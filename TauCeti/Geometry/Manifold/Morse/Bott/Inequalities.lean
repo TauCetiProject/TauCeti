@@ -171,7 +171,7 @@ submanifold of a smooth function `f`, with Morse index `r` at every point, and l
 fibre metric on its normal bundle. This says that the negative normal bundle `ν⁻` relative to `g`,
 a vector bundle of rank `r` (`hasLocalSubbundleFrames_negativeNormalSpace`), has a Thom class with
 coefficients in the commutative ring `K`. -/
-@[expose] def HasNegativeNormalThomClass (K : Type) [CommRing K] : Prop :=
+def HasNegativeNormalThomClass (K : Type) [CommRing K] : Prop :=
   letI := i.normalSpaceFiberBundle hn hdim
   haveI := i.normalSpaceVectorBundle hn hdim
   letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
@@ -180,6 +180,19 @@ coefficients in the commutative ring `K`. -/
       h.negativeNormalSpace hn g.toRiemannianMetric s).singularCohomology
       (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ (Fin r → ℝ)),
     IsThomClass (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) u
+
+/-- `HasNegativeNormalThomClass` says that the negative normal bundle has a Thom class over `K`. -/
+theorem hasNegativeNormalThomClass_iff (K : Type) [CommRing K] :
+    h.HasNegativeNormalThomClass hn hfs hdim g hr K ↔
+      letI := i.normalSpaceFiberBundle hn hdim
+      haveI := i.normalSpaceVectorBundle hn hdim
+      letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+      letI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
+      ∃ u : (thomPair (Fin r → ℝ) fun s ↦
+          h.negativeNormalSpace hn g.toRiemannianMetric s).singularCohomology
+          (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ (Fin r → ℝ)),
+        IsThomClass (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) u :=
+  Iff.rfl
 
 /-- **An oriented negative normal bundle has a Thom class** with coefficients in every commutative
 ring `K` (`TauCeti.VectorBundleOrientation.exists_isThomClass`). -/
@@ -193,10 +206,10 @@ theorem hasNegativeNormalThomClass_of_orientation
   have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
   exact VectorBundleOrientation.exists_isThomClass (by simp) o K
 
-/-- **The negative normal bundle has a Thom class mod `2`**, with coefficients in every field `K`
-whose only unit is `1`, such as `ZMod 2`, with no orientation needed
+/-- **The negative normal bundle has a Thom class mod `2`**, with coefficients in every commutative
+ring `K` whose only unit is `1`, such as `ZMod 2`, with no orientation needed
 (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). -/
-theorem hasNegativeNormalThomClass_of_subsingleton_units (K : Type) [Field K]
+theorem hasNegativeNormalThomClass_of_subsingleton_units (K : Type) [CommRing K]
     [Subsingleton Kˣ] : h.HasNegativeNormalThomClass hn hfs hdim g hr K := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
@@ -227,7 +240,7 @@ theorem finrank_singularHomology_negativeDiscSpherePair_of_isThomClass {ε : ℝ
   have := hV.vectorBundle
   split_ifs with hrn
   · -- In degrees from the rank on, the Thom isomorphism shifts the homology of `S` by `r`.
-    obtain ⟨u, hu⟩ := hu
+    obtain ⟨u, hu⟩ := (h.hasNegativeNormalThomClass_iff hn hfs hdim g hr K).1 hu
     obtain ⟨e⟩ := (h.toIsCriticalSubmanifold
       ).nonempty_singularHomology_negativeDiscSpherePair_iso_singularHomology_of_isThomClass hn
       g.toRiemannianMetric hdim hV hε u hu (p := n - r) (m := n) (by omega)
