@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Asymptotics
-public import TauCeti.Analysis.PDE.Vortex.Divisor
+public import TauCeti.Analysis.PDE.Vortex.Divisor.Basic
 public import TauCeti.Analysis.PDE.Vortex.EulerLagrange
 public import TauCeti.Analysis.PDE.Vortex.Minimizer
 public import TauCeti.Analysis.PDE.Vortex.Regularity
@@ -63,6 +63,11 @@ All in the namespace `TauCeti.Vortex`:
   `u₀ + w` and `P` is a smooth framed degree-`m` vortex.
 * `exists_contDiff_memLp_laplacian_eq_reduced`: for a polynomial of positive degree, the reduced
   vortex equation has a smooth square-integrable solution tending to zero at infinity.
+* `reducedSolution`: the smooth representative of the minimizer of Taubes's functional, a
+  canonical such solution (`laplacian_reducedSolution`, `memLp_reducedSolution`,
+  `tendsto_reducedSolution_cocompact`), characterized by `eq_reducedSolution_of_ae_eq`; for monic
+  `P` it gives a framed vortex
+  (`equation_amplitudeField_reducedSolution_eq_zero_and_tendsto_sectionValue`).
 * `exists_contDiff_equation_eq_zero_isZeroMultiplicity`: every `D ∈ Sym ℂ m` is the zero divisor
   of a smooth vortex with the degree-`m` end framing.
 * `framedVortexSubMulAction`: the smooth framed degree-`m` vortices of a coupling `c`, preserved
@@ -136,6 +141,110 @@ theorem exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctiona
           hw2.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume) φ
   exact ⟨w, contDiffOn_univ.1 (by simpa using hws), huw, hΔ'⟩
 
+end Minimizer
+
+/-! ### The smooth solution of the reduced equation -/
+
+section ReducedSolution
+
+variable {P : Polynomial ℂ}
+
+variable (P) in
+/-- **The smooth solution of Taubes's reduced equation.** For a polynomial `P` of positive degree,
+the smooth function that agrees almost everywhere with the minimizer
+`TauCeti.Vortex.reducedMinimizer P` of Taubes's functional. It solves the reduced equation
+`Δw = (exp (2w) h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²` at every point
+(`TauCeti.Vortex.laplacian_reducedSolution`), and the field with amplitude `u₀ + w` and section
+`P`, `u₀` the background amplitude, is a framed vortex when `P` is monic
+(`TauCeti.Vortex.equation_amplitudeField_reducedSolution_eq_zero_and_tendsto_sectionValue`). It is
+`0` for constant `P`. -/
+def reducedSolution : ℂ → ℝ :=
+  if hm : 0 < P.natDegree then
+    (exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctional_le hm
+      (forall_sobolevReducedFunctional_reducedMinimizer_le hm)).choose
+  else 0
+
+private theorem reducedSolution_spec (hm : 0 < P.natDegree) :
+    ContDiff ℝ ∞ (reducedSolution P) ∧
+      W1p.value (reducedMinimizer P) =ᵐ[volume] reducedSolution P ∧
+      ∀ z, Δ (reducedSolution P) z =
+        (Real.exp (2 * reducedSolution P z) * backgroundWeight P.eval z - 1) / 8 +
+          2 * ‖deriv P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by
+  rw [reducedSolution, dite_eq_left_of_eq_true (eq_true hm)]
+  exact (exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctional_le hm
+    (forall_sobolevReducedFunctional_reducedMinimizer_le hm)).choose_spec
+
+/-- The reduced solution of a constant polynomial is `0`. -/
+theorem reducedSolution_eq_zero_of_natDegree_eq_zero (hm : P.natDegree = 0) :
+    reducedSolution P = 0 := by
+  simp [reducedSolution, hm]
+
+variable (P) in
+/-- The reduced solution is smooth. -/
+theorem contDiff_reducedSolution : ContDiff ℝ ∞ (reducedSolution P) := by
+  rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
+  · rw [reducedSolution_eq_zero_of_natDegree_eq_zero hm]
+    exact contDiff_const
+  · exact (reducedSolution_spec hm).1
+
+/-- For `P` of positive degree, the reduced solution is a representative of the minimizer of
+Taubes's functional. -/
+theorem value_reducedMinimizer_ae_eq_reducedSolution (hm : 0 < P.natDegree) :
+    W1p.value (reducedMinimizer P) =ᵐ[volume] reducedSolution P :=
+  (reducedSolution_spec hm).2.1
+
+/-- **The reduced equation.** For `P` of positive degree, the reduced solution `w` satisfies
+`Δw = (exp (2w) h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²` everywhere, where `h = ‖P‖² / (1 + ‖P‖²)` is
+`TauCeti.Vortex.backgroundWeight P.eval`. -/
+theorem laplacian_reducedSolution (hm : 0 < P.natDegree) (z : ℂ) :
+    Δ (reducedSolution P) z =
+      (Real.exp (2 * reducedSolution P z) * backgroundWeight P.eval z - 1) / 8 +
+        2 * ‖deriv P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 :=
+  (reducedSolution_spec hm).2.2 z
+
+/-- The reduced solution is the only continuous representative of the minimizer of Taubes's
+functional. -/
+theorem eq_reducedSolution_of_ae_eq (hm : 0 < P.natDegree) {w : ℂ → ℝ} (hw : Continuous w)
+    (h : W1p.value (reducedMinimizer P) =ᵐ[volume] w) : w = reducedSolution P :=
+  (Continuous.ae_eq_iff_eq volume hw (contDiff_reducedSolution P).continuous).1
+    (h.symm.trans (value_reducedMinimizer_ae_eq_reducedSolution hm))
+
+variable (P) in
+/-- The reduced solution is square integrable. -/
+theorem memLp_reducedSolution : MemLp (reducedSolution P) 2 := by
+  rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
+  · rw [reducedSolution_eq_zero_of_natDegree_eq_zero hm]
+    exact MemLp.zero
+  · exact (W1p.memLp_value (reducedMinimizer P)).ae_eq
+      (by simpa using value_reducedMinimizer_ae_eq_reducedSolution hm)
+
+variable (P) in
+/-- The reduced solution tends to zero at infinity. -/
+theorem tendsto_reducedSolution_cocompact :
+    Tendsto (reducedSolution P) (cocompact ℂ) (𝓝 0) := by
+  rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
+  · rw [reducedSolution_eq_zero_of_natDegree_eq_zero hm]
+    exact tendsto_const_nhds
+  · exact tendsto_cocompact_of_memLp_of_laplacian_eq
+      (.of_forall fun _ ↦ ((contDiff_reducedSolution P).of_le (by simp)).contDiffAt)
+      (memLp_reducedSolution P) one_le_two ENNReal.ofNat_ne_top
+      (.of_forall (laplacian_reducedSolution hm))
+
+/-- **The vortex of a monic polynomial.** For a monic polynomial `P` of degree `m ≥ 1`, the field
+reconstructed from the amplitude `u₀ + w`, with `u₀` the background amplitude and `w` the reduced
+solution, and the section `P` solves the vortex equations everywhere and has the degree-`m` end
+framing `α(z) (z / ‖z‖)⁻ᵐ → 1` at infinity. -/
+theorem equation_amplitudeField_reducedSolution_eq_zero_and_tendsto_sectionValue (hP : P.Monic)
+    (hm : 0 < P.natDegree) :
+    (∀ z, equation (amplitudeField
+      (fun z ↦ backgroundAmplitude P.eval z + reducedSolution P z) P.eval) z = 0) ∧
+      Tendsto (fun z ↦ sectionValue
+        (amplitudeField (fun z ↦ backgroundAmplitude P.eval z + reducedSolution P z) P.eval) z *
+          ((z / (‖z‖ : ℂ)) ^ P.natDegree)⁻¹) (cocompact ℂ) (𝓝 1) :=
+  equation_amplitudeField_eq_zero_and_tendsto_sectionValue_of_memLp hP hm
+    ((contDiff_reducedSolution P).of_le (by simp)) (memLp_reducedSolution P) one_le_two
+    ENNReal.ofNat_ne_top (laplacian_reducedSolution hm)
+
 /-- **Existence of framed plane vortices with prescribed zeros.** Let `P` be a monic complex
 polynomial of degree `m ≥ 1` and let `u₀ = -log (1 + ‖P‖²) / 2` be its background amplitude. There
 is a smooth square-integrable function `w` on the plane such that the field reconstructed from the
@@ -150,21 +259,14 @@ theorem exists_contDiff_equation_amplitudeField_eq_zero_and_tendsto (hP : P.Moni
       (∀ z, equation (amplitudeField (fun z ↦ backgroundAmplitude P.eval z + w z) P.eval) z = 0) ∧
       Tendsto (fun z ↦ sectionValue
         (amplitudeField (fun z ↦ backgroundAmplitude P.eval z + w z) P.eval) z *
-          ((z / (‖z‖ : ℂ)) ^ P.natDegree)⁻¹) (cocompact ℂ) (𝓝 1) := by
-  obtain ⟨u, hu⟩ := exists_forall_sobolevReducedFunctional_le hm
-  obtain ⟨w, hw, huw, hΔ⟩ :=
-    exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctional_le hm hu
-  have hw2 : MemLp w 2 := by
-    have hL := Lp.memLp (W1p.value u)
-    simp only [Opens.coe_top, Measure.restrict_univ] at hL
-    exact hL.ae_eq huw
-  have hP' : ContDiff ℝ ∞ P.eval := (P.differentiable.contDiff).restrict_scalars ℝ
-  obtain ⟨hsol, hfr⟩ := equation_amplitudeField_eq_zero_and_tendsto_sectionValue_of_memLp hP hm
-    (hw.of_le (by simp)) hw2 one_le_two ENNReal.ofNat_ne_top hΔ
-  exact ⟨w, hw, hw2, contDiff_amplitudeField (n := ⊤)
-    ((contDiff_backgroundAmplitude hP').add hw) hP', hsol, hfr⟩
+          ((z / (‖z‖ : ℂ)) ^ P.natDegree)⁻¹) (cocompact ℂ) (𝓝 1) :=
+  ⟨reducedSolution P, contDiff_reducedSolution P, memLp_reducedSolution P,
+    contDiff_amplitudeField (n := ⊤) ((contDiff_backgroundAmplitude
+      ((P.differentiable.contDiff).restrict_scalars ℝ)).add (contDiff_reducedSolution P))
+      ((P.differentiable.contDiff).restrict_scalars ℝ),
+    equation_amplitudeField_reducedSolution_eq_zero_and_tendsto_sectionValue hP hm⟩
 
-end Minimizer
+end ReducedSolution
 
 /-- **Existence for the reduced vortex equation.** For a complex polynomial `P` of positive
 degree there is a smooth function `w ∈ L²(ℂ)` with `w → 0` at infinity solving Taubes's reduced
@@ -173,14 +275,9 @@ equation `Δw = (exp (2w) h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²` at ever
 theorem exists_contDiff_memLp_laplacian_eq_reduced {P : ℂ[X]} (hm : 0 < P.natDegree) :
     ∃ w : ℂ → ℝ, ContDiff ℝ ∞ w ∧ MemLp w 2 ∧ Tendsto w (cocompact ℂ) (𝓝 0) ∧
       ∀ z, Δ w z = (Real.exp (2 * w z) * backgroundWeight P.eval z - 1) / 8 +
-        2 * ‖deriv P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by
-  obtain ⟨u, hu⟩ := exists_forall_sobolevReducedFunctional_le hm
-  obtain ⟨w, hw, huw, heq⟩ :=
-    exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctional_le hm hu
-  have hwp : MemLp w 2 := (W1p.memLp_value u).ae_eq huw
-  exact ⟨w, hw, hwp, tendsto_cocompact_of_memLp_of_laplacian_eq
-    (.of_forall fun _ ↦ (hw.of_le (by simp)).contDiffAt) hwp one_le_two ENNReal.ofNat_ne_top
-    (.of_forall heq), heq⟩
+        2 * ‖deriv P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 :=
+  ⟨reducedSolution P, contDiff_reducedSolution P, memLp_reducedSolution P,
+    tendsto_reducedSolution_cocompact P, laplacian_reducedSolution hm⟩
 
 /-! ### Vortices with prescribed zeros -/
 

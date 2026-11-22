@@ -20,8 +20,9 @@ injective envelope.
 
 ## Main results
 
-* `TauCeti.injective_applyₗ_of_injective`: the evaluation map `M → Hom_R(Hom_R(M, E), E)` is
-  injective for every module `M`, so `E` is a cogenerator.
+* `TauCeti.injective_applyₗ_of_injective` and `TauCeti.exists_apply_ne_zero_of_injective`: the
+  evaluation map `M → Hom_R(Hom_R(M, E), E)` is injective and `E` separates points for every
+  module `M`, so `E` is a cogenerator.
 * `TauCeti.ker_lcomp_subtype_le_iff_of_injective`, `TauCeti.matlisAnnihilatorOrderEmbedding`,
   `TauCeti.isArtinian_of_isNoetherian_linearMap`, and
   `TauCeti.isNoetherian_of_isArtinian_linearMap`: annihilation embeds the submodule lattice into
@@ -49,7 +50,10 @@ universe u v w
 variable {R : Type u} [CommRing R] [IsLocalRing R] {E : Type v} [AddCommGroup E] [Module R E]
   {ι : ResidueField R →ₗ[R] E}
 
-private theorem nontrivial_quotient_linearMap_of_injective (hι : Function.Injective ι)
+/-- If `E` contains a copy of the residue field, then `R ⧸ 𝔪` has a nonzero linear map to `E` for
+the maximal ideal `𝔪`: the hypothesis of the cogenerator test
+`TauCeti.injective_applyₗ_of_forall_isMaximal`. -/
+theorem nontrivial_quotient_linearMap_of_injective (hι : Function.Injective ι)
     (𝔪 : Ideal R) (h𝔪 : 𝔪.IsMaximal) : Nontrivial (R ⧸ 𝔪 →ₗ[R] E) :=
   ⟨ι ∘ₗ (quotientEquivResidueField h𝔪).toLinearMap, 0, fun h => one_ne_zero <| hι <| by
     simpa using LinearMap.congr_fun h ((quotientEquivResidueField h𝔪).symm 1)⟩
@@ -62,6 +66,13 @@ theorem injective_applyₗ_of_injective [Module.Injective R E] (hι : Function.I
     {M : Type w} [AddCommGroup M] [Module R M] :
     Function.Injective (LinearMap.applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E) :=
   injective_applyₗ_of_forall_isMaximal (nontrivial_quotient_linearMap_of_injective hι)
+
+/-- If `E` is injective and contains a copy of the residue field, then `E` separates points: every
+nonzero element of a module is detected by a linear map to `E`. -/
+theorem exists_apply_ne_zero_of_injective [Module.Injective R E] (hι : Function.Injective ι)
+    {M : Type w} [AddCommGroup M] [Module R M] {m : M} (hm : m ≠ 0) :
+    ∃ f : M →ₗ[R] E, f m ≠ 0 :=
+  exists_apply_ne_zero_of_forall_isMaximal (nontrivial_quotient_linearMap_of_injective hι) hm
 
 /-- Restriction kernels in the Matlis dual reverse and reflect inclusion of submodules.
 It suffices that the injective target contain the residue field; essentiality is not needed. -/

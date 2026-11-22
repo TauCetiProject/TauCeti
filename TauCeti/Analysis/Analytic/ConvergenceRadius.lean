@@ -11,7 +11,8 @@ public import Mathlib.Analysis.Analytic.ConvergenceRadius
 
 Taking partial sums of a formal multilinear series commutes with continuous linear maps.
 This allows coefficientwise linear operations to pass through finite approximations.
-Each partial sum extends the previous one by a single term.
+The empty partial sum vanishes, each partial sum extends the previous one by a single term, and
+every partial sum of positive length evaluated at `0` equals the constant term `p 0 fun _ ↦ 0`.
 A geometric bound on coefficient norms also gives a comparison of convergence radii, even when
 the two series are defined over different normed fields.
 -/
@@ -33,10 +34,25 @@ theorem ContinuousLinearMap.compFormalMultilinearSeries_partialSum (f : F →L[�
     (f.compFormalMultilinearSeries p).partialSum n x = f (p.partialSum n x) := by
   simp [FormalMultilinearSeries.partialSum]
 
+/-- The partial sum of length `0` is `0`. -/
+@[simp]
+theorem FormalMultilinearSeries.partialSum_zero (p : FormalMultilinearSeries 𝕜 E F) (x : E) :
+    p.partialSum 0 x = 0 :=
+  Finset.sum_range_zero _
+
 /-- The partial sum of length `n + 1` is the partial sum of length `n` plus the `n`-th term. -/
 theorem FormalMultilinearSeries.partialSum_succ (p : FormalMultilinearSeries 𝕜 E F) (n : ℕ)
     (x : E) : p.partialSum (n + 1) x = p.partialSum n x + p n fun _ ↦ x :=
   Finset.sum_range_succ _ _
+
+/-- Every partial sum of positive length evaluated at `0` equals the constant term
+`p 0 fun _ ↦ 0`. -/
+@[simp]
+theorem FormalMultilinearSeries.partialSum_apply_zero_of_pos (p : FormalMultilinearSeries 𝕜 E F)
+    {n : ℕ} (hn : 0 < n) : p.partialSum n 0 = p 0 fun _ ↦ 0 := by
+  rw [FormalMultilinearSeries.partialSum, Finset.sum_eq_single 0]
+  · exact fun k _ hk ↦ (p k).map_coord_zero ⟨0, Nat.pos_of_ne_zero hk⟩ rfl
+  · exact fun h0 ↦ absurd (Finset.mem_range.2 hn) h0
 
 end PartialSum
 

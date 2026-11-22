@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Injective.Envelope.AdicCompletion
-public import TauCeti.RingTheory.MatlisDuality.Artinian
+public import TauCeti.RingTheory.Artinian.LocalRing
+public import TauCeti.RingTheory.MatlisDuality.Complete
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 
 /-!
@@ -206,7 +207,7 @@ def adicCompletionEvalEquivOfArtinian :
     AdicCompletion.restrictScalarsEquivOfMemPrimaryComponent
       (maximalIdeal R).fg_of_isNoetherianRing
       (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := M))
-  exact (hι.adicCompletion.evalEquivOfArtinian M ≪≫ₗ
+  exact (hι.adicCompletion.evalEquivOfIsArtinian M ≪≫ₗ
     LinearEquiv.congrLeft E A eHom).restrictScalars R
 
 @[simp]

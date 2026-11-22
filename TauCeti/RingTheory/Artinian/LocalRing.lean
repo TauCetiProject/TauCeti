@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Injective
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import TauCeti.Algebra.Module.Torsion.Essential
 public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
@@ -19,11 +18,9 @@ submodule of an `R`-module is annihilated by `𝔪`, so it lies in the socle `M[
 (`IsAtom.le_torsionBySet_maximalIdeal`). When `M` is Artinian, its submodule lattice is atomic,
 hence `M[𝔪]` is an essential submodule of `M` and is finite-dimensional over `κ`.
 
-Two structural consequences follow:
-* Without any Noetherian hypothesis on `R`, if `E` is an injective `R`-module containing a copy of
-  `κ`, extending an embedding `M[𝔪] ↪ E^r` along `M[𝔪] ⊆ M` embeds `M` into a finite power `E^r`.
-* If `R` is Noetherian, essentiality of `M[𝔪]` implies that every element of an Artinian `R`-module
-  is killed by a power of `𝔪`, so `M` carries the canonical action of the `𝔪`-adic completion `R̂`.
+In particular, if `R` is Noetherian, essentiality of `M[𝔪]` implies that every element of an
+Artinian `R`-module is killed by a power of `𝔪`, so `M` carries the canonical action of the `𝔪`-adic
+completion `R̂`.
 
 ## Main results
 
@@ -31,8 +28,6 @@ Two structural consequences follow:
   over a local ring is essential.
 * `TauCeti.exists_torsionBySet_maximalIdeal_linearEquiv_pi`: the `𝔪`-torsion submodule of an
   Artinian module is `R`-linearly isomorphic to `Fin r → κ` for some `r : ℕ`.
-* `TauCeti.exists_injective_linearMap_pi_of_isArtinian`: every Artinian module over a local ring
-  embeds into a finite power of any injective module containing `κ`.
 * `TauCeti.primaryComponent_maximalIdeal_eq_top_of_isArtinian`: over a Noetherian local ring,
   every Artinian module is maximal-ideal-power torsion.
 
@@ -51,7 +46,7 @@ open IsLocalRing Submodule
 
 namespace TauCeti
 
-universe u v w
+universe u w
 
 section IsLocalRing
 
@@ -91,23 +86,6 @@ theorem exists_torsionBySet_maximalIdeal_linearEquiv_pi [IsArtinian R M] :
     b.equivFun.trans (LinearEquiv.piCongrLeft K (fun _ ↦ K) (Fintype.equivFin _))
   refine ⟨_, ⟨eK.restrictScalars R ≪≫ₗ
     LinearEquiv.piCongrRight fun _ ↦ quotientEquivResidueField (maximalIdeal.isMaximal R)⟩⟩
-
-/-- Every Artinian module over a commutative local ring embeds into a finite power of any injective
-module containing a copy of the residue field. No Noetherian hypothesis on the ring is needed. -/
-theorem exists_injective_linearMap_pi_of_isArtinian [IsArtinian R M]
-    {E : Type v} [AddCommGroup E] [Module R E] [Small.{v} R] [Module.Injective R E]
-    {ι : ResidueField R →ₗ[R] E} (hι : Function.Injective ι) :
-    ∃ (r : ℕ) (j : M →ₗ[R] (Fin r → E)), Function.Injective j := by
-  obtain ⟨r, ⟨e₀⟩⟩ := exists_torsionBySet_maximalIdeal_linearEquiv_pi R M
-  let S₀ := torsionBySet R M (maximalIdeal R)
-  let g₀ : S₀ →ₗ[R] (Fin r → E) := (LinearMap.pi fun i ↦ ι ∘ₗ LinearMap.proj i) ∘ₗ e₀.toLinearMap
-  have hg₀ : Function.Injective g₀ := fun x y hxy ↦
-    e₀.injective (funext fun i ↦ hι (congrFun hxy i))
-  obtain ⟨j, hj⟩ := Module.Injective.extension_property R (Fin r → E) S₀ M
-    S₀.subtype S₀.injective_subtype g₀
-  have hrange : IsEssential (LinearMap.range S₀.subtype) := by
-    simpa [Submodule.range_subtype] using isEssential_torsionBySet_maximalIdeal R M
-  exact ⟨r, j, hrange.injective_of_injective_comp (hj.symm ▸ hg₀)⟩
 
 end IsLocalRing
 

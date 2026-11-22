@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.HalfSpace
-public import TauCeti.Analysis.PDE.Regularity.Interior
+public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.Localization
 
@@ -123,7 +123,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
   -- On `Ω ∩ W`, the restriction of `u` solves the equation with the principal coefficient `a'`,
   -- and the lower-order terms move to the right-hand side.
   set u₁ := W1p.restrictL hΩ₁ u
-  obtain ⟨g, hg⟩ := exists_forcing_restrictL_of_eqOn hΩ₁
+  obtain ⟨g, hg, -⟩ := exists_forcing_restrictL_of_eqOn hΩ₁
     (fun x hx => haa' ⟨⟨hx.1, hWU' hx.2⟩, hx.2⟩)
     (memLp_energyIntegrand_of_continuous hM' hK'.continuous _) hb hc hu
   -- A cutoff equal to one near `closure V` and supported in `W`.
@@ -167,8 +167,10 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
     rw [h1, h3, indicator_of_mem (hΩVΩ₁ hx), hxV.1, hxV.2, one_smul, smul_zero, add_zero, h2]
   -- The global theorem on `H` gives the second derivatives.
   exact W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn
-    (EuclideanSpace.basisFun ι ℝ) hΩV hgradV fun i j =>
-      ha'.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw _ _
+    (EuclideanSpace.basisFun ι ℝ) hΩV hgradV fun i j => by
+      obtain ⟨G, -, hG⟩ :=
+        ha'.exists_norm_le_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw _ _
+      exact ⟨G, hG⟩
 
 /-- **Local `H²` regularity near the boundary of a half-space.** Let `H = {x | c₀ < ⟪x, ν⟫}` with
 `ν ≠ 0`, and let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`, so that `∂Ω ∩ U` is a piece of the
