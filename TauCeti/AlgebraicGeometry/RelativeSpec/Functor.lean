@@ -202,6 +202,12 @@ theorem QuasicoherentAlgebra.forget_map_hom {A A' : QuasicoherentAlgebra X} (f :
       (forgetObjIso A).hom ≫ f.hom.hom.hom ≫ (forgetObjIso A').inv :=
   (Category.id_comp _).symm.trans (Category.comp_id _).symm
 
+/-- An isomorphism of quasi-coherent algebras is an epimorphism of the underlying module
+sheaves. -/
+theorem QuasicoherentAlgebra.epi_hom_hom_hom_of_isIso {A A' : QuasicoherentAlgebra X}
+    (f : A ⟶ A') [IsIso f] : Epi f.hom.hom.hom :=
+  SplitEpi.epi ⟨(inv f).hom.hom.hom, congrArg (fun φ ↦ φ.hom.hom.hom) (IsIso.inv_hom_id f)⟩
+
 /-- Affine schemes over `X`: the structure morphism, not necessarily the scheme, is affine.
 Morphisms are arbitrary scheme morphisms over `X`. -/
 abbrev AffineSchemeOver (X : Scheme.{u}) :=

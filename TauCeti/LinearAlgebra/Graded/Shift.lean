@@ -49,11 +49,11 @@ adopts its Koszul sign as the evaluation-level definition of the suspended opera
 
 ## Main results
 
-* `TauCeti.LinearMap.isHomogeneous_shift_source_iff`, `TauCeti.LinearMap.isHomogeneous_shift_iff`,
-  and `TauCeti.LinearMap.isHomogeneous_shift_target_iff`: shifting the source raises the degree of
+* `LinearMap.isHomogeneous_shift_source_iff`, `LinearMap.isHomogeneous_shift_iff`,
+  and `LinearMap.isHomogeneous_shift_target_iff`: shifting the source raises the degree of
   a linear map, shifting the target lowers it, and shifting both leaves it unchanged.
-* `TauCeti.LinearMap.isHomogeneous_shiftEquiv` and
-  `TauCeti.LinearMap.isHomogeneous_shiftEquiv_symm`: for a shift by `c`, the forward map has
+* `LinearMap.isHomogeneous_shiftEquiv` and
+  `LinearMap.isHomogeneous_shiftEquiv_symm`: for a shift by `c`, the forward map has
   degree `-c` and the inverse has degree `c`; at `c = 1` these are suspension and unsuspension.
 * `TauCeti.MultilinearMap.isHomogeneous_shift_iff`: shifting the inputs by `c` and the target by
   `r` translates degree `q` in the shifted gradings to degree `q + r - ∑ i, c i` in the original
@@ -71,9 +71,9 @@ adopts its Koszul sign as the evaluation-level definition of the suspended opera
 
 public section
 
-namespace TauCeti
-
 universe uR uι uκ uM uN
+
+namespace TauCeti
 
 namespace Graded
 
@@ -121,7 +121,11 @@ end ShiftEquiv
 
 end Graded
 
+end TauCeti
+
 namespace LinearMap
+
+open TauCeti
 
 section AddMonoid
 
@@ -211,6 +215,8 @@ theorem homogeneousSubmodule_shift_target (𝒜 : ι → σM) (ℬ : ι → σN)
 end Submodule
 
 end LinearMap
+
+namespace TauCeti
 
 namespace MultilinearMap
 
