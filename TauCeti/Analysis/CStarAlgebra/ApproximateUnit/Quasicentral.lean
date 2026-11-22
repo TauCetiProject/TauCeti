@@ -331,7 +331,10 @@ theorem isIncreasingApproximateUnit_comap_quasicentralApproximateUnit :
   exact (CStarAlgebra.increasingApproximateUnit I.toNonUnitalStarSubalgebra).mono
     I.comap_quasicentralApproximateUnit_le
 
-private theorem map_comap_quasicentralApproximateUnit :
+/-- Pushing forward the pullback of `I.quasicentralApproximateUnit` to
+`I.toNonUnitalStarSubalgebra` recovers `I.quasicentralApproximateUnit`. -/
+@[simp]
+theorem map_comap_quasicentralApproximateUnit :
     (I.quasicentralApproximateUnit.comap ((↑) : I.toNonUnitalStarSubalgebra → A)).map
       ((↑) : I.toNonUnitalStarSubalgebra → A) = I.quasicentralApproximateUnit := by
   have hmem : (I.toNonUnitalStarSubalgebra : Set A) ∈ I.quasicentralApproximateUnit :=
@@ -345,7 +348,8 @@ theorem tendsto_mul_right_quasicentralApproximateUnit {a : A} (ha : a ∈ I) :
   have hS := I.isIncreasingApproximateUnit_comap_quasicentralApproximateUnit.tendsto_mul_right
     ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩
   rw [← I.map_comap_quasicentralApproximateUnit, Filter.tendsto_map'_iff]
-  exact (continuous_subtypeVal.tendsto _).comp hS
+  exact ((continuous_subtypeVal.tendsto _).comp hS).congr fun x => by
+    simp only [Function.comp_apply, MulMemClass.coe_mul]
 
 /-- `I.quasicentralApproximateUnit` is a right approximate unit for `I`. -/
 theorem tendsto_mul_left_quasicentralApproximateUnit {a : A} (ha : a ∈ I) :
@@ -353,7 +357,8 @@ theorem tendsto_mul_left_quasicentralApproximateUnit {a : A} (ha : a ∈ I) :
   have hS := I.isIncreasingApproximateUnit_comap_quasicentralApproximateUnit.tendsto_mul_left
     ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩
   rw [← I.map_comap_quasicentralApproximateUnit, Filter.tendsto_map'_iff]
-  exact (continuous_subtypeVal.tendsto _).comp hS
+  exact ((continuous_subtypeVal.tendsto _).comp hS).congr fun x => by
+    simp only [Function.comp_apply, MulMemClass.coe_mul]
 
 /-- `I.quasicentralApproximateUnit` is quasicentral in `A`: `e * a - a * e → 0` for every
 `a : A`. -/
@@ -472,13 +477,10 @@ theorem exists_seq_quasicentral_approximateUnit [TopologicalSpace.SeparableSpace
     TauCeti.tendsto_mul_right_of_dense hdI (C := 1)
       (.of_forall fun n => (seq n).property.2.le) <| by
       rintro _ ⟨k, rfl⟩
-      refine tendsto_sub_nhds_zero_iff.mp <| (tendsto_add_atTop_iff_nat 1).mp ?_
-      refine TauCeti.tendsto_zero_of_eventually_norm_le_inv ?_
-      filter_upwards [Filter.eventually_ge_atTop (max k 1)] with m hm
-      refine (hf_approx m (seq m).val (seq m).property.1 (seq m).property.2 k
-        ((le_max_left k 1).trans hm)).le.trans ?_
-      exact inv_anti₀ (Nat.cast_pos.mpr (lt_of_lt_of_le Nat.zero_lt_one
-        ((le_max_right k 1).trans hm))) (by norm_cast; omega)
+      refine tendsto_sub_nhds_zero_iff.mp <| (tendsto_add_atTop_iff_nat 1).mp <|
+        TauCeti.tendsto_zero_of_eventually_norm_le_inv_add_one ?_
+      filter_upwards [Filter.eventually_ge_atTop k] with m hm
+      exact (hf_approx m (seq m).val (seq m).property.1 (seq m).property.2 k hm).le
   have hu_mul_right : ∀ a ∈ I, Tendsto (fun n => u n * a) atTop (𝓝 a) := fun a ha =>
     ((continuous_subtypeVal.tendsto _).comp
       (hS_lim ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩)).congr fun n => by
@@ -498,13 +500,10 @@ theorem exists_seq_quasicentral_approximateUnit [TopologicalSpace.SeparableSpace
     TauCeti.tendsto_commutator_of_dense hdA (C := 1)
       (.of_forall fun n => (hu_prop n).2.2.le) <| by
       rintro _ ⟨k, rfl⟩
-      refine (tendsto_add_atTop_iff_nat 1).mp ?_
-      refine TauCeti.tendsto_zero_of_eventually_norm_le_inv ?_
-      filter_upwards [Filter.eventually_ge_atTop (max k 1)] with m hm
-      refine (hf_comm m (seq m).val (seq m).property.1 (seq m).property.2 k
-        ((le_max_left k 1).trans hm)).le.trans ?_
-      exact inv_anti₀ (Nat.cast_pos.mpr (lt_of_lt_of_le Nat.zero_lt_one
-        ((le_max_right k 1).trans hm))) (by norm_cast; omega)
+      refine (tendsto_add_atTop_iff_nat 1).mp <|
+        TauCeti.tendsto_zero_of_eventually_norm_le_inv_add_one ?_
+      filter_upwards [Filter.eventually_ge_atTop k] with m hm
+      exact (hf_comm m (seq m).val (seq m).property.1 (seq m).property.2 k hm).le
   exact ⟨u, hu_mono, hu_prop, hu_mul_right, hu_mul_left, hu_comm⟩
 
 end Quasicentral

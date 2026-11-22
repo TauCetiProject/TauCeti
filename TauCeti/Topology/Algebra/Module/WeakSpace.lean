@@ -61,7 +61,8 @@ theorem tendsto_toWeakSpace_pi_apply {ι α : Type*} {F : ι → Type*}
     Tendsto (fun n ↦ toWeakSpace 𝕜 (F i) (u n i)) l (𝓝 (toWeakSpace 𝕜 (F i) (x i))) := by
   rw [tendsto_toWeakSpace_iff_forall_eval_tendsto] at h ⊢
   intro f
-  exact h (f.comp (ContinuousLinearMap.proj (R := 𝕜) (φ := F) i))
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] using
+    h (f.comp (ContinuousLinearMap.proj (R := 𝕜) (φ := F) i))
 
 /-- Weak convergence in a finite product of topological modules is equivalent to coordinatewise
 weak convergence. -/

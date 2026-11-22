@@ -215,35 +215,47 @@ theorem tendsto_mul_mul_of_isBoundedUnder {ι : Type*} {l : Filter ι} {u v : ι
     Filter.isBoundedUnder_le_mul_tendsto_zero hu (by simpa using hright.sub_const a)
   simpa only [mul_sub, ← mul_assoc, sub_add_cancel, zero_add] using hzero.add hleft
 
+/-- If `F : ι → X → Y` is eventually uniformly Lipschitz along `l`, `g : X → Y` is Lipschitz,
+and `F i d → g d` along `l` for every `d` in a dense set `D`, then `F i x → g x` for every
+`x`. -/
+private theorem tendsto_of_dense_of_eventually_lipschitz {ι X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {l : Filter ι} {F : ι → X → Y} {g : X → Y} {D : Set X}
+    (hD : Dense D) {K L : ℝ} (hK : 0 ≤ K) (hL : 0 ≤ L)
+    (hF : ∀ᶠ i in l, ∀ x y, dist (F i x) (F i y) ≤ K * dist x y)
+    (hg : ∀ x y, dist (g x) (g y) ≤ L * dist x y)
+    (hlim : ∀ d ∈ D, Tendsto (fun i => F i d) l (𝓝 (g d))) (x : X) :
+    Tendsto (fun i => F i x) l (𝓝 (g x)) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨d, hdD, hxd⟩ := hD.exists_dist_lt x (by positivity : 0 < ε / (2 * (K + L + 1)))
+  filter_upwards [hF, Metric.tendsto_nhds.mp (hlim d hdD) (ε / 2) (by positivity)] with i hi hid
+  have hdist : dist (F i x) (g x) ≤ (K + L) * dist x d + dist (F i d) (g d) := by
+    calc dist (F i x) (g x)
+        ≤ dist (F i x) (F i d) + dist (F i d) (g d) + dist (g d) (g x) := dist_triangle4 _ _ _ _
+      _ ≤ K * dist x d + dist (F i d) (g d) + L * dist d x := by
+          gcongr
+          · exact hi x d
+          · exact hg d x
+      _ = (K + L) * dist x d + dist (F i d) (g d) := by rw [dist_comm d x]; ring
+  have hprod : (K + L) * dist x d < ε / 2 := by
+    calc (K + L) * dist x d
+        ≤ (K + L + 1) * dist x d := mul_le_mul_of_nonneg_right (by linarith) dist_nonneg
+      _ < (K + L + 1) * (ε / (2 * (K + L + 1))) := mul_lt_mul_of_pos_left hxd (by positivity)
+      _ = ε / 2 := by field_simp
+  linarith
+
 /-- If `u` is eventually norm-bounded along `l` and `u i * d → d` for every `d` in a dense set `D`
 of a seminormed ring, then `u i * x → x` for every `x`. -/
 theorem tendsto_mul_right_of_dense {ι : Type*} {l : Filter ι} {u : ι → A} {D : Set A}
     (hD : Dense D) (hC : ∀ᶠ i in l, ‖u i‖ ≤ C)
     (hlim : ∀ d ∈ D, Tendsto (fun i => u i * d) l (𝓝 d)) (x : A) :
     Tendsto (fun i => u i * x) l (𝓝 x) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨d, hdD, hxd⟩ := hD.exists_dist_lt x (by positivity : 0 < ε / (2 * (|C| + 1)))
-  rw [dist_eq_norm] at hxd
-  filter_upwards [hC, Metric.tendsto_nhds.mp (hlim d hdD) (ε / 2) (by positivity)] with i hi hid
-  rw [dist_eq_norm] at hid ⊢
-  have hsub : u i * x - x = u i * (x - d) + (u i * d - d) + (d - x) := by
-    simp only [mul_sub]
-    abel
-  have hnorm : ‖u i * (x - d) + (u i * d - d) + (d - x)‖ ≤
-      (‖u i‖ + 1) * ‖x - d‖ + ‖u i * d - d‖ := by
-    have h1 : ‖u i * (x - d) + (u i * d - d) + (d - x)‖ ≤
-        ‖u i * (x - d)‖ + ‖u i * d - d‖ + ‖d - x‖ := norm_add₃_le
-    have h2 : ‖u i * (x - d)‖ ≤ ‖u i‖ * ‖x - d‖ := norm_mul_le _ _
-    have h3 : ‖d - x‖ = ‖x - d‖ := norm_sub_rev d x
-    linarith
-  have hC1 : ‖u i‖ + 1 ≤ |C| + 1 := by linarith [hi.trans (le_abs_self C)]
-  have hprod : (‖u i‖ + 1) * ‖x - d‖ < ε / 2 := by
-    calc (‖u i‖ + 1) * ‖x - d‖
-        ≤ (|C| + 1) * ‖x - d‖ := mul_le_mul_of_nonneg_right hC1 (norm_nonneg _)
-      _ < (|C| + 1) * (ε / (2 * (|C| + 1))) := mul_lt_mul_of_pos_left hxd (by positivity)
-      _ = ε / 2 := by field_simp
-  linarith [hsub ▸ hnorm]
+  refine tendsto_of_dense_of_eventually_lipschitz (F := fun i y => u i * y) (g := id) hD
+    (abs_nonneg C) zero_le_one ?_ (fun x y => by simp) hlim x
+  filter_upwards [hC] with i hi x y
+  rw [dist_eq_norm, dist_eq_norm, ← mul_sub]
+  exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hi.trans (le_abs_self C))
+    (norm_nonneg _))
 
 /-- If `u` is eventually norm-bounded along `l` and `u i * d - d * u i → 0` for every `d` in a
 dense set `D` of a seminormed ring, then `u i * x - x * u i → 0` for every `x`. -/
@@ -251,30 +263,20 @@ theorem tendsto_commutator_of_dense {ι : Type*} {l : Filter ι} {u : ι → A} 
     (hD : Dense D) (hC : ∀ᶠ i in l, ‖u i‖ ≤ C)
     (hlim : ∀ d ∈ D, Tendsto (fun i => u i * d - d * u i) l (𝓝 0)) (x : A) :
     Tendsto (fun i => u i * x - x * u i) l (𝓝 0) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨d, hdD, hxd⟩ := hD.exists_dist_lt x (by positivity : 0 < ε / (4 * (|C| + 1)))
-  rw [dist_eq_norm] at hxd
-  filter_upwards [hC, Metric.tendsto_nhds.mp (hlim d hdD) (ε / 2) (by positivity)] with i hi hid
-  rw [dist_zero_right] at hid ⊢
-  have hsub : u i * x - x * u i =
-      (u i * (x - d) - (x - d) * u i) + (u i * d - d * u i) := by
+  refine tendsto_of_dense_of_eventually_lipschitz (F := fun i y => u i * y - y * u i)
+    (g := fun _ => 0) hD (mul_nonneg zero_le_two (abs_nonneg C)) le_rfl ?_ (fun _ _ => by simp)
+    hlim x
+  filter_upwards [hC] with i hi x y
+  rw [dist_eq_norm, dist_eq_norm]
+  have hsub : (u i * x - x * u i) - (u i * y - y * u i) =
+      u i * (x - y) - (x - y) * u i := by
     simp only [mul_sub, sub_mul]
     abel
-  have hnorm : ‖(u i * (x - d) - (x - d) * u i) + (u i * d - d * u i)‖ ≤
-      2 * ‖u i‖ * ‖x - d‖ + ‖u i * d - d * u i‖ := by
-    have h1 := norm_add_le (u i * (x - d) - (x - d) * u i) (u i * d - d * u i)
-    have h2 := norm_sub_le (u i * (x - d)) ((x - d) * u i)
-    have h3 : ‖u i * (x - d)‖ ≤ ‖u i‖ * ‖x - d‖ := norm_mul_le _ _
-    have h4 : ‖(x - d) * u i‖ ≤ ‖x - d‖ * ‖u i‖ := norm_mul_le _ _
-    linarith
-  have hC1 : 2 * ‖u i‖ ≤ 2 * (|C| + 1) := by linarith [hi.trans (le_abs_self C)]
-  have hprod : 2 * ‖u i‖ * ‖x - d‖ < ε / 2 := by
-    calc 2 * ‖u i‖ * ‖x - d‖
-        ≤ 2 * (|C| + 1) * ‖x - d‖ := mul_le_mul_of_nonneg_right hC1 (norm_nonneg _)
-      _ < 2 * (|C| + 1) * (ε / (4 * (|C| + 1))) := mul_lt_mul_of_pos_left hxd (by positivity)
-      _ = ε / 2 := by field_simp; ring
-  linarith [hsub ▸ hnorm]
+  rw [hsub]
+  have h1 := norm_mul_le (u i) (x - y)
+  have h2 := norm_mul_le (x - y) (u i)
+  have h3 := hi.trans (le_abs_self C)
+  exact (norm_sub_le _ _).trans (by nlinarith [norm_nonneg (x - y)])
 
 end TauCeti
 

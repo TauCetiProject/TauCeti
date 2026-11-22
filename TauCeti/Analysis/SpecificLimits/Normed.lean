@@ -229,6 +229,15 @@ theorem tendsto_zero_of_eventually_norm_le_inv {E : Type*} [SeminormedAddCommGro
   exact squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) hg
     (tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop)
 
+/-- A sequence in a seminormed group whose norms are eventually bounded by `((n + 1 : ℕ) : ℝ)⁻¹`
+converges to `0`. -/
+theorem tendsto_zero_of_eventually_norm_le_inv_add_one {E : Type*} [SeminormedAddCommGroup E]
+    {g : ℕ → E} (hg : ∀ᶠ n in Filter.atTop, ‖g n‖ ≤ ((n + 1 : ℕ) : ℝ)⁻¹) :
+    Filter.Tendsto g Filter.atTop (nhds 0) := by
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  exact squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) hg
+    (by simpa [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+
 variable {K : Type*} [NormedField K]
 
 /-- The geometric series with coefficients `(k + 1)²` sums to `(1 + x) / (1 - x)³`. -/

@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
+public import TauCeti.Analysis.CStarAlgebra.State.Space
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.LinearAlgebra.Complex.Module
 import Mathlib.Topology.Algebra.Star.LinearMap
-import TauCeti.Analysis.CStarAlgebra.State.Space
 import TauCeti.Analysis.CStarAlgebra.State.Spectrum
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
@@ -27,8 +28,10 @@ C⋆-algebra `A` admits a norm-preserving Jordan decomposition `φ = ω₁ - ω�
 (`ContinuousLinearMap.exists_sub_positiveContinuousLinearMap_of_map_star`). For unital algebras,
 a nonzero Hermitian `φ` is first normalized to norm `1` before separating it from the weak-*
 compact convex set `convexJoin ℝ (TauCeti.stateSpace D) (-TauCeti.stateSpace D)` via Hahn–Banach
-and testing against a spectral norm-attaining state; the nonunital case follows by norm-preserving
-Hahn–Banach extension to `Unitization ℂ A` and symmetrization via `realPart`.
+and testing against a spectral norm-attaining state
+(`ContinuousLinearMap.toWeakDual_mem_convexJoin_stateSpace_of_norm_eq_one`); the nonunital case
+follows by norm-preserving Hahn–Banach extension to `Unitization ℂ A` and symmetrization via
+`realPart`.
 
 Splitting an arbitrary `φ : A →L[ℂ] ℂ` into its real and imaginary parts gives the four-positive
 decomposition (`ContinuousLinearMap.exists_four_positiveContinuousLinearMap`). Consequently, a net
@@ -53,10 +56,17 @@ namespace ContinuousLinearMap
 
 section JordanDecomposition
 
-private theorem toWeakDual_mem_convexJoin_stateSpace_of_norm_eq_one
-    {D : Type*} [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D] [Nontrivial D]
+/-- Every norm-one Hermitian continuous linear functional on a unital C⋆-algebra lies in the
+convex join of `TauCeti.stateSpace D` and `-TauCeti.stateSpace D` in the weak-* dual. -/
+theorem toWeakDual_mem_convexJoin_stateSpace_of_norm_eq_one
+    {D : Type*} [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D]
     {ψ : D →L[ℂ] ℂ} (hψ_norm : ‖ψ‖ = 1) (hψ_star : ∀ a, ψ (star a) = star (ψ a)) :
     StrongDual.toWeakDual ψ ∈ convexJoin ℝ (TauCeti.stateSpace D) (-TauCeti.stateSpace D) := by
+  have : Nontrivial D := by
+    by_contra h
+    rw [not_nontrivial_iff_subsingleton] at h
+    have h0 : ψ = 0 := ext fun a => by simp [Subsingleton.elim a 0]
+    simp [h0] at hψ_norm
   by_contra hnot
   have hconv : Convex ℝ (convexJoin ℝ (TauCeti.stateSpace D) (-TauCeti.stateSpace D)) :=
     TauCeti.convex_stateSpace.convexJoin TauCeti.convex_stateSpace.neg
@@ -128,10 +138,6 @@ private theorem exists_sub_positiveContinuousLinearMap_unital
       ‖(ω₁ : D →L[ℂ] ℂ)‖ + ‖(ω₂ : D →L[ℂ] ℂ)‖ = ‖φ‖ := by
   by_cases hφ0 : φ = 0
   · refine ⟨0, 0, fun a => by simp [hφ0], by simp [hφ0]⟩
-  have : Nontrivial D := by
-    by_contra h
-    rw [not_nontrivial_iff_subsingleton] at h
-    exact hφ0 (ext fun a => by simp [Subsingleton.elim a 0])
   have hφ_pos : 0 < ‖φ‖ := norm_pos_iff.mpr hφ0
   set ψ : D →L[ℂ] ℂ := (‖φ‖⁻¹ : ℂ) • φ
   have hψ_norm : ‖ψ‖ = 1 := by simp [ψ, norm_smul, inv_mul_cancel₀ hφ_pos.ne']

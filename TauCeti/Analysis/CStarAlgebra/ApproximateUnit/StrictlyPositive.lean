@@ -29,6 +29,7 @@ import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Unitization
 import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
 import TauCeti.Analysis.LocallyConvex.Mazur
 import TauCeti.Analysis.Normed.Operator.Dense
+import TauCeti.Topology.Instances.NNReal
 
 /-!
 # Strictly positive elements and σ-unital C⋆-algebras
@@ -139,6 +140,12 @@ theorem isStrictlyPositive_zero_iff :
     exact isStrictlyPositive_def.mpr
       ⟨le_rfl, Set.eq_univ_of_forall fun a => subset_closure ⟨0, Subsingleton.elim _ _⟩⟩
 
+/-- In a subsingleton (zero) C⋆-algebra, every element is strictly positive. -/
+@[nontriviality]
+theorem IsStrictlyPositive.of_subsingleton [Subsingleton A] {a : A} :
+    CStarAlgebra.IsStrictlyPositive a :=
+  Subsingleton.elim a 0 ▸ isStrictlyPositive_zero_iff.mpr inferInstance
+
 end Basic
 
 section NonUnital
@@ -191,21 +198,13 @@ theorem norm_strictlyPositiveApproximateUnit_le_one (h : A) (n : ℕ) :
     ‖strictlyPositiveApproximateUnit h n‖ ≤ 1 :=
   (norm_strictlyPositiveApproximateUnit_lt_one h n).le
 
-private theorem continuous_inv_add_nnreal {c : ℝ≥0} (hc : 0 < c) :
-    Continuous (fun t : ℝ≥0 => (c + t)⁻¹) :=
-  (continuous_const.add continuous_id).inv₀ fun t => (add_pos_of_pos_of_nonneg hc t.property).ne'
-
-private theorem continuous_mul_inv_add_nnreal {c : ℝ≥0} (hc : 0 < c) :
-    Continuous (fun t : ℝ≥0 => t * (c + t)⁻¹) :=
-  continuous_id.mul (continuous_inv_add_nnreal hc)
-
 /-- The sequence `strictlyPositiveApproximateUnit h` is monotone increasing. -/
 theorem strictlyPositiveApproximateUnit_monotone (h : A) :
     Monotone (strictlyPositiveApproximateUnit h) := by
   intro m n hmn
   have hcont : ∀ k : ℕ, ContinuousOn (fun t : ℝ≥0 => t * (((k + 1 : ℕ) : ℝ≥0)⁻¹ + t)⁻¹)
       (quasispectrum ℝ≥0 h) := fun k =>
-    (continuous_mul_inv_add_nnreal (by positivity : (0 : ℝ≥0) < ((k + 1 : ℕ) : ℝ≥0)⁻¹)).continuousOn
+    (NNReal.continuous_mul_inv_add (by positivity : (0 : ℝ≥0) < ((k + 1 : ℕ) : ℝ≥0)⁻¹)).continuousOn
   refine cfcₙ_mono (a := h) (fun t _ => ?_) (hcont m) (hcont n) (by simp) (by simp)
   gcongr
 
@@ -222,7 +221,7 @@ theorem map_strictlyPositiveApproximateUnit {B F : Type*} [NonUnitalCStarAlgebra
     f (strictlyPositiveApproximateUnit h n) = strictlyPositiveApproximateUnit (f h) n := by
   rw [strictlyPositiveApproximateUnit_def, strictlyPositiveApproximateUnit_def]
   exact NonUnitalStarAlgHomClass.map_cfcₙ f _ h
-    (continuous_mul_inv_add_nnreal (by positivity : (0 : ℝ≥0) < ((n + 1 : ℕ) : ℝ≥0)⁻¹)).continuousOn
+    (NNReal.continuous_mul_inv_add (by positivity : (0 : ℝ≥0) < ((n + 1 : ℕ) : ℝ≥0)⁻¹)).continuousOn
     (by simp) (map_continuous f) hh (map_nonneg f hh)
 
 /-- Algebraic `cfcₙ` identity for the approximation error
@@ -233,11 +232,11 @@ private theorem sub_mul_strictlyPositiveApproximateUnit_eq {h : A} (hh : 0 ≤ h
         t * (((n + 1 : ℕ) : ℝ≥0)⁻¹ * (((n + 1 : ℕ) : ℝ≥0)⁻¹ + t)⁻¹)) h := by
   let c : ℝ≥0 := ((n + 1 : ℕ) : ℝ≥0)⁻¹
   have hc_pos : 0 < c := by positivity
-  have hf_cont : Continuous (fun t : ℝ≥0 => t * (c + t)⁻¹) := continuous_mul_inv_add_nnreal hc_pos
+  have hf_cont : Continuous (fun t : ℝ≥0 => t * (c + t)⁻¹) := NNReal.continuous_mul_inv_add hc_pos
   have htf_cont : Continuous (fun t : ℝ≥0 => t * (t * (c + t)⁻¹)) :=
     continuous_id.mul hf_cont
   have hg_cont : Continuous (fun t : ℝ≥0 => t * (c * (c + t)⁻¹)) :=
-    continuous_id.mul (continuous_const.mul (continuous_inv_add_nnreal hc_pos))
+    continuous_id.mul (continuous_const.mul (NNReal.continuous_inv_add hc_pos))
   have hmul : h * strictlyPositiveApproximateUnit h n =
       cfcₙ (fun t : ℝ≥0 => t * (t * (c + t)⁻¹)) h := by
     calc h * strictlyPositiveApproximateUnit h n
@@ -312,7 +311,7 @@ theorem inr_strictlyPositiveApproximateUnit_eq (h : A) (n : ℕ) :
   · let c : ℝ≥0 := ((n + 1 : ℕ) : ℝ≥0)⁻¹
     have hh' : 0 ≤ (h : A⁺¹) := (Unitization.inr_nonneg_iff ℂ).mpr hh
     have hr_cont : ContinuousOn (fun t : ℝ≥0 => (c + t)⁻¹) (spectrum ℝ≥0 (h : A⁺¹)) :=
-      (continuous_inv_add_nnreal (by positivity : 0 < c)).continuousOn
+      (NNReal.continuous_inv_add (by positivity : 0 < c)).continuousOn
     have hL : ((strictlyPositiveApproximateUnit h n : A) : A⁺¹) =
         (h : A⁺¹) * cfc (fun t : ℝ≥0 => (c + t)⁻¹) (h : A⁺¹) := by
       rw [strictlyPositiveApproximateUnit_def,

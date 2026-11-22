@@ -24,10 +24,11 @@ without assuming a unit or a canonical cyclic vector.
 For a positive continuous linear functional `ω : A →P[ℂ] ℂ` extended canonically to
 `Unitization ℂ A`, the GNS classes `[e]` along any increasing approximate unit `e` of `A` converge
 in norm to the cyclic vector `[1]` of `ω.extendUnitization`
-(`PositiveContinuousLinearMap.tendsto_toGNS_inr_extendUnitization`), so restricting the GNS
-representation of `ω.extendUnitization` to `A` (`PositiveContinuousLinearMap.gnsInr ω`) remains
-nondegenerate (`PositiveContinuousLinearMap.isNondegenerate_gnsInr`), and its vector functional at
-`gnsVector` recovers `ω` (`PositiveContinuousLinearMap.inner_gnsVector_gnsInr`).
+(`PositiveContinuousLinearMap.tendsto_toGNS_inr_extendUnitization`), so `gnsVector` remains
+cyclic (`PositiveContinuousLinearMap.denseRange_gnsInr_gnsVector`) and the restricted GNS
+representation `PositiveContinuousLinearMap.gnsInr ω` remains nondegenerate
+(`PositiveContinuousLinearMap.isNondegenerate_gnsInr`), while its vector functional at `gnsVector`
+recovers `ω` (`PositiveContinuousLinearMap.inner_gnsVector_gnsInr`).
 
 The zero functional is included: its GNS Hilbert space is zero and the representation is
 still nondegenerate. Faithfulness is sufficient, not necessary, for injectivity of the GNS
@@ -165,43 +166,42 @@ theorem tendsto_toGNS_inr_extendUnitization (ω : A →P[ℂ] ℂ) {l : Filter A
   simpa [Function.comp_def, ← Complex.ofReal_pow] using
     (Complex.continuous_re.tendsto 0).comp hlimC
 
+/-- The designated GNS vector `gnsVector` of `ω.extendUnitization` is cyclic for the restricted
+GNS representation `ω.gnsInr`. -/
+theorem denseRange_gnsInr_gnsVector (ω : A →P[ℂ] ℂ) :
+    DenseRange (fun a : A => ω.gnsInr a ω.extendUnitization.toPositiveLinearMap.gnsVector) := by
+  set f := ω.extendUnitization.toPositiveLinearMap
+  have heq : (fun a : A => ω.gnsInr a f.gnsVector) = fun a : A => f.toGNS (a : A⁺¹) := by
+    ext a
+    rw [gnsInr_apply, f.gnsNonUnitalStarAlgHom_apply_gnsVector, PositiveLinearMap.toGNS_apply]
+  rw [heq, denseRange_iff_closure_range, Set.eq_univ_iff_forall]
+  intro ξ
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  have := hl.neBot
+  have hx : ∀ x : A⁺¹, f.toGNS x ∈ closure (Set.range fun a : A => f.toGNS (a : A⁺¹)) := fun x => by
+    have hlim : Tendsto (fun e : A => f.toGNS ((x.fst • e + x.snd : A) : A⁺¹))
+        (CStarAlgebra.approximateUnit A) (𝓝 (f.toGNS x)) := by
+      have h' := ((ω.tendsto_toGNS_inr_extendUnitization hl).const_smul x.fst).add
+        (tendsto_const_nhds (x := f.toGNS (x.snd : A⁺¹)))
+      have hlin : (fun e : A => f.toGNS ((x.fst • e + x.snd : A) : A⁺¹)) =
+          fun e : A => x.fst • f.toGNS (e : A⁺¹) + f.toGNS (x.snd : A⁺¹) := by
+        ext e
+        rw [Unitization.inr_add, Unitization.inr_smul, map_add, map_smul]
+      rw [hlin]
+      have hlim_eq : x.fst • f.gnsVector + f.toGNS (x.snd : A⁺¹) = f.toGNS x := by
+        rw [PositiveLinearMap.gnsVector_def, ← PositiveLinearMap.toGNS_apply, ← map_smul, ← map_add,
+          Unitization.fst_smul_one_add_inr_snd]
+      rwa [hlim_eq] at h'
+    exact mem_closure_of_tendsto hlim (.of_forall fun e => ⟨x.fst • e + x.snd, rfl⟩)
+  exact f.denseRange_toGNS.induction_on ξ isClosed_closure hx
+
 /-- Restricting the GNS representation of `ω.extendUnitization` to `A` yields a nondegenerate
 representation on `ω.extendUnitization.toPositiveLinearMap.GNS`. -/
 theorem isNondegenerate_gnsInr (ω : A →P[ℂ] ℂ) : ω.gnsInr.IsNondegenerate := by
-  set f := ω.extendUnitization.toPositiveLinearMap
-  rw [NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero]
-  intro ξ hξ
-  have hinner_inr : ∀ a : A, ⟪f.toGNS (a : A⁺¹), ξ⟫_ℂ = 0 := fun a => by
-    have h := hξ (star a)
-    rw [gnsInr_apply, Unitization.inr_star, map_star] at h
-    rw [PositiveLinearMap.toGNS_apply, ← f.gnsNonUnitalStarAlgHom_apply_gnsVector,
-      ← ContinuousLinearMap.adjoint_inner_right, ← ContinuousLinearMap.star_eq_adjoint,
-      h, inner_zero_right]
-  have hinner_one : ⟪f.gnsVector, ξ⟫_ℂ = 0 := by
-    have hl := CStarAlgebra.increasingApproximateUnit A
-    have := hl.neBot
-    have hlim := ((innerSL ℂ ξ).continuous.tendsto _).comp
-      (ω.tendsto_toGNS_inr_extendUnitization hl)
-    have hlim' : Tendsto (fun e : A => ⟪f.toGNS (e : A⁺¹), ξ⟫_ℂ)
-        (CStarAlgebra.approximateUnit A) (𝓝 ⟪f.gnsVector, ξ⟫_ℂ) := by
-      have hconj := (continuous_star.tendsto _).comp hlim
-      simpa [Function.comp_def] using hconj
-    exact tendsto_nhds_unique hlim' <|
-      (tendsto_const_nhds (x := (0 : ℂ))).congr fun e => (hinner_inr e).symm
-  have hinner_all : ∀ x : A⁺¹, ⟪f.toGNS x, ξ⟫_ℂ = 0 := fun x =>
-    calc ⟪f.toGNS x, ξ⟫_ℂ
-        = ⟪f.toGNS (x.fst • 1 + (x.snd : A⁺¹)), ξ⟫_ℂ := by
-          rw [Unitization.fst_smul_one_add_inr_snd]
-      _ = star x.fst * ⟪f.gnsVector, ξ⟫_ℂ + ⟪f.toGNS (x.snd : A⁺¹), ξ⟫_ℂ := by
-          rw [map_add, map_smul, inner_add_left, inner_smul_left,
-            PositiveLinearMap.toGNS_apply, ← PositiveLinearMap.gnsVector_def,
-            ← Complex.star_def]
-      _ = 0 := by rw [hinner_one, hinner_inr, mul_zero, add_zero]
-  refine ext_inner_left ℂ fun η => ?_
-  rw [inner_zero_right]
-  refine f.denseRange_toGNS.induction_on η ?_ hinner_all
-  exact isClosed_eq ((continuous_star.comp (innerSL ℂ ξ).continuous).congr fun v => by simp)
-    continuous_const
+  rw [NonUnitalStarAlgHom.isNondegenerate_iff_dense]
+  refine ω.denseRange_gnsInr_gnsVector.mono ?_
+  rintro _ ⟨a, rfl⟩
+  exact Submodule.subset_span <| Set.mem_iUnion.mpr ⟨a, _, rfl⟩
 
 /-- In the restricted GNS representation `ω.gnsInr`, the vector functional at `gnsVector` recovers
 `ω`. -/

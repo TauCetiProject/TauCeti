@@ -87,13 +87,16 @@ private def extendUnitizationCLM (ω : A →P[ℂ] ℂ) : Unitization ℂ A →L
           rw [Unitization.norm_inr]
           exact mul_le_mul_of_nonneg_left (mul_le_of_le_one_left (norm_nonneg x) he) (norm_nonneg _)
 
+private theorem extendUnitizationCLM_one (ω : A →P[ℂ] ℂ) :
+    extendUnitizationCLM ω 1 = (‖(ω : A →L[ℂ] ℂ)‖ : ℂ) := by
+  rw [extendUnitizationCLM, LinearMap.mkContinuous_apply]
+  simp
+
 private theorem opNorm_extendUnitizationCLM (ω : A →P[ℂ] ℂ) :
     ‖extendUnitizationCLM ω‖ = ‖(ω : A →L[ℂ] ℂ)‖ := by
   refine le_antisymm (LinearMap.mkContinuous_norm_le _ (norm_nonneg _) _) ?_
-  have h1 : extendUnitizationCLM ω 1 = (‖(ω : A →L[ℂ] ℂ)‖ : ℂ) := by
-    simp [extendUnitizationCLM]
   have hle := (extendUnitizationCLM ω).le_opNorm 1
-  rw [h1, Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _)] at hle
+  rw [extendUnitizationCLM_one, Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _)] at hle
   have hnorm1 : ‖(1 : Unitization ℂ A)‖ = 1 := norm_one
   rwa [hnorm1, mul_one] at hle
 
@@ -103,8 +106,7 @@ def extendUnitization (ω : A →P[ℂ] ℂ) : Unitization ℂ A →P[ℂ] ℂ :
   { toContinuousLinearMap := extendUnitizationCLM ω
     monotone' := (ContinuousLinearMap.monotone_iff_opNorm_eq_map_one
       (f := extendUnitizationCLM ω)).mpr <| by
-        rw [opNorm_extendUnitizationCLM]
-        simp [extendUnitizationCLM] }
+        rw [opNorm_extendUnitizationCLM, extendUnitizationCLM_one] }
 
 /-- Explicit evaluation formula for `ω.extendUnitization`. -/
 theorem extendUnitization_apply (ω : A →P[ℂ] ℂ) (x : Unitization ℂ A) :
