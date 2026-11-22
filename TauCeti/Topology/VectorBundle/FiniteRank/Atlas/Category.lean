@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Basic
+public import TauCeti.Topology.VectorBundle.FiniteRank.Glued.Category
 
 /-!
 # Category structure on variable-rank bundle atlases
 
 `TauCeti.FiniteRankAtlas 𝕜 X` inherits its `Category` instance from
-`TauCeti.VariableRankBundle.category` in `TauCeti.Topology.VectorBundle.FiniteRank.Glued`,
+`TauCeti.VariableRankBundle.category` in `TauCeti.Topology.VectorBundle.FiniteRank.Glued.Category`,
 which provides morphisms `VariableRankBundle.Hom`, `totalSpaceFunctor`, `fiberFunctor`, `isoMk`,
 and `Iso.variableRankBundle_rank_eq`.
 -/

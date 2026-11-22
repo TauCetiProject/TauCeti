@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.Basic
-public import TauCeti.Topology.FiberBundle.IsEmpty
+public import TauCeti.Topology.FiberBundle.Empty
 
 /-!
 # Vector bundles over an empty base

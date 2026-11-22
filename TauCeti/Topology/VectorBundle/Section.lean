@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.VectorBundle.Add
 public import Mathlib.Analysis.Convex.PartitionOfUnity
-public import Mathlib.Topology.VectorBundle.Basic
 
 import TauCeti.Topology.VectorBundle.Smul
 

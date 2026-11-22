@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Homeomorph.Sigma
 public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
-public import TauCeti.Topology.VectorBundle.FiniteRank.Glued
+public import TauCeti.Topology.VectorBundle.FiniteRank.Glued.Basic
 
 /-!
 # Small variable-rank vector-bundle atlases

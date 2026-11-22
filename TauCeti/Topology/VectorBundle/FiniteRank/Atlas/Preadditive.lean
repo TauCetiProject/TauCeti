@@ -11,7 +11,8 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Category
 # Preadditive structure on variable-rank bundle atlases
 
 `TauCeti.FiniteRankAtlas 𝕜 X` inherits its `Preadditive` structure from
-`TauCeti.VariableRankBundle.preadditive` in `TauCeti.Topology.VectorBundle.FiniteRank.Glued`.
+`TauCeti.VariableRankBundle.preadditive` in
+`TauCeti.Topology.VectorBundle.FiniteRank.Glued.Category`.
 -/
 
 public section

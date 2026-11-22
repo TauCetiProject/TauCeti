@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Normed.Operator.IntrinsicStar
 public import TauCeti.Topology.VectorBundle.FiniteRank.CoordinateFunctor
-public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.Basic
 
 /-!
 # Conjugation of complex finite-rank bundle cores

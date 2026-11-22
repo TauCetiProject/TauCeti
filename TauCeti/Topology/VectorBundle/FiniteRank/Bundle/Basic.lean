@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Glued
+public import TauCeti.Topology.VectorBundle.FiniteRank.Glued.Category
 public import Mathlib.Topology.Algebra.Module.TransferInstance
 
 /-!
