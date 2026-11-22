@@ -399,9 +399,7 @@ theorem ae_tendsto_hausdorffMeasure_inter_closedBall_div {d : ℝ} {A : Set X}
       ENNReal.ofReal (2 * r) ^ d) (𝓝[>] 0) (𝓝 0) := by
   have : IsFiniteMeasure (μH[d].restrict A) :=
     ⟨by rw [Measure.restrict_apply_univ]; exact hAfin.lt_top⟩
-  have hnull : (μH[d].restrict A) Aᶜ = 0 := by
-    rw [Measure.restrict_apply₀ (hA.compl.mono Measure.restrict_le_self), compl_inter_self,
-      measure_empty]
+  have hnull : (μH[d].restrict A) Aᶜ = 0 := ae_iff.1 (ae_restrict_mem₀ hA)
   simpa [Measure.restrict_apply measurableSet_closedBall, inter_comm A] using
     (μH[d].restrict A).ae_tendsto_measure_closedBall_div_of_measure_eq_zero hnull
 

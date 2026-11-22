@@ -41,11 +41,14 @@ its integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nh
 locally finite measure vanishing on points, the integrals of a function integrable on a set `S`
 over the parts of `S` in the balls about a point tend to `0` with the radius
 (`MeasureTheory.IntegrableOn.tendsto_setIntegral_ball_nhds_zero`). Also, for any measure on a
-pseudo-metric space, the variation of `r ↦ μ.real (s ∩ closedBall x r)` is controlled by that of
-`r ↦ μ.real (closedBall x r)` (`MeasureTheory.Measure.dist_real_inter_closedBall_le`), so
-continuity of the closed-ball volume passes to `r ↦ μ.real (s ∩ closedBall x r)` and
+pseudo-metric space with measurable closed balls (`[OpensMeasurableSpace]`), between radii whose
+closed balls have finite `μ`-measure the variation of `r ↦ μ.real (s ∩ closedBall x r)` is
+controlled by that of `r ↦ μ.real (closedBall x r)`
+(`MeasureTheory.Measure.dist_real_inter_closedBall_le`), so continuity and finiteness of the
+closed-ball volume on a set `S` pass to `r ↦ μ.real (s ∩ closedBall x r)` and
 `r ↦ μ (s ∩ closedBall x r)` (`MeasureTheory.Measure.continuousOn_real_inter_closedBall`,
-`MeasureTheory.Measure.continuousOn_inter_closedBall`).
+`MeasureTheory.Measure.continuousOn_inter_closedBall`), without any measurability assumption on
+`s`.
 
 ## Main results
 
@@ -62,7 +65,8 @@ continuity of the closed-ball volume passes to `r ↦ μ.real (s ∩ closedBall 
 * `MeasureTheory.Measure.dist_real_inter_closedBall_le`,
   `MeasureTheory.Measure.continuousOn_real_inter_closedBall` and
   `MeasureTheory.Measure.continuousOn_inter_closedBall`: variation bound and continuity of
-  `r ↦ μ (s ∩ closedBall x r)` from continuity of `r ↦ μ (closedBall x r)`.
+  `r ↦ μ (s ∩ closedBall x r)` from continuity of `r ↦ μ (closedBall x r)`, assuming measurable
+  closed balls of finite measure (with no measurability assumption on `s`).
 * `TauCeti.tendsto_measure_ball_nhdsGT_zero`: shrinking balls about `z` have measures tending to
   `μ {z}`.
 * `MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`: as `r → R⁻`, the integral over

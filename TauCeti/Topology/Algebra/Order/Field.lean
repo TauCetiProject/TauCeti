@@ -9,7 +9,6 @@ public import Mathlib.Topology.Algebra.Order.Field
 
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
-import TauCeti.Topology.Order.IntermediateValue
 
 /-!
 # Ratios, reciprocals of vanishing powers, one-sided bounds and eventual positivity
@@ -24,11 +23,9 @@ It also records that the reciprocal of a positive power of `x - a` diverges to `
 tends to `a` from the right, and likewise for `a - x` from the left. These are the one-sided
 blow-ups of `tendsto_inv_nhdsGT_zero` along a vanishing power, and their consequence that
 `x / (1 - x)` diverges as `x` tends to `1` from the left. It records the one-sided bound
-`x ^ 2 < 1` for `x` sufficiently close to `1` from below, a zero-or-`c` dichotomy for a
-continuous function on `(a, b)` whose minimum with a complementary function vanishes at `a⁺`, and
-that `t f + g` is eventually positive on a compact set when `f ≥ 0` there and `g > 0` at the
-zeros of `f`, the scalar form of the case of Finsler's lemma where the first form is positive
-semidefinite.
+`x ^ 2 < 1` for `x` sufficiently close to `1` from below. Finally, it records that `t f + g` is
+eventually positive on a compact set when `f ≥ 0` there and `g > 0` at the zeros of `f`, the
+scalar form of the case of Finsler's lemma where the first form is positive semidefinite.
 
 ## Main results
 
@@ -44,8 +41,6 @@ semidefinite.
   from the left.
 
 * `TauCeti.eventually_sq_lt_one_nhdsLT_one` — eventually `x ^ 2 < 1` along `𝓝[<] 1`.
-* `ContinuousOn.tendsto_zero_or_tendsto_of_tendsto_min` — if `f` is continuous on `(a, b)` and
-  eventually `c ≤ f + g`, `f ≤ c`, and `min f g → 0` as `x → a⁺`, then `f → 0` or `f → c`.
 * `IsCompact.eventually_forall_mul_add_pos` — if `f` and `g` are continuous on a compact set `K`,
   `f ≥ 0` on `K` and `g > 0` at the zeros of `f` in `K`, then for every sufficiently large `t`,
   `t f + g` is positive on `K`.
@@ -163,42 +158,5 @@ theorem tendsto_div_one_sub_nhdsLT_one :
   simpa [div_eq_mul_inv] using h
 
 end InvPow
-
-/-- **Zero-or-`c` dichotomy for a continuous function with vanishing complementary minimum.** If
-`f` is continuous on `(a, b)` (`a < b`), and as `x → a⁺` we eventually have `c ≤ f x + g x` and
-`f x ≤ c` while `min (f x) (g x) → 0`, then either `f → 0` or `f → c` as `x → a⁺`. -/
-theorem _root_.ContinuousOn.tendsto_zero_or_tendsto_of_tendsto_min
-    {X 𝕜 : Type*} [ConditionallyCompleteLinearOrder X] [TopologicalSpace X] [OrderTopology X]
-    [DenselyOrdered X] [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-    [TopologicalSpace 𝕜] [OrderTopology 𝕜]
-    {a b : X} {f g : X → 𝕜} {c : 𝕜}
-    (hf : ContinuousOn f (Set.Ioo a b)) (hab : a < b)
-    (hsum : ∀ᶠ x in 𝓝[>] a, c ≤ f x + g x) (hfle : ∀ᶠ x in 𝓝[>] a, f x ≤ c)
-    (hmin : Tendsto (fun x ↦ min (f x) (g x)) (𝓝[>] a) (𝓝 0)) :
-    Tendsto f (𝓝[>] a) (𝓝 0) ∨ Tendsto f (𝓝[>] a) (𝓝 c) := by
-  rcases le_or_gt c 0 with hc | hc
-  · exact .inl (tendsto_of_tendsto_of_tendsto_of_le_of_le' hmin tendsto_const_nhds
-      (.of_forall fun _ ↦ min_le_left _ _) (hfle.mono fun _ h ↦ h.trans hc))
-  -- Eventually `min f g < c / 2`, `c ≤ f + g`, and `f ≤ c` on a subinterval `(a, δ) ⊆ (a, b)`.
-  have hev : ∀ᶠ x in 𝓝[>] a,
-      x ∈ Set.Ioo a b ∧ min (f x) (g x) < c / 2 ∧ c ≤ f x + g x ∧ f x ≤ c := by
-    filter_upwards [Ioo_mem_nhdsGT hab, hmin.eventually (gt_mem_nhds (half_pos hc)), hsum, hfle]
-      with x h1 h2 h3 h4
-    exact ⟨h1, h2, h3, h4⟩
-  obtain ⟨δ, hδ, hδsub⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hab).1 hev
-  -- On `(a, δ)`, `f` cannot equal `c / 2` because `c ≤ f + g` would force `c / 2 ≤ min f g`.
-  have hne : ∀ x ∈ Set.Ioo a δ, f x ≠ c / 2 := fun x hx hfx ↦
-    (hδsub hx).2.1.not_ge (le_min hfx.ge (by linarith [(hδsub hx).2.2.1]))
-  have hfδ : ContinuousOn f (Set.Ioo a δ) := hf.mono fun x hx ↦ (hδsub hx).1
-  rcases isPreconnected_Ioo.forall_lt_or_forall_lt hfδ continuousOn_const hne with hlt | hgt
-  · refine .inl (hmin.congr' (eventually_of_mem (Ioo_mem_nhdsGT hδ) fun x hx ↦ ?_))
-    exact min_eq_left (by linarith [hlt x hx, (hδsub hx).2.2.1])
-  · have hg0 : Tendsto g (𝓝[>] a) (𝓝 0) :=
-      hmin.congr' (eventually_of_mem (Ioo_mem_nhdsGT hδ) fun x hx ↦
-        min_eq_right ((min_lt_iff.1 (hδsub hx).2.1).elim
-          (fun h ↦ (lt_asymm (hgt x hx) h).elim) fun h ↦ h.le.trans (hgt x hx).le))
-    refine .inr (tendsto_of_tendsto_of_tendsto_of_le_of_le'
-      (by simpa using tendsto_const_nhds.sub hg0) tendsto_const_nhds
-      (hsum.mono fun x hx ↦ by linarith) hfle)
 
 end TauCeti

@@ -869,38 +869,38 @@ open scoped ENNReal
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
-/-- For positive radii `r₁, r₂`, the variation of `r ↦ μ.real (s ∩ closedBall x r)` is bounded by
-`|r₁ ^ n - r₂ ^ n| * μ.real (ball 0 1)` without any measurability assumption on `s`. -/
+/-- For nonnegative radii `r₁, r₂`, the variation of `r ↦ μ.real (s ∩ closedBall x r)` is
+bounded by `|r₁ ^ n - r₂ ^ n| * μ.real (ball 0 1)` without any measurability assumption on `s`. -/
 theorem dist_addHaar_real_inter_closedBall_le (x : E) (s : Set E) {r₁ r₂ : ℝ}
-    (hr₁ : 0 < r₁) (hr₂ : 0 < r₂) :
+    (hr₁ : 0 ≤ r₁) (hr₂ : 0 ≤ r₂) :
     dist (μ.real (s ∩ closedBall x r₁)) (μ.real (s ∩ closedBall x r₂)) ≤
       dist (r₁ ^ finrank ℝ E * μ.real (ball 0 1)) (r₂ ^ finrank ℝ E * μ.real (ball 0 1)) := by
-  rw [← μ.addHaar_real_closedBall x hr₁.le, ← μ.addHaar_real_closedBall x hr₂.le]
+  rw [← μ.addHaar_real_closedBall x hr₁, ← μ.addHaar_real_closedBall x hr₂]
   exact μ.dist_real_inter_closedBall_le x s measure_closedBall_lt_top.ne
     measure_closedBall_lt_top.ne
 
 /-- For an additive Haar measure `μ` on a finite-dimensional real normed space, the real measure
-`r ↦ μ.real (s ∩ closedBall x r)` is continuous on `(0, ∞)` for every set `s` (no measurability is
+`r ↦ μ.real (s ∩ closedBall x r)` is continuous on `[0, ∞)` for every set `s` (no measurability is
 needed). -/
 theorem continuousOn_addHaar_real_inter_closedBall (x : E) (s : Set E) :
-    ContinuousOn (fun r => μ.real (s ∩ closedBall x r)) (Set.Ioi 0) := by
+    ContinuousOn (fun r => μ.real (s ∩ closedBall x r)) (Set.Ici 0) := by
   refine μ.continuousOn_real_inter_closedBall x s (fun _ _ => measure_closedBall_lt_top.ne) ?_
-  have hg : ContinuousOn (fun r : ℝ => r ^ finrank ℝ E * μ.real (ball 0 1)) (Set.Ioi 0) :=
+  have hg : ContinuousOn (fun r : ℝ => r ^ finrank ℝ E * μ.real (ball 0 1)) (Set.Ici 0) :=
     ((continuous_pow _).mul continuous_const).continuousOn
-  exact hg.congr fun r hr => μ.addHaar_real_closedBall x hr.le
+  exact hg.congr fun r hr => μ.addHaar_real_closedBall x hr
 
 /-- For an additive Haar measure `μ` on a finite-dimensional real normed space, the measure
-`r ↦ μ (s ∩ closedBall x r)` is continuous on `(0, ∞)` for every set `s` (no measurability is
+`r ↦ μ (s ∩ closedBall x r)` is continuous on `[0, ∞)` for every set `s` (no measurability is
 needed). -/
 theorem continuousOn_addHaar_inter_closedBall (x : E) (s : Set E) :
-    ContinuousOn (fun r => μ (s ∩ closedBall x r)) (Set.Ioi 0) := by
+    ContinuousOn (fun r => μ (s ∩ closedBall x r)) (Set.Ici 0) := by
   refine μ.continuousOn_inter_closedBall x s (fun _ _ => measure_closedBall_lt_top.ne) ?_
   have hg : ContinuousOn (fun r : ℝ => ENNReal.ofReal (r ^ finrank ℝ E * μ.real (ball 0 1)))
-      (Set.Ioi 0) :=
+      (Set.Ici 0) :=
     (ENNReal.continuous_ofReal.comp ((continuous_pow _).mul continuous_const)).continuousOn
   exact hg.congr fun r hr => by
     dsimp only
-    rw [← μ.addHaar_real_closedBall x hr.le, ofReal_measureReal measure_closedBall_lt_top.ne]
+    rw [← μ.addHaar_real_closedBall x hr, ofReal_measureReal measure_closedBall_lt_top.ne]
 
 end ClosedBallContinuity
 

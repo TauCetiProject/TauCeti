@@ -15,7 +15,6 @@ import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Federer's structure theorem for sets of locally finite perimeter

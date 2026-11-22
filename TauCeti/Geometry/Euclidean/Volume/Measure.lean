@@ -362,9 +362,7 @@ theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div (k : ℕ) {A :
       volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
   have : IsFiniteMeasure (μHE[k].restrict A) :=
     ⟨by rw [Measure.restrict_apply_univ]; exact hAfin.lt_top⟩
-  have hnull : (μHE[k].restrict A) Aᶜ = 0 := by
-    rw [Measure.restrict_apply₀ (hA.compl.mono Measure.restrict_le_self), compl_inter_self,
-      measure_empty]
+  have hnull : (μHE[k].restrict A) Aᶜ = 0 := ae_iff.1 (ae_restrict_mem₀ hA)
   simpa [Measure.restrict_apply measurableSet_closedBall, inter_comm A] using
     (μHE[k].restrict A).ae_tendsto_measure_closedBall_div_volume_closedBall_of_measure_eq_zero
       k hnull
@@ -377,9 +375,7 @@ theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFi
     [IsLocallyFiniteMeasure (μHE[k].restrict A)] :
     ∀ᵐ x ∂μHE[k], x ∉ A → Tendsto (fun r ↦ μHE[k] (A ∩ closedBall x r) /
       volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
-  have hnull : (μHE[k].restrict A) Aᶜ = 0 := by
-    rw [Measure.restrict_apply₀ (hA.compl.mono Measure.restrict_le_self), compl_inter_self,
-      measure_empty]
+  have hnull : (μHE[k].restrict A) Aᶜ = 0 := ae_iff.1 (ae_restrict_mem₀ hA)
   simpa [Measure.restrict_apply measurableSet_closedBall, inter_comm A] using
     (μHE[k].restrict A).ae_tendsto_measure_closedBall_div_volume_closedBall_of_measure_eq_zero
       k hnull

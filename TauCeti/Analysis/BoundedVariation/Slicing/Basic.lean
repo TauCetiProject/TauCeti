@@ -35,9 +35,10 @@ a set `s` of finite volume, with the line sections `{t | y + t • e ∈ s}`, th
 (`TauCeti.lintegral_perimeter_lineSection_le`), so almost every line section of a set of finite
 perimeter has finite perimeter in `ℝ` (`TauCeti.ae_perimeter_lineSection_lt_top`). This is the
 inequality half of the slicing theorem for sets of finite perimeter. Combined with the
-one-dimensional isoperimetric inequalities of `TauCeti.Analysis.BoundedVariation.Real`, it
-controls how many essential boundary points the line sections of a set can have. For instance a
-section of perimeter less than `4` agrees almost everywhere with an interval.
+one-dimensional isoperimetric inequalities of
+`TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter`, it controls how many essential
+boundary points the line sections of a set can have. For instance a section of perimeter less than
+`4` agrees almost everywhere with an interval.
 
 The inequality holds jointly with the transverse variation. For a test vector field `φ` on
 `(ℝ ∙ e)ᗮ` with `‖φ‖ ≤ 1`,
