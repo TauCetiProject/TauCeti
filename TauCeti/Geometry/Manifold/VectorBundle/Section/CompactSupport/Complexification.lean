@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.ChartTopology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Complexification.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 
