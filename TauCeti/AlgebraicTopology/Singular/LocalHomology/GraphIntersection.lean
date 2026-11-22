@@ -18,6 +18,7 @@ import TauCeti.Analysis.Complex.IsolatedZero
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.LinearAlgebra.LinearIndependent.Prod
 import TauCeti.LinearAlgebra.LinearMap.Coprod
+import TauCeti.Topology.Algebra.Group.Basic
 
 /-!
 # Local intersection numbers of holomorphic discs with a holomorphic graph
@@ -404,13 +405,6 @@ theorem two_le_localIndex_of_apply_eq_graph_sub_of_deriv_eq_zero
 
 /-! #### Changes of coordinates and immersed branches -/
 
-/-- Two discs whose difference `F (z, w) = u₁ z - u₂ w` is continuous are continuous. -/
-private theorem continuous_and_continuous_of_apply_eq_sub {F : C(ℂ × ℂ, ℂ × ℂ)}
-    {u₁ u₂ : ℂ → ℂ × ℂ} (hF : ∀ p, F p = u₁ p.1 - u₂ p.2) : Continuous u₁ ∧ Continuous u₂ := by
-  have h₂ : u₂ = fun w ↦ u₁ 0 - F (0, w) := funext fun w ↦ by rw [hF]; abel
-  have h₁ : u₁ = fun z ↦ F (z, 0) + u₂ 0 := funext fun z ↦ by rw [hF]; abel
-  exact ⟨h₁ ▸ by fun_prop, h₂ ▸ by fun_prop⟩
-
 include hn in
 /-- **Local intersection numbers do not depend on the parametrizations of the discs.** If
 `φ₁` and `φ₂` are strictly complex differentiable at `z₀` and `w₀` with nonzero derivatives, as
@@ -454,7 +448,7 @@ theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_snd_eq
     (h₂ : AnalyticAt ℂ u₂ w₀) (h : u₁ z₀ = u₂ w₀) :
     o.localIndex o F (z₀, w₀) = analyticOrderNatAt (fun w ↦ (u₂ w).2 - f (u₂ w).1) w₀ := by
   set c := (u₁ z₀).1
-  obtain ⟨hu₁, hu₂⟩ := continuous_and_continuous_of_apply_eq_sub hF
+  obtain ⟨hu₁, hu₂⟩ := continuous_and_continuous_of_continuous_sub (F.continuous.congr hF)
   have hg : Continuous fun z ↦ (u₁ z).1 := continuous_fst.comp hu₁
   -- Cut `f` off outside a closed ball about `c` on which it is continuous, so that the graph of the
   -- cut-off function `f₀` is the image of a continuous map.
@@ -518,7 +512,7 @@ theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq
     ext <;> simp [F', S, hF]
   have hS : HasStrictFDerivAt S (S.restrictScalars ℝ) (u₁ z₀) :=
     (S.restrictScalars ℝ).hasStrictFDerivAt
-  obtain ⟨hu₁, hu₂⟩ := continuous_and_continuous_of_apply_eq_sub hF
+  obtain ⟨hu₁, hu₂⟩ := continuous_and_continuous_of_continuous_sub (F.continuous.congr hF)
   rw [← o.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt hn o hn hF hF'
     (hu₁.comp continuous_fst).continuousAt (hu₂.comp continuous_snd).continuousAt h hS
     (ContinuousLinearEquiv.prodComm ℂ ℂ ℂ).injective]

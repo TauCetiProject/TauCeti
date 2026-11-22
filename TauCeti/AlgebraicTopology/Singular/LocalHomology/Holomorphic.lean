@@ -55,9 +55,12 @@ source (`TauCeti.HomologicalOrientation.localIndex_comp_eq_of_hasStrictFDerivAt`
 specializations of the real statements
 `TauCeti.HomologicalOrientation.localIndex_eq_sign_det_mul_of_apply_eq_sub` and
 `TauCeti.HomologicalOrientation.localIndex_comp_eq_mul_sign_det`. The target changes include the
-unitary maps, and the `C¹` charts whose derivative at the intersection point carries the almost
-complex structure there to the standard one, in which local intersection numbers of
-pseudoholomorphic branches are computed.
+unitary maps and the holomorphic changes of coordinates, which preserve the standard complex
+structure. A `C¹` chart whose derivative at the intersection point carries a different complex
+structure there to the standard one has a derivative that is not complex linear for the standard
+structure; such charts fall under the real statement
+`TauCeti.HomologicalOrientation.localIndex_eq_sign_det_mul_of_apply_eq_sub`, once the sign of its
+real Jacobian determinant is known.
 
 ## Proof
 
@@ -150,8 +153,7 @@ include hE in
 /-- **Local intersection indices are invariant under changes of coordinates of the target with
 complex-linear derivative.** Let `F p = a p - b p` for maps `a, b : M → E` continuous at `x` with
 `a x = b x`. If `Ψ : E → E` is strictly differentiable at `a x` with an injective complex-linear
-derivative, such as a holomorphic chart, a unitary map, or a `C¹` chart whose derivative at the
-point carries the complex structure to the standard one, then `G' p = Ψ (a p) - Ψ (b p)` has the
+derivative, such as a holomorphic chart or a unitary map, then `G' p = Ψ (a p) - Ψ (b p)` has the
 same local index as `F` at `x`: the real Jacobian determinant `|det_ℂ|²` of the derivative is
 positive. -/
 theorem localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt {M G : Type} [TopologicalSpace M]
