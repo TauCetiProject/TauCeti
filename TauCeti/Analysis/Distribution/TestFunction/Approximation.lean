@@ -20,7 +20,9 @@ function supported in a compact set `K` by normalized bumps of small radius give
 on `Ω` supported in a fixed closed thickening of `K` that converge to it uniformly, as long as that
 thickening lies in `Ω`. For a `C¹` function the derivatives of the mollifications are the
 mollifications of its derivative (Mathlib's `HasCompactSupport.hasFDerivAt_convolution_right`), so
-they converge uniformly as well. The construction follows Mathlib's
+they converge uniformly as well. Shrinking the mollifications by a factor close to `1` keeps them
+below any bound `‖f‖ ≤ ρ` by a function `ρ` that is continuous and positive near the support.
+The construction follows Mathlib's
 `MeasureTheory.LocallyIntegrable.exists_contDiff_dist_le_of_forall_mem_ball_dist_le` and
 `UniformContinuous.exists_contDiff_dist_le` (in
 `Mathlib.Analysis.Calculus.BumpFunction.SmoothApprox`), with added control of the support; the
@@ -37,6 +39,9 @@ error estimate is Mathlib's `ContDiffBump.dist_normed_convolution_le`.
   in `Ω`.
 * `ContDiff.exists_testFunction_dist_le_and_dist_fderiv_le`: a `C¹` function supported in a
   compact set `K` is approximated in the same way, uniformly together with its derivative.
+* `ContDiff.exists_testFunction_norm_le_and_dist_le_and_dist_fderiv_le`: the approximations can
+  moreover be chosen to respect a pointwise bound `‖f x‖ ≤ ρ x` by a function `ρ` that is
+  continuous and positive near the support.
 
 ## References
 
@@ -144,3 +149,85 @@ theorem ContDiff.exists_testFunction_dist_le_and_dist_fderiv_le {f : E → F}
     rw [hD]
     exact ρ.dist_normed_convolution_le hDf.aestronglyMeasurable fun y hy =>
       (hDfη ((mem_ball.mp hy).trans_le ((min_le_left _ _).trans (min_le_right _ _)))).le
+
+omit [CompleteSpace F] in
+/-- If `‖a - b‖ ≤ η` and `‖b‖ ≤ R`, shrinking `a` by the factor `(1 + η / m)⁻¹` keeps it within
+`η (1 + R / m)` of `b`. -/
+private theorem norm_inv_one_add_div_smul_sub_le {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {a b : G} {η m R : ℝ} (hη : 0 ≤ η) (hm : 0 < m)
+    (hab : ‖a - b‖ ≤ η) (hb : ‖b‖ ≤ R) :
+    ‖(1 + η / m)⁻¹ • a - b‖ ≤ η * (1 + R / m) := by
+  have hd : 0 < 1 + η / m := by positivity
+  have hsplit : (1 + η / m)⁻¹ • a - b = (1 + η / m)⁻¹ • (a - b) - ((η / m) / (1 + η / m)) • b := by
+    have hc : (1 + η / m)⁻¹ + (η / m) / (1 + η / m) = 1 := by
+      field_simp
+    rw [smul_sub, sub_sub, ← add_smul, hc, one_smul]
+  rw [hsplit]
+  refine (norm_sub_le _ _).trans ?_
+  rw [norm_smul, norm_smul, Real.norm_of_nonneg (inv_pos.2 hd).le,
+    Real.norm_of_nonneg (by positivity)]
+  have h1 : (1 + η / m)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith [div_nonneg hη hm.le])
+  have h2 : (η / m) / (1 + η / m) ≤ η / m :=
+    div_le_self (by positivity) (by linarith [div_nonneg hη hm.le])
+  calc (1 + η / m)⁻¹ * ‖a - b‖ + (η / m) / (1 + η / m) * ‖b‖ ≤ 1 * η + η / m * R := by
+        gcongr
+    _ = η * (1 + R / m) := by ring
+
+/-- A `C¹` function supported in a compact set `K` and bounded in norm by a function `ρ` is
+approximated by test functions obeying the same bound, uniformly together with its derivative, as
+long as a closed thickening `cthickening δ K` lies in `Ω` and `ρ` is continuous and positive on
+it: for every `ε > 0` there is a test function `φ` on `Ω`, supported in `cthickening δ K`, with
+`‖φ x‖ ≤ ρ x` everywhere, within `ε` of `f` everywhere and whose derivative is within `ε` of
+`fderiv ℝ f` everywhere. -/
+theorem ContDiff.exists_testFunction_norm_le_and_dist_le_and_dist_fderiv_le {f : E → F}
+    (hf : ContDiff ℝ 1 f) {K : Set E} (hK : IsCompact K) (hfK : tsupport f ⊆ K) {δ : ℝ}
+    (hδ : 0 < δ) (hKΩ : cthickening δ K ⊆ Ω) {ρ : E → ℝ}
+    (hρ : ContinuousOn ρ (cthickening δ K)) (hρ0 : ∀ x ∈ cthickening δ K, 0 < ρ x)
+    (hfρ : ∀ x, ‖f x‖ ≤ ρ x) {ε : ℝ} (hε : 0 < ε) :
+    ∃ φ : 𝓓(Ω, F), tsupport φ ⊆ cthickening δ K ∧ (∀ x, ‖φ x‖ ≤ ρ x) ∧
+      ∀ x, dist (φ x) (f x) ≤ ε ∧ dist (fderiv ℝ φ x) (fderiv ℝ f x) ≤ ε := by
+  have hfc : HasCompactSupport f := hK.of_isClosed_subset (isClosed_tsupport f) hfK
+  -- A positive lower bound `m` for `ρ` on the thickening, and a bound `R` for `f` and `Df`.
+  obtain ⟨C, hC⟩ := hK.cthickening.exists_bound_of_continuousOn
+    (hρ.inv₀ fun x hx => (hρ0 x hx).ne')
+  set m := (max C 1)⁻¹
+  have hm : 0 < m := inv_pos.2 (lt_max_of_lt_right one_pos)
+  have hmρ (x : E) (hx : x ∈ cthickening δ K) : m ≤ ρ x := by
+    have h := hC x hx
+    rw [Pi.inv_apply, norm_inv, Real.norm_of_nonneg (hρ0 x hx).le] at h
+    exact inv_le_of_inv_le₀ (hρ0 x hx) (h.trans (le_max_left _ _))
+  obtain ⟨R₀, hR₀⟩ := hf.continuous.bounded_above_of_compact_support hfc
+  obtain ⟨R₁, hR₁⟩ :=
+    (hf.continuous_fderiv one_ne_zero).bounded_above_of_compact_support (hfc.fderiv ℝ)
+  set R := max (max R₀ R₁) 0
+  -- Approximate `f` to within `η`, then shrink the approximation by `(1 + η / m)⁻¹`.
+  set η := ε / (1 + R / m)
+  have hη : 0 < η := by positivity
+  have hηε : η * (1 + R / m) = ε := div_mul_cancel₀ _ (by positivity)
+  obtain ⟨φ, hφK, hφ⟩ := hf.exists_testFunction_dist_le_and_dist_fderiv_le hK hfK hδ hKΩ hη
+  refine ⟨(1 + η / m)⁻¹ • φ, (tsupport_smul_subset_right _ _).trans hφK, fun x => ?_,
+    fun x => ⟨?_, ?_⟩⟩
+  · by_cases hx : x ∈ cthickening δ K
+    · have hρx := hmρ x hx
+      have hφx : ‖φ x‖ ≤ ρ x + η := by
+        have h := norm_sub_norm_le (φ x) (f x)
+        rw [← dist_eq_norm] at h
+        linarith [hfρ x, (hφ x).1]
+      have hd : 0 < 1 + η / m := by positivity
+      rw [smul_apply, norm_smul, Real.norm_of_nonneg (inv_pos.2 hd).le,
+        inv_mul_le_iff₀ hd]
+      calc ‖φ x‖ ≤ ρ x + η := hφx
+        _ ≤ ρ x + η * (ρ x / m) := by
+          gcongr
+          exact le_mul_of_one_le_right hη.le ((one_le_div hm).2 hρx)
+        _ = (1 + η / m) * ρ x := by ring
+    · rw [smul_apply, image_eq_zero_of_notMem_tsupport fun h => hx (hφK h), smul_zero,
+        norm_zero]
+      exact (norm_nonneg _).trans (hfρ x)
+  · rw [smul_apply, dist_eq_norm, ← hηε]
+    exact norm_inv_one_add_div_smul_sub_le hη.le hm (by simpa [dist_eq_norm] using (hφ x).1)
+      ((hR₀ x).trans ((le_max_left _ _).trans (le_max_left _ _)))
+  · rw [FunLike.coe_smul, fderiv_const_smul (φ.contDiff.differentiable (by simp) x), dist_eq_norm,
+      ← hηε]
+    exact norm_inv_one_add_div_smul_sub_le hη.le hm (by simpa [dist_eq_norm] using (hφ x).2)
+      ((hR₁ x).trans ((le_max_right _ _).trans (le_max_left _ _)))
