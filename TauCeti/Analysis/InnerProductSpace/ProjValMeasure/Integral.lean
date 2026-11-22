@@ -142,8 +142,7 @@ private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆�
     | const c hA =>
       induction t using SimpleFunc.induction with
       | const d hB =>
-        rw [SimpleFunc.piecewise_const_zero_mul_piecewise_const_zero, SimpleFunc.const_mul_eq_map,
-          SimpleFunc.map_const]
+        rw [SimpleFunc.piecewise_const_zero_mul_piecewise_const_zero, SimpleFunc.const_mul_const]
         rw [setToSimpleFunc_smulProj_piecewise, setToSimpleFunc_smulProj_piecewise,
           setToSimpleFunc_smulProj_piecewise, smul_mul_smul_comm, P.proj_inter]
       | add _ ht₁ ht₂ =>

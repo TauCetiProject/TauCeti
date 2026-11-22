@@ -23,9 +23,12 @@ If `u` lies in `Lᵖ` for some `0 < p < ∞`, each of these restricted constants
 (`MeasureTheory.SimpleFunc.memLp_restrict_const_fiber`), for `u` with values in any extended
 seminormed additive monoid.
 
-The file also records how products and stars act on simple functions defined piecewise on a
-measurable set (`MeasureTheory.SimpleFunc.piecewise_const_zero_mul_piecewise_const_zero`,
-`MeasureTheory.SimpleFunc.star_piecewise`).
+The file also records how products act on simple functions supported on a measurable set
+(extended by zero outside it,
+`MeasureTheory.SimpleFunc.piecewise_const_zero_mul_piecewise_const_zero`), how stars act on
+simple functions defined piecewise on a measurable set (`MeasureTheory.SimpleFunc.star_piecewise`),
+and how products and stars act on constant simple functions
+(`MeasureTheory.SimpleFunc.const_mul_const`, `MeasureTheory.SimpleFunc.star_const`).
 
 A finite family of simple functions is one simple function into the product,
 `MeasureTheory.SimpleFunc.pi`.
@@ -64,8 +67,7 @@ theorem eq_sum_restrict_const [AddCommMonoid β] (u : SimpleFunc α β) :
   map_eq_sum_restrict_const u id
 
 /-- If a simple function `u` lies in `Lᵖ` for some `0 < p < ∞`, the constant `c` restricted to the
-fibre `u ⁻¹' {c}` lies in every `L^q`: by Markov's inequality, either `‖c‖ₑ = 0`, or the fibre
-is null, or `‖c‖ₑ < ∞` and the fibre has finite measure. -/
+fibre `u ⁻¹' {c}` lies in every `L^q`. -/
 theorem memLp_restrict_const_fiber {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε]
     {μ : Measure α} {u : SimpleFunc α ε} {p : ℝ≥0∞} (hu : MemLp u p μ) (hp0 : p ≠ 0) (hp : p ≠ ∞)
     (q : ℝ≥0∞) (c : ε) : MemLp ((const α c).restrict (u ⁻¹' {c})) q μ := by
@@ -108,6 +110,12 @@ theorem piecewise_const_zero_mul_piecewise_const_zero [MulZeroClass β] (f g : S
       piecewise (A ∩ B) (hA.inter hB) (f * g) (const α 0) := by
   ext x
   by_cases hxA : x ∈ A <;> by_cases hxB : x ∈ B <;> simp [piecewise_apply, hxA, hxB]
+
+/-- The product of two constant simple functions is the constant product. -/
+@[to_additive (attr := simp) /-- The sum of two constant simple functions is the constant
+sum. -/]
+theorem const_mul_const [Mul β] (a b : β) : const α a * const α b = const α (a * b) :=
+  (rfl)
 
 /-- The star of a constant simple function is the constant star. -/
 @[simp]
