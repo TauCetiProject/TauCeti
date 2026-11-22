@@ -67,25 +67,26 @@ section Pullback
 variable {A B C E : Type*} [CommRing A] [CommRing B] [CommRing C] [CommRing E]
   [Algebra A B] [Algebra A C] [Algebra A E]
 
-/-- The alternating `B`-multilinear map `(Fin n → Ω[B⁄A]) → Forms A C n` under the `B`-algebra
-structure on `C` induced by `f : B →ₐ[A] C`. -/
-private def pullbackAlt (f : B →ₐ[A] C) (n : ℕ) :
-    letI : Algebra B C := f.toRingHom.toAlgebra
+/-- The alternating `B`-multilinear map `(Fin n → Ω[B⁄A]) → Forms A C n` under a `B`-algebra
+structure on `C` compatible with `A`. -/
+private def pullbackAlt (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
+    [Algebra A B] [Algebra A C] [Algebra B C] [IsScalarTower A B C] (n : ℕ) :
     AlternatingMap B (KaehlerDifferential A B) (Forms A C n) (Fin n) :=
-  letI : Algebra B C := f.toRingHom.toAlgebra
-  letI : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
-  { ((exteriorPower.ιMulti C n (M := KaehlerDifferential A C)).toMultilinearMap.restrictScalars
-        B).compLinearMap (fun _ => KaehlerDifferential.map A A B C) with
-    map_eq_zero_of_eq' := fun _ _ _ hv hij =>
-      (exteriorPower.ιMulti C n).map_eq_zero_of_eq _ (congrArg _ hv) hij }
+  AlternatingMap.mk
+    (((exteriorPower.ιMulti C n (M := KaehlerDifferential A C)).toMultilinearMap.restrictScalars
+        B).compLinearMap (fun _ => KaehlerDifferential.map A A B C))
+    fun v i j hv hij => by
+      rw [MultilinearMap.toFun_eq_coe, MultilinearMap.compLinearMap_apply,
+        MultilinearMap.coe_restrictScalars, AlternatingMap.coe_multilinearMap]
+      exact (exteriorPower.ιMulti C n).map_eq_zero_of_eq _ (congrArg _ hv) hij
 
-private theorem pullbackAlt_apply (f : B →ₐ[A] C) (n : ℕ)
+private theorem pullbackAlt_apply [Algebra B C] [IsScalarTower A B C] (n : ℕ)
     (ω : Fin n → KaehlerDifferential A B) :
-    let : Algebra B C := f.toRingHom.toAlgebra
-    let : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
-    pullbackAlt f n ω =
-      exteriorPower.ιMulti C n (fun i => KaehlerDifferential.map A A B C (ω i)) :=
-  rfl
+    pullbackAlt A B C n ω =
+      exteriorPower.ιMulti C n (fun i => KaehlerDifferential.map A A B C (ω i)) := by
+  unfold pullbackAlt
+  rw [AlternatingMap.coe_mk, MultilinearMap.compLinearMap_apply,
+    MultilinearMap.coe_restrictScalars, AlternatingMap.coe_multilinearMap]
 
 /-- **Pullback of ordinary algebraic differential `n`-forms** along an `A`-algebra homomorphism
 `f : B →ₐ[A] C`, extending `KaehlerDifferential.mapSemilinear f` to `n`-th exterior powers. It is
@@ -96,7 +97,7 @@ def pullback (f : B →ₐ[A] C) (n : ℕ) : Forms A B n →ₛₗ[f.toRingHom] 
   letI : Algebra B C := f.toRingHom.toAlgebra
   letI : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
   let φ : Forms A B n →ₗ[B] Forms A C n :=
-    exteriorPower.alternatingMapLinearEquiv (pullbackAlt f n)
+    exteriorPower.alternatingMapLinearEquiv (pullbackAlt A B C n)
   { toFun := φ
     map_add' := map_add φ
     map_smul' := fun b ω => by
@@ -105,7 +106,8 @@ def pullback (f : B →ₐ[A] C) (n : ℕ) : Forms A B n →ₛₗ[f.toRingHom] 
 
 private theorem pullback_apply (f : B →ₐ[A] C) (n : ℕ) (ω : Forms A B n) :
     let : Algebra B C := f.toRingHom.toAlgebra
-    pullback f n ω = exteriorPower.alternatingMapLinearEquiv (pullbackAlt f n) ω :=
+    let : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
+    pullback f n ω = exteriorPower.alternatingMapLinearEquiv (pullbackAlt A B C n) ω :=
   rfl
 
 /-- The semilinearity law of `pullback`, stated with `f` applied rather than `f.toRingHom`,
@@ -147,18 +149,25 @@ theorem pullback_elementary (f : B →ₐ[A] C) (n : ℕ) (c : B) (v : Fin n →
   funext i
   exact KaehlerDifferential.mapSemilinear_D f (v i)
 
+private theorem addMonoidHom_eq_of_elementary {F G M : Type*} [AddCommGroup M] {n : ℕ}
+    [FunLike F (Forms A B n) M] [AddMonoidHomClass F (Forms A B n) M]
+    [FunLike G (Forms A B n) M] [AddMonoidHomClass G (Forms A B n) M]
+    (φ : F) (ψ : G)
+    (h : ∀ (c : B) (v : Fin n → B), φ (elementary A c v) = ψ (elementary A c v))
+    (ω : Forms A B n) : φ ω = ψ ω := by
+  induction ω using induction_elementary with
+  | zero => simp only [map_zero]
+  | add ω₁ ω₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+  | elem c v => exact h c v
+
 /-- An `f`-semilinear map `Forms A B n →ₛₗ[f.toRingHom] Forms A C n` satisfying the
 elementary-form formula equals `pullback f n`. -/
 theorem pullback_unique (f : B →ₐ[A] C) (n : ℕ) {φ : Forms A B n →ₛₗ[f.toRingHom] Forms A C n}
     (hφ : ∀ (c : B) (v : Fin n → B),
       φ (elementary A c v) = elementary A (f c) (f ∘ v)) :
-    φ = pullback f n := by
-  apply LinearMap.ext
-  intro ω
-  induction ω using induction_elementary with
-  | zero => rw [map_zero, map_zero]
-  | add ω₁ ω₂ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
-  | elem c v => rw [hφ, pullback_elementary]
+    φ = pullback f n :=
+  LinearMap.ext <| addMonoidHom_eq_of_elementary φ (pullback f n) fun c v => by
+    rw [hφ, pullback_elementary]
 
 /-- In degree `0`, `pullback f 0` identifies with `f` via `exteriorPower.zeroEquiv`. -/
 @[simp]
@@ -174,25 +183,30 @@ theorem pullback_zero_degree (f : B →ₐ[A] C) (b : B) :
 theorem pullback_one_degree (f : B →ₐ[A] C) (ω : Forms A B 1) :
     exteriorPower.oneEquiv C (KaehlerDifferential A C) (pullback f 1 ω) =
       KaehlerDifferential.mapSemilinear f
-        (exteriorPower.oneEquiv B (KaehlerDifferential A B) ω) := by
-  induction ω using induction_elementary with
-  | zero => rw [map_zero, map_zero, map_zero, map_zero]
-  | add ω₁ ω₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-  | elem c v =>
-    rw [pullback_elementary, oneEquiv_elementary, oneEquiv_elementary,
-      KaehlerDifferential.mapSemilinear_smul, KaehlerDifferential.mapSemilinear_D,
-      Function.comp_apply]
+        (exteriorPower.oneEquiv B (KaehlerDifferential A B) ω) :=
+  addMonoidHom_eq_of_elementary
+    ((exteriorPower.oneEquiv C (KaehlerDifferential A C)).toAddMonoidHom.comp
+      (pullback f 1).toAddMonoidHom)
+    ((KaehlerDifferential.mapSemilinear f).toAddMonoidHom.comp
+      (exteriorPower.oneEquiv B (KaehlerDifferential A B)).toAddMonoidHom)
+    (fun c v => by
+      simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
+        pullback_elementary, oneEquiv_elementary, KaehlerDifferential.mapSemilinear_smul,
+        KaehlerDifferential.mapSemilinear_D, Function.comp_apply])
+    ω
 
 /-- Pullback commutes with the ordinary algebraic de Rham differential:
 `pullback f (n + 1) (d ω) = d (pullback f n ω)`. -/
 theorem pullback_d (f : B →ₐ[A] C) (n : ℕ) (ω : Forms A B n) :
-    pullback f (n + 1) (d A B n ω) = d A C n (pullback f n ω) := by
-  induction ω using induction_elementary with
-  | zero => rw [map_zero, map_zero, map_zero, map_zero]
-  | add ω₁ ω₂ h₁ h₂ => rw [map_add, map_add, map_add, map_add, h₁, h₂]
-  | elem c v =>
-    rw [d_elementary, pullback_ιMulti, pullback_elementary, d_elementary, Fin.comp_cons]
-    simp only [KaehlerDifferential.mapSemilinear_D, Function.comp_def]
+    pullback f (n + 1) (d A B n ω) = d A C n (pullback f n ω) :=
+  addMonoidHom_eq_of_elementary
+    ((pullback f (n + 1)).toAddMonoidHom.comp (d A B n).toAddMonoidHom)
+    ((d A C n).toAddMonoidHom.comp (pullback f n).toAddMonoidHom)
+    (fun c v => by
+      simp only [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, d_elementary,
+        pullback_ιMulti, pullback_elementary, Fin.comp_cons]
+      simp only [KaehlerDifferential.mapSemilinear_D, Function.comp_def])
+    ω
 
 /-- Pullback preserves the exterior wedge product of differential forms. -/
 theorem pullback_wedge (f : B →ₐ[A] C) {m n : ℕ} (α : Forms A B m) (β : Forms A B n) :
@@ -212,11 +226,11 @@ theorem pullback_wedge (f : B →ₐ[A] C) {m n : ℕ} (α : Forms A B m) (β : 
 /-- Pullback along the identity fixes every differential `n`-form. -/
 @[simp]
 theorem pullback_id_apply (n : ℕ) (ω : Forms A B n) :
-    pullback (AlgHom.id A B) n ω = ω := by
-  induction ω using induction_elementary with
-  | zero => simp only [map_zero]
-  | add ω₁ ω₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-  | elem c v => simp only [pullback_elementary, AlgHom.id_apply, Function.comp_def]
+    pullback (AlgHom.id A B) n ω = ω :=
+  addMonoidHom_eq_of_elementary (pullback (AlgHom.id A B) n) (AddMonoidHom.id _)
+    (fun c v => by
+      simp only [pullback_elementary, AlgHom.id_apply, Function.comp_def, AddMonoidHom.id_apply])
+    ω
 
 /-- Pullback along the identity `A`-algebra homomorphism is the identity on `Forms A B n`. -/
 theorem pullback_id (n : ℕ) :
