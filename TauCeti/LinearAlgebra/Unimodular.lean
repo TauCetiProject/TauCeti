@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.Basic
+public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 
 /-!
@@ -55,6 +56,10 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
   are unit multiples of one another exactly when their `2 × 2` minors vanish.
 * `LinearMap.kerProdEquivOfApplyEqOne`: if a linear functional `f` takes the value `1` at `v`, then
   `ker f × R ≃ M` by `(x, a) ↦ x + a • v`.
+* `Module.IsUnimodular.notMem_smul_top`: a unimodular element does not lie in `I • M` for a
+  proper ideal `I`, since a linear functional maps `I • M` into `I`.
+* `Module.Free.isUnimodular_iff_notMem_smul_top`: over a local ring with maximal ideal `𝔪`, an
+  element of a free module `M` of any rank is unimodular if and only if it does not lie in `𝔪 • M`.
 -/
 
 public section
@@ -333,3 +338,32 @@ theorem kerProdEquivOfApplyEqOne_symm_apply_snd {f : M →ₗ[R] R} {v : M} (hf 
   (rfl)
 
 end LinearMap
+
+namespace Module
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {v : M}
+
+/-- A unimodular element does not lie in `I • M` for a proper ideal `I`: a linear functional
+taking the value `1` at `v` maps `I • M` into `I`. -/
+theorem IsUnimodular.notMem_smul_top (hv : IsUnimodular R v) {I : Ideal R} (hI : I ≠ ⊤) :
+    v ∉ I • (⊤ : Submodule R M) := by
+  obtain ⟨f, hf⟩ := isUnimodular_iff.1 hv
+  refine fun h ↦ hI ((Ideal.eq_top_iff_one I).2 (hf ▸ ?_))
+  refine Submodule.smul_induction_on (p := fun x ↦ f x ∈ I) h (fun a ha x _ ↦ ?_)
+    fun x y hx hy ↦ by simpa using I.add_mem hx hy
+  simpa using I.mul_mem_right (f x) ha
+
+open IsLocalRing in
+/-- Over a local ring with maximal ideal `𝔪`, an element of a free module `M`, of any rank, is
+unimodular exactly when it does not lie in `𝔪 • M`: then one of its coordinates is a unit. -/
+theorem Free.isUnimodular_iff_notMem_smul_top [IsLocalRing R] [Module.Free R M] :
+    IsUnimodular R v ↔ v ∉ maximalIdeal R • (⊤ : Submodule R M) := by
+  refine ⟨fun hv ↦ hv.notMem_smul_top (maximalIdeal.isMaximal R).ne_top, fun hv ↦ ?_⟩
+  let b := Module.Free.chooseBasis R M
+  refine (Basis.isUnimodular_iff_span_repr_eq_top (b := b)).2 (by_contra fun h ↦ hv ?_)
+  have hle := le_maximalIdeal h
+  rw [← b.linearCombination_repr v, Finsupp.linearCombination_apply]
+  exact Submodule.finsuppSum_mem _ _ _ _ fun i _ ↦
+    Submodule.smul_mem_smul (hle (Ideal.subset_span ⟨i, rfl⟩)) Submodule.mem_top
+
+end Module
