@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Finset.Max
 public import Mathlib.Topology.Instances.NNReal.Lemmas
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Topology.MetricSpace.UniformConvergence
 
 /-!
 # Uniform grids of a closed nonnegative real interval
@@ -17,9 +20,12 @@ with its `Fin (m + 2)` restriction `TauCeti.uniformGridFin`.
 
 ## Main declarations
 
-* `TauCeti.uniformGrid`: the clamped uniform grid on `[s, t]` indexed by `ℕ`.
+* `TauCeti.uniformGrid`: the clamped uniform grid on `[s, t]` indexed by `ℕ`, with definitional
+  equation `TauCeti.uniformGrid_def` and tail lemma `TauCeti.uniformGrid_of_le`.
 * `TauCeti.uniformGridFin`: the `Fin (m + 2)` restriction of `TauCeti.uniformGrid`.
 * `TauCeti.tendsto_uniformGrid_mesh`: the mesh `((t : ℝ) - s) / (m + 1)` tends to `0`.
+* `TauCeti.tendsto_sup'_dist_uniformGridFin`: for any `PseudoMetricSpace`-valued function continuous
+  on `[s, t]`, the maximal adjacent increment along `uniformGridFin s t m` tends to `0`.
 -/
 
 public section
@@ -34,16 +40,26 @@ namespace TauCeti
 noncomputable def uniformGrid (s t : ℝ≥0) (m k : ℕ) : ℝ≥0 :=
   s + ((min k (m + 1) : ℕ) : ℝ≥0) / (m + 1 : ℝ≥0) * (t - s)
 
+/-- Defining formula for `TauCeti.uniformGrid`. -/
+theorem uniformGrid_def (s t : ℝ≥0) (m k : ℕ) :
+    uniformGrid s t m k = s + ((min k (m + 1) : ℕ) : ℝ≥0) / (m + 1 : ℝ≥0) * (t - s) :=
+  (rfl)
+
 /-- The initial point of a uniform grid on `[s, t]` is `s`. -/
 @[simp]
 theorem uniformGrid_zero (s t : ℝ≥0) (m : ℕ) : uniformGrid s t m 0 = s := by
   simp [uniformGrid]
 
-/-- Beyond `m + 1`, the clamped uniform grid on `[s, t]` equals `t` whenever `s ≤ t`. -/
+/-- For `m + 1 ≤ k`, the clamped uniform grid on `[s, t]` (`s ≤ t`) equals `t`. -/
 @[simp]
+theorem uniformGrid_of_le {s t : ℝ≥0} (hst : s ≤ t) (m : ℕ) {k : ℕ} (hk : m + 1 ≤ k) :
+    uniformGrid s t m k = t := by
+  simp [uniformGrid, min_eq_right hk, add_tsub_cancel_of_le hst]
+
+/-- At `m + 1`, the clamped uniform grid on `[s, t]` equals `t` whenever `s ≤ t`. -/
 theorem uniformGrid_last {s t : ℝ≥0} (hst : s ≤ t) (m : ℕ) :
-    uniformGrid s t m (m + 1) = t := by
-  simp [uniformGrid, add_tsub_cancel_of_le hst]
+    uniformGrid s t m (m + 1) = t :=
+  uniformGrid_of_le hst m le_rfl
 
 /-- The uniform grid on `[s, t]` is nondecreasing in the grid index. -/
 theorem uniformGrid_monotone (s t : ℝ≥0) (m : ℕ) : Monotone (uniformGrid s t m) :=
@@ -110,5 +126,31 @@ theorem tendsto_uniformGrid_mesh (s t : ℝ≥0) :
     Tendsto (fun m : ℕ ↦ ((t : ℝ) - s) / ((m + 1 : ℕ) : ℝ)) atTop (𝓝 0) := by
   simpa only [Nat.cast_add, Nat.cast_one, mul_one_div, mul_zero] using
     (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul ((t : ℝ) - s)
+
+/-- For any function continuous on `[s, t]` (`s ≤ t`), the maximal adjacent increment along
+`TauCeti.uniformGridFin s t m` tends to `0` as `m → ∞`. -/
+theorem tendsto_sup'_dist_uniformGridFin {E : Type*} [PseudoMetricSpace E] {f : ℝ≥0 → E}
+    {s t : ℝ≥0} (hst : s ≤ t) (hf : ContinuousOn f (Icc s t)) :
+    Tendsto (fun m ↦ (Finset.univ : Finset (Fin (m + 1))).sup' Finset.univ_nonempty fun k ↦
+      dist (f (uniformGridFin s t m k.succ)) (f (uniformGridFin s t m k.castSucc)))
+      atTop (𝓝 0) := by
+  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
+  obtain ⟨δ, hδ, hδp⟩ := Metric.uniformContinuousOn_iff.1
+    ((isCompact_Icc (a := s) (b := t)).uniformContinuousOn_of_continuous hf) ε hε
+  obtain ⟨N, hN⟩ := ((tendsto_uniformGrid_mesh s t).eventually
+    (gt_mem_nhds hδ)).exists_forall_of_atTop
+  refine ⟨N, fun m hm ↦ ?_⟩
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg (dist_nonneg.trans <| Finset.le_sup'
+    (f := fun k : Fin (m + 1) ↦
+      dist (f (uniformGridFin s t m k.succ)) (f (uniformGridFin s t m k.castSucc)))
+    (Finset.mem_univ 0))]
+  exact (Finset.sup'_lt_iff _).2 fun k _ ↦ by
+    have hdist : dist (uniformGridFin s t m k.succ) (uniformGridFin s t m k.castSucc) < δ := by
+      rw [NNReal.dist_eq, abs_of_nonneg (sub_nonneg.2 (NNReal.coe_le_coe.2
+          (uniformGridFin_monotone s t m (Fin.castSucc_le_succ k)))),
+        coe_uniformGridFin_succ_sub_castSucc hst m k]
+      simpa only [Nat.cast_add, Nat.cast_one] using hN m hm
+    exact hδp _ (uniformGridFin_mem_Icc hst m k.succ) _
+      (uniformGridFin_mem_Icc hst m k.castSucc) hdist
 
 end TauCeti

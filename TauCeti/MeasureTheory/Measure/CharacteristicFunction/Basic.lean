@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 
 /-!
@@ -13,7 +15,8 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 Complements Mathlib's `Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic` with scaling of
 `MeasureTheory.charFun` by an `ℝ≥0∞` measure factor, pushforward integral evaluation for an
 a.e.-measurable random variable, integrability of the characteristic integrand against any finite
-measure, and the real-line characteristic integrand identity `TauCeti.exp_inner_mul_I_real`.
+measure, the real-line characteristic integrand identity `TauCeti.exp_inner_mul_I_real`, and the
+finite-dimensional Euclidean `L²` characteristic integrand identity `TauCeti.exp_inner_toLp_mul_I`.
 -/
 
 public section
@@ -44,6 +47,14 @@ end MeasureTheory
 theorem TauCeti.exp_inner_mul_I_real (x t : ℝ) :
     exp ((⟪x, t⟫ : ℂ) * I) = exp (I * (t : ℂ) * (x : ℂ)) := by
   simp only [RCLike.inner_apply, conj_trivial]; congr 1; push_cast; ring
+
+/-- On `EuclideanSpace ℝ κ`, the characteristic integrand `exp (⟪toLp 2 x, v⟫ * I)` equals
+`exp (I * ∑ i, v i * x i)`. -/
+theorem TauCeti.exp_inner_toLp_mul_I {κ : Type*} [Fintype κ] (x : κ → ℝ)
+    (v : EuclideanSpace ℝ κ) :
+    exp ((⟪MeasurableEquiv.toLp 2 (κ → ℝ) x, v⟫ : ℂ) * I) = exp (I * ∑ i, v i * x i) := by
+  simp only [MeasurableEquiv.toLp_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
+  congr 1; push_cast; ring
 
 /-- The characteristic integrand `ω ↦ exp (⟪X ω, t⟫ * I)` of an a.e.-measurable random variable
 is integrable with respect to any finite measure. -/

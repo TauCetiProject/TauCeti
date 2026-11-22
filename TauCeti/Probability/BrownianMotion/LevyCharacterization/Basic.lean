@@ -19,9 +19,7 @@ import TauCeti.Probability.BrownianMotion.QuadraticVariation.Basic
 import TauCeti.Probability.Independence.CharacteristicFunction
 import TauCeti.Probability.Martingale.Basic
 import TauCeti.Probability.Martingale.Exponential.Local
-import TauCeti.Probability.Martingale.Local.Dominated
 import TauCeti.Probability.Martingale.Local.Version
-import TauCeti.Probability.Martingale.MaximalInequality.Lp
 import TauCeti.Probability.Martingale.QuadraticVariation
 import TauCeti.Probability.Process.LocalProperty
 import TauCeti.Topology.Instances.Real.UniformGrid
@@ -203,21 +201,6 @@ namespace ProbabilityTheory.IsBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {B : ℝ≥0 → Ω → ℝ}
 
-private lemma martingale_of_locally_martingale (hB : IsBrownianReal B P) (hA : Adapted ℱ B)
-    (hloc : Locally (fun Y ↦ Martingale Y ℱ P) ℱ B P) : Martingale B ℱ P := by
-  have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have hnat := hB.toIsPreBrownianReal.isFilteredPreBrownianReal_natural
-    fun t ↦ (hA.stronglyAdapted t).mono (ℱ.le t)
-  refine hA.stronglyAdapted.martingale_of_locally_martingale_of_dominated hloc fun T ↦ ?_
-  have hrc : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ B u ω) (Ioi t) t :=
-    hB.cont.mono fun _ hω _ _ ↦ hω.continuousWithinAt
-  refine ⟨fun ω ↦ (⨆ s ≤ T, ‖B s ω‖ₑ).toReal,
-    (hnat.martingale.memLp_toReal_iSup_eNorm hrc (by norm_num) ENNReal.ofNat_ne_top
-      (hB.memLp_eval T ENNReal.ofNat_ne_top)).integrable one_le_two, ?_⟩
-  filter_upwards [hnat.martingale.ae_iSup_eNorm_lt_top hrc] with ω hfin s hs
-  rw [← ENNReal.toReal_ofReal (norm_nonneg _), ofReal_norm]
-  exact ENNReal.toReal_mono hfin.ne (le_iSup₂_of_le s hs le_rfl)
-
 /-- **Filtered Brownian-law corollary.**
 A real Brownian motion `B` (in law) that is adapted to a filtration `ℱ` and is a local martingale
 on `ℱ` is automatically a filtered pre-Brownian motion relative to `ℱ`: in particular, every
@@ -226,7 +209,7 @@ theorem isFilteredPreBrownianReal_of_locally_martingale (hB : IsBrownianReal B P
     (hA : Adapted ℱ B) (hloc : Locally (fun Y ↦ Martingale Y ℱ P) ℱ B P) :
     IsFilteredPreBrownianReal ℱ B P := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have hBM := martingale_of_locally_martingale hB hA hloc
+  have hBM := hB.martingale_of_locally_martingale hA hloc
   refine Locally.isFilteredPreBrownianReal hloc (Locally.of_prop ?_) hB.eval_zero_ae_eq_zero
     hB.cont hA
   have hQ_adapt : StronglyAdapted ℱ (fun t ω ↦ B t ω ^ 2 - (t : ℝ)) := fun t ↦

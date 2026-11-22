@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+public import Mathlib.Probability.Process.Adapted
 public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import TauCeti.Analysis.QuadraticSums.BoundedVariation
 
@@ -25,6 +26,14 @@ The result concerns deterministic partitions and their limits, not construction 
 It requires neither adaptation nor a martingale hypothesis. Path regularity and finite variation
 hold outside a common sample-null set; no moment bound on total variation is assumed.
 
+Also provides reusable increment estimates for bounded and dominated processes: almost-sure bounds
+on differences (`MeasureTheory.ae_norm_sub_le`, `MeasureTheory.ae_sq_sub_le`), `Lᵖ` membership of
+bounded squared increments (`MeasureTheory.memLp_sub_sq_of_bound`) and quadratic sums
+(`TauCeti.Probability.memLp_quadraticSum_of_bound`,
+`TauCeti.Probability.ae_quadraticSum_le_of_bound`), and integrability of dominated strongly
+adapted increments (`MeasureTheory.StronglyAdapted.integrable_sub_of_bound` and
+`MeasureTheory.StronglyAdapted.integrable_sub_of_nonneg_le`).
+
 ## References
 
 * D. Revuz and M. Yor, *Continuous Martingales and Brownian Motion*, third edition,
@@ -36,7 +45,62 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Set
-open scoped NNReal Topology
+open scoped ENNReal NNReal Topology
+
+namespace MeasureTheory
+
+/-- If two functions are almost surely bounded in norm by `R₁` and `R₂`, then their difference is
+almost surely bounded in norm by `R₁ + R₂`. -/
+theorem ae_norm_sub_le {Ω E : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+    [SeminormedAddCommGroup E] {f g : Ω → E} {R₁ R₂ : ℝ}
+    (hf : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ R₁) (hg : ∀ᵐ ω ∂μ, ‖g ω‖ ≤ R₂) :
+    ∀ᵐ ω ∂μ, ‖f ω - g ω‖ ≤ R₁ + R₂ :=
+  hf.mp <| hg.mono fun _ h2 h1 ↦ (norm_sub_le _ _).trans (add_le_add h1 h2)
+
+/-- If two real functions are almost surely bounded in absolute value by `R`, then their squared
+difference is almost surely bounded by `(2 * R) ^ 2`. -/
+theorem ae_sq_sub_le {Ω : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+    {f g : Ω → ℝ} {R : ℝ} (hf : ∀ᵐ ω ∂μ, |f ω| ≤ R) (hg : ∀ᵐ ω ∂μ, |g ω| ≤ R) :
+    ∀ᵐ ω ∂μ, (f ω - g ω) ^ 2 ≤ (2 * R) ^ 2 :=
+  (ae_norm_sub_le (f := f) (g := g) (R₁ := R) (R₂ := R)
+      (hf.mono fun _ h ↦ by rwa [Real.norm_eq_abs])
+      (hg.mono fun _ h ↦ by rwa [Real.norm_eq_abs])).mono fun _ hω ↦ by
+    rw [Real.norm_eq_abs, ← two_mul] at hω
+    rw [← sq_abs]
+    gcongr
+
+/-- Under a finite measure, the squared difference of two almost-surely bounded measurable real
+functions lies in `Lᵖ` for every `p`. -/
+theorem memLp_sub_sq_of_bound {Ω : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsFiniteMeasure μ] {f g : Ω → ℝ} {R : ℝ} (p : ℝ≥0∞)
+    (hf_m : AEStronglyMeasurable f μ) (hg_m : AEStronglyMeasurable g μ)
+    (hf_bd : ∀ᵐ ω ∂μ, |f ω| ≤ R) (hg_bd : ∀ᵐ ω ∂μ, |g ω| ≤ R) :
+    MemLp (fun ω ↦ (f ω - g ω) ^ 2) p μ :=
+  MemLp.of_bound ((hf_m.sub hg_m).pow 2) ((2 * R) ^ 2)
+    ((ae_sq_sub_le hf_bd hg_bd).mono fun _ hω ↦ by
+      rwa [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)])
+
+/-- An increment of a strongly adapted process dominated almost surely by a constant is integrable
+under any finite measure. -/
+theorem StronglyAdapted.integrable_sub_of_bound {ι Ω E : Type*} [Preorder ι]
+    {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsFiniteMeasure μ] [NormedAddCommGroup E]
+    {ℱ : Filtration ι mΩ} {X : ι → Ω → E} (hX : StronglyAdapted ℱ X) {u v : ι} {C : ℝ}
+    (hbd : ∀ᵐ ω ∂μ, ‖X v ω - X u ω‖ ≤ C) :
+    Integrable (fun ω ↦ X v ω - X u ω) μ :=
+  (integrable_const C).mono'
+    (((hX v).mono (ℱ.le v)).sub ((hX u).mono (ℱ.le u))).aestronglyMeasurable hbd
+
+/-- A nonnegative real increment of a strongly adapted process bounded almost surely by a constant
+is integrable under any finite measure. -/
+theorem StronglyAdapted.integrable_sub_of_nonneg_le {ι Ω : Type*} [Preorder ι]
+    {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsFiniteMeasure μ] {ℱ : Filtration ι mΩ}
+    {A : ι → Ω → ℝ} (hA : StronglyAdapted ℱ A) {u v : ι} {C : ℝ}
+    (hbd : ∀ᵐ ω ∂μ, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ C) :
+    Integrable (fun ω ↦ A v ω - A u ω) μ :=
+  hA.integrable_sub_of_bound <| hbd.mono fun _ hω ↦ by
+    rw [Real.norm_eq_abs, abs_of_nonneg hω.1]; exact hω.2
+
+end MeasureTheory
 
 namespace TauCeti.Probability
 
@@ -61,6 +125,27 @@ theorem quadraticSum_zero {Ω : Type*} (B : ℝ≥0 → Ω → ℝ) (t : Fin 1 �
 theorem quadraticSum_nonneg {Ω : Type*} {n : ℕ} (B : ℝ≥0 → Ω → ℝ)
     (t : Fin (n + 1) → ℝ≥0) (ω : Ω) : 0 ≤ quadraticSum B t ω :=
   Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+
+/-- Under a finite measure, the quadratic sum of a process whose grid values are measurable and
+almost surely bounded by `R` lies in `Lᵖ` for every `p`. -/
+theorem memLp_quadraticSum_of_bound {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsFiniteMeasure μ] {X : ℝ≥0 → Ω → ℝ} {R : ℝ} (p : ℝ≥0∞) {n : ℕ}
+    (t : Fin (n + 1) → ℝ≥0) (hX : ∀ k, AEStronglyMeasurable (X (t k)) μ)
+    (hXR : ∀ k, ∀ᵐ ω ∂μ, |X (t k) ω| ≤ R) :
+    MemLp (quadraticSum X t) p μ := by
+  rw [quadraticSum_def]
+  exact memLp_finsetSum _ fun k _ ↦
+    memLp_sub_sq_of_bound p (hX k.succ) (hX k.castSucc) (hXR k.succ) (hXR k.castSucc)
+
+/-- If the grid values of `X` are almost surely bounded in absolute value by `R`, then the
+quadratic sum along `t : Fin (n + 1) → ℝ≥0` is almost surely at most `n * (2 * R) ^ 2`. -/
+theorem ae_quadraticSum_le_of_bound {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    {X : ℝ≥0 → Ω → ℝ} {R : ℝ} {n : ℕ} (t : Fin (n + 1) → ℝ≥0)
+    (hXR : ∀ k, ∀ᵐ ω ∂μ, |X (t k) ω| ≤ R) :
+    ∀ᵐ ω ∂μ, quadraticSum X t ω ≤ (n : ℝ) * (2 * R) ^ 2 := by
+  rw [quadraticSum_def]
+  refine (ae_all_iff.2 fun k : Fin n ↦ ae_sq_sub_le (hXR k.succ) (hXR k.castSucc)).mono
+    fun ω hω ↦ (Finset.sum_le_sum fun k _ ↦ hω k).trans_eq (by simp)
 
 variable {Ω : Type*} {X A : ℝ≥0 → Ω → ℝ} {s : Set ℝ≥0}
 

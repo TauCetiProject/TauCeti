@@ -17,15 +17,19 @@ the stopping-time property.
 Stopping preserves path continuity and right continuity at each time, including when the stopping
 time is infinite. These pathwise facts require no measurability or stopping-time hypothesis and let
 local-martingale arguments retain the continuity or right continuity of their native stopped stages.
+When random times tend to `⊤`, the stopped values at a fixed time eventually agree with the
+original process (`MeasureTheory.eventually_stoppedProcess_eq_of_tendsto` and
+`MeasureTheory.eventually_stoppedProcess_indicator_pos_eq_of_tendsto`).
 
-Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
+Simultaneous almost-surely nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
 Pathwise set membership up to the random time also passes to the stopped process. Neither
 fact requires a stopping-time or measurability assumption. Restricting a strongly progressive
 process to `{⊥ < τ}` before stopping preserves strong progressivity
 (`MeasureTheory.IsStronglyProgressive.stoppedProcess_indicator_pos`). Under a finite measure,
 truncating an almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound
-`T : ℝ≥0` yields an integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
+`T : ℝ≥0` yields an integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`),
+with monotonicity and increment bounds for `fun t ↦ (min (t : WithTop ι) x).untopA`.
 -/
 
 public section
@@ -204,11 +208,27 @@ theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
   ext ω
   exact stoppedProcess_eq_of_le (by simp)
 
-/-- At the initial time, an indicator-stopped process equals the indicator of the initial value. -/
-theorem stoppedProcess_indicator_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι] [Zero E]
-    (u : ι → Ω → E) (s : Set Ω) (τ : Ω → WithTop ι) :
-    stoppedProcess (fun t ↦ s.indicator (u t)) τ ⊥ = s.indicator (u ⊥) :=
-  stoppedProcess_bot _ τ
+/-- If a family of random times diverges to `⊤` at `ω`, then the stopped process at fixed time `u`
+eventually agrees with `X u ω`. -/
+theorem eventually_stoppedProcess_eq_of_tendsto {ι κ Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderTopology ι] {l : Filter κ} {X : ι → Ω → E}
+    {τ : κ → Ω → WithTop ι} {u : ι} {ω : Ω} (hω : Tendsto (τ · ω) l (𝓝 ⊤)) :
+    ∀ᶠ n in l, stoppedProcess X (τ n) u ω = X u ω :=
+  (hω.eventually (eventually_gt_nhds (WithTop.coe_lt_top u))).mono fun _ hn ↦
+    stoppedProcess_eq_of_le hn.le
+
+/-- If a family of random times diverges to `⊤` at `ω`, then the stopped process restricted to
+`{⊥ < τ n}` at fixed time `u` eventually agrees with `X u ω`. -/
+theorem eventually_stoppedProcess_indicator_pos_eq_of_tendsto {ι κ Ω E : Type*}
+    [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι] [Zero E]
+    {l : Filter κ} {X : ι → Ω → E} {τ : κ → Ω → WithTop ι} {u : ι} {ω : Ω}
+    (hω : Tendsto (τ · ω) l (𝓝 ⊤)) :
+    ∀ᶠ n in l,
+      stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ n ω}.indicator (X t)) (τ n) u ω =
+        X u ω :=
+  (hω.eventually (eventually_gt_nhds (WithTop.coe_lt_top u))).mono fun _ hn ↦ by
+    rw [stoppedProcess_eq_of_le hn.le,
+      Set.indicator_of_mem (lt_of_le_of_lt (WithTop.coe_le_coe.2 bot_le) hn)]
 
 /-- Evaluating an indicator-stopped process at `τ ≤ σ` factors through the stopped process at
 `σ` evaluated at `(min t (τ ω)).untopA`. -/
@@ -279,7 +299,41 @@ theorem IsStronglyProgressive.stoppedProcess_indicator_pos
   rw [stoppedProcess_indicator_comm]
   by_cases hω : (⊥ : WithTop ι) < τ ω <;> simp [hω]
 
+/-- Truncating `t` at `x : WithTop ι` is bounded above by `t`. -/
+theorem untopA_coe_min_le {ι : Type*} [LinearOrder ι] [Nonempty ι] (t : ι) (x : WithTop ι) :
+    (min (t : WithTop ι) x).untopA ≤ t :=
+  WithTop.untopA_le (min_le_left _ _)
+
+/-- Truncating `t` at `x : WithTop ι` is monotone in `t`. -/
+theorem untopA_coe_min_mono {ι : Type*} [LinearOrder ι] [Nonempty ι] (x : WithTop ι) :
+    Monotone (fun t : ι ↦ (min (t : WithTop ι) x).untopA) := by
+  cases x with
+  | top => intro _ _ h; simpa [WithTop.untopA] using h
+  | coe a =>
+    intro _ _ h
+    simp only [← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe]
+    gcongr
+
+/-- Unwrapping `⊥ : WithTop ι` yields `⊥ : ι`. -/
+@[simp]
+theorem untopA_bot {ι : Type*} [LinearOrder ι] [OrderBot ι] :
+    (⊥ : WithTop ι).untopA = ⊥ := by
+  rw [← WithTop.coe_bot, WithTop.untopA, WithTop.untopD_coe]
+
 open scoped NNReal
+
+/-- Truncating `u ≤ v` in `ℝ≥0` at `x : WithTop ℝ≥0` has increment at most `v - u`. -/
+theorem coe_untopA_coe_min_sub_le (x : WithTop ℝ≥0) {u v : ℝ≥0} (huv : u ≤ v) :
+    ((min (v : WithTop ℝ≥0) x).untopA : ℝ) - ((min (u : WithTop ℝ≥0) x).untopA : ℝ) ≤
+      (v : ℝ) - u := by
+  cases x with
+  | top => rw [min_eq_left le_top, min_eq_left le_top, WithTop.untopA, WithTop.untopD_coe,
+      WithTop.untopD_coe]
+  | coe a =>
+    simp only [← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe, NNReal.coe_min]
+    simp only [min_def]
+    have hvu : (u : ℝ) ≤ v := huv
+    split_ifs <;> linarith
 
 /-- For any almost everywhere measurable `WithTop ℝ≥0`-valued function and deterministic horizon
 `T`, the truncated value `(min T (τ ω)).untopA` is integrable under any finite measure. -/
@@ -292,6 +346,6 @@ theorem integrable_untopA_const_min {Ω : Type*} {_ : MeasurableSpace Ω} {P : M
       (hτ.ae_eq_mk.symm.fun_comp fun x : WithTop ℝ≥0 ↦ ((min (T : WithTop ℝ≥0) x).untopA : ℝ))) T
     (.of_forall fun ω ↦ by
       rw [Real.norm_eq_abs, abs_of_nonneg (NNReal.coe_nonneg _), NNReal.coe_le_coe]
-      exact WithTop.untopA_le (min_le_left _ _))
+      exact untopA_coe_min_le T (τ ω))
 
 end MeasureTheory

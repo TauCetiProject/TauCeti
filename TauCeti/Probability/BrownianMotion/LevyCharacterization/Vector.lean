@@ -37,10 +37,11 @@ import TauCeti.Probability.Process.LocalProperty
 
 Multivariate Lévy characterization for a family `M : ι → ℝ≥0 → Ω → ℝ` of almost-surely continuous
 real local martingales on a raw filtration `ℱ` with local-martingale cross-brackets
-`M i t * M j t - M i 0 * M j 0 - C i j * t`: Cramér–Wold characteristic-function factorization,
-joint increment independence from `ℱ s`, product Gaussian increment laws, global pathwise
-coordinate independence, coordinate vector Brownian law (`IsBrownianVector`), strongly predictable
-indistinguishable vector Brownian versions, and the converse cross-product martingale
+`M i t * M j t - M i 0 * M j 0 - C i j * t`: Cramér–Wold characteristic-function factorization
+(set-integral and conditional-expectation forms), joint increment independence from `ℱ s`, product
+Gaussian increment laws, global pathwise coordinate independence, coordinate vector Brownian law
+(`IsBrownianVector`), strongly predictable indistinguishable vector Brownian versions, the adapted
+combined filtered characterization, and the converse cross-product martingale
 (`ProbabilityTheory.IsBrownianReal.martingale_mul_of_indepFun`) and vector increment independence
 theorems for independent Brownian local martingales.
 
@@ -90,11 +91,6 @@ end ProbabilityTheory.IsBrownianReal
 
 namespace TauCeti.Probability
 
-private lemma exp_inner_toLp_mul_I {κ : Type*} [Fintype κ] (x : κ → ℝ) (v : EuclideanSpace ℝ κ) :
-    exp ((⟪MeasurableEquiv.toLp 2 (κ → ℝ) x, v⟫ : ℂ) * I) = exp (I * ∑ i, v i * x i) := by
-  simp only [MeasurableEquiv.toLp_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
-  congr 1; push_cast; ring
-
 /-- **Cramér–Wold characteristic-function factorization for vector continuous local martingales.**
 If `M : ι → ℝ≥0 → Ω → ℝ` is a finite family of almost-surely continuous local martingales on `ℱ`
 whose cross-brackets `M i t * M j t - M i 0 * M j 0 - C i j * t` are local martingales, then for
@@ -139,6 +135,33 @@ theorem setIntegral_exp_I_mul_sum_sub_of_locally_martingale [IsFiniteMeasure P] 
     Locally.setIntegral_exp_I_mul_sub hYv_l (hQeq ▸ hQsum)
       ((ae_all_iff.2 hYc).mono fun _ h ↦ by fun_prop) 1 hst hA, one_pow, one_mul]
 
+/-- **Joint conditional characteristic function for vector continuous local martingales.**
+If `M : ι → ℝ≥0 → Ω → ℝ` is a finite family of almost-surely continuous local martingales on `ℱ`
+whose cross-brackets `M i t * M j t - M i 0 * M j 0 - C i j * t` are local martingales, then for
+every frequency vector `v : ι → ℝ` and every `s ≤ t`, the conditional characteristic function of
+`∑ i, v i * (M i t - M i s)` given `ℱ s` is almost surely
+`exp (-(∑ i, ∑ j, v i * v j * C i j) * (t - s) / 2)`. -/
+theorem condExp_exp_I_mul_sum_sub_of_locally_martingale [IsFiniteMeasure P] {ι : Type*}
+    [Fintype ι] {M : ι → ℝ≥0 → Ω → ℝ} {C : ι → ι → ℝ}
+    (hM : ∀ i, Locally (fun Y ↦ Martingale Y ℱ P) ℱ (M i) P)
+    (hQ : ∀ i j, Locally (fun Y ↦ Martingale Y ℱ P) ℱ
+      (fun t ω ↦ M i t ω * M j t ω - M i 0 ω * M j 0 ω - C i j * (t : ℝ)) P)
+    (hcont : ∀ i, ∀ᵐ ω ∂P, Continuous (M i · ω))
+    (v : ι → ℝ) {s t : ℝ≥0} (hst : s ≤ t) :
+    P[fun ω ↦ exp (I * ∑ i, v i * (M i t ω - M i s ω)) | ℱ s] =ᵐ[P]
+      fun _ ↦ exp (-((∑ i, ∑ j, v i * v j * C i j) * ((t : ℝ) - s) / 2 : ℝ)) := by
+  have hsm : AEMeasurable (fun ω i ↦ M i t ω - M i s ω) P := aemeasurable_pi_iff.2 fun i ↦
+    ((hM i).aestronglyMeasurable_sub (fun _ h ↦ h.stronglyAdapted) s t).aemeasurable
+  let e := MeasurableEquiv.toLp 2 (ι → ℝ)
+  have hint : Integrable (fun ω ↦ exp (I * ∑ i, v i * (M i t ω - M i s ω))) P := by
+    convert (e.measurable.comp_aemeasurable hsm).integrable_exp_inner_mul_I (e v) using 1
+    ext ω; exact (TauCeti.exp_inner_toLp_mul_I (fun i ↦ M i t ω - M i s ω) (e v)).symm
+  exact (ae_eq_condExp_of_forall_setIntegral_eq (ℱ.le s) hint
+    (fun _ _ _ ↦ (integrable_const _).integrableOn) (fun A hA _ ↦ by
+      rw [setIntegral_const, Measure.real, Complex.real_smul,
+        setIntegral_exp_I_mul_sum_sub_of_locally_martingale hM hQ hcont v hst hA])
+    aestronglyMeasurable_const).symm
+
 /-- **Joint increment independence from the past for vector continuous local martingales.**
 If `M : ι → ℝ≥0 → Ω → ℝ` is a family of almost-surely continuous local martingales on `ℱ`
 whose cross-brackets `M i t * M j t - M i 0 * M j 0 - C i j * t` are local martingales, then for
@@ -162,7 +185,7 @@ theorem indep_comap_sub_pi_of_locally_martingale [IsZeroOrProbabilityMeasure P] 
           (e.measurable.comp_aemeasurable (aemeasurable_pi_iff.2 fun i ↦ hmeas i))
           (φ := fun v : EuclideanSpace ℝ S ↦
             exp (-((∑ i : S, ∑ j : S, v i * v j * C i j) * ((t : ℝ) - s) / 2 : ℝ))) fun v _ hA ↦ by
-          simp_rw [e, Function.comp_apply, exp_inner_toLp_mul_I]
+          simp_rw [e, Function.comp_apply, TauCeti.exp_inner_toLp_mul_I]
           exact setIntegral_exp_I_mul_sum_sub_of_locally_martingale (M := fun i : S ↦ M i)
             (C := fun i j : S ↦ C i j) (fun i ↦ hM i) (fun i j ↦ hQ i j) (fun i ↦ hcont i)
             (fun i ↦ v i) hst hA) _
@@ -194,7 +217,8 @@ theorem hasLaw_sub_pi_gaussianReal_of_locally_martingale [IsProbabilityMeasure P
   rw [← MeasurableEquiv.coe_toLp (p := 2) (X := ι → ℝ),
     e.measurable.aemeasurable.map_map_of_aemeasurable hX,
     charFun_map_eq_integral (e.measurable.comp_aemeasurable hX) v]
-  simp_rw [e, Function.comp_apply, exp_inner_toLp_mul_I, hset, charFun_gaussianReal, ← exp_sum]
+  simp_rw [e, Function.comp_apply, TauCeti.exp_inner_toLp_mul_I, hset, charFun_gaussianReal,
+    ← exp_sum]
   congr 1; simp only [mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte,
     NNReal.coe_mul, NNReal.coe_sub hst, ofReal_zero, zero_mul, zero_sub,
     Finset.sum_neg_distrib, ← Finset.sum_div]
@@ -371,5 +395,27 @@ theorem indep_comap_sub_pi_of_iIndepFun_isBrownianReal_locally_martingale
       (hloc i)).martingale_sq_sub.congr hsm fun _ ↦ h0ae.mono fun _ h0ω ↦ by simp [C, sq, h0ω]
   · exact ((hB i).martingale_mul_of_indepFun (hB j) (hind.indepFun hij) (hA i) (hA j) (hloc i)
       (hloc j)).congr hsm fun _ ↦ h0ae.mono fun _ h0ω ↦ by simp [C, hij, h0ω]
+
+/-- **Vector Lévy characterization for adapted continuous local martingales.**
+If `M : ι → ℝ≥0 → Ω → ℝ` is a family of adapted, almost-surely continuous local martingales on `ℱ`
+with `M i 0 = 0` almost surely and cross-brackets `M i t * M j t - δ_{ij} t` local martingales
+for all `i, j`, then `M` is a coordinate vector Brownian motion (`IsBrownianVector M P`), each
+coordinate `M i` is a filtered pre-Brownian motion relative to `ℱ`, and every vector increment
+`ω ↦ (M i t ω - M i s ω)_i` (`s ≤ t`) is independent of `ℱ s`. -/
+theorem isBrownianVector_and_isFilteredPreBrownianReal_of_locally_martingale
+    [IsProbabilityMeasure P] {ι : Type*} [DecidableEq ι] {M : ι → ℝ≥0 → Ω → ℝ}
+    (hM : ∀ i, Locally (fun Y ↦ Martingale Y ℱ P) ℱ (M i) P)
+    (hQ : ∀ i j, Locally (fun Y ↦ Martingale Y ℱ P) ℱ
+      (fun t ω ↦ M i t ω * M j t ω - if i = j then (t : ℝ) else 0) P)
+    (h0 : ∀ i, ∀ᵐ ω ∂P, M i 0 ω = 0) (hcont : ∀ i, ∀ᵐ ω ∂P, Continuous (M i · ω))
+    (hA : ∀ i, Adapted ℱ (M i)) :
+    IsBrownianVector M P ∧ (∀ i, IsFilteredPreBrownianReal ℱ (M i) P) ∧
+      (∀ s t, s ≤ t → Indep (.comap (fun ω i ↦ M i t ω - M i s ω) inferInstance) (ℱ s) P) := by
+  obtain ⟨_, _, hWM, hBW, hFB, _⟩ :=
+    exists_isStronglyPredictable_indist_isBrownianVector_of_locally_martingale hM hQ h0 hcont
+  have hBM := hBW.congr_indist hWM
+  exact ⟨hBM, fun i ↦ (hFB i).congr (hA i) fun t ↦ (hWM i).mono fun _ hω ↦ hω t,
+    fun _ _ hst ↦ indep_comap_sub_pi_of_iIndepFun_isBrownianReal_locally_martingale
+      (fun i ↦ ⟨hBM.isPreBrownianReal i, hBM.ae_continuous i⟩) hBM.iIndepFun hA hM hst⟩
 
 end TauCeti.Probability

@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Order.Cadlag
 public import TauCeti.Probability.Martingale.Local.Congruence
 public import TauCeti.Probability.Process.LocalProperty
 public import TauCeti.Probability.Process.Predictable.Basic
+import TauCeti.Probability.Martingale.Local.Centering
+import TauCeti.Probability.Martingale.Local.InitialMultiplier
+import TauCeti.Probability.Martingale.Local.Linear
 
 /-!
 # Predictable versions of local martingales
@@ -32,8 +36,10 @@ need not have left-continuous paths on the exceptional null set.
 
 For almost-surely continuous local martingales, the predictable version is also almost-surely
 continuous, and cross-brackets or quadratic brackets relative to strongly predictable processes
-transfer to it (`TauCeti.Probability.exists_isStronglyPredictable_indist_prod_sub_initialValue_sub`
-and `ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_sq_sub_initialValue_sub`).
+transfer to it (`TauCeti.Probability.exists_isStronglyPredictable_indist_prod_sub_initialValue_sub`,
+`ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_sq_sub_initialValue_sub`, and on
+finite measure spaces
+`ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_centered_sq_sub`).
 
 ## References
 
@@ -136,3 +142,43 @@ theorem ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_sq_sub_ini
       (fun _ _ ↦ by simpa only [sq] using hQM)
   exact ⟨Y (), hYp (), hYM (), hYc (), hYl (), by simpa only [sq] using hQp () (),
     by simpa only [sq] using hQY () ()⟩
+
+/-- An almost-surely continuous real native local martingale `M` on a finite measure space whose
+quadratic bracket `M t ^ 2 - M 0 ^ 2 - A t` (for strongly predictable, almost-surely
+right-continuous `A`) is indistinguishable from a local martingale `Q` admits an almost-surely
+continuous, strongly predictable indistinguishable centered version `N` of `M - M 0` with `N 0 = 0`
+which remains a local martingale and has strongly predictable local-martingale quadratic bracket
+`N t ^ 2 - A t`. -/
+theorem ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_centered_sq_sub
+    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
+    {ℱ : Filtration ℝ≥0 mΩ} {M A Q : ℝ≥0 → Ω → ℝ}
+    (hM : Locally (fun U ↦ Martingale U ℱ P) ℱ M P) (hQ : Locally (fun U ↦ Martingale U ℱ P) ℱ Q P)
+    (hA : IsStronglyPredictable ℱ A) (hAc : ∀ᵐ ω ∂P, IsRightContinuous (A · ω))
+    (hcont : ∀ᵐ ω ∂P, Continuous (M · ω))
+    (hQM : ∀ᵐ ω ∂P, ∀ t, M t ω ^ 2 - M 0 ω ^ 2 - A t ω = Q t ω) :
+    ∃ N : ℝ≥0 → Ω → ℝ, IsStronglyPredictable ℱ N ∧ (∀ ω, N 0 ω = 0) ∧
+      N ≡ᵐ[P] (fun t ω ↦ M t ω - M 0 ω) ∧ (∀ᵐ ω ∂P, Continuous (N · ω)) ∧
+      Locally (fun U ↦ Martingale U ℱ P) ℱ N P ∧
+      IsStronglyPredictable ℱ (fun t ω ↦ N t ω ^ 2 - A t ω) ∧
+      Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦ N t ω ^ 2 - A t ω) P := by
+  obtain ⟨Y, hYp, hYM, hYc, hYl, hQp, hQY⟩ :=
+    hM.exists_isStronglyPredictable_indist_sq_sub_initialValue_sub hQ hA hcont hQM
+  have hY0 : StronglyMeasurable[ℱ ⊥] (Y 0) := by
+    simpa only [bot_eq_zero] using hYp.isStronglyProgressive.stronglyAdapted 0
+  have hNp : IsStronglyPredictable ℱ (fun t ω ↦ Y t ω - Y 0 ω) :=
+    StronglyMeasurable.sub hYp hY0.isStronglyPredictable_snd
+  have hNAp : IsStronglyPredictable ℱ (fun t ω ↦ (Y t ω - Y 0 ω) ^ 2 - A t ω) := by
+    simp_rw [sq]; exact StronglyMeasurable.sub (hNp.mul hNp) hA
+  refine ⟨fun t ω ↦ Y t ω - Y 0 ω, hNp, fun _ ↦ sub_self _,
+    hYM.mono fun _ hω t ↦ by simp [hω t, hω 0], hYc.mono fun _ h ↦ h.sub continuous_const,
+    hYl.martingale_sub_initialValue, hNAp, ?_⟩
+  have h2Y0 : StronglyMeasurable[ℱ ⊥] (fun ω ↦ 2 * Y 0 ω) := stronglyMeasurable_const.mul hY0
+  have h2Y0' : StronglyMeasurable[ℱ 0] (fun ω ↦ 2 * Y 0 ω) := by
+    simpa only [← bot_eq_zero] using h2Y0
+  convert hQY.martingale_sub (by simpa only [smul_eq_mul, bot_eq_zero] using
+      hYl.martingale_sub_initialValue.martingale_smul_initial h2Y0') hQp.isStronglyProgressive
+    (h2Y0.isStronglyPredictable_snd.mul hNp).isStronglyProgressive
+    (hYc.mp (hAc.mono fun _ hAω hYω t ↦
+      (((hYω.pow 2).sub continuous_const).isRightContinuous t).sub (hAω t)))
+    (hYc.mono fun _ h ↦ (by fun_prop : Continuous _).isRightContinuous) using 1
+  ext t ω; ring
