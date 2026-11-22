@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.LogDeriv
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Meromorphic.Order
 
 /-!
@@ -41,10 +44,16 @@ of support finite and bounds sums over their subsets by the corresponding closed
   meromorphic orders.
 * `MeromorphicOn.zero_lt_divisor_iff_of_analyticAt` — at a point of analyticity and finite order,
   the divisor is positive exactly at a zero.
-* `AnalyticOnNhd.coe_divisor_eq_meromorphicOrderAt` — on a preconnected set where `f` is analytic
-  and nonzero somewhere, the divisor agrees with `meromorphicOrderAt`.
-* `AnalyticOnNhd.divisor_apply_eq_zero_iff`: on a preconnected set where `f` is analytic and
-  somewhere nonzero, the divisor vanishes exactly off the zeros.
+* `MeromorphicOn.coe_divisor_eq_meromorphicOrderAt` and
+  `AnalyticOnNhd.coe_divisor_eq_meromorphicOrderAt` — at a point of finite meromorphic order in
+  `U` (in particular on a preconnected set where `f` is analytic and nonzero somewhere), the
+  divisor agrees with `meromorphicOrderAt`.
+* `AnalyticOnNhd.one_le_divisor_of_eq_zero` and `AnalyticOnNhd.divisor_apply_eq_zero_iff` — on a
+  preconnected set where `f` is analytic and somewhere nonzero, the divisor is at least `1` at
+  every zero and vanishes exactly off the zeros.
+* `AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_le_of_norm_le` — converts a norm bound on
+  `logDeriv f z - ∑ᶠ ρ, divisor f U ρ / (z - ρ)` into a real-part bound retaining any finite set
+  `S` when all omitted zeros in `U` satisfy `ρ.re ≤ z.re`.
 * `MeromorphicOn.divisor_finite_inter_support_of_isCompact` — finite divisor support on a
   subset of a compact set in the meromorphic domain.
 * `MeromorphicOn.divisor_finite_inter_support` — finite divisor support on a bounded region
@@ -217,6 +226,15 @@ theorem MeromorphicOn.zero_lt_divisor_iff_of_analyticAt {𝕜 E : Type*} [Nontri
   rw [hm.divisor_eq_analyticOrderNatAt hf hz, Nat.cast_pos, Nat.pos_iff_ne_zero,
     ← hf.analyticOrderAt_ne_zero, ← Nat.cast_analyticOrderNatAt h, Nat.cast_ne_zero]
 
+/-- At a point `z ∈ U` where a function meromorphic on `U` has finite meromorphic order, its
+divisor on `U` agrees with `meromorphicOrderAt f z`. -/
+theorem MeromorphicOn.coe_divisor_eq_meromorphicOrderAt
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {U : Set 𝕜} {f : 𝕜 → E} (hf : MeromorphicOn f U) {z : 𝕜} (hz : z ∈ U)
+    (hfin : meromorphicOrderAt f z ≠ ⊤) :
+    (divisor f U z : WithTop ℤ) = meromorphicOrderAt f z := by
+  rw [hf.divisor_apply hz, WithTop.coe_untop₀_of_ne_top hfin]
+
 /-- On a preconnected set `U` where `f` is analytic and nonzero at some point, the divisor of `f`
 agrees with `meromorphicOrderAt f` at every point of `U` (in particular, the meromorphic order is
 finite everywhere on `U`). -/
@@ -224,9 +242,19 @@ theorem AnalyticOnNhd.coe_divisor_eq_meromorphicOrderAt
     {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     {U : Set 𝕜} {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f U) (hU : IsPreconnected U)
     (h0 : ∃ z₀ ∈ U, f z₀ ≠ 0) {z : 𝕜} (hz : z ∈ U) :
-    (MeromorphicOn.divisor f U z : WithTop ℤ) = meromorphicOrderAt f z := by
-  rw [hf.meromorphicOn.divisor_apply hz, WithTop.coe_untop₀_of_ne_top
-    (hf.meromorphicOrderAt_ne_top_of_exists_ne_zero ⟨⟨z, hz⟩, hU⟩ h0 hz)]
+    (MeromorphicOn.divisor f U z : WithTop ℤ) = meromorphicOrderAt f z :=
+  hf.meromorphicOn.coe_divisor_eq_meromorphicOrderAt hz
+    (hf.meromorphicOrderAt_ne_top_of_exists_ne_zero ⟨⟨z, hz⟩, hU⟩ h0 hz)
+
+/-- On a preconnected set `U` where `f` is analytic and nonzero at some point, the divisor of `f`
+on `U` is at least `1` at every zero `ρ ∈ U` of `f`. -/
+theorem AnalyticOnNhd.one_le_divisor_of_eq_zero
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {U : Set 𝕜} {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f U) (hU : IsPreconnected U)
+    (h0 : ∃ z₀ ∈ U, f z₀ ≠ 0) {ρ : 𝕜} (hρ : ρ ∈ U) (hfρ : f ρ = 0) :
+    1 ≤ MeromorphicOn.divisor f U ρ :=
+  Int.add_one_le_iff.2 <| (hf.meromorphicOn.zero_lt_divisor_iff_of_analyticAt (hf ρ hρ) hρ
+    (hf.meromorphicOrderAt_ne_top_of_exists_ne_zero ⟨⟨ρ, hρ⟩, hU⟩ h0 hρ)).2 hfρ
 
 /-- On a preconnected set where `f` is analytic and somewhere nonzero, the divisor of `f`
 vanishes exactly where `f` does not. The converse direction
@@ -332,3 +360,44 @@ theorem AnalyticOnNhd.negPart_divisor_add_left
     (MeromorphicOn.divisor (f + g) U)⁻ = (MeromorphicOn.divisor g U)⁻ := by
   rw [add_comm]
   exact hf.negPart_divisor_add_right g
+
+/-- Converts a norm bound on `logDeriv f z - ∑ᶠ ρ, divisor f U ρ / (z - ρ)` into a real-part
+upper bound retaining the divisor-weighted zero terms over any finite set `S : Finset ℂ`, provided
+`f` is analytic on the compact set `U` and every omitted zero `ρ ∈ U \ S` satisfies
+`ρ.re ≤ z.re`. -/
+theorem AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_le_of_norm_le
+    {f : ℂ → ℂ} {U : Set ℂ} {z : ℂ} {B : ℝ}
+    (hf : AnalyticOnNhd ℂ f U) (hU : IsCompact U) (S : Finset ℂ)
+    (hre : ∀ ρ ∈ U, ρ ∉ S → f ρ = 0 → ρ.re ≤ z.re)
+    (hmain : ‖logDeriv f z - ∑ᶠ ρ, (MeromorphicOn.divisor f U ρ : ℂ) / (z - ρ)‖ ≤ B) :
+    -(logDeriv f z).re +
+        ∑ ρ ∈ S, (MeromorphicOn.divisor f U ρ : ℝ) * ((z - ρ)⁻¹).re ≤ B := by
+  classical
+  let D := MeromorphicOn.divisor f U
+  let g : ℂ → ℝ := fun ρ ↦ (D ρ : ℝ) * ((z - ρ)⁻¹).re
+  have hfin : D.support.Finite := D.finiteSupport hU
+  have hfin_D : (fun ρ ↦ (D ρ : ℂ) / (z - ρ)).support.Finite :=
+    hfin.subset fun ρ hρ h0 ↦ hρ (by simp [h0])
+  have hfin_g : g.support.Finite :=
+    hfin.subset fun ρ hρ h0 ↦ hρ (by simp [g, h0])
+  have hg_nonneg (ρ : ℂ) (hρS : ρ ∉ S) : 0 ≤ g ρ := by
+    by_cases hD : D ρ = 0
+    · simp [g, hD]
+    have hρU : ρ ∈ U := D.supportWithinDomain hD
+    have hfρ : f ρ = 0 := (hf ρ hρU).apply_eq_zero_of_divisor_ne_zero hD
+    have hD0 : 0 ≤ (D ρ : ℝ) := mod_cast MeromorphicOn.AnalyticOnNhd.divisor_nonneg hf ρ
+    exact mul_nonneg hD0 (Complex.inv_re_nonneg.2 (by simpa using sub_nonneg.2 (hre ρ hρU hρS hfρ)))
+  have hle_finsum : ∑ ρ ∈ S, g ρ ≤ ∑ᶠ ρ, g ρ := by
+    rw [← finsum_mem_coe_finset g S, finsum_mem_def]
+    refine finsum_le_finsum (S.finite_toSet.subset Set.support_indicator_subset) hfin_g fun ρ ↦ ?_
+    by_cases h : ρ ∈ S
+    · simp [h]
+    · simp [h, hg_nonneg ρ h]
+  have hre_finsum : (∑ᶠ ρ, (D ρ : ℂ) / (z - ρ)).re = ∑ᶠ ρ, g ρ := by
+    rw [← Complex.coe_reAddGroupHom, map_finsum Complex.reAddGroupHom hfin_D]
+    refine finsum_congr fun ρ ↦ ?_
+    simp [g, div_eq_mul_inv, ← Complex.ofReal_intCast]
+  have h1 : -(logDeriv f z - ∑ᶠ ρ, (D ρ : ℂ) / (z - ρ)).re ≤ B :=
+    (neg_le_abs _).trans ((Complex.abs_re_le_norm _).trans hmain)
+  rw [Complex.sub_re, hre_finsum] at h1
+  linarith

@@ -95,9 +95,7 @@ theorem not_differentiableAt_LFunctionTrivChar_one :
     Filter.BoundedAtFilter.meromorphicOrderAt_nonneg
       ((hd.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).isBigO_one ℝ)
   rw [meromorphicOrderAt_LFunctionTrivChar_one] at hnonneg
-  change ((0 : ℤ) : WithTop ℤ) ≤ ((-1 : ℤ) : WithTop ℤ) at hnonneg
-  rw [WithTop.coe_le_coe] at hnonneg
-  omega
+  exact not_lt_of_ge hnonneg (by simpa using WithTop.coe_lt_coe.mpr (by norm_num : (-1 : ℤ) < 0))
 
 /-- The continued Dirichlet `L`-function `χ.LFunction` is differentiable at `s` if and only if
 `s ≠ 1` or `χ ≠ 1`. -/

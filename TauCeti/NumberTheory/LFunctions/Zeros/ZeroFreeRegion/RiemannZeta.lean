@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Algebra.Order.Field.Basic
-import TauCeti.Analysis.Complex.LocalLogDeriv
-import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds
@@ -21,13 +18,14 @@ import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 De la Vallée Poussin proved that `ζ(s)` has no zeros in a region of the form
 `Re s ≥ 1 - c / log (|Im s| + 3)` away from its simple pole at `s = 1`.
 
-For `|Im s| ≥ 1`, Landau's local logarithmic-derivative lemma (proved via the Euler–Maclaurin
-bound on the disc of radius `1 / 2` centred at `9 / 8 + i t` in
-`TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds`) gives an upper bound of order
-`log (|t| + 3)` for `-Re (ζ′/ζ)`, retaining any nearby zero `ρ = β + i t` with a positive
-partial-fraction term `(σ - β)⁻¹` (and extending across `Re s > 9 / 8` via the Dirichlet series
-at `9 / 8`). Combined with the pole bound `-Re (ζ′/ζ(1 + η)) ≤ η⁻¹ + O(1)` and the `3–4–1`
-trigonometric inequality at `σ = 1 + 4 (1 - β)`, this forces `1 - β ≫ (log (|t| + 3))⁻¹`.
+For `|Im s| ≥ 1`, `TauCeti.exists_neg_re_logDeriv_riemannZeta_add_sub_inv_le` (proved in
+`TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds`) combines Landau's local
+logarithmic-derivative lemma on the disc of radius `1 / 2` centred at `9 / 8 + i t`—retaining the
+partial-fraction term `(σ - β)⁻¹` for `1 ≤ σ ≤ 9 / 8` and a same-height zero `ρ = β + i t` with
+`β ≥ 7 / 8`—with the right-tail bound `TauCeti.exists_neg_re_logDeriv_riemannZeta_le`, which drops
+the zero term via the Dirichlet series at `9 / 8` (and is also used directly at `σ + 2 i t`).
+Combined with the pole bound `-Re (ζ′/ζ(1 + η)) ≤ η⁻¹ + O(1)` and the `3–4–1` trigonometric
+inequality at `σ = 1 + 4 (1 - β)`, this forces `1 - β ≫ (log (|t| + 3))⁻¹`.
 
 For `|Im s| ≤ 1`, the regularized function `LFunctionTrivChar₁ 1` (equal to `(s - 1) ζ(s)` away
 from `s = 1`) is entire and nonvanishing along the segment `{1} × [-1, 1]`, so compactness separates
@@ -53,30 +51,11 @@ open Complex DirichletCharacter Metric Set
 
 namespace TauCeti.LFunctions
 
-private theorem exists_neg_re_logDeriv_riemannZeta_retained :
-    ∃ A : ℝ, 0 < A ∧ ∀ {σ : ℝ} {s : ℂ}, 1 ≤ σ → σ ≤ 9 / 8 → 1 ≤ |s.im| → 7 / 8 ≤ s.re →
-      riemannZeta s = 0 →
-        -(logDeriv riemannZeta (σ + s.im * I)).re + (σ - s.re)⁻¹ ≤
-          A * Real.log (|s.im| + 3) := by
-  obtain ⟨A, hA, hLandau⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_add_sum_le
-  refine ⟨A, hA, fun {σ s} hσ1 hσ2 ht hs7 hζ0 ↦ ?_⟩
-  have hs_lt1 : s.re < 1 :=
-    by_contra fun h ↦ riemannZeta_ne_zero_of_one_le_re (not_lt.mp h) hζ0
-  have hf : AnalyticOnNhd ℂ riemannZeta (closedBall ((9 / 8 : ℝ) + s.im * I) ((1 / 2 : ℝ) / 2)) :=
-    analyticOn_riemannZeta.mono fun w hw h1 ↦ by
-      subst h1
-      have him : |s.im| ≤ (1 / 2 : ℝ) / 2 := by
-        simpa using RCLike.abs_im_sub_le_of_mem_closedBall hw
-      linarith
-  exact hf.neg_re_logDeriv_add_sub_inv_le
-    (riemannZeta_ne_zero_of_one_le_re (by simp; norm_num))
-    (abs_le.mpr ⟨by linarith, by linarith⟩) hζ0 (hs_lt1.le.trans hσ1) (hLandau hσ1 hσ2 ht {s})
-
 private theorem exists_riemannZeta_ne_zero_of_one_le_abs_im :
     ∃ c : ℝ, 0 < c ∧ ∀ s : ℂ, 1 ≤ |s.im| → 1 - c / Real.log (|s.im| + 3) ≤ s.re →
       riemannZeta s ≠ 0 := by
   obtain ⟨A₁, hA₁, hfree⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_le
-  obtain ⟨A₂, hA₂, hret⟩ := exists_neg_re_logDeriv_riemannZeta_retained
+  obtain ⟨A₂, hA₂, hret⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_add_sub_inv_le
   obtain ⟨C₁, hC₁0, hpole0⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le
   have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
   set B : ℝ := 3 * C₁ / Real.log 3 + 4 * A₂ + 2 * A₁
@@ -96,7 +75,7 @@ private theorem exists_riemannZeta_ne_zero_of_one_le_abs_im :
       (add_le_add_right (TauCeti.le_div_mul_of_le hC₁0 hlog3 hlog_ge) _)
   have hzero_t : -(logDeriv riemannZeta (σ + s.im * I)).re + (5 * δ)⁻¹ ≤ A₂ * L := by
     have hsub : σ - s.re = 5 * δ := by simp only [σ, δ]; ring
-    simpa [hsub] using hret (σ := σ) (s := s) (by linarith) (by linarith) ht (by linarith) hζ0
+    simpa [hsub] using hret (σ := σ) (ρ := s) (by linarith) ht hζ0
   have hzero_2t : -(logDeriv riemannZeta (σ + 2 * s.im * I)).re ≤ 2 * A₁ * L := by
     have him : ((σ : ℂ) + 2 * s.im * I).im = 2 * s.im := by simp
     have h2 := hfree (s := (σ : ℂ) + 2 * s.im * I) (by simp; linarith)
@@ -132,7 +111,8 @@ private theorem exists_riemannZeta_ne_zero_of_abs_im_le_one :
       (s : ℂ) (hs1 : s ≠ 1) (hsim : |s.im| ≤ 1) (hsre : 1 - δ ≤ s.re) : riemannZeta s ≠ 0 := by
     rcases le_or_gt 1 s.re with h1 | h1
     · exact riemannZeta_ne_zero_of_one_le_re h1
-    have hsK : s ∈ K := ⟨⟨by linarith, h1.le⟩, abs_le.mp hsim⟩
+    have hsK : s ∈ K :=
+      Complex.mem_reProdIm.2 ⟨Set.mem_Icc.2 ⟨by linarith, h1.le⟩, Set.mem_Icc.2 (abs_le.mp hsim)⟩
     have hsZ : LFunctionTrivChar₁ 1 s ≠ 0 := fun h0 ↦ (hdisj s ⟨hsK, h0⟩).not_ge hsre
     rw [LFunctionTrivChar₁, Function.update_of_ne hs1, LFunctionTrivChar, LFunction_modOne_eq]
       at hsZ
@@ -141,7 +121,8 @@ private theorem exists_riemannZeta_ne_zero_of_abs_im_le_one :
   · exact ⟨1 / 2, by norm_num, hne_of_not_mem (1 / 2) le_rfl (by simp [hZe])⟩
   obtain ⟨z₀, hz₀Z, hz₀max⟩ := hZ.exists_isMaxOn hZne continuous_re.continuousOn
   have hz₀_lt1 : z₀.re < 1 :=
-    lt_of_le_of_ne hz₀Z.1.1.2 fun h1 ↦ hline z₀ h1.ge hz₀Z.2
+    lt_of_le_of_ne (Set.mem_Icc.1 (Complex.mem_reProdIm.1 hz₀Z.1).1).2 fun h1 ↦
+      hline z₀ h1.ge hz₀Z.2
   refine ⟨min (1 / 2) ((1 - z₀.re) / 2), by positivity,
     hne_of_not_mem _ (min_le_left _ _) fun z hz ↦ ?_⟩
   have hle : z.re ≤ z₀.re := hz₀max hz

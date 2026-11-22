@@ -88,7 +88,7 @@ theorem exists_neg_re_logDeriv_riemannZeta_one_add_le :
   have hle : (-logDeriv riemannZeta (1 + η) - (η : ℂ)⁻¹).re ≤ max 0 C₀ :=
     (le_abs_self _).trans <| (Complex.abs_re_le_norm _).trans <|
       (hC₀ η hη hη₁).trans (le_max_right _ _)
-  have hre : ((η : ℂ)⁻¹).re = η⁻¹ := by rw [← ofReal_inv]; rfl
+  have hre : ((η : ℂ)⁻¹).re = η⁻¹ := by rw [← ofReal_inv, ofReal_re]
   rw [sub_re, neg_re, hre] at hle
   linarith
 

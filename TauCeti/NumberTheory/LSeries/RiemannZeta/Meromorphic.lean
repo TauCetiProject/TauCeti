@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Meromorphy, pole order, and zeros of the Riemann zeta function
@@ -15,9 +15,9 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 Mathlib's `riemannZeta` is analytic away from `s = 1` (`analyticOn_riemannZeta`) and
 decomposes away from `1` as `(s - 1)⁻¹ + riemannZeta₀ s` with `riemannZeta₀` entire
 (`riemannZeta_eq_inv_sub_add`, `differentiable_riemannZeta₀`). Consequently `riemannZeta` is
-meromorphic on `ℂ`. Identifying `riemannZeta` with the level-one Dirichlet `L`-function via
-`DirichletCharacter.LFunction_modOne_eq` reads off its simple pole of order `-1` at `s = 1`
-and characterizes positive meromorphic order by `riemannZeta s = 0`.
+meromorphic on `ℂ`. Its residue at `s = 1` (`riemannZeta_residue_one`) reads off its simple pole
+of order `-1` at `s = 1`, and analyticity away from `1` together with `riemannZeta_one_ne_zero`
+characterizes positive meromorphic order by `riemannZeta s = 0`.
 
 ## Main results
 
@@ -51,18 +51,16 @@ theorem meromorphic_riemannZeta : Meromorphic riemannZeta := by
 @[simp]
 theorem meromorphicOrderAt_riemannZeta_one :
     meromorphicOrderAt riemannZeta 1 = -1 := by
-  simpa [DirichletCharacter.LFunctionTrivChar, DirichletCharacter.LFunction_modOne_eq] using
-    DirichletCharacter.meromorphicOrderAt_LFunctionTrivChar_one (N := 1)
+  simpa using (meromorphic_riemannZeta 1).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
+    one_ne_zero riemannZeta_residue_one
 
 /-- The Riemann zeta function has positive meromorphic order at `s` if and only if
 `riemannZeta s = 0`. -/
 @[simp]
 theorem meromorphicOrderAt_riemannZeta_pos_iff {s : ℂ} :
     0 < meromorphicOrderAt riemannZeta s ↔ riemannZeta s = 0 := by
-  have h := DirichletCharacter.meromorphicOrderAt_LFunction_pos_iff
-    (χ := (1 : DirichletCharacter ℂ 1)) (s := s)
-  rw [DirichletCharacter.LFunction_modOne_eq] at h
-  refine h.trans ⟨And.left, fun hs ↦ ⟨hs, .inl fun h1 ↦ ?_⟩⟩
-  exact riemannZeta_one_ne_zero (h1 ▸ hs)
+  rcases eq_or_ne s 1 with rfl | hs
+  · simp [meromorphicOrderAt_riemannZeta_one, riemannZeta_one_ne_zero]
+  · exact (analyticOn_riemannZeta s hs).meromorphicOrderAt_pos_iff_eq_zero
 
 end TauCeti
