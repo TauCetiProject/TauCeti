@@ -68,7 +68,7 @@ end RestrictScalars
 section RestrictScalarsRing
 
 variable (R : Type*) {A M N ι : Type*} [Semiring R] [Semiring A] [SMul R A]
-  [AddCommGroup M] [AddCommGroup N] [Module R M] [Module A M] [Module R N] [Module A N]
+  [AddCommMonoid M] [AddCommGroup N] [Module R M] [Module A M] [Module R N] [Module A N]
   [IsScalarTower R A M] [IsScalarTower R A N]
 
 @[simp] theorem restrictScalars_neg (f : M [⋀^ι]→ₗ[A] N) :
