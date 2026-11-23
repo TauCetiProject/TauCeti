@@ -424,6 +424,25 @@ private theorem locallyIntegrableOn_differentiatedCR_coord {p q : ℝ≥0∞} (h
     ((hDSp.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) v)).locallyIntegrableOn_clm_apply
       hξ hpq Ω.isOpen.isLocallyClosed)
 
+/-- Testing the almost-everywhere equation `Dξ 1 + J (Dξ I) + S ξ = η` against a test function
+`ψ ∈ 𝓓(Ω, V)` splits `∫ ⟪ψ, η⟫` into the sum of the three inner-product integrals. -/
+theorem integral_inner_add_eq_of_ae_cauchyRiemann
+    {J S : ℂ → V →L[ℝ] V} {ξ η : ℂ → V} {Dξ : ℂ → ℂ →L[ℝ] V} (ψ : 𝓓(Ω, V))
+    (iD1 : Integrable (fun z => ⟪(ψ : ℂ → V) z, Dξ z 1⟫_ℝ))
+    (iJD : Integrable (fun z => ⟪(ψ : ℂ → V) z, J z (Dξ z I)⟫_ℝ))
+    (iSξ : Integrable (fun z => ⟪(ψ : ℂ → V) z, S z (ξ z)⟫_ℝ))
+    (heq : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z) :
+    (∫ z, ⟪(ψ : ℂ → V) z, Dξ z 1⟫_ℝ) +
+        (∫ z, ⟪(ψ : ℂ → V) z, J z (Dξ z I)⟫_ℝ) +
+        (∫ z, ⟪(ψ : ℂ → V) z, S z (ξ z)⟫_ℝ) =
+      ∫ z, ⟪(ψ : ℂ → V) z, η z⟫_ℝ := by
+  rw [← integral_add iD1 iJD]
+  refine (integral_add (iD1.add iJD) iSξ).symm.trans
+    (integral_congr_ae ((ae_imp_of_ae_restrict heq).mono fun z hz => ?_))
+  by_cases hzΩ : z ∈ (Ω : Set ℂ)
+  · simp only [Pi.add_apply, ← inner_add_right, hz hzΩ]
+  · simp [image_eq_zero_of_notMem_tsupport fun h => hzΩ (ψ.tsupport_subset h)]
+
 /-- Common weak directional differentiation of `∂_s ξ + J ∂_t ξ + S ξ = η` along `v ∈ ℂ` against a
 test function `θ ∈ 𝓓(Ω, V)`. -/
 private theorem integral_lineDeriv_crEquation [FiniteDimensional ℝ V] {p q : ℝ≥0∞}
@@ -464,12 +483,11 @@ private theorem integral_lineDeriv_crEquation [FiniteDimensional ℝ V] {p q : �
       (∫ z, ⟪fderiv ℝ (θ : ℂ → V) z v, J z (Dξ z I)⟫_ℝ) +
       (∫ z, ⟪fderiv ℝ (θ : ℂ → V) z v, S z (ξ z)⟫_ℝ) =
       ∫ z, ⟪fderiv ℝ (θ : ℂ → V) z v, η z⟫_ℝ := by
-    rw [← integral_add iD1 iJD]
-    refine (integral_add (iD1.add iJD) iSξ).symm.trans
-      (integral_congr_ae ((ae_imp_of_ae_restrict heq).mono fun z hz => ?_))
-    by_cases hzΩ : z ∈ (Ω : Set ℂ)
-    · simp only [Pi.add_apply, ← inner_add_right, hz hzΩ]
-    · simp [fderiv_of_notMem_tsupport ℝ fun h => hzΩ (θ.tsupport_subset h)]
+    simpa only [TestFunction.coe_lineDerivOp_eq_fderiv] using
+      integral_inner_add_eq_of_ae_cauchyRiemann (∂_{v} θ)
+        (by simpa only [TestFunction.coe_lineDerivOp_eq_fderiv] using iD1)
+        (by simpa only [TestFunction.coe_lineDerivOp_eq_fderiv] using iJD)
+        (by simpa only [TestFunction.coe_lineDerivOp_eq_fderiv] using iSξ) heq
   have hS_ibp := hSξ.integral_inner_lineDeriv_eq_neg θ
   have hη_ibp := (hDη.hasWeakLineDerivOn v).integral_inner_lineDeriv_eq_neg θ
   simp only [TestFunction.lineDeriv_eq_fderiv, inner_add_right, integral_add iDSξ iSD]
@@ -610,9 +628,9 @@ theorem isWeakCRSolution_differentiated [FiniteDimensional ℝ V] {p q : ℝ≥0
   have hc₂ : IsSobolevCRCoefficients p Ω (fun z => (J z).withLpProdMap 2 (J z))
       (fun z => (ContinuousLinearMap.withLpDiagL 2 ℝ V V).comp (DJ z))
       (fun z => e.arrowCongr e (differentiatedCRCoefficient (S z) (DJ z))) :=
-    ⟨hDJ₂, hJ₂.memLpLoc, memWkpLoc_zero_iff.1 (hJ₂.memWkpLoc_of_hasWeakFDerivOn hDJ₂),
-      (memWkpLoc_zero_iff.1 ((memWkpLoc_zero_iff.2 hS.memLpLoc).differentiatedCRCoefficient
-        hJ hDJ)).clm_comp (e.arrowCongr e).toContinuousLinearMap⟩
+    IsSobolevCRCoefficients.of_memWkpLoc hJ₂ hDJ₂
+      ((memWkpLoc_zero_iff.1 ((memWkpLoc_zero_iff.2 hS.memLpLoc).differentiatedCRCoefficient
+        hJ hDJ)).clm_comp (e.arrowCongr e).toContinuousLinearMap)
   have hΞq : MemLpLoc q Ω (fun z => WithLp.toLp 2 (Dξ z 1, Dξ z I)) := by
     simpa only [e, WithLp.prodContinuousLinearEquiv_symm_apply] using
       e.comp_memLpLoc_iff.2 (memWkpLoc_zero_iff.1 (hξ.memWkpLoc_partials_of_hasWeakFDerivOn hDξ))
@@ -635,11 +653,10 @@ theorem isWeakCRSolution_differentiated [FiniteDimensional ℝ V] {p q : ℝ≥0
         ENNReal.inv_ne_top.2 (tsub_pos_of_lt (ENNReal.inv_lt_one.2 hp)).ne', le_rfl, le_top, ?_⟩
       rw [inv_inv, add_tsub_cancel_of_le (ENNReal.inv_le_one.2 hp.le)]
     · exact ⟨p, q, hpt, hqt, le_rfl, le_rfl, hpq⟩
-  have hJ₀ := hJ.mono_exponent hp₀p
   have hS₀ := hS.mono_exponent hp₀p
   have hξ₀ := hξ.mono_exponent hq₀q
   have hc₀ : IsSobolevCRCoefficients p₀ Ω J DJ S :=
-    ⟨hDJ, hJ₀.memLpLoc, memWkpLoc_zero_iff.1 (hJ₀.memWkpLoc_of_hasWeakFDerivOn hDJ), hS₀.memLpLoc⟩
+    (IsSobolevCRCoefficients.of_memWkpLoc hJ hDJ hS.memLpLoc).mono_exponent hp₀p
   exact isWeakCRSolution_iff.2 ⟨hΞq, hHloc, fun Φ =>
     ⟨hc₂.integrable_inner_crFormalAdjoint hpq hΞq Φ,
       integral_inner_crFormalAdjoint_differentiated_aux hp₀ hq₀ hp₀q₀ hc₀ hS₀ hDS hξ₀ hDξ hDη heq

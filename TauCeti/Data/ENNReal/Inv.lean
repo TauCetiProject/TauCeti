@@ -54,6 +54,7 @@ is at most `2 b`.
   nonzero.
 * `ENNReal.exists_nnreal_lt_and_le_and_inv_add_inv_lt_one`: truncates `a < p ≤ ∞` above a
   finite `r ≤ p` while preserving `p₀⁻¹ + q⁻¹ < 1`.
+* `ENNReal.inv_add_inv_two_lt_one_iff`: `p⁻¹ + 2⁻¹ < 1 ↔ 2 < p`.
 -/
 
 public section
@@ -294,5 +295,12 @@ theorem exists_nnreal_lt_and_le_and_inv_add_inv_lt_one {a : ℝ≥0} {p q r : �
       calc (p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1 - q⁻¹ + q⁻¹ :=
             ENNReal.add_lt_add_right (lt_of_lt_of_le hq_lt le_rfl).ne_top hp₀_lt
         _ = 1 := tsub_add_cancel_of_le hq_lt.le
+
+/-- In `ℝ≥0∞`, `p⁻¹ + 2⁻¹ < 1` holds if and only if `2 < p`. -/
+theorem inv_add_inv_two_lt_one_iff {p : ℝ≥0∞} : p⁻¹ + 2⁻¹ < 1 ↔ 2 < p :=
+  ⟨fun h => ENNReal.inv_lt_inv.1 ((ENNReal.add_lt_add_iff_right (ENNReal.inv_ne_top.2
+      two_ne_zero)).1 (h.trans_eq ENNReal.inv_two_add_inv_two.symm)),
+    fun hp => (ENNReal.add_lt_add_right (ENNReal.inv_ne_top.2 two_ne_zero)
+      (ENNReal.inv_lt_inv.2 hp)).trans_eq ENNReal.inv_two_add_inv_two⟩
 
 end ENNReal

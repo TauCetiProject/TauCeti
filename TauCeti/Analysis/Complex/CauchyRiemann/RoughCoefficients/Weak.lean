@@ -58,7 +58,8 @@ for the statements here.
   `ξ` and continuous `η`, the weak equation with `DJ = fderiv ℝ J` is the classical equation
   `∂_s ξ + J ∂_t ξ + S ξ = η` at every point of `Ω`.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_deriv_apply`: the directional weak derivatives
-  `DJ · e` of the coefficient are locally `Lᵖ`; `TauCeti.IsSobolevCRCoefficients.add_zeroth`
+  `DJ · e` of the coefficient are locally `Lᵖ`; `TauCeti.IsSobolevCRCoefficients.of_memWkpLoc`
+  packages `W^{1,p}_loc` / `Lᵖ_loc` coefficients and `TauCeti.IsSobolevCRCoefficients.add_zeroth`
   changes the zeroth-order coefficient by a locally `Lᵖ` field.
 * Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`),
   restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), changing the exponent
@@ -250,6 +251,14 @@ theorem IsSobolevCRCoefficients.mono_exponent (hc : IsSobolevCRCoefficients p Ω
     (hrp : r ≤ p) : IsSobolevCRCoefficients r Ω J DJ S :=
   ⟨hc.hasWeakFDerivOn, hc.memLpLoc_coeff.mono_exponent hrp,
     hc.memLpLoc_deriv.mono_exponent hrp, hc.memLpLoc_zeroth.mono_exponent hrp⟩
+
+omit [CompleteSpace V] in
+/-- Coefficients in `W^{1,p}_loc(Ω)` (for `J`) and `Lᵖ_loc(Ω)` (for `S`) form Sobolev
+Cauchy–Riemann coefficients at exponent `p`. -/
+theorem IsSobolevCRCoefficients.of_memWkpLoc
+    (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ) (hS : MemLpLoc p Ω S) :
+    IsSobolevCRCoefficients p Ω J DJ S :=
+  ⟨hDJ, hJ.memLpLoc, memWkpLoc_zero_iff.1 (hJ.memWkpLoc_of_hasWeakFDerivOn hDJ), hS⟩
 
 section Holder
 
