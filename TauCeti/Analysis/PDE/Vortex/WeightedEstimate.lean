@@ -696,13 +696,8 @@ theorem exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le
         K * ∫ z, Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2 *
           ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ := by
   have hx₁ : ContDiff ℝ 1 x := hx.of_le (by norm_num)
-  -- The covariant derivative decays exponentially, so it tends to zero at infinity.
-  have hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0) := by
-    obtain ⟨K, hK⟩ := exists_norm_covariantDerivative_le_mul_exp
-      (contDiff_euclidean.1 hx 0).continuous (contDiff_euclidean.1 hx 2)
-      (contDiff_euclidean.1 hx 3) hsol hlim (c := 1 / 4) (by norm_num)
-    refine squeeze_zero_norm (fun z ↦ (hK z 1).trans_eq (by rw [norm_one, mul_one])) ?_
-    simpa using (tendsto_exp_neg_mul_norm_cocompact (E := ℂ) (c := 1 / 4) (by norm_num)).const_mul K
+  have hcov := tendsto_covariantDerivative_cocompact (contDiff_euclidean.1 hx 0).continuous
+    (contDiff_euclidean.1 hx 2) (contDiff_euclidean.1 hx 3) hsol hlim 1
   obtain ⟨K₁, hK₁, hG⟩ :=
     exists_integral_gaugeFixedGradientDensity_fun_smul_le (μ := μ) hx₁ hsol hlim hcov
   obtain ⟨K₂, hK₂, hA⟩ :=

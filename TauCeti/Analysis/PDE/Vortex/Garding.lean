@@ -140,13 +140,6 @@ theorem gaugeFixedGradientDensity_nonneg (x y : ℂ → EuclideanSpace ℝ (Fin 
   rw [gaugeFixedGradientDensity_def]
   positivity
 
-/-- The squared gradient of a function on `ℂ` is the sum of its squared partial derivatives along
-`1` and `I`. -/
-private theorem norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq (f : ℂ → ℝ) (z : ℂ) :
-    ‖∇ f z‖ ^ 2 = fderiv ℝ f z 1 ^ 2 + fderiv ℝ f z I ^ 2 := by
-  rw [← Complex.orthonormalBasisOneI.sum_sq_inner_left]
-  simp [Fin.sum_univ_two, inner_gradient_left]
-
 /-- The covariant gradient density controls the flat gradient of a variation `y`, up to the term
 `2 (A₁² + A₂²) ‖y z‖²` given by the connection coefficients of the field, where
 `a = i (A₁ ds + A₂ dt)`. -/
