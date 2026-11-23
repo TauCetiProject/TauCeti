@@ -1,0 +1,181 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.DiophantineApproximation.ContinuedFractions.Basic
+
+/-!
+# Convergents are best approximations
+
+Let `pₖ / qₖ = ξ.convergent k` be the convergents of a real number `ξ`, in lowest terms.
+This file proves Lagrange's best approximation property: no `q` with `0 < |q| < qₙ₊₁` brings `q ξ`
+closer to an integer than `qₙ ξ` comes to `pₙ`,
+
+`|qₙ ξ - pₙ| ≤ |q ξ - p|` for all integers `p` and `q` with `0 < |q| < qₙ₊₁`.
+
+The proof writes `(p, q)` as an integer combination `a (pₙ, qₙ) + b (pₙ₊₁, qₙ₊₁)`, which the
+determinant identity `pₙ qₙ₊₁ - pₙ₊₁ qₙ = ±1` allows. Take `q > 0`, replacing `(p, q)` by
+`(-p, -q)` if necessary. Then `0 < q < qₙ₊₁` forces `a ≠ 0` and `a b ≤ 0`, and the errors
+`qₙ ξ - pₙ` and `qₙ₊₁ ξ - pₙ₊₁` have opposite signs, so the two terms of
+`q ξ - p = a (qₙ ξ - pₙ) + b (qₙ₊₁ ξ - pₙ₊₁)` do not cancel. Once the continued fraction has
+terminated, `qₙ ξ - pₙ = 0` and there is nothing to prove; rational `ξ` need no separate statement.
+
+## Main results
+
+* `Real.neg_one_pow_mul_sub_convergent_pos`: before termination, the error `ξ - pₙ / qₙ` has sign
+  `(-1) ^ n`.
+* `Real.neg_one_pow_mul_den_convergent_mul_sub_num_convergent_nonneg`: the error `qₙ ξ - pₙ` has
+  sign `(-1) ^ n` or vanishes.
+* `Real.num_convergent_mul_den_convergent_succ_sub`: the determinant identity for the reduced
+  convergents.
+* `Real.abs_den_convergent_mul_sub_num_convergent_le`: the best approximation property.
+* `Real.abs_den_convergent_mul_sub_num_convergent_le_norm`: the same, with the distance of
+  `q ξ` to the nearest integer measured in `UnitAddCircle`.
+
+## References
+
+* A. Ya. Khinchin, *Continued Fractions*, Theorem 16.
+-/
+
+public section
+
+open GenContFract
+open GenContFract (of)
+
+namespace Real
+
+/-- Before the continued fraction of `ξ` terminates, the error `ξ - pₙ / qₙ` of its `n`-th
+convergent has sign `(-1) ^ n`. -/
+theorem neg_one_pow_mul_sub_convergent_pos (ξ : ℝ) {n : ℕ} (hn : ¬(of ξ).TerminatedAt n) :
+    0 < (-1) ^ n * (ξ - ξ.convergent n) := by
+  obtain ⟨gp, hs⟩ : ∃ gp, (of ξ).s.get? n = some gp := Option.ne_none_iff_exists'.1 hn
+  obtain ⟨ifp', hstream', -⟩ := IntFractPair.exists_succ_get?_stream_of_gcf_of_get?_eq_some hs
+  obtain ⟨ifp, hstream, hfr, -⟩ := IntFractPair.succ_nth_stream_eq_some_iff.1 hstream'
+  have hB : 0 < ((of ξ).contsAux (n + 1)).b :=
+    (fib_le_of_contsAux_b (v := ξ) (n := n + 1)
+      (Or.inr (mt (terminated_stable (n.sub_le 1)) hn))).trans_lt'
+      (mod_cast Nat.fib_pos.2 n.succ_pos)
+  have hpB : 0 ≤ ((of ξ).contsAux n).b := zero_le_of_contsAux_b
+  have hfr' : 0 < ifp.fr⁻¹ :=
+    inv_pos.2 ((IntFractPair.nth_stream_fr_nonneg hstream).lt_of_ne' hfr)
+  rw [← Real.convs_eq_convergent, sub_convs_eq hstream, ite_eq_right hfr, mul_div_assoc', ← pow_add,
+    ← two_mul, pow_mul, neg_one_sq, one_pow]
+  positivity
+
+/-- The determinant identity `pₙ qₙ₊₁ - qₙ pₙ₊₁ = (-1) ^ (n + 1)` for the reduced convergents
+of `ξ`, before its continued fraction terminates. -/
+theorem num_convergent_mul_den_convergent_succ_sub (ξ : ℝ) {n : ℕ} (hn : ¬(of ξ).TerminatedAt n) :
+    (ξ.convergent n).num * (ξ.convergent (n + 1)).den -
+      (ξ.convergent n).den * (ξ.convergent (n + 1)).num = (-1) ^ (n + 1) := by
+  have h := (SimpContFract.of ξ).determinant hn
+  have h' : (of ξ).nums n * (of ξ).dens (n + 1) - (of ξ).dens n * (of ξ).nums (n + 1) =
+      (-1) ^ (n + 1) := h
+  rw [← Real.num_convergent, ← Real.num_convergent, ← Real.den_convergent,
+    ← Real.den_convergent] at h'
+  exact_mod_cast h'
+
+/-- Before the continued fraction of `ξ` terminates, `qₙ ξ - pₙ` has sign `(-1) ^ n`. -/
+theorem neg_one_pow_mul_den_convergent_mul_sub_num_convergent_pos (ξ : ℝ) {n : ℕ}
+    (hn : ¬(of ξ).TerminatedAt n) :
+    0 < (-1) ^ n * ((ξ.convergent n).den * ξ - (ξ.convergent n).num) := by
+  have hQ : ((ξ.convergent n).den : ℝ) ≠ 0 := mod_cast (ξ.convergent n).pos.ne'
+  have h := mul_pos (show (0 : ℝ) < (ξ.convergent n).den by positivity)
+    (neg_one_pow_mul_sub_convergent_pos ξ hn)
+  rw [Rat.cast_def] at h
+  convert h using 1
+  field_simp
+
+/-- The error `qₙ ξ - pₙ` vanishes once the continued fraction of `ξ` has terminated. -/
+theorem den_convergent_mul_sub_num_convergent_eq_zero (ξ : ℝ) {n : ℕ}
+    (hn : (of ξ).TerminatedAt n) :
+    (ξ.convergent n).den * ξ - (ξ.convergent n).num = 0 := by
+  have h := of_correctness_of_terminatedAt hn
+  rw [convs_eq_convergent, Rat.cast_def] at h
+  have hQ : ((ξ.convergent n).den : ℝ) ≠ 0 := mod_cast (ξ.convergent n).pos.ne'
+  have h' := (eq_div_iff hQ).1 h
+  linarith
+
+/-- The error `qₙ ξ - pₙ` has sign `(-1) ^ n` or vanishes. -/
+theorem neg_one_pow_mul_den_convergent_mul_sub_num_convergent_nonneg (ξ : ℝ) (n : ℕ) :
+    0 ≤ (-1) ^ n * ((ξ.convergent n).den * ξ - (ξ.convergent n).num) := by
+  by_cases hn : (of ξ).TerminatedAt n
+  · rw [den_convergent_mul_sub_num_convergent_eq_zero ξ hn, mul_zero]
+  · exact (neg_one_pow_mul_den_convergent_mul_sub_num_convergent_pos ξ hn).le
+
+/-- The best approximation property for a positive denominator `q < qₙ₊₁`. -/
+private theorem abs_den_convergent_mul_sub_num_convergent_le_of_pos (ξ : ℝ) (n : ℕ) {q : ℤ}
+    (hq : 0 < q) (hq' : q < (ξ.convergent (n + 1)).den) (p : ℤ) :
+    |(ξ.convergent n).den * ξ - (ξ.convergent n).num| ≤ |q * ξ - p| := by
+  by_cases hn : (of ξ).TerminatedAt n
+  · rw [den_convergent_mul_sub_num_convergent_eq_zero ξ hn, abs_zero]
+    exact abs_nonneg _
+  have hdet := num_convergent_mul_den_convergent_succ_sub ξ hn
+  have hD : ((-1 : ℤ) ^ (n + 1)) * (-1) ^ (n + 1) = 1 := by rw [← mul_pow]; simp
+  -- The coordinates of `(p, q)` in the basis `(pₙ, qₙ)`, `(pₙ₊₁, qₙ₊₁)`.
+  obtain ⟨a, b, hqab, hpab⟩ : ∃ a b : ℤ,
+      q = a * (ξ.convergent n).den + b * (ξ.convergent (n + 1)).den ∧
+        p = a * (ξ.convergent n).num + b * (ξ.convergent (n + 1)).num :=
+    ⟨(-1) ^ (n + 1) * (p * (ξ.convergent (n + 1)).den - q * (ξ.convergent (n + 1)).num),
+      (-1) ^ (n + 1) * (q * (ξ.convergent n).num - p * (ξ.convergent n).den),
+      by linear_combination (-q) * hD - q * (-1) ^ (n + 1) * hdet,
+      by linear_combination (-p) * hD - p * (-1) ^ (n + 1) * hdet⟩
+  -- The signs of the errors `εₖ = qₖ ξ - pₖ` alternate; `εₙ₊₁` vanishes after termination.
+  set s : ℝ := (-1) ^ n
+  have hx := neg_one_pow_mul_den_convergent_mul_sub_num_convergent_pos ξ hn
+  have hy : s * ((ξ.convergent (n + 1)).den * ξ - (ξ.convergent (n + 1)).num) ≤ 0 := by
+    have := neg_one_pow_mul_den_convergent_mul_sub_num_convergent_nonneg ξ (n + 1)
+    rw [pow_succ] at this
+    linarith
+  have hqR : (q : ℝ) = a * (ξ.convergent n).den + b * (ξ.convergent (n + 1)).den := by
+    exact_mod_cast hqab
+  have hpR : (p : ℝ) = a * (ξ.convergent n).num + b * (ξ.convergent (n + 1)).num := by
+    exact_mod_cast hpab
+  have herr : s * (q * ξ - p) =
+      a * (s * ((ξ.convergent n).den * ξ - (ξ.convergent n).num)) +
+        b * (s * ((ξ.convergent (n + 1)).den * ξ - (ξ.convergent (n + 1)).num)) := by
+    rw [hpR, hqR]; ring
+  have hQ : (0 : ℤ) < (ξ.convergent n).den := mod_cast (ξ.convergent n).pos
+  have hs : |s| = 1 := by simp [s]
+  have habs : ∀ x : ℝ, |x| = |s * x| := fun x ↦ by rw [abs_mul, hs, one_mul]
+  rw [habs, habs (_ - _), abs_of_pos hx]
+  rcases le_or_gt b 0 with hb | hb
+  · -- `b ≤ 0` forces `a ≥ 1`, and both terms are at least `0`, the first at least `εₙ`.
+    have ha : 1 ≤ a := by nlinarith [hQ, hq']
+    have ha' : (1 : ℝ) ≤ a := mod_cast ha
+    have hb' : (b : ℝ) ≤ 0 := mod_cast hb
+    refine le_abs.2 (Or.inl ?_)
+    rw [herr]
+    nlinarith
+  · -- `b ≥ 1` forces `a ≤ -1`, and both terms are at most `0`, the first at most `-εₙ`.
+    have ha : a ≤ -1 := by nlinarith [hQ, hq']
+    have ha' : (a : ℝ) ≤ -1 := mod_cast ha
+    have hb' : (0 : ℝ) < b := mod_cast hb
+    refine le_abs.2 (Or.inr ?_)
+    rw [herr]
+    nlinarith
+
+/-- **Lagrange's best approximation property.** For a real `ξ` with convergents `pₖ / qₖ`, no
+integers `p` and `q` with `0 < |q| < qₙ₊₁` satisfy `|q ξ - p| < |qₙ ξ - pₙ|`. -/
+theorem abs_den_convergent_mul_sub_num_convergent_le (ξ : ℝ) (n : ℕ) {q : ℤ}
+    (hq : q ≠ 0) (hq' : q.natAbs < (ξ.convergent (n + 1)).den) (p : ℤ) :
+    |(ξ.convergent n).den * ξ - (ξ.convergent n).num| ≤ |q * ξ - p| := by
+  rcases hq.lt_or_gt with h | h
+  · have := abs_den_convergent_mul_sub_num_convergent_le_of_pos ξ n (q := -q) (by omega)
+      (by omega) (-p)
+    rwa [show ((-q : ℤ) : ℝ) * ξ - ((-p : ℤ) : ℝ) = -(q * ξ - p) by push_cast; ring,
+      abs_neg] at this
+  · exact abs_den_convergent_mul_sub_num_convergent_le_of_pos ξ n h (by omega) p
+
+/-- **Lagrange's best approximation property**, measured in `UnitAddCircle`: for `0 < q < qₙ₊₁`,
+the point `q ξ` is at least as far from an integer as `qₙ ξ` is from `pₙ`. -/
+theorem abs_den_convergent_mul_sub_num_convergent_le_norm (ξ : ℝ) (n : ℕ) {q : ℕ}
+    (hq : q ≠ 0) (hq' : q < (ξ.convergent (n + 1)).den) :
+    |(ξ.convergent n).den * ξ - (ξ.convergent n).num| ≤ ‖((q * ξ : ℝ) : UnitAddCircle)‖ := by
+  rw [UnitAddCircle.norm_eq]
+  exact_mod_cast abs_den_convergent_mul_sub_num_convergent_le ξ n (q := q) (mod_cast hq)
+    (by simpa using hq') (round ((q : ℝ) * ξ))
+
+end Real
