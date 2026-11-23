@@ -36,7 +36,9 @@ and conjugate the smooth framed gauge group to itself (`translateFramedVortex_sm
 to the moduli space (`TauCeti.Vortex.translateFramedVortexModuli`,
 `TauCeti.Vortex.rotateFramedVortexModuli`), where the divisor intertwines them with the maps
 `D ↦ D - a` and `D ↦ u⁻¹ D` of `Sym ℂ m` (`framedVortexModuliEquiv_translateFramedVortexModuli`,
-`framedVortexModuliEquiv_rotateFramedVortexModuli`) and the composition laws persist
+`framedVortexModuliEquiv_rotateFramedVortexModuli`, and through the inverse identification
+`translateFramedVortexModuli_framedVortexModuliEquiv_symm`,
+`rotateFramedVortexModuli_framedVortexModuliEquiv_symm`) and the composition laws persist
 (`translateFramedVortexModuli_translateFramedVortexModuli`,
 `rotateFramedVortexModuli_rotateFramedVortexModuli`,
 `rotateFramedVortexModuli_translateFramedVortexModuli`).
@@ -310,6 +312,22 @@ theorem framedVortexModuliEquiv_rotateFramedVortexModuli (u : Circle)
   Quotient.inductionOn' q fun x ↦ by
     rw [rotateFramedVortexModuli_mk, framedVortexModuliEquiv_mk, framedVortexModuliEquiv_mk,
       framedVortexDivisor_rotateFramedVortex]
+
+/-- Translating the moduli point with divisor `D` by `a` gives the point with divisor `D - a`. -/
+@[simp]
+theorem translateFramedVortexModuli_framedVortexModuliEquiv_symm (a : ℂ) (D : Sym ℂ m) :
+    translateFramedVortexModuli a ((framedVortexModuliEquiv one_pos m).symm D) =
+      (framedVortexModuliEquiv one_pos m).symm (D.map (· - a)) := by
+  rw [Equiv.eq_symm_apply, framedVortexModuliEquiv_translateFramedVortexModuli,
+    Equiv.apply_symm_apply]
+
+/-- Rotating the moduli point with divisor `D` by `u` gives the point with divisor `u⁻¹ D`. -/
+@[simp]
+theorem rotateFramedVortexModuli_framedVortexModuliEquiv_symm (u : Circle) (D : Sym ℂ m) :
+    rotateFramedVortexModuli u ((framedVortexModuliEquiv one_pos m).symm D) =
+      (framedVortexModuliEquiv one_pos m).symm (D.map ((u : ℂ)⁻¹ * ·)) := by
+  rw [Equiv.eq_symm_apply, framedVortexModuliEquiv_rotateFramedVortexModuli,
+    Equiv.apply_symm_apply]
 
 @[simp]
 theorem translateFramedVortexModuli_zero
