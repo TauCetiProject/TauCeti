@@ -8,11 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.RingTheory.RegularLocalRing.Locus
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
-import TauCeti.RingTheory.RegularLocalRing.Smooth
-import TauCeti.RingTheory.Smooth.Field
+import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 import TauCeti.RingTheory.Smooth.Regular
 
 /-!
@@ -25,11 +23,13 @@ Noetherian scheme is regular exactly when its regular locus is everything.
 
 For `X` locally of finite type over a perfect field `k`, the regular locus is the smooth locus of
 the structure morphism `X ⟶ Spec k` (The Stacks Project, Section 10.140).
-On an affine open `U` containing `x`, the local ring of `X` at `x` is the localization of `Γ(X, U)`
-at the prime of `x`. If it is formally smooth over `k` it is regular
-(`TauCeti.IsRegularLocalRing.of_formallySmooth`), and conversely a regular local ring essentially
-of finite type over `k` is formally smooth over `k`, since its residue field is
-(`TauCeti.formallySmooth_of_isRegularLocalRing`). Perfectness cannot be dropped: over
+For any morphism `f : X ⟶ Y` locally of finite presentation and smooth at `x`, the local ring of
+`X` at `x` is essentially of finite type and formally smooth over the local ring of `Y` at `f x`,
+so it is regular when the latter is (`TauCeti.IsRegularLocalRing.of_formallySmooth`). Conversely,
+over a perfect field every regular point is smooth
+(`AlgebraicGeometry.Scheme.Hom.mem_smoothLocus_of_isRegularLocalRing_stalk`), since a regular local
+ring essentially of finite type over `k` is formally smooth over `k`. Perfectness cannot be
+dropped: over
 `𝔽_p(t)` with `p` an odd prime, the curve `y ^ 2 = x ^ p - t` is regular at its point `y = 0`
 but not smooth there. In particular the regular locus over a perfect field is open, which fails
 for general locally Noetherian schemes (Stacks, Section 15.48).
@@ -38,6 +38,8 @@ for general locally Noetherian schemes (Stacks, Section 15.48).
 
 * `AlgebraicGeometry.Scheme.regularLocus`: the points of `X` with regular local ring.
 * `AlgebraicGeometry.Scheme.regularLocus_Spec`: on `Spec R` it is the regular locus of `R`.
+* `AlgebraicGeometry.Scheme.Hom.mem_regularLocus_of_mem_smoothLocus`: a point at which a morphism
+  is smooth and whose image is regular is regular.
 * `AlgebraicGeometry.Scheme.Hom.preimage_regularLocus`: flat, formally unramified morphisms locally
   of finite type (for instance étale morphisms and open immersions) identify regular loci.
 * `TauCeti.AlgebraicGeometry.isRegular_iff_regularLocus_eq_univ`: a locally Noetherian scheme is
@@ -92,31 +94,27 @@ theorem Hom.preimage_regularLocus {Y : Scheme.{u}} (f : X ⟶ Y) [Flat f] [Forma
   ext x
   exact f.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified x
 
+/-- **Smooth points over regular points are regular.** Let `f : X ⟶ Y` be locally of finite
+presentation and smooth at `x`. If the local ring of `Y` at `f x` is regular, then so is the local
+ring of `X` at `x`: it is essentially of finite type and formally smooth over the local ring of
+`Y` at `f x`. -/
+theorem Hom.mem_regularLocus_of_mem_smoothLocus {Y : Scheme.{u}} (f : X ⟶ Y)
+    [LocallyOfFinitePresentation f] {x : X} (hx : x ∈ f.smoothLocus)
+    (hfx : f x ∈ Y.regularLocus) : x ∈ X.regularLocus := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have := f.essFiniteType_stalkMap_toAlgebra x
+  have : Algebra.FormallySmooth (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := hx
+  have : IsRegularLocalRing (Y.presheaf.stalk (f x)) := hfx
+  exact IsRegularLocalRing.of_formallySmooth (R := Y.presheaf.stalk (f x))
+
 /-- **Regular points over a perfect field are smooth points.** Let `k` be a perfect field and
 `f : X ⟶ Spec k` locally of finite type. The local ring of `X` at `x` is regular exactly when `f`
 is smooth at `x` (The Stacks Project, Section 10.140). -/
 theorem Hom.mem_regularLocus_iff_mem_smoothLocus {k : Type u} [Field k] [PerfectField k]
     (f : X ⟶ Spec (.of k)) [LocallyOfFiniteType f] {x : X} :
-    x ∈ X.regularLocus ↔ x ∈ f.smoothLocus := by
-  obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top x)
-  rw [f.mem_smoothLocus_iff_isSmoothAt (U := ⟨U, hU⟩) hxU]
-  let φ := (Scheme.ΓSpecIso (.of k)).inv ≫ f.appLE ⊤ U le_top
-  let := φ.hom.toAlgebra
-  have : Algebra.FiniteType k Γ(X, U) := f.finiteType_ΓSpecIso_inv_comp_appLE hU
-  let q := (hU.primeIdealOf ⟨x, hxU⟩).asIdeal
-  -- the local ring of `X` at `x` is the localization of `Γ(X, U)` at `q`
-  let := TopCat.Presheaf.algebra_section_stalk X.presheaf ⟨x, hxU⟩
-  have := hU.isLocalization_stalk ⟨x, hxU⟩
-  let e : Localization.AtPrime q ≃+* X.presheaf.stalk x :=
-    (IsLocalization.algEquiv q.primeCompl (Localization.AtPrime q) _).toRingEquiv
-  rw [mem_regularLocus]
-  refine ⟨fun _ ↦ ?_, fun h ↦ ?_⟩
-  · have : IsRegularLocalRing (Localization.AtPrime q) := .of_ringEquiv e.symm
-    exact formallySmooth_of_isRegularLocalRing
-  · have : Algebra.FormallySmooth k (Localization.AtPrime q) := h
-    have : IsRegularLocalRing (Localization.AtPrime q) :=
-      IsRegularLocalRing.of_formallySmooth (R := k)
-    exact .of_ringEquiv e
+    x ∈ X.regularLocus ↔ x ∈ f.smoothLocus :=
+  ⟨fun (_ : IsRegularLocalRing _) ↦ f.mem_smoothLocus_of_isRegularLocalRing_stalk,
+    fun h ↦ f.mem_regularLocus_of_mem_smoothLocus h (isRegularLocalRing_stalk_Spec _ _)⟩
 
 /-- **The regular locus over a perfect field is the smooth locus.** If `k` is a perfect field and
 `f : X ⟶ Spec k` is locally of finite type, the points of `X` with regular local ring are exactly
