@@ -73,7 +73,7 @@ def characterCarryCocycles₂ (χ : Additive G →+ AddCircle (1 : ℚ)) (A : Re
     (a : A.ρ.invariants) : cocycles₂ A :=
   ⟨fun p ↦ ContCohomology.characterCarry χ p.1 p.2 • (a : A),
     (mem_cocycles₂_iff _).2 fun g h j ↦ by
-      simp only [map_zsmul, a.2 g, ← add_zsmul, ContCohomology.characterCarry_mul_add]⟩
+      simp only [map_zsmul, a.property g, ← add_zsmul, ContCohomology.characterCarry_mul_add]⟩
 
 /-- The value of the carry cocycle of `χ` and `a` at `(g, h)` is the carry of `χ` times `a`. -/
 @[simp]

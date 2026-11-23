@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 
 /-!
@@ -37,6 +38,9 @@ would `z₁⁻¹ c₁ z₁ z₂⁻¹ c₂ z₂ z₃⁻¹ c₃ z₃ d = 1` with `
   embed in `H`, the condition on the coefficients is automatic.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.IsRegular.map`: regularity passes along an injective
   `G`-homomorphism, for instance from `G` to a group containing it.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.IsRegular.of_isSeparatedBy`: regularity descends from
+  a group `K` to a group `H` by which `K` is separated over `G`, for instance from a free group to
+  a free factor of rank at least two.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_of_isGeneralPosition`: an equation whose
   coefficients stay nontrivial in `H`, with `κ(S) ≥ 4` and a solution in general position in `H`,
   is regular.
@@ -134,6 +138,36 @@ theorem IsRegular.map {ι : G →* H} {ιK : G →* K} {S : Standard G X} (h : S
   obtain ⟨-, ⟨v, hv⟩, ⟨hκ, w, hw, hw'⟩ | h | h⟩ := h
   · exact isRegular_of_not_isCommutative hc hκ (hV hw) ((isCommutative_comp_iff f hf).not.2 hw')
   all_goals exact ⟨hc, ⟨f ∘ v, hV hv⟩, by simp [h]⟩
+
+/-- If `K` is separated by `H` over `G`, an equation regular over `K` is regular over `H`. For
+instance, an equation over a free factor `F₀` of rank at least two of a free group `F` is regular
+over `F₀` when it is regular over `F`. -/
+theorem IsRegular.of_isSeparatedBy {ι : G →* H} {ιK : G →* K} {S : Standard G X}
+    (hsep : IsSeparatedBy ιK ι) (h : S.IsRegular ιK) : S.IsRegular ι := by
+  obtain ⟨hc, ⟨v, hv⟩, hS⟩ := h
+  have hc' (g : G) (hg : g ∈ S.coeffs) : ι g ≠ 1 := by
+    obtain ⟨ψ, hψ⟩ := (isSeparatedBy_def ιK ι).1 hsep _ (hc g hg)
+    rwa [ψ.map_coeff] at hψ
+  rcases hS with ⟨hκ, w, hw, hnc⟩ | h2 | h3
+  · -- two consecutive atoms whose values at `w` do not commute, kept so by some `ψ : K → H`
+    obtain ⟨a, b, l₁, l₂, hl, hab⟩ : ∃ a b l₁ l₂,
+        S.atoms.map (eval ιK w) = l₁ ++ a :: b :: l₂ ∧ ¬Commute a b := by
+      simpa [isCommutative_iff, List.isChain_iff_forall_rel_of_append_cons_cons] using hnc
+    obtain ⟨ψ, hψ⟩ := (isSeparatedBy_def ιK ι).1 hsep ⁅a, b⁆
+      (by rwa [Ne, commutatorElement_eq_one_iff_commute])
+    refine isRegular_of_not_isCommutative hc' hκ (ψ.comp_mem_V hw) fun hcomm => hψ ?_
+    have hmap : S.atoms.map (eval ι (ψ ∘ w)) = (S.atoms.map (eval ιK w)).map ψ := by
+      simp [Function.comp_def]
+    rw [isCommutative_iff, hmap, hl, List.isChain_iff_forall_rel_of_append_cons_cons] at hcomm
+    rw [map_commutatorElement, commutatorElement_eq_one_iff_commute]
+    exact hcomm (l₁ := l₁.map ψ) (l₂ := l₂.map ψ) (by simp)
+  · -- the constant survives under some `ψ : K → H`, which maps the solution `v` to `H`
+    obtain ⟨ψ, -⟩ := (isSeparatedBy_def ιK ι).1 hsep _ (hc _ (constant_mem_coeffs_iff.2 h2.2.2.2))
+    exact ⟨hc', ⟨ψ ∘ v, ψ.comp_mem_V hv⟩, .inr (.inl h2)⟩
+  · -- the coefficient-free equation is solved by the trivial point
+    refine ⟨hc', ⟨1, mem_V.2 fun _ hs => ?_⟩, .inr (.inr h3)⟩
+    rw [Set.mem_singleton_iff.1 hs, eval_toWord_congr (ι' := 1) (v' := 1)
+      (by simp [coeffs_eq_nil_iff.2 h3.2.2]) fun _ _ => rfl, eval_one_one, MonoidHom.one_apply]
 
 /-- Regularity is invariant under bijective `G`-homomorphisms. -/
 theorem isRegular_congr {ι : G →* H} {ιK : G →* K} {S : Standard G X} (f : GHom ι ιK)

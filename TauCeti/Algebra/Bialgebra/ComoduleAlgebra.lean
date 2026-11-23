@@ -258,7 +258,7 @@ variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [Semiring H]
 `TauCeti.ComoduleAlgebra.galoisMap`. -/
 theorem algebraMap_coinvariants_mem (c : coinvariants R H A) :
     algebraMap (coinvariants R H A) A c ∈ coinvariants R H A :=
-  c.2
+  c.property
 
 /-- The coaction, regarded as a `B`-algebra homomorphism when `B` acts on `A` by coinvariants. -/
 noncomputable def coactAlgHomOver (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A) :

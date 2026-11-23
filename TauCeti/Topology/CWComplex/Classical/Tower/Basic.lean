@@ -138,7 +138,7 @@ private lemma disjoint_image_ball_of_le (hι : ∀ k n i, map n (ι k n i) = map
     rw [← hmap]
     refine disjoint_openCell_of_ne fun h ↦ ?_
     obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
-    exact hnew hjk (eq_of_heq h ▸ i'.2)
+    exact hnew hjk (eq_of_heq h ▸ i'.property)
   · refine disjoint_openCell_of_ne fun h ↦ hne ?_
     obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
     rw [Subtype.ext (eq_of_heq h)]

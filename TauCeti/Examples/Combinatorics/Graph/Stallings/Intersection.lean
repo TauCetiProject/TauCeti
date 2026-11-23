@@ -18,7 +18,7 @@ import Mathlib.Tactic.FinCases
 The product of two folded labelled graphs accepts the intersection of their subgroups, and
 its based core is the subgroup graph of the intersection. Three examples:
 
-* `⟨a²⟩ ∩ ⟨a³⟩ = ⟨a⁶⟩`, as in any group (`Subgroup.zpowers_pow_inf_zpowers_pow_of_coprime`),
+* `⟨a²⟩ ∩ ⟨a³⟩ = ⟨a⁶⟩`, as in any group (`Subgroup.zpowers_pow_inf`),
   so the core of the product of the subgroup graphs of `⟨a²⟩` and `⟨a³⟩`, two cycles labelled
   `a`, is the cycle of length six labelled `a`.
 * For distinct letters `a` and `b`, `⟨a, b a b⁻¹⟩ ∩ ⟨b⟩ = 1`.
@@ -99,7 +99,7 @@ theorem nonempty_iso_core_prod_subgroupGraph_zpowers_sq_cube (a : α) :
   obtain ⟨f⟩ := Subgroup.nonempty_iso_core_prod_subgroupGraph (Subgroup.zpowers (of a ^ 2))
     (Subgroup.zpowers (of a ^ 3))
   obtain ⟨g⟩ := nonempty_iso_subgroupGraph (hexagon_isFolded a) (hexagon_isCore a)
-  rw [Subgroup.zpowers_pow_inf_zpowers_pow_of_coprime _ (by decide : Nat.Coprime 2 3)] at f
+  rw [Subgroup.zpowers_pow_inf, (by decide : Nat.lcm 2 3 = 6)] at f
   rw [ofDigraph_base, hexagon_subgroup] at g
   exact ⟨f.trans g.symm⟩
 
@@ -130,7 +130,7 @@ theorem closure_pair_conj_inf_zpowers_eq_bot {a b : α} (hab : a ≠ b) :
   refine eq_bot_iff.mpr ((inf_le_inf (closure_le_conjGraph a b) (petal_subgroup b).ge).trans ?_)
   rw [← prod_subgroup (conjGraph_isFolded hab) (petal_isFolded b) 0 ()]
   refine ((conjGraph a b).prod (petal b)).subgroup_le_of_forall_dart (fun v => ![1, of b] v.1)
-    (O := {e | e.1.1.2 = true}) ?_ ?_ (one_mem _)
+    (O := {e | e.val.1.2 = true}) ?_ ?_ (one_mem _)
   · rintro ⟨⟨⟨_, _ | _⟩, _⟩, _⟩
     exacts [Or.inr rfl, Or.inl rfl]
   · intro e he
@@ -172,7 +172,7 @@ the cycle reading `a b b⁻¹` accepts only the identity at the pair of base ver
 theorem petal_prod_unfoldedCycle_subgroup {a b : α} (hab : a ≠ b) :
     ((petal a).prod (unfoldedCycle a b)).subgroup ((), 0) = ⊥ := by
   refine eq_bot_iff.mpr (((petal a).prod (unfoldedCycle a b)).subgroup_le_of_forall_dart
-    (fun v => ![1, of a, 1] v.2) (O := {e | e.1.2.2 = true}) ?_ ?_ (one_mem _))
+    (fun v => ![1, of a, 1] v.2) (O := {e | e.val.2.2 = true}) ?_ ?_ (one_mem _))
   · rintro ⟨⟨_, _, _ | _⟩, _⟩
     exacts [Or.inr rfl, Or.inl rfl]
   · intro e he

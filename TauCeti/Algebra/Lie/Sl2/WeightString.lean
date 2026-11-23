@@ -529,7 +529,7 @@ noncomputable def lieModuleEquivOfHasPrimitiveVectorWith
             map_zero]
         · rw [P.lie_e_pow_succ_toEnd_f, P'.lie_e_pow_succ_toEnd_f, map_smul, hψ]
       intro x y
-      obtain ⟨c₁, c₂, c₃, hx⟩ := IsSl2Triple.mem_toLieSubalgebra_iff.1 x.2
+      obtain ⟨c₁, c₂, c₃, hx⟩ := IsSl2Triple.mem_toLieSubalgebra_iff.1 x.property
       -- The action of the subalgebra is the ambient action of the underlying element of `L`,
       -- which is a linear combination of `e`, `f` and `h`.
       -- The `map_lie'` goal is phrased with the anonymous constructor's `toFun`, which is the

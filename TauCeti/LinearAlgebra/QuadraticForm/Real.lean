@@ -13,6 +13,7 @@ import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import TauCeti.Data.SignType.Cardinality
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+public import TauCeti.LinearAlgebra.QuadraticForm.UInvariant
 
 /-!
 # Classification of real quadratic forms by their signature
@@ -37,6 +38,8 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
 
 * `QuadraticForm.anisotropic_iff_posDef_or_negDef`: real anisotropic forms are exactly the
   positive and negative definite forms, including forms on the zero space.
+* `QuadraticMap.Anisotropic.isSquare_inv_mul_inv`: for an anisotropic real form, the product of
+  the inverse values of two vectors is a real square.
 * `QuadraticForm.anisotropic_iff_sigNeg_eq_zero_or_sigPos_eq_zero`: a real form with trivial
   radical on a finite-dimensional space is anisotropic exactly when one of its two indices of
   inertia vanishes.
@@ -70,6 +73,7 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
   isometric to a prescribed normal form exactly when it has the prescribed signature.
 * `QuadraticForm.equivalent_realSignatureForm_iff`: distinct signatures give non-isometric normal
   forms.
+* `TauCeti.uInvariant_real`: `u(ℝ) = ⊤`.
 
 ## References
 
@@ -185,6 +189,18 @@ theorem anisotropic_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ M) :
     · exact hQ.anisotropic
     · exact fun x hx ↦ hQ.anisotropic x (by simpa using hx)
 
+/-- For an anisotropic real form, the product of the inverse values of two vectors is a real
+square: the form is positive or negative definite, so its values are either all nonnegative or all
+nonpositive, and the product of their inverses is nonnegative, including when a vector is zero. -/
+theorem _root_.QuadraticMap.Anisotropic.isSquare_inv_mul_inv {Q : _root_.QuadraticForm ℝ M}
+    (hQ : Q.Anisotropic) (v w : M) : IsSquare ((Q v)⁻¹ * (Q w)⁻¹) := by
+  rw [Real.isSquare_iff]
+  rcases (anisotropic_iff_posDef_or_negDef Q).1 hQ with h | h
+  · exact mul_nonneg (inv_nonneg.2 (h.nonneg v)) (inv_nonneg.2 (h.nonneg w))
+  · have hv : Q v ≤ 0 := neg_nonneg.1 (h.nonneg v)
+    have hw : Q w ≤ 0 := neg_nonneg.1 (h.nonneg w)
+    exact mul_nonneg_of_nonpos_of_nonpos (inv_nonpos.2 hv) (inv_nonpos.2 hw)
+
 /-- A real quadratic form with trivial radical on a finite-dimensional space is anisotropic if and
 only if one of its two indices of inertia vanishes: an indefinite regular real form is isotropic. -/
 theorem anisotropic_iff_sigNeg_eq_zero_or_sigPos_eq_zero [FiniteDimensional ℝ M]
@@ -237,10 +253,7 @@ private theorem equivalent_weightedSumSquares_of_ncard_fiber_eq (u : ι → Sign
     exact h s
   let σ : ι ≃ ι' := Equiv.ofFiberEquiv hfiber
   have hσ : ∀ i, u' (σ i) = u i := fun i ↦ Equiv.ofFiberEquiv_map hfiber i
-  have hcomp : (fun i' ↦ ((u' i' : ℝ))) ∘ σ = fun i ↦ ((u i : ℝ)) := by
-    funext i
-    exact congrArg (fun s : SignType ↦ ((s : ℝ))) (hσ i)
-  exact equivalent_weightedSumSquares_of_comp_eq σ hcomp
+  exact equivalent_weightedSumSquares_of_comp_eq σ fun i ↦ by rw [hσ i]
 
 end Fibers
 
@@ -382,7 +395,8 @@ theorem equivalent_weightedSumSquares_ite_lt_sigNeg (Q : _root_.QuadraticForm �
     | right j => simp [e]
   refine (equivalent_realSignatureForm Q hQ).trans ?_
   rw [realSignatureForm_def]
-  exact (equivalent_weightedSumSquares_of_comp_eq e hweight).symm
+  exact (equivalent_weightedSumSquares_of_comp_eq e fun i ↦
+    congrArg (· • (1 : ℝ)) (congrFun hweight i)).symm
 
 /-- Every signature `(p, n - p)` with `p ≤ n` is the signature of a regular quadratic form on the
 coordinate space `ℝⁿ`: the normal form `realSignatureForm p (n - p)` transported along a bijection
@@ -395,7 +409,7 @@ theorem exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq {n p : ℕ} (h : p ≤ 
   obtain ⟨f⟩ : (weightedSumSquares ℝ ((Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) ∘ e)).Equivalent
       (realSignatureForm p (n - p)) := by
     rw [realSignatureForm_def]
-    exact equivalent_weightedSumSquares_of_comp_eq e rfl
+    exact equivalent_weightedSumSquares_of_comp_eq e fun _ ↦ rfl
   exact ⟨_, f.nondegenerate_iff.mpr (nondegenerate_realSignatureForm p (n - p)),
     by rw [Equivalent.sigPos_eq ⟨f⟩, sigPos_realSignatureForm],
     by rw [Equivalent.sigNeg_eq ⟨f⟩, sigNeg_realSignatureForm]⟩
@@ -432,5 +446,11 @@ theorem nonempty_isometryEquiv_toQuadraticForm'_one_of_posDef (hQ : Q.PosDef) :
     rw [hwone, weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
   rw [hstandard] at e
   exact ⟨e⟩
+
+/-- The `u`-invariant of `ℝ` is infinite: the standard sum of squares is anisotropic in every
+dimension. -/
+@[simp]
+theorem uInvariant_real : uInvariant ℝ = ⊤ :=
+  uInvariant_eq_top_of_isStrictOrderedRing ℝ
 
 end TauCeti

@@ -21,9 +21,10 @@ Together with the vertex stabilizer theorem, this identifies the finite vertex c
 cycle orders with the corresponding orbits and stabilizer orders in the coarse quotient. It does
 not assert that every elliptic orbit meets a vertex: a self-paired side can also have an elliptic
 midpoint. `FiniteVertexCycle` is the type of finite vertex cycles, counted vertex by vertex in
-`natCard_finiteVertexCycle_eq_sum`, and `EllipticVertexCycle` restricts the finite cycles to those
-with nonidentity cycle transformation. Neither discreteness nor local finiteness is needed for the
-finite vertex result.
+`natCard_finiteVertexCycle_eq_sum`, an instance of `natCard_vertexCycle_eq_sum` for the vertex
+cycles through any cycle-invariant set of vertices, and `EllipticVertexCycle` restricts the finite
+cycles to those with nonidentity cycle transformation. Neither discreteness nor local finiteness
+is needed for the finite vertex result.
 
 ## References
 
@@ -52,7 +53,8 @@ theorem mem_orbit_iff_mem_cycle {j k : Fin n} {z w : ℍ}
   rw [MulAction.mem_orbit_iff, σ.mem_cycle_iff]
   constructor
   · rintro ⟨g, hg⟩
-    obtain ⟨m, -, -, hm⟩ := σ.exists_partialCycleMap_eq_of_smul_vertex_eq hz hw hmap hdisj g.2 hg
+    obtain ⟨m, -, -, hm⟩ := σ.exists_partialCycleMap_eq_of_smul_vertex_eq hz hw hmap hdisj
+        g.property hg
     exact ⟨m, hm⟩
   · rintro ⟨m, hm⟩
     refine ⟨⟨σ.partialCycleMap j m, σ.partialCycleMap_mem hmap j m⟩, ?_⟩
@@ -66,11 +68,12 @@ theorem finiteVertex_quotientMk_eq_quotientMk_iff_sameCycle
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     (j k : {i : Fin n // (P.vertex i).isLeft}) :
-    (Quotient.mk'' ((P.vertex j).getLeft j.2) : MulAction.orbitRel.Quotient Γ ℍ) =
-        Quotient.mk'' ((P.vertex k).getLeft k.2) ↔ σ.next.SameCycle j k := by
+    (Quotient.mk'' ((P.vertex j).getLeft j.property) : MulAction.orbitRel.Quotient Γ ℍ) =
+        Quotient.mk'' ((P.vertex k).getLeft k.property) ↔ σ.next.SameCycle j k := by
   rw [Quotient.eq'']
   have h := σ.mem_orbit_iff_mem_cycle
-    (Sum.inl_getLeft (P.vertex k) k.2).symm (Sum.inl_getLeft (P.vertex j) j.2).symm hmap hdisj
+    (Sum.inl_getLeft (P.vertex k) k.property).symm (Sum.inl_getLeft (P.vertex j) j.property).symm
+        hmap hdisj
   -- `orbitRel` relates `z` to `w` when `z` belongs to the orbit of `w`.
   rw [MulAction.orbitRel_apply, h]
   rw [σ.mem_cycle_iff, Equiv.Perm.sameCycle_comm]
@@ -85,16 +88,24 @@ abbrev FiniteVertexCycle : Type :=
   Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
     Setoid {i : Fin n // (P.vertex i).isLeft})
 
+/-- The number of vertex cycles of `σ` through the vertices satisfying a property `p` constant
+along cycles is the sum, over those vertices, of the inverse lengths of their cycles. -/
+theorem natCard_vertexCycle_eq_sum {K : Type*} [Semifield K] [CharZero K] {p : Fin n → Prop}
+    [DecidablePred p] (hp : ∀ {j i}, i ∈ σ.cycle j → (p i ↔ p j)) :
+    (Nat.card (Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+        Setoid {i : Fin n // p i})) : K) =
+      ∑ i, if p i then (1 : K) / σ.cycleLength i else 0 := by
+  classical
+  rw [← σ.finsum_eq_sum_ite_div_cycleLength hp (fun _ ↦ 1) _ fun _ ↦ rfl,
+    finsum_eq_sum_of_fintype, Finset.sum_const, Finset.card_univ, nsmul_one,
+    Nat.card_eq_fintype_card]
+
 /-- The number of finite vertex cycles is the sum, over the finite vertices, of the inverse
 lengths of their cycles. -/
 theorem natCard_finiteVertexCycle_eq_sum {K : Type*} [Semifield K] [CharZero K] :
     (Nat.card σ.FiniteVertexCycle : K) =
-      ∑ i, if (P.vertex i).isLeft then (1 : K) / σ.cycleLength i else 0 := by
-  classical
-  rw [← σ.finsum_eq_sum_ite_div_cycleLength (fun hi ↦ by rw [σ.isLeft_vertex_eq_of_mem_cycle hi])
-      (fun _ ↦ 1) _ fun _ ↦ rfl,
-    finsum_eq_sum_of_fintype, Finset.sum_const, Finset.card_univ, nsmul_one,
-    Nat.card_eq_fintype_card]
+      ∑ i, if (P.vertex i).isLeft then (1 : K) / σ.cycleLength i else 0 :=
+  σ.natCard_vertexCycle_eq_sum fun hi ↦ by rw [σ.isLeft_vertex_eq_of_mem_cycle hi]
 
 /-- The same-cycle quotient of the finite vertices whose cycle transformation is nonidentity.
 It is independent of the ambient subgroup and of the fundamental-polygon hypotheses. -/
@@ -112,9 +123,9 @@ noncomputable def finiteVertexCycleEquiv
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
     σ.FiniteVertexCycle ≃ Set.range (fun j : {i : Fin n // (P.vertex i).isLeft} ↦
-        (Quotient.mk'' ((P.vertex j).getLeft j.2) : MulAction.orbitRel.Quotient Γ ℍ)) := by
+        (Quotient.mk'' ((P.vertex j).getLeft j.property) : MulAction.orbitRel.Quotient Γ ℍ)) := by
   let f : {i : Fin n // (P.vertex i).isLeft} → MulAction.orbitRel.Quotient Γ ℍ :=
-    fun j ↦ Quotient.mk'' ((P.vertex j).getLeft j.2)
+    fun j ↦ Quotient.mk'' ((P.vertex j).getLeft j.property)
   have hker : ∀ j k, σ.next.SameCycle j.val k.val ↔ Setoid.ker f j k :=
     fun j k ↦ (σ.finiteVertex_quotientMk_eq_quotientMk_iff_sameCycle hmap hdisj j k).symm
   exact (Quotient.congrRight hker).trans (Setoid.quotientKerEquivRange f)
@@ -127,7 +138,7 @@ theorem finiteVertexCycleEquiv_apply
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     (j : {i : Fin n // (P.vertex i).isLeft}) :
     (σ.finiteVertexCycleEquiv hmap hdisj (Quotient.mk'' j)).val =
-      Quotient.mk'' ((P.vertex j).getLeft j.2) := by
+      Quotient.mk'' ((P.vertex j).getLeft j.property) := by
   -- Compute on representatives through Mathlib's kernel-quotient/image equivalence.
   rfl
 

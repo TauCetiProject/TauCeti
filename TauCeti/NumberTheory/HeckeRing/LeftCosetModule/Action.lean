@@ -258,8 +258,8 @@ private lemma exists_orbit_of_mem_orbit_orbit {g₁ g₂ β : Δ} {x i : HeckeCo
   have hΔ : (β : G)⁻¹ * ((x.rep : Δ) : G) ∈ Δ := by
     rw [show (β : G)⁻¹ * ((x.rep : Δ) : G) =
         ((β : G)⁻¹ * ((i.rep : Δ) : G)) * (((i.rep : Δ) : G)⁻¹ * ((x.rep : Δ) : G)) by group]
-    exact Δ.mul_mem (IsHeckeTriple.mem_of_mem_doubleCoset g₁.2 hβη)
-      (IsHeckeTriple.mem_of_mem_doubleCoset g₂.2 hηξ)
+    exact Δ.mul_mem (IsHeckeTriple.mem_of_mem_doubleCoset g₁.property hβη)
+      (IsHeckeTriple.mem_of_mem_doubleCoset g₂.property hηξ)
   refine ⟨mk H H ⟨(β : G)⁻¹ * ((x.rep : Δ) : G), hΔ⟩, ?_⟩
   have hmem : mk ⊥ H x.rep ∈
       smulOrbit H (mk H H ⟨(β : G)⁻¹ * ((x.rep : Δ) : G), hΔ⟩).rep β := by
@@ -353,7 +353,7 @@ private lemma smulOrbit_one_rep (q : HeckeCoset Δ ⊥ H) :
     have habsorb : (((q.rep : Δ) : G) * (i.out : G) * ((1 : Δ) : G))⁻¹ *
         ((q.rep : Δ) : G) = ((1 : Δ) : G)⁻¹ * (i.out : G)⁻¹ := by group
     rw [habsorb]
-    exact H.mul_mem (by simp) (H.inv_mem i.out.2)
+    exact H.mul_mem (by simp) (H.inv_mem i.out.property)
   ext x
   simp only [mem_smulOrbit, Finset.mem_singleton]
   constructor

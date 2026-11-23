@@ -8,24 +8,31 @@ module
 public import TauCeti.Probability.Moments.SubExponential
 public import TauCeti.Probability.Moments.SubGaussian.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
+import TauCeti.Probability.Moments.SubGaussian
 
 /-!
 # Sub-Gaussian and sub-exponential moment bounds
 
 A centered sub-Gaussian variable with variance proxy `c` is sub-exponential with any positive
 parameter `K` such that `c / 2 ≤ K ^ 2`. In particular the standard Gaussian is sub-exponential
-with parameter `1`.
+with parameter `1`. Products of two sub-Gaussian variables with proxy `c > 0`
+are sub-exponential with parameter `40 * c`, including when the factors are dependent.
 
 ## Main results
 
 * `ProbabilityTheory.HasSubgaussianMGF.hasSubexponentialMGF` compares the two MGF conventions.
 * `hasSubexponentialMGF_fun_id_gaussianReal` treats Gaussian laws of any mean and variance.
+* `ProbabilityTheory.HasSubgaussianMGF.hasSubexponentialMGF_mul` controls products.
+
+## References
+
+* R. Vershynin, *High-Dimensional Probability* (2018), Lemma 2.7.7 and Exercise 2.7.10.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory Real
-open scoped NNReal
+open scoped ENNReal NNReal
 
 namespace ProbabilityTheory.HasSubgaussianMGF
 
@@ -56,6 +63,76 @@ theorem hasSubexponentialMGF {Ω : Type*} [MeasurableSpace Ω]
     TauCeti.Probability.HasSubexponentialMGF X K μ := by
   apply hasSubexponentialMGF_of_centered _ hK hc
   simpa only [hX.integral_eq_zero, sub_zero] using hX
+
+private theorem mgf_sq_sub_sq_centered_le {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsZeroOrProbabilityMeasure μ] {X Y : Ω → ℝ} {c : ℝ≥0}
+    (hX : HasSubgaussianMGF X c μ) (hY : HasSubgaussianMGF Y c μ)
+    {t : ℝ} (ht : (c : ℝ) * |2 * t| ≤ 1 / 8) :
+    let Z := fun ω ↦ X ω ^ 2 - Y ω ^ 2
+    Integrable (fun ω ↦ exp (t * (Z ω - μ[Z]))) μ ∧
+      mgf (fun ω ↦ Z ω - μ[Z]) μ t ≤ exp (1536 * c ^ 2 * t ^ 2) := by
+  intro Z
+  have hX₂ := (hX.memLp 2).integrable_sq
+  have hY₂ := (hY.memLp 2).integrable_sq
+  have hmean : μ[Z] = μ[fun ω ↦ X ω ^ 2] - μ[fun ω ↦ Y ω ^ 2] :=
+    integral_sub hX₂ hY₂
+  obtain ⟨hXi, hXm⟩ := hX.mgf_sq_sub_integral_le ht
+  obtain ⟨hYi, hYm⟩ := hY.mgf_sq_sub_integral_le (by rwa [abs_neg] : (c : ℝ) * |-(2 * t)| ≤ _)
+  let Yc : Ω → ℝ := fun ω ↦ Y ω ^ 2 - μ[fun z ↦ Y z ^ 2]
+  have hYneg : Integrable (fun ω ↦ exp (2 * t * (-Yc) ω)) μ := by
+    simpa only [Yc, Pi.neg_apply, mul_neg, neg_mul] using hYi
+  have hYmgf : mgf (-Yc) μ (2 * t) ≤ exp (384 * (c : ℝ) ^ 2 * (2 * t) ^ 2) := by
+    simpa only [Yc, mgf_neg, even_two.neg_pow] using hYm
+  have hcenter (ω : Ω) : Z ω - μ[Z] =
+      (X ω ^ 2 - μ[fun z ↦ X z ^ 2]) + (-Yc) ω := by
+    rw [hmean]
+    simp only [Z, Yc, Pi.neg_apply]
+    ring
+  simp only [hcenter]
+  obtain ⟨hint, hle⟩ := TauCeti.mgf_add_le_of_mgf_two_mul_le hXi hYneg hXm hYmgf
+  exact ⟨hint, hle.trans_eq (by rw [add_self_div_two]; congr 1; ring)⟩
+
+/-- The product of two random variables with common positive sub-Gaussian proxy `c` is
+sub-exponential with parameter `40 * c`. The factors may be dependent. -/
+theorem hasSubexponentialMGF_mul {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ] {U V : Ω → ℝ} {c : ℝ≥0}
+    (hU : HasSubgaussianMGF U c μ) (hV : HasSubgaussianMGF V c μ) (hc : 0 < c) :
+    TauCeti.Probability.HasSubexponentialMGF (fun ω ↦ U ω * V ω) (40 * c) μ := by
+  let X : Ω → ℝ := fun ω ↦ (1 / 2) * (U ω + V ω)
+  let Y : Ω → ℝ := fun ω ↦ (1 / 2) * (U ω - V ω)
+  have hproxy : NNReal.mk ((1 / 2 : ℝ) ^ 2) (by positivity) *
+      ((c.sqrt + c.sqrt) ^ 2) = c := by
+    rw [← two_mul, mul_pow, NNReal.sq_sqrt, ← mul_assoc]
+    ext
+    simp only [NNReal.coe_mul, NNReal.coe_mk]
+    norm_num
+  have hX : HasSubgaussianMGF X c μ := by
+    convert (hU.add hV).const_mul (1 / 2) using 1
+    exact hproxy.symm
+  have hY : HasSubgaussianMGF Y c μ := by
+    convert (hU.add hV.neg).const_mul (1 / 2) using 1
+    exact hproxy.symm
+  have hpolar : (fun ω ↦ U ω * V ω) = fun ω ↦ X ω ^ 2 - Y ω ^ 2 := by
+    ext ω
+    dsimp [X, Y]
+    ring
+  have hmul : Integrable (fun ω ↦ U ω * V ω) μ :=
+    (hU.memLp 2).integrable_mul (hV.memLp 2) (p := (2 : ℝ≥0∞)) (q := (2 : ℝ≥0∞))
+  have hbound (t : ℝ) (ht : |t| ≤ (40 * (c : ℝ))⁻¹) :
+      Integrable (fun ω ↦ exp (t * (U ω * V ω - μ[fun a ↦ U a * V a]))) μ ∧
+      mgf (fun ω ↦ U ω * V ω - μ[fun a ↦ U a * V a]) μ t ≤ exp ((40 * c) ^ 2 * t ^ 2) := by
+    have hc' : 0 < (c : ℝ) := NNReal.coe_pos.mpr hc
+    have hsmall : (c : ℝ) * |2 * t| ≤ 1 / 8 := by
+      rw [abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 2)]
+      rw [← one_div] at ht
+      have ht' := (le_div_iff₀ (by positivity : 0 < 40 * (c : ℝ))).mp ht
+      linarith
+    obtain ⟨hint, hmgf⟩ := mgf_sq_sub_sq_centered_le hX hY hsmall
+    have hrate : 1536 * (c : ℝ) ^ 2 * t ^ 2 ≤ (40 * c) ^ 2 * t ^ 2 := by
+      nlinarith [sq_nonneg ((c : ℝ) * t)]
+    simp only [congrFun hpolar]
+    exact ⟨hint, hmgf.trans (exp_le_exp.mpr hrate)⟩
+  exact ⟨by positivity, hmul, fun t ht ↦ (hbound t ht).1, fun t ht ↦ (hbound t ht).2⟩
 
 end ProbabilityTheory.HasSubgaussianMGF
 

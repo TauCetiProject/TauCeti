@@ -89,17 +89,11 @@ coincidence set has empty interior. -/
 theorem W1p.gradient_ae_eq_on_eq (hp : p ≠ ∞) (u v : W1p mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega,
       W1p.value u x = W1p.value v x → W1p.gradient u x = W1p.gradient v x := by
-  have hvalue : ⇑(W1p.value (u - v)) =ᵐ[mu.restrict Omega]
-      W1p.value u - W1p.value v := by
-    simpa only [← W1p.valueL_apply, map_sub] using Lp.coeFn_sub (W1p.value u) (W1p.value v)
-  have hgradient : ⇑(W1p.gradient (u - v)) =ᵐ[mu.restrict Omega]
-      W1p.gradient u - W1p.gradient v := by
-    simpa only [← W1p.gradientL_apply, map_sub] using Lp.coeFn_sub (W1p.gradient u) (W1p.gradient v)
-  filter_upwards [W1p.gradient_ae_eq_zero_on_level_set hp (u - v) 0, hvalue, hgradient]
-    with x hx hux hgx
+  filter_upwards [W1p.gradient_ae_eq_zero_on_level_set hp (u - v) 0, W1p.value_sub_ae u v,
+    W1p.gradient_sub_ae u v] with x hx hux hgx
   intro h
   apply sub_eq_zero.mp
-  simpa only [hgx, Pi.sub_apply] using hx (by simp [hux, h])
+  simpa only [hgx, Pi.sub_apply] using hx (by rw [hux, Pi.sub_apply, h, sub_self])
 
 /-- If increasing levels `mⱼ`, eventually above `k`, have a null intersection of the sets
 `{u > mⱼ, ∇u ≠ 0}`, and each lies below an admissible level `l ≥ k` (one exceeded by `u` on a set

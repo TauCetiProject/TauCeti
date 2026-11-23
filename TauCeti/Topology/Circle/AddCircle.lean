@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Algebra.AddCircle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The additive circle and the complex unit circle
@@ -22,6 +23,13 @@ are `0` and the half period `T / 2`.
 Applied to both factors, it identifies the torus `S¹ × S¹` with the standard torus
 `UnitAddTorus (Fin 2) = ℝ² / ℤ²`. Applied coordinatewise, it identifies the standard torus
 `UnitAddTorus ι` with the product of circles `ι → Circle` as topological groups.
+A real function whose classes in `AddCircle p` tend to a point along a filter with a basis of
+preconnected sets, such as a one-sided neighborhood filter in `ℝ`, tends to one of its lifts: on a
+connected set where the classes stay near a point, the function stays near one lift.
+Finally, a continuous family `ψ (θ, ·)` of maps of `AddCircle T` starting at the identity, with
+`ψ (-θ, ·)` a right inverse of `ψ (θ, ·)` and without fixed points at small positive times, moves,
+at some small time, every point forward by a small continuous amount, and the short secants
+`(q τ, q (τ + w))` of a loop `q` stay near the diagonal.
 
 ## Main definitions
 
@@ -34,12 +42,27 @@ Applied to both factors, it identifies the torus `S¹ × S¹` with the standard 
 * `AddCircle.homeomorphCircle_symm_one` — the inverse circle homeomorphism sends `1` to `0` for
   every nonzero real period.
 * `AddCircle.homeomorphCircle_symm_exp` — it sends `exp (2πix / T)` to the class of `x`.
+* `AddCircle.homeomorphCircle_one_symm_exp` — for the unit period, it sends `exp (2πix)` to the
+  class of `x`.
 * `AddCircle.re_toCircle_coe`, `AddCircle.im_toCircle_coe` — the real and imaginary parts of
   `AddCircle.toCircle` at the class of `t` are `cos (2πt / T)` and `sin (2πt / T)`.
 * `AddCircle.toCircle_half_period`, `AddCircle.coe_half_period_ne_zero` — the half period is sent
   to `-1`, so it is not `0`.
+* `AddCircle.coe_add_half_period_ne` — adding the half period moves every point.
 * `AddCircle.im_toCircle_eq_zero_iff` — `0` and the half period are the only points at which
   `AddCircle.toCircle` is real.
+* `AddCircle.exists_forall_eq_add_pos` — a continuous family `ψ (θ, ·)` of maps of the circle, the
+  identity at time `0`, with `ψ (-θ, ·)` a right inverse of `ψ (θ, ·)` and without fixed points at
+  small positive times, moves every point forward by a small continuous amount at some arbitrarily
+  small nonzero time.
+* `AddCircle.exists_forall_abs_sub_eq_norm_coe_of_isPreconnected`,
+  `AddCircle.exists_tendsto_add_int_mul_of_tendsto_coe` — a real function whose classes in the
+  circle stay near, or tend to, a point lifts near, or tends to, one of its lifts, on a
+  preconnected set or along a filter with a preconnected basis.
+* `Function.Injective.secant_ne_zero` — a short forward secant of an injective circle map is nonzero
+  when its defining function has no zeros off the diagonal.
+* `ContinuousMap.exists_pos_forall_secant_mem` — the short secants `(q τ, q (τ + w))` of a loop
+  `q` lie in any given open neighborhood of the diagonal.
 * `TauCeti.circleProdHomeomorphUnitAddTorus_apply`,
   `TauCeti.circleProdHomeomorphUnitAddTorus_symm_apply` — the torus homeomorphism and its inverse
   act factorwise through `AddCircle.homeomorphCircle`.
@@ -67,6 +90,14 @@ theorem homeomorphCircle_symm_exp {T : ℝ} (hT : T ≠ 0) (x : ℝ) :
     (AddCircle.homeomorphCircle hT).symm (Circle.exp (2 * Real.pi / T * x)) = x := by
   rw [Homeomorph.symm_apply_eq, AddCircle.homeomorphCircle_apply, AddCircle.toCircle_apply_mk]
 
+/-- For the unit period, the inverse homeomorphism `AddCircle.homeomorphCircle.symm` carries
+`exp (2πix)` to the class of `x`. -/
+@[simp]
+theorem homeomorphCircle_one_symm_exp (x : ℝ) :
+    (AddCircle.homeomorphCircle one_ne_zero).symm (Circle.exp (2 * Real.pi * x)) =
+      (x : UnitAddCircle) := by
+  simpa using homeomorphCircle_symm_exp one_ne_zero x
+
 /-- The real part of `AddCircle.toCircle` at the class of `t` is `cos (2πt / T)`. -/
 @[simp]
 theorem re_toCircle_coe (T t : ℝ) :
@@ -93,6 +124,12 @@ theorem coe_half_period_ne_zero {T : ℝ} (hT : T ≠ 0) : ((T / 2 : ℝ) : AddC
     have := congrArg (fun x ↦ (toCircle x : ℂ).re) h
     norm_num [hT] at this
 
+/-- For a nonzero period `T`, the points `a + T / 2` and `a` of `AddCircle T` are different. -/
+theorem coe_add_half_period_ne {T : ℝ} (hT : T ≠ 0) (a : ℝ) :
+    ((a + T / 2 : ℝ) : AddCircle T) ≠ a :=
+  fun h ↦ coe_half_period_ne_zero hT <| by
+    rw [show T / 2 = a + T / 2 - a by ring, coe_sub, h, sub_self]
+
 /-- **The real points of the circle.** For a nonzero period `T`, the value of `AddCircle.toCircle`
 at `x` is real exactly when `x` is `0` or the half period `T / 2`; these are sent to `1` and `-1`.
 -/
@@ -103,7 +140,171 @@ theorem im_toCircle_eq_zero_iff {T : ℝ} (hT : T ≠ 0) {x : AddCircle T} :
   rw [Circle.im_coe_eq_zero_iff, ← toCircle_half_period hT, ← toCircle_zero (T := T),
     (injective_toCircle hT).eq_iff, (injective_toCircle hT).eq_iff]
 
+section Displacement
+
+open Set Filter
+open scoped Topology
+
+variable {T : ℝ} [hT : Fact (0 < T)]
+
+/-- **Maps moving the circle forward.** A continuous family `ψ (θ, ·)` of maps of `AddCircle T`,
+equal to the identity at `θ = 0`, with `ψ (-θ, ·)` a right inverse of `ψ (θ, ·)`, and without fixed
+points for small `θ > 0`, moves every point forward by a continuous amount `d τ ∈ (0, δ)` at some
+time `c ≠ 0` satisfying any property `P` holding near `0`. For small `θ` the displacement
+`ψ (θ, τ) - τ` lifts continuously to a small real number, which never vanishes and hence, the circle
+being connected, has constant sign; if it is negative, the time `-θ` moves points forward. -/
+theorem exists_forall_eq_add_pos (ψ : ℝ × AddCircle T → AddCircle T)
+    (hψ : Continuous ψ) (hψ0 : ∀ τ, ψ (0, τ) = τ) (hψinv : ∀ θ τ, ψ (θ, ψ (-θ, τ)) = τ)
+    (hψne : ∀ᶠ θ in 𝓝[>] (0 : ℝ), ∀ τ, ψ (θ, τ) ≠ τ) {δ : ℝ} (hδ : 0 < δ)
+    {P : ℝ → Prop} (hP : ∀ᶠ θ in 𝓝 (0 : ℝ), P θ) :
+    ∃ c : ℝ, c ≠ 0 ∧ P c ∧ ∃ d : AddCircle T → ℝ, Continuous d ∧
+      ∀ τ, d τ ∈ Ioo 0 δ ∧ ψ (c, τ) = τ + d τ := by
+  wlog hδT : δ ≤ T / 2 generalizing δ
+  · obtain ⟨c, hc0, hcP, d, hdc, hd⟩ := this (half_pos hT.out) le_rfl
+    exact ⟨c, hc0, hcP, d, hdc, fun τ ↦
+      ⟨⟨(hd τ).1.1, (hd τ).1.2.trans (not_le.1 hδT)⟩, (hd τ).2⟩⟩
+  let N : Set (AddCircle T) := (↑) '' Ioo (-δ) δ
+  have hnear : ∀ᶠ c in 𝓝 (0 : ℝ), ∀ τ ∈ (univ : Set (AddCircle T)), ψ (c, τ) - τ ∈ N :=
+    isCompact_univ.eventually_forall_of_forall_eventually fun τ _ ↦
+      ((by fun_prop : Continuous fun cτ : ℝ × AddCircle T ↦ ψ cτ - cτ.2)
+        |>.continuousAt.preimage_mem_nhds <| (QuotientAddGroup.isOpenMap_coe _ isOpen_Ioo).mem_nhds
+          ⟨0, ⟨neg_lt_zero.2 hδ, hδ⟩, by simp [hψ0]⟩)
+  have hPneg : ∀ᶠ θ in 𝓝 (0 : ℝ), P (-θ) :=
+    (continuous_neg.tendsto' (0 : ℝ) 0 neg_zero).eventually hP
+  obtain ⟨θ, hθ0, ⟨hθP, hθPneg, hθnear⟩, hθne⟩ := (eventually_mem_nhdsWithin.and <|
+    ((hP.and (hPneg.and hnear)).filter_mono nhdsWithin_le_nhds).and hψne).exists
+  have hIco {w : ℝ} (hw : w ∈ Ioo (-δ) δ) : w ∈ Ico (-(T / 2)) (-(T / 2) + T) :=
+    ⟨by linarith [hw.1], by linarith [hw.2]⟩
+  let d : AddCircle T → ℝ := fun τ ↦ AddCircle.equivIco T (-(T / 2)) (ψ (θ, τ) - τ)
+  have hd (τ : AddCircle T) : d τ ∈ Ioo (-δ) δ ∧ ψ (θ, τ) = τ + d τ := by
+    obtain ⟨w, hw, hwψ⟩ := hθnear τ (mem_univ τ)
+    have hdw : d τ = w := by simp only [d, ← hwψ, AddCircle.equivIco_coe_eq (hIco hw)]
+    exact ⟨hdw ▸ hw, by rw [hdw, hwψ, add_sub_cancel]⟩
+  have hdc : Continuous d := continuous_iff_continuousAt.2 fun τ ↦ by
+    obtain ⟨w, hw, hwψ⟩ := hθnear τ (mem_univ τ)
+    refine continuous_subtypeVal.continuousAt.comp <|
+      (AddCircle.continuousAt_equivIco T _ fun h ↦ ?_).comp (by fun_prop)
+    rw [← hwψ, AddCircle.coe_eq_coe_iff_of_mem_Ico (hIco hw)
+      ⟨le_rfl, by linarith [hT.out]⟩] at h
+    linarith [hw.1]
+  have hdne (τ : AddCircle T) : d τ ≠ 0 := fun h ↦ hθne τ (by simp [(hd τ).2, h])
+  have hsign {a b : AddCircle T} (ha : d a < 0) : d b < 0 := not_le.1 fun hb ↦
+    let ⟨τ, hτ⟩ := intermediate_value_univ a b hdc ⟨ha.le, hb⟩
+    hdne τ hτ
+  by_cases hpos : ∀ τ, 0 < d τ
+  · exact ⟨θ, hθ0.ne', hθP, d, hdc, fun τ ↦ ⟨⟨hpos τ, (hd τ).1.2⟩, (hd τ).2⟩⟩
+  obtain ⟨a, ha⟩ := not_forall.1 hpos
+  have hneg (τ : AddCircle T) : d τ < 0 := hsign ((not_lt.1 ha).lt_of_ne (hdne a))
+  refine ⟨-θ, neg_ne_zero.2 hθ0.ne', hθPneg, fun τ ↦ -d (ψ (-θ, τ)),
+    (hdc.comp (by fun_prop)).neg, fun τ ↦ ⟨⟨neg_pos.2 (hneg _), ?_⟩, ?_⟩⟩
+  · linarith [(hd (ψ (-θ, τ))).1.1]
+  · have h := (hd (ψ (-θ, τ))).2
+    rw [hψinv] at h
+    rw [AddCircle.coe_neg, ← sub_eq_add_neg, eq_sub_iff_add_eq]
+    exact h.symm
+
+end Displacement
+
+section Lift
+
+open Set Filter
+open scoped Topology
+
+variable {X : Type*} [TopologicalSpace X] {p : ℝ}
+
+/-- **Lifting on a connected set.** If a function `f` with values in `ℝ`, continuous on a
+preconnected set `s`, stays within `p / 2` of the class of `y` in `AddCircle p`, then on `s` it
+stays near one lift `y + n p` of that class: its distance to `y + n p` is the distance in the
+circle. -/
+theorem exists_forall_abs_sub_eq_norm_coe_of_isPreconnected (hp : 0 < p) {s : Set X}
+    (hs : IsPreconnected s) {f : X → ℝ} (hf : ContinuousOn f s) {y : ℝ}
+    (hsmall : ∀ x ∈ s, ‖((f x - y : ℝ) : AddCircle p)‖ < p / 2) :
+    ∃ n : ℤ, ∀ x ∈ s, |f x - (y + n * p)| = ‖((f x - y : ℝ) : AddCircle p)‖ := by
+  set k : X → ℤ := fun x ↦ round (p⁻¹ * (f x - y))
+  have hk (x : X) : ‖((f x - y : ℝ) : AddCircle p)‖ = |f x - (y + k x * p)| := by
+    rw [norm_eq, sub_sub]
+  -- Two points of `s` cannot have different nearest multiples of the period: the image of `s`
+  -- is an interval, which would contain a point at distance `p / 2` from `y + p ℤ`.
+  have hle {x₁ x₂ : X} (hx₁ : x₁ ∈ s) (hx₂ : x₂ ∈ s) : ¬k x₁ < k x₂ := by
+    intro hlt
+    have h₁ := hsmall x₁ hx₁
+    have h₂ := hsmall x₂ hx₂
+    rw [hk, abs_lt] at h₁ h₂
+    have hk' : (k x₁ : ℝ) + 1 ≤ k x₂ := by exact_mod_cast hlt
+    obtain ⟨x, hx, hfx⟩ : y + (k x₁ + 1 / 2) * p ∈ f '' s :=
+      (hs.image f hf).Icc_subset (mem_image_of_mem f hx₁) (mem_image_of_mem f hx₂)
+        ⟨by nlinarith, by nlinarith⟩
+    have h := hsmall x hx
+    rw [hfx, show y + (k x₁ + 1 / 2) * p - y = p / 2 + (k x₁ : ℤ) * p by ring,
+      coe_add_int_mul_period, norm_half_period_eq, abs_of_pos hp] at h
+    linarith
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+  · exact ⟨0, by simp⟩
+  refine ⟨k x₀, fun x hx ↦ ?_⟩
+  rw [hk, le_antisymm (not_lt.1 (hle hx₀ hx)) (not_lt.1 (hle hx hx₀))]
+
+/-- **Lifting a limit from the circle.** Let `l` be a filter with a basis of preconnected sets,
+for instance a one-sided neighborhood filter `𝓝[>] a` in `ℝ`, and `f` a real function continuous on
+a set of `l`. If the classes of `f` in `AddCircle p` tend to the class of `y` along `l`, then `f`
+itself tends to one of its lifts `y + n p`. -/
+theorem exists_tendsto_add_int_mul_of_tendsto_coe (hp : 0 < p) {l : Filter X}
+    (hl : ∀ u ∈ l, ∃ v ∈ l, v ⊆ u ∧ IsPreconnected v) {f : X → ℝ} {u : Set X} (hu : u ∈ l)
+    (hf : ContinuousOn f u) {y : ℝ}
+    (h : Tendsto (fun x ↦ (f x : AddCircle p)) l (𝓝 (y : AddCircle p))) :
+    ∃ n : ℤ, Tendsto f l (𝓝 (y + n * p)) := by
+  have hnorm : Tendsto (fun x ↦ ‖((f x - y : ℝ) : AddCircle p)‖) l (𝓝 0) := by
+    simpa [coe_sub] using tendsto_iff_norm_sub_tendsto_zero.1 h
+  obtain ⟨v, hv, hvu, hvc⟩ := hl _ (inter_mem hu
+    (hnorm.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < p / 2))))
+  obtain ⟨n, hn⟩ := exists_forall_abs_sub_eq_norm_coe_of_isPreconnected hp hvc
+    (hf.mono fun x hx ↦ (hvu hx).1) fun x hx ↦ (hvu hx).2
+  refine ⟨n, tendsto_iff_norm_sub_tendsto_zero.2 (hnorm.congr' ?_)⟩
+  filter_upwards [hv] with x hx
+  rw [Real.norm_eq_abs, hn x hx]
+
+end Lift
+
 end AddCircle
+
+namespace ContinuousMap
+
+open Set Filter
+open scoped Topology
+
+variable {X : Type*} [TopologicalSpace X] {T : ℝ} [Fact (0 < T)]
+
+/-- **Short secants of a loop.** The pairs `(q τ, q (τ + w))` of points of a loop `q` in `X`,
+parametrized by `AddCircle T`, with a short step `w`, lie in any given open neighborhood `U` of the
+diagonal, uniformly in `τ`. -/
+theorem exists_pos_forall_secant_mem (q : C(AddCircle T, X)) {U : Set (X × X)}
+    (hU : IsOpen U) (hdiag : ∀ x, (x, x) ∈ U) :
+    ∃ δ : ℝ, 0 < δ ∧ ∀ w : ℝ, |w| < δ → ∀ τ : AddCircle T, (q τ, q (τ + w)) ∈ U := by
+  have hnear : ∀ᶠ w : ℝ in 𝓝 0, ∀ τ ∈ (univ : Set (AddCircle T)), (q τ, q (τ + w)) ∈ U :=
+    isCompact_univ.eventually_forall_of_forall_eventually fun τ _ ↦
+      ((by fun_prop : Continuous fun z : ℝ × AddCircle T ↦ (q z.2, q (z.2 + z.1)))
+        |>.continuousAt.preimage_mem_nhds (hU.mem_nhds (by simpa using hdiag (q τ))))
+  obtain ⟨δ, hδ, hsub⟩ := Metric.eventually_nhds_iff.mp hnear
+  exact ⟨δ, hδ, fun w hw τ ↦ hsub (by rwa [Real.dist_eq, sub_zero]) τ (mem_univ τ)⟩
+
+end ContinuousMap
+
+namespace Function.Injective
+
+open Set
+
+/-- A secant of an injective map from `AddCircle T` with a step in `(0, T)` is nonzero if `S`
+has no zeros off the diagonal in the neighborhood containing the pair. -/
+theorem secant_ne_zero {X Y : Type*} [Zero Y] {T : ℝ} [Fact (0 < T)]
+    {q : AddCircle T → X} (hq : Function.Injective q) {S : X × X → Y} {U : Set (X × X)}
+    (hzero : ∀ x y, (x, y) ∈ U → S (x, y) = 0 → x = y)
+    {w : ℝ} (hw : w ∈ Ioo 0 T) {τ : AddCircle T} (hU : (q τ, q (τ + w)) ∈ U) :
+    S (q τ, q (τ + w)) ≠ 0 := by
+  intro h
+  have hw0 : ((w : ℝ) : AddCircle T) = 0 := by
+    simpa using (hq (hzero _ _ hU h)).symm
+  exact hw.1.ne' ((AddCircle.coe_eq_zero_iff_of_mem_Ico ⟨hw.1.le, hw.2⟩).1 hw0)
+
+end Function.Injective
 
 namespace TauCeti
 
@@ -137,11 +338,8 @@ theorem circleProdHomeomorphUnitAddTorus_exp (a b : ℝ) :
     circleProdHomeomorphUnitAddTorus
         (Circle.exp (2 * Real.pi * a), Circle.exp (2 * Real.pi * b)) =
       ![(a : UnitAddCircle), (b : UnitAddCircle)] := by
-  have h (x : ℝ) : (AddCircle.homeomorphCircle one_ne_zero).symm (Circle.exp (2 * Real.pi * x)) =
-      (x : UnitAddCircle) := by
-    simpa using AddCircle.homeomorphCircle_symm_exp one_ne_zero x
   ext i
-  fin_cases i <;> simp [circleProdHomeomorphUnitAddTorus, h]
+  fin_cases i <;> simp [circleProdHomeomorphUnitAddTorus]
 
 /-- The standard torus `UnitAddTorus ι = (ℝ / ℤ)^ι` is isomorphic as a topological group to the
 product `ι → Circle` of unit circles, each coordinate being identified with `Circle` by
