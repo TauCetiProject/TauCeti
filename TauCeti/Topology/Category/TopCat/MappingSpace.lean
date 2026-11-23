@@ -36,6 +36,8 @@ not preserve the pushout defining `X`.
 ## Main declarations
 
 * `TopCat.mappingSpace Y`: the functor `X ↦ C(Y, X)` on `TopCat`.
+* `TopCat.continuous_compactOpen_of_isLimit`: continuity into a mapping space with limit
+  codomain follows from continuity after every limit projection, for R₁ source spaces.
 * `TopCat.mappingSpace_preservesLimitsOfSize`: mapping spaces preserve limits for R₁ `Y`.
 * `TopCat.curryEquiv`: for locally compact `Y`, the bijection between maps `Y ⊗ X ⟶ Z`
   and maps `X ⟶ C(Y, Z)`.
@@ -73,7 +75,9 @@ def mappingSpace (Y : TopCat.{u}) : TopCat.{u} ⥤ TopCat.{u} where
   obj X := TopCat.of C(Y, X)
   map f := TopCat.ofHom ⟨f.hom.comp, ContinuousMap.continuous_postcomp f.hom⟩
 
-private theorem continuous_compactOpen_of_isLimit {Y : TopCat.{u}} [R1Space Y]
+/-- For a limit cone `c` and an R₁ space `Y`, a map into `C(Y, c.pt)` with the compact-open topology
+is continuous if postcomposing with each limit projection makes it continuous. -/
+theorem continuous_compactOpen_of_isLimit {Y : TopCat.{u}} [R1Space Y]
     {J : Type w} [Category.{w'} J] {F : J ⥤ TopCat.{u}} {c : Cone F} (hc : IsLimit c)
     {X : Type v} [TopologicalSpace X] (f : X → C(Y, c.pt))
     (hf : ∀ j, Continuous fun x ↦ (c.π.app j).hom.comp (f x)) : Continuous f := by

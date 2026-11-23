@@ -12,8 +12,10 @@ public import Mathlib.Topology.Category.TopCat.ULift
 /-!
 # Limits of coinduced representations
 
-For any topological group, `coind₁Functor` preserves limits because its underlying
-topological space is a compact-open mapping space, which preserves limits for R₁ source spaces.
+For any topological group, `coind₁Functor` preserves limits of diagrams whose object type is
+small in the source representation's carrier universe, with no restriction on the morphism
+universe. Its underlying topological space is a compact-open mapping space, which preserves
+limits for R₁ source spaces.
 -/
 
 public section
@@ -79,8 +81,8 @@ theorem coind₁FunctorCompForgetIso_inv_app_hom_apply (X : TopRep.{w} R G)
     DFunLike.coe (F := C(G, X.V))
       (((coind₁FunctorCompForgetIso R G).inv.app X).hom F) g = (F (ULift.up g)).down := (rfl)
 
-/-- Coinduction preserves limits of diagrams whose object type is small in the source carrier
-universe. -/
+/-- Coinduction over any topological group preserves limits of diagrams whose object type is
+small in the source representation's carrier universe `w`. -/
 instance coind₁Functor_preservesLimitsOfSize [UnivLE.{t₂, w}] :
     PreservesLimitsOfSize.{t₁, t₂} (coind₁Functor.{u, v, w} R G) := by
   refine ⟨fun {J} _ ↦ ?_⟩
@@ -104,7 +106,9 @@ instance coind₁Functor_preservesLimitsOfSize [UnivLE.{t₂, w}] :
     preservesLimitsOfShape_of_reflects_of_preserves _ T
   exact preservesLimitsOfShape_of_reflects_of_preserves _ U
 
-/-- Coinduction preserves limits over any topological group. -/
+/-- Coinduction over any topological group preserves small limits when the source representations
+have carrier universe `max v w`, where `v` is the group's universe. Here both the diagram's object
+and morphism universes are `max v w`. -/
 instance (priority := low) coind₁Functor_preservesLimits :
     PreservesLimits (coind₁Functor.{u, v, max v w} R G) :=
   coind₁Functor_preservesLimitsOfSize.{u, v, max v w, max v w, max v w} R G

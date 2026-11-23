@@ -31,8 +31,9 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] {Y Z : TopRep.{v} R G}
 
-/-- A coefficient map admitting a continuous set-theoretic section induces a surjection on
-continuous homogeneous cochains in every degree, when the source action is jointly continuous. -/
+/-- Over a locally compact topological group, a coefficient map admitting a continuous
+set-theoretic section induces a surjection on continuous homogeneous cochains in every degree,
+when the source action is jointly continuous. -/
 theorem continuousCochainsFunctor_map_f_surjective_of_continuous_section (g : Y ⟶ Z)
     (hs : ∃ s : Z.V → Y.V, Continuous s ∧ ∀ z, g.hom (s z) = z)
     (hρ : Continuous fun p : G × Y.V ↦ Y.ρ p.1 p.2) (n : ℕ) :
@@ -46,8 +47,9 @@ theorem continuousCochainsFunctor_map_f_surjective_of_continuous_section (g : Y 
       continuous_ρ₂ := hρ }
   exact hS.cochainsMap_g_f_surjective n
 
-/-- A surjective coefficient map onto a discrete representation induces a surjection on
-continuous homogeneous cochains in every degree, when the source action is jointly continuous. -/
+/-- Over a locally compact topological group, a surjective coefficient map onto a discrete
+representation induces a surjection on continuous homogeneous cochains in every degree, when the
+source action is jointly continuous. -/
 theorem continuousCochainsFunctor_map_f_surjective_of_discrete [DiscreteTopology Z.V] (g : Y ⟶ Z)
     (hg : Function.Surjective g.hom)
     (hρ : Continuous fun p : G × Y.V ↦ Y.ρ p.1 p.2) (n : ℕ) :
