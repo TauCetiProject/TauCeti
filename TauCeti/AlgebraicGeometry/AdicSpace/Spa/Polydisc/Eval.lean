@@ -66,7 +66,7 @@ theorem norm_evalAtHom_le (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
   exact MvPowerSeries.norm_restrictedEval₂_le (RingHom.id A) a (fun _ ↦ le_rfl) ha' _
 
 /-- **Ultrametric Lipschitz bound for `evalAtHom` in its argument.** If `a` and `b` lie in the
-closed unit polydisc and satisfy `‖a i - b i‖ ≤ δ` for every `i`, then
+closed unit polydisc and satisfy `‖a i - b i‖ ≤ δ` for every `i` with `0 ≤ δ`, then
 `‖f(a) - f(b)‖ ≤ δ * ‖f‖`. -/
 theorem norm_evalAtHom_sub_le {a b : Fin k → A} (ha : ∀ i, IsPowerBounded (a i))
     (ha' : ∀ i, ‖a i‖ ≤ 1) (hb : ∀ i, IsPowerBounded (b i)) (hb' : ∀ i, ‖b i‖ ≤ 1)

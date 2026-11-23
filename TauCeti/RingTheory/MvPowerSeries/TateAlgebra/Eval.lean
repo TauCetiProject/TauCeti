@@ -228,7 +228,7 @@ private theorem norm_weightedEvalTerm_sub_le (hφ : ∀ r, ‖φ r‖ ≤ ‖r�
     _ = δ * (‖coeff t f‖ * ∏ i ∈ t.support, c i ^ t i) := by ring
 
 /-- **Ultrametric Lipschitz bound in the evaluation argument.** If `a` and `b` lie in the closed
-polydisc of polyradius `c` and satisfy `‖a i - b i‖ ≤ δ * c i` for every `i`, then
+polydisc of polyradius `c` and satisfy `‖a i - b i‖ ≤ δ * c i` for every `i` with `0 ≤ δ`, then
 `‖f(a) - f(b)‖ ≤ δ * ‖f‖`. -/
 theorem norm_restrictedEval₂_sub_le (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) {a b : Fin k → S}
     (ha : ∀ i, ‖a i‖ ≤ c i) (hb : ∀ i, ‖b i‖ ≤ c i) {δ : ℝ} (hδ : 0 ≤ δ)
