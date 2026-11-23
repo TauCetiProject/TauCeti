@@ -181,10 +181,11 @@ theorem genus_sub_one_eq_mul_add_emod [FiniteCWType B] (hp : IsCoveringMap p)
   let := hp.finiteCWType hfin
   have hχ := eulerChar_eq_mul_of_isCoveringMap hp hfin hd
   have hgenB := RiemannSurface.two_mul_genus_eq_sub_emod hB
+  have hgenB' := congrArg ((d : ℤ) * ·) hgenB
   have hgenE := RiemannSurface.two_mul_genus_eq_sub_emod hE
   have hmod : eulerChar E % 2 = ((d : ℤ) * (eulerChar B % 2)) % 2 := by
-    rw [hχ, Int.mul_emod, Int.mul_emod (d : ℤ) (eulerChar B % 2), Int.emod_emod]
+    simp [hχ, Int.mul_emod]
   have hdiv := Int.emod_add_ediv_mul ((d : ℤ) * (eulerChar B % 2)) 2
-  nlinarith
+  linarith
 
 end IsCoveringMap
