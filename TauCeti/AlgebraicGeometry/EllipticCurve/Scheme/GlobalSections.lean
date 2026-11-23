@@ -75,9 +75,9 @@ instance isIso_appTop_projModelOver : IsIso W.projModelOver.appTop := by
     simpa using congr($hcat h)
   -- a global function is determined by its restriction to the dense chart `D₊(Z)`
   have hres : Function.Injective res := by
-    obtain ⟨k, hk⟩ := W.exists_SpecMap_comp_tautologicalPoint_eq_chartι
     have h2 : Function.Injective (W.chartι 2).appTop := (W.chartι 2).app_injective ⊤
-    rw [← hk, Scheme.Hom.comp_appTop, ConcreteCategory.coe_comp] at h2
+    rw [← W.SpecMap_chartRingTwoEquivCoordinateRing_symm_tautologicalPoint,
+      Scheme.Hom.comp_appTop, ConcreteCategory.coe_comp] at h2
     exact (Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv.injective.comp h2.of_comp
   rw [ConcreteCategory.isIso_iff_bijective]
   refine ⟨fun a b hab ↦ ?_, fun h ↦ ?_⟩

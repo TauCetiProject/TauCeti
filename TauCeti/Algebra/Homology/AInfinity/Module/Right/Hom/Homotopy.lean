@@ -92,20 +92,17 @@ theorem barMap_sub_barMap_apply (h : Homotopy f g) (z : M ⊗[R] TensorWords R A
 
 /-- The suspended Taylor map of a module homotopy, obtained by applying the coalgebra counit. -/
 noncomputable def taylor (h : Homotopy f g) : (M ⊗[R] TensorWords R A) →ₗ[R] N :=
-  (TensorProduct.rid R N).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ h.barMap
+  Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ h.barMap
 
 theorem taylor_def (h : Homotopy f g) :
-    h.taylor = (TensorProduct.rid R N).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ h.barMap := (rfl)
+    h.taylor = Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ h.barMap := (rfl)
 
 /-- The Taylor map of a homotopy lowers suspended degree by one. -/
 theorem isHomogeneous_taylor (h : Homotopy f g) :
     LinearMap.IsHomogeneous h.taylor
       (AInfinityRightModule.barGrading AA MM.grading).piece
       (NN.grading.shift 1).piece (-1) := by
-  rw [taylor_def]
-  rw [LinearMap.isHomogeneous_def]
+  rw [taylor_def, Comodule.cofreeCounit_def, LinearMap.isHomogeneous_def]
   intro p x hx
   have hz := h.isHomogeneous_barHomotopy.map_mem hx
   rw [AInfinityRightModule.barGrading_piece] at hz
@@ -146,8 +143,7 @@ theorem barMap_sub_barMap_iff
     f.barMap - g.barMap = NN.barDifferential ∘ₗ H.toLinearMap +
         H.toLinearMap ∘ₗ MM.barDifferential ↔
       f.taylor - g.taylor = NN.taylor ∘ₗ H.toLinearMap +
-        ((TensorProduct.rid R N).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ H.toLinearMap) ∘ₗ
+        (Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ H.toLinearMap) ∘ₗ
             MM.barDifferential := by
   let K := H.coderivationComm (r := -1) (q := 1) (b := AA.coaugmentedBarDifferential)
     (AInfinityRightModule.barGrading AA MM.grading)
@@ -159,18 +155,15 @@ theorem barMap_sub_barMap_iff
     norm_num
     module
   have hKtaylor :
-      (TensorProduct.rid R N).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ K.toLinearMap =
+      Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ K.toLinearMap =
         NN.taylor ∘ₗ H.toLinearMap +
-          ((TensorProduct.rid R N).toLinearMap ∘ₗ
-            (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ H.toLinearMap) ∘ₗ
+          (Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ H.toLinearMap) ∘ₗ
               MM.barDifferential := by
-    rw [hK, ← LinearMap.comp_assoc, LinearMap.comp_add]
+    rw [hK, LinearMap.comp_add]
     simp only [LinearMap.comp_assoc, AInfinityRightModule.taylor_def]
   constructor
   · intro e
-    have e' := congrArg (fun F ↦ (TensorProduct.rid R N).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ F) e
+    have e' := congrArg (fun F ↦ Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ F) e
     simpa only [LinearMap.comp_sub, LinearMap.comp_add, LinearMap.comp_assoc,
       AInfinityRightModuleHom.taylor_def, AInfinityRightModule.taylor_def] using e'
   · intro e
@@ -178,8 +171,8 @@ theorem barMap_sub_barMap_iff
       apply (Comodule.Hom.cofreeEquiv (R := R) (C := TensorWords R A) (M := N)
         (P := M ⊗[R] TensorWords R A)).injective
       rw [Comodule.Hom.cofreeEquiv_apply, Comodule.Hom.cofreeEquiv_apply,
-        Comodule.Hom.add_toLinearMap, LinearMap.comp_add, LinearMap.comp_add, hKtaylor]
-      rw [← f.taylor_def, ← g.taylor_def]
+        Comodule.Hom.add_toLinearMap, LinearMap.comp_add, hKtaylor, ← f.taylor_def,
+        ← g.taylor_def]
       rw [sub_eq_iff_eq_add] at e
       simpa only [add_comm] using e
     have hlin := congrArg Comodule.Hom.toLinearMap hhom
@@ -201,8 +194,7 @@ noncomputable def ofBarHomotopy
       (AInfinityRightModule.barGrading AA MM.grading).piece
       (AInfinityRightModule.barGrading AA NN.grading).piece (-1))
     (e : f.taylor - g.taylor = NN.taylor ∘ₗ H.toLinearMap +
-      ((TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ H.toLinearMap) ∘ₗ
+      (Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ H.toLinearMap) ∘ₗ
           MM.barDifferential) : Homotopy f g where
   barHomotopy := H
   isHomogeneous_barHomotopy := hH
@@ -217,8 +209,7 @@ component. -/
 @[simp]
 theorem taylor_ofBarHomotopy (H hH e) :
     (ofBarHomotopy (f := f) (g := g) H hH e).taylor =
-      (TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ H.toLinearMap :=
+      Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ H.toLinearMap :=
   (rfl)
 
 /-! ### The unary component -/

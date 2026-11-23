@@ -29,6 +29,8 @@ a polygonal complex with the link of the corresponding vertex of an isomorphic c
   `TauCeti.SerreGraph.Hom.toIso`: a morphism bijective on vertices and darts as an isomorphism.
 * `TauCeti.SerreGraph.Iso.geomEdgeEquiv`: the induced bijection of geometric edges, compatible
   with identities, inverses and composites.
+* `TauCeti.SerreGraph.isoNoEdgePUnit`: isomorphism of any single-vertex edgeless Serre graph with
+  `SerreGraph.noEdge PUnit`.
 
 ## References
 
@@ -223,6 +225,22 @@ noncomputable def Hom.toIso (f : Γ.Hom Δ) (hV : Function.Bijective f.mapV)
 
 @[simp] theorem Hom.toIso_toHom (f : Γ.Hom Δ) (hV : Function.Bijective f.mapV)
     (hE : Function.Bijective f.mapE) : (f.toIso hV hE).toHom = f := (rfl)
+
+/-- Any Serre graph with a unique vertex and no darts is isomorphic to `SerreGraph.noEdge PUnit`. -/
+def isoNoEdgePUnit (Γ : SerreGraph.{u, v}) [Unique Γ.V] [IsEmpty Γ.E] :
+    Γ.Iso (SerreGraph.noEdge.{u', v'} PUnit) where
+  equivV := Equiv.ofUnique _ _
+  equivE := Equiv.equivOfIsEmpty _ _
+  map_src d := isEmptyElim d
+  map_rev d := isEmptyElim d
+
+@[simp] theorem isoNoEdgePUnit_equivV_apply (Γ : SerreGraph.{u, v}) [Unique Γ.V] [IsEmpty Γ.E]
+    (v : Γ.V) :
+    (Γ.isoNoEdgePUnit.{u, v, u', v'}).equivV v = PUnit.unit := (rfl)
+
+@[simp] theorem isoNoEdgePUnit_equivV_symm_apply (Γ : SerreGraph.{u, v}) [Unique Γ.V]
+    [IsEmpty Γ.E] (x : (SerreGraph.noEdge.{u', v'} PUnit).V) :
+    (Γ.isoNoEdgePUnit.{u, v, u', v'}).equivV.symm x = default := (rfl)
 
 end SerreGraph
 

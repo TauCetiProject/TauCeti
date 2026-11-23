@@ -24,6 +24,8 @@ of measures.
 
 * `MeasureTheory.Measure.measurable_sum` — countable superposition is measurable for the
   evaluation sigma-algebra on measures.
+* `MeasureTheory.Measure.measurable_restrict` — restricting a measure to a fixed measurable set is
+  measurable for the evaluation sigma-algebra.
 * `Measurable.measure_of_isPiSystem_of_iUnion` — measurability on a generating π-system
   suffices for measures finite on each set of a fixed countable cover by π-system sets,
   without finite total mass.
@@ -65,6 +67,15 @@ namespace MeasureTheory.Measure
   refine measurable_of_measurable_coe _ fun s hs => ?_
   simp only [Measure.sum_apply _ hs]
   exact Measurable.tsum fun i => (measurable_coe hs).comp (measurable_pi_apply i)
+
+/-- Restricting a measure to a fixed measurable set is measurable for the evaluation
+sigma-algebra on measures. -/
+@[fun_prop]
+theorem measurable_restrict {X : Type*} [MeasurableSpace X] {s : Set X}
+    (hs : MeasurableSet s) :
+    Measurable (fun μ : Measure X ↦ μ.restrict s) := by
+  refine measurable_of_measurable_coe _ fun A hA ↦ ?_
+  simpa only [restrict_apply hA] using measurable_coe (hA.inter hs)
 
 end MeasureTheory.Measure
 
@@ -112,7 +123,7 @@ structure that `ProbabilityMeasure` inherits as a subtype of `Measure`. -/
 theorem measurable_probabilityMeasure_map {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     {f : α → β} (hf : Measurable f) :
     Measurable fun P : ProbabilityMeasure α => P.map f :=
-  ((Measure.measurable_map f hf).comp measurable_subtype_coe).subtype_mk
+  ((Measure.measurable_map f hf).comp measurable_subtypeVal).subtype_mk
 
 /-- Pushing a fixed s-finite measure forward along a jointly measurable family of maps `f a` is
 measurable in the parameter `a`. -/
@@ -151,7 +162,7 @@ theorem measurable_probabilityMeasure_map_of_measurable_uncurry
     {f : γ → α → β} (hf : Measurable (Function.uncurry f)) :
     Measurable fun p : ProbabilityMeasure α × γ => p.1.map (f p.2) := by
   have htoFinite : Measurable fun μ : ProbabilityMeasure α => μ.toFiniteMeasure :=
-    measurable_subtype_coe.subtype_mk
+    measurable_subtypeVal.subtype_mk
   exact ((measurable_map_finiteMeasure_of_measurable_uncurry hf).comp
     (htoFinite.comp measurable_fst |>.prodMk measurable_snd)).subtype_mk
 

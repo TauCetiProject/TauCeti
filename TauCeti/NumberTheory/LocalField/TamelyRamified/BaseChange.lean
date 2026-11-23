@@ -181,7 +181,7 @@ theorem IsTamelyRamified.of_adjoin_range_eq_top (hL : IsTamelyRamified K L) (ι 
     exact isUnit_natCast_natCard_pow_sub_one K inertiaDegree_pos.ne'
   -- The image of `α^e ∈ L₀ = K(ζ)` lies in `F₁`.
   have hπ : ι (π : L) ∈ F₁ := by
-    have hmem : ι (π : L) ∈ (K⟮ζ⟯).map (ι : L →ₐ[K] M) := ⟨_, hL₀ ▸ (π : L₀).2, rfl⟩
+    have hmem : ι (π : L) ∈ (K⟮ζ⟯).map (ι : L →ₐ[K] M) := ⟨_, hL₀ ▸ (π : L₀).property, rfl⟩
     rw [adjoin_map, Set.image_singleton] at hmem
     have hle : K⟮ι ζ⟯ ≤ F₁.restrictScalars K := adjoin_simple_le_iff.2 (mem_adjoin_simple_self F _)
     exact hle hmem

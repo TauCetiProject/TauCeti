@@ -26,9 +26,9 @@ variable {R : Type*} [CommRing R]
 
 /-- Conjugation by the coordinate reflection `diag(-1, 1)` in `SL₂(R)`. -/
 def conjJ (γ : SL(2, R)) : SL(2, R) :=
-  ⟨!![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1], by
+  .mk !![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1] (by
     simpa only [Matrix.det_fin_two, Matrix.of_apply, Matrix.cons_val_zero,
-      Matrix.cons_val_one, neg_mul_neg] using γ.det_coe⟩
+      Matrix.cons_val_one, neg_mul_neg] using γ.det_coe)
 
 @[simp] theorem coe_conjJ (γ : SL(2, R)) :
     (conjJ γ : Matrix (Fin 2) (Fin 2) R) = !![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1] := (rfl)
@@ -77,5 +77,10 @@ def conjJMulAut : MulAut (SL(2, R)) where
     map f (conjJ γ) = conjJ (map f γ) := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp
+
+/-- Coordinate conjugation negates the modular inversion `ModularGroup.S`. -/
+@[simp] theorem conjJ_S : conjJ _root_.ModularGroup.S = -_root_.ModularGroup.S := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [_root_.ModularGroup.coe_S]
 
 end Matrix.SpecialLinearGroup

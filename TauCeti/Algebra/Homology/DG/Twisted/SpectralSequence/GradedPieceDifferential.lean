@@ -68,7 +68,7 @@ noncomputable def indexGradedPieceD1X (q p n : ℤ) :
           (twistedTotalGrading ℳ (fun x : {x : P // ind x = p} ↦ ind x) n).subtype).codRestrict
         _ fun f ↦ mem_twistedTotalGrading_iff.2 fun y ↦ by
       have := mem_twistedTotalGrading_iff.1 (m.twistedDifferential_mem_twistedTotalGrading dM
-        hM.isHomogeneous (indexExtend_mem_twistedTotalGrading f.2)) y.1
+        hM.isHomogeneous (indexExtend_mem_twistedTotalGrading f.property)) y.val
       exact this) ∘ₗ
     (indexGradedPieceComplexXEquiv hM ind p n).toLinearMap
 
@@ -144,22 +144,22 @@ theorem shiftedModuleComplexXEquiv_indexGradedPieceEval_D1X_single (n : ℤ)
           (((indexGradedPieceSingle hM ind x).f n).hom α))) : M) =
       MulOpposite.op (m.m x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
         (shiftedModuleComplexXEquiv hM (b + 1) n α : M) := by
-  have hyx : y.1 ≠ x.1 := fun h ↦ by
-    have h₂ := y.2
+  have hyx : y.val ≠ x.val := fun h ↦ by
+    have h₂ := y.property
     rw [h] at h₂
     omega
   have hext : indexExtend R M ind (b + 1) (Pi.single x (shiftedModuleComplexXEquiv hM (b + 1) n α :
-      M)) = Pi.single x.1 (shiftedModuleComplexXEquiv hM (b + 1) n α : M) := by
+      M)) = Pi.single x.val (shiftedModuleComplexXEquiv hM (b + 1) n α : M) := by
     funext z
     by_cases hz : ind z = b + 1
     · rw [indexExtend_apply_of_eq _ hz]
-      by_cases hzx : z = x.1
+      by_cases hzx : z = x.val
       · subst hzx
         simp
       · rw [Pi.single_eq_of_ne hzx, Pi.single_eq_of_ne]
         exact fun h ↦ hzx (congrArg Subtype.val h)
     · rw [indexExtend_apply_of_ne _ hz, Pi.single_eq_of_ne]
-      exact fun h ↦ hz (h ▸ x.2)
+      exact fun h ↦ hz (h ▸ x.property)
   -- The component at `y` of the twisted differential of `α ⊗ x`.
   have hcomp : (shiftedModuleComplexXEquiv hM b (n + 1) (((indexGradedPieceEval hM ind y).f
       (n + 1)).hom (m.indexGradedPieceD1X hM b (b + 1) n
@@ -169,10 +169,10 @@ theorem shiftedModuleComplexXEquiv_indexGradedPieceEval_D1X_single (n : ℤ)
     rw [shiftedModuleComplexXEquiv_indexGradedPieceEval_f,
       indexGradedPieceComplexXEquiv_indexGradedPieceD1X,
       indexGradedPieceComplexXEquiv_indexGradedPieceSingle_f, LinearMap.funLeft_apply, hext,
-      twistedDifferential_single_apply m.m dM x.1 y.1
-        (shiftedModuleComplexXEquiv hM (b + 1) n α).2, Pi.single_eq_of_ne hyx, zero_add]
+      twistedDifferential_single_apply m.m dM x.val y.val
+        (shiftedModuleComplexXEquiv hM (b + 1) n α).property, Pi.single_eq_of_ne hyx, zero_add]
   -- Normalizing the sign: it is the Koszul sign of `α`, which commutes with the action.
-  rw [hcomp, koszulTwist_one_eq_negOnePow_smul (shiftedModuleComplexXEquiv hM (b + 1) n α).2]
+  rw [hcomp, koszulTwist_one_eq_negOnePow_smul (shiftedModuleComplexXEquiv hM (b + 1) n α).property]
   exact smul_comm _ _ _
 
 end Components
