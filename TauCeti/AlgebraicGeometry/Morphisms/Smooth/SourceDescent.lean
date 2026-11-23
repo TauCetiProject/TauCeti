@@ -12,14 +12,15 @@ import Mathlib.AlgebraicGeometry.Morphisms.SmoothFiber
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.RingTheory.Finiteness.Descent
 import Mathlib.RingTheory.Smooth.NoetherianDescent
-import Mathlib.RingTheory.Spectrum.Prime.Chevalley
 import Mathlib.RingTheory.TensorProduct.Quotient
+import TauCeti.Algebra.Colimit.DirectLimit
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Stalk
 import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Scheme.Regular.Descent
+import TauCeti.RingTheory.Flat.FaithfullyFlat.DirectLimit
 import TauCeti.RingTheory.RingHom.Etale
 import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
@@ -112,6 +113,32 @@ section SmoothOfRelativeDimension
 open MorphismProperty TauCeti.AlgebraicGeometry
 
 open scoped TensorProduct in
+-- Transfer faithful flatness of a base change from an algebra isomorphic to a direct limit
+-- down to a finite stage above a prescribed index.
+private theorem exists_faithfullyFlat_baseChange_of_algEquiv
+    {A ι : Type*} [CommRing A] [Preorder ι] [IsDirectedOrder ι] [Nonempty ι]
+    {B : ι → Type*} [∀ i, CommRing (B i)] [∀ i, Algebra A (B i)]
+    {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
+    {T : Type*} [CommRing T] [Algebra A T] (e : DirectLimit B f ≃ₐ[A] T)
+    (S : Type*) [CommRing S] [Algebra A S] [Module.Flat A S]
+    [Algebra.FinitePresentation A S] [Module.FaithfullyFlat T (T ⊗[A] S)] (i : ι) :
+    ∃ j, i ≤ j ∧ Module.FaithfullyFlat (B j) (B j ⊗[A] S) := by
+  have : Module.FaithfullyFlat (DirectLimit B f) ((DirectLimit B f) ⊗[A] S) := by
+    rw [← RingHom.faithfullyFlat_algebraMap_iff]
+    let φ : (DirectLimit B f) ⊗[A] S ≃ₐ[A] T ⊗[A] S := Algebra.TensorProduct.congr e .refl
+    have hcomp :
+        algebraMap (DirectLimit B f) ((DirectLimit B f) ⊗[A] S) =
+          φ.symm.toRingHom.comp ((algebraMap T (T ⊗[A] S)).comp e.toRingHom) := by
+      ext x
+      simp [φ, Algebra.TensorProduct.algebraMap_apply]
+    rw [hcomp]
+    exact RingHom.FaithfullyFlat.comp
+      (RingHom.FaithfullyFlat.comp (RingHom.FaithfullyFlat.of_bijective e.bijective)
+        (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance))
+      (RingHom.FaithfullyFlat.of_bijective φ.symm.bijective)
+  exact TauCeti.DirectLimit.Algebra.exists_faithfullyFlat_baseChange (f := f) S i
+
+open scoped TensorProduct in
 -- Finite type descends along an étale faithfully flat algebra map.
 private theorem finiteType_of_comp_etale_faithfullyFlat {R A B : Type u} [CommRing R]
     [CommRing A] [CommRing B] [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
@@ -124,51 +151,37 @@ private theorem finiteType_of_comp_etale_faithfullyFlat {R A B : Type u} [CommRi
   have hrep (x : s) := TensorProduct.exists_sum_tmul_eq (e x.val)
   choose k a y hxy using hrep
   let S₁ : Finset A := s.attach.biUnion fun x ↦ Finset.univ.image (a x)
-  obtain ⟨I₀, hI₀⟩ := (PrimeSpectrum.isClosed_iff_zeroLocus_ideal
-    (Set.range (PrimeSpectrum.comap (algebraMap A₀ B₀)))ᶜ).mp
-    (PrimeSpectrum.isOpenMap_comap_of_hasGoingDown_of_finitePresentation
-      (R := A₀) (S := B₀)).isOpen_range.isClosed_compl
-  have : Module.FaithfullyFlat A (A ⊗[A₀] B₀) :=
-    .of_linearEquiv A B e.symm.toLinearEquiv
-  have htop : I₀.map (algebraMap A₀ A) = ⊤ :=
-    (Ideal.faithfullyFlat_baseChange_iff_map_eq_top I₀ hI₀).mp inferInstance
-  have h1 : (1 : A) ∈ Ideal.span (algebraMap A₀ A '' (I₀ : Set A₀)) := by
-    change (1 : A) ∈ I₀.map (algebraMap A₀ A)
-    simp [htop]
-  rw [Submodule.mem_span_set] at h1
-  obtain ⟨c, hc_supp, hc_sum⟩ := h1
-  let S₂ : Finset A := c.support.image c
-  let A₁ : Subalgebra R A := Algebra.adjoin R (↑(G₀ ∪ S₁ ∪ S₂) : Set A)
-  have hA₀A₁ : A₀ ≤ A₁ := by
+  let stage (t : Finset A) : Subalgebra R A := Algebra.adjoin R (↑(G₀ ∪ t) : Set A)
+  have hA₀_le (t : Finset A) : A₀ ≤ stage t := by
     rw [← hG₀]
     exact Algebra.adjoin_mono (by intro z hz; simp [hz])
-  let : Algebra A₀ A₁ := (Subalgebra.inclusion hA₀A₁).toAlgebra
-  have : IsScalarTower A₀ A₁ A := .of_algebraMap_eq fun _ ↦ rfl
-  have htop₁ : I₀.map (algebraMap A₀ A₁) = ⊤ := by
-    rw [Ideal.eq_top_iff_one]
-    have hmem : ∀ z ∈ c.support, ∃ i ∈ I₀, algebraMap A₀ A i = z := fun z hz ↦ by
-      simpa using hc_supp hz
-    choose i hi_mem hi_eq using hmem
-    let sum₁ : A₁ := ∑ z ∈ c.support.attach,
-      ⟨c z.val, Algebra.subset_adjoin (Finset.mem_coe.mpr
-        (Finset.mem_union_right _ (Finset.mem_image_of_mem c z.property)))⟩ *
-        algebraMap A₀ A₁ (i z.val z.property)
-    have hsum₁_mem : sum₁ ∈ I₀.map (algebraMap A₀ A₁) :=
-      Ideal.sum_mem _ fun z _ ↦
-        Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ (hi_mem z.val z.property))
-    have hsum₁_val : (sum₁ : A) = 1 := by
-      change A₁.val sum₁ = 1
-      simp only [sum₁, map_sum, map_mul]
-      rw [← hc_sum, Finsupp.sum]
-      refine (Finset.sum_congr rfl fun z _ ↦ ?_).trans
-        (Finset.sum_attach c.support (fun z ↦ c z • z))
-      change c z.val * (algebraMap A₀ A (i z.val z.property)) = c z.val • z.val
-      simp [hi_eq z.val z.property, smul_eq_mul]
-    have : sum₁ = 1 := Subtype.val_injective hsum₁_val
-    exact this ▸ hsum₁_mem
-  have : Module.FaithfullyFlat A₁ (A₁ ⊗[A₀] B₀) :=
-    (Ideal.faithfullyFlat_baseChange_iff_map_eq_top I₀ hI₀).mpr htop₁
+  let Bstage (t : Finset A) : Type u := stage t
+  let : ∀ t, CommRing (Bstage t) := fun _ ↦ inferInstance
+  let : ∀ t, Algebra A₀ (Bstage t) := fun t ↦ (Subalgebra.inclusion (hA₀_le t)).toAlgebra
+  let fstage (t₁ t₂ : Finset A) (ht : t₁ ≤ t₂) : Bstage t₁ →ₐ[A₀] Bstage t₂ :=
+    { Subalgebra.inclusion (Algebra.adjoin_mono
+        (Finset.coe_subset.mpr (Finset.union_subset_union Finset.Subset.rfl ht))) with
+      commutes' := fun _ ↦ rfl }
+  have : DirectedSystem Bstage (fstage · · ·) :=
+    { map_self := fun _ _ ↦ rfl
+      map_map := fun _ _ _ _ _ _ ↦ rfl }
+  let eColim : DirectLimit Bstage fstage ≃ₐ[A₀] A :=
+    AlgEquiv.ofBijective
+      (DirectLimit.Algebra.lift Bstage fstage A
+        (fun t ↦ { (stage t).val with commutes' := fun _ ↦ rfl }) (fun _ _ _ _ ↦ rfl))
+      ⟨fun x y hxy ↦ by
+        obtain ⟨t₁, x₁, rfl⟩ := DirectLimit.exists_eq_mk _ x
+        obtain ⟨t₂, x₂, rfl⟩ := DirectLimit.exists_eq_mk _ y
+        exact Quotient.sound ⟨t₁ ∪ t₂, Finset.subset_union_left, Finset.subset_union_right,
+          Subtype.val_injective hxy⟩,
+       fun x ↦ ⟨DirectLimit.Algebra.of Bstage fstage {x}
+         ⟨x, Algebra.subset_adjoin (by simp)⟩, rfl⟩⟩
+  have : Module.FaithfullyFlat A (A ⊗[A₀] B₀) :=
+    .of_linearEquiv A B e.symm.toLinearEquiv
+  obtain ⟨S₂, hS₁S₂, _⟩ := exists_faithfullyFlat_baseChange_of_algEquiv eColim B₀ S₁
+  let A₁ := stage S₂
   let B₁ := A₁ ⊗[A₀] B₀
+  have : IsScalarTower A₀ A₁ A := .of_algebraMap_eq fun _ ↦ rfl
   let gAlg : B₁ →ₐ[R] B :=
     ((e.symm.restrictScalars R).toAlgHom).comp
       ((Algebra.TensorProduct.map (IsScalarTower.toAlgHom A₀ A₁ A) (.id A₀ B₀)).restrictScalars R)
@@ -176,8 +189,8 @@ private theorem finiteType_of_comp_etale_faithfullyFlat {R A B : Type u} [CommRi
     rw [← AlgHom.range_eq_top, _root_.eq_top_iff, ← hs, Algebra.adjoin_le_iff]
     intro b hb
     let x : s := ⟨b, hb⟩
-    have ha_mem : ∀ j : Fin (k x), a x j ∈ (↑(G₀ ∪ S₁ ∪ S₂) : Set A) := fun j ↦ by
-      refine Finset.mem_coe.mpr (Finset.mem_union_left _ (Finset.mem_union_right _ ?_))
+    have ha_mem : ∀ j : Fin (k x), a x j ∈ (↑(G₀ ∪ S₂) : Set A) := fun j ↦ by
+      refine Finset.mem_coe.mpr (Finset.mem_union_right _ (hS₁S₂ ?_))
       exact Finset.mem_biUnion.mpr ⟨x, Finset.mem_attach _ _,
         Finset.mem_image.mpr ⟨j, Finset.mem_univ _, rfl⟩⟩
     have ha₁ (j : Fin (k x)) : a x j ∈ A₁ := Algebra.subset_adjoin (ha_mem j)
@@ -216,32 +229,42 @@ private theorem finiteType_of_comp_etale_faithfullyFlat {R A B : Type u} [CommRi
   have htop_sub : A₁ = ⊤ := eq_top_iff.mpr fun a _ ↦ by
     obtain ⟨a₁, rfl⟩ := hA₁_surj a
     exact a₁.property
-  exact ⟨⟨G₀ ∪ S₁ ∪ S₂, by simpa [A₁] using htop_sub⟩⟩
+  exact ⟨⟨G₀ ∪ S₂, by simpa [A₁, stage] using htop_sub⟩⟩
 
-private theorem exists_etale_pushout_quotient {A₀ B : Type u} [CommRing A₀] [CommRing B]
-    (J : Ideal A₀) (ψ : (A₀ ⧸ J) →+* B) (hψ : ψ.Etale) :
-    ∃ (J' : { J' : Ideal A₀ // J' ≤ J ∧ J'.FG }) (T' : CommRingCat.{u})
-      (f' : CommRingCat.of (A₀ ⧸ J'.val) ⟶ T') (g' : T' ⟶ CommRingCat.of B),
-      IsPushout (CommRingCat.ofHom (Ideal.Quotient.factor J'.property.1)) f'
-        (CommRingCat.ofHom ψ) g' ∧ f'.hom.Etale := by
-  let ι := { J' : Ideal A₀ // J' ≤ J ∧ J'.FG }
-  let : Preorder ι := Preorder.lift Subtype.val
-  have : Nonempty ι := ⟨⟨⊥, bot_le, Submodule.fg_bot⟩⟩
-  have : IsDirectedOrder ι := ⟨fun J₁ J₂ ↦
+section QuotientSystem
+
+private def SubidealFG {A₀ : Type u} [CommRing A₀] (J : Ideal A₀) :=
+  { J' : Ideal A₀ // J' ≤ J ∧ J'.FG }
+
+private instance {A₀ : Type u} [CommRing A₀] (J : Ideal A₀) : Preorder (SubidealFG J) :=
+  Preorder.lift Subtype.val
+
+private instance {A₀ : Type u} [CommRing A₀] (J : Ideal A₀) : Nonempty (SubidealFG J) :=
+  ⟨⟨⊥, bot_le, Submodule.fg_bot⟩⟩
+
+private instance {A₀ : Type u} [CommRing A₀] (J : Ideal A₀) : IsDirectedOrder (SubidealFG J) :=
+  ⟨fun J₁ J₂ ↦
     ⟨⟨J₁.val ⊔ J₂.val, sup_le J₁.property.1 J₂.property.1,
       Submodule.FG.sup J₁.property.2 J₂.property.2⟩,
       (le_sup_left : J₁.val ≤ J₁.val ⊔ J₂.val),
       (le_sup_right : J₂.val ≤ J₁.val ⊔ J₂.val)⟩⟩
-  let D : ι ⥤ CommRingCat.{u} :=
-    { obj J' := CommRingCat.of (A₀ ⧸ J'.val)
-      map h := CommRingCat.ofHom (Ideal.Quotient.factor (leOfHom h)) }
-  let c : Cocone D :=
-    { pt := CommRingCat.of (A₀ ⧸ J)
-      ι :=
-        { app J' := CommRingCat.ofHom (Ideal.Quotient.factor J'.property.1)
-          naturality _ J₂ h := CommRingCat.hom_ext
-            (Ideal.Quotient.factor_comp (leOfHom h) J₂.property.1) } }
-  let hc : IsColimit c := isColimitOfReflects (forget CommRingCat.{u}) <|
+
+private def quotientFunctor {A₀ : Type u} [CommRing A₀] (J : Ideal A₀) :
+    SubidealFG J ⥤ CommRingCat.{u} where
+  obj J' := CommRingCat.of (A₀ ⧸ J'.val)
+  map h := CommRingCat.ofHom (Ideal.Quotient.factor (leOfHom h))
+
+private def quotientCocone {A₀ : Type u} [CommRing A₀] (J : Ideal A₀) :
+    Cocone (quotientFunctor J) where
+  pt := CommRingCat.of (A₀ ⧸ J)
+  ι :=
+    { app J' := CommRingCat.ofHom (Ideal.Quotient.factor J'.property.1)
+      naturality _ J₂ h := CommRingCat.hom_ext
+        (Ideal.Quotient.factor_comp (leOfHom h) J₂.property.1) }
+
+private noncomputable def quotientIsColimit {A₀ : Type u} [CommRing A₀] (J : Ideal A₀) :
+    IsColimit (quotientCocone J) :=
+  isColimitOfReflects (forget CommRingCat.{u}) <|
     Types.FilteredColimit.isColimitOf' _ _
       (fun x ↦ by
         obtain ⟨x₀, rfl⟩ := Ideal.Quotient.mk_surjective x
@@ -249,15 +272,14 @@ private theorem exists_etale_pushout_quotient {A₀ B : Type u} [CommRing A₀] 
       (fun J₁ x y hxy ↦ by
         obtain ⟨x₀, rfl⟩ := Ideal.Quotient.mk_surjective x
         obtain ⟨y₀, rfl⟩ := Ideal.Quotient.mk_surjective y
-        let J₂ : ι := ⟨J₁.val ⊔ Ideal.span {x₀ - y₀},
+        let J₂ : SubidealFG J := ⟨J₁.val ⊔ Ideal.span {x₀ - y₀},
           sup_le J₁.property.1
             (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr (Ideal.Quotient.eq.mp hxy))),
           Submodule.FG.sup J₁.property.2 (Submodule.fg_span (Set.finite_singleton _))⟩
         refine ⟨J₂, homOfLE (le_sup_left : J₁.val ≤ J₂.val), ?_⟩
         exact Ideal.Quotient.eq.mpr (Ideal.mem_sup_right (Ideal.subset_span rfl)))
-  obtain ⟨J', T', f', g', hpush, hf'⟩ :=
-    RingHom.Etale.preIndSpreads.exists_isPushout hc (CommRingCat.ofHom ψ) hψ
-  exact ⟨J', T', f', g', hpush, hf'⟩
+
+end QuotientSystem
 
 open scoped TensorProduct in
 private theorem fg_ker_of_etale_faithfullyFlat {R A' A'' Q B' B : Type u} [CommRing R] [CommRing A']
@@ -307,7 +329,8 @@ private theorem finitePresentation_of_comp_etale_faithfullyFlat {R A B : Type u}
   have hψJ : ψJ.Etale :=
     RingHom.Etale.comp (RingHom.etale_algebraMap.mpr inferInstance)
       (RingHom.Etale.of_bijective eA.bijective)
-  obtain ⟨J', T', f', g', hpush, hf'⟩ := exists_etale_pushout_quotient J ψJ hψJ
+  obtain ⟨J', T', f', g', hpush, hf'⟩ :=
+    RingHom.Etale.preIndSpreads.exists_isPushout (quotientIsColimit J) (CommRingCat.ofHom ψJ) hψJ
   let A' := A₀ ⧸ J'.val
   let B' : Type u := T'
   let : Algebra A' B' := f'.hom.toAlgebra
@@ -330,33 +353,43 @@ private theorem finitePresentation_of_comp_etale_faithfullyFlat {R A B : Type u}
       (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)
   have : Algebra.IsPushout A' (A₀ ⧸ J) B' B := CommRingCat.isPushout_iff_isPushout.mp hpush
   let ePush : (A₀ ⧸ J) ⊗[A'] B' ≃ₐ[A₀ ⧸ J] B := Algebra.IsPushout.equiv A' (A₀ ⧸ J) B' B
-  obtain ⟨I₀, hI₀⟩ := (PrimeSpectrum.isClosed_iff_zeroLocus_ideal
-    (Set.range (PrimeSpectrum.comap (algebraMap A' B')))ᶜ).mp
-    (PrimeSpectrum.isOpenMap_comap_of_hasGoingDown_of_finitePresentation
-      (R := A') (S := B')).isOpen_range.isClosed_compl
-  have : Module.FaithfullyFlat (A₀ ⧸ J) ((A₀ ⧸ J) ⊗[A'] B') :=
+  let D := quotientFunctor J
+  have : Nonempty { i : SubidealFG J // J' ≤ i } := ⟨⟨J', le_rfl⟩⟩
+  have : IsDirectedOrder { i : SubidealFG J // J' ≤ i } := ⟨fun i j ↦ by
+    obtain ⟨k, hik, hjk⟩ := exists_ge_ge i.val j.val
+    exact ⟨⟨k, i.property.trans hik⟩, hik, hjk⟩⟩
+  let : ∀ j : { i : SubidealFG J // J' ≤ i }, Algebra (D.obj J') (D.obj j.val) :=
+    fun j ↦ (D.map (homOfLE j.property)).hom.toAlgebra
+  obtain ⟨fTail, hfTail, ⟨eTail⟩⟩ :=
+    CategoryTheory.Functor.exists_directLimit_tail_algEquiv_colimit D J'
+  let : DirectedSystem (fun j : { i : SubidealFG J // J' ≤ i } ↦ D.obj j.val) (fTail · · ·) :=
+    hfTail
+  let : Algebra (D.obj J') (colimit D : CommRingCat.{u}) := (colimit.ι D J').hom.toAlgebra
+  let : Algebra (D.obj J') (A₀ ⧸ J) := (Ideal.Quotient.factor J'.property.1).toAlgebra
+  let : Algebra (D.obj J') B' := f'.hom.toAlgebra
+  have : Algebra.Etale (D.obj J') B' := hf'
+  have : Module.FaithfullyFlat (A₀ ⧸ J) ((A₀ ⧸ J) ⊗[D.obj J'] B') :=
     .of_linearEquiv (A₀ ⧸ J) B ePush.toLinearEquiv
-  have htop : I₀.map (algebraMap A' (A₀ ⧸ J)) = ⊤ :=
-    (Ideal.faithfullyFlat_baseChange_iff_map_eq_top I₀ hI₀).mp inferInstance
-  have h1 : (1 : A₀ ⧸ J) ∈ I₀.map (algebraMap A' (A₀ ⧸ J)) := by simp [htop]
-  obtain ⟨x, hxI₀, hx1⟩ :=
-    (Ideal.mem_map_iff_of_surjective (algebraMap A' (A₀ ⧸ J))
-      (Ideal.Quotient.factor_surjective J'.property.1)).mp h1
-  obtain ⟨x₀, rfl⟩ := Ideal.Quotient.mk_surjective x
-  have h1x₀ : 1 - x₀ ∈ J := by
-    rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one]
-    have hmk : Ideal.Quotient.mk J x₀ =
-        algebraMap A' (A₀ ⧸ J) (Ideal.Quotient.mk J'.val x₀) := rfl
-    rw [hmk, hx1, sub_self]
-  let J'' : Ideal A₀ := J'.val ⊔ Ideal.span {1 - x₀}
-  have hJ'J'' : J'.val ≤ J'' := le_sup_left
-  have hJ''J : J'' ≤ J :=
-    sup_le J'.property.1 (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr h1x₀))
-  have hJ''FG : J''.FG :=
-    Submodule.FG.sup J'.property.2 (Submodule.fg_span (Set.finite_singleton _))
-  let A'' := A₀ ⧸ J''
-  let : Algebra A' A'' := (Ideal.Quotient.factor hJ'J'').toAlgebra
-  let : Algebra A'' (A₀ ⧸ J) := (Ideal.Quotient.factor hJ''J).toAlgebra
+  let iso : (colimit D : CommRingCat.{u}) ≅ CommRingCat.of (A₀ ⧸ J) :=
+    (colimit.isColimit D).coconePointUniqueUpToIso (quotientIsColimit J)
+  let eIso : (colimit D : CommRingCat.{u}) ≃ₐ[D.obj J'] (A₀ ⧸ J) :=
+    { iso.hom.hom with
+      invFun := iso.inv.hom
+      left_inv x := ConcreteCategory.congr_hom iso.hom_inv_id x
+      right_inv x := ConcreteCategory.congr_hom iso.inv_hom_id x
+      commutes' x := ConcreteCategory.congr_hom
+        ((colimit.isColimit D).comp_coconePointUniqueUpToIso_hom (quotientIsColimit J) J') x }
+  obtain ⟨J'', _, hFF''⟩ :=
+    exists_faithfullyFlat_baseChange_of_algEquiv (A := D.obj J') (f := fTail)
+      (eTail.trans eIso) B' ⟨J', le_rfl⟩
+  let J₂ : Ideal A₀ := J''.val.val
+  have hJ'J₂ : J'.val ≤ J₂ := J''.property
+  have hJ₂J : J₂ ≤ J := J''.val.property.1
+  have hJ₂FG : J₂.FG := J''.val.property.2
+  let A'' := A₀ ⧸ J₂
+  let : Algebra A' A'' := (Ideal.Quotient.factor hJ'J₂).toAlgebra
+  let : Algebra A'' (A₀ ⧸ J) := (Ideal.Quotient.factor hJ₂J).toAlgebra
+  have : Module.FaithfullyFlat A'' (A'' ⊗[A'] B') := hFF''
   let : Algebra R B' := Algebra.compHom B' (algebraMap R A')
   have : IsScalarTower A' A'' (A₀ ⧸ J) := .of_algebraMap_eq fun x ↦ by
     obtain ⟨x₀, rfl⟩ := Ideal.Quotient.mk_surjective x
@@ -371,24 +404,14 @@ private theorem finitePresentation_of_comp_etale_faithfullyFlat {R A B : Type u}
     rw [IsScalarTower.algebraMap_apply R (A₀ ⧸ J) B,
       IsScalarTower.algebraMap_apply R A' (A₀ ⧸ J),
       IsScalarTower.algebraMap_apply A' (A₀ ⧸ J) B]
-  have htop'' : I₀.map (algebraMap A' A'') = ⊤ := by
-    rw [Ideal.eq_top_iff_one]
-    have hmem : algebraMap A' A'' (Ideal.Quotient.mk J'.val x₀) = 1 := by
-      have hsub : Ideal.Quotient.mk J'' (1 - x₀) = 0 :=
-        Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_sup_right (Ideal.subset_span rfl))
-      rw [map_sub, map_one, sub_eq_zero] at hsub
-      exact hsub.symm
-    exact hmem ▸ Ideal.mem_map_of_mem _ hxI₀
-  have : Module.FaithfullyFlat A'' (A'' ⊗[A'] B') :=
-    (Ideal.faithfullyFlat_baseChange_iff_map_eq_top I₀ hI₀).mpr htop''
   have : Algebra.FinitePresentation R A₀ := inferInstance
-  have : Algebra.FinitePresentation R A'' := .quotient hJ''FG
-  let K : Ideal A'' := RingHom.ker (Ideal.Quotient.factor hJ''J)
+  have : Algebra.FinitePresentation R A'' := .quotient hJ₂FG
+  let K : Ideal A'' := RingHom.ker (Ideal.Quotient.factor hJ₂J)
   have hKFG : K.FG :=
-    fg_ker_of_etale_faithfullyFlat (R := R) ePush (Ideal.Quotient.factor_surjective hJ''J)
+    fg_ker_of_etale_faithfullyFlat (R := R) ePush (Ideal.Quotient.factor_surjective hJ₂J)
   have hJFG : J.FG := by
-    have hcomp := Ideal.fg_ker_comp (Ideal.Quotient.mk J'') (Ideal.Quotient.factor hJ''J)
-      (by simpa [Ideal.mk_ker] using hJ''FG) hKFG Ideal.Quotient.mk_surjective
+    have hcomp := Ideal.fg_ker_comp (Ideal.Quotient.mk J₂) (Ideal.Quotient.factor hJ₂J)
+      (by simpa [Ideal.mk_ker] using hJ₂FG) hKFG Ideal.Quotient.mk_surjective
     simpa [Ideal.Quotient.factor_comp_mk, Ideal.mk_ker] using hcomp
   have : Algebra.FinitePresentation R (A₀ ⧸ J) := .quotient hJFG
   exact .equiv eA
