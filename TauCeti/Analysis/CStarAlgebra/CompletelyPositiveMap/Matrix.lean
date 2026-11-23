@@ -229,8 +229,7 @@ theorem exists_unital_eq_sqrt_mul_mul_sqrt_of_finite_spectrum [Nontrivial A] (φ
           CFC.sqrt (φ 1) * g * φ a * (g * CFC.sqrt (φ 1)) := by simp only [mul_assoc]
       rw [e, hsg, hgs]
     _ = CFC.sqrt (φ 1) * ψ a * CFC.sqrt (φ 1) := by
-      rw [hψ, mul_add, add_mul, mul_smul_comm, smul_mul_assoc, hsp, zero_mul, smul_zero,
-        add_zero]
+      simp [hψ, mul_add, hsp]
 
 /-- **The Choi–Effros factorization.** A completely positive map `φ` from a nonzero unital
 C⋆-algebra into a matrix algebra factors as `φ(a) = h ψ(a) h` with `h = φ(1)^{1/2}` and `ψ`

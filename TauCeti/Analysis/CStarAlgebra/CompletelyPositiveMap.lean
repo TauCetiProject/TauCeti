@@ -373,10 +373,8 @@ by the Kadison–Schwarz inequality, `q⋆ φ(a)⋆ φ(a) q ≤ ‖φ 1‖ ‖a�
 theorem IsNPositive.map_mul_eq_zero_of_map_one_mul_eq_zero (hφ : IsNPositive 2 φ) {q : B}
     (h : φ 1 * q = 0) (a : A) : φ a * q = 0 := by
   have hle : φ (star a * a) ≤ ‖star a * a‖ • φ 1 := by
-    have h1 := OrderHomClass.mono (hφ.toPositiveLinearMap two_pos)
-      (IsSelfAdjoint.le_algebraMap_norm_self (star a * a))
-    simp only [IsNPositive.toPositiveLinearMap_apply] at h1
-    rwa [Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul, map_smul, Complex.coe_smul] at h1
+    simpa [Complex.coe_smul] using (hφ.toPositiveLinearMap two_pos).map_le_norm_smul_map_one
+      (star_mul_self_nonneg a)
   have hKS : star (φ a) * φ a ≤ (‖φ 1‖ * ‖star a * a‖) • φ 1 := by
     refine (hφ.star_map_mul_map_le a).trans ?_
     rw [mul_smul]
@@ -436,13 +434,6 @@ domain and `‖φ 1‖ ≤ 1` satisfies `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
 theorem star_map_mul_map_le_of_norm_map_one_le_one (φ : F) (h : ‖φ 1‖ ≤ 1) (a : A) :
     star (φ a) * φ a ≤ φ (star a * a) :=
   (isNPositive φ 2).star_map_mul_map_le_of_norm_map_one_le_one h a
-
-/-- Precomposing a contractive completely positive map with a star homomorphism between
-C⋆-algebras keeps it contractive. -/
-theorem norm_apply_star_hom_le {C G : Type*} [NonUnitalCStarAlgebra C] [FunLike G C A]
-    [NonUnitalAlgHomClass G ℂ C A] [StarHomClass G C A] (φ : F) (h : ‖φ 1‖ ≤ 1) (θ : G)
-    (c : C) : ‖φ (θ c)‖ ≤ ‖c‖ :=
-  ((norm_map_one_le_one_iff φ).mp h (θ c)).trans (NonUnitalStarAlgHom.norm_apply_le θ c)
 
 /-- If `φ 1 q = 0` for a completely positive map `φ` with unital domain, then `φ a q = 0` for
 every `a`. -/
