@@ -603,19 +603,12 @@ theorem rangeMulVecBilinEquiv_symm_apply (he : IsIdempotentElem e)
     (w : LinearMap.range ((e.map f).mulVecBilin S Sᵐᵒᵖ)) :
     (rangeMulVecBilinEquiv f he).symm w =
       ∑ j, tmul (RingHom.op f) (op ((w : ι → S) j)) ⟨e.col j, e.col_mem_range_mulVecBilin j⟩ := by
-  rw [rangeMulVecBilinEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_symm,
-    LinearEquiv.trans_symm, congr_symm, LinearEquiv.symm_symm]
-  simp only [LinearEquiv.trans_apply, rangeVecMulLinearEquiv_symm_apply, map_sum, congr_tmul]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  have hj : ((LinearEquiv.ofEq _ _ (congrArg (fun M ↦ LinearMap.range M.vecMulLinear)
-      (transpose_map_op_map_ringHom_op e f))).symm
-      ((rangeVecMulLinearTransposeMapOpEquiv (e.map f)).symm w) : ι → Sᵐᵒᵖ) j =
-        op ((w : ι → S) j) := by
-    simp
-  rw [hj]
-  exact congrArg (tmul (RingHom.op f) _) (Subtype.ext (funext fun i ↦ by
-    simp only [coe_rangeVecMulLinearTransposeMapOpEquiv_apply, Function.comp_apply,
-      Matrix.map_apply, Matrix.transpose_apply, unop_op, Matrix.col_apply]))
+  rw [LinearEquiv.symm_apply_eq]
+  obtain ⟨v, hv⟩ := w.property
+  have hw : (e.map f) *ᵥ (w : ι → S) = (w : ι → S) := by
+    rw [← hv, mulVecBilin_apply, mulVec_mulVec, (he.matrix_map f).eq]
+  ext i
+  simpa [mulVec, dotProduct] using (congrFun hw i).symm
 
 end Idempotent
 

@@ -51,7 +51,8 @@ noncomputable def FiniteProjectiveModules.ofIdempotent {R : Type u} [Ring R] {ι
   let σ := Fintype.equivFin ι
   ⟨ModuleCat.of Rᵐᵒᵖ (range ((e.reindex σ σ).mulVecBilin R Rᵐᵒᵖ)),
     finiteProjectiveModules_iff.mpr ⟨inferInstance,
-      (he.idempotentEquivalent_reindex σ).isIdempotentElem_left.projective_range_mulVecBilin⟩⟩
+      (idempotentEquivalent_submatrix he
+        σ.symm).isIdempotentElem_right.projective_range_mulVecBilin⟩⟩
 
 /-- Canonical `Rᵐᵒᵖ`-linear equivalence between the underlying module of
 `FiniteProjectiveModules.ofIdempotent e he` and the original column range `e R^ι`. -/
@@ -267,12 +268,12 @@ theorem balancedExtensionCongr_extendScalarsOfIdempotentIso_inv_apply (f : R →
           ((extendScalarsOfIdempotentIso f he).inv.hom w)) =
       (BalancedExtension.rangeMulVecBilinEquiv f he).symm
         (ofIdempotentLinearEquiv (e.map f) (he.matrix_map f) w) := by
-  dsimp [extendScalarsOfIdempotentIso]
-  simp only [ObjectProperty.isoMk_inv, Iso.trans_inv, LinearEquiv.toModuleIso_inv,
-    LinearEquiv.trans_symm, LinearEquiv.symm_symm, BalancedExtension.congr_symm, eqToIso.inv,
-    ObjectProperty.homMk_hom, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, coe_comp,
-    LinearEquiv.coe_coe, Function.comp_apply, LinearEquiv.trans_apply]
-  rw [← ModuleCat.comp_apply, eqToHom_trans, eqToHom_refl]; simp
+  rw [LinearEquiv.eq_symm_apply, ← ofIdempotentLinearEquiv_extendScalarsOfIdempotentIso_hom_apply]
+  congr 1
+  have h := ConcreteCategory.congr_hom ((finiteProjectiveModules Sᵐᵒᵖ).ι.mapIso
+    (extendScalarsOfIdempotentIso f he)).inv_hom_id w
+  rw [ModuleCat.comp_apply, ModuleCat.id_apply] at h
+  exact h
 
 /-- Explicit column-sum formula for `(extendScalarsOfIdempotentIso f he).inv`. -/
 theorem extendScalarsOfIdempotentIso_inv_apply (f : R →+* S)
@@ -458,21 +459,6 @@ theorem splitK0Equiv_of (x : IdempotentMonoid A) :
     splitK0Equiv A (GrothendieckAddGroup.of x) = toSplitK0 x := by
   rw [toSplitK0, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
 
-/-- The identity map of an `S`-module `M`, as an `e`-semilinear equivalence from `M` with scalars
-restricted along `e : R ≃+* S` to `M` itself. The underlying additive group of
-`(ModuleCat.restrictScalars e.toRingHom).obj M` is `M`, and `map_smul'` is
-`ModuleCat.restrictScalars.smul_def`. -/
-private def restrictScalarsSemilinearEquiv {R S : Type*} [Ring R] [Ring S] (e : R ≃+* S)
-    {σ' : S →+* R} [RingHomInvPair (e : R →+* S) σ'] [RingHomInvPair σ' (e : R →+* S)]
-    (M : ModuleCat S) :
-    (ModuleCat.restrictScalars (e : R →+* S)).obj M ≃ₛₗ[(e : R →+* S)] M where
-  toFun m := m
-  invFun m := m
-  map_add' _ _ := rfl
-  map_smul' r m := ModuleCat.restrictScalars.smul_def (e : R →+* S) r m
-  left_inv _ := rfl
-  right_inv _ := rfl
-
 /-- The isomorphism `TauCeti.IdempotentMonoid.splitK0Equiv` sends the class of an idempotent
 matrix `e` to the class of any module isomorphic to the image `Aⁿe` of its action on row vectors. -/
 theorem splitK0Equiv_of_mk {ι : Type*} [Fintype ι] {e : Matrix ι ι A} (he : IsIdempotentElem e)
@@ -490,7 +476,7 @@ theorem splitK0Equiv_of_mk {ι : Type*} [Fintype ι] {e : Matrix ι ι A} (he : 
     .of_ringEquiv_symm (RingEquiv.opOp A)
   let eY : Y.obj ≃ₛₗ[((RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)] X.obj :=
     (eqToIso (E₀.finiteProjectiveModulesEquivalence_inverse_obj_obj X)).toLinearEquiv.trans
-      (restrictScalarsSemilinearEquiv (RingEquiv.opOp A).symm X.obj)
+      ((RingEquiv.opOp A).symm.restrictScalarsSemilinearEquiv X.obj)
   have heOp : (eᵀ.map op)ᵀ.map op = e.map (RingEquiv.opOp A) := by
     ext i j; simp [RingEquiv.opOp_apply]
   let eOp : range e.vecMulLinear ≃ₛₗ[(RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ)]

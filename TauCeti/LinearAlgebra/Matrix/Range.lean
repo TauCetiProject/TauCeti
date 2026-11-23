@@ -287,8 +287,10 @@ theorem coe_rangeVecMulLinearTransposeMapOpEquiv_apply (e : Matrix ι' ι R)
 theorem coe_rangeVecMulLinearTransposeMapOpEquiv_symm_apply (M : Matrix ι' ι R)
     (v : range (M.mulVecBilin R Rᵐᵒᵖ)) :
     ((rangeVecMulLinearTransposeMapOpEquiv M).symm v : ι' → Rᵐᵒᵖ) = op ∘ v := by
-  ext i; exact (op_unop _).symm.trans (congrArg op (congrFun (congrArg Subtype.val
-    ((rangeVecMulLinearTransposeMapOpEquiv M).apply_symm_apply v)) i))
+  conv_rhs =>
+    rw [← (rangeVecMulLinearTransposeMapOpEquiv M).apply_symm_apply v,
+      coe_rangeVecMulLinearTransposeMapOpEquiv_apply]
+  ext i; simp
 
 /-- A column vector `v` lies in the column range of `M` iff `op ∘ v` lies in the row range of
 `Mᵀ.map op`. -/

@@ -22,7 +22,7 @@ commutative monoid with zero the empty matrix. No cancellation is assumed.
 
 ## Main definitions and results
 
-* `TauCeti.IdempotentMonoid` with `mk`, `mk_eq_mk_iff`, `ind`, `lift`, `fun_ext`, `hom_ext`,
+* `TauCeti.IdempotentMonoid` with `mk`, `mk_eq_mk_iff`, `ind`, `lift`, `hom_ext`,
   `Unique` over subsingletons, `nsmul_mk_one`, and `mk_one_eq_mk_one_iff` under
   `InvariantBasisNumber`.
 * Functoriality (`map`, `congr`), transposition over the opposite ring (`opEquiv`), the ring
@@ -71,13 +71,9 @@ private noncomputable abbrev toFin (e : Matrix ι ι A) :
     Matrix (Fin (Fintype.card ι)) (Fin (Fintype.card ι)) A :=
   e.submatrix (Fintype.equivFin ι).symm (Fintype.equivFin ι).symm
 
-private theorem idempotentEquivalent_toFin {e : Matrix ι ι A} (he : IsIdempotentElem e) :
-    IdempotentEquivalent e (toFin e) :=
-  idempotentEquivalent_submatrix he _
-
 /-- The class in `V(A)` of an idempotent square matrix `e` indexed by a finite type. -/
 noncomputable def mk (e : Matrix ι ι A) (he : IsIdempotentElem e) : IdempotentMonoid A :=
-  Quotient.mk _ ⟨_, toFin e, (idempotentEquivalent_toFin he).isIdempotentElem_right⟩
+  Quotient.mk _ ⟨_, toFin e, (idempotentEquivalent_submatrix he _).isIdempotentElem_right⟩
 
 /-- **Equality in `V(A)`.** Two idempotent matrices have the same class exactly when they are
 equivalent idempotents. -/
@@ -85,8 +81,10 @@ equivalent idempotents. -/
 theorem mk_eq_mk_iff {e : Matrix ι ι A} {f : Matrix κ κ A} (he : IsIdempotentElem e)
     (hf : IsIdempotentElem f) : mk e he = mk f hf ↔ IdempotentEquivalent e f := by
   refine Quotient.eq.trans ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · exact (idempotentEquivalent_toFin he).trans (h.trans (idempotentEquivalent_toFin hf).symm)
-  · exact (idempotentEquivalent_toFin he).symm.trans (h.trans (idempotentEquivalent_toFin hf))
+  · exact (idempotentEquivalent_submatrix he _).trans
+      (h.trans (idempotentEquivalent_submatrix hf _).symm)
+  · exact (idempotentEquivalent_submatrix he _).symm.trans
+      (h.trans (idempotentEquivalent_submatrix hf _))
 
 /-- Equivalent idempotents have the same class in `V(A)`. -/
 theorem mk_eq_mk {e : Matrix ι ι A} {f : Matrix κ κ A} (h : IdempotentEquivalent e f) :
@@ -95,7 +93,7 @@ theorem mk_eq_mk {e : Matrix ι ι A} {f : Matrix κ κ A} (h : IdempotentEquiva
 
 private theorem quotient_mk_eq_mk {n : ℕ} (e : Matrix (Fin n) (Fin n) A)
     (he : IsIdempotentElem e) : Quotient.mk (idempotentSetoid A) ⟨n, e, he⟩ = mk e he :=
-  Quotient.sound (idempotentEquivalent_toFin he)
+  Quotient.sound (idempotentEquivalent_submatrix he _)
 
 /-- Induction on `V(A)`: every element is the class of an idempotent matrix indexed by `Fin n`. -/
 @[elab_as_elim]
@@ -164,7 +162,8 @@ theorem mk_eq_zero_iff {e : Matrix ι ι A} (he : IsIdempotentElem e) : mk e he 
 theorem mk_add_mk {e : Matrix ι ι A} {f : Matrix κ κ A} (he : IsIdempotentElem e)
     (hf : IsIdempotentElem f) :
     mk e he + mk f hf = mk (fromBlocks e 0 0 f) (he.fromBlocks_zero₁₂_zero₂₁ hf) :=
-  mk_eq_mk ((idempotentEquivalent_toFin he).symm.fromBlocks (idempotentEquivalent_toFin hf).symm)
+  mk_eq_mk ((idempotentEquivalent_submatrix he _).symm.fromBlocks
+    (idempotentEquivalent_submatrix hf _).symm)
 
 private theorem idempotentEquivalent_of_submatrix_eq {μ : Type*} [Fintype μ] {e : Matrix ι ι A}
     (he : IsIdempotentElem e) {f : Matrix μ μ A} (σ : μ ≃ ι) (h : e.submatrix σ σ = f) :
@@ -203,20 +202,13 @@ theorem mk_congr_matrix {e₁ e₂ : Matrix ι ι A}
     mk e₁ he₁ = mk e₂ he₂ := by
   subst h; rfl
 
-/-- Two functions out of `IdempotentMonoid A` that agree on every `Fin n` representative are
-equal. -/
-theorem fun_ext {α : Sort*} {f g : IdempotentMonoid A → α}
-    (h : ∀ (n : ℕ) (e : Matrix (Fin n) (Fin n) A) (he : IsIdempotentElem e),
-      f (mk e he) = g (mk e he)) : f = g :=
-  funext fun x ↦ ind h x
-
 /-- Two additive monoid homomorphisms out of `IdempotentMonoid A` that agree on every `Fin n`
 representative are equal. -/
 @[ext]
 theorem hom_ext {M : Type*} [AddZeroClass M] {f g : IdempotentMonoid A →+ M}
     (h : ∀ (n : ℕ) (e : Matrix (Fin n) (Fin n) A) (he : IsIdempotentElem e),
       f (mk e he) = g (mk e he)) : f = g :=
-  DFunLike.coe_injective (fun_ext h)
+  DFunLike.coe_injective (funext fun x ↦ ind h x)
 
 noncomputable instance [Subsingleton A] : Unique (IdempotentMonoid A) where
   default := 0
@@ -224,22 +216,14 @@ noncomputable instance [Subsingleton A] : Unique (IdempotentMonoid A) where
     induction x using ind with | mk n e he => exact (mk_eq_zero_iff he).mpr (Subsingleton.elim e 0)
 
 /-- Reindexing an idempotent matrix along an index equivalence via `Matrix.submatrix` preserves its
-class. This is the `simp`-normal form of `mk_reindex`, since `Matrix.reindex_apply` simplifies
-`e.reindex σ σ` to `e.submatrix σ.symm σ.symm`. -/
+class. (Since `Matrix.reindex_apply` simplifies `e.reindex σ σ` to `e.submatrix σ.symm σ.symm`,
+`simp [he]` also simplifies `mk (e.reindex σ σ) _`.) -/
 @[simp]
 theorem mk_submatrix_equiv {ι ι' : Type*} [Fintype ι] [Fintype ι'] (e : Matrix ι ι A)
     (he : IsIdempotentElem e) (σ : ι' ≃ ι) :
-    mk (e.submatrix σ σ) (he.idempotentEquivalent_reindex σ.symm).isIdempotentElem_left =
+    mk (e.submatrix σ σ) (idempotentEquivalent_submatrix he σ).isIdempotentElem_right =
       mk e he :=
   mk_eq_mk (idempotentEquivalent_submatrix he σ).symm
-
-/-- Reindexing an idempotent matrix along an index equivalence preserves its class. Not marked
-`@[simp]` because `Matrix.reindex_apply` simplifies `e.reindex σ σ` to `e.submatrix σ.symm σ.symm`,
-after which `mk_submatrix_equiv` applies. -/
-theorem mk_reindex {ι ι' : Type*} [Fintype ι] [Fintype ι'] (e : Matrix ι ι A)
-    (he : IsIdempotentElem e) (σ : ι ≃ ι') :
-    mk (e.reindex σ σ) (he.idempotentEquivalent_reindex σ).isIdempotentElem_left = mk e he :=
-  mk_eq_mk (he.idempotentEquivalent_reindex σ)
 
 /-- Padding by a lower-right zero block preserves the class in `IdempotentMonoid A`. -/
 @[simp]
@@ -310,11 +294,11 @@ noncomputable def congr (e : R ≃+* S) : IdempotentMonoid R ≃+ IdempotentMono
 
 /-- Pointwise evaluation of `congr` as `map e.toNonUnitalRingHom`. -/
 theorem congr_apply (e : R ≃+* S) (x : IdempotentMonoid R) :
-    congr e x = map e.toNonUnitalRingHom x := by unfold congr; rfl
+    congr e x = map e.toNonUnitalRingHom x := (rfl)
 
 /-- Pointwise evaluation of `(congr e).symm` as `map e.symm.toNonUnitalRingHom`. -/
 theorem congr_symm_apply (e : R ≃+* S) (y : IdempotentMonoid S) :
-    (congr e).symm y = map e.symm.toNonUnitalRingHom y := by unfold congr; rfl
+    (congr e).symm y = map e.symm.toNonUnitalRingHom y := (rfl)
 
 @[simp]
 theorem coe_congr (e : R ≃+* S) :
@@ -432,10 +416,9 @@ theorem nsmul_mk_one (n : ℕ) :
     rw [succ_nsmul, ih, mk_add_mk]
     refine mk_eq_mk ?_
     have h1 : fromBlocks (1 : Matrix (Fin n) (Fin n) R) 0 0 (1 : Matrix (Fin 1) (Fin 1) R) =
-        (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).reindex finSumFinEquiv.symm
-          finSumFinEquiv.symm := by
+        (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).submatrix finSumFinEquiv finSumFinEquiv := by
       rw [fromBlocks_one]; ext a b; simp [Matrix.one_apply]
-    rw [h1]; exact IsIdempotentElem.one.idempotentEquivalent_reindex _
+    rw [h1]; exact (idempotentEquivalent_submatrix IsIdempotentElem.one _).symm
 
 /-- Over a semiring with invariant basis number, `[1ₘ] = [1ₙ]` iff `|m| = |n|`. -/
 theorem mk_one_eq_mk_one_iff [InvariantBasisNumber R] {ι κ : Type*} [Fintype ι] [Fintype κ]

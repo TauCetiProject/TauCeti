@@ -51,7 +51,12 @@ modules exactly when the matrices are equivalent.
 * `Matrix.idempotentEquivalent_submatrix`, `Matrix.idempotentEquivalent_conj`,
   `Matrix.IdempotentEquivalent.fromBlocks`, `Matrix.IdempotentEquivalent.map`: invariance under
   relabelling, conjugation, block sums and ring homomorphisms.
-* `Matrix.idempotentEquivalent_fromBlocks_one_sub`: `f ⊕ (1 - f)` is equivalent to `1`.
+* `Matrix.idempotentEquivalent_zero_iff`,
+  `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right`,
+  `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left`,
+  `Matrix.idempotentEquivalent_self_iff`, `Matrix.idempotentEquivalent_single_one`,
+  `Matrix.idempotentEquivalent_fromBlocks_one_sub`: zero matrices, zero-block padding,
+  self-equivalence, diagonal matrix units, and `f ⊕ (1 - f) ∼ 1`.
 * `IsIdempotentElem.mem_range_vecMulLinear_iff`: the range of an idempotent matrix consists of its
   fixed row vectors.
 * `IsIdempotentElem.projective_range_vecMulLinear`: this range is a projective module.
@@ -253,6 +258,50 @@ theorem IdempotentEquivalent.map {B : Type*} [NonUnitalNonAssocSemiring B] {F : 
   obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
   refine ⟨x.map φ, y.map φ, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp [← Matrix.map_mul, *]
 
+/-- Zero matrices of any two finite sizes are equivalent idempotents. -/
+theorem idempotentEquivalent_zero_zero (m n : Type*) [Fintype m] [Fintype n] :
+    IdempotentEquivalent (0 : Matrix m m A) (0 : Matrix n n A) :=
+  idempotentEquivalent_iff.mpr ⟨0, 0, by simp, by simp, by simp, by simp, by simp, by simp⟩
+
+/-- Only the zero matrix is equivalent to a zero matrix. -/
+@[simp]
+theorem idempotentEquivalent_zero_iff {e : Matrix ι ι A} :
+    IdempotentEquivalent e (0 : Matrix κ κ A) ↔ e = 0 := by
+  refine ⟨?_, fun h ↦ h ▸ idempotentEquivalent_zero_zero ι κ⟩
+  rw [idempotentEquivalent_iff]; rintro ⟨x, y, rfl, -, -, hxf, -, -⟩
+  rw [← hxf, Matrix.mul_zero, Matrix.zero_mul]
+
+/-- A zero matrix is equivalent only to the zero matrix. -/
+@[simp]
+theorem zero_idempotentEquivalent_iff {f : Matrix κ κ A} :
+    IdempotentEquivalent (0 : Matrix ι ι A) f ↔ f = 0 :=
+  ⟨fun h ↦ idempotentEquivalent_zero_iff.1 h.symm, fun h ↦ h ▸ idempotentEquivalent_zero_zero ι κ⟩
+
+/-- Padding an idempotent matrix by a lower-right zero block preserves its equivalence class. -/
+theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right (n : Type*)
+    [Fintype n] {e : Matrix ι ι A} (he : IsIdempotentElem e) :
+    IdempotentEquivalent (fromBlocks e 0 0 (0 : Matrix n n A)) e := by
+  have hee (i j : ι) : ∑ k, e i k * e k j = e i j := by
+    simpa [Matrix.mul_apply] using congr_fun (congr_fun he.eq i) j
+  refine idempotentEquivalent_iff.mpr ⟨fromRows e 0, fromCols e 0, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · ext (i | i) (j | j) <;> simp [Matrix.mul_apply, hee]
+  · ext i j; simp [Matrix.mul_apply, Fintype.sum_sum_type, hee]
+  · ext (i | i) j <;> simp [Matrix.mul_apply, Fintype.sum_sum_type, hee]
+  · ext (i | i) j <;> simp [Matrix.mul_apply, hee]
+  · ext i (j | j) <;> simp [Matrix.mul_apply, hee]
+  · ext i (j | j) <;> simp [Matrix.mul_apply, Fintype.sum_sum_type, hee]
+
+/-- Padding an idempotent matrix by an upper-left zero block preserves its equivalence class. -/
+theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left (m : Type*)
+    [Fintype m] {e : Matrix ι ι A} (he : IsIdempotentElem e) :
+    IdempotentEquivalent (fromBlocks (0 : Matrix m m A) 0 0 e) e := by
+  have hEq : fromBlocks (0 : Matrix m m A) 0 0 e =
+      (fromBlocks e 0 0 (0 : Matrix m m A)).submatrix (Equiv.sumComm m ι) (Equiv.sumComm m ι) := by
+    ext (_ | _) (_ | _) <;> simp
+  rw [hEq]
+  simpa using (he.idempotentEquivalent_fromBlocks_zero_right m).submatrix
+    (Equiv.sumComm m ι) (Equiv.refl ι)
+
 end NonUnitalNonAssocSemiring
 
 section NonUnitalSemiring
@@ -310,7 +359,38 @@ theorem idempotentEquivalent_iff_exists_mul_eq {e : Matrix ι ι A} {f : Matrix 
   · rw [hye, ← Matrix.mul_assoc, hf.eq]
   · rw [Matrix.mul_assoc, he.eq]
 
+/-- A square matrix is equivalent to itself if and only if it is idempotent. -/
+@[simp]
+theorem idempotentEquivalent_self_iff {e : Matrix ι ι A} :
+    IdempotentEquivalent e e ↔ IsIdempotentElem e :=
+  ⟨IdempotentEquivalent.isIdempotentElem_left, IdempotentEquivalent.refl⟩
+
 end NonUnitalSemiring
+
+section NonAssocSemiring
+
+variable {A : Type*} [NonAssocSemiring A] {ι κ : Type*}
+
+/-- Any two diagonal matrix units `Eᵢᵢ ∈ Matrix ι ι A` and `Eⱼⱼ ∈ Matrix κ κ A` are equivalent
+idempotents, witnessed by `Eᵢⱼ` and `Eⱼᵢ`. -/
+theorem idempotentEquivalent_single_one [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    (i : ι) (j : κ) : IdempotentEquivalent (single i i (1 : A)) (single j j (1 : A)) :=
+  idempotentEquivalent_iff.mpr
+    ⟨single i j 1, single j i 1, by simp, by simp, by simp, by simp, by simp, by simp⟩
+
+/-- Any diagonal matrix unit `Eᵢᵢ` is equivalent to the `1 × 1` identity matrix. -/
+theorem idempotentEquivalent_single_one_one [Fintype ι] [DecidableEq ι] (i : ι) :
+    IdempotentEquivalent (single i i (1 : A)) (1 : Matrix (Fin 1) (Fin 1) A) := by
+  have h1 : single (0 : Fin 1) 0 (1 : A) = (1 : Matrix (Fin 1) (Fin 1) A) := by
+    ext a b; simp [Subsingleton.elim a 0, Subsingleton.elim b 0, Matrix.one_apply]
+  exact h1 ▸ idempotentEquivalent_single_one i (0 : Fin 1)
+
+/-- Over a nontrivial nonassociative semiring, `Eᵢᵢ` is not equivalent to a zero matrix. -/
+theorem not_idempotentEquivalent_single_one_zero [Nontrivial A] [Fintype ι] [Fintype κ]
+    [DecidableEq ι] (i : ι) : ¬ IdempotentEquivalent (single i i (1 : A)) (0 : Matrix κ κ A) := by
+  rw [idempotentEquivalent_zero_iff]; intro h; have hii := congrFun (congrFun h i) i; simp at hii
+
+end NonAssocSemiring
 
 section Semiring
 

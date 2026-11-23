@@ -75,8 +75,8 @@ theorem exists_linearEquiv_range_mulVecBilin :
   have he : IsIdempotentElem e := by
     rw [IsIdempotentElem, ← op_inj, op_mul, op_unop]
     exact (he'.map RingEquiv.mopMatrix).eq
-  have htr : e.transpose.map op = e' :=
-    RingEquiv.mopMatrix.symm_apply_apply e'
+  have htr : e.transpose.map op = e' := by
+    ext i j; simp [e]
   exact ⟨n, e, he, ⟨ψ.trans (htr ▸ rangeVecMulLinearTransposeMapOpEquiv e)⟩⟩
 
 end Module.Finite
