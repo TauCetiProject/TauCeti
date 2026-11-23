@@ -138,7 +138,8 @@ theorem tendsto_eigenvalues₀_zero_and_card_sub_one_of_eventually_l2_opNorm_lt
         (((hA i).norm_eigenvalues₀_le_l2_opNorm _).trans_lt hi),
     (tendsto_eigenvalues₀_card_sub_one_iff_of_tendsto_spectralMeasure h hx').2 fun c hc ↦
       (hnorm (-c) (by linarith)).mono fun i hi ↦ ?_⟩
-  have h' := ((hA i).norm_eigenvalues₀_le_l2_opNorm _).trans_lt hi
+  have h' := ((hA i).norm_eigenvalues₀_le_l2_opNorm
+    ⟨Fintype.card (n i) - 1, Nat.sub_one_lt Fintype.card_ne_zero⟩).trans_lt hi
   simpa only [neg_neg, Real.norm_eq_abs] using (neg_lt_neg h').trans_le (neg_abs_le _)
 
 end Matrix
