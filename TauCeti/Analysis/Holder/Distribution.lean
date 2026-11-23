@@ -57,7 +57,8 @@ The argument for the identification:
   a convex neighbourhood of `x` (`Distribution.IsLocallyCkHolderAt.of_contDiffOn`). The notion is
   stable under the linear operations (`Distribution.isLocallyCkHolderAt_zero_iff`,
   `Distribution.IsLocallyCkHolderAt.smul`, `Distribution.IsLocallyCkHolderAt.add`,
-  `Distribution.IsLocallyCkHolderAt.sub`) and lowering the regularity
+  `Distribution.IsLocallyCkHolderAt.sub`), smooth multipliers
+  (`Distribution.IsLocallyCkHolderAt.smulLeftCLM`) and lowering the regularity
   (`Distribution.IsLocallyCkHolderAt.mono_exponent`, `Distribution.IsLocallyCkHolderAt.mono`).
 * `Distribution.isLocallyMemBesovAt_iff_isLocallyCkHolderAt`: for `0 < α < 1`, being `C^{k,α}`
   near `x` is being `B^{k+α}_{∞,∞}` near `x`. The direction
@@ -213,6 +214,36 @@ theorem IsLocallyCkHolderAt.of_contDiffOn {s : Set E} {f : E → ℂ} {M H : ℝ
   rw [hg]
   by_cases hy : y ∈ tsupport ψ
   · simp [χ.one_of_mem_closedBall (Metric.ball_subset_closedBall (hψ hy))]
+  · simp [image_eq_zero_of_notMem_tsupport hy]
+
+/-- A smooth multiple `g T` of a distribution `C^{k,α}` near `x` is `C^{k,α}` near `x`, for
+`α ≤ 1`. -/
+theorem IsLocallyCkHolderAt.smulLeftCLM (h : T.IsLocallyCkHolderAt k α x) (hα : α ≤ 1)
+    {g : E → ℝ} (hg : ContDiff ℝ ∞ g) :
+    (Distribution.smulLeftCLM hg T).IsLocallyCkHolderAt k α x := by
+  obtain ⟨U, hU, hUΩ, f, hT⟩ := h
+  -- For a bump `χ` equal to one on `ball x 1`, the compactly supported `χ g` agrees with `g`
+  -- there, and `χ g • f ∈ C_b^{k,α}`.
+  let χ : ContDiffBump x := ⟨1, 2, one_pos, one_lt_two⟩
+  have hχg : ContDiff ℝ ∞ fun y ↦ χ y * g y := χ.contDiff.mul hg
+  obtain ⟨N, hN⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (𝕜 := ℝ)
+    (f := fun y ↦ χ y * g y) (N := k + 1) fun i _ ↦
+      (hχg.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
+        (χ.hasCompactSupport.mul_right.iteratedFDeriv i)
+  let fg := CkHolderSpace.cutoff f.contDiff.contDiffOn (hχg.of_le (mod_cast le_top)) isOpen_univ
+    convex_univ (subset_univ _) hα (M := ‖f‖₊) (fun i hi y _ ↦ f.norm_iteratedFDeriv_apply_le hi y)
+    (fun i hi y ↦ (hN i hi y).trans (Real.le_coe_toNNReal N))
+    ((f.holderWith_iteratedFDeriv_of_le hα le_rfl).holderOnWith univ)
+  refine ⟨U ∩ Metric.ball x 1, inter_mem hU (Metric.ball_mem_nhds x one_pos),
+    inter_subset_left.trans hUΩ, fg, fun ψ hψ ↦ ?_⟩
+  rw [smulLeftCLM_apply, hT _ ((TestFunction.tsupport_smulLeftCLM_subset_right hg ψ).trans
+    (hψ.trans inter_subset_left))]
+  refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
+  dsimp only
+  rw [show fg y = (χ y * g y) • f y from CkHolderSpace.cutoff_apply ..]
+  by_cases hy : y ∈ tsupport ψ
+  · simp [χ.one_of_mem_closedBall (Metric.ball_subset_closedBall (hψ hy).2)]
+    ring
   · simp [image_eq_zero_of_notMem_tsupport hy]
 
 /-- **Local Hölder–Zygmund regularity gives local Hölder regularity.** For `0 < α < 1`, a complex
