@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
 # The codifferential and the Hodge Laplacian of an oriented Riemannian manifold
@@ -98,6 +99,11 @@ whose Laplacian is computed in powers of `t` by `TauCeti.SmoothForm.laplacian_ad
   `TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff`: the
   pairing is positive definite, `∫_M |α|² vol ≥ 0` with equality only for `α = 0` when `α` is
   smooth and compactly supported.
+* `TauCeti.SmoothForm.integralTopForm_wedge_hodgeStar_self_ne_zero`: `∫_M α ∧ ⋆α ≠ 0` for a
+  nonzero compactly supported smooth form `α`.
+* `TauCeti.SmoothForm.exists_integralTopForm_wedge_ne_zero`: the metric-free consequence, that a
+  nonzero compactly supported smooth form pairs nontrivially with some form of complementary
+  degree.
 * `TauCeti.SmoothForm.hodgeStar_mextDeriv`: `⋆dα = (-1) ^ (k + 1) d*⋆α`.
 * `TauCeti.SmoothForm.hodgeStar_hodgeLaplacian`: `⋆Δ = Δ⋆`.
 * `TauCeti.SmoothForm.hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami`: on functions,
@@ -1012,6 +1018,37 @@ theorem integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff [NeZero
   · subst h
     exact integralTopForm_inner_zero_left o 0
 
+/-- **A nonzero form pairs nontrivially with its Hodge star**: on an oriented Riemannian manifold
+of positive dimension `m = k + l`, a nonzero compactly supported smooth `k`-form `α` satisfies
+`∫_M α ∧ ⋆α = ∫_M |α|² vol ≠ 0`. -/
+theorem integralTopForm_wedge_hodgeStar_self_ne_zero [NeZero m]
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) {α : SmoothForm I M ℝ k}
+    (hα : α ∈ compactlySupportedForms I M k) (hα₀ : α ≠ 0) :
+    integralTopForm o (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) hkl
+      (wedge α (hodgeStar o hkl α)) : RoughForm I M ℝ m) ≠ 0 := by
+  rw [← inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar]
+  exact mt (integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o hkl hα).mp hα₀
+
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- **The wedge pairing is nondegenerate**: on an oriented manifold of positive dimension
+`m = k + l`, a nonzero compactly supported smooth `k`-form `α` pairs nontrivially with some smooth
+form `β` of the complementary degree, `∫_M α ∧ β ≠ 0`. No metric enters the statement: `β` is the
+Hodge star `⋆α` for an auxiliary Riemannian metric on `M`
+(`TauCeti.SmoothForm.integralTopForm_wedge_hodgeStar_self_ne_zero`). -/
+theorem exists_integralTopForm_wedge_ne_zero [NeZero m] [T2Space M] [SigmaCompactSpace M]
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) {α : SmoothForm I M ℝ k}
+    (hα : α ∈ compactlySupportedForms I M k) (hα₀ : α ≠ 0) :
+    ∃ β : SmoothForm I M ℝ l, integralTopForm o
+      (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) hkl (wedge α β) :
+        RoughForm I M ℝ m) ≠ 0 := by
+  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
+    (E := fun y : M ↦ TangentSpace I y)
+  let : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+  have : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
+    Bundle.instIsContMDiffRiemannianBundle g
+  exact ⟨_, integralTopForm_wedge_hodgeStar_self_ne_zero o hkl hα hα₀⟩
+
 /-- The `L²` pairing of forms is additive in its first argument,
 `∫_M ⟨α + β, γ⟩ vol = ∫_M ⟨α, γ⟩ vol + ∫_M ⟨β, γ⟩ vol`, when `α` and `β` or `γ` are compactly
 supported. -/
@@ -1045,6 +1082,27 @@ theorem integralTopForm_inner_add_left (o : Manifold.Orientation I M (Fin m)) (h
   funext x
   rw [Submodule.coe_add, Pi.add_apply, LinearMap.map_add₂, add_smul, Pi.add_apply]
 
+/-- **The `L²` norm of a sum**: compactly supported smooth `k`-forms satisfy
+`∫_M |α + β|² vol = ∫_M |α|² vol + 2 ∫_M ⟨α, β⟩ vol + ∫_M |β|² vol`. -/
+theorem integralTopForm_inner_add_add_self (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {α β : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k)
+    (hβ : β ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k ((α + β).val x)
+        ((α + β).val x) • riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x) (α.val x) •
+          riemannianVolumeForm o x) +
+        2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x)
+          (β.val x) • riemannianVolumeForm o x) +
+        integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β.val x) (β.val x) •
+          riemannianVolumeForm o x) := by
+  rw [integralTopForm_inner_add_left o hkl α β (α + β) (.inl ⟨hα, hβ⟩),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o α.val,
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val,
+    integralTopForm_inner_add_left o hkl α β α (.inl ⟨hα, hβ⟩),
+    integralTopForm_inner_add_left o hkl α β β (.inl ⟨hα, hβ⟩),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val α.val]
+  ring
+
 /-- **Young's inequality for the `L²` pairing**: on an oriented Riemannian manifold of positive
 dimension `m = k + l`, compactly supported smooth `k`-forms satisfy
 `-(∫_M |α|² vol + ∫_M |β|² vol) ≤ 2 ∫_M ⟨α, β⟩ vol`, from `0 ≤ ∫_M |α + β|² vol`. -/
@@ -1058,12 +1116,7 @@ theorem neg_add_le_two_mul_integralTopForm_inner [NeZero m] (o : Manifold.Orient
       2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x) (β.val x) •
         riemannianVolumeForm o x) := by
   have hsq := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o (α + β).val
-  rw [integralTopForm_inner_add_left o hkl α β (α + β) (.inl ⟨hα, hβ⟩),
-    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o α.val,
-    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val,
-    integralTopForm_inner_add_left o hkl α β α (.inl ⟨hα, hβ⟩),
-    integralTopForm_inner_add_left o hkl α β β (.inl ⟨hα, hβ⟩),
-    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val α.val] at hsq
+  rw [integralTopForm_inner_add_add_self o hkl hα hβ] at hsq
   linarith
 
 end SmoothPairing

@@ -14,7 +14,6 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Instances.AddCircle.PeriodicExtension
-import TauCeti.Topology.Separation.InvFunOn
 
 /-!
 # Periodic orbits at the ends of finite-energy Floer half-cylinders in a manifold
@@ -58,9 +57,11 @@ measured through `e`: `c ‖d e v‖² ≤ ω(v, J z v)` for a constant `c > 0`.
 
 The proof transports the problem to `F`, where the vector-space theory applies.
 
-* The pushforward `d e (X_{H_t})` of the Hamiltonian vector field is a continuous periodic field
-  on the image `e(K)`, and extends to a continuous periodic field `Y` on all of `F` by the Tietze
-  extension theorem (`Topology.IsClosedEmbedding.exists_continuous_periodic_extension`).
+* The pushforward `d e (X_{H_t})` of the Hamiltonian vector field is continuous
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.continuous_mvfderiv_hamiltonianVectorField`), so it is
+  a continuous periodic field on the image `e(K)`, and extends to a continuous periodic field `Y`
+  on all of `F` by the Tietze extension theorem
+  (`Topology.IsClosedEmbedding.exists_continuous_periodic_extension`).
 * The defect `∂_t (e ∘ u) - Y(e ∘ u)` of the loops of `e ∘ u` is `d e (∂_t u - X_{H_t}(u))`
   (`TauCeti.sliceDefect_comp_eq_mvfderiv_sub`). By the Floer equation, the energy density is
   `ω(η, J η)` for `η = ∂_t u - X_{H_t}(u)`
@@ -191,18 +192,14 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
 /-- The pushforward `d e (X_{H_t})` of the Hamiltonian vector field on a compact set `K` on which
 `e` is injective extends to a continuous field `Y` on `F`, `1`-periodic in time. -/
-private theorem IsNondegenerate.exists_continuous_periodic_extension (hω : ω.IsNondegenerate)
+theorem IsNondegenerate.exists_continuous_periodic_extension (hω : ω.IsNondegenerate)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hHper : Periodic H 1)
     (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K) (he_inj : InjOn e K) :
     ∃ Y : ℝ → F → F, Continuous (uncurry Y) ∧ (∀ v, Periodic (fun t ↦ Y t v) 1) ∧
       ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p) := by
   have := isCompact_iff_compactSpace.1 hK
   have hemb := hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj
-  -- The pushforward `(t, p) ↦ d e_p (X_{H_t}(p))` of the Hamiltonian vector field is continuous.
-  have hXe : Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2) :=
-    (he.contMDiff_mvfderiv_apply (m := 0) (by simp)).continuous.comp
-      (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp)
-        (by simpa using hH)).continuous
+  have hXe := hω.continuous_mvfderiv_hamiltonianVectorField hH he
   -- Extend it from `e(K)` to a continuous periodic field on `F`.
   obtain ⟨Y, hYc, hYper, hYe⟩ := hemb.exists_continuous_periodic_extension
     (f := fun t (p : K) ↦ mvfderiv I e p (ω.hamiltonianVectorField (H t) p))

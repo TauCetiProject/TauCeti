@@ -34,8 +34,9 @@ The Betti numbers are invariants of homotopy type
 (`ContinuousMap.HomotopyEquiv.bettiNumber_eq`). Over a division ring, or any ring with the strong
 rank condition, the zeroth Betti number counts the path components (`TauCeti.bettiNumber_zero`),
 again with the junk value `0` when there are infinitely many, and the positive-degree Betti numbers
-of a contractible space vanish (`TauCeti.bettiNumber_eq_zero_of_contractibleSpace`). So a point has
-Betti numbers `1, 0, 0, …` over every division ring. A totally disconnected space, such as a
+of a contractible space vanish (`TauCeti.bettiNumber_eq_zero_of_contractibleSpace`). So a point, or
+any contractible space, has Betti numbers `1, 0, 0, …` over every division ring
+(`TauCeti.bettiNumber_of_contractibleSpace`). A totally disconnected space, such as a
 discrete one, has zeroth homology free on its points
 (`TauCeti.singularHomologyZeroLinearEquivFinsuppOfTotallyDisconnectedSpace`) and no homology in
 positive degrees (`TauCeti.subsingleton_singularHomology_of_totallyDisconnectedSpace`); so `r`
@@ -59,10 +60,14 @@ natural number coefficients.
 ## Main declarations
 
 * `TauCeti.bettiNumber`: the `j`-th Betti number of a space with coefficients in `k`.
+* `TauCeti.finrank_singularHomology_uLift_eq_bettiNumber`: the Betti numbers read with
+  coefficients in `ULift k`.
 * `ContinuousMap.HomotopyEquiv.bettiNumber_eq`: Betti numbers are homotopy invariant.
 * `TauCeti.bettiNumber_zero`: the zeroth Betti number is the number of path components.
 * `TauCeti.bettiNumber_eq_zero_of_contractibleSpace`: the positive-degree Betti numbers of a
   contractible space vanish.
+* `TauCeti.bettiNumber_of_contractibleSpace`: the Betti numbers of a contractible space are
+  `1, 0, 0, …`.
 * `TauCeti.singularHomologyZeroLinearEquivFinsuppOfTotallyDisconnectedSpace`,
   `TauCeti.subsingleton_singularHomology_of_totallyDisconnectedSpace`,
   `TauCeti.rank_singularHomology_zero_of_totallyDisconnectedSpace`,
@@ -131,6 +136,24 @@ theorem bettiNumber_eq_zero_of_contractibleSpace [Nontrivial k] [ContractibleSpa
   -- The carrier of `TopCat.of X` is `X` itself.
   have : ContractibleSpace (TopCat.of X) := ‹ContractibleSpace X›
   rw [bettiNumber_def, ModuleCat.finrank_singularHomology_of_contractibleSpace, ite_eq_right hj]
+
+variable {X} in
+/-- **The Betti numbers of a contractible space**, such as a point, are `1` in degree zero and `0`
+in every positive degree, over a ring with the strong rank condition. -/
+theorem bettiNumber_of_contractibleSpace [StrongRankCondition k] [ContractibleSpace X] (j : ℕ) :
+    bettiNumber k X j = if j = 0 then 1 else 0 := by
+  have : ContractibleSpace (TopCat.of X) := ‹ContractibleSpace X›
+  rw [bettiNumber_def, ModuleCat.finrank_singularHomology_of_contractibleSpace]
+  simp
+
+/-- The Betti numbers may be read with coefficients in `ULift k`, as for singular homology computed
+as twisted homology with constant coefficients. -/
+theorem finrank_singularHomology_uLift_eq_bettiNumber (j : ℕ) :
+    finrank k (((singularHomologyFunctor (ModuleCat.{u} k) j).obj
+        (ModuleCat.of k (ULift.{u} k))).obj (TopCat.of X)) = bettiNumber k X j := by
+  rw [bettiNumber_def]
+  exact ((((singularHomologyFunctor (ModuleCat.{u} k) j).mapIso
+    ULift.moduleEquiv.toModuleIso).app (TopCat.of X)).toLinearEquiv).finrank_eq
 
 end Ring
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Type
 public import Mathlib.Data.Nat.Factorization.Induction
+public import Mathlib.GroupTheory.Exponent
 
 /-!
 # The order of a finite group is invertible when the orders of its elements are
@@ -24,6 +25,7 @@ finite groups: there it controls the orders of all finite subgroups at once.
 
 * `TauCeti.isUnit_natCard_iff_forall_isUnit_orderOf`: `#G` is a unit of `k` exactly when the
   order of every element of `G` is.
+* `TauCeti.isUnit_natCard_of_isUnit_exponent`: `#G` is a unit of `k` if the exponent of `G` is.
 -/
 
 public section
@@ -49,5 +51,13 @@ theorem isUnit_natCard_iff_forall_isUnit_orderOf {G k : Type*} [Group G] [Finite
     obtain ⟨g, hg⟩ := exists_prime_orderOf_dvd_card' p (dvd_of_mul_right_dvd hn)
     rw [Nat.cast_mul]
     exact (hg ▸ h g).mul (ih (dvd_of_mul_left_dvd hn))
+
+/-- **The order of a finite group is invertible when its exponent is.** For a finite group `G` and
+a commutative semiring `k`, if the exponent of `G` is a unit of `k`, then so is `#G`: the order of
+every element of `G` divides the exponent. -/
+theorem isUnit_natCard_of_isUnit_exponent {G k : Type*} [Group G] [Finite G] [CommSemiring k]
+    (h : IsUnit (Monoid.exponent G : k)) : IsUnit (Nat.card G : k) :=
+  isUnit_natCard_iff_forall_isUnit_orderOf.2 fun g ↦
+    isUnit_of_dvd_unit (Nat.cast_dvd_cast (Monoid.order_dvd_exponent g)) h
 
 end TauCeti

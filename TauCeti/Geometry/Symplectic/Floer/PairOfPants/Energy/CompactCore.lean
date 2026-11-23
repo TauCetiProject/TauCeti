@@ -85,8 +85,7 @@ private theorem IsNondegenerate.pairOfPantsPerturbation_add_aux
     (hδs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δs))
     (hδt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
     (hD : IsCompact D) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
     (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
@@ -157,8 +156,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_add
     (hδs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δs))
     (hδt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
     (hD : IsCompact D) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
     (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
@@ -208,8 +206,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_
     (hδs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δs))
     (hδt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
     (hD : IsCompact D) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
     (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
@@ -258,8 +255,7 @@ theorem IsNondegenerate.exists_abs_integral_floerEnergyDensity_pairOfPantsPertur
       (fun q : (N × (ℝ × ℝ)) × M ↦ δt q.1.1 q.1.2 q.2))
     {A : Set N} {D U : Set (ℝ × ℝ)} {Q : Set M}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ p ∈ A, ∀ u : ℝ × ℝ → M,
       ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal → (∀ z ∈ D, u z ∈ Q) →
@@ -315,8 +311,7 @@ theorem IsNondegenerate.exists_neg_sum_add_le_integral_add_sum_of_pairOfPantsPer
       (fun q : (N × (ℝ × ℝ)) × M ↦ δt q.1.1 q.1.2 q.2))
     {A : Set N} {D U : Set (ℝ × ℝ)} {Q : Set M}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ p ∈ A, ∀ u : ℝ × ℝ → M,
       ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal → (∀ z ∈ D, u z ∈ Q) →
@@ -375,7 +370,7 @@ private theorem pairOfPantsPerturbation_add_aux (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {δs δt : ℝ × ℝ → V → ℝ}
     (hδs : ContDiff ℝ 1 (uncurry δs)) (hδt : ContDiff ℝ 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
     (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord (equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {K : ℂ → V → ℂ →L[ℝ] ℝ}
     (hKdef : K = fun w y ↦ pairOfPantsPerturbation H w y +
       (δs (equivRealProdCLM w) y • reCLM + δt (equivRealProdCLM w) y • imCLM)) :
@@ -428,7 +423,7 @@ theorem exists_integrable_and_integral_floerEnergyDensity_pairOfPantsPerturbatio
     (hδt : ContDiff ℝ 1 (fun q : (P × (ℝ × ℝ)) × V ↦ δt q.1.1 q.1.2 q.2))
     {A : Set P} {D U : Set (ℝ × ℝ)} {Q : Set V}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord (equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ p ∈ A, ∀ u : ℝ × ℝ → V, ContDiffOn ℝ 2 u thricePuncturedSphereReal →
       (∀ z ∈ D, u z ∈ Q) → ∀ J : ℝ × ℝ → AlmostComplexStructure V,
