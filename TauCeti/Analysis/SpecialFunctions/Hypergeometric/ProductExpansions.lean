@@ -297,34 +297,40 @@ private theorem bc_factorial_ratio_le (s j k : ℕ) :
       ≤ (m ! * (2 * s + m)!) * s ! * s ! := by gcongr
     _ = (m.choose j : ℝ) * ((s ! : ℝ) * s ! * j ! * k ! * (2 * s + m)!) := by rw [hch]; ring
 
-private theorem exists_bc_coeff_bound (a b c : ℂ) :
-    ∃ K : ℝ, ∃ P Q : ℕ, 0 ≤ K ∧ ∀ s j k : ℕ,
-      ‖bcGenCoeff a b c s j k‖ ≤
-        K * ((s : ℝ) + 1) ^ P * ((j + k : ℝ) + 1) ^ Q * ((j + k).choose j : ℝ) := by
-  let N : ℕ := max (max ⌈‖a‖⌉₊ ⌈‖b‖⌉₊) (max ⌈‖c - a‖⌉₊ ⌈‖c - b‖⌉₊) + 1
-  have hN (w : ℂ) (hw : ⌈‖w‖⌉₊ ≤ N - 1) : ‖w‖ ≤ N :=
-    (Nat.le_ceil ‖w‖).trans (by exact_mod_cast hw.trans (Nat.sub_le N 1))
-  have haN : ‖a‖ ≤ N := hN a ((le_max_left _ _).trans (le_max_left _ _))
-  have hbN : ‖b‖ ≤ N := hN b ((le_max_right _ _).trans (le_max_left _ _))
-  have hcaN : ‖c - a‖ ≤ N := hN (c - a) ((le_max_left _ _).trans (le_max_right _ _))
-  have hcbN : ‖c - b‖ ≤ N := hN (c - b) ((le_max_right _ _).trans (le_max_right _ _))
-  obtain ⟨CΓ, M, hCΓ, hΓ⟩ := exists_norm_inv_Gamma_add_natCast_le c
-  refine ⟨CΓ ^ 2 * ((N : ℝ) + 1) ^ (4 * N) * 2 ^ M, 4 * N + 2 * M, 2 * N + M,
-    by positivity, fun s j k ↦ ?_⟩
+private theorem natCast_add_natCast_le_mul (s N : ℕ) :
+    ((s + N : ℕ) : ℝ) ≤ ((N : ℝ) + 1) * ((s : ℝ) + 1) := by
+  push_cast
+  nlinarith [N.cast_nonneg (α := ℝ), s.cast_nonneg (α := ℝ)]
+
+private theorem natCast_add_add_le_mul (s m N : ℕ) :
+    ((s + m + N : ℕ) : ℝ) ≤ ((N : ℝ) + 1) * ((s : ℝ) + 1) * ((m : ℝ) + 1) := by
+  have h1 : (s : ℝ) + m + 1 ≤ ((s : ℝ) + 1) * ((m : ℝ) + 1) := by
+    nlinarith [s.cast_nonneg (α := ℝ), m.cast_nonneg (α := ℝ)]
+  have h2 := natCast_add_natCast_le_mul (s + m) N
+  push_cast at h2 ⊢
+  nlinarith [N.cast_nonneg (α := ℝ)]
+
+private theorem two_mul_add_natCast_add_one_le (s m : ℕ) :
+    ((2 * s + m : ℕ) : ℝ) + 1 ≤ 2 * ((s : ℝ) + 1) * ((m : ℝ) + 1) := by
+  push_cast
+  nlinarith [s.cast_nonneg (α := ℝ), m.cast_nonneg (α := ℝ)]
+
+private theorem norm_bcGenCoeff_le_pochhammer_gamma {a b c : ℂ} {N M : ℕ} {CΓ : ℝ}
+    (haN : ‖a‖ ≤ N) (hbN : ‖b‖ ≤ N) (hcaN : ‖c - a‖ ≤ N) (hcbN : ‖c - b‖ ≤ N)
+    (hCΓ : 0 ≤ CΓ)
+    (hΓ : ∀ n : ℕ, ‖(Gamma (c + n))⁻¹‖ ≤ CΓ * ((n : ℝ) + 1) ^ M / n !)
+    (s j k : ℕ) :
+    ‖bcGenCoeff a b c s j k‖ ≤
+      CΓ ^ 2 * ((s + (j + k) + N : ℕ) : ℝ) ^ (2 * N) * ((s + N : ℕ) : ℝ) ^ (2 * N) *
+        ((s : ℝ) + 1) ^ M * (((2 * s + (j + k) : ℕ) : ℝ) + 1) ^ M * ((j + k).choose j : ℝ) := by
   set m := j + k
   have h1 := TauCeti.norm_ascPochhammer_eval_le_pow_mul_factorial haN (s + m)
   have h2 := TauCeti.norm_ascPochhammer_eval_le_pow_mul_factorial hbN (s + m)
   have h3 := TauCeti.norm_ascPochhammer_eval_le_pow_mul_factorial hcaN s
   have h4 := TauCeti.norm_ascPochhammer_eval_le_pow_mul_factorial hcbN s
-  have h5 := hΓ s; have h6 := hΓ (2 * s + m); have hfac := bc_factorial_ratio_le s j k
-  have hp1 : ((s + m + N : ℕ) : ℝ) ≤ ((N : ℝ) + 1) * ((s : ℝ) + 1) * ((m : ℝ) + 1) := by
-    have : (s : ℝ) + m + 1 ≤ ((s : ℝ) + 1) * ((m : ℝ) + 1) := by
-      nlinarith [s.cast_nonneg (α := ℝ), m.cast_nonneg (α := ℝ)]
-    push_cast; nlinarith [N.cast_nonneg (α := ℝ), s.cast_nonneg (α := ℝ), m.cast_nonneg (α := ℝ)]
-  have hp2 : ((s + N : ℕ) : ℝ) ≤ ((N : ℝ) + 1) * ((s : ℝ) + 1) := by
-    push_cast; nlinarith [N.cast_nonneg (α := ℝ), s.cast_nonneg (α := ℝ)]
-  have hp3 : ((2 * s + m : ℕ) : ℝ) + 1 ≤ 2 * ((s : ℝ) + 1) * ((m : ℝ) + 1) := by
-    push_cast; nlinarith [s.cast_nonneg (α := ℝ), m.cast_nonneg (α := ℝ)]
+  have h5 := hΓ s
+  have h6 := hΓ (2 * s + m)
+  have hfac := bc_factorial_ratio_le s j k
   have hsjk : s + j + k = s + m := add_assoc s j k
   have h2sjk : 2 * s + j + k = 2 * s + m := add_assoc (2 * s) j k
   rw [bcGenCoeff, hsjk, h2sjk, div_eq_mul_inv]
@@ -342,35 +348,68 @@ private theorem exists_bc_coeff_bound (a b c : ℂ) :
           ((s : ℝ) + 1) ^ M * (((2 * s + m : ℕ) : ℝ) + 1) ^ M *
           ((((s + m)! : ℝ) * (s + m)! * s ! * s !) /
             ((s ! : ℝ) * s ! * j ! * k ! * (2 * s + m)!)) := by push_cast; ring
+    _ ≤ CΓ ^ 2 * ((s + m + N : ℕ) : ℝ) ^ (2 * N) * ((s + N : ℕ) : ℝ) ^ (2 * N) *
+          ((s : ℝ) + 1) ^ M * (((2 * s + m : ℕ) : ℝ) + 1) ^ M * (m.choose j : ℝ) := by gcongr
+
+private theorem norm_bcGenCoeff_le {a b c : ℂ} {N M : ℕ} {CΓ : ℝ}
+    (haN : ‖a‖ ≤ N) (hbN : ‖b‖ ≤ N) (hcaN : ‖c - a‖ ≤ N) (hcbN : ‖c - b‖ ≤ N)
+    (hCΓ : 0 ≤ CΓ)
+    (hΓ : ∀ n : ℕ, ‖(Gamma (c + n))⁻¹‖ ≤ CΓ * ((n : ℝ) + 1) ^ M / n !)
+    (s j k : ℕ) :
+    ‖bcGenCoeff a b c s j k‖ ≤
+      CΓ ^ 2 * ((N : ℝ) + 1) ^ (4 * N) * 2 ^ M * ((s : ℝ) + 1) ^ (4 * N + 2 * M) *
+        ((j + k : ℝ) + 1) ^ (2 * N + M) * ((j + k).choose j : ℝ) := by
+  set m := j + k
+  have hp1 := natCast_add_add_le_mul s m N
+  have hp2 := natCast_add_natCast_le_mul s N
+  have hp3 := two_mul_add_natCast_add_one_le s m
+  have h4N : 4 * N = 2 * N + 2 * N := by ring
+  have h2M : 2 * M = M + M := by ring
+  calc ‖bcGenCoeff a b c s j k‖
+      ≤ CΓ ^ 2 * ((s + m + N : ℕ) : ℝ) ^ (2 * N) * ((s + N : ℕ) : ℝ) ^ (2 * N) *
+          ((s : ℝ) + 1) ^ M * (((2 * s + m : ℕ) : ℝ) + 1) ^ M * (m.choose j : ℝ) :=
+        norm_bcGenCoeff_le_pochhammer_gamma haN hbN hcaN hcbN hCΓ hΓ s j k
     _ ≤ CΓ ^ 2 * (((N : ℝ) + 1) * ((s : ℝ) + 1) * ((m : ℝ) + 1)) ^ (2 * N) *
           (((N : ℝ) + 1) * ((s : ℝ) + 1)) ^ (2 * N) * ((s : ℝ) + 1) ^ M *
           (2 * ((s : ℝ) + 1) * ((m : ℝ) + 1)) ^ M * (m.choose j : ℝ) := by gcongr
     _ = CΓ ^ 2 * ((N : ℝ) + 1) ^ (4 * N) * 2 ^ M * ((s : ℝ) + 1) ^ (4 * N + 2 * M) *
           ((j + k : ℝ) + 1) ^ (2 * N + M) * ((j + k).choose j : ℝ) := by
-        have h4N : 4 * N = 2 * N + 2 * N := by ring
-        have h2M : 2 * M = M + M := by ring
         simp only [m, Nat.cast_add, mul_pow, h4N, h2M, pow_add]
         ring
+
+private theorem exists_bc_coeff_bound (a b c : ℂ) :
+    ∃ K : ℝ, ∃ P Q : ℕ, 0 ≤ K ∧ ∀ s j k : ℕ,
+      ‖bcGenCoeff a b c s j k‖ ≤
+        K * ((s : ℝ) + 1) ^ P * ((j + k : ℝ) + 1) ^ Q * ((j + k).choose j : ℝ) := by
+  let N : ℕ := max (max ⌈‖a‖⌉₊ ⌈‖b‖⌉₊) (max ⌈‖c - a‖⌉₊ ⌈‖c - b‖⌉₊) + 1
+  have hN (w : ℂ) (hw : ⌈‖w‖⌉₊ ≤ N - 1) : ‖w‖ ≤ N :=
+    (Nat.le_ceil ‖w‖).trans (by exact_mod_cast hw.trans (Nat.sub_le N 1))
+  obtain ⟨CΓ, M, hCΓ, hΓ⟩ := exists_norm_inv_Gamma_add_natCast_le c
+  exact ⟨CΓ ^ 2 * ((N : ℝ) + 1) ^ (4 * N) * 2 ^ M, 4 * N + 2 * M, 2 * N + M, by positivity,
+    norm_bcGenCoeff_le (hN a ((le_max_left _ _).trans (le_max_left _ _)))
+      (hN b ((le_max_right _ _).trans (le_max_left _ _)))
+      (hN (c - a) ((le_max_left _ _).trans (le_max_right _ _)))
+      (hN (c - b) ((le_max_right _ _).trans (le_max_right _ _))) hCΓ hΓ⟩
+
+private theorem ascPochhammer_add_add_eval (x : ℂ) (s j k : ℕ) :
+    (ascPochhammer ℂ s).eval x * (ascPochhammer ℂ j).eval (x + s) *
+        (ascPochhammer ℂ k).eval (x + s + j) =
+      (ascPochhammer ℂ (s + j + k)).eval x := by
+  rw [TauCeti.ascPochhammer_add_eval x (s + j) k, TauCeti.ascPochhammer_add_eval x s j]
+  push_cast
+  rw [add_assoc x (s : ℂ) j]
 
 private theorem norm_bcGenTerm_coeff_eq (a b c u v y : ℂ) (s j k : ℕ) :
     ‖bcGenPref a b c u v s j *
         ((regularizedGaussHGFunSeries (a + s + j) (b + s + j) (c + 2 * s + j)).coeff k *
           y ^ k)‖ =
       ‖bcGenCoeff a b c s j k‖ * ‖u‖ ^ s * ‖v‖ ^ j * ‖y‖ ^ k := by
-  have hp1 : (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ j).eval (a + s) *
-      (ascPochhammer ℂ k).eval (a + s + j) = (ascPochhammer ℂ (s + j + k)).eval a := by
-    rw [TauCeti.ascPochhammer_add_eval a (s + j) k, TauCeti.ascPochhammer_add_eval a s j]
-    push_cast; rw [add_assoc a (s : ℂ) j]
-  have hp2 : (ascPochhammer ℂ s).eval b * (ascPochhammer ℂ j).eval (b + s) *
-      (ascPochhammer ℂ k).eval (b + s + j) = (ascPochhammer ℂ (s + j + k)).eval b := by
-    rw [TauCeti.ascPochhammer_add_eval b (s + j) k, TauCeti.ascPochhammer_add_eval b s j]
-    push_cast; rw [add_assoc b (s : ℂ) j]
   have hc_eq : c + 2 * (s : ℂ) + j + k = c + (2 * s + j + k : ℕ) := by push_cast; ring
   simp only [bcGenPref, bcPref, bcGenCoeff, coeff_regularizedGaussHGFunSeries, hc_eq]
   rw [← norm_pow u s, ← norm_pow v j, ← norm_pow y k, ← norm_mul, ← norm_mul, ← norm_mul]
   refine congrArg norm ?_
   simp only [div_eq_mul_inv, mul_inv]
-  rw [← hp1, ← hp2]
+  rw [← ascPochhammer_add_add_eval a, ← ascPochhammer_add_add_eval b]
   ring
 
 private theorem norm_bcGenTerm_le {a b c u v y : ℂ} {K : ℝ} {P Q : ℕ} (hy : ‖y‖ < 1)
@@ -528,7 +567,7 @@ private theorem bcDoubleTerm_antidiag_eq (a b c z ζ : ℂ) {n s : ℕ} (hsn : s
   rw [hshift c] at hΓ
   have hp (x : ℂ) : (ascPochhammer ℂ s).eval x * (ascPochhammer ℂ (n - s)).eval (x + s) =
       (ascPochhammer ℂ n).eval x := by
-    simpa [hadd_n] using (TauCeti.ascPochhammer_add_eval x s (n - s)).symm
+    rw [← TauCeti.ascPochhammer_add_eval, hadd_n]
   have hζn : ζ ^ s * ζ ^ (n - s) = ζ ^ n := by rw [← pow_add, hadd_n]
   have hc2_shift : c + 2 * (s : ℂ) + (n - s : ℕ) = c + n + s := by
     have htwo : c + 2 * (s : ℂ) = c + s + s := by ring
