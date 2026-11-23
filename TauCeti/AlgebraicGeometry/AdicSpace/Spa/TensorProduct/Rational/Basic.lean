@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
-import TauCeti.RingTheory.Huber.TensorProduct.Rational.Presentation
 
 /-!
 # Rational preimages on adic spectra of completed tensor products
@@ -127,10 +126,12 @@ theorem completedTensor.inl_preimage_inter_inr_preimage_mem_spaRationalFamily
     (completedTensor.inl A UB UC).spaComap ⁻¹' (Subtype.val ⁻¹' rationalSubset UB.plus T s) ∩
         (completedTensor.inr A UB UC).spaComap ⁻¹'
           (Subtype.val ⁻¹' rationalSubset UC.plus T' s') ∈
-      spaRationalFamily (UB.completedTensor A UC).plus := by
-  classical
-  exact mem_spaRationalFamily_iff.mpr ⟨_, _, CompletedTensor.isOpen_span_inl_mul_inr hT hT',
-    completedTensor.inl_preimage_inter_inr_preimage_rationalSubset UB UC T s T' s'⟩
+      spaRationalFamily (UB.completedTensor A UC).plus :=
+  inter_mem_spaRationalFamily
+    (completedTensor.inl_spaComap_preimage_mem_spaRationalFamily UB UC
+      (mem_spaRationalFamily_iff.mpr ⟨T, s, hT, rfl⟩))
+    (completedTensor.inr_spaComap_preimage_mem_spaRationalFamily UB UC
+      (mem_spaRationalFamily_iff.mpr ⟨T', s', hT', rfl⟩))
 
 /-- Degenerate case `U = Spa(B, B⁺)` (`T = {1}`, `s = 1`): intersecting with `p_B⁻¹(R({1}/1))`
 leaves `p_C⁻¹(V)` unchanged. -/

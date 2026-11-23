@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.BaseChange
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedRationalSubset
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.TensorProduct.Rational.Basic
-public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Base
+public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Base.Pair
 public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Pair
 public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Presentation
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.PlusComparison

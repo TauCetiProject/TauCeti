@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.TensorProduct.Pushout
-public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Base
+public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Base.Pair
 public import TauCeti.RingTheory.Huber.TensorProduct.Rational.Pair
 
 /-!
@@ -16,7 +16,7 @@ Let `A → B` and `A → C` be adic homomorphisms of Huber rings, `(A, A⁺)`, `
 `(C, C⁺)` Huber pairs, and `(D, D⁺) = (B, B⁺) ⊗̂_A (C, C⁺)` their completed tensor product.
 Combining the fixed-base comparison `toRationalLocalization` / `ofRationalLocalization` (from
 `Rational.Pair`) with base-localisation invariance `toBaseLocalization` / `ofBaseLocalization`
-(from `Rational.Base`), this file proves that `(D⟨T''/(inl(s) · inr(s'))⟩, D_W⁺)` is a
+(from `Rational.Base.Pair`), this file proves that `(D⟨T''/(inl(s) · inr(s'))⟩, D_W⁺)` is a
 `TauCeti.Huber.IsCompletedPushout` over any compatible rational localisation
 `(A⟨T₀/s₀⟩, A_0⁺)`.
 

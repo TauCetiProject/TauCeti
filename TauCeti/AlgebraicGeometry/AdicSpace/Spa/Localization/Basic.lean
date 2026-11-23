@@ -59,8 +59,6 @@ in `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph`.
 * `TauCeti.ValuationSpectrum.spaComapLoc_mem_rationalSubset` and
   `TauCeti.ValuationSpectrum.range_spaComapLoc_subset` : the rational localisation satisfies that
   criterion, so `Spa (A_U, A_U⁺)` lies over `R(T/s)`.
-* `TauCeti.ValuationSpectrum.vle_one_of_comap_mem_rationalSubset` : at a point whose pullback
-  lies in `R(T/s)`, the fraction `φ t / φ s` is sub-unit.
 * `TauCeti.ValuationSpectrum.comap_mem_spa_completedPlusSubring` : a continuous valuation pulled
   back along a continuous map out of `A⟨T/s⟩` is a point of `Spa (A⟨T/s⟩, A_U⁺)` once its
   pullback to `A` lies in `R(T/s)`.
@@ -218,27 +216,6 @@ theorem spaComapLoc_mem_rationalSubset (P : PairOfDefinition A) (Aplus : Subring
   -- and `t` times that inverse is the fraction `t/s`, which lies in `A_U⁺`
   rw [toCompletionLoc_mul_unit_inv_eq_divBy P T s S hden t hu]
   exact divBy_mem_completedPlusSubring P Aplus T s S hden ht
-
-omit [IsTopologicalRing A] in
-/-- **The fractions are sub-unit.** At a point of `Spv B` whose pullback lies in `R(T/s)`, the
-fraction `φ t / φ s` has value at most `1`.
-
-The pullback condition gives `|φ t|_w ≤ |φ s|_w`, and dividing by the unit `φ s` turns that into
-`|φ t / φ s|_w ≤ 1`. Nothing beyond the pullback condition is used, so the unit enters as an
-argument rather than being re-derived.
-
-The pullback condition is taken at the single point `w` where it is spent, not as a hypothesis
-quantified over `spa B⁺`: the proof looks at no other point, and `Bplus` then plays no part in
-the statement at all, so no topology on `B` is needed either. -/
-theorem vle_one_of_comap_mem_rationalSubset {B : Type*} [CommRing B] {φ : A →+* B}
-    {Aplus : Subring A} {T : Finset A} {s : A} (hs : IsUnit (φ s)) {w : Spv B}
-    (hmem : comap φ w ∈ rationalSubset Aplus T s) {t : A} (ht : t ∈ T) :
-    w.toValuativeRel.vle (φ t * ↑hs.unit⁻¹) 1 := by
-  have hvle : w.toValuativeRel.vle (φ t) (φ s) := by
-    have h := ((mem_rationalSubset_iff Aplus T s _).mp hmem).2.1 t ht
-    rwa [comap_vle] at h
-  have h := w.toValuativeRel.mul_vle_mul_left hvle (↑hs.unit⁻¹ : B)
-  rwa [hs.mul_val_inv] at h
 
 -- **The plus ring of the localisation is sub-unit.** Let `w` be a point of `Spv B` that is
 -- sub-unit on the image of `A⁺` under `φ` and on the images `ψ (t/s)` of the fractions, and let
