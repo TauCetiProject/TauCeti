@@ -70,7 +70,7 @@ attribute [instance] Model.flat Model.locallyOfFinitePresentation Model.quasiCom
 
 /-- The total space of a model over a discrete valuation ring is Noetherian, being of finite
 presentation over the Noetherian scheme `Spec R`. -/
-instance isNoetherian_total (M : Model R K C toK) : AlgebraicGeometry.IsNoetherian M.total :=
+theorem isNoetherian_total (M : Model R K C toK) : AlgebraicGeometry.IsNoetherian M.total :=
   TauCeti.AlgebraicGeometry.isNoetherian_of_finiteType M.toBase
 
 /-- Properness of the structure morphism is an additional property of a model. -/

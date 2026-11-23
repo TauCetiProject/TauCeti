@@ -60,18 +60,21 @@ namespace AlgebraicGeometry.Scheme.Hom
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
   {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsIntegral X] [IsNoetherian X]
   [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase] [Flat toBase]
-  [ConnectedSpace (specialFiber R toBase).left]
-  (hX : ∀ x : X, coheight x ≤ 2)
+  (hX : ∀ x : X, coheight x ≤ 2) (hη : toBase (genericPoint X) ≠ closedPoint R)
+  (hC : toBase.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne)
   {π : R} (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π)
+  (hconn : _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}))
 
 /-- **Exceptional components are `(-1)`-indices.** If a component `Cᵢ` of the special fibre of a
 regular model, with its reduced structure, is an exceptional curve of the first kind, then `i` is
 a `(-1)`-index of the numerical type of the model: `gᵢ = 0` and `aᵢᵢ = -wᵢ`. -/
 theorem isMinusOneIndex_specialFiberNumericalType
-    (i : (toBase.specialFiberNumericalType hX hπ hreg).Component)
-    (hi : (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).IsExceptionalCurve) :
-    (toBase.specialFiberNumericalType hX hπ hreg).IsMinusOneIndex i := by
-  have hc := toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i
+    (i : (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset)
+    (hi : (vanishingIdeal
+      ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).IsExceptionalCurve) :
+    (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).IsMinusOneIndex i := by
+  have hc := (Set.Finite.mem_toFinset _).mp i.property
   let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
   refine (NumericalType.isMinusOneIndex_iff _).mpr ⟨?_, ?_⟩
   · -- `wᵢ gᵢ = dim_k H¹(Cᵢ, 𝒪_{Cᵢ}) = 0` with `wᵢ > 0`.
@@ -79,7 +82,7 @@ theorem isMinusOneIndex_specialFiberNumericalType
     rw [hi.finrank_cohomology_one_trivial (ResidueField R), mul_eq_zero] at h
     exact h.resolve_left (toBase.specialFiberWeight_pos hc
       (toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton hc)).ne'
-  · rw [specialFiberNumericalType_intersection_apply,
+  · rw [specialFiberNumericalType_intersection, specialFiberIntersectionMatrix_apply,
       hi.intersectionNumber_self (ResidueField R), specialFiberNumericalType_weight,
       specialFiberWeight_def]
 
@@ -87,11 +90,13 @@ theorem isMinusOneIndex_specialFiberNumericalType
 regular model is minimal, then no component of its special fibre, with its reduced structure, is
 an exceptional curve of the first kind. -/
 theorem not_isExceptionalCurve_of_isMinimal
-    (hmin : (toBase.specialFiberNumericalType hX hπ hreg).IsMinimal)
-    (i : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
-    ¬ (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).IsExceptionalCurve :=
+    (hmin : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).IsMinimal)
+    (i : (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset) :
+    ¬ (vanishingIdeal
+      ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).IsExceptionalCurve :=
   fun hi ↦ (NumericalType.isMinimal_iff _).mp hmin i
-    (toBase.isMinusOneIndex_specialFiberNumericalType hX hπ hreg i hi)
+    (toBase.isMinusOneIndex_specialFiberNumericalType hX hη hC hπ hreg hconn i hi)
 
 end AlgebraicGeometry.Scheme.Hom
 

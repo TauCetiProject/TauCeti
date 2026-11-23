@@ -68,10 +68,8 @@ notation on the structure morphism.
 * `AlgebraicGeometry.Scheme.Hom.base_eq_closedPoint_iff_mem_zeroLocus` and
   `AlgebraicGeometry.Scheme.Hom.preimage_closedPoint_eq_zeroLocus`: the special fibre is the zero
   locus of the pullback of a nonzero element of the maximal ideal;
-* `AlgebraicGeometry.Scheme.Hom.base_genericPoint_ne_closedPoint`,
-  `AlgebraicGeometry.Scheme.Hom.base_genericPoint_ne_closedPoint_of_not_isNilpotent`, and
-  `AlgebraicGeometry.Scheme.Hom.base_genericPoint_ne_closedPoint_of_isSMulRegular`: the generic
-  point of an irreducible scheme flat over `R` does not lie in the special fibre;
+* `AlgebraicGeometry.Scheme.Hom.base_genericPoint_ne_closedPoint`: the generic point of an
+  irreducible scheme flat over `R` does not lie in the special fibre;
 * `AlgebraicGeometry.Scheme.Hom.maximal_base_eq_closedPoint_iff`: the generic points of the
   irreducible components of the special fibre are the codimension-one points of `X` lying in it;
 * `AlgebraicGeometry.Scheme.Hom.exists_maximal_base_eq_closedPoint_specializes`: every point of
@@ -286,33 +284,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.base_genericPoint_ne_closedPoint [Is
   intro h
   have h' : (⊥ : Ideal R) = maximalIdeal R := congrArg PrimeSpectrum.asIdeal h
   exact hR h'.symm
-
-omit [Ring.DimensionLEOne R] in
-/-- If the maximal ideal of a local ring `R` contains a non-nilpotent element `π`, then the generic
-point of an irreducible scheme flat over `R` does not lie in the special fibre. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.base_genericPoint_ne_closedPoint_of_not_isNilpotent
-    [Flat toBase] {π : R} (hπ : π ∈ maximalIdeal R) (hπ0 : ¬IsNilpotent π) :
-    toBase (genericPoint X) ≠ closedPoint R := by
-  intro h
-  have hnil : π ∈ nilradical R := by
-    rw [nilradical_eq_sInf, Ideal.mem_sInf]
-    intro J hJ
-    have hspec : (⟨J, hJ⟩ : Spec (.of R)) ⤳ toBase (genericPoint X) :=
-      h.symm ▸ IsLocalRing.specializes_closedPoint ⟨J, hJ⟩
-    obtain ⟨η, hη, hfη⟩ := Flat.generalizingMap toBase hspec
-    rw [(hη.antisymm (genericPoint_specializes η)).eq, h] at hfη
-    have hmax : maximalIdeal R = J := congrArg PrimeSpectrum.asIdeal hfη
-    exact hmax ▸ hπ
-  exact hπ0 hnil
-
-omit [Ring.DimensionLEOne R] in
-/-- If the maximal ideal of a local ring `R` contains a nonzerodivisor `π`, then the generic point
-of an irreducible scheme flat over `R` does not lie in the special fibre. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.base_genericPoint_ne_closedPoint_of_isSMulRegular
-    [Flat toBase] {π : R} (hπ : π ∈ maximalIdeal R) (hreg : IsSMulRegular R π) :
-    toBase (genericPoint X) ≠ closedPoint R :=
-  toBase.base_genericPoint_ne_closedPoint_of_not_isNilpotent hπ fun ⟨n, hn⟩ ↦
-    (hreg.pow n).isLeftRegular.ne_zero hn
 
 /-- If the generic point of an irreducible scheme over a one-dimensional local ring does not lie
 in the special fibre, the pullback of a nonzero element of the maximal ideal is a nonzero global

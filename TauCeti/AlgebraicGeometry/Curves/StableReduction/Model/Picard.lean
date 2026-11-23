@@ -52,7 +52,7 @@ universe u
 variable {R K : Type u} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   [Field K] [Algebra R K] [IsFractionRing R K]
   {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)} (M : Model R K C toK)
-  [IsIntegral M.total] [TauCeti.AlgebraicGeometry.IsRegular M.total]
+  [IsIntegral M.total] [IsNoetherian M.total] [TauCeti.AlgebraicGeometry.IsRegular M.total]
 
 /-- **Surjectivity of `Pic(M.total) → Pic(C)` for a regular model.** If `M : Model R K C toK` is a
 model over a discrete valuation ring `R` with fraction field `K` whose total space `M.total` is a
