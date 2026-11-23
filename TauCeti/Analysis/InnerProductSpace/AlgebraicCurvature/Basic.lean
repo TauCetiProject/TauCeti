@@ -376,6 +376,7 @@ theorem pullbackAlgebraicCurvature_id :
       ContinuousLinearMap.id ℝ (algebraicCurvatureSubmodule V) := by ext; simp
 
 /-- Pulling back algebraic curvature tensors is contravariantly functorial under composition. -/
+@[simp]
 theorem pullbackAlgebraicCurvature_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
     (f : W →L[ℝ] V) (g : U →L[ℝ] W) :
     (f.comp g).pullbackAlgebraicCurvature =

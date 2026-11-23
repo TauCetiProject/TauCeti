@@ -48,7 +48,8 @@ orthogonal to both in every dimension.
   `TauCeti.FourTensor.curvatureEndomorphism_eq_add`, trace-pairing orthogonality (coinciding with
   Hilbert–Schmidt orthogonality when at least one factor is self-adjoint),
   `TauCeti.FourTensor.sum_kulkarniNomizu_innerₗ_mul_of_antisymm`,
-  `TauCeti.FourTensor.sum_sq_eq_scalar_add_tracelessRicci_add_weyl_of_antisymm`, and
+  `TauCeti.FourTensor.sum_sq_eq_scalar_sq_add_sum_tracelessRicci_sq_add_sum_weyl_sq_of_antisymm`,
+  and
   `TauCeti.FourTensor.weyl_eq_zero_of_finrank_le_three_of_antisymm`.
 
 ## References
@@ -962,7 +963,8 @@ theorem IsAlgebraicCurvature.sum_sq_eq_add {r : FourTensor V} (hr : IsAlgebraicC
 
 /-- **Explicit norm-squared identity for skew-pair four-tensors**:
 `∑ |r|² = (2 / (n (n - 1))) Scal(r)² + (4 / (n - 2)) ∑ |Ric₀(r)|² + ∑ |Weyl(r)|²`. -/
-theorem sum_sq_eq_scalar_add_tracelessRicci_add_weyl_of_antisymm {r : FourTensor V}
+theorem sum_sq_eq_scalar_sq_add_sum_tracelessRicci_sq_add_sum_weyl_sq_of_antisymm
+    {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (hr₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l, r ![b i, b j, b k, b l] ^ 2) =
@@ -972,14 +974,14 @@ theorem sum_sq_eq_scalar_add_tracelessRicci_add_weyl_of_antisymm {r : FourTensor
   rw [sum_sq_eq_add_of_antisymm hr₁ hr₂ b, sum_scalarPart_sq r b, sum_tracelessRicciPart_sq r b]
 
 /-- **Explicit norm-squared identity for algebraic curvature tensors.** -/
-theorem IsAlgebraicCurvature.sum_sq_eq_scalar_add_tracelessRicci_add_weyl {r : FourTensor V}
-    (hr : IsAlgebraicCurvature r) (b : OrthonormalBasis ι ℝ V) :
+theorem IsAlgebraicCurvature.sum_sq_eq_scalar_sq_add_sum_tracelessRicci_sq_add_sum_weyl_sq
+    {r : FourTensor V} (hr : IsAlgebraicCurvature r) (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l, r ![b i, b j, b k, b l] ^ 2) =
       2 * scalar r ^ 2 / ((Module.finrank ℝ V : ℝ) * ((Module.finrank ℝ V : ℝ) - 1)) +
         (4 / ((Module.finrank ℝ V : ℝ) - 2)) * (∑ i, ∑ k, tracelessRicci r (b i) (b k) ^ 2) +
         (∑ i, ∑ j, ∑ k, ∑ l, FourTensor.weyl r ![b i, b j, b k, b l] ^ 2) :=
-  FourTensor.sum_sq_eq_scalar_add_tracelessRicci_add_weyl_of_antisymm hr.antisymm_first
-    hr.antisymm_last b
+  FourTensor.sum_sq_eq_scalar_sq_add_sum_tracelessRicci_sq_add_sum_weyl_sq_of_antisymm
+    hr.antisymm_first hr.antisymm_last b
 
 end Orthogonality
 
@@ -1038,10 +1040,13 @@ theorem tracelessRicciPart_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r :
       LinearIsometryEquiv.coe_toLinearIsometry, e.toLinearEquiv.finrank_eq, e.inner_map_map]
 
 /-- `schouten` is equivariant under linear isometric equivalences. -/
-theorem schouten_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) (u v : W) :
-    schouten (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) u v =
-      schouten r (e u) (e v) := by
-  simp only [schouten_apply_apply, ricci_compContinuousLinearMap_linearIsometryEquiv,
+theorem schouten_compContinuousLinearMap (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
+    schouten (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
+      (schouten r).comp e.toLinearIsometry.toLinearMap e.toLinearIsometry.toLinearMap := by
+  ext u v
+  simp only [LinearMap.BilinForm.comp_apply, LinearIsometry.coe_toLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry, schouten_apply_apply,
+    ricci_compContinuousLinearMap_linearIsometryEquiv,
     scalar_compContinuousLinearMap_linearIsometryEquiv, e.toLinearEquiv.finrank_eq,
     e.inner_map_map]
 
