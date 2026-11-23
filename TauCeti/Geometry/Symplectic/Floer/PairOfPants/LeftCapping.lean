@@ -352,7 +352,7 @@ theorem contMDiffAt_cappedExchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodi
     · exact Or.inl endCenter_zero.symm
     · exact Or.inr ⟨h₀, hw⟩
   have hcap := contMDiffAt_plumbedPerturbation_single_inf (Hb := update H inf 0) (by decide)
-    ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
+    (periodic_update_zero hH inf)
     ((forall_update_iff H fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
       ⟨contMDiff_const, fun q _ => hHs q⟩) hL hw' x
   rw [update_inf_zero] at hcap
@@ -421,7 +421,7 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω :
   -- The capped part, with bounds `B₀`, `B₁`, `0`, vanishes away from `c`; the plane part has `B_∞`.
   have hBin := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
     (q := zero) (Hb := update H inf 0) (by decide)
-    ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
+    (periodic_update_zero hH inf)
     ((forall_update_iff H fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
       ⟨contMDiff_const, fun q _ => hHs q⟩) hL
     (Bb := update B inf 0) (fun q t x => by
