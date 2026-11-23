@@ -251,7 +251,7 @@ theorem fenchelConjugate_add_const (f : E → EReal) (r : ℝ) (y : F) :
     fenchelConjugate B (fun x => f x + (r : EReal)) y = fenchelConjugate B f y - (r : EReal) := by
   simp only [fenchelConjugate_apply]
   conv_rhs => rw [sub_eq_add_neg, AddQuantale.iSup_add_distrib]
-  exact iSup_congr fun x => EReal.coe_sub_add_coe (f x) (B x y) r
+  exact iSup_congr fun x => (EReal.coe_sub_add_coe (f x) (B x y) r).trans (sub_eq_add_neg _ _)
 
 /-! ### Convexity and lower semicontinuity -/
 
