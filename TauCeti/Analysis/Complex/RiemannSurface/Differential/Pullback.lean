@@ -136,10 +136,7 @@ theorem coeff_pullback (ω : OneForm Y) {f : X → Y} {x : X}
   have hω := ω.coeff_smul_mvfderiv hd (d.map_source hfx)
   rw [d.left_inv hfx] at hω
   have hdf := mdifferentiableAt_of_mem_maximalAtlas hd hfx
-  have hcoeff := coeff_mvfderiv he (e.map_source hx)
-    (by simpa only [e.left_inv hx] using hdf.comp x hf)
-  have hdc := (coeff_eq_iff (mvfderiv 𝓘(ℂ) (d ∘ f)) he hx).mp hcoeff
-  rw [coeff_eq_iff _ he hx, mul_smul, hdc]
+  rw [coeff_eq_iff _ he hx, mul_smul, ← mvfderiv_eq_deriv_smul he hx]
   apply ContinuousLinearMap.ext
   intro v
   rw [pullback_apply, ← hω]

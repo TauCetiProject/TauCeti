@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.TransferInstance
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Lp.MapCLM
+import Mathlib.Analysis.LocallyConvex.PointwiseConvergence
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The ultrastrong operator topology
@@ -30,7 +33,12 @@ The ultrastrong topology is coarser than the norm topology and finer than the st
 topology on Mathlib's pointwise-convergence copy `E →Lₚₜ[𝕜] F`. On norm-bounded sets the latter
 comparison is an equality (`isInducing_restrict_toPointwiseConvergenceCLM`): for a uniformly
 bounded net, strong and ultrastrong convergence agree. This is the bounded-set agreement used to
-pass between the two topologies in von Neumann algebra theory.
+pass between the two topologies in von Neumann algebra theory. Without a norm bound the two
+topologies differ: when `E` is infinite-dimensional with separating dual and `F` is nontrivial, the
+identity from the strong operator topology to the ultrastrong topology is not continuous
+(`not_continuous_ofPointwiseConvergenceCLM`). The test is a square-summable linearly independent
+sequence `ξ` (`lp.exists_linearIndependent`) and a rank-one operator vanishing on the finitely many
+vectors seen by a strong seminorm bound, but not on the whole sequence.
 
 The definition needs no inner product: `E` and `F` are arbitrary normed spaces.
 
@@ -170,6 +178,19 @@ theorem isEmbedding_inducingFn : IsEmbedding (inducingFn 𝕜 E F) := by
   refine Function.Injective.isEmbedding_induced fun A B hAB ↦ ?_
   ext x
   simpa using congr($hAB (lp.single 2 0 x) 0)
+
+/-- The ultrastrong topology is the strong operator topology of the ampliation: it is induced by
+`A ↦ ⊕ₙ A` into Mathlib's pointwise-convergence copy of the operators on `ℓ²(ℕ, E)`. -/
+theorem isInducing_toPointwiseConvergenceCLM_ampliation :
+    IsInducing fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) ℓ²(ℕ, E) ℓ²(ℕ, F)
+        (lp.ampliation ℕ 2 A.toCLM) := by
+  refine ((PointwiseConvergenceCLM.isEmbedding_coeFn (RingHom.id 𝕜) ℓ²(ℕ, E)
+    ℓ²(ℕ, F)).isInducing.of_comp_iff).1 ?_
+  convert isInducing_inducingFn (𝕜 := 𝕜) (E := E) (F := F) using 1
+  ext A ξ : 2
+  -- `ℓ²(ℕ, E) →Lₚₜ[𝕜] ℓ²(ℕ, F)` reuses the `FunLike` instance of `ℓ²(ℕ, E) →L[𝕜] ℓ²(ℕ, F)`.
+  rfl
 
 @[fun_prop]
 theorem continuous_ampliation_apply (ξ : ℓ²(ℕ, E)) :
@@ -329,10 +350,65 @@ theorem isInducing_restrict_toPointwiseConvergenceCLM
     IsInducing (s.domRestrict fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM) := by
   refine isInducing_iff_nhds.2 fun A ↦ le_antisymm
-    ((continuous_toPointwiseConvergenceCLM.comp continuous_subtype_val).tendsto A).le_comap ?_
+    ((continuous_toPointwiseConvergenceCLM.comp continuous_subtypeVal).tendsto A).le_comap ?_
   rw [nhds_subtype, ← tendsto_iff_comap]
   exact (tendsto_iff_tendsto_toPointwiseConvergenceCLM_of_eventually_norm_le
-    (Eventually.of_forall fun B : s ↦ hs B B.2)).2 tendsto_comap
+    (Eventually.of_forall fun B : s ↦ hs B B.property)).2 tendsto_comap
+
+/-- From an infinite-dimensional normed space with separating dual to a nontrivial one, the
+ultrastrong topology is strictly finer than the strong operator topology: the identity from the
+strong operator topology to the ultrastrong topology is not continuous. -/
+theorem not_continuous_ofPointwiseConvergenceCLM [SeparatingDual 𝕜 E] [Nontrivial F]
+    (hE : ¬ FiniteDimensional 𝕜 E) :
+    ¬ Continuous fun A : E →Lₚₜ[𝕜] F ↦ ofCLM (A : E →L[𝕜] F) := by
+  classical
+  intro h
+  obtain ⟨ξ, hξ⟩ := lp.exists_linearIndependent (𝕜 := 𝕜) (p := 2) (by norm_num) hE
+  -- Elements of `E →Lₚₜ[𝕜] F` are read as ultrastrong operators along these two equivalences.
+  have hof (B : E →L[𝕜] F) : (linearEquiv 𝕜).symm B = ofCLM B := by
+    rw [LinearEquiv.symm_apply_eq, linearEquiv_apply]
+  have hsymm (B : E →Lₚₜ[𝕜] F) :
+      (ContinuousLinearMap.toUniformConvergenceCLM _ F _).symm B = (B : E →L[𝕜] F) :=
+    ContinuousLinearMap.ext fun _ ↦ ContinuousLinearMap.toUniformConvergenceCLM_symm_apply
+  -- The ultrastrong seminorm `A ↦ ‖(⊕ A) ξ‖` would be bounded by finitely many of the strong
+  -- seminorms `A ↦ ‖A x‖`, `x ∈ s`.
+  obtain ⟨s, C, -, hC⟩ := Seminorm.bound_of_continuous PointwiseConvergenceCLM.withSeminorms
+    ((seminorm (𝕜 := 𝕜) (F := F) ξ).comp ((linearEquiv 𝕜).symm.toLinearMap ∘ₗ
+      (ContinuousLinearMap.toUniformConvergenceCLM _ F _).symm.toLinearMap))
+    (((withSeminorms.continuous_seminorm ξ).comp h).congr fun A ↦ by
+      simp only [Function.comp_apply, seminormFamily_apply, seminorm_apply, Seminorm.comp_apply,
+        LinearMap.coe_comp, LinearEquiv.coe_coe, hof]
+      rw [hsymm])
+  -- Some `ξ N` lies outside the span `K` of `s`.
+  set K := Submodule.span 𝕜 (s : Set E)
+  obtain ⟨N, hN⟩ : ∃ N, ξ N ∉ K := by
+    by_contra! hK
+    exact Module.Finite.not_linearIndependent_of_infinite (R := 𝕜) (fun n ↦ (⟨ξ n, hK n⟩ : K))
+      (LinearIndependent.of_comp K.subtype hξ)
+  -- A linear functional `f₀` vanishing on `K` with `f₀ (ξ N) ≠ 0`, restricted to the
+  -- finite-dimensional span `W` of `K` and `ξ N`, extends to a continuous functional `f` on `E`.
+  obtain ⟨f₀, hf₀N, hf₀K⟩ := K.exists_dual_map_eq_bot_of_notMem hN inferInstance
+  set W := Submodule.span 𝕜 ((insert (ξ N) s : Finset E) : Set E)
+  obtain ⟨f, hf⟩ := SeparatingDual.dualMap_surjective_iff.2 W.injective_subtype (f₀ ∘ₗ W.subtype)
+  have hfW (x : E) (hx : x ∈ W) : f x = f₀ x := by simpa using congr($hf ⟨x, hx⟩)
+  have hfK (x : E) (hx : x ∈ K) : f x = 0 := by
+    rw [hfW x (Submodule.span_mono (by simp) hx)]
+    simpa [hf₀K] using Submodule.mem_map_of_mem (f := f₀) hx
+  have hfN : f (ξ N) ≠ 0 := by rwa [hfW _ (Submodule.subset_span (by simp))]
+  -- The rank-one operator `A = f(·) y` vanishes at every `x ∈ s`, yet `(⊕ A) ξ ≠ 0`.
+  obtain ⟨y, hy⟩ := exists_ne (0 : F)
+  set A := ContinuousLinearMap.toUniformConvergenceCLM _ F _ (f.smulRight y)
+  have hsup : (s.sup (PointwiseConvergenceCLM.seminormFamily (RingHom.id 𝕜) E F)) A ≤ 0 :=
+    Seminorm.finset_sup_apply_le le_rfl fun x hx ↦
+      -- The seminorm at `x` is `‖A x‖`, and `A x = f x • y = 0`.
+      (norm_le_zero_iff (a := A x)).2 (by simp [A, hfK x (Submodule.subset_span hx)])
+  have h0 : ‖lp.ampliation ℕ 2 (f.smulRight y) ξ‖ ≤ 0 := by
+    refine le_trans (le_of_eq (by simp [A, seminorm_apply, hof])) ((hC A).trans ?_)
+    rw [smul_apply, NNReal.smul_def, smul_eq_mul]
+    exact mul_nonpos_of_nonneg_of_nonpos C.property hsup
+  refine smul_ne_zero hfN hy (norm_le_zero_iff.1 (le_trans ?_ h0))
+  simpa [lp.ampliation_apply_apply] using
+    lp.norm_apply_le_norm two_ne_zero (lp.ampliation ℕ 2 (f.smulRight y) ξ) N
 
 end Comparison
 
