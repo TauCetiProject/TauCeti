@@ -50,11 +50,10 @@ theorem disjoint_range_rootSubgroupPoints_map_conj_weylElement_borelSubgroup :
     Disjoint (D.rootSubgroupPoints (t.simpleIndex ht i) A).range
       ((D.borelSubgroup A).map
         (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1)).toMonoidHom) := by
-  refine (D.disjoint_positivePoints_inf_map_negativePoints_map_borelSubgroup A
+  refine (D.disjoint_map_conj_negativePoints_map_conj_borelSubgroup A
     (D.weylElement (t.simpleIndex ht i) A 1)).mono_left ?_
   rintro _ ⟨u, rfl⟩
-  refine ⟨D.rootSubgroupPoints_mem_positivePoints A
-    (support_subset_posRoots _ _ (t.simpleIndex_mem_support i)) u, Subgroup.mem_map_equiv.mpr ?_⟩
+  refine Subgroup.mem_map_equiv.mpr ?_
   rw [MulAut.conj_symm_apply]
   let n := D.weylElement (t.simpleIndex ht i) A 1
   have hconj :=
@@ -66,11 +65,7 @@ theorem disjoint_range_rootSubgroupPoints_map_conj_weylElement_borelSubgroup :
         (n * D.rootSubgroupPoints (t.simpleIndex ht i) A
           (Multiplicative.ofAdd (Multiplicative.toAdd u)) * n⁻¹) *
         (D.torusPoints A (D.simpleCorootParameter i A (-1))⁻¹)⁻¹ := by
-    change n⁻¹ * D.rootSubgroupPoints (t.simpleIndex ht i) A u * n =
-      D.torusPoints A (D.simpleCorootParameter i A (-1))⁻¹ *
-        (n * D.rootSubgroupPoints (t.simpleIndex ht i) A u * n⁻¹) *
-        (D.torusPoints A (D.simpleCorootParameter i A (-1))⁻¹)⁻¹
-    rw [map_inv, ← hnn]
+    rw [ofAdd_toAdd, map_inv, ← hnn]
     group
   have hneg : (t.simplyConnectedRootDatum ht).reflectionPerm
       (t.simpleIndex ht i) (t.simpleIndex ht i) ∈

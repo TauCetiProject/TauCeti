@@ -36,7 +36,8 @@ reflection, so the leading letter is the one deleted.
 
 ## Main results
 
-* `TauCeti.exists_wordProd_eraseIdx_eq_mul_ofIdx` is the strong exchange condition.
+* `RootPairing.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx` is the strong
+  exchange condition.
 * `TauCeti.eq_one_of_inversions_eq_empty` and `TauCeti.inversions_eq_empty_iff_eq_one` say that the
   inversion set of a Weyl-group element is empty exactly when the element is the identity.
 * `TauCeti.eq_one_of_mapsTo_posRoots` restates this as: a Weyl-group element keeping every positive
@@ -56,9 +57,11 @@ J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9
 
 public section
 
-namespace TauCeti
-
 open Set
+
+namespace RootPairing
+
+open TauCeti
 
 universe u v w x
 
@@ -67,10 +70,12 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
   [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
 
-/-- **Strong exchange with crossing suffix.** In the setting of
-`TauCeti.exists_wordProd_eraseIdx_eq_mul_ofIdx`, the deleted letter `l[j]` is the simple root
-through which the suffix `l.drop (j + 1)` carries `αₖ`. -/
-theorem exists_wordProd_eraseIdx_eq_mul_ofIdx_and_drop {k : ι} (hk : b.IsPos k)
+/-- **The strong exchange condition with crossing suffix.** If the word `l` spells a Weyl-group
+element sending the positive root `αₖ` to a negative root, then there is an index `j < l.length`
+such that the suffix `l.drop (j + 1)` carries `αₖ` to the simple root `l[j]` and the deleted word
+`l.eraseIdx j` spells `l` with the reflection `sₖ` appended. The root `αₖ` is an arbitrary
+positive root, not necessarily a simple one. -/
+theorem exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx {k : ι} (hk : b.IsPos k)
     (l : List b.support) (h : ¬ b.IsPos (P.weylGroupToPerm (wordProd P b l) k)) :
     ∃ (j : ℕ) (hj : j < l.length),
       P.weylGroupToPerm (wordProd P b (l.drop (j + 1))) k = (l[j] : ι) ∧
@@ -97,16 +102,16 @@ theorem exists_wordProd_eraseIdx_eq_mul_ofIdx_and_drop {k : ι} (hk : b.IsPos k)
       refine ⟨j' + 1, by simpa using hj', by simpa using hdrop, ?_⟩
       rw [List.eraseIdx_cons_succ, wordProd_cons, hl', wordProd_cons, mul_assoc]
 
-/-- **The strong exchange condition.** If the word `l` spells a Weyl-group element sending the
-positive root `αₖ` to a negative root, then the word `l` with the reflection `sₖ` appended is
-spelled by `l` with one of its letters deleted. The root `αₖ` is an arbitrary positive root, not
-necessarily a simple one, and the shorter word is a subword of `l`. -/
-theorem exists_wordProd_eraseIdx_eq_mul_ofIdx {k : ι} (hk : b.IsPos k)
-    (l : List b.support) (h : ¬ b.IsPos (P.weylGroupToPerm (wordProd P b l) k)) :
-    ∃ j < l.length,
-      wordProd P b (l.eraseIdx j) = wordProd P b l * RootPairing.weylGroup.ofIdx P k :=
-  let ⟨j, hj, _, hprod⟩ := exists_wordProd_eraseIdx_eq_mul_ofIdx_and_drop P b hk l h
-  ⟨j, hj, hprod⟩
+end RootPairing
+
+namespace TauCeti
+
+universe u v w x
+
+variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
+  [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
+  [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
 
 variable {P b}
 
@@ -130,9 +135,9 @@ theorem eq_one_of_inversions_eq_empty {w : P.weylGroup} (h : inversions P b w = 
       by_contra hc
       exact hkw (hl ▸ (mem_inversions_mul_ofIdx_iff_not_mem P _ b
         (b.isPos_of_mem_support k.property)).mpr hc)
-    obtain ⟨j, hj, hl'w⟩ :=
-      exists_wordProd_eraseIdx_eq_mul_ofIdx P b (b.isPos_of_mem_support k.property) l₁
-        ((mem_inversions P b _ _).mp hkv).2
+    obtain ⟨j, hj, -, hl'w⟩ :=
+      P.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx
+        b (b.isPos_of_mem_support k.property) l₁ ((mem_inversions P b _ _).mp hkv).2
     -- The resulting word spells `w` and is two letters shorter, contradicting minimality.
     refine Nat.find_min hex (m := (l₁.eraseIdx j).length) ?_ ⟨l₁.eraseIdx j, rfl, hl'w.trans hl⟩
     have hlen' := List.length_eraseIdx_add_one hj

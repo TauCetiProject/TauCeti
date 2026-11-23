@@ -107,12 +107,13 @@ theorem exists_unit_conj_rootSubgroupPoints (g : D.weylSubgroup K) (γ : Fin t.n
       refine ⟨torusCharacter s (D.coordinateRoot δ), fun u => ?_⟩
       simp only [D.weylProjection_torusPoints, map_one, Equiv.Perm.one_apply]
       exact D.torusPoints_conj_rootSubgroupPoints δ K s u
-    · refine ⟨⟨_, D.weylElement_simpleIndex_one_mem_weylSubgroup K i⟩, ?_, rfl⟩
+    · refine ⟨D.simpleWeylLift K i, ?_, D.coe_simpleWeylLift K i⟩
       intro δ
       refine ⟨Units.map (Int.castRingHom K).toMonoidHom
         (t.chevalleyWeylSign ht (t.simpleIndex ht i) δ), fun u => ?_⟩
-      simp only [D.weylProjection_weylElement_simpleIndex_one,
-        RootPairing.weylGroupToPerm_ofIdx_apply, Units.coe_map]
+      simp only [D.weylProjection_simpleWeylLift,
+        RootPairing.weylGroupToPerm_ofIdx_apply, Units.coe_map,
+        MulAut.conj_apply, D.coe_simpleWeylLift]
       exact D.weylElement_conj_rootSubgroupPoints i δ K u
   obtain ⟨h, hh, heq⟩ := hle g.property
   have heq' : h = g := Subtype.ext heq
@@ -199,24 +200,25 @@ theorem weylProjection_weylElement (k : Type v) [Field k] (γ : Fin t.numRoots) 
             D.weylElement_mem_weylSubgroup _ k s⟩ : D.weylSubgroup k) =
           ⟨D.torusPoints k (D.simpleCorootParameter i k s),
             D.torusPoints_mem_weylSubgroup k _⟩ *
-          ⟨D.weylElement (t.simpleIndex ht i) k 1,
-            D.weylElement_simpleIndex_one_mem_weylSubgroup k i⟩ :=
-      Subtype.ext (D.weylElement_simpleIndex_eq_torusPoints_mul k i s)
+          D.simpleWeylLift k i :=
+      Subtype.ext (by
+        simpa only [Subgroup.coe_mul, D.coe_simpleWeylLift] using
+          D.weylElement_simpleIndex_eq_torusPoints_mul k i s)
     rw [hsub, map_mul, D.weylProjection_torusPoints, one_mul,
-      D.weylProjection_weylElement_simpleIndex_one]
+      D.weylProjection_simpleWeylLift]
   · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
     rw [t.reflectionPerm_rationalRootSystem ht]
     have hsub :
         (⟨D.weylElement
             ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) k s,
             D.weylElement_mem_weylSubgroup _ k s⟩ : D.weylSubgroup k) =
-          ⟨D.weylElement (t.simpleIndex ht i) k 1,
-            D.weylElement_simpleIndex_one_mem_weylSubgroup k i⟩ *
+          D.simpleWeylLift k i *
           ⟨D.weylElement γ k _, D.weylElement_mem_weylSubgroup γ k _⟩ *
-          (⟨D.weylElement (t.simpleIndex ht i) k 1,
-            D.weylElement_simpleIndex_one_mem_weylSubgroup k i⟩)⁻¹ :=
-      Subtype.ext (D.weylElement_reflectionPerm_eq_conj i γ k s)
-    rw [hsub, map_mul, map_mul, map_inv, D.weylProjection_weylElement_simpleIndex_one, hγ,
+          (D.simpleWeylLift k i)⁻¹ :=
+      Subtype.ext (by
+        simpa only [Subgroup.coe_mul, Subgroup.coe_inv, D.coe_simpleWeylLift] using
+          D.weylElement_reflectionPerm_eq_conj i γ k s)
+    rw [hsub, map_mul, map_mul, map_inv, D.weylProjection_simpleWeylLift, hγ,
       ← RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
       RootPairing.weylGroupToPerm_ofIdx_apply]
 

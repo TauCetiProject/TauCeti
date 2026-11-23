@@ -32,9 +32,8 @@ Weyl representative leaves `B`. Over every nontrivial commutative ring, the simp
 with additive parameter one witnesses that each pinned simple Weyl representative conjugates
 some element of `B` outside `B`. This is the
 noncontainment required by the last Tits-system axiom, without assuming a Bruhat decomposition.
-Similarly, `U ∩ n U⁻ n⁻¹` meets `n B n⁻¹` trivially for every datum point `n`, giving
-uniqueness of the factors `(u, b) ∈ (U ∩ n U⁻ n⁻¹) × B` in `u * n * b` over every commutative
-ring.
+Similarly, `n U⁻ n⁻¹` meets `n B n⁻¹` trivially for every datum point `n`, giving
+uniqueness of the factors `(u, b) ∈ (n U⁻ n⁻¹) × B` in `u * n * b` over every commutative ring.
 
 Positive root points are block upper unitriangular in the datum's original weight basis,
 ordered by decreasing weight degree. The actual torus is diagonal, so `borelSubgroup`
@@ -196,15 +195,15 @@ theorem borelSubgroup_inf_negativePoints_eq_bot :
     D.borelSubgroup A ⊓ D.negativePoints A = ⊥ := by
   rw [inf_comm, D.negativePoints_inf_borelSubgroup_eq_bot]
 
-/-- For every datum point `n`, the unipotent subgroup `U(A) ∩ n U⁻(A) n⁻¹` meets the
-conjugate Borel subgroup `n B(A) n⁻¹` trivially, over every commutative ring `A`. -/
-theorem disjoint_positivePoints_inf_map_negativePoints_map_borelSubgroup
+/-- For every datum point `n`, the conjugate negative unipotent subgroup `n U⁻(A) n⁻¹` meets
+the conjugate Borel subgroup `n B(A) n⁻¹` trivially, over every commutative ring `A`. -/
+theorem disjoint_map_conj_negativePoints_map_conj_borelSubgroup
     (n : D.points A) :
     Disjoint
-      (D.positivePoints A ⊓ (D.negativePoints A).map (MulAut.conj n).toMonoidHom)
+      ((D.negativePoints A).map (MulAut.conj n).toMonoidHom)
       ((D.borelSubgroup A).map (MulAut.conj n).toMonoidHom) :=
-  (Subgroup.disjoint_map (MulAut.conj n).injective
-    (disjoint_iff.mpr (D.negativePoints_inf_borelSubgroup_eq_bot A))).mono_left inf_le_right
+  Subgroup.disjoint_map (MulAut.conj n).injective
+    (disjoint_iff.mpr (D.negativePoints_inf_borelSubgroup_eq_bot A))
 
 /-- A negative root element belongs to the positive Borel-type subgroup exactly when it is
 the identity. This does not assume that the root parameter is injective. -/

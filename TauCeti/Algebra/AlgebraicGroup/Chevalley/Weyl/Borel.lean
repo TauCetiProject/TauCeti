@@ -51,14 +51,6 @@ section CommRing
 
 variable (A : Type v) [CommRing A]
 
-/-- Every product of pinned simple Weyl representatives belongs to `D.weylSubgroup A`. -/
-theorem list_prod_map_weylElement_mem_weylSubgroup (l : List (Fin t.rank)) :
-    (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ D.weylSubgroup A := by
-  apply Subgroup.list_prod_mem
-  intro x hx
-  obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
-  exact D.weylElement_simpleIndex_one_mem_weylSubgroup A i
-
 /-- Every element of `D.weylSubgroup A` is a positive word in the pinned simple Weyl
 representatives followed by a point of the actual torus, over every commutative ring. -/
 theorem mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints {g : D.points A} :
@@ -249,41 +241,19 @@ theorem weylProjection_list_prod_mul_torusPoints (l : List (Fin t.rank))
         mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
           (D.torusPoints_mem_weylSubgroup K s)⟩ =
       t.geckWeylWordProd ht l := by
-  have hword (m : List (Fin t.rank)) :
-      D.weylProjection K ⟨(m.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod,
-        D.list_prod_map_weylElement_mem_weylSubgroup K m⟩ =
-        t.geckWeylWordProd ht m := by
-    induction m with
-    | nil =>
-      have hone :
-          (⟨([].map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod,
-            D.list_prod_map_weylElement_mem_weylSubgroup K []⟩ : D.weylSubgroup K) = 1 := by
-        ext
-        simp only [List.map_nil, List.prod_nil, Subgroup.coe_one]
-      rw [hone, map_one, geckWeylWordProd_nil]
-    | cons i m ih =>
-      have hsplit : (⟨((i :: m).map fun j => D.weylElement (t.simpleIndex ht j) K 1).prod,
-          D.list_prod_map_weylElement_mem_weylSubgroup K (i :: m)⟩ : D.weylSubgroup K) =
-          ⟨D.weylElement (t.simpleIndex ht i) K 1,
-            D.weylElement_simpleIndex_one_mem_weylSubgroup K i⟩ *
-            ⟨(m.map fun j => D.weylElement (t.simpleIndex ht j) K 1).prod,
-              D.list_prod_map_weylElement_mem_weylSubgroup K m⟩ := by
-        ext
-        simp only [List.map_cons, List.prod_cons, Subgroup.coe_mul]
-      rw [hsplit, map_mul, D.weylProjection_weylElement_simpleIndex_one K i, ih,
-        geckWeylWordProd_cons]
   -- Split the `D.weylSubgroup K` subtype into the word product and torus factor by comparing
   -- their underlying elements in `D.points K`.
   have hmul : (⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod *
       D.torusPoints K s,
       mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
         (D.torusPoints_mem_weylSubgroup K s)⟩ : D.weylSubgroup K) =
-      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod,
-        D.list_prod_map_weylElement_mem_weylSubgroup K l⟩ *
+      (l.map (D.simpleWeylLift K)).prod *
         ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ := by
     apply Subtype.ext
-    rw [Subgroup.coe_mul]
-  rw [hmul, map_mul, hword l, D.weylProjection_torusPoints K s, mul_one]
+    rw [Subgroup.coe_mul, D.coe_list_prod_simpleWeylLift]
+  rw [hmul, map_mul,
+    D.map_list_prod_simpleWeylLift K (D.weylProjection K) (D.weylProjection_simpleWeylLift K) l,
+    D.weylProjection_torusPoints K s, mul_one]
 
 /-- Any element of the Weyl subgroup that also belongs to the positive Borel subgroup has trivial
 Weyl projection. -/

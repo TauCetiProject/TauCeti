@@ -130,12 +130,9 @@ theorem eq_and_eq_of_mem_map_negativePoints_conj_of_mul_eq {n u₁ u₂ b₁ b�
     (hb₁ : b₁ ∈ D.borelSubgroup A) (hb₂ : b₂ ∈ D.borelSubgroup A)
     (heq : u₁ * n * b₁ = u₂ * n * b₂) :
     u₁ = u₂ ∧ b₁ = b₂ := by
-  have hdisj : Disjoint ((D.negativePoints A).map (MulAut.conj n).toMonoidHom)
-      ((D.borelSubgroup A).map (MulAut.conj n).toMonoidHom) :=
-    Subgroup.disjoint_map (MulAut.conj n).injective
-      (disjoint_iff.mpr (D.negativePoints_inf_borelSubgroup_eq_bot A))
   have hp := Subgroup.mul_mul_injective_of_disjoint
-    ((D.negativePoints A).map (MulAut.conj n).toMonoidHom) (D.borelSubgroup A) hdisj
+    ((D.negativePoints A).map (MulAut.conj n).toMonoidHom) (D.borelSubgroup A)
+    (D.disjoint_map_conj_negativePoints_map_conj_borelSubgroup A n)
     (a₁ := (⟨u₁, hu₁⟩, ⟨b₁, hb₁⟩)) (a₂ := (⟨u₂, hu₂⟩, ⟨b₂, hb₂⟩)) heq
   exact ⟨congrArg (fun p => (p.1 : D.points A)) hp,
     congrArg (fun p => (p.2 : D.points A)) hp⟩

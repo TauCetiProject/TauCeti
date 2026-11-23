@@ -18,8 +18,9 @@ commutative ring `A`, conjugating Steinberg's Weyl element `n_γ(s)` by `n_{α�
 `n_{sᵢ γ}(ε s)` (`ChevalleyDatum.weylElement_conj_weylElement`), so conjugating by a word of
 pinned simple Weyl representatives transports `n_γ(s)` to `n_{w γ}(s')`.
 
-Transporting the strong-exchange witness (`TauCeti.exists_wordProd_eraseIdx_eq_mul_ofIdx_and_drop`)
-from `TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange` to lifted words in `D.points A`
+Transporting the strong-exchange witness
+(`RootPairing.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx`) from
+`TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange` to lifted words in `D.points A`
 and tracking the resulting torus correction shows that any word of pinned simple Weyl
 representatives spelling `1` in the Weyl group lies in the actual character-lattice torus `T_D(A)`
 (`ChevalleyDatum.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`).
@@ -81,14 +82,10 @@ private theorem exists_torusPoints_mul_list_prod (A : Type v) [CommRing A]
       (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.torusPoints A r =
         D.torusPoints A r' *
           (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod := by
-  induction l generalizing r with
-  | nil => exact ⟨r, by simp⟩
-  | cons i l ih =>
-    obtain ⟨r₁, hr₁⟩ := ih r
-    refine ⟨D.simpleReflectionTorusParameter i A r₁, ?_⟩
-    rw [List.map_cons, List.prod_cons, mul_assoc, hr₁, ← mul_assoc,
-      ← D.weylElement_conj_torusPoints]
-    group
+  have hnorm := D.weylSubgroup_le_normalizer_range_torusPoints A
+    (D.list_prod_map_weylElement_mem_weylSubgroup A l)
+  obtain ⟨r', hr'⟩ := (Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints A r)).mp ⟨r, rfl⟩
+  exact ⟨r', by rw [hr']; group⟩
 
 private theorem wordProd_map_simpleSupportEquiv (l : List (Fin t.rank)) :
     TauCeti.wordProd (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
@@ -99,6 +96,30 @@ private theorem wordProd_map_simpleSupportEquiv (l : List (Fin t.rank)) :
   | cons i l ih =>
     rw [List.map_cons, wordProd_cons, ih, geckWeylWordProd_cons,
       coe_simpleSupportEquivSimplyConnectedBase_apply]
+
+/-- Rank-one torus cancellation across a crossing suffix: given the suffix conjugation identity
+`suf_lift * n_γ(1) * suf_lift⁻¹ = n_{αᵢ}(s')`, cancelling `nᵢ(1)` against `n_{αᵢ}(s')` produces
+a left factor in the actual torus `T_D(A)`. -/
+private theorem exists_weylElement_mul_list_prod_mul_eq_torusPoints_mul
+    (A : Type v) [CommRing A] (i : Fin t.rank) (suf : List (Fin t.rank)) {γ : Fin t.numRoots}
+    {s' : Aˣ}
+    (hsuf : (suf.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod *
+        D.weylElement γ A 1 *
+        ((suf.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod)⁻¹ =
+      D.weylElement (t.simpleIndex ht i) A s') :
+    ∃ r₀ : Fin t.rank → Aˣ,
+      D.weylElement (t.simpleIndex ht i) A 1 *
+          (suf.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod *
+          D.weylElement γ A 1 =
+        D.torusPoints A r₀ *
+          (suf.map fun j => D.weylElement (t.simpleIndex ht j) A 1).prod := by
+  rw [D.weylElement_simpleIndex_eq_torusPoints_mul] at hsuf
+  have hW := mul_inv_eq_iff_eq_mul.mp hsuf
+  refine ⟨D.simpleReflectionTorusParameter i A (D.simpleCorootParameter i A s') *
+    D.simpleCorootParameter i A (-1), ?_⟩
+  rw [mul_assoc, hW, map_mul, ← D.simpleCorootPoints_eq_torusPoints i A (-1),
+    ← D.weylElement_mul_self, ← D.weylElement_conj_torusPoints]
+  group
 
 /-- **Strong-exchange shortening of Weyl words in `D.points A`.** If `l` spells a Weyl element
 sending a positive root `γ` to a negative root, multiplying the lifted word on the right by
@@ -118,8 +139,9 @@ private theorem exists_eraseIdx_weylWord_mul_weylElement (A : Type v) [CommRing 
   let _ := t.isReduced_simplyConnectedRootDatum ht
   let e := t.simpleSupportEquivSimplyConnectedBase ht
   rw [← wordProd_map_simpleSupportEquiv] at h
-  obtain ⟨p, hp, hdrop, hwp⟩ := TauCeti.exists_wordProd_eraseIdx_eq_mul_ofIdx_and_drop
-    (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) hγ (l.map e) h
+  obtain ⟨p, hp, hdrop, hwp⟩ :=
+    (t.simplyConnectedRootDatum ht).exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx
+      (t.simplyConnectedBase ht) hγ (l.map e) h
   have hp' : p < l.length := by simpa using hp
   have hdrop' :
       (t.simplyConnectedRootDatum ht).weylGroupToPerm
@@ -132,28 +154,9 @@ private theorem exists_eraseIdx_weylWord_mul_weylElement (A : Type v) [CommRing 
           RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ := by
     simpa [e, List.eraseIdx_map, wordProd_map_simpleSupportEquiv] using hwp
   obtain ⟨s', hs'⟩ := D.exists_unit_weylWord_conj_weylElement A (l.drop (p + 1)) γ 1
-  rw [hdrop', D.weylElement_simpleIndex_eq_torusPoints_mul] at hs'
-  have hW :
-      ((l.drop (p + 1)).map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod *
-          D.weylElement γ A 1 =
-        D.torusPoints A (D.simpleCorootParameter l[p] A s') *
-          D.weylElement (t.simpleIndex ht l[p]) A 1 *
-          ((l.drop (p + 1)).map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod :=
-    mul_inv_eq_iff_eq_mul.mp hs'
-  let r₀ : Fin t.rank → Aˣ :=
-    D.simpleReflectionTorusParameter l[p] A (D.simpleCorootParameter l[p] A s') *
-      D.simpleCorootParameter l[p] A (-1)
-  have hmid :
-      D.weylElement (t.simpleIndex ht l[p]) A 1 *
-          ((l.drop (p + 1)).map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod *
-          D.weylElement γ A 1 =
-        D.torusPoints A r₀ *
-          ((l.drop (p + 1)).map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod := by
-    rw [mul_assoc, hW]
-    dsimp only [r₀]
-    rw [map_mul, ← D.simpleCorootPoints_eq_torusPoints l[p] A (-1), ← D.weylElement_mul_self,
-      ← D.weylElement_conj_torusPoints]
-    group
+  rw [hdrop'] at hs'
+  obtain ⟨r₀, hmid⟩ :=
+    D.exists_weylElement_mul_list_prod_mul_eq_torusPoints_mul A l[p] (l.drop (p + 1)) hs'
   obtain ⟨r, hr⟩ := D.exists_torusPoints_mul_list_prod A (l.take p) r₀
   refine ⟨p, hp', hwp', r, ?_⟩
   have hl_split : l.take p ++ l[p] :: l.drop (p + 1) = l := by
