@@ -41,6 +41,8 @@ recognise a corner ring as basic.
 
 * `IsIdempotentElem.isUnit_corner_iff`: `x` is a unit of `eAe` if and only if `1 - e + x` is a
   unit of `A`.
+* `IsIdempotentElem.isUnit_compress_iff_of_commute`: for `c` commuting with `e`, the compression
+  `ece` is a unit of `eAe` if and only if `1 - e + ce` is a unit of `A`.
 * `IsIdempotentElem.mem_jacobson_corner_iff`: an element of `eAe` lies in its Jacobson radical
   if and only if it lies in the Jacobson radical of `A`.
 * `IsIdempotentElem.jacobson_corner`: `J(eAe) = eJ(A)e`, as ideals of the corner.
@@ -90,6 +92,12 @@ theorem isUnit_corner_iff {x : he.Corner} : IsUnit x ↔ IsUnit (1 - e + x.val) 
     exact isUnit_iff_exists.mpr ⟨he.compress w,
       Subtype.ext (by rwa [Corner.val_mul, val_compress, Corner.val_one]),
       Subtype.ext (by rwa [Corner.val_mul, val_compress, Corner.val_one])⟩
+
+/-- **Corner units of a commuting element.** If `c` commutes with `e`, the compression `ece` of
+`c` is a unit of the corner `eAe` exactly when `1 - e + ce` is a unit of `A`. -/
+theorem isUnit_compress_iff_of_commute {c : A} (hc : Commute e c) :
+    IsUnit (he.compress c) ↔ IsUnit (1 - e + c * e) := by
+  rw [he.isUnit_corner_iff, val_compress, hc.eq, mul_assoc, he.eq]
 
 /-- `1 - e + (1 + y)` is `1 + y` for an element `y` of the corner. -/
 private theorem one_sub_add_val_one_add (y : he.Corner) :
