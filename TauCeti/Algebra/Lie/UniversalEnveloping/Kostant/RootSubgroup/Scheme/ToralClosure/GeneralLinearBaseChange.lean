@@ -378,54 +378,15 @@ theorem pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
       kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
         ((@AdditiveGroup.gaPointsMulEquiv ℤ Int.instCommSemiring B _
           (Ring.toIntAlgebra B)).symm (AdditiveGroup.gaPointsMulEquiv q)) := by
-  -- The additive coordinate Hopf algebra is definitionally this symmetric-algebra model; the
-  -- explicit spelling also selects the bundled `CommAlgCat` algebra structure carried by `q`.
-  change WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] B) at q
-  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.quotientPointsHom_apply, GeneralLinear.pointsMulEquiv_apply]
-  -- Expose the algebra-hom precomposition hidden by the quotient and point-functor wrappers.
-  change GeneralLinear.pointToGeneralLinear n
-      (WithConv.toConv (q.ofConv.comp
-        ((CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n) J ≫
-          kostantRootSubgroupToralCoordinateMapOfEq
-            e h ρ M hM hnil b wt hJ i).hom :
-          GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
-            AdditiveGroup.coordinateHopfAlgebra ℤ))) = _
-  rw [mkQuotient_comp_kostantRootSubgroupToralCoordinateMapOfEq]
-  let q' := WithConv.toConv q.ofConv.toRingHom.toIntAlgHom
-  let u : Multiplicative B := AdditiveGroup.gaPointsMulEquiv q
-  let u' := (@AdditiveGroup.gaPointsMulEquiv ℤ Int.instCommSemiring B _
-    (Ring.toIntAlgebra B)) q'
-  have hu : u' = u := by
-    apply Multiplicative.toAdd.injective
-    calc
-      Multiplicative.toAdd u' = q'.ofConv (SymmetricAlgebra.ι ℤ ℤ 1) := by
-        exact @AdditiveGroup.toAdd_gaPointsMulEquiv ℤ Int.instCommSemiring B _
-          (Ring.toIntAlgebra B) q'
-      _ = q.ofConv (SymmetricAlgebra.ι ℤ ℤ 1) :=
-        RingHom.toIntAlgHom_apply q.ofConv.toRingHom _
-      _ = Multiplicative.toAdd u := by
-        exact (@AdditiveGroup.toAdd_gaPointsMulEquiv ℤ Int.instCommSemiring B _
-          (CommAlgCat.algebra B) q).symm
-  -- The matrix theorem uses the canonical `Ring.toIntAlgebra`, while `q` uses the definitionally
-  -- equal structure bundled in `CommAlgCat`; `hu` identifies the resulting parameters.
-  change _ = kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
-    ((@AdditiveGroup.gaPointsMulEquiv ℤ Int.instCommSemiring B _
-      (Ring.toIntAlgebra B)).symm u)
-  rw [← hu]
-  have hcancel :
-      (@AdditiveGroup.gaPointsMulEquiv ℤ Int.instCommSemiring B _
-        (Ring.toIntAlgebra B)).symm u' = q' := by
-    exact (@AdditiveGroup.gaPointsMulEquiv ℤ Int.instCommSemiring B _
-      (Ring.toIntAlgebra B)).symm_apply_apply q'
-  rw [hcancel]
-  have hroot := pointsMulEquiv_kostantRootSubgroupCoordinateMap
-    e h ρ M hM i (hnil i) b B q'
-  rw [← hroot]
-  apply Matrix.GeneralLinearGroup.ext
-  intro r s
-  rw [GeneralLinear.pointToGeneralLinear_apply, GeneralLinear.pointToGeneralLinear_apply]
-  exact RingHom.toIntAlgHom_apply q.ofConv.toRingHom _
+  rw [← CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp _ _ _
+    (mkQuotient_comp_kostantRootSubgroupToralCoordinateMapOfEq e h ρ M hM hnil b wt hJ i)]
+  -- Normalise the bundled `ℤ`-algebra structure of `B` to `Ring.toIntAlgebra B`.
+  rcases B with ⟨B⟩
+  rename_i _ hB
+  obtain rfl : hB = Ring.toIntAlgebra B := Subsingleton.elim _ _
+  rw [MulEquiv.symm_apply_apply, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    GeneralLinear.pointsMulEquiv_apply]
+  exact pointsMulEquiv_kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b _ q
 
 /-- The integral weight-torus coordinate map, with source expressed using a named spelling `J` of
 the defining ideal. -/
@@ -464,18 +425,8 @@ theorem pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq [Fintype κ]
               e h ρ M hM hnil b wt hJ)).app B q)) =
       (@kostantTorusMatrix κ V _ M _ n b wt B _ (Ring.toIntAlgebra B))
         (SplitTorus.pointsMulEquiv q) := by
-  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.quotientPointsHom_apply, GeneralLinear.pointsMulEquiv_apply]
-  -- Expose the algebra-hom precomposition hidden by the quotient and point-functor wrappers.
-  change GeneralLinear.pointToGeneralLinear n
-      (WithConv.toConv (q.ofConv.comp
-        ((CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n) J ≫
-          kostantWeightTorusToralCoordinateMapOfEq e h ρ M hM hnil b wt hJ).hom :
-          GeneralLinear.coordinateHopfAlgebra ℤ n →ₐ[ℤ]
-            MonoidAlgebra ℤ (SplitTorus.characterGroup κ)))) = _
-  rw [mkQuotient_comp_kostantWeightTorusToralCoordinateMapOfEq]
-  rw [← GeneralLinear.pointsMulEquiv_apply,
-    ← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+  rw [← CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp _ _ _
+    (mkQuotient_comp_kostantWeightTorusToralCoordinateMapOfEq e h ρ M hM hnil b wt hJ),
     GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap,
     kostantTorusMatrix_apply]
 
