@@ -10,6 +10,7 @@ public import TauCeti.Topology.VectorBundle.Complex.Structure
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import Mathlib.Topology.VectorBundle.FiniteDimensional
 import TauCeti.Analysis.Normed.Module.Alternating.Tame
 import TauCeti.Geometry.Symplectic.ExistsCompatible
 
@@ -62,14 +63,6 @@ variable {B : Type*} [TopologicalSpace B]
   [∀ b, FiniteDimensional ℝ (V b)]
   (J : ContinuousComplexStructure F V) {k : ℕ} (hk : finrank ℝ F = k)
 
-omit [FiniteDimensional ℝ F] [∀ b, IsTopologicalAddGroup (V b)] [∀ b, ContinuousSMul ℝ (V b)]
-  [∀ b, FiniteDimensional ℝ (V b)] in
-include hk in
-/-- Every fibre has the dimension of the model fibre. -/
-private theorem finrank_fiber (b : B) : finrank ℝ (V b) = k :=
-  ((trivializationAt F V b).linearEquivAt ℝ b
-    (FiberBundle.mem_baseSet_trivializationAt' b)).finrank_eq.trans hk
-
 omit [FiniteDimensional ℝ F] [∀ b, FiniteDimensional ℝ (V b)] in
 /-- Read in the trivialization of `V` at `b₀`, the complex structure `J b` is `J.coord b₀ b`. -/
 theorem transport_almostComplexStructureAt_apply {b₀ b : B}
@@ -87,19 +80,23 @@ theorem transport_almostComplexStructureAt_apply {b₀ b : B}
 private theorem eventually_mapOrientation_orientation_eq (b : B) :
     ∀ᶠ x in 𝓝 b, ∀ hx : x ∈ (trivializationAt F V b).baseSet,
       (trivializationAt F V b).mapOrientation (Fin k) hx
-          ((J.almostComplexStructureAt x).orientation (finrank_fiber hk x)) =
+          ((J.almostComplexStructureAt x).orientation
+            ((VectorBundle.finrank_eq ℝ F V x).trans hk)) =
         (trivializationAt F V b).mapOrientation (Fin k)
           (FiberBundle.mem_baseSet_trivializationAt' b)
-          ((J.almostComplexStructureAt b).orientation (finrank_fiber hk b)) := by
+          ((J.almostComplexStructureAt b).orientation
+            ((VectorBundle.finrank_eq ℝ F V b).trans hk)) := by
   set e := trivializationAt F V b
   have hb : b ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' b
   -- A symplectic form on `F` taming `J` read at `x` induces the orientation at `x`.
   have hmap {x : B} (hx : x ∈ e.baseSet) (τ : SymplecticForm F)
       (hτ : ∀ u ≠ 0, 0 < τ u (J.coord b x u)) :
       e.mapOrientation (Fin k) hx
-        ((J.almostComplexStructureAt x).orientation (finrank_fiber hk x)) = τ.orientation hk := by
+        ((J.almostComplexStructureAt x).orientation ((VectorBundle.finrank_eq ℝ F V x).trans hk)) =
+          τ.orientation hk := by
     rw [Trivialization.mapOrientation_apply, AlmostComplexStructure.map_orientation
-      (AlmostComplexStructure.isComplexLinearMap_transport _ _) (finrank_fiber hk x)]
+      (AlmostComplexStructure.isComplexLinearMap_transport _ _)
+      ((VectorBundle.finrank_eq ℝ F V x).trans hk)]
     refine AlmostComplexStructure.orientation_eq_of_tames (fun u hu ↦ ?_) _
     rw [transport_almostComplexStructureAt_apply]
     exact hτ u hu
@@ -119,7 +116,7 @@ private theorem eventually_mapOrientation_orientation_eq (b : B) :
 `J`: on the fibre over `b` it is the complex orientation of `J b`, in which the `J b`-adapted bases
 `(v₁, J v₁, …, vₙ, J vₙ)` are positive. -/
 noncomputable def orientation : VectorBundleOrientation F V (Fin k) :=
-  ⟨fun b ↦ (J.almostComplexStructureAt b).orientation (finrank_fiber hk b),
+  ⟨fun b ↦ (J.almostComplexStructureAt b).orientation ((VectorBundle.finrank_eq ℝ F V b).trans hk),
     J.eventually_mapOrientation_orientation_eq hk⟩
 
 /-- The complex orientation of `V` orients the fibre over `b` by the complex orientation of
