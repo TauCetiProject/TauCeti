@@ -5,35 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Block
+public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Block.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Tail
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basic
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # First-site Markov rules and left-slice geometric atomic models
 
-For an atomic model `TauCeti.TypeAHeckeAlgebra.atomicTrace pos q p n` on an ordered alphabet `ι`,
-the shifted-tail inclusion `TauCeti.TypeAHeckeAlgebra.tailIncl` fixes the prepended first letter and
-acts on the remaining strands (`TauCeti.TypeAHeckeAlgebra.signedChecked_tailIncl_mapDomain_cons`).
-Consequently `atomicTrace` scales by `∑ a, p a` under `tailIncl`
-(`TauCeti.TypeAHeckeAlgebra.atomicTrace_tailIncl`), and multiplying by `T 0` tests the *left slice*
-`(if pos b then q ^ 2 else -1) * p b + (q ^ 2 - 1) * ∑ (a < b), p a`.
-
-When the weights sum to `1` and every left slice equals `q * z`, `atomicTrace` satisfies the
-first-site Markov rule (`TauCeti.TypeAHeckeAlgebra.atomicTrace_T_zero_mul_tailIncl`) and
-restricts `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace R q z`
-(`TauCeti.TypeAHeckeAlgebra.atomicTrace_eq_ocneanuTrace_of_leftSlice`). Decreasing positive
-geometric weights (`TauCeti.TypeAHeckeAlgebra.atomicTrace_geometric_leftSlice_eq`) and increasing
-negative geometric weights (`TauCeti.TypeAHeckeAlgebra.atomicTrace_negGeometric_eq`) realize both
-halves `a_(±(r + 1))(Q)` of Wenzl's discrete series.
-
-## References
-
-* Yu. A. Neretin, *Some remarks on traces on the infinite-dimensional Iwahori–Hecke algebra*,
-  arXiv:2101.02133, §§1.6–1.7 and §3.1.
-* H. Wenzl, *Hecke algebras of type A_n and subfactors*, Invent. Math. 92 (1988), 349–383, §3.
+For an atomic model `TauCeti.TypeAHeckeAlgebra.atomicTrace pos q p n`, `tailIncl` fixes the first
+letter (`signedChecked_tailIncl_mapDomain_cons`) and scales the trace by `∑ a, p a`
+(`atomicTrace_tailIncl`). Multiplying by `T 0` tests the left slice, so scalar left slices yield
+first-site Markov rules (`atomicTrace_T_zero_mul_tailIncl`,
+`atomicTrace_eq_ocneanuTrace_of_leftSlice`) and realize Wenzl's discrete series
+(`atomicTrace_geometric_leftSlice_eq`, `atomicTrace_negGeometric_eq`). Cf. Wenzl (1988, §3),
+Neretin (arXiv:2101.02133, §§1.6–1.7, §3.1).
 -/
 
 public section
@@ -46,8 +34,7 @@ variable {R : Type*} [CommRing R] {ι : Type*} [LinearOrder ι] (pos : ι → Pr
   (q : Rˣ) {n : ℕ}
 
 /-- `tailIncl` fixes the prepended first letter and acts on the remaining `n` letters. -/
-@[simp]
-theorem signedChecked_tailIncl_mapDomain_cons (x : TypeAHeckeAlgebra R q n) (a : ι)
+@[simp] theorem signedChecked_tailIncl_mapDomain_cons (x : TypeAHeckeAlgebra R q n) (a : ι)
     (v : (Fin n → ι) →₀ R) :
     signedChecked pos q (tailIncl q n x) (mapDomain (fun w ↦ Fin.cons a w) v) =
       mapDomain (fun w ↦ Fin.cons a w) (signedChecked pos q x v) := by
@@ -55,20 +42,19 @@ theorem signedChecked_tailIncl_mapDomain_cons (x : TypeAHeckeAlgebra R q n) (a :
   suffices h : (signedChecked pos q (tailIncl q n x)).comp L = L.comp (signedChecked pos q x) by
     simpa [L] using LinearMap.congr_fun h v
   refine signedChecked_comp_eq_of_forall_T pos q _ L (fun i ↦ ?_) x
-  have hj : BraidGroup.strand (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) =
-      (BraidGroup.strand i).succ := Fin.ext (by simp)
-  have hk : BraidGroup.strandSucc (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) =
-      (BraidGroup.strandSucc i).succ := Fin.ext (by simp)
   rw [tailIncl_T, signedChecked_T, signedChecked_T, LinearMap.smul_comp, LinearMap.comp_smul,
-    hj, hk, signedCheckedR_comp_lmapDomain_cons]
+    show BraidGroup.strand (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) = (BraidGroup.strand i).succ
+      from Fin.ext (by simp),
+    show BraidGroup.strandSucc (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) =
+      (BraidGroup.strandSucc i).succ from Fin.ext (by simp),
+    signedCheckedR_comp_lmapDomain_cons]
 
 /-- `tailIncl` acts block-diagonally on words grouped by their first letter. -/
 theorem signedChecked_tailIncl_single_cons_apply_cons (x : TypeAHeckeAlgebra R q n)
     (w u : Fin n → ι) (a d : ι) :
     signedChecked pos q (tailIncl q n x) (single (Fin.cons a w) 1) (Fin.cons d u) =
       if a = d then signedChecked pos q x (single w 1) u else 0 := by
-  have h := signedChecked_tailIncl_mapDomain_cons pos q x a (single w 1)
-  rw [mapDomain_single] at h; rw [h]
+  rw [← mapDomain_single (a := w) (b := (1 : R)), signedChecked_tailIncl_mapDomain_cons]
   split_ifs with had
   · subst d; exact mapDomain_apply_of_injective (@Fin.cons_right_injective _ (fun _ ↦ ι) a) _ _
   · apply mapDomain_of_notMem_range; rintro ⟨_, hv⟩
@@ -96,8 +82,7 @@ theorem signedChecked_tailIncl_mul_T_zero_single_cons_apply
       Finsupp.neg_apply, smul_eq_mul, signedChecked_tailIncl_single_cons_apply_cons]; ring
 
 /-- Adding an uncrossed first strand multiplies the atomic trace by the total weight. -/
-@[simp]
-theorem atomicTrace_tailIncl [Fintype ι] (p : ι → R) (x : TypeAHeckeAlgebra R q n) :
+@[simp] theorem atomicTrace_tailIncl [Fintype ι] (p : ι → R) (x : TypeAHeckeAlgebra R q n) :
     atomicTrace pos q p (n + 1) (tailIncl q n x) = atomicTrace pos q p n x * ∑ a, p a := by
   rw [← strandCycleConj_strandIncl, strandCycleConj_apply, mul_assoc, atomicTrace_mul_comm,
     mul_assoc, Units.inv_mul, mul_one, atomicTrace_strandIncl]
@@ -107,13 +92,10 @@ private theorem sum_leftSlice [Fintype ι] (p : ι → R) (b : ι) :
       else if a < b then (q : R) ^ 2 - 1 else 0) * p a) =
       (if pos b then (q : R) ^ 2 else -1) * p b + ((q : R) ^ 2 - 1) * ∑ a with a < b, p a := by
   classical
-  have h (a : ι) : (if a = b then (if pos b then (q : R) ^ 2 else -1)
-      else if a < b then (q : R) ^ 2 - 1 else 0) * p a =
-      (if a = b then (if pos b then (q : R) ^ 2 else -1) * p b else 0) +
-        (if a < b then ((q : R) ^ 2 - 1) * p a else 0) := by
-    split_ifs <;> simp_all
-  simp only [h, Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte,
-    Finset.mul_sum, Finset.sum_filter, mul_ite, mul_zero]
+  trans ∑ a, ((if a = b then (if pos b then (q : R) ^ 2 else -1) * p b else 0) +
+    if a < b then ((q : R) ^ 2 - 1) * p a else 0)
+  · exact Finset.sum_congr rfl fun a _ ↦ by split_ifs <;> simp_all
+  · simp [Finset.sum_add_distrib, Finset.mul_sum, Finset.sum_filter]
 
 /-- **First-site (left-slice) Markov rule** for `atomicTrace`. -/
 theorem atomicTrace_T_zero_mul_tailIncl [Fintype ι] (p : ι → R) {z : R}
@@ -124,21 +106,15 @@ theorem atomicTrace_T_zero_mul_tailIncl [Fintype ι] (p : ι → R) {z : R}
       z * atomicTrace pos q p (n + 1) x := by
   rw [atomicTrace_mul_comm, atomicTrace_eq_sum,
     ← (Fin.consEquiv (fun _ : Fin (n + 2) ↦ ι)).sum_comp]
-  simp only [Fin.consEquiv, Equiv.coe_fn_mk, Fintype.sum_prod_type,
-    signedChecked_tailIncl_mul_T_zero_single_cons_apply]
-  simp_rw [Fin.prod_univ_succ (n := n + 1), Fin.cons_zero, Fin.cons_succ]
+  simp only [Fintype.sum_prod_type, Fin.consEquiv_apply,
+    signedChecked_tailIncl_mul_T_zero_single_cons_apply, Fin.prod_univ_succ (n := n + 1),
+    Fin.cons_zero, Fin.cons_succ]
   rw [Finset.sum_comm, atomicTrace_eq_sum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
-  have hfactor : (∑ a, ((q⁻¹ : Rˣ) : R) * signedChecked pos q x (single w 1) w *
-      (if a = w 0 then (if pos (w 0) then (q : R) ^ 2 else -1)
-        else if a < w 0 then (q : R) ^ 2 - 1 else 0) * (p a * ∏ i, p (w i))) =
-      ((q⁻¹ : Rˣ) : R) * signedChecked pos q x (single w 1) w * (∏ i, p (w i)) *
-        ∑ a, (if a = w 0 then (if pos (w 0) then (q : R) ^ 2 else -1)
-          else if a < w 0 then (q : R) ^ 2 - 1 else 0) * p a := by
-    rw [Finset.mul_sum]
+  trans ((q⁻¹ : Rˣ) : R) * signedChecked pos q x (single w 1) w * (∏ i, p (w i)) * (q * z)
+  · rw [← hz (w 0), ← sum_leftSlice, Finset.mul_sum]
     exact Finset.sum_congr rfl fun _ _ ↦ by ring
-  rw [hfactor, sum_leftSlice, hz]
-  linear_combination (z * signedChecked pos q x (single w 1) w * ∏ i, p (w i)) * Units.inv_mul q
+  · linear_combination (z * signedChecked pos q x (single w 1) w * ∏ i, p (w i)) * Units.inv_mul q
 
 /-- **The atomic trace with scalar left slice is the Ocneanu trace.** -/
 theorem atomicTrace_eq_ocneanuTrace_of_leftSlice [Fintype ι] (p : ι → R) {z : R}
@@ -161,26 +137,23 @@ theorem atomicTrace_geometric_leftSlice_eq {r : ℕ} {c : R}
       InfiniteTypeAHeckeAlgebra.ocneanuTrace R q (c * (q : R) ^ (2 * r + 1))
         (toInfinite R q n x) := by
   refine atomicTrace_eq_ocneanuTrace_of_leftSlice _ q _ ?_ (fun b ↦ ?_) x
-  · rw [← Finset.mul_sum, ← hc]; congr 1
-    exact (Fintype.sum_equiv Fin.revPerm _ (fun a : Fin (r + 1) ↦ ((q : R) ^ 2) ^ (a : ℕ))
-      fun a ↦ by simp only [Fin.revPerm_apply, Fin.val_rev]; congr 1; omega).trans
-      (Fin.sum_univ_eq_sum_range (fun a ↦ ((q : R) ^ 2) ^ a) (r + 1))
+  · rw [← Finset.mul_sum, ← hc, ← Fin.sum_univ_eq_sum_range (fun a ↦ ((q : R) ^ 2) ^ a)]
+    exact congrArg (c * ·) (Fintype.sum_equiv Fin.revPerm _ _ fun a ↦ by
+      simp only [Fin.revPerm_apply, Fin.val_rev]; congr 1; omega)
   · have hI : ∑ a : Fin (r + 1) with a < b, c * ((q : R) ^ 2) ^ (r - (a : ℕ)) =
         c * ∑ k ∈ Finset.Ico ((r - (b : ℕ)) + 1) (r + 1), ((q : R) ^ 2) ^ k := by
-      rw [← Finset.mul_sum]; congr 1
-      refine Finset.sum_bij' (fun a _ ↦ r - (a : ℕ))
-        (fun k hk ↦ ⟨r - k, by rw [Finset.mem_Ico] at hk; omega⟩)
-        (fun a ha ↦ by simp only [Finset.mem_filter, Fin.lt_def, Finset.mem_Ico] at ha ⊢; omega)
-        (fun k hk ↦ by simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.lt_def,
-          Finset.mem_Ico] at hk ⊢; omega)
-        (fun a _ ↦ Fin.ext (by dsimp; omega))
-        (fun k hk ↦ by rw [Finset.mem_Ico] at hk; dsimp; omega)
-        (fun _ _ ↦ rfl)
-    have hle : r - (b : ℕ) + 1 ≤ r + 1 := by omega
-    have hg := geom_sum_Ico_mul ((q : R) ^ 2) hle
-    rw [pow_succ' ((q : R) ^ 2) (r - (b : ℕ))] at hg
-    have hpow : (q : R) * (q : R) ^ (2 * r + 1) = ((q : R) ^ 2) ^ (r + 1) := by ring
-    simp only [↓reduceIte, hI]; linear_combination c * hg - c * hpow
+      rw [← Finset.mul_sum, Finset.sum_filter]; congr 1
+      refine (Fintype.sum_equiv Fin.revPerm _ (fun a ↦ if r - (b : ℕ) < a then
+          ((q : R) ^ 2) ^ (a : ℕ) else 0) fun a ↦ by
+        simp only [Fin.revPerm_apply, Fin.val_rev, Fin.lt_def]
+        split_ifs <;> congr 1 <;> omega).trans ?_
+      rw [Fin.sum_univ_eq_sum_range (fun a ↦ if r - (b : ℕ) < a then ((q : R) ^ 2) ^ a else 0),
+        ← Finset.sum_filter]
+      congr 1; ext k; simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Ico]; omega
+    have hg := geom_sum_Ico_mul ((q : R) ^ 2) (by omega : r - (b : ℕ) + 1 ≤ r + 1)
+    rw [pow_succ' ((q : R) ^ 2) (r - (b : ℕ)),
+      show ((q : R) ^ 2) ^ (r + 1) = (q : R) * (q : R) ^ (2 * r + 1) by ring] at hg
+    simp only [↓reduceIte, hI]; linear_combination c * hg
 
 /-- **Negative discrete geometric model in first-site R-order** (`z = -(c * q⁻¹)`). -/
 theorem atomicTrace_negGeometric_eq {r : ℕ} {c : R}
@@ -192,10 +165,9 @@ theorem atomicTrace_negGeometric_eq {r : ℕ} {c : R}
   · rw [← Finset.mul_sum, ← hc, Fin.sum_univ_eq_sum_range (fun a ↦ ((q : R) ^ 2) ^ a)]
   · have hI : ∑ a : Fin (r + 1) with a < b, c * ((q : R) ^ 2) ^ (a : ℕ) =
         c * ∑ a ∈ Finset.range (b : ℕ), ((q : R) ^ 2) ^ a := by
-      rw [← Finset.mul_sum, Finset.sum_filter]; congr 1; simp_rw [Fin.lt_def]
-      rw [Fin.sum_univ_eq_sum_range
+      rw [← Finset.mul_sum, Finset.sum_filter]; simp_rw [Fin.lt_def]; rw [Fin.sum_univ_eq_sum_range
         (fun a ↦ if a < (b : ℕ) then ((q : R) ^ 2) ^ a else 0) (r + 1), ← Finset.sum_filter]
-      congr 1; ext a; simp only [Finset.mem_filter, Finset.mem_range]; omega
+      exact congrArg (c * ·) (Finset.sum_congr (by ext a; simp; omega) fun _ _ ↦ rfl)
     simp only [↓reduceIte, hI]
     linear_combination c * geom_sum_mul ((q : R) ^ 2) (b : ℕ) + c * Units.mul_inv q
 

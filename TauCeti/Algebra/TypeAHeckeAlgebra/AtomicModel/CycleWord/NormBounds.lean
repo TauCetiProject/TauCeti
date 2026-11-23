@@ -13,7 +13,8 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.CycleWord.Basic
 
 Over any normed commutative ring `R`, the diagonal entry of the cycle word `cycleWord q (m + 1)` in
 `signedChecked pos q` grows at most exponentially with base `max 1 (max ‖q ^ 2‖ ‖q ^ 2 - 1‖)`
-(`TauCeti.TypeAHeckeAlgebra.norm_signedChecked_cycleWord_single_apply_le`).
+(`TauCeti.TypeAHeckeAlgebra.norm_signedChecked_cycleWord_single_apply_le`), yielding the finite
+atomic trace norm estimate `TauCeti.TypeAHeckeAlgebra.norm_atomicTrace_cycleWord_le`.
 -/
 
 public section
@@ -45,5 +46,16 @@ theorem norm_signedChecked_cycleWord_single_apply_le :
     · exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left
         ((le_max_right _ _).trans (le_max_right _ _)) (norm_nonneg z))
     · rw [mul_zero, norm_zero]; positivity
+
+/-- Norm bound on the finite atomic trace of a cycle word `cycleWord (m + 1)`. -/
+theorem norm_atomicTrace_cycleWord_le [Fintype ι] (p : ι → R) (m : ℕ) :
+    ‖atomicTrace pos q p (m + 1) (cycleWord q (m + 1))‖ ≤
+      ‖(1 : R)‖ * max 1 (max ‖(q : R) ^ 2‖ ‖(q : R) ^ 2 - 1‖) ^ m * (∑ a, ‖p a‖) ^ (m + 1) := by
+  rw [atomicTrace_eq_sum]
+  refine (norm_sum_le _ _).trans ((Finset.sum_le_sum fun w _ ↦ (norm_mul_le _ _).trans <|
+    mul_le_mul (norm_signedChecked_cycleWord_single_apply_le pos q w)
+      (Finset.norm_prod_le' _ Finset.univ_nonempty _) (norm_nonneg _) (by positivity)).trans_eq ?_)
+  rw [← Finset.mul_sum, ← Fintype.prod_sum (fun (_ : Fin (m + 1)) a ↦ ‖p a‖),
+    Finset.prod_const, Finset.card_univ, Fintype.card_fin]
 
 end TauCeti.TypeAHeckeAlgebra

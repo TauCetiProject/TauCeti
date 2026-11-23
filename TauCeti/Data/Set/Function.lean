@@ -18,6 +18,8 @@ public import Mathlib.Data.Set.Function
   `s ∩ f ⁻¹' t`.
 * `Set.mapsTo_preimage_of_apply_eq`: a map compatible with maps `q` and `q'` to a common type
   carries preimages under `q` into preimages under `q'`.
+* `Set.mem_range_comp_subtype_val`: a function `w : α → β` lies in the range of postcomposition
+  with `Subtype.val : {b // P b} → β` iff `P (w a)` holds for all `a`.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
 * `Function.Injective.apply_mem_iff_of_eq_self`: such a map preserves membership in every set
@@ -54,6 +56,12 @@ carries preimages under `q` into preimages under `q'`. -/
 theorem mapsTo_preimage_of_apply_eq {γ : Type*} (f : α → β) {q : α → γ} {q' : β → γ}
     (hf : ∀ x, q' (f x) = q x) (S : Set γ) : MapsTo f (q ⁻¹' S) (q' ⁻¹' S) :=
   fun x hx ↦ by rw [mem_preimage, hf]; exact hx
+
+/-- A function `w : α → β` lies in the range of postcomposition with
+`Subtype.val : {b // P b} → β` iff `P (w a)` holds for every `a`. -/
+theorem mem_range_comp_subtype_val {P : β → Prop} {w : α → β} :
+    w ∈ range (fun u : α → {b : β // P b} ↦ Subtype.val ∘ u) ↔ ∀ a, P (w a) :=
+  ⟨by rintro ⟨u, rfl⟩ a; exact (u a).property, fun h ↦ ⟨Equiv.subtypePiEquivPi ⟨w, h⟩, rfl⟩⟩
 
 end Set
 

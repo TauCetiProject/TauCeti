@@ -125,21 +125,17 @@ theorem signedChecked_cycleWord_single_apply_of_sq_eq_one (hq : (q : R) ^ 2 = 1)
     conv_lhs => rw [← Fin.snoc_init_self w]
     rw [signedChecked_cycleWord_succ_snoc_apply,
       signedChecked_cycleWord_single_apply_of_sq_eq_one hq (Fin.init w), hq, sub_self, ite_self]
+    have h0 : Fin.init w 0 = w 0 := congrArg w Fin.castSucc_zero
     by_cases hall : ∀ i : Fin (m + 2), w i = w 0
-    · have h0 : Fin.init w 0 = w 0 := rfl
-      have hi : ∀ i : Fin (m + 1), Fin.init w i = Fin.init w 0 := fun i ↦
-        (hall i.castSucc).trans h0.symm
+    · have hi : ∀ i : Fin (m + 1), Fin.init w i = Fin.init w 0 :=
+        fun i ↦ (hall i.castSucc).trans h0.symm
       have hl : Fin.init w (Fin.last m) = w (Fin.last (m + 1)) :=
         (hall (Fin.last m).castSucc).trans (hall (Fin.last (m + 1))).symm
       rw [ite_eq_left hi, ite_eq_left hl, ite_eq_left hall, h0, hall (Fin.last (m + 1)), pow_succ]
     · rw [ite_eq_right hall]
       by_cases hl : Fin.init w (Fin.last m) = w (Fin.last (m + 1))
-      · have hnot : ¬ ∀ i : Fin (m + 1), Fin.init w i = Fin.init w 0 := by
-          intro hi
-          refine hall (Fin.forall_fin_succ'.mpr ⟨fun i ↦ ?_, ?_⟩)
-          · exact hi i
-          · exact hl.symm.trans (hi (Fin.last m))
-        rw [ite_eq_right hnot, zero_mul]
+      · rw [ite_eq_right fun hi ↦ hall (Fin.forall_fin_succ'.mpr
+          ⟨fun i ↦ (hi i).trans h0, hl.symm.trans ((hi (Fin.last m)).trans h0)⟩), zero_mul]
       · rw [ite_eq_right hl, mul_zero]
 
 variable [Fintype ι]
@@ -152,10 +148,10 @@ theorem atomicTrace_cycleWord_of_sq_eq_one (hq : (q : R) ^ 2 = 1) (p : ι → R)
   rw [atomicTrace_eq_sum]
   simp_rw [signedChecked_cycleWord_single_apply_of_sq_eq_one pos q hq, ite_mul, zero_mul,
     ← Finset.sum_filter]
-  refine Finset.sum_bij' (fun w _ ↦ w 0) (fun a _ _ ↦ a) (fun _ _ ↦ Finset.mem_univ _)
+  exact Finset.sum_bij' (fun w _ ↦ w 0) (fun a _ _ ↦ a) (fun _ _ ↦ Finset.mem_univ _)
     (fun _ _ ↦ Finset.mem_filter.mpr ⟨Finset.mem_univ _, fun _ ↦ rfl⟩)
-    (fun w hw ↦ funext fun i ↦ ((Finset.mem_filter.mp hw).2 i).symm) (fun _ _ ↦ rfl) fun w hw ↦ ?_
-  simp [fun i ↦ congrArg p ((Finset.mem_filter.mp hw).2 i)]
+    (fun w hw ↦ funext fun i ↦ ((Finset.mem_filter.mp hw).2 i).symm) (fun _ _ ↦ rfl)
+    fun w hw ↦ by simp [fun i ↦ congrArg p ((Finset.mem_filter.mp hw).2 i)]
 
 /-- Summing the diagonal coefficient of a crossing against a function of its first letter. -/
 private theorem sum_crossingDiag_mul (c : ι) (f : ι → R) :

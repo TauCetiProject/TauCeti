@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Order.Sum.Order
 public import Mathlib.Topology.Algebra.InfiniteSum.Constructions
-public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 
 /-!
 # Infinite products and sums over finite fibers and lexicographic sums
@@ -17,7 +16,9 @@ This file supplements Mathlib's results on infinite products and sums with:
 * `HasProd.prod_fiberwise_of_fintype`, `HasSum.sum_fiberwise_of_fintype`: grouping over `β × γ`
   for finite `γ`.
 * `HasProd.sumLex`, `HasSum.sumLex`, `Multipliable.sumLex`, `Summable.sumLex`,
-  `Multipliable.tprod_sumLex`, `Summable.tsum_sumLex`: splitting over `ι ⊕ₗ κ`.
+  `Multipliable.tprod_sumLex`, `Summable.tsum_sumLex`,
+  `Multipliable.tprod_sumLex_elim_const`, `Summable.tsum_sumLex_elim_const`:
+  splitting over `ι ⊕ₗ κ`.
 -/
 
 public section
@@ -60,3 +61,11 @@ theorem Multipliable.tprod_sumLex {ι κ M : Type*} [CommMonoid M] [TopologicalS
     (hf : Multipliable fun i ↦ f (Sum.inlₗ i)) (hg : Multipliable fun k ↦ f (Sum.inrₗ k)) :
     ∏' x, f x = (∏' i, f (Sum.inlₗ i)) * ∏' k, f (Sum.inrₗ k) :=
   (hf.hasProd.sumLex hg.hasProd).tprod_eq
+
+/-- Evaluating an infinite product over `ι ⊕ₗ κ` for a finite constant second branch. -/
+@[to_additive /-- Evaluating an infinite sum over `ι ⊕ₗ κ` for a finite constant second branch. -/]
+theorem Multipliable.tprod_sumLex_elim_const {ι κ M : Type*} [Fintype κ] [CommMonoid M]
+    [TopologicalSpace M] [ContinuousMul M] [T2Space M] {f : ι → M} (hf : Multipliable f) (c : M) :
+    ∏' a : ι ⊕ₗ κ, Sum.elim f (fun _ ↦ c) (ofLex a) = (∏' i, f i) * c ^ Fintype.card κ := by
+  simpa [tprod_fintype] using Multipliable.tprod_sumLex
+    (f := fun a : ι ⊕ₗ κ ↦ Sum.elim f (fun _ ↦ c) (ofLex a)) hf (hasProd_fintype _).multipliable

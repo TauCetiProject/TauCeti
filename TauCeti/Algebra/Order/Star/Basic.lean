@@ -24,8 +24,7 @@ namespace StarOrderedRing
 
 /-- In a commutative `StarOrderedRing`, the product of two nonnegative elements is nonnegative. -/
 theorem mul_nonneg {R : Type*} [CommSemiring R] [PartialOrder R] [StarRing R]
-    [StarOrderedRing R] {a b : R} (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a * b :=
-  smul_nonneg ha hb
+    [StarOrderedRing R] {a b : R} (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a * b := smul_nonneg ha hb
 
 end StarOrderedRing
 

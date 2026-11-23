@@ -44,8 +44,7 @@ theorem canonicalTrace_eq_ocneanuTrace_zero {n : ℕ} {W : Type*} [Group W]
       rw [canonicalTrace_eq_regularRep_toInfinite (cs₀ (m + 1)) cs',
         canonicalTrace_eq_regularRep_toInfinite (cs₀ m) cs', toInfinite_strandIncl])
     (fun m ↦ canonicalTrace_mul_comm (cs₀ m)) (fun m y ↦ ?_) n x
-  rw [zero_mul, canonicalTrace_mul_comm]
-  refine LinearMap.congr_fun ((basisTw q (cs₀ (m + 1))).ext
+  rw [zero_mul, canonicalTrace_mul_comm]; refine LinearMap.congr_fun ((basisTw q (cs₀ (m + 1))).ext
     (f₁ := (canonicalTrace (R := R) (q := q) (cs₀ (m + 2))).comp
       ((LinearMap.mulLeft R (T q (Fin.last m))).comp (strandIncl R q (m + 1)).toLinearMap))
     (f₂ := 0) fun w ↦ ?_) y
@@ -56,19 +55,15 @@ theorem canonicalTrace_eq_ocneanuTrace_zero {n : ℕ} {W : Type*} [Group W]
     InfiniteTypeAHeckeAlgebra.regularRep_T, regularRep_toInfinite_Tw_apply_single_one]
   set u := (cs₀ (m + 1)).parabolicHom cs' coxeterMatrixA_eq_coxeterMatrixAInfty w
   have hsu : cs'.simple m * u ≠ 1 := fun hmul ↦ by
-    have hmem : cs'.simple m ∈
+    have hm : cs'.simple m ∈
         ((cs₀ (m + 1)).parabolicHom cs' coxeterMatrixA_eq_coxeterMatrixAInfty).range :=
       ⟨w⁻¹, by rw [map_inv]; exact (eq_inv_of_mul_eq_one_left hmul).symm⟩
     rw [(cs₀ (m + 1)).range_parabolicHom coxeterMatrixA_eq_coxeterMatrixAInfty,
-      cs'.simple_mem_parabolic_iff] at hmem
-    obtain ⟨j, hj⟩ := hmem
-    exact j.isLt.ne hj
+      cs'.simple_mem_parabolic_iff] at hm; exact hm.choose.isLt.ne hm.choose_spec
   by_cases hd : cs'.IsLeftDescent u m
-  · have hu1 : u ≠ 1 := fun h1 ↦ cs'.not_isLeftDescent_one m (h1 ▸ hd)
-    rw [cs'.heckeLeftMul_single_of_isLeftDescent hd]
-    simp [hu1.symm, hsu.symm]
-  · rw [cs'.heckeLeftMul_single_of_not_isLeftDescent hd]
-    simp [hsu.symm]
+  · rw [cs'.heckeLeftMul_single_of_isLeftDescent hd]
+    simp [Ne.symm fun (h1 : u = 1) ↦ cs'.not_isLeftDescent_one m (h1 ▸ hd), hsu.symm]
+  · rw [cs'.heckeLeftMul_single_of_not_isLeftDescent hd]; simp [hsu.symm]
 
 end TypeAHeckeAlgebra
 
@@ -77,8 +72,7 @@ namespace InfiniteTypeAHeckeAlgebra
 /-- **Positivity of the `z = 0` Ocneanu trace** over any commutative `StarOrderedRing`. -/
 theorem ocneanuTrace_zero_star_mul_self_nonneg {R : Type*} [CommRing R] [PartialOrder R]
     [StarRing R] [StarOrderedRing R] {q : Rˣ} [Fact (IsSelfAdjoint (q : R))]
-    (x : InfiniteTypeAHeckeAlgebra R q) :
-    0 ≤ ocneanuTrace R q 0 (star x * x) := by
+    (x : InfiniteTypeAHeckeAlgebra R q) : 0 ≤ ocneanuTrace R q 0 (star x * x) := by
   obtain ⟨n, y, rfl⟩ := exists_toInfinite_eq x
   rw [← TypeAHeckeAlgebra.toInfinite_star, ← map_mul,
     ← TypeAHeckeAlgebra.canonicalTrace_eq_ocneanuTrace_zero (permCoxeterSystem n),
@@ -86,8 +80,7 @@ theorem ocneanuTrace_zero_star_mul_self_nonneg {R : Type*} [CommRing R] [Partial
   exact Finset.sum_nonneg fun _ _ ↦ star_mul_self_nonneg _
 
 /-- Over `ℝ` or `ℂ` (`RCLike 𝕜`), the `z = 0` Ocneanu trace form is anisotropic. -/
-@[simp]
-theorem ocneanuTrace_zero_star_mul_self_eq_zero_iff {𝕜 : Type*} [RCLike 𝕜] {q : 𝕜ˣ}
+@[simp] theorem ocneanuTrace_zero_star_mul_self_eq_zero_iff {𝕜 : Type*} [RCLike 𝕜] {q : 𝕜ˣ}
     [Fact (IsSelfAdjoint (q : 𝕜))] (x : InfiniteTypeAHeckeAlgebra 𝕜 q) :
     ocneanuTrace 𝕜 q 0 (star x * x) = 0 ↔ x = 0 := by
   obtain ⟨n, y, rfl⟩ := exists_toInfinite_eq x
@@ -99,11 +92,10 @@ theorem ocneanuTrace_zero_star_mul_self_eq_zero_iff {𝕜 : Type*} [RCLike 𝕜]
 /-- **Faithfulness of the `z = 0` Ocneanu trace** over `ℝ` or `ℂ`. -/
 theorem traceRadical_ocneanuTrace_zero {𝕜 : Type*} [RCLike 𝕜] {q : 𝕜ˣ}
     [Fact (IsSelfAdjoint (q : 𝕜))] :
-    (ocneanuTrace 𝕜 q 0).traceRadical (isMarkovTrace_ocneanuTrace 0).map_mul_comm = ⊥ := by
-  refine eq_bot_iff.mpr fun x hx ↦ (ocneanuTrace_zero_star_mul_self_eq_zero_iff x).mp ?_
-  rw [LinearMap.mem_traceRadical] at hx
-  rw [(isMarkovTrace_ocneanuTrace 0).map_mul_comm]
-  exact hx (star x)
+    (ocneanuTrace 𝕜 q 0).traceRadical (isMarkovTrace_ocneanuTrace 0).map_mul_comm = ⊥ :=
+  eq_bot_iff.mpr fun x hx ↦ (ocneanuTrace_zero_star_mul_self_eq_zero_iff x).mp <| by
+    rw [LinearMap.mem_traceRadical] at hx
+    rw [(isMarkovTrace_ocneanuTrace 0).map_mul_comm]; exact hx (star x)
 
 end InfiniteTypeAHeckeAlgebra
 

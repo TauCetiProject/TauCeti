@@ -44,12 +44,9 @@ theorem sum_norm_apply_le {α β R E : Type*} [SeminormedRing R] [SeminormedAddC
     (hC : ∀ a, (f (Finsupp.single a 1)).sum (fun _ x ↦ ‖x‖) ≤ C) (v : α →₀ R) :
     ((f v).sum fun _ x ↦ ‖x‖) ≤ C * v.sum fun _ r ↦ ‖r‖ := by
   rw [f.apply_eq_finsuppSum_smul v, Finsupp.sum]
-  refine (Finsupp.sum_norm_sum_le _ _).trans ?_
-  calc
-    ∑ a ∈ v.support, ((RingHom.id R (v a) • f (Finsupp.single a 1)).sum fun _ x ↦ ‖x‖)
-        ≤ ∑ a ∈ v.support, ‖v a‖ * C := Finset.sum_le_sum fun a _ ↦
-          (Finsupp.sum_norm_smul_le (v a) _).trans
-            (mul_le_mul_of_nonneg_left (hC a) (norm_nonneg _))
-    _ = C * v.sum fun _ r ↦ ‖r‖ := by rw [← Finset.sum_mul, mul_comm, Finsupp.sum]
+  refine (Finsupp.sum_norm_sum_le _ _).trans ((Finset.sum_le_sum fun a _ ↦
+    (Finsupp.sum_norm_smul_le (v a) _).trans
+      (mul_le_mul_of_nonneg_left (hC a) (norm_nonneg _))).trans_eq ?_)
+  rw [← Finset.sum_mul, mul_comm, Finsupp.sum]
 
 end LinearMap

@@ -146,9 +146,9 @@ theorem signedChecked_single_apply_eq_zero_of_star_mul_self [PartialOrder R] [St
     (hdiag : signedChecked pos q (star x * x) (single w 1) w = 0) (u : Fin n → ι) :
     signedChecked pos q x (single w 1) u = 0 := by
   rw [signedChecked_star_mul_self_single_apply] at hdiag
-  have hcol := (Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ star_mul_self_nonneg _).mp hdiag
   by_contra hne
-  exact hne ((mul_eq_zero.mp (hcol u (Finsupp.mem_support_iff.mpr hne))).elim star_eq_zero.mp id)
+  exact hne ((mul_eq_zero.mp ((Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦
+    star_mul_self_nonneg _).mp hdiag u (Finsupp.mem_support_iff.mpr hne))).elim star_eq_zero.mp id)
 
 /-- For self-adjoint weights, the atomic trace commutes with the involution. -/
 @[simp]
@@ -163,8 +163,7 @@ theorem star_atomicTrace [Finite ι] (x : TypeAHeckeAlgebra R q n) :
     star (atomicTrace pos q p n x) = atomicTrace pos q (star ∘ p) n (star x) := by
   cases nonempty_fintype ι
   rw [atomicTrace_eq_sum, atomicTrace_eq_sum, star_sum]
-  exact Finset.sum_congr rfl fun w _ ↦ by
-    rw [star_mul, mul_comm, star_prod, signedChecked_star_single_apply]; rfl
+  exact Finset.sum_congr rfl fun w _ ↦ by simp [mul_comm, signedChecked_star_single_apply]
 
 /-- **Positivity of atomic traces.** Over a commutative star-ordered ring, for a self-adjoint
 parameter and nonnegative weights, the atomic trace of `star x * x` is nonnegative. -/
@@ -219,12 +218,11 @@ theorem ocneanuTrace_star_mul_self_nonneg_geometric {r : ℕ} {c : R}
     (x : InfiniteTypeAHeckeAlgebra R q) :
     0 ≤ ocneanuTrace R q (c * (q : R) ^ (2 * r + 1)) (star x * x) := by
   have hQ : 0 ≤ (q : R) ^ 2 := hq.out.sq_nonneg
-  set S := ∑ a ∈ Finset.range (r + 1), ((q : R) ^ 2) ^ a
-  have hS : 0 ≤ S := Finset.sum_nonneg fun a _ ↦ pow_nonneg hQ a
-  -- `star c * S * c = star c * (c * S) = star c` is nonnegative since `S` is.
+  have hS : 0 ≤ ∑ a ∈ Finset.range (r + 1), ((q : R) ^ 2) ^ a :=
+    Finset.sum_nonneg fun _ _ ↦ pow_nonneg hQ _
   have hc₀ : 0 ≤ c := by
     have := star_left_conjugate_nonneg hS c
-    rwa [mul_assoc, mul_comm S c, hc, mul_one, star_nonneg_iff] at this
+    rwa [mul_assoc, mul_comm _ c, hc, mul_one, star_nonneg_iff] at this
   exact map_star_mul_self_nonneg_of_eq_atomicTrace (fun _ : Fin (r + 1) ↦ True)
     (fun a ↦ mul_nonneg hc₀ (pow_nonneg hQ _))
     (fun _ ↦ TypeAHeckeAlgebra.atomicTrace_geometric_eq q hc) x

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.Positivity
 public import TauCeti.Analysis.StarAlgebra.GNS.Basic
-import Mathlib.Analysis.Complex.Order
 
 /-!
 # Positive functionals from countable atomic models

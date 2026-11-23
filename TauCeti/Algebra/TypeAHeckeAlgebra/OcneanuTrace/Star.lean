@@ -25,19 +25,18 @@ namespace TauCeti.InfiniteTypeAHeckeAlgebra
 theorem star_ocneanuTrace {R : Type*} [CommRing R] [StarRing R] {q : Rˣ}
     [Fact (IsSelfAdjoint (q : R))] (z : R) (x : InfiniteTypeAHeckeAlgebra R q) :
     star (ocneanuTrace R q z x) = ocneanuTrace R q (star z) (star x) := by
-  let φ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R :=
-    { toFun y := star (ocneanuTrace R q z (star y))
-      map_add' _ _ := by simp
-      map_smul' _ _ := by simp [star_smul] }
-  have hφ : IsMarkovTrace (star z) φ :=
-    { map_one := by simp [φ]
-      map_mul_comm _ _ := by simp [φ, star_mul, (isMarkovTrace_ocneanuTrace z).map_mul_comm]
+  have hφ : IsMarkovTrace (star z)
+      { toFun y := star (ocneanuTrace R q z (star y))
+        map_add' _ _ := by simp
+        map_smul' _ _ := by simp [star_smul] } :=
+    { map_one := by simp
+      map_mul_comm _ _ := by simp [star_mul, (isMarkovTrace_ocneanuTrace z).map_mul_comm]
       map_mul_T {n a} ha := by
-        simp only [φ, LinearMap.coe_mk, AddHom.coe_mk, star_mul, star_T]
+        simp only [LinearMap.coe_mk, AddHom.coe_mk, star_mul, star_T]
         rw [(isMarkovTrace_ocneanuTrace (q := q) z).map_mul_comm (T q n) (star a),
           (isMarkovTrace_ocneanuTrace z).map_mul_T (star_mem_stage_iff.mpr ha),
           star_mul, mul_comm] }
-  simpa [φ] using LinearMap.congr_fun hφ.eq_ocneanuTrace (star x)
+  simpa using LinearMap.congr_fun hφ.eq_ocneanuTrace (star x)
 
 /-- For a self-adjoint Markov parameter `z`, `ocneanuTrace R q z` commutes with `star`. -/
 @[simp]

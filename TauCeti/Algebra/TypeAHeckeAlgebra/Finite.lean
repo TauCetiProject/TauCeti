@@ -406,8 +406,7 @@ theorem _root_.TauCeti.InfiniteTypeAHeckeAlgebra.exists_toInfinite_eq
     ∃ (n : ℕ) (y : TypeAHeckeAlgebra R q n), toInfinite R q n y = x := by
   obtain ⟨n, hx⟩ := InfiniteTypeAHeckeAlgebra.exists_mem_stage x
   rw [← range_toInfinite, AlgHom.mem_range] at hx
-  obtain ⟨y, rfl⟩ := hx
-  exact ⟨n, y, rfl⟩
+  exact ⟨n, hx⟩
 
 /-- The maps to the infinite type-A Hecke algebra are compatible with the tower maps. -/
 @[simp]

@@ -38,8 +38,7 @@ theorem sum_norm_nonneg (f : α →₀ E) : 0 ≤ f.sum fun _ a ↦ ‖a‖ :=
 theorem norm_apply_le_sum_norm (f : α →₀ E) (a : α) : ‖f a‖ ≤ f.sum fun _ x ↦ ‖x‖ := by
   by_cases ha : a ∈ f.support
   · exact Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) ha
-  · rw [notMem_support_iff.mp ha, norm_zero]
-    exact sum_norm_nonneg f
+  · rw [notMem_support_iff.mp ha, norm_zero]; exact sum_norm_nonneg f
 
 /-- The `ℓ¹`-sum of norms can be computed over any finite set containing the support. -/
 theorem sum_norm_eq_sum_of_support_subset (f : α →₀ E) {s : Finset α} (hs : f.support ⊆ s) :

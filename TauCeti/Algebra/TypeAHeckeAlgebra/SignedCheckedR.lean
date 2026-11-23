@@ -322,8 +322,7 @@ theorem signedCheckedR_comp_lmapDomain_cons (s : R) (j k : Fin n) (a : ι) :
       (lmapDomain R R (fun w : Fin n → ι ↦ Fin.cons a w)).comp (signedCheckedR pos s j k) :=
   signedCheckedR_comp_lmapDomain pos s _ (fun _ _ ↦ Fin.cons_succ ..) j k fun u ↦ funext <|
     Fin.cases (by simp [Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero j).symm
-      (Fin.succ_ne_zero k).symm]) fun i ↦ by
-      rw [comp_apply, ← (Fin.succ_injective n).map_swap j k i]; simp
+      (Fin.succ_ne_zero k).symm]) fun i ↦ by simp [← (Fin.succ_injective n).map_swap]
 
 /-- A strictly monotone sign-preserving map intertwines `signedCheckedR` via `lmapDomain`. -/
 theorem signedCheckedR_comp_lmapDomain_strictMono {ι' : Type*} [LinearOrder ι']
@@ -335,11 +334,10 @@ theorem signedCheckedR_comp_lmapDomain_strictMono {ι' : Type*} [LinearOrder ι'
   simp only [LinearMap.coe_comp, comp_apply, lsingle_apply]
   conv_lhs => rw [lmapDomain_apply, mapDomain_single]
   rw [signedCheckedR_single_one, signedCheckedR_single_one]
-  simp only [comp_apply]
   by_cases hjk : w j = w k
-  · simp only [hjk, ↓reduceIte, hpos (w k)]
+  · simp only [comp_apply, hjk, ↓reduceIte, hpos (w k)]
     split_ifs <;> simp only [map_smul, lmapDomain_apply, mapDomain_single]
-  · simp only [hjk, hg.injective.ne hjk, ↓reduceIte, hg.lt_iff_lt]
+  · simp only [comp_apply, hjk, hg.injective.ne hjk, ↓reduceIte, hg.lt_iff_lt]
     split_ifs <;> simp only [map_sub, map_neg, map_smul, lmapDomain_apply, mapDomain_single,
       Function.comp_assoc]
 

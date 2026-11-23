@@ -76,12 +76,9 @@ theorem summable_mul_pow_of_norm_le {K : Type*} [SeminormedRing K] [CompleteSpac
 `‖t * x ^ (m + 1)‖ ≤ (S * ‖x‖) * (M * S * ‖x‖) ^ m`. -/
 theorem norm_mul_pow_succ_le {R : Type*} [SeminormedRing R] {t x : R} {M S : ℝ} {m : ℕ}
     (ht : ‖t‖ ≤ M ^ m * S ^ (m + 1)) :
-    ‖t * x ^ (m + 1)‖ ≤ (S * ‖x‖) * (M * S * ‖x‖) ^ m := by
-  calc
-    ‖t * x ^ (m + 1)‖ ≤ ‖t‖ * ‖x ^ (m + 1)‖ := norm_mul_le _ _
-    _ ≤ (M ^ m * S ^ (m + 1)) * ‖x‖ ^ (m + 1) :=
-      mul_le_mul ht (norm_pow_le' x m.succ_pos) (norm_nonneg _) ((norm_nonneg t).trans ht)
-    _ = (S * ‖x‖) * (M * S * ‖x‖) ^ m := by ring
+    ‖t * x ^ (m + 1)‖ ≤ (S * ‖x‖) * (M * S * ‖x‖) ^ m :=
+  (norm_mul_le _ _).trans <| (mul_le_mul ht (norm_pow_le' x m.succ_pos) (norm_nonneg _)
+    ((norm_nonneg t).trans ht)).trans_eq (by simp only [Nat.succ_eq_add_one]; ring)
 
 /-- Geometric summability criterion for shifted power series `∑ m, f m * x ^ (m + 1)` with bounds
 `‖f m‖ ≤ M ^ m * S ^ (m + 1)`. -/
