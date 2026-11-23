@@ -64,7 +64,7 @@ example :
   have hroot : Function.Surjective fun x : (Pair.powerBounded ℂ_[p]).plus ↦ x ^ p := fun x ↦ by
     obtain ⟨y, hy⟩ := IsAlgClosed.exists_pow_nat_eq (x : ℂ_[p]) hp.out.pos
     exact ⟨⟨y, (Pair.powerBounded ℂ_[p]).isRingOfIntegralElements.mem_of_pow_mem hp.out.pos
-      (hy.symm ▸ x.2)⟩, Subtype.ext hy⟩
+      (hy.symm ▸ x.property)⟩, Subtype.ext hy⟩
   obtain ⟨roots, hroots⟩ :=
     Perfection.coeffMonoidHom_surjective hroot 0 (p : (Pair.powerBounded ℂ_[p]).plus)
   let I : Ideal (Pair.powerBounded ℂ_[p]).plus := span {(p : (Pair.powerBounded ℂ_[p]).plus)}

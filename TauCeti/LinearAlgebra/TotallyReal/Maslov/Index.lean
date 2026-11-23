@@ -248,7 +248,7 @@ theorem maslovIndex_rotationZPow {L₀ : Submodule ℝ E}
     (φ := fun t => finrank ℂ E * (π * k * t)) (by fun_prop) (fun t => by
       rw [hA, LinearMap.det_smul, LinearMap.det_id, mul_one, norm_pow,
         Complex.norm_exp_ofReal_mul_I]
-      simp [← Complex.exp_nat_mul]
+      simp [← Complex.exp_natCast_mul]
       ring_nf)
   have hπ : (π : ℝ) ≠ 0 := Real.pi_ne_zero
   simp only [Set.Icc.coe_one, Set.Icc.coe_zero, mul_one, mul_zero, sub_zero] at key

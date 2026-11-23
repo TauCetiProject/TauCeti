@@ -367,13 +367,13 @@ def scToralDiagramAutHom :
       (t.kostantForm_apply_mem_scLattice ht)
       (t.isNilpotent_representation_scModule_rootGenerator ht)
       (t.scWeightBasis ht) (t.scWeight ht)) where
-  toFun g := t.scToralDiagramAut ht g.2
+  toFun g := t.scToralDiagramAut ht g.property
   map_one' := t.scToralDiagramAut_one ht
-  map_mul' g₁ g₂ := t.scToralDiagramAut_mul ht g₁.2 g₂.2
+  map_mul' g₁ g₂ := t.scToralDiagramAut_mul ht g₁.property g₂.property
 
 /-- Evaluation of the bundled diagram action is the descended diagram automorphism. -/
 theorem scToralDiagramAutHom_apply (g : t.diagramSymmetry) :
-    t.scToralDiagramAutHom ht g = t.scToralDiagramAut ht g.2 :=
+    t.scToralDiagramAutHom ht g = t.scToralDiagramAut ht g.property :=
   (rfl)
 
 /-- Inverting a diagram symmetry inverts its descended automorphism. -/

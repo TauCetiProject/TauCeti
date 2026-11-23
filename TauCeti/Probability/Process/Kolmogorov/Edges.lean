@@ -20,7 +20,9 @@ their increments by `c^n`. For `c > 0`, if `a * r^q / c^p < 1`, the supremum of 
 finite random constant bounds every edge at every level, outside one common null set.
 
 These estimates are the probabilistic input to chaining: they do not assume that the
-edges form nets, and do not by themselves assert continuity of a modification.
+edges form nets, and do not by themselves assert continuity of a modification. In the
+single-edge case (`d = 0`), they also imply almost-sure convergence `X (u n) → X t` along
+any sequence approaching `t` at a geometric rate `r ^ n` (`r < 1`).
 Neither independence nor probability normalization is needed. The value space may be
 an extended pseudometric space, and the estimates also apply to almost-everywhere
 modifications of native Kolmogorov processes.
@@ -33,15 +35,18 @@ on general metric spaces*, arXiv:2107.13837v2, Theorem 1.1. We use Mathlib's
 
 public section
 
-open MeasureTheory
-open scoped ENNReal NNReal
+open Filter MeasureTheory
+open scoped ENNReal NNReal Topology
 
 namespace ProbabilityTheory.IsAEKolmogorovProcess
 
 variable {T Ω E : Type*} [PseudoEMetricSpace T] [PseudoEMetricSpace E]
   {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : T → Ω → E}
-  {p q : ℝ} {M : ℝ≥0} {k : ℕ → ℕ}
-  {s t : (n : ℕ) → Fin (k n) → T}
+  {p q : ℝ} {M : ℝ≥0}
+
+section EdgeFamily
+
+variable {k : ℕ → ℕ} {s t : (n : ℕ) → Fin (k n) → T}
 
 /-- The supremum over geometrically sized edge families has a geometric moment bound.
 The edge count is allowed to be zero, and endpoints and edges may repeat. -/
@@ -151,5 +156,43 @@ theorem ae_exists_edist_le_mul_pow_rpow (hX : IsAEKolmogorovProcess X P p q M)
   obtain ⟨K, hK⟩ := hω
   refine ⟨K, fun n i ↦ ?_⟩
   simpa only [ENNReal.coe_rpow_of_ne_zero hr.ne', ENNReal.pow_rpow_comm] using hK n i
+
+end EdgeFamily
+
+/-- Along any sequence `u : ℕ → T` approaching `t` at a geometric rate `r ^ n` (`r < 1`), an
+`IsAEKolmogorovProcess` converges almost surely to `X t`. Neither finiteness of `P` nor
+completeness or separation of `E` is needed. -/
+theorem ae_tendsto_of_edist_le_pow (hX : IsAEKolmogorovProcess X P p q M)
+    {u : ℕ → T} {t : T} {r : ℝ≥0} (hr : r < 1)
+    (hu : ∀ n, edist (u n) t ≤ (r : ℝ≥0∞) ^ n) :
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦ X (u n) ω) atTop (𝓝 (X t ω)) := by
+  have ⟨r', hr'0, hr'1, hu'⟩ :
+      ∃ r' : ℝ≥0, 0 < r' ∧ r' < 1 ∧ ∀ n, edist (u n) t ≤ (r' : ℝ≥0∞) ^ n := by
+    rcases eq_zero_or_pos r with rfl | hr0
+    · exact ⟨2⁻¹, by norm_num, by norm_num, fun n ↦
+        (hu n).trans (pow_le_pow_left' (by simp) n)⟩
+    · exact ⟨r, hr0, hr, hu⟩
+  have hp := hX.p_pos
+  have hq := hX.q_pos
+  set β : ℝ := q / (2 * p)
+  have hβ : 0 < β := by positivity
+  have hcard (n : ℕ) : ((1 : ℕ) : ℝ≥0) ≤ 1 * (r' ^ (-(0 : ℝ))) ^ n := by simp
+  have hedge (n : ℕ) (_ : Fin 1) : edist (u n) t ≤ (r' : ℝ≥0∞) ^ n := hu' n
+  have hβ_lt : 0 + p * β < q := by
+    have : p * β = q / 2 := by simp only [β]; field_simp
+    linarith
+  filter_upwards [hX.ae_exists_edist_le_mul_pow_rpow (C := 1) (r := r') (d := 0) (γ := β)
+    (k := fun _ ↦ 1) (s := fun n _ ↦ u n) (t := fun _ _ ↦ t)
+    hr'0 hr'1 hcard hedge hβ_lt] with ω ⟨K, hK⟩
+  rw [tendsto_iff_edist_tendsto_0]
+  have hρ_lt : (r' : ℝ≥0∞) ^ β < 1 :=
+    ENNReal.rpow_lt_one (ENNReal.coe_lt_one_iff.mpr hr'1) hβ
+  have hlim : Tendsto (fun n : ℕ ↦ (K : ℝ≥0∞) * ((r' : ℝ≥0∞) ^ n) ^ β) atTop (𝓝 0) := by
+    simpa only [ENNReal.pow_rpow_comm, mul_zero] using
+      ENNReal.Tendsto.const_mul (ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one hρ_lt)
+        (Or.inr ENNReal.coe_ne_top)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ zero_le)
+    fun n ↦ ?_
+  simpa using hK n 0
 
 end ProbabilityTheory.IsAEKolmogorovProcess

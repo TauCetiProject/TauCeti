@@ -105,7 +105,7 @@ theorem weightedFrameCoordinates_injective {x : B} (hx : x ∈ s) :
 weight suffices as a chart domain; the topological support need not lie in that domain. -/
 theorem continuous_weightedFrameCoordinates_apply [TauCeti.ContinuousFiberNorm F E]
     (he : ∀ i, {x | 0 < ρ i x} ⊆ (e i).baseSet) (i : ι) :
-    Continuous fun p : TotalSpace F E ↦ ρ.weightedFrameCoordinates e c b p.proj p.2 i := by
+    Continuous fun p : TotalSpace F E ↦ ρ.weightedFrameCoordinates e c b p.proj p.snd i := by
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   have hw : Continuous (fun q : TotalSpace F E ↦ Real.sqrt (ρ i q.proj)) :=
     ((ρ i).continuous.comp (FiberBundle.continuous_proj F E)).sqrt
@@ -115,11 +115,11 @@ theorem continuous_weightedFrameCoordinates_apply [TauCeti.ContinuousFiberNorm F
     exact (RCLike.continuous_ofReal.comp hw).continuousAt.smul
       (((e i).continuousOn_orthonormalFrameAt_symm c b).continuousAt hmem)
   · have hz : ρ i p.proj = 0 := le_antisymm (not_lt.1 hpos) (ρ.nonneg i p.proj)
-    have hzero : ρ.weightedFrameCoordinates e c b p.proj p.2 i = 0 := by simp [hz]
+    have hzero : ρ.weightedFrameCoordinates e c b p.proj p.snd i = 0 := by simp [hz]
     rw [ContinuousAt, hzero]
     apply squeeze_zero_norm (a := fun q : TotalSpace F E ↦
-      Real.sqrt (ρ i q.proj) * ‖q.2‖)
-      (fun q ↦ (ρ.norm_weightedFrameCoordinates_apply e c b q.proj q.2 i).le)
+      Real.sqrt (ρ i q.proj) * ‖q.snd‖)
+      (fun q ↦ (ρ.norm_weightedFrameCoordinates_apply e c b q.proj q.snd i).le)
     simpa only [hz, Real.sqrt_zero, zero_mul] using
       (hw.tendsto p).mul ((TauCeti.ContinuousFiberNorm.continuous_norm
         (F := F) (E := E)).tendsto p)
@@ -149,7 +149,7 @@ theorem exists_gap_weightedFrameCoordinates [TauCeti.ContinuousFiberNorm F E]
       (∀ (x : B) (v : E x) (n : ℕ),
         ‖j x v n‖ ^ 2 =
           (n : ℝ) * (∑ᶠ (S : Finset ι) (_ : S.card = n), ρ.gap S x) * ‖v‖ ^ 2) ∧
-      (∀ n, Continuous fun p : TotalSpace F E ↦ j p.proj p.2 n) ∧
+      (∀ n, Continuous fun p : TotalSpace F E ↦ j p.proj p.snd n) ∧
       (∀ x, ∃ N : ℕ, ∀ᶠ y in 𝓝 x, ∀ v : E y, (j y v).support ⊆ Finset.range N) ∧
       (∀ (x : B) (v : E x), ∑ᶠ n, ‖j x v n‖ ^ 2 = ‖v‖ ^ 2) ∧
       ∀ x, Injective (j x) := by
@@ -172,7 +172,7 @@ locally lie in a finite initial coordinate stage. The original bundle cover may 
 theorem _root_.TauCeti.exists_countable_weightedFrameCoordinates [TauCeti.ContinuousFiberNorm F E]
     [ParacompactSpace B] [NormalSpace B] :
     ∃ j : ∀ x, E x →ₗ[𝕜] (ℕ →₀ V),
-      (∀ n, Continuous fun p : TotalSpace F E ↦ j p.proj p.2 n) ∧
+      (∀ n, Continuous fun p : TotalSpace F E ↦ j p.proj p.snd n) ∧
       (∀ x, ∃ N : ℕ, ∀ᶠ y in 𝓝 x, ∀ v : E y, (j y v).support ⊆ Finset.range N) ∧
       (∀ (x : B) (v : E x), ∑ᶠ n, ‖j x v n‖ ^ 2 = ‖v‖ ^ 2) ∧
       ∀ x, Injective (j x) := by

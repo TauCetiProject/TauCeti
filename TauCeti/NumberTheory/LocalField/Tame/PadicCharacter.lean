@@ -196,7 +196,7 @@ theorem nonempty_continuousMulEquiv_piPadicInt :
   have hroots (ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ ringChar 𝓀[K]}) (n : ℕ) :
       HasEnoughRootsOfUnity (AlgebraicClosure K) ((ℓ : ℕ) ^ n) :=
     hasEnoughRootsOfUnity_algebraicClosure_of_coprime_ringChar K
-      (((Nat.coprime_primes ℓ.1.2 hp).2 ℓ.2).pow_left n)
+      (((Nat.coprime_primes ℓ.val.property hp).2 ℓ.property).pow_left n)
   let φ (ℓ : {ℓ : Nat.Primes // (ℓ : ℕ) ≠ ringChar 𝓀[K]}) :
       PadicTateTwist ℓ (AlgebraicClosure K) ≃ₜ+ ℤ_[ℓ] :=
     have := hroots ℓ

@@ -129,7 +129,7 @@ noncomputable def traceShortExact (hU : IsOpen (U : Set G)) :
   proj_equivariant g f := _root_.map_smul (trace G U M) g f
   incl_injective := Subtype.val_injective
   proj_surjective := trace_surjective hU
-  exact f := ⟨fun hf ↦ ⟨⟨f, hf⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact a.2⟩
+  exact f := ⟨fun hf ↦ ⟨⟨f, hf⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact a.property⟩
 
 variable (hU : IsOpen (U : Set G))
 
@@ -188,7 +188,7 @@ theorem conj_single_one [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMu
   by_cases hx : x * g⁻¹ ∈ V
   · -- `x = v g` with `v ∈ V`, then `g⁻¹ x = (g⁻¹ v g) 1`, and both sides are `v • g • a`
     obtain ⟨v, rfl⟩ : ∃ v : V, x = (v : G) * g := ⟨⟨x * g⁻¹, hx⟩, by simp⟩
-    have hv : g⁻¹ * v * g ∈ V := by simpa using ‹V.Normal›.conj_mem _ v.2 g⁻¹
+    have hv : g⁻¹ * v * g ∈ V := by simpa using ‹V.Normal›.conj_mem _ v.property g⁻¹
     have h₁ : g⁻¹ * ((v : G) * g) = ((⟨g⁻¹ * v * g, hv⟩ : V) : G) * 1 := by simp [mul_assoc]
     rw [h₁, single_apply_mul, single_apply_mul]
     simp only [Subgroup.smul_def, smul_smul]
@@ -298,10 +298,10 @@ noncomputable def traceKerCoverShortExact (hV : IsOpen (V : Set G)) :
   proj_equivariant g φ := Subtype.ext (_root_.map_smul (traceKerCover V M) g φ)
   incl_injective := Subtype.val_injective
   proj_surjective f := by
-    obtain ⟨φ, hφ⟩ := (range_traceKerCover V M hV).ge f.2
+    obtain ⟨φ, hφ⟩ := (range_traceKerCover V M hV).ge f.property
     exact ⟨φ, Subtype.ext hφ⟩
   exact φ := by
-    refine ⟨fun hφ ↦ ⟨⟨φ, ?_⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact Subtype.ext a.2⟩
+    refine ⟨fun hφ ↦ ⟨⟨φ, ?_⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact Subtype.ext a.property⟩
     exact congrArg Subtype.val hφ
 
 /-- The first map of the cover short exact sequence is the inclusion of the kernel. -/

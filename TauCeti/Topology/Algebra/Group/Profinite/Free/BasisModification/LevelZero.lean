@@ -120,9 +120,11 @@ noncomputable def basisModificationDeltaZero (ω : X → gradedPiece p (freeProP
     (fun i ↦ gradedPow p (freeProP p X) 0 (ω i) +
       p.choose 2 • gradedBracket p (freeProP p X) 0 0 (ω i) (gradedMkZero p (freeProP p X) (of i)))
     fun ij ↦
-      gradedBracket p (freeProP p X) 0 0 (ω ij.1.1) (gradedMkZero p (freeProP p X) (of ij.1.2)) -
-        gradedBracket p (freeProP p X) 0 0 (ω ij.1.2) (gradedMkZero p (freeProP p X) (of ij.1.1)) +
-        gradedBracket p (freeProP p X) 0 0 (ω ij.1.1) (ω ij.1.2)
+      gradedBracket p (freeProP p X) 0 0 (ω ij.val.1) (gradedMkZero p (freeProP p X)
+          (of ij.val.2)) -
+        gradedBracket p (freeProP p X) 0 0 (ω ij.val.2) (gradedMkZero p (freeProP p X)
+            (of ij.val.1)) +
+        gradedBracket p (freeProP p X) 0 0 (ω ij.val.1) (ω ij.val.2)
 
 /-- **The value of `δ⁰` on a `p`-power basis vector**:
 `δ⁰_{π ξ_i}(ω) = π ω_i + (p choose 2) • [ω_i, ξ_i]`. -/
@@ -139,9 +141,11 @@ theorem basisModificationDeltaZero_degreeOneBasis_inl (ω : X → gradedPiece p 
 theorem basisModificationDeltaZero_degreeOneBasis_inr (ω : X → gradedPiece p (freeProP p X) 0)
     (ij : {ij : X × X // ij.1 < ij.2}) :
     basisModificationDeltaZero p X ω (degreeOneBasis p X (Sum.inr ij)) =
-      gradedBracket p (freeProP p X) 0 0 (ω ij.1.1) (gradedMkZero p (freeProP p X) (of ij.1.2)) -
-        gradedBracket p (freeProP p X) 0 0 (ω ij.1.2) (gradedMkZero p (freeProP p X) (of ij.1.1)) +
-        gradedBracket p (freeProP p X) 0 0 (ω ij.1.1) (ω ij.1.2) := by
+      gradedBracket p (freeProP p X) 0 0 (ω ij.val.1) (gradedMkZero p (freeProP p X)
+          (of ij.val.2)) -
+        gradedBracket p (freeProP p X) 0 0 (ω ij.val.2) (gradedMkZero p (freeProP p X)
+            (of ij.val.1)) +
+        gradedBracket p (freeProP p X) 0 0 (ω ij.val.1) (ω ij.val.2) := by
   rw [basisModificationDeltaZero, Module.Basis.constr_basis, Sum.elim_inr]
 
 end
@@ -157,11 +161,11 @@ theorem basisModificationDeltaZero_apply [Fintype X] (ω : X → gradedPiece p (
             p.choose 2 • gradedBracket p (freeProP p X) 0 0 (ω i)
               (gradedMkZero p (freeProP p X) (of i))) +
         ∑ ij : {ij : X × X // ij.1 < ij.2}, (degreeOneBasis p X).repr ρ (Sum.inr ij) •
-          (gradedBracket p (freeProP p X) 0 0 (ω ij.1.1)
-              (gradedMkZero p (freeProP p X) (of ij.1.2)) -
-            gradedBracket p (freeProP p X) 0 0 (ω ij.1.2)
-              (gradedMkZero p (freeProP p X) (of ij.1.1)) +
-            gradedBracket p (freeProP p X) 0 0 (ω ij.1.1) (ω ij.1.2)) := by
+          (gradedBracket p (freeProP p X) 0 0 (ω ij.val.1)
+              (gradedMkZero p (freeProP p X) (of ij.val.2)) -
+            gradedBracket p (freeProP p X) 0 0 (ω ij.val.2)
+              (gradedMkZero p (freeProP p X) (of ij.val.1)) +
+            gradedBracket p (freeProP p X) 0 0 (ω ij.val.1) (ω ij.val.2)) := by
   conv_lhs => rw [← (degreeOneBasis p X).sum_repr ρ]
   simp only [Fintype.sum_sum_type, map_add, map_sum, map_smul,
     basisModificationDeltaZero_degreeOneBasis_inl, basisModificationDeltaZero_degreeOneBasis_inr]
@@ -206,7 +210,7 @@ theorem gradedMk_inv_mul_basisModification_zero (w : X → pLowerCentralSeries p
     gradedMk p (freeProP p X) 1 ⟨(r : freeProP p X)⁻¹ * basisModification w r,
         inv_mul_apply_mem_pLowerCentralSeries (basisModification w).toMonoidHom
           (basisModification w).continuous
-          (inv_mul_basisModification_mem_pLowerCentralSeries w) r.2⟩ =
+          (inv_mul_basisModification_mem_pLowerCentralSeries w) r.property⟩ =
       basisModificationDeltaZero p X (fun i ↦ gradedMkZero p (freeProP p X) (w i))
         (gradedMk p (freeProP p X) 1 r) := by
   have h := gradedDeviation_basisModification_zero w (gradedMk p (freeProP p X) 1 r)
@@ -245,7 +249,7 @@ theorem basisModificationDeltaZero_eq_sum_gradedPow_add_sum_add_sum [Fintype X]
       ∑ i, (degreeOneBasis p X).repr ρ (Sum.inl i) • gradedPow p (freeProP p X) 0 (ω i) +
         ∑ i, gradedBracket p (freeProP p X) 0 0 (ω i) (degreeOneDeriv p X i ρ) +
         ∑ ij : {ij : X × X // ij.1 < ij.2}, (degreeOneBasis p X).repr ρ (Sum.inr ij) •
-          gradedBracket p (freeProP p X) 0 0 (ω ij.1.1) (ω ij.1.2) := by
+          gradedBracket p (freeProP p X) 0 0 (ω ij.val.1) (ω ij.val.2) := by
   -- Both sides are linear in `ρ`; compare them on the standard basis of `gr_1(F)`.
   have key : basisModificationDeltaZero p X ω =
       ∑ i, (Finsupp.lapply (Sum.inl i) ∘ₗ (degreeOneBasis p X).repr.toLinearMap).smulRight
@@ -253,7 +257,7 @@ theorem basisModificationDeltaZero_eq_sum_gradedPow_add_sum_add_sum [Fintype X]
         ∑ i, gradedBracketLinear p (freeProP p X) 0 0 (ω i) ∘ₗ degreeOneDeriv p X i +
         ∑ ij : {ij : X × X // ij.1 < ij.2},
           (Finsupp.lapply (Sum.inr ij) ∘ₗ (degreeOneBasis p X).repr.toLinearMap).smulRight
-            (gradedBracket p (freeProP p X) 0 0 (ω ij.1.1) (ω ij.1.2)) := by
+            (gradedBracket p (freeProP p X) 0 0 (ω ij.val.1) (ω ij.val.2)) := by
     refine (degreeOneBasis p X).ext fun b ↦ ?_
     simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sum_apply,
       LinearMap.smulRight_apply, LinearEquiv.coe_coe, Module.Basis.repr_self, Finsupp.lapply_apply,
@@ -271,9 +275,11 @@ theorem basisModificationDeltaZero_eq_sum_gradedPow_add_sum_add_sum [Fintype X]
         zero_add, ite_smul, one_smul, Finset.sum_ite_eq, Finset.mem_univ,
         degreeOneDeriv_degreeOneBasis_inr, map_sub, Finset.sum_sub_distrib]
       congr 2
-      · rw [Finset.sum_eq_single jk.1.1 (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij), map_zero])
+      · rw [Finset.sum_eq_single jk.val.1 (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij),
+          map_zero])
           (fun h ↦ (h (Finset.mem_univ _)).elim), ite_eq_left rfl]
-      · rw [Finset.sum_eq_single jk.1.2 (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij), map_zero])
+      · rw [Finset.sum_eq_single jk.val.2 (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij),
+          map_zero])
           (fun h ↦ (h (Finset.mem_univ _)).elim), ite_eq_left rfl]
   have h := LinearMap.congr_fun key ρ
   simpa only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sum_apply,
@@ -296,8 +302,8 @@ theorem basisModificationDeltaZero_add [Fintype X] (v w : X → gradedPiece p (f
         p.choose 2 • ∑ i, (degreeOneBasis p X).repr ρ (Sum.inl i) •
           gradedBracket p (freeProP p X) 0 0 (w i) (v i) +
         ∑ ij : {ij : X × X // ij.1 < ij.2}, (degreeOneBasis p X).repr ρ (Sum.inr ij) •
-          (gradedBracket p (freeProP p X) 0 0 (v ij.1.1) (w ij.1.2) +
-            gradedBracket p (freeProP p X) 0 0 (w ij.1.1) (v ij.1.2)) := by
+          (gradedBracket p (freeProP p X) 0 0 (v ij.val.1) (w ij.val.2) +
+            gradedBracket p (freeProP p X) 0 0 (w ij.val.1) (v ij.val.2)) := by
   simp only [basisModificationDeltaZero_apply, Pi.add_apply, gradedPow_add_zero, map_add,
     AddMonoidHom.add_apply, smul_add, smul_sub, Finset.sum_add_distrib, Finset.sum_sub_distrib,
     Finset.smul_sum, smul_comm (p.choose 2)]
@@ -311,8 +317,8 @@ theorem basisModificationDeltaZero_add_of_odd [Fintype X] (hp : Odd p)
     basisModificationDeltaZero p X (v + w) ρ =
       basisModificationDeltaZero p X v ρ + basisModificationDeltaZero p X w ρ +
         ∑ ij : {ij : X × X // ij.1 < ij.2}, (degreeOneBasis p X).repr ρ (Sum.inr ij) •
-          (gradedBracket p (freeProP p X) 0 0 (v ij.1.1) (w ij.1.2) +
-            gradedBracket p (freeProP p X) 0 0 (w ij.1.1) (v ij.1.2)) := by
+          (gradedBracket p (freeProP p X) 0 0 (v ij.val.1) (w ij.val.2) +
+            gradedBracket p (freeProP p X) 0 0 (w ij.val.1) (v ij.val.2)) := by
   rw [basisModificationDeltaZero_add, choose_two_nsmul_gradedPiece_eq_zero_of_odd hp]
   abel
 
@@ -327,8 +333,8 @@ theorem basisModificationDeltaZero_add_of_two [Fintype X] (hp : p = 2)
         ∑ i, (degreeOneBasis p X).repr ρ (Sum.inl i) •
           gradedBracket p (freeProP p X) 0 0 (v i) (w i) +
         ∑ ij : {ij : X × X // ij.1 < ij.2}, (degreeOneBasis p X).repr ρ (Sum.inr ij) •
-          (gradedBracket p (freeProP p X) 0 0 (v ij.1.1) (w ij.1.2) +
-            gradedBracket p (freeProP p X) 0 0 (w ij.1.1) (v ij.1.2)) := by
+          (gradedBracket p (freeProP p X) 0 0 (v ij.val.1) (w ij.val.2) +
+            gradedBracket p (freeProP p X) 0 0 (w ij.val.1) (v ij.val.2)) := by
   subst hp
   -- Since `gr_1(F)` is killed by `2`, `[w_i, v_i] = -[v_i, w_i] = [v_i, w_i]`.
   have hswap (i : X) : gradedBracket 2 (freeProP 2 X) 0 0 (w i) (v i) =
