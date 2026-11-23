@@ -43,7 +43,9 @@ Uniqueness is proved with Wronskians: the Wronskian of two entire solutions is c
 * NIST Digital Library of Mathematical Functions, §9.2, <https://dlmf.nist.gov/9.2>.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), files
-`DLMF/Airy/Basic/Properties.lean` and `DLMF/Bessel/Basic/RegularizedSeries.lean`.
+`DLMF/Airy/Basic/Properties.lean` and `DLMF/Bessel/Basic/RegularizedSeries.lean`;
+`TauCeti.airy_inhomogeneous_ode_rotation` is adapted from `IsAiryInhomSol.rotate` in
+`DLMF/Airy/Scorer/Representations.lean`.
 -/
 
 public section
