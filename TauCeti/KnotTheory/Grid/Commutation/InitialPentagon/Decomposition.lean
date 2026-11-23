@@ -451,6 +451,17 @@ theorem initialPentagonRectangleWeight_eq_of_val_add_val_eq {x z : GridState n}
   simp only [← swapSquareWeight_def, Finset.prod_eq_multiset_prod, ← Multiset.prod_add,
     ← Multiset.map_add, h]
 
+/-- If two pairs of finsets have the same sum of underlying multisets and the second pair avoids a
+finset `X`, then so does the first. -/
+private theorem disjoint_of_val_add_val_eq {α : Type*} {s t u v X : Finset α}
+    (h : s.val + t.val = u.val + v.val) (hu : Disjoint u X) (hv : Disjoint v X) :
+    Disjoint s X ∧ Disjoint t X := by
+  have key : ∀ p ∈ s.val + t.val, p ∉ X := fun p hp hpX => by
+    rcases Multiset.mem_add.mp (h ▸ hp) with hp' | hp'
+    exacts [Finset.disjoint_left.mp hu hp' hpX, Finset.disjoint_left.mp hv hp' hpX]
+  exact ⟨Finset.disjoint_left.mpr fun p hp => key p (Multiset.mem_add.mpr (Or.inl hp)),
+    Finset.disjoint_left.mpr fun p hp => key p (Multiset.mem_add.mpr (Or.inr hp))⟩
+
 /-- An initial-side pentagon followed by a rectangle of the commuted diagram is counted when its
 two underlying rectangles are empty and its composite domain covers, with multiplicity, the
 squares of a counted rectangle followed by an initial-side pentagon, the rectangle of the commuted
@@ -470,22 +481,12 @@ theorem mem_initialPentagonRectangleDecompositions_of_val_add_val_eq {x z : Grid
   rw [mem_rectangleInitialPentagonDecompositions, mem_unblockedRectangles,
     mem_initialPentagons] at hD
   -- A square of the new domain is a square of the original domain, which avoids `X`.
-  have hX : Disjoint (E.pentagon.coveredSquares ∪ E.second.toGridRectangle.coveredSquares.map
-      ((Equiv.swap C.column (finRotate n C.column)).prodCongr
-        (Equiv.refl (Fin n))).toEmbedding) G.XSet := by
-    refine Finset.disjoint_left.mpr fun p hp hpX => ?_
-    have hmem : p ∈ D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val := by
-      rw [← h, Multiset.mem_add]
-      simpa only [Finset.mem_union, Finset.mem_val] using hp
-    rcases Multiset.mem_add.mp hmem with hp' | hp'
-    · exact Finset.disjoint_left.mp hD.1.2 hp' hpX
-    · exact Finset.disjoint_left.mp hD.2.2 hp' hpX
+  have hX := disjoint_of_val_add_val_eq h hD.1.2 hD.2.2
   rw [mem_initialPentagonRectangleDecompositions, mem_initialPentagons,
     GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween,
     (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
     ← G.disjoint_map_swapColumns_XSet_iff]
-  exact ⟨⟨hfirst, (Finset.disjoint_union_left.mp hX).1⟩, hsecond,
-    (Finset.disjoint_union_left.mp hX).2⟩
+  exact ⟨⟨hfirst, hX.1⟩, hsecond, hX.2⟩
 
 /-- A rectangle followed by an initial-side pentagon is counted when its underlying rectangles
 are empty and its composite domain agrees, with multiplicity, with a counted initial-side pentagon
@@ -505,14 +506,10 @@ theorem mem_rectangleInitialPentagonDecompositions_of_val_add_val_eq_initialPent
   rw [mem_initialPentagonRectangleDecompositions, mem_initialPentagons,
     (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
     ← G.disjoint_map_swapColumns_XSet_iff] at hE
-  have hunion := congrArg Multiset.toFinset h
-  simp only [Multiset.toFinset_add, Finset.val_toFinset] at hunion
-  have hX := Finset.disjoint_union_left.mpr ⟨hE.1.2, hE.2.2⟩
-  rw [← hunion] at hX
+  have hX := disjoint_of_val_add_val_eq h hE.1.2 hE.2.2
   rw [mem_rectangleInitialPentagonDecompositions, mem_unblockedRectangles, mem_initialPentagons,
     GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween]
-  exact ⟨⟨hfirst, (Finset.disjoint_union_left.mp hX).1⟩, hsecond,
-    (Finset.disjoint_union_left.mp hX).2⟩
+  exact ⟨⟨hfirst, hX.1⟩, hsecond, hX.2⟩
 
 /-- An initial-side pentagon followed by a rectangle is counted when its underlying rectangles
 are empty and its composite domain agrees, with multiplicity, with a counted domain in the same
@@ -535,12 +532,8 @@ theorem mem_initialPentagonRectangleDecompositions_of_val_add_val_eq_initialPent
     GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween,
     (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
     ← G.disjoint_map_swapColumns_XSet_iff] at hD ⊢
-  have hunion := congrArg Multiset.toFinset h
-  simp only [Multiset.toFinset_add, Finset.val_toFinset] at hunion
-  have hX := Finset.disjoint_union_left.mpr ⟨hD.1.2, hD.2.2⟩
-  rw [← hunion] at hX
-  exact ⟨⟨hfirst, (Finset.disjoint_union_left.mp hX).1⟩, hsecond,
-    (Finset.disjoint_union_left.mp hX).2⟩
+  have hX := disjoint_of_val_add_val_eq h hD.1.2 hD.2.2
+  exact ⟨⟨hfirst, hX.1⟩, hsecond, hX.2⟩
 
 /-- A rectangle followed by an initial-side pentagon is counted when its two domains are empty
 and its composite domain covers, with multiplicity, the squares of a counted rectangle followed by
@@ -556,14 +549,8 @@ theorem mem_rectangleInitialPentagonDecompositions_of_val_add_val_eq {x z : Grid
   rw [mem_rectangleInitialPentagonDecompositions, mem_unblockedRectangles,
     mem_initialPentagons] at hD ⊢
   -- A square of the new domain is a square of the original domain, which avoids `X`.
-  have hX (p : Fin n × Fin n) (hp : p ∈ D'.first.toGridRectangle.coveredSquares.val +
-      D'.pentagon.coveredSquares.val) : p ∉ G.XSet := fun hpX => by
-    rw [h] at hp
-    rcases Multiset.mem_add.mp hp with hp' | hp'
-    · exact Finset.disjoint_left.mp hD.1.2 hp' hpX
-    · exact Finset.disjoint_left.mp hD.2.2 hp' hpX
-  exact ⟨⟨hfirst, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inl hp))⟩,
-    hpentagon, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inr hp))⟩
+  have hX := disjoint_of_val_add_val_eq h hD.1.2 hD.2.2
+  exact ⟨⟨hfirst, hX.1⟩, hpentagon, hX.2⟩
 
 /-- The matrix product for the initial-side pentagon map after the original differential is the
 sum of the weights of the counted rectangle--initial-side pentagon decompositions. -/
