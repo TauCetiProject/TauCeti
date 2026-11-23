@@ -193,6 +193,12 @@ theorem unitaryTorusDualInclusion_apply (s : ι → ℝ) :
         (isHermitian_diagonal_iff.mpr fun k => conj_ofReal (s k)).isSelfAdjoint⟩ :=
   (rfl)
 
+/-- **The covector `⟨diag(s), ·⟩` in matrix entries**: `⟨diag(s), X⟩ = ∑ₐ sₐ Im Xₐₐ`. -/
+theorem unitaryTorusDualInclusion_apply_apply (s : ι → ℝ) (X : unitaryLieAlgebra ι) :
+    unitaryTorusDualInclusion ι s X = ∑ a, s a * ((X : Matrix ι ι ℂ) a a).im := by
+  rw [unitaryTorusDualInclusion_apply, unitaryTracePairing_apply, trace]
+  simp [diagonal_mul, Finset.mul_sum, Complex.re_sum]
+
 /-- **The torus restriction is a left inverse of the inclusion of `𝔱*`**: the restriction of
 `⟨diag(s), ·⟩` to the Lie algebra of the diagonal torus is `s`. -/
 @[simp]
