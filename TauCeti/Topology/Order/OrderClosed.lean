@@ -34,6 +34,8 @@ unchanged, since the escaping branch is eventually dominated by the convergent o
 * `Filter.Tendsto.atBot_max` and `Filter.Tendsto.max_atBot`: if one branch tends to `atBot` and the
   other tends to `𝓝 a`, their pointwise `max` tends to `𝓝 a` (with dual versions
   `Filter.Tendsto.atTop_min` and `Filter.Tendsto.min_atTop`).
+* `MapClusterPt.ge_of_monotone_atTop` and `MapClusterPt.le_of_monotone_atBot`: a monotone family
+  is bounded above by its cluster points at `atTop` and below by its cluster points at `atBot`.
 * `TauCeti.eq_of_tendsto_section`, `TauCeti.monotone_of_tendsto_section`: uniqueness and
   monotonicity of an index map matching boundary limits of sections on `C` along a set `B`
   meeting `closure C` to pointwise distinct or strictly monotone boundary sections on `B`.
@@ -105,6 +107,22 @@ theorem Filter.Tendsto.max_atBot {ι β : Type*} [LinearOrder β] [TopologicalSp
     (hg : Tendsto g l atBot) : Tendsto (fun i ↦ max (f i) (g i)) l (𝓝 a) := by
   simp_rw [max_comm (f _) (g _)]
   exact hg.atBot_max hf
+
+/-- **A monotone family lies below its cluster points at `atTop`.** If `f` is monotone and `a` is a
+cluster point of `f` along `atTop`, then `f i ≤ a` for every `i`. This is `Monotone.ge_of_tendsto`
+for a cluster point instead of a limit. -/
+theorem MapClusterPt.ge_of_monotone_atTop {ι α : Type*} [Preorder ι] [TopologicalSpace α]
+    [Preorder α] [ClosedIciTopology α] {f : ι → α} {a : α} (ha : MapClusterPt a atTop f)
+    (hf : Monotone f) (i : ι) : f i ≤ a :=
+  isClosed_Ici.mem_of_mapClusterPt ha <| (eventually_ge_atTop i).mono fun _ hj ↦ hf hj
+
+/-- **A monotone family lies above its cluster points at `atBot`.** If `f` is monotone and `a` is a
+cluster point of `f` along `atBot`, then `a ≤ f i` for every `i`. This is `Monotone.le_of_tendsto`
+for a cluster point instead of a limit. -/
+theorem MapClusterPt.le_of_monotone_atBot {ι α : Type*} [Preorder ι] [TopologicalSpace α]
+    [Preorder α] [ClosedIicTopology α] {f : ι → α} {a : α} (ha : MapClusterPt a atBot f)
+    (hf : Monotone f) (i : ι) : a ≤ f i :=
+  isClosed_Iic.mem_of_mapClusterPt ha <| (eventually_le_atBot i).mono fun _ hj ↦ hf hj
 
 namespace TauCeti
 
