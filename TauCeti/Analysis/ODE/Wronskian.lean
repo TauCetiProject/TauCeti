@@ -23,7 +23,7 @@ derivative `-p (f g' - f' g)` at `t`.
 * `TauCeti.wronskian_eq_of_hasDerivAt`: the Wronskian of two solutions of `f'' = q f` is
   constant.
 * `TauCeti.wronskian_eq_one_of_hasDerivAt`: the Wronskian of the fundamental pair is one.
-* `TauCeti.hasDerivAt_wronskian_of_hasDerivAt`: Abel's identity at a point, for
+* `HasDerivAt.wronskian_of_secondOrderLinearEquation`: Abel's identity at a point, for
   `y'' + p y' + q y = 0`.
 -/
 
@@ -34,8 +34,8 @@ namespace TauCeti
 /-- **Abel's identity** at a point: if `f` and `g` have derivatives `f'`, `g'` at `t`, these have
 derivatives `f''`, `g''` at `t`, and both satisfy `y'' + p y' + q y = 0` at `t`, then the
 Wronskian `f g' - f' g` has derivative `-p (f g' - f' g)` at `t`. -/
-theorem hasDerivAt_wronskian_of_hasDerivAt {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {f f' g g' : 𝕜 → 𝕜} {f'' g'' p q t : 𝕜}
+theorem _root_.HasDerivAt.wronskian_of_secondOrderLinearEquation {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {f f' g g' : 𝕜 → 𝕜} {f'' g'' p q t : 𝕜}
     (hf : HasDerivAt f (f' t) t) (hf' : HasDerivAt f' f'' t)
     (hg : HasDerivAt g (g' t) t) (hg' : HasDerivAt g' g'' t)
     (hfe : f'' + p * f' t + q * f t = 0) (hge : g'' + p * g' t + q * g t = 0) :
@@ -49,8 +49,12 @@ theorem wronskian_eq_of_hasDerivAt
     (hφ : ∀ t, HasDerivAt φ (φ' t) t) (hφ' : ∀ t, HasDerivAt φ' (q t * φ t) t)
     (hψ : ∀ t, HasDerivAt ψ (ψ' t) t) (hψ' : ∀ t, HasDerivAt ψ' (q t * ψ t) t) (t a : 𝕜) :
     ψ t * φ' t - φ t * ψ' t = ψ a * φ' a - φ a * ψ' a := by
-  have hderiv : ∀ t, HasDerivAt (fun r ↦ ψ r * φ' r - φ r * ψ' r) 0 t := fun t ↦
-    (((hψ t).mul (hφ' t)).sub ((hφ t).mul (hψ' t))).congr_deriv (by ring)
+  -- Abel's identity with no first-order term: the Wronskian has derivative `0`.
+  have hderiv : ∀ t, HasDerivAt (fun r ↦ ψ r * φ' r - φ r * ψ' r) 0 t := fun t ↦ by
+    have h := (hψ t).wronskian_of_secondOrderLinearEquation (hψ' t) (hφ t) (hφ' t)
+      (p := 0) (q := -q t) (by ring) (by ring)
+    simp only [neg_zero, zero_mul] at h
+    exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun r ↦ by ring)
   exact is_const_of_deriv_eq_zero (fun t ↦ (hderiv t).differentiableAt)
     (fun t ↦ (hderiv t).deriv) t a
 
