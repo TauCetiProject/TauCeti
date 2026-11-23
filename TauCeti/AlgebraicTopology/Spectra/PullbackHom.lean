@@ -49,8 +49,6 @@ Joël Riou and Jack McKoen and `ParametrizedAdjunction.hasLiftingProperty_iff` b
 
 ## References
 
-* M. Hovey, *Model categories*, Mathematical Surveys and Monographs 63, American Mathematical
-  Society, 1999, Section 4.2.
 * M. Hovey, B. Shipley and J. Smith, *Symmetric spectra*, J. Amer. Math. Soc. 13 (2000),
   Proposition 5.1.4 and Lemma 5.1.5.
 -/
@@ -398,15 +396,6 @@ lemma llp_levelFibrations_levelSmash_map_of_anodyne {X : SymmetricSpectrum}
     (hj : SSet.anodyneExtensions j.right) :
     levelFibrations.llp ((levelSmash X).map j) :=
   llp_levelFibrations_levelSmashBifunctor_pushoutObjObjι_of_anodyne hX hj
-    (Functor.PushoutObjObj.ofIsInitialLeft levelSmashBifunctor (initial.to X) j initialIsInitial)
-
-/-- If `⊥ ⟶ X` lifts against all level fibrations, then smashing `X` with any based
-monomorphism gives a map lifting against all level fibrations. -/
-lemma llp_levelFibrations_levelSmash_map_of_llp {X : SymmetricSpectrum}
-    (hX : levelFibrations.llp (initial.to X)) {K L : PointedSSet.{0}} (j : K ⟶ L)
-    [Mono j.right] :
-    levelFibrations.llp ((levelSmash X).map j) :=
-  llp_levelFibrations_levelSmashBifunctor_pushoutObjObjι_of_llp hX
     (Functor.PushoutObjObj.ofIsInitialLeft levelSmashBifunctor (initial.to X) j initialIsInitial)
 
 /-! ### Pullback-hom corners for mapping spaces -/

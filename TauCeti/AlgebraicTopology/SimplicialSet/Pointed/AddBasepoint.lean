@@ -229,9 +229,4 @@ instance mono_addBasepoint_map_right {K L : SSet.{u}} (f : K ⟶ L) [Mono f] :
     Mono (addBasepoint.map f).right :=
   addBasepoint_map_right_mem (MorphismProperty.monomorphisms SSet.{u}) (.infer_property f)
 
-/-- Adjoining a disjoint basepoint preserves monomorphisms of simplicial sets. -/
-instance : addBasepoint.{u}.PreservesMonomorphisms where
-  preserves f _ :=
-    (Under.forget _).mono_of_mono_map (inferInstance : Mono (addBasepoint.map f).right)
-
 end TauCeti.PointedSSet

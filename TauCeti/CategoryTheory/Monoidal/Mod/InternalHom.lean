@@ -30,17 +30,11 @@ sphere monoid of symmetric sequences, it is the function spectrum.
 
 * `Mod.tensorLeft M`: the functor `K ↦ M ⊗ K` from `C` to left `A`-modules.
 * `Mod.tensorRight K`: the functor `M ↦ M ⊗ K` on left `A`-modules.
-* `Mod.curriedTensor`: the bifunctor `M ↦ K ↦ M ⊗ K`.
 * `Mod.ihom M`: the functor `N ↦ Hom_A(M, N)` from left `A`-modules to `C`, with the inclusion
   `Mod.ihomι M N : Hom_A(M, N) ⟶ [M, N]` and the factorization `Mod.ihomLift`.
-* `Mod.ihomAdjunction M : Mod.tensorLeft M ⊣ Mod.ihom M`, together with `Mod.ihomPre`,
-  `Mod.ihomFunctor`, and the parametrized adjunction `Mod.ihomAdjunction₂`.
+* `Mod.ihomAdjunction M : Mod.tensorLeft M ⊣ Mod.ihom M`.
 * `Mod.internalHom M`: over a commutative monoid, `Hom_A(M, -)` as a functor of left
   `A`-modules.
-
-The parametrized adjunction and precomposition natural transformation use Mathlib's
-`CategoryTheory.ParametrizedAdjunction` by Joël Riou and Mathlib's mates calculus
-(`CategoryTheory.conjugateEquiv`).
 
 ## References
 
@@ -109,31 +103,6 @@ abbrev tensorRight (V : C) : Mod C A ⥤ Mod C A where
   map_id M := by ext; simp
   map_comp f g := by ext; simp
 
-/-- Tensoring a left `A`-module on the right with an object of `C`, curried in both variables:
-`M ↦ K ↦ M ⊗ K`, with `A` acting on `M`. -/
-@[expose]
-def curriedTensor : Mod C A ⥤ C ⥤ Mod C A where
-  obj M := tensorLeft M
-  map f :=
-    { app K := (tensorRight K).map f
-      naturality _ _ g := by
-        ext
-        simp only [comp_hom', Hom.mk'_hom, whisker_exchange] }
-  map_id M := by ext; simp
-  map_comp f g := by ext; simp
-
-/-- Evaluating `Mod.curriedTensor` at a module `M` gives `Mod.tensorLeft M`. -/
-@[simp]
-lemma curriedTensor_obj (M : Mod C A) : (curriedTensor (A := A)).obj M = tensorLeft M :=
-  (rfl)
-
-/-- The map component of `Mod.curriedTensor` at `f : M ⟶ N` and `K : C` is
-`(tensorRight K).map f`. -/
-@[simp]
-lemma curriedTensor_map_app {M N : Mod C A} (f : M ⟶ N) (K : C) :
-    ((curriedTensor (A := A)).map f).app K = (tensorRight K).map f :=
-  (rfl)
-
 /-- Tensoring a module with the unit object gives back the module: the right unitor
 `M ⊗ 𝟙 ≅ M` is `A`-linear. -/
 def tensorLeftUnitIso (M : Mod C A) : (tensorLeft M).obj (𝟙_ C) ≅ M where
@@ -150,27 +119,6 @@ lemma tensorLeftUnitIso_hom_hom (M : Mod C A) : (tensorLeftUnitIso M).hom.hom = 
 @[simp]
 lemma tensorLeftUnitIso_inv_hom (M : Mod C A) : (tensorLeftUnitIso M).inv.hom = (ρ_ M.X).inv := by
   rfl
-
-/-- Tensoring a module on the right with the monoidal unit is naturally isomorphic to the identity
-functor on left `A`-modules. -/
-def tensorRightUnitIso : tensorRight (A := A) (𝟙_ C) ≅ 𝟭 (Mod C A) :=
-  NatIso.ofComponents tensorLeftUnitIso fun f ↦ by
-    ext
-    simp
-
-/-- At each module `M`, the forward component of `Mod.tensorRightUnitIso` is
-`(Mod.tensorLeftUnitIso M).hom`. -/
-@[simp]
-lemma tensorRightUnitIso_hom_app (M : Mod C A) :
-    (tensorRightUnitIso (A := A)).hom.app M = (tensorLeftUnitIso M).hom :=
-  (rfl)
-
-/-- At each module `M`, the inverse component of `Mod.tensorRightUnitIso` is
-`(Mod.tensorLeftUnitIso M).inv`. -/
-@[simp]
-lemma tensorRightUnitIso_inv_app (M : Mod C A) :
-    (tensorRightUnitIso (A := A)).inv.app M = (tensorLeftUnitIso M).inv :=
-  (rfl)
 
 section ihom
 
@@ -322,86 +270,6 @@ lemma ihomAdjunction_counit_app_hom (M N : Mod C A) :
     ((ihomAdjunction M).counit.app N).hom = uncurry (ihomι M N) := by
   simp only [ihomAdjunction, Adjunction.mkOfHomEquiv_counit_app]
   exact (ihomHomEquiv_symm_apply_hom M (𝟙 _)).trans (by rw [Category.id_comp]; rfl)
-
-instance (M : Mod C A) : (tensorLeft M).IsLeftAdjoint :=
-  (ihomAdjunction M).isLeftAdjoint
-
-instance (M : Mod C A) : (ihom M).IsRightAdjoint :=
-  (ihomAdjunction M).isRightAdjoint
-
-/-- Precomposition with a map `M ⟶ M'` of left `A`-modules gives a natural transformation
-`Hom_A(M', -) ⟶ Hom_A(M, -)`, conjugate to `M ⊗ - ⟶ M' ⊗ -`. -/
-noncomputable def ihomPre {M M' : Mod C A} (f : M ⟶ M') : ihom M' ⟶ ihom M :=
-  conjugateEquiv (ihomAdjunction M') (ihomAdjunction M) ((curriedTensor (A := A)).map f)
-
-/-- Precomposition on `A`-linear maps agrees with ambient precomposition after the inclusion
-`Hom_A(-, N) ⟶ [-, N]`. -/
-@[reassoc (attr := simp)]
-lemma ihomPre_app_comp_ihomι {M M' : Mod C A} (f : M ⟶ M') (N : Mod C A) :
-    (ihomPre f).app N ≫ ihomι M N = ihomι M' N ≫ (MonoidalClosed.pre f.hom).app N.X := by
-  have h := congrArg Hom.hom
-    (conjugateEquiv_counit (ihomAdjunction M') (ihomAdjunction M)
-      ((curriedTensor (A := A)).map f) N)
-  simp only [comp_hom', ihomAdjunction_counit_app_hom] at h
-  apply uncurry_injective
-  rw [uncurry_natural_left, uncurry_pre_app]
-  exact h
-
-/-- Precomposition on `A`-linear maps sends the identity to the identity. -/
-@[simp]
-lemma ihomPre_id (M : Mod C A) : ihomPre (𝟙 M) = 𝟙 (ihom M) := by
-  have h : (curriedTensor (A := A)).map (𝟙 M) = 𝟙 (tensorLeft M) :=
-    (curriedTensor (A := A)).map_id M
-  rw [ihomPre, h]
-  exact conjugateEquiv_id _
-
-/-- Precomposition on `A`-linear maps is contravariantly functorial in the source module. -/
-@[simp]
-lemma ihomPre_comp {M₁ M₂ M₃ : Mod C A} (f : M₁ ⟶ M₂) (g : M₂ ⟶ M₃) :
-    ihomPre (f ≫ g) = ihomPre g ≫ ihomPre f := by
-  have h : (curriedTensor (A := A)).map (f ≫ g) =
-      ((curriedTensor (A := A)).map f : tensorLeft M₁ ⟶ tensorLeft M₂) ≫
-        (curriedTensor (A := A)).map g :=
-    (curriedTensor (A := A)).map_comp f g
-  rw [ihomPre, ihomPre, ihomPre, h]
-  exact (conjugateEquiv_comp (ihomAdjunction M₃) (ihomAdjunction M₂) (ihomAdjunction M₁) _ _).symm
-
-/-- The bifunctor `(M, N) ↦ Hom_A(M, N)` of `A`-linear maps, contravariant in `M` and covariant
-in `N`. -/
-@[expose]
-noncomputable def ihomFunctor : (Mod C A)ᵒᵖ ⥤ Mod C A ⥤ C where
-  obj M := ihom M.unop
-  map f := ihomPre f.unop
-
-/-- Evaluating `Mod.ihomFunctor` at `M` gives `Mod.ihom M.unop`. -/
-@[simp]
-lemma ihomFunctor_obj (M : (Mod C A)ᵒᵖ) : (ihomFunctor (A := A)).obj M = ihom M.unop :=
-  (rfl)
-
-/-- Applying `Mod.ihomFunctor` to `f : M ⟶ N` gives `Mod.ihomPre f.unop`. -/
-@[simp]
-lemma ihomFunctor_map {M N : (Mod C A)ᵒᵖ} (f : M ⟶ N) :
-    (ihomFunctor (A := A)).map f = ihomPre f.unop :=
-  (rfl)
-
-/-- The parametrized adjunction between `(M, K) ↦ M ⊗ K` and `(M, N) ↦ Hom_A(M, N)`. -/
-noncomputable def ihomAdjunction₂ : curriedTensor (A := A) ⊣₂ ihomFunctor where
-  adj := ihomAdjunction
-  unit_whiskerRight_map f := by
-    ext K
-    exact (unit_conjugateEquiv (ihomAdjunction _) (ihomAdjunction _)
-      ((curriedTensor (A := A)).map f) K).symm
-
-/-- At each module `M`, `Mod.ihomAdjunction₂` specializes to `Mod.ihomAdjunction M`. -/
-@[simp]
-lemma ihomAdjunction₂_adj (M : Mod C A) :
-    (ihomAdjunction₂ (A := A)).adj M = ihomAdjunction M := (rfl)
-
-/-- The bijection of `Mod.ihomAdjunction₂` is given by `Mod.ihomHomEquiv`. -/
-lemma ihomAdjunction₂_homEquiv_apply (M : Mod C A) (K : C) (N : Mod C A)
-    (f : (curriedTensor.obj M).obj K ⟶ N) :
-    (ihomAdjunction₂ (A := A)).homEquiv f = ihomHomEquiv M K N f :=
-  congrArg (fun e ↦ e f) (congrFun (congrFun (ihomAdjunction_homEquiv M) K) N)
 
 end ihom
 

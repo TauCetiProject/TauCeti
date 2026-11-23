@@ -13,16 +13,20 @@ import Mathlib.CategoryTheory.Adjunction.ParametrizedLimits
 /-!
 # Simplicial tensors, cotensors, and mapping-space bifunctors of symmetric spectra
 
-Using the pointed smash and mapping-space bifunctors (`SymmetricSpectrum.levelSmashBifunctor`,
-`SymmetricSpectrum.mappingSpaceBifunctor`) from `MappingSpace`, this file defines the pointed
-cotensor bifunctor
+The levelwise smash product `X ∧ K`, the point-set cotensor `E^K`, and the pointed mapping space
+`Map(X, Y)` of symmetric spectra assemble into bifunctors connected by two-variable adjunctions:
 
+* `SymmetricSpectrum.levelSmashBifunctor : SymmetricSpectrum ⥤ PointedSSet.{0} ⥤ SymmetricSpectrum`
+  sends `(X, K)` to `X ∧ K`;
 * `SymmetricSpectrum.cotensorBifunctor : PointedSSet.{0}ᵒᵖ ⥤ SymmetricSpectrum ⥤ SymmetricSpectrum`
-  sending `(K, E)` to `E^K`,
+  sends `(K, E)` to `E^K`;
+* `SymmetricSpectrum.mappingSpaceBifunctor :`
+  `SymmetricSpectrumᵒᵖ ⥤ SymmetricSpectrum ⥤ PointedSSet.{0}` sends `(X, Y)` to `Map(X, Y)`.
 
-together with the parametrized adjunction `levelSmashBifunctor.flip ⊣₂ cotensorBifunctor`.
-Precomposing with the disjoint-basepoint functor `PointedSSet.addBasepoint` and forgetting
-basepoints on mapping spaces yields the unpointed simplicial structure on symmetric spectra:
+These satisfy the parametrized adjunctions `levelSmashBifunctor ⊣₂ mappingSpaceBifunctor` and
+`levelSmashBifunctor.flip ⊣₂ cotensorBifunctor`. Precomposing with the disjoint-basepoint functor
+`PointedSSet.addBasepoint` and forgetting basepoints on mapping spaces yields the unpointed
+simplicial structure on symmetric spectra:
 
 * `SymmetricSpectrum.simplicialTensor`: `(K, X) ↦ X ∧ K₊`;
 * `SymmetricSpectrum.simplicialCotensor`: `(K, E) ↦ E^(K₊)`;
@@ -53,13 +57,54 @@ namespace TauCeti.SymmetricSpectrum
 
 open PointedSSet
 
-/-! ### Pointed cotensor bifunctor -/
+/-! ### Pointed smash, cotensor, and mapping-space bifunctors -/
 
--- The four bifunctors in this file carry `@[expose]` (matching `PointedSSet.simplicialTensor`,
--- `PointedSSet.simplicialCotensor`, `levelSmashBifunctor`, and `mappingSpaceBifunctor`) so that
--- dependently typed morphisms, adjunctions, and `PullbackObjObj`/`PushoutObjObj` corners over
--- them share carriers with `levelSmash`, `levelSmashRight`, `cotensor`, `mappingSpace`,
--- `addBasepoint`, and `forgetBasepoint` in public signatures without `eqToHom` transports.
+-- The six bifunctors in this file carry `@[expose]` (matching `PointedSSet.simplicialTensor` and
+-- `PointedSSet.simplicialCotensor`) so that dependently typed morphisms, adjunctions, and
+-- `PullbackObjObj`/`PushoutObjObj` corners over them share carriers with `levelSmash`,
+-- `levelSmashRight`, `cotensor`, `mappingSpace`, `addBasepoint`, and `forgetBasepoint` in public
+-- signatures without `eqToHom` transports.
+
+/-- The bifunctor `(X, K) ↦ X ∧ K` smashing a symmetric spectrum levelwise with a pointed
+simplicial set. Fixing `X` recovers `levelSmash X`, and fixing `K` recovers `levelSmashRight K`. -/
+@[expose]
+noncomputable def levelSmashBifunctor :
+    SymmetricSpectrum ⥤ PointedSSet.{0} ⥤ SymmetricSpectrum where
+  obj X := levelSmash X
+  map {X Y} f :=
+    { app K := (levelSmashRight K).map f
+      naturality {K L} g := by
+        apply Mod.Hom.ext
+        simp only [Mod.comp_hom', Mod.Hom.mk'_hom]
+        exact whisker_exchange f.hom ((SymmetricSequence.free 0).map g) }
+  map_id X := by
+    apply NatTrans.ext
+    funext K
+    exact (levelSmashRight K).map_id X
+  map_comp f g := by
+    apply NatTrans.ext
+    funext K
+    exact (levelSmashRight K).map_comp f g
+
+@[simp]
+lemma levelSmashBifunctor_obj (X : SymmetricSpectrum) :
+    levelSmashBifunctor.obj X = levelSmash X :=
+  (rfl)
+
+@[simp]
+lemma levelSmashBifunctor_flip_obj (K : PointedSSet.{0}) :
+    levelSmashBifunctor.flip.obj K = levelSmashRight K :=
+  (rfl)
+
+@[simp]
+lemma levelSmashBifunctor_map_app {X Y : SymmetricSpectrum} (f : X ⟶ Y) (K : PointedSSet.{0}) :
+    (levelSmashBifunctor.map f).app K = (levelSmashRight K).map f :=
+  (rfl)
+
+lemma levelSmashBifunctor_flip_map_app {K L : PointedSSet.{0}} (g : K ⟶ L)
+    (X : SymmetricSpectrum) :
+    (levelSmashBifunctor.flip.map g).app X = (levelSmash X).map g :=
+  (rfl)
 
 /-- The point-set cotensor bifunctor `(K, E) ↦ E^K`, contravariant in the pointed simplicial set
 `K` and covariant in the symmetric spectrum `E`. -/
@@ -76,6 +121,59 @@ lemma cotensorBifunctor_obj (K : PointedSSet.{0}ᵒᵖ) :
 @[simp]
 lemma cotensorBifunctor_map_app {K L : PointedSSet.{0}ᵒᵖ} (g : K ⟶ L) (E : SymmetricSpectrum) :
     (cotensorBifunctor.map g).app E = (MonoidalClosed.pre ((free 0).map g.unop)).app E :=
+  (rfl)
+
+/-- The pointed mapping-space bifunctor `(X, Y) ↦ Map(X, Y)` of symmetric spectra, contravariant
+in the source spectrum `X` and covariant in the target spectrum `Y`. Fixing `X` recovers
+`mappingSpace X`, while a map `f : X ⟶ X'` acts by level-zero internal-hom precomposition. -/
+@[expose]
+noncomputable def mappingSpaceBifunctor :
+    SymmetricSpectrumᵒᵖ ⥤ SymmetricSpectrum ⥤ PointedSSet.{0} :=
+  MonoidalClosed.internalHom ⋙
+    (Functor.whiskeringRight SymmetricSpectrum SymmetricSpectrum PointedSSet.{0}).obj
+      (evaluation 0)
+
+@[simp]
+lemma mappingSpaceBifunctor_obj (X : SymmetricSpectrumᵒᵖ) :
+    mappingSpaceBifunctor.obj X = mappingSpace X.unop :=
+  (rfl)
+
+@[simp]
+lemma mappingSpaceBifunctor_map_app {X X' : SymmetricSpectrumᵒᵖ} (f : X ⟶ X')
+    (Y : SymmetricSpectrum) :
+    (mappingSpaceBifunctor.map f).app Y = (evaluation 0).map ((MonoidalClosed.pre f.unop).app Y) :=
+  (rfl)
+
+/-- The parametrized adjunction `levelSmashBifunctor ⊣₂ mappingSpaceBifunctor`: spectrum maps
+`X ∧ K ⟶ Y` correspond naturally in all three variables to based maps `K ⟶ Map(X, Y)`. -/
+noncomputable def levelSmashMappingSpaceAdjunction₂ :
+    levelSmashBifunctor ⊣₂ mappingSpaceBifunctor :=
+  ParametrizedAdjunction.mk' levelSmashMappingSpaceAdjunction fun {X Y} f {K} {Z} g ↦ by
+    -- Unfold `levelSmashBifunctor` and `mappingSpaceBifunctor` on objects and maps, and view
+    -- `(MonoidalClosed.pre f).app Z` as a `Mod.internalHom` map so `rw` sees matching types.
+    change (levelSmash Y).obj K ⟶ Z at g
+    let p : (Mod.internalHom Y).obj Z ⟶ (Mod.internalHom X).obj Z := (MonoidalClosed.pre f).app Z
+    have hp : p.hom ≫ Mod.ihomι X Z = Mod.ihomι Y Z ≫ (MonoidalClosed.pre f.hom).app Z.X :=
+      Mod.pre_app_hom_comp_ihomι f Z
+    change (levelSmashMappingSpaceAdjunction X).homEquiv K Z ((levelSmashRight K).map f ≫ g) =
+      (levelSmashMappingSpaceAdjunction Y).homEquiv K Z g ≫ (evaluation 0).map p
+    have hcur : Mod.ihomHomEquiv X _ Z ((levelSmashRight K).map f ≫ g) =
+        Mod.ihomHomEquiv Y _ Z g ≫ p.hom := by
+      apply Mod.ihom_hom_ext
+      rw [Mod.ihomHomEquiv_apply_comp_ihomι, Category.assoc, hp,
+        Mod.ihomHomEquiv_apply_comp_ihomι_assoc, MonoidalClosed.curry_pre_app]
+      simp only [Mod.comp_hom', Mod.Hom.mk'_hom]
+    rw [levelSmashMappingSpaceAdjunction_homEquiv_apply,
+      levelSmashMappingSpaceAdjunction_homEquiv_apply, hcur, DayFunctor.comp_natTrans,
+      NatTrans.comp_app]
+    -- `(evaluation 0).map p` unfolds to `p.hom.natTrans.app (FiniteBijection.mk 0)`.
+    exact (Category.assoc _ _ _).symm
+
+/-- At each spectrum `X`, `levelSmashMappingSpaceAdjunction₂` specializes to
+`levelSmashMappingSpaceAdjunction X`. -/
+@[simp]
+lemma levelSmashMappingSpaceAdjunction₂_adj (X : SymmetricSpectrum) :
+    levelSmashMappingSpaceAdjunction₂.adj X = levelSmashMappingSpaceAdjunction X :=
   (rfl)
 
 /-- The parametrized adjunction `levelSmashBifunctor.flip ⊣₂ cotensorBifunctor`: spectrum maps
@@ -224,11 +322,8 @@ noncomputable def simplicialTensorMappingSpaceAdjunction₂ :
         forgetBasepoint.map m
     rw [Adjunction.comp_homEquiv, Adjunction.comp_homEquiv, Equiv.trans_apply, Equiv.trans_apply,
       ← addBasepointForgetAdjunction.homEquiv_naturality_right]
-    let g' : (levelSmashBifunctor.obj Y).obj (addBasepoint.obj K) ⟶ Z := g
-    have h := levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f g'
-    rw [levelSmashMappingSpaceAdjunction₂_homEquiv_apply,
-      levelSmashMappingSpaceAdjunction₂_homEquiv_apply] at h
-    exact congrArg (addBasepointForgetAdjunction.homEquiv K _) h
+    exact congrArg (addBasepointForgetAdjunction.homEquiv K _)
+      (levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f g)
 
 /-- At each spectrum `X`, `simplicialTensorMappingSpaceAdjunction₂` specializes to
 `simplicialTensorMappingSpaceAdjunction X`. -/
@@ -360,6 +455,21 @@ lemma homSimplicialCotensorEquiv_naturality_right {K : SSet.{0}} {X Y Y' : Symme
     (simplicialTensorHomEquiv_comp _ g)
 
 /-! ### Adjointness and limit preservation in each variable -/
+
+instance (X : SymmetricSpectrum) : (levelSmashBifunctor.obj X).IsLeftAdjoint :=
+  (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
+
+instance (K : PointedSSet.{0}) : (levelSmashBifunctor.flip.obj K).IsLeftAdjoint :=
+  (levelSmashCotensorAdjunction K).isLeftAdjoint
+
+instance (X : SymmetricSpectrumᵒᵖ) : (mappingSpaceBifunctor.obj X).IsRightAdjoint :=
+  (levelSmashMappingSpaceAdjunction X.unop).isRightAdjoint
+
+/-- Fixing the target spectrum `Y`, the contravariant functor `X ↦ Map(X, Y)` sends colimits of
+symmetric spectra to limits of pointed simplicial sets. -/
+instance (Y : SymmetricSpectrum) :
+    PreservesLimitsOfSize.{w', w} (mappingSpaceBifunctor.flip.obj Y) where
+  preservesLimitsOfShape := levelSmashMappingSpaceAdjunction₂.preservesLimitsOfShape_flip_obj _ Y
 
 instance (K : PointedSSet.{0}ᵒᵖ) : (cotensorBifunctor.obj K).IsRightAdjoint :=
   (levelSmashCotensorAdjunction K.unop).isRightAdjoint

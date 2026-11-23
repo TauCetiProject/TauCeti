@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Closed.InternalCurrying
-public import TauCeti.AlgebraicTopology.Spectra.PullbackHom
+public import TauCeti.AlgebraicTopology.Spectra.LevelFactorization
 public import TauCeti.AlgebraicTopology.Spectra.Stabilization
+public import TauCeti.AlgebraicTopology.Spectra.Tensor
 
 import Mathlib.CategoryTheory.Adjunction.Unique
 
@@ -82,52 +83,46 @@ private lemma freeι_comp_freeTensorFreeZeroHom (n : ℕ) (K L : PointedSSet.{0}
   freeι_comp_homEquiv_symm n _
 
 /-- Uniqueness of left adjoints relates `freeι n K` to the summand inclusion of `𝟙_` in the
-underlying coproduct `∐ (fun _ : mk n ⟶ mk n ↦ K)`. -/
+underlying coproduct `∐ (fun _ : mk n ⟶ mk n ↦ K)` (since `freeι` is opaque outside `Free`). -/
 private noncomputable def freeLeftAdjointSelfIso (n : ℕ) : free n ≅ free n :=
   (freeEvaluationAdjunction n).leftAdjointUniq
     ((evaluationAdjunctionRight PointedSSet.{0} (FiniteBijection.mk n)).comp
       (DayFunctor.equiv FiniteBijection PointedSSet.{0}).symm.toAdjunction)
 
-@[reassoc]
+private lemma freeι_comp_freeLeftAdjointSelfIso_hom_app (n : ℕ) (K : PointedSSet.{0}) :
+    freeι n K ≫ ((freeLeftAdjointSelfIso n).hom.app K).natTrans.app (FiniteBijection.mk n) =
+      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk n ↦ K) (𝟙 _) := by
+  let adj' := (evaluationAdjunctionRight PointedSSet.{0} (FiniteBijection.mk n)).comp
+    (DayFunctor.equiv FiniteBijection PointedSSet.{0}).symm.toAdjunction
+  have h := Adjunction.unit_leftAdjointUniq_hom_app (freeEvaluationAdjunction n) adj' K
+  rw [freeEvaluationAdjunction_unit_app] at h
+  refine h.trans ?_
+  simp only [Functor.id_obj, Equivalence.symm_functor, Functor.comp_obj, evaluation_obj_obj]
+  exact Category.comp_id _
+
 private lemma sigma_ι_comp_freeLeftAdjointSelfIso_inv (n : ℕ) (K : PointedSSet.{0})
     (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk n) :
     Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk n ↦ K) σ ≫
         ((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n) =
       freeι n K ≫ ((free n).obj K).functor.map σ := by
-  let adj' := (evaluationAdjunctionRight PointedSSet.{0} (FiniteBijection.mk n)).comp
-    (DayFunctor.equiv FiniteBijection PointedSSet.{0}).symm.toAdjunction
-  have hu : freeι n K ≫ ((freeLeftAdjointSelfIso n).hom.app K).natTrans.app (FiniteBijection.mk n) =
-      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk n ↦ K) (𝟙 _) := by
-    have h := Adjunction.unit_leftAdjointUniq_hom_app (freeEvaluationAdjunction n) adj' K
-    rw [freeEvaluationAdjunction_unit_app] at h
-    refine h.trans ?_
-    simp only [Functor.id_obj, Equivalence.symm_functor, Functor.comp_obj, evaluation_obj_obj]
-    exact Category.comp_id _
   have hinv : freeι n K ≫
       ((freeLeftAdjointSelfIso n).hom.app K).natTrans.app (FiniteBijection.mk n) ≫
       ((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n) = freeι n K := by
     have hid : ((freeLeftAdjointSelfIso n).hom.app K ≫
         (freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n) = 𝟙 _ := by
-      rw [Iso.hom_inv_id_app]
-      rfl
+      rw [Iso.hom_inv_id_app]; rfl
     rw [← NatTrans.comp_app, ← DayFunctor.comp_natTrans, hid, Category.comp_id]
-  have hnat : ((free n).obj K).functor.map σ ≫
-      ((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n) =
-      ((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n) ≫
-        ((free n).obj K).functor.map σ :=
-    ((freeLeftAdjointSelfIso n).inv.app K).natTrans.naturality σ
   have hσ : Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk n ↦ K) (𝟙 _) ≫
       ((free n).obj K).functor.map σ =
       Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk n ↦ K) σ := by
     have hmap : ((free n).obj K).functor.map σ =
         Limits.Sigma.desc fun g ↦
           Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk n ↦ K) (g ≫ σ) := by
-      -- Unfold `free` and `DayFunctor.equiv` on the morphism `σ` to expose `evaluationLeftAdjoint`.
       change ((evaluationLeftAdjoint PointedSSet.{0} (FiniteBijection.mk n)).obj K).map σ = _
-      simp only [evaluationLeftAdjoint_obj_map]
-      rfl
+      simp only [evaluationLeftAdjoint_obj_map]; rfl
     refine (congrArg (Limits.Sigma.ι (fun _ ↦ K) (𝟙 _) ≫ ·) hmap).trans ?_
     exact (Limits.Sigma.ι_comp_desc _ _).trans (by rw [Category.id_comp])
+  have hnat := ((freeLeftAdjointSelfIso n).inv.app K).natTrans.naturality σ
   have h1 : freeι n K ≫
       ((freeLeftAdjointSelfIso n).hom.app K).natTrans.app (FiniteBijection.mk n) ≫
       ((free n).obj K).functor.map σ ≫
@@ -136,20 +131,132 @@ private lemma sigma_ι_comp_freeLeftAdjointSelfIso_inv (n : ℕ) (K : PointedSSe
     rw [hnat, ← Category.assoc
       (((freeLeftAdjointSelfIso n).hom.app K).natTrans.app (FiniteBijection.mk n)),
       ← Category.assoc, hinv]
-  have h2 : (Limits.Sigma.ι (fun _ ↦ K) (𝟙 _) ≫ ((free n).obj K).functor.map σ) ≫
-      ((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n) =
-      freeι n K ≫ ((free n).obj K).functor.map σ := by
-    refine (Category.assoc
-      (Limits.Sigma.ι (fun _ ↦ K) (𝟙 _) : K ⟶ ((free n).obj K).functor.obj (FiniteBijection.mk n))
-      (((free n).obj K).functor.map σ)
-      (((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n))).trans ?_
-    refine (congrArg (fun g : K ⟶ ((free n).obj K).functor.obj (FiniteBijection.mk n) ↦
+  have h2 := (Category.assoc
+    (Limits.Sigma.ι (fun _ ↦ K) (𝟙 _) : K ⟶ ((free n).obj K).functor.obj (FiniteBijection.mk n))
+    (((free n).obj K).functor.map σ)
+    (((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n))).trans
+    ((congrArg (fun g : K ⟶ ((free n).obj K).functor.obj (FiniteBijection.mk n) ↦
       g ≫ ((free n).obj K).functor.map σ ≫
         ((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n))
-      hu.symm).trans ?_
-    exact (Category.assoc _ _ _).trans h1
+      (freeι_comp_freeLeftAdjointSelfIso_hom_app n K).symm).trans
+      ((Category.assoc _ _ _).trans h1))
   exact (congrArg (· ≫ ((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n))
     hσ).symm.trans h2
+
+private lemma freeι_comp_map_comp_freeLeftAdjointSelfIso_hom (n : ℕ) (K : PointedSSet.{0})
+    (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk n) :
+    freeι n K ≫ ((free n).obj K).functor.map σ ≫
+        ((freeLeftAdjointSelfIso n).hom.app K).natTrans.app (FiniteBijection.mk n) =
+      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk n ↦ K) σ := by
+  have hid : ((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n) ≫
+      ((freeLeftAdjointSelfIso n).hom.app K).natTrans.app (FiniteBijection.mk n) = 𝟙 _ := by
+    have h : (((freeLeftAdjointSelfIso n).inv.app K ≫
+        (freeLeftAdjointSelfIso n).hom.app K)).natTrans.app (FiniteBijection.mk n) = 𝟙 _ := by
+      rw [Iso.inv_hom_id_app]; rfl
+    simpa only [DayFunctor.comp_natTrans, NatTrans.comp_app] using h
+  refine (Category.assoc _ _ _).symm.trans ?_
+  refine (congrArg (· ≫ ((freeLeftAdjointSelfIso n).hom.app K).natTrans.app (FiniteBijection.mk n))
+    (sigma_ι_comp_freeLeftAdjointSelfIso_inv n K σ).symm).trans ?_
+  exact (Category.assoc
+    (Limits.Sigma.ι (fun _ ↦ K) σ : K ⟶ ((free n).obj K).functor.obj (FiniteBijection.mk n))
+    (((freeLeftAdjointSelfIso n).inv.app K).natTrans.app (FiniteBijection.mk n))
+    (((freeLeftAdjointSelfIso n).hom.app K).natTrans.app (FiniteBijection.mk n))).trans
+    ((congrArg (fun g : ((free n).obj K).functor.obj (FiniteBijection.mk n) ⟶ _ ↦
+      (Limits.Sigma.ι (fun _ ↦ K) σ :
+        K ⟶ ((free n).obj K).functor.obj (FiniteBijection.mk n)) ≫ g) hid).trans
+      (Category.comp_id _))
+
+private lemma sigma_ι_comp_fwdMap (m : ℕ) (K L : PointedSSet.{0})
+    (σ : FiniteBijection.mk m ⟶ FiniteBijection.mk m) :
+    Limits.Sigma.ι (fun _ ↦ K ⊗ L) σ ≫
+        ((freeLeftAdjointSelfIso m).inv.app (K ⊗ L)).natTrans.app (FiniteBijection.mk m) ≫
+        (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
+        inv (tensorFreeZeroι ((free m).obj K) L m) ≫
+        ((freeLeftAdjointSelfIso m).hom.app K).natTrans.app (FiniteBijection.mk m) ▷ L =
+      Limits.Sigma.ι (fun _ ↦ K) σ ▷ L := by
+  let uK := ((freeLeftAdjointSelfIso m).hom.app K).natTrans.app (FiniteBijection.mk m)
+  have hstep : (freeι m (K ⊗ L) ≫ ((free m).obj (K ⊗ L)).functor.map σ) ≫
+      (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
+      inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L =
+      (freeι m K ≫ ((free m).obj K).functor.map σ ≫ uK) ▷ L := by
+    calc
+      (freeι m (K ⊗ L) ≫ ((free m).obj (K ⊗ L)).functor.map σ) ≫
+          (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
+          inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L
+          = freeι m (K ⊗ L) ≫
+            (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
+            ((free m).obj K ⊗ (free 0).obj L).functor.map σ ≫
+            inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L := by
+            simp only [Category.assoc]
+            congr 1
+            exact NatTrans.naturality_assoc (freeTensorFreeZeroHom m K L).natTrans σ _
+      _ = (freeι m K ▷ L ≫ tensorFreeZeroι ((free m).obj K) L m) ≫
+            ((free m).obj K ⊗ (free 0).obj L).functor.map σ ≫
+            inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L := by
+            rw [freeι_comp_freeTensorFreeZeroHom_assoc]; rfl
+      _ = (freeι m K ▷ L ≫ ((free m).obj K).functor.map σ ▷ L) ≫
+            (tensorFreeZeroι ((free m).obj K) L m ≫
+              inv (tensorFreeZeroι ((free m).obj K) L m)) ≫ uK ▷ L := by
+            simp only [Category.assoc, map_whiskerRight_comp_tensorFreeZeroι_assoc]; rfl
+      _ = (freeι m K ≫ ((free m).obj K).functor.map σ ≫ uK) ▷ L := by
+            rw [IsIso.hom_inv_id, Category.id_comp, ← comp_whiskerRight, ← comp_whiskerRight,
+              Category.assoc]
+  refine (Category.assoc _ _ _).symm.trans ?_
+  refine (congrArg
+    (fun g : K ⊗ L ⟶ ((free m).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m) ↦
+      g ≫ (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
+        inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L)
+    (sigma_ι_comp_freeLeftAdjointSelfIso_inv m (K ⊗ L) σ)).trans ?_
+  exact hstep.trans (congrArg (· ▷ L) (freeι_comp_map_comp_freeLeftAdjointSelfIso_hom m K σ))
+
+private lemma isIso_freeTensorFreeZeroHom_app_self (m : ℕ) (K L : PointedSSet.{0}) :
+    IsIso ((freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m)) := by
+  let c₁ := Limits.coproductIsCoproduct
+    (fun _ : FiniteBijection.mk m ⟶ FiniteBijection.mk m ↦ K ⊗ L)
+  let c₂ := Limits.isColimitOfPreserves (tensorRight L)
+    (Limits.coproductIsCoproduct (fun _ : FiniteBijection.mk m ⟶ FiniteBijection.mk m ↦ K))
+  let invCocone : Limits.Cocone
+      (Discrete.functor (fun _ : FiniteBijection.mk m ⟶ FiniteBijection.mk m ↦ K) ⋙
+        tensorRight L) :=
+    Limits.Cocone.mk (((free m).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m))
+      (Discrete.natTrans fun j ↦ Limits.Sigma.ι (fun _ ↦ K ⊗ L) j.as)
+  let invMap := c₂.desc invCocone
+  let uKL := ((freeLeftAdjointSelfIso m).inv.app (K ⊗ L)).natTrans.app (FiniteBijection.mk m)
+  let uK := ((freeLeftAdjointSelfIso m).hom.app K).natTrans.app (FiniteBijection.mk m)
+  let fwdMap := uKL ≫ (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
+    inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L
+  have hfac (σ : FiniteBijection.mk m ⟶ FiniteBijection.mk m) :
+      Limits.Sigma.ι (fun _ ↦ K) σ ▷ L ≫ invMap = Limits.Sigma.ι (fun _ ↦ K ⊗ L) σ :=
+    c₂.fac invCocone ⟨σ⟩
+  have hfwd_inv : fwdMap ≫ invMap = 𝟙 _ := by
+    apply c₁.hom_ext
+    intro ⟨σ⟩
+    change Limits.Sigma.ι (fun _ ↦ K ⊗ L) σ ≫ fwdMap ≫ invMap =
+      Limits.Sigma.ι (fun _ ↦ K ⊗ L) σ ≫ 𝟙 _
+    exact (Category.assoc _ _ _).symm.trans
+      (((sigma_ι_comp_fwdMap m K L σ =≫ invMap).trans (hfac σ)).trans (Category.comp_id _).symm)
+  have hinv_fwd : invMap ≫ fwdMap = 𝟙 _ := by
+    apply c₂.hom_ext
+    intro ⟨σ⟩
+    change Limits.Sigma.ι (fun _ ↦ K) σ ▷ L ≫ invMap ≫ fwdMap =
+      Limits.Sigma.ι (fun _ ↦ K) σ ▷ L ≫ 𝟙 _
+    rw [← Category.assoc, hfac σ, Category.comp_id]
+    exact sigma_ι_comp_fwdMap m K L σ
+  have : IsIso fwdMap := ⟨⟨invMap, hfwd_inv, hinv_fwd⟩⟩
+  let evalM := (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor ⋙
+    (CategoryTheory.evaluation FiniteBijection PointedSSet.{0}).obj (FiniteBijection.mk m)
+  have huKL : IsIso uKL := Functor.map_isIso evalM ((freeLeftAdjointSelfIso m).inv.app (K ⊗ L))
+  have huK : IsIso uK := Functor.map_isIso evalM ((freeLeftAdjointSelfIso m).hom.app K)
+  have : IsIso ((freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
+      inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L) :=
+    IsIso.of_isIso_comp_left uKL _
+  have : IsIso (((freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
+      inv (tensorFreeZeroι ((free m).obj K) L m)) ≫ uK ▷ L) := by
+    simpa only [Category.assoc] using this
+  have : IsIso ((freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
+      inv (tensorFreeZeroι ((free m).obj K) L m)) :=
+    IsIso.of_isIso_comp_right _ (uK ▷ L)
+  exact IsIso.of_isIso_comp_right _ (inv (tensorFreeZeroι ((free m).obj K) L m))
 
 private lemma isIso_freeTensorFreeZeroHom (n : ℕ) (K L : PointedSSet.{0}) :
     IsIso (freeTensorFreeZeroHom n K L) := by
@@ -157,121 +264,7 @@ private lemma isIso_freeTensorFreeZeroHom (n : ℕ) (K L : PointedSSet.{0}) :
     rintro ⟨m⟩
     by_cases h : m = n
     · subst h
-      let c₁ := Limits.coproductIsCoproduct
-        (fun _ : FiniteBijection.mk m ⟶ FiniteBijection.mk m ↦ K ⊗ L)
-      let c₂ := Limits.isColimitOfPreserves (tensorRight L)
-        (Limits.coproductIsCoproduct
-          (fun _ : FiniteBijection.mk m ⟶ FiniteBijection.mk m ↦ K))
-      let invCocone : Limits.Cocone
-          (Discrete.functor (fun _ : FiniteBijection.mk m ⟶ FiniteBijection.mk m ↦ K) ⋙
-            tensorRight L) :=
-        Limits.Cocone.mk (((free m).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m))
-          (Discrete.natTrans fun j ↦ Limits.Sigma.ι (fun _ ↦ K ⊗ L) j.as)
-      let invMap : ((free m).obj K).functor.obj (FiniteBijection.mk m) ⊗ L ⟶
-          ((free m).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m) :=
-        c₂.desc invCocone
-      let uKL := ((freeLeftAdjointSelfIso m).inv.app (K ⊗ L)).natTrans.app (FiniteBijection.mk m)
-      let uK := ((freeLeftAdjointSelfIso m).hom.app K).natTrans.app (FiniteBijection.mk m)
-      let fwdMap : ((free m).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m) ⟶
-          ((free m).obj K).functor.obj (FiniteBijection.mk m) ⊗ L :=
-        uKL ≫ (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
-          inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L
-      have hσ (σ : FiniteBijection.mk m ⟶ FiniteBijection.mk m) :
-          Limits.Sigma.ι (fun _ ↦ K ⊗ L) σ ≫ fwdMap =
-            Limits.Sigma.ι (fun _ ↦ K) σ ▷ L := by
-        have hstep : (freeι m (K ⊗ L) ≫ ((free m).obj (K ⊗ L)).functor.map σ) ≫
-            (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
-            inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L =
-            (freeι m K ≫ ((free m).obj K).functor.map σ ≫ uK) ▷ L := by
-          calc
-            (freeι m (K ⊗ L) ≫ ((free m).obj (K ⊗ L)).functor.map σ) ≫
-                (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
-                inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L
-                = freeι m (K ⊗ L) ≫
-                  (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
-                  ((free m).obj K ⊗ (free 0).obj L).functor.map σ ≫
-                  inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L := by
-                  simp only [Category.assoc]
-                  congr 1
-                  exact NatTrans.naturality_assoc (freeTensorFreeZeroHom m K L).natTrans σ _
-            _ = (freeι m K ▷ L ≫ tensorFreeZeroι ((free m).obj K) L m) ≫
-                  ((free m).obj K ⊗ (free 0).obj L).functor.map σ ≫
-                  inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L := by
-                  rw [freeι_comp_freeTensorFreeZeroHom_assoc]
-                  rfl
-            _ = (freeι m K ▷ L ≫ ((free m).obj K).functor.map σ ▷ L) ≫
-                  (tensorFreeZeroι ((free m).obj K) L m ≫
-                    inv (tensorFreeZeroι ((free m).obj K) L m)) ≫ uK ▷ L := by
-                  simp only [Category.assoc, map_whiskerRight_comp_tensorFreeZeroι_assoc]
-                  rfl
-            _ = (freeι m K ≫ ((free m).obj K).functor.map σ ≫ uK) ▷ L := by
-                  rw [IsIso.hom_inv_id, Category.id_comp, ← comp_whiskerRight, ← comp_whiskerRight,
-                    Category.assoc]
-        have hR : freeι m K ≫ ((free m).obj K).functor.map σ ≫ uK =
-            Limits.Sigma.ι (fun _ ↦ K) σ := by
-          have hid : (((freeLeftAdjointSelfIso m).inv.app K ≫
-              (freeLeftAdjointSelfIso m).hom.app K)).natTrans.app (FiniteBijection.mk m) =
-              𝟙 _ := by
-            rw [Iso.inv_hom_id_app]
-            rfl
-          have hid' : ((freeLeftAdjointSelfIso m).inv.app K).natTrans.app
-              (FiniteBijection.mk m) ≫ uK = 𝟙 _ := by
-            simpa only [DayFunctor.comp_natTrans, NatTrans.comp_app] using hid
-          refine (Category.assoc _ _ _).symm.trans ?_
-          refine (congrArg (fun g : K ⟶ ((free m).obj K).functor.obj (FiniteBijection.mk m) ↦
-            g ≫ uK)
-            (sigma_ι_comp_freeLeftAdjointSelfIso_inv m K σ).symm).trans ?_
-          refine (Category.assoc
-            (Limits.Sigma.ι (fun _ ↦ K) σ :
-              K ⟶ ((free m).obj K).functor.obj (FiniteBijection.mk m))
-            (((freeLeftAdjointSelfIso m).inv.app K).natTrans.app (FiniteBijection.mk m))
-            uK).trans ?_
-          refine (congrArg (fun g : ((free m).obj K).functor.obj (FiniteBijection.mk m) ⟶ _ ↦
-            (Limits.Sigma.ι (fun _ ↦ K) σ :
-              K ⟶ ((free m).obj K).functor.obj (FiniteBijection.mk m)) ≫ g) hid').trans ?_
-          exact Category.comp_id _
-        dsimp only [fwdMap]
-        refine (Category.assoc _ _ _).symm.trans ?_
-        refine (congrArg
-          (fun g : K ⊗ L ⟶ ((free m).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m) ↦
-            g ≫ (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
-              inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L)
-          (sigma_ι_comp_freeLeftAdjointSelfIso_inv m (K ⊗ L) σ)).trans ?_
-        exact hstep.trans (congrArg (· ▷ L) hR)
-      have hfac (σ : FiniteBijection.mk m ⟶ FiniteBijection.mk m) :
-          Limits.Sigma.ι (fun _ ↦ K) σ ▷ L ≫ invMap = Limits.Sigma.ι (fun _ ↦ K ⊗ L) σ :=
-        c₂.fac invCocone ⟨σ⟩
-      have hfwd_inv : fwdMap ≫ invMap = 𝟙 _ := by
-        apply c₁.hom_ext
-        intro ⟨σ⟩
-        -- Expose the coproduct cocone injection `Sigma.ι` produced by `c₁.hom_ext`.
-        change Limits.Sigma.ι (fun _ ↦ K ⊗ L) σ ≫ fwdMap ≫ invMap =
-          Limits.Sigma.ι (fun _ ↦ K ⊗ L) σ ≫ 𝟙 _
-        exact (Category.assoc _ _ _).symm.trans
-          (((hσ σ =≫ invMap).trans (hfac σ)).trans (Category.comp_id _).symm)
-      have hinv_fwd : invMap ≫ fwdMap = 𝟙 _ := by
-        apply c₂.hom_ext
-        intro ⟨σ⟩
-        -- Expose the preserved coproduct cocone injection `Sigma.ι ▷ L` produced by `c₂.hom_ext`.
-        change Limits.Sigma.ι (fun _ ↦ K) σ ▷ L ≫ invMap ≫ fwdMap =
-          Limits.Sigma.ι (fun _ ↦ K) σ ▷ L ≫ 𝟙 _
-        rw [← Category.assoc, hfac σ, Category.comp_id]
-        exact hσ σ
-      have : IsIso fwdMap := ⟨⟨invMap, hfwd_inv, hinv_fwd⟩⟩
-      let evalM := (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor ⋙
-        (CategoryTheory.evaluation FiniteBijection PointedSSet.{0}).obj (FiniteBijection.mk m)
-      have huKL : IsIso uKL := Functor.map_isIso evalM ((freeLeftAdjointSelfIso m).inv.app (K ⊗ L))
-      have huK : IsIso uK := Functor.map_isIso evalM ((freeLeftAdjointSelfIso m).hom.app K)
-      have : IsIso ((freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
-          inv (tensorFreeZeroι ((free m).obj K) L m) ≫ uK ▷ L) :=
-        IsIso.of_isIso_comp_left uKL _
-      have : IsIso (((freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
-          inv (tensorFreeZeroι ((free m).obj K) L m)) ≫ uK ▷ L) := by
-        simpa only [Category.assoc] using this
-      have : IsIso ((freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) ≫
-          inv (tensorFreeZeroι ((free m).obj K) L m)) :=
-        IsIso.of_isIso_comp_right _ (uK ▷ L)
-      exact IsIso.of_isIso_comp_right _ (inv (tensorFreeZeroι ((free m).obj K) L m))
+      exact isIso_freeTensorFreeZeroHom_app_self m K L
     · have hI₁ : Limits.IsInitial (((free n).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m)) :=
         isInitialFreeObj (K ⊗ L) h
       have hI₂ : Limits.IsInitial
@@ -436,6 +429,68 @@ private lemma homEquiv_comp_mappingSpaceFreeIso_hom_app (n : ℕ) (K L : Pointed
 
 /-- Passing across `tensorFreeZeroι` intertwines the structure map of `X` with the structure map
 of `X ∧ L`. -/
+private lemma tensorFreeZeroι_comp_levelSmash_dayStructureMap_aux
+    (X : SymmetricSpectrum) (L : PointedSSet.{0}) (p q : FiniteBijection) :
+    (α_ (SymmetricSequence.sphere.functor.obj p) (X.X.functor.obj q)
+        (((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0))).hom ≫
+        SymmetricSequence.sphere.functor.obj p ◁
+          (DayFunctor.η X.X ((SymmetricSequence.free 0).obj L)).app (q, FiniteBijection.mk 0) ≫
+        SymmetricSequence.sphere.functor.obj p ◁
+          (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ q).hom ≫
+        (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ (SymmetricSequence.free 0).obj L)).app
+          (p, q) ≫
+        (α_ SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L)).inv.natTrans.app
+          (p ⊗ q) ≫
+        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
+          (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q) =
+      (DayFunctor.η SymmetricSequence.sphere X.X).app (p, q) ▷
+          ((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0) ≫
+        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X)).natTrans.app (p ⊗ q) ▷
+          ((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0) ≫
+        (DayFunctor.η X.X ((SymmetricSequence.free 0).obj L)).app (p ⊗ q, FiniteBijection.mk 0) ≫
+        (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ (p ⊗ q)).hom := by
+  have hη : SymmetricSequence.sphere.functor.obj p ◁
+        (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ q).hom ≫
+      (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ (SymmetricSequence.free 0).obj L)).app (p, q) =
+      (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ (SymmetricSequence.free 0).obj L)).app
+          (p, q ⊗ FiniteBijection.mk 0) ≫
+        (SymmetricSequence.sphere ⊗ (X.X ⊗ (SymmetricSequence.free 0).obj L)).functor.map
+          (p ◁ (ρ_ q).hom) := by
+    simpa using (DayFunctor.η SymmetricSequence.sphere
+      (X.X ⊗ (SymmetricSequence.free 0).obj L)).naturality
+      ((𝟙 p, (ρ_ q).hom) : (p, q ⊗ FiniteBijection.mk 0) ⟶ (p, q))
+  have hγNat : ((SymmetricSequence.sphere ⊗ X.X) ⊗ (SymmetricSequence.free 0).obj L).functor.map
+        (ρ_ (p ⊗ q)).hom ≫
+      (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
+        (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q) =
+      (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
+          (SymmetricSequence.free 0).obj L).natTrans.app ((p ⊗ q) ⊗ FiniteBijection.mk 0) ≫
+        (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ (p ⊗ q)).hom :=
+    (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
+      (SymmetricSequence.free 0).obj L).natTrans.naturality (ρ_ (p ⊗ q)).hom
+  have hday := DayFunctor.whiskerLeft_η_app_comp_η_app_comp_associator_inv_natTrans_app_assoc
+    SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L) p q (FiniteBijection.mk 0)
+    (((SymmetricSequence.sphere ⊗ X.X) ⊗ (SymmetricSequence.free 0).obj L).functor.map
+        (p ◁ (ρ_ q).hom) ≫
+      (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
+        (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q))
+  slice_lhs 3 4 => rw [hη]
+  slice_lhs 4 5 =>
+    rw [(α_ SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L)).inv.natTrans.naturality
+      ((p ◁ (ρ_ q).hom : p ⊗ q ⊗ FiniteBijection.mk 0 ⟶ p ⊗ q))]
+  rw [Category.assoc
+    ((α_ SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L)).inv.natTrans.app _)]
+  rw [hday, Iso.hom_inv_id_assoc]
+  congr 1
+  slice_lhs 2 3 =>
+    rw [← Functor.map_comp,
+      show (α_ p q (FiniteBijection.mk 0)).hom ≫ p ◁ (ρ_ q).hom = (ρ_ (p ⊗ q)).hom by
+        -- Expose `FiniteBijection.mk 0` as `𝟙_ FiniteBijection` so `monoidal` applies.
+        change (α_ p q (𝟙_ FiniteBijection)).hom ≫ p ◁ (ρ_ q).hom = (ρ_ (p ⊗ q)).hom
+        monoidal]
+  slice_lhs 2 3 => rw [hγNat]
+  rw [DayFunctor.η_app_comp_whiskerRight_natTrans_app_assoc]
+
 private lemma tensorFreeZeroι_comp_levelSmash_smashPowStructureMap
     (X : SymmetricSpectrum) (L : PointedSSet.{0}) (n : ℕ) :
     X.smashPowStructureMap n ▷ L ≫
@@ -445,102 +500,41 @@ private lemma tensorFreeZeroι_comp_levelSmash_smashPowStructureMap
         ((levelSmash X).obj L).smashPowStructureMap n := by
   let p := FiniteBijection.mk 1
   let q := FiniteBijection.mk n
-  let G₀L := (SymmetricSequence.free 0).obj L
-  have hday : X.dayStructureMap p q ▷ L ≫
-        SymmetricSequence.tensorFreeZeroι X.X L (1 + n) =
-      (α_ (SymmetricSequence.sphere.functor.obj p) (X.X.functor.obj q) L).hom ≫
+  have hday : (α_ (SymmetricSequence.sphere.functor.obj p) (X.X.functor.obj q) L).hom ≫
         SymmetricSequence.sphere.functor.obj p ◁ SymmetricSequence.tensorFreeZeroι X.X L n ≫
-        ((levelSmash X).obj L).dayStructureMap p q := by
-    have hη : SymmetricSequence.sphere.functor.obj p ◁ (X.X ⊗ G₀L).functor.map (ρ_ q).hom ≫
-        (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ G₀L)).app (p, q) =
-        (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ G₀L)).app (p, q ⊗ FiniteBijection.mk 0) ≫
-          (SymmetricSequence.sphere ⊗ (X.X ⊗ G₀L)).functor.map (p ◁ (ρ_ q).hom) := by
-      simpa using (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ G₀L)).naturality
-        ((𝟙 p, (ρ_ q).hom) : (p, q ⊗ FiniteBijection.mk 0) ⟶ (p, q))
-    have hαNat : (SymmetricSequence.sphere ⊗ X.X ⊗ G₀L).functor.map (p ◁ (ρ_ q).hom) ≫
-        (α_ SymmetricSequence.sphere X.X G₀L).inv.natTrans.app (p ⊗ q) =
-        (α_ SymmetricSequence.sphere X.X G₀L).inv.natTrans.app (p ⊗ q ⊗ FiniteBijection.mk 0) ≫
-          ((SymmetricSequence.sphere ⊗ X.X) ⊗ G₀L).functor.map (p ◁ (ρ_ q).hom) :=
-      (α_ SymmetricSequence.sphere X.X G₀L).inv.natTrans.naturality (p ◁ (ρ_ q).hom)
-    have hγNat : ((SymmetricSequence.sphere ⊗ X.X) ⊗ G₀L).functor.map (ρ_ (p ⊗ q)).hom ≫
-        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷ G₀L).natTrans.app (p ⊗ q) =
-        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷ G₀L).natTrans.app
-          ((p ⊗ q) ⊗ FiniteBijection.mk 0) ≫
-          (X.X ⊗ G₀L).functor.map (ρ_ (p ⊗ q)).hom :=
-      (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷ G₀L).natTrans.naturality
-        (ρ_ (p ⊗ q)).hom
-    symm
+        ((levelSmash X).obj L).dayStructureMap p q =
+      X.dayStructureMap p q ▷ L ≫
+        SymmetricSequence.tensorFreeZeroι X.X L (1 + n) := by
     calc
       (α_ _ _ _).hom ≫ SymmetricSequence.sphere.functor.obj p ◁
             SymmetricSequence.tensorFreeZeroι X.X L n ≫
           ((levelSmash X).obj L).dayStructureMap p q
-          = (α_ _ _ _).hom ≫
-              SymmetricSequence.sphere.functor.obj p ◁ (X.X.functor.obj q ◁
-                SymmetricSequence.freeι 0 L) ≫
-              SymmetricSequence.sphere.functor.obj p ◁ (DayFunctor.η X.X G₀L).app
-                (q, FiniteBijection.mk 0) ≫
-              SymmetricSequence.sphere.functor.obj p ◁ (X.X ⊗ G₀L).functor.map (ρ_ q).hom ≫
-              (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ G₀L)).app (p, q) ≫
-              (α_ SymmetricSequence.sphere X.X G₀L).inv.natTrans.app (p ⊗ q) ≫
-              (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷ G₀L).natTrans.app
-                (p ⊗ q) := by
+          = (SymmetricSequence.sphere.functor.obj p ⊗ X.X.functor.obj q) ◁
+                SymmetricSequence.freeι 0 L ≫
+              ((α_ (SymmetricSequence.sphere.functor.obj p) (X.X.functor.obj q)
+                  (((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0))).hom ≫
+                SymmetricSequence.sphere.functor.obj p ◁
+                  (DayFunctor.η X.X ((SymmetricSequence.free 0).obj L)).app
+                    (q, FiniteBijection.mk 0) ≫
+                SymmetricSequence.sphere.functor.obj p ◁
+                  (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ q).hom ≫
+                (DayFunctor.η SymmetricSequence.sphere
+                    (X.X ⊗ (SymmetricSequence.free 0).obj L)).app (p, q) ≫
+                (α_ SymmetricSequence.sphere X.X
+                    ((SymmetricSequence.free 0).obj L)).inv.natTrans.app (p ⊗ q) ≫
+                (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
+                  (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q)) := by
             simp only [SymmetricSequence.tensorFreeZeroι_def, Mod.dayStructureMap_def,
               Mod.tensorLeft_smul, DayFunctor.comp_natTrans, NatTrans.comp_app,
               whiskerLeft_comp, Category.assoc]
-            rfl
-      _ = (SymmetricSequence.sphere.functor.obj p ⊗ X.X.functor.obj q) ◁
-              SymmetricSequence.freeι 0 L ≫
-            (α_ _ _ _).hom ≫
-            SymmetricSequence.sphere.functor.obj p ◁ (DayFunctor.η X.X G₀L).app
-              (q, FiniteBijection.mk 0) ≫
-            (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ G₀L)).app (p, q ⊗ FiniteBijection.mk 0) ≫
-            (α_ SymmetricSequence.sphere X.X G₀L).inv.natTrans.app (p ⊗ q ⊗ FiniteBijection.mk 0) ≫
-            ((SymmetricSequence.sphere ⊗ X.X) ⊗ G₀L).functor.map (p ◁ (ρ_ q).hom) ≫
-            (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷ G₀L).natTrans.app
-              (p ⊗ q) := by
             rw [← associator_naturality_right_assoc]
-            congr 2
-            slice_lhs 2 3 => rw [hη]
-            slice_lhs 3 4 => rw [hαNat]
-            simp only [Category.assoc]
-      _ = (SymmetricSequence.sphere.functor.obj p ⊗ X.X.functor.obj q) ◁
-              SymmetricSequence.freeι 0 L ≫
-            ((DayFunctor.η SymmetricSequence.sphere X.X).app (p, q) ▷ G₀L.functor.obj
-              (FiniteBijection.mk 0) ≫
-            (DayFunctor.η (SymmetricSequence.sphere ⊗ X.X) G₀L).app (p ⊗ q, FiniteBijection.mk 0) ≫
-            ((SymmetricSequence.sphere ⊗ X.X) ⊗ G₀L).functor.map
-              (α_ p q (FiniteBijection.mk 0)).hom) ≫
-            ((SymmetricSequence.sphere ⊗ X.X) ⊗ G₀L).functor.map (p ◁ (ρ_ q).hom) ≫
-            (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷ G₀L).natTrans.app
-              (p ⊗ q) := by
-            rw [DayFunctor.whiskerLeft_η_app_comp_η_app_comp_associator_inv_natTrans_app_assoc,
-              Iso.hom_inv_id_assoc]
-            simp only [Category.assoc]
-      _ = (SymmetricSequence.sphere.functor.obj p ⊗ X.X.functor.obj q) ◁
-              SymmetricSequence.freeι 0 L ≫
-            (DayFunctor.η SymmetricSequence.sphere X.X).app (p, q) ▷
-              G₀L.functor.obj (FiniteBijection.mk 0) ≫
-            (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X)).natTrans.app (p ⊗ q) ▷
-              G₀L.functor.obj (FiniteBijection.mk 0) ≫
-            (DayFunctor.η X.X G₀L).app (p ⊗ q, FiniteBijection.mk 0) ≫
-            (X.X ⊗ G₀L).functor.map (ρ_ (p ⊗ q)).hom := by
-            simp only [Category.assoc]
-            congr 2
-            slice_lhs 2 3 =>
-              rw [← Functor.map_comp,
-                show (α_ p q (FiniteBijection.mk 0)).hom ≫ p ◁ (ρ_ q).hom = (ρ_ (p ⊗ q)).hom by
-                  -- Expose `FiniteBijection.mk 0` as `𝟙_ FiniteBijection` so `monoidal` applies.
-                  change (α_ p q (𝟙_ FiniteBijection)).hom ≫ p ◁ (ρ_ q).hom = (ρ_ (p ⊗ q)).hom
-                  monoidal]
-            slice_lhs 2 3 => rw [hγNat]
-            rw [DayFunctor.η_app_comp_whiskerRight_natTrans_app_assoc]
-      _ = X.dayStructureMap p q ▷ L ≫
-            SymmetricSequence.tensorFreeZeroι X.X L (1 + n) := by
+      _ = X.dayStructureMap p q ▷ L ≫ SymmetricSequence.tensorFreeZeroι X.X L (1 + n) := by
+            rw [tensorFreeZeroι_comp_levelSmash_dayStructureMap_aux]
             rw [← comp_whiskerRight_assoc, ← Mod.dayStructureMap_def, whisker_exchange_assoc]
             congr 1
             exact (SymmetricSequence.tensorFreeZeroι_def X.X L (1 + n)).symm
   rw [Mod.smashPowStructureMap_def, Mod.smashPowStructureMap_def, comp_whiskerRight,
-    Category.assoc, hday, associator_naturality_left_assoc, whisker_exchange_assoc]
+    Category.assoc, hday.symm, associator_naturality_left_assoc, whisker_exchange_assoc]
 
 /-- Comparing `ihomCurryIso A 𝟙_` with `MonoidalClosed.unitNatIso.inv` recovers precomposition
 with the inverse right unitor `(ρ_ A).inv`. -/
@@ -652,8 +646,8 @@ private lemma homEquiv_levelSmashRight_counit (n : ℕ) (K : PointedSSet.{0})
     (mappingSpaceBifunctor.map (freeStabilizationMap n K).op).app E
   have h := levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one
     (freeStabilizationMap n K) ε
-  rw [levelSmashMappingSpaceAdjunction₂_homEquiv_apply,
-    levelSmashMappingSpaceAdjunction₂_homEquiv_apply] at h
+  dsimp only [ParametrizedAdjunction.homEquiv] at h
+  rw [levelSmashMappingSpaceAdjunction₂_adj, levelSmashMappingSpaceAdjunction₂_adj] at h
   -- Express the `levelSmashMappingSpaceAdjunction₂` naturality RHS via `p` and `adj₀.counit.app`.
   change _ = (levelSmashMappingSpaceAdjunction ((free n).obj K)).homEquiv _ E
     ((levelSmashMappingSpaceAdjunction ((free n).obj K)).counit.app E) ≫ p at h
@@ -754,12 +748,9 @@ theorem isOmegaSpectrum_iff_mappingSpace_freeStabilizationMap (E : SymmetricSpec
   rw [isOmegaSpectrum_iff]
   refine and_congr_right fun _ ↦ forall_congr' fun n ↦ ?_
   have : IsIso ((MonoidalClosed.pre (ρ_ PointedSSet.circle).inv).app
-      ((evaluation (1 + n)).obj E)) := by
-    refine ⟨⟨(MonoidalClosed.pre (ρ_ PointedSSet.circle).hom).app _, ?_, ?_⟩⟩
-    · rw [← NatTrans.comp_app, ← MonoidalClosed.pre_map, Iso.hom_inv_id, MonoidalClosed.pre_id,
-        NatTrans.id_app]
-    · rw [← NatTrans.comp_app, ← MonoidalClosed.pre_map, Iso.inv_hom_id, MonoidalClosed.pre_id,
-        NatTrans.id_app]
+      ((evaluation (1 + n)).obj E)) :=
+    Iso.isIso_hom ((MonoidalClosed.internalHom.mapIso (ρ_ PointedSSet.circle).symm.op).app
+      ((evaluation (1 + n)).obj E))
   let f : ((mappingSpace ((free n).obj (𝟙_ _))).obj E).right ⟶
       ((mappingSpace ((free (1 + n)).obj (PointedSSet.circle ⊗ 𝟙_ _))).obj E).right :=
     ((mappingSpaceBifunctor.map (freeStabilizationMap n (𝟙_ _)).op).app E).right
