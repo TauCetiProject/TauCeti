@@ -45,11 +45,14 @@ theorem verticalIntegrable_Gamma_mul_exp_mul_abs_im {x θ : ℝ} (hx : ∀ n : �
     (hθ : θ < π / 2) :
     VerticalIntegrable (fun z ↦ Gamma z * (Real.exp (θ * |z.im|) : ℂ)) x := by
   obtain ⟨C, -, h⟩ := exists_norm_Gamma_vertical_line_le hx
+  have hΓ := verticalIntegrable_Gamma hx
+  unfold VerticalIntegrable at hΓ ⊢
   refine ((integrable_one_add_abs_rpow_mul_exp_neg_mul_abs (x - 1 / 2) (sub_pos.mpr hθ)).const_mul
-    C).mono' ((verticalIntegrable_Gamma hx).aestronglyMeasurable.mul (by fun_prop))
-    (Eventually.of_forall fun y ↦ ?_)
-  simp only [add_im, ofReal_im, mul_I_im, ofReal_re, zero_add, norm_mul, norm_real,
-    Real.norm_eq_abs, Real.abs_exp]
+    C).mono' (hΓ.aestronglyMeasurable.mul (by fun_prop)) (Eventually.of_forall fun y ↦ ?_)
+  have him : ((x : ℂ) + y * I).im = y := by simp
+  beta_reduce
+  rw [him]
+  simp only [norm_mul, norm_real, Real.norm_eq_abs, Real.abs_exp]
   calc ‖Gamma (x + y * I)‖ * Real.exp (θ * |y|)
       ≤ C * (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) * Real.exp (θ * |y|) := by
         gcongr

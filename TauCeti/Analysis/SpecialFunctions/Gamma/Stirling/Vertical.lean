@@ -441,10 +441,14 @@ theorem exists_norm_Gamma_sub_I_le {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
   obtain ⟨C, hC, hbnd⟩ := exists_norm_Gamma_add_I_le hw
   exact ⟨C, hC, fun y ↦ by simpa [sub_eq_add_neg] using hbnd (-y)⟩
 
-/-- On a bounded part of the strip, away from the poles, `Γ` is bounded: the admissible points
-form a compact set on which `Γ` is continuous. -/
-private theorem exists_norm_Gamma_le_of_mem_reProdIm {u v η : ℝ} (hη : 0 < η) (T : ℝ) :
-    ∃ M, ∀ s ∈ Icc u v ×ℂ Icc (-T) T, (∀ n : ℕ, η ≤ ‖s + n‖) → ‖Complex.Gamma s‖ ≤ M := by
+/-- On a bounded part of the strip, away from the poles, `Γ` is bounded by a multiple of the
+positive Stirling weight `(1 + |Im s|) ^ (Re s - 1/2) exp (-π |Im s| / 2)`: the admissible
+points form a compact set on which `Γ` and the weight are continuous, and the weight does not
+vanish. -/
+private theorem exists_norm_Gamma_le_weight_of_mem_reProdIm {u v η : ℝ} (hη : 0 < η) (T : ℝ) :
+    ∃ M, ∀ s ∈ Icc u v ×ℂ Icc (-T) T, (∀ n : ℕ, η ≤ ‖s + n‖) →
+      ‖Complex.Gamma s‖ ≤
+        M * ((1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2))) := by
   set S : Set ℂ := (Icc u v ×ℂ Icc (-T) T) ∩ ⋂ n : ℕ, {s | η ≤ ‖s + n‖}
   have hS : IsCompact S :=
     (isCompact_Icc.reProdIm isCompact_Icc).inter_right
@@ -454,8 +458,17 @@ private theorem exists_norm_Gamma_le_of_mem_reProdIm {u v η : ℝ} (hη : 0 < �
       have := mem_iInter.1 hs.2 m
       simp only [mem_ofPred_eq, hm, neg_add_cancel, norm_zero] at this
       linarith).continuousWithinAt
-  obtain ⟨M, hM⟩ := hS.exists_bound_of_continuousOn hc
-  exact ⟨M, fun s hs hsep ↦ hM s ⟨hs, mem_iInter.2 hsep⟩⟩
+  let w : ℂ → ℝ := fun s ↦ (1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2))
+  have hw_pos (s : ℂ) : 0 < w s := mul_pos (Real.rpow_pos_of_pos (by positivity) _) (Real.exp_pos _)
+  have hw : ContinuousOn (fun s : ℂ ↦ (w s : ℂ)) S :=
+    (continuous_stirlingWeight (by fun_prop) (by fun_prop)).continuousOn
+  have hO : Complex.Gamma =O[𝓟 S] fun s ↦ (w s : ℂ) :=
+    (hc.isBigO_principal hS (c := (1 : ℂ)) (by norm_num)).trans
+      (hw.isBigO_rev_principal hS (fun s _ ↦ ofReal_ne_zero.mpr (hw_pos s).ne') 1)
+  obtain ⟨M, hM⟩ := Asymptotics.isBigO_principal.1 hO
+  refine ⟨M, fun s hs hsep ↦ ?_⟩
+  simpa only [Complex.norm_real, Real.norm_of_nonneg (hw_pos s).le] using
+    hM s ⟨hs, mem_iInter.2 hsep⟩
 
 /-- **The Gamma function on vertical strips, sharp form.** For real `u`, `v` and `η > 0` there
 is `C > 0` such that `‖Γ(x + i y)‖ ≤ C (1 + |y|) ^ (x - 1/2) exp (-π |y| / 2)` whenever
@@ -465,45 +478,20 @@ theorem exists_norm_Gamma_le_rpow {u v η : ℝ} (hη : 0 < η) :
     ∃ C > 0, ∀ x y : ℝ, u ≤ x → x ≤ v → (∀ n : ℕ, η ≤ ‖(x : ℂ) + y * I + n‖) →
       ‖Complex.Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
   obtain ⟨C, hC, hlarge⟩ := exists_norm_Gamma_vertical_strip_le u v one_pos
-  obtain ⟨M, hsmall⟩ := exists_norm_Gamma_le_of_mem_reProdIm (u := u) (v := v) hη 1
-  set A : ℝ := |u - 1 / 2|
-  refine ⟨C + |M| * 2 ^ A * Real.exp (π / 2), by positivity, fun x y hux hxv hsep ↦ ?_⟩
+  obtain ⟨M, hsmall⟩ := exists_norm_Gamma_le_weight_of_mem_reProdIm (u := u) (v := v) hη 1
+  refine ⟨C + |M|, by positivity, fun x y hux hxv hsep ↦ ?_⟩
   have hB : 0 ≤ (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) := by positivity
   have hre : (x + y * I : ℂ).re = x := by simp
   have him : (x + y * I : ℂ).im = y := by simp
+  rw [mul_assoc]
   rcases le_total 1 |y| with hy | hy
-  · calc ‖Complex.Gamma (x + y * I)‖
-          ≤ C * (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
-          simpa only [hre, him] using hlarge (x + y * I)
-            (by rw [hre]; exact ⟨hux, hxv⟩) (by simpa only [him] using hy)
-      _ ≤ _ := by
-          rw [mul_assoc, mul_assoc]
-          exact mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (by positivity)) hB
-  · have h1y : 1 ≤ 1 + |y| := le_add_of_nonneg_right (abs_nonneg y)
-    -- the power is at least `2 ^ (-A)`, and the exponential at least `exp (-π / 2)`
-    have hpow : 1 ≤ 2 ^ A * (1 + |y|) ^ (x - 1 / 2) := by
-      have hA : 0 ≤ A := abs_nonneg _
-      have h2 : (1 + |y|) ^ A ≤ 2 ^ A := Real.rpow_le_rpow (by positivity) (by linarith) hA
-      have hle : (1 + |y|) ^ (-A) ≤ (1 + |y|) ^ (x - 1 / 2) :=
-        Real.rpow_le_rpow_of_exponent_le h1y (by linarith [neg_abs_le (u - 1 / 2)])
-      rw [Real.rpow_neg (by positivity)] at hle
-      calc (1 : ℝ) = 2 ^ A * (2 ^ A)⁻¹ := (mul_inv_cancel₀ (by positivity)).symm
-        _ ≤ 2 ^ A * ((1 + |y|) ^ A)⁻¹ := by gcongr
-        _ ≤ _ := by gcongr
-    have hexp : 1 ≤ Real.exp (π / 2) * Real.exp (-(π * |y| / 2)) := by
-      rw [← Real.exp_add]
-      exact Real.one_le_exp (by nlinarith [pi_pos])
-    calc ‖Complex.Gamma (x + y * I)‖ ≤ |M| :=
-          (hsmall _ (by simpa [mem_reProdIm] using ⟨⟨hux, hxv⟩, abs_le.1 hy⟩) hsep).trans
-            (le_abs_self M)
-      _ ≤ |M| * ((2 ^ A * (1 + |y|) ^ (x - 1 / 2)) *
-            (Real.exp (π / 2) * Real.exp (-(π * |y| / 2)))) :=
-          le_mul_of_one_le_right (abs_nonneg M) (one_le_mul_of_one_le_of_one_le hpow hexp)
-      _ = |M| * 2 ^ A * Real.exp (π / 2) *
-            ((1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2))) := by ring
-      _ ≤ _ := by
-          rw [mul_assoc (C + _)]
-          exact mul_le_mul_of_nonneg_right (le_add_of_nonneg_left hC.le) hB
+  · have h := hlarge (x + y * I) (by rw [hre]; exact ⟨hux, hxv⟩) (by rw [him]; exact hy)
+    rw [hre, him, mul_assoc] at h
+    exact h.trans (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (abs_nonneg M)) hB)
+  · have h := hsmall (x + y * I) (by simpa [mem_reProdIm] using ⟨⟨hux, hxv⟩, abs_le.1 hy⟩) hsep
+    rw [hre, him] at h
+    exact h.trans (mul_le_mul_of_nonneg_right
+      ((le_abs_self M).trans (le_add_of_nonneg_left hC.le)) hB)
 
 /-- **The Gamma function on vertical strips.** For real `u`, `v` and `η > 0` there are `C > 0`
 and `K : ℕ` such that `‖Γ(x + i y)‖ ≤ C (1 + |y|) ^ K exp (-π |y| / 2)` whenever `u ≤ x ≤ v`
@@ -526,8 +514,9 @@ theorem exists_norm_Gamma_le_of_pos {u v : ℝ} (hu : 0 < u) :
       ‖Complex.Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
   obtain ⟨C, hC, h⟩ := exists_norm_Gamma_le_rpow (u := u) (v := v) hu
   refine ⟨C, hC, fun x y hux hxv ↦ h x y hux hxv fun n ↦ ?_⟩
+  have hre : ((x : ℂ) + y * I + n).re = x + n := by simp
   refine le_trans ?_ (abs_re_le_norm _)
-  simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, natCast_re]
+  rw [hre]
   exact le_abs.2 (Or.inl (by linarith [n.cast_nonneg (α := ℝ)]))
 
 /-- Uniform upper bound for the reciprocal Gamma function across an entire vertical strip
