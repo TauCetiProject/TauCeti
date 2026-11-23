@@ -50,8 +50,9 @@ belong to De Giorgi's class with a linear term above the level `0`
 `u ≤ D (1 + (βR/λ)² + γR²/λ)ⁿ R^{-n/2} ‖u⁺‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`,
 
 now with `γ` in the constant, and for weak solutions the two-sided bound
-`|u| ≤ D (1 + (βR/λ)² + γR²/λ)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}`. On balls where `βR/λ` and `γR²/λ`
-are bounded, the `L²` norm can be replaced by any `Lᵖ` norm with `0 < p ≤ 2`
+`|u| ≤ D (1 + (βR/λ)² + γR²/λ)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}`. For weak subsolutions, on balls
+where `βR/λ` and `γR²/λ` are bounded, the one-sided bound also holds with the scaled `L²` norm
+of `u⁺` replaced by the scaled `Lᵖ` norm `R^{-n/p} ‖u⁺‖_{Lᵖ(B(x₀, R))}` for any `0 < p ≤ 2`
 (`TauCeti.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball`). For a positive weak
 supersolution `u` of the same equation, `u⁻¹` is formally a subsolution of the equation with mass
 coefficient `-c`, so Moser's weak Harnack and Harnack inequalities with lower-order terms need
@@ -73,8 +74,9 @@ local boundedness for mass coefficients of either sign.
 * `TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`: the
   two-sided bound `|u| ≤ D (1 + (βR/λ)² + γR²/λ)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}` for weak
   solutions with `c` of either sign.
-* `TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_setIntegral_rpow_lowerOrder`: the same in `Lᵖ`,
-  `0 < p ≤ 2`, on balls with `βR/λ` and `γR²/λ` bounded.
+* `TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_setIntegral_rpow_lowerOrder`: the one-sided
+  bound `u ≤ D R^{-n/p} ‖u⁺‖_{Lᵖ(B(x₀, R))}`, `0 < p ≤ 2`, for weak subsolutions with `c` of
+  either sign, on balls with `βR ≤ σλ` and `γR² ≤ σλ` for a fixed `σ`.
 
 ## References
 
