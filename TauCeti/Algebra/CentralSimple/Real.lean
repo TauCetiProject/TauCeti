@@ -27,12 +27,14 @@ import Mathlib.Algebra.QuaternionBasis
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
-# Frobenius' theorem: the real central division algebras are `ℝ` and `ℍ[ℝ]`
+# Frobenius' theorem: finite-dimensional real division algebras are `ℝ`, `ℂ`, or `ℍ[ℝ]`
 
-A finite-dimensional division algebra over `ℝ` whose centre is `ℝ` is `ℝ`-isomorphic either to `ℝ`
-itself or to the Hamilton quaternions `ℍ[ℝ]`. This is the classification the Brauer group of `ℝ`
-needs: it says that the two Brauer classes already known -- the identity and the class of `ℍ[ℝ]` --
-are all there are.
+Every finite-dimensional associative real algebra without zero divisors is `ℝ`-isomorphic to `ℝ`,
+`ℂ`, or the Hamilton quaternions `ℍ[ℝ]` (`TauCeti.nonempty_algEquiv_real_or_complex_or_quaternion`).
+The central case (`TauCeti.nonempty_algEquiv_real_or_quaternion`) shows that a finite-dimensional
+real division algebra with centre `ℝ` is `ℝ` or `ℍ[ℝ]`, which is the step that computes the Brauer
+group of `ℝ`: the two Brauer classes already known -- the identity and the class of `ℍ[ℝ]` -- are
+all there are.
 
 The proof runs in three steps, and only the first uses anything about central simple algebras.
 

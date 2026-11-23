@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.Algebra.Star.SelfAdjoint
 
@@ -40,5 +41,24 @@ theorem isSemisimpleRing_of_isProperStar (A : Type*) [Ring A] [StarRing A]
     simpa only [hm, Ideal.zero_eq_bot, Ideal.mem_bot, smul_eq_mul] using hpow
   exact (Submodule.mem_bot _).mpr
     (star_mul_self_eq_zero.mp ((IsSelfAdjoint.star_mul_self x).eq_zero_of_isNilpotent hnil))
+
+/-- A zero-preserving real functional strictly positive on `x * star x` forces an involutive star
+to be proper (`star x * x = 0 → x = 0`). -/
+theorem isProperStar_of_trace_mul_star_pos {E : Type*} [MulZeroClass E] [InvolutiveStar E]
+    (t : E → ℝ) (ht0 : t 0 = 0) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
+    IsProperStar E where
+  eq_zero_of_star_mul_self_eq_zero {x} hx := by_contra fun hx0 ↦ by
+    by_cases hsx : star x = 0
+    · exact (hpos x hx0).ne' (by rw [hsx, mul_zero, ht0])
+    · exact (hpos (star x) hsx).ne' (by rw [star_star, hx, ht0])
+
+/-- A finite-dimensional real star algebra with a linear functional strictly positive on
+`x * star x` is semisimple. -/
+theorem isSemisimpleRing_of_trace_mul_star_pos {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E]
+    [Module.Finite ℝ E] (t : E →ₗ[ℝ] ℝ)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) : IsSemisimpleRing E :=
+  have := IsArtinianRing.of_finite ℝ E
+  have := isProperStar_of_trace_mul_star_pos t (map_zero t) hpos
+  isSemisimpleRing_of_isProperStar E
 
 end TauCeti

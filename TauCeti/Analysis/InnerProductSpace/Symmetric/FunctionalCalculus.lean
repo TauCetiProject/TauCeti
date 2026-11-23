@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Analysis.InnerProductSpace.Positive
+import Mathlib.LinearAlgebra.Eigenspace.Minpoly
+import Mathlib.LinearAlgebra.Lagrange
 
 /-!
 # The functional calculus of a symmetric operator in finite dimension
@@ -51,6 +54,8 @@ calculus of a Hermitian matrix.
   of `T`.
 * `LinearMap.IsSymmetric.norm_cfc_apply_sq_add_norm_cfc_apply_sq`: `‖f(T)x‖² + ‖g(T)x‖² = ‖x‖²`
   when `f² + g² = 1` on the eigenvalues of `T`.
+* `LinearMap.IsSymmetric.exists_aeval_eq_cfc`: every functional calculus value `hT.cfc f` of
+  a symmetric real operator is a polynomial in `T`.
 
 ## References
 
@@ -61,7 +66,7 @@ calculus of a Hermitian matrix.
 public section
 
 open Module.End InnerProductSpace
-open scoped InnerProductSpace
+open scoped InnerProductSpace Polynomial
 
 namespace LinearMap.IsSymmetric
 
@@ -259,5 +264,19 @@ theorem isPositive_cfc (hT : T.IsSymmetric) {f : ℝ → ℝ}
   refine ⟨hT.isSymmetric_cfc f, fun x ↦ ?_⟩
   rw [hR, mul_apply_eq_comp, hT.isSymmetric_cfc _ _ x]
   exact inner_self_nonneg
+
+/-- Every functional calculus value `hT.cfc f` of a symmetric operator on a finite-dimensional
+real inner product space equals `Polynomial.aeval T p` for a Lagrange interpolating polynomial. -/
+theorem exists_aeval_eq_cfc {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [FiniteDimensional ℝ V] {T : V →ₗ[ℝ] V} (hT : T.IsSymmetric) (f : ℝ → ℝ) :
+    ∃ p : ℝ[X], Polynomial.aeval T p = hT.cfc f := by
+  let p : ℝ[X] := Lagrange.interpolate (Finset.univ.image (hT.eigenvalues rfl)) _root_.id f
+  refine ⟨p, (hT.eigenvectorBasis rfl).toBasis.ext fun i ↦ ?_⟩
+  have heval : Polynomial.eval (hT.eigenvalues rfl i) p = f (hT.eigenvalues rfl i) := by
+    simpa only [p, id_eq] using Lagrange.eval_interpolate_at_node (r := f) (v := _root_.id)
+      (fun _ _ _ _ h ↦ h) (Finset.mem_image_of_mem _ (Finset.mem_univ i))
+  rw [OrthonormalBasis.coe_toBasis, hT.cfc_apply_eigenvectorBasis,
+    Module.End.aeval_apply_of_mem_apply_eq_smul (hT.apply_eigenvectorBasis rfl i)]
+  simp only [RCLike.ofReal_real_eq_id, id_eq, heval]
 
 end LinearMap.IsSymmetric

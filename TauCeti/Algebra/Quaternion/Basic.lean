@@ -5,8 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Quaternion
+public import Mathlib.Basic.Real.Basic
+import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 
 /-!
 # Basic facts about the Hamilton quaternions
@@ -23,6 +28,11 @@ Mathlib's `Mathlib.Algebra.Quaternion`.
   because the quaternion `r + r i` squares to `2 r² i`.
 * `Quaternion.normSq_mk_div_two`: the norm of `(a + b i + c j + d k) / 2` is
   `(a² + b² + c² + d²) / 4`, as used for quaternions with half-integer coordinates.
+* `Quaternion.exists_pure_neg_conj`: every pure imaginary real quaternion `r` admits a nonzero pure
+  imaginary `q` with `star q * r * q = -(normSq q • r)`.
+* `Quaternion.cyclic_eq_mul_re`: every cyclic `ℝ`-linear functional on `ℍ[ℝ]` is a scalar multiple
+  of `re`.
+* `Quaternion.re_mul_star_pos`: `(a * star a).re > 0` for every nonzero `a : ℍ[ℝ]`.
 -/
 
 public section
@@ -59,5 +69,37 @@ theorem normSq_mk_div_two {K : Type*} [Field K] (a b c d : K) :
     normSq (⟨a / 2, b / 2, c / 2, d / 2⟩ : ℍ[K]) = (a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2) / 4 := by
   simp only [normSq_def', div_pow, add_div]
   norm_num
+
+/-- Every pure imaginary quaternion `r` admits a nonzero pure imaginary quaternion `q` satisfying
+`star q * r * q = -(q.normSq • r)`. -/
+theorem exists_pure_neg_conj (r : ℍ[ℝ]) (hr : r.re = 0) :
+    ∃ q : ℍ[ℝ], q ≠ 0 ∧ star q * r * q = -(normSq q • r) := by
+  by_cases h : r.imI = 0 ∧ r.imJ = 0
+  · refine ⟨⟨0, 1, 0, 0⟩, by intro h0; simpa using congrArg QuaternionAlgebra.imI h0, ?_⟩
+    ext <;> simp [normSq_def', hr, h.1, h.2]
+  · refine ⟨⟨0, -r.imJ, r.imI, 0⟩, fun h0 ↦ h ⟨congrArg QuaternionAlgebra.imJ h0,
+      neg_eq_zero.mp (congrArg QuaternionAlgebra.imI h0)⟩, ?_⟩
+    ext <;> simp [normSq_def', hr] <;> ring
+
+/-- Every cyclic `ℝ`-linear functional on `ℍ[ℝ]` is a scalar multiple of `QuaternionAlgebra.re`. -/
+theorem cyclic_eq_mul_re (τ : ℍ[ℝ] →ₗ[ℝ] ℝ)
+    (hcyc : ∀ a b : ℍ[ℝ], τ (a * b) = τ (b * a)) (q : ℍ[ℝ]) :
+    τ q = τ 1 * q.re := by
+  let qi : ℍ[ℝ] := ⟨0, 1, 0, 0⟩; let qj : ℍ[ℝ] := ⟨0, 0, 1, 0⟩; let qk : ℍ[ℝ] := ⟨0, 0, 0, 1⟩
+  have hzero (x y z : ℍ[ℝ]) (h : (2 : ℝ) • x = y * z - z * y) : τ x = 0 := by
+    have h0 : 2 * τ x = 0 := by
+      simpa [map_smul, smul_eq_mul, map_sub, hcyc y z] using congrArg τ h
+    linarith
+  have hdecomp : q = q.re • (1 : ℍ[ℝ]) + q.imI • qi + q.imJ • qj + q.imK • qk := by
+    ext <;> simp [qi, qj, qk]
+  conv_lhs => rw [hdecomp]
+  simp [hzero qi qj qk (by ext <;> norm_num [qi, qj, qk]),
+    hzero qj qk qi (by ext <;> norm_num [qi, qj, qk]),
+    hzero qk qi qj (by ext <;> norm_num [qi, qj, qk]), mul_comm]
+
+/-- For a nonzero real quaternion `a`, `(a * star a).re > 0`. -/
+theorem re_mul_star_pos {a : ℍ[ℝ]} (ha : a ≠ 0) : 0 < (a * star a).re := by
+  rw [self_mul_star, re_coe]
+  exact lt_of_not_ge fun h ↦ ha (normSq_le_zero.mp h)
 
 end Quaternion
