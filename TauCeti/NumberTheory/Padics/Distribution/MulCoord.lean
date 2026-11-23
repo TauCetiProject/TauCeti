@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Distribution.Amice.Transform
 public import TauCeti.NumberTheory.Padics.Distribution.Derivative
-public import TauCeti.NumberTheory.Padics.Measure.Moments
-import Mathlib.Algebra.CharZero.Infinite
-import TauCeti.Algebra.Module.NatInt
+public import TauCeti.NumberTheory.Padics.Measure.Weight
 
 /-!
 # Multiplication by the coordinate on locally analytic functions and distributions
@@ -27,25 +24,21 @@ coordinate is `x = a' + p^(h+1) v`, and Pascal's rule matches the two re-expansi
 identities are proved on coefficients, so no torsion-freeness of `E` is needed.
 
 The stage operators therefore induce `TauCeti.LocallyAnalytic.mulCoord` on the algebraic direct
-limit `LA(ℤ_p, E)`. On the locally analytic Mahler terms it is the Mahler recurrence
-
-`x (x choose n) = (n + 1) (x choose (n + 1)) + n (x choose n)`
-
-(`mulCoord_mahlerTerm`), proved on the stage of level `n + 1`, where Amice's vectors of degree
-`n` and `n + 1` are the Mahler terms themselves.
+limit `LA(ℤ_p, E)`.
 
 The transpose is multiplication of a distribution by the coordinate,
 `TauCeti.LocallyAnalyticDistribution.mulCoord`, with `(x μ)(f) = μ(x f)`. It does not increase
-the stage seminorms, and by the Mahler recurrence it acts on the Amice transform as the Mahler
-derivation `∂ = (1 + T) d/dT` (`amiceTransform_mulCoord`). On the distribution of a measure it is
-the measure weighted by the coordinate (`mulCoord_ofMeasure`), for which the corresponding
-identity is `AbstractMeasure.amiceTransform_weight_id_smul_one`.
+the stage seminorms. On the distribution of a measure it is the measure weighted by the coordinate
+(`mulCoord_ofMeasure`).
 
 Multiplication by the coordinate and the derivative of
-`TauCeti.NumberTheory.Padics.Distribution.Derivative` satisfy the Leibniz rule `(x f)' = f + x f'`
-(`derivative_mulCoord`); on a stage it follows from the coefficient identity
+`TauCeti.NumberTheory.Padics.Distribution.LocallyAnalytic.Derivative` satisfy the Leibniz rule
+`(x f)' = f + x f'` (`derivative_mulCoord`); on a stage it follows from the coefficient identity
 `d/dw (x f) = pʰ f + x (d f / d w)` (`discDerivative_mulCoord`). Its transpose is
 `x (d μ) = μ + d (x μ)` (`mulCoord_derivative`).
+
+The Mahler recurrence for multiplication by the coordinate and the Amice transform of `x μ` are in
+`TauCeti.NumberTheory.Padics.Distribution.Amice.MulCoord`.
 
 ## Main definitions
 
@@ -58,11 +51,8 @@ Multiplication by the coordinate and the derivative of
 * `TauCeti.AnalyticStage.eval_mulCoord`, `TauCeti.LocallyAnalytic.eval_mulCoord`: multiplication
   by `x` evaluates to `x ↦ x • f(x)`.
 * `TauCeti.AnalyticStage.transition_mulCoord`: multiplication by `x` commutes with re-expansion.
-* `TauCeti.LocallyAnalytic.mulCoord_mahlerTerm`: the Mahler recurrence for locally analytic
-  Mahler terms.
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm_mulCoord_le`: multiplication by `x` does not
   increase the stage seminorms.
-* `TauCeti.LocallyAnalyticDistribution.amiceTransform_mulCoord`: `A_{xμ} = ∂ A_μ`.
 * `TauCeti.LocallyAnalyticDistribution.mulCoord_ofMeasure`: on measures, multiplication by `x`
   is the weighted measure.
 * `TauCeti.AnalyticStage.derivative_mulCoord`, `TauCeti.LocallyAnalytic.derivative_mulCoord`: the
@@ -72,14 +62,12 @@ Multiplication by the coordinate and the derivative of
 ## References
 
 * P. Colmez, *Fonctions d'une variable p-adique*, Astérisque 330 (2010), §II.4.
-* J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, §3.5.1,
-  Lemma 3.29.
 -/
 
 public section
 
 open Filter Topology
-open scoped ZeroAtInfty Polynomial
+open scoped ZeroAtInfty
 
 namespace TauCeti
 
@@ -242,46 +230,6 @@ theorem transitionLE_mulCoord {k : ℕ} (hhk : h ≤ k) (c : AnalyticStage p h E
     rw [transitionLE_succ S hhk, ContinuousLinearMap.comp_apply, ih, transition_mulCoord,
       ContinuousLinearMap.comp_apply]
 
-/-- The Mahler recurrence for Amice's polynomials of degrees `n` and `n + 1 < pʰ` on the disc of
-`a`: these are `(a + pʰ w choose n)` and its successor, so multiplying by the coordinate
-`a + pʰ w` gives `(n + 1) (a + pʰ w choose (n + 1)) + n (a + pʰ w choose n)`. -/
-private theorem coord_mul_amicePolynomial {n : ℕ} (hn : n + 1 < p ^ h) (a : ℤ_[p]) :
-    (Polynomial.C a + Polynomial.C ((p : ℤ_[p]) ^ h) * Polynomial.X) *
-        amicePolynomial p h n a =
-      ((n + 1 : ℕ) : ℤ_[p][X]) * amicePolynomial p h (n + 1) a +
-        (n : ℤ_[p][X]) * amicePolynomial p h n a := by
-  refine Polynomial.funext fun w ↦ ?_
-  have hrec := DFunLike.congr_fun (id_mul_mahler (p := p) n) (a + (p : ℤ_[p]) ^ h * w)
-  simp only [ContinuousMap.mul_apply, ContinuousMap.id_apply, ContinuousMap.add_apply,
-    mahler_apply, nsmul_eq_mul] at hrec
-  simp only [Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_C, Polynomial.eval_X,
-    Polynomial.eval_natCast, eval_amicePolynomial, Nat.div_eq_of_lt hn,
-    Nat.div_eq_of_lt (Nat.lt_succ_self n |>.trans hn), Nat.factorial_zero, Nat.cast_one,
-    one_mul]
-  push_cast at hrec ⊢
-  exact hrec
-
-omit [CompleteSpace E] in
-/-- On the stage of a level `h` with `n + 1 < pʰ`, multiplication by the coordinate sends Amice's
-vector `e_{h,n} • e = (x choose n) • e` to
-`(x choose (n + 1)) • (n + 1) e + (x choose n) • n e`: for such `h` the factors `⌊n / pʰ⌋!` and
-`⌊(n + 1) / pʰ⌋!` of Amice's vectors are `1`. -/
-private theorem mulCoord_amiceTerm {n : ℕ} (hn : n + 1 < p ^ h) (e : E) :
-    mulCoord S (amiceTerm p h n e) =
-      amiceTerm p h (n + 1) ((n + 1) • e) + amiceTerm p h n (n • e) := by
-  -- Compare the coefficients of both sides of `coord_mul_amicePolynomial`.
-  ext ⟨a, k⟩
-  have hk := congrArg (fun P : ℤ_[p][X] ↦ P.coeff k) (coord_mul_amicePolynomial hn (a.val : ℤ_[p]))
-  rcases k with _ | k <;>
-  · simp only [add_mul, mul_assoc, Polynomial.coeff_add, Polynomial.coeff_C_mul,
-      Polynomial.coeff_X_mul_zero, Polynomial.coeff_X_mul, Polynomial.coeff_natCast_mul, mul_zero,
-      add_zero] at hk
-    simp only [mulCoord_apply_zero, mulCoord_apply_succ, FunLike.coe_add, Pi.add_apply,
-      amiceTerm_apply, ← Nat.cast_smul_eq_nsmul ℤ_[p], smul_smul, ← add_smul]
-    congr 1
-    push_cast at hk ⊢
-    linear_combination hk
-
 /-! ### The Leibniz rule for the derivative -/
 
 omit [CompleteSpace E] in
@@ -300,9 +248,11 @@ omit [CompleteSpace E] in
 theorem derivative_mulCoord (𝕜 : Type*) [Field 𝕜] [Module 𝕜 E] [ContinuousConstSMul 𝕜 E]
     [NeZero (p : 𝕜)] [SMulCommClass ℤ_[p] 𝕜 E] (c : AnalyticStage p h E) :
     derivative 𝕜 (mulCoord 𝕜 c) = c + mulCoord 𝕜 (derivative 𝕜 c) := by
-  have hp : ((p : 𝕜) ^ h) ≠ 0 := pow_ne_zero h (NeZero.ne _)
-  rw [derivative_def, derivative_def, discDerivative_mulCoord, natCast_pow_smul_eq ℤ_[p] 𝕜,
-    smul_add, inv_smul_smul₀ hp, map_smul]
+  have hp : ((p ^ h : ℕ) : 𝕜) ≠ 0 := by
+    rw [Nat.cast_pow]
+    exact pow_ne_zero h (NeZero.ne _)
+  simp only [derivative_def, discDerivative_mulCoord, ← Nat.cast_pow, Nat.cast_smul_eq_nsmul]
+  rw [← Nat.cast_smul_eq_nsmul 𝕜, smul_add, inv_smul_smul₀ hp, map_smul]
 
 end AnalyticStage
 
@@ -330,28 +280,15 @@ theorem mulCoord_ofStage (h : ℕ) (c : AnalyticStage p h E) :
 @[simp]
 theorem eval_mulCoord (f : LocallyAnalytic p S E) (x : ℤ_[p]) :
     eval S (mulCoord S f) x = x • eval S f x := by
-  obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
-  rw [← ofStage_def, mulCoord_ofStage, eval_ofStage, eval_ofStage, AnalyticStage.eval_mulCoord]
-
-/-- **The Mahler recurrence.** Multiplication by the coordinate sends the Mahler term
-`x ↦ (x choose n) • e` to `(x choose (n + 1)) • (n + 1) e + (x choose n) • n e`. -/
-theorem mulCoord_mahlerTerm (e : E) (n : ℕ) :
-    mulCoord S (mahlerTerm p S e n) =
-      mahlerTerm p S ((n + 1) • e) (n + 1) + mahlerTerm p S (n • e) n := by
-  have hn : n + 1 < p ^ (n + 1) := Nat.lt_pow_self hp.out.one_lt
-  have hterm (m : ℕ) (hm : m < p ^ (n + 1)) (e' : E) :
-      ofStage S (n + 1) (amiceTerm p (n + 1) m e') = mahlerTerm p S e' m := by
-    rw [ofStage_amiceTerm, Nat.div_eq_of_lt hm, Nat.factorial_zero, one_smul]
-  rw [← hterm n ((Nat.lt_succ_self n).trans hn), mulCoord_ofStage, mulCoord_amiceTerm S hn,
-    map_add, hterm _ hn, hterm _ ((Nat.lt_succ_self n).trans hn)]
+  obtain ⟨h, c, rfl⟩ := exists_ofStage S f
+  simp
 
 /-- **The Leibniz rule for the coordinate**: `(x f)' = f + x f'`. -/
 theorem derivative_mulCoord (𝕜 : Type*) [Field 𝕜] [NeZero (p : 𝕜)] [Module 𝕜 E]
     [ContinuousConstSMul 𝕜 E] [SMulCommClass ℤ_[p] 𝕜 E] (f : LocallyAnalytic p 𝕜 E) :
     derivative 𝕜 (mulCoord 𝕜 f) = f + mulCoord 𝕜 (derivative 𝕜 f) := by
-  obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
-  rw [← ofStage_def, mulCoord_ofStage, derivative_ofStage, derivative_ofStage, mulCoord_ofStage,
-    AnalyticStage.derivative_mulCoord, map_add]
+  obtain ⟨h, c, rfl⟩ := exists_ofStage 𝕜 f
+  simp [AnalyticStage.derivative_mulCoord]
 
 end LocallyAnalytic
 
@@ -387,23 +324,6 @@ theorem stageSeminorm_mulCoord_le (h : ℕ) (μ : LocallyAnalyticDistribution p 
     stageSeminorm h (mulCoord μ) ≤ stageSeminorm h μ :=
   (stageSeminorm_dualMap_le h μ).trans
     (mul_le_of_le_one_left (apply_nonneg _ _) opNorm_mulCoord_le_one)
-
-/-- **The Amice transform of `x μ`** is the Mahler derivation `∂ = (1 + T) d/dT` of the Amice
-transform of `μ`. -/
-@[simp]
-theorem amiceTransform_mulCoord (μ : LocallyAnalyticDistribution p K) :
-    amiceTransform (mulCoord μ) = PowerSeries.mahlerDerivation K (amiceTransform μ) := by
-  ext n
-  simp only [coeff_amiceTransform, PowerSeries.coeff_mahlerDerivation, coe_mulCoord_apply,
-    mulCoord_mahlerTerm, map_add, ← Nat.cast_smul_eq_nsmul K, mahlerTerm_smul, map_smul]
-  push_cast [smul_eq_mul]
-  ring
-
-/-- Iterating, multiplication by `x ^ k` acts on the Amice transform as `∂ ^ k`. -/
-theorem amiceTransform_iterate_mulCoord (μ : LocallyAnalyticDistribution p K) (k : ℕ) :
-    amiceTransform (mulCoord^[k] μ) =
-      (PowerSeries.mahlerDerivation K)^[k] (amiceTransform μ) :=
-  Function.Semiconj.iterate_right (f := amiceTransform) amiceTransform_mulCoord k μ
 
 /-- On the distribution of a measure, multiplication by the coordinate is the measure weighted by
 the coordinate function. -/

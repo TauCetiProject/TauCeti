@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Distribution.Amice.Convolution
-public import TauCeti.NumberTheory.Padics.Distribution.MulCoord
+public import TauCeti.NumberTheory.Padics.Distribution.Amice.MulCoord
 
 /-!
 # The Amice transform of the transpose derivative
@@ -23,21 +22,17 @@ degree `0` (`LocallyAnalytic.derivative_mahlerTerm_zero`), and the transpose der
 multiplication by the coordinate satisfy the commutator relation `x (d μ) = μ + d (x μ)`
 (`LocallyAnalyticDistribution.mulCoord_derivative`).
 
-Since the Amice transform turns convolution into multiplication of power series, the identity
-shows that the transpose derivative commutes with convolution, `d (μ * ν) = d μ * ν`, and is
-convolution with the derivative at `0`, `d 1 : f ↦ f'(0)`, whose Amice transform is `log (1 + T)`
-(`amiceTransform_derivative_one`). As `log (1 + T)` is not a zero divisor, the transpose
-derivative is injective.
+As `log (1 + T)` is not a zero divisor, the transpose derivative is injective. Its interaction with
+convolution is in `TauCeti.NumberTheory.Padics.Distribution.Amice.Derivative.Convolution`.
 
 ## Main results
 
 * `TauCeti.LocallyAnalytic.derivative_mahlerTerm_zero`: the derivative of a constant is zero.
 * `TauCeti.LocallyAnalyticDistribution.amiceTransform_derivative`: `A_{d μ} = log (1 + T) · A_μ`.
-* `TauCeti.LocallyAnalyticDistribution.amiceTransform_derivative_one`: the derivative at `0` has
-  Amice transform `log (1 + T)`.
-* `TauCeti.LocallyAnalyticDistribution.derivative_mul_eq_derivative_left_mul`,
-  `TauCeti.LocallyAnalyticDistribution.derivative_injective`: the transpose derivative commutes with
-  convolution, `d (μ * ν) = d μ * ν`, and is injective.
+* `TauCeti.LocallyAnalyticDistribution.amiceTransform_iterate_derivative`:
+  `A_{dᵏ μ} = log (1 + T)ᵏ · A_μ`.
+* `TauCeti.LocallyAnalyticDistribution.derivative_injective`: the transpose derivative is
+  injective.
 
 ## References
 
@@ -62,11 +57,9 @@ variable {E : Type*} [NormedAddCommGroup E] [Module ℤ_[p] E] [IsBoundedSMul �
 /-- **The derivative of a constant is zero**: `mahlerTerm p 𝕜 e 0` is the constant function `e`. -/
 @[simp]
 theorem derivative_mahlerTerm_zero (e : E) : derivative 𝕜 (mahlerTerm p 𝕜 e 0) = 0 := by
-  have hc : discDerivative 𝕜 (amiceTerm p 0 0 e) = 0 := by
-    ext ⟨a, n⟩
-    simp only [discDerivative_apply, amiceTerm_apply,
-      coeff_amicePolynomial_eq_zero _ (Nat.succ_pos n), zero_smul, smul_zero, zero_apply]
-  rw [mahlerTerm_def, derivative_ofStage, AnalyticStage.derivative_def, hc, smul_zero, map_zero]
+  rw [mahlerTerm_def]
+  refine derivative_ofStage_eq_zero 𝕜 fun a n ↦ ?_
+  rw [amiceTerm_apply, coeff_amicePolynomial_eq_zero _ (Nat.succ_pos n), zero_smul]
 
 end LocallyAnalytic
 
@@ -116,20 +109,8 @@ theorem amiceTransform_derivative (μ : LocallyAnalyticDistribution p K) :
 `log (1 + T) ^ k`. -/
 theorem amiceTransform_iterate_derivative (μ : LocallyAnalyticDistribution p K) (k : ℕ) :
     amiceTransform (derivative^[k] μ) = PowerSeries.log K ^ k * amiceTransform μ := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [Function.iterate_succ_apply', amiceTransform_derivative, ih, pow_succ',
-      mul_assoc]
-
-/-- **The transpose derivative commutes with convolution**: `d (μ * ν) = d μ * ν`. -/
-theorem derivative_mul_eq_derivative_left_mul (μ ν : LocallyAnalyticDistribution p K) :
-    derivative (μ * ν) = derivative μ * ν :=
-  amiceTransform_injective (by simp [mul_assoc])
-
-/-- The transpose derivative is convolution with `d 1`, the derivative at `0`. -/
-theorem derivative_eq_derivative_one_mul (μ : LocallyAnalyticDistribution p K) :
-    derivative μ = derivative 1 * μ := by
-  rw [← derivative_mul_eq_derivative_left_mul, one_mul]
+  rw [Function.Semiconj.iterate_right (f := amiceTransform) (gb := (PowerSeries.log K * ·))
+    amiceTransform_derivative k μ, mul_left_iterate_apply]
 
 /-- The transpose derivative is injective: `log (1 + T)` is not a zero divisor of `K⟦T⟧`. -/
 theorem derivative_injective :
@@ -139,12 +120,6 @@ theorem derivative_injective :
   intro μ ν hμν
   refine amiceTransform_injective (mul_left_cancel₀ hL ?_)
   rw [← amiceTransform_derivative, ← amiceTransform_derivative, hμν]
-
-/-- The transpose derivative of the unit `1 = δ_0` of the convolution algebra is the derivative at
-`0`, `f ↦ f'(0)`; its Amice transform is `log (1 + T)`. -/
-theorem amiceTransform_derivative_one :
-    amiceTransform (derivative (1 : LocallyAnalyticDistribution p K)) = PowerSeries.log K := by
-  rw [amiceTransform_derivative, amiceTransform_one, mul_one]
 
 end LocallyAnalyticDistribution
 

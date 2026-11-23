@@ -10,10 +10,7 @@ public import Mathlib.Algebra.Group.Action.Units
 import Mathlib.Algebra.Ring.Int.Units
 
 /-!
-# Natural number casts and integer unit signs acting on modules
-
-A power of a natural number acts on a module in the same way through any two semirings acting
-on it (`natCast_pow_smul_eq`), since both actions are repeated addition.
+# Integer unit signs acting on modules
 
 The sign action of an integer unit agrees with the action of its image in the scalar ring.
 This lets integer signs in the scalar ring, such as powers of `-1`, combine with integer unit
@@ -26,14 +23,6 @@ with multiplication, because `(-1) • a` is the additive inverse of `a`.
 public section
 
 namespace TauCeti
-
-/-- A power `nᵏ` of a natural number acts in the same way through any two semirings `R` and `S`
-acting on `M`: both actions are `nᵏ`-fold addition. -/
-theorem natCast_pow_smul_eq (R S : Type*) {M : Type*} [Semiring R] [Semiring S]
-    [AddCommMonoid M] [Module R M] [Module S M] (n k : ℕ) (v : M) :
-    (n : R) ^ k • v = (n : S) ^ k • v := by
-  rw [← Nat.cast_pow, ← Nat.cast_pow]
-  exact map_natCast_smul (AddMonoidHom.id M) R S (n ^ k) v
 
 /-- Acting by the image of an integer unit in the scalar ring and then by a second integer unit
 is the action of their product as integer units. -/
