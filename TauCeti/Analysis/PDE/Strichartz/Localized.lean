@@ -11,6 +11,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Integral.Lebesgue.SlidingWindow
 
 /-!
@@ -259,9 +260,7 @@ private theorem integral_inner_setIntegral_sub_preimage_eq {f g : ℝ → H} (hf
   set Φ := S.indicator fun z : ℝ × ℝ ↦ ⟪f z.2, g z.1⟫_𝕜
   -- The integrand on the region `s - t ∈ W` is integrable on `ℝ × ℝ`.
   have hΦ : Integrable Φ (volume.prod volume) :=
-    (hg.op_fst_snd (op := fun v u ↦ ⟪u, v⟫_𝕜) (continuous_inner.comp continuous_swap)
-      ⟨1, fun v u ↦ by simpa [mul_comm] using norm_inner_le_norm u v⟩ hf).indicator
-      ((measurable_snd.sub measurable_fst) hW)
+    (hf.inner_fst_snd (𝕜 := 𝕜) hg).swap.indicator ((measurable_snd.sub measurable_fst) hW)
   -- Both windows describe the same region: `s - t ∈ W` exactly when `t - s ∈ -W`.
   have hmem (t s : ℝ) : (t, s) ∈ S ↔ s ∈ (fun s ↦ s - t) ⁻¹' W := by
     simp only [S, mem_ofPred_eq, mem_preimage]
