@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Pullback
-public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
+public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Pullback
 

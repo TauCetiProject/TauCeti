@@ -7,8 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Pullback
-public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
+public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Pullback
+public import TauCeti.CategoryTheory.Monoidal.Functor
 
 /-!
 # Pullback of the Rees algebra of an ideal sheaf
@@ -82,18 +83,19 @@ the inclusion `Iⁿ ⟶ 𝒪_Y`, followed by `f^* 𝒪_Y ≅ 𝒪_X`. -/
 theorem reesPullbackComponent_sheafι (n : ℕ) :
     I.reesPullbackComponent f n ≫ (I.comap f ^ n).sheafι =
       (Scheme.Modules.pullback f).map (I ^ n).sheafι ≫
-        (Scheme.Modules.pullbackObjUnitIso f).hom :=
-  (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (eqToHom_sheafιUnit (comap_pow I f n))).trans
-    ((I ^ n).pullbackSheafHom_sheafι f))
+        (Scheme.Modules.pullbackObjUnitIso f).hom := by
+  have h := eqToHom_sheafιUnit (comap_pow I f n)
+  rw [sheafιUnit_def, sheafιUnit_def] at h
+  exact (Category.assoc _ _ _).trans
+    ((congrArg (_ ≫ ·) h).trans ((I ^ n).pullbackSheafHom_sheafι f))
 
 /-- `reesPullbackComponent_sheafι`, stated with the inclusions read as morphisms to the monoidal
 unit and with `f^* 𝒪_Y ≅ 𝒪_X` written as the unit comparison `η` of `f^*`. -/
 @[reassoc]
 private lemma reesPullbackComponent_sheafιUnit (n : ℕ) :
     I.reesPullbackComponent f n ≫ (I.comap f ^ n).sheafιUnit =
-      (Scheme.Modules.pullback f).map (I ^ n).sheafιUnit ≫ η (Scheme.Modules.pullback f) :=
-  (I.reesPullbackComponent_sheafι f n).trans
-    (congrArg (_ ≫ ·) (Scheme.Modules.pullback_η f).symm)
+      (Scheme.Modules.pullback f).map (I ^ n).sheafιUnit ≫ η (Scheme.Modules.pullback f) := by
+  rw [sheafιUnit_def, sheafιUnit_def, reesPullbackComponent_sheafι, Scheme.Modules.pullback_η]
 
 /-- The degree-`n` comparison is an epimorphism. -/
 instance epi_reesPullbackComponent (n : ℕ) : Epi (I.reesPullbackComponent f n) := by
@@ -105,20 +107,12 @@ of the Rees algebra of `I.comap f`. -/
 private lemma reesOne_reesPullbackComponent :
     ((Scheme.Modules.pullbackObjUnitIso f).inv ≫ (Scheme.Modules.pullback f).map I.reesOne) ≫
         I.reesPullbackComponent f 0 = (I.comap f).reesOne := by
-  rw [← cancel_mono (I.comap f ^ 0).sheafιUnit, reesOne_sheafιUnit, Category.assoc,
-    Category.assoc, reesPullbackComponent_sheafιUnit, ← Functor.map_comp_assoc,
-    reesOne_sheafιUnit, CategoryTheory.Functor.map_id, Category.id_comp, Scheme.Modules.pullback_η,
-    Iso.inv_hom_id]
-
-/-- The unit comparison `η : f^* 𝒪_Y ≅ 𝒪_X` carries the pullback of the multiplication of `𝒪_Y` to
-the multiplication of `𝒪_X`. -/
-private lemma δ_η_tensorHom_η :
-    δ (Scheme.Modules.pullback f) (𝟙_ Y.Modules) (𝟙_ Y.Modules) ≫
-        (η (Scheme.Modules.pullback f) ⊗ₘ η (Scheme.Modules.pullback f)) ≫
-          (λ_ (𝟙_ X.Modules)).hom =
-      (Scheme.Modules.pullback f).map (λ_ (𝟙_ Y.Modules)).hom ≫
-        η (Scheme.Modules.pullback f) := by
-  rw [δ_comp_η_tensorHom_assoc, leftUnitor_naturality, Iso.inv_hom_id_assoc]
+  rw [← cancel_mono (I.comap f ^ 0).sheafιUnit, reesOne_sheafιUnit]
+  -- Pass the inclusion into `𝒪_X` through the comparison, onto the pulled-back unit `reesOne`.
+  rw [Category.assoc, Category.assoc, reesPullbackComponent_sheafιUnit, ← Functor.map_comp_assoc,
+    reesOne_sheafιUnit]
+  -- What remains is `𝒪_X ≅ f^* 𝒪_Y` followed by its inverse `η`.
+  rw [CategoryTheory.Functor.map_id, Category.id_comp, Scheme.Modules.pullback_η, Iso.inv_hom_id]
 
 /-- The comparisons carry the pulled-back multiplication of the Rees algebra of `I` to the
 multiplication of the Rees algebra of `I.comap f`. -/
@@ -128,11 +122,14 @@ private lemma reesPullbackComponent_reesMul (i j : ℕ) :
         (Scheme.Modules.pullback f).map (I.reesMul i j)) ≫ I.reesPullbackComponent f (i + j) := by
   rw [← cancel_mono (I.comap f ^ (i + j)).sheafιUnit, ← cancel_epi
     (δ (Scheme.Modules.pullback f) (I ^ i).sheaf (I ^ j).sheaf), Category.assoc, Category.assoc,
-    reesMul_sheafιUnit, Category.assoc, IsIso.hom_inv_id_assoc,
-    reesPullbackComponent_sheafιUnit, ← Functor.map_comp_assoc, reesMul_sheafιUnit,
-    tensorHom_comp_tensorHom_assoc, reesPullbackComponent_sheafιUnit,
-    reesPullbackComponent_sheafιUnit, ← tensorHom_comp_tensorHom_assoc, δ_natural_assoc,
-    Functor.map_comp_assoc, δ_η_tensorHom_η]
+    reesMul_sheafιUnit, Category.assoc, IsIso.hom_inv_id_assoc]
+  -- Right side: the pullback of `reesMul ≫ sheafιUnit`, followed by `η`.
+  rw [reesPullbackComponent_sheafιUnit, ← Functor.map_comp_assoc, reesMul_sheafιUnit]
+  -- Left side: the pulled-back inclusions, followed by `η ⊗ η`.
+  rw [tensorHom_comp_tensorHom_assoc, reesPullbackComponent_sheafιUnit,
+    reesPullbackComponent_sheafιUnit, ← tensorHom_comp_tensorHom_assoc]
+  -- Naturality of `δ`, and compatibility of `η` with the multiplication of the unit.
+  rw [δ_natural_assoc, Functor.map_comp_assoc, δ_comp_η_tensorHom_η_comp_leftUnitor_hom]
 
 /-- The components of the pullback of the Rees algebra of `I` are the pullbacks `f^* Iⁿ`. -/
 theorem pullback_obj_reesAlgebra_obj_X :
@@ -141,14 +138,6 @@ theorem pullback_obj_reesAlgebra_obj_X :
   funext n
   rw [GradedQuasicoherentAlgebra.pullback_obj_obj_X, reesAlgebra_obj_X]
 
-/-- Pulling back a morphism followed by a transport is pulling back the morphism, followed by a
-transport. -/
-private lemma map_comp_eqToHom_comp_eqToHom {C D : Type*} [Category* C] [Category* D] (F : C ⥤ D)
-    {A B B' : C} {E : D} (a : A ⟶ B) (h : B = B') (h' : F.obj B' = E) :
-    F.map (a ≫ eqToHom h) ≫ eqToHom h' = F.map a ≫ eqToHom (by rw [h, h']) := by
-  subst h h'
-  simp
-
 /-- The unit of the pullback of the Rees algebra of `I` is the pullback of `reesOne`, preceded by
 `𝒪_X ≅ f^* 𝒪_Y`. -/
 private lemma one_pullback_reesAlgebra :
@@ -156,7 +145,9 @@ private lemma one_pullback_reesAlgebra :
       ((Scheme.Modules.pullbackObjUnitIso f).inv ≫ (Scheme.Modules.pullback f).map I.reesOne) ≫
         eqToHom (congrFun (pullback_obj_reesAlgebra_obj_X I f) 0).symm := by
   rw [GradedQuasicoherentAlgebra.pullback_obj_one, one_reesAlgebra, Category.assoc]
-  exact congrArg (_ ≫ ·) (map_comp_eqToHom_comp_eqToHom _ _ _ _)
+  -- `one_reesAlgebra` transports into `reesAlgebra.obj.X 0`, while the pulled-back unit expects
+  -- `reesAlgebra.obj.toMon.X 0`; these agree only by definition, so `rw` needs `erw` here.
+  erw [Functor.map_comp, Category.assoc, eqToHom_map, eqToHom_trans]
 
 /-- The homogeneous multiplication of the pullback of the Rees algebra of `I` is the pullback of
 `reesMul`, preceded by the inverse tensor comparison of `f^*`. -/
@@ -175,6 +166,8 @@ private lemma mul_pullback_reesAlgebra (i j : ℕ) :
       (I.reesAlgebra.obj.toMon.mul i j)
       (by rw [mul_reesAlgebra, TauCeti.eqToHom_tensorHom_eqToHom])]
   simp only [Category.assoc, eqToHom_trans, TauCeti.eqToHom_tensorHom_eqToHom, eqToHom_trans_assoc]
+  -- The two sides differ only in writing the components as `obj.X` or as `obj.toMon.X`, which
+  -- agree by definition.
   rfl
 
 /-- **Pullback of the Rees algebra.** For a morphism of schemes `f : X ⟶ Y` and an ideal sheaf
@@ -202,6 +195,8 @@ theorem reesAlgebraPullbackHom_hom_hom_hom (n : ℕ) :
 instance epi_reesAlgebraPullbackHom_hom_hom_hom (n : ℕ) :
     Epi ((I.reesAlgebraPullbackHom f).hom.hom.hom n) := by
   rw [reesAlgebraPullbackHom_hom_hom_hom]
+  -- The transports `eqToHom` are stated in the category of graded components, where instance
+  -- search does not find `IsIso (eqToHom _)`, so they are supplied through `eqToIso`.
   exact epi_comp' (IsIso.epi_of_iso (eqToIso (congrFun (pullback_obj_reesAlgebra_obj_X I f) n)).hom)
     (epi_comp' inferInstance
       (IsIso.epi_of_iso (eqToIso (congrFun (I.comap f).reesAlgebra_obj_X n).symm).hom))
