@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 public import TauCeti.Geometry.Manifold.Morse.BettiNumber
-import TauCeti.Geometry.Manifold.Morse.Bott.Index
+import TauCeti.Geometry.Manifold.Morse.Bott.Index.Basic
 
 /-!
 # The indices of the pieces of a Morse–Bott function and the Morse–Bott count
