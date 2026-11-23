@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Module.Bases.Unconditional
 public import TauCeti.Analysis.SpecialFunctions.Pow.Burkholder
 public import TauCeti.MeasureTheory.Function.Lp.HaarBasis.Basic
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.HaarBasis.L2
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -278,21 +277,6 @@ theorem integral_rpow_abs_haarFun_signed_le {p : ℝ} (hp : 2 ≤ p)
   dsimp only [haarSum, d] at hle hΦ0
   linarith
 
-private theorem coeFn_sum_haarBasis {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp : p ≠ ∞) (c : ℕ → 𝕜) (N : ℕ) :
-    (∑ k ∈ Finset.range N, c k • haarBasis 𝕜 p hp k : Lp 𝕜 p (volume : Measure I)) =ᵐ[volume]
-      fun x => ∑ k ∈ Finset.range N, c k * (haarFun k x : 𝕜) := by
-  have hterm (k : ℕ) :
-      (c k • haarBasis 𝕜 p hp k : Lp 𝕜 p (volume : Measure I)) =ᵐ[volume]
-        fun x => c k * (haarFun k x : 𝕜) := by
-    filter_upwards [Lp.coeFn_smul (c k) (haarBasis 𝕜 p hp k),
-      coeFn_haarBasis (𝕜 := 𝕜) (p := p) hp k] with x h1 h2
-    rw [h1, Pi.smul_apply, h2, smul_eq_mul]
-  filter_upwards [Lp.coeFn_finsetSum (Finset.range N) fun k => c k • haarBasis 𝕜 p hp k,
-    ae_all_iff.2 fun k : Fin N => hterm k] with x hsum hk
-  rw [hsum, Finset.sum_apply]
-  exact Finset.sum_congr rfl fun k hk_mem => hk ⟨k, Finset.mem_range.1 hk_mem⟩
-
 /-- **`Lᵖ` sign-transform bound for the real Haar basis (`2 ≤ p < ∞`).** -/
 theorem norm_sum_signed_haarBasis_real_le_of_two_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp2 : 2 ≤ p) (hp : p ≠ ∞) (c : ℕ → ℝ) {ε : ℕ → ℝ} (hε : ∀ k, |ε k| = 1) (N : ℕ) :
@@ -306,12 +290,12 @@ theorem norm_sum_signed_haarBasis_real_le_of_two_le {p : ℝ≥0∞} [Fact (1 �
   have hf_rpow : ‖f‖ ^ r = ∫ x, |∑ k ∈ Finset.range N, c k * haarFun k x| ^ r := by
     rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp f]
     refine integral_congr_ae ?_
-    filter_upwards [coeFn_sum_haarBasis hp c N] with x hx
+    filter_upwards [coeFn_sum_haarBasis hp c (Finset.range N)] with x hx
     simp only [f, r, Real.norm_eq_abs, hx, RCLike.ofReal_real_eq_id, id_eq]
   have hg_rpow : ‖g‖ ^ r = ∫ x, |∑ k ∈ Finset.range N, (ε k * c k) * haarFun k x| ^ r := by
     rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp g]
     refine integral_congr_ae ?_
-    filter_upwards [coeFn_sum_haarBasis hp (fun k => ε k * c k) N] with x hx
+    filter_upwards [coeFn_sum_haarBasis hp (fun k => ε k * c k) (Finset.range N)] with x hx
     simp only [g, r, Real.norm_eq_abs, hx, RCLike.ofReal_real_eq_id, id_eq]
   refine (Real.rpow_le_rpow_iff (norm_nonneg g)
     (mul_nonneg (by linarith) (norm_nonneg f)) (by linarith : 0 < r)).1 ?_
@@ -319,26 +303,6 @@ theorem norm_sum_signed_haarBasis_real_le_of_two_le {p : ℝ≥0∞} [Fact (1 �
   exact integral_rpow_abs_haarFun_signed_le hr2 c hε N
 
 /-! ### Hölder duality for `1 < p ≤ 2` -/
-
-private theorem integral_haarFun_mul_dyadicProj {q : ℝ≥0∞} [Fact (1 ≤ q)] {k N : ℕ}
-    (hk : k < N) (g : Lp ℝ q (volume : Measure I)) :
-    ∫ x, haarFun k x * g x = ∫ x, haarFun k x * dyadicProj ℝ q N g x := by
-  have hN : N ≠ 0 := by omega
-  have hm : StronglyMeasurable[dyadicFiltration N] (haarFun k) :=
-    ((measurable_haarFun_dyadicFiltration k).mono
-      (dyadicFiltration.mono (by omega)) le_rfl).stronglyMeasurable
-  have hg_int : Integrable g (volume : Measure I) := (Lp.memLp g).integrable Fact.out
-  have hpull := condExp_stronglyMeasurable_mul_of_bound (dyadicFiltration.le N) hm hg_int 1
-    (ae_of_all _ (norm_haarFun_le k))
-  calc
-    ∫ x, haarFun k x * g x
-        = ∫ x, volume[haarFun k * ⇑g | dyadicFiltration N] x :=
-          (integral_condExp (dyadicFiltration.le N)).symm
-    _ = ∫ x, haarFun k x * volume[⇑g | dyadicFiltration N] x := integral_congr_ae hpull
-    _ = ∫ x, haarFun k x * dyadicProj ℝ q N g x := by
-          refine integral_congr_ae ?_
-          filter_upwards [dyadicProj_ae_eq hN g] with x hx
-          rw [hx]
 
 /-- Orthogonality of distinct Haar functions makes signed Haar partial sums self-transpose with
 respect to the integral pairing on `I`. -/
@@ -394,7 +358,7 @@ private theorem toDual_sum_signed_haarBasis {p q : ℝ≥0∞} [Fact (1 ≤ p)] 
     ∫ x, (∑ k ∈ Finset.range N, (ε k * c k) • haarBasis ℝ p hp k) x * g x
         = ∫ x, haarSum (fun k => ε k * c k) N x * g x := by
           refine integral_congr_ae ?_
-          filter_upwards [coeFn_sum_haarBasis hp (fun k => ε k * c k) N] with x hx
+          filter_upwards [coeFn_sum_haarBasis hp (fun k => ε k * c k) (Finset.range N)] with x hx
           simp only [haarSum, hx, RCLike.ofReal_real_eq_id, id_eq]
     _ = ∑ k ∈ Finset.range N, (ε k * c k) * ∫ x, haarFun k x * g x := by
           simp_rw [haarSum, Finset.sum_mul, hmul]
@@ -402,22 +366,24 @@ private theorem toDual_sum_signed_haarBasis {p q : ℝ≥0∞} [Fact (1 ≤ p)] 
           exact Finset.sum_congr rfl fun k _ => integral_const_mul _ _
     _ = ∑ k ∈ Finset.range N, (ε k * c k) * ∫ x, haarFun k x * gN x := by
           refine Finset.sum_congr rfl fun k hk => ?_
-          rw [integral_haarFun_mul_dyadicProj (Finset.mem_range.1 hk), hgN_eq]
+          rw [show (∫ x, haarFun k x * g x) = ∫ x, haarFun k x * dyadicProj ℝ q N g x by
+            simpa only [RCLike.ofReal_real_eq_id, id_eq] using
+              integral_haarFun_mul_dyadicProj (Finset.mem_range.1 hk) g, hgN_eq]
     _ = ∫ x, haarSum (fun k => ε k * c k) N x * gN x := by
           simp_rw [haarSum, Finset.sum_mul, hmul]
           rw [integral_finsetSum _ fun k _ => (hint_mul hgN_int k).const_mul _]
           exact Finset.sum_congr rfl fun k _ => (integral_const_mul _ _).symm
     _ = ∫ x, haarSum (fun k => ε k * c k) N x * haarSum d N x := by
           refine integral_congr_ae ?_
-          filter_upwards [coeFn_sum_haarBasis hq d N] with x hx
+          filter_upwards [coeFn_sum_haarBasis hq d (Finset.range N)] with x hx
           simp only [gN, haarSum, hx, RCLike.ofReal_real_eq_id, id_eq]
     _ = ∫ x, haarSum c N x * haarSum (fun k => ε k * d k) N x :=
           integral_haarSum_signed_mul c d ε N
     _ = ∫ x, (∑ k ∈ Finset.range N, c k • haarBasis ℝ p hp k) x *
           (∑ k ∈ Finset.range N, (ε k * d k) • haarBasis ℝ q hq k) x := by
           refine integral_congr_ae ?_
-          filter_upwards [coeFn_sum_haarBasis hp c N,
-            coeFn_sum_haarBasis hq (fun k => ε k * d k) N] with x hfx hgx
+          filter_upwards [coeFn_sum_haarBasis hp c (Finset.range N),
+            coeFn_sum_haarBasis hq (fun k => ε k * d k) (Finset.range N)] with x hfx hgx
           simp only [haarSum, hfx, hgx, RCLike.ofReal_real_eq_id, id_eq]
 
 /-- **`Lᵖ` sign-transform bound for the real Haar basis (`1 < p ≤ 2`).** -/
@@ -503,18 +469,6 @@ private theorem one_le_haarRealBound {p : ℝ≥0∞} (hp1 : 1 < p) (hp : p ≠ 
 
 /-! ### Extension to `RCLike` scalars and unconditional basis of `Lᵖ([0, 1]; 𝕜)` -/
 
-private theorem compLpL_sum_haarBasis {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp : p ≠ ∞) (L : 𝕜 →L[ℝ] ℝ) (a : ℕ → 𝕜) (N : ℕ) :
-    L.compLpL p (volume : Measure I) (∑ k ∈ Finset.range N, a k • haarBasis 𝕜 p hp k) =
-      ∑ k ∈ Finset.range N, L (a k) • haarBasis ℝ p hp k := by
-  refine Lp.ext ?_
-  filter_upwards [L.coeFn_compLpL (∑ k ∈ Finset.range N, a k • haarBasis 𝕜 p hp k),
-    coeFn_sum_haarBasis hp a N, coeFn_sum_haarBasis hp (fun k => L (a k)) N] with x h1 h2 h3
-  rw [h1, h2, h3, map_sum]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [mul_comm, ← Algebra.smul_def, L.map_smul, RCLike.ofReal_real_eq_id, id_eq, smul_eq_mul,
-    mul_comm]
-
 /-- **Sign-transform bound for the Haar basis of `Lᵖ([0, 1]; 𝕜)` (`1 < p < ∞`).** For `1 < p < ∞`
 and signs `|ε k| = 1`, signed Haar partial sums in `Lᵖ(I; 𝕜)` satisfy
 `‖∑_{k < N} ε_k c_k h_k‖_p ≤ 2 * (max p (p / (p - 1)) - 1) * ‖∑_{k < N} c_k h_k‖_p`. -/
@@ -553,13 +507,13 @@ theorem norm_sum_signed_haarBasis_le {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0�
     simp_rw [RCLike.reCLM_apply, ← Algebra.smul_def, RCLike.smul_re]
     exact (norm_sum_signed_haarBasis_real_le hp1 hp _ hε N).trans
       (mul_le_mul_of_nonneg_left
-        (compLpL_sum_haarBasis hp (RCLike.reCLM (K := 𝕜)) c N ▸ hre_le) hC0)
+        (compLpL_sum_haarBasis hp (RCLike.reCLM (K := 𝕜)) c (Finset.range N) ▸ hre_le) hC0)
   have him_g : ‖imLp g‖ ≤ C * ‖f‖ := by
     rw [compLpL_sum_haarBasis hp (RCLike.imCLM (K := 𝕜))]
     simp_rw [RCLike.imCLM_apply, ← Algebra.smul_def, RCLike.smul_im]
     exact (norm_sum_signed_haarBasis_real_le hp1 hp _ hε N).trans
       (mul_le_mul_of_nonneg_left
-        (compLpL_sum_haarBasis hp (RCLike.imCLM (K := 𝕜)) c N ▸ him_le) hC0)
+        (compLpL_sum_haarBasis hp (RCLike.imCLM (K := 𝕜)) c (Finset.range N) ▸ him_le) hC0)
   linarith
 
 /-- Every finite signed coordinate multiplier of the real Haar basis on `Lᵖ(I)` (`1 < p < ∞`) has
@@ -714,14 +668,8 @@ theorem nnNormProjBound_haarUnconditionalBasis_two :
   refine le_antisymm ?_ ?_
   · rw [← NNReal.coe_le_coe, NNReal.coe_one]
     refine b.coe_nnNormProjBound_le fun A => ?_
-    dsimp only [b]
     rw [haarUnconditionalBasis_proj]
-    refine (haarBasis 𝕜 2 ENNReal.ofNat_ne_top).norm_proj_finset_le_of_range_signed
-      (fun N δ hδ g => ?_) A
-    simp only [smul_smul, one_mul]
-    rw [norm_sum_unimodular_haarBasis_two 𝕜 _ (Finset.range N)
-      (fun k _ => by rw [RCLike.norm_ofReal, hδ k]), ← SchauderBasis.proj_apply, haarBasis_proj]
-    simpa using (dyadicProj 𝕜 2 N).le_of_opNorm_le (norm_dyadicProj_le 𝕜 2 N) g
+    exact norm_proj_haarBasis_two_le 𝕜 A
   · have hproj : 1 ≤ ‖b.proj (Finset.range 1)‖ := by
       have hb0 : 0 < ‖b 0‖ := norm_pos_iff.2 fun h0 => by
         have := b.ortho 0 0

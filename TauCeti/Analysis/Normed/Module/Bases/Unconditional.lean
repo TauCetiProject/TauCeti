@@ -135,23 +135,9 @@ theorem norm_proj_apply_le_of_sign_bound {A B : Finset β} (hAB : A ⊆ B) {K : 
     (hK : ∀ ε : β → ℝ, (∀ i, ε i = 1 ∨ ε i = -1) →
       ‖∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj B x‖) :
     ‖b.proj A x‖ ≤ (1 + K) / 2 * ‖b.proj B x‖ := by
-  classical
-  let ε : β → ℝ := fun i ↦ if i ∈ A then 1 else -1
-  have hε : ∀ i, ε i = 1 ∨ ε i = -1 := fun i ↦ by dsimp [ε]; split_ifs <;> simp
-  -- Averaging the identity and the sign multiplier `ε` on `B` isolates the projection onto `A`.
-  have h2 : b.proj B x + ∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i = (2 : 𝕜) • b.proj A x := by
-    rw [proj_apply, proj_apply, Finset.smul_sum, ← Finset.sum_add_distrib,
-      ← Finset.sum_subset hAB fun i _ hi ↦ by simp [ε, hi]]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    simp [ε, hi, ← one_add_one_eq_two, add_smul]
-  have hnorm2 : ‖(2 : 𝕜) • b.proj A x‖ = 2 * ‖b.proj A x‖ := by
-    rw [norm_smul, ← RCLike.ofReal_ofNat, RCLike.norm_ofReal, abs_of_nonneg two_pos.le]
-  have hle : 2 * ‖b.proj A x‖ ≤ (1 + K) * ‖b.proj B x‖ := by
-    calc 2 * ‖b.proj A x‖ = ‖b.proj B x + ∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i‖ := by
-          rw [h2, hnorm2]
-      _ ≤ ‖b.proj B x‖ + ‖∑ i ∈ B, (ε i : 𝕜) • b.coord i x • b i‖ := norm_add_le _ _
-      _ ≤ ‖b.proj B x‖ + K * ‖b.proj B x‖ := by gcongr; exact hK ε hε
-      _ = (1 + K) * ‖b.proj B x‖ := by ring
+  have h := TauCeti.norm_sum_subset_le_of_forall_abs_eq_one (v := fun i ↦ b.coord i x • b i)
+    hAB (S := K * ‖b.proj B x‖) fun ε hε ↦ hK ε fun i ↦ (abs_eq zero_le_one).1 (hε i)
+  rw [← b.proj_apply B, ← b.proj_apply A] at h
   linarith
 
 /-- The finite coordinate projections of a generalized Schauder basis are uniformly bounded if

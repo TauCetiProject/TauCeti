@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Bases
 public import TauCeti.MeasureTheory.Constructions.UnitInterval.Dyadic
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import TauCeti.Analysis.Normed.Module.Bases.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -340,6 +341,31 @@ theorem tendsto_dyadicProj (hp : p ≠ ∞) (f : Lp 𝕜 p (volume : Measure I))
   filter_upwards [eventually_ne_atTop 0] with N hN
   exact eLpNorm_congr_ae ((dyadicProj_ae_eq hN f).symm.sub EventuallyEq.rfl)
 
+/-- Integrating against a Haar function `hₖ` commutes with applying `dyadicProj 𝕜 p N` whenever
+`k < N`. -/
+theorem integral_haarFun_mul_dyadicProj {k N : ℕ} (hk : k < N) (g : Lp 𝕜 p (volume : Measure I)) :
+    ∫ x, (haarFun k x : 𝕜) * g x = ∫ x, (haarFun k x : 𝕜) * dyadicProj 𝕜 p N g x := by
+  have hN : N ≠ 0 := by omega
+  have hm : StronglyMeasurable[dyadicFiltration N] (haarFun k) :=
+    ((measurable_haarFun_dyadicFiltration k).mono
+      (dyadicFiltration.mono (by omega)) le_rfl).stronglyMeasurable
+  have hg_int : Integrable g (volume : Measure I) := (Lp.memLp g).integrable Fact.out
+  have hpull := condExp_stronglyMeasurable_bilin_of_bound (ContinuousLinearMap.lsmul ℝ ℝ)
+    (dyadicFiltration.le N) hm hg_int 1 (ae_of_all _ (norm_haarFun_le k))
+  have hsmul (u : I → 𝕜) : (fun x => (haarFun k x : 𝕜) * u x) = fun x => haarFun k x • u x :=
+    funext fun x => (Algebra.smul_def (haarFun k x) (u x)).symm
+  calc
+    ∫ x, (haarFun k x : 𝕜) * g x
+        = ∫ x, haarFun k x • g x := by rw [hsmul]
+    _ = ∫ x, volume[fun x => haarFun k x • g x | dyadicFiltration N] x :=
+          (integral_condExp (dyadicFiltration.le N)).symm
+    _ = ∫ x, haarFun k x • volume[⇑g | dyadicFiltration N] x := integral_congr_ae hpull
+    _ = ∫ x, (haarFun k x : 𝕜) * dyadicProj 𝕜 p N g x := by
+          rw [hsmul]
+          refine integral_congr_ae ?_
+          filter_upwards [dyadicProj_ae_eq hN g] with x hx
+          rw [hx]
+
 /-- The Haar function `hₙ` is fixed by the dyadic averaging projection of rank `n + 1`. -/
 private theorem dyadicProj_succ_haarFun (n : ℕ) :
     dyadicProj 𝕜 p (n + 1) ((memLp_ofReal_haarFun 𝕜 p n).toLp (fun x => (haarFun n x : 𝕜))) =
@@ -483,6 +509,35 @@ theorem haarBasis_apply (hp : p ≠ ∞) (n : ℕ) :
 theorem coeFn_haarBasis (hp : p ≠ ∞) (n : ℕ) :
     haarBasis 𝕜 p hp n =ᵐ[volume] fun x => (haarFun n x : 𝕜) :=
   (memLp_ofReal_haarFun 𝕜 p n).coeFn_toLp
+
+/-- A finite linear combination of Haar basis vectors is a.e. the corresponding pointwise linear
+combination of Haar functions. -/
+theorem coeFn_sum_haarBasis (hp : p ≠ ∞) (c : ℕ → 𝕜) (A : Finset ℕ) :
+    (∑ k ∈ A, c k • haarBasis 𝕜 p hp k : Lp 𝕜 p (volume : Measure I)) =ᵐ[volume]
+      fun x => ∑ k ∈ A, c k * (haarFun k x : 𝕜) := by
+  have hterm (k : ℕ) :
+      (c k • haarBasis 𝕜 p hp k : Lp 𝕜 p (volume : Measure I)) =ᵐ[volume]
+        fun x => c k * (haarFun k x : 𝕜) := by
+    filter_upwards [Lp.coeFn_smul (c k) (haarBasis 𝕜 p hp k),
+      coeFn_haarBasis (𝕜 := 𝕜) (p := p) hp k] with x h1 h2
+    rw [h1, Pi.smul_apply, h2, smul_eq_mul]
+  filter_upwards [Lp.coeFn_finsetSum A fun k => c k • haarBasis 𝕜 p hp k,
+    ae_all_iff.2 fun k : A => hterm k] with x hsum hk
+  rw [hsum, Finset.sum_apply]
+  exact Finset.sum_congr rfl fun k hk_mem => hk ⟨k, hk_mem⟩
+
+/-- Post-composing a finite Haar sum in `Lᵖ(I; 𝕜)` with an `ℝ`-linear map `L : 𝕜 →L[ℝ] ℝ`
+applies `L` to each coefficient. -/
+theorem compLpL_sum_haarBasis (hp : p ≠ ∞) (L : 𝕜 →L[ℝ] ℝ) (a : ℕ → 𝕜) (A : Finset ℕ) :
+    L.compLpL p (volume : Measure I) (∑ k ∈ A, a k • haarBasis 𝕜 p hp k) =
+      ∑ k ∈ A, L (a k) • haarBasis ℝ p hp k := by
+  refine Lp.ext ?_
+  filter_upwards [L.coeFn_compLpL (∑ k ∈ A, a k • haarBasis 𝕜 p hp k),
+    coeFn_sum_haarBasis hp a A, coeFn_sum_haarBasis hp (fun k => L (a k)) A] with x h1 h2 h3
+  rw [h1, h2, h3, map_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [mul_comm, ← Algebra.smul_def, L.map_smul, RCLike.ofReal_real_eq_id, id_eq, smul_eq_mul,
+    mul_comm]
 
 /-- The initial projections of the Haar basis are the dyadic averaging projections. -/
 @[simp]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.Lp.HaarBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
+import TauCeti.Analysis.Normed.Module.Bases.Basic
 
 /-!
 # `L²` orthogonality of the Haar basis
@@ -14,8 +15,9 @@ import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 The Haar basis `haarBasis 𝕜 2 ENNReal.ofNat_ne_top` of `L²([0, 1]; 𝕜)` is an orthogonal family
 whose `j`-th vector has squared `L²` norm `2 ^ (-⌊log₂ j⌋)`
 (`TauCeti.unitInterval.inner_haarBasis_two`). Consequently finite Haar sums satisfy Parseval's
-identity (`TauCeti.unitInterval.norm_sq_sum_haarBasis_two`) and unimodular Haar multipliers are
-`L²` isometries (`TauCeti.unitInterval.norm_sum_unimodular_haarBasis_two`).
+identity (`TauCeti.unitInterval.norm_sq_sum_haarBasis_two`), unimodular Haar multipliers are `L²`
+isometries (`TauCeti.unitInterval.norm_sum_unimodular_haarBasis_two`), and every finite coordinate
+projection has norm at most `1` (`TauCeti.unitInterval.norm_proj_haarBasis_two_le`).
 -/
 
 public section
@@ -50,7 +52,8 @@ theorem inner_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (j k : ℕ) :
   · simp [hjk]
 
 -- Not `@[simp]`: `haarBasis_apply` and `inner_self_eq_norm_sq_to_K` simplify the LHS;
--- see `eLpNorm_ofReal_haarFun_two_sq` for the normalized `simp` rule.
+-- see `eLpNorm_ofReal_haarFun_two_sq` and `toReal_eLpNorm_ofReal_haarFun_two_sq` for the
+-- normalized `simp` rules.
 /-- Diagonal inner product of a Haar basis vector in `L²([0, 1]; 𝕜)`. -/
 theorem inner_haarBasis_two_self (𝕜 : Type*) [RCLike 𝕜] (j : ℕ) :
     ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j, haarBasis 𝕜 2 ENNReal.ofNat_ne_top j⟫_𝕜 =
@@ -64,6 +67,16 @@ theorem eLpNorm_ofReal_haarFun_two_sq (𝕜 : Type*) [RCLike 𝕜] (j : ℕ) :
     ((eLpNorm (fun x => (haarFun j x : 𝕜)) 2 (volume : Measure I)).toReal : 𝕜) ^ 2 =
       ((2 ^ Nat.log 2 j : ℕ) : 𝕜)⁻¹ := by
   simpa using inner_haarBasis_two_self 𝕜 j
+
+/-- Real-valued normalized `simp` form of `inner_haarBasis_two_self`: the squared `L²` norm of
+the `𝕜`-valued Haar function `haarFun j` equals `2 ^ (-⌊log₂ j⌋)`. -/
+@[simp]
+theorem toReal_eLpNorm_ofReal_haarFun_two_sq (𝕜 : Type*) [RCLike 𝕜] (j : ℕ) :
+    (eLpNorm (fun x => (haarFun j x : 𝕜)) 2 (volume : Measure I)).toReal ^ 2 =
+      ((2 ^ Nat.log 2 j : ℕ) : ℝ)⁻¹ := by
+  have h := congrArg RCLike.re (eLpNorm_ofReal_haarFun_two_sq 𝕜 j)
+  rw [RCLike.re_ofReal_pow, ← RCLike.ofReal_natCast, ← RCLike.ofReal_inv, RCLike.ofReal_re] at h
+  exact h
 
 -- Not `@[simp]`: `haarBasis_apply` simplifies the LHS; see `inner_toLp_ofReal_haarFun_of_ne` for
 -- the normalized `simp` rule.
@@ -107,5 +120,33 @@ theorem norm_sum_unimodular_haarBasis_two (𝕜 : Type*) [RCLike 𝕜]
   rw [norm_sq_sum_haarBasis_two, norm_sq_sum_haarBasis_two]
   refine Finset.sum_congr rfl fun k hk => ?_
   rw [norm_mul, hu k hk, one_mul]
+
+/-- Every finite coordinate projection of the Haar basis of `L²([0, 1]; 𝕜)` has operator norm at
+most `1`. -/
+theorem norm_proj_haarBasis_two_le (𝕜 : Type*) [RCLike 𝕜] (A : Finset ℕ) :
+    ‖GeneralSchauderBasis.proj (haarBasis 𝕜 2 ENNReal.ofNat_ne_top) A‖ ≤ 1 := by
+  classical
+  let b := haarBasis 𝕜 2 ENNReal.ofNat_ne_top
+  have hspan : (Submodule.span 𝕜 (Set.range b) : Set (Lp 𝕜 2 (volume : Measure I))) ⊆
+      {f | ‖GeneralSchauderBasis.proj b A f‖ ≤ ‖f‖} := by
+    rintro f hf
+    obtain ⟨c, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hf
+    rw [Finsupp.sum, Set.mem_ofPred_eq]
+    have hproj : GeneralSchauderBasis.proj b A (∑ k ∈ c.support, c k • b k) =
+        ∑ k ∈ c.support, (if k ∈ A then c k else 0) • b k := by
+      rw [map_sum]
+      refine Finset.sum_congr rfl fun k _ => ?_
+      rw [map_smul, GeneralSchauderBasis.proj_apply_basis_mem]
+      split_ifs <;> simp
+    rw [hproj, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_sum_haarBasis_two,
+      norm_sq_sum_haarBasis_two]
+    refine Finset.sum_le_sum fun k _ => ?_
+    refine mul_le_mul_of_nonneg_right ?_ (integral_nonneg fun _ => sq_nonneg _)
+    split_ifs <;> simp
+  have hclosed : IsClosed {f : Lp 𝕜 2 (volume : Measure I) |
+      ‖GeneralSchauderBasis.proj b A f‖ ≤ ‖f‖} :=
+    isClosed_le (GeneralSchauderBasis.proj b A).continuous.norm continuous_norm
+  exact (GeneralSchauderBasis.proj b A).opNorm_le_bound zero_le_one fun f => by
+    simpa using hclosed.closure_subset_iff.2 hspan (b.dense_span f)
 
 end TauCeti.unitInterval
