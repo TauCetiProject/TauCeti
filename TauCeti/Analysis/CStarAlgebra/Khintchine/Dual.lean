@@ -13,7 +13,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
-import TauCeti.Analysis.CStarAlgebra.CauchySchwarz
+import TauCeti.Analysis.CStarAlgebra.RademacherSum
 import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
@@ -23,21 +23,18 @@ This file proves the dual `L^∞` Rademacher factorization in arbitrary non-unit
 underlying the `p = 1` noncommutative Khintchine inequality with the explicit Haagerup–Musat /
 Pisier constant `√3`:
 
-1. **Sign-cube Bessel inequalities**: Rademacher Fourier coefficients
+1. **Square-function Bessel bounds**: using the sign-cube orthogonality bounds from
+   `TauCeti.Analysis.CStarAlgebra.RademacherSum`, Rademacher Fourier coefficients
    `y_k = rademacherCoeff ℝ Φ k` satisfy `max ‖columnSquare y‖ ‖rowSquare y‖ ≤ sup_ε ‖Φ(ε)‖`.
-2. **Pisier–Haagerup fourth-moment inequality**: for self-adjoint `x : ι → A`, expanding the fourth
-   moment and applying `norm_sum_mul_le_norm_rowSquare_mul_norm_columnSquare` gives
-   `‖|ι → ℤˣ|⁻¹ ∑_ε (∑_i ε_i • x_i)^4‖ ≤ 3 ‖∑_i x_i^2‖^2`.
-3. **Iterative truncation and `2 × 2` Hermitian dilation**: for self-adjoint `x` normalized by
-   `‖∑_i x_i^2‖ ≤ 1`, truncating `∑_i ε_i • x_i` at `√3 / 2` leaves a remainder `r` with
-   `‖∑_i r_i^2‖ ≤ 1 / 4`, whose rescaled iterates form a geometric series; `2 × 2` Hermitian
+2. **Iterative truncation and `2 × 2` Hermitian dilation**: using the fourth-moment estimate
+   `TauCeti.norm_card_inv_smul_sum_sum_units_smul_mul_self_mul_mul_self_le`, for self-adjoint `x`
+   normalized by `‖∑_i x_i^2‖ ≤ 1`, truncating `∑_i ε_i • x_i` at `√3 / 2` leaves a remainder `r`
+   with `‖∑_i r_i^2‖ ≤ 1 / 4`, whose rescaled iterates form a geometric series; `2 × 2` Hermitian
    dilation then extends the factorization with constant `√3` to arbitrary `x : ι → A`.
 
 ## Main declarations
 
-* `TauCeti.sum_star_rademacherCoeff_mul_le`, `TauCeti.sum_rademacherCoeff_mul_star_le`
 * `TauCeti.norm_columnSquare_rademacherCoeff_le`, `TauCeti.norm_rowSquare_rademacherCoeff_le`
-* `TauCeti.norm_inv_card_smul_sum_units_smul_mul₄_le`
 * `TauCeti.exists_isSelfAdjoint_rademacherCoeff_eq_and_norm_le`,
   `TauCeti.exists_rademacherCoeff_eq_and_norm_le`
 
@@ -60,60 +57,19 @@ open scoped BigOperators ComplexStarModule
 
 namespace TauCeti
 
-/-! ### Operator-valued Bessel inequalities on the sign cube -/
+/-! ### Square-function Bessel bounds on the sign cube -/
 
 section Bessel
 
 variable {ι A : Type*} [Fintype ι] [DecidableEq ι] [NonUnitalCStarAlgebra A]
   [PartialOrder A] [StarOrderedRing A]
 
-/-- Operator-valued Bessel inequality (column form): the Rademacher Fourier coefficients
-`y = rademacherCoeff ℝ Φ` satisfy
-`∑ k, star (y k) * y k ≤ |ι → ℤˣ|⁻¹ • ∑ ε, star (Φ ε) * Φ ε`. -/
-theorem sum_star_rademacherCoeff_mul_le (Φ : (ι → ℤˣ) → A) :
-    ∑ k, star (rademacherCoeff ℝ Φ k) * rademacherCoeff ℝ Φ k ≤
-      (Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε : ι → ℤˣ, star (Φ ε) * Φ ε := by
-  set c : ℝ := (Fintype.card (ι → ℤˣ) : ℝ)⁻¹
-  set y : ι → A := rademacherCoeff ℝ Φ
-  set S : (ι → ℤˣ) → A := fun ε => ∑ k, ε k • y k
-  let B : A →ₗ[ℝ] A →ₗ[ℝ] A :=
-    LinearMap.mk₂ ℝ (fun u v => star u * v)
-      (fun u₁ u₂ v => by rw [star_add, add_mul])
-      (fun r u v => by rw [star_smul, star_trivial, smul_mul_assoc])
-      (fun u v₁ v₂ => mul_add _ _ _)
-      (fun r u v => mul_smul_comm _ _ _)
-  have htransfer (Ψ : (ι → ℤˣ) → A) (b : ι → A) :
-      c • ∑ ε : ι → ℤˣ, star (Ψ ε) * ∑ k, ε k • b k = ∑ k, star (rademacherCoeff ℝ Ψ k) * b k :=
-    (sum_bilinear_rademacherCoeff B Ψ b).symm
-  have hcross2 : c • ∑ ε : ι → ℤˣ, star (Φ ε) * S ε = ∑ k, star (y k) * y k := htransfer Φ y
-  have hcross1 : c • ∑ ε : ι → ℤˣ, star (S ε) * Φ ε = ∑ k, star (y k) * y k := by
-    simpa only [star_smul, star_trivial, star_sum, star_mul, star_star] using congrArg star hcross2
-  have hS_coeff : rademacherCoeff ℝ S = y := rademacherCoeff_sum_units_smul y
-  have hsq : c • ∑ ε : ι → ℤˣ, star (S ε) * S ε = ∑ k, star (y k) * y k :=
-    (htransfer S y).trans (by rw [hS_coeff])
-  have hnonneg : 0 ≤ c • ∑ ε : ι → ℤˣ, star (Φ ε - S ε) * (Φ ε - S ε) :=
-    smul_nonneg (by positivity) (Finset.sum_nonneg fun ε _ => star_mul_self_nonneg _)
-  have hexpand : c • ∑ ε : ι → ℤˣ, star (Φ ε - S ε) * (Φ ε - S ε) =
-      (c • ∑ ε : ι → ℤˣ, star (Φ ε) * Φ ε) - ∑ k, star (y k) * y k := by
-    simp only [star_sub, mul_sub, sub_mul, Finset.sum_sub_distrib, smul_sub, hcross1, hcross2, hsq]
-    abel
-  rwa [hexpand, sub_nonneg] at hnonneg
-
-/-- Operator-valued Bessel inequality (row form): the Rademacher Fourier coefficients
-`y = rademacherCoeff ℝ Φ` satisfy
-`∑ k, y k * star (y k) ≤ |ι → ℤˣ|⁻¹ • ∑ ε, Φ ε * star (Φ ε)`. -/
-theorem sum_rademacherCoeff_mul_star_le (Φ : (ι → ℤˣ) → A) :
-    ∑ k, rademacherCoeff ℝ Φ k * star (rademacherCoeff ℝ Φ k) ≤
-      (Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε : ι → ℤˣ, Φ ε * star (Φ ε) := by
-  simpa only [star_rademacherCoeff, star_star] using
-    sum_star_rademacherCoeff_mul_le (fun ε : ι → ℤˣ => star (Φ ε))
-
 /-- If `‖Φ ε‖ ≤ C` for all `ε`, then `‖columnSquare (rademacherCoeff ℝ Φ)‖ ≤ C`. -/
 theorem norm_columnSquare_rademacherCoeff_le {Φ : (ι → ℤˣ) → A} {C : ℝ}
     (hΦ : ∀ ε, ‖Φ ε‖ ≤ C) : ‖columnSquare (rademacherCoeff ℝ Φ)‖ ≤ C := by
   rw [norm_columnSquare, ← Real.sqrt_sq ((norm_nonneg (Φ 1)).trans (hΦ 1))]
   refine Real.sqrt_le_sqrt <| (CStarAlgebra.norm_le_norm_of_le_of_nonneg
-    (sum_star_rademacherCoeff_mul_le Φ)
+    (by simpa only [← rademacherCoeff_apply] using sum_star_mul_le_card_inv_smul_sum_star_mul Φ)
     (Finset.sum_nonneg fun _ _ => star_mul_self_nonneg _)).trans ?_
   rw [norm_smul, Real.norm_of_nonneg (by positivity)]
   refine (mul_le_mul_of_nonneg_left ((norm_sum_le _ _).trans <|
@@ -132,49 +88,15 @@ theorem norm_rowSquare_rademacherCoeff_le {Φ : (ι → ℤˣ) → A} {C : ℝ}
 
 end Bessel
 
-/-! ### The Pisier–Haagerup fourth-moment inequality -/
-
-section FourthMoment
-
-variable {ι A : Type*} [Fintype ι] [NonUnitalCStarAlgebra A]
-  [PartialOrder A] [StarOrderedRing A]
-
-private theorem norm_apply_le_sqrt_norm_sum_mul_self {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i))
-    (i : ι) : ‖x i‖ ≤ √‖∑ k, x k * x k‖ :=
-  (norm_apply_le_norm_columnSquare x i).trans_eq <| by
-    rw [norm_columnSquare, Finset.sum_congr rfl fun k _ => by rw [(hx k).star_eq]]
-
-/-- **Pisier–Haagerup fourth-moment inequality**: for any finite family `x : ι → A` of self-adjoint
-elements in a non-unital C⋆-algebra,
-`‖|ι → ℤˣ|⁻¹ • ∑ ε, (∑ i, ε i • x i)^4‖ ≤ 3 * ‖∑ i, x i * x i‖ ^ 2`. -/
-theorem norm_inv_card_smul_sum_units_smul_mul₄_le [DecidableEq ι] {x : ι → A}
-    (hx : ∀ i, IsSelfAdjoint (x i)) :
-    ‖(Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε : ι → ℤˣ,
-        (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i)‖ ≤
-      3 * ‖∑ i, x i * x i‖ ^ 2 := by
-  have hpow4 {a : A} (ha : IsSelfAdjoint a) : 0 ≤ a * a * a * a := by
-    simpa only [star_mul, ha.star_eq, mul_assoc] using star_mul_self_nonneg (a * a)
-  set B : A := (∑ i, x i * x i) * (∑ i, x i * x i) + (∑ i, ∑ j, x i * x j * x i * x j) +
-    (∑ i, x i * (∑ j, x j * x j) * x i)
-  have hle : (Fintype.card (ι → ℤˣ) : ℝ)⁻¹ • ∑ ε : ι → ℤˣ,
-      (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) * (∑ i, ε i • x i) ≤ B := by
-    rw [inv_card_smul_sum_units_smul_mul₄]
-    exact sub_le_self B (nsmul_nonneg (Finset.sum_nonneg fun i _ => hpow4 (hx i)) 2)
-  calc _ ≤ ‖B‖ := CStarAlgebra.norm_le_norm_of_le_of_nonneg hle (smul_nonneg (by positivity)
-          (Finset.sum_nonneg fun ε _ => hpow4 (isSelfAdjoint_sum_units_smul hx ε)))
-    _ ≤ ‖(∑ i, x i * x i) * (∑ i, x i * x i)‖ + ‖∑ i, ∑ j, x i * x j * x i * x j‖ +
-          ‖∑ i, x i * (∑ j, x j * x j) * x i‖ := norm_add₃_le
-    _ ≤ ‖∑ i, x i * x i‖ ^ 2 + ‖∑ i, x i * x i‖ ^ 2 + ‖∑ i, x i * x i‖ ^ 2 :=
-        add_le_add (add_le_add (by simpa only [sq] using norm_mul_le (∑ i, x i * x i) _)
-          (Finset.norm_sum_alternating_four_le Finset.univ fun i _ => hx i))
-          (Finset.norm_sum_mul_sum_mul_le_sq Finset.univ fun i _ => hx i)
-    _ = 3 * ‖∑ i, x i * x i‖ ^ 2 := by ring
-
-end FourthMoment
-
 /-! ### Functional-calculus truncation and dual Rademacher factorization -/
 
 section Factorization
+
+private theorem norm_apply_le_sqrt_norm_sum_mul_self {ι A : Type*} [Fintype ι]
+    [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i)) (i : ι) : ‖x i‖ ≤ √‖∑ k, x k * x k‖ :=
+  (norm_apply_le_norm_columnSquare x i).trans_eq <| by
+    rw [norm_columnSquare, Finset.sum_congr rfl fun k _ => by rw [(hx k).star_eq]]
 
 private def pisierCutoff (t : ℝ) : ℝ := max (-(Real.sqrt 3 / 2)) (min (Real.sqrt 3 / 2) t)
 
@@ -272,28 +194,31 @@ private theorem norm_sum_pisierRemainder_sq_le {x : ι → A} (hx : ∀ i, IsSel
   have hS_sa (ε : ι → ℤˣ) : IsSelfAdjoint (S ε) := isSelfAdjoint_sum_units_smul hx ε
   have hrem_eq : pisierRemainder x = rademacherCoeff ℝ δ := by
     rw [pisierRemainder, map_sub, rademacherCoeff_sum_units_smul]
-  have hbessel : ∑ i, pisierRemainder x i * pisierRemainder x i ≤ c • ∑ ε : ι → ℤˣ, δ ε * δ ε :=
-    (Finset.sum_congr rfl fun i _ => by
+  have hbessel : ∑ i, pisierRemainder x i * pisierRemainder x i ≤ c • ∑ ε : ι → ℤˣ, δ ε * δ ε := by
+    have hbes := sum_star_mul_le_card_inv_smul_sum_star_mul δ
+    simp_rw [← rademacherCoeff_apply] at hbes
+    refine (Finset.sum_congr rfl fun i _ => by
       rw [← hrem_eq, (isSelfAdjoint_pisierRemainder hx i).star_eq]).symm.trans_le <|
-      (sum_star_rademacherCoeff_mul_le δ).trans_eq <| congrArg (c • ·) <|
+      hbes.trans_eq <| congrArg (c • ·) <|
         Finset.sum_congr rfl fun ε _ => by
           dsimp only [δ]
           rw [Pi.sub_apply, ((hS_sa ε).sub (isSelfAdjoint_pisierTruncate x ε)).star_eq]
   have hchain : ∑ i, pisierRemainder x i * pisierRemainder x i ≤
-      (1 / 12 : ℝ) • (c • ∑ ε : ι → ℤˣ, S ε * S ε * S ε * S ε) := hbessel.trans <| by
+      (1 / 12 : ℝ) • (c • ∑ ε : ι → ℤˣ, S ε * S ε * (S ε * S ε)) := hbessel.trans <| by
     rw [smul_comm (1 / 12 : ℝ), Finset.smul_sum (r := (1 / 12 : ℝ))]
     refine smul_le_smul_of_nonneg_left (Finset.sum_le_sum fun ε _ => ?_) (by positivity)
     dsimp only [δ]
-    rw [Pi.sub_apply]
+    rw [Pi.sub_apply, ← mul_assoc]
     exact sub_cfcₙ_pisierCutoff_sq_le (hS_sa ε)
-  calc _ ≤ ‖(1 / 12 : ℝ) • (c • ∑ ε : ι → ℤˣ, S ε * S ε * S ε * S ε)‖ :=
+  calc _ ≤ ‖(1 / 12 : ℝ) • (c • ∑ ε : ι → ℤˣ, S ε * S ε * (S ε * S ε))‖ :=
         CStarAlgebra.norm_le_norm_of_le_of_nonneg hchain (Finset.sum_nonneg fun i _ => by
           simpa only [(isSelfAdjoint_pisierRemainder hx i).star_eq] using
             star_mul_self_nonneg (pisierRemainder x i))
-    _ = (1 / 12 : ℝ) * ‖c • ∑ ε : ι → ℤˣ, S ε * S ε * S ε * S ε‖ := by
+    _ = (1 / 12 : ℝ) * ‖c • ∑ ε : ι → ℤˣ, S ε * S ε * (S ε * S ε)‖ := by
         rw [norm_smul, Real.norm_of_nonneg (by norm_num)]
     _ ≤ (1 / 12 : ℝ) * (3 * ‖∑ i, x i * x i‖ ^ 2) :=
-        mul_le_mul_of_nonneg_left (norm_inv_card_smul_sum_units_smul_mul₄_le hx) (by norm_num)
+        mul_le_mul_of_nonneg_left
+          (norm_card_inv_smul_sum_sum_units_smul_mul_self_mul_mul_self_le hx) (by norm_num)
     _ ≤ (1 / 12 : ℝ) * (3 * 1 ^ 2) := by gcongr
     _ = 1 / 4 := by norm_num
 

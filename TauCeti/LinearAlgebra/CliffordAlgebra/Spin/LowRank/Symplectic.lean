@@ -215,7 +215,7 @@ theorem exists_algEquiv_reverseEven_baseChange_eq_neg_J_mul_transpose_mul_J
   have : NeZero (2 : L) := ⟨Invertible.ne_zero 2⟩
   have hVL : finrank L (L ⊗[K] V) = 5 := by rw [Module.finrank_baseChange, hV]
   have hodd : Odd (finrank L (L ⊗[K] V)) := by rw [hVL]; decide
-  have hQL : (Q.baseChange L).Nondegenerate := QuadraticForm.Nondegenerate.baseChange (L := L) hQ
+  have hQL : (Q.baseChange L).Nondegenerate := QuadraticForm.Nondegenerate.baseChange (A := L) hQ
   -- The even Clifford algebra of the extended form is central simple of degree four, so it
   -- splits over the separably closed field `L`.
   have := TauCeti.CliffordAlgebra.isCentral_even_of_odd_finrank hQL hodd

@@ -9,9 +9,11 @@ public import Mathlib.Probability.StrongLaw
 -- Public: the statement is about `Measure.infinitePi`.
 public import Mathlib.Probability.Independence.InfinitePi
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import TauCeti.Algebra.BigOperators.Finset.Pairs
 import Mathlib.Probability.Kernel.MeasurableIntegral
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import TauCeti.Probability.Independence.InfinitePi
+import TauCeti.Analysis.SpecialFunctions.Choose
 
 /-!
 # Strong laws of large numbers
@@ -28,6 +30,10 @@ For variables with no moment assumptions, the fraction of coordinates whose norm
 threshold tending to infinity still tends almost surely to zero. The event is simultaneous for
 all diverging thresholds; this is useful for removing large entries by rank bounds.
 
+For an array indexed by the strictly increasing pairs of natural numbers, the strictly upper
+entries of an `n × n` corner form an initial segment of length `n.choose 2` in column order. The
+strong law then controls the averages over these corners.
+
 ## Main results
 
 * `TauCeti.Probability.strong_law_ae_infinitePi` — for `f` integrable against `Q`, the averages
@@ -41,6 +47,9 @@ all diverging thresholds; this is useful for removing large entries by rank boun
   finite extended mean; pairwise independence suffices.
 * `TauCeti.Probability.ae_tendsto_card_filter_norm_gt_div` — empirical tail frequencies at
   diverging thresholds tend almost surely to zero, without a moment assumption.
+* `TauCeti.Probability.ae_tendsto_inv_smul_sum_finStrictUpper` — the averages of a pairwise
+  independent, identically distributed Banach-valued array over the strictly upper corners
+  `FinStrictUpper n` converge almost surely to the common mean.
 
 ## Implementation
 
@@ -304,6 +313,30 @@ theorem ae_tendsto_card_filter_norm_gt_div (X : ℕ → Ω → F)
     · rfl
 
 end EscapingThresholds
+
+section StrictUpper
+
+/-- Strong law for the arithmetic means of the strictly upper triangular corners of an
+identically distributed, pairwise independent array with values in a Banach space. -/
+theorem ae_tendsto_inv_smul_sum_finStrictUpper {Ω F : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] [MeasurableSpace F] [BorelSpace F]
+    {X : StrictUpper → Ω → F} (hInt : Integrable (X ⟨(0, 1), by decide⟩) P)
+    (hind : Pairwise fun i j ↦ IndepFun (X i) (X j) P)
+    (hid : ∀ i, IdentDistrib (X i) (X ⟨(0, 1), by decide⟩) P P) :
+    ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦
+      (n.choose 2 : ℝ)⁻¹ • ∑ ij : FinStrictUpper n, X ij.toStrictUpper ω)
+      atTop (𝓝 (∫ ω, X ⟨(0, 1), by decide⟩ ω ∂P)) := by
+  let Y (k : ℕ) := X (strictUpperEquivNat.symm k)
+  have hY0 : Y 0 = X ⟨(0, 1), by decide⟩ := by simp only [Y, strictUpperEquivNat_symm_zero]
+  have hY := strong_law_ae Y (by rwa [hY0])
+    (fun i j hij ↦ hind (strictUpperEquivNat.symm.injective.ne hij))
+    (fun i ↦ by rw [hY0]; exact hid _)
+  filter_upwards [hY] with ω hω
+  simp_rw [sum_finStrictUpper_eq_sum_range _ (fun ij ↦ X ij ω)]
+  simpa only [Function.comp_def, Y, strictUpperEquivNat_symm_zero] using
+    hω.comp (tendsto_choose_atTop two_ne_zero)
+
+end StrictUpper
 
 end Probability
 

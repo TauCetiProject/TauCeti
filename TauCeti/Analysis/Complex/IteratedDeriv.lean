@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Complex.TaylorSeries
+import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
@@ -33,6 +34,16 @@ holomorphic on `U` are the restrictions of scalars of its complex iterated deriv
 uniform convergence of holomorphic maps on `U` to locally uniform convergence of all iterated
 derivatives (`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real iterated derivatives
 (`TendstoLocallyUniformlyOn.iteratedFDeriv`).
+
+For a family `f t` of maps holomorphic on `U`, depending on a real variable `t` with derivative
+`f' t` in `t`, Weierstrass's theorem applied to the difference quotients
+`(t - x)⁻¹ (f t - f x)`, which are holomorphic on `U` (`TauCeti.eventually_differentiableOn_slope`),
+shows that `f' x` is again holomorphic on `U` and that the complex derivatives of `f t` are
+differentiable in `t` at `x`, with derivatives those of `f' x`, provided `f' t` converges to `f' x`
+uniformly on `U`
+(`TauCeti.differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn`,
+`TauCeti.hasDerivAt_iteratedDeriv_of_tendstoUniformlyOn`). No joint regularity in `t` and the
+complex variable is assumed.
 -/
 
 public section
@@ -114,6 +125,61 @@ theorem TendstoLocallyUniformlyOn.iteratedFDeriv (𝕜 : Type*) [NontriviallyNor
     (hF.mono fun n hn z hz => .of_eq ?_)).congr_right fun z hz => ?_
   · exact (hn.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
   · exact (hf'.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
+
+namespace TauCeti
+
+/-! ### Holomorphic families depending on a real variable -/
+
+section RealVariable
+
+open Filter Metric Topology
+
+variable {f f' : ℝ → ℂ → E} {U : Set ℂ} {x δ : ℝ}
+
+omit [CompleteSpace E] in
+/-- If `f t` is holomorphic on `U` for every real `t` near `x`, then so are the difference
+quotients `r ↦ (t - x)⁻¹ (f t r - f x r)` for every `t ≠ x` near `x`. -/
+theorem eventually_differentiableOn_slope (hδ : 0 < δ)
+    (hF : ∀ t ∈ ball x δ, DifferentiableOn ℂ (f t) U) :
+    ∀ᶠ t in 𝓝[≠] x, DifferentiableOn ℂ (fun r ↦ slope (f · r) x t) U := by
+  filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds x hδ)] with t ht
+  simp only [slope_def_module]
+  exact ((hF t ht).sub (hF x (mem_ball_self hδ))).const_smul (t - x)⁻¹
+
+/-- **Differentiating a holomorphic family in a real variable.** Let `f t` be holomorphic on an
+open set `U ⊆ ℂ` for every real `t` near `x`, and let `t ↦ f t r` have derivative `f' t r`, with
+`f' t → f' x` uniformly on `U` as `t → x`. Then the derivative `f' x` at `t = x` is holomorphic
+on `U`. -/
+theorem differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn (hU : IsOpen U) (hδ : 0 < δ)
+    (hF : ∀ t ∈ ball x δ, DifferentiableOn ℂ (f t) U)
+    (hf : ∀ r ∈ U, ∀ t ∈ ball x δ, HasDerivAt (f · r) (f' t r) t)
+    (hf' : TendstoUniformlyOn f' (f' x) (𝓝 x) U) :
+    DifferentiableOn ℂ (f' x) U :=
+  (tendstoUniformlyOn_slope_of_tendstoUniformlyOn hδ hf hf').tendstoLocallyUniformlyOn
+    |>.differentiableOn (eventually_differentiableOn_slope hδ hF) hU
+
+/-- **The real and the complex derivatives of a holomorphic family commute.** Under the
+hypotheses of `TauCeti.differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn`, for every `k` and
+`r ∈ U` the `k`-th complex derivative `∂_r^k f t r` has derivative `∂_r^k f' x r` in `t` at
+`t = x`. -/
+theorem hasDerivAt_iteratedDeriv_of_tendstoUniformlyOn (hU : IsOpen U) (hδ : 0 < δ)
+    (hF : ∀ t ∈ ball x δ, DifferentiableOn ℂ (f t) U)
+    (hf : ∀ r ∈ U, ∀ t ∈ ball x δ, HasDerivAt (f · r) (f' t r) t)
+    (hf' : TendstoUniformlyOn f' (f' x) (𝓝 x) U) (k : ℕ) {r : ℂ} (hr : r ∈ U) :
+    HasDerivAt (fun t ↦ iteratedDeriv k (f t) r) (iteratedDeriv k (f' x) r) x := by
+  rw [hasDerivAt_iff_tendsto_slope]
+  -- by Weierstrass's theorem, the derivatives of the difference quotients converge
+  have hT := (tendstoUniformlyOn_slope_of_tendstoUniformlyOn hδ hf hf').tendstoLocallyUniformlyOn
+  refine ((hT.iteratedDeriv (eventually_differentiableOn_slope hδ hF) hU k).tendsto_at hr).congr' ?_
+  filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds x hδ)] with t ht
+  have hc (s : ℝ) (hs : s ∈ ball x δ) : ContDiffAt ℂ k (f s) r :=
+    ((hF s hs).contDiffOn hU).contDiffAt (hU.mem_nhds hr)
+  simp only [slope_def_module]
+  rw [iteratedDeriv_fun_const_smul_field, iteratedDeriv_fun_sub (hc t ht) (hc x (mem_ball_self hδ))]
+
+end RealVariable
+
+end TauCeti
 
 namespace TauCeti.Complex
 
