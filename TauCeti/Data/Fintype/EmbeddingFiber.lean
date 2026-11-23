@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Data.Set.PowersetCard
-import TauCeti.Data.Fintype.Card.Embedding
 import TauCeti.Data.Set.PowersetCard
 
 /-!
@@ -18,10 +17,6 @@ Fix two subsets of cardinality `r` in finite types. There are at most
 This separates the choices on a prescribed subset from the unconstrained remaining vertices,
 as needed when bounding the number of copies affected by a hyperedge edit.
 
-When the whole source is mapped onto a prescribed subset, the count is exact: an `n`-element
-type maps onto a prescribed `n`-element finset in exactly `n!` ways
-(`TauCeti.natCard_embedding_map_univ_eq_factorial`).
-
 When the source is `Fin r` itself, `Set.powersetCard.card_filter_ofFinEmb_eq` counts the `r!`
 injective `r`-tuples in a finite type with a prescribed unordered image `t`, and
 `Finset.card_filter_ofFinEmb_eq_sum_factorial` decomposes any unordered predicate count on a finite
@@ -29,8 +24,6 @@ set of injective `r`-tuples by fiber multiplicity in `{1, …, r!}`.
 -/
 
 public section
-
-open Finset
 
 namespace TauCeti
 
@@ -61,23 +54,6 @@ theorem card_embedding_map_eq_le {α β : Type*} [Fintype α] [Fintype β] {r : 
   simpa only [Nat.card_eq_fintype_card, Fintype.card_prod, Fintype.card_embedding_eq,
     Fintype.card_fun, Fintype.card_coe, Set.powersetCard.card_eq, Finset.card_compl,
     Nat.descFactorial_self] using Nat.card_le_card_of_injective code hinj
-
-/-- An `n`-element type maps onto a prescribed `n`-element finset by exactly `n!` embeddings. -/
-theorem natCard_embedding_map_univ_eq_factorial {α β : Type*} [Fintype α] {t : Finset β}
-    (ht : #t = Fintype.card α) :
-    Nat.card {f : α ↪ β // univ.map f = t} = (Fintype.card α).factorial := by
-  classical
-  -- An embedding maps the elements of `α` onto `t` exactly when it maps them into `t`.
-  have h (f : α ↪ β) : univ.map f = t ↔ ∀ a, f a ∈ t :=
-    ⟨fun hf a ↦ hf ▸ mem_map_of_mem f (mem_univ a), fun hf ↦ eq_of_subset_of_card_le
-      (fun x hx ↦ by obtain ⟨a, -, rfl⟩ := mem_map.1 hx; exact hf a)
-      (by rw [card_map, card_univ, ht])⟩
-  -- These are the orderings of `t` by `α`.
-  have hocc : Function.occCount (fun _ : α ↦ t) t = Fintype.card α := by
-    rw [Function.occCount_eq_card_filter, filter_true_of_mem fun _ _ ↦ rfl, card_univ]
-  rw [Nat.card_congr (Equiv.subtypeEquivRight h),
-    Nat.card_embedding_mem_eq_prod_descFactorial (fun _ ↦ t) (fun _ ↦ mem_singleton_self t)
-      (by simp), prod_singleton, hocc, ht, Nat.descFactorial_self]
 
 end TauCeti
 
