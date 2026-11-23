@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Injective
-public import TauCeti.RingTheory.AdicCompletion.Torsion
+public import Mathlib.RingTheory.AdicCompletion.Algebra
+public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.RingTheory.Ideal.ArtinRees
 

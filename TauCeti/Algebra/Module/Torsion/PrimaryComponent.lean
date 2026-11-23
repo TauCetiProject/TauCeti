@@ -215,6 +215,22 @@ end Submodule
 
 namespace Ideal
 
+section Map
+
+variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+
+/-- An element is annihilated by every element of the extended ideal `I.map (algebraMap R S)` iff
+it is annihilated by every element of `I`. This is the `simp`-normal form of
+`Submodule.mem_torsionBySet_map_iff`. -/
+@[simp]
+theorem forall_mem_map_smul_eq_zero_iff (I : Ideal R) {x : M} :
+    (∀ a ∈ I.map (algebraMap R S), a • x = 0) ↔ ∀ r ∈ I, r • x = 0 := by
+  simpa only [Submodule.mem_torsionBySet_iff, SetLike.coe_sort_coe, Subtype.forall] using
+    Submodule.mem_torsionBySet_map_iff (S := S) (M := M) I (x := x)
+
+end Map
+
 open Submodule
 open scoped DirectSum
 
