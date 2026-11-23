@@ -124,6 +124,12 @@ theorem mk_eq_mk {e : Matrix ι ι A} {f : Matrix κ κ A} (h : IdempotentEquiva
     mk e h.isIdempotentElem_left = mk f h.isIdempotentElem_right :=
   (mk_eq_mk_iff _ _).2 h
 
+/-- The class of an idempotent matrix is unchanged by rewriting the matrix. -/
+private theorem mk_congr {e f : Matrix ι ι A} (h : e = f) (he : IsIdempotentElem e)
+    (hf : IsIdempotentElem f) : mk e he = mk f hf := by
+  subst h
+  rfl
+
 private theorem quotient_mk_eq_mk {n : ℕ} (e : Matrix (Fin n) (Fin n) A)
     (he : IsIdempotentElem e) : Quotient.mk (idempotentSetoid A) ⟨n, e, he⟩ = mk e he :=
   Quotient.sound (idempotentEquivalent_toFin he)
@@ -228,6 +234,58 @@ instance : AddCommMonoid (IdempotentMonoid A) where
       (Equiv.sumComm _ _)
       (by simp)
   nsmul := nsmulRec
+
+/-! ### Change of rings -/
+
+section Map
+
+variable {B C : Type*} [Semiring B] [Semiring C]
+
+/-- Applying a ring homomorphism to the entries, on classes of idempotent matrices. -/
+private def mapFun (f : A →+* B) : IdempotentMonoid A → IdempotentMonoid B :=
+  lift (fun e he ↦ mk (e.map f) (he.matrix_map f)) fun _ _ _ _ h ↦ mk_eq_mk (h.map f)
+
+private theorem mapFun_mk (f : A →+* B) {e : Matrix ι ι A} (he : IsIdempotentElem e) :
+    mapFun f (mk e he) = mk (e.map f) (he.matrix_map f) :=
+  mk_eq_mk ((idempotentEquivalent_toFin he).symm.map f)
+
+/-- **Change of rings on `V(A)`.** A ring homomorphism `f : A →+* B` induces the additive map
+`V(A) →+ V(B)` applying `f` to the entries of an idempotent matrix
+(`TauCeti.IdempotentMonoid.map_mk`). -/
+def map (f : A →+* B) : IdempotentMonoid A →+ IdempotentMonoid B where
+  toFun := mapFun f
+  map_zero' := by
+    rw [← mk_zero (ι := Fin 0), mapFun_mk]
+    exact mk_congr (Matrix.map_zero f (map_zero f)) _ _
+  map_add' x y := by
+    induction x using ind with | mk n e he
+    induction y using ind with | mk m g hg
+    rw [mk_add_mk, mapFun_mk, mapFun_mk, mapFun_mk, mk_add_mk]
+    exact mk_congr (by simp [Matrix.fromBlocks_map]) _ _
+
+/-- `TauCeti.IdempotentMonoid.map f` sends the class of `e` to the class of `e.map f`. -/
+@[simp]
+theorem map_mk (f : A →+* B) {e : Matrix ι ι A} (he : IsIdempotentElem e) :
+    map f (mk e he) = mk (e.map f) (he.matrix_map f) :=
+  mapFun_mk f he
+
+variable (A) in
+/-- Change of rings along the identity is the identity. -/
+@[simp]
+theorem map_id : map (RingHom.id A) = AddMonoidHom.id (IdempotentMonoid A) := by
+  ext x
+  induction x using ind with | mk n e he
+  rw [map_mk, AddMonoidHom.id_apply]
+  exact mk_congr (Matrix.map_id' e) _ _
+
+/-- Change of rings along a composite is the composite of the changes of rings. -/
+theorem map_comp (f : A →+* B) (g : B →+* C) : map (g.comp f) = (map g).comp (map f) := by
+  ext x
+  induction x using ind with | mk n e he
+  rw [map_mk, AddMonoidHom.comp_apply, map_mk, map_mk]
+  exact mk_congr Matrix.map_map.symm _ _
+
+end Map
 
 end IdempotentMonoid
 
@@ -390,12 +448,6 @@ section Opposite
 namespace IdempotentMonoid
 
 variable {ι : Type*} [Fintype ι]
-
-/-- The class of an idempotent matrix is unchanged by rewriting the matrix. -/
-private theorem mk_congr {R : Type u} [Semiring R] {e f : Matrix ι ι R} (h : e = f)
-    (he : IsIdempotentElem e) (hf : IsIdempotentElem f) : mk e he = mk f hf := by
-  subst h
-  rfl
 
 /-- Transposing over the opposite ring, on classes of idempotent matrices. -/
 private def opFun (R : Type u) [Semiring R] : IdempotentMonoid R → IdempotentMonoid Rᵐᵒᵖ :=

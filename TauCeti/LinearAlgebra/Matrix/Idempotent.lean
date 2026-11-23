@@ -98,6 +98,13 @@ theorem IsIdempotentElem.matrix_map {B : Type*} [Semiring B] {e : Matrix ι ι A
     (he : IsIdempotentElem e) (f : A →+* B) : IsIdempotentElem (e.map f) := by
   rw [IsIdempotentElem, ← Matrix.map_mul, he.eq]
 
+/-- The matrix over `A × B` with components two idempotent matrices `e₁` over `A` and `e₂` over
+`B` is idempotent. -/
+theorem IsIdempotentElem.matrix_prodEquiv_symm {B : Type*} [Semiring B] {e₁ : Matrix ι ι A}
+    {e₂ : Matrix ι ι B} (he₁ : IsIdempotentElem e₁) (he₂ : IsIdempotentElem e₂) :
+    IsIdempotentElem ((Matrix.prodEquiv ι ι A B).symm (e₁, e₂)) :=
+  IsIdempotentElem.map (e := (e₁, e₂)) (Prod.ext he₁.eq he₂.eq) (Matrix.prodRingEquiv ι A B).symm
+
 /-- The range of right multiplication by an idempotent matrix is a direct summand of the row
 vectors, hence a projective module. -/
 theorem IsIdempotentElem.projective_range_vecMulLinear {e : Matrix ι ι A}
@@ -257,6 +264,34 @@ theorem IdempotentEquivalent.map {B : Type*} [Semiring B] {e : Matrix ι ι A} {
     (h : IdempotentEquivalent e f) (φ : A →+* B) : IdempotentEquivalent (e.map φ) (f.map φ) := by
   obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
   refine ⟨x.map φ, y.map φ, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp [← Matrix.map_mul, *]
+
+/-- A product of matrices over `A × B` is determined by its two components: both component maps
+are multiplicative. -/
+private theorem mul_eq_of_map_fst_of_map_snd {B μ ν ρ : Type*} [Semiring B] [Fintype ν]
+    {P : Matrix μ ν (A × B)} {Q : Matrix ν ρ (A × B)} {R : Matrix μ ρ (A × B)}
+    (hfst : P.map Prod.fst * Q.map Prod.fst = R.map Prod.fst)
+    (hsnd : P.map Prod.snd * Q.map Prod.snd = R.map Prod.snd) : P * Q = R := by
+  refine (Matrix.prodEquiv μ ρ A B).injective (Prod.ext ?_ ?_)
+  · simpa [← RingHom.coe_fst, ← Matrix.map_mul] using hfst
+  · simpa [← RingHom.coe_snd, ← Matrix.map_mul] using hsnd
+
+/-- **Products of semirings.** Idempotent matrices over `A × B` are equivalent exactly when both
+their components are: the rectangular matrices witnessing the two component equivalences pair
+up to a witness over `A × B`. -/
+theorem idempotentEquivalent_prod_iff {B : Type*} [Semiring B] {e : Matrix ι ι (A × B)}
+    {f : Matrix κ κ (A × B)} :
+    IdempotentEquivalent e f ↔ IdempotentEquivalent (e.map Prod.fst) (f.map Prod.fst) ∧
+      IdempotentEquivalent (e.map Prod.snd) (f.map Prod.snd) := by
+  refine ⟨fun h ↦ ⟨h.map (RingHom.fst A B), h.map (RingHom.snd A B)⟩, fun ⟨h₁, h₂⟩ ↦ ?_⟩
+  obtain ⟨x₁, y₁, h₁⟩ := h₁
+  obtain ⟨x₂, y₂, h₂⟩ := h₂
+  have hx₁ : ((Matrix.prodEquiv ι κ A B).symm (x₁, x₂)).map Prod.fst = x₁ := (rfl)
+  have hx₂ : ((Matrix.prodEquiv ι κ A B).symm (x₁, x₂)).map Prod.snd = x₂ := (rfl)
+  have hy₁ : ((Matrix.prodEquiv κ ι A B).symm (y₁, y₂)).map Prod.fst = y₁ := (rfl)
+  have hy₂ : ((Matrix.prodEquiv κ ι A B).symm (y₁, y₂)).map Prod.snd = y₂ := (rfl)
+  refine ⟨(Matrix.prodEquiv ι κ A B).symm (x₁, x₂), (Matrix.prodEquiv κ ι A B).symm (y₁, y₂),
+    ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  apply mul_eq_of_map_fst_of_map_snd <;> simp only [hx₁, hx₂, hy₁, hy₂, h₁, h₂]
 
 /-- **Complements.** For an idempotent `f`, the block sum of `f` and its complement `1 - f` is
 equivalent to the identity matrix: the images of `f` and `1 - f` together make up all vectors. -/
