@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.Algebra.BigOperators.Associated
+import TauCeti.Algebra.Group.Prod
 import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
@@ -144,26 +145,13 @@ theorem isUnit_away_prod_primes_iff (s : Finset ι) {p : ι → R}
     exact hy.mul P.isUnit
   obtain ⟨k, u, hu⟩ :=
     (s.isUnit_algebraMap_away_prod_primes_iff (S := S) hp).mp ha_unit |>.imp fun _ h ↦ h.symm
-  refine ⟨u, fun i ↦ (k i.val : ℤ) - (n : ℤ), ?_⟩
-  have hmul :
-      algebraMap R S (u : R) *
-          ((∏ i : s,
-            TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p i.property) ^
-              ((k i.val : ℤ) - (n : ℤ)) : Sˣ) : S) *
-          (P : S) =
-        y * (P : S) := by
-    calc
-      algebraMap R S (u : R) *
-          ((∏ i : s,
-            TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p i.property) ^
-              ((k i.val : ℤ) - (n : ℤ)) : Sˣ) : S) *
-          (P : S)
-        = algebraMap R S ((u : R) * ∏ i ∈ s, p i ^ k i) := by
-          rw [mul_assoc, TauCeti.Localization.coe_prod_awayUnitOfDvd_zpow_mul_eq S s p _ _ k
-            (fun i ↦ sub_add_cancel _ _), ← map_mul]
-      _ = y * (P : S) := by
-          rw [mul_comm (u : R), hu, ← hay, hP]
-  exact P.isUnit.mul_right_cancel hmul
+  let Q : Sˣ :=
+    ∏ i : s, TauCeti.Localization.awayUnitOfDvd S (dvd_prod_of_mem p i.property) ^
+      ((k i.val : ℤ) - (n : ℤ))
+  have hmul : algebraMap R S (u : R) * (Q : S) * (P : S) = y * (P : S) := by
+    rw [mul_assoc, TauCeti.Localization.coe_prod_awayUnitOfDvd_zpow_mul_eq S s p _ _ k
+      (fun i ↦ sub_add_cancel _ _), ← map_mul, mul_comm (u : R), hu, ← hay, hP]
+  exact ⟨u, fun i ↦ (k i.val : ℤ) - (n : ℤ), P.isUnit.mul_right_cancel hmul⟩
 
 end Finset
 
@@ -334,7 +322,7 @@ theorem awayUnitsMulEquiv_apply (hp : Prime p) (S : Type*) [CommSemiring S] [Alg
       Units.map (algebraMap R S : R →* S) u *
         TauCeti.Localization.awayUnitOfDvd S (dvd_rfl : p ∣ p) ^ m.toAdd := by
   ext
-  simp [awayUnitsMulEquiv, MulEquiv.prodCongr]
+  simp [awayUnitsMulEquiv, MulEquiv.prodCongr_apply]
 
 @[simp]
 theorem awayUnitsMulEquiv_symm_map (hp : Prime p) (S : Type*) [CommSemiring S] [Algebra R S]

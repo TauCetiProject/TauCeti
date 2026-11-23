@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.MvPolynomial.Units
 public import TauCeti.RingTheory.Localization.Away.Units
 import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
+import TauCeti.Algebra.Group.Prod
 
 /-!
 # Units of localizations of multivariate polynomial rings away from primes
@@ -56,7 +57,7 @@ theorem awayPrimeUnitsMulEquiv_apply (S : Type*) [CommSemiring S]
       Units.map ((algebraMap (_root_.MvPolynomial σ R) S).comp C : R →* S) c *
         awayUnitOfDvd S (dvd_rfl : f ∣ f) ^ m.toAdd := by
   ext
-  simp [awayPrimeUnitsMulEquiv, MulEquiv.prodCongr]
+  simp [awayPrimeUnitsMulEquiv, MulEquiv.prodCongr_apply]
 
 @[simp]
 theorem awayPrimeUnitsMulEquiv_symm_map (S : Type*) [CommSemiring S]
@@ -100,7 +101,7 @@ theorem awayProdPrimesUnitsMulEquiv_apply {J : Type*} (S : Type*) [CommSemiring 
       Units.map ((algebraMap (_root_.MvPolynomial σ R) S).comp C : R →* S) c *
         ∏ j : s, awayUnitOfDvd S (Finset.dvd_prod_of_mem p j.property) ^ (m j).toAdd := by
   ext
-  simp [awayProdPrimesUnitsMulEquiv, MulEquiv.prodCongr]
+  simp [awayProdPrimesUnitsMulEquiv, MulEquiv.prodCongr_apply]
 
 @[simp]
 theorem awayProdPrimesUnitsMulEquiv_symm_map {J : Type*} (S : Type*) [CommSemiring S]
@@ -125,6 +126,6 @@ theorem awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd {J : Type*} [DecidableEq 
       (1, Pi.mulSingle j (Multiplicative.ofAdd 1)) := by
   rw [awayProdPrimesUnitsMulEquiv, MulEquiv.symm_trans_apply,
     TauCeti.Localization.awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd]
-  simp [MulEquiv.prodCongr]
+  simp [MulEquiv.prodCongr_symm, MulEquiv.prodCongr_apply]
 
 end TauCeti.MvPolynomial
