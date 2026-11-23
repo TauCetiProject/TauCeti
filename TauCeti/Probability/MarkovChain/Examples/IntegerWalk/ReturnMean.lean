@@ -11,7 +11,6 @@ public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Analysis.SpecificLimits.CentralBinomial
 public import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import TauCeti.Probability.MarkovChain.Invariant
-import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Infinite mean return time of nearest-neighbor integer walks
@@ -104,14 +103,8 @@ theorem lintegral_integerWalk_hittingAfter_eq_top
     (Filtration.adapted_piLE.isStoppingTime_hittingAfter
       (f := Filtration.piLE (X := fun _ : ℕ => ℤ)) (measurableSet_singleton x)).measurable'
   have hm := (measurable_of_countable (fun t : WithTop ℕ => ENat.toENNReal t)).comp hτ
-  -- Entrance times depend only on the coordinate path; evaluation after composition
-  -- therefore identifies the integrand with the canonical path functional.
-  have hhit (ω : Ω) : hittingAfter (fun n ω => X ω n) {x} 1 ω =
-      hittingAfter (fun n (w : ℕ → ℤ) => w n) {x} 1 (X ω) :=
-    congrFun (hittingAfter_comp_right (fun n (w : ℕ → ℤ) => w n) X {x} 1) ω
-  simp_rw [hhit]
-  simpa only [Function.comp_apply] using (hX.lintegral_comp hm.aemeasurable).trans
-    (by simpa only [Kernel.meanReturnTime_def, Function.comp_def] using
+  exact (hX.lintegral_comp hm.aemeasurable).trans
+    (by simpa only [Kernel.meanReturnTime_def, Function.comp_apply] using
       integerWalk_meanReturnTime_eq_top p x)
 
 end ProbabilityTheory.HasLaw

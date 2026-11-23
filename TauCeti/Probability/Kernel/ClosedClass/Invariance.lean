@@ -78,7 +78,8 @@ noncomputable def invariantProbabilitySubtypeEquiv (κ : Kernel S S) (hs : Measu
       (invariant_subtype_iff κ hs hclosed ν).1 hinv, ν.map_subtype_coe_compl_eq_zero hs⟩
   invFun := fun ⟨μ, hprob, hinv, hμ⟩ =>
     letI := hprob
-    ⟨μ.comap Subtype.val, μ.isProbabilityMeasure_comap_subtype_coe hs hμ,
+    ⟨μ.comap Subtype.val, Measure.isProbabilityMeasure_comap_subtype hs μ
+      ((prob_compl_eq_zero_iff hs).mp hμ),
       (invariant_comap_subtype_iff κ hs hclosed μ hμ).2 hinv⟩
   left_inv := fun ⟨ν, _, _⟩ => Subtype.ext ((MeasurableEmbedding.subtypeVal hs).comap_map ν)
   right_inv := fun ⟨μ, _, _, hμ⟩ => Subtype.ext (μ.map_comap_subtype_coe_eq_self hs hμ)

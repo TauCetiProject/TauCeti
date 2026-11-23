@@ -9,6 +9,7 @@ public import TauCeti.Probability.Kernel.ClosedClass.Invariance
 public import TauCeti.Probability.MarkovChain.ClosedClass
 public import TauCeti.Probability.MarkovChain.Invariant
 public import TauCeti.Probability.MarkovChain.Occupation
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Null recurrence, recurrence trichotomy, and finite closed communicating classes
@@ -230,14 +231,9 @@ theorem not_isNullRecurrent_deterministic {f : S → S} (hf : Measurable f) (x :
     obtain ⟨k, hk⟩ := Set.ne_empty_iff_nonempty.mp hne
     rw [mem_returnLengths] at hk
     obtain ⟨hk_pos, hpos⟩ := hk
-    refine ⟨k, hk_pos, ?_⟩
-    by_contra hne_dirac
-    obtain ⟨A, hAm, hxA, hwA⟩ := dirac_ne_dirac_iff_exists_measurableSet.mp (Ne.symm hne_dirac)
     rw [deterministic_pow, deterministic_apply] at hpos
-    have hle : (Measure.dirac (f^[k] x) : Measure S) {x} ≤ Measure.dirac (f^[k] x) A :=
-      measure_mono (Set.singleton_subset_iff.mpr hxA)
-    rw [Measure.dirac_apply' _ hAm, Set.indicator_of_notMem hwA] at hle
-    exact (hle.trans_lt' hpos).false
+    exact ⟨k, hk_pos, Measure.eq_dirac_of_measure_singleton_eq_one
+      (Measure.dirac_apply_eq_zero_or_one.resolve_left hpos.ne')⟩
   obtain ⟨k, hk, hdirac_k⟩ := hex
   let w' : ℕ → S := Function.update w₀ k x
   have hdirac : (Measure.dirac w₀ : Measure (ℕ → S)) = Measure.dirac w' := by

@@ -53,9 +53,8 @@ of `μ.comap (↑)`:
   subtype of `μ`-mass `1` yields a probability measure.
 * `MeasureTheory.Measure.isFiniteMeasure_comap_subtype_coe`: finiteness of `μ.comap ((↑) : s → α)`
   when `μ s < ∞`.
-* `MeasureTheory.Measure.map_comap_subtype_coe_eq_self`,
-  `MeasureTheory.Measure.map_subtype_coe_compl_eq_zero`, and
-  `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_coe`: pushing and pulling measures
+* `MeasureTheory.Measure.map_comap_subtype_coe_eq_self` and
+  `MeasureTheory.Measure.map_subtype_coe_compl_eq_zero`: pushing and pulling measures
   concentrated on a measurable subtype `s`.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
   `MeasureTheory.Measure.instIsFiniteMeasureOnCompactsComapSubtype`: local finiteness and finiteness
@@ -135,15 +134,6 @@ theorem map_subtype_coe_compl_eq_zero {s : Set α} (ν : Measure s) (hs : Measur
     (ν.map ((↑) : s → α)) sᶜ = 0 := by
   rw [Measure.map_apply measurable_subtypeVal hs.compl]
   simp
-
-/-- Pulling a probability measure concentrated on a measurable set `s` back to the subtype `s`
-yields a probability measure. -/
-theorem isProbabilityMeasure_comap_subtype_coe (μ : Measure α) [IsProbabilityMeasure μ]
-    {s : Set α} (hs : MeasurableSet s) (hμ : μ sᶜ = 0) :
-    IsProbabilityMeasure (μ.comap ((↑) : s → α)) := by
-  have hae : ∀ᵐ x ∂μ, x ∈ range ((↑) : s → α) := by
-    simpa only [Subtype.range_coe] using (ae_iff.mpr hμ : ∀ᵐ x ∂μ, x ∈ s)
-  exact (MeasurableEmbedding.subtypeVal hs).isProbabilityMeasure_comap hae
 
 end Measurable
 

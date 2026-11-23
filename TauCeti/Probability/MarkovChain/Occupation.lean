@@ -10,7 +10,6 @@ public import TauCeti.Probability.MarkovChain.ReturnGaps
 public import TauCeti.Probability.Process.Occupation
 public import TauCeti.Probability.Process.ReturnGapRenewal
 public import TauCeti.Probability.Renewal.StrongLaw
-import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Occupation frequency from the counted state
@@ -251,11 +250,7 @@ theorem ae_tendsto_visitCount_div_markovChainLaw
           (κ.meanReturnTime y)⁻¹.toReal else 0)) := by
   have h := ν.ae_tendsto_visitCount_div_markovChainLaw κ y
   rw [← hX.map_eq] at h
-  filter_upwards [ae_of_ae_map hX.aemeasurable h] with ω hω
-  have hhit : hittingAfter (fun n ω => X ω n) {y} 0 ω =
-      hittingAfter (fun n (w : ℕ → α) => w n) {y} 0 (X ω) :=
-    congrFun (hittingAfter_comp_right (fun n (w : ℕ → α) => w n) X {y} 0) ω
-  rwa [hhit]
+  exact ae_of_ae_map hX.aemeasurable h
 
 /-- **Mean occupation frequencies on any realization.** On any realization of a Markov chain from a
 finite initial law `ν`, the expected proportion of the times `1, …, n` spent at `y` converges to
@@ -277,15 +272,8 @@ theorem tendsto_integral_visitCount_div_markovChainLaw [IsFiniteMeasure ν]
   have hE : MeasurableSet {x : ℕ → α | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} :=
     measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton y) 0
   have hreal : P.real {ω | hittingAfter (fun n ω => X ω n) {y} 0 ω ≠ ⊤} =
-      (markovChainLaw ν κ).real {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} := by
-    have hset : {ω | hittingAfter (fun n ω => X ω n) {y} 0 ω ≠ ⊤} =
-        {ω | hittingAfter (fun n (w : ℕ → α) => w n) {y} 0 (X ω) ≠ ⊤} := by
-      ext ω
-      simp only [Set.mem_ofPred_eq,
-        congrFun (hittingAfter_comp_right (fun n (w : ℕ → α) => w n) X {y} 0) ω,
-        Function.comp_apply]
-    rw [hset]
-    exact hX.measureReal_eq hE
+      (markovChainLaw ν κ).real {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} :=
+    hX.measureReal_eq hE
   simp_rw [heq, hreal]
   exact ν.tendsto_integral_visitCount_div_markovChainLaw κ y
 

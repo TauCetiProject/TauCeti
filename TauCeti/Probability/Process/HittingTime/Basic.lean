@@ -28,8 +28,6 @@ the sample-space map (`MeasureTheory.hittingAfter_comp_right`), and applying an 
   `hittingAfter`.
 * `Function.Injective.hittingAfter_singleton`: singleton hitting times under injective state
   maps.
-* `MeasureTheory.hittingAfter_eval_subtype_coe_singleton`: specialization to the coordinate
-  process on included subtype trajectories.
 -/
 
 public section
@@ -59,16 +57,6 @@ theorem _root_.Function.Injective.hittingAfter_singleton {f : α → β} (hf : F
     (u : ι → Ω → α) (x : α) (n : ι) :
     hittingAfter (fun i ω => f (u i ω)) {f x} n = hittingAfter u {x} n := by
   rw [hittingAfter_comp, ← Set.image_singleton, hf.preimage_image]
-
-/-- Evaluating coordinate-process `hittingAfter` on an included subtype trajectory preserves
-singleton hitting times. -/
-theorem hittingAfter_eval_subtype_coe_singleton {s : Set α} (x : s) (n : ι) (ω : ι → s) :
-    hittingAfter (fun i (w : ι → α) => w i) {x.val} n (fun i => (ω i).val) =
-      hittingAfter (fun i w => w i) {x} n ω :=
-  (congrFun (hittingAfter_comp_right (fun i (w : ι → α) => w i)
-    (fun (w : ι → s) i => (w i).val) {x.val} n) ω).symm.trans
-    (congrFun (Subtype.coe_injective.hittingAfter_singleton
-      (fun i (w : ι → s) => w i) x n) ω)
 
 end Composition
 
