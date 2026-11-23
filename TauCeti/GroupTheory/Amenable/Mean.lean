@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Order.Module.PositiveLinearMap
 public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 public import TauCeti.Topology.Algebra.Group.UCB.Basic
 

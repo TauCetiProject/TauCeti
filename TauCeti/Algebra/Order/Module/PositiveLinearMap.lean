@@ -76,13 +76,10 @@ variable {R U V W : Type*} [CommSemiring R]
 order-preserving algebra equivalence. -/
 def normalizedEquivOfAlgEquiv (e : U ≃ₐ[R] V)
     (hle : ∀ {f g : V}, e.symm f ≤ e.symm g ↔ f ≤ g) {w : W} :
-    {m : U →ₚ[R] W // m 1 = w} ≃ {m : V →ₚ[R] W // m 1 = w} where
-  toFun m := ⟨equivOfLinearEquiv e.toLinearEquiv hle m.val,
-    (congrArg m.val e.symm.map_one).trans m.property⟩
-  invFun m := ⟨(equivOfLinearEquiv e.toLinearEquiv hle).symm m.val,
-    (congrArg m.val e.map_one).trans m.property⟩
-  left_inv m := Subtype.ext ((equivOfLinearEquiv e.toLinearEquiv hle).left_inv m.val)
-  right_inv m := Subtype.ext ((equivOfLinearEquiv e.toLinearEquiv hle).right_inv m.val)
+    {m : U →ₚ[R] W // m 1 = w} ≃ {m : V →ₚ[R] W // m 1 = w} :=
+  let hle' : ∀ {f g : V}, e.toLinearEquiv.symm f ≤ e.toLinearEquiv.symm g ↔ f ≤ g := hle
+  (equivOfLinearEquiv e.toLinearEquiv hle').subtypeEquiv fun m => by
+    simp
 
 @[simp]
 theorem normalizedEquivOfAlgEquiv_apply (e : U ≃ₐ[R] V)

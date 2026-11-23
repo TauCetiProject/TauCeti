@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Order.Module.PositiveLinearMap
 public import TauCeti.GroupTheory.Amenable.Mean
 public import TauCeti.Topology.Algebra.Group.UCB.Additive
 
@@ -157,8 +158,10 @@ identity. -/
   the identity. -/]
 theorem map_symm_map (e : G ≃ₜ* H) (m : Mean G) :
     (m.map (e : G →ₜ* H)).map (e.symm : H →ₜ* G) = m := by
-  rw [map_map, show ((e.symm : H →ₜ* G).comp (e : G →ₜ* H)) = ContinuousMonoidHom.id G from
-    ContinuousMonoidHom.ext fun x => e.symm_apply_apply x, map_id]
+  have h : (e.symm : H →ₜ* G).comp (e : G →ₜ* H) = ContinuousMonoidHom.id G := by
+    ext x
+    simp
+  rw [map_map, h, map_id]
 
 end Mean
 

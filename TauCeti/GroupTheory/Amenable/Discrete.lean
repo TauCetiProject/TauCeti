@@ -110,11 +110,11 @@ theorem mapOfDiscrete_apply (r : G → H) (m : Mean G) (f : UCB H) :
 
 /-- Along a continuous homomorphism, the pushforward out of a discrete group is the pushforward
 `TauCeti.Mean.map`. -/
-@[to_additive
+@[to_additive (attr := simp)
   /-- Along a continuous additive homomorphism, the pushforward out of a discrete additive group
   is the pushforward `TauCeti.AddMean.map`. -/]
 theorem mapOfDiscrete_coe (φ : G →ₜ* H) (m : Mean G) : m.mapOfDiscrete (φ : G → H) = m.map φ :=
-  ext fun f => by simp [UCB.compRightAlgHomOfDiscrete_coe]
+  ext fun f => by simp
 
 /-- Pushing forward a mean on a discrete group along the identity map is the identity. -/
 @[to_additive (attr := simp)
@@ -152,7 +152,7 @@ theorem mapOfDiscrete_mapOfDiscrete {H K : Type*} [Group H] [TopologicalSpace H]
     [DiscreteTopology H] [Group K] [TopologicalSpace K] [IsTopologicalGroup K]
     (s : H → K) (r : G → H) (m : Mean G) :
     (m.mapOfDiscrete r).mapOfDiscrete s = m.mapOfDiscrete (s ∘ r) :=
-  ext fun f => by simp [UCB.compRightAlgHomOfDiscrete_comp]
+  ext fun f => by simp [← AlgHom.comp_apply]
 
 end Mean
 

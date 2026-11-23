@@ -324,10 +324,6 @@ end DiscreteGroup
 
 section AdditiveReiter
 
-private theorem arrowCongr_multiplicativeToAdd_apply {A β : Type*} (p : Multiplicative A → β) :
-    Equiv.arrowCongr Multiplicative.toAdd (Equiv.refl β) p = p ∘ Multiplicative.ofAdd :=
-  (rfl)
-
 /-- Transport of a coordinate Reiter witness between `A` and `Multiplicative A`. -/
 private theorem exists_sum_tsum_abs_sub_lt_multiplicative_iff {A : Type*} [AddGroup A]
     [DecidableEq (Multiplicative A)] (K : Finset A) {ε : ℝ} :
@@ -352,7 +348,9 @@ private theorem exists_sum_tsum_abs_sub_lt_multiplicative_iff {A : Type*} [AddGr
     refine Finset.sum_congr rfl fun a _ ↦ ?_
     simpa using
       (Multiplicative.ofAdd.tsum_eq fun x ↦ |p ((Multiplicative.ofAdd a)⁻¹ * x) - p x|).symm
-  rw [arrowCongr_multiplicativeToAdd_apply, h0, hfin, h1, hsum]
+  have hp : Equiv.arrowCongr Multiplicative.toAdd (Equiv.refl ℝ) p = p ∘ Multiplicative.ofAdd :=
+    funext fun _ ↦ by simp
+  rw [hp, h0, hfin, h1, hsum]
 
 variable {A : Type*} [AddGroup A] [TopologicalSpace A] [DiscreteTopology A]
 
