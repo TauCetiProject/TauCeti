@@ -32,8 +32,10 @@ For every finite linearly ordered `V` with `3 ≤ Fintype.card V`:
 Beasley, Corollary 7, is the replicated-seed witness for `k = 4 q`: the seed of
 Proposition 5 has defect `8 q ^ 3` and gauge distance `6 q ^ 2`, so the ratio is `k / 3`.
 That is `defect_replicatedSeed`, `gaugeDist_replicatedSeed` and
-`defect_div_gaugeDist_replicatedSeedOfCardEq`. Beasley, Theorem 8, is
-`h1_complete_movedNorm_fin_three`, which also covers `card V = 3`.
+`defect_div_gaugeDist_replicatedSeedOfCardEq`.
+Beasley, Theorem 8 (the moved-point count, k/3 for every k ≥ 4) is
+`h1_complete_movedNorm_fin_three` for `4 ≤ card V`; the Lean theorem also covers
+`card V = 3`.
 
 The lower bound is the star bound `card_div_three_le_h1_of_nontrivial`.
 For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`.

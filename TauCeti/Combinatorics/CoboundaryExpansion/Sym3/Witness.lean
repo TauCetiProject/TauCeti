@@ -16,7 +16,8 @@ import TauCeti.Algebra.BigOperators.Finset.Filter
 
 `h1_complete_movedNorm_fin_three` in `Sym3/Complete.lean` gives
 `h1 (complete V) (movedNorm (Fin 3)) = card V / 3` for every `3 ≤ card V`.
-Beasley, Theorem 8, is that statement, and it also covers `card V = 3`.
+Beasley, Theorem 8 (the moved-point count, k/3 for every k ≥ 4) is that statement for
+`4 ≤ card V`; the Lean theorem also covers `card V = 3`.
 Beasley, Corollary 7, is the replicated-seed ratio in that module:
 `defect_replicatedSeed`, `gaugeDist_replicatedSeed` and
 `defect_div_gaugeDist_replicatedSeedOfCardEq`.
