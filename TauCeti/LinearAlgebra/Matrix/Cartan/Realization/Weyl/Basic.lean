@@ -188,6 +188,35 @@ theorem commute_simpleReflection_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A
     hij, hji, zero_smul, sub_zero]
   exact sub_right_comm _ _ _
 
+/-- If `i ≠ j` and the simple reflections `sᵢ` and `sⱼ` commute, then `A i j = 0` and
+`A j i = 0`. -/
+theorem eq_zero_of_commute_simpleReflection {i j : I} (hij : i ≠ j)
+    (h : Commute (R.simpleReflection hA i) (R.simpleReflection hA j)) :
+    A i j = 0 ∧ A j i = 0 := by
+  have hpair (φ : Dual K H) : A i j * φ (R.coroot j) = 0 ∧ A j i * φ (R.coroot i) = 0 := by
+    have hφ := congr($(h.eq) φ)
+    simp only [mul_apply_eq_comp, simpleReflection_apply, map_sub, map_smul, R.root_coroot] at hφ
+    have hlin : (A i j * φ (R.coroot j)) • R.root i + (-(A j i * φ (R.coroot i))) • R.root j =
+        (0 : K) • R.root i + (0 : K) • R.root j := by
+      have hsub := sub_eq_zero.mpr hφ
+      simp only [zero_smul, add_zero]
+      rw [← hsub]
+      module
+    have hc := (R.linearIndependent_root_pair hij).eq_of_pair hlin
+    exact ⟨hc.1, neg_eq_zero.mp hc.2⟩
+  constructor <;> by_contra hne
+  · exact R.coroot_linearIndependent.ne_zero j <| (Module.forall_dual_apply_eq_zero_iff K _).mp
+      fun φ ↦ (mul_eq_zero.mp (hpair φ).1).resolve_left hne
+  · exact R.coroot_linearIndependent.ne_zero i <| (Module.forall_dual_apply_eq_zero_iff K _).mp
+      fun φ ↦ (mul_eq_zero.mp (hpair φ).2).resolve_left hne
+
+/-- For `i ≠ j`, the simple reflections `sᵢ` and `sⱼ` commute if and only if `A i j = 0` and
+`A j i = 0`. -/
+theorem commute_simpleReflection_iff_eq_zero {i j : I} (hij : i ≠ j) :
+    Commute (R.simpleReflection hA i) (R.simpleReflection hA j) ↔ A i j = 0 ∧ A j i = 0 :=
+  ⟨R.eq_zero_of_commute_simpleReflection hA hij,
+    fun ⟨h1, h2⟩ ↦ R.commute_simpleReflection_of_eq_zero hA h1 h2⟩
+
 /-- If `A i j = 0` and `A j i = 0`, the dual simple reflections `sᵢ` and `sⱼ` commute. -/
 theorem commute_simpleCoreflection_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A j i = 0) :
     Commute (R.simpleCoreflection hA i) (R.simpleCoreflection hA j) := by
@@ -241,6 +270,20 @@ group. -/
 theorem commute_weylSimple_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A j i = 0) :
     Commute (R.weylSimple hA i) (R.weylSimple hA j) :=
   Subtype.ext (R.commute_simpleReflection_of_eq_zero hA hij hji)
+
+/-- If `i ≠ j` and the simple reflections `sᵢ` and `sⱼ` commute in the Weyl group, then
+`A i j = 0` and `A j i = 0`. -/
+theorem eq_zero_of_commute_weylSimple {i j : I} (hij : i ≠ j)
+    (h : Commute (R.weylSimple hA i) (R.weylSimple hA j)) :
+    A i j = 0 ∧ A j i = 0 :=
+  R.eq_zero_of_commute_simpleReflection hA hij (h.map (R.weylGroup hA).subtype)
+
+/-- For `i ≠ j`, the simple reflections `sᵢ` and `sⱼ` commute in the Weyl group if and only if
+`A i j = 0` and `A j i = 0`. -/
+theorem commute_weylSimple_iff_eq_zero {i j : I} (hij : i ≠ j) :
+    Commute (R.weylSimple hA i) (R.weylSimple hA j) ↔ A i j = 0 ∧ A j i = 0 :=
+  ⟨R.eq_zero_of_commute_weylSimple hA hij,
+    fun ⟨h1, h2⟩ ↦ R.commute_weylSimple_of_eq_zero hA h1 h2⟩
 
 /-- The simple reflections generate the Weyl group. -/
 theorem closure_range_weylSimple : Subgroup.closure (Set.range (R.weylSimple hA)) = ⊤ := by
@@ -478,6 +521,21 @@ theorem diag_map_intCast {I K : Type*} [AddGroupWithOne K] {A : Matrix I I ℤ}
     (hA : ∀ i, A i i = 2) :
     ∀ i, (A.map (Int.cast : ℤ → K)) i i = 2 := fun i ↦ by
   simp [hA i]
+
+/-- **Order of a product of two simple reflections in `R.weylGroup`**: `orderOf (sᵢ * sⱼ)` equals
+the Coxeter matrix entry `coxeterMatrixOfGeneralizedCartanMatrix A i j` over a characteristic-zero
+field whenever `A i j = 0 ↔ A j i = 0` and `0 ≤ A i j * A j i`. -/
+@[simp]
+theorem orderOf_weylSimple_mul_weylSimple {I K H : Type*} [DecidableEq I] [Field K] [CharZero K]
+    [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
+    (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
+    (hdiag : ∀ i, A i i = 2) {i j : I} (hzero : A i j = 0 ↔ A j i = 0)
+    (hprod : 0 ≤ A i j * A j i) :
+    orderOf (R.weylSimple (diag_map_intCast hdiag) i *
+        R.weylSimple (diag_map_intCast hdiag) j) =
+      coxeterMatrixOfGeneralizedCartanMatrix A i j := by
+  rw [R.orderOf_weylSimple_mul_weylSimple_eq_orderOf_simpleReflection]
+  exact R.orderOf_simpleReflection_mul_simpleReflection (diag_map_intCast hdiag) hzero hprod
 
 section RankOne
 
