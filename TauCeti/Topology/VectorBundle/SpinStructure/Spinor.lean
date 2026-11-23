@@ -220,18 +220,19 @@ theorem smul_cliffordMul {ε' : ℂ} (hε : ε' = -ε) (x : SpinC) (v : Fin (4 +
     (realSpinCHalfSpinSmoothHom_comp_halfSpinCliffordMul o hQ b ρ ε x v) (toEigenspace ψ)
 
 /-- **The Clifford relation** on the model half-spinors: `c(v) c(v) = -‖v‖²`. -/
-theorem cliffordMul_cliffordMul {ε' : ℂ} (hε : ε' = -ε) (hε' : ε = -ε') (v : V)
+theorem cliffordMul_cliffordMul {ε' : ℂ} (hε : ε' = -ε) (v : V)
     (ψ : HalfSpinModel o hQ b ρ hρ ε) :
-    cliffordMul hε' v (cliffordMul hε v ψ) = ((-‖v‖ ^ 2 : ℝ) : ℂ) • ψ := by
+    cliffordMul (neg_eq_iff_eq_neg.mp hε.symm) v (cliffordMul hε v ψ) =
+      ((-‖v‖ ^ 2 : ℝ) : ℂ) • ψ := by
   apply (toEigenspace (o := o) (hQ := hQ) (b := b) (ρ := ρ) (hρ := hρ) (ε := ε)).injective
   apply Subtype.ext
   rw [coe_toEigenspace_cliffordMul, coe_toEigenspace_cliffordMul, map_ι_apply_map_ι_apply, hQ,
     map_smul, Submodule.coe_smul]
 
 /-- **Model Clifford multiplication is skew-adjoint**: `⟪c(v) ψ, φ⟫ = -⟪ψ, c(v) φ⟫`. -/
-theorem inner_cliffordMul_left {ε' : ℂ} (hε : ε' = -ε) (hε' : ε = -ε') (v : V)
+theorem inner_cliffordMul_left {ε' : ℂ} (hε : ε' = -ε) (v : V)
     (ψ : HalfSpinModel o hQ b ρ hρ ε) (φ : HalfSpinModel o hQ b ρ hρ ε') :
-    ⟪cliffordMul hε v ψ, φ⟫_ℂ = -⟪ψ, cliffordMul hε' v φ⟫_ℂ := by
+    ⟪cliffordMul hε v ψ, φ⟫_ℂ = -⟪ψ, cliffordMul (neg_eq_iff_eq_neg.mp hε.symm) v φ⟫_ℂ := by
   rw [← LinearIsometryEquiv.inner_map_map toEigenspace (cliffordMul hε v ψ),
     ← LinearIsometryEquiv.inner_map_map toEigenspace ψ, Submodule.coe_inner, Submodule.coe_inner,
     coe_toEigenspace_cliffordMul, coe_toEigenspace_cliffordMul, ← LinearMap.adjoint_inner_right,
@@ -363,8 +364,8 @@ abbrev determinantLine (s : SpinCStructure F E n) : X → Type _ :=
 theorem finrank_determinantLine (s : SpinCStructure F E n) (x : X) :
     finrank ℂ (s.determinantLine x) = 1 := by
   obtain ⟨p⟩ := s.nonempty_P x
-  rw [← (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinCn (F := DeterminantModel n) p).finrank_eq,
-    (DeterminantModel.toComplex (n := n)).finrank_eq, Module.finrank_self]
+  rw [AssociatedBundle.finrank_eq ℂ SpinCn p, (DeterminantModel.toComplex (n := n)).finrank_eq,
+    Module.finrank_self]
 
 /-- **The central circle acts with weight two on the determinant line**: `[p • [1, z], w]` is
 `[p, z² w]`. -/
@@ -408,9 +409,7 @@ theorem finrank_halfSpinorBundle (s : SpinCStructure F E 4) (x : X) :
     finrank ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) =
       finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
   obtain ⟨p⟩ := s.nonempty_P x
-  rw [← (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC
-    (F := o.HalfSpinModel hQ b ρ hρ ε) p).finrank_eq,
-    Orientation.HalfSpinModel.toEigenspace.finrank_eq]
+  rw [AssociatedBundle.finrank_eq ℂ SpinC p, Orientation.HalfSpinModel.toEigenspace.finrank_eq]
 
 /-- **The central circle acts with weight one on the half-spinors**: `[p • [1, z], ψ]` is
 `[p, z ψ]`. -/
@@ -492,20 +491,20 @@ theorem cliffordMul_mk (s : SpinCStructure F E 4) {ε' : ℂ} (hε : ε' = -ε) 
   exact congrArg _ (congrArg _ (AssociatedBundle.mkLinearIsometryEquiv_symm_apply_mk p₀ p ψ))
 
 /-- **The Clifford relation** `c(v) c(v) = -‖v‖²` on the half-spinor bundles. -/
-theorem cliffordMul_cliffordMul (s : SpinCStructure F E 4) {ε' : ℂ} (hε : ε' = -ε)
-    (hε' : ε = -ε') {x : X} (v : E x) (ψ : s.halfSpinorBundle o hQ b ρ hρ ε x) :
-    s.cliffordMul o hQ b ρ hρ hε' x v (s.cliffordMul o hQ b ρ hρ hε x v ψ) =
-      ((-‖v‖ ^ 2 : ℝ) : ℂ) • ψ := by
+theorem cliffordMul_cliffordMul (s : SpinCStructure F E 4) {ε' : ℂ} (hε : ε' = -ε) {x : X}
+    (v : E x) (ψ : s.halfSpinorBundle o hQ b ρ hρ ε x) :
+    s.cliffordMul o hQ b ρ hρ (neg_eq_iff_eq_neg.mp hε.symm) x v
+      (s.cliffordMul o hQ b ρ hρ hε x v ψ) = ((-‖v‖ ^ 2 : ℝ) : ℂ) • ψ := by
   obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
   rw [cliffordMul_mk, cliffordMul_mk, Orientation.HalfSpinModel.cliffordMul_cliffordMul,
     LinearIsometryEquiv.norm_map, AssociatedBundle.mk_smul_scalar]
 
 /-- **Clifford multiplication is skew-adjoint**: `⟪c(v) ψ, φ⟫ = -⟪ψ, c(v) φ⟫` for `ψ ∈ W^ε_x` and
 `φ ∈ W^{ε'}_x`. -/
-theorem inner_cliffordMul_left (s : SpinCStructure F E 4) {ε' : ℂ} (hε : ε' = -ε)
-    (hε' : ε = -ε') {x : X} (v : E x) (ψ : s.halfSpinorBundle o hQ b ρ hρ ε x)
-    (φ : s.halfSpinorBundle o hQ b ρ hρ ε' x) :
-    ⟪s.cliffordMul o hQ b ρ hρ hε x v ψ, φ⟫_ℂ = -⟪ψ, s.cliffordMul o hQ b ρ hρ hε' x v φ⟫_ℂ := by
+theorem inner_cliffordMul_left (s : SpinCStructure F E 4) {ε' : ℂ} (hε : ε' = -ε) {x : X}
+    (v : E x) (ψ : s.halfSpinorBundle o hQ b ρ hρ ε x) (φ : s.halfSpinorBundle o hQ b ρ hρ ε' x) :
+    ⟪s.cliffordMul o hQ b ρ hρ hε x v ψ, φ⟫_ℂ =
+      -⟪ψ, s.cliffordMul o hQ b ρ hρ (neg_eq_iff_eq_neg.mp hε.symm) x v φ⟫_ℂ := by
   obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
   obtain ⟨φ, rfl⟩ := (AssociatedBundle.mk_bijective (G := SpinC)
     (F := o.HalfSpinModel hQ b ρ hρ ε') p).2 φ
@@ -575,6 +574,7 @@ def halfSpinorDetAlternatingMap (h₂ : finrank ℂ (eigenspace (ρ (chirality Q
 
 /-- **The determinant pairing in a frame**: `([p, ψ₁], [p, ψ₂]) ↦ [p, ω(ψ₁, ψ₂)]` for every point
 `p` of the principal bundle over `x`. -/
+@[simp]
 theorem halfSpinorDetAlternatingMap_mk (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2)
     (s : SpinCStructure F E 4) (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) {x : X}
     (p : s.P x) (ψ : Fin 2 → o.HalfSpinModel hQ b ρ hρ ε) :
@@ -596,11 +596,8 @@ theorem bijective_alternatingMapLinearEquiv_halfSpinorDetAlternatingMap
       (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap h₂ ω x)) := by
   obtain ⟨p⟩ := s.nonempty_P x
   have : FiniteDimensional ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) :=
-    (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC
-      (F := o.HalfSpinModel hQ b ρ hρ ε) p).toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℂ (s.determinantLine x) :=
-    (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC
-      (F := DeterminantModel 4) p).toLinearEquiv.finiteDimensional
+    AssociatedBundle.finiteDimensional ℂ SpinC p
+  have : FiniteDimensional ℂ (s.determinantLine x) := AssociatedBundle.finiteDimensional ℂ SpinC p
   -- Every `[p, w]` is a multiple of the image of `[p, ψ₁] ∧ [p, ψ₂]`, for `ω(ψ₁, ψ₂) ≠ 0`.
   have hsurj : Function.Surjective
       (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap h₂ ω x)) := by
