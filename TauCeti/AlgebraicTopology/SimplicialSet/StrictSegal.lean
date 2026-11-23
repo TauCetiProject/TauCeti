@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
 public import Mathlib.AlgebraicTopology.Quasicategory.StrictSegal
-public import Mathlib.CategoryTheory.Limits.FunctorCategory.Basic
+public import Mathlib.CategoryTheory.Adjunction.Evaluation
 public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
 
@@ -58,13 +58,13 @@ an isomorphism, since simplices correspond to their spines.
   by its first and last faces.
 * `SSet.IsStrictSegal.exists_boundary_extension`: every map `∂Δ[n + 3] ⟶ X` extends to
   `Δ[n + 3]`.
-* `SSet.Edge.CompStruct.eq_of_isStrictSegal`: the third edge of a triangle in a strict Segal
-  simplicial set is determined by the other two.
+* `SSet.Edge.CompStruct.eq_of_isStrictSegal`: in a strict Segal simplicial set, the edge `e₀₂` of
+  a `CompStruct e₀₁ e₁₂ e₀₂` is determined by the spine edges `e₀₁` and `e₁₂`.
 * `SSet.StrictSegal.core`: a strict Segal structure gives `SSet.StrictSegalCore` in every
   dimension.
 * `SSet.IsStrictSegal.of_isColimit`: a filtered colimit of strict Segal simplicial sets is strict
-  Segal.
-* `SSet.Truncated.isIso_of_isStrictSegal`: a morphism of strict Segal truncated simplicial sets
+  Segal, for diagrams of any size.
+* `SSet.Truncated.isIso_of_bijective_app_one`: a morphism of strict Segal truncated simplicial sets
   that is bijective on edges is an isomorphism.
 -/
 
@@ -298,8 +298,17 @@ noncomputable def StrictSegal.core (sx : X.StrictSegal) (n : ℕ) : X.StrictSega
     | zero => exact h
     | succ i => rw [spine_arrow_succ, spine_arrow_succ, h₀]
 
-/-- In a strict Segal simplicial set, the third edge of a triangle is determined by the other
-two: a `2`-simplex is determined by its spine. -/
+/-- The simplex `(sx.core n).concat e s h` is the simplex whose spine is `e` followed by the spine
+of `s`. -/
+@[simp]
+lemma StrictSegal.core_concat (sx : X.StrictSegal) (n : ℕ) (e : X _⦋1⦌) (s : X _⦋n⦌)
+    (h : X.δ 0 e = X.map (SimplexCategory.const _ _ 0).op s) :
+    (sx.core n).concat e s h =
+      sx.spineToSimplex ((X.spine n s).cons e (h.trans (X.spine_vertex n s 0).symm)) :=
+  (rfl)
+
+/-- In a strict Segal simplicial set, the edge `e₀₂` of a `CompStruct e₀₁ e₁₂ e₀₂` is determined
+by the spine edges `e₀₁` and `e₁₂`. -/
 lemma Edge.CompStruct.eq_of_isStrictSegal [X.IsStrictSegal] {x₀ x₁ x₂ : X _⦋0⦌}
     {e₀₁ : Edge x₀ x₁} {e₁₂ : Edge x₁ x₂} {e₀₂ e₀₂' : Edge x₀ x₂}
     (h : CompStruct e₀₁ e₁₂ e₀₂) (h' : CompStruct e₀₁ e₁₂ e₀₂') : e₀₂ = e₀₂' := by
@@ -322,15 +331,16 @@ lemma spine_app {m : ℕ} (hm : m ≤ n + 1) (f : V ⟶ W) (x : V _⦋m⦌ₙ₊
     W.spine m hm (f.app _ x) = (V.spine m hm x).map f := by
   ext i <;> simp [← NatTrans.naturality_apply]
 
-/-- In a truncated simplicial set, the vertex of a degenerate edge is its source. -/
+/-- In a truncated simplicial set, the target (`δ 0`) of the degenerate edge on a vertex `z` is
+`z`. -/
 private lemma map_δ_map_σ (Z : SSet.Truncated.{u} (n + 1)) (z : Z _⦋0⦌ₙ₊₁) :
     Z.map (tr (SimplexCategory.δ 0)).op (Z.map (tr (SimplexCategory.σ 0)).op z) = z := by
   have fac := δ_comp_σ_self (i := (0 : Fin 1))
   dsimp at fac
   simp [← Functor.map_comp_apply, ← op_comp, ← tr_comp, fac]
 
-/-- A morphism of truncated simplicial sets that is bijective on edges is bijective on vertices:
-the vertices are a natural retract of the edges, through the degenerate edges. -/
+/-- A morphism of truncated simplicial sets that is bijective on edges is bijective on
+vertices. -/
 lemma bijective_app_zero_of_bijective_app_one (f : V ⟶ W)
     (h₁ : Function.Bijective (f.app (op ⦋1⦌ₙ₊₁))) : Function.Bijective (f.app (op ⦋0⦌ₙ₊₁)) := by
   refine ⟨fun x y hxy ↦ ?_, fun w ↦ ?_⟩
@@ -342,9 +352,8 @@ lemma bijective_app_zero_of_bijective_app_one (f : V ⟶ W)
       (NatTrans.naturality_apply f _ s).trans ((congrArg _ hs).trans (map_δ_map_σ W w))⟩
 
 /-- A morphism of strict Segal truncated simplicial sets that is bijective on edges is an
-isomorphism: simplices of both sides correspond to their spines, which are made of vertices and
-edges, and vertices are a retract of edges. -/
-theorem isIso_of_isStrictSegal [V.IsStrictSegal] [W.IsStrictSegal] (f : V ⟶ W)
+isomorphism. -/
+theorem isIso_of_bijective_app_one [V.IsStrictSegal] [W.IsStrictSegal] (f : V ⟶ W)
     (h₁ : Function.Bijective (f.app (op ⦋1⦌ₙ₊₁))) : IsIso f := by
   have h₀ := bijective_app_zero_of_bijective_app_one f h₁
   rw [NatTrans.isIso_iff_isIso_app]
@@ -377,8 +386,7 @@ end Truncated
 
 section Colimit
 
-variable {J : Type*} [Category* J] {F : J ⥤ SSet.{u}} [HasColimitsOfShape J (Type u)]
-  {c : Cocone F} (hc : IsColimit c)
+variable {J : Type*} [Category* J] {F : J ⥤ SSet.{u}} {c : Cocone F} (hc : IsColimit c)
 
 include hc in
 private lemma exists_ι_app_eq_of_isColimit {m : ℕ} (x : c.pt _⦋m⦌) :
@@ -387,20 +395,19 @@ private lemma exists_ι_app_eq_of_isColimit {m : ℕ} (x : c.pt _⦋m⦌) :
     (isColimitOfPreserves ((evaluation _ _).obj (op ⦋m⦌)) hc) x
 
 include hc in
-private lemma ι_app_eq_ι_app_iff_of_isColimit [IsFiltered J] {m : ℕ} {j : J}
+private lemma ι_app_eq_ι_app_iff_of_isColimit [IsFilteredOrEmpty J] {m : ℕ} {j : J}
     (x y : (F.obj j) _⦋m⦌) :
     (c.ι.app j).app _ x = (c.ι.app j).app _ y ↔
       ∃ (k : J) (f : j ⟶ k), (F.map f).app _ x = (F.map f).app _ y :=
   Types.FilteredColimit.isColimit_eq_iff'
     (isColimitOfPreserves ((evaluation _ _).obj (op ⦋m⦌)) hc) x y
 
-omit [HasColimitsOfShape J (Type u)] in
 private lemma ι_app_map_app {j k : J} (f : j ⟶ k) {m : ℕ} (x : (F.obj j) _⦋m⦌) :
     (c.ι.app k).app _ ((F.map f).app _ x) = (c.ι.app j).app _ x := by
   rw [← c.w f]
   rfl
 
-variable [IsFiltered J] [∀ j, (F.obj j).IsStrictSegal]
+variable [IsFilteredOrEmpty J] [∀ j, (F.obj j).IsStrictSegal]
 
 include hc in
 /-- In a filtered colimit of strict Segal simplicial sets, an `(n + 1)`-simplex is determined by
@@ -455,9 +462,8 @@ private lemma exists_concat_of_isColimit {n : ℕ} (e : c.pt _⦋1⦌) (s : c.pt
       sk.δ₀_concat]
 
 include hc in
-/-- A filtered colimit of strict Segal simplicial sets is strict Segal: an edge and a simplex
-glued along a vertex, and an equation between two simplices, all come from a common stage of the
-diagram, where the strict Segal condition of that stage applies. -/
+/-- The colimit of a filtered (or empty) diagram of strict Segal simplicial sets, of any size, is
+strict Segal. -/
 theorem IsStrictSegal.of_isColimit : c.pt.IsStrictSegal :=
   (StrictSegal.ofCore fun _ ↦
     { concat e s h := (exists_concat_of_isColimit hc e s h).choose

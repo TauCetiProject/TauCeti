@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.CompStruct
 public import Mathlib.AlgebraicTopology.Quasicategory.TwoTruncatedQuasicategory
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveAdjunction
+public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 
 /-!
@@ -31,7 +32,7 @@ edges are equal.
 Hence the morphism from the `2`-truncation of `X` to the `2`-truncated nerve of its homotopy
 category that corresponds to the identity functor under Mathlib's
 `SSet.Truncated.HomotopyCategory.functorEquiv` is bijective on edges, so it is an isomorphism
-(`SSet.Truncated.isIso_of_isStrictSegal`). Strict Segal simplicial sets and nerves are
+(`SSet.Truncated.isIso_of_bijective_app_one`). Strict Segal simplicial sets and nerves are
 `2`-coskeletal, which extends the isomorphism to all dimensions.
 
 ## Main results
@@ -64,7 +65,7 @@ variable {X : SSet.{u}} [X.IsStrictSegal]
 namespace HomotopyCategory
 
 /-- In a strict Segal simplicial set, every morphism of the homotopy category is represented by
-an edge, since every composite of two edges is again represented by an edge. -/
+an edge. -/
 lemma exists_homMk_eq {x y : X.HomotopyCategory} (f : x ⟶ y) :
     ∃ e : Edge (objEquiv x) (objEquiv y), homMk e = f := by
   induction f using hom_rec with
@@ -80,13 +81,10 @@ lemma homMk_injective {x y : X _⦋0⦌} :
     Function.Injective (homMk : Edge x y → (mk x ⟶ mk y)) := by
   intro e e' h
   -- Compare with the homotopy category whose morphisms are homotopy classes of edges.
-  let G : X.HomotopyCategory ⥤ Truncated.HomotopyCategory₂ ((truncation 2).obj X) :=
-    Truncated.HomotopyCategory.lift (fun x ↦ .mk x) (fun e ↦ Truncated.HomotopyCategory₂.homMk e)
-      (fun _ ↦ rfl) (fun h ↦ h.homotopyCategory₂_fac)
-  have hG (e : Edge x y) : G.map (homMk e) = Truncated.HomotopyCategory₂.homMk e.toTruncated :=
-    Truncated.HomotopyCategory.lift_map_homMk _ _ _ _ _
-  obtain ⟨hc⟩ := (Truncated.HomotopyCategory₂.homMk_eq_iff_homotopicL).1
-    ((hG e).symm.trans ((congr_arg G.map h).trans (hG e')))
+  have h' := congr_arg (Truncated.HomotopyCategory.toHomotopyCategory₂ ((truncation 2).obj X)).map h
+  simp only [HomotopyCategory.homMk, Truncated.HomotopyCategory.toHomotopyCategory₂_map_homMk,
+    cancel_epi, cancel_mono] at h'
+  obtain ⟨hc⟩ := (Truncated.HomotopyCategory₂.homMk_eq_iff_homotopicL).1 h'
   exact (Edge.CompStruct.compId e).eq_of_isStrictSegal (Edge.CompStruct.ofTruncated hc)
 
 /-- In a strict Segal simplicial set, the edges from `x` to `y` are exactly the morphisms from `x`
@@ -105,40 +103,31 @@ lemma arrowMk_homMk_eq_arrowMk_homMk_iff {x y x' y' : X _⦋0⦌} {e : Edge x y}
     obtain rfl : y = y' := congr_arg objEquiv h₂
     simp only [eqToHom_refl, Category.id_comp, Category.comp_id] at h
     rw [homMk_injective h]
-  · obtain rfl : x = x' := by rw [← e.src_eq, ← e'.src_eq, h]
-    obtain rfl : y = y' := by rw [← e.tgt_eq, ← e'.tgt_eq, h]
-    rw [Edge.ext h]
+  · exact Truncated.HomotopyCategory.congr_arrowMk_homMk e.toTruncated e'.toTruncated h
 
 end HomotopyCategory
-
-omit [X.IsStrictSegal] in
-open HomotopyCategory in
-/-- The morphism from the `2`-truncation of `X` to the `2`-truncated nerve of its homotopy
-category corresponding to the identity functor sends an edge `s` to the morphism it represents.
-This is Mathlib's `SSet.Truncated.HomotopyCategory.homToNerveMk_app_one`, rederived from
-`homToNerveMk_app_edge`: the statement of the former mentions an auxiliary proof that is private
-to its module, so the kernel cannot check its uses outside Mathlib. -/
-private lemma homToNerveMk_id_app_one (s : X _⦋1⦌) :
-    (Truncated.HomotopyCategory.homToNerveMk (𝟭 X.HomotopyCategory)).app (.op ⦋1⦌₂) s =
-      ComposableArrows.mk₁ (homMk (Edge.mk' s)) :=
-  Truncated.HomotopyCategory.homToNerveMk_app_edge _ (Edge.mk' s).toTruncated
 
 open HomotopyCategory in
 /-- For a strict Segal simplicial set `X`, the morphism from the `2`-truncation of `X` to the
 `2`-truncated nerve of its homotopy category corresponding to the identity functor is an
-isomorphism: it is bijective on edges by `SSet.HomotopyCategory.homMk_bijective`. -/
+isomorphism. -/
 instance isIso_homToNerveMk_id :
     IsIso (Truncated.HomotopyCategory.homToNerveMk (𝟭 X.HomotopyCategory)) := by
-  refine Truncated.isIso_of_isStrictSegal (n := 1) _ ⟨fun s t h ↦ ?_, fun A ↦ ?_⟩
-  · rw [homToNerveMk_id_app_one, homToNerveMk_id_app_one] at h
+  refine Truncated.isIso_of_bijective_app_one (n := 1) _ ⟨fun s t h ↦ ?_, fun A ↦ ?_⟩
+  · -- Mathlib's `homToNerveMk_app_one` would apply here, but its statement mentions an auxiliary
+    -- proof private to its module, which the kernel rejects outside Mathlib.
+    replace h :=
+      (Truncated.HomotopyCategory.homToNerveMk_app_edge _ (Edge.mk' s).toTruncated).symm.trans
+        (h.trans (Truncated.HomotopyCategory.homToNerveMk_app_edge _ (Edge.mk' t).toTruncated))
     exact (arrowMk_homMk_eq_arrowMk_homMk_iff (e := Edge.mk' s) (e' := Edge.mk' t)).1
       (congr_arg ComposableArrows.arrowEquiv h)
   · obtain ⟨_, _, f, rfl⟩ := ComposableArrows.mk₁_surjective A
     obtain ⟨e, rfl⟩ := exists_homMk_eq f
     exact ⟨e.edge, Truncated.HomotopyCategory.homToNerveMk_app_edge _ e.toTruncated⟩
 
-/-- A simplicial set is isomorphic to the nerve of a category exactly when it is strict Segal. A
-strict Segal simplicial set is the nerve of its homotopy category. -/
+/-- A simplicial set is isomorphic to the nerve of a category exactly when it is strict Segal. See
+`SSet.isIso_nerveAdjunction_unit_app_iff` for the isomorphism `X ≅ nerve X.HomotopyCategory`. -/
+@[simp]
 theorem mem_essImage_nerveFunctor_iff {X : SSet.{u}} :
     nerveFunctor.{u, u}.essImage X ↔ X.IsStrictSegal := by
   refine ⟨fun ⟨C, ⟨e⟩⟩ ↦ IsStrictSegal.of_iso (X := nerve C) e,
@@ -154,5 +143,10 @@ categories is an isomorphism exactly when `X` is strict Segal. -/
 theorem isIso_nerveAdjunction_unit_app_iff {X : SSet.{u}} :
     IsIso (nerveAdjunction.unit.app X) ↔ X.IsStrictSegal :=
   nerveAdjunction.isIso_unit_app_iff_mem_essImage.trans mem_essImage_nerveFunctor_iff
+
+/-- The unit `X ⟶ nerve X.HomotopyCategory` of the adjunction between simplicial sets and
+categories is an isomorphism when `X` is strict Segal. -/
+instance isIso_nerveAdjunction_unit_app : IsIso (nerveAdjunction.unit.app X) :=
+  isIso_nerveAdjunction_unit_app_iff.2 ‹_›
 
 end SSet
