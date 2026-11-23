@@ -561,8 +561,9 @@ theorem etaMultiplier_eq_kroneckerSym_mul_cexp_of_odd_c (γ : SL(2, ℤ)) (hodd 
     exact etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c γ hc hodd
 
 /-- **Kronecker-symbol formula for the eta multiplier** on all of `SL(2, ℤ)` (Strömberg,
-Remark 2.5, equation (2.5)): for `γ = (a b; c d) ∈ SL(2, ℤ)`, `ε(γ)` is given in terms of the
-Kronecker symbol `(d / |c|)` when `c` is odd and `(c / d)` when `c` is even. -/
+Remark 2.5, equation (2.5) for `c > 0`, extended here to `c = 0` and `c < 0`): for
+`γ = (a b; c d) ∈ SL(2, ℤ)`, `ε(γ)` is given in terms of the Kronecker symbol `(d / |c|)` when `c`
+is odd and `(c / d)` when `c` is even. -/
 theorem etaMultiplier_eq_ite_kroneckerSym_mul_cexp (γ : SL(2, ℤ)) :
     etaMultiplier γ =
       if Odd (γ 1 0) then
@@ -581,8 +582,9 @@ theorem etaMultiplier_eq_ite_kroneckerSym_mul_cexp (γ : SL(2, ℤ)) :
     exact etaMultiplier_eq_kroneckerSym_mul_of_even_c γ (Int.not_odd_iff_even.mp hodd)
 
 /-- **Kronecker-symbol formula for the eta multiplier for `c ≥ 0`** (Strömberg, Remark 2.5,
-equation (2.5)): for `γ = (a b; c d) ∈ SL(2, ℤ)` with `c ≥ 0`, `|c| = c`, so `ε(γ)` is given in
-terms of `(d / c)` when `c` is odd and `(c / d)` when `c` is even. -/
+equation (2.5) for `c > 0`, extended here to `c = 0`): for `γ = (a b; c d) ∈ SL(2, ℤ)` with
+`c ≥ 0`, `|c| = c`, so `ε(γ)` is given in terms of `(d / c)` when `c` is odd and `(c / d)` when
+`c` is even. -/
 theorem etaMultiplier_eq_ite_kroneckerSym_mul_cexp_of_c_nonneg (γ : SL(2, ℤ)) (hc : 0 ≤ γ 1 0) :
     etaMultiplier γ =
       if Odd (γ 1 0) then
