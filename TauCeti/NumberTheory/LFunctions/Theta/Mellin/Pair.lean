@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.MellinTransform
+public import TauCeti.Analysis.MellinTransform.Basic
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Volume
 public import TauCeti.NumberTheory.LSeries.FEPairWithLevel

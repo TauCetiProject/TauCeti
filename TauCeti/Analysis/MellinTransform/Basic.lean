@@ -21,6 +21,11 @@ transform of `t⁻¹ f(t⁻¹)` at `s` to that of `f` at `1 - s`.
 
 ## Main results
 
+* `TauCeti.hasMellin_congr`: functions agreeing on `(0, ∞)` have the same Mellin transform and
+  convergence.
+* `HasMellin.comp_mul_right`: transport of a convergent Mellin transform under positive dilation.
+* `TauCeti.mellin_zero`, `TauCeti.mellin_ofReal_zero`, `TauCeti.mellinConvergent_ofReal_zero_iff`:
+  the Mellin transform and convergence at `s = 0` in terms of `dt / t`.
 * `TauCeti.mellinConvergent_indicator_Ioi_iff`: convergence of the Mellin transform of an
   upper-tail indicator is integrability of the upper Mellin integrand.
 * `TauCeti.mellin_indicator_Ioi`, `TauCeti.mellin_indicator_Ici`: the Mellin transform of an
@@ -38,6 +43,38 @@ open Set MeasureTheory Complex
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- Functions that agree on `(0, ∞)` have the same Mellin transform, with the same convergence. -/
+theorem hasMellin_congr {f g : ℝ → E} (h : EqOn f g (Ioi 0)) {s : ℂ} {m : E} :
+    HasMellin f s m ↔ HasMellin g s m := by
+  have h' : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • f t) (fun t ↦ (t : ℂ) ^ (s - 1) • g t)
+      (Ioi 0) := fun t ht ↦ by simp only [h ht]
+  simp only [HasMellin, MellinConvergent, mellin,
+    MeasureTheory.integrableOn_congr_fun h' measurableSet_Ioi,
+    MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h']
+
+/-- The Mellin transform at `0` is the integral against `dt / t`. -/
+theorem mellin_zero (f : ℝ → E) :
+    mellin f 0 = ∫ t in Ioi (0 : ℝ), (t : ℂ)⁻¹ • f t := by
+  simp only [mellin, zero_sub, cpow_neg_one]
+
+/-- The Mellin transform at `0` of a real-valued function is its `dt / t`-integral. -/
+theorem mellin_ofReal_zero (f : ℝ → ℝ) :
+    mellin (fun t ↦ (f t : ℂ)) 0 = ((∫ t in Ioi (0 : ℝ), f t / t : ℝ) : ℂ) := by
+  rw [mellin_zero, ← integral_complex_ofReal]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_
+  simp [div_eq_inv_mul]
+
+/-- Mellin convergence at `0` of a real-valued function is equivalent to integrability of
+`f t / t` on `(0, ∞)`. -/
+theorem mellinConvergent_ofReal_zero_iff (f : ℝ → ℝ) :
+    MellinConvergent (fun t ↦ (f t : ℂ)) 0 ↔ IntegrableOn (fun t ↦ f t / t) (Ioi (0 : ℝ)) := by
+  have hEq : (fun t : ℝ ↦ (t : ℂ) ^ ((0 : ℂ) - 1) • (f t : ℂ)) =
+      fun t : ℝ ↦ ((f t / t : ℝ) : ℂ) := by
+    ext t
+    simp [cpow_neg_one, div_eq_inv_mul]
+  rw [MellinConvergent, hEq, IntegrableOn, IntegrableOn]
+  exact ⟨fun h ↦ Complex.reCLM.integrable_comp h, fun h ↦ Complex.ofRealCLM.integrable_comp h⟩
 
 /-- For `0 ≤ a`, the Mellin transform of `(Ioi a).indicator f` converges at `s` exactly when the
 upper Mellin integrand `u ^ (s - 1) • f u` is integrable on `Ioi a`. -/
@@ -119,3 +156,17 @@ theorem mellin_inv_smul_comp_inv (f : ℝ → E) (s : ℂ) :
   rw [h, mellin_comp_inv, neg_add, neg_neg, ← sub_eq_neg_add]
 
 end TauCeti
+
+namespace HasMellin
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- Dilation of the Mellin variable preserves convergence and multiplies the transform by
+`a^(-s)`. -/
+theorem comp_mul_right {f : ℝ → E} {s : ℂ} {m : E} (h : HasMellin f s m)
+    {a : ℝ} (ha : 0 < a) : HasMellin (fun t ↦ f (t * a)) s ((a : ℂ) ^ (-s) • m) := by
+  constructor
+  · simpa only [mul_comm] using (MellinConvergent.comp_mul_left (f := f) (s := s) ha).mpr h.1
+  · rw [mellin_comp_mul_right f s ha, h.2]
+
+end HasMellin

@@ -6,11 +6,12 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.MellinInversion
-import TauCeti.Analysis.MellinTransform
+import TauCeti.Analysis.MellinTransform.Convolution
+import TauCeti.Analysis.MellinTransform.Kernels
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 
 /-!
-# Mellin inversion and the continuous first-order cutoff
+# Mellin inversion, the Parseval formula, and the continuous first-order cutoff
 
 Mathlib's `mellinInv σ f y` is `(1 / 2π) ∫ y^{-(σ + i t)} • f(σ + i t) dt`. This file records that
 the integrand is integrable whenever `f` is integrable on the vertical line `Re s = σ` and
@@ -28,12 +29,19 @@ the integrand is integrable whenever `f` is integrable on the vertical line `Re 
   `x ≥ 0` on every line avoiding the two poles.
 * `TauCeti.integral_cpow_div_mul_add_one`: its integral is `2π * max (1 - 1/x) 0` for
   positive `x` and `c`. At the cutoff `x = 1` this value is zero.
+* `TauCeti.integral_mul_comp_mul_eq_mellinInv`: the Parseval formula for
+  `∫₀^∞ f(t) h(xt) dt` (DLMF 2.5.5).
 
 The kernel is used for sums smoothed by `1 - n/x`. The migration motivating this computation
 is the Prime Number Theorem and more project by Alex Kontorovich, Terence Tao and contributors,
 `PrimeNumberTheoremAnd/PerronFormula.lean` (`Perron.formulaLtOne`, `Perron.formulaGtOne`). The proof
 here composes Mathlib's interval-power Mellin transforms and Mellin inversion, independently of
 that project's contour argument.
+
+The Parseval formula (`TauCeti.integral_mul_comp_mul_eq_mellinInv`) is adapted from the lean-DLMF
+project (<https://github.com/bjbraams/lean-DLMF>), files
+`DLMFMathlib/Analysis/MellinConvolution.lean` and
+`DLMF/AsymptoticApproximations/Mellin/Transforms.lean`.
 -/
 
 public section
@@ -133,5 +141,32 @@ theorem integral_cpow_div_mul_add_one {c x : ℝ} (hc : 0 < c) (hx : 0 < x) :
   have hπ : ((2 * π : ℝ) : ℂ) ≠ 0 := by exact_mod_cast mul_ne_zero two_ne_zero pi_ne_zero
   apply (inv_mul_eq_iff_eq_mul₀ hπ).mp
   simpa only [Complex.real_smul, one_div, Complex.ofReal_inv] using h
+
+/-- DLMF 2.5.5, the Parseval formula: if `𝓜f(1 - z)` and `𝓜h(z)` converge absolutely on the line
+`Re z = c`, their product is integrable along that line, and `I(x) = ∫₀^∞ f(t) h(xt) dt` is
+continuous at `x > 0`, then `I(x) = (2πi)⁻¹ ∫_{c-i∞}^{c+i∞} x^{-z} 𝓜f(1 - z) 𝓜h(z) dz`. -/
+theorem integral_mul_comp_mul_eq_mellinInv {f h : ℝ → ℂ} {c x : ℝ} (hx : 0 < x)
+    (hconv : ∀ z : ℂ, z.re = c → MellinConvergent f (1 - z) ∧ MellinConvergent h z)
+    (hint : VerticalIntegrable (fun z => mellin f (1 - z) * mellin h z) c)
+    (hcont : ContinuousAt (fun x => ∫ t in Set.Ioi 0, f t * h (x * t)) x) :
+    (∫ t in Set.Ioi 0, f t * h (x * t)) =
+      mellinInv c (fun z => mellin f (1 - z) * mellin h z) x := by
+  set Iv : ℝ → ℂ := fun x => ∫ t in Set.Ioi 0, f t * h (x * t) with hIv
+  have hline : ∀ y : ℝ, mellin Iv ((c : ℂ) + y * I) =
+      mellin f (1 - ((c : ℂ) + y * I)) * mellin h ((c : ℂ) + y * I) := fun y => by
+    have hz := hconv ((c : ℂ) + y * I) (by simp)
+    exact (hasMellin_integral_mul_comp_mul hz.1 hz.2).2
+  have hIc : MellinConvergent Iv (c : ℂ) := by
+    have hz := hconv (c : ℂ) (by simp)
+    exact (hasMellin_integral_mul_comp_mul hz.1 hz.2).1
+  have hV : VerticalIntegrable (mellin Iv) c := by
+    unfold VerticalIntegrable at hint ⊢
+    simp only [hline]
+    exact hint
+  calc (∫ t in Set.Ioi 0, f t * h (x * t)) = Iv x := by rw [hIv]
+    _ = mellinInv c (mellin Iv) x := (mellinInv_mellin_eq c Iv hx hIc hV hcont).symm
+    _ = _ := by
+      unfold mellinInv
+      simp only [hline]
 
 end TauCeti

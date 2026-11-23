@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
-public import TauCeti.Analysis.MellinTransform
+public import TauCeti.Analysis.MellinTransform.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!

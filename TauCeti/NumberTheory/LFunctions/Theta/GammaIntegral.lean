@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import TauCeti.NumberTheory.LFunctions.Theta.Gaussian
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
 import Mathlib.MeasureTheory.Integral.Pi
-import TauCeti.Analysis.MellinTransform
+import TauCeti.Analysis.MellinTransform.Kernels
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
