@@ -96,7 +96,7 @@ theorem hasSum_thetaCoset_qParam (hh : 0 < h)
   -- The term of index `v` is `q_h ^ g v`, where `g v = h ‖γ + v‖² / 2 ∈ ℕ`.
   let g : L → ℕ := fun v ↦ ⌊h * ‖γ + (v : E)‖ ^ 2 / 2⌋₊
   have hg (v : L) : h * ‖γ + (v : E)‖ ^ 2 = 2 * g v := by
-    obtain ⟨m, hm⟩ := hnorm v v.2
+    obtain ⟨m, hm⟩ := hnorm v v.property
     have hm0 : 0 ≤ m := by
       have : (0 : ℝ) ≤ 2 * m := hm ▸ by positivity
       exact_mod_cast (by linarith : (0 : ℝ) ≤ m)
@@ -113,7 +113,7 @@ theorem hasSum_thetaCoset_qParam (hh : 0 < h)
     simp only [Set.mem_image, Set.mem_preimage, Set.mem_singleton_iff, mem_cosetShell]
     constructor
     · rintro ⟨v, hv, rfl⟩
-      refine ⟨v.2, ?_⟩
+      refine ⟨v.property, ?_⟩
       rw [eq_div_iff hh.ne', mul_comm, hg v, hv]
     · rintro ⟨hx, hxt⟩
       refine ⟨⟨x, hx⟩, ?_, rfl⟩
@@ -126,7 +126,7 @@ theorem hasSum_thetaCoset_qParam (hh : 0 < h)
     ← hfib, Set.ncard_image_of_injective _ Subtype.val_injective, Nat.card_coe_set_eq,
     ← Nat.cast_smul_eq_nsmul ℂ]
   rw [TauCeti.Periodic.exp_pi_mul_I_mul_eq_qParam_pow hh.ne' (hg v),
-    Set.mem_singleton_iff.mp v.2]
+    Set.mem_singleton_iff.mp v.property]
 
 variable [DiscreteTopology L] in
 /-- The coefficients of the `q`-expansion of a coset theta series: if `h ‖γ + v‖² ∈ 2ℤ` for every
@@ -267,7 +267,7 @@ theorem hasSum_thetaCosetClass_qParam_of_level_dvd (hL : IsEven L) (δ : Discrim
   induction δ using Submodule.Quotient.induction_on with
   | H x =>
     simpa only [thetaCosetClass_mk, cosetRepresentationNumberClass_mk] using
-      hL.hasSum_thetaCoset_qParam_of_level_dvd x.2 hN hdvd τ
+      hL.hasSum_thetaCoset_qParam_of_level_dvd x.property hN hdvd τ
 
 /-- For an even lattice `L`, `δ : DiscriminantGroup L` and a positive multiple `N` of `level L`,
 the `m`-th coefficient of `qExpansion N (θ_δ)` is `r_δ(2m / N)`. -/
@@ -278,7 +278,7 @@ theorem qExpansion_thetaCosetClass_coeff_of_level_dvd (hL : IsEven L) (δ : Disc
   induction δ using Submodule.Quotient.induction_on with
   | H x =>
     rw [thetaCosetClass_mk, cosetRepresentationNumberClass_mk]
-    exact hL.qExpansion_thetaCoset_coeff_of_level_dvd x.2 hN hdvd m
+    exact hL.qExpansion_thetaCoset_coeff_of_level_dvd x.property hN hdvd m
 
 /-- For an even lattice `L`, a nonzero class `δ : DiscriminantGroup L`, and a positive multiple `N`
 of `level L`, the constant term of `qExpansion N (θ_δ)` is `0`. -/
@@ -339,7 +339,7 @@ theorem qExpansion_thetaCoset_coeff_eq_zero_of_toRatAddCircle_ne (hL : IsEven L)
         ((isEven_ratModel_iff hL.isIntegral).mpr hL)
         (ratModelDiscriminantGroupEquiv hL.isIntegral (Submodule.Quotient.mk x))) :
     (qExpansion N (thetaCoset L (x : E))).coeff m = 0 := by
-  rw [hL.qExpansion_thetaCoset_coeff_of_level_dvd x.2 hN hdvd m, Nat.cast_eq_zero]
+  rw [hL.qExpansion_thetaCoset_coeff_of_level_dvd x.property hN hdvd m, Nat.cast_eq_zero]
   simpa using hL.cosetRepresentationNumber_div_eq_zero_of_toRatAddCircle_ne x (N := N) (m := m)
     (by simpa using hm)
 

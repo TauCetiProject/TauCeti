@@ -67,6 +67,61 @@ theorem isBigO (h : OrderLE f A) {A' : ℝ} (hA' : A < A') :
     f =O[cobounded ℂ] fun s ↦ Real.exp (‖s‖ ^ A') :=
   h A' hA'
 
+/-- Continuity extends an asymptotic order bound to a global exponential bound at each larger
+exponent. -/
+theorem exists_norm_le_mul_exp_rpow (h : OrderLE f A) (hf : Continuous f)
+    {B : ℝ} (hAB : A < B) :
+    ∃ C > 0, ∀ z, ‖f z‖ ≤ C * Real.exp (‖z‖ ^ B) := by
+  let g : ℂ → ℝ := fun z ↦ Real.exp ((max 1 ‖z‖) ^ B)
+  have hg : Continuous g :=
+    Real.continuous_exp.comp ((continuous_const.max continuous_norm).rpow_const fun z ↦
+      Or.inl (ne_of_gt (lt_of_lt_of_le zero_lt_one (le_max_left 1 ‖z‖))))
+  have hq : Continuous (fun z ↦ ‖f z‖ / g z) :=
+    hf.norm.div hg (fun z ↦ Real.exp_ne_zero _)
+  have hfg : f =O[cobounded ℂ] g :=
+      (h.isBigO hAB).congr' (Filter.Eventually.of_forall fun _ ↦ rfl) <| by
+    filter_upwards [eventually_cobounded_le_norm (1 : ℝ)] with z hz
+    simp only [g, max_eq_right hz]
+  have hO : (fun z ↦ ‖f z‖ / g z) =O[cocompact ℂ] (1 : ℂ → ℝ) := by
+    rw [← Metric.cobounded_eq_cocompact]
+    exact (div_isBoundedUnder_of_isBigO hfg.norm_left).isBigO_const one_ne_zero
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp
+    (hq.isBounded_range_iff_isBigO.mpr hO)
+  have hCpos : 0 < max C 1 := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
+  refine ⟨max C 1 * Real.exp 1, by positivity, fun z ↦ ?_⟩
+  have hp : (max 1 ‖z‖) ^ B ≤ 1 + ‖z‖ ^ B := by
+    rcases le_total 1 ‖z‖ with hz | hz
+    · rw [max_eq_right hz]; linarith
+    · rw [max_eq_left hz, Real.one_rpow]
+      exact le_add_of_nonneg_right (Real.rpow_nonneg (norm_nonneg z) B)
+  calc
+    ‖f z‖ ≤ max C 1 * g z := (div_le_iff₀ (Real.exp_pos _)).mp <|
+      (le_abs_self _).trans ((hC _ (Set.mem_range_self z)).trans (le_max_left _ _))
+    _ ≤ max C 1 * (Real.exp 1 * Real.exp (‖z‖ ^ B)) := by
+      exact mul_le_mul_of_nonneg_left
+        (by rw [← Real.exp_add]; exact Real.exp_le_exp.mpr hp) hCpos.le
+    _ = max C 1 * Real.exp 1 * Real.exp (‖z‖ ^ B) := (mul_assoc _ _ _).symm
+
+/-- A continuous function of order at most `A` has a global logarithmic power bound at every
+larger nonnegative exponent. -/
+theorem exists_log_one_add_norm_le_rpow (h : OrderLE f A) (hf : Continuous f)
+    {B : ℝ} (hAB : A < B) (hB : 0 ≤ B) :
+    ∃ C > 0, ∀ z, Real.log (1 + ‖f z‖) ≤ C * (1 + ‖z‖) ^ B := by
+  obtain ⟨C, hC, hbound⟩ := h.exists_norm_le_mul_exp_rpow hf hAB
+  have hlog : 0 < Real.log (1 + C) := Real.log_pos (by linarith)
+  refine ⟨Real.log (1 + C) + 1, by linarith, fun z ↦ ?_⟩
+  have hexp : 1 ≤ Real.exp (‖z‖ ^ B) := Real.one_le_exp (Real.rpow_nonneg (norm_nonneg z) B)
+  have hpow : 1 ≤ (1 + ‖z‖) ^ B := Real.one_le_rpow (by linarith [norm_nonneg z]) hB
+  have hpow' : ‖z‖ ^ B ≤ (1 + ‖z‖) ^ B :=
+    Real.rpow_le_rpow (norm_nonneg z) (by linarith) hB
+  calc
+    Real.log (1 + ‖f z‖) ≤ Real.log ((1 + C) * Real.exp (‖z‖ ^ B)) :=
+      Real.log_le_log (by positivity) (by nlinarith [hbound z])
+    _ = Real.log (1 + C) + ‖z‖ ^ B := by
+      rw [Real.log_mul (by positivity) (Real.exp_ne_zero _), Real.log_exp]
+    _ ≤ (Real.log (1 + C) + 1) * (1 + ‖z‖) ^ B := by
+      nlinarith [mul_le_mul_of_nonneg_left hpow hlog.le]
+
 /-- A function of order less than one is of exponential type. Hence a function of order at most
 `A` that is not `O(exp ‖s‖)` has `1 ≤ A`. -/
 theorem one_le_of_not_isBigO_exp (h : OrderLE f A)
@@ -227,6 +282,15 @@ theorem orderLE_cexp_mul_pow (a : ℂ) (n : ℕ) : OrderLE (fun s ↦ cexp (a * 
 theorem orderLE_cexp_mul (a : ℂ) : OrderLE (fun s ↦ cexp (a * s)) 1 := by
   simpa using orderLE_cexp_mul_pow a 1
 
+/-- `b ^ (c * s)` has order at most `1`, for every base `b` and every `c : ℂ`. For `b = 0` the
+function only takes the values `0` and `1`. -/
+theorem orderLE_cpow_mul (b c : ℂ) : OrderLE (fun s ↦ b ^ (c * s)) 1 := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · refine (isBigO_of_le _ fun s ↦ ?_).orderLE (orderLE_const 1 1)
+    rcases eq_or_ne (c * s) 0 with h | h <;> simp [h]
+  convert orderLE_cexp_mul (Complex.log b * c) using 2 with s
+  rw [cpow_def_of_ne_zero hb, mul_assoc]
+
 /-- For `n ≠ 0`, `exp (s ^ n)` has order at most `A` exactly when `n ≤ A`: along the positive
 reals `exp (x ^ n)` outgrows `exp (x ^ A')` for every `A' < n`. -/
 @[simp]
@@ -281,7 +345,7 @@ theorem not_isBigO_exp_mul_norm_of_factorial_le {z : ℕ → ℂ} {a b K L : ℝ
     ((hlim.eventually (gt_mem_nhds one_pos)).and (hz.eventually hc.bound))).exists
   rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] at hle
   have hexp : Real.exp (C * ‖z n‖) ≤ Real.exp (|C| * b) * Real.exp (|C| * a) ^ n := by
-    rw [← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_natCast_mul, ← Real.exp_add]
     refine Real.exp_le_exp.2 ?_
     calc C * ‖z n‖ ≤ |C| * ‖z n‖ := mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)
       _ ≤ |C| * (a * n + b) := mul_le_mul_of_nonneg_left (hnorm n) (abs_nonneg C)

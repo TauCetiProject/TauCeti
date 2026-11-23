@@ -85,7 +85,7 @@ theorem ncard_inversions_wordProd_le_length (l : List b.support) :
   induction l using List.reverseRecOn with
   | nil => simp
   | append_singleton l i ih =>
-    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b l) b i.2
+    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b l) b i.property
     rw [wordProd_append, wordProd_cons, wordProd_nil, mul_one]
     simp only [List.length_append, List.length_cons, List.length_nil]
     omega
@@ -97,7 +97,7 @@ theorem ncard_inversions_wordProd_modEq_length (l : List b.support) :
   induction l using List.reverseRecOn with
   | nil => simp [Nat.ModEq]
   | append_singleton l i ih =>
-    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b l) b i.2
+    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b l) b i.property
     rw [wordProd_append, wordProd_cons, wordProd_nil, mul_one]
     simp only [Nat.ModEq, List.length_append, List.length_cons, List.length_nil] at ih ⊢
     omega

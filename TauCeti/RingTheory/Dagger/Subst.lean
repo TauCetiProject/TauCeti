@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.WashnitzerAlgebra
+public import TauCeti.RingTheory.Dagger.GaussNorm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Subst
 
 /-!
@@ -16,8 +16,9 @@ in the variables `τ`, indexed by finitely many `s : σ`, without constant term 
 coefficients of norm at most `1`. Formal substitution `X s ↦ a s` then carries overconvergent
 series to overconvergent series: if `f` is restricted at a radius `ρ > 1` and the `a s` have total
 degree at most `A`, the substitution is restricted at `ρ ^ (1 / (A + 1)) > 1`. It is therefore an
-`R`-algebra homomorphism `R⟨X⟩† → R⟨Y⟩†` of Monsky–Washnitzer algebras, compatible with the
-corresponding homomorphism of Tate algebras, and two mutually inverse substitutions give an
+`R`-algebra homomorphism `R⟨X⟩† → R⟨Y⟩†` of Monsky–Washnitzer algebras, contractive and continuous
+for the unit Gauss norms, compatible with finite-radius inclusions and the corresponding
+homomorphism of Tate algebras, and two mutually inverse substitutions give an isometric
 isomorphism.
 
 ## Main definitions
@@ -34,8 +35,10 @@ isomorphism.
 * `TauCeti.Dagger.washnitzerAlgebra.subst_X` and
   `TauCeti.Dagger.washnitzerAlgebra.subst_ofMvPolynomial`: the substitution on variables and on
   polynomials.
-* `TauCeti.Dagger.washnitzerAlgebra.toTate_subst`: compatibility with the substitutions of the
-  Tate algebra.
+* `TauCeti.Dagger.washnitzerAlgebra.toTate_subst`,
+  `TauCeti.Dagger.washnitzerAlgebra.subst_ofRestricted`, and
+  `TauCeti.Dagger.washnitzerAlgebra.norm_subst_le`: compatibility with Tate-algebra and
+  polyradius inclusions, contractivity, and continuity.
 
 ## References
 
@@ -80,7 +83,7 @@ Substituting polynomials without constant term whose coefficients have norm at m
 `R`-algebra homomorphism `R⟨X⟩† → R⟨Y⟩†`. -/
 noncomputable def subst : washnitzerAlgebra σ R →ₐ[R] washnitzerAlgebra τ R :=
   ((substAlgHom (hasSubst_coe ha₀)).comp (washnitzerAlgebra σ R).val).codRestrict _ fun f ↦ by
-    simpa [coe_substAlgHom] using subst_mem_washnitzerAlgebra ha₀ ha₁ f.2
+    simpa [coe_substAlgHom] using subst_mem_washnitzerAlgebra ha₀ ha₁ f.property
 
 /-- The map of Monsky–Washnitzer algebras is Mathlib's formal substitution. -/
 @[simp]
@@ -108,6 +111,32 @@ theorem subst_ofMvPolynomial (p : MvPolynomial σ R) :
 theorem toTate_subst (f : washnitzerAlgebra σ R) :
     toTate τ R (subst a ha₀ ha₁ f) = MvPowerSeries.restrictedSubst a ha₀ ha₁ (toTate σ R f) :=
   Subtype.ext (by simp)
+
+/-- At polyradius `c` bounded below by `ρ > 1`, substituting polynomials of total degree at most
+`A` factors through `ofRestricted` at any radius `ρ' > 1` with `ρ' ^ A ≤ ρ`. -/
+theorem subst_ofRestricted {A : ℕ} (hA : ∀ s, (a s).totalDegree ≤ A) {c : σ → ℝ}
+    {ρ ρ' : ℝ} (hρ : 1 < ρ) (hρ' : 1 < ρ') (hpow : ρ' ^ A ≤ ρ) (hc : ∀ s, ρ ≤ c s)
+    (f : IsRestricted.subring (R := R) c) :
+    subst a ha₀ ha₁ (ofRestricted hρ hc f) =
+      ofRestricted hρ' (fun _ ↦ le_rfl)
+        ⟨(f : MvPowerSeries σ R).subst fun s ↦ (a s : MvPowerSeries τ R),
+          (TauCeti.MvPowerSeries.isRestricted_of_le f.property
+            (fun _ ↦ (zero_lt_one.trans hρ).le) hc).subst_of_totalDegree_le
+              ha₀ ha₁ hA hρ'.le hpow⟩ :=
+  Subtype.ext (by simp)
+
+/-- Substitution of unit-ball polynomials without constant term does not increase the unit Gauss
+norm. -/
+theorem norm_subst_le (f : washnitzerAlgebra σ R) : ‖subst a ha₀ ha₁ f‖ ≤ ‖f‖ := by
+  rw [← norm_toTate, ← norm_toTate, toTate_subst]
+  exact MvPowerSeries.norm_restrictedSubst_le a ha₀ ha₁ (toTate σ R f)
+
+/-- Substitution of unit-ball polynomials without constant term is continuous for the unit Gauss
+norms. -/
+@[continuity]
+theorem continuous_subst : Continuous (subst a ha₀ ha₁) :=
+  AddMonoidHomClass.continuous_of_bound (subst a ha₀ ha₁) 1 fun f ↦ by
+    simpa using norm_subst_le a ha₀ ha₁ f
 
 variable [Finite τ] (b : τ → MvPolynomial σ R) (hb₀ : ∀ t, (b t).constantCoeff = 0)
   (hb₁ : ∀ t u, ‖(b t).coeff u‖ ≤ 1)
@@ -172,6 +201,14 @@ theorem toTate_substEquiv (hab : ∀ s, MvPolynomial.aeval b (a s) = MvPolynomia
     toTate τ R (substEquiv a ha₀ ha₁ b hb₀ hb₁ hab hba f) =
       MvPowerSeries.restrictedSubstEquiv a ha₀ ha₁ b hb₀ hb₁ hab hba (toTate σ R f) :=
   Subtype.ext (by simp)
+
+/-- An isomorphism of Monsky–Washnitzer algebras given by inverse substitutions preserves the unit
+Gauss norm. -/
+@[simp]
+theorem norm_substEquiv (hab : ∀ s, MvPolynomial.aeval b (a s) = MvPolynomial.X s)
+    (hba : ∀ t, MvPolynomial.aeval a (b t) = MvPolynomial.X t) (f : washnitzerAlgebra σ R) :
+    ‖substEquiv a ha₀ ha₁ b hb₀ hb₁ hab hba f‖ = ‖f‖ := by
+  rw [← norm_toTate, ← norm_toTate, toTate_substEquiv, MvPowerSeries.norm_restrictedSubstEquiv]
 
 end Subst
 

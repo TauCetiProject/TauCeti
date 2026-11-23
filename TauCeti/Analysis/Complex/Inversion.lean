@@ -107,8 +107,9 @@ theorem exists_homeomorph_compl_ball_add_inv_comp_inv {G : ℂ → ℂ} {K S : S
   have hkc : ContinuousOn k S :=
     (hGinvc.comp hinvc fun y hy => (hιW hy).1).inv₀ fun y hy h0 =>
       hkmaps hy (by rw [Function.comp_apply] at h0; simp [hk, h0])
-  exact ⟨hhc, ⟨⟨hbij.mapsTo.restrict h _ _, hkmaps.restrict k _ _, fun w => Subtype.ext (hleft w.2),
-    fun y => Subtype.ext (hright y.2)⟩, hhc.mapsToRestrict hbij.mapsTo,
+  exact ⟨hhc, ⟨⟨hbij.mapsTo.restrict h _ _, hkmaps.restrict k _ _, fun w => Subtype.ext
+      (hleft w.property),
+    fun y => Subtype.ext (hright y.property)⟩, hhc.mapsToRestrict hbij.mapsTo,
     hkc.mapsToRestrict hkmaps⟩, fun _ => rfl⟩
 
 end TauCeti

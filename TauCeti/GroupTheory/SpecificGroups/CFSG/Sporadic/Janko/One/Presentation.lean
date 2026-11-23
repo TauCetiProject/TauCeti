@@ -100,6 +100,8 @@ a recorded number.
 * `TauCeti.Sporadic.j1Presentation`: the ATLAS finite presentation of `J₁`.
 * `TauCeti.Sporadic.j1Presentation_transcribed` and the equations for the remaining fields: the
   characterization of the sealed row.
+* `TauCeti.Sporadic.j1Presentation_relatorLetters`: the compiled words, spelled out letter by
+  letter.
 * `TauCeti.Sporadic.j1Presentation_map_length_relators`,
   `TauCeti.Sporadic.j1Presentation_totalLength` and
   `TauCeti.Sporadic.j1Presentation_relatorsCyclicallyReduced`: the three checks on the compiled
@@ -214,6 +216,37 @@ theorem j1Presentation_transcribed :
 
 /-- The relator count recorded for `J₁` agrees with the transcribed data. -/
 theorem j1Presentation_matchesMetadata : j1Presentation.matchesMetadata := by decide
+
+/-- The compiled relator words for `J₁`, spelled out. A letter `(i, true)` is the generator with
+index `i` and `(i, false)` is its inverse, so `(0, true)`, `(1, true)` and `(1, false)` read `a`,
+`b` and `b⁻¹`, and the five words are `a a`, `b b b`, seven copies of `a b`, five copies of
+`a b (a b a b⁻¹)³` and two copies of `a b (a b a b⁻¹)⁶ a b a b (a b⁻¹)²`. -/
+theorem j1Presentation_relatorLetters :
+    j1Presentation.relatorLetters =
+      [[(0, true), (0, true)],
+       [(1, true), (1, true), (1, true)],
+       [(0, true), (1, true), (0, true), (1, true), (0, true), (1, true), (0, true), (1, true),
+        (0, true), (1, true), (0, true), (1, true), (0, true), (1, true)],
+       [(0, true), (1, true), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, false)],
+       [(0, true), (1, true), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, false)]] := by
+  simp [GroupPresentation.relatorLetters_def, GroupPresentation.relators_def,
+    FreeGroup.invRev, j1Presentation, fifthPowerBase, squareBase, repeatedWord, a, b]
 
 /-- The lengths of the five compiled relator words for `J₁`, in the order of the source.
 

@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Algebra.Ring.Periodic
+public import Mathlib.Data.Int.Interval
 
 import Mathlib.Basic.Finite.Prod
-import Mathlib.Data.Int.Interval
 import Mathlib.Data.Set.Finite.Range
 
 /-!
@@ -19,7 +19,7 @@ A point of `[0, n)` in an ordered ring with a floor operation is the sum of an i
 `Fin n` and a remainder in `[0, 1)`. This describes, for example, time along one of the
 finitely many edges in a polygonal boundary parametrization. In the same way, a `1`-periodic
 function is determined by its values on `[0, 1)`: it takes the same value at `t` and at the
-fractional part of `t`.
+fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one.
 
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
@@ -33,6 +33,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
   a remainder in `[0, 1)`.
 * `Function.Periodic.apply_fract`: a `1`-periodic function takes the same value at `t` and at
   its fractional part `Int.fract t`.
+* `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
+* `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
@@ -58,6 +60,27 @@ theorem exists_eq_natCast_add_of_mem_Ico {R : Type*} [Ring R] [LinearOrder R]
 theorem _root_.Function.Periodic.apply_fract {R β : Type*} [Ring R] [LinearOrder R]
     [FloorRing R] {f : R → β} (hf : Function.Periodic f 1) (t : R) : f (Int.fract t) = f t := by
   simpa [Int.self_sub_floor] using hf.sub_int_mul_eq (x := t) ⌊t⌋
+
+/-- In an ordered ring with a natural ceiling, a natural number lies strictly below `a` exactly
+when it is at most `⌈a⌉₊ - 1`. This turns a strict cutoff into an inclusive one. -/
+theorem _root_.Nat.cast_lt_iff_le_ceil_sub_one {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorSemiring R] (n : ℕ) {a : R} :
+    (n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1 := by
+  rw [← Nat.lt_ceil, le_sub_iff_add_le, ← Nat.cast_add_one, Nat.cast_le, Nat.add_one_le_iff]
+
+/-- The number of integers in `[a, y)` is `max (y - a) 0` up to an error of at most one. -/
+theorem abs_card_Ico_ceil_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [FloorRing R] (a : ℤ) (y : R) :
+    |((Finset.Ico a ⌈y⌉).card : R) - max (y - a) 0| ≤ 1 := by
+  rw [Int.card_Ico]
+  rcases le_or_gt ⌈y⌉ a with h | h
+  · rw [Int.toNat_of_nonpos (by omega), max_eq_right (sub_nonpos.2 (Int.ceil_le.1 h))]
+    simp
+  · rw [← Int.cast_natCast, Int.toNat_of_nonneg (by omega),
+      max_eq_left (sub_nonneg.2 (Int.lt_ceil.1 h).le), Int.cast_sub, sub_sub_sub_cancel_right,
+      abs_le]
+    exact ⟨(neg_nonpos.2 zero_le_one).trans (sub_nonneg.2 (Int.le_ceil y)),
+      (sub_lt_iff_lt_add'.2 (Int.ceil_lt_add_one y)).le⟩
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing K] {δ : K}
 

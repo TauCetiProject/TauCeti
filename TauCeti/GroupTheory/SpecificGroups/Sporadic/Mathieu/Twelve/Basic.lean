@@ -55,6 +55,10 @@ most two of ten permutations given by tables of images: the ATLAS generators and
 elements of the model, each checked to be a word in the ATLAS generators. The same argument shows
 that `0, 1, 2, 3, 4` is a base: only the identity of the model fixes these five points.
 
+The surjection and the model order give a lower bound of `95040` on the order of the presented
+group whenever its `Nat.card` is positive. This condition excludes the junk value `0` for an
+infinite presented group; no finiteness of that group follows from the surjection alone.
+
 ## Main declarations
 
 * `TauCeti.Sporadic.M12`: the permutation model of `M₁₂` on `12` points.
@@ -65,6 +69,8 @@ that `0, 1, 2, 3, 4` is a base: only the identity of the model fixes these five 
 * `TauCeti.Sporadic.M12.presentationHom`: the homomorphism from the presented group.
 * `TauCeti.Sporadic.exists_surjective_M12`: the presented group maps onto the model.
 * `TauCeti.Sporadic.card_M12`: the model has `95040` elements.
+* `TauCeti.Sporadic.le_natCard_group_M12`: the presented group, when finite, has at least `95040`
+  elements.
 * `TauCeti.Sporadic.M12.stabilizerChain_five_eq_bot`: the points `0, 1, 2, 3, 4` form a base.
 
 ## References
@@ -462,5 +468,14 @@ theorem card_M12 : Nat.card M12 = 95040 := by
   rw [Subgroup.natCard_eq_prod_length_of_siftCheck M12.mem_transversal M12.le_closure_tables
     M12.transversalCheck_eq_true M12.sift_tables M12.siftCheck_eq_true]
   decide
+
+/-- The group presented by the transcribed `M₁₂` presentation, when finite, has at least `95040`
+elements, since it maps onto the model `M12`. The positivity hypothesis excludes the value
+`Nat.card = 0` for an infinite presented group. -/
+theorem le_natCard_group_M12 (h : 0 < Nat.card SporadicName.M12.Group) :
+    95040 ≤ Nat.card SporadicName.M12.Group := by
+  have : Finite SporadicName.M12.Group := Nat.finite_of_card_ne_zero h.ne'
+  obtain ⟨f, hf⟩ := exists_surjective_M12
+  exact card_M12 ▸ Nat.card_le_card_of_surjective f hf
 
 end TauCeti.Sporadic

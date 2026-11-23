@@ -75,6 +75,8 @@ open Set Function AffineMap Module TauCeti
 
 namespace Polygon
 
+section Disjoint
+
 variable {V P : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P] {n : ℕ} [NeZero n]
   {poly : Polygon P n} {p₀ : P} {d : V}
 
@@ -107,6 +109,8 @@ theorem gaussCode_insertVertex_of_disjoint (hs : poly.IsSimple ℝ)
   obtain ⟨h₁, h₂, h₃⟩ := hφt t ht₁ hti
   exact ⟨h₁, h₂, 1, one_pos, by rw [h₃, one_smul]⟩
 
+end Disjoint
+
 /-! ### A strand sliding across the triangle
 
 The proof of `Polygon.gaussCode_insertVertex_of_crossing` runs in five stages, each cut into the
@@ -119,7 +123,11 @@ argument, stated about the data it constructs, and are not meant to be used on t
 `poly.insertVertex i c`, and `x = a + r (a' - a)` on edge `i` crosses `x'` at the parameter `s₀`
 of edge `j`. -/
 
-omit [NeZero n] in
+section CrossingAux
+
+variable {V P : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P] {n : ℕ}
+  {poly : Polygon P n} {p₀ : P} {d : V}
+
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: if edges `i` and
 `j` of a simple polygon meet in a regular projection along `d` at the pairs `(x, x')` and `(z, w)`,
 then `z = x` and `w = x'`. -/
@@ -131,7 +139,6 @@ private theorem eq_of_mem_edgeSet_of_projAlong_eq (hs : poly.IsSimple ℝ)
     z = x ∧ w = x' :=
   Prod.mk.inj (hπ.subsingleton_setOf_mem_edgeSet hs hji.symm ⟨hz, hw, hπz⟩ ⟨hx, hx', hπx⟩)
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: if edges `i` and
 `j` of a simple polygon cross at `x` over `x'` in a regular projection along `d`, then `d ≠ 0`, the
 two edges are distinct, the endpoints of edge `i` do not lie on edge `j`, `x` and `x'` are double
@@ -176,7 +183,6 @@ private theorem exists_mem_Ioo_of_crossing (hs : poly.IsSimple ℝ)
     · exact hπ.apply_notMem_doublePoints j (by simpa using hx'DP)
     · exact hπ.apply_notMem_doublePoints _ (by simpa using hx'DP)
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: when the
 triangle of a Δ-move projects onto a nondegenerate triangle of the plane `V ⧸ ℝ ∙ d`, the projected
 vertices form an affine basis `β`, the projection is injective on the triangle, and a point of the
@@ -222,6 +228,7 @@ private theorem exists_affineBasis_projAlong {i : Fin n} {c : P} (hΔ : poly.IsD
     · fin_cases k <;> simp <;> linarith [hy 0, hy 1, hy 2]
     · rw [hπcomb _ hw, β.affineCombination_coord_eq_self]
 
+variable [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: if every point
 of an edge other than edges `i` and `j` projecting into `π D` is `a` or `a'`, which do not lie on
 edge `j`, then the endpoints of edge `j` project outside `π D`. -/
@@ -253,7 +260,6 @@ private theorem projAlong_notMem_image_closedInterior (hs : poly.IsSimple ℝ) {
   · rw [← h]
     exact hvj'
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: edge `j` avoids
 the projections of the three vertices of the triangle of the Δ-move. -/
 private theorem projAlong_edgePath_ne (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d))
@@ -278,6 +284,7 @@ private theorem projAlong_edgePath_ne (hπ : poly.IsRegularProjection ℝ (projA
   · exact hΔ.left_ne_apex h.symm
   · exact hΔ.apex_ne_right h
 
+variable [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: in the
 coordinates `f k` of an affine basis `β` on the projected vertices of the triangle of the Δ-move,
 edge `j`, which crosses edge `i` at the parameter `s₀`, satisfies the hypotheses of
@@ -336,7 +343,6 @@ private theorem exists_triangle_exit_edgePath (hs : poly.IsSimple ℝ)
     refine (hv hs).2.2 ?_
     rw [hext 2 fun k ↦ by fin_cases k <;> simp <;> linarith [hsum s], hβ2]
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: the two new
 edges project onto the sides from `β 0` to `β 2` and from `β 2` to `β 1` of the projected
 triangle, so on them coordinate `1` or coordinate `0` vanishes, and the others are nonnegative. -/
@@ -358,6 +364,7 @@ private theorem coord_projAlong_of_mem_union {i : Fin n} {c : P}
     simp only [Fin.isValue, Fin.reduceEq, ↓reduceIte, lineMap_apply_ring']
     exact ⟨.inr ⟨by ring, by linarith [ht.1]⟩, by linarith [ht.2]⟩
 
+variable [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: edge `j`, which
 crosses edge `i` at the parameter `s₀`, leaves `π D` at a parameter `s₁`, at its point `y'` over a
 point of one of the new edges. Between `s₀` and `s₁` it runs over `π D`; it meets the projection of
@@ -423,7 +430,6 @@ private theorem exists_exit (hs : poly.IsSimple ℝ)
       rw [hβ1, hβ2, β.coord_lineMap, ← hf]
       fin_cases k <;> simp [lineMap_apply_ring'] <;> linarith
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: the linear form
 `L v = det (v, w, d)`, for the direction `w` of edge `j`, vanishes on `y - x` for every point `y`
 over a point of edge `j`, as it vanishes on `d` and on `w`. -/
@@ -457,7 +463,6 @@ private theorem exists_linearMap_det (b : Basis (Fin 3) ℝ V) {i j : Fin n} {r 
     (poly.edgePath ℝ j s₁) (poly.edgePath ℝ j s₀), map_add, map_add, hLπ hy, hy'x', hLπ hπx.symm,
     add_zero, add_zero]
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: a point
 `y = a + ρ (c - a)` of the first new edge over `y'`, with `0 < ρ < 1`, lies in `D` and is reached
 at the time `i + ρ` of `q`. The direction `c - a` of `q` there gives a linear form `L` vanishing on
@@ -492,7 +497,6 @@ private theorem exists_lift_left {i : Fin n} {c : P} (hΔ : poly.IsDeltaMove ℝ
     have h := congrArg SignType.sign h
     rwa [sign_mul, sign_mul, sign_pos hρ.1, sign_pos hr.1, one_mul, one_mul] at h
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: a point
 `y = c + t (a' - c)` of the second new edge over `y'`, with `0 < t < 1`, lies in `D` and is reached
 at the time `i + 1 + t` of `q`. The direction `a' - c` of `q` there gives a linear form `L`
@@ -529,7 +533,6 @@ private theorem exists_lift_right {i : Fin n} {c : P} (hΔ : poly.IsDeltaMove �
     rwa [sign_mul, sign_mul, sign_pos (sub_pos.2 ht.2), sign_pos (sub_pos.2 hr.2), one_mul,
       one_mul] at h
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: the only double
 point on edge `i` is its crossing point `x` with edge `j`. The partner of another one would lie on
 an edge other than edges `i` and `j`, over `π D`, so it would be `a` or `a'`, which are not double
@@ -556,7 +559,6 @@ private theorem eq_of_mem_edgeSet_of_mem_doublePoints (hs : poly.IsSimple ℝ)
     exact (hne (hπ.eq_vertex_of_apply_eq _ (subset_iUnion (poly.edgeSet ℝ) i hz)
       hπeq.symm).symm).elim
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: between the
 parameters `s₀` and `s₁`, along which edge `j` runs over `π D`, its only double point is `x'`. -/
 private theorem eq_of_mem_uIcc_of_mem_doublePoints (hs : poly.IsSimple ℝ)
@@ -588,7 +590,6 @@ private theorem eq_of_mem_uIcc_of_mem_doublePoints (hs : poly.IsSimple ℝ)
     exact (hne (hπ.eq_vertex_of_apply_eq _ (subset_iUnion (poly.edgeSet ℝ) j ⟨s, hsI, rfl⟩)
       hπeq.symm).symm).elim
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: a point `w` of
 `q` other than a point `z` of the new edges, with the same projection, is the point `y'` of edge
 `j`, and then `z` is the point `y` over `y'`. The point `w` cannot lie on the new edges, on which
@@ -628,6 +629,7 @@ private theorem eq_of_mem_union_of_apply_eq {i j : Fin n} {c : P}
     rw [insertVertex_apply_finRotate_succ_self] at this
     exact (hne (this h.symm).symm).elim
 
+variable [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: edge `j` leaves
 `π D` at its point `y'` at a parameter `s₁`, over a point `y` of the new edges, reached at a
 time `τy` of `q` along an edge whose direction gives `L = det (·, w, d)` the sign of `a' - a`, for
@@ -694,7 +696,6 @@ private theorem exists_slide (hs : poly.IsSimple ℝ)
     ⟨-, h'⟩ | ⟨-, h'⟩ <;>
     exact hπ.apply_notMem_doublePoints _ (h' ▸ hxDP)
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: the
 correspondence `g`, sending `x ↦ y` and `x' ↦ y'` and fixing every other point, maps the double
 points of `poly` to those of `q`. A double point other than `x` and `x'` lies, with its partner,
@@ -725,7 +726,6 @@ private theorem mapsTo_doublePoints_insertVertex {i : Fin n} {c : P} {g : P → 
     exacts [h₁ h', h₂ h']
   exact mem_doublePoints.2 ⟨hoff hzb fun h ↦ h₁ (hDPi z h hz), w, hoff hw hwi, hne, hπeq⟩
 
-omit [NeZero n] in
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: every double
 point of `q` comes from a double point of `poly` under the correspondence `g`. One on the new edges
 is `y`, its partner being `y'`; otherwise both points lie on edges of `poly` other than edge `i`,
@@ -764,6 +764,10 @@ private theorem exists_mem_doublePoints_eq {i : Fin n} {c : P}
   · exact hxx' h
   · exact hxq (h ▸ hw)
   · exact hne h.symm
+
+section CrossingTimesAux
+
+variable [NeZero n]
 
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: `i + r` and
 `j + s₀`, the times of `x` and `x'`, are crossing times; the only crossing time on edge `i` is
@@ -941,7 +945,8 @@ private theorem exists_strictMonoOn_crossingTimes
   · obtain ⟨h₁, h₂, -, h₄, -⟩ := hθ t ht htx
     rw [hφo htx, (hψt _ h₁ h₂).2.2, h₄]
 
-omit [NeZero n] in
+end CrossingTimesAux
+
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: the
 correspondence `g` keeps over/under. At the moved crossing, `x` and `y` lie in `D` and `x'` and
 `y'` on edge `j`, which `D` does not meet, so the heights of `x` over `x'` and of `y` over `y'` have
@@ -986,6 +991,13 @@ private theorem exists_pos_smul_eq_vsub (hd : d ≠ 0) {i j : Fin n} {c : P}
       exact neg_pos.2 (lt_of_le_of_ne (not_lt.1 this) hh₁0)
     · exact (hzw rfl).elim
   · exact ⟨e, he, by rw [hgoff z hzx, hgoff w (hπzw ▸ hzx), hed]⟩
+
+end CrossingAux
+
+section Crossing
+
+variable {V P : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P] {n : ℕ} [NeZero n]
+  {poly : Polygon P n} {p₀ : P} {d : V}
 
 /-- A stage of `Polygon.gaussCode_insertVertex_of_crossing`, private to its proof: the change of
 time `φ` keeps the signs of the crossings. At the moved crossing, the edge of `q` at `φ (i + r)`
@@ -1117,5 +1129,7 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
     (exists_pos_smul_eq_vsub hd hΔ hji ha ha' hgx hgx' hgoff (hΔ.edgeSet_subset_closedInterior hx)
       hyD hx' ⟨s₁, Ioo_subset_Icc_self hs₁, rfl⟩ hyy' hπy hpair)
     (sign_det_eq_of_slide hbpinj hπ b hji hr hs₀ hxx' hπx hτx hτx' hL hφx hdir hdiry)
+
+end Crossing
 
 end Polygon

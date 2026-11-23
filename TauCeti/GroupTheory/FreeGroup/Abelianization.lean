@@ -17,8 +17,8 @@ The abelianization of a group with a free basis is a free abelian group with bas
 the same elements (`FreeGroupBasis.abelianizationBasis`). In particular the abelianization of a
 free group, written additively, is a free `ℤ`-module.
 
-The free abelian group `FreeAbelianGroup α` has unique division
-(`FreeAbelianGroup.instHasUniqueDiv`), and it is by definition the additive version of the
+The free abelian group `FreeAddCommGroup α` has unique division
+(`FreeAddCommGroup.instHasUniqueDiv`), and it is by definition the additive version of the
 abelianization of the free group `FreeGroup α`. Hence the abelianization of every free group has
 unique roots, and in particular is torsion-free: if `g ^ n` lies in the commutator subgroup of a
 free group for some `n ≠ 0`, then so does `g`.
@@ -47,11 +47,10 @@ namespace IsFreeGroup
 `a = b`. In particular it is torsion-free. -/
 instance instHasUniqueRootsAbelianization {G : Type*} [Group G] [IsFreeGroup G] :
     HasUniqueRoots (Group.Abelianization G) :=
-  -- `FreeAbelianGroup α` is defined as `Additive (Group.Abelianization (FreeGroup α))`.
-  have : HasUniqueRoots (Group.Abelianization (FreeGroup (Generators G))) :=
-    inferInstanceAs (HasUniqueRoots (Multiplicative (FreeAbelianGroup _)))
-  (toFreeGroup G).abelianizationCongr.injective.hasUniqueRoots
-    (toFreeGroup G).abelianizationCongr.toMonoidHom
+  -- `FreeCommGroup α` is defined as `Group.Abelianization (FreeGroup α)`.
+  let e : Group.Abelianization G ≃* Multiplicative (FreeAddCommGroup (Generators G)) :=
+    (toFreeGroup G).abelianizationCongr.trans FreeCommGroup.freeCommGroupEquivMultiplicative
+  e.injective.hasUniqueRoots e.toMonoidHom
 
 end IsFreeGroup
 
@@ -64,17 +63,18 @@ of `H`, the classes of the elements `b i` form a basis of the abelianization of 
 additively, as a `ℤ`-module. -/
 noncomputable def abelianizationBasis (b : FreeGroupBasis ι H) :
     Module.Basis ι ℤ (Additive (Group.Abelianization H)) :=
-  -- `FreeAbelianGroup ι` is by definition `Additive (Group.Abelianization (FreeGroup ι))`.
-  (FreeAbelianGroup.basis ι).map
-    (AddEquiv.toIntLinearEquiv (M := FreeAbelianGroup ι) b.repr.symm.abelianizationCongr.toAdditive)
+  -- `FreeCommGroup ι` is by definition `Group.Abelianization (FreeGroup ι)`.
+  (FreeAddCommGroup.basis ι).map
+    (FreeAddCommGroup.freeAddCommGroupEquivAdditive.trans
+      b.repr.symm.abelianizationCongr.toAdditive).toIntLinearEquiv
 
 @[simp]
 theorem abelianizationBasis_apply (b : FreeGroupBasis ι H) (i : ι) :
     b.abelianizationBasis i = .ofMul (.of (b i)) := by
-  have h : FreeAbelianGroup.basis ι i = FreeAbelianGroup.of i :=
-    (FreeAbelianGroup.basis ι).repr.injective <| by simp [FreeAbelianGroup.basis]
+  have h : FreeAddCommGroup.basis ι i = FreeAddCommGroup.of i :=
+    (FreeAddCommGroup.basis ι).repr.injective <| by simp [FreeAddCommGroup.basis]
   rw [abelianizationBasis, Module.Basis.map_apply, h]
-  -- `FreeAbelianGroup.of i` is by definition the additive class of `FreeGroup.of i`, which the
+  -- `FreeAddCommGroup.of i` is by definition the additive class of `FreeGroup.of i`, which the
   -- abelianized isomorphism sends to the class of `b.repr.symm (FreeGroup.of i) = b i`.
   rfl
 

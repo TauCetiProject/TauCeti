@@ -63,12 +63,12 @@ private abbrev GoodPrimeIndex (N : ℕ) := {p : ℕ // p.Prime ∧ p.Coprime N}
 /-- The canonical Hecke-ring action of the good prime indexed by `i`. -/
 private noncomputable def goodPrimeHeckeFamily :
     GoodPrimeIndex N → Module.End ℂ (cuspFormCharSpace k χ) :=
-  fun i ↦ heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N i.1)
+  fun i ↦ heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N i.val)
 
 /-- The family at the index `i` is the Hecke-ring action of `T_p` for the prime `p = i`. -/
 private theorem goodPrimeHeckeFamily_apply (i : GoodPrimeIndex N) :
     goodPrimeHeckeFamily k χ i =
-      heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N i.1) :=
+      heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N i.val) :=
   rfl
 
 private theorem goodPrimeHeckeFamily_pairwise_commute :
@@ -107,24 +107,25 @@ private theorem exists_symmetric_smul_goodPrimeHeckeFamily (i : GoodPrimeIndex N
   -- The Petersson adjoint of `T_p` on the `χ`-space is `χ(p)⁻¹ T_p`, so rescale by a square
   -- root `c` of `χ(p)⁻¹`.
   obtain ⟨c, hc_sq⟩ := IsAlgClosed.exists_pow_nat_eq
-    ((χ (ZMod.unitOfCoprime i.1 i.2.2) : ℂ)⁻¹) (show 0 < 2 by omega)
+    ((χ (ZMod.unitOfCoprime i.val i.property.2) : ℂ)⁻¹) (show 0 < 2 by omega)
   have hc_ne : c ≠ 0 := by
     intro hc
     rw [hc, zero_pow (by omega)] at hc_sq
-    exact inv_ne_zero (mod_cast Units.ne_zero (χ (ZMod.unitOfCoprime i.1 i.2.2))) hc_sq.symm
+    exact inv_ne_zero (mod_cast Units.ne_zero (χ (ZMod.unitOfCoprime i.val i.property.2)))
+        hc_sq.symm
   -- A character value has finite order, hence norm one, so `c` is a unit complex number.
   have hconj_mul : starRingEnd ℂ c * c = 1 := by
     have hnorm_sq : ‖c‖ ^ 2 = 1 := by
       rw [← norm_pow, hc_sq]
       simpa only [map_inv, Units.coeHom_apply] using ((Units.coeHom ℂ).isOfFinOrder
         (MonoidHom.isOfFinOrder χ
-          (isOfFinOrder_of_finite (ZMod.unitOfCoprime i.1 i.2.2))).inv).norm_eq_one
+          (isOfFinOrder_of_finite (ZMod.unitOfCoprime i.val i.property.2))).inv).norm_eq_one
     rw [← Complex.normSq_eq_conj_mul_self, Complex.normSq_eq_norm_sq, hnorm_sq,
       Complex.ofReal_one]
   refine ⟨c, hc_ne, fun f g ↦ ?_⟩
   -- The adjoint pair, read in the second argument: `⟪f, T_p g⟫ = conj (χ(p)⁻¹) ⟪T_p f, g⟫`.
   have hadj := isAdjointPair_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0
-    (χ := χ) k i.2.1 i.2.2 g f
+    (χ := χ) k i.property.1 i.property.2 g f
   simp only [LinearMap.flip_apply,
     TauCeti.CuspForm.peterssonInnerCosetsCharSpaceₛₗ_apply_apply, Pi.smul_apply,
     Submodule.coe_smul, CuspForm.peterssonInnerCosets_smul_left] at hadj
@@ -222,7 +223,7 @@ theorem exists_peterssonOrthonormalBasis_eigenformAwayFromLevel :
       simpa only [goodPrimeHeckeFamily, q, smul_smul,
         inv_mul_cancel₀ (goodPrimeHeckeScale_ne_zero k χ q), one_smul] using this
     have hbi_ne : (b i : cuspFormCharSpace k χ) ≠ 0 := hb_orthonormal.ne_zero i
-    let f := EigenformAwayFromLevel.ofForallPrime (b i).2
+    let f := EigenformAwayFromLevel.ofForallPrime (b i).property
       (fun h ↦ hbi_ne (Subtype.ext h)) hprime
     exact ⟨f, EigenformAwayFromLevel.ofForallPrime_χ _ _ _,
       EigenformAwayFromLevel.ofForallPrime_toCuspForm _ _ _⟩
