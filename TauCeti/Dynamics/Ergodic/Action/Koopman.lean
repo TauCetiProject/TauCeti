@@ -193,8 +193,7 @@ private theorem integral_abs_vadd_sub_le [IsFiniteMeasure μ] [VAddInvariantMeas
   have iM : Integrable (fun x => |a x - g x|) μ :=
     hint (continuous_abs.measurable.comp (ha.sub hg)) 2 hb
   have iT : Integrable (fun x => |a (t +ᵥ x) - g (t +ᵥ x)|) μ :=
-    hint ((continuous_abs.measurable.comp (ha.sub hg)).comp (measurable_const_vadd t)) 2
-      fun _ => hb _
+    (measurePreserving_vadd t μ).integrable_comp_of_integrable iM
   have iD : Integrable (fun x => |a (t +ᵥ x) - a x|) μ :=
     hint (continuous_abs.measurable.comp ((ha.comp (measurable_const_vadd t)).sub ha)) 2
       fun x => norm_abs_sub_le_two (norm_orbitAverage_le hg1 hh _) (norm_orbitAverage_le hg1 hh x)
@@ -209,11 +208,10 @@ private theorem integral_abs_vadd_sub_le [IsFiniteMeasure μ] [VAddInvariantMeas
   calc ∫ x, |g (t +ᵥ x) - g x| ∂μ
       ≤ ∫ x, (|a (t +ᵥ x) - g (t +ᵥ x)| + |a (t +ᵥ x) - a x|) + |a x - g x| ∂μ := by
         refine integral_mono iG (iTD.add iM) fun x => ?_
-        calc |g (t +ᵥ x) - g x|
-            = |-(a (t +ᵥ x) - g (t +ᵥ x)) + (a (t +ᵥ x) - a x) + (a x - g x)| := by ring_nf
-          _ ≤ |-(a (t +ᵥ x) - g (t +ᵥ x))| + |a (t +ᵥ x) - a x| + |a x - g x| :=
-            (abs_add_le _ _).trans (add_le_add_left (abs_add_le _ _) _)
-          _ = _ := by rw [abs_neg]
+        have := dist_triangle4 (g (t +ᵥ x)) (a (t +ᵥ x)) (a x) (g x)
+        rw [Real.dist_eq, Real.dist_eq, Real.dist_eq, Real.dist_eq,
+          abs_sub_comm (g (t +ᵥ x)) (a (t +ᵥ x))] at this
+        exact this
     _ = ∫ x, |a x - g x| ∂μ + ∫ x, |a (t +ᵥ x) - a x| ∂μ + ∫ x, |a x - g x| ∂μ := by
         rw [integral_add iTD iM, integral_add iT iD, hshift]
     _ = 2 * ∫ x, |a x - g x| ∂μ + ∫ x, |a (t +ᵥ x) - a x| ∂μ := by ring
@@ -237,8 +235,9 @@ theorem tendsto_measure_preimage_vadd_symmDiff {A : Set X} (hA : MeasurableSet A
   have hreal (t : ℝ) : μ.real (((t +ᵥ ·) ⁻¹' A) ∆ A) = ∫ x, |g (t +ᵥ x) - g x| ∂μ := by
     rw [← integral_indicator_one (hS t)]
     congr 1 with x
-    by_cases h₁ : t +ᵥ x ∈ A <;> by_cases h₂ : x ∈ A <;>
-      simp [g, h₁, h₂, Set.indicator, Set.mem_symmDiff]
+    have h := Set.apply_indicator_symmDiff abs_neg ((t +ᵥ ·) ⁻¹' A) A (fun _ ↦ (1 : ℝ)) x
+    rw [abs_of_nonneg (Set.indicator_nonneg (fun _ _ ↦ zero_le_one) x)] at h
+    exact h
   rw [← ENNReal.tendsto_toReal_iff (fun _ => measure_ne_top _ _) ENNReal.zero_ne_top,
     ENNReal.toReal_zero]
   simp only [← measureReal_def, hreal]
@@ -298,14 +297,6 @@ variable {X : Type*} [MeasurableSpace X] [AddAction ℝ X] [MeasurableVAdd₂ �
   (μ : Measure X) [IsFiniteMeasure μ] [VAddInvariantMeasure ℝ X μ]
   (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] (p : ℝ≥0∞) [Fact (1 ≤ p)]
 
-omit [AddAction ℝ X] [MeasurableVAdd₂ ℝ X] [IsFiniteMeasure μ] [VAddInvariantMeasure ℝ X μ]
-  [NormedSpace ℝ E] [Fact (1 ≤ p)] in
-private theorem compMeasurePreserving_congr {φ ψ : X → X} (h : φ = ψ)
-    (hφ : MeasurePreserving φ μ μ) (hψ : MeasurePreserving ψ μ μ) (f : Lp E p μ) :
-    Lp.compMeasurePreserving φ hφ f = Lp.compMeasurePreserving ψ hψ f := by
-  subst h
-  rfl
-
 /-- The Koopman group `U_t f = f ∘ (t +ᵥ ·)` of a jointly measurable action of `ℝ` preserving a
 finite measure `μ`, as a strongly continuous group on `Lᵖ(μ)` for `p ≠ ∞`. -/
 def koopmanGroup (hp : p ≠ ∞) : Semigroups.StronglyContinuousGroup (Lp E p μ) where
@@ -313,16 +304,18 @@ def koopmanGroup (hp : p ≠ ∞) : Semigroups.StronglyContinuousGroup (Lp E p �
     (Lp.compMeasurePreservingₗᵢ ℝ (t +ᵥ ·) (measurePreserving_vadd t μ)).toContinuousLinearMap
   map_zero' := by
     ext f : 1
-    exact (compMeasurePreserving_congr μ E p (ψ := id) (funext fun x => zero_vadd ℝ x) _
-      (.id μ) f).trans (Lp.compMeasurePreserving_id_apply f)
+    exact (Subtype.ext (f.val.compMeasurePreserving_congr (measurePreserving_vadd 0 μ)
+      measurable_id (.of_forall fun x => zero_vadd ℝ x))).trans
+      (Lp.compMeasurePreserving_id_apply f)
   map_add' s t := by
     ext f : 1
     have h : (fun x : X => (s + t) +ᵥ x) = (t +ᵥ ·) ∘ (s +ᵥ ·) := by
       ext x
       rw [add_comm s t, add_vadd]
       rfl
-    exact (compMeasurePreserving_congr μ E p h _ ((measurePreserving_vadd t μ).comp
-      (measurePreserving_vadd s μ)) f).trans (Lp.compMeasurePreserving_comp_apply f _ _)
+    exact (Subtype.ext (f.val.compMeasurePreserving_congr (measurePreserving_vadd (s + t) μ)
+      ((measurable_const_vadd t).comp (measurable_const_vadd s)) (.of_forall (congrFun h)))).trans
+      (Lp.compMeasurePreserving_comp_apply f _ _)
   continuousAt_zero' f := (Lp.continuous_compMeasurePreserving_vadd hp f).continuousAt
 
 /-- The Koopman operator at time `t` is the pullback along `(t +ᵥ ·)`. -/
