@@ -29,6 +29,7 @@ identity.
 ## Main declarations
 
 * `TauCeti.tensorPow`: the tensor powers of an object;
+* `TauCeti.tensorPowUnitIso`: tensor powers of the monoidal unit are isomorphic to the unit;
 * `TauCeti.tensorPowAddIso` and `TauCeti.tensorPowAddIso_assoc`: the block decomposition
   isomorphisms and their associativity;
 * `TauCeti.tensorPowSuccIso`: appending a factor on the right, with its compatibilities
@@ -61,6 +62,33 @@ theorem tensorPow_zero (X : C) : tensorPow X 0 = 𝟙_ C :=
 
 /-- The tensor power `tensorPow X (n + 1)` is `X ⊗ tensorPow X n`. -/
 theorem tensorPow_succ (X : C) (n : ℕ) : tensorPow X (n + 1) = X ⊗ tensorPow X n :=
+  (rfl)
+
+/-- Every tensor power of the monoidal unit is isomorphic to the monoidal unit. -/
+def tensorPowUnitIso : (n : ℕ) → tensorPow (𝟙_ C) n ≅ 𝟙_ C
+  | 0 => Iso.refl (𝟙_ C)
+  | n + 1 => λ_ (tensorPow (𝟙_ C) n) ≪≫ tensorPowUnitIso n
+
+/-- The zeroth tensor power of the monoidal unit is identified with the unit by the identity. -/
+@[simp]
+theorem tensorPowUnitIso_zero : tensorPowUnitIso (C := C) 0 = Iso.refl (𝟙_ C) :=
+  (rfl)
+
+/-- Recursive step of `tensorPowUnitIso`. -/
+theorem tensorPowUnitIso_succ (n : ℕ) :
+    tensorPowUnitIso (C := C) (n + 1) = λ_ (tensorPow (𝟙_ C) n) ≪≫ tensorPowUnitIso n :=
+  (rfl)
+
+/-- Recursive step of `tensorPowUnitIso`, on forward morphisms. -/
+theorem tensorPowUnitIso_succ_hom (n : ℕ) :
+    (tensorPowUnitIso (C := C) (n + 1)).hom =
+      (λ_ (tensorPow (𝟙_ C) n)).hom ≫ (tensorPowUnitIso n).hom :=
+  (rfl)
+
+/-- Recursive step of `tensorPowUnitIso`, on inverse morphisms. -/
+theorem tensorPowUnitIso_succ_inv (n : ℕ) :
+    (tensorPowUnitIso (C := C) (n + 1)).inv =
+      (tensorPowUnitIso n).inv ≫ (λ_ (tensorPow (𝟙_ C) n)).inv :=
   (rfl)
 
 /-- The block decomposition `tensorPow X m ⊗ tensorPow X n ≅ tensorPow X (n + m)` of a tensor

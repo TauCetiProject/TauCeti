@@ -16,7 +16,7 @@ with it is a linear isometric equivalence of `Lp E p μ`. Inversion is an involu
 equivalence is its own inverse: an element of `Lp` vanishes exactly when its inverse-translate does.
 
 The construction is `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv`
-(`TauCeti/MeasureTheory/Function/Lp/CompMeasurePreservingEquiv.lean`) at the inverse pair
+(`TauCeti/MeasureTheory/Function/Lp/CompMeasurePreserving/Equiv.lean`) at the inverse pair
 `Inv.inv`, `Inv.inv`; what this file adds is the interaction with the class functions of
 `TauCeti/MeasureTheory/Group/Conjugation.lean` and the compatibility with the continuous functions
 that supply the elements of `Lp` in practice.

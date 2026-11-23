@@ -269,9 +269,10 @@ theorem tmul_sub_tmul_eq_add_koszulMapRight (hMd : LinearMap.IsHomogeneous dM �
     rw [add_sub_add_comm, hm, hm']
     abel
   | @homogeneous q m =>
-    rw [← tmul_sub, hgk, tmul_add, koszulMapRight_tmul_of_mem hk m.2, map_smul, hD' m.2, hD m.2,
-      map_add, map_zsmul_unit, koszulMapRight_tmul_of_mem hk (hMd.map_mem m.2),
-      koszulMapRight_tmul_of_mem hk m.2, Int.negOnePow_succ]
+    rw [← tmul_sub, hgk, tmul_add, koszulMapRight_tmul_of_mem hk m.property, map_smul,
+        hD' m.property, hD m.property,
+      map_add, map_zsmul_unit, koszulMapRight_tmul_of_mem hk (hMd.map_mem m.property),
+      koszulMapRight_tmul_of_mem hk m.property, Int.negOnePow_succ]
     -- The two terms involving `dM m` cancel, and the remaining sign appears twice.
     simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, Units.val_neg, Int.cast_neg,
       neg_smul, smul_add, smul_smul, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self,
