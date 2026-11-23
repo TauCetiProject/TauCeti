@@ -23,8 +23,9 @@ If `u` lies in `Lᵖ` for some `0 < p < ∞`, then for each `c` the constant `c`
 `u ⁻¹' {c}` lies in every `L^q` (`MeasureTheory.SimpleFunc.memLp_restrict_const_fiber`), for `u`
 with values in any topological space with a zero of extended norm `0`.
 
-The file also records how products act on simple functions supported on a measurable set
-(extended by zero outside it,
+The file also records that restricting a simple function to a measurable set agrees with
+`SimpleFunc.piecewise` (`MeasureTheory.SimpleFunc.restrict_eq_piecewise`), how products act on
+simple functions supported on a measurable set (extended by zero outside it,
 `MeasureTheory.SimpleFunc.piecewise_const_zero_mul_piecewise_const_zero`), how stars act on
 simple functions defined piecewise on a measurable set (`MeasureTheory.SimpleFunc.star_piecewise`),
 and how products and stars act on constant simple functions
@@ -75,11 +76,11 @@ theorem memLp_restrict_const_fiber {ε : Type*} [TopologicalSpace ε] [Zero ε] 
   have hsm := u.measurableSet_fiber c
   have hs := hsm.nullMeasurableSet (μ := μ)
   -- The fibre piece has the extended norm of the `ℝ≥0∞`-valued indicator of `‖c‖ₑ` on the fibre,
-  -- so it lies in `L^r` exactly when that indicator does.
-  have hmem (r : ℝ≥0∞) : MemLp ((const α c).restrict (u ⁻¹' {c})) r μ ↔
-      MemLp ((u ⁻¹' {c}).indicator fun _ ↦ ‖c‖ₑ) r μ := by
-    refine iff_of_eq (congrArg (· < ∞) (eLpNorm_congr_eNorm_ae (SimpleFunc.aestronglyMeasurable _)
-      (aestronglyMeasurable_const.indicator hsm) (.of_forall fun x ↦ ?_)))
+  -- so both have the same `eLpNorm` for every exponent `r`.
+  have heLp (r : ℝ≥0∞) : eLpNorm ((const α c).restrict (u ⁻¹' {c})) r μ =
+      eLpNorm ((u ⁻¹' {c}).indicator fun _ ↦ ‖c‖ₑ) r μ := by
+    refine eLpNorm_congr_eNorm_ae (SimpleFunc.aestronglyMeasurable _)
+      (aestronglyMeasurable_const.indicator hsm) (.of_forall fun x ↦ ?_)
     by_cases hx : u x = c <;> simp [restrict_apply _ hsm, hx, h0]
   -- Markov's inequality: on the fibre `u` is `c`, so `‖c‖ₑ * μ (u ⁻¹' {c}) ^ (1 / p)` is bounded
   -- by the `p`-seminorm of `u`.
@@ -87,12 +88,12 @@ theorem memLp_restrict_const_fiber {ε : Type*} [TopologicalSpace ε] [Zero ε] 
     have hle : eLpNorm ((const α c).restrict (u ⁻¹' {c})) p μ ≤ eLpNorm u p μ := by
       refine eLpNorm_mono_eNorm (SimpleFunc.aestronglyMeasurable _) fun x ↦ ?_
       by_cases hx : u x = c <;> simp [restrict_apply _ hsm, hx, h0]
-    have h := (hmem p).1 (hle.trans_lt hu.eLpNorm_lt_top)
-    rwa [MeasureTheory.memLp_iff, eLpNorm_indicator_const hs hp0 hp, eNorm_eq_self] at h
+    have h := hle.trans_lt hu.eLpNorm_lt_top
+    rwa [heLp p, eLpNorm_indicator_const hs hp0 hp, eNorm_eq_self] at h
   have hp' : 0 < 1 / p.toReal := one_div_pos.2 (ENNReal.toReal_pos hp0 hp)
   rw [ENNReal.mul_lt_top_iff, ENNReal.rpow_lt_top_iff_of_pos hp',
     ENNReal.rpow_eq_zero_iff_of_pos hp'] at hfin
-  rw [hmem, MeasureTheory.memLp_iff]
+  rw [MeasureTheory.memLp_iff, heLp q]
   rcases hfin with ⟨hc, hμ⟩ | hc | hμ
   · exact (eLpNorm_indicator_const_le _ q hs).trans_lt
       (ENNReal.mul_lt_top (by simpa using hc)
@@ -111,6 +112,12 @@ theorem sum_smul_restrict_const_apply {R : Type*} [AddCommMonoid β] [SMulZeroCl
   refine Finset.sum_congr rfl fun c _ => ?_
   simp only [restrict_apply _ (u.measurableSet_fiber c), coe_const]
   by_cases hx : x ∈ u ⁻¹' {c} <;> simp [hx]
+
+/-- Restricting a simple function `f` to a measurable set `s` agrees with the piecewise function
+equal to `f` on `s` and `0` outside `s`. -/
+theorem restrict_eq_piecewise [Zero β] (f : SimpleFunc α β) {s : Set α}
+    (hs : MeasurableSet s) : f.restrict s = piecewise s hs f 0 := by
+  rw [restrict, dite_eq_left hs]
 
 /-- The product of a simple function `f` on a measurable set `A`, extended by zero, and a simple
 function `g` on a measurable set `B`, extended by zero, is `f * g` on `A ∩ B`, extended by zero. -/
