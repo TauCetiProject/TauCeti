@@ -15,15 +15,16 @@ public import TauCeti.Analysis.PDE.YangMills.GaugeIdentities
 Worked cases of the gauge calculus of `TauCeti.Analysis.PDE.YangMills.GaugeIdentities`.
 
 * The structure group `U(1)`, with coefficients `ℂ`: the one-form `A = i x₁ dx₂` on `ℝ²` has
-  curvature `F₁₂ = i` (`u1Connection_curvature`); the gauge transformation `O = exp (i φ)` acts by
-  `O·A = A - i dφ` (`gaugeAction_expPhase`) and leaves the curvature unchanged
-  (`connectionCurvature_gaugeAction_expPhase`).
+  curvature `F₁₂ = i` (`connectionCurvature_u1Connection`); the gauge transformation
+  `O = exp (i φ)` acts by `O·A = A - i dφ` (`gaugeAction_expPhase`) and leaves the curvature
+  unchanged (`connectionCurvature_gaugeAction_expPhase`).
 * A constant gauge transformation `c` that commutes with the coefficients acts trivially
   (`gaugeAction_const_of_commute`).
 * The structure group `SU(2)`, as the unit quaternions: for `O(t) = g exp (t i)` with `g = 1 + k`
   (a multiple of `exp (π k / 4)`, so with the same adjoint action) and the constant `B = j`, the
-  derivative of `Ad(O)B` at `t = 0` is `[O;1, Ad(O)B] = 2k` (`fderiv_adjoint_quaternion`), while
-  `Ad(O)[O;1, B] = 0` (`adjoint_lie_quaternion`). So the second term of the Leibniz rule
+  derivative of `Ad(O)B` at `t = 0` is `[O;1, Ad(O)B] = 2k`
+  (`fderiv_su2Gauge_mul_mul_ringInverse`), while `Ad(O)[O;1, B] = 0`
+  (`su2Gauge_mul_lie_mul_ringInverse_zero`). So the second term of the Leibniz rule
   `TauCeti.fderiv_mul_mul_ringInverse_apply` cannot be replaced by `Ad(O)[O;1, B]`.
 
 ## References
@@ -51,7 +52,7 @@ theorem u1Connection_apply (x v : ℝ × ℝ) : u1Connection x v = x.1 * (I * v.
   simp [u1Connection, Complex.real_smul]
 
 /-- The curvature of `A = i x₁ dx₂` is `F₁₂ = i`. -/
-theorem u1Connection_curvature (x : ℝ × ℝ) :
+theorem connectionCurvature_u1Connection (x : ℝ × ℝ) :
     connectionCurvature ℝ (⇑u1Connection) x (1, 0) (0, 1) = I := by
   rw [connectionCurvature_apply_of_comm, u1Connection.fderiv]
   simp [u1Connection_apply]
@@ -89,8 +90,9 @@ theorem connectionCurvature_gaugeAction_expPhase {φ : ℝ × ℝ → ℝ} {x : 
       connectionCurvature ℝ A x v w := by
   have hO : ContDiffAt ℝ 2 (expPhase φ) x :=
     ((ofRealCLM.contDiff.contDiffAt.comp x hφ).mul contDiffAt_const).cexp
-  rw [connectionCurvature_gaugeAction hO (by simp) (isUnit_expPhase φ x) hA, mul_comm,
-    ← mul_assoc, Ring.inverse_mul_cancel _ (isUnit_expPhase φ x), one_mul]
+  rw [connectionCurvature_gaugeAction hO (by simp) (isUnit_expPhase φ x) hA,
+    mul_comm _ (expPhase φ x)⁻¹ʳ, ← mul_assoc, Ring.inverse_mul_cancel _ (isUnit_expPhase φ x),
+    one_mul]
 
 /-! ### Constant central gauge transformations -/
 
@@ -132,7 +134,7 @@ theorem rightMaurerCartan_su2Gauge : rightMaurerCartan ℝ su2Gauge 0 1 = ⟨0, 
   ext <;> norm_num [su2Element]
 
 /-- The derivative of `Ad(O) j` at `t = 0` is `[O;1, Ad(O) j] = [j, -i] = 2k`. -/
-theorem fderiv_adjoint_quaternion :
+theorem fderiv_su2Gauge_mul_mul_ringInverse :
     fderiv ℝ (fun t ↦ su2Gauge t * ⟨0, 0, 1, 0⟩ * (su2Gauge t)⁻¹ʳ) 0 1 = ⟨0, 0, 0, 2⟩ := by
   rw [fderiv_mul_mul_ringInverse_apply hasDerivAt_su2Gauge.differentiableAt
       (su2Gauge_zero ▸ isUnit_su2Element) (differentiableAt_const _), fderiv_const_apply,
@@ -140,7 +142,7 @@ theorem fderiv_adjoint_quaternion :
   ext <;> norm_num [su2Element, Ring.lie_def]
 
 /-- The uncorrected second term `Ad(O)[O;1, j] = Ad(g)[j, j]` vanishes. -/
-theorem adjoint_lie_quaternion :
+theorem su2Gauge_mul_lie_mul_ringInverse_zero :
     su2Gauge 0 * ⁅rightMaurerCartan ℝ su2Gauge 0 1, ⟨0, 0, 1, 0⟩⁆ * (su2Gauge 0)⁻¹ʳ = 0 := by
   rw [rightMaurerCartan_su2Gauge, Ring.lie_def, sub_self, mul_zero, zero_mul]
 
