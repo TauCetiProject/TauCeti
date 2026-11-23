@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Lemmas
-public import TauCeti.Analysis.Convex.StdSimplex
+public import TauCeti.Analysis.Convex.StdSimplex.Boundary
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.Order.Field.Basic

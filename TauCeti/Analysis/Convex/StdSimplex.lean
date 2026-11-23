@@ -9,10 +9,11 @@ public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
-public import Mathlib.Topology.Order.Compact
 public import Mathlib.Analysis.Normed.Group.Constructions
 public import Mathlib.Analysis.Normed.Group.Real
 public import Mathlib.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Convex.StdSimplex.Boundary
+public import TauCeti.Analysis.Convex.StdSimplex.Faces
 import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.Normed.MulAction
@@ -40,24 +41,14 @@ vertex, the `i`-th coordinate recovering the position along each segment. This i
 of a closed vertex star whose link is a combinatorial ball.
 
 The faces of the standard simplex, the convex hulls of sets of vertices `Pi.single i 1`, are
-described in coordinates. A point of one face is moved into its intersection with a second face
-by transferring the coordinates outside the intersection to a common vertex; the distance moved
-is at most `card ι` times the distance to any point of the second face. Disjoint faces are
-likewise separated by at least `(card ι)⁻¹`.
+described in coordinates in `TauCeti.Analysis.Convex.StdSimplex.Faces`. Over `ℝ`, a point of one
+face is moved into its intersection with a second face by transferring the coordinates outside
+the intersection to a common vertex; the distance moved is at most `card ι` times the distance to
+any point of the second face. Disjoint faces are likewise separated by at least `(card ι)⁻¹`.
 
 ## Main results
 
-* `Convexity.StdSimplex.mem_range_toFun_comp_weights_iff`: the weight vectors of the standard
-  simplex are the vectors with nonnegative coordinates summing to one.
-* `Convexity.StdSimplex.convex_range_toFun_comp_weights`: the weight vectors of the standard
-  simplex form a convex set.
 * `Convexity.StdSimplex.norm_toLp_weights_le_one`: each weight vector has ℓᵖ norm at most one.
-* `LinearMap.sum_apply_eq_of_mapsTo_range_weights`: a linear map carrying the standard simplex
-  into a standard simplex preserves coordinate sums.
-* `TauCeti.stdSimplexBoundary`, `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary of
-  the standard simplex, the points with some vanishing coordinate, and its compactness.
-* `TauCeti.mem_convexHull_pi_single_iff`: the face of the standard simplex spanned by a set of
-  vertices consists of the points of the simplex whose coordinates vanish off that set.
 * `TauCeti.norm_sub_le_one_of_mem_convexHull_pi_single`: points of faces of the standard
   simplex are within distance one.
 * `TauCeti.exists_mem_convexHull_inter_norm_sub_le`: a point `x` of one coordinate face has a
@@ -84,25 +75,6 @@ open Set Finset Convexity
 
 namespace Convexity.StdSimplex
 
-/-- A vector is a weight vector of the standard simplex if and only if its coordinates are
-nonnegative and sum to one. -/
-theorem mem_range_toFun_comp_weights_iff {R : Type*} [Semiring R] [PartialOrder R]
-    {X : Type*} [Fintype X] {x : X → R} :
-    x ∈ (range fun t : StdSimplex R X => ⇑t.weights) ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i = 1 := by
-  rw [range_toFun_comp_weights]
-  simp
-
-/-- The weight vectors of the standard simplex form a convex set. -/
-theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R]
-    [IsOrderedRing R] (X : Type*) :
-    Convex R (range fun t : StdSimplex R X => ⇑t.weights) := by
-  rintro _ ⟨s, rfl⟩ _ ⟨t, rfl⟩ a b ha hb hab
-  refine ⟨⟨a • s.weights + b • t.weights, ?_, ?_⟩, rfl⟩
-  · intro x
-    simpa using add_nonneg (mul_nonneg ha (s.nonneg x)) (mul_nonneg hb (t.nonneg x))
-  · simp [Finsupp.sum_add_index', Finsupp.sum_smul_index', ← Finsupp.mul_sum, s.total, t.total,
-      hab]
-
 /-- The ℓᵖ norm of the weights of a standard simplex point is at most one for `1 ≤ p`. -/
 theorem norm_toLp_weights_le_one {ι : Type*} [Fintype ι] {p : ENNReal} [Fact (1 ≤ p)]
     (t : StdSimplex ℝ ι) : ‖WithLp.toLp p (t.weights : ι → ℝ)‖ ≤ 1 := by
@@ -113,173 +85,11 @@ theorem norm_toLp_weights_le_one {ι : Type*} [Fintype ι] {p : ENNReal} [Fact (
     norm_sum_le (Finset.univ : Finset ι)
       (fun i ↦ t.weights i • PiLp.single p i (1 : ℝ))
 
-/-- A coordinate of a point of the standard simplex is less than one if some other coordinate
-is positive. -/
-theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [PartialOrder R]
-    [AddLeftStrictMono R] {ι : Type*} {x : ι → R}
-    (hx : x ∈ range fun s : StdSimplex R ι => ⇑s.weights) {i j : ι} (hij : j ≠ i)
-    (hxj : 0 < x j) : x i < 1 := by
-  classical
-  have := addLeftMono_of_addLeftStrictMono R
-  obtain ⟨s, rfl⟩ := hx
-  -- The total weight is the sum over any finite set containing the support, here one that also
-  -- contains `i` and `j`.
-  have hsupp : s.weights.support ⊆ s.weights.support ∪ {i, j} := subset_union_left
-  have hij' : ({i, j} : Finset ι) ⊆ s.weights.support ∪ {i, j} := subset_union_right
-  have htotal := s.total
-  rw [s.weights.sum_of_support_subset hsupp _ fun _ _ => rfl] at htotal
-  have hle := sum_le_sum_of_subset_of_nonneg hij' fun k _ _ => s.weights_nonneg k
-  rw [sum_pair hij.symm, htotal] at hle
-  exact (lt_add_of_pos_right _ hxj).trans_le hle
-
-/-- The weight vector of a convex combination of two points of the standard simplex lies on the
-segment between their weight vectors. -/
-theorem weights_convexCombPair_mem_segment {R : Type*} [Semiring R] [PartialOrder R]
-    [IsStrictOrderedRing R] {ι : Type*} {p q : R} (hp : 0 ≤ p) (hq : 0 ≤ q) (hpq : p + q = 1)
-    (u v : StdSimplex R ι) :
-    ⇑(convexCombPair p q hp hq hpq u v).weights ∈ segment R ⇑u.weights ⇑v.weights :=
-  ⟨p, q, hp, hq, hpq, by simp⟩
-
-/-- A point of the standard simplex with no weight away from `x` is the vertex `x`. -/
-theorem eq_single_of_forall_ne_weights_eq_zero {R : Type*} [Semiring R] [PartialOrder R]
-    [IsStrictOrderedRing R] {ι : Type*} {w : StdSimplex R ι} {x : ι}
-    (h : ∀ y ≠ x, w.weights y = 0) : w = single x :=
-  support_weights_eq_singleton.mp <| w.support_weights_nonempty.subset_singleton_iff.mp
-    fun y hy => mem_singleton.mpr <| by_contra fun hyx => Finsupp.mem_support_iff.mp hy (h y hyx)
-
 end Convexity.StdSimplex
-
-/-- A linear map carrying the weight vectors of the standard simplex on `α` into those of the
-standard simplex on `β` preserves coordinate sums: it sends every vertex to a vector of coordinate
-sum one. -/
-theorem LinearMap.sum_apply_eq_of_mapsTo_range_weights {R α β : Type*} [Semiring R]
-    [PartialOrder R] [ZeroLEOneClass R] [Fintype α] [Fintype β] (L : (α → R) →ₗ[R] (β → R))
-    (hL : MapsTo L (Set.range fun t : StdSimplex R α => ⇑t.weights)
-      (Set.range fun t : StdSimplex R β => ⇑t.weights)) (v : α → R) :
-    ∑ b, L v b = ∑ a, v a := by
-  classical
-  have hvert (a : α) : ∑ b, L (Pi.single a 1) b = 1 := by
-    have ha : Pi.single a 1 ∈ Set.range fun t : StdSimplex R α => ⇑t.weights :=
-      StdSimplex.mem_range_toFun_comp_weights_iff.2 ⟨Pi.single_nonneg.2 zero_le_one, by simp⟩
-    exact (StdSimplex.mem_range_toFun_comp_weights_iff.1 (hL ha)).2
-  conv_lhs => rw [pi_eq_sum_univ' v]
-  simp_rw [map_sum, map_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
-  rw [Finset.sum_comm]
-  simp_rw [← Finset.mul_sum, hvert, mul_one]
 
 namespace TauCeti
 
 variable {R ι : Type*}
-
-section Boundary
-
-variable (R ι) in
-/-- The relative boundary of the standard simplex: its points with some vanishing coordinate. -/
-def stdSimplexBoundary [Semiring R] [PartialOrder R] : Set (ι → R) :=
-  {y ∈ (range fun s : StdSimplex R ι => ⇑s.weights) | ∃ i, y i = 0}
-
-variable (R ι) in
-/-- The relative boundary of the standard simplex is the set of its points with some vanishing
-coordinate. -/
-theorem stdSimplexBoundary_def [Semiring R] [PartialOrder R] :
-    stdSimplexBoundary R ι = {y ∈ (range fun s : StdSimplex R ι => ⇑s.weights) | ∃ i, y i = 0} :=
-  (rfl)
-
-/-- Membership in the relative boundary of the standard simplex. -/
-@[simp]
-theorem mem_stdSimplexBoundary [Semiring R] [PartialOrder R] {x : ι → R} :
-    x ∈ stdSimplexBoundary R ι ↔
-      x ∈ (range fun s : StdSimplex R ι => ⇑s.weights) ∧ ∃ i, x i = 0 :=
-  Iff.rfl
-
-/-- The relative boundary lies in the standard simplex. -/
-theorem stdSimplexBoundary_subset [Semiring R] [PartialOrder R] :
-    stdSimplexBoundary R ι ⊆ range fun s : StdSimplex R ι => ⇑s.weights :=
-  fun _ hx => (mem_stdSimplexBoundary.mp hx).1
-
-/-- A point of the standard simplex lies on its relative boundary or in its open part. -/
-theorem mem_stdSimplexBoundary_or_forall_pos [Semiring R] [PartialOrder R] {x : ι → R}
-    (hx : x ∈ range fun s : StdSimplex R ι => ⇑s.weights) :
-    x ∈ stdSimplexBoundary R ι ∨ ∀ i, 0 < x i := by
-  refine or_iff_not_imp_left.2 fun h i => ?_
-  obtain ⟨s, rfl⟩ := hx
-  exact (s.weights_nonneg i).lt_of_ne' fun h0 =>
-    h (mem_stdSimplexBoundary.mpr ⟨mem_range_self s, i, h0⟩)
-
-variable [Finite ι]
-
-/-- The relative boundary of the standard simplex over an ordered semiring with continuous
-addition, closed points and compact closed intervals, such as `ℝ`, is compact. -/
-theorem isCompact_stdSimplexBoundary [Semiring R] [PartialOrder R] [IsOrderedAddMonoid R]
-    [TopologicalSpace R] [ContinuousAdd R] [CompactIccSpace R] [T1Space R] :
-    IsCompact (stdSimplexBoundary R ι) := by
-  have := Fintype.ofFinite ι
-  -- The boundary is the intersection of the unit cube with a closed set.
-  have hC : IsClosed
-      ((fun y : ι → R => ∑ i, y i) ⁻¹' {1} ∩ ⋃ i, (fun y : ι → R => y i) ⁻¹' {0}) :=
-    (isClosed_singleton.preimage (continuous_finsetSum _ fun i _ => continuous_apply i)).inter
-      (isClosed_iUnion_of_finite fun i => isClosed_singleton.preimage (continuous_apply i))
-  convert (isCompact_univ_pi fun _ => isCompact_Icc (a := (0 : R)) (b := 1)).inter_right hC
-    using 1
-  ext y
-  simp only [mem_stdSimplexBoundary, StdSimplex.mem_range_toFun_comp_weights_iff, mem_inter_iff,
-    mem_univ_pi, Set.mem_Icc, Set.mem_preimage, mem_singleton_iff, mem_iUnion]
-  constructor
-  · rintro ⟨⟨h0, h1⟩, hz⟩
-    exact ⟨fun i => ⟨h0 i, h1 ▸ single_le_sum (fun j _ => h0 j) (mem_univ i)⟩, h1, hz⟩
-  · rintro ⟨hI, h1, hz⟩
-    exact ⟨⟨fun i => (hI i).1, h1⟩, hz⟩
-
-end Boundary
-
-/-- A face of the standard simplex, the convex hull of a set of vertices `Pi.single i 1`,
-consists of weight vectors of `Convexity.StdSimplex`. -/
-theorem convexHull_pi_single_subset_range_toFun_comp_weights [Semiring R] [PartialOrder R]
-    [IsOrderedRing R] [DecidableEq ι] (s : Set ι) :
-    convexHull R ((fun i : ι => Pi.single i (1 : R)) '' s) ⊆
-      range fun t : StdSimplex R ι => ⇑t.weights := by
-  refine convexHull_min (fun _ hi => ?_) (StdSimplex.convex_range_toFun_comp_weights R ι)
-  obtain ⟨i, _, rfl⟩ := hi
-  exact ⟨⟨.single i 1, by simp, by simp⟩, Finsupp.single_eq_pi_single i 1⟩
-
-/-- Membership in a face of the standard simplex, the convex hull of a set of vertices
-`Pi.single i 1`, is membership in the standard simplex together with vanishing of the coordinates
-outside the face. The empty face has empty convex hull. -/
-@[simp]
-theorem mem_convexHull_pi_single_iff [Semifield R] [LinearOrder R] [IsStrictOrderedRing R]
-    [DecidableEq ι] {s : Set ι} {x : ι → R} :
-    x ∈ convexHull R ((fun i : ι => Pi.single i (1 : R)) '' s) ↔
-      x ∈ (range fun t : StdSimplex R ι => ⇑t.weights) ∧ ∀ i ∉ s, x i = 0 := by
-  constructor
-  · intro hx
-    refine ⟨convexHull_pi_single_subset_range_toFun_comp_weights s hx, fun i hi => ?_⟩
-    apply convexHull_min (fun _ hz => ?_) (convex_hyperplane (LinearMap.proj i).isLinear 0) hx
-    obtain ⟨j, hj, rfl⟩ := hz
-    simp [ne_of_mem_of_not_mem hj hi]
-  · rintro ⟨⟨t, rfl⟩, hsupp⟩
-    classical
-    -- Split off one vertex at a time, by induction on the number of vertices carrying weight.
-    induction hn : #t.weights.support using Nat.strong_induction_on generalizing t with
-    | _ n ih =>
-    obtain ⟨a, ha⟩ := t.support_weights_nonempty
-    have has : a ∈ s := by_contra fun h => Finsupp.mem_support_iff.mp ha (hsupp a h)
-    have hva : (Pi.single a 1 : ι → R) ∈ convexHull R ((fun i : ι => Pi.single i (1 : R)) '' s) :=
-      subset_convexHull R _ ⟨a, has, rfl⟩
-    by_cases hs' : ∃ j ∈ ({a}ᶜ : Set ι), t.weights j ≠ 0
-    · -- `t` lies on the segment from the vertex `a` to its restriction away from `a`.
-      rw [← t.convexCombPair_restrict_restrict_compl {a} ⟨a, rfl, Finsupp.mem_support_iff.mp ha⟩
-        hs']
-      refine (convex_convexHull R _).segment_subset ?_ ?_
-        (StdSimplex.weights_convexCombPair_mem_segment ..)
-      · simpa [Finsupp.single_eq_pi_single] using hva
-      · refine ih _ ?_ _ (fun j hj => ?_) rfl
-        · rw [← hn, StdSimplex.support_weights_restrict]
-          exact card_lt_card (filter_ssubset.mpr ⟨a, ha, by simp⟩)
-        · exact Finsupp.notMem_support_iff.mp (by simp [hsupp j hj])
-    · -- Otherwise `t` is the vertex `a`.
-      push Not at hs'
-      simpa [StdSimplex.eq_single_of_forall_ne_weights_eq_zero hs', Finsupp.single_eq_pi_single]
-        using hva
 
 variable [Fintype ι]
 
@@ -444,9 +254,8 @@ theorem convexJoin_facet_stdSimplex_single [Semifield R] [LinearOrder R] [IsStri
     [Nontrivial ι] [DecidableEq ι] (i : ι) :
     convexJoin R {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0} {Pi.single i 1} =
       range fun s : StdSimplex R ι => ⇑s.weights := by
-  have hb : (Pi.single i 1 : ι → R) ∈ range fun s : StdSimplex R ι => ⇑s.weights :=
-    ⟨StdSimplex.single i, Finsupp.single_eq_pi_single i 1⟩
-  refine Subset.antisymm (convexJoin_subset (fun y hy => hy.1) (singleton_subset_iff.mpr hb)
+  refine Subset.antisymm (convexJoin_subset (fun y hy => hy.1)
+    (singleton_subset_iff.mpr (StdSimplex.pi_single_mem_range_toFun_comp_weights i))
     (StdSimplex.convex_range_toFun_comp_weights R ι)) ?_
   rintro _ ⟨w, rfl⟩
   dsimp only
@@ -470,7 +279,7 @@ theorem convexJoin_facet_stdSimplex_single [Semifield R] [LinearOrder R] [IsStri
     obtain ⟨j, hj⟩ := exists_ne i
     have hj' : (Pi.single j 1 : ι → R) ∈
         {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0} :=
-      ⟨⟨StdSimplex.single j, Finsupp.single_eq_pi_single j 1⟩, by simp [hj.symm]⟩
+      ⟨StdSimplex.pi_single_mem_range_toFun_comp_weights j, by simp [hj.symm]⟩
     rw [StdSimplex.eq_single_of_forall_ne_weights_eq_zero hs, StdSimplex.weights_single,
       Finsupp.single_eq_pi_single]
     exact subset_convexJoin_right ⟨_, hj'⟩ (mem_singleton _)

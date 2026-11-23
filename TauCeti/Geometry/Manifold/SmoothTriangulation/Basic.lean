@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Convex.SecantEstimate
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import TauCeti.Data.Finsupp.MapDomain
 
 /-!

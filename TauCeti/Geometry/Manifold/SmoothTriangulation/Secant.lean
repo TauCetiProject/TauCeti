@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.SmoothTriangulation.Basic
 
 import TauCeti.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.SecantEstimate
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 
 /-!
 # Secant maps of smooth triangulations
@@ -216,8 +216,8 @@ theorem isSimplexImmersion_secantMap_comp_faceInclusion_of_injOn {f : Realizatio
     have hhull : convexHull ℝ (range fun a : σ.val => Pi.single a (1 : ℝ)) ⊆
         range fun x : StandardSimplex σ.val => fun a : σ.val => x.val a := by
       rw [Finset.range_standardSimplex_coordinates]
-      exact convexHull_min (range_subset_iff.2 fun a => ⟨.single a, by
-        simp [Finsupp.single_eq_pi_single]⟩)
+      exact convexHull_min
+        (range_subset_iff.2 Convexity.StdSimplex.pi_single_mem_range_toFun_comp_weights)
         (Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ σ.val)
     rintro _ hw₁ _ hw₂ hw
     obtain ⟨x₁, rfl⟩ := hhull hw₁
