@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris
 public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 public import TauCeti.AlgebraicGeometry.PuncturedAffineSpace
 import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+import TauCeti.CategoryTheory.Sites.SheafCohomology.SectionsQuotient
 
 /-!
 # The punctured plane has nonzero first cohomology
@@ -25,12 +26,10 @@ cohomology, `𝔸²_R ∖ {0}` is not affine.
 The input is the degree-zero end of the Mayer-Vietoris sequence of the two opens, which is the
 two-set Čech computation: if `H¹(U ⊔ V, M) = 0`, every section of `M` over `U ⊓ V` is the
 difference of restrictions of sections over `U` and over `V`
-(`Scheme.Modules.exists_sub_eq_of_subsingleton_cohomologyOn_one`).
+(`TauCeti.CategoryTheory.mayerVietorisSectionClass_eq_zero_iff`).
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.Scheme.Modules.exists_sub_eq_of_subsingleton_cohomologyOn_one`: the
-  degree-zero part of the Mayer-Vietoris sequence of two opens, under vanishing of `H¹(U ⊔ V, M)`;
 * `TauCeti.PuncturedAffineSpace.nontrivial_cohomologyOn_one_puncturedPlane`: on the open subset
   `𝔸²_R ∖ {0}` of `𝔸²_R`, `H¹(𝔸²_R ∖ {0}, 𝒪) ≠ 0`;
 * `TauCeti.PuncturedAffineSpace.nontrivial_cohomology_one_puncturedPlane`: the same for the
@@ -51,42 +50,6 @@ universe u
 noncomputable section
 
 namespace TauCeti
-
-namespace AlgebraicGeometry.Scheme.Modules
-
-variable {X : Scheme.{u}} (M : X.Modules) (U V : X.Opens)
-
-/-- **Two-set Čech computation in degree one.** If the first cohomology of `M` on `U ⊔ V`
-vanishes, every section of `M` over `U ⊓ V` is the difference of the restriction of a section over
-`U` and the restriction of a section over `V`. This is the exactness of the Mayer-Vietoris sequence
-`H⁰(U, M) ⊞ H⁰(V, M) ⟶ H⁰(U ⊓ V, M) ⟶ H¹(U ⊔ V, M)`. -/
-theorem exists_sub_eq_of_subsingleton_cohomologyOn_one
-    (h : Subsingleton (cohomologyOn M 1 (U ⊔ V))) (s : Γ(M, U ⊓ V)) :
-    ∃ (a : Γ(M, U)) (b : Γ(M, V)),
-      M.presheaf.map (homOfLE inf_le_left).op a - M.presheaf.map (homOfLE inf_le_right).op b =
-        s := by
-  have hex := (mayerVietorisSequence_exact M U V 0 1 rfl).exact 1
-  have hepi : Epi (biprod.desc (cohomologyOnRes M 0 (inf_le_left : U ⊓ V ≤ U))
-      (-cohomologyOnRes M 0 (inf_le_right : U ⊓ V ≤ V))) :=
-    hex.epi_f (by ext x; exact Subsingleton.elim (α := cohomologyOn M 1 (U ⊔ V)) _ _)
-  obtain ⟨z, hz⟩ := (AddCommGrpCat.epi_iff_surjective _).mp hepi
-    ((M.cohomologyOnZeroEquiv (U ⊓ V)).symm s)
-  let B := cohomologyOn M 0 U ⊞ cohomologyOn M 0 V
-  refine ⟨M.cohomologyOnZeroEquiv U ((biprod.fst : B ⟶ _) z),
-    M.cohomologyOnZeroEquiv V ((biprod.snd : B ⟶ _) z), ?_⟩
-  rw [← M.cohomologyOnZeroEquiv_cohomologyOnRes, ← M.cohomologyOnZeroEquiv_cohomologyOnRes,
-    ← map_sub, ← (M.cohomologyOnZeroEquiv (U ⊓ V)).apply_symm_apply s, ← hz]
-  congr 1
-  have hz' : z = (biprod.inl : _ ⟶ B) ((biprod.fst : B ⟶ _) z) +
-      (biprod.inr : _ ⟶ B) ((biprod.snd : B ⟶ _) z) := by
-    rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← AddCommGrpCat.hom_add_apply,
-      biprod.total]
-    rfl
-  conv_rhs => rw [hz', map_add]
-  simp only [← ConcreteCategory.comp_apply]
-  simp [sub_eq_add_neg]
-
-end AlgebraicGeometry.Scheme.Modules
 
 namespace PuncturedAffineSpace
 
@@ -168,16 +131,9 @@ private theorem basicOpen_sup_basicOpen :
     (Spec (.of (MvPolynomial (Fin 2) R))).basicOpen (coordinate R 0) ⊔
         (Spec (.of (MvPolynomial (Fin 2) R))).basicOpen (coordinate R 1) =
       puncturedAffineSpaceOpens R (Fin 2) := by
-  have hmem (i : Fin 2) (x : Spec (.of (MvPolynomial (Fin 2) R))) :
-      x ∈ (Spec (.of (MvPolynomial (Fin 2) R))).basicOpen (coordinate R i) ↔
-        (X i : MvPolynomial (Fin 2) R) ∉ x.asIdeal := by
-    rw [basicOpen_eq_of_affine]
-    rfl
-  ext x
-  simp only [SetLike.mem_coe, Opens.mem_sup, hmem, mem_puncturedAffineSpaceOpens_iff]
-  change _ ↔ ¬ Set.range (X : Fin 2 → MvPolynomial (Fin 2) R) ⊆ (x.asIdeal : Set _)
-  rw [Set.range_subset_iff, Fin.forall_fin_two]
-  tauto
+  rw [puncturedAffineSpaceOpens_eq_iSup_basicOpen]
+  exact le_antisymm (sup_le (le_iSup_of_le 0 le_rfl) (le_iSup_of_le 1 le_rfl))
+    (iSup_le (Fin.forall_fin_two.mpr ⟨le_sup_left, le_sup_right⟩))
 
 /-- **The punctured plane is not cohomologically trivial.** Over a nonzero ring `R`, the first
 cohomology of the structure sheaf of `𝔸²_R` on the open subset `𝔸²_R ∖ {0}` is nonzero. -/
@@ -191,22 +147,25 @@ theorem nontrivial_cohomologyOn_one_puncturedPlane [Nontrivial R] :
   rw [← not_subsingleton_iff_nontrivial, ← basicOpen_sup_basicOpen]
   intro hsub
   have hW : Y.basicOpen x ⊓ Y.basicOpen y = Y.basicOpen (x * y) := (Y.basicOpen_mul x y).symm
-  obtain ⟨a, b, hab⟩ :=
-    AlgebraicGeometry.Scheme.Modules.exists_sub_eq_of_subsingleton_cohomologyOn_one _ _ _ hsub
-      (Y.presheaf.map (eqToHom hW).op
-        (IsLocalization.Away.invSelf (S := Γ(Y, Y.basicOpen (x * y))) (x * y)))
   have hcomp {P Q T : Y.Opens} (i : Q ⟶ P) (j : T ⟶ Q) (k : T ⟶ P) (s : Γ(Y, P)) :
       (Y.presheaf.map j.op).hom ((Y.presheaf.map i.op).hom s) = (Y.presheaf.map k.op).hom s := by
     rw [← CommRingCat.comp_apply, ← Functor.map_comp, ← op_comp, Subsingleton.elim (j ≫ i) k]
   have hxle : Y.basicOpen (x * y) ≤ Y.basicOpen x := hW ▸ inf_le_left
   have hyle : Y.basicOpen (x * y) ≤ Y.basicOpen y := hW ▸ inf_le_right
-  obtain ⟨a, b, hab2⟩ : ∃ (a : Γ(Y, Y.basicOpen x)) (b : Γ(Y, Y.basicOpen y)),
+  -- Mayer-Vietoris for `D(x)` and `D(y)`: the overlap section `1 / (xy)` is a difference of
+  -- restrictions. The ascription restates it for the structure sheaf: the sections of the unit
+  -- sheaf of modules and the maps of `Opens.mayerVietorisSquare` are definitionally those of
+  -- `Y.presheaf` along `U ⊓ V ≤ U` and `U ⊓ V ≤ V`.
+  obtain ⟨a, b, hab⟩ : ∃ (a : Γ(Y, Y.basicOpen x)) (b : Γ(Y, Y.basicOpen y)),
       (Y.presheaf.map (homOfLE inf_le_left).op).hom a -
         (Y.presheaf.map (homOfLE inf_le_right).op).hom b =
           (Y.presheaf.map (eqToHom hW).op).hom
             (IsLocalization.Away.invSelf (S := Γ(Y, Y.basicOpen (x * y))) (x * y)) :=
-    ⟨a, b, hab⟩
-  have key := congrArg (Y.presheaf.map (eqToHom hW.symm).op).hom hab2
+    (TauCeti.CategoryTheory.mayerVietorisSectionClass_eq_zero_iff
+      (Opens.mayerVietorisSquare (Y.basicOpen x) (Y.basicOpen y))
+      ((SheafOfModules.toSheaf Y.ringCatSheaf).obj (SheafOfModules.unit Y.ringCatSheaf)) _).mp
+      (@Subsingleton.elim _ hsub _ _)
+  have key := congrArg (Y.presheaf.map (eqToHom hW.symm).op).hom hab
   rw [map_sub, hcomp _ _ (homOfLE hxle), hcomp _ _ (homOfLE hyle), hcomp _ _ (𝟙 _), op_id,
     CategoryTheory.Functor.map_id, CommRingCat.id_apply, sub_eq_add_neg, ← map_neg] at key
   obtain ⟨k, m, n, p, q, h⟩ := exists_eq_of_add_eq_invSelf (A := Γ(Y, ⊤))
