@@ -51,8 +51,9 @@ facet contains a vertex; at that vertex its normal belongs to a lattice basis. H
 normal is primitive (`TauCeti.Toric.IsDelzant.isPrimitive`): the facet normals are the primitive
 inward normals.
 When the lattice map is injective, a Delzant polytope also has a point on none of its facets
-(`TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`): with at least two facets, the barycentre
-of points lying only on one facet each; with a single facet, such a point pushed off it.
+(`TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`): with at least two facets, the midpoint of
+the points lying only on one facet each, for two different facets; with a single facet, such a point
+pushed off it.
 
 Translating the polytope by `y ∈ V*` changes the support constants to `c j + ⟨y, u j⟩` and keeps
 the normals (`TauCeti.Toric.facetPolyhedron_add`). It preserves the active constraints, hence
@@ -383,8 +384,9 @@ theorem ne_zero (j : ι) : u j ≠ 0 := fun h0 ↦ by
 theorem facetPairing_ne_zero (hi : Function.Injective i) (j : ι) : facetPairing i u j ≠ 0 :=
   facetPairing_eq_zero_iff.not.2 ((map_ne_zero_iff i hi).2 (hΔ.ne_zero j))
 
-/-- **A Delzant polytope has an interior point.** For an injective lattice map, some point of a
-Delzant polytope lies on none of its facets. -/
+/-- **A Delzant polytope has a point on none of its facets.** For an injective lattice map, some
+point of a Delzant polytope lies on none of its facets (no facet inequality is an equality
+there). -/
 theorem exists_activeSet_eq_empty (hi : Function.Injective i) :
     ∃ x ∈ facetPolyhedron i u c, activeSet (facetPairing i u) c x = ∅ := by
   choose x hx hxj using hΔ.irredundant
