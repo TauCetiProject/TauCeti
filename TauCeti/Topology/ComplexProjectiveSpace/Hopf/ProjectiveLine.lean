@@ -11,6 +11,7 @@ public import TauCeti.Topology.Circle.Loop
 public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
 public import TauCeti.Topology.Homotopy.GenLoop.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 import TauCeti.Analysis.InnerProductSpace.Hemisphere
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
@@ -121,10 +122,8 @@ private def chordVector (hvw : ⟪(v : EuclideanSpace ℂ (Fin (n + 1))), w⟫ =
   ⟨⟨AffineMap.lineMap (1 : ℂ) (Circle.exp (2 * π * p.2) : ℂ) (p.1 : ℝ) •
       (v : EuclideanSpace ℂ (Fin (n + 1))),
     Submodule.mem_orthogonal_singleton_iff_inner_left.2 <| by
-      -- The real inner product is the real part of the complex one.
-      have h (x y : EuclideanSpace ℂ (Fin (n + 1))) : inner ℝ x y = (⟪x, y⟫).re := by
-        simp [PiLp.inner_apply, Complex.re_sum, Complex.inner, Complex.mul_re, mul_comm]
-      rw [h, inner_smul_left, hvw, mul_zero, Complex.zero_re]⟩,
+      rw [EuclideanSpace.real_inner_eq_re_inner, inner_smul_left, hvw, mul_zero,
+        Complex.zero_re]⟩,
     -- The chord lies in the closed unit disc, as a convex combination of `1` and `e^{2πit}`.
     mem_closedBall_zero_iff.2 <| by
       simpa [norm_smul] using (convex_closedBall (0 : ℂ) 1).lineMap_mem (by simp)
@@ -260,17 +259,6 @@ theorem hopfBoundary_congrEquiv_fromDoubleLoop_projectiveLineDoubleLoop :
 
 /-! ### The degree of the projective line -/
 
-include hvw in
-/-- Two orthogonal unit vectors exist only in `ℂⁿ⁺¹` with `n ≥ 1`. -/
-private theorem ne_zero_of_inner_eq_zero : n ≠ 0 := by
-  have h := (linearIndependent_of_ne_zero_of_inner_eq_zero (𝕜 := ℂ)
-    (v := ![(v : EuclideanSpace ℂ (Fin (n + 1))), w])
-    (by simp [Fin.forall_fin_two, ne_zero_of_mem_unit_sphere])
-    (fun i j hij ↦ by
-      fin_cases i <;> fin_cases j <;> simp_all [inner_eq_zero_symm])).fintype_card_le_finrank
-  simp only [Fintype.card_fin, finrank_euclideanSpace_fin] at h
-  omega
-
 /-- **The projective line has degree one.** The identification `π₂(CPⁿ, [v]) ≃* ℤ` of
 `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt`, through the Hopf boundary and the degree of loops
 of the circle, sends the class of the projective-line double loop to the generator `1`. -/
@@ -291,9 +279,11 @@ theorem pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop (hn : n ≠ 0) :
 read as a square, generates `π₂(CPⁿ, [v]) ≅ ℤ`. -/
 theorem zpowers_fromDoubleLoop_projectiveLineDoubleLoop_eq_top :
     Subgroup.zpowers (G := π_ 2 (ComplexProjectiveSpace n) (mk n v))
-      ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ = ⊤ :=
-  (pi2MulEquivInt v (ne_zero_of_inner_eq_zero hvw)).zpowers_eq_top_of_apply_eq_ofAdd_one
-    (pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop hvw _)
+      ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ = ⊤ := by
+  have hn : n ≠ 0 := (Nat.lt_of_succ_lt_succ (one_lt_of_inner_eq_zero_euclideanSpace
+    (ne_zero_of_mem_unit_sphere v) (ne_zero_of_mem_unit_sphere w) hvw)).ne'
+  exact (pi2MulEquivInt v hn).zpowers_eq_top_of_apply_eq_ofAdd_one
+    (pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop hvw hn)
 
 /-! ### The adjoint map -/
 
@@ -322,6 +312,15 @@ theorem projectiveLineLoopMap_exp (s : I) :
     projectiveLineLoopMap v w hvw (Circle.exp (2 * π * s)) = projectiveLineDoubleLoop v w hvw s :=
   Path.toCircle_exp _ s
 
+/-- The projective-line double loop, as a class of `π₁(Ω CPⁿ)`, has degree one in `ℤ`. -/
+private theorem pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projectiveLineDoubleLoop
+    (hn : n ≠ 0) :
+    (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.trans (pi2MulEquivInt v hn))
+        (FundamentalGroup.fromPath (.mk (projectiveLineDoubleLoop v w hvw))) =
+      Multiplicative.ofAdd 1 := by
+  rw [MulEquiv.trans_apply, HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk,
+    pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop]
+
 /-- **The adjoint map `j : S¹ → Ω CPⁿ` has degree one.** Composed with the loop-space shift
 `π₁(Ω CPⁿ) ≅ π₂(CPⁿ)` and the identification `π₂(CPⁿ) ≃* ℤ` of
 `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt`, the map `j_*` on fundamental groups is the degree
@@ -332,10 +331,8 @@ theorem pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_mapOfEq_projectiveLineL
         (FundamentalGroup.mapOfEq (projectiveLineLoopMap v w hvw)
           (projectiveLineLoopMap_one hvw) δ)) =
       Circle.fundamentalGroupMulEquiv 1 δ :=
-  Circle.apply_mapOfEq_toCircle_of_apply_eq_ofAdd_one
-    (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.trans (pi2MulEquivInt v hn)) _
-    (by rw [MulEquiv.trans_apply, HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk,
-      pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop]) δ
+  Circle.apply_mapOfEq_toCircle_of_apply_eq_ofAdd_one _ _
+    (pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projectiveLineDoubleLoop hvw hn) δ
 
 /-- **The adjoint map `j : S¹ → Ω CPⁿ` is bijective on fundamental groups**: it induces a
 bijection `π₁(S¹, 1) → π₁(Ω CPⁿ, refl)`. Bijectivity does not see the sign of `j`, which is
@@ -343,16 +340,10 @@ fixed by the degree computation
 `pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_mapOfEq_projectiveLineLoopMap`. -/
 theorem bijective_mapOfEq_projectiveLineLoopMap :
     Function.Bijective (FundamentalGroup.mapOfEq (projectiveLineLoopMap v w hvw)
-      (projectiveLineLoopMap_one hvw)) := by
-  have hn := ne_zero_of_inner_eq_zero hvw
-  have h : ⇑(FundamentalGroup.mapOfEq (projectiveLineLoopMap v w hvw)
-      (projectiveLineLoopMap_one hvw)) =
-        (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.trans (pi2MulEquivInt v hn)).symm ∘
-          Circle.fundamentalGroupMulEquiv 1 := by
-    funext δ
-    rw [Function.comp_apply, MulEquiv.eq_symm_apply, MulEquiv.trans_apply,
-      pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_mapOfEq_projectiveLineLoopMap]
-  rw [h]
-  exact MulEquiv.bijective _ |>.comp (MulEquiv.bijective _)
+      (projectiveLineLoopMap_one hvw)) :=
+  Circle.bijective_mapOfEq_toCircle_of_apply_eq_ofAdd_one _ _
+    (pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projectiveLineDoubleLoop hvw
+      (Nat.lt_of_succ_lt_succ (one_lt_of_inner_eq_zero_euclideanSpace
+        (ne_zero_of_mem_unit_sphere v) (ne_zero_of_mem_unit_sphere w) hvw)).ne')
 
 end TauCeti.ComplexProjectiveSpace

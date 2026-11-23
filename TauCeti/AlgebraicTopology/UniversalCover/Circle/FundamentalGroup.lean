@@ -529,12 +529,8 @@ theorem bijective_mapOfEq_toCircle_of_zpowers_eq_top {X : Type*} [TopologicalSpa
         fundamentalGroupMulEquiv 1 :=
     funext (mapOfEq_toCircle_apply γ)
   -- A generator of an infinite group has infinite order.
-  have hγ' : ¬IsOfFinOrder (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) :=
-    fun hfin ↦ by
-      have := hfin.finite_zpowers
-      rw [hγ] at this
-      have := Finite.of_equiv _ (Subgroup.topEquiv (G := FundamentalGroup X x)).toEquiv
-      exact not_finite (FundamentalGroup X x)
+  have hγ' := orderOf_eq_zero_iff.1
+    (Infinite.orderOf_eq_zero_of_forall_mem_zpowers fun y ↦ hγ ▸ Subgroup.mem_top y)
   rw [h]
   refine ⟨((injective_zpow_iff_not_isOfFinOrder.2 hγ').comp Multiplicative.toAdd.injective).comp
     (fundamentalGroupMulEquiv 1).injective, fun y ↦ ?_⟩
