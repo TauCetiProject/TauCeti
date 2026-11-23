@@ -63,29 +63,40 @@ noncomputable def conjugateCP (V : Matrix n m ℂ) :
     have hM₁ : 0 ≤ e₁ M := by simpa using (map_le_map_iff e₁).mpr hM
     let f : Fin k × n → Fin k × (n ⊕ m) := Prod.map id Sum.inl
     have hf : Function.Injective f := fun _ _ h => by simpa [f, Prod.ext_iff] using h
-    have hM₂ : 0 ≤ e₂.symm (ofMatrix (Matrix.of fun p q =>
-        Function.extend f (fun i => Function.extend f (ofMatrix.symm (e₁ M) i) 0 q) 0 p)) := by
-      simpa using (map_le_map_iff e₂.symm).mpr (CStarMatrix.extend_nonneg hf hM₁)
+    let M' : CStarMatrix (Fin k) (Fin k) (CStarMatrix (n ⊕ m) (n ⊕ m) ℂ) :=
+      M.map fun A => ofMatrix (Matrix.fromBlocks (ofMatrix.symm A) 0 0 0)
+    have hM' : 0 ≤ M' := by
+      rw [← map_le_map_iff e₂, map_zero]
+      convert CStarMatrix.extend_nonneg hf hM₁ using 2
+      ext ⟨i, x⟩ ⟨j, y⟩
+      simp only [e₂, e₁, M', compStarAlgEquiv_apply, CStarMatrix.map_apply, ofMatrix_apply,
+        of_apply, ofMatrix_symm_apply]
+      rcases x with x | x <;> rcases y with y | y
+      · rw [show (i, Sum.inl x) = f (i, x) from rfl, show (j, Sum.inl y) = f (j, y) from rfl,
+          hf.extend_apply, hf.extend_apply]
+        simp
+      · rw [show (i, Sum.inl x) = f (i, x) from rfl, hf.extend_apply,
+          Function.extend_apply' _ _ _ (by simp [f] : ¬∃ a, f a = (j, Sum.inr y))]
+        simp
+      · rw [Function.extend_apply' _ _ _ (by simp [f] : ¬∃ a, f a = (i, Sum.inr x))]
+        simp
+      · rw [Function.extend_apply' _ _ _ (by simp [f] : ¬∃ a, f a = (i, Sum.inr x))]
+        simp
     let B : CStarMatrix (n ⊕ m) (n ⊕ m) ℂ := ofMatrix (Matrix.fromBlocks 0 V 0 0)
-    have hconj := (CompletelyPositiveMap.conj B).map_cstarMatrix_nonneg _ hM₂
-    have hsub := CStarMatrix.submatrix_nonneg (Prod.map id Sum.inr)
-      (by simpa using (map_le_map_iff e₂).mpr hconj)
+    have hconj := (CompletelyPositiveMap.conj B).map_cstarMatrix_nonneg _ hM'
+    have hconj' : M'.map (CompletelyPositiveMap.conj B) =
+        M.map fun A => ofMatrix (Matrix.fromBlocks 0 0 0 (Vᴴ * ofMatrix.symm A * V)) := by
+      refine CStarMatrix.ext fun i j => ofMatrix.symm.injective ?_
+      simp [B, M', Matrix.fromBlocks_conjTranspose, Matrix.fromBlocks_multiply]
+    have hconj₂ : 0 ≤ e₂ (M.map fun A =>
+        ofMatrix (Matrix.fromBlocks 0 0 0 (Vᴴ * ofMatrix.symm A * V))) := by
+      rw [← map_zero e₂, map_le_map_iff e₂]
+      exact hconj' ▸ hconj
+    have hsub := CStarMatrix.submatrix_nonneg (Prod.map id Sum.inr) hconj₂
     rw [← map_le_map_iff e₃, map_zero]
     convert hsub using 1
     ext ⟨i, p⟩ ⟨j, q⟩
-    simp only [e₃, e₂, e₁, compStarAlgEquiv_apply, CStarMatrix.map_apply, LinearMap.coe_mk,
-      AddHom.coe_mk, ofMatrix_apply, of_apply, Matrix.submatrix_apply, Prod.map_apply, id_eq,
-      ofMatrix_symm_apply, compStarAlgEquiv_symm_apply, CompletelyPositiveMap.conj_apply,
-      CStarMatrix.mul_apply, CStarMatrix.star_apply, B]
-    simp only [Matrix.mul_apply, Matrix.conjTranspose_apply, Fintype.sum_sum_type,
-      Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₂, Matrix.zero_apply, zero_mul, mul_zero,
-      star_zero, Finset.sum_const_zero, add_zero]
-    refine Finset.sum_congr rfl fun y _ =>
-      congrArg (· * V y q) (Finset.sum_congr rfl fun x _ => ?_)
-    change star (V x p) * ofMatrix.symm (M i j) x y =
-      star (V x p) *
-        Function.extend f (fun a => Function.extend f (e₁ M a) 0 (f (j, y))) 0 (f (i, x))
-    simp [hf.extend_apply, e₁, compStarAlgEquiv_apply]
+    simp [e₃, e₂]
 
 /-- The conjugation map evaluates to the usual matrix formula. -/
 @[simp] theorem conjugateCP_apply (V : Matrix n m ℂ) (a : CStarMatrix n n ℂ) :

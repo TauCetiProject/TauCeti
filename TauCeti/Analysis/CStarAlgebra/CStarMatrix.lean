@@ -300,6 +300,12 @@ theorem map_smul_linearMap {m B : Type*} [CommSemiring R] [AddCommMonoid A] [Mod
   ext
   simp [smul_apply]
 
+private lemma sum_star_mul_mul_eq_dotProduct_mulVec [Fintype n] [NonUnitalSemiring A] [Star A]
+    (M : CStarMatrix n n A) (x : n → A) :
+    ∑ i, ∑ j, star (x i) * M i j * x j = star x ⬝ᵥ (ofMatrix.symm M *ᵥ x) := by
+  rw [dot_mulVec_eq_sum_sum, Finset.sum_comm]
+  rfl
+
 /-- A matrix over a complex star-algebra with proper star all of whose quadratic forms are
 self-adjoint is self-adjoint. -/
 theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum [Fintype n] [NonUnitalRing A] [StarRing A]
@@ -309,7 +315,7 @@ theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum [Fintype n] [NonUnitalRing A] 
     IsSelfAdjoint M := by
   classical
   replace hM (x : n → A) : IsSelfAdjoint (star x ⬝ᵥ (ofMatrix.symm M *ᵥ x)) := by
-    rw [dot_mulVec_eq_sum_sum, Finset.sum_comm]
+    rw [← sum_star_mul_mul_eq_dotProduct_mulVec]
     exact hM x
   -- Polarization: the sesquilinear form `P x y` satisfies `star (P x y) = P y x`.
   have hP (x y : n → A) :
@@ -365,17 +371,13 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
       star x ⬝ᵥ (ofMatrix.symm (star R * R) *ᵥ x) =
         star (ofMatrix.symm R *ᵥ x) ⬝ᵥ (ofMatrix.symm R *ᵥ x) := by
     rw [ofMatrix_symm_mul, ofMatrix_symm_star, ← mulVec_mulVec, dotProduct_mulVec, star_mulVec]
-  have hform (x : n → A) :
-      ∑ i, ∑ j, star (x i) * M i j * x j = star x ⬝ᵥ (ofMatrix.symm M *ᵥ x) := by
-    rw [dot_mulVec_eq_sum_sum, Finset.sum_comm]
-    rfl
-  simp_rw [hform]
+  simp_rw [sum_star_mul_mul_eq_dotProduct_mulVec]
   refine ⟨fun hM x => ?_, fun hQ => ?_⟩
   · obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
     rw [key]
     exact dotProduct_star_self_nonneg _
   have hsa : IsSelfAdjoint M := isSelfAdjoint_of_forall_isSelfAdjoint_sum fun x => by
-    rw [hform]
+    rw [sum_star_mul_mul_eq_dotProduct_mulVec]
     exact .of_nonneg (hQ x)
   -- Reduce positivity to showing no compression `star N * M * N` equals a nonzero `-(star R * R)`.
   refine hsa.nonneg_of_star_mul_mul_eq_neg_imp_eq_zero fun R N hRN => ?_
@@ -446,20 +448,15 @@ theorem norm_sq_smul_sub_mulLeft_nonneg (c : A) (a : n → A) :
   intro y
   have hvec (b : n → A) : star y ⬝ᵥ (Matrix.vecMulVec (star b) b *ᵥ y) =
       star (b ⬝ᵥ y) * (b ⬝ᵥ y) := by
-    rw [Matrix.vecMulVec_mulVec]
-    simp only [dotProduct, Pi.smul_apply, MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op,
-      ← mul_assoc, ← Finset.sum_mul]
-    exact congrArg (· * (b ⬝ᵥ y)) (Matrix.star_dotProduct_star y b)
+    rw [Matrix.dotProduct_mulVec, Matrix.vecMul_vecMulVec, smul_dotProduct, smul_eq_mul,
+      Matrix.star_dotProduct_star]
   let M : Matrix n n A :=
     ((‖c‖ ^ 2 : ℝ) : ℂ) • Matrix.vecMulVec (star a) a - Matrix.vecMulVec (star (c • a)) (c • a)
   have hM : ofMatrix (Matrix.of fun i j =>
       ((‖c‖ ^ 2 : ℝ) : ℂ) • (star (a i) * a j) - star (c * a i) * (c * a j)) = ofMatrix M := by
     ext i j
     simp [M, Matrix.vecMulVec_apply]
-  have hform : ∑ i, ∑ j, star (y i) * ofMatrix M i j * y j = star y ⬝ᵥ (M *ᵥ y) := by
-    rw [dot_mulVec_eq_sum_sum, Finset.sum_comm]
-    rfl
-  rw [hM, hform]
+  rw [hM, sum_star_mul_mul_eq_dotProduct_mulVec, ofMatrix.symm_apply_apply]
   simp only [M, sub_mulVec, smul_mulVec, dotProduct_sub, dotProduct_smul, hvec, smul_dotProduct,
     smul_eq_mul, Complex.coe_smul, star_mul, mul_assoc]
   rw [sub_nonneg, sq, ← CStarRing.norm_star_mul_self (x := c)]

@@ -218,12 +218,16 @@ theorem apply_le_of_le {ψ φ : A₁ →CP A₂} (h : ψ ≤ φ) {a : A₁} (ha 
 def conj (b : A₁) : A₁ →CP A₁ where
   toLinearMap := LinearMap.mulLeftRight ℂ (star b, b)
   map_cstarMatrix_nonneg' k M hM := by
-    let D := CStarMatrix.diagonalNonUnitalStarAlgHom ℂ (Fin k) A₁ b
-    have hD : M.map (LinearMap.mulLeftRight ℂ (star b, b)) = star D * M * D := by
+    let d := CStarMatrix.diagonalNonUnitalStarAlgHom ℂ (Fin k) A₁
+    have hD : M.map (LinearMap.mulLeftRight ℂ (star b, b)) = star (d b) * M * d b := by
+      apply CStarMatrix.ofMatrix.symm.injective
+      have hd (x : A₁) : CStarMatrix.ofMatrix.symm (d x) = Matrix.diagonal fun _ => x := by
+        ext i j
+        simp [d, Matrix.diagonal_apply]
+      rw [← map_star, CStarMatrix.ofMatrix_symm_mul, CStarMatrix.ofMatrix_symm_mul, hd, hd]
       ext i j
-      simp [D, CStarMatrix.mul_apply, CStarMatrix.star_apply,
-        CStarMatrix.diagonalNonUnitalStarAlgHom_apply, apply_ite star]
-    exact hD ▸ star_left_conjugate_nonneg hM D
+      simp [Matrix.mul_diagonal, Matrix.diagonal_mul]
+    exact hD ▸ star_left_conjugate_nonneg hM (d b)
 
 @[simp] theorem conj_apply (b a : A₁) : conj b a = star b * a * b := (rfl)
 
