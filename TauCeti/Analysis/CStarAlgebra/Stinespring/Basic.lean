@@ -93,8 +93,8 @@ private theorem leftLift_symm (x y : A ⊗[ℂ] H) : leftLift φ x y = star (lef
     induction y using TensorProduct.inductionOn with
     | tmul a ξ =>
       have hstar : φ (star b * a) = (φ (star a * b)).adjoint := by
-        simpa only [coe_toPositiveLinearMap, star_mul, star_star,
-          ContinuousLinearMap.star_eq_adjoint] using map_star φ.toPositiveLinearMap (star a * b)
+        simpa only [star_mul, star_star, ContinuousLinearMap.star_eq_adjoint] using
+          φ.map_star (star a * b)
       rw [leftLift_tmul_tmul, leftLift_tmul_tmul, star_star, Complex.star_def, inner_conj_symm,
         hstar, ContinuousLinearMap.adjoint_inner_right]
     | add y₁ y₂ hy₁ hy₂ => simp [leftLift_add, hy₁, hy₂]
@@ -578,6 +578,13 @@ theorem star_map_mul_map_le_opNorm_smul (a : A) :
   rw [hinner]
   exact ⟨by simp [-Complex.ofReal_pow],
     by simpa [RCLike.ofReal_re, -Complex.ofReal_pow] using sub_nonneg.mpr hle⟩
+
+/-- The **Kadison–Schwarz inequality** for a completely positive contraction into `H →L[ℂ] H`
+from a possibly nonunital C⋆-algebra: `star (φ a) * φ a ≤ φ (star a * a)`. -/
+theorem star_map_mul_map_le_of_opNorm_le_one (h : ‖φ.toContinuousLinearMap‖ ≤ 1) (a : A) :
+    star (φ a) * φ a ≤ φ (star a * a) :=
+  (φ.star_map_mul_map_le_opNorm_smul a).trans
+    (smul_le_of_le_one_left (map_nonneg φ (star_mul_self_nonneg a)) h)
 
 /-- **Stinespring's dilation theorem (nonunital domain)**. -/
 theorem stinespring_nonUnital :
