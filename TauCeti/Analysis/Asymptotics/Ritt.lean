@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import TauCeti.Analysis.Calculus.Deriv.ZPow
+import Mathlib.Analysis.Calculus.Deriv.ZPow
 import TauCeti.Analysis.Complex.Sector.Bounds
 import TauCeti.Analysis.Complex.Sector.Deriv
 
@@ -25,8 +25,10 @@ the same with `o` in place of `O`. Consequently a Poincaré expansion `f(z) ∼ 
 may be differentiated termwise in every such closed subsector.
 
 The proof is Cauchy's estimate for the derivative on discs whose radii are a fixed multiple of
-the distance of their centers to the vertex: such discs around points of the closed subsector
-stay inside `S`, by compactness of the arc of unit directions of the subsector.
+the distance of their centers to the vertex. By compactness of the arc of unit directions of the
+subsector, such discs around the nonzero points of the closed subsector stay in the open sector
+`|ph w| < θ`; once the center also satisfies `‖z‖ > 2 max R 0`, the disc clears the radial cutoff
+and lies in `S`.
 
 ## Main results
 
@@ -36,9 +38,9 @@ stay inside `S`, by compactness of the arc of unit directions of the subsector.
   expansion at infinity in a sector.
 
 The sector geometry is in `TauCeti.Analysis.Complex.Sector.Bounds`, the pointwise and eventual
-Cauchy estimates in a sector (`Complex.exists_pos_eventually_norm_deriv_le_sector`) are in
-`TauCeti.Analysis.Complex.Sector.Deriv`, the comparison of real powers of comparable numbers is
-`Real.rpow_le_two_rpow_abs_mul`, and the derivative of `z ↦ (z ^ n)⁻¹` is `hasDerivAt_inv_pow`.
+Cauchy estimates in a sector (`TauCeti.exists_pos_eventually_norm_deriv_le_sector`) are in
+`TauCeti.Analysis.Complex.Sector.Deriv`, and the comparison of real powers of comparable numbers
+is `TauCeti.rpow_le_two_rpow_abs_mul`.
 
 The statements and proofs are adapted from the lean-DLMF project
 (<https://github.com/bjbraams/lean-DLMF>), files
@@ -58,7 +60,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 namespace Asymptotics
 
-open Complex
+open Complex TauCeti
 
 /-- **Ritt's theorem** (DLMF §2.1(ii)): if `f` is holomorphic on `{R < ‖z‖, |arg z| < θ}` and
 `f(z) = O(‖z‖ ^ ν)` as `z → ∞` in `|arg z| < θ`, then `f'(z) = O(‖z‖ ^ (ν - 1))` as `z → ∞` in
@@ -106,34 +108,39 @@ theorem HasAsymptoticExpansion.deriv_sector {f : ℂ → E} {a : ℕ → E} {R �
   refine HasAsymptoticExpansion.of_isBigO fun N => ?_
   set P : ℂ → E := fun z => ∑ n ∈ range N, (z ^ n)⁻¹ • a n
   have hP (z : ℂ) (hz : z ≠ 0) :
-      HasDerivAt P (∑ n ∈ range N, (-(n : ℂ) * (z ^ (n + 1))⁻¹) • a n) z :=
-    HasDerivAt.fun_sum fun n _ => (hasDerivAt_inv_pow hz n).smul_const (a n)
+      HasDerivAt P (∑ n ∈ range N, (-(n : ℂ) * (z ^ (n + 1))⁻¹) • a n) z := by
+    refine HasDerivAt.fun_sum fun n _ => ?_
+    have hexp : -(n : ℤ) - 1 = -((n + 1 : ℕ) : ℤ) := by omega
+    have h := (hasDerivAt_zpow (-(n : ℤ)) z (Or.inl hz)).smul_const (a n)
+    simp only [hexp, zpow_neg, zpow_natCast, Int.cast_neg, Int.cast_natCast] at h
+    exact h
   have hS : {z : ℂ | max R 0 < ‖z‖ ∧ |arg z| < θ} ⊆ {z | R < ‖z‖ ∧ |arg z| < θ} :=
     fun z hz => ⟨(le_max_left R 0).trans_lt hz.1, hz.2⟩
   have hdiff : DifferentiableOn ℂ (fun z => f z - P z) {z | max R 0 < ‖z‖ ∧ |arg z| < θ} :=
     fun z hz => ((hf z (hS hz)).mono hS).sub (hP z (norm_pos_iff.mp
       ((le_max_right R 0).trans_lt hz.1))).differentiableAt.differentiableWithinAt
+  have hnorm (n : ℕ) (z : ℂ) : ‖(z ^ n)⁻¹‖ = ‖z‖ ^ (-(n : ℝ)) := by
+    rw [norm_inv, norm_pow, Real.rpow_neg (norm_nonneg _), Real.rpow_natCast]
   have hrem : (fun z => f z - P z) =O[cobounded ℂ ⊓ 𝓟 {z | |arg z| < θ}]
       fun z => ‖z‖ ^ (-(N : ℝ)) :=
     (he.isBigO N).trans <| isBigO_of_le _ fun z => by
-      rw [norm_inv, norm_pow, Real.norm_of_nonneg (by positivity), Real.rpow_neg (norm_nonneg _),
-        Real.rpow_natCast]
+      rw [hnorm, Real.norm_of_nonneg (by positivity)]
   have hscale : (fun z : ℂ => ‖z‖ ^ (-(N : ℝ) - 1)) =O[cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ θ'}]
       fun z => (z ^ (N + 1))⁻¹ := isBigO_of_le _ fun z => by
     have hexp : -(N : ℝ) - 1 = -((N + 1 : ℕ) : ℝ) := by push_cast; ring
-    rw [norm_inv, norm_pow, Real.norm_of_nonneg (by positivity), hexp,
-      Real.rpow_neg (norm_nonneg _), Real.rpow_natCast]
+    rw [Real.norm_of_nonneg (by positivity), hexp, hnorm]
   refine ((isBigO_deriv_of_isBigO_sector hθ' hdiff hrem).trans hscale).congr' ?_ .rfl
-  obtain ⟨c, hc, hball⟩ := Complex.exists_pos_forall_closedBall_abs_arg_lt hθ'
+  obtain ⟨c, hc, hc2, hball⟩ := exists_pos_forall_mem_closedBall_abs_arg_lt hθ'
   refine (hasBasis_cobounded_norm.inf_principal _).eventually_iff.mpr
     ⟨2 * max R 0 + 1, trivial, fun z ⟨hz, harg⟩ => ?_⟩
   have hz' : 2 * max R 0 + 1 ≤ ‖z‖ := hz
   have hzR : max R 0 < ‖z‖ := by linarith [le_max_right R 0]
   have hz0 : z ≠ 0 := norm_pos_iff.mp ((le_max_right R 0).trans_lt hzR)
-  have hnhds : {z | R < ‖z‖ ∧ |arg z| < θ} ∈ 𝓝 z := by
-    refine mem_of_superset (closedBall_mem_nhds z (mul_pos hc (norm_pos_iff.mpr hz0)))
-      fun w hw => ⟨?_, (hball z hz0 harg w hw).1⟩
-    linarith [(hball z hz0 harg w hw).2.1, le_max_left R 0, le_max_right R 0]
+  have hnhds : {z | R < ‖z‖ ∧ |arg z| < θ} ∈ 𝓝 z :=
+    mem_of_superset (closedBall_mem_nhds z (mul_pos hc (norm_pos_iff.mpr hz0)))
+      (closedBall_subset_setOf_lt_norm_and_abs_arg_lt (A := R) hc2
+        (fun w hw => (hball z harg w hw).1)
+        (by linarith [le_max_left R 0, le_max_right R 0]))
   rw [((hf.differentiableAt hnhds).hasDerivAt.fun_sub (hP z hz0)).deriv]
   refine congrArg (deriv f z - ·) (sum_congr rfl fun n _ => ?_)
   rw [smul_smul, mul_comm]
