@@ -73,7 +73,7 @@ theorem card_sylow_five_perm (hα : Nat.card α = 5) :
   have hP : Nat.card P = 5 :=
     P.card_eq_of_dvd_of_not_sq_dvd (by rw [h120]; norm_num) (by rw [h120]; norm_num)
   have hindex : P.index = 24 := by
-    have := P.1.index_mul_card
+    have := P.toSubgroup.index_mul_card
     rw [hP, h120] at this
     omega
   have hdvd : Nat.card (Sylow 5 (Perm α)) ∣ 24 := hindex ▸ P.card_dvd_index

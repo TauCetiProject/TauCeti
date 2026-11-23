@@ -101,7 +101,7 @@ theorem charFun_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
       intro k _
       have hexp : Complex.exp (((k : ℝ) * t) * Complex.I) =
           Complex.exp (Complex.I * t) ^ k := by
-        rw [← Complex.exp_nat_mul]
+        rw [← Complex.exp_natCast_mul]
         congr 1
         push_cast
         ring

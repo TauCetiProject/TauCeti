@@ -25,6 +25,8 @@ and a normalizing subalgebra normalizes `T`.
   subalgebra of `T'`.
 * `LieSubalgebra.le_normalizer_of_le_sup`: a subalgebra contained in the sum of `T` and a
   subalgebra `H` normalizing `T` normalizes `T`.
+* `LieSubalgebra.eq_of_le_of_isLieAbelian_of_normalizer_eq`: a self-normalizing subalgebra, such
+  as a Cartan subalgebra, is not properly contained in an abelian subalgebra.
 -/
 
 public section
@@ -42,7 +44,7 @@ def idealOfLeNormalizer (hT' : T' ≤ T.normalizer) : LieIdeal R T' where
   lie_mem {x m} hm := by
     -- membership in the comap is membership of the underlying element of `L` in `T`
     change ⁅(x : L), (m : L)⁆ ∈ T
-    exact ideal_in_normalizer (hT' x.2) hm
+    exact ideal_in_normalizer (hT' x.property) hm
 
 @[simp]
 theorem mem_idealOfLeNormalizer (hT' : T' ≤ T.normalizer) {x : T'} :
@@ -62,5 +64,19 @@ theorem toLieSubalgebra_idealOfLeNormalizer (hT' : T' ≤ T.normalizer) (hle : T
 theorem le_normalizer_of_le_sup (hsup : T'.toSubmodule ≤ T.toSubmodule ⊔ H.toSubmodule)
     (hH : H ≤ T.normalizer) : T' ≤ T.normalizer :=
   hsup.trans (sup_le T.le_normalizer hH)
+
+/-- **A self-normalizing Lie subalgebra is not properly contained in an abelian one.** If a Lie
+subalgebra `T` with `T.normalizer = T`, such as a Cartan subalgebra, lies in an abelian Lie
+subalgebra `T'`, then `T = T'`: the subalgebra `T'` commutes with `T`, hence normalizes it. -/
+theorem eq_of_le_of_isLieAbelian_of_normalizer_eq (hle : T ≤ T') [IsLieAbelian T']
+    (hT : T.normalizer = T) : T = T' := by
+  refine le_antisymm hle fun x hx ↦ ?_
+  rw [← hT, mem_normalizer_iff]
+  intro y hy
+  have hxy : ⁅x, y⁆ = 0 := by
+    have h := trivial_lie_zero T' T' ⟨x, hx⟩ ⟨y, hle hy⟩
+    rwa [← coe_zero_iff_zero, coe_bracket] at h
+  rw [hxy]
+  exact zero_mem T
 
 end LieSubalgebra

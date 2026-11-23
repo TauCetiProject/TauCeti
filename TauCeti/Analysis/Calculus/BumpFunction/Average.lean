@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 
+import TauCeti.Analysis.Calculus.BumpFunction.Normed
+
 /-!
 # Normalized bump averages
 
@@ -51,8 +53,7 @@ private theorem integrable_normed_smul_neg (phi : ContDiffBump (0 : E)) (mu : Me
     [IsLocallyFiniteMeasure mu] [mu.IsOpenPosMeasure]
     (T : E → 𝓕) (hT : ∀ f, Continuous fun h ↦ T h f) (f : F) :
     Integrable (fun t ↦ phi.normed mu t • T (-t) f) mu :=
-  (phi.continuous_normed.smul ((hT f).comp continuous_neg)).integrable_of_hasCompactSupport
-    phi.hasCompactSupport_normed.smul_right
+  phi.integrable_normed_smul mu ((hT f).comp continuous_neg)
 
 /-- Averaging a strongly continuous family of linear isometries against the normalized form of a
 smooth bump centred at zero, as a continuous linear operator. The continuity hypothesis makes the

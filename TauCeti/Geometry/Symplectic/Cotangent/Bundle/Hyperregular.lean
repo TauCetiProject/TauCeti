@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Flow.Diffeomorph
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Topology.FiberBundle.Separation
 
 /-!
 # Hyperregular Lagrangians
@@ -34,8 +36,13 @@ finite-dimensional manifold and for a hyperregular Lagrangian, the Legendre map 
 the Hamiltonian vector field `X_H` of `H` for the canonical symplectic form `ω` of `T*M`
 (`TauCeti.IsHyperregularLagrangian.mfderiv_legendreMap_hamiltonianVectorField`). Hence a curve
 `γ` in `TM` is an integral curve of `X_E` exactly when `FL ∘ γ` is an integral curve of `X_H`
-(`TauCeti.IsHyperregularLagrangian.isMIntegralCurve_legendreMap_comp_iff`): the Lagrangian and
-Hamiltonian flows are conjugate by `FL`.
+(`TauCeti.IsHyperregularLagrangian.isMIntegralCurve_legendreMap_comp_iff`), also on every
+parameter set (`TauCeti.IsHyperregularLagrangian.isMIntegralCurveOn_legendreMap_comp_iff`): the
+Lagrangian and Hamiltonian flows are conjugate by `FL`, with the same maximal domains
+(`TauCeti.IsHyperregularLagrangian.mem_flowDomain_legendreMap_iff`,
+`TauCeti.IsHyperregularLagrangian.legendreMap_flowOf_hamiltonianVectorField`). In particular
+`FL⁻¹ ∘ δ` is a Lagrangian trajectory whenever `δ` is a Hamiltonian one
+(`TauCeti.IsHyperregularLagrangian.isMIntegralCurveOn_legendreDiffeomorph_symm_comp`).
 
 Subtracting a potential `V : M → 𝕜` keeps a Lagrangian hyperregular and adds `V` to its
 Hamiltonian. A mechanical Lagrangian `½ g(v, v) - V(x)` with symmetric kinetic form `g` is
@@ -51,6 +58,8 @@ positive definite `g`. Its Hamiltonian is `H(p) = ½ p(g_x⁻¹ p) + V(x)` for a
 * `TauCeti.IsHyperregularLagrangian.hamiltonian`: the Hamiltonian `H = E_L ∘ FL⁻¹`.
 * `TauCeti.IsHyperregularLagrangian.isMIntegralCurve_legendreMap_comp_iff`: the Legendre map
   conjugates the Lagrangian and Hamiltonian flows.
+* `TauCeti.IsHyperregularLagrangian.legendreMap_flowOf_hamiltonianVectorField`: the Legendre map
+  conjugates the maximal Lagrangian and Hamiltonian flows.
 
 ## References
 
@@ -120,10 +129,10 @@ Lagrangian is hyperregular. -/
 @[simp]
 theorem isHyperregularLagrangian_sub_comp_proj_iff {V : M → 𝕜} :
     IsHyperregularLagrangian (fun v ↦ L v - V v.proj) ↔ IsHyperregularLagrangian L := by
-  refine ⟨fun h ↦ ⟨isRegularLagrangian_sub_comp_proj_iff.1 h.1, ?_⟩,
-    fun h ↦ ⟨isRegularLagrangian_sub_comp_proj_iff.2 h.1, ?_⟩⟩
-  · simpa only [legendreMap_sub_comp_proj] using h.2
-  · simpa only [legendreMap_sub_comp_proj] using h.2
+  refine ⟨fun h ↦ ⟨isRegularLagrangian_sub_comp_proj_iff.1 h.isRegularLagrangian, ?_⟩,
+    fun h ↦ ⟨isRegularLagrangian_sub_comp_proj_iff.2 h.isRegularLagrangian, ?_⟩⟩
+  · simpa only [legendreMap_sub_comp_proj] using h.bijective_legendreMap
+  · simpa only [legendreMap_sub_comp_proj] using h.bijective_legendreMap
 
 /-- Subtracting a potential `V` from a hyperregular Lagrangian adds `V` to its Hamiltonian. -/
 theorem IsHyperregularLagrangian.hamiltonian_sub_comp_proj (h : IsHyperregularLagrangian L)
@@ -241,6 +250,45 @@ theorem mfderiv_legendreMap_hamiltonianVectorField (v : TangentBundle I M) :
     ((h.contMDiff_hamiltonian hL _).mdifferentiableAt (by simp))
   rwa [h.hamiltonian_comp_legendreMap] at this
 
+/-- The Legendre diffeomorphism carries the Lagrangian vector field to the Hamiltonian vector
+field: this is `mfderiv_legendreMap_hamiltonianVectorField` stated for the coerced
+`legendreDiffeomorph`, the form consumed by the `Diffeomorph` conjugacy lemmas. -/
+theorem mfderiv_legendreDiffeomorph_hamiltonianVectorField (v : TangentBundle I M) :
+    mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (h.legendreDiffeomorph hL) v
+        ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L) v) =
+      (CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian
+        (h.legendreDiffeomorph hL v) := by
+  rw [h.coe_legendreDiffeomorph hL]
+  exact h.mfderiv_legendreMap_hamiltonianVectorField hL v
+
+/-- **The Legendre map conjugates the Lagrangian and Hamiltonian integral curves.** For a smooth
+hyperregular Lagrangian `L` on a finite-dimensional boundaryless manifold, a curve `γ` in `TM` is
+an integral curve on a parameter set `s` of the Hamiltonian vector field of the energy `E_L` for
+the Cartan two-form `ω_L` exactly when `FL ∘ γ` is an integral curve on `s` of the Hamiltonian
+vector field of `H = E_L ∘ FL⁻¹` for the canonical symplectic form of `T*M`. -/
+theorem isMIntegralCurveOn_legendreMap_comp_iff {γ : ℝ → TangentBundle I M} {s : Set ℝ} :
+    IsMIntegralCurveOn (legendreMap L ∘ γ)
+        ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian) s ↔
+      IsMIntegralCurveOn γ
+        ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)) s := by
+  rw [← h.coe_legendreDiffeomorph hL]
+  exact (h.legendreDiffeomorph hL).isMIntegralCurveOn_comp_iff (by simp)
+    (h.mfderiv_legendreDiffeomorph_hamiltonianVectorField hL)
+
+/-- **Hamiltonian trajectories pull back to Lagrangian trajectories.** For a smooth hyperregular
+Lagrangian `L` on a finite-dimensional boundaryless manifold, if `δ` is an integral curve on `s` of
+the Hamiltonian vector field of `H = E_L ∘ FL⁻¹` on `T*M`, then `FL⁻¹ ∘ δ` is an integral curve on
+`s` of the Hamiltonian vector field of the energy `E_L` for the Cartan two-form `ω_L`. -/
+theorem isMIntegralCurveOn_legendreDiffeomorph_symm_comp {δ : ℝ → CotangentBundle I M}
+    {s : Set ℝ}
+    (hδ : IsMIntegralCurveOn δ
+      ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian) s) :
+    IsMIntegralCurveOn ((h.legendreDiffeomorph hL).symm ∘ δ)
+      ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)) s := by
+  refine (h.isMIntegralCurveOn_legendreMap_comp_iff hL).1 ?_
+  convert hδ using 1
+  exact funext fun r ↦ h.legendreMap_legendreDiffeomorph_symm_apply hL (δ r)
+
 /-- **The Legendre map conjugates the Lagrangian and Hamiltonian flows.** For a smooth
 hyperregular Lagrangian `L` on a finite-dimensional boundaryless manifold, a curve `γ` in `TM` is
 an integral curve of the Hamiltonian vector field of the energy `E_L` for the Cartan two-form `ω_L`
@@ -250,33 +298,32 @@ theorem isMIntegralCurve_legendreMap_comp_iff {γ : ℝ → TangentBundle I M} :
     IsMIntegralCurve (legendreMap L ∘ γ)
         ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian) ↔
       IsMIntegralCurve γ ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)) := by
-  have hω := CotangentBundle.isSymplectic_symplecticForm (I := I) (M := M)
-  have hωL := h.isRegularLagrangian.isSymplectic_cartanTwoForm hL
-  set Φ := h.legendreDiffeomorph hL
-  have hΦ : SmoothForm.mpullback Φ Φ.contMDiff (CotangentBundle.symplecticForm I M) =
-      cartanTwoForm L hL := by
-    simpa only [Φ, coe_legendreDiffeomorph] using mpullback_legendreMap_symplecticForm hL
-  constructor
-  · intro hγ
-    -- Pull back along the inverse Legendre diffeomorphism, which carries `H` to `E_L`.
-    have hE : lagrangianEnergy L ∘ Φ.symm = h.hamiltonian :=
-      (h.hamiltonian_eq_comp_symm hL).symm
-    have := hω.isNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField hωL.isNondegenerate
-      Φ.symm.contMDiff (SmoothForm.mpullback_symm_eq_of_mpullback_eq hΦ)
-      (fun t ↦ (Φ.symm.isInvertible_mfderiv (by simp)).surjective)
-      (fun t ↦ ((contMDiff_lagrangianEnergy (m := ∞) hL le_rfl) _).mdifferentiableAt
-        (by simp))
-      (hE ▸ hγ)
-    have hid : ⇑Φ.symm ∘ (legendreMap L ∘ γ) = γ :=
-      funext fun t ↦ h.legendreDiffeomorph_symm_apply_legendreMap hL (γ t)
-    rwa [hid] at this
-  · intro hγ
-    exact hωL.isNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField hω.isNondegenerate
-      (contMDiff_legendreMap hL le_rfl) (mpullback_legendreMap_symplecticForm hL)
-      (fun t ↦ ((h.isRegularLagrangian.isLocalDiffeomorph_legendreMap hL).isInvertible_mfderiv
-        (by simp) _).surjective)
-      (fun t ↦ ((h.contMDiff_hamiltonian hL _).mdifferentiableAt (by simp)))
-      (h.hamiltonian_comp_legendreMap ▸ hγ)
+  simpa only [isMIntegralCurve_iff_isMIntegralCurveOn] using
+    h.isMIntegralCurveOn_legendreMap_comp_iff hL (γ := γ) (s := univ)
+
+/-- The Lagrangian flow is defined at `(t, v)` exactly when the Hamiltonian flow of
+`H = E_L ∘ FL⁻¹` is defined at `(t, FL v)`. -/
+theorem mem_flowDomain_legendreMap_iff {t : ℝ} {v : TangentBundle I M} :
+    (t, legendreMap L v) ∈
+        flowDomain ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian) ↔
+      (t, v) ∈ flowDomain ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)) := by
+  rw [← h.coe_legendreDiffeomorph hL]
+  exact (h.legendreDiffeomorph hL).mem_flowDomain_apply_iff (by simp)
+    (h.mfderiv_legendreDiffeomorph_hamiltonianVectorField hL)
+
+/-- **The Legendre map conjugates the maximal Lagrangian and Hamiltonian flows**, including their
+initial-point junk values outside the common maximal domain. -/
+theorem legendreMap_flowOf_hamiltonianVectorField [T2Space M] (t : ℝ) (v : TangentBundle I M) :
+    legendreMap L (flowOf ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)) t v) =
+      flowOf ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian) t
+        (legendreMap L v) := by
+  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
+  have := (h.legendreDiffeomorph hL).boundarylessManifold (by simp)
+  rw [← h.coe_legendreDiffeomorph hL]
+  exact (h.legendreDiffeomorph hL).apply_flowOf (by simp)
+    (CotangentBundle.isSymplectic_symplecticForm.isNondegenerate.contMDiff_hamiltonianVectorField
+      (n := 1) (by simp) ((h.contMDiff_hamiltonian hL).of_le (by simp)))
+    (h.mfderiv_legendreDiffeomorph_hamiltonianVectorField hL) t v
 
 end IsHyperregularLagrangian
 
@@ -313,13 +360,13 @@ momenta: for symmetric `g` and a covector `p` at `x`, `H(p) = ½ p(g_x⁻¹ p) +
 theorem IsHyperregularLagrangian.hamiltonian_mechanicalLagrangian
     (hg : ∀ x v w, g x v w = g x w v) {V : M → ℝ}
     (h : IsHyperregularLagrangian (mechanicalLagrangian g V)) (p : CotangentBundle I M) :
-    h.hamiltonian p = 2⁻¹ * p.2 ((g p.proj).inverse p.2) + V p.proj := by
+    h.hamiltonian p = 2⁻¹ * p.snd ((g p.proj).inverse p.snd) + V p.proj := by
   have hinv := (isHyperregularLagrangian_mechanicalLagrangian_iff hg V).1 h p.proj
   -- The covector `p` is the Legendre transform of the velocity `g_x⁻¹ p` at `x`.
   have hp : legendreMap (mechanicalLagrangian g V)
-      (TotalSpace.mk' E p.proj ((g p.proj).inverse p.2)) = p :=
+      (TotalSpace.mk' E p.proj ((g p.proj).inverse p.snd)) = p :=
     (legendreMap_mechanicalLagrangian hg V _).trans
-      (TotalSpace.ext rfl (heq_of_eq (hinv.self_apply_inverse p.2)))
+      (TotalSpace.ext rfl (heq_of_eq (hinv.self_apply_inverse p.snd)))
   conv_lhs => rw [← hp, h.hamiltonian_legendreMap, lagrangianEnergy_mechanicalLagrangian]
   dsimp only
   rw [hinv.self_apply_inverse]

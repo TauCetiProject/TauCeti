@@ -210,7 +210,7 @@ theorem IsLocalTiling.hasUniformTilingCharts_of_isCompact_of_forall_notMem
   -- a Lebesgue number for the charts of the points of `P` is a uniform radius on `K ∩ P`
   choose! W hxW hW using hP.exists_isTilingChart
   obtain ⟨δ, hδ, hball⟩ := lebesgue_number_lemma_of_metric (hK.inter_right hP.isClosed)
-    (c := fun x : P ↦ W x) (fun x ↦ (hW x x.2).isOpen)
+    (c := fun x : P ↦ W x) (fun x ↦ (hW x x.property).isOpen)
     fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx.2⟩, hxW x hx.2⟩
   refine ⟨min δ ε, lt_min hδ hε, fun y hy ↦ ?_⟩
   by_cases hyK : y ∈ K
@@ -278,13 +278,13 @@ section Gluing
 private def tilingSetoid (hP : IsLocalTiling P N) : Setoid (Σ _ : G, P) where
   r y z := y.1 • (y.2 : X) = z.1 • (z.2 : X) ∧ y.1⁻¹ * z.1 ∈ N y.2
   iseqv :=
-    { refl y := ⟨rfl, by simpa using hP.one_mem _ y.2.2⟩
+    { refl y := ⟨rfl, by simpa using hP.one_mem _ y.2.property⟩
       symm := by
         rintro ⟨a, x⟩ ⟨b, y⟩ ⟨hxy, hab⟩
         refine ⟨hxy.symm, ?_⟩
         have hy : (a⁻¹ * b)⁻¹ • (x : X) = y := by
           rw [mul_inv_rev, inv_inv, mul_smul, hxy, inv_smul_smul]
-        have h := hP.inv_mem _ x.2 _ hab
+        have h := hP.inv_mem _ x.property _ hab
         dsimp only at h ⊢
         rw [hy, mul_inv_rev, inv_inv] at h
         exact h
@@ -293,7 +293,7 @@ private def tilingSetoid (hP : IsLocalTiling P N) : Setoid (Σ _ : G, P) where
         refine ⟨hxy.trans hyz, ?_⟩
         have hy : (a⁻¹ * b)⁻¹ • (x : X) = y := by
           rw [mul_inv_rev, inv_inv, mul_smul, hxy, inv_smul_smul]
-        have := hP.mul_mem _ x.2 _ hab (b⁻¹ * c) (by rwa [hy])
+        have := hP.mul_mem _ x.property _ hab (b⁻¹ * c) (by rwa [hy])
         rwa [mul_assoc, mul_inv_cancel_left] at this }
 
 /-- The space glued from the copies `{a} × P` of the tile. -/
@@ -344,7 +344,8 @@ private theorem joined_glue (hP : IsLocalTiling P N) {γ : G}
     (hγ : γ ∈ Subgroup.closure (⋃ x ∈ P, N x)) (x y : P) :
     Joined (glue hP 1 x) (glue hP γ y) := by
   have hsheet (a : G) (x y : P) : Joined (glue hP a x) (glue hP a y) :=
-    ((hP.isPathConnected.joinedIn x x.2 y y.2).joined_subtype).map (continuous_glue hP a)
+    ((hP.isPathConnected.joinedIn x x.property y y.property).joined_subtype).map
+        (continuous_glue hP a)
   induction hγ using Subgroup.closure_induction generalizing x y with
   | mem g hg =>
     obtain ⟨x₀, hx₀, hg⟩ := mem_iUnion₂.1 hg
@@ -402,7 +403,7 @@ variable [IsIsometricSMul G X]
 
 private theorem continuous_proj (hP : IsLocalTiling P N) : Continuous (proj hP) :=
   Continuous.quotient_lift
-    (continuous_sigma fun a ↦ (continuous_const_smul a).comp continuous_subtype_val) _
+    (continuous_sigma fun a ↦ (continuous_const_smul a).comp continuous_subtypeVal) _
 
 /-- The lift from a chart is continuous on the chart: near each point it is pieced together
 from finitely many tiles, on each of which it is a translate of the inclusion of the tile. -/
@@ -423,11 +424,11 @@ private theorem continuousOn_chartLift (hP : IsLocalTiling P N) (hc : IsTilingCh
     rw [continuousOn_iff_continuous_domRestrict]
     have heq : ((h : G) • P ∩ W).domRestrict (chartLift hP M g e₀) =
         fun u : ↥((h : G) • P ∩ W) ↦
-          glue hP (g * h) ⟨(h : G)⁻¹ • (u : X), mem_smul_set_iff_inv_smul_mem.1 u.2.1⟩ :=
-      funext fun u ↦ chartLift_eq hP hc g e₀ u.2.2 h.1.2 u.2.1
+          glue hP (g * h) ⟨(h : G)⁻¹ • (u : X), mem_smul_set_iff_inv_smul_mem.1 u.property.1⟩ :=
+      funext fun u ↦ chartLift_eq hP hc g e₀ u.property.2 h.val.property u.property.1
     rw [heq]
     exact (continuous_glue hP _).comp
-      (((continuous_const_smul _).comp continuous_subtype_val).subtype_mk _)
+      (((continuous_const_smul _).comp continuous_subtypeVal).subtype_mk _)
   have hK : K ⊆ ⋃ h : F, ((h : G) • P ∩ K) := fun u hu ↦ by
     obtain ⟨h, hh, huh⟩ := mem_iUnion₂.1 (hc.subset_iUnion_smul (hKW hu).1)
     exact mem_iUnion.2 ⟨⟨⟨h, hh⟩, u, ⟨huh, (hKW hu).1⟩, (hKW hu).2⟩, huh, hu⟩
@@ -452,8 +453,8 @@ private theorem isOpen_image_chartLift (hP : IsLocalTiling P N) (hc : IsTilingCh
     rwa [mul_inv_rev, ← mul_assoc, mul_inv_cancel_left] at this
   refine ⟨{x' | g⁻¹ • a • (x' : X) ∈ B}, fun x' hx' ↦ ⟨_, hx', ?_⟩,
     hB.preimage ((continuous_const_smul _).comp ((continuous_const_smul _).comp
-      continuous_subtype_val)), ?_⟩
-  · rw [← mul_smul, chartLift_smul hP hc g e₀ hga x'.2 (by rw [mul_smul]; exact hBW hx'),
+      continuous_subtypeVal)), ?_⟩
+  · rw [← mul_smul, chartLift_smul hP hc g e₀ hga x'.property (by rw [mul_smul]; exact hBW hx'),
       mul_inv_cancel_left]
     -- `glue hP a x'` is by definition the class of `⟨a, x'⟩`
     rfl
@@ -473,14 +474,15 @@ private theorem t2Space_glued (hP : IsLocalTiling P N) : T2Space (Glued hP) := b
     exact ⟨_, _, hu.preimage (continuous_proj hP), hv.preimage (continuous_proj hP), hzu, hzv,
       huv.preimage _⟩
   rw [not_not, proj_glue, proj_glue] at hz
-  obtain ⟨W₁, hx₁, hc₁⟩ := hP.exists_isTilingChart x₁ x₁.2
-  obtain ⟨W₂, hx₂, hc₂⟩ := hP.exists_isTilingChart x₂ x₂.2
+  obtain ⟨W₁, hx₁, hc₁⟩ := hP.exists_isTilingChart x₁ x₁.property
+  obtain ⟨W₂, hx₂, hc₂⟩ := hP.exists_isTilingChart x₂ x₂.property
   set e₁ := glue hP a₁ x₁
   set e₂ := glue hP a₂ x₂
   have hmem (a : G) (x : P) (W : Set X) (hx : (x : X) ∈ W) (hc : IsTilingChart P N W (N x)) :
       glue hP a x ∈ chartLift hP (N x) a (glue hP a x) '' W := by
     refine ⟨x, hx, ?_⟩
-    have := chartLift_smul hP hc a (glue hP a x) (hP.one_mem x x.2) x.2 (by rwa [one_smul])
+    have := chartLift_smul hP hc a (glue hP a x) (hP.one_mem x x.property) x.property
+        (by rwa [one_smul])
     rwa [one_smul, mul_one] at this
   refine ⟨_, _, isOpen_image_chartLift hP hc₁ a₁ e₁ hc₁.isOpen subset_rfl,
     isOpen_image_chartLift hP hc₂ a₂ e₂ hc₂.isOpen subset_rfl, hmem a₁ x₁ W₁ hx₁ hc₁,
@@ -497,7 +499,7 @@ private theorem t2Space_glued (hP : IsLocalTiling P N) : T2Space (Glued hP) := b
     rwa [mul_inv_rev, ← mul_assoc, mul_inv_cancel_left, ← mul_assoc] at this
   have hx : (a₁⁻¹ * a₂ * h₂)⁻¹ • (x₁ : X) = h₂⁻¹ • (x₂ : X) := by
     rw [mul_inv_rev, mul_smul, mul_inv_rev, inv_inv, mul_smul, hz, inv_smul_smul]
-  have := hP.mul_mem _ x₁.2 _ h₁₂ h₂⁻¹ (by rw [hx]; exact hP.inv_mem _ x₂.2 _ hh₂)
+  have := hP.mul_mem _ x₁.property _ h₁₂ h₂⁻¹ (by rw [hx]; exact hP.inv_mem _ x₂.property _ hh₂)
   rw [mul_inv_cancel_right] at this
   exact hne ((glue_eq_glue_iff hP).2 ⟨hz, this⟩)
 
@@ -509,10 +511,11 @@ private theorem isCoveringMap_proj (hP : IsLocalTiling P N)
     (hu : HasUniformTilingCharts P N) : IsCoveringMap (proj hP) := by
   have := t2Space_glued hP
   obtain ⟨ε, hε, hunif⟩ := hu
-  refine .of_forall_exists_section (continuous_proj hP) (T2Space.isSeparatedMap (proj hP)) hε
-    fun e ↦ ?_
+  refine .of_forall_exists_section (continuous_proj hP) (T2Space.isSeparatedMap (proj hP))
+    (dist_mem_uniformity hε) fun e ↦ ?_
   obtain ⟨a, y, rfl⟩ := exists_glue_eq hP e
-  obtain ⟨W, M, hc, -, h, hh, hball⟩ := hunif y y.2
+  simp only [Metric.ball_eq_ball']
+  obtain ⟨W, M, hc, -, h, hh, hball⟩ := hunif y y.property
   set g := a * h⁻¹
   have hgy : g⁻¹ • a • (y : X) = h • (y : X) := by
     rw [← mul_smul, mul_inv_rev, inv_inv, mul_assoc, inv_mul_cancel, mul_one]
@@ -520,13 +523,14 @@ private theorem isCoveringMap_proj (hP : IsLocalTiling P N)
     rw [Metric.smul_ball, proj_glue, hgy]
   have hsub (w : X) (hw : w ∈ ball (proj hP (glue hP a y)) ε) : g⁻¹ • w ∈ W :=
     hball (hmaps ▸ smul_mem_smul_set hw)
+  have hlift : chartLift hP M g (glue hP a y) (h • (y : X)) = glue hP a y := by
+    rw [chartLift_smul hP hc g _ hh y.property (hball (mem_ball_self hε)), inv_mul_cancel_right]
   refine ⟨fun w ↦ chartLift hP M g (glue hP a y) (g⁻¹ • w),
     (continuousOn_chartLift hP hc g _).comp (continuous_const_smul _).continuousOn hsub, ?_,
-    fun w hw ↦ by simp only [proj_chartLift hP hc g _ (hsub w hw), smul_inv_smul], ?_⟩
-  · rw [← image_image (chartLift hP M g (glue hP a y)) (g⁻¹ • ·), image_smul, hmaps]
-    exact isOpen_image_chartLift hP hc g _ isOpen_ball hball
-  · simp only [proj_glue, hgy]
-    rw [chartLift_smul hP hc g _ hh y.2 (hball (mem_ball_self hε)), inv_mul_cancel_right]
+    fun w hw ↦ by simp only [proj_chartLift hP hc g _ (hsub w hw), smul_inv_smul]⟩
+  rw [← image_image (chartLift hP M g (glue hP a y)) (g⁻¹ • ·), image_smul, hmaps]
+  exact (isOpen_image_chartLift hP hc g _ isOpen_ball hball).mem_nhds
+    ⟨_, mem_ball_self hε, hlift⟩
 
 end Gluing
 

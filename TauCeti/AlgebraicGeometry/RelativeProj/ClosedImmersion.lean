@@ -36,6 +36,8 @@ the relative `Proj` of an algebra generated in degree one is a closed subscheme 
 * `CategoryTheory.CommMon.exists_mem_basicOpen_gradedSectionsGradedHom_of_epi_one`: over an affine
   open over which `A` is generated in degree one, the standard opens of the images of the
   degree-one sections of `B` cover the chart `Proj (⨁ n, Γ(Aₙ, U))`.
+* `CategoryTheory.CommMon.irrelevant_le_map_of_epi_one`: if `A` is generated in degree one, `φ`
+  satisfies the irrelevant-ideal containment needed to induce a relative `Proj` morphism.
 * `CategoryTheory.CommMon.isClosedImmersion_relativeProjMap_of_epi_one`: if `A` is generated in
   degree one, `Proj_X(A) ⟶ Proj_X(B)` is a closed immersion.
 
@@ -44,6 +46,8 @@ In the namespace `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra`, for `Sy
 * `exists_mem_basicOpen_gradedSymmetricAlgebraLift`: over an affine open over which `A` is
   generated in degree one, the standard opens of the images of the degree-one sections of `Sym A₁`
   cover the chart `Proj (⨁ n, Γ(Aₙ, U))`.
+* `irrelevant_le_map_gradedSymmetricAlgebraLift`: the canonical map satisfies the irrelevant-ideal
+  containment needed to induce a relative `Proj` morphism.
 * `isClosedImmersion_relativeProjMap_gradedSymmetricAlgebraLift`: if `A` is generated in degree
   one, `Proj_X(A) ⟶ Proj_X(Sym A₁)` is a closed immersion.
 
@@ -89,6 +93,19 @@ theorem _root_.CategoryTheory.CommMon.exists_mem_basicOpen_gradedSectionsGradedH
   refine ⟨_, SetLike.coe_mem (decompose (B.gradedSectionsGrading U) b 1), ?_⟩
   rwa [GradedRingHom.map_directSumDecompose, hb, decompose_of_mem_same _ ha]
 
+/-- A morphism `φ : B ⟶ A` that is an epimorphism in degree one onto an algebra generated in
+degree one satisfies the irrelevant-ideal containment needed to induce a morphism on relative
+`Proj`. -/
+theorem _root_.CategoryTheory.CommMon.irrelevant_le_map_of_epi_one
+    [(A.X 1).IsQuasicoherent] [(B.X 1).IsQuasicoherent] (h : A.IsGeneratedInDegreeOne) :
+    ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U)).map
+          (CommMon.gradedSectionsGradedHom φ U) :=
+  fun U hU ↦ HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _
+    (CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi_one φ U hU
+      (CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top.mp h U hU))
+
 /-- **A morphism that is an epimorphism in degree one onto an algebra generated in degree one
 induces a closed immersion of relative `Proj`s.** If `φ : B ⟶ A` is an epimorphism `B₁ ⟶ A₁` of
 module sheaves and `A` is generated in degree one, then `Proj_X(A) ⟶ Proj_X(B)` over `X` is a
@@ -97,10 +114,7 @@ closed immersion. -/
 theorem _root_.CategoryTheory.CommMon.isClosedImmersion_relativeProjMap_of_epi_one
     [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent]
     (h : A.IsGeneratedInDegreeOne) :
-    IsClosedImmersion (CommMon.relativeProjMap φ fun U hU ↦
-      HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _
-        (CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi_one φ U hU
-          (CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top.mp h U hU))) :=
+    IsClosedImmersion (CommMon.relativeProjMap φ (CommMon.irrelevant_le_map_of_epi_one φ h)) :=
   CommMon.isClosedImmersion_relativeProjMap φ fun U hU ↦
     CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi_one φ U hU
       (CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top.mp h U hU)
@@ -124,6 +138,18 @@ theorem exists_mem_basicOpen_gradedSymmetricAlgebraLift (U : X.Opens) (hU : IsAf
   have := epi_gradedSymmetricAlgebraLift_one A
   CommMon.exists_mem_basicOpen_gradedSectionsGradedHom_of_epi_one _ U hU h y
 
+/-- The canonical map `Sym A₁ ⟶ A` satisfies the irrelevant-ideal containment needed to
+induce a morphism on relative `Proj` when `A` is generated in degree one. -/
+theorem irrelevant_le_map_gradedSymmetricAlgebraLift (h : A.obj.IsGeneratedInDegreeOne) :
+    ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.obj.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant
+          (((gradedSymmetricAlgebra X).obj (degreeOne.obj A)).obj.gradedSectionsGrading U)).map
+            (CommMon.gradedSectionsGradedHom
+              (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A))).hom U) :=
+  have := epi_gradedSymmetricAlgebraLift_one A
+  CommMon.irrelevant_le_map_of_epi_one _ h
+
 /-- **The relative `Proj` of an algebra generated in degree one is a closed subscheme of
 `Proj_X(Sym A₁)`.** If `A` is generated in degree one, then the morphism
 `Proj_X(A) ⟶ Proj_X(Sym A₁)` over `X` induced by `Sym A₁ ⟶ A` is a closed immersion. -/
@@ -132,9 +158,7 @@ theorem isClosedImmersion_relativeProjMap_gradedSymmetricAlgebraLift
     (h : A.obj.IsGeneratedInDegreeOne) :
     IsClosedImmersion (CommMon.relativeProjMap
       (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj A))).hom
-      fun U hU ↦ HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _
-        (grade_subset_range_gradedSymmetricAlgebraLift A U hU
-          (CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top.mp h U hU))) :=
+      (irrelevant_le_map_gradedSymmetricAlgebraLift A h)) :=
   have := epi_gradedSymmetricAlgebraLift_one A
   CommMon.isClosedImmersion_relativeProjMap_of_epi_one _ h
 

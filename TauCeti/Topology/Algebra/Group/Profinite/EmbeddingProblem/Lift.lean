@@ -38,21 +38,21 @@ theorem exists_continuous_lift_of_compatible_levelSolutions
     (hβ : ∀ ⦃V U : OpenNormalSubgroup A⦄ (hVU : V ≤ U),
       levelSolutionMap α hα f hVU (β V) = β U) :
     ∃ φ : G →ₜ* A, α.comp φ = f ∧ ∀ U : OpenNormalSubgroup A,
-      (QuotientGroup.mk' U.toSubgroup).comp φ.toMonoidHom = (β U).1.toMonoidHom := by
+      (QuotientGroup.mk' U.toSubgroup).comp φ.toMonoidHom = (β U).val.toMonoidHom := by
   have hmaps : ∀ ⦃V U : OpenNormalSubgroup A⦄ (hVU : V ≤ U),
-      (QuotientGroup.mapOfLE hVU).comp (β V).1.toMonoidHom = (β U).1.toMonoidHom := by
+      (QuotientGroup.mapOfLE hVU).comp (β V).val.toMonoidHom = (β U).val.toMonoidHom := by
     intro V U hVU
     ext g
     simpa only [levelSolutionMap_apply, MonoidHom.comp_apply,
       ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] using
-        congrArg (fun s : LevelSolution α hα f U ↦ s.1 g) (hβ hVU)
+        congrArg (fun s : LevelSolution α hα f U ↦ s.val g) (hβ hVU)
   obtain ⟨φ, hφ, _⟩ := existsUnique_monoidHom_mk'_comp_eq
-    (fun U ↦ (β U).1.toMonoidHom) hmaps
-  have hquot (U : OpenNormalSubgroup A) (g : G) : ((φ g : A) : A ⧸ U.toSubgroup) = (β U).1 g := by
+    (fun U ↦ (β U).val.toMonoidHom) hmaps
+  have hquot (U : OpenNormalSubgroup A) (g : G) : ((φ g : A) : A ⧸ U.toSubgroup) = (β U).val g := by
     simpa only [MonoidHom.comp_apply, QuotientGroup.mk'_apply,
       ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] using DFunLike.congr_fun (hφ U) g
   have hcont : Continuous φ := continuous_iff_forall_continuous_mk.mpr fun U ↦
-    (β U).1.continuous.congr fun g ↦ (hquot U g).symm
+    (β U).val.continuous.congr fun g ↦ (hquot U g).symm
   refine ⟨⟨φ, hcont⟩, ?_, hφ⟩
   ext g
   rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.coe_mk]
@@ -63,7 +63,7 @@ theorem exists_continuous_lift_of_compatible_levelSolutions
   have hmem : (φ g)⁻¹ * a ∈ α.toMonoidHom.ker := by
     rw [α.toMonoidHom.ker.eq_iInf_sup_openNormalSubgroup hker]
     refine Subgroup.mem_iInf.mpr fun U ↦ ?_
-    have hlevel := (β U).2 g
+    have hlevel := (β U).property g
     rw [← hquot U g, levelMap_mk, ← ha] at hlevel
     have himage : (φ g)⁻¹ * a ∈
         (U.toSubgroup.map α.toMonoidHom).comap α.toMonoidHom := by
