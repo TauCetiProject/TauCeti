@@ -51,6 +51,8 @@ depend on the frequency alone.
 * `TauCeti.ParameterSymbol.IsAsymptoticSum`: `b` is an asymptotic sum of the symbols `aⱼ`.
 * `TauCeti.ParameterSymbol.IsAsymptoticSum.isAsymptoticSum_iff_isSmoothing_sub`: asymptotic sums
   are unique modulo smoothing symbols.
+* `TauCeti.ParameterSymbol.IsAsymptoticSum.add`, `.smul`, `.neg`, `.sub`: asymptotic sums are
+  compatible with the linear structure.
 * `TauCeti.ParameterSymbol.exists_asymptoticSum`: every sequence of parameter-dependent symbols of
   orders decreasing to `-∞` has an asymptotic sum;
   `TauCeti.ParameterSymbol.exists_asymptoticSum_sub_natCast` is the case of the orders `μ - j`.
@@ -526,6 +528,16 @@ theorem isAsymptoticSum_iff {m : ℕ → ℝ} {b : ParameterSymbol n Λ V W (m 0
       b.coefficient - ∑ j ∈ range N, (a j).coefficient = r.coefficient :=
   Iff.rfl
 
+/-- Adding a smoothing symbol to an asymptotic sum gives an asymptotic sum. -/
+theorem IsAsymptoticSum.of_isSmoothing_sub {m : ℕ → ℝ} {a : ∀ j, ParameterSymbol n Λ V W (m j)}
+    {b b' : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a) (h : (b' - b).IsSmoothing) :
+    b'.IsAsymptoticSum a := fun N => by
+  obtain ⟨r, hr⟩ := hb N
+  obtain ⟨s, hs⟩ := isSmoothing_iff.1 h (m N)
+  refine ⟨s + r, ?_⟩
+  rw [coefficient_add, hs, ← hr, coefficient_sub]
+  abel
+
 /-- Asymptotic sums are unique modulo smoothing symbols: if `b` is an asymptotic sum of
 parameter-dependent symbols `aⱼ` whose orders tend to `-∞`, then `b'` is one exactly when `b' - b`
 is smoothing. -/
@@ -533,18 +545,67 @@ theorem IsAsymptoticSum.isAsymptoticSum_iff_isSmoothing_sub {m : ℕ → ℝ}
     (hm' : Tendsto m atTop atBot) {a : ∀ j, ParameterSymbol n Λ V W (m j)}
     {b b' : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a) :
     b'.IsAsymptoticSum a ↔ (b' - b).IsSmoothing := by
-  refine ⟨fun hb' => isSmoothing_iff.2 fun m'' => ?_, fun h N => ?_⟩
-  · obtain ⟨N, hN⟩ := (hm'.eventually (eventually_le_atBot m'')).exists
-    obtain ⟨r, hr⟩ := hb N
-    obtain ⟨r', hr'⟩ := hb' N
-    refine ⟨inclusion hN (r' - r), ?_⟩
-    rw [coefficient_inclusion, coefficient_sub, ← hr, ← hr', coefficient_sub]
-    abel
-  · obtain ⟨r, hr⟩ := hb N
-    obtain ⟨s, hs⟩ := isSmoothing_iff.1 h (m N)
-    refine ⟨s + r, ?_⟩
-    rw [coefficient_add, hs, ← hr, coefficient_sub]
-    abel
+  refine ⟨fun hb' => isSmoothing_iff.2 fun m'' => ?_, hb.of_isSmoothing_sub⟩
+  obtain ⟨N, hN⟩ := (hm'.eventually (eventually_le_atBot m'')).exists
+  obtain ⟨r, hr⟩ := hb N
+  obtain ⟨r', hr'⟩ := hb' N
+  refine ⟨inclusion hN (r' - r), ?_⟩
+  rw [coefficient_inclusion, coefficient_sub, ← hr, ← hr', coefficient_sub]
+  abel
+
+/-- The zero symbol is an asymptotic sum of zero symbols. -/
+@[simp]
+theorem isAsymptoticSum_zero {m : ℕ → ℝ} :
+    (0 : ParameterSymbol n Λ V W (m 0)).IsAsymptoticSum
+      fun j => (0 : ParameterSymbol n Λ V W (m j)) :=
+  fun _ => ⟨0, by simp⟩
+
+/-- A parameter-dependent symbol is an asymptotic sum of zero symbols whose orders tend to `-∞`
+exactly when it is smoothing. -/
+@[simp]
+theorem isAsymptoticSum_zero_iff_isSmoothing {m : ℕ → ℝ} (hm' : Tendsto m atTop atBot)
+    {b : ParameterSymbol n Λ V W (m 0)} :
+    b.IsAsymptoticSum (fun j => (0 : ParameterSymbol n Λ V W (m j))) ↔ b.IsSmoothing := by
+  simpa only [sub_zero] using isAsymptoticSum_zero.isAsymptoticSum_iff_isSmoothing_sub hm' (b' := b)
+
+/-- Asymptotic sums add: if `b ∼ ∑ⱼ aⱼ` and `b' ∼ ∑ⱼ a'ⱼ`, then `b + b' ∼ ∑ⱼ (aⱼ + a'ⱼ)`. -/
+theorem IsAsymptoticSum.add {m : ℕ → ℝ} {a a' : ∀ j, ParameterSymbol n Λ V W (m j)}
+    {b b' : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a)
+    (hb' : b'.IsAsymptoticSum a') : (b + b').IsAsymptoticSum (a + a') := fun N => by
+  obtain ⟨r, hr⟩ := hb N
+  obtain ⟨r', hr'⟩ := hb' N
+  refine ⟨r + r', ?_⟩
+  rw [coefficient_add, coefficient_add, ← hr, ← hr']
+  simp only [Pi.add_apply, coefficient_add, Finset.sum_add_distrib]
+  abel
+
+/-- Asymptotic sums scale: if `b ∼ ∑ⱼ aⱼ`, then `c • b ∼ ∑ⱼ c • aⱼ`. -/
+theorem IsAsymptoticSum.smul {m : ℕ → ℝ} {a : ∀ j, ParameterSymbol n Λ V W (m j)}
+    {b : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a) (c : ℂ) :
+    (c • b).IsAsymptoticSum (c • a) := fun N => by
+  obtain ⟨r, hr⟩ := hb N
+  refine ⟨c • r, ?_⟩
+  rw [coefficient_smul, coefficient_smul, ← hr]
+  simp only [Pi.smul_apply, coefficient_smul, ← Finset.smul_sum, smul_sub]
+
+/-- If `b ∼ ∑ⱼ aⱼ`, then `-b ∼ ∑ⱼ (-aⱼ)`. -/
+theorem IsAsymptoticSum.neg {m : ℕ → ℝ} {a : ∀ j, ParameterSymbol n Λ V W (m j)}
+    {b : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a) :
+    (-b).IsAsymptoticSum (-a) := by
+  simpa using hb.smul (-1)
+
+/-- Negating both an asymptotic sum and its terms preserves the asymptotic expansion. -/
+@[simp]
+theorem isAsymptoticSum_neg_iff {m : ℕ → ℝ} {a : ∀ j, ParameterSymbol n Λ V W (m j)}
+    {b : ParameterSymbol n Λ V W (m 0)} : (-b).IsAsymptoticSum (-a) ↔ b.IsAsymptoticSum a :=
+  ⟨fun hb => by simpa only [neg_neg] using hb.neg, IsAsymptoticSum.neg⟩
+
+/-- Asymptotic sums subtract: if `b ∼ ∑ⱼ aⱼ` and `b' ∼ ∑ⱼ a'ⱼ`, then
+`b - b' ∼ ∑ⱼ (aⱼ - a'ⱼ)`. -/
+theorem IsAsymptoticSum.sub {m : ℕ → ℝ} {a a' : ∀ j, ParameterSymbol n Λ V W (m j)}
+    {b b' : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a)
+    (hb' : b'.IsAsymptoticSum a') : (b - b').IsAsymptoticSum (a - a') := by
+  simpa only [sub_eq_add_neg] using hb.add hb'.neg
 
 /-- **Asymptotic summation of parameter-dependent symbols** (Borel). Let `m₀ ≥ m₁ ≥ ⋯` be real
 orders tending to `-∞`, and let `aⱼ` be parameter-dependent symbols of order `mⱼ`. Then there is a
