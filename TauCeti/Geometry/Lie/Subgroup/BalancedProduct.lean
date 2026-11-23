@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Lie.Subgroup.Quotient
 public import TauCeti.Geometry.Manifold.GroupAction.BalancedProduct
 public import TauCeti.Topology.Covering.BalancedProduct.RightTranslation
 
 import TauCeti.Geometry.Manifold.Algebra.SMul
+import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
@@ -32,6 +34,8 @@ properly on `Z` (`TauCeti.BalancedProduct.contMDiff_orbitProj_rightTranslation`)
 is a submersion for every manifold structure on `Z ⧸ K` for which the orbit projection of `Z` is
 one (`TauCeti.BalancedProduct.isSubmersion_orbitProj_rightTranslation`). The action
 `k • [g, z] = [k g, z]` of `G` and the two maps `[g, z] ↦ g K` and `[g, z] ↦ g • ι z` are smooth.
+For a point `z₀` of `Z` fixed by `K`, the zero section `g K ↦ [g, z₀]` is a smooth embedding of
+the homogeneous space `G ⧸ K` onto the `G`-orbit of `[1, z₀]`.
 
 When `K` acts freely and properly on `Z`, so does `G` on `G ×_K Z`
 (`TauCeti.BalancedProduct.instProperSMulRightTranslation` and the freeness instance of
@@ -71,6 +75,9 @@ compared with reduction at zero of the shifted moment map on the product with th
 * `TauCeti.BalancedProduct.contMDiff_proj_rightTranslation`,
   `TauCeti.BalancedProduct.contMDiff_liftRightTranslation`: the maps to `G ⧸ K` and to a
   `G`-manifold are smooth.
+* `TauCeti.BalancedProduct.contMDiff_zeroSectionRightTranslation`,
+  `TauCeti.BalancedProduct.isSmoothEmbedding_zeroSectionRightTranslation`: the zero section
+  `G ⧸ K → G ×_K Z` at a `K`-fixed point is a smooth embedding.
 * `TauCeti.BalancedProduct.isManifold_orbitRelQuotient_rightTranslation`,
   `TauCeti.BalancedProduct.isSubmersion_quotientMk_orbitRelQuotient_rightTranslation`: the orbit
   space of `G` is a smooth manifold and the orbit projection is a smooth submersion.
@@ -294,6 +301,46 @@ theorem contMDiff_liftRightTranslation {EM HM : Type*} [NormedAddCommGroup EM] [
   rw [hcomp]
   exact ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm (I := I) ∞).comp
     (contMDiff_fst (J := IZ) (N := Z))).smul (hι.comp contMDiff_snd)
+
+/-- **The zero section is smooth**: for a point `z₀` of `Z` fixed by `K`, the map
+`g K ↦ [g, z₀]` from the homogeneous space `G ⧸ K`, with the charts
+`Subgroup.quotientChartedSpaceOfIsClosed`, is smooth. It descends from `g ↦ [g, z₀]` along the
+submersion `G → G ⧸ K`. -/
+theorem contMDiff_zeroSectionRightTranslation {z₀ : Z} (hz₀ : z₀ ∈ MulAction.fixedPoints K Z) :
+    letI := rightTranslationChartedSpace K Z I IZ F
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+    ContMDiff 𝓘(ℝ, Subgroup.QuotientModelSpace I K)
+      𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞ (zeroSectionRightTranslation hz₀) := by
+  let _ := rightTranslationChartedSpace K Z I IZ F
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+  refine ((Subgroup.isSubmersion_quotientMk (I := I) ‹_›).contMDiff_comp_iff
+    QuotientGroup.mk_surjective le_rfl).1 ?_
+  have hcomp : zeroSectionRightTranslation hz₀ ∘ (QuotientGroup.mk : G → G ⧸ K) =
+      Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) ∘
+        fun g ↦ (K.toRightTranslation g, z₀) :=
+    funext fun g ↦ zeroSectionRightTranslation_mk hz₀ g
+  rw [hcomp]
+  exact (isSubmersion_quotientMk_rightTranslation (I := I) (IZ := IZ) (F := F)).contMDiff.comp
+    ((Subgroup.RightTranslation.contMDiff_toRightTranslation (I := I) ∞).prodMk contMDiff_const)
+
+/-- **The zero section is a smooth embedding.** For a point `z₀` of `Z` fixed by `K`, the map
+`G ⧸ K → G ×_K Z`, `g K ↦ [g, z₀]`, is a smooth embedding onto the `G`-orbit of `[1, z₀]`
+(`TauCeti.BalancedProduct.range_zeroSectionRightTranslation`): the projection onto `G ⧸ K` is a
+smooth left inverse. -/
+theorem isSmoothEmbedding_zeroSectionRightTranslation {z₀ : Z}
+    (hz₀ : z₀ ∈ MulAction.fixedPoints K Z) :
+    letI := rightTranslationChartedSpace K Z I IZ F
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+    IsSmoothEmbedding 𝓘(ℝ, Subgroup.QuotientModelSpace I K)
+      𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞ (zeroSectionRightTranslation hz₀) := by
+  let _ := rightTranslationChartedSpace K Z I IZ F
+  let _ := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+  have := isManifold_rightTranslation (K := K) (Z := Z) (I := I) (IZ := IZ) (F := F)
+  have := Subgroup.isManifold_quotientOfIsClosed (I := I) ‹IsClosed (K : Set G)›
+  exact (contMDiff_zeroSectionRightTranslation (I := I) (IZ := IZ) (F := F) hz₀
+    ).isSmoothEmbedding_of_leftInverse (by simp)
+    ((contMDiff_proj_rightTranslation (I := I) (IZ := IZ) (F := F)).of_le (by simp))
+    (proj_zeroSectionRightTranslation hz₀)
 
 /-! ### The orbit space of `G` -/
 
