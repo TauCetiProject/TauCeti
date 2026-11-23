@@ -91,9 +91,8 @@ uniqueness of weak derivatives gives the chain rule for the weak Hessian.
 * `TauCeti.Wkp.IsChangeOfVariables.abs_det_fderiv_eq_one`: mutually inverse changes of variables
   with Jacobian determinants at least one in absolute value have Jacobian determinants of absolute
   value one.
-* `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL` and
-  `TauCeti.Wkp.exists_lowerOrder_eq_restrictL_of_w1pCompL`: local zero boundary values move forward,
-  and local `W^{2,p}` regularity moves back, along a change of variables.
+* `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL`: local zero
+  boundary values move forward along a change of variables.
 * `TauCeti.Wkp.gradient_firstOrder_compL_ae`: the chain rule `∇(u ∘ Φ) = DΦ† ∇u(Φ ·)` for the
   weak gradient.
 * `TauCeti.Wkp.inner_iteratedGradient_compL_ae`: the chain rule
@@ -1330,30 +1329,6 @@ theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL {Omega O 
   by_cases hx : x ∈ tsupport ψ
   · rw [interior_subset (hχ1 ⟨x, hx, rfl⟩), one_mul]
   · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul, zero_mul]
-
-/-- **Pushing `W^{2,p}` forward along a change of variables.** Let `Φ` be a change of variables
-from `Ω'` into `D ⊆ Ω`, and `Ψ` one of order two from `Ω ∩ V ⊆ D` into `Ω' ∩ V''` with
-`Φ ∘ Ψ = id` on `Ω ∩ V`. If `u ∘ Φ` is `W^{2,p}` on `Ω' ∩ V''`, then `u` is `W^{2,p}` on
-`Ω ∩ V`. -/
-theorem exists_lowerOrder_eq_restrictL_of_w1pCompL {Omega D V Ω' V'' : Opens E} (hp : p ≠ ⊤)
-    (hD : D ≤ Omega) (hVD : Omega ⊓ V ≤ D) (hΦ : IsChangeOfVariables 1 Ω' D Φ L c)
-    (hΨ : IsChangeOfVariables 2 (Omega ⊓ V) (Ω' ⊓ V'') Ψ L' c')
-    (hΦΨ : RightInvOn Ψ Φ (Omega ⊓ V : Opens E)) {u : W1p mu Omega p}
-    {w : Wkp mu (Ω' ⊓ V'') p 2}
-    (hw : lowerOrder 1 w = W1p.restrictL inf_le_left (hΦ.w1pCompL hp (W1p.restrictL hD u))) :
-    ∃ w' : Wkp mu (Omega ⊓ V) p 2, lowerOrder 1 w' = W1p.restrictL inf_le_left u := by
-  refine ⟨compL hΨ w, ?_⟩
-  rw [← firstOrder_one, firstOrder_compL (k := 1) hΨ hp, firstOrder_one, hw]
-  refine W1p.ext_value (Lp.ext ?_)
-  have hΩ'V : ((Ω' ⊓ V'' : Opens E) : Set E) ⊆ Ω' := fun x hx => hx.1
-  filter_upwards [hΨ.value_w1pCompL_ae (mu := mu) hp _,
-    hΨ.ae_comp (W1p.value_restrictL_ae (mu := mu) (p := p) inf_le_left _),
-    hΨ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩ'V
-      (hΦ.value_w1pCompL_ae hp (W1p.restrictL hD u))),
-    ae_restrict_of_ae_restrict_of_subset hVD (W1p.value_restrictL_ae hD u),
-    W1p.value_restrictL_ae (inf_le_left : Omega ⊓ V ≤ Omega) u,
-    ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h1 h2 h3 h4 h5 hx
-  rw [h1, h2, h3, hΦΨ hx, h4, h5]
 
 end Local
 
