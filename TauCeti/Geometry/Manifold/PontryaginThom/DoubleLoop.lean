@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.EvaluationPreimage
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Retract
-public import TauCeti.AlgebraicTopology.Singular.Fibration.Evaluation
 public import TauCeti.Geometry.Manifold.PontryaginThom.Existence
 public import TauCeti.Geometry.Manifold.PontryaginThom.Transverse
-public import TauCeti.Topology.MappingSpace.Fibration
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
@@ -47,7 +46,7 @@ point into `Y`: when `Y` is `(d + 1)`-connected, the inclusion `Ω²Q → P_{Q�
 evaluation over a point of `Y` is an isomorphism on `H_m` for `m ≤ d`. In the based mapping space
 model `Map_*(S², -)` of double loop spaces, the fibre of evaluation, the composite
 `Ω²Sᵏ → Ω²Q → P_{Q→Y} 𝓛₀Q` is therefore injective on `H_m` for `m ≤ d`
-(`TauCeti.IsFramedTube.injective_singularHomologyMap_inclEvalPreimage_comp_map`), so it keeps
+(`TauCeti.IsFramedTube.injective_singularHomologyMap_preimageInclusion_comp_map`), so it keeps
 `j_!α₀` of infinite order. In the source this composite is `j_{Y!} α = j^{(Y)}_* j_! β`, through the
 shriek maps of DG Morse homology, which are not formalized here; what is proved is the statement
 about the topological maps that the source's argument reduces to.
@@ -60,7 +59,7 @@ about the topological maps that the source's argument reduces to.
   smooth sphere meeting the core of a smooth tube once, transversely.
 * `TauCeti.SmoothEmbedding.injective_singularHomologyMap_map_map_of_transverse`: the same for a
   smooth sphere meeting a smoothly framed compact submanifold once, transversely.
-* `TauCeti.IsFramedTube.injective_singularHomologyMap_inclEvalPreimage_comp_map`: followed by the
+* `TauCeti.IsFramedTube.injective_singularHomologyMap_preimageInclusion_comp_map`: followed by the
   inclusion into the maps `S² → Q` sending the base point into a `(d + 1)`-connected core, the
   double loops of such a sphere stay injective on `H_m` for `m ≤ d`.
 
@@ -109,7 +108,7 @@ into the maps `S² → Q` sending a base point `b₀` into `Y`,
 `Ω²Sⁿ⁺² → Ω²Q → ev⁻¹(Y) = P_{Q→Y} 𝓛₀Q`, are injective on `H_m` for every `m ≤ d`, with any
 coefficients. Double loops are taken in their based mapping space model `Map_*(S², -)`, the fibre
 of evaluation at `b₀`. -/
-theorem injective_singularHomologyMap_inclEvalPreimage_comp_map (h : IsFramedTube f τ)
+theorem injective_singularHomologyMap_preimageInclusion_comp_map (h : IsFramedTube f τ)
     (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1)
     (σ : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1, Q)) {x : sphere (0 : EuclideanSpace ℝ
       (Fin (n + 3))) 1} (hx : σ ⁻¹' range f = {x})
@@ -118,20 +117,27 @@ theorem injective_singularHomologyMap_inclEvalPreimage_comp_map (h : IsFramedTub
     (hY : ∀ j ≤ d + 1, Subsingleton (π_ j (range f) ⟨σ x, hx.ge (mem_singleton x)⟩))
     (R : Type) [Ring R] {m : ℕ} (hm : m ≤ d) :
     Function.Injective (ContinuousMap.singularHomologyMap R m
-      ((BasedMap.inclEvalPreimage (b₀ := b₀) (Y := range f) (hx.ge (mem_singleton x))).comp
-        (BasedMap.mapContinuousMap σ rfl : C(BasedMap _ _ b₀ x, BasedMap _ Q b₀ (σ x))))) := by
-  -- Over the `(d + 1)`-connected core, the based maps are a homology isomorphism below `d + 1`,
-  -- and the double loops of `σ` are injective by Lemma 7.6.
-  have hev : TopCat.serreFibrations (TopCat.ofHom (mappingSpaceEval (X := Q) b₀)) :=
-    (isHurewiczFibration_mappingSpaceEval_sphere.{0} 2 b₀).mem_serreFibrations
-  have hincl := BasedMap.bijective_singularHomologyMap_inclEvalPreimage hev
-    (Y := range f) (hx.ge (mem_singleton x)) hY R (Nat.lt_succ_of_le hm)
+      (((mappingSpaceEval (X := Q) b₀).preimageInclusion
+          (mem_preimage.1 (hx.ge (mem_singleton x)))).hom.comp
+        ((basedMapHomeomorphPreimage b₀ (σ x) :
+            C(BasedMap _ Q b₀ (σ x), mappingSpaceEval (X := Q) b₀ ⁻¹' {σ x})).comp
+          (BasedMap.mapContinuousMap σ rfl : C(BasedMap _ _ b₀ x, BasedMap _ Q b₀ (σ x)))))) := by
+  -- Over the `(d + 1)`-connected core, the fibre of evaluation is a homology isomorphism below
+  -- `d + 1`, the based maps are that fibre, and the double loops of `σ` are injective by Lemma 7.6.
+  have hincl : Function.Bijective (ContinuousMap.singularHomologyMap R m
+      ((mappingSpaceEval (X := Q) b₀).preimageInclusion
+        (mem_preimage.1 (hx.ge (mem_singleton x)))).hom) := by
+    have hiso := isIso_singularHomologyMap_preimageInclusion_mappingSpaceEval_sphere R b₀
+      (mem_preimage.1 (hx.ge (mem_singleton x))) hY (Nat.lt_succ_of_le hm)
+    rw [ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map, TopCat.ofHom_hom]
+    exact CategoryTheory.ConcreteCategory.bijective_of_isIso _
   have hmap := BasedMap.injective_singularHomologyMap_map_of_surjective_singularHomologyMap
     (b₀ := b₀) (x := x) rfl (h.bijective_singularHomologyMap_pontryaginThomSphereMap_comp_sphere s₀
       (by omega) σ hx hσ).2 R m
   intro a b hab
-  rw [ContinuousMap.singularHomologyMap_comp, ContinuousMap.singularHomologyMap_comp] at hab
-  exact hmap (hincl.injective hab)
+  simp only [ContinuousMap.singularHomologyMap_comp] at hab
+  exact hmap (((basedMapHomeomorphPreimage b₀ (σ x)).toHomotopyEquiv.bijective_singularHomologyMap
+    R m).injective (hincl.injective hab))
 
 section Transverse
 
