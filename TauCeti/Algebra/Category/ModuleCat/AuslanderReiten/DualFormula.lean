@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Formula
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.StableEquivalence
 public import TauCeti.CategoryTheory.Exact.YonedaExt.Projective
+public import TauCeti.Algebra.Module.AuslanderReiten.PresentationNaturality
 import TauCeti.RingTheory.MatlisDuality.Semilocal
 
 /-!
@@ -40,6 +41,8 @@ for finitely generated `M` and `N`, dual to `ModuleCat.auslanderReitenFormula`.
 * `ModuleCat.covariantDefectEquivExt1`: the covariant defect of `K ⟶ P ⟶ M` at `τX` is
   `Ext¹(M, τX)`.
 * `ModuleCat.ext1TranslateEquivDualStableHom`: `Ext¹(M, τX) ≅ D (mod A / 𝒫)(X, M)`.
+* `ModuleCat.matlisDualTransposeMap`: the map `D Tr(t) : τX → τX'` induced by a lift of
+  `t : X → X'` to the presentations.
 * `TauCeti.stableTranslateObjIsoMatlisDualTranspose` and `TauCeti.matlisDualTransposeInverseIso`:
   the translate is the class of `D Tr X`, and `τ τ⁻ N ≅ N` modulo injectives.
 * `TauCeti.ext1EquivDualStableHom`: **the second Auslander–Reiten formula**
@@ -58,7 +61,9 @@ for finitely generated `M` and `N`, dual to `ModuleCat.auslanderReitenFormula`.
 * H. Krause, *A short proof for Auslander's defect formula*, Linear Algebra Appl. **365** (2003),
   267–270, Corollary.
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
-  University Press (1995), Theorem IV.2.13.
+  University Press (1995), Section IV.4, Propositions IV.4.5–IV.4.6.
+* I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
+  Algebras, Vol. 1*, Cambridge University Press (2006), Theorem IV.2.13.
 -/
 
 public section
@@ -83,15 +88,7 @@ noncomputable def contravariantDefectEquivStableHom (Y : ModuleCat.{w} A) :
     contravariantDefect R e.g.hom Y ≃ₗ[R]
       ((ExactStructure.abelian _).projectiveStableFunctor.obj Y ⟶
         (ExactStructure.abelian _).projectiveStableFunctor.obj M) :=
-  (Submodule.Quotient.equiv _ _ (homLinearEquiv (S := R)) (by
-      ext g
-      simp only [Submodule.mem_map, LinearMap.mem_range]
-      constructor
-      · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
-        exact ⟨s.hom, rfl⟩
-      · rintro ⟨s, rfl⟩
-        exact ⟨_, ⟨ofHom s, rfl⟩, rfl⟩)).symm ≪≫ₗ
-    e.homQuotientEquivStableHom he R Y
+  contravariantDefectEquivHomQuotient R e.g Y ≪≫ₗ e.homQuotientEquivStableHom he R Y
 
 /-- The class of `g : Y → M` in the contravariant defect is its stable class. -/
 @[simp]
@@ -99,9 +96,7 @@ theorem contravariantDefectEquivStableHom_mk {Y : ModuleCat.{w} A} (g : Y →ₗ
     contravariantDefectEquivStableHom R e he Y (Submodule.Quotient.mk g) =
       (ExactStructure.abelian _).projectiveStableFunctor.map (ofHom g) := by
   simp only [contravariantDefectEquivStableHom, LinearEquiv.trans_apply,
-    Submodule.Quotient.equiv_symm, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply,
-    Extension.homQuotientEquivStableHom_mk]
-  rfl
+    contravariantDefectEquivHomQuotient_mk, Extension.homQuotientEquivStableHom_mk]
 
 end Defect
 
@@ -116,15 +111,7 @@ projective, the cokernel of `Hom_A(P, τX) → Hom_A(K, τX)` is `Ext¹(M, τX)`
 noncomputable def covariantDefectEquivExt1 :
     covariantDefect R e.f.hom (MatlisDual R E (AuslanderReitenTranspose P.p)) ≃ₗ[R]
       (ExactStructure.abelian _).Ext1 M (matlisDualTranspose R E P) :=
-  Submodule.Quotient.equiv _ _ (matlisDualTransposeHomEquiv R E P K).symm (by
-      ext g
-      simp only [Submodule.mem_map, LinearMap.mem_range]
-      constructor
-      · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
-        exact ⟨ofHom s, by ext; simp [LinearMap.lcomp_apply']; rfl⟩
-      · rintro ⟨s, rfl⟩
-        exact ⟨_, ⟨s.hom, rfl⟩, by ext; simp; rfl⟩) ≪≫ₗ
-    e.homQuotientEquivExt1OfIsProjective he R _
+  covariantDefectEquivHomQuotient R E P e.f ≪≫ₗ e.homQuotientEquivExt1OfIsProjective he R _
 
 /-- The class of `v : K → τX` in the covariant defect is the cobase change `v_* [K ⟶ P ⟶ M]`. -/
 @[simp]
@@ -132,24 +119,6 @@ theorem covariantDefectEquivExt1_mk (v : K →ₗ[A] MatlisDual R E (AuslanderRe
     covariantDefectEquivExt1 R E P e he (Submodule.Quotient.mk v) =
       (ExactStructure.Ext1.mk e).pushout ((matlisDualTransposeHomEquiv R E P K).symm v) := by
   simp [covariantDefectEquivExt1]
-
-attribute [local instance] moduleOfAlgebra isScalarTower_moduleOfAlgebra in
-/-- The dual of a bundled right module `N`, on which `R` acts through `Aᵐᵒᵖ`, is the Matlis dual of
-any right module `N'` linearly equivalent to it, for any action of `R` on `N'` compatible with
-`Aᵐᵒᵖ`. -/
-noncomputable def matlisDualOpObjEquivOfLinearEquiv {N' : Type*} [AddCommGroup N']
-    [Module Aᵐᵒᵖ N'] [Module R N'] [IsScalarTower R Aᵐᵒᵖ N'] (N : ModuleCat.{max u v w} Aᵐᵒᵖ)
-    (e : N' ≃ₗ[Aᵐᵒᵖ] N) : (matlisDualOp R E).obj (Opposite.op N) ≃ₗ[A] MatlisDual R E N' :=
-  (matlisDualOpObjEquiv R E N).trans (MatlisDual.congrOp e)
-
-attribute [local instance] moduleOfAlgebra isScalarTower_moduleOfAlgebra in
-@[simp]
-theorem matlisDualOpObjEquivOfLinearEquiv_apply {N' : Type*} [AddCommGroup N']
-    [Module Aᵐᵒᵖ N'] [Module R N'] [IsScalarTower R Aᵐᵒᵖ N'] (N : ModuleCat.{max u v w} Aᵐᵒᵖ)
-    (e : N' ≃ₗ[Aᵐᵒᵖ] N) (φ : (matlisDualOp R E).obj (Opposite.op N)) (x : N') :
-    MatlisDual.equivLinearMap R E N' (matlisDualOpObjEquivOfLinearEquiv R E N e φ) x =
-      MatlisDual.equivLinearMap R E N (matlisDualOpObjEquiv R E N φ) (e x) :=
-  MatlisDual.congrOp_apply e _ x
 
 variable [Module.Injective R E] [Small.{w} R]
 
@@ -183,14 +152,11 @@ theorem ext1TranslateEquivDualStableHom_symm_apply
   rfl
 
 variable {M' K' : ModuleCat.{max u v w} A} (e' : (ExactStructure.abelian _).Extension M' K')
-  (he' : (ExactStructure.abelian _).isProjective e'.obj) {a₁ : K ⟶ K'} {a₂ : e.obj ⟶ e'.obj}
-  {f : M ⟶ M'}
+  (he' : (ExactStructure.abelian _).isProjective e'.obj)
 
-/-- **Naturality of `Ext¹(M, τX) ≅ D (mod A / 𝒫)(X, M)` in `M`.** For a morphism `(a₁, a₂, f)`
-from `K ⟶ P ⟶ M` to `K' ⟶ P' ⟶ M'`, both with projective middle terms, base change along `f`
-corresponds to the dual of postcomposition with the stable class of `f`. -/
-theorem ext1TranslateEquivDualStableHom_naturality (h₁ : e.f ≫ a₂ = a₁ ≫ e'.f)
-    (h₂ : e.g ≫ f = a₂ ≫ e'.g)
+/-- Naturality in `M`, for a given morphism `(a₁, a₂, f)` of the two sequences. -/
+private theorem ext1TranslateEquivDualStableHom_naturality_aux {a₁ : K ⟶ K'}
+    {a₂ : e.obj ⟶ e'.obj} {f : M ⟶ M'} (h₁ : e.f ≫ a₂ = a₁ ≫ e'.f) (h₂ : e.g ≫ f = a₂ ≫ e'.g)
     (ξ : (ExactStructure.abelian _).Ext1 M' (matlisDualTranspose R E P)) :
     ext1TranslateEquivDualStableHom R E P e he (ξ.pullback f) =
       ext1TranslateEquivDualStableHom R E P e' he' ξ ∘ₗ
@@ -228,33 +194,70 @@ theorem ext1TranslateEquivDualStableHom_naturality (h₁ : e.f ≫ a₂ = a₁ �
     simp
     rfl
 
+/-- **Naturality of `Ext¹(M, τX) ≅ D (mod A / 𝒫)(X, M)` in `M`.** For short exact sequences
+`K ⟶ P ⟶ M` and `K' ⟶ P' ⟶ M'` with projective middle terms and a map `f : M ⟶ M'`, base change
+along `f` corresponds to the dual of postcomposition with the stable class of `f`. -/
+theorem ext1TranslateEquivDualStableHom_naturality (f : M ⟶ M')
+    (ξ : (ExactStructure.abelian _).Ext1 M' (matlisDualTranspose R E P)) :
+    ext1TranslateEquivDualStableHom R E P e he (ξ.pullback f) =
+      ext1TranslateEquivDualStableHom R E P e' he' ξ ∘ₗ
+        Linear.rightComp R _ ((ExactStructure.abelian _).projectiveStableFunctor.map f) := by
+  -- Lift `f` to a morphism of the sequences through the projective middle term of `e`.
+  let a₂ : e.obj ⟶ e'.obj :=
+    he.factorThru ((ExactStructure.abelian _).isDeflation_g e'.conflation) (e.g ≫ f)
+  have h₂ : e.g ≫ f = a₂ ≫ e'.g := (isProjective.factorThru_comp _ _ _).symm
+  have hk : (e.f ≫ a₂) ≫ e'.g = 0 := by
+    rw [Category.assoc, ← h₂, ← Category.assoc, e.zero, Limits.zero_comp]
+  exact ext1TranslateEquivDualStableHom_naturality_aux R E P e he e' he'
+    (e'.isKernelCokernelPair.lift_f _ hk).symm h₂ ξ
+
 variable {X' : ModuleCat.{max u v w} A} (P' : FiniteProjectivePresentation X') {t : X ⟶ X'}
   {t₀ : P.P₀ →ₗ[A] P'.P₀} {t₁ : P.P₁ →ₗ[A] P'.P₁}
 
 omit [Module.Injective R E] [Small.{w} R] in
-/-- The map `D Tr X → D Tr X'` dual to the map of transposes induced by a lift `(t₀, t₁)` of a map
-`X → X'` to the presentations. -/
+/-- The map `D Tr(t) : D Tr X → D Tr X'` induced by a lift `(t₀, t₁)` of a map `X → X'` to the
+presentations: the Matlis dual of the map of transposes. -/
 noncomputable def matlisDualTransposeMap (ht₁ : t₀ ∘ₗ P.p = P'.p ∘ₗ t₁) :
     matlisDualTranspose R E P ⟶ matlisDualTranspose R E P' :=
-  ofHom (MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht₁))
+  ofHom (LinearMap.auslanderReitenTranslateMap t₀ t₁ ht₁)
+
+omit [Module.Injective R E] [Small.{w} R] in
+/-- `D Tr(t)` evaluates through the map of transposes. -/
+@[simp]
+theorem matlisDualTransposeMap_apply (ht₁ : t₀ ∘ₗ P.p = P'.p ∘ₗ t₁)
+    (φ : matlisDualTranspose R E P) (x : AuslanderReitenTranspose P'.p) :
+    MatlisDual.equivLinearMap R E _ ((matlisDualTransposeMap R E P P' ht₁).hom φ) x =
+      MatlisDual.equivLinearMap R E _ φ (AuslanderReitenTranspose.map t₀ t₁ ht₁ x) := by
+  rw [matlisDualTransposeMap]
+  exact LinearMap.auslanderReitenTranslateMap_apply t₀ t₁ ht₁ φ x
+
+omit [Module.Injective R E] [Small.{w} R] in
+/-- The identity lift induces the identity of `D Tr X`. -/
+@[simp]
+theorem matlisDualTransposeMap_id (ht₁ : LinearMap.id ∘ₗ P.p = P.p ∘ₗ LinearMap.id) :
+    matlisDualTransposeMap R E P P ht₁ = 𝟙 _ := by
+  rw [matlisDualTransposeMap, LinearMap.auslanderReitenTranslateMap_id]
+  rfl
+
+omit [Module.Injective R E] [Small.{w} R] in
+/-- The maps `D Tr(t)` compose along composed lifts. -/
+theorem matlisDualTransposeMap_comp {X'' : ModuleCat.{max u v w} A}
+    (P'' : FiniteProjectivePresentation X'') {t₀' : P'.P₀ →ₗ[A] P''.P₀}
+    {t₁' : P'.P₁ →ₗ[A] P''.P₁} (ht₁ : t₀ ∘ₗ P.p = P'.p ∘ₗ t₁)
+    (ht₁' : t₀' ∘ₗ P'.p = P''.p ∘ₗ t₁') (ht₁'' : (t₀' ∘ₗ t₀) ∘ₗ P.p = P''.p ∘ₗ (t₁' ∘ₗ t₁)) :
+    matlisDualTransposeMap R E P P'' ht₁'' =
+      matlisDualTransposeMap R E P P' ht₁ ≫ matlisDualTransposeMap R E P' P'' ht₁' := by
+  rw [matlisDualTransposeMap, matlisDualTransposeMap, matlisDualTransposeMap,
+    ← LinearMap.auslanderReitenTranslateMap_comp_map t₀ t₁ ht₁ t₀' t₁' ht₁']
+  rfl
 
 omit [Module.Injective R E] [Small.{w} R] in
 /-- The bundled dual of `Tr X`, with the action of `R` through `Aᵐᵒᵖ`, is `τX = D Tr X`. -/
 noncomputable def matlisDualOpTransposeIso :
     (matlisDualOp R E).obj (Opposite.op (of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))) ≅
-      matlisDualTranspose R E P where
-  hom := ofHom (matlisDualOpObjEquivOfLinearEquiv R E (of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))
-    (LinearEquiv.refl Aᵐᵒᵖ (AuslanderReitenTranspose P.p))).toLinearMap
-  inv := ofHom (matlisDualOpObjEquivOfLinearEquiv R E (of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))
-    (LinearEquiv.refl Aᵐᵒᵖ (AuslanderReitenTranspose P.p))).symm.toLinearMap
-  hom_inv_id := by
-    ext x
-    exact (matlisDualOpObjEquivOfLinearEquiv R E (of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))
-      (LinearEquiv.refl Aᵐᵒᵖ (AuslanderReitenTranspose P.p))).symm_apply_apply x
-  inv_hom_id := by
-    ext x
-    exact (matlisDualOpObjEquivOfLinearEquiv R E (of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))
-      (LinearEquiv.refl Aᵐᵒᵖ (AuslanderReitenTranspose P.p))).apply_symm_apply x
+      matlisDualTranspose R E P :=
+  (matlisDualOpObjEquivOfLinearEquiv R E (of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))
+    (LinearEquiv.refl Aᵐᵒᵖ (AuslanderReitenTranspose P.p))).toModuleIso
 
 omit [Module.Injective R E] [Small.{w} R] in
 /-- The dual of the map of transposes is `D Tr(t)`, through `ModuleCat.matlisDualOpTransposeIso`. -/
@@ -271,7 +274,7 @@ theorem matlisDualOp_map_comp_matlisDualOpTransposeIso_hom (ht₁ : t₀ ∘ₗ 
   have h₃ := matlisDualOpObjEquivOfLinearEquiv_apply R E (of Aᵐᵒᵖ (AuslanderReitenTranspose P.p))
     (LinearEquiv.refl Aᵐᵒᵖ (AuslanderReitenTranspose P.p)) φ
     (AuslanderReitenTranspose.map t₀ t₁ ht₁ τ)
-  exact h₁.trans (h₂.trans (h₃.symm.trans (MatlisDual.mapOp_apply _ _ τ).symm))
+  exact h₁.trans (h₂.trans (h₃.symm.trans (matlisDualTransposeMap_apply R E P P' ht₁ _ τ).symm))
 
 /-- **Naturality of `Ext¹(M, τX) ≅ D (mod A / 𝒫)(X, M)` in `X`.** For a map `t : X → X'` lifted by
 `(t₀, t₁)` to the presentations, cobase change along `D Tr(t) : τX → τX'` corresponds to the dual of
@@ -308,9 +311,10 @@ theorem ext1TranslateEquivDualStableHom_comap (ht₀ : P'.π ∘ₗ t₀ = t.hom
       ExactStructure.Ext1.pushout_pushout]
     congr 1
     ext x
-    simp only [LinearMap.comp_apply, matlisDualTransposeHomEquiv_symm_apply, matlisDualTransposeMap]
-    exact congrArg (MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht₁))
-      (matlisDualTransposeHomEquiv_symm_apply R E P v x)
+    refine (MatlisDual.equivLinearMap R E _).injective (LinearMap.ext fun y ↦ ?_)
+    simp only [LinearMap.comp_apply, matlisDualTransposeHomEquiv_symm_apply, hom_comp,
+      MatlisDual.mapOp_apply]
+    exact matlisDualTransposeMap_apply R E P P' ht₁ (v x) y
 
 end ModuleCat
 
@@ -445,8 +449,7 @@ theorem matlisDualTransposeInverseIso_naturality
     Iso.app_inv, eqToIso.hom, ← h₁, Category.assoc, Iso.hom_inv_id_assoc]
   rw [(finiteStableTranslateCompιIso R A E).inv.naturality_assoc]
   congr 2
-  have hg : g.hom = (ObjectProperty.ι _).map g := rfl
-  rw [hg, Functor.comp_map, ← Functor.map_comp, ← Functor.map_comp]
+  rw [← ObjectProperty.ι_map (f := g), Functor.comp_map, ← Functor.map_comp, ← Functor.map_comp]
   congr 1
   rw [Iso.app_hom, Iso.app_hom, Category.assoc, ← hc]
   simp
@@ -461,7 +464,8 @@ noncomputable def ext1EquivDualStableHom (M : FinitelyPresentedStableModule.{u, 
     (N : FinitelyGeneratedInjectiveStableModule.{u, max u v} A) :
     (ExactStructure.abelian _).Ext1 M.obj.as N.obj.as ≃ₗ[R]
       ((((stableTranslateEquivalence R A E hE).inverse.obj N).obj ⟶ M.obj) →ₗ[R] E) :=
-  (Ext1.pushoutLinearEquivOfIso R (matlisDualTransposeInverseIso hE N)).symm ≪≫ₗ
+  (Ext1.pushoutLinearEquivOfIso injectiveStableIdeal_le_injectivelyTrivialIdeal R
+      (matlisDualTransposeInverseIso hE N)).symm ≪≫ₗ
     ModuleCat.ext1TranslateEquivDualStableHom R E
       (FinitelyPresentedStableModule.presentation
         ((stableTranslateEquivalence R A E hE).inverse.obj N))
@@ -478,19 +482,9 @@ theorem ext1EquivDualStableHom_naturality {M M' : FinitelyPresentedStableModule.
     ext1EquivDualStableHom hE M N (ξ.pullback f) =
       ext1EquivDualStableHom hE M' N ξ ∘ₗ
         Linear.rightComp R _ ((ExactStructure.abelian _).projectiveStableFunctor.map f) := by
-  let Q := (ProjectivePresentation.abelian M.obj.as).extension
-  let Q' := (ProjectivePresentation.abelian M'.obj.as).extension
-  -- Lift `f` to a morphism of the chosen projective presentations.
-  let a₂ : Q.obj ⟶ Q'.obj := (ProjectivePresentation.abelian M.obj.as).isProjective_extension_obj
-    |>.factorThru ((ExactStructure.abelian _).isDeflation_g Q'.conflation) (Q.g ≫ f)
-  have h₂ : Q.g ≫ f = a₂ ≫ Q'.g := (isProjective.factorThru_comp _ _ _).symm
-  have hk : (Q.f ≫ a₂) ≫ Q'.g = 0 := by
-    rw [Category.assoc, ← h₂, ← Category.assoc, Q.zero, Limits.zero_comp]
-  have h₁ : Q.f ≫ a₂ = Q'.isKernelCokernelPair.lift (Q.f ≫ a₂) hk ≫ Q'.f :=
-    (Q'.isKernelCokernelPair.lift_f _ hk).symm
   simp only [ext1EquivDualStableHom, LinearEquiv.trans_apply,
     Ext1.pushoutLinearEquivOfIso_symm_pullback]
-  exact ModuleCat.ext1TranslateEquivDualStableHom_naturality R E _ _ _ _ _ h₁ h₂ _
+  exact ModuleCat.ext1TranslateEquivDualStableHom_naturality R E _ _ _ _ _ f _
 
 include hE in
 /-- **Naturality of the second Auslander–Reiten formula in `N`.** For a map `g : N ⟶ N'` of
@@ -520,9 +514,10 @@ theorem ext1EquivDualStableHom_naturality_right (M : FinitelyPresentedStableModu
     (matlisDualTransposeInverseIso hE N).inv
   obtain ⟨b', hb'⟩ := Functor.map_surjective (ExactStructure.abelian _).injectiveStableFunctor
     (matlisDualTransposeInverseIso hE N').inv
-  rw [Ext1.pushoutLinearEquivOfIso_symm_apply R _ b' hb',
-    Ext1.pushoutLinearEquivOfIso_symm_apply R _ b hb, Ext1.pushout_pushout, Ext1.pushout_pushout]
-  refine Ext1.pushout_eq_of_injectiveStableFunctor_map_eq ξ ?_
+  rw [Ext1.pushoutLinearEquivOfIso_symm_apply _ R _ b' hb',
+    Ext1.pushoutLinearEquivOfIso_symm_apply _ R _ b hb, Ext1.pushout_pushout, Ext1.pushout_pushout]
+  refine Ext1.pushout_eq_of_quotientFunctor_map_eq injectiveStableIdeal_le_injectivelyTrivialIdeal
+    ξ ?_
   rw [Functor.map_comp, Functor.map_comp, hg, hb, hb', Iso.eq_inv_comp, ← Category.assoc,
     Iso.comp_inv_eq, hn]
 

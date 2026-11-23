@@ -9,7 +9,6 @@ public import TauCeti.CategoryTheory.Exact.YonedaExt.BaerSum
 public import TauCeti.CategoryTheory.Exact.YonedaExt.LongExact
 public import TauCeti.CategoryTheory.Exact.YonedaExt.TrivialIdeal
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
-public import TauCeti.CategoryTheory.Exact.Stable.Injective
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Linear
 
 /-!
@@ -28,10 +27,6 @@ identifications of cokernels of `Hom` maps:
 These are the categorical sides of the covariant and contravariant defects of `e`, and are dual to
 `TauCeti/CategoryTheory/Exact/YonedaExt/Injective.lean`.
 
-Since `Ext¹_E(Z, -)` kills morphisms through relative injectives
-(`TauCeti.ExactStructure.mem_injectivelyTrivialIdeal_iff_forall_ext1`), it turns isomorphisms of the
-injective stable category into isomorphisms (`TauCeti.ExactStructure.Ext1.pushoutLinearEquivOfIso`).
-
 ## Main definitions
 
 * `TauCeti.ExactStructure.ProjectivePresentation.extension`: a projective presentation as an
@@ -40,8 +35,6 @@ injective stable category into isomorphisms (`TauCeti.ExactStructure.Ext1.pushou
   `Ext¹_E(Z, W) ≅ coker (Hom(P, W) → Hom(X, W))`.
 * `TauCeti.ExactStructure.Extension.homQuotientEquivStableHom`:
   `(E/𝒫)(Y, Z) ≅ coker (Hom(Y, P) → Hom(Y, Z))`.
-* `TauCeti.ExactStructure.Ext1.pushoutLinearEquivOfIso`: cobase change along an isomorphism of
-  the injective stable category.
 
 ## Main results
 
@@ -49,8 +42,6 @@ injective stable category into isomorphisms (`TauCeti.ExactStructure.Ext1.pushou
   `Ext¹_E(Z, W)` is a cobase change of `[e]`.
 * `TauCeti.ExactStructure.Extension.mem_projectiveStableIdeal_iff_of_isProjective`: a morphism
   into `Z` factors through a relative projective exactly when it lifts along the deflation of `e`.
-* `TauCeti.ExactStructure.Ext1.pushout_eq_of_injectiveStableFunctor_map_eq`: cobase change depends
-  only on the class of a morphism modulo injectives.
 
 ## References
 
@@ -170,64 +161,6 @@ theorem homQuotientEquivStableHom_mk {Y : C} (f : Y ⟶ Z) :
 end Linear
 
 end Extension
-
-namespace Ext1
-
-/-- Cobase change depends only on the class of a morphism in the injective stable category. -/
-theorem pushout_eq_of_injectiveStableFunctor_map_eq {X' : C} (ξ : E.Ext1 Z X) {f g : X ⟶ X'}
-    (h : E.injectiveStableFunctor.map f = E.injectiveStableFunctor.map g) :
-    ξ.pushout f = ξ.pushout g := by
-  rw [MorphismIdeal.quotientFunctor_map_eq_iff] at h
-  rw [← sub_eq_zero, sub_eq_add_neg, ← pushout_neg, ← pushout_add, ← sub_eq_add_neg]
-  exact mem_injectivelyTrivialIdeal_iff_forall_ext1.mp
-    (MorphismIdeal.le_def.mp injectiveStableIdeal_le_injectivelyTrivialIdeal _ h) Z ξ
-
-variable (R : Type*) [Ring R] [Linear R C]
-
-/-- **Cobase change along an isomorphism of the injective stable category**: for
-`α : X ≅ X'` modulo relative injectives, cobase change along representatives of `α` and `α⁻¹` is
-an `R`-linear equivalence `Ext¹_E(Z, X) ≃ Ext¹_E(Z, X')`. -/
-noncomputable def pushoutLinearEquivOfIso {X' : C}
-    (α : E.injectiveStableFunctor.obj X ≅ E.injectiveStableFunctor.obj X') :
-    E.Ext1 Z X ≃ₗ[R] E.Ext1 Z X' :=
-  { pushoutLinearMap R (E.injectiveStableFunctor.preimage α.hom) with
-    invFun ξ := ξ.pushout (E.injectiveStableFunctor.preimage α.inv)
-    left_inv ξ := by
-      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, pushoutLinearMap_apply,
-        pushout_pushout]
-      rw [pushout_eq_of_injectiveStableFunctor_map_eq ξ (g := 𝟙 X) (by simp), pushout_id]
-    right_inv ξ := by
-      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, pushoutLinearMap_apply,
-        pushout_pushout]
-      rw [pushout_eq_of_injectiveStableFunctor_map_eq ξ (g := 𝟙 X') (by simp), pushout_id] }
-
-/-- Cobase change along an isomorphism of the injective stable category is cobase change along
-any representative of it. -/
-theorem pushoutLinearEquivOfIso_apply {X' : C}
-    (α : E.injectiveStableFunctor.obj X ≅ E.injectiveStableFunctor.obj X') (a : X ⟶ X')
-    (ha : E.injectiveStableFunctor.map a = α.hom) (ξ : E.Ext1 Z X) :
-    pushoutLinearEquivOfIso R α ξ = ξ.pushout a :=
-  (pushoutLinearMap_apply R _ ξ).trans
-    (pushout_eq_of_injectiveStableFunctor_map_eq ξ (by rw [Functor.map_preimage, ha]))
-
-/-- The inverse of cobase change along an isomorphism of the injective stable category is cobase
-change along any representative of the inverse. -/
-theorem pushoutLinearEquivOfIso_symm_apply {X' : C}
-    (α : E.injectiveStableFunctor.obj X ≅ E.injectiveStableFunctor.obj X') (b : X' ⟶ X)
-    (hb : E.injectiveStableFunctor.map b = α.inv) (ξ : E.Ext1 Z X') :
-    (pushoutLinearEquivOfIso R α).symm ξ = ξ.pushout b :=
-  pushout_eq_of_injectiveStableFunctor_map_eq ξ (by rw [Functor.map_preimage, hb])
-
-/-- Cobase change along an isomorphism of the injective stable category commutes with base
-change. -/
-theorem pushoutLinearEquivOfIso_symm_pullback {X' Z' : C}
-    (α : E.injectiveStableFunctor.obj X ≅ E.injectiveStableFunctor.obj X')
-    (ξ : E.Ext1 Z X') (u : Z' ⟶ Z) :
-    (pushoutLinearEquivOfIso R α).symm (ξ.pullback u) =
-      ((pushoutLinearEquivOfIso R α).symm ξ).pullback u :=
-  (pushout_pullback ξ _ u).symm
-
-end Ext1
 
 end ExactStructure
 

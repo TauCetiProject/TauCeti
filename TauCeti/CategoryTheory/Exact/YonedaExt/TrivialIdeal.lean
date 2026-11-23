@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.YonedaExt.Basic
+public import TauCeti.CategoryTheory.Exact.YonedaExt.BaerSum
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
 public import TauCeti.CategoryTheory.Exact.Stable.Injective
 
@@ -53,6 +53,9 @@ for relative injectives.
   `TauCeti.ExactStructure.isInjective_iff_forall_ext1_eq_zero`: relative projectives and
   injectives are detected by the vanishing of `Ext¹`.
 * For the split exact structure both ideals are the ideal of all morphisms.
+* `TauCeti.ExactStructure.Ext1.pushout_eq_of_quotientFunctor_map_eq` and
+  `TauCeti.ExactStructure.Ext1.pushoutLinearEquivOfIso`: cobase change depends only on the class
+  of a morphism modulo `ℐ_E`, so an isomorphism modulo `ℐ_E` induces an isomorphism of `Ext¹`.
 
 ## References
 
@@ -267,6 +270,72 @@ theorem split_injectivelyTrivialIdeal :
     (ExactStructure.split C).injectivelyTrivialIdeal = ⊤ :=
   eq_top_iff.mpr <| MorphismIdeal.le_def.mpr fun _ _ _ _ ↦
     mem_injectivelyTrivialIdeal_iff_forall_ext1.mpr fun _ _ ↦ Subsingleton.elim _ _
+
+namespace Ext1
+
+variable {I : MorphismIdeal C} (hI : I ≤ E.injectivelyTrivialIdeal) {X' Z Z' : C}
+include hI
+
+/-- **Cobase change depends only on the class of a morphism modulo injectively trivial
+morphisms**, or modulo any smaller ideal `I`, such as the maps through relative injectives
+(`TauCeti.ExactStructure.injectiveStableIdeal_le_injectivelyTrivialIdeal`). -/
+theorem pushout_eq_of_quotientFunctor_map_eq (ξ : E.Ext1 Z X) {f g : X ⟶ X'}
+    (h : I.quotientFunctor.map f = I.quotientFunctor.map g) :
+    ξ.pushout f = ξ.pushout g := by
+  rw [MorphismIdeal.quotientFunctor_map_eq_iff] at h
+  rw [← sub_eq_zero, sub_eq_add_neg, ← pushout_neg, ← pushout_add, ← sub_eq_add_neg]
+  exact mem_injectivelyTrivialIdeal_iff_forall_ext1.mp (MorphismIdeal.le_def.mp hI _ h) Z ξ
+
+variable (R : Type*) [Semiring R] [Linear R C]
+
+/-- **Cobase change along an isomorphism modulo injectively trivial morphisms**: for
+`α : X ≅ X'` in the quotient by an ideal `I ⊆ ℐ_E`, cobase change along representatives of `α`
+and `α⁻¹` is an `R`-linear equivalence `Ext¹_E(Z, X) ≃ Ext¹_E(Z, X')`. -/
+noncomputable def pushoutLinearEquivOfIso (α : I.quotientFunctor.obj X ≅ I.quotientFunctor.obj X') :
+    E.Ext1 Z X ≃ₗ[R] E.Ext1 Z X' :=
+  { pushoutLinearMap R (I.quotientFunctor.preimage α.hom) with
+    invFun ξ := ξ.pushout (I.quotientFunctor.preimage α.inv)
+    left_inv ξ := by
+      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, pushoutLinearMap_apply,
+        pushout_pushout]
+      rw [pushout_eq_of_quotientFunctor_map_eq hI ξ (g := 𝟙 X) (by simp), pushout_id]
+    right_inv ξ := by
+      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, pushoutLinearMap_apply,
+        pushout_pushout]
+      rw [pushout_eq_of_quotientFunctor_map_eq hI ξ (g := 𝟙 X') (by simp), pushout_id] }
+
+/-- Cobase change along an isomorphism modulo `I` is cobase change along any representative. -/
+theorem pushoutLinearEquivOfIso_apply (α : I.quotientFunctor.obj X ≅ I.quotientFunctor.obj X')
+    (a : X ⟶ X') (ha : I.quotientFunctor.map a = α.hom) (ξ : E.Ext1 Z X) :
+    pushoutLinearEquivOfIso hI R α ξ = ξ.pushout a :=
+  (pushoutLinearMap_apply R _ ξ).trans
+    (pushout_eq_of_quotientFunctor_map_eq hI ξ (by rw [Functor.map_preimage, ha]))
+
+/-- The inverse of cobase change along an isomorphism modulo `I` is cobase change along any
+representative of the inverse. -/
+theorem pushoutLinearEquivOfIso_symm_apply
+    (α : I.quotientFunctor.obj X ≅ I.quotientFunctor.obj X') (b : X' ⟶ X)
+    (hb : I.quotientFunctor.map b = α.inv) (ξ : E.Ext1 Z X') :
+    (pushoutLinearEquivOfIso hI R α).symm ξ = ξ.pushout b :=
+  pushout_eq_of_quotientFunctor_map_eq hI ξ (by rw [Functor.map_preimage, hb])
+
+/-- Cobase change along an isomorphism modulo `I` commutes with base change. -/
+theorem pushoutLinearEquivOfIso_pullback
+    (α : I.quotientFunctor.obj X ≅ I.quotientFunctor.obj X') (ξ : E.Ext1 Z X) (u : Z' ⟶ Z) :
+    (pushoutLinearEquivOfIso hI R α ξ).pullback u =
+      pushoutLinearEquivOfIso hI R α (ξ.pullback u) := by
+  have ha := I.quotientFunctor.map_preimage α.hom
+  rw [pushoutLinearEquivOfIso_apply hI R α _ ha, pushoutLinearEquivOfIso_apply hI R α _ ha,
+    pushout_pullback]
+
+/-- The inverse of cobase change along an isomorphism modulo `I` commutes with base change. -/
+theorem pushoutLinearEquivOfIso_symm_pullback
+    (α : I.quotientFunctor.obj X ≅ I.quotientFunctor.obj X') (ξ : E.Ext1 Z X') (u : Z' ⟶ Z) :
+    (pushoutLinearEquivOfIso hI R α).symm (ξ.pullback u) =
+      ((pushoutLinearEquivOfIso hI R α).symm ξ).pullback u :=
+  (pushout_pullback ξ _ u).symm
+
+end Ext1
 
 end ExactStructure
 

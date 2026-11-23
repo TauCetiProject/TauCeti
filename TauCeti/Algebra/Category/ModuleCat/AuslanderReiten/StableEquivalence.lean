@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.StableTranslate
 public import TauCeti.Algebra.Module.AuslanderReiten.Equivalence
-public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.StableEquivalence
+public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Stable.Equivalence
 
 /-!
 # The Auslander–Reiten translate as a stable equivalence

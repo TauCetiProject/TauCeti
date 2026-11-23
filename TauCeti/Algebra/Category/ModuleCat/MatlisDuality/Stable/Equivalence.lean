@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Stable
+public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Stable.Basic
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.FiniteLength
 public import TauCeti.Algebra.Module.AuslanderReiten.Functor
 import Mathlib.Algebra.Category.ModuleCat.Injective
@@ -95,19 +95,17 @@ theorem projectiveStableFunctor_map_eq_zero_of_matlisDualOp {N N' : ModuleCat.{m
   have hπ : Mono ((ModuleCat.matlisDualOp R E).map π.op) := by
     rw [ModuleCat.mono_iff_injective]
     intro φ ψ h
+    rw [ModuleCat.matlisDualOp_map, Quiver.Hom.unop_op] at h
     apply (ModuleCat.matlisDualOpObjEquiv R E N).injective
-    refine (MatlisDual.equivLinearMap R E N).injective (LinearMap.ext fun x ↦ ?_)
-    obtain ⟨y, rfl⟩ := P.surjective x
-    have h' : ModuleCat.matlisDualOpMap R E π φ = ModuleCat.matlisDualOpMap R E π ψ := h
+    refine (MatlisDual.equivLinearMap R E N).injective
+      (LinearMap.lcomp_injective_of_surjective (S := R) (N := E) (P.π.restrictScalars R)
+        P.surjective (LinearMap.ext fun y ↦ ?_))
+    rw [LinearMap.lcomp_apply, LinearMap.lcomp_apply]
     exact (ModuleCat.matlisDualOpObjEquiv_map_apply R E π φ y).symm.trans
       ((congrArg (fun χ ↦ MatlisDual.equivLinearMap R E _
-        (ModuleCat.matlisDualOpObjEquiv R E _ χ) y) h').trans
+        (ModuleCat.matlisDualOpObjEquiv R E _ χ) y) h).trans
           (ModuleCat.matlisDualOpObjEquiv_map_apply R E π ψ y))
-  have hinj : (ExactStructure.abelian _).isInjective
-      ((ModuleCat.matlisDualOp R E).obj (op P.P₀)) := by
-    rw [ExactStructure.abelian_isInjective_iff]
-    exact Injective.of_iso (ModuleCat.matlisDualOpObjEquiv R E P.P₀).toModuleIso.symm
-      (Module.injective_object_of_injective_module A (MatlisDual R E P.P₀))
+  have hinj := isInjective_matlisDualOpObj_of_projective R E (ModuleCat.of Aᵐᵒᵖ P.P₀)
   rw [ExactStructure.injectiveStableFunctor_map_eq_zero_iff,
     ExactStructure.factorsThrough_injective_iff_exists_extension _ _
       ((ExactStructure.abelian_isInflation_iff _).mpr hπ) hinj] at hf
@@ -174,7 +172,6 @@ injectives. On objects it is the class of `D N`; it is isomorphic to the stable 
         have := N.unop.property
         Module.Finite.trans Aᵐᵒᵖ _
       have := Module.Finite.of_restrictScalars_finite R A (MatlisDual R E N.unop.obj.as)
-      change Module.Finite A (ModuleCat.matlisDualOpObj R E N.unop.obj.as)
       exact Module.Finite.equiv (ModuleCat.matlisDualOpObjEquiv R E _).symm
 
 @[simp]
@@ -231,7 +228,7 @@ theorem bijective_finiteStableMatlisDualOp_map
     refine ⟨(ObjectProperty.homMk f : N'.unop ⟶ N.unop).op, ObjectProperty.hom_ext _ ?_⟩
     simp only at hf
     rw [finiteStableMatlisDualOp_map_hom]
-    change _ ≫ (stableMatlisDualOp R E).map f.op ≫ _ = _
+    simp only [Quiver.Hom.unop_op, ObjectProperty.homMk_hom]
     rw [hf]
     simp only [Category.assoc, Iso.inv_hom_id_assoc]
     -- `φ.hom` is stated between the objects of the full subcategory, which are those classes.

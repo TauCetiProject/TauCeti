@@ -54,6 +54,8 @@ compares the two actions on morphisms into it.
 ## Main definitions
 
 * `ModuleCat.matlisDualTranspose R E P`: the module `τX = D Tr X`.
+* `ModuleCat.contravariantDefectEquivHomQuotient` and `ModuleCat.covariantDefectEquivHomQuotient`:
+  the defects of a map of `A`-modules as cokernels of `Hom` maps in `ModuleCat A`.
 * `ModuleCat.contravariantDefectEquivExt1`: the contravariant defect of `N ⟶ I ⟶ N'` at `Y` is
   `Ext¹(Y, N)`.
 * `ModuleCat.dualExt1EquivCostableHom`: `D Ext¹(X, N) ≅ (A/ℐ)(N, τX)` from the defect formula of
@@ -94,6 +96,31 @@ variable {R : Type u} {A : Type v} [CommRing R] [Ring A] [Algebra R A]
   {N N' : ModuleCat.{t} A}
 
 variable (R) in
+/-- The contravariant defect of a map `g : M ⟶ N'` of `A`-modules at `Y`, as the cokernel of
+`Hom(Y, M) → Hom(Y, N')` computed in `ModuleCat A`. -/
+noncomputable def contravariantDefectEquivHomQuotient {M : ModuleCat.{t} A} (g : M ⟶ N')
+    (Y : ModuleCat.{t} A) :
+    contravariantDefect R g.hom Y ≃ₗ[R] ((Y ⟶ N') ⧸ LinearMap.range (Linear.rightComp R Y g)) :=
+  (Submodule.Quotient.equiv _ _ (homLinearEquiv (S := R)) (by
+      ext x
+      simp only [Submodule.mem_map, LinearMap.mem_range]
+      constructor
+      · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
+        exact ⟨s.hom, rfl⟩
+      · rintro ⟨s, rfl⟩
+        exact ⟨_, ⟨ofHom s, rfl⟩, rfl⟩)).symm
+
+/-- The class of `g' : Y → N'` in the contravariant defect is the class of the morphism `g'`. -/
+@[simp]
+theorem contravariantDefectEquivHomQuotient_mk {M : ModuleCat.{t} A} (g : M ⟶ N')
+    {Y : ModuleCat.{t} A} (g' : Y →ₗ[A] N') :
+    contravariantDefectEquivHomQuotient R g Y (Submodule.Quotient.mk g') =
+      Submodule.Quotient.mk (ofHom g') := by
+  simp only [contravariantDefectEquivHomQuotient, Submodule.Quotient.equiv_symm,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  rfl
+
+variable (R) in
 /-- **The contravariant defect is `Ext¹`.** For a short exact sequence `N ⟶ I ⟶ N'` of
 `A`-modules with `I` injective, the cokernel of `Hom_A(Y, I) → Hom_A(Y, N')` is `Ext¹(Y, N)`,
 through `u ↦ u^* [N ⟶ I ⟶ N']`. -/
@@ -101,15 +128,7 @@ noncomputable def contravariantDefectEquivExt1
     (e : (ExactStructure.abelian _).Extension N' N)
     (he : (ExactStructure.abelian _).isInjective e.obj) (Y : ModuleCat.{t} A) :
     contravariantDefect R e.g.hom Y ≃ₗ[R] (ExactStructure.abelian _).Ext1 Y N :=
-  (Submodule.Quotient.equiv _ _ (homLinearEquiv (S := R)) (by
-      ext g
-      simp only [Submodule.mem_map, LinearMap.mem_range]
-      constructor
-      · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
-        exact ⟨s.hom, rfl⟩
-      · rintro ⟨s, rfl⟩
-        exact ⟨_, ⟨ofHom s, rfl⟩, rfl⟩)).symm ≪≫ₗ
-    e.homQuotientEquivExt1 he R Y
+  contravariantDefectEquivHomQuotient R e.g Y ≪≫ₗ e.homQuotientEquivExt1 he R Y
 
 /-- The class of `g : Y → N'` in the contravariant defect is the base change `g^* [N ⟶ I ⟶ N']`.
 -/
@@ -120,9 +139,8 @@ theorem contravariantDefectEquivExt1_mk
     (g : Y →ₗ[A] N') :
     contravariantDefectEquivExt1 R e he Y (Submodule.Quotient.mk g) =
       (Ext1.mk e).pullback (ofHom g) := by
-  simp only [contravariantDefectEquivExt1, LinearEquiv.trans_apply, Submodule.Quotient.equiv_symm,
-    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, Extension.homQuotientEquivExt1_mk]
-  rfl
+  simp only [contravariantDefectEquivExt1, LinearEquiv.trans_apply,
+    contravariantDefectEquivHomQuotient_mk, Extension.homQuotientEquivExt1_mk]
 
 end Defect
 
@@ -166,6 +184,29 @@ theorem matlisDualTransposeHomEquiv_symm_apply {M : ModuleCat.{max u v w} A}
     (matlisDualTransposeHomEquiv R E P M).symm g x = g x :=
   (rfl)
 
+/-- The covariant defect of a map `f : N ⟶ N'` at `τX = D Tr X`, as the cokernel of
+`Hom(N', τX) → Hom(N, τX)` computed in `ModuleCat A`. -/
+noncomputable def covariantDefectEquivHomQuotient {N N' : ModuleCat.{max u v w} A} (f : N ⟶ N') :
+    covariantDefect R f.hom (MatlisDual R E (AuslanderReitenTranspose P.p)) ≃ₗ[R]
+      ((N ⟶ matlisDualTranspose R E P) ⧸
+        LinearMap.range (Linear.leftComp R (matlisDualTranspose R E P) f)) :=
+  Submodule.Quotient.equiv _ _ (matlisDualTransposeHomEquiv R E P N).symm (by
+      ext g
+      simp only [Submodule.mem_map, LinearMap.mem_range]
+      constructor
+      · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
+        exact ⟨ofHom s, rfl⟩
+      · rintro ⟨s, rfl⟩
+        exact ⟨_, ⟨s.hom, rfl⟩, rfl⟩)
+
+/-- The class of `u : N → D Tr X` in the covariant defect is the class of the morphism `u`. -/
+@[simp]
+theorem covariantDefectEquivHomQuotient_mk {N N' : ModuleCat.{max u v w} A} (f : N ⟶ N')
+    (u : N →ₗ[A] MatlisDual R E (AuslanderReitenTranspose P.p)) :
+    covariantDefectEquivHomQuotient R E P f (Submodule.Quotient.mk u) =
+      Submodule.Quotient.mk ((matlisDualTransposeHomEquiv R E P N).symm u) :=
+  (rfl)
+
 /-! ### The defect formula as `D Ext¹(X, N) ≅ (A/ℐ)(N, τX)` -/
 
 variable {N N' : ModuleCat.{max u v w} A} (e : (ExactStructure.abelian _).Extension N' N)
@@ -178,15 +219,7 @@ noncomputable def covariantDefectEquivCostableHom :
       ((ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.obj N ⟶
         (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.obj
           (matlisDualTranspose R E P)) :=
-  Submodule.Quotient.equiv _ _ (matlisDualTransposeHomEquiv R E P N).symm (by
-      ext g
-      simp only [Submodule.mem_map, LinearMap.mem_range]
-      constructor
-      · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
-        exact ⟨ofHom s, rfl⟩
-      · rintro ⟨s, rfl⟩
-        exact ⟨_, ⟨s.hom, rfl⟩, rfl⟩) ≪≫ₗ
-    e.homQuotientEquivCostableHom he R _
+  covariantDefectEquivHomQuotient R E P e.f ≪≫ₗ e.homQuotientEquivCostableHom he R _
 
 /-- The class of `u : N → D Tr X` in the covariant defect is the class of `u` modulo `ℐ`. -/
 @[simp]

@@ -32,7 +32,8 @@ A module over an `R`-algebra `A` is bundled in `ModuleCat A`, which remembers on
 dual of a module this equals the `R`-action on the values only propositionally, not definitionally.
 The bundled duals `ModuleCat.matlisDualObj` and `ModuleCat.matlisDualOpObj` are therefore not
 reducible to `MatlisDual`, and are compared with it by `ModuleCat.matlisDualObjEquiv` and
-`ModuleCat.matlisDualOpObjEquiv`.
+`ModuleCat.matlisDualOpObjEquiv`, and with the dual of any linearly equivalent right module by
+`ModuleCat.matlisDualOpObjEquivOfLinearEquiv`.
 
 ## References
 
@@ -143,6 +144,21 @@ theorem matlisDualOpObjEquiv_map_apply {N N' : ModuleCat.{w} Aᵐᵒᵖ} (g : N 
     equivLinearMap R E N (matlisDualOpObjEquiv R E N (matlisDualOpMap R E g φ)) x =
       equivLinearMap R E N' (matlisDualOpObjEquiv R E N' φ) (g x) :=
   mapOp_apply g.hom (matlisDualOpObjEquiv R E N' φ) x
+
+/-- The bundled dual of a right module `N` is the Matlis dual of any right module `N'` linearly
+equivalent to it, for any action of `R` on `N'` compatible with `Aᵐᵒᵖ`. -/
+def matlisDualOpObjEquivOfLinearEquiv {N' : Type*} [AddCommGroup N'] [Module Aᵐᵒᵖ N'] [Module R N']
+    [IsScalarTower R Aᵐᵒᵖ N'] (N : ModuleCat.{w} Aᵐᵒᵖ) (e : N' ≃ₗ[Aᵐᵒᵖ] N) :
+    matlisDualOpObj R E N ≃ₗ[A] MatlisDual R E N' :=
+  (matlisDualOpObjEquiv R E N).trans (congrOp e)
+
+@[simp]
+theorem matlisDualOpObjEquivOfLinearEquiv_apply {N' : Type*} [AddCommGroup N'] [Module Aᵐᵒᵖ N']
+    [Module R N'] [IsScalarTower R Aᵐᵒᵖ N'] (N : ModuleCat.{w} Aᵐᵒᵖ) (e : N' ≃ₗ[Aᵐᵒᵖ] N)
+    (φ : matlisDualOpObj R E N) (x : N') :
+    equivLinearMap R E N' (matlisDualOpObjEquivOfLinearEquiv R E N e φ) x =
+      equivLinearMap R E N (matlisDualOpObjEquiv R E N φ) (e x) :=
+  congrOp_apply e _ x
 
 /-- The Matlis dual `D_R = Hom_R(-, E)`, from right to left `A`-modules. -/
 @[expose, simps]
