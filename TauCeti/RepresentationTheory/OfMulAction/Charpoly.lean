@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
-public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.GroupTheory.Perm.Partition
+public import TauCeti.RepresentationTheory.Charpoly
 import TauCeti.LinearAlgebra.Charpoly.Permutation
-import TauCeti.RepresentationTheory.Charpoly
 
 /-!
 # Characteristic polynomials of permutation representations

@@ -74,14 +74,10 @@ theorem map_inertiaDeg_fixedField_eq_of_almostConjugate
       (Finset.univ : Finset (p.primesOver (𝓞 ↥(IntermediateField.fixedField H')))).val.map
         (fun P ↦ P.val.inertiaDeg (𝓞 K)) := by
   -- Choose a prime `Q` of `𝓞 L` above `p` and an arithmetic Frobenius `σ` at `Q`.
-  obtain ⟨Q, hQmax, hQp⟩ := Ideal.exists_ideal_over_maximal_of_isIntegral (S := 𝓞 L) p
-    fun x hx ↦ by
-      have hx0 : x = 0 := FaithfulSMul.algebraMap_injective (𝓞 K) (𝓞 L)
-        ((RingHom.mem_ker.mp hx).trans (map_zero _).symm)
-      exact hx0 ▸ p.zero_mem
+  obtain ⟨Q, hQmax, hQp⟩ := Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := 𝓞 L) p
   have : Q.IsMaximal := hQmax
   have : Q.IsPrime := hQmax.isPrime
-  have : Q.LiesOver p := ⟨hQp.symm⟩
+  have : Q.LiesOver p := hQp
   have hQne : Q ≠ ⊥ :=
     Ring.ne_bot_of_isMaximal_of_not_isField hQmax (NumberField.RingOfIntegers.not_isField L)
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q hQne

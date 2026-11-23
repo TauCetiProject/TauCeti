@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IntermediateField.Basic
 public import Mathlib.FieldTheory.Normal.Basic
 
 /-!

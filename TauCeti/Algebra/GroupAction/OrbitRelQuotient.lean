@@ -1109,9 +1109,7 @@ theorem stabilizer_quotientGroup_orbitRelQuotient_mk (N : Subgroup G) [N.Normal]
       exact ‹N.Normal›.conj_mem' n n.property g
   · rintro ⟨s, hs, hsg⟩
     have hns : s⁻¹ * g ∈ N := QuotientGroup.eq.mp hsg
-    have hgn : g * s⁻¹ ∈ N := by
-      have h := ‹N.Normal›.conj_mem (s⁻¹ * g) hns s
-      rwa [← mul_assoc, mul_inv_cancel, one_mul] at h
+    have hgn : g * s⁻¹ ∈ N := ‹N.Normal›.mem_comm hns
     exact _root_.Quotient.sound' (orbitRel_apply.mpr (mem_orbit_iff.mpr
       ⟨⟨g * s⁻¹, hgn⟩, by rw [Subgroup.smul_def, mul_smul]; congr 1; rw [inv_smul_eq_iff, hs]⟩))
 

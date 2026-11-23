@@ -108,12 +108,8 @@ theorem fullCycleType_toPerm_inertiaOrbitQuotient_eq_map_inertiaDeg
   have hgen : Subgroup.zpowers frob = ⊤ := by
     have h := congrArg (Subgroup.map (QuotientGroup.mk' I))
       (zpowers_sup_inertia_eq_top_of_isArithFrobAt Q hσ)
-    have hI : I.map (QuotientGroup.mk' I) = ⊥ := by
-      rw [eq_bot_iff]
-      rintro _ ⟨x, hx, rfl⟩
-      exact (QuotientGroup.eq_one_iff _).mpr hx
     rw [Subgroup.map_sup, MonoidHom.map_zpowers, Subgroup.map_top_of_surjective _
-      (QuotientGroup.mk'_surjective I), hI, sup_bot_eq] at h
+      (QuotientGroup.mk'_surjective I), QuotientGroup.map_mk'_self, sup_bot_eq] at h
     exact h
   -- Rewrite the full cycle type as `(D / I)`-orbit sizes on `I \ (G / H)`.
   have horb_eq : ∀ ω : orbitRel.Quotient I ((L ≃ₐ[K] L) ⧸ H),
