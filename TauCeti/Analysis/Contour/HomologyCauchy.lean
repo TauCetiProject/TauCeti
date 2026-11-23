@@ -17,10 +17,12 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 /-!
 # The homology Cauchy theorem, via Dixon's argument
 
-Dixon's argument in `DixonLiouville` proves that the glued Dixon function vanishes for a closed
-null-homologous absolutely continuous curve. `CauchyIntegralFormula` then extracts two algebraic
-consequences from pointwise vanishing. This file packages the direct null-homologous forms and
-assembles the theorem:
+Dixon's argument in `Dixon.Liouville` (`dixonFunction_eq_zero`) proves that the glued Dixon
+function vanishes for a closed null-homologous absolutely continuous curve. `Cauchy.IntegralFormula`
+then extracts two algebraic consequences from pointwise vanishing
+(`dixonH2_eq_windingNumber_mul_f_of_dixonFunction_eq_zero` and
+`intervalIntegral_deriv_smul_eq_zero_of_dixonFunction_eq_zero`). This file packages the direct
+null-homologous forms and assembles the theorem:
 
 * `dixonH2_eq_windingNumber_mul_f_of_nullHomologous` — Cauchy's integral formula at an off-curve
   point.
@@ -95,13 +97,9 @@ theorem homologyCauchyTheorem {f : ℂ → ℂ} {Ω : Set ℂ} (hΩ : IsOpen Ω)
   obtain ⟨w₀, hw₀Ω, hw₀off⟩ := exists_mem_off_curve hΩ hγ_cont hγ
   have hg : DifferentiableOn ℂ (fun z ↦ (z - w₀) * f z) Ω := by
     fun_prop
-  have h_int_mul : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b :=
-    hderiv_int.continuousOn_mul (hf.continuousOn.comp hγ_cont hγ)
-  have h_int : IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume a b := by
-    rw [intervalIntegrable_iff] at h_int_mul ⊢
-    exact h_int_mul.congr_fun (fun t _ ↦ by rw [smul_eq_mul, mul_comm]) measurableSet_uIoc
   exact intervalIntegral_deriv_smul_eq_zero_of_dixonFunction_eq_zero hγ_cont w₀ hw₀Ω hw₀off
-    (dixonFunction_eq_zero hΩ hg hγ_ac hγ hclosed hnull w₀) h_int
+    (dixonFunction_eq_zero hΩ hg hγ_ac hγ hclosed hnull w₀)
+    (hderiv_int.smul_continuousOn (hf.continuousOn.comp hγ_cont hγ))
     (intervalIntegrable_inv_sub_mul_deriv hγ_cont hw₀off hderiv_int)
 
 end TauCeti.Contour

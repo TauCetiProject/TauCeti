@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.Cycle.Residue
+import TauCeti.Analysis.Contour.HomologyCauchy
 
 /-!
 # Cauchy's integral formula in homology form, for all derivatives
@@ -22,18 +24,24 @@ for every `k : ℕ`, with `n_z(γ)` the generalized winding number. The case `k 
 `f(z) · n_z(γ) = (2πi)⁻¹ ∮_γ f(w)/(w − z) dw` that accompanies the homology Cauchy theorem,
 and the general `k` is its derivative form.
 
-This is the single-curve case of
+The formula for general `k` is the single-curve case of
 `TauCeti.Contour.Cycle.cauchyIntegralFormula_iteratedDeriv_nullHomologous`:
 a closed curve is a cycle with one component and multiplicity one. The formulas here use the
 parametrization directly, so applications can express the contour integral as an interval integral
 over the oriented interval `a..b`.
 
+The case `k = 0` holds for every closed absolutely continuous curve, not only for the
+piecewise-`C¹` curves that generate cycles: it is Dixon's identity
+`TauCeti.Contour.dixonH2_eq_windingNumber_mul_f_of_nullHomologous`, the Cauchy integral formula
+that the proof of the homology Cauchy theorem produces.
+
 ## Main results
 
 * `TauCeti.Contour.cauchyIntegralFormula_iteratedDeriv_nullHomologous` — the formula above, for
   every order `k`.
-* `TauCeti.Contour.cauchyIntegralFormula_nullHomologous` — its `k = 0` case, Cauchy's integral
-  formula in homology form `∮_γ f(w)/(w − z) dw = 2πi · n_z(γ) · f z`.
+* `TauCeti.Contour.cauchyIntegralFormula_nullHomologous` — the `k = 0` case, Cauchy's integral
+  formula in homology form `∮_γ f(w)/(w − z) dw = 2πi · n_z(γ) · f z`, for a closed absolutely
+  continuous curve.
 * `TauCeti.Contour.cauchyIntegralFormula_deriv_nullHomologous` — its `k = 1` case, stated with
   `deriv f z`.
 
@@ -93,22 +101,27 @@ theorem cauchyIntegralFormula_iteratedDeriv_nullHomologous {f : ℂ → ℂ} {U 
       (by simpa only [Cycle.trace_of_raw, Set.mem_image, not_exists, not_and] using hoff) k
 
 /-- **Cauchy's integral formula, homology form.** For `f` holomorphic on an open
-`U`, `γ` a closed piecewise-`C¹` curve in `U` that is null-homologous there, and `z` off the
+`U`, `γ` a closed absolutely continuous curve in `U` that is null-homologous there, and `z` off the
 curve,
 
 `∫ t in a..b, γ' t • (f (γ t) / (γ t − z)) = 2πi · n_z(γ) · f z`,
 
 so that `f z · n_z(γ) = (2πi)⁻¹ ∮_γ f(w)/(w − z) dw`: the Cauchy-type integral recovers the value of
 `f` at `z`, counted with the multiplicity with which `γ` winds around it. The `S = ∅` companion of
-this statement is the homology Cauchy theorem `TauCeti.Contour.homologyCauchyTheorem`. -/
+this statement is the homology Cauchy theorem `TauCeti.Contour.homologyCauchyTheorem`.
+
+This is Dixon's identity `TauCeti.Contour.dixonH2_eq_windingNumber_mul_f_of_nullHomologous`, with
+the Cauchy-type integral written as a contour integral. For a piecewise-`C¹` curve it is also the
+`k = 0` case of `TauCeti.Contour.cauchyIntegralFormula_iteratedDeriv_nullHomologous`. -/
 theorem cauchyIntegralFormula_nullHomologous {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
-    (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) (hγ : IsPiecewiseC1On γ a b)
+    (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b) (hnull : IsNullHomologous γ a b U)
     (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z))
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z * f z := by
-  simpa using cauchyIntegralFormula_iteratedDeriv_nullHomologous hU hf hγ hγU hclosed hnull
-    hoff 0
+  rw [← dixonH2_eq_windingNumber_mul_f_of_nullHomologous hU hf hγ hγU hclosed hnull hoff,
+    dixonH2_def]
+  exact intervalIntegral.integral_congr fun t _ ↦ by rw [smul_eq_mul, mul_comm]
 
 /-- **Cauchy's integral formula for the first derivative, homology form.** The `k = 1` case of
 `TauCeti.Contour.cauchyIntegralFormula_iteratedDeriv_nullHomologous`, stated with `deriv f z`:

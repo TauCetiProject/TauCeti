@@ -10,8 +10,8 @@ public import TauCeti.Analysis.Contour.Argument.CyclePV
 public import TauCeti.Analysis.Contour.Cauchy.HomologyFormula
 public import TauCeti.Analysis.Contour.Cycle.HungerbuhlerWasem
 public import TauCeti.Analysis.Contour.Cycle.Residue
-public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 public import TauCeti.Analysis.Contour.Winding.StarConvex
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 
 /-!
 # Contour integration in a star-shaped domain
@@ -23,8 +23,8 @@ with an open disc, half-plane, strip, open rectangle or slit plane, or with a co
 neighborhood of a rectangle or triangle, and a contour drawn inside it.
 
 `TauCeti.Contour.isNullHomologous_of_starConvex` closes that gap: a closed curve in a set that is
-star-shaped about some point is null-homologous there. This file records the resulting
-hypothesis-free statements:
+star-shaped about some point is null-homologous there. This file records the resulting statements,
+in which star-shapedness of the domain discharges the null-homology hypothesis:
 
 * Cauchy's theorem `∮_γ f = 0`, for an absolutely continuous curve and for a cycle, and its
   `Metric.ball` case;
@@ -41,8 +41,9 @@ hypothesis-free statements:
 In each the hypothesis `IsNullHomologous` disappears, replaced by star-shapedness and openness of
 the ambient domain. Star-shapedness is genuinely a hypothesis on the *domain*, not on the curve:
 nothing is asked of `γ` beyond the regularity that every statement of the tower already carries —
-absolute continuity for Cauchy's theorem along a curve, piecewise-`C¹` regularity for the other
-statements, and the immersion regularity where a principal value is taken.
+absolute continuity for Cauchy's theorem and Cauchy's integral formula along a curve,
+piecewise-`C¹` regularity for the integral formula for higher derivatives, the residue theorem and
+the argument principle, and the immersion regularity where a principal value is taken.
 
 The relation to the other route to null-homology,
 `TauCeti.Contour.isNullHomologous_of_pathHomotopy_refl`, is one-way: a star-shaped domain
@@ -60,12 +61,11 @@ The disc statements `TauCeti.Contour.cauchyTheorem_ball` and
 `TauCeti.Contour.cauchyIntegralFormula_ball`, with the star-shaped statements they specialise,
 reconcile Cauchy's theorem for a contractible contour with Mathlib's disc statements: Mathlib's
 disc Cauchy theory integrates over the bounding circle, and these extend it to an arbitrary closed
-curve inside the disc — absolutely continuous for Cauchy's theorem, piecewise `C¹` for the
-integral formula. The residue and argument statements make the null-homologous
-residue theorems, argument principle and Hungerbühler–Wasem theorem applicable to the classical
-settings — poles inside a circle, a simple pole *on* the contour contributing the half-residue, an
-improper integral along the real axis — which are posed on a disc or a half-plane, both
-star-shaped.
+absolutely continuous curve inside the disc. The residue and argument statements make the
+null-homologous residue theorems, argument principle and Hungerbühler–Wasem theorem applicable to
+the classical settings — poles inside a circle, a simple pole *on* the contour contributing the
+half-residue, an improper integral along the real axis — which are posed on a disc or a
+half-plane, both star-shaped.
 
 ## Main results
 
@@ -147,17 +147,17 @@ theorem cauchyIntegralFormula_iteratedDeriv_starConvex {z : ℂ} (hstar : StarCo
     (isNullHomologous_of_starConvex hstar hγ hclosed hγΩ) hoff k
 
 /-- **Cauchy's integral formula on a star-shaped open set.** For `f` holomorphic on an open `Ω`
-star-shaped about `x`, a closed piecewise-`C¹` curve `γ` in `Ω`, and `z` off the curve,
+star-shaped about `x`, a closed absolutely continuous curve `γ` in `Ω`, and `z` off the curve,
 
 `∫ t in a..b, γ' t • (f (γ t) / (γ t − z)) = 2πi · n_z(γ) · f z`. -/
 theorem cauchyIntegralFormula_starConvex {z : ℂ} (hstar : StarConvex ℝ x Ω) (hopen : IsOpen Ω)
-    (hf : DifferentiableOn ℂ f Ω) (hγ : IsPiecewiseC1On γ a b)
+    (hf : DifferentiableOn ℂ f Ω) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hclosed : γ a = γ b)
     (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z))
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z * f z :=
   cauchyIntegralFormula_nullHomologous hopen hf hγ hγΩ hclosed
-    (isNullHomologous_of_starConvex hstar hγ hclosed hγΩ) hoff
+    (hγ.isNullHomologous_of_starConvex hstar hclosed hγΩ) hoff
 
 /-- **Cauchy's integral formula on a disc, for the `k`-th derivative** — the `Metric.ball` case of
 `TauCeti.Contour.cauchyIntegralFormula_iteratedDeriv_starConvex`. -/
@@ -172,9 +172,10 @@ theorem cauchyIntegralFormula_iteratedDeriv_ball {c : ℂ} {r : ℝ} {z : ℂ}
     ((convex_ball c r).starConvex (hγr a left_mem_uIcc)) Metric.isOpen_ball hf hγ hγr hclosed hoff k
 
 /-- **Cauchy's integral formula on a disc** — the `Metric.ball` case of
-`TauCeti.Contour.cauchyIntegralFormula_starConvex`. -/
+`TauCeti.Contour.cauchyIntegralFormula_starConvex`, for a closed absolutely continuous curve inside
+the disc. -/
 theorem cauchyIntegralFormula_ball {c : ℂ} {r : ℝ} {z : ℂ}
-    (hf : DifferentiableOn ℂ f (Metric.ball c r)) (hγ : IsPiecewiseC1On γ a b)
+    (hf : DifferentiableOn ℂ f (Metric.ball c r)) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγr : ∀ t ∈ uIcc a b, γ t ∈ Metric.ball c r) (hclosed : γ a = γ b)
     (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z))

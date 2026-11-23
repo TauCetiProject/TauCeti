@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Contour.Dixon.Def
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Dixon.H1Diff
 import TauCeti.Analysis.Contour.Dixon.H2.Diff
-import TauCeti.Analysis.Contour.Winding.LocallyConstant
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
@@ -17,7 +17,7 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 Dixon's glued function `dixonFunction f U γ a b` — equal to `dixonH1` on `U` and `dixonH2` off `U`
 — is complex-differentiable on all of `ℂ` when `f` is holomorphic on the open set `U` and the
-curve `γ` lives in `U`, is null-homologous there, is closed, and is absolutely continuous. On `U`
+curve `γ` lives in `U`, is null-homologous there, and is absolutely continuous. On `U`
 it agrees with the holomorphic `dixonH1`; off `U` (hence off the curve) it agrees with the
 holomorphic `dixonH2`, and the two pieces match across `∂U` because the winding number vanishes
 there, so the `h₁`/`h₂` identity collapses.
@@ -25,8 +25,8 @@ there, so the `h₁`/`h₂` identity collapses.
 ## Main results
 
 * `TauCeti.Contour.differentiable_dixonFunction` — `dixonFunction f U γ a b` is entire for a
-  null-homologous closed curve. It is built from a private gluing core that takes the off-`U`
-  winding-vanishing hypothesis directly, which the null-homologous case then discharges.
+  null-homologous absolutely continuous curve. It is built from a private gluing core that takes
+  the off-`U` winding-vanishing hypothesis directly, which the null-homologous case then discharges.
 * `TauCeti.Contour.dixonFunction_eq_dixonH2_of_windingNumber_zero` — off the curve with winding
   number `0` and the Cauchy integrand integrable, `dixonFunction` equals `dixonH2` (the pointwise
   gluing fact used here and downstream).
@@ -121,14 +121,14 @@ continuous curve `γ` with image in `U` that is null-homologous in `U`, the glue
 `dixonFunction f U γ a b` is complex-differentiable on all of `ℂ`. Closedness of `γ` is not needed
 here: it follows from null-homology about any point outside `U`, and there is no such point when
 `U = ℂ`. This specialises `differentiable_dixonFunction_of_windingNumber_zero_near`, discharging
-its local winding hypothesis via `exists_ball_windingNumber_zero`. -/
+its local winding hypothesis via `AbsolutelyContinuousOnInterval.exists_ball_windingNumber_zero`. -/
 theorem differentiable_dixonFunction (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
     (h_null : IsNullHomologous γ a b U) :
     Differentiable ℂ (dixonFunction f U γ a b) :=
   differentiable_dixonFunction_of_windingNumber_zero_near hU hf hγ.continuousOn hγU
     hγ.intervalIntegrable_deriv_of_finiteDimensional
-    fun w hw ↦ exists_ball_windingNumber_zero hγ
+    fun w hw ↦ hγ.exists_ball_windingNumber_zero
       (fun t ht heq ↦ hw (heq ▸ hγU t ht)) ((isNullHomologous_iff.mp h_null) w hw)
 
 end
