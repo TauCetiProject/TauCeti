@@ -51,8 +51,7 @@ of the circle, while the ambient `Diff(N)`-action is postcomposition.
 * `TauCeti.isSmoothEmbedding_diffeomorph`: a diffeomorphism is a smooth embedding.
 * `TauCeti.isSmoothEmbedding_continuousLinearEquiv`: a continuous linear equivalence between normed
   spaces is a smooth embedding.
-* `Manifold.IsSmoothEmbedding.eq_diffeomorphOfRangeEq_iff` and
-  `TauCeti.SmoothEmbedding.eq_diffeomorphOfRangeEq_iff`: a diffeomorphism coincides with the
+* `Manifold.IsSmoothEmbedding.eq_diffeomorphOfRangeEq_iff`: a diffeomorphism coincides with the
   canonical equal-range comparison if and only if it intertwines the two embeddings.
 
 ## Main definitions
@@ -64,8 +63,7 @@ of the circle, while the ambient `Diff(N)`-action is postcomposition.
   diffeomorphism of its source.
 * `TauCeti.SmoothEmbedding.transDiffeomorph`: transport a bundled smooth embedding by a
   diffeomorphism of its target.
-* `Manifold.IsSmoothEmbedding.diffeomorphOfRangeEq` and
-  `TauCeti.SmoothEmbedding.diffeomorphOfRangeEq`: canonical `C^n` diffeomorphism between two
+* `Manifold.IsSmoothEmbedding.diffeomorphOfRangeEq`: canonical `C^n` diffeomorphism between two
   manifolds smoothly embedded onto the same subset of an ambient manifold.
 * the `MulAction (Diff J N n) (SmoothEmbedding I J n M N)` given by transport, and the
   reparametrisation action of `(Diff I M n)ᵐᵒᵖ`.
@@ -514,114 +512,6 @@ instance instSMulCommClassDiff [IsManifold I n M] [IsManifold J n N] :
   ⟨fun e a f => transDiffeomorph_compDiffeomorph f a.unop e⟩
 
 end Bundled
-
-section RangeEq
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
-  {H : Type*} [TopologicalSpace H]
-  {H' : Type*} [TopologicalSpace H']
-  {G' : Type*} [TopologicalSpace G']
-  {I : ModelWithCorners 𝕜 E H}
-  {J : ModelWithCorners 𝕜 E' H'}
-  {J' : ModelWithCorners 𝕜 F' G'}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-  {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
-  {n : ℕ∞ω}
-
-/-- Two bundled `C^n` smooth embeddings `f : SmoothEmbedding I J' n M N'` and
-`g : SmoothEmbedding J J' n N N'` with equal ranges induce a canonical `C^n` diffeomorphism
-`M ≃ₘ^n⟮I, J⟯ N`. -/
-noncomputable def diffeomorphOfRangeEq
-    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
-    (h : Set.range f = Set.range g) :
-    M ≃ₘ^n⟮I, J⟯ N :=
-  f.isSmoothEmbedding.diffeomorphOfRangeEq g.isSmoothEmbedding h
-
-/-- The underlying equivalence of `f.diffeomorphOfRangeEq g h` is `Equiv.ofRangeEq`. -/
-@[simp]
-theorem toEquiv_diffeomorphOfRangeEq
-    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
-    (h : Set.range f = Set.range g) :
-    (f.diffeomorphOfRangeEq g h).toEquiv =
-      Equiv.ofRangeEq f.isSmoothEmbedding.isEmbedding.injective
-        g.isSmoothEmbedding.isEmbedding.injective h :=
-  f.isSmoothEmbedding.toEquiv_diffeomorphOfRangeEq g.isSmoothEmbedding h
-
-/-- Applying `g` after `f.diffeomorphOfRangeEq g h` recovers `f`. -/
-@[simp]
-theorem apply_diffeomorphOfRangeEq
-    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
-    (h : Set.range f = Set.range g) (x : M) :
-    g (f.diffeomorphOfRangeEq g h x) = f x :=
-  f.isSmoothEmbedding.apply_diffeomorphOfRangeEq g.isSmoothEmbedding h x
-
-/-- Postcomposing `f.diffeomorphOfRangeEq g h` with `g` gives `f`. -/
-@[simp]
-theorem comp_diffeomorphOfRangeEq
-    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
-    (h : Set.range f = Set.range g) :
-    ⇑g ∘ ⇑(f.diffeomorphOfRangeEq g h) = ⇑f :=
-  funext (f.apply_diffeomorphOfRangeEq g h)
-
-/-- Applying `f` after the inverse of `f.diffeomorphOfRangeEq g h` recovers `g`.
-
-Not a `simp` lemma: `diffeomorphOfRangeEq_symm` and `apply_diffeomorphOfRangeEq` already
-rewrite the left-hand side to `g y`. -/
-theorem apply_diffeomorphOfRangeEq_symm
-    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
-    (h : Set.range f = Set.range g) (y : N) :
-    f ((f.diffeomorphOfRangeEq g h).symm y) = g y :=
-  f.isSmoothEmbedding.apply_diffeomorphOfRangeEq_symm g.isSmoothEmbedding h y
-
-/-- A `C^n` diffeomorphism `e : M ≃ₘ^n⟮I, J⟯ N` equals `f.diffeomorphOfRangeEq g h` if and
-only if it intertwines `g` and `f`, i.e. `g ∘ e = f`. -/
-theorem eq_diffeomorphOfRangeEq_iff
-    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
-    (h : Set.range f = Set.range g) (e : M ≃ₘ^n⟮I, J⟯ N) :
-    e = f.diffeomorphOfRangeEq g h ↔ ⇑g ∘ ⇑e = ⇑f :=
-  f.isSmoothEmbedding.eq_diffeomorphOfRangeEq_iff g.isSmoothEmbedding h e
-
-/-- `f.diffeomorphOfRangeEq g h x` equals `y` if and only if `f x = g y`. -/
-@[simp]
-theorem diffeomorphOfRangeEq_apply_eq_iff
-    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
-    (h : Set.range f = Set.range g) (x : M) (y : N) :
-    f.diffeomorphOfRangeEq g h x = y ↔ f x = g y :=
-  f.isSmoothEmbedding.diffeomorphOfRangeEq_apply_eq_iff g.isSmoothEmbedding h x y
-
-/-- Comparing a bundled smooth embedding with itself gives the identity diffeomorphism. -/
-@[simp]
-theorem diffeomorphOfRangeEq_self
-    (f : SmoothEmbedding I J' n M N') (h : Set.range f = Set.range f := rfl) :
-    f.diffeomorphOfRangeEq f h = _root_.Diffeomorph.refl I M n :=
-  f.isSmoothEmbedding.diffeomorphOfRangeEq_self h
-
-/-- The inverse of `f.diffeomorphOfRangeEq g h` is `g.diffeomorphOfRangeEq f h.symm`. -/
-@[simp]
-theorem diffeomorphOfRangeEq_symm
-    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
-    (h : Set.range f = Set.range g) :
-    (f.diffeomorphOfRangeEq g h).symm = g.diffeomorphOfRangeEq f h.symm :=
-  f.isSmoothEmbedding.diffeomorphOfRangeEq_symm g.isSmoothEmbedding h
-
-/-- Composing two canonical equal-range comparisons gives the direct equal-range comparison. -/
-@[simp]
-theorem diffeomorphOfRangeEq_trans
-    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
-    {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
-    {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
-    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
-    (k : SmoothEmbedding K J' n P N')
-    (h₁ : Set.range f = Set.range g) (h₂ : Set.range g = Set.range k) :
-    (f.diffeomorphOfRangeEq g h₁).trans (g.diffeomorphOfRangeEq k h₂) =
-      f.diffeomorphOfRangeEq k (h₁.trans h₂) :=
-  f.isSmoothEmbedding.diffeomorphOfRangeEq_trans g.isSmoothEmbedding k.isSmoothEmbedding h₁ h₂
-
-end RangeEq
 
 end SmoothEmbedding
 
