@@ -31,7 +31,8 @@ derivative is `D²γ(h, k) ν`. The second-order chain rule through it
 
 `D²(w ∘ φ)(y)(h, k) = D²w(φ y)(h + Dγ(y) h ν, k + Dγ(y) k ν) + D²γ(y)(h, k) Dw(φ y) ν`,
 
-which gives Hölder and sup bounds for `D²(w ∘ φ)` from those of `Dw`, `D²w`, `Dγ` and `D²γ`
+which, for `w` with values in any real normed space, gives Hölder and sup bounds for
+`D²(w ∘ φ)` from those of `Dw`, `D²w`, `Dγ` and `D²γ`
 (`TauCeti.holderOnWith_fderiv_fderiv_comp_shear`, `TauCeti.norm_fderiv_fderiv_comp_shear_le`).
 A shear by a `G`-Lipschitz function is `(1 + G)`-Lipschitz (`TauCeti.lipschitzWith_shear`), so
 composing with it preserves Hölder continuity (`TauCeti.holderOnWith_comp_shear`).
@@ -161,70 +162,113 @@ theorem fderiv_fderiv_shear_apply {y : E} (hγ : ContDiffAt ℝ 2 γ y) (h k : E
     funext fun _ => fderiv_fun_id
   simp [h0]
 
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
 /-- **The second-order chain rule through a shear.** For `φ z = z + γ z • ν`, the second
 derivative of `w ∘ φ` is `D²w(φ y)(h + Dγ(y) h ν, k + Dγ(y) k ν) + D²γ(y)(h, k) Dw(φ y) ν`. -/
-theorem fderiv_fderiv_comp_shear_apply {w : E → ℝ} {y : E}
+theorem fderiv_fderiv_comp_shear_apply {w : E → F} {y : E}
     (hw : ContDiffAt ℝ 2 w (y + γ y • ν)) (hγ : ContDiffAt ℝ 2 γ y) (h k : E) :
     fderiv ℝ (fderiv ℝ (w ∘ fun z => z + γ z • ν)) y h k =
       fderiv ℝ (fderiv ℝ w) (y + γ y • ν) (h + fderiv ℝ γ y h • ν) (k + fderiv ℝ γ y k • ν) +
-        fderiv ℝ (fderiv ℝ γ) y h k * fderiv ℝ w (y + γ y • ν) ν := by
+        fderiv ℝ (fderiv ℝ γ) y h k • fderiv ℝ w (y + γ y • ν) ν := by
   have hφ : ContDiffAt ℝ 2 (fun z => z + γ z • ν) y := contDiffAt_fun_id.add
     (hγ.smul contDiffAt_const)
   rw [fderiv_fderiv_comp_apply (φ := fun z => z + γ z • ν) (b := y) hw hφ,
     (hasFDerivAt_shear (hγ.differentiableAt two_ne_zero)).fderiv, fderiv_fderiv_shear_apply hγ]
-  simp [map_smul, smul_eq_mul]
+  simp [map_smul]
 
-/-- The second derivative through a shear, as a bilinear map. -/
-theorem fderiv_fderiv_comp_shear {w : E → ℝ} {y : E}
+/-- The second derivative through a shear, as a bilinear map. The second term is
+`(h, k) ↦ D²γ(y)(h, k) Dw(φ y) ν`. -/
+theorem fderiv_fderiv_comp_shear {w : E → F} {y : E}
     (hw : ContDiffAt ℝ 2 w (y + γ y • ν)) (hγ : ContDiffAt ℝ 2 γ y) :
     fderiv ℝ (fderiv ℝ (w ∘ fun z => z + γ z • ν)) y =
       (fderiv ℝ (fderiv ℝ w) (y + γ y • ν)).bilinearComp
           (ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν)
           (ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν) +
-        fderiv ℝ w (y + γ y • ν) ν • fderiv ℝ (fderiv ℝ γ) y := by
+        ((StrongDual.smulRightL ℝ E F).flip (fderiv ℝ w (y + γ y • ν) ν)).comp
+          (fderiv ℝ (fderiv ℝ γ) y) := by
   ext h k
-  simp [fderiv_fderiv_comp_shear_apply hw hγ, mul_comm]
+  simp [fderiv_fderiv_comp_shear_apply hw hγ]
+
+/-- The bilinear map `(h, k) ↦ B h k • c` has norm at most `‖c‖ ‖B‖`. -/
+private theorem norm_smulRightL_flip_comp_le (c : F) (B : E →L[ℝ] E →L[ℝ] ℝ) :
+    ‖((StrongDual.smulRightL ℝ E F).flip c).comp B‖ ≤ ‖c‖ * ‖B‖ :=
+  ContinuousLinearMap.opNorm_le_bound₂ _ (by positivity) fun h k => by
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+      ContinuousLinearMap.smulRightL_apply_apply, ContinuousLinearMap.smulRight_apply, norm_smul]
+    calc ‖B h k‖ * ‖c‖ ≤ ‖B‖ * ‖h‖ * ‖k‖ * ‖c‖ := by gcongr; exact B.le_opNorm₂ h k
+      _ = _ := by ring
+
+/-- The bilinear maps `(h, k) ↦ B x h k • c x` form a Hölder family when `c` and `B` are Hölder
+and bounded on `s`. -/
+private theorem holderOnWith_smulRightL_flip_comp {X : Type*} [PseudoMetricSpace X]
+    {α Kc KB Mc MB : ℝ≥0} {c : X → F} {B : X → E →L[ℝ] E →L[ℝ] ℝ} {s : Set X}
+    (hc : HolderOnWith Kc α c s) (hB : HolderOnWith KB α B s) (hcn : ∀ x ∈ s, ‖c x‖ ≤ Mc)
+    (hBn : ∀ x ∈ s, ‖B x‖ ≤ MB) :
+    HolderOnWith (Mc * KB + MB * Kc) α
+      (fun x => ((StrongDual.smulRightL ℝ E F).flip (c x)).comp (B x)) s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have hsplit : ((StrongDual.smulRightL ℝ E F).flip (c x)).comp (B x) -
+      ((StrongDual.smulRightL ℝ E F).flip (c y)).comp (B y) =
+      ((StrongDual.smulRightL ℝ E F).flip (c x)).comp (B x - B y) +
+        ((StrongDual.smulRightL ℝ E F).flip (c x - c y)).comp (B y) := by
+    ext h k
+    simp
+  have hcd := hc.dist_le hx hy
+  have hBd := hB.dist_le hx hy
+  rw [dist_eq_norm (c x)] at hcd
+  rw [dist_eq_norm (B x)] at hBd
+  rw [dist_eq_norm, hsplit]
+  refine (norm_add_le (E := E →L[ℝ] E →L[ℝ] F) _ _).trans ?_
+  refine (add_le_add (norm_smulRightL_flip_comp_le _ _) (norm_smulRightL_flip_comp_le _ _)).trans ?_
+  calc _ ≤ Mc * (KB * dist x y ^ (α : ℝ)) + Kc * dist x y ^ (α : ℝ) * MB := by
+        have := hcn x hx
+        have := hBn y hy
+        gcongr
+    _ = _ := by push_cast; ring
 
 /-- **Hölder continuity of second derivatives through a shear.** For `φ z = z + γ z • ν` with
-`‖ν‖ ≤ 1`, if on `s` the derivatives `Dγ` and `D²γ` are bounded by `G`, `Dγ` is Hölder with
-constant `G₁` and `D²γ` with constant `G`, and `Dw ∘ φ`, `D²w ∘ φ` are bounded by `N` and Hölder
-with constants `H` and `V`, then `D²(w ∘ φ)` is Hölder on `s`. -/
-theorem holderOnWith_fderiv_fderiv_comp_shear (hν : ‖ν‖ ≤ 1) {w : E → ℝ} {s : Set E}
-    {α G G₁ N V H : ℝ≥0} (hγ : ∀ y ∈ s, ContDiffAt ℝ 2 γ y)
+`‖ν‖ ≤ 1`, if on `s` the derivatives `Dγ` and `D²γ` are bounded by `G₁` and `G₂` and Hölder with
+constants `K₁` and `K₂`, and `Dw ∘ φ`, `D²w ∘ φ` are bounded by `N₁` and `N₂` and Hölder with
+constants `H` and `V`, then `D²(w ∘ φ)` is Hölder on `s`. -/
+theorem holderOnWith_fderiv_fderiv_comp_shear (hν : ‖ν‖ ≤ 1) {w : E → F} {s : Set E}
+    {α G₁ G₂ K₁ K₂ N₁ N₂ V H : ℝ≥0} (hγ : ∀ y ∈ s, ContDiffAt ℝ 2 γ y)
     (hw : ∀ y ∈ s, ContDiffAt ℝ 2 w (y + γ y • ν))
-    (hG1 : ∀ y ∈ s, ‖fderiv ℝ γ y‖ ≤ G) (hG2 : ∀ y ∈ s, ‖fderiv ℝ (fderiv ℝ γ) y‖ ≤ G)
-    (hH1 : HolderOnWith G₁ α (fderiv ℝ γ) s) (hH2 : HolderOnWith G α (fderiv ℝ (fderiv ℝ γ)) s)
-    (hN1 : ∀ y ∈ s, ‖fderiv ℝ w (y + γ y • ν)‖ ≤ N)
-    (hN2 : ∀ y ∈ s, ‖fderiv ℝ (fderiv ℝ w) (y + γ y • ν)‖ ≤ N)
+    (hG1 : ∀ y ∈ s, ‖fderiv ℝ γ y‖ ≤ G₁) (hG2 : ∀ y ∈ s, ‖fderiv ℝ (fderiv ℝ γ) y‖ ≤ G₂)
+    (hK1 : HolderOnWith K₁ α (fderiv ℝ γ) s) (hK2 : HolderOnWith K₂ α (fderiv ℝ (fderiv ℝ γ)) s)
+    (hN1 : ∀ y ∈ s, ‖fderiv ℝ w (y + γ y • ν)‖ ≤ N₁)
+    (hN2 : ∀ y ∈ s, ‖fderiv ℝ (fderiv ℝ w) (y + γ y • ν)‖ ≤ N₂)
     (hV : HolderOnWith V α (fun y => fderiv ℝ (fderiv ℝ w) (y + γ y • ν)) s)
     (hH : HolderOnWith H α (fun y => fderiv ℝ w (y + γ y • ν)) s) :
-    HolderOnWith (V * (1 + G) * (1 + G) + N * G₁ * (1 + G) + N * (1 + G) * G₁ + (N * G + G * H))
+    HolderOnWith
+      (V * (1 + G₁) * (1 + G₁) + N₂ * K₁ * (1 + G₁) + N₂ * (1 + G₁) * K₁ + (N₁ * K₂ + G₂ * H))
       α (fderiv ℝ (fderiv ℝ (w ∘ fun z => z + γ z • ν))) s := by
-  have hS := holderOnWith_id_add_smulRight hν hH1
+  have hS := holderOnWith_id_add_smulRight hν hK1
   have hSb (y : E) (hy : y ∈ s) := norm_id_add_smulRight_le hν (hG1 y hy)
   have h1 := ContinuousLinearMap.holderOnWith_bilinearComp hV hS hS hN2 hSb hSb
   have hc : HolderOnWith H α (fun y => fderiv ℝ w (y + γ y • ν) ν) s :=
     hH.clm_apply_of_norm_le_one hν
-  have hcb (y : E) (hy : y ∈ s) : ‖fderiv ℝ w (y + γ y • ν) ν‖ ≤ N :=
+  have hcb (y : E) (hy : y ∈ s) : ‖fderiv ℝ w (y + γ y • ν) ν‖ ≤ N₁ :=
     ((fderiv ℝ w _).unit_le_opNorm ν hν).trans (hN1 y hy)
-  have h2 := hc.smul_of_norm_le hH2 hcb hG2
+  have h2 := holderOnWith_smulRightL_flip_comp hc hK2 hcb hG2
   exact (h1.add h2).congr fun y hy => (fderiv_fderiv_comp_shear (hw y hy) (hγ y hy)).symm
 
-/-- The bound `‖D²(w ∘ φ)‖ ≤ N (1 + G)² + N G` for the shear `φ z = z + γ z • ν`. -/
-theorem norm_fderiv_fderiv_comp_shear_le (hν : ‖ν‖ ≤ 1) {w : E → ℝ} {y : E} {G N : ℝ≥0}
+/-- The bound `‖D²(w ∘ φ)‖ ≤ N₂ (1 + G₁)² + N₁ G₂` for the shear `φ z = z + γ z • ν`. -/
+theorem norm_fderiv_fderiv_comp_shear_le (hν : ‖ν‖ ≤ 1) {w : E → F} {y : E} {G₁ G₂ N₁ N₂ : ℝ≥0}
     (hγ : ContDiffAt ℝ 2 γ y) (hw : ContDiffAt ℝ 2 w (y + γ y • ν))
-    (hG1 : ‖fderiv ℝ γ y‖ ≤ G) (hG2 : ‖fderiv ℝ (fderiv ℝ γ) y‖ ≤ G)
-    (hN1 : ‖fderiv ℝ w (y + γ y • ν)‖ ≤ N) (hN2 : ‖fderiv ℝ (fderiv ℝ w) (y + γ y • ν)‖ ≤ N) :
-    ‖fderiv ℝ (fderiv ℝ (w ∘ fun z => z + γ z • ν)) y‖ ≤ N * (1 + G) * (1 + G) + N * G := by
+    (hG1 : ‖fderiv ℝ γ y‖ ≤ G₁) (hG2 : ‖fderiv ℝ (fderiv ℝ γ) y‖ ≤ G₂)
+    (hN1 : ‖fderiv ℝ w (y + γ y • ν)‖ ≤ N₁) (hN2 : ‖fderiv ℝ (fderiv ℝ w) (y + γ y • ν)‖ ≤ N₂) :
+    ‖fderiv ℝ (fderiv ℝ (w ∘ fun z => z + γ z • ν)) y‖ ≤
+      N₂ * (1 + G₁) * (1 + G₁) + N₁ * G₂ := by
   have hSb := norm_id_add_smulRight_le hν hG1
-  have hc : ‖fderiv ℝ w (y + γ y • ν) ν‖ ≤ N :=
+  have hc : ‖fderiv ℝ w (y + γ y • ν) ν‖ ≤ N₁ :=
     ((fderiv ℝ w _).unit_le_opNorm ν hν).trans hN1
   rw [fderiv_fderiv_comp_shear hw hγ]
-  refine (norm_add_le (_ : E →L[ℝ] E →L[ℝ] ℝ) _).trans (add_le_add ?_ ?_)
+  refine (norm_add_le (_ : E →L[ℝ] E →L[ℝ] F) _).trans (add_le_add ?_ ?_)
   · refine (ContinuousLinearMap.norm_bilinearComp_le _ _ _).trans ?_
     push_cast at hSb ⊢
     gcongr
-  · refine (ContinuousLinearMap.opNorm_smul_le _ _).trans ?_
+  · refine (norm_smulRightL_flip_comp_le _ _).trans ?_
     gcongr
 
 end Derivative
