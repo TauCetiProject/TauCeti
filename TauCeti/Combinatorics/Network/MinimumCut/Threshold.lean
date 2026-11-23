@@ -39,6 +39,11 @@ least `k`.  The equality alternative is necessary because `pairMinimumValue f s 
 def ThresholdRelated (f : Finset V → K) (k : K) (s t : V) : Prop :=
   s = t ∨ k ≤ pairMinimumValue f s t
 
+@[simp]
+theorem thresholdRelated_iff (f : Finset V → K) (k : K) (s t : V) :
+    ThresholdRelated f k s t ↔ s = t ∨ k ≤ pairMinimumValue f s t :=
+  Iff.rfl
+
 /-- Threshold relatedness is an equivalence relation whenever the minimum cut value is
 symmetric. -/
 theorem thresholdRelated_equivalence
