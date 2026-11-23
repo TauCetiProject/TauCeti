@@ -28,8 +28,6 @@ expression is alternating for every `u`, and it is `2·Im L_u(x)(v, w)` as soon 
 
 ## Main definitions
 
-* `TauCeti.imLeviFormCLM f x`: the imaginary part of the Levi form of `f : V → ℝ` at `x`, as a
-  continuous real bilinear form.
 * `TauCeti.ddbarForm E u`: the real two-form `i∂∂bar u`.
 
 ## Main results
@@ -37,7 +35,7 @@ expression is alternating for every `u`, and it is `2·Im L_u(x)(v, w)` as soon 
 * `TauCeti.ddbarForm_apply_of_contMDiffAt`: `(i∂∂bar u)(v, w) = 2·Im L_u(v, w)` for `C²` `u`.
 * `TauCeti.ddbarForm_apply_I_smul`: `i∂∂bar u` is invariant under the complex structure, that is,
   of type (1,1).
-* `TauCeti.ddbarForm_hermitianForm`: the Hermitian form
+* `TauCeti.mk_ddbarForm_apply_eq_two_mul_manifoldLeviForm`: the Hermitian form
   `(i∂∂bar u)(v, J w) + i·(i∂∂bar u)(v, w)` of `i∂∂bar u` is `2·L_u`.
 * `TauCeti.ddbarForm_apply_of_mem_maximalAtlas`: `i∂∂bar u` may be computed in any holomorphic
   chart.
@@ -64,49 +62,6 @@ noncomputable section
 
 namespace TauCeti
 
-section ModelSpace
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {f : V → ℝ}
-
-/-- The imaginary part `(v, w) ↦ Im L_f(x)(v, w)` of the Levi form of `f : V → ℝ` at `x`, as a
-continuous real bilinear form: `(D²f(I • v, w) - D²f(v, I • w)) / 4`. -/
-def imLeviFormCLM (f : V → ℝ) (x : V) : V →L[ℝ] V →L[ℝ] ℝ :=
-  (4 : ℝ)⁻¹ • ((fderiv ℝ (fderiv ℝ f) x).comp (ContinuousLinearMap.lsmul ℝ ℂ I) -
-    ((fderiv ℝ (fderiv ℝ f) x).flip.comp (ContinuousLinearMap.lsmul ℝ ℂ I)).flip)
-
-/-- The bilinear form `TauCeti.imLeviFormCLM f x` is the imaginary part of the Levi form. -/
-@[simp]
-theorem imLeviFormCLM_apply (f : V → ℝ) (x v w : V) :
-    imLeviFormCLM f x v w = (leviForm f x v w).im := by
-  rw [im_leviForm_apply]
-  simp [imLeviFormCLM]
-  ring
-
-/-- On an open set where `f` is `C²`, the imaginary part of its Levi form depends continuously on
-the point. -/
-theorem continuousOn_imLeviFormCLM {s : Set V} (hs : IsOpen s) (hf : ContDiffOn ℝ 2 f s) :
-    ContinuousOn (imLeviFormCLM f) s := by
-  have hD : ContinuousOn (fun x ↦ fderiv ℝ (fderiv ℝ f) x) s :=
-    (hf.fderiv_of_isOpen hs (by norm_num)).continuousOn_fderiv_of_isOpen hs le_rfl
-  have hflip := (ContinuousLinearMap.flipₗᵢ ℝ V V ℝ).continuous
-  have hJ : ContinuousOn (fun _ : V ↦ (ContinuousLinearMap.lsmul ℝ ℂ I : V →L[ℝ] V)) s :=
-    continuousOn_const
-  have h1 : ContinuousOn (fun x ↦ (fderiv ℝ (fderiv ℝ f) x).comp
-      (ContinuousLinearMap.lsmul ℝ ℂ I : V →L[ℝ] V)) s :=
-    hD.clm_comp hJ
-  have h2 : ContinuousOn (fun x ↦ ((fderiv ℝ (fderiv ℝ f) x).flip.comp
-      (ContinuousLinearMap.lsmul ℝ ℂ I : V →L[ℝ] V)).flip) s :=
-    hflip.comp_continuousOn ((hflip.comp_continuousOn hD).clm_comp hJ)
-  exact (h1.sub h2).const_smul (4 : ℝ)⁻¹
-
-/-- The imaginary part of the Levi form of a constant function vanishes. -/
-@[simp]
-theorem imLeviFormCLM_const (c : ℝ) (x : V) : imLeviFormCLM (fun _ : V ↦ c) x = 0 := by
-  ext v w
-  simp [imLeviFormCLM]
-
-end ModelSpace
-
 variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace M]
   [ChartedSpace E M] {u w : M → ℝ} {x : M}
 
@@ -118,6 +73,13 @@ equals `2·Im L_u(x)(v, w)` when `u` is `C²` at `x` (`TauCeti.ddbarForm_apply_o
 def ddbarForm (u : M → ℝ) : RoughForm 𝓘(ℝ, E) M ℝ 2 := fun x ↦
   ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
     (imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x))
+
+/-- `i∂∂bar u` at `x` is the alternation of the imaginary part of the Levi form of the coordinate
+expression of `u` in the preferred chart at `x`. -/
+theorem ddbarForm_def (u : M → ℝ) (x : M) :
+    ddbarForm E u x = ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
+      (imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x)) :=
+  (rfl)
 
 /-- The value of `i∂∂bar u` on two tangent vectors, in terms of the Levi form. -/
 theorem ddbarForm_apply (u : M → ℝ) (x : M) (v : Fin 2 → E) :
@@ -152,7 +114,8 @@ theorem ddbarForm_apply_I_smul (u : M → ℝ) (x : M) (v w : E) :
 /-- **The Hermitian form of `i∂∂bar u` is `2·L_u`.** For `u` which is `C²` at `x`, the Hermitian
 form `H(v, w) = (i∂∂bar u)(v, J w) + i·(i∂∂bar u)(v, w)` of the real (1,1)-form `i∂∂bar u` at `x`
 is twice the Levi form of `u` at `x`. -/
-theorem ddbarForm_hermitianForm (hu : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 u x) (v w : E) :
+theorem mk_ddbarForm_apply_eq_two_mul_manifoldLeviForm (hu : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 u x)
+    (v w : E) :
     (⟨ddbarForm E u x ![v, I • w], ddbarForm E u x ![v, w]⟩ : ℂ) =
       2 * manifoldLeviForm E u x v w := by
   rw [ddbarForm_apply_of_contMDiffAt hu, ddbarForm_apply_of_contMDiffAt hu]
@@ -161,10 +124,7 @@ theorem ddbarForm_hermitianForm (hu : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 u x) 
 /-- `i∂∂bar u` at `x` depends only on the germ of `u` at `x`. -/
 theorem ddbarForm_congr_of_eventuallyEq (h : u =ᶠ[𝓝 x] w) :
     ddbarForm E u x = ddbarForm E w x := by
-  change ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
-      (imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x)) =
-    ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
-      (imLeviFormCLM (w ∘ (chartAt E x).symm) (chartAt E x x))
+  rw [ddbarForm_def, ddbarForm_def]
   congr 1
   ext a b
   rw [imLeviFormCLM_apply, imLeviFormCLM_apply, ← manifoldLeviForm_def, ← manifoldLeviForm_def,
@@ -174,57 +134,46 @@ theorem ddbarForm_congr_of_eventuallyEq (h : u =ᶠ[𝓝 x] w) :
 @[simp]
 theorem ddbarForm_const (c : ℝ) : ddbarForm E (fun _ : M ↦ c) = 0 := by
   funext x
-  change ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
-    (imLeviFormCLM ((fun _ : M ↦ c) ∘ (chartAt E x).symm) (chartAt E x x)) = 0
-  simp only [Function.comp_def, imLeviFormCLM_const, map_zero]
+  simp only [ddbarForm_def, Function.comp_def, imLeviFormCLM_const]
+  exact map_zero _
 
 /-- **The sum rule** `i∂∂bar (u + w) = i∂∂bar u + i∂∂bar w` at a point where both functions are
 `C²`. -/
 theorem ddbarForm_add (hu : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 u x)
     (hw : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 w x) :
     ddbarForm E (u + w) x = ddbarForm E u x + ddbarForm E w x := by
-  change ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
-      (imLeviFormCLM ((u + w) ∘ (chartAt E x).symm) (chartAt E x x)) =
-    ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
-        (imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x)) +
-      ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
-        (imLeviFormCLM (w ∘ (chartAt E x).symm) (chartAt E x x))
-  rw [← map_add]
-  congr 1
-  ext a b
-  simp only [add_apply, imLeviFormCLM_apply, ← manifoldLeviForm_def,
-    manifoldLeviForm_add hu hw, LinearMap.add_apply, add_im]
+  have h : imLeviFormCLM ((u + w) ∘ (chartAt E x).symm) (chartAt E x x) =
+      imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x) +
+        imLeviFormCLM (w ∘ (chartAt E x).symm) (chartAt E x x) := by
+    ext a b
+    simp only [add_apply, imLeviFormCLM_apply, ← manifoldLeviForm_def,
+      manifoldLeviForm_add hu hw, LinearMap.add_apply, add_im]
+  rw [ddbarForm_def, ddbarForm_def, ddbarForm_def, h]
+  exact map_add _ _ _
 
 /-- `i∂∂bar (-u) = -i∂∂bar u`. -/
 @[simp]
 theorem ddbarForm_neg (u : M → ℝ) : ddbarForm E (-u) = -ddbarForm E u := by
   funext x
-  change ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
-      (imLeviFormCLM ((-u) ∘ (chartAt E x).symm) (chartAt E x x)) =
-    -ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
-        (imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x))
-  rw [← map_neg]
-  congr 1
-  ext a b
-  simp only [neg_apply, imLeviFormCLM_apply, ← manifoldLeviForm_def,
-    manifoldLeviForm_neg, LinearMap.neg_apply, neg_im]
+  have h : imLeviFormCLM ((-u) ∘ (chartAt E x).symm) (chartAt E x x) =
+      -imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x) := by
+    ext a b
+    simp only [neg_apply, imLeviFormCLM_apply, ← manifoldLeviForm_def,
+      manifoldLeviForm_neg, LinearMap.neg_apply, neg_im]
+  rw [Pi.neg_apply, ddbarForm_def, ddbarForm_def, h]
+  exact map_neg _ _
 
 /-- `i∂∂bar (a • u) = a • i∂∂bar u` for a real constant `a`. -/
 @[simp]
 theorem ddbarForm_smul (a : ℝ) (u : M → ℝ) : ddbarForm E (a • u) = a • ddbarForm E u := by
   funext x
-  have h (y : M) : manifoldLeviForm E (a • u) y = (a : ℂ) • manifoldLeviForm E u y := by
-    rw [manifoldLeviForm_def, manifoldLeviForm_def, ← leviForm_smul]
-    rfl
-  change ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
-      (imLeviFormCLM ((a • u) ∘ (chartAt E x).symm) (chartAt E x x)) =
-    a • ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
-        (imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x))
-  rw [← map_smul]
-  congr 1
-  ext b c
-  simp only [smul_apply, imLeviFormCLM_apply, ← manifoldLeviForm_def, h,
-    LinearMap.smul_apply, smul_eq_mul, im_ofReal_mul]
+  have h : imLeviFormCLM ((a • u) ∘ (chartAt E x).symm) (chartAt E x x) =
+      a • imLeviFormCLM (u ∘ (chartAt E x).symm) (chartAt E x x) := by
+    ext b c
+    simp only [smul_apply, imLeviFormCLM_apply, ← manifoldLeviForm_def, manifoldLeviForm_smul,
+      LinearMap.smul_apply, smul_eq_mul, im_ofReal_mul]
+  rw [Pi.smul_apply, ddbarForm_def, ddbarForm_def, h]
+  exact map_smul _ _ _
 
 /-! ### Charts and continuity -/
 
@@ -267,10 +216,7 @@ theorem inChartAt_ddbarForm [IsManifold 𝓘(ℂ, E) 2 M] (hu : ContMDiff 𝓘(�
     have h := MDifferentiableAt.mfderiv_restrictScalars ℝ hmd
     rw [ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf ℝ (E := E) (E' := E)
       (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) c y)] at h
-    generalize hJ : 𝓘(ℂ, E).restrictScalars ℝ = J at h
-    rw [modelWithCornersSelf_restrictScalars] at hJ
-    subst hJ
-    exact h
+    rwa [modelWithCornersSelf_restrictScalars] at h
   -- So the complex derivative of the chart at `y` inverts the real derivative of its inverse.
   have hinv (v : E) : mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) c y
       (mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x₀).symm (range 𝓘(ℝ, E)) z v) = v := by

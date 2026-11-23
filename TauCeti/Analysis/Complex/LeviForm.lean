@@ -54,6 +54,8 @@ function.
 ## Main definitions
 
 * `TauCeti.leviForm f x`: the Levi form of `f : V → ℝ` at `x`.
+* `TauCeti.imLeviFormCLM f x`: the imaginary part of the Levi form of `f` at `x`, as a continuous
+  real bilinear form.
 
 ## Main results
 
@@ -138,6 +140,43 @@ theorem im_leviForm_apply (f : V → ℝ) (x v w : V) :
     (leviForm f x v w).im =
       (fderiv ℝ (fderiv ℝ f) x (I • v) w - fderiv ℝ (fderiv ℝ f) x v (I • w)) / 4 := by
   simp [leviForm_def]
+
+/-- The imaginary part `(v, w) ↦ Im L_f(x)(v, w)` of the Levi form of `f : V → ℝ` at `x`, as a
+continuous real bilinear form: `(D²f(I • v, w) - D²f(v, I • w)) / 4`. -/
+noncomputable def imLeviFormCLM (f : V → ℝ) (x : V) : V →L[ℝ] V →L[ℝ] ℝ :=
+  (4 : ℝ)⁻¹ • ((fderiv ℝ (fderiv ℝ f) x).comp (ContinuousLinearMap.lsmul ℝ ℂ I) -
+    ((fderiv ℝ (fderiv ℝ f) x).flip.comp (ContinuousLinearMap.lsmul ℝ ℂ I)).flip)
+
+/-- The bilinear form `TauCeti.imLeviFormCLM f x` is the imaginary part of the Levi form. -/
+@[simp]
+theorem imLeviFormCLM_apply (f : V → ℝ) (x v w : V) :
+    imLeviFormCLM f x v w = (leviForm f x v w).im := by
+  rw [im_leviForm_apply]
+  simp [imLeviFormCLM]
+  ring
+
+/-- On an open set where `f` is `C²`, the imaginary part of its Levi form depends continuously on
+the point. -/
+theorem continuousOn_imLeviFormCLM {s : Set V} (hs : IsOpen s) (hf : ContDiffOn ℝ 2 f s) :
+    ContinuousOn (imLeviFormCLM f) s := by
+  have hD : ContinuousOn (fun x ↦ fderiv ℝ (fderiv ℝ f) x) s :=
+    (hf.fderiv_of_isOpen hs (by norm_num)).continuousOn_fderiv_of_isOpen hs le_rfl
+  have hflip := (ContinuousLinearMap.flipₗᵢ ℝ V V ℝ).continuous
+  have hJ : ContinuousOn (fun _ : V ↦ (ContinuousLinearMap.lsmul ℝ ℂ I : V →L[ℝ] V)) s :=
+    continuousOn_const
+  have h1 : ContinuousOn (fun x ↦ (fderiv ℝ (fderiv ℝ f) x).comp
+      (ContinuousLinearMap.lsmul ℝ ℂ I : V →L[ℝ] V)) s :=
+    hD.clm_comp hJ
+  have h2 : ContinuousOn (fun x ↦ ((fderiv ℝ (fderiv ℝ f) x).flip.comp
+      (ContinuousLinearMap.lsmul ℝ ℂ I : V →L[ℝ] V)).flip) s :=
+    hflip.comp_continuousOn ((hflip.comp_continuousOn hD).clm_comp hJ)
+  exact (h1.sub h2).const_smul (4 : ℝ)⁻¹
+
+/-- The imaginary part of the Levi form of a constant function vanishes. -/
+@[simp]
+theorem imLeviFormCLM_const (c : ℝ) (x : V) : imLeviFormCLM (fun _ : V ↦ c) x = 0 := by
+  ext v w
+  simp [imLeviFormCLM]
 
 /-- **The diagonal of the Levi form.** For a `C²` function, `leviForm f x v v` is the real number
 `(Hess f(v, v) + Hess f(I • v, I • v)) / 4`. -/
