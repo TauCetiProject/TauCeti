@@ -147,7 +147,7 @@ theorem poissonBracket_eq_of_mpullback_eq [FiniteDimensional ℝ E] (hσ : σ.Is
     η.poissonBracket F G (p z) = σ.poissonBracket f g (i z) := by
   obtain ⟨Y, hY⟩ := htan
   -- `{F, G} = dF(X_G) = dF(dp Y) = d(F ∘ p)(Y) = d(f ∘ i)(Y) = df(X_g) = {f, g}`.
-  rw [hη.poissonBracket_eq_mvfderiv, hσ.poissonBracket_eq_mvfderiv,
+  rw [η.poissonBracket_eq_mvfderiv, σ.poissonBracket_eq_mvfderiv,
     ← hη.mfderiv_eq_hamiltonianVectorField_of_mpullback_eq hi hp hpi
       (hσ.isHamiltonianVectorField_hamiltonianVectorField g) hgG hg hG hsurj hY,
     ← mvfderiv_comp_apply z hF ((hp z).mdifferentiableAt (by simp)), ← hfF,

@@ -325,6 +325,18 @@ theorem baseChangeTowerAlgEquiv_symm_tmul (m : M) (a : A) :
   (baseChangeTowerAlgEquiv K L A M).symm_apply_eq.mpr <| by
     rw [baseChangeTowerAlgEquiv_tmul, one_smul]
 
+/-- `M ⊗[K] A` is the base change of `L ⊗[K] A` along `L → M`: the inverse tower comparison sends
+the image of `x ∈ L ⊗[K] A` under the scalar map `L → M` to `1 ⊗ x`. -/
+theorem _root_.Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor (x : L ⊗[K] A) :
+    (baseChangeTowerAlgEquiv K L A M).symm
+        (Algebra.TensorProduct.rTensor A (IsScalarTower.toAlgHom K L M) x) =
+      (1 : M) ⊗ₜ[L] x := by
+  induction x with
+  | tmul l a =>
+    simp [Algebra.algebraMap_eq_smul_one, _root_.TensorProduct.smul_tmul,
+      _root_.TensorProduct.smul_tmul']
+  | add x y hx hy => simp only [map_add, _root_.TensorProduct.tmul_add, hx, hy]
+
 /-- Collapsing a scalar-extension tower in both tensor factors commutes with distributing
 scalar extension over their tensor product, as an equality of algebra maps. -/
 theorem map_baseChangeTowerAlgEquiv_comp_baseChangeTensorAlgEquiv :

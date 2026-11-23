@@ -37,7 +37,9 @@ The unitary frames `Ψ_{J_t}` of `TauCeti.SymplecticForm.unitaryFrame` supply su
 `C¹` loop of compatible structures `J_t`, when the inner product is the metric of `J₀`
 (`TauCeti.Floer.asymptoticOperator_unitaryFrame_apply`,
 `TauCeti.Floer.frameLoop_unitaryFrame_apply_add_apply_eq_zero`). Since the frames involve no
-choices, they are periodic when `J_t` is.
+choices, they are periodic when `J_t` is. Composed with a frame `Φ` of `J₀` from a complex inner
+product space, they give loops that are infinitesimally symplectic for `Im ⟪·, ·⟫`
+(`TauCeti.Floer.im_inner_frameLoop_add_im_inner_frameLoop_eq_zero`).
 
 ## References
 
@@ -130,6 +132,30 @@ theorem frameLoop_periodic {c : ℝ} (hΦ : Periodic Φ c) (hS : Periodic S c) :
     Periodic (frameLoop Φ S) c := fun t ↦ by
   simp only [frameLoop, hΦ t, hS t, hΦ.deriv t]
 
+/-- **Nondegeneracy in a path of frames.** Let `Θ(t) : E → V` be a differentiable one-periodic
+path of invertible frames from a finite-dimensional complex space, and let `S` be such that the only
+one-periodic solution of `ζ' = S ζ` is zero. Then the loop operator `η ↦ η' - S' η` of the loop
+`S'` of `S` in the frames `Θ` is invertible from `H¹` to `H⁰`: `η' = S' η` exactly when `ζ = Θ η`
+solves `ζ' = S ζ`. -/
+theorem isInvertible_loopOperator_frameLoop {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [FiniteDimensional ℂ E] {Θ : ℝ → E →L[ℝ] V}
+    (hΘd : Differentiable ℝ Θ) (hΘp : Periodic Θ 1) (hΘinv : ∀ s, (Θ s).IsInvertible)
+    (hnd : ∀ ζ : ℝ → V, Periodic ζ 1 → (∀ t, HasDerivAt ζ (S t (ζ t)) t) → ζ = 0)
+    {S' : C(AddCircle (1 : ℝ), E →L[ℝ] E)} (hS' : ∀ t : ℝ, S' t = frameLoop Θ S t) :
+    (CircleSobolev.loopOperator 1 S').IsInvertible := by
+  refine (CircleSobolev.isInvertible_loopOperator_iff 1 S').2 fun η hη ↦ ?_
+  -- `ζ = Θ η` solves `ζ' = S ζ`.
+  set ζ : ℝ → V := fun s ↦ Θ s (η s) with hζ
+  have hζd (s : ℝ) : HasDerivAt ζ (S s (ζ s)) s := by
+    have h := (hΘd s).hasDerivAt.clm_apply (hη s)
+    rwa [hS', apply_frameLoop (hΘinv s), add_sub_cancel] at h
+  have hζp : Periodic ζ 1 := fun s ↦ by
+    simp only [hζ, hΘp s, AddCircle.coe_add_period]
+  have hζ0 : ζ = 0 := hnd ζ hζp hζd
+  ext x
+  obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective x
+  exact (hΘinv s).injective (by simpa [hζ] using congrFun hζ0 s)
+
 section UnitaryFrame
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -161,6 +187,30 @@ theorem frameLoop_unitaryFrame_apply_add_apply_eq_zero (hg : ∀ v w, ω v (J₀
       ω u (frameLoop (fun s ↦ ω.unitaryFrame (J s)) S t v) = 0 :=
   frameLoop_apply_add_apply_eq_zero (hJ.unitaryFrame (.of_forall hJc))
     (hJc t).isInvertible_unitaryFrame (fun s ↦ (hJc s).apply_unitaryFrame_unitaryFrame hg) hS u v
+
+/-- **The loop in the frames `Ψ_t Φ` is infinitesimally symplectic for `Im ⟪·, ·⟫`.** Let the
+inner product of `V` be the metric `ω(·, J₀ ·)`, let `Φ : F ≃ V` satisfy
+`ω (Φ x) (Φ y) = Im ⟪x, y⟫`, and let `Ψ_s` be the unitary frames of a family `J_s` of compatible
+structures, differentiable at `t`. If `S_t` is infinitesimally `ω`-symplectic, then the loop `S'_t`
+of `S` in the frames `Ψ_s Φ` is infinitesimally symplectic for `Im ⟪·, ·⟫`. -/
+theorem im_inner_frameLoop_add_im_inner_frameLoop_eq_zero {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] {Φ : F ≃L[ℝ] V} (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫)
+    (hΦω : ∀ x y, ω (Φ x) (Φ y) = (inner ℂ x y).im) (hJc : ∀ s, ω.Compatible (J s))
+    (hJ : DifferentiableAt ℝ (fun s ↦ LinearMap.toContinuousLinearMap (J s).toLinearMap) t)
+    (hS : ∀ u v, ω (S t u) v + ω u (S t v) = 0) (u v : F) :
+    (inner ℂ (frameLoop (fun s ↦ ω.unitaryFrame (J s) ∘L (Φ : F →L[ℝ] V)) S t u) v).im +
+      (inner ℂ u (frameLoop (fun s ↦ ω.unitaryFrame (J s) ∘L (Φ : F →L[ℝ] V)) S t v)).im =
+      0 := by
+  -- Pull `ω` back to `F` along `Φ`; it is `Im ⟪·, ·⟫`, and every `Ψ_s Φ` carries it to `ω`.
+  let ω₀ : SymplecticForm F := ω.transport (Φ.symm : V ≃ₗ[ℝ] F)
+  have hω₀ (x y : F) : ω₀ x y = (inner ℂ x y).im := by
+    simpa [ω₀, SymplecticForm.transport_apply] using hΦω x y
+  have h := frameLoop_apply_add_apply_eq_zero (ω₀ := ω₀)
+    (Φ := fun s ↦ ω.unitaryFrame (J s) ∘L (Φ : F →L[ℝ] V))
+    ((hJ.unitaryFrame (.of_forall hJc)).clm_comp (differentiableAt_const _))
+    ((hJc t).isInvertible_unitaryFrame.comp ⟨Φ, rfl⟩)
+    (fun s x y ↦ by simp [(hJc s).apply_unitaryFrame_unitaryFrame hg, hΦω, hω₀]) hS u v
+  rwa [hω₀, hω₀] at h
 
 /-- The loop of a continuous `S` in the unitary frames of a `C¹` family of compatible structures
 is continuous. -/

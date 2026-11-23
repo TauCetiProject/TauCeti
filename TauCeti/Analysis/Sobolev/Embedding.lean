@@ -60,8 +60,12 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
   when `p ≥ 1` and `p⋆` is finite (`TauCeti.two_le_of_inv_add_inv_eq_inv`) and `p ≠ ∞`
   (`TauCeti.ne_top_of_inv_add_inv_eq_inv`), and
   multiplying by `n` gives `n/p⋆ + 1 = n/p`
-  (`TauCeti.natCast_div_toReal_add_one_of_inv_add_inv_eq_inv`). With `γ = p⋆ (1 - 1/n)` and `p'`
-  the conjugate exponent of `p`, `(γ - 1) p' = p⋆` and `1 - 1/n = 1/p⋆ + 1/p'`
+  (`TauCeti.natCast_div_toReal_add_one_of_inv_add_inv_eq_inv`), so that the conditions
+  `(s - 1) p > -n` and `s p⋆ > -n` agree when `p⋆` is finite
+  (`TauCeti.neg_natCast_lt_sub_one_mul_iff_of_inv_add_inv_eq_inv`); a space of dimension `n`
+  admitting the relation is nontrivial (`TauCeti.nontrivial_of_inv_add_inv_eq_inv`). With
+  `γ = p⋆ (1 - 1/n)` and `p'` the conjugate exponent of `p`, `(γ - 1) p' = p⋆` and
+  `1 - 1/n = 1/p⋆ + 1/p'`
   (`TauCeti.exists_holderConjugate_sub_one_mul_eq`).
 
 * `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`: the transfer principle, from an
@@ -322,6 +326,30 @@ theorem natCast_div_toReal_add_one_of_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0
     (n : ℝ) / pstar.toReal + 1 = n / p.toReal := by
   rw [div_eq_mul_inv, div_eq_mul_inv, ← toReal_inv_add_inv_eq_inv hp hexp, mul_add,
     mul_inv_cancel₀ (Nat.cast_ne_zero.2 (ne_zero_of_inv_add_inv_eq_inv hp hexp))]
+
+variable {p pstar : ENNReal} in
+/-- Under the exponent relation `1/p⋆ + 1/n = 1/p` with `p⋆` finite, the conditions
+`(s - 1) p > -n` and `s p⋆ > -n` agree. -/
+theorem neg_natCast_lt_sub_one_mul_iff_of_inv_add_inv_eq_inv {n : ℕ} {s : ℝ} (hp : p ≠ 0)
+    (hpstar : pstar ≠ ∞) (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) :
+    -(n : ℝ) < (s - 1) * p.toReal ↔ -(n : ℝ) < s * pstar.toReal := by
+  have hc : 0 < p.toReal := ENNReal.toReal_pos hp (ne_top_of_inv_add_inv_eq_inv hexp)
+  have ha : 0 < pstar.toReal := by
+    refine ENNReal.toReal_pos (fun h => hp ?_) hpstar
+    rw [h, ENNReal.inv_zero, top_add, eq_comm, ENNReal.inv_eq_top] at hexp
+    exact hexp
+  -- Dividing by `p` and `p⋆`, the conditions read `-n / p < s - 1` and `-n / p⋆ < s`, which
+  -- agree since `n / p⋆ + 1 = n / p`.
+  rw [← div_lt_iff₀ hc, ← div_lt_iff₀ ha, neg_div, neg_div,
+    ← natCast_div_toReal_add_one_of_inv_add_inv_eq_inv hp hexp]
+  constructor <;> intro h <;> linarith
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] {p pstar : ENNReal} in
+/-- A space admitting a Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p`, `n` its dimension, is
+nontrivial. -/
+theorem nontrivial_of_inv_add_inv_eq_inv (hp : p ≠ 0)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) : Nontrivial E :=
+  nontrivial_of_finrank_pos (Nat.pos_of_ne_zero (ne_zero_of_inv_add_inv_eq_inv hp hexp))
 
 /-- **The exponents of the power trick.** If `1/q + 1/N = 1/P` with `P > 1` and `q > 0`, then
 `γ = q (1 - 1/N)` and the conjugate exponent `P'` of `P` satisfy `(γ - 1) P' = q` and

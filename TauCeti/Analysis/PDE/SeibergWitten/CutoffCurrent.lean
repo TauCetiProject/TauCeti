@@ -21,7 +21,6 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Calculus.FDeriv.Comp
-import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
 
@@ -95,7 +94,15 @@ covariant derivative: with `s = |α|²` and `χ'` the derivative of `χ`,
 
 `Θ(v, w) = (1 - χ(s)) i F_a(v, w) + 2 χ'(s) Im (conj (∇_v α) ∇_w α)`
 
-(`cutoffCurrent_apply_pair`), at every point, including the zeros of `α`. Write
+(`cutoffCurrent_apply_pair`), at every point, including the zeros of `α`. For `χ = id`, which
+does not vanish near `0`, the one-form `s τ = Im (conj α ∇_a α)` is still smooth across the zeros
+of `α` (`cutoffPhaseForm_id_apply_eq_im`, `contDiff_cutoffPhaseForm_id`), with
+
+`d(s τ)(v, w) = 2 Im (conj (∇_v α) ∇_w α) + s db(v, w)`
+
+(`extDeriv_cutoffPhaseForm_id_apply_pair`). Half of it, `(|α|² / 2) (dθ + b)`, is the primitive
+of the coupling form of the connection on the normal line of a pseudoholomorphic curve
+(`TauCeti.normalCouplingForm`). Write
 `∂_a α = ∇_a α - ∂bar_a α` for the `J`-linear part of `∇_a α`. On a complex line the second term
 is `2 χ'(s) (|∂_v α|² - |∂bar_v α|²)` (`cutoffCurrent_apply_pair_apply`), so for a nondecreasing
 cutoff
@@ -298,22 +305,9 @@ theorem covariantDeriv_sub_phaseForm_mul (hu : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1
     (hud : DifferentiableAt ℝ u x) (hα : DifferentiableAt ℝ α x) :
     covariantDeriv (b - phaseForm u) (u * α) x = u x • covariantDeriv b α x := by
   ext v
-  have hux : ‖u x‖ = 1 := hu.self_of_nhds
-  -- Since `|u| = 1` near `x`, `du` is orthogonal to `u`, so `u⁻¹ du = conj u du` is imaginary.
-  have hre : ((u x)⁻¹ * fderiv ℝ u x v).re = 0 := by
-    rw [inv_eq_conj hux, mul_comm, ← Complex.inner]
-    exact IsLocalExtr.inner_fderiv_eq_zero (IsMinFilter.isExtrFilter <|
-      (show ∀ᶠ y in 𝓝 x, ‖u y‖ = ‖u x‖ by rwa [hux]).mono fun _ hy ↦ hy.ge) v
-  have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hux]
-  have hdu : fderiv ℝ u x v = u x * (I * ((u x)⁻¹ * fderiv ℝ u x v).im) := by
-    have hw : (u x)⁻¹ * fderiv ℝ u x v = I * ((u x)⁻¹ * fderiv ℝ u x v).im :=
-      Complex.ext (by simp [hre]) (by simp)
-    rw [← hw, mul_inv_cancel_left₀ hu0]
   simp only [covariantDeriv_apply, fderiv_mul hud hα, Pi.sub_apply,
-    ContinuousAlternatingMap.sub_apply, phaseForm_apply, _root_.add_apply, _root_.smul_apply,
-    smul_eq_mul, Pi.mul_apply, real_smul, ofReal_sub]
-  generalize ((u x)⁻¹ * fderiv ℝ u x v).im = c at hdu ⊢
-  rw [hdu]
+    ContinuousAlternatingMap.sub_apply, _root_.add_apply, _root_.smul_apply,
+    smul_eq_mul, Pi.mul_apply, real_smul, ofReal_sub, fderiv_apply_eq_mul_I_mul_phaseForm hu v]
   ring
 
 /-! ### The cutoff phase form and the cutoff current -/
@@ -488,6 +482,17 @@ theorem cutoffCurrent_comp {y : F} (hα : ContDiffAt ℝ 2 α (f y)) (hb : ContD
   ext v
   simp
 
+/-- **Naturality of the covariant derivative.** The covariant derivative of the pulled-back pair
+`(f^* b, α ∘ f)` at `y` is the covariant derivative of `(b, α)` at `f y` composed with the
+derivative of `f`. -/
+theorem covariantDeriv_comp {y : F} (hα : DifferentiableAt ℝ α (f y))
+    (hf : DifferentiableAt ℝ f y) :
+    covariantDeriv (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
+      (covariantDeriv b α (f y)).comp (fderiv ℝ f y) := by
+  ext v
+  rw [covariantDeriv_apply, fderiv_comp y hα hf]
+  simp [Function.comp_def]
+
 /-- **The covariant derivative under an affine dilation.** Pulling a pair `(b, α)` back along
 `z ↦ x₀ + c • z`, which turns the connection form into `z ↦ c • b (x₀ + c • z)`, multiplies the
 covariant derivative by `c`. No differentiability is needed. -/
@@ -586,6 +591,92 @@ theorem cutoffCurrent_apply_pair (hα : ContDiffAt ℝ 2 α x) (hb : Differentia
     field_simp
     rw [normSq_apply]
     ring
+
+/-! ### The phase form weighted by `|α|²` -/
+
+/-- **The cutoff phase form for `χ = id`** is `|α|² τ = Im (conj α ∇_a α)`, at every point,
+including the zeros of `α`, where both sides vanish. -/
+theorem cutoffPhaseForm_id_apply_eq_im (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x v : E) :
+    cutoffPhaseForm id b α x (fun _ ↦ v) = (conj (α x) * covariantDeriv b α x v).im := by
+  by_cases h : α x = 0
+  · simp [h]
+  · rw [cutoffPhaseForm_apply, ContinuousAlternatingMap.smul_apply,
+      covariantPhaseForm_apply_eq_div h, id, smul_eq_mul]
+    field_simp [(normSq_pos.2 h).ne']
+
+/-- `|α|² τ = Im (conj α dα) + |α|² b`: the two summands are as regular as `dα` and `b`, also
+across the zeros of `α`. -/
+private theorem cutoffPhaseForm_id_eq (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) :
+    cutoffPhaseForm id b α =
+      (fun y ↦ imOneForm (conj (α y) • fderiv ℝ α y)) + (fun y ↦ normSq (α y)) • b := by
+  funext y
+  ext v
+  have hv : v = fun _ ↦ v 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
+  rw [hv, cutoffPhaseForm_id_apply_eq_im]
+  simp only [covariantDeriv_apply, Pi.add_apply, Pi.smul_apply', ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.smul_apply, imOneForm_apply, _root_.smul_apply, smul_eq_mul,
+    Complex.real_smul, normSq_apply, mul_add, add_im, mul_im, mul_re, conj_re, conj_im, I_re, I_im,
+    ofReal_re, ofReal_im]
+  ring
+
+/-- The phase form weighted by `|α|²` is `C^n` at `x` when `α` is `C^(n + 1)` and `b` is `C^n`
+at `x`, also at the zeros of `α`. -/
+theorem contDiffAt_cutoffPhaseForm_id {n : WithTop ℕ∞} (hα : ContDiffAt ℝ (n + 1) α x)
+    (hb : ContDiffAt ℝ n b x) : ContDiffAt ℝ n (cutoffPhaseForm id b α) x := by
+  rw [cutoffPhaseForm_id_eq]
+  have hα' : ContDiffAt ℝ n α x := hα.of_le le_self_add
+  have hc : ContDiffAt ℝ n (fun y ↦ conj (α y)) x :=
+    conjCLE.contDiff.contDiffAt.comp x hα'
+  have hs : ContDiffAt ℝ n (fun y ↦ normSq (α y)) x := by
+    simp_rw [normSq_eq_norm_sq]
+    exact (contDiff_norm_sq ℝ).contDiffAt.comp x hα'
+  exact (imOneForm.contDiff.contDiffAt.comp x (hc.smul (hα.fderiv_right le_rfl))).add (hs.smul hb)
+
+/-- The phase form weighted by `|α|²` is `C^n` when `α` is `C^(n + 1)` and `b` is `C^n`. -/
+theorem contDiff_cutoffPhaseForm_id {n : WithTop ℕ∞} (hα : ContDiff ℝ (n + 1) α)
+    (hb : ContDiff ℝ n b) : ContDiff ℝ n (cutoffPhaseForm id b α) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_cutoffPhaseForm_id hα.contDiffAt hb.contDiffAt
+
+/-- **The differential of the phase form weighted by `|α|²`.** For `α` that is `C²` and `b`
+differentiable at `x`,
+
+`d(|α|² τ)(v, w) = 2 Im (conj (∇_v α) ∇_w α) + |α|² db(v, w)`,
+
+at every point, including the zeros of `α`. This is the formula of `cutoffCurrent_apply_pair`
+for `χ = id`, which does not vanish near `0`. -/
+theorem extDeriv_cutoffPhaseForm_id_apply_pair (hα : ContDiffAt ℝ 2 α x)
+    (hb : DifferentiableAt ℝ b x) (v w : E) :
+    extDeriv (cutoffPhaseForm id b α) x ![v, w] =
+      2 * (conj (covariantDeriv b α x v) * covariantDeriv b α x w).im +
+        normSq (α x) * extDeriv b x ![v, w] := by
+  have hα₁ : DifferentiableAt ℝ α x := hα.differentiableAt (by simp)
+  have hd : DifferentiableAt ℝ (fderiv ℝ α) x :=
+    (hα.fderiv_right le_rfl).differentiableAt one_ne_zero
+  have hsymm := hα.isSymmSndFDerivAt (by simp)
+  have hc : HasFDerivAt (fun y ↦ conj (α y))
+      ((conjCLE : ℂ ≃L[ℝ] ℂ).toContinuousLinearMap.comp (fderiv ℝ α x)) x :=
+    (conjCLE : ℂ ≃L[ℝ] ℂ).hasFDerivAt.comp x hα₁.hasFDerivAt
+  have h₁ : HasFDerivAt (fun y ↦ imOneForm (conj (α y) • fderiv ℝ α y))
+      (imOneForm.comp (conj (α x) • fderiv ℝ (fderiv ℝ α) x +
+        ((conjCLE : ℂ ≃L[ℝ] ℂ).toContinuousLinearMap.comp (fderiv ℝ α x)).smulRight
+          (fderiv ℝ α x))) x :=
+    imOneForm.hasFDerivAt.comp x (hc.smul hd.hasFDerivAt)
+  have hs : HasFDerivAt (fun y ↦ normSq (α y))
+      (2 • (innerSL ℝ (α x)).comp (fderiv ℝ α x)) x := by
+    simp_rw [normSq_eq_norm_sq]
+    exact hα₁.hasFDerivAt.norm_sq
+  rw [cutoffPhaseForm_id_eq, extDeriv_add h₁.differentiableAt (hs.differentiableAt.smul hb),
+    extDeriv_function_smul hs.differentiableAt hb, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.add_apply, extDeriv_apply_pair, h₁.fderiv, hs.fderiv,
+    alternatizeUncurryFin_apply_pair]
+  -- The `conj α d²α` terms cancel by the symmetry of `d²α`.
+  simp only [ContinuousLinearMap.comp_apply, _root_.add_apply, imOneForm_apply, _root_.smul_apply,
+    ContinuousLinearMap.smulRight_apply, ContinuousAlternatingMap.smul_apply,
+    ContinuousLinearEquiv.coe_coe, conjCLE_apply, innerSL_apply_apply, Complex.inner, smul_eq_mul,
+    Complex.real_smul, nsmul_eq_mul, Nat.cast_ofNat, covariantDeriv_apply, hsymm.eq v w]
+  simp only [mul_re, mul_im, add_re, add_im, conj_re, conj_im, I_re, I_im, ofReal_re, ofReal_im,
+    normSq_apply]
+  ring
 
 /-! ### The modulus potential -/
 
@@ -726,6 +817,18 @@ theorem covariantDBar_eq_zero_iff (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
     linear_combination (-2 * I) * hv + covariantDeriv b α x (J v) * I_sq
   · simp only [covariantDBar_apply, h v, zero_apply]
     linear_combination covariantDeriv b α x v * I_sq / 2
+
+/-- **Naturality of `∂bar_a α`.** If the derivative of `f` at `y` intertwines a structure `J'` on
+`F` with `J`, then `∂bar_a α` of the pulled-back pair `(f^* b, α ∘ f)` at `y` is `∂bar_a α` of
+`(b, α)` at `f y` composed with the derivative of `f`. -/
+theorem covariantDBar_comp {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] (J' : AlmostComplexStructure F) {f : F → E} {y : F}
+    (hα : DifferentiableAt ℝ α (f y)) (hf : DifferentiableAt ℝ f y)
+    (hJ : ∀ v, fderiv ℝ f y (J' v) = J (fderiv ℝ f y v)) :
+    covariantDBar J' (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
+      (covariantDBar J b α (f y)).comp (fderiv ℝ f y) := by
+  ext v
+  simp [covariantDeriv_comp hα hf, hJ]
 
 /-- If `J` preserves the norm, then `‖∂_a α‖ ≤ ‖∇_a α‖`, since
 `∂_v α = (∇_v α - i ∇_{J v} α) / 2`. -/
