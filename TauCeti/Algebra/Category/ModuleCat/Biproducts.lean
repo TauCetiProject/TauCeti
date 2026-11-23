@@ -28,7 +28,8 @@ For a binary biproduct, Mathlib's `ModuleCat.biprodIsoProd` identifies `M ⊞ N`
 module `M × N`; this file also records that it reads off the two biproduct projections and
 carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`, and that the biproduct
 `biprod.map f g` of two bijective maps is bijective. A finite biproduct of finitely generated
-modules over an arbitrary ring is finitely generated (`ModuleCat.finite_biproduct`).
+modules over an arbitrary ring is finitely generated (`ModuleCat.finite_biproduct`), and so is
+each summand of a finitely generated biproduct (`ModuleCat.finite_of_finite_biproduct`).
 
 ## Main definitions
 
@@ -49,6 +50,8 @@ modules over an arbitrary ring is finitely generated (`ModuleCat.finite_biproduc
 * `ModuleCat.bijective_biprod_map`: `biprod.map f g` is bijective when `f` and `g` are.
 * `ModuleCat.finite_biproduct`: a finite biproduct of finitely generated modules is finitely
   generated.
+* `ModuleCat.finite_of_finite_biproduct`: the summands of a finitely generated biproduct are
+  finitely generated.
 
 * `ModuleCat.biprod_inl_fst_apply`, `ModuleCat.biprod_inr_fst_apply`,
   `ModuleCat.biprod_inl_snd_apply`, `ModuleCat.biprod_inr_snd_apply` and
@@ -193,6 +196,13 @@ theorem finite_biproduct {ι : Type*} [Finite ι] (V : ι → ModuleCat.{v} R)
   obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin ι
   exact Module.Finite.equiv (((biproduct.whiskerEquiv e.symm fun _ ↦ Iso.refl _).symm ≪≫
     biproductIsoPi (fun j : Fin m ↦ V (e.symm j)))).symm.toLinearEquiv
+
+/-- A summand of a finitely generated biproduct in `ModuleCat R` is finitely generated: it is the
+image of the projection onto it. -/
+theorem finite_of_finite_biproduct {ι : Type*} [Finite ι] (V : ι → ModuleCat.{v} R)
+    [Module.Finite R (⨁ V : ModuleCat.{v} R)] (i : ι) : Module.Finite R (V i) :=
+  Module.Finite.of_surjective (biproduct.π V i).hom fun x ↦
+    ⟨(biproduct.ι V i).hom x, by rw [← ConcreteCategory.comp_apply, biproduct.ι_π_self, id_apply]⟩
 
 end ModuleCat
 
