@@ -67,7 +67,8 @@ All declarations are in the namespace `TauCeti.SpinPolarizationData`.
   the trace-zero endomorphisms.
 * `typeDSpinPlusLieEquivSl`: the resulting Lie algebra isomorphism `so₆ ≃ sl₄`, given by the matrix
   of the action on `S⁺` in a chosen basis.
-* `typeDSpinPlusLieModuleEquivStd`: through this isomorphism, `S⁺` is the standard module of `sl₄`.
+* `typeDSpinPlusLieModuleEquivSlStd`: through this isomorphism, `S⁺` is the standard module of
+  `sl₄`.
 * `nonempty_lieModuleEquiv_dual_typeDSpinPlus_typeDSpinMinus_of_card_eq_three`: `S⁻` is the dual of
   `S⁺` as a Lie module over `so₆`.
 * `exists_basis_toMatrix_typeDSpinMinusLieRep_eq_neg_transpose`: the same duality in matrix form.
@@ -256,7 +257,7 @@ theorem mem_range_typeDSpinPlusLieRep_iff_of_card_eq_three (hι : Fintype.card �
 /-- **`D₃ ≅ A₃`.** For an even polarization with `dim W = 3` and a basis `B` of the even
 half-spin module `S⁺`, sending an element of the split type-`D` Lie algebra `so₆` to the matrix
 of its action on `S⁺` in the basis `B` is a Lie algebra isomorphism onto the trace-zero matrices.
-Through it, `S⁺` is the standard module of `sl₄` (`typeDSpinPlusLieModuleEquivStd`). -/
+Through it, `S⁺` is the standard module of `sl₄` (`typeDSpinPlusLieModuleEquivSlStd`). -/
 noncomputable def typeDSpinPlusLieEquivSl (hι : Fintype.card ι = 3)
     (B : Basis κ K (spinPlus Q P)) :
     LieAlgebra.Orthogonal.typeD ι K ≃ₗ⁅K⁆ SpecialLinear.sl κ K :=
@@ -301,7 +302,7 @@ theorem typeDSpinPlusLieRep_typeDSpinPlusLieEquivSl_symm_apply (hι : Fintype.ca
 /-- **`S⁺` is the standard module of `sl₄`.** Make `S⁺` a module over `so₆` through its half-spin
 action, and `κ → K` through `typeDSpinPlusLieEquivSl` followed by the matrix action. Then taking
 coordinates in `B` is an equivalence of Lie modules. -/
-noncomputable def typeDSpinPlusLieModuleEquivStd (hι : Fintype.card ι = 3)
+noncomputable def typeDSpinPlusLieModuleEquivSlStd (hι : Fintype.card ι = 3)
     (B : Basis κ K (spinPlus Q P)) :
     letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
       LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
@@ -318,9 +319,9 @@ noncomputable def typeDSpinPlusLieModuleEquivStd (hι : Fintype.card ι = 3)
     ((SpecialLinear.sl κ K).incl.comp (P.typeDSpinPlusLieEquivSl b hline hι B).toLieHom) B
     (P.coe_typeDSpinPlusLieEquivSl_apply b hline hι B)
 
-/-- The Lie module equivalence `typeDSpinPlusLieModuleEquivStd` takes coordinates in `B`. -/
+/-- The Lie module equivalence `typeDSpinPlusLieModuleEquivSlStd` takes coordinates in `B`. -/
 @[simp]
-theorem typeDSpinPlusLieModuleEquivStd_apply (hι : Fintype.card ι = 3)
+theorem typeDSpinPlusLieModuleEquivSlStd_apply (hι : Fintype.card ι = 3)
     (B : Basis κ K (spinPlus Q P)) (s : spinPlus Q P) :
     letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
       LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
@@ -332,13 +333,13 @@ theorem typeDSpinPlusLieModuleEquivStd_apply (hι : Fintype.card ι = 3)
     letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (κ → K) :=
       LieModule.compLieHom _
         ((SpecialLinear.sl κ K).incl.comp (P.typeDSpinPlusLieEquivSl b hline hι B).toLieHom)
-    P.typeDSpinPlusLieModuleEquivStd b hline hι B s = B.equivFun s :=
+    P.typeDSpinPlusLieModuleEquivSlStd b hline hι B s = B.equivFun s :=
   lieModuleEquivOfToMatrix_apply ..
 
-/-- The inverse of the Lie module equivalence `typeDSpinPlusLieModuleEquivStd` reconstructs a
+/-- The inverse of the Lie module equivalence `typeDSpinPlusLieModuleEquivSlStd` reconstructs a
 spinor from its coordinates in `B`. -/
 @[simp]
-theorem typeDSpinPlusLieModuleEquivStd_symm_apply (hι : Fintype.card ι = 3)
+theorem typeDSpinPlusLieModuleEquivSlStd_symm_apply (hι : Fintype.card ι = 3)
     (B : Basis κ K (spinPlus Q P)) (v : κ → K) :
     letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
       LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
@@ -350,7 +351,7 @@ theorem typeDSpinPlusLieModuleEquivStd_symm_apply (hι : Fintype.card ι = 3)
     letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (κ → K) :=
       LieModule.compLieHom _
         ((SpecialLinear.sl κ K).incl.comp (P.typeDSpinPlusLieEquivSl b hline hι B).toLieHom)
-    (P.typeDSpinPlusLieModuleEquivStd b hline hι B).symm v = B.equivFun.symm v :=
+    (P.typeDSpinPlusLieModuleEquivSlStd b hline hι B).symm v = B.equivFun.symm v :=
   lieModuleEquivOfToMatrix_symm_apply ..
 
 /-! ### `S⁻` is the dual of `S⁺` -/
@@ -381,7 +382,7 @@ private theorem exists_linearEquiv_dualMap_neg_typeDSpinPlusLieRep (hι : Fintyp
 /-- **The odd half-spin module of `so₆` is the dual of the even one.** For an even polarization
 with `dim W = 3`, make `S⁺` and `S⁻` Lie modules over the split type-`D` Lie algebra through their
 half-spin actions. Then `S⁻` is equivalent to the dual of `S⁺`, which carries the contragredient
-action `⁅x, φ⁆ = -φ ∘ ρ⁺(x)`. Combined with `typeDSpinPlusLieModuleEquivStd`, `S⁻` is the dual of
+action `⁅x, φ⁆ = -φ ∘ ρ⁺(x)`. Combined with `typeDSpinPlusLieModuleEquivSlStd`, `S⁻` is the dual of
 the standard module of `sl₄`. -/
 theorem nonempty_lieModuleEquiv_dual_typeDSpinPlus_typeDSpinMinus_of_card_eq_three
     (hι : Fintype.card ι = 3) :
