@@ -8,12 +8,12 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 
 /-!
-# Limits of rescaled secants under strict differentiability
+# Limits of rescaled secants under differentiation along a filter
 
-Suppose both endpoints approach the point of strict differentiation, their images agree on a
-common cofinal set, and their difference is a scalar scale times a convergent factor. If the
-scale is nonzero on that set, the derivative annihilates the limit of the factor. The scales
-need not be the lengths of the secants.
+Suppose endpoint pairs tend along a derivative filter, their images agree on a common cofinal
+set, and their difference is a scalar scale times a convergent factor. If the scale is nonzero
+on that set, the derivative annihilates the limit of the factor. The scales need not be the
+lengths of the secants. In particular, both endpoints may approach a strict derivative point.
 -/
 
 public section
@@ -21,20 +21,19 @@ public section
 open Asymptotics Filter
 open scoped Topology
 
-namespace HasStrictFDerivAt
-
 variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousSMul 𝕜 E] [ContinuousAdd E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousSMul 𝕜 F]
+  [ContinuousNeg F] [T2Space F]
 
-/-- If both endpoints tend to the strict derivative point and their images agree on a common
-cofinal set where the endpoint gap is a nonzero scalar times a convergent factor, the derivative
-annihilates the limit of that factor. The gap may be much smaller than the distances of the
-endpoints to the derivative point. -/
-theorem apply_eq_zero_of_tendsto_normalized_secant
-    {P : E → F} {L : E →L[𝕜] F} {x : E} (hP : HasStrictFDerivAt P L x)
+/-- If endpoint pairs tend along a derivative filter and their images agree on a common cofinal
+set where their gap is a nonzero scalar times a convergent factor, the derivative annihilates
+the limit of that factor. This applies to ordinary and within-set derivatives when the second
+endpoint is fixed. -/
+theorem HasFDerivAtFilter.apply_eq_zero_of_tendsto_normalized_secant
+    {P : E → F} {L : E →L[𝕜] F} {s : Filter (E × E)} (hP : HasFDerivAtFilter P L s)
     {l : Filter ι} {a b : ι → E} {c : ι → 𝕜} {v : ι → E} {w : E}
-    (ha : Tendsto a l (𝓝 x)) (hb : Tendsto b l (𝓝 x))
+    (hab : Tendsto (fun i ↦ (a i, b i)) l s)
     (hvalid : ∃ᶠ i in l, c i ≠ 0 ∧ a i - b i = c i • v i ∧
       P (a i) = P (b i))
     (hv : Tendsto v l (𝓝 w)) :
@@ -48,8 +47,7 @@ theorem apply_eq_zero_of_tendsto_normalized_secant
   let err : ι → F := fun i ↦ P (a i) - P (b i) - L (a i - b i)
   have ho : err =o[𝕜; l'] (fun i ↦ a i - b i) := by
     simpa only [err, Function.comp_def] using
-      hP.isLittleOTVS.comp_tendsto
-        ((ha.mono_left inf_le_left).prodMk_nhds (hb.mono_left inf_le_left))
+      hP.isLittleOTVS.comp_tendsto (hab.mono_left inf_le_left)
   have hscaled := ho.smul_left (fun i ↦ (c i)⁻¹)
   have hscaledGap : (fun i ↦ (c i)⁻¹ • (a i - b i)) =ᶠ[l'] v :=
     hgood.mono fun i hi ↦ by
@@ -73,4 +71,16 @@ theorem apply_eq_zero_of_tendsto_normalized_secant
     tendsto_nhds_unique_of_frequently_eq hlimv hlim heq.symm.frequently
   exact neg_eq_zero.mp hw
 
-end HasStrictFDerivAt
+/-- If both endpoints tend to the strict derivative point and their images agree on a common
+cofinal set where the endpoint gap is a nonzero scalar times a convergent factor, the derivative
+annihilates the limit of that factor. The gap may be much smaller than the distances of the
+endpoints to the derivative point. -/
+theorem HasStrictFDerivAt.apply_eq_zero_of_tendsto_normalized_secant
+    {P : E → F} {L : E →L[𝕜] F} {x : E} (hP : HasStrictFDerivAt P L x)
+    {l : Filter ι} {a b : ι → E} {c : ι → 𝕜} {v : ι → E} {w : E}
+    (ha : Tendsto a l (𝓝 x)) (hb : Tendsto b l (𝓝 x))
+    (hvalid : ∃ᶠ i in l, c i ≠ 0 ∧ a i - b i = c i • v i ∧
+      P (a i) = P (b i))
+    (hv : Tendsto v l (𝓝 w)) :
+    L w = 0 :=
+  HasFDerivAtFilter.apply_eq_zero_of_tendsto_normalized_secant hP (ha.prodMk_nhds hb) hvalid hv
