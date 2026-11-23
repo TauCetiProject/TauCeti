@@ -75,6 +75,8 @@ Neither normality nor a separation axiom is needed.
   map is invariant under the action.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
+* `TauCeti.involutive_of_forall_eq_neg_one_smul`: for any action of `ℤˣ`, the action of `-1` is an
+  involution.
 * `IsQuotientCoveringMap.comp_eq_of_forall_eq_neg_one_smul`,
   `IsQuotientCoveringMap.ne_self_of_forall_eq_neg_one_smul`,
   `IsQuotientCoveringMap.eq_or_eq_of_forall_eq_neg_one_smul`: for a quotient cover by `ℤˣ`, the
@@ -344,6 +346,11 @@ theorem _root_.IsQuotientCoveringMap.of_smul_eq {G' : Type*} [Group G'] [MulActi
     simpa using hdisj (e.symm g') hg'
 
 /-! ### Quotient covers by `ℤˣ` -/
+
+/-- For any action of `ℤˣ`, the action of `-1` is an involution. -/
+theorem involutive_of_forall_eq_neg_one_smul {α : Type*} [MulAction ℤˣ α] {σ : α → α}
+    (hσ : ∀ a, σ a = (-1 : ℤˣ) • a) : Function.Involutive σ := fun a ↦ by
+  rw [hσ, hσ, smul_smul, neg_one_mul, neg_neg, one_smul]
 
 section Units
 
