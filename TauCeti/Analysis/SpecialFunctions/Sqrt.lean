@@ -22,9 +22,10 @@ with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
 `1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, together with a weighted form of that bound, that
 `1 ≤ √(1 + t²)`, and that `|t / √(t² + p)| ≤ 1` for `p ≥ 0`. It also records that
-`1 / √(1 + f²)` is as smooth as `f`, that `y ↦ y / √(1 - y²)` inverts `t ↦ t / √(1 + t²)`, that
-the modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u`
-tends to `0` as `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
+`1 / √(1 + f²)` is as smooth as `f`, that `y ↦ y / √(1 - y²)` inverts `t ↦ t / √(1 + t²)` and
+`y ↦ √(1 - y²) / y` recovers `|t|` from `1 / √(1 + t²)`, that the modular `√(1 + t²) - 1` is at
+most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends to `0` as `u → 0`, and through
+positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
 `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`. Finally, it describes
 the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of two rays.
@@ -43,6 +44,8 @@ the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of t
 * `ContDiff.inv_sqrt_one_add_sq`: `x ↦ 1 / √(1 + f(x)²)` is as smooth as `f`.
 * `Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq`: `y ↦ y / √(1 - y²)` inverts
   `t ↦ t / √(1 + t²)`.
+* `Real.sqrt_one_sub_sq_div_inv_sqrt_one_add_sq`: `y ↦ √(1 - y²) / y` recovers `|t|` from
+  `1 / √(1 + t²)`.
 * `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
 * `Real.sqrt_one_add_sq_sub_one_le_sq_div_two`: for every real `t`, `√(1 + t²) - 1 ≤ t² / 2`.
 * `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`: for all reals `a` and `b`,
@@ -219,6 +222,16 @@ theorem mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq (t : ℝ) :
     field_simp
     ring
   rw [h, sqrt_sq hs.le, mul_div_assoc, div_self hs.ne', mul_one]
+
+/-- The map `y ↦ √(1 - y²) / y` recovers `|t|` from `1 / √(1 + t²)`, for every real `t`. -/
+theorem sqrt_one_sub_sq_div_inv_sqrt_one_add_sq (t : ℝ) :
+    √(1 - ((√(1 + t ^ 2))⁻¹) ^ 2) / (√(1 + t ^ 2))⁻¹ = |t| := by
+  have hs : 0 < (√(1 + t ^ 2))⁻¹ := inv_pos.2 (sqrt_pos.2 (by positivity))
+  have h : 1 - ((√(1 + t ^ 2))⁻¹) ^ 2 = (|t| * (√(1 + t ^ 2))⁻¹) ^ 2 := by
+    rw [mul_pow, inv_pow, sq_sqrt (by positivity), sq_abs]
+    field_simp
+    ring
+  rw [h, sqrt_sq (by positivity), mul_div_assoc, div_self hs.ne', mul_one]
 
 /-- The function `x ↦ 1 / √(1 + f(x)²)` is as smooth as `f`. -/
 theorem _root_.ContDiff.inv_sqrt_one_add_sq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

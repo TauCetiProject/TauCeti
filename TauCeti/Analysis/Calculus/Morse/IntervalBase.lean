@@ -86,10 +86,10 @@ bijective.
   gluing parameters `e^{C s}` and `e^{-C s}`.
 * `TauCeti.intervalBaseOrbit_one_sub_log`: the unit-rate trajectory at time `c + T` is
   `1 / √(1 + y²)` for `y = e^{-c} ρ` in the gluing parameter `ρ = e^{-T}`, a function of `ρ²`.
-* `TauCeti.intervalBaseFlow_one_mul_inv_sqrt_one_add_sq` and
-  `TauCeti.intervalBaseFlow_one_inv_sqrt_one_add_sq`: the flow acts on the end forms
-  `x / √(1 + x²)` and `1 / √(1 + y²)` of the unit-rate trajectory by scaling `x` with `e^{s}` and
-  `y` with `e^{-s}`.
+* `TauCeti.intervalBaseFlow_mul_inv_sqrt_one_add_sq` and
+  `TauCeti.intervalBaseFlow_inv_sqrt_one_add_sq`: the flow acts on the end forms
+  `x / √(1 + x²)` and `1 / √(1 + y²)` of the trajectory by scaling `x` with `e^{C s}` and `y` with
+  `e^{-C s}`.
 * `TauCeti.mem_Icc_of_isIntegralCurve_intervalBasePotential`: for `C > 0`, a trajectory whose
   backward limit lies in `[-1, 1]` stays in `[-1, 1]`.
 * `TauCeti.exists_eq_intervalBaseOrbit_of_isIntegralCurve` and
@@ -524,12 +524,16 @@ theorem intervalBaseFlow_intervalBaseOrbit (C s r : ℝ) :
   rw [intervalBaseOrbit_eq_intervalBaseFlow, intervalBaseOrbit_eq_intervalBaseFlow,
     intervalBaseFlow_add C s r inv_sqrt_two_mem_Icc]
 
-/-- The flow of the base for time `s` acts on the departing form `x / √(1 + x²)` of the unit-rate
-trajectory (`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`) by `x ↦ e^{s} x`, for every real
+/-- The flow of the base for time `s` acts on the departing form `x / √(1 + x²)` of the
+trajectory (`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`) by `x ↦ e^{C s} x`, for every real
 `x`. -/
-theorem intervalBaseFlow_one_mul_inv_sqrt_one_add_sq (s x : ℝ) :
-    intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
-      Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := by
+theorem intervalBaseFlow_mul_inv_sqrt_one_add_sq (C s x : ℝ) :
+    intervalBaseFlow C s (x * (√(1 + x ^ 2))⁻¹) =
+      Real.exp (C * s) * x * (√(1 + (Real.exp (C * s) * x) ^ 2))⁻¹ := by
+  -- The flow depends on `C` and `s` only through `C * s`, so reduce to the unit rate.
+  rw [show intervalBaseFlow C s = intervalBaseFlow 1 (C * s) by
+    ext; simp only [intervalBaseFlow_apply, mul_one, mul_assoc]]
+  generalize C * s = s
   have key : ∀ x : ℝ, 0 < x → intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
       Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := fun x hx ↦ by
     have h0 : x * (√(1 + x ^ 2))⁻¹ = intervalBaseOrbit 1 (Real.log x) := by
@@ -542,10 +546,14 @@ theorem intervalBaseFlow_one_mul_inv_sqrt_one_add_sq (s x : ℝ) :
   · simp
   · exact key x hx
 
-/-- The flow of the base for time `s` acts on the arriving form `1 / √(1 + y²)` of the unit-rate
-trajectory (`TauCeti.intervalBaseOrbit_one_sub_log`) by `y ↦ e^{-s} y`, for every real `y`. -/
-theorem intervalBaseFlow_one_inv_sqrt_one_add_sq (s y : ℝ) :
-    intervalBaseFlow 1 s (√(1 + y ^ 2))⁻¹ = (√(1 + (Real.exp (-s) * y) ^ 2))⁻¹ := by
+/-- The flow of the base for time `s` acts on the arriving form `1 / √(1 + y²)` of the trajectory
+(`TauCeti.intervalBaseOrbit_one_sub_log`) by `y ↦ e^{-C s} y`, for every real `y`. -/
+theorem intervalBaseFlow_inv_sqrt_one_add_sq (C s y : ℝ) :
+    intervalBaseFlow C s (√(1 + y ^ 2))⁻¹ = (√(1 + (Real.exp (-(C * s)) * y) ^ 2))⁻¹ := by
+  -- The flow depends on `C` and `s` only through `C * s`, so reduce to the unit rate.
+  rw [show intervalBaseFlow C s = intervalBaseFlow 1 (C * s) by
+    ext; simp only [intervalBaseFlow_apply, mul_one, mul_assoc]]
+  generalize C * s = s
   rcases eq_or_ne y 0 with rfl | hy
   · simp
   have h0 := intervalBaseOrbit_one_sub_log 0 (abs_pos.2 hy)
