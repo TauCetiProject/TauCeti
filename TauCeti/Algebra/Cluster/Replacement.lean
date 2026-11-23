@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Ring.Action.ConjAct
 public import Mathlib.Algebra.Ring.Subring.Pointwise
 public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.NoncommRing
+public import TauCeti.Algebra.Polynomial.DivX
 
 /-!
 # Finite polynomial replacement
@@ -209,11 +210,7 @@ end DivisionRing
 private theorem pow_mul_pow_sub_eq_mul_eval₂_divX {R F : Type*} [Ring R] [Field F] (f : R →+* F)
     (P : R[X]) {x y z : F} (hxz : x * z = P.eval₂ f y) (a : ℕ) :
     z ^ a * x ^ a - f (P.coeff 0) ^ a = y * (divX (P ^ a)).eval₂ f y := by
-  have hP : (P ^ a).coeff 0 = P.coeff 0 ^ a := by
-    simpa only [constantCoeff_apply] using map_pow constantCoeff P a
-  have h := congrArg (eval₂ f y) (X_mul_divX_add (P ^ a))
-  simp only [eval₂_add, eval₂_mul, eval₂_X, eval₂_C, eval₂_pow, hP, map_pow, ← hxz] at h
-  linear_combination -h
+  rw [mul_eval₂_divX_pow, ← hxz, mul_pow, mul_comm]
 
 /-- **Polynomial replacement.** Let `f : R →+* F` be a ring map into a field and let `y ≠ 0`
 with `x z = P_f(y)` and `y w = Q_f(x)` for polynomials `P, Q` over `R`. For every `e ≥ deg Q`,
