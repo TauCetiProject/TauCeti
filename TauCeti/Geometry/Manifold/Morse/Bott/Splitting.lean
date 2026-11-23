@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
-public import TauCeti.Geometry.Manifold.Morse.Bott.Index
+public import TauCeti.Geometry.Manifold.Morse.Bott.Index.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import TauCeti.Analysis.Analytic.Order
-public import TauCeti.Analysis.Calculus.DSlope.Analytic
+public import TauCeti.Analysis.Calculus.DSlope.Iterate
 
 /-!
 # Dividing an analytic function by prescribed zeros

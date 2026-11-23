@@ -141,6 +141,16 @@ theorem baseChangeTwoParams_symm_mk (w x y z : S) :
   cases h
   rfl
 
+variable {R S a b} {c d : R}
+
+/-- Isomorphic quaternion algebras `ℍ[R,a,b] ≃ ℍ[R,c,d]` stay isomorphic after extending scalars
+to any commutative `R`-algebra `S`. -/
+theorem nonempty_algEquiv_baseChangeTwoParams (h : Nonempty (ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d])) :
+    Nonempty (ℍ[S,algebraMap R S a,algebraMap R S b] ≃ₐ[S]
+      ℍ[S,algebraMap R S c,algebraMap R S d]) :=
+  h.map fun f => (baseChangeTwoParams R S a b).symm.trans
+    ((Algebra.TensorProduct.congr AlgEquiv.refl f).trans (baseChangeTwoParams R S c d))
+
 end TauCeti.QuaternionAlgebra
 
 namespace TauCeti.BrauerGroup

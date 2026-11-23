@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Analytic.IteratedDeriv
 public import TauCeti.Analysis.Analytic.TaylorSeries
-import TauCeti.Analysis.Calculus.DSlope.Analytic
+import TauCeti.Analysis.Calculus.DSlope.Iterate
 import TauCeti.Analysis.Calculus.DSlope.Parametric
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
 import TauCeti.Analysis.SpecialFunctions.Exp.TaylorSeries

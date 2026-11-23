@@ -5,103 +5,141 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import TauCeti.Analysis.Calculus.DSlope.Basic
-import Mathlib.Analysis.Analytic.IsolatedZeros
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
+import TauCeti.Analysis.Analytic.Constructions
+import TauCeti.Analysis.Analytic.MultiIndex.CoordinateDivision
 
 /-!
-# Iterated divided differences of analytic functions
+# Analytic coordinate divided differences
 
-Generic properties of iterated divided differences `(Function.swap dslope a)^[n] f` for analytic
-functions `f : 𝕜 → E`:
+Off the base hyperplane, a coordinate divided difference is analytic exactly when its numerator
+is analytic. With complete target, this criterion also holds across the hyperplane and near
+arbitrary sets. On the hyperplane the divided difference takes the coordinate-slice derivative.
 
-* `AnalyticAt.iterate_dslope`: iterated divided differences preserve analyticity.
-* `HasFPowerSeriesAt.iterate_dslope_apply_eq_coeff`: at the base point `z₀`, the `n`-th iterated
-  divided difference equals the `n`-th Taylor coefficient `p.coeff n`.
-* `AnalyticAt.factorial_smul_iterate_dslope_apply`: into a complete space `E`,
-  `n! • (swap dslope z₀)^[n] f z₀ = iteratedDeriv n f z₀` without characteristic assumptions.
-* Over a characteristic-zero nontrivially normed field `𝕜` into a complete space `F`,
-  `AnalyticAt.iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv`,
-  `AnalyticAt.sub_sum_inv_factorial_smul_iteratedDeriv_eq_pow_smul_iterate_dslope`, and
-  `AnalyticAt.iterate_dslope_eq_inv_factorial_smul_add_sub_smul_succ` relate the iterated divided
-  differences to `iteratedDeriv` and supply Taylor's formula with analytic remainder quotient.
+## Main results
+
+* `AnalyticWithinAt.sub_update_of_dslope_update`: analyticity of the divided difference
+  implies analyticity of its numerator, with no completeness or hyperplane restriction.
+* `TauCeti.analyticWithinAt_dslope_update_iff_of_ne`,
+  `TauCeti.analyticAt_dslope_update_iff_of_ne`, `TauCeti.analyticOn_dslope_update_iff_of_ne`,
+  and `TauCeti.analyticOnNhd_dslope_update_iff_of_ne`: analyticity away from the base hyperplane.
+* `TauCeti.analyticAt_dslope_update_iff` and `TauCeti.analyticOnNhd_dslope_update_iff`:
+  numerator criteria with complete target, including the base hyperplane and arbitrary sets.
+* `TauCeti.analyticAt_dslope_update`: the combined coordinate divided-difference theorem.
+* `AnalyticOnNhd.dslope_update`: coordinate divided differences preserve neighborhood
+  analyticity when the function is analytic near both the source and updated points.
 -/
 
 public section
 
-open Function
+open Filter Topology
 
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {f : 𝕜 → E} {a : 𝕜}
+variable {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [DecidableEq ι]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {f : (ι → 𝕜) → F} {x : ι → 𝕜} {i : ι} {ζ : 𝕜}
 
-/-- Iterated divided differences at `a` preserve analyticity at every point where `f` is
-analytic. -/
-theorem AnalyticAt.iterate_dslope {z : 𝕜} (hf : AnalyticAt 𝕜 f z) (n : ℕ) :
-    AnalyticAt 𝕜 ((swap dslope a)^[n] f) z := by
-  induction n with
-  | zero => exact hf
-  | succ n ih => rw [iterate_succ_apply']; exact ih.dslope a
+/-- An analytic coordinate divided difference has analytic numerator within the same set,
+including on the base hyperplane and without assuming the target is complete. -/
+theorem AnalyticWithinAt.sub_update_of_dslope_update {s : Set (ι → 𝕜)}
+    (h : AnalyticWithinAt 𝕜
+      (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) s x) :
+    AnalyticWithinAt 𝕜 (fun z ↦ f z - f (Function.update z i ζ)) s x := by
+  have hcoord : AnalyticAt 𝕜 (fun z : ι → 𝕜 ↦ z i) x :=
+    (ContinuousLinearMap.proj (R := 𝕜) i).analyticAt x
+  simpa only [sub_smul_dslope, Function.update_eq_self] using
+    (hcoord.fun_sub (analyticAt_const (v := ζ))).analyticWithinAt.smul h
 
-/-- The `n`-th iterated divided difference at `z₀` of a function with power series `p` at `z₀`
-takes the value `p.coeff n` at `z₀`: these values are the Taylor coefficients. -/
-theorem HasFPowerSeriesAt.iterate_dslope_apply_eq_coeff {p : FormalMultilinearSeries 𝕜 𝕜 E}
-    {z₀ : 𝕜} (hp : HasFPowerSeriesAt f p z₀) (n : ℕ) : (swap dslope z₀)^[n] f z₀ = p.coeff n := by
-  rw [← (hp.has_fpower_series_iterate_dslope_fslope n).coeff_zero 1,
-    ← FormalMultilinearSeries.coeff, FormalMultilinearSeries.coeff_iterate_fslope, zero_add]
+/-- Away from its base hyperplane, a coordinate divided difference is analytic within a set
+exactly when its numerator is analytic there. No separate analyticity of the numerator's two
+terms is needed. -/
+theorem TauCeti.analyticWithinAt_dslope_update_iff_of_ne {s : Set (ι → 𝕜)}
+    (hne : x i ≠ ζ) :
+    AnalyticWithinAt 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) s x ↔
+      AnalyticWithinAt 𝕜 (fun z ↦ f z - f (Function.update z i ζ)) s x := by
+  have hcoord : AnalyticAt 𝕜 (fun z : ι → 𝕜 ↦ z i) x :=
+    (ContinuousLinearMap.proj (R := 𝕜) i).analyticAt x
+  constructor
+  · exact AnalyticWithinAt.sub_update_of_dslope_update
+  · intro h
+    have hquot := ((hcoord.fun_sub (analyticAt_const (v := ζ))).analyticWithinAt.fun_inv
+      (sub_ne_zero.mpr hne)).smul h
+    have heq : (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) =ᶠ[𝓝 x]
+        (fun z ↦ (z i - ζ)⁻¹ • (f z - f (Function.update z i ζ))) := by
+      filter_upwards [hcoord.continuousAt.eventually_ne hne] with z hz
+      rw [dslope_of_ne _ hz, slope_def_module, Function.update_eq_self]
+    exact hquot.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
 
-/-- If `f : 𝕜 → E` is analytic at `z₀` into a complete space `E`, then `n!` times the `n`-th
-iterated divided difference at `z₀` equals `iteratedDeriv n f z₀`, without any characteristic
-assumption on `𝕜`. -/
-theorem AnalyticAt.factorial_smul_iterate_dslope_apply [CompleteSpace E] {z₀ : 𝕜}
-    (hf : AnalyticAt 𝕜 f z₀) (n : ℕ) :
-    n.factorial • (swap dslope z₀)^[n] f z₀ = iteratedDeriv n f z₀ := by
-  obtain ⟨p, r, hr⟩ := hf
-  have hfact := hr.factorial_smul 1 n
-  rw [← iteratedDeriv_eq_iteratedFDeriv] at hfact
-  rw [hr.hasFPowerSeriesAt.iterate_dslope_apply_eq_coeff n, FormalMultilinearSeries.coeff]
-  exact hfact
+/-- Away from its base hyperplane, a coordinate divided difference is analytic exactly when
+its numerator is analytic. No separate analyticity of the numerator's two terms is needed. -/
+theorem TauCeti.analyticAt_dslope_update_iff_of_ne (hne : x i ≠ ζ) :
+    AnalyticAt 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) x ↔
+      AnalyticAt 𝕜 (fun z ↦ f z - f (Function.update z i ζ)) x := by
+  simpa only [analyticWithinAt_univ] using
+    (analyticWithinAt_dslope_update_iff_of_ne (f := f) (s := Set.univ) hne)
 
-section CharZero
+/-- Away from the base hyperplane on a set, a coordinate divided difference is analytic
+on the set exactly when its numerator is analytic there, without target completeness. -/
+theorem TauCeti.analyticOn_dslope_update_iff_of_ne {s : Set (ι → 𝕜)}
+    (hne : ∀ z ∈ s, z i ≠ ζ) :
+    AnalyticOn 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) s ↔
+      AnalyticOn 𝕜 (fun z ↦ f z - f (Function.update z i ζ)) s :=
+  forall₂_congr fun z hz ↦ analyticWithinAt_dslope_update_iff_of_ne (hne z hz)
 
-variable {F : Type*} [CharZero 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+/-- Away from the base hyperplane on a set, a coordinate divided difference is analytic
+near the set exactly when its numerator is analytic there, without target completeness. -/
+theorem TauCeti.analyticOnNhd_dslope_update_iff_of_ne {s : Set (ι → 𝕜)}
+    (hne : ∀ z ∈ s, z i ≠ ζ) :
+    AnalyticOnNhd 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) s ↔
+      AnalyticOnNhd 𝕜 (fun z ↦ f z - f (Function.update z i ζ)) s :=
+  forall₂_congr fun z hz ↦ analyticAt_dslope_update_iff_of_ne (hne z hz)
 
-/-- Over a characteristic-zero nontrivially normed field `𝕜`, if `f : 𝕜 → F` is analytic at `z₀`
-into a complete space `F`, then the `n`-th iterated divided difference at `z₀` evaluates at `z₀`
-to `(n.factorial : 𝕜)⁻¹ • iteratedDeriv n f z₀`. -/
-theorem AnalyticAt.iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv
-    {f : 𝕜 → F} {z₀ : 𝕜} (hf : AnalyticAt 𝕜 f z₀) (n : ℕ) :
-    (swap dslope z₀)^[n] f z₀ = (n.factorial : 𝕜)⁻¹ • iteratedDeriv n f z₀ := by
-  have hne : (n.factorial : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
-  rw [← hf.factorial_smul_iterate_dslope_apply n, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul,
-    inv_mul_cancel₀ hne, one_smul]
+/-- With complete target, a coordinate divided difference is analytic exactly when its
+numerator is analytic, including on the base hyperplane. The two terms of the numerator need
+not be separately analytic. -/
+theorem TauCeti.analyticAt_dslope_update_iff [CompleteSpace F] (i : ι) (ζ : 𝕜) :
+    AnalyticAt 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) x ↔
+      AnalyticAt 𝕜 (fun z ↦ f z - f (Function.update z i ζ)) x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simpa only [analyticWithinAt_univ] using
+      (h.analyticWithinAt (s := Set.univ)).sub_update_of_dslope_update
+  by_cases hxi : x i = ζ
+  · subst ζ
+    obtain ⟨g, hg, hfactor⟩ := h.exists_eventuallyEq_coord_sub_smul i
+      (Filter.Eventually.of_forall fun z ↦ by
+        simp only [Function.update_idem, sub_self, Pi.zero_apply])
+    apply hg.congr
+    apply (TauCeti.eventuallyEq_dslope_update_of_factorization ?_ hfactor).symm
+    filter_upwards [hg.eventually_analyticAt] with z hgz hzi
+    have huz : Function.update z i (x i) = z := by rw [← hzi, Function.update_eq_self]
+    exact hgz.continuousAt.comp_of_eq (continuousAt_const.update i continuousAt_id) huz
+  · exact (analyticAt_dslope_update_iff_of_ne hxi).2 h
 
-/-- **Taylor's formula with analytic divided-difference remainder**: over a characteristic-zero
-nontrivially normed field `𝕜`, for `f : 𝕜 → F` analytic at `z₀` into a complete space `F`,
-`f z - ∑ j ∈ Finset.range n, (z - z₀) ^ j • ((j.factorial : 𝕜)⁻¹ • iteratedDeriv j f z₀) =
-  (z - z₀) ^ n • (Function.swap dslope z₀)^[n] f z`. -/
-theorem AnalyticAt.sub_sum_inv_factorial_smul_iteratedDeriv_eq_pow_smul_iterate_dslope
-    {f : 𝕜 → F} {z₀ : 𝕜} (hf : AnalyticAt 𝕜 f z₀) (n : ℕ) (z : 𝕜) :
-    f z - ∑ j ∈ Finset.range n, (z - z₀) ^ j • ((j.factorial : 𝕜)⁻¹ • iteratedDeriv j f z₀) =
-      (z - z₀) ^ n • (swap dslope z₀)^[n] f z := by
-  have h := TauCeti.sum_add_pow_sub_smul_iterate_dslope f z₀ z n
-  have hsum : ∑ j ∈ Finset.range n, (z - z₀) ^ j • (swap dslope z₀)^[j] f z₀ =
-      ∑ j ∈ Finset.range n, (z - z₀) ^ j • ((j.factorial : 𝕜)⁻¹ • iteratedDeriv j f z₀) :=
-    Finset.sum_congr rfl fun j _ ↦ by
-      rw [hf.iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv j]
-  rw [hsum] at h
-  exact sub_eq_of_eq_add' h.symm
+/-- With complete target, a coordinate divided difference is analytic near an arbitrary set
+exactly when its numerator is analytic there. No preservation of the set by the base-coordinate
+update is required. -/
+theorem TauCeti.analyticOnNhd_dslope_update_iff [CompleteSpace F] (i : ι) (ζ : 𝕜)
+    {s : Set (ι → 𝕜)} :
+    AnalyticOnNhd 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) s ↔
+      AnalyticOnNhd 𝕜 (fun z ↦ f z - f (Function.update z i ζ)) s := by
+  simp only [AnalyticOnNhd, analyticAt_dslope_update_iff i ζ]
 
-/-- Successor recurrence for iterated divided-difference remainders of an analytic function
-`f : 𝕜 → F` at `z₀` over a characteristic-zero nontrivially normed field `𝕜` into a complete
-space `F`. -/
-theorem AnalyticAt.iterate_dslope_eq_inv_factorial_smul_add_sub_smul_succ
-    {f : 𝕜 → F} {z₀ : 𝕜} (hf : AnalyticAt 𝕜 f z₀) (n : ℕ) (z : 𝕜) :
-    (swap dslope z₀)^[n] f z =
-      (n.factorial : 𝕜)⁻¹ • iteratedDeriv n f z₀ +
-        (z - z₀) • (swap dslope z₀)^[n + 1] f z := by
-  have h := eq_add_of_sub_eq' (sub_smul_dslope ((swap dslope z₀)^[n] f) z₀ z).symm
-  rw [hf.iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv n] at h
-  simpa only [iterate_succ_apply'] using h
+/-- With complete target, a coordinate divided difference is analytic if `f` is analytic at the
+point and at the corresponding updated point. At a hyperplane point its value is the
+coordinate-slice derivative. -/
+@[fun_prop]
+theorem TauCeti.analyticAt_dslope_update [CompleteSpace F] (i : ι) (ζ : 𝕜)
+    (hf : AnalyticAt 𝕜 f x)
+    (hres : AnalyticAt 𝕜 f (Function.update x i ζ)) :
+    AnalyticAt 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) x := by
+  apply (analyticAt_dslope_update_iff i ζ).2
+  exact hf.fun_sub hres.comp_update
 
-end CharZero
+/-- A coordinate divided difference is analytic near a source set if the function is analytic
+near that set and near a target set containing its base-coordinate updates. -/
+@[fun_prop]
+theorem AnalyticOnNhd.dslope_update [CompleteSpace F] {s t : Set (ι → 𝕜)}
+    (hf : AnalyticOnNhd 𝕜 f s) (ht : AnalyticOnNhd 𝕜 f t)
+    (hupdate : Set.MapsTo (fun z ↦ Function.update z i ζ) s t) :
+    AnalyticOnNhd 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) s := by
+  intro x hx
+  exact TauCeti.analyticAt_dslope_update i ζ (hf x hx) (ht _ (hupdate hx))
