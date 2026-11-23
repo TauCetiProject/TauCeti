@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Semigroups.Group.SmoothVectors
 public import TauCeti.Geometry.Manifold.Algebra.TypeTags
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector
-public import TauCeti.RepresentationTheory.Continuous.OneParameter
+public import TauCeti.RepresentationTheory.Continuous.OneParameter.Basic
 
 /-!
 # Smooth vectors of a representation of the real line

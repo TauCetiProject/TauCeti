@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Continuous.OneParameterSmooth
+public import TauCeti.RepresentationTheory.Continuous.OneParameter.Smooth
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
