@@ -24,7 +24,7 @@ variable {R G M : Type*} [Semiring R] [Group G] [AddCommMonoid M] [Module R M]
 
 /-- Restriction to the kernel is a trivial representation. -/
 instance isTrivial_comp_ker : IsTrivial (ρ.comp ρ.ker.subtype) where
-  out g := MonoidHom.mem_ker.mp g.2
+  out g := MonoidHom.mem_ker.mp g.property
 
 /-- Restricting a quotient representation along the quotient map recovers the original
 representation, on the same module with the caller's scalar and additive structures. -/

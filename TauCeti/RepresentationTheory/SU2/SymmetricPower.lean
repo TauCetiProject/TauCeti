@@ -148,7 +148,7 @@ theorem character_symPower_torusExp (θ : ℝ) :
       = ∑ i ∈ range (d + 1), Complex.exp ((2 * (i : ℂ) - d) * (θ * Complex.I)) := by
   rw [torusExp_def, character_symPower_torusHom_zpow]
   refine sum_congr rfl fun i _ => ?_
-  rw [Circle.coe_exp, ← Complex.exp_int_mul]
+  rw [Circle.coe_exp, ← Complex.exp_intCast_mul]
   push_cast
   ring_nf
 

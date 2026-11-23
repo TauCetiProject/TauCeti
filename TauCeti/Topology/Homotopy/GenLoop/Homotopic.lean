@@ -63,7 +63,7 @@ theorem homotopic_of_forall_apply_eq_comp {p q : Ω^ N X x} (f : N → C(I, I))
     continuous_pi fun i ↦ Set.Icc.continuous_convexComb_prod.comp
       (f := fun q : I × I^N ↦ (q.2 i, f i (q.2 i), q.1)) (by fun_prop)
   refine homotopic_of_continuousMap
-    ⟨fun q ↦ p fun i ↦ Set.Icc.convexComb (q.2 i) (f i (q.2 i)) q.1, p.1.continuous.comp hg⟩
+    ⟨fun q ↦ p fun i ↦ Set.Icc.convexComb (q.2 i) (f i (q.2 i)) q.1, p.val.continuous.comp hg⟩
     (fun z ↦ by simp [Set.Icc.convexComb_zero])
     (fun z ↦ by simp [Set.Icc.convexComb_one, hq])
     fun c z ⟨i, hi⟩ ↦ _root_.GenLoop.boundary p _ ⟨i, ?_⟩
@@ -86,7 +86,7 @@ theorem homotopic_iff_joined {p q : Ω^ N X x} :
   -- rewrites, and `Ω^ N X x` is the subtype `{h // h ∈ Ω^ N X x}`.
   change (p : C(I^N, X)).HomotopicWith q _ ↔ _
   rw [hP]
-  exact ContinuousMap.homotopicWith_iff_joined p.2 q.2
+  exact ContinuousMap.homotopicWith_iff_joined p.property q.property
 
 /-- A homeomorphism between spaces of generalized loops preserves and reflects homotopy
 relative to the cube boundary: both are path connectedness, which a homeomorphism transports

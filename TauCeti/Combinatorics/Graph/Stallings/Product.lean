@@ -40,43 +40,43 @@ with identical signed labels. -/
   graph := {
     V := S.graph.V × T.graph.V
     E := {e : S.graph.E × T.graph.E // S.label e.1 = T.label e.2}
-    src := fun e => (S.graph.src e.1.1, T.graph.src e.1.2)
-    rev := fun e => ⟨(S.graph.rev e.1.1, T.graph.rev e.1.2), by
+    src := fun e => (S.graph.src e.val.1, T.graph.src e.val.2)
+    rev := fun e => ⟨(S.graph.rev e.val.1, T.graph.rev e.val.2), by
       simpa only [S.label_rev, T.label_rev] using congrArg
-        (fun l : α × Bool => (l.1, !l.2)) e.2⟩
+        (fun l : α × Bool => (l.1, !l.2)) e.property⟩
     rev_rev := by
       intro e
       apply Subtype.ext
       simp
     rev_ne := by
       intro e h
-      have hfst : S.graph.rev e.1.1 = e.1.1 :=
+      have hfst : S.graph.rev e.val.1 = e.val.1 :=
         congrArg (fun p : S.graph.E × T.graph.E => p.1) (congrArg Subtype.val h)
-      exact S.graph.rev_ne e.1.1 hfst }
+      exact S.graph.rev_ne e.val.1 hfst }
   base := (S.base, T.base)
-  label := fun e => S.label e.1.1
+  label := fun e => S.label e.val.1
   label_rev := by
     intro e
-    exact S.label_rev e.1.1
+    exact S.label_rev e.val.1
 
 @[simp] theorem prod_base (S : StallingsGraph.{u, v, w} α)
     (T : StallingsGraph.{u, x, y} α) : (S.prod T).base = (S.base, T.base) := rfl
 
 @[simp] theorem prod_label (S : StallingsGraph.{u, v, w} α)
     (T : StallingsGraph.{u, x, y} α) (e : (S.prod T).graph.E) :
-    (S.prod T).label e = S.label e.1.1 := rfl
+    (S.prod T).label e = S.label e.val.1 := rfl
 
 @[simp] theorem prod_src (S : StallingsGraph.{u, v, w} α)
     (T : StallingsGraph.{u, x, y} α) (e : (S.prod T).graph.E) :
-    (S.prod T).graph.src e = (S.graph.src e.1.1, T.graph.src e.1.2) := rfl
+    (S.prod T).graph.src e = (S.graph.src e.val.1, T.graph.src e.val.2) := rfl
 
 @[simp] theorem prod_rev (S : StallingsGraph.{u, v, w} α)
     (T : StallingsGraph.{u, x, y} α) (e : (S.prod T).graph.E) :
-    ((S.prod T).graph.rev e).1 = (S.graph.rev e.1.1, T.graph.rev e.1.2) := rfl
+    ((S.prod T).graph.rev e).val = (S.graph.rev e.val.1, T.graph.rev e.val.2) := rfl
 
 @[simp] theorem prod_tgt (S : StallingsGraph.{u, v, w} α)
     (T : StallingsGraph.{u, x, y} α) (e : (S.prod T).graph.E) :
-    (S.prod T).graph.tgt e = (S.graph.tgt e.1.1, T.graph.tgt e.1.2) := by
+    (S.prod T).graph.tgt e = (S.graph.tgt e.val.1, T.graph.tgt e.val.2) := by
   simp only [SerreGraph.tgt_def, prod_src, prod_rev]
   rfl
 
@@ -85,7 +85,7 @@ with identical signed labels. -/
     (T : StallingsGraph.{u, x, y} α) : (S.prod T).Hom S where
   graphHom := {
     mapV := Prod.fst
-    mapE := fun e => e.1.1
+    mapE := fun e => e.val.1
     map_src := by intro e; rfl
     map_rev := by intro e; rfl }
   map_base := rfl
@@ -96,11 +96,11 @@ with identical signed labels. -/
     (T : StallingsGraph.{u, x, y} α) : (S.prod T).Hom T where
   graphHom := {
     mapV := Prod.snd
-    mapE := fun e => e.1.2
+    mapE := fun e => e.val.2
     map_src := by intro e; rfl
     map_rev := by intro e; rfl }
   map_base := rfl
-  map_label := by intro e; exact e.2.symm
+  map_label := by intro e; exact e.property.symm
 
 @[simp] theorem prodFst_mapV (S : StallingsGraph.{u, v, w} α)
     (T : StallingsGraph.{u, x, y} α) (p : (S.prod T).graph.V) :
@@ -112,11 +112,11 @@ with identical signed labels. -/
 
 @[simp] theorem prodFst_mapE (S : StallingsGraph.{u, v, w} α)
     (T : StallingsGraph.{u, x, y} α) (e : (S.prod T).graph.E) :
-    (S.prodFst T).graphHom.mapE e = e.1.1 := rfl
+    (S.prodFst T).graphHom.mapE e = e.val.1 := rfl
 
 @[simp] theorem prodSnd_mapE (S : StallingsGraph.{u, v, w} α)
     (T : StallingsGraph.{u, x, y} α) (e : (S.prod T).graph.E) :
-    (S.prodSnd T).graphHom.mapE e = e.1.2 := rfl
+    (S.prodSnd T).graphHom.mapE e = e.val.2 := rfl
 
 /-- Pair two morphisms with a common source into the labelled fibre product. -/
 def prodLift {R : StallingsGraph.{u, z, t} α} {S : StallingsGraph.{u, v, w} α}
@@ -143,7 +143,7 @@ def prodLift {R : StallingsGraph.{u, z, t} α} {S : StallingsGraph.{u, v, w} α}
 @[simp] theorem prodLift_mapE {R : StallingsGraph.{u, z, t} α}
     {S : StallingsGraph.{u, v, w} α} {T : StallingsGraph.{u, x, y} α}
     (f : R.Hom S) (g : R.Hom T) (e : R.graph.E) :
-    ((prodLift f g).graphHom.mapE e).1 =
+    ((prodLift f g).graphHom.mapE e).val =
       (f.graphHom.mapE e, g.graphHom.mapE e) := (rfl)
 
 @[simp] theorem prodFst_comp_prodLift {R : StallingsGraph.{u, z, t} α}
@@ -225,11 +225,11 @@ theorem exists_prod_path_of_word_eq (S : StallingsGraph.{u, v, w} α)
       obtain ⟨hpq, hef⟩ := List.append_inj' h (by simp)
       simp only [List.singleton_inj] at hef
       obtain ⟨r, hrS, hrT⟩ := ih q hpq
-      let k : (S.prod T).graph.E := ⟨(e.1, f.1), hef⟩
+      let k : (S.prod T).graph.E := ⟨(e.val, f.val), hef⟩
       refine ⟨r.cons ⟨k, ?_, ?_⟩, ?_, ?_⟩
-      · exact Prod.ext e.2.1 f.2.1
+      · exact Prod.ext e.property.1 f.property.1
       · rw [prod_tgt]
-        exact Prod.ext e.2.2 f.2.2
+        exact Prod.ext e.property.2 f.property.2
       · -- `erw` crosses the definitional equality between the product's vertex pairs
         -- and the vertex type of its graph, which `rw` cannot unfold here.
         erw [Prefunctor.mapPath_cons]
@@ -274,8 +274,9 @@ theorem IsFolded.prod {S : StallingsGraph.{u, v, w} α}
   intro e f hsrc hlabel
   apply Subtype.ext
   apply Prod.ext
-  · apply hS e.1.1 f.1.1 (congrArg Prod.fst hsrc) hlabel
-  · exact hT e.1.2 f.1.2 (congrArg Prod.snd hsrc) (e.2.symm.trans (hlabel.trans f.2))
+  · apply hS e.val.1 f.val.1 (congrArg Prod.fst hsrc) hlabel
+  · exact hT e.val.2 f.val.2 (congrArg Prod.snd hsrc) (e.property.symm.trans
+      (hlabel.trans f.property))
 
 /-- A morphism into the second factor makes the product accept exactly the first subgroup. -/
 theorem prod_subgroup_of_hom {S : StallingsGraph.{u, v, w} α}

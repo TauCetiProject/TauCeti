@@ -24,7 +24,8 @@ a Hausdorff space are determined on `U` by their values on `U \ S`
 (`Preperfect.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`,
 `IsOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`).
 
-A product of infinitely many nontrivial topological spaces has no isolated points: a
+A nonempty space without isolated points is nontrivial (`PerfectSpace.nontrivial`). A product of
+infinitely many nontrivial topological spaces has no isolated points: a
 neighbourhood of a point in the product topology constrains only finitely many coordinates, so
 changing a coordinate outside them moves the point without leaving the neighbourhood. No
 separation axiom is needed. In particular Cantor space `ℕ → Bool` and Baire space `ℕ → ℕ` are
@@ -39,6 +40,7 @@ perfect.
   `Preperfect.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`,
   `IsOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`: density and continuous-extension
   uniqueness across discrete subsets of preperfect sets and open sets in perfect spaces.
+* `PerfectSpace.nontrivial`: a nonempty perfect space has two distinct points.
 * `TauCeti.perfectSpace_pi`: a product of infinitely many nontrivial spaces is a perfect space.
 
 ## References
@@ -61,10 +63,10 @@ variable {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
 
 private theorem perfect_image_of_perfect (h : X ≃ₜ Y) {C : Set X} (hC : Perfect C) :
     Perfect (h '' C) :=
-  ⟨h.isClosed_image.2 hC.closed, by
+  ⟨h.isClosed_image.2 hC.isClosed, by
     rintro _ ⟨x, hx, rfl⟩
     simpa [Filter.map_principal] using
-      AccPt.map (hC.acc x hx) h.continuous.continuousAt h.injective⟩
+      AccPt.map (hC.preperfect x hx) h.continuous.continuousAt h.injective⟩
 
 /-- The image of a set under a homeomorphism is perfect exactly when the set is perfect. -/
 @[simp]
@@ -77,7 +79,7 @@ protected theorem perfectSpace [PerfectSpace X] (h : X ≃ₜ Y) : PerfectSpace 
   have hU : Perfect (h '' (univ : Set X)) :=
     h.perfect_image.2 (PerfectSpace.univ_perfect (α := X))
   rw [Set.image_univ, h.surjective.range_eq] at hU
-  exact ⟨hU.acc⟩
+  exact ⟨hU.preperfect⟩
 
 end Homeomorph
 
@@ -115,6 +117,14 @@ theorem IsOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete {X : Type u} {Y 
     {U S : Set X} (hU : IsOpen U) (hS : IsDiscrete (U ∩ S)) (hg₁ : ContinuousOn g₁ U)
     (hg₂ : ContinuousOn g₂ U) (heq : EqOn g₁ g₂ (U \ S)) : EqOn g₁ g₂ U :=
   hU.preperfect.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete hS hg₁ hg₂ heq
+
+/-- A nonempty space without isolated points is nontrivial: the punctured neighbourhoods of any
+point contain a second point. -/
+theorem PerfectSpace.nontrivial (X : Type u) [TopologicalSpace X] [PerfectSpace X] [Nonempty X] :
+    Nontrivial X := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  obtain ⟨y, hy⟩ := (eventually_mem_nhdsWithin (a := x) (s := {x}ᶜ)).exists
+  exact nontrivial_of_ne y x hy
 
 namespace TauCeti
 

@@ -196,6 +196,14 @@ theorem contDiffAt_rungeLenz (m κ : ℝ) {n : WithTop ℕ∞} {x : V × V} (hq 
       ((contDiffAt_const.div ((contDiffAt_norm ℝ hq).comp x contDiffAt_fst)
         (norm_ne_zero_iff.2 hq)).smul contDiffAt_fst)
 
+/-- Away from the collision set, a central-force Hamiltonian is `C^n` at `(q, p)` when the
+potential `U` is `C^n` at `‖q‖`. -/
+theorem contDiffAt_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ} {n : WithTop ℕ∞} {x : V × V}
+    (hU : ContDiffAt ℝ n U ‖x.1‖) (hq : x.1 ≠ 0) :
+    ContDiffAt ℝ n (centralForceHamiltonian m U) x :=
+  ((contDiff_norm_sq ℝ).comp contDiff_snd).contDiffAt.div_const _ |>.add
+    (hU.comp (f := fun y : V × V ↦ ‖y.1‖) x ((contDiffAt_norm ℝ hq).comp x contDiffAt_fst))
+
 /-- Away from the collision set, the partial gradients of the component `⟪A, e⟫` of the
 Runge–Lenz vector are
 `∇_q = ‖p‖² e - ⟪p, e⟫ p - (m κ / ‖q‖) e + (m κ ⟪q, e⟫ / ‖q‖³) q` and
