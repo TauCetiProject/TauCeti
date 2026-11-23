@@ -8,9 +8,9 @@ module
 public import TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
+public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
 import TauCeti.Topology.Homotopy.Covering
-import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 
 /-!
 # The homology of the Thom pair in the rank degree, with twisted coefficients
@@ -59,9 +59,12 @@ makes the map over the whole base an isomorphism.
 
 * `TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology`: `Hᵣ(E, E₀; K) ≅ H₀(B; o(E) ⊗ K)` for
   any ring `K`.
+* `TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology_inv_ιTwistedHomology₀_eq_smul`,
+  `TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology_hom_apply_orientedFiberGenerator`:
+  its values on the classes of the fibres and on the fibre classes of the generators.
 * `TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology_inv_ιTwistedHomology₀`,
-  `TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology_hom_apply`: its values on the classes
-  of the fibres.
+  `TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology_hom_apply`: the same values, read
+  through a linear trivialization.
 
 ## References
 
@@ -579,8 +582,12 @@ the point class of `1` (`TauCeti.complZeroPairPointHom`) in `Hᵣ(F, F ∖ {0}; 
 trivialization reading an orientation of `E_b` as `ω` carries the class of that orientation to the
 fibre class of the point class of `1`
 (`TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology_inv_ιTwistedHomology₀`,
-`TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology_hom_apply`). The opposite choice of `ω`
-negates the isomorphism. -/
+`TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology_hom_apply`). In terms of the generator
+`TauCeti.orientedFiberGenerator` of an arbitrary orientation `o` of `E_b`, the class of `f` goes to
+`f o` times the fibre class of the generator of `o`
+(`TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology_inv_ιTwistedHomology₀_eq_smul`,
+`TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology_hom_apply_orientedFiberGenerator`).
+The opposite choice of `ω` negates the isomorphism. -/
 def thomPairSingularHomologyFinrankIsoTwistedHomology :
     (thomPair F E).singularHomology (ModuleCat.of K K) (finrank ℝ F) ≅
       LocalCoefficientSystem.twistedHomology.{w, w, w} (signLocalSystem F E K hι) 0 :=
@@ -591,6 +598,37 @@ private theorem thomPairSingularHomologyFinrankIsoTwistedHomology_inv :
     (thomPairSingularHomologyFinrankIsoTwistedHomology K F E hι ω).inv =
       twistedHomologyThomPairDesc K E hι ω :=
   rfl
+
+/-- **The twisted Thom isomorphism on the class of a fibre function.** For any orientation `o` of
+`E_b`, the class of `f` in the fibre of the orientation local system over `b` goes to `f o` times
+the fibre class of the generator of `o`. -/
+theorem thomPairSingularHomologyFinrankIsoTwistedHomology_inv_ιTwistedHomology₀_eq_smul {b : B}
+    (o : Orientation ℝ (E b) ι) (f : (signLocalSystem F E K hι).obj (FundamentalGroupoid.mk b)) :
+    (thomPairSingularHomologyFinrankIsoTwistedHomology K F E hι ω).inv
+        (LocalCoefficientSystem.ιTwistedHomology₀.{w, w, w} (signLocalSystem F E K hι) b f) =
+      signLocalSystemFiberEquiv hι o f •
+        TopPair.singularHomologyMap (fiberThomPairMap F E b) (ModuleCat.of K K) (finrank ℝ F)
+          (orientedFiberGenerator K ω o) := by
+  rw [← ConcreteCategory.comp_apply, thomPairSingularHomologyFinrankIsoTwistedHomology_inv,
+    ιTwistedHomology₀_twistedHomologyThomPairDesc, ConcreteCategory.comp_apply,
+    twistedFiberClass_apply hι ω univ (mem_univ b) o, map_smul, fiberClassOver,
+    ← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp,
+    fiberThomPairOverMap_comp_thomPairOverUnivIso_hom]
+
+/-- **The twisted Thom isomorphism on the fibre class of a generator.** For any orientation `o` of
+`E_b`, the fibre class of the generator of `o` goes to the class of the function on the
+orientations of `E_b` equal to `1` at `o`. -/
+theorem thomPairSingularHomologyFinrankIsoTwistedHomology_hom_apply_orientedFiberGenerator {b : B}
+    (o : Orientation ℝ (E b) ι) :
+    (thomPairSingularHomologyFinrankIsoTwistedHomology K F E hι ω).hom
+        (TopPair.singularHomologyMap (fiberThomPairMap F E b) (ModuleCat.of K K) (finrank ℝ F)
+          (orientedFiberGenerator K ω o)) =
+      LocalCoefficientSystem.ιTwistedHomology₀.{w, w, w} (signLocalSystem F E K hι) b
+        ((signLocalSystemFiberEquiv hι o).symm 1) := by
+  have h := thomPairSingularHomologyFinrankIsoTwistedHomology_inv_ιTwistedHomology₀_eq_smul hι ω o
+    ((signLocalSystemFiberEquiv (R := K) hι o).symm 1)
+  rw [LinearEquiv.apply_symm_apply, one_smul] at h
+  rw [← h, Iso.inv_hom_id_apply]
 
 /-- **The twisted Thom isomorphism on the class of a fibre function.** Let `e` be a linear
 trivialization whose base set contains `b`, and `o` the orientation of `E_b` that `e` reads as the
@@ -606,11 +644,8 @@ theorem thomPairSingularHomologyFinrankIsoTwistedHomology_inv_ιTwistedHomology�
           (TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
             (ModuleCat.of K K) (finrank ℝ F)
             (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K))) := by
-  rw [← ConcreteCategory.comp_apply, thomPairSingularHomologyFinrankIsoTwistedHomology_inv,
-    ιTwistedHomology₀_twistedHomologyThomPairDesc, ConcreteCategory.comp_apply,
-    twistedFiberClass_apply hι ω univ (mem_univ b) ((e.mapOrientation ι hb).symm ω), map_smul,
-    fiberClassOver, ← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp,
-    fiberThomPairOverMap_comp_thomPairOverUnivIso_hom,
+  rw [thomPairSingularHomologyFinrankIsoTwistedHomology_inv_ιTwistedHomology₀_eq_smul hι ω
+      ((e.mapOrientation ι hb).symm ω),
     orientedFiberGenerator_of_mapOrientation_eq ω hι e hb (Equiv.apply_symm_apply _ _)]
 
 /-- **The twisted Thom isomorphism on a fibre class.** Let `e` be a linear trivialization whose
@@ -626,10 +661,8 @@ theorem thomPairSingularHomologyFinrankIsoTwistedHomology_hom_apply
             (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)))) =
       LocalCoefficientSystem.ιTwistedHomology₀.{w, w, w} (signLocalSystem F E K hι) b
         ((signLocalSystemFiberEquiv hι ((e.mapOrientation ι hb).symm ω)).symm 1) := by
-  have h := thomPairSingularHomologyFinrankIsoTwistedHomology_inv_ιTwistedHomology₀ hι ω e hb
-    ((signLocalSystemFiberEquiv (R := K) hι ((e.mapOrientation ι hb).symm ω)).symm 1)
-  rw [LinearEquiv.apply_symm_apply, one_smul] at h
-  rw [← h, Iso.inv_hom_id_apply]
+  rw [← orientedFiberGenerator_of_mapOrientation_eq ω hι e hb (Equiv.apply_symm_apply _ _),
+    thomPairSingularHomologyFinrankIsoTwistedHomology_hom_apply_orientedFiberGenerator]
 
 end Twisted
 
