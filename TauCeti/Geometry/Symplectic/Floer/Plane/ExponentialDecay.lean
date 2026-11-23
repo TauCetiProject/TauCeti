@@ -235,7 +235,7 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePertur
         fun x hxper hx hxK _ hv ↦
           ω.eq_zero_of_dysonSeriesLeft_apply_eq_self hL hHs2 hx (hnd x hxper hx hxK) hv
     refine ⟨x, hxper, hx, κ, hκ, A, h.mono fun s hs t ↦ ?_⟩
-    rw [← realChart_positive_mk, endSign_positive, one_mul]
+    rw [endSign_positive, one_mul, ← TauCeti.Complex.realChart_mk]
     exact hs t
   -- The negative plane is the positive plane for the reversed Hamiltonian `-H(-t)`, whose
   -- angular coordinate is reversed, so that its cylindrical structure is `J_{-t}`.
@@ -265,7 +265,7 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePertur
   refine ⟨_, hxper.comp_neg, ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hx,
     κ, hκ, A, h.mono fun s hs t ↦ ?_⟩
   rw [norm_fderiv_comp_realChart_negative_sub_smulRight, cylindricalEndLift_negative_endSign_mul,
-    ← realChart_positive_mk]
+    endSign_positive, one_mul, ← TauCeti.Complex.realChart_mk]
   exact hs (-t)
 
 /-- **Exponential convergence at the end of a PSS plane.** Under the hypotheses of
