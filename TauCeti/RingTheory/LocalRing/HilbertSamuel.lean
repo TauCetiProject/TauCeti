@@ -8,68 +8,70 @@ module
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import TauCeti.RingTheory.Length
 import Mathlib.RingTheory.LocalRing.Length
 import Mathlib.RingTheory.TensorProduct.Quotient
-import TauCeti.RingTheory.Length
 
 /-!
-# Local quotient Hilbert–Samuel functions
+# The Hilbert–Samuel function of a quotient of a local ring
 
-For a local commutative ring `(A, 𝔪)` and an ideal `I` of `A`, the *local quotient Hilbert–Samuel
-function* `TauCeti.localQuotientHilbertSamuel A I : ℕ → ℕ∞` sends `n` to the `A`-module length of
-`A ⧸ (I ⊔ 𝔪 ^ (n + 1))`. Measuring length over `A` (equivalently over `A ⧸ I` when `I` is proper,
-`TauCeti.localQuotientHilbertSamuel_quotient_bot`) normalizes each simple composition factor to have
-length `1`, rather than multiplying by the degree of the residue field over a local base ring or
-ground field (`TauCeti.length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField`): in
-particular, `H_{A/I}(0) = 1` for every proper ideal `I`
-(`TauCeti.localQuotientHilbertSamuel_zero_of_ne_top`), even at non-rational closed points whose
-residue field has degree greater than `1`. For `I = ⊤`, the quotient is zero and every value
-vanishes (`TauCeti.localQuotientHilbertSamuel_top`), while for `I = 𝔪` every value equals `1`
-(`TauCeti.localQuotientHilbertSamuel_maximalIdeal`) and adjoining `𝔪 ^ (k + 1)` truncates the
-function at `min k n` (`TauCeti.localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ`,
-`TauCeti.localQuotientHilbertSamuel_maximalIdeal_pow_succ`).
+For a local ring `(A, 𝔪)` and an ideal `I` of `A`, `I.localQuotientHilbertSamuel n` is the length
+over `A` of `A ⧸ (I + 𝔪 ^ (n + 1))`. When `I` is proper, `B = A ⧸ I` is local and this is the
+Hilbert–Samuel function `n ↦ ℓ_B(B ⧸ 𝔪_B ^ (n + 1))` of `B`
+(`Ideal.localQuotientHilbertSamuel_bot_quotient`). For the unit ideal it vanishes identically
+(`Ideal.localQuotientHilbertSamuel_top`), while for `I = 𝔪` every value equals `1`
+(`Ideal.localQuotientHilbertSamuel_maximalIdeal`) and adjoining `𝔪 ^ (k + 1)` truncates the
+function at `min k n` (`Ideal.localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ`,
+`Ideal.localQuotientHilbertSamuel_maximalIdeal_pow_succ`). Indexing by ideals of a fixed ambient
+local ring keeps the unit ideal in scope and lets the functions of different ideals of the same ring
+be compared, which is how they are used to measure singularities of closed subschemes of a fixed
+regular ambient space.
 
-When `A` is Noetherian, every quotient `A ⧸ (I ⊔ 𝔪 ^ n)` has finite length
-(`Ideal.isFiniteLength_quotient_sup_maximalIdeal_pow`), so every value
-`localQuotientHilbertSamuel A I n` is finite (`TauCeti.localQuotientHilbertSamuel_lt_top`,
-`TauCeti.natCast_toNat_localQuotientHilbertSamuel`). Along any surjective local ring homomorphism
-`f : A → B`, computing `localQuotientHilbertSamuel` at `I.map f` on `B` agrees with computing it at
-`RingHom.ker f ⊔ I` on `A` (`TauCeti.localQuotientHilbertSamuel_map_of_surjective`), specializing
-to both local quotients and ring or algebra equivalences
-(`TauCeti.localQuotientHilbertSamuel_map_equiv`, `TauCeti.localQuotientHilbertSamuel_comap_equiv`).
-Along any flat extension of local rings `A → B` with `𝔪_A B = 𝔪_B`, flat base change of lengths
-(`IsLocalRing.length_baseChange`) shows that extending `I` to `B` preserves every value of the
-Hilbert–Samuel function without any Noetherian hypothesis
-(`TauCeti.localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq`).
+The values lie in `ℕ∞` and are finite when `A` is noetherian
+(`Ideal.localQuotientHilbertSamuel_ne_top`, `Ideal.localQuotientHilbertSamuel_lt_top`,
+`Ideal.natCast_toNat_localQuotientHilbertSamuel`). The function is monotone in `n` and antitone in
+`I`, its value at `n` only depends on `I + 𝔪 ^ (n + 1)`, and for a proper ideal its value at `0`
+is `1`. Lengths are taken over the local ring: at a closed point whose residue field has degree two
+over a ground field `k`, the value at `0` is still `1`, not `2`
+(`TauCeti.length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField`). Along any surjective
+local ring homomorphism `f : A → B`, computing `localQuotientHilbertSamuel` at `I.map f` on `B`
+agrees with computing it at `RingHom.ker f ⊔ I` on `A`
+(`Ideal.localQuotientHilbertSamuel_map_of_surjective`), specializing to local quotients and ring
+or algebra equivalences (`Ideal.localQuotientHilbertSamuel_map_equiv`,
+`Ideal.localQuotientHilbertSamuel_comap_equiv`). Along any flat extension of local rings `A → B`
+with `𝔪_A B = 𝔪_B`, flat base change of lengths (`IsLocalRing.length_baseChange`) shows that
+extending `I` to `B` preserves every value of the Hilbert–Samuel function without any noetherian
+hypothesis (`Ideal.localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq`).
 
 ## Main definitions
 
-* `TauCeti.localQuotientHilbertSamuel`: `n ↦ Module.length A (A ⧸ (I ⊔ 𝔪 ^ (n + 1)))`.
+* `Ideal.localQuotientHilbertSamuel I n`: the length of `A ⧸ (I ⊔ 𝔪 ^ (n + 1))` over `A`.
 
 ## Main results
 
-* `TauCeti.localQuotientHilbertSamuel_eq_zero_iff`,
-  `TauCeti.localQuotientHilbertSamuel_zero_of_ne_top`,
-  `TauCeti.localQuotientHilbertSamuel_maximalIdeal`: vanishing characterizes `I = ⊤`, every proper
-  ideal satisfies `H_{A/I}(0) = 1`, and `H_{A/𝔪}(n) = 1` for all `n`.
-* `TauCeti.localQuotientHilbertSamuel_monotone`, `TauCeti.localQuotientHilbertSamuel_anti`,
-  `TauCeti.localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ`,
-  `TauCeti.localQuotientHilbertSamuel_maximalIdeal_pow_succ`,
-  `TauCeti.localQuotientHilbertSamuel_succ`: monotonicity in `n`, antitonicity in `I`, truncation by
-  powers of `𝔪`, and the one-step filtration identity.
-* `TauCeti.localQuotientHilbertSamuel_map_of_surjective`,
-  `TauCeti.localQuotientHilbertSamuel_quotient_map`,
-  `TauCeti.localQuotientHilbertSamuel_quotient_bot`,
-  `TauCeti.localQuotientHilbertSamuel_map_equiv`,
-  `TauCeti.localQuotientHilbertSamuel_comap_equiv`,
-  `TauCeti.localQuotientHilbertSamuel_bot_of_equiv`: compatibility with surjective local ring
+* `Ideal.localQuotientHilbertSamuel_ne_top`, `Ideal.localQuotientHilbertSamuel_lt_top`,
+  `Ideal.natCast_toNat_localQuotientHilbertSamuel`: over a noetherian local ring the values are
+  finite.
+* `Ideal.localQuotientHilbertSamuel_eq_zero_iff`, `Ideal.localQuotientHilbertSamuel_pos_iff`: a
+  value vanishes exactly for the unit ideal.
+* `Ideal.localQuotientHilbertSamuel_zero`, `Ideal.localQuotientHilbertSamuel_bot_zero`,
+  `Ideal.localQuotientHilbertSamuel_maximalIdeal`: the value at `0` of a proper ideal is `1`, and
+  `H_{A/𝔪}(n) = 1` for all `n`.
+* `Ideal.localQuotientHilbertSamuel_monotone`, `Ideal.localQuotientHilbertSamuel_anti`,
+  `Ideal.localQuotientHilbertSamuel_sup_maximalIdeal_pow`,
+  `Ideal.localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ`,
+  `Ideal.localQuotientHilbertSamuel_maximalIdeal_pow_succ`, `Ideal.localQuotientHilbertSamuel_succ`:
+  monotonicity in `n`, antitonicity in `I`, truncation by powers of `𝔪`, and the one-step
+  filtration identity.
+* `Ideal.localQuotientHilbertSamuel_bot_quotient`,
+  `Ideal.localQuotientHilbertSamuel_map_of_surjective`,
+  `Ideal.localQuotientHilbertSamuel_quotient_map`,
+  `Ideal.localQuotientHilbertSamuel_map_equiv`, `Ideal.localQuotientHilbertSamuel_comap_equiv`,
+  `Ideal.localQuotientHilbertSamuel_bot_of_equiv`: compatibility with surjective local ring
   homomorphisms, local quotients `A ⧸ I`, and ring/algebra equivalences.
 * `TauCeti.length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField`: comparison between
   `A`-length and local base-ring length via the residue-field length.
-* `TauCeti.localQuotientHilbertSamuel_ne_top`,
-  `TauCeti.localQuotientHilbertSamuel_lt_top`,
-  `TauCeti.natCast_toNat_localQuotientHilbertSamuel`: finiteness over Noetherian local rings.
-* `TauCeti.localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq`: invariance under flat
+* `Ideal.localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq`: invariance under flat
   local extensions with `𝔪_A B = 𝔪_B`.
 
 ## References
@@ -77,120 +79,137 @@ Hilbert–Samuel function without any Noetherian hypothesis
 * Edward Bierstone and Pierre D. Milman, *Canonical desingularization in characteristic zero by
   blowing up the maximum strata of a local invariant*, Invent. Math. 128 (1997), 207–302, §1
   (Remarks 1.3, pp. 213–214), §3 (Corollary 3.20, p. 239), and §9 (p. 276).
-* Hideyuki Matsumura, *Commutative Ring Theory*, Cambridge Studies in Advanced Mathematics 8,
-  Cambridge University Press, 1986, §13.
+* H. Matsumura, *Commutative Ring Theory*, §13.
 -/
 
 public section
 
-namespace TauCeti
+namespace Ideal
+
+open IsLocalRing
 
 section Basic
 
-variable (A : Type*) [CommRing A] [IsLocalRing A]
+variable {A : Type*} [CommRing A] [IsLocalRing A]
 
-/-- The local quotient Hilbert–Samuel function `H_{A/I}(n) = length_A (A ⧸ (I + 𝔪 ^ (n + 1)))` of
-an ideal `I` in a local commutative ring `(A, 𝔪)`. -/
+/-- The Hilbert–Samuel function of the quotient of a local ring `(A, 𝔪)` by an ideal `I`: its
+value at `n` is the length over `A` of `A ⧸ (I + 𝔪 ^ (n + 1))`. It vanishes for `I = ⊤`; for a
+proper ideal it is the Hilbert–Samuel function of the local ring `A ⧸ I`. -/
 noncomputable def localQuotientHilbertSamuel (I : Ideal A) (n : ℕ) : ℕ∞ :=
-  Module.length A (A ⧸ (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1)))
-
-variable {A}
+  Module.length A (A ⧸ (I ⊔ maximalIdeal A ^ (n + 1)))
 
 theorem localQuotientHilbertSamuel_def (I : Ideal A) (n : ℕ) :
-    localQuotientHilbertSamuel A I n =
-      Module.length A (A ⧸ (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1))) := (rfl)
+    I.localQuotientHilbertSamuel n = Module.length A (A ⧸ (I ⊔ maximalIdeal A ^ (n + 1))) :=
+  (rfl)
 
-/-- For the unit ideal `⊤`, the quotient is zero and every Hilbert–Samuel value vanishes. -/
-@[simp]
-theorem localQuotientHilbertSamuel_top (n : ℕ) :
-    localQuotientHilbertSamuel A (⊤ : Ideal A) n = 0 := by
-  simp [localQuotientHilbertSamuel_def]
+/-- The Hilbert–Samuel function of the zero ideal is that of the local ring itself. -/
+theorem localQuotientHilbertSamuel_bot (n : ℕ) :
+    (⊥ : Ideal A).localQuotientHilbertSamuel n =
+      Module.length A (A ⧸ maximalIdeal A ^ (n + 1)) := by
+  rw [localQuotientHilbertSamuel_def, bot_sup_eq]
 
-/-- `localQuotientHilbertSamuel A I n = 0` if and only if `I = ⊤`. -/
+/-- A value of the Hilbert–Samuel function vanishes exactly for the unit ideal, whose quotient is
+the zero ring. -/
 @[simp]
 theorem localQuotientHilbertSamuel_eq_zero_iff {I : Ideal A} {n : ℕ} :
-    localQuotientHilbertSamuel A I n = 0 ↔ I = ⊤ := by
+    I.localQuotientHilbertSamuel n = 0 ↔ I = ⊤ := by
   rw [localQuotientHilbertSamuel_def, Module.length_eq_zero_iff,
     Submodule.Quotient.subsingleton_iff]
-  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, top_sup_eq]⟩
   by_contra hI
-  have hle : I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1) ≤ IsLocalRing.maximalIdeal A :=
-    sup_le (IsLocalRing.le_maximalIdeal hI) (Ideal.pow_le_self (Nat.succ_ne_zero n))
-  exact (IsLocalRing.maximalIdeal.isMaximal A).ne_top (top_unique (h ▸ hle))
+  refine (maximalIdeal.isMaximal A).ne_top (top_le_iff.mp (h ▸ sup_le (le_maximalIdeal hI) ?_))
+  exact pow_le_self n.succ_ne_zero
 
-/-- `0 < localQuotientHilbertSamuel A I n` if and only if `I` is a proper ideal. -/
+/-- `0 < I.localQuotientHilbertSamuel n` if and only if `I` is a proper ideal. -/
 @[simp]
 theorem localQuotientHilbertSamuel_pos_iff {I : Ideal A} {n : ℕ} :
-    0 < localQuotientHilbertSamuel A I n ↔ I ≠ ⊤ := by
+    0 < I.localQuotientHilbertSamuel n ↔ I ≠ ⊤ := by
   rw [pos_iff_ne_zero, not_iff_not, localQuotientHilbertSamuel_eq_zero_iff]
 
-/-- For every proper ideal `I ≠ ⊤` of a local ring `A`, `localQuotientHilbertSamuel A I 0 = 1`. -/
-theorem localQuotientHilbertSamuel_zero_of_ne_top {I : Ideal A} (hI : I ≠ ⊤) :
-    localQuotientHilbertSamuel A I 0 = 1 := by
-  rw [localQuotientHilbertSamuel_def, zero_add, pow_one,
-    sup_eq_right.mpr (IsLocalRing.le_maximalIdeal hI), Ideal.length_quotient_eq_one]
+@[simp]
+theorem localQuotientHilbertSamuel_top (n : ℕ) : (⊤ : Ideal A).localQuotientHilbertSamuel n = 0 :=
+  localQuotientHilbertSamuel_eq_zero_iff.mpr rfl
+
+/-- The Hilbert–Samuel function of a proper ideal takes the value `1` at `0`: the quotient by
+`I + 𝔪 = 𝔪` is the residue field. -/
+theorem localQuotientHilbertSamuel_zero {I : Ideal A} (hI : I ≠ ⊤) :
+    I.localQuotientHilbertSamuel 0 = 1 := by
+  rw [localQuotientHilbertSamuel_def, zero_add, pow_one, sup_eq_right.mpr (le_maximalIdeal hI)]
+  exact length_quotient_eq_one _
 
 /-- At degree `0`, the Hilbert–Samuel function of a local ring `A` itself (`I = ⊥`) equals `1`. -/
 @[simp]
 theorem localQuotientHilbertSamuel_bot_zero :
-    localQuotientHilbertSamuel A (⊥ : Ideal A) 0 = 1 :=
-  localQuotientHilbertSamuel_zero_of_ne_top bot_ne_top
+    (⊥ : Ideal A).localQuotientHilbertSamuel 0 = 1 :=
+  localQuotientHilbertSamuel_zero bot_ne_top
 
 /-- For the maximal ideal `𝔪` of a local ring `A`, every Hilbert–Samuel value equals `1`. -/
 @[simp]
 theorem localQuotientHilbertSamuel_maximalIdeal (n : ℕ) :
-    localQuotientHilbertSamuel A (IsLocalRing.maximalIdeal A) n = 1 := by
-  rw [localQuotientHilbertSamuel_def,
-    sup_eq_left.mpr (Ideal.pow_le_self (Nat.succ_ne_zero n)),
-    Ideal.length_quotient_eq_one]
+    (maximalIdeal A).localQuotientHilbertSamuel n = 1 := by
+  rw [localQuotientHilbertSamuel_def, sup_eq_left.mpr (pow_le_self n.succ_ne_zero),
+    length_quotient_eq_one]
 
-/-- `localQuotientHilbertSamuel A I` is monotone in the jet degree `n`. -/
-theorem localQuotientHilbertSamuel_monotone (I : Ideal A) :
-    Monotone (localQuotientHilbertSamuel A I) := fun _ _ hmn ↦
-  length_quotient_anti (sup_le_sup_left (Ideal.pow_le_pow_right (Nat.add_le_add_right hmn 1)) I)
+/-- The Hilbert–Samuel function is monotone. -/
+theorem localQuotientHilbertSamuel_monotone (I : Ideal A) : Monotone I.localQuotientHilbertSamuel :=
+  fun _ _ h ↦ TauCeti.length_quotient_anti
+    (sup_le_sup_left (pow_le_pow_right (Nat.succ_le_succ h)) I)
 
-/-- Enlarging the ideal `I` cannot increase `localQuotientHilbertSamuel A I n`. -/
+/-- Enlarging the ideal can only decrease its Hilbert–Samuel function. -/
 theorem localQuotientHilbertSamuel_anti {I J : Ideal A} (h : I ≤ J) (n : ℕ) :
-    localQuotientHilbertSamuel A J n ≤ localQuotientHilbertSamuel A I n :=
-  length_quotient_anti (sup_le_sup_right h _)
+    J.localQuotientHilbertSamuel n ≤ I.localQuotientHilbertSamuel n :=
+  TauCeti.length_quotient_anti (sup_le_sup_right h _)
 
-/-- Adjoining `𝔪 ^ (k + 1)` to `I` truncates `localQuotientHilbertSamuel A I` at degree
+/-- The value at `n` only depends on `I + 𝔪 ^ (n + 1)`: adding a power `𝔪 ^ k` with `n < k`
+does not change it. -/
+theorem localQuotientHilbertSamuel_sup_maximalIdeal_pow (I : Ideal A) {k n : ℕ} (h : n < k) :
+    (I ⊔ maximalIdeal A ^ k).localQuotientHilbertSamuel n = I.localQuotientHilbertSamuel n := by
+  rw [localQuotientHilbertSamuel_def, localQuotientHilbertSamuel_def, sup_assoc,
+    sup_eq_right.mpr (pow_le_pow_right h : maximalIdeal A ^ k ≤ maximalIdeal A ^ (n + 1))]
+
+/-- Adjoining `𝔪 ^ (k + 1)` to `I` truncates `I.localQuotientHilbertSamuel` at degree
 `min k n`. -/
 theorem localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ (I : Ideal A) (k n : ℕ) :
-    localQuotientHilbertSamuel A (I ⊔ IsLocalRing.maximalIdeal A ^ (k + 1)) n =
-      localQuotientHilbertSamuel A I (min k n) := by
+    (I ⊔ maximalIdeal A ^ (k + 1)).localQuotientHilbertSamuel n =
+      I.localQuotientHilbertSamuel (min k n) := by
   rw [localQuotientHilbertSamuel_def, localQuotientHilbertSamuel_def, sup_assoc]
   refine congrArg (fun J ↦ Module.length A (A ⧸ (I ⊔ J))) ?_
   rcases le_total k n with hkn | hnk
-  · rw [min_eq_left hkn,
-      sup_eq_left.mpr (Ideal.pow_le_pow_right (Nat.add_le_add_right hkn 1))]
-  · rw [min_eq_right hnk,
-      sup_eq_right.mpr (Ideal.pow_le_pow_right (Nat.add_le_add_right hnk 1))]
+  · rw [min_eq_left hkn, sup_eq_left.mpr (pow_le_pow_right (Nat.add_le_add_right hkn 1))]
+  · rw [min_eq_right hnk, sup_eq_right.mpr (pow_le_pow_right (Nat.add_le_add_right hnk 1))]
 
 /-- For `𝔪 ^ (k + 1)`, the Hilbert–Samuel value at degree `n` agrees with that of `⊥` at degree
 `min k n`. -/
 theorem localQuotientHilbertSamuel_maximalIdeal_pow_succ (k n : ℕ) :
-    localQuotientHilbertSamuel A (IsLocalRing.maximalIdeal A ^ (k + 1)) n =
-      localQuotientHilbertSamuel A ⊥ (min k n) := by
-  rw [← bot_sup_eq (IsLocalRing.maximalIdeal A ^ (k + 1)),
-    localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ]
+    (maximalIdeal A ^ (k + 1)).localQuotientHilbertSamuel n =
+      (⊥ : Ideal A).localQuotientHilbertSamuel (min k n) := by
+  rw [← bot_sup_eq (maximalIdeal A ^ (k + 1)), localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ]
 
 /-- Filtration step: `H_{A/I}(n + 1)` equals `H_{A/I}(n)` plus the length of the image of
 `𝔪 ^ (n + 1)` in `A ⧸ (I + 𝔪 ^ (n + 2))`. -/
 theorem localQuotientHilbertSamuel_succ (I : Ideal A) (n : ℕ) :
-    localQuotientHilbertSamuel A I (n + 1) =
-      localQuotientHilbertSamuel A I n +
+    I.localQuotientHilbertSamuel (n + 1) =
+      I.localQuotientHilbertSamuel n +
         Module.length A
-          (Submodule.map (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 2)).mkQ
-            (IsLocalRing.maximalIdeal A ^ (n + 1))) := by
-  have hsup : (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 2)) ⊔
-      IsLocalRing.maximalIdeal A ^ (n + 1) = I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1) := by
+          (Submodule.map (I ⊔ maximalIdeal A ^ (n + 2)).mkQ (maximalIdeal A ^ (n + 1))) := by
+  have hsup : (I ⊔ maximalIdeal A ^ (n + 2)) ⊔ maximalIdeal A ^ (n + 1) =
+      I ⊔ maximalIdeal A ^ (n + 1) := by
     rw [sup_assoc]
-    exact congrArg (I ⊔ ·) (sup_eq_right.mpr (Ideal.pow_le_pow_right (Nat.le_succ (n + 1))))
+    exact congrArg (I ⊔ ·) (sup_eq_right.mpr (pow_le_pow_right (Nat.le_succ (n + 1))))
   rw [localQuotientHilbertSamuel_def, localQuotientHilbertSamuel_def,
-    length_quotient_eq_length_map_add_length_quotient_sup (IsLocalRing.maximalIdeal A ^ (n + 1))
-      (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 2)),
+    TauCeti.length_quotient_eq_length_map_add_length_quotient_sup (maximalIdeal A ^ (n + 1))
+      (I ⊔ maximalIdeal A ^ (n + 2)),
     hsup, add_comm]
+
+/-- For a proper ideal `I`, the Hilbert–Samuel function of `I` is that of the local ring
+`A ⧸ I`, measured by lengths over `A ⧸ I`. -/
+@[simp]
+theorem localQuotientHilbertSamuel_bot_quotient (I : Ideal A) [IsLocalRing (A ⧸ I)] (n : ℕ) :
+    (⊥ : Ideal (A ⧸ I)).localQuotientHilbertSamuel n = I.localQuotientHilbertSamuel n := by
+  rw [localQuotientHilbertSamuel_bot,
+    ← map_maximalIdeal_of_surjective (Quotient.mk I) Quotient.mk_surjective, ← Ideal.map_pow,
+    length_quotient_map_of_surjective _ Quotient.mk_surjective, mk_ker, sup_comm,
+    localQuotientHilbertSamuel_def]
 
 /-- Along any surjective homomorphism `f : A → B` between local rings, computing
 `localQuotientHilbertSamuel` on `B` at `I.map f` agrees with computing it on `A` at
@@ -198,31 +217,22 @@ theorem localQuotientHilbertSamuel_succ (I : Ideal A) (n : ℕ) :
 theorem localQuotientHilbertSamuel_map_of_surjective {B F : Type*}
     [CommRing B] [IsLocalRing B] [FunLike F A B] [RingHomClass F A B]
     {f : F} (hf : Function.Surjective f) (I : Ideal A) (n : ℕ) :
-    localQuotientHilbertSamuel B (I.map f) n =
-      localQuotientHilbertSamuel A (RingHom.ker f ⊔ I) n := by
-  have hmap : I.map f ⊔ IsLocalRing.maximalIdeal B ^ (n + 1) =
-      (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1)).map f := by
-    change I.map (f : A →+* B) ⊔ IsLocalRing.maximalIdeal B ^ (n + 1) =
-      (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1)).map (f : A →+* B)
-    rw [← IsLocalRing.map_maximalIdeal_of_surjective (f : A →+* B) hf,
-      ← Ideal.map_pow, ← Ideal.map_sup]
-  rw [localQuotientHilbertSamuel_def, hmap, Ideal.length_quotient_map_of_surjective _ hf,
+    (I.map f).localQuotientHilbertSamuel n =
+      (RingHom.ker f ⊔ I).localQuotientHilbertSamuel n := by
+  have hmap : I.map f ⊔ maximalIdeal B ^ (n + 1) =
+      (I ⊔ maximalIdeal A ^ (n + 1)).map f := by
+    rw [← map_maximalIdeal_of_surjective (f : A →+* B) hf, ← Ideal.map_pow, Ideal.map_coe,
+      ← Ideal.map_sup]
+  rw [localQuotientHilbertSamuel_def, hmap, length_quotient_map_of_surjective _ hf,
     sup_comm _ (RingHom.ker f), ← sup_assoc, localQuotientHilbertSamuel_def]
 
 /-- Computing `localQuotientHilbertSamuel` on a local quotient `A ⧸ I` at `J.map (Quotient.mk I)`
 agrees with computing it on `A` at `I ⊔ J`. -/
 @[simp]
 theorem localQuotientHilbertSamuel_quotient_map (I J : Ideal A) [IsLocalRing (A ⧸ I)] (n : ℕ) :
-    localQuotientHilbertSamuel (A ⧸ I) (J.map (Ideal.Quotient.mk I)) n =
-      localQuotientHilbertSamuel A (I ⊔ J) n := by
-  rw [localQuotientHilbertSamuel_map_of_surjective Ideal.Quotient.mk_surjective, Ideal.mk_ker]
-
-/-- The intrinsic Hilbert–Samuel function of a local quotient ring `A ⧸ I` (`J = ⊥`) agrees with
-`localQuotientHilbertSamuel A I`. -/
-@[simp]
-theorem localQuotientHilbertSamuel_quotient_bot (I : Ideal A) [IsLocalRing (A ⧸ I)] (n : ℕ) :
-    localQuotientHilbertSamuel (A ⧸ I) ⊥ n = localQuotientHilbertSamuel A I n := by
-  simpa using localQuotientHilbertSamuel_quotient_map I ⊥ n
+    (J.map (Quotient.mk I)).localQuotientHilbertSamuel n =
+      (I ⊔ J).localQuotientHilbertSamuel n := by
+  rw [localQuotientHilbertSamuel_map_of_surjective Quotient.mk_surjective, mk_ker]
 
 /-- Any ring or algebra equivalence `e : A ≃ B` between local rings preserves
 `localQuotientHilbertSamuel` under `Ideal.map e`. -/
@@ -230,7 +240,7 @@ theorem localQuotientHilbertSamuel_quotient_bot (I : Ideal A) [IsLocalRing (A �
 theorem localQuotientHilbertSamuel_map_equiv {B E : Type*}
     [CommRing B] [IsLocalRing B] [EquivLike E A B] [RingEquivClass E A B]
     (e : E) (I : Ideal A) (n : ℕ) :
-    localQuotientHilbertSamuel B (I.map e) n = localQuotientHilbertSamuel A I n := by
+    (I.map e).localQuotientHilbertSamuel n = I.localQuotientHilbertSamuel n := by
   rw [localQuotientHilbertSamuel_map_of_surjective (EquivLike.surjective e),
     RingHom.ker_equiv, bot_sup_eq]
 
@@ -240,57 +250,43 @@ theorem localQuotientHilbertSamuel_map_equiv {B E : Type*}
 theorem localQuotientHilbertSamuel_comap_equiv {B E : Type*}
     [CommRing B] [IsLocalRing B] [EquivLike E A B] [RingEquivClass E A B]
     (e : E) (J : Ideal B) (n : ℕ) :
-    localQuotientHilbertSamuel A (J.comap e) n = localQuotientHilbertSamuel B J n := by
+    (J.comap e).localQuotientHilbertSamuel n = J.localQuotientHilbertSamuel n := by
   rw [← localQuotientHilbertSamuel_map_equiv e (J.comap e) n,
-    Ideal.map_comap_of_surjective e (EquivLike.surjective e)]
+    map_comap_of_surjective e (EquivLike.surjective e)]
 
 /-- Isomorphic local rings have the same intrinsic Hilbert–Samuel function (`I = ⊥`). -/
 theorem localQuotientHilbertSamuel_bot_of_equiv {B E : Type*}
     [CommRing B] [IsLocalRing B] [EquivLike E A B] [RingEquivClass E A B]
     (e : E) (n : ℕ) :
-    localQuotientHilbertSamuel A ⊥ n = localQuotientHilbertSamuel B ⊥ n := by
-  rw [← Ideal.comap_bot_of_injective e (EquivLike.injective e),
-    localQuotientHilbertSamuel_comap_equiv]
+    (⊥ : Ideal A).localQuotientHilbertSamuel n = (⊥ : Ideal B).localQuotientHilbertSamuel n := by
+  rw [← comap_bot_of_injective e (EquivLike.injective e), localQuotientHilbertSamuel_comap_equiv]
 
 end Basic
-
-section RestrictScalars
-
-/-- Over a local extension `K → A`, the `K`-length of `A ⧸ (I + 𝔪_A ^ (n + 1))` equals
-`localQuotientHilbertSamuel A I n * Module.length K (ResidueField A)`. In particular, this applies
-whenever `K` is a ground field. -/
-theorem length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField
-    (K A : Type*) [CommRing K] [IsLocalRing K] [CommRing A] [IsLocalRing A]
-    [Algebra K A] [IsLocalHom (algebraMap K A)] (I : Ideal A) (n : ℕ) :
-    Module.length K (A ⧸ (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1))) =
-      localQuotientHilbertSamuel A I n * Module.length K (IsLocalRing.ResidueField A) := by
-  rw [localQuotientHilbertSamuel_def, IsLocalRing.length_restrictScalars K A,
-    Module.length_eq_of_surjective (IsLocalRing.residue_surjective (R := K))]
-
-end RestrictScalars
 
 section Noetherian
 
 variable {A : Type*} [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
 
-/-- Over a Noetherian local ring `A`, `localQuotientHilbertSamuel A I n` is never `⊤`. -/
+/-- Over a noetherian local ring every value of the Hilbert–Samuel function is finite. -/
 @[simp]
 theorem localQuotientHilbertSamuel_ne_top (I : Ideal A) (n : ℕ) :
-    localQuotientHilbertSamuel A I n ≠ ⊤ :=
-  Module.length_ne_top_iff.mpr (I.isFiniteLength_quotient_sup_maximalIdeal_pow (n + 1))
+    I.localQuotientHilbertSamuel n ≠ ⊤ :=
+  ne_top_of_le_ne_top
+    (Module.length_ne_top_iff.mpr (TauCeti.isFiniteLength_quotient_maximalIdeal_pow (n + 1)))
+    (TauCeti.length_quotient_anti le_sup_right)
 
-/-- Over a Noetherian local ring `A`, every value of `localQuotientHilbertSamuel A I` is strictly
+/-- Over a noetherian local ring `A`, every value of `I.localQuotientHilbertSamuel` is strictly
 less than `⊤`. -/
 @[simp]
 theorem localQuotientHilbertSamuel_lt_top (I : Ideal A) (n : ℕ) :
-    localQuotientHilbertSamuel A I n < ⊤ :=
+    I.localQuotientHilbertSamuel n < ⊤ :=
   lt_top_iff_ne_top.mpr (localQuotientHilbertSamuel_ne_top I n)
 
-/-- Over a Noetherian local ring `A`, `localQuotientHilbertSamuel A I n` equals the coercion of its
-`ℕ`-value `(localQuotientHilbertSamuel A I n).toNat`. -/
+/-- Over a noetherian local ring `A`, `I.localQuotientHilbertSamuel n` equals the coercion of its
+`ℕ`-value `(I.localQuotientHilbertSamuel n).toNat`. -/
 @[simp]
 theorem natCast_toNat_localQuotientHilbertSamuel (I : Ideal A) (n : ℕ) :
-    ((localQuotientHilbertSamuel A I n).toNat : ℕ∞) = localQuotientHilbertSamuel A I n :=
+    ((I.localQuotientHilbertSamuel n).toNat : ℕ∞) = I.localQuotientHilbertSamuel n :=
   ENat.natCast_toNat (localQuotientHilbertSamuel_ne_top I n)
 
 end Noetherian
@@ -302,23 +298,37 @@ preserves every value of `localQuotientHilbertSamuel`. -/
 theorem localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq
     {A B : Type*} [CommRing A] [IsLocalRing A] [CommRing B] [IsLocalRing B]
     [Algebra A B] [Module.Flat A B]
-    (hm : (IsLocalRing.maximalIdeal A).map (algebraMap A B) = IsLocalRing.maximalIdeal B)
+    (hm : (maximalIdeal A).map (algebraMap A B) = maximalIdeal B)
     (I : Ideal A) (n : ℕ) :
-    localQuotientHilbertSamuel B (I.map (algebraMap A B)) n =
-      localQuotientHilbertSamuel A I n := by
+    (I.map (algebraMap A B)).localQuotientHilbertSamuel n = I.localQuotientHilbertSamuel n := by
   have : IsLocalHom (algebraMap A B) :=
-    ((IsLocalRing.local_hom_tfae (algebraMap A B)).out 1 3).mpr hm.le
-  have hmap : I.map (algebraMap A B) ⊔ IsLocalRing.maximalIdeal B ^ (n + 1) =
-      (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1)).map (algebraMap A B) := by
+    ((local_hom_tfae (algebraMap A B)).out 1 3).mpr hm.le
+  have hmap : I.map (algebraMap A B) ⊔ maximalIdeal B ^ (n + 1) =
+      (I ⊔ maximalIdeal A ^ (n + 1)).map (algebraMap A B) := by
     rw [← hm, ← Ideal.map_pow, ← Ideal.map_sup]
-  have hlen : Module.length B (B ⧸ (IsLocalRing.maximalIdeal A).map (algebraMap A B)) = 1 := by
-    rw [hm, Ideal.length_quotient_eq_one]
+  have hlen : Module.length B (B ⧸ (maximalIdeal A).map (algebraMap A B)) = 1 := by
+    rw [hm, length_quotient_eq_one]
   rw [localQuotientHilbertSamuel_def, hmap,
     (Algebra.TensorProduct.quotIdealMapEquivTensorQuot B
-      (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1))).toLinearEquiv.length_eq,
-    IsLocalRing.length_baseChange A B (A ⧸ (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1))),
+      (I ⊔ maximalIdeal A ^ (n + 1))).toLinearEquiv.length_eq,
+    IsLocalRing.length_baseChange A B (A ⧸ (I ⊔ maximalIdeal A ^ (n + 1))),
     hlen, mul_one, localQuotientHilbertSamuel_def]
 
 end Flat
+
+end Ideal
+
+namespace TauCeti
+
+/-- Over a local extension `K → A`, the `K`-length of `A ⧸ (I + 𝔪_A ^ (n + 1))` equals
+`I.localQuotientHilbertSamuel n * Module.length K (ResidueField A)`. In particular, this applies
+whenever `K` is a ground field. -/
+theorem length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField
+    (K A : Type*) [CommRing K] [IsLocalRing K] [CommRing A] [IsLocalRing A]
+    [Algebra K A] [IsLocalHom (algebraMap K A)] (I : Ideal A) (n : ℕ) :
+    Module.length K (A ⧸ (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1))) =
+      I.localQuotientHilbertSamuel n * Module.length K (IsLocalRing.ResidueField A) := by
+  rw [Ideal.localQuotientHilbertSamuel_def, IsLocalRing.length_restrictScalars K A,
+    Module.length_eq_of_surjective (IsLocalRing.residue_surjective (R := K))]
 
 end TauCeti

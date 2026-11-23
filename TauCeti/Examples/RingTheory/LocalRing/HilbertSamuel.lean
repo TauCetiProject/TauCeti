@@ -15,7 +15,7 @@ import TauCeti.RingTheory.LocalRing.HilbertSamuel
 # Examples of local quotient Hilbert–Samuel functions
 
 At a non-rational closed point of `ℚ[X]`, measuring length over the local ring
-`A = Localization.AtPrime (Ideal.span {p})` normalizes `TauCeti.localQuotientHilbertSamuel A ⊥ 0`
+`A = Localization.AtPrime (Ideal.span {p})` normalizes `(⊥ : Ideal A).localQuotientHilbertSamuel 0`
 to `1`, whereas the `ℚ`-vector space length of `A ⧸ IsLocalRing.maximalIdeal A` equals the
 residue-field degree. The example below shows that there exists a closed point `(Ideal.span {p})`
 of `ℚ[X]` (witnessed in the proof by `p = X ^ 2 + 1`) where the local Hilbert–Samuel value is `1`
@@ -30,7 +30,7 @@ the quotient `A ⧸ 𝔪` has `ℚ`-dimension `2`. -/
 example : ∃ (p : ℚ[X]) (hmax : (Ideal.span {p}).IsMaximal),
     letI : (Ideal.span {p}).IsMaximal := hmax
     let A := Localization.AtPrime (Ideal.span {p})
-    localQuotientHilbertSamuel A ⊥ 0 = 1 ∧
+    (⊥ : Ideal A).localQuotientHilbertSamuel 0 = 1 ∧
       Module.length ℚ (A ⧸ IsLocalRing.maximalIdeal A) = 2 := by
   let p : ℚ[X] := X ^ 2 + 1
   have hp_monic : p.Monic := monic_X_pow_add_C 1 two_ne_zero
@@ -41,7 +41,7 @@ example : ∃ (p : ℚ[X]) (hmax : (Ideal.span {p}).IsMaximal),
     have hroot : q ^ 2 + 1 = 0 := by simpa [p, IsRoot.def] using isRoot_of_mem_roots hq
     linarith [sq_nonneg q]
   have hmax : (Ideal.span {p}).IsMaximal := PrincipalIdealRing.isMaximal_of_irreducible hp_irr
-  refine ⟨p, hmax, localQuotientHilbertSamuel_bot_zero, ?_⟩
+  refine ⟨p, hmax, Ideal.localQuotientHilbertSamuel_bot_zero, ?_⟩
   let A := Localization.AtPrime (Ideal.span {p})
   have : Module.Finite ℚ (ℚ[X] ⧸ Ideal.span {p}) := (AdjoinRoot.powerBasis hp_irr.ne_zero).finite
   have hres : Module.length ℚ (IsLocalRing.ResidueField A) = 2 := by
@@ -53,4 +53,4 @@ example : ∃ (p : ℚ[X]) (hmax : (Ideal.span {p}).IsMaximal),
     Ideal.quotientEquivAlgOfEq ℚ (by simp)
   rw [← hquot.toLinearEquiv.length_eq,
     length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField ℚ A ⊥ 0,
-    localQuotientHilbertSamuel_bot_zero, one_mul, hres]
+    Ideal.localQuotientHilbertSamuel_bot_zero, one_mul, hres]

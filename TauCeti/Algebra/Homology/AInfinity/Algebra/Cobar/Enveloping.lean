@@ -669,6 +669,39 @@ theorem fromEnveloping_naturality (eB : DGAlgAugmentation hB) (eC : DGAlgAugment
       fromEnveloping_comp_toEnveloping, AInfinityHom.comp_id, hφ]
     rw [← AInfinityHom.comp_assoc, fromEnveloping_comp_toEnveloping, AInfinityHom.id_comp]
 
+/-- Factoring `(ε.augmentedEnvelopingDGAlgHomEquiv e).symm` through `envelopingMap` and
+`fromEnveloping`. -/
+theorem fromEnveloping_comp_envelopingMap {A : Type uA} [AddCommGroup A] [Module R A]
+    {𝒜 : AInfinityAlgebra R A} {ε : 𝒜.Augmentation}
+    (e : DGAlgAugmentation hB)
+    {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra}
+    (hf : f.IsAugmented ε e.toAInfinityAugmentation) :
+    e.fromEnveloping.comp hf.envelopingMap =
+      ((ε.augmentedEnvelopingDGAlgHomEquiv e).symm ⟨f, hf⟩).val := by
+  have h := ε.augmentedEnvelopingDGAlgHomEquiv_symm_comp_right hf e
+    ⟨AInfinityHom.id _, AInfinityHom.isAugmented_id e.toAInfinityAugmentation⟩
+  simpa only [fromEnveloping, AInfinityAlgebra.Augmentation.envelopingDGAlgHomEquiv_symm_apply,
+    AInfinityAlgebra.Augmentation.augmentedEnvelopingDGAlgHomEquiv_symm_apply_val,
+    AInfinityHom.id_comp] using h.symm
+
 end DGAlgAugmentation
+
+namespace AInfinityAlgebra.Augmentation
+
+/-- Second triangle identity of the augmented enveloping bar–cobar adjunction for `(A, ε)`. -/
+@[simp] theorem fromEnveloping_comp_envelopingMap_toEnveloping
+    {𝒜 : AInfinityAlgebra R A} (ε : 𝒜.Augmentation) :
+    ε.envelopingAugmentation.fromEnveloping.comp ε.isAugmented_toEnveloping.envelopingMap =
+      DGAlgHom.id _ := by
+  have hid :
+      ε.augmentedEnvelopingDGAlgHomEquiv ε.envelopingAugmentation
+          ⟨DGAlgHom.id _, DGAlgHom.comp_id _⟩ =
+        ⟨ε.toEnveloping, ε.isAugmented_toEnveloping⟩ :=
+    Subtype.ext <| by
+      rw [augmentedEnvelopingDGAlgHomEquiv_apply_val, envelopingDGAlgHomEquiv_id]
+  rw [ε.envelopingAugmentation.fromEnveloping_comp_envelopingMap ε.isAugmented_toEnveloping, ← hid,
+    Equiv.symm_apply_apply]
+
+end AInfinityAlgebra.Augmentation
 
 end TauCeti
