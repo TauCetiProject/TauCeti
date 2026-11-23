@@ -76,9 +76,11 @@ foundational invariance and functoriality properties:
 * `FormalGroup.isWeaklyRegular_ofFn_iff_landweberSequence` and
   `FormalGroup.isRegular_ofFn_iff_landweberSequence`: replacing each `v_i` by any lift modulo
   `I_i(F)` preserves weak regularity and regularity.
-* `FormalGroup.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top` and
-  `FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`: when
-  `I_(n+1)(F) = R`, Landweber regularity at prime `p` reduces to `F.landweberSequence p n`.
+* `FormalGroup.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`,
+  `FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`, and
+  `FormalGroup.isLandweberRegular_iff_of_heightIdeal_two_eq_top`: when `I_(n+1)(F) = R`, Landweber
+  regularity at prime `p` reduces to `F.landweberSequence p n`, and when `I₂(F) = R` at every
+  prime `p`, Landweber regularity reduces to `p`-torsion-freeness.
 * `TauCeti.FormalGroupIso.isWeaklyRegular_landweberSequence_iff` and
   `TauCeti.FormalGroupIso.isLandweberRegular_iff`: invariance under arbitrary formal group
   isomorphisms.
@@ -286,10 +288,12 @@ theorem isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top (hp : p
   · rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hm ⊢
     exact fun i hi ↦ hm i (hi.trans_le hnm)
   · have hn1 : IsWeaklyRegular M (F.landweberSequence p (n + 1)) := by
-      rw [landweberSequence_succ, isWeaklyRegular_append_iff, ofList_landweberSequence _ hp,
-        isWeaklyRegular_singleton_iff]
-      exact ⟨hn, Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk _
-        ((F.isUnit_mk_coeff_nsmulSeries_iff hp _).mpr hI)⟩
+      rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hn ⊢
+      intro i hi
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
+      · exact hn i hi
+      · exact Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk _
+          ((F.isUnit_mk_coeff_nsmulSeries_iff hp _).mpr hI)
     exact (F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top hp M hI).mpr hn1 m
 
 /-- If `I_(n+1)(F) = ⊤`, weak regularity of `F.landweberSequence p m` on `M` for every `m : ℕ`
@@ -300,6 +304,15 @@ theorem forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top 
       IsWeaklyRegular M (F.landweberSequence p n) :=
   (F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top hp M hI).trans
     (F.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top hp M n.le_succ hI)
+
+/-- If `I₂(F) = ⊤` at every prime `p`, then `F` is Landweber regular on an `R`-module `M` if and
+only if multiplication by every prime `p` is injective on `M`. -/
+theorem isLandweberRegular_iff_of_heightIdeal_two_eq_top (M : Type*) [AddCommGroup M] [Module R M]
+    (hI : ∀ ⦃p : ℕ⦄, p.Prime → F.heightIdeal p 2 = ⊤) :
+    F.IsLandweberRegular M ↔ ∀ ⦃p : ℕ⦄, p.Prime → IsSMulRegular M (p : R) := by
+  refine forall₂_congr fun p hp ↦ ?_
+  rw [F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top hp M (hI hp),
+    landweberSequence_one, isWeaklyRegular_singleton_iff]
 
 end Comm
 
@@ -484,11 +497,9 @@ variable {R : Type*} [CommRing R]
 Landweber regular for `𝔾ₘ` if and only if multiplication by every prime `p` is injective on `M`
 (that is, `M` has no prime torsion as an abelian group). -/
 theorem isLandweberRegular_𝔾ₘ_iff (M : Type*) [AddCommGroup M] [Module R M] :
-    (𝔾ₘ : FormalGroup R).IsLandweberRegular M ↔ ∀ ⦃p : ℕ⦄, p.Prime → IsSMulRegular M (p : R) := by
-  refine forall₂_congr fun p hp ↦ ?_
-  rw [(𝔾ₘ : FormalGroup R).forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top
-    hp M (heightIdeal_𝔾ₘ_eq_top hp.one_lt (le_refl 2)),
-    landweberSequence_one, isWeaklyRegular_singleton_iff]
+    (𝔾ₘ : FormalGroup R).IsLandweberRegular M ↔ ∀ ⦃p : ℕ⦄, p.Prime → IsSMulRegular M (p : R) :=
+  (𝔾ₘ : FormalGroup R).isLandweberRegular_iff_of_heightIdeal_two_eq_top M
+    fun _ hp ↦ heightIdeal_𝔾ₘ_eq_top hp.one_lt le_rfl
 
 /-- **Landweber regularity for the additive formal group law `𝔾ₐ`.** An `R`-module `M` is
 Landweber regular for `𝔾ₐ` if and only if for every prime `p`, multiplication by `p` on `M` is
