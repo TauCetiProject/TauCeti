@@ -20,7 +20,8 @@ Let `(h, e, f)` be an `sl₂` triple in a Lie algebra `L`, with Slodowy slice
 natural in the triple.
 
 * A Lie algebra homomorphism `φ` carries `S(e, f)` into `S(φ e, φ f)`
-  (`LieHom.apply_mem_slodowySlice`), and a Lie algebra isomorphism carries it onto
+  (`LieHom.apply_mem_slodowySlice`), with `S(e, f)` the full preimage when `φ` is injective
+  (`LieHom.apply_mem_slodowySlice_iff`), and a Lie algebra isomorphism carries it onto
   `S(φ e, φ f)` (`LieEquiv.map_slodowySlice`).
 * A Lie algebra homomorphism intertwines the contracting actions of any two triples whose
   neutral elements correspond (`LieHom.map_contractingAction`), because it intertwines their
@@ -48,8 +49,8 @@ this identification.
 
 ## Main results
 
-* `LieHom.apply_mem_slodowySlice`, `LieEquiv.apply_mem_slodowySlice_iff`,
-  `LieEquiv.map_slodowySlice`: transport of slices.
+* `LieHom.apply_mem_slodowySlice`, `LieHom.apply_mem_slodowySlice_iff`,
+  `LieEquiv.apply_mem_slodowySlice_iff`, `LieEquiv.map_slodowySlice`: transport of slices.
 * `LieHom.map_contractingAction`: transport of the contracting action.
 * `TauCeti.lie_mem_ker_ad_of_mem_slodowySlice`,
   `IsSl2Triple.contractingAction_lie_of_lie_eq_zero`: the infinitesimal triple centralizer acts
@@ -86,13 +87,20 @@ theorem LieHom.apply_mem_slodowySlice (φ : L →ₗ⁅R⁆ L') (hx : x ∈ slod
   rw [mem_slodowySlice] at hx ⊢
   rw [← map_sub, ← LieHom.map_lie, hx, map_zero]
 
+/-- An injective Lie algebra homomorphism `φ` maps a point into `S(φ e, φ f)` exactly when the
+point lies in `S(e, f)`. -/
+theorem LieHom.apply_mem_slodowySlice_iff (φ : L →ₗ⁅R⁆ L') (hφ : Function.Injective φ) :
+    φ x ∈ slodowySlice R (φ e) (φ f) ↔ x ∈ slodowySlice R e f := by
+  simp only [mem_slodowySlice, ← map_sub, ← LieHom.map_lie, map_eq_zero_iff φ hφ]
+
 /-- A Lie algebra isomorphism `φ` maps a point into `S(φ e, φ f)` exactly when the point lies in
 `S(e, f)`. -/
 theorem LieEquiv.apply_mem_slodowySlice_iff (φ : L ≃ₗ⁅R⁆ L') :
-    φ x ∈ slodowySlice R (φ e) (φ f) ↔ x ∈ slodowySlice R e f := by
-  simp only [mem_slodowySlice, ← map_sub, ← LieEquiv.map_lie, EmbeddingLike.map_eq_zero_iff]
+    φ x ∈ slodowySlice R (φ e) (φ f) ↔ x ∈ slodowySlice R e f :=
+  φ.toLieHom.apply_mem_slodowySlice_iff φ.injective
 
 /-- **A Lie algebra isomorphism carries the Slodowy slice `S(e, f)` onto `S(φ e, φ f)`.** -/
+@[simp]
 theorem LieEquiv.map_slodowySlice (φ : L ≃ₗ⁅R⁆ L') (e f : L) :
     (slodowySlice R e f).map (φ : L →ₗ[R] L').toAffineMap = slodowySlice R (φ e) (φ f) := by
   ext y
