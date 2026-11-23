@@ -17,8 +17,8 @@ zero to `G`: the extended family takes the value `β x y` on `(f x, f y)` for ev
 `H`, and zero on every other pair, including the pairs of `G`-adjacent vertices of the copy which
 are not edges of `H`.
 
-When the values form an additive commutative monoid and carry a multiplication for which its
-zero is right-absorbing (`a * 0 = 0`, as in any semiring), the local sums
+When the values form an additive commutative monoid and carry a multiplication with
+`0 * 0 = 0` for its zero (as in any semiring), the local sums
 `∑_{w ∼ v} β w v * β v w` over the neighbours of a vertex are preserved: at a vertex `f x` of the
 copy with finitely many neighbours in `G` and `x` with finitely many neighbours in `H`, the
 extended sum is the sum of `H` at `x`. So when `H`
@@ -132,9 +132,10 @@ variable [AddCommMonoid M] [Mul M] (f : H.Copy G) (β : W → W → M)
 /-- At a vertex `f x` of the copy with finitely many neighbours in `G`, where `x` has finitely many
 neighbours in `H`, the local sum `∑_{w ∼ f x} β w (f x) * β (f x) w` of the extension by zero over
 the neighbours in `G` is the local sum `∑_{y ∼ x} β y x * β x y` of `β` over the neighbours in
-`H`. Only right absorption `a * 0 = 0` by the additive zero is used, so the multiplication need
-not distribute over the addition. -/
-theorem sum_extendByZero_mul_extendByZero_apply (hmul : ∀ a : M, a * 0 = 0) (x : W)
+`H`. Off the image of the neighbours of `x` both factors vanish, so of the multiplication only
+`0 * 0 = 0` for the additive zero is used: it need neither distribute over the addition nor have
+zero as an absorbing element (`a * 0 = 0` may fail, as for `a * b = a`). -/
+theorem sum_extendByZero_mul_extendByZero_apply (hmul : (0 : M) * 0 = 0) (x : W)
     [Fintype (G.neighborSet (f x))] [Fintype (H.neighborSet x)] :
     ∑ w ∈ G.neighborFinset (f x), f.extendByZero β w (f x) * f.extendByZero β (f x) w =
       ∑ y ∈ H.neighborFinset x, β y x * β x y := by
@@ -148,19 +149,25 @@ theorem sum_extendByZero_mul_extendByZero_apply (hmul : ∀ a : M, a * 0 = 0) (x
     rw [mem_neighborFinset] at hy
     exact congrArg₂ (· * ·) (extendByZero_apply_apply_of_adj f β hy.symm)
       (extendByZero_apply_apply_of_adj f β hy)
-  · -- Off the image of the neighbours of `x`, the right factor vanishes.
+  · -- Off the image of the neighbours of `x`, both factors vanish.
     intro w _ hw
-    suffices f.extendByZero β (f x) w = 0 by rw [this, hmul]
-    by_contra h
-    obtain ⟨a, b, ha, rfl, hab, -⟩ := (extendByZero_ne_zero_iff f β).1 h
-    rw [f.injective ha] at hab
-    exact hw (Finset.mem_map_of_mem _ ((mem_neighborFinset _ _ _).2 hab))
+    have hl : f.extendByZero β w (f x) = 0 := by
+      by_contra h
+      obtain ⟨a, b, rfl, hb, hab, -⟩ := (extendByZero_ne_zero_iff f β).1 h
+      rw [f.injective hb] at hab
+      exact hw (Finset.mem_map_of_mem _ ((mem_neighborFinset _ _ _).2 hab.symm))
+    have hr : f.extendByZero β (f x) w = 0 := by
+      by_contra h
+      obtain ⟨a, b, ha, rfl, hab, -⟩ := (extendByZero_ne_zero_iff f β).1 h
+      rw [f.injective ha] at hab
+      exact hw (Finset.mem_map_of_mem _ ((mem_neighborFinset _ _ _).2 hab))
+    rw [hl, hr, hmul]
 
 /-- **Local relations extend by zero along a copy**: if the sums `∑_{y ∼ x} β y x * β x y` over
 the neighbours in `H` vanish at every vertex of `H`, then so do the corresponding sums of the
 extension by zero at every vertex of `G` with finitely many neighbours. As for
-`sum_extendByZero_mul_extendByZero_apply`, only right absorption `a * 0 = 0` is used. -/
-theorem sum_extendByZero_mul_extendByZero [H.LocallyFinite] (hmul : ∀ a : M, a * 0 = 0)
+`sum_extendByZero_mul_extendByZero_apply`, of the multiplication only `0 * 0 = 0` is used. -/
+theorem sum_extendByZero_mul_extendByZero [H.LocallyFinite] (hmul : (0 : M) * 0 = 0)
     (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) (v : V)
     [Fintype (G.neighborSet v)] :
     ∑ w ∈ G.neighborFinset v, f.extendByZero β w v * f.extendByZero β v w = 0 := by
@@ -168,7 +175,8 @@ theorem sum_extendByZero_mul_extendByZero [H.LocallyFinite] (hmul : ∀ a : M, a
   · obtain ⟨x, rfl⟩ := hv
     exact (sum_extendByZero_mul_extendByZero_apply f β hmul x).trans (hβ x)
   · exact Finset.sum_eq_zero fun w _ => by
-      rw [extendByZero_eq_zero_of_notMem_range_left f β hv, hmul]
+      rw [extendByZero_eq_zero_of_notMem_range_right f β w hv,
+        extendByZero_eq_zero_of_notMem_range_left f β hv, hmul]
 
 end Mul
 

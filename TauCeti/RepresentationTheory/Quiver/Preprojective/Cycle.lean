@@ -102,7 +102,7 @@ private theorem sum_extendByZero_cycleMatrix_mul {V : Type u} {G : SimpleGraph V
     {m : ℕ} [NeZero m] (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) :
     ∀ v, ∑ w ∈ G.neighborFinset v,
       c.extendByZero (cycleMatrix k m) w v * c.extendByZero (cycleMatrix k m) v w = 0 := fun v =>
-  c.sum_extendByZero_mul_extendByZero _ mul_zero
+  c.sum_extendByZero_mul_extendByZero _ (mul_zero 0)
     (fun i => Finset.sum_eq_zero fun j _ => cycleMatrix_mul_cycleMatrix k hm i j) v
 
 /-- The `r`-step forward walk `c 0 → c 1 → ⋯ → c r` in the doubled path algebra of `G`, written in
