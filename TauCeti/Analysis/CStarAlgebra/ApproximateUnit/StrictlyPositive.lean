@@ -540,6 +540,14 @@ private theorem exists_mem_stateSpace_compress_eq_norm_sq {u : A} (hu : IsSelfAd
   rw [CStarRing.norm_self_mul_star, ← sq, Unitization.norm_inr, hb] at hω_eq
   exact ⟨ω, hω, hω_eq⟩
 
+private theorem one_sub_inr_resolventApprox_nonneg_and_norm_le_one {h : A} (hh : 0 ≤ h)
+    (m : ℕ) :
+    0 ≤ 1 - (Unitization.inr (resolventApprox h m) : A⁺¹) ∧
+      ‖1 - (Unitization.inr (resolventApprox h m) : A⁺¹)‖ ≤ 1 :=
+  CStarAlgebra.mem_Icc_iff_norm_le_one.mp <| Set.sub_mem_Icc_zero_iff_right.mpr <|
+    CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr
+      ⟨resolventApprox_nonneg hh m, (norm_resolventApprox_lt_one hh m).le⟩
+
 /-- Along `atTop`, compressing any sequence of states `ω m ∈ stateSpace A⁺¹` by
 `1 - ((resolventApprox h m : A) : A⁺¹)` sends `(h : A⁺¹)` to `0`. -/
 private theorem tendsto_compressFunctional_resolventApprox_self {h : A} (hh : 0 ≤ h)
@@ -548,9 +556,8 @@ private theorem tendsto_compressFunctional_resolventApprox_self {h : A} (hh : 0 
       atTop (𝓝 (0 : ℂ)) := by
   let u : ℕ → A := resolventApprox h
   let v : ℕ → A⁺¹ := fun m => 1 - (u m : A⁺¹)
-  have hv (m : ℕ) : 0 ≤ v m ∧ ‖v m‖ ≤ 1 := CStarAlgebra.mem_Icc_iff_norm_le_one.mp <|
-    Set.sub_mem_Icc_zero_iff_right.mpr <| CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr
-      ⟨resolventApprox_nonneg hh m, (norm_resolventApprox_lt_one hh m).le⟩
+  have hv (m : ℕ) : 0 ≤ v m ∧ ‖v m‖ ≤ 1 :=
+    one_sub_inr_resolventApprox_nonneg_and_norm_le_one hh m
   have hinv : Tendsto (fun m : ℕ => ((m : ℝ) + 1)⁻¹) atTop (𝓝 0) := by
     simpa only [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
   refine tendsto_iff_norm_sub_tendsto_zero.mpr <| squeeze_zero_norm' (.of_forall fun m => ?_) hinv
@@ -579,9 +586,8 @@ private theorem tendsto_resolventApprox_mul_of_forall_positiveLinearMap_pos {h :
     exact ⟨ε, hε, hf.mono fun m hm => by simpa [dist_eq_norm'] using hm⟩
   let u : ℕ → A := resolventApprox h
   let v : ℕ → A⁺¹ := fun m => 1 - (u m : A⁺¹)
-  have hv (m : ℕ) : 0 ≤ v m ∧ ‖v m‖ ≤ 1 := CStarAlgebra.mem_Icc_iff_norm_le_one.mp <|
-    Set.sub_mem_Icc_zero_iff_right.mpr <| CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr
-      ⟨resolventApprox_nonneg hh m, (norm_resolventApprox_lt_one hh m).le⟩
+  have hv (m : ℕ) : 0 ≤ v m ∧ ‖v m‖ ≤ 1 :=
+    one_sub_inr_resolventApprox_nonneg_and_norm_le_one hh m
   choose ω hω_mem hω_val using fun m =>
     exists_mem_stateSpace_compress_eq_norm_sq (isSelfAdjoint_resolventApprox h m) a
   let ψ : ℕ → WeakDual ℂ A⁺¹ := fun m => compressFunctional (v m) (ω m)
@@ -622,14 +628,13 @@ theorem isStrictlyPositive_iff_forall_positiveLinearMap_pos {h : A} :
   have hh : 0 ≤ h := by
     rw [TauCeti.nonneg_iff_forall_mem_stateSpace]
     intro ψ hψ
-    let ω : A →ₚ[ℂ] ℂ := .mk₀ (toStrongDual ψ).toLinearMap fun _ =>
-      TauCeti.map_nonneg_of_mem_stateSpace hψ
+    let ω := TauCeti.stateToPositiveLinearMap hψ
     have hω_ne : ω ≠ 0 := fun h0 => by
       have hnorm := TauCeti.norm_toStrongDual_of_mem_stateSpace hψ
-      have hzero : toStrongDual ψ = 0 :=
-        ContinuousLinearMap.ext fun x => DFunLike.congr_fun h0 x
+      have hzero : toStrongDual ψ = 0 := ContinuousLinearMap.ext fun x => by
+        simpa [ω] using DFunLike.congr_fun h0 x
       simp [hzero] at hnorm
-    exact (hpos ω hω_ne).le
+    exact (hpos ω hω_ne).le.trans_eq (TauCeti.stateToPositiveLinearMap_apply hψ h)
   rw [isStrictlyPositive_iff_isIncreasingApproximateUnit_resolventApprox]
   exact Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right
     (fun a => tendsto_map'_iff.mpr

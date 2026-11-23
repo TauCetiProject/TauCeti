@@ -348,7 +348,7 @@ private theorem mul_mem_of_mem_inducedClosedIdeal (B : NonUnitalStarSubalgebra �
     let kS : S := ⟨k, K.mem_toNonUnitalStarSubalgebra.mpr hk⟩
     have hk_lim : Tendsto (fun u : S => ((u : B) : A) * (k : A) * ((u : B) : A))
         (CStarAlgebra.approximateUnit S) (𝓝 (k : A)) := by
-      have h1 := (continuous_subtypeVal.tendsto kS).comp (hlS.tendsto_mul_self kS)
+      have h1 := (continuous_subtypeVal.tendsto kS).comp (hlS.tendsto_mul_mul kS)
       simpa only [Function.comp_def, MulMemClass.coe_mul] using
         (continuous_subtypeVal.tendsto k).comp h1
     have hΦ_lim : Tendsto (fun u : S => Φ (x * (((u : B) : A) * (k : A) * ((u : B) : A)) * y))
@@ -378,7 +378,7 @@ theorem restrictIdeal_inducedClosedIdeal (B : NonUnitalStarSubalgebra ℂ A)
   let hlB : (CStarAlgebra.approximateUnit B).IsIncreasingApproximateUnit :=
     CStarAlgebra.increasingApproximateUnit B
   have := hlB.neBot
-  refine hK.mem_of_tendsto (hlB.tendsto_mul_self b) (Eventually.of_forall fun e => ?_)
+  refine hK.mem_of_tendsto (hlB.tendsto_mul_mul b) (Eventually.of_forall fun e => ?_)
   exact B.mul_mem_of_mem_inducedClosedIdeal hB K e e (B.mem_restrictIdeal.mp hb)
 
 /-- For any two-sided ideal `J` of `A` and a hereditary `⋆`-subalgebra `B`, multiplying any

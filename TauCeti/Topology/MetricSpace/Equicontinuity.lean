@@ -27,6 +27,9 @@ smallness `F k p < ε` for all `k` once `s p` is small enough.
 * `Metric.equicontinuous_of_forall_dist_le`: a family `F : ι → X → W` controlled linearly by every
   uniform `Y`-slice distance bound of a jointly continuous map `g : X × Y → Z` with `Y` compact is
   equicontinuous.
+* `Metric.tendsto_of_dense_of_eventually_dist_le`: an eventually uniformly Lipschitz family
+  of maps between pseudometric spaces that converges to a continuous map on a dense set converges
+  everywhere.
 * `UniformEquicontinuous.exists_forall_lt_of_le_mul_add_mul`: a bound of the form
   `C (η + s L)` over a uniformly equicontinuous family gives uniform attainment as `s → 0`.
 -/
@@ -66,6 +69,34 @@ theorem equicontinuous_of_forall_dist_le {X Y Z W ι : Type*} [TopologicalSpace 
     _ ≤ M * δ := mul_le_mul_of_nonneg_right (le_max_left L 1) hδ.le
     _ = r / 2 := by simp only [δ]; field_simp [hM.ne']
     _ < r := half_lt_self hr
+
+/-- If a family of maps `F i : X → Y` between pseudometric spaces is eventually `C`-Lipschitz along
+a filter `l` and converges pointwise on a dense set `s` to a continuous map `f`, then `F i x`
+converges to `f x` along `l` for every `x : X`. -/
+theorem tendsto_of_dense_of_eventually_dist_le {ι X Y : Type*}
+    [PseudoMetricSpace X] [PseudoMetricSpace Y] {l : Filter ι} {F : ι → X → Y}
+    {f : X → Y} {s : Set X} {C : ℝ}
+    (hF : ∀ᶠ i in l, ∀ x y, dist (F i x) (F i y) ≤ C * dist x y)
+    (hf : Continuous f) (hs : Dense s)
+    (h : ∀ y ∈ s, Tendsto (F · y) l (𝓝 (f y))) (x : X) :
+    Tendsto (F · x) l (𝓝 (f x)) := by
+  let M : ℝ := max C 0
+  let P : Set ι := {i | ∀ x y, dist (F i x) (F i y) ≤ C * dist x y}
+  have hP : EquicontinuousAt (fun p : P => F p.val) x := by
+    rw [Metric.equicontinuousAt_iff_right]
+    intro ε hε
+    refine eventually_of_mem (Metric.ball_mem_nhds x (by positivity : 0 < ε / (M + 1)))
+      fun y hy ⟨i, hi⟩ => ?_
+    rw [dist_comm]
+    calc dist (F i y) (F i x) ≤ C * dist y x := hi y x
+      _ ≤ M * dist y x := mul_le_mul_of_nonneg_right (le_max_left C 0) dist_nonneg
+      _ < (M + 1) * (ε / (M + 1)) := mul_lt_mul_of_le_of_lt_of_nonneg_of_pos
+          (by linarith) (Metric.mem_ball.mp hy) dist_nonneg (by positivity)
+      _ = ε := mul_div_cancel₀ ε (by positivity)
+  have hsub : Tendsto (fun p : P => F p.val x) (l.comap Subtype.val) (𝓝 (f x)) :=
+    hP.tendsto_of_mem_closure (hf.continuousAt.mono_left inf_le_left)
+      (fun y hy => (h y hy).comp tendsto_comap) (hs.closure_eq ▸ Set.mem_univ x)
+  exact (tendsto_comap'_iff (m := (F · x)) (by simpa [P, Filter.Eventually] using hF)).mp hsub
 
 end Metric
 

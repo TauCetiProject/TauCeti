@@ -180,21 +180,19 @@ theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum {x : A} {z : ℂ}
       simpa [y, Algebra.algebraMap_eq_smul_one, map_one_of_mem_stateSpace hφ] using
         (toStrongDual_apply φ y).symm.trans hφy
     exact (sub_eq_zero.mp hsub).symm
+  have of_not_isUnit {p : A} (hp : IsSelfAdjoint p) (hnu : ¬ IsUnit p)
+      (hcs : ∀ ω : A →ₚ[ℂ] ℂ, ω p = 0 → ω y = 0) :
+      ∃ φ ∈ stateSpace A, φ y = 0 := by
+    have : IsStarNormal p := hp.isStarNormal
+    have hmem : (0 : ℂ) ∈ spectrum ℂ p := by simpa [spectrum.mem_iff] using hnu
+    obtain ⟨φ, hφ, hφ0⟩ := exists_mem_stateSpace_apply_eq_of_mem_spectrum_normal hmem
+    exact ⟨φ, hφ, by
+      simpa using hcs (stateToPositiveLinearMap hφ) (by simpa using hφ0)⟩
   rcases hnot with h₁ | h₂
-  · have : IsStarNormal (star y * y) := (IsSelfAdjoint.star_mul_self y).isStarNormal
-    have hmem : (0 : ℂ) ∈ spectrum ℂ (star y * y) := by simpa [spectrum.mem_iff] using h₁
-    obtain ⟨φ, hφ, hφ0⟩ := exists_mem_stateSpace_apply_eq_of_mem_spectrum_normal hmem
-    let ω : A →ₚ[ℂ] ℂ := .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
-    have h0 : ω (star y * y) = 0 := hφ0
-    have hωy : ω y = 0 := by simpa [h0] using PositiveLinearMap.norm_map_star_mul_le ω 1 y
-    exact ⟨φ, hφ, hωy⟩
-  · have : IsStarNormal (y * star y) := (IsSelfAdjoint.mul_star_self y).isStarNormal
-    have hmem : (0 : ℂ) ∈ spectrum ℂ (y * star y) := by simpa [spectrum.mem_iff] using h₂
-    obtain ⟨φ, hφ, hφ0⟩ := exists_mem_stateSpace_apply_eq_of_mem_spectrum_normal hmem
-    let ω : A →ₚ[ℂ] ℂ := .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
-    have h0 : ω (y * star y) = 0 := hφ0
-    have hωy : ω y = 0 := by simpa [h0] using PositiveLinearMap.norm_map_mul_star_le ω y 1
-    exact ⟨φ, hφ, hωy⟩
+  · exact of_not_isUnit (.star_mul_self y) h₁ fun ω h0 => by
+      simpa [h0] using PositiveLinearMap.norm_map_star_mul_le ω 1 y
+  · exact of_not_isUnit (.mul_star_self y) h₂ fun ω h0 => by
+      simpa [h0] using PositiveLinearMap.norm_map_mul_star_le ω y 1
 
 private theorem nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace {s : A} (hs : IsSelfAdjoint s)
     (h : ∀ φ ∈ stateSpace A, 0 ≤ φ s) : 0 ≤ s := by
@@ -208,8 +206,8 @@ private theorem nonneg_iff_forall_mem_stateSpace_unital {a : A} :
     0 ≤ a ↔ ∀ φ ∈ stateSpace A, 0 ≤ φ a := by
   refine ⟨fun ha φ hφ => map_nonneg_of_mem_stateSpace hφ ha, fun h => ?_⟩
   have hstar (φ : WeakDual ℂ A) (hφ : φ ∈ stateSpace A) : φ (star a) = φ a := by
-    let ω : A →ₚ[ℂ] ℂ := .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
-    have hω : ω (star a) = star (ω a) := map_star ω a
+    have hω := map_star (stateToPositiveLinearMap hφ) a
+    simp only [stateToPositiveLinearMap_apply] at hω
     exact hω.trans (h φ hφ).isSelfAdjoint.star_eq
   have him_zero (φ : WeakDual ℂ A) (hφ : φ ∈ stateSpace A) : φ (ℑ a : A) = 0 := by
     rw [← toStrongDual_apply, imaginaryPart_apply_coe, map_smul,

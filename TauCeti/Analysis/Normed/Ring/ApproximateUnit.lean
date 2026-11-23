@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 public import TauCeti.Topology.ApproximateUnit
 public import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 import Mathlib.Analysis.Normed.Ring.Lemmas
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # Bounded approximate identities in normed rings
@@ -209,52 +210,22 @@ for every `x` in a dense set `s`, then `e * a → a` along `l` for every `a : A`
 theorem tendsto_mul_right_of_dense {l : Filter A} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
     {s : Set A} (hs : Dense s) (h : ∀ x ∈ s, Tendsto (· * x) l (𝓝 x)) (a : A) :
     Tendsto (· * a) l (𝓝 a) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  let M : ℝ := max C 0
-  have hM0 : 0 ≤ M := le_max_right C 0
-  let δ : ℝ := ε / (2 * (M + 1))
-  have hδ : 0 < δ := by positivity
-  obtain ⟨x, hxball, hxs⟩ := Metric.dense_iff.mp hs a δ hδ
-  have hax : ‖a - x‖ < δ := by
-    rw [Metric.mem_ball, dist_comm, dist_eq_norm] at hxball
-    exact hxball
-  have hxa : ‖x - a‖ < δ := by rwa [norm_sub_rev]
-  have hx_ev := Metric.tendsto_nhds.mp (h x hxs) (ε / 2) (half_pos hε)
-  have hMδ : (M + 1) * δ = ε / 2 := by
-    dsimp only [δ]
-    field_simp
-  filter_upwards [hC, hx_ev] with e he hxe
-  rw [dist_eq_norm] at hxe ⊢
-  have heM : ‖e‖ ≤ M := he.trans (le_max_left C 0)
-  have hdecomp : e * a - a = e * (a - x) + (e * x - x) + (x - a) := by
-    simp only [mul_sub]
-    abel
-  have hle : ‖e * a - a‖ ≤ ‖e‖ * ‖a - x‖ + ‖e * x - x‖ + ‖x - a‖ := by
-    rw [hdecomp]
-    exact norm_add₃_le.trans (by gcongr; exact norm_mul_le _ _)
-  have hprod : ‖e‖ * ‖a - x‖ ≤ M * δ :=
-    mul_le_mul heM hax.le (norm_nonneg _) hM0
-  linarith
+  refine Metric.tendsto_of_dense_of_eventually_dist_le (F := fun e x => e * x) (f := id)
+    (C := C) ?_ continuous_id hs h a
+  refine hC.mono fun e he x y => ?_
+  rw [dist_eq_norm, dist_eq_norm, ← mul_sub]
+  exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right he (norm_nonneg _))
 
 /-- If `l` is eventually norm-bounded in a nonunital seminormed ring `A` and `x * e → x` along `l`
 for every `x` in a dense set `s`, then `a * e → a` along `l` for every `a : A`. -/
 theorem tendsto_mul_left_of_dense {l : Filter A} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
     {s : Set A} (hs : Dense s) (h : ∀ x ∈ s, Tendsto (x * ·) l (𝓝 x)) (a : A) :
     Tendsto (a * ·) l (𝓝 a) := by
-  have hdense : Dense (MulOpposite.op '' s) :=
-    MulOpposite.op_surjective.denseRange.dense_image MulOpposite.continuous_op hs
-  have hop : Tendsto (· * MulOpposite.op a) (l.map MulOpposite.op) (𝓝 (MulOpposite.op a)) :=
-    tendsto_mul_right_of_dense (A := Aᵐᵒᵖ) (l := l.map MulOpposite.op)
-      (eventually_map.mpr <| hC.mono fun _ he => by simpa [MulOpposite.norm_op] using he) hdense
-      (fun _ ⟨x, hxs, hx⟩ => by
-        subst hx
-        rw [tendsto_map'_iff]
-        simpa only [Function.comp_def, ← MulOpposite.op_mul] using
-          (MulOpposite.continuous_op.tendsto x).comp (h x hxs))
-      (MulOpposite.op a)
-  simpa only [Function.comp_def, ← MulOpposite.op_mul, MulOpposite.unop_op] using
-    (MulOpposite.continuous_unop.tendsto (MulOpposite.op a)).comp (tendsto_map'_iff.mp hop)
+  refine Metric.tendsto_of_dense_of_eventually_dist_le (F := fun e x => x * e) (f := id)
+    (C := C) ?_ continuous_id hs h a
+  refine hC.mono fun e he x y => ?_
+  rw [dist_eq_norm, dist_eq_norm, ← sub_mul]
+  exact (norm_mul_le _ _).trans (by rw [mul_comm]; gcongr)
 
 /-- If `u` is eventually norm bounded along `l`, `u i * a → a`, and `a * v i → a`, then the
 two-sided products `u i * a * v i` tend to `a`. -/
