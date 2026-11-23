@@ -11,7 +11,7 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 import Mathlib.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
