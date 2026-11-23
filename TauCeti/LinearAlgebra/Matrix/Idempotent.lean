@@ -14,6 +14,8 @@ public import TauCeti.Data.Matrix.Block
 public import TauCeti.Data.Matrix.Mul
 public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.LinearAlgebra.Matrix.ToLin
+public import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.LinearAlgebra.End.Idempotent
 
 /-!
 # Finitely generated projective modules from idempotent matrices
@@ -56,6 +58,8 @@ modules exactly when the matrices are equivalent.
   fixed row vectors.
 * `IsIdempotentElem.mem_range_mulVecLin_iff`: over a commutative semiring, likewise for column
   vectors.
+* `Matrix.BlockTriangular.bijOn_range_blockDiagonalPart`: a block triangular idempotent matrix
+  maps the range of its block-diagonal part bijectively onto its own range.
 * `IsIdempotentElem.projective_range_vecMulLinear`: this range is a projective module.
 * `IsIdempotentElem.linearMap_apply_eq_vecMul`: a linear map out of this range is right
   multiplication by the matrix of its values on the rows.
@@ -482,6 +486,43 @@ theorem IsIdempotentElem.mem_range_mulVecLin_iff {e : Matrix ι ι A} (he : IsId
   he.mulVecLin.mem_range_iff
 
 end CommIdempotent
+
+namespace Matrix
+
+variable {m α : Type*} [LinearOrder α] {b : m → α}
+
+/-- A block triangular idempotent matrix maps the range of its block-diagonal part bijectively
+onto its own range: the two idempotents differ by a matrix strictly raising the rank, which is
+nilpotent after multiplication by block triangular matrices on both sides. -/
+theorem BlockTriangular.bijOn_range_blockDiagonalPart {R : Type*} [CommRing R] [Fintype m]
+    {M : Matrix m m R} (hM : M.BlockTriangular b) (hMM : IsIdempotentElem M) :
+    Set.BijOn M.mulVecLin (LinearMap.range (M.blockDiagonalPart b).mulVecLin)
+      (LinearMap.range M.mulVecLin) := by
+  classical
+  set M₀ := M.blockDiagonalPart b
+  have hM₀ : M₀.BlockTriangular b := blockTriangular_blockDiagonalPart M
+  have hM₀M₀ : IsIdempotentElem M₀ := hM.isIdempotentElem_blockDiagonalPart hMM
+  have hN := hM.sub_blockDiagonalPart_apply_eq_zero_of_le
+  have hnil₁ : _root_.IsNilpotent (M₀ * M * M₀ - M₀) := by
+    have : M₀ * M * M₀ - M₀ = M₀ * (M - M₀) * M₀ := by
+      rw [mul_sub, sub_mul, hM₀M₀.eq, hM₀M₀.eq]
+    rw [this]
+    exact isNilpotent_of_apply_eq_zero_of_le
+      (hM₀.mul_apply_eq_zero_of_le' (hM₀.mul_apply_eq_zero_of_le hN))
+  have hnil₂ : _root_.IsNilpotent (M * M₀ * M - M) := by
+    have : M * M₀ * M - M = -(M * (M - M₀) * M) := by
+      rw [mul_sub, sub_mul, hMM.eq, hMM.eq, neg_sub]
+    rw [this]
+    exact (isNilpotent_of_apply_eq_zero_of_le
+      (hM.mul_apply_eq_zero_of_le' (hM.mul_apply_eq_zero_of_le hN))).neg
+  have hlin (N : Matrix m m R) : toLinAlgEquiv' N = N.mulVecLin :=
+    LinearMap.ext fun v ↦ by rw [toLinAlgEquiv'_apply, mulVecLin_apply]
+  rw [← hlin, ← hlin]
+  refine LinearMap.IsIdempotentElem.bijOn_range_of_isNilpotent (hMM.map _) (hM₀M₀.map _) ?_ ?_
+  · simpa only [map_sub, map_mul] using hnil₁.map (toLinAlgEquiv' (R := R) (n := m))
+  · simpa only [map_sub, map_mul] using hnil₂.map (toLinAlgEquiv' (R := R) (n := m))
+
+end Matrix
 
 namespace Module.Finite
 

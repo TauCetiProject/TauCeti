@@ -8,11 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Order.Interval.Finset.Defs
 public import Mathlib.Order.Interval.Set.OrdConnected
-public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.LinearAlgebra.Matrix.Reindex
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
-import TauCeti.LinearAlgebra.End.Idempotent
 import TauCeti.Order.Preorder.Finite
 
 /-!
@@ -84,8 +82,7 @@ Lie-algebra theory.
   nilpotence.
 * `Matrix.blockDiagonalPart` — the entries of a matrix between indices of equal rank for a
   ranking `b`, and `Matrix.BlockTriangular.isIdempotentElem_blockDiagonalPart`: it is idempotent
-  for a block triangular idempotent, and `Matrix.BlockTriangular.bijOn_range_blockDiagonalPart`:
-  the idempotent maps the range of its block-diagonal part bijectively onto its own range.
+  for a block triangular idempotent.
 * `Matrix.BlockTriangular.mul_apply_eq_zero_of_le` and its primed form — vanishing wherever a
   ranking of the indices does not strictly increase survives multiplication by block triangular
   matrices on either side.
@@ -375,37 +372,6 @@ theorem BlockTriangular.isIdempotentElem_blockDiagonalPart [Semiring S] [Fintype
   · refine Finset.sum_eq_zero fun l _ ↦ ?_
     rw [blockDiagonalPart_apply, blockDiagonalPart_apply]
     split_ifs with h1 h2 <;> simp_all
-
-/-- A block triangular idempotent matrix maps the range of its block-diagonal part bijectively
-onto its own range: the two idempotents differ by a matrix strictly raising the rank, which is
-nilpotent after multiplication by block triangular matrices on both sides. -/
-theorem BlockTriangular.bijOn_range_blockDiagonalPart {R : Type*} [CommRing R] [Fintype m]
-    {M : Matrix m m R} (hM : M.BlockTriangular b) (hMM : IsIdempotentElem M) :
-    Set.BijOn M.mulVecLin (LinearMap.range (M.blockDiagonalPart b).mulVecLin)
-      (LinearMap.range M.mulVecLin) := by
-  classical
-  set M₀ := M.blockDiagonalPart b
-  have hM₀ : M₀.BlockTriangular b := blockTriangular_blockDiagonalPart M
-  have hM₀M₀ : IsIdempotentElem M₀ := hM.isIdempotentElem_blockDiagonalPart hMM
-  have hN := hM.sub_blockDiagonalPart_apply_eq_zero_of_le
-  have hnil₁ : _root_.IsNilpotent (M₀ * M * M₀ - M₀) := by
-    have : M₀ * M * M₀ - M₀ = M₀ * (M - M₀) * M₀ := by
-      rw [mul_sub, sub_mul, hM₀M₀.eq, hM₀M₀.eq]
-    rw [this]
-    exact isNilpotent_of_apply_eq_zero_of_le
-      (hM₀.mul_apply_eq_zero_of_le' (hM₀.mul_apply_eq_zero_of_le hN))
-  have hnil₂ : _root_.IsNilpotent (M * M₀ * M - M) := by
-    have : M * M₀ * M - M = -(M * (M - M₀) * M) := by
-      rw [mul_sub, sub_mul, hMM.eq, hMM.eq, neg_sub]
-    rw [this]
-    exact (isNilpotent_of_apply_eq_zero_of_le
-      (hM.mul_apply_eq_zero_of_le' (hM.mul_apply_eq_zero_of_le hN))).neg
-  have hlin (N : Matrix m m R) : toLinAlgEquiv' N = N.mulVecLin :=
-    LinearMap.ext fun v ↦ by rw [toLinAlgEquiv'_apply, mulVecLin_apply]
-  rw [← hlin, ← hlin]
-  refine LinearMap.IsIdempotentElem.bijOn_range_of_isNilpotent (hMM.map _) (hM₀M₀.map _) ?_ ?_
-  · simpa only [map_sub, map_mul] using hnil₁.map (toLinAlgEquiv' (R := R) (n := m))
-  · simpa only [map_sub, map_mul] using hnil₂.map (toLinAlgEquiv' (R := R) (n := m))
 
 end BlockDiagonalPart
 

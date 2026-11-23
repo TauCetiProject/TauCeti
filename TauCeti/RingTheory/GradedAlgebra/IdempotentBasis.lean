@@ -312,7 +312,7 @@ theorem exists_weightedHomogeneous_basis_range_idempotent {σ : Type*} (w : σ �
         MvPolynomial.weightedHomogeneousSubmodule R w (d i - s j) :=
   have := (MvPolynomial.WeightedHomogeneousSubmodule.gradedMonoid (R := R) (w := w)).toGradedOne
   exists_homogeneous_basis_range_idempotent _
-    (fun _ hn ↦ MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_lt_zero (fun i ↦ (hw i).le) hn)
+    (fun _ hn ↦ MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_neg (fun i ↦ (hw i).le) hn)
     (fun _ ↦ MvPolynomial.mem_bot_of_mem_weightedHomogeneousSubmodule_zero hw)
     (MvPolynomial.C_injective σ R) s p hp hhom
 

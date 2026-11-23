@@ -115,7 +115,7 @@ degree-zero part `R`.
 * `MvPolynomial.vars_weight_lt_of_isWeightedHomogeneous_of_mem_pow_idealOfVars`: for positive
   weights in `ℕ`, every variable occurring in a weighted homogeneous polynomial of weight `m`
   in `idealOfVars σ R ^ 2` has weight strictly less than `m`.
-* `MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_lt_zero` and
+* `MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_neg` and
   `MvPolynomial.mem_bot_of_mem_weightedHomogeneousSubmodule_zero`: for nonnegative weights the
   pieces of negative weight vanish, and for positive weights the piece of weight zero consists of
   constants (`MvPolynomial.IsWeightedHomogeneous.eq_C_coeff_zero`).
@@ -564,7 +564,7 @@ section NonnegWeight
 variable {M : Type*} [AddCommMonoid M] [PartialOrder M] [IsOrderedAddMonoid M] {w : σ → M}
 
 /-- For nonnegative weights, a weighted homogeneous polynomial of negative weight vanishes. -/
-theorem IsWeightedHomogeneous.eq_zero_of_lt_zero {φ : MvPolynomial σ R} {n : M}
+theorem IsWeightedHomogeneous.eq_zero_of_neg {φ : MvPolynomial σ R} {n : M}
     (hφ : φ.IsWeightedHomogeneous w n) (hw : ∀ i, 0 ≤ w i) (hn : n < 0) : φ = 0 := by
   ext d
   by_contra hd
@@ -588,9 +588,9 @@ theorem IsWeightedHomogeneous.eq_C_coeff_zero {φ : MvPolynomial σ R}
   exact (hw i).not_ge this
 
 /-- For nonnegative weights, the weighted homogeneous submodules of negative weight vanish. -/
-theorem weightedHomogeneousSubmodule_eq_bot_of_lt_zero (hw : ∀ i, 0 ≤ w i) {n : M} (hn : n < 0) :
+theorem weightedHomogeneousSubmodule_eq_bot_of_neg (hw : ∀ i, 0 ≤ w i) {n : M} (hn : n < 0) :
     weightedHomogeneousSubmodule R w n = ⊥ :=
-  (Submodule.eq_bot_iff _).2 fun _ hφ ↦ IsWeightedHomogeneous.eq_zero_of_lt_zero hφ hw hn
+  (Submodule.eq_bot_iff _).2 fun _ hφ ↦ IsWeightedHomogeneous.eq_zero_of_neg hφ hw hn
 
 /-- For positive weights, the weighted homogeneous submodule of weight zero consists of
 constants. -/
