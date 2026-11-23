@@ -33,6 +33,8 @@ lies in the `i`-th interval and `0` otherwise.
 * `TauCeti.Multisegment.standardSpace`: the graded coordinate space spanned by these labels.
 * `TauCeti.Multisegment.standardBasis`: its basis indexed by the valid labels.
 * `TauCeti.Multisegment.standardVector`: the basis vector of a label, or `0` for an invalid one.
+* `TauCeti.Multisegment.standardGradeBasis`: the basis of the degree-`a` piece indexed by the
+  occurrences containing `a`.
 * `TauCeti.Multisegment.standardPair`: the standard raising or lowering pair of `m`.
 
 ## Main results
@@ -128,8 +130,8 @@ theorem finrank_grade_standardSpace (a : ℤ) :
   let f : {x : StandardIndex m // (x.2 : ℤ) = a} ≃
       {i : Fin m.card // a ∈ occurrenceInterval m i} :=
     { toFun x := ⟨x.val.1, (congrArg (· ∈ occurrenceInterval m x.val.1) x.property).mp
-        (NonemptyInterval.mem_def.2 (Set.mem_Icc.1 x.val.2.property))⟩
-      invFun i := ⟨⟨i.val, a, Set.mem_Icc.2 (NonemptyInterval.mem_def.1 i.property)⟩, rfl⟩
+        x.val.mem_occurrenceInterval⟩
+      invFun i := ⟨StandardIndex.mk i.val a i.property, rfl⟩
       left_inv := by
         rintro ⟨⟨i, b, hb⟩, rfl⟩
         rfl
@@ -144,15 +146,14 @@ open Classical in
 `i`-th interval of `m`, and `0` otherwise. -/
 noncomputable def standardVector (i : Fin m.card) (a : ℤ) : (standardSpace m).Carrier :=
   if h : a ∈ occurrenceInterval m i then
-    standardBasis m ⟨i, a, Set.mem_Icc.2 (NonemptyInterval.mem_def.1 h)⟩
+    standardBasis m (StandardIndex.mk i a h)
   else 0
 
 variable {m}
 
 /-- On a valid label the standard vector is the corresponding basis vector. -/
 theorem standardVector_of_mem {i : Fin m.card} {a : ℤ} (h : a ∈ occurrenceInterval m i) :
-    standardVector m i a =
-      standardBasis m ⟨i, a, Set.mem_Icc.2 (NonemptyInterval.mem_def.1 h)⟩ := by
+    standardVector m i a = standardBasis m (StandardIndex.mk i a h) := by
   simp [standardVector, h]
 
 /-- On an invalid label the standard vector is zero. -/
@@ -164,7 +165,7 @@ theorem standardVector_of_notMem {i : Fin m.card} {a : ℤ} (h : a ∉ occurrenc
 /-- Each basis vector of the standard space is a standard vector. -/
 theorem standardBasis_eq_standardVector (x : StandardIndex m) :
     standardBasis m x = standardVector m x.1 x.2 :=
-  (standardVector_of_mem (NonemptyInterval.mem_def.2 (Set.mem_Icc.1 x.2.property))).symm
+  (standardVector_of_mem x.mem_occurrenceInterval).symm
 
 /-- A standard vector vanishes exactly when its degree lies outside its interval. -/
 @[simp]
@@ -180,7 +181,7 @@ theorem standardVector_mem_grade (i : Fin m.card) (a : ℤ) :
     standardVector m i a ∈ (standardSpace m).grade a := by
   by_cases h : a ∈ occurrenceInterval m i
   · rw [standardVector_of_mem h]
-    exact standardBasis_mem_grade m ⟨i, a, _⟩
+    exact standardBasis_mem_grade m (StandardIndex.mk i a h)
   · rw [standardVector_of_notMem h]
     exact zero_mem _
 
@@ -228,6 +229,46 @@ theorem grade_standardSpace (a : ℤ) :
     simp only [standardBasis_apply, Pi.basisFun_apply]
   · rintro _ ⟨i, rfl⟩
     exact standardVector_mem_grade i a
+
+/-- The degree-`a` piece of the standard space is spanned by the standard vectors of the
+occurrences containing `a`. -/
+private theorem grade_standardSpace_eq_span_mem (m : Multisegment) (a : ℤ) :
+    (standardSpace m).grade a = Submodule.span ℂ (Set.range
+      fun i : {i : Fin m.card // a ∈ occurrenceInterval m i} ↦ standardVector m i a) := by
+  rw [grade_standardSpace]
+  refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_mono ?_)
+  · rintro _ ⟨i, rfl⟩
+    by_cases h : a ∈ occurrenceInterval m i
+    · exact Submodule.subset_span ⟨⟨i, h⟩, rfl⟩
+    · simp [standardVector_of_notMem h]
+  · rintro _ ⟨i, rfl⟩
+    exact ⟨i.val, rfl⟩
+
+/-- The standard vectors of the occurrences containing `a` are linearly independent. -/
+private theorem linearIndependent_standardVector_mem (m : Multisegment) (a : ℤ) :
+    LinearIndependent ℂ
+      fun i : {i : Fin m.card // a ∈ occurrenceInterval m i} ↦ standardVector m i a := by
+  have hinj : Function.Injective fun i : {i : Fin m.card // a ∈ occurrenceInterval m i} ↦
+      StandardIndex.mk i.val a i.property :=
+    fun i j h ↦ Subtype.ext (by simpa using congrArg Sigma.fst h)
+  convert linearIndependent_standardVector.comp _ hinj with i
+  simp
+
+variable (m) in
+/-- The basis of the degree-`a` piece of the standard space given by the standard vectors of the
+occurrences of `m` containing `a`. -/
+noncomputable def standardGradeBasis (a : ℤ) :
+    Basis {i : Fin m.card // a ∈ occurrenceInterval m i} ℂ ((standardSpace m).grade a) :=
+  (Basis.span (linearIndependent_standardVector_mem m a)).map
+    (LinearEquiv.ofEq _ _ (grade_standardSpace_eq_span_mem m a).symm)
+
+/-- The basis vector of an occurrence `i` containing `a` in `standardGradeBasis m a` is the
+standard vector of `(i, a)`. -/
+@[simp]
+theorem coe_standardGradeBasis_apply (a : ℤ)
+    (i : {i : Fin m.card // a ∈ occurrenceInterval m i}) :
+    (standardGradeBasis m a i : (standardSpace m).Carrier) = standardVector m i a := by
+  simp [standardGradeBasis]
 
 /-! ### The standard pairs -/
 
@@ -278,7 +319,8 @@ direction `d`; the result is zero when this step leaves the interval. -/
 theorem standardPair_operator_standardVector (d : StepDirection) {i : Fin m.card} {a : ℤ}
     (h : a ∈ occurrenceInterval m i) :
     (standardPair m d).operator (standardVector m i a) = standardVector m i (a + d.step) := by
-  rw [standardVector_of_mem h, standardPair_operator_standardBasis]
+  rw [standardVector_of_mem h, standardPair_operator_standardBasis,
+    StandardIndex.coe_snd_mk, StandardIndex.fst_mk]
 
 /-- The standard raising operator kills the last vector of each interval block. -/
 @[simp]
@@ -329,8 +371,8 @@ theorem standardPair_operator_pow_standardBasis (d : StepDirection) (x : Standar
     (k : ℕ) :
     ((standardPair m d).operator ^ k) (standardBasis m x) =
       standardVector m x.1 (x.2 + k * d.step) := by
-  rw [standardBasis_eq_standardVector, standardPair_operator_pow_standardVector d
-    (NonemptyInterval.mem_def.2 (Set.mem_Icc.1 x.2.property))]
+  rw [standardBasis_eq_standardVector,
+    standardPair_operator_pow_standardVector d x.mem_occurrenceInterval]
 
 end Multisegment
 

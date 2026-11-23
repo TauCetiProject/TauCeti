@@ -737,7 +737,31 @@ of `m`. -/
 abbrev StandardIndex (m : Multisegment) : Type :=
   Σ i : Fin m.card, Set.Icc (occurrenceInterval m i).fst (occurrenceInterval m i).snd
 
-/-- The number of occurrence–degree labels is the total length of `m`. -/
+/-- The occurrence–degree label `(i, a)` of a degree `a` in the `i`-th occurrence of `m`. -/
+@[expose] def StandardIndex.mk {m : Multisegment} (i : Fin m.card) (a : ℤ)
+    (h : a ∈ occurrenceInterval m i) : StandardIndex m :=
+  ⟨i, a, Set.mem_Icc.2 (NonemptyInterval.mem_def.1 h)⟩
+
+/-- The occurrence of the label `(i, a)` is `i`. -/
+@[simp]
+theorem StandardIndex.fst_mk {m : Multisegment} (i : Fin m.card) (a : ℤ)
+    (h : a ∈ occurrenceInterval m i) : (StandardIndex.mk i a h).1 = i :=
+  rfl
+
+/-- The degree of the label `(i, a)` is `a`. -/
+@[simp]
+theorem StandardIndex.coe_snd_mk {m : Multisegment} (i : Fin m.card) (a : ℤ)
+    (h : a ∈ occurrenceInterval m i) : ((StandardIndex.mk i a h).2 : ℤ) = a :=
+  rfl
+
+/-- The degree of an occurrence–degree label lies in the interval of its occurrence. -/
+theorem StandardIndex.mem_occurrenceInterval {m : Multisegment} (x : StandardIndex m) :
+    (x.2 : ℤ) ∈ occurrenceInterval m x.1 :=
+  NonemptyInterval.mem_def.2 (Set.mem_Icc.1 x.2.property)
+
+/-- The number of occurrence–degree labels is the total length of `m`. It takes precedence over
+`Fintype.card_sigma`, which would expand the count into a sum over occurrences. -/
+@[simp high]
 theorem card_standardIndex (m : Multisegment) :
     Fintype.card (StandardIndex m) = totalLength m := by
   rw [Fintype.card_sigma, ← sum_length_occurrenceInterval]
