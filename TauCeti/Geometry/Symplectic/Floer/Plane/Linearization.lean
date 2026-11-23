@@ -618,7 +618,7 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
       (hdecay.mono fun s hs t _ ↦ by
         rw [dist_eq_norm]
         exact (le_add_of_nonneg_right (norm_nonneg _)).trans (hs t))
-  obtain ⟨a, -, hsub⟩ := exists_two_le_exp_lt_norm_subset r
+  obtain ⟨a, -, hsub⟩ := exists_le_exp_lt_norm_subset 2 r
   -- The orbit stays in `K`, as a limit of loops in `K`.
   have hxK (t : ℝ) : x t ∈ K := by
     refine hK.isClosed.mem_of_tendsto ((hloop {t}).tendsto_at (mem_singleton t)) ?_
