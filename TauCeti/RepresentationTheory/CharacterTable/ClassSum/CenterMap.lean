@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basis
 public import TauCeti.RepresentationTheory.GroupAlgebra.OrbitSum
 
 /-!
-# Changing the coefficients of the centre of a finite group algebra
+# Changing the coefficients of the centre of a group algebra
 
 For a group `G`, a ring homomorphism `f : R →+* S` induces the ring homomorphism
 `MonoidAlgebra.centerMapRingHom G f : Z(R[G]) →+* Z(S[G])` between the centres of the group
@@ -23,15 +23,16 @@ the extension of `ker f` to `Z(R[G])`, consisting of the central elements all of
 lie in `ker f`.
 
 For the reduction `O → k` of a local ring onto its residue field this says that
-`Z(O[G]) → Z(k[G])` is surjective with kernel `𝔪 Z(O[G])`; it is the map along which the blocks of
-`k[G]` are lifted to blocks of `O[G]`.
+`Z(O[G]) → Z(k[G])` is surjective, and for finite `G` its kernel is `𝔪 Z(O[G])`; it is the map
+along which the blocks of `k[G]` are lifted to blocks of `O[G]`.
 
 ## Main results
 
 * `TauCeti.classSum_mk_eq_conjOrbitSum`: class sums are the orbit sums of conjugation by `G`.
 * `TauCeti.centerMapRingHom_classSumCenter`: the map on centres sends class sums to class sums.
 * `TauCeti.centerMapRingHom_surjective`: the map on centres is surjective when `f` is.
-* `TauCeti.ker_centerMapRingHom`: its kernel is `(ker f).map (algebraMap R Z(R[G]))`.
+* `TauCeti.ker_centerMapRingHom`: for finite `G`, its kernel is
+  `(ker f).map (algebraMap R Z(R[G]))`.
 -/
 
 public section
