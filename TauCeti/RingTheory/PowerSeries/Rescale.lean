@@ -124,7 +124,7 @@ theorem norm_coeff_rescale_mul_pow {R : Type*} [CommSemiring R] [Norm R] (f : R�
     (hu : ∀ x : R, ‖u * x‖ = ‖u‖ * ‖x‖) {r s : ℝ} (hrs : ‖u‖ * s = r) (n : ℕ) :
     ‖coeff n (rescale u f)‖ * s ^ n = ‖coeff n f‖ * r ^ n := by
   rw [coeff_rescale]
-  simpa only [smul_eq_mul] using TauCeti.norm_pow_smul_mul_pow (u := u) (r := r) (s := s)
-    (fun x ↦ by rw [smul_eq_mul, hu, ← hrs]; ac_rfl) n (coeff n f)
+  simpa only [smul_eq_mul] using
+    TauCeti.norm_pow_smul_mul_pow (TauCeti.norm_smul_mul_of_norm_mul hu hrs) n (coeff n f)
 
 end PowerSeries
