@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorAlgebra.ToTensorPower
+import Mathlib.LinearAlgebra.TensorAlgebra.Grading
 
 /-!
 # Tensor algebras and tensor powers
@@ -51,15 +52,10 @@ theorem toTensorAlgebra_mem_range_pow {n : ℕ} (t : ⨂[R]^n M) :
   induction t using PiTensorProduct.induction_on with
   | smul_tprod r x =>
     rw [map_smul]; refine Submodule.smul_mem _ r ?_
-    rw [TensorPower.toTensorAlgebra_tprod, TensorAlgebra.tprod_apply]
-    have hlen : ∀ l : List M, (l.map (TensorAlgebra.ι R)).prod ∈
-        (TensorAlgebra.ι R : M →ₗ[R] TensorAlgebra R M).range ^ l.length := by
-      intro l; induction l with
-      | nil => simp
-      | cons u l ih =>
-        rw [List.map_cons, List.prod_cons, List.length_cons, pow_succ']
-        exact Submodule.mul_mem_mul ⟨u, rfl⟩ ih
-    simpa [List.length_ofFn, List.map_ofFn, Function.comp_def] using hlen (List.ofFn x)
+    simpa [TensorPower.toTensorAlgebra_tprod, TensorAlgebra.tprod_apply] using
+      SetLike.list_prod_ofFn_mem_graded (fun _ : Fin n ↦ (1 : ℕ))
+        (fun i ↦ TensorAlgebra.ι R (x i))
+        (fun i ↦ by simpa only [pow_one] using LinearMap.mem_range_self _ (x i))
   | add _ _ hx hy => rw [map_add]; exact Submodule.add_mem _ hx hy
 
 end TensorPower

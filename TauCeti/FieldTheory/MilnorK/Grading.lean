@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.TensorAlgebra.ToTensorPower
 public import Mathlib.LinearAlgebra.TensorPower.Basic
 public import TauCeti.FieldTheory.MilnorK.Basic
 public import TauCeti.FieldTheory.MilnorK.SymbolGroup
+import TauCeti.LinearAlgebra.TensorSquare
 
 /-!
 # Homogeneous quotient bridge and degree-two identification of Milnor K-theory
@@ -193,8 +194,7 @@ theorem degreeEquivQuotient_mapDegree (f : R →+* S) (n : ℕ) (x : degree R n)
         PiTensorProduct.map_tprod, toDegree_tprod]
       congr 1
       simp only [List.map_ofFn, Function.comp_def, AddMonoidHom.coe_toIntLinearMap,
-        MonoidHom.coe_toAdditive, toMul_ofMul]
-      rfl
+        MonoidHom.coe_toAdditive, toMul_ofMul, RingHom.toMonoidHom_eq_coe]
     | add _ _ hu hv => rw [map_add, map_add, map_add, map_add, hu, hv]
   rw [hcomm, degreeEquivQuotient_toDegree, mapTensorPower, ← mapQuotient_mk]
 
@@ -204,82 +204,52 @@ section DegreeTwo
 
 variable (R : Type*) [CommRing R]
 
-private noncomputable def tensorPowerTwoToSymbolGroup :
-    (⨂[ℤ]^2) (Additive Rˣ) →ₗ[ℤ] SymbolGroup R :=
-  PiTensorProduct.lift
-    { toFun := fun x ↦ SymbolGroup.symbol (Additive.toMul (x 0)) (Additive.toMul (x 1))
-      map_update_add' := fun _ i _ _ ↦ by
-        fin_cases i <;> simp [SymbolGroup.symbol_mul_left, SymbolGroup.symbol_mul_right]
-      map_update_smul' := fun _ i _ _ ↦ by
-        fin_cases i <;> simp [SymbolGroup.symbol_zpow_left, SymbolGroup.symbol_zpow_right] }
+private noncomputable def tensorSquareEquivSymm :
+    (⨂[ℤ]^2) (Additive Rˣ) ≃ₗ[ℤ] Additive Rˣ ⊗[ℤ] Additive Rˣ where
+  __ := (tensorProductEquivTensorSquare ℤ (Additive Rˣ)).symm.toAddEquiv
+  map_smul' k x := by
+    rw [RingHom.id_apply]
+    exact map_zsmul (tensorProductEquivTensorSquare ℤ (Additive Rˣ)).symm.toAddMonoidHom k x
 
-private theorem relationSubmodule_two_le_ker_toSymbolGroup :
-    relationSubmodule R 2 ≤ LinearMap.ker (tensorPowerTwoToSymbolGroup R) := by
-  rw [relationSubmodule_def, Submodule.span_le]
-  rintro _ ⟨x, i, hi, hab, rfl⟩
-  obtain rfl : i = 0 := by omega
-  rw [SetLike.mem_coe, LinearMap.mem_ker, tensorPowerTwoToSymbolGroup, PiTensorProduct.lift.tprod]
-  exact SymbolGroup.symbol_eq_zero_of_add_eq_one hab
+private theorem tensorSquareEquivSymm_tprod (x : Fin 2 → Additive Rˣ) :
+    tensorSquareEquivSymm R (PiTensorProduct.tprod ℤ x) = x 0 ⊗ₜ[ℤ] x 1 :=
+  tensorProductEquivTensorSquare_symm_tprod ℤ (Additive Rˣ) x
 
-private noncomputable def degreeTwoToSymbolGroup : degree R 2 →ₗ[ℤ] SymbolGroup R :=
-  (Submodule.liftQ (relationSubmodule R 2) (tensorPowerTwoToSymbolGroup R)
-      (relationSubmodule_two_le_ker_toSymbolGroup R)).comp
-    (degreeEquivQuotient R 2).toLinearMap
-
-private theorem degreeTwoToSymbolGroup_symbol_pair (a b : Rˣ) :
-    degreeTwoToSymbolGroup R ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ =
-      SymbolGroup.symbol a b := by
-  have hsub : (⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ : degree R 2) =
-      ⟨symbol (List.ofFn ![a, b]), symbol_mem_degree_of_length (List.length_ofFn (f := ![a, b]))⟩ :=
-    Subtype.ext (congrArg symbol (by simp))
-  rw [hsub]
-  dsimp only [degreeTwoToSymbolGroup, LinearMap.comp_apply, LinearEquiv.coe_coe]
-  rw [degreeEquivQuotient_symbol_ofFn, Submodule.liftQ_apply, tensorPowerTwoToSymbolGroup,
-    PiTensorProduct.lift.tprod]
-  simp
-
-private noncomputable def symbolGroupToDegreeTwo : SymbolGroup R →ₗ[ℤ] degree R 2 :=
-  SymbolGroup.lift (fun a b ↦ ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩)
-    { map_mul_left := fun _ _ _ ↦ Subtype.ext (by simp [ofUnit_mul, add_mul])
-      map_mul_right := fun _ _ _ ↦ Subtype.ext (by simp [ofUnit_mul, mul_add])
-      steinberg := fun hab ↦ Subtype.ext (by
-        simpa [symbol_pair] using ofUnit_mul_ofUnit_of_add_eq_one hab) }
-
-private theorem symbolGroupToDegreeTwo_symbol (a b : Rˣ) :
-    symbolGroupToDegreeTwo R (SymbolGroup.symbol a b) =
-      ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ :=
-  SymbolGroup.lift_symbol _ _ a b
+private theorem map_relationSubmodule_two :
+    (relationSubmodule R 2).map (tensorSquareEquivSymm R).toLinearMap = steinbergRelations R := by
+  refine le_antisymm ?_ ?_
+  · rw [relationSubmodule_def, Submodule.map_span_le]
+    rintro _ ⟨x, i, hi, hab, rfl⟩
+    obtain rfl : i = 0 := by omega
+    rw [LinearEquiv.coe_coe, tensorSquareEquivSymm_tprod, steinbergRelations_def]
+    exact Submodule.subset_span ⟨Additive.toMul (x 0), Additive.toMul (x 1), hab, by simp⟩
+  · rw [steinbergRelations_def, Submodule.span_le]
+    rintro _ ⟨a, b, hab, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_map]
+    refine ⟨PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b],
+      tprod_mem_relationSubmodule _ (i := 0) (by omega) (by simpa using hab), ?_⟩
+    rw [LinearEquiv.coe_coe, tensorSquareEquivSymm_tprod]
+    simp
 
 /-- The canonical `ℤ`-linear equivalence `MilnorK.degree R 2 ≃ₗ[ℤ] SymbolGroup R`, taking
 `MilnorK.symbol [a, b]` to `SymbolGroup.symbol a b`. -/
 noncomputable def degreeTwoEquivSymbolGroup : degree R 2 ≃ₗ[ℤ] SymbolGroup R :=
-  LinearEquiv.ofLinearMap (degreeTwoToSymbolGroup R) (symbolGroupToDegreeTwo R)
-    (LinearMap.ext fun q ↦ by
-      induction q using SymbolGroup.inductionOn with
-      | symbol a b =>
-        rw [LinearMap.comp_apply, LinearMap.id_apply, symbolGroupToDegreeTwo_symbol,
-          degreeTwoToSymbolGroup_symbol_pair]
-      | add _ _ hx hy =>
-        simp only [LinearMap.comp_apply, LinearMap.id_apply, map_add] at hx hy ⊢; rw [hx, hy])
-    (LinearMap.ext fun x ↦ by
-      induction x using degree_inductionOn with
-      | zero => simp
-      | symbol l hl =>
-        match l, hl with
-        | [a, b], _ =>
-          rw [LinearMap.comp_apply, LinearMap.id_apply, degreeTwoToSymbolGroup_symbol_pair,
-            symbolGroupToDegreeTwo_symbol]
-      | add _ _ hx hy =>
-        simp only [LinearMap.comp_apply, LinearMap.id_apply, map_add] at hx hy ⊢; rw [hx, hy]
-      | smul _ _ hx =>
-        simp only [LinearMap.comp_apply, LinearMap.id_apply, map_smul] at hx ⊢; rw [hx])
+  (degreeEquivQuotient R 2).trans
+    (Submodule.Quotient.equiv (relationSubmodule R 2) (steinbergRelations R)
+      (tensorSquareEquivSymm R) (map_relationSubmodule_two R))
 
 /-- `degreeTwoEquivSymbolGroup R` sends the two-entry Milnor symbol `{a, b}` to
 `SymbolGroup.symbol a b`. -/
 theorem degreeTwoEquivSymbolGroup_symbol_pair (a b : Rˣ) :
     degreeTwoEquivSymbolGroup R ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ =
-      SymbolGroup.symbol a b :=
-  degreeTwoToSymbolGroup_symbol_pair R a b
+      SymbolGroup.symbol a b := by
+  have hsub : (⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ : degree R 2) =
+      ⟨symbol (List.ofFn ![a, b]), symbol_mem_degree_of_length (List.length_ofFn (f := ![a, b]))⟩ :=
+    Subtype.ext (congrArg symbol (by simp))
+  rw [hsub, degreeTwoEquivSymbolGroup, LinearEquiv.trans_apply, degreeEquivQuotient_symbol_ofFn,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
+    tensorSquareEquivSymm_tprod]
+  simp [SymbolGroup.symbol_def]
 
 /-- `degreeTwoEquivSymbolGroup R` sends `ofUnit a * ofUnit b` to `SymbolGroup.symbol a b`. -/
 @[simp]
@@ -295,8 +265,8 @@ symbol `{a, b}`. -/
 @[simp]
 theorem degreeTwoEquivSymbolGroup_symm_symbol (a b : Rˣ) :
     (degreeTwoEquivSymbolGroup R).symm (SymbolGroup.symbol a b) =
-      ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ :=
-  symbolGroupToDegreeTwo_symbol R a b
+      ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ := by
+  rw [LinearEquiv.symm_apply_eq, degreeTwoEquivSymbolGroup_symbol_pair]
 
 /-- The degree-two identification `degree R 2 ≃ₗ[ℤ] SymbolGroup R` is natural with respect to ring
 homomorphisms. -/
@@ -304,19 +274,23 @@ theorem degreeTwoEquivSymbolGroup_mapDegree {S : Type*} [CommRing S] (f : R →+
     (x : degree R 2) :
     degreeTwoEquivSymbolGroup S (mapDegree f 2 x) =
       SymbolGroup.map f (degreeTwoEquivSymbolGroup R x) := by
-  induction x using degree_inductionOn with
-  | zero => simp
-  | symbol l hl =>
-    match l, hl with
-    | [a, b], _ =>
-      have hmap : mapDegree f 2 ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ =
-          ⟨symbol [Units.map f.toMonoidHom a, Units.map f.toMonoidHom b],
-            symbol_mem_degree_of_length rfl⟩ :=
-        Subtype.ext (by rw [mapDegree_apply, map_symbol]; simp)
-      rw [hmap, degreeTwoEquivSymbolGroup_symbol_pair, degreeTwoEquivSymbolGroup_symbol_pair,
-        SymbolGroup.map_symbol]
-  | add _ _ hx hy => rw [map_add, map_add, map_add, map_add, hx, hy]
-  | smul _ _ hx => rw [map_smul, map_smul, map_smul, map_smul, hx]
+  obtain ⟨t, rfl⟩ := surjective_toDegree R 2 x
+  simp only [degreeTwoEquivSymbolGroup, LinearEquiv.trans_apply, degreeEquivQuotient_mapDegree,
+    degreeEquivQuotient_toDegree]
+  induction t using PiTensorProduct.induction_on with
+  | smul_tprod r y =>
+    simp only [Submodule.Quotient.mk_smul, map_smul]
+    congr 1
+    rw [mapQuotient_mk_tprod, Submodule.Quotient.equiv_apply, Submodule.Quotient.equiv_apply,
+      Submodule.mapQ_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+      tensorSquareEquivSymm_tprod, tensorSquareEquivSymm_tprod]
+    have hy : y 0 ⊗ₜ[ℤ] y 1 =
+        Additive.ofMul (Additive.toMul (y 0)) ⊗ₜ[ℤ] Additive.ofMul (Additive.toMul (y 1)) := by
+      simp
+    rw [hy, ← SymbolGroup.symbol_def, ← SymbolGroup.symbol_def, SymbolGroup.map_symbol]
+  | add _ _ hu hv =>
+    simp only [Submodule.Quotient.mk_add, map_add] at hu hv ⊢
+    rw [hu, hv]
 
 end DegreeTwo
 
