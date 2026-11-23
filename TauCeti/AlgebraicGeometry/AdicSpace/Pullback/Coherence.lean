@@ -18,11 +18,12 @@ Fibre products of adic spaces do not exist in general. When `f : X ⟶ S`, `g : 
 product theorems of `TauCeti.AlgebraicGeometry.AdicSpace.Pullback.WeaklyFiniteType` give all the
 iterated fibre products of `X`, `Y`, `Z` over `S`
 (`TauCeti.AdicSpace.FibreProduct.hasPullback_snd_comp`,
-`TauCeti.AdicSpace.FibreProduct.hasPullback_fst_comp`), so the canonical isomorphisms
-`(X ×_S Y) ×_S Z ≅ X ×_S (Y ×_S Z)`, `X ×_S Y ≅ Y ×_S X` and `X ×_S S ≅ X` are defined
-(`FibreProduct.associator`, `FibreProduct.symmetry`, `FibreProduct.unit`). Each is the unique
-isomorphism compatible with the projections (`FibreProduct.hom_ext`), so every coherence identity
-between composites of them holds.
+`TauCeti.AdicSpace.FibreProduct.hasPullback_fst_comp`). Given these, Mathlib's
+`pullbackAssoc f g g h : (X ×_S Y) ×_S Z ≅ X ×_S (Y ×_S Z)`, `pullbackSymmetry f g` (using
+`hasPullback_symmetry`) and `asIso (pullback.fst f (𝟙 S)) : X ×_S S ≅ X` are the associativity,
+symmetry and unit isomorphisms, with Mathlib's projection lemmas; each is the unique isomorphism
+compatible with the projections (`pullback.hom_ext`), so every coherence identity between
+composites of them holds.
 
 On affinoid charts these isomorphisms are `Spa` of the ring isomorphisms of completed tensor
 products. Since `Spa` is contravariant, the geometric associator
@@ -35,10 +36,6 @@ coprojection, with inverse `Spa` of `b ⊗ a ↦ b·a` (`FibreProduct.unitAffino
 
 * `TauCeti.AdicSpace.FibreProduct.hasPullback_snd_comp`,
   `TauCeti.AdicSpace.FibreProduct.hasPullback_fst_comp`: existence of the iterated fibre products.
-* `TauCeti.AdicSpace.FibreProduct.associator`, `TauCeti.AdicSpace.FibreProduct.symmetry`,
-  `TauCeti.AdicSpace.FibreProduct.unit`: the canonical isomorphisms of chosen fibre products.
-* `TauCeti.AdicSpace.FibreProduct.hom_ext`: morphisms into an iterated fibre product are
-  determined by the three projections.
 * `TauCeti.AdicSpace.FibreProduct.associatorAffinoid`,
   `TauCeti.AdicSpace.FibreProduct.symmetry_affinoid`,
   `TauCeti.AdicSpace.FibreProduct.unitAffinoid`: the chart formulas.
@@ -88,137 +85,6 @@ theorem hasPullback_fst_comp (hf : LocallyOfWeaklyFiniteType f)
     (IsAdic.isMultiplicative.comp_mem _ _
       (IsAdic.pullback_fst_of_locallyOfWeaklyFiniteType hg hh hZ) hg.isAdic)
     (isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_left hg hh hZ)
-
-/-- **Associativity of fibre products of adic spaces**: for `f`, `g`, `h` locally of weakly
-finite type with `X` and `Z` locally stably sheafy, the iterated fibre products exist and
-`(X ×_S Y) ×_S Z ≅ X ×_S (Y ×_S Z)` (Mathlib's `pullbackAssoc`). -/
-noncomputable def associator
-    (hf : LocallyOfWeaklyFiniteType f) (hg : LocallyOfWeaklyFiniteType g)
-    (hh : LocallyOfWeaklyFiniteType h) (hX : X.IsLocallyStablySheafy)
-    (hZ : Z.IsLocallyStablySheafy) :
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
-    haveI := hasPullback_snd_comp hf.isAdic hg hh hX
-    haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
-    pullback (pullback.snd f g ≫ g) h ≅ pullback f (pullback.fst g h ≫ g) :=
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
-  haveI := hasPullback_snd_comp hf.isAdic hg hh hX
-  haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
-  pullbackAssoc f g g h
-
-section Associator
-
-variable (hf : LocallyOfWeaklyFiniteType f)
-  (hg : LocallyOfWeaklyFiniteType g) (hh : LocallyOfWeaklyFiniteType h)
-  (hX : X.IsLocallyStablySheafy) (hZ : Z.IsLocallyStablySheafy)
-
-/-- The associator preserves the projection to `X`. -/
-@[reassoc]
-theorem associator_hom_fst :
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
-    haveI := hasPullback_snd_comp hf.isAdic hg hh hX
-    haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
-    (associator hf hg hh hX hZ).hom ≫ pullback.fst _ _ =
-      pullback.fst _ _ ≫ pullback.fst f g :=
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
-  haveI := hasPullback_snd_comp hf.isAdic hg hh hX
-  haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
-  pullbackAssoc_hom_fst f g g h
-
-/-- The associator preserves the projection to `Y`. -/
-@[reassoc]
-theorem associator_hom_snd_fst :
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
-    haveI := hasPullback_snd_comp hf.isAdic hg hh hX
-    haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
-    (associator hf hg hh hX hZ).hom ≫ pullback.snd _ _ ≫ pullback.fst g h =
-      pullback.fst _ _ ≫ pullback.snd f g :=
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
-  haveI := hasPullback_snd_comp hf.isAdic hg hh hX
-  haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
-  pullbackAssoc_hom_snd_fst f g g h
-
-/-- The associator preserves the projection to `Z`. -/
-@[reassoc]
-theorem associator_hom_snd_snd :
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
-    haveI := hasPullback_snd_comp hf.isAdic hg hh hX
-    haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
-    (associator hf hg hh hX hZ).hom ≫ pullback.snd _ _ ≫ pullback.snd g h =
-      pullback.snd _ _ :=
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf.isAdic hg hX
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh.isAdic hZ
-  haveI := hasPullback_snd_comp hf.isAdic hg hh hX
-  haveI := hasPullback_fst_comp hf hg hh.isAdic hZ
-  pullbackAssoc_hom_snd_snd f g g h
-
-end Associator
-
-/-- **Projection criterion for iterated fibre products**: two morphisms into `(X ×_S Y) ×_S Z`
-agree when their three projections to `X`, `Y` and `Z` agree. With `associator`, `symmetry` and
-`unit` this gives every coherence identity between them. -/
-theorem hom_ext [HasPullback f g] [HasPullback (pullback.snd f g ≫ g) h] {W : AdicSpace.{u}}
-    {a b : W ⟶ pullback (pullback.snd f g ≫ g) h}
-    (h₁ : a ≫ pullback.fst _ _ ≫ pullback.fst f g = b ≫ pullback.fst _ _ ≫ pullback.fst f g)
-    (h₂ : a ≫ pullback.fst _ _ ≫ pullback.snd f g = b ≫ pullback.fst _ _ ≫ pullback.snd f g)
-    (h₃ : a ≫ pullback.snd _ _ = b ≫ pullback.snd _ _) : a = b :=
-  pullback.hom_ext (pullback.hom_ext (by simpa using h₁) (by simpa using h₂)) h₃
-
-/-- **Symmetry of fibre products of adic spaces**: when `f` is adic, `g` is locally of weakly
-finite type and `X` is locally stably sheafy, `X ×_S Y ≅ Y ×_S X` (Mathlib's `pullbackSymmetry`). -/
-noncomputable def symmetry (hf : IsAdic f) (hg : LocallyOfWeaklyFiniteType g)
-    (hX : X.IsLocallyStablySheafy) :
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
-    haveI := hasPullback_symmetry f g
-    pullback f g ≅ pullback g f :=
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
-  haveI := hasPullback_symmetry f g
-  pullbackSymmetry f g
-
-/-- The symmetry exchanges the two projections. -/
-@[reassoc]
-theorem symmetry_hom_fst (hf : IsAdic f) (hg : LocallyOfWeaklyFiniteType g)
-    (hX : X.IsLocallyStablySheafy) :
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
-    haveI := hasPullback_symmetry f g
-    (symmetry hf hg hX).hom ≫ pullback.fst g f = pullback.snd f g :=
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
-  haveI := hasPullback_symmetry f g
-  pullbackSymmetry_hom_comp_fst f g
-
-/-- The symmetry exchanges the two projections. -/
-@[reassoc]
-theorem symmetry_hom_snd (hf : IsAdic f) (hg : LocallyOfWeaklyFiniteType g)
-    (hX : X.IsLocallyStablySheafy) :
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
-    haveI := hasPullback_symmetry f g
-    (symmetry hf hg hX).hom ≫ pullback.snd g f = pullback.fst f g :=
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
-  haveI := hasPullback_symmetry f g
-  pullbackSymmetry_hom_comp_snd f g
-
-variable (f) in
-/-- **Unit of fibre products of adic spaces**: `X ×_S S ≅ X` for every morphism `f : X ⟶ S`, by the
-first projection. -/
-noncomputable def unit : pullback f (𝟙 S) ≅ X :=
-  asIso (pullback.fst f (𝟙 S))
-
-variable (f) in
-@[simp]
-theorem unit_hom : (unit f).hom = pullback.fst f (𝟙 S) := (rfl)
-
-variable (f) in
-/-- The inverse unit is `(𝟙, f) : X ⟶ X ×_S S`. -/
-@[reassoc (attr := simp)]
-theorem unit_inv_snd : (unit f).inv ≫ pullback.snd f (𝟙 S) = f := by
-  rw [Iso.inv_comp_eq, unit_hom]
-  simpa using (pullback.condition (f := f) (g := 𝟙 S)).symm
 
 end General
 
