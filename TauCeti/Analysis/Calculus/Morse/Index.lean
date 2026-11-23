@@ -220,6 +220,18 @@ theorem hessianQuadraticForm_comp_apply_of_fderiv_apply_eq_zero {h : F → ℝ} 
     fderiv_fderiv_comp_apply hh hφ, hv]
   simp
 
+/-- Along the kernel of the differential of a `C²` map `φ` at `x`, the Hessian of `ℓ ∘ g ∘ φ`, for
+a `C²` map `g` and a continuous linear functional `ℓ`, only involves the differential of `g` at
+`φ x`: on a vector `v` with `Dφ(x) v = 0` it agrees with the Hessian of `(ℓ ∘ Dg(φ x)) ∘ φ`. -/
+theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (ℓ : G →L[ℝ] ℝ) {g : F → G} {φ : E → F}
+    (hg : ContDiffAt ℝ 2 g (φ x)) (hφ : ContDiffAt ℝ 2 φ x) {v : E} (hv : fderiv ℝ φ x v = 0) :
+    hessianQuadraticForm (ℓ ∘ g ∘ φ) x v =
+      hessianQuadraticForm (ℓ.comp (fderiv ℝ g (φ x)) ∘ φ) x v := by
+  rw [← Function.comp_assoc, hessianQuadraticForm_comp_apply_of_fderiv_apply_eq_zero
+    (ℓ.contDiff.contDiffAt.comp _ hg) hφ hv, fderiv_comp _ ℓ.differentiableAt
+    (hg.differentiableAt (by norm_num)), ℓ.fderiv]
+
 /-- At a critical point `x` of a `C²` map `φ`, the Hessian of `h ∘ φ` only involves the
 differential of `h` at `φ x`: it is the Hessian of `Dh(φ x) ∘ φ`. -/
 theorem hessianQuadraticForm_comp_eq_fderiv_comp {h : F → ℝ} {φ : E → F}
@@ -281,11 +293,9 @@ theorem range_hessianQuadraticForm_comp {G : Type*} [NormedAddCommGroup G] [Norm
   -- The Hessian of `ℓ ∘ g ∘ φ` is that of `(ℓ ∘ Dg) ∘ φ`, and every functional on `F` is of the
   -- form `ℓ ∘ Dg`.
   have hℓ : ∀ ℓ : G →L[ℝ] ℝ, hessianQuadraticForm (ℓ ∘ g ∘ φ) x =
-      hessianQuadraticForm ((ℓ.comp (fderiv ℝ g (φ x))) ∘ φ) x := by
-    intro ℓ
-    rw [← Function.comp_assoc, hessianQuadraticForm_comp_eq_fderiv_comp
-      (ℓ.contDiff.contDiffAt.comp _ hg) hφ hc, fderiv_comp _ ℓ.differentiableAt
-      (hg.differentiableAt (by norm_num)), ℓ.fderiv]
+      hessianQuadraticForm ((ℓ.comp (fderiv ℝ g (φ x))) ∘ φ) x := fun ℓ ↦ by
+    ext v
+    exact ℓ.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hφ (by simp [hc])
   simp only [hℓ]
   rw [← (ContinuousLinearMap.surjective_compL_flip_of_injective hinj).range_comp
     fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x]
