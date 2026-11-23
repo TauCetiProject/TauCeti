@@ -819,11 +819,12 @@ theorem regradeSingleLeftUnitor_zero :
   by_cases hp : p = 0
   · -- The summands of the regraded complexes are those of `𝟙 ⊗ L` and `L` by definition of
     -- `HomologicalComplex.restriction`.
-    refine (ι_regradeSingleLeftUnitor_f 0 n₂ L p q k h hp).trans ?_
-    refine Eq.trans ?_ (ι_leftUnitor_hom_f_assoc L p q (0 + n₂ - k) h hp _).symm
+    subst hp
+    obtain rfl : q = 0 + n₂ - k := by omega
+    refine (ι_regradeSingleLeftUnitor_f 0 n₂ L 0 _ k h rfl).trans ?_
+    refine Eq.trans ?_ (ι_leftUnitor_hom_f_assoc L (0 + n₂ - k) _).symm
     rw [zero_mul, Int.negOnePow_zero, one_smul]
-    congr 2
-    exact (XIsoOfEq_hom_comp_XIsoOfEq_hom L _ _).symm
+    rfl
   · -- The source `𝟙[0]_p ⊗ L_q` is zero for `p ≠ 0`.
     exact ((tensorRight (L.X q)).map_isZero (isZero_single_obj_X _ _ _ _ hp)).eq_of_src _ _
 
@@ -840,10 +841,11 @@ theorem regradeSingleRightUnitor_zero :
   by_cases hq : q = 0
   · -- The summands of the regraded complexes are those of `K ⊗ 𝟙` and `K` by definition of
     -- `HomologicalComplex.restriction`.
-    refine (ι_regradeSingleRightUnitor_f n₁ 0 K p q k h hq).trans ?_
-    refine Eq.trans ?_ (ι_rightUnitor_hom_f_assoc K p q (n₁ + 0 - k) h hq _).symm
-    congr 2
-    exact (XIsoOfEq_hom_comp_XIsoOfEq_hom K _ _).symm
+    subst hq
+    obtain rfl : p = n₁ + 0 - k := by omega
+    refine (ι_regradeSingleRightUnitor_f n₁ 0 K _ 0 k h rfl).trans ?_
+    refine Eq.trans ?_ (ι_rightUnitor_hom_f_assoc K (n₁ + 0 - k) _).symm
+    rfl
   · -- The source `K_p ⊗ 𝟙[0]_q` is zero for `q ≠ 0`.
     exact ((tensorLeft (K.X p)).map_isZero (isZero_single_obj_X _ _ _ _ hq)).eq_of_src _ _
 
