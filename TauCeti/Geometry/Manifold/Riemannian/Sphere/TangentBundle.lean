@@ -159,7 +159,7 @@ theorem sphereTangentSubbundleDiffeomorph_symm_apply {k : ℕ∞ω}
     (sphereTangentSubbundleDiffeomorph (k := k)).symm q =
       ⟨q.proj, (sphereTangentEquiv q.proj).symm q.snd⟩ := by
   rw [sphereTangentSubbundleDiffeomorph, Diffeomorph.symm_symm, bundleDiffeomorph_apply]
-  rfl
+  simp
 
 /-! ### Radial-normal splitting `TSⁿ ⊕ ε¹ ≅ εⁿ⁺¹` -/
 
