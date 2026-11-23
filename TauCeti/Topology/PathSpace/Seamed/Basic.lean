@@ -24,6 +24,8 @@ the circle (`TauCeti.SeamedPath.sectionHomeomorph`, in `TauCeti.Topology.Mapping
 ## Main definitions
 
 * `TauCeti.SeamedPath φ`: the paths `γ : C(I, X)` with `γ 1 = φ (γ 0)`.
+* `TauCeti.SeamedPath.ofPath`, `TauCeti.SeamedPath.toPath`: a path from `x` to `φ x` is a
+  `φ`-seamed path, and conversely.
 * `TauCeti.SeamedPath.const`: the constant path at a fixed point of `φ`.
 * `TauCeti.SeamedPath.map`: the map of seamed path spaces induced by a map `g` intertwining two
   seams, `g ∘ φ = ψ ∘ g`.
@@ -71,6 +73,36 @@ theorem apply_one (γ : SeamedPath φ) : γ.val 1 = φ (γ.val 0) :=
 @[ext]
 theorem ext {γ δ : SeamedPath φ} (h : ∀ t, γ.val t = δ.val t) : γ = δ :=
   Subtype.ext (ContinuousMap.ext h)
+
+/-! ### Seamed paths as paths -/
+
+/-- A path from `x` to `φ x` is a `φ`-seamed path. -/
+def ofPath {x : X} (p : Path x (φ x)) : SeamedPath φ :=
+  ⟨p.toContinuousMap, by simp⟩
+
+@[simp]
+theorem val_ofPath {x : X} (p : Path x (φ x)) : (ofPath p).val = p.toContinuousMap :=
+  (rfl)
+
+theorem ofPath_apply {x : X} (p : Path x (φ x)) (t : I) : (ofPath p).val t = p t :=
+  (rfl)
+
+/-- A `φ`-seamed path, read as a path from its start to the image of its start under `φ`. -/
+def toPath (γ : SeamedPath φ) : Path (γ.val 0) (φ (γ.val 0)) where
+  toContinuousMap := γ.val
+  source' := rfl
+  target' := γ.property
+
+@[simp]
+theorem coe_toPath (γ : SeamedPath φ) : ⇑γ.toPath = ⇑γ.val :=
+  (rfl)
+
+theorem toPath_apply (γ : SeamedPath φ) (t : I) : γ.toPath t = γ.val t :=
+  (rfl)
+
+@[simp]
+theorem ofPath_toPath (γ : SeamedPath φ) : ofPath γ.toPath = γ :=
+  (rfl)
 
 /-! ### Constant seamed paths and fixed points -/
 
