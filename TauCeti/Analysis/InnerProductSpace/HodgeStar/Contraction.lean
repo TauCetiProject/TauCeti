@@ -201,7 +201,7 @@ theorem ι_twoVectorContraction_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ 
   have h := o.koszulDifferential_hodgeStar u hkl hkl' β
   rw [hβ] at h
   rw [twoVectorContraction_apply, ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
-    (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) β.2),
+    (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) β.property),
     ← coe_koszulDifferential_apply, h]
   simp
 
