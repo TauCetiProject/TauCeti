@@ -444,27 +444,6 @@ theorem Convex.mem_interior_of_hasDerivWithinAt_Iic {C : Set E} (hC : Convex ℝ
   rw [← show (1 / 2 : ℝ) • γ s + (1 / 2 : ℝ) • ((2 : ℝ) • z - γ s) = z by module]
   exact hC hsC hq (by norm_num) (by norm_num) (by norm_num)
 
-/-- Any curve in a convex set `C` on `[a, b]` whose left derivatives on `(a, b]` lie in the strict
-inward cone of `C` stays in `interior C` for all `t ∈ (a, b]`. -/
-theorem Convex.mapsTo_Ioc_interior_of_hasDerivWithinAt_Iic {C : Set E} (hC : Convex ℝ C)
-    {v γ : ℝ → E} {a b : ℝ} (hγ : MapsTo γ (Icc a b) C)
-    (hγ' : ∀ t ∈ Ioc a b, HasDerivWithinAt γ (v t) (Iic t) t)
-    (hv : ∀ t ∈ Ioc a b, v t ∈ TauCeti.strictInwardCone C (γ t)) :
-    MapsTo γ (Ioc a b) (interior C) := fun t ht ↦
-  hC.mem_interior_of_hasDerivWithinAt_Iic (hγ' t ht)
-    (Filter.mem_of_superset (Ioo_mem_nhdsLT ht.1) fun _ hs ↦ hγ ⟨hs.1.le, hs.2.le.trans ht.2⟩)
-    (hv t ht)
-
-/-- Any curve in a convex set `C` on `[a, b]` whose derivatives within `[a, b]` on `(a, b]` lie in
-the strict inward cone of `C` maps `(a, b]` into `interior C`. -/
-theorem Convex.mapsTo_Ioc_interior_of_hasDerivWithinAt_Icc {C : Set E} (hC : Convex ℝ C)
-    {v γ : ℝ → E} {a b : ℝ} (hγ : MapsTo γ (Icc a b) C)
-    (hγ' : ∀ t ∈ Ioc a b, HasDerivWithinAt γ (v t) (Icc a b) t)
-    (hv : ∀ t ∈ Ioc a b, v t ∈ TauCeti.strictInwardCone C (γ t)) :
-    MapsTo γ (Ioc a b) (interior C) := hC.mapsTo_Ioc_interior_of_hasDerivWithinAt_Iic hγ
-  (fun t ht ↦ (hγ' t ht).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
-    ⟨Ioi a, isOpen_Ioi, ht.1, fun _ hs ↦ ⟨hs.1.le, hs.2.trans ht.2⟩⟩) hv
-
 /-- Any curve in a convex set `C` on `[a, b)` whose derivatives within `[a, b)` on `(a, b)` lie in
 the strict inward cone of `C` maps `(a, b)` into `interior C`. -/
 theorem Convex.mapsTo_Ioo_interior_of_hasDerivWithinAt_Ico {C : Set E} (hC : Convex ℝ C)

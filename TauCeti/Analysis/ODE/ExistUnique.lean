@@ -23,8 +23,7 @@ interior or boundary reference point.
 
 For an autonomous field `X` that is locally Lipschitz only on a subset `S` containing two
 trajectories (without an ambient neighborhood Lipschitz bound), compactness of `[a, c]` yields a
-single Lipschitz constant along their joint image, giving forward uniqueness on `[a, b]` and
-`[a, b)`.
+single Lipschitz constant along their joint image, giving forward uniqueness on `[a, b)`.
 
 ## Main results
 
@@ -37,9 +36,8 @@ single Lipschitz constant along their joint image, giving forward uniqueness on 
   ODE on `[a, b]` are determined by their value at `a`.
 * `LocallyLipschitzOn.eqOn_of_isPreconnected_of_hasDerivAt_interior`: uniqueness on any
   preconnected time set `I` for trajectories in `S` agreeing at any `c ∈ I`.
-* `LocallyLipschitzOn.eqOn_Icc_of_hasDerivAt_Ioo`,
-  `LocallyLipschitzOn.eqOn_Ico_of_hasDerivAt_Ioo`: uniqueness on `[a, b]` and `[a, b)` for
-  autonomous fields locally Lipschitz on `S`, agreeing at any `c ∈ [a, b)`.
+* `LocallyLipschitzOn.eqOn_Ico_of_hasDerivAt_Ioo`: uniqueness on `[a, b)` for autonomous
+  fields locally Lipschitz on `S`, agreeing at any `c ∈ [a, b)`.
 * `ODE.eqOn_Icc_of_lipschitzOnWith` and `ODE.eqOn_Icc_of_lipschitzWith`: closed-interval
   uniqueness from interior derivatives and a common value at any `c ∈ [a, b]`.
 
@@ -263,22 +261,5 @@ theorem eqOn_Ico_of_hasDerivAt_Ioo {S : Set E} {X : E → E} (hX : LocallyLipsch
   hX.eqOn_of_isPreconnected_of_hasDerivAt_interior isPreconnected_Ico hc
     hf (fun t ht ↦ hf' t (interior_Ico (α := ℝ) ▸ ht)) hf_mem
     hg (fun t ht ↦ hg' t (interior_Ico (α := ℝ) ▸ ht)) hg_mem hfc
-
-/-- **Uniqueness on `[a, b]`.** If `X` is locally Lipschitz on `S`, any two continuous curves on
-`[a, b]` mapping `[a, b)` into `S` with derivative `X (γ t)` on `(a, b)` and agreeing at
-`c ∈ [a, b)` agree on `[a, b]`. -/
-theorem eqOn_Icc_of_hasDerivAt_Ioo {S : Set E} {X : E → E} (hX : LocallyLipschitzOn S X)
-    {a b c : ℝ} (hc : c ∈ Ico a b)
-    (hf : ContinuousOn f (Icc a b))
-    (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (X (f t)) t)
-    (hf_mem : MapsTo f (Ico a b) S)
-    (hg : ContinuousOn g (Icc a b))
-    (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (X (g t)) t)
-    (hg_mem : MapsTo g (Ico a b) S)
-    (hfc : f c = g c) :
-    EqOn f g (Icc a b) :=
-  (hX.eqOn_Ico_of_hasDerivAt_Ioo hc (hf.mono Ico_subset_Icc_self) hf' hf_mem
-    (hg.mono Ico_subset_Icc_self) hg' hg_mem hfc).of_subset_closure
-    hf hg Ico_subset_Icc_self (closure_Ico (hc.1.trans_lt hc.2).ne ▸ Subset.rfl)
 
 end LocallyLipschitzOn
