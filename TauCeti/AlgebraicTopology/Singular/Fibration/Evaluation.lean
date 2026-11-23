@@ -91,10 +91,9 @@ theorem bijective_singularHomologyMap_inclEvalPreimage
   -- The fibre inclusion is a homology isomorphism, and `e` is a homeomorphism.
   have hι : Function.Bijective
       (ContinuousMap.singularHomologyMap R m (p.fiberι ⟨q, hq⟩).hom) := by
-    have := TopCat.isIso_singularHomologyMap_fiberι R hp hY hm
-    exact ConcreteCategory.bijective_of_isIso
-      (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-        (p.fiberι ⟨q, hq⟩))
+    have hiso := TopCat.isIso_singularHomologyMap_fiberι R hp hY hm
+    rw [ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map, TopCat.ofHom_hom]
+    exact ConcreteCategory.bijective_of_isIso _
   have hcomp' : ⇑(ContinuousMap.singularHomologyMap R m (inclEvalPreimage (b₀ := b₀) hq)) =
       ContinuousMap.singularHomologyMap R m (p.fiberι ⟨q, hq⟩).hom ∘
         ContinuousMap.singularHomologyMap R m (e : C(BasedMap B Q b₀ q, p.fiber ⟨q, hq⟩)) := by
