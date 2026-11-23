@@ -667,6 +667,30 @@ theorem sectionValue_gaugeTransform (u : ℂ → Circle)
     sectionValue (gaugeTransform u x) z = (u z : ℂ) * sectionValue x z := by
   apply Complex.ext <;> simp [sectionValue_apply, gaugeTransform] <;> ring
 
+/-- A gauge transformation preserves `|α|² / 4 = x₂² + x₃²` pointwise. -/
+@[simp]
+theorem gaugeTransform_apply_two_sq_add_apply_three_sq (u : ℂ → Circle)
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    gaugeTransform u x z 2 ^ 2 + gaugeTransform u x z 3 ^ 2 = x z 2 ^ 2 + x z 3 ^ 2 := by
+  simp only [gaugeTransform, Fin.isValue, Matrix.cons_val]
+  linear_combination (x z 2 ^ 2 + x z 3 ^ 2) * Circle.re_sq_add_im_sq (u z)
+
+/-- A smooth framed gauge preserves `C^n` fields, for every `n ≤ ∞`. -/
+theorem contDiff_framedGaugeGroup_smul {n : ℕ∞} (u : framedGaugeGroup)
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) : ContDiff ℝ n (u • x) := by
+  rw [framedGaugeGroup_smul]
+  exact contDiff_gaugeTransform
+    (((mem_framedGaugeGroup _).1 u.property).1.of_le (by exact_mod_cast le_top)) hx
+
+/-- A smooth framed gauge preserves the vortex equation, in both directions, at a point where the
+field is differentiable. -/
+theorem equation_framedGaugeGroup_smul_eq_zero_iff (u : framedGaugeGroup)
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hx : ∀ i, DifferentiableAt ℝ (fun w ↦ x w i) z) :
+    equation (u • x) z = 0 ↔ equation x z = 0 := by
+  rw [framedGaugeGroup_smul]
+  exact equation_gaugeTransform_eq_zero_iff
+    ((((mem_framedGaugeGroup _).1 u.property).1.of_le (by norm_cast)).contDiffAt) hx
+
 /-- If the section of `x` at `z` is `c` times the gauge `u`, then the gauge transformation by
 `u⁻¹` has the section `c` there. -/
 theorem sectionValue_gaugeTransform_inv_eq {u : ℂ → Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
