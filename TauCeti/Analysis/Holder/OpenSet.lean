@@ -1129,7 +1129,7 @@ theorem norm_inclusionSuccL_le (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1
   (norm_inclusionSuccLOfHolderOnWith_le _ _).trans_eq (by norm_num)
 
 /-- Lowering the order commutes with restricting between convex open sets. -/
-@[simp] theorem restrictL_comp_inclusionSuccL {Ω' : Opens E} (h : Ω' ≤ Ω)
+theorem restrictL_comp_inclusionSuccL {Ω' : Opens E} (h : Ω' ≤ Ω)
     (hΩ : Convex ℝ (Ω : Set E)) (hΩ' : Convex ℝ (Ω' : Set E)) (hα : α ≤ 1) :
     (restrictL (k := k) (α := α) (F := F) h).comp (inclusionSuccL hΩ hα) =
       (inclusionSuccL hΩ' hα).comp (restrictL h) := by ext f x; simp

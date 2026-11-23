@@ -30,7 +30,11 @@ constant (`ContinuousLinearMap.compCkHolderOn₂`). This is the order-`k` Leibni
 multiplication by coefficients in `C^{k,α}(Ω)`. Some geometric condition on `Ω` is needed for
 `k ≥ 1`: on a slit annulus in the plane the angle function `θ` lies in `C^{1,α}`, since its
 gradient is the restriction of a smooth field on the full annulus, but `θ²` does not, since the
-derivative `2 θ ∇θ` jumps across the slit.
+derivative `2 θ ∇θ` jumps across the slit. At order `0`, transporting
+`ContinuousLinearMap.compHolder₂` through the order-zero isometries gives
+`ContinuousLinearMap.compCkHolderZero₂`, `ContinuousLinearMap.compCkHolderOnZero₂`,
+`TauCeti.CkHolderSpaceOn.smulZeroL`, and `TauCeti.CkHolderSpaceOn.mulZeroL` for every open set `Ω`
+and every `α : ℝ≥0`, with sharp operator norm bounds `‖B‖` and `1`.
 
 The norm is the existing sum of the supremum norms of all derivative fields and the Hölder
 seminorm of the top field. We use Mathlib's bilinear Leibniz bound for the supremum terms and
@@ -173,6 +177,78 @@ theorem norm_compCkHolder₂_apply_le (B : E →L[ℝ] F →L[ℝ] G) (hα : α 
     gcongr
     exact B.norm_compCkHolder₂_le hα)
 
+/-- At order `0`, pointwise application of a continuous bilinear map on `CkHolderSpace 0 α`,
+transported from `ContinuousLinearMap.compHolder₂` without requiring `α ≤ 1`. -/
+def compCkHolderZero₂ (B : E →L[ℝ] F →L[ℝ] G) :
+    CkHolderSpace 0 α X E →L[ℝ] CkHolderSpace 0 α X F →L[ℝ] CkHolderSpace 0 α X G :=
+  (compL ℝ (CkHolderSpace 0 α X F) (HolderSpace α X G) (CkHolderSpace 0 α X G)
+    CkHolderSpace.equivHolderSpace.symm.toLinearIsometry.toContinuousLinearMap).comp
+    (B.compHolder₂.bilinearComp
+      CkHolderSpace.equivHolderSpace.toLinearIsometry.toContinuousLinearMap
+      CkHolderSpace.equivHolderSpace.toLinearIsometry.toContinuousLinearMap)
+
+/-- At order `0`, the transported bilinear lift is pointwise the original bilinear map. -/
+@[simp]
+theorem compCkHolderZero₂_apply (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) (x : X) :
+    B.compCkHolderZero₂ f g x = B (f x) (g x) := by
+  simp [compCkHolderZero₂]
+
+/-- At order `0`, `compCkHolderZero₂` transports through `equivHolderSpace` to `compHolder₂`. -/
+@[simp]
+theorem equivHolderSpace_compCkHolderZero₂ (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) :
+    CkHolderSpace.equivHolderSpace (B.compCkHolderZero₂ f g) =
+      B.compHolder₂ (CkHolderSpace.equivHolderSpace f)
+        (CkHolderSpace.equivHolderSpace g) := by
+  ext x
+  simp
+
+/-- At order `0`, the bilinear lift `compCkHolderZero₂` has operator norm at most `‖B‖`. -/
+theorem norm_compCkHolderZero₂_le (B : E →L[ℝ] F →L[ℝ] G) :
+    ‖B.compCkHolderZero₂ (α := α) (X := X)‖ ≤ ‖B‖ := by
+  refine opNorm_le_bound₂ _ (norm_nonneg B) fun f g ↦ ?_
+  rw [← CkHolderSpace.equivHolderSpace.norm_map, equivHolderSpace_compCkHolderZero₂]
+  simpa only [LinearIsometryEquiv.norm_map] using
+    B.norm_compHolder₂_apply_le (CkHolderSpace.equivHolderSpace f)
+      (CkHolderSpace.equivHolderSpace g)
+
+/-- On a nonempty space, the order-zero bilinear lift preserves the bilinear operator norm. -/
+@[simp]
+theorem norm_compCkHolderZero₂ [Nonempty X] (B : E →L[ℝ] F →L[ℝ] G) :
+    ‖B.compCkHolderZero₂ (α := α) (X := X)‖ = ‖B‖ := by
+  refine le_antisymm B.norm_compCkHolderZero₂_le ?_
+  rw [← B.norm_compHolder₂ (α := α) (X := X)]
+  refine opNorm_le_bound₂ _ (norm_nonneg (B.compCkHolderZero₂ (α := α) (X := X))) fun f g ↦ ?_
+  calc
+    ‖B.compHolder₂ f g‖ =
+        ‖B.compCkHolderZero₂ (CkHolderSpace.equivHolderSpace.symm f)
+          (CkHolderSpace.equivHolderSpace.symm g)‖ := by
+      rw [← CkHolderSpace.equivHolderSpace.norm_map, equivHolderSpace_compCkHolderZero₂,
+        LinearIsometryEquiv.apply_symm_apply, LinearIsometryEquiv.apply_symm_apply]
+    _ ≤ ‖B.compCkHolderZero₂ (α := α) (X := X)‖ *
+          ‖CkHolderSpace.equivHolderSpace.symm f‖ *
+          ‖CkHolderSpace.equivHolderSpace.symm g‖ :=
+      B.compCkHolderZero₂.le_opNorm₂ _ _
+    _ = ‖B.compCkHolderZero₂ (α := α) (X := X)‖ * ‖f‖ * ‖g‖ := by
+      simp only [LinearIsometryEquiv.norm_map]
+
+/-- At order `0`, the pointwise bilinear product satisfies `‖B (f, g)‖ ≤ ‖B‖ ‖f‖ ‖g‖`. -/
+theorem norm_compCkHolderZero₂_apply_le (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) :
+    ‖B.compCkHolderZero₂ f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ :=
+  (B.compCkHolderZero₂.le_opNorm₂ f g).trans (by
+    gcongr
+    exact B.norm_compCkHolderZero₂_le)
+
+/-- At order `0` and for `α ≤ 1`, the general-order lift `compCkHolder₂` agrees with
+`compCkHolderZero₂`. -/
+@[simp]
+theorem compCkHolder₂_zero (B : E →L[ℝ] F →L[ℝ] G) (hα : α ≤ 1) :
+    B.compCkHolder₂ (k := 0) (X := X) hα = B.compCkHolderZero₂ := by
+  ext f g x
+  simp
+
 section OpenSet
 
 open Function.ExtendByZero (linearMap_apply_of_injective)
@@ -297,35 +373,162 @@ theorem norm_compCkHolderOn₂_apply_le (B : E →L[ℝ] F →L[ℝ] G) (hΩ : C
     gcongr
     exact B.norm_compCkHolderOn₂_le hΩ hα)
 
-/-- At order `0`, `compCkHolderOn₂` transports through `equivHolderSpace` to `compHolder₂`. -/
+/-- At order `0`, pointwise application of a continuous bilinear map on `CkHolderSpaceOn 0 α Ω`,
+transported from `ContinuousLinearMap.compHolder₂` without requiring convexity or `α ≤ 1`. -/
+def compCkHolderOnZero₂ (B : E →L[ℝ] F →L[ℝ] G) :
+    CkHolderSpaceOn 0 α Ω E →L[ℝ] CkHolderSpaceOn 0 α Ω F →L[ℝ] CkHolderSpaceOn 0 α Ω G :=
+  (compL ℝ (CkHolderSpaceOn 0 α Ω F) (HolderSpace α Ω G) (CkHolderSpaceOn 0 α Ω G)
+    CkHolderSpaceOn.equivHolderSpace.symm.toLinearIsometry.toContinuousLinearMap).comp
+    (B.compHolder₂.bilinearComp
+      CkHolderSpaceOn.equivHolderSpace.toLinearIsometry.toContinuousLinearMap
+      CkHolderSpaceOn.equivHolderSpace.toLinearIsometry.toContinuousLinearMap)
+
+/-- At order `0`, the transported open-domain bilinear lift is pointwise the original bilinear
+map. -/
 @[simp]
-theorem equivHolderSpace_compCkHolderOn₂ (B : E →L[ℝ] F →L[ℝ] G)
-    (hΩ : Convex ℝ (Ω : Set X)) (hα : α ≤ 1)
+theorem compCkHolderOnZero₂_apply (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpaceOn 0 α Ω E) (g : CkHolderSpaceOn 0 α Ω F) (x : Ω) :
+    B.compCkHolderOnZero₂ f g x = B (f x) (g x) := by
+  simp [compCkHolderOnZero₂]
+
+/-- At order `0`, `compCkHolderOnZero₂` transports through `equivHolderSpace` to `compHolder₂`. -/
+@[simp]
+theorem equivHolderSpace_compCkHolderOnZero₂ (B : E →L[ℝ] F →L[ℝ] G)
     (f : CkHolderSpaceOn 0 α Ω E) (g : CkHolderSpaceOn 0 α Ω F) :
-    CkHolderSpaceOn.equivHolderSpace (B.compCkHolderOn₂ hΩ hα f g) =
+    CkHolderSpaceOn.equivHolderSpace (B.compCkHolderOnZero₂ f g) =
       B.compHolder₂ (CkHolderSpaceOn.equivHolderSpace f)
         (CkHolderSpaceOn.equivHolderSpace g) := by
   ext x
   simp
 
-/-- At order `0`, the bilinear lift `compCkHolderOn₂` has operator norm at most `‖B‖`. -/
-theorem norm_compCkHolderOn₂_zero_le (B : E →L[ℝ] F →L[ℝ] G)
-    (hΩ : Convex ℝ (Ω : Set X)) (hα : α ≤ 1) :
-    ‖B.compCkHolderOn₂ (k := 0) (α := α) hΩ hα‖ ≤ ‖B‖ := by
+/-- At order `0`, the open-domain bilinear lift `compCkHolderOnZero₂` has operator norm at most
+`‖B‖`. -/
+theorem norm_compCkHolderOnZero₂_le (B : E →L[ℝ] F →L[ℝ] G) :
+    ‖B.compCkHolderOnZero₂ (α := α) (Ω := Ω)‖ ≤ ‖B‖ := by
   refine ContinuousLinearMap.opNorm_le_bound₂ _ (norm_nonneg B) fun f g ↦ ?_
-  rw [← CkHolderSpaceOn.equivHolderSpace.norm_map, equivHolderSpace_compCkHolderOn₂]
+  rw [← CkHolderSpaceOn.equivHolderSpace.norm_map, equivHolderSpace_compCkHolderOnZero₂]
   simpa only [LinearIsometryEquiv.norm_map] using
     B.norm_compHolder₂_apply_le (CkHolderSpaceOn.equivHolderSpace f)
       (CkHolderSpaceOn.equivHolderSpace g)
 
-/-- At order `0`, the pointwise bilinear product satisfies `‖B (f, g)‖ ≤ ‖B‖ ‖f‖ ‖g‖`. -/
-theorem norm_compCkHolderOn₂_zero_apply_le (B : E →L[ℝ] F →L[ℝ] G)
-    (hΩ : Convex ℝ (Ω : Set X)) (hα : α ≤ 1)
+/-- On a nonempty open set, the order-zero bilinear lift preserves the bilinear operator norm. -/
+@[simp]
+theorem norm_compCkHolderOnZero₂ [Nonempty Ω] (B : E →L[ℝ] F →L[ℝ] G) :
+    ‖B.compCkHolderOnZero₂ (α := α) (Ω := Ω)‖ = ‖B‖ := by
+  refine le_antisymm B.norm_compCkHolderOnZero₂_le ?_
+  rw [← B.norm_compHolder₂ (α := α) (X := Ω)]
+  refine opNorm_le_bound₂ _ (norm_nonneg (B.compCkHolderOnZero₂ (α := α) (Ω := Ω))) fun f g ↦ ?_
+  calc
+    ‖B.compHolder₂ f g‖ =
+        ‖B.compCkHolderOnZero₂ (CkHolderSpaceOn.equivHolderSpace.symm f)
+          (CkHolderSpaceOn.equivHolderSpace.symm g)‖ := by
+      rw [← CkHolderSpaceOn.equivHolderSpace.norm_map, equivHolderSpace_compCkHolderOnZero₂,
+        LinearIsometryEquiv.apply_symm_apply, LinearIsometryEquiv.apply_symm_apply]
+    _ ≤ ‖B.compCkHolderOnZero₂ (α := α) (Ω := Ω)‖ *
+          ‖CkHolderSpaceOn.equivHolderSpace.symm f‖ *
+          ‖CkHolderSpaceOn.equivHolderSpace.symm g‖ :=
+      B.compCkHolderOnZero₂.le_opNorm₂ _ _
+    _ = ‖B.compCkHolderOnZero₂ (α := α) (Ω := Ω)‖ * ‖f‖ * ‖g‖ := by
+      simp only [LinearIsometryEquiv.norm_map]
+
+/-- At order `0`, the open-domain pointwise bilinear product satisfies `‖B (f, g)‖ ≤ ‖B‖ ‖f‖ ‖g‖`.
+-/
+theorem norm_compCkHolderOnZero₂_apply_le (B : E →L[ℝ] F →L[ℝ] G)
     (f : CkHolderSpaceOn 0 α Ω E) (g : CkHolderSpaceOn 0 α Ω F) :
-    ‖B.compCkHolderOn₂ hΩ hα f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ :=
-  ((B.compCkHolderOn₂ hΩ hα).le_opNorm₂ f g).trans (by
+    ‖B.compCkHolderOnZero₂ f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ :=
+  (B.compCkHolderOnZero₂.le_opNorm₂ f g).trans (by
     gcongr
-    exact B.norm_compCkHolderOn₂_zero_le hΩ hα)
+    exact B.norm_compCkHolderOnZero₂_le)
+
+/-- At order `0`, on a convex open set and for `α ≤ 1`, the general-order lift `compCkHolderOn₂`
+agrees with `compCkHolderOnZero₂`. -/
+@[simp]
+theorem compCkHolderOn₂_zero (B : E →L[ℝ] F →L[ℝ] G)
+    (hΩ : Convex ℝ (Ω : Set X)) (hα : α ≤ 1) :
+    B.compCkHolderOn₂ (k := 0) (α := α) hΩ hα = B.compCkHolderOnZero₂ := by
+  ext f g x
+  simp
+
+/-- Restricting a `C^{k,α}` bilinear product to a smaller convex open set agrees with multiplying
+the restricted factors. -/
+theorem restrictL_compCkHolderOn₂ (B : E →L[ℝ] F →L[ℝ] G) {Ω' : Opens X} (h : Ω' ≤ Ω)
+    (hΩ : Convex ℝ (Ω : Set X)) (hΩ' : Convex ℝ (Ω' : Set X)) (hα : α ≤ 1)
+    (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) :
+    CkHolderSpaceOn.restrictL h (B.compCkHolderOn₂ hΩ hα f g) =
+      B.compCkHolderOn₂ hΩ' hα (CkHolderSpaceOn.restrictL h f) (CkHolderSpaceOn.restrictL h g) := by
+  ext x
+  simp
+
+/-- Restricting an order-zero bilinear product to a smaller open set commutes with
+`compCkHolderOnZero₂`. -/
+@[simp]
+theorem restrictL_compCkHolderOnZero₂ (B : E →L[ℝ] F →L[ℝ] G) {Ω' : Opens X} (h : Ω' ≤ Ω)
+    (f : CkHolderSpaceOn 0 α Ω E) (g : CkHolderSpaceOn 0 α Ω F) :
+    CkHolderSpaceOn.restrictL h (B.compCkHolderOnZero₂ f g) =
+      B.compCkHolderOnZero₂ (CkHolderSpaceOn.restrictL h f) (CkHolderSpaceOn.restrictL h g) := by
+  ext x
+  simp
+
+/-- Multiplying two whole-space functions restricted to a convex open set `Ω` agrees with
+restricting their whole-space product to `Ω`. -/
+@[simp]
+theorem compCkHolderOn₂_restrictOnL (B : E →L[ℝ] F →L[ℝ] G)
+    (hΩ : Convex ℝ (Ω : Set X)) (hα : α ≤ 1)
+    (f : CkHolderSpace k α X E) (g : CkHolderSpace k α X F) :
+    B.compCkHolderOn₂ hΩ hα (CkHolderSpace.restrictOnL Ω f) (CkHolderSpace.restrictOnL Ω g) =
+      CkHolderSpace.restrictOnL Ω (B.compCkHolder₂ hα f g) := by
+  ext x
+  simp
+
+/-- Multiplying two whole-space `C^{0,α}` functions restricted to an open set `Ω` agrees with
+restricting their whole-space order-zero product to `Ω`. -/
+@[simp]
+theorem compCkHolderOnZero₂_restrictOnL (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) :
+    B.compCkHolderOnZero₂ (CkHolderSpace.restrictOnL Ω f) (CkHolderSpace.restrictOnL Ω g) =
+      CkHolderSpace.restrictOnL Ω (B.compCkHolderZero₂ f g) := by
+  ext x
+  simp
+
+/-- The identification `equivTop` carries `compCkHolderOn₂` on `⊤` to `compCkHolder₂`. -/
+@[simp]
+theorem equivTop_compCkHolderOn₂ (B : E →L[ℝ] F →L[ℝ] G)
+    (hΩ : Convex ℝ ((⊤ : Opens X) : Set X)) (hα : α ≤ 1)
+    (f : CkHolderSpaceOn k α (⊤ : Opens X) E) (g : CkHolderSpaceOn k α (⊤ : Opens X) F) :
+    CkHolderSpaceOn.equivTop (B.compCkHolderOn₂ hΩ hα f g) =
+      B.compCkHolder₂ hα (CkHolderSpaceOn.equivTop f) (CkHolderSpaceOn.equivTop g) := by
+  ext x
+  simp
+
+/-- The inverse identification `equivTop.symm` carries `compCkHolder₂` to `compCkHolderOn₂` on
+`⊤`. -/
+@[simp]
+theorem equivTop_symm_compCkHolder₂ (B : E →L[ℝ] F →L[ℝ] G) (hα : α ≤ 1)
+    (f : CkHolderSpace k α X E) (g : CkHolderSpace k α X F) :
+    CkHolderSpaceOn.equivTop.symm (B.compCkHolder₂ hα f g) =
+      B.compCkHolderOn₂ convex_univ hα (CkHolderSpaceOn.equivTop.symm f)
+        (CkHolderSpaceOn.equivTop.symm g) := by
+  ext x
+  simp
+
+/-- At order `0`, `equivTop` carries `compCkHolderOnZero₂` on `⊤` to `compCkHolderZero₂`. -/
+@[simp]
+theorem equivTop_compCkHolderOnZero₂ (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpaceOn 0 α (⊤ : Opens X) E) (g : CkHolderSpaceOn 0 α (⊤ : Opens X) F) :
+    CkHolderSpaceOn.equivTop (B.compCkHolderOnZero₂ f g) =
+      B.compCkHolderZero₂ (CkHolderSpaceOn.equivTop f) (CkHolderSpaceOn.equivTop g) := by
+  ext x
+  simp
+
+/-- At order `0`, `equivTop.symm` carries `compCkHolderZero₂` to `compCkHolderOnZero₂` on `⊤`. -/
+@[simp]
+theorem equivTop_symm_compCkHolderZero₂ (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) :
+    CkHolderSpaceOn.equivTop.symm (B.compCkHolderZero₂ f g) =
+      B.compCkHolderOnZero₂ (CkHolderSpaceOn.equivTop.symm f)
+        (CkHolderSpaceOn.equivTop.symm g) := by
+  ext x
+  simp
 
 end OpenSet
 
@@ -374,19 +577,71 @@ theorem norm_smulL_apply_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     gcongr
     exact norm_smulL_le hΩ hα)
 
+/-- At order `0`, pointwise scalar multiplication of `CkHolderSpaceOn 0 α Ω F` by
+`CkHolderSpaceOn 0 α Ω R`, without requiring convexity or `α ≤ 1`. -/
+def smulZeroL :
+    CkHolderSpaceOn 0 α Ω R →L[ℝ] CkHolderSpaceOn 0 α Ω F →L[ℝ] CkHolderSpaceOn 0 α Ω F :=
+  (ContinuousLinearMap.lsmul ℝ R : R →L[ℝ] F →L[ℝ] F).compCkHolderOnZero₂
+
+/-- At order `0`, pointwise scalar multiplication `smulZeroL` evaluates by multiplying values at
+`x`. -/
+@[simp]
+theorem smulZeroL_apply (f : CkHolderSpaceOn 0 α Ω R) (g : CkHolderSpaceOn 0 α Ω F) (x : Ω) :
+    smulZeroL f g x = f x • g x :=
+  ContinuousLinearMap.compCkHolderOnZero₂_apply _ f g x
+
 /-- At order `0`, pointwise scalar multiplication has operator norm at most `1`. -/
-theorem norm_smulL_zero_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
-    ‖smulL (k := 0) (α := α) (R := R) (F := F) hΩ hα‖ ≤ 1 :=
-  (ContinuousLinearMap.norm_compCkHolderOn₂_zero_le _ hΩ hα).trans
+theorem norm_smulZeroL_le :
+    ‖smulZeroL (α := α) (Ω := Ω) (R := R) (F := F)‖ ≤ 1 :=
+  (ContinuousLinearMap.norm_compCkHolderOnZero₂_le _).trans
     ContinuousLinearMap.opNorm_lsmul_le
 
-/-- At order `0`, pointwise scalar multiplication satisfies `‖smulL hΩ hα f g‖ ≤ ‖f‖ * ‖g‖`. -/
-theorem norm_smulL_zero_apply_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
-    (f : CkHolderSpaceOn 0 α Ω R) (g : CkHolderSpaceOn 0 α Ω F) :
-    ‖smulL hΩ hα f g‖ ≤ ‖f‖ * ‖g‖ :=
-  ((smulL hΩ hα).le_opNorm₂ f g).trans (by
+/-- At order `0`, pointwise scalar multiplication satisfies `‖smulZeroL f g‖ ≤ ‖f‖ * ‖g‖`. -/
+theorem norm_smulZeroL_apply_le (f : CkHolderSpaceOn 0 α Ω R) (g : CkHolderSpaceOn 0 α Ω F) :
+    ‖smulZeroL f g‖ ≤ ‖f‖ * ‖g‖ :=
+  (smulZeroL.le_opNorm₂ f g).trans (by
     simpa only [one_mul] using mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_right (norm_smulL_zero_le hΩ hα) (norm_nonneg f)) (norm_nonneg g))
+      (mul_le_mul_of_nonneg_right norm_smulZeroL_le (norm_nonneg f)) (norm_nonneg g))
+
+/-- At order `0`, on a convex open set and for `α ≤ 1`, `smulL` agrees with `smulZeroL`. -/
+@[simp]
+theorem smulL_zero (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
+    smulL (k := 0) (α := α) (R := R) (F := F) hΩ hα = smulZeroL :=
+  ContinuousLinearMap.compCkHolderOn₂_zero _ hΩ hα
+
+/-- Restricting a scalar product to a smaller convex open set agrees with multiplying the
+restricted factors. -/
+theorem restrictL_smulL {Ω' : TopologicalSpace.Opens E} (h : Ω' ≤ Ω)
+    (hΩ : Convex ℝ (Ω : Set E)) (hΩ' : Convex ℝ (Ω' : Set E)) (hα : α ≤ 1)
+    (f : CkHolderSpaceOn k α Ω R) (g : CkHolderSpaceOn k α Ω F) :
+    restrictL h (smulL hΩ hα f g) = smulL hΩ' hα (restrictL h f) (restrictL h g) :=
+  ContinuousLinearMap.restrictL_compCkHolderOn₂ _ h hΩ hΩ' hα f g
+
+/-- Restricting an order-zero scalar product to a smaller open set commutes with `smulZeroL`. -/
+@[simp]
+theorem restrictL_smulZeroL {Ω' : TopologicalSpace.Opens E} (h : Ω' ≤ Ω)
+    (f : CkHolderSpaceOn 0 α Ω R) (g : CkHolderSpaceOn 0 α Ω F) :
+    restrictL h (smulZeroL f g) = smulZeroL (restrictL h f) (restrictL h g) :=
+  ContinuousLinearMap.restrictL_compCkHolderOnZero₂ _ h f g
+
+/-- Scalar-multiplying two whole-space functions restricted to a convex open set `Ω` agrees with
+restricting their whole-space bilinear product to `Ω`. -/
+@[simp]
+theorem smulL_restrictOnL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
+    (f : CkHolderSpace k α E R) (g : CkHolderSpace k α E F) :
+    smulL hΩ hα (CkHolderSpace.restrictOnL Ω f) (CkHolderSpace.restrictOnL Ω g) =
+      CkHolderSpace.restrictOnL Ω
+        ((ContinuousLinearMap.lsmul ℝ R : R →L[ℝ] F →L[ℝ] F).compCkHolder₂ hα f g) :=
+  ContinuousLinearMap.compCkHolderOn₂_restrictOnL _ hΩ hα f g
+
+/-- At order `0`, scalar-multiplying two whole-space functions restricted to an open set `Ω` agrees
+with restricting their whole-space bilinear product to `Ω`. -/
+@[simp]
+theorem smulZeroL_restrictOnL (f : CkHolderSpace 0 α E R) (g : CkHolderSpace 0 α E F) :
+    smulZeroL (CkHolderSpace.restrictOnL Ω f) (CkHolderSpace.restrictOnL Ω g) =
+      CkHolderSpace.restrictOnL Ω
+        ((ContinuousLinearMap.lsmul ℝ R : R →L[ℝ] F →L[ℝ] F).compCkHolderZero₂ f g) :=
+  ContinuousLinearMap.compCkHolderOnZero₂_restrictOnL _ f g
 
 end SMul
 
@@ -428,19 +683,69 @@ theorem norm_mulL_apply_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     gcongr
     exact norm_mulL_le hΩ hα)
 
+/-- At order `0`, pointwise multiplication on `CkHolderSpaceOn 0 α Ω A` for a non-unital normed
+`ℝ`-algebra `A`, without requiring convexity or `α ≤ 1`. -/
+def mulZeroL :
+    CkHolderSpaceOn 0 α Ω A →L[ℝ] CkHolderSpaceOn 0 α Ω A →L[ℝ] CkHolderSpaceOn 0 α Ω A :=
+  (ContinuousLinearMap.mul ℝ A).compCkHolderOnZero₂
+
+/-- At order `0`, pointwise algebra multiplication `mulZeroL` evaluates by multiplying values at
+`x`. -/
+@[simp]
+theorem mulZeroL_apply (f g : CkHolderSpaceOn 0 α Ω A) (x : Ω) :
+    mulZeroL f g x = f x * g x :=
+  ContinuousLinearMap.compCkHolderOnZero₂_apply _ f g x
+
 /-- At order `0`, pointwise algebra multiplication has operator norm at most `1`. -/
-theorem norm_mulL_zero_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
-    ‖mulL (k := 0) (α := α) (A := A) hΩ hα‖ ≤ 1 :=
-  (ContinuousLinearMap.norm_compCkHolderOn₂_zero_le _ hΩ hα).trans
+theorem norm_mulZeroL_le :
+    ‖mulZeroL (α := α) (Ω := Ω) (A := A)‖ ≤ 1 :=
+  (ContinuousLinearMap.norm_compCkHolderOnZero₂_le _).trans
     (ContinuousLinearMap.opNorm_mul_le ℝ A)
 
-/-- At order `0`, pointwise algebra multiplication satisfies `‖mulL hΩ hα f g‖ ≤ ‖f‖ * ‖g‖`. -/
-theorem norm_mulL_zero_apply_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
-    (f g : CkHolderSpaceOn 0 α Ω A) :
-    ‖mulL hΩ hα f g‖ ≤ ‖f‖ * ‖g‖ :=
-  ((mulL hΩ hα).le_opNorm₂ f g).trans (by
+/-- At order `0`, pointwise algebra multiplication satisfies `‖mulZeroL f g‖ ≤ ‖f‖ * ‖g‖`. -/
+theorem norm_mulZeroL_apply_le (f g : CkHolderSpaceOn 0 α Ω A) :
+    ‖mulZeroL f g‖ ≤ ‖f‖ * ‖g‖ :=
+  (mulZeroL.le_opNorm₂ f g).trans (by
     simpa only [one_mul] using mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_right (norm_mulL_zero_le hΩ hα) (norm_nonneg f)) (norm_nonneg g))
+      (mul_le_mul_of_nonneg_right norm_mulZeroL_le (norm_nonneg f)) (norm_nonneg g))
+
+/-- At order `0`, on a convex open set and for `α ≤ 1`, `mulL` agrees with `mulZeroL`. -/
+@[simp]
+theorem mulL_zero (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
+    mulL (k := 0) (α := α) (A := A) hΩ hα = mulZeroL :=
+  ContinuousLinearMap.compCkHolderOn₂_zero _ hΩ hα
+
+/-- Restricting an algebra product to a smaller convex open set agrees with multiplying the
+restricted factors. -/
+theorem restrictL_mulL {Ω' : TopologicalSpace.Opens E} (h : Ω' ≤ Ω)
+    (hΩ : Convex ℝ (Ω : Set E)) (hΩ' : Convex ℝ (Ω' : Set E)) (hα : α ≤ 1)
+    (f g : CkHolderSpaceOn k α Ω A) :
+    restrictL h (mulL hΩ hα f g) = mulL hΩ' hα (restrictL h f) (restrictL h g) :=
+  ContinuousLinearMap.restrictL_compCkHolderOn₂ _ h hΩ hΩ' hα f g
+
+/-- Restricting an order-zero algebra product to a smaller open set commutes with `mulZeroL`. -/
+@[simp]
+theorem restrictL_mulZeroL {Ω' : TopologicalSpace.Opens E} (h : Ω' ≤ Ω)
+    (f g : CkHolderSpaceOn 0 α Ω A) :
+    restrictL h (mulZeroL f g) = mulZeroL (restrictL h f) (restrictL h g) :=
+  ContinuousLinearMap.restrictL_compCkHolderOnZero₂ _ h f g
+
+/-- Multiplying two whole-space functions restricted to a convex open set `Ω` agrees with
+restricting their whole-space bilinear product to `Ω`. -/
+@[simp]
+theorem mulL_restrictOnL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
+    (f g : CkHolderSpace k α E A) :
+    mulL hΩ hα (CkHolderSpace.restrictOnL Ω f) (CkHolderSpace.restrictOnL Ω g) =
+      CkHolderSpace.restrictOnL Ω ((ContinuousLinearMap.mul ℝ A).compCkHolder₂ hα f g) :=
+  ContinuousLinearMap.compCkHolderOn₂_restrictOnL _ hΩ hα f g
+
+/-- At order `0`, multiplying two whole-space functions restricted to an open set `Ω` agrees with
+restricting their whole-space bilinear product to `Ω`. -/
+@[simp]
+theorem mulZeroL_restrictOnL (f g : CkHolderSpace 0 α E A) :
+    mulZeroL (CkHolderSpace.restrictOnL Ω f) (CkHolderSpace.restrictOnL Ω g) =
+      CkHolderSpace.restrictOnL Ω ((ContinuousLinearMap.mul ℝ A).compCkHolderZero₂ f g) :=
+  ContinuousLinearMap.compCkHolderOnZero₂_restrictOnL _ f g
 
 end Mul
 

@@ -119,6 +119,26 @@ private theorem holderWith_iteratedFDeriv_bilinear_aux {E A B G : Type u}
         · exact_mod_cast L.norm_precompL_le E
       _ = _ := by ring
 
+/-- Composing a factor with linear isometry equivalences on both sides transfers smoothness on `s`,
+bounds on the derivative fields through order `k` and their Hölder bounds on `s` to the preimage
+of `s`. This is the per-factor step of the universe reduction for Leibniz Hölder bounds. -/
+private theorem contDiffOn_bounds_comp_linearIsometryEquiv
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E E' A A' : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup A']
+    [NormedSpace 𝕜 A'] (e : E' ≃ₗᵢ[𝕜] E) (a : A' ≃ₗᵢ[𝕜] A) {k : ℕ} {f : E → A} {s : Set E}
+    {M H α : ℝ≥0} (hf : ContDiffOn 𝕜 k f s)
+    (hfb : ∀ j ≤ k, ∀ x ∈ s, ‖iteratedFDeriv 𝕜 j f x‖ ≤ M)
+    (hfH : ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv 𝕜 j f) s) :
+    ContDiffOn 𝕜 k (a.symm ∘ f ∘ e) (e ⁻¹' s) ∧
+      (∀ j ≤ k, ∀ x ∈ e ⁻¹' s, ‖iteratedFDeriv 𝕜 j (a.symm ∘ f ∘ e) x‖ ≤ M) ∧
+      ∀ j ≤ k, HolderOnWith H α (iteratedFDeriv 𝕜 j (a.symm ∘ f ∘ e)) (e ⁻¹' s) :=
+  ⟨a.symm.contDiff.comp_contDiffOn (hf.comp_continuousLinearMap (e : E' →L[𝕜] E)),
+    fun j hj x hx => by
+      rw [a.symm.norm_iteratedFDeriv_comp_left, e.norm_iteratedFDeriv_comp_right]
+      exact hfb j hj (e x) hx,
+    fun j hj => e.holderOnWith_iteratedFDeriv_comp a.symm f j (hfH j hj)⟩
+
 /-- Transfers a Hölder bound for the `k`-th derivative of a bilinear product from `ULift` copies
 of the spaces in a common universe back to the original spaces. The lifted bound is required for
 every bilinear map between the lifted spaces of norm at most `‖L‖`. -/
@@ -188,7 +208,7 @@ theorem holderWith_iteratedFDeriv_of_tsupport_subset_right
   let e : ULift.{max uA uB uG, uE} E ≃ₗᵢ[ℝ] E := LinearIsometryEquiv.ulift ℝ E
   let a : ULift.{max uE uB uG, uA} A ≃ₗᵢ[ℝ] A := LinearIsometryEquiv.ulift ℝ A
   let b : ULift.{max uE uA uG, uB} B ≃ₗᵢ[ℝ] B := LinearIsometryEquiv.ulift ℝ B
-  obtain ⟨hfu, hfub, hfuH⟩ := e.contDiffOn_bounds_comp a.symm hf hfb hfH
+  obtain ⟨hfu, hfub, hfuH⟩ := contDiffOn_bounds_comp_linearIsometryEquiv e a hf hfb hfH
   have hgu : ContDiff ℝ k (b.symm ∘ g ∘ e) := b.symm.contDiff.comp (hg.comp e.contDiff)
   have hsupport : tsupport (b.symm ∘ g ∘ e) ⊆ e ⁻¹' s := by
     apply (tsupport_comp_subset (map_zero b.symm) (g ∘ e)).trans
@@ -293,8 +313,8 @@ theorem holderOnWith_iteratedFDeriv_comp₂
   let e : ULift.{max uA uB uG, uE} E ≃ₗᵢ[𝕜] E := LinearIsometryEquiv.ulift 𝕜 E
   let a : ULift.{max uE uB uG, uA} A ≃ₗᵢ[𝕜] A := LinearIsometryEquiv.ulift 𝕜 A
   let b : ULift.{max uE uA uG, uB} B ≃ₗᵢ[𝕜] B := LinearIsometryEquiv.ulift 𝕜 B
-  obtain ⟨hfu, hfub, hfuH⟩ := e.contDiffOn_bounds_comp a.symm hf hfb hfH
-  obtain ⟨hgu, hgub, hguH⟩ := e.contDiffOn_bounds_comp b.symm hg hgb hgH
+  obtain ⟨hfu, hfub, hfuH⟩ := contDiffOn_bounds_comp_linearIsometryEquiv e a hf hfb hfH
+  obtain ⟨hgu, hgub, hguH⟩ := contDiffOn_bounds_comp_linearIsometryEquiv e b hg hgb hgH
   have h := holderOnWith_iteratedFDeriv_comp₂_aux k Lu hfu hgu (hs.preimage e.continuous)
     hfub hgub hfuH hguH
   exact h.mono_const (by gcongr)
