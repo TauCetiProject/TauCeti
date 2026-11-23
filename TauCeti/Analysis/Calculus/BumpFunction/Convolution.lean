@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
 import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 import TauCeti.Analysis.Convolution.Basic
-import TauCeti.Analysis.Convolution.Holder
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -23,7 +22,7 @@ uniformly continuous on a neighbourhood of `s`. For uniformly continuous functio
 upgrades the pointwise convergence of Mathlib's
 `ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
 simultaneous approximation of the derivatives of a compactly supported smooth function.
-Normalized-bump convolution also preserves a uniform bound on a function
+Normalized-bump convolution also preserves an almost-everywhere bound on a function
 (`ContDiffBump.norm_normed_convolution_le`) and its Lipschitz constant, since it averages the
 differences of translates (`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
 For `K`-Lipschitz data, the pointwise approximation error is at most `K * ρ.rOut`
@@ -375,15 +374,21 @@ theorem ContDiffBump.dist_normed_convolution_le_of_dist_sub_le {G F : Type*}
           (ρ.nonneg_normed t)
     _ = B := by rw [integral_mul_const, ρ.integral_normed, one_mul]
 
-/-- Convolution with a nonnegative normalized bump preserves a uniform bound on the norm. -/
+/-- Convolution with a nonnegative normalized bump preserves an almost-everywhere bound on the
+norm. -/
 theorem ContDiffBump.norm_normed_convolution_le {G F : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G] [BorelSpace G]
     {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {g : G → F} (ρ : ContDiffBump (0 : G)) {M : ℝ} (hM : ∀ x, ‖g x‖ ≤ M) (x : G) :
+    {g : G → F} (ρ : ContDiffBump (0 : G)) {M : ℝ} (hM : ∀ᵐ x ∂μ, ‖g x‖ ≤ M) (x : G) :
     ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x‖ ≤ M := by
-  simpa only [convolution_def, lsmul_apply, Real.norm_of_nonneg (ρ.nonneg_normed _),
-    ρ.integral_normed, one_mul] using
-    TauCeti.norm_integral_kernel_smul_sub_le (μ := μ) ρ.integrable_normed hM x
+  rw [convolution_def]
+  calc
+    ‖∫ y, lsmul ℝ ℝ (ρ.normed μ y) (g (x - y)) ∂μ‖ ≤ ∫ y, ρ.normed μ y * M ∂μ := by
+      apply norm_integral_le_of_norm_le (ρ.integrable_normed.mul_const _)
+      filter_upwards [(μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM] with y hy
+      simpa only [lsmul_apply, norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed y)] using
+        mul_le_mul_of_nonneg_left hy (ρ.nonneg_normed y)
+    _ = M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
 including for Banach-valued functions. -/

@@ -8,22 +8,24 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # A constant bounded almost everywhere by a function in `Lᵖ`
 
-If a real number `t` satisfies `t ≤ ‖u y‖` for almost every `y` with respect to a nonzero
-measure `μ`, then taking `Lᵖ(μ)` seminorms of both sides gives `t ≤ μ(X)^{-1/p} ‖u‖_{Lᵖ(μ)}`
-(`MeasureTheory.le_toReal_eLpNorm_div_of_ae_le`). Applied to a restricted measure `μ.restrict s`
-and to `t - A`, this is the averaging step that turns a pointwise oscillation bound
-`t ≤ ‖u y‖ + A` on `s` into a sup bound. In particular, a function `f` that is `L`-Lipschitz on a
-ball `ball z r` of nonzero measure and agrees almost everywhere there with `g` satisfies
-`‖f z‖ ≤ L * r + ‖g‖_{Lᵖ(ball z r)} / μ(ball z r)^{1/p}`
-(`MeasureTheory.norm_le_of_lipschitzOnWith_ball`).
+Throughout this file, let `p ≠ 0`. If a real number `t` satisfies `t ≤ ‖u y‖` for almost every `y`
+with respect to a nonzero measure `μ` and `u` has finite `Lᵖ(μ)` seminorm, then taking `Lᵖ(μ)`
+seminorms of both sides gives `t ≤ μ(X)^{-1/p} ‖u‖_{Lᵖ(μ)}`
+(`MeasureTheory.le_toReal_eLpNorm_div_of_ae_le`).
 
-For a planar disc `B(x, r) ⊆ ℂ`, whose area `π r²` is at least `r²`, this reads
+Applied to a restricted measure `μ.restrict s` and to `‖c‖ - A`, this is the averaging step that
+turns a pointwise oscillation bound `dist c (f y) ≤ A` on a null-measurable set `s` of nonzero
+measure into a bound on `‖c‖`: if `g` agrees with `f` almost everywhere on `s` and has finite
+`Lᵖ(μ.restrict s)` seminorm, then `‖c‖ ≤ A + ‖g‖_{Lᵖ(μ.restrict s)} / μ(s)^{1/p}`
+(`MeasureTheory.norm_le_of_forall_dist_le`).
+
+For a planar disc `B(x, r) ⊆ ℂ` of radius `r > 0`, whose area `π r²` is at least `r²`, if `u` has
+finite `Lᵖ(B(x, r))` seminorm and `t ≤ ‖u y‖` almost everywhere on `B(x, r)`, then
 `t ≤ r^{-2/p} ‖u‖_{Lᵖ(B(x, r))}` (`Complex.le_rpow_neg_mul_toReal_eLpNorm_restrict_ball_of_ae_le`).
 -/
 
@@ -61,26 +63,20 @@ theorem le_toReal_eLpNorm_div_of_ae_le (hp : p ≠ 0) (h0 : μ ≠ 0)
   rw [ENNReal.toReal_rpow, le_div_iff₀ hpos]
   exact hreal
 
-/-- **Pointwise bound from a Lipschitz bound on a ball.** Let `p ≠ 0`, let `f` be `L`-Lipschitz on
-`ball z r` with `μ (ball z r) ≠ 0`, and let `g` agree with `f` almost everywhere on `ball z r`
-with finite `Lᵖ` seminorm there. Then
-`‖f z‖ ≤ L * r + ‖g‖_{Lᵖ(ball z r)} / μ(ball z r)^{1/p}`. -/
-theorem norm_le_of_lipschitzOnWith_ball [PseudoMetricSpace X] [OpensMeasurableSpace X]
-    {f g : X → F} {L : ℝ≥0} {z : X} {r : ℝ} (hμ : μ (ball z r) ≠ 0)
-    (hf : LipschitzOnWith L f (ball z r)) (hfg : g =ᵐ[μ.restrict (ball z r)] f)
-    (hp : p ≠ 0) (hg : eLpNorm g p (μ.restrict (ball z r)) ≠ ∞) :
-    ‖f z‖ ≤ L * r + (eLpNorm g p (μ.restrict (ball z r))).toReal /
-      (μ (ball z r)).toReal ^ (1 / p.toReal) := by
-  have hr : 0 < r := by
-    by_contra h
-    exact hμ (by rw [ball_eq_empty.2 (not_lt.1 h), measure_empty])
-  have hbound : ∀ᵐ y ∂μ.restrict (ball z r), ‖f z‖ - L * r ≤ ‖g y‖ := by
-    filter_upwards [hfg, ae_restrict_mem measurableSet_ball] with y hy hyB
+/-- **Pointwise bound from an oscillation bound on a null-measurable set.** Let `p ≠ 0`, let `s`
+be a null-measurable set of nonzero measure, and suppose `dist c (f y) ≤ A` for every `y ∈ s`.
+If `g` agrees with `f` almost everywhere on `s` and has finite `Lᵖ(μ.restrict s)` seminorm, then
+`‖c‖ ≤ A + ‖g‖_{Lᵖ(μ.restrict s)} / μ(s)^{1/p}`. -/
+theorem norm_le_of_forall_dist_le {s : Set X} (hs : NullMeasurableSet s μ) (hμ : μ s ≠ 0)
+    {f g : X → F} {c : F} {A : ℝ} (hf : ∀ y ∈ s, dist c (f y) ≤ A)
+    (hfg : g =ᵐ[μ.restrict s] f) (hp : p ≠ 0) (hg : eLpNorm g p (μ.restrict s) ≠ ∞) :
+    ‖c‖ ≤ A + (eLpNorm g p (μ.restrict s)).toReal / (μ s).toReal ^ (1 / p.toReal) := by
+  have hbound : ∀ᵐ y ∂μ.restrict s, ‖c‖ - A ≤ ‖g y‖ := by
+    filter_upwards [hfg, ae_restrict_mem₀ hs] with y hy hys
     rw [hy]
-    have hd := hf.dist_le_mul z (mem_ball_self hr) y hyB
-    have := mul_le_mul_of_nonneg_left (mem_ball'.1 hyB).le L.coe_nonneg
+    have hd := hf y hys
     rw [dist_eq_norm] at hd
-    linarith [norm_sub_norm_le (f z) (f y)]
+    linarith [norm_sub_norm_le c (f y)]
   have havg := le_toReal_eLpNorm_div_of_ae_le hp (Measure.restrict_eq_zero.not.2 hμ) hg hbound
   rw [Measure.restrict_apply_univ] at havg
   linarith
