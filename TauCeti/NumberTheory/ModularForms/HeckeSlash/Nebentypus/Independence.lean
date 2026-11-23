@@ -53,7 +53,7 @@ The uniformly repeating-family theorem corresponds to the role of
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset TauCeti
   HeckeRing.GLn
 
 open scoped MatrixGroups ModularForm Pointwise
@@ -100,7 +100,7 @@ theorem mem_Delta0_of_cover {ι : Type*} {a : ι → GL (Fin 2) ℚ}
         ((Gamma0 N).map (mapGL ℚ)) =
       ⋃ i, MulOpposite.op (a i) • (((Gamma0 N).map (mapGL ℚ) : Subgroup (GL (Fin 2) ℚ)) :
         Set (GL (Fin 2) ℚ))) (i : ι) : a i ∈ Delta0 N :=
-  IsHeckeTriple.mem_of_mem_doubleCoset D.out.2
+  IsHeckeTriple.mem_of_mem_doubleCoset D.out.property
     (hcover ▸ Set.mem_iUnion_of_mem i (mem_own_rightCoset _ _))
 
 /-- **The twisted slash sum of a `χ`-eigenfunction is the weighted sum over any decomposition of
@@ -164,7 +164,7 @@ theorem sum_nebentypus_smul_slash_eq_nsmul_twistedHeckeSlashSum
           (((Gamma0 N).map (mapGL ℚ) : Subgroup (GL (Fin 2) ℚ)) : Set (GL (Fin 2) ℚ))} = m)
     (f : ℍ → ℂ) (hf : f ∈ functionCharSpace k χ) :
     ∑ i, (delta0NebentypusChar N χ
-        ⟨a i, IsHeckeTriple.mem_of_mem_doubleCoset D.out.2 (hmem i)⟩ : ℂ) • (f ∣[k] a i) =
+        ⟨a i, IsHeckeTriple.mem_of_mem_doubleCoset D.out.property (hmem i)⟩ : ℂ) • (f ∣[k] a i) =
       m • twistedHeckeSlashSum k χ D f := by
   classical
   let _ := fintypeDecompQuotientGamma0 D
@@ -172,13 +172,13 @@ theorem sum_nebentypus_smul_slash_eq_nsmul_twistedHeckeSlashSum
   rw [twistedHeckeSlashSum_def, Finset.smul_sum,
     ← Finset.sum_fiberwise_of_maps_to (fun i _ ↦ Finset.mem_univ (g i))
       fun i ↦ (delta0NebentypusChar N χ
-        ⟨a i, IsHeckeTriple.mem_of_mem_doubleCoset D.out.2 (hmem i)⟩ : ℂ) • (f ∣[k] a i)]
+        ⟨a i, IsHeckeTriple.mem_of_mem_doubleCoset D.out.property (hmem i)⟩ : ℂ) • (f ∣[k] a i)]
   refine Finset.sum_congr rfl fun v _ ↦ ?_
   rw [Finset.sum_congr rfl fun i hi ↦ ?_, Finset.sum_const]
   · rw [card_filter_eq_of_rightCosetRep_smul_eq D hcard hg v]
   · rw [nebentypusWeight_def]
     exact (smul_slash_eq_of_rightCoset_eq k χ f hf
-      (IsHeckeTriple.mem_of_mem_doubleCoset D.out.2 (hmem i))
+      (IsHeckeTriple.mem_of_mem_doubleCoset D.out.property (hmem i))
       (rightCosetRep_mem_Delta0 D v) ((Finset.mem_filter.mp hi).2 ▸ hg i)).symm
 
 end HeckeRing.GL2

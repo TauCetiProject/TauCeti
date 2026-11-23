@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
+import TauCeti.Topology.Order.MonotoneConvergence
 
 /-!
 # Finite-energy pairs of pants have limiting end actions
@@ -83,18 +84,13 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
     0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H q w.2) (u ∘ endChart q) ζ := by
   have hpos : 0 < q.endSign * ζ.1 := by linarith
   have hS := endChart_mem_thricePuncturedSphereReal hpos
-  -- The components of the perturbation are differentiable in the target point.
-  have hK (v : ℂ) : DifferentiableAt ℝ
-      (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm (endChart q ζ)) x v)
-      (u (endChart q ζ)) :=
-    ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hS _ v).differentiableAt
-      one_ne_zero).comp _ ((differentiableAt_const _).prodMk differentiableAt_id)
   have hpb := ω.floerEnergyDensity_perturbationPullback
     (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     (hasFDerivAt_endChart q ζ).differentiableAt
     ((hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).differentiableAt two_ne_zero)
-    (hK 1) (hK Complex.I)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ 1)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ Complex.I)
   -- In the end coordinates, the pulled-back datum is `H_q(t) dt` at `ζ`.
   have hKs : perturbationPullback (endChart q)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -287,23 +283,15 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_ne_top_iff (ω : Sy
     ω.sum_endSign_mul_hamiltonianAction_le hH hHs hu hJ hfloer hE hR
   -- Each signed end action is increasing and bounded above, so it converges.
   have hconv (q : Puncture) : ∃ b, Tendsto (fun R ↦ q.endSign * A q R) atTop (𝓝 b) := by
-    set g : ℝ → ℝ := fun R ↦ q.endSign * A q (max R 2)
-    have hg : Monotone g := fun R₁ R₂ hR ↦ hmono q (le_max_right R₁ 2) (le_max_right R₂ 2)
-      (max_le_max_right 2 hR)
-    have hbdd : BddAbove (range g) := by
-      refine ⟨C - ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2, ?_⟩
-      rintro _ ⟨R, rfl⟩
-      have hR : 2 ≤ max R 2 := le_max_right R 2
-      have hrest : ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2 ≤
-          ∑ r ∈ Finset.univ.erase q, r.endSign * A r (max R 2) :=
-        Finset.sum_le_sum fun r _ ↦ hmono r (mem_Ici.2 le_rfl) hR hR
-      have h := hsum hR
-      rw [← Finset.add_sum_erase _ _ (Finset.mem_univ q)] at h
-      simp only [g]
-      linarith
-    refine ⟨⨆ R, g R, (tendsto_atTop_ciSup hg hbdd).congr' ?_⟩
-    filter_upwards [eventually_ge_atTop 2] with R hR
-    simp only [g, max_eq_left hR]
+    refine ⟨_, tendsto_atTop_ciSup_of_monotoneOn_Ici (hmono q)
+      ⟨C - ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2, ?_⟩⟩
+    rintro _ ⟨R, hR, rfl⟩
+    have hrest : ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2 ≤
+        ∑ r ∈ Finset.univ.erase q, r.endSign * A r R :=
+      Finset.sum_le_sum fun r _ ↦ hmono r (mem_Ici.2 le_rfl) hR hR
+    have h := hsum hR
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ q)] at h
+    linarith
   choose b hb using hconv
   refine ⟨fun q ↦ q.endSign * b q, fun q ↦ ((hb q).const_mul q.endSign).congr fun R ↦ ?_⟩
   rw [← mul_assoc, endSign_mul_self, one_mul]

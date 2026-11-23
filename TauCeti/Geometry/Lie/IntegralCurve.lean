@@ -35,11 +35,6 @@ every point, after which Mathlib's uniform-time theorem produces global integral
 * `mulInvariantIntegralCurve_smul`: scaling the vector field rescales time along its curves.
 * `mulInvariantOneParameterSubgroup`: the identity curve bundled as a continuous homomorphism.
 * `contMDiff_mulInvariantOneParameterSubgroup`: canonical one-parameter subgroups are smooth.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The exponential map".
 -/
 
 public section

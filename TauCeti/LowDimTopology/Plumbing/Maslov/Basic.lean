@@ -104,7 +104,7 @@ private theorem chainCoefficientEquiv_apply (c : PlumbingChain V) (C : PlumbingC
 /-- The internal relative Maslov grading of plumbing chains over the coefficient field.
 The monomial `U ^ j C` lies in degree `C.dimension - 2 * w(C) - 2 * j`. -/
 noncomputable def latticeChainMaslovGrading (P : PlumbingGraph V)
-    (k : P.characteristicVectors) : InternalGrading (ZMod 2) (PlumbingChain V) :=
+    (k : P.characteristicVectors) : InternalGrading (ZMod 2) (PlumbingChain V) ℤ :=
   (InternalGrading.finsupp (ZMod 2) fun i : PlumbingCube V × ℕ =>
     PlumbingCube.maslovDegree P k i.1 i.2).map chainCoefficientEquiv.symm
 

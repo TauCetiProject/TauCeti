@@ -711,9 +711,9 @@ theorem restrictedMvPowerSeriesSubmoduleMap_surjective {k : ℕ} {A M N : Type*}
     (hopen : nhds (0 : N) ≤ Filter.map φ (nhds (0 : M))) :
     Function.Surjective (restrictedMvPowerSeriesSubmoduleMap (k := k) φ hφ) := by
   intro g
-  obtain ⟨f, hfg, hf⟩ := TauCeti.exists_lift_tendsto_cofinite_nhds φ hsurj hopen
-    (fun s ↦ ((g : MvPowerSeries (Fin k) N) : (Fin k →₀ ℕ) → N) s)
-    (isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp g.2))
+  obtain ⟨f, hfg, hf⟩ := TauCeti.exists_lift_tendsto_cofinite_nhds φ hopen
+    (fun s ↦ ((g : MvPowerSeries (Fin k) N) : (Fin k →₀ ℕ) → N) s) (fun _ ↦ hsurj _)
+    (isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp g.property))
   -- `MvPowerSeries (Fin k) M` is a plain `def` for `(Fin k →₀ ℕ) → M`, and the lift `f` is produced
   -- at the bare function type. The `show` is what makes it elaborate as a series so that
   -- `IsRestricted` applies — the file's standing idiom, documented at `IsRestricted.map`.
@@ -809,7 +809,7 @@ theorem restrictedMvPowerSeriesSubmoduleMap_range_eq_ker {k : ℕ} {A M N P : Ty
       (LinearMap.surjective_rangeRestrict u) hstrict
       ⟨show MvPowerSeries (Fin k) ↥(LinearMap.range u) from fun s ↦ ⟨_, hcoef s⟩,
         mem_restrictedMvPowerSeriesSubmodule.mpr (isRestricted_iff.mpr
-          (tendsto_subtype_rng.mpr (isRestricted_iff.mp c.2)))⟩
+          (tendsto_subtype_rng.mpr (isRestricted_iff.mp c.property)))⟩
     -- `u = (range u).subtype ∘ u.rangeRestrict`, so reading `hb` coefficientwise and forgetting
     -- the membership proof is already the required equality.
     refine ⟨b, restrictedMvPowerSeriesSubmodule_ext fun s ↦ ?_⟩
@@ -826,10 +826,10 @@ tensor-product API, which produces the subring. -/
 noncomputable def restrictedMvPowerSeriesSubringLinearEquiv (k : ℕ) (A : Type*) [CommRing A]
     [TopologicalSpace A] [NonarchimedeanRing A] :
     restrictedMvPowerSeriesSubring k A ≃ₗ[A] restrictedMvPowerSeriesSubmodule k A A where
-  toFun f := ⟨f.1, mem_restrictedMvPowerSeriesSubmodule.mpr
-    (mem_restrictedMvPowerSeriesSubring.mp f.2)⟩
-  invFun g := ⟨g.1, mem_restrictedMvPowerSeriesSubring.mpr
-    (mem_restrictedMvPowerSeriesSubmodule.mp g.2)⟩
+  toFun f := ⟨f.val, mem_restrictedMvPowerSeriesSubmodule.mpr
+    (mem_restrictedMvPowerSeriesSubring.mp f.property)⟩
+  invFun g := ⟨g.val, mem_restrictedMvPowerSeriesSubring.mpr
+    (mem_restrictedMvPowerSeriesSubmodule.mp g.property)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -879,8 +879,8 @@ noncomputable def restrictedMvPowerSeriesSubmodulePiEquiv (k : ℕ) (A : Type*) 
     [∀ i, Module A (M i)] [∀ i, ContinuousAdd (M i)] [∀ i, ContinuousConstSMul A (M i)] :
     restrictedMvPowerSeriesSubmodule k A (∀ i, M i) ≃ₗ[A]
       ∀ i, restrictedMvPowerSeriesSubmodule k A (M i) where
-  toFun f i := ⟨fun s ↦ f.1 s i, isRestricted_pi_iff.mp f.2 i⟩
-  invFun g := ⟨fun s i ↦ (g i).1 s, isRestricted_pi_iff.mpr fun i ↦ (g i).2⟩
+  toFun f i := ⟨fun s ↦ f.val s i, isRestricted_pi_iff.mp f.property i⟩
+  invFun g := ⟨fun s i ↦ (g i).val s, isRestricted_pi_iff.mpr fun i ↦ (g i).property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl

@@ -30,9 +30,10 @@ This is reciprocity for the abelian layers of a class formation
 (`ClassFormation.abelianArtinMap`), applied to the local class formation and read on `Kˣ`. The
 lattice laws of local norm subgroups are likewise those of the norm subgroups of a class formation
 (`ClassFormation.normSubgroup_inf_of_isAbelian`, `ClassFormation.normSubgroup_sup`), read on `Kˣ`
-through `localGroundOrderIso`: the compositum of two finite abelian extensions has the intersection
-of their norm subgroups as its norm subgroup (`localNormSubgroup_inf_of_isAbelian`), and the
-intersection of two finite Galois extensions has the product of their norm subgroups
+through `localGroundOrderIso`: the compositum of a finite Galois extension with a finite abelian
+one has the intersection of their norm subgroups as its norm subgroup
+(`localNormSubgroup_inf_of_isAbelian`), and the intersection of two finite Galois
+extensions has the product of their norm subgroups
 (`localNormSubgroup_sup`; by norm limitation this needs no abelianity).
 
 ## Main definitions
@@ -46,8 +47,9 @@ intersection of two finite Galois extensions has the product of their norm subgr
   Artin map of the local class formation.
 * `TauCeti.ClassFieldTheory.index_localNormSubgroup`: `[Kˣ : N_{L/K}(Lˣ)] = [L : K]` for an
   abelian layer.
-* `TauCeti.ClassFieldTheory.localNormSubgroup_inf_of_isAbelian`: the norm subgroup of a compositum
-  of finite abelian extensions is the intersection of their norm subgroups.
+* `TauCeti.ClassFieldTheory.localNormSubgroup_inf_of_isAbelian`: the norm subgroup of the
+  compositum of a finite Galois extension with a finite abelian extension is the intersection of
+  their norm subgroups.
 * `TauCeti.ClassFieldTheory.localNormSubgroup_sup`: the norm subgroup of an intersection of finite
   Galois extensions is the product of their norm subgroups.
 
@@ -164,17 +166,17 @@ section Lattice
 
 variable {K} {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
 
-/-- **Composita.** For finite abelian extensions cut out by `V` and `W`, the norm subgroup of their
-compositum, cut out by `V ⊓ W`, is the intersection of the two norm subgroups. Abelianity is
-needed: by norm limitation the left side only sees the maximal abelian subextension of the
-compositum, which can be larger than the compositum of the maximal abelian subextensions. -/
-theorem localNormSubgroup_inf_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
-    (hW : W.IsAbelianClassFieldLayer) :
+/-- **Composita.** For finite Galois extensions cut out by `V` and `W`, with `W` abelian, the norm
+subgroup of their compositum, cut out by `V ⊓ W`, is the intersection of the two norm subgroups.
+Abelianity of `W` is needed: by norm limitation the left side only sees the maximal abelian
+subextension of the compositum, which can be larger than the compositum of the maximal abelian
+subextensions when neither extension is abelian. -/
+theorem localNormSubgroup_inf_of_isAbelian (hW : W.IsAbelianClassFieldLayer) :
     localNormSubgroup K (V ⊓ W) = localNormSubgroup K V ⊓ localNormSubgroup K W := by
   apply (localGroundOrderIso K).injective
   rw [map_inf, localGroundOrderIso_localNormSubgroup, localGroundOrderIso_localNormSubgroup,
     localGroundOrderIso_localNormSubgroup,
-    (localClassFormation K).normSubgroup_inf_of_isAbelian hV hW]
+    (localClassFormation K).normSubgroup_inf_of_isAbelian hW]
 
 /-- **Intersections.** The norm subgroup of the intersection of the finite Galois extensions cut
 out by `V` and `W`, which is cut out by `V ⊔ W`, is the product of the two norm subgroups. No

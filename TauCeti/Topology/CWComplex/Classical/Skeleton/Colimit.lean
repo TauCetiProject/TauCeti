@@ -46,7 +46,7 @@ abbrev skeletonFunctor : ℕ ⥤ TopCat.{w} where
   ι := { app j := TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C (j : ℕ∞)).subset_complex) }
 
 lemma coe_skeletonCocone_ι_app_apply (j : ℕ) (x : skeletonObj C j) :
-    ((skeletonCocone C).ι.app j x).1 = x.1 :=
+    ((skeletonCocone C).ι.app j x).val = x.val :=
   (rfl)
 
 /-- A map out of a relative CW complex defined on each skeleton, compatibly with the inclusions
@@ -70,12 +70,12 @@ def isColimitSkeletonCocone : IsColimit (skeletonCocone C) where
   desc s := TopCat.ofHom (exists_desc_skeletonCocone C s).choose
   fac s j := by
     ext x
-    exact (exists_desc_skeletonCocone C s).choose_spec j x.1 x.2
+    exact (exists_desc_skeletonCocone C s).choose_spec j x.val x.property
   uniq s m hm := by
     ext x
-    obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add 0 x.2
+    obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add 0 x.property
     rw [zero_add] at hj
-    exact (ConcreteCategory.congr_hom (hm j) ⟨x.1, hj⟩).trans
-      ((exists_desc_skeletonCocone C s).choose_spec j x.1 hj).symm
+    exact (ConcreteCategory.congr_hom (hm j) ⟨x.val, hj⟩).trans
+      ((exists_desc_skeletonCocone C s).choose_spec j x.val hj).symm
 
 end TauCeti

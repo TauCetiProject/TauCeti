@@ -50,8 +50,8 @@ def map (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.comp a) (hk : b k = k')
   ⟨fun p ↦ ⟨(a p.val.1, b.comp p.val.2),
     (congrArg b p.property.1).trans (ContinuousMap.congr_fun h p.val.1),
     (congrArg b p.property.2).trans hk⟩,
-    ((a.continuous.comp continuous_subtype_val.fst).prodMk
-      ((ContinuousMap.continuous_postcomp b).comp continuous_subtype_val.snd)).subtype_mk _⟩
+    ((a.continuous.comp continuous_subtypeVal.fst).prodMk
+      ((ContinuousMap.continuous_postcomp b).comp continuous_subtypeVal.snd)).subtype_mk _⟩
 
 @[simp]
 theorem map_val (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.comp a)
@@ -75,6 +75,19 @@ theorem endpointHomeomorph_map (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.
       MappingPathSpace.map a b h (endpointHomeomorph f k p).val := by
   apply Subtype.ext
   simp
+
+/-- Maps of mapping-path fibres commute with the constant-path inclusion of ordinary fibres. -/
+@[simp]
+theorem map_ofFiber (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.comp a)
+    (hk : b k = k') (x : f ⁻¹' {k}) :
+    map a b h hk (ofFiber f k x) =
+      ofFiber f' k' ⟨a x.val,
+        (ContinuousMap.congr_fun h x.val).symm.trans ((congrArg b x.property).trans hk)⟩ := by
+  apply Subtype.ext
+  rw [map_val, ofFiber_val, ofFiber_val]
+  refine Prod.ext rfl ?_
+  ext _
+  exact hk
 
 /-- The pullback comparison respects the induced map of fixed-end path spaces. -/
 @[simp]
@@ -132,11 +145,11 @@ def mapHomotopy :
     by simpa only [ContinuousMap.coe_mk, q.2.property.1] using hs q.1 q.2.val.1,
     by simpa only [ContinuousMap.coe_mk, q.2.property.2] using hk q.1⟩
   continuous_toFun := by
-    refine ((A.continuous.comp (continuous_fst.prodMk continuous_snd.subtype_val.fst)).prodMk
+    refine ((A.continuous.comp (continuous_fst.prodMk continuous_snd.subtypeVal.fst)).prodMk
       ?_).subtype_mk _
     apply ContinuousMap.continuous_of_continuous_uncurry
     exact H.continuous.comp ((continuous_fst.comp continuous_fst).prodMk
-      (((continuous_snd.comp continuous_fst).subtype_val.snd).eval continuous_snd))
+      (((continuous_snd.comp continuous_fst).subtypeVal.snd).eval continuous_snd))
   map_zero_left p := by
     apply Subtype.ext
     apply Prod.ext
