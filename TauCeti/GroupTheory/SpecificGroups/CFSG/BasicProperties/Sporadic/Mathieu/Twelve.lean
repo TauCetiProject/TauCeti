@@ -554,17 +554,6 @@ private theorem wordValue_wordH : wordValue m12Of wordH = gH := by
 private theorem wordValue_wordK : wordValue m12Of wordK = gK := by
   simp [wordK, wordValue_cons, wordValue_nil, gK, mul_assoc]
 
-private theorem wordValue_wordK_inv : wordValue m12Of (wordK.reverse.map invLetter) = gK⁻¹ := by
-  have hinv : wordK.map (letter m12Of ∘ invLetter) =
-      (wordK.map (letter m12Of)).map (·⁻¹) := by
-    rw [List.map_map]
-    refine List.map_congr_left fun t ht ↦ letter_invLetter m12Of ?_
-    simp only [wordK, List.mem_cons, List.not_mem_nil, or_false] at ht
-    simp only [presentation_M12, Sporadic.m12Presentation_generatorCount]
-    omega
-  rw [wordValue_def, List.map_map, List.map_reverse, hinv, ← List.prod_inv_reverse,
-    ← wordValue_def, wordValue_wordK]
-
 private theorem wordValue_wordA5 : wordValue m12Of wordA5 = 1 :=
   M12.presentation.wordValue_eq_one_of_checkRelators check_stage1 (131, wordA5)
     (by simp)
@@ -625,8 +614,8 @@ private theorem gH_pow_eleven : gH ^ 11 = 1 := by
 
 private theorem gK_conj_gH : gK * gH * gK⁻¹ = (gH ^ 2)⁻¹ := by
   have hc := wordValue_wordConj
-  rw [wordConj, wordValue_append, wordValue_append, wordValue_append, wordValue_append,
-    wordValue_wordK, wordValue_wordH, wordValue_wordK_inv] at hc
+  simp only [wordConj, wordValue_append, wordValue_reverse_map_invLetter, wordValue_wordK,
+    wordValue_wordH] at hc
   have hc' : gK * gH * gK⁻¹ * gH ^ 2 = 1 := by
     simpa [sq, mul_assoc] using hc
   exact eq_inv_of_mul_eq_one_left hc'

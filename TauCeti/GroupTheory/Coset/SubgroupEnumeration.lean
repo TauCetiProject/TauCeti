@@ -204,8 +204,9 @@ private theorem surjective_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrun : run n rels subs parents steps = some k) :
     ∃ f : Fin k → G ⧸ H, Function.Surjective f := by
   obtain ⟨⟨k', _⟩, hres, rfl⟩ := Option.map_eq_some_iff.mp hrun
-  exact surjective_of_result (unlabeledInterp H) hx H hrels (unlabeledInterp_sub hsubs) trivial hres
-    fun h ↦ by simpa [unlabeledInterp, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one] using h
+  exact exists_surjective_of_result (unlabeledInterp H) hx H hrels (unlabeledInterp_sub hsubs)
+    trivial hres fun h ↦ by
+      simpa [unlabeledInterp, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one] using h
 
 /-- A closed unlabeled replay shows that any subgroup containing the values of `subs` has finite
 index. -/

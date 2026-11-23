@@ -67,12 +67,13 @@ replay over thousands of points stays within reach of kernel evaluation.
   `Scheme.replay`.
 * `TauCeti.CosetEnumeration.exists_actR_eq_of_closesAt_replay`: a word closing at point `i` in a
   `Scheme.replay` satisfies the corresponding `I.actR` relation.
-* `TauCeti.CosetEnumeration.zero_mem_roots_and_exists_actR_of_isClosed_replay` and
-  `TauCeti.CosetEnumeration.surjective_of_result`: a closed `Scheme.replay` covers `G ⧸ H` with
-  its `k` surviving points.
-* `TauCeti.CosetEnumeration.wordValue_pow_exponent_replay_eq_one`: the exponent `N` recorded by any
+* `TauCeti.CosetEnumeration.zero_mem_roots_and_exists_actR_of_isClosed_replay`: surviving-root
+  closure of a closed `Scheme.replay` up to `I.actR`.
+* `TauCeti.CosetEnumeration.exists_surjective_of_result`: the `k` surviving points of a closed
+  `Scheme.replay` cover `G ⧸ H` when `I.actR`-related points have the same coset in `G ⧸ H`.
+* `TauCeti.CosetEnumeration.wordValue_pow_extra_replay_eq_one`: the exponent `N` recorded by any
   cyclic replay satisfies `h ^ N = 1`;
-  `TauCeti.GroupPresentation.wordValue_pow_exponent_replay_eq_one` is the same for the group defined
+  `TauCeti.GroupPresentation.wordValue_pow_extra_replay_eq_one` is the same for the group defined
   by a `TauCeti.GroupPresentation`.
 * `TauCeti.CosetEnumeration.index_zpowers_le_of_run` and
   `TauCeti.CosetEnumeration.wordValue_pow_eq_one_of_run`: a closed cyclic replay gives
@@ -209,6 +210,20 @@ theorem wordValue_rotate_eq_one {x : Fin n → G} {w : List ℕ} (hw : wordValue
     wordValue x (w.rotate k) = 1 := by
   rw [wordValue, List.map_rotate]
   exact List.prod_rotate_eq_one_of_prod_eq_one hw k
+
+/-- Reversing a word in signed letters and inverting each letter inverts its value. -/
+theorem wordValue_reverse_map_invLetter (x : Fin n → G) (w : List ℕ) :
+    wordValue x (w.reverse.map invLetter) = (wordValue x w)⁻¹ := by
+  induction w with
+  | nil => simp
+  | cons t w ih =>
+    have ht : letter x (invLetter t) = (letter x t)⁻¹ := by
+      by_cases h : t < 2 * n
+      · exact letter_invLetter x h
+      · rw [letter_eq_one_of_le x (by unfold invLetter; split_ifs <;> omega),
+          letter_eq_one_of_le x (by omega), inv_one]
+    simp only [List.reverse_cons, List.map_append, List.map_cons, List.map_nil, wordValue_append,
+      wordValue_cons, wordValue_nil, mul_one, ih, ht, mul_inv_rev]
 
 end Letters
 
@@ -961,7 +976,7 @@ theorem surjective_mk_pt_of_roots (hx : Subgroup.closure (Set.range x) = ⊤) (H
 
 /-- If a replay under `S` closes with `k` surviving points, and edges equated up to `I.actR`
 agree in `G ⧸ H`, then the cosets of the `k` surviving points cover `G ⧸ H`. -/
-theorem surjective_of_result (hx : Subgroup.closure (Set.range x) = ⊤) (H : Subgroup G)
+theorem exists_surjective_of_result (hx : Subgroup.closure (Set.range x) = ⊤) (H : Subgroup G)
     (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (hsubs : ∀ s ∈ subs, wordValue x s • base = I.actR base S.subLabel)
     (hextra0 : I.extraOk extra0) {k : ℕ} {a : A}
@@ -1013,7 +1028,7 @@ private theorem cyclicInterp_sub (x : Fin n → G) (s : List ℕ) :
 private theorem surjective_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hrun : run n rels s parents steps = some (k, N)) :
     ∃ f : Fin k → G ⧸ Subgroup.zpowers (wordValue x s), Function.Surjective f :=
-  surjective_of_result (cyclicInterp (wordValue x s)) hx (Subgroup.zpowers (wordValue x s))
+  exists_surjective_of_result (cyclicInterp (wordValue x s)) hx (Subgroup.zpowers (wordValue x s))
     hrels (cyclicInterp_sub x s) (by simp [cyclicInterp]) hrun fun {y z e} h ↦ by
       simp only [cyclicInterp, smul_eq_mul, mul_one] at h
       rw [h, QuotientGroup.mk_mul_of_mem _ (Subgroup.zpow_mem_zpowers (wordValue x s) e)]
@@ -1039,14 +1054,14 @@ theorem index_zpowers_le_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
 a replay annihilates the value of `s`, whether or not the replay closes. A replay of a few steps
 thus proves a relation `h ^ N = 1` in a group given by a presentation, without bounding the group
 itself. -/
-theorem wordValue_pow_exponent_replay_eq_one (hrels : ∀ r ∈ rels, wordValue x r = 1)
+theorem wordValue_pow_extra_replay_eq_one (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (s parents steps : List ℕ) :
     wordValue x s ^ (replay n rels s parents steps).extra = 1 :=
   extraOk_extra_replay (cyclicInterp (wordValue x s)) hrels (cyclicInterp_sub x s)
     (by simp [cyclicInterp])
 
-/-- The exponent returned by a closed replay is the exponent of its final state. -/
-theorem exponent_replay_of_run (hrun : run n rels s parents steps = some (k, N)) :
+/-- The exponent returned by a closed replay is the `extra` field of its final state. -/
+theorem extra_replay_of_run (hrun : run n rels s parents steps = some (k, N)) :
     (replay n rels s parents steps).extra = N :=
   (State.result_eq_some_iff.mp hrun).2.2
 
@@ -1054,7 +1069,7 @@ theorem exponent_replay_of_run (hrun : run n rels s parents steps = some (k, N))
 returned by a closed replay annihilates the value of `s`. -/
 theorem wordValue_pow_eq_one_of_run (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (hrun : run n rels s parents steps = some (k, N)) : wordValue x s ^ N = 1 :=
-  exponent_replay_of_run hrun ▸ wordValue_pow_exponent_replay_eq_one hrels s parents steps
+  extra_replay_of_run hrun ▸ wordValue_pow_extra_replay_eq_one hrels s parents steps
 
 /-- **A finiteness certificate.** If the generators `x` generate `G` and the relators `rels` hold,
 a closed replay with a positive exponent shows that `G` is finite. -/
@@ -1106,12 +1121,12 @@ theorem _root_.TauCeti.GroupPresentation.wordValue_relatorLetters_eq_one (P : Gr
 /-- **A power relation in a presented group.** The exponent recorded by a replay for the relators
 of a presentation annihilates the value of `s` at the generators of the presented group, whether
 or not the replay closes. -/
-theorem _root_.TauCeti.GroupPresentation.wordValue_pow_exponent_replay_eq_one
+theorem _root_.TauCeti.GroupPresentation.wordValue_pow_extra_replay_eq_one
     (P : GroupPresentation) (s parents steps : List ℕ) :
     wordValue (PresentedGroup.of (rels := P.relatorSet)) s ^
       (replay P.generatorCount (P.relatorLetters.map (List.map signedLetter)) s parents
         steps).extra = 1 :=
-  CosetEnumeration.wordValue_pow_exponent_replay_eq_one P.wordValue_relatorLetters_eq_one s
+  CosetEnumeration.wordValue_pow_extra_replay_eq_one P.wordValue_relatorLetters_eq_one s
     parents steps
 
 /-- **A finiteness certificate for a presented group.** A closed replay for the relators of a
