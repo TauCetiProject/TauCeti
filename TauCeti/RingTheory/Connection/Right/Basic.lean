@@ -247,7 +247,7 @@ instance : MulAction (E ≃ₗ[Aᵐᵒᵖ] E) (RightConnection (E := E) D) where
   mul_smul u v c := ext fun x ↦ rfl
 
 @[simp]
-theorem smul_apply (u : E ≃ₗ[Aᵐᵒᵖ] E) (c : RightConnection (E := E) D) (x : E) :
+protected theorem smul_apply (u : E ≃ₗ[Aᵐᵒᵖ] E) (c : RightConnection (E := E) D) (x : E) :
     (u • c) x = u (c (u.symm x)) := (rfl)
 
 /-- Gauge transformations conjugate the curvature. -/
