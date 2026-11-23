@@ -10,7 +10,7 @@ public import TauCeti.Topology.FilledHull
 public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.Conformal.Jordan.Quadrilateral
 import TauCeti.Analysis.Complex.Conformal.Jordan.Schoenflies
 import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Decomposition
