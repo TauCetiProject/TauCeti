@@ -320,14 +320,6 @@ theorem innerIdeal_eq_bot_iff [T1Space A] :
 
 end TopologicalCStarModule
 
-private theorem image_linearMap_span_range {B C : Type*} [AddCommMonoid B] [Module ℂ B]
-    [AddCommMonoid C] [Module ℂ C] (f : B →ₗ[ℂ] C) {ι : Type*} (g : ι → B) {h : ι → C}
-    (hfg : ∀ i, f (g i) = h i) :
-    f '' (Submodule.span ℂ (Set.range g) : Set B) =
-      (Submodule.span ℂ (Set.range h) : Set C) := by
-  rw [← Submodule.map_coe, Submodule.map_span, ← Set.range_comp]
-  simp only [Function.comp_def, hfg]
-
 section RightTopologicalCStarModule
 
 variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A]
@@ -341,8 +333,11 @@ theorem coe_rightInnerIdeal :
       closure
         (Submodule.span ℂ (Set.range fun p : E × E => unop (inner Aᵐᵒᵖ p.1 p.2)) : Set A) := by
   have himg : unop '' (innerSubmodule Aᵐᵒᵖ E : Set Aᵐᵒᵖ) =
-      (Submodule.span ℂ (Set.range fun p : E × E => unop (inner Aᵐᵒᵖ p.1 p.2)) : Set A) :=
-    image_linearMap_span_range (opLinearEquiv ℂ (M := A)).symm.toLinearMap _ fun _ => rfl
+      (Submodule.span ℂ (Set.range fun p : E × E => unop (inner Aᵐᵒᵖ p.1 p.2)) : Set A) := by
+    have h := congrArg SetLike.coe (Submodule.map_span
+      (opLinearEquiv ℂ (M := A)).symm.toLinearMap (Set.range fun p : E × E => inner Aᵐᵒᵖ p.1 p.2))
+    rw [Submodule.map_coe, ← Set.range_comp] at h
+    exact h
   have hpre : unop ⁻¹'
       (Submodule.span ℂ (Set.range fun p : E × E => unop (inner Aᵐᵒᵖ p.1 p.2)) : Set A) =
       (innerSubmodule Aᵐᵒᵖ E : Set Aᵐᵒᵖ) := by
@@ -407,8 +402,12 @@ theorem innerIdeal_le_iff_self {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
 /-- Mapping `innerSubmodule (innerIdeal A E) E` into `A` recovers `innerSubmodule A E`. -/
 theorem image_coe_innerSubmodule_innerIdeal :
     ((↑) : innerIdeal A E → A) '' (innerSubmodule (innerIdeal A E) E : Set (innerIdeal A E)) =
-      (innerSubmodule A E : Set A) :=
-  image_linearMap_span_range (innerIdeal A E).toSubmodule.subtype _ fun _ => rfl
+      (innerSubmodule A E : Set A) := by
+  have h := congrArg SetLike.coe (Submodule.map_span
+    ((innerIdeal A E).starAlgHom : ↥(innerIdeal A E) →ₗ[ℂ] A)
+    (Set.range fun p : E × E => inner (innerIdeal A E) p.1 p.2))
+  rw [Submodule.map_coe, ← Set.range_comp, LinearMap.coe_ofClass, TwoSidedIdeal.coe_starAlgHom] at h
+  exact h
 
 /-- Every Hilbert `A`-module `E` is canonically a Hilbert `(innerIdeal A E)`-module by restricting
 scalars and the codomain of the inner product to `innerIdeal A E`. -/
@@ -477,8 +476,12 @@ theorem image_coe_span_unop_inner_rightInnerIdeal :
     ((↑) : rightInnerIdeal A E → A) ''
         (Submodule.span ℂ (Set.range fun p : E × E =>
           unop (inner (rightInnerIdeal A E)ᵐᵒᵖ p.1 p.2)) : Set (rightInnerIdeal A E)) =
-      (Submodule.span ℂ (Set.range fun p : E × E => unop (inner Aᵐᵒᵖ p.1 p.2)) : Set A) :=
-  image_linearMap_span_range (rightInnerIdeal A E).toSubmodule.subtype _ fun _ => rfl
+      (Submodule.span ℂ (Set.range fun p : E × E => unop (inner Aᵐᵒᵖ p.1 p.2)) : Set A) := by
+  have h := congrArg SetLike.coe (Submodule.map_span
+    ((rightInnerIdeal A E).starAlgHom : ↥(rightInnerIdeal A E) →ₗ[ℂ] A)
+    (Set.range fun p : E × E => unop (inner (rightInnerIdeal A E)ᵐᵒᵖ p.1 p.2)))
+  rw [Submodule.map_coe, ← Set.range_comp, LinearMap.coe_ofClass, TwoSidedIdeal.coe_starAlgHom] at h
+  exact h
 
 /-- Viewed as a right module over `I_E = rightInnerIdeal A E`, the right inner-product ideal of `E`
 is all of `I_E`. -/

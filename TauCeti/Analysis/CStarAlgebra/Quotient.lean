@@ -609,11 +609,12 @@ instance isClosed_map_mk (I J : TwoSidedIdeal A) [IsClosed (I : Set A)] [IsClose
     IsClosed (TwoSidedIdeal.map (Quotient.mk J) I : Set (A ⧸ J)) :=
   isClosed_map_of_surjective (φ := Quotient.mkStarAlgHom J) (Quotient.mkStarAlgHom_surjective J) I
 
-/-- `TwoSidedIdeal.isClosed_map_mk` spelled with `Quotient.mkStarAlgHom J`. -/
-instance isClosed_map_mkStarAlgHom (I J : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    [IsClosed (J : Set A)] :
-    IsClosed (TwoSidedIdeal.map (Quotient.mkStarAlgHom J) I : Set (A ⧸ J)) :=
-  isClosed_map_mk I J
+/-- Normalizing `TwoSidedIdeal.map` along `Quotient.mkStarAlgHom J` to `Quotient.mk J`, so
+`TwoSidedIdeal.isClosed_map_mk` applies uniformly. -/
+@[simp]
+theorem map_mkStarAlgHom (I J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
+    TwoSidedIdeal.map (Quotient.mkStarAlgHom J) I = TwoSidedIdeal.map (Quotient.mk J) I :=
+  (rfl)
 
 /-- The algebraic sum `I ⊔ J` of two closed two-sided ideals in a C⋆-algebra is automatically
 closed. -/

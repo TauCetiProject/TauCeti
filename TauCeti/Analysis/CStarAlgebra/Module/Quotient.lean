@@ -51,8 +51,10 @@ products, the quotient norm formula, and functoriality require no order on `A �
 `CStarAlgebra.spectralOrder (A ⧸ J)`).
 
 Finally, we establish functoriality in `E` (`CStarModule.quotientMapCLM`, including contractive
-operator-norm bounds, isometricity under inner-product preservation, and descent of adjoint pairs)
-and in `J` (`CStarModule.quotientFactorCLM`, intertwining `factorStarAlgHom`). Compatibility with
+operator-norm bounds, isometricity under inner-product preservation, and descent of adjoint pairs),
+unique coefficient-equivariant descent into arbitrary `(A ⧸ J)`-modules
+(`CStarModule.quotientLiftCLM` and `CStarModule.quotientLiftOpCLM`), and functoriality in `J`
+(`CStarModule.quotientFactorCLM`, intertwining `factorStarAlgHom`). Compatibility with
 `innerIdeal`, `IsFull`, and self-modules is established in
 `TauCeti.Analysis.CStarAlgebra.Module.Full`.
 
@@ -66,8 +68,9 @@ and in `J` (`CStarModule.quotientFactorCLM`, intertwining `factorStarAlgHom`). C
   norm formula `‖mk x‖ = √‖mk J ⟪x, x⟫_A‖`.
 * `CStarModule.instCStarModuleQuotient` and `CStarModule.instCStarModuleQuotientMulOpposite`: the
   Hilbert `(A ⧸ J)`-module structures on `E ⧸ idealSubmodule J E` and `E ⧸ idealSubmodule J.op E`.
-* `CStarModule.quotientMapCLM` and `CStarModule.quotientFactorCLM`: functoriality of `E ⧸ E J` in
-  `E` and in `J`.
+* `CStarModule.quotientMapCLM`, `CStarModule.quotientLiftCLM`, `CStarModule.quotientLiftOpCLM`,
+  and `CStarModule.quotientFactorCLM`: functoriality and universal descent of `E ⧸ E J` in `E`
+  and in `J`.
 
 ## References
 
@@ -706,6 +709,110 @@ theorem quotientFactorCLM_comp_quotientMapCLM {J₁ J₂ : TwoSidedIdeal A} (h :
 
 end Map
 
+section Lift
+
+variable {A : Type*} [NonUnitalRing A]
+
+section LeftLift
+
+variable {E F : Type*}
+  [TopologicalSpace E] [AddCommGroup E] [Module ℂ E] [ContinuousAdd E]
+  [ContinuousConstSMul ℂ E] [SMul A E]
+  [TopologicalSpace F] [T1Space F] [AddCommGroup F] [Module ℂ F]
+
+/-- A continuous `ℂ`-linear map `T : E →L[ℂ] F` equivariant along `TwoSidedIdeal.Quotient.mk J`
+into an `(A ⧸ J)`-module `F` vanishes on `idealSubmodule J E`. -/
+theorem idealSubmodule_le_ker_of_smul_mk (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J) F]
+    (T : E →L[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = TwoSidedIdeal.Quotient.mk J a • T x) :
+    idealSubmodule J E ≤ LinearMap.ker T.toLinearMap := by
+  refine (idealSubmodule_le_iff (isClosed_singleton.preimage T.continuous)).mpr fun a ha x => ?_
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, hT,
+    TwoSidedIdeal.Quotient.eq_zero_iff_mem.mpr ha, zero_smul]
+
+/-- Descend a continuous `ℂ`-linear map `T : E →L[ℂ] F` equivariant along `mk J` into an
+arbitrary `(A ⧸ J)`-module `F` through `E ⧸ idealSubmodule J E`. When `F` is a
+`CStarModule (A ⧸ J) F`, install `CStarModule.smulWithZero (A ⧸ J) F` to supply `SMulWithZero`. -/
+def quotientLiftCLM (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J) F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = TwoSidedIdeal.Quotient.mk J a • T x) :
+    E ⧸ idealSubmodule J E →L[ℂ] F :=
+  (idealSubmodule J E).liftQL T (idealSubmodule_le_ker_of_smul_mk J T hT)
+
+@[simp]
+theorem quotientLiftCLM_mk (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J) F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = TwoSidedIdeal.Quotient.mk J a • T x) (x : E) :
+    quotientLiftCLM J T hT (Submodule.Quotient.mk x) = T x :=
+  (rfl)
+
+@[simp]
+theorem quotientLiftCLM_comp_mkQL (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J) F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = TwoSidedIdeal.Quotient.mk J a • T x) :
+    (quotientLiftCLM J T hT).comp (idealSubmodule J E).mkQL = T := by
+  ext x; rfl
+
+theorem eq_quotientLiftCLM_iff (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J) F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = TwoSidedIdeal.Quotient.mk J a • T x)
+    (L : E ⧸ idealSubmodule J E →L[ℂ] F) :
+    L = quotientLiftCLM J T hT ↔ L.comp (idealSubmodule J E).mkQL = T :=
+  ⟨fun h => h ▸ quotientLiftCLM_comp_mkQL J T hT, fun h => by
+    ext v
+    obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ v
+    exact DFunLike.congr_fun h x⟩
+
+end LeftLift
+
+section RightLift
+
+variable {E F : Type*}
+  [TopologicalSpace E] [AddCommGroup E] [Module ℂ E] [ContinuousAdd E]
+  [ContinuousConstSMul ℂ E] [SMul Aᵐᵒᵖ E]
+  [TopologicalSpace F] [T1Space F] [AddCommGroup F] [Module ℂ F]
+
+/-- Right-module form: a continuous `ℂ`-linear map `T : E →L[ℂ] F` equivariant along
+`op ∘ TwoSidedIdeal.Quotient.mk J` vanishes on `idealSubmodule J.op E`. -/
+theorem idealSubmodule_op_le_ker_of_op_smul_mk (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J)ᵐᵒᵖ F]
+    (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op (TwoSidedIdeal.Quotient.mk J a) • T x) :
+    idealSubmodule J.op E ≤ LinearMap.ker T.toLinearMap := by
+  refine (idealSubmodule_le_iff (isClosed_singleton.preimage T.continuous)).mpr fun u hu x => ?_
+  obtain ⟨a, rfl⟩ := op_surjective u
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, hT,
+    TwoSidedIdeal.Quotient.eq_zero_iff_mem.mpr (by simpa [TwoSidedIdeal.mem_op_iff] using hu),
+    op_zero, zero_smul]
+
+/-- Right-module form: descend a continuous `ℂ`-linear map `T : E →L[ℂ] F` equivariant along
+`op ∘ mk J` into an arbitrary right `(A ⧸ J)`-module `F` through `E ⧸ idealSubmodule J.op E`. -/
+def quotientLiftOpCLM (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J)ᵐᵒᵖ F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op (TwoSidedIdeal.Quotient.mk J a) • T x) :
+    E ⧸ idealSubmodule J.op E →L[ℂ] F :=
+  (idealSubmodule J.op E).liftQL T (idealSubmodule_op_le_ker_of_op_smul_mk J T hT)
+
+@[simp]
+theorem quotientLiftOpCLM_mk (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J)ᵐᵒᵖ F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op (TwoSidedIdeal.Quotient.mk J a) • T x) (x : E) :
+    quotientLiftOpCLM J T hT (Submodule.Quotient.mk x) = T x :=
+  (rfl)
+
+@[simp]
+theorem quotientLiftOpCLM_comp_mkQL (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J)ᵐᵒᵖ F]
+    (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op (TwoSidedIdeal.Quotient.mk J a) • T x) :
+    (quotientLiftOpCLM J T hT).comp (idealSubmodule J.op E).mkQL = T := by
+  ext x; rfl
+
+theorem eq_quotientLiftOpCLM_iff (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J)ᵐᵒᵖ F]
+    (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op (TwoSidedIdeal.Quotient.mk J a) • T x)
+    (L : E ⧸ idealSubmodule J.op E →L[ℂ] F) :
+    L = quotientLiftOpCLM J T hT ↔ L.comp (idealSubmodule J.op E).mkQL = T :=
+  ⟨fun h => h ▸ quotientLiftOpCLM_comp_mkQL J T hT, fun h => by
+    ext v
+    obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ v
+    exact DFunLike.congr_fun h x⟩
+
+end RightLift
+
+end Lift
+
 section Seminormed
 
 variable {E F : Type*}
@@ -739,6 +846,30 @@ theorem norm_quotientFactorCLM_apply_le {J₁ J₂ : TwoSidedIdeal A} (h : J₁ 
       mul_le_mul_of_nonneg_right (norm_quotientFactorCLM_le h) (norm_nonneg u)
 
 end Seminormed
+
+section SeminormedLift
+
+variable {A : Type*} [NonUnitalRing A]
+
+@[simp]
+theorem norm_quotientLiftCLM {E F : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E]
+    [SeminormedAddCommGroup F] [NormedSpace ℂ F] [T1Space F]
+    (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J) F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = TwoSidedIdeal.Quotient.mk J a • T x) :
+    ‖quotientLiftCLM J T hT‖ = ‖T‖ :=
+  (idealSubmodule J E).norm_liftQL T (idealSubmodule_le_ker_of_smul_mk J T hT)
+
+@[simp]
+theorem norm_quotientLiftOpCLM {E F : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E]
+    [SeminormedAddCommGroup F] [NormedSpace ℂ F] [T1Space F]
+    (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J)ᵐᵒᵖ F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op (TwoSidedIdeal.Quotient.mk J a) • T x) :
+    ‖quotientLiftOpCLM J T hT‖ = ‖T‖ :=
+  (idealSubmodule J.op E).norm_liftQL T (idealSubmodule_op_le_ker_of_op_smul_mk J T hT)
+
+end SeminormedLift
 
 end FunctorialityTopological
 
@@ -919,6 +1050,68 @@ theorem inner_quotientFactorCLM_op {J₁ J₂ : TwoSidedIdeal A} [IsClosed (J₁
       unop_inner_mk_mk, TwoSidedIdeal.Quotient.factorStarAlgHom_mk])
 
 end RightModules
+
+section LeftLiftCStarModule
+
+variable {E F : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+  [TopologicalSpace F] [T1Space F] [AddCommGroup F] [Module ℂ F]
+
+/-- `quotientLiftCLM J T hT` is `(A ⧸ J)`-linear. -/
+@[simp]
+theorem quotientLiftCLM_smul (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J) F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = TwoSidedIdeal.Quotient.mk J a • T x)
+    (q : A ⧸ J) (v : E ⧸ idealSubmodule J E) :
+    quotientLiftCLM J T hT (q • v) = q • quotientLiftCLM J T hT v := by
+  obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective J q
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ v
+  rw [mk_smul_mk, quotientLiftCLM_mk, hT, quotientLiftCLM_mk]
+
+/-- Unique `(A ⧸ J)`-equivariant factorization through `E →L[ℂ] E ⧸ idealSubmodule J E` for a
+continuous `ℂ`-linear map `T : E →L[ℂ] F` equivariant along `TwoSidedIdeal.Quotient.mk J`. -/
+theorem existsUnique_quotientLiftCLM (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J) F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = TwoSidedIdeal.Quotient.mk J a • T x) :
+    ∃! L : E ⧸ idealSubmodule J E →L[ℂ] F,
+      L.comp (idealSubmodule J E).mkQL = T ∧
+        ∀ (q : A ⧸ J) (v : E ⧸ idealSubmodule J E), L (q • v) = q • L v :=
+  ⟨quotientLiftCLM J T hT,
+    ⟨quotientLiftCLM_comp_mkQL J T hT, quotientLiftCLM_smul J T hT⟩,
+    fun _ ⟨hcomp, _⟩ => (eq_quotientLiftCLM_iff J T hT _).mpr hcomp⟩
+
+end LeftLiftCStarModule
+
+section RightLiftCStarModule
+
+variable {E F : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
+  [TopologicalSpace F] [T1Space F] [AddCommGroup F] [Module ℂ F]
+
+/-- Right-module form: `quotientLiftOpCLM J T hT` is `(A ⧸ J)ᵐᵒᵖ`-linear. -/
+@[simp]
+theorem quotientLiftOpCLM_smul (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J)ᵐᵒᵖ F]
+    (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op (TwoSidedIdeal.Quotient.mk J a) • T x)
+    (q : (A ⧸ J)ᵐᵒᵖ) (v : E ⧸ idealSubmodule J.op E) :
+    quotientLiftOpCLM J T hT (q • v) = q • quotientLiftOpCLM J T hT v := by
+  obtain ⟨q, rfl⟩ := op_surjective q
+  obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective J q
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ v
+  rw [op_mk_smul_mk, quotientLiftOpCLM_mk, hT, quotientLiftOpCLM_mk]
+
+/-- Right-module form: unique `(A ⧸ J)ᵐᵒᵖ`-equivariant factorization through
+`E →L[ℂ] E ⧸ idealSubmodule J.op E` for a continuous `ℂ`-linear map `T : E →L[ℂ] F` equivariant
+along `op ∘ TwoSidedIdeal.Quotient.mk J`. -/
+theorem existsUnique_quotientLiftOpCLM (J : TwoSidedIdeal A) [SMulWithZero (A ⧸ J)ᵐᵒᵖ F]
+    (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op (TwoSidedIdeal.Quotient.mk J a) • T x) :
+    ∃! L : E ⧸ idealSubmodule J.op E →L[ℂ] F,
+      L.comp (idealSubmodule J.op E).mkQL = T ∧
+        ∀ (q : (A ⧸ J)ᵐᵒᵖ) (v : E ⧸ idealSubmodule J.op E), L (q • v) = q • L v :=
+  ⟨quotientLiftOpCLM J T hT,
+    ⟨quotientLiftOpCLM_comp_mkQL J T hT, quotientLiftOpCLM_smul J T hT⟩,
+    fun _ ⟨hcomp, _⟩ => (eq_quotientLiftOpCLM_iff J T hT _).mpr hcomp⟩
+
+end RightLiftCStarModule
 
 end FunctorialityCStarModule
 

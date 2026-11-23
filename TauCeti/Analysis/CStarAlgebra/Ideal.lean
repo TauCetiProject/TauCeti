@@ -13,6 +13,7 @@ public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import TauCeti.Algebra.Order.Star.Basic
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
@@ -274,42 +275,12 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
 
-private theorem map_mem_closure_star_mul_self {R S F : Type*} [NonUnitalSemiring R] [StarMul R]
-    [NonUnitalSemiring S] [StarMul S] [FunLike F R S] [NonUnitalRingHomClass F R S]
-    [StarHomClass F R S] (f : F) {p : R}
-    (hp : p ∈ AddSubmonoid.closure (Set.range fun s : R => star s * s)) :
-    f p ∈ AddSubmonoid.closure (Set.range fun s : S => star s * s) :=
-  AddSubmonoid.closure_induction
-    (by rintro _ ⟨s, rfl⟩; rw [map_mul, map_star]; exact AddSubmonoid.subset_closure ⟨f s, rfl⟩)
-    (map_zero f ▸ AddSubmonoid.zero_mem _)
-    (fun _ _ _ _ ha hb => map_add f _ _ ▸ AddSubmonoid.add_mem _ ha hb) hp
-
-private theorem starOrderedRing_of_equiv {R S F : Type*}
-    [NonUnitalSemiring R] [PartialOrder R] [StarRing R]
-    [NonUnitalSemiring S] [PartialOrder S] [StarRing S] [StarOrderedRing S]
-    [EquivLike F R S] [NonUnitalRingHomClass F R S] [StarHomClass F R S]
-    (e : F) (hle : ∀ x y : R, x ≤ y ↔ e x ≤ e y) :
-    StarOrderedRing R where
-  le_iff x y := by
-    rw [hle, StarOrderedRing.le_iff]
-    let eInv : S →⋆ₙ+* R :=
-      { toFun := EquivLike.inv e
-        map_zero' := by apply EquivLike.injective e; simp
-        map_add' := fun a b => by apply EquivLike.injective e; simp
-        map_mul' := fun a b => by apply EquivLike.injective e; simp
-        map_star' := fun a => by apply EquivLike.injective e; simp [map_star] }
-    have heInv (a : R) : eInv (e a) = a := EquivLike.inv_apply_apply e a
-    refine ⟨fun ⟨p, hp, hpy⟩ => ⟨eInv p, map_mem_closure_star_mul_self eInv hp, ?_⟩,
-      fun ⟨p, hp, hpy⟩ => ⟨e p, map_mem_closure_star_mul_self e hp, ?_⟩⟩
-    · simpa [map_add, heInv] using congrArg eInv hpy
-    · simpa [map_add] using congrArg e hpy
-
 /-- Every closed two-sided ideal of an ordered C⋆-algebra inherits `StarOrderedRing` for the
 subtype partial order, transported from `Subtype.starOrderedRing I.toNonUnitalStarSubalgebra`. -/
 instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I := by
   let _ : StarOrderedRing I.toNonUnitalStarSubalgebra :=
     Subtype.starOrderedRing (𝕜 := ℂ) I.toNonUnitalStarSubalgebra
-  exact starOrderedRing_of_equiv (R := I) (S := I.toNonUnitalStarSubalgebra)
+  exact StarOrderedRing.of_equiv (R := I) (S := I.toNonUnitalStarSubalgebra)
     I.toNonUnitalStarSubalgebraEquiv fun _ _ => Iff.rfl
 
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
