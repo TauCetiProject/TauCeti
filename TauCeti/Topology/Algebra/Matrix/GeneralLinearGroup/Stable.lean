@@ -31,6 +31,7 @@ namespace TauCeti
 
 /-- **Identity stabilization is continuous**: `u ↦ diag (u, 1)` from `GL (Fin m) A` to
 `GL (Fin n) A`. -/
+@[fun_prop]
 theorem continuous_stabilizeGL {A : Type*} [Ring A] [TopologicalSpace A] {m n : ℕ}
     (h : m ≤ n) : Continuous (stabilizeGL A h) := by
   refine Units.continuous_iff.2 ⟨continuous_matrix fun i j => ?_, continuous_matrix fun i j => ?_⟩

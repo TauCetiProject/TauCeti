@@ -17,6 +17,7 @@ import Mathlib.RingTheory.Complex
 import Mathlib.Topology.Homotopy.Lifting
 import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Matrix.Polar.Deformation
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Euclidean
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.LeftMulMatrix
 
@@ -132,17 +133,6 @@ private theorem spinVectorAction_spinCircle_single (n : ℕ) (z : Circle) (i j :
       (by simp [Fin.ext_iff]) 1 1) (isOrtho_realCliffordForm_single (by simp [Fin.ext_iff]) 1 1)]
     rcases i with ⟨_ | _ | i, hi⟩ <;> simp [Pi.single_apply, Fin.ext_iff, Matrix.one_apply]
 
-/-- The entries of the special orthogonal matrix underlying the compact Spin projection of `g`:
-column `j` is the image of the standard basis vector `eⱼ` under the action of `g`. -/
-private theorem coe_symm_realCliffordSpinProjectionZero_apply (n : ℕ) [NeZero n]
-    (g : realCliffordSpinGroupZero n) (i j : Fin n) :
-    ((QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm n).symm
-        (realCliffordSpinProjectionZero n g) : Matrix (Fin n) (Fin n) ℝ) i j =
-      spinVectorAction (realCliffordForm n 0) g (Pi.single j 1) i := by
-  rw [QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe,
-    LinearMap.toMatrix'_apply, LinearEquiv.coe_coe, realCliffordSpinProjectionZero_apply,
-    realCliffordSpinDoubleCoverZero_rightHom, coe_spinToSpecialOrthogonal_apply]
-
 /-- **The Spin lift of the rotation loop.** Let `e₀, e₁` be the first two standard basis vectors
 of `ℝⁿ⁺²`. The Spin rotation path of the pair `(e₁, e₀)`, which runs from `1` to `-1` in the
 compact Spin group, projects at time `t` to the rotation loop at `exp (2π i t)`. -/
@@ -155,7 +145,7 @@ theorem coe_symm_realCliffordSpinProjectionZero_spinRotationPath (n : ℕ) (t : 
         Matrix (Fin (n + 2)) (Fin (n + 2)) ℝ) =
       circleRotationLoop (Nat.le_add_left 2 n) (Circle.exp (2 * π * t)) := by
   ext i j
-  simp only [coe_symm_realCliffordSpinProjectionZero_apply, spinRotationPath_apply,
+  simp only [CliffordAlgebra.coe_symm_realCliffordSpinProjectionZero_apply, spinRotationPath_apply,
     spinRotation_eq_spinCircle, spinVectorAction_spinCircle_single, ← Circle.exp_natCast_mul,
     Nat.cast_ofNat, mul_assoc]
 

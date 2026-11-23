@@ -29,6 +29,7 @@ namespace TauCeti
 
 /-- **The left multiplication embedding of units is continuous**: `x ↦ leftMulMatrix b x` from
 `Sˣ` to `GL ι R`, for `S` with a finite basis over a complete nontrivially normed field. -/
+@[fun_prop]
 theorem continuous_unitsLeftMulMatrix {R S ι : Type*} [Fintype ι] [DecidableEq ι]
     [NontriviallyNormedField R] [CompleteSpace R] [Ring S] [Algebra R S] [TopologicalSpace S]
     [IsTopologicalAddGroup S] [ContinuousSMul R S] [T2Space S] (b : Module.Basis ι R S) :

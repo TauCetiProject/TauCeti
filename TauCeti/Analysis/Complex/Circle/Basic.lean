@@ -400,6 +400,7 @@ theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
   simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
 
 /-- The inclusion `Circle →* ℂˣ` is continuous for the topology of the unit group. -/
+@[fun_prop]
 theorem continuous_toUnits : Continuous toUnits := by
   refine Units.continuous_iff.2 ⟨?_, ?_⟩ <;>
     simp only [Function.comp_def, toUnits_apply, Units.val_mk0]
