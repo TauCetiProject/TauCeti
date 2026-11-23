@@ -28,7 +28,8 @@ Archimedean case `Λ = ℤ`:
   that reads `x` at the iterated successors `Order.succ^[n] 0` (the nonnegative multiples
   `n • Order.succ 0`) and `y` elsewhere have lengths `{0, 1, 2, …}`, which has no greatest
   element, so `(x^t)⁻¹ ∗ nonArchimedeanWord t x y` is undefined
-  (`TauCeti.InfWord.inv_ofFun_const_mul_nonArchimedeanWord_eq_none`).
+  (`TauCeti.InfWord.inv_ofFun_const_mul_nonArchimedeanWord_eq_none`, packaged for a single letter in
+  `TauCeti.InfWord.exists_isReduced_not_mul_dom`).
 * **Strictness of `CDR(Λ, X)`**: the concatenation `nonArchimedeanWord t x y ++ (x^t)⁻¹` is reduced
   (`TauCeti.InfWord.isReduced_nonArchimedeanWord_append_inv`) yet does not belong to `CDR(Λ, X)`
   (`TauCeti.InfWord.nonArchimedeanWord_append_inv_notMem_CDR`, packaged for a single letter in
@@ -53,8 +54,9 @@ concretely on `Λ = ℤ ×ₗ ℤ` (and `X = Fin 2`).
 
 * `TauCeti.InfWord.common_prefix_lengths_nonArchimedeanWord_eq_range`: the set of common initial
   segment lengths of `x^t` and `nonArchimedeanWord t x y` is the iterated successor range of `0`.
-* `TauCeti.InfWord.inv_ofFun_const_mul_nonArchimedeanWord_eq_none`: `(x^t)⁻¹ ∗ v` is undefined when
-  `t` exceeds all finite multiples of `Order.succ 0` and `x ≠ y`.
+* `TauCeti.InfWord.inv_ofFun_const_mul_nonArchimedeanWord_eq_none`,
+  `TauCeti.InfWord.exists_isReduced_not_mul_dom`: `(x^t)⁻¹ ∗ v` is undefined when `t` exceeds all
+  finite multiples of `Order.succ 0` and `x ≠ y`, so multiplication on reduced words is not total.
 * `TauCeti.InfWord.nonArchimedeanWord_append_inv_notMem_CDR`,
   `TauCeti.InfWord.exists_isReduced_notMem_CDR`: `v ++ (x^t)⁻¹` is reduced yet lies outside
   `CDR(Λ, X)`.
@@ -163,6 +165,16 @@ theorem inv_ofFun_const_mul_nonArchimedeanWord_eq_none {t : Λ}
     exists_isMul_inv_left_iff (isReduced_ofFun_const t x) (isReduced_nonArchimedeanWord t x y),
     common_prefix_lengths_nonArchimedeanWord_eq_range ht' hxy]
   exact TauCeti.Order.not_exists_isGreatest_range_succ_iterate fun n => not_isMax_of_lt (ht' n)
+
+/-- Whenever `Λ` is non-Archimedean and `X` is nonempty, multiplication on reduced `Λ`-words is not
+total: there exist reduced words `u` and `v` whose product `u.mul v` is undefined. -/
+theorem exists_isReduced_not_mul_dom [Nonempty X] (hΛ : ¬ Archimedean Λ) :
+    ∃ u v : InfWord Λ X, u.IsReduced ∧ v.IsReduced ∧ ¬ (u.mul v).Dom := by
+  obtain ⟨t, ht⟩ := TauCeti.Order.not_archimedean_iff_exists_forall_nsmul_succ_zero_lt.1 hΛ
+  obtain ⟨a⟩ := ‹Nonempty X›
+  refine ⟨(ofFun t fun _ => (a, true))⁻¹, nonArchimedeanWord t (a, true) (a, false),
+    (isReduced_ofFun_const t _).inv, isReduced_nonArchimedeanWord t _ _, ?_⟩
+  simp [inv_ofFun_const_mul_nonArchimedeanWord_eq_none ht (x := (a, true)) (y := (a, false))]
 
 /-- When `t` exceeds every finite multiple `n • Order.succ 0` and `x ≠ y`, the concatenation
 `nonArchimedeanWord t x y ++ (x^t)⁻¹` is reduced. -/
