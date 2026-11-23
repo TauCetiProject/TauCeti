@@ -32,13 +32,12 @@ namespace AlgebraicGeometry
 
 universe u v
 
-namespace IsLocallyNoetherian
-
 variable {Y : Scheme.{u}}
 
-open Scheme in
+open Scheme IsLocallyNoetherian in
 /-- Local Noetherianity descends along a quasi-compact covering family of flat morphisms. -/
-theorem of_flat_quasiCompactCover (𝒰 : Y.Cover.{v} (Scheme.precoverage @Flat))
+theorem Scheme.Cover.isLocallyNoetherian_of_flat_quasiCompactCover
+    (𝒰 : Y.Cover.{v} (Scheme.precoverage @Flat))
     [QuasiCompactCover 𝒰.toPreZeroHypercover] (h : ∀ i, IsLocallyNoetherian (𝒰.X i)) :
     IsLocallyNoetherian Y := by
   refine (isLocallyNoetherian_iff_openCover Y.affineCover).mpr fun i ↦ ?_
@@ -87,20 +86,20 @@ theorem of_flat_quasiCompactCover (𝒰 : Y.Cover.{v} (Scheme.precoverage @Flat)
 
 /-- A surjective, open flat morphism from a locally Noetherian scheme has locally Noetherian
 target. No quasi-compactness of the morphism is required. -/
-theorem of_flat_of_surjective_of_isOpenMap {X : Scheme.{u}} (f : X ⟶ Y)
-    [Flat f] [Surjective f] [IsLocallyNoetherian X] (hf : IsOpenMap f) : IsLocallyNoetherian Y := by
+theorem Scheme.Hom.isLocallyNoetherian_of_flat_of_surjective_of_isOpenMap
+    {X : Scheme.{u}} (f : X ⟶ Y) [Flat f] [Surjective f] [IsLocallyNoetherian X]
+    (hf : IsOpenMap f) : IsLocallyNoetherian Y := by
   let 𝒰 : Y.Cover.{0} (Scheme.precoverage @Flat) := f.cover (P := @Flat) inferInstance
   have : Scheme.JointlySurjective (Scheme.precoverage (@Flat : MorphismProperty Scheme.{u})) :=
     Scheme.instJointlySurjectivePrecoverage
   have : QuasiCompactCover 𝒰.toPreZeroHypercover := .of_isOpenMap (𝒰 := 𝒰) (fun _ ↦ hf)
-  exact of_flat_quasiCompactCover 𝒰 fun _ ↦ inferInstanceAs (IsLocallyNoetherian X)
-
-end IsLocallyNoetherian
+  exact 𝒰.isLocallyNoetherian_of_flat_quasiCompactCover fun _ ↦
+    inferInstanceAs (IsLocallyNoetherian X)
 
 /-- Local Noetherianity can be tested on a smooth surjective cover. -/
 theorem Scheme.Hom.isLocallyNoetherian_iff_of_smooth_of_surjective {X Y : Scheme.{u}} (f : X ⟶ Y)
     [Smooth f] [Surjective f] : IsLocallyNoetherian X ↔ IsLocallyNoetherian Y :=
-  ⟨fun _ ↦ .of_flat_of_surjective_of_isOpenMap f f.isOpenMap,
+  ⟨fun _ ↦ f.isLocallyNoetherian_of_flat_of_surjective_of_isOpenMap f.isOpenMap,
     fun _ ↦ LocallyOfFiniteType.isLocallyNoetherian f⟩
 
 end AlgebraicGeometry
