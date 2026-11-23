@@ -33,7 +33,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n] {α : Type*} [CommRing α] [Sta
 for determinant one the inverse is the adjugate. -/
 theorem star_eq_adjugate (g : specialUnitaryGroup n α) :
     star (g : Matrix n n α) = (g : Matrix n n α).adjugate := by
-  obtain ⟨hU, hdet⟩ := mem_specialUnitaryGroup_iff.mp g.2
+  obtain ⟨hU, hdet⟩ := mem_specialUnitaryGroup_iff.mp g.property
   rw [adjugate_eq_det_smul_of_mul_eq_one (mem_unitaryGroup_iff.mp hU), hdet, one_smul]
 
 end Matrix.specialUnitaryGroup

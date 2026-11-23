@@ -128,13 +128,13 @@ full-weight graph-stable type-`E₆` doubled minuscule Chevalley carrier over th
 of its prime field. No finiteness, reductivity, pinning or maximality statement is attached to it,
 and it is not identified with the points of the pinned simply connected `E₆` group scheme, as the
 module docstring describes. -/
-abbrev AmbientGroup : Type := E6DoubledMinuscule.points d.1.Closure
+abbrev AmbientGroup : Type := E6DoubledMinuscule.points d.val.Closure
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the `E₆` diagram. It is
 the carrier's numbered raising subgroup at the same node, the index type `Fin d.1.rank` being the
 upstream Bourbaki index type of the index's own Dynkin type. -/
-def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
-  E6DoubledMinuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_six i)) d.1.Closure
+def simpleRootSubgroup (i : Fin d.val.rank) : Multiplicative d.val.Closure →* d.AmbientGroup :=
+  E6DoubledMinuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_six i)) d.val.Closure
 
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding node.
 This is the equation through which the upstream root-subgroup API reaches `simpleRootSubgroup`. It
@@ -142,9 +142,9 @@ is deliberately not a `simp` lemma: the pinned equations `γ₂ (x_i(u)) = x_{σ
 `Frob_q (x_i(u)) = x_i(u ^ q)` of this branch's Steinberg map are stated against
 `simpleRootSubgroup` itself, and unfolding to `TauCeti.E6DoubledMinuscule.rootSubgroupPoints` would
 keep them from firing, as it does on the branches already assembled. -/
-theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
+theorem simpleRootSubgroup_def (i : Fin d.val.rank) :
     d.simpleRootSubgroup i =
-      E6DoubledMinuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_six i)) d.1.Closure :=
+      E6DoubledMinuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_six i)) d.val.Closure :=
   (rfl)
 
 /-- **The simple-root subgroups sit at the simple roots of the `E₆` root datum.** The character by
@@ -157,7 +157,7 @@ having defined them from the `E₆` Cartan matrix alone, so this is the same ide
 untwisted branch records in `TauCeti.TypeE6LieIndex.rootGeneratorWeight_eq_root_simpleIndex`, on
 the index subtype of this branch. It is not a claim that the doubled carrier is the pinned group of
 that diagram, no pinning being constructed for it. -/
-theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
+theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.val.rank) :
     E6.rootGeneratorWeight (.inl (finCongr d.rank_eq_six i)) =
       (E6.simplyConnectedRootDatum valid_E6).root
         (E6.simpleIndex valid_E6 (finCongr d.rank_eq_six i)) := by
@@ -168,21 +168,21 @@ theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
     cartanMatrix_E6]
 
 /-- The represented full-weight torus, in the fundamental-weight coordinates of the index. -/
-def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
-  (E6DoubledMinuscule.weightTorusPoints d.1.Closure).comp
+def weightTorus : (Fin d.val.rank → d.val.Closureˣ) →* d.AmbientGroup :=
+  (E6DoubledMinuscule.weightTorusPoints d.val.Closure).comp
     (MonoidHom.pi fun i => Pi.evalMonoidHom _ (finCongr d.rank_eq_six.symm i))
 
 /-- The indexed torus is the doubled carrier's torus after the rank identification.
 This equation is not a simp rule, so torus-action lemmas retain the indexed torus. -/
-theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
+theorem weightTorus_apply (s : Fin d.val.rank → d.val.Closureˣ) :
     d.weightTorus s =
-      E6DoubledMinuscule.weightTorusPoints d.1.Closure
+      E6DoubledMinuscule.weightTorusPoints d.val.Closure
         (fun i => s (finCongr d.rank_eq_six.symm i)) :=
   (rfl)
 
 /-- On a constructor index, the rank identification leaves the torus coordinates unchanged. -/
-theorem weightTorus_of (q : PrimePower) (s : Fin 6 → (of q).1.Closureˣ) :
-    (of q).weightTorus s = E6DoubledMinuscule.weightTorusPoints (of q).1.Closure s := by
+theorem weightTorus_of (q : PrimePower) (s : Fin 6 → (of q).val.Closureˣ) :
+    (of q).weightTorus s = E6DoubledMinuscule.weightTorusPoints (of q).val.Closure s := by
   -- `erw` unfolds the constructor's semireducible rank to identify its coordinates with `Fin 6`.
   erw [(of q).weightTorus_apply]
 
@@ -202,7 +202,7 @@ The minuscule weight family alone admits no such equivariance, by
 `TauCeti.DynkinType.e6MinusculeWeight_comp_graphPermE6_notMem_range`; that is why this branch is
 built on the doubled carrier. -/
 theorem e6DoubledMinusculeWeight_e6DoubledMinusculeGraphPerm_diagramPerm
-    (x : Fin 27 ⊕ Fin 27) (i : Fin d.1.rank) :
+    (x : Fin 27 ⊕ Fin 27) (i : Fin d.val.rank) :
     e6DoubledMinusculeWeight (e6DoubledMinusculeGraphPerm x)
         (finCongr d.rank_eq_six (d.toGraphTwistedIndex.diagramPerm i)) =
       e6DoubledMinusculeWeight x (finCongr d.rank_eq_six i) := by
@@ -237,7 +237,7 @@ the diagram permutation the index carries, which is `TauCeti.graphPermE6` by
 points it fixes, characterized below, is correspondingly the untwisted one and not the fixed
 subgroup of the composite. -/
 def frobenius : d.AmbientGroup →* d.AmbientGroup :=
-  E6DoubledMinuscule.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure
+  E6DoubledMinuscule.frobenius d.val.characteristic d.val.fieldExponent d.val.Closure
 
 /-- The Frobenius of a `²E₆` index is the doubled minuscule carrier's Frobenius at the
 characteristic and the exponent the index records. -/
@@ -246,7 +246,8 @@ characteristic and the exponent the index records. -/
 -- `TauCeti.E6DoubledMinuscule.frobenius` would keep them from firing, as it does on the branches
 -- already assembled.
 theorem frobenius_def :
-    d.frobenius = E6DoubledMinuscule.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure :=
+    d.frobenius = E6DoubledMinuscule.frobenius d.val.characteristic d.val.fieldExponent
+        d.val.Closure :=
   (rfl)
 
 /-- The Frobenius acts on the ambient group by raising each entry of the `54 × 54` matrix of a
@@ -254,11 +255,11 @@ point to the `q`-th power. This is the coefficient-level form from which the com
 `Frob_q` with a coordinate symmetry of the carrier is read. -/
 @[simp]
 theorem coe_frobenius_apply (g : d.AmbientGroup) (r c : Fin 54) :
-    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin 54) d.1.Closure) :
-        Matrix (Fin 54) (Fin 54) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 54) d.1.Closure) :
-        Matrix (Fin 54) (Fin 54) d.1.Closure) r c ^ d.1.fieldOrder := by
-  rw [frobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin 54) d.val.Closure) :
+        Matrix (Fin 54) (Fin 54) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 54) d.val.Closure) :
+        Matrix (Fin 54) (Fin 54) d.val.Closure) r c ^ d.val.fieldOrder := by
+  rw [frobenius_def, d.val.fieldOrder_eq_characteristic_pow]
   exact E6DoubledMinuscule.coe_frobenius_apply _ _ _ g r c
 
 /-- **The Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises its parameter
@@ -266,10 +267,10 @@ to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. The diagram perm
 twisted family enters through the other factor `γ₂` of the Steinberg map, and not through this
 one. -/
 @[simp]
-theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem frobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, E6DoubledMinuscule.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
@@ -277,33 +278,33 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
 defining characteristic. The `q`-power Frobenius is its `e`-th power, for `e` the field exponent
 the index records, by `frobenius_eq_primeFrobenius_pow`. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  E6DoubledMinuscule.frobenius d.1.characteristic 1 d.1.Closure
+  E6DoubledMinuscule.frobenius d.val.characteristic 1 d.val.Closure
 
 -- Not `@[simp]`, for the reason `frobenius_def` is not.
 /-- The prime-field Frobenius is the doubled minuscule carrier's Frobenius at exponent one. -/
 theorem primeFrobenius_def :
-    d.primeFrobenius = E6DoubledMinuscule.frobenius d.1.characteristic 1 d.1.Closure :=
+    d.primeFrobenius = E6DoubledMinuscule.frobenius d.val.characteristic 1 d.val.Closure :=
   (rfl)
 
 /-- The prime-field Frobenius acts on the ambient group by raising every entry of its `54 × 54`
 matrix to the `p`-th power, for `p` the defining characteristic. -/
 @[simp]
 theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 54) :
-    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 54) d.1.Closure) :
-        Matrix (Fin 54) (Fin 54) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 54) d.1.Closure) :
-        Matrix (Fin 54) (Fin 54) d.1.Closure) r c ^ d.1.characteristic := by
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 54) d.val.Closure) :
+        Matrix (Fin 54) (Fin 54) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 54) d.val.Closure) :
+        Matrix (Fin 54) (Fin 54) d.val.Closure) r c ^ d.val.characteristic := by
   rw [primeFrobenius_def]
-  simpa only [pow_one] using E6DoubledMinuscule.coe_frobenius_apply d.1.characteristic 1
-    d.1.Closure g r c
+  simpa only [pow_one] using E6DoubledMinuscule.coe_frobenius_apply d.val.characteristic 1
+    d.val.Closure g r c
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def,
     E6DoubledMinuscule.frobenius_rootSubgroupPoints, pow_one]
 
@@ -313,7 +314,7 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
 /-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
 exponent the index records. -/
 theorem frobenius_eq_primeFrobenius_pow :
-    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, E6DoubledMinuscule.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when every entry of its
@@ -328,11 +329,11 @@ carrier with coordinates in `𝔽_q`. It is not the group of points fixed by the
 -- rejects the annotation.
 theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.frobenius ↔
-      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 54) d.1.Closure) :
-        Matrix (Fin 54) (Fin 54) d.1.Closure) r c ∈ d.1.fixedField := by
+      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 54) d.val.Closure) :
+        Matrix (Fin 54) (Fin 54) d.val.Closure) r c ∈ d.val.fixedField := by
   rw [mem_fixedSubgroup, frobenius_def, E6DoubledMinuscule.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 /-! ## The graph automorphism factor of the Steinberg map -/
 
@@ -342,7 +343,7 @@ It realizes on the ambient group the diagram permutation the index carries, send
 Bourbaki-numbered simple-root subgroup at `i` to the one at `σ i` without changing its parameter,
 and it is the left-hand factor `γ₂` of the Steinberg map `γ₂ ∘ Frob_q` of the family. -/
 def graphAut : MulAut d.AmbientGroup :=
-  E6DoubledMinuscule.graphAutomorphismPoints d.1.Closure
+  E6DoubledMinuscule.graphAutomorphismPoints d.val.Closure
 
 /-- The graph automorphism of a `²E₆` index is the doubled minuscule carrier's graph automorphism
 on points over the index's closure. This is its unfolding lemma; the definition itself stays
@@ -350,7 +351,7 @@ sealed. -/
 -- Not `@[simp]`: `graphAut_simpleRootSubgroup` and `graphAut_sq` are the normal forms the
 -- pinned equations of this file are stated against, and unfolding to
 -- `TauCeti.E6DoubledMinuscule.graphAutomorphismPoints` would keep them from firing.
-theorem graphAut_def : d.graphAut = E6DoubledMinuscule.graphAutomorphismPoints d.1.Closure :=
+theorem graphAut_def : d.graphAut = E6DoubledMinuscule.graphAutomorphismPoints d.val.Closure :=
   (rfl)
 
 /-- **The graph automorphism has the pinned action on every simple-root subgroup**: it sends
@@ -358,7 +359,7 @@ theorem graphAut_def : d.graphAut = E6DoubledMinuscule.graphAutomorphismPoints d
 carried across unchanged, with neither a field power nor a sign; on a general root the equation
 would acquire a sign forced by the Chevalley structure constants. -/
 @[simp]
-theorem graphAut_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem graphAut_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.graphAut (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup (d.toGraphTwistedIndex.diagramPerm i) u := by
   -- As in `e6DoubledMinusculeWeight_e6DoubledMinusculeGraphPerm_diagramPerm`, the `finCongr`
@@ -373,7 +374,7 @@ theorem graphAut_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.C
 @[simp]
 theorem graphAut_sq : d.graphAut ^ 2 = 1 := by
   rw [graphAut_def]
-  exact E6DoubledMinuscule.graphAutomorphismPoints_sq d.1.Closure
+  exact E6DoubledMinuscule.graphAutomorphismPoints_sq d.val.Closure
 
 /-- **The twist order of the index annihilates its graph automorphism.** This is the order relation
 on the graph factor of the Steinberg map of a graph-twisted family, and it matches
@@ -419,10 +420,10 @@ theorem steinberg_eq_frobenius_comp_graphAut :
 to `x_{σ i}(u ^ q)`, where `σ` is the diagram permutation the index carries and `q` is its recorded
 field order. -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup (d.toGraphTwistedIndex.diagramPerm i)
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, frobenius_simpleRootSubgroup,
     graphAut_simpleRootSubgroup]
 

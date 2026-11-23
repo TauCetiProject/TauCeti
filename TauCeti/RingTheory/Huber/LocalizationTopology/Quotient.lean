@@ -478,7 +478,9 @@ theorem rationalQuotientHom_surjective :
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
-  rw [rationalQuotientHom, RingEquiv.toRingHom_eq_coe, RingHom.coe_comp, RingEquiv.coe_toRingHom]
+  rw [rationalQuotientHom]
+  dsimp only
+  rw [RingEquiv.toRingHom_eq_coe, RingHom.coe_comp, RingEquiv.coe_toRingHom]
   exact (RingEquiv.surjective _).comp Ideal.Quotient.mk_surjective
 
 /-- **The presentation map is continuous.** With `rationalQuotientHom_surjective` this is what
@@ -554,7 +556,9 @@ theorem rationalQuotientHom_eq_zero_iff_mem
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
-  rw [rationalQuotientHom, RingEquiv.toRingHom_eq_coe, RingHom.comp_apply, RingEquiv.coe_toRingHom,
+  rw [rationalQuotientHom]
+  dsimp only
+  rw [RingEquiv.toRingHom_eq_coe, RingHom.comp_apply, RingEquiv.coe_toRingHom,
     map_eq_zero_iff _ (RingEquiv.injective _), Ideal.Quotient.eq_zero_iff_mem]
 
 end Identification

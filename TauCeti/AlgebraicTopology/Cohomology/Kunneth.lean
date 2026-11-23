@@ -235,10 +235,10 @@ private def singularCohomologyKunnethInvAux (n : ℕ)
     (GradedObject.Monoidal.ιTensorObj
       (fun p ↦ X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
       (fun q ↦ Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
-      x.1.1 x.1.2 n (Finset.mem_antidiagonal.1 x.2)).hom ∘ₗ
-    (kroneckerTensorEquiv X Y x.1.1 x.1.2
-      (hX _ (by have := Finset.mem_antidiagonal.1 x.2; omega))).symm.toLinearMap ∘ₗ
-      slantCross X Y x.1.1 x.1.2 n (Finset.mem_antidiagonal.1 x.2)
+      x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property)).hom ∘ₗ
+    (kroneckerTensorEquiv X Y x.val.1 x.val.2
+      (hX _ (by have := Finset.mem_antidiagonal.1 x.property; omega))).symm.toLinearMap ∘ₗ
+      slantCross X Y x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property)
 
 /-- The inverse of the cohomology Künneth map. -/
 private def singularCohomologyKunnethInv (n : ℕ)
@@ -260,10 +260,10 @@ private lemma singularCohomologyKunnethInv_apply (n : ℕ)
       GradedObject.Monoidal.ιTensorObj
         (fun p ↦ X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
         (fun q ↦ Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
-        x.1.1 x.1.2 n (Finset.mem_antidiagonal.1 x.2)
-        ((kroneckerTensorEquiv X Y x.1.1 x.1.2
-            (hX _ (by have := Finset.mem_antidiagonal.1 x.2; omega))).symm
-          (slantCross X Y x.1.1 x.1.2 n (Finset.mem_antidiagonal.1 x.2) α)) :=
+        x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property)
+        ((kroneckerTensorEquiv X Y x.val.1 x.val.2
+            (hX _ (by have := Finset.mem_antidiagonal.1 x.property; omega))).symm
+          (slantCross X Y x.val.1 x.val.2 n (Finset.mem_antidiagonal.1 x.property) α)) :=
   LinearMap.sum_apply _ _ α
 
 private lemma singularCohomologyKunneth_comp_singularCohomologyKunnethInv (n : ℕ)
@@ -279,8 +279,8 @@ private lemma singularCohomologyKunneth_comp_singularCohomologyKunnethInv (n : �
   · rw [slantCross_singularCohomologyKunneth_ιTensorObj X Y p q n h (hX p (by omega)),
       LinearEquiv.symm_apply_apply]
   · intro x hx
-    have hxp : x.1.1 ≠ p := fun hxp ↦ hx (Subtype.ext (Prod.ext hxp (by
-      have := Finset.mem_antidiagonal.1 x.2
+    have hxp : x.val.1 ≠ p := fun hxp ↦ hx (Subtype.ext (Prod.ext hxp (by
+      have := Finset.mem_antidiagonal.1 x.property
       dsimp only
       omega)))
     rw [slantCross_singularCohomologyKunneth_ιTensorObj_of_ne X Y _ h hxp, map_zero, map_zero]
@@ -304,8 +304,8 @@ private lemma singularCohomologyKunnethInv_comp_singularCohomologyKunneth (n : �
   · rw [slantCross_singularCohomologyKunneth_ιTensorObj X Y p q n h (hX p (by omega)),
       LinearEquiv.apply_symm_apply]
   · intro x hx
-    have hxp : p ≠ x.1.1 := fun hxp ↦ hx (Subtype.ext (Prod.ext hxp.symm (by
-      have := Finset.mem_antidiagonal.1 x.2
+    have hxp : p ≠ x.val.1 := fun hxp ↦ hx (Subtype.ext (Prod.ext hxp.symm (by
+      have := Finset.mem_antidiagonal.1 x.property
       dsimp only
       omega)))
     rw [slantCross_singularCohomologyKunneth_ιTensorObj_of_ne X Y h _ hxp, LinearMap.zero_apply]

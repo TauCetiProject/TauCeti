@@ -25,22 +25,26 @@ all of `ℂⁿ` is `bar∂`-exact: some smooth `u` has `∂u/∂(conj z_j) = f_j
 (`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc`) only solves the
 equation on a strictly smaller polydisc.
 
-The proof is the exhaustion argument of the Dolbeault lemma on discs
-(`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball`), with balls of the sup norm,
-which are polydiscs, in place of discs. The polydisc lemma gives local solutions `h k` on the
-balls `ball 0 (k + 2)`. Consecutive ones differ by a holomorphic function
+The proof exhausts `ℂⁿ` by the balls of the sup norm, which are polydiscs. The polydisc lemma
+gives local solutions `h k` on the balls `ball 0 (k + 2)`. Consecutive ones differ by a
+holomorphic function
 (`TauCeti.differentiableAt_iff_forall_conjWirtingerDeriv_apply_single_eq_zero`), which a partial
 sum of its multivariate Cauchy expansion approximates within `2⁻ᵏ` on `closedBall 0 (k + 1)`
 (`DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi`). Subtracting these polynomials makes
 the local solutions converge, and on each `ball 0 (m + 1)` the limit is `h m` plus a uniform limit
 of holomorphic functions (`TauCeti.exists_differentiableOn_eqOn_add_tsum`).
 
-**Holomorphic gauges.** A unitary connection `d + a` on the trivial line over `ℂⁿ` whose curvature
-has no `(0,2)` part has a `bar∂`-closed `(0,1)` part `b = ∑ j, b_j d(conj z_j)`. If a section `α`
-satisfies `bar∂_a α = 0`, that is `∂α/∂(conj z_j) + b_j α = 0`, choose `g` with `bar∂ g = b`;
-then `exp g • α` is entire (`TauCeti.exists_contDiff_differentiable_exp_smul`). So `α` is an
-entire function times the nowhere vanishing factor `exp (-g)`, and its zeros are those of an entire
-function, with their multiplicities. In Taubes's analysis of Seiberg–Witten solutions near a
+The lemma holds on every finite-dimensional complex space `V`, by transport along a basis: a smooth
+`bar∂`-closed `(0,1)`-form `c`, a family of complex-antilinear maps `c z : V → F` with
+`∂_v (c · w) = ∂_w (c · v)`, is `bar∂ u` for a smooth `u`
+(`TauCeti.exists_contDiff_conjWirtingerDeriv_eq`).
+
+**Holomorphic gauges.** A unitary connection `d + a` on the trivial line over `V` whose curvature
+has no `(0,2)` part has a `bar∂`-closed `(0,1)` part `c`. If a section `α` satisfies
+`bar∂_a α = 0`, that is `bar∂ α + c α = 0`, choose `g` with `bar∂ g = c`; then `exp g • α` is
+holomorphic (`TauCeti.exists_contDiff_differentiable_exp_smul`). So `α` is a holomorphic function
+times the nowhere vanishing factor `exp (-g)`, and its zeros are those of a holomorphic function,
+with their multiplicities. In Taubes's analysis of Seiberg–Witten solutions near a
 pseudoholomorphic curve, the rescaled limits are such pairs on `ℂ_base × ℂ_normal`, and this
 complex gauge is how their zero divisors become holomorphic.
 
@@ -48,8 +52,10 @@ complex gauge is how their zero divisors become holomorphic.
 
 * `TauCeti.exists_contDiff_conjWirtingerDeriv_apply_single_eq`: the `bar∂`-Poincaré lemma for
   `(0,1)`-forms on `ℂⁿ`.
-* `TauCeti.exists_contDiff_differentiable_exp_smul`: a section annihilated by `bar∂ + b` for a
-  `bar∂`-closed `(0,1)`-form `b` is holomorphic in a smooth complex gauge.
+* `TauCeti.exists_contDiff_conjWirtingerDeriv_eq`: the `bar∂`-Poincaré lemma on a
+  finite-dimensional complex space.
+* `TauCeti.exists_contDiff_differentiable_exp_smul`: a section annihilated by `bar∂ + c` for a
+  `bar∂`-closed `(0,1)`-form `c` is holomorphic in a smooth complex gauge.
 
 ## References
 
@@ -127,33 +133,63 @@ theorem exists_contDiff_conjWirtingerDeriv_apply_single_eq {f : ι → (ι → �
         fun w hw ↦ hh_eq m w (hsub hw), hK.contDiffOn_of_finiteDimensional isOpen_ball, huK⟩
   exact ⟨u, contDiffOn_univ.1 hglue.1, fun z ↦ hglue.2 z trivial⟩
 
+
+/-- **The `bar∂`-Poincaré lemma on a finite-dimensional complex space.** Let `c` be a smooth
+`(0,1)`-form on `V`, a family of complex-antilinear maps `c z : V → F` whose coefficients
+`z ↦ c z v` are smooth, with coefficients in a complex Banach space. If `c` is `bar∂`-closed,
+`∂_v (c · w) = ∂_w (c · v)` for the conjugate Wirtinger derivatives `∂_v = \bar∂(·)(v)`, then it is
+`bar∂`-exact: some smooth `u` satisfies `\bar∂u = c`. -/
+theorem exists_contDiff_conjWirtingerDeriv_eq {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+    [FiniteDimensional ℂ V] {c : V → V →L⋆[ℂ] F} (hc : ∀ v, ContDiff ℝ ∞ fun z ↦ c z v)
+    (hclosed : ∀ z v w,
+      conjWirtingerDeriv (fun y ↦ c y w) z v = conjWirtingerDeriv (fun y ↦ c y v) z w) :
+    ∃ u : V → F, ContDiff ℝ ∞ u ∧ ∀ z, conjWirtingerDeriv u z = c z := by
+  -- Transport to the coordinates of a basis `B`, in which `B j` is `Pi.single j 1`.
+  set B := Module.finBasis ℂ V
+  set e : (Fin (Module.finrank ℂ V) → ℂ) ≃L[ℂ] V := B.equivFunL.symm
+  have he (j) : e (Pi.single j 1) = B j := Basis.equivFun_symm_single B j
+  have hcd (v : V) : ContDiff ℝ ∞ fun z ↦ c (e z) v :=
+    (hc v).comp (e.contDiff.restrict_scalars ℝ)
+  have hpull (v : V) (z : Fin (Module.finrank ℂ V) → ℂ) (w : Fin (Module.finrank ℂ V) → ℂ) :
+      conjWirtingerDeriv (fun y ↦ c (e y) v) z w = conjWirtingerDeriv (fun y ↦ c y v) (e z) (e w) :=
+    DFunLike.congr_fun (conjWirtingerDeriv_comp_continuousLinearEquiv e (fun y ↦ c y v) z) w
+  obtain ⟨u, hu, hdu⟩ := exists_contDiff_conjWirtingerDeriv_apply_single_eq
+    (f := fun j z ↦ c (e z) (B j)) (fun j ↦ hcd (B j)) fun z i j ↦ by
+      rw [hpull, hpull, he, he, hclosed]
+  refine ⟨u ∘ e.symm, hu.comp (e.symm.contDiff.restrict_scalars ℝ), fun z ↦ ?_⟩
+  -- Both sides are complex-antilinear, so it suffices to compare them on the basis.
+  refine ContinuousLinearMap.coe_injective (B.ext fun j ↦ ?_)
+  have hej : e.symm (B j) = Pi.single j 1 := by rw [← he, e.symm_apply_apply]
+  simp only [ContinuousLinearMap.coe_coe, conjWirtingerDeriv_comp_continuousLinearEquiv,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hej, hdu, e.apply_symm_apply]
+
 omit [CompleteSpace F] in
-/-- **Holomorphic gauge.** Let `b = ∑ j, b_j d(conj z_j)` be a smooth `bar∂`-closed `(0,1)`-form
-on `ι → ℂ`, for instance the `(0,1)` part of a connection whose curvature has no `(0,2)` part, and
-let `α` be a real-differentiable section with `bar∂ α + b α = 0`, that is
-`∂α/∂(conj z_j) + b_j α = 0` for every `j`. Then some smooth `g` with `∂g/∂(conj z_j) = b_j`
-makes `exp g • α` entire. -/
-theorem exists_contDiff_differentiable_exp_smul {b : ι → (ι → ℂ) → ℂ}
-    (hb : ∀ j, ContDiff ℝ ∞ (b j))
-    (hclosed : ∀ z i j,
-      conjWirtingerDeriv (b j) z (Pi.single i 1) = conjWirtingerDeriv (b i) z (Pi.single j 1))
-    {α : (ι → ℂ) → F} (hα : Differentiable ℝ α)
-    (hαb : ∀ z j, conjWirtingerDeriv α z (Pi.single j 1) + b j z • α z = 0) :
-    ∃ g : (ι → ℂ) → ℂ, ContDiff ℝ ∞ g ∧
-      (∀ z j, conjWirtingerDeriv g z (Pi.single j 1) = b j z) ∧
+/-- **Holomorphic gauge.** Let `c` be a smooth `bar∂`-closed `(0,1)`-form on a finite-dimensional
+complex space `V`, for instance the `(0,1)` part of a connection whose curvature has no `(0,2)`
+part, and let `α` be a real-differentiable section with `bar∂ α + c α = 0`. Then some smooth `g`
+with `bar∂ g = c` makes `exp g • α` holomorphic. -/
+theorem exists_contDiff_differentiable_exp_smul {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] [FiniteDimensional ℂ V] {c : V → V →L⋆[ℂ] ℂ}
+    (hc : ∀ v, ContDiff ℝ ∞ fun z ↦ c z v)
+    (hclosed : ∀ z v w,
+      conjWirtingerDeriv (fun y ↦ c y w) z v = conjWirtingerDeriv (fun y ↦ c y v) z w)
+    {α : V → F} (hα : Differentiable ℝ α)
+    (hαc : ∀ z v, conjWirtingerDeriv α z v + c z v • α z = 0) :
+    ∃ g : V → ℂ, ContDiff ℝ ∞ g ∧ (∀ z, conjWirtingerDeriv g z = c z) ∧
       Differentiable ℂ fun z ↦ cexp (g z) • α z := by
-  obtain ⟨g, hg, hgb⟩ := exists_contDiff_conjWirtingerDeriv_apply_single_eq hb hclosed
-  refine ⟨g, hg, hgb, fun z ↦ ?_⟩
+  obtain ⟨g, hg, hgc⟩ := exists_contDiff_conjWirtingerDeriv_eq hc hclosed
+  refine ⟨g, hg, hgc, fun z ↦ ?_⟩
   have hgd : DifferentiableAt ℝ g z := hg.differentiable (by simp) z
   have hed : DifferentiableAt ℝ (fun y ↦ cexp (g y)) z := hgd.cexp
-  refine (differentiableAt_iff_forall_conjWirtingerDeriv_apply_single_eq_zero
-    (hed.fun_smul (hα z))).2 fun j ↦ ?_
+  refine (differentiableAt_iff_conjWirtingerDeriv_eq_zero (hed.fun_smul (hα z))).2
+    (ContinuousLinearMap.ext fun v ↦ ?_)
   -- `\bar∂ (exp g) = exp g • \bar∂ g` by the chain rule through the holomorphic `exp`.
-  have hexp : conjWirtingerDeriv (fun y ↦ cexp (g y)) z (Pi.single j 1) = cexp (g z) * b j z := by
+  have hexp : conjWirtingerDeriv (fun y ↦ cexp (g y)) z v = cexp (g z) * c z v := by
     have hcomp := conjWirtingerDeriv_comp (φ := cexp) differentiableAt_exp hgd
     rw [Function.comp_def] at hcomp
-    rw [hcomp, ContinuousLinearMap.comp_apply, hgb z j, (hasDerivAt_exp (g z)).hasFDerivAt.fderiv]
+    rw [hcomp, ContinuousLinearMap.comp_apply, hgc z, (hasDerivAt_exp (g z)).hasFDerivAt.fderiv]
     simp [mul_comm]
-  rw [conjWirtingerDeriv_smul_apply hed (hα z), hexp, mul_smul, ← smul_add, hαb z j, smul_zero]
+  rw [conjWirtingerDeriv_smul_apply hed (hα z), hexp, mul_smul, ← smul_add, hαc z v, smul_zero,
+    zero_apply]
 
 end TauCeti

@@ -79,6 +79,20 @@ def fullUnitLattice : Submodule ℤ (singleParityCheckCode ℝ (InfinitePlace K)
     x ∈ fullUnitLattice K ↔ ∃ u, unitLogEmbedding K u = x :=
   (Iff.rfl)
 
+/-- The **unit logarithmic subgroup** `log |(𝓞 K)ˣ| ⊆ ℝ^{InfinitePlace K}`: the weighted logarithms
+`(mult(v) log |u|_v)_v` of the units `u` of `𝓞 K`, that is the image of `TauCeti.unitLogEmbedding`
+in the ambient space of functions on the infinite places. -/
+def unitLogSubgroup : AddSubgroup (InfinitePlace K → ℝ) :=
+  ((singleParityCheckCode ℝ (InfinitePlace K)).subtype.toAddMonoidHom.comp
+    (unitLogEmbedding K)).range
+
+variable {K} in
+/-- The unit logarithmic subgroup consists exactly of the weighted logarithms of units. -/
+@[simp] theorem mem_unitLogSubgroup {l : InfinitePlace K → ℝ} :
+    l ∈ unitLogSubgroup K ↔
+      ∃ u : (𝓞 K)ˣ, (unitLogEmbedding K (Additive.ofMul u) : InfinitePlace K → ℝ) = l :=
+  ⟨fun ⟨u, hu⟩ ↦ ⟨u.toMul, hu⟩, fun ⟨u, hu⟩ ↦ ⟨Additive.ofMul u, hu⟩⟩
+
 /-! Comparison with Mathlib's coordinates transfers Dirichlet's lattice property and supplies
 the coordinate map used for the Euclidean covolume comparison in `Log.Covolume`.
 The distinguished place is not part of the full logarithmic embedding. -/

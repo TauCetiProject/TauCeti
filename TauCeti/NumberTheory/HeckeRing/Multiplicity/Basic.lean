@@ -133,7 +133,8 @@ noncomputable def mulMapOf {H₁ H₂ : Subgroup G} (h₁ : H₁.toSubmonoid ≤
     (h₂ : H₂.toSubmonoid ≤ Δ) (H₃ : Subgroup G) (g₁ g₂ : Δ)
     (p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)) : HeckeCoset Δ H₁ H₃ :=
   mk H₁ H₃ ⟨(p.1.out : G) * g₁ * ((p.2.out : G) * g₂),
-    Δ.mul_mem (Δ.mul_mem (h₁ p.1.out.2) g₁.2) (Δ.mul_mem (h₂ p.2.out.2) g₂.2)⟩
+    Δ.mul_mem (Δ.mul_mem (h₁ p.1.out.property) g₁.property) (Δ.mul_mem
+        (h₂ p.2.out.property) g₂.property)⟩
 
 /-- The map sending a pair of coset representatives `(σᵢ, τⱼ)` to the mixed double coset
 `H₁ (σᵢ g₁ τⱼ g₂) H₃` of their product: the Hecke-triple form of `mulMapOf`. -/
@@ -157,7 +158,8 @@ theorem mulMapOf_eq_mk {H₁ H₂ : Subgroup G} (h₁ : H₁.toSubmonoid ≤ Δ)
     (p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)) :
     mulMapOf h₁ h₂ H₃ g₁ g₂ p =
       mk H₁ H₃ ⟨(p.1.out : G) * g₁ * ((p.2.out : G) * g₂),
-        Δ.mul_mem (Δ.mul_mem (h₁ p.1.out.2) g₁.2) (Δ.mul_mem (h₂ p.2.out.2) g₂.2)⟩ :=
+        Δ.mul_mem (Δ.mul_mem (h₁ p.1.out.property) g₁.property) (Δ.mul_mem
+            (h₂ p.2.out.property) g₂.property)⟩ :=
   (rfl)
 
 /-- The value of `mulMap` on a pair of representatives: the Hecke-triple form of
@@ -166,8 +168,8 @@ theorem mulMap_eq_mk (H₁ H₂ H₃ : Subgroup G) [IsHeckeTriple Δ H₁ H₂] 
     (p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)) :
     mulMap H₁ H₂ H₃ g₁ g₂ p =
       mk H₁ H₃ ⟨(p.1.out : G) * g₁ * ((p.2.out : G) * g₂),
-        Δ.mul_mem (Δ.mul_mem (IsHeckeTriple.mem_of_mem_left H₂ p.1.out.2) g₁.2)
-          (Δ.mul_mem (IsHeckeTriple.mem_of_mem_right H₁ p.2.out.2) g₂.2)⟩ :=
+        Δ.mul_mem (Δ.mul_mem (IsHeckeTriple.mem_of_mem_left H₂ p.1.out.property) g₁.property)
+          (Δ.mul_mem (IsHeckeTriple.mem_of_mem_right H₁ p.2.out.property) g₂.property)⟩ :=
   mulMapOf_eq_mk _ _ H₃ g₁ g₂ p
 
 /-- **A factorisation `σᵢ g₁ τⱼ g₂ = l d r` with `l ∈ H₁` and `r ∈ H₃` names the double coset
@@ -210,5 +212,27 @@ lemma mulMap_eq_of_mk_eq {H₁ H₂ H₃ : Subgroup G} [IsHeckeTriple Δ H₁ H�
     (h : ((p.1.out : G) * g₁ * ((p.2.out : G) * g₂) : G ⧸ H₃) = ((d : G) : G ⧸ H₃)) :
     mulMap H₁ H₂ H₃ g₁ g₂ p = mk H₁ H₃ d :=
   mulMapOf_eq_of_mk_eq h
+
+/-- **If the product set of two double cosets lies in the double coset of `d`, so does every
+product of coset representatives**, from bare containments: `mulMapOf` is constant with value
+the double coset of `d`. -/
+theorem mulMapOf_eq_of_mul_subset_doubleCoset {H₁ H₂ H₃ : Subgroup G}
+    {h₁ : H₁.toSubmonoid ≤ Δ} {h₂ : H₂.toSubmonoid ≤ Δ} {g₁ g₂ d : Δ}
+    (hd : doubleCoset (g₁ : G) H₁ H₂ * doubleCoset (g₂ : G) H₂ H₃ ⊆ doubleCoset (d : G) H₁ H₃)
+    (p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)) :
+    mulMapOf h₁ h₂ H₃ g₁ g₂ p = mk H₁ H₃ d :=
+  (mulMapOf_eq_mk h₁ h₂ H₃ g₁ g₂ p).trans <| mk_eq_mk_of_mem <| hd <| Set.mul_mem_mul
+    (mem_doubleCoset.mpr ⟨p.1.out, p.1.out.property, 1, H₂.one_mem, (mul_one _).symm⟩)
+    (mem_doubleCoset.mpr ⟨p.2.out, p.2.out.property, 1, H₃.one_mem, (mul_one _).symm⟩)
+
+/-- If the product set of two double cosets lies in the double coset of `d`, so does every
+product of coset representatives: the Hecke-triple form of
+`mulMapOf_eq_of_mul_subset_doubleCoset`. -/
+theorem mulMap_eq_of_mul_subset_doubleCoset {H₁ H₂ H₃ : Subgroup G} [IsHeckeTriple Δ H₁ H₂]
+    {g₁ g₂ d : Δ}
+    (hd : doubleCoset (g₁ : G) H₁ H₂ * doubleCoset (g₂ : G) H₂ H₃ ⊆ doubleCoset (d : G) H₁ H₃)
+    (p : DecompQuotient H₁ H₂ (g₁ : G) × DecompQuotient H₂ H₃ (g₂ : G)) :
+    mulMap H₁ H₂ H₃ g₁ g₂ p = mk H₁ H₃ d :=
+  mulMapOf_eq_of_mul_subset_doubleCoset hd p
 
 end HeckeCoset
