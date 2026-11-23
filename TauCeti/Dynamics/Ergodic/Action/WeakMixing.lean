@@ -75,7 +75,8 @@ theorem IsWeaklyMixing.measureReal_eq_zero_or_one (h : IsWeaklyMixing μ) {s : S
     (hs : MeasurableSet s) (hinv : ∀ t : ℝ, (fun x => t +ᵥ x) ⁻¹' s =ᵐ[μ] s) :
     μ.real s = 0 ∨ μ.real s = 1 := by
   have hconst : ∀ t : ℝ, μ.real ((fun x => t +ᵥ x) ⁻¹' s ∩ s) = μ.real s := fun t => by
-    rw [measureReal_congr ((hinv t).inter (EventuallyEq.refl _ s)), inter_self]
+    have hs' : s =ᵐ[μ] s := by rfl
+    rw [measureReal_congr ((hinv t).inter hs'), inter_self]
   have h0 := h s s hs hs
   simp_rw [hconst] at h0
   have hc := abs_eq_zero.1 (TauCeti.intervalIntegral.eq_zero_of_tendsto_average_const h0)
