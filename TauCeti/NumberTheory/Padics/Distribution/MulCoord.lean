@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Transform
+public import TauCeti.NumberTheory.Padics.Distribution.Derivative
 public import TauCeti.NumberTheory.Padics.Measure.Moments
 import Mathlib.Algebra.CharZero.Infinite
+import TauCeti.Algebra.Module.NatInt
 
 /-!
 # Multiplication by the coordinate on locally analytic functions and distributions
@@ -39,6 +41,12 @@ derivation `∂ = (1 + T) d/dT` (`amiceTransform_mulCoord`). On the distribution
 the measure weighted by the coordinate (`mulCoord_ofMeasure`), for which the corresponding
 identity is `AbstractMeasure.amiceTransform_weight_id_smul_one`.
 
+Multiplication by the coordinate and the derivative of
+`TauCeti.NumberTheory.Padics.Distribution.Derivative` satisfy the Leibniz rule `(x f)' = f + x f'`
+(`derivative_mulCoord`); on a stage it follows from the coefficient identity
+`d/dw (x f) = pʰ f + x (d f / d w)` (`discDerivative_mulCoord`). Its transpose is
+`x (d μ) = μ + d (x μ)` (`mulCoord_derivative`).
+
 ## Main definitions
 
 * `TauCeti.AnalyticStage.mulCoord S`: multiplication by `x` on the analytic stage `LA_h(E)`.
@@ -57,6 +65,9 @@ identity is `AbstractMeasure.amiceTransform_weight_id_smul_one`.
 * `TauCeti.LocallyAnalyticDistribution.amiceTransform_mulCoord`: `A_{xμ} = ∂ A_μ`.
 * `TauCeti.LocallyAnalyticDistribution.mulCoord_ofMeasure`: on measures, multiplication by `x`
   is the weighted measure.
+* `TauCeti.AnalyticStage.derivative_mulCoord`, `TauCeti.LocallyAnalytic.derivative_mulCoord`: the
+  Leibniz rule `(x f)' = f + x f'`.
+* `TauCeti.LocallyAnalyticDistribution.mulCoord_derivative`: `x (d μ) = μ + d (x μ)`.
 
 ## References
 
@@ -271,6 +282,28 @@ private theorem mulCoord_amiceTerm {n : ℕ} (hn : n + 1 < p ^ h) (e : E) :
     push_cast at hk ⊢
     linear_combination hk
 
+/-! ### The Leibniz rule for the derivative -/
+
+omit [CompleteSpace E] in
+/-- **The Leibniz rule for the coordinate.** Differentiating `x f = (a + pʰ w) f` in `w` gives
+`pʰ f + x (d f / d w)`. -/
+theorem discDerivative_mulCoord (c : AnalyticStage p h E) :
+    discDerivative S (mulCoord S c) = (p : ℤ_[p]) ^ h • c + mulCoord S (discDerivative S c) := by
+  ext ⟨a, _ | n⟩ <;>
+  · simp only [discDerivative_apply, mulCoord_apply_zero, mulCoord_apply_succ, FunLike.coe_add,
+      Pi.add_apply, smul_apply, ← Nat.cast_smul_eq_nsmul ℤ_[p]]
+    push_cast
+    module
+
+omit [CompleteSpace E] in
+/-- **The Leibniz rule for the coordinate**: `(x f)' = f + x f'`. -/
+theorem derivative_mulCoord (𝕜 : Type*) [Field 𝕜] [Module 𝕜 E] [ContinuousConstSMul 𝕜 E]
+    [NeZero (p : 𝕜)] [SMulCommClass ℤ_[p] 𝕜 E] (c : AnalyticStage p h E) :
+    derivative 𝕜 (mulCoord 𝕜 c) = c + mulCoord 𝕜 (derivative 𝕜 c) := by
+  have hp : ((p : 𝕜) ^ h) ≠ 0 := pow_ne_zero h (NeZero.ne _)
+  rw [derivative_def, derivative_def, discDerivative_mulCoord, natCast_pow_smul_eq ℤ_[p] 𝕜,
+    smul_add, inv_smul_smul₀ hp, map_smul]
+
 end AnalyticStage
 
 namespace LocallyAnalytic
@@ -312,6 +345,14 @@ theorem mulCoord_mahlerTerm (e : E) (n : ℕ) :
   rw [← hterm n ((Nat.lt_succ_self n).trans hn), mulCoord_ofStage, mulCoord_amiceTerm S hn,
     map_add, hterm _ hn, hterm _ ((Nat.lt_succ_self n).trans hn)]
 
+/-- **The Leibniz rule for the coordinate**: `(x f)' = f + x f'`. -/
+theorem derivative_mulCoord (𝕜 : Type*) [Field 𝕜] [NeZero (p : 𝕜)] [Module 𝕜 E]
+    [ContinuousConstSMul 𝕜 E] [SMulCommClass ℤ_[p] 𝕜 E] (f : LocallyAnalytic p 𝕜 E) :
+    derivative 𝕜 (mulCoord 𝕜 f) = f + mulCoord 𝕜 (derivative 𝕜 f) := by
+  obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
+  rw [← ofStage_def, mulCoord_ofStage, derivative_ofStage, derivative_ofStage, mulCoord_ofStage,
+    AnalyticStage.derivative_mulCoord, map_add]
+
 end LocallyAnalytic
 
 namespace LocallyAnalyticDistribution
@@ -324,36 +365,28 @@ variable {K : Type*} [NontriviallyNormedField K] [Algebra ℤ_[p] K]
 /-- Multiplication of a locally analytic distribution by the coordinate `x`:
 `(x μ)(f) = μ(x f)`. -/
 noncomputable def mulCoord :
-    LocallyAnalyticDistribution p K →ₗ[K] LocallyAnalyticDistribution p K where
-  toFun μ := ⟨(μ : Module.Dual K (LocallyAnalytic p K K)) ∘ₗ LocallyAnalytic.mulCoord K,
-    mem_iff.mpr fun h ↦ by
-      convert (stage h μ ∘L AnalyticStage.mulCoord K).continuous using 1
-      ext c
-      simp⟩
-  map_add' μ ν := rfl
-  map_smul' a μ := rfl
+    LocallyAnalyticDistribution p K →ₗ[K] LocallyAnalyticDistribution p K :=
+  dualMap (LocallyAnalytic.mulCoord K) (fun _ ↦ AnalyticStage.mulCoord K) (mulCoord_ofStage K)
 
 /-- The distribution `x μ` takes the value `μ(x f)` on `f`. -/
 @[simp]
 theorem coe_mulCoord_apply (μ : LocallyAnalyticDistribution p K) (f : LocallyAnalytic p K K) :
     (mulCoord μ : Module.Dual K (LocallyAnalytic p K K)) f =
       (μ : Module.Dual K (LocallyAnalytic p K K)) (LocallyAnalytic.mulCoord K f) :=
-  (rfl)
+  coe_dualMap_apply μ f
 
 /-- The restriction of `x μ` to a stage is the restriction of `μ` composed with multiplication by
 the coordinate on that stage. -/
 @[simp]
 theorem stage_mulCoord (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
-    stage h (mulCoord μ) = stage h μ ∘L AnalyticStage.mulCoord K := by
-  ext c
-  simp
+    stage h (mulCoord μ) = stage h μ ∘L AnalyticStage.mulCoord K :=
+  stage_dualMap h μ
 
 /-- Multiplication by the coordinate does not increase the stage seminorms. -/
 theorem stageSeminorm_mulCoord_le (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
-    stageSeminorm h (mulCoord μ) ≤ stageSeminorm h μ := by
-  rw [stageSeminorm_apply, stageSeminorm_apply, stage_mulCoord]
-  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-    (mul_le_of_le_one_right (norm_nonneg _) opNorm_mulCoord_le_one)
+    stageSeminorm h (mulCoord μ) ≤ stageSeminorm h μ :=
+  (stageSeminorm_dualMap_le h μ).trans
+    (mul_le_of_le_one_left (apply_nonneg _ _) opNorm_mulCoord_le_one)
 
 /-- **The Amice transform of `x μ`** is the Mahler derivation `∂ = (1 + T) d/dT` of the Amice
 transform of `μ`. -/
@@ -383,6 +416,12 @@ theorem mulCoord_ofMeasure (μ : AbstractMeasure ℤ_[p] K K) :
   congr 1
   ext x
   simp [Algebra.smul_def]
+
+/-- **The Leibniz rule for distributions**: `x (d μ) = μ + d (x μ)`. -/
+theorem mulCoord_derivative [NeZero (p : K)] (μ : LocallyAnalyticDistribution p K) :
+    mulCoord (derivative μ) = μ + derivative (mulCoord μ) := by
+  refine Subtype.ext <| LinearMap.ext fun f ↦ ?_
+  simp [LocallyAnalytic.derivative_mulCoord]
 
 end LocallyAnalyticDistribution
 

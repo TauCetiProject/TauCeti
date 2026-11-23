@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Distribution.Amice.Convolution
-public import TauCeti.NumberTheory.Padics.Distribution.MulCoord
+public import TauCeti.NumberTheory.Padics.Distribution.Dual
 import Mathlib.Algebra.Polynomial.Identities
 import TauCeti.Algebra.Module.NatInt
 
@@ -15,10 +14,14 @@ import TauCeti.Algebra.Module.NatInt
 
 On the disc `a + pʰℤ_p` the coordinate is `x = a + pʰ w`, and a locally analytic function is the
 power series `∑ₙ c(a, n) wⁿ`. Its derivative in the disc coordinate `w` has coefficients
-`(n + 1) • c(a, n + 1)`. This is `TauCeti.AnalyticStage.discDerivative`, a continuous linear
-endomorphism of the analytic stage `LA_h(E)` which does not increase norms, for every complete
-ultrametric `ℤ_p`-module `E`. It is the derivative of the evaluated function in the strong sense
-of a quadratic Taylor remainder: on each disc,
+`(n + 1) • c(a, n + 1)`. This coefficient operator is `TauCeti.AnalyticStage.discDerivative`, a
+continuous linear endomorphism of the analytic stage `LA_h(E)` which does not increase norms, for
+every ultrametric normed group `E` with a semiring action.
+
+When `E` is moreover a complete `ℤ_p`-module with contractive `ℤ_p`-action
+(`‖r • v‖ ≤ ‖r‖ ‖v‖`), `discDerivative` is the derivative of the evaluated function: it evaluates
+to the series of termwise derivatives (`hasSum_eval_discDerivative`), and on each disc the Taylor
+remainder of order two is quadratic,
 
 `‖f(a + pʰ (w + d)) - f(a + pʰ w) - d • (d f / d w)(a + pʰ w)‖ ≤ ‖d‖² ‖c‖`
 
@@ -32,24 +35,16 @@ invertible on the coefficients. For a field `𝕜` acting on `E` in which `p ≠
 (`transition_derivative`). It therefore induces the derivative
 `TauCeti.LocallyAnalytic.derivative 𝕜` of locally analytic functions `LA(ℤ_p, E)`, which is the
 derivative of the evaluated functions with a quadratic remainder
-(`LocallyAnalytic.exists_norm_eval_sub_sub_smul_eval_derivative_le`). It kills the constants
-(`derivative_mahlerTerm_zero`) and satisfies the Leibniz rule for multiplication by the coordinate,
-`(x f)' = f + x f'` (`derivative_mulCoord`).
+(`LocallyAnalytic.exists_norm_eval_sub_sub_smul_eval_derivative_le`).
 
 The transpose is the derivative of a distribution, `TauCeti.LocallyAnalyticDistribution.derivative`,
-with the sign convention `(d μ)(f) = μ(f')`. Over a field `K` of characteristic zero, it acts on the
-Amice transform as multiplication by `log (1 + T)` (`amiceTransform_derivative`):
+with the sign convention `(d μ)(f) = μ(f')`. It multiplies the stage seminorm of level `h` by at
+most `‖p‖⁻ʰ`.
 
-`A_{d μ} = log (1 + T) · A_μ`.
-
-The proof needs no formula for the derivatives of the binomial polynomials. By the Leibniz rule,
-`x (d μ) = μ + d (x μ)`, and multiplication by `x` acts on Amice transforms as the derivation
-`∂ = (1 + T) d/dT` (`amiceTransform_mulCoord`). Since `∂ log (1 + T) = 1`, the difference
-`A_{d μ} - log (1 + T) A_μ` intertwines multiplication by `x` with `∂`; its constant coefficient
-vanishes because the derivative kills the constant `1`, and the coefficient formula
-`∂ (∑ₙ aₙ Tⁿ) = ∑ₙ ((n + 1) aₙ₊₁ + n aₙ) Tⁿ` then kills all its coefficients by induction. In
-particular the derivative at `0`, `f ↦ f'(0)`, has Amice transform `log (1 + T)`
-(`amiceTransform_derivative_one`).
+The Leibniz rules for multiplication by the coordinate are in
+`TauCeti.NumberTheory.Padics.Distribution.MulCoord`, and the Amice transform of the transpose
+derivative, `A_{d μ} = log (1 + T) · A_μ`, is in
+`TauCeti.NumberTheory.Padics.Distribution.Amice.Derivative`.
 
 ## Main definitions
 
@@ -60,19 +55,14 @@ particular the derivative at `0`, `f ↦ f'(0)`, has Amice transform `log (1 + T
 
 ## Main results
 
+* `TauCeti.AnalyticStage.hasSum_eval_discDerivative`: the derivative in the disc coordinate
+  evaluates to the series of termwise derivatives.
 * `TauCeti.AnalyticStage.norm_eval_add_sub_sub_smul_eval_discDerivative_le` and
   `TauCeti.LocallyAnalytic.exists_norm_eval_sub_sub_smul_eval_derivative_le`: the derivatives
   differentiate the evaluated functions, with a quadratic remainder.
 * `TauCeti.AnalyticStage.transition_derivative`: the derivative commutes with re-expansion.
-* `TauCeti.LocallyAnalytic.derivative_mulCoord`: the Leibniz rule `(x f)' = f + x f'`.
-* `TauCeti.LocallyAnalytic.derivative_mahlerTerm_zero`: the derivative of a constant is zero.
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm_derivative_le`: the derivative multiplies the
   stage seminorm of level `h` by at most `‖p‖⁻ʰ`.
-* `TauCeti.LocallyAnalyticDistribution.mulCoord_derivative`: `x (d μ) = μ + d (x μ)`.
-* `TauCeti.LocallyAnalyticDistribution.amiceTransform_derivative`: `A_{d μ} = log (1 + T) · A_μ`.
-* `TauCeti.LocallyAnalyticDistribution.derivative_mul`,
-  `TauCeti.LocallyAnalyticDistribution.derivative_injective`: the transpose derivative commutes with
-  convolution, `d (μ * ν) = d μ * ν`, and is injective.
 
 ## References
 
@@ -112,6 +102,14 @@ private theorem tendsto_discDerivativeCoeff (c : AnalyticStage p h E) :
   exact squeeze_zero_norm (norm_discDerivativeCoeff_le c)
     ((tendsto_zero_iff_norm_tendsto_zero.mp c.tendsto_cofinite).comp hinj.tendsto_cofinite)
 
+/-- The coefficient vector of the derivative in `w` has norm at most `‖c‖`. -/
+private theorem norm_mkOfDiscrete_discDerivativeCoeff_le (c : AnalyticStage p h E) :
+    ‖ZeroAtInftyContinuousMap.mkOfDiscrete (discDerivativeCoeff c)
+      (tendsto_discDerivativeCoeff c)‖ ≤ ‖c‖ :=
+  (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦ by
+    rw [ZeroAtInftyContinuousMap.coe_mkOfDiscrete]
+    exact (norm_discDerivativeCoeff_le c i).trans (c.norm_coe_le_norm _)
+
 variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E]
 
 /-- The derivative in the disc coordinate on the analytic stage `LA_h(E)`: on the disc of `a`,
@@ -130,9 +128,7 @@ noncomputable def discDerivative : AnalyticStage p h E →L[S] AnalyticStage p h
   { L with
     cont := AddMonoidHomClass.continuous_of_bound L 1 fun c ↦ by
       rw [one_mul]
-      refine (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦ ?_
-      simp only [L, LinearMap.coe_mk, AddHom.coe_mk, ZeroAtInftyContinuousMap.coe_mkOfDiscrete]
-      exact (norm_discDerivativeCoeff_le c i).trans (c.norm_coe_le_norm _) }
+      exact norm_mkOfDiscrete_discDerivativeCoeff_le c }
 
 private theorem coe_discDerivative (c : AnalyticStage p h E) :
     ⇑(discDerivative S c) = discDerivativeCoeff c :=
@@ -147,8 +143,7 @@ theorem discDerivative_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (n : �
 
 /-- The derivative in the disc coordinate does not increase norms. -/
 theorem norm_discDerivative_le (c : AnalyticStage p h E) : ‖discDerivative S c‖ ≤ ‖c‖ :=
-  (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦
-    coe_discDerivative S c ▸ (norm_discDerivativeCoeff_le c i).trans (c.norm_coe_le_norm _)
+  norm_mkOfDiscrete_discDerivativeCoeff_le c
 
 /-- The derivative in the disc coordinate has operator norm at most `1`. -/
 theorem opNorm_discDerivative_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] :
@@ -182,38 +177,21 @@ theorem derivative_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (n : ℕ) 
 
 end Derivative
 
-section NormedField
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
-
-variable (𝕜) in
 /-- The derivative in `x` multiplies norms by at most `‖p⁻ʰ‖`. -/
-theorem norm_derivative_le (c : AnalyticStage p h E) :
+theorem norm_derivative_le (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 E]
+    (c : AnalyticStage p h E) :
     ‖derivative 𝕜 c‖ ≤ ‖((p : 𝕜) ^ h)⁻¹‖ * ‖c‖ := by
   rw [derivative_def]
   exact (norm_smul_le _ _).trans
     (mul_le_mul_of_nonneg_left (norm_discDerivative_le 𝕜 c) (norm_nonneg _))
 
 /-- The derivative in `x` has operator norm at most `‖p⁻ʰ‖`. -/
-theorem opNorm_derivative_le :
+theorem opNorm_derivative_le {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] :
     ‖derivative (p := p) (h := h) (E := E) 𝕜‖ ≤ ‖((p : 𝕜) ^ h)⁻¹‖ :=
   ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) (norm_derivative_le 𝕜)
 
-end NormedField
-
 variable [hp : Fact p.Prime] [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E] [SMulCommClass ℤ_[p] S E]
-
-/-- **The Leibniz rule for the coordinate.** Differentiating `x f = (a + pʰ w) f` in `w` gives
-`pʰ f + x (d f / d w)`. -/
-theorem discDerivative_mulCoord (c : AnalyticStage p h E) :
-    discDerivative S (mulCoord S c) = (p : ℤ_[p]) ^ h • c + mulCoord S (discDerivative S c) := by
-  ext ⟨a, _ | n⟩ <;>
-  · simp only [discDerivative_apply, mulCoord_apply_zero, mulCoord_apply_succ, FunLike.coe_add,
-      Pi.add_apply, smul_apply, ← Nat.cast_smul_eq_nsmul ℤ_[p]]
-    push_cast
-    module
-
-variable [CompleteSpace E]
+  [CompleteSpace E]
 
 /-- **The derivative in `v` of the re-expansion.** On the disc of level `h + 1` where
 `w = b + p v`, differentiating in `v` is `p` times the re-expansion of the derivative in `w`. -/
@@ -241,6 +219,18 @@ theorem discDerivative_transition (c : AnalyticStage p h E) :
   rw [discDerivative_apply, ← Nat.cast_smul_eq_nsmul ℤ_[p], smul_smul, smul_smul, smul_smul,
     hscalar, mul_assoc]
 
+/-- **The derivative in the disc coordinate evaluates to the termwise derivative.** On the disc of
+`a`, the derivative in `w` of `f = eval c` is `∑ₙ (n wⁿ⁻¹) • c(a, n)`. -/
+theorem hasSum_eval_discDerivative (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (w : ℤ_[p]) :
+    HasSum (fun n : ℕ ↦ ((n : ℤ_[p]) * w ^ (n - 1)) • c (a, n))
+      (eval S (discDerivative S c) ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w)) := by
+  -- Shift the series `∑ₙ wⁿ • (n + 1) • c(a, n + 1)` by one degree; its degree `0` term vanishes.
+  refine (hasSum_nat_add_iff' 1).mp ?_
+  simp only [Finset.range_one, Finset.sum_singleton, Nat.cast_zero, zero_mul, zero_smul, sub_zero]
+  refine (hasSum_eval_natCast_val_add_mul S (discDerivative S c) a w).congr_fun fun n ↦ ?_
+  rw [discDerivative_apply, ← Nat.cast_smul_eq_nsmul ℤ_[p], smul_smul, Nat.add_sub_cancel,
+    mul_comm]
+
 /-- **The derivative in the disc coordinate differentiates the evaluated function.** On the disc
 of `a`, the Taylor remainder of order two of `f = eval c` in the disc coordinate is bounded by
 `‖d‖² ‖c‖`:
@@ -252,29 +242,18 @@ theorem norm_eval_add_sub_sub_smul_eval_discDerivative_le (c : AnalyticStage p h
         eval S c ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) -
         d • eval S (discDerivative S c) ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w)‖ ≤
       ‖d‖ ^ 2 * ‖c‖ := by
-  -- The derivative series, shifted by one degree, is `∑ₙ (n wⁿ⁻¹ d) • c(a, n)`.
-  have hD := ((hasSum_eval_natCast_val_add_mul S (discDerivative S c) a w).const_smul d)
-  have hD' : HasSum (fun n : ℕ ↦ ((n : ℤ_[p]) * w ^ (n - 1) * d) • c (a, n))
-      (d • eval S (discDerivative S c) ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w)) := by
-    refine (hasSum_nat_add_iff' 1).mp ?_
-    simp only [Finset.range_one, Finset.sum_singleton, Nat.cast_zero, zero_mul, zero_smul,
-      sub_zero]
-    refine hD.congr_fun fun n ↦ ?_
-    rw [discDerivative_apply, ← Nat.cast_smul_eq_nsmul ℤ_[p], smul_smul, smul_smul,
-      Nat.add_sub_cancel]
-    congr 1
-    push_cast
-    ring
   have hsum := ((hasSum_eval_natCast_val_add_mul S c a (w + d)).sub
-    (hasSum_eval_natCast_val_add_mul S c a w)).sub hD'
+    (hasSum_eval_natCast_val_add_mul S c a w)).sub
+    ((hasSum_eval_discDerivative S c a w).const_smul d)
   rw [← hsum.tsum_eq]
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun n ↦ ?_
-  -- By the binomial expansion, `(w + d)ⁿ - wⁿ - n wⁿ⁻¹ d = k d²` with `k ∈ ℤ_p`.
+  -- By the binomial expansion, `(w + d)ⁿ - wⁿ - d (n wⁿ⁻¹) = k d²` with `k ∈ ℤ_p`.
   obtain ⟨k, hk⟩ := Polynomial.binomExpansion (Polynomial.X ^ n) w d
   simp only [Polynomial.eval_pow, Polynomial.eval_X, Polynomial.derivative_X_pow,
     Polynomial.eval_mul, Polynomial.eval_C] at hk
-  rw [← sub_smul, ← sub_smul, hk, show (w ^ n + (n : ℤ_[p]) * w ^ (n - 1) * d + k * d ^ 2 - w ^ n -
-    (n : ℤ_[p]) * w ^ (n - 1) * d) = k * d ^ 2 by ring]
+  have hrem : (w + d) ^ n - w ^ n - d * ((n : ℤ_[p]) * w ^ (n - 1)) = k * d ^ 2 := by
+    linear_combination hk
+  rw [smul_smul, ← sub_smul, ← sub_smul, hrem]
   refine (norm_smul_le _ _).trans ?_
   rw [norm_mul, norm_pow]
   calc ‖k‖ * ‖d‖ ^ 2 * ‖c (a, n)‖ ≤ 1 * ‖d‖ ^ 2 * ‖c‖ := by
@@ -282,7 +261,7 @@ theorem norm_eval_add_sub_sub_smul_eval_discDerivative_le (c : AnalyticStage p h
         exacts [PadicInt.norm_le_one k, c.norm_coe_le_norm _]
     _ = ‖d‖ ^ 2 * ‖c‖ := by rw [one_mul]
 
-/-! ### Re-expansion and the Leibniz rule for the derivative in `x` -/
+/-! ### Re-expansion of the derivative in `x` -/
 
 section Derivative
 
@@ -306,14 +285,6 @@ theorem transitionLE_derivative {k : ℕ} (hhk : h ≤ k) (c : AnalyticStage p h
   | succ k hhk ih =>
     rw [transitionLE_succ 𝕜 hhk, ContinuousLinearMap.comp_apply, ih, transition_derivative,
       ContinuousLinearMap.comp_apply]
-
-omit [CompleteSpace E] in
-/-- **The Leibniz rule for the coordinate**: `(x f)' = f + x f'`. -/
-theorem derivative_mulCoord (c : AnalyticStage p h E) :
-    derivative 𝕜 (mulCoord 𝕜 c) = c + mulCoord 𝕜 (derivative 𝕜 c) := by
-  have hp : ((p : 𝕜) ^ h) ≠ 0 := pow_ne_zero h (NeZero.ne _)
-  rw [derivative_def, derivative_def, discDerivative_mulCoord, natCast_pow_smul_eq ℤ_[p] 𝕜,
-    smul_add, inv_smul_smul₀ hp, map_smul]
 
 end Derivative
 
@@ -342,22 +313,6 @@ noncomputable def derivative : LocallyAnalytic p 𝕜 E →ₗ[𝕜] LocallyAnal
 theorem derivative_ofStage (h : ℕ) (c : AnalyticStage p h E) :
     derivative 𝕜 (ofStage 𝕜 h c) = ofStage 𝕜 h (AnalyticStage.derivative 𝕜 c) := by
   rw [derivative, ofStage_def, Module.DirectLimit.map_apply_of, ContinuousLinearMap.coe_coe]
-
-/-- **The Leibniz rule for the coordinate**: `(x f)' = f + x f'`. -/
-theorem derivative_mulCoord (f : LocallyAnalytic p 𝕜 E) :
-    derivative 𝕜 (mulCoord 𝕜 f) = f + mulCoord 𝕜 (derivative 𝕜 f) := by
-  obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
-  rw [← ofStage_def, mulCoord_ofStage, derivative_ofStage, derivative_ofStage, mulCoord_ofStage,
-    AnalyticStage.derivative_mulCoord, map_add]
-
-/-- **The derivative of a constant is zero**: `mahlerTerm p 𝕜 e 0` is the constant function `e`. -/
-@[simp]
-theorem derivative_mahlerTerm_zero (e : E) : derivative 𝕜 (mahlerTerm p 𝕜 e 0) = 0 := by
-  have hc : discDerivative 𝕜 (amiceTerm p 0 0 e) = 0 := by
-    ext ⟨a, n⟩
-    simp only [discDerivative_apply, amiceTerm_apply,
-      coeff_amicePolynomial_eq_zero _ (Nat.succ_pos n), zero_smul, smul_zero, zero_apply]
-  rw [mahlerTerm_def, derivative_ofStage, AnalyticStage.derivative_def, hc, smul_zero, map_zero]
 
 /-- **The derivative differentiates the evaluated function.** For every locally analytic `f` there
 are a level `h` and a constant `C` such that the Taylor remainder of order two is quadratic on the
@@ -396,121 +351,33 @@ namespace LocallyAnalyticDistribution
 open AnalyticStage LocallyAnalytic
 
 variable {K : Type*} [NontriviallyNormedField K] [Algebra ℤ_[p] K]
-  [IsBoundedSMul ℤ_[p] K] [IsUltrametricDist K] [CompleteSpace K]
-
-section NeZero
-
-variable [NeZero (p : K)]
+  [IsBoundedSMul ℤ_[p] K] [IsUltrametricDist K] [CompleteSpace K] [NeZero (p : K)]
 
 /-- The transpose derivative of a locally analytic distribution: `(d μ)(f) = μ(f')`. -/
 noncomputable def derivative :
-    LocallyAnalyticDistribution p K →ₗ[K] LocallyAnalyticDistribution p K where
-  toFun μ := ⟨(μ : Module.Dual K (LocallyAnalytic p K K)) ∘ₗ LocallyAnalytic.derivative K,
-    mem_iff.mpr fun h ↦ by
-      convert (stage h μ ∘L AnalyticStage.derivative K).continuous using 1
-      ext c
-      simp⟩
-  map_add' μ ν := rfl
-  map_smul' a μ := rfl
+    LocallyAnalyticDistribution p K →ₗ[K] LocallyAnalyticDistribution p K :=
+  dualMap (LocallyAnalytic.derivative K) (fun _ ↦ AnalyticStage.derivative K)
+    (derivative_ofStage K)
 
 /-- The distribution `d μ` takes the value `μ(f')` on `f`. -/
 @[simp]
 theorem coe_derivative_apply (μ : LocallyAnalyticDistribution p K) (f : LocallyAnalytic p K K) :
     (derivative μ : Module.Dual K (LocallyAnalytic p K K)) f =
       (μ : Module.Dual K (LocallyAnalytic p K K)) (LocallyAnalytic.derivative K f) :=
-  (rfl)
+  coe_dualMap_apply μ f
 
 /-- The restriction of `d μ` to a stage is the restriction of `μ` composed with the derivative on
 that stage. -/
 @[simp]
 theorem stage_derivative (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
-    stage h (derivative μ) = stage h μ ∘L AnalyticStage.derivative K := by
-  ext c
-  simp
+    stage h (derivative μ) = stage h μ ∘L AnalyticStage.derivative K :=
+  stage_dualMap h μ
 
 /-- The derivative multiplies the stage seminorm of level `h` by at most `‖p‖⁻ʰ`. -/
 theorem stageSeminorm_derivative_le (h : ℕ) (μ : LocallyAnalyticDistribution p K) :
-    stageSeminorm h (derivative μ) ≤ ‖((p : K) ^ h)⁻¹‖ * stageSeminorm h μ := by
-  rw [stageSeminorm_apply, stageSeminorm_apply, stage_derivative, mul_comm]
-  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-    (mul_le_mul_of_nonneg_left opNorm_derivative_le (norm_nonneg _))
-
-/-- **The Leibniz rule for distributions**: `x (d μ) = μ + d (x μ)`. -/
-theorem mulCoord_derivative (μ : LocallyAnalyticDistribution p K) :
-    mulCoord (derivative μ) = μ + derivative (mulCoord μ) := by
-  refine Subtype.ext <| LinearMap.ext fun f ↦ ?_
-  simp [LocallyAnalytic.derivative_mulCoord]
-
-end NeZero
-
-section CharZero
-
-variable [CharZero K]
-
-/-- **The Amice transform of the transpose derivative.** With the convention `(d μ)(f) = μ(f')`,
-the Amice transform of `d μ` is `log (1 + T)` times the Amice transform of `μ`. -/
-@[simp]
-theorem amiceTransform_derivative (μ : LocallyAnalyticDistribution p K) :
-    amiceTransform (derivative μ) = PowerSeries.log K * amiceTransform μ := by
-  set L := PowerSeries.log K
-  set D := PowerSeries.mahlerDerivation K
-  -- `∂ log (1 + T) = (1 + T) d/dT log (1 + T) = 1`.
-  have hL : D L = 1 := by
-    rw [PowerSeries.mahlerDerivation_apply, mul_comm, PowerSeries.derivative_log_mul_one_add_X]
-  -- The difference `A_{d ν} - L A_ν` intertwines multiplication by `x` with `∂`.
-  have hstep (ν : LocallyAnalyticDistribution p K) :
-      D (amiceTransform (derivative ν)) - D (L * amiceTransform ν) =
-        amiceTransform (derivative (mulCoord ν)) - L * amiceTransform (mulCoord ν) := by
-    rw [← amiceTransform_mulCoord, mulCoord_derivative, map_add, Derivation.leibniz, hL,
-      amiceTransform_mulCoord, smul_eq_mul, smul_eq_mul, mul_one]
-    ring
-  ext n
-  induction n generalizing μ with
-  | zero =>
-    -- The constant coefficients vanish: the derivative kills the constant `1`.
-    simp [L, PowerSeries.coeff_mul]
-  | succ n ih =>
-    have hn := congrArg (PowerSeries.coeff n) (hstep μ)
-    simp only [map_sub, D, PowerSeries.coeff_mahlerDerivation, ih μ, ih (mulCoord μ),
-      sub_self] at hn
-    refine mul_left_cancel₀ (Nat.cast_add_one_ne_zero n : ((n : K) + 1) ≠ 0) ?_
-    linear_combination hn
-
-/-- Iterating, the transpose derivative `dᵏ` acts on the Amice transform as multiplication by
-`log (1 + T) ^ k`. -/
-theorem amiceTransform_iterate_derivative (μ : LocallyAnalyticDistribution p K) (k : ℕ) :
-    amiceTransform (derivative^[k] μ) = PowerSeries.log K ^ k * amiceTransform μ := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [Function.iterate_succ_apply', amiceTransform_derivative, ih, pow_succ',
-      mul_assoc]
-
-/-- **The transpose derivative commutes with convolution**: `d (μ * ν) = d μ * ν`. -/
-theorem derivative_mul (μ ν : LocallyAnalyticDistribution p K) :
-    derivative (μ * ν) = derivative μ * ν :=
-  amiceTransform_injective (by simp [mul_assoc])
-
-/-- The transpose derivative is convolution with `d 1`, the derivative at `0`. -/
-theorem derivative_eq_derivative_one_mul (μ : LocallyAnalyticDistribution p K) :
-    derivative μ = derivative 1 * μ := by
-  rw [← derivative_mul, one_mul]
-
-/-- The transpose derivative is injective: `log (1 + T)` is not a zero divisor of `K⟦T⟧`. -/
-theorem derivative_injective :
-    Function.Injective (derivative (p := p) (K := K)) := by
-  have hL : PowerSeries.log K ≠ 0 := fun hL ↦ by
-    simpa [hL] using PowerSeries.derivative_log_mul_one_add_X (A := K)
-  intro μ ν hμν
-  refine amiceTransform_injective (mul_left_cancel₀ hL ?_)
-  rw [← amiceTransform_derivative, ← amiceTransform_derivative, hμν]
-
-/-- The transpose derivative of the unit `1 = δ_0` of the convolution algebra is the derivative at
-`0`, `f ↦ f'(0)`; its Amice transform is `log (1 + T)`. -/
-theorem amiceTransform_derivative_one :
-    amiceTransform (derivative (1 : LocallyAnalyticDistribution p K)) = PowerSeries.log K := by
-  rw [amiceTransform_derivative, amiceTransform_one, mul_one]
-
-end CharZero
+    stageSeminorm h (derivative μ) ≤ ‖((p : K) ^ h)⁻¹‖ * stageSeminorm h μ :=
+  (stageSeminorm_dualMap_le h μ).trans
+    (mul_le_mul_of_nonneg_right opNorm_derivative_le (apply_nonneg _ _))
 
 end LocallyAnalyticDistribution
 
