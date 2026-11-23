@@ -19,18 +19,14 @@ a `ℚ`-algebra. For instance a finite product of number fields has finitely man
 
 ## Main declarations
 
-* `RingHom.finite_of_moduleFinite_rat`: `R →+* K` is finite for a finite-dimensional `ℚ`-algebra
+* `Finite.ringHom_of_rat`: `R →+* K` is finite for a finite-dimensional `ℚ`-algebra
   `R` and a field `K`.
 -/
 
 public section
 
-namespace RingHom
-
 /-- A finite-dimensional `ℚ`-algebra has finitely many ring homomorphisms into a field: they are
 its `ℚ`-algebra homomorphisms, which are linearly independent. -/
-instance finite_of_moduleFinite_rat {R K : Type*} [Ring R] [Algebra ℚ R] [Module.Finite ℚ R]
-    [Field K] [Algebra ℚ K] : _root_.Finite (R →+* K) :=
-  .of_equiv _ (equivRatAlgHom R K).symm
-
-end RingHom
+instance Finite.ringHom_of_rat {R K : Type*} [Ring R] [Algebra ℚ R] [Module.Finite ℚ R]
+    [Field K] [Algebra ℚ K] : Finite (R →+* K) :=
+  .of_equiv _ (RingHom.equivRatAlgHom R K).symm

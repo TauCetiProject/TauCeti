@@ -31,7 +31,7 @@ composes the type trace with the trace `Tr_{L/K}`, so it does not change the ref
 
 Both constructions assume finitely many complex embeddings. This holds for every
 finite-dimensional `ℚ`-algebra, such as a finite product of CM fields, by the instance
-`RingHom.finite_of_moduleFinite_rat`.
+`Finite.ringHom_of_rat`.
 
 ## Main definitions
 
