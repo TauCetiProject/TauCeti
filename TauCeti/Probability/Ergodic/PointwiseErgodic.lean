@@ -88,6 +88,13 @@ section RealBirkhoffHelpers
 
 /-! ## Private helpers for the real-valued pointwise ergodic theorem -/
 
+private lemma norm_birkhoffAverage_le {Ω E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (T : Ω → Ω) (f : Ω → E) (n : ℕ) (x : Ω) :
+    ‖birkhoffAverage ℝ T f n x‖ ≤ birkhoffAverage ℝ T (fun y ↦ ‖f y‖) n x := by
+  simp only [birkhoffAverage, birkhoffSum, norm_smul, Real.norm_eq_abs, abs_inv, Nat.abs_cast,
+    smul_eq_mul]
+  exact mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
+
 private lemma mul_measureReal_le_setIntegral_of_lt_limsup {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsFiniteMeasure μ] {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
     {g : Ω → ℝ} (hg : Integrable g μ) {E : Set Ω}
@@ -196,9 +203,7 @@ private lemma ae_tendsto_birkhoffAverage_real_limit {Ω : Type*} [MeasurableSpac
   set L : EReal := limsup (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) atTop
   have hbound (n : ℕ) :
       |(birkhoffAverage ℝ T g n x : ℝ)| ≤ birkhoffAverage ℝ T (fun y ↦ ‖g y‖) n x := by
-    simp only [birkhoffAverage, birkhoffSum, smul_eq_mul, Real.norm_eq_abs, abs_mul, abs_inv,
-      Nat.abs_cast]
-    exact mul_le_mul_of_nonneg_left (Finset.abs_sum_le_sum_abs _ _) (by positivity)
+    simpa only [Real.norm_eq_abs] using norm_birkhoffAverage_le T g n x
   have htop : L < ⊤ := by
     refine lt_of_le_of_lt ?_ hfin
     exact (limsup_le_limsup (Eventually.of_forall fun n ↦
@@ -324,10 +329,8 @@ private lemma ae_mem_union_of_lt_limsup_norm_birkhoffAverage_sub_condExp {Ω E :
         ‖μ[f - ⇑s | MeasurableSpace.invariants T] x‖ := by
     rw [hdecomp n]
     refine (norm_sub_le _ _).trans (add_le_add ?_ le_rfl)
-    refine (norm_add_le _ _).trans (add_le_add ?_ le_rfl)
-    simp only [birkhoffAverage, birkhoffSum, norm_smul, Real.norm_eq_abs, abs_inv,
-      Nat.abs_cast, smul_eq_mul]
-    exact mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
+    exact (norm_add_le _ _).trans
+      (add_le_add (norm_birkhoffAverage_le T (f - ⇑s) n x) le_rfl)
   by_cases hB : δ / 3 ≤ ‖μ[f - ⇑s | MeasurableSpace.invariants T] x‖
   · exact Or.inr hB
   · left
