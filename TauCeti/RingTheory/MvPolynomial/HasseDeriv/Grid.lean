@@ -78,8 +78,8 @@ theorem coeff_finSuccEquiv_hasseDeriv_cons (k : ℕ) (d : Fin n →₀ ℕ)
       hasseDeriv d ((Polynomial.hasseDeriv k (finSuccEquiv R n P)).coeff i) := by
   ext m
   rw [finSuccEquiv_coeff_coeff, hasseDeriv_coeff, Polynomial.hasseDeriv_coeff,
-    ← nsmul_eq_mul ((i + k).choose k), map_nsmul, coeff_smul, nsmul_eq_mul, hasseDeriv_coeff,
-    finSuccEquiv_coeff_coeff]
+    ← nsmul_eq_mul ((i + k).choose k), map_nsmul, AddMonoidAlgebra.coeff_smul_apply, nsmul_eq_mul,
+    hasseDeriv_coeff, finSuccEquiv_coeff_coeff]
   have hadd : Finsupp.cons i m + Finsupp.cons k d = Finsupp.cons (i + k) (m + d) :=
     Finsupp.cons_add_cons i k m d
   have hprod : (Finsupp.cons k d).prod (fun j c ↦ (Finsupp.cons i m j + c).choose c) =

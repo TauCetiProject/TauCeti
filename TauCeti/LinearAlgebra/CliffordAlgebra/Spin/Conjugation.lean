@@ -48,7 +48,7 @@ theorem spinTransvection_conj (hQ : Q.Nondegenerate) (hu : Q u = 0)
         (by simpa using hu)
         (by
           rw [← coe_spinToOrthogonal_apply Q g u, ← coe_spinToOrthogonal_apply Q g w,
-            TauCeti.QuadraticMap.polar_apply_of_mem_orthogonalGroup (spinToOrthogonal Q g).2]
+            TauCeti.QuadraticMap.polar_apply_of_mem_orthogonalGroup (spinToOrthogonal Q g).property]
           exact huw) := by
   let e := TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q (spinToOrthogonal Q g)
   have h := e.spinGroupEquiv_spinTransvection hQ hu huw

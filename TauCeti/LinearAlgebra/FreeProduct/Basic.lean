@@ -89,7 +89,7 @@ theorem iSup_range_ι : (⨆ i, (ι R A i).range) = (⊤ : Subalgebra R (FreePro
   rw [eq_top_iff]
   intro x _
   have hx : S.val (s x) = x := AlgHom.congr_fun hs x
-  exact hx ▸ (s x).2
+  exact hx ▸ (s x).property
 
 /-- The union of the ranges of the factor maps generates `FreeProduct R A` over `R`. -/
 theorem adjoin_iUnion_range_ι :

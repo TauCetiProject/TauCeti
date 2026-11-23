@@ -227,7 +227,7 @@ theorem toSpectralSequencePageX_d (r : ℤ) (hr : 2 ≤ r) (p q a b c : ℤ) (ha
     (hb : b = q - r + 2) (hc : c = q + 1) (n : ℤ) (hn : n = p + q) :
     toSpectralSequencePageX G r hr (p, q) b c hb hc n hn ≫
         ((spectralSequence G).page r).d (p, q) (p + r, q - r + 1) =
-      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+      (TauCeti.cokernelCompSequence_shortExact
           (G.map (eIntHomOfLE (show a ≤ b by lia))) (G.map (eIntHomOfLE (show b ≤ c by lia)))).δ
           n (n + 1) rfl ≫
         toSpectralSequencePageX G r hr (p + r, q - r + 1) a b (by dsimp; lia) (by dsimp; lia)
@@ -247,9 +247,6 @@ theorem toSpectralSequencePageX_d (r : ℤ) (hr : 2 ≤ r) (p q a b c : ℤ) (ha
     (eIntHomOfLE (show q - r + 2 ≤ q + 1 by lia)) (by simp; lia) (by simp) (by simp) rfl rfl rfl
     (p + q - 1) (p + q) (p + q + 1) (p + q + 2) rfl,
     spectralObjectHIsoCokernel_inv_comp_spectralObject_δ_assoc]
-  -- The target of the connecting map of the cokernels is the cohomology of `G_b/G_a` only up to
-  -- unfolding `kernelCokernelCompSequence.snakeInput`, so `simp` cannot reassociate this composite.
-  exact Category.assoc _ _ _
 
 /-- **The differentials of the spectral sequence of `G`, dually.** On page `r ≥ 2`, the
 differential from `(p, q)` to `(p + r, q - r + 1)` followed by
@@ -264,7 +261,7 @@ theorem d_fromSpectralSequencePageX (r : ℤ) (hr : 2 ≤ r) (p q a b c : ℤ) (
         fromSpectralSequencePageX G r hr (p + r, q - r + 1) a b (by dsimp; lia) (by dsimp; lia)
           (n + 1) (by dsimp; lia) =
       fromSpectralSequencePageX G r hr (p, q) b c hb hc n hn ≫
-        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+        (TauCeti.cokernelCompSequence_shortExact
           (G.map (eIntHomOfLE (show a ≤ b by lia))) (G.map (eIntHomOfLE (show b ≤ c by lia)))).δ
           n (n + 1) rfl := by
   subst a b c n
@@ -285,8 +282,6 @@ theorem d_fromSpectralSequencePageX (r : ℤ) (hr : 2 ≤ r) (p q a b c : ℤ) (
       (p + q - 1) (p + q) (p + q + 1) (p + q + 2) rfl)
   simp only [Category.assoc] at h
   rw [h, spectralObject_δ_comp_spectralObjectHIsoCokernel_hom]
-  -- The source of the connecting map of the cokernels is the cohomology of `G_c/G_b` only up to
-  -- unfolding `kernelCokernelCompSequence.snakeInput`, so `simp` cannot reassociate this composite.
-  exact ((Category.assoc _ _ _).trans (congrArg _ (Category.assoc _ _ _))).symm
+  simp only [Category.assoc]
 
 end CochainComplex
