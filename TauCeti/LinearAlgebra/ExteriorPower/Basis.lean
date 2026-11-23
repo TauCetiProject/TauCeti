@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
-public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Order.Hom.PowersetCard
 

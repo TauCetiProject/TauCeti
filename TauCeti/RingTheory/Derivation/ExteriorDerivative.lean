@@ -16,9 +16,10 @@ import TauCeti.LinearAlgebra.ExteriorAlgebra.GradeInvolution
 
 Let `D : Derivation R A M` be an `R`-derivation whose image spans `M` over `A`. Whenever the
 twisted `A`-module `TwistedExt D = M × ⋀[A]^2 M` with `a • (m, ω) = (a • m, D a ∧ m + a • ω)`
-receives an `A`-linear lift of `derTwistedExt D`, its second component extends uniquely to a
-square-zero degree-`+1` graded `R`-derivation on `ExteriorAlgebra A M`, with no bases, smoothness,
-or characteristic hypotheses.
+receives an `A`-linear lift `u : M →ₗ[A] TwistedExt D` of `D.derTwistedExt`, there is a unique
+square-zero degree-`+1` graded `R`-derivation on `ExteriorAlgebra A M` sending a scalar
+`algebraMap A _ a` to `ExteriorAlgebra.ι A (D a)` and a degree-one generator
+`ExteriorAlgebra.ι A m` to `(u m).snd`, with no bases, smoothness, or characteristic hypotheses.
 -/
 
 public section
@@ -28,8 +29,8 @@ namespace Derivation
 As an abelian group it is `M × ⋀[A]^2 M`, with `a • (m, ω) = (a • m, D a ∧ m + a • ω)`. When the
 image of `D` spans `M` over `A`, an `A`-linear map `u : M →ₗ[A] TwistedExt D` satisfying
 `u (D a) = (D a, 0)` for all `a` is automatically a section of `fstLinear D` and determines a
-unique square-zero degree-`+1` graded `R`-derivation on `ExteriorAlgebra A M` extending `D` (with
-degree-`1` component `m ↦ (u m).snd`). -/
+unique square-zero degree-`+1` graded `R`-derivation on `ExteriorAlgebra A M` sending
+`algebraMap A _ a` to `ExteriorAlgebra.ι A (D a)` and `ExteriorAlgebra.ι A m` to `(u m).snd`. -/
 @[ext]
 structure TwistedExt {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
     [AddCommGroup M] [Module R M] [Module A M] (_D : Derivation R A M) where

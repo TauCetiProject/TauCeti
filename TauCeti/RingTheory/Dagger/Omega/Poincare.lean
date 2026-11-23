@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Dagger.Omega.DeRham.Basic
 public import TauCeti.RingTheory.Dagger.Omega.DeRham.Coordinates
 public import TauCeti.RingTheory.Dagger.Poincare
-import TauCeti.RingTheory.Dagger.Omega.Forms
 
 /-!
 # The Poincaré lemma on a dagger polydisc
@@ -18,9 +18,9 @@ degree `q + 1`, so `deRhamCohomology K W (q + 1)` is subsingleton.
 
 Using the coordinate formula `washnitzerBasis_exteriorPower_repr_exteriorDeriv` and the curl-free
 characterization `exteriorDeriv_one_eq_zero_iff`, we deduce degree-one exactness and unique
-potentials with prescribed constant coefficient, establish positive-degree exactness by induction
-over `σ` via `washnitzerAlgebra.primitive`, and prove failure in degrees `0` and `1` on
-`K⟨X₀⟩†` in prime characteristic `p`.
+potentials with prescribed constant coefficient, and establish positive-degree exactness by
+induction over `σ` via `washnitzerAlgebra.primitive`. Positive-characteristic counterexamples
+live in `TauCeti.RingTheory.Dagger.Omega.Basic` and `TauCeti.RingTheory.Dagger.Omega.DeRham.CharP`.
 
 ## References
 
@@ -73,7 +73,8 @@ noncomputable def closedFormsZeroWashnitzerEquiv :
       MvPowerSeries.constantCoeff (exteriorPower.zeroEquiv _ _ ω.val).val := (rfl)
 
 variable (σ K) in
-/-- **Degree-zero de Rham cohomology of a dagger polydisc**: `H⁰_dR(K⟨X_σ⟩† / K) ≃ₗ[K] K`. -/
+/-- **Degree-zero de Rham cohomology of a dagger polydisc in characteristic zero**:
+`H⁰_dR(K⟨X_σ⟩† / K) ≃ₗ[K] K`. -/
 noncomputable def deRhamCohomologyZeroWashnitzerEquiv :
     K ≃ₗ[K] deRhamCohomology K (washnitzerAlgebra σ K) 0 :=
   (closedFormsZeroWashnitzerEquiv σ K).trans
@@ -311,74 +312,17 @@ theorem exactForms_washnitzer_succ (q : ℕ) :
     (exactForms_succ K (washnitzerAlgebra σ K) q).symm ▸ LinearMap.mem_range.mpr
       (exists_exteriorDeriv_eq_of_exteriorDeriv_eq_zero q ((mem_closedForms K _ ω).mp hω))
 
-/-- **Exactness of the overconvergent de Rham complex of a dagger polydisc** in positive degree. -/
+/-- **Exactness of the overconvergent de Rham complex of a dagger polydisc** in positive degree
+in characteristic zero. -/
 theorem exactAt_deRhamComplex_washnitzer_succ (q : ℕ) :
     (deRhamComplex K (washnitzerAlgebra σ K)).ExactAt (q + 1) :=
   (exactAt_deRhamComplex_succ_iff K (washnitzerAlgebra σ K) q).mpr (exactForms_washnitzer_succ q)
 
-/-- **Vanishing of positive-degree overconvergent de Rham cohomology on a dagger polydisc.** -/
+/-- **Vanishing of positive-degree overconvergent de Rham cohomology on a dagger polydisc in
+characteristic zero.** -/
 instance instSubsingletonDeRhamCohomologyWashnitzerSucc (q : ℕ) :
     Subsingleton (deRhamCohomology K (washnitzerAlgebra σ K) (q + 1)) :=
   subsingleton_deRhamCohomology_of_closedForms_le_exactForms K _ (exactForms_washnitzer_succ q).ge
 end AllPositiveDegrees
-/-! ### Failure of the polydisc Poincaré lemma in positive characteristic -/
-section CharP
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-omit [CompleteSpace K] in
-/-- In characteristic `p`, `d (X₀ ^ p) = 0` in `Ω¹_{K⟨X₀⟩† / K}`. -/
-theorem d_X_pow_charP (p : ℕ) [CharP K p] :
-    d K (washnitzerAlgebra (Fin 1) K) (X (Fin 1) K 0 ^ p) = 0 := by
-  rw [(d K _).leibniz_pow, ← Nat.cast_smul_eq_nsmul K, CharP.cast_eq_zero, zero_smul]
-
-omit [CompleteSpace K] in
-/-- **Failure of the degree-zero Poincaré lemma in characteristic `p > 0`.** -/
-theorem exists_d_eq_zero_and_notMem_range_algebraMap_charP (p : ℕ) [CharP K p] [Fact p.Prime] :
-    ∃ f : washnitzerAlgebra (Fin 1) K,
-      d K (washnitzerAlgebra (Fin 1) K) f = 0 ∧
-        f ∉ Set.range (algebraMap K (washnitzerAlgebra (Fin 1) K)) :=
-  ⟨X (Fin 1) K 0 ^ p, d_X_pow_charP p, X_pow_notMem_range_algebraMap 0 (Fact.out : p.Prime).pos⟩
-
-/-- **Failure of the degree-one Poincaré lemma in characteristic `p > 0`**: `X₀ ^ (p - 1) • d X₀`
-has no potential `g ∈ K⟨X₀⟩†`. -/
-theorem not_exists_d_eq_X_pow_sub_one_smul_d_X_charP (p : ℕ) [CharP K p] [Fact p.Prime] :
-    ¬∃ g : washnitzerAlgebra (Fin 1) K,
-      d K (washnitzerAlgebra (Fin 1) K) g =
-        X (Fin 1) K 0 ^ (p - 1) • d K (washnitzerAlgebra (Fin 1) K) (X (Fin 1) K 0) := by
-  rintro ⟨g, hg⟩
-  have hrepr := congrArg (fun ω ↦ (washnitzerBasis (Fin 1) K).repr ω 0) hg
-  rw [washnitzerBasis_repr_d, LinearEquiv.map_smul, ← washnitzerBasis_apply,
-    Module.Basis.repr_self, Finsupp.smul_single_one, Finsupp.single_eq_same] at hrepr
-  let e : Fin 1 →₀ ℕ := Finsupp.single 0 (p - 1)
-  have hcoeff := congrArg (fun f : washnitzerAlgebra (Fin 1) K ↦ MvPowerSeries.coeff e f.val) hrepr
-  have hlhs : MvPowerSeries.coeff e (pderiv (Fin 1) K 0 g).val = 0 := by
-    rw [coe_pderiv, MvPowerSeries.coeff_pderiv, Finsupp.single_eq_same, ← Nat.cast_add_one,
-      Nat.sub_add_cancel (Fact.out : p.Prime).pos, CharP.cast_eq_zero, mul_zero]
-  rw [hlhs, SubmonoidClass.coe_pow, coe_X, MvPowerSeries.coeff_X_pow, ite_eq_left rfl] at hcoeff
-  exact zero_ne_one hcoeff
-
-/-- In characteristic `p > 0`, `deRhamComplex K (K⟨X₀⟩†)` is not exact in degree `1`. -/
-theorem not_exactAt_deRhamComplex_washnitzer_one_charP (p : ℕ) [CharP K p] [Fact p.Prime] :
-    ¬(deRhamComplex K (washnitzerAlgebra (Fin 1) K)).ExactAt 1 := by
-  rw [exactAt_deRhamComplex_succ_iff K (washnitzerAlgebra (Fin 1) K) 0]; intro hex
-  let W := washnitzerAlgebra (Fin 1) K
-  let ω : ⋀[W]^1 (Omega K W) := (exteriorPower.oneEquiv W _).symm
-    (X (Fin 1) K 0 ^ (p - 1) • d K W (X (Fin 1) K 0))
-  have hclosed : ω ∈ closedForms K W 1 := by
-    have := subsingleton_forms_washnitzer_of_card_lt (σ := Fin 1) (K := K) (q := 2) (by simp)
-    rw [mem_closedForms]; exact Subsingleton.elim _ 0
-  obtain ⟨f₀, hf₀⟩ := LinearMap.mem_range.mp ((exactForms_succ K W 0) ▸ hex.symm ▸ hclosed)
-  obtain ⟨c, rfl⟩ := (exteriorPower.zeroEquiv W _).symm.surjective f₀
-  exact not_exists_d_eq_X_pow_sub_one_smul_d_X_charP p
-    ⟨c, (exteriorPower.oneEquiv W _).symm.injective (by rwa [exteriorDeriv_zero_symm] at hf₀)⟩
-
-/-- In characteristic `p > 0`, `H¹_dR(K⟨X₀⟩† / K)` is nontrivial. -/
-theorem nontrivial_deRhamCohomology_washnitzer_one_charP (p : ℕ) [CharP K p] [Fact p.Prime] :
-    Nontrivial (deRhamCohomology K (washnitzerAlgebra (Fin 1) K) 1) :=
-  not_subsingleton_iff_nontrivial.mp fun _ ↦
-    not_exactAt_deRhamComplex_washnitzer_one_charP (K := K) p <|
-      (HomologicalComplex.exactAt_iff_isZero_homology _ 1).mpr
-        (ModuleCat.isZero_iff_subsingleton.mpr ‹_›)
-end CharP
 
 end TauCeti.Dagger.Omega

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
-public import Mathlib.LinearAlgebra.ExteriorAlgebra.Grading
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Basic
 
 /-!

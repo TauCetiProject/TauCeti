@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Basis
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
-public import TauCeti.RingTheory.Dagger.Omega.DeRham.Basic
+public import TauCeti.RingTheory.Dagger.Omega.DeRham.Derivative
 
 /-!
 # Coordinate formulas for the overconvergent exterior derivative
