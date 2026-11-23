@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finset.BooleanAlgebra
 import Mathlib.Tactic.Tauto
+import TauCeti.Data.Set.Pairwise
 
 /-!
 # Laminar families and crossing bipartitions of finite sets
@@ -20,6 +21,7 @@ side avoiding a fixed root identifies pairwise non-crossing bipartitions with la
 * `Finset.NestedOrDisjoint`: the relation defining laminar families.
 * `Finset.Crosses`: crossing of the bipartitions determined by two finite sets.
 * `Finset.sideAvoiding`: the side of a bipartition avoiding a chosen root.
+* `Finset.nestedOrDisjoint_sideAvoiding_iff`: the root convention for two cuts.
 * `Finset.pairwise_nestedOrDisjoint_image_sideAvoiding`: the root convention for a family.
 
 ## References
@@ -72,6 +74,14 @@ theorem nestedOrDisjoint_comm {S T : Finset V} :
     NestedOrDisjoint S T ↔ NestedOrDisjoint T S := by
   simp only [NestedOrDisjoint, disjoint_comm (a := S)]
   tauto
+
+/-- Every set is nested with itself. -/
+@[simp] theorem NestedOrDisjoint.refl (S : Finset V) : NestedOrDisjoint S S :=
+  .of_subset subset_rfl
+
+/-- Being nested or disjoint is a reflexive relation. -/
+instance instReflNestedOrDisjoint : Std.Refl (NestedOrDisjoint (V := V)) :=
+  ⟨NestedOrDisjoint.refl⟩
 
 /-- Being nested or disjoint is a symmetric relation. -/
 theorem NestedOrDisjoint.symm {S T : Finset V} (h : NestedOrDisjoint S T) :
@@ -142,6 +152,10 @@ theorem NestedOrDisjoint.not_crosses {S T : Finset V} (h : NestedOrDisjoint S T)
   simp only [NestedOrDisjoint, Crosses, subset_iff, disjoint_left] at *
   grind
 
+/-- No cut crosses itself. -/
+@[simp] theorem not_crosses_self (S : Finset V) : ¬Crosses S S :=
+  (NestedOrDisjoint.refl S).not_crosses
+
 /-- **Root convention.** Two sets avoiding a common vertex do not cross exactly when they are
 nested or disjoint: their union cannot cover all vertices. -/
 theorem not_crosses_iff_nestedOrDisjoint {r : V} {S T : Finset V} (hS : r ∉ S) (hT : r ∉ T) :
@@ -198,15 +212,21 @@ the cut from the root. -/
     Crosses S (sideAvoiding r T) ↔ Crosses S T := by
   by_cases h : r ∈ T <;> simp [sideAvoiding, h]
 
-/-- **Root convention.** Representing each cut of a pairwise non-crossing family by its side
-avoiding a fixed root vertex gives a laminar family. -/
-theorem pairwise_nestedOrDisjoint_image_sideAvoiding {𝒞 : Set (Finset V)}
-    (h𝒞 : 𝒞.Pairwise fun S T ↦ ¬Crosses S T) (r : V) :
-    (sideAvoiding r '' 𝒞).Pairwise NestedOrDisjoint := by
-  rintro _ ⟨S, hS, rfl⟩ _ ⟨T, hT, rfl⟩ hne
+/-- **Root convention.** The sides of two cuts avoiding a fixed root vertex are nested or
+disjoint exactly when the cuts do not cross. -/
+@[simp] theorem nestedOrDisjoint_sideAvoiding_iff {r : V} {S T : Finset V} :
+    NestedOrDisjoint (sideAvoiding r S) (sideAvoiding r T) ↔ ¬Crosses S T := by
   rw [← not_crosses_iff_nestedOrDisjoint (notMem_sideAvoiding r S) (notMem_sideAvoiding r T),
     crosses_sideAvoiding_left, crosses_sideAvoiding_right]
-  exact h𝒞 hS hT fun h ↦ hne (h ▸ rfl)
+
+/-- **Root convention.** A family of cuts is pairwise non-crossing exactly when representing
+each cut by its side avoiding a fixed root vertex gives a laminar family. The map to these sides
+is not injective: the distinct finsets `S` and `Sᶜ` represent the same cut, so they have the same
+side avoiding the root. They do not cross, as that side is nested with itself. -/
+theorem pairwise_nestedOrDisjoint_image_sideAvoiding (r : V) {𝒞 : Set (Finset V)} :
+    (sideAvoiding r '' 𝒞).Pairwise NestedOrDisjoint ↔ 𝒞.Pairwise fun S T ↦ ¬Crosses S T := by
+  rw [𝒞.pairwise_image_of_refl]
+  simp only [Set.Pairwise, nestedOrDisjoint_sideAvoiding_iff]
 
 end Crossing
 

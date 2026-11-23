@@ -45,19 +45,20 @@ def normalBundleHomeomorphTubeOfRadius (f : M → V) (r : C(M, ℝ))
     (hr : ∀ x, 0 < r x) :
     TotalSpace V (fun x : M => normalSubspace I f x) ≃ₜ normalTubeOfRadius I f r where
   toFun p :=
-    ⟨(p.proj, r p.proj • ((Homeomorph.unitBall p.2 : normalSubspace I f p.proj) : V)),
+    ⟨(p.proj, r p.proj • ((Homeomorph.unitBall p.snd : normalSubspace I f p.proj) : V)),
       mem_normalTubeOfRadius.mpr ⟨(normalSubspace I f p.proj).smul_mem (r p.proj)
-        (Homeomorph.unitBall p.2).1.2, by
+        (Homeomorph.unitBall p.snd).val.property, by
           rw [norm_smul, Real.norm_of_nonneg (hr p.proj).le]
           exact (mul_lt_mul_of_pos_left
-            (mem_ball_zero_iff.mp (Homeomorph.unitBall p.2).2) (hr p.proj)).trans_eq
+            (mem_ball_zero_iff.mp (Homeomorph.unitBall p.snd).property) (hr p.proj)).trans_eq
               (mul_one (r p.proj))⟩⟩
   invFun q :=
-    ⟨q.1.1, Homeomorph.unitBall.symm
-      ⟨(r q.1.1)⁻¹ • (⟨q.1.2, (mem_normalTubeOfRadius.mp q.2).1⟩ :
-          normalSubspace I f q.1.1), by
-        rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.1.1).le]
-        exact (inv_mul_lt_iff₀ (hr q.1.1)).mpr (by simpa using (mem_normalTubeOfRadius.mp q.2).2)⟩⟩
+    ⟨q.val.1, Homeomorph.unitBall.symm
+      ⟨(r q.val.1)⁻¹ • (⟨q.val.2, (mem_normalTubeOfRadius.mp q.property).1⟩ :
+          normalSubspace I f q.val.1), by
+        rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.val.1).le]
+        exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr
+            (by simpa using (mem_normalTubeOfRadius.mp q.property).2)⟩⟩
   left_inv p := by
     rcases p with ⟨x, v⟩
     dsimp only
@@ -71,14 +72,14 @@ def normalBundleHomeomorphTubeOfRadius (f : M → V) (r : C(M, ℝ))
     dsimp only
     apply Prod.ext
     · rfl
-    · simp [smul_smul, (hr q.1.1).ne']
+    · simp [smul_smul, (hr q.val.1).ne']
   continuous_toFun := by
     have hι := isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f
     have hv := hι.continuous.snd
     have ha : Continuous fun p : TotalSpace V (fun x : M => normalSubspace I f x) =>
-        (Real.sqrt (1 + ‖(p.2 : V)‖ ^ 2))⁻¹ :=
+        (Real.sqrt (1 + ‖(p.snd : V)‖ ^ 2))⁻¹ :=
       ((continuous_const.add (hv.norm.pow 2)).sqrt).inv₀
-        (fun p => Real.sqrt_ne_zero'.mpr (by simpa using zero_lt_one_add_norm_sq (p.2 : V)))
+        (fun p => Real.sqrt_ne_zero'.mpr (by simpa using zero_lt_one_add_norm_sq (p.snd : V)))
     have hrp : Continuous fun p : TotalSpace V (fun x : M => normalSubspace I f x) => r p.proj :=
       r.continuous.comp hι.continuous.fst
     apply Continuous.subtype_mk
@@ -88,74 +89,77 @@ def normalBundleHomeomorphTubeOfRadius (f : M → V) (r : C(M, ℝ))
     simp [Homeomorph.unitBall_apply_coe, OpenPartialHomeomorph.univUnitBall_apply]
   continuous_invFun := by
     have hι := isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f
-    have hrq : Continuous fun q : normalTubeOfRadius I f r => (r q.1.1)⁻¹ :=
-      (r.continuous.comp (continuous_fst.comp continuous_subtype_val)).inv₀
-        (fun q => (hr q.1.1).ne')
+    have hrq : Continuous fun q : normalTubeOfRadius I f r => (r q.val.1)⁻¹ :=
+      (r.continuous.comp (continuous_fst.comp continuous_subtypeVal)).inv₀
+        (fun q => (hr q.val.1).ne')
     have hv : Continuous fun q : normalTubeOfRadius I f r =>
-        (r q.1.1)⁻¹ • q.1.2 :=
-      hrq.smul (continuous_snd.comp continuous_subtype_val)
+        (r q.val.1)⁻¹ • q.val.2 :=
+      hrq.smul (continuous_snd.comp continuous_subtypeVal)
     let k : normalTubeOfRadius I f r → ball (0 : V) 1 := fun q =>
-      ⟨(r q.1.1)⁻¹ • q.1.2, by
-        rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.1.1).le]
-        exact (inv_mul_lt_iff₀ (hr q.1.1)).mpr (by simpa using (mem_normalTubeOfRadius.mp q.2).2)⟩
+      ⟨(r q.val.1)⁻¹ • q.val.2, by
+        rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.val.1).le]
+        exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr
+            (by simpa using (mem_normalTubeOfRadius.mp q.property).2)⟩
     have hk : Continuous k := hv.subtype_mk _
     apply hι.isInducing.continuous_iff.mpr
-    convert (continuous_fst.comp continuous_subtype_val).prodMk
+    convert (continuous_fst.comp continuous_subtypeVal).prodMk
       (Homeomorph.unitBall.symm.continuous.comp hk) using 1
     funext q
     apply Prod.ext
     · rfl
-    · let y : ball (0 : normalSubspace I f q.1.1) 1 :=
-        ⟨(r q.1.1)⁻¹ • ⟨q.1.2, (mem_normalTubeOfRadius.mp q.2).1⟩, by
-          rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.1.1).le]
-          exact (inv_mul_lt_iff₀ (hr q.1.1)).mpr (by simpa using (mem_normalTubeOfRadius.mp q.2).2)⟩
+    · let y : ball (0 : normalSubspace I f q.val.1) 1 :=
+        ⟨(r q.val.1)⁻¹ • ⟨q.val.2, (mem_normalTubeOfRadius.mp q.property).1⟩, by
+          rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.val.1).le]
+          exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr
+              (by simpa using (mem_normalTubeOfRadius.mp q.property).2)⟩
       have hS : Homeomorph.unitBall.symm y =
-          (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := Homeomorph.unitBall_symm_apply_coe y
+          (Real.sqrt (1 - ‖y.val‖ ^ 2))⁻¹ • y.val := Homeomorph.unitBall_symm_apply_coe y
       have hV : Homeomorph.unitBall.symm (k q) =
-          (Real.sqrt (1 - ‖(k q).1‖ ^ 2))⁻¹ • (k q).1 :=
+          (Real.sqrt (1 - ‖(k q).val‖ ^ 2))⁻¹ • (k q).val :=
         Homeomorph.unitBall_symm_apply_coe (k q)
       simpa only [k, y, Function.comp_apply, Submodule.coe_smul, Submodule.norm_coe]
-        using congrArg ((↑) : normalSubspace I f q.1.1 → V) hS |>.trans hV.symm
+        using congrArg ((↑) : normalSubspace I f q.val.1 → V) hS |>.trans hV.symm
 
 @[simp]
 theorem normalBundleHomeomorphTubeOfRadius_apply_fst (f : M → V) (r : C(M, ℝ))
     (hr : ∀ x, 0 < r x) (p : TotalSpace V (fun x : M => normalSubspace I f x)) :
-    (normalBundleHomeomorphTubeOfRadius f r hr p).1.1 = p.proj := by
+    (normalBundleHomeomorphTubeOfRadius f r hr p).val.1 = p.proj := by
   simp [normalBundleHomeomorphTubeOfRadius]
 
 @[simp]
 theorem normalBundleHomeomorphTubeOfRadius_symm_apply_proj (f : M → V) (r : C(M, ℝ))
     (hr : ∀ x, 0 < r x) (q : normalTubeOfRadius I f r) :
-    ((normalBundleHomeomorphTubeOfRadius f r hr).symm q).proj = q.1.1 := by
+    ((normalBundleHomeomorphTubeOfRadius f r hr).symm q).proj = q.val.1 := by
   simp [normalBundleHomeomorphTubeOfRadius]
 
 @[simp]
 theorem normalBundleHomeomorphTubeOfRadius_apply_snd (f : M → V) (r : C(M, ℝ))
     (hr : ∀ x, 0 < r x) (p : TotalSpace V (fun x : M => normalSubspace I f x)) :
-    (normalBundleHomeomorphTubeOfRadius f r hr p).1.2 =
-      r p.proj • (Real.sqrt (1 + ‖(p.2 : V)‖ ^ 2))⁻¹ • (p.2 : V) := by
+    (normalBundleHomeomorphTubeOfRadius f r hr p).val.2 =
+      r p.proj • (Real.sqrt (1 + ‖(p.snd : V)‖ ^ 2))⁻¹ • (p.snd : V) := by
   simp [normalBundleHomeomorphTubeOfRadius, Homeomorph.unitBall_apply_coe,
     OpenPartialHomeomorph.univUnitBall_apply]
 
 @[simp]
 theorem normalBundleHomeomorphTubeOfRadius_symm_apply_snd (f : M → V) (r : C(M, ℝ))
     (hr : ∀ x, 0 < r x) (q : normalTubeOfRadius I f r) :
-    (((normalBundleHomeomorphTubeOfRadius f r hr).symm q).2 : V) =
-      (Real.sqrt (1 - ‖(r q.1.1)⁻¹ • q.1.2‖ ^ 2))⁻¹ •
-        ((r q.1.1)⁻¹ • q.1.2) := by
-  let y : ball (0 : normalSubspace I f q.1.1) 1 :=
-    ⟨(r q.1.1)⁻¹ • ⟨q.1.2, (mem_normalTubeOfRadius.mp q.2).1⟩, by
-      rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.1.1).le]
-      exact (inv_mul_lt_iff₀ (hr q.1.1)).mpr (by simpa using (mem_normalTubeOfRadius.mp q.2).2)⟩
+    (((normalBundleHomeomorphTubeOfRadius f r hr).symm q).snd : V) =
+      (Real.sqrt (1 - ‖(r q.val.1)⁻¹ • q.val.2‖ ^ 2))⁻¹ •
+        ((r q.val.1)⁻¹ • q.val.2) := by
+  let y : ball (0 : normalSubspace I f q.val.1) 1 :=
+    ⟨(r q.val.1)⁻¹ • ⟨q.val.2, (mem_normalTubeOfRadius.mp q.property).1⟩, by
+      rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.val.1).le]
+      exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr
+          (by simpa using (mem_normalTubeOfRadius.mp q.property).2)⟩
   have hy : Homeomorph.unitBall.symm y =
-      (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := Homeomorph.unitBall_symm_apply_coe y
+      (Real.sqrt (1 - ‖y.val‖ ^ 2))⁻¹ • y.val := Homeomorph.unitBall_symm_apply_coe y
   have hinv :
-      (((normalBundleHomeomorphTubeOfRadius f r hr).symm q).2 : V) =
-        ((Homeomorph.unitBall.symm y : normalSubspace I f q.1.1) : V) := by
+      (((normalBundleHomeomorphTubeOfRadius f r hr).symm q).snd : V) =
+        ((Homeomorph.unitBall.symm y : normalSubspace I f q.val.1) : V) := by
     -- The inverse is defined with this dependent subtype; expose that definition explicitly.
     dsimp [normalBundleHomeomorphTubeOfRadius, y]
   simpa only [y, ← Submodule.norm_coe, Submodule.coe_smul, Subtype.coe_mk]
-    using hinv.trans (congrArg ((↑) : normalSubspace I f q.1.1 → V) hy)
+    using hinv.trans (congrArg ((↑) : normalSubspace I f q.val.1 → V) hy)
 
 @[simp]
 theorem normalBundleHomeomorphTubeOfRadius_zeroSection (f : M → V) (r : C(M, ℝ))
@@ -176,7 +180,7 @@ theorem exists_isTubularNeighborhood_wholeNormalBundle [FiniteDimensional ℝ V]
   obtain ⟨r, hr, hemb⟩ := exists_isOpenEmbedding_normalTubeOfRadius hf himm hind
   let e := normalBundleHomeomorphTubeOfRadius (I := I) f r hr
   let Φ : TotalSpace V (fun x : M => normalSubspace I f x) → V :=
-    fun p => f (e p).1.1 + (e p).1.2
+    fun p => f (e p).val.1 + (e p).val.2
   have hΦ : IsOpenEmbedding Φ := by
     have he : IsOpenEmbedding (fun p : TotalSpace V (fun x : M => normalSubspace I f x) =>
         (normalTubeOfRadius I f r).domRestrict (fun q : M × V => f q.1 + q.2) (e p)) :=
@@ -207,9 +211,9 @@ theorem exists_isTubularNeighborhood_wholeNormalBundle [FiniteDimensional ℝ V]
   · apply hι.isInducing.continuous_iff.mpr
     have hp : Continuous fun p : Icc (0 : ℝ) 1 ×
         (Set.univ : Set (TotalSpace V (fun x : M => normalSubspace I f x))) =>
-          (p.2.1.proj, (p.2.1.2 : V)) :=
-      hι.continuous.comp (continuous_subtype_val.comp continuous_snd)
-    exact hp.fst.prodMk ((continuous_subtype_val.comp continuous_fst).smul hp.snd)
+          (p.2.val.proj, (p.2.val.snd : V)) :=
+      hι.continuous.comp (continuous_subtypeVal.comp continuous_snd)
+    exact hp.fst.prodMk ((continuous_subtypeVal.comp continuous_fst).smul hp.snd)
 
 /-- A noncompact Euclidean immersion inducing the source topology has an open embedding of its
 whole normal bundle. -/

@@ -194,6 +194,16 @@ noncomputable def levelSmashMappingSpaceAdjunction (X : SymmetricSpectrum) :
     levelSmash X ⊣ mappingSpace X :=
   (SymmetricSequence.freeEvaluationAdjunction 0).comp (Mod.ihomAdjunction X)
 
+/-- Smashing a fixed symmetric spectrum `X` with pointed simplicial sets is a left adjoint, hence
+preserves colimits of all sizes. -/
+instance (X : SymmetricSpectrum) : (levelSmash X).IsLeftAdjoint :=
+  (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
+
+/-- Taking the pointed mapping space out of a fixed symmetric spectrum `X` is a right adjoint, hence
+preserves limits of all sizes. -/
+instance (X : SymmetricSpectrum) : (mappingSpace X).IsRightAdjoint :=
+  (levelSmashMappingSpaceAdjunction X).isRightAdjoint
+
 /-- The adjunction `X ∧ - ⊣ Map(X, -)` curries a spectrum map `X ∧ K ⟶ Y` into `Hom_S(X, Y)` and
 restricts it to the generator `K ⟶ (G₀ K)₀`. -/
 lemma levelSmashMappingSpaceAdjunction_homEquiv_apply (X : SymmetricSpectrum)

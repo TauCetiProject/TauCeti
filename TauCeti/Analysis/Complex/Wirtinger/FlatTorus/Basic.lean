@@ -14,8 +14,10 @@ public import TauCeti.NumberTheory.Real.Irrational
 import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Fourier.TwistedWirtinger
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -61,6 +63,13 @@ construction of Seiberg–Witten solutions near a square-zero pseudoholomorphic 
 normal bundle of irrational holonomy, where the leading inverse acts on the powers `N ^ j` of the
 normal line.
 
+Integration by parts over the fundamental domain rests on one periodicity: for `C¹` sections `u`
+and `φ` twisted by the same unit complex number along `ω₁`, the function `u conj φ` is periodic in
+the first lattice coordinate, so its derivative along `ω₁` integrates to zero
+(`TauCeti.setIntegral_fderiv_mul_conj_add_mul_conj_fderiv_eq_zero`). Derivatives of sections are
+again sections of the same line (`TauCeti.fderiv_add_eq_smul`,
+`TauCeti.wirtingerDeriv_add_apply_one_eq_mul`, `TauCeti.conjWirtingerDeriv_add_apply_one_eq_mul`).
+
 ## Proof
 
 Write `v (s, t) = u (s ω₁ + t ω₂)`, `A = ∂_s v` and `B = ∂_t v`. Eliminating `∂u` from
@@ -100,6 +109,22 @@ open scoped ContDiff
 
 /-! ### Smooth sections of a flat line and the Cauchy–Riemann operator -/
 
+/-- If `u (z + ω) = χ u z`, then also `∂u (z + ω) = χ ∂u z`: the Wirtinger derivative of a
+section of a flat line is a section of the same line. -/
+theorem wirtingerDeriv_add_apply_one_eq_mul {ω χ : ℂ} (h : ∀ z, u (z + ω) = χ * u z) (z : ℂ) :
+    wirtingerDeriv u (z + ω) 1 = χ * wirtingerDeriv u z 1 := by
+  simp only [wirtingerDeriv_apply, fderiv_add_eq_smul (𝕜 := ℝ) (a := χ) h, smul_apply,
+    smul_eq_mul]
+  ring
+
+/-- If `u (z + ω) = χ u z`, then also `∂bar u (z + ω) = χ ∂bar u z`: the conjugate Wirtinger
+derivative of a section of a flat line is a section of the same line. -/
+theorem conjWirtingerDeriv_add_apply_one_eq_mul {ω χ : ℂ} (h : ∀ z, u (z + ω) = χ * u z)
+    (z : ℂ) : conjWirtingerDeriv u (z + ω) 1 = χ * conjWirtingerDeriv u z 1 := by
+  simp only [conjWirtingerDeriv_apply, fderiv_add_eq_smul (𝕜 := ℝ) (a := χ) h, smul_apply,
+    smul_eq_mul]
+  ring
+
 /-- The smooth sections of the flat line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`,
 `exp (2πiθ₂)` along `ω₁`, `ω₂`: the smooth functions `u : ℂ → ℂ` with
 `u (z + ω₁) = exp (2πiθ₁) u z` and `u (z + ω₂) = exp (2πiθ₂) u z`. -/
@@ -125,12 +150,8 @@ theorem mem_flatLineSections :
 theorem conjWirtingerDeriv_mem_flatLineSections (hu : u ∈ flatLineSections ω₁ ω₂ θ₁ θ₂) :
     (fun z ↦ conjWirtingerDeriv u z 1) ∈ flatLineSections ω₁ ω₂ θ₁ θ₂ :=
   ⟨contDiff_iff_contDiffAt.2 fun z ↦ hu.1.contDiffAt.conjWirtingerDeriv_apply (by simp) 1,
-    fun z ↦ by
-      beta_reduce; rw [conjWirtingerDeriv_add_eq_smul hu.2.1, smul_apply,
-        smul_eq_mul],
-    fun z ↦ by
-      beta_reduce; rw [conjWirtingerDeriv_add_eq_smul hu.2.2, smul_apply,
-        smul_eq_mul]⟩
+    conjWirtingerDeriv_add_apply_one_eq_mul hu.2.1,
+    conjWirtingerDeriv_add_apply_one_eq_mul hu.2.2⟩
 
 /-- The Cauchy–Riemann operator `∂bar` as a complex-linear map on the smooth sections of the flat
 line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`, `exp (2πiθ₂)`. -/
@@ -162,7 +183,8 @@ private theorem hasDerivAt_latticeCoord_snd (s t : ℝ) :
     HasDerivAt (fun t : ℝ ↦ (s : ℂ) * ω₁ + t * ω₂) ω₂ t := by
   simpa using ((hasDerivAt_id t).ofReal_comp.mul_const ω₂).const_add ((s : ℂ) * ω₁)
 
-private theorem continuous_latticeCoord :
+/-- The lattice coordinate map `(s, t) ↦ s ω₁ + t ω₂` is continuous. -/
+theorem continuous_ofReal_fst_mul_add_ofReal_snd_mul :
     Continuous fun p : ℝ × ℝ ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ :=
   ((continuous_ofReal.comp continuous_fst).mul continuous_const).add
     ((continuous_ofReal.comp continuous_snd).mul continuous_const)
@@ -181,13 +203,13 @@ private theorem mul_setIntegral_norm_sq_le_snd (hu : ContDiff ℝ 1 u)
   have hFi : Integrable (fun p : ℝ × ℝ ↦ ‖u (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2)
       ((volume.restrict (Icc (0 : ℝ) 1)).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
-    exact ((hu.continuous.comp continuous_latticeCoord).norm.pow 2).continuousOn
-      |>.integrableOn_compact hR
+    exact ((hu.continuous.comp continuous_ofReal_fst_mul_add_ofReal_snd_mul).norm.pow 2)
+      |>.continuousOn.integrableOn_compact hR
   have hGi : Integrable (fun p : ℝ × ℝ ↦ ‖fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₂‖ ^ 2)
       ((volume.restrict (Icc (0 : ℝ) 1)).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
-    exact (((hdc.comp continuous_latticeCoord).clm_apply continuous_const).norm.pow 2).continuousOn
-      |>.integrableOn_compact hR
+    exact ((hdc.comp continuous_ofReal_fst_mul_add_ofReal_snd_mul).clm_apply continuous_const)
+      |>.norm.pow 2 |>.continuousOn.integrableOn_compact hR
   rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_prod _ hFi, integral_prod _ hGi,
     ← integral_const_mul]
   refine integral_mono (hFi.integral_prod_left.const_mul _) hGi.integral_prod_left fun s ↦ ?_
@@ -213,8 +235,8 @@ private theorem mul_setIntegral_norm_sq_le_snd (hu : ContDiff ℝ 1 u)
 
 /-- Exchanging the two lattice vectors and the two lattice coordinates leaves integrals over the
 fundamental domain unchanged. -/
-private theorem setIntegral_comp_latticeCoord_swap {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (F : ℂ → E) :
+theorem setIntegral_comp_ofReal_fst_mul_add_ofReal_snd_mul_swap {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (F : ℂ → E) :
     ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, F (p.1 * ω₂ + p.2 * ω₁) =
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, F (p.1 * ω₁ + p.2 * ω₂) := by
   rw [Measure.volume_eq_prod, ← setIntegral_prod_swap]
@@ -228,12 +250,50 @@ private theorem mul_setIntegral_norm_sq_le_fst (hu : ContDiff ℝ 1 u)
         ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 ≤
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₁‖ ^ 2 := by
   have h := mul_setIntegral_norm_sq_le_snd (ω₁ := ω₂) hu h₁
-  rwa [setIntegral_comp_latticeCoord_swap (fun z ↦ ‖u z‖ ^ 2),
-    setIntegral_comp_latticeCoord_swap (fun z ↦ ‖fderiv ℝ u z ω₁‖ ^ 2)] at h
+  rwa [setIntegral_comp_ofReal_fst_mul_add_ofReal_snd_mul_swap (fun z ↦ ‖u z‖ ^ 2),
+    setIntegral_comp_ofReal_fst_mul_add_ofReal_snd_mul_swap (fun z ↦ ‖fderiv ℝ u z ω₁‖ ^ 2)] at h
 
 end Lines
 
 section IntegrationByParts
+
+/-- The derivative `Du w conj φ + u conj (Dφ w)` of `u conj φ` in the direction `w` is continuous
+for `C¹` functions `u` and `φ`. -/
+theorem continuous_fderiv_mul_conj_add_mul_conj_fderiv {φ : ℂ → ℂ} (hu : ContDiff ℝ 1 u)
+    (hφ : ContDiff ℝ 1 φ) (w : ℂ) :
+    Continuous fun z ↦ fderiv ℝ u z w * conj (φ z) + u z * conj (fderiv ℝ φ z w) := by
+  have := hu.continuous_fderiv one_ne_zero; have := hφ.continuous_fderiv one_ne_zero
+  have := hu.continuous; have := hφ.continuous
+  fun_prop
+
+/-- **Integration by parts along the first lattice direction.** For `C¹` functions `u` and `φ`
+twisted by the same unit complex number `χ₁` along `ω₁`, the function `u conj φ` is periodic in
+the first lattice coordinate, so its derivative `Du ω₁ conj φ + u conj (Dφ ω₁)` integrates to zero
+over the fundamental domain. -/
+theorem setIntegral_fderiv_mul_conj_add_mul_conj_fderiv_eq_zero {φ : ℂ → ℂ} (hu : ContDiff ℝ 1 u)
+    (hφ : ContDiff ℝ 1 φ) (hχ₁ : ‖χ₁‖ = 1) (hu₁ : ∀ z, u (z + ω₁) = χ₁ * u z)
+    (hφ₁ : ∀ z, φ (z + ω₁) = χ₁ * φ z) :
+    ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
+      (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₁ * conj (φ (p.1 * ω₁ + p.2 * ω₂)) +
+        u (p.1 * ω₁ + p.2 * ω₂) * conj (fderiv ℝ φ (p.1 * ω₁ + p.2 * ω₂) ω₁)) = 0 := by
+  set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ with hL
+  have hu' (s t : ℝ) : HasDerivAt (fun s ↦ u (L (s, t))) (fderiv ℝ u (L (s, t)) ω₁) s :=
+    ((hu.differentiable one_ne_zero) _).hasFDerivAt.comp_hasDerivAt s
+      (hasDerivAt_latticeCoord_fst s t)
+  have hφ' (s t : ℝ) : HasDerivAt (fun s ↦ conj (φ (L (s, t))))
+      (conj (fderiv ℝ φ (L (s, t)) ω₁)) s := by
+    simpa using (((hφ.differentiable one_ne_zero) _).hasFDerivAt.comp_hasDerivAt s
+      (hasDerivAt_latticeCoord_fst (ω₁ := ω₁) (ω₂ := ω₂) s t)).star
+  have hconj : χ₁ * conj χ₁ = 1 := by
+    rw [Complex.mul_conj, Complex.normSq_eq_norm_sq, hχ₁]
+    simp
+  have hL₁ (t : ℝ) : L (1, t) = L (0, t) + ω₁ := by simp only [hL]; push_cast; ring
+  refine setIntegral_rect_eq_zero_of_hasDerivAt_fst
+    ((continuous_fderiv_mul_conj_add_mul_conj_fderiv hu hφ ω₁).comp
+      continuous_ofReal_fst_mul_add_ofReal_snd_mul)
+    (Φ := fun p ↦ u (L p) * conj (φ (L p))) (fun s t ↦ (hu' s t).mul (hφ' s t)) fun t ↦ ?_
+  simp only [hL₁, hu₁, hφ₁, map_mul]
+  linear_combination (u (L (0, t)) * conj (φ (L (0, t)))) * hconj
 
 /-- **A periodic potential.** Let `u` be `C²` with `u (z + ω₁) = χ₁ u z` for a unit complex
 number `χ₁`, and `v (s, t) = u (s ω₁ + t ω₂)`. For every direction `w`, the function
@@ -245,41 +305,18 @@ private theorem setIntegral_potential_eq_zero (hu : ContDiff ℝ 2 u) (hχ₁ : 
       (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₁ * conj (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) w) +
         u (p.1 * ω₁ + p.2 * ω₂) * conj (fderiv ℝ (fderiv ℝ u) (p.1 * ω₁ + p.2 * ω₂) ω₁ w)) =
       0 := by
-  set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ with hL
-  have hLc : Continuous L := continuous_latticeCoord
-  have hud : Differentiable ℝ u := hu.differentiable (by norm_num)
   have hdu : Differentiable ℝ (fderiv ℝ u) :=
     (hu.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero
-  have hdc : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
-  have hddc : Continuous (fderiv ℝ (fderiv ℝ u)) :=
-    (hu.fderiv_right (m := 1) le_rfl).continuous_fderiv one_ne_zero
-  -- The derivatives of `v` and of `conj (Du w)` along the first coordinate.
-  have hv (s t : ℝ) : HasDerivAt (fun s ↦ u (L (s, t))) (fderiv ℝ u (L (s, t)) ω₁) s :=
-    (hud _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_latticeCoord_fst s t)
-  have hd (s t : ℝ) : HasDerivAt (fun s ↦ conj (fderiv ℝ u (L (s, t)) w))
-      (conj (fderiv ℝ (fderiv ℝ u) (L (s, t)) ω₁ w)) s := by
-    have h := ((hdu _).hasFDerivAt.comp_hasDerivAt s
-      (hasDerivAt_latticeCoord_fst (ω₁ := ω₁) (ω₂ := ω₂) s t)).clm_apply (hasDerivAt_const s w)
-    simpa using h.star
   -- Differentiating `u (z + ω₁) = χ₁ u z` twists the derivative by the same `χ₁`.
-  have hdu₁ (z : ℂ) : fderiv ℝ u (z + ω₁) = χ₁ • fderiv ℝ u z := by
-    have := congrArg (fun g ↦ fderiv ℝ g z) (funext h₁ : (fun z ↦ u (z + ω₁)) = fun z ↦ χ₁ * u z)
-    simpa only [fderiv_comp_add_right, fderiv_const_mul (hud z)] using this
-  have hconj : χ₁ * conj χ₁ = 1 := by
-    rw [Complex.mul_conj, Complex.normSq_eq_norm_sq, hχ₁]
+  have hdu₁ := fderiv_add_eq_smul (𝕜 := ℝ) (a := χ₁) h₁
+  have hd (z : ℂ) : fderiv ℝ (fun z ↦ fderiv ℝ u z w) z ω₁ = fderiv ℝ (fderiv ℝ u) z ω₁ w := by
+    rw [fderiv_clm_apply (hdu z) (differentiableAt_const w)]
     simp
-  have hL₁ (t : ℝ) : L (1, t) = L (0, t) + ω₁ := by simp only [hL]; push_cast; ring
-  refine setIntegral_rect_eq_zero_of_hasDerivAt_fst ?_
-    (Φ := fun p ↦ u (L p) * conj (fderiv ℝ u (L p) w))
-    (fun s t ↦ (hv s t).mul (hd s t)) fun t ↦ ?_
-  · have h₁c := (hdc.comp hLc).clm_apply (continuous_const (y := ω₁))
-    have h₂c := (hdc.comp hLc).clm_apply (continuous_const (y := w))
-    have h₃c := ((hddc.comp hLc).clm_apply (continuous_const (y := ω₁))).clm_apply
-      (continuous_const (y := w))
-    exact (h₁c.mul (continuous_conj.comp h₂c)).add
-      ((hu.continuous.comp hLc).mul (continuous_conj.comp h₃c))
-  · simp only [hL₁, h₁, hdu₁, _root_.smul_apply, smul_eq_mul, map_mul]
-    linear_combination (u (L (0, t)) * conj (fderiv ℝ u (L (0, t)) w)) * hconj
+  have h := setIntegral_fderiv_mul_conj_add_mul_conj_fderiv_eq_zero (ω₂ := ω₂)
+    (φ := fun z ↦ fderiv ℝ u z w) (hu.of_le one_le_two)
+    ((hu.fderiv_right (m := 1) le_rfl).clm_apply contDiff_const) hχ₁ h₁
+    fun z ↦ by simp [hdu₁]
+  simpa only [hd] using h
 
 /-- **The imaginary part of the cross term integrates to zero.** For a `C²` function `u` twisted by
 unit complex numbers along `ω₁` and `ω₂`, with `A = ∂_s v`, `B = ∂_t v` and
@@ -292,9 +329,11 @@ private theorem setIntegral_im_mul_conj_eq_zero (hu : ContDiff ℝ 2 u) (hχ₁ 
       conj (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₂)).im = 0 := by
   have hint₁ := setIntegral_potential_eq_zero (ω₂ := ω₂) hu hχ₁ h₁ ω₂
   have hint₂ := setIntegral_potential_eq_zero (ω₂ := ω₁) hu hχ₂ h₂ ω₁
-  rw [setIntegral_comp_latticeCoord_swap (fun z ↦ fderiv ℝ u z ω₂ * conj (fderiv ℝ u z ω₁) +
-    u z * conj (fderiv ℝ (fderiv ℝ u) z ω₂ ω₁))] at hint₂
-  have hc : Continuous fun p : ℝ × ℝ ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ := continuous_latticeCoord
+  rw [setIntegral_comp_ofReal_fst_mul_add_ofReal_snd_mul_swap
+    (fun z ↦ fderiv ℝ u z ω₂ * conj (fderiv ℝ u z ω₁) +
+      u z * conj (fderiv ℝ (fderiv ℝ u) z ω₂ ω₁))] at hint₂
+  have hc : Continuous fun p : ℝ × ℝ ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ :=
+    continuous_ofReal_fst_mul_add_ofReal_snd_mul
   have hdc : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
   have huc : Continuous u := hu.continuous
   set F₁ : ℂ → ℂ := fun z ↦ fderiv ℝ u z ω₁ * conj (fderiv ℝ u z ω₂) +
@@ -406,7 +445,7 @@ private theorem mul_setIntegral_le_setIntegral_sub (hu : ContDiff ℝ 1 u)
             conj (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₂)).re) := by
   set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂
   set D := (conj ω₁ * ω₂).im
-  have hLc : Continuous L := continuous_latticeCoord
+  have hLc : Continuous L := continuous_ofReal_fst_mul_add_ofReal_snd_mul
   have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
   have hW₁ := mul_setIntegral_norm_sq_le_fst (ω₂ := ω₂) hu h₁
   have hW₂ := mul_setIntegral_norm_sq_le_snd (ω₁ := ω₁) hu h₂
@@ -481,7 +520,7 @@ private theorem mul_setIntegral_norm_sq_le_of_four_mul_sq_mul_norm_sq_eq (hu : C
   set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂
   have hu1 : ContDiff ℝ 1 u := hu.of_le (by norm_num)
   have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  have hLc : Continuous L := continuous_latticeCoord
+  have hLc : Continuous L := continuous_ofReal_fst_mul_add_ofReal_snd_mul
   have hGc : Continuous fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 +
       ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
       2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re := by
@@ -489,8 +528,8 @@ private theorem mul_setIntegral_norm_sq_le_of_four_mul_sq_mul_norm_sq_eq (hu : C
   have hIc : Continuous fun p ↦ ε * (2 * (conj ω₁ * ω₂).im *
       (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).im) := by
     fun_prop
-  have him := setIntegral_im_mul_conj_eq_zero hu (by simpa using norm_exp_ofReal_mul_I (2 * π * θ₁))
-    (by simpa using norm_exp_ofReal_mul_I (2 * π * θ₂)) h₁ h₂
+  have him := setIntegral_im_mul_conj_eq_zero hu (norm_exp_two_pi_mul_ofReal_mul_I θ₁)
+    (norm_exp_two_pi_mul_ofReal_mul_I θ₂) h₁ h₂
   refine mul_setIntegral_le_of_four_mul (W := fun p ↦ W (L p))
     (V := ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (L p)‖ ^ 2)
     (G := fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -

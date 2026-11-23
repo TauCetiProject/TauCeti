@@ -24,7 +24,9 @@ the native dual carrying the inverse-antipode contragredient action. On a reflex
 `TauCeti.BialgebraModule.leftDualEvalEquiv` is evaluation as an `H`-linear equivalence with the
 `S`-contragredient `TauCeti.BialgebraModule.Dual` of this left contragredient. It identifies the
 module with the right dual of its left dual, from which left duals of finite-dimensional
-modules are obtained.
+modules are obtained. Over a cocommutative Hopf algebra, where `S⁻¹ = S`,
+`TauCeti.BialgebraModule.leftDualEquivDual` identifies `LeftDual` with `Dual` as `H`-modules by
+the identity of the native dual.
 
 The construction follows `AlgHom.hopfDual`, reusing Mathlib's
 `Module.Dual.transpose` and `Module.evalEquiv`. See C. Kassel,
@@ -172,6 +174,29 @@ theorem leftDualEquiv_smul_apply (h : H) (φ : LeftDual R H M hS) (m : M) :
 /-- The inverse-antipode dual of a finite projective module is finite. -/
 instance [Module.Projective R M] [Module.Finite R M] : Module.Finite R (LeftDual R H M hS) :=
   Module.Finite.equiv (leftDualEquiv R H M hS).symm
+
+/-- Over a cocommutative Hopf algebra, `S⁻¹ = S`, so the inverse-antipode contragredient
+`LeftDual R H M hS` agrees `H`-linearly with the contragredient `Dual R H M` by the identity of
+the underlying linear dual. -/
+noncomputable def leftDualEquivDual [Coalgebra.IsCocomm R H] :
+    LeftDual R H M hS ≃ₗ[H] Dual R H M :=
+  let e : LeftDual R H M hS ≃ₗ[R] Dual R H M :=
+    (leftDualEquiv R H M hS).trans (dualEquiv R H M).symm
+  e.toAddEquiv.toLinearEquiv fun h φ =>
+    (dualEquiv R H M).injective <| LinearMap.ext fun m => by
+      simp [e]
+
+/-- On underlying linear functionals, `leftDualEquivDual` is the identity. -/
+@[simp]
+theorem dualEquiv_leftDualEquivDual [Coalgebra.IsCocomm R H] (φ : LeftDual R H M hS) :
+    dualEquiv R H M (leftDualEquivDual R H M hS φ) = leftDualEquiv R H M hS φ :=
+  (dualEquiv R H M).apply_symm_apply _
+
+/-- On underlying linear functionals, the inverse of `leftDualEquivDual` is the identity. -/
+@[simp]
+theorem leftDualEquiv_leftDualEquivDual_symm [Coalgebra.IsCocomm R H] (φ : Dual R H M) :
+    leftDualEquiv R H M hS ((leftDualEquivDual R H M hS).symm φ) = dualEquiv R H M φ :=
+  (leftDualEquiv R H M hS).apply_symm_apply _
 
 variable [Module.IsReflexive R M]
 

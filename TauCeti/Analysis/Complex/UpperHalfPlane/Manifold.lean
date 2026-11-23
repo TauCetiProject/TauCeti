@@ -8,29 +8,45 @@ module
 public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
+public import Mathlib.Geometry.Manifold.Algebra.SMul
 
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Analysis.Polynomial.SymmetricPower
+import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Topology.DiscreteSeparation
 
 /-!
-# Analyticity through `ofComplex`
+# Smoothness and analyticity through `ofComplex`
 
-Near `τ`, the chart of `ℍ` at `τ` reads a function `f` as its extension `f ∘ ofComplex`. A
-function holomorphic on the upper half-plane, extended to `ℂ` by `ofComplex`, is
-analytic at every point of the open upper half-plane, and a locally uniform limit of holomorphic
-functions on `ℍ` is holomorphic. Holomorphy on `ℍ` is also invariant under the Möbius action of
-a positive-determinant real matrix, the biholomorphism `UpperHalfPlane.mdifferentiable_smul`
-exhibits. Polynomial functions of the coordinate, such as `z ↦ P(z, 1)` for a binary form `P`,
-are holomorphic, and so are the coefficients of a product `∏ (X - aᵢ(τ))` of linear factors
-whose roots `aᵢ` are holomorphic.
+Near `τ`, the chart of `ℍ` at `τ` reads a function `f` as its extension `f ∘ ofComplex`
+(`comp_chartAt_symm_eventuallyEq` and `UpperHalfPlane.writtenInExtChartAt_eventuallyEq`), so its
+manifold derivative in tangent coordinates is the Fréchet derivative of
+`extChartAt J (f τ) ∘ f ∘ ofComplex` (`UpperHalfPlane.tangentSpaceCastModel_mfderiv_apply`), and
+the real coordinate functions `z ↦ Im z` and `z ↦ log (Im z)` are real-analytic (`contMDiff_im`,
+`contMDiff_log_im`). A function holomorphic on the upper half-plane, extended to `ℂ` by
+`ofComplex`, is analytic at every point of the open upper half-plane, and a locally uniform limit
+of holomorphic functions on `ℍ` is holomorphic.
+
+Holomorphy on `ℍ` is invariant under the Möbius action of a positive-determinant real matrix, the
+biholomorphism `UpperHalfPlane.mdifferentiable_smul` exhibits (`mdifferentiable_comp_smul_iff`),
+while the reflection `UpperHalfPlane.J : z ↦ -conj z` is real-analytic (`contMDiff_J_smul`), so
+every element of `GL(2, ℝ)`, `PGL(2, ℝ)`, and `SL(2, R)` acts on `ℍ` by a real-analytic map for
+`𝓘(ℝ, ℂ)`. Polynomial functions of the coordinate, such as `z ↦ P(z, 1)` for a binary form `P`,
+are holomorphic, and so are the coefficients of a product `∏ (X - aᵢ(τ))` of linear factors whose
+roots `aᵢ` are holomorphic.
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.comp_chartAt_symm_eventuallyEq` — near `τ`, a function read in the
-  chart of `ℍ` at `τ` is its extension by `ofComplex`.
+* `TauCeti.UpperHalfPlane.comp_chartAt_symm_eventuallyEq`,
+  `UpperHalfPlane.writtenInExtChartAt_eventuallyEq`, and
+  `UpperHalfPlane.tangentSpaceCastModel_mfderiv_apply` — near `τ`, a function read in the chart of
+  `ℍ` at `τ` is its extension by `ofComplex`, and its differential in tangent coordinates is the
+  Fréchet derivative of `extChartAt J (f τ) ∘ f ∘ ofComplex`.
+* `TauCeti.UpperHalfPlane.contMDiff_im` and `TauCeti.UpperHalfPlane.contMDiff_log_im` — `Im` and
+  `log ∘ Im` are real-analytic on `ℍ`.
 * `TauCeti.UpperHalfPlane.analyticAt_comp_ofComplex`.
 * `MvPolynomial.mdifferentiable_aeval_coe` — `z ↦ P(z, 1)` is holomorphic for a polynomial `P`
   in two variables.
@@ -38,6 +54,11 @@ whose roots `aᵢ` are holomorphic.
   `∏ (X - aᵢ(τ))` are holomorphic when every `aᵢ` is.
 * `TauCeti.UpperHalfPlane.mdifferentiable_comp_smul_iff` — `τ ↦ f (g • τ)` is holomorphic
   exactly when `f` is, for `g : GL (Fin 2) ℝ` of positive determinant.
+* `TauCeti.UpperHalfPlane.contMDiff_J_smul`,
+  `TauCeti.UpperHalfPlane.instContMDiffConstSMulGLReal`,
+  `TauCeti.UpperHalfPlane.instContMDiffConstSMulPGLReal`, and
+  `TauCeti.UpperHalfPlane.instContMDiffConstSMulSL2Real` — `J`, `GL(2, ℝ)`, `PGL(2, ℝ)`, and
+  `SL(2, R)` act on `ℍ` by real-analytic maps (`𝓘(ℝ, ℂ)`).
 * `TauCeti.UpperHalfPlane.not_accPt_zeros_comp_ofComplex` and
   `TauCeti.UpperHalfPlane.exists_isOpen_zeros_inter` — a subset's zeros isolate in an
   open neighbourhood.
@@ -46,13 +67,15 @@ whose roots `aᵢ` are holomorphic.
 
 * [AINTLIB `LeanModularForms`](https://github.com/CBirkbeck/AINTLIB) — the valence-formula
   development this file ports onto the current Mathlib pin.
+* Svetlana Katok, *Fuchsian Groups*, University of Chicago Press (1992), §1.1.
+* Alan Beardon, *The Geometry of Discrete Groups*, Springer GTM 91 (1983), §7.2.
 -/
 
 public section
 
 open Filter Topology UpperHalfPlane
 
-open scoped Manifold MatrixGroups
+open scoped ContDiff Manifold MatrixGroups
 
 namespace TauCeti.UpperHalfPlane
 
@@ -65,6 +88,50 @@ theorem comp_chartAt_symm_eventuallyEq {α : Type*} (f : ℍ → α) (τ : ℍ) 
   congr 1
   ext
   simpa using (chartAt ℂ τ).right_inv hwt
+
+/-- In the inclusion chart of `ℍ` at `z` for the manifold structure `𝓘(𝕜, ℂ)`,
+`writtenInExtChartAt 𝓘(𝕜, ℂ) J z f` agrees near `(z : ℂ)` with
+`extChartAt J (f z) ∘ f ∘ ofComplex`. -/
+theorem _root_.UpperHalfPlane.writtenInExtChartAt_eventuallyEq (z : ℍ)
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 ℂ]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] (J : ModelWithCorners 𝕜 E H)
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H N] (f : ℍ → N) :
+    writtenInExtChartAt 𝓘(𝕜, ℂ) J z f =ᶠ[𝓝 (z : ℂ)] extChartAt J (f z) ∘ f ∘ ofComplex := by
+  filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw
+  have hsymm : (extChartAt 𝓘(𝕜, ℂ) z).symm w = ofComplex w := by
+    apply UpperHalfPlane.ext
+    rw [ofComplex_apply_of_im_pos hw, coe_mk]
+    simpa using (extChartAt 𝓘(𝕜, ℂ) z).right_inv (by simpa using hw)
+  simp only [writtenInExtChartAt, Function.comp_apply, hsymm]
+
+/-- In the inclusion chart of `ℍ` at `z`, the manifold derivative of a differentiable map
+`f : ℍ → N` read through `tangentSpaceCastModel` is the Fréchet derivative of
+`extChartAt J (f z) ∘ f ∘ ofComplex` at `(z : ℂ)`. -/
+theorem _root_.UpperHalfPlane.tangentSpaceCastModel_mfderiv_apply (z : ℍ)
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 ℂ]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {J : ModelWithCorners 𝕜 E H}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H N] {f : ℍ → N}
+    (hf : MDifferentiableAt 𝓘(𝕜, ℂ) J f z) (v : TangentSpace 𝓘(𝕜, ℂ) z) :
+    tangentSpaceCastModel J (f z) (mfderiv 𝓘(𝕜, ℂ) J f z v) =
+      fderiv 𝕜 (extChartAt J (f z) ∘ f ∘ ofComplex) (z : ℂ)
+        (tangentSpaceCastModel 𝓘(𝕜, ℂ) z v) := by
+  have hchart : extChartAt 𝓘(𝕜, ℂ) z z = (z : ℂ) := by simp
+  rw [hf.tangentSpaceCastModel_mfderiv_apply, hchart,
+    (z.writtenInExtChartAt_eventuallyEq J f).fderiv_eq]
+
+/-- The imaginary-part coordinate `z ↦ Im z` is real-analytic on `ℍ` (and hence `C^n` of every
+order `n : ℕ∞ω`). -/
+theorem contMDiff_im {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) n UpperHalfPlane.im := fun z ↦
+  Complex.imCLM.contMDiff.contMDiffAt.comp z contMDiffAt_extChartAt
+
+/-- The logarithmic height `z ↦ log (Im z)` is real-analytic on `ℍ` (and hence `C^n` of every
+order `n : ℕ∞ω`). -/
+theorem contMDiff_log_im {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) n (fun z : ℍ ↦ Real.log z.im) := fun z ↦
+  (Real.contDiffAt_log.2 z.im_ne_zero).contMDiffAt.comp z (contMDiff_im z)
 
 /-- For a polynomial `P` in two variables with coefficients mapping to `ℂ`, the function
 `z ↦ P(z, 1)` is holomorphic on `ℍ`. -/
@@ -89,7 +156,7 @@ theorem mdifferentiable_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι) {a : ι 
     MDiff fun τ : ℍ ↦ ((∏ i ∈ s, (X - C (a i τ))).coeff k : ℂ) := by
   -- index the roots by `s`: the coefficient is an analytic function of the tuple of roots
   have hv : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, s → ℂ) fun τ : ℍ ↦ fun i : s ↦ a i τ :=
-    mdifferentiable_pi_space_iff.2 fun i ↦ ha i i.2
+    mdifferentiable_pi_space_iff.2 fun i ↦ ha i i.property
   have hg : Differentiable ℂ fun v : s → ℂ ↦ (∏ i : s, (X - C (v i))).coeff k := fun v ↦
     (TauCeti.Polynomial.analyticAt_coeff_prod_X_sub_C Finset.univ k v).differentiableAt
   convert Differentiable.comp_mdifferentiable hg hv using 1
@@ -112,7 +179,7 @@ lemma not_accPt_zeros_comp_ofComplex {g : ℍ → ℂ} (hg : MDiff g) (hg0 : g �
     analyticAt_comp_ofComplex hg hw
   obtain ⟨τ, hτ⟩ := Function.ne_iff.mp hg0
   have hcod := hall.preimage_zero_mem_codiscreteWithin (x := (τ : ℂ))
-    (by simpa [Function.comp, ofComplex_apply] using hτ) τ.2
+    (by simpa [Function.comp, ofComplex_apply] using hτ) τ.coe_im_pos
     ⟨⟨Complex.I, by simp⟩, (convex_halfSpace_im_gt 0).isPreconnected⟩
   have hne := mem_codiscreteWithin_accPt.mp hcod x hx
   have hset : {z : ℂ | 0 < z.im ∧ (g ∘ ofComplex) z = 0} =
@@ -156,7 +223,7 @@ lemma mdifferentiable_of_tendstoLocallyUniformly {ι : Type*} {l : Filter ι} [l
   exact hloc.differentiableOn (hFd.mono fun i hi ↦ UpperHalfPlane.mdifferentiable_iff.mp hi)
     isOpen_upperHalfPlaneSet
 
-/-! ### Holomorphy and the Möbius action -/
+/-! ### Holomorphy and smoothness of the Möbius action -/
 
 /-- **Holomorphy is invariant under a positive-determinant Möbius action.** For any
 `g : GL (Fin 2) ℝ` with `0 < det g`, the function `τ ↦ f (g • τ)` is holomorphic exactly when
@@ -173,6 +240,49 @@ lemma mdifferentiable_comp_smul_iff {g : GL (Fin 2) ℝ} (hg : 0 < (g.det : ℝ)
     simp [smul_smul]
   rw [hcomp]
   exact hf.comp (mdifferentiable_smul hg')
+
+/-- The reflection `UpperHalfPlane.J : z ↦ -conj z` is real-analytic on `ℍ` (and hence `C^n` of
+every order `n : ℕ∞ω`). -/
+theorem contMDiff_J_smul {n : ℕ∞ω} : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n (J • · : ℍ → ℍ) := by
+  apply ContMDiff.of_comp_isOpenEmbedding isOpenEmbedding_coe
+  have hcoe : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n UpperHalfPlane.coe := fun _ ↦ contMDiffAt_extChartAt
+  have hfun : UpperHalfPlane.coe ∘ (J • · : ℍ → ℍ) = (-Complex.conjCLE : ℂ →L[ℝ] ℂ) ∘
+      UpperHalfPlane.coe := by
+    funext z
+    simp [coe_J_smul]
+  rw [hfun]
+  exact (-Complex.conjCLE : ℂ →L[ℝ] ℂ).contDiff.contMDiff.comp hcoe
+
+/-- Every element of `GL(2, ℝ)` acts on `ℍ` by a real-analytic map (and hence smoothly of every
+order `n : ℕ∞ω`). -/
+instance instContMDiffConstSMulGLReal {n : ℕ∞ω} :
+    ContMDiffConstSMul 𝓘(ℝ, ℂ) n (GL (Fin 2) ℝ) ℍ where
+  contMDiff_const_smul g := by
+    -- Positive-determinant matrices act holomorphically; negative-determinant ones factor via `J`.
+    have hpos {h : GL (Fin 2) ℝ} (hh : 0 < h.det.val) :
+        ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n (h • · : ℍ → ℍ) := by
+      simpa only [modelWithCornersSelf_restrictScalars] using
+        ((UpperHalfPlane.contMDiff_smul (n := ω) hh).restrictScalars ℝ).of_le le_top
+    rcases g.det.ne_zero.lt_or_gt with hg | hg
+    · have hJg : 0 < (J * g).det.val := by simpa using hg
+      have hcomp : (g • · : ℍ → ℍ) = (J • ·) ∘ ((J * g) • ·) := by
+        funext z
+        simp [smul_smul, ← mul_assoc, ← sq]
+      rw [hcomp]
+      exact contMDiff_J_smul.comp (hpos hJg)
+    · exact hpos hg
+
+/-- Every element of `PGL(2, ℝ)` acts on `ℍ` by a real-analytic map. -/
+instance instContMDiffConstSMulPGLReal {n : ℕ∞ω} :
+    ContMDiffConstSMul 𝓘(ℝ, ℂ) n PGL(2, ℝ) ℍ where
+  contMDiff_const_smul q := by
+    induction q using Matrix.ProjGenLinGroup.induction_on with | mk g =>
+    simpa only [pglMk_smul] using contMDiff_const_smul (I := 𝓘(ℝ, ℂ)) (n := n) g
+
+/-- Every element of `SL(2, R)` acts on `ℍ` by a real-analytic map. -/
+instance instContMDiffConstSMulSL2Real {R : Type*} [CommRing R] [Algebra R ℝ] {n : ℕ∞ω} :
+    ContMDiffConstSMul 𝓘(ℝ, ℂ) n SL(2, R) ℍ :=
+  MulAction.contMDiffConstSMul_compHom (I := 𝓘(ℝ, ℂ)) (f := Matrix.SpecialLinearGroup.mapGL ℝ)
 
 end TauCeti.UpperHalfPlane
 
