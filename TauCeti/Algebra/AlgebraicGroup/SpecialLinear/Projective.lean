@@ -346,15 +346,9 @@ theorem centerPointwiseQuotientIsoPGLOfAlgClosed_hom_mk
       Matrix.ProjGenLinGroup.mk
         (Matrix.SpecialLinearGroup.toGL
           (pointsMulEquiv (R := k) (A := F) n q)) := by
-  unfold centerPointwiseQuotientIsoPGLOfAlgClosed
-  change (Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosed (n := Fin n) (F := F)).symm
-      ((centerPointwiseQuotientIsoPSL n (CommAlgCat.of k F)).hom (↑q)) = _
-  rw [centerPointwiseQuotientIsoPSL_hom_mk]
-  -- Mathlib's equivalence branches on `Nonempty (Fin n)`; in rank zero as well as in positive
-  -- rank, its inverse is the underlying PSL-to-PGL inclusion.
-  simp only [Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosed,
-    Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosedOfNonempty]
-  split_ifs <;> rfl
+  have h := congrArg Matrix.ProjectiveSpecialLinearGroup.toPGL
+    (centerPointwiseQuotientIsoPSL_hom_mk n (CommAlgCat.of k F) q)
+  simpa [centerPointwiseQuotientIsoPGLOfAlgClosed] using h
 
 /-- The inverse algebraically closed-field identification sends the projective class of a
 determinant-one matrix to the quotient class of its associated `SLₙ`-point. -/

@@ -163,17 +163,7 @@ theorem mapPointsFunctor_conjugationMap_app_surjective {R : Type u} [CommRing R]
     pointsMulEquiv_conjugationMap, MulEquiv.apply_symm_apply]
   rw [← Matrix.ProjGenLinGroup.innerAut_mk]
   have hs' : Matrix.ProjectiveSpecialLinearGroup.toPGL (QuotientGroup.mk g) = p := by
-    classical
-    -- Mathlib constructs both branches of this equivalence from the same inclusion;
-    -- expand its branch selection to recover that inclusion, including in rank zero.
-    by_cases h : Nonempty (Fin n)
-    · simp only [Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosed, dite_eq_left h,
-        Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosedOfNonempty,
-        MulEquiv.symm_symm] at hs
-      exact hs
-    · simp only [Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosed, dite_eq_right h,
-        MulEquiv.symm_symm] at hs
-      exact hs
+    simpa using hs
   exact (congrArg Matrix.ProjGenLinGroup.innerAut hs').trans hp
 
 end
