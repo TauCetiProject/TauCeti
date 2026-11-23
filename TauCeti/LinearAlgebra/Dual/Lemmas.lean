@@ -452,10 +452,11 @@ theorem pi_surjective {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [
   have hl' : LinearIndependent K fun i ↦ (l i : V → K) :=
     hl.map' (LinearMap.ltoFun K V K K) (LinearMap.ker_eq_bot.mpr DFunLike.coe_injective)
   -- The values of the family at a vector are the components of `LinearMap.pi l`.
-  have hspan := span_flip_eq_top_iff_linearIndependent.mpr hl'
+  have hpi : ⇑(LinearMap.pi l) = flip fun i ↦ ⇑(l i) :=
+    funext fun v ↦ funext fun i ↦ LinearMap.pi_apply l v i
   rw [← LinearMap.range_eq_top, ← Submodule.span_eq (LinearMap.range (LinearMap.pi l)),
-    LinearMap.coe_range]
-  exact hspan
+    LinearMap.coe_range, hpi]
+  exact span_flip_eq_top_iff_linearIndependent.mpr hl'
 
 section Separation
 

@@ -117,13 +117,14 @@ theorem mem_ineffectiveArrows_cornerFace_iff
         Manifold.mfderiv_comp_subtype_val_apply (f := ρ i) (x := x₀) v
     rw [h]
     exact hlin
+  -- The labels are invariant under the isotropy action, since `σ a y` is an arrow `y ⟶ a • y`.
+  have hinvU (i : ι) (a : Aut x) : ∀ᶠ y in 𝓝 x₀, ρ i (a • y : U) = ρ i y :=
+    .of_forall fun y ↦ by simpa only [hl a y, hr a y] using (hρinv i (asIso (σ a y).hom)).symm
   have hgerm := (eventually_nhdsWithin_face_smul_eq_iff (fun g ↦ hsmul.contMDiff_const_smul g) hn
-    hfix hρU (fun i a ↦ Eventually.of_forall fun y ↦ ?_) hlinU
-    (cornerDomain_iff.mp (cornerFace_iff.mp hx).1) (cornerFace_iff.mp hx).2 gA).mp hface
-  · rw [mem_ineffectiveArrows_iff, ← hτ, ← (hopen gA).map_nhds_eq, eventually_map]
-    filter_upwards [hgerm] with y hy
-    exact (hl gA y).trans ((congrArg Subtype.val hy).symm.trans (hr gA y).symm)
-  · rw [← hl a y, ← hr a y]
-    exact (hρinv i (asIso (σ a y).hom)).symm
+    hfix hρU hinvU hlinU (cornerDomain_iff.mp (cornerFace_iff.mp hx).1)
+    (cornerFace_iff.mp hx).2 gA).mp hface
+  rw [mem_ineffectiveArrows_iff, ← hτ, ← (hopen gA).map_nhds_eq, eventually_map]
+  filter_upwards [hgerm] with y hy
+  exact (hl gA y).trans ((congrArg Subtype.val hy).symm.trans (hr gA y).symm)
 
 end TauCeti

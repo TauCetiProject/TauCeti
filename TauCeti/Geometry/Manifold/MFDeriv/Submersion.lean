@@ -76,7 +76,7 @@ theorem _root_.IsLocalDiffeomorphAt.surjective_fderiv_pi_comp {ι : Type*} [Fini
         (LinearMap.ker_eq_bot.mpr ContinuousLinearMap.coe_injective)
     intro w
     obtain ⟨u, hu⟩ := LinearIndependent.pi_surjective hlin' w
-    exact ⟨u, hu⟩
+    exact ⟨u, by simpa only [← ContinuousLinearMap.coe_pi, ContinuousLinearMap.coe_coe] using hu⟩
   -- The differential of a local diffeomorphism is invertible, hence surjective.
   obtain ⟨L, hL⟩ := hφ.isInvertible_mfderiv hn
   refine hpi.comp fun w ↦ ?_

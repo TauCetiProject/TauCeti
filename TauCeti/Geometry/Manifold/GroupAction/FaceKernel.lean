@@ -73,10 +73,10 @@ variable {E H M G ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Comple
 
 /-- **Equivariant straightened charts.** Let a finite group act by `C^n` maps, `1 ≤ n`, fixing
 `x`, and let the functions `ρ i` vanish at `x`, be locally invariant and `C¹` at `x`, with
-linearly independent differentials at `x`. Then some chart `χ` centred at `x`, with invariant
-source, makes the action linear through a representation `σ` and the functions `ρ i` linear
-coordinates: they are the components of a surjective continuous linear map `q`, which is
-invariant under `σ`. -/
+linearly independent differentials at `x`. Then some chart `χ` centred at `x`, `C¹` in both
+directions and with invariant source, makes the action linear through a representation `σ` and
+the functions `ρ i` linear coordinates: they are the components of a surjective continuous linear
+map `q`, which is invariant under `σ`. -/
 theorem exists_equivariant_straightened_chart
     (hsmooth : ∀ g : G, ContMDiff I I n fun y : M ↦ g • y) (hn : 1 ≤ n)
     {x : M} (hx : ∀ g : G, g • x = x) {ρ : ι → M → ℝ} (h0 : ∀ i, ρ i x = 0)
@@ -85,6 +85,7 @@ theorem exists_equivariant_straightened_chart
     (hlin : LinearIndependent ℝ fun i ↦ mvfderiv I (ρ i) x) :
     ∃ (σ : ContRepresentation ℝ G E) (χ : OpenPartialHomeomorph M E) (q : E →L[ℝ] ι → ℝ),
       x ∈ χ.source ∧ χ x = 0 ∧
+      ContMDiffOn I 𝓘(ℝ, E) 1 χ χ.source ∧ ContMDiffOn 𝓘(ℝ, E) I 1 χ.symm χ.target ∧
       (∀ g : G, ∀ z ∈ χ.source, g • z ∈ χ.source ∧ χ (g • z) = σ g (χ z)) ∧
       Function.Surjective q ∧ (∀ g : G, q.comp (σ g) = q) ∧
       ∀ z ∈ χ.source, ∀ i, q (χ z) i = ρ i z := by
@@ -112,12 +113,8 @@ theorem exists_equivariant_straightened_chart
   -- Its derivative is surjective, since `e.symm` is a local diffeomorphism at `0`.
   let q : E →L[ℝ] ι → ℝ := fderiv ℝ r 0
   have hd : HasFDerivAt r q 0 := (hrC.differentiableAt one_ne_zero).hasFDerivAt
-  have hq : Function.Surjective q := by
-    refine e.surjective_fderiv_pi_comp_symm hes het hn0 h0t (fun i ↦ ?_) ?_
-    · rw [hsymm0]
-      exact (hρ i).mdifferentiableAt one_ne_zero
-    · rw [hsymm0]
-      exact hlin
+  have hq : Function.Surjective q := e.surjective_fderiv_pi_comp_symm hes het hn0 h0t
+    (fun i ↦ hsymm0 ▸ (hρ i).mdifferentiableAt one_ne_zero) (hsymm0 ▸ hlin)
   -- Local invariance of the defining functions, read in the linear chart.
   have hinvr (g : G) : r ∘ σ g =ᶠ[𝓝 0] r := by
     filter_upwards [e.open_target.mem_nhds h0t,
@@ -127,10 +124,14 @@ theorem exists_equivariant_straightened_chart
   have hqσ (g : G) : q.comp (σ g) = q :=
     hd.comp_eq_of_eventuallyEq (σ g).hasFDerivAt (map_zero _) (hinvr g)
   -- Straighten the defining functions equivariantly, and compose the charts.
-  obtain ⟨e', h0e', he'0, -, -, -, -, hqe', -, he's, -⟩ :=
+  obtain ⟨e', h0e', he'0, -, -, he'C, he'Cs, hqe', -, he's, -⟩ :=
     σ.exists_equivariant_straightening hrU hU h0U le_rfl hr0 hd hq hinvr
-  refine ⟨σ, e.trans e', q, ⟨hxe, by simpa [hex] using h0e'⟩, by simp [hex, he'0],
+  refine ⟨σ, e.trans e', q, ⟨hxe, by simpa [hex] using h0e'⟩, by simp [hex, he'0], ?_, ?_,
     fun g z hz ↦ ?_, hq, hqσ, fun z hz i ↦ ?_⟩
+  · rw [OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.trans_source]
+    exact he'C.contMDiffOn.comp ((hes.of_le hn).mono inter_subset_left) fun _ hz ↦ hz.2
+  · rw [OpenPartialHomeomorph.coe_trans_symm, OpenPartialHomeomorph.trans_target]
+    exact (het.of_le hn).comp (he'Cs.contMDiffOn.mono inter_subset_left) fun _ hz ↦ hz.2
   · obtain ⟨hgz, hegz⟩ := he g z hz.1
     obtain ⟨hσz, he'σz⟩ := he's g _ hz.2
     refine ⟨⟨hgz, by simpa [hegz] using hσz⟩, ?_⟩
@@ -192,7 +193,7 @@ theorem eventually_nhdsWithin_face_smul_eq_iff
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
   let : ContinuousConstSMul G M := ⟨fun g ↦ (hsmooth g).continuous⟩
   refine ⟨fun hg ↦ ?_, fun h ↦ nhdsWithin_le_nhds h⟩
-  obtain ⟨σ, χ, q, hxχ, hχx, hχ, hq, hqσ, hqχ⟩ :=
+  obtain ⟨σ, χ, q, hxχ, hχx, -, -, hχ, hq, hqσ, hqχ⟩ :=
     exists_equivariant_straightened_chart (ρ := fun a : {i // ρ i x = 0} ↦ ρ a) hsmooth hn hx
       (fun a ↦ a.property) (fun a ↦ hρ a) (fun a ↦ hinv a) hlin
   let A := {i // ρ i x = 0}
