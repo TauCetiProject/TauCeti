@@ -135,7 +135,8 @@ section Definition
 variable [CharZero R] [Finite ι] [Nonempty ι] [Preorder R]
 
 /-- The **open fundamental alcove** of a base `b`: the points of the coweight space at which every
-simple root is positive and the highest root `θ = b.highestRoot` is less than `1`.
+simple root is positive and the chosen maximal-height root `θ = b.highestRoot` is less than `1`
+(the classical highest root when `P` is reduced and irreducible).
 
 For a finite, reduced, irreducible, crystallographic root pairing over a linearly ordered ring,
 `RootPairing.mem_fundamentalAlcove_iff_of_mem` characterizes it as the cell of a given point of
@@ -157,7 +158,8 @@ lemma fundamentalAlcove_subset_openDominantChamber :
   (mem_openDominantChamber P.flip b.flip x).mpr fun i hi ↦ by simpa using hx.1 i (by simpa using hi)
 
 /-- The **closed fundamental alcove** of a base `b`: the points of the coweight space at which every
-simple root is nonnegative and the highest root `θ = b.highestRoot` is at most `1`. When `N` is a
+simple root is nonnegative and the chosen maximal-height root `θ = b.highestRoot` is at most `1`
+(the classical highest root when `P` is reduced and irreducible). When `N` is a
 finite-dimensional Hausdorff real topological vector space (`[IsTopologicalAddGroup N]
 [ContinuousSMul ℝ N] [T2Space N] [FiniteDimensional ℝ N]`) and `ι` is finite and nonempty, it is
 the closure of `RootPairing.fundamentalAlcove` (`RootPairing.closure_fundamentalAlcove`). For a
@@ -349,8 +351,9 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 namespace Base
 
 /-- The **affine simple roots** of a base `b`: the affine functions `a₀ = 1 - θ` at the affine node
-`none`, and `aᵢ = αᵢ` at the node of a simple root `αᵢ`, where `θ = b.highestRoot`. Their zero sets
-are the walls of the fundamental alcove
+`none`, and `aᵢ = αᵢ` at the node of a simple root `αᵢ`, where `θ = b.highestRoot` is the chosen
+maximal-height root (the classical highest root when `P` is reduced and irreducible). Their zero
+sets are the walls of the fundamental alcove
 (`RootPairing.mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos`). -/
 noncomputable def affineSimpleRoot : Option b.support → N → R
   | none, x => 1 - P.root' b.highestRoot x
@@ -381,8 +384,9 @@ lemma affineSimpleRoot_injective : Function.Injective b.affineSimpleRoot := by
       P.toPerfPair.injective <| LinearMap.ext fun x ↦ by simpa using congrFun h x
     exact congrArg some (Subtype.ext (P.root.injective this))
 
-/-- **The null-root relation**: `∑ₖ mₖ aₖ = 1`, where the marks `mₖ` are the coefficients of the
-highest root `θ = ∑ mᵢ αᵢ` and `m₀ = 1`. -/
+/-- **The null-root relation**: `∑ₖ mₖ aₖ = 1`, where the marks `mₖ` are the simple-root expansion
+coefficients of the chosen maximal-height root `θ = b.highestRoot = ∑ mᵢ αᵢ` (the classical
+highest root when `P` is reduced and irreducible) and `m₀ = 1`. -/
 theorem sum_affineMarks_mul_affineSimpleRoot (x : N) :
     ∑ k, (b.affineMarks k : R) * b.affineSimpleRoot k x = 1 := by
   have h : P.root' b.highestRoot x =
@@ -439,7 +443,8 @@ theorem mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg [PartialO
 
 variable [P.IsRootSystem]
 
-/-- The highest root evaluated on a fundamental coweight `ϖⱼ` is the mark `mⱼ`. -/
+/-- The chosen maximal-height root `b.highestRoot` (the classical highest root when `P` is
+reduced and irreducible) evaluated on a fundamental coweight `ϖⱼ` is the mark `mⱼ`. -/
 @[simp]
 theorem Base.root'_highestRoot_fundamentalCoweightBasis (j : b.support) :
     P.root' b.highestRoot (b.fundamentalCoweightBasis j) = b.affineMarks (some j) := by

@@ -270,8 +270,11 @@ lemma constVAdd_mem_affineWeylGroup {v : N} (hv : v ∈ P.corootSpan ℤ) :
 /-- `LinearEquiv.toAffineEquiv` as a monoid homomorphism. -/
 private def toAffineEquivHom : (N ≃ₗ[R] N) →* (N ≃ᵃ[R] N) where
   toFun := LinearEquiv.toAffineEquiv
-  map_one' := AffineEquiv.ext fun _ ↦ rfl
-  map_mul' _ _ := AffineEquiv.ext fun _ ↦ rfl
+  map_one' := AffineEquiv.ext fun x ↦ by
+    simp only [LinearEquiv.coe_toAffineEquiv, FunLike.coe_one_eq_id, AffineEquiv.coe_one]
+  map_mul' f g := AffineEquiv.ext fun x ↦ by
+    simp only [LinearEquiv.coe_toAffineEquiv, mul_apply_eq_comp, AffineEquiv.coe_mul,
+      Function.comp_apply]
 
 private lemma toAffineEquivHom_apply (w : N ≃ₗ[R] N) :
     toAffineEquivHom (R := R) (N := N) w = w.toAffineEquiv :=
@@ -458,7 +461,8 @@ theorem affinePointStabilizer_zero :
     rw [toAffineEquivHom_apply, LinearEquiv.coe_toAffineEquiv,
       AffineEquiv.apply_eq_linear_add f y, hf0, add_zero]
   · rintro ⟨w, hw, rfl⟩
-    exact ⟨P.toAffineEquiv_mem_affineWeylGroup hw, map_zero w⟩
+    exact ⟨P.toAffineEquiv_mem_affineWeylGroup hw, by
+      rw [toAffineEquivHom_apply, LinearEquiv.coe_toAffineEquiv, map_zero]⟩
 
 /-- Conjugating `P.affinePointStabilizer x` by `g ∈ W_aff` gives `P.affinePointStabilizer (g x)`. -/
 theorem map_conj_affinePointStabilizer {g : N ≃ᵃ[R] N} (hg : g ∈ P.affineWeylGroup) (x : N) :
