@@ -192,7 +192,6 @@ noncomputable abbrev orthShapeRep (t : YoungTableau μ) :
 
 /-- The action on the shape space is the restriction of the diagonal action on the tensor
 power. -/
-@[simp]
 theorem orthShapeRep_apply_coe (t : YoungTableau μ) (g : Matrix.orthogonalGroup (Fin n) k)
     (x : (orthShapeSpace k n t).toSubmodule) :
     ((orthShapeRep k n t g x : (orthShapeSpace k n t).toSubmodule) :

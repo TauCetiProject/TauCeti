@@ -142,7 +142,7 @@ def crossingComponentOfHalfEdge (h : Fin (4 * n)) : D.CrossingComponent :=
 
 /-- A function on crossing-bearing components agrees with an arc-invariant half-edge function on
 every half-edge once it agrees on outgoing half-edges. -/
-theorem apply_crossingComponentOfHalfEdge {α : Type*} (φ : D.CrossingComponent → α)
+theorem apply_crossingComponentOfHalfEdge {α : Sort*} (φ : D.CrossingComponent → α)
     (g : Fin (4 * n) → α)
     (hedge : ∀ x, g (D.edgePair.val x) = g x)
     (hout : ∀ h : {h : Fin (4 * n) // D.orientation h = true}, φ ⟦h⟧ = g h.val)
@@ -156,27 +156,26 @@ theorem apply_crossingComponentOfHalfEdge {α : Type*} (φ : D.CrossingComponent
 
 /-- Descend a half-edge function invariant under crossing turns and arc pairing to the
 crossing-bearing components of `D`. -/
-def liftCrossingComponent {α : Type*} (f : Fin (4 * n) → α)
+def liftCrossingComponent {α : Sort*} (f : Fin (4 * n) → α)
     (hturn : ∀ x, f (D.crossingTurn x) = f x)
     (hedge : ∀ x, f (D.edgePair.val x) = f x) :
     D.CrossingComponent → α :=
-  (invariantColouringEquiv D.componentPermOutgoing).symm
-    ⟨fun x ↦ f x.val, funext fun x ↦ by
-      simp only [Function.comp_apply, componentPermOutgoing_apply, PDCode.componentPerm_apply]
-      rw [hturn, hedge]⟩
+  Quotient.lift (fun x ↦ f x.val) fun _ _ hxy ↦
+    hxy.apply_eq_of_apply_eq (f := fun x ↦ f x.val) fun x ↦ by
+      simp only [componentPermOutgoing_apply, PDCode.componentPerm_apply, hturn, hedge]
 
 /-- Evaluating `liftCrossingComponent` on an outgoing traversal class evaluates the underlying
 half-edge function at that representative. -/
-@[simp] theorem liftCrossingComponent_mk {α : Type*} (f : Fin (4 * n) → α)
+@[simp] theorem liftCrossingComponent_mk {α : Sort*} (f : Fin (4 * n) → α)
     (hturn : ∀ x, f (D.crossingTurn x) = f x)
     (hedge : ∀ x, f (D.edgePair.val x) = f x)
     (h : {h : Fin (4 * n) // D.orientation h = true}) :
-    D.liftCrossingComponent f hturn hedge ⟦h⟧ = f h.val :=
-  invariantColouringEquiv_symm_apply D.componentPermOutgoing _ h
+    D.liftCrossingComponent f hturn hedge ⟦h⟧ = f h.val := by
+  simp only [liftCrossingComponent, Quotient.lift_mk]
 
 /-- Evaluating `liftCrossingComponent` on the crossing component of any half-edge, incoming or
 outgoing, recovers the underlying half-edge function. -/
-@[simp] theorem liftCrossingComponent_crossingComponentOfHalfEdge {α : Type*}
+@[simp] theorem liftCrossingComponent_crossingComponentOfHalfEdge {α : Sort*}
     (f : Fin (4 * n) → α)
     (hturn : ∀ x, f (D.crossingTurn x) = f x)
     (hedge : ∀ x, f (D.edgePair.val x) = f x) (x : Fin (4 * n)) :

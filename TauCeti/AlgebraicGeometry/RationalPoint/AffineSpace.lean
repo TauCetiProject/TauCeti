@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AffineSpace
-public import TauCeti.AlgebraicGeometry.RationalPoint.FixedField
-public import TauCeti.FieldTheory.Finite.SepClosedSubfield
+public import TauCeti.AlgebraicGeometry.RationalPoint.Frobenius
 import Mathlib.Algebra.MvPolynomial.Funext
 
 /-!
@@ -28,7 +27,9 @@ elements. Hence the `r`-th power of Frobenius has `(q ^ r) ^ |n|` fixed points o
 `L`-valued points of affine `n`-space
 (`AlgebraicGeometry.AffineSpace.natCard_fixedPoints_frobeniusAlgEquivOfAlgebraic_pow`). For the
 affine line this is the count `q ^ r`, the basic instance of counting points over finite fields
-by fixed points of Frobenius.
+by fixed points of Frobenius. In terms of the point count over the extension of degree `r`,
+affine `n`-space has `AlgebraicGeometry.Scheme.Hom.pointCount` equal to `(q ^ r) ^ |n|` for
+`r ≠ 0` (`AlgebraicGeometry.AffineSpace.pointCount_eq`).
 
 ## Main results
 
@@ -36,6 +37,8 @@ by fixed points of Frobenius.
   `|L| ^ |n|` points with values in a field `L` over `k`.
 * `AlgebraicGeometry.AffineSpace.natCard_fixedPoints_frobeniusAlgEquivOfAlgebraic_pow`: the
   `r`-th power of Frobenius has `(q ^ r) ^ |n|` fixed points on affine `n`-space.
+* `AlgebraicGeometry.AffineSpace.pointCount_eq`: affine `n`-space has `(q ^ r) ^ |n|` points over
+  the extension of degree `r ≠ 0` of a finite field with `q` elements.
 
 ## References
 
@@ -114,5 +117,18 @@ theorem natCard_fixedPoints_frobeniusAlgEquivOfAlgebraic_pow (k L : Type u) [Fie
       (Fintype.card k ^ r) ^ Nat.card n := by
   rw [← AlgEquiv.numberOfRationalPoints_fixedField_eq_natCard, numberOfRationalPoints_eq,
     TauCeti.natCard_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow k L hr]
+
+/-- **The point counts of affine space.** Over a finite field `k` with `q` elements, the affine
+space `𝔸(n; Spec k)` has `(q ^ r) ^ |n|` points over the extension of degree `r ≠ 0` of `k`. At
+`r = 0` the count is that of `k`-valued points, `q ^ |n|`, which is not `(q ^ 0) ^ |n|` in
+general. -/
+theorem pointCount_eq {k : Type u} [Field k] [Finite k] (n : Type u) [Finite n] {r : ℕ}
+    (hr : r ≠ 0) :
+    (𝔸(n; Spec (.of k)) ↘ Spec (.of k)).pointCount r = (Nat.card k ^ r) ^ Nat.card n := by
+  have := Fintype.ofFinite k
+  rw [Scheme.Hom.pointCount_eq_natCard_fixedPoints_frobeniusAlgEquivOfAlgebraic_pow
+      (AlgebraicClosure k) _ hr,
+    natCard_fixedPoints_frobeniusAlgEquivOfAlgebraic_pow k (AlgebraicClosure k) n hr,
+    Fintype.card_eq_nat_card]
 
 end AlgebraicGeometry.AffineSpace

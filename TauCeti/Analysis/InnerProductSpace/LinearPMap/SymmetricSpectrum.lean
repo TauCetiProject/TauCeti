@@ -43,11 +43,15 @@ In the namespace `LinearPMap.IsFormalAdjoint`:
   is a resolvent point.
 * `subset_resolventSet_or_disjoint`: a preconnected set of nonreal scalars lies in the resolvent
   set or is disjoint from it.
+* `mem_resolventSet_iff_of_im_pos`, `mem_resolventSet_iff_of_im_neg`: membership in the
+  resolvent set is constant on each open half-plane.
 * `mem_resolventSet_iff_forall_adjoint_apply_eq_smul`: for a closed densely defined symmetric
   operator, a nonreal `z` is a resolvent point exactly when `S†` has no eigenvector for
   `conj z`.
-* `resolventSet_alternatives`: the four possible resolvent sets of a symmetric operator on a
-  complex Hilbert space.
+* `isSelfAdjoint_of_mem_resolventSet`: one resolvent point in each open half-plane makes a
+  symmetric operator on a complex Hilbert space self-adjoint.
+* `resolventSet_alternatives`, `spectrum_alternatives`: the four possible resolvent sets and
+  spectra of a symmetric operator on a complex Hilbert space.
 * `isSelfAdjoint_iff_spectrum_subset`: a symmetric operator on a complex Hilbert space is
   self-adjoint exactly when its spectrum is real.
 
@@ -119,6 +123,36 @@ theorem subset_resolventSet_or_disjoint (hS : S.IsFormalAdjoint S) {s : Set 𝕜
   · exact Or.inl (hs.subset_of_closure_inter_subset S.isOpen_resolventSet h
       fun z hz ↦ hS.closure_resolventSet_inter_subset ⟨hz.1, him z hz.2⟩)
 
+/-- A resolvent point in a preconnected set of nonreal scalars puts the whole set in the
+resolvent set of a symmetric operator. -/
+private theorem subset_resolventSet_of_mem (hS : S.IsFormalAdjoint S) {s : Set 𝕜}
+    (hs : IsPreconnected s) (him : ∀ z ∈ s, RCLike.im z ≠ 0) {z : 𝕜} (hz : z ∈ s)
+    (hzρ : z ∈ S.resolventSet) : s ⊆ S.resolventSet :=
+  (hS.subset_resolventSet_or_disjoint hs him).resolve_right
+    fun h ↦ h.notMem_of_mem_left hz hzρ
+
+/-- Membership in the resolvent set of a symmetric operator is constant on the open upper
+half-plane. -/
+theorem mem_resolventSet_iff_of_im_pos (hS : S.IsFormalAdjoint S) {z w : 𝕜}
+    (hz : 0 < RCLike.im z) (hw : 0 < RCLike.im w) :
+    z ∈ S.resolventSet ↔ w ∈ S.resolventSet := by
+  have hs : IsPreconnected {u : 𝕜 | 0 < RCLike.im u} :=
+    (convex_halfSpace_gt RCLike.imLm.isLinear 0).isPreconnected
+  have him : ∀ u ∈ {u : 𝕜 | 0 < RCLike.im u}, RCLike.im u ≠ 0 := fun _ h ↦ ne_of_gt h
+  exact ⟨fun h ↦ hS.subset_resolventSet_of_mem hs him hz h hw,
+    fun h ↦ hS.subset_resolventSet_of_mem hs him hw h hz⟩
+
+/-- Membership in the resolvent set of a symmetric operator is constant on the open lower
+half-plane. -/
+theorem mem_resolventSet_iff_of_im_neg (hS : S.IsFormalAdjoint S) {z w : 𝕜}
+    (hz : RCLike.im z < 0) (hw : RCLike.im w < 0) :
+    z ∈ S.resolventSet ↔ w ∈ S.resolventSet := by
+  have hs : IsPreconnected {u : 𝕜 | RCLike.im u < 0} :=
+    (convex_halfSpace_lt RCLike.imLm.isLinear 0).isPreconnected
+  have him : ∀ u ∈ {u : 𝕜 | RCLike.im u < 0}, RCLike.im u ≠ 0 := fun _ h ↦ ne_of_lt h
+  exact ⟨fun h ↦ hS.subset_resolventSet_of_mem hs him hz h hw,
+    fun h ↦ hS.subset_resolventSet_of_mem hs him hw h hz⟩
+
 /-- **Nonreal resolvent points and deficiency vectors.** For a closed densely defined symmetric
 operator `S` and a nonreal scalar `z`, `z` is a resolvent point of `S` exactly when the adjoint
 `S†` has no nonzero eigenvector for the eigenvalue `conj z`, that is, when the deficiency space
@@ -126,31 +160,12 @@ operator `S` and a nonreal scalar `z`, `z` is a resolvent point of `S` exactly w
 theorem mem_resolventSet_iff_forall_adjoint_apply_eq_smul (hS : S.IsFormalAdjoint S)
     (hdense : Dense (S.domain : Set E)) (hcl : S.IsClosed) {z : 𝕜} (hz : RCLike.im z ≠ 0) :
     z ∈ S.resolventSet ↔
-      ∀ y : S†.domain, S† y = (starRingEnd 𝕜) z • (y : E) → (y : E) = 0 := by
-  constructor
-  · intro hres y hy
-    -- `y` is orthogonal to the range of `z • I - S`, which is the whole space.
-    obtain ⟨x, hx⟩ := (smul_sub_bijective hres).surjective (y : E)
-    beta_reduce at hx
-    have hpair : inner 𝕜 (S† y) (x : E) = inner 𝕜 (y : E) (S x) :=
-      adjoint_isFormalAdjoint hdense y x
-    rw [hy, inner_smul_left, RCLike.conj_conj] at hpair
-    have h0 : inner 𝕜 (y : E) (y : E) = 0 := by
-      calc inner 𝕜 (y : E) (y : E) = inner 𝕜 (y : E) (z • (x : E) - S x) := by rw [hx]
-        _ = 0 := by rw [inner_sub_right, inner_smul_right, hpair, sub_self]
-    exact inner_self_eq_zero.mp h0
-  · intro h
-    refine mem_resolventSet_iff_isClosed_denseRange_norm_le.mpr
-      ⟨hS.isClosed_range_smul_sub hcl hz, ?_, |RCLike.im z|, abs_pos.mpr hz,
-        hS.abs_im_mul_norm_le_norm_smul_sub z⟩
-    -- A vector orthogonal to the range is an eigenvector of `S†` for `conj z`.
-    rw [DenseRange, ← S.coe_range_smulSub z]
-    refine Submodule.dense_iff_topologicalClosure_eq_top.mpr
-      (Submodule.topologicalClosure_eq_top_iff.mpr ((Submodule.eq_bot_iff _).mpr fun y hy ↦ ?_))
-    have hortho : ∀ x : S.domain, inner 𝕜 y (z • (x : E) - S x) = 0 := fun x ↦
-      (Submodule.mem_orthogonal' _ y).mp hy _ (LinearMap.mem_range.mpr ⟨x, S.smulSub_apply z x⟩)
-    obtain ⟨hy', hSy⟩ := exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero hdense hortho
-    exact h ⟨y, hy'⟩ hSy
+      ∀ y : S†.domain, S† y = (starRingEnd 𝕜) z • (y : E) → (y : E) = 0 :=
+  ⟨fun hρ ↦ (denseRange_smul_sub_iff hdense).mp
+    (mem_resolventSet_iff_isClosed_denseRange_norm_le.mp hρ).2.1, fun hker ↦
+    mem_resolventSet_iff_isClosed_denseRange_norm_le.mpr ⟨hS.isClosed_range_smul_sub hcl hz,
+      (denseRange_smul_sub_iff hdense).mpr hker, _, abs_pos.mpr hz,
+      hS.abs_im_mul_norm_le_norm_smul_sub z⟩⟩
 
 end RCLike
 
@@ -160,6 +175,22 @@ open Complex
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {S : H →ₗ.[ℂ] H}
+
+/-- **One resolvent point in each half-plane makes a symmetric operator self-adjoint.** A
+symmetric operator on a complex Hilbert space with a resolvent point in the open upper half-plane
+and one in the open lower half-plane is self-adjoint. -/
+theorem isSelfAdjoint_of_mem_resolventSet (hS : S.IsFormalAdjoint S) {z w : ℂ}
+    (hz : 0 < z.im) (hzρ : z ∈ S.resolventSet) (hw : w.im < 0) (hwρ : w ∈ S.resolventSet) :
+    IsSelfAdjoint S := by
+  have hI : I ∈ S.resolventSet := (hS.mem_resolventSet_iff_of_im_pos hz (by simp)).mp hzρ
+  have hnegI : -I ∈ S.resolventSet := (hS.mem_resolventSet_iff_of_im_neg hw (by simp)).mp hwρ
+  refine isSelfAdjoint_of_surjective_addSub S hS (fun φ ↦ ?_) fun φ ↦ ?_
+  · obtain ⟨ψ, hψ⟩ := (smul_sub_bijective hnegI).surjective (-φ)
+    beta_reduce at hψ
+    exact ⟨ψ, by rw [← neg_neg φ, ← hψ, neg_smul, neg_sub, sub_neg_eq_add, add_comm]⟩
+  · obtain ⟨ψ, hψ⟩ := (smul_sub_bijective hI).surjective (-φ)
+    beta_reduce at hψ
+    exact ⟨ψ, by rw [← neg_neg φ, ← hψ, neg_sub]⟩
 
 /-- **The four possible resolvent sets of a symmetric operator.** The resolvent set of a
 symmetric operator on a complex Hilbert space is empty, exactly the open lower half-plane,
@@ -192,6 +223,20 @@ theorem resolventSet_alternatives (hS : S.IsFormalAdjoint S) :
     rw [mem_ofPred_eq] at hz₁ hz₂
     exact lt_asymm hz₁ hz₂
 
+/-- **The spectrum of a symmetric operator.** The spectrum of a symmetric operator on a complex
+Hilbert space is all of `ℂ`, the closed upper half-plane, the closed lower half-plane, or a subset
+of the real axis. -/
+theorem spectrum_alternatives (hS : S.IsFormalAdjoint S) :
+    S.spectrum = univ ∨ S.spectrum = {z : ℂ | 0 ≤ z.im} ∨ S.spectrum = {z : ℂ | z.im ≤ 0} ∨
+      S.spectrum ⊆ {z : ℂ | z.im = 0} := by
+  have hspec : S.spectrum = S.resolventSetᶜ := Set.ext fun z ↦ S.mem_spectrum_iff z
+  rcases hS.resolventSet_alternatives with h | h | h | h
+  · exact Or.inl (by rw [hspec, h, compl_empty])
+  · exact Or.inr (Or.inl (by rw [hspec, h]; exact Set.ext fun z ↦ by simp))
+  · exact Or.inr (Or.inr (Or.inl (by rw [hspec, h]; exact Set.ext fun z ↦ by simp)))
+  · refine Or.inr (Or.inr (Or.inr fun z hz ↦ not_not.mp fun hne ↦ ?_))
+    exact (S.mem_spectrum_iff z).mp hz (h hne)
+
 /-- **Self-adjointness through the spectrum.** A symmetric operator on a complex Hilbert space is
 self-adjoint exactly when its spectrum is contained in the real axis. -/
 theorem isSelfAdjoint_iff_spectrum_subset (hS : S.IsFormalAdjoint S) :
@@ -200,13 +245,8 @@ theorem isSelfAdjoint_iff_spectrum_subset (hS : S.IsFormalAdjoint S) :
   have hres (z : ℂ) (hz : z.im ≠ 0) : z ∈ S.resolventSet := by
     by_contra hz'
     exact hz (h ((S.mem_spectrum_iff z).mpr hz'))
-  refine isSelfAdjoint_of_surjective_addSub S hS (fun φ ↦ ?_) fun φ ↦ ?_
-  · obtain ⟨ψ, hψ⟩ := (smul_sub_bijective (hres (-I) (by simp))).surjective (-φ)
-    beta_reduce at hψ
-    exact ⟨ψ, by rw [← neg_neg φ, ← hψ, neg_smul, neg_sub, sub_neg_eq_add, add_comm]⟩
-  · obtain ⟨ψ, hψ⟩ := (smul_sub_bijective (hres I (by simp))).surjective (-φ)
-    beta_reduce at hψ
-    exact ⟨ψ, by rw [← neg_neg φ, ← hψ, neg_sub]⟩
+  exact hS.isSelfAdjoint_of_mem_resolventSet (z := I) (w := -I) (by simp) (hres _ (by simp))
+    (by simp) (hres _ (by simp))
 
 end Complex
 

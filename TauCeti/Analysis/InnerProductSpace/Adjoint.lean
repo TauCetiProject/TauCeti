@@ -18,7 +18,9 @@ import TauCeti.Analysis.Normed.Operator.ClosedRange
 An endomorphism and its adjoint have the same real quadratic form
 (`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
-orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
+orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`),
+and the adjoint is injective exactly when the operator has dense range
+(`ContinuousLinearMap.adjoint_injective_iff_denseRange`).
 The Gram operator of an operator with finite-dimensional source is invertible exactly when the
 operator is injective (`ContinuousLinearMap.isUnit_adjoint_comp_self_iff`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
@@ -41,7 +43,9 @@ On real Hilbert spaces the Riesz isomorphisms carry the adjoint to the transpose
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
-with the adjoint of the inverse as inverse.
+with the adjoint of the inverse as inverse. For a family of equivalences continuous in the
+operator norm, the adjoints are again continuous
+(`ContinuousLinearEquiv.continuous_adjointEquiv`).
 For a finite-dimensional linear isometry, the adjoint returns its image vectors to their
 preimages (`LinearIsometry.adjoint_apply_apply`).
 
@@ -55,10 +59,12 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `LinearIsometry.cornerEmbedding`: extension by zero `T ↦ e T e†`, an isometric embedding
   of operator spaces along an isometric inclusion.
 * `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence, with the
-  same operator norm (`ContinuousLinearEquiv.norm_adjointEquiv`).
+  same operator norm (`ContinuousLinearEquiv.norm_adjointEquiv`), bounded below by `‖A⁻¹‖⁻¹`
+  (`ContinuousLinearEquiv.norm_le_norm_symm_mul_norm_adjointEquiv`).
 * `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
   Hilbert spaces as a real-linear continuous map.
-* `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`.
+* `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
+  continuous family it is continuous (`Continuous.clm_adjoint`).
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
   continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
 
@@ -83,7 +89,9 @@ Similarly, if `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`, then `‖M‖ ≤ λ⁻¹ �
 (`ContinuousLinearEquiv.norm_le_inv_mul_norm_adjoint_comp_comp`).
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
-endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For a surjective
+endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`), so the determinants
+of an invertible real operator and of the adjoint of its inverse multiply to `1`
+(`ContinuousLinearMap.det_mul_det_adjoint_ringInverse`). For a surjective
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
 
@@ -115,6 +123,22 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+/-- The adjoint of a bounded operator between Hilbert spaces is injective exactly when the
+operator has dense range: its kernel is the orthogonal complement of the range. -/
+theorem adjoint_injective_iff_denseRange [CompleteSpace E] [CompleteSpace F] {u : E →L[𝕜] F} :
+    Function.Injective (u†) ↔ DenseRange u := by
+  rw [← coe_coe, ← LinearMap.ker_eq_bot, ← orthogonal_range,
+    ← Submodule.topologicalClosure_eq_top_iff, ← Submodule.dense_iff_topologicalClosure_eq_top,
+    LinearMap.coe_range, coe_coe]
+  rfl
+
+/-- The pointwise adjoint `x ↦ (f x)†` of a continuous family of operators between Hilbert spaces
+is continuous. -/
+theorem _root_.Continuous.clm_adjoint [CompleteSpace E] [CompleteSpace F] {X : Type*}
+    [TopologicalSpace X] {f : X → E →L[𝕜] F} (hf : Continuous f) :
+    Continuous fun x ↦ adjoint (f x) :=
+  (adjoint : (E →L[𝕜] F) ≃ₗᵢ⋆[𝕜] (F →L[𝕜] E)).continuous.comp hf
 
 /-- Real scalars act on operators through `𝕜`, so they commute with adjoints. Mathlib records
 only `StarModule 𝕜` here. -/
@@ -412,13 +436,20 @@ theorem continuous_adjointEquiv [CompleteSpace E] [CompleteSpace F] {X : Type*}
     [TopologicalSpace X] {A : X → E ≃L[𝕜] F} (hA : Continuous fun x ↦ (A x : E →L[𝕜] F)) :
     Continuous fun x ↦ ((A x).adjointEquiv : F →L[𝕜] E) := by
   simp_rw [coe_adjointEquiv]
-  exact ContinuousLinearMap.adjoint.continuous.comp hA
+  exact hA.clm_adjoint
 
 /-- The adjoint equivalence has the same operator norm as the equivalence. -/
 @[simp]
 theorem norm_adjointEquiv [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] F) :
     ‖(A.adjointEquiv : F →L[𝕜] E)‖ = ‖(A : E →L[𝕜] F)‖ := by
   rw [coe_adjointEquiv, LinearIsometryEquiv.norm_map]
+
+/-- The adjoint equivalence of `A` is bounded below by the reciprocal of the norm of `A⁻¹`:
+`‖ξ‖ ≤ ‖A⁻¹‖ ‖Aᵀ ξ‖`, since `(Aᵀ)⁻¹ = (A⁻¹)ᵀ` has the norm of `A⁻¹`. -/
+theorem norm_le_norm_symm_mul_norm_adjointEquiv [CompleteSpace E] [CompleteSpace F]
+    (A : E ≃L[𝕜] F) (ξ : F) : ‖ξ‖ ≤ ‖(A.symm : F →L[𝕜] E)‖ * ‖A.adjointEquiv ξ‖ := by
+  simpa only [coe_nnNorm, adjointEquiv_symm, norm_adjointEquiv] using
+    A.adjointEquiv.antilipschitzWith.le_mul_norm (map_zero _) ξ
 
 /-- If `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` for all `x`, then conjugating by `e` loses at most a factor `λ` in
 operator norm: `‖M‖ ≤ λ⁻¹ ‖e† ∘ M ∘ e‖`. -/
@@ -681,3 +712,15 @@ instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
     exact (star_comm_self (x := T)).map (Module.End.toContinuousLinearMap (𝕜 := 𝕜) E)
 
 end LinearMap
+
+namespace ContinuousLinearMap
+
+/-- The determinants of an invertible operator on a finite-dimensional real inner product space and
+of the adjoint of its inverse multiply to `1`. -/
+theorem det_mul_det_adjoint_ringInverse {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {A : E →L[ℝ] E} (hA : IsUnit A) :
+    A.det * (adjoint (Ring.inverse A)).det = 1 := by
+  rw [det, det, ← adjoint_toLinearMap, LinearMap.det_adjoint, star_trivial, ← LinearMap.det_comp,
+    ← toLinearMap_comp, ← mul_def, Ring.mul_inverse_cancel A hA, toLinearMap_one, map_one]
+
+end ContinuousLinearMap

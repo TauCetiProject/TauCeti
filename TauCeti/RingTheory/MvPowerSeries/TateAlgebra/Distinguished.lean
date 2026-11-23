@@ -11,9 +11,6 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Units
 public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import Mathlib.Analysis.Normed.Ring.Units
 
-import Mathlib.Data.List.Indexes
-import Mathlib.Data.Nat.Digits.Lemmas
-
 
 /-!
 # Making a restricted series distinguished in one variable
@@ -173,7 +170,7 @@ private theorem coeff_optionElim_prod_triangularFamily [Nontrivial R] {α : σ �
 /-- With the exponents `α i = b ^ (k i + 1)`, the triangular degree is a base-`b` expansion, so it
 separates exponents whose entries are all below `b`. -/
 private theorem triangularDegree_injective {n : ℕ} (k : σ ≃ Fin n) {b : ℕ}
-    (hb : 1 < b) {ν ν' : Option σ →₀ ℕ} (hν : ∀ x, ν x < b) (hν' : ∀ x, ν' x < b)
+    {ν ν' : Option σ →₀ ℕ} (hν : ∀ x, ν x < b) (hν' : ∀ x, ν' x < b)
     (h : triangularDegree (fun i ↦ b ^ ((k i : ℕ) + 1)) ν =
       triangularDegree (fun i ↦ b ^ ((k i : ℕ) + 1)) ν') :
     ν = ν' := by
@@ -186,14 +183,12 @@ private theorem triangularDegree_injective {n : ℕ} (k : σ ≃ Fin n) {b : ℕ
     rw [E.symm_apply_apply]
     cases x <;> simp [E]
   -- Base-`b` expansions with digits below `b` are unique.
-  have hdigits {m : ℕ} {v w : Fin m → ℕ} (hv : ∀ j, v j < b) (hw : ∀ j, w j < b)
-      (h : ∑ j : Fin m, b ^ (j : ℕ) * v j = ∑ j : Fin m, b ^ (j : ℕ) * w j) : v = w := by
-    refine List.ofFn_injective (Nat.ofDigits_inj_of_len_eq hb (by simp) (by simpa using hv)
-      (by simpa using hw) ?_)
-    simpa [Nat.ofDigits_eq_sum_mapIdx, List.mapIdx_eq_ofFn, List.sum_ofFn, mul_comm] using h
-  have hv := hdigits (fun j ↦ hν _) (fun j ↦ hν' _) ((hE ν).symm.trans (h.trans (hE ν')))
+  have hv : (Finsupp.equivFunOnFinite.symm fun j ↦ ν (E.symm j)) =
+      Finsupp.equivFunOnFinite.symm fun j ↦ ν' (E.symm j) :=
+    Finsupp.injOn_weight_pow (n + 1) b (fun _ ↦ hν _) (fun _ ↦ hν' _) <| by
+      simpa [Finsupp.weight_eq_sum, mul_comm] using (hE ν).symm.trans (h.trans (hE ν'))
   ext x
-  simpa using congrFun hv (E x)
+  simpa using DFunLike.congr_fun hv (E x)
 
 section
 
@@ -225,14 +220,14 @@ section
 variable [IsUltrametricDist R]
 
 /-- **Choice of the triangular exponents.** Let `f` be a nonzero restricted series, `S` the finite
-set of its exponents of maximal coefficient norm, and `b > 1` a base exceeding every entry of each
+set of its exponents of maximal coefficient norm, and `b` a base exceeding every entry of each
 exponent in `S`. For the exponents `α i = b ^ (k i + 1)` there are an exponent `ν` with
 `‖coeff ν f‖ = ‖f‖` and some `ε < ‖f‖` such that every other exponent of triangular degree at
 least that of `ν` carries a coefficient of norm at most `ε`. -/
 private theorem exists_triangularDegree_dominant (f : ExtraTate) (hf : f ≠ 0)
     (S : Finset (Option σ →₀ ℕ))
     (hS : ∀ d, d ∈ S ↔ ‖f‖ ≤ ‖coeff d (f : MvPowerSeries (Option σ) R)‖)
-    {n : ℕ} (k : σ ≃ Fin n) {b : ℕ} (hb : 1 < b) (hbS : ∀ d ∈ S, ∀ x, d x < b) :
+    {n : ℕ} (k : σ ≃ Fin n) {b : ℕ} (hbS : ∀ d ∈ S, ∀ x, d x < b) :
     ∃ (ν : Option σ →₀ ℕ) (ε : ℝ), 0 ≤ ε ∧ ε < ‖f‖ ∧
       ‖coeff ν (f : MvPowerSeries (Option σ) R)‖ = ‖f‖ ∧
       ∀ d ≠ ν, triangularDegree (fun i ↦ b ^ ((k i : ℕ) + 1)) ν ≤
@@ -250,7 +245,7 @@ private theorem exists_triangularDegree_dominant (f : ExtraTate) (hf : f ≠ 0)
     (triangularDegree fun i ↦ b ^ ((k i : ℕ) + 1)) ⟨d₀, (hS d₀).mpr hd₀.ge⟩
   refine ⟨ν, ε, hε0, hεM, le_antisymm (hle ν) ((hS ν).mp hνS), fun d hd hdeg ↦ ?_⟩
   by_cases hdS : d ∈ S
-  · exact absurd (triangularDegree_injective k hb (hbS d hdS) (hbS ν hνS)
+  · exact absurd (triangularDegree_injective k (hbS d hdS) (hbS ν hνS)
       (le_antisymm (hνmax d hdS) hdeg)) hd
   · exact hε d (lt_of_not_ge fun h ↦ hdS ((hS d).mpr h))
 
@@ -396,7 +391,7 @@ theorem exists_restrictedTriangularEquiv_forall_isDistinguished [Finite σ] {ι 
   have hα (i : σ) : b ^ ((k i : ℕ) + 1) ≠ 0 := pow_ne_zero _ (by omega)
   refine ⟨fun i ↦ b ^ ((k i : ℕ) + 1), hα, fun j ↦ ?_⟩
   obtain ⟨ν, ε, hε0, hεM, hνM, hν⟩ := exists_triangularDegree_dominant (f j) (hf j) (S j)
-    (fun d ↦ (hSfin j).mem_toFinset) k hb (hbS j)
+    (fun d ↦ (hSfin j).mem_toFinset) k (hbS j)
   exact exists_isDistinguished_of_triangularDegree_dominant hα (f j) ν hε0 hεM hνM hν
 
 /-- **Distinguishing automorphisms of Tate algebras.** Over an ultrametric normed commutative

@@ -28,11 +28,12 @@ restated for the Duistermaat–Heckman measure of the symplectic manifold `ℂ^�
 `Module.Basis.duistermaatHeckmanMeasure_weightMomentMap_neg`).
 
 Since `μ` is the linear map `a ↦ Σ_i a_i (-α_i)` applied to the moment map `(|z_i|² / 2)_i` of the
-reversed rotation action `z_i ↦ exp(-i θ_i) z_i` (`TauCeti.weightMomentMap_eq_linearCombination`),
-and the latter pushes Lebesgue measure to `(2π)^|ι|` times Lebesgue measure on the closed positive
-orthant (`TauCeti.map_volume_euclideanSpace_half_sq_add_sq`), for arbitrary weights the
-pushforward of Lebesgue measure by `μ` is `(2π)^|ι|` times the image of Lebesgue measure on the
-orthant under that linear map (`TauCeti.map_volume_weightMomentMap`).
+reversed rotation action `z_i ↦ exp(-i θ_i) z_i`
+(`TauCeti.weightMomentMap_eq_linearCombination_comp_halfSqRadii`), and the latter pushes Lebesgue
+measure to `(2π)^|ι|` times Lebesgue measure on the closed positive orthant
+(`TauCeti.map_volume_euclideanSpace_half_sq_add_sq`), for arbitrary weights the pushforward of
+Lebesgue measure by `μ` is `(2π)^|ι|` times the image of Lebesgue measure on the orthant under that
+linear map (`TauCeti.map_volume_weightMomentMap`).
 
 When the negated weights form a basis `b` of `𝔱*`, so that `μ = ½ Σ_i (q_i² + p_i²) b_i` is the
 moment map of the action `z_i ↦ exp(-i b_i(ξ)) z_i`, this pushforward is `(2π)^|ι|` times the Haar
@@ -90,8 +91,11 @@ theorem map_volume_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
   have hL : Measurable (Fintype.linearCombination ℝ (-α)) :=
     (LinearMap.continuous_of_finiteDimensional _).measurable
   have hfun : weightMomentMap α = Fintype.linearCombination ℝ (-α) ∘
-      fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 :=
-    funext (weightMomentMap_eq_linearCombination α)
+      fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 := by
+    rw [weightMomentMap_eq_linearCombination_comp_halfSqRadii]
+    congr 1
+    ext x i
+    simp
   rw [hfun, ← Measure.map_map hL (by fun_prop), map_volume_euclideanSpace_half_sq_add_sq,
     Measure.map_smul]
   exact hL.aemeasurable

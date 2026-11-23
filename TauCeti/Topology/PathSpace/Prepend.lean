@@ -61,13 +61,15 @@ variable {X : Type*} [TopologicalSpace X] {w x y z : X}
 /-- Serre's left delay is continuous for a family of paths with varying endpoints. -/
 theorem delayReflLeft_continuous_family {A : Type*} [TopologicalSpace A]
     {a b : A → X} (γ : ∀ q, Path (a q) (b q)) (hγ : Continuous ↿γ)
-    (s : C(A, I)) : Continuous ↿fun q ↦ delayReflLeft (s q) (γ q) := by
+    (s : C(A, I)) : Continuous ↿fun q ↦ delayReflLeft (s q) (γ q) :=
   -- The delay is evaluation at the reflected Serre reparametrization; this also works when
   -- the endpoints vary, where continuity in a single fixed native path space does not apply.
-  have h : Continuous (fun q : A × I ↦ γ q.1 (σ (qRight (σ q.2, s q.1)))) :=
-    hγ.comp (show Continuous (fun q : A × I ↦ (q.1, σ (qRight (σ q.2, s q.1)))) from by
-      fun_prop)
-  exact h
+  hγ.comp (by fun_prop : Continuous fun q : A × I ↦ (q.1, σ (qRight (σ q.2, s q.1))))
+
+/-- The product of the H-space structure of the loop space `Path x x` is concatenation. -/
+@[simp]
+theorem hmul_eq_trans (γ₁ γ₂ : Path x x) : HSpace.hmul (γ₁, γ₂) = γ₁.trans γ₂ :=
+  (rfl)
 
 /-! ### Reparametrizing the paths of a path space -/
 
@@ -77,6 +79,17 @@ compact-open space of paths. -/
 theorem continuous_reparam {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) :
     Continuous fun γ : Path x y ↦ γ.reparam f hf hf₀ hf₁ :=
   continuous_uncurry_iff.mp <| continuous_fst.eval (hf.comp continuous_snd)
+
+/-- The straight-line homotopy `Path.Homotopy.reparam` from a path to its reparametrization by
+`f` evaluates the path at the convex combination `(1 - s) t + s f(t)`. -/
+theorem Homotopy.reparam_apply (γ : Path x y) {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0)
+    (hf₁ : f 1 = 1) (q : I × I) :
+    Homotopy.reparam γ f hf hf₀ hf₁ q = γ.extend (σ q.1 * q.2 + q.1 * f q.2) := by
+  have h : (σ q.1 : ℝ) * q.2 + q.1 * f q.2 ∈ I := by
+    simpa only [smul_eq_mul] using
+      convex_Icc _ _ q.2.property (f q.2).property (nonneg (σ q.1)) (nonneg q.1) (by simp)
+  rw [extend_apply _ h]
+  rfl
 
 /-- The straight-line homotopy from the identity of the path space to reparametrization by `f`,
 evaluating `Path.Homotopy.reparam γ f` at each time. It is continuous in the path. -/
@@ -155,9 +168,8 @@ def transAssocHomotopy (w x y z : X) :
           (continuous_snd.comp continuous_snd)⟩ :=
   ((reparamHomotopy transAssocReparam continuous_transAssocReparam transAssocReparam_zero
       transAssocReparam_one).compContinuousMap _).cast
-    (ContinuousMap.id_comp _) (by
-      ext γ : 1
-      exact (Homotopy.trans_assoc_reparam γ.1 γ.2.1 γ.2.2).symm)
+    (ContinuousMap.id_comp _)
+    (ContinuousMap.ext fun γ ↦ (Homotopy.trans_assoc_reparam γ.1 γ.2.1 γ.2.2).symm)
 
 @[simp]
 theorem transAssocHomotopy_apply (s : I) (γ : Path w x × Path x y × Path y z) :
@@ -180,15 +192,12 @@ theorem Homotopic.cast_map_reparam (L : Path (Path.refl x) (Path.refl x)) {f : I
     map_zero_left s := by simp
     map_one_left s := by simp
     prop' r s hs := by
-      -- At the ends `L` is the constant loop, which every reparametrization fixes. The `change`
-      -- unfolds the homotopy's value and the cast path at an endpoint.
-      rcases hs with rfl | hs
-      · change reparamHomotopy f hf hf₀ hf₁ (r, L 0) = L 0
-        rw [L.source, reparamHomotopy_apply, Homotopy.reparam_refl_eval]
-      · rw [Set.mem_singleton_iff] at hs
-        subst hs
-        change reparamHomotopy f hf hf₀ hf₁ (r, L 1) = L 1
-        rw [L.target, reparamHomotopy_apply, Homotopy.reparam_refl_eval] }⟩
+      -- At the ends `L` is the constant loop. Keeping `reparamHomotopy` folded, `simp` reduces
+      -- the goal to `reparamHomotopy f hf hf₀ hf₁ (r, refl x) = refl x`: every reparametrization
+      -- fixes the constant loop.
+      have h : reparamHomotopy f hf hf₀ hf₁ (r, Path.refl x) = Path.refl x :=
+        Homotopy.reparam_refl_eval f hf hf₀ hf₁ r
+      rcases hs with rfl | rfl <;> simpa [-reparamHomotopy_apply] using h }⟩
 
 /-- Concatenating every loop of a loop of loops `L` at the constant loop with the constant loop
 does not change its homotopy class. -/

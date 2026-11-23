@@ -126,7 +126,7 @@ theorem isImmersionAtOfComplement_comp_diffeomorph [IsManifold I n M']
       = ⇑e.symm ∘ ⇑(h.domChart.extend I).symm := rfl
   refine IsImmersionAtOfComplement.mk_of_charts h.equiv
     (e.toHomeomorph.transOpenPartialHomeomorph h.domChart) h.codChart ?_ h.mem_codChart_source
-    (e.transOpenPartialHomeomorph_mem_maximalAtlas h.domChart_mem_maximalAtlas)
+    (e.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl h.domChart_mem_maximalAtlas)
     h.codChart_mem_maximalAtlas ?_ fun y hy => ?_
   · rw [hsource]
     exact h.mem_domChart_source
