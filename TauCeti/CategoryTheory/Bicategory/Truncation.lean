@@ -21,23 +21,25 @@ such as Quillen's `Q`-construction of an exact category, arise from Mathlib's sp
 
 ## Main definitions
 
-* `CategoryTheory.Bicategory.Truncation B`: the 1-truncation of the bicategory `B`.
-* `CategoryTheory.Bicategory.Truncation.homMk`: the class of a 1-morphism.
-* `CategoryTheory.Bicategory.Truncation.homLift`: a function on 1-morphisms invariant under
-  isomorphism, descended to the truncation.
+* `TauCeti.CategoryTheory.Bicategory.Truncation B`: the 1-truncation of the bicategory `B`.
+* `TauCeti.CategoryTheory.Bicategory.Truncation.homMk`: the class of a 1-morphism.
+* `TauCeti.CategoryTheory.Bicategory.Truncation.homLift`: a function on 1-morphisms invariant
+  under isomorphism, descended to the truncation.
 
 ## Main results
 
-* `CategoryTheory.Bicategory.Truncation.homMk_eq_homMk_iff`: two 1-morphisms have the same class
-  exactly when they are isomorphic.
-* `CategoryTheory.Bicategory.Truncation.homMk_comp` and
-  `CategoryTheory.Bicategory.Truncation.homMk_id`: the class of a composite is the composite of
-  the classes, and the class of an identity is an identity.
+* `TauCeti.CategoryTheory.Bicategory.Truncation.homMk_eq_homMk_iff`: two 1-morphisms have the
+  same class exactly when they are isomorphic.
+* `TauCeti.CategoryTheory.Bicategory.Truncation.homMk_comp` and
+  `TauCeti.CategoryTheory.Bicategory.Truncation.homMk_id`: the class of a composite is the
+  composite of the classes, and the class of an identity is an identity.
 -/
 
 public section
 
-namespace CategoryTheory.Bicategory
+namespace TauCeti.CategoryTheory.Bicategory
+
+open _root_.CategoryTheory _root_.CategoryTheory.Bicategory
 
 universe w v u
 
@@ -115,4 +117,4 @@ theorem homMk_comp {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
 
 end Truncation
 
-end CategoryTheory.Bicategory
+end TauCeti.CategoryTheory.Bicategory

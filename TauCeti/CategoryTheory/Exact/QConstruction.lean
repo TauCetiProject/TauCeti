@@ -58,13 +58,15 @@ of `Q(E)` is the space whose loop space is the algebraic K-theory of `E`.
   Definition 6.1 and the remarks 6.1.1--6.1.2.
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69,
   <https://arxiv.org/abs/0811.1480>, Proposition 2.15.
+* The span bicategory `CategoryTheory.Span.SpanBicat` used here is Robin Carlier's
+  formalization in Mathlib, `Mathlib/CategoryTheory/Bicategory/Span/Basic.lean`.
 -/
 
 public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.Bicategory CategoryTheory.Span
+open _root_.CategoryTheory Limits Bicategory Span TauCeti.CategoryTheory.Bicategory
 
 universe v u
 
@@ -77,7 +79,7 @@ variable (E : ExactStructure C)
 /-- **Quillen's Q-construction** of an exact category. Its objects are those of `C`, and its
 morphisms `X ⟶ Y` are the isomorphism classes of spans `X ↞ M ↣ Y` whose left leg is a
 deflation and whose right leg is an inflation. -/
-@[expose] def QConstruction : Type u :=
+def QConstruction : Type u :=
   Truncation (SpanBicat C E.deflations E.inflations)
 
 namespace QConstruction
@@ -87,7 +89,7 @@ noncomputable instance : Category.{max u v} E.QConstruction :=
   inferInstanceAs (Category (Truncation (SpanBicat C E.deflations E.inflations)))
 
 /-- The object of the Q-construction attached to an object of `C`. -/
-def mk (X : C) : E.QConstruction :=
+noncomputable def mk (X : C) : E.QConstruction :=
   ⟨⟨X⟩⟩
 
 /-- Every object of the Q-construction comes from an object of `C`. -/
@@ -124,12 +126,12 @@ theorem homMk_eq_homMk_iff {X Y M M' : C} {p : M ⟶ X} {hp : E.IsDeflation p} {
   · exact ⟨SpanBicat.mkIso₂ e hl hr⟩
 
 /-- The identity Q-morphism is represented by the span of two identities. -/
-@[simp]
 theorem homMk_id (X : C) :
     homMk (𝟙 X) (E.isDeflation_id X) (𝟙 X) (E.isInflation_id X) = 𝟙 (mk E X) :=
   Truncation.homMk_id (B := SpanBicat C E.deflations E.inflations) ⟨X⟩
 
 /-- A span whose two legs are the same isomorphism represents an identity Q-morphism. -/
+@[simp]
 theorem homMk_self {X M : C} (e : M ⟶ X) [IsIso e] {hp : E.IsDeflation e}
     {hi : E.IsInflation e} : homMk e hp e hi = 𝟙 (mk E X) := by
   rw [← homMk_id, homMk_eq_homMk_iff]
@@ -164,15 +166,18 @@ noncomputable def ofInflation {X Y : C} (i : X ⟶ Y) (hi : E.IsInflation i) : m
 noncomputable def ofDeflation {X Y : C} (p : X ⟶ Y) (hp : E.IsDeflation p) : mk E Y ⟶ mk E X :=
   homMk p hp (𝟙 X) (E.isInflation_id X)
 
+/-- The Q-morphism of the identity inflation is the identity. -/
 @[simp]
 theorem ofInflation_id (X : C) : ofInflation (𝟙 X) (E.isInflation_id X) = 𝟙 (mk E X) :=
   homMk_id X
 
+/-- The reversed Q-morphism of the identity deflation is the identity. -/
 @[simp]
 theorem ofDeflation_id (X : C) : ofDeflation (𝟙 X) (E.isDeflation_id X) = 𝟙 (mk E X) :=
   homMk_id X
 
 /-- The Q-morphism of a composite of inflations is the composite of their Q-morphisms. -/
+@[simp]
 theorem ofInflation_comp {X Y Z : C} {i : X ⟶ Y} (hi : E.IsInflation i) {j : Y ⟶ Z}
     (hj : E.IsInflation j) :
     ofInflation (i ≫ j) (E.isInflation_comp i j hi hj) = ofInflation i hi ≫ ofInflation j hj := by
@@ -181,6 +186,7 @@ theorem ofInflation_comp {X Y Z : C} {i : X ⟶ Y} (hi : E.IsInflation i) {j : Y
 
 /-- The reversed Q-morphism of a composite of deflations is the composite of their reversed
 Q-morphisms, in the opposite order. -/
+@[simp]
 theorem ofDeflation_comp {X Y Z : C} {p : X ⟶ Y} (hp : E.IsDeflation p) {q : Y ⟶ Z}
     (hq : E.IsDeflation q) :
     ofDeflation (p ≫ q) (E.isDeflation_comp p q hp hq) = ofDeflation q hq ≫ ofDeflation p hp := by
@@ -189,6 +195,7 @@ theorem ofDeflation_comp {X Y Z : C} {p : X ⟶ Y} (hp : E.IsDeflation p) {q : Y
 
 /-- **Normal form of a Q-morphism.** The Q-morphism of a span `X ↞ M ↣ Y` is the reversed
 deflation `X ⟶ M` followed by the inflation `M ⟶ Y`. -/
+@[simp]
 theorem ofDeflation_comp_ofInflation {X Y M : C} {p : M ⟶ X} (hp : E.IsDeflation p)
     {i : M ⟶ Y} (hi : E.IsInflation i) : ofDeflation p hp ≫ ofInflation i hi = homMk p hp i hi := by
   rw [ofDeflation, ofInflation, homMk_comp_homMk _ _ _ _ (IsPullback.id_vert (𝟙 M))]
@@ -234,6 +241,7 @@ private theorem isIso_of_ofDeflation_comp_eq_id {X Y : C} {p : X ⟶ Y} (hp : E.
 
 /-- **Isomorphisms of the Q-construction come from isomorphisms of `C`.** The Q-morphism of a
 span is invertible exactly when both legs of the span are isomorphisms. -/
+@[simp]
 theorem isIso_homMk_iff {X Y M : C} {p : M ⟶ X} {hp : E.IsDeflation p} {i : M ⟶ Y}
     {hi : E.IsInflation i} : IsIso (homMk p hp i hi) ↔ IsIso p ∧ IsIso i := by
   constructor
@@ -250,16 +258,18 @@ theorem isIso_homMk_iff {X Y M : C} {p : M ⟶ X} {hp : E.IsDeflation p} {i : M 
     have hp' : E.IsDeflation i := E.deflations.of_isIso i
     refine ⟨homMk i hp' p hi', ?_, ?_⟩
     · rw [homMk_comp_homMk _ _ _ _ (IsPullback.of_horiz_isIso (fst := 𝟙 M) (snd := 𝟙 M) ⟨rfl⟩)]
-      simpa using homMk_self p
+      simp
     · rw [homMk_comp_homMk _ _ _ _ (IsPullback.of_horiz_isIso (fst := 𝟙 M) (snd := 𝟙 M) ⟨rfl⟩)]
-      simpa using homMk_self i
+      simp
 
 /-- The Q-morphism of an inflation is invertible exactly when the inflation is. -/
+@[simp]
 theorem isIso_ofInflation_iff {X Y : C} {i : X ⟶ Y} {hi : E.IsInflation i} :
     IsIso (ofInflation i hi) ↔ IsIso i :=
   isIso_homMk_iff.trans ⟨fun h => h.2, fun h => ⟨inferInstance, h⟩⟩
 
 /-- The reversed Q-morphism of a deflation is invertible exactly when the deflation is. -/
+@[simp]
 theorem isIso_ofDeflation_iff {X Y : C} {p : X ⟶ Y} {hp : E.IsDeflation p} :
     IsIso (ofDeflation p hp) ↔ IsIso p :=
   isIso_homMk_iff.trans ⟨fun h => h.1, fun h => ⟨h, inferInstance⟩⟩
@@ -297,7 +307,8 @@ subobject `M ↣ Y`. -/
 noncomputable def homFromZeroEquiv (Y : C) :
     (mk E 0 ⟶ mk E Y) ≃ {P : Subobject Y // E.IsInflation P.arrow} where
   toFun := toAdmissibleSubobject
-  invFun P := homMk (0 : (P.1 : C) ⟶ 0) (E.isDeflation_g (E.conflation_id_zero _)) P.1.arrow P.2
+  invFun P :=
+    homMk (0 : (P.val : C) ⟶ 0) (E.isDeflation_g (E.conflation_id_zero _)) P.val.arrow P.property
   left_inv f := by
     obtain ⟨M, p, hp, i, hi, rfl⟩ := homMk_surjective f
     have := hi.mono
@@ -308,8 +319,10 @@ noncomputable def homFromZeroEquiv (Y : C) :
       exact Subobject.arrow_congr _ _ toAdmissibleSubobject_homMk
   right_inv P := Subtype.ext <| by
     rw [toAdmissibleSubobject_homMk]
-    exact Subobject.mk_arrow P.1
+    exact Subobject.mk_arrow P.val
 
+/-- The equivalence `homFromZeroEquiv` sends the Q-morphism of a span `0 ↞ M ↣ Y` to the
+subobject of `Y` cut out by its inflation leg `M ↣ Y`. -/
 @[simp]
 theorem homFromZeroEquiv_homMk {Y M : C} {p : M ⟶ 0} {hp : E.IsDeflation p} {i : M ⟶ Y}
     {hi : E.IsInflation i} :
@@ -317,10 +330,13 @@ theorem homFromZeroEquiv_homMk {Y M : C} {p : M ⟶ 0} {hp : E.IsDeflation p} {i
     (homFromZeroEquiv Y (homMk p hp i hi) : Subobject Y) = Subobject.mk i :=
   toAdmissibleSubobject_homMk
 
+/-- The inverse of `homFromZeroEquiv` sends an admissible subobject `P ↣ Y` to the Q-morphism of
+the span `0 ↞ P ↣ Y`. -/
 @[simp]
 theorem homFromZeroEquiv_symm_apply {Y : C} (P : {P : Subobject Y // E.IsInflation P.arrow}) :
     (homFromZeroEquiv Y).symm P =
-      homMk (0 : (P.1 : C) ⟶ 0) (E.isDeflation_g (E.conflation_id_zero _)) P.1.arrow P.2 :=
+      homMk (0 : (P.val : C) ⟶ 0) (E.isDeflation_g (E.conflation_id_zero _)) P.val.arrow
+        P.property :=
   (rfl)
 
 end QConstruction
