@@ -432,16 +432,6 @@ theorem hasDerivAt_fderiv_apply_line {u : E → G} {p q : E} {s : 𝕜}
   simpa [Function.comp_def] using
     (hu.hasFDerivAt.clm_apply (hasFDerivAt_const v _)).comp_hasDerivAt s hline
 
-/-- A differentiable function on `ℝ × F` whose partial derivative in the first variable vanishes
-everywhere is constant along every horizontal line. -/
-theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero {F G : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {u : ℝ × F → G}
-    (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (1, 0) = 0) (s : ℝ) (b : F) :
-    u (s, b) = u (0, b) := by
-  have hl (s : ℝ) : HasDerivAt (fun s ↦ u (s, b)) 0 s := by
-    simpa [h] using hasDerivAt_slice_left (hu (s, b))
-  exact is_const_of_deriv_eq_zero (fun s ↦ (hl s).differentiableAt) (fun s ↦ (hl s).deriv) s 0
-
 /-- A function on `ℝ × F` that is differentiable at every point of `ℝ × T` has vanishing partial
 derivative in the first variable there exactly when it is constant along the horizontal lines
 through `T`. -/
@@ -461,6 +451,15 @@ theorem fderiv_fst_eqOn_zero_iff {F G : Type*} [NormedAddCommGroup F] [NormedSpa
   · have hz' := hline z.1 hz.2
     rw [show (fun r ↦ u (r, z.2)) = fun _ ↦ u (0, z.2) from funext fun r ↦ h r z.2 hz.2] at hz'
     exact hz'.unique (hasDerivAt_const _ _)
+
+/-- A differentiable function on `ℝ × F` whose partial derivative in the first variable vanishes
+everywhere is constant along every horizontal line. -/
+theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {u : ℝ × F → G}
+    (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (1, 0) = 0) (s : ℝ) (b : F) :
+    u (s, b) = u (0, b) :=
+  (fderiv_fst_eqOn_zero_iff (T := Set.univ) fun z _ ↦ hu z).1 (fun z _ ↦ h z) s b
+    (Set.mem_univ b)
 
 section FstClmApplySnd
 
