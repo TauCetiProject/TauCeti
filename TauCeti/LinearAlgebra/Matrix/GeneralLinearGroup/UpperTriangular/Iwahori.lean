@@ -34,13 +34,21 @@ reduction to `GL_m(k)` is surjective, and this file computes in terms of the res
 ## Main declarations
 
 * `TauCeti.iwahori`, `TauCeti.iwahoriOne`: the subgroups `Iw` and `Iw₁` of `GL_m(R)`.
-* `TauCeti.comap_map_residue_upperTriangularGroup`: `Iw` is the preimage of the upper-triangular
-  subgroup of `GL_m(k)`.
+* `TauCeti.comap_generalLinearGroupMap_residue_upperTriangularGroup`: `Iw` is the preimage of
+  the upper-triangular subgroup of `GL_m(k)`.
 * `TauCeti.index_iwahori`: `[GL_m(R) : Iw]` is the index of the upper-triangular subgroup of
   `GL_m(k)`.
 * `TauCeti.index_iwahori_fin_two`: `[GL₂(R) : Iw] = q + 1`.
 * `TauCeti.iwahoriQuotientEquiv`: `Iw ⧸ Iw₁ ≃* (m → kˣ)`.
 * `TauCeti.relIndex_iwahoriOne_iwahori`: `[Iw : Iw₁] = (q - 1) ^ #m`.
+
+## Implementation notes
+
+Mathlib defines `IsLocalRing.ResidueField R` as `R ⧸ maximalIdeal R`, with `IsLocalRing.residue R`
+the quotient map (`IsLocalRing.residue_def`). The results for the general congruence subgroups
+modulo `maximalIdeal R` are stated over `R ⧸ maximalIdeal R`; this file restates them over
+`ResidueField R` through this definitional identification, where the residue field structure
+(`Field`, `Finite`) lives.
 
 ## References
 
@@ -76,28 +84,30 @@ theorem iwahoriOne_le_iwahori : iwahoriOne m R ≤ iwahori m R :=
 
 /-- The Iwahori subgroup is the preimage of the upper-triangular subgroup of `GL_m` of the residue
 field. -/
-theorem comap_map_residue_upperTriangularGroup :
+theorem comap_generalLinearGroupMap_residue_upperTriangularGroup :
     (upperTriangularGroup m (ResidueField R)).comap (GeneralLinearGroup.map (residue R)) =
       iwahori m R := by
-  rw [comap_map_upperTriangularGroup, ker_residue]
+  rw [comap_generalLinearGroupMap_upperTriangularGroup, ker_residue]
 
 /-- The pro-`p` Iwahori subgroup is the preimage of the upper-unitriangular subgroup of `GL_m` of
 the residue field. -/
-theorem comap_map_residue_upperUnitriangularGroup :
+theorem comap_generalLinearGroupMap_residue_upperUnitriangularGroup :
     (upperUnitriangularGroup m (ResidueField R)).comap (GeneralLinearGroup.map (residue R)) =
       iwahoriOne m R := by
-  rw [comap_map_upperUnitriangularGroup, ker_residue]
+  rw [comap_generalLinearGroupMap_upperUnitriangularGroup, ker_residue]
 
 /-- The index of the Iwahori subgroup in `GL_m(R)` is the index of the upper-triangular subgroup
 in `GL_m` of the residue field. -/
 theorem index_iwahori :
     (iwahori m R).index = (upperTriangularGroup m (ResidueField R)).index :=
+  -- `ResidueField R` is `R ⧸ maximalIdeal R` by definition.
   index_upperTriangularCongruenceSubgroup (ringJacobson_eq_maximalIdeal R).ge
 
 /-- The index of the pro-`p` Iwahori subgroup in `GL_m(R)` is the index of the
 upper-unitriangular subgroup in `GL_m` of the residue field. -/
 theorem index_iwahoriOne :
     (iwahoriOne m R).index = (upperUnitriangularGroup m (ResidueField R)).index :=
+  -- `ResidueField R` is `R ⧸ maximalIdeal R` by definition.
   index_upperUnitriangularCongruenceSubgroup (ringJacobson_eq_maximalIdeal R).ge
 
 /-- For a finite residue field with `q` elements, the Iwahori subgroup of `GL₂(R)` has index
@@ -112,6 +122,7 @@ variable (m R) in
 pro-`p` Iwahori subgroup with `m → kˣ`, for the residue field `k`. -/
 noncomputable def iwahoriQuotientEquiv :
     iwahori m R ⧸ (iwahoriOne m R).subgroupOf (iwahori m R) ≃* (m → (ResidueField R)ˣ) :=
+  -- `ResidueField R` is `R ⧸ maximalIdeal R` by definition.
   quotientEquiv (ringJacobson_eq_maximalIdeal R).ge
 
 /-- The identification of the Iwahori quotient sends a class to the diagonal entries of a
@@ -122,14 +133,16 @@ theorem iwahoriQuotientEquiv_mk_apply_val (g : iwahori m R) (i : m) :
         (g : iwahori m R ⧸ (iwahoriOne m R).subgroupOf (iwahori m R)) i : (ResidueField R)ˣ) :
       ResidueField R) = residue R (((g : GL m R) : Matrix m m R) i i) :=
   (congrArg (fun x ↦ ((x i : (R ⧸ maximalIdeal R)ˣ) : R ⧸ maximalIdeal R))
-    (quotientEquiv_mk _ g)).trans (diag_apply_val g i)
+    (quotientEquiv_mk _ g)).trans ((diag_apply_val g i).trans (residue_def _).symm)
 
 /-- The index of the pro-`p` Iwahori subgroup in the Iwahori subgroup is `(q - 1) ^ #m`, where `q`
 is the cardinality of the residue field. -/
 theorem relIndex_iwahoriOne_iwahori :
     (iwahoriOne m R).relIndex (iwahori m R) = (Nat.card (ResidueField R) - 1) ^ Fintype.card m := by
-  rw [relIndex_upperUnitriangularCongruenceSubgroup (ringJacobson_eq_maximalIdeal R).ge,
-    ← Nat.card_units]
-  rfl
+  rw [← Nat.card_units]
+  -- `(ResidueField R)ˣ` is `(R ⧸ maximalIdeal R)ˣ`, as `ResidueField R` is `R ⧸ maximalIdeal R`
+  -- by definition.
+  exact relIndex_upperUnitriangularCongruenceSubgroup_upperTriangularCongruenceSubgroup
+    (ringJacobson_eq_maximalIdeal R).ge
 
 end TauCeti

@@ -41,13 +41,14 @@ the upper-triangular and upper-unitriangular subgroups of `GL_m(R ⧸ I)`.
 * `TauCeti.mem_upperTriangularCongruenceSubgroup_iff`,
   `TauCeti.mem_upperUnitriangularCongruenceSubgroup_iff`: membership through the entries below
   the diagonal and the diagonal congruences.
-* `TauCeti.comap_map_upperTriangularGroup`: the preimage of the upper-triangular group under any
-  ring homomorphism `f` is `B(ker f)`.
+* `TauCeti.comap_generalLinearGroupMap_upperTriangularGroup`: the preimage of the
+  upper-triangular group under any ring homomorphism `f` is `B(ker f)`.
 * `TauCeti.UpperTriangularCongruenceSubgroup.diag`: the diagonal modulo `I`, with kernel `U(I)`
   (`TauCeti.UpperTriangularCongruenceSubgroup.ker_diag`).
 * `TauCeti.UpperTriangularCongruenceSubgroup.quotientEquiv`: `B(I) ⧸ U(I) ≃* (m → (R ⧸ I)ˣ)`
   for `I` in the Jacobson radical.
-* `TauCeti.relIndex_upperUnitriangularCongruenceSubgroup`: `[B(I) : U(I)] = #((R ⧸ I)ˣ) ^ #m`.
+* `TauCeti.relIndex_upperUnitriangularCongruenceSubgroup_upperTriangularCongruenceSubgroup`:
+  `[B(I) : U(I)] = #((R ⧸ I)ˣ) ^ #m`.
 * `TauCeti.index_upperTriangularCongruenceSubgroup`: `[GL_m(R) : B(I)]` is the index of the
   upper-triangular subgroup of `GL_m(R ⧸ I)`.
 
@@ -136,7 +137,7 @@ theorem upperUnitriangularCongruenceSubgroup_mono (h : I ≤ J) :
 
 /-- The preimage of the upper-triangular subgroup under entrywise application of a ring
 homomorphism `f` is the upper-triangular congruence subgroup modulo `ker f`. -/
-theorem comap_map_upperTriangularGroup {S : Type*} [CommRing S] (f : R →+* S) :
+theorem comap_generalLinearGroupMap_upperTriangularGroup {S : Type*} [CommRing S] (f : R →+* S) :
     (upperTriangularGroup m S).comap (GeneralLinearGroup.map f) =
       upperTriangularCongruenceSubgroup m (RingHom.ker f) := by
   ext g
@@ -146,7 +147,8 @@ theorem comap_map_upperTriangularGroup {S : Type*} [CommRing S] (f : R →+* S) 
 
 /-- The preimage of the upper-unitriangular subgroup under entrywise application of a ring
 homomorphism `f` is the upper-unitriangular congruence subgroup modulo `ker f`. -/
-theorem comap_map_upperUnitriangularGroup {S : Type*} [CommRing S] (f : R →+* S) :
+theorem comap_generalLinearGroupMap_upperUnitriangularGroup {S : Type*} [CommRing S]
+    (f : R →+* S) :
     (upperUnitriangularGroup m S).comap (GeneralLinearGroup.map f) =
       upperUnitriangularCongruenceSubgroup m (RingHom.ker f) := by
   ext g
@@ -274,7 +276,8 @@ end UpperTriangularCongruenceSubgroup
 open UpperTriangularCongruenceSubgroup in
 /-- If `I` lies in the Jacobson radical, the index of the upper-unitriangular congruence subgroup
 in the upper-triangular one is `#((R ⧸ I)ˣ) ^ #m`. -/
-theorem relIndex_upperUnitriangularCongruenceSubgroup (hI : I ≤ Ring.jacobson R) :
+theorem relIndex_upperUnitriangularCongruenceSubgroup_upperTriangularCongruenceSubgroup
+    (hI : I ≤ Ring.jacobson R) :
     (upperUnitriangularCongruenceSubgroup m I).relIndex (upperTriangularCongruenceSubgroup m I) =
       Nat.card (R ⧸ I)ˣ ^ Fintype.card m := by
   rw [Subgroup.relIndex, ← ker_diag, Subgroup.index_ker,

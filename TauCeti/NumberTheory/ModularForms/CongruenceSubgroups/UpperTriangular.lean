@@ -40,7 +40,7 @@ open Matrix CongruenceSubgroup
 theorem comap_toGL_upperTriangularCongruenceSubgroup_span (N : ℕ) :
     (upperTriangularCongruenceSubgroup (Fin 2) (Ideal.span {(N : ℤ)})).comap
         SpecialLinearGroup.toGL = Gamma0 N := by
-  rw [← ZMod.ker_intCastRingHom, ← comap_map_upperTriangularGroup]
+  rw [← ZMod.ker_intCastRingHom, ← comap_generalLinearGroupMap_upperTriangularGroup]
   ext g
   simp [Matrix.IsUpperTriangular, Matrix.BlockTriangular, Fin.forall_fin_two, Gamma0_mem]
 
@@ -48,7 +48,7 @@ theorem comap_toGL_upperTriangularCongruenceSubgroup_span (N : ℕ) :
 theorem comap_toGL_upperUnitriangularCongruenceSubgroup_span (N : ℕ) :
     (upperUnitriangularCongruenceSubgroup (Fin 2) (Ideal.span {(N : ℤ)})).comap
         SpecialLinearGroup.toGL = Gamma1 N := by
-  rw [← ZMod.ker_intCastRingHom, ← comap_map_upperUnitriangularGroup]
+  rw [← ZMod.ker_intCastRingHom, ← comap_generalLinearGroupMap_upperUnitriangularGroup]
   ext g
   simp [Matrix.isUpperUnitriangular_def, Matrix.IsUpperTriangular, Matrix.BlockTriangular,
     Fin.forall_fin_two, and_comm, and_left_comm]
