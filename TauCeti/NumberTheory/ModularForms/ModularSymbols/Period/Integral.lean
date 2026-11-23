@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.ModularForms.GeodesicIntegral.BetweenCusps
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.MeasureTheory.Integral.Asymptotics
 import Mathlib.MeasureTheory.Integral.ExpDecay
-import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 /-!
@@ -197,7 +196,8 @@ theorem periodIntegrand_slash_apply {k : ℤ} (hk : k = w + 2) (f : ℍ → ℂ)
   -- homogeneity: `P(aτ + b, cτ + d) = (cτ + d) ^ w · P(g • τ, 1)`
   have hP : aeval ![num g' τ, denom g' τ] (P : MvPolynomial (Fin 2) R) =
       denom g' τ ^ w * aeval ![((g' • τ : ℍ) : ℂ), 1] (P : MvPolynomial (Fin 2) R) := by
-    have h := ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul_of_algebra ![((g' • τ : ℍ) : ℂ), 1]
+    have h := ((mem_homogeneousSubmodule w _).mp P.property).aeval_smul_of_algebra ![((g' • τ : ℍ) :
+        ℂ), 1]
       (denom g' τ)
     rw [smul_eq_mul] at h
     rw [← h]
@@ -259,7 +259,8 @@ theorem integrableOn_resToImagAxis_periodIntegrand_slash_Ici [Γ.IsArithmetic] [
       (hmd _)).continuousAt.continuousWithinAt
   -- exponential decay of `f ∣[k] g`, polynomial growth of `P`
   obtain ⟨c, hc, hdecay⟩ := exists_isBigO_resToImagAxis_rat_slash_exp f g
-  have hpoly := isBigO_aeval_num_denom ((mem_homogeneousSubmodule w _).mp P.2).totalDegree_le g'
+  have hpoly := isBigO_aeval_num_denom ((mem_homogeneousSubmodule w _).mp P.property).totalDegree_le
+      g'
   have hO : resToImagAxis (periodIntegrand f P ∣[(2 : ℤ)] g) =O[atTop]
       fun t ↦ Real.exp (-(c / 2) * t) := by
     have h1 : resToImagAxis (periodIntegrand f P ∣[(2 : ℤ)] g) =ᶠ[atTop]
@@ -299,7 +300,7 @@ theorem integrableOn_resToImagAxis_periodIntegrand_slash [Γ.IsArithmetic] [Cusp
     exact hg
   have := integrableOn_resToImagAxis_periodIntegrand_slash_Ici f hk P hgS
   rwa [SlashAction.slash_mul, ModularForm.rat_slash_mapGL,
-    ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash] at this
+    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash] at this
 
 /-- **Decay on vertical strips**: for a cusp form `f` of weight `w + 2` on an arithmetic
 subgroup, a binary form `P` of degree `w`, and a rational matrix `g` of positive determinant, the
@@ -333,7 +334,7 @@ theorem tendsto_periodIntegrand_slash [Γ.IsArithmetic] [CuspFormClass F Γ k] (
   have hpoly : (fun τ : ℍ ↦ aeval ![num g' τ, denom g' τ] (P : MvPolynomial (Fin 2) R)) =O[l]
       fun τ ↦ τ.im ^ w := by
     refine TauCeti.isBigO_aeval_of_totalDegree_le
-      ((mem_homogeneousSubmodule w _).mp P.2).totalDegree_le (fun i ↦ ?_) hone
+      ((mem_homogeneousSubmodule w _).mp P.property).totalDegree_le (fun i ↦ ?_) hone
     fin_cases i
     · simpa [num] using haffine (g' 0 0 : ℂ) (g' 0 1 : ℂ)
     · simpa [denom] using haffine (g' 1 0 : ℂ) (g' 1 1 : ℂ)
@@ -398,7 +399,7 @@ theorem cuspIntegral_mul_sub_pow [Γ.IsArithmetic] [CuspFormClass F Γ k] (f : F
     simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, hc, sub_eq_add_neg, add_pow,
       Finset.mul_sum]
     exact Finset.sum_congr rfl fun j _ ↦ by ring
-  rw [hsum, cuspIntegral_sum _ hg hint]
+  rw [hsum, cuspIntegral_sum _ hint]
   exact Finset.sum_congr rfl fun j _ ↦ cuspIntegral_smul _ _ _ _
 
 end CommSemiring
@@ -418,7 +419,7 @@ theorem periodIntegrand_slash_mapGL {k : ℤ} (hk : k = w + 2) (f : ℍ → ℂ)
     rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]
   funext τ
   rw [periodIntegrand_slash_apply hk f P (by rw [hdet]; exact one_pos) τ, periodIntegrand_apply,
-    hdet, ModularForm.rat_slash_mapGL, ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    hdet, ModularForm.rat_slash_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     ← ModularForm.SL_slash, map_mapGL, coe_binaryFormRep_apply, aeval_linearSubst]
   push_cast
   rw [_root_.one_zpow, one_mul]
@@ -451,7 +452,7 @@ theorem geodesicIntegral_mapGL_mul_periodIntegrand_of_mem {Γ : Subgroup SL(2, �
       g.geodesicIntegral
         (periodIntegrand f (binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P)) := by
   rw [geodesicIntegral_mapGL_mul_periodIntegrand hk, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)]
 
 /-- **The periods between cusps respect the modular-symbol relation**: for `γ` in the level `Γ`
@@ -468,7 +469,7 @@ theorem cuspIntegral_periodIntegrand_mapGL_smul_of_mem {Γ : Subgroup SL(2, ℤ)
     rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]
     exact one_pos
   rw [← cuspIntegral_slash _ hdet, periodIntegrand_slash_mapGL hk, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)]
 
 /-! ### The transformation law under integral matrices -/
@@ -497,7 +498,8 @@ theorem periodIntegrand_adjugate_slash {k : ℤ} (hk : k = w + 2) (f : ℍ → �
     fin_cases i <;>
       simp [adjugate_fin_two, num, denom, mulVec, dotProduct, Fin.sum_univ_two, hent] <;> ring
   rw [periodIntegrand_slash_apply hk f _ hg τ, periodIntegrand_apply, coe_binaryFormRep_apply,
-    aeval_linearSubst, ← hg', hvec, ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul_of_algebra,
+    aeval_linearSubst, ← hg', hvec, ((mem_homogeneousSubmodule w _).mp
+        P.property).aeval_smul_of_algebra,
     smul_eq_mul, _root_.zpow_neg, zpow_natCast]
   field_simp
 

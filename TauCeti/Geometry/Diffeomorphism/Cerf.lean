@@ -94,7 +94,7 @@ private lemma joined_orthogonalToDiffSphere_one_or_reflection
         (orthogonalToDiffSphere 3 ∞ A) := by
   rw [← map_one (orthogonalToDiffSphere 3 ∞), joined_orthogonalToDiffSphere_iff,
     joined_orthogonalToDiffSphere_iff, det_orthogonalDiagonalReflection]
-  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.2 with hA | hA <;> simp [hA]
+  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;> simp [hA]
 
 /-- **Cerf's theorem as a count of path components.** Cerf's theorem holds exactly when the
 diffeomorphism group of `S³` has two path components. -/

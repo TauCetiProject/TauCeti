@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.LocalRing.Module
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.RingTheory.KrullSchmidt.Multiplicity
-public import TauCeti.RingTheory.Idempotents.Simple
+public import TauCeti.RingTheory.Idempotents.Simple.Basic
 
 /-!
 # Indecomposable classes in the Grothendieck group of finitely generated projectives

@@ -46,7 +46,7 @@ theorem Scheme.Hom.bijective_app_of_isIntegralHom_of_isIso_app [IsIntegral X] [I
     [IsNormalScheme Y] (f : X ⟶ Y) [IsIntegralHom f] {V W : Y.Opens} (hV : IsAffineOpen V)
     (hWV : W ≤ V) [Nonempty W] [IsIso (f.app W)] :
     Function.Bijective (f.app V) := by
-  have : Nonempty V := ⟨⟨_, hWV (Classical.choice ‹Nonempty W›).2⟩⟩
+  have : Nonempty V := ⟨⟨_, hWV (Classical.choice ‹Nonempty W›).property⟩⟩
   -- An empty preimage would make `f.app W` identify the nonzero ring `Γ(Y, W)` with zero.
   have : Nonempty (f ⁻¹ᵁ W) := by
     by_contra h
@@ -54,7 +54,7 @@ theorem Scheme.Hom.bijective_app_of_isIntegralHom_of_isIso_app [IsIntegral X] [I
       (X.sheaf.isTerminalOfEqEmpty (SetLike.ext' (Set.not_nonempty_iff_eq_empty'.mp h)))
     exact not_subsingleton Γ(Y, W) (ConcreteCategory.bijective_of_isIso (f.app W)).1.subsingleton
   have : Nonempty (f ⁻¹ᵁ V) :=
-    ⟨⟨_, f.preimage_mono hWV (Classical.choice ‹Nonempty (f ⁻¹ᵁ W)›).2⟩⟩
+    ⟨⟨_, f.preimage_mono hWV (Classical.choice ‹Nonempty (f ⁻¹ᵁ W)›).property⟩⟩
   have := functionField_isFractionRing_of_isAffineOpen Y V hV
   have := IsNormalScheme.isIntegrallyClosed_of_isAffineOpen hV
   let σ := X.presheaf.map (homOfLE (f.preimage_mono hWV)).op ≫ inv (f.app W) ≫

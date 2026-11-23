@@ -332,7 +332,7 @@ theorem mem_modFormCharSpace_of_slash_Gamma0_eq (huv : u * v ∣ N)
   rw [mem_modFormCharSpace_iff_nebentypus]
   intro g
   -- `SL_slash`: slashing by `g` is slashing by its image `mapGL ℝ g`
-  have hslash : ⇑f ∣[k] mapGL ℝ (g : SL(2, ℤ)) = _ := (SL_slash _ _).symm.trans (hf _ g.2)
+  have hslash : ⇑f ∣[k] mapGL ℝ (g : SL(2, ℤ)) = _ := (SL_slash _ _).symm.trans (hf _ g.property)
   rw [hslash, MulChar.coe_toUnitHom, MulChar.coeToFun_mul,
     Pi.mul_apply, DirichletCharacter.changeLevel_eq_cast_of_dvd,
     DirichletCharacter.changeLevel_eq_cast_of_dvd]

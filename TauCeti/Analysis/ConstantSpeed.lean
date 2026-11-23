@@ -28,6 +28,10 @@ hypothesis is needed: the bound is trivial when the variation is infinite.
   of Hausdorff dimension at most one.
 * `eVariationOn.hausdorffMeasure_image_le`: `μH[1] (f '' s) ≤ eVariationOn f s`.
 * `eVariationOn.euclideanHausdorffMeasure_image_le`: `μHE[1] (f '' s) ≤ eVariationOn f s`.
+* `BoundedVariationOn.isFiniteMeasure_euclideanHausdorffMeasure_restrict`: `μHE[1]` restricted to
+  the trace of a bounded-variation curve is a finite measure.
+* `HasConstantSpeedOnWith.isFiniteMeasure_euclideanHausdorffMeasure_restrict`: `μHE[1]` restricted
+  to the trace of a constant-speed curve on a compact interval is a finite measure.
 -/
 
 public section
@@ -50,20 +54,6 @@ theorem HasConstantSpeedOnWith.lipschitzOnWith {E : Type*} [PseudoEMetricSpace E
     exact (ENNReal.ofReal_mul l.prop).trans (by simp)
   simpa only [edist_dist, Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hxy), neg_sub]
     using hdist.trans_eq hmul
-
-/-- The extended diameter of the set of cumulative variations from a base point of `s` is at most
-the total variation on `s`. -/
-theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [TopologicalSpace E]
-    [WeakPseudoEMetricSpace E] (f : α → E) {s : Set α} {a : α} (ha : a ∈ s) :
-    Metric.ediam (variationOnFromTo f s a '' s) ≤ eVariationOn f s := by
-  by_cases hf : BoundedVariationOn f s
-  swap
-  · rw [BoundedVariationOn, not_ne_iff] at hf
-    exact hf ▸ le_top
-  refine Metric.ediam_image_le_iff.2 fun x hx y hy ↦ ?_
-  rw [edist_dist, Real.dist_eq, variationOnFromTo.sub_right hf.locallyBoundedVariationOn ha hx hy,
-    ← ENNReal.ofReal_toReal hf]
-  exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_le_eVariationOn hf)
 
 /-- The image of a curve of locally bounded variation has Hausdorff dimension at most one,
 because its natural parameterization is Lipschitz on a subset of the real line. -/
@@ -109,7 +99,7 @@ theorem hausdorffMeasure_image_le (f : α → E) (s : Set α) :
       simpa using hφ.hausdorffMeasure_image_le zero_le_one
     _ = volume (v '' s) := by rw [hausdorffMeasure_real]
     _ ≤ Metric.ediam (v '' s) := Real.volume_le_diam _
-    _ ≤ eVariationOn f s := variationOnFromTo.ediam_image_le f ha
+    _ ≤ eVariationOn f s := variationOnFromTo.ediam_image_le f a
 
 /-- The Euclidean one-dimensional Hausdorff measure of the image of `s` under `f` is at most the
 total variation of `f` on `s`. In particular, the trace of a rectifiable curve has
@@ -120,6 +110,27 @@ theorem euclideanHausdorffMeasure_image_le (f : α → E) (s : Set α) :
   exact hausdorffMeasure_image_le f s
 
 end eVariationOn
+
+/-- `μHE[1]` restricted to the trace of a curve of bounded variation is a finite measure. -/
+theorem BoundedVariationOn.isFiniteMeasure_euclideanHausdorffMeasure_restrict
+    {α E : Type*} [LinearOrder α] [EMetricSpace E] [MeasurableSpace E] [BorelSpace E]
+    {f : α → E} {s : Set α} (hf : BoundedVariationOn f s) :
+    IsFiniteMeasure (μHE[1].restrict (f '' s)) :=
+  isFiniteMeasure_restrict.2
+    ((eVariationOn.euclideanHausdorffMeasure_image_le f s).trans_lt hf.lt_top).ne
+
+/-- `μHE[1]` restricted to the trace of a constant-speed curve on a compact interval is a finite
+measure. -/
+theorem HasConstantSpeedOnWith.isFiniteMeasure_euclideanHausdorffMeasure_restrict
+    {E : Type*} [EMetricSpace E] [MeasurableSpace E] [BorelSpace E]
+    {f : ℝ → E} {a b : ℝ} {l : ℝ≥0} (hf : HasConstantSpeedOnWith f (Icc a b) l) :
+    IsFiniteMeasure (μHE[1].restrict (f '' Icc a b)) := by
+  rcases le_or_gt a b with hab | hab
+  · have hbv : BoundedVariationOn f (Icc a b) := by
+      simpa using hf.hasLocallyBoundedVariationOn a b (left_mem_Icc.2 hab) (right_mem_Icc.2 hab)
+    exact hbv.isFiniteMeasure_euclideanHausdorffMeasure_restrict
+  · rw [Icc_eq_empty_of_lt hab, image_empty, Measure.restrict_empty]
+    infer_instance
 
 /-- The image of a curve of locally bounded variation has zero additive Haar measure in every
 real normed space of dimension greater than one (so in particular finite-dimensional). -/

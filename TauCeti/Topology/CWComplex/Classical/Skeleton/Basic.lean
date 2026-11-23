@@ -7,22 +7,29 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import Mathlib.Topology.Category.TopCat.Basic
+public import Mathlib.Topology.Path
+public import TauCeti.Topology.UnitInterval
 
 /-!
 # Skeletal objects of relative CW complexes
 
 The stages of a relative CW complex's skeletal filtration, bundled as topological spaces.
 Characteristic-map lemmas describe their continuity on the closed unit ball (bundled as
-`TauCeti.cellMap`), how open cells sit outside the lower skeleton, how their coordinates are
+`TauCeti.cellMap`, and for a `1`-cell as the path `TauCeti.cellPath` between its end points in the
+`0`-skeleton), how open cells sit outside the lower skeleton, how their coordinates are
 unique, and how cells account for points in consecutive skeleta, so that a map sends
 `skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
 `n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
-skeleton above any given level.  With a single `0`-cell, the `0`-skeleton is the base together
-with that point (`TauCeti.skeletonLT_one_eq_insert`).  A subset of the `0`-skeleton is closed as
+skeleton above any given level, which gives induction principles over the skeleta
+(`TauCeti.forall_mem_skeletonLT_of_map`, `TauCeti.forall_mem_complex_of_map`).  With a single
+`0`-cell, the `0`-skeleton is the base together with that point
+(`TauCeti.skeletonLT_one_eq_insert`).  A subset of the `0`-skeleton is closed as
 soon as its trace on the base is (`TauCeti.isClosed_of_subset_skeletonLT_one`), so a map from a
 preconnected space into the `0`-skeleton cannot leave such a subset whose complement there is
 also closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`).  The preimages of the skeleta under
-a map into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
+a map into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`), carried
+along any map over a map of bases that preserves the skeleta
+(`TauCeti.mapsTo_preimageSkeleton_of_mapsTo_skeletonLT`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -42,17 +49,17 @@ variable {X : Type w} [TopologicalSpace X]
 the subtype. -/
 lemma continuous_map_closedBall {n : ℕ} (j : cell C n) :
     Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j y :=
-  (continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2
+  (continuousOn n j).comp_continuous continuous_subtypeVal fun y ↦ y.property
 
 /-- The characteristic map of an `n`-cell, as a continuous map from the closed unit ball of
 `Fin n → ℝ` into the complex. -/
 def cellMap {n : ℕ} (j : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, C) :=
-  ⟨fun y ↦ ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩,
+  ⟨fun y ↦ ⟨map n j y, closedCell_subset_complex n j ⟨y, y.property, rfl⟩⟩,
     (continuous_map_closedBall j).subtype_mk _⟩
 
 /-- The value of `TauCeti.cellMap` as a point of the complex. -/
 lemma cellMap_apply {n : ℕ} (j : cell C n) (y : closedBall (0 : Fin n → ℝ) 1) :
-    cellMap j y = ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩ :=
+    cellMap j y = ⟨map n j y, closedCell_subset_complex n j ⟨y, y.property, rfl⟩⟩ :=
   (rfl)
 
 /-- The value of `TauCeti.cellMap` in the ambient space is the characteristic map. -/
@@ -71,6 +78,23 @@ lemma map_eq_map_iff {n : ℕ} {i j : cell C n} {y z : Fin n → ℝ} (hy : ‖y
     refine (disjoint_openCell_of_ne (by simpa using hne)).ne_of_mem
       ⟨y, mem_ball_zero_iff.2 hy, rfl⟩ ⟨z, mem_ball_zero_iff.2 hz, rfl⟩ h
   refine ⟨rfl, (map n i).injOn ?_ ?_ h⟩ <;> rw [source_eq] <;> simpa
+
+variable (C) in
+/-- The path along a `1`-cell `j`: its characteristic map read on `[-1, 1]`, from the end point
+`χⱼ(-1)` to the end point `χⱼ(1)`. -/
+def cellPath (j : cell C 1) : Path (map 1 j (fun _ ↦ -1)) (map 1 j (fun _ ↦ 1)) where
+  toFun t := map 1 j (fun _ ↦ 2 * (t : ℝ) - 1)
+  continuous_toFun := by
+    refine (continuousOn 1 j).comp_continuous (by fun_prop) fun t ↦ ?_
+    rw [mem_closedBall_zero_iff, pi_norm_const, Real.norm_eq_abs]
+    exact unitInterval.abs_two_mul_sub_one_le_one t
+  source' := by simp
+  target' := by norm_num
+
+@[simp]
+lemma cellPath_apply (j : cell C 1) (t : unitInterval) :
+    cellPath C j t = map 1 j (fun _ ↦ 2 * (t : ℝ) - 1) :=
+  (rfl)
 
 variable [T2Space X] (C)
 
@@ -117,6 +141,11 @@ lemma map_notMem_skeletonLT {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : �
     map n j y ∉ (skeletonLT C (n : ℕ∞) : Set X) := fun h ↦
   (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left h ⟨y, mem_ball_zero_iff.2 hy, rfl⟩
 
+/-- The characteristic map of an `n`-cell sends the unit sphere into `skeletonLT C n`. -/
+lemma map_mem_skeletonLT_of_norm_eq_one {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ = 1) :
+    map n j y ∈ (skeletonLT C (n : ℕ∞) : Set X) :=
+  cellFrontier_subset_skeletonLT n j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩
+
 /-- A point of `skeletonLT C (n + 1)` lies in `skeletonLT C n` or is the image of a point of the
 open unit ball under the characteristic map of an `n`-cell. -/
 lemma mem_skeletonLT_or_exists_map {n : ℕ} {x : X}
@@ -129,13 +158,35 @@ lemma mem_skeletonLT_or_exists_map {n : ℕ} {x : X}
   obtain ⟨j, y, hy, rfl⟩ := mem_iUnion.1 hx
   rcases (mem_closedBall_zero_iff.1 hy).lt_or_eq with hy | hy
   · exact .inr ⟨j, y, hy, rfl⟩
-  · exact .inl (cellFrontier_subset_skeletonLT n j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩)
+  · exact .inl (map_mem_skeletonLT_of_norm_eq_one j hy)
 
 /-- The characteristic map of a closed `n`-cell lands in the `(n + 1)`-skeleton. -/
 lemma map_mem_skeletonLT_succ {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1) :
     map n j y ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
   rw [Nat.cast_succ]
   exact closedCell_subset_skeletonLT n j ⟨y, mem_closedBall_zero_iff.2 hy, rfl⟩
+
+/-- The centre of an `n`-cell does not lie in `skeletonLT C n`. -/
+lemma map_zero_notMem_skeletonLT {n : ℕ} (j : cell C n) :
+    map n j 0 ∉ (skeletonLT C (n : ℕ∞) : Set X) :=
+  map_notMem_skeletonLT j (by simp)
+
+/-- On the closed unit ball, the characteristic map of an `n`-cell takes the value at the centre
+only at the centre: it is injective on the open ball, and it sends the boundary sphere into
+`skeletonLT C n`, which the centre avoids. -/
+lemma map_eq_map_zero_iff {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1) :
+    map n j y = map n j 0 ↔ y = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
+  rcases hy.lt_or_eq with hy | hy
+  · exact (map n j).injOn (by rw [source_eq]; exact mem_ball_zero_iff.2 hy)
+      (by rw [source_eq]; exact mem_ball_self one_pos) h
+  · exact (map_zero_notMem_skeletonLT j (h ▸ map_mem_skeletonLT_of_norm_eq_one j hy)).elim
+
+variable (C) in
+/-- The end points `χⱼ(-1)` and `χⱼ(1)` of a `1`-cell `j` lie in the `0`-skeleton. -/
+lemma map_mem_skeletonLT_one (j : cell C 1) {c : ℝ} (hc : |c| = 1) :
+    map 1 j (fun _ ↦ c) ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set X) :=
+  map_mem_skeletonLT_of_norm_eq_one j (by rw [pi_norm_const, Real.norm_eq_abs, hc])
 
 /-- A map out of a relative CW complex sends `skeletonLT C (n + 1)` into a set `T` exactly when
 it sends `skeletonLT C n` into `T` and sends every closed `n`-cell, read through its
@@ -144,7 +195,7 @@ lemma mapsTo_skeletonLT_succ_iff {Y : Type*} {n : ℕ} {g : C → Y} {T : Set Y}
     MapsTo g {x : C | (x : X) ∈ skeletonLT C ((n + 1 : ℕ) : ℕ∞)} T ↔
       MapsTo g {x : C | (x : X) ∈ skeletonLT C n} T ∧ ∀ (j : cell C n) y, g (cellMap j y) ∈ T := by
   refine ⟨fun h ↦ ⟨h.mono_left fun x hx ↦ skeletonLT_mono (by exact_mod_cast n.le_succ) hx,
-    fun j y ↦ h (map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2))⟩,
+    fun j y ↦ h (map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.property))⟩,
     fun ⟨h, hcell⟩ x hx ↦ ?_⟩
   obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map (x := (x : X)) hx
   · exact h hx'
@@ -157,6 +208,39 @@ lemma exists_mem_skeletonLT_add (k : ℕ) {x : X} (hx : x ∈ C) :
   rw [← iUnion_skeletonLT_eq_complex (C := C), mem_iUnion] at hx
   obtain ⟨j, hj⟩ := hx
   exact ⟨j, skeletonLT_mono (by exact_mod_cast Nat.le_add_left j k) hj⟩
+
+/-- **Induction on the skeleta.** A property of points holds on `skeletonLT C n` as soon as it
+holds on the base and, at every point `map m j y` of an open `m`-cell with `m < n`, it follows
+from its truth on `skeletonLT C m`. -/
+lemma forall_mem_skeletonLT_of_map {P : X → Prop} {n : ℕ∞} (hD : ∀ x ∈ D, P x)
+    (hcell : ∀ m : ℕ, (m : ℕ∞) < n → ∀ (j : cell C m) (y : Fin m → ℝ), ‖y‖ < 1 →
+      (∀ x ∈ (skeletonLT C (m : ℕ∞) : Set X), P x) → P (map m j y)) :
+    ∀ x ∈ (skeletonLT C n : Set X), P x := by
+  have hnat (k : ℕ) (hk : (k : ℕ∞) ≤ n) : ∀ x ∈ (skeletonLT C (k : ℕ∞) : Set X), P x := by
+    induction k with
+    | zero => simpa [skeletonLT_zero_eq_base] using hD
+    | succ k ih =>
+      have hk' : (k : ℕ∞) < n := lt_of_lt_of_le (mod_cast k.lt_succ_self) hk
+      intro x hx
+      obtain hx | ⟨j, y, hy, rfl⟩ := mem_skeletonLT_or_exists_map hx
+      · exact ih hk'.le x hx
+      · exact hcell k hk' j y hy (ih hk'.le)
+  induction n using ENat.recTopCoe with
+  | top =>
+    intro x hx
+    obtain ⟨k, hk⟩ := exists_mem_skeletonLT_add 0 (skeletonLT_top (C := C) ▸ hx)
+    exact hnat (0 + k) le_top x hk
+  | coe n => exact hnat n le_rfl
+
+/-- **Induction on the skeleta**, for all points of the complex: a property holds on `C` as soon
+as it holds on the base and, at every point `map n j y` of an open `n`-cell, it follows from its
+truth on `skeletonLT C n`. -/
+lemma forall_mem_complex_of_map {P : X → Prop} (hD : ∀ x ∈ D, P x)
+    (hcell : ∀ n (j : cell C n) (y : Fin n → ℝ), ‖y‖ < 1 →
+      (∀ x ∈ (skeletonLT C (n : ℕ∞) : Set X), P x) → P (map n j y)) :
+    ∀ x ∈ C, P x := by
+  simpa only [skeletonLT_top] using
+    forall_mem_skeletonLT_of_map (n := ⊤) hD fun m _ ↦ hcell m
 
 /-- **Closed subsets of the `0`-skeleton.** A subset `A` of the `0`-skeleton `skeletonLT C 1`,
 which consists of the base `D` and the `0`-cells, is closed as soon as `A ∩ D` is closed. -/
@@ -205,9 +289,28 @@ lemma preimageSkeleton_def (f : E → X) (q : ℤ) :
 lemma mem_preimageSkeleton_iff (f : E → X) (q : ℤ) (x : E) :
     x ∈ preimageSkeleton C f q ↔ f x ∈ skeletonLT C ((q + 1).toNat : ℕ∞) := Iff.rfl
 
+/-- For `q = k - 1`, the stage `q` of the skeletal filtration is the preimage of
+`skeletonLT C k`. -/
+lemma preimageSkeleton_eq_preimage_skeletonLT (f : E → X) (k : ℕ) (q : ℤ) (hq : q = k - 1) :
+    preimageSkeleton C f q = f ⁻¹' skeletonLT C (k : ℕ∞) := by
+  rw [preimageSkeleton_def, show (q + 1).toNat = k by lia]
+
+/-- For `q = k - 1`, the stage `q + 1` of the skeletal filtration is the preimage of
+`skeletonLT C (k + 1)`. -/
+lemma preimageSkeleton_add_one_eq_preimage_skeletonLT (f : E → X) (k : ℕ) (q : ℤ)
+    (hq : q = k - 1) :
+    preimageSkeleton C f (q + 1) = f ⁻¹' skeletonLT C ((k + 1 : ℕ) : ℕ∞) :=
+  preimageSkeleton_eq_preimage_skeletonLT f (k + 1) (q + 1) (by lia)
+
 /-- The preimages of the skeleta form an increasing filtration. -/
 lemma monotone_preimageSkeleton (f : E → X) : Monotone (preimageSkeleton C f) :=
   fun _ _ h ↦ Set.preimage_mono (skeletonLT_mono (by exact_mod_cast Int.toNat_le_toNat (by lia)))
+
+/-- A map over `X` carries each stage of the skeletal filtration into the corresponding stage. -/
+lemma mapsTo_preimageSkeleton {E' : Type*} {f : E → X} {f' : E' → X} (g : E → E')
+    (hg : ∀ x, f' (g x) = f x) (q : ℤ) :
+    Set.MapsTo g (preimageSkeleton C f q) (preimageSkeleton C f' q) := fun x hx ↦ by
+  rwa [mem_preimageSkeleton_iff, hg]
 
 /-- Below degree `0` the skeletal filtration is the preimage of the base. -/
 @[simp]
@@ -226,6 +329,13 @@ lemma preimageSkeleton_natCast (f : E → X) (n : ℕ) :
     preimageSkeleton C f n = f ⁻¹' skeleton C n := by
   simp [preimageSkeleton, skeleton]
 
+/-- The stage `n - 1` of the skeletal filtration is the preimage of the `(n - 1)`-skeleton
+`skeletonLT C n`. -/
+@[simp]
+lemma preimageSkeleton_natCast_sub_one (f : E → X) (n : ℕ) :
+    preimageSkeleton C f ((n : ℤ) - 1) = f ⁻¹' skeletonLT C n := by
+  rw [preimageSkeleton_def, show ((n : ℤ) - 1 + 1).toNat = n by lia]
+
 /-- The stage `0` of the skeletal filtration is the preimage of the `0`-skeleton. -/
 @[simp]
 lemma preimageSkeleton_zero (f : E → X) : preimageSkeleton C f 0 = f ⁻¹' skeleton C 0 := by
@@ -241,5 +351,17 @@ lemma preimageSkeleton_one (f : E → X) : preimageSkeleton C f 1 = f ⁻¹' ske
 lemma preimageSkeleton_ofNat (f : E → X) (n : ℕ) [n.AtLeastTwo] :
     preimageSkeleton C f ofNat(n) = f ⁻¹' skeleton C ofNat(n) :=
   preimageSkeleton_natCast f n
+
+/-- **A map over a cellular map preserves the skeletal filtrations.** If `p' ∘ f = g ∘ p` and `g`
+carries each skeleton of `C` into the skeleton of `C'` of the same dimension, then `f` carries the
+preimage under `p` of the `q`-skeleton of `C` into the preimage under `p'` of the `q`-skeleton of
+`C'`. -/
+lemma mapsTo_preimageSkeleton_of_mapsTo_skeletonLT {E' X' : Type*} [TopologicalSpace X']
+    [T2Space X'] {C' D' : Set X'} [RelCWComplex C' D'] {p : E → X} {p' : E' → X'} {f : E → E'}
+    {g : X → X'}
+    (hfg : p' ∘ f = g ∘ p) (hg : ∀ n : ℕ, MapsTo g (skeletonLT C n) (skeletonLT C' n)) (q : ℤ) :
+    MapsTo f (preimageSkeleton C p q) (preimageSkeleton C' p' q) := fun x hx ↦ by
+  rw [mem_preimageSkeleton_iff, ← Function.comp_apply (f := p'), hfg]
+  exact hg _ hx
 
 end TauCeti

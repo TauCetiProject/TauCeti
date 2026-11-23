@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
+import Mathlib.Algebra.Order.Ring.Pow
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
-# Real summability, finite repetitions, and unbounded weights
+# Real summability, finite repetitions, unbounded weights, and tails of nonnegative series
 
 A summable real sequence `a` remains summable after multiplication by suitable weights
 `c n ≥ 1` tending to infinity: no summable sequence decays at a slowest possible rate. This is
@@ -26,14 +28,31 @@ the original family weighted by those multiplicities.
 A square-summable real family is eventually small: `b i * C ≤ 1` for all but finitely many
 `i`, for any fixed real `C`.
 
+The tails `∑_{m > n} a m` of a nonnegative summable sequence decrease, and satisfy a discrete
+analogue of the power-rule integral identity for tails.
+
 ## Main results
 
 * `Summable.exists_tendsto_atTop_summable_mul`: weights `c n ≥ 1` with `c n → ∞` and
   `∑ n, c n * a n` summable.
+* `Summable.antitone_tsum_Ioi`: the tails `∑_{m > n} a m` of a nonnegative summable sequence
+  decrease with `n`.
+* `Summable.mul_pow_tsum_Ioi`: the sequence `a m * (∑_{j > m} a j) ^ k` is summable for a
+  nonnegative summable sequence `a`.
+* `Summable.tsum_Ioi_mul_pow_tsum_Ioi_le`: the estimate
+  `∑_{m > n} a m * (∑_{j > m} a j) ^ k ≤ (∑_{m > n} a m) ^ (k + 1) / (k + 1)` for a nonnegative
+  summable sequence `a`, the discrete counterpart of `∫_x^∞ a Ψ ^ k = Ψ x ^ (k + 1) / (k + 1)` for
+  `Ψ x = ∫_x^∞ a`.
 * `TauCeti.summable_sigma_fin_iff`: repeating each nonnegative term `m i` times is summable
   exactly when `∑ i, m i * a i` is.
 * `TauCeti.eventually_mul_le_one_of_summable_sq`: a square-summable family eventually satisfies
   `b i * C ≤ 1`.
+* `TauCeti.summable_pow_natAbs`, `TauCeti.tsum_pow_natAbs`,
+  `TauCeti.tsum_ite_eq_zero_pow_natAbs`, `TauCeti.tendsto_tsum_ite_eq_zero_pow_natAbs`: summability,
+  sum `(1 + r) * (1 - r)⁻¹`, nonzero-mode sum `2 * (r * (1 - r)⁻¹)`, and limit along `𝓝[≥] 0` of
+  the bilateral geometric series `r ^ k.natAbs` on `ℤ` for `0 ≤ r < 1`.
+* `TauCeti.cauchySeq_of_eventually_dist_le_of_summable`: a sequence whose steps are eventually
+  bounded by a summable sequence is Cauchy.
 -/
 
 public section
@@ -113,6 +132,65 @@ theorem Summable.exists_tendsto_atTop_summable_mul {a : ℕ → ℝ} (ha : Summa
     simp only [hb_def]
     split_ifs <;> simp
 
+section Tail
+
+variable {a : ℕ → ℝ}
+
+/-- The tails `∑_{m > n} a m` of a nonnegative summable sequence decrease with `n`. -/
+theorem Summable.antitone_tsum_Ioi (ha : Summable a) (ha0 : ∀ m, 0 ≤ a m) :
+    Antitone fun n : ℕ ↦ ∑' m : Set.Ioi n, a m := fun _ _ hnm ↦
+  have hsub := Set.Ioi_subset_Ioi hnm
+  (ha.subtype _).tsum_le_tsum_of_inj (Set.inclusion hsub) (Set.inclusion_injective hsub)
+    (fun j _ ↦ ha0 j) (fun _ ↦ le_rfl) (ha.subtype _)
+
+/-- For a nonnegative summable sequence `a` with tails `Ψ m = ∑_{j > m} a j`, the sequence
+`a m * Ψ m ^ k` is summable. -/
+theorem Summable.mul_pow_tsum_Ioi (ha : Summable a) (ha0 : ∀ m, 0 ≤ a m) (k : ℕ) :
+    Summable fun m ↦ a m * (∑' j : Set.Ioi m, a j) ^ k := by
+  have hΨ0 : ∀ m : ℕ, 0 ≤ ∑' j : Set.Ioi m, a j := fun m ↦ tsum_nonneg fun j ↦ ha0 j
+  refine (ha.mul_right ((∑' j : Set.Ioi 0, a j) ^ k)).of_nonneg_of_le
+    (fun m ↦ mul_nonneg (ha0 m) (pow_nonneg (hΨ0 m) k)) fun m ↦ ?_
+  have hle : ∑' j : Set.Ioi m, a j ≤ ∑' j : Set.Ioi 0, a j :=
+    ha.antitone_tsum_Ioi ha0 (Nat.zero_le m)
+  exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (hΨ0 m) hle k) (ha0 m)
+
+/-- For a nonnegative summable sequence `a` with tails `Ψ n = ∑_{m > n} a m`,
+`∑_{m > n} a m * Ψ m ^ k ≤ Ψ n ^ (k + 1) / (k + 1)`. This is the discrete counterpart of
+`∫_x^∞ a(v) Ψ(v)^k dv = Ψ(x)^(k+1)/(k+1)` for `Ψ(x) = ∫_x^∞ a`. -/
+theorem Summable.tsum_Ioi_mul_pow_tsum_Ioi_le (ha : Summable a) (ha0 : ∀ m, 0 ≤ a m)
+    (n k : ℕ) :
+    ∑' m : Set.Ioi n, a m * (∑' j : Set.Ioi (m : ℕ), a j) ^ k ≤
+      (∑' m : Set.Ioi n, a m) ^ (k + 1) / (k + 1) := by
+  obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : ℕ → ℝ, ∀ n, ∑' m : Set.Ioi n, a m = Ψ n := ⟨_, fun _ ↦ rfl⟩
+  simp only [hΨ]
+  have hΨ0 : ∀ n, 0 ≤ Ψ n := fun n ↦ hΨ n ▸ tsum_nonneg fun m ↦ ha0 m
+  -- telescoping over the partial sums, using `Ψ (m - 1) = Ψ m + a m`
+  have hpartial : ∀ M, (k + 1) * ∑ j ∈ range M,
+      a (j + (n + 1)) * Ψ (j + (n + 1)) ^ k ≤ Ψ n ^ (k + 1) - Ψ (n + M) ^ (k + 1) := by
+    intro M
+    induction M with
+    | zero => simp
+    | succ M ih =>
+      have hsplit : Ψ (n + M) = Ψ (n + M + 1) + a (n + M + 1) := by
+        rw [← hΨ, ← hΨ, (ha.subtype _).tsum_Ioi_eq_add]
+        ring
+      -- Bernoulli's inequality `x ^ (k + 1) + (k + 1) x ^ k y ≤ (x + y) ^ (k + 1)`
+      have hstep := pow_add_mul_le_add_pow (hΨ0 (n + M + 1))
+        (by linarith [hΨ0 (n + M + 1), ha0 (n + M + 1)]) (k + 1)
+      rw [← hsplit, Nat.add_sub_cancel] at hstep
+      push_cast at hstep
+      rw [sum_range_succ, mul_add, show M + (n + 1) = n + M + 1 by omega,
+        show n + (M + 1) = n + M + 1 by omega]
+      linarith
+  have hk : (0 : ℝ) < k + 1 := by positivity
+  rw [TauCeti.tsum_Ioi_eq_tsum_nat_add (fun m ↦ a m * Ψ m ^ k)]
+  refine Real.tsum_le_of_sum_range_le (fun j ↦ mul_nonneg (ha0 _) (pow_nonneg (hΨ0 _) k))
+    fun M ↦ ?_
+  rw [le_div_iff₀ hk]
+  linarith [hpartial M, pow_nonneg (hΨ0 (n + M)) (k + 1)]
+
+end Tail
+
 namespace TauCeti
 
 /-- Repeating each nonnegative real term a finite natural number of times preserves
@@ -141,5 +219,48 @@ theorem eventually_mul_le_one_of_summable_sq {ι : Type*} {b : ι → ℝ}
         rw [inv_mul_le_iff₀ (by positivity)]
         linarith
   nlinarith
+
+private lemma pow_neg_succ_natAbs (r : ℝ) :
+    (fun n : ℕ ↦ r ^ (-(n + 1 : ℤ)).natAbs) = fun n : ℕ ↦ r * r ^ n := by
+  ext n; rw [(by omega : (-(n + 1 : ℤ)).natAbs = n + 1), pow_succ']
+
+/-- For `0 ≤ r < 1`, the bilateral geometric series `k ↦ r ^ k.natAbs` on `ℤ` is summable. -/
+theorem summable_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    Summable fun k : ℤ ↦ r ^ k.natAbs :=
+  Summable.of_nat_of_neg_add_one (summable_geometric_of_lt_one hr₀ hr₁)
+    (pow_neg_succ_natAbs r ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r)
+
+/-- For `0 ≤ r < 1`, `k ↦ r ^ k.natAbs` on `ℤ` sums to `(1 + r) * (1 - r)⁻¹`. -/
+theorem tsum_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    (∑' k : ℤ, r ^ k.natAbs) = (1 + r) * (1 - r)⁻¹ := by
+  have h1 : (fun n : ℕ ↦ r ^ (n : ℤ).natAbs) = fun n : ℕ ↦ r ^ n := by ext n; simp
+  rw [tsum_of_nat_of_neg_add_one (h1 ▸ summable_geometric_of_lt_one hr₀ hr₁)
+    (pow_neg_succ_natAbs r ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r), h1,
+    pow_neg_succ_natAbs, tsum_mul_left, tsum_geometric_of_lt_one hr₀ hr₁]; ring
+
+/-- For `0 ≤ r < 1`, the nonzero modes of `r ^ k.natAbs` sum to `2 * (r * (1 - r)⁻¹)`. -/
+theorem tsum_ite_eq_zero_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    (∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs) = 2 * (r * (1 - r)⁻¹) := by
+  have hite := (summable_pow_natAbs hr₀ hr₁).tsum_eq_add_tsum_ite (0 : ℤ)
+  rw [tsum_pow_natAbs hr₀ hr₁, Int.natAbs_zero, pow_zero] at hite
+  have : 1 - r ≠ 0 := sub_ne_zero.2 hr₁.ne'; field_simp at hite ⊢; linarith
+
+/-- Along `𝓝[≥] 0`, the nonzero-mode bilateral geometric sum `∑'_{k ≠ 0} r ^ |k|` tends to `0`. -/
+theorem tendsto_tsum_ite_eq_zero_pow_natAbs :
+    Tendsto (fun r : ℝ ↦ ∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs) (𝓝[≥] 0) (𝓝 0) :=
+  ((by simpa using (((tendsto_id (α := ℝ)).mul (((tendsto_const_nhds (x := (1 : ℝ))).sub
+      tendsto_id).inv₀ (by norm_num : (1 : ℝ) - 0 ≠ 0))).const_mul 2) :
+      Tendsto (fun r : ℝ ↦ 2 * (r * (1 - r)⁻¹)) (𝓝 0) (𝓝 0)).mono_left nhdsWithin_le_nhds).congr'
+    (eventually_of_mem (Ico_mem_nhdsGE zero_lt_one) fun _ hr ↦
+      (tsum_ite_eq_zero_pow_natAbs hr.1 hr.2).symm)
+
+/-- A sequence whose steps are eventually bounded by a summable sequence is Cauchy. -/
+theorem cauchySeq_of_eventually_dist_le_of_summable {α : Type*} [PseudoMetricSpace α]
+    {x : ℕ → α} {d : ℕ → ℝ} (hd : Summable d)
+    (h : ∀ᶠ m in atTop, dist (x m) (x (m + 1)) ≤ d m) : CauchySeq x := by
+  obtain ⟨n, hn⟩ := eventually_atTop.mp h
+  exact (cauchySeq_shift n).mp <| cauchySeq_of_dist_le_of_summable (fun k ↦ d (k + n))
+    (fun k ↦ by simpa only [Nat.succ_add] using hn (k + n) (Nat.le_add_left n k))
+    ((summable_nat_add_iff n).mpr hd)
 
 end TauCeti

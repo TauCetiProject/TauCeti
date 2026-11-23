@@ -85,7 +85,7 @@ theorem exists_minimal_isBorelCandidate_le
     exists_minimal_of_smooth_of_connected
       (fun J : HopfIdeal k H ↦ IsBorelCandidate k H J ∧ J ≤ I)
       (fun hJ ↦ hJ.1.smooth)
-      (fun hJ ↦ geometricallyConnectedCommHopfAlgProperty.connectedSpace k _
+      (fun hJ ↦ geometricallyConnectedCommHopfAlgProperty.connectedSpace
         hJ.1.geometricallyConnected)
       ⟨I, hI, le_rfl⟩
   refine ⟨J, hJI, hJ, fun K hK hKJ ↦ ?_⟩

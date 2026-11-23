@@ -36,8 +36,8 @@ ring, with arbitrary `a₆`, and does not require the roots to be distinct.
 no further machinery. `y_eq_zero_of_order_two` is the current example: negation is `(x, y) ↦
 (x, -y)`, so a `2`-torsion point has `y = 0`. It lives here rather than with the division-polynomial
 material that first proved it because it needs none of that — this module's closure is one file,
-against thirty-three for `DivisionPolynomial/ShortNagellLutz.lean` — and its consumers, Nagell–Lutz
-and the `2`-descent torsion count, sit in unrelated parts of the library.
+against more than thirty for `DivisionPolynomial/ShortNagellLutz.lean` — and its consumers,
+Nagell–Lutz and the `2`-descent torsion count, sit in unrelated parts of the library.
 
 That gap matters as soon as a statement is about a curve over `ℤ` and a point over `ℚ`, which is
 the shape of the classical Nagell–Lutz theorem: the hypothesis is natural on the integral model,
@@ -52,7 +52,8 @@ re-established by hand at every such crossing.
 * `WeierstrassCurve.isShortNF_map` and `WeierstrassCurve.isShortNF_baseChange`: the same two
   statements for short normal form.
 * `WeierstrassCurve.VariableChange.r_eq_zero_of_isShortNF`, `…s_eq_zero_of_isShortNF` and
-  `…t_eq_zero_of_isShortNF`: a change of variables between short normal forms is a scaling.
+  `…t_eq_zero_of_isShortNF`, combined in `…eq_mk_u_of_isShortNF`: a change of variables between
+  short normal forms is a scaling.
 * `WeierstrassCurve.variableChange_a₄_of_isShortNF` and
   `WeierstrassCurve.variableChange_a₆_of_isShortNF`: it acts on the coefficients by
   `(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`.
@@ -137,6 +138,16 @@ non-zero-divisors. -/
 lemma VariableChange.r_eq_zero_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular (3 : R)) :
     C.r = 0 :=
   h3.left (by simpa using C.three_mul_r_eq_zero_of_isShortNF W h2)
+
+/-- **A change of variables between short normal forms is a scaling** `(x, y) ↦ (u²x, u³y)`, when
+`2` and `3` are non-zero-divisors. -/
+lemma VariableChange.eq_mk_u_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular (3 : R)) :
+    C = ⟨C.u, 0, 0, 0⟩ := by
+  ext
+  · rfl
+  · exact C.r_eq_zero_of_isShortNF W h2 h3
+  · exact C.s_eq_zero_of_isShortNF W h2
+  · exact C.t_eq_zero_of_isShortNF W h2
 
 /-- Between short normal forms, a change of variables scales `a₄` by `u⁻⁴`, when `2` is a
 non-zero-divisor. -/

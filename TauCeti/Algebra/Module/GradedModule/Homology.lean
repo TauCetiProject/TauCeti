@@ -16,7 +16,7 @@ indexed by an additive monoid with right cancellation.
 Let `d` be a square-zero endomorphism of `M`, linear over a ring `S` acting compatibly with `R`,
 which is homogeneous of some degree `r` for `G`. Then its homology `ker d ⧸ im d` inherits an
 internal grading over `R`: the kernel of `d` carries the grading `TauCeti.InternalGrading.ker`,
-and the image of `d` is homogeneous (`TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`), so
+and the image of `d` is homogeneous (`LinearMap.IsHomogeneous.isHomogeneous_range`), so
 the grading descends to the quotient of the kernel by the image.
 
 The ring `S` of `d` may be larger than the ring `R` of the grading. This is the situation of a
@@ -47,7 +47,7 @@ open DirectSum
 
 namespace TauCeti.InternalGrading
 
-variable {ι : Type} [DecidableEq ι] [AddRightCancelMonoid ι] {R S M : Type*}
+variable {ι : Type*} [DecidableEq ι] [AddRightCancelMonoid ι] {R S M : Type*}
 
 section Semiring
 

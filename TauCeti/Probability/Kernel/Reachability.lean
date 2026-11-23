@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Kernel.Irreducible
 public import TauCeti.Probability.Kernel.Composition.Power
 import Mathlib.Order.Preorder.Finite
+import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Reachability and communication for kernels
@@ -17,8 +18,10 @@ For a kernel `κ` on a measurable space, a state `y` is *reachable* from `x` if 
 mutually reachable. Reachability is reflexive and transitive, communication is an equivalence
 relation, and Mathlib's `Kernel.IsIrreducible` with respect to the counting measure is
 equivalent to every state reaching every other state, equivalently to every pair of states
-communicating. A state with finitely many reachable states
-reaches a state from which every reachable state can return.
+communicating. Positive singleton mass of an invariant measure propagates along reachability, so
+under counting-measure irreducibility every nonzero invariant measure charges every singleton. A
+state with finitely many reachable states reaches a state from which every reachable state can
+return.
 -/
 
 public section
@@ -175,5 +178,46 @@ theorem countable_of_isIrreducible_count [MeasurableSingletonClass S] [IsSFinite
     exact Set.countable_univ_iff.mp (hc.mono fun y _ =>
       Set.mem_iUnion.mpr ((reaches_def x y).mp
         (isIrreducible_count_iff_forall_reaches.mp ‹_› x y)))
+
+/-- Positive singleton mass of an invariant measure propagates along reachable transitions. -/
+theorem Invariant.apply_singleton_pos_of_reaches {μ : Measure S} (hμ : κ.Invariant μ) {x y : S}
+    (hx : 0 < μ {x}) (hxy : κ.Reaches x y) :
+    0 < μ {y} := by
+  obtain ⟨n, hn⟩ := (reaches_def x y).mp hxy
+  have hle := Measure.singleton_mul_apply_le_bind_apply μ (κ ^ n).aemeasurable x (s := {y})
+  rw [(hμ.pow n).def] at hle
+  exact (ENNReal.mul_pos hx.ne' hn.ne').trans_le hle
+
+/-- Under counting-measure irreducibility, every nonzero invariant measure charges every
+singleton. -/
+theorem Invariant.apply_singleton_pos_of_ne_zero
+    [IsIrreducible Measure.count κ] {μ : Measure S} (hμ : κ.Invariant μ) (hμ0 : μ ≠ 0) (x : S) :
+    0 < μ {x} := by
+  by_contra hx0
+  set A := toMeasurable μ {x}
+  have hA : MeasurableSet A := measurableSet_toMeasurable μ {x}
+  have hzero : ∀ n : ℕ, μ {z | (κ ^ n) z A ≠ 0} = 0 := fun n => by
+    have hint : ∫⁻ z, (κ ^ n) z A ∂μ = 0 := by
+      rw [← Measure.bind_apply hA (κ ^ n).aemeasurable, (hμ.pow n).def, measure_toMeasurable]
+      exact nonpos_iff_eq_zero.mp (not_lt.mp hx0)
+    exact ae_iff.mp (((lintegral_eq_zero_iff
+      ((κ ^ n).measurable_coe hA)).mp hint).mono fun _ hz => hz)
+  have huniv : (⋃ n : ℕ, {z : S | (κ ^ n) z A ≠ 0}) = Set.univ := by
+    ext z
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+    obtain ⟨n, hn⟩ := exists_pos_pow_apply_singleton (κ := κ) z x
+    exact ⟨n, (hn.trans_le (measure_mono (subset_toMeasurable μ {x}))).ne'⟩
+  have hμ_univ : μ Set.univ = 0 := by
+    rw [← huniv]
+    exact measure_iUnion_null hzero
+  exact hμ0 (Measure.measure_univ_eq_zero.mp hμ_univ)
+
+/-- Under counting-measure irreducibility, every invariant probability measure charges every
+singleton. -/
+theorem Invariant.apply_singleton_pos
+    [IsIrreducible Measure.count κ] {π : Measure S} [IsProbabilityMeasure π]
+    (hπ : κ.Invariant π) (x : S) :
+    0 < π {x} :=
+  hπ.apply_singleton_pos_of_ne_zero (IsProbabilityMeasure.ne_zero π) x
 
 end ProbabilityTheory.Kernel
