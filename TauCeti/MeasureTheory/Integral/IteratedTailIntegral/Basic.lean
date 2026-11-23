@@ -162,9 +162,8 @@ theorem iteratedTailIntegral_comp_add_right (f : ℝ → E) (c : ℝ) (n : ℕ) 
   | zero => simp only [iteratedTailIntegral_zero_apply]
   | succ n ih =>
     simp only [iteratedTailIntegral_succ_apply, ih, intervalIntegral.integral_comp_add_right]
-    rw [limUnder, limUnder,
-      ← Function.comp_def (fun R ↦ ∫ t in x + c..R, iteratedTailIntegral f n t) (· + c),
-      ← Filter.map_map, Filter.map_add_atTop_eq]
+    rw [← Function.comp_def (fun R ↦ ∫ t in x + c..R, iteratedTailIntegral f n t) (· + c),
+      limUnder_comp, Filter.map_add_atTop_eq]
 
 /-- Two functions agreeing on `[a, ∞)` have identical `iteratedTailIntegral` on `[a, ∞)`. -/
 theorem iteratedTailIntegral_congr_Ici {f g : ℝ → E} {a : ℝ} (h : EqOn f g (Ici a)) (n : ℕ) :

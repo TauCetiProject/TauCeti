@@ -152,7 +152,7 @@ private theorem tendsto_pow_sub_smul_integral_exp_neg_mul_mul_pow_smul_zero [Com
       have hk₁ : m + 1 + 1 - (k + 1) = m + 1 - k := by omega
       have hk₂ : m + 2 - k = m + 1 - k + 1 := by omega
       rw [hk₁, integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq hp m hloc ⟨L0, hL0'⟩ hh_int,
-        smul_sub, smul_comm, hk₂, pow_succ, mul_smul]
+        smul_sub, smul_comm (p ^ (m + 1 - k)) (m + 1 : ℝ), hk₂, pow_succ, mul_smul]
 
 /-- Base case (`n = 0`) of the Abelian Laplace theorem assuming `[CompleteSpace E]`. -/
 private theorem tendsto_integral_exp_neg_mul_smul_nhdsGT_zero_aux [CompleteSpace E] {f : ℝ → E}
