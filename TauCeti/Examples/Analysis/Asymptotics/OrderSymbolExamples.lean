@@ -16,18 +16,19 @@ import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 The order symbols `∼`, `o` and `O` of DLMF §2.1(i) are Mathlib's `Asymptotics.IsEquivalent`,
 `Asymptotics.IsLittleO` and `Asymptotics.IsBigO`. This file records the examples that DLMF gives
 for them, including the remark after 2.1.7 that `e^{-z} = o(1)` holds uniformly in a closed
-sector `|ph z| ≤ π/2 - δ` but not in the open half-plane `|ph z| < π/2`.
+sector `|ph z| ≤ π/2 - δ` with `δ > 0` but not in the open half-plane `|ph z| < π/2`.
 
 ## Main results
 
+* `TauCeti.abs_sin_pi_mul_intCast_add_le`: `|sin(πn + x)| ≤ |x|` for `n ∈ ℤ` and real `x`.
 * `TauCeti.sin_pi_mul_add_inv_isBigO`: `sin(πn + n⁻¹) = O(n⁻¹)` on all of `ℤ`, hence as
   `n → ±∞` (DLMF 2.1.6).
 
 The other examples are `example`s citing the general results: DLMF 2.1.4, `tanh z ∼ z` as
-`z → 0`, is `Complex.tanh_isEquivalent_id` of `TauCeti.Analysis.SpecialFunctions.Hyperbolic`;
+`z → 0`, is `TauCeti.tanh_isEquivalent_id` of `TauCeti.Analysis.SpecialFunctions.Hyperbolic`;
 DLMF 2.1.5, `e^{-x} = o(1)` as `x → +∞`, is Mathlib's `Real.tendsto_exp_neg_atTop_nhds_zero`;
-the sector statements are `TauCeti.exp_neg_isLittleO_one_sector` and
-`TauCeti.not_exp_neg_isLittleO_one_halfPlane` of `TauCeti.Analysis.SpecialFunctions.Exp.Decay`;
+the sector statements are `TauCeti.cexp_neg_isLittleO_one_sector` and
+`TauCeti.not_cexp_neg_isLittleO_one_halfPlane` of `TauCeti.Analysis.SpecialFunctions.Exp.Decay`;
 DLMF 2.1.7, `e^{ix} = O(1)` on `ℝ`, is `Complex.norm_exp_ofReal_mul_I`. DLMF 2.1.8, that the tail
 from index `n` of a power series converging near `0` is `O(zⁿ)`, is
 `TauCeti.tsum_tail_isBigO_pow` of `TauCeti.Analysis.Analytic.OfScalars`, recorded here for
@@ -45,35 +46,41 @@ open scoped Topology Real
 
 namespace TauCeti
 
-/-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` on all of `ℤ` (the filter `⊤`), with constant `1`. -/
-theorem sin_pi_mul_add_inv_isBigO :
-    (fun n : ℤ => Real.sin (π * n + (n : ℝ)⁻¹)) =O[⊤] fun n => (n : ℝ)⁻¹ := by
-  refine IsBigO.of_bound 1 (Eventually.of_forall fun n => ?_)
-  -- `sin(πn + n⁻¹) = (−1)ⁿ sin(n⁻¹)`, and `|sin x| ≤ |x|`.
+/-- `|sin(πn + x)| ≤ |x|` for every integer `n` and real `x`: shifting by `πn` only changes the
+sign of the sine, and `|sin x| ≤ |x|`. -/
+theorem abs_sin_pi_mul_intCast_add_le (n : ℤ) (x : ℝ) : |Real.sin (π * n + x)| ≤ |x| := by
+  -- `sin(πn + x) = (−1)ⁿ sin x`.
   rw [add_comm, mul_comm π]
-  simpa [Real.sin_add_int_mul_pi, abs_mul] using Real.abs_sin_le_abs (x := (n : ℝ)⁻¹)
+  simpa [Real.sin_add_int_mul_pi, abs_mul] using Real.abs_sin_le_abs (x := x)
 
-/-- DLMF 2.1.4: `tanh z ∼ z` as `z → 0` in `ℂ`, the result `Complex.tanh_isEquivalent_id`. -/
+/-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` on all of `ℤ` (the filter `⊤`), the case `x = n⁻¹` of
+`TauCeti.abs_sin_pi_mul_intCast_add_le`. -/
+theorem sin_pi_mul_add_inv_isBigO :
+    (fun n : ℤ => Real.sin (π * n + (n : ℝ)⁻¹)) =O[⊤] fun n => (n : ℝ)⁻¹ :=
+  IsBigO.of_bound 1 (Eventually.of_forall fun n => by
+    simpa [Real.norm_eq_abs] using abs_sin_pi_mul_intCast_add_le n (n : ℝ)⁻¹)
+
+/-- DLMF 2.1.4: `tanh z ∼ z` as `z → 0` in `ℂ`, the result `TauCeti.tanh_isEquivalent_id`. -/
 example : (fun z : ℂ => tanh z) ~[𝓝 0] fun z => z :=
-  Complex.tanh_isEquivalent_id
+  tanh_isEquivalent_id
 
 /-- DLMF 2.1.5: `e^{-x} = o(1)` as `x → +∞` in `ℝ`. -/
 example : (fun x : ℝ => Real.exp (-x)) =o[atTop] fun _ => (1 : ℝ) :=
   (isLittleO_one_iff ℝ).mpr Real.tendsto_exp_neg_atTop_nhds_zero
 
 /-- DLMF §2.1(i), after 2.1.7: `e^{-z} = o(1)` as `z → ∞` in the closed sector
-`|ph z| ≤ π/2 - δ`, for every `δ > 0`, the result `TauCeti.exp_neg_isLittleO_one_sector`. -/
+`|ph z| ≤ π/2 - δ`, for every `δ > 0`, the result `TauCeti.cexp_neg_isLittleO_one_sector`. -/
 example {δ : ℝ} (hδ : 0 < δ) :
     (fun z : ℂ => exp (-z)) =o[Bornology.cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ π / 2 - δ}]
       fun _ => (1 : ℂ) :=
-  exp_neg_isLittleO_one_sector hδ
+  cexp_neg_isLittleO_one_sector hδ
 
 /-- DLMF §2.1(i), after 2.1.7: `e^{-z} = o(1)` fails as `z → ∞` in the open half-plane
-`|ph z| < π/2`, the result `TauCeti.not_exp_neg_isLittleO_one_halfPlane`. -/
+`|ph z| < π/2`, the result `TauCeti.not_cexp_neg_isLittleO_one_halfPlane`. -/
 example :
     ¬ (fun z : ℂ => exp (-z)) =o[Bornology.cobounded ℂ ⊓ 𝓟 {z | |arg z| < π / 2}]
       fun _ => (1 : ℂ) :=
-  not_exp_neg_isLittleO_one_halfPlane
+  not_cexp_neg_isLittleO_one_halfPlane
 
 /-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ`, from the global bound
 `TauCeti.sin_pi_mul_add_inv_isBigO`. -/

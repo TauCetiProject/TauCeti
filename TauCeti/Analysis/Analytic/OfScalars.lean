@@ -369,24 +369,12 @@ theorem tsum_tail_isBigO_pow {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a : 
     (ha : ∀ᶠ z in 𝓝 0, Summable fun s ↦ a s * z ^ s) (n : ℕ) :
     (fun z : 𝕜 ↦ ∑' s, a (s + n) * z ^ (s + n)) =O[𝓝 0] fun z ↦ z ^ n := by
   set p := FormalMultilinearSeries.ofScalars 𝕜 a with hp
-  -- `p` has positive radius: its terms at a small nonzero `x` tend to `0`.
-  obtain ⟨ε, hε, hs⟩ := Metric.eventually_nhds_iff.mp ha
-  obtain ⟨x, hx0, hxε⟩ := NormedField.exists_norm_lt 𝕜 hε
-  have hrad : (‖x‖₊ : ℝ≥0∞) ≤ p.radius := p.le_radius_of_tendsto (l := 0) <| by
-    simpa [hp, FormalMultilinearSeries.ofScalars_norm, norm_mul, norm_pow] using
-      (hs (y := x) (by simpa using hxε)).tendsto_atTop_zero.norm
-  -- On the ball of radius `‖x‖` the sum of the scalar series has `p` as its power series.
-  have hball : HasFPowerSeriesOnBall (fun z : 𝕜 ↦ ∑' s, a s * z ^ s) p 0 ‖x‖₊ :=
-    { r_le := hrad
-      r_pos := ENNReal.coe_pos.mpr (nnNorm_pos.mpr (norm_pos_iff.mp hx0))
-      hasSum := fun {y} hy ↦ by
-        simp only [Metric.mem_eball, edist_dist, dist_zero_right] at hy
-        have hy' : ‖y‖ < ‖x‖ := by
-          rwa [← ENNReal.ofReal_coe_nnreal, coe_nnNorm,
-            ENNReal.ofReal_lt_ofReal_iff hx0] at hy
-        simpa [hp, FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul, mul_comm] using
-          (hs (y := y) (by simpa using hy'.trans hxε)).hasSum }
-  have h := hball.hasFPowerSeriesAt.isBigO_sub_partialSum_pow n
+  -- The scalar series is the power series of its sum at `0`.
+  have hfps : HasFPowerSeriesAt (fun z : 𝕜 ↦ ∑' s, a s * z ^ s) p 0 :=
+    hasFPowerSeriesAt_iff.mpr <| ha.mono fun z hz ↦ by
+      simpa [hp, FormalMultilinearSeries.coeff_ofScalars, zero_add, smul_eq_mul, mul_comm]
+        using hz.hasSum
+  have h := hfps.isBigO_sub_partialSum_pow n
   -- Near `0` the remainder after `n` terms is the tail of the scalar series.
   have heq : (fun z : 𝕜 ↦ (∑' s, a s * (0 + z) ^ s) - p.partialSum n z) =ᶠ[𝓝 0]
       fun z ↦ ∑' s, a (s + n) * z ^ (s + n) := by
