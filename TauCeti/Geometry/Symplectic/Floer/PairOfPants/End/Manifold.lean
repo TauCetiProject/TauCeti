@@ -195,11 +195,12 @@ be a nondegenerate two-form on a manifold `M`, let `K` be equal to `H_q(t) dt` b
 end `q`, for a `1`-periodic `C¹` Hamiltonian `H_q`, and let `u` be `C¹` on `S`, with image in a
 compact set `B`, solving the Floer equation `(du - X_K)^{0,1} = 0` on `S`. Let `e : M → F` be a
 `C¹` map into a finite-dimensional normed space, injective on `B` and with injective differential
-at the points of `B`, and suppose that the almost complex structures are uniformly tame with
-respect to `e`: `c ‖d e v‖² ≤ ω(v, J z v)` with `c > 0`. If the energy of `u` over `S` is finite,
-then at the end `q` there are a `1`-periodic orbit `y` of the Hamiltonian vector field of `H_q`
-in `B` and `s_n → ∞` such that the loops `t ↦ u(φ_q(±s_n, t))`, with the sign of the end,
-converge to `y`, pointwise in `M` and uniformly after applying `e`. -/
+at the points of `B`, and suppose that on `(b, ∞) × [0, 1]` in the positive end chart `φ'_q` the
+almost complex structures are uniformly tame with respect to `e`:
+`c ‖d e v‖² ≤ ω(v, J (φ'_q z) v)` with `c > 0`. If the energy of `u` over `S` is finite, then at
+the end `q` there are a `1`-periodic orbit `y` of the Hamiltonian vector field of `H_q` in `B` and
+`s_n → ∞` such that the loops `t ↦ u(φ_q(±s_n, t))`, with the sign of the end, converge to `y`,
+pointwise in `M` and uniformly after applying `e`. -/
 theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact
     (hω : ω.IsNondegenerate) (q : Puncture)
     (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
@@ -209,9 +210,10 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCom
     (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
-    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
-    (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
-      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {b c : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ Ioi b ×ˢ Icc 0 1, ∀ v,
+      c * ‖mvfderiv I e (u (positiveEndChart q z)) v‖ ^ 2 ≤
+        hω.symplecticFormAt (u (positiveEndChart q z)) v (J (positiveEndChart q z) v))
     (hfloer : ∀ z ∈ thricePuncturedSphereReal,
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
         (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
@@ -222,21 +224,37 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCom
     ∃ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1, (∀ t, y t ∈ B) ∧
       ∃ σ : ℕ → ℝ, Tendsto σ atTop atTop ∧
         TendstoUniformly (fun n t ↦ e (u (endChart q (q.endSign * σ n, t)))) (e ∘ y) atTop ∧
-        ∀ t, Tendsto (fun n ↦ u (endChart q (q.endSign * σ n, t))) atTop (𝓝 (y t)) :=
-  hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen q hKH hH hHs he hB
-    he_inj hde isOpen_thricePuncturedSphereReal hu huB J hc hJc hfloer hE (a := 0)
-    fun _ hζ ↦ positiveEndChart_mem_thricePuncturedSphereReal hζ
+        ∀ t, Tendsto (fun n ↦ u (endChart q (q.endSign * σ n, t))) atTop (𝓝 (y t)) := by
+  set a := max b 0
+  set U : Set (ℝ × ℝ) := positiveEndChart q '' (Ioi a ×ˢ univ)
+  have hU : IsOpen U := (isOpenMap_positiveEndChart q) _ (isOpen_Ioi.prod isOpen_univ)
+  have hUS : U ⊆ thricePuncturedSphereReal := by
+    rintro _ ⟨ζ, hζ, rfl⟩
+    exact positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right b 0).trans_lt hζ.1)
+  have hJcU : ∀ z ∈ U, ∀ v,
+      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v) := by
+    rintro _ ⟨ζ, hζ, rfl⟩ v
+    have hper : Periodic (fun t ↦ positiveEndChart q (ζ.1, t)) 1 := positiveEndChart_add_one q ζ.1
+    have h := hper.sub_int_mul_eq (x := ζ.2) ⌊ζ.2⌋
+    rw [mul_one, ← Int.fract] at h
+    rw [← h]
+    exact hJc (ζ.1, Int.fract ζ.2)
+      ⟨(le_max_left b 0).trans_lt hζ.1, Int.fract_nonneg _, (Int.fract_lt_one _).le⟩ v
+  exact hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen q hKH hH hHs
+    he hB he_inj hde hU (hu.mono hUS) (fun z hz ↦ huB z (hUS hz)) J hc hJcU
+    (fun z hz ↦ hfloer z (hUS hz)) (ne_top_of_le_ne_top hE (lintegral_mono_set hUS))
+    (a := a) fun ζ hζ ↦ ⟨ζ, ⟨hζ, mem_univ _⟩, rfl⟩
 
 /-- **A finite-energy Floer pair of pants in a closed manifold breaks off an orbit at each end.**
 Let `ω` be a nondegenerate two-form on a compact manifold `M`, let `K` be equal to `H_q(t) dt`
 beyond `T₀` on an end `q`, for a `1`-periodic `C¹` Hamiltonian `H_q`, and let `u` be `C¹` on `S`,
 solving the Floer equation `(du - X_K)^{0,1} = 0` on `S`. Let `e : M → F` be a `C¹` injective map
-with injective differential into a finite-dimensional normed space, and suppose that the almost
-complex structures are uniformly tame with respect to `e`: `c ‖d e v‖² ≤ ω(v, J z v)` with
-`c > 0`. If the energy of `u` over `S` is finite, then at the end `q` there are a `1`-periodic
-orbit `y` of the Hamiltonian vector field of `H_q` and `s_n → ∞` such that the loops
-`t ↦ u(φ_q(±s_n, t))`, with the sign of the end, converge to `y`, pointwise in `M` and uniformly
-after applying `e`. -/
+with injective differential into a finite-dimensional normed space, and suppose that on
+`(b, ∞) × [0, 1]` in the positive end chart `φ'_q` the almost complex structures are uniformly tame
+with respect to `e`: `c ‖d e v‖² ≤ ω(v, J (φ'_q z) v)` with `c > 0`. If the energy of `u` over `S`
+is finite, then at the end `q` there are a `1`-periodic orbit `y` of the Hamiltonian vector field of
+`H_q` and `s_n → ∞` such that the loops `t ↦ u(φ_q(±s_n, t))`, with the sign of the end, converge
+to `y`, pointwise in `M` and uniformly after applying `e`. -/
 theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer
     [CompactSpace M] (hω : ω.IsNondegenerate) (q : Puncture)
     (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
@@ -245,9 +263,10 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer
     (he : ContMDiff I 𝓘(ℝ, F) 1 e) (he_inj : Injective e)
     (hde : ∀ p, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
-    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
-    (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v,
-      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {b c : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ Ioi b ×ˢ Icc 0 1, ∀ v,
+      c * ‖mvfderiv I e (u (positiveEndChart q z)) v‖ ^ 2 ≤
+        hω.symplecticFormAt (u (positiveEndChart q z)) v (J (positiveEndChart q z) v))
     (hfloer : ∀ z ∈ thricePuncturedSphereReal,
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
         (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
@@ -365,8 +384,10 @@ Under the hypotheses of
 `t ↦ u(φ_q(±s, t))` (`s > 0`) is null-homotopic, then the subsequential limit orbit is contractible.
 -/
 theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact
-    (hc : 0 < c)
-    (hJc : ∀ z ∈ Sℝ, ∀ v, c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    {b : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ Ioi b ×ˢ Icc 0 1, ∀ v,
+      c * ‖mvfderiv I e (u (positiveEndChart q z)) v‖ ^ 2 ≤
+        hω.symplecticFormAt (u (positiveEndChart q z)) v (J (positiveEndChart q z) v))
     (hHq : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q))) (hnull : NullEnd(u, q)) :
     ∃ y ∈ ContrOrbits(ω, H, q), (∀ t, y t ∈ B) ∧ SeqEndLim(e, u, q, y) := by
   obtain ⟨y, hy, hyB, σ, hσ, hconv, hpt⟩ :=
@@ -483,8 +504,10 @@ include hω q hKH hH he he_inj hde hu J hfloer hE
 `exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact` to a
 compact manifold `M`. -/
 theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_floer
-    (hc : 0 < c)
-    (hJc : ∀ z ∈ Sℝ, ∀ v, c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    {b : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ Ioi b ×ˢ Icc 0 1, ∀ v,
+      c * ‖mvfderiv I e (u (positiveEndChart q z)) v‖ ^ 2 ≤
+        hω.symplecticFormAt (u (positiveEndChart q z)) v (J (positiveEndChart q z) v))
     (hHq : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q))) (hnull : NullEnd(u, q)) :
     ∃ y ∈ ContrOrbits(ω, H, q), SeqEndLim(e, u, q, y) := by
   obtain ⟨y, hy, -, h⟩ :=
