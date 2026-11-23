@@ -30,7 +30,9 @@ inclusions.
 
 ## Main results
 
-* `TauCeti.RelJetAlgebra.polyJetEquivRel_totalDeriv`: compatibility with total derivatives.
+* `TauCeti.RelJetAlgebra.polyJetEquivRel_totalDeriv`,
+  `TauCeti.RelJetAlgebra.polyJetEquivRel_pderiv_field`: compatibility with total derivatives and
+  field partial derivatives.
 * `TauCeti.RelJetAlgebra.map_stage_polyJetEquivRel_symm`,
   `TauCeti.RelJetAlgebra.polyJetEquivRel_mem_stage_iff`,
   `TauCeti.RelJetAlgebra.polyJetStageEquiv_inclusion`: compatibility with finite-order stages and
@@ -75,18 +77,24 @@ theorem polyJetEquivRel_C (r : R) :
     polyJetEquivRel R ι α (C r) = C (C r) := by
   simp [polyJetEquivRel]
 
+/-- Restricting `(polyJetEquivRel R ι α).symm` to the base polynomial ring `MvPolynomial ι R`
+yields `MvPolynomial.rename Sum.inl`. -/
+theorem polyJetEquivRel_symm_comp_algebraMap :
+    ((polyJetEquivRel R ι α).symm.toAlgHom).comp
+        (IsScalarTower.toAlgHom R (MvPolynomial ι R) (RelJetAlgebra (MvPolynomial ι R) ι α)) =
+      MvPolynomial.rename Sum.inl := by
+  apply MvPolynomial.algHom_ext
+  intro j
+  rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', MvPolynomial.algebraMap_eq,
+    AlgEquiv.coe_toAlgHom, MvPolynomial.rename_X, AlgEquiv.symm_apply_eq,
+    polyJetEquivRel_X_base]
+
 /-- The inverse comparison sends a base polynomial coefficient `C b` to `rename Sum.inl b`. -/
 @[simp]
 theorem polyJetEquivRel_symm_C (b : MvPolynomial ι R) :
     (polyJetEquivRel R ι α).symm (C b) = MvPolynomial.rename Sum.inl b := by
-  apply (polyJetEquivRel R ι α).injective
-  rw [AlgEquiv.apply_symm_apply, polyJetEquivRel, AlgEquiv.trans_apply,
-    MvPolynomial.renameEquiv_apply, MvPolynomial.rename_rename]
-  have h := AlgHom.congr_fun
-    (MvPolynomial.sumAlgEquiv_comp_rename_inr R (α × (ι →₀ ℕ)) ι) b
-  simp only [AlgHom.coe_comp, Function.comp_apply, AlgEquiv.coe_toAlgHom,
-    IsScalarTower.coe_toAlgHom', MvPolynomial.algebraMap_eq] at h
-  exact h.symm
+  simpa [MvPolynomial.algebraMap_eq] using
+    AlgHom.congr_fun (polyJetEquivRel_symm_comp_algebraMap (R := R) (ι := ι) (α := α)) b
 
 /-- The inverse comparison sends a field-jet coordinate `X (a, I)` to `X (Sum.inr (a, I))`. -/
 @[simp]
@@ -116,38 +124,53 @@ theorem polyJetEquivRel_totalDeriv (i : ι) (p : PolynomialJet R ι α) :
   have hp := DFunLike.congr_fun h p
   simpa [Derivation.conjAlgEquiv_apply] using congrArg (polyJetEquivRel R ι α) hp.symm
 
+/-- `polyJetEquivRel` intertwines field partial derivatives with relative field partials. -/
+theorem polyJetEquivRel_pderiv_field (a : α) (I : ι →₀ ℕ) (p : PolynomialJet R ι α) :
+    polyJetEquivRel R ι α (MvPolynomial.pderiv (Sum.inr (a, I)) p) =
+      MvPolynomial.pderiv (a, I) (polyJetEquivRel R ι α p) := by
+  classical
+  have h :
+      ((MvPolynomial.pderiv (R := MvPolynomial ι R) (a, I)).restrictScalars R).conjAlgEquiv
+          (polyJetEquivRel R ι α).symm =
+        MvPolynomial.pderiv (R := R) (Sum.inr (a, I)) := by
+    apply MvPolynomial.derivation_ext
+    rintro (j | ⟨b, J⟩)
+    · simp
+    · simp only [Derivation.conjAlgEquiv_apply, AlgEquiv.symm_symm, polyJetEquivRel_X_field,
+        Derivation.coe_restrictScalars, MvPolynomial.pderiv_X, Pi.single_apply, Sum.inr.injEq]
+      split_ifs <;> simp
+  have hp := DFunLike.congr_fun h p
+  simpa [Derivation.conjAlgEquiv_apply] using congrArg (polyJetEquivRel R ι α) hp.symm
+
 /-- Mapping a relative finite stage along `(polyJetEquivRel R ι α).symm` yields the corresponding
 `PolynomialJet` stage. -/
 theorem map_stage_polyJetEquivRel_symm (r : ℕ) :
     ((stage (MvPolynomial ι R) ι α r).restrictScalars R).map
         (polyJetEquivRel R ι α).symm.toAlgHom =
       PolynomialJet.stage R ι α r := by
+  have hbase_set :
+      (MvPolynomial.rename (R := R) (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ)))) '' Set.range X =
+        X '' Set.range (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ))) := by
+    ext x
+    simp
   have hcoeff :
       (IsScalarTower.toAlgHom R (MvPolynomial ι R)
           (RelJetAlgebra (MvPolynomial ι R) ι α)).range.map
           (polyJetEquivRel R ι α).symm.toAlgHom =
         Algebra.adjoin R (X '' Set.range (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ)))) := by
-    rw [← AlgHom.range_comp]
-    have hcomp :
-        ((polyJetEquivRel R ι α).symm.toAlgHom).comp
-            (IsScalarTower.toAlgHom R (MvPolynomial ι R)
-              (RelJetAlgebra (MvPolynomial ι R) ι α)) =
-          MvPolynomial.rename Sum.inl := by
-      ext j
-      simp [MvPolynomial.algebraMap_eq]
-    rw [hcomp, ← Algebra.map_top, ← MvPolynomial.adjoin_range_X (R := R) (σ := ι),
-      AlgHom.map_adjoin, ← Set.range_comp, ← Set.range_comp]
-    congr 2
-    ext j
+    rw [← AlgHom.range_comp, polyJetEquivRel_symm_comp_algebraMap, ← Algebra.map_top,
+      ← MvPolynomial.adjoin_range_X (R := R) (σ := ι), AlgHom.map_adjoin, hbase_set]
+  have hfield_set :
+      (polyJetEquivRel R ι α).symm.toAlgHom ''
+          (X '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r}) =
+        X '' (Sum.inr '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r}) := by
+    ext x
     simp
-  have hfield :
-      Algebra.adjoin R
-          ((polyJetEquivRel R ι α).symm.toAlgHom ''
-            (X '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r})) =
-        Algebra.adjoin R (X '' (Sum.inr '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r})) := by
-    rw [Set.image_image, Set.image_image]
-    congr 1
-    exact Set.image_congr fun ⟨a, I⟩ _ ↦ polyJetEquivRel_symm_X a I
+  have hunion :
+      Set.range (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ))) ∪
+          Sum.inr '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r} =
+        {v | Sum.elim (fun _ ↦ True) (fun aI ↦ aI.2.degree ≤ r) v} := by
+    ext (j | ⟨a, I⟩) <;> simp
   calc
     ((stage (MvPolynomial ι R) ι α r).restrictScalars R).map
           (polyJetEquivRel R ι α).symm.toAlgHom
@@ -157,31 +180,22 @@ theorem map_stage_polyJetEquivRel_symm (r : ℕ) :
             Algebra.adjoin R
               ((polyJetEquivRel R ι α).symm.toAlgHom ''
                 (X '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r})) := by
-          rw [stage, MvPolynomial.supported_eq_adjoin_X,
+          rw [stage_eq_supported, MvPolynomial.supported_eq_adjoin_X,
             Algebra.Subalgebra.restrictScalars_adjoin, Algebra.map_sup, AlgHom.map_adjoin]
     _ = Algebra.adjoin R (X '' Set.range (Sum.inl : ι → ι ⊕ (α × (ι →₀ ℕ)))) ⊔
           Algebra.adjoin R (X '' (Sum.inr '' {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r})) := by
-          rw [hcoeff, hfield]
+          rw [hcoeff, hfield_set]
     _ = PolynomialJet.stage R ι α r := by
-          rw [← Algebra.adjoin_union, ← Set.image_union, PolynomialJet.stage,
-            MvPolynomial.supported_eq_adjoin_X]
-          congr 2
-          ext (j | ⟨a, I⟩) <;> simp
+          rw [← Algebra.adjoin_union, ← Set.image_union, hunion,
+            ← MvPolynomial.supported_eq_adjoin_X, ← PolynomialJet.stage_eq_supported]
 
 /-- `polyJetEquivRel` identifies the finite stages of `PolynomialJet` and `RelJetAlgebra`. -/
+@[simp]
 theorem polyJetEquivRel_mem_stage_iff (r : ℕ) (p : PolynomialJet R ι α) :
     polyJetEquivRel R ι α p ∈ stage (MvPolynomial ι R) ι α r ↔
       p ∈ PolynomialJet.stage R ι α r := by
-  have himg :
-      (polyJetEquivRel R ι α).symm ''
-          (stage (MvPolynomial ι R) ι α r : Set (RelJetAlgebra (MvPolynomial ι R) ι α)) =
-        polyJetEquivRel R ι α ⁻¹'
-          (stage (MvPolynomial ι R) ι α r : Set (RelJetAlgebra (MvPolynomial ι R) ι α)) :=
-    (polyJetEquivRel R ι α).symm.toEquiv.image_eq_preimage_symm _
-  rw [← map_stage_polyJetEquivRel_symm (R := R) (ι := ι) (α := α) r]
-  nth_rw 2 [← SetLike.mem_coe]
-  rw [Subalgebra.coe_map, Subalgebra.coe_restrictScalars, AlgEquiv.coe_toAlgHom, himg]
-  rfl
+  rw [← map_stage_polyJetEquivRel_symm (R := R) (ι := ι) (α := α) r, Subalgebra.mem_map]
+  simp [(polyJetEquivRel R ι α).symm_apply_eq]
 
 /-- Restricting `polyJetEquivRel` to finite stages gives an `R`-algebra isomorphism between
 `PolynomialJet.stage R ι α r` and `(stage (MvPolynomial ι R) ι α r).restrictScalars R`. -/
@@ -192,19 +206,18 @@ def polyJetStageEquiv (R ι α : Type*) [CommSemiring R] (r : ℕ) :
     (Subalgebra.equivOfEq _ _ (map_stage_polyJetEquivRel_symm r))).symm
 
 @[simp]
-theorem coe_polyJetStageEquiv (r : ℕ) (p : PolynomialJet.stage R ι α r) :
-    (polyJetStageEquiv R ι α r p : RelJetAlgebra (MvPolynomial ι R) ι α) =
-      polyJetEquivRel R ι α p := by
-  apply (polyJetEquivRel R ι α).symm.injective
-  rw [AlgEquiv.symm_apply_apply]
-  exact congrArg Subtype.val ((polyJetStageEquiv R ι α r).symm_apply_apply p)
-
-@[simp]
 theorem coe_polyJetStageEquiv_symm (r : ℕ)
     (q : (stage (MvPolynomial ι R) ι α r).restrictScalars R) :
     ((polyJetStageEquiv R ι α r).symm q : PolynomialJet R ι α) =
       (polyJetEquivRel R ι α).symm q := by
-  rfl
+  simp [polyJetStageEquiv]
+
+@[simp]
+theorem coe_polyJetStageEquiv (r : ℕ) (p : PolynomialJet.stage R ι α r) :
+    (polyJetStageEquiv R ι α r p : RelJetAlgebra (MvPolynomial ι R) ι α) =
+      polyJetEquivRel R ι α p := by
+  apply (polyJetEquivRel R ι α).symm.injective
+  rw [AlgEquiv.symm_apply_apply, ← coe_polyJetStageEquiv_symm, AlgEquiv.symm_apply_apply]
 
 /-- Increasing the jet-order bound enlarges the scalar-restricted relative stage subalgebra. -/
 theorem restrictScalars_stage_mono {r s : ℕ} (hrs : r ≤ s) :

@@ -64,46 +64,15 @@ theorem totalDeriv_mem_stage (i : ι) {r : ℕ} {p : PolynomialJet R ι α}
   exact RelJetAlgebra.totalDeriv_mem_stage _ i
     ((RelJetAlgebra.polyJetEquivRel_mem_stage_iff r p).mpr hp)
 
-private def stageRestrictEquiv (r : ℕ) :
-    (RelJetAlgebra.stage (MvPolynomial ι R) ι α r).restrictScalars R ≃ₗ[R]
-      RelJetAlgebra.stage (MvPolynomial ι R) ι α r :=
-  { AddEquiv.refl _ with
-    map_smul' := fun _ _ ↦ rfl }
-
-private def stageEquiv (r : ℕ) :
-    stage R ι α r ≃ₗ[R] RelJetAlgebra.stage (MvPolynomial ι R) ι α r :=
-  (RelJetAlgebra.polyJetStageEquiv R ι α r).toLinearEquiv.trans (stageRestrictEquiv r)
-
-private theorem coe_stageEquiv (r : ℕ) (p : stage R ι α r) :
-    (stageEquiv r p : RelJetAlgebra (MvPolynomial ι R) ι α) =
-      RelJetAlgebra.polyJetEquivRel R ι α p :=
-  RelJetAlgebra.coe_polyJetStageEquiv r p
-
-private theorem coe_stageEquiv_symm (r : ℕ)
-    (q : RelJetAlgebra.stage (MvPolynomial ι R) ι α r) :
-    ((stageEquiv r).symm q : PolynomialJet R ι α) =
-      (RelJetAlgebra.polyJetEquivRel R ι α).symm q :=
-  RelJetAlgebra.coe_polyJetStageEquiv_symm r q
-
-/-- Total differentiation as a linear map between consecutive finite stages, transported from
-`RelJetAlgebra.stageDeriv` along `RelJetAlgebra.polyJetStageEquiv`. -/
+/-- Total differentiation as an `R`-linear map between consecutive finite stages. -/
 def stageDeriv (i : ι) (r : ℕ) : stage R ι α r →ₗ[R] stage R ι α (r + 1) :=
-  (stageEquiv (r + 1)).symm.toLinearMap.comp
-    ((RelJetAlgebra.stageDeriv (fun k ↦ MvPolynomial.pderiv (R := R) k) i r).comp
-      (stageEquiv r).toLinearMap)
-
-private theorem stageDeriv_apply (i : ι) (r : ℕ) (p : stage R ι α r) :
-    stageDeriv i r p =
-      (stageEquiv (r + 1)).symm
-        (RelJetAlgebra.stageDeriv (fun k ↦ MvPolynomial.pderiv (R := R) k) i r
-          (stageEquiv r p)) :=
-  rfl
+  (totalDeriv i).toLinearMap.restrict (p := (stage R ι α r).toSubmodule)
+    (q := (stage R ι α (r + 1)).toSubmodule) fun _ hp ↦ totalDeriv_mem_stage i hp
 
 @[simp]
 theorem coe_stageDeriv (i : ι) (r : ℕ) (p : stage R ι α r) :
     (stageDeriv i r p : PolynomialJet R ι α) = totalDeriv i p := by
-  simp only [stageDeriv_apply, coe_stageEquiv_symm, RelJetAlgebra.coe_stageDeriv, coe_stageEquiv,
-    ← RelJetAlgebra.polyJetEquivRel_totalDeriv, AlgEquiv.symm_apply_apply]
+  rfl
 
 /-- Finite-stage differentiation commutes with the transition inclusions. -/
 @[simp]
@@ -119,25 +88,8 @@ theorem stageDeriv_mul (i : ι) (r : ℕ) (p q : stage R ι α r) :
     stageDeriv i r (p * q) =
       Subalgebra.inclusion (stage_mono (Nat.le_succ r)) p * stageDeriv i r q +
         Subalgebra.inclusion (stage_mono (Nat.le_succ r)) q * stageDeriv i r p := by
-  have hmul :
-      stageEquiv r (p * q) = stageEquiv r p * stageEquiv r q := by
-    apply Subtype.ext
-    simp [coe_stageEquiv]
-  have hadd (x y : RelJetAlgebra.stage (MvPolynomial ι R) ι α (r + 1)) :
-      (stageEquiv (r + 1)).symm (x + y) =
-        (stageEquiv (r + 1)).symm x + (stageEquiv (r + 1)).symm y :=
-    map_add (stageEquiv (r + 1)).symm x y
-  have hsmul (x : stage R ι α r) (y : RelJetAlgebra.stage (MvPolynomial ι R) ι α (r + 1)) :
-      (stageEquiv (r + 1)).symm
-          (Subalgebra.inclusion (RelJetAlgebra.stage_mono (Nat.le_succ r))
-              (stageEquiv r x) * y) =
-        Subalgebra.inclusion (stage_mono (Nat.le_succ r)) x *
-          (stageEquiv (r + 1)).symm y := by
-    apply Subtype.ext
-    simp [coe_stageEquiv_symm, coe_stageEquiv]
-  rw [stageDeriv_apply, hmul,
-    RelJetAlgebra.stageDeriv_mul (fun k ↦ MvPolynomial.pderiv (R := R) k) i r, hadd, hsmul, hsmul,
-    stageDeriv_apply, stageDeriv_apply]
+  apply Subtype.ext
+  simp [Derivation.leibniz]
 
 /-- At the top-order generator the order increase is real; a finite stage is not closed
 under total differentiation. -/
@@ -156,8 +108,8 @@ theorem totalDeriv_comm (i j : ι) (p : PolynomialJet R ι α) :
 theorem stageDeriv_comm (i j : ι) (r : ℕ) (p : stage R ι α r) :
     stageDeriv i (r + 1) (stageDeriv j r p) =
       stageDeriv j (r + 1) (stageDeriv i r p) := by
-  simp only [stageDeriv_apply, LinearEquiv.apply_symm_apply]
-  rw [RelJetAlgebra.stageDeriv_comm (MvPolynomial.pderiv_comm i j)]
+  apply Subtype.ext
+  simp [totalDeriv_comm]
 
 section Evaluation
 

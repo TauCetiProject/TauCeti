@@ -48,12 +48,6 @@ theorem deRhamLieDeriv_mem_supportedForms {R B σ : Type*} [CommRing R] [CommRin
   | mem_ι_D_X i hi =>
     rw [Derivation.deRhamLieDeriv_ι, Derivation.kaehlerLieDeriv_D]
     exact ι_D_mem_supportedForms (hD (X i) (Algebra.subset_adjoin ⟨i, hi, rfl⟩))
-  | algebraMap_base b =>
-    have hb : algebraMap B (ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B])) b =
-        algebraMap (MvPolynomial σ B) _ (C b) :=
-      IsScalarTower.algebraMap_apply B (MvPolynomial σ B) _ b
-    rw [hb, Derivation.deRhamLieDeriv_algebraMap]
-    exact algebraMap_mem_supportedForms (hD (C b) (Subalgebra.algebraMap_mem _ b))
   | add x y _ _ hx hy =>
     rw [map_add]
     exact add_mem hx hy

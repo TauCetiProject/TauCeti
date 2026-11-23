@@ -47,7 +47,8 @@ any commutative ring `R` (without characteristic restrictions).
   commutation rules for `totalDerivForm`.
 * `TauCeti.RelJetAlgebra.totalDerivForm_comm`: commuting base derivations induce commuting
   total-derivative actions on vertical forms.
-* `TauCeti.RelJetAlgebra.algebraMap_mem_vertStage_iff`,
+* `TauCeti.RelJetAlgebra.vertStage_eq_supportedForms`,
+  `TauCeti.RelJetAlgebra.algebraMap_mem_vertStage_iff`,
   `TauCeti.RelJetAlgebra.ι_D_X_mem_vertStage_iff`,
   `TauCeti.RelJetAlgebra.extDeriv_mem_vertStage`: finite-stage membership and `extDeriv`
   preservation.
@@ -90,6 +91,13 @@ def vertStage (r : ℕ) : Subalgebra B (VertForms B ι α) :=
   KaehlerDeRham.supportedForms B {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r}
 
 variable {B ι α}
+
+/-- `vertStage B ι α r` is the subalgebra of vertical forms supported on field-jet coordinates
+of order at most `r`. -/
+theorem vertStage_eq_supportedForms (r : ℕ) :
+    vertStage B ι α r =
+      KaehlerDeRham.supportedForms B {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r} := by
+  rw [vertStage]
 
 variable {R : Type*} [CommRing R] [Algebra R B]
 
@@ -148,8 +156,9 @@ theorem vertStage_mono : Monotone (vertStage B ι α) := by
 @[simp]
 theorem algebraMap_mem_vertStage_iff {r : ℕ} {p : RelJetAlgebra B ι α} :
     algebraMap (RelJetAlgebra B ι α) (VertForms B ι α) p ∈ vertStage B ι α r ↔
-      p ∈ stage B ι α r :=
-  KaehlerDeRham.algebraMap_mem_supportedForms_iff
+      p ∈ stage B ι α r := by
+  rw [vertStage_eq_supportedForms, stage_eq_supported,
+    KaehlerDeRham.algebraMap_mem_supportedForms_iff]
 
 /-- Over a nontrivial coefficient ring `B`, a coordinate one-form `duᵃ_I` belongs to
 `vertStage B ι α r` if and only if `I.degree ≤ r`. -/
@@ -175,10 +184,13 @@ theorem exists_mem_vertStage (ω : VertForms B ι α) : ∃ r, ω ∈ vertStage 
 /-- `totalDerivForm δ i` raises the vertical stage by at most one. -/
 theorem totalDerivForm_mem_vertStage (δ : ι → Derivation R B B) (i : ι) {r : ℕ}
     {ω : VertForms B ι α} (hω : ω ∈ vertStage B ι α r) :
-    totalDerivForm δ i ω ∈ vertStage B ι α (r + 1) :=
-  KaehlerDeRham.deRhamLieDeriv_mem_supportedForms (fun b ↦ by simp)
+    totalDerivForm δ i ω ∈ vertStage B ι α (r + 1) := by
+  rw [vertStage_eq_supportedForms] at hω ⊢
+  exact KaehlerDeRham.deRhamLieDeriv_mem_supportedForms (fun b ↦ by simp)
     (fun _ h ↦ le_trans h (Nat.le_succ r))
-    (fun _ hp ↦ totalDeriv_mem_stage δ i hp)
+    (fun _ hp ↦ by
+      rw [← stage_eq_supported] at hp ⊢
+      exact totalDeriv_mem_stage δ i hp)
     hω
 
 variable (B ι α) in

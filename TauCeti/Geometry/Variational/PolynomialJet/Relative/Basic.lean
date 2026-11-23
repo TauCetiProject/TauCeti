@@ -109,8 +109,8 @@ theorem totalDeriv_unique (δ : ι → Derivation R B B) (i : ι)
 theorem totalDeriv_comm {δ : ι → Derivation R B B} {i j : ι}
     (hδ : ∀ b, δ i (δ j b) = δ j (δ i b)) (p : RelJetAlgebra B ι α) :
     totalDeriv δ i (totalDeriv δ j p) = totalDeriv δ j (totalDeriv δ i p) := by
-  simpa using Derivation.apply_apply_eq_add_of_adjoin_eq_top
-    (D₁ := totalDeriv δ i) (D₂ := totalDeriv δ j) (E := 0)
+  simpa using (totalDeriv δ i).apply_apply_eq_add_of_adjoin_eq_top
+    (D₂ := totalDeriv δ j) (E := 0)
     (TauCeti.MvPolynomial.adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ)))
     (by
       rintro _ (⟨b, rfl⟩ | ⟨⟨a, I⟩, rfl⟩)
@@ -168,16 +168,18 @@ theorem pderiv_totalDeriv (δ : ι → Derivation R B B) (i : ι) (a : α) (I : 
       simp only [Derivation.coe_restrictScalars, totalDeriv_X, h0, zero_add, hX]
       exact pderiv_X_add_single i a b I J
   by_cases hI : 1 ≤ I i
-  · simpa [hI] using Derivation.apply_apply_eq_add_of_adjoin_eq_top
-      (D₁ := (MvPolynomial.pderiv (a, I)).restrictScalars R) (D₂ := totalDeriv δ i)
-      (E := (MvPolynomial.pderiv (a, I - Finsupp.single i 1)).restrictScalars R)
-      (TauCeti.MvPolynomial.adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ)))
-      (hgen (E := (MvPolynomial.pderiv (a, I - Finsupp.single i 1)).restrictScalars R)
-        (fun _ ↦ by simp) fun b J ↦ by simp [hI]) p
-  · simpa [hI] using Derivation.apply_apply_eq_add_of_adjoin_eq_top
-      (D₁ := (MvPolynomial.pderiv (a, I)).restrictScalars R) (D₂ := totalDeriv δ i) (E := 0)
-      (TauCeti.MvPolynomial.adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ)))
-      (hgen (E := 0) (fun _ ↦ by simp) fun b J ↦ by simp [hI]) p
+  · simpa [hI] using
+      ((MvPolynomial.pderiv (a, I)).restrictScalars R).apply_apply_eq_add_of_adjoin_eq_top
+        (D₂ := totalDeriv δ i)
+        (E := (MvPolynomial.pderiv (a, I - Finsupp.single i 1)).restrictScalars R)
+        (TauCeti.MvPolynomial.adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ)))
+        (hgen (E := (MvPolynomial.pderiv (a, I - Finsupp.single i 1)).restrictScalars R)
+          (fun _ ↦ by simp) fun b J ↦ by simp [hI]) p
+  · simpa [hI] using
+      ((MvPolynomial.pderiv (a, I)).restrictScalars R).apply_apply_eq_add_of_adjoin_eq_top
+        (D₂ := totalDeriv δ i) (E := 0)
+        (TauCeti.MvPolynomial.adjoin_range_C_union_range_X R B (α × (ι →₀ ℕ)))
+        (hgen (E := 0) (fun _ ↦ by simp) fun b J ↦ by simp [hI]) p
 
 end TotalDeriv
 
@@ -187,10 +189,16 @@ variable (B ι α : Type*) [CommSemiring B]
 
 /-- The finite-order relative jet subalgebra of order at most `r`, allowing arbitrary base
 coefficients in `B` and field-jet coordinates `uᵃ_I` with `I.degree ≤ r`. -/
-@[expose] def stage (r : ℕ) : Subalgebra B (RelJetAlgebra B ι α) :=
+def stage (r : ℕ) : Subalgebra B (RelJetAlgebra B ι α) :=
   MvPolynomial.supported B {aI | aI.2.degree ≤ r}
 
 variable {B ι α}
+
+/-- `RelJetAlgebra.stage B ι α r` is the subalgebra of relative jet polynomials supported on
+field-jet variables of order at most `r`. -/
+theorem stage_eq_supported (r : ℕ) :
+    stage B ι α r = MvPolynomial.supported B {aI | aI.2.degree ≤ r} := by
+  rw [stage]
 
 /-- Membership in `stage B ι α r` is equivalent to every occurring variable having order `≤ r`. -/
 theorem mem_stage_iff {r : ℕ} {p : RelJetAlgebra B ι α} :

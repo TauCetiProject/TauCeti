@@ -155,8 +155,9 @@ theorem squarefree_of_isUnit (D : Derivation R A A) {a : A} (ha : IsUnit (D a)) 
 
 /-- An additive commutator relation `D₁ (D₂ a) = D₂ (D₁ a) + E a` among `R`-derivations of an
 `R`-algebra `A` holds on all of `A` whenever it holds on an algebra generating set `s`. -/
-theorem apply_apply_eq_add_of_adjoin_eq_top {D₁ D₂ E : Derivation R A A} {s : Set A}
-    (hs : Algebra.adjoin R s = ⊤) (h : ∀ x ∈ s, D₁ (D₂ x) = D₂ (D₁ x) + E x) (a : A) :
+theorem apply_apply_eq_add_of_adjoin_eq_top (D₁ : Derivation R A A) {D₂ E : Derivation R A A}
+    {s : Set A} (hs : Algebra.adjoin R s = ⊤) (h : ∀ x ∈ s, D₁ (D₂ x) = D₂ (D₁ x) + E x)
+    (a : A) :
     D₁ (D₂ a) = D₂ (D₁ a) + E a := by
   have ha : a ∈ Algebra.adjoin R s := hs ▸ Algebra.mem_top
   induction ha using Algebra.adjoin_induction with

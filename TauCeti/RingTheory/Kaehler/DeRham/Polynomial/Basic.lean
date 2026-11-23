@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.Kaehler.DeRham.Basic
 import Mathlib.RingTheory.Kaehler.Polynomial
+import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.RingTheory.Kaehler.MvPolynomial
 
 /-!
@@ -199,17 +200,12 @@ theorem ι_D_mem_supportedForms {s : Set σ} {p : MvPolynomial σ B}
     (hp : p ∈ MvPolynomial.supported B s) :
     ι (MvPolynomial σ B) (KaehlerDifferential.D B (MvPolynomial σ B) p) ∈
       supportedForms B s := by
-  induction hp using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, hi, rfl⟩ := hx
-    exact ι_D_X_mem_supportedForms hi
-  | algebraMap b => simp
-  | add x y _ _ hx hy =>
-    rw [map_add, map_add]
-    exact add_mem hx hy
-  | mul x y hx hy ihx ihy =>
-    rw [Derivation.leibniz, map_add, _root_.map_smul, _root_.map_smul]
-    exact add_mem (smul_mem_supportedForms hx ihy) (smul_mem_supportedForms hy ihx)
+  rw [← extDeriv_algebraMap, extDeriv_algebraMap_mvPolynomial_eq_sum_vars]
+  refine sum_mem fun i hi ↦ smul_mem_supportedForms ?_
+    (ι_D_X_mem_supportedForms (MvPolynomial.mem_supported.mp hp hi))
+  exact MvPolynomial.mem_supported.mpr
+    ((Finset.coe_subset.mpr (MvPolynomial.vars_pderiv_subset i p)).trans
+      (MvPolynomial.mem_supported.mp hp))
 
 /-- The grade involution preserves `supportedForms B s`. -/
 theorem involute_mem_supportedForms {s : Set σ}
@@ -239,8 +235,6 @@ theorem supportedForms_induction {s : Set σ}
     (mem_ι_D_X : ∀ i (hi : i ∈ s),
       P (ι (MvPolynomial σ B) (KaehlerDifferential.D B (MvPolynomial σ B) (X i)))
         (ι_D_X_mem_supportedForms hi))
-    (algebraMap_base : ∀ b : B,
-      P (algebraMap B _ b) (Subalgebra.algebraMap_mem (supportedForms B s) b))
     (add : ∀ x y hx hy, P x hx → P y hy → P (x + y) (add_mem hx hy))
     (mul : ∀ x y hx hy, P x hx → P y hy → P (x * y) (mul_mem hx hy))
     {α : ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B])}
@@ -250,7 +244,14 @@ theorem supportedForms_induction {s : Set σ}
     rcases hx with ⟨p, hp, rfl⟩ | ⟨i, hi, rfl⟩
     · exact mem_algebraMap p hp
     · exact mem_ι_D_X i hi
-  | algebraMap b => exact algebraMap_base b
+  | algebraMap b =>
+    have hb : algebraMap B (ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B])) b =
+        algebraMap (MvPolynomial σ B) _ (C b) :=
+      IsScalarTower.algebraMap_apply B (MvPolynomial σ B) _ b
+    have hmem : C b ∈ MvPolynomial.supported B s := by
+      rw [← MvPolynomial.algebraMap_eq]
+      exact Subalgebra.algebraMap_mem _ b
+    simpa [hb] using mem_algebraMap (C b) hmem
   | add x y _ _ hx hy => exact add x y _ _ hx hy
   | mul x y _ _ hx hy => exact mul x y _ _ hx hy
 
@@ -265,9 +266,6 @@ theorem extDeriv_mem_supportedForms {s : Set σ}
     exact ι_D_mem_supportedForms hp
   | mem_ι_D_X i _ =>
     rw [extDeriv_ι_D]
-    exact zero_mem _
-  | algebraMap_base b =>
-    rw [extDeriv_algebraMap_base]
     exact zero_mem _
   | add x y _ _ hx hy =>
     rw [map_add]
