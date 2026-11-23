@@ -60,17 +60,15 @@ theorem map_mul_right_eq_self_of_isUnit {u : A} (hu : IsUnit u) : μ.map (· * u
 /-- Left multiplication by a unit preserves the finite additive Haar measure of every set. -/
 theorem measure_preimage_mul_left_of_isUnit {u : A} (hu : IsUnit u) (s : Set A) :
     μ ((u * ·) ⁻¹' s) = μ s := by
-  have he : ⇑(ContinuousAddEquiv.mulLeft hu.unit).toHomeomorph = (u * ·) := funext fun x =>
-    (ContinuousAddEquiv.mulLeft_apply hu.unit x).trans (congrArg (· * x) hu.unit_spec)
-  rw [← he, ← (ContinuousAddEquiv.mulLeft hu.unit).toHomeomorph.measurableEmbedding.map_apply,
+  have he : ⇑(ContinuousAddEquiv.mulLeft hu.unit : A ≃ₜ A) = (u * ·) := by ext; simp
+  rw [← he, ← (ContinuousAddEquiv.mulLeft hu.unit : A ≃ₜ A).measurableEmbedding.map_apply,
     he, map_mul_left_eq_self_of_isUnit μ hu]
 
 /-- Right multiplication by a unit preserves the finite additive Haar measure of every set. -/
 theorem measure_preimage_mul_right_of_isUnit {u : A} (hu : IsUnit u) (s : Set A) :
     μ ((· * u) ⁻¹' s) = μ s := by
-  have he : ⇑(ContinuousAddEquiv.mulRight hu.unit).toHomeomorph = (· * u) := funext fun x =>
-    (ContinuousAddEquiv.mulRight_apply hu.unit x).trans (congrArg (x * ·) hu.unit_spec)
-  rw [← he, ← (ContinuousAddEquiv.mulRight hu.unit).toHomeomorph.measurableEmbedding.map_apply,
+  have he : ⇑(ContinuousAddEquiv.mulRight hu.unit : A ≃ₜ A) = (· * u) := by ext; simp
+  rw [← he, ← (ContinuousAddEquiv.mulRight hu.unit : A ≃ₜ A).measurableEmbedding.map_apply,
     he, map_mul_right_eq_self_of_isUnit μ hu]
 
 variable [T2Space A] {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
