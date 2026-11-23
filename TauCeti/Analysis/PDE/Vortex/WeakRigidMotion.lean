@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RigidMotion
 public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.AffineIsometry
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
-import TauCeti.Analysis.Complex.RigidMotion
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Rigid motions of the weak solutions and the weak right inverse of the vortex operator
@@ -25,9 +25,11 @@ motion preserves every additive Haar measure on `ℂ`
 `L²` theory of `L_x` of `TauCeti.Analysis.PDE.Vortex.RightInverse`, against any additive Haar
 measure `μ`.
 
-Write `x' = rotateField u (translateField a x)`, and let `f'` and `y'` be square-integrable
-fields agreeing almost everywhere with `rotateTarget u (translateField a f)` and
-`rotateField u (translateField a y)`.
+Write `x' = rotateField u (translateField a x)`. On `L²(μ; ℝ⁴)` the motion acts by the linear
+isometry equivalences `MeasureTheory.Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a)` on
+data and `MeasureTheory.Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a)` on solutions,
+sending the classes of `f` and `y` to those of `rotateTarget u (translateField a f)` and
+`rotateField u (translateField a y)`. Write `f'` and `y'` for these moved classes.
 
 * **Weak solutions.** `y'` is a weak solution of `L_{x'} y' = f'` exactly when `y` is a weak
   solution of `L_x y = f`
@@ -44,9 +46,9 @@ fields agreeing almost everywhere with `rotateTarget u (translateField a f)` and
   (`TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution.unique`). So if `Q` and `Q'` send every `f` to
   a minimal weak solution at `x` and at `x'`, as the weak right inverses of
   `TauCeti.Vortex.exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution` do, then `Q' f'` is
-  the moved `Q f` almost everywhere
-  (`TauCeti.Vortex.apply_ae_eq_rotateField_translateField_apply`). This is the translation and
-  rotation law of the weak right inverse; `u = 1` and `a = 0` give the two separately.
+  the moved `Q f` (`TauCeti.Vortex.apply_rigidMotionₗᵢ_eq_rigidMotionₗᵢ_apply`). This is the
+  translation and rotation law of the weak right inverse; `u = 1` and `a = 0` give the two
+  separately.
 
 The gauge laws, including the line-frame laws for constant gauges, are in
 `TauCeti.Analysis.PDE.Vortex.FramedGauge.WeakKernel`, and the rigid-motion laws of the `H¹`
@@ -67,7 +69,11 @@ open scoped RealInnerProductSpace
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-! ### Moving fields by an affine isometry of the plane -/
+/-! ### Moving fields by an affine isometry of the plane
+
+Smooth test fields are moved pointwise by `motion`; square-integrable classes are moved by
+`MeasureTheory.Lp.rigidMotionₗᵢ`, which is almost everywhere `motion`
+(`MeasureTheory.Lp.coeFn_rigidMotionₗᵢ`). -/
 
 /-- The field `z ↦ R (v (g z))`: `v` pulled back by the affine isometry `g` of the plane, with
 values moved by the linear isometry `R`. -/
@@ -111,19 +117,6 @@ private theorem hasCompactSupport_motion
     HasCompactSupport (motion R g v) :=
   (hv.comp_homeomorph g.toHomeomorph).comp_left (g := R) (map_zero R)
 
-private theorem memLp_motion (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4))
-    (g : ℂ ≃ᵃⁱ[ℝ] ℂ) {v : ℂ → EuclideanSpace ℝ (Fin 4)} (hv : MemLp v 2 μ) :
-    MemLp (motion R g v) 2 μ :=
-  R.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp'
-    (hv.comp_measurePreserving (g.measurePreserving_addHaar μ))
-
-private theorem motion_ae_eq (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4))
-    (g : ℂ ≃ᵃⁱ[ℝ] ℂ) {v w : ℂ → EuclideanSpace ℝ (Fin 4)} (h : v =ᵐ[μ] w) :
-    motion R g v =ᵐ[μ] motion R g w :=
-  ((g.measurePreserving_addHaar μ).quasiMeasurePreserving.ae_eq_comp h).mono fun z hz ↦ by
-    rw [motion_apply, motion_apply]
-    exact congrArg R hz
-
 /-- Moving both fields by the same motion preserves their `L²` pairing. -/
 private theorem integral_inner_motion
     (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4)) (g : ℂ ≃ᵃⁱ[ℝ] ℂ)
@@ -149,23 +142,27 @@ private theorem gaugeFixedAdjoint_rotateField_translateField (u : Circle) (a : �
 
 /-! ### Weak solutions -/
 
-/-- **Rigid motions of weak solutions.** Let `f'` and `y'` agree almost everywhere with
-`rotateTarget u (translateField a f)` and `rotateField u (translateField a y)`. Then `y'` is a
-weak solution of `L_{x'} y' = f'` at the moved field `x' = rotateField u (translateField a x)`
-exactly when `y` is a weak solution of `L_x y = f`. -/
+/-- **Rigid motions of weak solutions.** The moved field
+`Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) y` is a weak solution of
+`L_{x'} y' = f'` at the moved field `x' = rotateField u (translateField a x)` with the moved
+data `f' = Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f` exactly when `y` is a
+weak solution of `L_x y = f`. These are the classes of
+`rotateField u (translateField a y)` and `rotateTarget u (translateField a f)`. -/
 theorem isGaugeFixedWeakSolution_rotateField_translateField_iff (u : Circle) (a : ℂ)
-    {f y f' y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
-    (hf : ⇑f' =ᵐ[μ] rotateTarget u (translateField a f))
-    (hy : ⇑y' =ᵐ[μ] rotateField u (translateField a y)) :
-    IsGaugeFixedWeakSolution μ (rotateField u (translateField a x)) f' y' ↔
+    {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    IsGaugeFixedWeakSolution μ (rotateField u (translateField a x))
+        (Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f)
+        (Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) y) ↔
       IsGaugeFixedWeakSolution μ x f y := by
-  rw [rotateTarget_translateField_eq_motion] at hf
-  rw [rotateField_translateField_eq_motion] at hy
+  have hf := Lp.coeFn_rigidMotionₗᵢ (targetRotation u) (u.rigidMotion a) f
+  have hy := Lp.coeFn_rigidMotionₗᵢ (fieldRotation u) (u.rigidMotion a) y
   -- Testing at `x'` against the moved target of `η` is testing at `x` against `η`.
   have key {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 2 η) :
-      (∫ z, ⟪y' z, gaugeFixedAdjoint (rotateField u (translateField a x))
-          (rotateTarget u (translateField a η)) z⟫ ∂μ =
-        ∫ z, ⟪f' z, rotateTarget u (translateField a η) z⟫ ∂μ) ↔
+      (∫ z, ⟪Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) y z,
+          gaugeFixedAdjoint (rotateField u (translateField a x))
+            (rotateTarget u (translateField a η)) z⟫ ∂μ =
+        ∫ z, ⟪Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f z,
+          rotateTarget u (translateField a η) z⟫ ∂μ) ↔
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ := by
     rw [gaugeFixedAdjoint_rotateField_translateField u a x (hη.of_le one_le_two),
       rotateTarget_translateField_eq_motion, integral_inner_motion _ _ hy .rfl,
@@ -183,118 +180,88 @@ theorem isGaugeFixedWeakSolution_rotateField_translateField_iff (u : Circle) (a 
     have h' := (key hη).2 (h _ hη (hasCompactSupport_motion _ _ hνc))
     rwa [hT] at h'
 
-/-- The rigid motions on weak solutions: if `y` is a weak solution of `L_x y = f`, then a
-square-integrable field agreeing almost everywhere with `rotateField u (translateField a y)` is a
-weak solution at `rotateField u (translateField a x)`, with data agreeing almost everywhere with
-`rotateTarget u (translateField a f)`. -/
+/-- The rigid motions on weak solutions: if `y` is a weak solution of `L_x y = f`, then the moved
+`y` is a weak solution at `rotateField u (translateField a x)` with the moved data. -/
 theorem IsGaugeFixedWeakSolution.rotateField_translateField
     {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsGaugeFixedWeakSolution μ x f y) (u : Circle)
-    (a : ℂ) {f' y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
-    (hf : ⇑f' =ᵐ[μ] rotateTarget u (translateField a f))
-    (hy : ⇑y' =ᵐ[μ] rotateField u (translateField a y)) :
-    IsGaugeFixedWeakSolution μ (rotateField u (translateField a x)) f' y' :=
-  (isGaugeFixedWeakSolution_rotateField_translateField_iff u a hf hy).2 h
+    (a : ℂ) :
+    IsGaugeFixedWeakSolution μ (rotateField u (translateField a x))
+      (Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f)
+      (Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) y) :=
+  (isGaugeFixedWeakSolution_rotateField_translateField_iff u a).2 h
 
 /-! ### Minimal weak solutions -/
 
-/-- **Rigid motions of the weak kernel.** If `w'` agrees almost everywhere with
-`rotateField u (translateField a w)`, then `w'` is a weak solution of `L_{x'} w' = 0` at the moved
-field `x' = rotateField u (translateField a x)` exactly when `w` is a weak solution of
-`L_x w = 0`. -/
+/-- **Rigid motions of the weak kernel.** The moved field
+`Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) w` is a weak solution of `L_{x'} w' = 0`
+at the moved field `x' = rotateField u (translateField a x)` exactly when `w` is a weak solution
+of `L_x w = 0`. -/
 theorem isGaugeFixedWeakSolution_zero_rotateField_translateField_iff (u : Circle) (a : ℂ)
-    {w w' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
-    (hw : ⇑w' =ᵐ[μ] rotateField u (translateField a w)) :
-    IsGaugeFixedWeakSolution μ (rotateField u (translateField a x)) 0 w' ↔
+    {w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    IsGaugeFixedWeakSolution μ (rotateField u (translateField a x)) 0
+        (Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) w) ↔
       IsGaugeFixedWeakSolution μ x 0 w := by
-  refine isGaugeFixedWeakSolution_rotateField_translateField_iff u a ?_ hw
-  rw [rotateTarget_translateField_eq_motion]
-  have h₀ : (0 : ℂ → EuclideanSpace ℝ (Fin 4)) = motion (targetRotation u) (u.rigidMotion a) 0 :=
-    funext fun z ↦ by rw [motion_apply, Pi.zero_apply, Pi.zero_apply, map_zero]
-  exact (Lp.coeFn_zero _ 2 μ).trans
-    ((Filter.EventuallyEq.of_eq h₀).trans (motion_ae_eq _ _ (Lp.coeFn_zero _ 2 μ).symm))
+  simpa only [map_zero] using
+    isGaugeFixedWeakSolution_rotateField_translateField_iff (x := x) u a (f := 0) (y := w)
 
-/-- **Rigid motions of minimal weak solutions.** Let `f'` and `y'` agree almost everywhere with
-`rotateTarget u (translateField a f)` and `rotateField u (translateField a y)`. Then `y'` is a
-minimal weak solution of `L_{x'} y' = f'` at the moved field
-`x' = rotateField u (translateField a x)` exactly when `y` is a minimal weak solution of
-`L_x y = f`. -/
+/-- **Rigid motions of minimal weak solutions.**
+`Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) y` is a minimal weak solution of
+`L_{x'} y' = f'` at the moved field `x' = rotateField u (translateField a x)` with the moved data
+`f' = Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f` exactly when `y` is a minimal
+weak solution of `L_x y = f`. -/
 theorem isMinimalGaugeFixedWeakSolution_rotateField_translateField_iff (u : Circle) (a : ℂ)
-    {f y f' y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
-    (hf : ⇑f' =ᵐ[μ] rotateTarget u (translateField a f))
-    (hy : ⇑y' =ᵐ[μ] rotateField u (translateField a y)) :
-    IsMinimalGaugeFixedWeakSolution μ (rotateField u (translateField a x)) f' y' ↔
+    {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    IsMinimalGaugeFixedWeakSolution μ (rotateField u (translateField a x))
+        (Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f)
+        (Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) y) ↔
       IsMinimalGaugeFixedWeakSolution μ x f y := by
   rw [isMinimalGaugeFixedWeakSolution_iff, isMinimalGaugeFixedWeakSolution_iff,
-    isGaugeFixedWeakSolution_rotateField_translateField_iff u a hf hy]
+    isGaugeFixedWeakSolution_rotateField_translateField_iff u a]
   refine and_congr_right fun _ ↦ ?_
-  have hy' := hy
-  rw [rotateField_translateField_eq_motion] at hy'
-  refine ⟨fun h w hw ↦ ?_, fun h w' hw' ↦ ?_⟩
-  · -- Move a weak solution of `L_x w = 0` to `x'`.
-    have hm := memLp_motion (fieldRotation u) (u.rigidMotion a) (Lp.memLp w)
-    have hw' : ⇑hm.toLp =ᵐ[μ] rotateField u (translateField a w) := by
-      rw [rotateField_translateField_eq_motion]
-      exact hm.coeFn_toLp
-    rw [← integral_inner_motion _ _ hy' hm.coeFn_toLp]
-    exact h _ ((isGaugeFixedWeakSolution_zero_rotateField_translateField_iff u a hw').2 hw)
-  · -- Move a weak solution of `L_{x'} w' = 0` back to `x`.
-    have hm := memLp_motion (fieldRotation u).symm (u.rigidMotion a).symm (Lp.memLp w')
-    have hw : ⇑w' =ᵐ[μ] motion (fieldRotation u) (u.rigidMotion a) hm.toLp := by
-      refine (motion_ae_eq (fieldRotation u) (u.rigidMotion a) hm.coeFn_toLp).mono fun z hz ↦ ?_
-      rw [hz, motion_motion_symm]
-    rw [integral_inner_motion _ _ hy' hw]
-    refine h _ ((isGaugeFixedWeakSolution_zero_rotateField_translateField_iff u a ?_).1 hw')
-    rwa [rotateField_translateField_eq_motion]
+  -- Every weak solution of `L_{x'} w' = 0` is the moved weak solution of `L_x w = 0`.
+  rw [(Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a)).surjective.forall]
+  refine forall_congr' fun w ↦ ?_
+  rw [isGaugeFixedWeakSolution_zero_rotateField_translateField_iff u a,
+    integral_inner_motion _ _ (Lp.coeFn_rigidMotionₗᵢ _ _ y) (Lp.coeFn_rigidMotionₗᵢ _ _ w)]
 
 /-- The rigid motions on minimal weak solutions: if `y` is a minimal weak solution of `L_x y = f`,
-then a square-integrable field agreeing almost everywhere with
-`rotateField u (translateField a y)` is a minimal weak solution at
-`rotateField u (translateField a x)`, with data agreeing almost everywhere with
-`rotateTarget u (translateField a f)`. -/
+then the moved `y` is a minimal weak solution at `rotateField u (translateField a x)` with the
+moved data. -/
 theorem IsMinimalGaugeFixedWeakSolution.rotateField_translateField
     {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsMinimalGaugeFixedWeakSolution μ x f y)
-    (u : Circle) (a : ℂ) {f' y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
-    (hf : ⇑f' =ᵐ[μ] rotateTarget u (translateField a f))
-    (hy : ⇑y' =ᵐ[μ] rotateField u (translateField a y)) :
-    IsMinimalGaugeFixedWeakSolution μ (rotateField u (translateField a x)) f' y' :=
-  (isMinimalGaugeFixedWeakSolution_rotateField_translateField_iff u a hf hy).2 h
+    (u : Circle) (a : ℂ) :
+    IsMinimalGaugeFixedWeakSolution μ (rotateField u (translateField a x))
+      (Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f)
+      (Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) y) :=
+  (isMinimalGaugeFixedWeakSolution_rotateField_translateField_iff u a).2 h
 
 /-! ### The weak right inverse -/
 
 /-- **Rigid motions of the minimal weak solution.** At a continuous field `x`, if `y` is the
 minimal weak solution of `L_x y = f` and `y'` is the minimal weak solution at
-`rotateField u (translateField a x)` with data agreeing almost everywhere with
-`rotateTarget u (translateField a f)`, then `y'` agrees almost everywhere with
-`rotateField u (translateField a y)`. -/
-theorem IsMinimalGaugeFixedWeakSolution.ae_eq_rotateField_translateField (hx : Continuous x)
+`rotateField u (translateField a x)` with the moved data
+`Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f`, then `y'` is the moved `y`. -/
+theorem IsMinimalGaugeFixedWeakSolution.eq_rigidMotionₗᵢ (hx : Continuous x)
     {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsMinimalGaugeFixedWeakSolution μ x f y)
-    {u : Circle} {a : ℂ} {f' y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
-    (hf : ⇑f' =ᵐ[μ] rotateTarget u (translateField a f))
-    (h' : IsMinimalGaugeFixedWeakSolution μ (rotateField u (translateField a x)) f' y') :
-    ⇑y' =ᵐ[μ] rotateField u (translateField a y) := by
-  have hm := memLp_motion (fieldRotation u) (u.rigidMotion a) (Lp.memLp y)
-  rw [rotateField_translateField_eq_motion]
-  have hy : ⇑hm.toLp =ᵐ[μ] rotateField u (translateField a y) := by
-    rw [rotateField_translateField_eq_motion]
-    exact hm.coeFn_toLp
-  have hx' : Continuous (rotateField u (translateField a x)) :=
-    contDiff_zero.1 (contDiff_rotateField u (contDiff_translateField a (contDiff_zero.2 hx)))
-  rw [h'.unique hx' (h.rotateField_translateField u a hf hy)]
-  exact hm.coeFn_toLp
+    {u : Circle} {a : ℂ} {y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (h' : IsMinimalGaugeFixedWeakSolution μ (rotateField u (translateField a x))
+      (Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f) y') :
+    y' = Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) y :=
+  h'.unique (contDiff_zero.1 (contDiff_rotateField u (contDiff_translateField a
+    (contDiff_zero.2 hx)))) (h.rotateField_translateField u a)
 
 /-- **Rigid motions of the weak right inverse.** Let `x` be a continuous field and
 `x' = rotateField u (translateField a x)`. If `Q f` is a minimal weak solution of `L_x y = f` and
 `Q' f` one of `L_{x'} y = f` for every `f`, as for the weak right inverses of
-`TauCeti.Vortex.exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`, then for data `f'`
-agreeing almost everywhere with `rotateTarget u (translateField a f)`, `Q' f'` agrees almost
-everywhere with `rotateField u (translateField a (Q f))`. -/
-theorem apply_ae_eq_rotateField_translateField_apply (hx : Continuous x) {u : Circle} {a : ℂ}
+`TauCeti.Vortex.exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`, then `Q'` sends the
+moved data to the moved `Q f`. -/
+theorem apply_rigidMotionₗᵢ_eq_rigidMotionₗᵢ_apply (hx : Continuous x) {u : Circle} {a : ℂ}
     {Q Q' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ → Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
     (hQ : ∀ f, IsMinimalGaugeFixedWeakSolution μ x f (Q f))
     (hQ' : ∀ f, IsMinimalGaugeFixedWeakSolution μ (rotateField u (translateField a x)) f (Q' f))
-    {f f' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
-    (hf : ⇑f' =ᵐ[μ] rotateTarget u (translateField a f)) :
-    ⇑(Q' f') =ᵐ[μ] rotateField u (translateField a (Q f)) :=
-  (hQ f).ae_eq_rotateField_translateField hx hf (hQ' f')
+    (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
+    Q' (Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f) =
+      Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) (Q f) :=
+  (hQ f).eq_rigidMotionₗᵢ hx (hQ' _)
 
 end TauCeti.Vortex
