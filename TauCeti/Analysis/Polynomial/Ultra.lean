@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Polynomial.Splits
-public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.Basic
 
@@ -32,12 +31,13 @@ bounds the coefficients of determinants such as `det (1 - X A)` and of the adjug
 An integral polynomial has norm at most one on the closed unit ball of an ultrametric
 seminormed ring with `‖1‖ = 1` (`Polynomial.norm_aeval_le_one`).
 
-Over an ultrametric normed field, let `P` be a split monic polynomial of degree `n` all of whose
-roots lie within `r` of a point `α`. The value at `α` of the `d`-th Hasse derivative of `P` is the
-coefficient of `Y ^ d` in `P(α + Y) = ∏ (Y - (αᵢ - α))`, so it has norm at most `r ^ (n - d)`
-(`Polynomial.Monic.norm_eval_hasseDeriv_le`). If that Hasse derivative splits too and its leading
-coefficient `n.choose d` is nonzero, the product of the distances from `α` to its roots shows that
-one of them, `β`, satisfies `‖n.choose d‖ * ‖α - β‖ ^ (n - d) ≤ r ^ (n - d)`
+Over an ultrametric seminormed integral domain with `‖1‖ = 1`, let `P` be a split monic
+polynomial of degree `n` all of whose roots lie within `r` of a point `α`. The value at `α` of the
+`d`-th Hasse derivative of `P` is the coefficient of `Y ^ d` in `P(α + Y) = ∏ (Y - (αᵢ - α))`, so
+it has norm at most `r ^ (n - d)` (`Polynomial.Monic.norm_eval_hasseDeriv_le`). If moreover the
+norm is multiplicative, that Hasse derivative splits and its leading coefficient `n.choose d` is
+nonzero, the product of the distances from `α` to its roots shows that one of them, `β`,
+satisfies `‖n.choose d‖ * ‖α - β‖ ^ (n - d) ≤ r ^ (n - d)`
 (`Polynomial.Monic.exists_isRoot_hasseDeriv_norm_sub_le`). These are the estimates in Ax's proof
 of the Ax–Sen lemma.
 
@@ -116,12 +116,12 @@ end TauCeti
 
 namespace Polynomial.Monic
 
-variable {E : Type*} [NormedField E] [IsUltrametricDist E]
+variable {E : Type*} [SeminormedCommRing E] [IsDomain E] [NormOneClass E] [IsUltrametricDist E]
 
-/-- **Hasse derivatives near the roots.** If a monic polynomial `P` over an ultrametric normed
-field splits, and all its roots lie within `r` of a point `α`, then the `d`-th Hasse derivative of
-`P` at `α` has norm at most `r ^ (natDegree P - d)`. It is the coefficient of `Y ^ d` in
-`P(α + Y) = ∏ (Y - (αᵢ - α))`. -/
+/-- **Hasse derivatives near the roots.** If a monic polynomial `P` over an ultrametric seminormed
+integral domain with `‖1‖ = 1` splits, and all its roots lie within `r` of a point `α`, then the
+`d`-th Hasse derivative of `P` at `α` has norm at most `r ^ (natDegree P - d)`. It is the
+coefficient of `Y ^ d` in `P(α + Y) = ∏ (Y - (αᵢ - α))`. -/
 theorem norm_eval_hasseDeriv_le {P : E[X]} (hP : P.Monic) (hsplit : P.Splits) {α : E} {r : ℝ}
     (hr : ∀ β ∈ P.roots, ‖β - α‖ ≤ r) (d : ℕ) :
     ‖(hasseDeriv d P).eval α‖ ≤ r ^ (P.natDegree - d) := by
@@ -142,11 +142,13 @@ theorem norm_eval_hasseDeriv_le {P : E[X]} (hP : P.Monic) (hsplit : P.Splits) {�
     (splits_iff_card_roots.mp (hsplit.taylor α)) hroots d
   rwa [taylor_coeff, natDegree_taylor] at h
 
+variable [NormMulClass E]
+
 /-- **A root of a Hasse derivative near a point.** Let `P` be a split monic polynomial over an
-ultrametric normed field, all of whose roots lie within `r` of a point `α`, and let
-`d < n = natDegree P`. If the `d`-th Hasse derivative of `P` splits and its leading coefficient
-`n.choose d` is nonzero, then it has a root `β` with
-`‖n.choose d‖ * ‖α - β‖ ^ (n - d) ≤ r ^ (n - d)`. -/
+ultrametric seminormed integral domain with a multiplicative norm and `‖1‖ = 1`, all of whose
+roots lie within `r` of a point `α`, and let `d < n = natDegree P`. If the `d`-th Hasse
+derivative of `P` splits and its leading coefficient `n.choose d` is nonzero, then it has a root
+`β` with `‖n.choose d‖ * ‖α - β‖ ^ (n - d) ≤ r ^ (n - d)`. -/
 theorem exists_isRoot_hasseDeriv_norm_sub_le {P : E[X]} (hP : P.Monic) (hsplit : P.Splits)
     {α : E} {r : ℝ} (hr : ∀ β ∈ P.roots, ‖β - α‖ ≤ r) {d : ℕ} (hd : d < P.natDegree)
     (hdsplit : (hasseDeriv d P).Splits) (hchoose : (P.natDegree.choose d : E) ≠ 0) :

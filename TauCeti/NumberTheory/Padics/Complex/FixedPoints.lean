@@ -65,16 +65,12 @@ namespace PadicComplex
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
-private theorem norm_natCast_p_lt_one : ‖(p : PadicAlgCl p)‖ < 1 := by
-  rw [← norm_extends, coe_natCast]
-  exact norm_p_lt_one p
-
 /-- **The Ax–Sen–Tate theorem.** For every field `L` between `ℚ_p` and `PadicAlgCl p`, the
 elements of `ℂ_p` fixed by `Gal(PadicAlgCl p / L)` are the closure of `L` in `ℂ_p`. -/
 theorem fixedPoints_algEquiv_eq_closure (L : IntermediateField ℚ_[p] (PadicAlgCl p)) :
     MulAction.fixedPoints (PadicAlgCl p ≃ₐ[L] PadicAlgCl p) ℂ_[p] =
       closure (Set.range fun a : L ↦ ((a : PadicAlgCl p) : ℂ_[p])) :=
-  TauCeti.fixedPoints_algEquiv_completion_eq_closure hp.out norm_natCast_p_lt_one
+  TauCeti.fixedPoints_algEquiv_completion_eq_closure hp.out (PadicAlgCl.norm_p_lt_one p)
 
 /-- **The Ax–Sen–Tate theorem for closed subgroups.** For a closed subgroup `H` of
 `Gal(PadicAlgCl p / ℚ_p)`, the elements of `ℂ_p` fixed by `H` are the closure in `ℂ_p` of the
@@ -84,7 +80,7 @@ theorem fixedPoints_eq_closure_fixedField
     MulAction.fixedPoints H.toSubgroup ℂ_[p] =
       closure (Set.range fun a : IntermediateField.fixedField H.toSubgroup ↦
         ((a : PadicAlgCl p) : ℂ_[p])) :=
-  TauCeti.fixedPoints_completion_eq_closure_fixedField hp.out norm_natCast_p_lt_one H
+  TauCeti.fixedPoints_completion_eq_closure_fixedField hp.out (PadicAlgCl.norm_p_lt_one p) H
 
 /-- **The Ax–Sen–Tate theorem for finite extensions.** For a finite extension `K` of `ℚ_p` inside
 `PadicAlgCl p`, the elements of `ℂ_p` fixed by `Gal(PadicAlgCl p / K)` are the elements of `K`. -/
@@ -92,6 +88,6 @@ theorem fixedPoints_algEquiv_eq_range (K : IntermediateField ℚ_[p] (PadicAlgCl
     [FiniteDimensional ℚ_[p] K] :
     MulAction.fixedPoints (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) ℂ_[p] =
       Set.range fun a : K ↦ ((a : PadicAlgCl p) : ℂ_[p]) :=
-  TauCeti.fixedPoints_algEquiv_completion_eq_range K hp.out norm_natCast_p_lt_one
+  TauCeti.fixedPoints_algEquiv_completion_eq_range ℚ_[p] hp.out (PadicAlgCl.norm_p_lt_one p)
 
 end PadicComplex

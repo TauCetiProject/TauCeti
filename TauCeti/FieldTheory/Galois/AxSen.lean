@@ -62,7 +62,7 @@ gives `a ∈ F` with `‖y - a‖ ≤ C δ` for a constant `C` depending only on
 points form a closed set, by continuity of the action, which contains `F`. By infinite Galois
 theory the closed subgroups `H` of `Gal(E/F)` are exactly the groups `Gal(E/L)`, with `L` the fixed
 field of `H`, so the theorem also computes the fixed points of every closed subgroup. When `F` is
-finite-dimensional over a complete subfield, it is closed in `Ê`, and the fixed points are exactly
+finite-dimensional over a complete field, it is closed in `Ê`, and the fixed points are exactly
 `F`. For `E` an algebraic closure of `ℚ_p` this is the Ax–Sen–Tate theorem for `ℂ_p`
 (`TauCeti.NumberTheory.Padics.Complex.FixedPoints`).
 
@@ -73,8 +73,8 @@ finite-dimensional over a complete subfield, it is closed in `Ê`, and the fixed
   completion of `E` are the closure of `F`.
 * `TauCeti.fixedPoints_completion_eq_closure_fixedField`: the fixed points of a closed subgroup `H`
   of `Gal(E/F)` are the closure of the fixed field of `H`.
-* `TauCeti.fixedPoints_algEquiv_completion_eq_range`: for `L` finite-dimensional over a complete
-  subfield, the fixed points of `Gal(E/L)` are `L`.
+* `TauCeti.fixedPoints_algEquiv_completion_eq_range`: for `F` finite-dimensional over a complete
+  field, the fixed points of `Gal(E/F)` are `F`.
 
 The estimates on Hasse derivatives near the roots of a split polynomial used in the induction are
 `Polynomial.Monic.norm_eval_hasseDeriv_le` and
@@ -405,21 +405,25 @@ end AxSen
 
 section Finite
 
-variable {K E : Type*} [NontriviallyNormedField K] [CompleteSpace K] [NormedField E]
-  [NormedAlgebra K E] [IsUltrametricDist E] [CharZero E] [IsAlgClosed E] (L : IntermediateField K E)
-  [Algebra.IsAlgebraic L E] [IsIsometricSMul Gal(E/L) E] [FiniteDimensional K L]
+variable (K : Type*) {F E : Type*} [NontriviallyNormedField K] [CompleteSpace K] [Field F]
+  [NormedField E] [NormedAlgebra K E] [Algebra K F] [Algebra F E] [IsScalarTower K F E]
+  [FiniteDimensional K F] [IsUltrametricDist E] [CharZero E] [IsAlgClosed E]
+  [Algebra.IsAlgebraic F E] [IsIsometricSMul Gal(E/F) E]
+include K
 
 /-- **The Ax–Sen–Tate theorem for finite extensions.** In the setting of the Ax–Sen lemma, if the
-subfield `L` is finite-dimensional over a complete nontrivially normed field `K`, then the elements
-of the completion of `E` fixed by `Gal(E/L)` are the elements of `L`. -/
+field `F` is finite-dimensional over a complete nontrivially normed field `K`, then the elements
+of the completion of `E` fixed by `Gal(E/F)` are the elements of `F`. -/
 theorem fixedPoints_algEquiv_completion_eq_range {p : ℕ} (hp : p.Prime) (hpE : ‖(p : E)‖ < 1) :
-    MulAction.fixedPoints Gal(E/L) (UniformSpace.Completion E) =
-      Set.range fun a : L ↦ ((a : E) : UniformSpace.Completion E) := by
+    MulAction.fixedPoints Gal(E/F) (UniformSpace.Completion E) =
+      Set.range fun a : F ↦ (algebraMap F E a : UniformSpace.Completion E) := by
   refine (fixedPoints_algEquiv_completion_eq_closure hp hpE).trans (closure_eq_iff_isClosed.mpr ?_)
-  -- The image of `L` is a finite-dimensional `K`-subspace of the completion, hence closed; the
-  -- function underlying `f` is `a ↦ ((a : E) : UniformSpace.Completion E)` by definition.
-  let f : L →ₗ[K] UniformSpace.Completion E :=
-    (UniformSpace.Completion.toComplₗᵢ (𝕜 := K) (E := E)).toLinearMap ∘ₗ L.val.toLinearMap
+  -- The image of `F` is a finite-dimensional `K`-subspace of the completion, hence closed; the
+  -- function underlying `f` is `a ↦ (algebraMap F E a : UniformSpace.Completion E)` by
+  -- definition.
+  let f : F →ₗ[K] UniformSpace.Completion E :=
+    (UniformSpace.Completion.toComplₗᵢ (𝕜 := K) (E := E)).toLinearMap ∘ₗ
+      (IsScalarTower.toAlgHom K F E).toLinearMap
   have h := (LinearMap.range f).isClosed_of_finiteDimensional
   rwa [LinearMap.coe_range] at h
 

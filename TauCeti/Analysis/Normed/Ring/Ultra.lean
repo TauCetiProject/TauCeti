@@ -28,9 +28,9 @@ when its terms are `1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (
 
 Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
 `‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one, and if `‖n‖ < 1` then every
-natural number coprime to `n` has norm one. With a multiplicative norm and a prime `p` with
-`‖p‖ < 1`, the binomial coefficient `(p ^ (k + 1)).choose (p ^ k)`, exactly divisible by `p`, thus
-has the norm of `p`. Since the forward differences
+natural number coprime to `n` has norm one, and multiplying `n` by it does not change the norm of
+`n`. For a prime `p` with `‖p‖ < 1`, the binomial coefficient `(p ^ (k + 1)).choose (p ^ k)`,
+exactly divisible by `p`, thus has the norm of `p`. Since the forward differences
 of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
 
 ## Main results
@@ -39,6 +39,8 @@ of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
   one in an ultrametric seminormed ring with `‖1‖ = 1`.
 * `IsUltrametricDist.norm_natCast_eq_one_of_coprime`: if `‖n‖ < 1` with `‖1‖ = 1`, every natural
   number coprime to `n` has norm one.
+* `IsUltrametricDist.norm_natCast_mul_eq_of_coprime`: if `‖n‖ < 1` with `‖1‖ = 1`, then
+  `‖n * m‖ = ‖n‖` for every natural number `m` coprime to `n`.
 * `IsUltrametricDist.norm_choose_prime_pow_succ`: if a prime `p` has `‖p‖ < 1`, the binomial
   coefficient `(p ^ (k + 1)).choose (p ^ k)` has the norm of `p`.
 * `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
@@ -123,11 +125,44 @@ theorem IsUltrametricDist.norm_natCast_eq_one_of_coprime {R : Type*} [Seminormed
   rw [hsum, norm_one] at h
   exact (h.trans_lt (max_lt (hlt n _ hnR) (hlt m _ hmR))).false
 
-/-- In an ultrametric normed ring in which a prime `p` has norm less than one, the binomial
-coefficient `(p ^ (k + 1)).choose (p ^ k)`, which is exactly divisible by `p`, has the norm of `p`.
--/
+/-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a natural number `n` has norm less
+than one, multiplying `n` by a natural number coprime to it does not change its norm. -/
+theorem IsUltrametricDist.norm_natCast_mul_eq_of_coprime {R : Type*} [SeminormedRing R]
+    [NormOneClass R] [IsUltrametricDist R] {n m : ℕ} (hnR : ‖(n : R)‖ < 1) (hnm : n.Coprime m) :
+    ‖((n * m : ℕ) : R)‖ = ‖(n : R)‖ := by
+  rw [Nat.cast_mul]
+  refine ((norm_mul_le _ _).trans ?_).antisymm (not_lt.mp fun hlt ↦ ?_)
+  · rw [norm_natCast_eq_one_of_coprime hnR hnm, mul_one]
+  -- Bézout: `n * a + m * b = 1`, hence `n = n * (n * a) + (n * m) * b`.
+  have hsum : (n : R) = n * (n * (n.gcdA m : R)) + n * m * (n.gcdB m : R) := by
+    have h : (n : ℤ) * n.gcdA m + m * n.gcdB m = 1 := by
+      rw [← Nat.gcd_eq_gcd_ab, hnm.gcd_eq_one, Nat.cast_one]
+    have h' : (n : R) * (n.gcdA m : R) + (m : R) * (n.gcdB m : R) = 1 := by
+      exact_mod_cast congrArg (Int.cast (R := R)) h
+    calc (n : R) = n * (n * (n.gcdA m : R) + m * (n.gcdB m : R)) := by rw [h', mul_one]
+      _ = _ := by rw [mul_add, mul_assoc]
+  have h1 : ‖(n : R) * (n * (n.gcdA m : R))‖ < ‖(n : R)‖ := by
+    have hn0 : 0 < ‖(n : R)‖ := (norm_nonneg _).trans_lt hlt
+    calc ‖(n : R) * (n * (n.gcdA m : R))‖ ≤ ‖(n : R)‖ * (‖(n : R)‖ * 1) := by
+          refine (norm_mul_le _ _).trans ?_
+          gcongr
+          exact (norm_mul_le _ _).trans (by gcongr; exact norm_intCast_le_one R _)
+      _ < ‖(n : R)‖ * 1 := by gcongr; rwa [mul_one]
+      _ = ‖(n : R)‖ := mul_one _
+  have h2 : ‖(n : R) * m * (n.gcdB m : R)‖ < ‖(n : R)‖ := by
+    calc ‖(n : R) * m * (n.gcdB m : R)‖ ≤ ‖(n : R) * m‖ * 1 :=
+          (norm_mul_le _ _).trans (by gcongr; exact norm_intCast_le_one R _)
+      _ < ‖(n : R)‖ := by rwa [mul_one]
+  have h := IsUltrametricDist.norm_add_le_max ((n : R) * (n * (n.gcdA m : R)))
+    ((n : R) * m * (n.gcdB m : R))
+  rw [← hsum] at h
+  exact (h.trans_lt (max_lt h1 h2)).false
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a prime `p` has norm less than one,
+the binomial coefficient `(p ^ (k + 1)).choose (p ^ k)`, which is exactly divisible by `p`, has the
+norm of `p`. -/
 theorem IsUltrametricDist.norm_choose_prime_pow_succ {R : Type*} [SeminormedRing R]
-    [NormOneClass R] [NormMulClass R] [IsUltrametricDist R] {p : ℕ} (hp : p.Prime)
+    [NormOneClass R] [IsUltrametricDist R] {p : ℕ} (hp : p.Prime)
     (hpR : ‖(p : R)‖ < 1) (k : ℕ) : ‖((p ^ (k + 1)).choose (p ^ k) : R)‖ = ‖(p : R)‖ := by
   have hc : (p ^ (k + 1)).choose (p ^ k) ≠ 0 :=
     (Nat.choose_pos (Nat.pow_le_pow_right hp.pos (Nat.le_succ k))).ne'
@@ -138,8 +173,7 @@ theorem IsUltrametricDist.norm_choose_prime_pow_succ {R : Type*} [SeminormedRing
   have h := Nat.ordProj_mul_ordCompl_eq_self ((p ^ (k + 1)).choose (p ^ k)) p
   have hu := Nat.not_dvd_ordCompl hp hc
   rw [hfact, pow_one] at h hu
-  rw [← h, Nat.cast_mul, norm_mul,
-    norm_natCast_eq_one_of_coprime hpR (hp.coprime_iff_not_dvd.mpr hu), mul_one]
+  rw [← h, norm_natCast_mul_eq_of_coprime hpR (hp.coprime_iff_not_dvd.mpr hu)]
 
 /-- **An ultrametric seminormed ring is a nonarchimedean ring.** This is the ring form of
 Mathlib's `IsUltrametricDist.nonarchimedeanAddGroup`: every neighbourhood of zero contains an open
