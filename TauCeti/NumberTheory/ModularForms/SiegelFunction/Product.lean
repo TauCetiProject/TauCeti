@@ -89,7 +89,7 @@ private theorem prod_leadingCoeff_zero_first {N : ℕ} [NeZero N] :
         ZMod.val_natCast_of_lt h2] at hv; omega
     · rcases Finset.mem_filter.mp hv with ⟨hvS, hv0⟩
       have hpos : 0 < (v 1).val := Nat.pos_of_ne_zero <| mt (ZMod.val_eq_zero _).mp fun h1 ↦
-        (Finset.mem_erase.mp hvS).1 (by ext i; fin_cases i <;> assumption)
+        (Finset.mem_erase.mp hvS).1 (funext (Fin.forall_fin_two.mpr ⟨hv0, h1⟩))
       refine ⟨(v 1).val - 1, Finset.mem_range.mpr (by have := (v 1).val_lt; omega), ?_⟩
       ext i; fin_cases i
       · simp [hv0]

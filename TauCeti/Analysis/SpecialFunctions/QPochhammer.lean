@@ -776,9 +776,12 @@ theorem isBigO_qPochhammerFun_sub_one {𝕜 : Type*} [NormedField 𝕜]
   filter_upwards [Metric.ball_mem_nhds (0 : 𝕜) (by positivity : (0 : ℝ) < 1 / 2)] with z hz
   have hz1 : ‖z‖ < 1 := (mem_ball_zero_iff.mp hz).trans (by norm_num)
   have hsum : HasSum (fun n : ℕ ↦ ‖-(w * z ^ (N * n + c))‖) (y z) := by
-    simpa [y, norm_mul, norm_pow, pow_add, pow_mul, ← mul_assoc, mul_comm, mul_left_comm,
-      div_eq_mul_inv] using (hasSum_geometric_of_lt_one (pow_nonneg (norm_nonneg z) N)
-        (by simpa [norm_pow] using norm_pow_lt_one hz1 hN.ne')).mul_left (‖w‖ * ‖z‖ ^ c)
+    rw [show (fun n : ℕ ↦ ‖-(w * z ^ (N * n + c))‖) =
+        fun n : ℕ ↦ (‖w‖ * ‖z‖ ^ c) * (‖z‖ ^ N) ^ n from
+      funext fun n ↦ by simp only [norm_neg, norm_mul, norm_pow, pow_add, pow_mul]; ring]
+    rw [show y z = (‖w‖ * ‖z‖ ^ c) * (1 - ‖z‖ ^ N)⁻¹ from div_eq_mul_inv _ _]
+    exact (hasSum_geometric_of_lt_one (pow_nonneg (norm_nonneg z) N)
+      (by rw [← norm_pow]; exact norm_pow_lt_one hz1 hN.ne')).mul_left (‖w‖ * ‖z‖ ^ c)
   have hle := norm_tprod_one_add_sub_one_le hsum.summable
   simp only [← sub_eq_add_neg, hsum.tsum_eq] at hle
   simpa [qPochhammerFun_def] using hle.trans (le_abs_self _)

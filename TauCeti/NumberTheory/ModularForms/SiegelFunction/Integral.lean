@@ -76,6 +76,10 @@ private def diagSecondEquiv {N : ℕ} (u : (ZMod N)ˣ) :
     ((Equiv.refl (ZMod N)).prodCongr (LinearEquiv.smulOfUnit u).toEquiv).trans
       (piFinTwoEquiv fun _ ↦ ZMod N).symm
 
+private theorem diagSecondEquiv_apply {N : ℕ} (u : (ZMod N)ˣ) (v : Fin 2 → ZMod N) :
+    diagSecondEquiv u v = ![v 0, (u : ZMod N) * v 1] := by
+  ext i; fin_cases i <;> simp [diagSecondEquiv, LinearEquiv.smulOfUnit, Units.smul_def]
+
 /-- The monic polynomial `∏_{v ≠ 0} (X - g_{v/N}^{12 N})` over `meromorphicAtCuspSubring N`. -/
 private noncomputable def siegelPowerPoly (N : ℕ) [NeZero N] : (meromorphicAtCuspSubring N)[X] :=
   ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
@@ -134,14 +138,11 @@ private theorem laurentQExpansion_siegelPolyCoeff_mem_range_intCast {N : ℕ} [N
     simp only [siegelPowerPoly, ZMod.natCast_zmod_val, Polynomial.map_prod, Polynomial.map_sub,
       Polynomial.map_X, Polynomial.map_C]
     exact Finset.prod_univ_erase_equiv (diagSecondEquiv u)
-      (by ext i; fin_cases i <;> simp [diagSecondEquiv, LinearEquiv.smulOfUnit])
+      (by rw [diagSecondEquiv_apply]; simp [funext_iff, Fin.forall_fin_two])
       (fun v ↦ Polynomial.X - Polynomial.C
         (laurentQExpansionRingHom N (siegelPowerMem N ![v 0, (u : ZMod N) * v 1])))
       (fun w ↦ Polynomial.X - Polynomial.C (laurentQExpansionRingHom N (siegelPowerMem N w)))
-      fun v _ ↦ by
-        have hv : diagSecondEquiv u v = ![v 0, (u : ZMod N) * v 1] := by
-          ext i; fin_cases i <;> simp [diagSecondEquiv, LinearEquiv.smulOfUnit, Units.smul_def]
-        rw [hv]
+      fun v _ ↦ by rw [diagSecondEquiv_apply]
   simpa only [Polynomial.coeff_map, HahnSeries.coeff_mapRingHom, AlgHom.toRingHom_eq_coe,
     RingHom.coe_coe] using congrArg (fun P : (LaurentSeries ℂ)[X] ↦ (P.coeff k).coeff m) hu
 

@@ -33,9 +33,12 @@ series.
   function by `𝕢 h ^ k` yields an analytic cusp function at `0`.
 * `TauCeti.UpperHalfPlane.meromorphicOrderAt_cuspFunction_nonneg_iff_analyticAt`: a meromorphic
   cusp function is analytic at `0` iff its meromorphic order at `0` is nonnegative.
-* `TauCeti.UpperHalfPlane.cuspPoleOrder`, `TauCeti.UpperHalfPlane.neg_cuspPoleOrder_le`, and
+* `TauCeti.UpperHalfPlane.cuspPoleOrder`, `TauCeti.UpperHalfPlane.cuspPoleOrder_def`,
+  `TauCeti.UpperHalfPlane.cuspPoleOrder_congr`, `TauCeti.UpperHalfPlane.cuspPoleOrder_le_iff`,
+  `TauCeti.UpperHalfPlane.cuspPoleOrder_eq_zero_of_analyticAt`,
+  `TauCeti.UpperHalfPlane.neg_cuspPoleOrder_le`, and
   `TauCeti.UpperHalfPlane.exists_neg_natCast_le_meromorphicOrderAt_cuspFunction`: the canonical
-  pole order at `i∞` and lower bound on the cusp order.
+  pole order at `i∞`, its characterizing lemmas, and lower bound on the cusp order.
 * `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_pow`: cusp meromorphy descends from `f ^ n`
   (`0 < n`) to `f`.
 * `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_nat_mul`: cusp meromorphy descends from
@@ -96,18 +99,39 @@ theorem meromorphicOrderAt_cuspFunction_nonneg_iff_analyticAt
 
 /-- The pole order of `f` at `i∞`, as a natural number: the order of the pole at `0` of the cusp
 function of `f`, and `0` if there is no pole. -/
-@[expose]
 def cuspPoleOrder (h : ℝ) (f : ℍ → ℂ) : ℕ :=
   (-(meromorphicOrderAt (cuspFunction h f) 0).untop₀).toNat
 
+/-- Defining formula for `cuspPoleOrder`. -/
+theorem cuspPoleOrder_def (h : ℝ) (f : ℍ → ℂ) :
+    cuspPoleOrder h f = (-(meromorphicOrderAt (cuspFunction h f) 0).untop₀).toNat :=
+  (rfl)
+
+/-- The pole order only depends on the cusp function off `q = 0`. -/
+theorem cuspPoleOrder_congr {g : ℍ → ℂ} (hfg : cuspFunction h f =ᶠ[𝓝[≠] 0] cuspFunction h g) :
+    cuspPoleOrder h f = cuspPoleOrder h g := by
+  simp only [cuspPoleOrder, meromorphicOrderAt_congr hfg]
+
+/-- The pole order of `f` at `i∞` is at most `k` if and only if the cusp order of `f` at `0` is
+at least `-k`. -/
+theorem cuspPoleOrder_le_iff {k : ℕ} :
+    cuspPoleOrder h f ≤ k ↔
+      ((-k : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 := by
+  cases hn : meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
+  | top => simp [cuspPoleOrder, hn]
+  | coe n =>
+    simp only [cuspPoleOrder, hn, WithTop.untop₀_coe, Int.toNat_le, WithTop.coe_le_coe]
+    omega
+
+/-- When the cusp function of `f` is analytic at `0`, the pole order at `i∞` is `0`. -/
+theorem cuspPoleOrder_eq_zero_of_analyticAt (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
+    cuspPoleOrder h f = 0 :=
+  Nat.le_zero.mp (cuspPoleOrder_le_iff.mpr (by simpa using hf.meromorphicOrderAt_nonneg))
+
 /-- The pole order bounds the order of the cusp function from below. -/
 theorem neg_cuspPoleOrder_le (h : ℝ) (f : ℍ → ℂ) :
-    ((-(cuspPoleOrder h f : ℤ) : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 := by
-  cases hn : meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
-  | top => exact le_top
-  | coe n =>
-    simp only [cuspPoleOrder, hn, WithTop.untop₀_coe]
-    exact WithTop.coe_le_coe.mpr (by omega)
+    ((-(cuspPoleOrder h f : ℤ) : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 :=
+  cuspPoleOrder_le_iff.mp le_rfl
 
 /-- For every function on `ℍ`, the meromorphic order of its cusp function at `0` is bounded below
 by `-(k : ℤ)` for some `k : ℕ`. -/

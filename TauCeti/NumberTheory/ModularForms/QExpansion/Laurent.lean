@@ -140,17 +140,11 @@ theorem laurentQExpansion_eq_of_analyticAt_qParam_pow_mul (hh : 0 < h) {k : ℕ}
   rw [← meromorphicOrderAt_congr (cuspFunction_qParam_pow_mul_eventuallyEq hh k f)]
   exact hk.meromorphicOrderAt_nonneg
 
-/-- The pole order only depends on the cusp function off `q = 0`. -/
-private theorem cuspPoleOrder_congr (hfg : cuspFunction h f =ᶠ[𝓝[≠] 0] cuspFunction h g) :
-    cuspPoleOrder h f = cuspPoleOrder h g := by
-  simp only [cuspPoleOrder, meromorphicOrderAt_congr hfg]
-
 /-- When the cusp function of `f` is analytic at `0`, the Laurent `q`-expansion is the
 `q`-expansion. -/
 theorem laurentQExpansion_of_analyticAt (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
     laurentQExpansion h f = qExpansion h f := by
-  have hk : cuspPoleOrder h f = 0 := by simp [cuspPoleOrder, hf.meromorphicOrderAt_nonneg]
-  rw [laurentQExpansion, hk]
+  rw [laurentQExpansion, cuspPoleOrder_eq_zero_of_analyticAt hf]
   simp
 
 /-- The Laurent `q`-expansion of a constant function is the constant Laurent series. -/
@@ -226,9 +220,7 @@ theorem laurentQExpansion_coeff_eq_zero_of_lt_neg {k : ℕ}
     (hk : ((-k : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0) {n : ℤ}
     (hn : n < -k) :
     (laurentQExpansion h f).coeff n = 0 := by
-  have hp : cuspPoleOrder h f ≤ k := by
-    rw [cuspPoleOrder, Int.toNat_le, Int.neg_le_iff, WithTop.untop₀, WithTop.le_untopD_iff]
-    exacts [hk, fun _ ↦ by omega]
+  have hp : cuspPoleOrder h f ≤ k := cuspPoleOrder_le_iff.mpr hk
   rw [laurentQExpansion, HahnSeries.coeff_single_mul, one_mul, PowerSeries.coeff_coe]
   split_ifs
   · rfl

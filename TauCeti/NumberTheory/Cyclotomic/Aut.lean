@@ -129,9 +129,14 @@ theorem aeval_mem_range_intCast {L : Type*} [Field L] [CharZero L]
       simpa [x] using (Polynomial.aeval_algHom_apply (σ : K →+* K).toIntAlgHom ζK P).symm
     rw [hσ, ← hζK.autToPow_spec ℚ σ]
     apply Subtype.ext
-    have hval := (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom
-      (ζK ^ (hζK.autToPow ℚ σ : ZMod N).val) P).symm
-    simpa [ζK, hx_val, hP (hζK.autToPow ℚ σ), -IsPrimitiveRoot.autToPow_spec] using hval
+    have hval : (Polynomial.aeval (ζK ^ (hζK.autToPow ℚ σ : ZMod N).val) P : L) =
+        Polynomial.aeval (ζ ^ (hζK.autToPow ℚ σ : ZMod N).val) P := by
+      simpa only [RingHom.toIntAlgHom_apply, RingHom.coe_coe, IntermediateField.coe_val,
+        SubmonoidClass.coe_pow, ζK] using
+        (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom
+          (ζK ^ (hζK.autToPow ℚ σ : ZMod N).val) P).symm
+    change (Polynomial.aeval (ζK ^ (hζK.autToPow ℚ σ : ZMod N).val) P : L) = (x : L)
+    rw [hval, hP (hζK.autToPow ℚ σ), hx_val]
   obtain ⟨q, hq⟩ := IntermediateField.mem_bot.mp ((IsGalois.mem_bot_iff_fixed x).mpr hfix)
   have hqL : algebraMap ℚ L q = Polynomial.aeval ζ P := by
     rw [IsScalarTower.algebraMap_apply ℚ K L, IntermediateField.algebraMap_apply, hq, hx_val]
