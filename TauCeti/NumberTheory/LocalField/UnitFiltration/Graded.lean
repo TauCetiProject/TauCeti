@@ -6,17 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
-import TauCeti.RingTheory.DiscreteValuationRing.UnitFiltration
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 
 /-!
 # Positive graded pieces of the unit filtration
 
 For a nonarchimedean local field `K`, each positive successive quotient `U(K,n+1) / U(K,n+2)`
-of the unit filtration is identified, via `TauCeti.unitFiltrationGradedEquivInteger` and the
-general discrete-valuation-ring isomorphism
-`TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField`, with the additive
-group of the residue field `𝓀[K]`. This file records the resulting cardinalities, relative
-indices, powering congruence, and strictness of the unit filtration.
+of the unit filtration is identified, via
+`TauCeti.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer`, with the additive group of the
+residue field `𝓀[K]`. This file records the resulting cardinalities, relative indices, powering
+congruence, and strictness of the unit filtration.
 
 ## Main results
 
@@ -56,17 +55,14 @@ noncomputable instance finite_unitFiltrationGraded_succ (n : ℕ) :
     Finite (UnitFiltrationGraded K (n + 1)) :=
   have ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   Finite.of_equiv 𝓀[K]
-    ((unitFiltrationGradedEquivInteger (K := K) (n + 1)).toAdditive.trans
-      (TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField
-        n π hπ)).symm.toEquiv
+    (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π hπ).symm.toEquiv
 
 /-- Every positive graded piece has the cardinality of the residue field. -/
 theorem natCard_unitFiltrationGraded_succ (n : ℕ) :
     Nat.card (UnitFiltrationGraded K (n + 1)) = Nat.card 𝓀[K] := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   exact Nat.card_congr
-    ((unitFiltrationGradedEquivInteger (K := K) (n + 1)).toAdditive.trans
-      (TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField n π hπ)).toEquiv
+    (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π hπ).toEquiv
 
 /-- Every positive step has relative index equal to the cardinality of the residue field:
 `[U(K,n+1) : U(K,n+2)] = #𝓀[K]`. -/

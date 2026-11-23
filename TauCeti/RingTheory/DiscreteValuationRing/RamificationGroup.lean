@@ -139,6 +139,34 @@ theorem mul_coe_uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     ϖ * ((uniformizerRatio i hϖ σ : Bˣ) : B) = (σ : G) • ϖ :=
   mul_uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ _
 
+omit [IsDomain B] [_root_.IsDiscreteValuationRing B] in
+private theorem irreducible_smul (σ : G) {ϖ : B} (hϖ : Irreducible ϖ) :
+    Irreducible (σ • ϖ) :=
+  hϖ.map (MulSemiringAction.toRingEquiv G B σ).toMulEquiv
+
+private theorem coe_uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
+    (σ : ramificationGroup G B (i : ℤ))
+    (hσϖ : Irreducible ((σ : G) • ϖ) := irreducible_smul (σ : G) hϖ) :
+    (uniformizerRatio i hϖ σ : Bˣ) = uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ hσϖ :=
+  rfl
+
+private theorem uniformizerChangeUnit_eq_right {ϖ ϖ₁ ϖ₂ : B} (hϖ : Irreducible ϖ)
+    (h₁ : Irreducible ϖ₁) (h₂ : Irreducible ϖ₂) (h : ϖ₁ = ϖ₂) :
+    uniformizerChangeUnit ϖ ϖ₁ hϖ h₁ = uniformizerChangeUnit ϖ ϖ₂ hϖ h₂ := by
+  subst h; rfl
+
+private theorem unitsMap_uniformizerChangeUnit (σ : G) {ϖ ϖ' : B}
+    (hϖ : Irreducible ϖ) (hϖ' : Irreducible ϖ')
+    (hσϖ : Irreducible (σ • ϖ) := irreducible_smul σ hϖ)
+    (hσϖ' : Irreducible (σ • ϖ') := irreducible_smul σ hϖ') :
+    Units.map (MulSemiringAction.toRingHom G B σ).toMonoidHom
+        (uniformizerChangeUnit ϖ ϖ' hϖ hϖ') =
+      uniformizerChangeUnit (σ • ϖ) (σ • ϖ') hσϖ hσϖ' := by
+  apply Units.ext
+  apply mul_left_cancel₀ hσϖ.ne_zero
+  simp only [mul_uniformizerChangeUnit, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+    MonoidHom.coe_ofClass, MulSemiringAction.toRingHom_apply, ← smul_mul']
+
 /-- The 1-cocycle identity `u_{στ} = u_σ * σ(u_τ)` in `Bˣ` for the uniformizer ratio. -/
 theorem coe_uniformizerRatio_mul_apply (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (σ τ : ramificationGroup G B (i : ℤ)) :
@@ -146,22 +174,9 @@ theorem coe_uniformizerRatio_mul_apply (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
       (uniformizerRatio i hϖ σ : Bˣ) *
         Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
           (uniformizerRatio i hϖ τ : Bˣ) := by
-  apply Units.ext
-  apply mul_left_cancel₀ hϖ.ne_zero
-  calc
-    ϖ * ((uniformizerRatio i hϖ (σ * τ) : Bˣ) : B)
-        = (σ : G) • ((τ : G) • ϖ) := by
-          rw [mul_coe_uniformizerRatio, Subgroup.coe_mul, mul_smul]
-    _ = (σ : G) • (ϖ * ((uniformizerRatio i hϖ τ : Bˣ) : B)) := by
-          rw [mul_coe_uniformizerRatio]
-    _ = (ϖ * ((uniformizerRatio i hϖ σ : Bˣ) : B)) *
-          (σ : G) • ((uniformizerRatio i hϖ τ : Bˣ) : B) := by
-          rw [smul_mul', mul_coe_uniformizerRatio]
-    _ = ϖ * (((uniformizerRatio i hϖ σ : Bˣ) *
-          Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
-            (uniformizerRatio i hϖ τ : Bˣ) : Bˣ) : B) := by
-          rw [Units.val_mul, Units.coe_map, mul_assoc]
-          rfl
+  rw [coe_uniformizerRatio i hϖ (σ * τ), coe_uniformizerRatio i hϖ σ,
+    coe_uniformizerRatio i hϖ τ, unitsMap_uniformizerChangeUnit, uniformizerChangeUnit_mul]
+  exact uniformizerChangeUnit_eq_right _ _ _ (by rw [Subgroup.coe_mul, mul_smul])
 
 /-- The **quotient homomorphism** `G_i →* U_i / U_{i+1}` sending `σ` to the class of its
 uniformizer ratio `u_σ`. It does not depend on `ϖ`
@@ -199,22 +214,8 @@ private theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : B} (hϖ : Irredu
       (uniformizerRatio i hϖ σ : Bˣ) *
         Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
           (uniformizerChangeUnit ϖ ϖ' hϖ hϖ') := by
-  apply Units.ext
-  apply mul_left_cancel₀ hϖ.ne_zero
-  calc
-    ϖ * ((uniformizerChangeUnit ϖ ϖ' hϖ hϖ' * (uniformizerRatio i hϖ' σ : Bˣ) : Bˣ) : B)
-        = (σ : G) • ϖ' := by
-          rw [Units.val_mul, ← mul_assoc, mul_uniformizerChangeUnit, mul_coe_uniformizerRatio]
-    _ = (σ : G) • (ϖ * (uniformizerChangeUnit ϖ ϖ' hϖ hϖ' : B)) := by
-          rw [mul_uniformizerChangeUnit]
-    _ = (ϖ * ((uniformizerRatio i hϖ σ : Bˣ) : B)) *
-          (σ : G) • (uniformizerChangeUnit ϖ ϖ' hϖ hϖ' : B) := by
-          rw [smul_mul', mul_coe_uniformizerRatio]
-    _ = ϖ * (((uniformizerRatio i hϖ σ : Bˣ) *
-          Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
-            (uniformizerChangeUnit ϖ ϖ' hϖ hϖ') : Bˣ) : B) := by
-          rw [Units.val_mul, Units.coe_map, mul_assoc]
-          rfl
+  rw [coe_uniformizerRatio i hϖ' σ, coe_uniformizerRatio i hϖ σ,
+    unitsMap_uniformizerChangeUnit, uniformizerChangeUnit_mul, uniformizerChangeUnit_mul]
 
 /-- The quotient homomorphism `G_i →* U_i / U_{i+1}` does not depend on the choice of
 uniformizer. -/
@@ -279,11 +280,9 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible (i : ℕ
     (hϖ : Irreducible ϖ) (hϖ' : Irreducible ϖ') :
     ramificationGroupGradedToUnitFiltrationGraded (G := G) i hϖ =
       ramificationGroupGradedToUnitFiltrationGraded (G := G) i hϖ' := by
-  refine MonoidHom.ext fun x ↦ ?_
-  induction x using QuotientGroup.induction_on with
-  | _ σ =>
-    exact DFunLike.congr_fun
-      (ramificationGroupToUnitFiltrationGraded_eq_of_irreducible i hϖ hϖ') σ
+  apply QuotientGroup.monoidHom_ext
+  simp only [ramificationGroupGradedToUnitFiltrationGraded, QuotientGroup.lift_comp_mk']
+  exact ramificationGroupToUnitFiltrationGraded_eq_of_irreducible i hϖ hϖ'
 
 /-! ### The tame character and positive-depth residue coordinates -/
 
@@ -655,16 +654,6 @@ theorem ramificationGroupOneSylow_coe (p : ℕ) [Fact p.Prime] [CharP (ResidueFi
       (ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0) :=
   (rfl)
 
-/-- The wild inertia Sylow subgroup is normal in `G_0`. -/
-theorem ramificationGroupOneSylow_normal (p : ℕ) [Fact p.Prime] [CharP (ResidueField B) p]
-    [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
-    (ramificationGroupOneSylow G A B p : Subgroup (ramificationGroup G B 0)).Normal := by
-  rw [ramificationGroupOneSylow_coe,
-    Subgroup.normal_subgroupOf_iff_le_normalizer
-      (ramificationGroup_antitone G B (by omega : (0 : ℤ) ≤ 1)),
-    Subgroup.normalizer_eq_top_iff.mpr inferInstance]
-  exact le_top
-
 /-- **Wild inertia is the unique Sylow `p`-subgroup of inertia.** -/
 theorem eq_ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueField B) p]
     [FaithfulSMul G B] [Finite (ramificationGroup G B 0)]
@@ -672,7 +661,7 @@ theorem eq_ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueFie
     Q = ramificationGroupOneSylow G A B p := by
   let _ : Unique (Sylow p (ramificationGroup G B 0)) :=
     Sylow.unique_of_normal (ramificationGroupOneSylow G A B p)
-      (ramificationGroupOneSylow_normal G A B p)
+      (by rw [ramificationGroupOneSylow_coe]; infer_instance)
   exact Subsingleton.elim _ _
 
 /-- The order of `G_1` is the `p`-part of the order of `G_0`: `#G_1 = p ^ (v_p #G_0)`. -/
@@ -765,17 +754,13 @@ theorem ramificationGroup_eq_bot_of_charZero [CharZero (ResidueField B)] [Faithf
       Finite.of_injective
         (Subgroup.inclusion (ramificationGroup_antitone G B (Int.natCast_nonneg (j + 1))))
         (Subgroup.inclusion_injective _)
-    have : Subsingleton (RamificationGroupGraded G B ((j + 1 : ℕ) : ℤ)) :=
+    have hq : Subsingleton (RamificationGroupGraded G B ((j + 1 : ℕ) : ℤ)) :=
       subsingleton_ramificationGroupGraded_natCast_succ_of_charZero G A B j
-    -- Since `G_{j+2} = ⊥` and `G_{j+1} / G_{j+2}` is a subsingleton, `G_{j+1} = ⊥`.
-    rw [Subgroup.eq_bot_iff_forall]
-    intro σ hσ
-    have hmk :
-        (QuotientGroup.mk ⟨σ, hσ⟩ : RamificationGroupGraded G B ((j + 1 : ℕ) : ℤ)) = 1 :=
-      Subsingleton.elim _ _
-    rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf,
-      show ((j + 1 : ℕ) : ℤ) + 1 = n by omega, hsucc, Subgroup.mem_bot] at hmk
-    exact hmk
+    rw [RamificationGroupGraded, show ((j + 1 : ℕ) : ℤ) + 1 = n by omega, hsucc,
+      Subgroup.bot_subgroupOf] at hq
+    have : Subsingleton (ramificationGroup G B ((j + 1 : ℕ) : ℤ)) :=
+      QuotientGroup.quotientBot.symm.injective.subsingleton
+    exact Subgroup.eq_bot_of_subsingleton _
 
 /-- **In residue characteristic zero, the wild inertia group `G_1` is trivial**, whenever the
 residue extension is separable, the action is faithful, and `G_0` is finite. -/
