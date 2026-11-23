@@ -11,9 +11,7 @@ public import Mathlib.RingTheory.Flat.Equalizer
 public import Mathlib.RingTheory.TotallySplit
 public import Mathlib.RingTheory.TensorProduct.Pi
 
-import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
-import Mathlib.RingTheory.Finiteness.Small
 import Mathlib.RingTheory.Localization.Away.Lemmas
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.Algebra.Algebra.Subalgebra.Equalizer
@@ -62,10 +60,8 @@ The proof reduces to split algebras in three steps.
   local for such a decomposition (`TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents`,
   `TauCeti.Module.Finite.of_completeOrthogonalIdempotents`).
 
-`Algebra.IsFiniteSplit.exists_tensorProduct_of_etale` takes `R`, `A` and `B` in one universe. A
-finite algebra is small over its base (`Module.Finite.small`), so in general `A` and `B` are
-replaced by isomorphic copies in the universe of `R`, and the equalizer is transported back
-(`AlgEquiv.equalizerCongr`).
+The main results take `R`, `A` and `B` in one universe, as
+`Algebra.IsFiniteSplit.exists_tensorProduct_of_etale` does.
 
 ## References
 
@@ -77,7 +73,7 @@ public section
 
 open TensorProduct
 
-universe u v w
+universe u
 
 namespace AlgHom
 
@@ -175,17 +171,18 @@ private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι]
     · exact .inl (by simpa [sub_eq_self] using hfactor)
   let eι := Algebra.TensorProduct.piScalarRight T T' T' ι
   let eκ := Algebra.TensorProduct.piScalarRight T T' T' κ
-  let φ' := Algebra.TensorProduct.map (AlgHom.id T' T') φ
-  let ψ' := Algebra.TensorProduct.map (AlgHom.id T' T') ψ
-  let e : equalizer φ' ψ' ≃ₐ[T'] equalizer (eι.arrowCongr eκ φ') (eι.arrowCongr eκ ψ') :=
-    eι.equalizerCongr eκ φ' ψ'
-  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_of_entries (eι.arrowCongr eκ φ')
-    (eι.arrowCongr eκ ψ')
+  let e := eι.equalizerCongr eκ (Algebra.TensorProduct.map (AlgHom.id T' T') φ)
+    (Algebra.TensorProduct.map (AlgHom.id T' T') ψ)
+  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_of_entries
+    ((eκ : (T' ⊗[T] (κ → T)) →ₐ[T'] (κ → T')).comp
+      ((Algebra.TensorProduct.map (AlgHom.id T' T') φ).comp (eι.symm : (ι → T') →ₐ[T'] _)))
+    ((eκ : (T' ⊗[T] (κ → T)) →ₐ[T'] (κ → T')).comp
+      ((Algebra.TensorProduct.map (AlgHom.id T' T') ψ).comp (eι.symm : (ι → T') →ₐ[T'] _)))
     (fun i j ↦ by
-      simpa [a, eι, eκ, φ', Algebra.algebraMap_eq_smul_one] using
+      simpa [a, eι, eκ, Algebra.algebraMap_eq_smul_one] using
         hT' (true, i, j))
     (fun i j ↦ by
-      simpa [a, eι, eκ, ψ', Algebra.algebraMap_eq_smul_one] using
+      simpa [a, eι, eκ, Algebra.algebraMap_eq_smul_one] using
         hT' (false, i, j))
   exact ⟨.of_equiv e.symm, .equiv e.symm.toLinearEquiv⟩
 
@@ -196,9 +193,10 @@ private theorem etale_and_finite_equalizer_of_isFiniteSplit {A B : Type*} [CommR
     Algebra.Etale T (equalizer f g) ∧ Module.Finite T (equalizer f g) := by
   obtain ⟨m, ⟨eA⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T A
   obtain ⟨n, ⟨eB⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T B
-  let e : equalizer f g ≃ₐ[T] equalizer (eA.arrowCongr eB f) (eA.arrowCongr eB g) :=
-    eA.equalizerCongr eB f g
-  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_pi (eA.arrowCongr eB f) (eA.arrowCongr eB g)
+  let e := eA.equalizerCongr eB f g
+  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_pi
+    ((eB : B →ₐ[T] (Fin n → T)).comp (f.comp (eA.symm : (Fin m → T) →ₐ[T] A)))
+    ((eB : B →ₐ[T] (Fin n → T)).comp (g.comp (eA.symm : (Fin m → T) →ₐ[T] A)))
   exact ⟨.of_equiv e.symm, .equiv e.symm.toLinearEquiv⟩
 
 end Split
@@ -232,13 +230,12 @@ private theorem etale_and_finite_equalizer_of_rankAtStalk_eq {R A B : Type u} [C
   exact ⟨.of_etale_tensorProduct_of_faithfullyFlat T₂,
     .of_finite_tensorProduct_of_faithfullyFlat T₂⟩
 
-/-- The equalizer of two algebra maps between finite étale algebras in the universe of the base is
-finite étale. The ranks of the two algebras are locally constant, so the choice products of the
-idempotents cutting out their fibres decompose the base into components over which both ranks are
-constant. -/
-private theorem etale_and_finite_equalizer_aux {R A B : Type u} [CommRing R] [CommRing A]
-    [CommRing B] [Algebra R A] [Algebra R B] [Algebra.Etale R A] [Module.Finite R A]
-    [Algebra.Etale R B] [Module.Finite R B] (f g : A →ₐ[R] B) :
+/-- The equalizer of two algebra maps between finite étale algebras is finite étale. The ranks of
+the two algebras are locally constant, so the choice products of the idempotents cutting out their
+fibres decompose the base into components over which both ranks are constant. -/
+private theorem etale_and_finite_equalizer {R A B : Type u} [CommRing R] [CommRing A] [CommRing B]
+    [Algebra R A] [Algebra R B] [Algebra.Etale R A] [Module.Finite R A] [Algebra.Etale R B]
+    [Module.Finite R B] (f g : A →ₐ[R] B) :
     Algebra.Etale R (equalizer f g) ∧ Module.Finite R (equalizer f g) := by
   classical
   have : Module.FinitePresentation R A := .of_finite_of_finitePresentation R A
@@ -288,29 +285,10 @@ private theorem etale_and_finite_equalizer_aux {R A B : Type u} [CommRing R] [Co
     hconst _ εB hNB hεB' fun q q' k ↦ (hσ q (.inr k)).trans (hσ q' (.inr k)).symm
   exact etale_and_finite_equalizer_of_rankAtStalk_eq hm hn _ _
 
-/-- The equalizer of two algebra maps between finite étale algebras is finite étale. The finite
-algebras `A` and `B` have isomorphic copies in the universe of `R` (`Module.Finite.small`), where
-`etale_and_finite_equalizer_aux` applies. -/
-private theorem etale_and_finite_equalizer {R : Type u} {A : Type v} {B : Type w} [CommRing R]
-    [CommRing A] [CommRing B] [Algebra R A] [Algebra R B] [Algebra.Etale R A] [Module.Finite R A]
-    [Algebra.Etale R B] [Module.Finite R B] (f g : A →ₐ[R] B) :
-    Algebra.Etale R (equalizer f g) ∧ Module.Finite R (equalizer f g) := by
-  have : Small.{u} A := Module.Finite.small R A
-  have : Small.{u} B := Module.Finite.small R B
-  let eA := (Shrink.algEquiv R A).symm
-  let eB := (Shrink.algEquiv R B).symm
-  have : Algebra.Etale R (Shrink.{u} A) := .of_equiv eA
-  have : Algebra.Etale R (Shrink.{u} B) := .of_equiv eB
-  let e : equalizer f g ≃ₐ[R] equalizer (eA.arrowCongr eB f) (eA.arrowCongr eB g) :=
-    eA.equalizerCongr eB f g
-  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_aux (eA.arrowCongr eB f) (eA.arrowCongr eB g)
-  exact ⟨.of_equiv e.symm, .equiv e.symm.toLinearEquiv⟩
-
 section
 
-variable {R : Type u} {A : Type v} {B : Type w} [CommRing R] [CommRing A] [CommRing B]
-  [Algebra R A] [Algebra R B] [Algebra.Etale R A] [Module.Finite R A] [Algebra.Etale R B]
-  [Module.Finite R B]
+variable {R A B : Type u} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+  [Algebra.Etale R A] [Module.Finite R A] [Algebra.Etale R B] [Module.Finite R B]
 
 /-- **The equalizer of two algebra maps between finite étale algebras is étale.** -/
 instance etale_equalizer (f g : A →ₐ[R] B) : Algebra.Etale R (equalizer f g) :=
@@ -326,7 +304,7 @@ end AlgHom
 
 namespace TauCeti.FixedPoints
 
-variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [Algebra R S] (G : Type*) [Monoid G]
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] (G : Type*) [Monoid G]
   [MulSemiringAction G S] [SMulCommClass G R S]
 
 variable [Algebra.Etale R S] [Module.Finite R S] [Finite G]
