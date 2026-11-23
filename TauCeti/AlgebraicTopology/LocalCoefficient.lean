@@ -217,68 +217,67 @@ theorem pullback_obj_comp {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v
     (pullback (R := R) (g.comp f)).obj L = (pullback f).obj ((pullback g).obj L) :=
   congrArg (· ⋙ L) (FundamentalGroupoid.map_comp g f)
 
-/-- For a commuting square `b.comp a = d.comp c` of continuous maps, the two iterated pullbacks
-of a local coefficient system around the square are canonically isomorphic. -/
+/-- For a commuting square `b.comp a = d.comp c` of continuous maps, the two iterated pullback
+functors around the square are naturally isomorphic. -/
 def pullbackSquareIso {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}} {D : TopCat.{v₄}}
-    (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D))
-    (L : LocalCoefficientSystem.{u, v₄, w} R D) (h : b.comp a = d.comp c) :
-    (pullback (R := R) a).obj ((pullback (R := R) b).obj L) ≅
-      (pullback (R := R) c).obj ((pullback (R := R) d).obj L) :=
-  ((pullbackCompIso (R := R) a b).app L).symm ≪≫
-    eqToIso (congrArg (fun k : C(A, D) ↦ (pullback (R := R) k).obj L) h) ≪≫
-    (pullbackCompIso (R := R) c d).app L
+    (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D)) (h : b.comp a = d.comp c) :
+    pullback (R := R) b ⋙ pullback (R := R) a ≅
+      pullback (R := R) d ⋙ pullback (R := R) c :=
+  (pullbackCompIso (R := R) a b).symm ≪≫
+    eqToIso (congrArg (fun k : C(A, D) ↦ pullback (R := R) k) h) ≪≫
+    pullbackCompIso (R := R) c d
 
-/-- The forward morphism of `pullbackSquareIso` unfolds to the composite of the two
+/-- The forward component of `pullbackSquareIso` unfolds to the composite of the two
 `pullbackCompIso` comparisons across the square equality. -/
-theorem pullbackSquareIso_hom {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
+theorem pullbackSquareIso_hom_app {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
     {D : TopCat.{v₄}} (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D))
     (L : LocalCoefficientSystem.{u, v₄, w} R D) (h : b.comp a = d.comp c) :
-    (pullbackSquareIso (R := R) a b c d L h).hom =
+    (pullbackSquareIso (R := R) a b c d h).hom.app L =
       (pullbackCompIso (R := R) a b).inv.app L ≫
         eqToHom (congrArg (fun k : C(A, D) ↦ (pullback (R := R) k).obj L) h) ≫
         (pullbackCompIso (R := R) c d).hom.app L := by
-  simp [pullbackSquareIso]
+  simp only [pullbackSquareIso, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, eqToIso.hom,
+    eqToHom_app]
 
-/-- The inverse morphism of `pullbackSquareIso` unfolds to the reversed composite of the two
+/-- The inverse component of `pullbackSquareIso` unfolds to the reversed composite of the two
 `pullbackCompIso` comparisons across the square equality. -/
-theorem pullbackSquareIso_inv {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
+theorem pullbackSquareIso_inv_app {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
     {D : TopCat.{v₄}} (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D))
     (L : LocalCoefficientSystem.{u, v₄, w} R D) (h : b.comp a = d.comp c) :
-    (pullbackSquareIso (R := R) a b c d L h).inv =
+    (pullbackSquareIso (R := R) a b c d h).inv.app L =
       (pullbackCompIso (R := R) c d).inv.app L ≫
         eqToHom (congrArg (fun k : C(A, D) ↦ (pullback (R := R) k).obj L) h.symm) ≫
         (pullbackCompIso (R := R) a b).hom.app L := by
-  simp [pullbackSquareIso, Category.assoc]
+  simp only [pullbackSquareIso, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app, eqToIso.inv,
+    eqToHom_app, Category.assoc]
 
 /-- On every fibre, the forward morphism of `pullbackSquareIso` is the `eqToHom` identifying the
 fibres of `L` over the two equal images of the point around the square. -/
 @[simp]
-theorem pullbackSquareIso_hom_app {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
+theorem pullbackSquareIso_hom_app_app {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
     {D : TopCat.{v₄}} (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D))
     (L : LocalCoefficientSystem.{u, v₄, w} R D) (h : b.comp a = d.comp c)
     (x : FundamentalGroupoid A) :
-    ((pullbackSquareIso (R := R) a b c d L h).hom.app x) =
+    ((pullbackSquareIso (R := R) a b c d h).hom.app L).app x =
       eqToHom (Functor.congr_obj (congrArg (fun k : C(A, D) ↦
         (pullback (R := R) k).obj L) h) x) := by
-  simp only [pullbackSquareIso, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, eqToIso.hom,
-    eqToHom_app, Iso.app_hom, Iso.app_inv, pullbackCompIso_hom_app_app,
-    pullbackCompIso_inv_app_app]
+  simp only [pullbackSquareIso_hom_app, NatTrans.comp_app, eqToHom_app,
+    pullbackCompIso_hom_app_app, pullbackCompIso_inv_app_app]
   exact (Category.id_comp _).trans (Category.comp_id _)
 
 /-- On every fibre, the inverse morphism of `pullbackSquareIso` is the `eqToHom` identifying the
 fibres of `L` in the reverse direction around the square. -/
 @[simp]
-theorem pullbackSquareIso_inv_app {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
+theorem pullbackSquareIso_inv_app_app {A : TopCat.{v₁}} {B : TopCat.{v₂}} {C : TopCat.{v₃}}
     {D : TopCat.{v₄}} (a : C(A, B)) (b : C(B, D)) (c : C(A, C)) (d : C(C, D))
     (L : LocalCoefficientSystem.{u, v₄, w} R D) (h : b.comp a = d.comp c)
     (x : FundamentalGroupoid A) :
-    ((pullbackSquareIso (R := R) a b c d L h).inv.app x) =
+    ((pullbackSquareIso (R := R) a b c d h).inv.app L).app x =
       eqToHom (Functor.congr_obj (congrArg (fun k : C(A, D) ↦
         (pullback (R := R) k).obj L) h.symm) x) := by
-  simp only [pullbackSquareIso, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app, eqToIso.inv,
-    eqToHom_app, Iso.app_hom, Iso.app_inv, pullbackCompIso_hom_app_app,
-    pullbackCompIso_inv_app_app]
-  exact (Category.comp_id _).trans (Category.id_comp _)
+  simp only [pullbackSquareIso_inv_app, NatTrans.comp_app, eqToHom_app,
+    pullbackCompIso_hom_app_app, pullbackCompIso_inv_app_app]
+  exact (Category.id_comp _).trans (Category.comp_id _)
 
 /-- Pulling back a constant local coefficient system leaves it constant. -/
 def pullbackConstantIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))

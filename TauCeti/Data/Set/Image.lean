@@ -43,14 +43,10 @@ theorem _root_.Function.Injective.image_preimage_eq_preimage_image {U V X Y : Ty
     {f : X → Y} {f' : U → V} {i : U → X} {j : V → Y} (hj : Injective j)
     (hsq : f ∘ i = j ∘ f') (hpre : range i = f ⁻¹' range j) (s : Set V) :
     i '' (f' ⁻¹' s) = f ⁻¹' (j '' s) := by
-  ext x
-  simp only [mem_image, mem_preimage]
-  constructor
-  · rintro ⟨u, hu, rfl⟩
-    exact ⟨f' u, hu, (congrFun hsq u).symm⟩
-  · rintro ⟨v, hv, hfx⟩
-    have hx : x ∈ range i := hpre.symm ▸ ⟨v, hfx⟩
-    obtain ⟨u, rfl⟩ := hx
-    exact ⟨u, hj ((congrFun hsq u).symm.trans hfx.symm) ▸ hv, rfl⟩
+  have h1 : f' ⁻¹' s = i ⁻¹' (f ⁻¹' (j '' s)) := by
+    rw [← Set.preimage_comp, hsq, Set.preimage_comp, hj.preimage_image]
+  rw [h1]
+  exact Set.image_preimage_eq_of_subset
+    (hpre.symm ▸ Set.preimage_mono (Set.image_subset_range j s))
 
 end TauCeti

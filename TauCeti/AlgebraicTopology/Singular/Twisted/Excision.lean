@@ -277,6 +277,35 @@ theorem isIso_twistedHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (h
     IsIso (twistedHomologyMap (excisionMap U Kᶜ) L n) :=
   isIso_twistedHomologyMap_excisionMap_of_closure_subset L hU (hK.closure_eq.symm ▸ hKU) n
 
+/-- **Excision with local coefficients for an open embedding.** For an open embedding `j : V ⟶ X`
+and a subset `S ⊆ V` whose image has closure inside `Set.range j`, the pair map
+`(V, V ∖ S) ⟶ (X, X ∖ j '' S)` induces a quasi-isomorphism of relative twisted chains. -/
+theorem quasiIso_twistedChainComplexMap_ofSubsetMap_compl_image {V X : TopCat.{v}} {j : V ⟶ X}
+    (L : LocalCoefficientSystem.{u, v, max v w} R X) (hj : IsOpenEmbedding j.hom) {S : Set V}
+    (hS : closure (j.hom '' S) ⊆ Set.range j.hom) :
+    QuasiIso (twistedChainComplexMap
+      (ofSubsetMap j (Set.SurjOn.mapsTo_compl (Set.surjOn_image j.hom S) hj.injective)) L) := by
+  let f := ofSubsetMap j (Set.SurjOn.mapsTo_compl (Set.surjOn_image j.hom S) hj.injective)
+  have hfst : Hom.fst f = j := ofSubsetMap_fst j _
+  refine quasiIso_twistedChainComplexMap_of_open_cover f L (hfst.symm ▸ hj.isEmbedding)
+    (fun x hx ↦ by
+      rw [range_ofSubset_map] at hx ⊢
+      rw [hfst] at hx
+      exact fun hxS ↦ hx ⟨x, hxS, rfl⟩)
+    (fun b : Bool ↦ bif b then Set.range j.hom else (closure (j.hom '' S))ᶜ)
+    (fun b ↦ by cases b <;> [exact isClosed_closure.isOpen_compl; exact hj.isOpen_range])
+    ?_ (fun b ↦ by
+      cases b
+      · exact Or.inl ((Set.compl_subset_compl.2 subset_closure).trans
+          (range_ofSubset_map (B := (j.hom '' S)ᶜ)).ge)
+      · exact Or.inr (hfst.symm ▸ Set.Subset.rfl))
+  rw [← Set.union_eq_iUnion, Set.union_comm]
+  ext x
+  simp only [Set.mem_union, Set.mem_compl_iff, Set.mem_univ, iff_true]
+  by_cases hx : x ∈ closure (j.hom '' S)
+  · exact Or.inr (hS hx)
+  · exact Or.inl hx
+
 end Subsets
 
 end TopPair

@@ -452,6 +452,18 @@ lemma pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap (φ : K ⟶ L) :
       φ.f 0 ≫ L.pOpcycles 0 ≫ L.isoHomologyι₀.inv := by
   rw [ChainComplex.isoHomologyι₀_inv_naturality, HomologicalComplex.p_opcyclesMap_assoc]
 
+/-- For a chain map into a complex whose differential `1 ⟶ 0` vanishes, passing from degree-zero
+chains of the source to degree-zero homology, mapping along `φ`, and identifying the target
+degree-zero homology with degree-zero chains recovers `φ.f 0`. -/
+@[reassoc]
+lemma pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap_comp_isoHomologyι₀_hom_comp_pOpcyclesIso_inv
+    (φ : K ⟶ L) (hd : L.d 1 0 = 0) :
+    K.pOpcycles 0 ≫ K.isoHomologyι₀.inv ≫ HomologicalComplex.homologyMap φ 0 ≫
+        L.isoHomologyι₀.hom ≫ (L.pOpcyclesIso 1 0 (by simp) hd).inv =
+      φ.f 0 := by
+  rw [ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap_assoc,
+    Iso.inv_hom_id_assoc, HomologicalComplex.pOpcyclesIso_hom_inv_id, Category.comp_id]
+
 end ChainComplex
 
 namespace HomologicalComplex

@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.Naturality
-import TauCeti.Algebra.Category.ModuleCat.Tower.Subsequence.LimOne
-import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # Quasi-isomorphisms of towers of complexes
@@ -55,6 +53,22 @@ namespace TauCeti.ComplexTower
 variable {R : Type u} [Ring R] {ι : Type w} {c : ComplexShape ι}
   {C D : ComplexTower.{v} R c}
 
+private def milnorShortComplex (E : ComplexTower.{v} R c)
+    (hE : ∀ i, Function.Surjective (E.term i).shift) {i j : ι} (hij : c.Rel i j) :
+    ShortComplex (ModuleCat.{v} R) :=
+  ShortComplex.mk (ModuleCat.ofHom (E.limOneToHomology hE hij))
+    (ModuleCat.ofHom (E.homologyToLim j))
+    (ModuleCat.hom_ext <| LinearMap.ext fun x ↦
+      (exact_limOneToHomology_homologyToLim hE hij _).2 ⟨x, rfl⟩)
+
+private lemma milnorShortComplex_shortExact (E : ComplexTower.{v} R c)
+    (hE : ∀ i, Function.Surjective (E.term i).shift) {i j : ι} (hij : c.Rel i j) :
+    (milnorShortComplex E hE hij).ShortExact :=
+  ModuleCat.shortComplex_shortExact _
+    (exact_limOneToHomology_homologyToLim hE hij)
+    (limOneToHomology_injective hE hij)
+    (homologyToLim_surjective hE j)
+
 /-- **Degreewise limit-homology comparison for towers of complexes.** Let `f : C ⟶ D` be a
 morphism between towers of complexes whose termwise shifts are surjective. If `f` is eventually a
 quasi-isomorphism in degree `j` and in every degree `i` with `c.Rel i j`, then `limComplexMap f`
@@ -78,25 +92,7 @@ theorem quasiIsoAt_limComplexMap (f : C ⟶ D)
         (HomologicalComplex.homologyFunctor _ c i))) :=
       ModuleTower.limOneMap_bijective_of_isIso_of_le _ Ni fun n hn ↦
         (quasiIsoAt_iff_isIso_homologyMap (f.app (op n)) i).1 (hNi n hn)
-    let SC : ShortComplex (ModuleCat.{v} R) := ShortComplex.mk
-      (ModuleCat.ofHom (C.limOneToHomology hC hij))
-      (ModuleCat.ofHom (C.homologyToLim j))
-      (ModuleCat.hom_ext <| LinearMap.ext fun x ↦
-        (exact_limOneToHomology_homologyToLim hC hij _).2 ⟨x, rfl⟩)
-    let SD : ShortComplex (ModuleCat.{v} R) := ShortComplex.mk
-      (ModuleCat.ofHom (D.limOneToHomology hD hij))
-      (ModuleCat.ofHom (D.homologyToLim j))
-      (ModuleCat.hom_ext <| LinearMap.ext fun x ↦
-        (exact_limOneToHomology_homologyToLim hD hij _).2 ⟨x, rfl⟩)
-    have hSC : SC.ShortExact := ModuleCat.shortComplex_shortExact SC
-      (exact_limOneToHomology_homologyToLim hC hij)
-      (limOneToHomology_injective hC hij)
-      (homologyToLim_surjective hC j)
-    have hSD : SD.ShortExact := ModuleCat.shortComplex_shortExact SD
-      (exact_limOneToHomology_homologyToLim hD hij)
-      (limOneToHomology_injective hD hij)
-      (homologyToLim_surjective hD j)
-    let φ : SC ⟶ SD := ShortComplex.homMk
+    let φ : milnorShortComplex C hC hij ⟶ milnorShortComplex D hD hij := ShortComplex.homMk
       (ModuleCat.ofHom (ModuleTower.limOneMap
         (Functor.whiskerRight f (HomologicalComplex.homologyFunctor _ c i))))
       (HomologicalComplex.homologyMap (limComplexMap f) j)
@@ -106,7 +102,8 @@ theorem quasiIsoAt_limComplexMap (f : C ⟶ D)
       (ModuleCat.hom_ext (homologyToLim_naturality f j))
     have : IsIso φ.τ₁ := (ConcreteCategory.isIso_iff_bijective _).2 hlim1i
     have : IsIso φ.τ₃ := (ConcreteCategory.isIso_iff_bijective _).2 hlimj
-    exact ShortComplex.isIso₂_of_shortExact_of_isIso₁₃ φ hSC hSD
+    exact ShortComplex.isIso₂_of_shortExact_of_isIso₁₃ φ
+      (milnorShortComplex_shortExact C hC hij) (milnorShortComplex_shortExact D hD hij)
   · rw [ConcreteCategory.isIso_iff_bijective]
     have hCbij : Function.Bijective (C.homologyToLim j) :=
       ⟨C.homologyToLim_injective_of_forall_not_rel fun i hij ↦ hrel ⟨i, hij⟩,

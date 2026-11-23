@@ -40,6 +40,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits TauCeti
+open scoped Simplicial
 
 universe u v w
 
@@ -53,8 +54,8 @@ pulling the restricted system back along the subspace component of a map of pair
 def subspaceSystemPullbackIso :
     P.subspaceSystem ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L) ≅
       (LocalCoefficientSystem.pullback (Hom.snd f).hom).obj (Q.subspaceSystem L) :=
-  LocalCoefficientSystem.pullbackSquareIso P.map.hom (Hom.fst f).hom (Hom.snd f).hom Q.map.hom L
-    (congrArg (·.hom) (Hom.w f).symm)
+  (LocalCoefficientSystem.pullbackSquareIso P.map.hom (Hom.fst f).hom (Hom.snd f).hom Q.map.hom
+    (congrArg (·.hom) (Hom.w f).symm)).app L
 
 /-- On every fibre, the comparison `TopPair.subspaceSystemPullbackIso` is the identification of
 the fibres of `L` over the two equal images of a point under `P.map ≫ Hom.fst f` and
@@ -64,7 +65,7 @@ lemma subspaceSystemPullbackIso_hom_app (x : FundamentalGroupoid P.snd) :
     (subspaceSystemPullbackIso f L).hom.app x =
       eqToHom (Functor.congr_obj (congrArg (fun g : P.snd ⟶ Q.fst ↦
         (LocalCoefficientSystem.pullback g.hom).obj L) (Hom.w f).symm) x) :=
-  LocalCoefficientSystem.pullbackSquareIso_hom_app P.map.hom (Hom.fst f).hom (Hom.snd f).hom
+  LocalCoefficientSystem.pullbackSquareIso_hom_app_app P.map.hom (Hom.fst f).hom (Hom.snd f).hom
     Q.map.hom L (congrArg (·.hom) (Hom.w f).symm) x
 
 /-- On every fibre, the inverse of the comparison `TopPair.subspaceSystemPullbackIso` is the
@@ -74,7 +75,7 @@ lemma subspaceSystemPullbackIso_inv_app (x : FundamentalGroupoid P.snd) :
     (subspaceSystemPullbackIso f L).inv.app x =
       eqToHom (Functor.congr_obj (congrArg (fun g : P.snd ⟶ Q.fst ↦
         (LocalCoefficientSystem.pullback g.hom).obj L) (Hom.w f)) x) :=
-  LocalCoefficientSystem.pullbackSquareIso_inv_app P.map.hom (Hom.fst f).hom (Hom.snd f).hom
+  LocalCoefficientSystem.pullbackSquareIso_inv_app_app P.map.hom (Hom.fst f).hom (Hom.snd f).hom
     Q.map.hom L (congrArg (·.hom) (Hom.w f).symm) x
 
 /-- The map on twisted chains of the subspaces induced by a map of pairs.  Its source is first
@@ -152,6 +153,29 @@ lemma twistedChainComplexMap_f_twistedChainComplexπ_f_apply {k : ℕ}
     twistedChainComplexπ_comp_twistedChainComplexMap, HomologicalComplex.comp_f,
     ConcreteCategory.comp_apply]
 
+/-- Evaluating the coefficient of a relative chain on an image simplex after a map of pairs with
+injective ambient component agrees with evaluating on the original simplex. -/
+@[reassoc]
+lemma twistedChainComplexMap_f_comp_twistedChainComplexCoeff [Mono (Hom.fst f)] {k : ℕ}
+    (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌) (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map)
+    (hσ' : ¬Set.range (TopCat.simplexMap ((TopCat.toSSet.map (Hom.fst f)).app _ σ)) ⊆
+      Set.range Q.map) :
+    (twistedChainComplexMap f L).f k ≫ Q.twistedChainComplexCoeff L _ hσ' =
+      P.twistedChainComplexCoeff ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L) σ
+        hσ := by
+  refine ModuleCat.hom_ext <| LinearMap.ext fun z ↦ ?_
+  obtain ⟨a, rfl⟩ := P.twistedChainComplexπ_f_surjective _ z
+  -- The fibres of `((pullback (Hom.fst f).hom).obj L)` at `initialVertex σ` and of `L` at
+  -- `initialVertex ((toSSet.map (Hom.fst f)).app _ σ)` agree only definitionally, so `Eq.trans`
+  -- bridges them across the rewrite steps.
+  exact (congrArg (fun x ↦ (Q.twistedChainComplexCoeff L _ hσ').hom x)
+      (twistedChainComplexMap_f_twistedChainComplexπ_f_apply f L a)).trans <|
+    (Q.twistedChainComplexCoeff_twistedChainComplexπ_f_apply L _ hσ' _).trans <|
+    (LocalCoefficientSystem.twistedChainComplexCoeff_twistedChainComplexMap_f_apply
+      (Hom.fst f) L σ a).trans
+      (P.twistedChainComplexCoeff_twistedChainComplexπ_f_apply
+        ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L) σ hσ a).symm
+
 /-- **Relative twisted chains of a subpair inject.** If the ambient component of a map of pairs
 `f : (X, A) ⟶ (Y, B)` is injective and every point of `X` sent into `B` lies in `A`, then `f`
 induces an injective map of relative twisted chains in every degree. For instance, this applies
@@ -169,13 +193,32 @@ theorem twistedChainComplexMap_f_injective [Mono (Hom.fst f)]
   have key (z : (P.twistedChainComplex
       ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L)).X k) :
       (P.twistedChainComplexCoeff _ σ hσ).hom z =
-        (Q.twistedChainComplexCoeff L _ hσ').hom (((twistedChainComplexMap f L).f k).hom z) := by
-    obtain ⟨a, rfl⟩ := P.twistedChainComplexπ_f_surjective _ z
-    rw [twistedChainComplexMap_f_twistedChainComplexπ_f_apply,
-      twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
-      twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
-      LocalCoefficientSystem.twistedChainComplexCoeff_twistedChainComplexMap_f_apply]
+        (Q.twistedChainComplexCoeff L _ hσ').hom (((twistedChainComplexMap f L).f k).hom z) :=
+    (congrArg (fun φ ↦ φ.hom z)
+      (twistedChainComplexMap_f_comp_twistedChainComplexCoeff f L σ hσ hσ')).symm
   rw [key, key, h]
+
+/-- Evaluating a coefficient on a simplex outside the subspace commutes with a change of local
+coefficients. -/
+@[reassoc]
+lemma twistedChainComplexCoefficientMap_f_comp_twistedChainComplexCoeff
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (η : L ⟶ K) {k : ℕ}
+    (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌)
+    (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map) :
+    (P.twistedChainComplexCoefficientMap η).f k ≫ P.twistedChainComplexCoeff K σ hσ =
+      P.twistedChainComplexCoeff L σ hσ ≫ η.app (LocalCoefficientSystem.initialVertex σ) := by
+  apply (cancel_epi ((P.twistedChainComplexπ L).f k)).1
+  have hπ := congrArg (fun φ ↦ φ.f k)
+    (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap η)
+  simp only [HomologicalComplex.comp_f] at hπ
+  rw [← Category.assoc, hπ, Category.assoc, P.twistedChainComplexπ_f_twistedChainComplexCoeff,
+    P.twistedChainComplexπ_f_twistedChainComplexCoeff_assoc]
+  refine LocalCoefficientSystem.twistedChainComplex_hom_ext L fun τ ↦ ?_
+  rw [LocalCoefficientSystem.ιTwistedChainComplex_twistedChainComplexCoefficientMap_f_assoc]
+  by_cases hτ : τ = σ
+  · subst hτ
+    simp [LocalCoefficientSystem.ιTwistedChainComplex_twistedChainComplexCoeff]
+  · simp [LocalCoefficientSystem.ιTwistedChainComplex_twistedChainComplexCoeff_of_ne, hτ]
 
 /-- Relative maps of pairs commute with a change of coefficients on the target pair. -/
 @[reassoc]
@@ -538,7 +581,7 @@ lemma twistedHomologyMap_comp_twistedHomologyMap_eq_of_fst_comp_eq
   congr 2
   ext x : 2
   simp only [eqToHom_map, eqToHom_app, NatTrans.comp_app,
-    LocalCoefficientSystem.pullbackSquareIso_hom_app, eqToHom_trans]
+    LocalCoefficientSystem.pullbackSquareIso_hom_app_app, eqToHom_trans]
   -- Every component is now a composite of `eqToHom`s between fibres of `S` over equal points,
   -- matching up to unfolding of whiskered functors, so `erw` closes it.
   erw [eqToHom_trans, eqToHom_trans]
@@ -599,5 +642,82 @@ lemma twistedHomologyCoefficientMap_comp_twistedHomologyMap_of_eq_comp (g₁ : P
   rfl
 
 end EqualMaps
+
+section FstEq
+
+/-! ### Transport along an ambient-component equality
+
+When a map of pairs `f : P ⟶ Q` has an opaque ambient component equal to `g : P.fst ⟶ Q.fst`
+only propositionally (`hg : Hom.fst f = g`), `TopPair.twistedChainComplexMapOfFstEq` transports
+`TopPair.twistedChainComplexMap f L` to a chain map out of the pullback along `g`. -/
+
+/-- The relative twisted chain map induced by `f : P ⟶ Q`, transported along `hg : Hom.fst f = g`
+so its source uses the pullback along `g`. -/
+def twistedChainComplexMapOfFstEq {P Q : TopPair.{v}} (f : P ⟶ Q) {g : P.fst ⟶ Q.fst}
+    (hg : Hom.fst f = g) (L : LocalCoefficientSystem.{u, v, max v w} R Q.fst) :
+    P.twistedChainComplex ((LocalCoefficientSystem.pullback g.hom).obj L) ⟶
+      Q.twistedChainComplex L :=
+  eqToHom (congrArg (fun k : P.fst ⟶ Q.fst ↦
+    P.twistedChainComplex ((LocalCoefficientSystem.pullback k.hom).obj L)) hg.symm) ≫
+    twistedChainComplexMap f L
+
+/-- Transporting `TopPair.twistedChainComplexMap` along `rfl` recovers the original map. -/
+@[simp]
+lemma twistedChainComplexMapOfFstEq_rfl {P Q : TopPair.{v}} (f : P ⟶ Q)
+    (L : LocalCoefficientSystem.{u, v, max v w} R Q.fst) :
+    twistedChainComplexMapOfFstEq f rfl L = twistedChainComplexMap f L := by
+  simp [twistedChainComplexMapOfFstEq]
+
+/-- Compatibility of `TopPair.twistedChainComplexMapOfFstEq` with the quotient maps from ambient
+twisted chains. -/
+@[reassoc (attr := simp)]
+lemma twistedChainComplexπ_comp_twistedChainComplexMapOfFstEq {P Q : TopPair.{v}} (f : P ⟶ Q)
+    {g : P.fst ⟶ Q.fst} (hg : Hom.fst f = g)
+    (L : LocalCoefficientSystem.{u, v, max v w} R Q.fst) :
+    P.twistedChainComplexπ ((LocalCoefficientSystem.pullback g.hom).obj L) ≫
+        twistedChainComplexMapOfFstEq f hg L =
+      LocalCoefficientSystem.twistedChainComplexMap g L ≫ Q.twistedChainComplexπ L := by
+  subst hg
+  simp [twistedChainComplexMapOfFstEq]
+
+/-- Naturality of `TopPair.twistedChainComplexMapOfFstEq` in morphisms of local coefficients. -/
+@[reassoc]
+lemma twistedChainComplexMapOfFstEq_naturality {P Q : TopPair.{v}} (f : P ⟶ Q)
+    {g : P.fst ⟶ Q.fst} (hg : Hom.fst f = g)
+    {L K : LocalCoefficientSystem.{u, v, max v w} R Q.fst} (η : L ⟶ K) :
+    twistedChainComplexMapOfFstEq f hg L ≫ Q.twistedChainComplexCoefficientMap η =
+      P.twistedChainComplexCoefficientMap ((LocalCoefficientSystem.pullback g.hom).map η) ≫
+        twistedChainComplexMapOfFstEq f hg K := by
+  subst hg
+  simp [twistedChainComplexMapOfFstEq, twistedChainComplexMap_naturality]
+
+/-- Evaluating the coefficient of a relative chain on an image simplex after
+`TopPair.twistedChainComplexMapOfFstEq` agrees with evaluating on the original simplex. -/
+@[reassoc]
+lemma twistedChainComplexMapOfFstEq_f_comp_twistedChainComplexCoeff {P Q : TopPair.{v}}
+    (f : P ⟶ Q) {g : P.fst ⟶ Q.fst} (hg : Hom.fst f = g) [Mono g]
+    (L : LocalCoefficientSystem.{u, v, max v w} R Q.fst) {k : ℕ}
+    (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌) (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map)
+    (hσ' : ¬Set.range (TopCat.simplexMap ((TopCat.toSSet.map g).app _ σ)) ⊆ Set.range Q.map) :
+    (twistedChainComplexMapOfFstEq f hg L).f k ≫ Q.twistedChainComplexCoeff L _ hσ' =
+      P.twistedChainComplexCoeff ((LocalCoefficientSystem.pullback g.hom).obj L) σ hσ := by
+  subst hg
+  unfold twistedChainComplexMapOfFstEq
+  rw [eqToHom_refl, Category.id_comp]
+  exact twistedChainComplexMap_f_comp_twistedChainComplexCoeff f L σ hσ hσ'
+
+/-- Transporting a quasi-isomorphism of relative twisted chains along `Hom.fst f = g` preserves
+being a quasi-isomorphism. -/
+lemma quasiIso_twistedChainComplexMapOfFstEq {P Q : TopPair.{v}} (f : P ⟶ Q)
+    {g : P.fst ⟶ Q.fst} (hg : Hom.fst f = g)
+    (L : LocalCoefficientSystem.{u, v, max v w} R Q.fst)
+    (h : QuasiIso (twistedChainComplexMap f L)) :
+    QuasiIso (twistedChainComplexMapOfFstEq f hg L) := by
+  subst hg
+  unfold twistedChainComplexMapOfFstEq
+  rw [eqToHom_refl, Category.id_comp]
+  exact h
+
+end FstEq
 
 end TopPair

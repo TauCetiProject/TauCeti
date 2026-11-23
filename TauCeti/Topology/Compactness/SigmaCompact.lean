@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Maps.Proper.Basic
-public import Mathlib.Topology.Separation.Hausdorff
 import TauCeti.Topology.Compactness.Compact
 
 /-!
@@ -94,8 +93,7 @@ def unionImage {W V : Type*} [TopologicalSpace W] [TopologicalSpace V]
     refine Set.union_subset
       ((K.subset_interior_succ n).trans (interior_mono Set.subset_union_left)) ?_
     calc i '' L n ⊆ i '' interior (L (n + 1)) := Set.image_mono (L.subset_interior_succ n)
-      _ ⊆ interior (i '' L (n + 1)) :=
-          interior_maximal (Set.image_mono interior_subset) (hi_open _ isOpen_interior)
+      _ ⊆ interior (i '' L (n + 1)) := hi_open.image_interior_subset _
       _ ⊆ interior (K (n + 1) ∪ i '' L (n + 1)) := interior_mono Set.subset_union_right
   iUnion_eq' := by
     rw [Set.iUnion_union_distrib, K.iUnion_eq, Set.univ_union]
@@ -114,8 +112,7 @@ def preimage {U V : Type*} [TopologicalSpace U] [TopologicalSpace V]
   isCompact' n := hf.isCompact_preimage (K.isCompact n)
   subset_interior_succ' n :=
     (Set.preimage_mono (K.subset_interior_succ n)).trans
-      (interior_maximal (Set.preimage_mono interior_subset)
-        (isOpen_interior.preimage hf.continuous))
+      (preimage_interior_subset_interior_preimage hf.continuous)
   iUnion_eq' := by
     rw [← Set.preimage_iUnion, K.iUnion_eq, Set.preimage_univ]
 

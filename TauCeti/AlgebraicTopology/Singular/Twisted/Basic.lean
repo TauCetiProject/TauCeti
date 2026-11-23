@@ -1303,13 +1303,13 @@ comparing the two iterated pullbacks of the coefficient system. -/
 lemma twistedChainComplexMap_naturality_square :
     twistedChainComplexMap a ((pullback b.hom).obj L) ≫ twistedChainComplexMap b L =
       twistedChainComplexCoefficientMap
-          (pullbackSquareIso a.hom b.hom c.hom d.hom L (congrArg (·.hom) h)).hom ≫
+          ((pullbackSquareIso a.hom b.hom c.hom d.hom (congrArg (·.hom) h)).hom.app L) ≫
         twistedChainComplexMap c ((pullback d.hom).obj L) ≫
           twistedChainComplexMap d L := by
   have heq : twistedChainComplexCoefficientMap (eqToHom (congrArg (fun k : C(A, D) ↦
       (pullback k).obj L) (congrArg (·.hom) h))) ≫ twistedChainComplexMap (c ≫ d) L =
       twistedChainComplexMap (a ≫ b) L := (twistedChainComplexMap_congr _ _ h).symm
-  simp only [pullbackSquareIso_hom, twistedChainComplexCoefficientMap_comp, Category.assoc,
+  simp only [pullbackSquareIso_hom_app, twistedChainComplexCoefficientMap_comp, Category.assoc,
     ← twistedChainComplexMap_comp, heq]
   simp [← twistedChainComplexCoefficientMap_comp_assoc]
 
@@ -1365,10 +1365,10 @@ def restrictTwistedChainComplexMap :
         ((pullback f.hom).obj M)).twistedChainComplex ⟶
       ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj M).twistedChainComplex :=
   twistedChainComplexCoefficientMap
-      (pullbackSquareIso (TopCat.ofHom (ContinuousMap.subtypeVal A)).hom f.hom
+      ((pullbackSquareIso (TopCat.ofHom (ContinuousMap.subtypeVal A)).hom f.hom
         (TopCat.ofHom ⟨hf.restrict, f.hom.continuous.restrict hf⟩).hom
-        (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom M
-        (congrArg (·.hom) (TopCat.ofHom_subtypeVal_comp f hf))).hom ≫
+        (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom
+        (congrArg (·.hom) (TopCat.ofHom_subtypeVal_comp f hf))).hom.app M) ≫
     twistedChainComplexMap (TopCat.ofHom ⟨hf.restrict, f.hom.continuous.restrict hf⟩)
       ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj M)
 
