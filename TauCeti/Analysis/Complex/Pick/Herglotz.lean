@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pick.Nevanlinna
+public import Mathlib.MeasureTheory.Measure.ResolventTransform
 import TauCeti.Basic.Complex.Basic
 import TauCeti.Basic.Complex.OfRealSub
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
 /-!
 # The Herglotz representation on the upper half-plane in resolvent convention
@@ -26,9 +28,11 @@ weighted mass `∫ (1 + t ^ 2)⁻¹ dν` is the total mass of `ρ`.
 
 This file proves the density conversion, the existence of the representation
 `F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` with `a = Re F(i)`, `b ≥ 0` and
-`∫ (1 + t ^ 2)⁻¹ dν < ∞`, and the uniqueness of the constants `a` and `b`: `a` is read off at
-`z = i` and `b` is the limit of `Im F(i y) / y` as `y → ∞`.  Uniqueness of the measure `ν` is
-not proved here.
+`∫ (1 + t ^ 2)⁻¹ dν < ∞`, and the uniqueness of the triple `(a, b, ν)`.  The constant `a` is read
+off at `z = i` and `b` is the limit of `Im F(i y) / y` as `y → ∞`.  For the measure, the
+Nevanlinna integral of a finite measure `ρ` is `ρ(ℝ) z + (1 + z ^ 2) m_ρ(z)`, where `m_ρ` is the
+resolvent transform, so Stieltjes inversion determines `ρ`, and `ν` is recovered from
+`ρ = (1 + t ^ 2)⁻¹ ν`.
 
 ## Main declarations
 
@@ -44,6 +48,12 @@ not proved here.
   `TauCeti.tendsto_im_div_of_eq_subtractedResolventKernel_add`: the constant term is `Re F(i)`, and
   the linear coefficient is the limit of `Im F(i y) / y`.
 * `TauCeti.eq_and_eq_of_eq_subtractedResolventKernel_add`: uniqueness of the constants.
+* `TauCeti.integral_nevanlinnaKernel_eq_add_mul_resolventTransform`,
+  `MeasureTheory.Measure.ext_of_integral_nevanlinnaKernel`: a finite measure is determined by its
+  Nevanlinna integral on the upper half-plane.
+* `TauCeti.eq_of_eq_subtractedResolventKernel_add`: uniqueness of the measure.
+* `TauCeti.existsUnique_eq_subtractedResolventKernel_add`: the Herglotz representation of a Pick
+  function, with a unique triple `(a, b, ν)`.
 
 ## References
 
@@ -331,6 +341,152 @@ theorem eq_and_eq_of_eq_subtractedResolventKernel_add {F : ℂ → ℂ} {a a' b 
       (re_eq_of_eq_subtractedResolventKernel_add hrep').symm,
     tendsto_nhds_unique (tendsto_im_div_of_eq_subtractedResolventKernel_add hrep)
       (tendsto_im_div_of_eq_subtractedResolventKernel_add hrep')⟩
+
+/-- Off the real axis, the Nevanlinna integral of a finite measure `ρ` is
+`ρ(ℝ) z + (1 + z ^ 2) m_ρ(z)`, where `m_ρ` is the resolvent transform. -/
+theorem integral_nevanlinnaKernel_eq_add_mul_resolventTransform (rho : Measure ℝ)
+    [IsFiniteMeasure rho] {z : ℂ} (hz : z.im ≠ 0) :
+    ∫ t, nevanlinnaKernel z t ∂rho =
+      rho.real Set.univ * z + (1 + z ^ 2) * resolventTransform rho z := by
+  have hk : ∀ t : ℝ, nevanlinnaKernel z t = z + (1 + z ^ 2) * resolvent z t := fun t ↦ by
+    rw [nevanlinnaKernel_eq_add_div (ofReal_sub_ne_zero_of_im_ne_zero hz t), resolvent,
+      Ring.inverse_eq_inv', div_eq_mul_inv]
+    simp
+  simp_rw [hk]
+  rw [integral_add (integrable_const _)
+      ((integrable_resolvent_of_im_ne_zero hz).const_mul _), integral_const, integral_const_mul,
+    resolventTransform_apply, real_smul]
+
+/-- The resolvent transform of a finite measure is continuous at `i` along the imaginary axis. -/
+private theorem tendsto_resolventTransform_I_mul (rho : Measure ℝ) [IsFiniteMeasure rho] :
+    Tendsto (fun s : ℝ ↦ resolventTransform rho (I * (1 + s))) (𝓝[>] 0)
+      (𝓝 (resolventTransform rho I)) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_ (?_ : Tendsto (fun s : ℝ ↦
+    |s| * rho.real Set.univ) (𝓝[>] 0) (𝓝 0))
+  · filter_upwards [self_mem_nhdsWithin] with s (hs : 0 < s)
+    have hw : (I * (1 + s)).im = 1 + s := by simp
+    refine (norm_resolventTransform_sub_le (by rw [hw]; positivity) (by simp)).trans ?_
+    rw [hw, I_im, abs_one, mul_one, abs_of_pos (by positivity : (0 : ℝ) < 1 + s)]
+    have : ‖I * (1 + s) - I‖ = |s| := by
+      rw [show I * (1 + s) - I = I * s by ring, norm_mul, norm_I, one_mul, norm_real,
+        Real.norm_eq_abs]
+    rw [this]
+    gcongr
+    exact div_le_self (abs_nonneg s) (by linarith)
+  · have : Tendsto (fun s : ℝ ↦ |s| * rho.real Set.univ) (𝓝 0) (𝓝 (|0| * rho.real Set.univ)) :=
+      (continuous_abs.mul continuous_const).tendsto 0
+    simpa using this.mono_left nhdsWithin_le_nhds
+
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti
+
+/-- **A finite measure is determined by its Nevanlinna integral.** Two finite measures on `ℝ`
+whose Nevanlinna kernels have the same integral at every point of the upper half-plane are equal. -/
+theorem ext_of_integral_nevanlinnaKernel {rho rho' : Measure ℝ} [IsFiniteMeasure rho]
+    [IsFiniteMeasure rho']
+    (h : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      ∫ t, nevanlinnaKernel z t ∂rho = ∫ t, nevanlinnaKernel z t ∂rho') :
+    rho = rho' := by
+  have hrep (z : ℂ) (hz : 0 < z.im) := by
+    have := h z hz
+    rwa [integral_nevanlinnaKernel_eq_add_mul_resolventTransform _ hz.ne',
+      integral_nevanlinnaKernel_eq_add_mul_resolventTransform _ hz.ne'] at this
+  have hmass : rho.real Set.univ = rho'.real Set.univ := by
+    simpa using congrArg im (hrep I (by simp))
+  have hne {z : ℂ} (hz : 0 < z.im) (hzI : z ≠ I) :
+      resolventTransform rho z = resolventTransform rho' z := by
+    have h1 : 1 + z ^ 2 ≠ 0 := by
+      have : 1 + z ^ 2 = (z - I) * (z + I) := by ring_nf; rw [I_sq]; ring
+      rw [this]
+      refine mul_ne_zero (sub_ne_zero.2 hzI) fun h0 ↦ ?_
+      have := congrArg im h0
+      simp only [add_im, I_im, zero_im] at this
+      linarith
+    have := hrep z hz
+    rw [hmass, _root_.add_right_inj] at this
+    exact mul_left_cancel₀ h1 this
+  refine ext_of_resolventTransform fun z hz ↦ ?_
+  rcases eq_or_ne z I with rfl | hzI
+  · refine tendsto_nhds_unique (tendsto_resolventTransform_I_mul rho)
+      ((tendsto_resolventTransform_I_mul rho').congr' ?_)
+    filter_upwards [self_mem_nhdsWithin] with s (hs : 0 < s)
+    refine (hne (by simpa using (by positivity : (0 : ℝ) < 1 + s)) fun h0 ↦ ?_).symm
+    have := congrArg im h0
+    simp only [mul_im, I_re, I_im, add_re, one_re, ofReal_re, add_im, one_im, ofReal_im] at this
+    linarith
+  · exact hne hz hzI
+
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+/-- Integrals of the subtracted resolvent kernel against a measure `ν` of finite weighted mass
+are Nevanlinna integrals of the finite measure `(1 + t ^ 2)⁻¹ ν`. -/
+private theorem integral_subtractedResolventKernel_eq {nu : Measure ℝ} {z : ℂ} (hz : z.im ≠ 0) :
+    ∫ t, subtractedResolventKernel z t ∂nu =
+      ∫ t, nevanlinnaKernel z t ∂nu.withDensity fun t ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹ := by
+  conv_lhs => rw [← nu.withDensity_inv_one_add_sq_withDensity]
+  exact Measure.integral_subtractedResolventKernel_withDensity _ hz
+
+/-- **Uniqueness of the measure of a Herglotz representation.** Two representations
+`F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` of the same function on the upper
+half-plane, with measures of finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`, have the same measure.
+The finiteness is needed: for measures of infinite weighted mass the integral term vanishes. -/
+theorem eq_of_eq_subtractedResolventKernel_add {F : ℂ → ℂ} {a a' b b' : ℝ}
+    {nu nu' : Measure ℝ} (hnu : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤)
+    (hnu' : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu' < ⊤)
+    (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu)
+    (hrep' : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      F z = a' + b' * z + ∫ t, subtractedResolventKernel z t ∂nu') :
+    nu = nu' := by
+  obtain ⟨rfl, rfl⟩ := eq_and_eq_of_eq_subtractedResolventKernel_add hrep hrep'
+  have := isFiniteMeasure_withDensity hnu.ne
+  have := isFiniteMeasure_withDensity hnu'.ne
+  suffices h : nu.withDensity (fun t ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹) =
+      nu'.withDensity (fun t ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹) by
+    rw [← nu.withDensity_inv_one_add_sq_withDensity, h,
+      nu'.withDensity_inv_one_add_sq_withDensity]
+  refine Measure.ext_of_integral_nevanlinnaKernel fun z hz ↦ ?_
+  have := (hrep z hz).symm.trans (hrep' z hz)
+  rwa [add_right_inj, integral_subtractedResolventKernel_eq (ne_of_gt hz),
+    integral_subtractedResolventKernel_eq (ne_of_gt hz)] at this
+
+/-- **Uniqueness of a Herglotz representation.** Two representations
+`F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` of the same function on the upper
+half-plane, with measures of finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`, have the same triple
+`(a, b, ν)`. -/
+theorem eq_and_eq_and_eq_of_eq_subtractedResolventKernel_add {F : ℂ → ℂ} {a a' b b' : ℝ}
+    {nu nu' : Measure ℝ} (hnu : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤)
+    (hnu' : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu' < ⊤)
+    (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu)
+    (hrep' : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      F z = a' + b' * z + ∫ t, subtractedResolventKernel z t ∂nu') :
+    a = a' ∧ b = b' ∧ nu = nu' :=
+  ⟨(eq_and_eq_of_eq_subtractedResolventKernel_add hrep hrep').1,
+    (eq_and_eq_of_eq_subtractedResolventKernel_add hrep hrep').2,
+    eq_of_eq_subtractedResolventKernel_add hnu hnu' hrep hrep'⟩
+
+/-- **The Herglotz representation theorem.** A function holomorphic on the upper half-plane with
+nonnegative imaginary part has a unique representation
+`F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` with `b ≥ 0` and `ν` a positive measure
+of finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`; its constant term is `a = Re F(i)`. -/
+theorem existsUnique_eq_subtractedResolventKernel_add {F : ℂ → ℂ}
+    (hF : DifferentiableOn ℂ F UpperHalfPlane.upperHalfPlaneSet)
+    (him : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, 0 ≤ (F z).im) :
+    ∃! p : ℝ × ℝ × Measure ℝ, 0 ≤ p.2.1 ∧ ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂p.2.2 < ⊤ ∧
+      ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+        F z = p.1 + p.2.1 * z + ∫ t, subtractedResolventKernel z t ∂p.2.2 := by
+  obtain ⟨b, nu, hb, hnu, hrep⟩ := exists_eq_subtractedResolventKernel_add hF him
+  refine ⟨((F I).re, b, nu), ⟨hb, hnu, hrep⟩, fun ⟨a', b', nu'⟩ ⟨_, hnu', hrep'⟩ ↦ ?_⟩
+  obtain ⟨rfl, rfl, rfl⟩ :=
+    eq_and_eq_and_eq_of_eq_subtractedResolventKernel_add hnu' hnu hrep' hrep
+  rfl
 
 end TauCeti
 
