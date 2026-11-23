@@ -249,10 +249,11 @@ theorem can_transition_tmul (l : L) (a : R₁) (n : N) :
 `(R₁ ⊗[R] N) × (R₂ ⊗[R] N) → L ⊗[R] N`. -/
 theorem mem_sections_can_iff (x : (R₁ ⊗[R] N) × (R₂ ⊗[R] N)) :
     x ∈ (can R R₁ R₂ L N).sections ↔ patchingDifference R R₁ R₂ L N x = 0 := by
-  refine ((can R R₁ R₂ L N).mem_sections_iff x).trans ?_
-  rw [patchingDifference_apply, sub_eq_zero, ← AlgebraTensorModule.cancelBaseChange_one_tmul,
-    ← AlgebraTensorModule.cancelBaseChange_one_tmul]
-  exact LinearEquiv.symm_apply_eq _
+  refine ((can R R₁ R₂ L N).mem_sections_iff x).trans ((LinearEquiv.symm_apply_eq _).trans ?_)
+  rw [patchingDifference_apply, sub_eq_zero]
+  exact Iff.of_eq <| congrArg₂ (· = ·)
+    ((AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor 1 x.1).trans (one_smul L _))
+    ((AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor 1 x.2).trans (one_smul L _))
 
 variable {N} in
 /-- A morphism `Can N ⟶ D` from maps of the two pieces that are compatible on the elements
