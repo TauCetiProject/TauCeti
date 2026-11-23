@@ -7,9 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
-import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import TauCeti.Analysis.SpecificLimits.SuperlogarithmicGeometric
+import TauCeti.MeasureTheory.Integral.Bochner.Markov
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
@@ -65,19 +65,13 @@ theorem ae_forall_eventually_lt_of_summable_integral_div_pow (hL : 0 ≤ L)
   -- Markov's inequality for `Z n` at the level `c ^ k n` bounds each exceedance probability.
   have hmarkov (n : ℕ) :
       μ {ω | c ≤ Y n ω} ≤ ENNReal.ofReal ((∫ ω, Z n ω ∂μ) / c ^ k n) := by
-    have hck : 0 < c ^ k n := pow_pos hc₀ _
-    calc μ {ω | c ≤ Y n ω}
-        ≤ μ {ω | ENNReal.ofReal (c ^ k n) ≤ ENNReal.ofReal (Z n ω)} :=
-          measure_mono_ae <| by
-            filter_upwards [hYZ n] with ω hω (hcY : c ≤ Y n ω)
-            exact ENNReal.ofReal_le_ofReal
-              ((pow_le_pow_left₀ hc₀.le (hcY.trans (le_abs_self _)) _).trans hω)
-      _ ≤ (∫⁻ ω, ENNReal.ofReal (Z n ω) ∂μ) / ENNReal.ofReal (c ^ k n) :=
-          meas_ge_le_lintegral_div (hZ n).aemeasurable.ennreal_ofReal
-            (ENNReal.ofReal_pos.2 hck).ne' ENNReal.ofReal_ne_top
-      _ = ENNReal.ofReal ((∫ ω, Z n ω ∂μ) / c ^ k n) := by
-          rw [← ofReal_integral_eq_lintegral_ofReal (hZ n) (hZ₀ n),
-            ENNReal.ofReal_div_of_pos hck]
+    have hsub : {ω | c ≤ Y n ω} ≤ᵐ[μ] {ω | c ^ k n ≤ Z n ω} := by
+      filter_upwards [hYZ n] with ω hω (hcY : c ≤ Y n ω)
+      exact (pow_le_pow_left₀ hc₀.le (hcY.trans (le_abs_self _)) _).trans hω
+    refine (measure_mono_ae hsub).trans ?_
+    simpa only [pow_one] using meas_ge_le_integral_pow_div_pow (Y := Z n) 1
+      (by simpa only [pow_one] using hZ n) ((hZ₀ n).mono fun _ h ↦ by simpa only [pow_one] using h)
+      (pow_pos hc₀ _)
   have hnonneg (n : ℕ) : 0 ≤ (∫ ω, Z n ω ∂μ) / c ^ k n :=
     div_nonneg (integral_nonneg_of_ae (hZ₀ n)) (pow_nonneg hc₀.le _)
   refine ne_top_of_le_ne_top ?_ (tsum_le_tsum hmarkov)

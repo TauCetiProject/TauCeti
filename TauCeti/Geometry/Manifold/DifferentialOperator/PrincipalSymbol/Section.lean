@@ -54,6 +54,8 @@ symbol is its fibre map.
   operator.
 * `TauCeti.sectionPrincipalSymbol I hx P`: the principal symbol of `P` at `x`, a homogeneous
   function of degree `m` on `T_x*M` with values in `Hom(V_x, W_x)`.
+* `TauCeti.sectionPrincipalSymbolₗ I hx P`: for `P` of order at most one, the principal symbol at
+  `x` as a linear map on `T_x*M`.
 
 ## Main results
 
@@ -65,7 +67,7 @@ symbol is its fibre map.
 * `TauCeti.smoothSectionFiberEquiv_cotangentSymbol`: comparison with the cotangent symbol of the
   vanishing ideal, through `I_x / I_x² ≃ T_x*M` and `Γ(V) / I_x Γ(V) ≃ V_x`.
 * `TauCeti.sectionPrincipalSymbol_smul_covector`: the principal symbol is homogeneous of degree
-  `m`.
+  `m`; for `m = 1` it is moreover additive (`TauCeti.sectionPrincipalSymbol_add_covector`).
 * `TauCeti.sectionCommutatorSymbol_eq_zero_of_mem_differentialOperators`,
   `TauCeti.sectionPrincipalSymbol_eq_zero_of_mem_differentialOperators`: an operator of order at
   most `m`, viewed as one of order at most `m + 1`, has vanishing commutator and principal
@@ -195,6 +197,38 @@ theorem sectionPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m : ℕ
   simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, RingHom.id_apply] at h
   rw [sectionPrincipalSymbol_def, sectionPrincipalSymbol_def, h]
   exact smul_comm _ _ _
+
+/-- The principal symbol of an operator of order at most one is additive in the covector. -/
+theorem sectionPrincipalSymbol_add_covector (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 1)
+    (ξ η : TangentSpace I x →L[ℝ] ℝ) :
+    sectionPrincipalSymbol I hx P (ξ + η) =
+      sectionPrincipalSymbol I hx P ξ + sectionPrincipalSymbol I hx P η := by
+  -- A family indexed by `Fin 1` is its value at `0`.
+  have hu (ζ : TangentSpace I x →L[ℝ] ℝ) :
+      Function.update (fun _ : Fin 1 ↦ ξ) 0 ζ = fun _ ↦ ζ :=
+    funext fun j ↦ by rw [Fin.fin_one_eq_zero j, Function.update_self]
+  have h := (sectionCommutatorSymbol I hx P).map_update_add (fun _ ↦ ξ) 0 ξ η
+  rw [hu, hu, hu] at h
+  rw [sectionPrincipalSymbol_def, sectionPrincipalSymbol_def, sectionPrincipalSymbol_def, h,
+    smul_add]
+
+variable (I) in
+/-- The principal symbol at `x` of an operator of order at most one, as a linear map in the
+covector. -/
+def sectionPrincipalSymbolₗ (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 1) :
+    (TangentSpace I x →L[ℝ] ℝ) →ₗ[ℝ] V x →ₗ[ℝ] W x where
+  toFun := sectionPrincipalSymbol I hx P
+  map_add' := sectionPrincipalSymbol_add_covector hx P
+  map_smul' a ξ := by simpa using sectionPrincipalSymbol_smul_covector hx P a ξ
+
+@[simp]
+theorem sectionPrincipalSymbolₗ_apply (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 1)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    sectionPrincipalSymbolₗ I hx P ξ = sectionPrincipalSymbol I hx P ξ :=
+  (rfl)
 
 @[simp]
 theorem sectionPrincipalSymbol_neg (hx : I.IsInteriorPoint x) {m : ℕ}

@@ -88,6 +88,13 @@ namespace MeasureTheory
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
+/-- An a.e. strongly measurable function is square integrable if its totalized squared-norm
+integral is nonzero. -/
+theorem AEStronglyMeasurable.memLp_two_of_integral_norm_sq_ne_zero
+    {F : Type*} [NormedAddCommGroup F] {f : α → F} (hf : AEStronglyMeasurable f μ)
+    (h : ∫ x, ‖f x‖ ^ 2 ∂μ ≠ 0) : MemLp f 2 μ :=
+  (memLp_two_iff_integrable_sq_norm hf).2 (Integrable.of_integral_ne_zero h)
+
 /-- The pointwise inner product of two square-integrable functions is integrable. -/
 theorem MemLp.integrable_inner {f g : α → E} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
     Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=

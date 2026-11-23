@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.Topology.Sets.Opens
 public import TauCeti.MeasureTheory.Function.Lp.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
@@ -23,6 +24,7 @@ import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
+import TauCeti.MeasureTheory.Measure.Restrict
 import TauCeti.MeasureTheory.OuterMeasure.AE
 
 /-!
@@ -73,10 +75,13 @@ bounds.
   everywhere class.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
   any representative.
+* `MeasureTheory.Lp.memLp_of_restrict_coe_opens_top` and
+  `MeasureTheory.Lp.norm_eq_lpNorm_of_restrict_coe_opens_top`: an element of `Lᵖ` over the whole
+  space, written as the top open set, is an `Lᵖ` function for the measure itself, with the same
+  norm.
 * `MeasureTheory.lpNorm_le_norm_of_ae_eq_of_le`: for `ν ≤ ν'`, the `Lᵖ(ν)` norm of a
   representative of an element of `Lᵖ(ν')` is at most its norm.
-* `MeasureTheory.Lp.ae_norm_le_norm_top` and `MeasureTheory.Lp.norm_top_le_of_ae_bound`: an `L∞`
-  function is bounded almost everywhere by its norm, and an almost everywhere bound bounds the
+* `MeasureTheory.Lp.ae_norm_le_norm_top`: an `L∞` function is bounded almost everywhere by its
   norm, for any measure.
 * `MeasureTheory.Lp.norm_toLp_memLp_top_const_le`: the `L∞` class of a constant `c` has norm at
   most `‖c‖`.
@@ -323,6 +328,23 @@ theorem Lp.norm_eq_lpNorm_of_ae_eq {alpha F : Type*} [MeasurableSpace alpha]
     (h : f =ᵐ[ν] g) : ‖f‖ = lpNorm g p ν := by
   rw [← lpNorm_congr_ae h, Lp.norm_def, toReal_eLpNorm]
 
+/-- An element of `Lᵖ` over the whole space, written as the top open set, is an `Lᵖ` function for
+the measure itself. -/
+theorem Lp.memLp_of_restrict_coe_opens_top {alpha F : Type*} [MeasurableSpace alpha]
+    [TopologicalSpace alpha] [NormedAddCommGroup F] {ν : Measure alpha} {p : ℝ≥0∞}
+    (f : Lp F p (ν.restrict ((⊤ : TopologicalSpace.Opens alpha) : Set alpha))) :
+    MemLp f p ν :=
+  (congrArg (fun μ => MemLp f p μ) (Measure.restrict_coe_opens_top ν)).mp (Lp.memLp f)
+
+/-- The norm of an element of `Lᵖ` over the whole space, written as the top open set, is its `Lᵖ`
+norm for the measure itself. -/
+theorem Lp.norm_eq_lpNorm_of_restrict_coe_opens_top {alpha F : Type*} [MeasurableSpace alpha]
+    [TopologicalSpace alpha] [NormedAddCommGroup F] {ν : Measure alpha} {p : ℝ≥0∞}
+    (f : Lp F p (ν.restrict ((⊤ : TopologicalSpace.Opens alpha) : Set alpha))) :
+    ‖f‖ = lpNorm f p ν :=
+  (Lp.norm_eq_lpNorm_of_ae_eq EventuallyEq.rfl).trans
+    (congrArg (lpNorm f p) (Measure.restrict_coe_opens_top ν))
+
 /-- The `Lᵖ(ν)` norm of a function agreeing `ν`-almost everywhere with an element of `Lᵖ(ν')`, for
 `ν ≤ ν'`, is at most the norm of that element. -/
 theorem lpNorm_le_norm_of_ae_eq_of_le {alpha F : Type*} [MeasurableSpace alpha]
@@ -331,7 +353,8 @@ theorem lpNorm_le_norm_of_ae_eq_of_le {alpha F : Type*} [MeasurableSpace alpha]
   rw [lpNorm_congr_ae h, ← toReal_eLpNorm, Lp.norm_def]
   exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) (eLpNorm_mono_measure _ hν)
 
-/-- An `L∞` function is bounded almost everywhere by its norm. -/
+/-- An `L∞` function is bounded almost everywhere by its norm. The converse bound is
+`MeasureTheory.Lp.norm_le_of_ae_bound_top`. -/
 theorem Lp.ae_norm_le_norm_top {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
     {m : Measure alpha} (f : Lp F ∞ m) : ∀ᵐ x ∂m, ‖f x‖ ≤ ‖f‖ := by
   simpa [Lp.norm_def, toReal_eLpNorm] using ae_le_lpNorm_exponent_top (Lp.memLp f)
@@ -350,19 +373,11 @@ theorem Lp.norm_le_norm_top_of_ae_eq_of_continuousAt {alpha F : Type*} [Topologi
   exact (m.measure_pos_of_mem_nhds (hg.norm.eventually (lt_mem_nhds h))).ne'
     (measure_eq_zero_iff_ae_notMem.2 hae)
 
-/-- An almost everywhere bound on an `L∞` function bounds its norm, whatever the measure. Compare
-`MeasureTheory.Lp.norm_le_of_ae_bound`, which needs a finite measure. -/
-theorem Lp.norm_top_le_of_ae_bound {alpha F : Type*} [MeasurableSpace alpha]
-    [NormedAddCommGroup F] {m : Measure alpha} {f : Lp F ∞ m} {c : ℝ} (hc : 0 ≤ c)
-    (h : ∀ᵐ x ∂m, ‖f x‖ ≤ c) : ‖f‖ ≤ c := by
-  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
-  exact ENNReal.toReal_le_of_le_ofReal hc (eLpNormEssSup_le_of_ae_bound h)
-
 /-- The `L∞` class of the constant function `c` has norm at most `‖c‖`, whatever the measure. -/
 theorem Lp.norm_toLp_memLp_top_const_le {alpha F : Type*} [MeasurableSpace alpha]
     [NormedAddCommGroup F] {m : Measure alpha} (c : F) :
     ‖(memLp_top_const (μ := m) c).toLp _‖ ≤ ‖c‖ := by
-  refine Lp.norm_top_le_of_ae_bound (norm_nonneg c) ?_
+  refine Lp.norm_le_of_ae_bound_top (norm_nonneg c) ?_
   filter_upwards [(memLp_top_const (μ := m) c).coeFn_toLp] with x hx
   rw [hx]
 
@@ -383,7 +398,7 @@ theorem Lp.measure_lt_norm_ne_zero {alpha F : Type*} [MeasurableSpace alpha]
   intro hms
   have hae : ∀ᵐ x ∂m, ‖f x‖ ≤ c :=
     (measure_eq_zero_iff_ae_notMem.mp hms).mono fun x hx ↦ le_of_not_gt hx
-  exact (not_lt_of_ge (Lp.norm_top_le_of_ae_bound hc_nonneg hae)) hc
+  exact (not_lt_of_ge (Lp.norm_le_of_ae_bound_top hc_nonneg hae)) hc
 
 /-- The norm of a nonnegative real `L¹` function is its integral. -/
 theorem L1.norm_eq_integral_of_nonneg {alpha : Type*} [MeasurableSpace alpha] {m : Measure alpha}
