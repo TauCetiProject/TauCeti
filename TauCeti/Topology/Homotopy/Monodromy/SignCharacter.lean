@@ -31,13 +31,17 @@ conjugate classes after a change of basepoint (`Path.joined_toCircle_iff_isConj`
 character of the loop `t ↦ f(e^{2πit})` at `f 1` is an invariant of the path component of `f`
 (`IsCoveringMap.freeLoopSignCharacter`, `IsCoveringMap.freeLoopSignCharacter_eq_of_joined`). For
 a double cover it is `1` exactly when `f` lifts to the cover
-(`IsCoveringMap.freeLoopSignCharacter_eq_one_iff`).
+(`IsCoveringMap.freeLoopSignCharacter_eq_one_iff`). On the Moore free loop space, the
+**orientation exponent** of a free loop is `0` when its sign is `1` and `-1` otherwise
+(`IsCoveringMap.orientationExponent`); it is constant on path components
+(`IsCoveringMap.orientationExponent_eq_of_joined`).
 
 ## Main definitions
 
 * `IsCoveringMap.signCharacter`: the sign of the monodromy permutation of a finite fibre, as a
   homomorphism `π₁(X, x) →* ℤˣ`.
 * `IsCoveringMap.freeLoopSignCharacter`: the sign character of a free loop `S¹ → X`.
+* `IsCoveringMap.orientationExponent`: the exponent `w`, `0` or `-1`, of a Moore free loop.
 
 ## Main results
 
@@ -276,5 +280,32 @@ theorem freeLoopSignCharacter_eq_one_iff {σ : E → E}
         exact hs _)
       (by simp)).trans ?_)
     simp
+
+/-- **The orientation exponent** `w` of a Moore free loop: `0` when the loop has sign `1`, so that
+for the orientation cover of a vector bundle the bundle pulled back along the loop is orientable,
+and `-1` otherwise. -/
+def orientationExponent (γ : MooreFreeLoopSpace X) : ℤ :=
+  if hp.freeLoopSignCharacter hfin (MooreFreeLoopSpace.toCircleMap γ) = 1 then 0 else -1
+
+/-- The orientation exponent of a free loop is `0` exactly when its sign in `ℤˣ` is `1`. -/
+@[simp]
+theorem orientationExponent_eq_zero_iff (γ : MooreFreeLoopSpace X) :
+    hp.orientationExponent hfin γ = 0 ↔
+      hp.freeLoopSignCharacter hfin (MooreFreeLoopSpace.toCircleMap γ) = 1 := by
+  simp [orientationExponent]
+
+/-- The orientation exponent of a free loop is `-1` exactly when its sign in `ℤˣ` is `-1`. -/
+@[simp]
+theorem orientationExponent_eq_neg_one_iff (γ : MooreFreeLoopSpace X) :
+    hp.orientationExponent hfin γ = -1 ↔
+      hp.freeLoopSignCharacter hfin (MooreFreeLoopSpace.toCircleMap γ) = -1 := by
+  rcases Int.units_eq_one_or (hp.freeLoopSignCharacter hfin (MooreFreeLoopSpace.toCircleMap γ))
+    with h | h <;> simp [orientationExponent, h]
+
+/-- The orientation exponent is constant on the path components of the free loop space. -/
+theorem orientationExponent_eq_of_joined {γ δ : MooreFreeLoopSpace X} (h : Joined γ δ) :
+    hp.orientationExponent hfin γ = hp.orientationExponent hfin δ := by
+  rw [orientationExponent, orientationExponent, hp.freeLoopSignCharacter_eq_of_joined hfin
+    (h.map MooreFreeLoopSpace.toCircleMap.continuous)]
 
 end IsCoveringMap

@@ -92,8 +92,8 @@ the sign by which transport along it acts on local orientations. -/
 theorem orientation_ρ_apply (hd : finrank ℝ E = d) {x : M} (γ : MooreLoopSpace M x) :
     (orientation R hd x).ρ γ =
       Units.map (Int.castRingHom R).toMonoidHom
-        (orientationCharacter hd x (MooreLoopSpace.fundamentalGroupHom x γ)) := by
-  rw [orientation, ofMonodromy_ρ_apply, MonoidHom.comp_apply, ← map_inv, Int.units_inv_eq_self]
+        (orientationCharacter hd x (MooreLoopSpace.fundamentalGroupHom x γ)) :=
+  ofMonodromy_unitsMap_comp_ρ_apply _ γ
 
 /-- **The orientation local system is its own inverse**, since the orientation character takes
 only the values `±1`. -/
