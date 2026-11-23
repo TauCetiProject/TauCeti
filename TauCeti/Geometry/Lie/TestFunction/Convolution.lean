@@ -139,6 +139,7 @@ def convolution : LieTestFunction I G →ₗ[ℂ] LieTestFunction I G →ₗ[ℂ
       simp only [convolutionAux_apply, smul_apply, smul_eq_mul, mul_left_comm _ c]
       exact integral_const_mul c _)
 
+@[simp]
 theorem convolution_apply (a b : LieTestFunction I G) (g : G) :
     convolution μ a b g = ∫ x, a x * b (x⁻¹ * g) ∂μ :=
   (rfl)
@@ -233,12 +234,9 @@ theorem inversion_convolution (a b : LieTestFunction I G) :
 left-invariant measure: `(a * b)^* = b^* * a^*`. -/
 theorem involution_convolution (a b : LieTestFunction I G) :
     involution (convolution μ a b) = convolution μ (involution b) (involution a) := by
-  ext g
-  simp only [involution_apply, convolution_apply, mul_inv_rev, inv_inv]
-  rw [← integral_conj]
-  conv_rhs => rw [← integral_mul_left_eq_self _ g]
-  congr 1 with x
-  simp [mul_comm]
+  have h (c : LieTestFunction I G) : involution c = conj (inversion c) := by
+    ext; simp
+  rw [h, h, h, inversion_convolution, conj_convolution]
 
 end LeftInvariant
 
