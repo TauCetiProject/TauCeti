@@ -15,8 +15,8 @@ import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 Every field `K` algebraic over `ℚ` has a largest subfield `E_K` that is totally real or CM,
 `TauCeti.NumberField.maximalRealOrCMSubfield K`. It contains Mathlib's maximal real subfield
-`K⁺ = NumberField.maximalRealSubfield K`, it is CM exactly when `K` has a CM subfield (and then it
-is the maximal CM subfield of `K`), and `[E_K : K⁺] ≤ 2`.
+`K⁺ = NumberField.maximalRealSubfield K`, and it is CM exactly when `K` has a CM subfield (and then
+it is the maximal CM subfield of `K`). When `K⁺` is finite over `ℚ`, `[E_K : K⁺] ≤ 2`.
 
 The construction uses a normal extension `Ω` of `ℚ` containing a copy of `K`, such as an algebraic
 closure of `ℚ`, and its complex conjugations. Let `H` be
@@ -27,9 +27,9 @@ fixed field of `H`; by Milne's criterion
 `K` that is totally real or CM. For a number field `K`, two embeddings of `K` into `Ω` agree on
 `E_K` exactly when they differ by an element of `H`, or equivalently of its closure.
 
-The last section proves the Artin–Weil factorization: a function `m` on embeddings
-`K →+* Ω` with `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c` depends only on the
-restriction of `τ` to `E_K`, and satisfies `2 • m(τ) = w` when `K` has no CM subfield.
+The last section proves the Artin–Weil factorization. For a number field `K`, a function `m` on
+embeddings `K →+* Ω` with `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c` depends only
+on the restriction of `τ` to `E_K`, and satisfies `2 • m(τ) = w` when `K` has no CM subfield.
 
 ## Main definitions
 
@@ -93,17 +93,12 @@ def cmSubgroup : Subgroup Gal(Ω/ℚ) :=
 /-- `cmSubgroup Ω` is normal, since the set of complex conjugations is stable under
 conjugation. -/
 instance cmSubgroup_normal : (cmSubgroup Ω).Normal := by
-  refine ⟨fun n hn g ↦ ?_⟩
-  induction hn using Subgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨c₁, hc₁, c₂, hc₂, rfl⟩ := hx
-    refine Subgroup.subset_closure ⟨_, ?_, _, inv_mul_mul_mem_complexConjugations hc₂ g⁻¹,
-      (by group : (g * c₁ * g⁻¹) * (g * c₂ * g⁻¹) = g * (c₁ * c₂) * g⁻¹)⟩
-    simpa using inv_mul_mul_mem_complexConjugations hc₁ g⁻¹
-  | one => simp
-  | mul x y _ _ hx hy =>
-    simpa [mul_assoc] using mul_mem hx hy
-  | inv x _ hx => simpa [mul_assoc] using inv_mem hx
+  rw [← Subgroup.normalizer_eq_top_iff, ← top_le_iff, cmSubgroup,
+    Subgroup.le_normalizer_closure_iff]
+  rintro g - _ ⟨c₁, hc₁, c₂, hc₂, rfl⟩
+  refine Subgroup.subset_closure ⟨_, ?_, _, inv_mul_mul_mem_complexConjugations hc₂ g⁻¹,
+    (by group : (g * c₁ * g⁻¹) * (g * c₂ * g⁻¹) = g * (c₁ * c₂) * g⁻¹)⟩
+  simpa using inv_mul_mul_mem_complexConjugations hc₁ g⁻¹
 
 variable {Ω}
 
@@ -117,9 +112,8 @@ complex conjugations. -/
 theorem cmSubgroup_le_iff {P : Subgroup Gal(Ω/ℚ)} :
     cmSubgroup Ω ≤ P ↔
       ∀ c₁ ∈ complexConjugations Ω, ∀ c₂ ∈ complexConjugations Ω, c₁ * c₂ ∈ P := by
-  rw [cmSubgroup, Subgroup.closure_le]
-  exact ⟨fun h c₁ hc₁ c₂ hc₂ ↦ h ⟨c₁, hc₁, c₂, hc₂, rfl⟩,
-    fun h ↦ by rintro _ ⟨c₁, hc₁, c₂, hc₂, rfl⟩; exact h c₁ hc₁ c₂ hc₂⟩
+  rw [cmSubgroup, Subgroup.closure_le, Set.mul_subset_iff]
+  rfl
 
 /-- An element of `Ω` is fixed by `cmSubgroup Ω` if and only if every product of two complex
 conjugations fixes it. -/
@@ -276,8 +270,11 @@ theorem map_maximalRealSubfield_maximalRealOrCMSubfield :
     rw [← ComplexEmbedding.lift_algebraMap_apply K φ]
     exact hx (ComplexEmbedding.lift K φ)
 
-/-- **`[E_K : K⁺]` is `1` or `2`**, stated through degrees over `ℚ`: `[E_K : ℚ]` is `[K⁺ : ℚ]` or
-`2 [K⁺ : ℚ]`. When `K⁺` is infinite over `ℚ` both degrees are `0` and this says nothing. -/
+/-- **`[E_K : ℚ]` is `[K⁺ : ℚ]` or `2 [K⁺ : ℚ]`.** When `K⁺` is finite over `ℚ`, this says that
+`[E_K : K⁺]` is `1` or `2`; when `K⁺` is infinite over `ℚ` both degrees are `0` and it says
+nothing. Over `K⁺` itself, `E_K` is `K⁺` or a quadratic extension of its maximal real subfield
+(Mathlib's `Algebra.IsQuadraticExtension` for a CM field), which is `K⁺` by
+`map_maximalRealSubfield_maximalRealOrCMSubfield`. -/
 theorem finrank_maximalRealOrCMSubfield :
     Module.finrank ℚ (maximalRealOrCMSubfield K) = Module.finrank ℚ (maximalRealSubfield K) ∨
       Module.finrank ℚ (maximalRealOrCMSubfield K) =
@@ -306,7 +303,7 @@ theorem map_maximalRealOrCMSubfield {K' : Type*} [Field K'] [CharZero K']
   ext y
   have : y ∈ (maximalRealOrCMSubfield K).map (σ : K →+* K') ↔
       σ.symm y ∈ maximalRealOrCMSubfield K :=
-    ⟨fun ⟨x, hx, hxy⟩ ↦ by simpa [← hxy] using hx, fun h ↦ ⟨_, h, σ.apply_symm_apply y⟩⟩
+    Set.mem_image_equiv (f := σ.toEquiv)
   rw [this, mem_maximalRealOrCMSubfield_iff
     ((toAlgebraicClosure K').comp (σ : K →+* K')),
     mem_maximalRealOrCMSubfield_iff (toAlgebraicClosure K')]
@@ -426,7 +423,7 @@ section ArtinWeil
 /-! ### The Artin–Weil factorization -/
 
 variable [NumberField K] {Ω : Type*} [Field Ω] [CharZero Ω] [Normal ℚ Ω]
-  {A : Type*} [AddCommGroup A] {m : (K →+* Ω) → A} {w : A}
+  {A : Type*} [AddCancelCommMonoid A] {m : (K →+* Ω) → A} {w : A}
 
 omit [NumberField K] [Normal ℚ Ω] in
 /-- A function on embeddings with the conjugation relation is invariant under `cmSubgroup Ω`. -/
@@ -442,10 +439,8 @@ private theorem apply_comp_eq_of_mem_cmSubgroup
     have h₂ := hm c₂ hc₂ τ
     rw [← RingHom.comp_assoc] at h₁
     rw [hmul]
-    linear_combination (norm := abel) h₁ - h₂
-  | one =>
-    rw [show ((1 : Gal(Ω/ℚ)) : Ω →+* Ω) = RingHom.id Ω from
-      RingHom.ext fun _ ↦ AlgEquiv.one_apply _, RingHom.id_comp]
+    exact add_right_cancel (h₁.trans (h₂.symm.trans (add_comm _ _)))
+  | one => congr 1
   | mul x y _ _ hx hy =>
     rw [hmul, RingHom.comp_assoc, hx, hy]
   | inv x _ hx =>
@@ -455,17 +450,17 @@ private theorem apply_comp_eq_of_mem_cmSubgroup
     simp
 
 /-- **Artin–Weil factorization (Milne, *Complex Multiplication*, I, proof of Proposition 4.9).**
-If `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c` and every embedding `τ : K →+* Ω`, then
-`m(τ)` depends only on the restriction of `τ` to `E_K`. -/
+For a number field `K`, if `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c` and every
+embedding `τ : K →+* Ω`, then `m(τ)` depends only on the restriction of `τ` to `E_K`. -/
 theorem apply_eq_apply_of_eqOn_maximalRealOrCMSubfield
     (hm : ∀ c ∈ complexConjugations Ω, ∀ τ, m ((c : Ω →+* Ω).comp τ) + m τ = w)
     {τ τ' : K →+* Ω} (h : ∀ x ∈ maximalRealOrCMSubfield K, τ x = τ' x) : m τ = m τ' := by
   obtain ⟨g, hg, rfl⟩ := (exists_mem_cmSubgroup_iff_eqOn_maximalRealOrCMSubfield τ τ').mpr h
   exact (apply_comp_eq_of_mem_cmSubgroup hm hg τ).symm
 
-/-- **Without a CM subfield the conjugation relation forces `2 • m = w`.** If `K` has no CM
-subfield and `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c` and every embedding `τ`,
-then `2 • m(τ) = w`. -/
+/-- **Without a CM subfield the conjugation relation forces `2 • m = w`.** If a number field `K`
+has no CM subfield and `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c` and every
+embedding `τ`, then `2 • m(τ) = w`. -/
 theorem two_nsmul_eq_of_forall_not_isCMField (hK : ∀ F : Subfield K, ¬ IsCMField F)
     (hm : ∀ c ∈ complexConjugations Ω, ∀ τ, m ((c : Ω →+* Ω).comp τ) + m τ = w)
     (τ : K →+* Ω) : 2 • m τ = w := by

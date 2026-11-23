@@ -99,6 +99,7 @@ theorem mem_complexConjugations_iff {c : Gal(Ω/ℚ)} :
   Iff.rfl
 
 /-- A complex conjugation is an involution. -/
+@[simp]
 theorem mul_self_of_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω) :
     c * c = 1 := by
   obtain ⟨ι, hι⟩ := hc
@@ -137,12 +138,6 @@ theorem apply_eq_complexConj_of_isCMField {F : Type*} [Field F] [CharZero F]
   apply ι.injective
   rw [hι.eq]
   exact (IsCMField.complexEmbedding_complexConj F (ι.comp τ) x).symm
-
-/-- If `c₁ c₂` fixes `y` for a complex conjugation `c₁`, then `c₁` and `c₂` agree on `y`. -/
-theorem apply_eq_apply_of_apply_apply_eq {c₁ c₂ : Gal(Ω/ℚ)} (hc₁ : c₁ ∈ complexConjugations Ω)
-    {y : Ω} (h : c₁ (c₂ y) = y) : c₁ y = c₂ y := by
-  conv_lhs => rw [← h]
-  exact apply_apply_of_mem_complexConjugations hc₁ _
 
 /-- **Extension of complex embeddings.** For an embedding `τ : F →+* Ω` into an algebraic
 extension of `ℚ`, every embedding `φ : F →+* ℂ` factors as `ι ∘ τ` for some `ι : Ω →+* ℂ`. -/
@@ -186,29 +181,38 @@ theorem apply_mem_fieldRange_of_forall_mul {τ : F →+* Ω}
   have hc' : g * c * g⁻¹ ∈ complexConjugations Ω := by
     simpa using inv_mul_mul_mem_complexConjugations hc g⁻¹
   simpa [AlgEquiv.mul_apply, hginv] using
-    apply_eq_apply_of_apply_apply_eq hc' (h _ hc' _ hc x)
+    ((Function.Involutive.eq_iff (apply_apply_of_mem_complexConjugations hc')).mp
+      (h _ hc' _ hc x)).symm
+
+/-- The endomorphism of `F` through which an automorphism `c` of `Ω` acts on `τ(F)`, when it maps
+`τ(F)` into itself. -/
+private noncomputable def restrictAlgHomOfApplyMem (τ : F →+* Ω) (c : Gal(Ω/ℚ))
+    (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) : F →ₐ[ℚ] F :=
+  (AlgEquiv.ofInjectiveField τ.toRatAlgHom).symm.toAlgHom.comp
+    ((c.toAlgHom.comp τ.toRatAlgHom).codRestrict τ.toRatAlgHom.fieldRange.toSubalgebra hmem)
+
+omit [Normal ℚ Ω] in
+private theorem apply_restrictAlgHomOfApplyMem (τ : F →+* Ω) (c : Gal(Ω/ℚ))
+    (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) (x : F) :
+    τ (restrictAlgHomOfApplyMem τ c hmem x) = c (τ x) :=
+  congr($(AlgEquiv.apply_symm_apply (AlgEquiv.ofInjectiveField τ.toRatAlgHom)
+      ⟨c (τ x), hmem x⟩).val)
 
 /-- The automorphism of `F` through which a complex conjugation `c` acts on `τ(F)`, when it maps
 `τ(F)` into itself. -/
 private noncomputable def restrictOfApplyMem (τ : F →+* Ω) {c : Gal(Ω/ℚ)}
     (hc : c ∈ complexConjugations Ω) (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) :
     Gal(F/ℚ) :=
-  let s : F →ₐ[ℚ] F := ((AlgEquiv.ofInjectiveField τ.toRatAlgHom).symm.toAlgHom.comp
-    ((c.toAlgHom.comp τ.toRatAlgHom).codRestrict
-      τ.toRatAlgHom.fieldRange.toSubalgebra hmem))
-  have hs : ∀ x, τ (s x) = c (τ x) := fun x ↦
-    congr($(AlgEquiv.apply_symm_apply (AlgEquiv.ofInjectiveField τ.toRatAlgHom)
-      ⟨c (τ x), hmem x⟩).val)
-  have hss : s.comp s = AlgHom.id ℚ F := AlgHom.ext fun x ↦ τ.injective <| by
-    simp [hs, apply_apply_of_mem_complexConjugations hc]
-  AlgEquiv.ofAlgHom s s hss hss
+  have hss : (restrictAlgHomOfApplyMem τ c hmem).comp (restrictAlgHomOfApplyMem τ c hmem) =
+      AlgHom.id ℚ F := AlgHom.ext fun x ↦ τ.injective <| by
+    simp [apply_restrictAlgHomOfApplyMem, apply_apply_of_mem_complexConjugations hc]
+  AlgEquiv.ofAlgHom _ _ hss hss
 
 omit [Normal ℚ Ω] in
 private theorem apply_restrictOfApplyMem (τ : F →+* Ω) {c : Gal(Ω/ℚ)}
     (hc : c ∈ complexConjugations Ω) (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) (x : F) :
     τ (restrictOfApplyMem τ hc hmem x) = c (τ x) :=
-  congr($(AlgEquiv.apply_symm_apply (AlgEquiv.ofInjectiveField τ.toRatAlgHom)
-      ⟨c (τ x), hmem x⟩).val)
+  apply_restrictAlgHomOfApplyMem τ c hmem x
 
 /-- **Milne's criterion (Milne, *Complex Multiplication*, I, Proposition 1.4).** A field `F`
 embedded in `Ω` by `τ` (hence algebraic over `ℚ`) is totally real or CM if and only if every
@@ -232,7 +236,8 @@ theorem isTotallyReal_or_isCMField_iff (τ : F →+* Ω) :
       obtain ⟨c, hc⟩ := exists_isConj ι
       refine RingHom.ext fun x ↦ ?_
       simp only [conjugate_coe_eq, RingHom.comp_apply, RingHom.coe_coe, hs']
-      rw [apply_eq_apply_of_apply_apply_eq hc₀ (h _ hc₀ _ ⟨ι, hc⟩ x), hc.eq, Complex.star_def]
+      rw [((Function.Involutive.eq_iff (apply_apply_of_mem_complexConjugations hc₀)).mp
+        (h _ hc₀ _ ⟨ι, hc⟩ x)).symm, hc.eq, Complex.star_def]
     by_cases hs1 : s = 1
     · left
       exact ⟨fun w ↦ isReal_iff.mpr (isConj_one_iff.mp (hs1 ▸ hs _))⟩
