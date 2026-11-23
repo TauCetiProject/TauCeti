@@ -114,39 +114,10 @@ namespace TauCeti
 
 namespace HomologicalOrientation
 
-section Holomorphic
+section Real
 
-variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E] {n : ℕ}
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
   (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n)
-
-include hE in
-/-- **The local index at a point with invertible complex derivative is `1`.** If `f` is complex
-differentiable at `x` with injective derivative, its local index at `x`, for the same orientation of
-`E` on source and target, is `1`: the real Jacobian determinant `|det_ℂ f'|²` is positive. -/
-theorem localIndex_eq_one_of_hasFDerivAt {f : C(E, E)} {f' : E →L[ℂ] E} {x : E}
-    (hf : HasFDerivAt f f' x) (hf' : Function.Injective f') : o.localIndex o f x = 1 := by
-  have hpos : 0 < (f'.restrictScalars ℝ).det :=
-    LinearMap.det_restrictScalars_pos_iff_injective.2 hf'
-  rw [o.localIndex_eq_sign_det hE (hf.restrictScalars ℝ) hpos.ne', sign_pos hpos,
-    SignType.coe_one]
-
-include hE in
-/-- **The degree of a holomorphic proper map counts preimages.** If every preimage of `y` under the
-proper map `f : E → E` is a point where `f` is complex differentiable with injective derivative,
-then the degree of `f` is the number of preimages of `y`. -/
-theorem degree_eq_ncard_of_hasFDerivAt {f : C(E, E)} (hf : IsProperMap f) {f' : E → E →L[ℂ] E}
-    {y : E} (hderiv : ∀ x ∈ f ⁻¹' {y}, HasFDerivAt f (f' x) x)
-    (hinj : ∀ x ∈ f ⁻¹' {y}, Function.Injective (f' x)) :
-    o.degree o hE f = (f ⁻¹' {y}).ncard := by
-  have hpos (x : E) (hx : x ∈ f ⁻¹' {y}) : 0 < ((f' x).restrictScalars ℝ).det :=
-    LinearMap.det_restrictScalars_pos_iff_injective.2 (hinj x hx)
-  have h₁ : {x | 0 < ((f' x).restrictScalars ℝ).det} ∩ f ⁻¹' {y} = f ⁻¹' {y} :=
-    inter_eq_right.2 fun x hx ↦ hpos x hx
-  have h₂ : {x | ((f' x).restrictScalars ℝ).det < 0} ∩ f ⁻¹' {y} = ∅ :=
-    eq_empty_iff_forall_notMem.2 fun x hx ↦ (hpos x hx.2).not_gt hx.1
-  rw [o.degree_eq_ncard_sub_ncard hE hf (f' := fun x ↦ (f' x).restrictScalars ℝ)
-    (fun x hx ↦ (hderiv x hx).restrictScalars ℝ) fun x hx ↦ (hpos x hx).ne', h₁, h₂,
-    ncard_empty, Nat.cast_zero, sub_zero]
 
 include hE in
 /-- If `x` is the only solution of `f z = f x` in the ball of radius `r` about `x`, and `f` stays
@@ -182,6 +153,42 @@ private theorem exists_isProperMap_eqOn_localIndex_eq_degree {f : C(E, E)} {x : 
     eventually_of_mem (ball_mem_nhds x hr) fun _ hw ↦ hgf (ball_subset_closedBall hw)
   rw [o.localIndex_congr o hE hgf_nhds.symm, ← o.localDegree_eq_localIndex o hE hE g hfib₀,
     o.localDegree_eq_degree o hE hE hgp]
+
+end Real
+
+section Holomorphic
+
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E] {n : ℕ}
+  (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n)
+
+include hE in
+/-- **The local index at a point with invertible complex derivative is `1`.** If `f` is complex
+differentiable at `x` with injective derivative, its local index at `x`, for the same orientation of
+`E` on source and target, is `1`: the real Jacobian determinant `|det_ℂ f'|²` is positive. -/
+theorem localIndex_eq_one_of_hasFDerivAt {f : C(E, E)} {f' : E →L[ℂ] E} {x : E}
+    (hf : HasFDerivAt f f' x) (hf' : Function.Injective f') : o.localIndex o f x = 1 := by
+  have hpos : 0 < (f'.restrictScalars ℝ).det :=
+    LinearMap.det_restrictScalars_pos_iff_injective.2 hf'
+  rw [o.localIndex_eq_sign_det hE (hf.restrictScalars ℝ) hpos.ne', sign_pos hpos,
+    SignType.coe_one]
+
+include hE in
+/-- **The degree of a holomorphic proper map counts preimages.** If every preimage of `y` under the
+proper map `f : E → E` is a point where `f` is complex differentiable with injective derivative,
+then the degree of `f` is the number of preimages of `y`. -/
+theorem degree_eq_ncard_of_hasFDerivAt {f : C(E, E)} (hf : IsProperMap f) {f' : E → E →L[ℂ] E}
+    {y : E} (hderiv : ∀ x ∈ f ⁻¹' {y}, HasFDerivAt f (f' x) x)
+    (hinj : ∀ x ∈ f ⁻¹' {y}, Function.Injective (f' x)) :
+    o.degree o hE f = (f ⁻¹' {y}).ncard := by
+  have hpos (x : E) (hx : x ∈ f ⁻¹' {y}) : 0 < ((f' x).restrictScalars ℝ).det :=
+    LinearMap.det_restrictScalars_pos_iff_injective.2 (hinj x hx)
+  have h₁ : {x | 0 < ((f' x).restrictScalars ℝ).det} ∩ f ⁻¹' {y} = f ⁻¹' {y} :=
+    inter_eq_right.2 fun x hx ↦ hpos x hx
+  have h₂ : {x | ((f' x).restrictScalars ℝ).det < 0} ∩ f ⁻¹' {y} = ∅ :=
+    eq_empty_iff_forall_notMem.2 fun x hx ↦ (hpos x hx.2).not_gt hx.1
+  rw [o.degree_eq_ncard_sub_ncard hE hf (f' := fun x ↦ (f' x).restrictScalars ℝ)
+    (fun x hx ↦ (hderiv x hx).restrictScalars ℝ) fun x hx ↦ (hpos x hx).ne', h₁, h₂,
+    ncard_empty, Nat.cast_zero, sub_zero]
 
 include hE in
 /-- **The local index of a holomorphic map counts nearby solutions.** Suppose that `x` is the only
