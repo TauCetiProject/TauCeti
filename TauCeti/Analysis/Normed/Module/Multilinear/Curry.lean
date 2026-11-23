@@ -42,8 +42,8 @@ derivative of a map into the `m`-th derivative of its directional derivative in 
   applied to a map is `ContinuousMultilinearMap.curryLeft`.
 * `ContinuousMultilinearMap.applyLastL`: evaluation with `h` in the last argument, as a
   continuous linear map; `ContinuousMultilinearMap.norm_applyLastL_le` bounds its operator norm
-  by `‖h‖`, and `ContinuousMultilinearMap.applyLastL_comp_curryLeft` says it commutes with
-  `curryLeft`.
+  by `‖h‖`, so it is `‖h‖`-Lipschitz (`ContinuousMultilinearMap.lipschitzWith_applyLastL`), and
+  `ContinuousMultilinearMap.applyLastL_comp_curryLeft` says it commutes with `curryLeft`.
 -/
 
 public section
@@ -157,6 +157,10 @@ theorem norm_applyLastL_le (m : ℕ) (h : E) : ‖applyLastL 𝕜 F m h‖ ≤ �
   rw [Fin.prod_univ_castSucc, Fin.snoc_last]
   simp only [Fin.snoc_castSucc]
   ring
+
+/-- Evaluation with `h` in the last argument is `‖h‖`-Lipschitz. -/
+theorem lipschitzWith_applyLastL (m : ℕ) (h : E) : LipschitzWith ‖h‖₊ (applyLastL 𝕜 F m h) :=
+  (applyLastL 𝕜 F m h).lipschitzWith.weaken (by exact_mod_cast norm_applyLastL_le m h)
 
 /-- Evaluation in the last argument commutes with fixing the first argument. -/
 theorem applyLastL_comp_curryLeft (m : ℕ) (h : E) (M : E [×(m + 2)]→L[𝕜] F) :

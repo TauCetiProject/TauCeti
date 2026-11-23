@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Differentiation
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Linear
-import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 
 /-!
 # Spatial differentiation in the parabolic Hölder scale
@@ -24,12 +24,14 @@ in the direction `h` in the last argument:
 
 `D_t^r D_x^m (∂_h u) (x, t) (h₁, …, h_m) = D_t^r D_x^(m+1) u (x, t) (h₁, …, h_m, h)`
 
-(`TauCeti.ParabolicCkHolderSpace.mixedDerivL_spatialLineDerivL`). The same holds for the
+(`TauCeti.ParabolicCkHolderSpace.mixedDerivL_spatialLineDerivL_apply`). The same holds for the
 top-order parabolic Hölder fields and for the uniform temporal Hölder slices one order below the
 top, and the value of `∂_h u` at `(x, t)` is the derivative of `u (·, t)` at `x` in the direction
 `h` (`TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_slabMk`), that is, the spatial derivative
 `TauCeti.ParabolicCkHolderSpace.spatialFDerivL` applied to `h`
-(`TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_apply_eq_spatialFDerivL`).
+(`TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_apply_eq_spatialFDerivL`). Spatial
+differentiation commutes with the time derivative
+(`TauCeti.ParabolicCkHolderSpace.timeDerivL_spatialLineDerivL`).
 
 In the higher-order Schauder theory spatial differentiation is how the order is lowered: the
 derivative `∂_i u` of a solution of a parabolic equation in a coordinate direction solves the
@@ -42,11 +44,13 @@ differentiated equation, whose data are one order lower.
 * `TauCeti.ParabolicCkHolderSpace.mixedDerivL_spatialLineDerivL`,
   `TauCeti.ParabolicCkHolderSpace.mixedDerivHolderL_spatialLineDerivL` and
   `TauCeti.ParabolicCkHolderSpace.timeSliceL_spatialLineDerivL`: its derivative fields, Hölder
-  fields and time slices.
+  fields and time slices, as compositions with
+  `ContinuousMultilinearMap.applyLastL`; their `_apply` forms evaluate them.
 * `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_slabMk`: the values are directional
   derivatives in space.
 * `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_apply_eq_spatialFDerivL`: the values are those
   of the spatial derivative applied to `h`.
+* `TauCeti.ParabolicCkHolderSpace.timeDerivL_spatialLineDerivL`: `∂ₜ (∂_h u) = ∂_h (∂ₜu)`.
 * `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_add` and
   `TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_smul`: linearity in the direction.
 * `TauCeti.ParabolicCkHolderSpace.norm_spatialLineDerivL_le`: the operator norm of `∂_h` is at
@@ -83,16 +87,6 @@ private theorem lineDerivField_apply (h : E) (f : ParabolicCkHolderSpace (k + 1)
     lineDerivField h f r m p = applyLastL ℝ F m h (mixedDerivL r (m + 1) f p) :=
   rfl
 
-/-- The fields of `u` with one more spatial derivative compose with `applyLastL` into Hölder
-maps with the constant multiplied by `‖h‖`. -/
-private theorem holderWith_applyLastL_comp {X : Type*} [PseudoEMetricSpace X] {C r : ℝ≥0}
-    (m : ℕ) (h : E) {g : X → E [×(m + 1)]→L[ℝ] F} (hg : HolderWith C r g) :
-    HolderWith (‖h‖₊ * C) r fun x ↦ applyLastL ℝ F m h (g x) := by
-  have hL : LipschitzWith ‖h‖₊ (applyLastL ℝ F m h) :=
-    (applyLastL ℝ F m h).lipschitzWith.weaken (by exact_mod_cast norm_applyLastL_le m h)
-  simpa only [NNReal.coe_one, NNReal.rpow_one, one_mul, Function.comp_def] using
-    (holderWith_one.2 hL).comp hg
-
 private def lineDeriv (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab) :
     ParabolicCkHolderSpace k α E F hab :=
   mk (lineDerivField h f)
@@ -109,14 +103,14 @@ private def lineDeriv (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab) :
     (fun r m hrm ↦ ⟨‖h‖₊ * ‖timeSliceL r (m + 1) f‖₊, fun x ↦ by
       have hnorm : ‖timeSliceL r (m + 1) f x‖₊ ≤ ‖timeSliceL r (m + 1) f‖₊ := by
         exact_mod_cast lp.norm_apply_le_norm ENNReal.top_ne_zero (timeSliceL r (m + 1) f) x
-      have H := holderWith_applyLastL_comp m h
+      have H := (lipschitzWith_applyLastL (𝕜 := ℝ) (F := F) m h).comp_holderWith
         ((timeSliceL r (m + 1) f x).holderWith_nnnorm.mono hnorm)
       intro t s
-      simpa only [lineDerivField_apply, timeSliceL_apply f (r := r) (m := m + 1) (by omega)]
-        using H t s⟩)
+      simpa only [lineDerivField_apply, timeSliceL_apply f (r := r) (m := m + 1) (by omega),
+        Function.comp_apply] using H t s⟩)
     (fun r m hrm ↦ by
       obtain ⟨C, hC⟩ := memHolder_mixedDerivL f (r := r) (m := m + 1) (by omega)
-      exact (holderWith_applyLastL_comp m h hC).memHolder)
+      exact ((lipschitzWith_applyLastL (𝕜 := ℝ) (F := F) m h).comp_holderWith hC).memHolder)
 
 private theorem mixedDerivL_lineDeriv (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (r m : ℕ) : mixedDerivL r m (lineDeriv h f) = lineDerivField h f r m := by
@@ -209,37 +203,60 @@ private theorem spatialLineDerivL_eq_lineDeriv (h : E)
     (f : ParabolicCkHolderSpace (k + 1) α E F hab) : spatialLineDerivL h f = lineDeriv h f := by
   rw [spatialLineDerivL, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk]
 
+/-- The derivative fields of `∂_h u` are those of `u` with one more spatial derivative, composed
+with evaluation in the direction `h` in the last argument. -/
+theorem mixedDerivL_spatialLineDerivL (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
+    (r m : ℕ) : mixedDerivL r m (spatialLineDerivL h f) =
+      (applyLastL ℝ F m h).compLeftContinuousBounded _ (mixedDerivL r (m + 1) f) := by
+  rw [spatialLineDerivL_eq_lineDeriv, mixedDerivL_lineDeriv]
+  rfl
+
+/-- The top-order parabolic Hölder fields of `∂_h u` are those of `u` with one more spatial
+derivative, composed with evaluation in the direction `h` in the last argument. -/
+theorem mixedDerivHolderL_spatialLineDerivL (h : E)
+    (f : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) :
+    mixedDerivHolderL r m (spatialLineDerivL h f) =
+      HolderSpace.compLeftL (applyLastL ℝ F m h) (mixedDerivHolderL r (m + 1) f) := by
+  rw [spatialLineDerivL_eq_lineDeriv, mixedDerivHolderL_lineDeriv]
+
+/-- The uniformly Hölder time slices of `∂_h u` at `x` are those of `u` with one more spatial
+derivative, composed with evaluation in the direction `h` in the last argument. -/
+theorem timeSliceL_spatialLineDerivL (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
+    (r m : ℕ) (x : E) : timeSliceL r m (spatialLineDerivL h f) x =
+      HolderSpace.compLeftL (applyLastL ℝ F m h) (timeSliceL r (m + 1) f x) := by
+  rw [spatialLineDerivL_eq_lineDeriv, timeSliceL_lineDeriv]
+
 /-- The derivative fields of `∂_h u` are those of `u` with one more spatial derivative, in the
 direction `h` in the last argument. -/
 @[simp]
-theorem mixedDerivL_spatialLineDerivL (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
-    (r m : ℕ) (p : slab (E := E) a b) (v : Fin m → E) :
+theorem mixedDerivL_spatialLineDerivL_apply (h : E)
+    (f : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) (p : slab (E := E) a b)
+    (v : Fin m → E) :
     mixedDerivL r m (spatialLineDerivL h f) p v = mixedDerivL r (m + 1) f p (Fin.snoc v h) := by
-  rw [spatialLineDerivL_eq_lineDeriv, mixedDerivL_lineDeriv, lineDerivField_apply,
+  rw [mixedDerivL_spatialLineDerivL, ContinuousLinearMap.compLeftContinuousBounded_apply,
     applyLastL_apply]
 
 /-- The top-order parabolic Hölder fields of `∂_h u` are those of `u` with one more spatial
 derivative, in the direction `h` in the last argument. -/
 @[simp]
-theorem mixedDerivHolderL_spatialLineDerivL (h : E)
+theorem mixedDerivHolderL_spatialLineDerivL_apply (h : E)
     (f : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) (p : slab (E := E) a b)
     (v : Fin m → E) :
     mixedDerivHolderL r m (spatialLineDerivL h f) p v =
       mixedDerivHolderL r (m + 1) f p (Fin.snoc v h) := by
-  rw [spatialLineDerivL_eq_lineDeriv, mixedDerivHolderL_lineDeriv, HolderSpace.compLeftL_apply,
-    applyLastL_apply]
+  rw [mixedDerivHolderL_spatialLineDerivL, HolderSpace.compLeftL_apply, applyLastL_apply]
 
 /-- The uniformly Hölder time slices of `∂_h u` are those of `u` with one more spatial
 derivative, in the direction `h` in the last argument. -/
 @[simp]
-theorem timeSliceL_spatialLineDerivL (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
+theorem timeSliceL_spatialLineDerivL_apply (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (r m : ℕ) (x : E) (t : Icc a b) (v : Fin m → E) :
     timeSliceL r m (spatialLineDerivL h f) x t v = timeSliceL r (m + 1) f x t (Fin.snoc v h) := by
-  rw [spatialLineDerivL_eq_lineDeriv, timeSliceL_lineDeriv, HolderSpace.compLeftL_apply,
-    applyLastL_apply]
+  rw [timeSliceL_spatialLineDerivL, HolderSpace.compLeftL_apply, applyLastL_apply]
 
 /-- The value of `∂_h u` is the first spatial derivative field of `u` on the constant tuple
 `h`. -/
+@[simp]
 theorem spatialLineDerivL_apply (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (p : slab (E := E) a b) : spatialLineDerivL h f p = mixedDerivL 0 1 f p (fun _ ↦ h) := by
   rw [spatialLineDerivL_eq_lineDeriv, lineDeriv_apply]
@@ -257,6 +274,17 @@ theorem spatialLineDerivL_apply_eq_spatialFDerivL (h : E)
     spatialLineDerivL h f p = spatialFDerivL k α E F hab f p h := by
   obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
   rw [spatialLineDerivL_slabMk, spatialFDerivL_slabMk]
+
+/-- **Spatial and time derivatives commute**: `∂ₜ (∂_h u) = ∂_h (∂ₜu)` for
+`u ∈ C_{par,b}^{(k+3)+α}`. -/
+theorem timeDerivL_spatialLineDerivL (h : E) (u : ParabolicCkHolderSpace (k + 3) α E F hab) :
+    timeDerivL k α E F hab (spatialLineDerivL h u) =
+      spatialLineDerivL h (timeDerivL (k + 1) α E F hab u) := by
+  ext p
+  rw [← mixedDerivL_zero_zero_apply (timeDerivL k α E F hab (spatialLineDerivL h u)) p 0,
+    ← mixedDerivL_zero_zero_apply (spatialLineDerivL h (timeDerivL (k + 1) α E F hab u)) p 0,
+    mixedDerivL_timeDerivL, mixedDerivL_spatialLineDerivL_apply,
+    mixedDerivL_spatialLineDerivL_apply, mixedDerivL_timeDerivL]
 
 /-- Spatial differentiation is additive in the direction. -/
 @[simp]
