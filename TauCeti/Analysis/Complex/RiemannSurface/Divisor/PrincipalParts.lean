@@ -33,7 +33,16 @@ differentials descends to Serre duality.
 
 For `D ≤ E` there is a surjection `PrincipalParts D → PrincipalParts E`
 (`TauCeti.RiemannSurface.PrincipalParts.mapOfLE`), compatible with taking principal parts of
-meromorphic functions.
+meromorphic functions. Its kernel at `x` consists of the principal parts with poles bounded by
+`E` (`TauCeti.RiemannSurface.LocalPrincipalPart.boundedBy`): the classes of germs of order at
+least `-E x`.
+
+Every local principal part `p` relative to `D` has a least pole bound
+`TauCeti.RiemannSurface.LocalPrincipalPart.poleBound D p ≥ D x`, and every Mittag-Leffler
+distribution `μ` a least bounding divisor
+`TauCeti.RiemannSurface.PrincipalParts.boundingDivisor μ` built from them. The distributions
+bounded by `E` (`TauCeti.RiemannSurface.PrincipalParts.boundedBy`) are the same as families of
+local principal parts bounded by `E` (`TauCeti.RiemannSurface.PrincipalParts.toBoundedFamily`).
 
 ## References
 
@@ -79,6 +88,131 @@ theorem mapOfLE_mk (h : D ≤ E) (x : X) (φ : meromorphicGerms ℂ (chartAt ℂ
 theorem mapOfLE_surjective (h : D ≤ E) (x : X) : Function.Surjective (mapOfLE h x) :=
   Submodule.factor_surjective (meromorphicGerms.orderGE_antitone _ (neg_le_neg (h x)))
 
+variable (D E) in
+/-- The **principal parts relative to `D` with poles bounded by `E`** at `x`: the classes of the
+coordinate germs of order at least `-E x`, modulo those of order at least `-D x`. For `D ≤ E` it
+is the kernel of the projection `LocalPrincipalPart D x → LocalPrincipalPart E x`. -/
+def boundedBy (x : X) : Submodule ℂ (LocalPrincipalPart D x) :=
+  (meromorphicGerms.orderGE (chartAt ℂ x x) (-E x)).map
+    (meromorphicGerms.orderGE (chartAt ℂ x x) (-D x)).mkQ
+
+variable {x : X}
+
+/-- A principal part is bounded by `E` exactly when it is the class of a germ satisfying the
+order bound of `E`. -/
+theorem mem_boundedBy_iff {p : LocalPrincipalPart D x} :
+    p ∈ boundedBy D E x ↔
+      ∃ φ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-E x), Submodule.Quotient.mk φ = p :=
+  Submodule.mem_map
+
+/-- The class of a germ satisfying the order bound of `E` is bounded by `E`. -/
+theorem mk_mem_boundedBy {φ : meromorphicGerms ℂ (chartAt ℂ x x)}
+    (hφ : φ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-E x)) :
+    (Submodule.Quotient.mk φ : LocalPrincipalPart D x) ∈ boundedBy D E x :=
+  Submodule.mem_map_of_mem hφ
+
+/-- Where `E` permits no more poles than `D`, there are no principal parts bounded by `E`. -/
+theorem boundedBy_eq_bot (h : E x ≤ D x) : boundedBy D E x = ⊥ := by
+  rw [eq_bot_iff]
+  rintro _ ⟨φ, hφ, rfl⟩
+  exact (Submodule.mem_bot ℂ).2 ((Submodule.Quotient.mk_eq_zero _).2
+    (meromorphicGerms.orderGE_antitone _ (neg_le_neg h) hφ))
+
+/-- For `D ≤ E`, the principal parts bounded by `E` are those which vanish relative to `E`. -/
+theorem boundedBy_eq_ker_mapOfLE (h : D ≤ E) (x : X) :
+    boundedBy D E x = LinearMap.ker (mapOfLE h x) := by
+  have he :
+      mapOfLE h x = Submodule.factor (meromorphicGerms.orderGE_antitone _ (neg_le_neg (h x))) :=
+    Submodule.linearMap_qext _ (LinearMap.ext (mapOfLE_mk h x))
+  rw [he, Submodule.ker_mapQ, Submodule.comap_id]
+  rfl
+
+variable {D' E' : WeilDivisor X}
+
+/-- Principal parts bounded by `E` are bounded by every `E'` permitting more poles at `x`. -/
+theorem boundedBy_mono (h : E x ≤ E' x) : boundedBy D E x ≤ boundedBy D E' x := fun _ hp ↦ by
+  obtain ⟨φ, hφ, rfl⟩ := mem_boundedBy_iff.1 hp
+  exact mk_mem_boundedBy (meromorphicGerms.orderGE_antitone _ (neg_le_neg h) hφ)
+
+/-- The projection to a larger divisor `D'` maps principal parts bounded by `E` to principal parts
+bounded by every `E'` permitting more poles at `x`. -/
+theorem mapOfLE_mem_boundedBy (hD : D ≤ D') (hE : E x ≤ E' x) {p : LocalPrincipalPart D x}
+    (hp : p ∈ boundedBy D E x) : mapOfLE hD x p ∈ boundedBy D' E' x := by
+  obtain ⟨φ, hφ, rfl⟩ := mem_boundedBy_iff.1 hp
+  rw [mapOfLE_mk]
+  exact mk_mem_boundedBy (meromorphicGerms.orderGE_antitone _ (neg_le_neg hE) hφ)
+
+@[simp]
+theorem mapOfLE_refl_apply (p : LocalPrincipalPart D x) : mapOfLE (le_refl D) x p = p := by
+  induction p using Submodule.Quotient.induction_on with
+  | _ φ => rw [mapOfLE_mk]
+
+/-- For `D ≤ D'` and `E x ≤ E' x`, the projection `LocalPrincipalPart.mapOfLE` restricted to the
+principal parts bounded by `E` and `E'`. -/
+def boundedByMapOfLE (hD : D ≤ D') (hE : E x ≤ E' x) :
+    boundedBy D E x →ₗ[ℂ] boundedBy D' E' x :=
+  (mapOfLE hD x).restrict fun _ ↦ mapOfLE_mem_boundedBy hD hE
+
+@[simp]
+theorem coe_boundedByMapOfLE_apply (hD : D ≤ D') (hE : E x ≤ E' x) (p : boundedBy D E x) :
+    (boundedByMapOfLE hD hE p : LocalPrincipalPart D' x) = mapOfLE hD x p := (rfl)
+
+/-- A principal part relative to `D` at `x` whose poles are bounded by the integer `n`. -/
+private def BoundedAt (p : LocalPrincipalPart D x) (n : ℤ) : Prop :=
+  ∃ φ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-n), Submodule.Quotient.mk φ = p
+
+/-- Every local principal part has some pole bound. -/
+private theorem exists_boundedAt (p : LocalPrincipalPart D x) :
+    ∃ n, D x ≤ n ∧ BoundedAt p n := by
+  induction p using Submodule.Quotient.induction_on with
+  | _ φ =>
+    cases h : meromorphicGerms.order φ with
+    | top =>
+      refine ⟨D x, le_rfl, φ, ?_, rfl⟩
+      rw [meromorphicGerms.mem_orderGE, h]
+      exact le_top
+    | coe m =>
+      refine ⟨max (D x) (-m), le_max_left _ _, φ, ?_, rfl⟩
+      rw [meromorphicGerms.mem_orderGE, h, WithTop.coe_le_coe]
+      have := le_max_right (D x) (-m)
+      omega
+
+variable (D) in
+/-- The **pole bound** of a local principal part relative to `D` at `x`: the least integer
+`n ≥ D x` such that the principal part is the class of a germ of order at least `-n`. -/
+def poleBound (p : LocalPrincipalPart D x) : ℤ :=
+  sInf {n | D x ≤ n ∧ BoundedAt p n}
+
+private theorem poleBound_mem (p : LocalPrincipalPart D x) :
+    poleBound D p ∈ {n | D x ≤ n ∧ BoundedAt p n} :=
+  Int.csInf_mem (exists_boundedAt p) ⟨D x, fun _ hn ↦ hn.1⟩
+
+theorem le_poleBound (p : LocalPrincipalPart D x) : D x ≤ poleBound D p :=
+  (poleBound_mem p).1
+
+/-- A principal part is bounded by every divisor whose coefficient at `x` is at least its pole
+bound. -/
+theorem mem_boundedBy_of_poleBound_le {p : LocalPrincipalPart D x} (h : poleBound D p ≤ E x) :
+    p ∈ boundedBy D E x := by
+  obtain ⟨φ, hφ, rfl⟩ := (poleBound_mem p).2
+  exact mk_mem_boundedBy (meromorphicGerms.orderGE_antitone _ (neg_le_neg h) hφ)
+
+/-- The pole bound is least among the bounds `E x ≥ D x`. -/
+theorem poleBound_le {p : LocalPrincipalPart D x} (hD : D x ≤ E x) (hp : p ∈ boundedBy D E x) :
+    poleBound D p ≤ E x :=
+  csInf_le ⟨D x, fun _ hn ↦ hn.1⟩ ⟨hD, mem_boundedBy_iff.1 hp⟩
+
+/-- A principal part is bounded by `E` with `E x ≥ D x` exactly when its pole bound is at most
+`E x`. -/
+theorem mem_boundedBy_iff_poleBound_le {p : LocalPrincipalPart D x} (hD : D x ≤ E x) :
+    p ∈ boundedBy D E x ↔ poleBound D p ≤ E x :=
+  ⟨poleBound_le hD, mem_boundedBy_of_poleBound_le⟩
+
+@[simp]
+theorem poleBound_zero : poleBound D (0 : LocalPrincipalPart D x) = D x :=
+  le_antisymm (csInf_le ⟨D x, fun _ hn ↦ hn.1⟩ ⟨le_rfl, 0, Submodule.zero_mem _, rfl⟩)
+    (le_poleBound _)
+
 end LocalPrincipalPart
 
 namespace PrincipalParts
@@ -103,9 +237,7 @@ theorem mapOfLE_surjective (h : D ≤ E) : Function.Surjective (mapOfLE h) :=
 @[simp]
 theorem mapOfLE_refl : mapOfLE (le_refl D) = LinearMap.id := by
   ext μ x : 2
-  rw [mapOfLE_apply, LinearMap.id_apply]
-  induction μ x using Submodule.Quotient.induction_on with
-  | _ φ => rw [LocalPrincipalPart.mapOfLE_mk]
+  rw [mapOfLE_apply, LinearMap.id_apply, LocalPrincipalPart.mapOfLE_refl_apply]
 
 @[simp]
 theorem mapOfLE_comp (hDE : D ≤ E) (hEF : E ≤ F) :
@@ -114,6 +246,143 @@ theorem mapOfLE_comp (hDE : D ≤ E) (hEF : E ≤ F) :
   simp only [LinearMap.comp_apply, mapOfLE_apply]
   induction μ x using Submodule.Quotient.induction_on with
   | _ φ => simp only [LocalPrincipalPart.mapOfLE_mk]
+
+section Bounds
+
+variable {D' E' : WeilDivisor X}
+
+variable (D E) in
+/-- The **Mittag-Leffler distributions relative to `D` with poles bounded by `E`**: those whose
+local principal parts all lie in `LocalPrincipalPart.boundedBy D E x`. -/
+def boundedBy : Submodule ℂ (PrincipalParts D) :=
+  ⨅ x, (LocalPrincipalPart.boundedBy D E x).comap (DFinsupp.lapply x)
+
+@[simp]
+theorem mem_boundedBy_iff {μ : PrincipalParts D} :
+    μ ∈ boundedBy D E ↔ ∀ x, μ x ∈ LocalPrincipalPart.boundedBy D E x := by
+  simp only [boundedBy, Submodule.mem_iInf, Submodule.mem_comap, DFinsupp.lapply_apply]
+
+theorem boundedBy_mono (h : E ≤ E') : boundedBy D E ≤ boundedBy D E' := fun _ hμ ↦
+  mem_boundedBy_iff.2 fun x ↦ LocalPrincipalPart.boundedBy_mono (h x) (mem_boundedBy_iff.1 hμ x)
+
+theorem mapOfLE_mem_boundedBy (hD : D ≤ D') (hE : E ≤ E') {μ : PrincipalParts D}
+    (hμ : μ ∈ boundedBy D E) : mapOfLE hD μ ∈ boundedBy D' E' :=
+  mem_boundedBy_iff.2 fun x ↦ by
+    rw [mapOfLE_apply]
+    exact LocalPrincipalPart.mapOfLE_mem_boundedBy hD (hE x) (mem_boundedBy_iff.1 hμ x)
+
+/-- For `D ≤ E`, the distributions bounded by `E` are those which vanish relative to `E`. -/
+theorem boundedBy_eq_ker_mapOfLE (h : D ≤ E) : boundedBy D E = LinearMap.ker (mapOfLE h) := by
+  ext μ
+  simp only [mem_boundedBy_iff, LocalPrincipalPart.boundedBy_eq_ker_mapOfLE h, LinearMap.mem_ker,
+    DFinsupp.ext_iff, mapOfLE_apply, DFinsupp.zero_apply]
+
+/-- Where `E` permits no more poles than `D`, the only distribution bounded by `E` is zero. -/
+theorem boundedBy_eq_bot (h : E ≤ D) : boundedBy D E = ⊥ := by
+  rw [eq_bot_iff]
+  intro μ hμ
+  refine (Submodule.mem_bot ℂ).2 (DFinsupp.ext fun x ↦ ?_)
+  simpa [LocalPrincipalPart.boundedBy_eq_bot (h x)] using mem_boundedBy_iff.1 hμ x
+
+variable (D E) in
+/-- The pointwise reading of a Mittag-Leffler distribution bounded by `E`. -/
+private def toBoundedFamilyAux : boundedBy D E →ₗ[ℂ] ∀ x, LocalPrincipalPart.boundedBy D E x :=
+  LinearMap.pi fun x ↦ (DFinsupp.lapply x).restrict fun _ hμ ↦ mem_boundedBy_iff.1 hμ x
+
+/-- Every family of principal parts bounded by `E` is a Mittag-Leffler distribution: it vanishes
+off the finite support of `E - D`. -/
+private theorem toBoundedFamilyAux_bijective : Function.Bijective (toBoundedFamilyAux D E) := by
+  classical
+  refine ⟨fun μ ν h ↦ Subtype.ext (DFinsupp.ext fun x ↦ congrArg Subtype.val (congrFun h x)),
+    fun c ↦ ?_⟩
+  have hfin : {x | (c x : LocalPrincipalPart D x) ≠ 0}.Finite := by
+    refine (E - D).support.finite_toSet.subset fun x hx ↦ ?_
+    by_contra hmem
+    have hED : E x ≤ D x := by
+      simp [sub_eq_zero] at hmem
+      exact hmem.le
+    exact hx (by
+      simpa using (Submodule.eq_bot_iff _).1 (LocalPrincipalPart.boundedBy_eq_bot hED) _
+          (c x).property)
+  refine ⟨⟨DFinsupp.ofSupportFinite (fun x ↦ (c x : LocalPrincipalPart D x)) hfin,
+    mem_boundedBy_iff.2 fun x ↦ by simp [DFinsupp.ofSupportFinite_apply]⟩, ?_⟩
+  funext x
+  exact Subtype.ext (DFinsupp.ofSupportFinite_apply _ _ x)
+
+variable (D E) in
+/-- A Mittag-Leffler distribution bounded by `E` is the same as a family of local principal parts
+bounded by `E`: such a family vanishes off the finite support of `E - D`. -/
+def toBoundedFamily : boundedBy D E ≃ₗ[ℂ] ∀ x, LocalPrincipalPart.boundedBy D E x :=
+  LinearEquiv.ofBijective (toBoundedFamilyAux D E) toBoundedFamilyAux_bijective
+
+@[simp]
+theorem coe_toBoundedFamily_apply (μ : boundedBy D E) (x : X) :
+    (toBoundedFamily D E μ x : LocalPrincipalPart D x) = (μ : PrincipalParts D) x := (rfl)
+
+@[simp]
+theorem coe_toBoundedFamily_symm_apply (c : ∀ x, LocalPrincipalPart.boundedBy D E x) (x : X) :
+    ((toBoundedFamily D E).symm c : PrincipalParts D) x = c x := by
+  rw [← coe_toBoundedFamily_apply, LinearEquiv.apply_symm_apply]
+
+/-- The **least bounding divisor** of a Mittag-Leffler distribution relative to `D`: its
+coefficient at `x` is the pole bound of the local principal part at `x`. -/
+def boundingDivisor (μ : PrincipalParts D) : WeilDivisor X :=
+  D + Finsupp.ofSupportFinite (fun x ↦ LocalPrincipalPart.poleBound D (μ x) - D x) (by
+    classical
+    refine (μ.support.finite_toSet).subset fun x hx ↦ ?_
+    by_contra hmem
+    simp only [Finset.mem_coe, DFinsupp.mem_support_toFun, not_not] at hmem
+    simp [hmem] at hx)
+
+@[simp]
+theorem boundingDivisor_apply (μ : PrincipalParts D) (x : X) :
+    boundingDivisor μ x = LocalPrincipalPart.poleBound D (μ x) := by
+  rw [boundingDivisor, Finsupp.add_apply, Finsupp.ofSupportFinite_coe]
+  omega
+
+theorem le_boundingDivisor (μ : PrincipalParts D) : D ≤ boundingDivisor μ := fun x ↦ by
+  simpa using LocalPrincipalPart.le_poleBound (μ x)
+
+theorem mem_boundedBy_boundingDivisor (μ : PrincipalParts D) :
+    μ ∈ boundedBy D (boundingDivisor μ) :=
+  mem_boundedBy_iff.2 fun x ↦ LocalPrincipalPart.mem_boundedBy_of_poleBound_le (by simp)
+
+/-- The bounding divisor is least among the divisors `E ≥ D` bounding the distribution. -/
+theorem boundingDivisor_le {μ : PrincipalParts D} (hD : D ≤ E) (hμ : μ ∈ boundedBy D E) :
+    boundingDivisor μ ≤ E := fun x ↦ by
+  simpa using LocalPrincipalPart.poleBound_le (hD x) (mem_boundedBy_iff.1 hμ x)
+
+/-- A distribution is bounded by `E ≥ D` exactly when its least bounding divisor is at most `E`. -/
+theorem mem_boundedBy_iff_boundingDivisor_le {μ : PrincipalParts D} (hD : D ≤ E) :
+    μ ∈ boundedBy D E ↔ boundingDivisor μ ≤ E :=
+  ⟨boundingDivisor_le hD, fun h ↦ boundedBy_mono h (mem_boundedBy_boundingDivisor μ)⟩
+
+@[simp]
+theorem boundingDivisor_zero : boundingDivisor (0 : PrincipalParts D) = D :=
+  Finsupp.ext fun x ↦ by
+    rw [boundingDivisor_apply, DFinsupp.zero_apply, LocalPrincipalPart.poleBound_zero]
+
+/-- For `D ≤ D'` and `E ≤ E'`, the map from families of principal parts relative to `D` bounded by
+`E` to families relative to `D'` bounded by `E'`, pointwise by `LocalPrincipalPart.mapOfLE`. -/
+def boundedFamilyMap (hD : D ≤ D') (hE : E ≤ E') :
+    (∀ x : X, LocalPrincipalPart.boundedBy D E x) →ₗ[ℂ]
+      ∀ x : X, LocalPrincipalPart.boundedBy D' E' x :=
+  LinearMap.piMap fun x ↦ LocalPrincipalPart.boundedByMapOfLE hD (hE x)
+
+@[simp]
+theorem coe_boundedFamilyMap_apply (hD : D ≤ D') (hE : E ≤ E')
+    (c : ∀ x : X, LocalPrincipalPart.boundedBy D E x) (x : X) :
+    (boundedFamilyMap hD hE c x : LocalPrincipalPart D' x) =
+      LocalPrincipalPart.mapOfLE hD x (c x) := (rfl)
+
+theorem boundedFamilyMap_toBoundedFamily (hD : D ≤ D') (hE : E ≤ E') (μ : boundedBy D E) :
+    boundedFamilyMap hD hE (toBoundedFamily D E μ) =
+      toBoundedFamily D' E' ⟨mapOfLE hD μ, mapOfLE_mem_boundedBy hD hE μ.property⟩ :=
+  funext fun x ↦ Subtype.ext (by
+    rw [coe_boundedFamilyMap_apply, coe_toBoundedFamily_apply, coe_toBoundedFamily_apply,
+      mapOfLE_apply])
+
+end Bounds
 
 end PrincipalParts
 

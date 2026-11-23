@@ -488,13 +488,6 @@ lemma im_fdBoundary_of_le_four (h3 : 3 < t) (h4 : t ≤ 4) :
     simp [ρ]
   rw [Complex.add_im, Complex.smul_im, hchord, rho_im, smul_eq_mul, add_comm]
 
-/-- The right vertical has constant real part `1/2`. -/
-theorem re_fdBoundarySegment1 (H : ℝ) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    (fdBoundary H t).re = 1 / 2 := by
-  rw [eqOn_fdBoundarySegment1 H ht, fdBoundarySegment1_apply, AffineMap.lineMap_apply]
-  simp [ρ, Complex.real_smul]
-  norm_num
-
 /-- The arc stays at height at most `1`. -/
 theorem im_fdBoundary_arc_le (H : ℝ) {t : ℝ} (ht : t ∈ Icc (1 : ℝ) 3) :
     (fdBoundary H t).im ≤ 1 := by
@@ -515,12 +508,6 @@ theorem re_fdBoundarySegment4 (H : ℝ) {t : ℝ} (ht : t ∈ Icc (3 : ℝ) 4) :
   rw [eqOn_fdBoundarySegment4 H ht, fdBoundarySegment4_apply, AffineMap.lineMap_apply]
   simp [ρ, Complex.real_smul]
   norm_num
-
-/-- The truncation ceiling has constant height `H`. -/
-theorem im_fdBoundarySegment5 (H : ℝ) {t : ℝ} (ht : t ∈ Icc (4 : ℝ) 5) :
-    (fdBoundary H t).im = H := by
-  rw [eqOn_fdBoundarySegment5 H ht, fdBoundarySegment5_apply, AffineMap.lineMap_apply]
-  simp [Complex.real_smul]
 
 /-- The fundamental-domain boundary contour is piecewise `C¹` on `[0, 5]`;
 `contDiffOn_fdBoundary` certifies the three genuine corners as a breakpoint witness. -/
@@ -604,16 +591,6 @@ lemma im_fdBoundary_of_le_one (h1 : t ≤ 1) :
   have him : (1 / 2 + H * Complex.I : ℂ).im = H := by simp
   rw [Complex.add_im, Complex.smul_im, segment1_chord_im, him, smul_eq_mul, add_comm]
 
-/-- The left vertical has constant real part `-1/2`. -/
-lemma re_fdBoundary_of_le_four (h3 : 3 < t) (h4 : t ≤ 4) :
-    (fdBoundary H t).re = -(1 / 2) := by
-  rw [fdBoundary_of_le_four h3 h4, fdBoundarySegment4_apply, AffineMap.lineMap_apply_module']
-  have hchord : ((-1 / 2 + H * Complex.I : ℂ) - (ρ : ℂ)).re = 0 := by
-    simp [ρ]
-  rw [Complex.add_re, Complex.smul_re, hchord, smul_eq_mul, mul_zero, zero_add]
-  simp [ρ]
-  norm_num
-
 /-- The truncation ceiling runs affinely from the left corner to the right. -/
 lemma re_fdBoundary_of_gt_four (h4 : 4 < t) :
     (fdBoundary H t).re = -(1 / 2) + (t - 4) := by
@@ -627,7 +604,10 @@ lemma re_fdBoundary_of_gt_four (h4 : 4 < t) :
   rw [Complex.add_re, Complex.smul_re, hchord, hre, smul_eq_mul, mul_one, add_comm]
 
 /-- The truncation ceiling has constant height `H`. -/
-lemma im_fdBoundary_of_gt_four (h4 : 4 < t) : (fdBoundary H t).im = H := by
+lemma im_fdBoundary_of_four_le (h4 : 4 ≤ t) : (fdBoundary H t).im = H := by
+  rcases h4.eq_or_lt with rfl | h4
+  · rw [im_fdBoundary_of_le_four (by norm_num) le_rfl]
+    ring
   rw [fdBoundary_of_gt_four h4, fdBoundarySegment5_apply, AffineMap.lineMap_apply_module']
   have h5 : ((1 / 2 + H * Complex.I : ℂ) - (-1 / 2 + H * Complex.I)).im = 0 := by
     simp

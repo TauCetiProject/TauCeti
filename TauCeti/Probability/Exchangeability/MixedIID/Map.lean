@@ -64,8 +64,8 @@ theorem MixedIIDWith.map_values {μ : Measure Ω} {X : ι → Ω → α}
       Measurable.of_eval fun i => hf.comp (measurable_pi_apply i)
     have hg : AEMeasurable
         (fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) μ :=
-      MeasureTheory.aemeasurable_probabilityMeasure_pi_toMeasure_of_measurable (fun _ : Fin m => ν)
-        (fun _ => h.measurable_mixingRepresentative)
+      (MeasureTheory.measurable_probabilityMeasure_pi_const_toMeasure ν
+        h.measurable_mixingRepresentative).aemeasurable
     calc
       blockLaw μ (fun i ω => f (X i ω)) k
           = (blockLaw μ X k).map fun x : Fin m → α => fun i => f (x i) :=

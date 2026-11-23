@@ -251,7 +251,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G]
 instance [SeparatelyContinuousMul G] (N : Subgroup G) [N.Normal] :
     ContinuousConstSMul (ConjAct G) N where
   continuous_const_smul g :=
-    continuous_induced_rng.2 ((continuous_const_smul g).comp continuous_subtype_val)
+    continuous_induced_rng.2 ((continuous_const_smul g).comp continuous_subtypeVal)
 
 variable [IsTopologicalGroup G] (N : Subgroup G) [N.Normal]
 
@@ -372,7 +372,7 @@ the acting group, and Labute's formula is itself a left action when `G ⧸ N` is
 @[simp]
 theorem mk_inv_smul_mk (g : G) (n : N) :
     (g : G ⧸ N)⁻¹ • (n : TopologicalAbelianization N) =
-      ((⟨g⁻¹ * n * g, ‹N.Normal›.conj_mem' n n.2 g⟩ : N) : TopologicalAbelianization N) := by
+      ((⟨g⁻¹ * n * g, ‹N.Normal›.conj_mem' n n.property g⟩ : N) : TopologicalAbelianization N) := by
   rw [← QuotientGroup.mk_inv, mk_smul_mk]
   exact congrArg _ (Subtype.ext (by simp))
 
@@ -389,7 +389,7 @@ instance : ContinuousSMul (G ⧸ N) (TopologicalAbelianization N) where
     refine QuotientGroup.continuous_mk.comp (continuous_induced_rng.2 ?_)
     simp only [Function.comp_def, MulAut.conjNormal_apply]
     exact IsTopologicalGroup.continuous_conj_prod.comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
 
 variable {R : Subgroup G} [R.Normal] {N}
 
@@ -487,7 +487,7 @@ theorem topologicalClosure_closure_univ_smul_image_mk_eq_top {S : Set G}
   have hsub : QuotientGroup.mk' (commutator N).topologicalClosure ''
       ((Subtype.val : N → G) ⁻¹' (Subgroup.normalClosure S : Set G)) ⊆ (H : Set _) := by
     rintro _ ⟨y, hy, rfl⟩
-    exact hmem y hy y.2
+    exact hmem y hy y.property
   rw [eq_top_iff, ← SetLike.coe_subset_coe, Subgroup.coe_top, Subgroup.topologicalClosure_coe]
   exact fun x _ ↦ (himage.mono hsub) x
 
