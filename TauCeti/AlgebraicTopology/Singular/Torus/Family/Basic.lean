@@ -209,7 +209,7 @@ theorem torusFamilyMarking_loopClass
     (γ : Path z z) (Γ : C(I, E))
     (hΓ : letI := periodAddAction P
       ∀ t, (γ t : AddAction.orbitRel.Quotient Λ (Y × E)) = Quotient.mk _ (y, Γ t)) :
-    P y (torusFamilyMarking P hcont hinj y (H₁AddEquivHomology _ (loopClass γ))) =
+    P y (torusFamilyMarking P hcont hinj y (H₁AddEquivHomology ℤ _ (loopClass ℤ γ))) =
       Γ 1 - Γ 0 := by
   let _ := periodAddAction P
   rw [period_torusFamilyMarking, ContinuousMap.singularHomologyMap_loopClass]
@@ -243,7 +243,7 @@ private theorem exists_loopClass_eq (y : Y)
     ∃ (z : {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y})
       (γ : Path z z) (Γ : C(I, E)),
       (∀ t, (γ t : AddAction.orbitRel.Quotient Λ (Y × E)) = Quotient.mk _ (y, Γ t)) ∧
-        H₁AddEquivHomology _ (loopClass γ) = c := by
+        H₁AddEquivHomology ℤ _ (loopClass ℤ γ) = c := by
   let _ := periodAddAction P
   let L := (LinearMap.range (P y)).toAddSubgroup
   -- The orbit space of `L` is definitionally that of the submodule `LinearMap.range (P y)`.
@@ -252,7 +252,7 @@ private theorem exists_loopClass_eq (y : Y)
     torusFamilyFiberHomeomorph P y hcont
   let x : AddAction.orbitRel.Quotient L E := Quotient.mk _ 0
   obtain ⟨a, ha⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E))
-    x).surjective (ContinuousMap.singularHomologyMap ℤ 1 (h.symm : C(_, _)) c)
+    x (.refl ℤ)).surjective (ContinuousMap.singularHomologyMap ℤ 1 (h.symm : C(_, _)) c)
   obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
   -- `Group.Abelianization G` is the quotient of `G` by its commutator subgroup and
   -- `Group.Abelianization.of`
@@ -367,8 +367,8 @@ theorem torusFamilyMarking_loopClass_eq_of_homotopy {y₀ y₁ : Y}
     (H : letI := periodAddAction P; C(I × I, AddAction.orbitRel.Quotient Λ (Y × E)))
     (hH : ∀ s, H (0, s) = H (1, s)) (h₀ : ∀ t, (γ₀ t : _) = H (t, 0))
     (h₁ : ∀ t, (γ₁ t : _) = H (t, 1)) :
-    torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology _ (loopClass γ₀)) =
-      torusFamilyMarking P hcont hinj y₁ (H₁AddEquivHomology _ (loopClass γ₁)) := by
+    torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₀)) =
+      torusFamilyMarking P hcont hinj y₁ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₁)) := by
   let _ := periodAddAction P
   have _ := continuousConstVAdd_periodAddAction P hcont
   have _ := properlyDiscontinuousVAdd_periodAddAction P hcont hinj
@@ -404,7 +404,7 @@ theorem torusFamilyMarking_loopClass_eq_of_homotopy {y₀ y₁ : Y}
     rfl
   have hΓ₀ := torusFamilyMarking_loopClass P hcont hinj y₀ γ₀ (Γ 0) (hΓ γ₀ 0 h₀)
   have hΓ₁ := torusFamilyMarking_loopClass P hcont hinj y₁ γ₁ (Γ 1) (hΓ γ₁ 1 h₁)
-  set l := torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology _ (loopClass γ₀))
+  set l := torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₀))
   -- By uniqueness of lifts of `s ↦ H (0, s) = H (1, s)`, translating the start points of the
   -- lifted loops by `l` gives their end points, since this holds at `s = 0`.
   have key : (fun s ↦ H' (1, s)) = fun s ↦ l +ᵥ H' (0, s) := by
@@ -453,8 +453,8 @@ theorem torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy {g : Γ} {y
         (φ x : AddAction.orbitRel.Quotient Λ (Y × E)) = torusFamilyAffineMap R P ρ hP b hb g x)
     (hR : Continuous (R g y₁)) :
     torusFamilyMarking P hcont hinj y₀
-        (ContinuousMap.singularHomologyMap ℤ 1 φ (H₁AddEquivHomology _ (loopClass γ₁))) =
-      ρ g (torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology _ (loopClass γ₀))) := by
+        (ContinuousMap.singularHomologyMap ℤ 1 φ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₁))) =
+      ρ g (torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₀))) := by
   rw [torusFamilyMarking_singularHomologyMap_affineMap P hcont hinj R ρ hP b hb φ hφ hR,
     torusFamilyMarking_loopClass_eq_of_homotopy P hcont hinj γ₀ γ₁ H hH h₀ h₁]
 
@@ -498,10 +498,10 @@ variable [IsTopologicalAddGroup E] [SimplyConnectedSpace E]
 @[simp]
 theorem torusFamilyMarking_periodLoop (y : Y) (l : Λ) :
     dsimp% (torusFamilyMarking P hcont hinj y
-      (H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l)))) = l := by
+      (H₁AddEquivHomology ℤ _ (loopClass ℤ (torusFamilyPeriodLoop P y l)))) = l := by
   -- Normalize the homology carrier in the statement so this simp rule matches after simplification.
   change torusFamilyMarking P hcont hinj y
-    (H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l))) = l
+    (H₁AddEquivHomology ℤ _ (loopClass ℤ (torusFamilyPeriodLoop P y l))) = l
   refine hinj y ?_
   rw [torusFamilyMarking_loopClass P hcont hinj y _
     ⟨fun t ↦ (t : ℝ) • P y l, continuous_subtypeVal.smul continuous_const⟩
@@ -511,7 +511,7 @@ theorem torusFamilyMarking_periodLoop (y : Y) (l : Λ) :
 /-- The inverse of the canonical marking sends `l` to the class of its period loop. -/
 theorem torusFamilyMarking_symm_apply_eq_loopClass (y : Y) (l : Λ) :
     (torusFamilyMarking P hcont hinj y).symm l =
-      H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l)) :=
+      H₁AddEquivHomology ℤ _ (loopClass ℤ (torusFamilyPeriodLoop P y l)) :=
   (LinearEquiv.symm_apply_eq _).2 (torusFamilyMarking_periodLoop P hcont hinj y l).symm
 
 end PeriodLoop
@@ -540,7 +540,8 @@ def IsFlatTorusFamilyMarking
     ⦃z₁ : {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₁}⦄
     (γ₀ : Path z₀ z₀) (γ₁ : Path z₁ z₁) (H : C(I × I, AddAction.orbitRel.Quotient Λ (Y × E))),
     (∀ s, H (0, s) = H (1, s)) → (∀ t, (γ₀ t : _) = H (t, 0)) → (∀ t, (γ₁ t : _) = H (t, 1)) →
-      μ y₀ (H₁AddEquivHomology _ (loopClass γ₀)) = μ y₁ (H₁AddEquivHomology _ (loopClass γ₁))
+      μ y₀ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₀)) =
+        μ y₁ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₁))
 
 variable {P}
 
@@ -665,9 +666,9 @@ theorem apply_singularHomologyMap_loopClass_of_homotopy_eq_conj {g : Γ} {y₀ y
       ((singularChains ℤ).obj (TopCat.of
         {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₀})).homology 1
         ≃ₗ[ℤ] Λ) :
-    ν (ContinuousMap.singularHomologyMap ℤ 1 φ (H₁AddEquivHomology _ (loopClass γ₁))) =
+    ν (ContinuousMap.singularHomologyMap ℤ 1 φ (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₁))) =
       ((torusFamilyMarking P hcont hinj y₀).symm.trans ν).conj (ρ g)
-        (ν (H₁AddEquivHomology _ (loopClass γ₀))) := by
+        (ν (H₁AddEquivHomology ℤ _ (loopClass ℤ γ₀))) := by
   have h := torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy P hcont hinj R ρ hP b hb
     γ₀ γ₁ H hH h₀ h₁ φ hφ hR
   rw [LinearEquiv.conj_apply_apply, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply,

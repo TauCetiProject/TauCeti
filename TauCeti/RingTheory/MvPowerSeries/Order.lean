@@ -58,7 +58,8 @@ Perturbing one entry `a s` by a series `e` of order at least `n ≥ 1` changes `
 (`MvPowerSeries.coeff_mul_eq_coeff_mul_constantCoeff_of_le_order`).
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
-(`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`). Over a commutative ring, if `f` and
+(`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`), and one on finitely many series
+bounds the order of their sum (`MvPowerSeries.le_order_sum`). Over a commutative ring, if `f` and
 `g` have zero constant coefficient, then `f ^ n - g ^ n` has order larger than that of `f - g` for
 `n ≥ 2` (`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
 The degree-zero component of a series is its constant term
@@ -93,6 +94,12 @@ theorem le_order_iff [Semiring R] {f : MvPowerSeries σ R} :
 theorem le_order_add [Semiring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
     (hg : n ≤ g.order) : n ≤ (f + g).order :=
   (le_min hf hg).trans min_order_le_add
+
+/-- A common lower bound on the orders of finitely many series bounds the order of their sum. -/
+theorem le_order_sum [Semiring R] {ι : Type*} {s : Finset ι} {f : ι → MvPowerSeries σ R}
+    (h : ∀ i ∈ s, n ≤ (f i).order) : n ≤ (∑ i ∈ s, f i).order :=
+  Finset.sum_induction _ (fun g : MvPowerSeries σ R ↦ n ≤ g.order) (fun _ _ ↦ le_order_add)
+    (by simp) h
 
 /-- A lower bound on the orders of two series bounds the order of their difference. -/
 theorem le_order_sub [Ring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)

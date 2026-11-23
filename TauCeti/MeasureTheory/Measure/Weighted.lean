@@ -117,14 +117,17 @@ theorem rnDeriv_weighted (μ : Measure α) [SigmaFinite μ] {w : α → ℝ≥0}
   rw [weighted_eq_withDensity μ hw]
   exact rnDeriv_withDensity₀ μ (aemeasurable_const.mul hw.coe_nnreal_ennreal)
 
-/-- Integrability under a valid weighted law is weighted integrability under its base measure. -/
+/-- For an almost-everywhere measurable weight `w` with finite total weight, integrability under
+the weighted law is weighted integrability under its base measure. A zero total weight is allowed:
+then the weighted law is zero and `w = 0` almost everywhere, so both sides hold. -/
 theorem integrable_weighted_iff {μ : Measure α} {w : α → ℝ≥0} (hw : AEMeasurable w μ)
-    (hpos : 0 < ∫⁻ x, (w x : ℝ≥0∞) ∂μ)
     (hfin : ∫⁻ x, (w x : ℝ≥0∞) ∂μ ≠ ∞)
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {g : α → E} :
     Integrable g (μ.weighted w) ↔ Integrable (fun x => w x • g x) μ := by
-  rw [weighted_def, integrable_inv_smul_measure hpos.ne' hfin,
-    integrable_withDensity_iff_integrable_smul₀ hw]
+  have := isFiniteMeasure_withDensity hfin
+  rw [← integrable_withDensity_iff_integrable_smul₀ hw,
+    ← integrable_average (μ := μ.withDensity fun x => (w x : ℝ≥0∞)), weighted_def,
+    withDensity_apply _ MeasurableSet.univ, restrict_univ]
 
 /-- Integration against a weighted law is weighted integration divided by the total weight.
 

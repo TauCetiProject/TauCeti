@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.UniformMulAction
 public import Mathlib.Topology.UniformSpace.HeineCantor
 import Mathlib.Topology.UniformSpace.Compact
 import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
@@ -28,7 +29,10 @@ For coefficients `P (x, y)` that depend on both the point `x` and the value `y`,
 compact product `s ×ˢ t` suffices when all the values lie in `t`
 (`IsCompact.tendstoUniformlyOn_comp_prodMk`): `P` is then uniformly continuous there. This is the
 form in which the coefficients `J(z, u(z))` of a nonlinear equation converge along a sequence of
-maps `u` converging uniformly on a compact set.
+maps `u` converging uniformly on a compact set. When the space of values is weakly locally compact,
+a jointly continuous `P` and a limit continuous on `s` suffice
+(`IsCompact.tendstoUniformlyOn_comp_prodMk_of_continuous`): a compact neighborhood of the values
+of the limit then serves as `t`.
 
 When the inner maps vary too, a uniformly convergent family `G i → g` can be composed with a
 uniformly convergent family `F i → f`, provided `g` is uniformly continuous on a set containing all
@@ -45,7 +49,8 @@ The file also records that a constant family converges uniformly
 uniform convergence of the reindexed family `F ∘ g` along `l`
 (`TauCeti.tendstoUniformlyOn_map_iff`), and that two families converging uniformly along the same
 filter converge jointly (`TendstoUniformlyOn.prodMk_same`), which is the form needed to compose
-with maps of several variables.
+with maps of several variables, and that multiplying by a constant scalar preserves uniform
+convergence (`TendstoUniformlyOn.const_smul`).
 -/
 
 public section
@@ -135,3 +140,22 @@ theorem IsCompact.tendstoUniformlyOn_comp_prodMk [UniformSpace α] {t : Set β} 
   ((hs.prod ht).uniformContinuousOn_of_continuous hP).comp_tendstoUniformlyOn_eventually
     (hF.mono fun _ hFi _ hx ↦ mk_mem_prod hx (hFi hx)) (fun _ hx ↦ mk_mem_prod hx (hf hx))
     h.graph
+
+/-- Let `Fᵢ → f` uniformly on a compact set `s`, with `f` continuous on `s` and values in a weakly
+locally compact space. Then `P (x, Fᵢ x) → P (x, f x)` uniformly on `s`, for every continuous `P`.
+-/
+theorem IsCompact.tendstoUniformlyOn_comp_prodMk_of_continuous [UniformSpace α]
+    [WeaklyLocallyCompactSpace β] {P : α × β → γ} (hs : IsCompact s) (hP : Continuous P)
+    (hf : ContinuousOn f s) (h : TendstoUniformlyOn F f p s) :
+    TendstoUniformlyOn (fun i x ↦ P (x, F i x)) (fun x ↦ P (x, f x)) p s := by
+  have hfs := hs.image_of_continuousOn hf
+  obtain ⟨t, ht, hft⟩ := exists_compact_superset hfs
+  exact hs.tendstoUniformlyOn_comp_prodMk ht hP.continuousOn
+    (h.eventually_mapsTo (mapsTo_image f s) hfs (subset_interior_iff_mem_nhdsSet.1 hft))
+    (fun _ hx ↦ interior_subset (hft (mem_image_of_mem f hx))) h
+
+/-- Multiplying a family converging uniformly on `s` by a constant scalar preserves uniform
+convergence on `s`. -/
+theorem TendstoUniformlyOn.const_smul {M : Type*} [SMul M β] [UniformContinuousConstSMul M β]
+    (h : TendstoUniformlyOn F f p s) (c : M) : TendstoUniformlyOn (c • F) (c • f) p s :=
+  (uniformContinuous_const_smul c).comp_tendstoUniformlyOn h
