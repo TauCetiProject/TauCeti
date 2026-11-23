@@ -405,7 +405,10 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
     refine integral_mono_of_nonneg (ae_of_all _ fun z ↦ by positivity)
       ((hYi.const_mul _).add (hGi.const_mul _)) (ae_of_all _ fun z ↦ ?_)
     have h₁ := sum_norm_gradient_sq_le x Y z
-    have h₂ : ‖x z‖ ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (hM z) 2
+    have h₂ : x z 0 ^ 2 + x z 1 ^ 2 ≤ M ^ 2 := by
+      have := pow_le_pow_left₀ (norm_nonneg _) (hM z) 2
+      rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four] at this
+      nlinarith [sq_nonneg (x z 2), sq_nonneg (x z 3)]
     -- The coordinates of `Y` are the test functions themselves.
     have h₃ (j : Fin 4) : (fun w ↦ Y w j) = φ j := funext fun w ↦ by simp only [Y]
     simp only [h₃] at h₁
