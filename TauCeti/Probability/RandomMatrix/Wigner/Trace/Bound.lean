@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Trace.Word
+public import TauCeti.Probability.Moments.CenteredTruncation
+import TauCeti.Algebra.Order.GroupWithZero.Pow
 import TauCeti.Combinatorics.TraceWord.Coding
+import TauCeti.Probability.Independence.Basic
 import Mathlib.Tactic.FieldSimp
 
 /-!
 # Füredi–Komlós bound on growing Wigner traces
 
 Let the entries of a Wigner matrix `Hₙ = Wₙ / √n` be independent and centred. Let them be bounded
-by `K` almost surely and have second absolute moments at most `σ ^ 2`. If `K ≤ σ * γ ^ 2 * √n`
-with `0 ≤ γ ≤ 1`, then `‖E trace Hₙ ^ L‖ ≤ n * (σ * (2 + L * γ)) ^ L` for every `L`.
+by `K` almost surely and have second absolute moments at most `σ ^ 2`, for some `σ ≥ 0`. If
+`K ≤ σ * γ ^ 2 * √n` with `0 ≤ γ ≤ 1`, then `‖E trace Hₙ ^ L‖ ≤ n * (σ * (2 + L * γ)) ^ L` for
+every `L`.
 
 The bound is uniform in the length `L`. With entries truncated at a power `n ^ a` with `a < 1/2`,
 the choice `γ ^ 4 = K ^ 2 / (σ ^ 2 * n)` makes `L * γ` tend to zero along lengths `L` of
@@ -28,9 +32,12 @@ entries and `c = min (σ ^ 2 / n) (b ^ 2)` bounds their second moments. The walk
 by the weighted Füredi–Komlós enumeration
 `TauCeti.sum_pow_div_pow_card_image_le_of_no_singleton_edge`.
 
-## Main result
+## Main results
 
-* `TauCeti.norm_integral_trace_pow_wignerMatrix_le`: the trace bound.
+* `ProbabilityTheory.iIndepFun.norm_integral_trace_pow_wignerMatrix_le`: the trace bound.
+* `ProbabilityTheory.iIndepFun.norm_integral_trace_pow_wignerMatrix_centeredTruncation_le`: the
+  trace bound for the zero-diagonal Wigner matrices of centered truncations at radius `R`, whose
+  entries are bounded by `2 * R`.
 
 ## References
 
@@ -43,28 +50,9 @@ by the weighted Füredi–Komlós enumeration
 public section
 
 open MeasureTheory ProbabilityTheory Matrix Finset
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
-
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ}
-  {η : ℕ → Ω → ℝ}
-
-/-- Trading an edge for two extra traversals: `c ^ s * b ^ (L - 2 * s)` does not decrease when
-`s` decreases, if `0 ≤ c ≤ b ^ 2`. -/
-private theorem pow_mul_pow_sub_le {b c : ℝ} (hb : 0 ≤ b) (hc : 0 ≤ c) (hcb : c ≤ b ^ 2)
-    {r s L : ℕ} (hrs : r ≤ s) (hs : 2 * s ≤ L) :
-    c ^ s * b ^ (L - 2 * s) ≤ c ^ r * b ^ (L - 2 * r) := by
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hrs
-  calc c ^ (r + d) * b ^ (L - 2 * (r + d)) = c ^ r * (c ^ d * b ^ (L - 2 * (r + d))) := by
-        rw [pow_add, mul_assoc]
-    _ ≤ c ^ r * ((b ^ 2) ^ d * b ^ (L - 2 * (r + d))) :=
-        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hc hcb d)
-          (pow_nonneg hb _)) (pow_nonneg hc r)
-    _ = c ^ r * b ^ (L - 2 * r) := by
-        rw [← pow_mul, ← pow_add]
-        congr 2
-        omega
 
 /-- The bound for a single trace word in the form counted by the Füredi–Komlós enumeration: a word
 with `e` distinct edges and `t ≤ e + 1` vertices, `2 * e ≤ L`, contributes at most
@@ -78,7 +66,7 @@ private theorem pow_mul_pow_sub_le_mul_pow_div_pow {b c σ γ n : ℝ} (hb : 0 �
     rw [← pow_mul, ← pow_add]
     congr 1
     omega
-  calc _ ≤ c ^ t' * b ^ (L - 2 * t') := pow_mul_pow_sub_le hb hc hcb (by omega) heL
+  calc _ ≤ c ^ t' * b ^ (L - 2 * t') := pow_mul_pow_sub_two_mul_le hb hc hcb (by omega) heL
     _ ≤ (σ ^ 2 / n) ^ t' * (σ * γ ^ 2) ^ (L - 2 * t') :=
         mul_le_mul (pow_le_pow_left₀ hc hcσ _) (pow_le_pow_left₀ hb hbσ _) (pow_nonneg hb _)
           (pow_nonneg (hc.trans hcσ) _)
@@ -88,59 +76,19 @@ private theorem pow_mul_pow_sub_le_mul_pow_div_pow {b c σ γ n : ℝ} (hb : 0 �
         field_simp [hn.ne']
         ring
 
-/-- Bounded entries of second moment at most `σ ^ 2 / n` have absolute moments of order `m + 2`
-at most `b ^ m * min (σ ^ 2 / n) (b ^ 2)`, for the bound `b = K / √n` on the normalized entries. -/
-private theorem integral_norm_wignerMatrix_apply_pow_add_two_le [IsProbabilityMeasure P] {n : ℕ}
-    {K σ : ℝ} (hn : 0 < n)
-    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEStronglyMeasurable (ξ ij) P)
-    (hηm : ∀ i < n, AEStronglyMeasurable (η i) P)
-    (hξK : ∀ ij : StrictUpper, ij.val.2 < n → ∀ᵐ ω ∂P, ‖ξ ij ω‖ ≤ K)
-    (hηK : ∀ i < n, ∀ᵐ ω ∂P, ‖η i ω‖ ≤ K)
-    (hξσ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P ≤ σ ^ 2)
-    (hησ : ∀ i < n, ∫ ω, ‖η i ω‖ ^ 2 ∂P ≤ σ ^ 2) (i j : Fin n) (m : ℕ) :
-    ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ (m + 2) ∂P ≤
-      (K / Real.sqrt n) ^ m * min (σ ^ 2 / n) ((K / Real.sqrt n) ^ 2) := by
-  have hsqrt : 0 < Real.sqrt n := Real.sqrt_pos.mpr (Nat.cast_pos.mpr hn)
-  have hK₀ : 0 ≤ K := (hηK 0 hn).exists.elim fun _ h ↦ (norm_nonneg _).trans h
-  have hξp (p : ℕ) : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) p P :=
-    fun ij hij ↦ .of_bound (hξm ij hij) K (hξK ij hij)
-  have hηp (p : ℕ) : ∀ i < n, MemLp (η i) p P := fun i hi ↦ .of_bound (hηm i hi) K (hηK i hi)
-  -- The normalized entries are bounded by `K / √n`.
-  have hent : ∀ᵐ ω ∂P, ‖wignerMatrix ξ η n ω i j‖ ≤ K / Real.sqrt n := by
-    by_cases hij : i = j
-    · subst hij
-      filter_upwards [hηK i.val i.isLt] with ω hω
-      rw [wignerMatrix_apply_self, norm_mul, norm_inv, Complex.norm_real, Complex.norm_real,
-        Real.norm_of_nonneg (Real.sqrt_nonneg _), inv_mul_eq_div]
-      exact div_le_div_of_nonneg_right hω hsqrt.le
-    · filter_upwards [hξK ⟨(min i.val j.val, max i.val j.val),
-        min_lt_max.mpr (Fin.val_ne_of_ne hij)⟩ (max_lt i.isLt j.isLt)] with ω hω
-      rw [norm_wignerMatrix_apply_of_ne _ _ _ hij, inv_mul_eq_div]
-      exact div_le_div_of_nonneg_right hω hsqrt.le
-  have hint : Integrable (fun ω ↦ ‖wignerMatrix ξ η n ω i j‖ ^ 2) P :=
-    (memLp_wignerMatrix_apply (hξp 2) (hηp 2) i j).integrable_norm_pow two_ne_zero
-  have hσn : ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P ≤ σ ^ 2 / n := by
-    have := integral_norm_wignerMatrix_apply_pow_le (k := 2) hξσ hησ i j
-    rwa [inv_pow, Real.sq_sqrt (Nat.cast_nonneg n), inv_mul_eq_div] at this
-  have hbb : ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P ≤ (K / Real.sqrt n) ^ 2 := by
-    calc _ ≤ ∫ _ : Ω, (K / Real.sqrt n) ^ 2 ∂P := integral_mono_ae hint (integrable_const _)
-          (hent.mono fun ω hω ↦ pow_le_pow_left₀ (norm_nonneg _) hω 2)
-      _ = (K / Real.sqrt n) ^ 2 := by simp
-  calc _ ≤ ∫ ω, (K / Real.sqrt n) ^ m * ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P :=
-        integral_mono_ae ((memLp_wignerMatrix_apply (hξp (m + 2)) (hηp (m + 2)) i j)
-          |>.integrable_norm_pow (Nat.succ_ne_zero _)) (hint.const_mul _)
-          (hent.mono fun ω hω ↦ by
-            simp only [pow_add]
-            exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) hω m)
-              (sq_nonneg _))
-    _ = (K / Real.sqrt n) ^ m * ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P := integral_const_mul _ _
-    _ ≤ _ := mul_le_mul_of_nonneg_left (le_min hσn hbb)
-        (pow_nonneg (div_nonneg hK₀ hsqrt.le) m)
+end TauCeti
+
+namespace ProbabilityTheory.iIndepFun
+
+open TauCeti
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ}
+  {η : ℕ → Ω → ℝ}
 
 /-- **Füredi–Komlós trace bound.** Let the entries in the `n × n` corner be independent and
-centred, bounded by `K` in norm almost surely, and with second absolute moments at most `σ ^ 2`.
-If `0 ≤ γ ≤ 1` and `K ≤ σ * γ ^ 2 * √n`, then for every `L` the expected trace of `Hₙ ^ L` has
-norm at most `n * (σ * (2 + L * γ)) ^ L`. -/
+centred, bounded by `K` in norm almost surely, and with second absolute moments at most `σ ^ 2`,
+where `σ ≥ 0`. If `0 ≤ γ ≤ 1` and `K ≤ σ * γ ^ 2 * √n`, then for every `L` the expected trace of
+`Hₙ ^ L` has norm at most `n * (σ * (2 + L * γ)) ^ L`. -/
 theorem norm_integral_trace_pow_wignerMatrix_le {L n : ℕ} {K σ γ : ℝ}
     (hindep : iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
@@ -179,8 +127,12 @@ theorem norm_integral_trace_pow_wignerMatrix_le {L n : ℕ} {K σ γ : ℝ}
         -- A walk with `t` vertices and `e` distinct edges has `t ≤ e + 1` and `2 * e ≤ L`.
         have hword := norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge
           (fun ij hij ↦ (hξm ij hij).aemeasurable) (fun i hi ↦ (hηm i hi).aemeasurable) hindep
-          (fun i j m _ ↦ integral_norm_wignerMatrix_apply_pow_add_two_le hn hξm hηm hξK hηK hξσ
-            hησ i j m) w (fun s ↦ w (finRotate L s)) hw
+          w (fun s ↦ w (finRotate L s)) hw fun s ↦ by
+            -- The position of each step is read `m + 2` times for some `m`.
+            obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le'
+              (two_le_card_filter_eq_of_no_singleton_fiber hw _ (mem_image_of_mem _ (mem_univ s)))
+            rw [hm, Nat.add_sub_cancel]
+            exact integral_norm_wignerMatrix_apply_pow_add_two_le hξm hηm hξK hηK hξσ hησ _ _ m
         rw [Fintype.card_fin] at hword
         exact hword.trans (pow_mul_pow_sub_le_mul_pow_div_pow hb₀ (le_min (by positivity)
           (sq_nonneg _)) (min_le_right _ _) (min_le_left _ _) ((div_le_iff₀ hsqrt).mpr hK)
@@ -196,4 +148,46 @@ theorem norm_integral_trace_pow_wignerMatrix_le {L n : ℕ} {K σ γ : ℝ}
         mul_le_mul_of_nonneg_left hcomb (mul_nonneg (Nat.cast_nonneg n) (pow_nonneg hσ L))
     _ = n * (σ * (2 + L * γ)) ^ L := by rw [mul_pow, mul_assoc]
 
-end TauCeti
+/-- Independent upper entries in the `n × n` corner and a zero diagonal give independent
+coordinates on the corner. -/
+private theorem sumElim_zero_subtype_lt {n : ℕ}
+    (h : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P) :
+    iIndepFun (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+      Sum.elim (fun ij ↦ ξ ij.val) (fun _ _ ↦ ((0 : ℝ) : ℂ)) r) P := by
+  let e := Equiv.ofInjective
+    (Sum.inl : {ij : StrictUpper // ij.val.2 < n} → _ ⊕ {i : ℕ // i < n}) Sum.inl_injective
+  refine iIndepFun.of_subtype_of_ae_eq_const_outside (s := Set.range Sum.inl) ?_ ?_
+  · refine (h.precomp e.symm.injective).congr fun i ↦ ?_
+    obtain ⟨_, a, rfl⟩ := i
+    exact .of_forall fun ω ↦ by simp [e]
+  · rintro (a | b) hi
+    · exact absurd ⟨a, rfl⟩ hi
+    · exact ⟨0, .of_forall fun _ ↦ rfl⟩
+
+/-- **Füredi–Komlós bound for centered truncations.** Let the upper entries in the `N × N` corner
+be independent and square-integrable, with second absolute moments at most `σ ^ 2`, where
+`σ ≥ 0`, and let `0 ≤ γ ≤ 1`. If the bound `2 * R` on their centered truncations at radius `R`
+satisfies `2 * R ≤ σ * γ ^ 2 * √N`, then for every `L` the expected trace of the `L`th power of
+the zero-diagonal Wigner matrix of size `N` built from these truncations has norm at most
+`N * (σ * (2 + L * γ)) ^ L`. -/
+theorem norm_integral_trace_pow_wignerMatrix_centeredTruncation_le {N : ℕ}
+    (hind : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < N} ↦ ξ ij.val) P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < N → MemLp (ξ ij) 2 P) {σ γ : ℝ}
+    (hσ : ∀ ij : StrictUpper, ij.val.2 < N → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P ≤ σ ^ 2) (hσ₀ : 0 ≤ σ)
+    (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1) (R : ℝ≥0) (hR : 2 * (R : ℝ) ≤ σ * γ ^ 2 * Real.sqrt N)
+    (L : ℕ) :
+    ‖∫ ω, (wignerMatrix (fun ij ↦ TauCeti.Probability.centeredTruncation (ξ ij) P R)
+      (fun _ _ ↦ 0) N ω ^ L).trace ∂P‖ ≤ N * (σ * (2 + L * γ)) ^ L := by
+  have : IsProbabilityMeasure P := hind.isProbabilityMeasure
+  exact (sumElim_zero_subtype_lt (ξ := fun ij ↦ TauCeti.Probability.centeredTruncation (ξ ij) P R)
+      (hind.centeredTruncation fun _ ↦ R)).norm_integral_trace_pow_wignerMatrix_le
+    (fun ij hij ↦ (hξ ij hij).aestronglyMeasurable.centeredTruncation R)
+    (fun _ _ ↦ aestronglyMeasurable_const)
+    (fun ij hij ↦ (hξ ij hij).aestronglyMeasurable.integral_centeredTruncation R)
+    (fun _ _ ↦ integral_zero _ _)
+    (fun _ _ ↦ .of_forall fun ω ↦ TauCeti.Probability.norm_centeredTruncation_le R ω)
+    (fun _ _ ↦ .of_forall fun _ ↦ by simp)
+    (fun ij hij ↦ ((hξ ij hij).integral_norm_centeredTruncation_sq_le R).trans (hσ ij hij))
+    (fun _ _ ↦ by simpa using sq_nonneg σ) hσ₀ hγ₀ hγ₁ hR
+
+end ProbabilityTheory.iIndepFun

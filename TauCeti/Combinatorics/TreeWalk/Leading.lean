@@ -73,8 +73,7 @@ theorem cyclicPath_apply {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin (k + 1
 
 @[simp] theorem cyclicPath_succ {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin k) :
     cyclicPath w i.succ = w (finRotate k i) := by
-  apply congrArg w
-  simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+  rw [cyclicPath_apply, Fin.val_succ, ← finRotate_ofNat, Fin.ofNat_val_eq_self]
 
 @[simp] theorem cyclicPath_zero {k : ℕ} [NeZero k] (w : Fin k → α) :
     cyclicPath w 0 = w 0 := by

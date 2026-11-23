@@ -16,16 +16,17 @@ import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 # Füredi–Komlós coding of trace words
 
 The moment method for the largest eigenvalue of a Wigner matrix needs the number of closed walks of
-growing length `L` that traverse each of their edges at least twice. The walks visiting the maximal
-number `L / 2 + 1` of vertices are the double traversals of trees. They number at most
-`n ^ (L / 2 + 1) * 2 ^ L` on `n` vertices. Each vertex fewer costs only a factor polynomial in `L`.
+growing length `L` that traverse each of their edges at least twice. Such a walk visits at most
+`L / 2 + 1` vertices. When `L = 2 * m > 0`, the walks visiting `m + 1` vertices, that is with
+`2 * t = L + 2` for `t` vertices, are the double traversals of trees. They number at most
+`n ^ (m + 1) * 2 ^ L` on `n` vertices. Each vertex fewer costs only a factor polynomial in `L`.
 
 This file proves the weighted form of this enumeration. For `0 ≤ γ ≤ 1`, a finite type `α` of
 cardinality `n`, and the closed walks `w : Fin L → α` traversing each edge at least twice,
 `∑ γ ^ (2 * (L + 2 - 2 * t w)) / n ^ (t w) ≤ (2 + L * γ) ^ L`, where `t w` is the number of
 vertices `w` visits. The left side weights each walk by `n⁻ᵗ`, damped by the factor
-`γ ^ (2 * (L + 2 - 2 * t))`, which is `1` exactly for the walks attaining the tree bound
-`2 * t = L + 2`.
+`γ ^ (2 * (L + 2 - 2 * t))`. For `0 ≤ γ < 1` this factor is `1` exactly for the walks attaining
+the tree bound `2 * t = L + 2`. At `γ = 1` every walk has damping factor `1`.
 
 The proof codes a walk by its first vertex and one symbol per step. Each step goes to a new vertex,
 or closes the only open discovery edge at the current vertex, or *jumps*. A step is a discovery
@@ -65,19 +66,10 @@ section Path
 /-- The edge traversed by step `s` of the path `p`. -/
 private def edge (p : ℕ → α) (s : ℕ) : Sym2 α := s(p s, p (s + 1))
 
-section Edge
-
-variable {p : ℕ → α}
-
-private theorem mem_edge_iff {s : ℕ} {x : α} : x ∈ edge p s ↔ x = p s ∨ x = p (s + 1) :=
-  Sym2.mem_iff
-
-private theorem mem_edge_left (p : ℕ → α) (s : ℕ) : p s ∈ edge p s := Sym2.mem_mk_left _ _
-
-private theorem mem_edge_right (p : ℕ → α) (s : ℕ) : p (s + 1) ∈ edge p s :=
-  Sym2.mem_mk_right _ _
-
-end Edge
+/-- Paths agreeing up to time `l` traverse the same edges before time `l`. -/
+private theorem edge_congr {p q : ℕ → α} {l t : ℕ} (h : ∀ j ≤ l, p j = q j) (ht : t < l) :
+    edge p t = edge q t := by
+  rw [edge, edge, h t ht.le, h (t + 1) ht]
 
 variable [DecidableEq α]
 
@@ -109,20 +101,16 @@ variable {p q : ℕ → α}
 private theorem notMem_edge_of_isNew {l s : ℕ} (hl : IsNew p l) (hs : s < l) :
     p (l + 1) ∉ edge p s := by
   intro h
-  rcases mem_edge_iff.mp h with h | h
+  rcases Sym2.mem_iff.mp h with h | h
   · exact hl (mem_image.mpr ⟨s, mem_range.mpr (by omega), h.symm⟩)
   · exact hl (mem_image.mpr ⟨s + 1, mem_range.mpr (by omega), h.symm⟩)
 
 private theorem edge_ne_of_isNew {l s : ℕ} (hl : IsNew p l) (hs : s < l) :
     edge p s ≠ edge p l := fun h ↦
-  notMem_edge_of_isNew hl hs (h ▸ mem_edge_right p l)
+  notMem_edge_of_isNew hl hs (h ▸ Sym2.mem_mk_right _ _)
 
 private theorem ne_of_isNew {l : ℕ} (hl : IsNew p l) : p l ≠ p (l + 1) :=
   fun h ↦ hl (mem_image.mpr ⟨l, mem_range.mpr (by omega), h⟩)
-
-private theorem eq_of_isOpen {l s s' : ℕ} (hs : IsOpen p l s) (hs' : IsOpen p l s')
-    (h : edge p s' = edge p s) : s' = s :=
-  hs.2.2 s' hs'.1 h
 
 private theorem not_isNew_of_closes {l : ℕ} (h : Closes p l) : ¬ IsNew p l := by
   obtain ⟨s, hs, he⟩ := h
@@ -186,7 +174,7 @@ private theorem openDeg_succ_add (l : ℕ) (x : α) :
       rw [sum_eq_single_of_mem s₀ (mem_range.mpr hs₀.1)]
       · simp only [hs₀, he₀, hc, true_and]
       · intro s _ hs
-        exact ite_eq_right fun h ↦ hs (eq_of_isOpen hs₀ h.1 (h.2.1.trans he₀.symm))
+        exact ite_eq_right fun h ↦ hs (hs₀.2.2 s h.1.1 (h.2.1.trans he₀.symm))
     · rw [ite_eq_right fun h ↦ hc h.1]
       exact sum_eq_zero fun s _ ↦ ite_eq_right fun h ↦ hc ⟨s, h.1, h.2.1⟩
   simp only [hll]
@@ -220,7 +208,7 @@ private theorem one_le_openDeg_of_closes {l : ℕ} (h : Closes p l) : 1 ≤ open
   obtain ⟨s, hs, he⟩ := h
   refine card_pos.mpr ⟨s, mem_filter.mpr ⟨mem_range.mpr hs.1, hs, ?_⟩⟩
   rw [he]
-  exact mem_edge_left p l
+  exact Sym2.mem_mk_left _ _
 
 open Classical in
 /-- A discovery leaves every degree excess unchanged. -/
@@ -233,7 +221,7 @@ private theorem potential_succ_le_of_isNew [Fintype α] {l : ℕ} (hnew : IsNew 
   have hu := openDeg_eq_zero_of_isNew hnew
   refine sum_le_sum fun x _ ↦ ?_
   have hx := openDeg_succ_add (p := p) l x
-  simp only [mem_edge_iff] at hx
+  simp only [edge, Sym2.mem_iff] at hx
   rw [ite_eq_right fun h ↦ hc h.1] at hx
   simp only [potentialDeg]
   by_cases hxu : x = p (l + 1)
@@ -260,7 +248,7 @@ private theorem potential_succ_add_le_of_closes [Fintype α] {l : ℕ} (hc : Clo
   have hle (x : α) : potentialDeg p (l + 1) x + (if x = p l then 2 else 0) =
       potentialDeg p l x := by
     have hx := openDeg_succ_add (p := p) l x
-    simp only [mem_edge_iff] at hx
+    simp only [edge, Sym2.mem_iff] at hx
     have hN : (if IsNew p l ∧ (x = p l ∨ x = p (l + 1)) then 1 else 0) = 0 :=
       ite_eq_right fun h ↦ hnew h.1
     rw [hN, add_zero] at hx
@@ -295,10 +283,14 @@ private theorem potential_succ_add_le_of_closes [Fintype α] {l : ℕ} (hc : Clo
     split_ifs at this <;> omega
 
 open Classical in
-/-- A step that neither discovers nor closes moves one end of the path, which raises the excess
-by at most one. -/
-private theorem potential_succ_le_add_one [Fintype α] {l : ℕ} (hnew : ¬ IsNew p l)
-    (hc : ¬ Closes p l) : potential p (l + 1) ≤ potential p l + 1 := by
+/-- A step raises the excess by at most one: a discovery or a closing step does not raise it, and
+any other step moves one end of the path. -/
+private theorem potential_succ_le_add_one [Fintype α] (l : ℕ) :
+    potential p (l + 1) ≤ potential p l + 1 := by
+  by_cases hnew : IsNew p l
+  · exact (potential_succ_le_of_isNew hnew).trans (Nat.le_succ _)
+  by_cases hc : Closes p l
+  · exact ((Nat.le_add_right _ _).trans (potential_succ_add_le_of_closes hc)).trans (Nat.le_succ _)
   calc potential p (l + 1)
       ≤ ∑ x, ((potentialDeg p l x - 2) + if x = p (l + 1) then 1 else 0) := by
         refine sum_le_sum fun x _ ↦ ?_
@@ -331,7 +323,7 @@ private theorem potential_succ_add_le [Fintype α] (l : ℕ) :
       ite_eq_right fun h ↦ hc h.1
     have hT : (if ¬ IsNew p l ∧ ¬ Closes p l then 1 else 0) = 1 := ite_eq_left ⟨hnew, hc⟩
     rw [hA, hT, add_zero]
-    exact potential_succ_le_add_one hnew hc
+    exact potential_succ_le_add_one l
 
 open Classical in
 /-- Closing steps at a vertex carrying at least two open discovery edges are no more numerous
@@ -444,17 +436,17 @@ private theorem card_jump_add_four_mul_card_isNew_le [Finite α] {L : ℕ}
 /-- Paths agreeing up to time `l` have the same open discovery steps at time `l`. -/
 private theorem isOpen_congr {l s : ℕ} (h : ∀ j ≤ l, p j = q j) :
     IsOpen p l s ↔ IsOpen q l s := by
-  have hedge {s' : ℕ} (hs' : s' < l) : edge p s' = edge q s' := by
-    rw [edge, edge, h s' hs'.le, h (s' + 1) hs']
   have hnew {s' : ℕ} (hs' : s' < l) : IsNew p s' ↔ IsNew q s' := by
     have himage : (range (s' + 1)).image p = (range (s' + 1)).image q :=
       image_congr fun j hj ↦ h j (by have := mem_range.mp hj; omega)
     rw [IsNew, IsNew, himage, h (s' + 1) hs']
   constructor
   · rintro ⟨hs, hn, hu⟩
-    exact ⟨hs, (hnew hs).mp hn, fun s' hs' he ↦ hu s' hs' (by rwa [hedge hs', hedge hs])⟩
+    exact ⟨hs, (hnew hs).mp hn, fun s' hs' he ↦
+      hu s' hs' (by rwa [edge_congr h hs', edge_congr h hs])⟩
   · rintro ⟨hs, hn, hu⟩
-    exact ⟨hs, (hnew hs).mpr hn, fun s' hs' he ↦ hu s' hs' (by rwa [← hedge hs', ← hedge hs])⟩
+    exact ⟨hs, (hnew hs).mpr hn, fun s' hs' he ↦
+      hu s' hs' (by rwa [← edge_congr h hs', ← edge_congr h hs])⟩
 
 open Classical in
 /-- A forced step is determined by the path up to its starting time. -/
@@ -462,8 +454,6 @@ private theorem eq_of_forced {l : ℕ} (h : ∀ j ≤ l, p j = q j) (hp : Forced
     (hq : Forced q l) : p (l + 1) = q (l + 1) := by
   obtain ⟨⟨s, hs, he⟩, hdeg⟩ := hp
   obtain ⟨⟨s', hs', he'⟩, -⟩ := hq
-  have hedge {t : ℕ} (ht : t < l) : edge p t = edge q t := by
-    rw [edge, edge, h t ht.le, h (t + 1) ht]
   have hs'p : IsOpen p l s' := (isOpen_congr h).mpr hs'
   -- Both open steps carry the starting vertex, which has a single open discovery edge.
   have hss' : s = s' := by
@@ -471,12 +461,12 @@ private theorem eq_of_forced {l : ℕ} (h : ∀ j ≤ l, p j = q j) (hp : Forced
     refine card_le_one.mp hdeg' s (mem_filter.mpr ⟨mem_range.mpr hs.1, hs, ?_⟩) s'
       (mem_filter.mpr ⟨mem_range.mpr hs'.1, hs'p, ?_⟩)
     · rw [he]
-      exact mem_edge_left p l
-    · rw [hedge hs'.1, he', h l le_rfl]
-      exact mem_edge_left q l
+      exact Sym2.mem_mk_left _ _
+    · rw [edge_congr h hs'.1, he', h l le_rfl]
+      exact Sym2.mem_mk_left _ _
   subst hss'
   have : s(p l, p (l + 1)) = s(p l, q (l + 1)) := by
-    have := he.symm.trans ((hedge hs.1).trans he')
+    have := he.symm.trans ((edge_congr h hs.1).trans he')
     rwa [edge, edge, ← h l le_rfl] at this
   exact Sym2.congr_right.mp this
 
@@ -515,10 +505,7 @@ private theorem cyclicPath_val (w : Fin L → α) (t : Fin L) : cyclicPath w t.v
 private theorem edge_cyclicPath (w : Fin L → α) (i : ℕ) :
     edge (cyclicPath w) i =
       s(w (Fin.ofNat L i), w (finRotate L (Fin.ofNat L i))) := by
-  obtain ⟨k, rfl⟩ : ∃ k, L = k + 1 := ⟨L - 1, by have := NeZero.ne L; omega⟩
-  have hnext : Fin.ofNat (k + 1) (i + 1) = finRotate (k + 1) (Fin.ofNat (k + 1) i) := by
-    simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
-  rw [edge, cyclicPath, cyclicPath, hnext]
+  rw [edge, cyclicPath, cyclicPath, finRotate_ofNat]
 
 variable [DecidableEq α]
 
@@ -593,14 +580,8 @@ private theorem prod_symbolWeight (n γ : ℝ) (p : ℕ → α) :
   simp only [hw, prod_ite, prod_const_one, prod_const, one_mul, filter_filter]
 
 private theorem image_range_cyclicPath (w : Fin L → α) :
-    (range (L + 1)).image (cyclicPath w) = univ.image w := by
-  ext x
-  simp only [mem_image, mem_range, mem_univ, true_and]
-  constructor
-  · rintro ⟨i, -, rfl⟩
-    exact ⟨_, rfl⟩
-  · rintro ⟨t, rfl⟩
-    exact ⟨t.val, by omega, cyclicPath_val w t⟩
+    (range (L + 1)).image (cyclicPath w) = univ.image w :=
+  image_range_ofNat_eq_image_univ w (Nat.le_succ L)
 
 open Classical in
 /-- A cyclic word traversing each edge at least twice is bounded by `n⁻¹` times the weight of its
@@ -635,8 +616,8 @@ end Code
 `s(w t, w (t + 1))` at least twice, the sum of `γ ^ (2 * (L + 2 - 2 * t)) / n ^ t`, where `t` is
 the number of vertices visited by `w`, is at most `(2 + L * γ) ^ L`.
 
-The walks visiting the maximal number `L / 2 + 1` of vertices have weight `n⁻ᵗ`, and every vertex
-fewer adds the factor `γ ^ 4`. In particular, for `0 < γ ≤ 1` there are at most
+When `L = 2 * m > 0`, the walks visiting `m + 1` vertices, the most possible, have weight `n⁻ᵗ`,
+and every vertex fewer adds the factor `γ ^ 4`. In particular, for `0 < γ ≤ 1` there are at most
 `n ^ t * (2 + L * γ) ^ L / γ ^ (2 * (L + 2 - 2 * t))` such walks visiting `t` vertices. -/
 theorem sum_pow_div_pow_card_image_le_of_no_singleton_edge [DecidableEq α] [Fintype α] {L : ℕ}
     {γ : ℝ}

@@ -42,10 +42,12 @@ case and proves integrability first.
   expectation.
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`: for independent centred corner entries, a
   product of entries reading some edge exactly once has expectation zero.
+* `TauCeti.integral_prod_wignerMatrix_apply_eq_prod`: for independent corner entries, the
+  expected product of entries factors over the unordered positions read.
 * `TauCeti.norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge`: for independent
-  corner entries with absolute moments `∫ ‖Hₙ i j‖ ^ (m + 2) ≤ b ^ m * c`, an entry product reading
-  each of its `e` unordered positions at least twice has expectation of norm at most
-  `c ^ e * b ^ (k - 2 * e)`, where `k` is the number of factors.
+  corner entries, an entry product reading each of its `e` unordered positions at least twice has
+  expectation of norm at most `c ^ e * b ^ (k - 2 * e)`, where `k` is the number of factors,
+  provided `∫ ‖Hₙ i j‖ ^ d ≤ b ^ (d - 2) * c` for each position `s(i, j)` read `d` times.
 * `TauCeti.integral_trace_pow_wignerMatrix`: for `k > 0`, when the corner entries are
   independent, centred and in `Lᵏ`, the expectation of `(Hₙ ^ k).trace` is the sum, over the
   closed walks of length `k` traversing each of their edges at least twice, of the expected
@@ -239,30 +241,18 @@ private def sym2Index {n : ℕ} :
     Sym2 (Fin n) → {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} :=
   Sym2.lift ⟨entryIndex, fun _ _ ↦ entryIndex_eq_entryIndex_iff.mpr Sym2.eq_swap⟩
 
-private theorem sym2Index_mk {n : ℕ} (i j : Fin n) : sym2Index s(i, j) = entryIndex i j :=
-  Sym2.lift_mk _ i j
-
 private theorem sym2Index_injective {n : ℕ} : Function.Injective (sym2Index (n := n)) := by
   intro x y
   refine Sym2.inductionOn₂ x y fun a b c d h ↦ ?_
-  rw [sym2Index_mk, sym2Index_mk] at h
+  simp only [sym2Index, Sym2.lift_mk] at h
   exact entryIndex_eq_entryIndex_iff.mp h
 
-omit [MeasurableSpace Ω] in
-/-- Entries at the same unordered position have the same norm. -/
-private theorem norm_wignerMatrix_apply_eq_of_mk_eq {n : ℕ} (ω : Ω) {i j i' j' : Fin n}
-    (h : s(i, j) = s(i', j')) :
-    ‖wignerMatrix ξ η n ω i j‖ = ‖wignerMatrix ξ η n ω i' j'‖ := by
-  have hsymm (a b : Fin n) : ‖wignerMatrix ξ η n ω a b‖ = ‖wignerMatrix ξ η n ω b a‖ := by
-    rw [← (wignerMatrix_isHermitian ξ η ω n).apply a b, norm_star]
-  rcases Sym2.eq_iff.mp h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · rfl
-  · exact hsymm _ _
-
 open Finset in
-/-- For independent corner entries, the expected product of entries factors over the unordered
-positions read. -/
-private theorem integral_prod_wignerMatrix_apply_eq_prod {ι : Type*} [Fintype ι] {n : ℕ}
+/-- **Factorization of expected Wigner words.** Let the entries in the `n × n` corner be
+independent. Then the expected product of the entries `Hₙ (u s) (v s)` is the product, over the
+unordered positions `x` read, of the expected products of the factors read at `x`. No
+integrability or centering is assumed. -/
+theorem integral_prod_wignerMatrix_apply_eq_prod {ι : Type*} [Fintype ι] {n : ℕ}
     (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
     (hηm : ∀ i < n, AEMeasurable (η i) P)
     (hindep : iIndepFun
@@ -281,18 +271,19 @@ private theorem integral_prod_wignerMatrix_apply_eq_prod {ι : Type*} [Fintype �
     (φ := fun s z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u s) (v s) z)
     (fun s _ ↦ (measurable_const.mul (measurable_orientEntry _ _)).aestronglyMeasurable)
   refine Eq.trans ?_ (hfactor.trans ?_)
-  · simp only [sym2Index_mk, wignerMatrix_apply_eq_orientEntry]
+  · simp only [sym2Index, Sym2.lift_mk, wignerMatrix_apply_eq_orientEntry]
   · rw [prod_image fun x _ y _ h ↦ sym2Index_injective h]
     refine prod_congr rfl fun x _ ↦ integral_congr_ae (.of_forall fun ω ↦ ?_)
     simp only [sym2Index_injective.eq_iff]
     refine prod_congr rfl fun s hs ↦ ?_
-    rw [← (mem_filter.mp hs).2, sym2Index_mk, wignerMatrix_apply_eq_orientEntry]
+    rw [← (mem_filter.mp hs).2]
+    simp only [sym2Index, Sym2.lift_mk, wignerMatrix_apply_eq_orientEntry]
 
 open Finset in
 /-- **Expected Wigner words reading each position at least twice.** Let the entries in the
-`n × n` corner be independent, and let every entry of `Hₙ` satisfy the absolute moment bounds
-`∫ ‖Hₙ i j‖ ^ (m + 2) ≤ b ^ m * c` for `m + 2 ≤ card ι`. If each unordered position read by the
-family `(u s, v s)` is read at least twice, the expected product of the entries has norm at most
+`n × n` corner be independent, and let each unordered position read by the family `(u s, v s)`
+be read at least twice. If the position of each factor `s` is read `d` times and
+`∫ ‖Hₙ (u s) (v s)‖ ^ d ≤ b ^ (d - 2) * c`, the expected product of the entries has norm at most
 `c ^ e * b ^ (card ι - 2 * e)`, where `e` is the number of distinct unordered positions read. -/
 theorem norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge {ι : Type*} [Fintype ι]
     {n : ℕ} {b c : ℝ}
@@ -301,43 +292,36 @@ theorem norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge {ι : Type
     (hindep : iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
         Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
-    (hmom : ∀ i j : Fin n, ∀ m, m + 2 ≤ Fintype.card ι →
-      ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ (m + 2) ∂P ≤ b ^ m * c)
-    (u v : ι → Fin n) (huv : ∀ t, ∃ s ≠ t, s(u s, v s) = s(u t, v t)) :
+    (u v : ι → Fin n) (huv : ∀ t, ∃ s ≠ t, s(u s, v s) = s(u t, v t))
+    (hmom : ∀ s, ∫ ω, ‖wignerMatrix ξ η n ω (u s) (v s)‖ ^ #{t | s(u t, v t) = s(u s, v s)} ∂P ≤
+      b ^ (#{t | s(u t, v t) = s(u s, v s)} - 2) * c) :
     ‖∫ ω, ∏ s, wignerMatrix ξ η n ω (u s) (v s) ∂P‖ ≤
       c ^ #(univ.image fun s ↦ s(u s, v s)) *
         b ^ (Fintype.card ι - 2 * #(univ.image fun s ↦ s(u s, v s))) := by
-  classical
   rw [integral_prod_wignerMatrix_apply_eq_prod hξm hηm hindep u v, norm_prod]
   set g : ι → Sym2 (Fin n) := fun s ↦ s(u s, v s)
   -- Every position read is read at least twice.
-  have hfib (s₀ : ι) : 2 ≤ #{s | g s = g s₀} := by
-    obtain ⟨s, hs, he⟩ := huv s₀
-    exact one_lt_card.mpr ⟨s, mem_filter.mpr ⟨mem_univ _, he⟩, s₀,
-      mem_filter.mpr ⟨mem_univ _, rfl⟩, hs⟩
-  -- The factor of a position read `m` times is bounded by the `m`th absolute moment.
+  have hfib := two_le_card_filter_eq_of_no_singleton_fiber (f := g) huv
+  -- The factor of a position read `d` times is bounded by the `d`th absolute moment.
   have hbound (x : Sym2 (Fin n)) (hx : x ∈ univ.image g) :
       ‖∫ ω, ∏ s with g s = x, wignerMatrix ξ η n ω (u s) (v s) ∂P‖ ≤
         b ^ (#{s | g s = x} - 2) * c := by
     obtain ⟨s₀, -, rfl⟩ := mem_image.mp hx
-    have h2 := hfib s₀
     calc _ ≤ ∫ ω, ‖∏ s with g s = g s₀, wignerMatrix ξ η n ω (u s) (v s)‖ ∂P :=
           norm_integral_le_integral_norm _
-      _ = ∫ ω, ‖wignerMatrix ξ η n ω (u s₀) (v s₀)‖ ^ (#{s | g s = g s₀} - 2 + 2) ∂P := by
+      _ = ∫ ω, ‖wignerMatrix ξ η n ω (u s₀) (v s₀)‖ ^ #{s | g s = g s₀} ∂P := by
           refine integral_congr_ae (.of_forall fun ω ↦ ?_)
           dsimp only
-          rw [Nat.sub_add_cancel h2, norm_prod, ← prod_const]
+          rw [norm_prod, ← prod_const]
           exact prod_congr rfl fun s hs ↦
             norm_wignerMatrix_apply_eq_of_mk_eq ω (mem_filter.mp hs).2
-      _ ≤ _ := hmom _ _ _ (by rw [Nat.sub_add_cancel h2]; exact card_le_univ _)
+      _ ≤ _ := hmom s₀
   -- The multiplicities of the positions read add up to the length of the word.
   have hsum : ∑ x ∈ univ.image g, (#{s | g s = x} - 2) + 2 * #(univ.image g) =
       Fintype.card ι := by
     rw [← card_univ, card_eq_sum_card_image g univ, mul_comm, ← smul_eq_mul, ← sum_const,
       ← sum_add_distrib]
-    refine sum_congr rfl fun x hx ↦ ?_
-    obtain ⟨s₀, -, rfl⟩ := mem_image.mp hx
-    exact Nat.sub_add_cancel (hfib s₀)
+    exact sum_congr rfl fun x hx ↦ Nat.sub_add_cancel (hfib x hx)
   calc _ ≤ ∏ x ∈ univ.image g, b ^ (#{s | g s = x} - 2) * c :=
         prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) hbound
     _ = c ^ #(univ.image g) * b ^ (Fintype.card ι - 2 * #(univ.image g)) := by

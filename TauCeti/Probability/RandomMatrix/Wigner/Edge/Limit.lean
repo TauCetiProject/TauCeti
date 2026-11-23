@@ -13,7 +13,6 @@ import TauCeti.Probability.RandomMatrix.SpectralMoment.Extremes
 import TauCeti.Probability.RandomMatrix.Wigner.Trace.Integrability
 import TauCeti.Analysis.Matrix.SpectralMeasure.ExtremeEigenvalues
 import TauCeti.Analysis.Normed.Group.Basic
-import TauCeti.Probability.Independence.Basic
 import TauCeti.Probability.RandomMatrix.Wigner.Trace.Bound
 
 /-!
@@ -30,7 +29,7 @@ from above. This upper bound transfers to the original matrices by the operator-
 truncation result. The diagonal perturbation also transfers the lower edge estimates,
 so the diagonal entries can be dependent. The growing trace bound holds at truncation radius
 `(n + 1) ^ (1 / 3)` and orders of logarithmic size, by the Füredi–Komlós bound
-`TauCeti.norm_integral_trace_pow_wignerMatrix_le`.
+`ProbabilityTheory.iIndepFun.norm_integral_trace_pow_wignerMatrix_centeredTruncation_le`.
 
 ## Main results
 
@@ -55,49 +54,6 @@ open scoped Topology ENNReal NNReal Matrix.Norms.L2Operator
 
 namespace TauCeti
 
-open ProbabilityTheory
-
-section TraceBound
-
-variable {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω}
-  {Q : Measure Ω'} {ξ : StrictUpper → Ω → ℂ} {X : Ω' → ℂ}
-
-/-- Independent upper entries and a zero diagonal give independent coordinates on every corner. -/
-private theorem iIndepFun_sumElim_zero_subtype_lt (h : iIndepFun ξ P) (n : ℕ) :
-    iIndepFun (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
-      Sum.elim (fun ij ↦ ξ ij.val) (fun _ _ ↦ ((0 : ℝ) : ℂ)) r) P := by
-  let e := Equiv.ofInjective
-    (Sum.inl : {ij : StrictUpper // ij.val.2 < n} → _ ⊕ {i : ℕ // i < n}) Sum.inl_injective
-  refine iIndepFun.of_subtype_of_ae_eq_const_outside (s := Set.range Sum.inl) ?_ ?_
-  · refine ((h.precomp Subtype.val_injective).precomp e.symm.injective).congr fun i ↦ ?_
-    obtain ⟨_, a, rfl⟩ := i
-    exact .of_forall fun ω ↦ by simp [e]
-  · rintro (a | b) hi
-    · exact absurd ⟨a, rfl⟩ hi
-    · exact ⟨0, .of_forall fun _ ↦ rfl⟩
-
-/-- The Füredi–Komlós trace bound for the zero-diagonal centered truncations at radius `R` of
-i.i.d. upper entries with second absolute moment at most `σ ^ 2`. -/
-private theorem norm_integral_trace_pow_wignerMatrix_centeredTruncation_le
-    (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) X P Q) (hξ : MemLp X 2 Q)
-    {σ γ : ℝ} (hσ : ∫ ω, ‖X ω‖ ^ 2 ∂Q ≤ σ ^ 2) (hσ₀ : 0 ≤ σ) (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1)
-    (R : ℝ≥0) {N : ℕ} (hR : 2 * (R : ℝ) ≤ σ * γ ^ 2 * Real.sqrt N) (L : ℕ) :
-    ‖∫ ω, (wignerMatrix (fun ij ↦ TauCeti.Probability.centeredTruncation (ξ ij) P R)
-      (fun _ _ ↦ 0) N ω ^ L).trace ∂P‖ ≤ N * (σ * (2 + L * γ)) ^ L := by
-  have : IsProbabilityMeasure P := hind.isProbabilityMeasure
-  refine norm_integral_trace_pow_wignerMatrix_le
-    (iIndepFun_sumElim_zero_subtype_lt (hind.centeredTruncation fun _ ↦ R) N)
-    (fun ij _ ↦ (hid ij).aestronglyMeasurable_fst.centeredTruncation R)
-    (fun _ _ ↦ aestronglyMeasurable_const)
-    (fun ij _ ↦ (hid ij).aestronglyMeasurable_fst.integral_centeredTruncation R)
-    (fun _ _ ↦ integral_zero _ _)
-    (fun _ _ ↦ .of_forall fun ω ↦ norm_centeredTruncation_le R ω)
-    (fun _ _ ↦ .of_forall fun _ ↦ by simp)
-    (fun ij _ ↦ ?_) (fun _ _ ↦ by simpa using sq_nonneg σ) hσ₀ hγ₀ hγ₁ hR
-  refine (((hid ij).symm.memLp_snd hξ).integral_norm_centeredTruncation_sq_le R).trans ?_
-  simpa only [Function.comp_apply] using
-    ((hid ij).comp (measurable_norm.pow_const 2)).integral_eq.trans_le hσ
-
 /-- At truncation radius `(n + 1) ^ (1 / 3)` and orders `⌈B * log (n + 1)⌉₊`, the parameter `γ` of
 the Füredi–Komlós bound eventually lies in `[0, 1]`, and its product with the orders tends to
 zero. -/
@@ -108,52 +64,53 @@ private theorem eventually_sqrt_le_one_and_ceil_mul_sqrt_le {σ B δ : ℝ} (hσ
       (⌈B * Real.log (n + 1)⌉₊ : ℝ) *
         Real.sqrt (2 * ((n + 1 : ℕ) : ℝ) ^ (1 / 3 : ℝ) / (σ * Real.sqrt ((n + 1 : ℕ) : ℝ))) ≤
           δ := by
-  have hN (n : ℕ) : (1 : ℝ) ≤ ((n + 1 : ℕ) : ℝ) := by exact_mod_cast Nat.succ_pos n
-  -- The squared parameter is a negative power of `n + 1`.
-  have hx (n : ℕ) : 2 * ((n + 1 : ℕ) : ℝ) ^ (1 / 3 : ℝ) / (σ * Real.sqrt ((n + 1 : ℕ) : ℝ)) =
-      2 / σ * ((n + 1 : ℕ) : ℝ) ^ (-(1 / 6) : ℝ) := by
-    rw [Real.sqrt_eq_rpow, show (-(1 / 6) : ℝ) = 1 / 3 - 1 / 2 by norm_num,
-      Real.rpow_sub (zero_lt_one.trans_le (hN n))]
+  -- The parameter is `√(2 / σ) / (n + 1) ^ (1 / 12)`.
+  have hγ (x : ℝ) (hx : 0 < x) : Real.sqrt (2 * x ^ (1 / 3 : ℝ) / (σ * Real.sqrt x)) =
+      Real.sqrt (2 / σ) / x ^ (1 / 12 : ℝ) := by
+    have h₄ : x ^ (1 / 3 : ℝ) = (x ^ (1 / 12 : ℝ)) ^ 4 := by
+      rw [← Real.rpow_natCast, ← Real.rpow_mul hx.le]
+      norm_num
+    have h₆ : Real.sqrt x = (x ^ (1 / 12 : ℝ)) ^ 6 := by
+      rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul hx.le]
+      norm_num
+    rw [← Real.sqrt_sq (by positivity : 0 ≤ Real.sqrt (2 / σ) / x ^ (1 / 12 : ℝ)), div_pow,
+      Real.sq_sqrt (by positivity), h₄, h₆]
+    congr 1
     field_simp
-  -- The orders grow more slowly than every positive power of `n + 1`.
-  have hk (n : ℕ) : (⌈B * Real.log (n + 1)⌉₊ : ℝ) ≤
-      (48 * B + 1) * ((n + 1 : ℕ) : ℝ) ^ (1 / 48 : ℝ) := by
-    have hlog0 : 0 ≤ Real.log ((n : ℝ) + 1) := Real.log_nonneg (by exact_mod_cast hN n)
-    have hlog : Real.log ((n : ℝ) + 1) ≤ 48 * ((n + 1 : ℕ) : ℝ) ^ (1 / 48 : ℝ) := by
-      have := Real.log_le_rpow_div (zero_le_one.trans (hN n)) (by norm_num : (0 : ℝ) < 1 / 48)
-      push_cast at this ⊢
-      linarith
-    have hone : (1 : ℝ) ≤ ((n + 1 : ℕ) : ℝ) ^ (1 / 48 : ℝ) := Real.one_le_rpow (hN n) (by norm_num)
-    calc (⌈B * Real.log (n + 1)⌉₊ : ℝ) ≤ B * Real.log (n + 1) + 1 :=
-          (Nat.ceil_lt_add_one (mul_nonneg hB hlog0)).le
-      _ ≤ B * (48 * ((n + 1 : ℕ) : ℝ) ^ (1 / 48 : ℝ)) + ((n + 1 : ℕ) : ℝ) ^ (1 / 48 : ℝ) :=
-          add_le_add (mul_le_mul_of_nonneg_left hlog hB) hone
-      _ = _ := by ring
-  have hpow (n : ℕ) : (((n + 1 : ℕ) : ℝ) ^ (1 / 48 : ℝ)) ^ 2 * ((n + 1 : ℕ) : ℝ) ^ (-(1 / 6) : ℝ) =
-      ((n + 1 : ℕ) : ℝ) ^ (-(1 / 8) : ℝ) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (zero_le_one.trans (hN n)),
-      ← Real.rpow_add (zero_lt_one.trans_le (hN n))]
-    norm_num
+  -- Both `(n + 1) ^ (-1 / 12)` and `log (n + 1) / (n + 1) ^ (1 / 12)` tend to zero.
   have hlim : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)) atTop atTop :=
     tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1)
-  have h₁ := ((tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 6)).comp hlim).const_mul
-    (2 / σ)
-  have h₂ := ((tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 8)).comp hlim).const_mul
-    ((48 * B + 1) ^ 2 * (2 / σ))
-  rw [mul_zero] at h₁ h₂
-  filter_upwards [h₁.eventually (ge_mem_nhds zero_lt_one),
-    h₂.eventually (gt_mem_nhds (pow_pos hδ 2))] with n hn₁ hn₂
-  simp only [Function.comp_apply] at hn₁ hn₂
-  have hx₀ : 0 ≤ 2 / σ * ((n + 1 : ℕ) : ℝ) ^ (-(1 / 6) : ℝ) := by positivity
-  rw [hx]
-  refine ⟨(Real.sqrt_le_sqrt hn₁).trans_eq Real.sqrt_one, ?_⟩
-  rw [← sq_le_sq₀ (by positivity) hδ.le, mul_pow, Real.sq_sqrt hx₀]
-  calc _ ≤ ((48 * B + 1) * ((n + 1 : ℕ) : ℝ) ^ (1 / 48 : ℝ)) ^ 2 *
-        (2 / σ * ((n + 1 : ℕ) : ℝ) ^ (-(1 / 6) : ℝ)) :=
-        mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (Nat.cast_nonneg _) (hk n) 2) hx₀
-    _ = (48 * B + 1) ^ 2 * (2 / σ) * ((((n + 1 : ℕ) : ℝ) ^ (1 / 48 : ℝ)) ^ 2 *
-        ((n + 1 : ℕ) : ℝ) ^ (-(1 / 6) : ℝ)) := by ring
-    _ ≤ δ ^ 2 := by rw [hpow]; exact hn₂.le
+  have h₁ := ((tendsto_rpow_atTop (by norm_num : (0 : ℝ) < 1 / 12)).inv_tendsto_atTop.comp
+    hlim).const_mul (Real.sqrt (2 / σ))
+  have h₂ := ((((isLittleO_log_rpow_atTop (by norm_num : (0 : ℝ) < 1 / 12)).tendsto_div_nhds_zero
+    ).comp hlim).const_mul (B * Real.sqrt (2 / σ))).add h₁
+  rw [mul_zero] at h₁
+  rw [mul_zero, zero_add, mul_zero] at h₂
+  filter_upwards [h₁.eventually (ge_mem_nhds zero_lt_one), h₂.eventually (ge_mem_nhds hδ)]
+    with n hn₁ hn₂
+  simp only [Function.comp_apply, Pi.inv_apply] at hn₁ hn₂
+  have hlog : 0 ≤ Real.log (n + 1) := Real.log_nonneg (by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)])
+  rw [hγ _ (Nat.cast_pos.mpr n.succ_pos)]
+  refine ⟨by rwa [div_eq_mul_inv], ?_⟩
+  calc (⌈B * Real.log (n + 1)⌉₊ : ℝ) * (Real.sqrt (2 / σ) / ((n + 1 : ℕ) : ℝ) ^ (1 / 12 : ℝ))
+      ≤ (B * Real.log (n + 1) + 1) * (Real.sqrt (2 / σ) / ((n + 1 : ℕ) : ℝ) ^ (1 / 12 : ℝ)) :=
+        mul_le_mul_of_nonneg_right (Nat.ceil_lt_add_one (mul_nonneg hB hlog)).le (by positivity)
+    _ = B * Real.sqrt (2 / σ) *
+          (Real.log ((n + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ) ^ (1 / 12 : ℝ)) +
+        Real.sqrt (2 / σ) * (((n + 1 : ℕ) : ℝ) ^ (1 / 12 : ℝ))⁻¹ := by
+        push_cast
+        ring
+    _ ≤ δ := hn₂
+
+end TauCeti
+
+namespace ProbabilityTheory.iIndepFun
+
+variable {Ω Ω' Ω'' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] [MeasurableSpace Ω'']
+  {P : Measure Ω} {Q : Measure Ω'} {S : Measure Ω''}
+  {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {X : Ω' → ℂ} {Y : Ω'' → ℝ}
+
+local notation "e₀" => (⟨(0, 1), by decide⟩ : StrictUpper)
 
 /-- At truncation radius `(n + 1) ^ (1 / 3)`, the expected real traces of the `2 * k`th powers of
 the zero-diagonal centered truncated corners of size `n + 1` are at most `(n + 1) * t₂ ^ (2 * k)`.
@@ -172,14 +129,21 @@ private theorem integral_re_trace_pow_wignerMatrix_centeredTruncation_le
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   set γ := Real.sqrt (2 * ((n + 1 : ℕ) : ℝ) ^ (1 / 3 : ℝ) /
     (t₁ / 2 * Real.sqrt ((n + 1 : ℕ) : ℝ)))
-  -- The truncation radius is exactly `σ * γ ^ 2 * √(n + 1)` for `σ = t₁ / 2`.
+  -- For `σ = t₁ / 2`, `σ * γ ^ 2 * √(n + 1)` is exactly `2 * R`, the bound on the centered
+  -- truncations at radius `R = (n + 1) ^ (1 / 3)`.
   have hR : 2 * ((n + 1 : ℕ) : ℝ) ^ (1 / 3 : ℝ) ≤
       t₁ / 2 * γ ^ 2 * Real.sqrt ((n + 1 : ℕ) : ℝ) := by
     rw [Real.sq_sqrt (by positivity)]
     exact (by field_simp : t₁ / 2 * (2 * ((n + 1 : ℕ) : ℝ) ^ (1 / 3 : ℝ) /
       (t₁ / 2 * Real.sqrt ((n + 1 : ℕ) : ℝ))) * Real.sqrt ((n + 1 : ℕ) : ℝ) =
         2 * ((n + 1 : ℕ) : ℝ) ^ (1 / 3 : ℝ)).ge
-  have htrace := norm_integral_trace_pow_wignerMatrix_centeredTruncation_le hind hid hX hσ
+  have hcorner : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n + 1} ↦ ξ ij.val) P :=
+    hind.precomp Subtype.val_injective
+  have htrace := hcorner.norm_integral_trace_pow_wignerMatrix_centeredTruncation_le
+    (fun ij _ ↦ (hid ij).symm.memLp_snd hX)
+    (fun ij _ ↦ by
+      simpa only [Function.comp_apply] using
+        ((hid ij).comp (measurable_norm.pow_const 2)).integral_eq.trans_le hσ)
     (half_pos ht₁).le (Real.sqrt_nonneg _) hγ
     ⟨((n + 1 : ℕ) : ℝ) ^ (1 / 3 : ℝ), Real.rpow_nonneg (Nat.cast_nonneg _) _⟩ hR (2 * k)
   have hint : Integrable (fun ω ↦ ((wignerMatrix (fun ij ↦
@@ -197,18 +161,6 @@ private theorem integral_re_trace_pow_wignerMatrix_centeredTruncation_le
   simp only [RCLike.re_to_complex] at hre
   refine hre.trans_le ((Complex.re_le_norm _).trans (htrace.trans ?_))
   exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hbase _) (Nat.cast_nonneg _)
-
-end TraceBound
-
-end TauCeti
-
-namespace ProbabilityTheory.iIndepFun
-
-variable {Ω Ω' Ω'' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] [MeasurableSpace Ω'']
-  {P : Measure Ω} {Q : Measure Ω'} {S : Measure Ω''}
-  {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {X : Ω' → ℂ} {Y : Ω'' → ℝ}
-
-local notation "e₀" => (⟨(0, 1), by decide⟩ : StrictUpper)
 
 /-- Let the upper entries be independent with a common centered law of second moment `v` and
 finite fourth moment, and let the diagonal entries, possibly dependent, share a law of finite
@@ -320,7 +272,7 @@ theorem ae_tendsto_eigenvalues₀_zero_and_card_sub_one_wignerMatrix
   filter_upwards [eventually_sqrt_le_one_and_ceil_mul_sqrt_le (half_pos ht₁₀)
     (div_nonneg zero_le_two hlog.le) (sub_pos.mpr ((one_lt_div ht₁₀).mpr ht₁₂))]
     with n ⟨hγ, hkγ⟩
-  refine (TauCeti.integral_re_trace_pow_wignerMatrix_centeredTruncation_le hind hid hX ht₁₀
+  refine (hind.integral_re_trace_pow_wignerMatrix_centeredTruncation_le hid hX ht₁₀
     (hvar.trans_le hσ) hγ hkγ).trans_eq ?_
   rw [Real.rpow_one, one_mul, Nat.cast_add_one]
 

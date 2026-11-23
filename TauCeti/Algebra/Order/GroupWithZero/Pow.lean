@@ -17,7 +17,9 @@ with zero:
   (`TauCeti.pow_le_pow_iff_of_mul_eq`);
 * replacing the base `c ≥ 0` by `max 1 c ≥ 1` allows raising the exponent (`c ^ m ≤ max 1 c ^ n`
   for `m ≤ n`) and re-basing shifted or rescaled geometric bounds (`c ^ m ≤ (max 1 c ^ k) ^ n`
-  for `m ≤ k * n`).
+  for `m ≤ k * n`);
+* trading one factor `c` for two factors `b ≥ 0` with `c ≤ b ^ 2` does not decrease
+  `c ^ s * b ^ (L - 2 * s)`; this needs only a preorder.
 
 ## Main results
 
@@ -25,6 +27,8 @@ with zero:
   `(m, n)` and `(m', n')` are proportional.
 * `TauCeti.pow_le_max_one_pow`: `c ^ m ≤ max 1 c ^ n` for `0 ≤ c` and `m ≤ n`.
 * `TauCeti.pow_le_max_one_pow_pow`: `c ^ m ≤ (max 1 c ^ k) ^ n` for `0 ≤ c` and `m ≤ k * n`.
+* `TauCeti.pow_mul_pow_sub_two_mul_le`: for `0 ≤ c ≤ b ^ 2` and `0 ≤ b`, the product
+  `c ^ s * b ^ (L - 2 * s)` does not increase with `s` while `2 * s ≤ L`.
 -/
 
 public section
@@ -62,5 +66,23 @@ theorem pow_le_max_one_pow_pow {M₀ : Type*} [MonoidWithZero M₀] [LinearOrder
     c ^ m ≤ (max 1 c ^ k) ^ n := by
   rw [← pow_mul]
   exact pow_le_max_one_pow hc h
+
+/-- Trading one factor `c` for two factors `b`: in an ordered monoid with zero, if
+`0 ≤ c ≤ b ^ 2` and `0 ≤ b`, then `c ^ s * b ^ (L - 2 * s) ≤ c ^ r * b ^ (L - 2 * r)` for
+`r ≤ s` and `2 * s ≤ L`. -/
+theorem pow_mul_pow_sub_two_mul_le {M₀ : Type*} [MonoidWithZero M₀] [Preorder M₀]
+    [ZeroLEOneClass M₀] [PosMulMono M₀] [MulPosMono M₀] {b c : M₀} (hb : 0 ≤ b) (hc : 0 ≤ c)
+    (hcb : c ≤ b ^ 2) {r s L : ℕ} (hrs : r ≤ s) (hs : 2 * s ≤ L) :
+    c ^ s * b ^ (L - 2 * s) ≤ c ^ r * b ^ (L - 2 * r) := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hrs
+  calc c ^ (r + d) * b ^ (L - 2 * (r + d)) = c ^ r * (c ^ d * b ^ (L - 2 * (r + d))) := by
+        rw [pow_add, mul_assoc]
+    _ ≤ c ^ r * ((b ^ 2) ^ d * b ^ (L - 2 * (r + d))) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hc hcb d)
+          (pow_nonneg hb _)) (pow_nonneg hc r)
+    _ = c ^ r * b ^ (L - 2 * r) := by
+        rw [← pow_mul, ← pow_add]
+        congr 2
+        omega
 
 end TauCeti
