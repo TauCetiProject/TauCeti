@@ -70,7 +70,9 @@ theorem qParam_zpow (z : ℂ) (n : ℤ) : 𝕢 h z ^ n = exp (2 * π * I * n * z
 
 /-- At period `1`, an integer power of the local parameter is `exp (2 π I n z)`. -/
 theorem qParam_one_zpow (z : ℂ) (n : ℤ) : 𝕢 1 z ^ n = exp (2 * π * I * n * z) := by
-  simpa using qParam_zpow (h := 1) z n
+  rw [qParam_one, ← Complex.exp_intCast_mul]
+  congr 1
+  ring
 
 /-- Translation by `j` in the argument of `qParam` corresponds to multiplication by
 `exp (-2 π I j / h)`. -/
