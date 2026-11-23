@@ -34,6 +34,9 @@ about divisors of a function field, such as Weil reciprocity, to the rational fu
 
 * `TauCeti.Divisor.norm_ofPoint`: the norm of a place is `f(P' ∣ P) · P`.
 * `TauCeti.Divisor.coeff_norm`: the coefficient of `N(D)` at `P` is `∑_{P' ∣ P} f(P' ∣ P) D(P')`.
+* `TauCeti.Divisor.support_norm_subset`, `TauCeti.Divisor.norm_nonneg` and
+  `TauCeti.Divisor.norm_mono`: `N(D)` is supported below the support of `D`, and `N` preserves
+  effectivity and the order on divisors.
 * `TauCeti.Divisor.norm_principal`: `N(div x) = div (N_{F'/F} x)` for a finite extension of an
   algebraic function field, with no separability hypothesis.
 * `TauCeti.Divisor.degree_norm`: `deg N(D) = [k' : k] · deg D`.
@@ -106,6 +109,33 @@ theorem coeff_norm (D : Divisor k' F') (P : Place k F) {s : Finset (Place k' F')
       · simp
       rw [WeilDivisor.coeff_ofPoint_of_ne fun hQP ↦ h (by rw [← hQP]; exact (hs Q).mp hQ)]
       simp
+
+/-- The norm of a divisor is supported below its support: a place `P` with nonzero coefficient
+in `N(D)` lies under a place `P'` with nonzero coefficient in `D`. -/
+theorem support_norm_subset (D : Divisor k' F') :
+    ((norm k F D).support : Set (Place k F)) ⊆
+      (fun P' : Place k' F' ↦ P'.restrict k F) '' D.support := by
+  intro P hP
+  by_contra h
+  refine WeilDivisor.mem_support_iff.1 hP ?_
+  rw [norm, Finsupp.liftAddHom_apply, Finsupp.sum, WeilDivisor.coeff, Finsupp.finsetSum_apply]
+  refine Finset.sum_eq_zero fun P' hP' ↦ ?_
+  rw [zmultiplesHom_apply, ← WeilDivisor.coeff, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_zsmul,
+    WeilDivisor.coeff_ofPoint_of_ne fun hP ↦ h ⟨P', hP', hP.symm⟩, mul_zero, mul_zero]
+
+/-- The norm of an effective divisor is effective. -/
+theorem norm_nonneg {D : Divisor k' F'} (hD : 0 ≤ D) : 0 ≤ norm k F D := by
+  rw [norm, Finsupp.liftAddHom_apply]
+  refine Finset.sum_nonneg fun P' _ ↦ ?_
+  dsimp only
+  rw [zmultiplesHom_apply]
+  refine zsmul_nonneg (zsmul_nonneg (WeilDivisor.ofPoint_nonneg _) (by positivity)) ?_
+  rw [← WeilDivisor.coeff, ← WeilDivisor.coeff_zero P']
+  exact WeilDivisor.coeff_le_coeff hD P'
+
+/-- The norm of divisors is monotone. -/
+theorem norm_mono : Monotone (norm k F : Divisor k' F' → Divisor k F) := fun D E h ↦ by
+  simpa only [map_sub, sub_nonneg] using norm_nonneg k F (sub_nonneg.2 h)
 
 /-- **The degree of a norm**: `deg N(D) = [k' : k] · deg D`. On a place this is
 `f(P' ∣ P) · deg P = [k' : k] · deg P'`, the comparison of the degrees of a place and of the place

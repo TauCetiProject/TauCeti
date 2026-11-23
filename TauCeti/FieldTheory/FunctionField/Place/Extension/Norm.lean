@@ -5,20 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
-import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
-import TauCeti.RingTheory.IntegralClosure.MvPolynomial
-import TauCeti.RingTheory.IntegralClosure.Transfer
-import TauCeti.RingTheory.Length.Norm
+import TauCeti.RingTheory.Length.Norm.Basic
 
 /-!
 # The order of a norm at a place
 
 Let `F' / k'` be a finite extension of the field extension `F / k`, with `k'` integral over `k`,
-and let `P` be a place of `F / k`. For `x ∈ F'` this file proves the **order-of-a-norm formula**
+and let `P` be a place of `F / k` whose local model `𝒪'_P`, the integral closure of `𝒪_P` in
+`F'`, is a finite `𝒪_P`-module. This holds when `F' / F` is separable
+(`TauCeti.Place.moduleFinite_integralClosure`) and when `F / k` is an algebraic function field
+(`TauCeti.Place.moduleFinite_integralClosure_of_isFunctionField`). For `x ∈ F'` this file then
+proves the **order-of-a-norm formula**
 
 `ord_P (N_{F'/F} x) = ∑_{P' ∣ P} f(P' ∣ P) · ord_{P'} x`,
 
@@ -27,13 +27,7 @@ relative degrees. It is the coefficient identity behind the norm of divisors,
 `N(div x) = div (N_{F'/F} x)` (`TauCeti.Divisor.norm_principal`).
 
 The proof reads Fulton's order-of-a-norm formula `TauCeti.ordFrac_norm_eq_finprod` on the local
-model `𝒪_P ⊆ 𝒪'_P`, where `𝒪'_P` is the integral closure of `𝒪_P` in `F'`. That formula needs
-`𝒪'_P` to be a finite `𝒪_P`-module. For a separable extension this is Mathlib's
-`IsIntegralClosure.finite`. For an algebraic function field `F / k` it holds for every finite
-extension (`TauCeti.Place.moduleFinite_integralClosure_of_isFunctionField`): the integral closure
-`S` of the affine model `R = R_t` of a uniformizer `t` at `P` is a finite `R`-module without
-separability, `𝒪_P` is the localization of `R` at the centre of `P`, and clearing denominators
-places `𝒪'_P` inside the `𝒪_P`-span of finitely many generators of `S`. The maximal ideals of the
+model `𝒪_P ⊆ 𝒪'_P`, which needs `𝒪'_P` to be a finite `𝒪_P`-module. The maximal ideals of the
 Dedekind domain `𝒪'_P` are the centres of the places above `P`, their local rings are the
 valuation rings of those places, and the `𝒪_P`-length of each residue ring is the relative degree,
 so Fulton's formula is the displayed one.
@@ -42,11 +36,10 @@ so Fulton's formula is the displayed one.
 
 * `TauCeti.Place.ordFrac_integers`: Mathlib's order of vanishing `Ring.ordFrac` along the valuation
   ring of a place is the inverse of the valuation of the place.
-* `TauCeti.Place.moduleFinite_integralClosure_of_isFunctionField`: for an algebraic function field
-  the local model `𝒪'_P` is a finite `𝒪_P`-module, with no separability hypothesis.
-* `TauCeti.Place.ord_norm_of_isSeparable` and `TauCeti.Place.ord_norm_of_isFunctionField`: the
-  order-of-a-norm formula, for a separable extension and for any finite extension of an algebraic
-  function field.
+* `TauCeti.Place.ord_norm_of_moduleFinite`: the order-of-a-norm formula whenever `𝒪'_P` is a finite
+  `𝒪_P`-module, in particular for a separable extension.
+* `TauCeti.Place.ord_norm_of_isFunctionField`: the order-of-a-norm formula for any finite extension
+  of an algebraic function field, with no separability hypothesis.
 
 ## References
 
@@ -86,7 +79,7 @@ omit [Field k'] [Field F'] [Algebra k k'] [Algebra k' F'] [Algebra F F'] [Algebr
 inverse of the valuation of the place. -/
 theorem ordFrac_integers (P : Place k F) (x : F) :
     Ring.ordFrac P.integers x = (P.valuation x)⁻¹ := by
-  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.2
+  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.property
   rw [Ring.ordFrac_eq_valuation_inv, ← center_integers P hR, valuation_center]
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
@@ -135,7 +128,7 @@ private theorem length_quotient_toNat (𝔓 : HeightOneSpectrum (integralClosure
 private theorem exists_ofPrime_eq_iff (P' : Place k' F') :
     (∃ 𝔓 : HeightOneSpectrum (integralClosure P.integers F'), ofPrime k' F' 𝔓 = P') ↔
       P'.restrict k F = P := by
-  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.2
+  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.property
   have hmax : (P.center hR).asIdeal = IsLocalRing.maximalIdeal P.integers := by
     rw [center_integers P hR]
     rfl
@@ -190,17 +183,14 @@ end LocalModel
 
 variable [Algebra.IsIntegral k k']
 
-omit [FiniteDimensional F F'] in
-/-- The local model `𝒪'_P` is a `k'`-algebra: the constants `k'` are integral over `k ⊆ 𝒪_P`. -/
-private theorem algebraMap_mem_integralClosure (P : Place k F) (c : k') :
-    algebraMap k' F' c ∈ integralClosure P.integers F' :=
-  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
-  (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
+/-- **The order of a norm** at a place `P` of `F / k` whose local model `𝒪'_P` is a finite
+`𝒪_P`-module: for `x ∈ F'`, `ord_P (N_{F'/F} x) = ∑_{P' ∣ P} f(P' ∣ P) · ord_{P'} x`.
 
-/-- The additive form of `valuation_norm_inv`, for a finite local model. -/
-private theorem ord_norm_eq_sum_of_moduleFinite (P : Place k F)
+The finite set `s` is the fibre of `TauCeti.Place.restrict` over `P`. The finiteness hypothesis
+holds for a separable `F' / F` (`TauCeti.Place.moduleFinite_integralClosure`) and for any finite
+extension of an algebraic function field; that case is
+`TauCeti.Place.ord_norm_of_isFunctionField`. -/
+theorem ord_norm_of_moduleFinite (P : Place k F)
     [Module.Finite P.integers (integralClosure P.integers F')]
     {s : Finset (Place k' F')} (hs : ∀ P' : Place k' F', P' ∈ s ↔ P'.restrict k F = P)
     (x : F') : P.ord (Algebra.norm F x) = ∑ P' ∈ s, (relativeDegree k F P' : ℤ) * P'.ord x := by
@@ -208,146 +198,18 @@ private theorem ord_norm_eq_sum_of_moduleFinite (P : Place k F)
   · simp
   have : IsDedekindDomain (integralClosure P.integers F') :=
     TauCeti.integralClosure.isDedekindDomain P.integers F F'
-  let _ : Algebra k' (integralClosure P.integers F') :=
-    ((algebraMap k' F').codRestrict _ (algebraMap_mem_integralClosure P)).toAlgebra
-  have : IsScalarTower k' (integralClosure P.integers F') F' := .of_algebraMap_eq fun _ ↦ rfl
+  let _ := algebraConstantsIntegralClosure (k' := k') (F' := F') P
+  have := isScalarTower_constants_integralClosure (k' := k') (F' := F') P
   have hkey := valuation_norm_inv P hs hx
   simp only [valuation_eq_exp_neg_ord _ (Algebra.norm_ne_zero_iff.mpr hx),
     valuation_eq_exp_neg_ord _ hx, ← WithZero.exp_neg, neg_neg, ← WithZero.exp_nsmul] at hkey
-  have hexp (t : Finset (Place k' F')) (g : Place k' F' → ℤ) :
-      ∏ P' ∈ t, WithZero.exp (g P') = WithZero.exp (∑ P' ∈ t, g P') := by
-    induction t using Finset.cons_induction with
-    | empty => simp
-    | cons a t ha ih => rw [Finset.prod_cons, Finset.sum_cons, ih, WithZero.exp_add]
+  -- `WithZero.exp` turns sums into products: it is `ofAdd` followed by the coercion.
+  have hexp : ∏ P' ∈ s, WithZero.exp (relativeDegree k F P' • P'.ord x) =
+      WithZero.exp (∑ P' ∈ s, relativeDegree k F P' • P'.ord x) := by
+    simp only [WithZero.exp_eq_coe_ofAdd, ofAdd_sum]
+    exact (map_prod (WithZero.coeMonoidHom (α := Multiplicative ℤ)) _ s).symm
   rw [← WithZero.exp_inj, hkey, hexp]
   simp
-
-section AffineModel
-
-/-! ### Finiteness of the local model
-
-If `P` is finite on an affine model `R` of `F / k` whose integral closure `S` in `F'` is a finite
-`R`-module, then `𝒪_P` is the localization of `R` at the centre of `P`, and clearing denominators
-places `𝒪'_P` inside the `𝒪_P`-span of finitely many generators of `S`. -/
-
-variable (P : Place k F) {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R F]
-  [IsFractionRing R F] [Algebra R F'] [IsScalarTower R F F']
-  (hR : ∀ r : R, algebraMap R F r ∈ P.integers)
-
-include hR
-
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] [Algebra.IsIntegral k k'] in
-/-- A function integral over `𝒪_P` becomes integral over `R` after multiplication by an element of
-`R` outside the centre of `P`. -/
-private theorem exists_mul_isIntegral {y : F'} (hy : IsIntegral P.integers y) :
-    ∃ c : R, c ∉ (P.center hR).asIdeal ∧ IsIntegral R (algebraMap R F' c * y) := by
-  -- `𝒪_P` is Mathlib's localization of `R` at the centre of `P`.
-  let V := HeightOneSpectrum.valuationSubringAtPrime F (P.center hR)
-  have hV : V = P.integers := valuationSubringAtPrime_eq_integers P hR
-  let _ : Algebra V F' := ((algebraMap F F').comp (algebraMap V F)).toAlgebra
-  have : IsScalarTower R V F' := .of_algebraMap_eq fun r ↦ by
-    rw [IsScalarTower.algebraMap_apply R F F', IsScalarTower.algebraMap_apply R V F]
-    rfl
-  have hyV : IsIntegral V y :=
-    IsIntegral.map_of_comp_eq (ValuationSubring.inclusion _ _ hV.ge) (RingHom.id F')
-      (RingHom.ext fun _ ↦ rfl) hy
-  obtain ⟨⟨c, hc⟩, hcy⟩ := hyV.exists_multiple_integral_of_isLocalization
-    (P.center hR).asIdeal.primeCompl y
-  exact ⟨c, hc, by simpa [Submonoid.smul_def, Algebra.smul_def] using hcy⟩
-
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] [Algebra.IsIntegral k k'] in
-/-- `𝒪'_P` lies in the `𝒪_P`-span of any set spanning `S` over `R`. -/
-private theorem toSubmodule_integralClosure_le_span {T : Set (integralClosure R F')}
-    (hT : Submodule.span R T = ⊤) :
-    Subalgebra.toSubmodule ((integralClosure P.integers F').restrictScalars P.integers) ≤
-      Submodule.span P.integers ((↑) '' T) := by
-  -- The `R`-span of `T` in `F'` lies in its `𝒪_P`-span, since `R` maps into `𝒪_P`.
-  have hRN : ∀ w ∈ Submodule.span R ((↑) '' T : Set F'), w ∈ Submodule.span P.integers
-      ((↑) '' T) := by
-    intro w hw
-    induction hw using Submodule.span_induction with
-    | mem w hw => exact Submodule.subset_span hw
-    | zero => exact zero_mem _
-    | add _ _ _ _ h₁ h₂ => exact add_mem h₁ h₂
-    | smul r w _ h =>
-      have : r • w = (⟨algebraMap R F r, hR r⟩ : P.integers) • w := by
-        rw [Algebra.smul_def, Algebra.smul_def, IsScalarTower.algebraMap_apply R F F',
-          IsScalarTower.algebraMap_apply P.integers F F']
-        rfl
-      rw [this]
-      exact Submodule.smul_mem _ _ h
-  intro y hy
-  obtain ⟨c, hc, hcy⟩ := exists_mul_isIntegral P hR hy
-  -- `c` is a unit at `P`, so `y = c⁻¹ · (c y)` with `c y` in the `R`-span of `T`.
-  have hc0 : c ≠ 0 := fun h ↦ hc (h ▸ zero_mem _)
-  have hcF : algebraMap R F c ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective R F)).mpr hc0
-  have hord : P.ord (algebraMap R F c) = 0 := by
-    have := (P.mem_integers_iff_ord_nonneg).mp (hR c)
-    have := (P.mem_center_asIdeal_iff_ord_pos hR hc0).not.mp hc
-    omega
-  have hinv : (algebraMap R F c)⁻¹ ∈ P.integers := by
-    rw [P.mem_integers_iff_ord_nonneg, ord_inv, hord, neg_zero]
-  have hz : algebraMap R F' c * y ∈ Submodule.span R ((↑) '' T : Set F') := by
-    have h₁ : (⟨_, hcy⟩ : integralClosure R F') ∈ Submodule.span R T := hT ▸ Submodule.mem_top
-    have h₂ := Submodule.mem_map_of_mem (f := (integralClosure R F').val.toLinearMap) h₁
-    rw [← Submodule.span_image] at h₂
-    exact h₂
-  have hy' : y = (⟨(algebraMap R F c)⁻¹, hinv⟩ : P.integers) • (algebraMap R F' c * y) := by
-    rw [Algebra.smul_def, IsScalarTower.algebraMap_apply P.integers F F',
-      IsScalarTower.algebraMap_apply R F F', ← mul_assoc, ← map_mul,
-      ValuationSubring.algebraMap_apply, inv_mul_cancel₀ hcF, map_one, one_mul]
-  rw [hy']
-  exact Submodule.smul_mem _ _ (hRN _ hz)
-
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] [Algebra.IsIntegral k k'] in
-/-- If the integral closure of an affine model `R` on which `P` is finite is a finite
-`R`-module, then the local model `𝒪'_P` is a finite `𝒪_P`-module. -/
-private theorem moduleFinite_integralClosure_of_affineModel
-    [Module.Finite R (integralClosure R F')] :
-    Module.Finite P.integers (integralClosure P.integers F') := by
-  obtain ⟨T, hT⟩ := Module.Finite.fg_top (R := R) (M := integralClosure R F')
-  have : IsNoetherian P.integers (Submodule.span P.integers
-      (Subtype.val '' (T : Set (integralClosure R F')))) :=
-    isNoetherian_span_of_finite _ (T.finite_toSet.image _)
-  have := isNoetherian_of_le (toSubmodule_integralClosure_le_span P hR hT)
-  exact Module.IsNoetherian.finite P.integers
-    (Subalgebra.toSubmodule ((integralClosure P.integers F').restrictScalars P.integers))
-
-end AffineModel
-
-omit [Algebra k F'] [IsScalarTower k F F'] in
-open _root_.IntermediateField _root_.IntermediateField.algebraAdjoinAdjoin in
-/-- **The local model of a finite extension of an algebraic function field is finite**: for a
-place `P` of `F / k` and a finite extension `F' / F`, the integral closure `𝒪'_P` of `𝒪_P` in `F'`
-is a finite `𝒪_P`-module, with no separability hypothesis. -/
-theorem moduleFinite_integralClosure_of_isFunctionField (hF : IsFunctionField k F)
-    (P : Place k F) : Module.Finite P.integers (integralClosure P.integers F') := by
-  -- A uniformizer `t` at `P` is transcendental over `k` and has no pole at `P`.
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  have htP : P.ord t = 1 := P.isUniformizer_iff_ord_eq_one.mp ht
-  have htr : Transcendental k t := P.transcendental_of_ord_ne_zero (by omega)
-  have hti : t ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr (by omega)
-  have : FiniteDimensional k⟮t⟯ F := hF.finiteDimensional_adjoin htr
-  have : FiniteDimensional k⟮t⟯ F' := Module.Finite.trans F F'
-  -- The integral closure `R` of `k[t]` in `F` is an affine model on which `P` is finite, and its
-  -- integral closure in `F'` is a finite `R`-module without separability.
-  let R := integralClosure (Algebra.adjoin k {t}) F
-  have : IsDedekindDomain R := isDedekindDomain_integralClosure_adjoin hF t
-  have : IsFractionRing R F := isFractionRing_integralClosure_adjoin hF htr
-  have : Module.Finite R (integralClosure R F') :=
-    IsIntegralClosure.finite_integralClosure_integralClosure_adjoin k t F'
-  exact moduleFinite_integralClosure_of_affineModel P (R := R) fun r ↦ P.mem_integers_iff.mpr
-    (P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr hti r r.2)
-
-/-- **The order of a norm**, for a separable extension: if `F' / F` is finite and separable, `P` is
-a place of `F / k` and `x ∈ F'`, then `ord_P (N_{F'/F} x) = ∑_{P' ∣ P} f(P' ∣ P) · ord_{P'} x`.
-
-The finite set `s` is the fibre of `TauCeti.Place.restrict` over `P`. When `F / k` is an algebraic
-function field no separability is needed; that is `TauCeti.Place.ord_norm_of_isFunctionField`. -/
-theorem ord_norm_of_isSeparable [Algebra.IsSeparable F F'] (P : Place k F)
-    {s : Finset (Place k' F')} (hs : ∀ P' : Place k' F', P' ∈ s ↔ P'.restrict k F = P) (x : F') :
-    P.ord (Algebra.norm F x) = ∑ P' ∈ s, (relativeDegree k F P' : ℤ) * P'.ord x := by
-  exact ord_norm_eq_sum_of_moduleFinite P hs x
 
 /-- **The order of a norm** at a place of an algebraic function field: if `F / k` is an algebraic
 function field, `F' / F` is finite, `P` is a place of `F / k` and `x ∈ F'`, then
@@ -357,8 +219,8 @@ The finite set `s` is the fibre of `TauCeti.Place.restrict` over `P`. -/
 theorem ord_norm_of_isFunctionField (hF : IsFunctionField k F) (P : Place k F)
     {s : Finset (Place k' F')} (hs : ∀ P' : Place k' F', P' ∈ s ↔ P'.restrict k F = P) (x : F') :
     P.ord (Algebra.norm F x) = ∑ P' ∈ s, (relativeDegree k F P' : ℤ) * P'.ord x := by
-  have := moduleFinite_integralClosure_of_isFunctionField (F' := F') hF P
-  exact ord_norm_eq_sum_of_moduleFinite P hs x
+  have := moduleFinite_integralClosure_of_isFunctionField F' P hF
+  exact ord_norm_of_moduleFinite P hs x
 
 end Place
 
