@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.Commute
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -283,10 +284,9 @@ theorem mk_mul_upperRightHom_mul_inv (a : SL(2, R)) (ha : a 1 0 = 0) (x : R) :
     ← QuotientGroup.mk_mul]
   congr 1
   apply Subtype.ext
-  simp only [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe]
-  rw [← Matrix.transvection, ← Matrix.transvection]
+  simp only [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_transvection_zero_one]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [ha]
+  fin_cases i <;> fin_cases j <;> simp [ha, Matrix.mul_apply, Fin.sum_univ_two]
   linear_combination -(a 0 0 * x) * hdet
 
 omit [NoZeroDivisors R] in
@@ -300,9 +300,9 @@ theorem mk_eq_upperRightHom (a : SL(2, R)) (h10 : a 1 0 = 0)
   rw [upperRightHom_apply, QuotientGroup.eq_iff_div_mem, div_eq_mul_inv,
     SpecialLinearGroup.transvection_inv, SpecialLinearGroup.mem_center_iff]
   refine ⟨a 0 0, by simpa [sq] using hsq, ?_⟩
-  rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe, ← Matrix.transvection]
+  rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_transvection_zero_one]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [h10, ← hd]
+  fin_cases i <;> fin_cases j <;> simp [h10, ← hd, Matrix.mul_apply, Fin.sum_univ_two]
   linear_combination a 0 1 * hsq
 
 /-- An element commuting with a nonzero translation is itself a translation. This holds over
@@ -352,8 +352,8 @@ theorem isParabolic_upperRightHom_iff {x : R} : IsParabolic (upperRightHom x) �
   · exact fun h hx ↦ h.ne_one (by rw [hx, AddChar.map_zero_eq_one])
   · simp only [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
       Matrix.IsParabolic, Matrix.discr_fin_two, Matrix.trace_fin_two, Matrix.det_fin_two,
-      SpecialLinearGroup.transvection_coe]
-    refine ⟨?_, by norm_num [Matrix.single_apply]⟩
+      SpecialLinearGroup.coe_transvection_zero_one]
+    refine ⟨?_, by norm_num⟩
     exact fun hs ↦ hx (by simpa using (TauCeti.mem_range_scalar_fin_two_iff.1 hs).1)
 
 omit [NoZeroDivisors R] in
@@ -369,9 +369,7 @@ theorem trace_commutatorElement_sub_two_of_mk_eq_upperRightHom {T : SL(2, R)} {x
     have hr2 : r * r = 1 := by simpa [sq] using hr
     have hS : ((T * (T⁻¹ * SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) x) :
         SL(2, R)) : Matrix (Fin 2) (Fin 2) R) = !![1, x; 0, 1] := by
-      rw [mul_inv_cancel_left, SpecialLinearGroup.transvection_coe, ← Matrix.transvection]
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp [Matrix.transvection]
+      rw [mul_inv_cancel_left, SpecialLinearGroup.coe_transvection_zero_one]
     rw [SpecialLinearGroup.coe_mul, ← hrT] at hS
     have h00 := congrFun (congrFun hS 0) 0
     have h01 := congrFun (congrFun hS 0) 1

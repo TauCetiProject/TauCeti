@@ -43,6 +43,15 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   target point, the Hamiltonian vector field in the chart is `C^n` on the chart target
   (`TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt`): it is
   the coordinate expression of the `C^n` section `(z, x) ↦ X_{K(z)}(x)` of the tangent bundle.
+* Both readings take a parameter of any type. For a family over a further parameter `p`, the
+  uncurried family read in the chart at `((p, z), y)` is the member at `p` read in the chart at
+  `(z, y)` (`TauCeti.Floer.almostComplexInChartAt_uncurry`,
+  `TauCeti.SmoothTwoForm.hamiltonianVectorFieldInChartAt_uncurry`). So a single member of a jointly
+  continuous family is continuous
+  (`TauCeti.SmoothTwoForm.continuousOn_hamiltonianVectorFieldInChartAt_of_uncurry`), and a single
+  datum, as a constant family, is as regular as the datum
+  (`TauCeti.Floer.contDiffOn_almostComplexInChartAt_uncurry_const`,
+  `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const`).
 * `TauCeti.SmoothTwoForm.associatedBilinFormInChartAt ω α J` is the bilinear form
   `ω(·, J(z, x) ·)` read in the chart, at `x = (extChartAt I α).symm y` and on tangent coordinates
   (`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt_extChartAt`), that is, the coordinate
@@ -155,6 +164,16 @@ theorem almostComplexInChartAt_apply (z : P) (y v : E) :
   rw [almostComplexInChartAt, inCoordinates, comp_apply, comp_apply,
     LinearMap.coe_toContinuousLinearMap']
 
+/-- For a family `J_p(q)` of structures depending on a parameter `p` and a point `q`, the
+uncurried family read in the chart at `((p, q), y)` is the family `J_p` read in the chart at
+`(q, y)`. -/
+@[simp]
+theorem almostComplexInChartAt_uncurry {Q : Type*}
+    (J : P → Q → (x : M) → AlmostComplexStructure (TangentSpace I x)) (p : P) (q : Q) (y : E) :
+    almostComplexInChartAt I α (Function.uncurry J) ((p, q), y) =
+      almostComplexInChartAt I α (J p) (q, y) :=
+  (rfl)
+
 /-- On the chart target, the structure in the chart squares to `-1`. -/
 theorem almostComplexInChartAt_apply_apply {y : E} (hy : y ∈ (extChartAt I α).target)
     (z : P) (v : E) :
@@ -169,6 +188,27 @@ theorem almostComplexInChartAt_apply_apply {y : E} (hy : y ∈ (extChartAt I α)
 theorem almostComplexInChartAt_comp {Q : Type*} (f : Q → P) (p : Q × E) :
     almostComplexInChartAt I α (fun z ↦ J (f z)) p = almostComplexInChartAt I α J (f p.1, p.2) :=
   (rfl)
+
+/-- The family read in the chart of the constant family `(r, q) ↦ J q` over a further parameter
+`r` is continuous wherever the family `J` read in the chart is, after forgetting `r`. -/
+theorem continuousOn_almostComplexInChartAt_uncurry_const {R : Type*} [TopologicalSpace P]
+    [TopologicalSpace R] {S : Set (P × E)} {T : Set ((R × P) × E)}
+    (hJ : ContinuousOn (almostComplexInChartAt I α J) S)
+    (hT : MapsTo (fun q : (R × P) × E ↦ (q.1.2, q.2)) T S) :
+    ContinuousOn (almostComplexInChartAt I α (Function.uncurry fun (_ : R) ↦ J)) T :=
+  (hJ.comp ((continuous_snd.comp continuous_fst).prodMk continuous_snd).continuousOn hT).congr
+    fun _ _ ↦ almostComplexInChartAt_uncurry _ _ _ _
+
+/-- The family read in the chart of the constant family `(r, q) ↦ J q` over a further parameter
+`r` is as regular as the family `J` read in the chart, after forgetting `r`. -/
+theorem contDiffOn_almostComplexInChartAt_uncurry_const {R : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] [NormedAddCommGroup R] [NormedSpace ℝ R] {n : WithTop ℕ∞}
+    {S : Set (P × E)} {T : Set ((R × P) × E)}
+    (hJ : ContDiffOn ℝ n (almostComplexInChartAt I α J) S)
+    (hT : MapsTo (fun q : (R × P) × E ↦ (q.1.2, q.2)) T S) :
+    ContDiffOn ℝ n (almostComplexInChartAt I α (Function.uncurry fun (_ : R) ↦ J)) T :=
+  (hJ.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffOn hT).congr
+    fun _ _ ↦ almostComplexInChartAt_uncurry _ _ _ _
 
 /-- For a jointly regular family of structures over the domain `ℝ × ℝ`, the structure in the chart
 is the coordinate expression of the family in the product chart at `(p, α)`, whatever `p`. In
@@ -212,21 +252,91 @@ variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ} {u : ℝ ×
 
 /-- The Hamiltonian vector field of a family of Hamiltonians `K(z)`, read in the chart at `α`: at
 `(z, y)`, the vector `X_{K(z)}(x)` at `x = (extChartAt I α).symm y`, in the tangent coordinates of
-the chart at `α`. Outside the chart target the value is junk. -/
-def hamiltonianVectorFieldInChartAt (ω : SmoothTwoForm I M) (α : M) (K : ℝ × ℝ → M → ℝ)
-    (p : (ℝ × ℝ) × E) : E :=
+the chart at `α`. Outside the chart target the value is junk. The parameter `z` ranges over any
+type `Q`, such as the domain `ℝ × ℝ` of the Floer equation. -/
+def hamiltonianVectorFieldInChartAt (ω : SmoothTwoForm I M) (α : M) {Q : Type*} (K : Q → M → ℝ)
+    (p : Q × E) : E :=
   (trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ ((extChartAt I α).symm p.2)
     (ω.hamiltonianVectorField (K p.1) ((extChartAt I α).symm p.2))
 
 omit [FiniteDimensional ℝ E] in
 /-- At a chart coordinate `y`, the Hamiltonian vector field in the chart is the tangent coordinate
 of `X_{K(z)}` at `x = (extChartAt I α).symm y`. -/
-theorem hamiltonianVectorFieldInChartAt_apply (ω : SmoothTwoForm I M) (α : M)
-    (K : ℝ × ℝ → M → ℝ) (z : ℝ × ℝ) (y : E) :
+theorem hamiltonianVectorFieldInChartAt_apply (ω : SmoothTwoForm I M) (α : M) {Q : Type*}
+    (K : Q → M → ℝ) (z : Q) (y : E) :
     ω.hamiltonianVectorFieldInChartAt α K (z, y) =
       (trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ ((extChartAt I α).symm y)
         (ω.hamiltonianVectorField (K z) ((extChartAt I α).symm y)) :=
   (rfl)
+
+omit [FiniteDimensional ℝ E] in
+/-- **The coordinate expression of `ω` on two vectors.** At a coordinate `y` in the target of the
+chart at `α`, the coordinate expression of `ω` on vectors `a` and `b` is `ω_x(a', b')` at the point
+`x = (extChartAt I α).symm y`, for the tangent vectors `a'` and `b'` at `x` with tangent coordinates
+`a` and `b`. -/
+theorem inChartAt_apply_eq_eval₂ (ω : SmoothTwoForm I M) {y : E}
+    (hy : y ∈ (extChartAt I α).target) (a b : E) :
+    RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α y ![a, b] =
+      SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
+        ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
+        ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) b) := by
+  -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
+  have hS := TangentBundle.symmL_trivializationAt (I := I) (𝕜 := ℝ) (x₀ := α)
+    (by simpa only [extChartAt_source] using (extChartAt I α).map_target hy)
+  rw [(extChartAt I α).right_inv hy] at hS
+  rw [RoughForm.inChartAt_apply, SmoothBundleForm.eval₂_apply, ← hS]
+  congr 1
+  funext i
+  -- Each entry is `extChartAt_coe_symm` unfolded; the trivialization occurs in an instance
+  -- argument of `symmL`, so it cannot be rewritten and `rfl` closes both goals.
+  fin_cases i <;> rfl
+
+omit [FiniteDimensional ℝ E] in
+/-- For a family `K_p(q)` of Hamiltonians depending on a parameter `p` and a point `q`, the
+Hamiltonian vector field of the uncurried family read in the chart at `((p, q), y)` is that of the
+family `K_p` read in the chart at `(q, y)`. -/
+@[simp]
+theorem hamiltonianVectorFieldInChartAt_uncurry (ω : SmoothTwoForm I M) (α : M) {P Q : Type*}
+    (K : P → Q → M → ℝ) (p : P) (q : Q) (y : E) :
+    ω.hamiltonianVectorFieldInChartAt α (Function.uncurry K) ((p, q), y) =
+      ω.hamiltonianVectorFieldInChartAt α (K p) (q, y) :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+/-- For a family `K_p(q)` of Hamiltonians depending on a parameter `p`, the Hamiltonian vector field
+of a single member `K_p` read in the chart is continuous wherever the vector field of the uncurried
+family read in the chart is, at the parameter `p`. -/
+theorem continuousOn_hamiltonianVectorFieldInChartAt_of_uncurry {P Q : Type*}
+    [TopologicalSpace P] [TopologicalSpace Q] {K : P → Q → M → ℝ} {p : P} {S : Set (Q × E)}
+    {T : Set ((P × Q) × E)}
+    (hX : ContinuousOn (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry K)) T)
+    (hS : MapsTo (fun q : Q × E ↦ ((p, q.1), q.2)) S T) :
+    ContinuousOn (ω.hamiltonianVectorFieldInChartAt α (K p)) S :=
+  (hX.comp ((continuous_const.prodMk continuous_fst).prodMk continuous_snd).continuousOn hS).congr
+    fun _ _ ↦ (ω.hamiltonianVectorFieldInChartAt_uncurry α _ _ _ _).symm
+
+omit [FiniteDimensional ℝ E] in
+/-- The Hamiltonian vector field read in the chart of the constant family `(r, q) ↦ K q` over a
+further parameter `r` is continuous wherever that of `K` is, after forgetting `r`. -/
+theorem continuousOn_hamiltonianVectorFieldInChartAt_uncurry_const {Q R : Type*}
+    [TopologicalSpace Q] [TopologicalSpace R] {K : Q → M → ℝ} {S : Set (Q × E)}
+    {T : Set ((R × Q) × E)} (hX : ContinuousOn (ω.hamiltonianVectorFieldInChartAt α K) S)
+    (hT : MapsTo (fun q : (R × Q) × E ↦ (q.1.2, q.2)) T S) :
+    ContinuousOn (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry fun (_ : R) ↦ K)) T :=
+  (hX.comp ((continuous_snd.comp continuous_fst).prodMk continuous_snd).continuousOn hT).congr
+    fun _ _ ↦ ω.hamiltonianVectorFieldInChartAt_uncurry α _ _ _ _
+
+omit [FiniteDimensional ℝ E] in
+/-- The Hamiltonian vector field read in the chart of the constant family `(r, q) ↦ K q` over a
+further parameter `r` is as regular as that of `K`, after forgetting `r`. -/
+theorem contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const {Q R : Type*}
+    [NormedAddCommGroup Q] [NormedSpace ℝ Q] [NormedAddCommGroup R] [NormedSpace ℝ R]
+    {n : WithTop ℕ∞} {K : Q → M → ℝ} {S : Set (Q × E)} {T : Set ((R × Q) × E)}
+    (hX : ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α K) S)
+    (hT : MapsTo (fun q : (R × Q) × E ↦ (q.1.2, q.2)) T S) :
+    ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α (Function.uncurry fun (_ : R) ↦ K)) T :=
+  (hX.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffOn hT).congr
+    fun _ _ ↦ ω.hamiltonianVectorFieldInChartAt_uncurry α _ _ _ _
 
 /-- **The Hamiltonian vector field in a chart is smooth.** For a nondegenerate two-form `ω` and a
 family of Hamiltonians `K(z)` which is jointly `C^(n+1)` at every point of `U × M`, for an open set
@@ -263,6 +373,15 @@ theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsN
   · rw [hamiltonianVectorFieldInChartAt_apply]
     exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) T (hbase hy) _
 
+omit [FiniteDimensional ℝ E] in
+/-- The Hamiltonian vector field of the zero Hamiltonian, read in a chart, vanishes. -/
+@[simp]
+theorem hamiltonianVectorFieldInChartAt_zero (ω : SmoothTwoForm I M) (α : M) {Q : Type*} :
+    ω.hamiltonianVectorFieldInChartAt α (fun (_ : Q) _ ↦ 0) = 0 := by
+  funext ⟨z, y⟩
+  rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorField_const]
+  exact map_zero _
+
 /-- The bilinear forms `ω(·, J(z, x) ·)` of the structures `J(z, x)`, read in the chart at `α`: at
 `(z, y)`, the form at the point `x = (extChartAt I α).symm y` with both arguments in the tangent
 coordinates of the chart at `α` (`associatedBilinFormInChartAt_apply`). The structures are tamed
@@ -297,26 +416,12 @@ theorem associatedBilinFormInChartAt_apply (ω : SmoothTwoForm I M) {P : Type*}
         ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
         (J z ((extChartAt I α).symm y)
           ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) b)) := by
-  set T := trivializationAt E (TangentSpace I) α
-  have hx : (extChartAt I α).symm y ∈ T.baseSet :=
+  have hx : (extChartAt I α).symm y ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
     TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
-  rw [associatedBilinFormInChartAt_apply_eq_inChartAt]
-  -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
-  have hS := TangentBundle.symmL_trivializationAt (I := I) (𝕜 := ℝ) (x₀ := α)
-    (by simpa only [extChartAt_source] using (extChartAt I α).map_target hy)
-  rw [(extChartAt I α).right_inv hy] at hS
-  rw [RoughForm.inChartAt_apply, SmoothBundleForm.eval₂_apply, ← hS]
-  congr 1
-  funext i
-  fin_cases i
-  · simp only [Fin.zero_eta, Matrix.cons_val_zero]
-    rw [extChartAt_coe_symm, Function.comp_apply]
-    -- `T` abbreviates `trivializationAt E (TangentSpace I) α`, which an instance argument of
-    -- `symmL` also mentions, so it cannot be rewritten; `rfl` unfolds the local definition.
-    rfl
-  · exact (congrArg (T.symmL ℝ ((extChartAt I α).symm y))
-      (Floer.almostComplexInChartAt_apply z y b)).trans
-      (Trivialization.symmL_continuousLinearMapAt _ hx _)
+  rw [associatedBilinFormInChartAt_apply_eq_inChartAt, ω.inChartAt_apply_eq_eval₂ hy]
+  -- The second vector is rotated by the structure read in the chart.
+  exact congrArg _ ((congrArg _ (Floer.almostComplexInChartAt_apply z y b)).trans
+    (Trivialization.symmL_continuousLinearMapAt _ hx _))
 
 /-- At the chart image of a point `x` of the chart source, the form `ω(·, J ·)` in the chart,
 evaluated on the chart coordinates of tangent vectors `v` and `w` at `x`, is `ω_x(v, J(z, x) w)`. -/
@@ -353,14 +458,14 @@ the domain to `a X_{K_s} + b X_{K_t}`, with the Hamiltonian vector fields read i
 the one-form of the coordinate Floer equation solved by the coordinate expressions of solutions
 (in the namespace `TauCeti.SmoothTwoForm`,
 `isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub`). -/
-def hamiltonianOneFormInChartAt (ω : SmoothTwoForm I M) (α : M) (Ks Kt : ℝ × ℝ → M → ℝ)
-    (p : (ℝ × ℝ) × E) : ℝ × ℝ →L[ℝ] E :=
+def hamiltonianOneFormInChartAt (ω : SmoothTwoForm I M) (α : M) {Q : Type*} (Ks Kt : Q → M → ℝ)
+    (p : Q × E) : ℝ × ℝ →L[ℝ] E :=
   (ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorFieldInChartAt α Ks p) +
     (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorFieldInChartAt α Kt p)
 
 omit [FiniteDimensional ℝ E] in
-theorem hamiltonianOneFormInChartAt_apply (ω : SmoothTwoForm I M) (α : M)
-    (Ks Kt : ℝ × ℝ → M → ℝ) (p : (ℝ × ℝ) × E) (v : ℝ × ℝ) :
+theorem hamiltonianOneFormInChartAt_apply (ω : SmoothTwoForm I M) (α : M) {Q : Type*}
+    (Ks Kt : Q → M → ℝ) (p : Q × E) (v : ℝ × ℝ) :
     ω.hamiltonianOneFormInChartAt α Ks Kt p v =
       v.1 • ω.hamiltonianVectorFieldInChartAt α Ks p +
         v.2 • ω.hamiltonianVectorFieldInChartAt α Kt p :=
@@ -369,7 +474,7 @@ theorem hamiltonianOneFormInChartAt_apply (ω : SmoothTwoForm I M) (α : M)
 omit [FiniteDimensional ℝ E] in
 @[simp]
 theorem hamiltonianOneFormInChartAt_stdComplexLineReal (ω : SmoothTwoForm I M) (α : M)
-    (Ks Kt : ℝ × ℝ → M → ℝ) (p : (ℝ × ℝ) × E) :
+    {Q : Type*} (Ks Kt : Q → M → ℝ) (p : Q × E) :
     ω.hamiltonianOneFormInChartAt α Ks Kt p stdComplexLineReal =
       ω.hamiltonianVectorFieldInChartAt α Ks p := by
   simp [hamiltonianOneFormInChartAt_apply]
@@ -377,14 +482,26 @@ theorem hamiltonianOneFormInChartAt_stdComplexLineReal (ω : SmoothTwoForm I M) 
 omit [FiniteDimensional ℝ E] in
 @[simp]
 theorem hamiltonianOneFormInChartAt_stdComplexLineImag (ω : SmoothTwoForm I M) (α : M)
-    (Ks Kt : ℝ × ℝ → M → ℝ) (p : (ℝ × ℝ) × E) :
+    {Q : Type*} (Ks Kt : Q → M → ℝ) (p : Q × E) :
     ω.hamiltonianOneFormInChartAt α Ks Kt p stdComplexLineImag =
       ω.hamiltonianVectorFieldInChartAt α Kt p := by
   simp [hamiltonianOneFormInChartAt_apply]
 
 omit [FiniteDimensional ℝ E] in
+/-- For families `K_{s,p}`, `K_{t,p}` of Hamiltonians depending on a parameter `p`, the Hamiltonian
+one-form of the uncurried families read in the chart at `((p, q), y)` is that of `K_p` read in the
+chart at `(q, y)`. -/
+@[simp]
+theorem hamiltonianOneFormInChartAt_uncurry (ω : SmoothTwoForm I M) (α : M) {P Q : Type*}
+    (Ks Kt : P → Q → M → ℝ) (p : P) (q : Q) (y : E) :
+    ω.hamiltonianOneFormInChartAt α (Function.uncurry Ks) (Function.uncurry Kt) ((p, q), y) =
+      ω.hamiltonianOneFormInChartAt α (Ks p) (Kt p) (q, y) :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
 /-- The Hamiltonian one-form in a chart is as regular as the two Hamiltonian vector fields. -/
-theorem contDiffOn_hamiltonianOneFormInChartAt {n : WithTop ℕ∞} {W : Set ((ℝ × ℝ) × E)}
+theorem contDiffOn_hamiltonianOneFormInChartAt {Q : Type*} [NormedAddCommGroup Q]
+    [NormedSpace ℝ Q] {n : WithTop ℕ∞} {Ks Kt : Q → M → ℝ} {W : Set (Q × E)}
     (hXs : ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α Ks) W)
     (hXt : ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α Kt) W) :
     ContDiffOn ℝ n (ω.hamiltonianOneFormInChartAt α Ks Kt) W :=

@@ -535,13 +535,10 @@ omit [FiniteDimensional ℝ V] in
 the functional `⟪u, ·⟫`, read as a vector of `V` with `ExteriorAlgebra.ιInv`. It is the operator
 `A` with `⟪A u, w⟫ = ω(u, w)` for the two-form `ω(u, w) = ⟪F, u ∧ w⟫` that `F` represents
 (`TauCeti.inner_twoVectorContraction_apply`). -/
-noncomputable def twoVectorContraction : ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ V where
-  toFun F :=
-    { toFun := fun u ↦ ExteriorAlgebra.ιInv (contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V))
-      map_add' := fun u v ↦ by simp
-      map_smul' := fun c u ↦ by simp }
-  map_add' F G := LinearMap.ext fun u ↦ by simp
-  map_smul' c F := LinearMap.ext fun u ↦ by simp
+noncomputable def twoVectorContraction (F : ⋀[ℝ]^2 V) : V →ₗ[ℝ] V where
+  toFun u := ExteriorAlgebra.ιInv (contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V))
+  map_add' u v := by simp
+  map_smul' c u := by simp
 
 omit [FiniteDimensional ℝ V] in
 theorem twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u : V) :
@@ -550,26 +547,78 @@ theorem twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u : V) :
   (rfl)
 
 omit [FiniteDimensional ℝ V] in
-/-- Contracting a pure two-vector `u ∧ v` against `x` yields `⟪x, u⟫ • v - ⟪x, v⟫ • u`. -/
 @[simp]
-theorem twoVectorContraction_ιMulti (u v x : V) :
-    twoVectorContraction (ιMulti ℝ 2 ![u, v]) x = ⟪x, u⟫ • v - ⟪x, v⟫ • u := by
-  simp [twoVectorContraction_apply, ExteriorAlgebra.ιMulti_apply, Matrix.vecTail,
-    contractLeft_ι_mul, ← Algebra.commutes, ← Algebra.smul_def, ExteriorAlgebra.ι_leftInverse _]
+theorem twoVectorContraction_zero : twoVectorContraction (0 : ⋀[ℝ]^2 V) = 0 := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_add (F G : ⋀[ℝ]^2 V) :
+    twoVectorContraction (F + G) = twoVectorContraction F + twoVectorContraction G := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_smul (c : ℝ) (F : ⋀[ℝ]^2 V) :
+    twoVectorContraction (c • F) = c • twoVectorContraction F := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContraction_neg (F : ⋀[ℝ]^2 V) :
+    twoVectorContraction (-F) = -twoVectorContraction F := by
+  ext u
+  simp [twoVectorContraction_apply]
+
+omit [FiniteDimensional ℝ V] in
+/-- The contraction `(F, u) ↦ u ⌟ F` as a bilinear map, linear in the two-vector `F` as well as in
+`u`. -/
+noncomputable def twoVectorContractionₗ : ⋀[ℝ]^2 V →ₗ[ℝ] V →ₗ[ℝ] V where
+  toFun := twoVectorContraction
+  map_add' := twoVectorContraction_add
+  map_smul' := twoVectorContraction_smul
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContractionₗ_apply (F : ⋀[ℝ]^2 V) :
+    twoVectorContractionₗ F = twoVectorContraction F :=
+  (rfl)
+
+omit [FiniteDimensional ℝ V] in
+/-- The contraction `u ⌟ F`, read back in the exterior algebra, is the contraction of `F` by the
+functional `⟪u, ·⟫`. -/
+@[simp]
+theorem ι_twoVectorContraction (F : ⋀[ℝ]^2 V) (u : V) :
+    ExteriorAlgebra.ι ℝ (twoVectorContraction F u) =
+      contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V) :=
+  ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
+    (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) F.property)
+
+omit [FiniteDimensional ℝ V] in
+/-- **The contraction of a simple two-vector**: `u ⌟ (a ∧ b) = ⟪u, a⟫ b - ⟪u, b⟫ a`. -/
+@[simp]
+theorem twoVectorContraction_ιMulti (w : Fin 2 → V) (u : V) :
+    twoVectorContraction (ιMulti ℝ 2 w) u = ⟪u, w 0⟫ • w 1 - ⟪u, w 1⟫ • w 0 := by
+  apply (ExteriorAlgebra.ι_leftInverse (R := ℝ) (M := V)).injective
+  rw [ι_twoVectorContraction, ιMulti_apply_coe, ExteriorAlgebra.contractLeft_ιMulti]
+  simp [Fin.sum_univ_two, Fin.removeNth, ExteriorAlgebra.ιMulti_apply, sub_eq_add_neg]
 
 /-- **The contraction represents the two-form of `F`**: `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`. Equivalently,
 on two-forms, wedging with `u` is adjoint to contracting with `⟪u, ·⟫`. -/
 @[simp]
 theorem inner_twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u w : V) :
     ⟪twoVectorContraction F u, w⟫ = ⟪F, ιMulti ℝ 2 ![u, w]⟫ := by
-  have key : (innerₗ (⋀[ℝ]^2 V)).flip (ιMulti ℝ 2 ![u, w]) =
-      innerₗ V w ∘ₗ (twoVectorContraction (V := V)).flip u :=
+  -- Both sides are linear in `F`, so it suffices to compare them on `p ∧ q`.
+  have key : innerₗ (⋀[ℝ]^2 V) (ιMulti ℝ 2 ![u, w]) =
+      innerₗ V w ∘ₗ LinearMap.applyₗ (R := ℝ) u ∘ₗ twoVectorContractionₗ :=
     exteriorPower.linearMap_ext_ιMulti_two fun p q ↦ by
-      simp only [LinearMap.flip_apply, LinearMap.comp_apply, innerₗ_apply_apply,
-        twoVectorContraction_ιMulti, inner_sub_right, real_inner_smul_right, inner_ιMulti_two]
-      rw [real_inner_comm p u, real_inner_comm q w, real_inner_comm p w, real_inner_comm q u]
+      simp [inner_ιMulti_ιMulti, Matrix.det_fin_two, inner_sub_right, real_inner_smul_right]
       ring
-  simpa [real_inner_comm w, real_inner_comm F] using (LinearMap.congr_fun key F).symm
+  rw [real_inner_comm w, real_inner_comm _ F]
+  simpa using (LinearMap.congr_fun key F).symm
 
 /-- `twoVectorContraction` is injective on `⋀[ℝ]^2 V`. -/
 theorem twoVectorContraction_injective :
@@ -582,15 +631,10 @@ omit [FiniteDimensional ℝ V] in
 /-- The contraction by a two-vector is orthogonal to its argument, `⟪u ⌟ F, u⟫ = 0`. -/
 theorem inner_twoVectorContraction_apply_self (F : ⋀[ℝ]^2 V) (u : V) :
     ⟪twoVectorContraction F u, u⟫ = 0 := by
-  -- The contraction `u ⌟ F` is a one-form, the image of the vector `a`, and contracting by `u`
-  -- twice gives zero.
-  set a := twoVectorContraction F u with ha
-  have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V) := by
-    rw [ha, twoVectorContraction_apply]
-    exact ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
-      (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) F.property)
+  -- The contraction `u ⌟ F` is a one-form, the image of the vector `u ⌟ F`, and contracting by
+  -- `u` twice gives zero.
   have h0 := contractLeft_contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V)
-  rw [← hιa, contractLeft_ι, ExteriorAlgebra.algebraMap_eq_zero_iff] at h0
+  rw [← ι_twoVectorContraction, contractLeft_ι, ExteriorAlgebra.algebraMap_eq_zero_iff] at h0
   rw [real_inner_comm]
   exact h0
 
@@ -658,11 +702,13 @@ private theorem lie_bivectorExterior_ι (F : ⋀[ℝ]^2 V) (x : V) :
   have h :
       ((LieAlgebra.ad ℝ (CliffordAlgebra (negHalfInnerQ V))).toLinearMap.flip
           (ι (negHalfInnerQ V) x)).comp (bivectorExterior (negHalfInnerQ V)) =
-        (ι (negHalfInnerQ V)).comp (twoVectorContraction.flip x) :=
+        (ι (negHalfInnerQ V)).comp (twoVectorContractionₗ.flip x) :=
     exteriorPower.linearMap_ext_ιMulti_two fun a b ↦ by
       simp only [LinearMap.comp_apply, LinearMap.flip_apply, LieHom.coe_toLinearMap,
-        LieAlgebra.ad_apply, bivectorExterior_apply_ιMulti, bivector_lie_ι, polar_negHalfInnerQ]
-      rw [twoVectorContraction_ιMulti, real_inner_comm b x, real_inner_comm a x]
+        LieAlgebra.ad_apply, bivectorExterior_apply_ιMulti, bivector_lie_ι, polar_negHalfInnerQ,
+        twoVectorContractionₗ_apply, twoVectorContraction_ιMulti, Matrix.cons_val_zero,
+        Matrix.cons_val_one]
+      rw [real_inner_comm b x, real_inner_comm a x]
       congr 1
       module
   exact LinearMap.congr_fun h F
@@ -690,14 +736,15 @@ omit [FiniteDimensional ℝ V] in
 theorem twoVectorBracket_apply (F G : ⋀[ℝ]^2 V) :
     twoVectorBracket F G = lieMap 2 (twoVectorContraction F) G := by
   have h :
-      twoVectorBracket = ((lieMap (V := V) 2).toLinearMap.comp twoVectorContraction) :=
+      twoVectorBracket = ((lieMap (V := V) 2).toLinearMap.comp twoVectorContractionₗ) :=
     exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
       exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ by
-        rw [LinearMap.comp_apply, LieHom.coe_toLinearMap, lieMap_two_apply_ιMulti,
-          twoVectorContraction_ιMulti, twoVectorContraction_ιMulti]
+        rw [LinearMap.comp_apply, LieHom.coe_toLinearMap, twoVectorContractionₗ_apply,
+          lieMap_two_apply_ιMulti, twoVectorContraction_ιMulti, twoVectorContraction_ιMulti]
         change twoVectorBracket (ιMulti ℝ 2 ![u, v]) (ιMulti ℝ 2 ![z, w]) = _
         rw [twoVectorBracket_ιMulti]
-        simp only [sub_eq_add_neg, ιMulti_two_add_left, ιMulti_two_add_right, ← neg_smul,
+        simp only [Matrix.cons_val_zero, Matrix.cons_val_one, sub_eq_add_neg,
+          ιMulti_two_add_left, ιMulti_two_add_right, ← neg_smul,
           ιMulti_two_smul_left, ιMulti_two_smul_right]
         module
   exact LinearMap.congr_fun₂ h F G
