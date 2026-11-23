@@ -50,14 +50,16 @@ def tangentCochainEquiv (k : ℕ) : SmoothForm I M ℝ k ≃ₗ[ℝ] (tangent I 
 `TauCeti.mextDerivₗ`. -/
 theorem tangent_extDeriv_toContMDiffSection [T2Space M] {k : ℕ} (φ : SmoothForm I M ℝ k) :
     (tangent I M).extDeriv k φ.toContMDiffSection = (mextDerivₗ I k φ).toContMDiffSection := by
-  ext x v; choose V hV using fun i ↦ ContMDiffSection.evalLinearMap_surjective (I := I) (F := E) ∞
+  ext x v
+  choose V hV using fun i ↦ ContMDiffSection.evalLinearMap_surjective (I := I) (F := E) ∞
     (V := (TangentSpace I : M → Type _)) x (v i)
   have hv : (fun i ↦ V i x) = v := funext fun i ↦ by simpa using hV i
   rw [← hv]; cases k with
   | zero =>
-    have htup : (fun i : Fin 1 ↦ V i x) = ![V 0 x] := funext fun i ↦ by fin_cases i; rfl
-    rw [htup, (tangent I M).extDeriv_zero_apply_section, anchorDeriv_apply, tangent_anchor_apply,
-      SmoothForm.toContMDiffSection_apply, mextDerivₗ_zero_apply]; congr 2; ext y; simp
+    rw [show (fun i : Fin 1 ↦ V i x) = ![V 0 x] from funext fun i ↦ by fin_cases i; rfl,
+      (tangent I M).extDeriv_zero_apply_section, anchorDeriv_apply, tangent_anchor_apply,
+      SmoothForm.toContMDiffSection_apply, mextDerivₗ_zero_apply]
+    congr 2; ext y; simp
   | succ k =>
     rw [(tangent I M).extDeriv_succ_apply_sections,
       (mextDerivₗ I (k + 1) φ).toContMDiffSection_apply, mextDerivₗ_apply,

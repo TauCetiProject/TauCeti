@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.Wedge
 
 /-!
@@ -52,25 +51,21 @@ theorem _root_.ContMDiffWithinAt.pairedWedge_section {μ : ∀ y, V₁ y →L[�
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin k]→L[ℝ] F₁) y (φ y)) u x)
     (hψ : ContMDiffWithinAt I (I.prod 𝓘(ℝ, FW [⋀^Fin l]→L[ℝ] F₂)) n
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) u x) :
-    ContMDiffWithinAt I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦
-      TotalSpace.mk' (FW [⋀^Fin (k + l)]→L[ℝ] F₃) y
-        (pairedWedge (μ y) (hμ y) (φ y) (ψ y))) u x := by
+    ContMDiffWithinAt I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦ TotalSpace.mk'
+      (FW [⋀^Fin (k + l)]→L[ℝ] F₃) y (pairedWedge (μ y) (hμ y) (φ y) (ψ y))) u x := by
   rw [contMDiffWithinAt_hom_bundle] at hpair
   rw [contMDiffWithinAt_continuousAlternatingMap_bundle] at hφ hψ ⊢; refine ⟨hφ.1, ?_⟩
   have h := (((pairedWedgeCLM (E := FW) (k := k) (l := l)).contDiff.comp_contMDiffWithinAt
     hpair.2).clm_apply hφ.2).clm_apply hψ.2
   have heq : (fun y ↦ inCoordinates FW F₃ x y x y (pairedWedge (μ y) (hμ y) (φ y) (ψ y))) =ᶠ[𝓝 x]
-      fun y ↦ pairedWedgeCLM (ContinuousLinearMap.inCoordinates F₁ V₁
-        (F₂ →L[ℝ] F₃) (fun z ↦ V₂ z →L[ℝ] V₃ z) x y x y (μ y))
-        (inCoordinates FW F₁ x y x y (φ y)) (inCoordinates FW F₂ x y x y (ψ y)) := by
+      fun y ↦ pairedWedgeCLM (ContinuousLinearMap.inCoordinates F₁ V₁ (F₂ →L[ℝ] F₃)
+        (fun z ↦ V₂ z →L[ℝ] V₃ z) x y x y (μ y)) (inCoordinates FW F₁ x y x y (φ y))
+        (inCoordinates FW F₂ x y x y (ψ y)) := by
     filter_upwards
-      [(trivializationAt F₁ V₁ x).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt F₁ V₁ x),
-       (trivializationAt F₂ V₂ x).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt F₂ V₂ x),
-       (trivializationAt F₃ V₃ x).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt F₃ V₃ x)] with y h₁ h₂ h₃ using
-      TauCeti.inCoordinates_pairedWedge (μ y) (hμ y) (φ y) (ψ y) h₁ h₂ h₃
+      [(trivializationAt F₁ V₁ x).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F₁ V₁ x),
+       (trivializationAt F₂ V₂ x).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F₂ V₂ x),
+       (trivializationAt F₃ V₃ x).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F₃ V₃ x)]
+      with y h₁ h₂ h₃ using TauCeti.inCoordinates_pairedWedge (μ y) (hμ y) (φ y) (ψ y) h₁ h₂ h₃
   exact h.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
 
 /-- Pointwise regularity of a fibrewise paired wedge on `W`. -/
@@ -83,8 +78,8 @@ theorem _root_.ContMDiffAt.pairedWedge_section {μ : ∀ y, V₁ y →L[ℝ] V�
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin k]→L[ℝ] F₁) y (φ y)) x)
     (hψ : ContMDiffAt I (I.prod 𝓘(ℝ, FW [⋀^Fin l]→L[ℝ] F₂)) n
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) x) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦
-      TotalSpace.mk' (FW [⋀^Fin (k + l)]→L[ℝ] F₃) y (pairedWedge (μ y) (hμ y) (φ y) (ψ y))) x :=
+    ContMDiffAt I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦ TotalSpace.mk'
+      (FW [⋀^Fin (k + l)]→L[ℝ] F₃) y (pairedWedge (μ y) (hμ y) (φ y) (ψ y))) x :=
   ContMDiffWithinAt.pairedWedge_section hμ hpair hφ hψ
 
 /-- Regularity on a set of a fibrewise paired wedge on `W`. -/
@@ -97,8 +92,8 @@ theorem _root_.ContMDiffOn.pairedWedge_section {μ : ∀ y, V₁ y →L[ℝ] V�
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin k]→L[ℝ] F₁) y (φ y)) u)
     (hψ : ContMDiffOn I (I.prod 𝓘(ℝ, FW [⋀^Fin l]→L[ℝ] F₂)) n
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) u) :
-    ContMDiffOn I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦
-      TotalSpace.mk' (FW [⋀^Fin (k + l)]→L[ℝ] F₃) y (pairedWedge (μ y) (hμ y) (φ y) (ψ y))) u :=
+    ContMDiffOn I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦ TotalSpace.mk'
+      (FW [⋀^Fin (k + l)]→L[ℝ] F₃) y (pairedWedge (μ y) (hμ y) (φ y) (ψ y))) u :=
   fun y hy ↦ ContMDiffWithinAt.pairedWedge_section hμ (hpair y hy) (hφ y hy) (hψ y hy)
 
 /-- Global regularity of a fibrewise paired wedge on `W`. -/
@@ -111,7 +106,7 @@ theorem _root_.ContMDiff.pairedWedge_section {μ : ∀ y, V₁ y →L[ℝ] V₂ 
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin k]→L[ℝ] F₁) y (φ y)))
     (hψ : ContMDiff I (I.prod 𝓘(ℝ, FW [⋀^Fin l]→L[ℝ] F₂)) n
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin l]→L[ℝ] F₂) y (ψ y))) :
-    ContMDiff I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦
-      TotalSpace.mk' (FW [⋀^Fin (k + l)]→L[ℝ] F₃) y (pairedWedge (μ y) (hμ y) (φ y) (ψ y))) :=
+    ContMDiff I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦ TotalSpace.mk'
+      (FW [⋀^Fin (k + l)]→L[ℝ] F₃) y (pairedWedge (μ y) (hμ y) (φ y) (ψ y))) :=
   fun y ↦ ContMDiffAt.pairedWedge_section hμ (hpair y) (hφ y) (hψ y)
 end PairedWedgeRegularity

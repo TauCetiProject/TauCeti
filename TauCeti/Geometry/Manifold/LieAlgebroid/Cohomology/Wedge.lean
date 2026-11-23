@@ -39,7 +39,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 omit [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] in
 private lemma cochainZeroEquiv_eq (ξ : A.Cochain 0) :
     trivialEquiv (alternatingIsEmptyEquiv ξ) = A.cochainZeroEquiv ξ := by ext x; simp
-
 /-- The Lie derivative is an ungraded derivation of `ContMDiffSection.wedge`. -/
 theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k) (ψ : A.Cochain l) :
     A.lieDeriv a (wedge φ ψ) = wedge (A.lieDeriv a φ) ψ + wedge φ (A.lieDeriv a ψ) := by
@@ -57,7 +56,6 @@ theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k
     have ih₂ := ih ((k + 1) + l) (by omega) φ (interior b ψ) rfl
     simp only [A.interior_lieDeriv, interior_wedge, map_add, map_sub, map_smul,
       LinearMap.sub_apply, A.lieDeriv_cast, ih₁, ih₂]; module
-
 /-- Scalar derivation rule for `A.extDeriv` in terms of `ContMDiffSection.wedge`. -/
 theorem extDeriv_smul {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (η : A.Cochain k) :
     A.extDeriv k (f • η) = LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain) (Nat.add_comm 1 k)
@@ -83,7 +81,6 @@ theorem extDeriv_smul {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (η : A.Cochain k) :
       LinearEquiv.apply_symm_apply, LinearMapClass.map_smul_of_tower (S := C^∞⟮I, M; ℝ⟯),
       ih (interior a η)]
     simp only [smul_sub, LinearEquiv.cast_apply, cast_cast, cast_eq]; module
-
 /-- Pointwise scalar derivation rule for `A.extDeriv` in terms of `ContMDiffSection.wedge`. -/
 theorem extDeriv_smul_apply {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (η : A.Cochain k) (x : M)
     (v : Fin (k + 1) → V x) : (A.extDeriv k (f • η)) x v =
@@ -92,7 +89,6 @@ theorem extDeriv_smul_apply {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (η : A.Cochain
   rw [A.extDeriv_smul, ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
     alternating_cast_apply, ContMDiffSection.smul_apply, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul]
-
 private lemma extDeriv_wedge_zero_left {l : ℕ} (φ : A.Cochain 0) (ψ : A.Cochain l) :
     A.extDeriv (0 + l) (wedge φ ψ) = LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain)
         (show 0 + 1 + l = 0 + l + 1 by omega) (wedge (A.extDeriv 0 φ) ψ) + (-1 : ℝ) ^ 0 •
@@ -101,20 +97,18 @@ private lemma extDeriv_wedge_zero_left {l : ℕ} (φ : A.Cochain 0) (ψ : A.Coch
   simp only [wedge_zero_left, A.cochainZeroEquiv_eq]
   rw [A.extDeriv_cast, A.extDeriv_smul, LinearEquiv.symm_apply_apply, map_add]
   simp only [pow_zero, one_smul, LinearEquiv.cast_apply, cast_cast]
-
 private lemma extDeriv_wedge_zero_right {k : ℕ} (φ : A.Cochain (k + 1)) (ψ : A.Cochain 0) :
     A.extDeriv (k + 1 + 0) (wedge φ ψ) = LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain)
         (show k + 1 + 1 + 0 = k + 1 + 0 + 1 by omega) (wedge (A.extDeriv (k + 1) φ) ψ) +
       (-1 : ℝ) ^ (k + 1) • LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain)
         (show k + 1 + (0 + 1) = k + 1 + 0 + 1 by omega) (wedge φ (A.extDeriv 0 ψ)) := by
-  have hsmul_sq (ξ : A.Cochain (k + 1 + 0 + 1)) :
-      (-1 : ℝ) ^ (k + 1) • (-1 : ℝ) ^ ((k + 1) * (0 + 1)) • ξ = ξ := by
+  have hsmul_sq (ξ : A.Cochain (k + 1 + 0 + 1)) : (-1 : ℝ) ^ (k + 1) •
+      (-1 : ℝ) ^ ((k + 1) * (0 + 1)) • ξ = ξ := by
     rw [smul_smul, zero_add, mul_one, ← pow_add, Even.neg_one_pow ⟨k + 1, rfl⟩, one_smul]
   simp only [wedge_zero_right, A.cochainZeroEquiv_eq]
   rw [A.extDeriv_cast, A.extDeriv_smul, LinearEquiv.symm_apply_apply, wedge_comm φ (A.extDeriv 0 ψ)]
   simp only [LinearMapClass.map_smul_of_tower (S := C^∞⟮I, M; ℝ⟯), LinearEquiv.cast_apply,
     cast_cast, hsmul_sq]; exact add_comm _ _
-
 /-- **Graded Leibniz rule** for `A.extDeriv` with respect to `ContMDiffSection.wedge`. -/
 theorem extDeriv_wedge {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l) :
     A.extDeriv (k + l) (wedge φ ψ) = LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain)
@@ -144,7 +138,6 @@ theorem extDeriv_wedge {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l) :
       ih₁, ih₂, smul_add, smul_sub, LinearMapClass.map_smul_of_tower (S := C^∞⟮I, M; ℝ⟯)]
     simp only [LinearEquiv.cast_apply, cast_cast, cast_eq, hsmul_add, pow_succ, mul_neg, mul_one,
       hneg_smul, hsmul_neg, neg_neg, hsmul_sq]; module
-
 /-- Pointwise **graded Leibniz rule** for `A.extDeriv` with respect to `ContMDiffSection.wedge`. -/
 theorem extDeriv_wedge_apply {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l) (x : M)
     (v : Fin (k + l + 1) → V x) : (A.extDeriv (k + l) (wedge φ ψ)) x v =

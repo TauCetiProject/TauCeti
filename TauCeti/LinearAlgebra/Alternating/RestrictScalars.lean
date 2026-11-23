@@ -45,12 +45,10 @@ def restrictScalars (f : M [⋀^ι]→ₗ[A] N) : M [⋀^ι]→ₗ[R] N where
 @[simp] theorem coe_restrictScalars (f : M [⋀^ι]→ₗ[A] N) : ⇑(f.restrictScalars R) = f := (rfl)
 @[simp] theorem restrictScalars_apply (f : M [⋀^ι]→ₗ[A] N) (v : ι → M) :
     f.restrictScalars R v = f v := (rfl)
-
 /-- Scalar restriction on alternating maps is injective. -/
 theorem restrictScalars_injective :
     Function.Injective (restrictScalars R : (M [⋀^ι]→ₗ[A] N) → M [⋀^ι]→ₗ[R] N) :=
   fun _ _ h ↦ ext fun v ↦ congr($h v)
-
 @[simp] theorem restrictScalars_zero : (0 : M [⋀^ι]→ₗ[A] N).restrictScalars R = 0 := (rfl)
 @[simp] theorem restrictScalars_add (f g : M [⋀^ι]→ₗ[A] N) :
     (f + g).restrictScalars R = f.restrictScalars R + g.restrictScalars R := (rfl)
@@ -63,7 +61,6 @@ section RestrictScalarsAddCommGroup
 variable (R : Type*) [Semiring R] {A M N : Type*} [Semiring A] [SMul R A]
   [AddCommMonoid M] [AddCommGroup N] [Module R M] [Module A M] [Module R N] [Module A N]
   [IsScalarTower R A M] [IsScalarTower R A N]
-
 @[simp] theorem restrictScalars_neg {ι : Type*} (f : M [⋀^ι]→ₗ[A] N) :
     (-f).restrictScalars R = -f.restrictScalars R := (rfl)
 @[simp] theorem restrictScalars_sub {ι : Type*} (f g : M [⋀^ι]→ₗ[A] N) :
@@ -74,7 +71,6 @@ section RestrictScalarsCommSemiring
 variable (R : Type*) [CommSemiring R] {A M N : Type*} [CommSemiring A] [SMul R A]
   [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module A M] [Module R N] [Module A N]
   [IsScalarTower R A M] [IsScalarTower R A N]
-
 @[simp] theorem restrictScalars_curryLeft {n : ℕ} (f : M [⋀^Fin (n + 1)]→ₗ[A] N) (m : M) :
     (f.curryLeft m).restrictScalars R = (f.restrictScalars R).curryLeft m := (rfl)
 end RestrictScalarsCommSemiring
@@ -83,7 +79,6 @@ section OfCurryLeftSMul
 variable {R A M N : Type*} [CommSemiring R] [Semiring A] [SMul R A]
   [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module A M] [Module R N] [Module A N]
   [IsScalarTower R A M] [IsScalarTower R A N] {n : ℕ}
-
 @[simp] theorem restrictScalars_ofCurryLeftSMul (f : M [⋀^Fin (n + 1)]→ₗ[R] N)
     (hf : ∀ (a : A) (m : M) (w : Fin n → M), f.curryLeft (a • m) w = a • f.curryLeft m w) :
     (ofCurryLeftSMul f hf).restrictScalars R = f := by ext v; simp

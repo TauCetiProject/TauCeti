@@ -68,24 +68,24 @@ theorem _root_.ContMDiffAt.curryLeftTopological_section
     {s : ∀ y, W y} {φ : ∀ y, W y [⋀^Fin (k + 1)]→L[𝕜] V y} (hs : CMDiffAt n (T% s) x)
     (hφ : ContMDiffAt I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV) y (φ y)) x) :
-    ContMDiffAt I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦
-      TotalSpace.mk' (FW [⋀^Fin k]→L[𝕜] FV) y ((φ y).curryLeftTopological (s y))) x :=
+    ContMDiffAt I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦ TotalSpace.mk'
+      (FW [⋀^Fin k]→L[𝕜] FV) y ((φ y).curryLeftTopological (s y))) x :=
   ContMDiffWithinAt.curryLeftTopological_section hs hφ
 
 theorem _root_.ContMDiffOn.curryLeftTopological_section
     {s : ∀ y, W y} {φ : ∀ y, W y [⋀^Fin (k + 1)]→L[𝕜] V y} (hs : CMDiff[u] n (T% s))
     (hφ : ContMDiffOn I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV) y (φ y)) u) :
-    ContMDiffOn I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦
-      TotalSpace.mk' (FW [⋀^Fin k]→L[𝕜] FV) y ((φ y).curryLeftTopological (s y))) u :=
+    ContMDiffOn I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦ TotalSpace.mk'
+      (FW [⋀^Fin k]→L[𝕜] FV) y ((φ y).curryLeftTopological (s y))) u :=
   fun y hy ↦ (hs y hy).curryLeftTopological_section (hφ y hy)
 
 theorem _root_.ContMDiff.curryLeftTopological_section
     {s : ∀ y, W y} {φ : ∀ y, W y [⋀^Fin (k + 1)]→L[𝕜] V y} (hs : CMDiff n (T% s))
     (hφ : ContMDiff I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n
       (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV) y (φ y))) :
-    ContMDiff I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦
-      TotalSpace.mk' (FW [⋀^Fin k]→L[𝕜] FV) y ((φ y).curryLeftTopological (s y))) :=
+    ContMDiff I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦ TotalSpace.mk'
+      (FW [⋀^Fin k]→L[𝕜] FV) y ((φ y).curryLeftTopological (s y))) :=
   fun y ↦ (hs y).curryLeftTopological_section (hφ y)
 end CurryRegularity
 
@@ -102,17 +102,14 @@ def interior {k : ℕ} : Cₛ^n⟮I; FW, W⟯ →ₗ[C^n⟮I, M; 𝕜⟯]
 
 theorem interior_eq_curryLeftTopological {k : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (k + 1)]→L[𝕜] FV, fun x ↦ W x [⋀^Fin (k + 1)]→L[𝕜] V x⟯) (x : M) :
-    interior s φ x = (φ x).curryLeftTopological (s x) := by rw [interior]; simp
-
+    interior s φ x = (φ x).curryLeftTopological (s x) := (rfl)
 @[simp] theorem interior_apply {k : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (k + 1)]→L[𝕜] FV, fun x ↦ W x [⋀^Fin (k + 1)]→L[𝕜] V x⟯) (x : M)
     (v : Fin k → W x) : interior s φ x v = φ x (Matrix.vecCons (s x) v) := by
   rw [interior_eq_curryLeftTopological, ContinuousAlternatingMap.curryLeftTopological_apply_apply]
-
 @[simp] theorem interior_self {k : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (k + 2)]→L[𝕜] FV, fun x ↦ W x [⋀^Fin (k + 2)]→L[𝕜] V x⟯) :
     interior s (interior s φ) = 0 := by ext x v; simp [interior_eq_curryLeftTopological]
-
 /-- Anticommutativity of the interior product: `ι_s (ι_t φ) = -ι_t (ι_s φ)`. -/
 theorem interior_swap {k : ℕ} (s t : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (k + 2)]→L[𝕜] FV, fun x ↦ W x [⋀^Fin (k + 2)]→L[𝕜] V x⟯) :
@@ -120,14 +117,12 @@ theorem interior_swap {k : ℕ} (s t : Cₛ^n⟮I; FW, W⟯)
   have h := interior_self (s + t) φ
   simp only [map_add, LinearMap.add_apply, interior_self, zero_add, add_zero,
     add_eq_zero_iff_eq_neg] at h; exact neg_eq_iff_eq_neg.mp h.symm
-
 /-- Pointwise evaluation of a degree cast on alternating bundle sections. -/
 theorem alternating_cast_apply {m k : ℕ} (h : m = k)
     (φ : Cₛ^n⟮I; FW [⋀^Fin m]→L[𝕜] FV, fun x ↦ W x [⋀^Fin m]→L[𝕜] V x⟯) (x : M)
     (v : Fin k → W x) : LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯)
       (M := fun q ↦ Cₛ^n⟮I; FW [⋀^Fin q]→L[𝕜] FV, fun x ↦ W x [⋀^Fin q]→L[𝕜] V x⟯) h φ x v =
         φ x (v ∘ Fin.cast h) := by cases h; rfl
-
 /-- The interior product commutes with degree casts on alternating bundle sections. -/
 theorem interior_cast {m k : ℕ} (h : m + 1 = k + 1) (s : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (m + 1)]→L[𝕜] FV, fun x ↦ W x [⋀^Fin (m + 1)]→L[𝕜] V x⟯) :
@@ -136,7 +131,6 @@ theorem interior_cast {m k : ℕ} (h : m + 1 = k + 1) (s : Cₛ^n⟮I; FW, W⟯)
       LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯)
         (M := fun q ↦ Cₛ^n⟮I; FW [⋀^Fin q]→L[𝕜] FV, fun x ↦ W x [⋀^Fin q]→L[𝕜] V x⟯)
         (Nat.succ_injective h) (interior s φ) := by cases Nat.succ_injective h; rfl
-
 /-- Evaluating a `C^n` alternating bundle section pointwise on `C^n` global sections of `W` gives
 an alternating `C^n(M, 𝕜)`-multilinear map `Γ^n(W) [⋀^ι]→ₗ[C^n(M, 𝕜)] Γ^n(V)`. -/
 def toAlternatingMap {ι : Type*} [Fintype ι]
@@ -144,17 +138,15 @@ def toAlternatingMap {ι : Type*} [Fintype ι]
     Cₛ^n⟮I; FW, W⟯ [⋀^ι]→ₗ[C^n⟮I, M; 𝕜⟯] Cₛ^n⟮I; FV, V⟯ where
   toFun s := ⟨fun x ↦ φ x (fun i ↦ s i x),
     φ.contMDiff.continuousAlternatingMap_bundle_apply fun i ↦ (s i).contMDiff⟩
-  map_update_add' := fun {inst} s i u₁ u₂ ↦ by
-    ext x; simp [Function.apply_update (fun _ (r : Cₛ^n⟮I; FW, W⟯) ↦ r x)]
-  map_update_smul' := fun {inst} s i f u ↦ by
-    ext x; simp [smul_apply, Function.apply_update (fun _ (r : Cₛ^n⟮I; FW, W⟯) ↦ r x)]
+  map_update_add' _ _ _ _ := by
+    ext x; simp [Function.apply_update (fun _ r ↦ (r : Cₛ^n⟮I; FW, W⟯) x)]
+  map_update_smul' _ _ _ _ := by
+    ext x; simp [smul_apply, Function.apply_update (fun _ r ↦ (r : Cₛ^n⟮I; FW, W⟯) x)]
   map_eq_zero_of_eq' s i j hij hne := by
     ext x; exact (φ x).map_eq_zero_of_eq (fun r ↦ s r x) (congr_arg (· x) hij) hne
-
 @[simp] theorem toAlternatingMap_apply {ι : Type*} [Fintype ι]
     (φ : Cₛ^n⟮I; FW [⋀^ι]→L[𝕜] FV, fun x ↦ W x [⋀^ι]→L[𝕜] V x⟯) (s : ι → Cₛ^n⟮I; FW, W⟯)
     (x : M) : toAlternatingMap φ s x = φ x (fun i ↦ s i x) := (rfl)
-
 /-- Pointwise evaluation intertwines `interior` with `AlternatingMap.curryLeft`. -/
 @[simp] theorem toAlternatingMap_interior {k : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (k + 1)]→L[𝕜] FV, fun x ↦ W x [⋀^Fin (k + 1)]→L[𝕜] V x⟯) :
@@ -170,16 +162,13 @@ def alternatingIsEmptyEquiv {ι : Type*} [Fintype ι] [IsEmpty ι] :
     ⟨fun x ↦ φ x 0, φ.contMDiff.continuousAlternatingMap_bundle_apply fun i ↦ isEmptyElim i⟩
   invFun s := ⟨fun x ↦ ContinuousAlternatingMap.constOfIsEmpty 𝕜 (W x) ι (s x), fun x₀ ↦ by
     rw [contMDiffAt_continuousAlternatingMap_bundle]; refine ⟨contMDiffAt_id, ?_⟩
-    have heq : (fun y ↦ ContinuousAlternatingMap.inCoordinates FW (E₁ := W) FV (E₂ := V)
-        x₀ y x₀ y (ContinuousAlternatingMap.constOfIsEmpty 𝕜 (W y) ι (s y))) =ᶠ[𝓝 x₀] fun y ↦
-        (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 FW FV ι).toLinearIsometry
-          |>.toContinuousLinearMap ((trivializationAt FV V x₀ ⟨y, s y⟩).2) := by
-      filter_upwards [(trivializationAt FV V x₀).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt FV V x₀)] with y hy using by
-          ext v; simp [ContinuousAlternatingMap.inCoordinates, hy]
-    exact ((ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 FW FV ι).toLinearIsometry
-      |>.toContinuousLinearMap.contDiff.comp_contMDiffAt
-        (contMDiffAt_totalSpace_iff.mp (s.contMDiff x₀)).2).congr_of_eventuallyEq heq⟩
+    let L :=
+      (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 FW FV ι).toLinearIsometry.toContinuousLinearMap
+    refine ((L.contDiff.comp_contMDiffAt (contMDiffAt_totalSpace_iff.mp
+      (s.contMDiff x₀)).2)).congr_of_eventuallyEq ?_
+    filter_upwards [(trivializationAt FV V x₀).open_baseSet.mem_nhds
+      (FiberBundle.mem_baseSet_trivializationAt FV V x₀)] with y hy using by
+        ext v; simp [L, ContinuousAlternatingMap.inCoordinates, hy]⟩
   left_inv φ := by ext x v; simpa using congr_arg (φ x) (Subsingleton.elim 0 v)
   right_inv s := by ext x; exact ContinuousAlternatingMap.constOfIsEmpty_apply 𝕜 (W x) ι (s x) 0
   map_add' _ _ := by ext x; simp
