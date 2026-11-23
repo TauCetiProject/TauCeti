@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.Probability.Distributions.Beta.Uniform
 public import TauCeti.Probability.Distributions.LKJ.EntryVariance
 public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
 public import TauCeti.Probability.Distributions.LKJ.PrincipalBlock
@@ -34,6 +35,8 @@ the independent-Beta construction become marginal laws of `TauCeti.Probability.l
 
 * `TauCeti.Probability.map_coe_apply_lkjMeasure_of_ne` and
   `TauCeti.Probability.map_coe_apply_add_one_div_two_lkjMeasure_of_ne`: off-diagonal entry laws;
+* `TauCeti.Probability.map_coe_apply_lkjMeasure_two_shape_one_of_ne`: in dimension two and at
+  shape one, the free correlation is uniform on `(-1, 1)`;
 * `TauCeti.Probability.map_coe_apply_self_lkjMeasure`: diagonal entry laws;
 * `TauCeti.Probability.variance_coe_apply_lkjMeasure_of_ne` and
   `TauCeti.Probability.covariance_coe_apply_lkjMeasure`: entry variances and covariances.
@@ -62,8 +65,8 @@ private theorem map_coe_apply_one_zero_lkjMeasure_two (hη : 0 < η) :
       (betaMeasure η η).map (fun x ↦ -1 + 2 * x) := by
   let ij₀ : strictLowerTriangle 2 := ⟨(1, 0), Fin.zero_lt_one⟩
   have hshape : ∀ ij, lkjPartialCorrelationShape 2 η ij = η := fun ij ↦ by
-    have := ij.2
-    have : ij.1.2.val = 0 := by omega
+    have := ij.property
+    have : ij.val.2.val = 0 := by omega
     simp [lkjPartialCorrelationShape_eq, this]
   have (ij : strictLowerTriangle 2) :
       IsProbabilityMeasure ((betaMeasure (lkjPartialCorrelationShape 2 η ij)
@@ -76,7 +79,7 @@ private theorem map_coe_apply_one_zero_lkjMeasure_two (hη : 0 < η) :
         (fun R : Matrix (Fin 2) (Fin 2) ℝ ↦ R 1 0) ∘
           (fun R : selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℝ) ↦
             (R : Matrix (Fin 2) (Fin 2) ℝ)) := rfl
-  rw [hentry, ← Measure.map_map (by fun_prop) measurable_subtype_coe, map_coe_lkjMeasure hη,
+  rw [hentry, ← Measure.map_map (by fun_prop) measurable_subtypeVal, map_coe_lkjMeasure hη,
     Measure.map_map (by fun_prop) continuous_partialCorrelationGram.measurable]
   have hgram : (fun R : Matrix (Fin 2) (Fin 2) ℝ ↦ R 1 0) ∘ partialCorrelationGram =
       Function.eval ij₀ := by
@@ -137,6 +140,18 @@ theorem map_coe_apply_add_one_div_two_lkjMeasure_of_ne (hη : 0 < η) {i j : Fin
   simp only [Function.comp_apply, id_eq]
   ring
 
+/-- In dimension two, every off-diagonal entry of an LKJ matrix of shape one is uniform on
+`(-1, 1)`. -/
+theorem map_coe_apply_lkjMeasure_two_shape_one_of_ne {i j : Fin 2} (hij : i ≠ j) :
+    (lkjMeasure 2 1).map
+        (fun R : selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℝ) ↦
+          (R : Matrix (Fin 2) (Fin 2) ℝ) i j) =
+      uniformMeasure (-1) 1 := by
+  rw [map_coe_apply_lkjMeasure_of_ne one_pos hij]
+  norm_num [betaMeasure_one_one]
+  convert map_uniformMeasure_affine (by norm_num : (-1 : ℝ) < 1) using 1
+  norm_num
+
 /-- **Diagonal entries of LKJ matrices.** For `η > 0`, every diagonal entry of an LKJ matrix
 is almost surely one, so its law is the Dirac mass at one. -/
 theorem map_coe_apply_self_lkjMeasure (hη : 0 < η) (i : Fin p) :
@@ -170,7 +185,7 @@ theorem variance_coe_apply_lkjMeasure_of_ne (hη : 0 < η) {i j : Fin p} (hij : 
           (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
             (R : Matrix (Fin p) (Fin p) ℝ)) := rfl
   rw [hcomp, ← variance_map Matrix.measurable_apply.aemeasurable
-      measurable_subtype_coe.aemeasurable,
+      measurable_subtypeVal.aemeasurable,
     map_coe_lkjMeasure hη, variance_map Matrix.measurable_apply.aemeasurable
       continuous_partialCorrelationGram.measurable.aemeasurable]
   exact variance_partialCorrelationGram hη hij
@@ -180,9 +195,9 @@ covariance zero. Nonpositive shapes give the zero measure, for which the covaria
 zero. Zero covariance does not assert independence of the entries. -/
 theorem covariance_coe_apply_lkjMeasure {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
     cov[fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2,
+        (R : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2,
       fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        (R : Matrix (Fin p) (Fin p) ℝ) kl.1.1 kl.1.2; lkjMeasure p η] = 0 := by
+        (R : Matrix (Fin p) (Fin p) ℝ) kl.val.1 kl.val.2; lkjMeasure p η] = 0 := by
   rcases le_or_gt η 0 with hη | hη
   · simp [lkjMeasure_of_nonpos hη]
   have (ij : strictLowerTriangle p) : IsProbabilityMeasure
@@ -191,12 +206,12 @@ theorem covariance_coe_apply_lkjMeasure {ij kl : strictLowerTriangle p} (hne : i
       (lkjPartialCorrelationShape_pos hη ij)
   have hcomp (ij : strictLowerTriangle p) :
       (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2) =
-          (fun R : Matrix (Fin p) (Fin p) ℝ ↦ R ij.1.1 ij.1.2) ∘
+        (R : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2) =
+          (fun R : Matrix (Fin p) (Fin p) ℝ ↦ R ij.val.1 ij.val.2) ∘
             (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
               (R : Matrix (Fin p) (Fin p) ℝ)) := rfl
   rw [hcomp ij, hcomp kl, ← covariance_map Matrix.measurable_apply.aestronglyMeasurable
-      Matrix.measurable_apply.aestronglyMeasurable measurable_subtype_coe.aemeasurable,
+      Matrix.measurable_apply.aestronglyMeasurable measurable_subtypeVal.aemeasurable,
     map_coe_lkjMeasure hη]
   exact covariance_apply_map_partialCorrelationGram_pi _ hne
 

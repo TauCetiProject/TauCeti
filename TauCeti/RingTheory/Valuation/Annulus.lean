@@ -48,13 +48,13 @@ theorem le_or_le_iff_map_mul_le_map_mul_self_sub {f r σ : A} (hr : w r ≠ 0) (
     · -- `w f² ≤ w r² < w (r σ)`, so `w (f² - r σ) = w (r σ)`
       have hlt : w (f * f) < w (r * σ) := by
         rw [map_mul, map_mul]
-        exact (mul_le_mul' h h).trans_lt (mul_lt_mul_of_pos_left hrσ (zero_lt_iff.mpr hr))
+        exact (mul_le_mul' h h).trans_lt (mul_lt_mul_of_pos_left hrσ (pos_iff_ne_zero.mpr hr))
       rw [Valuation.map_sub_eq_of_lt_right _ hlt, map_mul, map_mul, mul_comm (w σ)]
       exact ⟨mul_le_mul_left h _, mul_ne_zero hr hσ⟩
     · -- `w (r σ) < w σ² ≤ w f²`, so `w (f² - r σ) = w f²`
       have hlt : w (r * σ) < w (f * f) := by
         rw [map_mul, map_mul]
-        exact (mul_lt_mul_of_pos_right hrσ (zero_lt_iff.mpr hσ)).trans_le (mul_le_mul' h h)
+        exact (mul_lt_mul_of_pos_right hrσ (pos_iff_ne_zero.mpr hσ)).trans_le (mul_le_mul' h h)
       rw [Valuation.map_sub_eq_of_lt_left _ hlt, map_mul, map_mul]
       exact ⟨mul_le_mul_left h _, map_mul w f f ▸ (zero_le.trans_lt hlt).ne'⟩
   · rintro ⟨h₁, h₂⟩
@@ -62,7 +62,7 @@ theorem le_or_le_iff_map_mul_le_map_mul_self_sub {f r σ : A} (hr : w r ≠ 0) (
     rcases lt_trichotomy (w (f * f)) (w (r * σ)) with hlt | heq | hgt
     · left
       rw [Valuation.map_sub_eq_of_lt_right _ hlt, map_mul, mul_comm (w r)] at h₁
-      exact le_of_mul_le_mul_left h₁ (zero_lt_iff.mpr hσ)
+      exact le_of_mul_le_mul_left h₁ (pos_iff_ne_zero.mpr hσ)
     · right
       have hf : w f ≠ 0 := by
         intro h0
@@ -71,9 +71,9 @@ theorem le_or_le_iff_map_mul_le_map_mul_self_sub {f r σ : A} (hr : w r ≠ 0) (
       have h₃ : w (f * f - r * σ) ≤ w f * w f := by
         rw [← map_mul]
         exact (Valuation.map_sub _ _ _).trans (by rw [heq, max_self])
-      exact le_of_mul_le_mul_right (h₁.trans h₃) (zero_lt_iff.mpr hf)
+      exact le_of_mul_le_mul_right (h₁.trans h₃) (pos_iff_ne_zero.mpr hf)
     · right
       rw [Valuation.map_sub_eq_of_lt_left _ hgt, map_mul] at h₁ h₂
-      exact le_of_mul_le_mul_right h₁ (zero_lt_iff.mpr (left_ne_zero_of_mul h₂))
+      exact le_of_mul_le_mul_right h₁ (pos_iff_ne_zero.mpr (left_ne_zero_of_mul h₂))
 
 end Valuation

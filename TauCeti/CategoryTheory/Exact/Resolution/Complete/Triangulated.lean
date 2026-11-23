@@ -22,10 +22,11 @@ the stable category and `K_ac(P)` is a triangle equivalence.
 
 The functor commutes with shifts: the shift by one of a complete resolution of `X` is a complete
 resolution of the cokernel of `X ↪ X⁰`, which represents the suspension of `X`. It sends the
-standard triangle of a conflation `X ↪ Y ↠ Z` to the triangle of the degreewise split sequence of
-complete resolutions given by the horseshoe lemma, which is distinguished in `K(C)`. The two
-connecting maps are compared on cycles in degree zero, where two maps of complete resolutions
-agree in `K(C)` exactly when they agree in the stable category.
+standard triangle of a conflation `X ↪ Y ↠ Z` to a triangle isomorphic to the triangle of the
+degreewise split sequence of complete resolutions given by the horseshoe lemma, which is
+distinguished in `K(C)`. The two connecting
+maps are compared on cycles in degree zero, where two maps of complete resolutions agree in `K(C)`
+exactly when they agree in the stable category.
 
 ## Main results
 
@@ -204,12 +205,8 @@ noncomputable def completeResolutionSuspensionCompIso :
       ((HomotopyCategory.quotient C _).commShiftIso (1 : ℤ)).app _ ≪≫
       (shiftFunctor _ (1 : ℤ)).mapIso (eqToIso (hE.completeResolutionFunctor_obj X).symm))
     (fun {X Y} f ↦ by
-      have hc : hE.stableToHomotopyCategory.map (E.projectiveStableFunctor.map
-          ((hE.completeResolutionPresentation X).cokernelMap
-            (hE.completeResolutionPresentation Y) f)) =
-          hE.completeResolutionFunctor.map ((hE.completeResolutionPresentation X).cokernelMap
-            (hE.completeResolutionPresentation Y) f) := rfl
-      simp only [Functor.comp_map, suspensionToStableOfPresentations_map, Functor.map_comp, hc]
+      simp only [Functor.comp_map, suspensionToStableOfPresentations_map, Functor.map_comp,
+        stableToHomotopyCategory_map_projectiveStableFunctor_map]
       simp only [completeResolutionFunctor_map, eqToHom_map, Iso.trans_hom, eqToIso.hom,
         Functor.mapIso_hom, HomotopyCategory.isoOfHomotopyEquiv, Iso.app_hom, Category.assoc,
         eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Functor.map_comp]
@@ -450,13 +447,7 @@ theorem stableToHomotopyCategory_map_stableConflationTriangle_mem_distTriang
       (HomotopyCategory.quotient C _).obj (hE.completeResolution S.X₃).complex :=
     eqToIso (hE.completeResolutionFunctor_obj S.X₃)
   refine isomorphic_distinguished _ (CochainComplex.trianglehOfDegreewiseSplit_distinguished
-    _ σ) _ (Triangle.isoMk _ _ i₁ i₂ i₃ ?_ ?_ ?_) <;>
-    dsimp only [Functor.mapTriangle_obj, Triangle.mk_obj₁, Triangle.mk_obj₂, Triangle.mk_obj₃,
-      Triangle.mk_mor₁, Triangle.mk_mor₂, Triangle.mk_mor₃,
-      stableToHomotopyCategory_obj_projectiveStableFunctor_obj,
-      CochainComplex.triangleOfDegreewiseSplit_obj₁, CochainComplex.triangleOfDegreewiseSplit_obj₂,
-      CochainComplex.triangleOfDegreewiseSplit_obj₃, CochainComplex.triangleOfDegreewiseSplit_mor₁,
-      CochainComplex.triangleOfDegreewiseSplit_mor₂, CochainComplex.triangleOfDegreewiseSplit_mor₃]
+    _ σ) _ (Triangle.isoMk _ _ i₁ i₂ i₃ ?_ ?_ ?_)
   · exact hE.completeResolutionFunctor_map_f_comp_isoOfHomotopyEquiv_hom h
   · exact hE.completeResolutionFunctor_map_g_comp_eqToIso_hom h
   · exact hE.stableToHomotopyCategory_map_connectingMap_comp_eq hS h σ

@@ -44,7 +44,7 @@ open TauCeti
 variable {ι κ : Type u} [LinearOrder ι] [LinearOrder κ]
   {K : AbstractSimplicialComplex ι} {L : AbstractSimplicialComplex κ}
   (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-  (hf : ∀ n (c : RealizationCell K n), StrictMonoOn f (↑c.1.1 : Set ι))
+  (hf : ∀ n (c : RealizationCell K n), StrictMonoOn f (↑c.val.val : Set ι))
   (R : Type u) [Ring R]
 
 include hf

@@ -251,7 +251,7 @@ theorem comap_indexTwoInd_wreathBase : wreathBase.comap (indexTwoInd U hU s hs �
 /-- **`Ind α` pulls the tautological character back to `α`:** on `U`, which `Ind α` maps into the
 base group, the first coordinate of `Ind α` is `α`. -/
 theorem coordA_indexTwoInd_coe (γ : U) : coordA (indexTwoInd U hU s hs α γ) = toAdd (α γ) := by
-  rw [coordA_indexTwoInd, evensB1_of_mem γ.2, evensExtend_of_mem γ.2]
+  rw [coordA_indexTwoInd, evensB1_of_mem γ.property, evensExtend_of_mem γ.property]
 
 /-- **`Ind α` pulls the tautological character back to `α`**, as homomorphisms on
 `wreathBase.comap (Ind α)`, which is identified with `U` by

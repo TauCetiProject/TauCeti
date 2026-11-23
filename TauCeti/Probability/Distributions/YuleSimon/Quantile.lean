@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.YuleSimon.Basic
 public import TauCeti.Probability.Quantile.Discrete
 public import Mathlib.Topology.Instances.EReal.Lemmas
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 
 /-!
 # Quantiles of Yule–Simon laws

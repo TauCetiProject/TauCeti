@@ -78,7 +78,7 @@ theorem isEmbedding_realCliffordSpinToUnits (n : ℕ) :
   have hcontinuous : Continuous
       (spinGroup.toUnits (Q := realCliffordForm n 0)) := by
     apply Units.continuous_iff.mpr
-    exact ⟨continuous_subtype_val, continuous_subtype_val.star⟩
+    exact ⟨continuous_subtypeVal, continuous_subtypeVal.star⟩
   exact (hcontinuous.isClosedEmbedding
     (spinGroup.toUnits_injective (Q := realCliffordForm n 0))).isEmbedding
 

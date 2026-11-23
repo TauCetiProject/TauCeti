@@ -182,7 +182,7 @@ image. -/
 theorem weightGradedRatMap_mk (WQ : ℤ → Submodule ℚ Vℚ) (W'Q : ℤ → Submodule ℚ V'ℚ)
     (f : Vℚ →ₗ[ℚ] V'ℚ) (hf : ∀ k x, x ∈ WQ k → f x ∈ W'Q k) (k : ℤ) (x : WQ k) :
     weightGradedRatMap WQ W'Q f hf k (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨f x, hf k x x.2⟩ :=
+      Submodule.Quotient.mk ⟨f x, hf k x x.property⟩ :=
   (rfl)
 
 /-- The map induced on the `k`-th graded piece of a complex filtration by a complex-linear map
@@ -199,7 +199,7 @@ theorem weightGradedComplexMap_mk (WC : ℤ → Submodule ℂ Vℂ) (W'C : ℤ �
     (g : Vℂ →ₗ[ℂ] V'ℂ) (hg : ∀ k x, x ∈ WC k → g x ∈ W'C k) (k : ℤ)
     (x : WC k) :
     weightGradedComplexMap WC W'C g hg k (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨g x, hg k x x.2⟩ :=
+      Submodule.Quotient.mk ⟨g x, hg k x x.property⟩ :=
   (rfl)
 
 /-- Passage to the complex graded pieces sends the identity map to the identity. -/
@@ -423,7 +423,7 @@ conjugation. -/
 theorem complexGradedConjugation_mk (hk : ∀ x ∈ WC k, ω.toEquiv x ∈ WC k)
     (hk₁ : ∀ x ∈ WC (k - 1), ω.toEquiv x ∈ WC (k - 1)) (x : WC k) :
     (complexGradedConjugation WC ω k hk hk₁).toEquiv (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨ω.toEquiv (x : Vℂ), hk (x : Vℂ) x.2⟩ := by
+      Submodule.Quotient.mk ⟨ω.toEquiv (x : Vℂ), hk (x : Vℂ) x.property⟩ := by
   rw [complexGradedConjugation, Conjugation.quotient_toEquiv_mk]
   exact congrArg Submodule.Quotient.mk (Subtype.ext (ω.restrict_toEquiv_apply hk x))
 
@@ -446,7 +446,7 @@ theorem map_complexGradedConjugation_complexGradedF
     obtain ⟨y, hy, rfl⟩ :=
       (mem_complexGradedF_iff WC (fun q ↦ (F q).map ω.toEquiv.toLinearMap) k p u).1 hu
     obtain ⟨w, hw, hwy⟩ := hy
-    refine ⟨Submodule.Quotient.mk ⟨ω.toEquiv (y : Vℂ), hk (y : Vℂ) y.2⟩, ?_, ?_⟩
+    refine ⟨Submodule.Quotient.mk ⟨ω.toEquiv (y : Vℂ), hk (y : Vℂ) y.property⟩, ?_, ?_⟩
     · simp only [SetLike.mem_coe, mem_complexGradedF_iff]
       refine ⟨_, ?_, rfl⟩
       simpa only [← hwy, LinearEquiv.coe_coe, ω.apply_apply, SetLike.mem_coe] using hw
@@ -480,7 +480,7 @@ theorem gradedComplexConjugation_mk (k : ℤ)
     (x : rationalToComplexSubmodule hℚ hℂ (WQ k)) :
     (gradedComplexConjugation hℚ hℂ WQ k).toEquiv (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk ⟨latticeConj hℂ (x : Vℂ),
-        (rationalToComplexSubmodule_conj hℚ hℂ (WQ k)).le ⟨x, x.2, rfl⟩⟩ := by
+        (rationalToComplexSubmodule_conj hℚ hℂ (WQ k)).le ⟨x, x.property, rfl⟩⟩ := by
   rw [gradedComplexConjugation, complexGradedConjugation_mk]
   exact congrArg Submodule.Quotient.mk (Subtype.ext (latticeConjugation_toEquiv_apply hℂ _))
 

@@ -40,7 +40,7 @@ open TauCeti.QuadraticMap
 universe u v
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] [NeZero (2 : K)]
+  [FiniteDimensional K V]
 
 /-- The product of two reflections, as an element of the special orthogonal group. -/
 noncomputable def reflectionPairSpecialOrthogonal
@@ -49,11 +49,10 @@ noncomputable def reflectionPairSpecialOrthogonal
   ⟨(reflectionOrthogonal Q u : V ≃ₗ[K] V) * reflectionOrthogonal Q v, by
     rw [mem_specialOrthogonalGroup_iff]
     constructor
-    · exact (orthogonalGroup Q).mul_mem (reflectionOrthogonal Q u).2
-        (reflectionOrthogonal Q v).2
+    · exact (orthogonalGroup Q).mul_mem (reflectionOrthogonal Q u).property
+        (reflectionOrthogonal Q v).property
     · simp⟩
 
-omit [NeZero (2 : K)] in
 /-- The underlying orthogonal isometry of a pair of reflections. -/
 @[simp] theorem reflectionPairSpecialOrthogonal_toOrthogonal
     (Q : QuadraticForm K V) (u v : V) [Invertible (Q u)] [Invertible (Q v)] :
@@ -63,7 +62,6 @@ omit [NeZero (2 : K)] in
   simp only [coe_specialOrthogonalToOrthogonal, Subgroup.coe_mul,
     reflectionPairSpecialOrthogonal]
 
-omit [NeZero (2 : K)] in
 /-- A pair of reflections acts by applying the second reflection, then the first. -/
 @[simp] theorem reflectionPairSpecialOrthogonal_apply
     (Q : QuadraticForm K V) (u v x : V) [Invertible (Q u)] [Invertible (Q v)] :
@@ -90,8 +88,8 @@ theorem exists_even_reflectionOrthogonal_list_prod_eq
       (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
         QuadraticMap.reflectionOrthogonal Q v = r) ∧
       l.length ≤ Module.finrank K V ∧ Even l.length ∧
-      l.prod = ⟨g, (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2).1⟩ := by
-  have hg := QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2
+      l.prod = ⟨g, (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.property).1⟩ := by
+  have hg := QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.property
   obtain ⟨l, hlrefl, hllen, hprod⟩ := exists_reflectionOrthogonal_list_prod_eq Q hQ
     (⟨g, hg.1⟩ : QuadraticMap.orthogonalGroup Q)
   refine ⟨l, hlrefl, hllen, ?_, hprod⟩
