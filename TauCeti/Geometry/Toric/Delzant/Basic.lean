@@ -379,6 +379,45 @@ theorem ne_zero (j : ι) : u j ≠ 0 := fun h0 ↦ by
   have hj : j ∈ activeSet (facetPairing i u) c 0 := by simp [mem_activeSet, hcj]
   exact b.ne_zero ⟨j, hj⟩ ((hb ⟨j, hj⟩).trans h0)
 
+/-- For an injective lattice map, the facet pairings of a Delzant polytope are nonzero. -/
+theorem facetPairing_ne_zero (hi : Function.Injective i) (j : ι) : facetPairing i u j ≠ 0 :=
+  facetPairing_eq_zero_iff.not.2 ((map_ne_zero_iff i hi).2 (hΔ.ne_zero j))
+
+/-- **A Delzant polytope has an interior point.** For an injective lattice map, some point of a
+Delzant polytope lies on none of its facets. -/
+theorem exists_activeSet_eq_empty (hi : Function.Injective i) :
+    ∃ x ∈ facetPolyhedron i u c, activeSet (facetPairing i u) c x = ∅ := by
+  choose x hx hxj using hΔ.irredundant
+  have hslack : ∀ j k, j ≠ k → c j < x k (i (u j)) := fun j k hjk ↦
+    (mem_facetPolyhedron.1 (hx k) j).lt_of_ne fun h ↦ hjk <| by
+      simpa [hxj k] using (mem_activeSet.2 h.symm : j ∈ activeSet (facetPairing i u) c (x k))
+  rcases subsingleton_or_nontrivial ι with hι | hι
+  · obtain hι' | ⟨⟨j⟩⟩ := isEmpty_or_nonempty ι
+    · exact ⟨0, mem_facetPolyhedron.2 isEmptyElim, eq_empty_of_isEmpty _⟩
+    -- With a single facet `j`, move off it in a direction `w` with `⟨w, u j⟩ = 1`.
+    obtain ⟨w, hw⟩ := LinearMap.surjective_iff_ne_zero.2 (hΔ.facetPairing_ne_zero hi j) 1
+    rw [facetPairing_apply] at hw
+    have hlt : ∀ k, c k < (x j + w) (i (u k)) := fun k ↦ by
+      obtain rfl := Subsingleton.elim k j
+      have := mem_facetPolyhedron.1 (hx k) k
+      simp only [add_apply, hw]
+      linarith
+    exact ⟨x j + w, mem_facetPolyhedron.2 fun k ↦ (hlt k).le,
+      eq_empty_of_forall_notMem fun k hk ↦ (hlt k).ne' (mem_activeSet.1 hk)⟩
+  -- With at least two facets `a ≠ b`, the midpoint of `x a` and `x b` lies on no facet.
+  obtain ⟨a, b, hab⟩ := exists_pair_ne ι
+  have hlt : ∀ j, c j < ((2 : ℝ)⁻¹ • (x a + x b)) (i (u j)) := fun j ↦ by
+    have h1 := mem_facetPolyhedron.1 (hx a) j
+    have h2 := mem_facetPolyhedron.1 (hx b) j
+    have h3 : c j < x a (i (u j)) ∨ c j < x b (i (u j)) := by
+      by_cases hja : j = a
+      · exact Or.inr (hslack j b (by rw [hja]; exact hab))
+      · exact Or.inl (hslack j a hja)
+    simp only [smul_apply, add_apply, smul_eq_mul]
+    rcases h3 with h3 | h3 <;> linarith
+  exact ⟨_, mem_facetPolyhedron.2 fun j ↦ (hlt j).le,
+    eq_empty_of_forall_notMem fun j hj ↦ (hlt j).ne' (mem_activeSet.1 hj)⟩
+
 variable [FiniteDimensional ℝ V]
 
 /-- A Delzant polytope is compact. -/
@@ -409,46 +448,6 @@ theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
   obtain ⟨x, hx, hj⟩ := hΔ.exists_mem_extremePoints_mem_activeSet j
   obtain ⟨b, hb⟩ := hΔ.isSmoothVertex x hx
   simpa only [hb] using b.isPrimitive ⟨j, hj⟩
-
-/-- For an injective lattice map, the facet pairings of a Delzant polytope are nonzero. -/
-theorem facetPairing_ne_zero (hi : Function.Injective i) (j : ι) : facetPairing i u j ≠ 0 :=
-  facetPairing_eq_zero_iff.not.2 ((map_ne_zero_iff i hi).2 (hΔ.isPrimitive j).ne_zero)
-
-omit [FiniteDimensional ℝ V] in
-/-- **A Delzant polytope has an interior point.** For an injective lattice map, some point of a
-Delzant polytope lies on none of its facets. -/
-theorem exists_activeSet_eq_empty (hi : Function.Injective i) :
-    ∃ x ∈ facetPolyhedron i u c, activeSet (facetPairing i u) c x = ∅ := by
-  choose x hx hxj using hΔ.irredundant
-  have hslack : ∀ j k, j ≠ k → c j < x k (i (u j)) := fun j k hjk ↦
-    (mem_facetPolyhedron.1 (hx k) j).lt_of_ne fun h ↦ hjk <| by
-      simpa [hxj k] using (mem_activeSet.2 h.symm : j ∈ activeSet (facetPairing i u) c (x k))
-  rcases subsingleton_or_nontrivial ι with hι | hι
-  · obtain hι' | ⟨⟨j⟩⟩ := isEmpty_or_nonempty ι
-    · exact ⟨0, mem_facetPolyhedron.2 isEmptyElim, eq_empty_of_isEmpty _⟩
-    -- With a single facet `j`, move off it in a direction `w` with `⟨w, u j⟩ = 1`.
-    obtain ⟨w, hw⟩ := SeparatingDual.exists_eq_one (R := ℝ)
-      ((map_ne_zero_iff i hi).2 (hΔ.ne_zero j))
-    have hlt : ∀ k, c k < (x j + w) (i (u k)) := fun k ↦ by
-      obtain rfl := Subsingleton.elim k j
-      have := mem_facetPolyhedron.1 (hx k) k
-      simp only [add_apply, hw]
-      linarith
-    exact ⟨x j + w, mem_facetPolyhedron.2 fun k ↦ (hlt k).le,
-      eq_empty_of_forall_notMem fun k hk ↦ (hlt k).ne' (mem_activeSet.1 hk)⟩
-  -- With at least two facets `a ≠ b`, the midpoint of `x a` and `x b` lies on no facet.
-  obtain ⟨a, b, hab⟩ := exists_pair_ne ι
-  have hlt : ∀ j, c j < ((2 : ℝ)⁻¹ • (x a + x b)) (i (u j)) := fun j ↦ by
-    have h1 := mem_facetPolyhedron.1 (hx a) j
-    have h2 := mem_facetPolyhedron.1 (hx b) j
-    have h3 : c j < x a (i (u j)) ∨ c j < x b (i (u j)) := by
-      by_cases hja : j = a
-      · exact Or.inr (hslack j b (by rw [hja]; exact hab))
-      · exact Or.inl (hslack j a hja)
-    simp only [smul_apply, add_apply, smul_eq_mul]
-    rcases h3 with h3 | h3 <;> linarith
-  exact ⟨_, mem_facetPolyhedron.2 fun j ↦ (hlt j).le,
-    eq_empty_of_forall_notMem fun j hj ↦ (hlt j).ne' (mem_activeSet.1 hj)⟩
 
 end IsDelzant
 
