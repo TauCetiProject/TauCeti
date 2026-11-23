@@ -73,6 +73,26 @@ theorem prodLeft_tmul (a : A₁ × A₂) (b : B) :
   rw [prodLeft, Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct_apply,
     _root_.TensorProduct.prodLeft_tmul]
 
+/-- The first component of `prodLeft z` is the base change along `B` of the projection
+`A₁ × A₂ → A₁`, applied to `z`. -/
+@[simp]
+theorem prodLeft_apply_fst (z : (A₁ × A₂) ⊗[R] B) :
+    (prodLeft R S A₁ A₂ B z).1 =
+      Algebra.TensorProduct.map (AlgHom.fst S A₁ A₂) (AlgHom.id R B) z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul a b => simp
+  | add x y hx hy => simp [hx, hy]
+
+/-- The second component of `prodLeft z` is the base change along `B` of the projection
+`A₁ × A₂ → A₂`, applied to `z`. -/
+@[simp]
+theorem prodLeft_apply_snd (z : (A₁ × A₂) ⊗[R] B) :
+    (prodLeft R S A₁ A₂ B z).2 =
+      Algebra.TensorProduct.map (AlgHom.snd S A₁ A₂) (AlgHom.id R B) z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul a b => simp
+  | add x y hx hy => simp [hx, hy]
+
 /-- The inverse of `prodLeft` sends `(a₁ ⊗ₜ b, a₂ ⊗ₜ b)` to `(a₁, a₂) ⊗ₜ b`. -/
 @[simp]
 theorem prodLeft_symm_tmul (a₁ : A₁) (a₂ : A₂) (b : B) :
