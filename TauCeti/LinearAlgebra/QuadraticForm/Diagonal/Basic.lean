@@ -7,7 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+import Mathlib.Algebra.Regular.Pi
 import Mathlib.LinearAlgebra.Determinant
+import Mathlib.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.Logic.Equiv.Set
 
@@ -377,24 +379,17 @@ regular. Over a domain this says that every weight is nonzero (`isRegular_iff_ne
 @[simp]
 theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares_iff {w : ι → R} :
     (QuadraticMap.weightedSumSquares R w).Nondegenerate ↔ ∀ i, IsRegular (w i) := by
-  classical
-  -- The associated bilinear form is the weighted dot product
-  -- (`QuadraticMap.associated_weightedSumSquares`), so it pairs `x` with `y` to
-  -- `∑ j, w j * (x j * y j)`.
+  -- The associated bilinear form pairs `x` with `y` to the dot product `(w * x) ⬝ᵥ y`
+  -- (`QuadraticMap.associated_weightedSumSquares`), which vanishes for every `y` exactly when
+  -- `w * x = 0`. So the form is nondegenerate exactly when `w` is regular in `ι → R`, that is,
+  -- when each weight is regular.
+  have hB (x y : ι → R) :
+      QuadraticMap.associated (QuadraticMap.weightedSumSquares R w) x y = (w * x) ⬝ᵥ y := by
+    simp [dotProduct, mul_assoc]
   rw [← QuadraticMap.nondegenerate_associated_iff,
-    (QuadraticForm.associated_isSymm R _).isRefl.nondegenerate_iff_separatingLeft]
-  refine ⟨fun h i ↦ ?_, fun hw x hx ↦ ?_⟩
-  · -- If `w i * r = 0`, then `Pi.single i r` pairs to zero with every vector, so `r = 0`.
-    rw [← isLeftRegular_iff_isRegular, isLeftRegular_iff_right_eq_zero_of_mul]
-    intro r hr
-    have hx := h (Pi.single i r) fun y ↦ by
-      simp [QuadraticMap.associated_weightedSumSquares, Pi.single_apply, ← mul_assoc, hr]
-    simpa using congrFun hx i
-  · -- Pairing `x` with the basis vector `Pi.single i 1` isolates `w i * x i`, and regularity of
-    -- `w i` forces `x i = 0`.
-    ext i
-    simpa [QuadraticMap.associated_weightedSumSquares, Pi.single_apply,
-      (hw i).left.mul_left_eq_zero_iff] using hx (Pi.single i 1)
+    (QuadraticForm.associated_isSymm R _).isRefl.nondegenerate_iff_separatingLeft,
+    ← Pi.isRegular_iff, ← isLeftRegular_iff_isRegular, isLeftRegular_iff_right_eq_zero_of_mul]
+  simp only [LinearMap.SeparatingLeft, hB, dotProduct_eq_zero_iff]
 
 /-- The form `⟨1, a, -a⟩` with `a` a unit is nondegenerate when two is invertible. -/
 theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares_one_self_neg (a : Rˣ) :

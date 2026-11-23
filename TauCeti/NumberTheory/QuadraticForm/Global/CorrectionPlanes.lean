@@ -39,7 +39,8 @@ finite Hasse sign exactly at the finite places of `R`.
 ## Main results
 
 * `QuadraticForm.nondegenerate_weightedSumSquares_one_neg`,
-  `QuadraticForm.nondegenerate_weightedSumSquares_neg_self_mul`: both planes are regular.
+  `QuadraticForm.nondegenerate_weightedSumSquares_neg_self_mul`: both planes are regular, over
+  any commutative ring in which two is invertible.
 * `QuadraticForm.discr_formClass_weightedSumSquares_neg_self_mul`: they have the same
   discriminant.
 * `QuadraticForm.finiteHasse_weightedSumSquares_one_neg`: `s_v(⟨1, -β⟩) = 1`.
@@ -64,17 +65,31 @@ namespace QuadraticForm
 
 section Planes
 
+section CommRing
+
+variable {R : Type*} [CommRing R] [Invertible (2 : R)]
+
+/-- The norm plane `⟨1, -β⟩` with `β` a unit is regular over any commutative ring in which two is
+invertible. -/
+theorem nondegenerate_weightedSumSquares_one_neg (b : Rˣ) :
+    (weightedSumSquares R ![1, -(b : R)]).Nondegenerate :=
+  nondegenerate_weightedSumSquares_iff.mpr fun i => by
+    fin_cases i
+    · exact isRegular_one
+    · exact b.isUnit.neg.isRegular
+
+/-- The scaled norm plane `⟨α, -αβ⟩` with `α, β` units is regular over any commutative ring in
+which two is invertible. -/
+theorem nondegenerate_weightedSumSquares_neg_self_mul (a b : Rˣ) :
+    (weightedSumSquares R ![(a : R), -(a * b : R)]).Nondegenerate :=
+  nondegenerate_weightedSumSquares_iff.mpr fun i => by
+    fin_cases i
+    · exact a.isUnit.isRegular
+    · exact (a.isUnit.mul b.isUnit).neg.isRegular
+
+end CommRing
+
 variable {K : Type*} [Field K] [Invertible (2 : K)]
-
-/-- The norm plane `⟨1, -β⟩` is regular. -/
-theorem nondegenerate_weightedSumSquares_one_neg (b : Kˣ) :
-    (weightedSumSquares K ![1, -(b : K)]).Nondegenerate :=
-  nondegenerate_weightedSumSquares_iff.mpr fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
-
-/-- The scaled norm plane `⟨α, -αβ⟩` is regular. -/
-theorem nondegenerate_weightedSumSquares_neg_self_mul (a b : Kˣ) :
-    (weightedSumSquares K ![(a : K), -(a * b : K)]).Nondegenerate :=
-  nondegenerate_weightedSumSquares_iff.mpr fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
 
 /-- The plain discriminant of the norm plane `⟨1, -β⟩` is the square class of `-β`. -/
 @[simp]
