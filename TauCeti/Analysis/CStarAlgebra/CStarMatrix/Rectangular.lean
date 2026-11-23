@@ -36,7 +36,7 @@ develops that rectangular calculus:
   rectangular operator-norm submultiplicativity and C⋆-identities.
 * `CStarMatrix.reindexₗᵢ`: rectangular row-and-column reindexing as a linear isometry equivalence.
 * `CStarMatrix.permMatrix`: rectangular `0`-`1` matrices attached to `e : m ≃ n`, implementing
-  `reindexₐ` by `(permMatrix A e).conjTranspose * M * permMatrix A e = reindexₐ R A e M`.
+  `reindexₗ` by `(permMatrix A e₁).conjTranspose * M * permMatrix A e₂ = reindexₗ R A e₁ e₂ M`.
 
 ## References
 
@@ -278,20 +278,6 @@ theorem permMatrix_trans [Fintype m] [DecidableEq m] [DecidableEq n] [NonAssocSe
     [NonAssocSemiring A] (e : m ≃ n) : permMatrix A e * permMatrix A e.symm = 1 := by
   rw [← permMatrix_trans, Equiv.self_trans_symm, permMatrix_refl]
 
-theorem permMatrix_conjTranspose_mul_self [Fintype m] [DecidableEq n] [NonAssocSemiring A]
-    [StarRing A] (e : m ≃ n) : (permMatrix A e).conjTranspose * permMatrix A e = 1 := by
-  classical rw [conjTranspose_permMatrix, permMatrix_symm_mul_self]
-
-theorem permMatrix_mul_conjTranspose_self [Fintype n] [DecidableEq m] [DecidableEq n]
-    [NonAssocSemiring A] [StarRing A] (e : m ≃ n) :
-    permMatrix A e * (permMatrix A e).conjTranspose = 1 := by
-  rw [conjTranspose_permMatrix, permMatrix_mul_symm_self]
-
-/-- A square permutation `CStarMatrix` is unitary. -/
-theorem permMatrix_mem_unitary [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
-    (σ : Equiv.Perm n) : permMatrix A σ ∈ unitary (CStarMatrix n n A) :=
-  ⟨permMatrix_conjTranspose_mul_self σ, permMatrix_mul_conjTranspose_self σ⟩
-
 /-- Conjugating a rectangular matrix `M : CStarMatrix l m A` by permutation matrices implements
 `reindexₗ R A e₁ e₂ M`. -/
 theorem conjTranspose_permMatrix_mul_permMatrix_eq_reindexₗ [Fintype l] [Fintype m]
@@ -304,13 +290,6 @@ theorem conjTranspose_permMatrix_mul_permMatrix_eq_reindexₗ [Fintype l] [Finty
   simp only [ofMatrix_symm_mul, ofMatrix_symm_permMatrix, PEquiv.toMatrix_toPEquiv_mul,
     PEquiv.mul_toMatrix_toPEquiv]
   ext i j; rfl
-
-/-- Conjugating `M : CStarMatrix m m A` by `permMatrix A e` implements `reindexₐ R A e M`. -/
-theorem conjTranspose_permMatrix_mul_permMatrix [Fintype m] [Fintype n] [DecidableEq n]
-    [Semiring R] [NonAssocSemiring A] [Module R A] [StarRing A] (e : m ≃ n)
-    (M : CStarMatrix m m A) :
-    (permMatrix A e).conjTranspose * M * permMatrix A e = reindexₐ R A e M :=
-  conjTranspose_permMatrix_mul_permMatrix_eq_reindexₗ e e M
 
 end PermMatrix
 

@@ -9,7 +9,6 @@ public import Mathlib.Data.Matrix.Basis
 public import Mathlib.Data.Matrix.Block
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Rectangular
 import Mathlib.Analysis.CStarAlgebra.Hom
-import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
 # Block matrices, corner embeddings, and block operator norms on `CStarMatrix`
@@ -158,29 +157,6 @@ theorem star_fromBlocks [Star A] (M₁₁ : CStarMatrix m m A) (M₁₂ : CStarM
       fromBlocks (star M₁₁) M₂₁.conjTranspose M₁₂.conjTranspose (star M₂₂) :=
   fromBlocks_conjTranspose M₁₁ M₁₂ M₂₁ M₂₂
 
-/-- Entrywise `mapₙₐ` distributes across `fromBlocks`. -/
-theorem mapₙₐ_fromBlocks [Fintype m] [Fintype n] [Semiring R]
-    [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
-    [NonUnitalNonAssocSemiring B] [Module R B] [Star B] (f : A →⋆ₙₐ[R] B)
-    (M₁₁ : CStarMatrix m m A) (M₁₂ : CStarMatrix m n A)
-    (M₂₁ : CStarMatrix n m A) (M₂₂ : CStarMatrix n n A) :
-    mapₙₐ f (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) =
-      fromBlocks (mapₙₐ f M₁₁) (M₁₂.map f) (M₂₁.map f) (mapₙₐ f M₂₂) :=
-  fromBlocks_map M₁₁ M₁₂ M₂₁ M₂₂ f
-
-/-- Entrywise `mapₙₐ` commutes with block-diagonal direct sums. -/
-theorem mapₙₐ_fromBlocks_zero₁₂_zero₂₁ [Fintype m] [Fintype n] [Semiring R]
-    [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
-    [NonUnitalNonAssocSemiring B] [Module R B] [Star B] (f : A →⋆ₙₐ[R] B)
-    (M : CStarMatrix m m A) (N : CStarMatrix n n A) :
-    mapₙₐ f (fromBlocks M 0 0 N) = fromBlocks (mapₙₐ f M) 0 0 (mapₙₐ f N) := by
-  rw [mapₙₐ_fromBlocks]; congr 1 <;> ext <;> simp
-
-private theorem isSelfAdjoint_iff_isHermitian_ofMatrix_symm {k A : Type*} [InvolutiveStar A]
-    (X : CStarMatrix k k A) : IsSelfAdjoint X ↔ (ofMatrix.symm X).IsHermitian := by
-  rw [Matrix.isHermitian_iff_isSelfAdjoint]
-  exact ofMatrix.symm.injective.eq_iff.symm
-
 /-- A square `2 × 2` block `CStarMatrix` is self-adjoint iff its diagonal blocks are self-adjoint
 and its off-diagonal blocks are conjugate transposes of each other. -/
 theorem isSelfAdjoint_fromBlocks_iff [InvolutiveStar A]
@@ -188,12 +164,9 @@ theorem isSelfAdjoint_fromBlocks_iff [InvolutiveStar A]
     {M₂₁ : CStarMatrix n m A} {M₂₂ : CStarMatrix n n A} :
     IsSelfAdjoint (fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) ↔
       IsSelfAdjoint M₁₁ ∧ M₁₂.conjTranspose = M₂₁ ∧ IsSelfAdjoint M₂₂ := by
-  rw [isSelfAdjoint_iff_isHermitian_ofMatrix_symm, ofMatrix_symm_fromBlocks,
-    Matrix.isHermitian_fromBlocks_iff, ← isSelfAdjoint_iff_isHermitian_ofMatrix_symm,
-    ← isSelfAdjoint_iff_isHermitian_ofMatrix_symm]
-  simp only [← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_conjTranspose]
-  exact ⟨fun ⟨h₁₁, h₁₂, _, h₂₂⟩ ↦ ⟨h₁₁, h₁₂, h₂₂⟩,
-    fun ⟨h₁₁, h₁₂, h₂₂⟩ ↦ ⟨h₁₁, h₁₂, by simp [← h₁₂], h₂₂⟩⟩
+  rw [IsSelfAdjoint, star_fromBlocks, fromBlocks_inj]
+  exact ⟨fun ⟨h₁₁, _, h₂₁, h₂₂⟩ ↦ ⟨h₁₁, h₂₁, h₂₂⟩,
+    fun ⟨h₁₁, h₂₁, h₂₂⟩ ↦ ⟨h₁₁, by simp [← h₂₁], h₂₁, h₂₂⟩⟩
 
 /-- A block-diagonal `CStarMatrix` is self-adjoint iff both diagonal blocks are self-adjoint. -/
 @[simp] theorem isSelfAdjoint_fromBlocks_zero₁₂_zero₂₁ [AddMonoid A] [StarAddMonoid A]

@@ -43,9 +43,10 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
 * `IsStarProjection.isMurrayVonNeumannEquivalent_mul_mul_star`: unitary conjugacy implies
   equivalence. More generally, `IsStarProjection.isMurrayVonNeumannEquivalent_mul_mul_conjTranspose`
   compresses by a rectangular matrix that is isometric on the range of the projection.
-* `Matrix.IsMurrayVonNeumannEquivalent.reindex`, `Matrix.IsMurrayVonNeumannEquivalent.fromBlocks`
-  and `Matrix.IsMurrayVonNeumannEquivalent.map`: the relation is preserved by reindexing, by block
-  sums and by entrywise star ring homomorphisms.
+* `Matrix.IsMurrayVonNeumannEquivalent.reindex`, `Matrix.IsMurrayVonNeumannEquivalent.fromBlocks`,
+  `Matrix.IsMurrayVonNeumannEquivalent.add_of_mul_eq_zero` and
+  `Matrix.IsMurrayVonNeumannEquivalent.map`: the relation is preserved by reindexing, by block
+  sums, by orthogonal sums, and by entrywise star ring homomorphisms.
 * `IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_zero`,
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_comm` and
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_assoc`: padding by a zero block, and
@@ -320,6 +321,44 @@ theorem _root_.IsStarProjection.isMurrayVonNeumannEquivalent_single [DecidableEq
   refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, single j i p, ?_, ?_⟩ <;>
     simp [IsIdempotentElem, IsSelfAdjoint, star_eq_conjTranspose, hp.isIdempotentElem.eq,
       hp.isSelfAdjoint.star_eq]
+
+/-- **Orthogonal sums.** If `p₁ * p₂ = 0` and `q₁ * q₂ = 0`, then adding supported implementing
+matrices `v₁ + v₂` witnesses `p₁ + p₂ ∼ q₁ + q₂`. -/
+theorem IsMurrayVonNeumannEquivalent.add_of_mul_eq_zero {p₁ p₂ : Matrix m m R}
+    {q₁ q₂ : Matrix n n R} (h₁ : IsMurrayVonNeumannEquivalent p₁ q₁)
+    (h₂ : IsMurrayVonNeumannEquivalent p₂ q₂) (hp : p₁ * p₂ = 0) (hq : q₁ * q₂ = 0) :
+    IsMurrayVonNeumannEquivalent (p₁ + p₂) (q₁ + q₂) := by
+  have hp₁ := h₁.isStarProjection_left
+  have hq₁ := h₁.isStarProjection_right
+  have hp₂ := h₂.isStarProjection_left
+  have hq₂ := h₂.isStarProjection_right
+  obtain ⟨v₁, hv₁p, hv₁q, hv₁⟩ := h₁.exists_mul_conjTranspose_mul_self_eq
+  obtain ⟨v₂, hv₂p, hv₂q, hv₂⟩ := h₂.exists_mul_conjTranspose_mul_self_eq
+  have hv₁_mul : v₁ * p₁ = v₁ := by rw [← hv₁p, ← Matrix.mul_assoc, hv₁]
+  have hv₂_mul : v₂ * p₂ = v₂ := by rw [← hv₂p, ← Matrix.mul_assoc, hv₂]
+  have hq₁v₁ : q₁ * v₁ = v₁ := by rw [← hv₁q, Matrix.mul_assoc, hv₁p, hv₁_mul]
+  have hq₂v₂ : q₂ * v₂ = v₂ := by rw [← hv₂q, Matrix.mul_assoc, hv₂p, hv₂_mul]
+  have hp₂H : p₂ᴴ = p₂ := by rw [← star_eq_conjTranspose, hp₂.isSelfAdjoint.star_eq]
+  have hq₁H : q₁ᴴ = q₁ := by rw [← star_eq_conjTranspose, hq₁.isSelfAdjoint.star_eq]
+  have hp₂v₂ : p₂ * v₂ᴴ = v₂ᴴ := by
+    simpa [hp₂H] using congrArg conjTranspose hv₂_mul
+  have hv₁q₁ : v₁ᴴ * q₁ = v₁ᴴ := by
+    simpa [hq₁H] using congrArg conjTranspose hq₁v₁
+  have hv₁₂ : v₁ᴴ * v₂ = 0 := by
+    calc v₁ᴴ * v₂ = (v₁ᴴ * q₁) * (q₂ * v₂) := by rw [hv₁q₁, hq₂v₂]
+      _ = v₁ᴴ * (q₁ * q₂) * v₂ := by simp only [Matrix.mul_assoc]
+      _ = 0 := by rw [hq, Matrix.mul_zero, Matrix.zero_mul]
+  have hv₂₁ : v₂ᴴ * v₁ = 0 := by simpa using congrArg conjTranspose hv₁₂
+  have hw₁₂ : v₁ * v₂ᴴ = 0 := by
+    calc v₁ * v₂ᴴ = (v₁ * p₁) * (p₂ * v₂ᴴ) := by rw [hv₁_mul, hp₂v₂]
+      _ = v₁ * (p₁ * p₂) * v₂ᴴ := by simp only [Matrix.mul_assoc]
+      _ = 0 := by rw [hp, Matrix.mul_zero, Matrix.zero_mul]
+  have hw₂₁ : v₂ * v₁ᴴ = 0 := by simpa using congrArg conjTranspose hw₁₂
+  refine ⟨hp₁.add hp₂ hp, hq₁.add hq₂ hq, v₁ + v₂, ?_, ?_⟩
+  · rw [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add,
+      hv₁p, hv₂p, hv₁₂, hv₂₁, add_zero, zero_add]
+  · rw [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add,
+      hv₁q, hv₂q, hw₁₂, hw₂₁, add_zero, zero_add]
 
 end NonUnitalSemiring
 
