@@ -55,6 +55,11 @@ theorem lex_lt_of_sum_take_le {l₁ l₂ : List ℕ} (hpos : ∀ i ∈ l₂, 0 <
               (fun k => by simpa using hle (k + 1)) (by simpa using hne)
           · exact Lex.rel hba
 
+/-- Extending the smaller of two lists that is not a prefix of the larger one keeps it smaller. -/
+theorem append_lt_of_lt_of_not_prefix {α : Type*} [LT α] {l₁ l₂ l₃ : List α} (h₁ : l₁ < l₂)
+    (h₂ : ¬ l₁ <+: l₂) : l₁ ++ l₃ < l₂ := by
+  simpa using append_lt_append_of_lt_of_not_prefix (l₃ := l₃) (l₄ := []) h₁ h₂
+
 section LinearOrder
 
 variable {α : Type*} [LinearOrder α]
@@ -64,7 +69,7 @@ instance instOrderBot : OrderBot (List α) where
   bot := []
   bot_le
     | [] => le_rfl
-    | _ :: _ => le_of_lt Lex.nil
+    | _ :: _ => (nil_lt_cons _ _).le
 
 /-- The least element `⊥` of the lexicographic order is the empty list. -/
 @[simp]
@@ -91,7 +96,7 @@ instance instDenselyOrdered [NoMinOrder α] : DenselyOrdered (List α) where
     · obtain ⟨a, x', rfl⟩ : ∃ a x', x = a :: x' :=
         exists_cons_of_ne_nil (by rintro rfl; exact hp nil_prefix)
       exact ⟨a :: x' ++ [a], lt_append_of_ne_nil _ (by simp),
-        by simpa using append_lt_append_of_lt_of_not_prefix (l₃ := [a]) (l₄ := []) hxy hp⟩
+        append_lt_of_lt_of_not_prefix hxy hp⟩
 
 /-- A nonempty list is lexicographically larger than its parent `l.dropLast`. -/
 theorem dropLast_lt {l : List α} (hl : l ≠ []) : l.dropLast < l := by
@@ -110,8 +115,8 @@ theorem length_le_of_dropLast_lt_of_lt {l z : List α} (h₁ : l.dropLast < z) (
     have := length_pos_iff.2 hl
     rw [length_append, length_dropLast]
     omega
-  · have := append_lt_append_of_lt_of_not_prefix (l₃ := [l.getLast hl]) (l₄ := []) h₁ hp
-    rw [dropLast_append_getLast hl, append_nil] at this
+  · have := append_lt_of_lt_of_not_prefix (l₃ := [l.getLast hl]) h₁ hp
+    rw [dropLast_append_getLast hl] at this
     exact absurd (this.trans h₂) (lt_irrefl l)
 
 /-- The parent `l.dropLast` of a nonempty list `l` is definable from the lexicographic order
