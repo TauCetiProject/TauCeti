@@ -43,17 +43,17 @@ theorem MeromorphicOn.measurable_domRestrict
     (hf : MeromorphicOn f s) :
     Measurable (s.domRestrict f) := by
   set u : Set s := {z | AnalyticAt 𝕜 f z}
-  have hu_open : IsOpen u := (isOpen_analyticAt 𝕜 f).preimage continuous_subtype_val
+  have hu_open : IsOpen u := (isOpen_analyticAt 𝕜 f).preimage continuous_subtypeVal
   have hsub : uᶜ ⊆ (Subtype.val : s → 𝕜) ⁻¹' ({z : 𝕜 | AnalyticAt 𝕜 f z}ᶜ ∩ s) :=
-    fun z hz ↦ ⟨hz, z.2⟩
+    fun z hz ↦ ⟨hz, z.property⟩
   have huc_cnt : uᶜ.Countable :=
     Set.Countable.mono hsub (hf.countable_compl_analyticAt_inter.preimage Subtype.val_injective)
   have _ : Countable ↑uᶜ := huc_cnt.to_subtype
   have hcont : ContinuousOn (s.domRestrict f) u := fun _ hz ↦
-    (hz.continuousAt.comp continuous_subtype_val.continuousAt).continuousWithinAt
-  exact .of_union_range_cover (.subtype_coe hu_open.measurableSet)
-    (.subtype_coe huc_cnt.measurableSet) (by simp [-mem_compl_iff])
-    ((hcont.comp_continuous continuous_subtype_val fun x ↦ x.2).measurable)
+    (hz.continuousAt.comp continuous_subtypeVal.continuousAt).continuousWithinAt
+  exact .of_union_range_cover (.subtypeVal hu_open.measurableSet)
+    (.subtypeVal huc_cnt.measurableSet) (by simp [-mem_compl_iff])
+    ((hcont.comp_continuous continuous_subtypeVal fun x ↦ x.property).measurable)
     (measurable_of_countable _)
 
 /-- Precomposing a function meromorphic on `s` with a measurable map into `s` produces a measurable

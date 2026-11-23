@@ -96,7 +96,8 @@ theorem finite_induction_of_exists_addSubgroup
   have hMP : Q (M ⧸ P) :=
     map M (M ⧸ P) E.projDistribMulActionHom E.projDistribMulActionHom_surjective hM
   refine extension P M (M ⧸ P) E hPS
-    (fun g a ↦ Subtype.ext ((P.restrictDistribMulAction_coe_smul hP g a).trans (hPfix g a a.2)))
+    (fun g a ↦ Subtype.ext ((P.restrictDistribMulAction_coe_smul hP g a).trans
+        (hPfix g a a.property)))
     hM hMP ?_
   -- the quotient has smaller order, and the induction hypothesis applies to it
   refine ih _ ?_ (M ⧸ P) hMP rfl

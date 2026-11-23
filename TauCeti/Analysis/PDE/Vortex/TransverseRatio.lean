@@ -115,7 +115,8 @@ theorem exists_contDiff_eq_mul_sectionValue {f : E × ℂ → ℂ} (hf : Differe
   have hk0 (w : ℂ) : k w ≠ 0 :=
     mul_ne_zero (Circle.coe_ne_zero _) (ofReal_ne_zero.2 (Real.exp_pos _).ne')
   have hkd : ContDiff ℝ ∞ k :=
-    ((mem_framedGaugeGroup _).1 g.2).1.mul (ofRealCLM.contDiff.comp (Real.contDiff_exp.comp hv))
+    ((mem_framedGaugeGroup _).1 g.property).1.mul (ofRealCLM.contDiff.comp
+        (Real.contDiff_exp.comp hv))
   have hud : ContDiff ℝ ∞ u := hu.contDiff_of_finiteDimensional.restrict_scalars ℝ
   refine ⟨fun p ↦ u p * (k p.2)⁻¹, hud.mul ((hkd.comp contDiff_snd).inv fun p ↦ hk0 p.2),
     fun p ↦ mul_ne_zero (hu0 p) (inv_ne_zero (hk0 p.2)), fun p ↦ ?_⟩

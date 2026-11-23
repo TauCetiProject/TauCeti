@@ -14,9 +14,12 @@ Run `CoxeterSystem.reflectionRepresentation` over `ℤ` on three matrices. In ra
 `[2]` gives `s₀ e₀ = -e₀`, while `[1]` fails the Gram hypothesis and its reflection would send `1`
 to `0`. For `A₂` the matrix `!![2, -1; -1, 2]` gives `s₀ e₁ = e₀ + e₁`. For the infinite dihedral
 group, a Coxeter matrix on `Fin 2` with off-diagonal entry `0` (standing for `∞`), the degenerate
-matrix `!![2, -2; -2, 2]` is allowed, and `s₀ s₁` sends `e₀` to `3 e₀ + 2 e₁`. Each Gram hypothesis
-is checked in its own example; the reflection examples take it as a hypothesis, which by proof
-irrelevance loses nothing.
+matrix `!![2, -2; -2, 2]` is allowed, and `s₀ s₁` sends `e₀` to `3 e₀ + 2 e₁`. We also check that
+`(CoxeterMatrix.I 1).integralGramMatrix` recovers `!![2, -1; -1, 2]`, that reducing the rank-one
+integral representation modulo `2` makes `s₀` act trivially, and that transporting `A₂` to
+`Fin 2 → ℤ` along `Pi.basisFun` sends `1 ⊗ₜ Pi.single i 1` to `eᵢ` after extending scalars to `ℝ`.
+Each Gram hypothesis is checked in its own example; the reflection examples take it as a hypothesis,
+which by proof irrelevance loses nothing.
 -/
 
 public section
@@ -87,3 +90,36 @@ example (M : CoxeterMatrix (Fin 2))
     CoxeterSystem.reflectionRepresentation_simple_apply]
   ext k
   fin_cases k <;> simp
+
+/-- The canonical integer Gram matrix of `A₂` is `!![2, -1; -1, 2]`. -/
+example : (CoxeterMatrix.I 1).integralGramMatrix = !![2, -1; -1, 2] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [CoxeterMatrix.integralGramMatrix_apply, CoxeterMatrix.I]
+
+/-- Reducing the rank-one integral geometric representation modulo `2` makes `s₀` act as the
+identity, showing that modular reductions of a faithful integral representation need not remain
+faithful. -/
+example (hA : ∀ i j : Fin 1, algebraMap ℤ ℝ (!![2] i j) =
+      2 * (CoxeterMatrix.A 1).geometricForm (Finsupp.single i 1) (Finsupp.single j 1)) :
+    (CoxeterMatrix.A 1).toCoxeterSystem.mapReflectionRepresentation
+        (algebraMap ℤ ℝ).injective_int hA (Int.castRingHom (ZMod 2))
+        ((CoxeterMatrix.A 1).toCoxeterSystem.simple 0) = 1 := by
+  refine Finsupp.lhom_ext' fun i ↦ LinearMap.ext_ring ?_
+  rw [LinearMap.comp_apply, CoxeterSystem.mapReflectionRepresentation_simple_apply]
+  fin_cases i
+  simp
+  rfl
+
+open TensorProduct in
+/-- Transporting `A₂` to `Fin 2 → ℤ` along `Pi.basisFun ℤ (Fin 2)` and extending scalars to `ℝ`
+sends `1 ⊗ₜ Pi.single i 1` to the `i`-th real simple root `Finsupp.single i 1`. -/
+example (hA : ∀ i j : Fin 2, algebraMap ℤ ℝ (!![2, -1; -1, 2] i j) =
+      2 * (CoxeterMatrix.I 1).geometricForm (Finsupp.single i 1) (Finsupp.single j 1))
+    (i : Fin 2) :
+    (CoxeterMatrix.I 1).toCoxeterSystem.baseChangeRealReflectionRepresentationOfBasisEquiv
+        (algebraMap ℤ ℝ).injective_int hA (Pi.basisFun ℤ (Fin 2))
+        ((1 : ℝ) ⊗ₜ[ℤ] Pi.basisFun ℤ (Fin 2) i) =
+      Finsupp.single i 1 := by
+  rw [CoxeterSystem.baseChangeRealReflectionRepresentationOfBasisEquiv_apply,
+    Module.Basis.baseChange_repr_tmul_basis]
+

@@ -69,7 +69,7 @@ ambient field into `A` exactly when that element lies in `A`. -/
 theorem decompositionSubgroup_apply_mem_iff (A : ValuationSubring L)
     (g : A.decompositionSubgroup K) {x : L} : (g : L ≃ₐ[K] L) x ∈ A ↔ x ∈ A := by
   rw [← AlgEquiv.smul_def, ← smul_mem_pointwise_smul_iff (g := (g : L ≃ₐ[K] L)) (x := x),
-    MulAction.mem_stabilizer_iff.mp g.2]
+    MulAction.mem_stabilizer_iff.mp g.property]
 
 /-- **The decomposition group, elementwise**: an automorphism of `L` lies in the decomposition
 group of a valuation subring `A` exactly when it maps an element of `L` into `A` precisely when
@@ -145,7 +145,7 @@ theorem map_restrictScalarsHom_inertiaSubgroup (A : ValuationSubring L)
   constructor
   · rintro ⟨_, ⟨g, hg, rfl⟩, rfl⟩
     have hZ : f g ∈ A.decompositionSubgroup K :=
-      (restrictScalars_mem_decompositionSubgroup_iff A (g : L ≃ₐ[E] L)).mpr g.2
+      (restrictScalars_mem_decompositionSubgroup_iff A (g : L ≃ₐ[E] L)).mpr g.property
     exact ⟨(IntermediateField.mem_fixingSubgroup_iff _ _).mpr
       fun x hx ↦ (g : L ≃ₐ[E] L).commutes ⟨x, hx⟩, ⟨f g, hZ⟩, (hiff fun _ ↦ rfl).mp hg, rfl⟩
   · rintro ⟨hE, g, hg, rfl⟩
@@ -154,7 +154,7 @@ theorem map_restrictScalarsHom_inertiaSubgroup (A : ValuationSubring L)
       congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨g, hE⟩) x
     have hτg : τ.restrictScalars K = g := AlgEquiv.ext hτ
     have hZ : τ ∈ A.decompositionSubgroup E :=
-      (restrictScalars_mem_decompositionSubgroup_iff A τ).mp (hτg ▸ g.2)
+      (restrictScalars_mem_decompositionSubgroup_iff A τ).mp (hτg ▸ g.property)
     exact ⟨τ, ⟨⟨τ, hZ⟩, (hiff hτ).mpr hg, rfl⟩, AlgEquiv.ext hτ⟩
 
 end ValuationSubring
