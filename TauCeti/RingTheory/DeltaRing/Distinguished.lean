@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import TauCeti.RingTheory.DeltaRing.Basic
+import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # Distinguished elements of δ-rings
@@ -18,11 +19,14 @@ distinguished elements from Bhatt and Scholze, *Prisms and prismatic cohomology*
 
 * `δ`-maps preserve distinguished elements, and a distinguished `d` has `p ∈ (d, φ d)`;
 * if `p ∈ rad(A)` then `p` is distinguished, as `δ p = 1 - p ^ (p - 1)`;
-* if `d, p ∈ rad(A)`, a unit multiple of a distinguished `d` is distinguished (Lemma 2.23);
-* if `f * h` is distinguished and `f, p ∈ rad(A)`, then `f` is distinguished and `h` is a unit
-  (Lemma 2.24);
-* if `d, p ∈ rad(A)`, then `d` is distinguished if and only if `p ∈ (d, φ d)`, so distinguishedness
-  only depends on the ideal `(d)` (Lemma 2.25).
+* if `d ∈ rad(A)`, a unit multiple of a distinguished `d` is distinguished (Lemma 2.23);
+* if `f * h` is distinguished and `f ∈ rad(A)`, then `f` is distinguished, and if moreover
+  `p ∈ rad(A)` then `h` is a unit (Lemma 2.24);
+* if `d, p ∈ rad(A)`, then `d` is distinguished if and only if `p ∈ (d, φ d)` (Lemma 2.25);
+* if `d ∈ rad(A)`, distinguishedness only depends on the ideal `(d)` (Lemma 2.25).
+
+Lemmas 2.23 and 2.24 and the last part of Lemma 2.25 assume `p ∈ rad(A)` in the source; the
+proofs here only use it to make `h` a unit, by writing `δ (x * y) = x ^ p * δ y + δ x * φ y`.
 
 The converse in Lemma 2.25 is proved modulo every maximal ideal `m` containing `δ d`, rather than
 after a completion as in the source: writing `p = a d + b φ d` gives
@@ -39,8 +43,9 @@ after a completion as in the source: writing `p = a d + b φ d` gives
   `d`.
 * `TauCeti.DeltaRing.isDistinguished_natCast_self`: `p` is distinguished when `p ∈ rad(A)`.
 * `TauCeti.DeltaRing.IsDistinguished.unit_mul`: unit multiples (Lemma 2.23).
-* `TauCeti.DeltaRing.IsDistinguished.of_mul` and `TauCeti.DeltaRing.IsDistinguished.isUnit_of_mul`:
-  the factor lemma (Lemma 2.24).
+* `TauCeti.DeltaRing.IsDistinguished.of_mul_left` and
+  `TauCeti.DeltaRing.IsDistinguished.isUnit_of_mul_right`: the factor lemma (Lemma 2.24).
+* `TauCeti.DeltaRing.IsDistinguished.of_dvd`: divisors in the Jacobson radical.
 * `TauCeti.DeltaRing.isDistinguished_iff_natCast_mem_span_frobenius` and
   `TauCeti.DeltaRing.isDistinguished_iff_of_span_singleton_eq`: Lemma 2.25.
 
@@ -74,20 +79,17 @@ theorem IsDistinguished.map {f : A →+* B} (hf : IsDeltaMap p f) {d : A}
   rw [isDistinguished_iff, ← hf.map_delta]
   exact IsUnit.map f hd
 
-/-- Adding an element of the Jacobson radical does not change being a unit. -/
-private theorem isUnit_add_iff_of_mem_jacobson {a j : A} (hj : j ∈ Ring.jacobson A) :
-    IsUnit (a + j) ↔ IsUnit a := by
-  have key {a j : A} (hj : j ∈ Ring.jacobson A) (ha : IsUnit a) : IsUnit (a + j) := by
-    obtain ⟨u, rfl⟩ := ha
-    have h := Ring.mem_jacobson_iff.1 hj ↑u⁻¹
-    have he : (u : A) + j = (j * ↑u⁻¹ + 1) * u := by
-      rw [add_mul, mul_assoc, Units.inv_mul, mul_one, one_mul, add_comm]
-    rw [he]
-    exact h.mul u.isUnit
-  refine ⟨fun h => ?_, key hj⟩
-  simpa using key (neg_mem hj) h
-
 variable [hp : Fact p.Prime]
+
+/-- For `x` in the Jacobson radical, `δ (x * y) = x ^ p * δ y + δ x * φ y` is a unit if and only if
+`δ x * φ y` is. -/
+private theorem isUnit_delta_mul_iff {x y : A} (hxJ : x ∈ Ring.jacobson A) :
+    IsUnit (delta p (x * y)) ↔ IsUnit (delta p x * frobenius p A y) := by
+  have h : delta p (x * y) = delta p x * frobenius p A y + x ^ p * delta p y := by
+    rw [delta_mul, frobenius_apply]
+    ring
+  rw [h, Ring.isUnit_add_iff_of_mem_jacobson
+    (Ideal.mul_mem_right _ _ (Ideal.pow_mem_of_mem _ hxJ _ hp.out.pos))]
 
 /-- A distinguished element `d` has `p ∈ (d, φ d)`, as `φ d = d ^ p + p * δ d`. -/
 theorem IsDistinguished.natCast_mem_span_frobenius {d : A} (hd : IsDistinguished p d) :
@@ -104,47 +106,39 @@ theorem IsDistinguished.natCast_mem_span_frobenius {d : A} (hd : IsDistinguished
 theorem isDistinguished_natCast_self (hpJ : (p : A) ∈ Ring.jacobson A) :
     IsDistinguished p (p : A) := by
   rw [isDistinguished_iff, delta_natCast_self, sub_eq_add_neg,
-    isUnit_add_iff_of_mem_jacobson (neg_mem (Ideal.pow_mem_of_mem _ hpJ _
+    Ring.isUnit_add_iff_of_mem_jacobson (neg_mem (Ideal.pow_mem_of_mem _ hpJ _
       (Nat.sub_pos_of_lt hp.out.one_lt)))]
   exact isUnit_one
 
-/-- **Unit multiples of distinguished elements.** If `d` is distinguished and `d` and `p` lie in
-the Jacobson radical, then `u * d` is distinguished for every unit `u` (Bhatt and Scholze,
-*Prisms and prismatic cohomology*, Lemma 2.23). -/
+/-- **Unit multiples of distinguished elements.** If `d` is distinguished and lies in the Jacobson
+radical, then `u * d` is distinguished for every unit `u` (Bhatt and Scholze, *Prisms and
+prismatic cohomology*, Lemma 2.23, which also assumes `p` in the Jacobson radical). -/
 theorem IsDistinguished.unit_mul {d u : A} (hd : IsDistinguished p d) (hu : IsUnit u)
-    (hdJ : d ∈ Ring.jacobson A) (hpJ : (p : A) ∈ Ring.jacobson A) :
-    IsDistinguished p (u * d) := by
-  rw [isDistinguished_iff, delta_mul, add_assoc, isUnit_add_iff_of_mem_jacobson]
-  · exact (hu.pow p).mul hd
-  · refine Ideal.add_mem _ (Ideal.mul_mem_right _ _ ?_) ?_
-    · exact Ideal.pow_mem_of_mem _ hdJ _ hp.out.pos
-    · exact Ideal.mul_mem_right _ _ (Ideal.mul_mem_right _ _ hpJ)
+    (hdJ : d ∈ Ring.jacobson A) : IsDistinguished p (u * d) := by
+  rw [mul_comm, isDistinguished_iff, isUnit_delta_mul_iff hdJ]
+  exact hd.mul (hu.map (frobenius p A))
 
-/-- In a factorization `f * h` of a distinguished element with `f` and `p` in the Jacobson
-radical, `h ^ p * δ f` is a unit. -/
-private theorem IsDistinguished.isUnit_pow_mul_delta {f h : A}
-    (hd : IsDistinguished p (f * h)) (hfJ : f ∈ Ring.jacobson A)
-    (hpJ : (p : A) ∈ Ring.jacobson A) : IsUnit (h ^ p * delta p f) := by
-  rw [isDistinguished_iff, delta_mul, add_comm (f ^ p * _), add_assoc,
-    isUnit_add_iff_of_mem_jacobson] at hd
-  · exact hd
-  · refine Ideal.add_mem _ (Ideal.mul_mem_right _ _ ?_) ?_
-    · exact Ideal.pow_mem_of_mem _ hfJ _ hp.out.pos
-    · exact Ideal.mul_mem_right _ _ (Ideal.mul_mem_right _ _ hpJ)
-
-/-- **The factor lemma, distinguished factor.** If `f * h` is distinguished and `f` and `p` lie in
-the Jacobson radical, then `f` is distinguished (Bhatt and Scholze, *Prisms and prismatic
-cohomology*, Lemma 2.24). -/
-theorem IsDistinguished.of_mul {f h : A} (hd : IsDistinguished p (f * h))
-    (hfJ : f ∈ Ring.jacobson A) (hpJ : (p : A) ∈ Ring.jacobson A) : IsDistinguished p f :=
-  isUnit_of_mul_isUnit_right (hd.isUnit_pow_mul_delta hfJ hpJ)
+/-- **The factor lemma, distinguished factor.** If `f * h` is distinguished and `f` lies in the
+Jacobson radical, then `f` is distinguished (Bhatt and Scholze, *Prisms and prismatic cohomology*,
+Lemma 2.24, which also assumes `p` in the Jacobson radical). -/
+theorem IsDistinguished.of_mul_left {f h : A} (hd : IsDistinguished p (f * h))
+    (hfJ : f ∈ Ring.jacobson A) : IsDistinguished p f :=
+  isUnit_of_mul_isUnit_left ((isUnit_delta_mul_iff hfJ).1 hd)
 
 /-- **The factor lemma, unit factor.** If `f * h` is distinguished and `f` and `p` lie in the
 Jacobson radical, then `h` is a unit (Bhatt and Scholze, *Prisms and prismatic cohomology*,
 Lemma 2.24). -/
-theorem IsDistinguished.isUnit_of_mul {f h : A} (hd : IsDistinguished p (f * h))
-    (hfJ : f ∈ Ring.jacobson A) (hpJ : (p : A) ∈ Ring.jacobson A) : IsUnit h :=
-  (isUnit_pow_iff hp.out.ne_zero).1 (isUnit_of_mul_isUnit_left (hd.isUnit_pow_mul_delta hfJ hpJ))
+theorem IsDistinguished.isUnit_of_mul_right {f h : A} (hd : IsDistinguished p (f * h))
+    (hfJ : f ∈ Ring.jacobson A) (hpJ : (p : A) ∈ Ring.jacobson A) : IsUnit h := by
+  have hφ := isUnit_of_mul_isUnit_right ((isUnit_delta_mul_iff hfJ).1 hd)
+  rw [frobenius_apply, Ring.isUnit_add_iff_of_mem_jacobson (Ideal.mul_mem_right _ _ hpJ)] at hφ
+  exact (isUnit_pow_iff hp.out.ne_zero).1 hφ
+
+/-- A divisor in the Jacobson radical of a distinguished element is distinguished. -/
+theorem IsDistinguished.of_dvd {d e : A} (hd : IsDistinguished p d) (hed : e ∣ d)
+    (heJ : e ∈ Ring.jacobson A) : IsDistinguished p e := by
+  obtain ⟨x, rfl⟩ := hed
+  exact hd.of_mul_left heJ
 
 /-- If `p ∈ (d, φ d)` and `d` and `p` lie in the Jacobson radical, then `δ d` lies in no maximal
 ideal. -/
@@ -181,28 +175,18 @@ theorem isDistinguished_iff_natCast_mem_span_frobenius {d : A} (hdJ : d ∈ Ring
   obtain ⟨m, hm, hδ⟩ := exists_max_ideal_of_mem_nonunits hd
   exact delta_notMem_of_natCast_mem_span hspan hdJ hpJ m hδ
 
-/-- Generators of the same principal ideal give the same ideal `(d, φ d)`. -/
-private theorem span_frobenius_le_of_mem {d e : A} (hd : d ∈ Ideal.span {e}) :
-    Ideal.span {d, frobenius p A d} ≤ Ideal.span {e, frobenius p A e} := by
-  obtain ⟨x, rfl⟩ := Ideal.mem_span_singleton'.1 hd
-  rw [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff, map_mul]
-  exact ⟨Ideal.mul_mem_left _ _ (Ideal.subset_span (by simp)),
-    Ideal.mul_mem_left _ _ (Ideal.subset_span (by simp))⟩
-
-/-- **Distinguishedness depends only on the ideal.** If `(d) = (e)` and `d` and `p` lie in the
-Jacobson radical, then `d` is distinguished if and only if `e` is (Bhatt and Scholze, *Prisms and
-prismatic cohomology*, Lemma 2.25). -/
+/-- **Distinguishedness depends only on the ideal.** If `(d) = (e)` and `d` lies in the Jacobson
+radical, then `d` is distinguished if and only if `e` is (Bhatt and Scholze, *Prisms and
+prismatic cohomology*, Lemma 2.25, which also assumes `p` in the Jacobson radical). -/
 theorem isDistinguished_iff_of_span_singleton_eq {d e : A}
-    (hde : Ideal.span {d} = Ideal.span {e}) (hdJ : d ∈ Ring.jacobson A)
-    (hpJ : (p : A) ∈ Ring.jacobson A) : IsDistinguished p d ↔ IsDistinguished p e := by
+    (hde : Ideal.span {d} = Ideal.span {e}) (hdJ : d ∈ Ring.jacobson A) :
+    IsDistinguished p d ↔ IsDistinguished p e := by
+  have hed : e ∣ d := Ideal.span_singleton_le_span_singleton.1 hde.le
+  have hde' : d ∣ e := Ideal.span_singleton_le_span_singleton.1 hde.ge
   have heJ : e ∈ Ring.jacobson A := by
-    have he : e ∈ Ideal.span {d} := hde ▸ Ideal.mem_span_singleton_self e
-    exact (Ideal.span_singleton_le_iff_mem _).2 hdJ he
-  have hspan : Ideal.span {d, frobenius p A d} = Ideal.span {e, frobenius p A e} :=
-    le_antisymm (span_frobenius_le_of_mem (hde ▸ Ideal.mem_span_singleton_self d))
-      (span_frobenius_le_of_mem (hde ▸ Ideal.mem_span_singleton_self e))
-  rw [isDistinguished_iff_natCast_mem_span_frobenius hdJ hpJ,
-    isDistinguished_iff_natCast_mem_span_frobenius heJ hpJ, hspan]
+    obtain ⟨x, rfl⟩ := hde'
+    exact Ideal.mul_mem_right _ _ hdJ
+  exact ⟨fun h => h.of_dvd hed heJ, fun h => h.of_dvd hde' hdJ⟩
 
 end DeltaRing
 
