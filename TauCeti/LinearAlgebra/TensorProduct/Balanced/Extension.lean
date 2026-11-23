@@ -164,6 +164,21 @@ theorem add_tmul (s s' : S) (p : P) : tmul f (s + s') p = tmul f s p + tmul f s'
 theorem tmul_add (s : S) (p p' : P) : tmul f s (p + p') = tmul f s p + tmul f s p' :=
   BalancedTensorProduct.tmul_add ℤ R (Scalars.of f s) p p'
 
+@[simp]
+theorem tmul_neg (s : S) (p : P) : tmul f s (-p) = -tmul f s p :=
+  BalancedTensorProduct.tmul_neg ℤ R (Scalars.of f s) p
+
+theorem tmul_sub (s : S) (p p' : P) : tmul f s (p - p') = tmul f s p - tmul f s p' :=
+  BalancedTensorProduct.tmul_sub ℤ R (Scalars.of f s) p p'
+
+theorem tmul_nsmul (s : S) (n : ℕ) (p : P) : tmul f s (n • p) = n • tmul f s p := by
+  rw [tmul_def, tmul_def, ← BalancedTensorProduct.mk_apply, ← BalancedTensorProduct.mk_apply,
+    map_nsmul]
+
+theorem tmul_zsmul (s : S) (n : ℤ) (p : P) : tmul f s (n • p) = n • tmul f s p := by
+  rw [tmul_def, tmul_def, ← BalancedTensorProduct.mk_apply, ← BalancedTensorProduct.mk_apply,
+    map_zsmul]
+
 /-- The balancing relation `s ⊗ (r • p) = (s * f r) ⊗ p`. -/
 theorem tmul_smul (s : S) (r : R) (p : P) : tmul f s (r • p) = tmul f (s * f r) p := by
   rw [tmul_def, tmul_def, ← BalancedTensorProduct.balance, Scalars.op_smul_of]
@@ -488,6 +503,28 @@ theorem piScalarRight_symm_apply [DecidableEq ι] (v : ι → S) :
   rw [LinearEquiv.symm_apply_eq, map_sum]
   ext i
   simp [Pi.single_apply]
+
+/-- Transport along an equality of ring homomorphisms does not change coordinates. -/
+@[simp]
+theorem piScalarRight_congrRingHom {g : R →+* S} (h : f = g) (x : BalancedExtension f (ι → R)) :
+    piScalarRight g ι (congrRingHom h x) = piScalarRight f ι x := by
+  subst g
+  rfl
+
+/-- In coordinates, cancelling base change along `f` and then `g` applies `g` to the coordinates
+and multiplies by the outer scalar. -/
+@[simp]
+theorem piScalarRight_cancelBaseChange_tmul (g : S →+* T) (t : T)
+    (x : BalancedExtension f (ι → R)) :
+    piScalarRight (g.comp f) ι (cancelBaseChange f g (tmul g t x)) =
+      fun i ↦ t * g (piScalarRight f ι x i) := by
+  induction x using induction_on with
+  | tmul s x =>
+    ext i
+    simp [mul_assoc]
+  | add x y hx hy =>
+    ext i
+    simp only [tmul_add, _root_.map_add, hx, hy, Pi.add_apply, mul_add]
 
 end Pi
 
