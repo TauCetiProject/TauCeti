@@ -34,19 +34,22 @@ follow as theorems.
 
 ## Main declarations
 
-* `Real.li`, `Real.li_def`, `Real.li_eq_add_log_abs`, `Real.li_zero`, `Real.li_one`,
-  `Real.li_neg_eq` — the unoffset logarithmic integral and its normalization lemmas.
-* `Real.hasDerivAt_li`, `Real.deriv_li`, `Real.differentiableAt_li`, `Real.continuousAt_li`,
-  `Real.measurable_li` — derivative `(log x)⁻¹` and regularity of `li`.
-* `Real.tendsto_li_nhdsGT_zero` — `li x → 0` as `x → 0⁺`.
-* `Real.integral_inv_log_eq_li_sub`, `Real.integral_inv_log_eq_li_sub_of_lt_one`,
-  `Real.integral_inv_log_eq_li_sub_of_one_lt` — endpoint-difference formula
+* `TauCeti.Real.li`, `TauCeti.Real.li_def`, `TauCeti.Real.li_eq_add_log_abs`,
+  `TauCeti.Real.li_zero`, `TauCeti.Real.li_one`, `TauCeti.Real.li_neg_eq` — the unoffset logarithmic
+  integral and its normalization lemmas.
+* `TauCeti.Real.hasDerivAt_li`, `TauCeti.Real.deriv_li`, `TauCeti.Real.differentiableAt_li`,
+  `TauCeti.Real.continuousAt_li`, `TauCeti.Real.measurable_li` — derivative `(log x)⁻¹` and
+  regularity of `li`.
+* `TauCeti.Real.tendsto_li_nhdsGT_zero` — `li x → 0` as `x → 0⁺`.
+* `TauCeti.Real.integral_inv_log_eq_li_sub`, `TauCeti.Real.integral_inv_log_eq_li_sub_of_lt_one`,
+  `TauCeti.Real.integral_inv_log_eq_li_sub_of_one_lt` — endpoint-difference formula
   `∫ t in a..b, (log t)⁻¹ = li b - li a` on either branch `(0, 1)` or `(1, ∞)`.
-* `Real.logIntegral_eq_li_sub_li_two` and `Real.li_eq_logIntegral_add_li_two` — the offset
-  identity `Li x = li x - li 2` for `x > 1`.
-* `Real.strictAntiOn_li_Ioo`, `Real.li_neg`, `Real.strictMonoOn_li_Ioi`,
-  `Real.tendsto_li_nhdsNE_one`, `Real.tendsto_li_nhdsGT_one`, `Real.tendsto_li_nhdsLT_one`,
-  `Real.tendsto_li_atTop`, `Real.li_pos_of_three_halves_le`, and `Real.existsUnique_li_eq_zero` —
+* `TauCeti.Real.logIntegral_eq_li_sub_li_two` and `TauCeti.Real.li_eq_logIntegral_add_li_two` —
+  the offset identity `Li x = li x - li 2` for `x > 1`.
+* `TauCeti.Real.strictAntiOn_li_Ioo`, `TauCeti.Real.li_neg`, `TauCeti.Real.strictMonoOn_li_Ioi`,
+  `TauCeti.Real.tendsto_li_nhdsNE_one`, `TauCeti.Real.tendsto_li_nhdsGT_one`,
+  `TauCeti.Real.tendsto_li_nhdsLT_one`, `TauCeti.Real.tendsto_li_atTop`,
+  `TauCeti.Real.li_pos_of_three_halves_le`, and `TauCeti.Real.existsUnique_li_eq_zero` —
   monotonicity, boundary limits, positivity for `x ≥ 3 / 2`, and Soldner's constant.
 
 ## References
@@ -58,10 +61,10 @@ follow as theorems.
 
 public section
 
-open Filter MeasureTheory Set TauCeti.Real
+open Filter MeasureTheory Set Real
 open scoped Topology Nat
 
-namespace Real
+namespace TauCeti.Real
 
 /-! ### Definition, derivative, and regularity of `li` -/
 
@@ -78,12 +81,12 @@ noncomputable def li (x : ℝ) : ℝ :=
   eulerMascheroniConstant + log (log x) +
     ∑' n : ℕ, log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))
 
-/-- Defining equation of `Real.li`. -/
+/-- Defining equation of `TauCeti.Real.li`. -/
 theorem li_def (x : ℝ) :
     li x = eulerMascheroniConstant + log (log x) +
       ∑' n : ℕ, log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := (rfl)
 
-/-- Explicit absolute-value form of `Real.li`. -/
+/-- Explicit absolute-value form of `TauCeti.Real.li`. -/
 theorem li_eq_add_log_abs (x : ℝ) :
     li x = eulerMascheroniConstant + log |log x| +
       ∑' n : ℕ, log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
@@ -320,17 +323,13 @@ theorem li_pos_of_three_halves_le {x : ℝ} (hx : (3 : ℝ) / 2 ≤ x) : 0 < li 
     simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
     norm_num at hb ⊢
     linarith
-  -- Show `-0.903 < log (log (3 / 2))` via `1 < 0.4054 * exp 0.903`.
+  -- Show `-0.903 < log (log (3 / 2))` via `(0.4054)⁻¹ < exp 0.903`.
   have hloglog : (-0.903 : ℝ) < log (log (3 / 2)) := by
-    rw [lt_log_iff_exp_lt (by linarith)]
-    have he := sum_le_exp_of_nonneg (x := (903 / 1000 : ℝ)) (by norm_num) 8
-    simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at he
-    norm_num at he
-    have hexp_mul : exp (-(903 / 1000 : ℝ)) * exp (903 / 1000) = 1 := by
-      rw [← exp_add]; norm_num
-    have hlt : exp (-(903 / 1000 : ℝ)) < 4054 / 10000 := by nlinarith
-    have hlt' : exp (-0.903) < 0.4054 := by norm_num at hlt ⊢; exact hlt
-    exact hlt'.trans hlog32
+    rw [lt_log_iff_exp_lt (by linarith), exp_neg]
+    refine (inv_lt_of_inv_lt₀ (by norm_num : (0 : ℝ) < 0.4054) ?_).trans hlog32
+    refine lt_of_lt_of_le ?_ (sum_le_exp_of_nonneg (x := (0.903 : ℝ)) (by norm_num) 8)
+    simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+    norm_num
   -- First two terms of the positive series at `log (3 / 2)`.
   have hser : (0.446 : ℝ) <
       ∑' n : ℕ, log (3 / 2) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
@@ -376,4 +375,4 @@ theorem existsUnique_li_eq_zero : ∃! μ ∈ Ioi (1 : ℝ), li μ = 0 := by
   refine ⟨μ, ⟨ha1.1.trans_le hμ.1, hliμ⟩, fun y ⟨hy1, hliy⟩ ↦ ?_⟩
   exact strictMonoOn_li_Ioi.injOn hy1 (ha1.1.trans_le hμ.1) (hliy.trans hliμ.symm)
 
-end Real
+end TauCeti.Real

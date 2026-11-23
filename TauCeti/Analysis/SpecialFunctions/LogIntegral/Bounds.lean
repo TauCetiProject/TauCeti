@@ -17,20 +17,21 @@ import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 # Explicit bounds and asymptotic expansion for the logarithmic integral
 
 These bounds translate between the offset logarithmic integral `TauCeti.Real.logIntegral` (`Li`),
-the unoffset logarithmic integral `Real.li`, and explicit `x / log x ^ k` approximations in
-prime-counting estimates. Because Mathlib currently supplies only `1 / 2 < γ < 2 / 3` for the
-Euler–Mascheroni constant, this file records both the sharp enclosure
-`0.4679475 ≤ li 2 - γ ≤ 0.4679495` (which yields tighter `li 2` bounds whenever a sharper enclosure
-of `γ` is available) and the resulting unconditional enclosure `0.96 < li 2 < 1.14`.
+the unoffset logarithmic integral `TauCeti.Real.li`, and explicit `x / log x ^ k` approximations in
+prime-counting estimates. The enclosure `0.4679475 ≤ li 2 - γ ≤ 0.4679495` turns any enclosure of
+the Euler–Mascheroni constant `γ` into one of `li 2`: combined with `1 / 2 < γ < 2 / 3` it gives
+the unconditional enclosure `0.96 < li 2 < 1.14`, and under `|γ - 0.5772156649| < 10⁻⁹` it gives
+`1.0451 ≤ li 2 ≤ 1.0452`.
 
 * **Asymptotic expansion**: repeated integration by parts gives
   `li x - (x / log x) * ∑ k ∈ range n, k! / log x ^ k = O(x / log x ^ (n + 1))` as `x → ∞`,
   together with `li ~ Li ~ x / log x`.
 * **Numerical enclosures of `li 2 - γ` and `li 2`**: combining the `y = log 2` series enclosure
-  `∑_{n ≥ 1} (log 2)^n / (n * n!) ∈ [0.8344605, 0.8344615]` (from
-  `TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference`) with
-  `log (log 2) ∈ [-0.366513, -0.366512]` yields `0.4679475 ≤ li 2 - γ ≤ 0.4679495` and
-  `0.96 < li 2 < 1.14`.
+  `∑_{n ≥ 1} (log 2)^n / (n * n!) ∈ [0.8344605, 0.8344615]` (via the partial-sum and
+  geometric-tail bounds in `TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference`) with
+  `log (log 2) ∈ [-0.366513, -0.366512]` yields `0.4679475 ≤ li 2 - γ ≤ 0.4679495`, the
+  unconditional enclosure `0.96 < li 2 < 1.14`, and conditional enclosures `1.0451 ≤ li 2 ≤ 1.0452`
+  assuming `|γ - 0.5772156649| < 10⁻⁹`.
 * **Bounds and unique zero of `Li x - x / log x`**: strict monotonicity on `(1, ∞)`, explicit
   two-sided bounds for `x ≥ 2`, localization of the unique zero in `(6.5797, 6.5798)`, sign bounds
   away from `(6.5797, 6.5798)`, and Fiori–Kadiri–Swidinsky's lower bound
@@ -38,33 +39,38 @@ of `γ` is available) and the resulting unconditional enclosure `0.96 < li 2 < 1
 
 ## Main declarations
 
-* `Real.logIntegral_eq_sum_add_integral`, `Real.isBigO_logIntegral_sub_mul_sum`,
-  `Real.isBigO_li_sub_mul_sum`, `Real.li_isEquivalent_logIntegral`,
-  `Real.li_isEquivalent_div_log` — asymptotic expansion and prime-number-theorem equivalences for
-  `li`.
-* `Real.le_li_two_sub_eulerMascheroniConstant`, `Real.li_two_sub_eulerMascheroniConstant_le`,
-  `Real.lt_li_two`, `Real.li_two_lt` — enclosures of `li 2 - γ` and `li 2`.
-* `Real.strictMonoOn_logIntegral_sub_div_log`, `Real.le_logIntegral_sub_div_log`,
-  `Real.lt_logIntegral_sub_div_log`, `Real.logIntegral_sub_div_log_lt`,
-  `Real.existsUnique_logIntegral_sub_div_log_eq_zero`,
-  `Real.existsUnique_logIntegral_sub_div_log_eq_zero_Ioo`,
-  `Real.logIntegral_sub_div_log_neg`, `Real.logIntegral_sub_div_log_pos`,
-  `Real.sub_div_log_sq_le_logIntegral_sub_div_log` — monotonicity, bounds, unique zero, and
+* `TauCeti.Real.logIntegral_eq_sum_add_integral`, `TauCeti.Real.isBigO_logIntegral_sub_mul_sum`,
+  `TauCeti.Real.isBigO_li_sub_mul_sum`, `TauCeti.Real.li_isEquivalent_logIntegral`,
+  `TauCeti.Real.li_isEquivalent_div_log` — asymptotic expansion and prime-number-theorem
+  equivalences for `li`.
+* `TauCeti.Real.le_li_two_sub_eulerMascheroniConstant`,
+  `TauCeti.Real.li_two_sub_eulerMascheroniConstant_le`, `TauCeti.Real.lt_li_two`,
+  `TauCeti.Real.li_two_lt`, `TauCeti.Real.le_li_two_of_abs_eulerMascheroniConstant_sub_lt`,
+  `TauCeti.Real.li_two_le_of_abs_eulerMascheroniConstant_sub_lt` — enclosures of `li 2 - γ` and
+  `li 2`.
+* `TauCeti.Real.strictMonoOn_logIntegral_sub_div_log`, `TauCeti.Real.le_logIntegral_sub_div_log`,
+  `TauCeti.Real.lt_logIntegral_sub_div_log`, `TauCeti.Real.logIntegral_sub_div_log_lt`,
+  `TauCeti.Real.existsUnique_logIntegral_sub_div_log_eq_zero`,
+  `TauCeti.Real.existsUnique_logIntegral_sub_div_log_eq_zero_Ioo`,
+  `TauCeti.Real.logIntegral_sub_div_log_neg`, `TauCeti.Real.logIntegral_sub_div_log_pos`,
+  `TauCeti.Real.sub_div_log_sq_le_logIntegral_sub_div_log` — monotonicity, bounds, unique zero, and
   Fiori–Kadiri–Swidinsky Lemma 20 for `Li x - x / log x`.
 
 ## References
 
 * F. W. J. Olver et al., *NIST Digital Library of Mathematical Functions*, §6.2 and §6.12.
+* O. Ramaré and R. Rumely, *Primes in arithmetic progressions*, *Math. Comp.* 65 (1996)
+  (for the decimal enclosure `|γ - 0.5772156649| < 10⁻⁹`).
 * A. Fiori, H. Kadiri, and J. Swidinsky, *Sharper bounds for the error term in the prime number
   theorem*, *Res. Number Theory* 9 (2023), Article 63, Lemma 20.
 -/
 
 public section
 
-open Asymptotics Filter MeasureTheory Set TauCeti.Real
+open Asymptotics Filter MeasureTheory Set Real
 open scoped Topology Nat
 
-namespace Real
+namespace TauCeti.Real
 
 /-! ### Asymptotic expansion of `Li` and `li` -/
 
@@ -130,6 +136,26 @@ theorem li_isEquivalent_div_log : li ~[atTop] fun x : ℝ ↦ x / log x :=
 
 /-! ### Numerical enclosures of `li 2 - γ` and `li 2` -/
 
+/-- Lower bound `0.8344605 ≤ ∑_{n ≥ 1} (log 2)^n / (n * n!)`. -/
+private theorem le_tsum_log_two_pow_div_mul_factorial :
+    (0.8344605 : ℝ) ≤
+      ∑' n : ℕ, log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
+  have hlog : (0.693147 : ℝ) ≤ log 2 := le_trans (by norm_num) log_two_gt_d9.le
+  refine le_trans ?_ (tsum_pow_div_mul_factorial_mono hlog)
+  refine le_trans ?_ (sum_range_le_tsum_pow_div_mul_factorial (y := (0.693147 : ℝ)) (by norm_num) 7)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+  norm_num
+
+/-- Upper bound `∑_{n ≥ 1} (log 2)^n / (n * n!) ≤ 0.8344615`. -/
+private theorem tsum_log_two_pow_div_mul_factorial_le :
+    (∑' n : ℕ, log 2 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) ≤ 0.8344615 := by
+  have hlog : log 2 ≤ 0.6931472 := le_trans log_two_lt_d9.le (by norm_num)
+  refine (tsum_pow_div_mul_factorial_mono hlog).trans ?_
+  refine (tsum_pow_div_mul_factorial_le_sum_range_add (y := (0.6931472 : ℝ))
+    (by norm_num) (N := 7) (by norm_num)).trans ?_
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+  norm_num
+
 /-- Sharp lower bound `0.4679475 ≤ li 2 - γ`. -/
 theorem le_li_two_sub_eulerMascheroniConstant :
     (0.4679475 : ℝ) ≤ li 2 - eulerMascheroniConstant := by
@@ -149,6 +175,22 @@ theorem lt_li_two : (0.96 : ℝ) < li 2 := by
 /-- Unconditional upper bound `li 2 < 1.14`. -/
 theorem li_two_lt : li 2 < 1.14 := by
   linarith [eulerMascheroniConstant_lt_two_thirds, li_two_sub_eulerMascheroniConstant_le]
+
+/-- Conditional lower bound `1.0451 ≤ li 2` under `|γ - 0.5772156649| < 10⁻⁹`. -/
+theorem le_li_two_of_abs_eulerMascheroniConstant_sub_lt
+    (hγ : |eulerMascheroniConstant - 0.5772156649| < 10 ^ (-(9 : ℤ))) :
+    (1.0451 : ℝ) ≤ li 2 := by
+  rw [abs_lt] at hγ
+  norm_num at hγ
+  linarith [hγ.1, le_li_two_sub_eulerMascheroniConstant]
+
+/-- Conditional upper bound `li 2 ≤ 1.0452` under `|γ - 0.5772156649| < 10⁻⁹`. -/
+theorem li_two_le_of_abs_eulerMascheroniConstant_sub_lt
+    (hγ : |eulerMascheroniConstant - 0.5772156649| < 10 ^ (-(9 : ℤ))) :
+    li 2 ≤ 1.0452 := by
+  rw [abs_lt] at hγ
+  norm_num at hγ
+  linarith [hγ.2, li_two_sub_eulerMascheroniConstant_le]
 
 /-! ### Bounds and unique zero of `Li x - x / log x` -/
 
@@ -209,17 +251,34 @@ theorem logIntegral_eq_log_div_add_tsum_sub {x : ℝ} (hx : 1 < x) :
     log_div (log_pos hx).ne' (log_pos one_lt_two).ne']
   ring
 
+private theorem abs_log_eight_mul_one_sub_sub_le {u : ℝ} (hu0 : 0 ≤ u) (hu1 : u < 1) (n : ℕ) :
+    |log (8 * (1 - u)) -
+        (3 * log 2 - ∑ i ∈ Finset.range n, u ^ (i + 1) / ((i : ℝ) + 1))| ≤
+      u ^ (n + 1) / (1 - u) := by
+  have hu_abs : |u| = u := abs_of_nonneg hu0
+  have hsplit : log (8 * (1 - u)) = 3 * log 2 + log (1 - u) := by
+    have h8 : (8 : ℝ) = 2 ^ 3 := by norm_num
+    rw [h8, log_mul (by norm_num) (sub_pos.mpr hu1).ne', log_pow]
+    norm_num
+  have ht := abs_log_sub_add_sum_range_le (x := u) (by rw [hu_abs]; exact hu1) n
+  rw [hu_abs] at ht
+  rw [hsplit]
+  convert ht using 2
+  ring
+
+private theorem log_log_div_log_two_eq_one_add {x : ℝ} (hx : 0 < log x) :
+    log (log x / log 2) = 1 + log (log x / (exp 1 * log 2)) := by
+  rw [log_div hx.ne' (log_pos one_lt_two).ne',
+    log_div hx.ne' (mul_pos (exp_pos 1) (log_pos one_lt_two)).ne',
+    log_mul (exp_pos 1).ne' (log_pos one_lt_two).ne', log_exp]
+  ring
+
 private theorem logIntegral_sub_div_log_neg_at :
     logIntegral 6.5797 - 6.5797 / log 6.5797 < 0 := by
-  -- Step 1: Upper bound `log 6.5797 ≤ 1.8839895` via `log 6.5797 = 3 log 2 + log (1 - u)`.
+  -- Step 1: Upper bound `log 6.5797 ≤ 1.8839895` via `6.5797 = 8 * (1 - 14203 / 80000)`.
   have hlogx : log 6.5797 ≤ 1.8839895 := by
-    have hsplit : log 6.5797 = 3 * log 2 + log (1 - 14203 / 80000) := by
-      have hprod : (6.5797 : ℝ) = 2 ^ 3 * (1 - 14203 / 80000) := by norm_num
-      rw [hprod, log_mul (by norm_num) (by norm_num), log_pow]
-      norm_num
-    have ht := abs_log_sub_add_sum_range_le (x := (14203 / 80000 : ℝ)) (by norm_num) 8
-    rw [abs_le] at ht
-    have hupper := ht.2
+    have hupper := (abs_le.mp (abs_log_eight_mul_one_sub_sub_le
+      (u := (14203 / 80000 : ℝ)) (by norm_num) (by norm_num) 8)).2
     simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty] at hupper
     norm_num at hupper
     linarith [log_two_lt_d9]
@@ -229,11 +288,7 @@ private theorem logIntegral_sub_div_log_neg_at :
     have hr : log 6.5797 / (exp 1 * log 2) ≤ 1.8839895 / (2.7182818283 * 0.6931471803) :=
       div_le_div₀ (by norm_num) hlogx (by norm_num)
         (mul_le_mul exp_one_gt_d9.le log_two_gt_d9.le (by norm_num) (exp_pos 1).le)
-    have h1 : log (log 6.5797 / log 2) = 1 + log (log 6.5797 / (exp 1 * log 2)) := by
-      rw [log_div hlogx_pos.ne' (log_pos one_lt_two).ne',
-        log_div hlogx_pos.ne' (mul_pos (exp_pos 1) (log_pos one_lt_two)).ne',
-        log_mul (exp_pos 1).ne' (log_pos one_lt_two).ne', log_exp]
-      ring
+    have h1 := log_log_div_log_two_eq_one_add hlogx_pos
     have h2 := log_le_sub_one_of_pos
       (div_pos hlogx_pos (mul_pos (exp_pos 1) (log_pos one_lt_two)))
     linarith
@@ -253,15 +308,10 @@ private theorem logIntegral_sub_div_log_neg_at :
 
 private theorem logIntegral_sub_div_log_pos_at :
     0 < logIntegral 6.5798 - 6.5798 / log 6.5798 := by
-  -- Step 1: Lower bound `1.884004 ≤ log 6.5798` via `log 6.5798 = 3 log 2 + log (1 - u)`.
+  -- Step 1: Lower bound `1.884004 ≤ log 6.5798` via `6.5798 = 8 * (1 - 7101 / 40000)`.
   have hlogx : (1.884004 : ℝ) ≤ log 6.5798 := by
-    have hsplit : log 6.5798 = 3 * log 2 + log (1 - 7101 / 40000) := by
-      have hprod : (6.5798 : ℝ) = 2 ^ 3 * (1 - 7101 / 40000) := by norm_num
-      rw [hprod, log_mul (by norm_num) (by norm_num), log_pow]
-      norm_num
-    have ht := abs_log_sub_add_sum_range_le (x := (7101 / 40000 : ℝ)) (by norm_num) 8
-    rw [abs_le] at ht
-    have hlower := ht.1
+    have hlower := (abs_le.mp (abs_log_eight_mul_one_sub_sub_le
+      (u := (7101 / 40000 : ℝ)) (by norm_num) (by norm_num) 8)).1
     simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty] at hlower
     norm_num at hlower
     linarith [log_two_gt_d9]
@@ -273,11 +323,7 @@ private theorem logIntegral_sub_div_log_pos_at :
       div_le_div₀ (by norm_num)
         (mul_le_mul exp_one_lt_d9.le log_two_lt_d9.le (log_pos one_lt_two).le (by norm_num))
         (by norm_num) hlogx
-    have h1 : log (log 6.5798 / log 2) = 1 + log (log 6.5798 / (exp 1 * log 2)) := by
-      rw [log_div hlogx_pos.ne' (log_pos one_lt_two).ne',
-        log_div hlogx_pos.ne' (mul_pos (exp_pos 1) (log_pos one_lt_two)).ne',
-        log_mul (exp_pos 1).ne' (log_pos one_lt_two).ne', log_exp]
-      ring
+    have h1 := log_log_div_log_two_eq_one_add hlogx_pos
     have h2 := one_sub_inv_le_log_of_pos
       (div_pos hlogx_pos (mul_pos (exp_pos 1) (log_pos one_lt_two)))
     rw [inv_div] at h2
@@ -354,4 +400,4 @@ theorem sub_div_log_sq_le_logIntegral_sub_div_log {x : ℝ} (hx : 6.58 ≤ x) :
   have hlow := le_integral_inv_log_pow 2 (by norm_num : (1 : ℝ) < 6.58) hx
   linarith
 
-end Real
+end TauCeti.Real

@@ -17,7 +17,7 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 # Principal-value and regularized integral representations of `li`
 
 This file recovers the classical Cauchy principal-value and exponential-integral (`Ei (log x)`)
-characterizations of `Real.li` from the globally convergent series definition in
+characterizations of `TauCeti.Real.li` from the globally convergent series definition in
 `TauCeti.Analysis.SpecialFunctions.LogIntegral.Unoffset`, and supplies pole-subtracted and
 symmetrically folded Lebesgue integrals that avoid principal-value limits when evaluating `li x`
 and `li 2`:
@@ -36,14 +36,15 @@ and `li 2`:
 
 ## Main declarations
 
-* `Real.li_eq_integral_inv_log` — ordinary integral on `(0, 1)`.
-* `Real.tendsto_li_one_add_sub_one_sub` and `Real.tendsto_integral_inv_log_principalValue` —
-  Cauchy principal value on `(1, ∞)`.
-* `Real.hasDerivAt_li_exp`, `Real.integral_exp_div_eq_li_exp_sub`,
-  `Real.integral_Iic_exp_div_eq_li_exp`, `Real.li_exp`, and
-  `Real.tendsto_integral_exp_div_principalValue` — exponential-integral forms.
-* `Real.li_eq_log_abs_sub_one_add_integral` — absolutely convergent regularized integral.
-* `Real.li_two_eq_integral_inv_log_one_add_add_inv_log_one_sub` — symmetric integral for `li 2`.
+* `TauCeti.Real.li_eq_integral_inv_log` — ordinary integral on `(0, 1)`.
+* `TauCeti.Real.tendsto_li_one_add_sub_one_sub` and
+  `TauCeti.Real.tendsto_integral_inv_log_principalValue` — Cauchy principal value on `(1, ∞)`.
+* `TauCeti.Real.hasDerivAt_li_exp`, `TauCeti.Real.integral_exp_div_eq_li_exp_sub`,
+  `TauCeti.Real.integral_Iic_exp_div_eq_li_exp`, `TauCeti.Real.li_exp`, and
+  `TauCeti.Real.tendsto_integral_exp_div_principalValue` — exponential-integral forms.
+* `TauCeti.Real.li_eq_log_abs_sub_one_add_integral` — absolutely convergent regularized integral.
+* `TauCeti.Real.li_two_eq_integral_inv_log_one_add_add_inv_log_one_sub` — symmetric integral for
+  `li 2`.
 
 ## References
 
@@ -54,10 +55,10 @@ and `li 2`:
 
 public section
 
-open Filter MeasureTheory Set TauCeti.Real
+open Filter MeasureTheory Set Real
 open scoped Topology Nat
 
-namespace Real
+namespace TauCeti.Real
 
 /-! ### Principal value and exponential-integral representations -/
 
@@ -291,4 +292,4 @@ theorem li_two_eq_integral_inv_log_one_add_add_inv_log_one_sub :
     (intervalIntegrable_inv_log_sub_inv_sub_one (a := (1 : ℝ)) (b := 2) zero_le_one (by norm_num))
   rw [heq, hshift1, hshift2, add_comm, hsplit, ← hreg]
 
-end Real
+end TauCeti.Real

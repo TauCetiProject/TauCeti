@@ -35,7 +35,8 @@ the fundamental theorem of calculus applied to `t ↦ t / log t`, together with 
 * `TauCeti.Real.logIntegral` — the offset logarithmic integral.
 * `TauCeti.Real.logIntegral_sub_logIntegral_eq_integral_inv_log` —
   `Li b - Li a = ∫ t in a..b, (log t)⁻¹` for `a, b > 1`.
-* `TauCeti.Real.hasDerivAt_logIntegral` — its derivative `(log x)⁻¹` for `x > 1`.
+* `TauCeti.Real.hasDerivAt_logIntegral`, `TauCeti.Real.deriv_logIntegral` —
+  its derivative `(log x)⁻¹` for `x > 1`.
 * `TauCeti.Real.le_logIntegral` — the elementary lower bound `(x - 2) / log x ≤ Li x`.
 * `TauCeti.Real.logIntegral_eq_div_log_sub_add` — the antiderivative identity above.
 * `TauCeti.Real.logIntegral_isEquivalent_div_log` — `Li x ~ x / log x` at infinity, with the
@@ -104,6 +105,11 @@ theorem hasDerivAt_logIntegral {x : ℝ} (hx : 1 < x) :
   simpa only [logIntegral] using! intervalIntegral.integral_hasDerivAt_right hint
     Real.measurable_log.inv.stronglyMeasurable.stronglyMeasurableAtFilter
     ((Real.continuousAt_log (zero_lt_one.trans hx).ne').inv₀ (Real.log_pos hx).ne')
+
+/-- The derivative of the offset logarithmic integral is `(log x)⁻¹` to the right of `1`. -/
+@[simp]
+theorem deriv_logIntegral {x : ℝ} (hx : 1 < x) : deriv logIntegral x = (Real.log x)⁻¹ :=
+  (hasDerivAt_logIntegral hx).deriv
 
 /-- The offset logarithmic integral is differentiable on `(1, ∞)`. -/
 theorem differentiableOn_logIntegral : DifferentiableOn ℝ logIntegral (Ioi 1) :=

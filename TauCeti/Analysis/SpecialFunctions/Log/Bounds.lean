@@ -67,29 +67,20 @@ theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := b
 
 /-- Lower bound `-0.366513 ≤ log (log 2)`. -/
 theorem le_log_log_two : (-0.366513 : ℝ) ≤ log (log 2) := by
-  rw [le_log_iff_exp_le (log_pos one_lt_two)]
-  have he := sum_le_exp_of_nonneg (x := (366513 / 1000000 : ℝ)) (by norm_num) 8
-  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at he
-  norm_num at he
-  have hmul : exp (-(366513 / 1000000 : ℝ)) * exp (366513 / 1000000) = 1 := by
-    rw [← exp_add]; norm_num
-  have hlt : exp (-(366513 / 1000000 : ℝ)) ≤ 6931471803 / 10000000000 := by nlinarith
-  have hlt' : exp (-0.366513) ≤ 0.6931471803 := by norm_num at hlt ⊢; exact hlt
-  exact hlt'.trans log_two_gt_d9.le
+  rw [le_log_iff_exp_le (log_pos one_lt_two), exp_neg]
+  refine (inv_le_of_inv_le₀ (by norm_num : (0 : ℝ) < 0.6931471803) ?_).trans log_two_gt_d9.le
+  refine le_trans ?_ (sum_le_exp_of_nonneg (x := (0.366513 : ℝ)) (by norm_num) 8)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+  norm_num
 
 /-- Upper bound `log (log 2) ≤ -0.366512`. -/
 theorem log_log_two_le : log (log 2) ≤ -0.366512 := by
-  rw [log_le_iff_le_exp (log_pos one_lt_two)]
-  have hb := exp_bound' (x := (22907 / 62500 : ℝ)) (by norm_num) (by norm_num)
-    (n := 8) (by decide)
+  rw [log_le_iff_le_exp (log_pos one_lt_two), exp_neg]
+  refine log_two_lt_d9.le.trans (le_inv_of_le_inv₀ (exp_pos _) ?_)
+  have hb := exp_bound' (x := (0.366512 : ℝ)) (by norm_num) (by norm_num) (n := 8) (by decide)
   simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
   norm_num at hb
-  have hmul : exp (-(22907 / 62500 : ℝ)) * exp (22907 / 62500) = 1 := by
-    rw [← exp_add]; norm_num
-  have hle : (6931471808 / 10000000000 : ℝ) ≤ exp (-(22907 / 62500 : ℝ)) := by
-    nlinarith [exp_pos (-(22907 / 62500 : ℝ)), exp_pos (22907 / 62500 : ℝ)]
-  have hle' : (0.6931471808 : ℝ) ≤ exp (-0.366512) := by norm_num at hle ⊢; exact hle
-  exact log_two_lt_d9.le.trans hle'
+  linarith
 
 /-- Near `1` from below the logarithm is controlled by the distance to `1`: for `1 / 2 ≤ x ≤ 1`,
 `|log x| ≤ 2 (1 - x)`. -/

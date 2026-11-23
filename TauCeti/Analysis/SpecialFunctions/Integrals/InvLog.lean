@@ -23,9 +23,10 @@ integrability of `(log t)⁻¹` on `[0, 1)`, the pole-subtracted integrand `(log
 on `[0, ∞)`, and the symmetrically folded integrand `(log (1 + u))⁻¹ + (log (1 - u))⁻¹` on
 `[0, 1]`.
 
-Separating these integrand and integral lemmas from `TauCeti.Analysis.SpecialFunctions.LogIntegral`
-lets consumers of reciprocal-log integrals (such as Abel summation and regularization estimates)
-import them directly without depending on `Li`, `li`, or `Real.eulerMascheroniConstant`.
+Separating these integrand and integral lemmas from
+`TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic` lets consumers of reciprocal-log integrals
+(such as Abel summation and regularization estimates) import them directly without depending on
+`TauCeti.Real.logIntegral`, `TauCeti.Real.li`, or `Real.eulerMascheroniConstant`.
 
 ## Main declarations
 
@@ -65,6 +66,10 @@ import them directly without depending on `Li`, `li`, or `Real.eulerMascheroniCo
 * H. Davenport, *Multiplicative Number Theory*, Chapters 7 and 18.
 * The integration-by-parts recurrence is adapted from the Ramanujan estimates in the
   [PrimeNumberTheoremAnd project](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/dc6e36e/PrimeNumberTheoremAnd/IEANTN/Ramanujan/Ramanujan.lean).
+* Mathlib's `Mathlib/NumberTheory/Chebyshev.lean` carries out the weighted-remainder estimate for
+  the rational Chebyshev function in `Chebyshev.integral_theta_div_log_sq_isLittleO`; the proof
+  of `TauCeti.Real.isLittleO_integral_div_mul_log_sq` follows the same split into a bounded initial
+  segment and a linearly bounded tail.
 -/
 
 public section
@@ -503,7 +508,9 @@ theorem abs_integral_div_mul_log_sq_le_add {f : ℝ → ℝ} {a T x c : ℝ} (ha
 /-- **A linearly bounded integrand leaves a negligible remainder.**  If `f` is interval integrable
 above `2` and satisfies `f = O(x)`, then `∫ t in 2..x, f t / (t * log t ^ 2)` is `o (x / log x)`.
 
-For the rational Chebyshev function this is `Chebyshev.integral_theta_div_log_sq_isLittleO`. -/
+The argument follows the split into a bounded initial segment and a linearly bounded tail in
+Mathlib's `Chebyshev.integral_theta_div_log_sq_isLittleO` (the rational Chebyshev special
+case). -/
 theorem isLittleO_integral_div_mul_log_sq {f : ℝ → ℝ}
     (hf_int : ∀ x, 2 ≤ x → IntervalIntegrable f volume 2 x) (hf : f =O[atTop] id) :
     (fun x : ℝ ↦ ∫ t in (2 : ℝ)..x, f t / (t * Real.log t ^ 2)) =o[atTop]
