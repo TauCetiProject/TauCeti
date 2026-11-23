@@ -80,7 +80,7 @@ theorem exists_continuous_eqOn_range_subset_image {f : X → Y} (hs : IsCompact 
   -- Each point `x` of `s` has a clopen neighbourhood `U x` on whose trace on `s` the map `f` is
   -- constant, and finitely many of these cover `s`.
   choose U hU hUf using fun x : s ↦ ((nhdsWithin_hasBasis (nhds_basis_isClopen (x : X)) s).mem_iff.1
-    ((hf x x.2).preimage_mem_nhdsWithin ((isOpen_discrete {f x}).mem_nhds rfl)))
+    ((hf x x.property).preimage_mem_nhdsWithin ((isOpen_discrete {f x}).mem_nhds rfl)))
   obtain ⟨t, ht⟩ := hs.elim_nhds_subcover' (fun x hx ↦ U ⟨x, hx⟩)
     fun x hx ↦ (hU ⟨x, hx⟩).1.isOpen.mem_nhds (hU ⟨x, hx⟩).2
   -- Glue the constant values of `f` on the clopens `U x`, `x ∈ t`, one clopen at a time.
@@ -103,7 +103,7 @@ theorem exists_continuous_eqOn_range_subset_image {f : X → Y} (hs : IsCompact 
       · simpa [hxa] using hgf ⟨hxs, by simpa [hxa] using hx⟩
     · rintro _ ⟨x, rfl⟩
       by_cases hxa : x ∈ U a
-      · simpa [hxa] using mem_image_of_mem f a.2
+      · simpa [hxa] using mem_image_of_mem f a.property
       · simpa [hxa] using hgs (mem_range_self x)
 
 /-- **Continuous extension from a compact subset of a zero-dimensional space**, for an ambient
@@ -148,7 +148,7 @@ theorem exists_restrict_eq_of_discrete [Nonempty Y] (hs : IsCompact s) (f : C(s,
     TauCeti.exists_continuous_eqOn
       (f := Function.extend Subtype.val f fun _ ↦ Classical.arbitrary Y)
       hs (continuousOn_iff_continuous_domRestrict.2 (f.continuous.congr fun x ↦ (hF x).symm))
-  exact ⟨⟨g, hg⟩, ext fun x ↦ (hgf x.2).trans (hF x)⟩
+  exact ⟨⟨g, hg⟩, ext fun x ↦ (hgf x.property).trans (hF x)⟩
 
 /-- Restriction of continuous maps to a compact subset of a zero-dimensional space is surjective,
 when the target is discrete and nonempty. -/

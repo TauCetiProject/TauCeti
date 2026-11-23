@@ -315,19 +315,19 @@ private theorem nextCrossing_of_cons_cons_cons {w : BraidWord n} {p : Fin n}
 hypothesis, so that `simp` applies them once it has computed the letter of the crossing. -/
 
 private theorem incomingSlot_eq_three {w : BraidWord n} {k : Fin w.length} {p : Fin n}
-    (hp : p = strand w[k.1].1) : w.incomingSlot k p = 3 := by
+    (hp : p = strand w[k.val].1) : w.incomingSlot k p = 3 := by
   rw [hp, incomingSlot_strand]
 
 private theorem incomingSlot_eq_zero {w : BraidWord n} {k : Fin w.length} {p : Fin n}
-    (hp : p = strandSucc w[k.1].1) : w.incomingSlot k p = 0 := by
+    (hp : p = strandSucc w[k.val].1) : w.incomingSlot k p = 0 := by
   rw [hp, incomingSlot_strandSucc]
 
 private theorem outgoingSlot_eq_two {w : BraidWord n} {k : Fin w.length} {p : Fin n}
-    (hp : p = strand w[k.1].1) : w.outgoingSlot k p = 2 := by
+    (hp : p = strand w[k.val].1) : w.outgoingSlot k p = 2 := by
   rw [hp, outgoingSlot_strand]
 
 private theorem outgoingSlot_eq_one {w : BraidWord n} {k : Fin w.length} {p : Fin n}
-    (hp : p = strandSucc w[k.1].1) : w.outgoingSlot k p = 1 := by
+    (hp : p = strandSucc w[k.val].1) : w.outgoingSlot k p = 1 := by
   rw [hp, outgoingSlot_strandSucc]
 
 /-! ### Closures of words with three letters at the bottom
@@ -356,40 +356,40 @@ private theorem edgePair_closure_cons₃_one {x y z : Fin (n - 1) × ℤˣ} {v :
     (k : Fin (v.length + 1 + 1 + 1)) :
     (closure (x :: y :: z :: v)).edgePair.val (crossingSlotEquiv (v.length + 1 + 1 + 1) (k, 1)) =
       crossingSlotEquiv (v.length + 1 + 1 + 1)
-        (nextCrossing (x :: y :: z :: v) (strandSucc (x :: y :: z :: v)[k.1].1) k,
+        (nextCrossing (x :: y :: z :: v) (strandSucc (x :: y :: z :: v)[k.val].1) k,
           incomingSlot (x :: y :: z :: v)
-            (nextCrossing (x :: y :: z :: v) (strandSucc (x :: y :: z :: v)[k.1].1) k)
-            (strandSucc (x :: y :: z :: v)[k.1].1)) :=
+            (nextCrossing (x :: y :: z :: v) (strandSucc (x :: y :: z :: v)[k.val].1) k)
+            (strandSucc (x :: y :: z :: v)[k.val].1)) :=
   edgePair_closure_crossingSlotEquiv_one (x :: y :: z :: v) k
 
 private theorem edgePair_closure_cons₃_two {x y z : Fin (n - 1) × ℤˣ} {v : BraidWord n}
     (k : Fin (v.length + 1 + 1 + 1)) :
     (closure (x :: y :: z :: v)).edgePair.val (crossingSlotEquiv (v.length + 1 + 1 + 1) (k, 2)) =
       crossingSlotEquiv (v.length + 1 + 1 + 1)
-        (nextCrossing (x :: y :: z :: v) (strand (x :: y :: z :: v)[k.1].1) k,
+        (nextCrossing (x :: y :: z :: v) (strand (x :: y :: z :: v)[k.val].1) k,
           incomingSlot (x :: y :: z :: v)
-            (nextCrossing (x :: y :: z :: v) (strand (x :: y :: z :: v)[k.1].1) k)
-            (strand (x :: y :: z :: v)[k.1].1)) :=
+            (nextCrossing (x :: y :: z :: v) (strand (x :: y :: z :: v)[k.val].1) k)
+            (strand (x :: y :: z :: v)[k.val].1)) :=
   edgePair_closure_crossingSlotEquiv_two (x :: y :: z :: v) k
 
 private theorem edgePair_closure_cons₃_zero {x y z : Fin (n - 1) × ℤˣ} {v : BraidWord n}
     (k : Fin (v.length + 1 + 1 + 1)) :
     (closure (x :: y :: z :: v)).edgePair.val (crossingSlotEquiv (v.length + 1 + 1 + 1) (k, 0)) =
       crossingSlotEquiv (v.length + 1 + 1 + 1)
-        ((nextCrossing (x :: y :: z :: v) (strandSucc (x :: y :: z :: v)[k.1].1)).symm k,
+        ((nextCrossing (x :: y :: z :: v) (strandSucc (x :: y :: z :: v)[k.val].1)).symm k,
           outgoingSlot (x :: y :: z :: v)
-            ((nextCrossing (x :: y :: z :: v) (strandSucc (x :: y :: z :: v)[k.1].1)).symm k)
-            (strandSucc (x :: y :: z :: v)[k.1].1)) :=
+            ((nextCrossing (x :: y :: z :: v) (strandSucc (x :: y :: z :: v)[k.val].1)).symm k)
+            (strandSucc (x :: y :: z :: v)[k.val].1)) :=
   edgePair_closure_crossingSlotEquiv_zero (x :: y :: z :: v) k
 
 private theorem edgePair_closure_cons₃_three {x y z : Fin (n - 1) × ℤˣ} {v : BraidWord n}
     (k : Fin (v.length + 1 + 1 + 1)) :
     (closure (x :: y :: z :: v)).edgePair.val (crossingSlotEquiv (v.length + 1 + 1 + 1) (k, 3)) =
       crossingSlotEquiv (v.length + 1 + 1 + 1)
-        ((nextCrossing (x :: y :: z :: v) (strand (x :: y :: z :: v)[k.1].1)).symm k,
+        ((nextCrossing (x :: y :: z :: v) (strand (x :: y :: z :: v)[k.val].1)).symm k,
           outgoingSlot (x :: y :: z :: v)
-            ((nextCrossing (x :: y :: z :: v) (strand (x :: y :: z :: v)[k.1].1)).symm k)
-            (strand (x :: y :: z :: v)[k.1].1)) :=
+            ((nextCrossing (x :: y :: z :: v) (strand (x :: y :: z :: v)[k.val].1)).symm k)
+            (strand (x :: y :: z :: v)[k.val].1)) :=
   edgePair_closure_crossingSlotEquiv_three (x :: y :: z :: v) k
 
 private theorem crossingsAt_cons_cons_cons (x y z : Fin (n - 1) × ℤˣ) (v : BraidWord n)
@@ -772,7 +772,7 @@ private theorem edgePair_closure_triple'_zero {p : Fin n}
 /-- At a crossing of `v` the same letter sits at the same place in both words, so the arc leaving
 it ends at the same crossing of `v`, or else enters the triangle through corresponding ports. -/
 private theorem edgePair_closure_triple'_sh (k : Fin v.length) {p : Fin n}
-    (hk : p = strand v[k.1].1 ∨ p = strandSucc v[k.1].1) :
+    (hk : p = strand v[k.val].1 ∨ p = strandSucc v[k.val].1) :
     (closure W₂).edgePair.val
         (crossingSlotEquiv (v.length + 1 + 1 + 1) (sh k, outgoingSlot W₂ (sh k) p)) =
       ρ ((closure W₁).edgePair.val

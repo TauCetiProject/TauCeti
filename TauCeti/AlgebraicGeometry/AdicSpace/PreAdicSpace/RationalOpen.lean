@@ -430,7 +430,7 @@ theorem isAffinoid_restrict_spaComapLocHom :
   have _ := isHuberRing_completion_locTopology P T s S hden
   let S' : Pair (UniformSpace.Completion S) :=
     ⟨completedPlusSubring P Aplus T s S hden, isRingOfIntegralElements_completedPlusSubring P Aplus
-      (fun j _ ↦ hP j.2) hAplus T s S hden⟩
+      (fun j _ ↦ hP j.property) hAplus T s S hden⟩
   exact ObjectProperty.prop_of_iso PreAdicSpace.isAffinoid
     (presentationLimitPreAdicSpaceLocIso P Aplus T s S hden hAplus hP hT).symm
     (PreAdicSpace.isAffinoid_presentationLimitPreAdicSpace S' (completionLocalization P T s S hden)
@@ -1008,7 +1008,7 @@ induces an isomorphism** `Spa(A⟨T/s⟩, A_U⁺) ≅ Spa(A, A⁺)` in `𝒱^pre
 topological image is the whole space. -/
 theorem exists_iso_presentationLimitPreAdicSpaceComap_toCompletionLocHom_of_forall_mem
     (hT : IsOpen (Ideal.span (T : Set A) : Set A))
-    (huniv : ∀ y : spa U.plus, y.1 ∈ rationalSubset U.plus T s)
+    (huniv : ∀ y : spa U.plus, y.val ∈ rationalSubset U.plus T s)
     (hsheafU : letI := P.locUniformSpace T s L hden
       letI := P.isUniformAddGroup_locUniformSpace T s L hden
       letI := P.isTopologicalRing_locUniformSpace T s L hden

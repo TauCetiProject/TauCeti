@@ -177,9 +177,9 @@ private noncomputable def pieriDenom (s : Fin n) : K :=
 private noncomputable def pieriVec (s : Fin n) : M :=
   if s ≤ t then (if s = t then v else 0) else
     (pieriDenom mu t s)⁻¹ • ∑ k ∈ (Finset.Iio s).attach,
-      ⁅(single s k.1 1 : Matrix (Fin n) (Fin n) K), pieriVec k.1⁆
+      ⁅(single s k.val 1 : Matrix (Fin n) (Fin n) K), pieriVec k.val⁆
 termination_by (s : ℕ)
-decreasing_by exact Fin.lt_def.mp (Finset.mem_Iio.mp k.2)
+decreasing_by exact Fin.lt_def.mp (Finset.mem_Iio.mp k.property)
 
 variable {mu v t}
 
@@ -398,7 +398,7 @@ theorem gl_dual_standard_pieri [IsAlgClosed K] (mu : Fin n → K) (hmu : IsGlDom
   refine nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_exists_eq_smul
     (lam := fun t : {t : Fin n // IsGlDominantIntegral (mu - Pi.single t 1)} =>
       mu - Pi.single (t : Fin n) 1) (fun s t hst => Subtype.ext ?_) (fun nu x hx hnu => ?_)
-    (fun t => exists_isGlHighestWeightVector_dual_tensorProduct hg t.2)
+    (fun t => exists_isGlHighestWeightVector_dual_tensorProduct hg t.property)
     (fun t x y hx hy => exists_eq_smul_of_isGlHighestWeightVector_sub_single hg hx hy)
   · by_contra hne
     have h := congr_fun hst (s : Fin n)

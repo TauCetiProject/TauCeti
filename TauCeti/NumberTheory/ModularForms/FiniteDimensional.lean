@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.NumberTheory.ModularForms.NormTrace
+import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
 # Modular forms of non-positive weight
@@ -26,6 +27,8 @@ These are the cases the weight induction in the dimension formulas bottoms out a
   `M_k(𝒢) = 0` for `k < 0`.
 * `ModularForm.coe_eq_zero_of_neg_weight`, `ModularForm.qExpansion_eq_zero_of_neg_weight`: a
   modular form of negative weight and its `q`-expansion are zero.
+* `ModularForm.qExpansion_coeff_eq_zero_of_weight_nonpos`: in nonpositive weight `k ≤ 0`, every
+  positive `q`-expansion coefficient of a modular form vanishes.
 * `CuspForm.coe_eq_zero_of_weight_nonpos`, `CuspForm.qExpansion_eq_zero_of_weight_nonpos`: a cusp
   form of nonpositive weight and its `q`-expansion are zero.
 * `ModularForm.eq_iff_apply_eq_of_weight_zero`: a form in `M_0(𝒢)` is determined by its value
@@ -66,6 +69,22 @@ theorem coe_eq_zero_of_neg_weight {F : Type*} [FunLike F ℍ ℂ] {k : ℤ} [Mod
 theorem qExpansion_eq_zero_of_neg_weight {F : Type*} [FunLike F ℍ ℂ] {k : ℤ}
     [ModularFormClass F 𝒢 k] (hk : k < 0) {h : ℝ} (f : F) : qExpansion h f = 0 := by
   rw [coe_eq_zero_of_neg_weight hk f, qExpansion_zero]
+
+/-- In nonpositive weight `k ≤ 0`, every positive `q`-expansion coefficient of a modular form
+vanishes (for negative weight the form is zero; in weight zero it is constant). -/
+theorem qExpansion_coeff_eq_zero_of_weight_nonpos {F : Type*} [FunLike F ℍ ℂ] {k : ℤ}
+    [ModularFormClass F 𝒢 k] (hk : k ≤ 0) {h : ℝ} (f : F) {n : ℕ} (hn : n ≠ 0) :
+    (qExpansion h f).coeff n = 0 := by
+  rcases hk.lt_or_eq with hk | rfl
+  · simp [qExpansion_eq_zero_of_neg_weight hk f]
+  · obtain ⟨c, hc⟩ := eq_const_of_weight_zero (ModularFormClass.modularForm f)
+    have hf : (f : ℍ → ℂ) = c • (1 : ℍ → ℂ) := by
+      ext z
+      simpa [ModularFormClass.coe_modularForm] using congrFun hc z
+    have han : AnalyticAt ℂ (cuspFunction h (1 : ℍ → ℂ)) 0 :=
+      (TauCeti.UpperHalfPlane.cuspFunction_one h).symm ▸ analyticAt_const
+    rw [hf, UpperHalfPlane.qExpansion_smul han, UpperHalfPlane.qExpansion_one,
+      PowerSeries.coeff_smul, PowerSeries.coeff_one, ite_eq_right hn, smul_zero]
 
 /-- Modular forms of negative weight form a finite-dimensional space — the zero space. -/
 theorem finiteDimensional_of_neg_weight [𝒢.HasDetOne] {k : ℤ} (hk : k < 0) :

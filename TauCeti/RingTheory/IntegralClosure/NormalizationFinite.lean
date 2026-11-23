@@ -146,7 +146,7 @@ private theorem length_quotient_lsmul_le_ord_of_le_span_singleton [IsNoetherianR
     rw [injective_iff_map_eq_zero]
     intro z hz
     have hzx : (z : V) ∈ K ∙ x := by
-      rw [← Submodule.restrictScalars_mem (S := A)]; exact hN z.2
+      rw [← Submodule.restrictScalars_mem (S := A)]; exact hN z.property
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hzx
     have hz' : φ (z : V) = 0 := by simpa [hιdef] using hz
     rw [← hc, map_smul, hφx, smul_eq_mul, mul_one] at hz'

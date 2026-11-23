@@ -36,7 +36,7 @@ even unimodular intermediate overlattice. -/
 theorem isMetabolic_discriminantQuadraticModule_iff (hL : L.IsEven) :
     (L.discriminantQuadraticModule hL).IsMetabolic ↔
       ∃ M : {M : L.IntermediateCarrier // IntermediateCarrier.IsEven M},
-        M.2.isIntegral.toIntegralLattice.IsUnimodular := by
+        M.property.isIntegral.toIntegralLattice.IsUnimodular := by
   constructor
   · intro hMetabolic
     obtain ⟨H, hH⟩ := (L.discriminantQuadraticModule hL).isMetabolic_def.mp hMetabolic
@@ -51,11 +51,11 @@ theorem isMetabolic_discriminantQuadraticModule_iff (hL : L.IsEven) :
       ((L.dual_intermediateCarrierOfDiscriminantSubgroup_eq_self_iff H).mpr hLag)
   · rintro ⟨M, hM⟩
     apply (L.discriminantQuadraticModule hL).isMetabolic_def.mpr
-    refine ⟨L.discriminantSubgroup M.1,
+    refine ⟨L.discriminantSubgroup M.val,
       ((L.discriminantQuadraticModule hL).isLagrangian_def _).mpr ⟨?_, ?_⟩⟩
-    · exact (IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup hL M.1).1 M.2
+    · exact (IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup hL M.val).1 M.property
     · simpa only [L.discriminantQuadraticModule_toFiniteBilinearModule hL] using
-        M.2.isIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian.mp hM
+        M.property.isIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian.mp hM
 
 end IntegralLattice
 

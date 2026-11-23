@@ -55,7 +55,7 @@ theorem vle_iff_norm_le_of_mem_spa {v : Spv K} (hv : v ∈ spa (powerBoundedSubr
     have hlt' := ((isContinuous_def v).mp ((mem_spa_iff _ v).mp hv).1
       ).lt_one_of_isTopologicallyNilpotent hnil
     have hvx : v.valuation x ≠ 0 := (Valuation.ne_zero_iff _).mpr hx
-    rw [map_div₀, div_lt_one₀ (zero_lt_iff.mpr hvx)] at hlt'
+    rw [map_div₀, div_lt_one₀ (pos_iff_ne_zero.mpr hvx)] at hlt'
     exact hlt'.not_ge h
   · rcases eq_or_ne y 0 with rfl | hy
     · rw [norm_zero, norm_le_zero_iff] at h
@@ -64,6 +64,6 @@ theorem vle_iff_norm_le_of_mem_spa {v : Spv K} (hv : v ∈ spa (powerBoundedSubr
       rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one, norm_div]
       exact div_le_one_of_le₀ h (norm_nonneg y)
     have hle := valuation_le_one_of_mem_spa hv hxy
-    rwa [map_div₀, div_le_one₀ (zero_lt_iff.mpr ((Valuation.ne_zero_iff _).mpr hy))] at hle
+    rwa [map_div₀, div_le_one₀ (pos_iff_ne_zero.mpr ((Valuation.ne_zero_iff _).mpr hy))] at hle
 
 end TauCeti.ValuationSpectrum

@@ -136,12 +136,12 @@ theorem measurable_orderStatistic (k : Fin n) :
   let p := (Finset.univ : Finset (Fin n)).powersetCard ((k : ℕ) + 1)
   have hp : p.Nonempty := Finset.powersetCard_nonempty.mpr (by simp)
   have hpa : p.attach.Nonempty := by simpa using hp
-  have hs : ∀ s : p, s.1.Nonempty := fun s => Finset.card_pos.mp (by
-    rw [(Finset.mem_powersetCard.mp s.2).2]
+  have hs : ∀ s : p, s.val.Nonempty := fun s => Finset.card_pos.mp (by
+    rw [(Finset.mem_powersetCard.mp s.property).2]
     omega)
   have hrepr : (orderStatistic k : (Fin n → α) → α) =
       p.attach.inf' hpa fun s =>
-        s.1.sup' (hs s) fun i (x : Fin n → α) => x i := by
+        s.val.sup' (hs s) fun i (x : Fin n → α) => x i := by
     funext x
     simp only [Finset.inf'_apply, Finset.sup'_apply]
     refine eq_of_forall_ge_iff fun t => ?_
@@ -154,7 +154,7 @@ theorem measurable_orderStatistic (k : Fin n) :
       refine ⟨⟨s, hsp⟩, by simp, fun i hi => ?_⟩
       exact (Finset.mem_filter.mp (hsub hi)).2
     · rintro ⟨s, -, hsle⟩
-      rw [← (Finset.mem_powersetCard.mp s.2).2]
+      rw [← (Finset.mem_powersetCard.mp s.property).2]
       exact Finset.card_le_card fun i hi =>
         Finset.mem_filter.mpr ⟨Finset.mem_univ i, hsle i hi⟩
   -- `Finset.inf'_induction` plays the role of the missing `Finset.measurable_inf'`.

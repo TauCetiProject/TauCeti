@@ -72,7 +72,7 @@ indices and inertia degrees of the primes of `𝓞 K` satisfy `∑ e(𝔭) f(�
 private theorem sum_ramificationIdx_mul_inertiaDeg_eq_two (hK : finrank ℚ K = 2)
     [(span {(p : ℤ)} : Ideal ℤ).IsMaximal] :
     ∑ q : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K),
-      q.1.ramificationIdx ℤ * q.1.inertiaDeg ℤ = 2 := by
+      q.val.ramificationIdx ℤ * q.val.inertiaDeg ℤ = 2 := by
   rw [Ideal.sum_ramification_inertia_eq_finrank, NumberField.RingOfIntegers.rank K, hK]
 
 /-- **The engine of the file.** If some prime `𝔭` of `𝓞 K` above a rational prime `p` has
@@ -97,7 +97,8 @@ private theorem totallyRamified_aux (hK : finrank ℚ K = 2) (hp : p.Prime)
   have hsum := sum_ramificationIdx_mul_inertiaDeg_eq_two (K := K) (p := p) hK
   rw [← Finset.add_sum_erase _ _ (Finset.mem_univ x), hx1] at hsum
   -- The summand at `𝔭` already accounts for the whole sum, so the remaining ones vanish.
-  have hrest : ∑ q ∈ Finset.univ.erase x, q.1.ramificationIdx ℤ * q.1.inertiaDeg ℤ = 0 := by omega
+  have hrest : ∑ q ∈ Finset.univ.erase x, q.val.ramificationIdx ℤ * q.val.inertiaDeg ℤ = 0
+      := by omega
   have hxval : 𝔭.ramificationIdx ℤ * 𝔭.inertiaDeg ℤ = 2 := by omega
   -- `e ∣ 2` and `2` is prime, so `e = 2`; then `f = 1`.
   have heone : 𝔭.ramificationIdx ℤ = 2 :=
@@ -108,9 +109,9 @@ private theorem totallyRamified_aux (hK : finrank ℚ K = 2) (hp : p.Prime)
     by_contra hne
     exact absurd ((Finset.sum_eq_zero_iff.mp hrest) q
         (Finset.mem_erase.mpr ⟨hne, Finset.mem_univ q⟩))
-      (Nat.mul_ne_zero (Ideal.ramificationIdx_pos ℤ q.1).ne' (Ideal.inertiaDeg_pos q.1 ℤ).ne')
+      (Nat.mul_ne_zero (Ideal.ramificationIdx_pos ℤ q.val).ne' (Ideal.inertiaDeg_pos q.val ℤ).ne')
   exact ⟨heone, hfone, hx1 ▸ Set.eq_singleton_iff_unique_mem.mpr
-    ⟨x.2, fun q hq => congrArg Subtype.val (huniq ⟨q, hq.1, hq.2⟩)⟩⟩
+    ⟨x.property, fun q hq => congrArg Subtype.val (huniq ⟨q, hq.1, hq.2⟩)⟩⟩
 
 /-- A ramified rational prime admits a prime of `𝓞 K` above it with ramification index `≠ 1`. -/
 private theorem exists_ramificationIdx_ne_one (hmem : p ∈ ramifiedPrimes K) :

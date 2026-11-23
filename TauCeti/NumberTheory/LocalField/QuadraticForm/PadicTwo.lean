@@ -51,6 +51,8 @@ full `8 × 8` table of the symbol over `ℚ_2`, the check that pins the dyadic s
 * `TauCeti.hilbertSymbol_neg_one_neg_one_padicTwo`: `(-1, -1) = −1` over `ℚ_2`, that is `-1` is
   not of the form `x² + y²` in `ℚ_2`.
 * `TauCeti.hilbertSymbol_two_five_padicTwo`: `(2, 5) = −1` over `ℚ_2`.
+* `TauCeti.hilbertSymbol_neg_one_two_padicTwo`, `TauCeti.hilbertSymbol_neg_one_five_padicTwo`,
+  `TauCeti.hilbertSymbol_five_five_padicTwo`: `(-1, 2) = (-1, 5) = (5, 5) = 1` over `ℚ_2`.
 * `TauCeti.padicTwoSquareClassBasis`: the classes of `-1`, `2`, `5` as a `ZMod 2`-basis of the
   square-class group of `ℚ_2`.
 * `TauCeti.hilbertSymbolOnSquareClasses_padicTwo`: the symbol on square classes in the coordinates
@@ -112,13 +114,6 @@ private theorem exists_eq_two_zpow_mul (b : ℚ_[2]ˣ) :
   obtain ⟨v, hv⟩ := Padic.exists_eq_zpow_valuation_mul b.ne_zero
   exact ⟨_, v, by exact_mod_cast hv⟩
 
-/-- A unit of `ℤ_2` that is not `1 mod 8` is a nonsquare of `ℚ_2ˣ`. -/
-private theorem not_isSquare_of_toZModPow_ne_one {a : ℚ_[2]ˣ} {u : ℤ_[2]ˣ}
-    (ha : (a : ℚ_[2]) = u) (hu : PadicInt.toZModPow 3 (u : ℤ_[2]) ≠ 1) : ¬IsSquare a := by
-  rw [isSquare_iff_serreEps_eq_zero_and_serreOmega_eq_zero ha,
-    serreEps_eq_zero_and_serreOmega_eq_zero_iff, mem_unitsPrincipal_iff_toZModPow]
-  exact hu
-
 /-- For a nonsquare `c`, the symbol `(c, ·)` is nontrivial on one of the generators `2`, `-1`,
 `5` of `ℚ_2ˣ/(ℚ_2ˣ)²`. -/
 private theorem not_hilbertSymbol_generators_eq_one {c : ℚ_[2]ˣ} (hc : ¬IsSquare c)
@@ -131,33 +126,29 @@ private theorem not_hilbertSymbol_generators_eq_one {c : ℚ_[2]ˣ} (hc : ¬IsSq
   rw [hilbertSymbol_eq_of_eq_two_zpow_mul c b hv, ht, hm, hf] at hb
   simp at hb
 
--- The `+1` values on the generators, from explicit solutions of `b = x² − a y²`.
-private theorem hilbertSymbol_neg_one_unitTwo : hilbertSymbol (-1) unitTwo = 1 :=
+/-- `(-1, 2) = 1` over `ℚ_2`: `2 = 1² + 1²`. -/
+theorem hilbertSymbol_neg_one_two_padicTwo :
+    hilbertSymbol (-1 : ℚ_[2]ˣ) (Units.mk0 2 two_ne_zero) = 1 :=
   (hilbertSymbol_eq_one_iff _ _).mpr ⟨1, 1, by norm_num⟩
 
-private theorem hilbertSymbol_neg_one_unitFive : hilbertSymbol (-1) unitFive = 1 :=
+/-- `(-1, 5) = 1` over `ℚ_2`: `5 = 1² + 2²`. -/
+theorem hilbertSymbol_neg_one_five_padicTwo :
+    hilbertSymbol (-1 : ℚ_[2]ˣ) (Units.mk0 5 (by norm_num)) = 1 :=
   (hilbertSymbol_eq_one_iff _ _).mpr ⟨1, 2, by norm_num⟩
 
-private theorem hilbertSymbol_unitFive_unitFive : hilbertSymbol unitFive unitFive = 1 :=
+/-- `(5, 5) = 1` over `ℚ_2`: `5 = 5² − 5 · 2²`. -/
+theorem hilbertSymbol_five_five_padicTwo :
+    hilbertSymbol (Units.mk0 (5 : ℚ_[2]) (by norm_num)) (Units.mk0 5 (by norm_num)) = 1 :=
   (hilbertSymbol_eq_one_iff _ _).mpr ⟨5, 2, by norm_num⟩
 
 /-- `(-1, -1) = −1` over `ℚ_2`: `-1` is not of the form `x² + y²` with `x, y ∈ ℚ_2`. -/
 theorem hilbertSymbol_neg_one_neg_one_padicTwo : hilbertSymbol (-1 : ℚ_[2]ˣ) (-1) = -1 := by
   -- `-1` is a nonsquare, and `(-1, 2) = (-1, 5) = +1`, so `(-1, -1)` must be `−1`.
-  have hc : ¬IsSquare (-1 : ℚ_[2]ˣ) :=
-    not_isSquare_of_toZModPow_ne_one (u := -1) (by simp)
-      (by rw [Units.val_neg, Units.val_one, map_neg, map_one]; decide)
+  have hc : ¬IsSquare (-1 : ℚ_[2]ˣ) := by
+    rw [← Units.isSquare_coe_iff]
+    simpa using Padic.not_isSquare_neg_one_of_mod_four_ne_one 2 (by decide)
   exact (Int.units_eq_one_or _).resolve_left fun h ↦ not_hilbertSymbol_generators_eq_one hc
-    hilbertSymbol_neg_one_unitTwo h hilbertSymbol_neg_one_unitFive
-
-/-- `-1` is not a square in `ℚ_2`, so the quadratic algebra `ℚ_2(i)` is a field. -/
-instance : Fact (¬ IsSquare (-1 : ℚ_[2])) := by
-  refine ⟨?_⟩
-  intro h
-  have hunit : IsSquare (-1 : ℚ_[2]ˣ) := Units.isSquare_coe_iff.mp (by simpa using h)
-  have := hilbertSymbol_eq_one_of_isSquare_left hunit (-1)
-  rw [hilbertSymbol_neg_one_neg_one_padicTwo] at this
-  norm_num at this
+    hilbertSymbol_neg_one_two_padicTwo h hilbertSymbol_neg_one_five_padicTwo
 
 /-- `(2, 5) = −1` over `ℚ_2`: `5` is not of the form `x² − 2 y²` with `x, y ∈ ℚ_2`. -/
 theorem hilbertSymbol_two_five_padicTwo :
@@ -168,8 +159,8 @@ theorem hilbertSymbol_two_five_padicTwo :
     exact Padic.not_isSquare_five
   rw [hilbertSymbol_comm]
   exact (Int.units_eq_one_or _).resolve_left fun h ↦ not_hilbertSymbol_generators_eq_one hc h
-    (by rw [hilbertSymbol_comm]; exact hilbertSymbol_neg_one_unitFive)
-    hilbertSymbol_unitFive_unitFive
+    (by rw [hilbertSymbol_comm]; exact hilbertSymbol_neg_one_five_padicTwo)
+    hilbertSymbol_five_five_padicTwo
 
 /-- **Serre's formula for the Hilbert symbol over `ℚ_2`.** For `a = 2 ^ α u` and `b = 2 ^ β v`
 with `u, v` units of `ℤ_2`,
@@ -183,10 +174,10 @@ theorem hilbertSymbol_padicTwo {a b : ℚ_[2]ˣ} {α β : ℤ} {u v : ℤ_[2]ˣ}
       (β : ZMod 2) * serreOmega u) := by
   have h2m : hilbertSymbol unitTwo (-1) = 1 := by
     rw [hilbertSymbol_comm]
-    exact hilbertSymbol_neg_one_unitTwo
+    exact hilbertSymbol_neg_one_two_padicTwo
   have h5m : hilbertSymbol unitFive (-1) = 1 := by
     rw [hilbertSymbol_comm]
-    exact hilbertSymbol_neg_one_unitFive
+    exact hilbertSymbol_neg_one_five_padicTwo
   have h52 : hilbertSymbol unitFive unitTwo = -1 := by
     rw [hilbertSymbol_comm]
     exact hilbertSymbol_two_five_padicTwo
@@ -194,8 +185,8 @@ theorem hilbertSymbol_padicTwo {a b : ℚ_[2]ˣ} {α β : ℤ} {u v : ℤ_[2]ˣ}
   have hta : hilbertSymbol unitTwo a = (-1) ^ ((serreOmega u).val : ℤ) := by
     simp [hilbertSymbol_eq_of_eq_two_zpow_mul _ a ha, h2m, hilbertSymbol_two_five_padicTwo]
   have hma : hilbertSymbol (-1) a = (-1) ^ ((serreEps u).val : ℤ) := by
-    simp [hilbertSymbol_eq_of_eq_two_zpow_mul _ a ha, hilbertSymbol_neg_one_unitTwo,
-      hilbertSymbol_neg_one_neg_one_padicTwo, hilbertSymbol_neg_one_unitFive]
+    simp [hilbertSymbol_eq_of_eq_two_zpow_mul _ a ha, hilbertSymbol_neg_one_two_padicTwo,
+      hilbertSymbol_neg_one_neg_one_padicTwo, hilbertSymbol_neg_one_five_padicTwo]
   have hfa : hilbertSymbol unitFive a = (-1) ^ α := by
     simp [hilbertSymbol_eq_of_eq_two_zpow_mul _ a ha, h52, h5m]
   rw [hilbertSymbol_eq_of_eq_two_zpow_mul a b hb, hilbertSymbol_comm a, hilbertSymbol_comm a,
