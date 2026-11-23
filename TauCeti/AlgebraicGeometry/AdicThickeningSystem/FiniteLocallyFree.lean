@@ -634,12 +634,10 @@ theorem overPullback_map_injective_of_faithful_completionFunctor
   dsimp only at h
   have hg₁ : g₁.left ≫ q = p := by simpa only [Over.mk_hom] using Over.w g₁
   have hg₂ : g₂.left ≫ q = p := by simpa only [Over.mk_hom] using Over.w g₂
-  have hle₁ : (I.comap q).comap g₁.left ≤ I.comap p := by
-    rw [← Scheme.IdealSheafData.comap_comp, hg₁]
-  have hle₂ : (I.comap q).comap g₂.left ≤ I.comap p := by
-    rw [← Scheme.IdealSheafData.comap_comp, hg₂]
-  let m₁ := Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₁.left hle₁
-  let m₂ := Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₂.left hle₂
+  let m₁ := Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₁.left
+    (Scheme.formalCompletion.comap_over_left I g₁).le
+  let m₂ := Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₂.left
+    (Scheme.formalCompletion.comap_over_left I g₂).le
   have hg₀ : m₁.app 0 = m₂.app 0 := by
     apply (cancel_mono (Scheme.formalCompletion.levelIsoPullback q rfl 0).hom).mp
     rw [Scheme.formalCompletion.levelIsoPullback_hom_map rfl rfl g₁ 0,
@@ -674,8 +672,6 @@ theorem overPullback_map_bijective_of_fullyFaithful_completionFunctor
     Function.Bijective
       (fun g : Over.mk p ⟶ Over.mk q ↦
         (Over.pullback (Scheme.formalCompletion.toScheme X I 0)).map g) := by
-  have ⟨_, _, _⟩ : Flat q ∧ FormallyUnramified q ∧ LocallyOfFinitePresentation q :=
-    Etale.iff_flat_and_formallyUnramified.mp inferInstance
   refine ⟨overPullback_map_injective_of_faithful_completionFunctor I p q, fun g₀ ↦ ?_⟩
   let p_fc := Scheme.formalCompletion.map (I := I.comap p) p le_rfl
   let q_fc := Scheme.formalCompletion.map (I := I.comap q) q le_rfl

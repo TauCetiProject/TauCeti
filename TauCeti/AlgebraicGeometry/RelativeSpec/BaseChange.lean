@@ -449,10 +449,9 @@ theorem relativeSpecPullbackFst_id :
   rfl
 
 /-- Transporting `relativeSpecPullbackFst` along an equality of base morphisms. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem relativeSpecPullbackFst_congr {f₁ f₂ : Y ⟶ X} (hf : f₁ = f₂) :
-    CommMon.relativeSpecMap
-        (eqToHom (congrArg (fun k ↦ (QuasicoherentAlgebra.pullback k).obj A) hf)).hom ≫
+    CommMon.relativeSpecMap ((QuasicoherentAlgebra.pullbackCongr hf).hom.app A).hom ≫
       relativeSpecPullbackFst A f₁ = relativeSpecPullbackFst A f₂ := by
   subst hf
   simp

@@ -68,10 +68,6 @@ private lemma faithful_pullback_toScheme_zero (X : Scheme.{u}) (I : X.IdealSheaf
       Scheme.formalCompletion.completionFunctor X I).Faithful] :
     (pullback (Scheme.formalCompletion.toScheme X I 0)).Faithful where
   map_injective {A B} _ _ h := by
-    have ⟨_, _⟩ := (finiteEtaleSchemeProperty_iff _).mp A.property
-    have ⟨_, _⟩ := (finiteEtaleSchemeProperty_iff _).mp B.property
-    have ⟨_, _, _⟩ := Etale.iff_flat_and_formallyUnramified.mp (inferInstance : Etale A.obj.hom)
-    have ⟨_, _, _⟩ := Etale.iff_flat_and_formallyUnramified.mp (inferInstance : Etale B.obj.hom)
     have h' := congrArg (·.hom) h
     rw [pullback_map_hom, pullback_map_hom] at h'
     exact ObjectProperty.hom_ext _
@@ -84,9 +80,6 @@ private lemma full_pullback_toScheme_zero (X : Scheme.{u}) (I : X.IdealSheafData
       Scheme.formalCompletion.completionFunctor X I).Faithful] :
     (pullback (Scheme.formalCompletion.toScheme X I 0)).Full where
   map_surjective {A B} g := by
-    have ⟨_, _⟩ := (finiteEtaleSchemeProperty_iff _).mp A.property
-    have ⟨_, _⟩ := (finiteEtaleSchemeProperty_iff _).mp B.property
-    have ⟨_, _, _⟩ := Etale.iff_flat_and_formallyUnramified.mp (inferInstance : Etale A.obj.hom)
     obtain ⟨f, hf⟩ := (overPullback_map_bijective_of_fullyFaithful_completionFunctor
       I A.obj.hom B.obj.hom).2 g.hom
     refine ⟨ObjectProperty.homMk f, ObjectProperty.hom_ext _ ?_⟩
