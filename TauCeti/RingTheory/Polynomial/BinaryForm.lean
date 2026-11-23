@@ -14,22 +14,24 @@ import TauCeti.RingTheory.Polynomial.Radical
 # Square-free divisors of integer binary forms
 
 Let `F ∈ ℤ[X₀, X₁]` be a binary form and let `L` be an algebraically closed field of
-characteristic zero. If `F(X, 1)` has `r` distinct zeros in `L`, then `F` has a divisor
+characteristic zero, and let `r` be the number of distinct roots of `F(X, 1)` in `L`, counted
+as `Polynomial.roots` counts them, so that `r = 0` if `F(X, 1) = 0`. Then `F` has a divisor
 `G ∈ ℤ[X₀, X₁]` which is a binary form of degree `r` without squared linear factors over `L`:
-the homogenization of the radical of `F(X, 1)` in `ℤ[X]`.
+the homogenization of the radical of `F(X, 1)` in `ℤ[X]`. For `F(X, 1) ≠ 0`, `r` is the number
+of distinct zeros of `F(X, 1)` in `L`.
 
 Results on binary forms without squared linear factors, such as the Thue–Roth inequality
 `MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eval`, thus apply to a divisor of
-an arbitrary integer binary form. If `F(X, 1)` has at least three distinct complex zeros, the
-divisor has degree at least `3`; since `G(x, y)` divides `F(x, y)`, solutions of the Thue equation
-`F(x, y) = m ≠ 0` are solutions of `G(x, y) = m'` for one of the finitely many divisors `m'`
-of `m`.
+an arbitrary integer binary form. If `F(X, 1)` is nonzero and has at least three distinct
+complex zeros, the divisor has degree at least `3`; since `G(x, y)` divides `F(x, y)`, solutions
+of the Thue equation `F(x, y) = m ≠ 0` are solutions of `G(x, y) = m'` for one of the finitely
+many divisors `m'` of `m`.
 
 ## Main results
 
 * `MvPolynomial.IsHomogeneous.exists_dvd_isHomogeneous_not_sq_dvd`: an integer binary form has
   a divisor which is a binary form without squared linear factors over `L`, of degree the number
-  of distinct zeros of `F(X, 1)` in `L`.
+  of distinct roots of `F(X, 1)` in `L` (`roots.toFinset.card`, which is `0` if `F(X, 1) = 0`).
 
 ## References
 
@@ -45,7 +47,9 @@ namespace MvPolynomial
 /-- **Square-free divisors of integer binary forms** (Evertse, proof of Corollary 6.4). Let
 `F ∈ ℤ[X₀, X₁]` be a binary form and `L` an algebraically closed field of characteristic zero.
 Then `F` is divisible by a binary form `G ∈ ℤ[X₀, X₁]` whose degree is the number of distinct
-zeros of `F(X, 1)` in `L`, and which has no squared linear factor `(a X₀ + b X₁) ^ 2` over `L`. -/
+roots of `F(X, 1)` in `L`, as counted by `Polynomial.roots` (so `0` if `F(X, 1) = 0`; otherwise
+the number of its distinct zeros in `L`), and which has no squared linear factor
+`(a X₀ + b X₁) ^ 2` over `L`. -/
 theorem IsHomogeneous.exists_dvd_isHomogeneous_not_sq_dvd {F : MvPolynomial (Fin 2) ℤ} {d : ℕ}
     (hF : F.IsHomogeneous d) (L : Type*) [Field L] [CharZero L] [IsAlgClosed L]
     [DecidableEq L] :
@@ -60,12 +64,13 @@ theorem IsHomogeneous.exists_dvd_isHomogeneous_not_sq_dvd {F : MvPolynomial (Fin
   -- The radical `g` of `f` in `ℤ[X]` divides `f`, and is separable over `ℚ`, hence over `L`.
   set g : ℤ[X] := radical f
   have hgf : g ∣ f := radical_dvd_self
-  have hsep : (g.map φ).Separable := separable_map_radical ℚ L f
+  have hsep : (g.map φ).Separable := separable_map_radical f ℚ L
   have hdeg : (g.map φ).natDegree = g.natDegree :=
     natDegree_map_eq_of_injective (RingHom.injective_int φ) g
-  -- `f` and `g` have the same zeros in `L`, as `g ∣ f ∣ g ^ n`.
+  -- `f` and `g` have the same roots in `L`: for `f ≠ 0`, as `g ∣ f ∣ g ^ n`, and for `f = 0`,
+  -- as `g = 1` and `roots 0 = 0`.
   have hroots : (g.map φ).roots.toFinset = (f.map φ).roots.toFinset :=
-    roots_toFinset_map_radical φ f
+    roots_toFinset_map_radical f φ
   have hcard : g.natDegree = ((f.map φ).roots.toFinset).card := by
     rw [← hroots, Multiset.toFinset_card_of_nodup (nodup_roots hsep),
       IsAlgClosed.card_roots_eq_natDegree, hdeg]

@@ -92,8 +92,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   exactly when `R` has a repeated element.
 * `Finset.prod_prod_erase_sub_eq_neg_one_pow_mul_discr`: the same product formula for
   `∏_{w ∈ s} (X - g w)`, indexed by a finite set.
-* `Squarefree.discr_ne_zero`: a squarefree polynomial over a GCD domain of characteristic zero
-  has nonzero discriminant.
+* `Squarefree.discr_ne_zero`: a squarefree polynomial over a domain of characteristic zero whose
+  polynomials form a decomposition monoid, such as a GCD domain, has nonzero discriminant.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.separable_map_zmod_iff_not_dvd_discr`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
@@ -784,10 +784,10 @@ theorem separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
   rw [← discr_ne_zero_iff hn,
     discr_map_of_natDegree_eq φ (natDegree_map_of_leadingCoeff_ne_zero φ hlc)]
 
-/-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero discriminant. -/
-theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsGCDMonoid D] [CharZero D]
-    {p : D[X]} (hp : Squarefree p) : p.discr ≠ 0 := by
-  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
+/-- A squarefree polynomial over a domain of characteristic zero whose polynomials form a
+decomposition monoid, such as a GCD domain, has nonzero discriminant. -/
+theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsCancelMulZero D]
+    [DecompositionMonoid D[X]] [CharZero D] {p : D[X]} (hp : Squarefree p) : p.discr ≠ 0 := by
   have : IsDomain D := ⟨⟩
   have hinj := IsFractionRing.injective D (FractionRing D)
   have : CharZero (FractionRing D) := charZero_of_injective_algebraMap hinj
