@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Counting.Scattered.Vaught
 public import TauCeti.ModelTheory.RelationalConfiguration.FragmentSpectrum
+import TauCeti.ModelTheory.Counting.Scattered.Spectrum
 
 /-!
 # Fragment-spectrum characterizations of scattered classes and sentences
@@ -34,9 +35,11 @@ This file connects those notions to the fragment type spectra of
   or isomorphism invariance of `K`.
 * Specializing to `modelsOf φ`, thinness of an infinitary sentence with countable branching on `ℕ`
   is equivalent to countability of all countable-fragment type spectra on `modelsOf (V := ℕ) φ`
-  (`TauCeti.isThinOnNatModels_iff_countable_typeSpectrum`), and absence of a perfect set of
-  countable models across all countable carriers is equivalent to countable fragment spectra on `ℕ`
-  and on every finite carrier `Fin d`
+  (`TauCeti.isThinOnNatModels_iff_countable_typeSpectrum`); for `φ : L.Sentenceω` it suffices to
+  ask this of the countable fragments containing `φ`, which is Morley's definition of a scattered
+  sentence (`TauCeti.isThinOnNatModels_iff_forall_mem_countable_typeSpectrum`). Absence of a
+  perfect set of countable models across all countable carriers is equivalent to countable fragment
+  spectra on `ℕ` and on every finite carrier `Fin d`
   (`TauCeti.not_hasPerfectlyManyCountableModels_iff_countable_typeSpectrum`).
 * Consequently, Vaught's conjecture—and under `ℵ₁ < 𝔠` the cardinal Vaught conjecture—is equivalent
   to countability of `Quotient (isoSetoidOn ℕ φ)` for every `L_{ω₁ω}` sentence whose countable
@@ -52,9 +55,13 @@ This file connects those notions to the fragment type spectra of
   `n : ℕ`.
 * `TauCeti.mk_isoClasses_le_aleph_one_of_countable_typeSpectrum`: countable fragment spectra on `K`
   bound the isomorphism classes met by `K` on `ℕ` by `ℵ₁`.
-* `TauCeti.isThinOnNatModels_iff_countable_typeSpectrum`: in a countable relational vocabulary,
-  thinness on `ℕ` of a sentence with countable branching equals classical scatteredness via
-  countable fragment spectra.
+* `TauCeti.isThinOn_of_countable_typeSpectrum_zero`: on any countable carrier, countable
+  arity-`0` spectra of all countable fragments already force thinness, since the arity-`0`
+  spectrum of `Fragment.ofTheory (Set.range θ)` determines the truth sequences of `θ`.
+* `TauCeti.isThinOnNatModels_iff_countable_typeSpectrum` and
+  `TauCeti.isThinOnNatModels_iff_forall_mem_countable_typeSpectrum`: in a countable relational
+  vocabulary, thinness on `ℕ` of a sentence with countable branching equals classical scatteredness
+  via countable fragment spectra, for all countable fragments or only those containing `φ`.
 * `TauCeti.not_hasPerfectlyManyCountableModels_iff_countable_typeSpectrum` and
   `TauCeti.countableModelCount_le_aleph_one_of_countable_typeSpectrum`: extension across `ℕ` and all
   finite carriers `Fin d`.
@@ -68,6 +75,8 @@ This file connects those notions to the fragment type spectra of
   (countable fragments and fragment `n`-types) and the chapters on the space of countable models and
   Vaught counterexamples (scattered sentences).
 * M. Morley, *The number of countable models*, J. Symbolic Logic 35 (1970), 14–18.
+* J. Baldwin, S. Friedman, M. Koerwien and M. C. Laskowski, *Three red herrings around Vaught's
+  conjecture*, Trans. Amer. Math. Soc. 368 (2016), 3673–3694, Theorem 3.3 and Lemma 3.4.
 * J. H. Silver, *Counting the number of equivalence classes of Borel and coanalytic equivalence
   relations*, Annals of Mathematical Logic 18 (1980), 1–28.
 * Related formalizations appear in Cameron Freer's `cameronfreer/infinitary-logic` at commit
@@ -78,7 +87,7 @@ This file connects those notions to the fragment type spectra of
 
 public section
 
-universe u v uι
+universe u v w uι
 
 open FirstOrder FirstOrder.Language Cardinal Ordinal Set
 
@@ -135,6 +144,25 @@ theorem mk_isoClasses_le_aleph_one_of_countable_typeSpectrum [∀ k, Countable (
   mk_isoClasses_le_aleph_one_of_countable_levels K
     (bfScattered_iff.1 (bfScattered_of_countable_typeSpectrum hspec))
 
+/-- **Countable arity-zero spectra imply thinness.** On a countable carrier in a relational language
+with countably many relation symbols of each arity, if every countable fragment has a countable
+arity-`0` type spectrum on `C`, then `C` is thin for isomorphism: the arity-`0` spectrum of
+`Fragment.ofTheory (Set.range θ)` determines the truth sequences of `θ`. Neither measurability nor
+isomorphism invariance of `C` is required. -/
+theorem isThinOn_of_countable_typeSpectrum_zero [∀ k, Countable (L.Relations k)] {V : Type w}
+    [Countable V] {C : Set (RelationalConfiguration L V)}
+    (h : ∀ F : Fragment L, (F : Set (Σ m, L.BoundedFormulaω Empty m)).Countable →
+      (F.typeSpectrum 0 C).Countable) :
+    (isoSetoid L V).IsThinOn C := by
+  classical
+  refine isThinOn_of_forall_countable_image_sentenceTheory fun θ => ?_
+  refine ((countable_image_mem_modelsOf_of_countable_typeSpectrum θ
+    (h _ (Fragment.ofTheory_countable (countable_range θ)))).image
+      fun s i => decide (s i)).mono ?_
+  rintro _ ⟨c, hc, rfl⟩
+  refine ⟨_, ⟨c, hc, rfl⟩, funext fun i => ?_⟩
+  rw [Bool.eq_iff_iff, sentenceTheory_eq_true_iff, decide_eq_true_iff]
+
 /-! ### Model classes of infinitary sentences and Vaught's conjecture -/
 
 /-- In a relational language with countably many relation symbols of each arity, a sentence with
@@ -168,6 +196,26 @@ theorem isThinOnNatModels_iff_countable_typeSpectrum [∀ k, Countable (L.Relati
         (F : Set (Σ m, L.BoundedFormulaω Empty m)).Countable →
           ∀ n : ℕ, (F.typeSpectrum n (modelsOf (V := ℕ) φ)).Countable :=
   bfScattered_modelsOf_iff_isThinOnNatModels.symm.trans bfScattered_iff_countable_typeSpectrum
+
+/-- **Thin sentences are the scattered ones.** In a relational language with countably many
+relation symbols of each arity, an `L_{ω₁ω}` sentence `φ` is thin on `ℕ` if and only if, for every
+countable fragment `F` containing `φ` and every arity `n`, its models on `ℕ` realize only countably
+many `F`-types of arity `n`: Morley's definition of a scattered sentence, for models on `ℕ`. -/
+theorem isThinOnNatModels_iff_forall_mem_countable_typeSpectrum [∀ k, Countable (L.Relations k)]
+    {φ : L.Sentenceω} :
+    IsThinOnNatModels φ ↔
+      ∀ F : Fragment L, (F : Set (Σ m, L.BoundedFormulaω Empty m)).Countable →
+        (⟨0, φ⟩ : Σ m, L.BoundedFormulaω Empty m) ∈ F →
+          ∀ n : ℕ, (F.typeSpectrum n (modelsOf (V := ℕ) φ)).Countable := by
+  refine isThinOnNatModels_iff_countable_typeSpectrum.trans
+    ⟨fun h F hF _ n => h F hF n, fun h F hF n => ?_⟩
+  -- Enlarge `F` by the fragment of `φ`; the spectrum of `F` is a restriction of the larger one.
+  have hB : ((F ⊔ Fragment.ofSentence φ : Fragment L) :
+      Set (Σ m, L.BoundedFormulaω Empty m)).Countable := by
+    rw [Fragment.coe_sup]
+    exact hF.union (Fragment.ofSentence_countable φ)
+  exact Fragment.countable_typeSpectrum_of_le le_sup_left
+    (h _ hB (Fragment.mem_sup.2 (.inr (Fragment.mem_ofSentence φ))) n)
 
 /-- In a relational language with countably many relation symbols of each arity, countable fragment
 spectra on `ℕ` and on every finite carrier `Fin d` rule out a perfect set of pairwise

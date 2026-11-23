@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Perturbation.Manifold
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Analysis.Calculus.Deriv.Mul

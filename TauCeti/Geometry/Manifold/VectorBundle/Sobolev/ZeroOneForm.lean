@@ -52,6 +52,8 @@ which lifts the pointwise `(0,1)`-projection
   `TauCeti.FiniteBundleAtlas.coord_tangentHom_zeroOnePart`: on the image of a chart, a one-form is a
   `(0,1)`-form exactly when its reading is complex antilinear, and its `(0,1)`-part is read as the
   complex antilinear part of its reading.
+* `TauCeti.FiniteBundleAtlas.complexAntilinearPartL_coordChangeL_comp`: taking the complex
+  antilinear part commutes with the one-form coordinate change `η ↦ g ∘ η ∘ dτ` on overlaps.
 * `TauCeti.mem_zeroOneSobolevSections_iff`: membership is complex antilinearity of the chart data
   almost everywhere.
 * `TauCeti.mem_zeroOneSobolevSections_iff_isZeroOneForm`: an element whose chart data are the
@@ -137,6 +139,42 @@ theorem isZeroOneForm_iff_coord_tangentHom (i : Fin A.n)
   exact isZeroOneForm_iff_inCoordinates
     (inTangentCoordinates_ofComplexManifold (A.dom_subset_chart_source i (A.symm_mem_dom hy)))
     (A.dom_subset_baseSet i (A.symm_mem_dom hy))
+
+section TangentHom
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  (A : FiniteBundleAtlas ℂ M F V)
+
+variable [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [∀ x, Module ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℂ F V]
+
+/-- On the overlap of charts `i` and `i'`, the complex antilinear part commutes with the
+coordinate change of one-forms: `∂bar (g ∘ L ∘ dτ) = g ∘ ∂bar L ∘ dτ`, since both the coordinate
+change `g` of the complex vector bundle `V` and the derivative of the holomorphic chart transition
+`τ` are complex linear. -/
+theorem complexAntilinearPartL_coordChangeL_comp {i i' : Fin A.n} {y : ℂ}
+    (hy : y ∈ A.overlap i i') (L : ℂ →L[ℝ] F) :
+    complexAntilinearPartL (((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) :
+        F →L[ℝ] F).comp (L.comp (fderiv ℝ (A.transition i i') y))) =
+      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+        ((complexAntilinearPartL L).comp (fderiv ℝ (A.transition i i') y)) := by
+  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
+  have hτ : A.transition i i' y ∈ A.tangentHom.image i := by
+    rw [image_tangentHom]
+    exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
+  set θ : ∀ x, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x := fun x ↦ (A.tangentHom.triv i).symm x L
+  have h₁ := A.coord_tangentHom_eq_coordChange θ hy
+  have h₂ := A.coord_tangentHom_eq_coordChange
+    (fun x ↦ (ofComplexManifold ℂ M).zeroOnePart (θ x)) hy
+  rw [A.coord_tangentHom_zeroOnePart, A.coord_tangentHom_zeroOnePart, h₁,
+    A.tangentHom.coord_triv_symm L hτ] at h₂
+  exact h₂
+
+end TangentHom
 
 end FiniteBundleAtlas
 
@@ -248,8 +286,7 @@ variable (A μ p k) in
 /-- The `(0,1)`-projection on `W^{k,p}` of `V`-valued one-forms, as an endomorphism. -/
 private def zeroOnePartEnd :
     SobolevSection A.tangentHom μ p k →L[ℝ] SobolevSection A.tangentHom μ p k :=
-  haveI (x : M) : ContinuousSMul ℂ (V x) :=
-    (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
+  haveI : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   SectionChartData.constMapL μ p k complexAntilinearPartL
     (fun θ x ↦ (ofComplexManifold ℂ M).zeroOnePart (θ x)) fun i θ y hy ↦ by
       rw [A.tangentHom.sectionChartData_coord_of_mem _ hy,

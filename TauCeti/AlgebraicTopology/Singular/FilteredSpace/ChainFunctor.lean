@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 public import TauCeti.Topology.Category.TopPair
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 
 /-!
@@ -36,8 +37,15 @@ from `TauCeti.Algebra.Homology.SpectralSequence.Filtered`, which uses cochain co
 * **First page.** The object at `(p, q)` on the first page (numbered `2` in the indexing of
   `CochainComplex.spectralSequence`) is the homology in degree `n` of that cokernel for the pair
   `(X (q + 1), X q)`, with `p + q = -n` (`TauCeti.chainFiltrationSpectralSequenceFirstPageXIso`).
-* **Convergence.** The abutment in degree `-n` is `Hₙ(F Y)` (`TauCeti.chainFiltrationAbutmentIso`).
-  When `X a = ∅`, `F` vanishes on empty spaces and `X b = Y`, the filtration is finite and the
+* **Convergence.** The abutment in degree `-n` is `Hₙ(F Y)`
+  (`TauCeti.chainFiltrationAbutmentIso`), and the `q`th piece of its filtration is the image of
+  `Hₙ(F (X q)) ⟶ Hₙ(F Y)`
+  (`TauCeti.chainFiltrationToAbutmentFiltration_comp_chainFiltrationAbutmentIso_hom`,
+  `TauCeti.range_abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom`). When
+  `X (q + 1) = Y`, the projection of `Hₙ(F Y)` onto the limit object `E∞` at `q`
+  (`TauCeti.chainFiltrationToTopColumnEInfty`) vanishes exactly on the image of `Hₙ(F (X q))`
+  (`TauCeti.chainFiltrationToTopColumnEInfty_eq_zero_iff`). When
+  `X a = ∅`, `F` vanishes on empty spaces and `X b = Y`, the filtration is finite and the
   spectral sequence converges strongly
   (`TauCeti.chainFiltrationSpectralSequencePageXIsoGradedOfFinite`).
 * **Maps.** A natural transformation `α : F ⟶ G` together with a map of filtered spaces induces a
@@ -311,6 +319,103 @@ lemma chainFiltrationAbutmentIso_eq (n : ℕ) :
         extendHomologyIso _ ComplexShape.embeddingDownNat rfl :=
   (rfl)
 
+/-- The epimorphism from the homology `Hₙ(F (X q))` of the chains of `X q` onto the `q`th piece of
+the filtration of the abutment in degree `-n`. Through `TauCeti.chainFiltrationAbutmentIso` it is
+the map `Hₙ(F (X q)) ⟶ Hₙ(F Y)` induced by the inclusion of `X q`
+(`TauCeti.chainFiltrationToAbutmentFiltration_comp_chainFiltrationAbutmentIso_hom`),
+so that piece is the image of this map. -/
+def chainFiltrationToAbutmentFiltration (q : ℤ) (n : ℕ) :
+    (F.obj (TopPair.ofSubset (X q)).snd).homology n ⟶
+      (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+        (monotone_chainFiltration F hX))).abutmentFiltration q (-n) :=
+  (extendHomologyIso _ ComplexShape.embeddingDownNat rfl).inv ≫
+    homologyMap (chainFiltrationIso F X q).inv (-n) ≫
+      CochainComplex.toFiltrationAbutmentFiltration _ (monotone_chainFiltration F hX) q (-n)
+
+instance (q : ℤ) (n : ℕ) : Epi (chainFiltrationToAbutmentFiltration F hX q n) := by
+  rw [chainFiltrationToAbutmentFiltration]
+  infer_instance
+
+/-- **The filtration of the abutment of a filtered space is the image filtration.** Under the
+identification `TauCeti.chainFiltrationAbutmentIso` of the abutment in degree `-n` with `Hₙ(F Y)`,
+the embedding of the `q`th piece of its filtration, precomposed with the epimorphism
+`TauCeti.chainFiltrationToAbutmentFiltration`, is the map `Hₙ(F (X q)) ⟶ Hₙ(F Y)` induced by the
+inclusion of `X q`. -/
+@[reassoc (attr := simp)]
+theorem chainFiltrationToAbutmentFiltration_comp_chainFiltrationAbutmentIso_hom
+    (q : ℤ) (n : ℕ) :
+    chainFiltrationToAbutmentFiltration F hX q n ≫
+        (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+          (monotone_chainFiltration F hX))).abutmentFiltrationι q (-n) ≫
+          (chainFiltrationAbutmentIso F hX n).hom =
+      homologyMap (F.map (TopPair.ofSubset (X q)).map) n := by
+  have h := extendHomologyIso_hom_naturality (F.map (TopPair.ofSubset (X q)).map)
+    ComplexShape.embeddingDownNat (j := n) rfl
+  rw [← Iso.inv_comp_eq, ← chainFiltrationι_def] at h
+  have h₂ := CochainComplex.toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom
+    (chainFiltration F X) (monotone_chainFiltration F hX) q (-n)
+  rw [chainFiltrationToAbutmentFiltration, chainFiltrationAbutmentIso_eq, Iso.trans_hom]
+  simp only [Category.assoc]
+  -- `chainFiltrationAbutmentIso` indexes the abutment by `ComplexShape.embeddingDownNat.f n`,
+  -- which is `-n` only up to unfolding, so `h₂` is rewritten up to that unfolding.
+  erw [reassoc_of% h₂]
+  rw [← homologyMap_comp_assoc, ← chainFiltrationIso_hom_comp_chainFiltrationι,
+    Iso.inv_hom_id_assoc]
+  -- The codomain of the map induced by the inclusion is `Y` only up to unfolding
+  -- `TopPair.ofSubset`, which `exact` performs.
+  exact h
+
+section TopColumn
+
+variable {q : ℤ} (hq : X (q + 1) = Set.univ)
+
+include hq in
+/-- If `X (q + 1)` is all of `Y`, the identification of the piece `F_{q+1}` of the filtration of
+the abutment in degree `-n` with `Hₙ(F Y)`. -/
+private def chainFiltrationTopFiltrationIso (n : ℕ) :
+    (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+      (monotone_chainFiltration F hX))).abutmentFiltration (q + 1) (-n) ≅ (F.obj Y).homology n :=
+  haveI := CochainComplex.isIso_filtrationAbutmentFiltrationι _
+    (monotone_chainFiltration F hX) (chainFiltration_eq_top F hq) (-n)
+  asIso ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+      (monotone_chainFiltration F hX))).abutmentFiltrationι (q + 1) (-n)) ≪≫
+    chainFiltrationAbutmentIso F hX n
+
+include hq in
+/-- **The projection onto the top column of the spectral sequence of a filtered space.** If
+`X (q + 1)` is all of `Y`, then `Hₙ(F Y)` is the piece `F_{q+1}` of the filtration of the abutment
+in degree `-n`, and this is its projection onto the graded piece `F_{q+1} / F_q`, the limit object
+`E∞` at `q` in degree `-n`. -/
+def chainFiltrationToTopColumnEInfty (n : ℕ) :
+    (F.obj Y).homology n ⟶ (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+      (monotone_chainFiltration F hX))).EInfty q (-n) :=
+  (chainFiltrationTopFiltrationIso F hX hq n).inv ≫
+    cokernel.π ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+      (monotone_chainFiltration F hX))).abutmentFiltrationMap q (-n)) ≫
+      ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+        (monotone_chainFiltration F hX))).EInftyIsoCokernel q (-n)).inv
+
+/-- **The defining property of the projection onto the top column.** On the piece `F_{q+1}` of the
+filtration of the abutment, identified with `Hₙ(F Y)`, the projection is the quotient map onto the
+cokernel of `F_q ⟶ F_{q+1}`, identified with `E∞`. -/
+@[reassoc]
+lemma abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom_comp_chainFiltrationToTopColumnEInfty
+    (n : ℕ) :
+    (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+        (monotone_chainFiltration F hX))).abutmentFiltrationι (q + 1) (-n) ≫
+        (chainFiltrationAbutmentIso F hX n).hom ≫ chainFiltrationToTopColumnEInfty F hX hq n =
+      cokernel.π ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+          (monotone_chainFiltration F hX))).abutmentFiltrationMap q (-n)) ≫
+        ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+          (monotone_chainFiltration F hX))).EInftyIsoCokernel q (-n)).inv :=
+  (Category.assoc _ _ _).symm.trans ((chainFiltrationTopFiltrationIso F hX hq n).hom_inv_id_assoc _)
+
+instance (n : ℕ) : Epi (chainFiltrationToTopColumnEInfty F hX hq n) := by
+  rw [chainFiltrationToTopColumnEInfty]
+  infer_instance
+
+end TopColumn
+
 /-- **Strong convergence of the spectral sequence of a finite filtration of a space.** If `F`
 vanishes on empty spaces, `X a = ∅` and `X b` is all of `Y`, then on every page `r ≥ 2` with
 `q - r + 2 ≤ a` and `b ≤ q + r - 1`, the object at `(p, q)` is the graded piece `F_{q+1} H / F_q H`
@@ -327,6 +432,66 @@ def chainFiltrationSpectralSequencePageXIsoGradedOfFinite
     (chainFiltration_eq_bot F hF ha) (chainFiltration_eq_top F hb) r hr pq hra hrb
 
 end ChainFunctor
+
+section ImageFiltration
+
+variable {k : Type u} [Ring k] (F : TopCat.{w} ⥤ ChainComplex (ModuleCat.{v} k) ℕ)
+  [∀ P : TopPair.{w}, Mono (F.map P.map)] {X : ℤ → Set Y} (hX : Monotone X)
+
+/-- **The filtration of the abutment of a filtered space is the image filtration.** Under the
+identification `TauCeti.chainFiltrationAbutmentIso` of the abutment in degree `-n` with `Hₙ(F Y)`,
+the `q`th piece of its filtration is the image of the map `Hₙ(F (X q)) ⟶ Hₙ(F Y)` induced by the
+inclusion of `X q`. -/
+theorem range_abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom (q : ℤ) (n : ℕ) :
+    LinearMap.range ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+        (monotone_chainFiltration F hX))).abutmentFiltrationι q (-n) ≫
+        (chainFiltrationAbutmentIso F hX n).hom).hom =
+      LinearMap.range (homologyMap (F.map (TopPair.ofSubset (X q)).map) n).hom := by
+  have h := congrArg (fun f ↦ LinearMap.range (ModuleCat.Hom.hom f))
+    (chainFiltrationToAbutmentFiltration_comp_chainFiltrationAbutmentIso_hom F hX q n)
+  simp only [ModuleCat.hom_comp] at h
+  rw [LinearMap.range_comp_of_range_eq_top _
+    ((ModuleCat.epi_iff_range_eq_top _).1 inferInstance)] at h
+  -- The codomain of the map induced by the inclusion is `Y` only up to unfolding
+  -- `TopPair.ofSubset`, which `exact` performs.
+  exact h
+
+/-- The projection onto the top column vanishes on a class `α ∈ Hₙ(F Y)` exactly when `α` comes
+from the homology of the chains of `X q`. -/
+theorem chainFiltrationToTopColumnEInfty_eq_zero_iff {q : ℤ} (hq : X (q + 1) = Set.univ) {n : ℕ}
+    (α : (F.obj Y).homology n) :
+    (chainFiltrationToTopColumnEInfty F hX hq n).hom α = 0 ↔
+      α ∈ LinearMap.range (homologyMap (F.map (TopPair.ofSubset (X q)).map) n).hom := by
+  set e := chainFiltrationTopFiltrationIso F hX hq n
+  set m := (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+    (monotone_chainFiltration F hX))).abutmentFiltrationMap q (-n)
+  -- The last factor of the projection is an isomorphism, so the projection vanishes exactly when
+  -- the class of `e⁻¹ α` in the cokernel of `m` does, that is, when `e⁻¹ α` lies in the range of
+  -- `m`.
+  have hproj : (chainFiltrationToTopColumnEInfty F hX hq n).hom α = 0 ↔
+      (cokernel.π m).hom (e.inv.hom α) = 0 := by
+    rw [chainFiltrationToTopColumnEInfty, ModuleCat.hom_comp, ModuleCat.hom_comp,
+      LinearMap.comp_apply, LinearMap.comp_apply]
+    exact ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+      (monotone_chainFiltration F hX))).EInftyIsoCokernel _ _).symm.toLinearEquiv.map_eq_zero_iff
+  have hπ : (cokernel.π m).hom (e.inv.hom α) = 0 ↔ e.inv.hom α ∈ LinearMap.range m.hom := by
+    rw [(ShortComplex.exact_cokernel m).moduleCat_range_eq_ker, LinearMap.mem_ker]
+  have hmem : e.inv.hom α ∈ LinearMap.range m.hom ↔ α ∈ LinearMap.range (m ≫ e.hom).hom := by
+    constructor
+    · rintro ⟨y, hy⟩
+      exact ⟨y, by simp [hy]⟩
+    · rintro ⟨y, hy⟩
+      exact ⟨y, by simp [← hy]⟩
+  -- Applying `e`, the range of `m` becomes the range of the embedding of `F_q`, which is the image
+  -- filtration.
+  have hm : m ≫ e.hom = (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+      (monotone_chainFiltration F hX))).abutmentFiltrationι q (-n) ≫
+      (chainFiltrationAbutmentIso F hX n).hom :=
+    Abelian.SpectralObject.abutmentFiltrationMap_ι_assoc _ _ _ _
+  rw [hproj, hπ, hmem, hm]
+  exact SetLike.ext_iff.1 (range_abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom F hX q n) α
+
+end ImageFiltration
 
 section ChainFunctorMap
 

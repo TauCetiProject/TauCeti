@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Epi
-public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
-public import Mathlib.RingTheory.Polynomial.Subring
 public import Mathlib.RingTheory.QuasiFinite.Basic
 public import TauCeti.LinearAlgebra.Charpoly.Projective
 public import TauCeti.RingTheory.Norm.Projective
@@ -380,36 +378,9 @@ theorem coeff_projectiveCharpolyRev_mem_eqLocus (f : A) (i : ℕ) :
 relation whose first morphism is finite locally free, that is, `B` is a finite projective
 `A`-module, then `A` is integral over the ring of invariants `{a : s a = t a}`. -/
 @[stacks 03BK]
-theorem isIntegral : Algebra.IsIntegral ((algebraMap A B).eqLocus t) A := by
-  refine ⟨fun f ↦ ?_⟩
-  set Q := LinearMap.projectiveCharpolyRev (Algebra.lmul A B (t f))
-  -- by Cayley–Hamilton, a monic reflection `p = Q.reflect n` of `Q` kills `t f`
-  obtain ⟨n, hn, hQn⟩ :=
-    LinearMap.exists_aeval_reflect_projectiveCharpolyRev_eq_zero (Algebra.lmul A B (t f))
-  have h1 : aeval (t f) (Q.reflect n) = 0 := by
-    have h1 := congr($hQn 1)
-    rw [Polynomial.aeval_algHom_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', mul_one]
-      at h1
-    exact h1
-  -- the coefficients of `p` are invariants
-  have hS : ((Q.reflect n).coeffs : Set A) ⊆ (algebraMap A B).eqLocus t := by
-    intro c hc
-    obtain ⟨i, -, rfl⟩ := mem_coeffs_iff.mp hc
-    rw [coeff_reflect]
-    exact h.coeff_projectiveCharpolyRev_mem_eqLocus f _
-  -- so `t (p f) = p (t f) = 0`, and `p f = 0` since `t` is injective
-  have hp : (Q.reflect n).map t = (Q.reflect n).map (algebraMap A B) := by
-    ext i
-    rw [coeff_map, coeff_map, coeff_reflect]
-    exact (mem_eqLocus.mp (h.coeff_projectiveCharpolyRev_mem_eqLocus f _)).symm
-  have h2 : eval f (Q.reflect n) = 0 := by
-    apply h.injective_right
-    rw [map_zero, ← h1, aeval_def, ← eval_map, ← hp, eval_map, eval₂_at_apply]
-  refine ⟨(Q.reflect n).toSubring _ hS,
-    (monic_toSubring _ _ _).mpr (LinearMap.monic_reflect_projectiveCharpolyRev _ hn), ?_⟩
-  rw [← eval_map]
-  convert h2
-  exact map_toSubring _ _ _
+theorem isIntegral : Algebra.IsIntegral ((algebraMap A B).eqLocus t) A :=
+  ⟨fun f ↦ t.isIntegral_of_coeff_projectiveCharpolyRev_mem_eqLocus h.injective_right f
+    (h.coeff_projectiveCharpolyRev_mem_eqLocus f)⟩
 
 /-! ### Points of the quotient
 

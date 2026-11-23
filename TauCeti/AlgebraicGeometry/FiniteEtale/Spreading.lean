@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.AlgebraicGeometry.Stalk
 import TauCeti.AlgebraicGeometry.FiniteEtale.BaseChange
 import TauCeti.AlgebraicGeometry.FiniteEtale.Gluing
-import TauCeti.AlgebraicGeometry.Limits.FinitePresentation
+import TauCeti.AlgebraicGeometry.Limits.Finite.Presentation
 import TauCeti.RingTheory.Etale.DirectLimit
 
 /-!

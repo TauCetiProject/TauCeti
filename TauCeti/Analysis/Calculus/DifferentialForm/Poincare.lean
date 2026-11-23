@@ -174,8 +174,9 @@ private theorem intervalIntegrable_integrand {x₀ x : E} {ω : E → E [⋀^Fin
       volume 0 1 := by
   have hmaps : MapsTo (lineMap x₀ x) (uIcc (0 : ℝ) 1) (segment ℝ x₀ x) := fun _ ht ↦
     lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht)
-  exact ((continuousOn_pow n).smul (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E)
-    (F := F) (n := n)).toContinuousLinearMap.flip (x - x₀)).continuous.comp_continuousOn
+  simp only [← ContinuousAlternatingMap.curryLeftFlipL_apply_apply (𝕜 := ℝ)]
+  exact ((continuousOn_pow n).smul ((ContinuousAlternatingMap.curryLeftFlipL (𝕜 := ℝ) (F := F)
+    (n := n) (x - x₀)).continuous.comp_continuousOn
       (hω.comp lineMap_continuous.continuousOn hmaps))).intervalIntegrable
 
 /-- The Poincaré homotopy operator is additive on forms that are continuous along the segment
@@ -244,8 +245,7 @@ theorem curryLeft_poincareHomotopy_sub_eq_zero (x₀ : E)
   · simp [intervalIntegral, integral_of_not_completeSpace hG]
   by_cases h : IntervalIntegrable
       (fun t : ℝ ↦ t ^ (n + 1) • (ω (lineMap x₀ x t)).curryLeft (x - x₀)) volume 0 1
-  · let L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-      (n := n)).toContinuousLinearMap.flip (x - x₀)
+  · let L := ContinuousAlternatingMap.curryLeftFlipL (𝕜 := ℝ) (F := F) (n := n) (x - x₀)
     have hL (f : E [⋀^Fin (n + 1)]→L[ℝ] F) : L f = f.curryLeft (x - x₀) := by simp [L]
     -- The codomain of `L` need not be complete, so commute the integral in its completion.
     have key := ContinuousLinearMap.intervalIntegral_comp_comm (𝕜 := ℝ)
@@ -541,8 +541,7 @@ private theorem hasFDerivWithinAt_integrand {x₀ : E} {u v : Set E}
     (hω : HasFDerivWithinAt ω ω' v (lineMap x₀ x t))
     (huv : MapsTo (fun x' ↦ lineMap x₀ x' t) u v) :
     HasFDerivWithinAt (fun x' ↦ (ω (lineMap x₀ x' t)).curryLeft (x' - x₀))
-      (t • ((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-          (n := n)).toContinuousLinearMap.flip (x - x₀) ∘L ω') +
+      (t • (ContinuousAlternatingMap.curryLeftFlipL (x - x₀) ∘L ω') +
         (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
           (n := n)).toContinuousLinearMap (ω (lineMap x₀ x t))) u x := by
   set L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
@@ -716,8 +715,7 @@ private theorem extDeriv_poincareHomotopy_eq (hs : StarConvex ℝ x₀ s) (hso :
     extDeriv (poincareHomotopy x₀ ω) x =
       ∫ t in (0 : ℝ)..1, t ^ n •
         (t • ContinuousAlternatingMap.alternatizeUncurryFin
-            ((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-              (n := n)).toContinuousLinearMap.flip (x - x₀) ∘L
+            (ContinuousAlternatingMap.curryLeftFlipL (x - x₀) ∘L
                 fderivWithin ℝ ω s (lineMap x₀ x t)) +
           (n + 1) • ω (lineMap x₀ x t)) := by
   have hW : IsOpen {p : E × ℝ | lineMap x₀ p.1 p.2 ∈ s} :=
@@ -801,12 +799,9 @@ private theorem integral_add_poincareHomotopy_extDerivWithin_eq (hs : StarConvex
     (hsu : UniqueDiffOn ℝ s) (hω : ContDiffOn ℝ 1 ω s) {x : E} (hx : x ∈ s) :
     (∫ t in (0 : ℝ)..1, t ^ n •
         (t • ContinuousAlternatingMap.alternatizeUncurryFin
-            ((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-              (n := n)).toContinuousLinearMap.flip (x - x₀) ∘L
+            (ContinuousAlternatingMap.curryLeftFlipL (x - x₀) ∘L
                 fderivWithin ℝ ω s (lineMap x₀ x t)) +
           (n + 1) • ω (lineMap x₀ x t))) + poincareHomotopy x₀ (extDerivWithin ω s) x = ω x := by
-  set L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-    (n := n)).toContinuousLinearMap
   set y := x - x₀
   have hmaps : MapsTo (lineMap x₀ x) (uIcc (0 : ℝ) 1) s := fun _ ht ↦
     hs.segment_subset hx (lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht))
@@ -814,15 +809,15 @@ private theorem integral_add_poincareHomotopy_extDerivWithin_eq (hs : StarConvex
     lineMap_continuous.continuousOn hmaps
   have hD_int : IntervalIntegrable (fun t : ℝ ↦ t ^ n •
       (t • ContinuousAlternatingMap.alternatizeUncurryFin
-          (L.flip y ∘L fderivWithin ℝ ω s (lineMap x₀ x t)) +
+          (ContinuousAlternatingMap.curryLeftFlipL y ∘L fderivWithin ℝ ω s (lineMap x₀ x t)) +
         (n + 1) • ω (lineMap x₀ x t))) volume 0 1 :=
     ContinuousOn.intervalIntegrable ((continuousOn_pow n).smul ((continuousOn_id.smul
       ((ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F).continuous.comp_continuousOn
-        ((ContinuousLinearMap.compL ℝ E _ _ (L.flip y)).continuous.comp_continuousOn
-          hDω_cont))).add
+        ((ContinuousLinearMap.compL ℝ E _ _ (ContinuousAlternatingMap.curryLeftFlipL (𝕜 := ℝ)
+          (F := F) (n := n) y)).continuous.comp_continuousOn hDω_cont))).add
         ((hω.continuousOn.comp lineMap_continuous.continuousOn hmaps).const_smul _)))
-  have hcurry := (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-    (n := n + 1)).toContinuousLinearMap.flip y).comp
+  have hcurry := ((ContinuousAlternatingMap.curryLeftFlipL (𝕜 := ℝ) (F := F) (n := n + 1)
+    y).comp
       (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F)).continuous.comp_continuousOn
         hDω_cont
   have hdω_int : IntervalIntegrable (fun t : ℝ ↦ t ^ (n + 1) •
@@ -836,7 +831,7 @@ private theorem integral_add_poincareHomotopy_extDerivWithin_eq (hs : StarConvex
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   have key := ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft
     (fderivWithin ℝ ω s (lineMap x₀ x t)) y
-  simp only [extDerivWithin, L]
+  simp only [extDerivWithin]
   rw [← Nat.cast_smul_eq_nsmul ℝ]
   linear_combination (norm := module) t ^ (n + 1) • key
 
@@ -954,8 +949,7 @@ private theorem extDerivWithin_poincareHomotopy_eq (hs : Convex ℝ s) (hsu : Un
     extDerivWithin (poincareHomotopy x₀ ω) s x =
       ∫ t in (0 : ℝ)..1, t ^ n •
         (t • ContinuousAlternatingMap.alternatizeUncurryFin
-            ((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-              (n := n)).toContinuousLinearMap.flip (x - x₀) ∘L
+            (ContinuousAlternatingMap.curryLeftFlipL (x - x₀) ∘L
                 fderivWithin ℝ ω s (lineMap x₀ x t)) +
           (n + 1) • ω (lineMap x₀ x t)) := by
   set L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
@@ -975,7 +969,8 @@ private theorem extDerivWithin_poincareHomotopy_eq (hs : Convex ℝ s) (hsu : Un
     funext fun x ↦ by rw [poincareHomotopy_apply, intervalIntegral_eq_integral_unitInterval]
   -- the partial derivative of the integrand, explicitly
   set D : ℝ → E →L[ℝ] E [⋀^Fin n]→L[ℝ] F := fun t ↦
-    t • (L.flip (x - x₀) ∘L fderivWithin ℝ ω s (lineMap x₀ x t)) + L (ω (lineMap x₀ x t))
+    t • (ContinuousAlternatingMap.curryLeftFlipL (x - x₀) ∘L fderivWithin ℝ ω s (lineMap x₀ x t)) +
+      L (ω (lineMap x₀ x t))
   have hD (t : I) : fderivWithin ℝ (fun x' ↦ (ω (lineMap x₀ x' (t : ℝ))).curryLeft (x' - x₀)) s x =
       D t :=
     (hasFDerivWithinAt_integrand ((hω.differentiableOn one_ne_zero _
@@ -983,7 +978,8 @@ private theorem extDerivWithin_poincareHomotopy_eq (hs : Convex ℝ s) (hsu : Un
   have hDc : ContinuousOn D (Icc 0 1) := by
     have hseg : MapsTo (lineMap x₀ x) (Icc (0 : ℝ) 1) s := fun t ht ↦ hmaps ⟨t, ht⟩ hx
     exact (continuousOn_id.smul ((ContinuousLinearMap.compL ℝ E _ _
-      (L.flip (x - x₀))).continuous.comp_continuousOn
+      (ContinuousAlternatingMap.curryLeftFlipL (𝕜 := ℝ) (F := F) (n := n)
+        (x - x₀))).continuous.comp_continuousOn
         ((hω.continuousOn_fderivWithin hsu le_rfl).comp lineMap_continuous.continuousOn
           hseg))).add (L.continuous.comp_continuousOn
             (hω.continuousOn.comp lineMap_continuous.continuousOn hseg))
