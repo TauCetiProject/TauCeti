@@ -30,8 +30,9 @@ This file develops what these properties give, independently of how such a tree 
   minimizes `f` among all sets separating two vertices, with value that minimum weight.
 * `IsFlowEquivalentTree.card_image_pairMinimumValue_le`: the minimum cut values between distinct
   vertices take at most `|V| - 1` distinct values, since each is a tree-edge weight.
-* `IsFlowEquivalentTree.exists_edge_weight_le_pairMinimumValue`: a minimum tree-edge weight is at
-  most every distinct-pair minimum cut value.
+* `IsFlowEquivalentTree.exists_edge_iInf_pairMinimumValue_eq_weight`: after applying an order
+  homomorphism into a complete lattice, the least pair minimum value over distinct vertices is a
+  minimum tree-edge weight, provided the tree has at least two vertices.
 * `IsCutTree.of_isMinimum_edgeSide`: a tree whose edges all leave minimum cuts between their ends
   is a cut tree for the weights given by those minimum cut values.
 
@@ -156,23 +157,21 @@ theorem exists_edge_weight_le_pairMinimumValue [Nontrivial V]
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
 
-/-- The least extended pair minimum value is the weight of a minimum-weight tree edge. The
-extended value is `⊤` on the diagonal, so the infimum uniformly covers all vertex pairs. -/
-theorem exists_edge_iInf_pairMinimumValue_eq_weight
-    {f : Finset V → ℕ} {T : SimpleGraph V} {w : Sym2 V → ℕ} [Nontrivial V]
-    (hT : IsFlowEquivalentTree f T w) :
+/-- If the tree has at least two vertices, the least image of its pair minimum values under an
+order homomorphism into a complete lattice is the image of a minimum-weight tree edge. -/
+theorem exists_edge_iInf_pairMinimumValue_eq_weight {L : Type*} [CompleteLattice L]
+    [Nontrivial V] (hT : IsFlowEquivalentTree f T w) (phi : K →o L) :
     ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
-      (⨅ s, ⨅ t, ⨅ (_ : s ≠ t), ((pairMinimumValue f s t : ℕ) : ℕ∞)) =
-        (w s(u, v) : ℕ∞) := by
+      (⨅ s, ⨅ t, ⨅ (_ : s ≠ t), phi (pairMinimumValue f s t)) = phi (w s(u, v)) := by
   obtain ⟨u, v, huv, hmin, hpair⟩ := hT.exists_edge_weight_le_pairMinimumValue
   refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
   · calc
-      (⨅ s, ⨅ t, ⨅ (_ : s ≠ t), ((pairMinimumValue f s t : ℕ) : ℕ∞)) ≤
-          ((pairMinimumValue f u v : ℕ) : ℕ∞) :=
+      (⨅ s, ⨅ t, ⨅ (_ : s ≠ t), phi (pairMinimumValue f s t)) ≤
+          phi (pairMinimumValue f u v) :=
         iInf_le_of_le u (iInf_le_of_le v (iInf_le_of_le huv.ne le_rfl))
-      _ = (w s(u, v) : ℕ∞) := congrArg (↑· : ℕ → ℕ∞) (hT.weight_eq huv).symm
+      _ = phi (w s(u, v)) := congrArg phi (hT.weight_eq huv).symm
   · refine le_iInf fun s ↦ le_iInf fun t ↦ le_iInf fun hst ↦ ?_
-    exact_mod_cast hpair s t hst
+    exact phi.monotone (hpair s t hst)
 
 end IsFlowEquivalentTree
 
