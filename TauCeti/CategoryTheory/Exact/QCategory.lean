@@ -56,6 +56,8 @@ loop space is the algebraic K-theory of `E`.
   faithfully into `Q(E)`.
 * `TauCeti.ExactStructure.QCategory.isIso_iff_exists_iso`: the isomorphisms of `Q(E)` are exactly
   those coming from isomorphisms of `C`.
+* `TauCeti.ExactStructure.QCategory.isIso_homMk_iff`: a span represents an isomorphism of `Q(E)`
+  exactly when both of its legs are isomorphisms.
 
 ## References
 
@@ -165,6 +167,7 @@ theorem ofDeflation_id (X : C) : ofDeflation (𝟙 X) (E.isDeflation_id X) = �
   homMk_id_id X
 
 /-- Distinct inflations give distinct morphisms of `Q(E)`. -/
+@[simp]
 theorem ofInflation_inj {X Y : C} {i i' : X ⟶ Y} (hi : E.IsInflation i) (hi' : E.IsInflation i') :
     ofInflation i hi = ofInflation i' hi' ↔ i = i' := by
   rw [ofInflation, ofInflation, homMk_eq_homMk_iff]
@@ -176,6 +179,7 @@ theorem ofInflation_inj {X Y : C} {i i' : X ⟶ Y} (hi : E.IsInflation i) (hi' :
     exact ⟨Iso.refl X, by simp, by simp⟩
 
 /-- Distinct deflations give distinct morphisms of `Q(E)`. -/
+@[simp]
 theorem ofDeflation_inj {X Y : C} {p p' : X ⟶ Y} (hp : E.IsDeflation p) (hp' : E.IsDeflation p') :
     ofDeflation p hp = ofDeflation p' hp' ↔ p = p' := by
   rw [ofDeflation, ofDeflation, homMk_eq_homMk_iff]
@@ -369,6 +373,21 @@ theorem isIso_iff_exists_iso {X Y : C} (f : (mk X : E.QCategory) ⟶ mk Y) :
   refine ⟨(asIso (inv i ≫ p)).symm, ?_⟩
   rw [homMk_eq_ofDeflation]
   exact (ofDeflation_hom (asIso (inv i ≫ p))).trans (by simp)
+
+/-- **An invertible span has both legs invertible.** The morphism of `Q(E)` represented by a
+span is an isomorphism exactly when both legs of the span are isomorphisms of `C`. -/
+theorem isIso_homMk_iff {X Y M : C} {p : M ⟶ X} {i : M ⟶ Y} (hp : E.IsDeflation p)
+    (hi : E.IsInflation i) : IsIso (homMk p i hp hi) ↔ IsIso p ∧ IsIso i := by
+  rw [isIso_iff_exists_iso]
+  constructor
+  · rintro ⟨e, he⟩
+    rw [ofIso_hom, ofInflation, homMk_eq_homMk_iff] at he
+    obtain ⟨f, rfl, rfl⟩ := he
+    exact ⟨by simpa using f.isIso_hom, inferInstance⟩
+  · rintro ⟨_, _⟩
+    refine ⟨asIso (inv p ≫ i), ?_⟩
+    rw [ofIso_hom, ofInflation, homMk_eq_homMk_iff]
+    exact ⟨asIso p, by simp, by simp⟩
 
 /-- **Morphisms out of the zero object of `Q(E)` are admissible subobjects.** A span
 `0 ↞ M ↣ Y` is determined up to isomorphism by the subobject of `Y` represented by its inflation
