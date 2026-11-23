@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.AlgebraicTopology.UniversalCover.Basic
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.Topology.SeparatedMap
 
 /-!

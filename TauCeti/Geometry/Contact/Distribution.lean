@@ -66,6 +66,8 @@ has no integral hypersurfaces.
   a smooth contact structure is defined near each point by a smooth one-form on the whole manifold.
 * `TauCeti.isContactDistribution_iff_forall_exists_isContactFormAt`: a `C^n` hyperplane field is a
   contact structure exactly when it is locally the kernel of one-forms that are contact.
+* `TauCeti.IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq`: a smooth
+  one-form whose kernel is a contact structure near a point is a contact form at that point.
 * `TauCeti.SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution`: a smooth one-form
   is a contact form exactly when its kernel is a contact structure.
 * `TauCeti.IsContactDistribution.even_finrank` and `TauCeti.IsContactDistribution.odd_finrank`:
@@ -243,6 +245,20 @@ theorem isContactDistribution_iff_forall_exists_isContactFormAt [IsManifold I (n
     obtain ⟨V, hV, hxV, X, hX⟩ := isContMDiffDistribution_iff.1 hD x
     exact ((RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
       (hV.mem_nhds hxV) hαd hαD).1 hα).2
+
+/-- **A smooth one-form defining a contact structure near a point is a contact form there.** If
+the kernel of a smooth one-form `α` is the `C^n` contact structure `D` near `x`, with `1 ≤ n`, then
+`α` is a contact form at `x`. -/
+theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
+    (hD : IsContactDistribution I n D) (hn : 1 ≤ n) {α : SmoothForm I M ℝ 1} {x : M}
+    (hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y) : IsContactFormAt α.val x := by
+  obtain ⟨V, hV, hxV, X, hX⟩ := isContMDiffDistribution_iff.1 hD.isContMDiffDistribution x
+  refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
+    (hV.mem_nhds hxV) (α.mdifferentiableAt x)
+    (hαD.mono fun y hy ↦ (SmoothForm.kerDistribution_eq_ker α y).symm.trans hy)).2
+    ⟨?_, hD.bijective_distributionLeviForm x⟩
+  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
+  exact hD.ne_top x
 
 /-! ### Kernels of contact forms -/
 

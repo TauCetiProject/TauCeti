@@ -9,6 +9,7 @@ public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Algebra.Group.Pi.Units
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Diagonal matrices: products with matrix units, and commutation
@@ -180,19 +181,9 @@ theorem prod_pow_mul_apply_mul {ι R : Type*} [Fintype ι] [CommMonoid R]
         ∏ q : ι × ι, M q.1 q.2 ^ n q := by
   have hterm (q : ι × ι) :
       (s q.1 * M q.1 q.2 * s q.2) ^ n q =
-        (s q.1 ^ n q * s q.2 ^ n q) * M q.1 q.2 ^ n q := by
-    rw [mul_right_comm, mul_pow, mul_pow]
+        (s q.1 * s q.2) ^ n q * M q.1 q.2 ^ n q := by
+    rw [mul_right_comm, mul_pow]
   simp_rw [hterm]
-  rw [Finset.prod_mul_distrib, Finset.prod_mul_distrib]
-  congr 1
-  have hleft : (∏ q : ι × ι, s q.1 ^ n q) = ∏ i : ι, s i ^ ∑ j : ι, n (i, j) := by
-    rw [Fintype.prod_prod_type]
-    exact Finset.prod_congr rfl fun i _ ↦ by simp [Finset.prod_pow_eq_pow_sum]
-  have hright : (∏ q : ι × ι, s q.2 ^ n q) = ∏ i : ι, s i ^ ∑ j : ι, n (j, i) := by
-    rw [Fintype.prod_prod_type, Finset.prod_comm]
-    exact Finset.prod_congr rfl fun i _ ↦ by simp [Finset.prod_pow_eq_pow_sum]
-  rw [hleft, hright, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun i _ ↦ ?_
-  rw [← pow_add, ← Finset.sum_add_distrib]
+  rw [Finset.prod_mul_distrib, ← Finset.univ_product_univ, Finset.prod_product_mul_pow]
 
 end Matrix
