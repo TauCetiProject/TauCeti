@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import TauCeti.Algebra.TemperleyLieb.Quotient.Tower
-import TauCeti.Combinatorics.SimpleGraph.PathGraph
+import TauCeti.Combinatorics.SimpleGraph.PathGraph.Basic
 import TauCeti.RingTheory.Idempotents.Jacobson
 /-! # Low-strand examples of positive Jones quotients and Markov formulas
 

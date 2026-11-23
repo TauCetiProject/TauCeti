@@ -17,11 +17,11 @@ Restricting `TauCeti.Algebra.TemperleyLieb.PathModel` to genuine `n`-step walks 
 decomposing by their endpoint in `G.walkEndpoints v₀ n` extends the path model to arbitrary locally
 finite graphs: `PathAlgebra K G v₀ n`, one-step extension homomorphisms `walkExtend` /
 `walkStarExtend` (injective when no reachable vertex is a dead end), Temperley–Lieb
-(`⋆`-)representations `walkRep` / `walkStarRep` and `walkRep_surjective`, the weighted last-step
-closure map `walkExpect` (a unital `walkExtend`-bimodule retraction when `r` is nowhere zero,
-`δ ≠ 0`, and `r ^ 2` is a `δ`-eigenvector; positivity and C⋆-conditional expectations are developed
-in `Quotient.Positivity` and `Quotient.Tower`), and the Markov trace `walkTrace` /
-`isMarkovTrace_walkTrace`.
+(`⋆`-)representations `pathAlgebraRep` / `pathAlgebraStarRep` and `pathAlgebraRep_surjective`,
+the weighted last-step closure map `walkExpect` (a unital `walkExtend`-bimodule retraction when
+`r` is nowhere zero, `δ ≠ 0`, and `r ^ 2` is a `δ`-eigenvector; positivity and C⋆-conditional
+expectations are developed in `Quotient.Positivity` and `Quotient.Tower`), and the Markov trace
+`walkTrace` / `isMarkovTrace_walkTrace`.
 
 ## References
 
@@ -526,7 +526,7 @@ variable {G v₀ r} (hr : ∀ v, r v ≠ 0) {δ : K}
   (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2) {n : ℕ}
 variable (G v₀) in
 /-- Endpoint-graded path representation `TemperleyLieb K δ n →ₐ[K] PathAlgebra K G v₀ n`. -/
-def walkRep : TemperleyLieb K δ n →ₐ[K] PathAlgebra K G v₀ n :=
+def pathAlgebraRep : TemperleyLieb K δ n →ₐ[K] PathAlgebra K G v₀ n :=
   lift (fun i ↦ walkGenerator G v₀ r ⟨i, by omega⟩ ⟨i + 1, by omega⟩ ⟨i + 2, by omega⟩)
     (fun _ ↦ walkGenerator_mul_self hr hδ rfl rfl)
     (fun {i j} h ↦ by
@@ -536,38 +536,39 @@ def walkRep : TemperleyLieb K δ n →ₐ[K] PathAlgebra K G v₀ n :=
     (fun {_ _} h ↦ by
       refine walkGenerator_mul_walkGenerator_comm rfl rfl rfl rfl ?_ ?_ ?_ ?_ ?_ <;>
         (simp [Fin.ext_iff]; omega))
-@[simp] theorem walkRep_e (i : Fin (n - 1)) : walkRep G v₀ hr hδ (e δ i) =
+@[simp] theorem pathAlgebraRep_e (i : Fin (n - 1)) : pathAlgebraRep G v₀ hr hδ (e δ i) =
     walkGenerator G v₀ r ⟨i, by omega⟩ ⟨i + 1, by omega⟩ ⟨i + 2, by omega⟩ := lift_e _ _ _ _ i
-/-- `walkRep` intertwines `strandIncl` with `walkExtend`. -/
-@[simp] theorem walkRep_strandIncl {m : ℕ} (x : TemperleyLieb K δ (m + 1)) :
-    walkRep G v₀ hr hδ (strandIncl x) = walkExtend G v₀ (walkRep G v₀ hr hδ x) :=
-  DFunLike.congr_fun (hom_ext (F := (walkRep G v₀ hr hδ).comp strandIncl)
-    (G := (walkExtend G v₀).comp (walkRep G v₀ hr hδ)) fun i ↦ by
-      simp only [AlgHom.comp_apply, strandIncl_e, walkRep_e]
+/-- `pathAlgebraRep` intertwines `strandIncl` with `walkExtend`. -/
+@[simp] theorem pathAlgebraRep_strandIncl {m : ℕ} (x : TemperleyLieb K δ (m + 1)) :
+    pathAlgebraRep G v₀ hr hδ (strandIncl x) = walkExtend G v₀ (pathAlgebraRep G v₀ hr hδ x) :=
+  DFunLike.congr_fun (hom_ext (F := (pathAlgebraRep G v₀ hr hδ).comp strandIncl)
+    (G := (walkExtend G v₀).comp (pathAlgebraRep G v₀ hr hδ)) fun i ↦ by
+      simp only [AlgHom.comp_apply, strandIncl_e, pathAlgebraRep_e]
       exact (walkExtend_walkGenerator (a := ⟨i, by omega⟩) (b := ⟨i + 1, by omega⟩)
         (c := ⟨i + 2, by omega⟩) rfl).symm) x
-/-- `walkRep` intertwines `strandInclAll n` with `walkExtend` at every level `n ≥ 0`. -/
-@[simp] theorem walkRep_strandInclAll (n : ℕ) (x : TemperleyLieb K δ n) :
-    walkRep G v₀ hr hδ (strandInclAll n x) = walkExtend G v₀ (walkRep G v₀ hr hδ x) := by
+/-- `pathAlgebraRep` intertwines `strandInclAll n` with `walkExtend` at every level `n ≥ 0`. -/
+@[simp] theorem pathAlgebraRep_strandInclAll (n : ℕ) (x : TemperleyLieb K δ n) :
+    pathAlgebraRep G v₀ hr hδ (strandInclAll n x) =
+      walkExtend G v₀ (pathAlgebraRep G v₀ hr hδ x) := by
   cases n with
   | zero => rw [eq_algebraMap_aug_zero x]; simp
-  | succ _ => rw [strandInclAll_succ, walkRep_strandIncl]
+  | succ _ => rw [strandInclAll_succ, pathAlgebraRep_strandIncl]
 section Star
 variable [StarRing K] (hrs : ∀ v, IsSelfAdjoint (r v)) [Fact (IsSelfAdjoint δ)]
 include hrs in
-/-- For self-adjoint weights `r`, `walkRep` preserves the `⋆`-involution. -/
-@[simp] theorem walkRep_star (x : TemperleyLieb K δ n) :
-    walkRep G v₀ hr hδ (star x) = star (walkRep G v₀ hr hδ x) :=
+/-- For self-adjoint weights `r`, `pathAlgebraRep` preserves the `⋆`-involution. -/
+@[simp] theorem pathAlgebraRep_star (x : TemperleyLieb K δ n) :
+    pathAlgebraRep G v₀ hr hδ (star x) = star (pathAlgebraRep G v₀ hr hδ x) :=
   (map_star_iff.mpr fun i ↦ by
     have := i.isLt; obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-    funext v; rw [Pi.star_apply, Matrix.star_eq_conjTranspose, walkRep_e,
+    funext v; rw [Pi.star_apply, Matrix.star_eq_conjTranspose, pathAlgebraRep_e,
       conjTranspose_walkGenerator hrs rfl rfl v]) x
 variable (G v₀) in
 /-- The **endpoint-graded path `⋆`-representation** of `TemperleyLieb K δ n`. -/
-def walkStarRep : TemperleyLieb K δ n →⋆ₐ[K] PathAlgebra K G v₀ n :=
-  { walkRep G v₀ hr hδ with map_star' := walkRep_star hr hδ hrs }
-@[simp] theorem walkStarRep_toAlgHom :
-    (walkStarRep G v₀ hr hδ hrs (n := n)).toAlgHom = walkRep G v₀ hr hδ := (rfl)
+def pathAlgebraStarRep : TemperleyLieb K δ n →⋆ₐ[K] PathAlgebra K G v₀ n :=
+  { pathAlgebraRep G v₀ hr hδ with map_star' := pathAlgebraRep_star hr hδ hrs }
+@[simp] theorem pathAlgebraStarRep_toAlgHom :
+    (pathAlgebraStarRep G v₀ hr hδ hrs (n := n)).toAlgHom = pathAlgebraRep G v₀ hr hδ := (rfl)
 end Star
 end Representation
 section Surjective
@@ -638,30 +639,32 @@ private theorem walkExtend_blockSingle_mul_walkGenerator_mul_walkExtend_blockSin
     · rw [walkGenerator_apply, ite_eq_right fun ⟨heq, _, _⟩ ↦
         hst (Subtype.ext (by simpa [p₀.apply_last_eq] using heq.symm))]
     all_goals rfl
-private theorem blockSingle_mem_walkRep_range_of_mem_walkEndpoints
-    {m : ℕ} (ih : Function.Surjective (walkRep G v₀ hr hδ (n := m + 1)))
+private theorem blockSingle_mem_pathAlgebraRep_range_of_mem_walkEndpoints
+    {m : ℕ} (ih : Function.Surjective (pathAlgebraRep G v₀ hr hδ (n := m + 1)))
     (t : G.walkEndpoints v₀ (m + 2)) (ht : t.val ∈ G.walkEndpoints v₀ m)
     (p q : G.EndpointWalk v₀ (m + 2) t.val) :
-    PathAlgebra.blockSingle t p q (1 : K) ∈ (walkRep G v₀ hr hδ (n := m + 2)).range := by
+    PathAlgebra.blockSingle t p q (1 : K) ∈ (pathAlgebraRep G v₀ hr hδ (n := m + 2)).range := by
   obtain ⟨p₀⟩ := (G.mem_walkEndpoints_iff v₀).1 ht
   let u := p (Fin.last (m + 1)).castSucc; let u' := q (Fin.last (m + 1)).castSucc
   obtain ⟨a, ha⟩ := ih (PathAlgebra.blockSingle ⟨u, (G.mem_walkEndpoints_iff v₀).2 ⟨p.init⟩⟩
     p.init (p₀.snoc p.adj_init_last.symm) 1)
   obtain ⟨b, hb⟩ := ih (PathAlgebra.blockSingle ⟨u', (G.mem_walkEndpoints_iff v₀).2 ⟨q.init⟩⟩
     (p₀.snoc q.adj_init_last.symm) q.init 1)
-  let R := (walkRep G v₀ hr hδ (n := m + 2)).range
+  let R := (pathAlgebraRep G v₀ hr hδ (n := m + 2)).range
   have hprod : (r u * r u' / r t.val ^ 2) • PathAlgebra.blockSingle t p q 1 ∈ R := by
     rw [← walkExtend_blockSingle_mul_walkGenerator_mul_walkExtend_blockSingle t p₀ p q]
-    exact (walkRep G v₀ hr hδ).mem_range.2 ⟨strandIncl a * e δ (Fin.last m) * strandIncl b, by
-      simp only [map_mul, walkRep_strandIncl, ha, hb, walkRep_e]; rfl⟩
+    exact (pathAlgebraRep G v₀ hr hδ).mem_range.2
+      ⟨strandIncl a * e δ (Fin.last m) * strandIncl b, by
+        simp only [map_mul, pathAlgebraRep_strandIncl, ha, hb, pathAlgebraRep_e]; rfl⟩
   have hc : r u * r u' / r t.val ^ 2 ≠ 0 :=
     div_ne_zero (mul_ne_zero (hr u) (hr u')) (pow_ne_zero 2 (hr t.val))
   convert R.smul_mem hprod (r u * r u' / r t.val ^ 2)⁻¹ using 1
   rw [smul_smul, inv_mul_cancel₀ hc, one_smul]
-/-- Under an injective unit-step height from `v₀` with nonzero weights, `walkRep` is surjective. -/
-theorem walkRep_surjective {f : V → ℕ} (hf : Function.Injective f) (hf₀ : f v₀ = 0)
+/-- Under an injective unit-step height from `v₀` with nonzero weights, `pathAlgebraRep` is
+surjective. -/
+theorem pathAlgebraRep_surjective {f : V → ℕ} (hf : Function.Injective f) (hf₀ : f v₀ = 0)
     (hadj : ∀ {x y}, G.Adj x y → f x + 1 = f y ∨ f y + 1 = f x) :
-    ∀ n : ℕ, Function.Surjective (walkRep G v₀ hr hδ (n := n))
+    ∀ n : ℕ, Function.Surjective (pathAlgebraRep G v₀ hr hδ (n := n))
   | 0 => fun X ↦ ⟨algebraMap K _ (X ⟨v₀, by simp⟩ default default), by
     ext ⟨v, hv⟩ p q; obtain rfl : v = v₀ := by simpa using hv
     rw [Subsingleton.elim p default, Subsingleton.elim q default]
@@ -674,9 +677,9 @@ theorem walkRep_surjective {f : V → ℕ} (hf : Function.Injective f) (hf₀ : 
       obtain rfl : v = v₁ :=
         Finset.card_le_one.1 (G.card_walkEndpoints_one_le_one v₀ hf hf₀ hadj) v hv v₁ hv₁
       rw [Subsingleton.elim p p₁, Subsingleton.elim q p₁]; simp [Algebra.algebraMap_eq_smul_one]
-  | m + 2 => fun X ↦ (walkRep G v₀ hr hδ).mem_range.1 <| by
-    have ih := walkRep_surjective hf hf₀ hadj (m + 1)
-    let R := (walkRep G v₀ hr hδ (n := m + 2)).range
+  | m + 2 => fun X ↦ (pathAlgebraRep G v₀ hr hδ).mem_range.1 <| by
+    have ih := pathAlgebraRep_surjective hf hf₀ hadj (m + 1)
+    let R := (pathAlgebraRep G v₀ hr hδ (n := m + 2)).range
     have hmax {s : G.walkEndpoints v₀ (m + 2)} (hs : s.val ∉ G.walkEndpoints v₀ m) :
         f s.val = m + 2 := by
       obtain ⟨w⟩ := (G.mem_walkEndpoints_iff v₀).1 s.property
@@ -686,7 +689,7 @@ theorem walkRep_surjective {f : V → ℕ} (hf : Function.Injective f) (hf₀ : 
     rw [X.eq_sum_blockSingle]
     refine R.sum_mem fun t _ ↦ R.sum_mem fun p _ ↦ R.sum_mem fun q _ ↦ R.smul_mem ?_ _
     by_cases ht : t.val ∈ G.walkEndpoints v₀ m
-    · exact blockSingle_mem_walkRep_range_of_mem_walkEndpoints hr hδ ih t ht p q
+    · exact blockSingle_mem_pathAlgebraRep_range_of_mem_walkEndpoints hr hδ ih t ht p q
     · have := EndpointWalk.subsingleton_of_last_eq hf hf₀ hadj (hmax ht)
       obtain rfl : p = q := Subsingleton.elim _ _
       have h1 : (1 : PathAlgebra K G v₀ (m + 2)) = PathAlgebra.blockSingle t p p 1 +
@@ -695,7 +698,7 @@ theorem walkRep_surjective {f : V → ℕ} (hf : Function.Injective f) (hf₀ : 
           Fintype.sum_subsingleton _ p]
       rw [eq_sub_of_add_eq h1.symm]
       exact R.sub_mem R.one_mem <| R.sum_mem fun s hs ↦ R.sum_mem fun w _ ↦
-        blockSingle_mem_walkRep_range_of_mem_walkEndpoints hr hδ ih s (by_contra fun hns ↦
+        blockSingle_mem_pathAlgebraRep_range_of_mem_walkEndpoints hr hδ ih s (by_contra fun hns ↦
           Finset.ne_of_mem_erase hs <| Subtype.ext <| hf ((hmax hns).trans (hmax ht).symm)) w w
 end Surjective
 section WalkTraceMarkov
@@ -754,18 +757,20 @@ theorem walkTrace_walkExtend_mul_walkGenerator (hr : ∀ v, r v ≠ 0) {n : ℕ}
         fun _ _ h ↦ ite_eq_right h.symm, ite_eq_left rfl, Matrix.diag_apply]
 variable (hr : ∀ v, r v ≠ 0) {δ : K} (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
 variable (G v₀) in
-/-- Pulling back `walkTrace` along `walkRep` defines a Markov trace on the Temperley–Lieb tower. -/
+/-- Pulling back `walkTrace` along `pathAlgebraRep` defines a Markov trace on the Temperley–Lieb
+tower. -/
 theorem isMarkovTrace_walkTrace :
-    IsMarkovTrace K δ (fun n ↦ (walkTrace G v₀ r).comp (walkRep G v₀ hr hδ (n := n)).toLinearMap) :=
+    IsMarkovTrace K δ
+      (fun n ↦ (walkTrace G v₀ r).comp (pathAlgebraRep G v₀ hr hδ (n := n)).toLinearMap) :=
   ⟨fun _ ↦ by simp [walkTrace_one (hr v₀) hδ], fun _ _ _ ↦ by simp [walkTrace_mul_comm],
     fun _ _ ↦ by simp [walkTrace_walkExtend hδ], fun _ _ ↦ by
-      simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, map_mul, walkRep_strandIncl,
-        walkRep_e]; exact walkTrace_walkExtend_mul_walkGenerator hr _ rfl rfl rfl⟩
+      simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, map_mul, pathAlgebraRep_strandIncl,
+        pathAlgebraRep_e]; exact walkTrace_walkExtend_mul_walkGenerator hr _ rfl rfl rfl⟩
 variable (G v₀) in
-/-- By uniqueness of the Markov trace, any Markov trace `tr` equals `walkTrace ∘ walkRep`. -/
-theorem IsMarkovTrace.eq_walkTrace_comp_walkRep {tr : ∀ n : ℕ, TemperleyLieb K δ n →ₗ[K] K}
+/-- By uniqueness of the Markov trace, any Markov trace `tr` equals `walkTrace ∘ pathAlgebraRep`. -/
+theorem IsMarkovTrace.eq_walkTrace_comp_pathAlgebraRep {tr : ∀ n : ℕ, TemperleyLieb K δ n →ₗ[K] K}
     (htr : IsMarkovTrace K δ tr) (n : ℕ) (x : TemperleyLieb K δ n) :
-    tr n x = walkTrace G v₀ r (walkRep G v₀ hr hδ x) :=
+    tr n x = walkTrace G v₀ r (pathAlgebraRep G v₀ hr hδ x) :=
   LinearMap.congr_fun (congrFun (htr.unique (isMarkovTrace_walkTrace G v₀ hr hδ)) n) x
 end WalkTraceMarkov
 end WalkRep
@@ -773,14 +778,14 @@ section FiniteGraph
 variable {K : Type*} [Field K] {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
   [DecidableRel G.Adj] (v₀ : V) {r : V → K} (hr : ∀ v, r v ≠ 0) {δ : K}
   (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
-/-- On a finite graph, `walkRep` agrees entrywise with `pathRep` on genuine walks. -/
-theorem walkRep_eq_pathRep_apply {n : ℕ} (x : TemperleyLieb K δ n)
+/-- On a finite graph, `pathAlgebraRep` agrees entrywise with `pathRep` on genuine walks. -/
+theorem pathAlgebraRep_eq_pathRep_apply {n : ℕ} (x : TemperleyLieb K δ n)
     (v : G.walkEndpoints v₀ n) (p q : G.EndpointWalk v₀ n v.val) :
-    walkRep G v₀ hr hδ x v p q = pathRep G v₀ hr (.of_forall hδ n) x p q := by
+    pathAlgebraRep G v₀ hr hδ x v p q = pathRep G v₀ hr (.of_forall hδ n) x p q := by
   induction x using TemperleyLieb.induction generalizing p q with
   | e _ =>
     have hp : G.IsWalkFrom v₀ ⇑p := p.isWalkFrom
-    simp only [walkRep_e, pathRep_e, walkGenerator_apply, pathGenerator_apply, hp, true_and]
+    simp only [pathAlgebraRep_e, pathRep_e, walkGenerator_apply, pathGenerator_apply, hp, true_and]
   | algebraMap _ =>
     simp [Algebra.algebraMap_eq_smul_one, Matrix.one_apply, DFunLike.coe_injective.eq_iff]
   | add _ _ hx hy => simp [hx, hy]
@@ -794,9 +799,9 @@ theorem walkRep_eq_pathRep_apply {n : ℕ} (x : TemperleyLieb K δ n)
       rw [pathRep_apply_eq_zero hr (.of_forall hδ n) x (s := ⇑p) fun ⟨hp, hlast⟩ ↦ hu <|
         Finset.mem_image.2 ⟨⟨u, hp.1 p.isWalkFrom, hlast.symm.trans p.apply_last_eq⟩,
           Finset.mem_univ _, rfl⟩, zero_mul]
-/-- On a finite graph, `walkTrace ∘ walkRep` coincides with `pathTrace`. -/
-theorem walkTrace_walkRep_eq_pathTrace {n : ℕ} (x : TemperleyLieb K δ n) :
-    walkTrace G v₀ r (walkRep G v₀ hr hδ x) = pathTrace G v₀ hr (.of_forall hδ n) x :=
-  ((isMarkovTrace_pathTrace G v₀ hr hδ).eq_walkTrace_comp_walkRep G v₀ hr hδ n x).symm
+/-- On a finite graph, `walkTrace ∘ pathAlgebraRep` coincides with `pathTrace`. -/
+theorem walkTrace_pathAlgebraRep_eq_pathTrace {n : ℕ} (x : TemperleyLieb K δ n) :
+    walkTrace G v₀ r (pathAlgebraRep G v₀ hr hδ x) = pathTrace G v₀ hr (.of_forall hδ n) x :=
+  ((isMarkovTrace_pathTrace G v₀ hr hδ).eq_walkTrace_comp_pathAlgebraRep G v₀ hr hδ n x).symm
 end FiniteGraph
 end TauCeti.TemperleyLieb

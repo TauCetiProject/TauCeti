@@ -15,7 +15,7 @@ import Mathlib.Analysis.Matrix.Order
 
 Over `ℂ` with self-adjoint weights `r : V → ℂ`, `walkTrace` on `PathAlgebra ℂ G v₀ n` is a
 positive tracial functional (and faithful when every `r v ≠ 0`), identifying `htr.traceRadical n`
-with the kernel of `walkStarRep` and descending under an injective unit-step height to
+with the kernel of `pathAlgebraStarRep` and descending under an injective unit-step height to
 `htr.Quotient n ≃⋆ₐ[ℂ] PathAlgebra ℂ G v₀ n` (`quotientPathAlgebraEquiv`), yielding multimatrix
 decompositions across `δ = 2 cos (π / m)` (`m ≥ 2`) and `δ ≥ 2`, and the existence classification of
 positive semidefinite Markov traces across `δ = 0 ∨ δ ∈ jonesLoopParameters`.
@@ -107,48 +107,50 @@ variable {V : Type*} (G : SimpleGraph V) [DecidableEq V] [DecidableRel G.Adj] [G
   (v₀ : V) {r : V → ℂ} (hr : ∀ v, r v ≠ 0) (hrs : ∀ v, IsSelfAdjoint (r v))
   {δ : ℂ} [Fact (IsSelfAdjoint δ)] (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
   {tr : ∀ n : ℕ, TemperleyLieb ℂ δ n →ₗ[ℂ] ℂ} (htr : IsMarkovTrace ℂ δ tr)
-/-- Faithfulness of `walkPositiveTrace` identifies `htr.traceRadical n` with `ker walkStarRep`. -/
-theorem traceRadical_eq_ker_walkStarRep (n : ℕ) :
-    htr.traceRadical n = RingHom.ker (walkStarRep G v₀ hr hδ hrs (n := n)) :=
+/-- Faithfulness of `walkPositiveTrace` identifies `htr.traceRadical n` with
+`ker pathAlgebraStarRep`. -/
+theorem traceRadical_eq_ker_pathAlgebraStarRep (n : ℕ) :
+    htr.traceRadical n = RingHom.ker (pathAlgebraStarRep G v₀ hr hδ hrs (n := n)) :=
   (tr n).traceRadical_eq_ker_of_nullSubmodule_eq_bot (htr.map_mul_comm n)
     (walkPositiveTrace G v₀ hrs n) (nullSubmodule_walkPositiveTrace hr hrs n)
-    (walkStarRep G v₀ hr hδ hrs) fun a ↦ by
-      rw [walkPositiveTrace_apply, ← StarAlgHom.coe_toAlgHom, walkStarRep_toAlgHom hr hδ hrs]
-      exact (htr.eq_walkTrace_comp_walkRep G v₀ hr hδ n a).symm
-/-- `walkStarRep` descended to a `⋆`-homomorphism `htr.Quotient n →⋆ₐ[ℂ] PathAlgebra ℂ G v₀ n`. -/
+    (pathAlgebraStarRep G v₀ hr hδ hrs) fun a ↦ by
+      rw [walkPositiveTrace_apply, ← StarAlgHom.coe_toAlgHom, pathAlgebraStarRep_toAlgHom hr hδ hrs]
+      exact (htr.eq_walkTrace_comp_pathAlgebraRep G v₀ hr hδ n a).symm
+/-- `pathAlgebraStarRep` descended to a `⋆`-homomorphism
+`htr.Quotient n →⋆ₐ[ℂ] PathAlgebra ℂ G v₀ n`. -/
 def quotientToPathAlgebra (n : ℕ) : htr.Quotient n →⋆ₐ[ℂ] PathAlgebra ℂ G v₀ n :=
-  { Ideal.Quotient.liftₐ (htr.traceRadical n) (walkRep G v₀ hr hδ) fun a ha ↦ by
-      rwa [htr.traceRadical_eq_ker_walkStarRep G v₀ hr hrs hδ n, RingHom.mem_ker,
-        ← StarAlgHom.coe_toAlgHom, walkStarRep_toAlgHom hr hδ hrs] at ha with
+  { Ideal.Quotient.liftₐ (htr.traceRadical n) (pathAlgebraRep G v₀ hr hδ) fun a ha ↦ by
+      rwa [htr.traceRadical_eq_ker_pathAlgebraStarRep G v₀ hr hrs hδ n, RingHom.mem_ker,
+        ← StarAlgHom.coe_toAlgHom, pathAlgebraStarRep_toAlgHom hr hδ hrs] at ha with
     map_star' x := by
       obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x; rw [Ideal.Quotient.star_mk]
-      exact walkRep_star hr hδ hrs a }
+      exact pathAlgebraRep_star hr hδ hrs a }
 @[simp] theorem quotientToPathAlgebra_mk {n : ℕ} (x : TemperleyLieb ℂ δ n) :
     htr.quotientToPathAlgebra G v₀ hr hrs hδ n (Ideal.Quotient.mk (htr.traceRadical n) x) =
-      walkRep G v₀ hr hδ x := (rfl)
+      pathAlgebraRep G v₀ hr hδ x := (rfl)
 /-- The descended `⋆`-homomorphism `quotientToPathAlgebra` is injective. -/
 theorem quotientToPathAlgebra_injective (n : ℕ) :
     Function.Injective (htr.quotientToPathAlgebra G v₀ hr hrs hδ n) := fun x y hxy ↦ by
   rcases Ideal.Quotient.mk_surjective x, Ideal.Quotient.mk_surjective y with ⟨⟨_, rfl⟩, ⟨_, rfl⟩⟩
   rwa [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem,
-    htr.traceRadical_eq_ker_walkStarRep G v₀ hr hrs hδ n, RingHom.mem_ker, map_sub, sub_eq_zero,
-    ← StarAlgHom.coe_toAlgHom, walkStarRep_toAlgHom hr hδ hrs]
+    htr.traceRadical_eq_ker_pathAlgebraStarRep G v₀ hr hrs hδ n, RingHom.mem_ker, map_sub,
+    sub_eq_zero, ← StarAlgHom.coe_toAlgHom, pathAlgebraStarRep_toAlgHom hr hδ hrs]
 variable {f : V → ℕ} (hf : Function.Injective f) (hf₀ : f v₀ = 0)
   (hadj : ∀ {x y}, G.Adj x y → f x + 1 = f y ∨ f y + 1 = f x)
 /-- **Multimatrix decomposition of a positive trace quotient** via an injective unit-step height. -/
 def quotientPathAlgebraEquiv (n : ℕ) : htr.Quotient n ≃⋆ₐ[ℂ] PathAlgebra ℂ G v₀ n :=
   StarAlgEquiv.ofBijective (htr.quotientToPathAlgebra G v₀ hr hrs hδ n)
     ⟨htr.quotientToPathAlgebra_injective G v₀ hr hrs hδ n, fun X ↦
-      let ⟨a, ha⟩ := walkRep_surjective hr hδ hf hf₀ hadj n X; ⟨Ideal.Quotient.mk _ a, ha⟩⟩
+      let ⟨a, ha⟩ := pathAlgebraRep_surjective hr hδ hf hf₀ hadj n X; ⟨Ideal.Quotient.mk _ a, ha⟩⟩
 @[simp] theorem quotientPathAlgebraEquiv_mk {n : ℕ} (x : TemperleyLieb ℂ δ n) :
     htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj n
-        (Ideal.Quotient.mk (htr.traceRadical n) x) = walkRep G v₀ hr hδ x := (rfl)
+        (Ideal.Quotient.mk (htr.traceRadical n) x) = pathAlgebraRep G v₀ hr hδ x := (rfl)
 /-- `quotientPathAlgebraEquiv` intertwines `walkTrace` with the quotient trace of `tr n`. -/
 @[simp] theorem walkTrace_quotientPathAlgebraEquiv {n : ℕ} (x : htr.Quotient n) :
     walkTrace G v₀ r (htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj n x) =
       (tr n).quotientTrace (htr.map_mul_comm n) x := by
   obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x
-  exact (htr.eq_walkTrace_comp_walkRep G v₀ hr hδ n _).symm.trans
+  exact (htr.eq_walkTrace_comp_pathAlgebraRep G v₀ hr hδ n _).symm.trans
     (LinearMap.quotientTrace_mk _ _ _).symm
 /-- `quotientPathAlgebraEquiv` intertwines `quotientStrandIncl` with `walkExtend`. -/
 theorem quotientPathAlgebraEquiv_quotientStrandIncl (n : ℕ) (x : htr.Quotient n) :
@@ -178,11 +180,12 @@ def discreteQuotientEquiv {m : ℕ} (hm : 2 ≤ m) (hδ : δ = 2 * cos (π / m))
     discretePathWeight_ne_zero (isSelfAdjoint_discretePathWeight m)
     (fun v ↦ by rw [hδ]; exact sum_neighborFinset_discretePathWeight_sq v)
     Fin.val_injective rfl (fun h ↦ pathGraph_adj.1 h) n
-/-- Evaluating `discreteQuotientEquiv` on a quotient class computes `walkRep` on `A_(m-1)`. -/
+/-- Evaluating `discreteQuotientEquiv` on a quotient class computes `pathAlgebraRep` on
+`A_(m-1)`. -/
 @[simp] theorem discreteQuotientEquiv_mk {m : ℕ} (hm : 2 ≤ m) (hδ : δ = 2 * cos (π / m))
     {n : ℕ} (x : TemperleyLieb ℂ (δ : ℂ) n) :
     htr.discreteQuotientEquiv hm hδ n (Ideal.Quotient.mk (htr.traceRadical n) x) =
-      walkRep (pathGraph (m - 1)) ⟨0, Nat.sub_pos_of_lt (by omega)⟩
+      pathAlgebraRep (pathGraph (m - 1)) ⟨0, Nat.sub_pos_of_lt (by omega)⟩
         discretePathWeight_ne_zero
         (fun v ↦ by rw [hδ]; exact sum_neighborFinset_discretePathWeight_sq v) x := (rfl)
 /-- **Generic Jones quotient decomposition** for `δ ≥ 2` on `A_∞` (`hasse ℕ`). -/
@@ -190,10 +193,10 @@ def genericQuotientEquiv (hδ : 2 ≤ δ) (n : ℕ) : htr.Quotient n ≃⋆ₐ[�
   htr.quotientPathAlgebraEquiv (hasse ℕ) 0 (genericPathWeight_ne_zero hδ)
     (isSelfAdjoint_genericPathWeight δ) (sum_neighborFinset_genericPathWeight_sq hδ)
     Function.injective_id rfl (fun h ↦ hasse_nat_adj.1 h) n
-/-- Evaluating `genericQuotientEquiv` on a quotient class computes `walkRep` on `A_∞`. -/
+/-- Evaluating `genericQuotientEquiv` on a quotient class computes `pathAlgebraRep` on `A_∞`. -/
 @[simp] theorem genericQuotientEquiv_mk (hδ : 2 ≤ δ) {n : ℕ} (x : TemperleyLieb ℂ (δ : ℂ) n) :
     htr.genericQuotientEquiv hδ n (Ideal.Quotient.mk (htr.traceRadical n) x) =
-      walkRep (hasse ℕ) 0 (genericPathWeight_ne_zero hδ)
+      pathAlgebraRep (hasse ℕ) 0 (genericPathWeight_ne_zero hδ)
         (sum_neighborFinset_genericPathWeight_sq hδ) x := (rfl)
 end JonesQuotients
 end IsMarkovTrace
