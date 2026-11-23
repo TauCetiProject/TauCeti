@@ -260,14 +260,13 @@ end Basic
 section SecondResolvent
 
 variable {𝕜 X : Type*} [Ring 𝕜] [AddCommGroup X] [TopologicalSpace X] [Module 𝕜 X]
-  [IsTopologicalAddGroup X]
 variable {A : X →ₗ.[𝕜] X} {z : 𝕜}
 
 /-- **The second resolvent identity.** If `dom A ⊆ dom V` and `z` lies in the resolvent sets of
 both `A` and `A + V`, then `R_{A+V}(z) - R_A(z) = R_{A+V}(z) V R_A(z)`. -/
 theorem resolvent_add_sub_apply {V : X →ₗ.[𝕜] X} (h : A.domain ≤ V.domain)
     (hz : z ∈ A.resolventSet) (hz' : z ∈ (A + V).resolventSet) (y : X) :
-    ((A + V).resolvent z - A.resolvent z) y = (A + V).resolvent z (compResolvent h hz y) := by
+    (A + V).resolvent z y - A.resolvent z y = (A + V).resolvent z (compResolvent h hz y) := by
   set x := A.resolvent z y
   have hx : x ∈ (A + V).domain := ⟨resolvent_mem_domain hz y, h (resolvent_mem_domain hz y)⟩
   have hsolve := resolvent_smul_sub_apply hz' ⟨x, hx⟩
@@ -276,7 +275,7 @@ theorem resolvent_add_sub_apply {V : X →ₗ.[𝕜] X} (h : A.domain ≤ V.doma
     rw [add_apply, hAx]
     abel
   rw [hsplit, ContinuousLinearMap.map_sub] at hsolve
-  rw [_root_.sub_apply, compResolvent_apply]
+  rw [compResolvent_apply]
   exact sub_eq_iff_comm.mp hsolve
 
 end SecondResolvent

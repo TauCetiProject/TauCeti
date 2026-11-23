@@ -209,9 +209,10 @@ end Definition
 
 section Radius
 
-variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [AddCommGroup G]
-  [TopologicalSpace G] [Module 𝕜 G] [ContinuousConstSMul 𝕜 G] {V : E →ₗ.[𝕜] G} {A : E →ₗ.[𝕜] F}
+variable {𝕜 S T E F G : Type*} [NontriviallyNormedField 𝕜] [Ring S] [SeminormedRing T]
+  {σ : 𝕜 →+* S} {τ : 𝕜 →+* T} [RingHomIsometric τ] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [Module T F] [IsBoundedSMul T F] [AddCommGroup G]
+  [TopologicalSpace G] [Module S G] [ContinuousConstSMul S G] {V : E →ₛₗ.[σ] G} {A : E →ₛₗ.[τ] F}
 
 /-- **One radius suffices for relative compactness.** For any `r > 0`, the map `V` is `A`-compact
 exactly when `dom A ⊆ dom V` and `V` maps the vectors of graph norm at most `r` into a compact
@@ -224,14 +225,20 @@ theorem isRelativelyCompact_iff_exists_isCompact_of_pos {r : ℝ} (hr : 0 < r) :
   have hc0 : 0 < ‖c‖ := (le_max_right _ _).trans_lt hc
   have hc' : c ≠ 0 := norm_pos_iff.1 hc0
   have hCr : C ≤ ‖c‖ * r := (div_le_iff₀ hr).1 ((le_max_left (C / r) 0).trans hc.le)
-  refine ⟨c • K, hK.smul c, fun x hx ↦ ?_⟩
+  refine ⟨σ c • K, hK.smul (σ c), fun x hx ↦ ?_⟩
   set y : A.domain := c⁻¹ • x
   have hy : ‖(y : E)‖ + ‖A y‖ ≤ r := by
-    rw [A.map_smul, Submodule.coe_smul, norm_smul, norm_smul, ← mul_add, norm_inv,
-      inv_mul_le_iff₀ hc0]
+    have hAy : ‖A y‖ ≤ ‖c⁻¹‖ * ‖A x‖ := by
+      rw [A.map_smulₛₗ, ← RingHomIsometric.norm_map (σ := τ)]
+      exact norm_smul_le _ _
+    have hxy : ‖(y : E)‖ = ‖c⁻¹‖ * ‖(x : E)‖ := by rw [Submodule.coe_smul, norm_smul]
+    rw [norm_inv] at hAy hxy
+    have : ‖c‖⁻¹ * (‖(x : E)‖ + ‖A x‖) ≤ r := by
+      rw [inv_mul_le_iff₀ hc0]
+      linarith
     linarith
-  have hVx : V ⟨x, h x.property⟩ = c • V ⟨y, h y.property⟩ := by
-    rw [← V.map_smul]
+  have hVx : V ⟨x, h x.property⟩ = σ c • V ⟨y, h y.property⟩ := by
+    rw [← V.map_smulₛₗ]
     exact congrArg V (Subtype.ext (by simp [y, smul_smul, mul_inv_cancel₀ hc']))
   rw [hVx]
   exact Set.smul_mem_smul_set (hKV y hy)
@@ -240,20 +247,39 @@ end Radius
 
 section Bounded
 
-variable {𝕜 E F G : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup G]
-  [NormedSpace 𝕜 G] {V : E →ₗ.[𝕜] G} {A : E →ₗ.[𝕜] F}
+variable {𝕜 𝕜₂ 𝕜₃ E F G : Type*} [NontriviallyNormedField 𝕜] [NormedField 𝕜₂] [NormedField 𝕜₃]
+  {σ : 𝕜 →+* 𝕜₂} {τ : 𝕜 →+* 𝕜₃} [RingHomIsometric σ] [RingHomIsometric τ]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜₃ F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜₂ G] {V : E →ₛₗ.[σ] G} {A : E →ₛₗ.[τ] F}
 
 /-- A relatively compact map is relatively bounded, with equal constants. -/
 theorem IsRelativelyCompact.exists_isRelativelyBounded_const (hV : V.IsRelativelyCompact A) :
     ∃ M, V.IsRelativelyBounded A M M := by
   obtain ⟨K, hK, hKV⟩ := hV.exists_isCompact 1
-  obtain ⟨M, hM⟩ := hK.isBounded.exists_norm_le
-  refine ⟨M, by_contra fun h ↦ ?_⟩
-  obtain ⟨u, hu1, hu2⟩ := exists_normalized_of_not_isRelativelyBounded hV.domain_le h
-  have := hM _ (hKV u hu1.le)
-  rw [← mul_add, hu1, mul_one] at hu2
-  linarith
+  obtain ⟨M, hM0, hM⟩ := hK.isBounded.exists_pos_norm_le
+  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
+  -- The graph seminorm `p` of `A` and the seminorm `q = ‖V ·‖` on `dom A`.
+  let p : Seminorm 𝕜 A.domain :=
+    (normSeminorm 𝕜 E).comp A.domain.subtype + (normSeminorm 𝕜₃ F).comp A.toFun
+  let q : Seminorm 𝕜 A.domain :=
+    (normSeminorm 𝕜₂ G).comp (V.toFun ∘ₛₗ Submodule.inclusion hV.domain_le)
+  have hp (x : A.domain) : p x = ‖(x : E)‖ + ‖A x‖ := rfl
+  have hq (x : A.domain) : q x = ‖V ⟨x, hV.domain_le x.property⟩‖ := rfl
+  have hqM (x : A.domain) (hx : p x ≤ 1) : q x ≤ M := hM _ (hKV x hx)
+  refine ⟨M * ‖c‖, hV.domain_le, fun x ↦ ?_⟩
+  rw [← hq, ← mul_add, ← hp]
+  rcases eq_or_ne (p x) 0 with hx | hx
+  · -- Every multiple of a graph-norm-null vector has graph norm at most one, so `q x = 0`.
+    rw [hx, mul_zero]
+    by_contra! h
+    obtain ⟨d, hd⟩ := NormedField.exists_lt_norm 𝕜 (M / q x)
+    have hqd := hqM (d • x) (by rw [map_smul_eq_mul, hx, mul_zero]; exact zero_le_one)
+    rw [map_smul_eq_mul] at hqd
+    rw [div_lt_iff₀ h] at hd
+    linarith
+  · refine p.bound_of_shell q one_pos hc (fun y hy₁ hy₂ ↦ ?_) hx
+    rw [div_le_iff₀ (zero_lt_one.trans hc)] at hy₁
+    nlinarith [hqM y hy₂.le]
 
 end Bounded
 
@@ -329,7 +355,7 @@ theorem IsRelativelyCompact.isCompactOperator_resolvent_add_sub {V : E →ₗ.[�
   obtain ⟨h, hc⟩ := (isRelativelyCompact_iff_isCompactOperator_compResolvent hz).1 hV
   have heq : ⇑((A + V).resolvent z - A.resolvent z) =
       (A + V).resolvent z ∘ compResolvent h hz :=
-    funext (resolvent_add_sub_apply h hz hz')
+    funext fun y ↦ resolvent_add_sub_apply h hz hz' y
   rw [heq]
   exact hc.clm_comp ((A + V).resolvent z)
 

@@ -8,12 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
 public import TauCeti.Analysis.Normed.Operator.LinearPMap.Relative.Compact
 import Mathlib.Analysis.InnerProductSpace.Dual
-import Mathlib.Analysis.InnerProductSpace.ProdL2
-import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
-import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.KatoRellich
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.SubmoduleAdjoint
-import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Relatively compact perturbations on Hilbert space
@@ -32,8 +28,8 @@ and `A` differ by a compact operator at every nonreal point, the input of Weyl's
 
 ## Main declarations
 
-* `LinearPMap.tendsto_dual_apply_of_isClosable`: for closable `A` and `A`-bounded `V`, a sequence
-  `uₙ → 0` of `dom A` with `‖A uₙ‖ ≤ 1` has `V uₙ → 0` weakly.
+* `LinearPMap.tendsto_dual_apply_of_isClosable`: for closable `A` and `A`-bounded `V`, a family
+  `uᵢ → 0` of `dom A` with `‖A uᵢ‖` eventually bounded has `V uᵢ → 0` weakly.
 * `LinearPMap.IsRelativelyCompact.exists_isRelativelyBounded`: for closable `A`, relative
   compactness gives relative bound zero.
 * `LinearPMap.IsRelativelyCompact.add_right`, `LinearPMap.IsRelativelyCompact.add_right_self`: for
@@ -58,37 +54,39 @@ open scoped InnerProductSpace
 
 namespace LinearPMap
 
-variable {𝕜 E F G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-/-- For a closable `A`, an `A`-bounded `V` and a sequence `uₙ → 0` of `dom A` with `‖A uₙ‖ ≤ 1`,
-the vectors `V uₙ` tend to zero weakly. -/
-theorem tendsto_dual_apply_of_isClosable {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
-    (hA : A.IsClosable) {a b : ℝ} (hV : V.IsRelativelyBounded A a b) {u : ℕ → A.domain}
-    (hu : Tendsto (fun n ↦ (u n : E)) atTop (𝓝 0)) (hAu : ∀ n, ‖A (u n)‖ ≤ 1)
+/-- For a closable `A`, an `A`-bounded `V` and a family `uᵢ → 0` of `dom A` with `‖A uᵢ‖`
+eventually bounded, the vectors `V uᵢ` tend to zero weakly. -/
+theorem tendsto_dual_apply_of_isClosable {G : Type*} [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G} (hA : A.IsClosable) {a b : ℝ}
+    (hV : V.IsRelativelyBounded A a b) {ι : Type*} {l : Filter ι} {u : ι → A.domain} {C : ℝ}
+    (hu : Tendsto (fun i ↦ (u i : E)) l (𝓝 0)) (hAu : ∀ᶠ i in l, ‖A (u i)‖ ≤ C)
     (f : StrongDual 𝕜 G) :
-    Tendsto (fun n ↦ f (V ⟨u n, hV.domain_le (u n).property⟩)) atTop (𝓝 0) := by
+    Tendsto (fun i ↦ f (V ⟨u i, hV.domain_le (u i).property⟩)) l (𝓝 0) := by
   obtain ⟨g, hg⟩ := exists_dual_apply_eq_of_isRelativelyBounded hV f
-  have hsplit (n : ℕ) : f (V ⟨u n, hV.domain_le (u n).property⟩) =
-      g (ContinuousLinearMap.inl 𝕜 E F (u n)) + g (ContinuousLinearMap.inr 𝕜 E F (A (u n))) := by
+  have hsplit (i : ι) : f (V ⟨u i, hV.domain_le (u i).property⟩) =
+      g (ContinuousLinearMap.inl 𝕜 E F (u i)) + g (ContinuousLinearMap.inr 𝕜 E F (A (u i))) := by
     rw [hg, ← _root_.map_add g]
     simp
-  have h₁ : Tendsto (fun n ↦ g (ContinuousLinearMap.inl 𝕜 E F (u n))) atTop (𝓝 0) := by
+  have h₁ : Tendsto (fun i ↦ g (ContinuousLinearMap.inl 𝕜 E F (u i))) l (𝓝 0) := by
     simpa [Function.comp_def, Prod.mk_zero_zero] using
       ((g.comp (ContinuousLinearMap.inl 𝕜 E F)).continuous.tendsto 0).comp hu
   -- The second coordinate is represented by a vector `k` of the Hilbert space `F`.
   set k := (InnerProductSpace.toDual 𝕜 F).symm (g.comp (ContinuousLinearMap.inr 𝕜 E F))
-  have h₂ : Tendsto (fun n ↦ g (ContinuousLinearMap.inr 𝕜 E F (A (u n)))) atTop (𝓝 0) := by
+  have h₂ : Tendsto (fun i ↦ g (ContinuousLinearMap.inr 𝕜 E F (A (u i)))) l (𝓝 0) := by
     have hk (y : F) : g (ContinuousLinearMap.inr 𝕜 E F y) = ⟪k, y⟫_𝕜 := by
       rw [InnerProductSpace.toDual_symm_apply, ContinuousLinearMap.comp_apply]
     simp_rw [hk]
     have := ((RCLike.continuous_conj (K := 𝕜)).tendsto 0).comp
       (tendsto_inner_apply_of_isClosable hA hu hAu k)
     rw [_root_.map_zero] at this
-    exact this.congr fun n ↦ inner_conj_symm _ _
+    exact this.congr fun i ↦ inner_conj_symm _ _
   simp_rw [hsplit]
   simpa using h₁.add h₂
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
 /-- **A relatively compact map has relative bound zero** (Teschl, Lemma 6.22; Kato, §IV.1.3).
 Let `A` be a closable partial linear map between Hilbert spaces. If `V` is `A`-compact, then for
@@ -124,7 +122,7 @@ theorem IsRelativelyCompact.exists_isRelativelyBounded {A : E →ₗ.[𝕜] F} {
   have hu : Tendsto (fun n ↦ (u n : E)) atTop (𝓝 0) := tendsto_zero_iff_norm_tendsto_zero.2 hu0
   have hw0 : w = 0 := SeparatingDual.eq_zero_of_forall_dual_eq_zero fun f ↦
     tendsto_nhds_unique ((f.continuous.tendsto w).comp hlim)
-      ((tendsto_dual_apply_of_isClosable hA hC hu hAu f).comp hφ.tendsto_atTop)
+      ((tendsto_dual_apply_of_isClosable hA hC hu (.of_forall hAu) f).comp hφ.tendsto_atTop)
   rw [hw0, norm_zero] at hw
   linarith
 
