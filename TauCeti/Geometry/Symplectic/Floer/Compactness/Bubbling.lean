@@ -146,7 +146,8 @@ private theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_o
   have hN : φ.source ∩ φ ⁻¹' ball (φ x) (κ / 2) ∈ 𝓝 x :=
     inter_mem (extChartAt_source_mem_nhds x)
       ((continuousAt_extChartAt x).preimage_mem_nhds (ball_mem_nhds _ (half_pos hκ)))
-  obtain ⟨V, hV, hVN⟩ := hK.exists_mem_nhds_inter_preimage_subset he he_inj hx hN
+  obtain ⟨V, hV, hVN⟩ :=
+    hK.exists_mem_nhds_inter_preimage_subset he he_inj hx (mem_nhdsWithin_of_mem_nhds hN)
   obtain ⟨ρ, hρ, hρV⟩ := Metric.mem_nhds_iff.1 hV
   refine ⟨δ, hδ, C, hC, ρ, hρ, fun Ω u z₀ r hΩ hr hBΩ hBD hu hfl hρu hint hE ↦ ?_⟩
   have huN {y : ℝ × ℝ} (hy : y ∈ closedBall z₀ r) :

@@ -15,6 +15,8 @@ public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
+public import Mathlib.Topology.Algebra.Module.Star
+public import TauCeti.LinearAlgebra.Basis.Semilinear
 -- Private: `Subspace.dual_finrank_eq` is used only inside proofs.
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Multilinear.Basis
@@ -79,7 +81,8 @@ topology given in advance.
 The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of a finite
 basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
-`Module.Basis.equivFun_symm_apply`.
+`Module.Basis.equivFun_symm_apply`. Over a field with a continuous star, the conjugation of the
+coordinates `Module.Basis.coordConj` is continuous: `Module.Basis.coordConjL`.
 A composition `S ∘ T` of continuous linear maps expands in the products `b l ∘ a k` of finite
 bases `b` and `a` of the spaces of continuous linear maps containing `S` and `T`, with the products
 of their coordinates as coefficients: `ContinuousLinearMap.comp_eq_sum_coord`.
@@ -376,6 +379,28 @@ vector `x` to the linear combination `∑ i, x i • v i`. -/
     v.equivFunL.symm x = ∑ i, x i • v i :=
   v.equivFunL.symm_apply_eq.2 <| funext fun i ↦ by
     rw [equivFunL_apply, ← equivFun_apply, ← v.equivFun_symm_apply, LinearEquiv.apply_symm_apply]
+
+variable [StarRing 𝕜] [ContinuousStar 𝕜]
+
+/-- The conjugation of the coordinates `Module.Basis.coordConj` in a finite basis `v`, as a
+continuous conjugate-linear automorphism. -/
+noncomputable def coordConjL (v : Basis ι 𝕜 E) : E ≃SL[starRingEnd 𝕜] E :=
+  v.equivFunL.trans ((starL 𝕜 : (ι → 𝕜) ≃L⋆[𝕜] (ι → 𝕜)).trans v.equivFunL.symm)
+
+/-- Forgetting continuity in the continuous conjugation of the coordinates recovers the algebraic
+one. -/
+@[simp] theorem coordConjL_toLinearEquiv (v : Basis ι 𝕜 E) :
+    v.coordConjL.toLinearEquiv = v.coordConj :=
+  LinearEquiv.ext fun x ↦ by
+    simp [coordConjL, coordConj_apply]
+
+/-- The continuous conjugation of the coordinates evaluates as the algebraic one. -/
+@[simp] theorem coordConjL_apply (v : Basis ι 𝕜 E) (x : E) : v.coordConjL x = v.coordConj x :=
+  LinearEquiv.congr_fun v.coordConjL_toLinearEquiv x
+
+/-- The continuous conjugation of the coordinates is its own inverse. -/
+@[simp] theorem coordConjL_symm (v : Basis ι 𝕜 E) : v.coordConjL.symm = v.coordConjL :=
+  ContinuousLinearEquiv.ext <| funext fun x ↦ v.coordConjL.injective (by simp)
 
 end Module.Basis
 
