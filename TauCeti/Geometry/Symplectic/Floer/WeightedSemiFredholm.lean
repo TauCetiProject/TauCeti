@@ -39,10 +39,13 @@ All in the namespace `TauCeti.SymplecticForm`:
   regular along `u`, an unweighted semi-Fredholm estimate with constants `C`, `T` implies the
   weighted one with constant `8 (1 + δ²) C`, for every weight exponent with slope at most `δ`,
   where `4 C δ² ≤ 1`.
+* `setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLinearization_add`: its case
+  `ρ(s) = δ √(1 + s²)` for `|δ| ≤ δ₀` with `4 C δ₀² ≤ 1`, the smooth weight comparable to
+  `e^{δ |s|}`.
 * `exists_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add`: the weighted
   semi-Fredholm estimate along a Floer trajectory between nondegenerate orbits.
 * `exists_forall_setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLinearization_add`: its case
-  `ρ(s) = δ √(1 + s²)`, the smooth weight comparable to `e^{δ |s|}`.
+  `ρ(s) = δ √(1 + s²)`.
 
 The Sobolev completion and the Fredholm property itself are not treated here.
 
@@ -253,6 +256,58 @@ theorem setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add (ω : Symp
     _ ≤ (2 + 2 * δ ^ 2) * (4 * C * (X + Y)) := by gcongr
     _ = _ := by ring
 
+/-- A constant `C ≥ 0` admits a slope bound `δ > 0` with `4 C δ² ≤ 1`, namely
+`δ = 1 / (2 (C + 1))`. -/
+private theorem exists_pos_four_mul_mul_sq_le_one {C : ℝ} (hC : 0 ≤ C) :
+    ∃ δ > 0, 4 * C * δ ^ 2 ≤ 1 := by
+  refine ⟨1 / (2 * (C + 1)), by positivity, ?_⟩
+  have h : 4 * C * (1 / (2 * (C + 1))) ^ 2 = C / (C + 1) ^ 2 := by
+    field_simp
+    ring
+  rw [h, div_le_one (by positivity)]
+  nlinarith
+
+/-- **The semi-Fredholm estimate with weight `e^{δ ⟨s⟩}` from the unweighted one.** Under the
+hypotheses of `setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add`, with
+`4 C δ₀² ≤ 1`, every `|δ| ≤ δ₀` gives the weighted estimate with constant `8 (1 + δ₀²) C` for the
+weight `e^{2 δ √(1 + s²)}`, which is comparable to `e^{2 δ |s|}`: the exponent
+`ρ(s) = δ √(1 + s²)` has slope `ρ' = δ s / √(1 + s²)`, of absolute value at most `|δ|`. -/
+theorem setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLinearization_add (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1 (uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u) {C T δ₀ : ℝ}
+    (hC : 0 ≤ C) (hδ₀ : 4 * C * δ₀ ^ 2 ≤ 1)
+    (hest : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+            ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+          C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) +
+            ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2))
+    {δ : ℝ} (hδ : |δ| ≤ δ₀) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ)
+    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) {a b : ℝ} (hab : a ≤ b)
+    (hξ₀ : ∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) :
+    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, Real.exp (2 * (δ * √(1 + z.1 ^ 2))) *
+        (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 +
+          ‖ξ z‖ ^ 2) ≤
+      8 * (1 + δ₀ ^ 2) * C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
+          Real.exp (2 * (δ * √(1 + z.1 ^ 2))) * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) +
+        ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1,
+          Real.exp (2 * (δ * √(1 + z.1 ^ 2))) * ‖ξ z‖ ^ 2) := by
+  refine ω.setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add hJ hKs hKt hu hC hδ₀
+    hest (ρ := fun s ↦ δ * √(1 + s ^ 2)) ?_ (fun s ↦ ?_) hξ hper hab hξ₀
+  · exact contDiff_const.mul ((contDiff_const.add (contDiff_id.pow 2)).sqrt fun s ↦ by positivity)
+  · -- `ρ' = δ s / √(1 + s²)`, and `|s| ≤ √(1 + s²)`.
+    have hpos : 0 < 1 + s ^ 2 := by positivity
+    have h1 : HasDerivAt (fun s ↦ 1 + s ^ 2) (2 * s) s := by
+      simpa using (hasDerivAt_pow 2 s).const_add 1
+    have hq : |2 * s / (2 * √(1 + s ^ 2))| ≤ 1 := by
+      rw [mul_div_mul_left _ _ two_ne_zero, abs_div, abs_of_pos (Real.sqrt_pos.2 hpos)]
+      exact div_le_one_of_le₀ (Real.abs_le_sqrt (by linarith)) (Real.sqrt_nonneg _)
+    rw [((h1.sqrt hpos.ne').const_mul δ).deriv, abs_mul]
+    calc _ ≤ |δ| * 1 := by gcongr
+      _ ≤ δ₀ := by rwa [mul_one]
+
 /-- **The weighted semi-Fredholm estimate along a Floer trajectory.** Under the hypotheses of the
 unweighted estimate `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add`, for a
 Floer trajectory `u` from `xm` to `xp` between nondegenerate one-periodic orbits, there are
@@ -294,15 +349,8 @@ theorem exists_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_
             ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, Real.exp (2 * ρ z.1) * ‖ξ z‖ ^ 2) := by
   obtain ⟨C, hC, T, hest⟩ := ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add
     hX hH hxm hndm hxp hndp hJ hJxm hJxp hu hJu huxm huxp hδm hδp
-  set δ := 1 / (2 * (C + 1))
-  have hδ : 4 * C * δ ^ 2 ≤ 1 := by
-    have h : 4 * C * δ ^ 2 = C / (C + 1) ^ 2 := by
-      simp only [δ]
-      field_simp
-      ring
-    rw [h, div_le_one (by positivity)]
-    nlinarith
-  refine ⟨8 * (1 + δ ^ 2) * C, by positivity, T, δ, by positivity,
+  obtain ⟨δ, hδpos, hδ⟩ := exists_pos_four_mul_mul_sq_le_one hC
+  refine ⟨8 * (1 + δ ^ 2) * C, by positivity, T, δ, hδpos,
     fun ρ hρ hρδ ξ hξ hper a b hab hξ₀ ↦ ?_⟩
   exact ω.setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add
     (J := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
@@ -310,11 +358,12 @@ theorem exists_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_
     (fun _ ↦ contDiffAt_const) (fun _ ↦ (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt)
     hu hC hδ hest hρ hρδ hξ hper hab hξ₀
 
-/-- **The semi-Fredholm estimate with weight `e^{δ ⟨s⟩}`.** Under the hypotheses of
-`exists_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add`, there are `C ≥ 0`,
-`T` and `δ₀ > 0` such that for every `|δ| ≤ δ₀` the estimate holds with the weight
+/-- **The semi-Fredholm estimate with weight `e^{δ ⟨s⟩}` along a Floer trajectory.** Under the
+hypotheses of `exists_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add`, there
+are `C ≥ 0`, `T` and `δ₀ > 0` such that for every `|δ| ≤ δ₀` the estimate holds with the weight
 `e^{2 δ √(1 + s²)}`, which is comparable to `e^{2 δ |s|}`. For `δ > 0` these are the weighted norms
-forcing exponential decay of sections at both ends of the cylinder. -/
+forcing exponential decay of sections at both ends of the cylinder. This is the case of
+`setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLinearization_add` along a Floer trajectory. -/
 theorem exists_forall_setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLinearization_add
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
@@ -346,20 +395,15 @@ theorem exists_forall_setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLineariza
             (fun w ↦ H w.2) u ξ z‖ ^ 2) +
             ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1,
               Real.exp (2 * (δ * √(1 + z.1 ^ 2))) * ‖ξ z‖ ^ 2) := by
-  obtain ⟨C, hC, T, δ₀, hδ₀, h⟩ :=
-    ω.exists_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add hX hH hxm hndm
-      hxp hndp hJ hJxm hJxp hu hJu huxm huxp hδm hδp
-  refine ⟨C, hC, T, δ₀, hδ₀, fun δ hδ ↦ h (ρ := fun s ↦ δ * √(1 + s ^ 2)) ?_ fun s ↦ ?_⟩
-  · exact contDiff_const.mul ((contDiff_const.add (contDiff_id.pow 2)).sqrt fun s ↦ by positivity)
-  · -- `ρ' = δ s / √(1 + s²)`, and `|s| ≤ √(1 + s²)`.
-    have hpos : 0 < 1 + s ^ 2 := by positivity
-    have h1 : HasDerivAt (fun s ↦ 1 + s ^ 2) (2 * s) s := by
-      simpa using (hasDerivAt_pow 2 s).const_add 1
-    have hq : |2 * s / (2 * √(1 + s ^ 2))| ≤ 1 := by
-      rw [mul_div_mul_left _ _ two_ne_zero, abs_div, abs_of_pos (Real.sqrt_pos.2 hpos)]
-      exact div_le_one_of_le₀ (Real.abs_le_sqrt (by linarith)) (Real.sqrt_nonneg _)
-    rw [((h1.sqrt hpos.ne').const_mul δ).deriv, abs_mul]
-    calc _ ≤ |δ| * 1 := by gcongr
-      _ ≤ δ₀ := by rwa [mul_one]
+  obtain ⟨C, hC, T, hest⟩ := ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add
+    hX hH hxm hndm hxp hndp hJ hJxm hJxp hu hJu huxm huxp hδm hδp
+  obtain ⟨δ₀, hδ₀pos, hδ₀⟩ := exists_pos_four_mul_mul_sq_le_one hC
+  refine ⟨8 * (1 + δ₀ ^ 2) * C, by positivity, T, δ₀, hδ₀pos,
+    fun δ hδ ξ hξ hper a b hab hξ₀ ↦ ?_⟩
+  exact ω.setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLinearization_add
+    (J := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
+    (Kt := fun w ↦ H w.2) (fun _ ↦ (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt)
+    (fun _ ↦ contDiffAt_const) (fun _ ↦ (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt)
+    hu hC hδ₀ hest hδ hξ hper hab hξ₀
 
 end TauCeti.SymplecticForm
