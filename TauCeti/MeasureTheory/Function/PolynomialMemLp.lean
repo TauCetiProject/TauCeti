@@ -28,6 +28,8 @@ integrable:
   and, eventually, against `μᵢ`, then `∫ q(g) dμᵢ` converges to `∫ q(g) dμ`;
 * `integrable_eval_of_forall_integrable_pow` — the all-moments corollary: every polynomial is
   integrable along `g` when every power of `g` is;
+* `integrable_pow_of_integrable_pow_two_mul` — against a finite measure on `ℝ`, a finite moment of
+  order `2k` makes every moment of order at most `2k` finite;
 * `memLp_eval_of_forall_mem_support` — likewise, `ω ↦ q(g ω)` lies in `Lᵖ` as soon as `gᵏ` does
   for every `k` in the support of `q`;
 * `memLp_pow_of_forall_integrable_pow` and `memLp_eval_of_forall_integrable_pow` — over a normed
@@ -174,7 +176,18 @@ theorem memLp_algebraMap_eval_of_forall_integrable_pow (hp : p ≠ ∞)
 
 end Real
 
-variable {μ : Measure ℝ} {p : ℝ≥0∞}
+variable {μ : Measure ℝ}
+
+/-- On a finite measure, a finite moment of order `2k` makes every moment of order `n ≤ 2k`
+finite: the real-monomial case of Mathlib's `integrable_norm_pow_of_le`. Finiteness of the even
+moments alone therefore gives the moment hypothesis of the results above. -/
+theorem integrable_pow_of_integrable_pow_two_mul [IsFiniteMeasure μ] {k n : ℕ} (hn : n ≤ 2 * k)
+    (h : Integrable (fun x : ℝ ↦ x ^ (2 * k)) μ) : Integrable (fun x : ℝ ↦ x ^ n) μ :=
+  (integrable_norm_iff (by fun_prop)).1 <| by
+    simpa only [norm_pow, id] using integrable_norm_pow_of_le (f := id) aestronglyMeasurable_id hn
+      (by simpa only [id, Real.norm_eq_abs, (even_two_mul k).pow_abs] using h)
+
+variable {p : ℝ≥0∞}
 
 /-- Polynomial evaluation on `ℝ`, cast into any `RCLike` scalar field, bundled as an `ℝ`-linear
 map into `Lᵖ`, against any measure for which every monomial lies in `Lᵖ`. -/

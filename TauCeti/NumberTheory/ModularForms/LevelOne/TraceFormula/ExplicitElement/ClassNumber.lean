@@ -31,7 +31,7 @@ class-number terms `P_{w+2}(t, n) H(4 n - t²)` of the Eichler–Selberg trace f
 
 ## Main results
 
-* `TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`: for `n > 0`, the weights of the
+* `TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`: for `n ≠ 0`, the weights of the
   matrices of trace `t + 2` and determinant `n + t + 1` have the same sum as those of trace `t`
   and determinant `n`.
 * `TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber`: the
@@ -157,14 +157,14 @@ private theorem finsum_eq_sum_divisorsAntidiagonal (g : Matrix (Fin 2) (Fin 2) �
   exact Finset.sum_attach _ fun p ↦ g (φ p)
 
 /-- The matrices with `a = c` are `(u, t - u - v; u, t - u)` for `n = u v`. -/
-private theorem finsum_corr₁ (hn : 0 < n) :
+private theorem finsum_corr₁ (hn : n ≠ 0) :
     (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₁ M.val).Finite ∧
       ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₁ M.val = ∑ p ∈ n.toNat.divisorsAntidiagonal,
         chainWeight₃ (2 * p.1 - t) (p.1 + p.2 - t) p.1 := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₁
     (fun p ↦ !![(p.1 : ℤ), t - p.1 - p.2; p.1, t - p.1])
     (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
-      obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+      obtain ⟨-, -, h⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
       linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((M 0 0).toNat, (M 1 1 - M 0 1).toNat))
@@ -175,10 +175,10 @@ private theorem finsum_corr₁ (hn : 0 < n) :
       split_ifs at h with hg
       · obtain ⟨hc, hca⟩ := hg
         have hdet' : M 0 0 * (M 1 1 - M 0 1) = n := by rw [← hdet, hca]; ring
+        have hw := le_of_chainWeight₃_ne_zero h
         obtain ⟨hu, hv⟩ : 0 < M 0 0 ∧ 0 < M 1 1 - M 0 1 := by
-          rcases pos_and_pos_or_neg_and_neg_of_mul_pos (hdet' ▸ hn) with h' | h'
-          · exact h'
-          · omega
+          have := mul_ne_zero_iff.mp (hdet'.trans_ne hn)
+          omega
         refine ⟨_, Int.prodMk_toNat_mem_divisorsAntidiagonal_toNat hu hv hdet',
           Eq.trans ?_ (eta_fin_two M).symm⟩
         simp only [Int.toNat_of_nonneg hu.le, Int.toNat_of_nonneg hv.le,
@@ -186,20 +186,20 @@ private theorem finsum_corr₁ (hn : 0 < n) :
         omega
       · exact absurd rfl h)
   refine ⟨hfin, hsum.trans (Finset.sum_congr rfl fun p hp ↦ ?_)⟩
-  obtain ⟨h1, -, -⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+  obtain ⟨h1, -, -⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
   simp only [corr₁, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one,
     h1.le, true_and, ite_true]
   ring_nf
 
 /-- The matrices with `b = d < 0` are `(t + u, -u; t + u + v, -u)` for `n = u v`. -/
-private theorem finsum_corr₂ (hn : 0 < n) :
+private theorem finsum_corr₂ :
     (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₂ M.val).Finite ∧
       ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₂ M.val = ∑ p ∈ n.toNat.divisorsAntidiagonal,
         chainWeight₃ p.1 (t + 2 * p.1) (t + p.1 + p.2) := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₂
     (fun p ↦ !![t + p.1, -(p.1 : ℤ); t + p.1 + p.2, -(p.1 : ℤ)])
     (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
-      obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+      obtain ⟨-, -, h⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
       linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((-M 1 1).toNat, (M 1 0 - M 0 0).toNat))
@@ -211,7 +211,7 @@ private theorem finsum_corr₂ (hn : 0 < n) :
       · obtain ⟨hbd, hd⟩ := hg
         have hdet' : -M 1 1 * (M 1 0 - M 0 0) = n := by rw [← hdet, hbd]; ring
         have hu : 0 < -M 1 1 := by omega
-        have hv : 0 < M 1 0 - M 0 0 := pos_of_mul_pos_right (hdet' ▸ hn) hu.le
+        have hv : 0 < M 1 0 - M 0 0 := by have := le_of_chainWeight₃_ne_zero h; omega
         refine ⟨_, Int.prodMk_toNat_mem_divisorsAntidiagonal_toNat hu hv hdet',
           Eq.trans ?_ (eta_fin_two M).symm⟩
         simp only [Int.toNat_of_nonneg hu.le, Int.toNat_of_nonneg hv.le,
@@ -219,21 +219,21 @@ private theorem finsum_corr₂ (hn : 0 < n) :
         omega
       · exact absurd rfl h)
   refine ⟨hfin, hsum.trans (Finset.sum_congr rfl fun p hp ↦ ?_)⟩
-  obtain ⟨h1, -, -⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+  obtain ⟨h1, -, -⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
   have : -(p.1 : ℤ) ≤ -1 := by omega
   simp only [corr₂, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, this,
     and_self, ite_true]
   ring_nf
 
 /-- The matrices with `d = 0` are `(t, -v; u, 0)` for `n = u v`. -/
-private theorem finsum_corr₃ (hn : 0 < n) :
+private theorem finsum_corr₃ :
     (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₃ M.val).Finite ∧
       ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₃ M.val = ∑ p ∈ n.toNat.divisorsAntidiagonal,
         (chainWeight₃ p.2 t p.1 + chainWeight₄ 0 t p.2 p.1) := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₃
     (fun p ↦ !![t, -(p.2 : ℤ); p.1, 0])
     (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
-      obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+      obtain ⟨-, -, h⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
       linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((M 1 0).toNat, (-M 0 1).toNat)) fun _ _ ↦ by simp)
@@ -244,7 +244,12 @@ private theorem finsum_corr₃ (hn : 0 < n) :
       · obtain ⟨hd, hb⟩ := hg
         have hdet' : M 1 0 * -M 0 1 = n := by rw [← hdet, hd]; ring
         have hv : 0 < -M 0 1 := by omega
-        have hu : 0 < M 1 0 := pos_of_mul_pos_left (hdet' ▸ hn) hv.le
+        have hu : 0 < M 1 0 := by
+          by_cases h₃ : chainWeight₃ (-M 0 1) (M 0 0 - M 1 1) (M 1 0) = 0
+          · have := le_of_chainWeight₄_ne_zero (by rwa [h₃, zero_add] at h)
+            omega
+          · have := le_of_chainWeight₃_ne_zero h₃
+            omega
         refine ⟨_, Int.prodMk_toNat_mem_divisorsAntidiagonal_toNat hu hv hdet',
           Eq.trans ?_ (eta_fin_two M).symm⟩
         simp only [Int.toNat_of_nonneg hu.le, Int.toNat_of_nonneg hv.le,
@@ -252,20 +257,20 @@ private theorem finsum_corr₃ (hn : 0 < n) :
         omega
       · exact absurd rfl h)
   refine ⟨hfin, hsum.trans (Finset.sum_congr rfl fun p hp ↦ ?_)⟩
-  obtain ⟨-, h2, -⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+  obtain ⟨-, h2, -⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
   have : -(p.2 : ℤ) < 0 := by omega
   simp only [corr₃, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, this,
     and_self, ite_true, neg_neg, sub_zero]
 
 /-- The matrices with `a = 0` are `(0, -v; u, t)` for `n = u v`. -/
-private theorem finsum_corr₄ (hn : 0 < n) :
+private theorem finsum_corr₄ :
     (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₄ M.val).Finite ∧
       ∑ᶠ M : traceDetFiber (Fin 2) t n, corr₄ M.val = ∑ p ∈ n.toNat.divisorsAntidiagonal,
         chainWeight₄ 0 (-t) p.1 p.2 := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₄
     (fun p ↦ !![0, -(p.2 : ℤ); p.1, t])
     (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
-      obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+      obtain ⟨-, -, h⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
       linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((M 1 0).toNat, (-M 0 1).toNat)) fun _ _ ↦ by simp)
@@ -275,7 +280,7 @@ private theorem finsum_corr₄ (hn : 0 < n) :
       split_ifs at h with hg
       · obtain ⟨ha, hc⟩ := hg
         have hdet' : M 1 0 * -M 0 1 = n := by rw [← hdet, ha]; ring
-        have hv : 0 < -M 0 1 := pos_of_mul_pos_right (hdet' ▸ hn) hc.le
+        have hv : 0 < -M 0 1 := by have := le_of_chainWeight₄_ne_zero h; omega
         refine ⟨_, Int.prodMk_toNat_mem_divisorsAntidiagonal_toNat hc hv hdet',
           Eq.trans ?_ (eta_fin_two M).symm⟩
         simp only [Int.toNat_of_nonneg hc.le, Int.toNat_of_nonneg hv.le,
@@ -283,7 +288,7 @@ private theorem finsum_corr₄ (hn : 0 < n) :
         omega
       · exact absurd rfl h)
   refine ⟨hfin, hsum.trans (Finset.sum_congr rfl fun p hp ↦ ?_)⟩
-  obtain ⟨h1, -, -⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+  obtain ⟨h1, -, -⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
   simp only [corr₄, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, h1,
     and_self, ite_true, neg_neg, zero_sub]
 
@@ -315,23 +320,23 @@ private theorem sum_pairTerm (n t : ℤ) :
     rfl
   have hsum : ∑ p ∈ n.toNat.divisorsAntidiagonal, (pairTerm p.1 p.2 t + pairTerm p.2 p.1 t) = 0 :=
     Finset.sum_eq_zero fun p hp ↦ by
-      obtain ⟨h1, h2, -⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
+      obtain ⟨h1, h2, -⟩ := Int.mem_divisorsAntidiagonal_toNat.mp hp
       exact pairTerm_add_pairTerm _ _ t h1 h2
   rw [Finset.sum_add_distrib, ← hswap] at hsum
   omega
 
-/-- **Translation by the identity.** For `n > 0`, the weights of the matrices of trace `t + 2`
+/-- **Translation by the identity.** For `n ≠ 0`, the weights of the matrices of trace `t + 2`
 and determinant `n + t + 1` have the same sum as those of trace `t` and determinant `n`.
 
 The translation `M ↦ M + 1` is a bijection between these matrices, it fixes the discriminant
 `t² - 4 n`, and its effect on the weights cancels in total. -/
-theorem finsum_weight_traceDetFiber_add_two (hn : 0 < n) :
+theorem finsum_weight_traceDetFiber_add_two (hn : n ≠ 0) :
     ∑ᶠ M : traceDetFiber (Fin 2) (t + 2) (n + t + 1), weight M.val =
       ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val := by
   obtain ⟨h₁, e₁⟩ := finsum_corr₁ (t := t) hn
-  obtain ⟨h₂, e₂⟩ := finsum_corr₂ (t := t) hn
-  obtain ⟨h₃, e₃⟩ := finsum_corr₃ (t := t) hn
-  obtain ⟨h₄, e₄⟩ := finsum_corr₄ (t := t) hn
+  obtain ⟨h₂, e₂⟩ := finsum_corr₂ (t := t) (n := n)
+  obtain ⟨h₃, e₃⟩ := finsum_corr₃ (t := t) (n := n)
+  obtain ⟨h₄, e₄⟩ := finsum_corr₄ (t := t) (n := n)
   have h₁₂ := (h₁.union h₂).subset (Function.support_sub _ _)
   have h₁₂₃ := (h₁₂.union h₃).subset (Function.support_add _ _)
   have h₁₂₃₄ := (h₁₂₃.union h₄).subset (Function.support_add _ _)
@@ -596,7 +601,7 @@ theorem finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber {D : �
       · exact finsum_weight_of_le h ht'
       have hD : (0 : ℤ) < D := by exact_mod_cast NeZero.pos D
       have hpos : 0 < n - t + 1 := by nlinarith [sq_nonneg (t - 2)]
-      have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hpos
+      have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hpos.ne'
       have hn' : n - t + 1 + (t - 2) + 1 = n := by ring
       rw [sub_add_cancel, hn'] at hstep
       rw [hstep]
