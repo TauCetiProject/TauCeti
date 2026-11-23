@@ -35,8 +35,11 @@ of squares.
   basis is the diagonal matrix of the weights (acting on `1`), and its discriminant is their
   product.
 * `QuadraticMap.nondegenerate_weightedSumSquares_iff`: over a ring in which two is invertible, a
-  diagonal form is nondegenerate if and only if its weights are regular; in particular `⟨1, a, -a⟩`
-  is nondegenerate for a unit `a` (`QuadraticMap.nondegenerate_weightedSumSquares_one_self_neg`).
+  diagonal form is nondegenerate if and only if its weights are regular; in particular `⟨1, -b⟩`,
+  `⟨a, -a * b⟩`, and `⟨1, a, -a⟩` are nondegenerate for units `a, b`
+  (`QuadraticMap.nondegenerate_weightedSumSquares_one_neg`,
+  `QuadraticMap.nondegenerate_weightedSumSquares_neg_self_mul`,
+  `QuadraticMap.nondegenerate_weightedSumSquares_one_self_neg`).
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
 * `QuadraticMap.smul_weightedSumSquares` and `QuadraticMap.neg_weightedSumSquares`: scaling or
   negating a diagonal form scales or negates its weights.
@@ -390,6 +393,23 @@ theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares_iff {w : ι → R} 
     (QuadraticForm.associated_isSymm R _).isRefl.nondegenerate_iff_separatingLeft,
     ← Pi.isRegular_iff, ← isLeftRegular_iff_isRegular, isLeftRegular_iff_right_eq_zero_of_mul]
   simp only [LinearMap.SeparatingLeft, hB, dotProduct_eq_zero_iff]
+
+/-- The binary form `⟨1, -b⟩` with `b` a unit is nondegenerate when two is invertible. -/
+theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares_one_neg (b : Rˣ) :
+    (QuadraticMap.weightedSumSquares R ![1, -(b : R)]).Nondegenerate :=
+  QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun i => by
+    fin_cases i
+    · exact isRegular_one
+    · exact b.isUnit.neg.isRegular
+
+/-- The scaled binary form `⟨a, -a * b⟩` with `a, b` units is nondegenerate when two is
+invertible. -/
+theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares_neg_self_mul (a b : Rˣ) :
+    (QuadraticMap.weightedSumSquares R ![(a : R), -(a * b : R)]).Nondegenerate :=
+  QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun i => by
+    fin_cases i
+    · exact a.isUnit.isRegular
+    · exact (a.isUnit.mul b.isUnit).neg.isRegular
 
 /-- The form `⟨1, a, -a⟩` with `a` a unit is nondegenerate when two is invertible. -/
 theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares_one_self_neg (a : Rˣ) :
