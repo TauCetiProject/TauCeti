@@ -207,6 +207,7 @@ theorem isUnit_mk_iff_isCoprime {f g : R[X]} : IsUnit (mk f g) ↔ IsCoprime f g
 /-- Modulo a product `p * q`, the class of the difference `p - q` is a unit exactly when `p` and
 `q` are coprime. For a relator `p * (X - C x)` with a linear factor, `p - (X - C x)` is the
 representative `C x - X + p`. -/
+@[simp↓]
 theorem isUnit_mk_mul_sub_iff_isCoprime {p q : R[X]} :
     IsUnit (mk (p * q) (p - q)) ↔ IsCoprime p q := by
   have h₁ : IsCoprime p (p - q) ↔ IsCoprime p q := by
