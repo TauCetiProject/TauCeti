@@ -61,26 +61,26 @@ theorem char_stdRep (H : Subgroup SU2) (h : H) :
     Subgroup.coe_subtype, ← _root_.Representation.character, TauCeti.char_stdRep, coe_toGL]
 
 /-- The tautological two-dimensional complex representation of `H : Subgroup SU2` in `FDRep ℂ H`. -/
-noncomputable abbrev stdFDRep (H : Subgroup SU2) : FDRep ℂ H := FDRep.of (stdRep H)
+noncomputable def stdFDRep (H : Subgroup SU2) : FDRep ℂ H := FDRep.of (stdRep H)
 
--- Match before `FDRep.finrank_of` unfolds `FDRep.of (stdRep H)`.
-@[simp↓]
+/-- The bundled standard representation is `FDRep.of (stdRep H)`. -/
+theorem stdFDRep_def (H : Subgroup SU2) : stdFDRep H = FDRep.of (stdRep H) := (rfl)
+
+@[simp]
 theorem finrank_stdFDRep (H : Subgroup SU2) : Module.finrank ℂ (stdFDRep H) = 2 := by
-  rw [FDRep.finrank_of (stdRep H)]; simp
+  rw [stdFDRep_def, FDRep.finrank_of]; simp
 
 theorem ρ_stdFDRep_injective (H : Subgroup SU2) : Function.Injective (stdFDRep H).ρ := by
-  rw [FDRep.of_ρ' (stdRep H)]; exact stdRep_injective H
+  rw [stdFDRep_def, FDRep.of_ρ']; exact stdRep_injective H
 
--- Match before `FDRep.of_ρ'` and `stdRep_apply` unfold `(stdFDRep H).ρ h`.
-@[simp↓]
+@[simp]
 theorem det_ρ_stdFDRep (H : Subgroup SU2) (h : H) : LinearMap.det ((stdFDRep H).ρ h) = 1 := by
-  rw [FDRep.of_ρ' (stdRep H)]; exact det_stdRep H h
+  rw [stdFDRep_def, FDRep.of_ρ']; exact det_stdRep H h
 
--- Match before `FDRep.character_of` and `char_stdRep` unfold `(stdFDRep H).character h`.
-@[simp↓]
+@[simp]
 theorem character_stdFDRep (H : Subgroup SU2) (h : H) :
     (stdFDRep H).character h = Matrix.trace (h.val : Matrix (Fin 2) (Fin 2) ℂ) := by
-  rw [FDRep.character_of (stdRep H), char_stdRep]
+  rw [stdFDRep_def, FDRep.character_of, char_stdRep]
 
 open CategoryTheory in
 /-- Conjugation by `g : SU2` induces an isomorphism in `FDRep ℂ H` from the restriction of
@@ -93,6 +93,8 @@ noncomputable def stdFDRepConjIso {H K : Subgroup SU2} {g : SU2}
           H →* K)).obj
         (stdFDRep K) ≅
       stdFDRep H :=
+  let φ : H →* K :=
+    (((MulAut.conj g).subgroupMap H).trans (MulEquiv.subgroupCongr hK.symm) : H ≃* K)
   let e : (Fin 2 → ℂ) ≃ₗ[ℂ] (Fin 2 → ℂ) :=
     { __ := Matrix.mulVecLin ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ)
       invFun := fun v ↦ (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v
@@ -110,26 +112,27 @@ noncomputable def stdFDRepConjIso {H K : Subgroup SU2} {g : SU2}
         change ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ
             ((g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v) = v
         rw [Matrix.mulVec_mulVec, hg, Matrix.one_mulVec] }
-  LinearEquiv.toFDRepIso e fun h v ↦ by
-    let v' : Fin 2 → ℂ := v
-    change ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ
-        (stdRep K
-          ((((MulAut.conj g).subgroupMap H).trans (MulEquiv.subgroupCongr hK.symm)) h) v') =
-      stdRep H h (((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v')
-    rw [stdRep_apply_apply, stdRep_apply_apply]
-    have hval :
-        (((((MulAut.conj g).subgroupMap H).trans (MulEquiv.subgroupCongr hK.symm)) h : K) :
-            SU2) =
-          g * h.val * g⁻¹ := rfl
-    rw [hval]
-    have hm :
-        ((g * h.val * g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
-          (g : Matrix (Fin 2) (Fin 2) ℂ) * (h.val : Matrix (Fin 2) (Fin 2) ℂ) *
-            ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) := rfl
-    have hg : ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *
-        (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
-      rw [← coe_toGL, ← coe_toGL, map_inv, ← Units.val_mul, inv_mul_cancel, Units.val_one]
-    rw [hm, Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
-      hg, Matrix.one_mul]
+  let mid : (Action.res (FGModuleCat ℂ) φ).obj (FDRep.of (stdRep K)) ≅ FDRep.of (stdRep H) :=
+    LinearEquiv.toFDRepIso (X := (Action.res (FGModuleCat ℂ) φ).obj (FDRep.of (stdRep K)))
+      (Y := FDRep.of (stdRep H)) e fun h v ↦ by
+      let v' : Fin 2 → ℂ := v
+      change ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ
+          (stdRep K (φ h) v') =
+        stdRep H h (((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v')
+      rw [stdRep_apply_apply, stdRep_apply_apply]
+      have hval : ((φ h : K) : SU2) = g * h.val * g⁻¹ := rfl
+      rw [hval]
+      have hm :
+          ((g * h.val * g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
+            (g : Matrix (Fin 2) (Fin 2) ℂ) * (h.val : Matrix (Fin 2) (Fin 2) ℂ) *
+              ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) := rfl
+      have hg : ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *
+          (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
+        rw [← coe_toGL, ← coe_toGL, map_inv, ← Units.val_mul, inv_mul_cancel, Units.val_one]
+      rw [hm, Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
+        hg, Matrix.one_mul]
+  (Action.res (FGModuleCat ℂ) φ).mapIso (eqToIso (stdFDRep_def K)) ≪≫
+    mid ≪≫
+    (eqToIso (stdFDRep_def H)).symm
 
 end TauCeti.SU2
