@@ -21,20 +21,6 @@ integral curves, and their maximal domains.
 The construction is functorial: tangent lifts preserve identity maps, inverses, and composition.
 The underlying function is Mathlib's `tangentMap`; no parallel tangent-map API is introduced.
 
-By functoriality, a group `G` acting on `M` by smooth maps (`ContMDiffConstSMul I ∞ G M`) acts on
-`TM` by the tangent lifts of these maps,
-
-`g • (x, v) = (g • x, dg_x v)`
-
-(`TangentBundle.instMulAction`), again by smooth maps (`TangentBundle.instContMDiffConstSMul`).
-For a smooth action of a manifold `G` the lifted action is jointly smooth on `G × TM`
-(`TangentBundle.instContMDiffSMul`), since the differential of `x ↦ g • x` depends smoothly on
-`g`. This **tangent-lifted action** covers the action on `M` (`TangentBundle.proj_smul`) and the
-tangent lift of each `x ↦ g • x` is the action of `g` on `TM` (`Diffeomorph.tangent_constSmul`).
-It is the tangent counterpart of the cotangent-lifted action
-`TauCeti.CotangentBundle.instMulAction`; together they describe the symmetries of a Lagrangian
-system on `TM` and of its Hamiltonian counterpart on `T*M`.
-
 ## Main definitions and results
 
 * `Diffeomorph.tangent`: the tangent lift of a smooth diffeomorphism.
@@ -46,17 +32,10 @@ system on `TM` and of its Hamiltonian counterpart on `T*M`.
 * `Diffeomorph.tangent_trans`: taking a tangent lift commutes with composition.
 * `Diffeomorph.tangent_curveVelocityLift`: tangent lifts carry the velocity lift of a curve to
   the velocity lift of its image.
-* `TangentBundle.instMulAction`, `TangentBundle.instContMDiffConstSMul`,
-  `TangentBundle.instContMDiffSMul`: the tangent lift of a smooth group action.
-* `TangentBundle.smul_eq_tangentMap`, `TangentBundle.proj_smul`: the lifted action of `g` is the
-  tangent map of `x ↦ g • x`, covering the action on the base.
-
-## References
-
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
-  Springer, 2013, Chapter 3 (the global differential).
-* J. E. Marsden, T. S. Ratiu, *Introduction to Mechanics and Symmetry*, 2nd ed., Texts in Applied
-  Mathematics 17, Springer, 1999, Section 9.3 (tangent and cotangent lifts of group actions).
+* `TangentBundle.instMulAction`: the tangent lift `g • v = dg_x v` of an action of a group by
+  smooth maps, again an action by smooth maps (`TangentBundle.instContMDiffConstSMul`), and jointly
+  smooth when the action is (`TangentBundle.instContMDiffSMul`).
+* `Diffeomorph.tangent_constSmul`: the tangent lift of `x ↦ g • x` is `v ↦ g • v`.
 -/
 
 public section
@@ -129,8 +108,8 @@ theorem tangent_trans (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P) :
   apply Diffeomorph.ext
   intro z
   simpa only [coe_tangent, coe_trans, Function.comp_apply] using
-    tangentMap_comp_at z ((g.mdifferentiable (by simp)) (h z.1))
-      ((h.mdifferentiable (by simp)) z.1)
+    tangentMap_comp_at z ((g.mdifferentiable (by simp)) (h z.proj))
+      ((h.mdifferentiable (by simp)) z.proj)
 
 /-- The tangent map of a `C^n` diffeomorphism, `n ≥ 1`, as a homeomorphism of tangent bundles.
 Its value at `(x, v)` is `(h x, mfderiv I J h x v)`, and its inverse is the tangent map of
@@ -167,15 +146,13 @@ theorem tangent_curveVelocityLift (h : M ≃ₘ⟮I, J⟯ N) {γ : 𝕜 → M} {
 
 end Diffeomorph
 
-/-! ### The tangent-lifted action -/
-
 namespace TangentBundle
 
 variable {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
 
 /-- The **tangent lift of a smooth group action**: an element `g` acts on `TM` by the tangent lift
-of the diffeomorphism `x ↦ g • x`, sending a vector `v` at `x` to the vector `dg_x v` at `g • x`
-(`TangentBundle.smul_eq_tangentMap`). -/
+of the diffeomorphism `x ↦ g • x`, sending a tangent vector `v` at `x` to the tangent vector
+`dg_x v` at `g • x` (`TangentBundle.smul_eq_tangentMap`). -/
 instance instSMul : SMul G (TangentBundle I M) where
   smul g := (Diffeomorph.constSmul I ∞ g).tangent
 
@@ -184,8 +161,7 @@ theorem smul_def (g : G) (v : TangentBundle I M) :
     g • v = (Diffeomorph.constSmul I ∞ g).tangent v :=
   (rfl)
 
-/-- The tangent-lifted action of `g` is the tangent map of `x ↦ g • x`: it sends a vector `v` at
-`x` to the vector `dg_x v` at `g • x`. -/
+/-- The tangent-lifted action of `g` is the tangent map of `x ↦ g • x`. -/
 theorem smul_eq_tangentMap (g : G) (v : TangentBundle I M) :
     g • v = tangentMap I I (fun x : M ↦ g • x) v := by
   rw [smul_def, Diffeomorph.coe_tangent, Diffeomorph.coe_constSmul]
@@ -193,7 +169,13 @@ theorem smul_eq_tangentMap (g : G) (v : TangentBundle I M) :
 /-- The tangent-lifted action covers the action on the base. -/
 @[simp]
 theorem proj_smul (g : G) (v : TangentBundle I M) : (g • v).proj = g • v.proj := by
-  rw [smul_eq_tangentMap, tangentMap_proj]
+  rw [smul_eq_tangentMap, tangentMap]
+
+/-- The tangent-lifted action sends a tangent vector `v` at `x` to `dg_x v`. -/
+@[simp]
+theorem snd_smul (g : G) (v : TangentBundle I M) :
+    (g • v).snd = mfderiv I I (fun x : M ↦ g • x) v.proj v.snd := by
+  rw [smul_eq_tangentMap, tangentMap]
 
 /-- The tangent lift of a smooth group action is a group action. -/
 instance instMulAction : MulAction G (TangentBundle I M) where
@@ -208,16 +190,16 @@ instance instMulAction : MulAction G (TangentBundle I M) where
 instance instContMDiffConstSMul : ContMDiffConstSMul I.tangent ∞ G (TangentBundle I M) where
   contMDiff_const_smul g := (Diffeomorph.constSmul I ∞ g).tangent.contMDiff.congr (smul_def g)
 
-/-- **The tangent lift of a smooth action is smooth.** If a manifold `G` acts smoothly on `M`, then
-`(g, v) ↦ g • v` is smooth on `G × TM`: the vector `g • v` is the image of `v` under the
-differential of `x ↦ g • x`, which depends smoothly on `g`. -/
+/-- **The tangent lift of a smooth action is smooth.** If `G` acts smoothly on `M`, then
+`(g, v) ↦ g • v` is smooth on `G × TM`: the tangent vector `g • v` is the image of `(0, v)` under
+the tangent map of the action `G × M → M`. -/
 instance instContMDiffSMul {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 𝕜 EG]
-    [TopologicalSpace HG] {IG : ModelWithCorners 𝕜 EG HG} [TopologicalSpace G] [ChartedSpace HG G]
-    [IsManifold IG ∞ G] [ContMDiffSMul IG I ∞ G M] :
+    [TopologicalSpace HG] {IG : ModelWithCorners 𝕜 EG HG} [TopologicalSpace G]
+    [ChartedSpace HG G] [IsManifold IG ∞ G] [ContMDiffSMul IG I ∞ G M] :
     ContMDiffSMul IG I.tangent ∞ G (TangentBundle I M) where
   contMDiff_smul :=
-    (ContMDiff.contMDiff_tangentMap_family (f := fun (g : G) (x : M) ↦ g • x) (m := ∞) (n := ∞)
-      contMDiff_smul (by simp)).congr fun p ↦ smul_eq_tangentMap p.1 p.2
+    (ContMDiffSMul.contMDiff_smul.contMDiff_tangentMap_family (f := fun (g : G) (x : M) ↦ g • x)
+      (n := ∞) (m := ∞) (by simp)).congr fun p ↦ smul_eq_tangentMap p.1 p.2
 
 end TangentBundle
 

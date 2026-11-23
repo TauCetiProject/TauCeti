@@ -48,7 +48,7 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
 /-- The principal part of a section in the preferred chart at a point. -/
 private def localPrincipalPart (D : WeilDivisor X) (x : X) :
     divisorSections D ⊤ →ₗ[ℂ] ℂ[X] where
-  toFun f := principalPart (meromorphicGerms.mk ((fun y ↦ f.1 ⟨y, trivial⟩) ∘ (chartAt ℂ x).symm)
+  toFun f := principalPart (meromorphicGerms.mk ((fun y ↦ f.val ⟨y, trivial⟩) ∘ (chartAt ℂ x).symm)
     ((meromorphicAt_def _ _).mp (isDivisorSectionAt f x).meromorphicAt))
   map_add' f g := by
     rw [← map_add, ← mk_add]
@@ -74,7 +74,7 @@ private def principalParts (D : WeilDivisor X) :
     (Polynomial.lcoeff ℂ (i.val + 1)).comp (localPrincipalPart D x)
 
 private lemma localPrincipalPart_eq_zero_of_mem_ker (D : WeilDivisor X)
-    (f : (principalParts D).ker) (x : X) : localPrincipalPart D x f.1 = 0 := by
+    (f : (principalParts D).ker) (x : X) : localPrincipalPart D x f.val = 0 := by
   classical
   ext n
   rcases n with _ | n
@@ -84,24 +84,24 @@ private lemma localPrincipalPart_eq_zero_of_mem_ker (D : WeilDivisor X)
         apply Finsupp.mem_support_iff.mpr
         intro h
         simp [h] at hn
-      have h := congrFun (congrFun f.2 ⟨x, hx⟩)
+      have h := congrFun (congrFun f.property ⟨x, hx⟩)
         ⟨n, by dsimp only [Subtype.coe_mk]; omega⟩
       simpa only [principalParts, LinearMap.pi_apply, LinearMap.comp_apply,
         Polynomial.lcoeff_apply, Pi.zero_apply, Polynomial.coeff_zero] using h
     · exact coeff_eq_zero_of_natDegree_lt
-        ((localPrincipalPart_natDegree_le D f.1 x).trans_lt (by omega))
+        ((localPrincipalPart_natDegree_le D f.val x).trans_lt (by omega))
 
 variable [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X]
 
 private lemma toMeromorphic_mem_constants_of_mem_ker (D : WeilDivisor X) [CompactSpace X]
     (f : (principalParts D).ker) :
-    toMeromorphic D f.1 ∈ (Algebra.linearMap ℂ (MeromorphicFunction X)).range := by
+    toMeromorphic D f.val ∈ (Algebra.linearMap ℂ (MeromorphicFunction X)).range := by
   apply LinearMap.mem_range.mpr
   apply MeromorphicFunction.exists_algebraMap_eq_of_forall_ne_infty
   intro x
   rw [← MeromorphicFunction.order_nonneg_iff, order_toMeromorphic, meromorphicOrderAt_def]
   exact (principalPart_mk_eq_zero_iff
-    ((meromorphicAt_def _ _).mp (isDivisorSectionAt f.1 x).meromorphicAt)).mp
+    ((meromorphicAt_def _ _).mp (isDivisorSectionAt f.val x).meromorphicAt)).mp
     (localPrincipalPart_eq_zero_of_mem_ker D f x)
 
 /-- On the kernel, the meromorphic image lands in the one-dimensional space of constants. -/

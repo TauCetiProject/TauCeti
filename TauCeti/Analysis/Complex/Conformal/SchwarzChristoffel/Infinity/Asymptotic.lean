@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Integrand
 public import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.Analysis.Complex.AtInfinity
+import TauCeti.Analysis.Normed.Field.AtInfinity
 
 /-!
 # Complex asymptotics of the Schwarz--Christoffel integrand at infinity

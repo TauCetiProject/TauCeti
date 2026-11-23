@@ -7,256 +7,275 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre.Naturality
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.MomentMap
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Pullback
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Integrable
-import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 
 /-!
-# Noether's theorem for a Lie group symmetry of a Lagrangian
+# Noether's theorem for Lagrangians with a configuration symmetry
 
-Let a Lie group `G` act smoothly on a configuration manifold `M`, and let `L : TM → ℝ` be a
-Lagrangian invariant under the tangent-lifted action `g • (x, v) = (g • x, dg_x v)`
-(`TangentBundle.instMulAction`), that is `L (g • v) = L v`. The **Lagrangian momentum map** is the
-moment map `μ` of the cotangent-lifted action (`TauCeti.CotangentBundle.momentMap`) composed with
-the Legendre map `FL : TM → T*M`. Its component along `ξ ∈ 𝔤` is
+Let a Lie group `G` act smoothly on a configuration manifold `M`. Its tangent lift
+`g • v = dg_x v` (`TangentBundle.instMulAction`) acts on the velocity phase space `TM`, and its
+cotangent lift `g • p = p ∘ (dg_x)⁻¹` (`TauCeti.CotangentBundle.instMulAction`) acts on the momentum
+phase space `T*M`, where it has the moment map `⟨μ(x, p), ξ⟩ = p(ξ_M(x))`
+(`TauCeti.CotangentBundle.momentMap`).
 
-`J_ξ(v) = ⟨μ(FL v), ξ⟩ = FL(v)(ξ_M(x))`, for `v ∈ T_x M`,
+Let `L : TM → ℝ` be a smooth Lagrangian invariant under the action, `L (g • v) = L v`. Reading `L`
+through the diffeomorphism `x ↦ g • x` gives `L` back, so the naturality of Lagrangian mechanics
+under changes of configuration coordinates makes the Legendre map `FL : TM → T*M` equivariant,
+`FL (g • v) = g • FL v` (`TauCeti.legendreMap_smul`), and the energy `E_L` invariant
+(`TauCeti.lagrangianEnergy_smul`). The **Noether charges** of the symmetry are the components of
 
-the derivative of `L` along the fibre through `v` in the direction of the fundamental vector field
-`ξ_M` of the action on `M`. This file proves Noether's theorem: the Lagrangian momentum map is
-conserved by the Lagrangian dynamics.
+`J = μ ∘ FL`, `⟨J(v), ξ⟩ = FL(v)(ξ_M(x))` for `v ∈ T_x M`,
 
-* The Legendre map of an invariant Lagrangian intertwines the tangent- and cotangent-lifted
-  actions, `FL (g • v) = g • FL v` (`TauCeti.legendreMap_smul`), and the energy is invariant,
-  `E_L (g • v) = E_L v` (`TauCeti.lagrangianEnergy_smul`). Both are the naturality of `FL` and
-  `E_L` under the diffeomorphisms `x ↦ g • x`.
-* Differentiating the first identity, `dFL` carries the fundamental vector field `ξ_{TM}` of the
-  tangent-lifted action to the fundamental vector field `ξ_{T*M}` of the cotangent-lifted action
-  (`TauCeti.mfderiv_legendreMap_fundamentalVectorField`). Since `μ_ξ` is a Hamiltonian of
-  `ξ_{T*M}` for the canonical form `ω` and the Cartan two-form is `ω_L = FL^* ω`, the component
-  `J_ξ = μ_ξ ∘ FL` is a Hamiltonian of `ξ_{TM}` for `ω_L`. Together with the coadjoint equivariance
-  of `μ`, this says that `μ ∘ FL` is a group-level moment map of the tangent-lifted action on
-  `(TM, ω_L)` (`TauCeti.isEquivariantMomentMap_cartanTwoForm_momentMap_comp_legendreMap`).
-* **Noether's theorem.** Let `X` be a Hamiltonian vector field of the energy for `ω_L`, such as
-  the Lagrangian vector field `X_E` of a regular Lagrangian. Then
-  `dJ_ξ(X) = ω_L(ξ_{TM}, X) = -dE_L(ξ_{TM}) = 0`, because the energy is invariant
-  (`TauCeti.mvfderiv_lagrangianEnergy_fundamentalVectorField`). So `μ ∘ FL` is constant along every
-  integral curve of `X` (`TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurveOn`). The
-  Cartan two-form need not be nondegenerate for this; regularity of `L` only provides the
-  Lagrangian vector field `X_E`, for which the statement is
-  `TauCeti.IsRegularLagrangian.momentMap_legendreMap_eq_of_isMIntegralCurve`.
-* **The Hamiltonian side.** For a hyperregular Lagrangian, the Hamiltonian `H = E_L ∘ FL⁻¹` is
-  invariant under the cotangent-lifted action (`TauCeti.IsHyperregularLagrangian.hamiltonian_smul`),
-  so every component of the cotangent moment map `μ` is a first integral of `H`
-  (`TauCeti.IsHyperregularLagrangian.isFirstIntegral_momentMap`). This is the conservation law of
-  the Hamiltonian action on `T*M` whose pullback along `FL` is the Lagrangian momentum map.
+the momentum `FL(v)` paired with the infinitesimal symmetry `ξ_M`. The fundamental vector field
+`ξ_{TM}` of the tangent-lifted action covers `ξ_M`, so this is the Cartan form `θ_L = FL^*λ`
+evaluated on `ξ_{TM}` (`TauCeti.cartanForm_apply_fundamentalVectorField`). Since `FL` is
+equivariant and pulls the canonical symplectic form `ω` of `T*M` back to the Cartan two-form
+`ω_L`, the moment map `μ` pulls back to a coadjoint-equivariant moment map `J` of the
+tangent-lifted action for `ω_L` (`TauCeti.isEquivariantMomentMap_momentMap_comp_legendreMap`):
+`d⟨J, ξ⟩ = ι_{ξ_{TM}} ω_L`.
 
-This is the intrinsic, group-level form of the coordinate statement
-`TauCeti.noetherCharge_eq_cotangentMomentMap` for linear symmetries of a Lagrangian on a vector
-space.
+**Noether's theorem** (`TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurveOn`) follows from the
+conservation law of moment maps under invariant Hamiltonians
+(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant`): along an
+integral curve of a Lagrangian vector field `X`, that is `ι_X ω_L = dE_L`, the derivative of
+`⟨J, ξ⟩` is `ω_L(ξ_{TM}, X) = -dE_L(ξ_{TM})`, and this vanishes because `E_L` is invariant. So
+`J` is constant along every motion of the system. Neither regularity of `L` nor nondegeneracy
+of `ω_L` is used: when `L` is regular, `X` is the Lagrangian vector field
+(`TauCeti.IsRegularLagrangian.momentMap_legendreMap_eq_of_isMIntegralCurve`) and its integral
+curves are the velocity curves of the motions
+(`TauCeti.IsRegularLagrangian.eq_curveVelocityLift_of_isMIntegralCurve`).
+
+For a hyperregular Lagrangian the Hamiltonian `H = E_L ∘ FL⁻¹` is invariant under the
+cotangent-lifted action (`TauCeti.IsHyperregularLagrangian.hamiltonian_smul`), so the moment map
+`μ` is conserved along the Hamiltonian motions in `T*M`
+(`TauCeti.IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn`); equivalently, every
+component of `μ` Poisson-commutes with `H`
+(`TauCeti.IsHyperregularLagrangian.isFirstIntegral_momentMap`). This is the same conservation
+law: the Legendre map carries the Lagrangian motions to the Hamiltonian ones
+(`TauCeti.IsHyperregularLagrangian.isMIntegralCurve_legendreMap_comp_iff`), and `J = μ ∘ FL`.
+
+The flat version, for configuration spaces that are normed spaces and symmetries with a gauge
+term, is `TauCeti.noetherCharge_eq_of_eulerLagrange`; for a linear symmetry its charge is the
+cotangent moment map of the Legendre image (`TauCeti.noetherCharge_eq_cotangentMomentMap`).
 
 ## Main results
 
-* `TauCeti.legendreMap_smul`, `TauCeti.lagrangianEnergy_smul`: equivariance of the Legendre map and
-  invariance of the energy of an invariant Lagrangian.
-* `TauCeti.isEquivariantMomentMap_cartanTwoForm_momentMap_comp_legendreMap`: `μ ∘ FL` is a
-  coadjoint-equivariant moment map of the tangent-lifted action for the Cartan two-form.
-* `TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurveOn`: Noether's theorem, conservation of
-  `μ ∘ FL` along integral curves of a Hamiltonian vector field of the energy.
+* `TauCeti.legendreMap_smul`, `TauCeti.lagrangianEnergy_smul`: for an invariant Lagrangian the
+  Legendre map is equivariant and the energy is invariant.
+* `TauCeti.IsHyperregularLagrangian.hamiltonian_smul`: the Hamiltonian of an invariant
+  hyperregular Lagrangian is invariant.
+* `TauCeti.cartanForm_apply_fundamentalVectorField`: the Noether charge `⟨μ(FL v), ξ⟩` is the
+  Cartan form evaluated on the fundamental vector field `ξ_{TM}`.
+* `TauCeti.isEquivariantMomentMap_momentMap_comp_legendreMap`: the Noether charges `μ ∘ FL` form a
+  coadjoint-equivariant moment map for the Cartan two-form.
+* `TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurveOn`,
+  `TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurve`: **Noether's theorem**, the Noether
+  charges are conserved along the integral curves of a Lagrangian vector field.
 * `TauCeti.IsRegularLagrangian.momentMap_legendreMap_eq_of_isMIntegralCurve`: Noether's theorem
-  for the Lagrangian vector field of a regular Lagrangian.
-* `TauCeti.IsHyperregularLagrangian.isFirstIntegral_momentMap`: the components of `μ` are first
-  integrals of the Hamiltonian of a hyperregular invariant Lagrangian.
+  for the Lagrangian vector field `X_E` of a regular Lagrangian.
+* `TauCeti.IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn`,
+  `TauCeti.IsHyperregularLagrangian.isFirstIntegral_momentMap`: the moment map is conserved along
+  the Hamiltonian motions of an invariant hyperregular Lagrangian, and its components are first
+  integrals of the Hamiltonian.
 
 ## References
 
 * E. Noether, *Invariante Variationsprobleme*, Nachrichten von der Gesellschaft der Wissenschaften
   zu Göttingen, Mathematisch-Physikalische Klasse (1918), 235–257.
 * R. Abraham, J. E. Marsden, *Foundations of Mechanics*, 2nd ed., Benjamin/Cummings, 1978,
-  Section 4.2 (momentum maps of Lagrangian systems with symmetry).
+  Section 4.2 (Noether's theorem for the momentum map of a Lagrangian system).
 * J. E. Marsden, T. S. Ratiu, *Introduction to Mechanics and Symmetry*, 2nd ed., Texts in Applied
-  Mathematics 17, Springer, 1999, Sections 11.4 and 12.1 (Noether's theorem and the momentum maps
-  of tangent and cotangent lifts).
+  Mathematics 17, Springer, 1999, Section 12.4 (momentum maps of lifted actions on tangent bundles,
+  and the Lagrangian Noether theorem).
 -/
 
 public section
 
-open Bundle Manifold
+noncomputable section
+
+open Bundle
 open scoped ContDiff Manifold
 
 namespace TauCeti
 
-open CotangentBundle
-
-/-! ### Invariant Lagrangians -/
-
-section Invariance
+section Invariant
 
 variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I 2 M] {G : Type*} [Group G] [MulAction G M]
   [ContMDiffConstSMul I ∞ G M] {L : TangentBundle I M → 𝕜} {g : G}
 
-/-- A Lagrangian invariant under the tangent-lifted action of `g` is unchanged by composing it with
-the tangent map of `x ↦ g • x`. -/
-private theorem comp_tangentMap_constSmul (hL : ∀ v, L (g • v) = L v) :
+/-- An element `g` preserves `L` exactly when `L` read through the diffeomorphism `x ↦ g • x` is
+`L` itself. -/
+private theorem comp_tangentMap_constSmul (hLg : ∀ v, L (g • v) = L v) :
     L ∘ tangentMap I I (Diffeomorph.constSmul I ∞ g) = L :=
   funext fun v ↦ by
-    rw [Function.comp_apply, Diffeomorph.coe_constSmul, ← TangentBundle.smul_eq_tangentMap, hL]
+    rw [← Diffeomorph.coe_tangent, Diffeomorph.tangent_constSmul, Function.comp_apply,
+      Diffeomorph.coe_constSmul, hLg]
 
-/-- **The Legendre map of an invariant Lagrangian is equivariant.** If `L (g • v) = L v` for every
-tangent vector `v`, then the Legendre map intertwines the tangent- and cotangent-lifted actions of
-`g`: `FL (g • v) = g • FL v`. -/
-theorem legendreMap_smul (hL : ∀ v, L (g • v) = L v) (v : TangentBundle I M) :
+/-- **The Legendre map of an invariant Lagrangian is equivariant.** If `g` preserves `L`, then
+`FL (g • v) = g • FL v`, for the tangent-lifted action on `TM` and the cotangent-lifted action on
+`T*M`. -/
+theorem legendreMap_smul (hLg : ∀ v, L (g • v) = L v) (v : TangentBundle I M) :
     legendreMap L (g • v) = g • legendreMap L v := by
   have h := cotangent_legendreMap_comp_tangentMap L (Diffeomorph.constSmul I ∞ g) v
-  rw [comp_tangentMap_constSmul hL, Diffeomorph.cotangent_constSmul, Diffeomorph.constSmul_apply,
-    Diffeomorph.coe_constSmul, ← TangentBundle.smul_eq_tangentMap] at h
+  rw [comp_tangentMap_constSmul hLg, Diffeomorph.coe_constSmul,
+    ← TangentBundle.smul_eq_tangentMap, ← CotangentBundle.smul_def] at h
   exact h.symm
 
-/-- **The energy of an invariant Lagrangian is invariant.** If `L (g • v) = L v` for every tangent
-vector `v`, then `E_L (g • v) = E_L v`. -/
-theorem lagrangianEnergy_smul (hL : ∀ v, L (g • v) = L v) (v : TangentBundle I M) :
+/-- **The energy of an invariant Lagrangian is invariant**: if `g` preserves `L`, then
+`E_L (g • v) = E_L v`. -/
+theorem lagrangianEnergy_smul (hLg : ∀ v, L (g • v) = L v) (v : TangentBundle I M) :
     lagrangianEnergy L (g • v) = lagrangianEnergy L v := by
   have h := congrFun (lagrangianEnergy_comp_tangentMap L (Diffeomorph.constSmul I ∞ g)
     (by simp)) v
-  rw [comp_tangentMap_constSmul hL, Function.comp_apply, Diffeomorph.coe_constSmul,
+  rw [comp_tangentMap_constSmul hLg, Function.comp_apply, Diffeomorph.coe_constSmul,
     ← TangentBundle.smul_eq_tangentMap] at h
   exact h.symm
 
-/-- **The Hamiltonian of an invariant hyperregular Lagrangian is invariant** under the
-cotangent-lifted action: if `L (g • v) = L v` for every tangent vector `v`, then
-`H (g • z) = H z` for the Hamiltonian `H = E_L ∘ FL⁻¹`. -/
-theorem IsHyperregularLagrangian.hamiltonian_smul (h : IsHyperregularLagrangian L)
-    (hL : ∀ v, L (g • v) = L v) (z : CotangentBundle I M) :
-    h.hamiltonian (g • z) = h.hamiltonian z := by
-  obtain ⟨v, rfl⟩ := h.bijective_legendreMap.2 z
-  rw [← legendreMap_smul hL, h.hamiltonian_legendreMap, h.hamiltonian_legendreMap,
-    lagrangianEnergy_smul hL]
+/-- **The Hamiltonian of an invariant hyperregular Lagrangian is invariant**: if `g` preserves
+`L`, then `H (g • p) = H p` for the cotangent-lifted action. -/
+theorem IsHyperregularLagrangian.hamiltonian_smul (hL : IsHyperregularLagrangian L)
+    (hLg : ∀ v, L (g • v) = L v) (p : CotangentBundle I M) :
+    hL.hamiltonian (g • p) = hL.hamiltonian p := by
+  -- `p ↦ H (g • p)` composed with `FL` is `v ↦ E_L (g • v) = E_L v`, which characterizes `H`.
+  have hH : (fun p ↦ hL.hamiltonian (g • p)) = hL.hamiltonian :=
+    hL.eq_hamiltonian_iff.2 <| funext fun v ↦ by
+      rw [Function.comp_apply, ← legendreMap_smul hLg, hL.hamiltonian_legendreMap,
+        lagrangianEnergy_smul hLg]
+  exact congrFun hH p
 
-end Invariance
+end Invariant
 
-/-! ### The Lagrangian momentum map -/
+section Charge
+
+variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [TopologicalSpace HG]
+  {IG : ModelWithCorners ℝ EG HG} {G : Type*} [TopologicalSpace G] [ChartedSpace HG G] [Group G]
+  [IsManifold IG ∞ G] {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [MulAction G M] [ContMDiffSMul IG I ∞ G M] [ContMDiffConstSMul I ∞ G M]
+
+/-- **The Noether charge is the Cartan form on the symmetry.** The Cartan one-form `θ_L = FL^*λ`
+evaluated on the fundamental vector field `ξ_{TM}` of the tangent-lifted action is the Noether
+charge `⟨μ(FL v), ξ⟩ = FL(v)(ξ_M(π v))`. -/
+theorem cartanForm_apply_fundamentalVectorField {L : TangentBundle I M → ℝ}
+    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (ξ : GroupLieAlgebra IG G) (v : TangentBundle I M) :
+    (cartanForm L hL).val v ![fundamentalVectorField I.tangent ξ v] =
+      CotangentBundle.momentMap IG G (legendreMap L v) ξ := by
+  rw [cartanForm_apply, Matrix.cons_val_zero, TangentBundle.mfderiv_proj_fundamentalVectorField,
+    CotangentBundle.momentMap_apply]
+  -- The Legendre map covers the identity, `π (FL v) = π v`.
+  exact congrArg (legendreMap L v).snd
+    (congrArg (fundamentalVectorField I ξ) (proj_legendreMap L v).symm)
+
+end Charge
 
 section Noether
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M] {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG]
+variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [CompleteSpace EG]
   [TopologicalSpace HG] {IG : ModelWithCorners ℝ EG HG} {G : Type*} [TopologicalSpace G]
-  [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G] [MulAction G M] [ContMDiffSMul IG I ∞ G M]
-  [ContMDiffConstSMul I ∞ G M] {L : TangentBundle I M → ℝ}
+  [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G] [T2Space G] [BoundarylessManifold IG G]
+  {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] {M : Type*}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M] [MulAction G M]
+  [ContMDiffSMul IG I ∞ G M] [ContMDiffConstSMul I ∞ G M] {L : TangentBundle I M → ℝ}
 
-/-- **The Legendre map relates fundamental vector fields.** For a smooth Lagrangian invariant under
-the tangent-lifted action, the differential of the Legendre map carries the fundamental vector
-field `ξ_{TM}` of the tangent-lifted action to the fundamental vector field `ξ_{T*M}` of the
-cotangent-lifted action. -/
-theorem mfderiv_legendreMap_fundamentalVectorField (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
-    (hinv : ∀ (g : G) v, L (g • v) = L v) (ξ : GroupLieAlgebra IG G) (v : TangentBundle I M) :
-    mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v
-        (fundamentalVectorField I.tangent ξ v) =
-      fundamentalVectorField (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ξ (legendreMap L v) :=
-  mfderiv_fundamentalVectorField_of_map_smul
-    ((contMDiff_legendreMap (m := ∞) hL le_rfl).mdifferentiableAt (by simp))
-    (ContMDiffSMul.mdifferentiableAt_smul_const v 1) (fun g ↦ legendreMap_smul (hinv g) v) ξ
-
-/-- **The energy of an invariant Lagrangian is infinitesimally invariant**: its derivative along
-every fundamental vector field `ξ_{TM}` of the tangent-lifted action vanishes. -/
-theorem mvfderiv_lagrangianEnergy_fundamentalVectorField (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
-    (hinv : ∀ (g : G) v, L (g • v) = L v) (ξ : GroupLieAlgebra IG G) (v : TangentBundle I M) :
-    mvfderiv I.tangent (lagrangianEnergy L) v (fundamentalVectorField I.tangent ξ v) = 0 :=
-  mvfderiv_fundamentalVectorField_eq_zero
-    ((contMDiff_lagrangianEnergy (m := ∞) hL le_rfl).mdifferentiableAt (by simp))
-    (ContMDiffSMul.mdifferentiableAt_smul_const v 1) (fun g ↦ lagrangianEnergy_smul (hinv g) v) ξ
-
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [CompleteSpace EG] [T2Space G]
-  [BoundarylessManifold IG G]
-
-/-- Group-level moment maps only need a `C³` Lie group. -/
+/-- The pullback of moment maps only needs a `C³` Lie group. -/
 local instance lieGroupMinSmoothness : LieGroup IG (minSmoothness ℝ 3) G :=
   LieGroup.of_le (I := IG) (G := G) (m := minSmoothness ℝ 3) (n := ∞) (by simp)
 
-/-- **The Lagrangian momentum map is a moment map.** For a smooth Lagrangian invariant under the
-tangent-lifted action of `G`, the composite `μ ∘ FL` of the cotangent-lift moment map with the
-Legendre map is a coadjoint-equivariant moment map of the tangent-lifted action for the Cartan
-two-form: `d⟨μ ∘ FL, ξ⟩ = ι_{ξ_{TM}} ω_L`. -/
-theorem isEquivariantMomentMap_cartanTwoForm_momentMap_comp_legendreMap
-    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (hinv : ∀ (g : G) v, L (g • v) = L v) :
-    (cartanTwoForm L hL).IsEquivariantMomentMap (momentMap IG G ∘ legendreMap L) where
-  contMDiff ξ := (contMDiff_momentMap_apply ξ).comp (contMDiff_legendreMap hL le_rfl)
-  isHamiltonianVectorField ξ := by
-    have hμ := (isEquivariantMomentMap_momentMap (IG := IG) (G := G) (I := I) (M := M)
-      ).isHamiltonianVectorField ξ
-    rw [InfinitesimalAction.fundamental_apply] at hμ
-    rw [← mpullback_legendreMap_symplecticForm hL, InfinitesimalAction.fundamental_apply]
-    exact hμ.mpullback (contMDiff_legendreMap hL le_rfl)
-      (fun v ↦ (contMDiff_momentMap_apply ξ (legendreMap L v)).mdifferentiableAt (by simp))
-      (mfderiv_legendreMap_fundamentalVectorField hL hinv ξ)
-  apply_smul g v := by
-    rw [Function.comp_apply, Function.comp_apply, legendreMap_smul (hinv g), momentMap_smul]
+/-- **The Noether charges form a moment map.** For a smooth Lagrangian `L` invariant under the
+tangent lift of a smooth action of `G`, the Noether charges
+`⟨μ(FL v), ξ⟩ = FL(v)(ξ_M(x))` (`TauCeti.CotangentBundle.momentMap_apply`) form a
+coadjoint-equivariant moment map of the tangent-lifted action for the Cartan two-form `ω_L`:
+`d⟨μ ∘ FL, ξ⟩ = ι_{ξ_{TM}} ω_L`. -/
+theorem isEquivariantMomentMap_momentMap_comp_legendreMap
+    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (hLG : ∀ (g : G) v, L (g • v) = L v) :
+    (cartanTwoForm L hL).IsEquivariantMomentMap
+      (CotangentBundle.momentMap IG G ∘ legendreMap L) := by
+  rw [← mpullback_legendreMap_symplecticForm hL]
+  exact CotangentBundle.isEquivariantMomentMap_momentMap.mpullback
+    (contMDiff_legendreMap hL le_rfl) fun g ↦ legendreMap_smul (hLG g)
 
-/-- **Noether's theorem, pointwise.** For a smooth Lagrangian invariant under the tangent-lifted
-action of `G` and a Hamiltonian vector field `X` of the energy for the Cartan two-form, every
-component `J_ξ = ⟨μ ∘ FL, ξ⟩` of the Lagrangian momentum map is stationary along `X`:
-`dJ_ξ(X) = -dE_L(ξ_{TM}) = 0`. -/
-theorem mvfderiv_momentMap_legendreMap_eq_zero (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
-    (hinv : ∀ (g : G) v, L (g • v) = L v) {X : (v : TangentBundle I M) → TangentSpace I.tangent v}
-    (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
-    (ξ : GroupLieAlgebra IG G) (v : TangentBundle I M) :
-    mvfderiv I.tangent (fun w ↦ momentMap IG G (legendreMap L w) ξ) v (X v) = 0 := by
-  have h := (isEquivariantMomentMap_cartanTwoForm_momentMap_comp_legendreMap hL hinv
-    ).toIsMomentMap.differential_apply_of_isHamiltonianVectorField hX v ξ
-  rwa [SmoothTwoForm.IsMomentMap.differential_apply, InfinitesimalAction.fundamental_apply,
-    mvfderiv_lagrangianEnergy_fundamentalVectorField hL hinv, neg_zero] at h
-
-/-- **Noether's theorem.** For a smooth Lagrangian invariant under the tangent-lifted action of
-`G`, the Lagrangian momentum map `μ ∘ FL` is constant along every integral curve, on a
-preconnected set of times, of a Hamiltonian vector field `X` of the energy for the Cartan
-two-form. -/
+/-- **Noether's theorem.** Let `L` be a smooth Lagrangian invariant under the tangent lift of a
+smooth action of `G`, and let `X` be a Lagrangian vector field, `ι_X ω_L = dE_L`. Along an
+integral curve `γ` of `X` on a preconnected set `s` of times, the Noether charges
+`⟨μ(FL v), ξ⟩ = FL(v)(ξ_M(x))` are constant. -/
 theorem momentMap_legendreMap_eq_of_isMIntegralCurveOn (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
-    (hinv : ∀ (g : G) v, L (g • v) = L v) {X : (v : TangentBundle I M) → TangentSpace I.tangent v}
+    (hLG : ∀ (g : G) v, L (g • v) = L v)
+    {X : (v : TangentBundle I M) → TangentSpace I.tangent v}
     (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
-    {γ : ℝ → TangentBundle I M} {s : Set ℝ} (hs : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s)
-    {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
-    momentMap IG G (legendreMap L (γ t)) = momentMap IG G (legendreMap L (γ t₀)) := by
-  have h := isEquivariantMomentMap_cartanTwoForm_momentMap_comp_legendreMap (IG := IG) hL hinv
-  ext ξ
-  exact hγ.apply_eq_of_mvfderiv_apply_eq_zero (f := fun w ↦ momentMap IG G (legendreMap L w) ξ)
-    hs (fun u _ ↦ (h.contMDiff ξ (γ u)).mdifferentiableAt (by simp))
-    (fun u _ ↦ mvfderiv_momentMap_legendreMap_eq_zero hL hinv hX ξ (γ u)) ht₀ ht
+    {γ : ℝ → TangentBundle I M} {s : Set ℝ} (hs : IsPreconnected s)
+    (hγ : IsMIntegralCurveOn γ X s) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    CotangentBundle.momentMap IG G (legendreMap L (γ t)) =
+      CotangentBundle.momentMap IG G (legendreMap L (γ t₀)) :=
+  (isEquivariantMomentMap_momentMap_comp_legendreMap hL hLG).toIsMomentMap
+    |>.apply_eq_of_isMIntegralCurveOn_of_smul_invariant (fun g ↦ lagrangianEnergy_smul (hLG g))
+      hX hs hγ (fun t _ ↦ (contMDiff_lagrangianEnergy hL (m := 1) (by simp)).mdifferentiableAt
+        one_ne_zero) ht₀ ht
 
-/-- **Noether's theorem for a regular Lagrangian.** For a smooth regular Lagrangian invariant under
-the tangent-lifted action of `G`, the Lagrangian momentum map `μ ∘ FL` is constant along every
+/-- **Noether's theorem** along a global integral curve: for a smooth Lagrangian `L` invariant
+under the tangent lift of a smooth action of `G`, the Noether charges are constant along every
+integral curve of a Lagrangian vector field. -/
+theorem momentMap_legendreMap_eq_of_isMIntegralCurve (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
+    (hLG : ∀ (g : G) v, L (g • v) = L v)
+    {X : (v : TangentBundle I M) → TangentSpace I.tangent v}
+    (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
+    {γ : ℝ → TangentBundle I M} (hγ : IsMIntegralCurve γ X) (t₀ t : ℝ) :
+    CotangentBundle.momentMap IG G (legendreMap L (γ t)) =
+      CotangentBundle.momentMap IG G (legendreMap L (γ t₀)) :=
+  momentMap_legendreMap_eq_of_isMIntegralCurveOn hL hLG hX isPreconnected_univ
+    (hγ.isMIntegralCurveOn _) (Set.mem_univ t₀) (Set.mem_univ t)
+
+/-- **Noether's theorem on the Hamiltonian side.** For a smooth hyperregular Lagrangian `L`
+invariant under the tangent lift of a smooth action of `G`, the moment map `μ` of the
+cotangent-lifted action is constant along every integral curve of a Hamiltonian vector field of
+`H = E_L ∘ FL⁻¹` on a preconnected set of times. -/
+theorem IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn
+    (hLh : IsHyperregularLagrangian L) (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
+    (hLG : ∀ (g : G) v, L (g • v) = L v)
+    {X : (p : CotangentBundle I M) → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) p}
+    (hX : (CotangentBundle.symplecticForm I M).IsHamiltonianVectorField hLh.hamiltonian X)
+    {γ : ℝ → CotangentBundle I M} {s : Set ℝ} (hs : IsPreconnected s)
+    (hγ : IsMIntegralCurveOn γ X s) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    CotangentBundle.momentMap IG G (γ t) = CotangentBundle.momentMap IG G (γ t₀) :=
+  CotangentBundle.isEquivariantMomentMap_momentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant
+    (fun g ↦ hLh.hamiltonian_smul (hLG g)) hX hs hγ
+    (fun t _ ↦ (hLh.contMDiff_hamiltonian hL).mdifferentiableAt (by simp)) ht₀ ht
+
+/-- **Noether's theorem for a regular Lagrangian.** For a smooth regular Lagrangian `L` invariant
+under the tangent lift of a smooth action of `G`, the Noether charges are constant along every
 integral curve of the Lagrangian vector field `X_E`, the Hamiltonian vector field of the energy
 for the symplectic Cartan two-form. -/
 theorem IsRegularLagrangian.momentMap_legendreMap_eq_of_isMIntegralCurve
-    (hreg : IsRegularLagrangian L)
-    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (hinv : ∀ (g : G) v, L (g • v) = L v)
-    {γ : ℝ → TangentBundle I M}
+    (hreg : IsRegularLagrangian L) (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
+    (hLG : ∀ (g : G) v, L (g • v) = L v) {γ : ℝ → TangentBundle I M}
     (hγ : IsMIntegralCurve γ ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)))
-    (s t : ℝ) :
-    momentMap IG G (legendreMap L (γ t)) = momentMap IG G (legendreMap L (γ s)) :=
-  momentMap_legendreMap_eq_of_isMIntegralCurveOn (IG := IG) hL hinv
+    (t₀ t : ℝ) :
+    CotangentBundle.momentMap IG G (legendreMap L (γ t)) =
+      CotangentBundle.momentMap IG G (legendreMap L (γ t₀)) :=
+  TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurve hL hLG
     ((hreg.isSymplectic_cartanTwoForm hL).isNondegenerate
-      |>.isHamiltonianVectorField_hamiltonianVectorField _)
-    isPreconnected_univ (hγ.isMIntegralCurveOn _) (Set.mem_univ s) (Set.mem_univ t)
+      |>.isHamiltonianVectorField_hamiltonianVectorField _) hγ t₀ t
 
-/-- **Hamiltonian conservation of the cotangent moment map.** For a smooth hyperregular Lagrangian
-invariant under the tangent-lifted action of `G`, every component `μ_ξ` of the cotangent-lift
-moment map is a first integral of the Hamiltonian `H = E_L ∘ FL⁻¹` for the canonical symplectic
-form of `T*M`. -/
-theorem IsHyperregularLagrangian.isFirstIntegral_momentMap (h : IsHyperregularLagrangian L)
-    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (hinv : ∀ (g : G) v, L (g • v) = L v)
+/-- **The moment map is a first integral of the Hamiltonian.** For a smooth hyperregular
+Lagrangian `L` invariant under the tangent lift of a smooth action of `G`, every component `μ_ξ`
+of the cotangent-lift moment map Poisson-commutes with the Hamiltonian `H = E_L ∘ FL⁻¹` for the
+canonical symplectic form of `T*M`. -/
+theorem IsHyperregularLagrangian.isFirstIntegral_momentMap (hLh : IsHyperregularLagrangian L)
+    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (hLG : ∀ (g : G) v, L (g • v) = L v)
     (ξ : GroupLieAlgebra IG G) :
-    (symplecticForm I M).IsFirstIntegral h.hamiltonian fun z ↦ momentMap IG G z ξ := by
-  have hμ := (isEquivariantMomentMap_momentMap (IG := IG) (G := G) (I := I) (M := M)).toIsMomentMap
-  refine SmoothTwoForm.isFirstIntegral_iff.2 fun z ↦ congrFun
-    ((hμ.poissonBracket_eq_zero_iff isSymplectic_symplecticForm.isNondegenerate h.hamiltonian
-      ξ).2 fun z ↦ ?_) z
+    (CotangentBundle.symplecticForm I M).IsFirstIntegral hLh.hamiltonian
+      fun p ↦ CotangentBundle.momentMap IG G p ξ := by
+  refine SmoothTwoForm.isFirstIntegral_iff.2 fun p ↦ congrFun
+    ((CotangentBundle.isEquivariantMomentMap_momentMap.toIsMomentMap.poissonBracket_eq_zero_iff
+      CotangentBundle.isSymplectic_symplecticForm.isNondegenerate hLh.hamiltonian ξ).2
+      fun q ↦ ?_) p
   rw [InfinitesimalAction.fundamental_apply]
-  exact mvfderiv_fundamentalVectorField_eq_zero
-    ((h.contMDiff_hamiltonian hL).mdifferentiableAt (by simp))
-    (ContMDiffSMul.mdifferentiableAt_smul_const z 1)
-    (fun g ↦ h.hamiltonian_smul (hinv g) z) ξ
+  exact mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant
+    ((hLh.contMDiff_hamiltonian hL).mdifferentiableAt (by simp))
+    (ContMDiffSMul.mdifferentiableAt_smul_const q 1) (fun g ↦ hLh.hamiltonian_smul (hLG g) q) ξ
 
 end Noether
 

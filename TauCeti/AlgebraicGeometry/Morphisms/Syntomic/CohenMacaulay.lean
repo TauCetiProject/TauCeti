@@ -49,13 +49,13 @@ theorem IsCohenMacaulay.of_syntomic (f : X ⟶ Y) [SyntomicOfRelativeDimension n
   refine ⟨fun x ↦ ?_⟩
   obtain ⟨U, V, hxV, e, hf⟩ :=
     SyntomicOfRelativeDimension.exists_isStandardSyntomicOfRelativeDimension (n := n) (f := f) x
-  have := U.2.isCohenMacaulay
+  have := U.property.isCohenMacaulay
   let := (f.appLE U V e).hom.toAlgebra
   have : TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension n Γ(Y, U) Γ(X, V) :=
     (isStandardSyntomicOfRelativeDimension_iff n _).mp hf
   have := TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.isCohenMacaulay
     (n := n) (R := Γ(Y, U)) (S := Γ(X, V))
-  exact (isCohenMacaulay_stalk_iff_of_isAffineOpen V.2 ⟨x, hxV⟩).mpr
+  exact (isCohenMacaulay_stalk_iff_of_isAffineOpen V.property ⟨x, hxV⟩).mpr
     (TauCeti.Ring.IsCohenMacaulay.isCohenMacaulay_localization _)
 
 /-- Every field-valued fibre of a syntomic morphism of fixed relative dimension is

@@ -118,7 +118,7 @@ theorem kernelCotangentLinearEquivZariski_toCotangent (a : RingHom.ker (f : H �
               IsLocalization.AtPrime.under_maximalIdeal
                 ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))
                 (RingHom.ker (f : H →+* k))]
-            exact a.2⟩ :=
+            exact a.property⟩ :=
   Ideal.cotangentLocalizationEquiv_toCotangent (RingHom.ker (f : H →+* k))
     ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f)) a
 
