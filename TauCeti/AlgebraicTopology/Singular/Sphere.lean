@@ -18,7 +18,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLast
 public import TauCeti.Geometry.Sphere.LinearIsometry
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber

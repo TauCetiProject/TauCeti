@@ -22,7 +22,7 @@ Let `τ₀, τ₁ : S × V → M` be framed tubes around the same map `f : S →
 (`TauCeti.IsFramedTube`), with `S` a compact boundaryless manifold and `V` a real normed space.
 The collapse of `τ₁` is homotopic to that of `τ₀` as soon as the transition from `τ₁` to `τ₀`
 has, along the core, a fibre derivative homotopic to the identity through linear automorphisms
-(`TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopic`). This file supplies that fibre
+(`TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopicRel`). This file supplies that fibre
 derivative for smooth tubes.
 
 At a point `(x, 0)` of the core both tubes pass through `f x`. The **transition fibre
@@ -49,12 +49,15 @@ Hence:
 
 * two such tubes whose transition fibre derivative is homotopic to the identity through linear
   automorphisms have homotopic collapses
-  (`TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopic_of_transitionFDeriv`), also as maps
-  onto `Sᵏ` for `V = ℝᵏ`
-  (`TauCeti.IsFramedTube.pontryaginThomSphereMap_homotopic_of_transitionFDeriv`);
+  (`TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopicRel_of_transitionFDeriv`), also as
+  maps onto `Sᵏ` for `V = ℝᵏ`
+  (`TauCeti.IsFramedTube.pontryaginThomSphereMap_homotopicRel_of_transitionFDeriv`);
 * in particular two smooth tubes inducing the same framing of the normal bundle, that is with
   transition fibre derivative the identity, have homotopic collapses
-  (`TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopic_of_transitionFDeriv_eq_id`).
+  (`TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopicRel_of_transitionFDeriv_eq_id`).
+
+All these homotopies are relative to the points outside both tubes, which stay at `∞`: for a base
+point of `M` outside both tubes they are based homotopies.
 
 ## Main declarations
 
@@ -70,8 +73,9 @@ Hence:
 * `TauCeti.continuous_transitionFDeriv`: it depends continuously on the point of the core.
 * `TauCeti.exists_continuous_units_transitionFDeriv`: for two smooth local diffeomorphic tubes it
   lifts to a continuous map into the linear automorphisms of `V`.
-* `TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopic_of_transitionFDeriv`: smooth tubes
-  whose transition fibre derivative is homotopic to the identity have homotopic collapses.
+* `TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopicRel_of_transitionFDeriv`: smooth tubes
+  whose transition fibre derivative is homotopic to the identity have collapses homotopic relative
+  to the points outside both tubes.
 
 ## References
 
@@ -286,7 +290,7 @@ automorphisms.** If `τ₀` and `τ₁` are framed tubes around the same map `f 
 boundaryless manifold `S`, and both are `C^n` local diffeomorphisms, `n ≥ 1`, then
 `transitionFDeriv I J τ₀ τ₁` lifts to a continuous map into the units of `V →L[ℝ] V`; this
 supplies the endpoint of the homotopy in
-`TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopic_of_transitionFDeriv`. -/
+`TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopicRel_of_transitionFDeriv`. -/
 theorem exists_continuous_units_transitionFDeriv (hn : 1 ≤ n) (h₀ : IsFramedTube f τ₀)
     (h₁ : IsFramedTube f τ₁) (hτ₀ : IsLocalDiffeomorph (I.prod 𝓘(ℝ, V)) J n τ₀)
     (hτ₁ : IsLocalDiffeomorph (I.prod 𝓘(ℝ, V)) J n τ₁) :
@@ -314,44 +318,46 @@ variable [I.Boundaryless] [CompactSpace S] [IsManifold I n S] [T2Space M]
 framed tubes around the same map `f : S → M`, from a compact boundaryless manifold `S` into a
 Hausdorff manifold `M`, with `τ₀` a `C^n` local diffeomorphism and `τ₁` a `C^n` map, `n ≥ 1`.
 If their transition fibre derivative is homotopic to the identity through a homotopy `B` of linear
-automorphisms of `V`, their collapses are homotopic. -/
-theorem IsFramedTube.pontryaginThomCollapseMap_homotopic_of_transitionFDeriv
+automorphisms of `V`, their collapses are homotopic relative to the points outside both tubes, so
+by a based homotopy for a base point outside both tubes. -/
+theorem IsFramedTube.pontryaginThomCollapseMap_homotopicRel_of_transitionFDeriv
     (h₁ : IsFramedTube f τ₁) (h₀ : IsFramedTube f τ₀) (hn : 1 ≤ n)
     (hτ₀ : IsLocalDiffeomorph (I.prod 𝓘(ℝ, V)) J n τ₀) (hτ₁ : ContMDiff (I.prod 𝓘(ℝ, V)) J n τ₁)
     {B : unitInterval × S → (V →L[ℝ] V)ˣ} (hB : Continuous B)
     (hB₀ : ∀ x, (B (0, x) : V →L[ℝ] V) = transitionFDeriv I J τ₀ τ₁ x)
     (hB₁ : ∀ x, B (1, x) = 1) :
-    (pontryaginThomCollapseMap h₁.isOpenEmbedding).Homotopic
-      (pontryaginThomCollapseMap h₀.isOpenEmbedding) := by
-  refine h₁.pontryaginThomCollapseMap_homotopic h₀ hB ?_ hB₁
+    (pontryaginThomCollapseMap h₁.isOpenEmbedding).HomotopicRel
+      (pontryaginThomCollapseMap h₀.isOpenEmbedding) (range τ₀ ∪ range τ₁)ᶜ := by
+  refine h₁.pontryaginThomCollapseMap_homotopicRel h₀ hB ?_ hB₁
   simpa only [hB₀] using hasTransitionFDeriv_transitionFDeriv hn h₀ h₁ hτ₀ hτ₁
 
 /-- **Smooth tubes inducing the same framing have homotopic collapses.** If the transition fibre
 derivative of two framed tubes around the same map, `τ₀` a `C^n` local diffeomorphism and `τ₁` a
-`C^n` map with `n ≥ 1`, is the identity along the whole core, their collapses are homotopic. -/
-theorem IsFramedTube.pontryaginThomCollapseMap_homotopic_of_transitionFDeriv_eq_id
+`C^n` map with `n ≥ 1`, is the identity along the whole core, their collapses are homotopic
+relative to the points outside both tubes. -/
+theorem IsFramedTube.pontryaginThomCollapseMap_homotopicRel_of_transitionFDeriv_eq_id
     (h₁ : IsFramedTube f τ₁) (h₀ : IsFramedTube f τ₀) (hn : 1 ≤ n)
     (hτ₀ : IsLocalDiffeomorph (I.prod 𝓘(ℝ, V)) J n τ₀) (hτ₁ : ContMDiff (I.prod 𝓘(ℝ, V)) J n τ₁)
     (hid : ∀ x, transitionFDeriv I J τ₀ τ₁ x = ContinuousLinearMap.id ℝ V) :
-    (pontryaginThomCollapseMap h₁.isOpenEmbedding).Homotopic
-      (pontryaginThomCollapseMap h₀.isOpenEmbedding) :=
-  h₁.pontryaginThomCollapseMap_homotopic_of_transitionFDeriv h₀ hn hτ₀ hτ₁ continuous_const
+    (pontryaginThomCollapseMap h₁.isOpenEmbedding).HomotopicRel
+      (pontryaginThomCollapseMap h₀.isOpenEmbedding) (range τ₀ ∪ range τ₁)ᶜ :=
+  h₁.pontryaginThomCollapseMap_homotopicRel_of_transitionFDeriv h₀ hn hτ₀ hτ₁ continuous_const
     (fun x ↦ (hid x).symm) fun _ ↦ rfl
 
 /-- **Independence of the collapse onto the sphere from a smooth tube.** For `V = ℝᵏ`, two framed
-tubes as in `TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopic_of_transitionFDeriv`, whose
-transition fibre derivative is homotopic to the identity through linear automorphisms, have
-homotopic collapses onto `Sᵏ`. -/
-theorem IsFramedTube.pontryaginThomSphereMap_homotopic_of_transitionFDeriv {k : ℕ}
+tubes as in `TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopicRel_of_transitionFDeriv`,
+whose transition fibre derivative is homotopic to the identity through linear automorphisms, have
+collapses onto `Sᵏ` homotopic relative to the points outside both tubes. -/
+theorem IsFramedTube.pontryaginThomSphereMap_homotopicRel_of_transitionFDeriv {k : ℕ}
     {τ₀ τ₁ : S × (Fin k → ℝ) → M} (h₁ : IsFramedTube f τ₁) (h₀ : IsFramedTube f τ₀) (hn : 1 ≤ n)
     (hτ₀ : IsLocalDiffeomorph (I.prod 𝓘(ℝ, Fin k → ℝ)) J n τ₀)
     (hτ₁ : ContMDiff (I.prod 𝓘(ℝ, Fin k → ℝ)) J n τ₁)
     {B : unitInterval × S → ((Fin k → ℝ) →L[ℝ] (Fin k → ℝ))ˣ} (hB : Continuous B)
     (hB₀ : ∀ x, (B (0, x) : (Fin k → ℝ) →L[ℝ] (Fin k → ℝ)) = transitionFDeriv I J τ₀ τ₁ x)
     (hB₁ : ∀ x, B (1, x) = 1) (s₀ : Metric.sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
-    (pontryaginThomSphereMap h₁.isOpenEmbedding s₀).Homotopic
-      (pontryaginThomSphereMap h₀.isOpenEmbedding s₀) := by
-  refine h₁.pontryaginThomSphereMap_homotopic h₀ hB ?_ hB₁ s₀
+    (pontryaginThomSphereMap h₁.isOpenEmbedding s₀).HomotopicRel
+      (pontryaginThomSphereMap h₀.isOpenEmbedding s₀) (range τ₀ ∪ range τ₁)ᶜ := by
+  refine h₁.pontryaginThomSphereMap_homotopicRel h₀ hB ?_ hB₁ s₀
   simpa only [hB₀] using hasTransitionFDeriv_transitionFDeriv hn h₀ h₁ hτ₀ hτ₁
 
 end TauCeti

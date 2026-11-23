@@ -82,6 +82,9 @@ the labelled presentation is Delzant exactly when `(u, c)` is Delzant and every 
 * `TauCeti.Toric.IsDelzant.extremePoints_nonempty`: a Delzant polytope has a vertex.
 * `TauCeti.Toric.mem_extremePoints_facetPolyhedron_iff_span_eq_top`: in finite dimension, the
   vertices are the points of the polyhedron at which the active normals span `V`.
+* `TauCeti.Toric.injOn_activeSet_extremePoints_facetPolyhedron`,
+  `TauCeti.Toric.finite_extremePoints_facetPolyhedron`: a vertex is determined by its active
+  constraints, so a facet polyhedron has finitely many vertices.
 * `TauCeti.Toric.exists_mem_extremePoints_activeSet_subset`: the constraints active at a point of
   a compact facet polyhedron are active at some vertex.
 * `TauCeti.Toric.isSmoothVertex_iff_linearIndepOn`: a smooth vertex is a point whose active
@@ -234,6 +237,19 @@ theorem mem_extremePoints_facetPolyhedron_iff [Finite ι] {x : StrongDual ℝ V}
       ∀ w : StrongDual ℝ V, (∀ j ∈ activeSet (facetPairing i u) c x, w (i (u j)) = 0) → w = 0 := by
   unfold facetPolyhedron
   exact mem_extremePoints_polyhedron_iff
+
+/-- **A vertex of a facet polyhedron is determined by its facets.** Two vertices at which the
+same constraints are active are equal. -/
+theorem injOn_activeSet_extremePoints_facetPolyhedron [Finite ι] :
+    InjOn (activeSet (facetPairing i u) c) ((facetPolyhedron i u c).extremePoints ℝ) := by
+  unfold facetPolyhedron
+  exact injOn_activeSet_extremePoints_polyhedron
+
+/-- A facet polyhedron with finitely many facets has finitely many vertices. -/
+theorem finite_extremePoints_facetPolyhedron [Finite ι] :
+    ((facetPolyhedron i u c).extremePoints ℝ).Finite := by
+  unfold facetPolyhedron
+  exact finite_extremePoints_polyhedron
 
 /-- **Vertices of a facet polyhedron, by spanning.** In finite dimension, a point `x` of the
 polyhedron is a vertex exactly when the normals active at `x` span `V`. -/
