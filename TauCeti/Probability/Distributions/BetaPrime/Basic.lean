@@ -28,7 +28,7 @@ rescaling lets the density calculation reuse the existing beta-to-F change of va
 * `TauCeti.Probability.betaPrimeMeasure_eq_map_fisherSnedecorMeasure` — the rescaled F-law
   representation;
 * `TauCeti.Probability.hasLaw_betaPrimeMeasure_of_hasLaw_betaMeasure` and
-  `TauCeti.Probability.hasLaw_betaPrimeMeasure_of_hasLaw_fisherSnedecorMeasure` — random-variable
+  `ProbabilityTheory.HasLaw.betaPrimeMeasure_of_fisherSnedecorMeasure` — random-variable
   forms of these constructions;
 * `TauCeti.Probability.betaPrimeMeasure_eq_withDensity` — the Lebesgue-density representation;
 * `TauCeti.Probability.cdf_betaPrimeMeasure_eq` — the regularized-incomplete-Beta cdf.
@@ -122,7 +122,7 @@ theorem betaPrimeMeasure_eq_map_fisherSnedecorMeasure :
 
 /-- Multiplying an F random variable with degrees `2 * a` and `2 * b` by `a / b` gives the
 beta-prime law. This includes the totalized invalid-parameter branches. -/
-theorem hasLaw_betaPrimeMeasure_of_hasLaw_fisherSnedecorMeasure
+theorem _root_.ProbabilityTheory.HasLaw.betaPrimeMeasure_of_fisherSnedecorMeasure
     {Omega : Type*} [MeasurableSpace Omega] {P : Measure Omega} {X : Omega → ℝ} {a b : ℝ}
     (hX : HasLaw X (fisherSnedecorMeasure (2 * a) (2 * b)) P) :
     HasLaw (fun ω ↦ (a / b) * X ω) (betaPrimeMeasure a b) P := by
