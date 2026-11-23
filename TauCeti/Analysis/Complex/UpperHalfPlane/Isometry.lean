@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
+import TauCeti.Topology.MetricSpace.IsometricSMul
 
 /-!
 # The isometry group of the upper half-plane is `PGL(2, ℝ)`
@@ -41,7 +42,7 @@ the sign of `x`. Uniqueness is the faithfulness of the action. Hence the action 
   isometry.
 * `Isometry.exists_pgl_smul_eq` and `Isometry.existsUnique_pgl_smul_eq`: every isometry
   `ℍ → ℍ` is the action of exactly one element of `PGL(2, ℝ)`.
-* `UpperHalfPlane.pglEquivIsometryEquiv`: the group isomorphism `PGL(2, ℝ) ≃* (ℍ ≃ᵢ ℍ)`.
+* `TauCeti.UpperHalfPlane.pglEquivIsometryEquiv`: the group isomorphism `PGL(2, ℝ) ≃* (ℍ ≃ᵢ ℍ)`.
 
 ## References
 
@@ -92,12 +93,6 @@ instance instIsIsometricSMulPGL : IsIsometricSMul PGL(2, ℝ) ℍ where
   isometry_smul q := by
     induction q using Matrix.ProjGenLinGroup.induction_on with | mk g =>
     simpa only [pglMk_smul] using isometry_smul ℍ g
-
-end TauCeti.UpperHalfPlane
-
-namespace UpperHalfPlane
-
-open TauCeti.UpperHalfPlane
 
 /-- For a fixed point `p`, the hyperbolic distance from `p` determines
 `((re - p.re)² + im² + p.im²) / im`, by `UpperHalfPlane.cosh_dist'`. -/
@@ -198,7 +193,7 @@ theorem _root_.Isometry.existsUnique_pgl_smul_eq {f : ℍ → ℍ} (hf : Isometr
 and their compositions with `z ↦ -conj z` for negative determinant. -/
 def pglEquivIsometryEquiv : PGL(2, ℝ) ≃* (ℍ ≃ᵢ ℍ) :=
   MulEquiv.ofBijective
-    (MonoidHom.mk' IsometryEquiv.constSMul fun c c' ↦ IsometryEquiv.ext (mul_smul c c'))
+    (IsometryEquiv.constSMulHom PGL(2, ℝ) ℍ)
     ⟨fun _ _ h ↦ eq_of_smul_eq_smul (DFunLike.congr_fun h),
       fun f ↦ f.isometry.exists_pgl_smul_eq.imp fun _ hc ↦ IsometryEquiv.ext hc⟩
 
@@ -214,4 +209,4 @@ theorem pglEquivIsometryEquiv_symm_smul (f : ℍ ≃ᵢ ℍ) (z : ℍ) :
     pglEquivIsometryEquiv.symm f • z = f z := by
   rw [← pglEquivIsometryEquiv_apply, MulEquiv.apply_symm_apply]
 
-end UpperHalfPlane
+end TauCeti.UpperHalfPlane
