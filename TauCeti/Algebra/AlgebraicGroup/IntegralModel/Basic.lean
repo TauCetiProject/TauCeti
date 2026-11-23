@@ -6,50 +6,45 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Smooth.Flat
-public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
+public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
-public import TauCeti.Algebra.AlgebraicGroup.Reductive.Over
+public import TauCeti.Algebra.AlgebraicGroup.IntegralModel.Points
 
 /-!
-# Smooth affine integral models and reductive models
+# Smooth affine integral models
 
 Let `O` be a commutative ring with an algebra map to a commutative ring `K`, typically a valuation
 ring and its fraction field, and let `G` be an affine group of finite type over `K` with coordinate
 Hopf algebra `H`. A smooth affine `O`-model of `G` is a smooth commutative Hopf `O`-algebra `A`,
-of finite type, together with a Hopf isomorphism `K ⊗[O] A ≅ H`. Its integral points are the
-image of `𝒢(O) = Hom_O(A, O)` in `G(K) = Hom_K(H, K)` under base change along `O → K`. When
-`O → K` is injective (`FaithfulSMul O K`), a point `g` of `G` is integral exactly when `g` takes
-values in the image of `O` on the image of `A`. Morphisms of models are Hopf maps of the
-coordinate algebras over the identity of `H`; they compare integral points, and when `O → K` is
-injective there is at most one morphism between two models.
+of finite type, together with a Hopf isomorphism `K ⊗[O] A ≅ H`. We call the base change
+`K ⊗[O] A` the generic fiber of the model; this is shorthand, as `K` is an arbitrary `O`-algebra
+and need not be the fraction field of a domain `O`. The integral points of the model are the image
+of `𝒢(O) = Hom_O(A, O)` in `G(K) = Hom_K(H, K)` under base change along `O → K`. When `O → K` is
+injective (`FaithfulSMul O K`), a point `g` of `G` is integral exactly when `g` takes values in
+the image of `O` on the image of `A`. Morphisms of models are Hopf maps of the coordinate algebras
+over the identity of `H`, that is, morphisms of the corresponding objects of
+`CostructuredArrow (FiniteTypeCommHopfAlgCat.baseChangeFunctor) H`; they compare integral points,
+and when `O → K` is injective there is at most one morphism between two models.
 
-Over a local ring `O` with residue field `κ` and a field `K`, the special fiber of `𝒢` is
-`κ ⊗[O] A`. A model is reductive when both fibers are connected reductive groups, and a subgroup
-of `G(K)` is hyperspecial when it is the group of integral points of a reductive model. A reductive
-group scheme over `O` in the sense of `TauCeti.reductiveCommHopfAlgPropertyOver` gives a reductive
-model.
+Over a local ring `O` with residue field `κ`, the special fiber of `𝒢` is the base change
+`κ ⊗[O] A`. When `K` is a field, a model has connected fibers when its two selected base changes,
+to `K` and to `κ`, are geometrically connected; other fibers of `Spec A → Spec O` are not tested.
 
 ## Main declarations
 
-* `TauCeti.IntegralModel.integralPoints`: the integral points of a Hopf `O`-algebra, as a subgroup
-  of the points of its generic fiber.
 * `TauCeti.IntegralModel.SmoothModel`: a smooth affine `O`-model of an affine `K`-group.
 * `TauCeti.IntegralModel.SmoothModel.integralPoints`: the subgroup of `G(K)` of integral points,
   with membership criterion `SmoothModel.mem_integralPoints_iff`.
-* `TauCeti.IntegralModel.SmoothModel.Hom`: morphisms of models, with identity and composition, at
-  most one between two models when `O → K` is injective (`SmoothModel.Hom.instSubsingleton`);
+* `TauCeti.IntegralModel.SmoothModel.Hom`: morphisms of models, at most one between two models
+  when `O → K` is injective (`SmoothModel.Hom.instSubsingleton`);
   `SmoothModel.Hom.integralPoints_le` compares integral points along a morphism.
-* `TauCeti.IntegralModel.SmoothModel.specialFiber`, `SmoothModel.HasConnectedFibers` and
-  `SmoothModel.IsReductive`: the special fiber and the fiberwise conditions on a model.
-* `TauCeti.IntegralModel.IsHyperspecialSubgroup`: the integral points of some reductive model.
+* `TauCeti.IntegralModel.SmoothModel.specialFiber` and `SmoothModel.HasConnectedFibers`: the
+  special fiber and the connectedness condition on the two selected base changes.
 
 ## References
 
 * F. Bruhat, J. Tits, *Groupes réductifs sur un corps local II*, Publ. Math. IHÉS 60 (1984),
-  1.2.2–1.2.5, pp. 17–18, and 4.6.31, pp. 136–137.
-* J. Tits, *Reductive groups over local fields*, in *Automorphic forms, representations and
-  L-functions*, Proc. Sympos. Pure Math. 33, Part 1 (1979), §3.8.1.
-* B. Conrad, *Reductive group schemes* (2014), Definition 3.1.1.
+  1.2.2–1.2.5, pp. 17–18.
 -/
 
 public section
@@ -60,53 +55,11 @@ namespace TauCeti.IntegralModel
 
 universe u
 
-section IntegralPoints
-
-variable (O K A : Type*) [CommSemiring O] [CommSemiring K] [Algebra O K] [Semiring A]
-  [_root_.HopfAlgebra O A]
-
-/-- The integral points of a Hopf `O`-algebra `A`, as a subgroup of the points
-`Hom_K(K ⊗[O] A, K)` of its generic fiber: the image of `Hom_O(A, O)` under base change of points
-along `O → K` (`AlgHom.pointsBaseChange`). -/
-noncomputable def integralPoints : Subgroup (WithConv (K ⊗[O] A →ₐ[K] K)) :=
-  (AlgHom.pointsBaseChange (k := O) (A := A) K).range
-
-/-- Unfolding lemma for `IntegralModel.integralPoints`. -/
-theorem integralPoints_def :
-    integralPoints O K A = (AlgHom.pointsBaseChange (k := O) (A := A) K).range :=
-  (rfl)
-
-variable {O K A}
-
-/-- Integral points are contravariant in the Hopf algebra: a Hopf map `φ : A → A'` sends the
-integral points of `A'` to integral points of `A` by precomposition with its scalar extension. -/
-theorem integralPoints_le_comap {A' : Type*} [Semiring A'] [_root_.HopfAlgebra O A']
-    (φ : A →ₐc[O] A') :
-    integralPoints O K A' ≤ (integralPoints O K A).comap
-      (BialgHom.mapDomain (A := K)
-        (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)) := by
-  rintro _ ⟨x, rfl⟩
-  exact ⟨BialgHom.mapDomain φ x, (BialgHom.mapDomain_pointsBaseChange K φ x).symm⟩
-
-end IntegralPoints
-
-/-- When `O → K` is injective, a point of the generic fiber is integral exactly when its values on
-`1 ⊗ a` lie in the image of `O` for every `a ∈ A`. -/
-theorem mem_integralPoints_iff {O K : Type*} [CommSemiring O] [CommSemiring K] [Algebra O K]
-    [FaithfulSMul O K] (A : Type*) [Semiring A] [_root_.HopfAlgebra O A]
-    (g : WithConv (K ⊗[O] A →ₐ[K] K)) :
-    g ∈ integralPoints O K A ↔ ∀ a : A, g (1 ⊗ₜ[O] a) ∈ (algebraMap O K).rangeS := by
-  rw [integralPoints_def, AlgHom.pointsBaseChange_def, MonoidHom.range_comp, Subgroup.mem_map_equiv,
-    MonoidHom.mem_range, ← MonoidHom.mem_mrange,
-    AlgHom.mem_mrange_mapValue_iff (FaithfulSMul.algebraMap_injective O K)]
-  simp only [AlgHom.baseChangePointsMulEquiv_symm_apply, AlgHom.mem_range, RingHom.mem_rangeS,
-    Algebra.ofId_apply]
-
 variable {O K : Type u} [CommRing O] [CommRing K] [Algebra O K]
 
 /-- A smooth affine `O`-model of the affine `K`-group with coordinate Hopf algebra `H`: a smooth
-commutative Hopf `O`-algebra of finite type with a Hopf isomorphism from its generic fiber to
-`H` ([Bruhat–Tits II], 1.2.2–1.2.5). -/
+commutative Hopf `O`-algebra of finite type with a Hopf isomorphism from its generic fiber
+`K ⊗[O] O[𝒢]` to `H` ([Bruhat–Tits II], 1.2.2–1.2.5). -/
 structure SmoothModel (O K : Type u) [CommRing O] [CommRing K] [Algebra O K]
     (H : FiniteTypeCommHopfAlgCat.{u, u} K) where
   /-- The coordinate Hopf algebra `O[𝒢]` of the model. -/
@@ -123,18 +76,18 @@ attribute [instance] SmoothModel.smooth
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} K} (𝒢 : SmoothModel O K H)
 
 /-- The integral points of a smooth model, as a subgroup of the points `G(K) = Hom_K(H, K)` of its
-generic fiber: the integral points of its coordinate algebra, transported along the generic fiber
-isomorphism. -/
+generic fiber: the points whose pullback along the generic fiber isomorphism is an integral point
+of the coordinate algebra. -/
 noncomputable def integralPoints : Subgroup (WithConv (H →ₐ[K] K)) :=
-  (IntegralModel.integralPoints O K 𝒢.coord).map
-    (BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.inv) :
-      WithConv (K ⊗[O] 𝒢.coord →ₐ[K] K) →* WithConv (H →ₐ[K] K))
+  (IntegralModel.integralPoints O K 𝒢.coord).comap
+    (BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom) :
+      WithConv (H →ₐ[K] K) →* WithConv (K ⊗[O] 𝒢.coord →ₐ[K] K))
 
 /-- Unfolding lemma for `SmoothModel.integralPoints`. -/
 theorem integralPoints_def :
-    𝒢.integralPoints = (IntegralModel.integralPoints O K 𝒢.coord).map
-      (BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.inv) :
-        WithConv (K ⊗[O] 𝒢.coord →ₐ[K] K) →* WithConv (H →ₐ[K] K)) :=
+    𝒢.integralPoints = (IntegralModel.integralPoints O K 𝒢.coord).comap
+      (BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom) :
+        WithConv (H →ₐ[K] K) →* WithConv (K ⊗[O] 𝒢.coord →ₐ[K] K)) :=
   (rfl)
 
 /-- A point `g` of `G` lies in the integral points of `𝒢` exactly when its pullback along the
@@ -143,16 +96,7 @@ theorem mem_integralPoints_iff_mapDomain (g : WithConv (H →ₐ[K] K)) :
     g ∈ 𝒢.integralPoints ↔
       BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom) g ∈
         IntegralModel.integralPoints O K 𝒢.coord := by
-  let e := BialgEquiv.mapDomainMulEquiv (A := K) (_root_.CommHopfAlgCat.ofIso
-    ((finiteTypeCommHopfAlgProperty K).ι.mapIso 𝒢.genericFiberIso))
-  have he : e.symm.toMonoidHom =
-      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.inv) :=
-    MonoidHom.ext fun g ↦ by
-      rw [MulEquiv.coe_toMonoidHom, BialgEquiv.mapDomainMulEquiv_symm_apply,
-        CommHopfAlgCat.coe_ofIso_symm, CategoryTheory.Functor.mapIso_inv, ObjectProperty.ι_map]
-  rw [integralPoints_def, ← he, Subgroup.mem_map_equiv, MulEquiv.symm_symm,
-    BialgEquiv.mapDomainMulEquiv_apply, CommHopfAlgCat.coe_ofIso,
-    CategoryTheory.Functor.mapIso_hom, ObjectProperty.ι_map]
+  rw [integralPoints_def, Subgroup.mem_comap]
 
 /-- When `O → K` is injective, a point `g` of `G` is integral for `𝒢` exactly when it takes
 values in the image of `O` on the image of every `a ∈ O[𝒢]` in `H`. -/
@@ -163,64 +107,47 @@ theorem mem_integralPoints_iff [FaithfulSMul O K] (g : WithConv (H →ₐ[K] K))
   simp only [mem_integralPoints_iff_mapDomain, IntegralModel.mem_integralPoints_iff,
     BialgHom.mapDomain_apply_apply, RingHom.mem_rangeS, RingHom.mem_range]
 
+/-- A smooth model as an object of `CostructuredArrow FiniteTypeCommHopfAlgCat.baseChangeFunctor H`:
+its coordinate algebra together with its generic fiber isomorphism. -/
+noncomputable abbrev toCostructuredArrow :
+    CostructuredArrow (FiniteTypeCommHopfAlgCat.baseChangeFunctor (k := O) (K := K)) H :=
+  CostructuredArrow.mk 𝒢.genericFiberIso.hom
+
 /-- A morphism of smooth models `𝒢' → 𝒢`, given by a Hopf map `O[𝒢] → O[𝒢']` of coordinate
-algebras over the identity of `H`. -/
-@[ext]
-structure Hom (𝒢 𝒢' : SmoothModel O K H) where
-  /-- The Hopf map of coordinate algebras. -/
-  hom : 𝒢.coord ⟶ 𝒢'.coord
-  /-- The map lies over the identity of the generic fiber. -/
-  comm : FiniteTypeCommHopfAlgCat.baseChangeMap (K := K) hom ≫ 𝒢'.genericFiberIso.hom =
-    𝒢.genericFiberIso.hom
+algebras over the identity of `H`: a morphism `𝒢.toCostructuredArrow ⟶ 𝒢'.toCostructuredArrow`,
+with identity `𝟙`, composition `≫`, underlying Hopf map `CostructuredArrow.Hom.left` and
+compatibility `CostructuredArrow.w`. -/
+abbrev Hom (𝒢 𝒢' : SmoothModel O K H) :=
+  𝒢.toCostructuredArrow ⟶ 𝒢'.toCostructuredArrow
 
 namespace Hom
 
-attribute [reassoc (attr := simp)] comm
+variable {𝒢} {𝒢' : SmoothModel O K H}
 
-/-- The identity morphism of a smooth model. -/
-protected def id : Hom 𝒢 𝒢 where
-  hom := 𝟙 _
-  comm := by
-    rw [← FiniteTypeCommHopfAlgCat.baseChangeFunctor_map, CategoryTheory.Functor.map_id,
-      Category.id_comp]
-
-/-- The identity morphism is the identity Hopf map. -/
-@[simp]
-theorem id_hom : (Hom.id 𝒢).hom = 𝟙 _ :=
-  (rfl)
-
-variable {𝒢} {𝒢' 𝒢'' : SmoothModel O K H}
-
-/-- The composite of morphisms of smooth models, given by composing the Hopf maps of coordinate
-algebras. -/
-protected def comp (f : Hom 𝒢 𝒢') (f' : Hom 𝒢' 𝒢'') : Hom 𝒢 𝒢'' where
-  hom := f.hom ≫ f'.hom
-  comm := by
-    rw [← FiniteTypeCommHopfAlgCat.baseChangeFunctor_map, CategoryTheory.Functor.map_comp,
-      Category.assoc, FiniteTypeCommHopfAlgCat.baseChangeFunctor_map,
-      FiniteTypeCommHopfAlgCat.baseChangeFunctor_map, f'.comm, f.comm]
-
-/-- Composition of morphisms of models composes the Hopf maps. -/
-@[simp]
-theorem comp_hom (f : Hom 𝒢 𝒢') (f' : Hom 𝒢' 𝒢'') : (f.comp f').hom = f.hom ≫ f'.hom :=
-  (rfl)
+/-- A morphism of models intertwines the generic fiber isomorphisms, as bialgebra maps. -/
+theorem toBialgHom_genericFiberIso_hom_comp (f : Hom 𝒢 𝒢') :
+    (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢'.genericFiberIso.hom).comp
+        (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K)
+          (FiniteTypeCommHopfAlgCat.toBialgHom f.left)) =
+      FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom := by
+  simpa using congrArg FiniteTypeCommHopfAlgCat.toBialgHom (CostructuredArrow.w f)
 
 /-- On pure tensors `1 ⊗ a`, a morphism of models is compatible with the generic-fiber
 isomorphisms. -/
 @[simp]
 lemma genericFiberIso_hom_one_tmul (f : Hom 𝒢 𝒢') (a : 𝒢.coord) :
     FiniteTypeCommHopfAlgCat.toBialgHom 𝒢'.genericFiberIso.hom
-        (1 ⊗ₜ[O] FiniteTypeCommHopfAlgCat.toBialgHom f.hom a) =
+        (1 ⊗ₜ[O] FiniteTypeCommHopfAlgCat.toBialgHom (H := 𝒢.coord) (K := 𝒢'.coord) f.left a) =
       FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom (1 ⊗ₜ[O] a) := by
-  rw [← FiniteTypeCommHopfAlgCat.baseChangeMap_apply_tmul (K := K) f.hom, ← BialgHom.comp_apply,
-    ← FiniteTypeCommHopfAlgCat.toBialgHom_comp, f.comm]
+  simpa using DFunLike.congr_fun (toBialgHom_genericFiberIso_hom_comp f) (1 ⊗ₜ[O] a)
 
 /-- When `O → K` is injective, there is at most one morphism between two smooth models. -/
 instance instSubsingleton [FaithfulSMul O K] : Subsingleton (Hom 𝒢 𝒢') :=
-  ⟨fun f f' ↦ Hom.ext <| ObjectProperty.hom_ext _ <|
-    CommHopfAlgCat.baseChangeMap_injective_hom (FaithfulSMul.algebraMap_injective O K) <|
+  ⟨fun f f' ↦ CostructuredArrow.hom_ext _ _ <| ObjectProperty.hom_ext _ <|
+    CommHopfAlgCat.baseChangeMap_injective_hom (H := 𝒢.coord.obj) (L := 𝒢'.coord.obj)
+      (FaithfulSMul.algebraMap_injective O K) <|
       congrArg (fun φ ↦ φ.hom) ((cancel_mono 𝒢'.genericFiberIso.hom).1
-        (f.comm.trans f'.comm.symm))⟩
+        ((CostructuredArrow.w f).trans (CostructuredArrow.w f').symm))⟩
 
 /-- A morphism of models `𝒢' → 𝒢` gives an inclusion of the integral points of `𝒢'` in those
 of `𝒢`. -/
@@ -228,10 +155,9 @@ theorem integralPoints_le (f : Hom 𝒢 𝒢') :
     𝒢'.integralPoints ≤ 𝒢.integralPoints := by
   intro g hg
   rw [mem_integralPoints_iff_mapDomain] at hg ⊢
-  have := integralPoints_le_comap (K := K) (FiniteTypeCommHopfAlgCat.toBialgHom f.hom) hg
-  rwa [← FiniteTypeCommHopfAlgCat.toBialgHom_baseChangeMap, Subgroup.mem_comap,
-    ← MonoidHom.comp_apply, ← BialgHom.mapDomain_comp,
-    ← FiniteTypeCommHopfAlgCat.toBialgHom_comp, f.comm] at this
+  have := integralPoints_le_comap (K := K) (FiniteTypeCommHopfAlgCat.toBialgHom f.left) hg
+  rwa [Subgroup.mem_comap, ← MonoidHom.comp_apply, ← BialgHom.mapDomain_comp,
+    toBialgHom_genericFiberIso_hom_comp] at this
 
 end Hom
 
@@ -246,8 +172,8 @@ section Fibers
 variable {K : Type u} [Field K] [Algebra O K] [IsLocalRing O]
   {H : FiniteTypeCommHopfAlgCat.{u, u} K} (𝒢 : SmoothModel O K H)
 
-/-- A smooth model has connected fibers when both its generic fiber `G` and its special fiber are
-geometrically connected. -/
+/-- A smooth model has connected fibers when its two selected base changes, the generic fiber `G`
+over `K` and the special fiber over the residue field of `O`, are geometrically connected. -/
 def HasConnectedFibers : Prop :=
   geometricallyConnectedCommHopfAlgProperty K H.obj ∧
     geometricallyConnectedCommHopfAlgProperty (IsLocalRing.ResidueField O) 𝒢.specialFiber.obj
@@ -256,18 +182,6 @@ def HasConnectedFibers : Prop :=
 theorem hasConnectedFibers_iff :
     𝒢.HasConnectedFibers ↔ geometricallyConnectedCommHopfAlgProperty K H.obj ∧
       geometricallyConnectedCommHopfAlgProperty (IsLocalRing.ResidueField O) 𝒢.specialFiber.obj :=
-  Iff.rfl
-
-/-- A smooth model is reductive when both its generic fiber `G` and its special fiber are
-connected reductive groups ([Bruhat–Tits II], 4.6.31; [Conrad], Definition 3.1.1). -/
-def IsReductive : Prop :=
-  reductiveCommHopfAlgProperty K H ∧
-    reductiveCommHopfAlgProperty (IsLocalRing.ResidueField O) 𝒢.specialFiber
-
-/-- Unfolding lemma for `SmoothModel.IsReductive`. -/
-theorem isReductive_iff :
-    𝒢.IsReductive ↔ reductiveCommHopfAlgProperty K H ∧
-      reductiveCommHopfAlgProperty (IsLocalRing.ResidueField O) 𝒢.specialFiber :=
   Iff.rfl
 
 variable {𝒢}
@@ -282,54 +196,8 @@ theorem HasConnectedFibers.specialFiber (h𝒢 : 𝒢.HasConnectedFibers) :
     geometricallyConnectedCommHopfAlgProperty (IsLocalRing.ResidueField O) 𝒢.specialFiber.obj :=
   h𝒢.2
 
-/-- The generic fiber of a reductive model is a connected reductive group. -/
-theorem IsReductive.genericFiber (h𝒢 : 𝒢.IsReductive) : reductiveCommHopfAlgProperty K H :=
-  h𝒢.1
-
-/-- The special fiber of a reductive model is a connected reductive group. -/
-theorem IsReductive.specialFiber (h𝒢 : 𝒢.IsReductive) :
-    reductiveCommHopfAlgProperty (IsLocalRing.ResidueField O) 𝒢.specialFiber :=
-  h𝒢.2
-
-/-- A reductive model has connected fibers. -/
-theorem IsReductive.hasConnectedFibers (h𝒢 : 𝒢.IsReductive) : 𝒢.HasConnectedFibers :=
-  ⟨h𝒢.1.geometricallyConnected, h𝒢.2.geometricallyConnected⟩
-
-/-- A smooth model whose coordinate algebra is a reductive group scheme over `O` is a reductive
-model. -/
-theorem isReductive_of_reductiveCommHopfAlgPropertyOver
-    (h𝒢 : reductiveCommHopfAlgPropertyOver O 𝒢.coord) : 𝒢.IsReductive :=
-  ⟨(reductiveCommHopfAlgProperty K).prop_of_iso 𝒢.genericFiberIso (h𝒢.fiber K),
-    h𝒢.fiber (IsLocalRing.ResidueField O)⟩
-
 end Fibers
 
 end SmoothModel
-
-section Hyperspecial
-
-variable {K : Type u} [Field K] [Algebra O K] [IsLocalRing O]
-
-variable (O) in
-/-- A subgroup of `G(K)` is hyperspecial when it is the group of integral points of a reductive
-model of `G` over the local ring `O` ([Tits], §3.8.1). -/
-def IsHyperspecialSubgroup {H : FiniteTypeCommHopfAlgCat.{u, u} K}
-    (P : Subgroup (WithConv (H →ₐ[K] K))) : Prop :=
-  ∃ 𝒢 : SmoothModel O K H, 𝒢.IsReductive ∧ 𝒢.integralPoints = P
-
-variable (O) in
-/-- Unfolding lemma for `IsHyperspecialSubgroup`. -/
-theorem isHyperspecialSubgroup_iff {H : FiniteTypeCommHopfAlgCat.{u, u} K}
-    (P : Subgroup (WithConv (H →ₐ[K] K))) :
-    IsHyperspecialSubgroup O P ↔ ∃ 𝒢 : SmoothModel O K H, 𝒢.IsReductive ∧ 𝒢.integralPoints = P :=
-  Iff.rfl
-
-/-- The integral points of a reductive model form a hyperspecial subgroup. -/
-theorem SmoothModel.IsReductive.isHyperspecialSubgroup {H : FiniteTypeCommHopfAlgCat.{u, u} K}
-    {𝒢 : SmoothModel O K H} (h𝒢 : 𝒢.IsReductive) :
-    IsHyperspecialSubgroup O 𝒢.integralPoints :=
-  ⟨𝒢, h𝒢, rfl⟩
-
-end Hyperspecial
 
 end TauCeti.IntegralModel

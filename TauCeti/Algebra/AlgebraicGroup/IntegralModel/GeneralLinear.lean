@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Reductive.Over
-public import TauCeti.Algebra.AlgebraicGroup.IntegralModel.Basic
+public import TauCeti.Algebra.AlgebraicGroup.IntegralModel.Reductive
 
 /-!
 # The standard integral model of `GL_n`
@@ -15,7 +14,7 @@ public import TauCeti.Algebra.AlgebraicGroup.IntegralModel.Basic
 For a commutative ring `O` with an algebra map to a commutative ring `K`, the general linear
 group scheme `GL_{n,O}` is a smooth affine `O`-model of `GL_{n,K}`
 (`TauCeti.IntegralModel.SmoothModel.generalLinear`). When `O` is local and `K` is a field it is a
-reductive model, so its integral points form a hyperspecial subgroup of the `K`-points of `GL_n`.
+reductive model, so its integral points satisfy `TauCeti.IntegralModel.IsHyperspecialSubgroup`.
 
 ## Main declarations
 
@@ -23,10 +22,12 @@ reductive model, so its integral points form a hyperspecial subgroup of the `K`-
 * `TauCeti.IntegralModel.SmoothModel.isReductive_generalLinear`: it is reductive over a local
   ring with a field `K`.
 * `TauCeti.IntegralModel.SmoothModel.isHyperspecialSubgroup_generalLinear`: its integral points
-  form a hyperspecial subgroup.
+  satisfy `IsHyperspecialSubgroup`.
 -/
 
 public section
+
+open CategoryTheory
 
 namespace TauCeti.IntegralModel.SmoothModel
 
@@ -37,7 +38,7 @@ section CommRing
 variable (O K : Type u) [CommRing O] [CommRing K] [Algebra O K]
 
 /-- The standard smooth model `GL_{n,O}` of `GL_{n,K}`. -/
-@[expose] noncomputable def generalLinear (n : ℕ) :
+noncomputable def generalLinear (n : ℕ) :
     SmoothModel O K (GeneralLinear.finiteTypeCoordinateHopfAlgebra K n) where
   coord := GeneralLinear.finiteTypeCoordinateHopfAlgebra O n
   smooth := (GeneralLinear.reductiveCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra
@@ -51,12 +52,16 @@ theorem generalLinear_coord (n : ℕ) :
   (rfl)
 
 /-- The generic fiber isomorphism of the standard model is the base change isomorphism of the
-coordinate algebra of `GL_n`. -/
+coordinate algebra of `GL_n`, transported along `generalLinear_coord`. -/
 @[simp]
 theorem generalLinear_genericFiberIso (n : ℕ) :
     (generalLinear O K n).genericFiberIso =
-      GeneralLinear.finiteTypeCoordinateHopfAlgebraBaseChangeIso O K n :=
-  (rfl)
+      eqToIso (congrArg (FiniteTypeCommHopfAlgCat.baseChange (K := K))
+        (generalLinear_coord O K n)) ≪≫
+        GeneralLinear.finiteTypeCoordinateHopfAlgebraBaseChangeIso O K n := by
+  -- `generalLinear_coord` holds by `rfl`, so the transport `eqToHom` is the identity.
+  ext1
+  exact (Category.id_comp _).symm
 
 end CommRing
 
@@ -67,12 +72,12 @@ theorem isReductive_generalLinear (n : ℕ) : (generalLinear O K n).IsReductive 
   isReductive_of_reductiveCommHopfAlgPropertyOver
     (GeneralLinear.reductiveCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra O n)
 
-/-- Both fibers `GL_{n,K}` and `GL_{n,κ}` of the standard model are geometrically connected. -/
+/-- The two selected base changes `GL_{n,K}` and `GL_{n,κ}` of the standard model are
+geometrically connected. -/
 theorem hasConnectedFibers_generalLinear (n : ℕ) : (generalLinear O K n).HasConnectedFibers :=
   (isReductive_generalLinear O K n).hasConnectedFibers
 
-/-- The integral points of the standard model `GL_{n,O}` form a hyperspecial subgroup of the
-`K`-points of `GL_n`. -/
+/-- The integral points of the standard model `GL_{n,O}` satisfy `IsHyperspecialSubgroup O`. -/
 theorem isHyperspecialSubgroup_generalLinear (n : ℕ) :
     IsHyperspecialSubgroup O (generalLinear O K n).integralPoints :=
   (isReductive_generalLinear O K n).isHyperspecialSubgroup
