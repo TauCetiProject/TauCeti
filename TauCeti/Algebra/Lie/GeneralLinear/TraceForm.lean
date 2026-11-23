@@ -401,7 +401,7 @@ private theorem eq_zero_of_forall_trace_mul_eq_zero [NeZero (n : K)]
   refine Subtype.ext (Matrix.ext_iff_trace_mul_right.mpr fun Z => ?_)
   -- The right-hand zero is the zero of `sl`, coerced into the matrices.
   simp only [Submodule.coe_zero, zero_mul, trace_zero]
-  have hX : trace X.val = 0 := X.property
+  have hX : trace X.val = 0 := LieAlgebra.SpecialLinear.mem_sl_iff.mp X.property
   obtain ⟨Y, r, rfl⟩ := exists_sl_add_smul_one_eq
     (fun _ => by simpa only [Fintype.card_fin] using (NeZero.ne (n : K)).isUnit) Z
   simp only [Matrix.mul_add, Matrix.mul_smul, Matrix.mul_one, trace_add, trace_smul, h Y,

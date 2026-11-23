@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
+import TauCeti.Algebra.Lie.GeneralLinear.Basic
 
 /-! # Surjectivity of the two adjoint-square contractions
 
@@ -35,7 +36,7 @@ private def pair (i j k l : Fin 3) (h : i ≠ j) (h' : k ≠ l) : 𝔰 K ⊗[K] 
 
 private theorem diagonal_sum_zero (X : 𝔰 K) :
     X.val 0 0 + X.val 1 1 + X.val 2 2 = 0 := by
-  have h : Matrix.trace X.val = 0 := X.property
+  have h : Matrix.trace X.val = 0 := LieAlgebra.SpecialLinear.mem_sl_iff.mp X.property
   rw [Matrix.trace_fin_three] at h
   exact h
 
