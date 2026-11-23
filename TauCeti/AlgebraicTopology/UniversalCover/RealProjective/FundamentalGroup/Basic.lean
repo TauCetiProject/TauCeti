@@ -160,7 +160,7 @@ theorem nontrivial_fundamentalGroup (hn : 2 ≤ n)
 theorem not_simplyConnectedSpace (hn : 2 ≤ n)
  :
     ¬ SimplyConnectedSpace (RealProjectiveSpace n) := by
-  let x : RealProjectiveSpace n := mk n (instNonemptySphere n).some
+  let x : RealProjectiveSpace n := Nonempty.some inferInstance
   have := nontrivial_fundamentalGroup n hn x
   exact not_simplyConnectedSpace_of_nontrivial_fundamentalGroup x
 

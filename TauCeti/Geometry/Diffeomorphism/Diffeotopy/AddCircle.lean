@@ -409,13 +409,13 @@ def halfCylinderDiffeotopyOfLift (hF : ContDiff ℝ n F) (hn : n ≠ 0)
     (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x) :
     TauCeti.Diffeotopy ((𝓡∂ 1).prod 𝓘(ℝ)) n (EuclideanHalfSpace 1 × AddCircle T) := by
   let depth (p : unitInterval × EuclideanHalfSpace 1) : ℝ :=
-    1 - (p.1 : ℝ) * Real.smoothTransition (2 - p.2.1 0)
+    1 - (p.1 : ℝ) * Real.smoothTransition (2 - p.2.val 0)
   have hd : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n depth := by
     have ht : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n
         (fun p : unitInterval × EuclideanHalfSpace 1 ↦ (p.1 : ℝ)) :=
       contMDiff_subtypeVal_Icc.comp contMDiff_fst
     have hr : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n
-        (fun p : unitInterval × EuclideanHalfSpace 1 ↦ p.2.1 0) :=
+        (fun p : unitInterval × EuclideanHalfSpace 1 ↦ p.2.val 0) :=
       (EuclideanSpace.proj 0).contDiff.contMDiff.comp
         ((𝓡∂ 1).contMDiff.comp contMDiff_snd)
     exact contMDiff_const.sub (ht.mul
@@ -442,26 +442,26 @@ theorem halfCylinderDiffeotopyOfLift_apply_coe (hF : ContDiff ℝ n F) (hn : n �
     (t : unitInterval) (r : EuclideanHalfSpace 1) (x : ℝ) :
     halfCylinderDiffeotopyOfLift hF hn hper hpos (t, r, (x : AddCircle T)) =
       (r, ((x + Real.smoothTransition
-        ((t : ℝ) * Real.smoothTransition (2 - r.1 0)) *
+        ((t : ℝ) * Real.smoothTransition (2 - r.val 0)) *
           (F x - x) : ℝ) : AddCircle T)) := by
   simp [halfCylinderDiffeotopyOfLift, collarDiffeomorphOfLift_apply_coe]
 
 /-- The half-cylinder motion fixes every point at depth at least two, at every time. -/
 theorem halfCylinderDiffeotopyOfLift_apply_of_two_le (hF : ContDiff ℝ n F) (hn : n ≠ 0)
     (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x)
-    (t : unitInterval) {r : EuclideanHalfSpace 1} (hr : 2 ≤ r.1 0) (θ : AddCircle T) :
+    (t : unitInterval) {r : EuclideanHalfSpace 1} (hr : 2 ≤ r.val 0) (θ : AddCircle T) :
     halfCylinderDiffeotopyOfLift hF hn hper hpos (t, r, θ) = (r, θ) := by
   obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective θ
-  simp [Real.smoothTransition.zero_of_nonpos (by linarith : 2 - r.1 0 ≤ 0)]
+  simp [Real.smoothTransition.zero_of_nonpos (by linarith : 2 - r.val 0 ≤ 0)]
 
 /-- Through depth one, the final half-cylinder map is the product map of the prescribed lift. -/
 theorem halfCylinderDiffeotopyOfLift_final_apply_coe_of_le_one
     (hF : ContDiff ℝ n F) (hn : n ≠ 0) (hper : ∀ x, F (x + T) = F x + T)
-    (hpos : ∀ x, 0 < deriv F x) {r : EuclideanHalfSpace 1} (hr : r.1 0 ≤ 1) (x : ℝ) :
+    (hpos : ∀ x, 0 < deriv F x) {r : EuclideanHalfSpace 1} (hr : r.val 0 ≤ 1) (x : ℝ) :
     (halfCylinderDiffeotopyOfLift hF hn hper hpos).final (r, (x : AddCircle T)) =
       (r, (F x : AddCircle T)) := by
   simp [TauCeti.Diffeotopy.final_apply, Real.smoothTransition.one_of_one_le
-    (by linarith : 1 ≤ 2 - r.1 0)]
+    (by linarith : 1 ≤ 2 - r.val 0)]
 
 end HalfCylinder
 

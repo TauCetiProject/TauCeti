@@ -195,9 +195,10 @@ theorem equivalent_atRealPlace_binary_one_neg_iff_hilbertSymbol_eq_one (a b : K�
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
   -- Evaluate both diagonal forms at the real embedding, then apply the criterion over `ℝ`.
   have key (x y : K) : (atRealPlace (weightedSumSquares K ![x, y]) w).Equivalent
-      (weightedSumSquares ℝ ![embedding_of_isReal w.2 x, embedding_of_isReal w.2 y]) := by
-    have hc : (fun i => embedding_of_isReal w.2 (![x, y] i)) =
-        ![embedding_of_isReal w.2 x, embedding_of_isReal w.2 y] := by
+      (weightedSumSquares ℝ ![embedding_of_isReal w.property x, embedding_of_isReal w.property y])
+          := by
+    have hc : (fun i => embedding_of_isReal w.property (![x, y] i)) =
+        ![embedding_of_isReal w.property x, embedding_of_isReal w.property y] := by
       ext i; fin_cases i <;> rfl
     rw [← hc]
     exact ⟨atRealPlaceWeightedSumSquares w _⟩
@@ -211,7 +212,7 @@ omit [NumberField K] in
 /-- At a real place where `β` is positive, the planes `⟨1, -β⟩` and `⟨α, -αβ⟩` are isometric:
 both are hyperbolic there. -/
 theorem equivalent_atRealPlace_binary_one_neg_of_pos (a : Kˣ) {b : Kˣ}
-    {w : {w : InfinitePlace K // w.IsReal}} (hb : 0 < embedding_of_isReal w.2 (b : K)) :
+    {w : {w : InfinitePlace K // w.IsReal}} (hb : 0 < embedding_of_isReal w.property (b : K)) :
     (atRealPlace (weightedSumSquares K ![1, -(b : K)]) w).Equivalent
       (atRealPlace (weightedSumSquares K ![(a : K), -(a * b : K)]) w) :=
   (equivalent_atRealPlace_binary_one_neg_iff_hilbertSymbol_eq_one a b w).mpr

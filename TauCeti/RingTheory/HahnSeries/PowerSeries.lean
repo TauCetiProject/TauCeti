@@ -12,17 +12,40 @@ public import Mathlib.RingTheory.HahnSeries.PowerSeries
 
 If `A⟦X⟧` is an `S`-algebra, the `S`-algebra structure on `A⟦Γ⟧` is inherited from `A⟦X⟧`
 through `HahnSeries.ofPowerSeries`. This file records that the resulting algebra actions form a
-scalar tower `S → A⟦X⟧ → A⟦Γ⟧`.
+scalar tower `S → A⟦X⟧ → A⟦Γ⟧`, and that the `R`-algebra map `HahnSeries.ofPowerSeriesAlg`, for the
+coefficientwise algebra structure of `A⟦Γ⟧`, is the ring map `HahnSeries.ofPowerSeries`.
 
 ## Main results
 
+* `HahnSeries.ofPowerSeries_comp_algebraMap`: composing `HahnSeries.ofPowerSeries` with
+  `algebraMap S A⟦X⟧` recovers `algebraMap S A⟦Γ⟧`.
 * `TauCeti.hahnSeries_isScalarTower_powerSeries`: the algebra actions of `S` on `A⟦X⟧` and on
   Hahn series `A⟦Γ⟧` form a scalar tower.
+* `HahnSeries.coe_ofPowerSeriesAlg`: `HahnSeries.ofPowerSeriesAlg` is `HahnSeries.ofPowerSeries`.
 -/
 
 public section
 
 open scoped PowerSeries
+
+namespace HahnSeries
+
+/-- Composing `HahnSeries.ofPowerSeries` with `algebraMap S A⟦X⟧` recovers `algebraMap S A⟦Γ⟧`. -/
+@[simp]
+theorem ofPowerSeries_comp_algebraMap {Γ A S : Type*} [Semiring Γ] [PartialOrder Γ]
+    [IsStrictOrderedRing Γ] [CommSemiring A] [CommSemiring S] [Algebra S A⟦X⟧] :
+    (ofPowerSeries Γ A).comp (algebraMap S A⟦X⟧) = algebraMap S (HahnSeries Γ A) :=
+  RingHom.ext fun s ↦ (algebraMap_apply' Γ s).symm
+
+/-- The `R`-algebra map `HahnSeries.ofPowerSeriesAlg` is the inclusion
+`HahnSeries.ofPowerSeries` of power series into Hahn series. -/
+@[simp]
+theorem coe_ofPowerSeriesAlg (Γ R : Type*) [CommSemiring R] {A : Type*} [Semiring A]
+    [Algebra R A] [Semiring Γ] [PartialOrder Γ] [IsStrictOrderedRing Γ] :
+    ⇑(ofPowerSeriesAlg Γ R : A⟦X⟧ →ₐ[R] HahnSeries Γ A) = ofPowerSeries Γ A :=
+  rfl
+
+end HahnSeries
 
 namespace TauCeti
 
