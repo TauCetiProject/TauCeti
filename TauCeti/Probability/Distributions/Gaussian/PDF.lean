@@ -11,12 +11,13 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 # Density API for the real Gaussian distribution
 
 This file connects nondegenerate real Gaussian laws to `HasPDF` and identifies `pdf` at every
-variance, including the singular zero-variance boundary.
+variance, including the singular zero-variance boundary. It also computes the logarithm of the
+density.
 -/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Real
 namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 /-- A variable with a nondegenerate Gaussian law has a density.
@@ -32,4 +33,14 @@ theorem pdf_eq_gaussianPDF_of_hasLaw_gaussianReal {m : ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal m v) P) : pdf X P =ᵐ[volume] gaussianPDF m v := by
   rw [pdf_def, hX.map_eq]
   exact rnDeriv_gaussianReal m v
+/-- The logarithm of the Gaussian density is
+`log (gaussianPDFReal m w y) = -log (2πw) / 2 - (y - m)² / (2w)`. At `w = 0` both sides are `0`,
+since `Real.log 0 = 0` and division by `0` gives `0`. -/
+theorem log_gaussianPDFReal (m : ℝ) (w : ℝ≥0) (y : ℝ) :
+    Real.log (gaussianPDFReal m w y) = -Real.log (2 * π * w) / 2 - (y - m) ^ 2 / (2 * w) := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp [gaussianPDFReal_zero_var]
+  rw [gaussianPDFReal_def, Real.log_mul (by positivity) (Real.exp_pos _).ne', Real.log_inv,
+    Real.log_sqrt (by positivity), Real.log_exp]
+  ring
 end TauCeti.Probability
