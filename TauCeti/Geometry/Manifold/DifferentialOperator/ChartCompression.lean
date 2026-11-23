@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
-public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
+public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
