@@ -126,7 +126,7 @@ theorem coefficient_eq_zero_of_coordinate_subcomodule
   have hzero : (bas.coord a).comp N.carrier.subtype = 0 := by
     ext x
     rw [LinearMap.zero_apply]
-    have hx : (x : M) ∈ Submodule.span R (bas '' s) := hcoord ▸ x.2
+    have hx : (x : M) ∈ Submodule.span R (bas '' s) := hcoord ▸ x.property
     have hasupport : a ∉ (bas.repr (x : M)).support := by
       intro has
       exact ha ((bas.mem_span_image.mp hx) has)

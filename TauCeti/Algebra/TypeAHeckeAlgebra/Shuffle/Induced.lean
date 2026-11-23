@@ -140,7 +140,7 @@ theorem shuffleInvWord_initial :
 /-- Moving a selected position `strand i` forward past the rest position after it multiplies the
 inverse shuffle word by `T i⁻¹` on the left. -/
 theorem shuffleInvWord_swap {i : Fin (k + l - 1)} {S : ShuffleMask k l}
-    (ha : BraidGroup.strand i ∈ S.1) (hb : BraidGroup.strandSucc i ∉ S.1) :
+    (ha : BraidGroup.strand i ∈ S.val) (hb : BraidGroup.strandSucc i ∉ S.val) :
     shuffleInvWord q (S.swap (BraidGroup.strand i) (BraidGroup.strandSucc i)) =
       ↑(unitT q i)⁻¹ * shuffleInvWord q S := by
   obtain ⟨w, hw⟩ := ShuffleMask.exists_isShufflePath S
@@ -159,7 +159,7 @@ theorem shuffleRep_shuffleInvWord_single_initial {U : Type*} [AddCommGroup U] [M
 /-- If `strand γ` is a rest position of `S` followed by a selected position, the inverse shuffle
 word of `S` is `T γ⁻¹` times that of the mask exchanging the two positions. -/
 private theorem shuffleInvWord_eq_inv_unitT_mul {γ : Fin (k + l - 1)} {S : ShuffleMask k l}
-    (hc : BraidGroup.strand γ ∉ S.1) (hd : BraidGroup.strandSucc γ ∈ S.1) :
+    (hc : BraidGroup.strand γ ∉ S.val) (hd : BraidGroup.strandSucc γ ∈ S.val) :
     shuffleInvWord q S = ↑(unitT q γ)⁻¹ *
       shuffleInvWord q (S.swap (BraidGroup.strand γ) (BraidGroup.strandSucc γ)) := by
   conv_lhs => rw [← ShuffleMask.swap_swap (BraidGroup.strand γ) (BraidGroup.strandSucc γ) S]
@@ -169,10 +169,10 @@ private theorem shuffleInvWord_eq_inv_unitT_mul {γ : Fin (k + l - 1)} {S : Shuf
 generator `T i`: it keeps their membership and the number of rest positions before them. -/
 private theorem ShuffleMask.swap_strand_strandSucc_of_distant {i γ : Fin (k + l - 1)}
     (h : (γ : ℕ) + 2 ≤ i ∨ (i : ℕ) + 2 ≤ γ) (S : ShuffleMask k l) :
-    (BraidGroup.strand i ∈ (S.swap (BraidGroup.strand γ) (BraidGroup.strandSucc γ)).1 ↔
-      BraidGroup.strand i ∈ S.1) ∧
-    (BraidGroup.strandSucc i ∈ (S.swap (BraidGroup.strand γ) (BraidGroup.strandSucc γ)).1 ↔
-      BraidGroup.strandSucc i ∈ S.1) ∧
+    (BraidGroup.strand i ∈ (S.swap (BraidGroup.strand γ) (BraidGroup.strandSucc γ)).val ↔
+      BraidGroup.strand i ∈ S.val) ∧
+    (BraidGroup.strandSucc i ∈ (S.swap (BraidGroup.strand γ) (BraidGroup.strandSucc γ)).val ↔
+      BraidGroup.strandSucc i ∈ S.val) ∧
     (S.swap (BraidGroup.strand γ) (BraidGroup.strandSucc γ)).restIndex (BraidGroup.strand i) =
       S.restIndex (BraidGroup.strand i) := by
   have hne₁ : BraidGroup.strand i ≠ BraidGroup.strand γ := by simp [Fin.ext_iff]; omega
@@ -189,10 +189,10 @@ open ShuffleMask in
 /-- The braid step of Deodhar's lemma for selected positions: the selected positions `strand i`
 and `strandSucc i` are preceded by the rest position `strand γ`. -/
 private theorem T_mul_shuffleInvWord_of_mem_of_mem_of_succ_eq {i γ : Fin (k + l - 1)}
-    (hγ : (γ : ℕ) + 1 = i) {S : ShuffleMask k l} (hc : BraidGroup.strand γ ∉ S.1)
-    (ha : BraidGroup.strand i ∈ S.1) (hb : BraidGroup.strandSucc i ∈ S.1)
-    (ih : ∀ S' : ShuffleMask k l, S'.length < S.length → BraidGroup.strand γ ∈ S'.1 →
-      BraidGroup.strandSucc γ ∈ S'.1 → T q γ * shuffleInvWord q S' =
+    (hγ : (γ : ℕ) + 1 = i) {S : ShuffleMask k l} (hc : BraidGroup.strand γ ∉ S.val)
+    (ha : BraidGroup.strand i ∈ S.val) (hb : BraidGroup.strandSucc i ∈ S.val)
+    (ih : ∀ S' : ShuffleMask k l, S'.length < S.length → BraidGroup.strand γ ∈ S'.val →
+      BraidGroup.strandSucc γ ∈ S'.val → T q γ * shuffleInvWord q S' =
         shuffleInvWord q S' * T q ⟨γ - S'.restIndex (BraidGroup.strand γ), by omega⟩) :
     T q i * shuffleInvWord q S =
       shuffleInvWord q S * T q ⟨i - S.restIndex (BraidGroup.strand i), by omega⟩ := by
@@ -205,10 +205,10 @@ private theorem T_mul_shuffleInvWord_of_mem_of_mem_of_succ_eq {i γ : Fin (k + l
   have hne₂ := (BraidGroup.strand_ne_strandSucc i).symm
   have hne₃ : BraidGroup.strand γ ≠ BraidGroup.strand i := by
     rw [← hda]; intro h; simpa using congrArg Fin.val h
-  have ha₂ : BraidGroup.strand i ∈ S₂.1 := by
+  have ha₂ : BraidGroup.strand i ∈ S₂.val := by
     simpa [S₂, Equiv.swap_apply_of_ne_of_ne hne₁ hne₂] using hb
-  have hb₂ : BraidGroup.strandSucc i ∉ S₂.1 := by simpa [S₂] using hc
-  have hc₂ : BraidGroup.strand γ ∈ S₂.1 := by
+  have hb₂ : BraidGroup.strandSucc i ∉ S₂.val := by simpa [S₂] using hc
+  have hc₂ : BraidGroup.strand γ ∈ S₂.val := by
     simpa [S₂, Equiv.swap_apply_of_ne_of_ne hne₃ hne₁.symm] using ha
   have hW₂ := shuffleInvWord_swap (q := q) ha₂ hb₂
   have hlt := length_swap_add_one_of_notMem_of_mem (a := BraidGroup.strand γ)
@@ -240,7 +240,7 @@ open ShuffleMask in
 the corresponding two of the first `k` positions: the first position `strand i` is preceded by
 `i - S.restIndex (strand i)` selected positions. -/
 theorem T_mul_shuffleInvWord_of_mem_of_mem {i : Fin (k + l - 1)} {S : ShuffleMask k l}
-    (ha : BraidGroup.strand i ∈ S.1) (hb : BraidGroup.strandSucc i ∈ S.1) :
+    (ha : BraidGroup.strand i ∈ S.val) (hb : BraidGroup.strandSucc i ∈ S.val) :
     T q i * shuffleInvWord q S =
       shuffleInvWord q S * T q ⟨i - S.restIndex (BraidGroup.strand i), by omega⟩ := by
   induction S using strong_induction_on generalizing i with
@@ -270,10 +270,10 @@ open ShuffleMask in
 /-- The braid step of Deodhar's lemma for rest positions: the rest positions `strand i` and
 `strandSucc i` are followed by the selected position `strandSucc γ`. -/
 private theorem T_mul_shuffleInvWord_of_notMem_of_notMem_of_succ_eq {i γ : Fin (k + l - 1)}
-    (hγ : (i : ℕ) + 1 = γ) {S : ShuffleMask k l} (hd : BraidGroup.strandSucc γ ∈ S.1)
-    (ha : BraidGroup.strand i ∉ S.1) (hb : BraidGroup.strandSucc i ∉ S.1)
-    (ih : ∀ S' : ShuffleMask k l, S'.length < S.length → ∀ (hc' : BraidGroup.strand γ ∉ S'.1)
-      (hd' : BraidGroup.strandSucc γ ∉ S'.1), T q γ * shuffleInvWord q S' =
+    (hγ : (i : ℕ) + 1 = γ) {S : ShuffleMask k l} (hd : BraidGroup.strandSucc γ ∈ S.val)
+    (ha : BraidGroup.strand i ∉ S.val) (hb : BraidGroup.strandSucc i ∉ S.val)
+    (ih : ∀ S' : ShuffleMask k l, S'.length < S.length → ∀ (hc' : BraidGroup.strand γ ∉ S'.val)
+      (hd' : BraidGroup.strandSucc γ ∉ S'.val), T q γ * shuffleInvWord q S' =
         shuffleInvWord q S' * T q ⟨k + S'.restIndex (BraidGroup.strand γ),
           by have := restIndex_lt_sub_one (by simp [Fin.lt_def]) hc' hd'; omega⟩) :
     T q i * shuffleInvWord q S =
@@ -288,10 +288,10 @@ private theorem T_mul_shuffleInvWord_of_notMem_of_notMem_of_succ_eq {i γ : Fin 
     intro h; have := congrArg Fin.val h; simp at this; omega
   have hne₃ : BraidGroup.strandSucc γ ≠ BraidGroup.strandSucc i := by
     intro h; have := congrArg Fin.val h; simp at this; omega
-  have ha₂ : BraidGroup.strand i ∈ S₂.1 := by simpa [S₂] using hd
-  have hb₂ : BraidGroup.strandSucc i ∉ S₂.1 := by
+  have ha₂ : BraidGroup.strand i ∈ S₂.val := by simpa [S₂] using hd
+  have hb₂ : BraidGroup.strandSucc i ∉ S₂.val := by
     simpa [S₂, Equiv.swap_apply_of_ne_of_ne hne₁ hne₂] using ha
-  have hd₂ : BraidGroup.strandSucc γ ∉ S₂.1 := by
+  have hd₂ : BraidGroup.strandSucc γ ∉ S₂.val := by
     simpa [S₂, Equiv.swap_apply_of_ne_of_ne hne₂.symm hne₃] using hb
   have hW₂ := shuffleInvWord_swap (q := q) ha₂ hb₂
   have hlt := length_swap_add_one_of_notMem_of_mem (by simp) (hcb ▸ hb) hd
@@ -323,7 +323,7 @@ open ShuffleMask in
 the corresponding two of the last `l` positions: the first position `strand i` is the
 `S.restIndex (strand i)`-th rest position. -/
 theorem T_mul_shuffleInvWord_of_notMem_of_notMem {i : Fin (k + l - 1)} {S : ShuffleMask k l}
-    (ha : BraidGroup.strand i ∉ S.1) (hb : BraidGroup.strandSucc i ∉ S.1) :
+    (ha : BraidGroup.strand i ∉ S.val) (hb : BraidGroup.strandSucc i ∉ S.val) :
     T q i * shuffleInvWord q S =
       shuffleInvWord q S * T q ⟨k + S.restIndex (BraidGroup.strand i),
         by have := restIndex_lt_sub_one (by simp [Fin.lt_def]) ha hb; omega⟩ := by
@@ -386,7 +386,7 @@ private theorem shuffleLift_comp_shuffleRep_T {f : U →ₗ[R] N}
     shuffleLift σ f ∘ₗ shuffleRep k ρ (T q i) = σ (T q i) ∘ₗ shuffleLift σ f := by
   refine LinearMap.pi_ext fun S u ↦ ?_
   simp only [LinearMap.comp_apply]
-  by_cases ha : BraidGroup.strand i ∈ S.1 <;> by_cases hb : BraidGroup.strandSucc i ∈ S.1
+  by_cases ha : BraidGroup.strand i ∈ S.val <;> by_cases hb : BraidGroup.strandSucc i ∈ S.val
   · have hT := LinearMap.congr_fun
       (congrArg σ (T_mul_shuffleInvWord_of_mem_of_mem (q := q) ha hb)) (f u)
     have hsel' := LinearMap.congr_fun

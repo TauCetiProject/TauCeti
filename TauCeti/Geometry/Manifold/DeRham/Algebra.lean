@@ -47,7 +47,7 @@ namespace deRhamCohomology
 private theorem mk_heq_of_apply_eq {a b : ℕ} (h : a = b)
     (φ : closedForms I M a) (ψ : closedForms I M b)
     (hφ : ∀ x (v : Fin a → TangentSpace I x),
-      φ.1.1 x v = ψ.1.1 x (v ∘ Fin.cast h.symm)) :
+      φ.val.val x v = ψ.val.val x (v ∘ Fin.cast h.symm)) :
     HEq (mk I a φ) (mk I b ψ) := by
   subst b
   have hφψ : φ = ψ := by
@@ -68,7 +68,7 @@ theorem wedge_assoc (a : deRhamCohomology I M k) (b : deRhamCohomology I M l)
   obtain ⟨χ, rfl⟩ := mk_surjective I m c
   simp only [wedge_mk]
   exact Sigma.ext (Nat.add_assoc k l m) <|
-    mk_heq_of_apply_eq (Nat.add_assoc k l m) _ _ (SmoothForm.wedge_assoc_apply φ.1 ψ.1 χ.1)
+    mk_heq_of_apply_eq (Nat.add_assoc k l m) _ _ (SmoothForm.wedge_assoc_apply φ.val ψ.val χ.val)
 
 /-- Homogeneous de Rham classes commute with the Koszul sign. -/
 theorem wedge_comm (a : deRhamCohomology I M k) (b : deRhamCohomology I M l) :
@@ -78,7 +78,7 @@ theorem wedge_comm (a : deRhamCohomology I M k) (b : deRhamCohomology I M l) :
   obtain ⟨ψ, rfl⟩ := mk_surjective I l b
   simp only [wedge_mk, ← map_smul]
   exact Sigma.ext (Nat.add_comm k l) <|
-    mk_heq_of_apply_eq (Nat.add_comm k l) _ _ (SmoothForm.wedge_comm φ.1 ψ.1)
+    mk_heq_of_apply_eq (Nat.add_comm k l) _ _ (SmoothForm.wedge_comm φ.val ψ.val)
 
 /-- Wedge with the class of a constant function on the right is scalar multiplication. -/
 @[simp]

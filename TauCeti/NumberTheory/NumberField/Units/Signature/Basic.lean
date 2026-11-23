@@ -48,12 +48,12 @@ noncomputable def fieldUnitSignature :
     Kˣ →* ({w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) :=
   MonoidHom.pi fun w =>
     (QuotientGroup.mk' (Units.posSubgroup ℝ)).comp
-      (Units.map (embedding_of_isReal w.2).toMonoidHom)
+      (Units.map (embedding_of_isReal w.property).toMonoidHom)
 
 /-- Componentwise evaluation of the field-unit signature. -/
 @[simp] theorem fieldUnitSignature_apply (u : Kˣ) (w : {w : InfinitePlace K // w.IsReal}) :
     fieldUnitSignature u w =
-      (Units.map (embedding_of_isReal w.2).toMonoidHom u : ℝˣ ⧸ Units.posSubgroup ℝ) := by
+      (Units.map (embedding_of_isReal w.property).toMonoidHom u : ℝˣ ⧸ Units.posSubgroup ℝ) := by
   simp only [fieldUnitSignature, MonoidHom.pi_apply, MonoidHom.comp_apply, QuotientGroup.mk'_apply]
 
 /-- The kernel of the field-unit signature is exactly the subgroup of totally positive units. -/
@@ -80,7 +80,7 @@ noncomputable def unitSignature :
 /-- Componentwise evaluation of the integer-unit signature: the class, in the sign group, of the
 image of `u` under the real embedding `w` composed with `(𝓞 K) → K`. -/
 @[simp] theorem unitSignature_apply (u : (𝓞 K)ˣ) (w : {w : InfinitePlace K // w.IsReal}) :
-    unitSignature u w = (Units.map (embedding_of_isReal w.2).toMonoidHom
+    unitSignature u w = (Units.map (embedding_of_isReal w.property).toMonoidHom
       (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) : ℝˣ ⧸ Units.posSubgroup ℝ) := by
   simp only [unitSignature, MonoidHom.comp_apply, fieldUnitSignature_apply]
 

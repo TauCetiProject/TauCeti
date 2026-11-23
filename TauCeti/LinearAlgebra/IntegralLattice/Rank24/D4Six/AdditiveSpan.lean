@@ -142,7 +142,7 @@ theorem natCard_closure_d4SixPrintedDigits :
     ext x
     rw [AddMonoidHom.mem_ker, AddSubgroup.mem_addSubgroupOf, mem_closure_d4SixPrintedDigits_iff,
       ← d4VectorBit_eq_zero_iff, ← d4SixFirstVectorBit_apply]
-    exact (and_iff_right x.2).symm
+    exact (and_iff_right x.property).symm
   have hall : d4SixAllVector ∈ d4SixGlueSubgroup := by
     rw [d4SixGlueSubgroup_def]
     exact AddSubgroup.subset_closure ⟨_, Set.mem_insert _ _, rfl⟩

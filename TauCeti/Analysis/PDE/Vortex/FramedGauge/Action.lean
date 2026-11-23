@@ -51,7 +51,7 @@ def framedFieldSubMulAction (f : ContDiffBump (0 : ℝ)) (m : ℕ) {n : ℕ} (hn
   carrier := framedFieldSpace f m n
   smul_mem' u x hx := by
     rw [Subgroup.smul_def, framedGaugeGroup_smul]
-    exact gaugeTransform_mem_framedFieldSpace hn (Subgroup.mem_subgroupOf.1 u.2) hx
+    exact gaugeTransform_mem_framedFieldSpace hn (Subgroup.mem_subgroupOf.1 u.property) hx
 
 /-- The fields acted on by `framedFieldSubMulAction f m hn` are those of `A_m^n`. -/
 @[simp]
@@ -75,11 +75,12 @@ theorem mem_orbit_framedFieldSubMulAction_iff {f : ContDiffBump (0 : ℝ)} {m n 
   · rintro ⟨u, rfl⟩
     exact ⟨u, by rw [SubMulAction.val_smul, Subgroup.smul_def]⟩
   · rintro ⟨u, hu⟩
-    have hsmooth := ((mem_framedGaugeGroup _).1 u.2).1
+    have hsmooth := ((mem_framedGaugeGroup _).1 u.property).1
     have hy : gaugeTransform u x ∈ framedFieldSpace f m n := by
       rw [← framedGaugeGroup_smul, hu]
-      exact y.2
-    refine ⟨⟨u, Subgroup.mem_subgroupOf.2 (mem_sobolevGaugeGroup_of_mem_framedFieldSpace hn x.2
+      exact y.property
+    refine ⟨⟨u, Subgroup.mem_subgroupOf.2 (mem_sobolevGaugeGroup_of_mem_framedFieldSpace hn
+        x.property
       (hsmooth.of_le (by simp)) hy)⟩, Subtype.ext ?_⟩
     rw [SubMulAction.val_smul, Subgroup.smul_def, hu]
 
