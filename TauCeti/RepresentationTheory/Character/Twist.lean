@@ -66,6 +66,11 @@ representation need neither.
   of `ρ`.
 * `Representation.invariants_charTwist_trivial_eq_bot`: if `χ g - 1` acts injectively on `V` for
   some `g`, then `G` acting on `V` through `χ` has no nonzero invariant vector.
+* `Representation.ker_inf_stabilizer_le_stabilizer_charTwist`: the kernel of `χ` meets the
+  stabilizer of `v` for `ρ` inside the stabilizer of `v` for the twist.
+* `Representation.charTwist_comp_subtype_of_le_ker` and
+  `Representation.invariants_charTwist_comp_subtype`: on a subgroup inside the kernel of `χ`, the
+  twist restricts to `ρ`, so it has the same invariants.
 * `Representation.asAlgebraHom_charTwist`: on the group algebra, the twist acts through the
   algebra automorphism `MonoidAlgebra.charTwist χ` of `k[G]`.
 
@@ -293,6 +298,25 @@ end IntertwiningMap
 
 end CommSemiring
 
+section Group
+
+variable [CommSemiring k] [Group G] [AddCommMonoid V] [Module k V] (χ : G →* kˣ)
+  (ρ : Representation k G V)
+
+/-- A vector fixed by `ρ g` is fixed by the twist `χ g • ρ g` when `g` is in the kernel of `χ`. -/
+theorem ker_inf_stabilizer_le_stabilizer_charTwist (v : V) :
+    χ.ker ⊓ ρ.stabilizer v ≤ (charTwist χ ρ).stabilizer v := fun g hg ↦ by
+  rw [Subgroup.mem_inf, MonoidHom.mem_ker, mem_stabilizer] at hg
+  simp [mem_stabilizer, hg.1, hg.2]
+
+/-- On a subgroup inside the kernel of `χ`, the twist by `χ` restricts to `ρ`. -/
+theorem charTwist_comp_subtype_of_le_ker {U : Subgroup G} (hU : U ≤ χ.ker) :
+    (charTwist χ ρ).comp U.subtype = ρ.comp U.subtype := by
+  ext g v
+  simp [MonoidHom.mem_ker.1 (hU g.property)]
+
+end Group
+
 section Invariants
 
 variable [CommRing k] [Group G] [AddCommGroup V] [Module k V] (χ : G →* kˣ)
@@ -307,6 +331,12 @@ theorem invariants_charTwist_trivial_eq_bot {g : G} (hg : IsSMulRegular V ((χ g
   refine eq_bot_iff.2 fun v hv ↦ (Submodule.mem_bot k).2 <| hg ?_
   have hv' : (χ g : k) • v = v := by simpa [charTwist_apply_apply] using hv g
   simp only [smul_zero, sub_smul, one_smul, hv', sub_self]
+
+/-- On a subgroup inside the kernel of `χ`, twisting by `χ` does not change the invariants. -/
+theorem invariants_charTwist_comp_subtype (ρ : Representation k G V) {U : Subgroup G}
+    (hU : U ≤ χ.ker) :
+    invariants ((charTwist χ ρ).comp U.subtype) = invariants (ρ.comp U.subtype) := by
+  rw [charTwist_comp_subtype_of_le_ker χ ρ hU]
 
 end Invariants
 

@@ -7,18 +7,23 @@ module
 
 public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RepresentationTheory.Smooth.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+public import TauCeti.Topology.Algebra.Group.LocallyConstant
+import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # Smooth characters and twists of smooth representations
 
-Let `G` be a topological group and `A` a commutative ring. A character `χ : G →* Aˣ` is *smooth*
-(`TauCeti.IsSmoothCharacter χ`) when its kernel is open. Equivalently, the rank-one representation
-`A(χ)` (`Representation.ofLinearCharacter χ`) is smooth, and, for a group with separately
-continuous multiplication, `χ` is continuous for the discrete topology on `Aˣ`. For instance an
-unramified character `x ↦ t ^ v(x)` of the multiplicative group of a nonarchimedean local field is
-smooth. Smooth characters are closed under products and inverses. Twisting a smooth
-representation by a smooth character (`Representation.charTwist`) gives a smooth representation,
-and does not change the invariants of a subgroup on which the character is trivial.
+Let `G` be a topological group and `A` a monoid. A character `χ : G →* Aˣ` is *smooth*
+(`TauCeti.IsSmoothCharacter χ`) when its kernel is open. For a group with separately continuous
+multiplication this says equivalently that `χ` contains an open subgroup in its kernel, that `χ` is
+locally constant, that `χ` is continuous for the discrete topology on `Aˣ`, and, when `A` is a
+commutative semiring, that the rank-one representation `A(χ)` (`Representation.ofLinearCharacter
+χ`) is smooth. For instance an unramified character `x ↦ t ^ v(x)` of the multiplicative group of
+a nonarchimedean local field is smooth. Smooth characters with values in a commutative monoid form
+a subgroup of the character group, and they pull back along continuous homomorphisms. Twisting a
+representation by a smooth character (`Representation.charTwist`) preserves and reflects
+smoothness.
 
 ## Main definitions
 
@@ -27,15 +32,22 @@ and does not change the invariants of a subgroup on which the character is trivi
 ## Main results
 
 * `TauCeti.isSmoothCharacter_iff_isSmooth`: `χ` is smooth exactly when `A(χ)` is.
-* `TauCeti.isSmoothCharacter_iff_continuous`: `χ` is smooth exactly when it is continuous for the
+* `TauCeti.isSmoothCharacter_iff_continuous_of_discreteTopology` and
+  `TauCeti.isSmoothCharacter_iff_continuous`: `χ` is smooth exactly when it is continuous for a
   discrete topology on `Aˣ`.
+* `TauCeti.isSmoothCharacter_iff_exists_openSubgroup`,
+  `TauCeti.isSmoothCharacter_iff_isLocallyConstant`: `χ` is smooth exactly when its kernel contains
+  an open subgroup, exactly when it is locally constant.
 * `TauCeti.IsSmoothCharacter.mul`, `TauCeti.IsSmoothCharacter.inv`,
-  `TauCeti.isSmoothCharacter_one`: smooth characters form a subgroup, which contains every
-  character of a discrete group (`TauCeti.isSmoothCharacter_of_discreteTopology`).
-* `TauCeti.IsSmoothCharacter.isSmooth_charTwist`: the twist of a smooth representation by a smooth
-  character is smooth.
-* `TauCeti.invariants_charTwist_comp_subtype`: on a subgroup inside the kernel of `χ`, twisting by
-  `χ` does not change the invariants.
+  `TauCeti.isSmoothCharacter_one`, `TauCeti.IsSmoothCharacter.div`,
+  `TauCeti.IsSmoothCharacter.pow`, `TauCeti.IsSmoothCharacter.zpow`: smooth characters form a
+  subgroup, which contains every character of a discrete group
+  (`TauCeti.isSmoothCharacter_of_discreteTopology`).
+* `TauCeti.IsSmoothCharacter.comp`, `TauCeti.IsSmoothCharacter.unitsMap`: smooth characters pull
+  back along continuous homomorphisms and push forward along maps of coefficients.
+* `TauCeti.IsSmoothCharacter.isSmooth_charTwist`,
+  `TauCeti.IsSmoothCharacter.isSmooth_charTwist_iff`: the twist of a representation by a smooth
+  character is smooth exactly when the representation is.
 
 ## References
 
@@ -50,8 +62,11 @@ open Representation
 
 namespace TauCeti
 
-variable {A G V : Type*} [CommRing A] [Group G] [TopologicalSpace G]
-  [AddCommGroup V] [Module A V]
+variable {A G : Type*} [Group G] [TopologicalSpace G]
+
+section Monoid
+
+variable [Monoid A]
 
 /-- A character `χ : G →* Aˣ` of a topological group is *smooth* when its kernel is open. -/
 def IsSmoothCharacter (χ : G →* Aˣ) : Prop :=
@@ -61,80 +76,134 @@ def IsSmoothCharacter (χ : G →* Aˣ) : Prop :=
 theorem isSmoothCharacter_iff {χ : G →* Aˣ} : IsSmoothCharacter χ ↔ IsOpen (χ.ker : Set G) :=
   Iff.rfl
 
-omit [TopologicalSpace G] in
-/-- The stabilizer of `1` in the rank-one representation `A(χ)` is the kernel of `χ`. -/
-private theorem stabilizer_ofLinearCharacter_one (χ : G →* Aˣ) :
-    (ofLinearCharacter χ).stabilizer 1 = χ.ker := by
-  ext g
-  simp [mem_stabilizer, Units.val_eq_one]
-
-omit [TopologicalSpace G] in
-/-- The kernel of `χ` fixes every vector of `A(χ)`. -/
-private theorem ker_le_stabilizer_ofLinearCharacter (χ : G →* Aˣ) (x : A) :
-    χ.ker ≤ (ofLinearCharacter χ).stabilizer x := fun g hg ↦ by
-  simp [mem_stabilizer, MonoidHom.mem_ker.1 hg]
-
-/-- A character is smooth exactly when its rank-one representation `A(χ)` is smooth. -/
-theorem isSmoothCharacter_iff_isSmooth [SeparatelyContinuousMul G] {χ : G →* Aˣ} :
-    IsSmoothCharacter χ ↔ IsSmooth (ofLinearCharacter χ) := by
-  refine ⟨fun h ↦ ⟨fun x ↦ Subgroup.isOpen_mono (ker_le_stabilizer_ofLinearCharacter χ x) h⟩,
-    fun h ↦ ?_⟩
-  rw [isSmoothCharacter_iff, ← stabilizer_ofLinearCharacter_one]
-  exact IsSmooth.isOpen_stabilizer 1
-
-/-- A character is smooth exactly when it is continuous for the discrete topology on `Aˣ`. -/
-theorem isSmoothCharacter_iff_continuous [SeparatelyContinuousMul G] {χ : G →* Aˣ} :
-    IsSmoothCharacter χ ↔ @Continuous G Aˣ _ ⊥ χ := by
-  let _ : TopologicalSpace Aˣ := ⊥
-  have : DiscreteTopology Aˣ := ⟨rfl⟩
-  refine ⟨fun h ↦ continuous_def.2 fun s _ ↦ isOpen_iff_forall_mem_open.2 fun g hg ↦
-    ⟨(g⁻¹ * ·) ⁻¹' χ.ker, fun x hx ↦ ?_,
-      h.preimage SeparatelyContinuousMul.continuous_const_mul, by simp⟩, fun h ↦ ?_⟩
-  · have hgx : χ g = χ x := inv_mul_eq_one.1 (by simpa using hx)
-    rw [Set.mem_preimage, ← hgx]
-    exact hg
-  · exact (isOpen_discrete ({1} : Set Aˣ)).preimage h
-
 /-- The trivial character is smooth. -/
+@[simp]
 theorem isSmoothCharacter_one : IsSmoothCharacter (1 : G →* Aˣ) := by
   simp [isSmoothCharacter_iff, MonoidHom.ker_one]
 
 /-- Every character of a discrete group is smooth. -/
 theorem isSmoothCharacter_of_discreteTopology [DiscreteTopology G] (χ : G →* Aˣ) :
     IsSmoothCharacter χ :=
-  isOpen_discrete _
+  isSmoothCharacter_iff.2 (isOpen_discrete _)
 
-/-- The product of two smooth characters is smooth. -/
-theorem IsSmoothCharacter.mul [SeparatelyContinuousMul G] {χ ψ : G →* Aˣ}
-    (hχ : IsSmoothCharacter χ) (hψ : IsSmoothCharacter ψ) : IsSmoothCharacter (χ * ψ) := by
-  have h : IsOpen ((χ.ker ⊓ ψ.ker : Subgroup G) : Set G) := hχ.inter hψ
-  exact Subgroup.isOpen_mono (fun g (hg : g ∈ χ.ker ⊓ ψ.ker) ↦ by
-    simp [MonoidHom.mem_ker.1 hg.1, MonoidHom.mem_ker.1 hg.2]) h
+/-- A smooth character pulls back to a smooth character along a continuous homomorphism. -/
+theorem IsSmoothCharacter.comp {H : Type*} [Group H] [TopologicalSpace H] {χ : G →* Aˣ}
+    (hχ : IsSmoothCharacter χ) {f : H →* G} (hf : Continuous f) :
+    IsSmoothCharacter (χ.comp f) := by
+  rw [isSmoothCharacter_iff, ← MonoidHom.comap_ker, Subgroup.coe_comap]
+  exact (isSmoothCharacter_iff.1 hχ).preimage hf
+
+section SeparatelyContinuousMul
+
+variable [SeparatelyContinuousMul G]
+
+/-- A character is smooth exactly when it is continuous for a discrete topology on `Aˣ`. -/
+theorem isSmoothCharacter_iff_continuous_of_discreteTopology [TopologicalSpace Aˣ]
+    [DiscreteTopology Aˣ] {χ : G →* Aˣ} : IsSmoothCharacter χ ↔ Continuous χ :=
+  (MonoidHom.continuous_iff_isOpen_ker χ).symm
+
+/-- A character is smooth exactly when it is continuous for the discrete topology on `Aˣ`. -/
+theorem isSmoothCharacter_iff_continuous {χ : G →* Aˣ} :
+    IsSmoothCharacter χ ↔ @Continuous G Aˣ _ ⊥ χ := by
+  let _ : TopologicalSpace Aˣ := ⊥
+  have : DiscreteTopology Aˣ := ⟨rfl⟩
+  exact isSmoothCharacter_iff_continuous_of_discreteTopology
+
+/-- A character is smooth exactly when its kernel contains an open subgroup. -/
+theorem isSmoothCharacter_iff_exists_openSubgroup {χ : G →* Aˣ} :
+    IsSmoothCharacter χ ↔ ∃ U : OpenSubgroup G, (U : Subgroup G) ≤ χ.ker :=
+  ⟨fun h ↦ ⟨⟨χ.ker, isSmoothCharacter_iff.1 h⟩, le_rfl⟩, fun ⟨U, hU⟩ ↦
+    isSmoothCharacter_iff.2 (Subgroup.isOpen_mono hU U.isOpen)⟩
+
+/-- A character is smooth exactly when it is locally constant. -/
+theorem isSmoothCharacter_iff_isLocallyConstant {χ : G →* Aˣ} :
+    IsSmoothCharacter χ ↔ IsLocallyConstant (χ : G → Aˣ) :=
+  ⟨fun h ↦ χ.isLocallyConstant_of_isOpen_ker (isSmoothCharacter_iff.1 h), fun h ↦
+    isSmoothCharacter_iff.2 (by rw [MonoidHom.coe_ker]; exact h {1})⟩
+
+/-- The pushforward of a smooth character along a homomorphism of coefficient monoids is smooth. -/
+theorem IsSmoothCharacter.unitsMap {B : Type*} [Monoid B] {χ : G →* Aˣ}
+    (hχ : IsSmoothCharacter χ) (φ : A →* B) : IsSmoothCharacter ((Units.map φ).comp χ) :=
+  isSmoothCharacter_iff.2 <| Subgroup.isOpen_mono
+    (fun g hg ↦ by simp [MonoidHom.mem_ker.1 hg]) (isSmoothCharacter_iff.1 hχ)
+
+end SeparatelyContinuousMul
+
+end Monoid
+
+section CommMonoid
+
+variable [CommMonoid A]
+
+/-- The inverse of a character is smooth exactly when the character is. -/
+@[simp]
+theorem isSmoothCharacter_inv_iff {χ : G →* Aˣ} : IsSmoothCharacter χ⁻¹ ↔ IsSmoothCharacter χ := by
+  rw [isSmoothCharacter_iff, isSmoothCharacter_iff, MonoidHom.ker_inv]
 
 /-- The inverse of a smooth character is smooth. -/
 theorem IsSmoothCharacter.inv {χ : G →* Aˣ} (hχ : IsSmoothCharacter χ) :
-    IsSmoothCharacter χ⁻¹ := by
-  have : χ⁻¹.ker = χ.ker := by
-    ext g
-    simp
-  rwa [isSmoothCharacter_iff, this]
+    IsSmoothCharacter χ⁻¹ :=
+  isSmoothCharacter_inv_iff.2 hχ
+
+variable [SeparatelyContinuousMul G]
+
+/-- The product of two smooth characters is smooth. -/
+theorem IsSmoothCharacter.mul {χ ψ : G →* Aˣ} (hχ : IsSmoothCharacter χ)
+    (hψ : IsSmoothCharacter ψ) : IsSmoothCharacter (χ * ψ) := by
+  rw [isSmoothCharacter_iff] at hχ hψ ⊢
+  refine Subgroup.isOpen_mono (H₁ := χ.ker ⊓ ψ.ker) (fun g hg ↦ ?_)
+    (by rw [Subgroup.coe_inf]; exact hχ.inter hψ)
+  rw [Subgroup.mem_inf, MonoidHom.mem_ker, MonoidHom.mem_ker] at hg
+  simp [hg.1, hg.2]
+
+/-- The quotient of two smooth characters is smooth. -/
+theorem IsSmoothCharacter.div {χ ψ : G →* Aˣ} (hχ : IsSmoothCharacter χ)
+    (hψ : IsSmoothCharacter ψ) : IsSmoothCharacter (χ / ψ) := by
+  rw [div_eq_mul_inv]
+  exact hχ.mul hψ.inv
+
+/-- A natural power of a smooth character is smooth. -/
+theorem IsSmoothCharacter.pow {χ : G →* Aˣ} (hχ : IsSmoothCharacter χ) (n : ℕ) :
+    IsSmoothCharacter (χ ^ n) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ]; exact ih.mul hχ
+
+/-- An integer power of a smooth character is smooth. -/
+theorem IsSmoothCharacter.zpow {χ : G →* Aˣ} (hχ : IsSmoothCharacter χ) (n : ℤ) :
+    IsSmoothCharacter (χ ^ n) := by
+  cases n with
+  | ofNat n => rw [Int.ofNat_eq_natCast, zpow_natCast]; exact hχ.pow n
+  | negSucc n => rw [zpow_negSucc]; exact (hχ.pow (n + 1)).inv
+
+end CommMonoid
+
+section Representation
+
+variable {V : Type*} [CommSemiring A] [SeparatelyContinuousMul G] [AddCommMonoid V] [Module A V]
+
+/-- A character is smooth exactly when its rank-one representation `A(χ)` is smooth. -/
+theorem isSmoothCharacter_iff_isSmooth {χ : G →* Aˣ} :
+    IsSmoothCharacter χ ↔ IsSmooth (ofLinearCharacter χ) := by
+  refine ⟨fun h ↦ ⟨fun x ↦ Subgroup.isOpen_mono (ker_le_stabilizer_ofLinearCharacter χ x)
+    (isSmoothCharacter_iff.1 h)⟩, fun h ↦ ?_⟩
+  rw [isSmoothCharacter_iff, ← stabilizer_ofLinearCharacter_one]
+  exact IsSmooth.isOpen_stabilizer 1
 
 /-- The twist of a smooth representation by a smooth character is smooth. -/
-theorem IsSmoothCharacter.isSmooth_charTwist [SeparatelyContinuousMul G] {χ : G →* Aˣ}
-    (hχ : IsSmoothCharacter χ) (ρ : Representation A G V) [IsSmooth ρ] :
-    IsSmooth (charTwist χ ρ) := by
-  refine ⟨fun v ↦ ?_⟩
-  have h : IsOpen ((χ.ker ⊓ ρ.stabilizer v : Subgroup G) : Set G) :=
-    hχ.inter (IsSmooth.isOpen_stabilizer v)
-  exact Subgroup.isOpen_mono (fun g (hg : g ∈ χ.ker ⊓ ρ.stabilizer v) ↦ by
-    simp [mem_stabilizer, MonoidHom.mem_ker.1 hg.1, mem_stabilizer.1 hg.2]) h
+theorem IsSmoothCharacter.isSmooth_charTwist {χ : G →* Aˣ} (hχ : IsSmoothCharacter χ)
+    (ρ : Representation A G V) [IsSmooth ρ] : IsSmooth (charTwist χ ρ) := by
+  refine ⟨fun v ↦ Subgroup.isOpen_mono (ker_inf_stabilizer_le_stabilizer_charTwist χ ρ v) ?_⟩
+  rw [Subgroup.coe_inf]
+  exact (isSmoothCharacter_iff.1 hχ).inter (IsSmooth.isOpen_stabilizer v)
 
-omit [TopologicalSpace G] in
-/-- On a subgroup inside the kernel of `χ`, twisting by `χ` does not change the invariants. -/
-theorem invariants_charTwist_comp_subtype (χ : G →* Aˣ) (ρ : Representation A G V)
-    {U : Subgroup G} (hU : U ≤ χ.ker) :
-    invariants ((charTwist χ ρ).comp U.subtype) = invariants (ρ.comp U.subtype) := by
-  ext v
-  simp [mem_invariants, MonoidHom.mem_ker.1 (hU _)]
+/-- Twisting by a smooth character preserves and reflects smoothness. -/
+theorem IsSmoothCharacter.isSmooth_charTwist_iff {χ : G →* Aˣ} (hχ : IsSmoothCharacter χ)
+    (ρ : Representation A G V) : IsSmooth (charTwist χ ρ) ↔ IsSmooth ρ := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ hχ.isSmooth_charTwist ρ⟩
+  have := hχ.inv.isSmooth_charTwist (charTwist χ ρ)
+  rwa [charTwist_charTwist, show χ⁻¹ * χ = 1 by ext; simp, charTwist_one] at this
+
+end Representation
 
 end TauCeti
