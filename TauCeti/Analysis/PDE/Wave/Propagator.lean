@@ -71,8 +71,9 @@ identity and Duhamel's formula.
 * `TauCeti.norm_waveSinPropagator_sub_le`: `t ↦ D⁻¹ sin(tD)` is `1`-Lipschitz in operator norm,
   and `TauCeti.continuous_waveSinPropagator_uncurry`: `(t, g) ↦ D⁻¹ sin(tD) g` is jointly
   continuous. Hence retarded Duhamel integrals are measurable in time
-  (`TauCeti.aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub`), and integrable between
-  any two times at which the forcing is (`IntervalIntegrable.waveSinPropagator_sub_apply`).
+  (`TauCeti.aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub`), and, for fixed `t`, the
+  integrand `τ ↦ D⁻¹ sin((t - τ)D) G(τ)` is integrable between `t₀` and `t` whenever `G` is
+  (`IntervalIntegrable.waveSinPropagator_sub_apply`).
 * `TauCeti.hasDerivAt_waveSinPropagator_apply`, `TauCeti.hasDerivAt_waveCosPropagator_apply`:
   the time derivatives.
 
