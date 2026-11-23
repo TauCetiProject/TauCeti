@@ -270,7 +270,7 @@ lemma Hom.comp_app (f : Hom r s) (f' : Hom s t) (n : ℕ) :
 /-- The homomorphism `lim G →* lim H` induced by a morphism of towers. -/
 def Hom.limMap (f : Hom r s) : r.lim →* s.lim :=
   ((MonoidHom.piMap f.app).comp r.lim.subtype).codRestrict s.lim fun g n ↦ by
-    simp [r.mem_lim.1 g.2 n]
+    simp [r.mem_lim.1 g.property n]
 
 @[simp]
 lemma Hom.coe_limMap_apply (f : Hom r s) (g : r.lim) (n : ℕ) :

@@ -107,7 +107,7 @@ theorem isUnit_convMul_apply_orbitCoordinates_iff
         (Comodule.orbitCoordinates (H := H) m s)) ↔
       IsUnit (g.ofConv (Comodule.orbitCoordinates (H := H) m s)) := by
   rw [I.convMul_apply_orbitCoordinates_of_mem_weightSpace χ hm g h hs, IsUnit.mul_iff]
-  exact and_iff_right ((χ.2.isUnit.map h.ofConv).pow n)
+  exact and_iff_right ((χ.isGroupLikeElem_val.isUnit.map h.ofConv).pow n)
 
 end Points
 

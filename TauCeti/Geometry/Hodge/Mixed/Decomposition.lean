@@ -221,10 +221,10 @@ private theorem piece_le_map_deligneSplitting {k : ℤ}
   have haW : a ∈ mhs.WC (p + (k - p)) := by
     have hya : a = (y : Vℂ) - b := by rw [← hab]; abel
     rw [hkp, hya]
-    exact Submodule.sub_mem _ y.2 (mhs.WC_monotone (by omega) hb)
+    exact Submodule.sub_mem _ y.property (mhs.WC_monotone (by omega) hb)
   have hyc : (y : Vℂ) - c = a + e := by rw [← hab, ← hce]; abel
   have hxW : (y : Vℂ) - c ∈ mhs.WC k :=
-    Submodule.sub_mem _ y.2 (mhs.WC_monotone (by omega) hc.2)
+    Submodule.sub_mem _ y.property (mhs.WC_monotone (by omega) hc.2)
   have hxW' : (y : Vℂ) - c ∈ mhs.WC (p + (k - p)) := by rw [hkp]; exact hxW
   have hx : (y : Vℂ) - c ∈ mhs.deligneSplitting p (k - p) := by
     rw [mem_deligneSplitting_iff]

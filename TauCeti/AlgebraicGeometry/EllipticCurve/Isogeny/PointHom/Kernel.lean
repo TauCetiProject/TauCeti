@@ -77,7 +77,7 @@ private theorem translation_fieldPullback_of_forall_exists {P : W₁.Point} {z :
   set g := σ (φ.fieldPullback z) - φ.fieldPullback (ρ z) with hg
   -- `g` vanishes at every point `Q` with `φ(Q)` and `φ(Q + P)` affine
   have hzero : ∀ Q : W₁.Point, φ.toPointHom Q ≠ 0 → φ.toPointHom (Q + P) ≠ 0 →
-      (pointEquivDegreeOnePlace W₁ Q).1.valuation g < 1 := by
+      (pointEquivDegreeOnePlace W₁ Q).val.valuation g < 1 := by
     intro Q hQ hQP
     obtain ⟨x', y', h', hQP'⟩ : ∃ x' y' h', φ.toPointHom (Q + P) = .some x' y' h' := by
       cases h : φ.toPointHom (Q + P) with
@@ -90,10 +90,10 @@ private theorem translation_fieldPullback_of_forall_exists {P : W₁.Point} {z :
     obtain ⟨c, hc⟩ := hz x' y' h'
     -- `φ^* z` takes the value `c` at `Q + P`, and `τ_P^*` carries the place of `Q + P` to that
     -- of `Q`
-    have hσval : (pointEquivDegreeOnePlace W₁ Q).1.valuation
+    have hσval : (pointEquivDegreeOnePlace W₁ Q).val.valuation
         (σ (φ.fieldPullback z) - algebraMap F W₁.FunctionField c) < 1 := by
-      have hsmul : σ • (pointEquivDegreeOnePlace W₁ (Q + P)).1 =
-          (pointEquivDegreeOnePlace W₁ Q).1 := by
+      have hsmul : σ • (pointEquivDegreeOnePlace W₁ (Q + P)).val =
+          (pointEquivDegreeOnePlace W₁ Q).val := by
         rw [hσ, translation_smul_pointEquivDegreeOnePlace, add_sub_cancel_right]
       have hval := φ.valuation_fieldPullback_lt_one_of_toPointHom_eq_some hQP' hc
       rw [map_sub, AlgHom.commutes] at hval
@@ -103,8 +103,8 @@ private theorem translation_fieldPullback_of_forall_exists {P : W₁.Point} {z :
     -- `φ(Q)`
     have hρval : (Place.ofPrime F W₂.FunctionField (CoordinateRing.pointPlace h''.1)).valuation
         (ρ z - algebraMap F W₂.FunctionField c) < 1 := by
-      have hsmul : ρ • (pointEquivDegreeOnePlace W₂ (φ.toPointHom (Q + P))).1 =
-          (pointEquivDegreeOnePlace W₂ (φ.toPointHom Q)).1 := by
+      have hsmul : ρ • (pointEquivDegreeOnePlace W₂ (φ.toPointHom (Q + P))).val =
+          (pointEquivDegreeOnePlace W₂ (φ.toPointHom Q)).val := by
         rw [hρ, translation_smul_pointEquivDegreeOnePlace, map_add, add_sub_cancel_right]
       rw [hQP', hQ', coe_pointEquivDegreeOnePlace_some, coe_pointEquivDegreeOnePlace_some]
         at hsmul
@@ -121,7 +121,7 @@ private theorem translation_fieldPullback_of_forall_exists {P : W₁.Point} {z :
   have hfib : {Q : W₁.Point | φ.toPointHom Q = 0 ∨ φ.toPointHom (Q + P) = 0}.Finite :=
     (φ.finite_setOf_toPointHom_eq 0).union
       ((φ.finite_setOf_toPointHom_eq 0).preimage (add_left_injective P).injOn)
-  have hf : Function.Injective fun Q : W₁.Point ↦ (pointEquivDegreeOnePlace W₁ Q).1 :=
+  have hf : Function.Injective fun Q : W₁.Point ↦ (pointEquivDegreeOnePlace W₁ Q).val :=
     Subtype.val_injective.comp (pointEquivDegreeOnePlace W₁).injective
   refine ((Set.infinite_image_iff hf.injOn).mpr hfib.infinite_compl).mono ?_
     (Place.finite_setOf_ord_pos W₁.isFunctionField g)
@@ -185,7 +185,7 @@ theorem mem_ker_iff_toPointHom_eq_zero (P : W₁.Point) :
     -- the place of `φ(P)` is the restriction of the place of `P`, which `τ_P^*` carries to the
     -- place of `O₁`, whose restriction is the place of `φ(O₁) = O₂`
     have h := φ.coe_pointEquivDegreeOnePlace_toPointHom (fun _ ↦ rfl) P
-    rw [← hres (pointEquivDegreeOnePlace W₁ P).1, translation_smul_pointEquivDegreeOnePlace,
+    rw [← hres (pointEquivDegreeOnePlace W₁ P).val, translation_smul_pointEquivDegreeOnePlace,
       sub_self, ← φ.coe_pointEquivDegreeOnePlace_toPointHom (fun _ ↦ rfl) 0, map_zero] at h
     exact (pointEquivDegreeOnePlace W₂).injective (Subtype.ext h)
   · intro hP

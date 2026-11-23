@@ -64,13 +64,13 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 
 /-- A cone `τ` of a fan, viewed as a face of a cone `σ` containing it. This is the affine stratum
 in the chart of `σ` that represents the global orbit of `τ`. -/
-def orbitFace {τ σ : Φ.cones} (h : τ ≤ σ) : σ.1.Face :=
-  ⟨τ.1, Φ.isFaceOf_of_le σ.2 τ.2 h⟩
+def orbitFace {τ σ : Φ.cones} (h : τ ≤ σ) : σ.val.Face :=
+  ⟨τ.val, Φ.isFaceOf_of_le σ.property τ.property h⟩
 
 /-- The cone underlying `orbitFace` is the smaller cone. -/
 @[simp]
 theorem coe_orbitFace {τ σ : Φ.cones} (h : τ ≤ σ) :
-    (Φ.orbitFace h : PointedCone ℝ V) = τ.1 :=
+    (Φ.orbitFace h : PointedCone ℝ V) = τ.val :=
   (rfl)
 
 /-- A cone viewed as a face of itself is the top face. -/
@@ -81,11 +81,11 @@ theorem orbitFace_refl (σ : Φ.cones) : Φ.orbitFace (le_rfl : σ ≤ σ) = ⊤
 /-- A map of the chart diagram sends the stratum of a face of the smaller cone into the stratum of
 the same cone, viewed as a face of the larger cone. -/
 private theorem analyticAffineChartDiagram_map_mem_affineConeOrbit {τ σ : Φ.cones} (f : τ ⟶ σ)
-    {F : τ.1.Face} {G : σ.1.Face} (hFG : (F : PointedCone ℝ V) = G)
+    {F : τ.val.Face} {G : σ.val.Face} (hFG : (F : PointedCone ℝ V) = G)
     {x : (Φ.analyticAffineChartDiagram).obj τ} (hx : x ∈ affineConeOrbit Φ.lattice F) :
     (Φ.analyticAffineChartDiagram).map f x ∈ affineConeOrbit Φ.lattice G := by
   rw [analyticAffineChartDiagram_map_apply,
-    ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))]
+    ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property (leOfHom f))]
   exact faceAffinePointMap_mem_affineConeOrbit Φ.lattice _ hFG hx
 
 /-- The stratum of a point of the analytic realization does not depend on the chart: if points of
@@ -94,7 +94,7 @@ face `G` of `τ`, then `F` and `G` are the same cone. -/
 theorem coe_eq_coe_of_analyticAffineChartι_eq {σ τ : Φ.cones}
     {x : (Φ.analyticAffineChartDiagram).obj σ} {y : (Φ.analyticAffineChartDiagram).obj τ}
     (hxy : Φ.analyticAffineChartι hΦ σ x = Φ.analyticAffineChartι hΦ τ y)
-    {F : σ.1.Face} {G : τ.1.Face} (hx : x ∈ affineConeOrbit Φ.lattice F)
+    {F : σ.val.Face} {G : τ.val.Face} (hx : x ∈ affineConeOrbit Φ.lattice F)
     (hy : y ∈ affineConeOrbit Φ.lattice G) :
     (F : PointedCone ℝ V) = G := by
   -- Both points come from a point `z` of the chart of `σ ⊓ τ`, in the stratum of some face `H`.
@@ -102,13 +102,13 @@ theorem coe_eq_coe_of_analyticAffineChartι_eq {σ τ : Φ.cones}
   rw [analyticOverlapLeft_def] at hx
   rw [analyticOverlapRight_def] at hy
   obtain ⟨H, hz, -⟩ := existsUnique_face_mem_affineConeOrbit Φ.lattice
-    ((isRegular_iff.mp hΦ) _ (σ ⊓ τ).2) z
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
-  have hτ := (isRegular_iff.mp hΦ) τ.1 τ.2
+    ((isRegular_iff.mp hΦ) _ (σ ⊓ τ).property) z
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
+  have hτ := (isRegular_iff.mp hΦ) τ.val τ.property
   have hHσ : (H : PointedCone ℝ V).IsFaceOf σ :=
-    H.isFaceOf.trans (Φ.isFaceOf_of_le σ.2 (σ ⊓ τ).2 inf_le_left)
+    H.isFaceOf.trans (Φ.isFaceOf_of_le σ.property (σ ⊓ τ).property inf_le_left)
   have hHτ : (H : PointedCone ℝ V).IsFaceOf τ :=
-    H.isFaceOf.trans (Φ.isFaceOf_of_le τ.2 (σ ⊓ τ).2 inf_le_right)
+    H.isFaceOf.trans (Φ.isFaceOf_of_le τ.property (σ ⊓ τ).property inf_le_right)
   -- Restriction preserves strata, so both `F` and `G` are the cone `H`.
   have hF : F = ⟨H, hHσ⟩ := (existsUnique_face_mem_affineConeOrbit Φ.lattice hσ _).unique hx
     (Φ.analyticAffineChartDiagram_map_mem_affineConeOrbit (homOfLE inf_le_left)
@@ -123,12 +123,12 @@ theorem coe_eq_coe_of_analyticAffineChartι_eq {σ τ : Φ.cones}
 /-- The distinguished point of a cone `σ` of a regular fan: the distinguished point of the top face
 of `σ` in the affine chart of `σ`, viewed in the analytic realization. -/
 noncomputable def analyticDistinguishedPoint (σ : Φ.cones) : Φ.analyticRealization hΦ :=
-  Φ.analyticAffineChartι hΦ σ (distinguishedPoint Φ.lattice (⊤ : σ.1.Face))
+  Φ.analyticAffineChartι hΦ σ (distinguishedPoint Φ.lattice (⊤ : σ.val.Face))
 
 /-- The distinguished point of a cone is the image of the distinguished point of its top face. -/
 theorem analyticDistinguishedPoint_def (σ : Φ.cones) :
     Φ.analyticDistinguishedPoint hΦ σ =
-      Φ.analyticAffineChartι hΦ σ (distinguishedPoint Φ.lattice (⊤ : σ.1.Face)) :=
+      Φ.analyticAffineChartι hΦ σ (distinguishedPoint Φ.lattice (⊤ : σ.val.Face)) :=
   (rfl)
 
 /-- The distinguished point of a face `τ` of `σ`, seen in the chart of `σ`, is the distinguished
@@ -138,11 +138,11 @@ theorem analyticAffineChartι_distinguishedPoint {τ σ : Φ.cones} (h : τ ≤ 
         (distinguishedPoint Φ.lattice (Φ.orbitFace h)) =
       Φ.analyticDistinguishedPoint hΦ τ := by
   have hd : (Φ.analyticAffineChartDiagram).map (homOfLE h)
-      (distinguishedPoint Φ.lattice (⊤ : τ.1.Face)) =
+      (distinguishedPoint Φ.lattice (⊤ : τ.val.Face)) =
         distinguishedPoint Φ.lattice (Φ.orbitFace h) := by
     rw [analyticAffineChartDiagram_map_apply Φ (homOfLE h)
-        (distinguishedPoint Φ.lattice (⊤ : τ.1.Face)),
-      ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h)]
+        (distinguishedPoint Φ.lattice (⊤ : τ.val.Face)),
+      ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property h)]
     exact faceAffinePointMap_distinguishedPoint Φ.lattice _ rfl
   rw [← hd, analyticDistinguishedPoint_def]
   exact ConcreteCategory.congr_hom
@@ -152,27 +152,27 @@ theorem analyticAffineChartι_distinguishedPoint {τ σ : Φ.cones} (h : τ ≤ 
 stratum of the top face of `σ` in the affine chart of `σ`. By `analyticConeOrbit_eq_orbit`, it is
 the torus orbit of the distinguished point of `σ`. -/
 noncomputable def analyticConeOrbit (σ : Φ.cones) : Set (Φ.analyticRealization hΦ) :=
-  Φ.analyticAffineChartι hΦ σ '' affineConeOrbit Φ.lattice (⊤ : σ.1.Face)
+  Φ.analyticAffineChartι hΦ σ '' affineConeOrbit Φ.lattice (⊤ : σ.val.Face)
 
 /-- The orbit of a cone is the image of the stratum of its top face. -/
 theorem analyticConeOrbit_def (σ : Φ.cones) :
     Φ.analyticConeOrbit hΦ σ =
-      Φ.analyticAffineChartι hΦ σ '' affineConeOrbit Φ.lattice (⊤ : σ.1.Face) :=
+      Φ.analyticAffineChartι hΦ σ '' affineConeOrbit Φ.lattice (⊤ : σ.val.Face) :=
   (rfl)
 
 /-- The orbit of a cone `σ` is the torus orbit of the distinguished point of `σ`. -/
 theorem analyticConeOrbit_eq_orbit (σ : Φ.cones) :
     Φ.analyticConeOrbit hΦ σ =
       MulAction.orbit (ComplexTorus N) (Φ.analyticDistinguishedPoint hΦ σ) := by
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   ext x
   rw [analyticConeOrbit_def, affineConeOrbit_eq_orbit Φ.lattice hσ, analyticDistinguishedPoint_def]
   constructor
   · rintro ⟨_, ⟨t, rfl⟩, rfl⟩
-    exact ⟨t, Φ.smul_analyticAffineChartι hΦ t σ (distinguishedPoint Φ.lattice (⊤ : σ.1.Face))⟩
+    exact ⟨t, Φ.smul_analyticAffineChartι hΦ t σ (distinguishedPoint Φ.lattice (⊤ : σ.val.Face))⟩
   · rintro ⟨t, rfl⟩
-    exact ⟨t • distinguishedPoint Φ.lattice (⊤ : σ.1.Face), ⟨t, rfl⟩,
-      (Φ.smul_analyticAffineChartι hΦ t σ (distinguishedPoint Φ.lattice (⊤ : σ.1.Face))).symm⟩
+    exact ⟨t • distinguishedPoint Φ.lattice (⊤ : σ.val.Face), ⟨t, rfl⟩,
+      (Φ.smul_analyticAffineChartι hΦ t σ (distinguishedPoint Φ.lattice (⊤ : σ.val.Face))).symm⟩
 
 /-- The torus preserves the orbit of every cone. -/
 theorem smul_mem_analyticConeOrbit {σ : Φ.cones} (T : ComplexTorus N)
@@ -190,13 +190,13 @@ theorem analyticDistinguishedPoint_mem_analyticConeOrbit (σ : Φ.cones) :
 /-- A point of the chart of `σ` in the stratum of a face `F` lies in the orbit of a cone `τ` exactly
 when `F` is the cone `τ`. -/
 theorem analyticAffineChartι_mem_analyticConeOrbit_iff {σ τ : Φ.cones}
-    {x : (Φ.analyticAffineChartDiagram).obj σ} {F : σ.1.Face}
+    {x : (Φ.analyticAffineChartDiagram).obj σ} {F : σ.val.Face}
     (hx : x ∈ affineConeOrbit Φ.lattice F) :
     Φ.analyticAffineChartι hΦ σ x ∈ Φ.analyticConeOrbit hΦ τ ↔ (F : PointedCone ℝ V) = τ := by
   refine ⟨fun ⟨y, hy, hxy⟩ ↦ Φ.coe_eq_coe_of_analyticAffineChartι_eq hΦ hxy.symm hx hy, ?_⟩
   intro hF
   have hτσ : τ ≤ σ := Subtype.coe_le_coe.1 (hF ▸ F.toPointedCone_le)
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   -- `x` is a torus translate of the distinguished point of `F`, which is that of `τ`.
   have hFτ : F = Φ.orbitFace hτσ := PointedCone.Face.ext fun y ↦
     SetLike.ext_iff.mp hF y
@@ -213,7 +213,7 @@ theorem analyticAffineChartι_mem_analyticConeOrbit_iff {σ τ : Φ.cones}
 theorem preimage_analyticAffineChartι_analyticConeOrbit {τ σ : Φ.cones} (h : τ ≤ σ) :
     Φ.analyticAffineChartι hΦ σ ⁻¹' Φ.analyticConeOrbit hΦ τ =
       affineConeOrbit Φ.lattice (Φ.orbitFace h) := by
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   ext x
   obtain ⟨F, hx, hF⟩ := existsUnique_face_mem_affineConeOrbit Φ.lattice hσ x
   rw [mem_preimage, Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hx]
@@ -227,7 +227,7 @@ theorem preimage_analyticAffineChartι_analyticConeOrbit {τ σ : Φ.cones} (h :
 theorem preimage_analyticAffineChartι_analyticConeOrbit_of_not_le {τ σ : Φ.cones}
     (h : ¬τ ≤ σ) :
     Φ.analyticAffineChartι hΦ σ ⁻¹' Φ.analyticConeOrbit hΦ τ = ∅ := by
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   refine eq_empty_of_forall_notMem fun x hx ↦ h ?_
   obtain ⟨F, hxF, -⟩ := existsUnique_face_mem_affineConeOrbit Φ.lattice hσ x
   have hF := (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hxF).1 hx
@@ -240,7 +240,7 @@ theorem mem_range_analyticAffineChartι_iff {σ τ : Φ.cones} {x : Φ.analyticR
   constructor
   · rintro ⟨y, rfl⟩
     obtain ⟨F, hy, -⟩ := existsUnique_face_mem_affineConeOrbit Φ.lattice
-      ((isRegular_iff.mp hΦ) τ.1 τ.2) y
+      ((isRegular_iff.mp hΦ) τ.val τ.property) y
     have hF := (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hy).1 hx
     exact Subtype.coe_le_coe.1 (hF ▸ F.toPointedCone_le)
   · intro h
@@ -265,7 +265,7 @@ noncomputable def analyticConeOrbitChartEquiv (σ : Φ.cones) {υ : Φ.cones} (h
 theorem coe_analyticConeOrbitChartEquiv_apply (σ : Φ.cones) {υ : Φ.cones} (h : σ ≤ υ)
     (x : affineConeOrbit Φ.lattice (Φ.orbitFace h)) :
     (Φ.analyticConeOrbitChartEquiv hΦ σ h x : Φ.analyticRealization hΦ) =
-      Φ.analyticAffineChartι hΦ υ x.1 :=
+      Φ.analyticAffineChartι hΦ υ x.val :=
   (rfl)
 
 /-- Applying the affine chart inclusion to the inverse orbit parametrization recovers
@@ -273,7 +273,7 @@ the point. -/
 @[simp]
 theorem analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply
     (σ : Φ.cones) {υ : Φ.cones} (h : σ ≤ υ) (x : Φ.analyticConeOrbit hΦ σ) :
-    Φ.analyticAffineChartι hΦ υ ((Φ.analyticConeOrbitChartEquiv hΦ σ h).symm x).1 = x.1 := by
+    Φ.analyticAffineChartι hΦ υ ((Φ.analyticConeOrbitChartEquiv hΦ σ h).symm x).val = x.val := by
   simpa only [coe_analyticConeOrbitChartEquiv_apply] using
     congrArg Subtype.val ((Φ.analyticConeOrbitChartEquiv hΦ σ h).apply_symm_apply x)
 
@@ -285,8 +285,8 @@ theorem existsUnique_mem_analyticConeOrbit (x : Φ.analyticRealization hΦ) :
     ∃! σ : Φ.cones, x ∈ Φ.analyticConeOrbit hΦ σ := by
   obtain ⟨σ, y, rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ x
   obtain ⟨F, hy, -⟩ := existsUnique_face_mem_affineConeOrbit Φ.lattice
-    ((isRegular_iff.mp hΦ) σ.1 σ.2) y
-  refine ⟨⟨F, Φ.mem_of_isFaceOf σ.2 F.isFaceOf⟩,
+    ((isRegular_iff.mp hΦ) σ.val σ.property) y
+  refine ⟨⟨F, Φ.mem_of_isFaceOf σ.property F.isFaceOf⟩,
     (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hy).2 rfl, fun τ hτ ↦ ?_⟩
   exact Subtype.ext ((Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hy).1 hτ).symm
 
@@ -345,7 +345,7 @@ of `σ`. -/
 theorem mem_closure_analyticConeOrbit_iff {σ τ : Φ.cones} {x : Φ.analyticRealization hΦ}
     (hx : x ∈ Φ.analyticConeOrbit hΦ σ) :
     x ∈ closure (Φ.analyticConeOrbit hΦ τ) ↔ τ ≤ σ := by
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   have hι := Φ.isOpenEmbedding_analyticAffineChartι hΦ σ
   obtain ⟨y, hy, rfl⟩ := hx
   -- The chart of `σ` is an open subspace, so the closure can be computed in that chart.
@@ -371,9 +371,9 @@ theorem closure_analyticConeOrbit (τ : Φ.cones) :
 theorem isLocallyClosed_analyticConeOrbit (σ : Φ.cones) :
     IsLocallyClosed (Φ.analyticConeOrbit hΦ σ) := by
   let := affinePointTopology (Φ.analyticChartGenerators σ).2
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   have hι := Φ.isOpenEmbedding_analyticAffineChartι hΦ σ
-  have hc := isLocallyClosed_affineConeOrbit Φ.lattice hσ (⊤ : σ.1.Face)
+  have hc := isLocallyClosed_affineConeOrbit Φ.lattice hσ (⊤ : σ.val.Face)
     (Φ.analyticChartGenerators σ).2
   rw [← Φ.analyticAffineChart_str_eq σ] at hc
   rw [analyticConeOrbit_def]
@@ -394,12 +394,13 @@ theorem analyticConeOrbit_subset_closure_iff (σ τ : Φ.cones) :
 are trivial on the characters vanishing on `σ`. -/
 theorem mem_stabilizer_analyticDistinguishedPoint_iff (σ : Φ.cones) (T : ComplexTorus N) :
     T ∈ MulAction.stabilizer (ComplexTorus N) (Φ.analyticDistinguishedPoint hΦ σ) ↔
-      ∀ m : N →+ ℤ, (∀ y ∈ σ.1, Φ.lattice.realCharacter m y = 0) → T m = 1 := by
+      ∀ m : N →+ ℤ, (∀ y ∈ σ.val, Φ.lattice.realCharacter m y = 0) → T m = 1 := by
   rw [MulAction.mem_stabilizer_iff, analyticDistinguishedPoint_def,
-    Φ.smul_analyticAffineChartι hΦ T σ (distinguishedPoint Φ.lattice (⊤ : σ.1.Face))]
+    Φ.smul_analyticAffineChartι hΦ T σ (distinguishedPoint Φ.lattice (⊤ : σ.val.Face))]
   -- The chart inclusion is injective and equivariant, so the stabilizer is the affine one.
   exact (Φ.isOpenEmbedding_analyticAffineChartι hΦ σ).injective.eq_iff.trans
     (MulAction.mem_stabilizer_iff.symm.trans
-      (mem_stabilizer_distinguishedPoint_iff Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2) ⊤ T))
+      (mem_stabilizer_distinguishedPoint_iff Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property) ⊤
+          T))
 
 end TauCeti.Toric.Fan

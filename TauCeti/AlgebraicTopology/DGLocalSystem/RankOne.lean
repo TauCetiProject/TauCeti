@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.DGLocalSystem.Homology
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Cohomology
 public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Twist
+public import TauCeti.Algebra.Ring.Int.Units
 public import TauCeti.Algebra.Homology.DG.Twisted.Map
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
@@ -36,27 +37,10 @@ twisted complex of `𝓕` with the cocycle `m^L`
 (`TauCeti.RankOneLocalSystem.twistedCochainComplexIso`, the source's Proposition
 `prop:FotimesL-mL`), so the two have isomorphic homology.
 
-Rank-one local systems form a commutative group under the tensor product of their characters
-(`L ⊗ L'` is written `L * L'`), and twisting is multiplicative: `Φ^{L ⊗ L'} = Φ^L ∘ Φ^{L'}`
-(`TauCeti.RankOneLocalSystem.twist_mul`). Hence `𝓕 ⊗ (L ⊗ L') ≅ (𝓕 ⊗ L) ⊗ L'`
-(`TauCeti.RankOneLocalSystem.tensorMul`), and twisting by `L` is an autoequivalence of DG local
-systems with inverse the twist by `L⁻¹` (`TauCeti.RankOneLocalSystem.tensorEquivalence`). Along a
-based map `f`, the pullback `f^*L` acts on a loop through its image under `f`; the twist is natural
-(`TauCeti.RankOneLocalSystem.loopChainMap_comp_twist_pullback`), so pulling back commutes with
-twisting: `f^*𝓕 ⊗ f^*L ≅ f^*(𝓕 ⊗ L)` (`TauCeti.RankOneLocalSystem.pullbackTensorIso`). These are the
-operations by which rank-one coefficient systems are assembled from simpler ones, such as pullbacks
-of orientation local systems and their inverses.
-
 As a classical local system, `L` is the representation of `π₁(B, b)` on `R` through its monodromy
 `TauCeti.RankOneLocalSystem.monodromy`, the character sending the inverse of the class of a Moore
-loop `γ` to `ρ γ`. A rank-one local system is determined by its monodromy, and every character
-`π₁(B, b) →* Rˣ` is the monodromy of one (`TauCeti.RankOneLocalSystem.ofMonodromy`): the monodromy
-is an isomorphism from the group of rank-one local systems to the group of characters of the
-fundamental group (`TauCeti.RankOneLocalSystem.monodromyEquiv`), compatible with pullback
-(`TauCeti.RankOneLocalSystem.monodromy_pullback`).
-
-On homology, twisting by `L` tensors with this representation: `H(𝓕 ⊗ L) ≅ H(𝓕) ⊗ L` as
-representations of the fundamental group
+loop `γ` to `ρ γ`. On homology, twisting by `L` tensors with this representation:
+`H(𝓕 ⊗ L) ≅ H(𝓕) ⊗ L` as representations of the fundamental group
 (`TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivTprod`), through the identification of
 the homology of the restriction of `𝓕` along `Φ^L` with that of `𝓕`. Equivalently, the
 representation on `H(𝓕 ⊗ L)` is the one on `H(𝓕)` rescaled by the monodromy
@@ -67,21 +51,45 @@ degrees, so they restrict to each degree: `H_q(𝓕 ⊗ L) ≅ H_q(𝓕) ⊗ L`
 (`TauCeti.RankOneLocalSystem.cohomologyGradingRepresentationEquivTprod`), stated in the
 cohomological degree `p = -q`.
 
+Rank-one local systems form a commutative group under the tensor product, on which loops act by
+the product of the units. Twisting turns products into composites, `Φ^{L L'} = Φ^L ∘ Φ^{L'}`
+(`TauCeti.RankOneLocalSystem.twist_mul`), so `𝓕 ⊗ (L L') ≅ (𝓕 ⊗ L) ⊗ L'`
+(`TauCeti.RankOneLocalSystem.tensorMulIso`) and `m^{L L'} = (m^{L'})^L`, and tensoring with `L` is
+an autoequivalence of DG local systems with inverse tensoring with `L⁻¹`
+(`TauCeti.RankOneLocalSystem.tensorEquivalence`). The monodromy is an
+isomorphism of groups onto the characters `π₁(B, b) →* Rˣ`
+(`TauCeti.RankOneLocalSystem.monodromyEquiv`), with inverse
+`TauCeti.RankOneLocalSystem.ofMonodromy`, so a rank-one local system is a classical local system of
+rank one. A character with values in `ℤˣ = {±1}`, read in `Rˣ`, gives a rank-one local system which
+is its own inverse (`TauCeti.RankOneLocalSystem.inv_ofMonodromy_unitsMap_comp`) and which is
+trivial exactly when the character is trivial or `2 = 0` in `R`
+(`TauCeti.RankOneLocalSystem.ofMonodromy_unitsMap_comp_eq_one_iff`).
+
+Along a based map `f : (B, b) → (B', b')`, rank-one local systems pull back by letting a loop act
+through its image (`TauCeti.RankOneLocalSystem.pullback`), a group homomorphism, functorial in `f`,
+whose monodromy is the monodromy composed with `π₁(f)`. Twisting is natural in the space,
+`C_*(Ωf) ∘ Φ^{f^* L} = Φ^L ∘ C_*(Ωf)`
+(`TauCeti.RankOneLocalSystem.loopChainMap_comp_twist_pullback`), so pulling back DG local
+systems commutes with tensoring, `f^*(𝓕 ⊗ L) ≅ f^* 𝓕 ⊗ f^* L`
+(`TauCeti.RankOneLocalSystem.tensorPullbackIso`), and pushing a twisting cocycle forward along
+`C_*(Ωf)` commutes with twisting. These are the operations by which twisting local systems such as
+the orientation local system of a manifold, pulled back along the evaluation of free loops, are
+combined.
+
 ## Main definitions
 
 * `TauCeti.RankOneLocalSystem B b R`: rank-one local systems on `(B, b)`.
 * `TauCeti.RankOneLocalSystem.twist L`: the DG algebra automorphism `Φ^L` of `C_*(Ω_b B)`.
 * `TauCeti.RankOneLocalSystem.tensor L`: the functor `𝓕 ↦ 𝓕 ⊗ L` on DG local systems.
-* `TauCeti.RankOneLocalSystem.tensorOne`, `TauCeti.RankOneLocalSystem.tensorMul`: twisting by the
-  trivial local system, and by a tensor product.
-* `TauCeti.RankOneLocalSystem.tensorEquivalence L`: the autoequivalence `𝓕 ↦ 𝓕 ⊗ L`.
-* `TauCeti.RankOneLocalSystem.pullback L f hf`: the pullback `f^*L` along a based map.
-* `TauCeti.RankOneLocalSystem.pullbackTensorIso`: `f^*𝓕 ⊗ f^*L ≅ f^*(𝓕 ⊗ L)`.
 * `TauCeti.RankOneLocalSystem.twistCocycle L m`: the twisted cocycle `m^L`.
 * `TauCeti.RankOneLocalSystem.monodromy L`: the monodromy character `π₁(B, b) →* Rˣ`.
-* `TauCeti.RankOneLocalSystem.ofMonodromy χ`: the rank-one local system with monodromy `χ`.
-* `TauCeti.RankOneLocalSystem.monodromyEquiv`: rank-one local systems are the characters of the
-  fundamental group.
+* `TauCeti.RankOneLocalSystem.monodromyEquiv`: rank-one local systems are the characters of
+  `π₁(B, b)`, with inverse `TauCeti.RankOneLocalSystem.ofMonodromy`.
+* `TauCeti.RankOneLocalSystem.pullback f hf`: the pullback along a based map.
+* `TauCeti.RankOneLocalSystem.tensorOneIso`, `TauCeti.RankOneLocalSystem.tensorMulIso`:
+  `𝓕 ⊗ 1 ≅ 𝓕` and `𝓕 ⊗ (L L') ≅ (𝓕 ⊗ L) ⊗ L'`.
+* `TauCeti.RankOneLocalSystem.tensorEquivalence L`: the autoequivalence `𝓕 ↦ 𝓕 ⊗ L`.
+* `TauCeti.RankOneLocalSystem.tensorPullbackIso`: `f^*(𝓕 ⊗ L) ≅ f^* 𝓕 ⊗ f^* L`.
 * `TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivTprod`: `H(𝓕 ⊗ L) ≅ H(𝓕) ⊗ L`.
 * `TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivCharTwist`: the same, with `L` absorbed
   into the twist of the representation on `H(𝓕)` by the monodromy.
@@ -92,12 +100,12 @@ cohomological degree `p = -q`.
 
 ## Main results
 
-* `TauCeti.RankOneLocalSystem.twist_mul`: `Φ^{L ⊗ L'} = Φ^L ∘ Φ^{L'}`.
 * `TauCeti.RankOneLocalSystem.twist_comp_twist_inv`: `Φ^L` is invertible.
-* `TauCeti.RankOneLocalSystem.loopChainMap_comp_twist_pullback`:
-  `C_*(Ωf) ∘ Φ^{f^*L} = Φ^L ∘ C_*(Ωf)`.
-* `TauCeti.RankOneLocalSystem.monodromy_pullback`: the monodromy of `f^*L` is that of `L` composed
-  with `π₁(f)`.
+* `TauCeti.RankOneLocalSystem.twist_mul`: `Φ^{L L'} = Φ^L ∘ Φ^{L'}`.
+* `TauCeti.RankOneLocalSystem.loopChainMap_comp_twist_pullback`: twisting is natural in the space.
+* `TauCeti.RankOneLocalSystem.twistCocycle_mul`,
+  `TauCeti.RankOneLocalSystem.twistCocycle_map_loopChainMap`: `m^{L L'} = (m^{L'})^L`, and
+  twisting commutes with pushing cocycles forward.
 * `TauCeti.RankOneLocalSystem.twistedCochainComplexIso`: the twisted complex of `𝓕 ⊗ L` is the
   twisted complex of `𝓕` with the cocycle `m^L`.
 
@@ -182,47 +190,55 @@ instance : One (RankOneLocalSystem B b R) where
 theorem one_ρ : (1 : RankOneLocalSystem B b R).ρ = 1 :=
   rfl
 
-/-- The **tensor product `L ⊗ L'`** of rank-one local systems: a loop acts by the product of the
-units by which it acts on `L` and on `L'`. -/
+/-- The **product** of rank-one local systems, their tensor product over `R`: a loop acts on
+`R ⊗ R = R` by the product of the units by which it acts on the factors. -/
 instance : Mul (RankOneLocalSystem B b R) where
   mul L L' :=
     { ρ := L.ρ * L'.ρ
       eq_of_joined := fun _ _ h ↦ by
         rw [MonoidHom.mul_apply, MonoidHom.mul_apply, L.eq_of_joined h, L'.eq_of_joined h] }
 
+/-- The quotient of rank-one local systems, `L ⊗ L'⁻¹`. -/
+instance : Div (RankOneLocalSystem B b R) where
+  div L L' :=
+    { ρ := L.ρ / L'.ρ
+      eq_of_joined := fun _ _ h ↦ by
+        rw [MonoidHom.div_apply, MonoidHom.div_apply, L.eq_of_joined h, L'.eq_of_joined h] }
+
+/-- The tensor powers of a rank-one local system. -/
+instance : Pow (RankOneLocalSystem B b R) ℕ where
+  pow L n :=
+    { ρ := L.ρ ^ n
+      eq_of_joined := fun _ _ h ↦ by
+        rw [MonoidHom.pow_apply, MonoidHom.pow_apply, L.eq_of_joined h] }
+
+/-- The integer tensor powers of a rank-one local system. -/
+instance : Pow (RankOneLocalSystem B b R) ℤ where
+  pow L n :=
+    { ρ := L.ρ ^ n
+      eq_of_joined := fun _ _ h ↦ by
+        rw [MonoidHom.zpow_apply, MonoidHom.zpow_apply, L.eq_of_joined h] }
+
 @[simp]
-theorem mul_ρ (L' : RankOneLocalSystem B b R) : (L * L').ρ = L.ρ * L'.ρ :=
+theorem mul_ρ (L L' : RankOneLocalSystem B b R) : (L * L').ρ = L.ρ * L'.ρ :=
   rfl
 
-/-- Rank-one local systems form a commutative group under the tensor product, with unit the
-trivial local system and inverse the dual local system. -/
-instance : CommGroup (RankOneLocalSystem B b R) where
-  mul := (· * ·)
-  one := 1
-  inv := (·⁻¹)
-  mul_assoc L₁ L₂ L₃ := RankOneLocalSystem.ext (mul_assoc L₁.ρ L₂.ρ L₃.ρ)
-  one_mul L := RankOneLocalSystem.ext (one_mul L.ρ)
-  mul_one L := RankOneLocalSystem.ext (mul_one L.ρ)
-  inv_mul_cancel L := RankOneLocalSystem.ext (inv_mul_cancel L.ρ)
-  mul_comm L₁ L₂ := RankOneLocalSystem.ext (mul_comm L₁.ρ L₂.ρ)
-
-/-- The action of a rank-one local system, as a homomorphism of groups. -/
-private def ρHom : RankOneLocalSystem B b R →* (MooreLoopSpace B b →* Rˣ) where
-  toFun L := L.ρ
-  map_one' := one_ρ
-  map_mul' := mul_ρ
-
 @[simp]
-theorem div_ρ (L' : RankOneLocalSystem B b R) : (L / L').ρ = L.ρ / L'.ρ :=
-  map_div ρHom L L'
+theorem div_ρ (L L' : RankOneLocalSystem B b R) : (L / L').ρ = L.ρ / L'.ρ :=
+  rfl
 
 @[simp]
 theorem pow_ρ (n : ℕ) : (L ^ n).ρ = L.ρ ^ n :=
-  map_pow ρHom L n
+  rfl
 
 @[simp]
 theorem zpow_ρ (n : ℤ) : (L ^ n).ρ = L.ρ ^ n :=
-  map_zpow ρHom L n
+  rfl
+
+/-- Rank-one local systems form a commutative group under the tensor product. -/
+instance : CommGroup (RankOneLocalSystem B b R) :=
+  Function.Injective.commGroup ρ (fun _ _ ↦ RankOneLocalSystem.ext) rfl (fun _ _ ↦ rfl)
+    (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
 /-- The twist of the trivial local system is the identity. -/
 @[simp]
@@ -234,9 +250,8 @@ theorem twist_one :
   rw [twist, ← cubicalChainTwist_one (G := MooreLoopSpace B b) (R := R)]
   congr
 
-/-- **Twisting is multiplicative**: the twist `Φ^{L ⊗ L'}` of a tensor product is the composite
-`Φ^L ∘ Φ^{L'}`. -/
-theorem twist_mul (L' : RankOneLocalSystem B b R) : (L * L').twist = L.twist.comp L'.twist := by
+/-- **The twist of a product is the composite of the twists**, `Φ^{L L'} = Φ^L ∘ Φ^{L'}`. -/
+theorem twist_mul (L L' : RankOneLocalSystem B b R) : (L * L').twist = L.twist.comp L'.twist := by
   have h : (L * L').character = L.character * L'.character := by
     ext γ
     simp
@@ -269,56 +284,51 @@ theorem tensor_smul_lof_ofCube (𝓕 : DGLocalSystem.{uM} B b R) {n : ℕ}
         DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕 x) := by
   rw [DGRightModuleCat.restrictScalarsEquiv_smul, unop_op, twist_lof_ofCube, op_smul, smul_assoc]
 
-/-- Twisting by the trivial rank-one local system is isomorphic to the identity functor. -/
-def tensorOne : (1 : RankOneLocalSystem B b R).tensor ≅ 𝟭 (DGLocalSystem.{uM} B b R) :=
+/-- **Tensoring with the trivial local system** is isomorphic to the identity, `𝓕 ⊗ 1 ≅ 𝓕`. -/
+def tensorOneIso : tensor.{uM} (1 : RankOneLocalSystem B b R) ≅ 𝟭 _ :=
   eqToIso (by rw [tensor, twist_one]) ≪≫ DGRightModuleCat.restrictScalarsId
 
-/-- The component of `tensorOne` at `𝓕`. -/
+/-- The component of `tensorOneIso` at `𝓕`. -/
 @[simp]
-theorem tensorOne_hom_app (𝓕 : DGLocalSystem.{uM} B b R) :
-    tensorOne.hom.app 𝓕 =
+theorem tensorOneIso_hom_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    tensorOneIso.hom.app 𝓕 =
       eqToHom (by rw [tensor, twist_one]) ≫ (DGRightModuleCat.restrictScalarsIdApp 𝓕).hom := by
-  rw [tensorOne, Iso.trans_hom, NatTrans.comp_app, eqToIso.hom, eqToHom_app, ← Iso.app_hom,
-    DGRightModuleCat.restrictScalarsId_app]
+  simp [tensorOneIso, ← Iso.app_hom, DGRightModuleCat.restrictScalarsId_app]
 
-/-- The component of the inverse of `tensorOne` at `𝓕`. -/
+/-- The component of the inverse of `tensorOneIso` at `𝓕`. -/
 @[simp]
-theorem tensorOne_inv_app (𝓕 : DGLocalSystem.{uM} B b R) :
-    tensorOne.inv.app 𝓕 =
+theorem tensorOneIso_inv_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    tensorOneIso.inv.app 𝓕 =
       (DGRightModuleCat.restrictScalarsIdApp 𝓕).inv ≫ eqToHom (by rw [tensor, twist_one]) := by
-  rw [tensorOne, Iso.trans_inv, NatTrans.comp_app, eqToIso.inv, eqToHom_app, ← Iso.app_inv,
-    DGRightModuleCat.restrictScalarsId_app]
+  simp [tensorOneIso, ← Iso.app_inv, DGRightModuleCat.restrictScalarsId_app]
 
-/-- Twisting by a tensor product of rank-one local systems is twisting by each factor in turn:
-`𝓕 ⊗ (L ⊗ L') ≅ (𝓕 ⊗ L) ⊗ L'`. -/
-def tensorMul (L' : RankOneLocalSystem B b R) :
-    (L * L').tensor ≅ (L.tensor ⋙ L'.tensor : DGLocalSystem.{uM} B b R ⥤ _) :=
-  eqToIso (by rw [tensor, twist_mul]) ≪≫ DGRightModuleCat.restrictScalarsComp L'.twist L.twist
+/-- **Tensoring with a product is tensoring twice**, `𝓕 ⊗ (L L') ≅ (𝓕 ⊗ L) ⊗ L'`. -/
+def tensorMulIso (L L' : RankOneLocalSystem B b R) :
+    tensor.{uM} (L * L') ≅ L.tensor ⋙ L'.tensor :=
+  eqToIso (by rw [tensor, twist_mul]) ≪≫ DGRightModuleCat.restrictScalarsComp _ _
 
-/-- The component of `tensorMul` at `𝓕`. -/
+/-- The component of `tensorMulIso` at `𝓕`. -/
 @[simp]
-theorem tensorMul_hom_app (L' : RankOneLocalSystem B b R) (𝓕 : DGLocalSystem.{uM} B b R) :
-    (L.tensorMul L').hom.app 𝓕 =
+theorem tensorMulIso_hom_app (L L' : RankOneLocalSystem B b R) (𝓕 : DGLocalSystem.{uM} B b R) :
+    (tensorMulIso L L').hom.app 𝓕 =
       eqToHom (by rw [tensor, twist_mul]) ≫
         (DGRightModuleCat.restrictScalarsCompApp L'.twist L.twist 𝓕).hom := by
-  rw [tensorMul, Iso.trans_hom, NatTrans.comp_app, eqToIso.hom, eqToHom_app, ← Iso.app_hom,
-    DGRightModuleCat.restrictScalarsComp_app]
+  simp [tensorMulIso, ← Iso.app_hom, DGRightModuleCat.restrictScalarsComp_app]
 
-/-- The component of the inverse of `tensorMul` at `𝓕`. -/
+/-- The component of the inverse of `tensorMulIso` at `𝓕`. -/
 @[simp]
-theorem tensorMul_inv_app (L' : RankOneLocalSystem B b R) (𝓕 : DGLocalSystem.{uM} B b R) :
-    (L.tensorMul L').inv.app 𝓕 =
+theorem tensorMulIso_inv_app (L L' : RankOneLocalSystem B b R) (𝓕 : DGLocalSystem.{uM} B b R) :
+    (tensorMulIso L L').inv.app 𝓕 =
       (DGRightModuleCat.restrictScalarsCompApp L'.twist L.twist 𝓕).inv ≫
         eqToHom (by rw [tensor, twist_mul]) := by
-  rw [tensorMul, Iso.trans_inv, NatTrans.comp_app, eqToIso.inv, eqToHom_app, ← Iso.app_inv,
-    DGRightModuleCat.restrictScalarsComp_app]
+  simp [tensorMulIso, ← Iso.app_inv, DGRightModuleCat.restrictScalarsComp_app]
 
-/-- **Twisting by `L` is an autoequivalence** of DG local systems, with inverse the twist by
+/-- **Tensoring with `L` is an autoequivalence** of DG local systems, with inverse tensoring with
 `L⁻¹`. -/
 def tensorEquivalence : DGLocalSystem.{uM} B b R ≌ DGLocalSystem.{uM} B b R :=
   .mk L.tensor L⁻¹.tensor
-    (tensorOne.symm ≪≫ eqToIso (by rw [mul_inv_cancel]) ≪≫ L.tensorMul L⁻¹)
-    ((L⁻¹.tensorMul L).symm ≪≫ eqToIso (by rw [inv_mul_cancel]) ≪≫ tensorOne)
+    (tensorOneIso.symm ≪≫ eqToIso (by rw [mul_inv_cancel]) ≪≫ tensorMulIso L L⁻¹)
+    ((tensorMulIso L⁻¹ L).symm ≪≫ eqToIso (by rw [inv_mul_cancel]) ≪≫ tensorOneIso)
 
 @[simp]
 theorem tensorEquivalence_functor : L.tensorEquivalence.{uM}.functor = L.tensor :=
@@ -332,7 +342,7 @@ theorem tensorEquivalence_inverse : L.tensorEquivalence.{uM}.inverse = L⁻¹.te
 theorem ρ_eq_of_fundamentalGroupHom_eq {γ δ : MooreLoopSpace B b}
     (h : MooreLoopSpace.fundamentalGroupHom b γ = MooreLoopSpace.fundamentalGroupHom b δ) :
     L.ρ γ = L.ρ δ :=
-  L.eq_of_joined (MooreLoopSpace.fundamentalGroupHom_eq_fundamentalGroupHom_iff.1 h)
+  L.eq_of_joined (MooreLoopSpace.fundamentalGroupHom_eq_iff_joined.1 h)
 
 /-- **The monodromy of a rank-one local system**: the character of the fundamental group by
 which it is a classical local system, sending the inverse of the class
@@ -359,59 +369,56 @@ theorem monodromy_fundamentalGroupHom_inv (γ : MooreLoopSpace B b) :
   L.ρ_eq_of_fundamentalGroupHom_eq (by
     rw [Function.surjInv_eq (MooreLoopSpace.fundamentalGroupHom_surjective b), inv_inv])
 
-/-- The monodromy of the class of a Moore loop `γ` is the inverse of the unit by which `γ`
-acts. -/
+/-- The monodromy of the class of a Moore loop `γ` is the inverse of the unit by which `γ` acts. -/
 theorem monodromy_fundamentalGroupHom (γ : MooreLoopSpace B b) :
     L.monodromy (MooreLoopSpace.fundamentalGroupHom b γ) = (L.ρ γ)⁻¹ := by
-  rw [← L.monodromy_fundamentalGroupHom_inv, map_inv, inv_inv]
+  rw [← monodromy_fundamentalGroupHom_inv, map_inv, inv_inv]
 
-/-- The monodromy, read on Moore loops through their classes, is the inverse of the action. -/
-theorem monodromy_comp_fundamentalGroupHom :
-    L.monodromy.comp (MooreLoopSpace.fundamentalGroupHom b) = L.ρ⁻¹ :=
-  MonoidHom.ext fun γ ↦ by
-    rw [MonoidHom.comp_apply, monodromy_fundamentalGroupHom, MonoidHom.inv_apply]
-
-/-- The monodromy of a tensor product is the product of the monodromies. -/
+/-- The monodromy of the fundamental-group class of the path underlying a Moore loop `γ` is the
+unit by which `γ` acts. This is `monodromy_fundamentalGroupHom_inv` in simp normal form. -/
 @[simp]
-theorem monodromy_mul (L' : RankOneLocalSystem B b R) :
-    (L * L').monodromy = L.monodromy * L'.monodromy :=
-  (MonoidHom.cancel_right (MooreLoopSpace.fundamentalGroupHom_surjective b)).1 <| by
-    rw [monodromy_comp_fundamentalGroupHom, MonoidHom.mul_comp, monodromy_comp_fundamentalGroupHom,
-      monodromy_comp_fundamentalGroupHom, mul_ρ]
-    exact mul_inv L.ρ L'.ρ
+theorem monodromy_fromPath_mk_toPath (γ : MooreLoopSpace B b) :
+    L.monodromy (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ.toPath)) = L.ρ γ := by
+  simpa using L.monodromy_fundamentalGroupHom_inv γ
 
-/-- The **rank-one local system with monodromy `χ`**: a Moore loop acts by the value of `χ` at the
-inverse of its class. -/
+/-- The monodromy of a product is the product of the monodromies. -/
+@[simp]
+theorem monodromy_mul (L L' : RankOneLocalSystem B b R) :
+    (L * L').monodromy = L.monodromy * L'.monodromy :=
+  MooreLoopSpace.fundamentalGroup_hom_ext fun γ ↦ by
+    simp only [monodromy_fundamentalGroupHom, MonoidHom.mul_apply, mul_ρ, mul_inv]
+
+/-- The trivial local system has trivial monodromy. -/
+@[simp]
+theorem monodromy_one : (1 : RankOneLocalSystem B b R).monodromy = 1 :=
+  MooreLoopSpace.fundamentalGroup_hom_ext fun γ ↦ by
+    simp only [monodromy_fundamentalGroupHom, one_ρ, MonoidHom.one_apply, inv_one]
+
+/-- The rank-one local system with a given monodromy `χ`: the Moore loop `γ` acts by the value of
+`χ` on the inverse of its class. -/
 def ofMonodromy (χ : FundamentalGroup B b →* Rˣ) : RankOneLocalSystem B b R where
   ρ := (χ.comp (MooreLoopSpace.fundamentalGroupHom b))⁻¹
   eq_of_joined _ _ h := by
     rw [MonoidHom.inv_apply, MonoidHom.inv_apply, MonoidHom.comp_apply, MonoidHom.comp_apply,
-      MooreLoopSpace.fundamentalGroupHom_eq_fundamentalGroupHom_iff.2 h]
+      MooreLoopSpace.fundamentalGroupHom_eq_iff_joined.2 h]
 
 @[simp]
 theorem ofMonodromy_ρ_apply (χ : FundamentalGroup B b →* Rˣ) (γ : MooreLoopSpace B b) :
     (ofMonodromy χ).ρ γ = (χ (MooreLoopSpace.fundamentalGroupHom b γ))⁻¹ :=
   (rfl)
 
-/-- The monodromy of `ofMonodromy χ` is `χ`. -/
 @[simp]
-theorem monodromy_ofMonodromy (χ : FundamentalGroup B b →* Rˣ) :
-    (ofMonodromy χ).monodromy = χ :=
-  (MonoidHom.cancel_right (MooreLoopSpace.fundamentalGroupHom_surjective b)).1 <|
-    MonoidHom.ext fun γ ↦ by
-      rw [MonoidHom.comp_apply, monodromy_fundamentalGroupHom, ofMonodromy_ρ_apply, inv_inv,
-        MonoidHom.comp_apply]
+theorem monodromy_ofMonodromy (χ : FundamentalGroup B b →* Rˣ) : (ofMonodromy χ).monodromy = χ :=
+  MooreLoopSpace.fundamentalGroup_hom_ext fun γ ↦ by
+    simp only [monodromy_fundamentalGroupHom, ofMonodromy_ρ_apply, inv_inv]
 
-/-- A rank-one local system is the one with its monodromy. -/
 @[simp]
 theorem ofMonodromy_monodromy : ofMonodromy L.monodromy = L :=
   RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by
     rw [ofMonodromy_ρ_apply, monodromy_fundamentalGroupHom, inv_inv]
 
-variable (B b R) in
-/-- **Rank-one local systems are classified by their monodromy**: the monodromy is an isomorphism
-from the group of rank-one local systems on `(B, b)` to the group of characters
-`π₁(B, b) →* Rˣ`. -/
+/-- **Rank-one local systems are the characters of the fundamental group**: the monodromy is an
+isomorphism of groups onto `FundamentalGroup B b →* Rˣ`, with inverse `ofMonodromy`. -/
 def monodromyEquiv : RankOneLocalSystem B b R ≃* (FundamentalGroup B b →* Rˣ) where
   toFun L := L.monodromy
   invFun := ofMonodromy
@@ -420,105 +427,129 @@ def monodromyEquiv : RankOneLocalSystem B b R ≃* (FundamentalGroup B b →* R�
   map_mul' := monodromy_mul
 
 @[simp]
-theorem monodromyEquiv_apply : monodromyEquiv B b R L = L.monodromy :=
+theorem monodromyEquiv_apply : monodromyEquiv L = L.monodromy :=
   (rfl)
 
 @[simp]
 theorem monodromyEquiv_symm_apply (χ : FundamentalGroup B b →* Rˣ) :
-    (monodromyEquiv B b R).symm χ = ofMonodromy χ :=
+    monodromyEquiv.symm χ = ofMonodromy χ :=
   (rfl)
-
-/-- The trivial rank-one local system has trivial monodromy. -/
-@[simp]
-theorem monodromy_one : (1 : RankOneLocalSystem B b R).monodromy = 1 :=
-  map_one (monodromyEquiv B b R)
 
 /-- The monodromy of the inverse local system is the inverse character. -/
 @[simp]
 theorem monodromy_inv : L⁻¹.monodromy = L.monodromy⁻¹ :=
-  map_inv (monodromyEquiv B b R) L
+  map_inv monodromyEquiv L
+
+/-- A rank-one local system is determined by its monodromy. -/
+theorem monodromy_injective : Function.Injective (monodromy : RankOneLocalSystem B b R → _) :=
+  monodromyEquiv.injective
+
+/-! ### Characters with values in `ℤˣ` -/
+
+/-- The rank-one local system whose monodromy is a `ℤˣ`-valued character `χ`, read in `Rˣ`, is
+trivial exactly when `χ` is trivial or `2 = 0` in `R`. -/
+theorem ofMonodromy_unitsMap_comp_eq_one_iff (χ : FundamentalGroup B b →* ℤˣ) :
+    ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ) = 1 ↔
+      χ = 1 ∨ (2 : R) = 0 := by
+  rw [← monodromy_injective.eq_iff, monodromy_ofMonodromy, monodromy_one, MonoidHom.ext_iff,
+    MonoidHom.ext_iff]
+  simp only [MonoidHom.comp_apply, MonoidHom.one_apply, Int.unitsMap_castRingHom_eq_one_iff,
+    forall_or_right]
+
+/-- The rank-one local system whose monodromy is a `ℤˣ`-valued character, read in `Rˣ`, is its own
+inverse, since the character takes only the values `±1`. -/
+theorem inv_ofMonodromy_unitsMap_comp (χ : FundamentalGroup B b →* ℤˣ) :
+    (ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ))⁻¹ =
+      ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ) :=
+  monodromy_injective <| MonoidHom.ext fun γ ↦ by
+    rw [monodromy_inv, MonoidHom.inv_apply, monodromy_ofMonodromy, MonoidHom.comp_apply, ← map_inv,
+      Int.units_inv_eq_self]
+
+/-! ### Pullback along based maps -/
 
 section Pullback
 
 variable {B' B'' : Type*} [TopologicalSpace B'] [TopologicalSpace B''] {b' : B'} {b'' : B''}
 
-/-- The **pullback `f^*L`** of a rank-one local system along a based map
-`f : (B', b') → (B, b)`: a loop acts by the unit by which its image acts on `L`. -/
-def pullback (f : C(B', B)) (hf : f b' = b) : RankOneLocalSystem B' b' R where
-  ρ := L.ρ.comp (MooreLoopSpace.map f hf : MooreLoopSpace B' b' →* MooreLoopSpace B b)
-  eq_of_joined _ _ h := L.eq_of_joined (h.map (MooreLoopSpace.map f hf).continuous)
+/-- The **pullback** of rank-one local systems along a based map `f : (B, b) → (B', b')`, as a
+group homomorphism: a loop acts through its image under `f`. -/
+def pullback (f : C(B, B')) (hf : f b = b') :
+    RankOneLocalSystem B' b' R →* RankOneLocalSystem B b R where
+  toFun L :=
+    { ρ := L.ρ.comp (MooreLoopSpace.map f hf).toMonoidHom
+      eq_of_joined := fun _ _ h ↦ L.eq_of_joined (h.map (MooreLoopSpace.map f hf).continuous) }
+  map_one' := rfl
+  map_mul' _ _ := rfl
 
 @[simp]
-theorem pullback_ρ_apply (f : C(B', B)) (hf : f b' = b) (γ : MooreLoopSpace B' b') :
-    (L.pullback f hf).ρ γ = L.ρ (MooreLoopSpace.map f hf γ) :=
+theorem pullback_ρ_apply (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSystem B' b' R)
+    (γ : MooreLoopSpace B b) : (pullback f hf L).ρ γ = L.ρ (MooreLoopSpace.map f hf γ) :=
   (rfl)
 
+/-- The character of a pullback is the character composed with the induced map on Moore loops. -/
+theorem pullback_character (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSystem B' b' R) :
+    (pullback f hf L).character = L.character.comp (MooreLoopSpace.map f hf).toMonoidHom :=
+  (rfl)
+
+/-- The pullback along the identity is the identity. -/
 @[simp]
-theorem pullback_one (f : C(B', B)) (hf : f b' = b) :
-    (1 : RankOneLocalSystem B b R).pullback f hf = 1 :=
-  RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by simp
+theorem pullback_id :
+    pullback (R := R) (.id B) (ContinuousMap.id_apply b) = MonoidHom.id _ :=
+  MonoidHom.ext fun L ↦ RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by simp
 
-@[simp]
-theorem pullback_mul (L' : RankOneLocalSystem B b R) (f : C(B', B)) (hf : f b' = b) :
-    (L * L').pullback f hf = L.pullback f hf * L'.pullback f hf :=
-  RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by simp
+/-- The pullback along a composite is the composite of the pullbacks. -/
+theorem pullback_comp (g : C(B', B'')) (f : C(B, B')) (hg : g b' = b'') (hf : f b = b') :
+    pullback (R := R) (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) =
+      (pullback f hf).comp (pullback g hg) :=
+  MonoidHom.ext fun L ↦ RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by
+    simp [MooreLoopSpace.map_comp g f hg hf]
 
-@[simp]
-theorem pullback_inv (f : C(B', B)) (hf : f b' = b) : L⁻¹.pullback f hf = (L.pullback f hf)⁻¹ :=
-  RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by simp
-
-@[simp]
-theorem pullback_id : L.pullback (.id B) (ContinuousMap.id_apply b) = L :=
-  RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by simp
-
-theorem pullback_comp (g : C(B', B)) (f : C(B'', B')) (hg : g b' = b) (hf : f b'' = b') :
-    L.pullback (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) =
-      (L.pullback g hg).pullback f hf :=
-  RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by simp [MooreLoopSpace.map_comp g f hg hf]
-
-/-- The monodromy of a pullback is the monodromy precomposed with the induced map of fundamental
+/-- The monodromy of a pullback is the monodromy composed with the induced map on fundamental
 groups. -/
 @[simp]
-theorem monodromy_pullback (f : C(B', B)) (hf : f b' = b) :
-    (L.pullback f hf).monodromy = L.monodromy.comp (FundamentalGroup.mapOfEq f hf) :=
-  (MonoidHom.cancel_right (MooreLoopSpace.fundamentalGroupHom_surjective b')).1 <|
-    MonoidHom.ext fun γ ↦ by
-      rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.comp_apply,
-        ← MooreLoopSpace.fundamentalGroupHom_map, monodromy_fundamentalGroupHom,
-        monodromy_fundamentalGroupHom, pullback_ρ_apply]
+theorem monodromy_pullback (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSystem B' b' R) :
+    (pullback f hf L).monodromy = L.monodromy.comp (FundamentalGroup.mapOfEq f hf) :=
+  MooreLoopSpace.fundamentalGroup_hom_ext fun γ ↦ by
+    simp only [monodromy_fundamentalGroupHom, pullback_ρ_apply, MonoidHom.comp_apply,
+      ← MooreLoopSpace.fundamentalGroupHom_map]
 
-/-- **The twist is natural**: `C_*(Ωf) ∘ Φ^{f^*L} = Φ^L ∘ C_*(Ωf)`. -/
-theorem loopChainMap_comp_twist_pullback (f : C(B', B)) (hf : f b' = b) :
-    (loopChainMap R f hf).comp (L.pullback f hf).twist = L.twist.comp (loopChainMap R f hf) := by
-  have h : ⇑(L.pullback f hf).character =
-      ⇑L.character ∘ (MooreLoopSpace.map f hf).toContinuousMap :=
-    funext fun γ ↦ by simp
-  refine cubicalChain_dgAlgHom_ext fun n y ↦ ?_
-  rw [DGAlgHom.comp_apply, DGAlgHom.comp_apply, twist, twist, cubicalChainTwist_lof,
-    loopChainMap_lof, loopChainMap_lof, cubicalChainTwist_lof, h,
-    ← LinearMap.comp_apply (NormalizedCubicalChain.map R _ n),
-    NormalizedCubicalChain.map_comp_twist, LinearMap.comp_apply]
+/-- **The twist is natural in the space**: `C_*(Ωf) ∘ Φ^{f^* L} = Φ^L ∘ C_*(Ωf)`. -/
+theorem loopChainMap_comp_twist_pullback (f : C(B, B')) (hf : f b = b')
+    (L : RankOneLocalSystem B' b' R) :
+    (loopChainMap R f hf).comp (pullback f hf L).twist = L.twist.comp (loopChainMap R f hf) := by
+  rw [loopChainMap_def]
+  exact cubicalChainDGAlgHom_comp_cubicalChainTwist (MooreLoopSpace.map f hf)
+    L.character_eq_of_joined
 
-/-- **Pullback commutes with twisting**: `f^*𝓕 ⊗ f^*L ≅ f^*(𝓕 ⊗ L)`, naturally in `𝓕`. -/
-def pullbackTensorIso (f : C(B', B)) (hf : f b' = b) :
-    (DGLocalSystem.pullback R f hf ⋙ (L.pullback f hf).tensor :
-        DGLocalSystem.{uM} B b R ⥤ DGLocalSystem.{uM} B' b' R) ≅
-      L.tensor ⋙ DGLocalSystem.pullback R f hf :=
-  (DGRightModuleCat.restrictScalarsComp (L.pullback f hf).twist (loopChainMap R f hf)).symm ≪≫
-    eqToIso (by rw [L.loopChainMap_comp_twist_pullback f hf]) ≪≫
-    DGRightModuleCat.restrictScalarsComp (loopChainMap R f hf) L.twist
+/-- **Pulling back commutes with tensoring**: `f^*(𝓕 ⊗ L) ≅ f^* 𝓕 ⊗ f^* L`. -/
+def tensorPullbackIso (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSystem B' b' R) :
+    tensor.{uM} L ⋙ DGLocalSystem.pullback R f hf ≅
+      DGLocalSystem.pullback R f hf ⋙ (pullback f hf L).tensor :=
+  (DGRightModuleCat.restrictScalarsComp _ _).symm ≪≫
+    eqToIso (by rw [loopChainMap_comp_twist_pullback]) ≪≫
+      DGRightModuleCat.restrictScalarsComp _ _
 
-/-- The component of `pullbackTensorIso` at `𝓕`. -/
+/-- The component of `tensorPullbackIso` at `𝓕`. -/
 @[simp]
-theorem pullbackTensorIso_hom_app (f : C(B', B)) (hf : f b' = b) (𝓕 : DGLocalSystem.{uM} B b R) :
-    (L.pullbackTensorIso f hf).hom.app 𝓕 =
-      (DGRightModuleCat.restrictScalarsCompApp (L.pullback f hf).twist (loopChainMap R f hf)
-          𝓕).inv ≫
-        eqToHom (by rw [L.loopChainMap_comp_twist_pullback f hf]) ≫
+theorem tensorPullbackIso_hom_app (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSystem B' b' R)
+    (𝓕 : DGLocalSystem.{uM} B' b' R) :
+    (tensorPullbackIso f hf L).hom.app 𝓕 =
+      (DGRightModuleCat.restrictScalarsCompApp (loopChainMap R f hf) L.twist 𝓕).inv ≫
+        eqToHom (by rw [loopChainMap_comp_twist_pullback]) ≫
+          (DGRightModuleCat.restrictScalarsCompApp (pullback f hf L).twist
+            (loopChainMap R f hf) 𝓕).hom := by
+  simp [tensorPullbackIso, ← Iso.app_hom, ← Iso.app_inv, DGRightModuleCat.restrictScalarsComp_app]
+
+/-- The component of the inverse of `tensorPullbackIso` at `𝓕`. -/
+@[simp]
+theorem tensorPullbackIso_inv_app (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSystem B' b' R)
+    (𝓕 : DGLocalSystem.{uM} B' b' R) :
+    (tensorPullbackIso f hf L).inv.app 𝓕 =
+      (DGRightModuleCat.restrictScalarsCompApp (pullback f hf L).twist
+          (loopChainMap R f hf) 𝓕).inv ≫
+        eqToHom (by rw [loopChainMap_comp_twist_pullback]) ≫
           (DGRightModuleCat.restrictScalarsCompApp (loopChainMap R f hf) L.twist 𝓕).hom := by
-  rw [pullbackTensorIso, Iso.trans_hom, Iso.trans_hom, NatTrans.comp_app, NatTrans.comp_app,
-    Iso.symm_hom, ← Iso.app_inv, DGRightModuleCat.restrictScalarsComp_app, eqToIso.hom,
-    eqToHom_app, ← Iso.app_hom, DGRightModuleCat.restrictScalarsComp_app]
+  simp [tensorPullbackIso, ← Iso.app_hom, ← Iso.app_inv, DGRightModuleCat.restrictScalarsComp_app]
 
 end Pullback
 
@@ -538,6 +569,27 @@ variable {B b R} (L : RankOneLocalSystem B b R) {P : Type*} [Fintype P] {ind : P
 abbrev twistCocycle
     (m : LoopTwistingCocycle B b R P ind) : LoopTwistingCocycle B b R P ind :=
   m.map L.twist
+
+/-- Twisting a cocycle by a product twists it successively, `m^{L L'} = (m^{L'})^L`. -/
+theorem twistCocycle_mul (L L' : RankOneLocalSystem B b R) (m : LoopTwistingCocycle B b R P ind) :
+    (L * L').twistCocycle m = L.twistCocycle (L'.twistCocycle m) := by
+  rw [twistCocycle, twistCocycle, twistCocycle, TwistingCocycle.map_map, twist_mul]
+
+/-- Twisting by the trivial local system leaves a cocycle unchanged. -/
+@[simp]
+theorem twistCocycle_one (m : LoopTwistingCocycle B b R P ind) :
+    (1 : RankOneLocalSystem B b R).twistCocycle m = m := by
+  rw [twistCocycle, twist_one, TwistingCocycle.map_id]
+
+/-- Twisting commutes with pushing cocycles forward along a based map `f`: the image of `m^{f^* L}`
+under `C_*(Ωf)` is the twist by `L` of the image of `m`. -/
+theorem twistCocycle_map_loopChainMap {B' : Type*} [TopologicalSpace B'] {b' : B'}
+    (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSystem B' b' R)
+    (m : LoopTwistingCocycle B b R P ind) :
+    L.twistCocycle (m.map (loopChainMap R f hf)) =
+      ((pullback f hf L).twistCocycle m).map (loopChainMap R f hf) := by
+  rw [twistCocycle, twistCocycle, TwistingCocycle.map_map, TwistingCocycle.map_map,
+    loopChainMap_comp_twist_pullback]
 
 variable {M : Type uM} [AddCommGroup M] [Module R M] [Module (loopChainAlgebra B b R)ᵐᵒᵖ M]
   [IsScalarTower R (loopChainAlgebra B b R)ᵐᵒᵖ M] {ℳ : ℤ → Submodule R M}
