@@ -32,11 +32,11 @@ between bounds for `ψ` and for `θ`:
   `a √x + θ(x^{1/3}) ≤ ψ(x) − θ(x) ≤ c' √x + c (log x / log 2 − 2) x^{1/3}`
   for `x ≥ y₀²` (and `x ≥ 4` on the right);
 * controlling the cube-root tail by the dimensionless coefficient
-  `TauCeti.psiSubThetaTailCoeff x = ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ (1 / k - 1 / 3)`, which
+  `Chebyshev.psiSubThetaTailCoeff x = ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ (1 / k - 1 / 3)`, which
   vanishes for `0 ≤ x < 8`, is strictly decreasing on `[2 ^ n, 2 ^ (n + 1))` for `n ≥ 4`,
   satisfies `f (2 ^ (n + 1)) < f (2 ^ n)` for `n ≥ 9`, and is bounded uniformly for `x ≥ X ≥ 2 ^ 8`
   by the antitone envelope
-  `TauCeti.psiSubThetaTailBound X = max (f X) (f (2 ^ (⌊log X / log 2⌋₊ + 1)))`, yielding
+  `Chebyshev.psiSubThetaTailBound X = max (f X) (f (2 ^ (⌊log X / log 2⌋₊ + 1)))`, yielding
   Propositions 3–4, Corollary 3.1, and Theorem 5 of Broadbent, Kadiri, Lumley, Ng, and Wilk
   (2021);
 * conversely, a bound for `ψ` gives one for `θ` through Costa Pereira's comparison
@@ -47,52 +47,56 @@ most `π(x) + (log x / log 2 − 1) √x ≤ 6 x / log x` for `x ≥ 2`, giving 
 
 ## Main definitions
 
-* `TauCeti.psiSubThetaTailCoeff`: the cube-root tail coefficient
+* `Chebyshev.psiSubThetaTailCoeff`: the cube-root tail coefficient
   `∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ (1 / k - 1 / 3)`.
-* `TauCeti.psiSubThetaTailBound`: the uniform dyadic envelope
+* `Chebyshev.psiSubThetaTailBound`: the uniform dyadic envelope
   `max (psiSubThetaTailCoeff X) (psiSubThetaTailCoeff (2 ^ (⌊log X / log 2⌋₊ + 1)))`.
 
 ## Main results
 
-* `Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum`, `TauCeti.psi_sub_theta_eq_sum_theta`:
+* `Chebyshev.psi_eq_theta_add_theta_sqrt_add_sum`, `Chebyshev.psi_sub_theta_eq_sum_theta`:
   the exact decompositions of `ψ(x)` and `ψ(x) − θ(x)`.
-* `Chebyshev.theta_sqrt_add_theta_rpow_le_psi_sub_theta`, `TauCeti.theta_sqrt_le_psi_sub_theta`:
+* `Chebyshev.theta_sqrt_add_theta_rpow_le_psi_sub_theta`, `Chebyshev.theta_sqrt_le_psi_sub_theta`:
   unconditional lower bounds on `ψ(x) − θ(x)`.
 * `Chebyshev.sum_rpow_one_div_le`:
   `∑_{3 ≤ k ≤ log x / log 2} x^{1/k} ≤ (log x / log 2 − 2)⁺ x^{1/3}`.
-* `TauCeti.sum_theta_rpow_le`: bounds the `k ≥ 3` sum by `c * psiSubThetaTailCoeff x * x ^ (1 / 3)`.
-* `TauCeti.psiSubThetaTailCoeff_eq_zero_iff`,
-  `TauCeti.psiSubThetaTailCoeff_eq_sum_of_mem_Ico`,
-  `TauCeti.strictAntiOn_psiSubThetaTailCoeff_Ico_two_pow`,
-  `TauCeti.psiSubThetaTailCoeff_two_pow_succ_lt`,
-  `TauCeti.psiSubThetaTailCoeff_two_pow_eight_lt_two_pow_nine`,
-  `TauCeti.psiSubThetaTailCoeff_le_psiSubThetaTailBound`,
-  `TauCeti.psiSubThetaTailBound_le_iff_forall`,
-  `TauCeti.antitoneOn_psiSubThetaTailBound`: vanishing, dyadic monotonicity, sharpness, and
+* `Chebyshev.sum_theta_rpow_le`: bounds the `k ≥ 3` sum by
+  `c * psiSubThetaTailCoeff x * x ^ (1 / 3)`.
+* `Chebyshev.psiSubThetaTailCoeff_eq_zero_iff`,
+  `Chebyshev.psiSubThetaTailCoeff_eq_sum_of_mem_Ico`,
+  `Chebyshev.strictAntiOn_psiSubThetaTailCoeff_Ico_two_pow`,
+  `Chebyshev.psiSubThetaTailCoeff_two_pow_succ_lt`,
+  `Chebyshev.psiSubThetaTailCoeff_two_pow_eight_lt_two_pow_nine`,
+  `Chebyshev.psiSubThetaTailCoeff_le_psiSubThetaTailBound`,
+  `Chebyshev.psiSubThetaTailBound_le_iff_forall`,
+  `Chebyshev.antitoneOn_psiSubThetaTailBound`: vanishing, dyadic monotonicity, sharpness, and
   uniform least-upper-bound envelope for `psiSubThetaTailCoeff`.
 * `Chebyshev.psi_sub_theta_le_log_four_mul`,
-  `TauCeti.psi_sub_theta_le_of_theta_le`, `TauCeti.psi_sub_theta_le_add_max_mul_cbrt`,
-  `TauCeti.psi_sub_theta_le_add_mul_cbrt`, `TauCeti.mul_sqrt_le_psi_sub_theta`,
-  `TauCeti.psi_sub_theta_le_mul_rpow_of_theta_le`: unconditional and general-`θ` bounds on `ψ − θ`.
-* `TauCeti.abs_theta_sub_self_le_of_theta_le`, `TauCeti.abs_psi_sub_self_le_of_theta_le`,
-  `TauCeti.abs_theta_sub_self_le_mul_of_theta_le_of_abs_psi_sub_self_le`,
-  `TauCeti.abs_theta_sub_self_le_mul_of_abs_psi_sub_self_le`,
-  `TauCeti.abs_psi_sub_self_le_mul_of_theta_le_of_abs_theta_sub_self_le`,
-  `TauCeti.abs_psi_sub_self_le_mul_of_abs_theta_sub_self_le`: additive and relative-error
+  `Chebyshev.psi_sub_theta_le_of_theta_le`, `Chebyshev.psi_sub_theta_le_add_max_mul_cbrt`,
+  `Chebyshev.psi_sub_theta_le_add_mul_cbrt`, `Chebyshev.mul_sqrt_le_psi_sub_theta`,
+  `Chebyshev.psi_sub_theta_le_mul_rpow_of_theta_le`: unconditional and general-`θ` bounds on
+  `ψ − θ`.
+* `Chebyshev.abs_theta_sub_self_le_of_theta_le`, `Chebyshev.abs_psi_sub_self_le_of_theta_le`,
+  `Chebyshev.abs_theta_sub_self_le_mul_of_theta_le_of_abs_psi_sub_self_le`,
+  `Chebyshev.abs_theta_sub_self_le_mul_of_abs_psi_sub_self_le`,
+  `Chebyshev.abs_psi_sub_self_le_mul_of_theta_le_of_abs_theta_sub_self_le`,
+  `Chebyshev.abs_psi_sub_self_le_mul_of_abs_theta_sub_self_le`: additive and relative-error
   conversions between bounds for `|ψ(x) − x|` and `|θ(x) − x|`.
 * `Chebyshev.theta_ge_psi_sub_mul`,
-  `TauCeti.psi_sub_theta_sub_theta_sqrt_le`, `TauCeti.psi_sub_theta_le_add_psiSubThetaTailBound`,
-  `TauCeti.mul_sqrt_add_theta_cbrt_le_psi_sub_theta`, `TauCeti.theta_le_of_theta_le_self_of_psi_le`,
-  `TauCeti.psi_sub_theta_le_of_psi_le_exp`, `TauCeti.psi_sub_theta_le_mul_rpow_sum`,
-  `TauCeti.psi_sub_theta_le_mul_exp_sum`, `TauCeti.le_theta_of_le_psi_rpow`,
-  `TauCeti.le_theta_of_le_psi_exp`: general-input transfer bounds of Broadbent, Kadiri, Lumley,
+  `Chebyshev.psi_sub_theta_sub_theta_sqrt_le`,
+  `Chebyshev.psi_sub_theta_le_add_psiSubThetaTailBound`,
+  `Chebyshev.mul_sqrt_add_theta_cbrt_le_psi_sub_theta`,
+  `Chebyshev.theta_le_of_theta_le_self_of_psi_le`,
+  `Chebyshev.psi_sub_theta_le_of_psi_le_exp`, `Chebyshev.psi_sub_theta_le_mul_rpow_sum`,
+  `Chebyshev.psi_sub_theta_le_mul_exp_sum`, `Chebyshev.le_theta_of_le_psi_rpow`,
+  `Chebyshev.le_theta_of_le_psi_exp`: general-input transfer bounds of Broadbent, Kadiri, Lumley,
   Ng, and Wilk.
 * `Chebyshev.card_filter_isPrimePow_eq_sum_primeCounting`,
   `Chebyshev.card_filter_isPrimePow_le_six_mul_div_log`,
   `Chebyshev.card_filter_range_isPrimePow_le_six_mul_div_log`,
-  `TauCeti.card_filter_isPrimePow_Ioc_nat_le_six_mul_div_log`,
-  `TauCeti.isBigO_card_filter_isPrimePow_Ioc_div_log`,
-  `TauCeti.isBigO_card_filter_isPrimePow_Ioc_nat_div_log`: the number of prime powers up to `x`,
+  `Chebyshev.card_filter_isPrimePow_Ioc_nat_le_six_mul_div_log`,
+  `Chebyshev.isBigO_card_filter_isPrimePow_Ioc_div_log`,
+  `Chebyshev.isBigO_card_filter_isPrimePow_Ioc_nat_div_log`: the number of prime powers up to `x`,
   below or at an integer `N`, and its `O(x / log x)` asymptotic form.
 
 ## References
@@ -176,7 +180,7 @@ theorem sum_theta_rpow_le_mul_sum_rpow {c x : ℝ} (hc : ∀ y, 2 ≤ y → θ y
     (N : ℕ) :
     ∑ k ∈ Icc 3 N, θ (x ^ ((1 : ℝ) / k)) ≤ c * ∑ k ∈ Icc 3 N, x ^ ((1 : ℝ) / k) := by
   rw [mul_sum]
-  exact sum_le_sum fun k _ ↦ TauCeti.theta_le_mul_of_two_le (rpow_nonneg hx _) hc
+  exact sum_le_sum fun k _ ↦ theta_le_mul_of_two_le (rpow_nonneg hx _) hc
 
 /-! ### Upper bounds for `ψ − θ` -/
 
@@ -199,9 +203,9 @@ theorem theta_ge_psi_sub_mul {c₀ x : ℝ} (hc₀ : ∀ y, 2 ≤ y → ψ y ≤
     ψ x - c₀ * (√x + x ^ ((1 : ℝ) / 3) + x ^ ((1 : ℝ) / 5)) ≤ θ x := by
   have := psi_sub_theta_le_psi_add_psi_add_psi x
   rw [← one_div, ← one_div, ← one_div, ← sqrt_eq_rpow] at this
-  have h2 := TauCeti.psi_le_mul_of_two_le (sqrt_nonneg x) hc₀
-  have h3 := TauCeti.psi_le_mul_of_two_le (rpow_nonneg hx ((1 : ℝ) / 3)) hc₀
-  have h5 := TauCeti.psi_le_mul_of_two_le (rpow_nonneg hx ((1 : ℝ) / 5)) hc₀
+  have h2 := psi_le_mul_of_two_le (sqrt_nonneg x) hc₀
+  have h3 := psi_le_mul_of_two_le (rpow_nonneg hx ((1 : ℝ) / 3)) hc₀
+  have h5 := psi_le_mul_of_two_le (rpow_nonneg hx ((1 : ℝ) / 5)) hc₀
   linarith
 
 /-! ### The number of prime powers -/
@@ -300,12 +304,12 @@ end Chebyshev
 
 end ChebyshevBounds
 
-section TauCetiExtensions
+section ChebyshevExtensions
 
 open Finset Filter
 open scoped Chebyshev Asymptotics
 
-namespace TauCeti
+namespace Chebyshev
 
 /-! ### Exact `ψ - θ` decomposition and square-root lower bound -/
 
@@ -666,7 +670,6 @@ theorem psiSubThetaTailBound_def (X : ℝ) :
   (rfl)
 
 /-- Upper-bound characterization of `psiSubThetaTailBound`. -/
-@[simp]
 theorem psiSubThetaTailBound_le_iff {X u : ℝ} :
     psiSubThetaTailBound X ≤ u ↔
       psiSubThetaTailCoeff X ≤ u ∧
@@ -1054,6 +1057,6 @@ theorem isBigO_card_filter_isPrimePow_Ioc_nat_div_log :
   simpa only [Function.comp_def, Nat.floor_natCast] using
     isBigO_card_filter_isPrimePow_Ioc_div_log.comp_tendsto tendsto_natCast_atTop_atTop
 
-end TauCeti
+end Chebyshev
 
-end TauCetiExtensions
+end ChebyshevExtensions
