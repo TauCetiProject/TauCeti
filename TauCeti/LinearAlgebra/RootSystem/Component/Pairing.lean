@@ -256,8 +256,9 @@ onto the component space of `C` and then applying the equivalence of component p
 applying `e` and then projecting onto the component space of the corresponding component. -/
 theorem componentPairingEquiv_weightMap_componentProj (e : P.Equiv Q) (C : P.Component) (x : M) :
     (e.componentPairingEquiv C).toHom.weightMap (P.componentProj C x) =
-      Q.componentProj (e.componentEquiv C) (e.toHom.weightMap x) :=
-  Subtype.ext (e.coe_componentProj_weightMap C x).symm
+      Q.componentProj (e.componentEquiv C) (e.toHom.weightMap x) := by
+  apply Subtype.ext
+  rw [coe_componentPairingEquiv_weightMap_apply, ← e.coe_componentProj_weightMap C x]
 
 end Equiv
 

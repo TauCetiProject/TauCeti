@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Component.Aut
-public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.Algebra.Group.Submonoid.Closure
@@ -38,10 +37,10 @@ Heights and positivity of roots of the component are the same for both bases.
   components.
 * `RootPairing.Base.componentBase`: the base of the component pairing formed by the simple roots in
   the component.
+* `RootPairing.Base.componentReturnSupportEquiv`: equivalence between simple roots of `b` in `C`
+  and the support of `b.componentBase C`.
 * `RootPairing.Base.componentWeightBasis`: the simple roots of `b` in `C` as a basis of
   `P.componentSpace C`.
-* `RootPairing.Equiv.diagramGraphIso`: the Dynkin-diagram isomorphism induced by a base-preserving
-  equivalence.
 
 ## Main results
 
@@ -329,6 +328,23 @@ theorem mem_support_componentBase {i : C.supp} :
     i ∈ (b.componentBase C).support ↔ (i : ι) ∈ b.support := by
   simp [support_componentBase]
 
+/-- Equivalence between simple roots of `b` in `C` and the support of `b.componentBase C`. -/
+def componentReturnSupportEquiv :
+    {i : b.support // P.componentOf (i : ι) = C} ≃ (b.componentBase C).support where
+  toFun i := ⟨⟨(i.val : ι), (C.mem_supp_iff _).mpr i.property⟩,
+    (b.mem_support_componentBase C).mpr i.val.property⟩
+  invFun j := ⟨⟨(j.val : ι), (b.mem_support_componentBase C).mp j.property⟩,
+    (C.mem_supp_iff _).mp j.val.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp] theorem coe_componentReturnSupportEquiv_apply
+    (i : {i : b.support // P.componentOf (i : ι) = C}) :
+    ((b.componentReturnSupportEquiv C i : C.supp) : ι) = (i.val : ι) := (rfl)
+
+@[simp] theorem coe_componentReturnSupportEquiv_symm_apply (j : (b.componentBase C).support) :
+    (((b.componentReturnSupportEquiv C).symm j).val : ι) = ((j : C.supp) : ι) := (rfl)
+
 /-- **The positive cone of the component base**: a vector of the component space of `C` is a sum
 of simple roots of the component base exactly when it is a sum of simple roots of `b`. -/
 theorem mem_closure_root_componentBase_iff {x : P.componentSpace C} :
@@ -521,17 +537,6 @@ variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
   (e : P.Equiv Q) {b : P.Base} {b' : Q.Base}
   (hb : ∀ i, i ∈ b.support ↔ e.indexEquiv i ∈ b'.support)
   [CharZero R] [P.IsCrystallographic] [Q.IsCrystallographic]
-
-/-- The Dynkin-diagram isomorphism induced by a base-preserving equivalence. -/
-def Equiv.diagramGraphIso : diagramGraph b.cartanMatrix ≃g diagramGraph b'.cartanMatrix where
-  toEquiv := e.supportEquiv hb
-  map_rel_iff' {i j} := by
-    simp only [diagramGraph_adj, ne_eq, (e.supportEquiv hb).apply_eq_iff_eq,
-      e.cartanMatrix_supportEquiv hb]
-
-/-- `Equiv.diagramGraphIso` evaluates via `Equiv.supportEquiv`. -/
-@[simp] theorem Equiv.diagramGraphIso_apply (i : b.support) :
-    e.diagramGraphIso hb i = e.supportEquiv hb i := (rfl)
 
 /-- **For a base-preserving equivalence, `componentEquiv` agrees with `diagramGraphIso`.** -/
 theorem Equiv.componentEquiv_base_componentEquiv [IsDomain R] [Finite ι] [Finite ι₂]

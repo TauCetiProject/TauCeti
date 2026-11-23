@@ -495,6 +495,21 @@ theorem iSup_inf_eq_of_component_mem
   exact Submodule.sum_mem _ fun i _ ↦
     Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).property⟩
 
+/-- The inverse of the canonical linear isomorphism of an internal direct sum computes
+`DirectSum.decompose`. -/
+theorem decompose_eq_ofBijective_symm {R M ι : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [DecidableEq ι] {Q : ι → Submodule R M}
+    [DirectSum.Decomposition Q] (hQ : DirectSum.IsInternal Q) (x : M) :
+    DirectSum.decompose Q x =
+      (LinearEquiv.ofBijective (DirectSum.coeLinearMap Q) hQ).symm x := by
+  classical
+  have hQ' : Function.Bijective (DirectSum.coeLinearMap Q) := hQ
+  set e := LinearEquiv.ofBijective (DirectSum.coeLinearMap Q) hQ'
+  apply e.injective
+  rw [e.apply_symm_apply, LinearEquiv.ofBijective_apply,
+    ← DirectSum.sum_support_of (DirectSum.decompose Q x), map_sum]
+  simpa only [DirectSum.coeLinearMap_of] using DirectSum.sum_support_decompose Q x
+
 end DirectSum.IsInternal
 
 namespace DirectSum

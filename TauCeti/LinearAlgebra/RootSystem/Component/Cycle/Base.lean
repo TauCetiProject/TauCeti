@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FixedSubmodule.Permutation
 public import TauCeti.LinearAlgebra.RootSystem.Component.Base
 public import TauCeti.LinearAlgebra.RootSystem.Component.Cycle.Basic
+public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Realization
 import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 import TauCeti.GroupTheory.Perm.Semiconj
 
@@ -18,8 +19,8 @@ When an automorphism `σ` of a root system `P` preserves a base `b`, `P.componen
 transports simple-root coordinates, orbit-sum bases (`Base.componentCycleWeightBasis`,
 `Base.componentReturnSimpleOrbitBasis`, `Base.componentCycleSimpleOrbitBasis`,
 `Base.componentCycleSimpleOrbitEquiv`, `Base.componentCycleSigmaSimpleOrbitEquiv`,
-`Base.componentReturnSupportEquiv`, `Base.componentReturnBaseOrbitEquiv`), and the positive root
-cone (`mem_posRootCone_componentCycleDiag_iff`,
+`Base.componentReturnBaseOrbitEquiv`), and the positive root cone
+(`mem_posRootCone_componentCycleDiag_iff`,
 `Base.mem_posRootCone_iff_forall_componentReturnSimpleOrbitBasis_repr`) without distortion.
 
 ## References
@@ -93,8 +94,8 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 noncomputable def componentReturnSupportPerm :
     Perm {i : b.support // P.componentOf (i : ι) = C} where
   toFun i := ⟨(σ.supportEquiv hb ^ minimalPeriod σ.componentEquiv C) i.val, by
-    rw [σ.coe_supportEquiv_pow hb, ← σ.indexEquiv_pow, ← (σ ^ _).componentEquiv_componentOf,
-      i.property, P.componentEquiv_pow_minimalPeriod]⟩
+    rw [σ.coe_supportEquiv_pow hb, (P.semiconj_componentOf σ).perm_pow_right,
+      i.property, ← σ.componentEquiv_pow, P.componentEquiv_pow_minimalPeriod]⟩
   invFun i := ⟨(σ.supportEquiv hb ^ minimalPeriod σ.componentEquiv C).symm i.val, by
     set c := minimalPeriod σ.componentEquiv C
     apply (σ ^ c).componentEquiv.injective
@@ -108,6 +109,13 @@ noncomputable def componentReturnSupportPerm :
     ((b.componentReturnSupportPerm σ hb C i).val : ι) =
       (σ.indexEquiv ^ minimalPeriod σ.componentEquiv C) (i.val : ι) :=
   σ.coe_supportEquiv_pow hb _ i.val
+
+@[simp] theorem coe_componentReturnSupportPerm_symm_apply
+    (i : {i : b.support // P.componentOf (i : ι) = C}) :
+    (((b.componentReturnSupportPerm σ hb C).symm i).val : ι) =
+      (σ.indexEquiv ^ minimalPeriod σ.componentEquiv C).symm (i.val : ι) :=
+  (σ.indexEquiv ^ minimalPeriod σ.componentEquiv C).eq_symm_apply.mpr <| by
+    rw [← b.coe_componentReturnSupportPerm_apply σ hb C, _root_.Equiv.apply_symm_apply]
 
 @[simp] theorem coe_componentReturnSupportPerm_pow (k : ℕ)
     (i : {i : b.support // P.componentOf (i : ι) = C}) :
@@ -133,6 +141,11 @@ noncomputable def componentCycleSupportPerm :
     ((b.componentCycleSupportPerm σ hb C i).val : ι) = σ.indexEquiv (i.val : ι) :=
   σ.coe_supportEquiv_apply hb i.val
 
+@[simp] theorem coe_componentCycleSupportPerm_symm_apply
+    (i : {i : b.support // SameCycle σ.componentEquiv C (P.componentOf (i : ι))}) :
+    (((b.componentCycleSupportPerm σ hb C).symm i).val : ι) = σ.indexEquiv.symm (i.val : ι) :=
+  σ.coe_supportEquiv_symm_apply hb i.val
+
 @[simp] theorem coe_componentCycleSupportPerm_pow (k : ℕ)
     (i : {i : b.support // SameCycle σ.componentEquiv C (P.componentOf (i : ι))}) :
     (((b.componentCycleSupportPerm σ hb C ^ k) i).val : ι) = (σ.indexEquiv ^ k) (i.val : ι) :=
@@ -140,6 +153,11 @@ noncomputable def componentCycleSupportPerm :
     (g := fun x : {i : b.support // SameCycle σ.componentEquiv C (P.componentOf (i : ι))} ↦
       (x.val : ι))
     (fun j ↦ b.coe_componentCycleSupportPerm_apply σ hb C j) k i
+
+private theorem semiconj_componentCycleSupportPerm :
+    Semiconj (fun x : {i : b.support // SameCycle σ.componentEquiv C (P.componentOf (i : ι))} ↦
+      P.componentOf (x.val : ι)) (b.componentCycleSupportPerm σ hb C) σ.componentEquiv :=
+  fun x ↦ by dsimp only; rw [b.coe_componentCycleSupportPerm_apply, ← σ.componentEquiv_componentOf]
 
 private theorem sameCycle_componentReturnSupportPerm_iff
     (i j : {i : b.support // P.componentOf (i : ι) = C}) :
@@ -149,15 +167,12 @@ private theorem sameCycle_componentReturnSupportPerm_iff
   let ιC : {i : b.support // P.componentOf (i : ι) = C} →
       {i : b.support // SameCycle σ.componentEquiv C (P.componentOf (i : ι))} :=
     fun k ↦ ⟨k.val, by rw [k.property]⟩
-  have hsemi : Semiconj (fun x : {i : b.support // SameCycle σ.componentEquiv C
-      (P.componentOf (i : ι))} ↦ P.componentOf (x.val : ι))
-      (b.componentCycleSupportPerm σ hb C) σ.componentEquiv := fun x ↦ by
-    dsimp only; rw [b.coe_componentCycleSupportPerm_apply, ← σ.componentEquiv_componentOf]
   have hιC : Semiconj ιC (b.componentReturnSupportPerm σ hb C)
       ⇑(b.componentCycleSupportPerm σ hb C ^ minimalPeriod σ.componentEquiv C) := fun k ↦
     Subtype.ext <| Subtype.ext <| by
       rw [b.coe_componentCycleSupportPerm_pow, b.coe_componentReturnSupportPerm_apply]
-  have hset := Set.ext_iff.mp (hsemi.setOf_sameCycle_and_eq (ιC i)) (ιC j)
+  have hset := Set.ext_iff.mp
+    ((b.semiconj_componentCycleSupportPerm σ hb C).setOf_sameCycle_and_eq (ιC i)) (ιC j)
   simp only [Set.mem_ofPred_eq, ιC, i.property, j.property, and_true] at hset
   exact (hιC.sameCycle_iff fun _ _ h ↦ Subtype.ext (congrArg (fun k ↦ k.val) h)).symm.trans
     hset.symm
@@ -166,9 +181,6 @@ private theorem sameCycle_componentReturnSupportPerm_iff
 noncomputable def componentCycleSimpleOrbitEquiv :
     Quotient (SameCycle.setoid (b.componentReturnSupportPerm σ hb C)) ≃
       Quotient (SameCycle.setoid (b.componentCycleSupportPerm σ hb C)) :=
-  have hsemi : Semiconj (fun x ↦ P.componentOf (x.val : ι))
-      (b.componentCycleSupportPerm σ hb C) σ.componentEquiv := fun x ↦ by
-    dsimp only; rw [b.coe_componentCycleSupportPerm_apply, ← σ.componentEquiv_componentOf]
   _root_.Equiv.ofBijective
     (Quotient.lift (fun i ↦ ⟦⟨i.val, by rw [i.property]⟩⟧) fun i j hij ↦
       Quotient.sound ((b.sameCycle_componentReturnSupportPerm_iff σ hb C i j).mp hij))
@@ -181,7 +193,8 @@ noncomputable def componentCycleSimpleOrbitEquiv :
       induction O using Quotient.ind with | _ j =>
       obtain ⟨k, hk⟩ := j.property.symm
       let i₀ : {i : b.support // P.componentOf (i : ι) = C} :=
-        ⟨((b.componentCycleSupportPerm σ hb C ^ k) j).val, (hsemi.perm_zpow_right k j).trans hk⟩
+        ⟨((b.componentCycleSupportPerm σ hb C ^ k) j).val,
+          ((b.semiconj_componentCycleSupportPerm σ hb C).perm_zpow_right k j).trans hk⟩
       exact ⟨⟦i₀⟧, Quotient.sound (SameCycle.symm ⟨k, Subtype.ext rfl⟩)⟩⟩
 
 /-- The orbit correspondence sends the cycle of a simple root in `C` to its `σ`-cycle. -/
@@ -215,8 +228,7 @@ noncomputable def componentCycleSigmaSimpleOrbitEquiv :
           (P.componentOf (j.val : ι)) := by
         refine ⟨(k : ℤ), ?_⟩
         have h' := congrArg (fun x : b.support ↦ P.componentOf (x : ι)) hk
-        rw [σ.coe_supportEquiv_pow hb, ← σ.indexEquiv_pow,
-          ← (σ ^ k).componentEquiv_componentOf, σ.componentEquiv_pow] at h'
+        rw [σ.coe_supportEquiv_pow hb, (P.semiconj_componentOf σ).perm_pow_right] at h'
         rwa [zpow_natCast]
       have hO : O₁ = O₂ :=
         ((Perm.sameCycle_out_iff σ.componentEquiv).mp
@@ -288,15 +300,21 @@ private noncomputable def cycleWeightEquiv (σ : P.Aut) (C : P.Component) :
   σ.weightEquiv.ofSubmodules _ _
     (by rw [LinearMap.ext σ.weightEquiv_apply]; exact P.map_componentCycleSpace σ C)
 
+omit [P.IsRootSystem] in
+@[simp] private theorem coe_cycleWeightEquiv_apply (σ : P.Aut) (C : P.Component)
+    (x : P.componentCycleSpace σ C) :
+    (cycleWeightEquiv (P := P) σ C x : M) = σ.weightMap x := by
+  rw [cycleWeightEquiv, LinearEquiv.ofSubmodules_apply, Equiv.weightEquiv_apply]
+
 private noncomputable def componentCycleFixedEquiv (σ : P.Aut) (C : P.Component) :
     (cycleWeightEquiv (P := P) σ C).toLinearMap.fixedSubmodule ≃ₗ[R]
       P.componentCycleFixedSubmodule σ C where
-  toFun z := ⟨⟨(z.val : M), LinearMap.mem_fixedSubmodule_iff.mpr <|
-    congrArg Subtype.val (LinearMap.mem_fixedSubmodule_iff.mp z.property)⟩,
+  toFun z := ⟨⟨(z.val : M), LinearMap.mem_fixedSubmodule_iff.mpr <| by
+    simpa using congrArg Subtype.val (LinearMap.mem_fixedSubmodule_iff.mp z.property)⟩,
     P.mem_componentCycleFixedSubmodule.mpr z.val.property⟩
   invFun y := ⟨⟨(y.val : M), P.mem_componentCycleFixedSubmodule.mp y.property⟩,
-    LinearMap.mem_fixedSubmodule_iff.mpr <| Subtype.ext <|
-      LinearMap.mem_fixedSubmodule_iff.mp y.val.property⟩
+    LinearMap.mem_fixedSubmodule_iff.mpr <| Subtype.ext <| by
+      simpa using LinearMap.mem_fixedSubmodule_iff.mp y.val.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -324,9 +342,9 @@ noncomputable def componentCycleSimpleOrbitBasis :
       (P.componentCycleFixedSubmodule σ C) :=
   (Perm.basisPermFixedBasis (b.componentCycleWeightBasis σ C) (cycleWeightEquiv (P := P) σ C)
     (b.componentCycleSupportPerm σ hb C) fun i ↦ Subtype.ext <| by
-      rw [cycleWeightEquiv, LinearEquiv.ofSubmodules_apply, Equiv.weightEquiv_apply,
-        b.coe_componentCycleWeightBasis_apply, b.coe_componentCycleWeightBasis_apply,
-        b.coe_componentCycleSupportPerm_apply, Hom.root_weightMap_apply P P _ σ.toHom]).map
+      rw [coe_cycleWeightEquiv_apply, b.coe_componentCycleWeightBasis_apply,
+        b.coe_componentCycleWeightBasis_apply, b.coe_componentCycleSupportPerm_apply,
+        Hom.root_weightMap_apply P P _ σ.toHom]).map
     (componentCycleFixedEquiv (P := P) σ C)
 
 @[simp] theorem componentCycleSimpleOrbitBasis_repr (y : P.componentCycleFixedSubmodule σ C)
@@ -366,29 +384,6 @@ section ReturnSimpleOrbitBasis
 variable {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
   {P : RootPairing ι K M N} [Finite ι] [P.IsRootSystem] (b : P.Base)
 
-section
-
-variable (C : P.Component)
-
-/-- Equivalence between simple roots of `b` in `C` and the support of `b.componentBase C`. -/
-def componentReturnSupportEquiv :
-    {i : b.support // P.componentOf (i : ι) = C} ≃ (b.componentBase C).support where
-  toFun i := ⟨⟨(i.val : ι), (C.mem_supp_iff _).mpr i.property⟩,
-    (b.mem_support_componentBase C).mpr i.val.property⟩
-  invFun j := ⟨⟨(j.val : ι), (b.mem_support_componentBase C).mp j.property⟩,
-    (C.mem_supp_iff _).mp j.val.property⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp] theorem coe_componentReturnSupportEquiv_apply
-    (i : {i : b.support // P.componentOf (i : ι) = C}) :
-    ((b.componentReturnSupportEquiv C i : C.supp) : ι) = (i.val : ι) := (rfl)
-
-@[simp] theorem coe_componentReturnSupportEquiv_symm_apply (j : (b.componentBase C).support) :
-    (((b.componentReturnSupportEquiv C).symm j).val : ι) = ((j : C.supp) : ι) := (rfl)
-
-end
-
 variable (σ : P.Aut) (hb : ∀ i, i ∈ b.support ↔ σ.indexEquiv i ∈ b.support) (C : P.Component)
 
 include hb in
@@ -409,20 +404,18 @@ theorem mem_support_componentReturnAut_indexEquiv_iff (i : C.supp) :
 /-- `componentReturnSupportEquiv` conjugates `componentReturnSupportPerm` to the support
 permutation of `componentReturnAut` on `b.componentBase C`. -/
 theorem componentReturnSupportEquiv_supportPerm :
-    (b.componentBase C).supportPerm
-        (fun j hj ↦ (b.mem_support_componentReturnAut_indexEquiv_iff σ hb C j).mpr hj) =
+    (P.componentReturnAut σ C).supportEquiv
+        (fun j ↦ (b.mem_support_componentReturnAut_indexEquiv_iff σ hb C j).symm) =
       (b.componentReturnSupportEquiv C).permCongr (b.componentReturnSupportPerm σ hb C) := by
   ext j
-  simp only [_root_.Equiv.permCongr_apply, Base.coe_supportPerm_apply,
-    P.coe_componentReturnAut_indexEquiv, coe_componentReturnSupportEquiv_apply,
-    coe_componentReturnSupportPerm_apply, coe_componentReturnSupportEquiv_symm_apply]
+  simp [P.coe_componentReturnAut_indexEquiv]
 
 /-- Bijection between `(σ ^ c)`-simple-root orbits in `C` and simple-root orbits of
 `P.componentReturnAut σ C` on `b.componentBase C`. -/
 noncomputable def componentReturnBaseOrbitEquiv :
     Quotient (SameCycle.setoid (b.componentReturnSupportPerm σ hb C)) ≃
-      Quotient (SameCycle.setoid ((b.componentBase C).supportPerm
-        (fun j hj ↦ (b.mem_support_componentReturnAut_indexEquiv_iff σ hb C j).mpr hj))) :=
+      Quotient (SameCycle.setoid ((P.componentReturnAut σ C).supportEquiv
+        (fun j ↦ (b.mem_support_componentReturnAut_indexEquiv_iff σ hb C j).symm))) :=
   _root_.Equiv.sameCycleQuotientCongr (b.componentReturnSupportEquiv C)
     (b.componentReturnSupportEquiv_supportPerm σ hb C)
 
@@ -499,26 +492,6 @@ theorem coe_componentReturnSimpleOrbitBasis_apply
       (fun k ↦ P.root (k : ι)) o) ?_)
   exact Finset.sum_congr rfl fun r _ ↦ (P.coe_componentPairing_root C _).symm
 
-/-- **Diagonal transport carries the return simple-orbit basis to the cycle simple-orbit basis.** -/
-@[simp] theorem componentCycleDiag_componentReturnSimpleOrbitBasis
-    (o : Quotient (SameCycle.setoid (b.componentReturnSupportPerm σ hb C))) :
-    P.componentCycleDiag σ C (b.componentReturnSimpleOrbitBasis σ hb C o) =
-      b.componentCycleSimpleOrbitBasis σ hb C (b.componentCycleSimpleOrbitEquiv σ hb C o) := by
-  apply Subtype.ext; apply Subtype.ext
-  have hret : b.componentReturnSimpleOrbitBasis σ hb C o =
-      P.componentReturnOrbitSumFixed σ C ⟨o.out.val, (C.mem_supp_iff _).mpr o.out.property⟩ :=
-    Subtype.ext ((b.coe_componentReturnSimpleOrbitBasis_apply σ hb C o).trans
-      (P.coe_componentReturnOrbitSumFixed σ C _).symm)
-  rw [hret, P.coe_componentCycleDiag_orbitSum, b.coe_componentCycleSimpleOrbitBasis_apply]
-  have heq : b.componentCycleSimpleOrbitEquiv σ hb C o =
-      ⟦⟨o.out.val, by rw [o.out.property]⟩⟧ := by
-    conv_lhs => rw [← Quotient.out_eq o, b.componentCycleSimpleOrbitEquiv_mk]
-  obtain ⟨k, hk⟩ := (Quotient.exact ((Quotient.out_eq _).trans heq) :
-    SameCycle (b.componentCycleSupportPerm σ hb C) (b.componentCycleSimpleOrbitEquiv σ hb C o).out
-      ⟨o.out.val, by rw [o.out.property]⟩).exists_nat_pow_eq
-  exact P.orbitSum_eq_of_mem (P.mem_orbitIndices_iff_exists_pow.mpr ⟨k, by
-    simpa using congrArg (fun x ↦ (x.val : ι)) hk⟩)
-
 /-- **Simple-orbit coordinates are preserved unchanged by `componentCycleDiag`.** -/
 @[simp] theorem componentCycleSimpleOrbitBasis_repr_componentCycleDiag
     (u : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap)
@@ -530,6 +503,62 @@ theorem coe_componentReturnSimpleOrbitBasis_apply
   rw [b.componentCycleSimpleOrbitEquiv_mk, b.componentCycleSimpleOrbitBasis_repr,
     b.componentReturnSimpleOrbitBasis_repr, ← P.toWeightBasis_repr_componentProj_of_eq b i.property,
     P.componentProj_componentCycleDiag]
+
+/-- **Diagonal transport carries the return simple-orbit basis to the cycle simple-orbit basis.** -/
+@[simp] theorem componentCycleDiag_componentReturnSimpleOrbitBasis
+    (o : Quotient (SameCycle.setoid (b.componentReturnSupportPerm σ hb C))) :
+    P.componentCycleDiag σ C (b.componentReturnSimpleOrbitBasis σ hb C o) =
+      b.componentCycleSimpleOrbitBasis σ hb C (b.componentCycleSimpleOrbitEquiv σ hb C o) := by
+  apply (b.componentCycleSimpleOrbitBasis σ hb C).repr.injective
+  ext O
+  obtain ⟨o', rfl⟩ := (b.componentCycleSimpleOrbitEquiv σ hb C).surjective O
+  classical
+  rw [b.componentCycleSimpleOrbitBasis_repr_componentCycleDiag, Module.Basis.repr_self,
+    Module.Basis.repr_self, Finsupp.single_apply, Finsupp.single_apply]
+  simp only [(b.componentCycleSimpleOrbitEquiv σ hb C).apply_eq_iff_eq]
+
+/-- `componentReturnSimpleOrbitBasis` agrees with `(b.componentBase C).fixedSubmoduleBasis` via
+`b.componentReturnBaseOrbitEquiv`. -/
+theorem componentReturnSimpleOrbitBasis_eq_fixedSubmoduleBasis
+    (o : Quotient (SameCycle.setoid (b.componentReturnSupportPerm σ hb C))) :
+    b.componentReturnSimpleOrbitBasis σ hb C o =
+      (b.componentBase C).fixedSubmoduleBasis
+        (fun j hj ↦ (b.mem_support_componentReturnAut_indexEquiv_iff σ hb C j).mpr hj)
+        (b.componentReturnBaseOrbitEquiv σ hb C o) := by
+  induction o using Quotient.ind with | _ i =>
+  apply Subtype.ext
+  rw [b.componentReturnBaseOrbitEquiv_mk,
+    (b.componentBase C).coe_fixedSubmoduleBasis_mk _ (b.componentReturnSupportEquiv C i),
+    b.coe_componentReturnSimpleOrbitBasis_apply]
+  have hsc : SameCycle (b.componentReturnSupportPerm σ hb C)
+      i (Quotient.mk (SameCycle.setoid (b.componentReturnSupportPerm σ hb C)) i).out :=
+    ((Perm.sameCycle_out_iff (b.componentReturnSupportPerm σ hb C)).mpr rfl).symm
+  obtain ⟨k, hk⟩ := hsc.exists_nat_pow_eq
+  refine (P.componentPairing C).orbitSum_eq_of_mem
+    ((P.componentPairing C).mem_orbitIndices_iff_exists_pow.mpr ⟨k, Subtype.ext ?_⟩)
+  rw [P.coe_componentReturnAut_indexEquiv_pow]
+  simpa [b.coe_componentReturnSupportPerm_pow] using congrArg (fun x ↦ (x.val : ι)) hk
+
+omit C in
+/-- Each vector of `componentCycleSimpleOrbitBasis` agrees in `M` with `b.fixedSubmoduleBasis`
+via `componentCycleSigmaSimpleOrbitEquiv`. -/
+theorem coe_componentCycleSimpleOrbitBasis_eq_fixedSubmoduleBasis
+    (O : Quotient (SameCycle.setoid σ.componentEquiv))
+    (o : Quotient (SameCycle.setoid (b.componentCycleSupportPerm σ hb O.out))) :
+    ((b.componentCycleSimpleOrbitBasis σ hb O.out o : LinearMap.fixedSubmodule σ.weightMap) : M) =
+      ((b.fixedSubmoduleBasis (fun j hj ↦ (hb j).mp hj)
+        (b.componentCycleSigmaSimpleOrbitEquiv σ hb ⟨O, o⟩) :
+          LinearMap.fixedSubmodule σ.weightMap) : M) := by
+  induction o using Quotient.ind with | _ i =>
+  rw [b.componentCycleSigmaSimpleOrbitEquiv_mk,
+    b.coe_fixedSubmoduleBasis_mk (fun j hj ↦ (hb j).mp hj) i.val,
+    b.coe_componentCycleSimpleOrbitBasis_apply]
+  have hsc : SameCycle (b.componentCycleSupportPerm σ hb O.out)
+      i (Quotient.mk (SameCycle.setoid (b.componentCycleSupportPerm σ hb O.out)) i).out :=
+    ((Perm.sameCycle_out_iff (b.componentCycleSupportPerm σ hb O.out)).mpr rfl).symm
+  obtain ⟨k, hk⟩ := hsc.exists_nat_pow_eq
+  exact P.orbitSum_eq_of_mem (P.mem_orbitIndices_iff_exists_pow.mpr ⟨k, by
+    simpa [b.coe_componentCycleSupportPerm_pow] using congrArg (fun x ↦ (x.val : ι)) hk⟩)
 
 /-- A return fixed vector lies in `posRootCone P b` iff its return simple-orbit coordinates lie in
 `ℕ`. -/

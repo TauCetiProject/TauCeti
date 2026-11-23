@@ -76,16 +76,13 @@ private theorem bilinear_componentCycleDiag (B : M →ₗ[K] M →ₗ[K] K)
     | zero => rfl
     | succ r ih =>
       rw [pow_succ', Module.End.mul_eq_comp, LinearMap.comp_apply, LinearMap.comp_apply, hB, ih]
-  have hmem (r : ℕ) {w : M} (hw : w ∈ P.componentSpace C) :
-      (σ.weightMap ^ r) w ∈ P.componentSpace ((σ.componentEquiv ^ r) C) := by
-    rw [← σ.weightMap_pow, ← σ.componentEquiv_pow]
-    exact (σ ^ r).weightMap_mem_componentSpace hw
   rw [P.coe_componentCycleDiag_apply, P.coe_componentCycleDiag_apply]
   simp only [map_sum, LinearMap.sum_apply]
   rw [Finset.sum_congr rfl fun s hs ↦ by
     rw [Finset.sum_eq_single s (fun r hr hrs ↦ horth (P.pow_componentEquiv_ne_of_ne_lt σ C
       (Finset.mem_range.mp hr) (Finset.mem_range.mp hs) hrs)
-      (hmem r u.val.property) (hmem s v.val.property)) (fun h ↦ absurd hs h), hpow s],
+      (σ.pow_weightMap_mem_componentSpace u.val.property r)
+      (σ.pow_weightMap_mem_componentSpace v.val.property s)) (fun h ↦ absurd hs h), hpow s],
     Finset.sum_const, Finset.card_range, nsmul_eq_mul]
 
 /-- **Scaling of a `σ`-invariant `B : P.InvariantForm` along `componentCycleDiag`** (`2 ≠ 0`). -/
@@ -101,7 +98,7 @@ theorem InvariantForm.form_componentCycleDiag [NeZero (2 : K)] (B : P.InvariantF
 
 /-- **Cartan ratios for a `σ`-invariant `B : P.InvariantForm` are preserved** when the cycle length
 is nonzero in `K`. -/
-theorem InvariantForm.cartanRatio_componentCycleDiag [NeZero (2 : K)] (B : P.InvariantForm)
+theorem InvariantForm.cartanRatio_componentCycleDiag (B : P.InvariantForm)
     {σ : P.Aut} (hB : ∀ x y, B.form (σ.weightMap x) (σ.weightMap y) = B.form x y)
     (C : P.Component) (hc : (minimalPeriod σ.componentEquiv C : K) ≠ 0)
     (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
@@ -110,8 +107,11 @@ theorem InvariantForm.cartanRatio_componentCycleDiag [NeZero (2 : K)] (B : P.Inv
         B.form ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M)
           ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
       2 * (B.restrictComponent C).form u.val v.val / (B.restrictComponent C).form v.val v.val := by
-  rw [B.form_componentCycleDiag P hB C, B.form_componentCycleDiag P hB C, mul_left_comm (2 : K),
-    mul_div_mul_left _ _ hc]
+  by_cases h2 : (2 : K) = 0
+  · simp [h2]
+  · have : NeZero (2 : K) := ⟨h2⟩
+    rw [B.form_componentCycleDiag P hB C, B.form_componentCycleDiag P hB C, mul_left_comm (2 : K),
+      mul_div_mul_left _ _ hc]
 
 end Finite
 

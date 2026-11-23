@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Defs
+public import Mathlib.LinearAlgebra.FixedSubmodule
+public import Mathlib.LinearAlgebra.RootSystem.Hom
 import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
@@ -16,6 +17,10 @@ Elementary consequences of the definition of a root system that need no further 
 ## Main results
 
 * `RootPairing.nonempty_of_isRootSystem`: a root system on a nontrivial module has a root.
+* `RootPairing.subsingleton_weight_of_isEmpty`: the weight module of an empty root system is
+  subsingleton.
+* `RootPairing.subsingleton_fixedSubmodule_of_isEmpty`: an empty root system has a subsingleton
+  fixed submodule for every automorphism.
 * `RootPairing.finite_weight_of_isRootSystem`: the weight module of a finite root system is finitely
   generated.
 -/
@@ -39,6 +44,13 @@ lemma nonempty_of_isRootSystem [Nontrivial M] (P : RootPairing ι R M N) [P.IsRo
 theorem subsingleton_weight_of_isEmpty (P : RootPairing ι R M N) [IsEmpty ι] [P.IsRootSystem] :
     Subsingleton M :=
   not_nontrivial_iff_subsingleton.mp fun _ ↦ (P.nonempty_of_isRootSystem).elim IsEmpty.false
+
+/-- An empty root system has a subsingleton fixed submodule for every automorphism. -/
+theorem subsingleton_fixedSubmodule_of_isEmpty (P : RootPairing ι R M N) (σ : P.Aut)
+    [IsEmpty ι] [P.IsRootSystem] :
+    Subsingleton (LinearMap.fixedSubmodule σ.weightMap) :=
+  have := P.subsingleton_weight_of_isEmpty
+  inferInstance
 
 /-- On a finite root system, the weight module is finitely generated because it is spanned by the
 finite set of roots. -/

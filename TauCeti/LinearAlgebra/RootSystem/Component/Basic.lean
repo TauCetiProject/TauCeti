@@ -561,6 +561,14 @@ theorem Equiv.weightMap_mem_componentSpace (e : P.Equiv Q) {C : P.Component} {x 
     e.weightMap x ∈ Q.componentSpace (e.componentEquiv C) :=
   e.map_componentSpace C ▸ Submodule.mem_map_of_mem hx
 
+/-- Powers of an automorphism map weights in a component space to weights in the corresponding
+component space. -/
+theorem Equiv.pow_weightMap_mem_componentSpace (σ : P.Aut) {C : P.Component} {x : M}
+    (hx : x ∈ P.componentSpace C) (r : ℕ) :
+    (σ.weightMap ^ r) x ∈ P.componentSpace ((σ.componentEquiv ^ r) C) := by
+  rw [← σ.weightMap_pow, ← σ.componentEquiv_pow]
+  exact (σ ^ r).weightMap_mem_componentSpace hx
+
 /-- An equivalence of root pairings carries coroot component spaces to coroot component spaces. -/
 theorem Equiv.map_corootComponentSpace (e : P.Equiv Q) (C : P.Component) :
     (Q.corootComponentSpace (e.componentEquiv C)).map e.coweightEquiv.toLinearMap =

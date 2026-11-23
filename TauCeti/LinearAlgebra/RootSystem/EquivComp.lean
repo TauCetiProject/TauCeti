@@ -255,6 +255,18 @@ theorem indexEquiv_apply_of_weightEquiv_comp_weightMap (e : P.Equiv Q) {σ : Aut
   e.toHom.indexEquiv_apply_of_weightMap_comp
     ((LinearMap.ext e.weightEquiv_apply : e.weightEquiv.toLinearMap = e.toHom.weightMap) ▸ hw) j
 
+/-- An equivalence intertwining the weight-space endomorphisms of `σ` and `τ` along `e.weightEquiv`
+conjugates `σ` to `τ`. -/
+theorem autCongr_eq_of_weightEquiv_comp_weightMap (e : P.Equiv Q) {σ : Aut P} {τ : Aut Q}
+    (hw : e.weightEquiv.toLinearMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightEquiv.toLinearMap) :
+    e.autCongr σ = τ := by
+  have hhom : (e.autCongr σ).toHom = τ.toHom := RootPairing.Hom.weightHom_injective Q <| by
+    ext x
+    change e.weightEquiv (σ.weightMap (e.weightEquiv.symm x)) = τ.weightMap x
+    simpa using LinearMap.congr_fun hw (e.weightEquiv.symm x)
+  exact Equiv.ext (congrArg Hom.weightMap hhom) (congrArg Hom.coweightMap hhom)
+    (congrArg Hom.indexEquiv hhom)
+
 end Intertwine
 
 end RootPairing.Equiv

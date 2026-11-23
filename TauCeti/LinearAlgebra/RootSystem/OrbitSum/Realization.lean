@@ -61,28 +61,32 @@ variable {P : RootPairing ι R M N} [P.IsRootSystem] (b : P.Base) {σ : P.Aut}
 
 private theorem equivFun_comp_weightMap (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) :
     b.toWeightBasis.equivFun.toLinearMap ∘ₗ σ.weightMap =
-      (LinearEquiv.funCongrLeft R R (b.supportPerm hσ).symm).toLinearMap ∘ₗ
+      (LinearEquiv.funCongrLeft R R
+        (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm).symm).toLinearMap ∘ₗ
         b.toWeightBasis.equivFun.toLinearMap := by
   refine b.toWeightBasis.ext fun i ↦ funext fun j ↦ ?_
   classical
+  set π := σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.equivFun_apply,
     b.toWeightBasis_apply i, Hom.root_weightMap_apply P P i σ.toHom,
     LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply]
-  have hπ : P.root (σ.indexEquiv i) = b.toWeightBasis (b.supportPerm hσ i) := by
-    rw [← b.coe_supportPerm_apply hσ i, b.toWeightBasis_apply]
+  have hπ : P.root (σ.indexEquiv i) = b.toWeightBasis (π i) := by
+    rw [← σ.coe_supportEquiv_apply _ i, b.toWeightBasis_apply]
   rw [hπ, ← b.toWeightBasis_apply i, Module.Basis.repr_self, Module.Basis.repr_self,
     Finsupp.single_apply, Finsupp.single_apply]
-  exact if_congr (b.supportPerm hσ).eq_symm_apply.symm rfl rfl
+  exact if_congr π.eq_symm_apply.symm rfl rfl
 
 /-- **The simple-orbit basis of the `σ`-fixed weight submodule**, indexed by the `σ`-cycles of
 `b.support`. -/
 noncomputable def fixedSubmoduleBasis (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) :
-    Module.Basis (Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ))) R
+    Module.Basis (Quotient (Equiv.Perm.SameCycle.setoid
+      (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm))) R
       (LinearMap.fixedSubmodule σ.weightMap) :=
-  let qCongr : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)⁻¹) ≃
-      Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) :=
+  let π := σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm
+  let qCongr : Quotient (Equiv.Perm.SameCycle.setoid π⁻¹) ≃
+      Quotient (Equiv.Perm.SameCycle.setoid π) :=
     Quotient.congr (_root_.Equiv.refl _) fun _ _ ↦ Equiv.Perm.sameCycle_inv
-  ((Equiv.Perm.permutationFixedBasis (R := R) (b.supportPerm hσ)⁻¹).reindex qCongr).map
+  ((Equiv.Perm.permutationFixedBasis (R := R) π⁻¹).reindex qCongr).map
     (b.toWeightBasis.equivFun.fixedSubmoduleCongr (b.equivFun_comp_weightMap hσ)).symm
 
 /-- The coordinate of a `σ`-fixed vector on the simple orbit of `j` is its `b.toWeightBasis`
@@ -90,8 +94,9 @@ coordinate at `j`. -/
 @[simp] theorem fixedSubmoduleBasis_repr (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
     (x : LinearMap.fixedSubmodule σ.weightMap) (j : b.support) :
     (b.fixedSubmoduleBasis hσ).repr x (Quotient.mk _ j) = b.toWeightBasis.repr (x : M) j := by
-  let qCongr : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)⁻¹) ≃
-      Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) :=
+  let π := σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm
+  let qCongr : Quotient (Equiv.Perm.SameCycle.setoid π⁻¹) ≃
+      Quotient (Equiv.Perm.SameCycle.setoid π) :=
     Quotient.congr (_root_.Equiv.refl b.support) fun _ _ ↦ Equiv.Perm.sameCycle_inv
   have hq : qCongr.symm (Quotient.mk _ j) = Quotient.mk _ j := rfl
   simp only [fixedSubmoduleBasis, Module.Basis.map_repr, LinearEquiv.trans_apply,
@@ -104,7 +109,8 @@ coordinate at `j`. -/
 at `O.out`. -/
 theorem fixedSubmoduleBasis_repr_out (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
     (x : LinearMap.fixedSubmodule σ.weightMap)
-    (O : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ))) :
+    (O : Quotient (Equiv.Perm.SameCycle.setoid
+      (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm))) :
     (b.fixedSubmoduleBasis hσ).repr x O = b.toWeightBasis.repr (x : M) O.out := by
   simpa only [Quotient.out_eq] using b.fixedSubmoduleBasis_repr hσ x O.out
 
@@ -114,15 +120,18 @@ variable [Finite ι]
 
 /-- Each basis vector of `fixedSubmoduleBasis` at a cycle `O` is `P.orbitSum σ O.out`. -/
 theorem coe_fixedSubmoduleBasis_out (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
-    (O : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ))) :
+    (O : Quotient (Equiv.Perm.SameCycle.setoid
+      (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm))) :
     ((b.fixedSubmoduleBasis hσ O) : M) = P.orbitSum σ (O.out : ι) := by
   classical
   refine b.toWeightBasis.equivFun.injective (funext fun j ↦ ?_)
   rw [Module.Basis.equivFun_apply, ← b.fixedSubmoduleBasis_repr hσ (b.fixedSubmoduleBasis hσ O) j,
     Module.Basis.repr_self, Finsupp.single_apply, orbitSum_def, map_sum, Finset.sum_apply]
   have hmem : (j : ι) ∈ P.orbitIndices σ (O.out : ι) ↔
-      Quotient.mk (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) j = O := by
-    rw [mem_orbitIndices, ← b.sameCycle_supportPerm_iff hσ]
+      Quotient.mk (Equiv.Perm.SameCycle.setoid
+        (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm)) j = O := by
+    rw [mem_orbitIndices,
+      ← σ.sameCycle_supportEquiv_iff fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm]
     exact ⟨fun h ↦ (Quotient.sound h.symm).trans (Quotient.out_eq O),
       fun h ↦ (Quotient.exact (h.trans (Quotient.out_eq O).symm)).symm⟩
   have hterm (k : ι) (hk : k ∈ P.orbitIndices σ (O.out : ι)) :
@@ -137,9 +146,10 @@ theorem coe_fixedSubmoduleBasis_out (hσ : ∀ j ∈ b.support, σ.indexEquiv j 
 /-- The `fixedSubmoduleBasis` vector at the cycle of `j : b.support` is `P.orbitSum σ j`. -/
 @[simp] theorem coe_fixedSubmoduleBasis_mk (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
     (j : b.support) : ((b.fixedSubmoduleBasis hσ (Quotient.mk _ j)) : M) = P.orbitSum σ j := by
-  let O : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) := Quotient.mk _ j
+  let O : Quotient (Equiv.Perm.SameCycle.setoid
+      (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm)) := Quotient.mk _ j
   exact (b.coe_fixedSubmoduleBasis_out hσ O).trans (orbitSum_eq_of_mem (mem_orbitIndices.mpr
-    ((b.sameCycle_supportPerm_iff hσ).mp (Quotient.exact (Quotient.out_eq O))).symm))
+    ((σ.sameCycle_supportEquiv_iff _).mp (Quotient.exact (Quotient.out_eq O))).symm))
 
 /-- When `σ` stabilizes `b.support`, `P.foldedRootEmb σ` spans the `σ`-fixed weight submodule. -/
 theorem span_foldedRootEmb_eq_top (hσ : ∀ k ∈ b.support, σ.indexEquiv k ∈ b.support) :
@@ -155,7 +165,9 @@ theorem linearIndepOn_foldedRootEmb (hσ : ∀ k ∈ b.support, σ.indexEquiv k 
       {u : P.foldedIndices σ | ∃ j ∈ b.support, P.orbitSum σ j = (u : M)} := by
   rcases subsingleton_or_nontrivial R with _ | _
   · exact linearIndepOn_iff'.mpr fun _ _ _ _ _ _ ↦ Subsingleton.elim _ _
-  · let idxMap : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) → P.foldedIndices σ :=
+  · let idxMap : Quotient (Equiv.Perm.SameCycle.setoid
+        (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm)) →
+        P.foldedIndices σ :=
       fun O ↦ ⟨P.orbitSum σ (O.out : ι), P.orbitSum_mem_foldedIndices σ _⟩
     have hcomp : P.foldedRootEmb σ ∘ idxMap = b.fixedSubmoduleBasis hσ :=
       funext fun O ↦ Subtype.ext (b.coe_fixedSubmoduleBasis_out hσ O).symm
@@ -165,8 +177,10 @@ theorem linearIndepOn_foldedRootEmb (hσ : ∀ k ∈ b.support, σ.indexEquiv k 
         {u : P.foldedIndices σ | ∃ j ∈ b.support, P.orbitSum σ j = (u : M)} := by
       ext u
       refine ⟨fun ⟨O, hO⟩ ↦ hO ▸ ⟨O.out, O.out.property, rfl⟩, fun ⟨j, hj, hju⟩ ↦ ?_⟩
-      let O : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) := Quotient.mk _ ⟨j, hj⟩
-      have hsc := (b.sameCycle_supportPerm_iff hσ).mp (Quotient.exact (Quotient.out_eq O))
+      let O : Quotient (Equiv.Perm.SameCycle.setoid
+          (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm)) :=
+        Quotient.mk _ ⟨j, hj⟩
+      have hsc := (σ.sameCycle_supportEquiv_iff _).mp (Quotient.exact (Quotient.out_eq O))
       exact ⟨O, Subtype.ext ((orbitSum_eq_of_mem (mem_orbitIndices.mpr hsc.symm)).trans hju)⟩
     exact hrange ▸ (linearIndepOn_range_iff (Injective.of_comp hli.injective) _).mpr hli
 
@@ -180,7 +194,8 @@ theorem foldedRootEmb_orbitSum_mem_closure_of_isPos [CharZero R]
   classical
   set x := P.foldedRootEmb σ ⟨P.orbitSum σ r, P.orbitSum_mem_foldedIndices σ r⟩
   obtain ⟨c, hc⟩ := (mem_posRootCone P b).mp (orbitSum_mem_posRootCone hσ hr)
-  have hrepr (O : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ))) :
+  have hrepr (O : Quotient (Equiv.Perm.SameCycle.setoid
+      (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm))) :
       (b.fixedSubmoduleBasis hσ).repr x O = (c (O.out : ι) : R) := by
     rw [b.fixedSubmoduleBasis_repr_out hσ x O, ← Module.Basis.equivFun_apply,
       coe_foldedRootEmb_apply, Subtype.coe_mk]
