@@ -275,7 +275,7 @@ orthogonal complement. -/
 private theorem map_toIntSubmodule_addSubgroupOf_orthogonalComplement
     (f : Isometry A B) (H : AddSubgroup A) :
     (H.addSubgroupOf (A.orthogonalComplement H)).toIntSubmodule.map
-        ((Isometry.orthogonalComplementEquiv A f H).toIntLinearEquiv :
+        ((f.orthogonalComplementEquiv H).toIntLinearEquiv :
           A.orthogonalComplement H →ₗ[ℤ]
             B.orthogonalComplement (H.map f.toAddEquiv)) =
       ((H.map f.toAddEquiv).addSubgroupOf
@@ -285,7 +285,7 @@ private theorem map_toIntSubmodule_addSubgroupOf_orthogonalComplement
   -- `mem_map_equiv` exposes membership in the underlying `ℤ`-submodules; normalize those
   -- coercions to the corresponding `AddSubgroup.addSubgroupOf` memberships so its public lemma
   -- and the representative formula for `orthogonalComplementEquiv` can be used.
-  change (Isometry.orthogonalComplementEquiv A f H).symm y ∈
+  change (f.orthogonalComplementEquiv H).symm y ∈
       H.addSubgroupOf (A.orthogonalComplement H) ↔
     y ∈ (H.map f.toAddEquiv).addSubgroupOf
       (B.orthogonalComplement (H.map f.toAddEquiv))
@@ -308,7 +308,7 @@ image. -/
 private noncomputable def orthogonalQuotientAddEquiv (f : Isometry A B) (H : AddSubgroup A) :
     A.orthogonalQuotient H ≃+ B.orthogonalQuotient (H.map f.toAddEquiv) :=
   (Submodule.Quotient.equiv _ _
-    (Isometry.orthogonalComplementEquiv A f H).toIntLinearEquiv
+    (f.orthogonalComplementEquiv H).toIntLinearEquiv
     (map_toIntSubmodule_addSubgroupOf_orthogonalComplement f H)).toAddEquiv
 
 /-- The image-subgroup additive equivalence sends the class of `x ∈ H⊥` to the class of
@@ -318,12 +318,12 @@ private theorem orthogonalQuotientAddEquiv_orthogonalQuotientMk (f : Isometry A 
     (H : AddSubgroup A) (x : A.orthogonalComplement H) :
     f.orthogonalQuotientAddEquiv H (A.orthogonalQuotientMk H x) =
       B.orthogonalQuotientMk (H.map f.toAddEquiv)
-        (Isometry.orthogonalComplementEquiv A f H x) := by
+        (f.orthogonalComplementEquiv H x) := by
   rw [orthogonalQuotientMk_apply, orthogonalQuotientMk_apply]
   -- After replacing the packaged quotient constructors by `Submodule.Quotient.mk`, expose the
   -- underlying quotient equivalence so Mathlib's `equiv_apply` and `mapQ_apply` lemmas match.
   change (Submodule.Quotient.equiv _ _
-      (Isometry.orthogonalComplementEquiv A f H).toIntLinearEquiv
+      (f.orthogonalComplementEquiv H).toIntLinearEquiv
       (map_toIntSubmodule_addSubgroupOf_orthogonalComplement f H))
       (Submodule.Quotient.mk x) = Submodule.Quotient.mk _
   rw [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
@@ -351,7 +351,7 @@ private theorem orthogonalQuotientMap_orthogonalQuotientMk (f : Isometry A B)
     (H : AddSubgroup A) (x : A.orthogonalComplement H) :
     f.orthogonalQuotientMap H (A.orthogonalQuotientMk H x) =
       B.orthogonalQuotientMk (H.map f.toAddEquiv)
-        (Isometry.orthogonalComplementEquiv A f H x) := by
+        (f.orthogonalComplementEquiv H x) := by
   rw [orthogonalQuotientMap]
   exact orthogonalQuotientAddEquiv_orthogonalQuotientMk f H x
 

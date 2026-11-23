@@ -285,8 +285,7 @@ theorem glueWordIsometry_symm_mk_mem_orthogonalComplement
   rw [discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup,
     IntermediateCarrier.IsIntegral.dualClassHom_apply,
     mk_dualCarrierEquiv_ofEq_gluedLattice] at hmem
-  have h := ((FiniteBilinearModule.Isometry.orthogonalComplementEquiv _
-    (glueWordIsometry t ht hv).toFiniteBilinearModule H).symm
+  have h := (((glueWordIsometry t ht hv).toFiniteBilinearModule.orthogonalComplementEquiv H).symm
       ⟨_, by rwa [FiniteQuadraticModule.Isometry.toFiniteBilinearModule_toAddEquiv]⟩).property
   rw [FiniteBilinearModule.Isometry.coe_orthogonalComplementEquiv_symm_apply,
     ← FiniteBilinearModule.Isometry.coe_toAddEquiv,

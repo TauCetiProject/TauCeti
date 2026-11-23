@@ -72,34 +72,6 @@ namespace TauCeti
 
 universe u v w x
 
-section CharacterModuleApply
-
-variable {G : Type*} [AddCommGroup G]
-
-@[simp]
-theorem _root_.CharacterModule.zero_apply (x : G) : (0 : CharacterModule G) x = 0 := rfl
-
-@[simp]
-theorem _root_.CharacterModule.add_apply (f g : CharacterModule G) (x : G) :
-    (f + g) x = f x + g x := rfl
-
-@[simp]
-theorem _root_.CharacterModule.neg_apply (f : CharacterModule G) (x : G) : (-f) x = -f x := rfl
-
-@[simp]
-theorem _root_.CharacterModule.sub_apply (f g : CharacterModule G) (x : G) :
-    (f - g) x = f x - g x := rfl
-
-@[simp]
-theorem _root_.CharacterModule.nsmul_apply (n : ℕ) (f : CharacterModule G) (x : G) :
-    (n • f) x = n • f x := rfl
-
-@[simp]
-theorem _root_.CharacterModule.zsmul_apply (n : ℤ) (f : CharacterModule G) (x : G) :
-    (n • f) x = n • f x := rfl
-
-end CharacterModuleApply
-
 /-- A finite abelian group equipped with a symmetric biadditive pairing into `ℚ/ℤ`.
 
 The pairing is stored as its adjoint `A →+ CharacterModule A`, so biadditivity is part of its
@@ -831,6 +803,7 @@ theorem Isometry.orthogonalComplement_comap {B : FiniteBilinearModule} (f : Isom
   · intro hx y hy
     exact (f.map_pairing x y).symm.trans (hx (f y) (by simpa using hy))
 
+variable {A} in
 /-- An isometry restricts to an additive equivalence from the orthogonal complement of a subgroup
 onto the orthogonal complement of its image. -/
 def Isometry.orthogonalComplementEquiv {B : FiniteBilinearModule} (f : Isometry A B)
@@ -844,7 +817,7 @@ variable {A} in
 @[simp]
 theorem Isometry.coe_orthogonalComplementEquiv_apply {B : FiniteBilinearModule}
     (f : Isometry A B) (H : AddSubgroup A) (x : A.orthogonalComplement H) :
-    (Isometry.orthogonalComplementEquiv A f H x : B) = f (x : A) := (rfl)
+    (f.orthogonalComplementEquiv H x : B) = f (x : A) := (rfl)
 
 variable {A} in
 /-- The inverse restricted equivalence of orthogonal complements acts by the inverse isometry. -/
@@ -852,7 +825,7 @@ variable {A} in
 theorem Isometry.coe_orthogonalComplementEquiv_symm_apply {B : FiniteBilinearModule}
     (f : Isometry A B) (H : AddSubgroup A)
     (y : B.orthogonalComplement (H.map f.toAddEquiv)) :
-    ((Isometry.orthogonalComplementEquiv A f H).symm y : A) = f.symm (y : B) := (rfl)
+    ((f.orthogonalComplementEquiv H).symm y : A) = f.symm (y : B) := (rfl)
 
 variable {A} in
 /-- An isometry carries an element of the orthogonal complement of `H` into the orthogonal
