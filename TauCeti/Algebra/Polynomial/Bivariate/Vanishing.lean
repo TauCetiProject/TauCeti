@@ -33,11 +33,11 @@ Note that this reverses the `R[X][Y]` variable naming convention used in
 `TauCeti.Algebra.Polynomial.Bivariate.Specialization`.
 
 Whenever the fixed-degree resultant `F.resultant F.derivative F.natDegree (F.natDegree - 1)` is
-nonzero over an integral domain `K` (in particular, when `F` is irreducible over a GCD domain of
+nonzero over an integral domain `K` (in particular, when `F` is squarefree over a GCD domain of
 characteristic zero), summing `(F.map (evalRingHom p.2)).rootMultiplicity p.1` over a finite set
 `Ω` with distinct second coordinates is bounded by the zero count of `F` in `Ω` plus
 `(2 * F.natDegree - 1) * dY` (`Polynomial.sum_rootMultiplicity_le_of_resultant_deriv_ne_zero` and
-`Polynomial.sum_rootMultiplicity_le_of_irreducible`). By Mathlib's convention
+`Polynomial.sum_rootMultiplicity_le_of_squarefree`). By Mathlib's convention
 `(0 : K[X]).rootMultiplicity a = 0`, an identically zero fiber `F.map (evalRingHom p.2) = 0`
 contributes `0` to the sum, not an unbounded vanishing order (in contrast to divisibility by every
 power `(X - C p.1) ^ k`).
@@ -45,10 +45,10 @@ power `(X - C p.1) ^ k`).
 Factoring an arbitrary nonzero polynomial `P : K[X][X]` over a characteristic-zero GCD domain into
 a coefficient-ring factor in `K[X]` and a multiset of irreducible factors of positive outer natural
 degree (`Polynomial.exists_eq_C_mul_prod_irreducible`), and applying
-`Polynomial.sum_rootMultiplicity_le_of_irreducible` to each irreducible factor, yields a general
-bivariate vanishing estimate on any finite point set having both distinct second coordinates and
-the Schwartz–Zippel zero bound `M * (F.natDegree + (Bivariate.swap F).natDegree)` for every
-irreducible `F : K[X][X]` of positive outer natural degree
+`Polynomial.sum_rootMultiplicity_le_of_squarefree` to each irreducible (hence squarefree) factor,
+yields a general bivariate vanishing estimate on any finite point set having both distinct second
+coordinates and the Schwartz–Zippel zero bound `M * (F.natDegree + (Bivariate.swap F).natDegree)`
+for every irreducible `F : K[X][X]` of positive outer natural degree
 (`Polynomial.mul_card_le_of_forall_X_sub_C_pow_dvd`).
 
 Specializing to the image of a Cartesian grid `S × S` under `Matrix.linearGridMap M` for a
@@ -65,8 +65,8 @@ derivatives
 * `Polynomial.sum_rootMultiplicity_le_of_resultant_deriv_ne_zero`: sum of fiberwise root
   multiplicities over a set with distinct second coordinates whenever the fixed-degree resultant
   with the derivative is nonzero.
-* `Polynomial.sum_rootMultiplicity_le_of_irreducible`: sum of fiberwise root multiplicities of an
-  irreducible bivariate polynomial over a set with distinct second coordinates in characteristic
+* `Polynomial.sum_rootMultiplicity_le_of_squarefree`: sum of fiberwise root multiplicities of a
+  squarefree bivariate polynomial over a set with distinct second coordinates in characteristic
   zero.
 * `Polynomial.mul_card_le_of_forall_X_sub_C_pow_dvd`: abstract bivariate multiplicity bound
   requiring distinct second coordinates and the Schwartz–Zippel zero bound
@@ -91,7 +91,7 @@ open Finset
 
 namespace Polynomial
 
-section IrreducibleBound
+section SquarefreeBound
 
 /-- **Sum of fiberwise root multiplicities when the fixed-degree resultant is nonzero.**
 Over an integral domain `K`, if `F : K[X][X]` has nonzero fixed-degree resultant
@@ -147,33 +147,30 @@ theorem sum_rootMultiplicity_le_of_resultant_deriv_ne_zero {K : Type*} [CommRing
     exact sum_rootMultiplicity_le_natDegree res (Z.image Prod.snd)
   exact hsum_eq.le.trans (hsum_Z.trans (Nat.add_le_add_left (hsum_res.trans hres_deg) Z.card))
 
-/-- **Sum of fiberwise root multiplicities of an irreducible bivariate polynomial.**
-Over a GCD domain of characteristic zero, if `F : K[X][X]` is irreducible and every coefficient
+/-- **Sum of fiberwise root multiplicities of a squarefree bivariate polynomial.**
+Over a GCD domain of characteristic zero, if `F : K[X][X]` is squarefree and every coefficient
 `F.coeff i` has natural degree at most `dY`, then the sum of
 `(F.map (evalRingHom p.2)).rootMultiplicity p.1` over a finite set `Ω` of points with distinct
 second coordinates is bounded by the number of zeros of `F` in `Ω` (`F.evalEval p.2 p.1 = 0`) plus
-`(2 * F.natDegree - 1) * dY`.
-
-When `0 < F.natDegree`, every inner-variable specialization `F.map (evalRingHom p.2)` is nonzero by
-`Polynomial.IsPrimitive.map_evalRingHom_ne_zero`. -/
-theorem sum_rootMultiplicity_le_of_irreducible {K : Type*} [CommRing K] [IsDomain K]
+`(2 * F.natDegree - 1) * dY`. -/
+theorem sum_rootMultiplicity_le_of_squarefree {K : Type*} [CommRing K] [IsDomain K]
     [IsGCDMonoid K] [CharZero K] [DecidableEq K]
-    {F : K[X][X]} (hF : Irreducible F)
+    {F : K[X][X]} (hF : Squarefree F)
     {dY : ℕ} (hdY : ∀ i, (F.coeff i).natDegree ≤ dY)
     {Ω : Finset (K × K)} (hinj : Set.InjOn Prod.snd (Ω : Set (K × K))) :
     ∑ p ∈ Ω, (F.map (evalRingHom p.2)).rootMultiplicity p.1 ≤
       (Ω.filter fun p : K × K ↦ F.evalEval p.2 p.1 = 0).card +
         (2 * F.natDegree - 1) * dY :=
   sum_rootMultiplicity_le_of_resultant_deriv_ne_zero
-    (resultant_deriv_ne_zero_of_squarefree hF.squarefree) hdY hinj
+    (resultant_deriv_ne_zero_of_squarefree hF) hdY hinj
 
-end IrreducibleBound
+end SquarefreeBound
 
 section VanishingHelpers
 
-private theorem sum_rootMultiplicity_le_of_irreducible_of_zero_bound {K : Type*} [CommRing K]
+private theorem sum_rootMultiplicity_le_of_squarefree_of_zero_bound {K : Type*} [CommRing K]
     [IsDomain K] [IsGCDMonoid K] [CharZero K] [DecidableEq K]
-    {F : K[X][X]} (hF : Irreducible F) {Ω : Finset (K × K)}
+    {F : K[X][X]} (hF : Squarefree F) {Ω : Finset (K × K)}
     (hinj : Set.InjOn Prod.snd (Ω : Set (K × K))) {M : ℕ}
     (hzero : (Ω.filter fun p : K × K ↦ F.evalEval p.2 p.1 = 0).card ≤
       M * (F.natDegree + (Bivariate.swap F).natDegree)) :
@@ -185,7 +182,7 @@ private theorem sum_rootMultiplicity_le_of_irreducible_of_zero_bound {K : Type*}
   calc ∑ p ∈ Ω, (F.map (evalRingHom p.2)).rootMultiplicity p.1
       ≤ (Ω.filter fun p : K × K ↦ F.evalEval p.2 p.1 = 0).card +
           (2 * F.natDegree - 1) * (Bivariate.swap F).natDegree :=
-        sum_rootMultiplicity_le_of_irreducible hF hcoeffF hinj
+        sum_rootMultiplicity_le_of_squarefree hF hcoeffF hinj
     _ ≤ M * (F.natDegree + (Bivariate.swap F).natDegree) +
           2 * F.natDegree * (Bivariate.swap F).natDegree := by
         have h2 : (2 * F.natDegree - 1) * (Bivariate.swap F).natDegree ≤
@@ -305,7 +302,7 @@ theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [CommRing K] [IsDomain
         M * (F.natDegree + (Bivariate.swap F).natDegree) +
           2 * F.natDegree * (Bivariate.swap F).natDegree := fun F hF ↦
     (Finset.sum_le_sum_of_subset (Finset.filter_subset _ Ω)).trans
-      (sum_rootMultiplicity_le_of_irreducible_of_zero_bound (hs F hF).1 hinj
+      (sum_rootMultiplicity_le_of_squarefree_of_zero_bound (hs F hF).1.squarefree hinj
         (hsz F (hs F hF).1 (hs F hF).2))
   -- Aggregate over `F ∈ s` and combine the `Ω₀` and `Ω₁` bounds.
   set sX := (s.map natDegree).sum

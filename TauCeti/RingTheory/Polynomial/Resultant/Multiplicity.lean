@@ -93,16 +93,14 @@ theorem X_sub_C_pow_dvd_resultant_deriv (f : R[X][X]) {a b : R} {k : ℕ}
     (hk : k - 1 ≤ f.natDegree + (f.natDegree - 1))
     (hdvd : (X - C a) ^ k ∣ f.map (evalRingHom b)) :
     (X - C b) ^ (k - 1) ∣ f.resultant f.derivative f.natDegree (f.natDegree - 1) := by
-  let e : R[X] ≃ₐ[R] R[X] := taylorEquiv b
-  let φ : R[X] →+* R[X] := e.toRingHom
-  have he_apply (p : R[X]) : e p = taylor b p := rfl
-  have hφ_apply (p : R[X]) : φ p = taylor b p := rfl
+  let φ : R[X] →+* R[X] := (taylorAlgHom b).toRingHom
+  have hφ_inj : Function.Injective φ := fun _ _ h ↦ taylor_injective b (by simpa [φ] using h)
   let f₁ : R[X][X] := f.map φ
-  have hf₁_deg : f₁.natDegree = f.natDegree := natDegree_map_eq_of_injective e.injective f
+  have hf₁_deg : f₁.natDegree = f.natDegree := natDegree_map_eq_of_injective hφ_inj f
   let f₂ : R[X][X] := taylor (C a) f₁
   have hf₂_deg : f₂.natDegree = f.natDegree := by rw [natDegree_taylor, hf₁_deg]
   have heval0 : (evalRingHom (0 : R)).comp φ = evalRingHom b :=
-    RingHom.ext fun p ↦ by simp [hφ_apply, taylor_eval]
+    RingHom.ext fun p ↦ by simp [φ, taylor_eval]
   have hf₂_eval0 : f₂.map (evalRingHom 0) = taylor a (f.map (evalRingHom b)) := by
     rw [map_taylor, Polynomial.map_map, heval0]
     simp
@@ -119,17 +117,16 @@ theorem X_sub_C_pow_dvd_resultant_deriv (f : R[X][X]) {a b : R} {k : ℕ}
   have hder₁ : (taylor (C a) f₁).derivative = taylor (C a) f₁.derivative :=
     (taylor_derivative (C a) f₁).symm
   have hres_eq : f₂.resultant f₂.derivative f₂.natDegree (f₂.natDegree - 1) =
-      e (f.resultant f.derivative f.natDegree (f.natDegree - 1)) := by
+      taylor b (f.resultant f.derivative f.natDegree (f.natDegree - 1)) := by
     dsimp only [f₂]
     rw [hf₂_deg, ← hf₁_deg, hder₁,
       resultant_taylor_of_natDegree_le f₁ f₁.derivative (C a) le_rfl (natDegree_derivative_le f₁),
       hf₁_deg]
     dsimp only [f₁]
-    rw [derivative_map, resultant_map_map, hφ_apply, he_apply]
+    rw [derivative_map, resultant_map_map]
+    simp [φ]
   rw [hres_eq] at hdvd_res₂
-  have hX : e (X - C b) = X := by rw [he_apply, taylor_X_sub_C]
-  rw [← hX, ← map_pow, map_dvd_iff] at hdvd_res₂
-  exact hdvd_res₂
+  simpa [taylor_taylor, sub_eq_add_neg] using (taylorAlgHom (-b)).map_dvd hdvd_res₂
 
 /-- If the fixed-degree resultant `Res_{n, n - 1}(f, f.derivative) := f.resultant f.derivative
 f.natDegree (f.natDegree - 1)` is nonzero, then the root multiplicity of `f.map (evalRingHom b)`
