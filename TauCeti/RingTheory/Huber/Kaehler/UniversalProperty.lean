@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Derivation.Topology
 public import TauCeti.RingTheory.Huber.Kaehler.FiniteTarget
 public import TauCeti.RingTheory.Huber.Kaehler.FiniteType
 
@@ -15,7 +16,8 @@ When `B ⊗̂_A B` is of noetherian type, combining `ContinuousKaehlerDifferenti
 `liftOfFinite` with `hom_ext` and `linearMap_ext` yields uniqueness (`existsUnique_lift`,
 `lift_compDer_D`, `liftOfFinite_compDer_D`). When `A → B` is topologically of finite type into
 complete Hausdorff Huber `B` of noetherian type, `continuous_D` gives the `B`-linear equivalence
-`continuousLinearMapEquivDerivation : (Ωᶜ[B⁄A] →L[B] M) ≃ₗ[B] continuousDerivations A B M`.
+`continuousLinearMapEquivDerivation : (Ωᶜ[B⁄A] →L[B] M) ≃ₗ[B]`
+`Derivation.continuousDerivations A B M`.
 
 ## References
 
@@ -28,23 +30,6 @@ public section
 namespace TauCeti.Huber.ContinuousKaehlerDifferential
 
 open CompletedTensor
-
-/-- The `B`-submodule of continuous `A`-derivations `B → M`. -/
-def continuousDerivations (A B M : Type*) [CommRing A] [CommRing B] [Algebra A B]
-    [TopologicalSpace B] [AddCommGroup M] [TopologicalSpace M] [ContinuousAdd M]
-    [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousConstSMul B M] :
-    Submodule B (Derivation A B M) where
-  carrier := {δ | Continuous δ}
-  add_mem' h₁ h₂ := h₁.add h₂
-  zero_mem' := continuous_zero
-  smul_mem' _ _ h := h.const_smul _
-
-/-- An `A`-derivation belongs to `continuousDerivations A B M` iff it is continuous. -/
-@[simp] theorem mem_continuousDerivations {A B M : Type*} [CommRing A] [CommRing B] [Algebra A B]
-    [TopologicalSpace B] [AddCommGroup M] [TopologicalSpace M] [ContinuousAdd M]
-    [Module A M] [Module B M] [IsScalarTower A B M] [ContinuousConstSMul B M]
-    {δ : Derivation A B M} : δ ∈ continuousDerivations A B M ↔ Continuous δ :=
-  Iff.rfl
 
 section NoetherianDiagonal
 
@@ -100,36 +85,38 @@ variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
 continuous `A`-derivations `B → M`** (Huber 1996, §1.6, Definition 1.6.1 and (1.6.2)(ii)). -/
 noncomputable def continuousLinearMapEquivDerivation
     (h : IsTopologicallyFiniteType (algebraMap A B)) :
-    (ContinuousKaehlerDifferential A B →L[B] M) ≃ₗ[B] continuousDerivations A B M where
+    (ContinuousKaehlerDifferential A B →L[B] M) ≃ₗ[B]
+      Derivation.continuousDerivations A B M where
   toFun f := ⟨f.toLinearMap.compDer (D A B),
-    mem_continuousDerivations.mpr (f.continuous.comp (continuous_D h))⟩
+    Derivation.mem_continuousDerivations.mpr (f.continuous.comp (continuous_D h))⟩
   map_add' _ _ := Subtype.ext <| by ext b; simp
   map_smul' _ _ := Subtype.ext <| by ext b; simp
-  invFun δ := lift δ.val (mem_continuousDerivations.mp δ.property)
+  invFun δ := lift δ.val (Derivation.mem_continuousDerivations.mp δ.property)
   left_inv _ :=
     have := isNoetherianType_of_isTopologicallyFiniteType (B := B) h
     hom_ext fun b ↦ lift_D _ _ b
-  right_inv δ := Subtype.ext (compDer_lift_D δ.val (mem_continuousDerivations.mp δ.property))
+  right_inv δ :=
+    Subtype.ext (compDer_lift_D δ.val (Derivation.mem_continuousDerivations.mp δ.property))
 
 /-- The underlying derivation of `continuousLinearMapEquivDerivation h f` is `f ∘ d`. -/
 @[simp] theorem continuousLinearMapEquivDerivation_apply_coe
     (h : IsTopologicallyFiniteType (algebraMap A B))
     (f : ContinuousKaehlerDifferential A B →L[B] M) :
-    ((continuousLinearMapEquivDerivation h f : continuousDerivations A B M) :
+    ((continuousLinearMapEquivDerivation h f : Derivation.continuousDerivations A B M) :
       Derivation A B M) = f.toLinearMap.compDer (D A B) := (rfl)
 
 /-- The inverse of `continuousLinearMapEquivDerivation` is `lift`. -/
 @[simp] theorem continuousLinearMapEquivDerivation_symm_apply
     (h : IsTopologicallyFiniteType (algebraMap A B))
-    (δ : continuousDerivations A B M) :
+    (δ : Derivation.continuousDerivations A B M) :
     (continuousLinearMapEquivDerivation h).symm δ =
-      lift δ.val (mem_continuousDerivations.mp δ.property) := (rfl)
+      lift δ.val (Derivation.mem_continuousDerivations.mp δ.property) := (rfl)
 
 /-- `continuousLinearMapEquivDerivation` sends `lift δ hδ` back to `⟨δ, hδ⟩`. -/
 @[simp] theorem continuousLinearMapEquivDerivation_lift
     (h : IsTopologicallyFiniteType (algebraMap A B)) (δ : Derivation A B M) (hδ : Continuous δ) :
     continuousLinearMapEquivDerivation h (lift δ hδ) =
-      ⟨δ, mem_continuousDerivations.mpr hδ⟩ :=
+      ⟨δ, Derivation.mem_continuousDerivations.mpr hδ⟩ :=
   Subtype.ext (compDer_lift_D δ hδ)
 
 end UniversalEquiv
