@@ -53,9 +53,8 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
   `M *ᵥ x`.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
 * `MvPolynomial.linearSubst_injective_of_det_mem_nonZeroDivisors`,
-  `MvPolynomial.linearSubst_injective_of_isUnit`, `MvPolynomial.linearSubst_injective`:
-  linear substitutions with regular determinant (or unit determinant, or nonzero determinant
-  over a domain) are injective.
+  `MvPolynomial.linearSubst_injective`: linear substitutions with regular determinant (or
+  nonzero determinant over a domain) are injective.
 * `MvPolynomial.pderiv_linearSubst`: the chain rule
   `∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`.
 * `MvPolynomial.exists_aeval_pderiv_linearSubst_ne_zero`: a substitution with nonzero
@@ -291,11 +290,6 @@ theorem linearSubst_injective_of_det_mem_nonZeroDivisors [DecidableEq σ] {R : T
     prod_mem fun _ _ ↦ pow_mem hM _
   rw [← sub_eq_zero]
   exact (mem_nonZeroDivisors_iff_left.mp hprod) _ (by rw [mul_sub, sub_eq_zero, hcoeff])
-
-/-- A linear change of variables with unit determinant is injective over any commutative ring. -/
-theorem linearSubst_injective_of_isUnit [DecidableEq σ] {R : Type*} [CommRing R]
-    {M : Matrix σ σ R} (hM : IsUnit M.det) : Function.Injective (linearSubst M) :=
-  linearSubst_injective_of_det_mem_nonZeroDivisors hM.mem_nonZeroDivisors
 
 /-- A linear change of variables with nonzero determinant is injective over any integral domain. -/
 theorem linearSubst_injective [DecidableEq σ] {R : Type*} [CommRing R] [IsDomain R]

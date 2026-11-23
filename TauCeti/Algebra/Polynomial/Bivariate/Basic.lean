@@ -30,6 +30,8 @@ This file also provides coefficient and natural-degree formulas for `Bivariate.s
 * `Polynomial.coeff_coeff_swap`: coefficients of `Bivariate.swap P` swap indices.
 * `Polynomial.natDegree_swap_le_iff`: natural degree of `Bivariate.swap P` bounds the coefficient
   natural degrees.
+* `Polynomial.natDegree_swap_eq_of_eq_C_mul_multiset_prod`: swapped (inner-variable) natural
+  degree of a bivariate product `C c * s.prod`.
 -/
 
 public section
@@ -148,5 +150,29 @@ theorem natDegree_swap_le_iff {R : Type*} [CommSemiring R] (P : R[X][Y]) (d : �
     ext r
     rw [coeff_coeff_swap, coeff_zero]
     exact coeff_eq_zero_of_natDegree_lt (lt_of_le_of_lt (h r) hs)
+
+/-- Over a commutative semiring without zero divisors, if a bivariate polynomial factors as
+`P = C c * s.prod` with `c ≠ 0` and all factors in `s` nonzero, then `(Bivariate.swap P).natDegree`
+is `c.natDegree` plus the sum of `(Bivariate.swap F).natDegree` over `F ∈ s`. -/
+theorem natDegree_swap_eq_of_eq_C_mul_multiset_prod {R : Type*} [CommSemiring R] [NoZeroDivisors R]
+    {P : R[X][Y]} {c : R[X]} {s : Multiset R[X][Y]} (hPeq : P = C c * s.prod) (hc0 : c ≠ 0)
+    (hs0 : ∀ F ∈ s, F ≠ 0) :
+    (Bivariate.swap P).natDegree =
+      c.natDegree + (s.map fun F ↦ (Bivariate.swap F).natDegree).sum := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact absurd (Subsingleton.elim c 0) hc0
+  have hswap_ne : ∀ q ∈ s.map (Bivariate.swap (R := R)), q ≠ 0 := by
+    intro q hq
+    obtain ⟨F, hF, rfl⟩ := Multiset.mem_map.mp hq
+    simpa using hs0 F hF
+  have hmap_c : c.map (C : R →+* R[X]) ≠ 0 := by
+    simpa using (Polynomial.map_injective (C : R →+* R[X]) C_injective).ne hc0
+  have hswap_prod : (s.map (Bivariate.swap (R := R))).prod ≠ 0 :=
+    Multiset.prod_ne_zero fun h0 ↦ hswap_ne 0 h0 rfl
+  rw [hPeq, map_mul, Bivariate.swap_C, map_multiset_prod,
+    natDegree_mul hmap_c hswap_prod,
+    natDegree_map_eq_of_injective C_injective,
+    natDegree_multiset_prod _ fun h0 ↦ hswap_ne 0 h0 rfl,
+    Multiset.map_map, Function.comp_def]
 
 end Polynomial

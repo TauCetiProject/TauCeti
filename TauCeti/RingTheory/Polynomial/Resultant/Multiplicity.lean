@@ -95,15 +95,14 @@ theorem X_sub_C_pow_dvd_resultant_deriv (f : R[X][X]) {a b : R} {k : ℕ}
     (X - C b) ^ (k - 1) ∣ f.resultant f.derivative f.natDegree (f.natDegree - 1) := by
   let e : R[X] ≃ₐ[R] R[X] := taylorEquiv b
   let φ : R[X] →+* R[X] := e.toRingHom
+  have he_apply (p : R[X]) : e p = taylor b p := rfl
+  have hφ_apply (p : R[X]) : φ p = taylor b p := rfl
   let f₁ : R[X][X] := f.map φ
   have hf₁_deg : f₁.natDegree = f.natDegree := natDegree_map_eq_of_injective e.injective f
   let f₂ : R[X][X] := taylor (C a) f₁
   have hf₂_deg : f₂.natDegree = f.natDegree := by rw [natDegree_taylor, hf₁_deg]
   have heval0 : (evalRingHom (0 : R)).comp φ = evalRingHom b :=
-    RingHom.ext fun p ↦ by
-      simp only [RingHom.comp_apply, coe_evalRingHom, φ, RingEquiv.toRingHom_eq_coe,
-        AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe, e, ← AlgEquiv.coe_toAlgHom,
-        toAlgHom_taylorEquiv, taylorAlgHom_apply, taylor_eval, zero_add]
+    RingHom.ext fun p ↦ by simp [hφ_apply, taylor_eval]
   have hf₂_eval0 : f₂.map (evalRingHom 0) = taylor a (f.map (evalRingHom b)) := by
     rw [map_taylor, Polynomial.map_map, heval0]
     simp
@@ -126,12 +125,9 @@ theorem X_sub_C_pow_dvd_resultant_deriv (f : R[X][X]) {a b : R} {k : ℕ}
       resultant_taylor_of_natDegree_le f₁ f₁.derivative (C a) le_rfl (natDegree_derivative_le f₁),
       hf₁_deg]
     dsimp only [f₁]
-    rw [derivative_map, resultant_map_map]
-    simp only [φ, RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe]
+    rw [derivative_map, resultant_map_map, hφ_apply, he_apply]
   rw [hres_eq] at hdvd_res₂
-  have hX : e (X - C b) = X := by
-    simp only [e, ← AlgEquiv.coe_toAlgHom, toAlgHom_taylorEquiv, taylorAlgHom_apply,
-      taylor_X_sub_C]
+  have hX : e (X - C b) = X := by rw [he_apply, taylor_X_sub_C]
   rw [← hX, ← map_pow, map_dvd_iff] at hdvd_res₂
   exact hdvd_res₂
 

@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basic
-public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.LinearAlgebra.Pi
 import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
@@ -46,8 +46,8 @@ permutation to vectors invariant under the row map.
 A right null vector whose last coordinate is a unit lets the submatrix omitting the last column
 reproduce every product `A *ᵥ x`.
 
-A `2 × 2` matrix acts on pairs `K × K` by `Matrix.linearGridMap` via `finTwoArrowEquiv K`,
-and is injective whenever its determinant is nonzero over a ring without zero divisors.
+A `2 × 2` matrix acts linearly on pairs `K × K` by `Matrix.linearGridMap` via
+`LinearEquiv.finTwoArrow`.
 
 ## Main definitions
 
@@ -75,9 +75,8 @@ and is injective whenever its determinant is nonzero over a ring without zero di
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
 * `Matrix.map_intCast_mulVec` and `Matrix.map_intCast_vecMul`: casting integer entries commutes
   with matrix-vector and vector-matrix multiplication.
-* `Matrix.linearGridMap_finTwoArrowEquiv`, `Matrix.finTwoArrowEquiv_symm_linearGridMap`,
-  `Matrix.linearGridMap_apply`, `Matrix.linearGridMap_injective`: transport with
-  `finTwoArrowEquiv`, entrywise formula, and injectivity for nonzero determinant.
+* `Matrix.linearGridMap_finTwoArrowEquiv`: transport of `Matrix.linearGridMap` along
+  `finTwoArrowEquiv`.
 -/
 
 public section
@@ -238,38 +237,18 @@ end Ring
 
 section LinearGridMap
 
-/-- The linear action of a `2 × 2` matrix `M` on `K × K`, defined via `finTwoArrowEquiv K`. -/
-def linearGridMap {K : Type*} [NonUnitalNonAssocSemiring K] (M : Matrix (Fin 2) (Fin 2) K) :
-    K × K → K × K :=
-  finTwoArrowEquiv K ∘ M.mulVec ∘ (finTwoArrowEquiv K).symm
+/-- The linear action of a `2 × 2` matrix `M` on `K × K`, defined by conjugating
+`Matrix.toLin' M` along `LinearEquiv.finTwoArrow`. -/
+def linearGridMap {K : Type*} [CommSemiring K] (M : Matrix (Fin 2) (Fin 2) K) :
+    K × K →ₗ[K] K × K :=
+  (LinearEquiv.finTwoArrow K K).conj (Matrix.toLin' M)
 
 /-- Applying `linearGridMap M` commutes with `finTwoArrowEquiv K` and `M.mulVec`. -/
-theorem linearGridMap_finTwoArrowEquiv {K : Type*} [NonUnitalNonAssocSemiring K]
+theorem linearGridMap_finTwoArrowEquiv {K : Type*} [CommSemiring K]
     (M : Matrix (Fin 2) (Fin 2) K) (v : Fin 2 → K) :
     linearGridMap M (finTwoArrowEquiv K v) = finTwoArrowEquiv K (M *ᵥ v) := by
-  simp only [linearGridMap, Function.comp_apply, Equiv.symm_apply_apply]
-
-/-- Pulling `linearGridMap M q` back along `(finTwoArrowEquiv K).symm` gives
-`M *ᵥ (finTwoArrowEquiv K).symm q`. -/
-@[simp]
-theorem finTwoArrowEquiv_symm_linearGridMap {K : Type*} [NonUnitalNonAssocSemiring K]
-    (M : Matrix (Fin 2) (Fin 2) K) (q : K × K) :
-    (finTwoArrowEquiv K).symm (linearGridMap M q) = M *ᵥ (finTwoArrowEquiv K).symm q := by
-  simp only [linearGridMap, Function.comp_apply, Equiv.symm_apply_apply]
-
-/-- Coordinate formula for `linearGridMap M q` on `K × K`. -/
-theorem linearGridMap_apply {K : Type*} [NonUnitalNonAssocSemiring K]
-    (M : Matrix (Fin 2) (Fin 2) K) (q : K × K) :
-    linearGridMap M q = (M 0 0 * q.1 + M 0 1 * q.2, M 1 0 * q.1 + M 1 1 * q.2) := by
-  simp [linearGridMap, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-
-/-- Over a commutative ring without zero divisors, `linearGridMap M` is injective whenever
-`M.det ≠ 0`. -/
-theorem linearGridMap_injective {K : Type*} [CommRing K] [NoZeroDivisors K]
-    {M : Matrix (Fin 2) (Fin 2) K} (hdet : M.det ≠ 0) :
-    Function.Injective (linearGridMap M) :=
-  (finTwoArrowEquiv K).injective.comp
-    ((mulVec_injective_of_det_ne_zero hdet).comp (finTwoArrowEquiv K).symm.injective)
+  have hv : ![v 0, v 1] = v := by ext i; fin_cases i <;> rfl
+  simp [linearGridMap, LinearEquiv.conj_apply_apply, hv]
 
 end LinearGridMap
 

@@ -8,12 +8,10 @@ module
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-public import Mathlib.RingTheory.UniqueFactorizationDomain.Basic
 public import TauCeti.LinearAlgebra.Matrix.MulVec
-import Mathlib.RingTheory.UniqueFactorizationDomain.GCDMonoid
 import TauCeti.Algebra.Polynomial.Bivariate.Basic
-import TauCeti.Algebra.Polynomial.Bivariate.Factorization
 import TauCeti.Algebra.Polynomial.Bivariate.SchwartzZippel
+import TauCeti.Algebra.Polynomial.Bivariate.Specialization
 import TauCeti.Algebra.Polynomial.HasseDeriv
 import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.Algebra.Polynomial.Taylor
@@ -30,8 +28,9 @@ via `P.evalEval y x = (P.map (evalRingHom y)).eval x`. Accordingly, the first co
 the outer polynomial variable (bounded by `P.natDegree`, denoted `dX` below) and the second
 coordinate `y` enters the inner coefficient polynomials (bounded by
 `∀ i, (P.coeff i).natDegree ≤ dY`).
-Note that this reverses the `R[X][Y]` variable naming convention used for algebraic factorization in
-`TauCeti.Algebra.Polynomial.Bivariate.Factorization`.
+Note that this reverses the `R[X][Y]` variable naming convention used in
+`TauCeti.Algebra.Polynomial.Bivariate.Basic` and
+`TauCeti.Algebra.Polynomial.Bivariate.Specialization`.
 
 Whenever the fixed-degree resultant `F.resultant F.derivative F.natDegree (F.natDegree - 1)` is
 nonzero over an integral domain `K` (in particular, when `F` is irreducible over a GCD domain of
@@ -43,12 +42,13 @@ characteristic zero), summing `(F.map (evalRingHom p.2)).rootMultiplicity p.1` o
 contributes `0` to the sum, not an unbounded vanishing order (in contrast to divisibility by every
 power `(X - C p.1) ^ k`).
 
-Factoring an arbitrary nonzero polynomial `P : K[X][X]` over a characteristic-zero unique
-factorization domain into a coefficient-ring factor in `K[X]` and a multiset of irreducible factors
-of positive outer natural degree (`Polynomial.exists_eq_C_mul_prod_irreducible`), and
-applying `Polynomial.sum_rootMultiplicity_le_of_irreducible` to each irreducible factor, yields a
-general bivariate vanishing estimate on any finite point set having both distinct second
-coordinates and a Schwartz–Zippel zero bound on irreducible positive-degree factors
+Factoring an arbitrary nonzero polynomial `P : K[X][X]` over a characteristic-zero GCD domain into
+a coefficient-ring factor in `K[X]` and a multiset of irreducible factors of positive outer natural
+degree (`Polynomial.exists_eq_C_mul_prod_irreducible`), and applying
+`Polynomial.sum_rootMultiplicity_le_of_irreducible` to each irreducible factor, yields a general
+bivariate vanishing estimate on any finite point set having both distinct second coordinates and
+the Schwartz–Zippel zero bound `M * (F.natDegree + (Bivariate.swap F).natDegree)` for every
+irreducible `F : K[X][X]` of positive outer natural degree
 (`Polynomial.mul_card_le_of_forall_X_sub_C_pow_dvd`).
 
 Specializing to the image of a Cartesian grid `S × S` under `Matrix.linearGridMap M` for a
@@ -69,7 +69,9 @@ derivatives
   irreducible bivariate polynomial over a set with distinct second coordinates in characteristic
   zero.
 * `Polynomial.mul_card_le_of_forall_X_sub_C_pow_dvd`: abstract bivariate multiplicity bound
-  requiring distinct second coordinates and a Schwartz–Zippel zero bound on irreducible factors.
+  requiring distinct second coordinates and the Schwartz–Zippel zero bound
+  `M * (F.natDegree + (Bivariate.swap F).natDegree)` for every irreducible `F : K[X][X]` of
+  positive outer natural degree.
 * `Polynomial.X_sub_C_pow_dvd_map_evalRingHom_iff_forall_evalEval_iterate_derivative_eq_zero`:
   characterization of fiberwise divisibility `(X - C x) ^ k ∣ P.map (evalRingHom y)` in
   characteristic zero via vanishing of the first `k` outer iterated derivatives at `(x, y)`.
@@ -224,20 +226,43 @@ private theorem mul_card_le_of_sum_rootMultiplicity_le {K : Type*} [CommRing K]
           Multiset.sum_map_mul_right
     _ = M * (sX + sY) + 2 * sX * sY := by ring
 
+private theorem mul_card_add_le_of_split {card₀ card₁ degC sX sY dX dY M k : ℕ}
+    (hΩ₀ : card₀ ≤ degC) (hΩ₁ : k * card₁ ≤ M * (sX + sY) + 2 * sX * sY)
+    (hsX : sX ≤ dX) (hY : degC + sY ≤ dY) :
+    k * (card₀ + card₁) ≤ M * dX + max k M * dY + 2 * dX * dY := by
+  have hsY : sY ≤ dY := le_trans (Nat.le_add_left _ _) hY
+  calc k * (card₀ + card₁) = k * card₀ + k * card₁ := by rw [mul_add]
+    _ ≤ k * degC + (M * (sX + sY) + 2 * sX * sY) :=
+        add_le_add (Nat.mul_le_mul_left k hΩ₀) hΩ₁
+    _ ≤ max k M * degC + (M * sX + max k M * sY + 2 * sX * sY) := by
+        have h1 : k * degC ≤ max k M * degC := Nat.mul_le_mul_right _ (le_max_left k M)
+        have h2 : M * sY ≤ max k M * sY := Nat.mul_le_mul_right _ (le_max_right k M)
+        rw [mul_add]
+        omega
+    _ = M * sX + max k M * (degC + sY) + 2 * sX * sY := by ring
+    _ ≤ M * dX + max k M * dY + 2 * dX * dY := by
+        have h1 : M * sX ≤ M * dX := Nat.mul_le_mul_left M hsX
+        have h2 : max k M * (degC + sY) ≤ max k M * dY := Nat.mul_le_mul_left _ hY
+        have h3 : 2 * sX * sY ≤ 2 * dX * dY :=
+          Nat.mul_le_mul (Nat.mul_le_mul_left 2 hsX) hsY
+        omega
+
 end VanishingHelpers
 
 section VanishingEstimates
 
-/-- **Abstract bivariate multiplicity bound.** Let `P : K[X][X]` be nonzero over a unique
-factorization domain of characteristic zero, where point evaluation at `(x, y)` is
+/-- **Abstract bivariate multiplicity bound.** Let `P : K[X][X]` be nonzero over a GCD domain of
+characteristic zero, where point evaluation at `(x, y)` is
 `P.evalEval y x = (P.map (evalRingHom y)).eval x`, `dX` bounds the first-coordinate (outer)
 natural degree `P.natDegree`, and `dY` bounds the second-coordinate (inner) coefficient natural
 degrees `(P.coeff i).natDegree`. If `Ω` is a finite set of points satisfying both distinct second
-coordinates and a Schwartz–Zippel zero bound with parameter `M` on irreducible factors of positive
-outer natural degree, and `P.map (evalRingHom p.2)` vanishes to order at least `k` at `p.1` for
-every `p ∈ Ω`, then `k * Ω.card ≤ M * dX + max k M * dY + 2 * dX * dY`. -/
+coordinates and the Schwartz–Zippel zero bound
+`(Ω.filter fun p ↦ F.evalEval p.2 p.1 = 0).card ≤ M * (F.natDegree + (Bivariate.swap F).natDegree)`
+for every irreducible `F : K[X][X]` of positive outer natural degree, and `P.map (evalRingHom p.2)`
+vanishes to order at least `k` at `p.1` for every `p ∈ Ω`, then
+`k * Ω.card ≤ M * dX + max k M * dY + 2 * dX * dY`. -/
 theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [CommRing K] [IsDomain K]
-    [UniqueFactorizationMonoid K] [CharZero K] [DecidableEq K]
+    [IsGCDMonoid K] [CharZero K] [DecidableEq K]
     {P : K[X][X]} (hP : P ≠ 0) {dX dY : ℕ}
     (hdX : P.natDegree ≤ dX) (hdY : ∀ i, (P.coeff i).natDegree ≤ dY)
     {Ω : Finset (K × K)} (hinj : Set.InjOn Prod.snd (Ω : Set (K × K)))
@@ -247,6 +272,7 @@ theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [CommRing K] [IsDomain
         M * (F.natDegree + (Bivariate.swap F).natDegree))
     (hvan : ∀ p ∈ Ω, (X - C p.1) ^ k ∣ P.map (evalRingHom p.2)) :
     k * Ω.card ≤ M * dX + max k M * dY + 2 * dX * dY := by
+  -- Factor `P = C c * s.prod` into its `Y`-content `c` and primitive irreducible factors `s`.
   obtain ⟨c, s, hs, hPeq⟩ := exists_eq_C_mul_prod_irreducible P
   have hc0 : c ≠ 0 := fun h0 ↦ hP (by rw [hPeq, h0, map_zero, zero_mul])
   have hs_ne : ∀ F ∈ s, F ≠ 0 := fun F hF ↦ (hs F hF).1.ne_zero
@@ -255,11 +281,14 @@ theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [CommRing K] [IsDomain
   have hdegY_sum : c.natDegree + (s.map fun F ↦ (Bivariate.swap F).natDegree).sum =
       (Bivariate.swap P).natDegree :=
     (natDegree_swap_eq_of_eq_C_mul_multiset_prod hPeq hc0 hs_ne).symm
+  -- Split `Ω` into `Ω₀` (where `c` vanishes, giving zero fibers) and `Ω₁` (where `c` is nonzero).
   let Ω₀ : Finset (K × K) := Ω.filter fun p ↦ c.eval p.2 = 0
   let Ω₁ : Finset (K × K) := Ω.filter fun p ↦ ¬ c.eval p.2 = 0
   have hcard_split : Ω.card = Ω₀.card + Ω₁.card :=
     (Finset.card_filter_add_card_filter_not (s := Ω) (p := fun p : K × K ↦ c.eval p.2 = 0)).symm
   have hΩ₀_le : Ω₀.card ≤ c.natDegree := card_filter_eval_comp_eq_zero_le hc0 hinj
+  -- On `Ω₁`, every specialized factor and hence `P.map (evalRingHom p.2)` is nonzero, so
+  -- fiber multiplicity at `p.1` splits as the sum over `F ∈ s`.
   have hpt : ∀ p ∈ Ω₁, k ≤ (s.map fun F ↦ (F.map (evalRingHom p.2)).rootMultiplicity p.1).sum := by
     intro p hp
     have hpΩ : p ∈ Ω := (Finset.mem_filter.mp hp).1
@@ -270,6 +299,7 @@ theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [CommRing K] [IsDomain
       (map_ne_zero_iff_of_eq_C_mul_multiset_prod hPeq).mpr ⟨hcp, hFmap_ne⟩
     rw [← rootMultiplicity_map_eq_sum hPeq hPmap_ne]
     exact (le_rootMultiplicity_iff hPmap_ne).mpr (hvan p hpΩ)
+  -- Bound each irreducible factor `F ∈ s` on `Ω₁` via the resultant multiplicity estimate.
   have hF_bound : ∀ F ∈ s,
       ∑ p ∈ Ω₁, (F.map (evalRingHom p.2)).rootMultiplicity p.1 ≤
         M * (F.natDegree + (Bivariate.swap F).natDegree) +
@@ -277,31 +307,14 @@ theorem mul_card_le_of_forall_X_sub_C_pow_dvd {K : Type*} [CommRing K] [IsDomain
     (Finset.sum_le_sum_of_subset (Finset.filter_subset _ Ω)).trans
       (sum_rootMultiplicity_le_of_irreducible_of_zero_bound (hs F hF).1 hinj
         (hsz F (hs F hF).1 (hs F hF).2))
+  -- Aggregate over `F ∈ s` and combine the `Ω₀` and `Ω₁` bounds.
   set sX := (s.map natDegree).sum
   set sY := (s.map fun F ↦ (Bivariate.swap F).natDegree).sum
   have hΩ₁_bound : k * Ω₁.card ≤ M * (sX + sY) + 2 * sX * sY :=
     mul_card_le_of_sum_rootMultiplicity_le hpt hF_bound
-  have hsX_le : sX ≤ dX := hdegX_sum.le.trans hdX
-  have hc_sY_le : c.natDegree + sY ≤ dY :=
-    hdegY_sum.le.trans ((natDegree_swap_le_iff P dY).mpr hdY)
-  have hsY_le : sY ≤ dY := le_trans (Nat.le_add_left _ _) hc_sY_le
-  calc k * Ω.card = k * Ω₀.card + k * Ω₁.card := by rw [hcard_split, mul_add]
-    _ ≤ k * c.natDegree + (M * (sX + sY) + 2 * sX * sY) :=
-        add_le_add (Nat.mul_le_mul_left k hΩ₀_le) hΩ₁_bound
-    _ ≤ max k M * c.natDegree + (M * sX + max k M * sY + 2 * sX * sY) := by
-        have h1 : k * c.natDegree ≤ max k M * c.natDegree :=
-          Nat.mul_le_mul_right _ (le_max_left k M)
-        have h2 : M * sY ≤ max k M * sY := Nat.mul_le_mul_right _ (le_max_right k M)
-        rw [mul_add]
-        omega
-    _ = M * sX + max k M * (c.natDegree + sY) + 2 * sX * sY := by ring
-    _ ≤ M * dX + max k M * dY + 2 * dX * dY := by
-        have h1 : M * sX ≤ M * dX := Nat.mul_le_mul_left M hsX_le
-        have h2 : max k M * (c.natDegree + sY) ≤ max k M * dY :=
-          Nat.mul_le_mul_left _ hc_sY_le
-        have h3 : 2 * sX * sY ≤ 2 * dX * dY :=
-          Nat.mul_le_mul (Nat.mul_le_mul_left 2 hsX_le) hsY_le
-        omega
+  rw [hcard_split]
+  exact mul_card_add_le_of_split hΩ₀_le hΩ₁_bound (hdegX_sum.le.trans hdX)
+    (hdegY_sum.le.trans ((natDegree_swap_le_iff P dY).mpr hdY))
 
 /-- Over a commutative ring of characteristic zero without zero divisors, `(X - C x) ^ k`
 divides the fiber `P.map (evalRingHom y)` if and only if the first `k` outer iterated
@@ -317,17 +330,16 @@ theorem X_sub_C_pow_dvd_map_evalRingHom_iff_forall_evalEval_iterate_derivative_e
   rw [← mul_eq_zero_iff_left hi, ← eval_iterate_derivative_eq_factorial_mul,
     iterate_derivative_map, map_evalRingHom_eval]
 
-/-- **Bivariate vanishing criterion on a sheared grid.** Let `P : K[X][X]` over a unique
-factorization domain of characteristic zero be evaluated at `(x, y)` via
-`P.evalEval y x = (P.map (evalRingHom y)).eval x`, with first-coordinate (outer) natural degree
-`P.natDegree ≤ dX` and second-coordinate (inner) coefficient natural degrees
-`(P.coeff i).natDegree ≤ dY`. Let `M` be a `2 × 2` matrix over `K` with nonzero determinant such
-that `Prod.snd ∘ Matrix.linearGridMap M` is injective on `S × S`. If
+/-- **Bivariate vanishing criterion on a sheared grid.** Let `P : K[X][X]` over a GCD domain of
+characteristic zero be evaluated at `(x, y)` via `P.evalEval y x = (P.map (evalRingHom y)).eval x`,
+with first-coordinate (outer) natural degree `P.natDegree ≤ dX` and second-coordinate (inner)
+coefficient natural degrees `(P.coeff i).natDegree ≤ dY`. Let `M` be a `2 × 2` matrix over `K` with
+nonzero determinant such that `Prod.snd ∘ Matrix.linearGridMap M` is injective on `S × S`. If
 `P.map (evalRingHom (Matrix.linearGridMap M q).2)` vanishes to order at least `k` at
 `(Matrix.linearGridMap M q).1` for all `q ∈ S ×ˢ S`, and
 `S.card * dX + max k S.card * dY + 2 * dX * dY < k * S.card ^ 2`, then `P = 0`. -/
 theorem eq_zero_of_forall_linearGrid_X_sub_C_pow_dvd {K : Type*} [CommRing K] [IsDomain K]
-    [UniqueFactorizationMonoid K] [CharZero K]
+    [IsGCDMonoid K] [CharZero K]
     {P : K[X][X]} {dX dY k : ℕ}
     (hdX : P.natDegree ≤ dX) (hdY : ∀ i, (P.coeff i).natDegree ≤ dY)
     {S : Finset K} {M : Matrix (Fin 2) (Fin 2) K} (hdet : M.det ≠ 0)
