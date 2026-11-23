@@ -202,8 +202,8 @@ theorem formSolutionOperator_formGenerator (hJ : DenseRange J)
     hB.formSolutionOperator J (hB.formGenerator J x) = -(x : H) := by
   have hx : (x : H) ∈ ((hB.formSolutionOperator J : H →ₗ[ℝ] H).toPMap ⊤).inverse.domain := by
     rw [← LinearPMap.neg_domain, ← formGenerator_def]
-    exact x.2
-  rw [LinearPMap.congr_fun (hB.formGenerator_def J) x.2 hx, LinearPMap.neg_apply, map_neg,
+    exact x.property
+  rw [LinearPMap.congr_fun (hB.formGenerator_def J) x.property hx, LinearPMap.neg_apply, map_neg,
     ContinuousLinearMap.apply_inverse_toPMap_top _ (hB.formSolutionOperator_injective hJ) ⟨x, hx⟩]
 
 /-- **The solution operator is the resolvent of the generator at `0`**: it inverts
@@ -289,7 +289,7 @@ theorem formSemigroup_generator_apply [CompleteSpace H] (hJ : DenseRange J)
     (hx : (x : H) ∈ (hB.formGenerator J).domain) :
     (hB.formSemigroup hJ).toStronglyContinuousSemigroup.generator x =
       hB.formGenerator J ⟨x, hx⟩ :=
-  LinearPMap.congr_fun (hB.formSemigroup_generator hJ) x.2 hx
+  LinearPMap.congr_fun (hB.formSemigroup_generator hJ) x.property hx
 
 /-- **The semigroup on an eigenvector.** If `B u v = κ ⟪J u, J v⟫` for every `v`, then the
 semigroup multiplies `J u` by `exp (-κ t)`. -/

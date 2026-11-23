@@ -105,17 +105,17 @@ noncomputable def edgeColoringEquivMatchings (G : Graph α β) [G.Loopless] (C :
     G.EdgeColoring C ≃
       {M : C → Set E(G) // (∀ i, G.IsMatching (M i)) ∧ ∀ e, ∃! i, e ∈ M i} where
   toFun c := ⟨c.colorClass, c.isMatching_colorClass, fun e ↦ ⟨c e, rfl, fun _ h ↦ h.symm⟩⟩
-  invFun M := EdgeColoring.ofMatchings M.1 M.2.1 M.2.2
+  invFun M := EdgeColoring.ofMatchings M.val M.property.1 M.property.2
   left_inv c := c.ofMatchings_colorClass _
   right_inv M := by
     apply Subtype.ext
     funext i
-    exact EdgeColoring.colorClass_ofMatchings M.1 M.2.1 M.2.2 i
+    exact EdgeColoring.colorClass_ofMatchings M.val M.property.1 M.property.2 i
 
 /-- The matching indexed by a colour in the forward correspondence is its colour class. -/
 @[simp]
 theorem edgeColoringEquivMatchings_apply [G.Loopless] (c : G.EdgeColoring C) (i : C) :
-    (edgeColoringEquivMatchings G C c).1 i = c.colorClass i :=
+    (edgeColoringEquivMatchings G C c).val i = c.colorClass i :=
   (rfl)
 
 /-- The inverse correspondence colours an edge by the index of its matching. -/
@@ -123,8 +123,8 @@ theorem edgeColoringEquivMatchings_apply [G.Loopless] (c : G.EdgeColoring C) (i 
 theorem edgeColoringEquivMatchings_symm_apply_eq_iff [G.Loopless]
     (M : {M : C → Set E(G) // (∀ i, G.IsMatching (M i)) ∧ ∀ e, ∃! i, e ∈ M i})
     (e : E(G)) (i : C) :
-    (edgeColoringEquivMatchings G C).symm M e = i ↔ e ∈ M.1 i :=
-  EdgeColoring.ofMatchings_apply_eq_iff M.1 M.2.1 M.2.2 e i
+    (edgeColoringEquivMatchings G C).symm M e = i ↔ e ∈ M.val i :=
+  EdgeColoring.ofMatchings_apply_eq_iff M.val M.property.1 M.property.2 e i
 
 /-- A loopless multigraph admits a proper edge-colouring by `C` exactly when its actual edges
 are the disjoint union of a `C`-indexed family of matchings. In particular, taking `C = Fin k`

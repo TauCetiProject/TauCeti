@@ -65,12 +65,12 @@ root functions, provided the content of every member of `F` has constant Lazard 
 Members of `F` may be nullified at points of `S`; no connectedness of `S` is needed. -/
 noncomputable def ofIrreducibleBasis
     (D : LazardDelineation
-      (fun b : B ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.1)) S)
+      (fun b : B ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.val)) S)
     (hB : F.IsIrreducibleBasis B)
     (hc : ∀ f ∈ F, ∀ x ∈ S, ∀ y ∈ S,
       f.content.lazardValuation x = f.content.lazardValuation y) :
     LazardDelineation
-      (fun f : F ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm f.1)) S :=
+      (fun f : F ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm f.val)) S :=
   let e := (optionEquivLeft ℝ (Fin n)).symm.trans (optionEquivRight ℝ (Fin n))
   let x₀ : S := ⟨D.nonempty.some, D.nonempty.some_mem⟩
   -- Putting the distinguished variable last and moving it back into the coefficients is the
@@ -81,10 +81,10 @@ noncomputable def ofIrreducibleBasis
     rw [rename_rename, Equiv.self_comp_symm, rename_id_apply, AlgEquiv.trans_apply]
   -- The basis data of `D`, restated through `e`.
   have hexp (b : Polynomial (MvPolynomial (Fin n) ℝ)) (hb : b ∈ B) (x : S) :
-      (e b).lazardExponent (Polynomial.C ∘ x.1) = D.exponent ⟨b, hb⟩ := by
+      (e b).lazardExponent (Polynomial.C ∘ x.val) = D.exponent ⟨b, hb⟩ := by
     rw [← D.lazardExponent_eq ⟨b, hb⟩ x, hswap]
   have hmul (b : Polynomial (MvPolynomial (Fin n) ℝ)) (hb : b ∈ B) (i : Fin D.count) (x : S) :
-      ((e b).lazardEval (Polynomial.C ∘ x.1)).rootMultiplicity (D.root i x) =
+      ((e b).lazardEval (Polynomial.C ∘ x.val)).rootMultiplicity (D.root i x) =
         D.multiplicity ⟨b, hb⟩ i := by
     rw [← D.rootMultiplicity_root ⟨b, hb⟩ i x, hswap]
   { nonempty := D.nonempty
@@ -92,29 +92,31 @@ noncomputable def ofIrreducibleBasis
     root := D.root
     continuous_root := D.continuous_root
     strictMono_root := D.strictMono_root
-    exponent f := (e f.1).lazardExponent (Polynomial.C ∘ x₀.1)
+    exponent f := (e f.val).lazardExponent (Polynomial.C ∘ x₀.val)
     lazardExponent_eq f x := by
       rw [hswap]
-      refine hB.isSquarefreeBasis.lazardExponent_eq f.2 ?_
+      refine hB.isSquarefreeBasis.lazardExponent_eq f.property ?_
         fun b hb ↦ (hexp b hb x).trans (hexp b hb x₀).symm
       -- Constant content valuation gives constant content exponents, including content `0`.
-      obtain h0 | h0 := eq_or_ne f.1.content 0
+      obtain h0 | h0 := eq_or_ne f.val.content 0
       · simp [h0]
-      · have h := hc f.1 f.2 x x.2 x₀ x₀.2
+      · have h := hc f.val f.property x x.property x₀ x₀.property
         rw [lazardValuation_eq_lazardExponent h0, lazardValuation_eq_lazardExponent h0] at h
         exact toLex.injective (WithTop.coe_injective h)
-    multiplicity f i := ((e f.1).lazardEval (Polynomial.C ∘ x₀.1)).rootMultiplicity (D.root i x₀)
+    multiplicity f i := ((e f.val).lazardEval (Polynomial.C ∘ x₀.val)).rootMultiplicity
+        (D.root i x₀)
     rootMultiplicity_root f i x := by
       rw [hswap]
-      exact hB.isSquarefreeBasis.rootMultiplicity_lazardEval_eq f.2 fun b hb ↦
+      exact hB.isSquarefreeBasis.rootMultiplicity_lazardEval_eq f.property fun b hb ↦
         (hmul b hb i x).trans (hmul b hb i x₀).symm
     exists_root_eq f x hf t ht := by
       rw [hswap] at ht
-      have hf0 : f.1 ≠ 0 := by
+      have hf0 : f.val ≠ 0 := by
         rintro h
         exact hf (by simp only [h, map_zero])
       -- A root of a nonzero input is a root of a basis member, hence a section value.
-      obtain ⟨b, hb, hbt⟩ := (hB.exists_isRoot_lazardEval_iff x.1 t).1 ⟨f.1, f.2, hf0, ht⟩
+      obtain ⟨b, hb, hbt⟩ := (hB.exists_isRoot_lazardEval_iff x.val t).1 ⟨f.val, f.property, hf0,
+          ht⟩
       refine D.exists_root_eq ⟨b, hb⟩ x ?_ t (by rwa [hswap])
       exact (map_ne_zero_iff _ (rename_injective _ finSuccEquivLast.symm.injective)).2
         (EmbeddingLike.map_ne_zero_iff.2 (hB.irreducible b hb).ne_zero)
@@ -122,13 +124,13 @@ noncomputable def ofIrreducibleBasis
       -- Each section is a root of a basis member, which divides a nonzero input.
       obtain ⟨⟨b, hb⟩, hpos⟩ := D.exists_multiplicity_pos i
       rw [← hmul b hb i x₀] at hpos
-      obtain ⟨f, hf, hf0, hft⟩ := (hB.exists_isRoot_lazardEval_iff x₀.1 (D.root i x₀)).2
+      obtain ⟨f, hf, hf0, hft⟩ := (hB.exists_isRoot_lazardEval_iff x₀.val (D.root i x₀)).2
         ⟨b, hb, (Polynomial.rootMultiplicity_pos'.1 hpos).2⟩
       exact ⟨⟨f, hf⟩, (Polynomial.rootMultiplicity_pos
         (lazardEval_ne_zero (EmbeddingLike.map_ne_zero_iff.2 hf0) _)).2 hft⟩ }
 
 variable (D : LazardDelineation
-    (fun b : B ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.1)) S)
+    (fun b : B ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.val)) S)
   (hB : F.IsIrreducibleBasis B)
   (hc : ∀ f ∈ F, ∀ x ∈ S, ∀ y ∈ S, f.content.lazardValuation x = f.content.lazardValuation y)
 

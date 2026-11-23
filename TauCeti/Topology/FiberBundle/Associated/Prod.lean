@@ -118,8 +118,8 @@ variable (G P F₁ F₂) in
 /-- Association commutes with fibrewise products, on the existing total-space topologies. -/
 def prodHomeomorph : TotalSpace (F₁ × F₂) (AssociatedBundle G P (F₁ × F₂)) ≃ₜ
     TotalSpace (F₁ × F₂) (AssociatedBundle G P F₁ ×ᵇ AssociatedBundle G P F₂) where
-  toFun v := ⟨v.proj, prodEquiv v.proj v.2⟩
-  invFun v := ⟨v.proj, (prodEquiv v.proj).symm v.2⟩
+  toFun v := ⟨v.proj, prodEquiv v.proj v.snd⟩
+  invFun v := ⟨v.proj, (prodEquiv v.proj).symm v.snd⟩
   left_inv v := by simp
   right_inv v := by simp
   continuous_toFun := continuous_iff_continuousAt.mpr fun v ↦ by

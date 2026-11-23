@@ -76,18 +76,18 @@ theorem height_add_height_map_quotientMk {p q : Ideal R} [p.IsPrime] [q.IsPrime]
   -- The prime `x = p R_q` of `R_q`, which lies over `p`.
   let x := e.symm P
   have hx : x.asIdeal.under R = p :=
-    congrArg (fun y : Set.Iic Q ↦ y.1.asIdeal) (e.apply_symm_apply P)
+    congrArg (fun y : Set.Iic Q ↦ y.val.asIdeal) (e.apply_symm_apply P)
   -- The primes of `R_q` containing `x` are the primes of `R` between `p` and `q`.
-  let f : Set.Ici P ≃o Set.Icc P.1 Q :=
-    { toFun y := ⟨y.1.1, y.2, y.1.2⟩
-      invFun y := ⟨⟨y.1, y.2.2⟩, y.2.1⟩
+  let f : Set.Ici P ≃o Set.Icc P.val Q :=
+    { toFun y := ⟨y.val.val, y.property, y.val.property⟩
+      invFun y := ⟨⟨y.val, y.property.2⟩, y.property.1⟩
       left_inv _ := rfl
       right_inv _ := rfl
       map_rel_iff' := Iff.rfl }
   have hcoheight : ringKrullDim (A ⧸ x.asIdeal) = (q.map (Ideal.Quotient.mk p)).height := by
     rw [← x.coheight_eq_ringKrullDim_quotient, ← Order.coheight_orderIso e, e.apply_symm_apply,
       Order.coheight_eq_krullDim_Ici, Order.krullDim_eq_of_orderIso f,
-      PrimeSpectrum.krullDim_Icc P.2]
+      PrimeSpectrum.krullDim_Icc P.property]
   have key := h.height_add_ringKrullDim_quotient x.asIdeal
   rw [hcoheight, ← IsLocalization.height_under q.primeCompl, hx,
     IsLocalization.AtPrime.ringKrullDim_eq_height q] at key

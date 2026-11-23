@@ -78,7 +78,7 @@ theorem not_isCompact_orthogonalGroup (hiso : ¬Q.Anisotropic) :
   · obtain ⟨u, v, -, hu, hv, huv⟩ :=
       _root_.QuadraticMap.exists_isotropic_pair_of_radical_eq_bot hQ hiso
     exact not_isCompact_of_hyperbolicPairTorus_sq_mem Q hu hv huv fun t =>
-      (hyperbolicPairTorus Q hu hv huv (t ^ 2)).2
+      (hyperbolicPairTorus Q hu hv huv (t ^ 2)).property
   intro hcpt
   -- Scale a nonzero radical vector while fixing the kernel of a linear functional.
   obtain ⟨u, hu, hu0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hQ
@@ -136,10 +136,11 @@ theorem isCompact_orthogonalGroup (hQ : Q.Anisotropic) :
         (isClosed_eq (continuous_snd.mul continuous_fst) continuous_const))
   have : CompactSpace T := isCompact_iff_compactSpace.mp hT
   -- Such a pair is a linear automorphism, continuously in the pair.
-  let Φ : T → V ≃ₗ[K] V := fun p => LinearEquiv.ofLinearMap p.1.1 p.1.2 p.2.2.1 p.2.2.2
+  let Φ : T → V ≃ₗ[K] V := fun p => LinearEquiv.ofLinearMap p.val.1 p.val.2 p.property.2.1
+      p.property.2.2
   have hΦ : Continuous Φ := continuous_linearEquiv_iff.mpr
-    ⟨(continuous_fst.comp continuous_subtype_val).congr fun p => by simp [Φ],
-      (continuous_snd.comp continuous_subtype_val).congr fun p =>
+    ⟨(continuous_fst.comp continuous_subtypeVal).congr fun p => by simp [Φ],
+      (continuous_snd.comp continuous_subtypeVal).congr fun p =>
         LinearMap.ext fun x => by simp [Φ]⟩
   refine (isCompact_range hΦ).of_isClosed_subset (isClosed_orthogonalGroup Q) fun g hg => ?_
   have hinv : (g : Module.End K V) * ((g⁻¹ : V ≃ₗ[K] V) : Module.End K V) = 1 :=

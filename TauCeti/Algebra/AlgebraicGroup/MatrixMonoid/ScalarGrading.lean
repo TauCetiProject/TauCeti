@@ -217,7 +217,7 @@ private theorem homogeneousProj_of_mem {d : ℕ} {c : coordinateBialgebra R ι}
 private theorem homogeneousProj_comp_subtype (d : ℕ) :
     homogeneousProj R ι d ∘ₗ (homogeneousSubcoalgebra R ι d).toSubmodule.subtype =
       (homogeneousSubcoalgebra R ι d).toSubmodule.subtype :=
-  LinearMap.ext fun c ↦ homogeneousProj_of_mem R ι c.2
+  LinearMap.ext fun c ↦ homogeneousProj_of_mem R ι c.property
 
 private theorem homogeneousProj_idem (d : ℕ) :
     homogeneousProj R ι d ∘ₗ homogeneousProj R ι d = homogeneousProj R ι d :=

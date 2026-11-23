@@ -118,20 +118,20 @@ theorem isGorensteinProjective_of_isCompleteResolutionStep (L R : ObjectProperty
   choose fL hfL hLX₁ eL using hL
   choose fR hfR hRX₃ eR using hR
   -- The cosyzygies `Rn n` and syzygies `Ln n` of `M`.
-  let Rn : ℕ → {X // R X} := fun n ↦ Nat.rec ⟨M, hM⟩ (fun _ X ↦ ⟨_, hRX₃ X.1 X.2⟩) n
-  let Ln : ℕ → {X // L X} := fun n ↦ Nat.rec ⟨M, hRL _ hM⟩ (fun _ X ↦ ⟨_, hLX₁ X.1 X.2⟩) n
+  let Rn : ℕ → {X // R X} := fun n ↦ Nat.rec ⟨M, hM⟩ (fun _ X ↦ ⟨_, hRX₃ X.val X.property⟩) n
+  let Ln : ℕ → {X // L X} := fun n ↦ Nat.rec ⟨M, hRL _ hM⟩ (fun _ X ↦ ⟨_, hLX₁ X.val X.property⟩) n
   let S : ℤ → ShortComplex (ModuleCat.{v} A) := fun n ↦ match n with
-    | .ofNat n => fR (Rn n).1 (Rn n).2
-    | .negSucc n => fL (Ln n).1 (Ln n).2
+    | .ofNat n => fR (Rn n).val (Rn n).property
+    | .negSucc n => fL (Ln n).val (Ln n).property
   -- The branches type-check by computation: `Int.ofNat n + 1`, `Int.negSucc 0 + 1` and
   -- `Int.negSucc (n + 1) + 1` reduce to `.ofNat (n + 1)`, `.ofNat 0` and `.negSucc n`, and `Rn 0`,
   -- `Ln 0` reduce to `M` through `Nat.rec`. The same splicing pattern is used by
   -- `TauCeti.ExactStructure.IsFrobenius.completeResolution`.
   let e : ∀ n, (S n).X₃ ≅ (S (n + 1)).X₁ := fun n ↦ match n with
-    | .ofNat n => (Classical.choice (eR (Rn (n + 1)).1 (Rn (n + 1)).2)).symm
-    | .negSucc 0 => Classical.choice (eL (Ln 0).1 (Ln 0).2) ≪≫
-        (Classical.choice (eR (Rn 0).1 (Rn 0).2)).symm
-    | .negSucc (n + 1) => Classical.choice (eL (Ln (n + 1)).1 (Ln (n + 1)).2)
+    | .ofNat n => (Classical.choice (eR (Rn (n + 1)).val (Rn (n + 1)).property)).symm
+    | .negSucc 0 => Classical.choice (eL (Ln 0).val (Ln 0).property) ≪≫
+        (Classical.choice (eR (Rn 0).val (Rn 0).property)).symm
+    | .negSucc (n + 1) => Classical.choice (eL (Ln (n + 1)).val (Ln (n + 1)).property)
   have hS (n : ℤ) : (S n).IsCompleteResolutionStep := by
     cases n with
     | ofNat n => exact hfR _ _
@@ -140,6 +140,6 @@ theorem isGorensteinProjective_of_isCompleteResolutionStep (L R : ObjectProperty
     CochainComplex.isTotallyAcyclic_splice S e (fun n ↦ (hS n).shortExact) (fun n ↦ (hS n).finite)
       (fun n ↦ (hS n).projective) (fun n ↦ (hS n).exists_comp_eq),
     ⟨(CochainComplex.spliceCyclesIso S e (fun n ↦ (hS n).shortExact) 0).symm ≪≫
-      Classical.choice (eR (Rn 0).1 (Rn 0).2)⟩⟩
+      Classical.choice (eR (Rn 0).val (Rn 0).property)⟩⟩
 
 end TauCeti

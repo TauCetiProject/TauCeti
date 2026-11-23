@@ -473,14 +473,13 @@ theorem existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom
   obtain ⟨C, hC, hu2, hu3, hr, hs, ht⟩ := Affine.CoordinateRing.exists_variableChange_of_equation hα
     hEq
   refine ⟨C, hC, ?_⟩
-  -- the two isomorphisms agree on the scheme-theoretically dense chart `D₊(Z)`, through which the
-  -- chart factors through the tautological point
-  obtain ⟨k, hk⟩ := W.exists_SpecMap_comp_tautologicalPoint_eq_chartι
+  -- The two isomorphisms agree on the scheme-theoretically dense chart `D₊(Z)`.
   refine TauCeti.ext_of_isSchemeTheoreticallyDominant (W.chartι 2) W'.projModelOver ?_ ?_
   · rw [he, Category.assoc, projModelVariableChangeIso_hom_projModelOver]
     subst hC
     simp
-  · rw [← hk, Category.assoc, Category.assoc, hτ, tautologicalPoint_def,
+  · rw [← W.SpecMap_chartRingTwoEquivCoordinateRing_symm_tautologicalPoint,
+      Category.assoc, Category.assoc, hτ, tautologicalPoint_def,
       projModelPoint_eqToHom_assoc hC.symm,
       projModelPoint_projModelVariableChangeIso_hom (j := 2) _
         (by rw [VariableChange.toMatrix_mulVec_two]; exact isUnit_vecCons_two _ _)]
@@ -507,11 +506,11 @@ variable {S : Scheme.{v}}
 /-- Changes of variables over `Γ(S, ⊤)` are determined by their images under restriction to the
 affine opens of `S`. -/
 theorem VariableChange.eq_of_forall_affineOpens_map_eq (C₁ C₂ : VariableChange Γ(S, ⊤))
-    (h : ∀ U : S.affineOpens, C₁.map (S.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op).hom =
-      C₂.map (S.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op).hom) : C₁ = C₂ := by
+    (h : ∀ U : S.affineOpens, C₁.map (S.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op).hom =
+      C₂.map (S.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op).hom) : C₁ = C₂ := by
   ext
   · exact S.eq_of_forall_affineOpens_map_eq fun U ↦
-      congrArg (fun C ↦ (C.u : Γ(S, U.1))) (h U)
+      congrArg (fun C ↦ (C.u : Γ(S, U.val))) (h U)
   · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg VariableChange.r (h U)
   · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg VariableChange.s (h U)
   · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg VariableChange.t (h U)
@@ -520,18 +519,18 @@ theorem VariableChange.eq_of_forall_affineOpens_map_eq (C₁ C₂ : VariableChan
 `Γ(S, U)`, one for each affine open `U`, compatible with restriction from an affine open to a
 smaller one, are the images of a change of variables over `Γ(S, ⊤)`. -/
 theorem VariableChange.exists_forall_affineOpens_map_eq
-    (C : ∀ U : S.affineOpens, VariableChange Γ(S, U.1))
-    (compat : ∀ (U V : S.affineOpens) (hVU : V.1 ≤ U.1),
+    (C : ∀ U : S.affineOpens, VariableChange Γ(S, U.val))
+    (compat : ∀ (U V : S.affineOpens) (hVU : V.val ≤ U.val),
       (C U).map (S.presheaf.map (homOfLE hVU).op).hom = C V) :
     ∃ C₀ : VariableChange Γ(S, ⊤),
-      ∀ U : S.affineOpens, C₀.map (S.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op).hom = C U := by
+      ∀ U : S.affineOpens, C₀.map (S.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op).hom = C U := by
   -- glue the four coefficients of the local changes of variables, and the inverse of `u`
-  obtain ⟨u, hu⟩ := (S.existsUnique_gluing_affineOpens (fun U ↦ ((C U).u : Γ(S, U.1)))
-    fun U V hVU ↦ congrArg (fun C ↦ (C.u : Γ(S, V.1))) (compat U V hVU)).exists
-  obtain ⟨v, hv⟩ := (S.existsUnique_gluing_affineOpens (fun U ↦ (↑(C U).u⁻¹ : Γ(S, U.1)))
+  obtain ⟨u, hu⟩ := (S.existsUnique_gluing_affineOpens (fun U ↦ ((C U).u : Γ(S, U.val)))
+    fun U V hVU ↦ congrArg (fun C ↦ (C.u : Γ(S, V.val))) (compat U V hVU)).exists
+  obtain ⟨v, hv⟩ := (S.existsUnique_gluing_affineOpens (fun U ↦ (↑(C U).u⁻¹ : Γ(S, U.val)))
     fun U V hVU ↦ by
       simpa [VariableChange.map] using
-        congrArg (fun C : VariableChange Γ(S, V.1) ↦ ((C.u⁻¹ : Γ(S, V.1)ˣ) : Γ(S, V.1)))
+        congrArg (fun C : VariableChange Γ(S, V.val) ↦ ((C.u⁻¹ : Γ(S, V.val)ˣ) : Γ(S, V.val)))
           (compat U V hVU)).exists
   obtain ⟨r, hr⟩ := (S.existsUnique_gluing_affineOpens (fun U ↦ (C U).r) fun U V hVU ↦
     congrArg VariableChange.r (compat U V hVU)).exists

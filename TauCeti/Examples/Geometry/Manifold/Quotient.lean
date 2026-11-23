@@ -62,7 +62,7 @@ example : ¬ CompactSpace (AddAction.orbitRel.Quotient (AddSubgroup.zmultiples (
   rintro ⟨K, hK, hKG⟩
   obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
   obtain ⟨g, hg⟩ := hKG ((R + 1) * Complex.I)
-  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 g.2
+  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 g.property
   have him := (Complex.abs_im_le_norm _).trans (mem_closedBall_zero_iff.1 (hR hg))
   rw [AddSubgroup.vadd_def, vadd_eq_add, Complex.add_im, ← hk] at him
   have him' : |R + 1| ≤ R := by simpa using him

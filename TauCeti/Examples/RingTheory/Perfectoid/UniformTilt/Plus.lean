@@ -54,7 +54,7 @@ local instance : CharP (powerBoundedSubring ℂ_[p] ⧸ Ideal.span {(p : powerBo
       have h := congrArg Subtype.val u.mul_inv
       rwa [hu, Subring.coe_mul, Subring.coe_natCast, Subring.coe_one] at h
     have h1 : ‖((u⁻¹ : (powerBoundedSubring ℂ_[p])ˣ) : ℂ_[p])‖ ≤ 1 :=
-      isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp (u⁻¹).1.2)
+      isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp (u⁻¹).val.property)
     have h2 := congrArg norm hu'
     rw [norm_mul, norm_one] at h2
     have := PadicComplex.norm_p_lt_one p
@@ -73,7 +73,7 @@ variable (ϖ : PseudoUniformizerRoots p ℂ_[p])
 theorem mk_root_mem_plusSubring : uniformTilt.mk ϖ.root ϖ.root_succ_pow ∈
     uniformTilt.plusSubring p (isRingOfIntegralElements_padicComplex p) := by
   rw [uniformTilt.mem_plusSubring_iff_coeff_zero, uniformTilt.coeff_mk, ← ϖ.coe_rootPB]
-  exact (ϖ.rootPB 0).2
+  exact (ϖ.rootPB 0).property
 
 /-- `ϖ♭⁻¹ = (ϖ ^ (-1 / p ^ n))ₙ` does not lie in the integral tilt: `‖ϖ⁻¹‖ > 1`. -/
 theorem mk_inv_root_not_mem_plusSubring :
@@ -98,9 +98,9 @@ theorem coeff_zero_plusEquiv_mk_root_ne_zero :
   have hd' : (p : ℂ_[p]) = ϖ.root 0 ^ p * (d : ℂ_[p]) := by
     simpa using congrArg Subtype.val hd
   have hc1 : ‖(c : ℂ_[p])‖ ≤ 1 :=
-    isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2)
+    isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.property)
   have hd1 : ‖(d : ℂ_[p])‖ ≤ 1 :=
-    isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp d.2)
+    isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp d.property)
   obtain ⟨h0, h1⟩ := isPseudoUniformizer_iff_norm_lt_one.mp ϖ.isPseudoUniformizer_root_zero
   have hle : ‖ϖ.root 0‖ ≤ ‖ϖ.root 0‖ ^ p :=
     calc ‖ϖ.root 0‖ = ‖(p : ℂ_[p])‖ * ‖(c : ℂ_[p])‖ := by rw [hc', norm_mul]

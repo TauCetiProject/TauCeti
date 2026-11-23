@@ -72,8 +72,8 @@ theorem herbrandQuotient_ideleClassRep_eq_finrank :
     herbrandQuotient_sUnitsRep S (placeAbove L S), herbrandQuotient_sUnitsRep_empty,
     herbrandQuotient_units_eq_div, herbrandQuotient_ofMulAction_infinitePlace]
   -- The archimedean factor `2 ^ r` and the local degrees at `S` cancel.
-  have hP : ∏ v : S, (Module.finrank (v.1.adicCompletion K)
-      ((placeAbove L S v).1.adicCompletion L) : ℚ) ≠ 0 :=
+  have hP : ∏ v : S, (Module.finrank (v.val.adicCompletion K)
+      ((placeAbove L S v).val.adicCompletion L) : ℚ) ≠ 0 :=
     Finset.prod_ne_zero_iff.2 fun v _ ↦ Nat.cast_ne_zero.2 Module.finrank_pos.ne'
   have hn : (Module.finrank K L : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
   field_simp

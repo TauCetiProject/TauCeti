@@ -121,7 +121,7 @@ theorem unramifiedCoordinate_mk_eq_unramifiedCoordinate_mk_iff
   · have hy := congrArg Subtype.val (AlgEquiv.congr_fun h
       ⟨x, unramifiedExtension_le_maximalUnramifiedExtension K _ f hx⟩)
     rwa [restrictMaximalUnramifiedHom_coe_apply, restrictMaximalUnramifiedHom_coe_apply] at hy
-  · obtain ⟨f, -, hf⟩ := mem_maximalUnramifiedExtension_iff.1 y.2
+  · obtain ⟨f, -, hf⟩ := mem_maximalUnramifiedExtension_iff.1 y.property
     rw [restrictMaximalUnramifiedHom_coe_apply, restrictMaximalUnramifiedHom_coe_apply]
     exact h f y hf
 
