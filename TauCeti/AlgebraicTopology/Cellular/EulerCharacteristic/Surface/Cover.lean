@@ -50,13 +50,16 @@ theorem IsFiniteCover.natCard_fiber_mul_eulerChar_le_two (hq : IsFiniteCover q)
   exact o.eulerChar_le_two hn
 
 /-- A connected homologically oriented surface finitely covering a compact Hausdorff base of
-finite CW type with Euler characteristic two has at most one sheet. -/
-theorem IsFiniteCover.natCard_fiber_le_one_of_eulerChar_eq_two (hq : IsFiniteCover q)
+finite CW type with Euler characteristic two has exactly one sheet. -/
+theorem IsFiniteCover.natCard_fiber_eq_one_of_eulerChar_eq_two (hq : IsFiniteCover q)
     (o : haveI := hq.isCoveringMap.t2Space
       HomologicalOrientation T E 2) (hn : finrank ℝ E = 2)
-    (hχS : eulerChar S = 2) (y : S) : Nat.card (q ⁻¹' {y}) ≤ 1 := by
+    (hχS : eulerChar S = 2) (y : S) : Nat.card (q ⁻¹' {y}) = 1 := by
   have h := hq.natCard_fiber_mul_eulerChar_le_two o hn y
   rw [hχS] at h
+  obtain ⟨x, hx⟩ := hq.surjective y
+  have hpos : 0 < Nat.card (q ⁻¹' {y}) :=
+    Nat.card_pos_iff.mpr ⟨⟨⟨x, hx⟩⟩, hq.finite_fiber y⟩
   omega
 
 end TauCeti
