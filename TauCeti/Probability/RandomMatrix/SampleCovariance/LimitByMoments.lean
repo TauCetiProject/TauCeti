@@ -10,7 +10,7 @@ public import TauCeti.Probability.RandomMatrix.SampleCovariance.RectangularMomen
 import TauCeti.Data.Nat.Factorial.Asymptotics
 import TauCeti.Probability.Distributions.MarchenkoPastur.Moments
 import TauCeti.Probability.Moments.WeakConvergence
-import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceWord
+import TauCeti.Probability.RandomMatrix.SampleCovariance.Trace.Integrability
 
 /-!
 # The Marchenko–Pastur moment limit for sample covariance matrices
@@ -146,7 +146,7 @@ theorem tendsto_expectedCovarianceSpectralMeasure_marchenkoPastur_of_uniform_ent
   · intro k
     filter_upwards [hLp (max k 2) (by omega)] with i hi
     exact integrable_pow_expectedCovarianceSpectralMeasure (hXm i)
-      (integrable_trace_pow_sampleCovariance fun a b ↦
+      (integrable_trace_pow_sampleCovariance (fun _ ↦ inferInstance) fun a b ↦
         (hi a b).mono_exponent (by
           push_cast
           gcongr
