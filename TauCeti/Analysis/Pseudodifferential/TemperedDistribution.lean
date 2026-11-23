@@ -87,7 +87,9 @@ on one side they tend to `e_ξ` as tempered distributions
 
 A spatial cutoff `ψ` equal to `1` wherever the symbol `r` does not vanish identically leaves
 `Op(r) T` unchanged: `ψ Op(r) T = Op(r) T`
-(`TauCeti.Symbol.smulLeftCLM_quantizeTempered_of_eq_one`).
+(`TauCeti.Symbol.smulLeftCLM_quantizeTempered_of_eq_one`). For a symbol with compact spatial
+support, `ψ` can be chosen to be a compactly supported Schwartz function
+(`TauCeti.Symbol.HasCompactSpatialSupport.exists_smulLeftCLM_quantizeTempered_eq`).
 
 ## References
 
@@ -490,6 +492,21 @@ theorem smulLeftCLM_quantizeTempered_of_eq_one (hr : r.IsUniform)
   ext φ
   rw [TemperedDistribution.smulLeftCLM_apply_apply, quantizeTempered_apply_apply,
     quantizeTempered_apply_apply, ← ContinuousLinearMap.comp_apply, key]
+
+/-- **Compactly supported spatial cutoffs.** For a symbol `r` with compact spatial support there is
+a compactly supported Schwartz function `ψ` with `ψ Op(r) T = Op(r) T` for every tempered
+distribution `T`. -/
+theorem HasCompactSpatialSupport.exists_smulLeftCLM_quantizeTempered_eq
+    (hr : r.HasCompactSpatialSupport) :
+    ∃ ψ : 𝓢(CoordinateSpace n, ℂ), HasCompactSupport ψ ∧ ∀ T : 𝓢'(CoordinateSpace n, F),
+      TemperedDistribution.smulLeftCLM F ψ (quantizeTempered F r hr.isUniform T) =
+        quantizeTempered F r hr.isUniform T := by
+  obtain ⟨K, hK, hKr⟩ := hasCompactSpatialSupport_iff.1 hr
+  obtain ⟨ψ, hψc, -, hψ⟩ := hK.exists_schwartzMap_cutoff isOpen_univ (Set.subset_univ K)
+  refine ⟨ψ, hψc, smulLeftCLM_quantizeTempered_of_eq_one hr.isUniform ψ.hasTemperateGrowth
+    fun x ξ hx ↦ ?_⟩
+  by_contra hψx
+  exact hx (hKr x (fun hxK ↦ hψx (hψ.self_of_nhdsSet x hxK)) ξ)
 
 end Cutoff
 
