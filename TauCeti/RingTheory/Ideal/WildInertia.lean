@@ -14,12 +14,14 @@ import Mathlib.Tactic.LinearCombination
 
 Let a group `G` act by ring automorphisms on a commutative ring `R`, and let `Q` be an ideal of `R`.
 The **wild inertia subgroup** `Q.wildInertia G` consists of the `σ ∈ G` such that every `x ∈ R`
-admits `s ∈ 1 + Q` and `q ∈ Q` with `s (σ x - x) = q x`. For a prime `Q` of a domain `R` this says
-that for every nonzero `x ∈ R` the ratio `σ(x)/x` lies in the localization `R_Q` and is `≡ 1` modulo
-its maximal ideal; the condition on the `x ∈ Q` is what separates wild inertia from inertia. This is
-Serre's characterization of the first lower ramification group `G_1` (*Corps locaux*, IV §2,
-Proposition 6 and its corollaries); unlike the definition through `G_1`, it does not need the
-maximal ideal of `R_Q` to be finitely generated or its powers to separate points.
+admits `s ∈ 1 + Q` and `q ∈ Q` with `s (σ x - x) = q x`. For a maximal ideal `Q` of a domain `R`
+this says that for every nonzero `x ∈ R` the ratio `σ(x)/x` lies in the localization `R_Q` and is
+`≡ 1` modulo its maximal ideal; the condition on the `x ∈ Q` is what separates wild inertia from
+inertia. This is Serre's characterization of the first lower ramification group `G_1`
+(*Corps locaux*, IV §2, Proposition 6 and its corollaries); unlike the definition through `G_1`, it
+does not need the maximal ideal of `R_Q` to be finitely generated or its powers to separate points.
+For a prime `Q` of a domain that is not maximal, membership still implies the ratio condition, but
+the converse can fail, since a denominator outside `Q` need not be invertible modulo `Q`.
 
 ## Main definitions
 
@@ -47,9 +49,9 @@ namespace Ideal
 variable (G : Type*) [Group G] {R : Type*} [CommRing R] [MulSemiringAction G R] (Q : Ideal R)
 
 /-- The **wild inertia subgroup** of an ideal `Q`: the `σ ∈ G` such that every `x` has `s ∈ 1 + Q`
-and `q ∈ Q` with `s (σ x - x) = q x`. For a prime `Q` of a domain, these are the `σ` such that
-for every nonzero `x` the ratio `σ(x)/x` lies in the localization at `Q` and is `≡ 1` modulo its
-maximal ideal. -/
+and `q ∈ Q` with `s (σ x - x) = q x`. For a maximal ideal `Q` of a domain, these are the `σ` such
+that for every nonzero `x` the ratio `σ(x)/x` lies in the localization at `Q` and is `≡ 1` modulo
+its maximal ideal. -/
 def wildInertia : Subgroup G where
   carrier := {σ | ∀ x, ∃ s q, s - 1 ∈ Q ∧ q ∈ Q ∧ s * (σ • x - x) = q * x}
   one_mem' x := ⟨1, 0, by simp, Q.zero_mem, by simp⟩

@@ -22,19 +22,26 @@ an integral closure, which makes `O` a `G_F`-ring. For an ideal `Q` of `O` this 
 
 * the **decomposition group** `D_Q = {σ | σ • Q = Q}`, Mathlib's `MulAction.stabilizer`;
 * the **inertia group** `I_Q = {σ | ∀ x ∈ O, σ x - x ∈ Q}`, Mathlib's `Ideal.inertia`;
-* the **wild inertia group** `P_Q`, `Ideal.wildInertia`: the `σ` such that for every nonzero
-  `x ∈ O` the ratio `σ(x)/x` lies in the localization `O_Q` and is `≡ 1` modulo its maximal ideal;
+* the **wild inertia group** `P_Q`, `Ideal.wildInertia`: the `σ` such that every `x ∈ O` has
+  `s ∈ 1 + Q` and `q ∈ Q` with `s (σ x - x) = q x`; for a maximal ideal `Q` these are the `σ` such
+  that for every nonzero `x ∈ O` the ratio `σ(x)/x` lies in the localization `O_Q` and is `≡ 1`
+  modulo its maximal ideal;
 * the predicate `IsArithFrobAtIntegralPrime σ Q`, that `σ x ≡ x ^ q mod Q` for all `x ∈ O`, where
-  `q` is the cardinality of the residue field of `𝓞 F` below `Q`; it is Mathlib's `IsArithFrobAt`
-  for the action of `σ`, that is `AlgHom.IsArithFrobAt` for `toIntegralClosure F σ`.
+  `q = Nat.card (𝓞 F ⧸ Q.under (𝓞 F))`; it is Mathlib's `IsArithFrobAt` for the action of `σ`, that
+  is `AlgHom.IsArithFrobAt` for `toIntegralClosure F σ`. When the residue ring `𝓞 F ⧸ Q.under (𝓞 F)`
+  is a finite field, `q` is its order and this is the usual arithmetic Frobenius. When that residue
+  ring is infinite, `Nat.card` is `0`, and the congruence `σ x ≡ 1 mod Q` holds only if `Q = ⊤`;
+  so at a proper ideal with infinite residue ring no `σ` satisfies the predicate.
 
 All four are reducible, so Mathlib's and Tau Ceti's API for stabilizers, inertia subgroups and
 Frobenius elements applies to them directly: `MulAction.stabilizer_smul_eq_stabilizer_map_conj`,
 `Ideal.inertia_smul` and `Ideal.wildInertia_smul` give `D_{τQ} = τ D_Q τ⁻¹` and its analogues,
 `Ideal.wildInertia_le_inertia` and `Ideal.inertia_le_stabilizer` give `P_Q ≤ I_Q ≤ D_Q`,
 `I_Q` and `P_Q` are normal in `D_Q` by instances, `IsArithFrobAt.mem_stabilizer_of_isIntegral`
-puts the Frobenius elements at `Q` in `D_Q`, `IsArithFrobAt.iff_mul_inv_mem_inertia` says that
-they form one coset of `I_Q`, and `IsArithFrobAt.conj` moves them to `τ • Q`.
+puts the Frobenius elements at `Q` in `D_Q`, `IsArithFrobAt.iff_mul_inv_mem_inertia` says that,
+given one Frobenius element at `Q`, the Frobenius elements at `Q` are exactly its coset of `I_Q`,
+and `IsArithFrobAt.conj` moves them to `τ • Q`. Existence of a Frobenius element at `Q` is not
+proved here.
 
 At a maximal ideal `Q` above a finite place of a number field, `P_Q` is the inverse limit of the
 first lower ramification groups of the finite Galois subextensions at the primes below `Q`
@@ -169,9 +176,10 @@ abbrev wildInertiaGroup : Subgroup (Field.absoluteGaloisGroup F) :=
 
 variable {F} in
 /-- `σ ∈ G_F` is an **arithmetic Frobenius** at an ideal `Q` of `O` if `σ x ≡ x ^ q mod Q` for all
-`x ∈ O`, where `q` is the cardinality of the residue ring of `𝓞 F` below `Q`: Mathlib's
-`IsArithFrobAt` for the action of `σ` on `O`, that is `AlgHom.IsArithFrobAt` for
-`toIntegralClosure F σ` (`TauCeti.GaloisRep.isArithFrobAtIntegralPrime_iff`). -/
+`x ∈ O`, where `q = Nat.card (𝓞 F ⧸ Q.under (𝓞 F))`: Mathlib's `IsArithFrobAt` for the action of
+`σ` on `O`, that is `AlgHom.IsArithFrobAt` for `toIntegralClosure F σ`
+(`TauCeti.GaloisRep.isArithFrobAtIntegralPrime_iff`). When `𝓞 F ⧸ Q.under (𝓞 F)` is a finite
+field, `q` is its order; when it is infinite, `q = 0` and the predicate holds only for `Q = ⊤`. -/
 abbrev IsArithFrobAtIntegralPrime (σ : Field.absoluteGaloisGroup F)
     (Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))) : Prop :=
   IsArithFrobAt (𝓞 F) σ Q
