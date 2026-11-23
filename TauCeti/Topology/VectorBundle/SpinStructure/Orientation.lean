@@ -604,9 +604,9 @@ theorem range_toFrame_eq_orientedFrames (s : SpinStructure F E n)
     Set.range s.toFrame = OrthonormalFrameBundle.orientedFrames (s.orientation o) o := by
   refine Subset.antisymm (range_subset_iff.2 (s.toFrame_mem_orientedFrames o)) fun q hq ↦ ?_
   obtain ⟨p₀⟩ := s.nonempty_P q.proj
-  obtain ⟨u, hu, huq⟩ := OrthonormalFrameBundle.exists_mem_specialOrthogonalGroup_smul_eq
-    (Fact.out : Fintype.card (Fin n) = Module.finrank ℝ (EuclideanSpace ℝ (Fin n)))
-    (s.toFrame_mem_orientedFrames o ⟨q.proj, p₀⟩) hq (s.proj_toFrame ⟨q.proj, p₀⟩)
+  obtain ⟨u, hu, huq⟩ := OrthonormalFrameBundle.SMulMemIff.exists_mem_smul_eq
+    (H := specialOrthogonalGroup _) (s.toFrame_mem_orientedFrames o ⟨q.proj, p₀⟩) hq
+    (s.proj_toFrame ⟨q.proj, p₀⟩)
   obtain ⟨g, hg⟩ := realCliffordSpinToEuclideanSpecialOrthogonal_surjective n ⟨u, hu⟩
   refine ⟨op g • ⟨q.proj, p₀⟩, ?_⟩
   rw [s.toFrame_op_smul, hg, huq]

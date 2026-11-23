@@ -81,17 +81,6 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
   (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
   (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
 
-omit [SecondCountableTopology M] [FiniteDimensional ℝ E'] [J.Boundaryless] [IsManifold J ∞ S] in
-include hfs hcompact hcrit in
-/-- If the critical submanifold is empty, the band has no critical points, so it carries no
-relative homology. -/
-private theorem isZero_singularHomology_sublevelPair_of_isEmpty [IsEmpty S]
-    {C : Type*} [Category C] [Abelian C] [HasCoproducts.{0} C] (R : C) (k : ℕ) :
-    IsZero ((sublevelPair f (hac.trans hcb).le).singularHomology R k) :=
-  isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hfs _ hcompact
-    (fun _ hax hxb hx ↦ isEmptyElim (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx,
-      hax, hxb⟩).choose) R k
-
 include h hfs hc hac hcb hcompact hcrit in
 /-- **Across a Morse–Bott level the relative homology vanishes below the index.** Let
 `i : S → M` be a nondegenerate critical submanifold of a smooth function `f` on a Hausdorff,
@@ -104,7 +93,8 @@ theorem isZero_singularHomology_sublevelPair_of_lt {r : ℕ}
     {C : Type*} [Category C] [Abelian C] [HasCoproducts.{0} C] (R : C) {k : ℕ} (hk : k < r) :
     IsZero ((sublevelPair f (hac.trans hcb).le).singularHomology R k) := by
   cases isEmpty_or_nonempty S with
-  | inl _ => exact isZero_singularHomology_sublevelPair_of_isEmpty hfs hac hcb hcompact hcrit R k
+  | inl _ =>
+    exact isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit R k
   | inr _ =>
     have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
@@ -176,13 +166,11 @@ theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology {r : ℕ}
   | inl _ =>
     -- Over an empty critical submanifold both groups vanish.
     have : IsEmpty (TopCat.of S) := inferInstanceAs (IsEmpty S)
-    exact ⟨(isZero_singularHomology_sublevelPair_of_isEmpty hfs hac hcb hcompact hcrit _ _).iso
-      (isZero_twistedHomology_of_isEmpty _ 0)⟩
+    exact ⟨(isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit
+      _ _).iso (isZero_twistedHomology_of_isEmpty _ 0)⟩
   | inr _ =>
     -- The frames have size the dimension of the negative normal spaces, which is the index.
-    have hr (s : S) : manifoldMorseIndex I f (i s) = r + 1 := by
-      rw [← h.finrank_negativeNormalSpace hn g.toRiemannianMetric, hV.finrank_eq,
-        Fintype.card_fin]
+    have hr := h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV
     obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
       hcrit hdim g hr (ModuleCat.of ℤ (ULift.{0} ℤ)) (r + 1)
     exact ⟨e ≪≫ thomPairSingularHomologyIsoTwistedHomology (Fin (r + 1) → ℝ) _

@@ -47,8 +47,9 @@ Bundled as continuous maps between the spaces of broken trajectories
 (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryConcat`), with their associativity
 (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryConcat_assoc`), they provide the maps from
 which the composition maps `ι x z y : 𝓜(x, z) × 𝓜(z, y) → 𝓜(x, y)` of a twisting chain system of
-Barraud and Cornea (`TauCeti.TwistingChainSystem`) can be built, once the index type is the set of
-critical points of `f` and `L` contains no critical value. This file does not build that family.
+Barraud and Cornea (`TauCeti.TwistingChainSystem`) are built, once the index type is the set of
+critical points of `f` and `L` contains no critical value
+(`TauCeti.IsAdaptedPseudoGradient.morseRecordsComp`).
 
 ## Main definitions
 

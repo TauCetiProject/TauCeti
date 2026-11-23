@@ -76,7 +76,7 @@ theorem projectiveLiftingFactorSet_ker_le_center :
     (FactorSet.rightHom (projectiveLiftingFactorSet k G)).ker ≤
       Subgroup.center (projectiveLiftingFactorSet k G).Extension := by
   rw [← FactorSet.range_inl_eq_ker_rightHom]
-  exact FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul
+  exact (FactorSet.range_inl_le_center_iff _).2 trivialMulDistribMulAction_smul
 
 end
 
