@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
-import TauCeti.Analysis.BoundedVariation.Slicing.Basic
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
+import TauCeti.Analysis.Distribution.TestFunction.AffineLine
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -42,9 +41,10 @@ the slicing inequality `TauCeti.lintegral_perimeter_lineSection_le`, and is the 
 proof of Federer's criterion for finite perimeter that passes from line sections to the
 ambient set.
 
-The proof restricts the test function `ψ` to each line, giving a test function on the open set
-of parameters whose derivative is `∂_e ψ` along the line, and splits the integral over `Ω` along
-the lines by Fubini's theorem in orthogonal line coordinates.
+The proof restricts the test function `ψ` to each line, giving a test function
+(`TauCeti.lineTestFunction`) on the open set of parameters whose derivative is `∂_e ψ` along the
+line, and splits the integral over `Ω` along the lines by Fubini's theorem in orthogonal line
+coordinates.
 
 ## Main results
 
@@ -75,32 +75,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {Ω : Opens E}
 
 namespace TauCeti
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The restriction `t ↦ ψ (y + t • e)` of a scalar test function on `Ω` to the line through `y`
-in a nonzero direction `e`, as a test function on the open set of parameters of the line lying
-in `Ω`. -/
-private noncomputable def lineTestFunction (ψ : 𝓓(Ω, ℝ)) (y e : E) (he : e ≠ 0) :
-    𝓓(Opens.comap ⟨fun t : ℝ => y + t • e, by fun_prop⟩ Ω, ℝ) :=
-  ⟨fun t => ψ (y + t • e), ψ.contDiff.comp (contDiff_const.add (contDiff_id.smul contDiff_const)),
-    ψ.hasCompactSupport.comp_isClosedEmbedding
-      ((Homeomorph.addLeft y).isClosedEmbedding.comp (isClosedEmbedding_smul_left he)),
-    (tsupport_comp_subset_preimage (ψ : E → ℝ) (by fun_prop : Continuous fun t : ℝ => y + t • e))
-      |>.trans fun _ ht => ψ.tsupport_subset ht⟩
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem lineTestFunction_apply (ψ : 𝓓(Ω, ℝ)) (y e : E) (he : e ≠ 0) (t : ℝ) :
-    lineTestFunction ψ y e he t = ψ (y + t • e) :=
-  (rfl)
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The divergence of the restriction of `ψ` to a line is the derivative `∂_e ψ` along it. -/
-private theorem divergenceCLM_lineTestFunction (ψ : 𝓓(Ω, ℝ)) (y e : E) (he : e ≠ 0) (t : ℝ) :
-    divergenceCLM (lineTestFunction ψ y e he) t = ∂_{e} ψ (y + t • e) := by
-  rw [divergenceCLM_apply_eq_deriv, lineDerivOp_apply_eq_fderiv]
-  have hl : HasDerivAt (fun s : ℝ => y + s • e) e t := by
-    simpa using ((hasDerivAt_id t).smul_const e).const_add y
-  exact ((ψ.contDiff.differentiable (by simp) (y + t • e)).hasFDerivAt.comp_hasDerivAt t hl).deriv
 
 /-- **Variation along a direction is controlled by the variations on lines.** Let `u` be locally
 integrable on `Ω`, `e` a unit vector and `ψ` a scalar test function on `Ω` with `|ψ| ≤ 1`. Then
@@ -169,28 +143,30 @@ theorem totalVariationOn_le_sum_lintegral_totalVariationOn_line {ι : Type*} [Fi
   exact ofReal_integral_lineDerivOp_mul_le_lintegral_totalVariationOn_line hu (b i)
     (b.orthonormal.1 i) (ψ i) (hψle i)
 
-/-- **The converse slicing inequality for perimeter.** For a null-measurable set `s`, an open set
-`Ω` and an orthonormal basis `b` of `E`, the perimeter of `s` in `Ω` is at most the sum over `i`
-of the integrals, over the hyperplanes `(ℝ ∙ b i)ᗮ`, of the perimeters of the line sections
-`{t | y + t • b i ∈ s}` in the open sets `{t | y + t • b i ∈ Ω}`. No finiteness of the volume or
-of any perimeter is assumed. -/
+/-- **The converse slicing inequality for perimeter.** For an open set `Ω`, a set `s`
+null-measurable in `Ω` and an orthonormal basis `b` of `E`, the perimeter of `s` in `Ω` is at
+most the sum over `i` of the integrals, over the hyperplanes `(ℝ ∙ b i)ᗮ`, of the perimeters of
+the line sections `{t | y + t • b i ∈ s}` in the open sets `{t | y + t • b i ∈ Ω}`. No finiteness
+of the volume or of any perimeter is assumed. -/
 theorem perimeter_le_sum_lintegral_perimeter_lineSection {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) {s : Set E} (hs : NullMeasurableSet s) :
+    (b : OrthonormalBasis ι ℝ E) {s : Set E}
+    (hs : NullMeasurableSet s (volume.restrict Ω)) :
     perimeter volume Ω s ≤ ∑ i, ∫⁻ y : (ℝ ∙ b i)ᗮ, perimeter volume
       (Opens.comap ⟨fun t : ℝ => (y : E) + t • b i, by fun_prop⟩ Ω)
       {t : ℝ | (y : E) + t • b i ∈ s} := by
-  have hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω :=
-    (((locallyIntegrable_const (1 : ℝ)).indicator (measurableSet_toMeasurable volume s)).congr
-      (indicator_ae_eq_of_ae_eq_set hs.toMeasurable_ae_eq)).locallyIntegrableOn _
-  simp_rw [perimeter_def, ← indicator_one_line]
-  exact totalVariationOn_le_sum_lintegral_totalVariationOn_line b hu
+  have hline (y e : E) : (fun t : ℝ => s.indicator (1 : E → ℝ) (y + t • e)) =
+      {t : ℝ | y + t • e ∈ s}.indicator 1 :=
+    funext fun _ => (indicator_comp_right (fun t : ℝ => y + t • e)).symm
+  simp_rw [perimeter_def, ← hline]
+  exact totalVariationOn_le_sum_lintegral_totalVariationOn_line b
+    (locallyIntegrableOn_indicator_const hs 1)
 
 /-- **Finite perimeter from the line sections.** If the perimeters of the line sections of a
-null-measurable set `s` along the directions of an orthonormal basis, in the open sets of
+set `s`, null-measurable in `Ω`, along the directions of an orthonormal basis, in the open sets of
 parameters of the lines lying in `Ω`, have finite integrals over the orthogonal hyperplanes, then
 `s` has finite perimeter in `Ω`. -/
 theorem perimeter_lt_top_of_lintegral_perimeter_lineSection_lt_top {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) {s : Set E} (hs : NullMeasurableSet s)
+    (b : OrthonormalBasis ι ℝ E) {s : Set E} (hs : NullMeasurableSet s (volume.restrict Ω))
     (h : ∀ i, ∫⁻ y : (ℝ ∙ b i)ᗮ, perimeter volume
       (Opens.comap ⟨fun t : ℝ => (y : E) + t • b i, by fun_prop⟩ Ω)
       {t : ℝ | (y : E) + t • b i ∈ s} < ∞) :
