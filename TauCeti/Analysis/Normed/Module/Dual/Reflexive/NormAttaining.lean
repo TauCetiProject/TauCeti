@@ -9,9 +9,9 @@ public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.Normed.Module.WeakDual
 import Mathlib.Analysis.Complex.Basic
-import Mathlib.Topology.Algebra.InfiniteSum.Module
 import Mathlib.Topology.MetricSpace.Sequences
 import TauCeti.Analysis.Convex.Simons
+import TauCeti.Analysis.Normed.Module.Dual.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
@@ -57,7 +57,7 @@ reflexive, and so is the space when it is complete
 
 public section
 
-open Bornology ComplexConjugate Filter Function Metric NormedSpace RCLike Set Topology
+open Bornology Filter Function Metric NormedSpace RCLike Set Topology
 
 namespace TauCeti
 
@@ -67,23 +67,8 @@ section Seminormed
 
 variable [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- A functional which attains its norm at a point of the closed unit ball also attains it in
-real part, at a rotation of that point. -/
-theorem _root_.StrongDual.exists_norm_le_one_re_apply_eq_norm {f : StrongDual 𝕜 E} {x : E}
-    (hx : ‖x‖ ≤ 1) (hfx : ‖f x‖ = ‖f‖) : ∃ y : E, ‖y‖ ≤ 1 ∧ re (f y) = ‖f‖ := by
-  by_cases h : f x = 0
-  · refine ⟨x, hx, ?_⟩
-    rw [h, map_zero, ← hfx, h, norm_zero]
-  refine ⟨(conj (f x) / (‖f x‖ : 𝕜)) • x, ?_, ?_⟩
-  · have hn : ‖f x‖ ≠ 0 := norm_ne_zero_iff.2 h
-    rw [norm_smul, norm_div, RCLike.norm_conj, RCLike.norm_ofReal, abs_norm, div_self hn, one_mul]
-    exact hx
-  · have hn : (‖f x‖ : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 (norm_ne_zero_iff.2 h)
-    rw [map_smul, smul_eq_mul, div_mul_eq_mul_div, RCLike.conj_mul, sq, mul_div_assoc,
-      div_self hn, mul_one, RCLike.ofReal_re, hfx]
-
 /-- Every continuous linear functional on a reflexive space attains its norm on the closed unit
-ball, which is weakly compact. -/
+ball. -/
 theorem exists_norm_apply_eq_norm_of_surjective_inclusionInDoubleDual
     (hE : Surjective (inclusionInDoubleDual 𝕜 E)) (f : StrongDual 𝕜 E) :
     ∃ x, ‖x‖ ≤ 1 ∧ ‖f x‖ = ‖f‖ := by
@@ -98,18 +83,6 @@ theorem exists_norm_apply_eq_norm_of_surjective_inclusionInDoubleDual
   have := hmax ⟨y, mem_closedBall_zero_iff.2 hy.le, rfl⟩
   simpa using this
 
-/-- Real parts of continuous linear images commute with σ-convex combinations of a bounded
-sequence of functionals. -/
-private lemma re_map_tsum_ofReal_smul {h : ℕ → StrongDual 𝕜 E} {C : ℝ} (hC : ∀ k, ‖h k‖ ≤ C)
-    {w : ℕ → ℝ} (hw0 : ∀ k, 0 ≤ w k) (hw : HasSum w 1) (L : StrongDual 𝕜 E →L[𝕜] 𝕜) :
-    re (L (∑' k, (w k : 𝕜) • h k)) = ∑' k, w k * re (L (h k)) := by
-  have hs : Summable fun k ↦ (w k : 𝕜) • h k :=
-    Summable.of_norm_bounded (hw.summable.mul_right C) fun k ↦ by
-      rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (hw0 k)]
-      exact mul_le_mul_of_nonneg_left (hC k) (hw0 k)
-  rw [L.map_tsum hs, RCLike.re_tsum _ (ContinuousLinearMap.summable L hs)]
-  simp only [map_smul, smul_eq_mul, RCLike.re_ofReal_mul]
-
 /-- Simons' inequality on the closed unit ball. If every functional on `E` attains its norm, and
 the real part of a bidual element `Ψ` is bounded below by `θ > 0` on a bounded sequence `h k` of
 functionals, then some vector `x` keeps `re (h k x)` above a positive constant for infinitely
@@ -123,47 +96,35 @@ private lemma exists_frequently_lt_re_apply
     have := ((hΨ 0).trans_le (re_le_norm _)).trans_le (Ψ.le_opNorm (h 0))
     rw [← h0, zero_mul] at this
     linarith
-  -- Every σ-convex combination `H` of the `h k` has `θ ≤ re (Ψ H) ≤ ‖Ψ‖ ‖H‖`, and attains its
-  -- norm in real part on the closed unit ball.
+  -- The real parts of the `h k` commute with σ-convex combinations of them.
+  have happly : ∀ w : ℕ → ℝ, HasSum w 1 → ∀ b : E,
+      ∑' k, w k * re (h k b) = re ((∑' k, (w k : 𝕜) • h k) b) := fun w hw b ↦ by
+    simpa only [ContinuousLinearMap.apply_apply] using
+      (StrongDual.hasSum_mul_re_apply (ContinuousLinearMap.apply 𝕜 𝕜 b) hw.summable hC).tsum_eq
+  -- Every σ-convex combination `H` of the `h k` has `θ ≤ re (Ψ H) ≤ ‖Ψ‖ ‖H‖`.
   have hHnorm : ∀ w : ℕ → ℝ, (∀ k, 0 ≤ w k) → HasSum w 1 →
       θ / ‖Ψ‖ ≤ ‖∑' k, (w k : 𝕜) • h k‖ := fun w hw0 hw ↦ by
-    have hsr : Summable fun k ↦ w k * re (Ψ (h k)) :=
-      Summable.of_norm_bounded (hw.summable.mul_right (‖Ψ‖ * C)) fun k ↦ by
-        rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hw0 k)]
-        exact mul_le_mul_of_nonneg_left ((abs_re_le_norm _).trans ((Ψ.le_opNorm _).trans
-          (mul_le_mul_of_nonneg_left (hC k) (norm_nonneg Ψ)))) (hw0 k)
     have hθle : θ ≤ re (Ψ (∑' k, (w k : 𝕜) • h k)) := by
-      rw [re_map_tsum_ofReal_smul hC hw0 hw, ← one_mul θ, ← hw.tsum_eq,
-        ← hw.summable.tsum_mul_right]
-      exact (hw.summable.mul_right θ).tsum_le_tsum
-        (fun k ↦ mul_le_mul_of_nonneg_left (hΨ k).le (hw0 k)) hsr
+      simpa only [one_mul] using hasSum_le (fun k ↦ mul_le_mul_of_nonneg_left (hΨ k).le (hw0 k))
+        (hw.mul_right θ) (Ψ.hasSum_mul_re_apply hw.summable hC)
     rw [div_le_iff₀ hΨ0, mul_comm]
     exact hθle.trans ((re_le_norm _).trans (Ψ.le_opNorm _))
-  have hattain : ∀ w : ℕ → ℝ, ∃ y : E, ‖y‖ ≤ 1 ∧
-      re ((∑' k, (w k : 𝕜) • h k) y) = ‖∑' k, (w k : 𝕜) • h k‖ := fun w ↦ by
-    obtain ⟨x₀, hx₀, hfx₀⟩ := hE (∑' k, (w k : 𝕜) • h k)
-    exact StrongDual.exists_norm_le_one_re_apply_eq_norm hx₀ hfx₀
-  have happly : ∀ w : ℕ → ℝ, (∀ k, 0 ≤ w k) → HasSum w 1 → ∀ b : E,
-      ∑' k, w k * re (h k b) = re ((∑' k, (w k : 𝕜) • h k) b) := fun w hw0 hw b ↦ by
-    simpa only [ContinuousLinearMap.apply_apply] using
-      (re_map_tsum_ofReal_smul hC hw0 hw (ContinuousLinearMap.apply 𝕜 𝕜 b)).symm
-  -- Simons' inequality for the real parts of the `h k` on the closed unit ball.
-  have hM : ∀ k (b : closedBall (0 : E) 1), |re (h k b)| ≤ C := fun k b ↦
+  -- Simons' inequality for the real parts of the `h k` on the closed unit ball, where every
+  -- σ-convex combination attains its norm in real part.
+  have hM : ∀ k, ∀ b ∈ closedBall (0 : E) 1, |re (h k b)| ≤ C := fun k b hb ↦
     (abs_re_le_norm _).trans (((h k).le_opNorm b).trans
-      ((mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 b.2)).trans (hC k)))
-  have hmax : ∀ w : ℕ → ℝ, (∀ k, 0 ≤ w k) → HasSum w 1 → ∃ b : closedBall (0 : E) 1,
-      IsMaxOn (fun b : closedBall (0 : E) 1 ↦ ∑' k, w k * re (h k b)) univ b := fun w hw0 hw ↦ by
-    obtain ⟨y, hy, hyre⟩ := hattain w
-    refine ⟨⟨y, mem_closedBall_zero_iff.2 hy⟩, isMaxOn_iff.2 fun b _ ↦ ?_⟩
-    rw [happly w hw0 hw, happly w hw0 hw, hyre]
-    exact (re_le_norm _).trans (ContinuousLinearMap.unit_le_opNorm _ _
-      (mem_closedBall_zero_iff.1 b.2))
-  have hcle : ∀ w : ℕ → ℝ, (∀ k, 0 ≤ w k) → HasSum w 1 → ∃ b : closedBall (0 : E) 1,
+      ((mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 hb)).trans (hC k)))
+  have hmax : ∀ w : ℕ → ℝ, (∀ k, 0 ≤ w k) → HasSum w 1 → ∃ b ∈ closedBall (0 : E) 1,
+      IsMaxOn (fun b ↦ ∑' k, w k * re (h k b)) (closedBall 0 1) b := fun w _ hw ↦ by
+    simpa only [happly w hw] using
+      StrongDual.exists_isMaxOn_re_apply_closedBall_iff.2 (hE (∑' k, (w k : 𝕜) • h k))
+  have hcle : ∀ w : ℕ → ℝ, (∀ k, 0 ≤ w k) → HasSum w 1 → ∃ b ∈ closedBall (0 : E) 1,
       θ / ‖Ψ‖ ≤ ∑' k, w k * re (h k b) := fun w hw0 hw ↦ by
-    obtain ⟨y, hy, hyre⟩ := hattain w
-    exact ⟨⟨y, mem_closedBall_zero_iff.2 hy⟩, by rw [happly w hw0 hw, hyre]; exact hHnorm w hw0 hw⟩
+    obtain ⟨y, hy, hyre⟩ :=
+      StrongDual.exists_norm_le_one_re_apply_eq_norm_iff.2 (hE (∑' k, (w k : 𝕜) • h k))
+    exact ⟨y, mem_closedBall_zero_iff.2 hy, by rw [happly w hw, hyre]; exact hHnorm w hw0 hw⟩
   have hc : 0 < θ / ‖Ψ‖ := by positivity
-  obtain ⟨b, hfreq⟩ := exists_frequently_sub_lt_of_isMaxOn_tsum hM hmax hcle (half_pos hc)
+  obtain ⟨b, -, hfreq⟩ := exists_frequently_sub_lt_of_isMaxOn_tsum hM hmax hcle (half_pos hc)
   exact ⟨θ / ‖Ψ‖ - θ / ‖Ψ‖ / 2, by linarith, b, hfreq⟩
 
 /-- **The Rainwater–Simons theorem.** If every continuous linear functional on `E` attains its
@@ -199,13 +160,11 @@ theorem tendsto_toWeakSpace_of_forall_exists_norm_apply_eq_norm
   have hLε : ε ≤ ‖L‖ := ge_of_tendsto (hL.norm) (Eventually.of_forall fun k ↦ hφ₁ε (φ₂ k))
   have hL0 : L ≠ 0 := norm_pos_iff.1 (hε.trans_le hLε)
   -- Rotate `Φ` so that its real part is eventually above `‖L‖ / 2` on `f n - g`.
-  set Ψ : StrongDual 𝕜 (StrongDual 𝕜 E) := (conj L / (‖L‖ : 𝕜)) • Φ with hΨ
+  obtain ⟨a, -, haL⟩ := exists_norm_eq_mul_self L
+  set Ψ : StrongDual 𝕜 (StrongDual 𝕜 E) := a • Φ with hΨ
   have hΨlim : Tendsto (fun k ↦ re (Ψ (f (φ₁ (φ₂ k)) - g))) atTop (𝓝 ‖L‖) := by
-    have hlimL : conj L / (‖L‖ : 𝕜) * L = ‖L‖ := by
-      rw [div_mul_eq_mul_div, RCLike.conj_mul, sq, mul_div_assoc,
-        div_self (RCLike.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hL0)), mul_one]
-    have := (RCLike.continuous_re.tendsto _).comp (hL.const_mul (conj L / (‖L‖ : 𝕜)))
-    simpa only [hlimL, RCLike.ofReal_re, hΨ, smul_apply, smul_eq_mul, hu, comp_def] using this
+    have := (RCLike.continuous_re.tendsto _).comp (hL.const_mul a)
+    simpa only [← haL, RCLike.ofReal_re, hΨ, smul_apply, smul_eq_mul, hu, comp_def] using this
   obtain ⟨K, hK⟩ := eventually_atTop.1
     (hΨlim.eventually_const_lt (half_lt_self (norm_pos_iff.2 hL0)))
   -- Simons' inequality gives `x` with `re ((f n - g) x)` frequently large along the

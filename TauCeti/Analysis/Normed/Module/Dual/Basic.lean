@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.Prod
 public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
@@ -22,6 +24,11 @@ the real part of `f` exceeds `r * ‖x‖` at some point `x` if and only if `r <
 `re_apply_add_mul_norm_le_iff` on unit balls of two factors gives the `ℓ¹` norm identity
 `‖Ψ ∘ inl‖ + ‖Ψ ∘ inr‖ = ‖Ψ‖` on `ℓ^∞` products `E × F`.
 
+Rotating a vector by a unit scalar turns `f x` into the nonnegative real `‖f x‖`. So a
+functional attains its norm on the closed unit ball exactly when its real part takes the value
+`‖f‖` there, and exactly when its real part has a maximum there. Real parts of functionals also
+commute with real-weighted series of a bounded family.
+
 ## Main results
 
 * `StrongDual.re_apply_add_mul_norm_le_iff`: for `0 ≤ r`, the real part of a functional is at
@@ -32,6 +39,11 @@ the real part of `f` exceeds `r * ‖x‖` at some point `x` if and only if `r <
 * `StrongDual.norm_comp_inl_add_norm_comp_inr`: on `E × F` over `RCLike` scalars, the operator
   norm of `Ψ` equals the sum of the norms of its restrictions `Ψ.comp (.inl 𝕜 E F)` and
   `Ψ.comp (.inr 𝕜 E F)`.
+* `StrongDual.exists_norm_le_one_re_apply_eq_norm_iff`,
+  `StrongDual.exists_isMaxOn_re_apply_closedBall_iff`: a functional attains its norm on the
+  closed unit ball exactly when its real part takes the value `‖f‖`, or has a maximum, there.
+* `StrongDual.hasSum_mul_re_apply`: the real part of a functional applied to a real-weighted
+  series of a bounded family.
 -/
 
 public section
@@ -109,5 +121,50 @@ theorem norm_comp_inl_add_norm_comp_inr [SeminormedAddCommGroup F] [NormedSpace 
     rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
   have h0 := (re_apply_add_mul_norm_le_iff (f := f₁) (x := 0) zero_le_one).2 h₁
   rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
+
+/-- A rotation `y` of `x`, of the same norm, on which `f` takes the nonnegative real value
+`‖f x‖`. -/
+theorem exists_norm_eq_apply_eq_norm_apply (f : StrongDual 𝕜 E) (x : E) :
+    ∃ y : E, ‖y‖ = ‖x‖ ∧ f y = ‖f x‖ := by
+  obtain ⟨a, ha, hax⟩ := exists_norm_eq_mul_self (f x)
+  exact ⟨a • x, by rw [norm_smul, ha, one_mul], by rw [map_smul, smul_eq_mul, hax]⟩
+
+/-- A functional attains its norm on the closed unit ball exactly when its real part takes the
+value `‖f‖` there. -/
+theorem exists_norm_le_one_re_apply_eq_norm_iff {f : StrongDual 𝕜 E} :
+    (∃ x : E, ‖x‖ ≤ 1 ∧ re (f x) = ‖f‖) ↔ ∃ x : E, ‖x‖ ≤ 1 ∧ ‖f x‖ = ‖f‖ := by
+  refine ⟨fun ⟨x, hx, h⟩ ↦ ⟨x, hx, (f.unit_le_opNorm x hx).antisymm
+    (h.symm.trans_le (re_le_norm _))⟩, fun ⟨x, hx, h⟩ ↦ ?_⟩
+  obtain ⟨y, hy, hfy⟩ := f.exists_norm_eq_apply_eq_norm_apply x
+  exact ⟨y, hy ▸ hx, by rw [hfy, ofReal_re, h]⟩
+
+/-- A functional attains its norm on the closed unit ball exactly when its real part has a maximum
+there. -/
+theorem exists_isMaxOn_re_apply_closedBall_iff {f : StrongDual 𝕜 E} :
+    (∃ x ∈ closedBall (0 : E) 1, IsMaxOn (fun y ↦ re (f y)) (closedBall 0 1) x) ↔
+      ∃ x : E, ‖x‖ ≤ 1 ∧ ‖f x‖ = ‖f‖ := by
+  rw [← exists_norm_le_one_re_apply_eq_norm_iff]
+  refine ⟨fun ⟨x, hx, hmax⟩ ↦ ⟨x, mem_closedBall_zero_iff.1 hx, ?_⟩, fun ⟨x, hx, h⟩ ↦
+    ⟨x, mem_closedBall_zero_iff.2 hx, isMaxOn_iff.2 fun y hy ↦ h ▸ (re_le_norm _).trans
+      (f.unit_le_opNorm y (mem_closedBall_zero_iff.1 hy))⟩⟩
+  refine ((re_le_norm _).trans (f.unit_le_opNorm x (mem_closedBall_zero_iff.1 hx))).antisymm
+    (f.opNorm_le_of_unit_norm ?_ fun y hy ↦ ?_)
+  · simpa using isMaxOn_iff.1 hmax 0 (mem_closedBall_self zero_le_one)
+  · -- `‖f y‖` is the real part of `f` at a rotation of `y`, which lies in the closed unit ball.
+    obtain ⟨z, hz, hfz⟩ := f.exists_norm_eq_apply_eq_norm_apply y
+    simpa [hfz] using isMaxOn_iff.1 hmax z (mem_closedBall_zero_iff.2 (hz.trans hy).le)
+
+/-- The real part of a functional `L` commutes with a real-weighted series `∑' i, w i • h i` of a
+bounded family `h`. -/
+theorem hasSum_mul_re_apply {ι : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [CompleteSpace F] (L : StrongDual 𝕜 F) {w : ι → ℝ} (hw : Summable w) {h : ι → F} {C : ℝ}
+    (hC : ∀ i, ‖h i‖ ≤ C) :
+    HasSum (fun i ↦ w i * re (L (h i))) (re (L (∑' i, (w i : 𝕜) • h i))) := by
+  have hs : Summable fun i ↦ (w i : 𝕜) • h i :=
+    Summable.of_norm_bounded (hw.abs.mul_right C) fun i ↦ by
+      rw [norm_smul, norm_ofReal]
+      exact mul_le_mul_of_nonneg_left (hC i) (abs_nonneg _)
+  simpa only [map_smul, smul_eq_mul, reCLM_apply, re_ofReal_mul] using
+    reCLM.hasSum (L.hasSum hs.hasSum)
 
 end StrongDual

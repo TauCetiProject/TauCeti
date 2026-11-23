@@ -25,6 +25,8 @@ Natural multiplicities can also be expressed by repeating each nonnegative real 
 through a finite fiber. Summability of the repeated family is equivalent to summability of
 the original family weighted by those multiplicities.
 
+A summable real family times a bounded one is summable.
+
 A square-summable real family is eventually small: `b i * C ≤ 1` for all but finitely many
 `i`, for any fixed real `C`.
 
@@ -35,6 +37,7 @@ analogue of the power-rule integral identity for tails.
 
 * `Summable.exists_tendsto_atTop_summable_mul`: weights `c n ≥ 1` with `c n → ∞` and
   `∑ n, c n * a n` summable.
+* `Summable.mul_of_abs_le`: a summable family times a bounded family is summable.
 * `Summable.antitone_tsum_Ioi`: the tails `∑_{m > n} a m` of a nonnegative summable sequence
   decrease with `n`.
 * `Summable.mul_pow_tsum_Ioi`: the sequence `a m * (∑_{j > m} a j) ^ k` is summable for a
@@ -133,6 +136,13 @@ theorem Summable.exists_tendsto_atTop_summable_mul {a : ℕ → ℝ} (ha : Summa
     gcongr with k
     simp only [hb_def]
     split_ifs <;> simp
+
+/-- A summable real family times a bounded real family is summable. -/
+theorem Summable.mul_of_abs_le {ι : Type*} {f g : ι → ℝ} {C : ℝ} (hf : Summable f)
+    (hg : ∀ i, |g i| ≤ C) : Summable fun i ↦ f i * g i :=
+  summable_abs_iff.1 <| (hf.abs.mul_right C).of_nonneg_of_le (fun i ↦ abs_nonneg _) fun i ↦ by
+    rw [abs_mul]
+    exact mul_le_mul_of_nonneg_left (hg i) (abs_nonneg _)
 
 section Tail
 
