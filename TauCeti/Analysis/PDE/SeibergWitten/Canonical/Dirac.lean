@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
+public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
+import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
@@ -31,9 +33,10 @@ taken as data. Fix a positively oriented unitary frame `(e₀, e₁, e₂, e₃)
   compatible with Clifford multiplication gives the Leibniz relation
   `c₂(θ v) u₀ + c₂(ω) (u v) = -2i u v`. The defining property of `A₀` is `P_α (u v) = 0`.
 
-The Leibniz relation and `P_α (u v) = 0` determine the derivative: `u v = (i / 4) c₂(θ v) u₀`
-(`TauCeti.SeibergWitten.eq_I_div_four_smul_of_cliffordProjection_apply_eq_zero`). On the
-canonical eigenspace, `c₂` of a two-form `x` is computed in the frame by
+The Leibniz relation determines the `P_β`-component of the derivative, `P_β (u v) = C(iθ v) u₀ / 4`
+(`TauCeti.SeibergWitten.cliffordProjection_neg_apply_eq_smul_cliffordRestriction_apply`), so
+`P_α (u v) = 0` gives `u v = (i / 4) c₂(θ v) u₀`. On the canonical eigenspace, `c₂` of a
+two-form `x` is computed in the frame by
 `c₂(x) u₀ = -i (x₀₁ + x₂₃) u₀ + (x₀₂ - x₁₃ + i (x₀₃ + x₁₂)) c(e₀) c(e₂) u₀`, with
 `xᵢⱼ = x(eᵢ, eⱼ)`
 (`TauCeti.SeibergWitten.bivectorExterior_apply_eq_of_cliffordProjection_apply_eq_self`).
@@ -60,23 +63,45 @@ structure is nonzero, and only its alternation `dω` enters `D_{A₀} u₀`.
 The bundle-level construction of `A₀` and `u₀`, and the identification of `θ` and `u` with
 covariant derivatives on an actual manifold, are not done here.
 
+The last part proves the same vanishing without a frame, for an arbitrary Hermitian Clifford
+module. Let `ψ'ₖ` be positive half-spinors satisfying the differentiated eigenvalue equations
+`C(iω'ₖ) ψ + C(iω) ψ'ₖ = 2 ψ'ₖ` for self-dual two-vectors `ω'ₖ`, and `P_β = 1 - P_α`. For a
+positive spinor `ψ`, a vector `v` and a self-dual `β`, Clifford multiplication satisfies
+`c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ`
+(`Orientation.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`), so
+
+`∑ₖ c(vₖ) P_β ψ'ₖ = -(i / 2) c(∑ₖ vₖ ⌟ ω'ₖ) ψ`
+
+(`TauCeti.SeibergWitten.sum_ι_apply_cliffordProjection_neg_apply`). In dimension four, if
+`∑ₖ vₖ ∧ ω'ₖ` vanishes then so does `∑ₖ vₖ ⌟ ω'ₖ`
+(`Orientation.sum_twoVectorContraction_eq_zero_of_hodgeStar_eq_self`), and then the sum vanishes
+(`TauCeti.SeibergWitten.sum_ι_apply_cliffordProjection_neg_apply_eq_zero`). When `ω` is self-dual,
+`W⁺` has complex dimension two and `u₀` is a unit spinor with `P_α u₀ = u₀`, `P_α` and `P_β` are
+the orthogonal projections onto the canonical line `ℂ u₀` and its complement:
+`P_β ψ' = ψ' - ⟪u₀, ψ'⟫ u₀`. For an orthonormal frame `vₖ = eₖ`, `ψ'ₖ = ∇_{eₖ} u₀` and
+`ω'ₖ = ∇_{eₖ} ω`, the sum is then `D_{A₀} u₀`, the vector `∑ₖ eₖ ⌟ ∇_{eₖ} ω` is `-d*ω`, and the
+hypothesis is `dω = 0` (`TauCeti.SeibergWitten.sum_ι_apply_sub_inner_smul_eq_zero`).
+
 ## Main results
 
 * `TauCeti.SeibergWitten.bivectorExterior_apply_eq_of_cliffordProjection_apply_eq_self`: the frame
   formula for `c₂(x) u₀`.
-* `TauCeti.SeibergWitten.eq_I_div_four_smul_of_cliffordProjection_apply_eq_zero`: the derivative
-  of the canonical spinor for the canonical connection, `∇_v u₀ = (i / 4) c₂(∇_v ω) u₀`.
 * `TauCeti.SeibergWitten.sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero`: `D_{A₀} u₀` in terms
   of `dω`.
 * `TauCeti.SeibergWitten.sum_ι_apply_eq_zero_of_twoVectorAlternatingSum_eq_zero`:
   `D_{A₀} u₀ = 0` when `dω = 0`.
+* `TauCeti.SeibergWitten.sum_ι_apply_cliffordProjection_neg_apply`: without a frame,
+  `∑ₖ c(vₖ) P_β ψ'ₖ = -(i / 2) c(∑ₖ vₖ ⌟ ω'ₖ) ψ`.
+* `TauCeti.SeibergWitten.sum_ι_apply_cliffordProjection_neg_apply_eq_zero` and, on a spin module,
+  `TauCeti.SeibergWitten.sum_ι_apply_sub_inner_smul_eq_zero`: it vanishes when
+  `∑ₖ vₖ ∧ ω'ₖ = 0`.
 
 ## References
 
 * C. H. Taubes, *The Seiberg–Witten invariants and symplectic forms*, Math. Res. Lett. 1 (1994),
   809–822.
 * C. H. Taubes, *SW ⇒ Gr: From the Seiberg–Witten equations to pseudo-holomorphic curves*,
-  J. Amer. Math. Soc. 9 (1996), 845–918.
+  J. Amer. Math. Soc. 9 (1996), 845–918, Section 2.
 -/
 
 public section
@@ -85,7 +110,7 @@ noncomputable section
 
 namespace TauCeti.SeibergWitten
 
-open CliffordAlgebra Module exteriorPower
+open CliffordAlgebra Module _root_.exteriorPower
 open scoped RealInnerProductSpace InnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
@@ -160,25 +185,7 @@ theorem bivectorExterior_apply_eq_of_cliffordProjection_apply_eq_self
   push_cast
   match_scalars <;> ring_nf
 
-/-! ### The derivative of the canonical spinor -/
-
-/-- **The derivative of the canonical spinor for the canonical connection.** Let `u₀` satisfy
-`c₂(ω) u₀ = -2i u₀` and let `u` be a positive half-spinor with `P_α u = 0`. If
-`c₂(θ) u₀ + c₂(ω) u = -2i u`, the Leibniz rule for the derivative `θ = ∇_v ω`, `u = ∇_v u₀`, then
-`u = (i / 4) c₂(θ) u₀`. -/
-theorem eq_I_div_four_smul_of_cliffordProjection_apply_eq_zero {u₀ : W}
-    {u : positiveHalfSpinors o ρ} {ω θ : ⋀[ℝ]^2 V}
-    (hu : cliffordProjection o ρ ω u = 0)
-    (hL : ρ (bivectorExterior Q θ) u₀ + ρ (bivectorExterior Q ω) u =
-      (-2 * Complex.I) • (u : W)) :
-    (u : W) = (Complex.I / 4) • ρ (bivectorExterior Q θ) u₀ := by
-  have hθ : ρ (bivectorExterior Q θ) u₀ = (-4 * Complex.I) • (u : W) := by
-    linear_combination (norm := module)
-      hL - bivectorExterior_apply_of_cliffordProjection_apply_eq_zero o ρ hu
-  rw [hθ, smul_smul, show Complex.I / 4 * (-4 * Complex.I) = 1 by
-    linear_combination -Complex.I_mul_I, one_smul]
-
-/-! ### The Dirac operator of the canonical spinor -/
+/-! ### The Dirac operator of the canonical spinor in a unitary frame -/
 
 include hQ hkl he h₀ h₂ in
 /-- Clifford multiplication by the frame on `β₀ = c(e₀) c(e₂) u₀`, for `u₀` in the canonical
@@ -229,14 +236,25 @@ theorem sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero
   obtain ⟨q0, q1, q2, q3⟩ :=
     map_ι_apply_map_ι_apply_map_ι_apply_of_cliffordProjection hQ hkl he h₀ h₂ hu₀
   set β₀ := ρ (ι Q (e 0)) (ρ (ι Q (e 2)) (u₀ : W)) with hβ₀
-  -- Each derivative is `(i / 4) c₂(θ v) u₀`, a multiple of `β₀`.
+  -- Each derivative is `P_β (u v) = C(iθ v) u₀ / 4 = (i / 4) c₂(θ v) u₀`.
+  have hd (v : V) : (u v : W) = (Complex.I / 4) • ρ (bivectorExterior Q (θ v)) u₀ := by
+    have h := cliffordProjection_neg_apply_eq_smul_cliffordRestriction_apply (ω := J.kahlerForm)
+      (ω' := θ v) (ψ := u₀) (ψ' := u v) (Subtype.ext (by
+        simp only [Submodule.coe_add, coe_cliffordRestriction_apply, Submodule.coe_smul, ← smul_add,
+          hL v, smul_smul]
+        congr 1
+        linear_combination (-2 : ℂ) * Complex.I_mul_I))
+    rw [cliffordProjection_neg_apply, hu v, sub_zero] at h
+    rw [h, Submodule.coe_smul, coe_cliffordRestriction_apply, smul_smul]
+    ring_nf
+  -- So each derivative is a multiple of `β₀`.
   have hu' (k : Fin 4) : (u (e k) : W) = (Complex.I / 4) •
       ((((⟪θ (e k), ιMulti ℝ 2 ![e 0, e 2]⟫ - ⟪θ (e k), ιMulti ℝ 2 ![e 1, e 3]⟫ : ℝ) : ℂ) +
         ((⟪θ (e k), ιMulti ℝ 2 ![e 0, e 3]⟫ + ⟪θ (e k), ιMulti ℝ 2 ![e 1, e 2]⟫ : ℝ) : ℂ) *
           Complex.I) • β₀) := by
     obtain ⟨h01, h23, -, -⟩ :=
       AlmostComplexStructure.inner_ιMulti_of_antiinvariant h₀ h₂ (hθ (e k))
-    rw [eq_I_div_four_smul_of_cliffordProjection_apply_eq_zero (hu (e k)) (hL (e k)),
+    rw [hd,
       bivectorExterior_apply_eq_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀, h01,
       h23]
     simp [hβ₀]
@@ -345,5 +363,72 @@ theorem sum_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_zero
     · left; left
       rw [h₁, h₂, h₃, h₄]
       norm_num
+
+
+/-! ### The Dirac operator of the canonical connection without a frame -/
+
+include hQ hkl in
+/-- **The Dirac operator of the canonical connection on the canonical spinor**: if `ψ'ₖ` satisfy
+the differentiated eigenvalue equations `C(iω'ₖ) ψ + C(iω) ψ'ₖ = 2 ψ'ₖ` with self-dual `ω'ₖ`, then
+
+`∑ₖ c(vₖ) P_β ψ'ₖ = -(i / 2) c(∑ₖ vₖ ⌟ ω'ₖ) ψ`.
+
+For an orthonormal frame `vₖ = eₖ`, `ψ = u₀`, `ψ'ₖ = ∇_{eₖ} u₀` and `ω'ₖ = ∇_{eₖ} ω`, on a spin
+module and for a unit `u₀` on the canonical line of `ω`, the left side is `D_{A₀} u₀` and
+`∑ₖ eₖ ⌟ ∇_{eₖ} ω = -d*ω`. -/
+theorem sum_ι_apply_cliffordProjection_neg_apply {κ : Type*} {s : Finset κ} {ω : ⋀[ℝ]^2 V}
+    {ψ : positiveHalfSpinors o ρ} (v : κ → V) {ω' : κ → ⋀[ℝ]^2 V}
+    {ψ' : κ → positiveHalfSpinors o ρ} (hω' : ∀ k ∈ s, o.hodgeStar hkl (ω' k) = ω' k)
+    (hψ' : ∀ k ∈ s, cliffordRestriction o ρ (ω' k) ψ + cliffordRestriction o ρ ω (ψ' k) =
+      (2 : ℂ) • ψ' k) :
+    ∑ k ∈ s, ρ (ι Q (v k)) (cliffordProjection o ρ (-ω) (ψ' k)) =
+      (-Complex.I / 2) • ρ (ι Q (∑ k ∈ s, twoVectorContraction (ω' k) (v k))) ψ := by
+  simp only [map_sum, LinearMap.sum_apply, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  rw [cliffordProjection_neg_apply_eq_smul_cliffordRestriction_apply (hψ' k hk),
+    Submodule.coe_smul, coe_cliffordRestriction_apply, map_smul, map_smul,
+    o.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self hQ hkl (hω' k hk), smul_smul,
+    smul_smul]
+  congr 1
+  ring
+
+include hQ hkl in
+/-- **Taubes's identity `D_{A₀} u₀ = 0`**: under the hypotheses of
+`sum_ι_apply_cliffordProjection_neg_apply`, if moreover `∑ₖ vₖ ∧ ω'ₖ = 0`, then
+`∑ₖ c(vₖ) P_β ψ'ₖ = 0`. For an orthonormal frame the hypothesis is `dω = 0`. -/
+theorem sum_ι_apply_cliffordProjection_neg_apply_eq_zero {κ : Type*} {s : Finset κ}
+    {ω : ⋀[ℝ]^2 V} {ψ : positiveHalfSpinors o ρ} (v : κ → V) {ω' : κ → ⋀[ℝ]^2 V}
+    {ψ' : κ → positiveHalfSpinors o ρ} (hω' : ∀ k ∈ s, o.hodgeStar hkl (ω' k) = ω' k)
+    (hψ' : ∀ k ∈ s, cliffordRestriction o ρ (ω' k) ψ + cliffordRestriction o ρ ω (ψ' k) =
+      (2 : ℂ) • ψ' k)
+    (hdω : ∑ k ∈ s, ExteriorAlgebra.wedgeLeft (v k) 2 (ω' k) = 0) :
+    ∑ k ∈ s, ρ (ι Q (v k)) (cliffordProjection o ρ (-ω) (ψ' k)) = 0 := by
+  rw [sum_ι_apply_cliffordProjection_neg_apply hQ hkl v hω' hψ',
+    o.sum_twoVectorContraction_eq_zero_of_hodgeStar_eq_self hkl hω' hdω]
+  simp
+
+include hQ hkl in
+/-- **Taubes's identity `D_{A₀} u₀ = 0` on a spin module**: when `W⁺` has complex dimension two
+and `u₀` is a unit spinor on the canonical line of a self-dual `ω`, the canonical covariant
+derivative of `u₀` is `ψ' - ⟪u₀, ψ'⟫ u₀`, and under the hypotheses of
+`sum_ι_apply_cliffordProjection_neg_apply_eq_zero`,
+
+`∑ₖ c(vₖ) (ψ'ₖ - ⟪u₀, ψ'ₖ⟫ u₀) = 0`. -/
+theorem sum_ι_apply_sub_inner_smul_eq_zero (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2) {κ : Type*} {s : Finset κ} {ω : ⋀[ℝ]^2 V}
+    (hω : o.hodgeStar hkl ω = ω) {u₀ : positiveHalfSpinors o ρ}
+    (hu₀ : cliffordProjection o ρ ω u₀ = u₀) (hu₀₁ : ‖u₀‖ = 1) (v : κ → V)
+    {ω' : κ → ⋀[ℝ]^2 V} {ψ' : κ → positiveHalfSpinors o ρ}
+    (hω' : ∀ k ∈ s, o.hodgeStar hkl (ω' k) = ω' k)
+    (hψ' : ∀ k ∈ s, cliffordRestriction o ρ (ω' k) u₀ + cliffordRestriction o ρ ω (ψ' k) =
+      (2 : ℂ) • ψ' k)
+    (hdω : ∑ k ∈ s, ExteriorAlgebra.wedgeLeft (v k) 2 (ω' k) = 0) :
+    ∑ k ∈ s, ρ (ι Q (v k)) ((ψ' k - ⟪u₀, ψ' k⟫_ℂ • u₀ : positiveHalfSpinors o ρ) : W) = 0 := by
+  -- On a spin module `P_α ψ = ⟪u₀, ψ⟫ u₀`, so `P_β ψ = ψ - ⟪u₀, ψ⟫ u₀`.
+  have hP (ψ : positiveHalfSpinors o ρ) : cliffordProjection o ρ (-ω) ψ = ψ - ⟪u₀, ψ⟫_ℂ • u₀ := by
+    rw [cliffordProjection_neg_apply,
+      cliffordProjection_apply_eq_inner_smul o hQ hkl hω hρ hW hu₀ hu₀₁]
+  simp_rw [← hP]
+  exact sum_ι_apply_cliffordProjection_neg_apply_eq_zero hQ hkl v hω' hψ' hdω
 
 end TauCeti.SeibergWitten
