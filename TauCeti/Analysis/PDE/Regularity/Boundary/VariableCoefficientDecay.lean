@@ -11,6 +11,7 @@ import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.SpecificLimits.CampanatoIteration
 import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
