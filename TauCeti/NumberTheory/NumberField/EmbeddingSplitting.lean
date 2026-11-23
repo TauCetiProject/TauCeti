@@ -29,7 +29,8 @@ idempotents of the product split every `R`-module `M` with a commuting action of
 internal direct sum `M = ⨁_σ M(σ)`, where `M(σ)` is the largest submodule on which `𝓞 L` acts
 through `σ`; they act on `M` through `TauCeti.Algebra.TensorProduct.toModuleEnd R (𝓞 L) M`. The
 splitting is functorial in `R`-linear maps commuting with the `𝓞 L`-actions and commutes with
-base change: `(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
+base change: for an `R`-module `N`, with `𝓞 L` acting on `M ⊗[R] N` through the factor `M`,
+`(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
 
 ## Main definitions
 
@@ -52,8 +53,8 @@ base change: `(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
 * `TauCeti.NumberField.isInternal_embeddingEigenspace`: `M = ⨁_σ M(σ)`.
 * `TauCeti.NumberField.embeddingEigenspace_le_comap`: an `R`-linear map commuting with the
   `𝓞 L`-actions sends `M(σ)` into `N(σ)`.
-* `TauCeti.NumberField.embeddingEigenspace_tensorProduct`: `(M ⊗[R] N)(σ)` is the image of
-  `M(σ) ⊗[R] N`.
+* `TauCeti.NumberField.embeddingEigenspace_tensorProduct`: for an `R`-module `N`, with `𝓞 L`
+  acting on `M ⊗[R] N` through the factor `M`, `(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
 
 ## References
 
