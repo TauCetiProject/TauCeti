@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.LFunction
-import Mathlib.RingTheory.PowerSeries.WellKnown
 import TauCeti.NumberTheory.Divisors
 import TauCeti.RingTheory.PowerSeries.Geometric
 
