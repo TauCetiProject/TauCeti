@@ -156,9 +156,17 @@ variable {R : Type u} [Ring R] {M N L : Type v} [AddCommGroup M] [AddCommGroup N
   (eL : L ≃ₗ[R] L') {f : M' →ₗ[R] N'} {g : N' →ₗ[R] L'}
 
 /-- The first map of `ModuleCat.shortComplexOfConj` is `f` conjugated by the equivalences. -/
+@[simp]
 theorem shortComplexOfConj_f (eq0 : g ∘ₗ f = 0) :
     (shortComplexOfConj eM eN eL f g eq0).f =
       ofHom (eN.symm.toLinearMap ∘ₗ f ∘ₗ eM.toLinearMap) :=
+  (rfl)
+
+/-- The second map of `ModuleCat.shortComplexOfConj` is `g` conjugated by the equivalences. -/
+@[simp]
+theorem shortComplexOfConj_g (eq0 : g ∘ₗ f = 0) :
+    (shortComplexOfConj eM eN eL f g eq0).g =
+      ofHom (eL.symm.toLinearMap ∘ₗ g ∘ₗ eN.toLinearMap) :=
   (rfl)
 
 /-- The first map of `ModuleCat.shortComplexOfConj` is a monomorphism when `f` is injective. -/

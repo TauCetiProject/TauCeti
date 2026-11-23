@@ -54,11 +54,10 @@ theorem _root_.CategoryTheory.IsCoseparator.injective_end {A : Type v} [Ring A] 
     [Algebra R A] [Module.Finite R A] :
     Module.Injective (Module.End A M.obj) M.obj := by
   have := IsArtinianRing.of_finite R A
-  -- Replace `R` by the centre `C` of `A`, which is small in the universe `w`, and take an injective
-  -- hull `E` of `C ⧸ J(C)`.
+  -- Replace `R` by the centre `C` of `A` and take an injective hull `E` of `C ⧸ J(C)` in the
+  -- universe of `C`; the dual of the regular module is then shrunk to the universe of `M`.
   let C := Subalgebra.center R A
   have : Module.Finite C A := Subalgebra.finite_centerAlgebra_of_finite
-  have : Small.{w} C := inferInstanceAs (Small.{w} {a : A // a ∈ C})
   obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson.{v, v} C
   have := hf.moduleInjective
   -- The dual `D_C A`, shrunk to the universe `w`, is a finitely generated injective module.

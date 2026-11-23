@@ -165,7 +165,12 @@ theorem _root_.CategoryTheory.IsCoseparator.additiveClosure_of_injective {M : FG
   have : Mono ι := Preadditive.mono_of_cancel_zero ι fun {Z} h hh ↦ by
     refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun z ↦ hg ?_))
     ext j
-    simpa [ι] using congr(($hh ≫ biproduct.π _ j).hom.hom z)
+    -- The `j`-th coordinate of `ι` is `proj j ∘ g`, so `h ≫ ι = 0` kills `proj j (g (h z))`.
+    have hπ : ι ≫ biproduct.π _ j =
+        ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g)) := biproduct.lift_π _ j
+    have hz := congr(($hh ≫ biproduct.π _ j).hom.hom z)
+    rw [Category.assoc, hπ, zero_comp] at hz
+    simpa using hz
   exact (additiveClosure M).prop_of_retract ⟨ι, Injective.factorThru (𝟙 I) ι, by simp⟩
     ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
 
