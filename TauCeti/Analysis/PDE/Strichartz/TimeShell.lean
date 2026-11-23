@@ -293,13 +293,6 @@ theorem setLIntegral_timeShell_enorm_inner_adjoint_le {r r' : ℝ≥0∞} [r'.Ho
         norm_num
     _ = 4 * A * (ENNReal.ofReal ρ * ENNReal.ofReal ρ ^ (-γ)) * x * y := by ring
 
-/-- The `L²` norm of a function into `ℝ≥0∞` is the square root of the integral of its square. -/
-private theorem eLpNorm_two_eq {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) :
-    eLpNorm f 2 = (∫⁻ x, f x ^ (2 : ℝ)) ^ (2⁻¹ : ℝ) := by
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-    hf.aestronglyMeasurable]
-  simp
-
 /-- The section at a first time `s` of a set `W` of pairs of times inside the dyadic time shell
 `ρ ≤ |s - t| < 2ρ` has measure at most `2ρ`. -/
 private theorem volume_mk_preimage_le {ρ : ℝ} {W : Set (ℝ × ℝ)} (hWρ : W ⊆ timeShell ρ)
@@ -320,7 +313,9 @@ private theorem eLpNorm_indicator_mk_preimage_eq {W : Set (ℝ × ℝ)} (hW : Me
     {b : ℝ → ℝ≥0∞} (hb : AEMeasurable b) (s : ℝ) :
     eLpNorm ((Prod.mk s ⁻¹' W).indicator b) 2 =
       (∫⁻ t, W.indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t)) ^ (2⁻¹ : ℝ) := by
-  rw [eLpNorm_two_eq (hb.indicator (measurable_prodMk_left hW))]
+  rw [eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top
+    (hb.indicator (measurable_prodMk_left hW))]
+  simp only [ENNReal.toReal_ofNat, one_div]
   congr 1
   refine lintegral_congr fun t ↦ ?_
   by_cases ht : (s, t) ∈ W <;> simp [ht]
@@ -357,7 +352,10 @@ private theorem eLpNorm_eLpNorm_indicator_mk_preimage_le {ρ : ℝ} {W : Set (�
   have hsq (x : ℝ≥0∞) : (x ^ (2⁻¹ : ℝ)) ^ (2 : ℝ) = x := by
     rw [← ENNReal.rpow_mul]
     norm_num
-  rw [eLpNorm_two_eq (aemeasurable_eLpNorm_indicator_mk_preimage hW hb), eLpNorm_two_eq hb]
+  rw [eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top
+      (aemeasurable_eLpNorm_indicator_mk_preimage hW hb),
+    eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top hb]
+  simp only [ENNReal.toReal_ofNat, one_div]
   simp_rw [eLpNorm_indicator_mk_preimage_eq hW hb, hsq]
   rw [lintegral_lintegral_swap (aemeasurable_uncurry_indicator hW hb)]
   calc (∫⁻ t, ∫⁻ s, W.indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t)) ^ (2⁻¹ : ℝ)
