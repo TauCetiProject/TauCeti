@@ -228,12 +228,6 @@ theorem Spec.closure_range_Γevaluation_eq_top (R : CommRingCat.{u}) (x : Spec R
     algebraMap_residueFieldIso_inv R x
   have hrange : Set.range ((ΓSpecIso R).inv ≫ (Spec R).Γevaluation x) = Set.range f := by
     rw [← heval, ConcreteCategory.coe_comp]
-    have hcoordinate (a : R) :
-        CommRingCat.ofHom (algebraMap R x.asIdeal.ResidueField) a =
-          algebraMap (R ⧸ x.asIdeal) x.asIdeal.ResidueField (Ideal.Quotient.mk _ a) := by
-      rw [CommRingCat.ofHom_apply, IsScalarTower.algebraMap_apply R (R ⧸ x.asIdeal)
-        x.asIdeal.ResidueField, Ideal.Quotient.algebraMap_eq]
-    simp_rw [Function.comp_def, hcoordinate]
     exact Ideal.Quotient.mk_surjective.range_comp f
   rw [hrange, ← RingHom.coe_range,
     ← IsFractionRing.ringHom_fieldRange_eq_of_comp_eq (f := e.hom) (g := f) rfl]

@@ -73,20 +73,21 @@ theorem standardTameCover_isTamelyRamifiedInCodimOne [IsNoetherianRing A]
   have hne : q y ≠ ξ := fun eq ↦ hξ (eq ▸ ((p ∣_ U) y).property)
   have : IsFractionRing R K := Scheme.isFractionRing_residueField_of_specializes sp hne
   let φ := ((Scheme.ΓSpecIso _).inv ≫ (Spec _).Γevaluation (g y) ≫ g.residueFieldMap y).hom
+  have hcoordinate (a : A) : ((Scheme.ΓSpecIso (.of A)).inv ≫ S.Γevaluation (q y)) a =
+      (S.presheaf.stalkSpecializes sp ≫ S.residue _) (StructureSheaf.toStalk A ξ.val a) := by
+    -- Affine coordinates give the canonical germs used by specialization.
+    change (StructureSheaf.toStalk A (q y) ≫ S.residue _).hom a =
+      (StructureSheaf.toStalk A ξ.val ≫ S.presheaf.stalkSpecializes sp ≫ S.residue _).hom a
+    exact (congr($(StructureSheaf.toStalk_stalkSpecializes_assoc sp (S.residue _)).hom a)).symm
   have hα : φ (AdjoinRoot.root (X ^ e - C f)) ^ e = algebraMap R L (algebraMap A R f) := by
     rw [← map_pow, AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq]
-    have hmap := g.Γevaluation_naturality_of_Spec _ hq y
-    have hs := StructureSheaf.toStalk_stalkSpecializes_assoc sp (S.residue _ ≫ q.residueFieldMap y)
-    simp only [StructureSheaf.toStalk] at hs
-    simp only [Scheme.Γevaluation, Scheme.ΓSpecIso_inv] at hmap
-    have hvalue := congrArg (fun t : CommRingCat.of A ⟶ CommRingCat.of L ↦ t f)
-      (hmap.trans hs.symm)
-    rw [CommRingCat.comp_apply] at hvalue
-    simp only [φ, RingHom.algebraMap_toAlgebra, Scheme.ΓSpecIso_inv,
-      show algebraMap A R = (StructureSheaf.toStalk A ξ.val).hom from
-        RingHom.algebraMap_toAlgebra _, StructureSheaf.toStalk]
-    -- Identify the scheme presheaf with the affine structure sheaf in the specialization map.
-    convert hvalue using 1; rfl
+    have hstalk : algebraMap A R f = StructureSheaf.toStalk A ξ.val f :=
+      StructureSheaf.stalkAlgebra_map A ξ.val f
+    -- The chosen scalar map specializes the stalk, then applies the induced residue-field map.
+    change φ (algebraMap A _ f) = q.residueFieldMap y
+      ((S.presheaf.stalkSpecializes sp ≫ S.residue _) (algebraMap A R f))
+    rw [hstalk, ← hcoordinate]
+    exact congr($(g.Γevaluation_naturality_of_Spec _ hq y).hom f)
   have hgen : K⟮φ (AdjoinRoot.root (X ^ e - C f))⟯ = ⊤ := by
     simpa only [Set.image_singleton] using
       g.adjoin_residueField_eq_top_of_isIso_residueFieldMap hq y
