@@ -111,10 +111,11 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
           (((n : ℝ) + 1) ^ 2 * (4 * Z)) * N := by
   subst hB₂ hδ
   have hsR : ball x₀ R ⊆ closedBall x₀ R := ball_subset_closedBall
-  obtain ⟨hHu, hHdu⟩ := (convex_ball x₀ R).holderOnWith_and_holderOnWith_fderiv_apply_of_norm_le
+  have hHu := holderOnWith_ball_of_norm_fderiv_le hα1 (hu.differentiableOn two_ne_zero) hN1
+  have hHdu := (convex_ball x₀ R).holderOnWith_fderiv_apply_of_norm_iteratedFDeriv_two_le
     (D := (2 * R).toNNReal) hα1
     (fun _ hx _ hy => edist_le_two_mul_of_mem_closedBall (hsR hx) (hsR hy))
-    isOpen_ball subset_rfl hu hN1 hN2
+    isOpen_ball subset_rfl hu hN2
   have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ univ) :
       |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
     simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans

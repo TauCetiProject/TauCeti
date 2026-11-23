@@ -281,10 +281,12 @@ private theorem cutoff_mul_data_of_halfSpace {ζ u : E → ℝ} {ν x₀ : E} {c
   have hsub : ball x₀ R ∩ Ho ⊆ ball x₀ R ∩ Hc := inter_subset_inter_right _ hHo
   have hsub' : ball x₀ R ∩ Ho ⊆ closedBall x₀ R ∩ Hc :=
     inter_subset_inter ball_subset_closedBall hHo
-  obtain ⟨hHu, hHdu⟩ := hconv.holderOnWith_and_holderOnWith_fderiv_apply_of_norm_le
-    (D := (2 * R).toNNReal) hα1 (fun _ hx _ hy => edist_le_two_mul_of_mem_closedBall
-      (ball_subset_closedBall hx.1) (ball_subset_closedBall hy.1)) hU hUs
-    hu hN1 hN2
+  have hD : ∀ x ∈ ball x₀ R ∩ Hc, ∀ y ∈ ball x₀ R ∩ Hc, edist x y ≤ (2 * R).toNNReal :=
+    fun _ hx _ hy => edist_le_two_mul_of_mem_closedBall (ball_subset_closedBall hx.1)
+      (ball_subset_closedBall hy.1)
+  have hHu := hconv.holderOnWith_of_norm_fderiv_le hα1 hD
+    (fun x hx => (hu.contDiffAt (hU.mem_nhds (hUs hx))).differentiableAt two_ne_zero) hN1
+  have hHdu := hconv.holderOnWith_fderiv_apply_of_norm_iteratedFDeriv_two_le hα1 hD hU hUs hu hN2
   have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ Hc) :
       |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
     simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans
