@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Translation
-public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Exterior
+public import TauCeti.Algebra.Coalgebra.Comodule.ExteriorAlgebra.Flag
 public import TauCeti.LinearAlgebra.ExteriorPower.Flag.Cone
 import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Flag
 

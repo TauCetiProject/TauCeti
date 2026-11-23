@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Exterior
+public import TauCeti.Algebra.Coalgebra.Comodule.ExteriorAlgebra.Flag
 import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.ExteriorPower
 import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Transport
 import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct.Basic
