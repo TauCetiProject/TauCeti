@@ -75,7 +75,7 @@ onto the full weight-`(γ - λ)` fibre over `μ` (`fixedIntegerHiveEquivGTPatter
   `TauCeti.Hive.gt_completion_of_uniform_input_gap`, `TauCeti.Hive.exists_stable_gt_equiv`:
   automatic completion and full fibre equivalence in the stable range.
 * `TauCeti.Hive.isGTCompletable_two_iff`, `TauCeti.Hive.hiveCount_two_productBoundary`,
-  `TauCeti.Hive.hiveCount_three_productBoundary_eq_card_gtPattern`,
+  `TauCeti.Hive.hiveCount_three_productBoundary_eq_card_gtPattern_of_gap_bounds`,
   `TauCeti.Hive.hiveCount_three_zero_adjoint_zero`: low-rank classifications and concrete counts.
 
 ## References
@@ -262,10 +262,7 @@ theorem gtCompletion_succ_right (lam : DominantWeight n) (P : GTPattern n) (i : 
 theorem gtCompletion_shift_dominantWeight (lam : DominantWeight n) (m : ℤ) (P : GTPattern n)
     (i : ℕ) {j : ℕ} (hj : j ≤ n) :
     gtCompletion (lam.shift m) P i j = gtCompletion lam P i j + j * m := by
-  rw [gtCompletion_def, gtCompletion_def, TauCeti.prefixSum_eq_sum_castLE hj,
-    TauCeti.prefixSum_eq_sum_castLE hj]
-  simp only [DominantWeight.shift_apply, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
-    Fintype.card_fin, nsmul_eq_mul]; ring
+  rw [gtCompletion_def, gtCompletion_def, lam.prefixSum_shift m hj]; ring
 
 theorem gtCompletion_shift_gtPattern (lam : DominantWeight n) (P : GTPattern n) (m : ℤ) {i j : ℕ}
     (hij : i ≤ j) (hj : j ≤ n) :
@@ -1068,7 +1065,7 @@ and `μ₀ + μ₁ - ((γ₀ - λ₀) + (γ₁ - λ₁)) ≤ λ₁ - λ₂`, eve
 weight-`(γ - λ)` fibre over `μ` satisfies `IsGTCompletable lam P`, so
 `hiveCount (productBoundary lam μ γ)` equals the full fibre cardinality
 `Nat.card {P : GTPattern 3 // P.topRow = μ.val ∧ P.rowWeight = γ.val - lam.val}`. -/
-theorem hiveCount_three_productBoundary_eq_card_gtPattern (lam μ γ : DominantWeight 3)
+theorem hiveCount_three_productBoundary_eq_card_gtPattern_of_gap_bounds (lam μ γ : DominantWeight 3)
     (h00 : μ.val 0 - (γ.val 0 - lam.val 0) ≤ lam.val 0 - lam.val 1)
     (h01 : μ.val 0 - (γ.val 0 - lam.val 0) ≤ lam.val 1 - lam.val 2)
     (h11 : μ.val 0 + μ.val 1 - ((γ.val 0 - lam.val 0) + (γ.val 1 - lam.val 1)) ≤
@@ -1084,9 +1081,10 @@ theorem hiveCount_three_productBoundary_eq_card_gtPattern (lam μ γ : DominantW
   have h13 : P 1 3 = μ.val 1 := by simpa [P.topRow_apply] using congrFun ht 1
   have h2 : P 0 2 + P 1 2 = (γ.val 0 - lam.val 0) + (γ.val 1 - lam.val 1) := by
     have hp := P.prefixSum_rowWeight (j := 2) (by decide)
-    rw [hw] at hp
-    simpa [TauCeti.prefixSum_def, Finset.sum_filter, Fin.sum_univ_three, P.rowSum_def,
-      Finset.sum_range_succ, sub_add_sub_comm] using hp.symm
+    rw [P.rowSum_two, hw, TauCeti.prefixSum_succ (by decide),
+      TauCeti.prefixSum_succ (by decide), TauCeti.prefixSum_zero, zero_add,
+      Pi.sub_apply, Pi.sub_apply] at hp
+    exact hp.symm
   have hlo : γ.val 0 - lam.val 0 ≤ P 0 2 :=
     h01' ▸ P.entry_le_entry_succ_row (by decide) (by decide)
   have hhi : P 0 2 ≤ μ.val 0 := h03 ▸ P.entry_le_entry_succ_row (by decide) (by decide)
@@ -1102,17 +1100,20 @@ theorem hiveCount_three_one_one_two :
     hiveCount
       (productBoundary ⟨![1, 0, 0], by decide⟩ ⟨![1, 0, 0], by decide⟩
         ⟨![2, 0, 0], by decide⟩) = 1 := by
-  rw [hiveCount_three_productBoundary_eq_card_gtPattern _ _ _ (by decide) (by decide) (by decide),
+  rw [hiveCount_three_productBoundary_eq_card_gtPattern_of_gap_bounds _ _ _
+      (by decide) (by decide) (by decide),
     GTPattern.card_topRow_rowWeight_three]
   decide
 
-/-- **Rank-`3` check**: `hiveCount = 2` for `((2, 1, 0), (2, 1, 0), (3, 2, 1))`, corresponding to
-the two middle-row fillings `P 0 2 = 1, P 1 2 = 1` and `P 0 2 = 2, P 1 2 = 0`. -/
+/-- **Rank-`3` check**: `hiveCount = 2` for `((2, 1, 0), (2, 1, 0), (3, 2, 1))`. (Explanatory
+context: the two hives arise from the middle-row fillings `P 0 2 = 1, P 1 2 = 1` and
+`P 0 2 = 2, P 1 2 = 0`, though only the cardinality is proved here.) -/
 theorem hiveCount_three_two_one_two_one_three_two_one :
     hiveCount
       (productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩
         ⟨![3, 2, 1], by decide⟩) = 2 := by
-  rw [hiveCount_three_productBoundary_eq_card_gtPattern _ _ _ (by decide) (by decide) (by decide),
+  rw [hiveCount_three_productBoundary_eq_card_gtPattern_of_gap_bounds _ _ _
+      (by decide) (by decide) (by decide),
     GTPattern.card_topRow_rowWeight_three]
   decide
 

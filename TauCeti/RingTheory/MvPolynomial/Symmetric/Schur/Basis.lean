@@ -78,10 +78,14 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.finrank_symmetricHomogeneousSubmodule`: the dimension in degree `n` is the number of
   partitions of `n` with at most `Fintype.card σ` parts; it is the number of all partitions of `n`
   in at least `n` letters and smaller in fewer.
-* `TauCeti.linearIndependent_schurPoly`, `TauCeti.linearIndependent_diagramSchurPoly`, and
-  `TauCeti.eq_of_sum_nsmul_diagramSchurPoly_eq`: linear independence of the Schur polynomials of
-  all partitions of `n` in at least `n` variables, and uniqueness of `ℕ`-coefficients over a
-  characteristic-zero commutative ring.
+* `TauCeti.linearIndependent_schurPoly_of_card_le`, `TauCeti.linearIndependent_schurPoly`,
+  `TauCeti.linearIndependent_diagramSchurPoly_of_colLen_le`,
+  `TauCeti.linearIndependent_diagramSchurPoly`,
+  `TauCeti.eq_of_sum_nsmul_diagramSchurPoly_eq_of_colLen_le`, and
+  `TauCeti.eq_of_sum_nsmul_diagramSchurPoly_eq`: linear independence of the Schur polynomials over
+  any additively cancellative commutative semiring (both for bounded-row partitions in any number
+  of variables and for all partitions of `n` in at least `n` variables), and uniqueness of
+  `ℕ`-coefficients over a characteristic-zero commutative semiring.
 
 ## References
 
@@ -374,29 +378,122 @@ theorem schurPolyBasis_repr_of_coe_eq_sum {p : symmetricHomogeneousSubmodule σ 
       fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.property), smul_zero], add_zero]
   rw [h, Module.Basis.repr_sum_self]
 
-/-- In an alphabet with at least `n` letters, the Schur polynomials of all partitions of
-`n` are linearly independent. Thus their coefficients in a finite expansion are unique. -/
-theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
+end CommRing
+
+section LinearIndependent
+
+variable {R : Type*} [CommSemiring R] {n : ℕ}
+
+open scoped PartitionLex in
+/-- The Schur polynomials of the partitions of `n` with at most `Fintype.card σ` parts are
+linearly independent over any additively cancellative commutative semiring `R`. -/
+theorem linearIndependent_schurPoly_of_card_le {σ : Type*} [Fintype σ] [IsCancelAdd R] :
+    LinearIndependent R
+      (fun ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} => schurPoly σ R ν.val) := by
+  classical
+  refine linearIndependent_iff'ₛ.mpr fun s g g' hsum μ hμ => ?_
+  by_contra hne
+  let t := s.filter fun ν => g ν ≠ g' ν
+  have ht : t.Nonempty := ⟨μ, Finset.mem_filter.mpr ⟨hμ, hne⟩⟩
+  let ξ := t.max' ht
+  have hξt : ξ ∈ t := Finset.max'_mem t ht
+  have hξne : g ξ ≠ g' ξ := (Finset.mem_filter.mp hξt).2
+  have hcoeff := congrArg (fun p : MvPolynomial σ R => p.coeff (partWeight σ ξ.val)) hsum
+  simp only [coeff_sum, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul] at hcoeff
+  have hterm (ν : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
+      (schurPoly σ R ν.val).coeff (partWeight σ ξ.val) = (kostkaNumber ν.val ξ.val : R) :=
+    coeff_schurPoly_partWeight ν.val ξ.val
+      (by rw [YoungDiagram.colLen_zero_ofPartition]; exact ξ.property)
+  simp_rw [hterm] at hcoeff
+  rw [← Finset.sum_filter_add_sum_filter_not s (fun ν => g ν ≠ g' ν),
+    ← Finset.sum_filter_add_sum_filter_not s (fun ν => g ν ≠ g' ν)] at hcoeff
+  have hrest :
+      ∑ ν ∈ s.filter (fun ν => ¬(g ν ≠ g' ν)), g ν * (kostkaNumber ν.val ξ.val : R) =
+      ∑ ν ∈ s.filter (fun ν => ¬(g ν ≠ g' ν)), g' ν * (kostkaNumber ν.val ξ.val : R) :=
+    Finset.sum_congr rfl fun ν hν => by
+      rw [not_not.mp (Finset.mem_filter.mp hν).2]
+  have htop (f : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} → R) :
+      ∑ ν ∈ t, f ν * (kostkaNumber ν.val ξ.val : R) = f ξ := by
+    refine (Finset.sum_eq_single ξ (fun ν hν hνξ => ?_) fun hξ' => absurd hξt hξ').trans ?_
+    · have hlt : ν.val < ξ.val := lt_of_le_of_ne (Subtype.coe_le_coe.mpr (Finset.le_max' t ν hν))
+        (fun h => hνξ (Subtype.ext h))
+      rw [kostkaNumber_eq_zero_of_not_dominates fun hdom =>
+        absurd (Nat.Partition.lex_le_of_dominates hdom) (not_le.mpr hlt),
+        Nat.cast_zero, mul_zero]
+    · rw [kostkaNumber_self, Nat.cast_one, mul_one]
+  change (∑ ν ∈ t, g ν * (kostkaNumber ν.val ξ.val : R)) + _ =
+    (∑ ν ∈ t, g' ν * (kostkaNumber ν.val ξ.val : R)) + _ at hcoeff
+  rw [htop g, htop g', hrest] at hcoeff
+  exact hξne (add_right_cancel hcoeff)
+
+/-- Over an additively cancellative commutative semiring, in an alphabet with at least `n` letters,
+the Schur polynomials of all partitions of `n` are linearly independent. -/
+theorem linearIndependent_schurPoly {σ : Type*} [Fintype σ] [IsCancelAdd R]
+    (h : n ≤ Fintype.card σ) :
     LinearIndependent R (schurPoly σ R : n.Partition → MvPolynomial σ R) := by
   let f (μ : n.Partition) : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} :=
     ⟨μ, μ.card_parts_le.trans h⟩
-  have hf : Function.Injective f := fun _ _ he ↦ congrArg Subtype.val he
-  simpa only [Function.comp_def, Submodule.subtype_apply, coe_schurPolyBasis, f] using
-    ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'
-      (symmetricHomogeneousSubmodule σ R n).subtype (Submodule.ker_subtype _)
+  have hf : Function.Injective f := fun _ _ he => congrArg Subtype.val he
+  exact linearIndependent_schurPoly_of_card_le.comp f hf
 
-/-- In at least `n` variables, the diagram-indexed Schur polynomials `s_ν` of all partitions `ν`
-of `n` are linearly independent. -/
-theorem linearIndependent_diagramSchurPoly {N : ℕ} (h : n ≤ N) :
+/-- Over an additively cancellative commutative semiring, in `N` variables, the diagram-indexed
+Schur polynomials `s_ν` of the partitions `ν` of `n` with at most `N` rows are linearly
+independent. -/
+theorem linearIndependent_diagramSchurPoly_of_colLen_le [IsCancelAdd R] {N : ℕ} :
+    LinearIndependent R
+      (fun ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} =>
+        diagramSchurPoly N R (YoungDiagram.ofPartition ν.val)) := by
+  let e : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} ≃
+      {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin N)} :=
+    Equiv.subtypeEquivRight fun ν => by
+      rw [YoungDiagram.colLen_zero_ofPartition, Fintype.card_fin]
+  have heq :
+      (fun ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} =>
+        diagramSchurPoly N R (YoungDiagram.ofPartition ν.val)) =
+      (fun μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin N)} =>
+        schurPoly (Fin N) R μ.val) ∘ e := by
+    funext ν
+    simp only [Function.comp_apply, e, Equiv.subtypeEquivRight_apply, schurPoly_eq_rename,
+      rename_diagramSchurPoly]
+  rw [heq]
+  exact (linearIndependent_schurPoly_of_card_le (σ := Fin N) (R := R) (n := n)).comp e
+    e.injective
+
+/-- Over an additively cancellative commutative semiring, in at least `n` variables, the
+diagram-indexed Schur polynomials `s_ν` of all partitions `ν` of `n` are linearly independent. -/
+theorem linearIndependent_diagramSchurPoly [IsCancelAdd R] {N : ℕ} (h : n ≤ N) :
     LinearIndependent R
       (fun ν : n.Partition => diagramSchurPoly N R (YoungDiagram.ofPartition ν)) := by
-  have heq : (fun ν : n.Partition => diagramSchurPoly N R (YoungDiagram.ofPartition ν)) =
-      schurPoly (Fin N) R := funext fun ν => by
-    simp only [schurPoly_eq_rename, rename_diagramSchurPoly]
-  rw [heq]
-  exact linearIndependent_schurPoly (h.trans_eq (Fintype.card_fin N).symm)
+  let f (ν : n.Partition) :
+      {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} :=
+    ⟨ν, by rw [YoungDiagram.colLen_zero_ofPartition]; exact ν.card_parts_le.trans h⟩
+  have hf : Function.Injective f := fun _ _ he => congrArg Subtype.val he
+  exact (linearIndependent_diagramSchurPoly_of_colLen_le (R := R)).comp f hf
 
-/-- Over a characteristic-zero commutative ring, a natural-number linear combination of the
+/-- Over a characteristic-zero commutative semiring, a natural-number linear combination of the
+diagram Schur polynomials of the partitions of `n` with at most `N` rows in `N` variables determines
+its coefficients uniquely. -/
+theorem eq_of_sum_nsmul_diagramSchurPoly_eq_of_colLen_le [CharZero R] {N : ℕ}
+    {c c' : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} → ℕ}
+    (heq :
+      ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
+        c ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν.val) =
+      ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
+        c' ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν.val)) :
+    c = c' := by
+  have hℕ :
+      ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
+        c ν • diagramSchurPoly N ℕ (YoungDiagram.ofPartition ν.val) =
+      ∑ ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
+        c' ν • diagramSchurPoly N ℕ (YoungDiagram.ofPartition ν.val) :=
+    MvPolynomial.map_injective (Nat.castRingHom R) Nat.cast_injective <| by
+      simpa only [map_sum, map_nsmul, map_diagramSchurPoly] using heq
+  funext ν
+  exact linearIndependent_iff'ₛ.mp
+    (linearIndependent_diagramSchurPoly_of_colLen_le (R := ℕ))
+    Finset.univ c c' hℕ ν (Finset.mem_univ ν)
+
+/-- Over a characteristic-zero commutative semiring, a natural-number linear combination of the
 diagram Schur polynomials of the partitions of `n` in `N ≥ n` variables determines its
 coefficients uniquely. -/
 theorem eq_of_sum_nsmul_diagramSchurPoly_eq [CharZero R] {N : ℕ} (h : n ≤ N)
@@ -404,15 +501,19 @@ theorem eq_of_sum_nsmul_diagramSchurPoly_eq [CharZero R] {N : ℕ} (h : n ≤ N)
     (heq : ∑ ν : n.Partition, c ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν) =
       ∑ ν : n.Partition, c' ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν)) :
     c = c' := by
-  funext ν
+  let e : n.Partition ≃ {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} :=
+    (Equiv.subtypeUnivEquiv fun ν : n.Partition => by
+      rw [YoungDiagram.colLen_zero_ofPartition]; exact ν.card_parts_le.trans h).symm
   have heq' :
-      ∑ μ : n.Partition, (c μ : R) • diagramSchurPoly N R (YoungDiagram.ofPartition μ) =
-      ∑ μ : n.Partition, (c' μ : R) • diagramSchurPoly N R (YoungDiagram.ofPartition μ) := by
-    simpa only [Nat.cast_smul_eq_nsmul] using heq
-  exact Nat.cast_injective <|
-    linearIndependent_iff'ₛ.mp (linearIndependent_diagramSchurPoly h)
-      Finset.univ (fun μ => (c μ : R)) (fun μ => (c' μ : R)) heq' ν (Finset.mem_univ ν)
+      ∑ μ : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
+        c μ.val • diagramSchurPoly N R (YoungDiagram.ofPartition μ.val) =
+      ∑ μ : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N},
+        c' μ.val • diagramSchurPoly N R (YoungDiagram.ofPartition μ.val) :=
+    (Fintype.sum_equiv e _ _ (fun _ => rfl)).symm.trans
+      (heq.trans (Fintype.sum_equiv e _ _ (fun _ => rfl)))
+  funext ν
+  exact congrFun (eq_of_sum_nsmul_diagramSchurPoly_eq_of_colLen_le heq') (e ν)
 
-end CommRing
+end LinearIndependent
 
 end TauCeti

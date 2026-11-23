@@ -115,6 +115,13 @@ theorem shift_shift (l : DominantWeight n) (m m' : ℤ) :
     (l.shift m).shift m' = l.shift (m + m') := by
   ext i; simp [add_assoc]
 
+/-- Shifting a dominant weight by `m` adds `j * m` to its length-`j` prefix sum (`j ≤ n`). -/
+theorem prefixSum_shift (l : DominantWeight n) (m : ℤ) {j : ℕ} (hj : j ≤ n) :
+    TauCeti.prefixSum j (l.shift m).val = TauCeti.prefixSum j l.val + j * m := by
+  rw [TauCeti.prefixSum_eq_sum_castLE hj, TauCeti.prefixSum_eq_sum_castLE hj]
+  simp only [shift_apply, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul]
+
 /-- The **contragredient** (or **dual**) dominant weight `λ*ᵢ = -λₙ₋₁₋ᵢ`: negating and reversing
 an antitone integer sequence keeps it antitone. On representations this is passing to the dual
 module. -/
