@@ -22,9 +22,6 @@ at every prime is an integer, and so is a rational number whose denominator is a
 which is a `p`-adic integer. Consequently two rational numbers agree in `ℚ/ℤ` when their
 difference has `p`-power denominator and is a `p`-adic integer.
 
-At a fixed prime `p`, a nonzero rational number `c` has norm `p ^ (-v_p(c))` in `ℚ_[p]`, and two
-natural numbers below `p ^ k` whose difference has norm at most `p ^ (-k)` are equal.
-
 ## Main results
 
 * `Rat.eventually_not_dvd_den`: almost every prime is coprime to the denominator.
@@ -38,9 +35,6 @@ natural numbers below `p ^ k` whose difference has norm at most `p ^ (-k)` are e
   power of `p` is an integer is an integer.
 * `Padic.addCircle_coe_eq_coe_of_eq_add_algebraMap`: two rational numbers agree in `ℚ/ℤ` when their
   difference has `p`-power denominator and lies in `ℤ_p`.
-* `Padic.norm_ratCast_eq_zpow_neg_padicValRat`: `‖c‖ = p ^ (-v_p(c))` for a nonzero rational `c`.
-* `Padic.eq_of_norm_natCast_sub_le`: natural numbers below `p ^ k` that are congruent modulo
-  `p ^ k` in `ℚ_[p]` are equal.
 -/
 
 public section
@@ -108,19 +102,6 @@ theorem addCircle_coe_eq_coe_of_eq_add_algebraMap {p : ℕ} [Fact p.Prime] {r s 
     rw [Rat.cast_sub, hz, add_sub_cancel_left, PadicInt.algebraMap_apply]
     exact PadicInt.norm_le_one z)
   exact Submodule.mem_one.mpr ⟨_, (eq_intCast _ _).trans ((Rat.den_eq_one_iff _).mp hden)⟩
-
-/-- The norm of a nonzero rational number `c` in `ℚ_[p]` is `p ^ (-v_p(c))`. -/
-theorem norm_ratCast_eq_zpow_neg_padicValRat {p : ℕ} [Fact p.Prime] {c : ℚ} (hc : c ≠ 0) :
-    ‖(c : ℚ_[p])‖ = (p : ℝ) ^ (-padicValRat p c) := by
-  rw [norm_eq_zpow_neg_valuation (Rat.cast_ne_zero.mpr hc), valuation_ratCast]
-
-/-- Natural numbers below `p ^ k` whose difference has norm at most `p ^ (-k)` in `ℚ_[p]` are
-equal. -/
-theorem eq_of_norm_natCast_sub_le {p : ℕ} [Fact p.Prime] {a b k : ℕ} (ha : a < p ^ k)
-    (hb : b < p ^ k) (h : ‖(a : ℚ_[p]) - b‖ ≤ (p : ℝ) ^ (-(k : ℤ))) : a = b := by
-  rw [norm_sub_rev] at h
-  have hdvd := (norm_int_le_pow_iff_dvd ((b : ℤ) - a) k).mp (by push_cast; exact h)
-  exact Nat.ModEq.eq_of_lt_of_lt (Nat.modEq_iff_dvd.mpr (by exact_mod_cast hdvd)) ha hb
 
 /-- The integer `D = ∏_p p ^ k p` of a finitely supported family of exponents factors at each
 prime `p` as `p ^ k p * D' p`, where `D' p` is a `p`-adic unit divisible by `q ^ k q` for

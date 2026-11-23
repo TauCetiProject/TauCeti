@@ -45,6 +45,8 @@ An enclosure of width zero, on the other hand, determines the enclosed number
   `q` in the interval.
 * `TauCeti.RealEnclosure.ofRat`, `TauCeti.RealEnclosure.ofLE`: the degenerate enclosure `[q, q]`
   of a rational `q`, and the enlargement of an enclosure to a larger interval.
+* `TauCeti.ComplexEnclosure.max_abs_sub_le_width`: every point `w` of the box satisfies
+  `max (|Re z - Re w|, |Im z - Im w|) ≤ width`.
 * `TauCeti.ComplexEnclosure.normSq_le_normSqBound`:
   `|z|² ≤ max (l_R², u_R²) + max (l_I², u_I²)`.
 
@@ -191,6 +193,13 @@ def box (E : ComplexEnclosure z) : Set ℂ :=
   Set.Icc (E.re.interval.fst : ℝ) E.re.interval.snd ×ℂ
     Set.Icc (E.im.interval.fst : ℝ) E.im.interval.snd
 
+/-- Combined with `Complex.mem_reProdIm`, this characterizes membership in the box by the endpoint
+bounds on the real and imaginary parts. -/
+theorem box_def (E : ComplexEnclosure z) :
+    E.box = Set.Icc (E.re.interval.fst : ℝ) E.re.interval.snd ×ℂ
+      Set.Icc (E.im.interval.fst : ℝ) E.im.interval.snd :=
+  (rfl)
+
 /-- The enclosed complex number lies in the box of the enclosure. -/
 theorem self_mem_box (E : ComplexEnclosure z) : z ∈ E.box :=
   mem_reProdIm.mpr ⟨E.re.mem_Icc, E.im.mem_Icc⟩
@@ -207,6 +216,14 @@ theorem width_def (E : ComplexEnclosure z) :
 
 theorem width_nonneg (E : ComplexEnclosure z) : 0 ≤ E.width :=
   le_max_of_le_left E.re.interval.length_nonneg
+
+/-- Every point `w` of the box approximates the enclosed number coordinatewise up to the width:
+the errors of the real and of the imaginary part are both at most `E.width`. -/
+theorem max_abs_sub_le_width (E : ComplexEnclosure z) {w : ℂ} (hw : w ∈ E.box) :
+    max |z.re - w.re| |z.im - w.im| ≤ E.width := by
+  rw [box_def, mem_reProdIm] at hw
+  rw [width_def, Rat.cast_max]
+  exact max_le_max (E.re.abs_sub_le_length hw.1) (E.im.abs_sub_le_length hw.2)
 
 /-- A complex enclosure of width zero determines the enclosed number. -/
 theorem eq_of_width_eq_zero (E : ComplexEnclosure z) (h : E.width = 0) :
@@ -302,7 +319,7 @@ example : ComplexEnclosure Complex.I where
 
 example (E : ComplexEnclosure Complex.I) (h : E.re.interval = NonemptyInterval.pure 0)
     (h' : E.im.interval = NonemptyInterval.pure 1) : (1 : ℂ) ∉ E.box ∧ (0 : ℂ) ∉ E.box := by
-  simp [ComplexEnclosure.box, Complex.mem_reProdIm, h, h']
+  simp [ComplexEnclosure.box_def, Complex.mem_reProdIm, h, h']
 
 /-- The decimal enclosure `[141/100, 142/100]` of `√2`. -/
 private def sqrtTwoEnclosure : RealEnclosure (Real.sqrt 2) where

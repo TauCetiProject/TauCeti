@@ -86,6 +86,8 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a natural number `m` is at least
   `1 / m`.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
+* `Padic.norm_ratCast_le_zpow_neg_iff`: a rational number `q` satisfies `‖q‖ ≤ p ^ (-N)` exactly
+  when `q = 0` or `N ≤ v_p(q)`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 
@@ -361,13 +363,6 @@ theorem norm_mul_zpow_neg_valuation {x : ℚ_[p]} (hx : x ≠ 0) :
   rw [norm_mul, norm_zpow, Padic.norm_p, Padic.norm_eq_zpow_neg_valuation hx, inv_zpow',
     neg_neg, ← zpow_add₀ hp, neg_add_cancel, _root_.zpow_zero]
 
-/-- Every nonzero `p`-adic number is `p ^ v(x)` times a unit of `ℤ_[p]`. -/
-theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
-    ∃ u : ℤ_[p]ˣ, x = (p : ℚ_[p]) ^ x.valuation * u := by
-  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  refine ⟨PadicInt.mkUnits (norm_mul_zpow_neg_valuation hx), ?_⟩
-  rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, _root_.zpow_zero, mul_one]
-
 /-- The unit part `x p ^ (-v(x))` of `x : ℚ_[p]`, as a `p`-adic integer, extended by `0` at
 `x = 0`. On nonzero `x` it is the unit `TauCeti.padicUnitPart p x` of `ℤ_[p]`; this total version
 is the one to use when `x` may vanish. -/
@@ -382,6 +377,10 @@ theorem coe_unitPart (x : ℚ_[p]) :
     (unitPart x : ℚ_[p]) = x * (p : ℚ_[p]) ^ (-x.valuation) :=
   (rfl)
 
+@[simp]
+theorem unitPart_zero : unitPart (0 : ℚ_[p]) = 0 :=
+  PadicInt.ext (by simp)
+
 /-- The unit part of a nonzero `p`-adic number has norm one. -/
 theorem norm_unitPart {x : ℚ_[p]} (hx : x ≠ 0) : ‖unitPart x‖ = 1 := by
   rw [PadicInt.norm_def, coe_unitPart, norm_mul_zpow_neg_valuation hx]
@@ -391,6 +390,12 @@ theorem eq_zpow_valuation_mul_unitPart (x : ℚ_[p]) :
     x = (p : ℚ_[p]) ^ x.valuation * (unitPart x : ℚ_[p]) := by
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   rw [coe_unitPart, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, _root_.zpow_zero, mul_one]
+
+/-- Every nonzero `p`-adic number is `p ^ v(x)` times a unit of `ℤ_[p]`. -/
+theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
+    ∃ u : ℤ_[p]ˣ, x = (p : ℚ_[p]) ^ x.valuation * u :=
+  ⟨PadicInt.mkUnits ((PadicInt.norm_coe _).trans (norm_unitPart hx)),
+    eq_zpow_valuation_mul_unitPart x⟩
 
 /-- Multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its valuation. -/
 theorem valuation_p_zpow_mul (α : ℤ) {x : ℚ_[p]} (hx : x ≠ 0) :
@@ -423,5 +428,16 @@ theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
     ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
   rw [Nat.padicValNat_def, Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm),
     Padic.valuation_natCast]
+
+/-- A rational number `q` lies in the closed ball of radius `p ^ (-N)` about `0` in `ℚ_[p]`
+exactly when `q = 0` or `N ≤ v_p(q)`. The case `q = 0` is separate because Mathlib's totalized
+`padicValRat p 0` is `0`. -/
+theorem norm_ratCast_le_zpow_neg_iff {q : ℚ} {N : ℤ} :
+    ‖(q : ℚ_[p])‖ ≤ (p : ℝ) ^ (-N) ↔ q = 0 ∨ N ≤ padicValRat p q := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · simpa using zpow_nonneg (Nat.cast_nonneg (α := ℝ) p) N
+  rw [Padic.norm_eq_zpow_neg_valuation (Rat.cast_ne_zero.mpr hq), Padic.valuation_ratCast,
+    zpow_le_zpow_iff_right₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt), neg_le_neg_iff]
+  simp [hq]
 
 end Padic

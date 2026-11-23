@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.NumberTheory.Padics.PadicIntegers
-import TauCeti.NumberTheory.Padics.RatCast
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Rational-centred enclosures of `p`-adic numbers
@@ -56,6 +56,7 @@ A zero-centred enclosure does not certify vanishing: at `p = 3`, the enclosure `
   the enclosure.
 * `TauCeti.PadicEnclosure.normalizedVal_eq_and_normalizedResidue_eq_iff`: canonicity of the
   record.
+* `TauCeti.PadicEnclosure.normalize_normalize`: normalization is idempotent.
 
 ## References
 
@@ -84,10 +85,6 @@ namespace PadicEnclosure
 
 variable {p : ℕ} [hp : Fact p.Prime] {x : ℚ_[p]}
 
-private theorem one_lt_prime : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
-
-private theorem prime_pos : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
-
 /-- The enclosed number lies in the closed ball of radius `p ^ (-N)` about the centre. -/
 theorem mem_closedBall (E : PadicEnclosure p x) :
     x ∈ Metric.closedBall (E.center : ℚ_[p]) ((p : ℝ) ^ (-E.prec)) := by
@@ -114,7 +111,8 @@ theorem ofRat_prec (q : ℚ) (N : ℤ) : (ofRat (p := p) q N).prec = N :=
 def ofLE (E : PadicEnclosure p x) (N : ℤ) (h : N ≤ E.prec) : PadicEnclosure p x where
   center := E.center
   prec := N
-  norm_sub_le := E.norm_sub_le.trans (zpow_le_zpow_right₀ one_lt_prime.le (neg_le_neg h))
+  norm_sub_le := E.norm_sub_le.trans
+    (zpow_le_zpow_right₀ (Nat.one_lt_cast.mpr hp.out.one_lt).le (neg_le_neg h))
 
 @[simp]
 theorem ofLE_center (E : PadicEnclosure p x) (N : ℤ) (h : N ≤ E.prec) :
@@ -188,8 +186,9 @@ theorem zpow_neg_normalizedVal (E : PadicEnclosure p x) :
   by_cases h : E.center = 0
   · rw [E.normalizedVal_of_center_eq_zero h, h, Rat.cast_zero, norm_zero,
       max_eq_right (zpow_nonneg (Nat.cast_nonneg p) _)]
-  · rw [E.normalizedVal_of_center_ne_zero h, Padic.norm_ratCast_eq_zpow_neg_padicValRat h,
-      ← max_neg_neg, (zpow_right_mono₀ one_lt_prime.le).map_max]
+  · rw [E.normalizedVal_of_center_ne_zero h,
+      Padic.norm_eq_zpow_neg_valuation (Rat.cast_ne_zero.mpr h), Padic.valuation_ratCast,
+      ← max_neg_neg, (zpow_right_mono₀ (Nat.one_lt_cast.mpr hp.out.one_lt).le).map_max]
 
 /-- The residue component `s` of the canonical normalized record of `(c, N)`: the residue of
 `c · p ^ (-v)` in `[0, p ^ (N - v))`, computed from the unit part `Padic.unitPart c`. It is `0`
@@ -226,27 +225,29 @@ theorem ratCast_normalizedCenter (E : PadicEnclosure p x) :
     (E.normalizedCenter : ℚ_[p]) = (p : ℚ_[p]) ^ E.normalizedVal * E.normalizedResidue := by
   simp [normalizedCenter_def]
 
-/-- The residue approximates the unit part to precision `N - v`, in `ℚ_[p]`. -/
-private theorem norm_unitPart_sub_normalizedResidue_le (E : PadicEnclosure p x) :
-    ‖(Padic.unitPart (E.center : ℚ_[p]) : ℚ_[p]) - E.normalizedResidue‖ ≤
-      (p : ℝ) ^ (-((E.prec - E.normalizedVal).toNat : ℤ)) := by
-  have h := (PadicInt.norm_le_pow_iff_mem_span_pow _ _).mpr
-    (PadicInt.appr_spec (E.prec - E.normalizedVal).toNat (Padic.unitPart (E.center : ℚ_[p])))
-  rwa [PadicInt.norm_def, PadicInt.coe_sub, PadicInt.coe_natCast] at h
+/-- Below the precision, `c - p ^ v * s = p ^ v * (u - s)` for the unit part `u` of `c`. -/
+private theorem norm_center_sub_zpow_mul (E : PadicEnclosure p x) (h : E.normalizedVal < E.prec)
+    (s : ℕ) : ‖(E.center : ℚ_[p]) - (p : ℚ_[p]) ^ E.normalizedVal * s‖ =
+      (p : ℝ) ^ (-E.normalizedVal) * ‖Padic.unitPart (E.center : ℚ_[p]) - s‖ := by
+  have hc : (E.center : ℚ_[p]) =
+      (p : ℚ_[p]) ^ E.normalizedVal * Padic.unitPart (E.center : ℚ_[p]) := by
+    rw [E.normalizedVal_eq_padicValRat h, ← Padic.valuation_ratCast]
+    exact Padic.eq_zpow_valuation_mul_unitPart _
+  conv_lhs => rw [hc]
+  rw [← mul_sub, norm_mul, Padic.norm_p_zpow, PadicInt.norm_def, PadicInt.coe_sub,
+    PadicInt.coe_natCast]
 
 /-- The normalized centre lies in the ball of the enclosure. -/
 theorem norm_center_sub_normalizedCenter_le (E : PadicEnclosure p x) :
     ‖(E.center : ℚ_[p]) - E.normalizedCenter‖ ≤ (p : ℝ) ^ (-E.prec) := by
   rcases E.normalizedVal_le_prec.lt_or_eq with hlt | heq
-  · -- Below the precision, `c - p ^ v * s = p ^ v * (u - s)` for the unit part `u` of `c`.
-    have hv := E.normalizedVal_eq_padicValRat hlt
-    rw [ratCast_normalizedCenter, Padic.eq_zpow_valuation_mul_unitPart (E.center : ℚ_[p]),
-      Padic.valuation_ratCast, ← hv, ← mul_sub, norm_mul, Padic.norm_p_zpow]
+  · -- Below the precision, the residue approximates the unit part to precision `N - v`.
+    rw [ratCast_normalizedCenter, E.norm_center_sub_zpow_mul hlt]
     calc (p : ℝ) ^ (-E.normalizedVal) *
-          ‖(Padic.unitPart (E.center : ℚ_[p]) : ℚ_[p]) - E.normalizedResidue‖
+          ‖Padic.unitPart (E.center : ℚ_[p]) - (E.normalizedResidue : ℤ_[p])‖
         ≤ (p : ℝ) ^ (-E.normalizedVal) *
           (p : ℝ) ^ (-((E.prec - E.normalizedVal).toNat : ℤ)) :=
-          mul_le_mul_of_nonneg_left E.norm_unitPart_sub_normalizedResidue_le
+          mul_le_mul_of_nonneg_left (PadicInt.norm_sub_appr_le _ _)
             (zpow_nonneg (Nat.cast_nonneg p) _)
       _ = (p : ℝ) ^ (-E.prec) := by
           rw [← zpow_add₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero), Int.toNat_of_nonneg (by omega)]
@@ -285,22 +286,20 @@ theorem normalizedResidue_eq_of_norm_sub_le (E : PadicEnclosure p x) {s : ℕ}
     (hs : s < p ^ (E.prec - E.normalizedVal).toNat)
     (h : ‖(E.center : ℚ_[p]) - (p : ℚ_[p]) ^ E.normalizedVal * s‖ ≤ (p : ℝ) ^ (-E.prec)) :
     E.normalizedResidue = s := by
-  have hE := E.norm_center_sub_normalizedCenter_le
-  rw [ratCast_normalizedCenter, norm_sub_rev] at hE
-  rw [norm_sub_rev] at h
-  -- `p ^ v * (s_E - s)` is the difference of two points of the ball.
-  have hdiff := (IsUltrametricDist.norm_sub_le_max_norm_sub _ (E.center : ℚ_[p]) _).trans
-    (max_le hE h)
-  rw [← mul_sub, norm_mul, Padic.norm_p_zpow] at hdiff
-  refine Padic.eq_of_norm_natCast_sub_le E.normalizedResidue_lt hs ?_
-  have hpos : (0 : ℝ) < (p : ℝ) ^ (-E.normalizedVal) := zpow_pos prime_pos _
-  rw [Int.toNat_of_nonneg (by linarith [E.normalizedVal_le_prec])]
-  have : (p : ℝ) ^ (-(E.prec - E.normalizedVal)) =
-      (p : ℝ) ^ (-E.prec) / (p : ℝ) ^ (-E.normalizedVal) := by
-    rw [← zpow_sub₀ prime_pos.ne']
-    ring_nf
-  rw [this, le_div_iff₀ hpos, mul_comm]
-  exact hdiff
+  rcases E.normalizedVal_le_prec.lt_or_eq with hlt | heq
+  · -- Below the precision, `h` says that `s` approximates the unit part to precision `N - v`.
+    refine (PadicInt.appr_eq_iff_norm_sub_le _ hs).mpr ?_
+    have hpos : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
+    rw [E.norm_center_sub_zpow_mul hlt] at h
+    rw [Int.toNat_of_nonneg (by omega)]
+    refine le_of_mul_le_mul_left (h.trans_eq ?_) (zpow_pos hpos (-E.normalizedVal))
+    rw [← zpow_add₀ hpos.ne']
+    congr 1
+    ring
+  · -- At the precision, both residues lie below `p ^ 0 = 1`.
+    rw [heq, sub_self, Int.toNat_zero, pow_zero] at hs
+    rw [E.normalizedResidue_eq_zero_of_eq heq]
+    omega
 
 /-- In the case `v < N`, the residue component is prime to `p`, and in particular positive. -/
 theorem coprime_normalizedResidue (E : PadicEnclosure p x) (h : E.normalizedVal < E.prec) :
@@ -309,11 +308,12 @@ theorem coprime_normalizedResidue (E : PadicEnclosure p x) (h : E.normalizedVal 
   have hk : 1 ≤ (E.prec - E.normalizedVal).toNat := by omega
   -- The unit part `u` has norm one and `‖u - s‖ < 1`, so `s` has norm one as well.
   have hu : ‖(Padic.unitPart (E.center : ℚ_[p]) : ℚ_[p])‖ = 1 := by
-    rw [← PadicInt.norm_def, Padic.norm_unitPart (Rat.cast_ne_zero.mpr hc)]
+    rw [PadicInt.norm_coe, Padic.norm_unitPart (Rat.cast_ne_zero.mpr hc)]
   have h₁ : ‖(Padic.unitPart (E.center : ℚ_[p]) : ℚ_[p]) - (E.normalizedResidue : ℚ_[p])‖ <
-      ‖(Padic.unitPart (E.center : ℚ_[p]) : ℚ_[p])‖ :=
-    hu ▸ E.norm_unitPart_sub_normalizedResidue_le.trans_lt
-      (zpow_lt_one_of_neg₀ one_lt_prime (by omega))
+      ‖(Padic.unitPart (E.center : ℚ_[p]) : ℚ_[p])‖ := by
+    rw [hu, ← PadicInt.coe_natCast, ← PadicInt.coe_sub, PadicInt.norm_coe]
+    exact (PadicInt.norm_sub_appr_le _ _).trans_lt
+      (zpow_lt_one_of_neg₀ (Nat.one_lt_cast.mpr hp.out.one_lt) (by omega))
   rw [Nat.coprime_comm, ← Padic.norm_natCast_eq_one_iff, ← Padic.norm_eq_of_norm_sub_lt_left h₁,
     hu]
 
@@ -344,12 +344,34 @@ theorem normalizedVal_eq_and_normalizedResidue_eq_iff {y : ℚ_[p]} (E : PadicEn
       have h' : (p : ℝ) ^ (-E.normalizedVal) = (p : ℝ) ^ (-F.normalizedVal) := by
         rw [E.zpow_neg_normalizedVal, F.zpow_neg_normalizedVal, ← hN]
         exact IsUltrametricDist.max_norm_eq_of_norm_sub_le h
-      exact neg_inj.mp (zpow_right_injective₀ prime_pos one_lt_prime.ne' h')
+      exact neg_inj.mp (zpow_right_injective₀ (Nat.cast_pos.mpr hp.out.pos)
+        (Nat.one_lt_cast.mpr hp.out.one_lt).ne' h')
     refine ⟨hv, E.normalizedResidue_eq_of_norm_sub_le (hv ▸ hN ▸ F.normalizedResidue_lt) ?_⟩
     have hF := F.norm_center_sub_normalizedCenter_le
     rw [ratCast_normalizedCenter, ← hN, ← hv] at hF
     exact (IsUltrametricDist.norm_sub_le_max_norm_sub _ (F.center : ℚ_[p]) _).trans
       (max_le h (by rwa [norm_sub_rev]))
+
+/-- Normalizing an enclosure does not change the valuation component of its record. -/
+@[simp]
+theorem normalizedVal_normalize (E : PadicEnclosure p x) :
+    E.normalize.normalizedVal = E.normalizedVal :=
+  ((E.normalize.normalizedVal_eq_and_normalizedResidue_eq_iff E rfl).mpr
+    ((norm_sub_rev _ _).trans_le E.norm_center_sub_normalizedCenter_le)).1
+
+/-- Normalizing an enclosure does not change the residue component of its record. -/
+@[simp]
+theorem normalizedResidue_normalize (E : PadicEnclosure p x) :
+    E.normalize.normalizedResidue = E.normalizedResidue :=
+  ((E.normalize.normalizedVal_eq_and_normalizedResidue_eq_iff E rfl).mpr
+    ((norm_sub_rev _ _).trans_le E.norm_center_sub_normalizedCenter_le)).2
+
+/-- Normalization is idempotent: a normalized enclosure is its own normalization. -/
+@[simp]
+theorem normalize_normalize (E : PadicEnclosure p x) : E.normalize.normalize = E.normalize := by
+  ext
+  · simp [normalizedCenter_def]
+  · rfl
 
 end PadicEnclosure
 
