@@ -110,9 +110,9 @@ section Sheafify
 variable {C : Type*} [Category.{u} C] [HasColimits C]
   [HasWeakSheafify (Opens.grothendieckTopology X) C] (P : X.Presheaf C)
 
-/-- Mathlib's `stalkFunctor_map_unit_toSheafify_isIso` without its `[HasTerminal C]` hypothesis:
-weak sheafification already provides a terminal object, the sheafification of any presheaf
-on the empty space. -/
+/-- The stalk map of the sheafification unit `P ⟶ sheafify P` is an isomorphism: sheafification
+does not change stalks. Unlike Mathlib's `stalkFunctor_map_unit_toSheafify_isIso`, this needs no
+`HasTerminal C` hypothesis. -/
 theorem isIso_stalkFunctor_map_toSheafify :
     IsIso ((stalkFunctor C x).map (CategoryTheory.toSheafify (Opens.grothendieckTopology X) P)) :=
   have : HasTerminal C := (TopCat.Sheaf.isTerminalOfEmpty
@@ -156,9 +156,8 @@ theorem isZero_stalk_iff [∀ A, Zero (CC A)] [∀ A B, ZeroHomClass (FC A B) (C
 
 /-- A sheaf valued in a concrete category with zero morphisms, whose forgetful functor preserves
 limits and filtered colimits, vanishes if and only if all its stalks vanish. Unlike Mathlib's
-`TopCat.Sheaf.isZero_iff_stalkFunctor_obj_isZero`, the category need only have zero morphisms:
-two sections with equal germs agree locally, hence agree, since the sections form a sheaf of
-types. -/
+`TopCat.Sheaf.isZero_iff_stalkFunctor_obj_isZero`, this needs neither `Abelian C` nor
+`HasLimits C`. -/
 theorem _root_.TopCat.Sheaf.isZero_iff_forall_isZero_stalk [HasZeroMorphisms C]
     [PreservesLimits (forget C)] (Q : TopCat.Sheaf C X) :
     IsZero Q ↔ ∀ x : X, IsZero (Q.presheaf.stalk x) := by
@@ -172,7 +171,7 @@ theorem _root_.TopCat.Sheaf.isZero_iff_forall_isZero_stalk [HasZeroMorphisms C]
         (fun W _ ↦ by simpa using NatTrans.congr_app h0 (op W)) (Set.mem_univ x)
   refine IsZero.of_full_of_faithful_of_isZero (sheafToPresheaf _ C) Q
     (Functor.isZero _ fun U ↦ (ConcreteCategory.isZero_iff_subsingleton _).2 ⟨fun s t ↦ ?_⟩)
-  -- the underlying presheaf of types is a sheaf, and `s`, `t` agree locally since their germs do
+  -- the underlying presheaf of types is a sheaf: equal germs give local, hence global, equality
   let Qt : TopCat.Sheaf (Type u) X :=
     ⟨Q.obj ⋙ forget C, Presheaf.isSheaf_comp_of_isSheaf _ _ (forget C) Q.property⟩
   have hgerm (x : U.unop) :
