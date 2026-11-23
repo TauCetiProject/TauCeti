@@ -61,6 +61,12 @@ exponent dominates every constant multiple of a larger one.
 
 At positive infinity, `(1 + r) log (2 + r)` is `o(r ^ p)` for every `p > 1`, and any negative real
 power `x ^ r` (`r < 0`) is `o((log x)⁻¹)`.
+
+## Powers outgrowing geometric sequences
+
+For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`: the
+power `r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
+proof of the Gelfond–Schneider theorem.
 -/
 
 public section
@@ -316,6 +322,36 @@ theorem isLittleO_rpow_inv_log_atTop {r : ℝ} (hr : r < 0) :
     exact absurd h (log_pos hx).ne'
   · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
     rw [← rpow_neg hx, neg_neg]
+
+/-- For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`. -/
+theorem pow_mul_rpow_lt_one_of_four_mul_sq_le (C : ℝ) {r : ℕ} (hCr : 4 * C ^ 2 ≤ r) :
+    C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 := by
+  rcases Nat.eq_zero_or_pos r with rfl | hr
+  · norm_num
+  have hr₁ : (1 : ℝ) ≤ r := by exact_mod_cast hr
+  have hr₀ : (0 : ℝ) < r := zero_lt_one.trans_le hr₁
+  set s := √(r : ℝ)
+  have hs₀ : 0 < s := sqrt_pos.2 hr₀
+  have hsr : s ≤ r := sqrt_le_self_iff.2 (Or.inr hr₁)
+  -- `2 |C| ≤ s`, since `(2 |C|) ^ 2 = 4 C ^ 2 ≤ r`.
+  have hCs : 2 * |C| ≤ s := le_sqrt_of_sq_le (by rw [mul_pow, sq_abs]; linarith)
+  -- `r ^ ((1 - r) / 2) = s ^ (1 - r) = s / s ^ r`.
+  have hrs : (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s / s ^ r := by
+    rw [rpow_div_two_eq_sqrt _ hr₀.le, rpow_sub hs₀]
+    simp
+  have hCs' : |C| / s ≤ 1 / 2 := by
+    rw [div_le_div_iff₀ hs₀ two_pos]
+    linarith
+  calc C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) ≤ |C| ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) :=
+        mul_le_mul_of_nonneg_right ((le_abs_self _).trans_eq (abs_pow C r)) (by positivity)
+    _ = s * (|C| / s) ^ r := by
+        rw [hrs, div_pow]
+        field_simp
+    _ ≤ s * (1 / 2) ^ r := by gcongr
+    _ = s / 2 ^ r := by rw [one_div_pow, mul_one_div]
+    _ < 1 := by
+        rw [div_lt_one (by positivity)]
+        exact hsr.trans_lt (by exact_mod_cast Nat.lt_two_pow_self)
 
 /-- For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the real number `q` tends to `∞`. -/
 theorem tendsto_const_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
