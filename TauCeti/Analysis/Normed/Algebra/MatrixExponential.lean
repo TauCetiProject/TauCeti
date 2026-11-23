@@ -155,13 +155,8 @@ theorem IsUpperTriangular.exp_submatrix_castSucc {n : ℕ}
 /-- Matrix exponentiation commutes with simultaneous row and column reindexing. -/
 theorem exp_reindex {p q : Type*} [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q]
     (e : p ≃ q) (M : Matrix p p R) :
-    exp (M.reindex e e) = (exp M).reindex e e := by
-  ext i j
-  rw [reindex_apply (M := exp M), submatrix_apply]
-  refine exp_apply_eq_of_forall_pow_apply_eq (M.reindex e e) M i j (e.symm i) (e.symm j)
-    fun k ↦ ?_
-  have hpow := map_pow (Matrix.reindexRingEquiv R e) M k
-  exact congrFun (congrFun hpow.symm i) j
+    exp (M.reindex e e) = (exp M).reindex e e :=
+  (NormedSpace.map_exp (Matrix.reindexRingEquiv R e) (continuous_id.matrix_reindex e e) M).symm
 
 end EntrySeries
 
@@ -250,16 +245,6 @@ theorem apply_eq_zero_of_forall_exp_smul_apply_eq_zero {X : Matrix m m 𝕜} {i 
   have hX := hasDerivAt_exp_smul_apply X i j
   simp only [h] at hX
   exact hX.unique (hasDerivAt_const 0 0)
-
-/-- A matrix `X` is zero if `exp (t • X) = 1` for every real `t`. -/
-theorem eq_zero_of_forall_exp_smul_eq_one {X : Matrix m m 𝕜}
-    (h : ∀ t : ℝ, exp (t • X) = 1) : X = 0 := by
-  ext i j
-  have hX := hasDerivAt_exp_smul_apply X i j
-  have hconst : (fun t : ℝ ↦ exp (t • X) i j) = fun _ ↦ (1 : Matrix m m 𝕜) i j :=
-    funext fun t ↦ congrFun (congrFun (h t) i) j
-  rw [hconst] at hX
-  exact hX.unique (hasDerivAt_const 0 _)
 
 /-- If the exponential line `t ↦ exp (t • X)` stays inside the union of two closed sets `U` and
 `V` whose preimages are disjoint, and `1 ∈ U`, then `exp (t • X) ∈ U` for every `t : ℝ`. -/

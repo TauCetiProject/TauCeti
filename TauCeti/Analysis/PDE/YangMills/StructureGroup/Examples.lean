@@ -8,7 +8,13 @@ module
 public import TauCeti.Analysis.PDE.YangMills.StructureGroup
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Exponential
+import Mathlib.LinearAlgebra.BilinearForm.Hom
+import Mathlib.LinearAlgebra.Complex.Module
+import TauCeti.Analysis.Matrix.UnitaryGroup.Weyl
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
+import TauCeti.LinearAlgebra.Matrix.Unique
+import TauCeti.RepresentationTheory.SU2.StandardBasis
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Concrete compact matrix structure groups and counterexample
@@ -38,10 +44,9 @@ This file records the basic concrete examples of compact matrix structure groups
   quaternion basis of `𝔰𝔲(2)`.
 * `TauCeti.YangMills.pmOneSubgroup` and `TauCeti.YangMills.pmOne`: the finite structure group
   `{±1} ⊂ U(1)`.
-* `TauCeti.YangMills.torusSemidirectZ2Subgroup`, `TauCeti.YangMills.swapUnitary`,
-  `TauCeti.YangMills.torusE₁`, `TauCeti.YangMills.torusE₂`, and
-  `TauCeti.YangMills.weightedDiagBilinForm`: the disconnected subgroup `T² ⋊ ℤ/2 ⊂ U(2)` and an
-  `ad`-invariant inner product that is not `Ad`-invariant.
+* `TauCeti.YangMills.torusSemidirectZ2Subgroup`, `TauCeti.YangMills.torusE₁`,
+  `TauCeti.YangMills.torusE₂`, and `TauCeti.YangMills.weightedDiagBilinForm`: the disconnected
+  subgroup `T² ⋊ ℤ/2 ⊂ U(2)` and an `ad`-invariant inner product that is not `Ad`-invariant.
 
 ## Main results
 
@@ -84,7 +89,7 @@ section UnitaryOne
 /-- A `1 × 1` complex matrix lies in `𝔲(1)` iff its entry is purely imaginary (`re = 0`). -/
 theorem mem_matrixLieAlgebra_unitary_fin_one_iff (X : Matrix (Fin 1) (Fin 1) ℂ) :
     X ∈ (CompactMatrixStructureGroup.unitary (Fin 1)).group.matrixLieAlgebra ↔ (X 0 0).re = 0 := by
-  rw [CompactMatrixStructureGroup.mem_matrixLieAlgebra_unitary_iff]
+  rw [CompactMatrixStructureGroup.unitary_group, ClosedSubgroup.mem_matrixLieAlgebra_unitary_iff]
   constructor
   · intro h
     have h00 := congrFun (congrFun h 0) 0
@@ -106,29 +111,9 @@ theorem mem_matrixLieAlgebra_unitary_fin_one_iff (X : Matrix (Fin 1) (Fin 1) ℂ
 theorem lie_eq_zero_unitary_fin_one
     (X Y : (CompactMatrixStructureGroup.unitary (Fin 1)).group.matrixLieAlgebra) :
     ⁅X, Y⁆ = 0 := by
-  apply Subtype.ext
-  ext i j
-  fin_cases i
-  fin_cases j
-  simp [LieRing.of_associative_ring_bracket, Matrix.mul_apply, mul_comm]
-
-private theorem conj_eq_self_unitary_fin_one (U : Matrix.unitaryGroup (Fin 1) ℂ)
-    (X : Matrix (Fin 1) (Fin 1) ℂ) :
-    (U : Matrix (Fin 1) (Fin 1) ℂ) * X * star (U : Matrix (Fin 1) (Fin 1) ℂ) = X := by
-  ext i j
-  fin_cases i
-  fin_cases j
-  have h1 : (U : Matrix (Fin 1) (Fin 1) ℂ) * (U : Matrix (Fin 1) (Fin 1) ℂ)ᴴ = 1 := by
-    simpa only [Matrix.star_eq_conjTranspose] using Matrix.mem_unitaryGroup_iff.1 U.property
-  have h00 := congrFun (congrFun h1 0) 0
-  simp only [Matrix.mul_apply, Finset.univ_unique, Fin.default_eq_zero, Finset.sum_singleton,
-    Matrix.conjTranspose_apply, Matrix.one_apply_eq] at h00
-  simp only [Matrix.mul_apply, Finset.univ_unique, Fin.default_eq_zero, Finset.sum_singleton,
-    Matrix.star_eq_conjTranspose, Matrix.conjTranspose_apply]
-  calc (U : Matrix (Fin 1) (Fin 1) ℂ) 0 0 * X 0 0 * star ((U : Matrix (Fin 1) (Fin 1) ℂ) 0 0)
-      = ((U : Matrix (Fin 1) (Fin 1) ℂ) 0 0 * star ((U : Matrix (Fin 1) (Fin 1) ℂ) 0 0)) *
-          X 0 0 := by ring
-    _ = X 0 0 := by rw [h00, one_mul]
+  have hmul : (X : Matrix (Fin 1) (Fin 1) ℂ) * Y = (Y : Matrix (Fin 1) (Fin 1) ℂ) * X :=
+    Matrix.uniqueStarRingEquiv.injective (by simp [mul_comm])
+  exact Subtype.ext (by simp [LieRing.of_associative_ring_bracket, hmul])
 
 /-- The adjoint action of `U(1)` on `𝔲(1)` is trivial. -/
 @[simp]
@@ -139,7 +124,11 @@ theorem matrixAdjointRepresentation_unitary_fin_one
   ext1 X
   ext1
   rw [ClosedSubgroup.coe_matrixAdjointRepresentation_apply]
-  exact conj_eq_self_unitary_fin_one g.val X.val
+  have hmul : (g.val : Matrix (Fin 1) (Fin 1) ℂ) * X.val =
+      (X.val : Matrix (Fin 1) (Fin 1) ℂ) * g.val :=
+    Matrix.uniqueStarRingEquiv.injective (by simp [mul_comm])
+  rw [hmul, mul_assoc, Unitary.mul_star_self_of_mem g.val.property, mul_one]
+  rfl
 
 /-- Every symmetric positive-definite real bilinear form on `𝔲(1)` is automatically
 `Ad(U(1))`-invariant and therefore defines a `CompactMatrixStructureGroup (Fin 1)`. -/
@@ -153,12 +142,9 @@ def unitaryOneOfBilinForm
   isSymm_innerForm := hSymm
   posDef_innerForm := hPos
   isInvariantForm_innerForm := TauCeti.Representation.isInvariantForm_iff.mpr fun g X Y ↦ by
-    have hfix (Z : (ClosedSubgroup.unitary (Fin 1) ℂ).matrixLieAlgebra) :
-        (ClosedSubgroup.unitary (Fin 1) ℂ).matrixAdjointRepresentation g Z = Z := by
-      ext1
-      rw [ClosedSubgroup.coe_matrixAdjointRepresentation_apply]
-      exact conj_eq_self_unitary_fin_one g.val Z.val
-    rw [hfix X, hfix Y]
+    have hg : (ClosedSubgroup.unitary (Fin 1) ℂ).matrixAdjointRepresentation g = LinearMap.id :=
+      matrixAdjointRepresentation_unitary_fin_one g
+    simp [hg]
 
 /-- The underlying subgroup of `unitaryOneOfBilinForm` is `U(1)`. -/
 @[simp]
@@ -183,109 +169,131 @@ end UnitaryOne
 
 section SpecialUnitaryTwo
 
-/-- On `𝔰𝔲(2)`, `-tr (X * Y)` is real and coincides with the trace inner product. -/
-theorem neg_trace_mul_specialUnitary_fin_two
-    (X Y : (CompactMatrixStructureGroup.specialUnitary (Fin 2)).group.matrixLieAlgebra) :
-    -((X : Matrix (Fin 2) (Fin 2) ℂ) * (Y : Matrix (Fin 2) (Fin 2) ℂ)).trace =
-      ((CompactMatrixStructureGroup.specialUnitary (Fin 2)).innerForm X Y : ℂ) :=
-  CompactMatrixStructureGroup.ofTraceForm_neg_trace_mul
-    (ClosedSubgroup.specialUnitary (Fin 2) ℂ) X Y
+private def su2OfCoord (x : Fin 3 → ℝ) :
+    (CompactMatrixStructureGroup.specialUnitary (Fin 2)).group.matrixLieAlgebra :=
+  ⟨SU2.toMatrix (suTwoEquiv x), by
+    rw [CompactMatrixStructureGroup.specialUnitary_group,
+      ClosedSubgroup.mem_matrixLieAlgebra_specialUnitary_iff]
+    exact ⟨SU2.conjTranspose_toMatrix _, SU2.trace_toMatrix _⟩⟩
+
+private theorem innerForm_su2OfCoord (x y : Fin 3 → ℝ) :
+    (CompactMatrixStructureGroup.specialUnitary (Fin 2)).innerForm
+        (su2OfCoord x) (su2OfCoord y) =
+      (x ⬝ᵥ y) / 2 :=
+  (CompactMatrixStructureGroup.ofTraceForm_innerForm_apply
+      (ClosedSubgroup.specialUnitary (Fin 2) ℂ) (su2OfCoord x) (su2OfCoord y)).trans <| by
+    dsimp [su2OfCoord]
+    rw [trace_toMatrix_suTwoEquiv_mul]
+    simp
+    ring
+
+private theorem lie_su2OfCoord (x y : Fin 3 → ℝ) :
+    ⁅su2OfCoord x, su2OfCoord y⁆ = su2OfCoord (x ⨯₃ y) := by
+  apply Subtype.ext
+  rw [LieSubalgebra.coe_bracket, LieRing.of_associative_ring_bracket, ← Ring.lie_def]
+  change ⁅SU2.toMatrix (suTwoEquiv x), SU2.toMatrix (suTwoEquiv y)⁆ = _
+  rw [← LieHom.map_lie, lie_suTwoEquiv]
+  rfl
+
+private theorem smul_su2OfCoord (c : ℝ) (x : Fin 3 → ℝ) :
+    c • su2OfCoord x = su2OfCoord (c • x) :=
+  Subtype.ext (by simp [su2OfCoord, map_smul])
 
 /-- The quaternion basis element `i = !![0, 1; -1, 0]` of `𝔰𝔲(2)`. -/
 def su2I : (CompactMatrixStructureGroup.specialUnitary (Fin 2)).group.matrixLieAlgebra :=
-  ⟨!![0, 1; -1, 0], by
-    rw [CompactMatrixStructureGroup.mem_matrixLieAlgebra_specialUnitary_iff]
-    refine ⟨?_, by simp [Matrix.trace, Fin.sum_univ_two]⟩
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp⟩
+  su2OfCoord ((-2 : ℝ) • Pi.single 1 1)
 
 /-- The quaternion basis element `j = !![0, I; I, 0]` of `𝔰𝔲(2)`. -/
 def su2J : (CompactMatrixStructureGroup.specialUnitary (Fin 2)).group.matrixLieAlgebra :=
-  ⟨!![0, Complex.I; Complex.I, 0], by
-    rw [CompactMatrixStructureGroup.mem_matrixLieAlgebra_specialUnitary_iff]
-    refine ⟨?_, by simp [Matrix.trace, Fin.sum_univ_two]⟩
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp⟩
+  su2OfCoord ((-2 : ℝ) • Pi.single 0 1)
 
 /-- The quaternion basis element `k = !![I, 0; 0, -I]` of `𝔰𝔲(2)`. -/
 def su2K : (CompactMatrixStructureGroup.specialUnitary (Fin 2)).group.matrixLieAlgebra :=
-  ⟨!![Complex.I, 0; 0, -Complex.I], by
-    rw [CompactMatrixStructureGroup.mem_matrixLieAlgebra_specialUnitary_iff]
-    refine ⟨?_, by simp [Matrix.trace, Fin.sum_univ_two]⟩
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp⟩
+  su2OfCoord ((-2 : ℝ) • Pi.single 2 1)
 
 /-- The underlying matrix of `su2I` is `!![0, 1; -1, 0]`. -/
-@[simp] theorem coe_su2I : (su2I : Matrix (Fin 2) (Fin 2) ℂ) = !![0, 1; -1, 0] := (rfl)
+@[simp] theorem coe_su2I : (su2I : Matrix (Fin 2) (Fin 2) ℂ) = !![0, 1; -1, 0] := by
+  simp only [su2I, su2OfCoord, toMatrix_suTwoEquiv]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [pauli_apply]
+  · linear_combination -Complex.I_sq
+  · linear_combination Complex.I_sq
 
 /-- The underlying matrix of `su2J` is `!![0, I; I, 0]`. -/
-@[simp] theorem coe_su2J : (su2J : Matrix (Fin 2) (Fin 2) ℂ) = !![0, Complex.I; Complex.I, 0] :=
-  (rfl)
+@[simp] theorem coe_su2J : (su2J : Matrix (Fin 2) (Fin 2) ℂ) = !![0, Complex.I; Complex.I, 0] := by
+  simp only [su2J, su2OfCoord, toMatrix_suTwoEquiv]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [pauli_apply]
 
 /-- The underlying matrix of `su2K` is `!![I, 0; 0, -I]`. -/
 @[simp] theorem coe_su2K :
-    (su2K : Matrix (Fin 2) (Fin 2) ℂ) = !![Complex.I, 0; 0, -Complex.I] :=
-  (rfl)
+    (su2K : Matrix (Fin 2) (Fin 2) ℂ) = !![Complex.I, 0; 0, -Complex.I] := by
+  simp only [su2K, su2OfCoord, toMatrix_suTwoEquiv]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [pauli_apply]
 
 /-- Trace-metric normalization of the quaternion basis element `i ∈ 𝔰𝔲(2)`:
 `⟨i, i⟩ = -Re tr (i²) = 2`. -/
 theorem innerForm_su2I_self :
     (CompactMatrixStructureGroup.specialUnitary (Fin 2)).innerForm su2I su2I = 2 := by
-  simp [Matrix.trace, Fin.sum_univ_two]
-  norm_num
+  rw [su2I, innerForm_su2OfCoord]
+  simp [dotProduct, Fin.sum_univ_three]
 
 /-- Trace-metric normalization of the quaternion basis element `j ∈ 𝔰𝔲(2)`:
 `⟨j, j⟩ = -Re tr (j²) = 2`. -/
 theorem innerForm_su2J_self :
     (CompactMatrixStructureGroup.specialUnitary (Fin 2)).innerForm su2J su2J = 2 := by
-  simp [Matrix.trace, Fin.sum_univ_two]
-  norm_num
+  rw [su2J, innerForm_su2OfCoord]
+  simp [dotProduct, Fin.sum_univ_three]
 
 /-- Trace-metric normalization of the quaternion basis element `k ∈ 𝔰𝔲(2)`:
 `⟨k, k⟩ = -Re tr (k²) = 2`. -/
 theorem innerForm_su2K_self :
     (CompactMatrixStructureGroup.specialUnitary (Fin 2)).innerForm su2K su2K = 2 := by
-  simp [Matrix.trace, Fin.sum_univ_two]
-  norm_num
+  rw [su2K, innerForm_su2OfCoord]
+  simp [dotProduct, Fin.sum_univ_three]
 
 /-- Trace-metric orthogonality of the quaternion basis elements `i` and `j` in `𝔰𝔲(2)`:
 `⟨i, j⟩ = 0`. -/
 theorem innerForm_su2I_su2J :
     (CompactMatrixStructureGroup.specialUnitary (Fin 2)).innerForm su2I su2J = 0 := by
-  simp [Matrix.trace, Fin.sum_univ_two]
+  rw [su2I, su2J, innerForm_su2OfCoord]
+  simp [dotProduct, Fin.sum_univ_three]
 
 /-- Trace-metric orthogonality of the quaternion basis elements `j` and `k` in `𝔰𝔲(2)`:
 `⟨j, k⟩ = 0`. -/
 theorem innerForm_su2J_su2K :
     (CompactMatrixStructureGroup.specialUnitary (Fin 2)).innerForm su2J su2K = 0 := by
-  simp [Matrix.trace, Fin.sum_univ_two]
+  rw [su2J, su2K, innerForm_su2OfCoord]
+  simp [dotProduct, Fin.sum_univ_three]
 
 /-- Trace-metric orthogonality of the quaternion basis elements `k` and `i` in `𝔰𝔲(2)`:
 `⟨k, i⟩ = 0`. -/
 theorem innerForm_su2K_su2I :
     (CompactMatrixStructureGroup.specialUnitary (Fin 2)).innerForm su2K su2I = 0 := by
-  simp [Matrix.trace, Fin.sum_univ_two]
+  rw [su2K, su2I, innerForm_su2OfCoord]
+  simp [dotProduct, Fin.sum_univ_three]
 
 /-- Signed quaternion commutator convention in `𝔰𝔲(2)`: `[i, j] = 2k`. -/
 theorem lie_su2I_su2J : ⁅su2I, su2J⁆ = (2 : ℝ) • su2K := by
-  apply Subtype.ext
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieRing.of_associative_ring_bracket, Complex.real_smul] <;> ring
+  rw [su2I, su2J, su2K, lie_su2OfCoord, smul_su2OfCoord]
+  congr 1
+  ext i
+  fin_cases i <;> norm_num [crossProduct]
 
 /-- Signed quaternion commutator convention in `𝔰𝔲(2)`: `[j, k] = 2i`. -/
 theorem lie_su2J_su2K : ⁅su2J, su2K⁆ = (2 : ℝ) • su2I := by
-  apply Subtype.ext
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieRing.of_associative_ring_bracket, Complex.real_smul] <;> ring
+  rw [su2J, su2K, su2I, lie_su2OfCoord, smul_su2OfCoord]
+  congr 1
+  ext i
+  fin_cases i <;> norm_num [crossProduct]
 
 /-- Signed quaternion commutator convention in `𝔰𝔲(2)`: `[k, i] = 2j`. -/
 theorem lie_su2K_su2I : ⁅su2K, su2I⁆ = (2 : ℝ) • su2J := by
-  apply Subtype.ext
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [LieRing.of_associative_ring_bracket, Complex.real_smul] <;> ring
+  rw [su2K, su2I, su2J, lie_su2OfCoord, smul_su2OfCoord]
+  congr 1
+  ext i
+  fin_cases i <;> norm_num [crossProduct]
 
 end SpecialUnitaryTwo
 
@@ -293,39 +301,52 @@ end SpecialUnitaryTwo
 
 section FinitePmOne
 
-private theorem finite_pmOne_carrier :
-    ({U : Matrix.unitaryGroup (Fin 1) ℂ |
-      (U : Matrix (Fin 1) (Fin 1) ℂ) = 1 ∨ (U : Matrix (Fin 1) (Fin 1) ℂ) = -1}).Finite := by
-  let negOne : Matrix.unitaryGroup (Fin 1) ℂ :=
-    ⟨-(1 : Matrix (Fin 1) (Fin 1) ℂ), by
-      rw [Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_neg,
-        Matrix.conjTranspose_one, neg_mul_neg, mul_one]⟩
-  refine ((Set.finite_singleton negOne).insert 1).subset fun U hU ↦ ?_
-  rcases hU with h1 | hm1
-  · exact Or.inl (Subtype.ext h1)
-  · exact Or.inr (Subtype.ext hm1)
+private def pmOneGen : Matrix.unitaryGroup (Fin 1) ℂ :=
+  ⟨-(1 : Matrix (Fin 1) (Fin 1) ℂ), by
+    rw [Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_neg,
+      Matrix.conjTranspose_one, neg_mul_neg, mul_one]⟩
+
+private theorem pmOneGen_sq : pmOneGen ^ 2 = 1 :=
+  Subtype.ext (by simp [pmOneGen, sq])
+
+private theorem pmOneGen_ne_one : pmOneGen ≠ 1 := by
+  intro h
+  have h00 := congrFun (congrFun (congrArg Subtype.val h) 0) 0
+  simp [pmOneGen] at h00
+  norm_num at h00
+
+private theorem isOfFinOrder_pmOneGen : IsOfFinOrder pmOneGen :=
+  isOfFinOrder_iff_pow_eq_one.mpr ⟨2, by decide, pmOneGen_sq⟩
 
 /-- The finite closed subgroup `{±1} ⊂ U(1)`. -/
 def pmOneSubgroup : ClosedSubgroup (Matrix.unitaryGroup (Fin 1) ℂ) where
-  carrier := {U | (U : Matrix (Fin 1) (Fin 1) ℂ) = 1 ∨ (U : Matrix (Fin 1) (Fin 1) ℂ) = -1}
-  mul_mem' {A B} hA hB := by
-    simp only [Set.mem_ofPred_eq, MulMemClass.coe_mul] at hA hB ⊢
-    rcases hA with hA | hA <;> rcases hB with hB | hB <;> simp [hA, hB]
-  one_mem' := Or.inl rfl
-  inv_mem' {A} hA := by
-    have hinv : ((A⁻¹ : Matrix.unitaryGroup (Fin 1) ℂ) : Matrix (Fin 1) (Fin 1) ℂ) =
-        (A : Matrix (Fin 1) (Fin 1) ℂ)ᴴ := by
-      rw [← Unitary.star_eq_inv, Unitary.coe_star, Matrix.star_eq_conjTranspose]
-    simp only [Set.mem_ofPred_eq, hinv] at hA ⊢
-    rcases hA with hA | hA
-    · left; simp [hA]
-    · right; simp [hA]
-  isClosed' := finite_pmOne_carrier.isClosed
+  toSubgroup := Subgroup.zpowers pmOneGen
+  isClosed' :=
+    have : Finite (Subgroup.zpowers pmOneGen) := isOfFinOrder_pmOneGen.finite_zpowers
+    (Set.toFinite _).isClosed
 
 /-- `{±1} ⊂ U(1)` is finite. -/
 theorem finite_pmOneSubgroup :
-    (pmOneSubgroup : Set (Matrix.unitaryGroup (Fin 1) ℂ)).Finite :=
-  finite_pmOne_carrier
+    (pmOneSubgroup : Set (Matrix.unitaryGroup (Fin 1) ℂ)).Finite := by
+  change (Subgroup.zpowers pmOneGen : Set (Matrix.unitaryGroup (Fin 1) ℂ)).Finite
+  have : Finite (Subgroup.zpowers pmOneGen) := isOfFinOrder_pmOneGen.finite_zpowers
+  exact Set.toFinite _
+
+/-- Membership in `pmOneSubgroup` characterizes the two-element group `{1, -1} ⊂ U(1)`. -/
+theorem mem_pmOneSubgroup_iff {U : Matrix.unitaryGroup (Fin 1) ℂ} :
+    U ∈ pmOneSubgroup ↔
+      (U : Matrix (Fin 1) (Fin 1) ℂ) = 1 ∨ (U : Matrix (Fin 1) (Fin 1) ℂ) = -1 := by
+  have hord : orderOf pmOneGen = 2 := orderOf_eq_prime pmOneGen_sq pmOneGen_ne_one
+  change U ∈ Subgroup.zpowers pmOneGen ↔ _
+  rw [isOfFinOrder_pmOneGen.mem_zpowers_iff_mem_range_orderOf, hord]
+  simp only [Finset.mem_image, Finset.mem_range]
+  constructor
+  · rintro ⟨k, hk, rfl⟩
+    have : k = 0 ∨ k = 1 := by omega
+    rcases this with rfl | rfl <;> simp [pmOneGen]
+  · rintro (h1 | hm1)
+    · exact ⟨0, by decide, Subtype.ext h1.symm⟩
+    · exact ⟨1, by decide, Subtype.ext (by simpa [pmOneGen] using hm1.symm)⟩
 
 /-- `{±1} ⊂ U(1)` as a compact matrix structure group. -/
 @[expose]
@@ -339,11 +360,12 @@ theorem pmOne_group : pmOne.group = pmOneSubgroup :=
 
 /-- The Lie algebra of `{±1} ⊂ U(1)` is trivial (`⊥`). -/
 theorem matrixLieAlgebra_pmOne : pmOne.group.matrixLieAlgebra = ⊥ :=
-  pmOne.matrixLieAlgebra_eq_bot_of_finite (by rw [pmOne_group]; exact finite_pmOneSubgroup)
+  ClosedSubgroup.matrixLieAlgebra_eq_bot_of_finite (by rw [pmOne_group]; exact finite_pmOneSubgroup)
 
 /-- `pmOne.group.matrixLieAlgebra` is a subsingleton (every `pmOne`-valued connection vanishes). -/
-theorem subsingleton_matrixLieAlgebra_pmOne : Subsingleton pmOne.group.matrixLieAlgebra :=
-  pmOne.subsingleton_matrixLieAlgebra_of_finite (by rw [pmOne_group]; exact finite_pmOneSubgroup)
+theorem subsingleton_matrixLieAlgebra_pmOne : Subsingleton pmOne.group.matrixLieAlgebra := by
+  rw [matrixLieAlgebra_pmOne]
+  exact LieSubalgebra.subsingleton_bot
 
 end FinitePmOne
 
@@ -351,68 +373,49 @@ end FinitePmOne
 
 section DisconnectedCounterexample
 
-private theorem isClosed_torusSemidirectZ2_carrier :
-    IsClosed {U : Matrix.unitaryGroup (Fin 2) ℂ |
-      ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 0 = 0) ∨
-        ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 0 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 1 = 0)} := by
-  have heval : ∀ i j : Fin 2, Continuous fun U : Matrix.unitaryGroup (Fin 2) ℂ ↦
-      (U : Matrix (Fin 2) (Fin 2) ℂ) i j := fun i j ↦
-    (continuous_apply j).comp ((continuous_apply i).comp continuous_subtypeVal)
-  have h1 : IsClosed {U : Matrix.unitaryGroup (Fin 2) ℂ |
-      (U : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 0 = 0} :=
-    (isClosed_eq (heval 0 1) continuous_const).inter (isClosed_eq (heval 1 0) continuous_const)
-  have h2 : IsClosed {U : Matrix.unitaryGroup (Fin 2) ℂ |
-      (U : Matrix (Fin 2) (Fin 2) ℂ) 0 0 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 1 = 0} :=
-    (isClosed_eq (heval 0 0) continuous_const).inter (isClosed_eq (heval 1 1) continuous_const)
-  exact h1.union h2
-
-/-- The disconnected closed subgroup `T² ⋊ ℤ/2 ⊂ U(2)` consisting of diagonal and anti-diagonal
-unitary `2 × 2` complex matrices. -/
+/-- The disconnected closed subgroup `T² ⋊ ℤ/2 ⊂ U(2)`, realized as the normalizer of the
+diagonal torus `TauCeti.unitaryTorus (Fin 2)` in `U(2)`. -/
 def torusSemidirectZ2Subgroup : ClosedSubgroup (Matrix.unitaryGroup (Fin 2) ℂ) where
-  carrier :=
-    {U | ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 0 = 0) ∨
-      ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 0 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 1 = 0)}
-  mul_mem' {A B} hA hB := by
-    simp only [Set.mem_ofPred_eq, MulMemClass.coe_mul] at hA hB ⊢
-    rcases hA with ⟨hA01, hA10⟩ | ⟨hA00, hA11⟩ <;> rcases hB with ⟨hB01, hB10⟩ | ⟨hB00, hB11⟩
-    · left; simp [Matrix.mul_apply, Fin.sum_univ_two, hA01, hA10, hB01, hB10]
-    · right; simp [Matrix.mul_apply, Fin.sum_univ_two, hA01, hA10, hB00, hB11]
-    · right; simp [Matrix.mul_apply, Fin.sum_univ_two, hA00, hA11, hB01, hB10]
-    · left; simp [Matrix.mul_apply, Fin.sum_univ_two, hA00, hA11, hB00, hB11]
-  one_mem' := Or.inl ⟨by simp, by simp⟩
-  inv_mem' {A} hA := by
-    have hinv : ((A⁻¹ : Matrix.unitaryGroup (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) =
-        (A : Matrix (Fin 2) (Fin 2) ℂ)ᴴ := by
-      rw [← Unitary.star_eq_inv, Unitary.coe_star, Matrix.star_eq_conjTranspose]
-    simp only [Set.mem_ofPred_eq, hinv] at hA ⊢
-    rcases hA with ⟨h01, h10⟩ | ⟨h00, h11⟩
-    · left; simp [h01, h10]
-    · right; simp [h00, h11]
-  isClosed' := isClosed_torusSemidirectZ2_carrier
+  toSubgroup := Subgroup.normalizer (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ))
+  isClosed' := Subgroup.isClosed_normalizer <| by
+    rw [show (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ)) =
+        Set.range (unitaryTorusHom (Fin 2)) from
+      Set.ext fun _ ↦ mem_unitaryTorus_iff_exists_unitaryTorusHom.trans (by simp [eq_comm])]
+    exact (isCompact_range (continuous_unitaryTorusHom (n := Fin 2))).isClosed
 
 /-- Membership in `torusSemidirectZ2Subgroup` means being diagonal or anti-diagonal. -/
 theorem mem_torusSemidirectZ2Subgroup_iff {U : Matrix.unitaryGroup (Fin 2) ℂ} :
     U ∈ torusSemidirectZ2Subgroup ↔
       ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 0 = 0) ∨
-        ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 0 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 1 = 0) :=
-  Iff.rfl
-
-/-- The permutation matrix `!![0, 1; 1, 0]` as an element of `U(2)`. -/
-def swapUnitary : Matrix.unitaryGroup (Fin 2) ℂ :=
-  ⟨!![0, 1; 1, 0], by
-    rw [Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]⟩
-
-/-- The underlying matrix of `swapUnitary` is `!![0, 1; 1, 0]`. -/
-@[simp]
-theorem coe_swapUnitary : (swapUnitary : Matrix (Fin 2) (Fin 2) ℂ) = !![0, 1; 1, 0] :=
-  (rfl)
-
-/-- The permutation matrix `swapUnitary` lies in `T² ⋊ ℤ/2`. -/
-theorem swapUnitary_mem_torusSemidirectZ2Subgroup :
-    swapUnitary ∈ torusSemidirectZ2Subgroup :=
-  Or.inr ⟨by simp, by simp⟩
+        ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 0 = 0 ∧ (U : Matrix (Fin 2) (Fin 2) ℂ) 1 1 = 0) := by
+  change U ∈ Subgroup.normalizer (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ)) ↔ _
+  rw [mem_normalizer_unitaryTorus_iff]
+  constructor
+  · rintro ⟨z, σ, rfl⟩
+    have hperm : ∀ τ : Equiv.Perm (Fin 2), τ = 1 ∨ τ = Equiv.swap 0 1 := by decide
+    rcases hperm σ with rfl | rfl
+    · left; simp
+    · right; simp [coe_unitaryTorusHom_mul_permutationUnitary_apply]
+  · rintro (⟨h01, h10⟩ | ⟨h00, h11⟩)
+    · have hdiag : (U : Matrix (Fin 2) (Fin 2) ℂ).IsDiag := by
+        intro i j hij
+        fin_cases i <;> fin_cases j <;> simp_all
+      obtain ⟨z, hz⟩ := mem_unitaryTorus_iff_exists_unitaryTorusHom.mp
+        (mem_unitaryTorus_iff.mpr hdiag)
+      exact ⟨z, 1, by simp [hz]⟩
+    · let P : Matrix.unitaryGroup (Fin 2) ℂ := Matrix.permutationUnitary (Equiv.swap 0 1)
+      have hP2 : P * P = 1 := by
+        simp [P, ← map_mul, Equiv.swap_mul_self]
+      have hdiag : ((U * P : Matrix.unitaryGroup (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ).IsDiag := by
+        intro i j hij
+        fin_cases i <;> fin_cases j <;>
+          simp_all [P, Matrix.mul_apply, Fin.sum_univ_two, Matrix.coe_permutationUnitary]
+      obtain ⟨z, hz⟩ := mem_unitaryTorus_iff_exists_unitaryTorusHom.mp
+        (mem_unitaryTorus_iff.mpr hdiag)
+      refine ⟨z, Equiv.swap 0 1, ?_⟩
+      calc U = U * (P * P) := by rw [hP2, mul_one]
+        _ = (U * P) * P := (mul_assoc _ _ _).symm
+        _ = unitaryTorusHom (Fin 2) z * Matrix.permutationUnitary (Equiv.swap 0 1) := by rw [hz]
 
 /-- The Lie algebra of `T² ⋊ ℤ/2 ⊂ U(2)` is the abelian algebra of purely imaginary diagonal
 `2 × 2` matrices. -/
@@ -497,7 +500,7 @@ theorem mem_matrixLieAlgebra_torusSemidirectZ2_iff (X : Matrix (Fin 2) (Fin 2) �
       ext i j
       fin_cases i <;> fin_cases j <;> simp [hmul]
     refine ⟨⟨Matrix.diagonal (fun i ↦ Complex.exp (v i)), hunit⟩,
-      Or.inl ⟨by simp, by simp⟩, hexp_diag.symm⟩
+      mem_torusSemidirectZ2Subgroup_iff.mpr (Or.inl ⟨by simp, by simp⟩), hexp_diag.symm⟩
 
 /-- First diagonal basis element `e₁ = diag(i, 0)` of the Lie algebra of `T² ⋊ ℤ/2`. -/
 def torusE₁ : torusSemidirectZ2Subgroup.matrixLieAlgebra :=
@@ -521,29 +524,18 @@ theorem coe_torusE₂ : (torusE₂ : Matrix (Fin 2) (Fin 2) ℂ) = !![0, 0; 0, C
 `⟨e₁, e₁⟩ = 1`, `⟨e₂, e₂⟩ = 2`, and `⟨e₁, e₂⟩ = 0`. -/
 def weightedDiagBilinForm :
     LinearMap.BilinForm ℝ torusSemidirectZ2Subgroup.matrixLieAlgebra :=
-  LinearMap.mk₂ ℝ
-    (fun X Y ↦ (X.val 0 0).im * (Y.val 0 0).im + 2 * (X.val 1 1).im * (Y.val 1 1).im)
-    (fun X Y Z ↦ by
-      simp only [AddMemClass.coe_add, Matrix.add_apply, Complex.add_im]
-      ring)
-    (fun r X Y ↦ by
-      simp only [SetLike.val_smul, Matrix.smul_apply, Complex.real_smul, Complex.mul_im,
-        Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero, smul_eq_mul]
-      ring)
-    (fun X Y Z ↦ by
-      simp only [AddMemClass.coe_add, Matrix.add_apply, Complex.add_im]
-      ring)
-    (fun r X Y ↦ by
-      simp only [SetLike.val_smul, Matrix.smul_apply, Complex.real_smul, Complex.mul_im,
-        Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero, smul_eq_mul]
-      ring)
+  let f (i : Fin 2) : torusSemidirectZ2Subgroup.matrixLieAlgebra →ₗ[ℝ] ℝ :=
+    Complex.imLm.comp
+      ((Matrix.entryLinearMap ℝ ℂ i i).comp
+        torusSemidirectZ2Subgroup.matrixLieAlgebra.incl.toLinearMap)
+  LinearMap.BilinForm.linMulLin (f 0) (f 0) + (2 : ℝ) • LinearMap.BilinForm.linMulLin (f 1) (f 1)
 
 /-- Evaluation formula for `weightedDiagBilinForm`. -/
 @[simp]
 theorem weightedDiagBilinForm_apply (X Y : torusSemidirectZ2Subgroup.matrixLieAlgebra) :
     weightedDiagBilinForm X Y =
-      (X.val 0 0).im * (Y.val 0 0).im + 2 * (X.val 1 1).im * (Y.val 1 1).im :=
-  (rfl)
+      (X.val 0 0).im * (Y.val 0 0).im + 2 * (X.val 1 1).im * (Y.val 1 1).im := by
+  simp [weightedDiagBilinForm, mul_assoc]
 
 /-- `weightedDiagBilinForm` is symmetric. -/
 theorem weightedDiagBilinForm_isSymm : weightedDiagBilinForm.IsSymm :=
@@ -606,15 +598,15 @@ theorem not_Ad_invariant_weightedDiagBilinForm :
     ¬ TauCeti.Representation.IsInvariantForm torusSemidirectZ2Subgroup.matrixAdjointRepresentation
       weightedDiagBilinForm := by
   intro hInv
-  have hspec := TauCeti.Representation.isInvariantForm_iff.mp hInv
-    ⟨swapUnitary, swapUnitary_mem_torusSemidirectZ2Subgroup⟩ torusE₁ torusE₁
-  have hconj :
-      torusSemidirectZ2Subgroup.matrixAdjointRepresentation
-        ⟨swapUnitary, swapUnitary_mem_torusSemidirectZ2Subgroup⟩ torusE₁ = torusE₂ := by
+  let swap : torusSemidirectZ2Subgroup :=
+    ⟨Matrix.permutationUnitary (Equiv.swap 0 1), permutationUnitary_mem_normalizer (Equiv.swap 0 1)⟩
+  have hspec := TauCeti.Representation.isInvariantForm_iff.mp hInv swap torusE₁ torusE₁
+  have hconj : torusSemidirectZ2Subgroup.matrixAdjointRepresentation swap torusE₁ = torusE₂ := by
     apply Subtype.ext
     ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.star_eq_conjTranspose]
+      simp [swap, Matrix.coe_permutationUnitary, Matrix.mul_apply, Fin.sum_univ_two,
+        Matrix.star_eq_conjTranspose]
   rw [hconj, weightedDiagBilinForm_e₂_e₂, weightedDiagBilinForm_e₁_e₁] at hspec
   norm_num at hspec
 
