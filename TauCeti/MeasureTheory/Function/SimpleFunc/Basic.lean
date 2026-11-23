@@ -19,9 +19,9 @@ fibres. This is the form in which an operator defined on simple functions is eva
 linearity, as in the Riesz–Thorin theorem. Weighting the fibre pieces by coefficients `a c`
 gives `x ↦ a (u x) • u x` (`MeasureTheory.SimpleFunc.sum_smul_restrict_const_apply`).
 
-If `u` lies in `Lᵖ` for some `0 < p < ∞`, each of these restricted constants lies in every `L^q`
-(`MeasureTheory.SimpleFunc.memLp_restrict_const_fiber`), for `u` with values in any extended
-seminormed additive monoid.
+If `u` lies in `Lᵖ` for some `0 < p < ∞`, then for each `c` the constant `c` restricted to
+`u ⁻¹' {c}` lies in every `L^q` (`MeasureTheory.SimpleFunc.memLp_restrict_const_fiber`), for `u`
+with values in any extended seminormed additive monoid.
 
 The file also records how products act on simple functions supported on a measurable set
 (extended by zero outside it,
@@ -124,6 +124,7 @@ theorem star_const [Star β] (b : β) : star (const α b) = const α (star b) :=
 
 /-- The star of a simple function defined piecewise on a measurable set `A` is defined piecewise
 on `A` by the stars of the two pieces. -/
+@[simp]
 theorem star_piecewise [Star β] (f g : SimpleFunc α β) {A : Set α} (hA : MeasurableSet A) :
     star (piecewise A hA f g) = piecewise A hA (star f) (star g) := by
   ext x
