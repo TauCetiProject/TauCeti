@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.Fibration.FramedTube
 public import TauCeti.Topology.Compactification.OnePoint.Collapse
 public import TauCeti.Topology.Compactification.OnePoint.ZeroSection
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # The shriek map of a framed submanifold through its Thom space
@@ -235,6 +236,13 @@ private def zeroSectionHomeomorph :
     (.setCongr range_coe_comp_prodMk_zero)
 
 omit [CompactSpace S] [T2Space S] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- The zero section homeomorphism sends `x` to the point `(x, 0)` of `OnePoint (S × V)`. -/
+private lemma coe_zeroSectionHomeomorph_apply (x : S) :
+    (zeroSectionHomeomorph (V := V) x : OnePoint (S × V)) = ((x, (0 : V)) : OnePoint (S × V)) := by
+  rw [zeroSectionHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply,
+    IsEmbedding.toHomeomorph_apply_coe, comp_apply]
+
+omit [CompactSpace S] [T2Space S] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- The zero section is the core of the framed tube of the Thom space. -/
 private lemma isoOfHomeo_zeroSectionHomeomorph_hom :
     (_root_.TopCat.isoOfHomeo (zeroSectionHomeomorph (S := S) (V := V))).hom =
@@ -242,10 +250,8 @@ private lemma isoOfHomeo_zeroSectionHomeomorph_hom :
   -- `ext` also applies `Subtype.ext`, so the goal is about the points of `OnePoint (S × V)`.
   ext x
   rw [IsFramedTube.coe_coreHom_apply]
-  simp only [_root_.TopCat.isoOfHomeo_hom, _root_.TopCat.hom_ofHom, ContinuousMap.coe_ofClass,
-    zeroSectionHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr,
-    Homeomorph.homeomorph_mk_coe, equivOfEq_apply, IsEmbedding.toHomeomorph_apply_coe,
-    comp_apply]
+  -- The morphism `(TopCat.isoOfHomeo h).hom` applies `h` itself.
+  exact coe_zeroSectionHomeomorph_apply x
 
 /-- **The Thom isomorphism of a trivial bundle, on its Thom space.** For a compact Hausdorff space
 `S` and a real normed space `V` of finite dimension `k`, the homology of the Thom space
