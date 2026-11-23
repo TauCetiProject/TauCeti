@@ -52,15 +52,16 @@ This file provides two complementary formalizations of SAGBI completion:
   family and subducted at a possibly different stage `N`, with any nonzero remainder adjoined at
   some stage `M ≥ N`, allowing batch adjunction of multiple remainders); proves eventual-basis
   termination (every sufficiently late stage is a SAGBI basis, though the generator families may
-  keep growing) under finite generation of the leading-exponent monoid or initial algebra of
-  `k[c 0]`, and characterizes finite-stage basis attainment for finite stage families by that
-  finite-generation condition; constructs the concrete batch completion sequence
-  `MonomialOrder.sagbiCompletionFamily` with surjective presentation retractions
-  `MonomialOrder.sagbiCompletionRetract`; and, for any finite nonzero family `b` whose
-  leading-exponent monoid `(m.leadingExponents (Algebra.adjoin k (Set.range b))).FG` is finitely
-  generated, deduces existence of a finite monic SAGBI basis `c` of `k[b]` together with a
-  surjective presentation homomorphism `φ` satisfying `(aeval b).comp φ = aeval c` and
-  `(RingHom.ker (aeval c)).map φ = RingHom.ker (aeval b)`
+  keep growing) under finite generation of the leading-exponent monoid of `k[c 0]`, and
+  characterizes finite-stage basis attainment for finite stage families by that finite-generation
+  condition; constructs the concrete batch completion sequence `MonomialOrder.sagbiCompletionFamily`
+  with surjective presentation retractions `MonomialOrder.sagbiCompletionRetract`, proving batch
+  fairness (`MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`) for finite monic initial
+  families `c₀`; and, distinct from that monic-start fairness theorem, for any finite nonzero
+  family `b` whose leading-exponent monoid
+  `(m.leadingExponents (Algebra.adjoin k (Set.range b))).FG` is finitely generated (via prior
+  monic normalization), deduces existence of a finite monic SAGBI basis `c` of `k[b]` together
+  with a surjective presentation homomorphism `φ` satisfying `(aeval b).comp φ = aeval c`
   (`MonomialOrder.exists_finite_monic_isSAGBIBasis_of_fg`).
 
 ## Main results
@@ -89,9 +90,10 @@ This file provides two complementary formalizations of SAGBI completion:
 * `MonomialOrder.sagbiCompletionFamily`, `MonomialOrder.sagbiCompletionRetract`,
   `MonomialOrder.exists_sagbiCompletion_succ`,
   `MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`, and
-  `MonomialOrder.exists_finite_monic_isSAGBIBasis_of_fg`: concrete certified batch completion and,
-  under finite generation of the leading-exponent monoid, existence of a finite monic SAGBI basis
-  with a surjective presentation map.
+  `MonomialOrder.exists_finite_monic_isSAGBIBasis_of_fg`: concrete certified batch completion
+  (with batch fairness proved for finite monic initial families) and, distinct from that, for any
+  finite nonzero family whose leading-exponent monoid is finitely generated, existence of a finite
+  monic SAGBI basis with a surjective presentation map.
 
 ## References
 
@@ -652,15 +654,6 @@ theorem exists_isSAGBIBasis_of_fg (h : m.IsFairSAGBISequence c)
       exact ⟨c M i, ⟨⟨i, rfl⟩, (h.monic M i).ne_zero⟩, rfl⟩
     exact (AddSubmonoid.closure_le.2 hsub) (hE ▸ degree_mem_leadingExponents hf hf0)
 
-/-- Every sufficiently late stage of a fair SAGBI completion sequence is a SAGBI basis whenever the
-full initial algebra of `k[c 0]` is finitely generated as a `k`-algebra (the generator families may
-keep growing). -/
-theorem exists_isSAGBIBasis_of_fg_initialAlgebra (h : m.IsFairSAGBISequence c)
-    (hfg : (m.initialAlgebra (Algebra.adjoin k (Set.range (c 0)))).FG) :
-    ∃ N : ℕ, ∀ M ≥ N,
-      m.IsSAGBIBasis (Set.range (c M)) (Algebra.adjoin k (Set.range (c 0))) :=
-  h.exists_isSAGBIBasis_of_fg (fg_initialAlgebra_iff_fg_leadingExponents.1 hfg)
-
 /-- For a fair SAGBI completion sequence of finite families, some stage is a SAGBI basis of
 `k[c 0]` if and only if the leading-exponent monoid of `k[c 0]` is finitely generated. -/
 theorem exists_isSAGBIBasis_iff_fg_leadingExponents [∀ n, Finite (ι n)]
@@ -670,15 +663,6 @@ theorem exists_isSAGBIBasis_iff_fg_leadingExponents [∀ n, Finite (ι n)]
   refine ⟨fun ⟨N, hN⟩ ↦ hN.fg_leadingExponents (Set.finite_range (c N)), fun hfg ↦ ?_⟩
   obtain ⟨N, hN⟩ := h.exists_isSAGBIBasis_of_fg hfg
   exact ⟨N, hN N le_rfl⟩
-
-/-- For a fair SAGBI completion sequence of finite families, some stage is a SAGBI basis of
-`k[c 0]` if and only if the full initial algebra of `k[c 0]` is finitely generated. -/
-theorem exists_isSAGBIBasis_iff_fg_initialAlgebra [∀ n, Finite (ι n)]
-    (h : m.IsFairSAGBISequence c) :
-    (∃ N : ℕ, m.IsSAGBIBasis (Set.range (c N)) (Algebra.adjoin k (Set.range (c 0)))) ↔
-      (m.initialAlgebra (Algebra.adjoin k (Set.range (c 0)))).FG :=
-  h.exists_isSAGBIBasis_iff_fg_leadingExponents.trans
-    fg_initialAlgebra_iff_fg_leadingExponents.symm
 
 end IsFairSAGBISequence
 
@@ -764,25 +748,19 @@ theorem exists_isSAGBIBasis_of_subductionStep
     (hfg : (m.initialAlgebra (Algebra.adjoin k (G 0))).FG) :
     ∃ N, m.IsSAGBIBasis (G N) (Algebra.adjoin k (G 0)) ∧ ∀ n, N ≤ n → G n = G N := by
   have hseq := isFairSAGBISequence_of_subductionStep hstep hf hG hJ hfair
-  obtain ⟨N, hN⟩ := hseq.exists_isSAGBIBasis_of_fg_initialAlgebra
-    (by simpa only [Subtype.range_coe] using hfg)
+  obtain ⟨N, hN⟩ := hseq.exists_isSAGBIBasis_of_fg
+    (fg_initialAlgebra_iff_fg_leadingExponents.mp (by simpa only [Subtype.range_coe] using hfg))
   have hN' : m.IsSAGBIBasis (G N) (Algebra.adjoin k (G 0)) := by
     simpa only [Subtype.range_coe] using hN N le_rfl
   refine ⟨N, hN', fun i hi ↦ ?_⟩
   induction i, hi using Nat.le_induction with
   | base => rfl
   | succ i hi ih =>
-    have hsub : G i ⊆ Algebra.adjoin k (G 0) := by
-      have h := hseq.adjoin_eq i
-      simp only [Subtype.range_coe] at h
-      exact h ▸ Algebra.subset_adjoin
-    have hmono : G N ⊆ G i := by
-      simpa only [Subtype.range_coe] using hseq.range_subset_of_le hi
     have hfi : f i ∈ Algebra.adjoin k (G 0) := by
       have h := hseq.adjoin_eq i
       simp only [Subtype.range_coe] at h
       exact h ▸ hf i
-    rw [(hstep i).eq_of_isSAGBIBasis (hN'.mono hmono hsub) hfi, ih]
+    rw [(hstep i).eq_of_isSAGBIBasis (by simpa only [Subtype.range_coe] using hN i hi) hfi, ih]
 
 end Run
 
@@ -1039,13 +1017,9 @@ theorem aeval_comp_sagbiCompletionRetract (hc₀ : ∀ i, m.Monic (c₀ i)) (n :
     obtain ⟨B, Q, r, e, -, hsub, -, hfam, hret⟩ := m.exists_sagbiCompletion_succ c₀ n
     have hs := fun l : {p : B // r p ≠ 0} ↦
       hsub (fun i ↦ (m.monic_sagbiCompletionFamily hc₀ n i).ne_zero) l.val
-    have hcomp : ((aeval c₀).comp (m.sagbiCompletionRetract c₀ (n + 1))).comp (rename e) =
-        aeval (m.sagbiCompletionFamily c₀ (n + 1) ∘ e) := by
-      rw [AlgHom.comp_assoc, hret, ← AlgHom.comp_assoc, ih,
-        m.aeval_comp_subductionRetract hs, ← hfam]
-    refine algHom_ext fun i ↦ ?_
-    obtain ⟨x, rfl⟩ := e.surjective i
-    simpa using AlgHom.congr_fun hcomp (X x)
+    refine (AlgHom.cancel_right (rename_surjective e e.surjective)).mp ?_
+    rw [AlgHom.comp_assoc, hret, ← AlgHom.comp_assoc, ih,
+      m.aeval_comp_subductionRetract hs, ← hfam, aeval_comp_rename]
 
 /-- Batch toric-binomial completion starting from a finite monic family `c₀` is a fair SAGBI
 completion sequence. -/
@@ -1073,8 +1047,7 @@ theorem isFairSAGBISequence_sagbiCompletionFamily (hc₀ : ∀ i, m.Monic (c₀ 
 `b : ι₀ → MvPolynomial σ k` is a finite family of nonzero polynomials whose generated subalgebra
 `k[b]` has finitely generated leading-exponent monoid, then there exist a finite monic SAGBI basis
 `c : κ → MvPolynomial σ k` of `k[b]` and a surjective `k`-algebra homomorphism
-`φ : MvPolynomial κ k →ₐ[k] MvPolynomial ι₀ k` satisfying `(aeval b).comp φ = aeval c` and
-`(RingHom.ker (aeval c)).map φ = RingHom.ker (aeval b)`. -/
+`φ : MvPolynomial κ k →ₐ[k] MvPolynomial ι₀ k` satisfying `(aeval b).comp φ = aeval c`. -/
 theorem exists_finite_monic_isSAGBIBasis_of_fg {b : ι₀ → MvPolynomial σ k}
     (hb : ∀ i, b i ≠ 0)
     (hfg : (m.leadingExponents (Algebra.adjoin k (Set.range b))).FG) :
@@ -1083,8 +1056,7 @@ theorem exists_finite_monic_isSAGBIBasis_of_fg {b : ι₀ → MvPolynomial σ k}
       (∀ l, m.Monic (c l)) ∧
       m.IsSAGBIBasis (Set.range c) (Algebra.adjoin k (Set.range b)) ∧
       Function.Surjective φ ∧
-      (aeval b).comp φ = aeval c ∧
-      (RingHom.ker (aeval c)).map φ = RingHom.ker (aeval b) := by
+      (aeval b).comp φ = aeval c := by
   let c₀ : ι₀ → MvPolynomial σ k := m.monicNormalize ∘ b
   have hc₀ : ∀ i, m.Monic (c₀ i) := fun i ↦ m.monic_monicNormalize (hb i)
   have hadj : Algebra.adjoin k (Set.range c₀) = Algebra.adjoin k (Set.range b) := by
@@ -1103,15 +1075,12 @@ theorem exists_finite_monic_isSAGBIBasis_of_fg {b : ι₀ → MvPolynomial σ k}
     rfl
   let φ := (D.symm : MvPolynomial ι₀ k →ₐ[k] MvPolynomial ι₀ k).comp
     (m.sagbiCompletionRetract c₀ N)
-  have hφ_surj : Function.Surjective φ :=
-    D.symm.surjective.comp (m.sagbiCompletionRetract_surjective c₀ N)
-  have hφ_comp : (aeval b).comp φ = aeval (m.sagbiCompletionFamily c₀ N) := by
-    rw [← AlgHom.comp_assoc, haeval_Dinv, m.aeval_comp_sagbiCompletionRetract hc₀ N]
   refine ⟨m.sagbiCompletionIndex c₀ N, inferInstance, m.sagbiCompletionFamily c₀ N, φ,
-    m.monic_sagbiCompletionFamily hc₀ N, ?_, hφ_surj, hφ_comp, ?_⟩
+    m.monic_sagbiCompletionFamily hc₀ N, ?_,
+    D.symm.surjective.comp (m.sagbiCompletionRetract_surjective c₀ N), ?_⟩
   · have hN0 := hN N le_rfl
     rwa [m.range_sagbiCompletionFamily_zero, hadj] at hN0
-  · rw [← hφ_comp, ← AlgHom.comap_ker, Ideal.map_comap_of_surjective _ hφ_surj]
+  · rw [← AlgHom.comp_assoc, haeval_Dinv, m.aeval_comp_sagbiCompletionRetract hc₀ N]
 
 end BatchCompletion
 

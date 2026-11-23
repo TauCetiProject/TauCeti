@@ -273,13 +273,6 @@ theorem not_fg_initialAlgebra_robbianoSweedler :
     ¬ (lex.initialAlgebra (robbianoSweedlerSubalgebra k)).FG :=
   lex.fg_initialAlgebra_iff_fg_leadingExponents.not.2 not_fg_leadingExponents_robbianoSweedler
 
-/-- Over a field, the `lex`-initial algebra of `robbianoSweedlerSubalgebra k` is not of finite type
-over `k`. -/
-theorem not_finiteType_initialAlgebra_robbianoSweedler :
-    ¬ Algebra.FiniteType k (lex.initialAlgebra (robbianoSweedlerSubalgebra k)) :=
-  lex.finiteType_initialAlgebra_iff_fg_leadingExponents.not.2
-    not_fg_leadingExponents_robbianoSweedler
-
 /-- Over a field, no finite subset is a `lex`-SAGBI basis of `robbianoSweedlerSubalgebra k`. -/
 theorem not_isSAGBIBasis_finset_robbianoSweedler (B : Finset (MvPolynomial (Fin 2) k)) :
     ¬ lex.IsSAGBIBasis (B : Set (MvPolynomial (Fin 2) k)) (robbianoSweedlerSubalgebra k) :=
