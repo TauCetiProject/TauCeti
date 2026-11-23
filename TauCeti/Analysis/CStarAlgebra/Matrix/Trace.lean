@@ -51,14 +51,15 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
 * `CStarMatrix.normalizedTwoNorm_sub_mul_mul_le`: `‖x - cxd‖₂ ≤ ‖x‖(‖c - 1‖₂ + ‖c‖‖d - 1‖₂)`, and
   `CStarMatrix.normalizedTwoNorm_sub_mul_mul_le_of_norm_le_one`: `‖x - cxc‖₂ ≤ 2‖x‖‖c - 1‖₂` for a
   contraction `c`.
-* `CStarMatrix.normalizedTrace_reindex`, `CStarMatrix.normalizedTwoNorm_reindex`: `tr_k` and
+* `CStarMatrix.normalizedTrace_reindexₐ`, `CStarMatrix.normalizedTwoNorm_reindexₐ`: `tr_k` and
   `‖·‖₂` do not depend on the labelling of the index type, so the statements below over `n ⊕ m`
   and `n × m` give those over `Fin (k + l)` and `Fin (k * l)`.
 * `CStarMatrix.normalizedTrace_fromBlocks`, `CStarMatrix.normalizedTwoNorm_fromBlocks_sq`: block
   additivity `tr_{k+l}(x ⊕ y) = (k tr_k(x) + l tr_l(y))/(k + l)`, and the same for `‖·‖₂²`.
 * `CStarMatrix.normalizedTrace_kronecker`, `CStarMatrix.normalizedTwoNorm_kronecker`: tensor
   multiplicativity `tr_{kl}(x ⊗ y) = tr_k(x) tr_l(y)` and `‖x ⊗ y‖₂ = ‖x‖₂‖y‖₂` for the Kronecker
-  product.
+  product; the `simp` forms `CStarMatrix.normalizedTrace_ofMatrix_kronecker` and
+  `CStarMatrix.normalizedTwoNorm_ofMatrix_kronecker` take `Matrix` arguments.
 
 ## References
 
@@ -497,17 +498,30 @@ variable {m : Type*} [Fintype m]
 
 /-- The normalized trace does not depend on the labelling of the index type. -/
 @[simp]
-theorem normalizedTrace_reindex (e : n ≃ m) (x : CStarMatrix n n ℂ) :
+theorem normalizedTrace_reindexₐ (e : n ≃ m) (x : CStarMatrix n n ℂ) :
     normalizedTrace (reindexₐ ℂ ℂ e x) = normalizedTrace x := by
   rw [normalizedTrace_eq_sum, normalizedTrace_eq_sum, Fintype.card_congr e]
   congr 1
   exact Fintype.sum_equiv e.symm _ _ fun _ ↦ rfl
 
+/-- The normalized trace is invariant under the inverse of a reindexing. -/
+@[simp]
+theorem normalizedTrace_reindexₐ_symm (e : m ≃ n) (x : CStarMatrix n n ℂ) :
+    normalizedTrace ((reindexₐ ℂ ℂ e).symm x) = normalizedTrace x := by
+  rw [← reindexₐ_symm, normalizedTrace_reindexₐ]
+
 /-- The normalized 2-norm does not depend on the labelling of the index type. -/
 @[simp]
-theorem normalizedTwoNorm_reindex (e : n ≃ m) (x : CStarMatrix n n ℂ) :
+theorem normalizedTwoNorm_reindexₐ (e : n ≃ m) (x : CStarMatrix n n ℂ) :
     normalizedTwoNorm (reindexₐ ℂ ℂ e x) = normalizedTwoNorm x := by
-  rw [normalizedTwoNorm_def, normalizedTwoNorm_def, ← map_star, ← map_mul, normalizedTrace_reindex]
+  rw [normalizedTwoNorm_def, normalizedTwoNorm_def, ← map_star, ← map_mul,
+    normalizedTrace_reindexₐ]
+
+/-- The normalized 2-norm is invariant under the inverse of a reindexing. -/
+@[simp]
+theorem normalizedTwoNorm_reindexₐ_symm (e : m ≃ n) (x : CStarMatrix n n ℂ) :
+    normalizedTwoNorm ((reindexₐ ℂ ℂ e).symm x) = normalizedTwoNorm x := by
+  rw [← reindexₐ_symm, normalizedTwoNorm_reindexₐ]
 
 /-- **Block additivity of the normalized trace.** For the block matrix with diagonal blocks
 `x ∈ M_k` and `y ∈ M_l`, `tr_{k+l} = (k tr_k(x) + l tr_l(y))/(k + l)`; the off-diagonal blocks do
@@ -538,26 +552,33 @@ theorem normalizedTwoNorm_fromBlocks_sq (x : CStarMatrix n n ℂ) (y : CStarMatr
     normalizedTrace_star_mul_self]
   norm_cast
 
-/-- **Tensor multiplicativity of the normalized trace.** For the Kronecker product of `x ∈ M_k`
-and `y ∈ M_l`, `tr_{kl}(x ⊗ y) = tr_k(x) tr_l(y)`. -/
+/-- **Tensor multiplicativity of the normalized trace**, for matrices `A ∈ M_k` and `B ∈ M_l`:
+`tr_{kl}(A ⊗ B) = tr_k(A) tr_l(B)`. -/
 @[simp]
-theorem normalizedTrace_kronecker (x : CStarMatrix n n ℂ) (y : CStarMatrix m m ℂ) :
-    normalizedTrace (ofMatrix (ofMatrix.symm x ⊗ₖ ofMatrix.symm y)) =
-      normalizedTrace x * normalizedTrace y := by
+theorem normalizedTrace_ofMatrix_kronecker (A : Matrix n n ℂ) (B : Matrix m m ℂ) :
+    normalizedTrace (ofMatrix (A ⊗ₖ B)) =
+      normalizedTrace (ofMatrix A) * normalizedTrace (ofMatrix B) := by
   rw [normalizedTrace_def, normalizedTrace_def, normalizedTrace_def, Equiv.symm_apply_apply,
-    Matrix.trace_kronecker, Fintype.card_prod]
+    Equiv.symm_apply_apply, Equiv.symm_apply_apply, Matrix.trace_kronecker, Fintype.card_prod]
   push_cast
   ring
 
-/-- **Tensor multiplicativity of the normalized 2-norm.** For the Kronecker product of `x ∈ M_k`
-and `y ∈ M_l`, `‖x ⊗ y‖₂ = ‖x‖₂‖y‖₂`. -/
+/-- **Tensor multiplicativity of the normalized trace.** For the Kronecker product of `x ∈ M_k`
+and `y ∈ M_l`, `tr_{kl}(x ⊗ y) = tr_k(x) tr_l(y)`. -/
+theorem normalizedTrace_kronecker (x : CStarMatrix n n ℂ) (y : CStarMatrix m m ℂ) :
+    normalizedTrace (ofMatrix (ofMatrix.symm x ⊗ₖ ofMatrix.symm y)) =
+      normalizedTrace x * normalizedTrace y := by
+  rw [normalizedTrace_ofMatrix_kronecker, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- **Tensor multiplicativity of the normalized 2-norm**, for matrices `A ∈ M_k` and `B ∈ M_l`:
+`‖A ⊗ B‖₂ = ‖A‖₂‖B‖₂`. -/
 @[simp]
-theorem normalizedTwoNorm_kronecker (x : CStarMatrix n n ℂ) (y : CStarMatrix m m ℂ) :
-    normalizedTwoNorm (ofMatrix (ofMatrix.symm x ⊗ₖ ofMatrix.symm y)) =
-      normalizedTwoNorm x * normalizedTwoNorm y := by
-  have h : star (ofMatrix (ofMatrix.symm x ⊗ₖ ofMatrix.symm y)) *
-      ofMatrix (ofMatrix.symm x ⊗ₖ ofMatrix.symm y) =
-      ofMatrix (ofMatrix.symm (star x * x) ⊗ₖ ofMatrix.symm (star y * y)) := by
+theorem normalizedTwoNorm_ofMatrix_kronecker (A : Matrix n n ℂ) (B : Matrix m m ℂ) :
+    normalizedTwoNorm (ofMatrix (A ⊗ₖ B)) =
+      normalizedTwoNorm (ofMatrix A) * normalizedTwoNorm (ofMatrix B) := by
+  have h : star (ofMatrix (A ⊗ₖ B)) * ofMatrix (A ⊗ₖ B) =
+      ofMatrix (ofMatrix.symm (star (ofMatrix A) * ofMatrix A) ⊗ₖ
+        ofMatrix.symm (star (ofMatrix B) * ofMatrix B)) := by
     apply ofMatrix.symm.injective
     simp [Matrix.conjTranspose_kronecker, Matrix.mul_kronecker_mul]
   rw [← sq_eq_sq₀ (normalizedTwoNorm_nonneg _)
@@ -565,6 +586,13 @@ theorem normalizedTwoNorm_kronecker (x : CStarMatrix n n ℂ) (y : CStarMatrix m
     normalizedTwoNorm_sq, h, normalizedTrace_kronecker, normalizedTrace_star_mul_self,
     normalizedTrace_star_mul_self]
   norm_cast
+
+/-- **Tensor multiplicativity of the normalized 2-norm.** For the Kronecker product of `x ∈ M_k`
+and `y ∈ M_l`, `‖x ⊗ y‖₂ = ‖x‖₂‖y‖₂`. -/
+theorem normalizedTwoNorm_kronecker (x : CStarMatrix n n ℂ) (y : CStarMatrix m m ℂ) :
+    normalizedTwoNorm (ofMatrix (ofMatrix.symm x ⊗ₖ ofMatrix.symm y)) =
+      normalizedTwoNorm x * normalizedTwoNorm y := by
+  rw [normalizedTwoNorm_ofMatrix_kronecker, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
 
 end BlockTensor
 
