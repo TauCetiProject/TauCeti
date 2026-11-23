@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.PiSystem
-public import Mathlib.Topology.MetricSpace.Ultra.Basic
+public import TauCeti.Topology.MetricSpace.Ultra.Basic
 
 /-!
 # Closed balls generate the Borel σ-algebra of an ultrametric space
@@ -18,10 +18,9 @@ nested or disjoint. Hence the closed balls of positive radius form a topological
 
 ## Main results
 
-* `IsUltrametricDist.isTopologicalBasis_closedBall`: the closed balls of positive radius form a
-  basis of the topology.
-* `IsUltrametricDist.borel_eq_generateFrom_closedBall`: they generate the Borel σ-algebra of a
-  second-countable ultrametric space.
+* `IsUltrametricDist.borel_eq_generateFrom_closedBall`: the closed balls of positive radius (a
+  basis of the topology, `IsUltrametricDist.isTopologicalBasis_closedBall`) generate the Borel
+  σ-algebra of a second-countable ultrametric space.
 * `IsUltrametricDist.isPiSystem_closedBall`: they form a π-system.
 -/
 
@@ -32,15 +31,6 @@ open Set Metric
 namespace IsUltrametricDist
 
 variable {X : Type*} [PseudoMetricSpace X] [IsUltrametricDist X]
-
-/-- In an ultrametric space, the closed balls of positive radius form a basis of the topology. -/
-theorem isTopologicalBasis_closedBall :
-    TopologicalSpace.IsTopologicalBasis {s : Set X | ∃ x, ∃ r > 0, s = closedBall x r} :=
-  TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds
-    (by rintro _ ⟨x, r, hr, rfl⟩; exact isOpen_closedBall _ hr.ne') fun x u hx hu ↦ by
-      obtain ⟨ε, hε, hεu⟩ := Metric.isOpen_iff.1 hu x hx
-      exact ⟨closedBall x (ε / 2), ⟨x, ε / 2, half_pos hε, rfl⟩,
-        mem_closedBall_self (by positivity), (closedBall_subset_ball (half_lt_self hε)).trans hεu⟩
 
 /-- In a second-countable ultrametric space, the closed balls of positive radius generate the
 Borel σ-algebra. -/

@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Ultrametric
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Ultra
@@ -24,16 +23,16 @@ on a Borel set `s` and strictly differentiable at every point of `s` with an inv
 ν (f '' s) = ∫⁻ x in s, J x ∂μ.
 ```
 
-Over `ℝ` this is Mathlib's `MeasureTheory.lintegral_abs_det_fderiv_eq_addHaar_image`, with
-`J x = |det f' x|`. Over a nonarchimedean local field `K` the linear scaling law gives
-`J x = |det f' x|_K`, the normalized absolute value. The ultrametric argument is simpler than the
-real one, since no error term survives on small balls.
+Over `ℝ` this is Mathlib's `MeasureTheory.lintegral_abs_det_fderiv_eq_addHaar_image`, with `J x =
+|det f' x|`. Over a nonarchimedean local field `K`, for `μ = ν` an additive Haar measure on `K ^ d`,
+the linear scaling law gives `J x = |det f' x|_K`, the normalized absolute value. The ultrametric
+argument is simpler than the real one, since no error term survives on small balls.
 
 A map approximating a linear equivalence `A` on an ultrametric closed ball maps it onto a
 translate of the linear image of a ball
 (`ApproximatesLinearOn.image_closedBall_eq_vadd_image_of_isUltrametricDist`), so it multiplies
 the Haar measure of that ball and of each of its closed sub-balls by the scaling factor of `A`
-(`ApproximatesLinearOn.addHaar_image_closedBall_of_isUltrametricDist`). By strict
+(`ApproximatesLinearOn.measure_image_closedBall_eq_mul_of_isUltrametricDist`). By strict
 differentiability, `f` approximates `f' x` on a small closed ball around each point `x` of `s`,
 and is injective there. On such a ball the scaling factor `J` is constant along `s`, and since
 closed balls of an ultrametric space are nested or disjoint, they form a π-system generating the
@@ -42,7 +41,7 @@ with `J x • μ` on the whole ball. Countably many such balls cover `s`.
 
 ## Main results
 
-* `ApproximatesLinearOn.addHaar_image_closedBall_of_isUltrametricDist`: the Haar measure of the
+* `ApproximatesLinearOn.measure_image_closedBall_eq_mul_of_isUltrametricDist`: the measure of the
   image of an ultrametric closed ball under a map approximating a linear equivalence.
 * `MeasureTheory.lintegral_eq_addHaar_image_of_isUltrametricDist`: the change of variables
   formula for a map injective on a Borel set, with invertible strict derivatives on it.
@@ -73,7 +72,7 @@ variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
 equivalence `A` on `closedBall x r` as in `image_closedBall_eq_vadd_image_of_isUltrametricDist`,
 and `A` multiplies the Haar measure of `closedBall 0 r` by `J`, then `f` multiplies the Haar
 measure of `closedBall x r` by `J`. -/
-theorem addHaar_image_closedBall_of_isUltrametricDist [IsUltrametricDist E] [CompleteSpace E]
+theorem measure_image_closedBall_eq_mul_of_isUltrametricDist [IsUltrametricDist E] [CompleteSpace E]
     (μ : Measure E) [μ.IsAddLeftInvariant] (ν : Measure F) [ν.IsAddLeftInvariant] {f : E → F}
     {A : E ≃L[𝕜] F} {x : E} {r : ℝ} {c : ℝ≥0}
     (hf : ApproximatesLinearOn f (A : E →L[𝕜] F) (closedBall x r) c)
@@ -138,7 +137,7 @@ private theorem image_closedBall_of_isGoodBall {x : E} (hJ : ∀ s, ν (f' x '' 
   obtain ⟨-, c, hc, hf⟩ := hgood
   have hsub : closedBall y t ⊆ closedBall x r :=
     (closedBall_subset_closedBall ht).trans (IsUltrametricDist.closedBall_eq_of_mem hy).symm.subset
-  exact (hf.mono_set hsub).addHaar_image_closedBall_of_isUltrametricDist μ ν hc (hJ _)
+  exact (hf.mono_set hsub).measure_image_closedBall_eq_mul_of_isUltrametricDist μ ν hc (hJ _)
 
 include μ ν in
 /-- The scaling factor at a point `y` of a good ball around `x` is the one at `x`. -/
@@ -210,8 +209,9 @@ measurable subset `s` of a proper ultrametric normed space `E`, with an invertib
 derivative `f' x` at every `x ∈ s`, and let `f' x` multiply Haar measure by `J x`, in the sense
 that `ν (f' x '' t) = J x * μ t` for every set `t`. Then `∫⁻ x in s, J x ∂μ = ν (f '' s)`.
 
-Over a nonarchimedean local field `K`, with `μ` and `ν` additive Haar measures on `K ^ d`, the
-linear scaling law makes `J x = |det f' x|_K`. -/
+Over a nonarchimedean local field `K`, with `μ = ν` an additive Haar measure on `K ^ d`, the
+linear scaling law makes `J x = |det f' x|_K`; for two different normalizations, `J x` also
+carries their ratio. -/
 theorem lintegral_eq_addHaar_image_of_isUltrametricDist {s : Set E} (hs : MeasurableSet s)
     (hf' : ∀ x ∈ s, HasStrictFDerivAt f (f' x : E →L[𝕜] F) x) (hinj : InjOn f s)
     (hJ : ∀ x ∈ s, ∀ t, ν (f' x '' t) = J x * μ t) : ∫⁻ x in s, J x ∂μ = ν (f '' s) := by
