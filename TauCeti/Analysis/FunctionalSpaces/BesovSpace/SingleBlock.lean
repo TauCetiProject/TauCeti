@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.Distribution.TemperedDistribution.PlaneWave
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.One
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Basic
-public import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.RealInterpolation
 import TauCeti.MeasureTheory.Function.Holder

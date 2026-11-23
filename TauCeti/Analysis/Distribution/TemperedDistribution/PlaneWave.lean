@@ -43,8 +43,8 @@ basic example on which the dyadic decomposition can be computed exactly.
 
 ## Main declarations
 
-* `TemperedDistribution.fourierInv_delta`, `TemperedDistribution.fourierInv_delta_zero`: the
-  inverse Fourier transform of `δ_ξ` is the plane wave `e_ξ`, and that of `δ₀` is the constant `1`.
+* `TemperedDistribution.fourierInv_delta`: the inverse Fourier transform of `δ_ξ` is the plane
+  wave `e_ξ`.
 * `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`,
   `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le`,
   `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`: the blocks of plane
@@ -77,12 +77,6 @@ theorem fourierInv_delta (ξ : E) :
     𝓕⁻ (delta ξ) = (hasTemperateGrowth_fourierChar_inner ξ).toTemperedDistribution := by
   ext f
   simp [SchwartzMap.fourierInv_coe, Real.fourierInv_eq, Circle.smul_def, mul_comm]
-
-/-- **The inverse Fourier transform of `δ₀` is the constant function `1`**, which as a tempered
-distribution is integration against the volume. -/
-theorem fourierInv_delta_zero : 𝓕⁻ (delta (0 : E)) = volume.toTemperedDistribution := by
-  ext f
-  simp [SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
 
 variable (φ : ContDiffBump (0 : E))
 

@@ -961,16 +961,13 @@ distribution `volume.toTemperedDistribution`, is its own low-frequency block `Δ
 theorem littlewoodPaleyBlock_toTemperedDistribution_volume (k : ℕ) :
     littlewoodPaleyBlock ℂ φ k (volume : Measure E).toTemperedDistribution =
       if k = 0 then (volume : Measure E).toTemperedDistribution else 0 := by
-  have hvol : (volume : Measure E).toTemperedDistribution = 𝓕⁻ (delta (0 : E)) := by
-    ext f
-    simp [SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
-  rw [hvol, littlewoodPaleyBlock_apply,
+  rw [← fourierInv_delta_zero, littlewoodPaleyBlock_apply,
     fourierMultiplierCLM_fourierInv_delta
       (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k) 0]
   rcases k with _ | k
   · rw [φ.inhomogeneousLittlewoodPaley_zero,
       φ.one_of_mem_closedBall (Metric.mem_closedBall_self φ.rIn_pos.le)]
-    simp [← hvol]
+    simp [fourierInv_delta_zero]
   · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le
       (by rw [norm_zero]; exact mul_nonneg (by positivity) φ.rIn_pos.le)]
     simp
