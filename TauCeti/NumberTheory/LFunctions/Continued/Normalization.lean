@@ -86,8 +86,9 @@ theorem analyticAt_analytic_continuedL_iff (s : ℂ) :
   rw [T.analytic_continuedL]
   exact analyticAt_comp_iff_of_deriv_ne_zero (by fun_prop) (by simp)
 
-/-- In the arithmetic normalization, the continued function agrees with the arithmetic
-Dirichlet series on `Re s > 1 + w/2`. -/
+/-- If the analytic record has Dirichlet agreement and a meromorphic completion, then in the
+arithmetic normalization the continued function agrees with the arithmetic Dirichlet series on
+`Re s > 1 + w/2`. -/
 theorem arithmetic_continuedL_eq_LSeries (hda : T.analytic.HasDirichletAgreement)
     (hm : Meromorphic T.analytic.completed) {s : ℂ} (hs : 1 + (T.weight : ℝ) / 2 < s.re) :
     T.arithmetic.continuedL s = LSeries T.arithmetic.coeff s := by
