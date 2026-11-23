@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Wave.Propagator
 public import TauCeti.Analysis.PDE.Wave.Strichartz
-import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
-import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
@@ -52,7 +50,7 @@ summation.
 
 The symbol `1 / (2π ‖·‖)` is smooth away from the origin, so it agrees on the annulus
 `φ.rIn / 2 ≤ ‖ξ‖ ≤ φ.rOut`, which contains the support of `ψ₀`, with a Schwartz function `θ`
-(`SchwartzMap.exists_eqOn_annulus_of_contDiffOn`). Let `Mⱼ` be the multiplier with symbol
+(`ContDiffBump.exists_eqOn_inv_of_contDiffOn`). Let `Mⱼ` be the multiplier with symbol
 `θ(2^{-j} ·)`. Its kernel is the `L¹`-normalised dilate of `𝓕⁻ θ`, so `Mⱼ` is bounded on every
 `Lᵖ` uniformly in `j`, and `2^{-j} θ(2^{-j} ξ) · 2π ‖ξ‖ = 1` on the support of `ψⱼ`. Since
 `sin x = (e^{ix} - e^{-ix}) / 2i`,
@@ -134,6 +132,12 @@ containing the support of `ψⱼ`, and the dyadic multiplier `Mⱼ` with symbol 
 private def invCutoff : 𝓢(E, ℂ) :=
   φ.exists_invCutoff.choose
 
+/-- `θ₀` equals `1 / (2π ‖(φ.rIn / 2) • η‖)` on the annulus `1 ≤ ‖η‖ ≤ 2 φ.rOut / φ.rIn`. -/
+private theorem eqOn_invCutoff : Set.EqOn φ.invCutoff
+    (fun η ↦ (((sqrtNegLaplacianSymbol ((φ.rIn / 2) • η))⁻¹ : ℝ) : ℂ))
+    {η | 1 ≤ ‖η‖ ∧ ‖η‖ ≤ 2 * φ.rOut / φ.rIn} :=
+  φ.exists_invCutoff.choose_spec
+
 /-- On the support of `ψⱼ`, `2^{-j} θ(2^{-j} ξ)` inverts the symbol `2π ‖ξ‖` of `D`. -/
 private theorem inv_mul_dyadicDilate_invCutoff_mul {j : ℤ} {ξ : E}
     (hξ : φ.littlewoodPaley j ξ ≠ 0) :
@@ -142,8 +146,8 @@ private theorem inv_mul_dyadicDilate_invCutoff_mul {j : ℤ} {ξ : E}
   have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
   have hξ0 : (‖ξ‖ : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 fun h ↦
     hξ (h ▸ φ.littlewoodPaley_apply_zero j))
-  rw [φ.dyadicDilate_apply_of_littlewoodPaley_ne_zero (σ := φ.invCutoff)
-    φ.exists_invCutoff.choose_spec hξ, sqrtNegLaplacianSymbol_apply,
+  rw [φ.dyadicDilate_apply_of_littlewoodPaley_ne_zero φ.eqOn_invCutoff hξ,
+    sqrtNegLaplacianSymbol_apply,
     sqrtNegLaplacianSymbol_apply, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 h2j.le)]
   push_cast
   field_simp

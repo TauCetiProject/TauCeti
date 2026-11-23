@@ -71,25 +71,6 @@ public section
 open Filter MeasureTheory Topology
 open scoped ENNReal NNReal
 
-namespace TauCeti
-
-/-- **Shifting a dyadic weight.** In a sum over `l ∈ ℤ` of weighted terms `Yₗ`, shifting the index
-of the weight `2^{lσ}` by `d` costs the factor `2^{dσ}`:
-`∑ₗ ∑_{d ∈ S} 2^{(d + l)σ} Yₗ = (∑_{d ∈ S} 2^{dσ}) ∑ₗ 2^{lσ} Yₗ`. -/
-theorem tsum_sum_ofReal_two_zpow_add_rpow_mul (σ : ℝ) (S : Finset ℤ) (Y : ℤ → ℝ≥0∞) :
-    ∑' l, ∑ d ∈ S, ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) * Y l =
-      ((∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) : ℝ≥0∞) *
-        ∑' l, ENNReal.ofReal (((2 : ℝ) ^ l) ^ σ) * Y l := by
-  rw [← ENNReal.tsum_mul_left]
-  refine tsum_congr fun l ↦ ?_
-  rw [ENNReal.ofNNReal_finsetSum, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun d _ ↦ ?_
-  rw [ENNReal.ofNNReal_toNNReal, zpow_add₀ two_ne_zero,
-    Real.mul_rpow (by positivity) (by positivity), ENNReal.ofReal_mul (by positivity)]
-  ring
-
-end TauCeti
-
 namespace ContDiffBump
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]

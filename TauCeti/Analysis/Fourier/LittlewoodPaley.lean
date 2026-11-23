@@ -1224,6 +1224,13 @@ private theorem exists_invSumSq : ∃ σ : 𝓢(V, ℂ), Set.EqOn σ
 def invSumSq : 𝓢(V, ℂ) :=
   φ.exists_invSumSq.choose
 
+/-- `ContDiffBump.invSumSq` equals `1 / Ψ ((φ.rIn / 2) • η)` on the annulus
+`1 ≤ ‖η‖ ≤ 2 φ.rOut / φ.rIn`, where `Ψ = ∑ⱼ ψⱼ²`. -/
+theorem eqOn_invSumSq : Set.EqOn φ.invSumSq
+    (fun η ↦ (((φ.sumSqLittlewoodPaley ((φ.rIn / 2) • η))⁻¹ : ℝ) : ℂ))
+    {η | 1 ≤ ‖η‖ ∧ ‖η‖ ≤ 2 * φ.rOut / φ.rIn} :=
+  φ.exists_invSumSq.choose_spec
+
 /-- On the support of `ψⱼ`, the `j`-th dyadic dilate of `ContDiffBump.invSumSq` inverts
 `Ψ = ∑ⱼ ψⱼ²`. -/
 theorem dyadicDilate_invSumSq_mul_sumSqLittlewoodPaley {j : ℤ} {ξ : V}
@@ -1232,8 +1239,7 @@ theorem dyadicDilate_invSumSq_mul_sumSqLittlewoodPaley {j : ℤ} {ξ : V}
   have hξ0 : ξ ≠ 0 := by
     rintro rfl
     exact hξ (φ.littlewoodPaley_apply_zero j)
-  rw [φ.dyadicDilate_apply_of_littlewoodPaley_ne_zero (σ := φ.invSumSq)
-      φ.exists_invSumSq.choose_spec hξ,
+  rw [φ.dyadicDilate_apply_of_littlewoodPaley_ne_zero φ.eqOn_invSumSq hξ,
     sumSqLittlewoodPaley_two_zpow_inv_smul, Complex.ofReal_inv]
   exact inv_mul_cancel₀ (Complex.ofReal_ne_zero.2 (φ.sumSqLittlewoodPaley_pos hξ0).ne')
 
