@@ -40,6 +40,8 @@ commutative monoid with zero.
 * `DirichletCharacter.conductor_χ₄_ringHomComp`, `DirichletCharacter.conductor_χ₈_ringHomComp`,
   `DirichletCharacter.conductor_χ₈'_ringHomComp`: the conductors of the classical characters
   when `2 ≠ 0`.
+* `DirichletCharacter.natCard_isQuadratic_two_pow`: when `2 ≠ 0`, the number of quadratic
+  characters at level `2 ^ k` is `1`, `1`, `2` for `k = 0, 1, 2` and `4` for `k ≥ 3`.
 
 The values of the lifted characters at odd residues follow from
 `DirichletCharacter.changeLevel_ringHomComp_intCast_apply` and Mathlib's tables
@@ -178,6 +180,64 @@ theorem conductor_χ₈'_ringHomComp : conductor (χ₈'.ringHomComp (Int.castRi
   rw [MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈' (b := 1) (by decide),
     MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈' (b := -1) (by decide)]
   simpa [eq_neg_iff_add_eq_zero, one_add_one_eq_two] using two_ne_zero (α := R)
+
+/-- **The number of quadratic characters at a power-of-two level.** When `2 ≠ 0` in the
+coefficient ring, there is one quadratic character modulo `1` and modulo `2`, two modulo `4`
+and four modulo `2 ^ k` for every `k ≥ 3`. -/
+theorem natCard_isQuadratic_two_pow (k : ℕ) :
+    Nat.card {χ : DirichletCharacter R (2 ^ k) // χ.IsQuadratic} =
+      if k ≤ 1 then 1 else if k = 2 then 2 else 4 := by
+  rw [← Set.coe_ofPred, Nat.card_coe_set_eq]
+  have hc (h : 4 ∣ 2 ^ k) (ψ : DirichletCharacter R 4) :
+      (changeLevel h ψ).conductor = ψ.conductor := conductor_changeLevel ψ h
+  have hc8 (h : 8 ∣ 2 ^ k) (ψ : DirichletCharacter R 8) :
+      (changeLevel h ψ).conductor = ψ.conductor := conductor_changeLevel ψ h
+  have h1 : (1 : DirichletCharacter R (2 ^ k)).conductor = 1 := conductor_one
+  have hmem (χ : DirichletCharacter R (2 ^ k)) :
+      χ ∈ {χ : DirichletCharacter R (2 ^ k) | χ.IsQuadratic} ↔ χ.IsQuadratic := Iff.rfl
+  split_ifs with hk hk2
+  · have h4 : ¬4 ∣ 2 ^ k := fun h ↦ by
+      have : 2 ^ k ≤ 2 ^ 1 := Nat.pow_le_pow_right two_pos hk
+      have := Nat.le_of_dvd (by positivity) h
+      omega
+    have h8 : ¬8 ∣ 2 ^ k := fun h ↦ h4 ((by decide : 4 ∣ 8).trans h)
+    rw [Set.ncard_eq_one]
+    refine ⟨1, Set.ext fun χ ↦ ?_⟩
+    rw [hmem, isQuadratic_iff_of_level_two_pow]
+    simp [h4, h8]
+  · have h4 : 4 ∣ 2 ^ k := by rw [hk2]; decide
+    have h8 : ¬8 ∣ 2 ^ k := by rw [hk2]; decide
+    rw [Set.ncard_eq_two]
+    refine ⟨1, changeLevel h4 (χ₄.ringHomComp (Int.castRingHom R)), fun h ↦ ?_,
+      Set.ext fun χ ↦ ?_⟩
+    · simpa [h1, hc, conductor_χ₄_ringHomComp] using congrArg conductor h
+    · rw [hmem, isQuadratic_iff_of_level_two_pow]
+      simp [h4, h8]
+  · have h4 : 4 ∣ 2 ^ k := Nat.pow_dvd_pow 2 (by omega : 2 ≤ k)
+    have h8 : 8 ∣ 2 ^ k := Nat.pow_dvd_pow 2 (by omega : 3 ≤ k)
+    have hset : {χ : DirichletCharacter R (2 ^ k) | χ.IsQuadratic} =
+        {1, changeLevel h4 (χ₄.ringHomComp (Int.castRingHom R)),
+          changeLevel h8 (χ₈.ringHomComp (Int.castRingHom R)),
+          changeLevel h8 (χ₈'.ringHomComp (Int.castRingHom R))} := by
+      ext χ
+      rw [hmem, isQuadratic_iff_of_level_two_pow]
+      simp [h4, h8]
+    have h88 : changeLevel h8 (χ₈.ringHomComp (Int.castRingHom R)) ≠
+        changeLevel h8 (χ₈'.ringHomComp (Int.castRingHom R)) := fun h ↦ by
+      have h3 := DFunLike.congr_fun (changeLevel_injective h8 h) (3 : ZMod 8)
+      rw [MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈ (a := 3) (b := -1) (by decide),
+        MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈' (a := 3) (b := 1) (by decide),
+        Int.cast_neg, Int.cast_one] at h3
+      exact two_ne_zero (α := R) (by linear_combination -h3)
+    rw [hset, Set.ncard_insert_of_notMem, Set.ncard_insert_of_notMem, Set.ncard_pair h88]
+    · simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
+      refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;>
+        simpa [hc, hc8, conductor_χ₄_ringHomComp, conductor_χ₈_ringHomComp,
+          conductor_χ₈'_ringHomComp] using congrArg conductor h
+    · simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
+      refine ⟨fun h ↦ ?_, fun h ↦ ?_, fun h ↦ ?_⟩ <;>
+        simpa [h1, hc, hc8, conductor_χ₄_ringHomComp, conductor_χ₈_ringHomComp,
+          conductor_χ₈'_ringHomComp] using congrArg conductor h
 
 end Conductor
 
