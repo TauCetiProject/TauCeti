@@ -19,20 +19,23 @@ gluing and compactness arguments instead produce sequences into a complete metri
 space `Z` with no linear structure and no global separability assumption, where only differences or
 consecutive jumps have controlled `Lᵖ` seminorm.
 
-This file provides `Lᵖ` completeness in that setting for every exponent `1 ≤ p ≤ ∞` and every
-measure `μ`:
+This file provides `Lᵖ` completeness in that setting for every measure `μ`; the chain results need
+`1 ≤ p ≤ ∞`, the vanishing-modulus results hold for every exponent `p`:
 
 1. `TauCeti.ae_tsum_edist_lt_top_of_eLpNorm_le` and `TauCeti.exists_eLpNorm_edist_le_tsum` prove
    that a sequence of almost everywhere strongly measurable functions into a complete
    pseudo-extended-metric space whose consecutive `Lᵖ` jumps are bounded by a summable sequence `b`
    converges almost everywhere to a strongly measurable limit `g`, with tail bound
    `eLpNorm (fun x ↦ edist (f n x) (g x)) p μ ≤ ∑' k, b (n + k)` for every `n`, passing finite
-   partial-sum bounds to the limit via `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto`.
+   partial-sum bounds to the limit via `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto`. For `p ≤ 1`,
+   `TauCeti.ae_tsum_edist_lt_top_of_eLpNorm_le_of_le_one` replaces the summability of `b` by that
+   of `b n ^ p`, using subadditivity of `t ↦ t ^ p`, and
+   `TauCeti.ae_tsum_edist_lt_top_of_eLpNorm_le_pow` covers geometric jump bounds at every `p ≠ 0`.
 2. `TauCeti.exists_tendsto_eLpNorm_edist_of_tendsto_bound` and its seminormed-group specialization
    `TauCeti.exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound` deduce `Lᵖ` convergence under a
    merely vanishing Cauchy modulus `B N → 0`, with the rate `B N` past index `N`, by extracting a
-   geometrically summable subsequence and passing the `Lᵖ` Cauchy bound to the almost-everywhere
-   limit.
+   subsequence with geometrically small jumps and passing the `Lᵖ` Cauchy bound to the
+   almost-everywhere limit.
 3. `TauCeti.ae_eq_zero_of_tendsto_of_eLpNorm_le` identifies an almost-everywhere limit of
    functions whose `Lᵖ` seminorms tend to zero with `0`.
 
@@ -80,6 +83,54 @@ theorem ae_tsum_edist_lt_top_of_eLpNorm_le (hp : 1 ≤ p) {f : ℕ → α → Z}
     (eLpNorm_tsum_le hd hp).trans (tsum_le_tsum hjump)
   exact ae_lt_top_of_eLpNorm_ne_top hp0 (ne_top_of_le_ne_top hb htsum_le)
 
+/-- **Almost-everywhere summability of metric `Lᵖ` jumps for `p ≤ 1`.** For `p ≤ 1`, if the
+consecutive `Lᵖ` discrepancies of a sequence of functions into `Z` are bounded by a sequence `b`
+whose `p`-th powers are summable (which forces `p ≠ 0`), then the pointwise jump series is finite
+almost everywhere. For `p < 1`, summability of `b` itself, as in
+`TauCeti.ae_tsum_edist_lt_top_of_eLpNorm_le`, is not enough. No measurability of the functions
+themselves is needed. -/
+theorem ae_tsum_edist_lt_top_of_eLpNorm_le_of_le_one (hp1 : p ≤ 1) {f : ℕ → α → Z}
+    {b : ℕ → ℝ≥0∞} (hb : ∑' n, b n ^ p.toReal ≠ ∞)
+    (hjump : ∀ n, eLpNorm (fun x ↦ edist (f n x) (f (n + 1) x)) p μ ≤ b n) :
+    ∀ᵐ x ∂μ, ∑' n, edist (f n x) (f (n + 1) x) < ∞ := by
+  have hp0 : p ≠ 0 := by
+    rintro rfl
+    simp at hb
+  have hp : p ≠ ∞ := (hp1.trans_lt ENNReal.one_lt_top).ne
+  have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  have hq1 : p.toReal ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using hp1)
+  let d : ℕ → α → ℝ≥0∞ := fun k x ↦ edist (f k x) (f (k + 1) x)
+  have hd (k : ℕ) : AEMeasurable (d k) μ :=
+    (aestronglyMeasurable_of_eLpNorm_ne_top ((hjump k).trans_lt
+      ((ENNReal.rpow_lt_top_iff_of_pos hq).1 (ENNReal.lt_top_of_tsum_ne_top hb k))).ne).aemeasurable
+  -- The `p`-th powers of the jumps have summable integrals, so their sum is finite a.e.
+  have hint : ∫⁻ x, ∑' k, d k x ^ p.toReal ∂μ ≠ ∞ := by
+    rw [lintegral_tsum fun k ↦ (hd k).pow_const _]
+    refine ne_top_of_le_ne_top hb (tsum_le_tsum fun k ↦ ?_)
+    rw [← eLpNorm_rpow_eq_lintegral hp0 hp (hd k)]
+    exact ENNReal.rpow_le_rpow (hjump k) hq.le
+  filter_upwards [ae_lt_top' (AEMeasurable.tsum fun k ↦ (hd k).pow_const _) hint] with x hx
+  -- Subadditivity of `t ↦ t ^ p` bounds each partial jump sum by `(∑' k, d k x ^ p) ^ p⁻¹`.
+  refine (ENNReal.tsum_le_of_sum_range_le fun n ↦ ?_).trans_lt
+    (ENNReal.rpow_lt_top_of_nonneg (inv_nonneg.2 hq.le) hx.ne)
+  rw [ENNReal.le_rpow_inv_iff hq]
+  exact (ENNReal.rpow_sum_le_sum_rpow _ _ hq hq1).trans (sum_le_tsum _)
+
+/-- **Almost-everywhere summability of geometrically small metric `Lᵖ` jumps.** For every exponent
+`p ≠ 0` (including `p = ∞`) and every `r < 1`, if the `n`-th consecutive `Lᵖ` discrepancy of a
+sequence of functions into `Z` is at most `r ^ n`, then the pointwise jump series is finite almost
+everywhere. -/
+theorem ae_tsum_edist_lt_top_of_eLpNorm_le_pow (hp0 : p ≠ 0) {f : ℕ → α → Z} {r : ℝ≥0∞}
+    (hr : r < 1) (hjump : ∀ n, eLpNorm (fun x ↦ edist (f n x) (f (n + 1) x)) p μ ≤ r ^ n) :
+    ∀ᵐ x ∂μ, ∑' n, edist (f n x) (f (n + 1) x) < ∞ := by
+  rcases le_total 1 p with hp | hp
+  · exact ae_tsum_edist_lt_top_of_eLpNorm_le hp (tsum_geometric_lt_top.2 hr).ne hjump
+  · have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 (hp.trans_lt ENNReal.one_lt_top).ne
+    refine ae_tsum_edist_lt_top_of_eLpNorm_le_of_le_one hp ?_ hjump
+    simp_rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul, mul_comm _ p.toReal, ENNReal.rpow_mul,
+      ENNReal.rpow_natCast]
+    exact (tsum_geometric_lt_top.2 (ENNReal.rpow_lt_one hr hq)).ne
+
 /-- **Metric-valued `Lᵖ` chain completeness.** For `1 ≤ p` (including `p = ∞`) and a complete
 pseudo-extended-metric target `Z` (with no global separability assumption), if consecutive `Lᵖ`
 discrepancies of a sequence `f` of a.e. strongly measurable functions are bounded by a summable
@@ -112,18 +163,36 @@ theorem exists_eLpNorm_edist_le_tsum [CompleteSpace Z] (hp : 1 ≤ p) {f : ℕ �
       _ ≤ ∑ k ∈ Finset.range N, b (n + k) := Finset.sum_le_sum fun k _ ↦ hjump (n + k)
       _ ≤ ∑' k, b (n + k) := sum_le_tsum _
 
-/-- **Completeness of metric `Lᵖ` discrepancies under a vanishing Cauchy modulus.** For `1 ≤ p` and
-a complete pseudo-extended-metric target `Z`, a sequence of functions infinitely many of which are
-a.e. strongly measurable, whose terms of index at least `N` have `Lᵖ` discrepancy at most `B N`,
-where `B N → 0`, converges in `Lᵖ` to a strongly measurable function `g`, and every term of index at
-least `N` lies within `B N` of `g` in `Lᵖ`. -/
-theorem exists_tendsto_eLpNorm_edist_of_tendsto_bound [CompleteSpace Z] (hp : 1 ≤ p)
-    {f : ℕ → α → Z} (hf : ∃ᶠ n in atTop, AEStronglyMeasurable (f n) μ) {B : ℕ → ℝ≥0∞}
+/-- **Completeness of metric `Lᵖ` discrepancies under a vanishing Cauchy modulus.** For every
+exponent `p` and a complete pseudo-extended-metric target `Z`, a sequence of functions infinitely
+many of which are a.e. strongly measurable, whose terms of index at least `N` have `Lᵖ` discrepancy
+at most `B N`, where `B N → 0`, converges in `Lᵖ` to a strongly measurable function `g`, and every
+term of index at least `N` lies within `B N` of `g` in `Lᵖ`. -/
+theorem exists_tendsto_eLpNorm_edist_of_tendsto_bound [CompleteSpace Z] {f : ℕ → α → Z}
+    (hf : ∃ᶠ n in atTop, AEStronglyMeasurable (f n) μ) {B : ℕ → ℝ≥0∞}
     (hB : Tendsto B atTop (𝓝 0))
     (h_cau : ∀ N n m, N ≤ n → N ≤ m → eLpNorm (fun x ↦ edist (f n x) (f m x)) p μ ≤ B N) :
     ∃ g : α → Z, StronglyMeasurable g ∧
       (∀ N n, N ≤ n → eLpNorm (fun x ↦ edist (f n x) (g x)) p μ ≤ B N) ∧
       Tendsto (fun n ↦ eLpNorm (fun x ↦ edist (f n x) (g x)) p μ) atTop (𝓝 0) := by
+  suffices ∃ g : α → Z, StronglyMeasurable g ∧
+      ∀ N n, N ≤ n → eLpNorm (fun x ↦ edist (f n x) (g x)) p μ ≤ B N by
+    obtain ⟨g, hg, hbound⟩ := this
+    exact ⟨g, hg, hbound, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hB
+      (fun _ ↦ zero_le) fun n ↦ hbound n n le_rfl⟩
+  rcases eq_or_ne p 0 with rfl | hp0
+  · -- At `p = 0`, `eLpNorm` is `0` on a.e. strongly measurable functions and `∞` otherwise. Every
+    -- index `N` with `B N` finite is at least the first such index `N₀`, so a strongly measurable
+    -- version of an a.e. strongly measurable term of index at least `N₀` will do.
+    have hex : ∃ N, B N ≠ ∞ := (hB.eventually (eventually_ne_nhds ENNReal.zero_ne_top)).exists
+    obtain ⟨m, hm, hm0⟩ := (hf.and_eventually (eventually_ge_atTop (Nat.find hex))).exists
+    refine ⟨hm.mk _, hm.stronglyMeasurable_mk, fun N n hn ↦ ?_⟩
+    rcases eq_or_ne (B N) ∞ with hBN | hBN
+    · exact hBN ▸ le_top
+    have hmeas := aestronglyMeasurable_of_eLpNorm_ne_top (ne_top_of_le_ne_top (Nat.find_spec hex)
+      (h_cau _ n m ((Nat.find_min' hex hBN).trans hn) hm0))
+    rw [eLpNorm_exponent_zero (hmeas.congr (hm.ae_eq_mk.mono fun x hx ↦ by simp only [hx]))]
+    exact zero_le
   -- Extract a subsequence of a.e. strongly measurable terms with geometrically decaying modulus.
   have hB_frequently : ∀ n, ∃ᶠ k in atTop, AEStronglyMeasurable (f k) μ ∧ B k < 2⁻¹ ^ n :=
     fun n ↦ hf.and_eventually
@@ -132,8 +201,10 @@ theorem exists_tendsto_eLpNorm_edist_of_tendsto_bound [CompleteSpace Z] (hp : 1 
   have hjump : ∀ n, eLpNorm (fun x ↦ edist (f (φ n) x) (f (φ (n + 1)) x)) p μ ≤ 2⁻¹ ^ n :=
     fun n ↦ (h_cau (φ n) (φ n) (φ (n + 1)) le_rfl (hφ.monotone (Nat.le_succ n))).trans
       (hφB n).2.le
-  obtain ⟨g, hg, hlim, -⟩ := exists_eLpNorm_edist_le_tsum hp (fun n ↦ (hφB n).1)
-    (by simp [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two]) hjump
+  -- The jumps along `φ` are summable a.e., so `f ∘ φ` converges a.e.
+  obtain ⟨g, hg, hlim⟩ := exists_stronglyMeasurable_limit_of_tendsto_ae (fun n ↦ (hφB n).1)
+    ((ae_tsum_edist_lt_top_of_eLpNorm_le_pow hp0 (by norm_num) hjump).mono fun x hx ↦
+      cauchySeq_tendsto_of_complete (cauchySeq_of_edist_le_of_tsum_ne_top _ (fun _ ↦ le_rfl) hx.ne))
   -- Pass the Cauchy bound to the almost-everywhere limit along the tail `φ (· + N)`. When `B N` is
   -- finite, the discrepancies from `f n` along it are a.e. measurable, even if `f n` is not.
   have hbound (N n : ℕ) (hn : N ≤ n) :
@@ -147,21 +218,20 @@ theorem exists_tendsto_eLpNorm_edist_of_tendsto_bound [CompleteSpace Z] (hp : 1 
         ((hle m).trans_lt hBN.lt_top).ne).aemeasurable)
       (hlim.mono fun x hx ↦ tendsto_const_nhds.edist (hx.comp (tendsto_add_atTop_nat N)))
       (.of_forall hle)
-  exact ⟨g, hg, hbound, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hB
-    (fun _ ↦ zero_le) fun n ↦ hbound n n le_rfl⟩
+  exact ⟨g, hg, hbound⟩
 
 end PseudoEMetricSpace
 
-/-- **Completeness of the `Lᵖ` seminorm under a vanishing Cauchy modulus.** For `1 ≤ p`, a
-sequence of functions into a complete seminormed group, infinitely many of which are a.e. strongly
-measurable, whose terms of index at least `N` are within `B N` of each other in `Lᵖ`, where
+/-- **Completeness of the `Lᵖ` seminorm under a vanishing Cauchy modulus.** For every exponent
+`p`, a sequence of functions into a complete seminormed group, infinitely many of which are a.e.
+strongly measurable, whose terms of index at least `N` are within `B N` of each other in `Lᵖ`, where
 `B N → 0`, converges in `Lᵖ` to a strongly measurable function `g`, and every term of index at least
 `N` lies within `B N` of `g` in `Lᵖ`.
 
 Unlike `MeasureTheory.Lp.cauchy_complete_eLpNorm`, the modulus need not be summable and the terms
 need not lie in `Lᵖ`. -/
 theorem exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound [SeminormedAddCommGroup E]
-    [CompleteSpace E] (hp : 1 ≤ p) {f : ℕ → α → E}
+    [CompleteSpace E] {f : ℕ → α → E}
     (hf : ∃ᶠ n in atTop, AEStronglyMeasurable (f n) μ) {B : ℕ → ℝ≥0∞}
     (hB : Tendsto B atTop (𝓝 0))
     (h_cau : ∀ N n m, N ≤ n → N ≤ m → eLpNorm (f n - f m) p μ ≤ B N) :
@@ -172,7 +242,7 @@ theorem exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound [SeminormedAddCommGroup 
     by_cases hu : AEStronglyMeasurable u μ
     · exact (eLpNorm_eNorm u hu).le
     · simp [eLpNorm_of_not_aestronglyMeasurable hu]
-  obtain ⟨g, hg, hbound, -⟩ := exists_tendsto_eLpNorm_edist_of_tendsto_bound hp hf hB
+  obtain ⟨g, hg, hbound, -⟩ := exists_tendsto_eLpNorm_edist_of_tendsto_bound hf hB
     fun N n m hn hm ↦ by
       simpa only [eDist_eq_eNorm_sub, Pi.sub_apply] using (hle _).trans (h_cau N n m hn hm)
   -- When `B N` is finite, every term of index at least `N` is a.e. strongly measurable.
