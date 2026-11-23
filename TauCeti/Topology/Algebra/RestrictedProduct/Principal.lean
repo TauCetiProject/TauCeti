@@ -266,15 +266,24 @@ def levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
   toSubgroup := (levelMonoidHom B S).range
   isOpen' := (isOpenEmbedding_levelMonoidHom_of_isOpen B S hB).isOpen_range
 
+/-- The underlying subgroup of `levelOpenSubgroup B S hB` is `(levelMonoidHom B S).range`. -/
+@[to_additive
+/-- The underlying additive subgroup of `levelOpenAddSubgroup B S hB` is
+`(levelAddMonoidHom B S).range`. -/]
+theorem toSubgroup_levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
+    (levelOpenSubgroup B S hB : Subgroup (Πʳ i, [G i, B i])) = (levelMonoidHom B S).range := by
+  unfold levelOpenSubgroup
+  rfl
+
 /-- Membership in `levelOpenSubgroup B S hB` means integrality at every index outside `S`. -/
 @[to_additive (attr := simp) /-- Membership in `levelOpenAddSubgroup B S hB` means integrality at
 every index outside `S`. -/]
 theorem mem_levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (x : Πʳ i, [G i, B i]) :
     x ∈ levelOpenSubgroup B S hB ↔ ∀ i ∉ S, x i ∈ B i := by
-  change x ∈ (levelMonoidHom B S).range ↔ _
-  rw [← SetLike.mem_coe, MonoidHom.coe_range, range_levelMonoidHom]
-  rfl
+  rw [← OpenSubgroup.mem_toSubgroup, toSubgroup_levelOpenSubgroup, ← SetLike.mem_coe,
+    MonoidHom.coe_range, range_levelMonoidHom, Set.mem_ofPred_eq]
 
 /-- As a subset of `Πʳ i, [G i, B i]`, `levelOpenSubgroup B S hB` is the coordinate box equal to
 `Set.univ` on `S` and `B i` outside `S`. -/
