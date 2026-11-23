@@ -208,6 +208,12 @@ theorem map_complexCoordinateBialgHom_one_tmul (he : ∀ i, ω.toEquiv (e i) = e
   let f : coordinateHopfAlgebra ℝ d →ₐ[ℝ] ℂ ⊗[ℝ] S :=
     ((hs.complexCoordinateBialgHom e).toAlgHom.restrictScalars ℝ).comp
       Algebra.TensorProduct.includeRight
+  -- Both `Algebra.TensorProduct.map σ id` and `TensorProduct.map σ id` are the scalar action.
+  have hmap (y : ℂ ⊗[ℝ] S) :
+      Algebra.TensorProduct.map σ.toAlgHom (AlgHom.id ℝ S) y =
+        TensorProduct.map σ.toLinearMap LinearMap.id y := by
+    rw [← AlgEquiv.refl_toAlgHom, ← Algebra.TensorProduct.congr_apply, ← ScalarAut.smul_def,
+      ScalarAut.tensorProductMap_eq_smul]
   have key : (Algebra.TensorProduct.map σ.toAlgHom (AlgHom.id ℝ S)).comp f = f := by
     refine coordinateHopfAlgebra_algHom_ext ℝ d fun i j ↦ ?_
     have hij := hs.complexCoordinateBialgHom_one_tmul_X e i j
@@ -215,12 +221,15 @@ theorem map_complexCoordinateBialgHom_one_tmul (he : ∀ i, ω.toEquiv (e i) = e
       AlgHom.restrictScalars_apply, BialgHom.coe_toAlgHom, hij]
     rcases Complex.real_algHom_eq_id_or_conj σ.toAlgHom with hσ | hσ
     · rw [hσ, Algebra.TensorProduct.map_id, AlgHom.id_apply]
-    · rw [hσ]
-      have h := splittingBialgEquiv_map_conj
-        (splittingBialgEquiv.symm (hs.splitCoordinateMatrix e i j))
-      rw [splittingBialgEquiv.apply_symm_apply, hs.conjSwap_splitCoordinateMatrix he] at h
-      exact splittingBialgEquiv.injective (h.trans (splittingBialgEquiv.apply_symm_apply _).symm)
-  exact congrArg (fun φ : coordinateHopfAlgebra ℝ d →ₐ[ℝ] ℂ ⊗[ℝ] S ↦ φ a) key
+    · rw [hmap]
+      obtain rfl : σ = Complex.conjAe := AlgEquiv.coe_toAlgHom_injective hσ
+      refine EquivLike.injective splittingBialgEquiv ?_
+      rw [splittingBialgEquiv_map_conj, splittingBialgEquiv.apply_symm_apply,
+        hs.conjSwap_splitCoordinateMatrix he]
+  have ha := DFunLike.congr_fun key a
+  simp only [AlgHom.comp_apply, f, Algebra.TensorProduct.includeRight_apply,
+    AlgHom.restrictScalars_apply, BialgHom.coe_toAlgHom] at ha
+  rwa [hmap] at ha
 
 /-- **Galois equivariance of the complexified action.** In a basis fixed by the conjugation, the
 complexified action of `S` on coordinate rings commutes with every automorphism of `ℂ` over `ℝ`
@@ -235,11 +244,8 @@ theorem complexCoordinateBialgHom_map (he : ∀ i, ω.toEquiv (e i) = e i) (σ :
       TensorProduct.tmul_eq_smul_one_tmul, TensorProduct.tmul_eq_smul_one_tmul c, map_smul,
       map_smul]
     conv_lhs => rw [← hs.map_complexCoordinateBialgHom_one_tmul he σ a]
-    -- It remains that `TensorProduct.map σ id` is `σ`-semilinear for the scalar action of `ℂ`.
-    generalize hs.complexCoordinateBialgHom e (1 ⊗ₜ a) = y
-    induction y using TensorProduct.inductionOn with
-    | tmul z s => simp [TensorProduct.smul_tmul']
-    | add y z hy hz => simp [smul_add, hy, hz]
+    rw [ScalarAut.tensorProductMap_eq_smul, ScalarAut.tensorProductMap_eq_smul,
+      ScalarAut.smul_smulₛₗ]
   | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
 
 /-- **The homomorphism `h : S → GL_{d,ℝ}` of a Hodge structure, on coordinate rings**, in a
