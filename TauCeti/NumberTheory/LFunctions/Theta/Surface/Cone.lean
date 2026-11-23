@@ -20,10 +20,11 @@ whose surface part lies in `D`. Restricting `archHaar` to this cone gives the im
 `(surfaceHaar.restrict D) × multHaar` under radial scaling. Consequently integration over the
 cone splits into a surface integral and a radial Mellin transform.
 
-Furthermore, the squared unit action `unitScale` factors through `(𝓞 K)ˣ ⧸ torsion K` as a
-continuous, `archHaar K`-preserving action on `realSpace K` (registered as scoped instances in
-`TauCeti.LFunctions`), and for every unit fundamental domain `D`, `unitCone D` is a
-measure-theoretic fundamental domain for this action (`isFundamentalDomain_unitCone`).
+Furthermore, the squared unit action `unitScale` factors through an action of
+`(𝓞 K)ˣ ⧸ torsion K` on `realSpace K` in which each quotient element acts continuously and
+preserves `archHaar K` (registered as scoped instances in `TauCeti.LFunctions`), and for every
+unit fundamental domain `D`, `unitCone D` is a measure-theoretic fundamental domain for this
+action (`isFundamentalDomain_unitCone`).
 
 Over a unit fundamental domain `D`, the translates of the cone by the action
 `y ↦ (|u|_w² y_w)_w` of the units cover the positive orthant, every point exactly `w = #μ(K)`
