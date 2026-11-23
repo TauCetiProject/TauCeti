@@ -138,13 +138,13 @@ instance coind₁Functor_preservesLimitsOfSize [UnivLE.{t₂, w}] :
       (eApp X).hom.hom F g = ULift.up (F g.down) := (rfl)
   have e : (coind₁Functor R G ⋙ U) ⋙ T ≅
       ((U₀ ⋙ T₀) ⋙ TopCat.uliftFunctor.{v}) ⋙ TopCat.mappingSpace (TopCat.of (ULift.{w} G)) :=
-    NatIso.ofComponents
-      eApp
+    NatIso.ofComponents eApp
       (fun {X Y} f ↦ by
         ext F
         apply ContinuousMap.ext
         intro g
-        -- Pin the underlying coinduced carrier to its compact-open mapping space.
+        -- Pin the carrier to its compact-open mapping space. The first calc step unfolds
+        -- the composite functor map to coind₁Map.
         change C(G, X.V) at F
         let liftedMap := TopCat.uliftFunctor.{v}.map (T₀.map (U₀.map f))
         let liftedF := (eApp X).hom.hom F
@@ -173,8 +173,7 @@ instance resolutionFunctor_preservesLimitsOfSize [UnivLE.{t₂, max v w}] (n : �
   | zero =>
     have e : 𝟭 (TopRep.{max v w} R G) ≅ resolutionFunctor R G 0 :=
       NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
-        apply (Category.comp_id _).trans
-        apply Eq.trans _ (Category.id_comp _).symm
+        simp only [Iso.refl_hom]
         exact (_root_.ContinuousCohomology.resolutionMap_zero
           (ContinuousMonoidHom.id G) f).symm.trans (resolutionFunctor_map R G 0 f).symm)
     exact preservesLimits_of_natIso e
@@ -183,8 +182,7 @@ instance resolutionFunctor_preservesLimitsOfSize [UnivLE.{t₂, max v w}] (n : �
     have e : resolutionFunctor R G n ⋙ coind₁Functor R G ≅
         resolutionFunctor R G (n + 1) :=
       NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
-        apply (Category.comp_id _).trans
-        apply Eq.trans _ (Category.id_comp _).symm
+        simp only [Iso.refl_hom]
         rw [Functor.comp_map, resolutionFunctor_map, resolutionFunctor_map]
         exact (congrArg ofHom (ContRepresentation.coind₁ResMap_id _)).symm.trans
           (_root_.ContinuousCohomology.resolutionMap_succ

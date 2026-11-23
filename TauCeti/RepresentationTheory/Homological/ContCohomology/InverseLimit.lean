@@ -46,12 +46,13 @@ instance continuousCochainsFunctor_preservesLimitsOfSize [LocallyCompactSpace G]
         continuousCochainsFunctor R G ⋙ HomologicalComplex.eval _ _ n :=
       -- Homogeneous cochains are the invariants of the shifted resolution.
       NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
-        apply (Category.comp_id _).trans
-        apply Eq.trans _ (Category.id_comp _).symm
+        simp only [Iso.refl_hom]
         rw [Functor.comp_map, Functor.comp_map, resolutionFunctor_map,
           HomologicalComplex.eval_map, continuousCochainsFunctor_map,
           ← mapHomologicalComplex_map_shiftedResolutionMap,
           Functor.mapHomologicalComplex_map_f, shiftedResolutionMap_f]
+        -- The resolutionFunctor objects unfold to resolutionX, so the remaining identity
+        -- composites reduce definitionally.
         rfl)
     exact preservesLimitsOfShape_of_natIso e
 
