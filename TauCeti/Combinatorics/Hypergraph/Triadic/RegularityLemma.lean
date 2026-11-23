@@ -145,9 +145,9 @@ theorem strongTriadicRegularityStep_mono (F : ℕ → ℝ) (g : ℝ) (η μ : �
     Monotone (strongTriadicRegularityStep F g η μ r) := by
   intro B₁ B₂ hB
   rw [strongTriadicRegularityStep_def, strongTriadicRegularityStep_def]
-  refine (Finset.sup_mono_fun fun t _ ↦ Finset.sup_mono (Finset.range_mono
-    (Nat.succ_le_succ (strongTopRegularityStep_mono η μ r le_rfl hB)))).trans
-    (Finset.sup_mono (Finset.range_mono (Nat.succ_le_succ hB)))
+  simp_rw [← partialSups_eq_sup_range]
+  exact (partialSups_mono (fun t ↦ (partialSups _).monotone
+    (strongTopRegularityStep_mono η μ r le_rfl hB)) _).trans ((partialSups _).monotone hB)
 
 /-- `strongTriadicRegularityBound` is at least the requested vertex-cell floor `l₀`. -/
 theorem le_strongTriadicRegularityBound {F : ℕ → ℝ} {g : ℝ} (hg : 0 < g)

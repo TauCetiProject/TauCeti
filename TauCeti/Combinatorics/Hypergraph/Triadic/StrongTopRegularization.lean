@@ -96,12 +96,11 @@ pair colors. -/
 theorem strongTopRegularityStep_mono {t₁ t₂ m₁ m₂ : ℕ} (η μ : ℕ → ℝ) (r : ℕ → ℕ)
     (ht : t₁ ≤ t₂) (hm : m₁ ≤ m₂) :
     strongTopRegularityStep t₁ η μ r m₁ ≤ strongTopRegularityStep t₂ η μ r m₂ := by
-  rw [strongTopRegularityStep_def]
-  refine Finset.sup_le fun n hn ↦ ?_
-  have hn' : n ≤ t₂ + m₂ + t₂ ^ 3 * m₂ ^ 3 :=
-    (Nat.lt_succ_iff.1 (mem_range.1 hn)).trans (by gcongr)
-  exact (topRegularRefinementBound_mono_parts _ _ _ _ ht).trans
-    (topRegularRefinementBound_le_strongTopRegularityStep η μ r hm hn')
+  rw [strongTopRegularityStep_def, strongTopRegularityStep_def,
+    ← partialSups_eq_sup_range, ← partialSups_eq_sup_range]
+  exact (partialSups_mono (fun _ ↦ (topRegularRefinementBound_mono_parts _ _ _ _ ht).trans
+    (topRegularRefinementBound_mono _ _ _ _ hm)) _).trans
+    ((partialSups _).monotone (by gcongr))
 
 /-- `strongTopRegularityStep` never lowers the number of pair colors. -/
 theorem le_strongTopRegularityStep (t : ℕ) (η μ : ℕ → ℝ) (r : ℕ → ℕ) (m : ℕ) :

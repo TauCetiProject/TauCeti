@@ -476,7 +476,7 @@ theorem TopRegularOverMostPolyads.of_polyadEnergy_sub_le_topRegularEnergyGap [Fi
   have hγ : 0 ≤ γ := div_nonneg h.nonneg (by positivity)
   have hη : topRegularFineTolerance δ < δ ^ 2 := by
     rw [topRegularFineTolerance_def]
-    linarith [pow_pos hδ 2]
+    exact half_lt_self (pow_pos hδ 2)
   have hreg := h.of_polyadEnergy_sub_le hC hD hV f hf hgap
     (topRegularFineTolerance_pos hδ).le hδ hη
   refine hreg.mono le_rfl ?_ le_rfl
@@ -493,8 +493,8 @@ theorem TopRegularOverMostPolyads.of_polyadEnergy_sub_le_topRegularEnergyGap [Fi
     rw [mul_div_left_comm]
     exact mul_le_of_le_one_right h.nonneg
       ((div_le_one₀ (by positivity)).2 (le_add_of_nonneg_right zero_le_one))
-  rw [topRegularFineProportion_def, topRegularFineTolerance_def] at hqγ ⊢
-  linarith
+  refine (add_le_add_right (hsqrt.trans hqγ) _).trans_eq ?_
+  rw [topRegularFineProportion_def, add_halves, topRegularFineTolerance_def, sub_half]
 
 /-! ### Reference density targets -/
 
