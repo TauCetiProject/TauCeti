@@ -14,6 +14,9 @@ Suppose endpoint pairs tend along a derivative filter, their images agree on a c
 and their scalar-rescaled difference converges. The derivative annihilates that limit.
 The scalars are arbitrary and may vanish. In particular, both endpoints may approach a strict
 derivative point.
+
+The argument adapts Mathlib's `HasFDerivWithinAt.lim` from a fixed base point to pairs of
+endpoints.
 -/
 
 public section
