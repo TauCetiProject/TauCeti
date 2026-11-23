@@ -225,7 +225,7 @@ theorem eLorentzNorm_self {ε' : Type*} [TopologicalSpace ε'] [ContinuousENorm 
   · rw [eLorentzNorm_exponent_zero_left hf, eLpNorm_exponent_zero hf]
   rw [eLorentzNorm_eq_eLpNorm hf hp0]
   simp_rw [ENNReal.toReal_inv]
-  rw [← eLpNorm_volume_Ioi_eq_eLpNorm_multHaar hp0 (μ.decreasingRearrangement (‖f ·‖ₑ)),
+  rw [← eLpNorm_volume_Ioi_eq_eLpNorm_multHaar (μ.decreasingRearrangement (‖f ·‖ₑ)),
     Measure.eLpNorm_decreasingRearrangement μ hf.eNorm, eLpNorm_eNorm _ hf]
 
 /-- On the diagonal `q = p`, membership in `L^{p, p}(μ)` coincides with `MemLp f p μ`. -/

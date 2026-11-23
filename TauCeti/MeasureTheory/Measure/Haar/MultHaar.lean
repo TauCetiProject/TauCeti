@@ -34,7 +34,9 @@ radial coordinate is split off a multiplicative Haar measure, as in the decompos
 Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
 (`TauCeti.lintegral_multHaar_eq_setLIntegral`, `TauCeti.setLIntegral_multHaar_eq_setLIntegral`,
 `TauCeti.setLIntegral_eq_setLIntegral_multHaar`, `TauCeti.integral_multHaar_eq_setIntegral`,
-`TauCeti.integrable_multHaar_iff`), the two measures share the same almost-everywhere filter
+`TauCeti.integrable_multHaar_iff`), `dt / t` and Lebesgue measure on `(0, ∞)` are mutually
+absolutely continuous (`TauCeti.multHaar_absolutelyContinuous_volume_Ioi`,
+`TauCeti.volume_Ioi_absolutelyContinuous_multHaar`) and share the same almost-everywhere filter
 (`TauCeti.ae_multHaar_eq_ae_volume_Ioi`), converting `Lᵖ(0, ∞)` seminorms into weighted
 `Lᵖ(dt / t)` seminorms (`TauCeti.eLpNorm_volume_Ioi_eq_eLpNorm_multHaar`), and a right-continuous
 function on `(0, ∞)` has `dt / t`-essential supremum equal to its pointwise supremum
@@ -143,13 +145,21 @@ theorem ae_multHaar_eq_ae_volume_Ioi :
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
   exact (ENNReal.ofReal_pos.2 (inv_pos.2 ht)).ne'
 
+/-- `dt / t` is absolutely continuous with respect to Lebesgue measure on `(0, ∞)`. -/
+theorem multHaar_absolutelyContinuous_volume_Ioi :
+    multHaar ≪ volume.restrict (Ioi (0 : ℝ)) :=
+  Measure.ae_le_iff_absolutelyContinuous.1 ae_multHaar_eq_ae_volume_Ioi.le
+
+/-- Lebesgue measure on `(0, ∞)` is absolutely continuous with respect to `dt / t`. -/
+theorem volume_Ioi_absolutelyContinuous_multHaar :
+    volume.restrict (Ioi (0 : ℝ)) ≪ multHaar :=
+  Measure.ae_le_iff_absolutelyContinuous.1 ae_multHaar_eq_ae_volume_Ioi.ge
+
 /-- A function continuous on `(0, ∞)` is almost everywhere strongly measurable for `dt / t`. -/
 theorem _root_.ContinuousOn.aestronglyMeasurable_multHaar {β : Type*} [TopologicalSpace β]
     [TopologicalSpace.PseudoMetrizableSpace β] {f : ℝ → β} (hf : ContinuousOn f (Ioi 0)) :
-    AEStronglyMeasurable f multHaar := by
-  rw [multHaar_def]
-  exact (hf.aestronglyMeasurable measurableSet_Ioi).mono_ac
-    (withDensity_absolutelyContinuous _ _)
+    AEStronglyMeasurable f multHaar :=
+  (hf.aestronglyMeasurable measurableSet_Ioi).mono_ac multHaar_absolutelyContinuous_volume_Ioi
 
 /-- `dt / t` is invariant under the dilations `t ↦ c t`, `c > 0`. -/
 theorem map_multHaar_mul_left {c : ℝ} (hc : 0 < c) : multHaar.map (c * ·) = multHaar := by
@@ -399,17 +409,17 @@ theorem essSup_multHaar_eq_iSup_Ioi {f : ℝ → ℝ≥0∞}
     exact Real.log_lt_log ht htu
   exact hpos.ne' (measure_mono_null hu (meas_essSup_lt (f := f)))
 
-/-- For `p ≠ 0`, the `Lᵖ(0, ∞)` seminorm of `f : ℝ → ℝ≥0∞` is the `Lᵖ(dt / t)` seminorm of
+/-- The `Lᵖ(0, ∞)` seminorm of `f : ℝ → ℝ≥0∞` is the `Lᵖ(dt / t)` seminorm of
 `t ↦ t ^ (1 / p) * f t`. -/
-theorem eLpNorm_volume_Ioi_eq_eLpNorm_multHaar {p : ℝ≥0∞} (hp0 : p ≠ 0) (f : ℝ → ℝ≥0∞) :
+theorem eLpNorm_volume_Ioi_eq_eLpNorm_multHaar {p : ℝ≥0∞} (f : ℝ → ℝ≥0∞) :
     eLpNorm f p (volume.restrict (Ioi 0)) =
       eLpNorm (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * f t) p multHaar := by
   have hmeas_iff : AEStronglyMeasurable f (volume.restrict (Ioi 0)) ↔
       AEStronglyMeasurable (fun t : ℝ ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * f t) multHaar := by
     have h1 : AEStronglyMeasurable f (volume.restrict (Ioi 0)) ↔
-        AEStronglyMeasurable f multHaar := by
-      simp only [aestronglyMeasurable_iff_aemeasurable, AEMeasurable]
-      simp only [Filter.EventuallyEq, ae_multHaar_eq_ae_volume_Ioi]
+        AEStronglyMeasurable f multHaar :=
+      ⟨fun h ↦ h.mono_ac multHaar_absolutelyContinuous_volume_Ioi,
+        fun h ↦ h.mono_ac volume_Ioi_absolutelyContinuous_multHaar⟩
     rw [h1]
     refine ⟨fun hf ↦ ((by fun_prop : Measurable fun t : ℝ ↦
         ENNReal.ofReal (t ^ p.toReal⁻¹)).aemeasurable.mul hf.aemeasurable).aestronglyMeasurable,
@@ -427,11 +437,15 @@ theorem eLpNorm_volume_Ioi_eq_eLpNorm_multHaar {p : ℝ≥0∞} (hp0 : p ≠ 0) 
   · rw [eLpNorm_of_not_aestronglyMeasurable hf,
       eLpNorm_of_not_aestronglyMeasurable (mt hmeas_iff.2 hf)]
   have hf' := hmeas_iff.1 hf
+  rcases eq_or_ne p 0 with rfl | hp0
+  · rw [eLpNorm_exponent_zero hf, eLpNorm_exponent_zero hf']
   rcases eq_or_ne p ∞ with rfl | hptop
   · rw [eLpNorm_exponent_top hf, eLpNorm_exponent_top hf', eLpNormEssSup_eq_essSup_eNorm,
       eLpNormEssSup_eq_essSup_eNorm]
     simp only [eNorm_eq_self, ENNReal.toReal_top, inv_zero, Real.rpow_zero, ENNReal.ofReal_one,
-      one_mul, essSup, ae_multHaar_eq_ae_volume_Ioi]
+      one_mul]
+    exact le_antisymm (essSup_mono_measure volume_Ioi_absolutelyContinuous_multHaar)
+      (essSup_mono_measure multHaar_absolutelyContinuous_volume_Ioi)
   have hp_pos : 0 < p.toReal := ENNReal.toReal_pos hp0 hptop
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf']
