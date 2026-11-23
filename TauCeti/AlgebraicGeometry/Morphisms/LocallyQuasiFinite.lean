@@ -57,7 +57,7 @@ of the chart is mapped into a hypersurface.
   locally quasi-finite morphism onto a normal scheme. Over a normal base the inequality between
   coheights becomes an equality; the ring-level input is
   `Ideal.height_eq_height_of_quasiFiniteAt`.
-* `AlgebraicGeometry.Scheme.exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_eq`:
+* `AlgebraicGeometry.Scheme.Hom.exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_eq`:
   a point with values in a field `Ω` of a locally quasi-finite scheme over a field `K` is fixed by
   the elements of `Gal(Ω/K)` fixing a finite extension of `K` in `Ω`.
 
@@ -219,8 +219,8 @@ theorem Scheme.Hom.ringKrullDim_stalk_eq_of_locallyQuasiFinite {X Y : Scheme.{u}
 subgroup of a finite extension of `K` in `Ω`.** If `f : X ⟶ Spec K` is locally quasi-finite and
 `t : Spec Ω ⟶ X` lifts `Spec Ω ⟶ Spec K` along `f`, then there is a finite-dimensional
 intermediate field `L` of `Ω/K` such that `Spec σ ≫ t = t` for every `σ ∈ L.fixingSubgroup`. -/
-theorem Scheme.exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_eq
-    (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω] {X : Scheme.{u}}
+theorem Scheme.Hom.exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_eq
+    {K Ω : Type u} [Field K] [Field Ω] [Algebra K Ω] {X : Scheme.{u}}
     (f : X ⟶ Spec (.of K)) [LocallyQuasiFinite f] (t : Spec (.of Ω) ⟶ X)
     (ht : t ≫ f = Spec.map (CommRingCat.ofHom (algebraMap K Ω))) :
     ∃ L : IntermediateField K Ω, FiniteDimensional K L ∧
