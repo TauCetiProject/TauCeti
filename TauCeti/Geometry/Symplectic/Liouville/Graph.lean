@@ -248,18 +248,21 @@ theorem isTransverseAlong_liouvilleGraph (hι : MDifferentiable J I ι)
 end Flow
 
 /-- **The graph restricts the primitive to `f` times its restriction.** If `Z` is the Liouville
-field of `α`, `ι_Z dα = α`, then the Liouville graph `s ↦ φ_{log f(s)}(ι s)` pulls `α` back to
-`f ι^* α` at every point `s` where `ι` and `f` are differentiable, `f s > 0` and `ι s` stays in the
-flow domain up to time `log f(s)`: the flow rescales the primitive by `e^{log f} = f`, and the
-primitive vanishes on its Liouville field. -/
+field of a differentiable one-form `α`, `ι_Z dα = α`, then the Liouville graph
+`s ↦ φ_{log f(s)}(ι s)` pulls `α` back to `f ι^* α` at every point `s` where `ι` and `f` are
+differentiable, `f s > 0` and `ι s` stays in the flow domain up to time `log f(s)`: the flow
+rescales the primitive by `e^{log f} = f`, and the primitive vanishes on its Liouville field. For a
+smooth form `α`, apply it to `α.val` with `α.mdifferentiable rfl`. -/
 theorem mpullback_liouvilleGraph_apply [IsManifold I 2 M] (hZ : ContMDiff I I.tangent 1 (T% Z))
-    {α : SmoothForm I M ℝ 1} (hZα : (mextDeriv α.val).interior Z = α.val) {s : S}
+    {α : RoughForm I M ℝ 1} {σ : RoughForm I M ℝ 2}
+    (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)))
+    (hdα : mextDeriv α = σ) (hZα : σ.interior Z = α) {s : S}
     (hp : (Real.log (f s), ι s) ∈ flowDomain Z) (hι : MDifferentiableAt J I ι s)
     (hf : MDifferentiableAt J 𝓘(ℝ) f s) (hfs : 0 < f s) :
-    mpullback J I (liouvilleGraph Z ι f) α.val s = f s • mpullback J I ι α.val s := by
+    mpullback J I (liouvilleGraph Z ι f) α s = f s • mpullback J I ι α s := by
   -- The flow rescales the primitive: `(φₜ^* α)_x = eᵗ α_x`.
-  have hscale := mpullback_flowOf_apply_eq_exp_smul_of_interior_eq hZ
-    α.mdifferentiable rfl hZα hp
+  have hscale := mpullback_flowOf_apply_eq_exp_smul_of_interior_eq hZ hα hdα hZα hp
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
   have hs := congrArg (fun β ↦ β ![mvfderiv J (fun s ↦ Real.log (f s)) s w • Z (ι s) +
