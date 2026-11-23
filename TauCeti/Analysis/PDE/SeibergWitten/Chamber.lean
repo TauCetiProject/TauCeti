@@ -101,18 +101,19 @@ says that the wall coordinate is `-2π Δ` for the real cohomological coordinate
 theorem integralTopForm_inner_sub_smul_riemannianVolumeForm_eq
     (hω : ω ∈ compactlySupportedClosedForms I M 2) (hω' : ω ∈ SmoothForm.selfDualForms o)
     (hF : F ∈ closedForms I M 2) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 ((η - F).1 x) (ω.1 x) •
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 ((η - F).val x) (ω.val x) •
         riemannianVolumeForm o x) =
-      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (η.1 x) (ω.1 x) •
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (η.val x) (ω.val x) •
           riemannianVolumeForm o x) -
         poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
           (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) := by
   have hc := compactlySupportedClosedForms_le_compactlySupportedForms I 2 hω
   -- The pairing with `-F` is the negative of the pairing with `F`.
   have hneg : integralTopForm o (fun x ↦
-      alternatingFormInner (TangentSpace I x) 2 ((-F).1 x) (ω.1 x) • riemannianVolumeForm o x) =
+      alternatingFormInner (TangentSpace I x) 2 ((-F).val x) (ω.val x) • riemannianVolumeForm o x) =
       -1 * integralTopForm o (fun x ↦
-        alternatingFormInner (TangentSpace I x) 2 (F.1 x) (ω.1 x) • riemannianVolumeForm o x) := by
+        alternatingFormInner (TangentSpace I x) 2 (F.val x) (ω.val x) •
+          riemannianVolumeForm o x) := by
     rw [← integralTopForm_mul_smul_riemannianVolumeForm]
     congr 1
     funext x
@@ -127,7 +128,7 @@ coordinate is `∫_M ⟨η - F, ω⟩ vol = -⟨[F] - [η], [ω]⟩`, the Poinca
 theorem integralTopForm_inner_sub_smul_riemannianVolumeForm_eq_neg
     (hω : ω ∈ compactlySupportedClosedForms I M 2) (hω' : ω ∈ SmoothForm.selfDualForms o)
     (hF : F ∈ closedForms I M 2) (hη : η ∈ closedForms I M 2) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 ((η - F).1 x) (ω.1 x) •
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 ((η - F).val x) (ω.val x) •
         riemannianVolumeForm o x) =
       -poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩ - deRhamCohomology.mk I 2 ⟨η, hη⟩)
         (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) := by
@@ -150,21 +151,24 @@ theorem integralTopForm_inner_largeParameter_eq (hω : ω ∈ compactlySupported
     (hω' : ω ∈ SmoothForm.selfDualForms o) {F₀ a ρ : SmoothForm I M ℝ 2}
     (ha : a ∈ closedForms I M 2) (r : ℝ) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • a)).1 x) (ω.1 x) •
+        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • a)).val x) (ω.val x) •
         riemannianVolumeForm o x) =
       r / 4 * integralTopForm o (fun x ↦
-          alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (ω.1 x) • riemannianVolumeForm o x) -
+          alternatingFormInner (TangentSpace I x) 2 (ω.val x) (ω.val x) •
+            riemannianVolumeForm o x) -
         2 * poincarePairing I M o (deRhamCohomology.mk I 2 ⟨a, ha⟩)
           (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) +
         integralTopForm o (fun x ↦
-          alternatingFormInner (TangentSpace I x) 2 (ρ.1 x) (ω.1 x) •
+          alternatingFormInner (TangentSpace I x) 2 (ρ.val x) (ω.val x) •
             riemannianVolumeForm o x) := by
   have hc := compactlySupportedClosedForms_le_compactlySupportedForms I 2 hω
   -- Pairing with `ω` takes a constant factor out of the first argument.
   have hsmul (c : ℝ) (φ : SmoothForm I M ℝ 2) : integralTopForm o (fun x ↦
-      alternatingFormInner (TangentSpace I x) 2 ((c • φ).1 x) (ω.1 x) • riemannianVolumeForm o x) =
+      alternatingFormInner (TangentSpace I x) 2 ((c • φ).val x) (ω.val x) •
+        riemannianVolumeForm o x) =
       c * integralTopForm o (fun x ↦
-        alternatingFormInner (TangentSpace I x) 2 (φ.1 x) (ω.1 x) • riemannianVolumeForm o x) := by
+        alternatingFormInner (TangentSpace I x) 2 (φ.val x) (ω.val x) •
+          riemannianVolumeForm o x) := by
     rw [← integralTopForm_mul_smul_riemannianVolumeForm]
     congr 1
     funext x
@@ -175,9 +179,9 @@ theorem integralTopForm_inner_largeParameter_eq (hω : ω ∈ compactlySupported
   have hF₀ := (SmoothForm.coe_mem_antiSelfDualForms_iff (o := o)).2
     (SmoothForm.antiSelfDualPart_mem_antiSelfDualForms o even_two F₀)
   have hint : (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-      ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • a)).1 x) (ω.1 x) •
+      ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • a)).val x) (ω.val x) •
         riemannianVolumeForm o x) = fun x ↦ alternatingFormInner (TangentSpace I x) 2
-      (((r / 4) • ω + ρ + (-2 : ℝ) • a).1 x) (ω.1 x) • riemannianVolumeForm o x := by
+      (((r / 4) • ω + ρ + (-2 : ℝ) • a).val x) (ω.val x) • riemannianVolumeForm o x := by
     funext x
     have h0 := RoughForm.alternatingFormInner_eq_zero_of_mem_selfDualForms o hω'' hF₀ x
     rw [alternatingFormInner_comm] at h0
@@ -201,13 +205,14 @@ theorem mul_le_integralTopForm_inner_largeParameter
     (hr : 16 * poincarePairing I M o (deRhamCohomology.mk I 2 ⟨a, ha⟩)
           (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) -
         8 * integralTopForm o (fun x ↦
-          alternatingFormInner (TangentSpace I x) 2 (ρ.1 x) (ω.1 x) • riemannianVolumeForm o x) ≤
+          alternatingFormInner (TangentSpace I x) 2 (ρ.val x) (ω.val x) •
+            riemannianVolumeForm o x) ≤
       r * integralTopForm o (fun x ↦
-        alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (ω.1 x) • riemannianVolumeForm o x)) :
+        alternatingFormInner (TangentSpace I x) 2 (ω.val x) (ω.val x) • riemannianVolumeForm o x)) :
     r / 8 * integralTopForm o (fun x ↦
-        alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (ω.1 x) • riemannianVolumeForm o x) ≤
+        alternatingFormInner (TangentSpace I x) 2 (ω.val x) (ω.val x) • riemannianVolumeForm o x) ≤
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • a)).1 x) (ω.1 x) •
+        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • a)).val x) (ω.val x) •
         riemannianVolumeForm o x) := by
   rw [integralTopForm_inner_largeParameter_eq o hω hω' ha r]
   linarith
@@ -229,18 +234,18 @@ when `r > 0` and `∫_M |ω|² vol > 0` it puts these perturbations in the chamb
 theorem mul_le_integralTopForm_inner_largeParameter_of_norm_le
     (hω : ω ∈ compactlySupportedClosedForms I M 2) (hω' : ω ∈ SmoothForm.selfDualForms o)
     {F₀ a ρ : SmoothForm I M ℝ 2} (ha : a ∈ closedForms I M 2) {r K : ℝ}
-    (hρ : ∀ x, √(alternatingFormInner (TangentSpace I x) 2 (ρ.1 x) (ρ.1 x)) ≤ K)
+    (hρ : ∀ x, √(alternatingFormInner (TangentSpace I x) 2 (ρ.val x) (ρ.val x)) ≤ K)
     (hr : 16 * |poincarePairing I M o (deRhamCohomology.mk I 2 ⟨a, ha⟩)
           (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩)| +
         8 * K * integralTopForm o (fun x ↦
-          √(alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (ω.1 x)) •
+          √(alternatingFormInner (TangentSpace I x) 2 (ω.val x) (ω.val x)) •
             riemannianVolumeForm o x) ≤
       r * integralTopForm o (fun x ↦
-        alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (ω.1 x) • riemannianVolumeForm o x)) :
+        alternatingFormInner (TangentSpace I x) 2 (ω.val x) (ω.val x) • riemannianVolumeForm o x)) :
     r / 8 * integralTopForm o (fun x ↦
-        alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (ω.1 x) • riemannianVolumeForm o x) ≤
+        alternatingFormInner (TangentSpace I x) 2 (ω.val x) (ω.val x) • riemannianVolumeForm o x) ≤
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • a)).1 x) (ω.1 x) •
+        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • a)).val x) (ω.val x) •
         riemannianVolumeForm o x) := by
   refine mul_le_integralTopForm_inner_largeParameter o hω hω' ha ?_
   have h₁ := le_abs_self (poincarePairing I M o (deRhamCohomology.mk I 2 ⟨a, ha⟩)
