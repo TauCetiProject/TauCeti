@@ -261,8 +261,9 @@ theorem coe_thomPairSnd_smul (u : ℤˣ)
 cover commutes with the actions `thomPairSndMulAction` and `thomPairFstMulAction` of `ℤˣ`. -/
 theorem thomPair_map_smul (u : ℤˣ)
     (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd) :
-    (thomPair F _).map (u • v) = u • (thomPair F _).map v :=
-  (rfl)
+    (thomPair F _).map (u • v) = u • (thomPair F _).map v := by
+  rw [TopPair.ofSubset_map]
+  exact coe_thomPairSnd_smul u v
 
 variable [Fintype ι] [FiniteDimensional ℝ F] (hι : Fintype.card ι = finrank ℝ F)
 
@@ -288,6 +289,9 @@ covering map of the action `thomPairSndMulAction` of `ℤˣ`. With
 theorem isQuotientCoveringMap_pullbackThomPairMap_snd :
     IsQuotientCoveringMap
       (TopPair.Hom.snd (pullbackThomPairMap F E (projection (F := F) (E := E) (ι := ι)))) ℤˣ := by
+  -- `IsQuotientCoveringMap.restrict` asks for the action on the subtype of nonzero vectors, which
+  -- `(thomPair F _).snd` unfolds to (`thomPair` is `TopPair.ofSubset` of `zeroSectionCompl`), so
+  -- `thomPairSndMulAction` and its lemma `coe_thomPairSnd_smul` are used on that subtype.
   let : MulAction ℤˣ
       (zeroSectionCompl F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :=
     thomPairSndMulAction
