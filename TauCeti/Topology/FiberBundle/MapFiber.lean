@@ -289,6 +289,26 @@ def fiberBundleOfHomeomorph {Q : B → Type*} [TopologicalSpace (TotalSpace F Q)
   mem_baseSet_trivializationAt' := A.mem_baseSet_trivAt
   trivialization_mem_atlas' b := mem_range_self b
 
+/-- The trivialization at `b` of the bundle `A.fiberBundleOfHomeomorph h hh hQ` is that of `A`,
+transported along `h`. -/
+theorem trivializationAt_fiberBundleOfHomeomorph {Q : B → Type*}
+    [TopologicalSpace (TotalSpace F Q)] [∀ b, TopologicalSpace (Q b)] (h : TotalSpace F Q ≃ₜ P)
+    (hh : ∀ x, proj (h x) = x.proj) (hQ : ∀ b, IsInducing (TotalSpace.mk b : Q b → TotalSpace F Q))
+    (b : B) :
+    letI := A.fiberBundleOfHomeomorph h hh hQ
+    trivializationAt F Q b = (A.trivAt b).compTotalSpaceHomeomorph h hh :=
+  (rfl)
+
+/-- The trivializations of the atlas of `A.fiberBundleOfHomeomorph h hh hQ` are those of `A`,
+transported along `h`. -/
+theorem mem_trivializationAtlas_fiberBundleOfHomeomorph_iff {Q : B → Type*}
+    [TopologicalSpace (TotalSpace F Q)] [∀ b, TopologicalSpace (Q b)] (h : TotalSpace F Q ≃ₜ P)
+    (hh : ∀ x, proj (h x) = x.proj) (hQ : ∀ b, IsInducing (TotalSpace.mk b : Q b → TotalSpace F Q))
+    (e : Trivialization F (π F Q)) :
+    letI := A.fiberBundleOfHomeomorph h hh hQ
+    e ∈ trivializationAtlas F Q ↔ ∃ b, (A.trivAt b).compTotalSpaceHomeomorph h hh = e :=
+  Iff.rfl
+
 /-- **The fibre bundle of a locally trivial map.** The fibres of `proj`, with their subspace
 topologies, form a fibre bundle over `B` with model fibre `F` and total space `P`, whose atlas
 consists of the trivializations of `A`. -/
@@ -300,13 +320,13 @@ def fiberBundle : FiberBundle F (MapFiber proj) :=
 theorem trivializationAt_eq (b : B) :
     letI := A.fiberBundle
     trivializationAt F (MapFiber proj) b = (A.trivAt b).toMapFiber :=
-  (rfl)
+  A.trivializationAt_fiberBundleOfHomeomorph _ _ _ b
 
 /-- The trivializations of the atlas of the bundle of fibres are those of `A`. -/
 theorem mem_trivializationAtlas_iff (e : Trivialization F (π F (MapFiber proj))) :
     letI := A.fiberBundle
     e ∈ trivializationAtlas F (MapFiber proj) ↔ ∃ b, (A.trivAt b).toMapFiber = e :=
-  Iff.rfl
+  A.mem_trivializationAtlas_fiberBundleOfHomeomorph_iff _ _ _ e
 
 end Atlas
 

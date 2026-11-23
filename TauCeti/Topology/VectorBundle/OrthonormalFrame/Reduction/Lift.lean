@@ -189,12 +189,25 @@ def IsLocallyTrivialReduction.atlas :
     MapFiber.Atlas H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj) :=
   ⟨fun x ↦ (hS x).choose, fun x ↦ (hS x).choose_spec.1⟩
 
+/-- The trivialization of the atlas at `x` is the chosen equivariant trivialization at `x`. -/
+theorem IsLocallyTrivialReduction.atlas_trivAt (x : B) : hS.atlas.trivAt x = (hS x).choose :=
+  (rfl)
+
 /-- **A locally trivial reduction of the orthonormal frame bundle is a fibre bundle** with fibre
 `H`, with the chosen trivializations as its atlas. -/
 @[instance_reducible]
 def reductionFiberBundle : FiberBundle H (ReductionFiber S) :=
   hS.atlas.fiberBundleOfHomeomorph (reductionTotalSpaceHomeomorph H S) (fun _ ↦ rfl)
     (ReductionFiber.isInducing_totalSpaceMk H)
+
+/-- The trivialization at `x` of the reduction is the chosen equivariant trivialization of `S` at
+`x`, transported along `reductionTotalSpaceHomeomorph`. -/
+theorem trivializationAt_reductionFiberBundle (x : B) :
+    letI := reductionFiberBundle hS
+    trivializationAt H (ReductionFiber S) x =
+      (hS.atlas.trivAt x).compTotalSpaceHomeomorph (reductionTotalSpaceHomeomorph H S)
+        (fun _ ↦ by simp) :=
+  hS.atlas.trivializationAt_fiberBundleOfHomeomorph _ _ _ x
 
 /-- **A locally trivial reduction of the orthonormal frame bundle is a principal `H`-bundle.** -/
 theorem principalBundle_reductionFiber :
