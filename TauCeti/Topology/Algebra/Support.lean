@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Algebra.Support
+public import Mathlib.Topology.MetricSpace.ProperSpace
 
 /-!
 # Topological support of a translate
@@ -27,6 +28,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   `Homeomorph.mulTSupport_comp_symm_subset_interior_image`.
 * `Continuous.smul_of_continuousOn_of_tsupport_subset`: a continuous function supported
   in `U`, times a function continuous on `U`, is continuous.
+* `Continuous.continuousOn_smul_comp_snd_of_continuousAt`: for `f` continuous,
+  `(x, y) ↦ F (x, y) • f y` is continuous on `s ×ˢ univ` when `F` is continuous at every `(x, y)`
+  with `x ∈ s` and `y ∈ tsupport f`.
 * `TauCeti.tsupport_snd_smul_fst_subset`: the topological support of `(x, y) ↦ f y • g x` lies in
   `tsupport g ×ˢ tsupport f`.
 * `TauCeti.tsupport_subset_of_forall_notMem_eq_zero`: a function vanishing off a closed set `s`
@@ -34,6 +38,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   `TauCeti.mulTSupport_subset_of_forall_notMem_eq_one`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
+* `HasCompactSupport.of_tsupport_subset_ball`: in a proper space, a function whose topological
+  support lies in a ball is compactly supported, with multiplicative version
+  `HasCompactMulSupport.of_mulTSupport_subset_ball`.
 * `HasCompactSupport.mono_of_eq_zero`: a function vanishing wherever a compactly supported
   function vanishes is compactly supported, with multiplicative version
   `HasCompactMulSupport.mono_of_eq_one`.
@@ -111,6 +118,23 @@ theorem smul_of_continuousOn_of_tsupport_subset {Z 𝕜 F : Type*} [TopologicalS
   exact (continuousWithinAt_const.smul hb.continuousAt.continuousWithinAt).congr
     (fun y hy ↦ by simp [hzero y hy]) rfl
 
+/-- For `f` continuous, the function `(x, y) ↦ F (x, y) • f y` is continuous on `s ×ˢ univ` as
+soon as `F` is continuous at every `(x, y)` with `x ∈ s` and `y ∈ tsupport f`: off the support
+of `f` the function vanishes near `(x, y)`. -/
+theorem continuousOn_smul_comp_snd_of_continuousAt {X Y 𝕜 M : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace 𝕜] [Zero M] [TopologicalSpace M] [SMulZeroClass 𝕜 M]
+    [ContinuousSMul 𝕜 M] {F : X × Y → 𝕜} {f : Y → M} {s : Set X} (hf : Continuous f)
+    (hF : ∀ x ∈ s, ∀ y ∈ tsupport f, ContinuousAt F (x, y)) :
+    ContinuousOn (fun p : X × Y ↦ F p • f p.2) (s ×ˢ Set.univ) := by
+  rintro ⟨x, y⟩ ⟨hx, -⟩
+  refine ContinuousAt.continuousWithinAt ?_
+  by_cases hy : y ∈ tsupport f
+  · exact (hF x hx y hy).smul (hf.continuousAt.comp continuousAt_snd)
+  · have h0 : ∀ᶠ z in nhds y, f z = 0 := notMem_tsupport_iff_eventuallyEq.1 hy
+    refine (continuousAt_const (y := (0 : M))).congr ?_
+    filter_upwards [continuousAt_snd.eventually h0] with p hp
+    simp only [hp, smul_zero]
+
 end Continuous
 
 namespace Homeomorph
@@ -143,6 +167,16 @@ theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [Topologica
     (hΨK : ∀ y, Ψ y ∈ T → y ∈ K) {k : Y → Z}
     (hkz : ∀ z ∉ T, k z = 0) : HasCompactSupport fun y ↦ k (Ψ y) :=
   HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)
+
+/-- In a proper space, a function whose topological multiplicative support lies in a ball has
+compact multiplicative support. -/
+@[to_additive /-- In a proper space, a function whose topological support lies in a ball has
+compact support. -/]
+theorem HasCompactMulSupport.of_mulTSupport_subset_ball {X β : Type*} [PseudoMetricSpace X]
+    [ProperSpace X] [One β] {g : X → β} {c : X} {r : ℝ} (h : mulTSupport g ⊆ Metric.ball c r) :
+    HasCompactMulSupport g :=
+  .of_mulSupport_subset_isCompact (isCompact_closedBall c r)
+    ((subset_mulTSupport g).trans (h.trans Metric.ball_subset_closedBall))
 
 /-- A function equal to `1` wherever a function with compact multiplicative support is equal to
 `1` has compact multiplicative support. -/

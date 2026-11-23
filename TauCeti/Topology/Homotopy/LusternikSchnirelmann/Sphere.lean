@@ -25,10 +25,10 @@ For spheres of positive dimension the cup-length lower bound is attained: over e
 commutative ring `R` the top cohomology class of the sphere is nonzero, so the cup length is `1`.
 For a product of `k` spheres of positive dimension, the cup product of the pullbacks of the top
 classes of the factors evaluates to `1` on a homology class built from homology cross products
-(`TopCat.exists_singularKronecker_singularCup_fst_snd_eq_mul`). So this product of `k` classes of
-positive degree is nonzero, and the cup length and the normalized category of the product are at
-least `k`. This lower bound needs no Künneth isomorphism, so it holds over every nontrivial
-commutative ring. No upper bound for the category of a product is proved here.
+(`TopCat.singularKronecker_singularCup_fst_snd_singularHomologyCross`). So this product of `k`
+classes of positive degree is nonzero, and the cup length and the normalized category of the
+product are at least `k`. This lower bound needs no Künneth isomorphism, so it holds over every
+nontrivial commutative ring. No upper bound for the category of a product is proved here.
 
 ## Main results
 
@@ -37,6 +37,9 @@ commutative ring. No upper bound for the category of a product is proved here.
 * `TauCeti.lsCategoryCount_univ_sphere` and `TauCeti.normalizedLSCategory_sphere`: the unit
   sphere of a nontrivial finite-dimensional real normed space has count `2` and normalized
   category `1`.
+* `TauCeti.lsCategoryCount_univ_sum_sphere` and `TauCeti.normalizedLSCategory_sum_sphere`: the
+  disjoint union of two such spheres has count `2 + 2 = 4` but normalized category `3`, not
+  `1 + 1`.
 * `TauCeti.lsCupLength_sphere`: a sphere of positive dimension has cup length `1` over every
   nontrivial commutative ring.
 * `TauCeti.natCast_le_lsCupLength_pi_sphere` and
@@ -106,6 +109,25 @@ theorem normalizedLSCategory_sphere [FiniteDimensional ℝ E] [Nontrivial E] :
   rw [normalizedLSCategory_def, lsCategoryCount_univ_sphere]
   rfl
 
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E]
+  [Nontrivial E] [FiniteDimensional ℝ E'] [Nontrivial E']
+
+/-- **Two disjoint spheres have Lusternik–Schnirelmann count `2 + 2 = 4`.** -/
+theorem lsCategoryCount_univ_sum_sphere :
+    lsCategoryCount (sphere (0 : E) 1 ⊕ sphere (0 : E') 1) univ = 4 := by
+  rw [lsCategoryCount_univ_sum, lsCategoryCount_univ_sphere, lsCategoryCount_univ_sphere]
+  norm_num
+
+/-- **Two disjoint spheres have normalized category `3`**, although each sphere has normalized
+category `1` (`TauCeti.normalizedLSCategory_sphere`): normalized category is not additive over
+disjoint unions, since `1 + 1 ≠ 3`. -/
+theorem normalizedLSCategory_sum_sphere :
+    normalizedLSCategory (sphere (0 : E) 1 ⊕ sphere (0 : E') 1) = 3 := by
+  have : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  have : Nonempty (sphere (0 : E') 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  rw [normalizedLSCategory_sum, normalizedLSCategory_sphere, normalizedLSCategory_sphere]
+  norm_num
+
 end Sphere
 
 section Detected
@@ -156,15 +178,14 @@ private theorem HasDetectedCupProduct.prod {Y : Type u} [TopologicalSpace Y] {m 
     HasDetectedCupProduct (Y × X) R (m + 1) := by
   obtain ⟨p, b, y, hb, hy⟩ := hY
   obtain ⟨q, c, x, hc, hx⟩ := hX
-  obtain ⟨z, hz⟩ := TopCat.exists_singularKronecker_singularCup_fst_snd_eq_mul (k := R)
+  have hz := TopCat.singularKronecker_singularCup_fst_snd_singularHomologyCross (k := R)
     (TopCat.of Y) (TopCat.of X) rfl b c y x
+  rw [hy, hx, one_mul] at hz
   -- The product of `TopCat.of Y` and `TopCat.of X` in `TopCat` is `TopCat.of (Y × X)`, with the
   -- projections as its structure maps.
-  refine ⟨p + q, _, z,
+  exact ⟨p + q, _, _,
     .cup hb.degree_ne_zero rfl (TopCat.singularCohomologyMap (TopCat.ofHom ContinuousMap.fst) p b)
-      (hc.map ContinuousMap.snd), ?_⟩
-  rw [hy, hx, one_mul] at hz
-  exact hz
+      (hc.map ContinuousMap.snd), hz⟩
 
 variable (R) in
 private theorem hasDetectedCupProduct_sphere {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]

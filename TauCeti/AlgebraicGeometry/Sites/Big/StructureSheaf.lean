@@ -16,6 +16,7 @@ public import Mathlib.CategoryTheory.Sites.Limits
 public import Mathlib.CategoryTheory.Sites.Over
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.CategoryTheory.Sites.CommRingCat
+public import TauCeti.CategoryTheory.Sites.Continuous
 
 /-!
 # The structure sheaf of the big fpqc site and the sheaves `𝔾_a`, `𝔾_m`, `μ_n`
@@ -33,7 +34,9 @@ are morphisms `T ⟶ Spec R`, so for every subcanonical topology on schemes, in 
 fpqc topology, the global sections functor is a sheaf of commutative rings. The sheaves `𝔾_a`
 and `𝔾_m` are obtained by composing with limit-preserving functors, and `μ_n` is the kernel of
 the `n`-th power map `𝔾_m ⟶ 𝔾_m` (`isLimitMuKernelFork`). The sheaf `μ_n` is defined for
-every `n`, not only for `n` invertible on `S`.
+every `n`, not only for `n` invertible on `S`. For every topology `J` on schemes coarser than the
+fpqc topology, `μ_n`, regarded as a sheaf for `J`, is still the kernel of the `n`-th power map
+(`isLimitMuKernelForkMap`), because regarding an fpqc sheaf as a `J`-sheaf preserves finite limits.
 
 ## Main declarations
 
@@ -45,6 +48,8 @@ every `n`, not only for `n` invertible on `S`.
   the sheaves `𝔾_a`, `𝔾_m` and `μ_n`.
 * `AlgebraicGeometry.Scheme.powHom`: the `n`-th power map of `𝔾_m`.
 * `AlgebraicGeometry.Scheme.isLimitMuKernelFork`: `μ_n` is the kernel of `powHom`.
+* `AlgebraicGeometry.Scheme.isLimitMuKernelForkMap`: the same holds for every topology coarser
+  than the fpqc topology, such as the étale topology.
 
 ## References
 
@@ -248,6 +253,17 @@ noncomputable def isLimitMuKernelFork (n : ℕ) :
     IsLimit (KernelFork.ofι (muToGm S n) (muToGm_comp_powHom S n)) :=
   isLimitOfReflects (sheafToPresheaf _ _) <|
     (KernelFork.isLimitMapConeEquiv _ _).symm (isLimitMuPresheafKernelFork S n)
+
+/-- **`μ_n` is the kernel in the Kummer sequence.** For every topology `J` on schemes coarser
+than the fpqc topology, such as the étale topology, the sheaf `μ_n` on the site `Over S` for `J`
+is the kernel of the `n`-th power map `𝔾_m ⟶ 𝔾_m`. -/
+@[stacks 03PL]
+noncomputable def isLimitMuKernelForkMap (J : GrothendieckTopology Scheme.{u})
+    [(𝟭 (Over S)).IsContinuous (J.over S) (fpqcTopology.over S)] (n : ℕ) :
+    IsLimit ((KernelFork.ofι (muToGm S n) (muToGm_comp_powHom S n)).map
+      ((𝟭 (Over S)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over S)
+        (fpqcTopology.over S))) :=
+  KernelFork.mapIsLimit _ (isLimitMuKernelFork S n) _
 
 /-- `μ_1` is the zero sheaf. -/
 lemma isZero_mu_one : IsZero (mu S 1) :=
