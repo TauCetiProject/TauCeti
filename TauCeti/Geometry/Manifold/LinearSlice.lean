@@ -12,8 +12,6 @@ public import Mathlib.Geometry.Manifold.SmoothEmbedding
 
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Topology.Algebra.Module.SubspaceExchange
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
-import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
 # Manifold structures from linear slice charts
@@ -21,13 +19,14 @@ import TauCeti.Geometry.Manifold.Immersion.Differential
 Ambient charts flattening a subset of a manifold onto a fixed linear slice induce a manifold
 structure on the subset with its original topology. If the ambient charts and their inverses are
 `C^n`, the induced atlas and the inclusion into the ambient manifold are `C^n`. A subset of a
-normed space is the case of the space modelled on itself. For a self-modelled ambient manifold,
-a linear identification of the product coordinates with the ambient model makes the inclusion
+normed space is the case of the space modelled on itself. For a boundaryless ambient manifold,
+a linear identification of the product coordinates with the model vector space makes the inclusion
 a smooth embedding, with the transverse model as its immersion complement.
 
 The existence statements `TauCeti.exists_isSmoothEmbedding_of_linearSubspaceCharts` and
 `TauCeti.exists_isSmoothEmbedding_of_finrankSubspaceCharts` record this embedding for a subset of
-a self-modelled manifold flattened near each of its points by smooth charts.
+a boundaryless manifold flattened near each of its points by smooth charts with values in the model
+vector space.
 
 The construction requires neither finite dimension nor completeness. It reuses
 `IsSliceChart.subtypeChart`; the smooth-atlas argument follows the preferred-chart argument
@@ -43,10 +42,10 @@ field: there linear isomorphisms are continuous and every subspace has a closed 
 
 public section
 
+namespace TauCeti
+
 open Set Topology
 open scoped ContDiff Manifold
-
-namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -130,26 +129,31 @@ theorem contMDiff_subtypeVal_linearSliceChartedSpace
   rw [linearSliceChart_apply, (he x).mk_fst_zero_eq hy y.property, (e x).left_inv hy]
 
 omit hsmooth hinv in
-/-- For smooth linear-slice charts, the inclusion is an immersion with the transverse model as
-complement. The linear equivalence identifies the product coordinates with the ambient model. -/
+/-- For smooth linear-slice charts of a boundaryless manifold, the inclusion is an immersion with
+the transverse model as complement. The linear equivalence identifies the product coordinates with
+the model vector space `E`, which the model `I` identifies with the model space `H`. -/
 theorem isImmersionOfComplement_subtypeVal_linearSliceChartedSpace
-    (A : s → (F × G) ≃L[𝕜] E) [ChartedSpace E M] [IsManifold 𝓘(𝕜, E) n M]
-    (hs : ∀ x, ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, F × G) n (e x) (e x).source)
-    (hi : ∀ x, ContMDiffOn 𝓘(𝕜, F × G) 𝓘(𝕜, E) n (e x).symm (e x).target)
+    (A : s → (F × G) ≃L[𝕜] E) [I.Boundaryless] [IsManifold I n M]
+    (hs : ∀ x, ContMDiffOn I 𝓘(𝕜, F × G) n (e x) (e x).source)
+    (hi : ∀ x, ContMDiffOn 𝓘(𝕜, F × G) I n (e x).symm (e x).target)
     (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
     letI := linearSliceChartedSpace e he hcover
-    Manifold.IsImmersionOfComplement G 𝓘(𝕜, F) 𝓘(𝕜, E) n
-      (Subtype.val : s → M) := by
+    Manifold.IsImmersionOfComplement G 𝓘(𝕜, F) I n (Subtype.val : s → M) := by
   let := linearSliceChartedSpace e he hcover
   have := isManifold_linearSliceChartedSpace e he
     (fun x z hz ↦ (hs x).contMDiffAt ((e x).open_source.mem_nhds hz))
     (fun x z hz ↦ (hi x).contMDiffAt ((e x).open_target.mem_nhds hz)) hcover
+  have hI : ContMDiff 𝓘(𝕜, E) I n I.symm :=
+    contMDiffOn_univ.1 (I.range_eq_univ ▸ I.contMDiffOn_symm)
   intro x
-  let c := (e x).transHomeomorph (A x).toHomeomorph
-  have hc : c ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M := by
+  -- The ambient chart reads the slice chart in `E` through `A x`, then in `H` through `I.symm`.
+  let c := (e x).transHomeomorph ((A x).toHomeomorph.trans I.toHomeomorph.symm)
+  have hc : c ∈ IsManifold.maximalAtlas I n M := by
     apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
-    · exact (A x).contDiff.contMDiff.comp_contMDiffOn (hs x)
-    · exact (hi x).comp (A x).symm.contDiff.contMDiff.contMDiffOn fun z hz ↦ hz
+    · exact hI.comp_contMDiffOn ((A x).contDiff.contMDiff.comp_contMDiffOn (hs x))
+    · refine (hi x).comp ((A x).symm.contDiff.contMDiff.comp (I.contMDiff (n := n))).contMDiffOn
+        fun z hz ↦ ?_
+      simpa [c] using hz
   refine Manifold.IsImmersionAtOfComplement.mk_of_charts (A x)
     (linearSliceChart e he x) c ?_ ?_ ?_ hc ?_ ?_
   · simpa only [linearSliceChart_source, Set.mem_preimage] using hcover x
@@ -163,50 +167,28 @@ theorem isImmersionOfComplement_subtypeVal_linearSliceChartedSpace
       simpa only [OpenPartialHomeomorph.extend_target, modelWithCornersSelf_coe,
         modelWithCornersSelf_coe_symm, Set.preimage_id,
         Set.range_id, Set.inter_univ, linearSliceChart_target, Set.mem_preimage] using hv
-    -- Both models are self-models; their extensions leave the ordinary chart formulas intact.
+    -- The domain model is a self-model, whose extension leaves the chart formula intact.
     simp only [Function.comp_apply, OpenPartialHomeomorph.extend_coe,
-      OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe,
+      OpenPartialHomeomorph.extend_coe_symm,
       modelWithCornersSelf_coe_symm, id_eq, OpenPartialHomeomorph.transHomeomorph_apply,
-      ContinuousLinearEquiv.coe_toHomeomorph, c,
+      Homeomorph.trans_apply, ContinuousLinearEquiv.coe_toHomeomorph, c,
       coe_linearSliceChart_symm_apply e he x hv', (e x).right_inv hv']
+    exact I.toHomeomorph.apply_symm_apply _
 
 omit hsmooth hinv in
-/-- The inclusion equipped with its smooth linear-slice atlas is a smooth embedding. -/
+/-- The inclusion equipped with its smooth linear-slice atlas into a boundaryless manifold is a
+smooth embedding. -/
 theorem isSmoothEmbedding_subtypeVal_linearSliceChartedSpace
-    (A : s → (F × G) ≃L[𝕜] E) [ChartedSpace E M] [IsManifold 𝓘(𝕜, E) n M]
-    (hs : ∀ x, ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, F × G) n (e x) (e x).source)
-    (hi : ∀ x, ContMDiffOn 𝓘(𝕜, F × G) 𝓘(𝕜, E) n (e x).symm (e x).target)
+    (A : s → (F × G) ≃L[𝕜] E) [I.Boundaryless] [IsManifold I n M]
+    (hs : ∀ x, ContMDiffOn I 𝓘(𝕜, F × G) n (e x) (e x).source)
+    (hi : ∀ x, ContMDiffOn 𝓘(𝕜, F × G) I n (e x).symm (e x).target)
     (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
     letI := linearSliceChartedSpace e he hcover
-    Manifold.IsSmoothEmbedding 𝓘(𝕜, F) 𝓘(𝕜, E) n (Subtype.val : s → M) := by
+    Manifold.IsSmoothEmbedding 𝓘(𝕜, F) I n (Subtype.val : s → M) := by
   let := linearSliceChartedSpace e he hcover
   exact ⟨(isImmersionOfComplement_subtypeVal_linearSliceChartedSpace
     e he A hs hi hcover).isImmersion,
     IsEmbedding.subtypeVal⟩
-
-/-- For `C^n` linear-slice charts with `n ≠ 0`, the inclusion of the subset equipped with its
-linear-slice atlas has injective differential at every point. -/
-theorem injective_mfderiv_subtypeVal_linearSliceChartedSpace (hn : n ≠ 0)
-    (hcover : ∀ x : s, (x : M) ∈ (e x).source) (x : s) :
-    letI := linearSliceChartedSpace e he hcover
-    Function.Injective (mfderiv 𝓘(𝕜, F) I (Subtype.val : s → M) x) := by
-  let := linearSliceChartedSpace e he hcover
-  have hval : MDifferentiableAt 𝓘(𝕜, F) I (Subtype.val : s → M) x :=
-    (contMDiff_subtypeVal_linearSliceChartedSpace e he hinv hcover x).mdifferentiableAt hn
-  have hfst : MDifferentiableAt I 𝓘(𝕜, F) (fun z ↦ (e x z).1) x :=
-    ((contDiff_fst.contMDiff.contMDiffAt).comp (x : M)
-      (hsmooth x x (hcover x))).mdifferentiableAt hn
-  -- Reading the inclusion in the ambient chart at `x` gives the chart of `x` in the slice atlas.
-  have hcomp : (fun z ↦ (e x z).1) ∘ (Subtype.val : s → M) = extChartAt 𝓘(𝕜, F) x := by
-    ext y
-    simp
-  have h := mfderiv_comp x hfst hval
-  rw [hcomp, mfderiv_extChartAt_eq_id] at h
-  have hinj : Function.Injective (mfderiv I 𝓘(𝕜, F) (fun z ↦ (e x z).1) x ∘
-      mfderiv 𝓘(𝕜, F) I (Subtype.val : s → M) x) := by
-    rw [← ContinuousLinearMap.coe_comp, ← h]
-    exact Function.injective_id
-  exact hinj.of_comp
 
 omit e he hsmooth hinv in
 /-- Ambient charts flattening `s` onto a complemented subspace `L` of the model, read in the
@@ -308,30 +290,31 @@ theorem exists_isManifold_of_finrankSubspaceCharts [CompleteSpace 𝕜] [FiniteD
   obtain ⟨N, hLN, hcharts'⟩ := exists_linearSubspaceCharts_of_finrankSubspaceCharts hcharts
   exact exists_isManifold_of_linearSubspaceCharts hLN hcharts'
 
-/-! ### Smooth embeddings into a manifold modelled on its model space -/
+/-! ### Smooth embeddings into a boundaryless manifold -/
 
 section Embedding
 
-variable {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(𝕜, E) n X] {t : Set X}
+variable [I.Boundaryless] [IsManifold I n M]
 
 omit e he hsmooth hinv in
-/-- A subset of a manifold with charts in its model space, locally flattened onto a complemented
-linear subspace `L` of the model, is a `C^n` manifold modelled on `L`, and its inclusion into the
-ambient manifold is a `C^n` embedding. -/
+/-- A subset of a boundaryless manifold, locally flattened onto a complemented linear subspace `L`
+of the model vector space `E` by `C^n` charts with values in `E`, is a `C^n` manifold modelled on
+`L`, and its inclusion into the ambient manifold is a `C^n` embedding. The atlas of the ambient
+manifold takes values in its model space `H`. -/
 theorem exists_isSmoothEmbedding_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
     (hcompl : Submodule.IsTopCompl L N)
-    (hcharts : ∀ y : t, ∃ q : OpenPartialHomeomorph X E, (y : X) ∈ q.source ∧
-      (∀ z ∈ q.source, ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, E) n q z) ∧
-      (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, E) n q.symm z) ∧
-      ∀ z ∈ q.source, z ∈ t ↔ q z ∈ L) :
-    ∃ C : ChartedSpace L t, letI := C
-      IsManifold 𝓘(𝕜, L) n t ∧
-        Manifold.IsSmoothEmbedding 𝓘(𝕜, L) 𝓘(𝕜, E) n (Subtype.val : t → X) := by
+    (hcharts : ∀ y : s, ∃ q : OpenPartialHomeomorph M E, (y : M) ∈ q.source ∧
+      (∀ z ∈ q.source, ContMDiffAt I 𝓘(𝕜, E) n q z) ∧
+      (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) I n q.symm z) ∧
+      ∀ z ∈ q.source, z ∈ s ↔ q z ∈ L) :
+    ∃ C : ChartedSpace L s, letI := C
+      IsManifold 𝓘(𝕜, L) n s ∧
+        Manifold.IsSmoothEmbedding 𝓘(𝕜, L) I n (Subtype.val : s → M) := by
   obtain ⟨e, he, hcover, hs, hi⟩ :=
     exists_linearSliceCharts_of_linearSubspaceCharts hcompl hcharts
-  have hs' (y : t) : ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, L × N) n (e y) (e y).source :=
+  have hs' (y : s) : ContMDiffOn I 𝓘(𝕜, L × N) n (e y) (e y).source :=
     fun z hz ↦ (hs y z hz).contMDiffWithinAt
-  have hi' (y : t) : ContMDiffOn 𝓘(𝕜, L × N) 𝓘(𝕜, E) n (e y).symm (e y).target :=
+  have hi' (y : s) : ContMDiffOn 𝓘(𝕜, L × N) I n (e y).symm (e y).target :=
     fun z hz ↦ (hi y z hz).contMDiffWithinAt
   exact ⟨linearSliceChartedSpace e he hcover,
     isManifold_linearSliceChartedSpace e he hs hi hcover,
@@ -339,58 +322,23 @@ theorem exists_isSmoothEmbedding_of_linearSubspaceCharts {L N : Submodule 𝕜 E
       (fun _ ↦ L.prodEquivOfIsTopCompl N hcompl) hs' hi' hcover⟩
 
 omit e he hsmooth hinv in
-/-- A subset of a manifold with charts in its finite-dimensional model space, flattened near each
-of its points by a `C^n` chart onto some subspace of dimension `d` of the model, is a `C^n`
-manifold modelled on any subspace `L` of dimension `d`, and its inclusion is a `C^n`
-embedding. -/
+/-- A subset of a boundaryless manifold modelled on a finite-dimensional vector space `E`, flattened
+near each of its points by a `C^n` chart with values in `E` onto some subspace of dimension `d` of
+`E`, is a `C^n` manifold modelled on any subspace `L` of dimension `d`, and its inclusion is a
+`C^n` embedding. The atlas of the ambient manifold takes values in its model space `H`, while each
+flattening chart takes values in `E`. -/
 theorem exists_isSmoothEmbedding_of_finrankSubspaceCharts [CompleteSpace 𝕜]
     [FiniteDimensional 𝕜 E] {L : Submodule 𝕜 E}
-    (hcharts : ∀ y ∈ t, ∃ (q : OpenPartialHomeomorph X E) (V : Submodule 𝕜 E), y ∈ q.source ∧
-      (∀ z ∈ q.source, ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, E) n q z) ∧
-      (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, E) n q.symm z) ∧
-      (∀ z ∈ q.source, z ∈ t ↔ q z ∈ V) ∧ Module.finrank 𝕜 V = Module.finrank 𝕜 L) :
-    ∃ C : ChartedSpace L t, letI := C
-      IsManifold 𝓘(𝕜, L) n t ∧
-        Manifold.IsSmoothEmbedding 𝓘(𝕜, L) 𝓘(𝕜, E) n (Subtype.val : t → X) := by
-  obtain ⟨N, hLN, hcharts'⟩ := exists_linearSubspaceCharts_of_finrankSubspaceCharts hcharts
-  exact exists_isSmoothEmbedding_of_linearSubspaceCharts hLN hcharts'
-
-end Embedding
-
-/-! ### Smooth embeddings into a boundaryless manifold with any model -/
-
-section BoundarylessEmbedding
-
-variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  [I.Boundaryless] {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
-  [IsManifold I n M] {s : Set M}
-
-omit e he hsmooth hinv in
-/-- A subset of a boundaryless manifold modelled on a finite-dimensional space, flattened near each
-of its points by a `C^n` chart onto some subspace of dimension `d` of the model, with `1 ≤ n`, is a
-`C^n` manifold modelled on any subspace `L` of dimension `d`, and its inclusion is a `C^n`
-embedding. Unlike `TauCeti.exists_isSmoothEmbedding_of_finrankSubspaceCharts`, the ambient charts
-may take values in any model space `H`. -/
-theorem exists_isSmoothEmbedding_of_finrankSubspaceCharts_of_boundaryless {L : Submodule 𝕜 E}
-    (hn : 1 ≤ n)
     (hcharts : ∀ y ∈ s, ∃ (q : OpenPartialHomeomorph M E) (V : Submodule 𝕜 E), y ∈ q.source ∧
       (∀ z ∈ q.source, ContMDiffAt I 𝓘(𝕜, E) n q z) ∧
       (∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) I n q.symm z) ∧
       (∀ z ∈ q.source, z ∈ s ↔ q z ∈ V) ∧ Module.finrank 𝕜 V = Module.finrank 𝕜 L) :
     ∃ C : ChartedSpace L s, letI := C
-      IsManifold 𝓘(𝕜, L) n s ∧ Manifold.IsSmoothEmbedding 𝓘(𝕜, L) I n (Subtype.val : s → M) := by
-  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+      IsManifold 𝓘(𝕜, L) n s ∧
+        Manifold.IsSmoothEmbedding 𝓘(𝕜, L) I n (Subtype.val : s → M) := by
   obtain ⟨N, hLN, hcharts'⟩ := exists_linearSubspaceCharts_of_finrankSubspaceCharts hcharts
-  obtain ⟨e, he, hcover, hs, hi⟩ :=
-    exists_linearSliceCharts_of_linearSubspaceCharts hLN hcharts'
-  let := linearSliceChartedSpace e he hcover
-  have := isManifold_linearSliceChartedSpace e he hs hi hcover
-  exact ⟨_, this,
-    (contMDiff_subtypeVal_linearSliceChartedSpace e he hi hcover).isImmersion_of_injective_mfderiv
-      hn (injective_mfderiv_subtypeVal_linearSliceChartedSpace e he hs hi hn0 hcover),
-    IsEmbedding.subtypeVal⟩
+  exact exists_isSmoothEmbedding_of_linearSubspaceCharts hLN hcharts'
 
-end BoundarylessEmbedding
+end Embedding
 
 end TauCeti

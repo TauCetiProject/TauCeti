@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Invariants
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Symplectic.Basic
 public import TauCeti.Geometry.Symplectic.Restrict
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints.Components
 import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
 
 /-!
@@ -37,8 +38,11 @@ symplectic, the inclusion of `M^K_d` is a symplectic submanifold embedding
 (`IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsOfFinrank`):
 `σ` restricts to a nondegenerate form on `M^K_d`, which is symplectic when `σ` is
 (`IsNondegenerate.IsSymplecticSubmanifoldEmbedding.isSymplectic_mpullback`). Hence each
-component of the fixed set of a group of symplectic isometries is an embedded symplectic
-submanifold of even dimension.
+connected component of the fixed set of a group of symplectic isometries is an embedded
+symplectic submanifold of even dimension
+(`IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_connectedComponentIn_fixedPoints`), as is
+every subset of `M^K_d` open in `M^K`
+(`IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_of_subset_fixedPointsOfFinrank`).
 
 These data are natural. Let `ψ : M → M₂` be a diffeomorphism pulling a nondegenerate two-form
 `τ` back to `σ` and commuting near `p` with the action of every element of `K`. Its differential
@@ -69,9 +73,12 @@ of smooth symplectic actions of compact Lie groups, such as torus actions.
   subspace at a fixed point is symplectic.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.even_finrank_fixedTangentSubspace`: it has even
   dimension.
-* `IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsOfFinrank`:
-  each `M^K_d` is an embedded symplectic submanifold with tangent spaces the fixed tangent
-  subspaces.
+* `IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsOfFinrank`,
+  `IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_connectedComponentIn_fixedPoints`:
+  each `M^K_d` and each connected component of `M^K` is an embedded symplectic submanifold with
+  tangent spaces the fixed tangent subspaces.
+* `IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_of_subset_fixedPointsOfFinrank`: the
+  same for every subset of `M^K_d` open in `M^K`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_fixedTangentSubspaceEquiv_apply`: the
   restricted differential of an equivariant symplectomorphism preserves the symplectic forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_fixedTangentSubspaceEquiv`,
@@ -151,6 +158,28 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 include hK hσK
 
+/-- **Open parts of the fixed locus of a single dimension are symplectic submanifolds.** For a
+group acting by isometries preserving a nondegenerate two-form `σ`, let `s` be a subset of the
+fixed set, open in it, at whose points the fixed tangent subspace has dimension `d`. For a
+subspace `L` of the model of dimension `d`, `s` is a smooth manifold modelled on `L` whose
+inclusion into `M` is a symplectic submanifold embedding, with tangent image the fixed tangent
+subspace at every point. -/
+theorem IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_of_subset_fixedPointsOfFinrank
+    (hσ : σ.IsNondegenerate) {s : Set M} {d : ℕ} {L : Submodule ℝ E}
+    (hL : Module.finrank ℝ L = d) (hsd : s ⊆ fixedPointsOfFinrank I K M d)
+    (hs : IsOpen ((↑) ⁻¹' s : Set (MulAction.fixedPoints K M))) :
+    ∃ C : ChartedSpace L s, letI := C
+      IsManifold 𝓘(ℝ, L) ∞ s ∧ hσ.IsSymplecticSubmanifoldEmbedding 𝓘(ℝ, L) (Subtype.val : s → M) ∧
+      ∀ y : s, LinearMap.range (mfderiv 𝓘(ℝ, L) I Subtype.val y).toLinearMap =
+        fixedTangentSubspace I K (y : M) := by
+  obtain ⟨C, hman, hemb, hrange⟩ :=
+    exists_isSmoothEmbedding_of_subset_fixedPointsOfFinrank hK hL hsd hs
+  let := C
+  refine ⟨C, hman, (isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding hemb).2
+    (hasSymplecticTangentImages_iff_forall.2 fun y ↦ ?_), hrange⟩
+  rw [hrange y]
+  exact hσ.isSymplectic_fixedTangentSubspace hK hσK _
+
 /-- **The fixed locus of a group of symplectic isometries is a symplectic submanifold.** For a
 group acting by isometries preserving a nondegenerate two-form `σ` and a subspace `L` of the model
 of dimension `d`, the points of the fixed set at which the fixed tangent subspace has dimension `d`
@@ -164,13 +193,30 @@ theorem IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsOfFin
         (Subtype.val : fixedPointsOfFinrank I K M d → M) ∧
       ∀ y : fixedPointsOfFinrank I K M d,
         LinearMap.range (mfderiv 𝓘(ℝ, L) I Subtype.val y).toLinearMap =
-          fixedTangentSubspace I K (y : M) := by
-  obtain ⟨C, hman, hemb, hrange⟩ := exists_isSmoothEmbedding_fixedPointsOfFinrank hK hL
-  let := C
-  refine ⟨C, hman, (isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding hemb).2
-    (hasSymplecticTangentImages_iff_forall.2 fun y ↦ ?_), hrange⟩
-  rw [hrange y]
-  exact hσ.isSymplectic_fixedTangentSubspace hK hσK _
+          fixedTangentSubspace I K (y : M) :=
+  hσ.exists_isSymplecticSubmanifoldEmbedding_of_subset_fixedPointsOfFinrank hK hσK hL subset_rfl
+    (isOpen_preimage_val_fixedPointsOfFinrank hK d)
+
+/-- **The connected components of the fixed locus of a group of symplectic isometries are
+symplectic submanifolds.** For a group acting by isometries preserving a nondegenerate two-form
+`σ`, a fixed point `p` and a subspace `L` of the model of the dimension of the fixed tangent
+subspace at `p`, the connected component of `p` in the fixed set is a smooth manifold modelled on
+`L` whose inclusion into `M` is a symplectic submanifold embedding, with tangent image the fixed
+tangent subspace at every point. -/
+theorem IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_connectedComponentIn_fixedPoints
+    (hσ : σ.IsNondegenerate) {p : M} (hp : p ∈ MulAction.fixedPoints K M) {L : Submodule ℝ E}
+    (hL : Module.finrank ℝ L = Module.finrank ℝ (fixedTangentSubspace I K p)) :
+    ∃ C : ChartedSpace L (connectedComponentIn (MulAction.fixedPoints K M) p), letI := C
+      IsManifold 𝓘(ℝ, L) ∞ (connectedComponentIn (MulAction.fixedPoints K M) p) ∧
+      hσ.IsSymplecticSubmanifoldEmbedding 𝓘(ℝ, L)
+        (Subtype.val : connectedComponentIn (MulAction.fixedPoints K M) p → M) ∧
+      ∀ y : connectedComponentIn (MulAction.fixedPoints K M) p,
+        LinearMap.range (mfderiv 𝓘(ℝ, L) I Subtype.val y).toLinearMap =
+          fixedTangentSubspace I K (y : M) :=
+  hσ.exists_isSymplecticSubmanifoldEmbedding_of_subset_fixedPointsOfFinrank hK hσK hL
+    (subset_fixedPointsOfFinrank_of_isPreconnected hK isPreconnected_connectedComponentIn
+      (connectedComponentIn_subset _ _) (mem_connectedComponentIn hp))
+    (isOpen_preimage_val_connectedComponentIn_fixedPoints hK hp)
 
 end FixedLocus
 
