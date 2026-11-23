@@ -40,6 +40,9 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
 
 ## Main results
 
+* `ContinuousOn.piecewise_Iic` — paste continuous maps across a closed cut on any set.
+* `ContinuousOn.piecewise_Iic_Icc` — the adjacent-interval version, with a conditional join.
+
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
 * `TauCeti.disjoint_frontier_Icc`, `TauCeti.disjoint_frontier_Ioc` — the frontier of `[a, b]` or
@@ -84,6 +87,36 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
 public section
 
 open Filter Set Topology
+
+/-- Paste two continuous maps across a closed cut. Agreement at the cut is needed only when
+that point belongs to the set on which continuity is asserted. -/
+theorem ContinuousOn.piecewise_Iic {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [TopologicalSpace X] {s : Set α} {b : α} {l₁ l₂ : α → X}
+    [∀ t, Decidable (t ∈ Iic b)] (h₁ : ContinuousOn l₁ (s ∩ Iic b))
+    (h₂ : ContinuousOn l₂ (s ∩ Ici b)) (hjoin : b ∈ s → l₁ b = l₂ b) :
+    ContinuousOn ((Iic b).piecewise l₁ l₂) s := by
+  have hclosure : closure (Iic b)ᶜ ⊆ Ici b := by
+    rw [compl_Iic]
+    exact closure_minimal Ioi_subset_Ici_self isClosed_Ici
+  apply ContinuousOn.piecewise
+  · intro t ht
+    have : t = b := frontier_Iic_subset b ht.2
+    subst t
+    exact hjoin ht.1
+  · exact h₁.mono fun _ ht ↦ ⟨ht.1, isClosed_Iic.closure_subset ht.2⟩
+  · exact h₂.mono fun _ ht ↦ ⟨ht.1, hclosure ht.2⟩
+
+/-- Two maps continuous on adjacent closed intervals have a continuous pasting on the combined
+interval. They need agree at the cut only when it lies in that combined interval; no ordering
+of the three endpoints or separation assumption on the codomain is required. -/
+theorem ContinuousOn.piecewise_Iic_Icc {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [TopologicalSpace X] {a b d : α} {l₁ l₂ : α → X}
+    [∀ t, Decidable (t ∈ Iic b)] (h₁ : ContinuousOn l₁ (Icc a b))
+    (h₂ : ContinuousOn l₂ (Icc b d)) (hjoin : b ∈ Icc a d → l₁ b = l₂ b) :
+    ContinuousOn ((Iic b).piecewise l₁ l₂) (Icc a d) :=
+  ContinuousOn.piecewise_Iic (s := Icc a d)
+    (h₁.mono fun _ ht ↦ ⟨ht.1.1, ht.2⟩)
+    (h₂.mono fun _ ht ↦ ⟨ht.2, ht.1.2⟩) hjoin
 
 namespace TauCeti
 

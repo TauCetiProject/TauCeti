@@ -173,7 +173,7 @@ theorem finrank_orbitTangent_inf_orthogonal_add_finrank_isotropy [FiniteDimensio
     finrank ℝ ↥(a.orbitTangent x ⊓ (σ.bilinFormAt x).orthogonal (a.orbitTangent x)) +
       finrank ℝ (a.isotropy x) = finrank ℝ (lieAnnihilator ℝ 𝔤 (μ x)) := by
   have hle : (a.isotropy x).toSubmodule ≤ (lieAnnihilator ℝ 𝔤 (μ x)).toSubmodule :=
-    h.isotropy_le_lieAnnihilator hc
+    isotropy_le_lieAnnihilator_of_momentCocycle_eq_zero hc
   have h₁ := Submodule.finrank_quotient_add_finrank
     ((a.isotropy x).toSubmodule.comap (lieAnnihilator ℝ 𝔤 (μ x)).toSubmodule.subtype)
   rw [(h.quotEquivOrbitTangentInfOrthogonal hc).finrank_eq,
