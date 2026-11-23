@@ -209,11 +209,8 @@ theorem hilbertSymbol_units_map_ringEquiv {L : Type*} [Field L] (e : K ≃+* L) 
 an isomorphism). -/
 theorem hilbertSymbol_units_map_of_surjective {L : Type*} [Field L] {f : K →+* L}
     (hf : Function.Surjective f) (a b : Kˣ) :
-    hilbertSymbol (Units.map f.toMonoidHom a) (Units.map f.toMonoidHom b) = hilbertSymbol a b := by
+    hilbertSymbol (Units.map (f : K →* L) a) (Units.map (f : K →* L) b) = hilbertSymbol a b := by
   let e : K ≃+* L := RingEquiv.ofBijective f ⟨f.injective, hf⟩
-  have hmap : f.toMonoidHom = (e : K →* L) :=
-    MonoidHom.ext fun x ↦ (RingEquiv.ofBijective_apply f ⟨f.injective, hf⟩ x).symm
-  rw [hmap]
   exact hilbertSymbol_units_map_ringEquiv e a b
 
 -- The quotient-representative construction follows
