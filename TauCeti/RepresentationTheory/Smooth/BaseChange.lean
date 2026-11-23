@@ -32,11 +32,6 @@ the target is `ℤ/2`.
   `B`.
 * `Representation.bijective_invariantsBaseChangeMap`: the comparison map is bijective for flat `B`
   and a finite group.
-
-## References
-
-* J. Bernstein, *Le "centre" de Bernstein*, in *Représentations des groupes réductifs sur un
-  corps local*, Hermann, 1984, §2.0, Generalization, p. 9.
 -/
 
 public section
