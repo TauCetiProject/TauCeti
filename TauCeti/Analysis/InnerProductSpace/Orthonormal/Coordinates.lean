@@ -58,20 +58,18 @@ open scoped InnerProductSpace
 namespace TauCeti
 
 /-- Choose orthonormal coordinates in which the inner product with `v` is its norm times the
-prescribed coordinate. This also holds for `v = 0`. For `v ≠ 0` the coordinates are those of an
-orthonormal basis whose `i`-th vector is `‖v‖⁻¹ • v`, obtained by extending this unit vector with
-Mathlib's `Orthonormal.exists_orthonormalBasis_extension_of_card_eq`. -/
+prescribed coordinate `i`. This also holds for `v = 0`. For `v ≠ 0`, coordinate `i` is
+therefore the inner product with the unit vector `‖v‖⁻¹ • v`. -/
 theorem exists_linearIsometryEquiv_inner_eq_norm_mul_eval {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] (v : E) (i : Fin (Module.finrank 𝕜 E)) :
     ∃ f : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E)),
       ∀ x, ⟪v, x⟫_𝕜 = ‖v‖ * f x i := by
   -- In infinite dimension `finrank = 0`, so there is no coordinate `i`.
-  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (by
-    have := i.isLt
-    omega)
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (Fin.pos i)
   rcases eq_or_ne v 0 with rfl | hv
   · exact ⟨(stdOrthonormalBasis 𝕜 E).repr, by simp⟩
-  -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis whose `i`-th vector it is.
+  -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis whose `i`-th vector it is, by
+  -- Mathlib's `Orthonormal.exists_orthonormalBasis_extension_of_card_eq`.
   obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq
     (Fintype.card_fin _).symm (v := fun _ ↦ (‖v‖⁻¹ : 𝕜) • v) (s := {i})
     (orthonormal_subsingleton_iff.mpr fun _ ↦ norm_smul_inv_norm (𝕜 := 𝕜) hv)
