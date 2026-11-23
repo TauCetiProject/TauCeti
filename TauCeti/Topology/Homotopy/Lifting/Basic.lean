@@ -28,7 +28,9 @@ homotopy lifting of
 (`TauCeti.HasHomotopyLiftingProperty.exists_lift_of_mem`); it depends on the space only up to
 homeomorphism (`Homeomorph.hasHomotopyLiftingProperty_iff`), passes from open subsets along open
 embeddings (`TauCeti.HasHomotopyLiftingProperty.of_isOpenEmbedding`), and a map with it lifts paths
-(`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`).
+(`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`). By uniqueness of lifts, a covering map
+also lifts a free homotopy of loops to a free homotopy of loops starting at any loop lifting the
+first loop (`IsCoveringMap.exists_lift_freeHomotopy`).
 
 Serre fibrations, the maps with the homotopy lifting property with respect to every disk, are in
 `TauCeti.Topology.Homotopy.SerreFibration.Basic`.
@@ -214,4 +216,31 @@ theorem Homeomorph.hasHomotopyLiftingProperty_iff (e : A ≃ₜ A') :
 theorem IsCoveringMap.hasHomotopyLiftingProperty (hp : IsCoveringMap p) (A : Type w)
     [TopologicalSpace A] : HasHomotopyLiftingProperty p A :=
   fun f H hH ↦ ⟨hp.liftHomotopy H f hH, hp.liftHomotopy_lifts H f hH, hp.liftHomotopy_zero H f hH⟩
+
+/-- **Lifting free homotopies of loops through a covering map.** Let `H : I × I → B` be a free
+homotopy of loops, so that each `H (·, s)` is a loop, and let `γ` be a loop in `E` lifting the
+first loop `H (·, 0)`. Then `H` lifts to a free homotopy of loops `G` starting at `γ`:
+`p ∘ G = H`, `G (·, 0) = γ`, and each `G (·, s)` is a loop. -/
+theorem IsCoveringMap.exists_lift_freeHomotopy (hp : IsCoveringMap p) (H : C(I × I, B))
+    (hH : ∀ s, H (0, s) = H (1, s)) (γ : C(I, E)) (hγ : ∀ t, p (γ t) = H (t, 0))
+    (hγ₁ : γ 0 = γ 1) :
+    ∃ G : C(I × I, E), p ∘ G = H ∧ (∀ t, G (t, 0) = γ t) ∧ ∀ s, G (0, s) = G (1, s) := by
+  -- Lift the path `s ↦ H (0, s)` of base points from `γ 0`, then the whole homotopy.
+  let c : C(I, B) := H.comp ((ContinuousMap.const I 0).prodMk (ContinuousMap.id I))
+  let c' := hp.liftPath c (γ 0) (hγ 0).symm
+  have hc' : ∀ s, H (0, s) = p (c' s) := fun s ↦
+    (congr_fun (hp.liftPath_lifts c _ (hγ 0).symm) s).symm
+  let G := hp.liftHomotopy H c' hc'
+  have hG : ∀ t s, p (G (t, s)) = H (t, s) := fun t s ↦
+    congr_fun (hp.liftHomotopy_lifts H c' hc') (t, s)
+  -- By uniqueness of lifts, the bottom edge of `G` is `γ`, and each `G (·, s)` is a loop.
+  have hbot : ∀ t, G (t, 0) = γ t := congr_fun <| hp.eq_of_comp_eq (g₁ := fun t ↦ G (t, 0))
+    (G.continuous.comp (Continuous.prodMk_left 0)) γ.continuous
+    (funext fun t ↦ (hG t 0).trans (hγ t).symm) 0
+    ((hp.liftHomotopy_zero H c' hc' 0).trans (hp.liftPath_zero c _ (hγ 0).symm))
+  refine ⟨G, funext fun ts ↦ hG ts.1 ts.2, hbot, congr_fun <| hp.eq_of_comp_eq
+    (g₁ := fun s ↦ G (0, s)) (G.continuous.comp (Continuous.prodMk_right 0))
+    (G.continuous.comp (Continuous.prodMk_right 1))
+    (funext fun s ↦ (hG 0 s).trans ((hH s).trans (hG 1 s).symm)) 0 ?_⟩
+  rw [hbot, hbot, hγ₁]
 
