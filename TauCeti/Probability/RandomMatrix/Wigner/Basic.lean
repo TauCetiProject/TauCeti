@@ -62,7 +62,7 @@ and resolvent methods:
   (`sum_norm_wignerMatrix_apply_sq`);
 * the squared Frobenius distance of two Wigner matrices sharing a diagonal is `2/n` times the sum
   of the squared upper differences in the corner
-  (`TauCeti.Probability.norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper`), so its expectation is
+  (`norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper`), so its expectation is
   `2/n` times the sum of their second absolute moments
   (`integral_norm_wignerMatrix_sub_sq_eq_sum`). Hence, if the upper differences in the corner of
   size `n + 1` have second absolute moment `s`, the matrices differ by expected squared Frobenius
@@ -404,7 +404,7 @@ theorem sum_norm_wignerMatrix_apply_sq (ξ : StrictUpper → Ω → ℂ) (η : �
 
 /-- Squared Frobenius error between Wigner matrices with a common diagonal, in terms of
 the squared errors on the strictly upper corner. -/
-theorem Probability.norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper
+theorem norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper
     {ξ : StrictUpper → Ω → ℂ} (ζ : StrictUpper → Ω → ℂ)
     (η : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
     ‖wignerMatrix ξ η n ω - wignerMatrix ζ η n ω‖ ^ 2 =
@@ -866,7 +866,7 @@ theorem integral_norm_wignerMatrix_sub_sq_eq_sum {ξ' : StrictUpper → Ω → �
     ∫ ω, ‖wignerMatrix ξ η n ω - wignerMatrix ξ' η n ω‖ ^ 2 ∂P =
       (2 / (n : ℝ)) * ∑ u : FinStrictUpper n,
         ∫ ω, ‖ξ u.toStrictUpper ω - ξ' u.toStrictUpper ω‖ ^ 2 ∂P := by
-  simp_rw [Probability.norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper]
+  simp_rw [norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper]
   rw [integral_const_mul,
     integral_finsetSum _ fun u _ ↦ hξ _ (FinStrictUpper.toStrictUpper_val_snd_lt u)]
 
