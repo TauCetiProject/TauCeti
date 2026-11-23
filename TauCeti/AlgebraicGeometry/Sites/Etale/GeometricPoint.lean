@@ -184,7 +184,7 @@ instance isIso_toPointFunctor_map {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ 
       (Over.mk s.hom ⟶ (Scheme.Etale.forget S).obj U) ≃
         {u : Spec (.of s.Ω) ⟶ U.left // u ≫ U.hom = t} :=
     { toFun u := ⟨u.left, (Over.w u).trans ht⟩
-      invFun u := Over.homMk u.1 (u.2.trans ht.symm)
+      invFun u := Over.homMk u.val (u.property.trans ht.symm)
       left_inv _ := by cat_disch
       right_inv _ := rfl }
   exact (e s₁ _ φ.w.symm).symm.bijective.comp

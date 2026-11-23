@@ -28,7 +28,7 @@ theory of finite Weyl groups:
   invariant in `Sym(M*)^W` has degree at least `2` (and hence none has degree `1`).
 * **Chevalley's theorem** (`exists_bijective_aeval_weylGroupRootRep_dual`,
   `exists_bijective_aeval_weylGroupRootRep_dual_of_base`): over a field `K` with `2 ≠ 0`, when `M`
-  is finite-dimensional and `P.weylGroup` is finite of order nonzero in `K`, the invariant
+  is finite-dimensional and `Nat.card P.weylGroup` is nonzero in `K`, the invariant
   subalgebra `Sym(M*)^W` is a polynomial algebra on `finrank K M` homogeneous invariants of positive
   degree. Over a field of characteristic zero with `M` finite-dimensional, a base `b : P.Base` of a
   finite reduced crystallographic pairing suffices.
@@ -146,16 +146,17 @@ theorem natCard_inertia_coroot'_weylGroup [NeZero (2 : K)] [P.flip.IsReduced] (�
     Set.ncard_pair (weylGroup.ofIdx_ne_one P α).symm]
 
 /-- **Chevalley's theorem for the Weyl group.** If `2 ≠ 0` in `K`, `M` is finite-dimensional, and
-`P.weylGroup` is finite of order nonzero in `K`, then the `W`-invariant polynomial functions
-`Sym(M*)^W` form a polynomial algebra on `finrank K M` homogeneous invariants of positive degree. -/
+`Nat.card P.weylGroup` is nonzero in `K` (so `P.weylGroup` is finite), then the `W`-invariant
+polynomial functions `Sym(M*)^W` form a polynomial algebra on `finrank K M` homogeneous invariants
+of positive degree. -/
 theorem exists_bijective_aeval_weylGroupRootRep_dual
-    [NeZero (2 : K)] [FiniteDimensional K M] [Finite P.weylGroup]
-    (hcard : (Nat.card P.weylGroup : K) ≠ 0) :
+    [NeZero (2 : K)] [FiniteDimensional K M] (hcard : (Nat.card P.weylGroup : K) ≠ 0) :
     ∃ f : Fin (Module.finrank K M) → P.weylGroupRootRep.dual.symmetricAlgebraInvariants,
       (∀ i, ∃ d, 0 < d ∧
         (f i : SymmetricAlgebra K (Module.Dual K M)) ∈
           homogeneousSubmodule K (Module.Dual K M) d) ∧
         Function.Bijective (MvPolynomial.aeval (R := K) f) := by
+  have : Finite P.weylGroup := Nat.finite_of_card_ne_zero fun h ↦ hcard (by simp [h])
   let _ : Fintype P.weylGroup := Fintype.ofFinite P.weylGroup
   have hcard' : (Fintype.card P.weylGroup : K) ≠ 0 := by
     rwa [← Nat.card_eq_fintype_card]
@@ -283,7 +284,7 @@ theorem exists_jacobian_eq_algebraMap_mul_prod_posRootsFinset
   let _ : Finite P.weylGroup := P.finite_weylGroup_of_base b
   let _ := P.weylGroupRootRep.dual.symmetricAlgebraMulSemiringAction
   let e := P.posRootsEquivReflectingHyperplanes b
-  let ℓ (H : P.weylGroupRootRep.reflectingHyperplanes) : Module.Dual K M := P.coroot' (e.symm H).1
+  let ℓ (H : P.weylGroupRootRep.reflectingHyperplanes) : Module.Dual K M := P.coroot' (e.symm H).val
   have hker (H : P.weylGroupRootRep.reflectingHyperplanes) : LinearMap.ker (ℓ H) = H.val :=
     (P.coe_posRootsEquivReflectingHyperplanes b (e.symm H)).symm.trans
       (congrArg Subtype.val (e.apply_symm_apply H))
@@ -295,10 +296,10 @@ theorem exists_jacobian_eq_algebraMap_mul_prod_posRootsFinset
   have hpow : (∏ H : P.weylGroupRootRep.reflectingHyperplanes,
       SymmetricAlgebra.ι K (Module.Dual K M) (ℓ H) ^
         (Nat.card ((Ideal.span {SymmetricAlgebra.ι K (Module.Dual K M) (ℓ H)}).inertia
-          P.weylGroup) - 1)) = ∏ H : P.weylGroupRootRep.reflectingHyperplanes, g (e.symm H).1 :=
+          P.weylGroup) - 1)) = ∏ H : P.weylGroupRootRep.reflectingHyperplanes, g (e.symm H).val :=
     Finset.prod_congr rfl fun H _ ↦ by
       dsimp only [ℓ]
-      rw [P.natCard_inertia_coroot'_weylGroup (e.symm H).1, pow_one]
+      rw [P.natCard_inertia_coroot'_weylGroup (e.symm H).val, pow_one]
   let eFin : ↥(posRootsFinset P b) ≃ posRoots P b :=
     Equiv.subtypeEquivRight (mem_posRootsFinset P b)
   let _ : Fintype (posRoots P b) := Fintype.ofEquiv _ eFin
@@ -361,7 +362,7 @@ theorem charpoly_weylGroupRootRep_of_isRegularWeight_of_smul_eq
   let B : Module.Basis κ K (Module.Dual K M) :=
     (Module.finBasis K (Module.Dual K M)).reindex (Fintype.equivFinOfCardEq hcard).symm
   exact P.weylGroupRootRep.charpoly_eq_prod_of_eigenvector_of_jacobian_ne_zero
-    B d hf (fun k ↦ (f k).2) w x c hw
+    B d hf (fun k ↦ (f k).property) w x c hw
     ((P.lift_jacobian_ne_zero_iff_isRegularWeight b B hf hbij x).2 hx)
 
 end Base

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Jimbo.StrandInclusion
+import TauCeti.GroupTheory.SpecificGroups.Braid.HeckeSkein
 
 /-!
 # Markov stabilization of the Jimbo weighted trace
@@ -19,6 +20,10 @@ The added strand keeps its colour under the included braid. Consequently, in the
 diagonal coefficient of a stabilized braid, only the colour-preserving part of the
 last crossing survives. The weighted partial trace of that crossing supplies the
 stabilization factor. These are the two Markov laws needed for writhe normalization.
+Together with the Hecke spanning decomposition of the braid group algebra, they also show
+that the weighted trace of every nonempty braid is divisible by the quantum dimension
+`∑ a : Fin N, jimboWeight q a` over any commutative ring and unit parameter
+(`TauCeti.KnotTheory.sum_jimboWeight_dvd_jimboWeightedTrace`).
 
 ## References
 
@@ -114,5 +119,39 @@ theorem jimboWeightedTrace_stabilizeInv (q : Rˣ) (b : BraidGroup (n + 1)) :
   simp only [mul_one, jimboWeightedTrace_stabilize, jimboWeightedTrace_strandIncl] at h
   have hs := jimboWeight_sum (N := N) q
   linear_combination -h - jimboWeightedTrace (N := N) q b * hs
+
+/-- Over any commutative ring `R` and at any unit parameter `q : Rˣ`, the unnormalized weighted
+Jimbo trace of a nonempty braid is divisible by the quantum dimension `[N]_q`. -/
+theorem sum_jimboWeight_dvd_jimboWeightedTrace (q : Rˣ) (b : BraidGroup (n + 1)) :
+    (∑ a : Fin N, jimboWeight q a) ∣ jimboWeightedTrace (N := N) q b := by
+  let δ : R := ∑ a : Fin N, jimboWeight q a
+  let z : R := (q : R) - ↑q⁻¹
+  induction n with
+  | zero =>
+    rw [BraidGroup.eq_one_of_le_one le_rfl b, jimboWeightedTrace_one, pow_one]
+  | succ m ih =>
+    let φ : MonoidAlgebra R (BraidGroup (m + 2)) →ₗ[R] R :=
+      Finsupp.linearCombination R (jimboWeightedTrace (N := N) q) ∘ₗ
+        (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
+    have hφ (g : BraidGroup (m + 2)) (r : R) :
+        φ (MonoidAlgebra.single g r) = r * jimboWeightedTrace (N := N) q g := by
+      simp [φ, MonoidAlgebra.coeffLinearEquiv_apply, MonoidAlgebra.coeff_single]
+    have hle : BraidGroup.strandSpan R m ⊔ BraidGroup.heckeSkein R z (m + 2) ≤
+        Submodule.comap φ (Ideal.span {δ}) := by
+      refine sup_le ((BraidGroup.strandSpan_le_iff _).mpr ⟨fun d ↦ ?_, fun d e ↦ ?_⟩)
+        ((BraidGroup.heckeSkein_le_iff _ _).mpr fun b c i ↦ ?_) <;>
+        simp only [Submodule.mem_comap, Ideal.mem_span_singleton]
+      · rw [hφ, one_mul, jimboWeightedTrace_strandIncl]
+        exact dvd_mul_left δ _
+      · rw [hφ, one_mul, jimboWeightedTrace_mul_comm, ← mul_assoc, ← map_mul,
+          jimboWeightedTrace_stabilize]
+        exact dvd_mul_of_dvd_right (ih (e * d)) _
+      · rw [BraidGroup.heckeRelator_def, map_sub, map_sub, hφ, hφ, hφ,
+          one_mul, one_mul, jimboWeightedTrace_skein]
+        simp [z]
+    rw [BraidGroup.strandSpan_sup_heckeSkein_eq_top, top_le_iff] at hle
+    have hb : MonoidAlgebra.single b 1 ∈ Submodule.comap φ (Ideal.span {δ}) :=
+      hle ▸ Submodule.mem_top
+    simpa only [Submodule.mem_comap, Ideal.mem_span_singleton, hφ, one_mul] using hb
 
 end TauCeti.KnotTheory

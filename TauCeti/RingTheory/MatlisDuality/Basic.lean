@@ -7,6 +7,7 @@ module
 
 import TauCeti.Algebra.Module.Dual.ProjectiveInjective
 import TauCeti.Algebra.Module.Opposite
+import TauCeti.RingTheory.Noetherian.LinearMap
 public import TauCeti.LinearAlgebra.Dual.RightAction
 public import TauCeti.Algebra.Module.Injective.Cogenerator
 
@@ -312,6 +313,19 @@ instance : Module.Injective A (MatlisDual R E A) :=
 
 end Instances
 
+section Finite
+
+variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E] [IsNoetherian R E]
+  {N : Type w} [AddCommGroup N] [Module R N] [Module.Finite R N]
+
+/-- The dual of a finitely generated module with values in a Noetherian module is Noetherian, as
+linear maps between such modules are (`TauCeti.isNoetherian_linearMap_of_finite`); in particular it
+is finitely generated. -/
+instance : IsNoetherian R (MatlisDual R E N) :=
+  isNoetherian_of_linearEquiv (equivLinearMap R E N).symm
+
+end Finite
+
 section Biduality
 
 variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E]
@@ -351,6 +365,14 @@ theorem subsingleton_matlisDual_iff
   have : Subsingleton (MatlisDual R E (MatlisDual R E N)) :=
     (equivLinearMap R E (MatlisDual R E N)).toEquiv.subsingleton
   exact (MatlisDual.injective_evalₗ hE).subsingleton
+
+/-- The Matlis dual of a module of finite length has finite length, if `E` is injective and each
+`Hom_R(R ⧸ 𝔪, E)` has length one: dualizing preserves length. -/
+theorem MatlisDual.isFiniteLength
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
+    (hN : IsFiniteLength R N) : IsFiniteLength R (MatlisDual R E N) := by
+  rw [← Module.length_ne_top_iff] at hN ⊢
+  rwa [(equivLinearMap R E N).length_eq, length_linearMap_of_forall_isMaximal hE]
 
 /-- **Matlis biduality.** If `E` is injective and each `Hom_R(R ⧸ 𝔪, E)` has length one, then
 evaluation `N → D_R (D_R N)` is bijective for every `R`-module `N` of finite length. -/

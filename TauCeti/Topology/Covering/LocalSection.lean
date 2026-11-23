@@ -89,31 +89,31 @@ theorem _root_.IsEvenlyCovered.of_leftInvOn_sections (hp : Continuous p)
   refine .of_trivialization (t := isOpen_interior.trivializationDiscrete
     (fun e : p ⁻¹' {x} ↦ s e '' interior V) (interior V)
     (fun e W hWV ↦ ⟨fun hW ↦ ?_, fun hW ↦ ?_⟩)
-    (fun e ↦ (LeftInvOn.rightInvOn_image (hps' e (hfib e e.2))).injOn)
-    (fun e y hy ↦ ⟨s e y, mem_image_of_mem _ hy, hps' e (hfib e e.2) hy⟩) ?_ ?_) hxI
+    (fun e ↦ (LeftInvOn.rightInvOn_image (hps' e (hfib e e.property))).injOn)
+    (fun e y hy ↦ ⟨s e y, mem_image_of_mem _ hy, hps' e (hfib e e.property) hy⟩) ?_ ?_) hxI
   · -- an open subset of `interior V` has open preimage in each sheet
     exact (hp.isOpen_preimage W hW).inter
       (hinj.isOpen_image_of_leftInvOn hp isOpen_interior
-        (hsc' e (hfib e e.2)) (hps' e (hfib e e.2)))
+        (hsc' e (hfib e e.property)) (hps' e (hfib e e.property)))
   · -- conversely, an open trace on a sheet comes from an open subset of `interior V`
-    convert (hsc' e (hfib e e.2)).isOpen_inter_preimage isOpen_interior hW using 1
+    convert (hsc' e (hfib e e.property)).isOpen_inter_preimage isOpen_interior hW using 1
     ext y
     constructor
     · intro hy
       refine ⟨hWV hy, ?_, mem_image_of_mem _ (hWV hy)⟩
-      rwa [mem_preimage, hps' e (hfib e e.2) (hWV hy)]
+      rwa [mem_preimage, hps' e (hfib e e.property) (hWV hy)]
     · rintro ⟨hyV, hyW, -⟩
-      rwa [mem_preimage, hps' e (hfib e e.2) hyV] at hyW
+      rwa [mem_preimage, hps' e (hfib e e.property) hyV] at hyW
   · -- distinct points of the fibre have disjoint sheets
     intro e e' hee'
     refine disjoint_left.2 ?_
     rintro _ ⟨y, hy, rfl⟩ ⟨z, hz, hzy⟩
     have hzy' : z = y := by
-      rw [← hps' e' (hfib e' e'.2) hz, hzy, hps' e (hfib e e.2) hy]
+      rw [← hps' e' (hfib e' e'.property) hz, hzy, hps' e (hfib e e.property) hy]
     subst hzy'
     refine hee' (Subtype.ext ?_)
-    rw [← hsx e e.2, ← hsx e' e'.2]
-    exact hrigid e e' (hfib e e.2) (hfib e' e'.2) (interior_subset hy) hzy.symm hxV
+    rw [← hsx e e.property, ← hsx e' e'.property]
+    exact hrigid e e' (hfib e e.property) (hfib e' e'.property) (interior_subset hy) hzy.symm hxV
   · -- the sheets exhaust the preimage of `interior V`
     intro e' he'
     obtain ⟨e, he, he'e⟩ := hmem e' (interior_subset he')

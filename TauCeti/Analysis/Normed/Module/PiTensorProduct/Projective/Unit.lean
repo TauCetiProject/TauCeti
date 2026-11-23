@@ -183,7 +183,7 @@ private theorem scalarUnitInsert_comp_proj :
 /-- Scalar multiplication identifies the projective tensor of the scalar field and a locally
 convex space with that space, before completion. -/
 noncomputable def lid : ProjectiveTensorProduct (scalarUnitSeminorms p) ≃L[𝕜] E :=
-  ContinuousLinearEquiv.equivOfInverse' (scalarUnitProj p hp) (scalarUnitInsert p hp)
+  ContinuousLinearEquiv.ofContinuousLinearMap (scalarUnitProj p hp) (scalarUnitInsert p hp)
     (scalarUnitProj_comp_insert p hp) (scalarUnitInsert_comp_proj p hp)
 
 /-- The scalar-unit equivalence sends a pure tensor to scalar multiplication. -/
@@ -191,7 +191,7 @@ noncomputable def lid : ProjectiveTensorProduct (scalarUnitSeminorms p) ≃L[�
     lid p hp (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct (scalarUnitSeminorms p)) =
       x 0 • x 1 := by
   simp only [lid]
-  rw [ContinuousLinearEquiv.equivOfInverse'_apply]
+  rw [ContinuousLinearEquiv.coe_ofContinuousLinearMap]
   simpa only [tprod_apply] using scalarUnitProj_tprod p hp x
 
 /-- The inverse scalar-unit equivalence inserts the scalar `1`. -/
@@ -200,7 +200,8 @@ noncomputable def lid : ProjectiveTensorProduct (scalarUnitSeminorms p) ≃L[�
       (⟨⨂ₜ[𝕜] i, Fin.cons 1 (fun _ => x) i⟩ :
         ProjectiveTensorProduct (scalarUnitSeminorms p)) := by
   simp only [lid]
-  rw [ContinuousLinearEquiv.symm_equivOfInverse', ContinuousLinearEquiv.equivOfInverse'_apply]
+  rw [ContinuousLinearEquiv.symm_ofContinuousLinearMap,
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap]
   simpa only [tprod_apply] using scalarUnitInsert_apply p hp x
 
 /-- The scalar-unit identification commutes with the algebraic tensor map of the scalar
@@ -312,7 +313,7 @@ private theorem scalarUnitInsert_comp_proj :
 /-- The scalar field is a left unit for the completed projective tensor of complete Hausdorff
 locally convex spaces, with the caller's compatible additive uniformity. -/
 noncomputable def lid : CompletedProjectiveTensorProduct (scalarUnitSeminorms p) ≃L[𝕜] E :=
-  ContinuousLinearEquiv.equivOfInverse' (scalarUnitProj p hp) (scalarUnitInsert p hp)
+  ContinuousLinearEquiv.ofContinuousLinearMap (scalarUnitProj p hp) (scalarUnitInsert p hp)
     (scalarUnitProj_comp_insert p hp) (scalarUnitInsert_comp_proj p hp)
 
 /-- The completed scalar-unit equivalence extends the algebraic scalar-unit equivalence. -/
@@ -335,7 +336,8 @@ theorem lid_tprod (x : ∀ i, ScalarUnitFactors 𝕜 E i) :
         ProjectiveTensorProduct (scalarUnitSeminorms p)) :
           CompletedProjectiveTensorProduct (scalarUnitSeminorms p)) := by
   simp only [lid]
-  rw [ContinuousLinearEquiv.symm_equivOfInverse', ContinuousLinearEquiv.equivOfInverse'_apply]
+  rw [ContinuousLinearEquiv.symm_ofContinuousLinearMap,
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap]
   rw [scalarUnitInsert_apply, ProjectiveTensorProduct.lid_symm_apply]
 
 variable {F : Type u} [AddCommGroup F] [Module 𝕜 F] [UniformSpace F]

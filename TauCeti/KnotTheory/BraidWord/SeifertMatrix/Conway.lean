@@ -129,8 +129,8 @@ private def lastLoop (ε : ℤˣ) : (v ++ [(i, ε)]).seifertLoops :=
 
 /-- A loop other than the loop through the appended letter ends before it. -/
 private theorem snd_lt_length_of_ne_lastLoop {ε : ℤˣ} {c : (v ++ [(i, ε)]).seifertLoops}
-    (hc : c ≠ lastLoop ht htl htg ε) : c.1.2 < v.length :=
-  (((mem_seifertLoops _).1 c.2).append_singleton_cases ht htl htg).resolve_right
+    (hc : c ≠ lastLoop ht htl htg ε) : c.val.2 < v.length :=
+  (((mem_seifertLoops _).1 c.property).append_singleton_cases ht htl htg).resolve_right
     fun h ↦ hc (Subtype.ext h)
 
 /-- **Changing the sign of the appended letter.** Going from `σᵢ⁻¹` to `σᵢ` at the end of the word
@@ -146,7 +146,7 @@ private theorem seifertMatrix_append_singleton_one_submatrix :
   obtain ⟨⟨b₁, b₂⟩, hb⟩ := b
   have hα : ((⟨(a₁, a₂), ha⟩ : (v ++ [(i, -1)]).seifertLoops) = lastLoop ht htl htg (-1)) ↔
       a₂ = v.length := by
-    refine ⟨fun h ↦ congrArg (fun c : (v ++ [(i, -1)]).seifertLoops ↦ c.1.2) h, fun h ↦ ?_⟩
+    refine ⟨fun h ↦ congrArg (fun c : (v ++ [(i, -1)]).seifertLoops ↦ c.val.2) h, fun h ↦ ?_⟩
     rcases ((mem_seifertLoops _).1 ha).append_singleton_cases ht htl htg with h' | h'
     · exact absurd h (Nat.ne_of_lt h')
     · exact Subtype.ext h'
@@ -175,14 +175,15 @@ private theorem seifertMatrix_append_singleton_one_submatrix :
 /-- Deleting the row and column of the loop through the appended letter leaves the loops of `v`. -/
 private def lastLoopComplEquiv (ε : ℤˣ) :
     {c : (v ++ [(i, ε)]).seifertLoops // c ≠ lastLoop ht htl htg ε} ≃ v.seifertLoops where
-  toFun c := ⟨c.1.1, (mem_seifertLoops _).2 ((isSeifertLoop_append_singleton_iff v _
-    (snd_lt_length_of_ne_lastLoop ht htl htg c.2)).1 ((mem_seifertLoops _).1 c.1.2))⟩
+  toFun c := ⟨c.val.val, (mem_seifertLoops _).2 ((isSeifertLoop_append_singleton_iff v _
+    (snd_lt_length_of_ne_lastLoop ht htl htg c.property)).1
+        ((mem_seifertLoops _).1 c.val.property))⟩
   invFun d := by
-    have hd := (mem_seifertLoops _).1 d.2
-    have hd2 : d.1.2 < v.length := ((isSeifertLoop_iff _).1 hd).2.1
-    refine ⟨⟨d.1, (mem_seifertLoops _).2 ((isSeifertLoop_append_singleton_iff v _ hd2).2 hd)⟩,
+    have hd := (mem_seifertLoops _).1 d.property
+    have hd2 : d.val.2 < v.length := ((isSeifertLoop_iff _).1 hd).2.1
+    refine ⟨⟨d.val, (mem_seifertLoops _).2 ((isSeifertLoop_append_singleton_iff v _ hd2).2 hd)⟩,
       fun h ↦ ?_⟩
-    have : d.1.2 = v.length := congrArg (fun c : (v ++ [(i, ε)]).seifertLoops ↦ c.1.2) h
+    have : d.val.2 = v.length := congrArg (fun c : (v ++ [(i, ε)]).seifertLoops ↦ c.val.2) h
     omega
   left_inv _ := rfl
   right_inv _ := rfl
@@ -195,12 +196,12 @@ private theorem seifertMatrix_append_singleton_submatrix_ne (ε : ℤˣ) :
       v.seifertMatrix.submatrix (lastLoopComplEquiv ht htl htg ε)
         (lastLoopComplEquiv ht htl htg ε) := by
   ext a b
-  have ha2 := snd_lt_length_of_ne_lastLoop ht htl htg a.2
-  have hb2 := snd_lt_length_of_ne_lastLoop ht htl htg b.2
-  have ha1 : a.1.1.1 < v.length :=
-    ((isSeifertLoop_iff _).1 ((mem_seifertLoops _).1 a.1.2)).1.trans ha2
-  have hb1 : b.1.1.1 < v.length :=
-    ((isSeifertLoop_iff _).1 ((mem_seifertLoops _).1 b.1.2)).1.trans hb2
+  have ha2 := snd_lt_length_of_ne_lastLoop ht htl htg a.property
+  have hb2 := snd_lt_length_of_ne_lastLoop ht htl htg b.property
+  have ha1 : a.val.val.1 < v.length :=
+    ((isSeifertLoop_iff _).1 ((mem_seifertLoops _).1 a.val.property)).1.trans ha2
+  have hb1 : b.val.val.1 < v.length :=
+    ((isSeifertLoop_iff _).1 ((mem_seifertLoops _).1 b.val.property)).1.trans hb2
   simp only [submatrix_apply, seifertMatrix_apply, lastLoopComplEquiv, Equiv.coe_fn_mk,
     Subtype.ext_iff, levelAt_append_singleton_of_lt v _ ha1, levelAt_append_singleton_of_lt v _ hb1,
     signAt_append_singleton_of_lt v _ ha1, signAt_append_singleton_of_lt v _ ha2]

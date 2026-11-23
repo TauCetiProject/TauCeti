@@ -11,11 +11,11 @@ public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.BaseChange
+public import TauCeti.NumberTheory.LocalField.Unramified.Factorization
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.LocalField.Frobenius
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Unramified
 import TauCeti.NumberTheory.LocalField.UnitFiltration.ValuationSequence
-import TauCeti.NumberTheory.LocalField.Unramified.Factorization
 
 /-!
 # The local invariant of an unramified layer
@@ -392,6 +392,8 @@ section UnitCocycles
 
 variable [IsUnramified K L]
 
+attribute [local instance] IsUnramified.isGalois
+
 /-- **A unit-valued cocycle of an unramified extension is a coboundary.** If a `2`-cocycle of
 `Gal(L/K)` with values in `Lˣ` takes all its values in the units `U(L,0)` of valuation one, its
 class in `H²(Gal(L/K), Lˣ)` vanishes. -/
@@ -400,9 +402,6 @@ theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
     (hc : ∀ g h, (Rep.toAdditive (c (g, h))).toMul ∈ unitFiltration L 0) :
     H2π _ c = 0 := by
   have := TauCeti.finite_of_valuativeExtension K L
-  have : IsGalois K L := .of_algEquiv <|
-    (IntermediateField.equivOfEq
-      (IsUnramified.unramifiedExtension_inertiaDegree_eq_top K L)).trans IntermediateField.topEquiv
   set A := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)
   -- The cocycle `c`, read in `U(L,0)`.
   let c' : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) → A := fun p ↦ Additive.ofMul ⟨_, hc p.1 p.2⟩
@@ -416,7 +415,7 @@ theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
     apply unitFiltrationZeroIncl_injective K L
     simp only [map_add, hc']
     rw [Rep.hom_comm_apply, hc']
-    exact (mem_cocycles₂_iff (c : _ → _)).1 c.2 g h j
+    exact (mem_cocycles₂_iff (c : _ → _)).1 c.property g h j
   have hmap : mapCocycles₂ (MonoidHom.id _) (unitFiltrationZeroIncl K L) ⟨c', hmem⟩ = c :=
     cocycles₂_ext fun g h ↦ hc' (g, h)
   -- `H²(Gal(L/K), U(L,0))` vanishes, since `U(L,0)` has no Tate cohomology.
@@ -425,14 +424,14 @@ theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
       (K := K) (L := L) 2).of_iso ((_root_.TateCohomology.isoGroupCohomology 2).app _).symm
   rw [← hmap, ← H2π_comp_map_apply, Subsingleton.elim (H2π A ⟨c', hmem⟩) 0, map_zero]
 
-/-- **A continuous cocycle read off an unramified normal extension with unit values is a
+/-- **A continuous cocycle read off an unramified extension with unit values is a
 coboundary.** If a continuous `2`-cocycle `z` on `G_K` with values in `(Kˢ)ˣ` takes at `(g, h)` the
 value `σ (u (g|_L, h|_L))`, for a function `u` on `Gal(L/K) × Gal(L/K)` with values in the units
 `U(L,0)` of valuation one, then the class of `z` in `H²(G_K, (Kˢ)ˣ)` vanishes. -/
-theorem mk_eq_zero_of_forall_mem_unitFiltration_zero [Normal K L] (σ : L →ₐ[K] SeparableClosure K)
+theorem mk_eq_zero_of_forall_mem_unitFiltration_zero (σ : L →ₐ[K] SeparableClosure K)
     (z : ContCohomology.Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) (u : Gal(L/K) × Gal(L/K) → Lˣ)
     (hu : ∀ p, u p ∈ unitFiltration L 0)
-    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.1 (g, h) : UnitsCoeff K) =
+    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.val (g, h) : UnitsCoeff K) =
       embeddedUnitsEquivInvariants K L σ
         (.ofMul (u (σ.restrictNormalHom g, σ.restrictNormalHom h)))) :
     (z : ContCohomology.H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) = 0 := by
@@ -455,9 +454,6 @@ theorem brBaseChange_relBrInfl_eq_zero (F : Type) [Field F] [Algebra F K] [Algeb
       unitFiltration L 0) :
     brBaseChange F K (relBrInfl F E σ (H2π _ c)) = 0 := by
   have := TauCeti.finite_of_valuativeExtension K L
-  have : IsGalois K L := .of_algEquiv <|
-    (IntermediateField.equivOfEq
-      (IsUnramified.unramifiedExtension_inertiaDegree_eq_top K L)).trans IntermediateField.topEquiv
   rw [brBaseChange_relBrInfl F K E L σ IsSepClosed.lift, H2π_comp_map_apply,
     H2π_eq_zero_of_forall_mem_unitFiltration_zero K L _ fun g h ↦ ?_, map_zero]
   rw [toMul_mapCocycles₂_unitsBaseChangeHom]

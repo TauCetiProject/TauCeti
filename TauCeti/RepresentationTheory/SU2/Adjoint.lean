@@ -110,7 +110,7 @@ private theorem isHermitian_mul_pauli_mul_star (x : Fin 3 → ℝ) :
 /-- Conjugation by a unitary matrix preserves the trace. -/
 private theorem trace_mul_mul_star (A : Matrix (Fin 2) (Fin 2) ℂ) :
     ((U : Matrix (Fin 2) (Fin 2) ℂ) * A * star (U : Matrix (Fin 2) (Fin 2) ℂ)).trace = A.trace := by
-  rw [trace_mul_cycle, mem_unitaryGroup_iff'.mp U.2, one_mul]
+  rw [trace_mul_cycle, mem_unitaryGroup_iff'.mp U.property, one_mul]
 
 /-- Conjugating `pauli x` by a unitary matrix gives a traceless matrix. -/
 private theorem trace_mul_pauli_mul_star (x : Fin 3 → ℝ) :
@@ -241,7 +241,7 @@ theorem pauliRotation_mulVec_single_two :
       ![2 * ((U : Matrix (Fin 2) (Fin 2) ℂ) 1 0 * conj ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 0)).re,
         2 * ((U : Matrix (Fin 2) (Fin 2) ℂ) 1 0 * conj ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 0)).im,
         2 * normSq ((U : Matrix (Fin 2) (Fin 2) ℂ) 0 0) - 1] := by
-  obtain ⟨h10, h00⟩ := mul_pauli_single_two_mul_star (mem_unitaryGroup_iff.mp U.2)
+  obtain ⟨h10, h00⟩ := mul_pauli_single_two_mul_star (mem_unitaryGroup_iff.mp U.property)
   rw [pauliRotation_mulVec, pauliCoord_apply, h10, h00, mul_conj]
   ext i
   fin_cases i <;> simp
@@ -267,7 +267,7 @@ private theorem eq_smul_one_of_commute_pauli {A : Matrix (Fin 2) (Fin 2) ℂ}
 `U(2) → SO(3)` is the center of `U(2)`. -/
 theorem pauliRotation_eq_one_iff :
     pauliRotation U = 1 ↔ ∃ c : ℂ, (U : Matrix (Fin 2) (Fin 2) ℂ) = c • 1 := by
-  have hU := mem_unitaryGroup_iff'.mp U.2
+  have hU := mem_unitaryGroup_iff'.mp U.property
   constructor
   · intro h
     -- `U` commutes with every `pauli x`.
@@ -281,7 +281,7 @@ theorem pauliRotation_eq_one_iff :
   · rintro ⟨c, hc⟩
     refine (pauliRotation_eq_iff U).mpr fun x => ?_
     have hcc : conj c * c = 1 := by
-      have := Matrix.ext_iff.mpr (mem_unitaryGroup_iff.mp U.2) 0 0
+      have := Matrix.ext_iff.mpr (mem_unitaryGroup_iff.mp U.property) 0 0
       rw [hc] at this
       simpa [mul_comm] using this
     simp [hc, smul_smul, hcc]
@@ -310,7 +310,7 @@ theorem toSO3_eq_one_iff (g : SU2) :
   simp only [Submonoid.coe_inclusion]
   constructor
   · rintro ⟨c, hc⟩
-    have hdet := (mem_specialUnitaryGroup_iff.mp g.2).2
+    have hdet := (mem_specialUnitaryGroup_iff.mp g.property).2
     rw [hc, det_smul, Fintype.card_fin, det_one, mul_one] at hdet
     rcases sq_eq_one_iff.mp hdet with rfl | rfl
     · exact Or.inl (by rw [hc, one_smul])
@@ -448,7 +448,7 @@ theorem toSO3_surjective : Function.Surjective toSO3 := by
   have hT : (T : (Fin 3 → ℝ) ≃ₗ[ℝ] (Fin 3 → ℝ)) ∈
       QuadraticMap.specialOrthogonalGroup (realCliffordForm 3 0) := by
     rw [realCliffordForm_zero_eq_weightedSumSquares_one]
-    exact T.2
+    exact T.property
   obtain ⟨s, hs⟩ := CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_posDef _
     (posDef_realCliffordForm_zero 3) ⟨_, hT⟩
   have hsx (x : Fin 3 → ℝ) :
@@ -475,7 +475,7 @@ theorem continuous_toSO3 : Continuous toSO3 := by
     exact congrFun ((mulVec_single_one _ j).symm.trans (pauliRotation_mulVec _ _)) i
   have hc : Continuous fun g : SU2 => (g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single j 1) *
       star (g : Matrix (Fin 2) (Fin 2) ℂ) :=
-    (continuous_subtype_val.mul continuous_const).mul continuous_subtype_val.star
+    (continuous_subtypeVal.mul continuous_const).mul continuous_subtypeVal.star
   simp only [Function.comp_def, h]
   exact (continuous_apply i).comp ((LinearMap.continuous_of_finiteDimensional pauliCoord).comp hc)
 

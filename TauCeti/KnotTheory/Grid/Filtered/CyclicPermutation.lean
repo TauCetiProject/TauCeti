@@ -227,11 +227,11 @@ equivalence from the filtered grid complex of `G` to that of the row-permuted di
 homotopies: it intertwines the filtered differentials and carries each level of the Alexander
 filtration onto the corresponding level. -/
 noncomputable def relabelRowsFilteredHomotopyEquiv :
-    LinearMap.FilteredHomotopyEquiv (G.1.filteredDifferential R)
-      ((G.relabelRows (finRotate n)).1.filteredDifferential R) (G.alexanderFiltration R)
+    LinearMap.FilteredHomotopyEquiv (G.val.filteredDifferential R)
+      ((G.relabelRows (finRotate n)).val.filteredDifferential R) (G.alexanderFiltration R)
       ((G.relabelRows (finRotate n)).alexanderFiltration R) :=
   .ofLinearEquiv (GridChain.relabelRowsEquiv (finRotate n))
-    (by rw [val_relabelRows]; exact (G.1.filteredDifferential_relabelRows_finRotate R).symm)
+    (by rw [val_relabelRows]; exact (G.val.filteredDifferential_relabelRows_finRotate R).symm)
     (G.map_relabelRowsEquiv_finRotate_alexanderFiltration R)
 
 /-- The chain map of `relabelRowsFilteredHomotopyEquiv` is the relabeling of the grid states. -/

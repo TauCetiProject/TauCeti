@@ -263,7 +263,7 @@ instance isClosedUnderBinaryProducts_isFiniteLocallyFree :
     obtain ⟨_, _⟩ := p.prop_diag_obj ⟨.right⟩
     exact (isFiniteLocallyFree R).prop_of_iso
       (IsLimit.conePointUniqueUpToIso (BinaryBiproduct.isLimit _ _)
-        ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).2 p.isLimit))
+        ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).invFun p.isLimit))
       ⟨isLocallyFree_biprod, isFinitePresentation_biprod⟩
 
 variable [HasBinaryProducts C]

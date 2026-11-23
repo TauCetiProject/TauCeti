@@ -239,7 +239,7 @@ theorem weightPerm_eq_neg (α : Weight K H L) :
     weightPerm ω (LieSubalgebra.map_eq_self_of_forall_mem_apply_eq_neg ω hω) α = -α := by
   have hsymm : ∀ y : H, ω.symm (y : L) = -(y : L) := by
     intro y
-    have h₁ : ω (-(y : L)) = (y : L) := by rw [hω _ (neg_mem y.2), neg_neg]
+    have h₁ : ω (-(y : L)) = (y : L) := by rw [hω _ (neg_mem y.property), neg_neg]
     calc ω.symm (y : L) = ω.symm (ω (-(y : L))) := by rw [h₁]
       _ = -(y : L) := ω.symm_apply_apply _
   ext y

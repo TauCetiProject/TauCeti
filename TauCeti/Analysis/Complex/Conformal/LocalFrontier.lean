@@ -87,9 +87,9 @@ theorem abs_arg_div_eq_of_mem_frontier {V : Set ℂ} {v b z : ℂ} {α : ℝ}
   have hfr : (⟨z, hz, hzv⟩ : O) ∈ frontier {y : O | |((y - v : ℂ) / b).arg| < α} := by
     have hpreimage : ((↑) : O → ℂ) ⁻¹' U =
         {y : O | |((y - v : ℂ) / b).arg| < α} :=
-      Set.ext fun y => hU y y.2.1 y.2.2
+      Set.ext fun y => hU y y.property.1 y.property.2
     rw [← hpreimage,
-      ← hO.isOpenMap_subtype_val.preimage_frontier_eq_frontier_preimage continuous_subtype_val]
+      ← hO.isOpenMap_subtypeVal.preimage_frontier_eq_frontier_preimage continuous_subtypeVal]
     exact hzU
   exact frontier_lt_subset_eq hφ.domRestrict continuous_const hfr
 
