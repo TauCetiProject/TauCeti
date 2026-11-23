@@ -76,6 +76,8 @@ the finite-rank groups `Stₙ(R)` along the index inclusions `Fin m ↪ Fin n`.
   (`|ι| ≥ 3` or `Infinite ι`).
 * `TauCeti.IndexedSteinbergGroup.range_toGL`: the image of `St_ι(R)` in `GL ι R` is
   `TauCeti.elementarySubgroup ι R`.
+* `TauCeti.IndexedSteinbergGroup.toGL_mapIndex`: along an embedding of finite index types, `toGL`
+  intertwines `mapIndex` with extension by the identity, `Function.Embedding.extendGL`.
 * `TauCeti.SteinbergGroup.directLimitEquiv`: `St(R)` is isomorphic to the direct limit of
   `Stₙ(R)` over `n : ℕ`.
 * `TauCeti.SteinbergGroup.range_toStableGL`: the image of `toStableGL R` in `GL_∞(R)` is
@@ -667,15 +669,19 @@ theorem coe_toGL_transposeOp (z : IndexedSteinbergGroup ι R) :
 
 end FiniteIndex
 
+/-- Along an embedding `e : ι ↪ κ` of finite index types, `toGL` sends the image of `z` under
+`mapIndex e` to the extension of `toGL z` by the identity. -/
+theorem toGL_mapIndex [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] (e : ι ↪ κ)
+    (z : IndexedSteinbergGroup ι R) : toGL (mapIndex e z) = e.extendGL R (toGL z) := by
+  have hhom : (toGL (ι := κ) (R := R)).comp (mapIndex e) = (e.extendGL R).comp toGL :=
+    hom_ext fun i j hij a ↦ by simp
+  exact DFunLike.congr_fun hhom z
+
 /-- Along the standard inclusion `Fin m ↪ Fin n` (`m ≤ n`), `toGL` commutes with matrix
 stabilization `TauCeti.stabilizeGL`. -/
 theorem toGL_mapIndex_castLE {m n : ℕ} (h : m ≤ n) (z : IndexedSteinbergGroup (Fin m) R) :
     toGL (mapIndex (Fin.castLEEmb h) z) = stabilizeGL R h (toGL z) := by
-  have hhom : (toGL (ι := Fin n) (R := R)).comp (mapIndex (Fin.castLEEmb h)) =
-      (stabilizeGL R h).comp toGL := by
-    ext i j hij a
-    simp [stabilizeGL_transvectionUnit]
-  exact DFunLike.congr_fun hhom z
+  rw [toGL_mapIndex, Function.Embedding.extendGL_castLEEmb]
 
 end IndexedSteinbergGroup
 

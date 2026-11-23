@@ -54,6 +54,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 
 * `TauCeti.stabilizeGL_apply`, `TauCeti.coe_stabilizeGL_apply`: block and entry formulas for a
   stabilized matrix.
+* `Function.Embedding.extendGL_castLEEmb`: stabilization is extension by the identity along the
+  inclusion `Fin m ↪ Fin n` of the first `m` indices.
 * `TauCeti.StableGeneralLinearGroup.mem_elementarySubgroup_iff`: an element of `GL_∞(A)` is
   stably elementary exactly when it is represented by an elementary matrix of some size.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_normal`: `E_∞(A)` is normal.
@@ -151,6 +153,17 @@ theorem stabilizeGL_eq_reindexGL_fromBlocksGL (m k : ℕ) (u : GL (Fin m) A) :
   obtain ⟨j, rfl⟩ := finSumFinEquiv.surjective j
   rcases i with i | i <;> rcases j with j | j <;>
     simp [coe_stabilizeGL_apply, Matrix.one_apply, Fin.ext_iff] <;> omega
+
+/-- Stabilization is extension by the identity along the inclusion `Fin m ↪ Fin n` of the first
+`m` indices. -/
+theorem _root_.Function.Embedding.extendGL_castLEEmb {m n : ℕ} (h : m ≤ n) :
+    (Fin.castLEEmb h).extendGL A = stabilizeGL A h := by
+  ext u : 1
+  refine Function.Embedding.extendGL_apply_eq_iff.2 ⟨fun i j ↦ ?_, fun i j hij ↦ ?_⟩
+  · simp [coe_stabilizeGL_apply]
+  · have : ¬((i : ℕ) < m ∧ (j : ℕ) < m) := fun h' ↦
+      hij.elim (· ⟨⟨i, h'.1⟩, Fin.ext rfl⟩) (· ⟨⟨j, h'.2⟩, Fin.ext rfl⟩)
+    simp [coe_stabilizeGL_apply, this]
 
 /-- Stabilization sends an elementary matrix to the elementary matrix with the same parameter at
 the same pair of indices. -/
