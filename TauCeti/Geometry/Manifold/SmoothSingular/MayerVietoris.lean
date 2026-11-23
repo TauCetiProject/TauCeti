@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Range
+public import TauCeti.AlgebraicTopology.SimplicialSet.Subcomplex
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Subcomplex
 public import TauCeti.Geometry.Manifold.SmoothSingular.Subdivision
@@ -117,7 +117,9 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE :
         R) := by
   have : Mono (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩) :=
     (TopCat.mono_iff_injective _).2 (Set.inclusion_injective h)
-  refine SSet.quasiIso_chainComplexMap_iff_homOfLE_of_range_eq R _ _ _ ?_ rfl
+  refine SSet.Subcomplex.morphismProperty_iff_homOfLE_of_range_eq
+    ((HomologicalComplex.quasiIso C _).inverseImage ((SSet.chainComplexFunctor C).obj R)) _ _ _ ?_
+    rfl
   rw [← range_smoothSingularSubcomplexMap_inclusion_ι h, smoothSingularSubcomplexMap_ι]
 
 end Inclusion
