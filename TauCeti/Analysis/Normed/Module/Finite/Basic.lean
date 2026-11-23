@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
-public import TauCeti.RingTheory.Huber.Basic
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
 
