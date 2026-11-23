@@ -98,8 +98,8 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_lo
   have : Subsingleton (π_ 1 (pathComponent (Path.refl x)) c₀) :=
     ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
       (HomotopyGroup.pathLoopSpaceMulEquiv 0)).toEquiv.subsingleton_congr.2 ‹_›
-  (isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo (y := c₀) (n := n)
-    fun q hq _ ↦ by
+  (isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo_ringEquiv
+    (RingEquiv.refl (ZMod 2)) (y := c₀) (n := n) fun q hq _ ↦ by
       obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
       exact ModuleCat.isZero_iff_subsingleton.2 (hX q')).of_addEquiv
     ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
@@ -118,8 +118,8 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_mo
   have : Subsingleton (π_ 1 (pathComponent (1 : MooreLoopSpace X x)) c₀) :=
     ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
       (MooreLoopSpace.homotopyGroupMulEquiv x 0)).toEquiv.subsingleton_congr.2 ‹_›
-  (isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo (y := c₀) (n := n)
-    fun q hq _ ↦ by
+  (isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo_ringEquiv
+    (RingEquiv.refl (ZMod 2)) (y := c₀) (n := n) fun q hq _ ↦ by
       obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
       exact ModuleCat.isZero_iff_subsingleton.2 (hX q')).of_addEquiv
     ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans

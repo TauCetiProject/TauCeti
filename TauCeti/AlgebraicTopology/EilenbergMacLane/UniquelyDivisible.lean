@@ -20,8 +20,8 @@ import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
 # Eilenberg--Mac Lane spaces of uniquely divisible groups
 
 Let `m : ℤ`, let `A` be an abelian group on which multiplication by `m` is bijective, and let
-`n ≥ 1`. Then every Eilenberg--Mac Lane space `X` of type `K(A, n)` (with no hypothesis of CW
-type) satisfies:
+`n ≥ 1` (with `A`, the space, and the coefficient rings/modules in arbitrary universes). Then
+every Eilenberg--Mac Lane space `X` of type `K(A, n)` (with no hypothesis of CW type) satisfies:
 
 * multiplication by `m` is bijective on positive-degree integral singular homology `Hᵢ(X; ℤ)`
   (`TauCeti.IsEilenbergMacLaneSpace.bijective_zsmul_singularHomology_int_of_bijective_zsmul`);
@@ -84,17 +84,20 @@ noncomputable section
 
 open CategoryTheory Limits AlgebraicTopology
 
+universe u v
+
 namespace TauCeti
 
 namespace IsEilenbergMacLaneSpace
 
 /-- Mod-`m` acyclicity of `K(A, d)` spaces for arbitrary `m : ℕ`, obtained from prime moduli via
 `TopCat.isZero_singularHomology_zmod_iff_forall_prime`. -/
-private theorem subsingleton_singularHomology_zmod_of_bijective_zsmul {m : ℕ} {A : Type}
+private theorem isZero_singularHomology_zmod_of_bijective_zsmul {m : ℕ} {A : Type u}
     [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ (m : ℤ) • a) {d : ℕ} [NeZero d]
-    {X : Type} [TopologicalSpace X] {x : X}
+    {X : Type u} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpace (Multiplicative A) d X x) (n : ℕ) :
-    Subsingleton (((singularChains (ZMod m)).obj (TopCat.of X)).homology (n + 1)) := by
+    Limits.IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) (n + 1)).obj
+      (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj (TopCat.of X)) := by
   by_cases hm : m = 0
   · subst hm
     have : Subsingleton A := ⟨fun a b ↦ hA.1 (by simp)⟩
@@ -104,13 +107,13 @@ private theorem subsingleton_singularHomology_zmod_of_bijective_zsmul {m : ℕ} 
         exact (hX.nonempty_homotopyGroupMulEquiv.some.toEquiv.trans
           Multiplicative.toAdd).subsingleton
       · exact hX.subsingleton_homotopyGroup hr
-    exact ModuleCat.isZero_iff_subsingleton.1 <|
-      isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup (fun r _ ↦ hπ r) (ZMod 0)
-        (Nat.succ_ne_zero n) (Nat.lt_succ_self (n + 1))
+    exact ((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv
+      (ULift.ringEquiv : ULift.{u} (ZMod 0) ≃+* ZMod 0) (n + 1)).2 <|
+        isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup (fun r _ ↦ hπ r)
+          (ULift.{u} (ZMod 0)) (Nat.succ_ne_zero n) (Nat.lt_succ_self (n + 1))
   · have : NeZero m := ⟨hm⟩
-    refine ModuleCat.isZero_iff_subsingleton.1 <|
-      ((TopCat.of X).isZero_singularHomology_uliftZMod_iff m (n + 1)).1 <|
-        ((TopCat.of X).isZero_singularHomology_zmod_iff_forall_prime m (n + 1)).2 fun p hp hpm ↦ ?_
+    refine ((TopCat.of X).isZero_singularHomology_zmod_iff_forall_prime m (n + 1)).2
+      fun p hp hpm ↦ ?_
     have : Fact p.Prime := ⟨hp⟩
     obtain ⟨q, rfl⟩ := hpm
     have hAp : Function.Bijective fun a : A ↦ (p : ℤ) • a := by
@@ -121,48 +124,43 @@ private theorem subsingleton_singularHomology_zmod_of_bijective_zsmul {m : ℕ} 
           (fun a : A ↦ (q : ℤ) • a) ∘ (fun a : A ↦ (p : ℤ) • a) := by
         funext a; rw [Function.comp_apply, Nat.cast_mul, mul_comm, mul_zsmul]
       exact ⟨Function.Injective.of_comp (h2 ▸ hA.1), Function.Surjective.of_comp (h1 ▸ hA.2)⟩
-    exact ((TopCat.of X).isZero_singularHomology_uliftZMod_iff p (n + 1)).2 <|
-      ModuleCat.isZero_iff_subsingleton.2 <|
-        subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne (ZMod p)
-          (IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul (ZMod p)
-            (m := p) (by simp) hAp) hX n
+    have : IsSemisimpleRing (ULift.{u} (ZMod p)) :=
+      (ULift.ringEquiv : ULift.{u} (ZMod p) ≃+* ZMod p).symm.isSemisimpleRing
+    exact ((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv
+      (ULift.ringEquiv : ULift.{u} (ZMod p) ≃+* ZMod p) (n + 1)).2 <|
+        ModuleCat.isZero_iff_subsingleton.2 <|
+          subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne (ULift.{u} (ZMod p))
+            (IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul
+              (ULift.{u} (ZMod p)) (m := p) (ULift.down_injective (by simp)) hAp) hX n
 
 /-- **Unique `m`-divisibility of the integral homology of `K(A, d)`**: if multiplication by `m : ℤ`
 is a bijection of `A`, then for every `d ≥ 1` and `n ≥ 0`, multiplication by `m` is a bijection on
-the integral singular homology `Hₙ₊₁(K(A, d); ℤ)`. -/
-theorem bijective_zsmul_singularHomology_int_of_bijective_zsmul {m : ℤ} {A : Type}
-    [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ m • a) {d : ℕ} [NeZero d] {X : Type}
+the lifted integral singular homology `Hₙ₊₁(K(A, d); ULift.{u} ℤ)`. -/
+theorem bijective_zsmul_singularHomology_int_of_bijective_zsmul {m : ℤ} {A : Type u}
+    [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ m • a) {d : ℕ} [NeZero d] {X : Type u}
     [TopologicalSpace X] {x : X} (hX : IsEilenbergMacLaneSpace (Multiplicative A) d X x)
     (n : ℕ) :
-    Function.Bijective fun y : ((singularChains ℤ).obj (TopCat.of X)).homology (n + 1) ↦
-      m • y := by
+    Function.Bijective fun y : ((singularHomologyFunctor (ModuleCat.{u} ℤ) (n + 1)).obj
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of X) ↦ m • y := by
   rw [TauCeti.bijective_zsmul_iff_natAbs] at hA ⊢
-  have hZ (j : ℕ) := ((TopCat.of X).isZero_singularHomology_uliftZMod_iff m.natAbs (j + 1)).2 <|
-    ModuleCat.isZero_iff_subsingleton.2
-      (subsingleton_singularHomology_zmod_of_bijective_zsmul hA hX j)
-  have hbij := (TopCat.of X).bijective_zsmul_singularHomology_of_isZero_zmod m.natAbs (n + 1)
-    (hZ n) (hZ (n + 1))
-  let e : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj
-      (ModuleCat.of ℤ (ULift.{0} ℤ))).obj (TopCat.of X) ≃+
-      ((singularChains ℤ).obj (TopCat.of X)).homology (n + 1) :=
-    (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).mapIso
-      (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso).app
-        (TopCat.of X)).toLinearEquiv.toAddEquiv
-  exact (e.bijective_zsmul_iff (m.natAbs : ℤ)).1 hbij
+  exact (TopCat.of X).bijective_zsmul_singularHomology_of_isZero_zmod m.natAbs (n + 1)
+    (isZero_singularHomology_zmod_of_bijective_zsmul hA hX n)
+    (isZero_singularHomology_zmod_of_bijective_zsmul hA hX (n + 1))
 
 /-- **`K(A, d)` spaces of uniquely `m`-divisible groups are acyclic for any module killed by `m`.**
 If multiplication by `m : ℤ` is a bijection of `A`, then for every `d ≥ 1`, every ring `R`, and
 every `R`-module `M` annihilated by `m`, every `K(A, d)` space has vanishing positive-degree
 singular homology `Hₙ₊₁(X; M) = 0`. -/
-theorem isZero_singularHomology_of_bijective_zsmul {R : Type} [Ring R] (M : ModuleCat.{0} R)
-    {m : ℤ} (hmM : ∀ a : M, m • a = 0) {A : Type} [AddCommGroup A]
-    (hA : Function.Bijective fun a : A ↦ m • a) {d : ℕ} [NeZero d] {X : Type} [TopologicalSpace X]
-    {x : X} (hX : IsEilenbergMacLaneSpace (Multiplicative A) d X x) (n : ℕ) :
-    Limits.IsZero (((singularHomologyFunctor (ModuleCat.{0} R) (n + 1)).obj M).obj
+theorem isZero_singularHomology_of_bijective_zsmul {R : Type v} [Ring R] (M : ModuleCat.{u} R)
+    {m : ℤ} (hmM : ∀ a : M, m • a = 0) {A : Type u} [AddCommGroup A]
+    (hA : Function.Bijective fun a : A ↦ m • a) {d : ℕ} [NeZero d] {X : Type u}
+    [TopologicalSpace X] {x : X} (hX : IsEilenbergMacLaneSpace (Multiplicative A) d X x)
+    (n : ℕ) :
+    Limits.IsZero (((singularHomologyFunctor (ModuleCat.{u} R) (n + 1)).obj M).obj
       (TopCat.of X)) := by
   have := hX.pathConnectedSpace
-  let F := ModuleCat.restrictScalars.{0} (algebraMap ℤ R)
-  have hℤ : Limits.IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj
+  let F := ModuleCat.restrictScalars.{u} (algebraMap ℤ R)
+  have hℤ : Limits.IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) (n + 1)).obj
       (F.obj M)).obj (TopCat.of X)) :=
     TauCeti.isZero_singularHomology_of_bijective_zsmul_int
       (bijective_zsmul_singularHomology_int_of_bijective_zsmul hA hX) (F.obj M) hmM n
@@ -172,10 +170,11 @@ theorem isZero_singularHomology_of_bijective_zsmul {R : Type} [Ring R] (M : Modu
 bijection of `A`, then for every `d ≥ 1`, every ring `R`, and every `R`-module `M` annihilated by
 `m`, the reduced singular homology of every `K(A, d)` space `X` with coefficients in `M` vanishes
 in every degree, including degree zero. -/
-theorem isZero_reducedSingularHomology_of_bijective_zsmul {R : Type} [Ring R]
-    (M : ModuleCat.{0} R) {m : ℤ} (hmM : ∀ a : M, m • a = 0) {A : Type} [AddCommGroup A]
-    (hA : Function.Bijective fun a : A ↦ m • a) {d : ℕ} [NeZero d] {X : Type} [TopologicalSpace X]
-    {x : X} (hX : IsEilenbergMacLaneSpace (Multiplicative A) d X x) (n : ℕ) :
+theorem isZero_reducedSingularHomology_of_bijective_zsmul {R : Type v} [Ring R]
+    (M : ModuleCat.{u} R) {m : ℤ} (hmM : ∀ a : M, m • a = 0) {A : Type u} [AddCommGroup A]
+    (hA : Function.Bijective fun a : A ↦ m • a) {d : ℕ} [NeZero d] {X : Type u}
+    [TopologicalSpace X] {x : X} (hX : IsEilenbergMacLaneSpace (Multiplicative A) d X x)
+    (n : ℕ) :
     Limits.IsZero ((reducedSingularHomologyFunctor M n).obj (TopCat.of X)) := by
   cases n with
   | zero =>
@@ -189,9 +188,9 @@ theorem isZero_reducedSingularHomology_of_bijective_zsmul {R : Type} [Ring R]
 multiplication by the integer `m` is a bijection of the abelian group `A`, then every `K(A, n)`
 space, for every `n ≥ 1`, has no homology in positive degrees with coefficients in any ring `k` in
 which `m = 0` (including `ZMod m` for any `m : ℕ`). -/
-theorem subsingleton_singularHomology_of_bijective_zsmul (k : Type) [Ring k] {m : ℤ}
-    (hmk : (m : k) = 0) {A : Type} [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ m • a)
-    {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
+theorem subsingleton_singularHomology_of_bijective_zsmul (k : Type u) [Ring k] {m : ℤ}
+    (hmk : (m : k) = 0) {A : Type u} [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ m • a)
+    {n : ℕ} [NeZero n] {X : Type u} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (i : ℕ) :
     Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) :=
   ModuleCat.isZero_iff_subsingleton.1 <|
@@ -201,9 +200,9 @@ theorem subsingleton_singularHomology_of_bijective_zsmul (k : Type) [Ring k] {m 
 /-- Multiplicative form of `subsingleton_singularHomology_of_bijective_zsmul`: if raising to the
 `m`-th power is a bijection of a commutative group `G`, then every `K(G, n)` space has no positive
 degree homology with coefficients in any ring `k` in which `m = 0`. -/
-theorem subsingleton_singularHomology_of_bijective_zpow (k : Type) [Ring k] {m : ℤ}
-    (hmk : (m : k) = 0) {G : Type} [CommGroup G] (hG : Function.Bijective fun g : G ↦ g ^ m)
-    {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
+theorem subsingleton_singularHomology_of_bijective_zpow (k : Type u) [Ring k] {m : ℤ}
+    (hmk : (m : k) = 0) {G : Type u} [CommGroup G] (hG : Function.Bijective fun g : G ↦ g ^ m)
+    {n : ℕ} [NeZero n] {X : Type u} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpace G n X x) (i : ℕ) :
     Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) :=
   subsingleton_singularHomology_of_bijective_zsmul k hmk (A := Additive G)
@@ -211,27 +210,26 @@ theorem subsingleton_singularHomology_of_bijective_zpow (k : Type) [Ring k] {m :
     (hX.of_mulEquiv (AddEquiv.toMultiplicativeRight (.refl (Additive G)))) i
 
 /-- **Mod-two acyclicity of `K(A, n)` spaces.** For a uniquely two-divisible abelian group `A`
-and every `n ≥ 1`, every `K(A, n)` space has the mod-two homology of a point: `Hᵢ(X; 𝔽₂) = 0` for
-all `i > 0`. -/
-theorem subsingleton_singularHomology_of_isUniquelyTwoDivisible {A : Type} [AddCommGroup A]
-    (hA : IsUniquelyTwoDivisible A) {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
+and every `n ≥ 1`, every `K(A, n)` space has the mod-two homology of a point: `Hᵢ(X; k) = 0` for
+all `i > 0`, with coefficients in any ring `k` in which `2 = 0`, such as `𝔽₂`. -/
+theorem subsingleton_singularHomology_of_isUniquelyTwoDivisible (k : Type u) [Ring k]
+    (hk : (2 : k) = 0) {A : Type u} [AddCommGroup A] (hA : IsUniquelyTwoDivisible A) {n : ℕ}
+    [NeZero n] {X : Type u} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (i : ℕ) :
-    Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of X)).homology (i + 1)) :=
-  subsingleton_singularHomology_of_bijective_zsmul (ZMod 2) (m := 2) (by decide)
+    Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) :=
+  subsingleton_singularHomology_of_bijective_zsmul k (m := 2) (mod_cast hk)
     ((isUniquelyTwoDivisible_iff A).1 hA) hX i
 
 /-- **Reduced mod-two acyclicity of `K(A, n)` spaces.** For a uniquely two-divisible abelian group
-`A` and every `n ≥ 1`, the reduced mod-two singular homology of every `K(A, n)` space vanishes in
-every degree. -/
-theorem isZero_reducedSingularHomology_of_isUniquelyTwoDivisible {A : Type} [AddCommGroup A]
-    (hA : IsUniquelyTwoDivisible A) {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
+`A` and every `n ≥ 1`, the reduced singular homology of every `K(A, n)` space with coefficients in
+a ring `k` with `2 = 0` vanishes in every degree. -/
+theorem isZero_reducedSingularHomology_of_isUniquelyTwoDivisible (k : Type u) [Ring k]
+    (hk : (2 : k) = 0) {A : Type u} [AddCommGroup A] (hA : IsUniquelyTwoDivisible A) {n : ℕ}
+    [NeZero n] {X : Type u} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (i : ℕ) :
-    Limits.IsZero
-      ((reducedSingularHomologyFunctor (ModuleCat.of (ZMod 2) (ZMod 2)) i).obj (TopCat.of X)) :=
-  isZero_reducedSingularHomology_of_bijective_zsmul (ModuleCat.of (ZMod 2) (ZMod 2)) (m := 2)
-    (fun a ↦ by
-      have h2 : ((2 : ℤ) : ZMod 2) = 0 := by decide
-      rw [zsmul_eq_mul, h2, zero_mul])
+    Limits.IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) i).obj (TopCat.of X)) :=
+  isZero_reducedSingularHomology_of_bijective_zsmul (ModuleCat.of k k) (m := 2)
+    (fun a ↦ by rw [zsmul_eq_mul, Int.cast_ofNat, hk, zero_mul])
     ((isUniquelyTwoDivisible_iff A).1 hA) hX i
 
 end IsEilenbergMacLaneSpace

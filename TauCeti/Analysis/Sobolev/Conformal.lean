@@ -60,6 +60,10 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   into sections of the plane of bounded `W^{1,2}(ℝ²)` norm supported in a fixed compact set, to
   which the Fréchet–Kolmogorov criterion `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`
   applies; on `K` the weight `√ρ` is a bounded multiplier.
+* **Weighted values on compact sets.** The restricted weighted value of the jet of `ξ` has squared
+  norm `∫_K ρ ‖ξ‖²` (`TauCeti.ConformalSobolev.norm_restrictWeightedValue_sq`); since `ρ` is bounded
+  below on a compact set `K ⊆ U`, it controls the `L²` norm of `ξ` over `K`
+  (`TauCeti.ConformalSobolev.exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq`).
 * **First-order operators.** A coefficient field `M : U → L(V × V × V, W)`, essentially bounded on
   `U`, acts on `L²` jets by `f ↦ M f` (`TauCeti.jetOperator (volume.restrict U) M`). On the jet
   of a test section `ξ` this is the first-order operator `ξ ↦ M (√ρ ξ, ∂s ξ, ∂t ξ)`
@@ -443,6 +447,48 @@ theorem coeFn_restrictWeightedValue (K : Set (ℝ × ℝ))
     restrictWeightedValue V U K f =ᵐ[(volume.restrict U).restrict K] fun z ↦ (f z).1 :=
   (LpToLpRestrictCLM_coeFn ℝ _ _).trans
     (ae_restrict_of_ae ((ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f))
+
+/-- On a measurable set `K ⊆ U`, the squared norm of the restricted weighted value of the class of
+the jet of `ξ` is the weighted `L²` energy `∫_K ρ ‖ξ‖²`. -/
+theorem norm_restrictWeightedValue_sq (hρ : IsWeight U ρ) {K : Set (ℝ × ℝ)}
+    (hK : MeasurableSet K) (hKU : K ⊆ U) {f : Lp (V × V × V) 2 (volume.restrict U)}
+    (hf : f =ᵐ[volume.restrict U] jet ρ ξ) :
+    ‖restrictWeightedValue V U K f‖ ^ 2 = ∫ z in K, ρ z * ‖ξ z‖ ^ 2 := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  calc ∫ z, ‖restrictWeightedValue V U K f z‖ ^ 2 ∂((volume.restrict U).restrict K) =
+        ∫ z, ρ z * ‖ξ z‖ ^ 2 ∂((volume.restrict U).restrict K) := by
+        refine integral_congr_ae ?_
+        filter_upwards [coeFn_restrictWeightedValue K f, ae_restrict_of_ae hf,
+          ae_restrict_mem hK] with z h₁ h₂ hz
+        rw [h₁, h₂]
+        simp [jet_apply, norm_smul, mul_pow, Real.sq_sqrt (hρ.pos z (hKU hz)).le]
+    _ = ∫ z in K, ρ z * ‖ξ z‖ ^ 2 := by rw [Measure.restrict_restrict hK, inter_eq_left.2 hKU]
+
+/-- On a compact set `K ⊆ U`, where the weight is bounded below, the `L²` norm over `K` of a
+section `ξ` continuous on `K` is controlled by the restricted weighted value of the class of its
+jet. -/
+theorem exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq (hρ : IsWeight U ρ)
+    {K : Set (ℝ × ℝ)} (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∃ B, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContinuousOn ξ K → ∀ ⦃f : Lp (V × V × V) 2 (volume.restrict U)⦄,
+      f =ᵐ[volume.restrict U] jet ρ ξ →
+      ∫ z in K, ‖ξ z‖ ^ 2 ≤ B * ‖restrictWeightedValue V U K f‖ ^ 2 := by
+  -- The inverse of the weight is bounded on `K`.
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ (ρ z)⁻¹)
+    ((hρ.continuousOn.mono hKU).inv₀ fun z hz ↦ (hρ.pos z (hKU hz)).ne')
+  refine ⟨|B|, fun ξ hξ f hf ↦ ?_⟩
+  rw [norm_restrictWeightedValue_sq hρ hK.measurableSet hKU hf, ← integral_const_mul]
+  have hcξ : ContinuousOn (fun z ↦ ‖ξ z‖ ^ 2) K := hξ.norm.pow 2
+  refine setIntegral_mono_on (hcξ.integrableOn_compact hK)
+    ((continuousOn_const.mul ((hρ.continuousOn.mono hKU).mul hcξ)).integrableOn_compact
+      hK) hK.measurableSet fun z hz ↦ ?_
+  have hρz := hρ.pos z (hKU hz)
+  have hBz : (ρ z)⁻¹ ≤ |B| := by
+    have h := hB z hz
+    rw [Real.norm_eq_abs, abs_of_pos (inv_pos.2 hρz)] at h
+    exact h.trans (le_abs_self B)
+  calc ‖ξ z‖ ^ 2 = (ρ z)⁻¹ * (ρ z * ‖ξ z‖ ^ 2) := by
+        rw [← mul_assoc, inv_mul_cancel₀ hρz.ne', one_mul]
+    _ ≤ |B| * (ρ z * ‖ξ z‖ ^ 2) := mul_le_mul_of_nonneg_right hBz (by positivity)
 
 /-- A continuous function with compact support inside `U` is bounded by a multiple of `√ρ`. -/
 private theorem exists_abs_le_mul_sqrt (hρ : IsWeight U ρ) {g : ℝ × ℝ → ℝ} (hg : Continuous g)

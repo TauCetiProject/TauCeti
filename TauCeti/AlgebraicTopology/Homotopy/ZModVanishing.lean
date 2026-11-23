@@ -14,6 +14,7 @@ import TauCeti.Algebra.Group.Equiv.Pow
 import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
 import TauCeti.AlgebraicTopology.Homotopy.AcyclicCover
 import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.ZMod
+import TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence
 
 /-!
 # Mod-`m` and mod-two vanishing theorems for higher homotopy groups
@@ -38,22 +39,27 @@ homotopy group at a time, along the Whitehead tower
   isomorphism on the CW approximation of the path component of `z` and the mod-`m` coefficient
   exact sequence make multiplication by `m` bijective on `π_{j + 2}(Z, z)` from vanishing of
   `H_{j + 2}(Z; ℤ/m)` and `H_{j + 3}(Z; ℤ/m)`
-  (`TauCeti.bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_isZero_zmod`).
+  (`TauCeti.bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_isZero_ringEquiv`,
+  `TauCeti.bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_isZero_zmod`).
 * **Eilenberg--Mac Lane spaces.** Every fibre of the `(j + 2)`-connected cover `W⟨j + 2⟩ → W` of
   the `(j + 1)`-connected Hausdorff CW approximation `W` is a `K(π_{j + 2} W, j + 1)`. Once
   `π_{j + 2} W` is uniquely `m`-divisible, every such fibre is acyclic modulo `m`
   (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_bijective_zsmul`), so
   `TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber` makes `W⟨j + 2⟩ → W` an
-  isomorphism on `H_*(-; ℤ/m)`.
+  isomorphism on `H_*(-; k)`.
 
 ## Main results
 
-* `TauCeti.bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod`,
+* `TauCeti.bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv`,
+  `TauCeti.bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod`,
+  `TauCeti.bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_ringEquiv`,
   `TauCeti.bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod`: sharp
-  finite-range and reduced-homology mod-`m` vanishing theorems.
+  finite-range and reduced-homology mod-`m` vanishing theorems in any universe `u`.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo`,
-  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo`: the
-  mod-two vanishing theorems.
+  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo_ringEquiv`,
+  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo`,
+  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo_ringEquiv`:
+  the mod-two vanishing theorems in any universe `u`.
 
 ## References
 
@@ -69,60 +75,124 @@ noncomputable section
 open CategoryTheory Limits AlgebraicTopology
 open scoped Topology Topology.Homotopy
 
+universe u
+
 namespace TauCeti
 
-/-- **Sharp finite-range mod-`m` vanishing theorem.** Let `Y` be a space with a base point `y` such
-that `π₁(Y, y)` is trivial, and let `m, n : ℕ`. If `H_q(Y; ℤ/m) = 0` for all `2 ≤ q ≤ n + 3`, then
-multiplication by `m` is a bijection on `π_{n + 2}(Y, y)`. No Hausdorff, path-connectedness, CW,
-or finite-generation assumption is required on `Y`, and `m` need not be prime or nonzero. -/
-theorem bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod {Y : Type}
-    [TopologicalSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)] {m n : ℕ}
-    (hY : ∀ q, 2 ≤ q → q ≤ n + 3 →
-      IsZero (((singularChains (ZMod m)).obj (TopCat.of Y)).homology q)) :
+/-- **Sharp finite-range mod-`m` vanishing theorem with ring coefficients.** Let `Y` be a space in
+any universe `u` with a base point `y` such that `π₁(Y, y)` is trivial, and let `k ≃+* ZMod m` be
+a ring in the universe of `Y`. If `H_q(Y; k) = 0` for all `2 ≤ q ≤ n + 3`, then multiplication by
+`m` is a bijection on `π_{n + 2}(Y, y)`. No Hausdorff, path-connectedness, CW, or finite-generation
+assumption is required on `Y`, and `m` need not be prime or nonzero. -/
+theorem bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv {k : Type u} [CommRing k]
+    {m : ℕ} (e : k ≃+* ZMod m) {Y : Type u} [TopologicalSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)]
+    {n : ℕ} (hY : ∀ q, 2 ≤ q → q ≤ n + 3 →
+      IsZero (((singularChains k).obj (TopCat.of Y)).homology q)) :
     Function.Bijective fun a : Additive (π_ (n + 2) Y y) ↦ (m : ℤ) • a :=
-  prop_homotopyGroup_of_subsingleton_singularHomology (ZMod m)
+  have hmk : ((m : ℤ) : k) = 0 :=
+    e.injective (by rw [map_intCast, Int.cast_natCast, ZMod.natCast_self, map_zero])
+  prop_homotopyGroup_of_subsingleton_singularHomology k
     (fun G _ ↦ Function.Bijective fun a : G ↦ (m : ℤ) • a) 1
-    (fun e h ↦ (e.bijective_zsmul_iff (m : ℤ)).1 h)
+    (fun hE h ↦ (hE.bijective_zsmul_iff (m : ℤ)).1 h)
     (fun z j hZ hZk ↦
-      bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_isZero_zmod
-        (fun k hk1 hk2 ↦ hZ k (by omega) hk2)
+      bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_isZero_ringEquiv e
+        (fun l hl1 hl2 ↦ hZ l (by omega) hl2)
         (ModuleCat.isZero_iff_subsingleton.2 (hZk (j + 2) le_rfl (by omega)))
         (ModuleCat.isZero_iff_subsingleton.2 (hZk (j + 3) (by omega) le_rfl)))
     (fun hA _ _ _ _ _ hX ↦
-      IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_bijective_zsmul (ZMod m)
-        (by rw [Int.cast_natCast, ZMod.natCast_self]) hA hX)
+      IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_bijective_zsmul k hmk hA hX)
     y n fun q hq1 hq2 ↦ ModuleCat.isZero_iff_subsingleton.1 (hY q hq1 hq2)
 
+/-- **Sharp finite-range mod-`m` vanishing theorem.** Let `Y` be a space in any universe `u` with a
+base point `y` such that `π₁(Y, y)` is trivial, and let `m, n : ℕ`. If `H_q(Y; ℤ/m) = 0` (with
+lifted integer-module coefficients) for all `2 ≤ q ≤ n + 3`, then multiplication by `m` is a
+bijection on `π_{n + 2}(Y, y)`. No Hausdorff, path-connectedness, CW, or finite-generation
+assumption is required on `Y`, and `m` need not be prime or nonzero. -/
+theorem bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod {Y : Type u}
+    [TopologicalSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)] {m n : ℕ}
+    (hY : ∀ q, 2 ≤ q → q ≤ n + 3 →
+      IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) q).obj
+        (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj (TopCat.of Y))) :
+    Function.Bijective fun a : Additive (π_ (n + 2) Y y) ↦ (m : ℤ) • a :=
+  bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv
+    (ULift.ringEquiv : ULift.{u} (ZMod m) ≃+* ZMod m) fun q hq1 hq2 ↦ by
+      rw [← singularHomologyFunctor_obj_obj]
+      exact ((TopCat.of Y).isZero_singularHomology_zmod_iff_of_ringEquiv
+        (ULift.ringEquiv : ULift.{u} (ZMod m) ≃+* ZMod m) q).1 (hY q hq1 hq2)
+
+/-- **Reduced-homology mod-`m` vanishing theorem with ring coefficients.** If `π₁(Y, y)` is trivial
+and the reduced singular homology of `Y` with coefficients in a ring `k ≃+* ZMod m` in the universe
+of `Y` vanishes in every degree, then multiplication by `m` is a bijection on every higher homotopy
+group `π_{n + 2}(Y, y)`. -/
+theorem bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_ringEquiv {k : Type u}
+    [CommRing k] {m : ℕ} (e : k ≃+* ZMod m) {Y : Type u} [TopologicalSpace Y] {y : Y}
+    [Subsingleton (π_ 1 Y y)]
+    (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) q).obj (TopCat.of Y)))
+    (n : ℕ) : Function.Bijective fun a : Additive (π_ (n + 2) Y y) ↦ (m : ℤ) • a :=
+  bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv e fun q hq _ ↦ by
+    obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
+    exact (hY (q' + 1)).of_iso
+      ((reducedSingularHomologySuccIso (ModuleCat.of k k) q').app (TopCat.of Y)).symm
+
 /-- **Reduced-homology mod-`m` vanishing theorem.** If `π₁(Y, y)` is trivial and the reduced
-singular homology of `Y` with coefficients in `ZMod m` vanishes in every degree, then
-multiplication by `m` is a bijection on every higher homotopy group `π_{n + 2}(Y, y)`. -/
-theorem bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod {Y : Type}
+singular homology of `Y` with coefficients in the lifted integer module `ℤ/m` vanishes in every
+degree, then multiplication by `m` is a bijection on every higher homotopy group `π_{n + 2}(Y, y)`.
+-/
+theorem bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod {Y : Type u}
     [TopologicalSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)] {m : ℕ}
     (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor
-      (ModuleCat.of (ZMod m) (ZMod m)) q).obj (TopCat.of Y))) (n : ℕ) :
+      (ModuleCat.of ℤ (ULift.{u} (ZMod m))) q).obj (TopCat.of Y))) (n : ℕ) :
     Function.Bijective fun a : Additive (π_ (n + 2) Y y) ↦ (m : ℤ) • a :=
   bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod fun q hq _ ↦ by
     obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : q ≠ 0)
     exact (hY (q' + 1)).of_iso
-      ((reducedSingularHomologySuccIso (ModuleCat.of (ZMod m) (ZMod m)) q').app (TopCat.of Y)).symm
+      ((reducedSingularHomologySuccIso
+        (ModuleCat.of ℤ (ULift.{u} (ZMod m))) q').app (TopCat.of Y)).symm
 
-/-- **Sharp finite-range mod-two vanishing theorem.** If `π₁(Y, y)` is trivial and `H_q(Y; 𝔽₂) = 0`
-for all `2 ≤ q ≤ n + 3`, then `π_{n + 2}(Y, y)` is uniquely two-divisible. -/
-theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo {Y : Type}
+/-- **Sharp finite-range mod-two vanishing theorem with ring coefficients.** If `π₁(Y, y)` is
+trivial and `H_q(Y; k) = 0` for all `2 ≤ q ≤ n + 3` for a ring `k ≃+* ZMod 2` in the universe of
+`Y`, then `π_{n + 2}(Y, y)` is uniquely two-divisible. -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo_ringEquiv
+    {k : Type u} [CommRing k] (e : k ≃+* ZMod 2) {Y : Type u} [TopologicalSpace Y] {y : Y}
+    [Subsingleton (π_ 1 Y y)] {n : ℕ}
+    (hY : ∀ q, 2 ≤ q → q ≤ n + 3 →
+      IsZero (((singularChains k).obj (TopCat.of Y)).homology q)) :
+    IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
+  (isUniquelyTwoDivisible_iff _).2
+    (bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv e hY)
+
+/-- **Sharp finite-range mod-two vanishing theorem.** If `π₁(Y, y)` is trivial and `H_q(Y; ℤ/2) = 0`
+(with lifted integer-module coefficients) for all `2 ≤ q ≤ n + 3`, then `π_{n + 2}(Y, y)` is
+uniquely two-divisible. -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo {Y : Type u}
     [TopologicalSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)] {n : ℕ}
     (hY : ∀ q, 2 ≤ q → q ≤ n + 3 →
-      IsZero (((singularChains (ZMod 2)).obj (TopCat.of Y)).homology q)) :
+      IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) q).obj
+        (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).obj (TopCat.of Y))) :
     IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
   (isUniquelyTwoDivisible_iff _).2
     (bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod hY)
 
+/-- **The mod-two vanishing theorem with ring coefficients.** If `π₁(Y, y)` is trivial and the
+reduced mod-two singular homology of `Y` with coefficients in a ring `k ≃+* ZMod 2` in the
+universe of `Y` vanishes in every degree, then every higher homotopy group `π_{n + 2}(Y, y)` is
+uniquely two-divisible. -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo_ringEquiv
+    {k : Type u} [CommRing k] (e : k ≃+* ZMod 2) {Y : Type u} [TopologicalSpace Y] {y : Y}
+    [Subsingleton (π_ 1 Y y)]
+    (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) q).obj (TopCat.of Y)))
+    (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
+  (isUniquelyTwoDivisible_iff _).2
+    (bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_ringEquiv e hY n)
+
 /-- **The mod-two vanishing theorem.** If `π₁(Y, y)` is trivial and the reduced mod-two singular
-homology of `Y` vanishes in every degree, then every higher homotopy group `π_{n + 2}(Y, y)` is
-uniquely two-divisible (hence is a `ℤ[1/2]`-module and satisfies `π_{n + 2}(Y, y) ⊗ 𝔽₂ = 0`). -/
-theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo {Y : Type}
+homology of `Y` with coefficients in the lifted integer module `ℤ/2` vanishes in every degree, then
+every higher homotopy group `π_{n + 2}(Y, y)` is uniquely two-divisible (hence is a `ℤ[1/2]`-module
+and satisfies `π_{n + 2}(Y, y) ⊗ 𝔽₂ = 0`). -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo {Y : Type u}
     [TopologicalSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)]
     (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor
-      (ModuleCat.of (ZMod 2) (ZMod 2)) q).obj (TopCat.of Y))) (n : ℕ) :
+      (ModuleCat.of ℤ (ULift.{u} (ZMod 2))) q).obj (TopCat.of Y))) (n : ℕ) :
     IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
   (isUniquelyTwoDivisible_iff _).2
     (bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod hY n)
