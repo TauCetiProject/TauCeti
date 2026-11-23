@@ -37,7 +37,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {a b
 
 private def differentiate (φ : meromorphicGerms 𝕜 a) : meromorphicGerms 𝕜 a :=
   ⟨Germ.map' deriv (fun {_ _} h ↦ h.nhdsNE_deriv) φ.val, by
-    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
     rw [← hφ]
     exact (Germ.map'_coe deriv (fun {_ _} h ↦ h.nhdsNE_deriv) f).symm ▸
       coe_mem_meromorphicGerms.mpr hf.deriv⟩

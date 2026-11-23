@@ -188,7 +188,7 @@ theorem lt_setFinrank_smul_inter_of_successiveMin_lt [DiscreteTopology L] {r : �
   obtain ⟨r', hr', hr'r⟩ := exists_lt_of_csInf_lt ⟨r₀, hr₀⟩ hr
   refine hr'.trans_le (finrank_mono (span_mono (Set.inter_subset_inter_left _ ?_)))
   rintro _ ⟨x, hx, rfl⟩
-  obtain ⟨y, hy, hyx⟩ := hsc.smul_mono r'.2 hr'r.le ⟨x, hx, rfl⟩
+  obtain ⟨y, hy, hyx⟩ := hsc.smul_mono r'.property hr'r.le ⟨x, hx, rfl⟩
   exact ⟨y, hy, by simpa [NNReal.smul_def] using hyx⟩
 
 /-- For a discrete `L`, `i < finrank ℤ L`, and a convex neighbourhood `s` of `0`, every dilate of
@@ -232,7 +232,7 @@ theorem lt_setFinrank_successiveMin_smul [DiscreteTopology L] (hsc : Convex ℝ 
     rintro x ⟨-, hxm⟩
     by_contra! hle
     have hsub := TauCeti.setOfPred_gauge_le_eq_closure_smul hsc
-      ((NormedSpace.isVonNBounded_iff ℝ).2 hs.isBounded) hs₀ m.2
+      ((NormedSpace.isVonNBounded_iff ℝ).2 hs.isBounded) hs₀ m.property
     exact hxm ((hs.smul (m : ℝ)).isClosed.closure_subset (hsub.subset hle))
   -- Hence some `r > m` lies strictly below `m + 1` and the gauge of every vector of `G`.
   have hev : ∀ᶠ r in 𝓝[>] (m : ℝ), ((∀ x ∈ G, r < gauge s x) ∧ r < m + 1) ∧ (m : ℝ) < r :=
@@ -240,7 +240,7 @@ theorem lt_setFinrank_successiveMin_smul [DiscreteTopology L] (hsc : Convex ℝ 
       (eventually_lt_nhds (lt_add_one (m : ℝ)))).filter_mono nhdsWithin_le_nhds).and
       self_mem_nhdsWithin
   obtain ⟨r, ⟨hrG, hr1⟩, hmr⟩ := hev.exists
-  lift r to ℝ≥0 using m.2.trans hmr.le
+  lift r to ℝ≥0 using m.property.trans hmr.le
   -- Every vector of `L` in `r • s` lies in `(m + 1) • s` and has gauge at most `r`, so it is not
   -- in `G`: it lies in `m • s`.
   refine (lt_setFinrank_smul_inter_of_successiveMin_lt (hsc.starConvex h₀)
@@ -248,8 +248,8 @@ theorem lt_setFinrank_successiveMin_smul [DiscreteTopology L] (hsc : Convex ℝ 
   rintro x ⟨hxr, hxL⟩
   rw [hsmul] at hxr ⊢
   refine ⟨by_contra fun hxm ↦ ?_, hxL⟩
-  have hxG : x ∈ G := ⟨⟨hsc.smul_mono_of_zero_mem h₀ r.2 hr1.le hxr, hxL⟩, hxm⟩
-  exact (hrG x hxG).not_ge (gauge_le_of_mem r.2 hxr)
+  have hxG : x ∈ G := ⟨⟨hsc.smul_mono_of_zero_mem h₀ r.property hr1.le hxr, hxL⟩, hxm⟩
+  exact (hrG x hxG).not_ge (gauge_le_of_mem r.property hxr)
 
 /-- **The threshold set is a closed half-line.** Below the integer rank of a discrete `L`, the
 factors `r` for which the vectors of `L` in the dilate `r • s` of a compact convex neighbourhood

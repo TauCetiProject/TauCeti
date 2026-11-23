@@ -87,7 +87,7 @@ theorem leftTranslation_extendByZeroComapₗᵢ (hH : MeasurableSet (H : Set G))
     filter_upwards [coeFn_leftTranslation (𝕜 := 𝕜) (u : G) (extendByZeroComapₗᵢ 𝕜 μ hH f₀),
       (measurePreserving_mul_left μ (u : G)⁻¹).quasiMeasurePreserving.ae h0] with x hx1 hx2 hxH
     refine hx1.trans (hx2 fun hmem ↦ hxH ?_)
-    simpa [mul_inv_cancel_left] using mul_mem u.2 hmem
+    simpa [mul_inv_cancel_left] using mul_mem u.property hmem
   rw [← extendByZeroComapₗᵢ_restrictComapCLM_of_ae_restrict_compl_eq_zero (𝕜 := 𝕜) hH hoff,
     restrictComapCLM_leftTranslation, restrictComapCLM_extendByZeroComapₗᵢ]
 
@@ -138,7 +138,7 @@ theorem rightTranslation_extendByZeroComapₗᵢ (H : OpenSubgroup G) (u : H)
     filter_upwards [coeFn_rightTranslation (𝕜 := 𝕜) (u : G) (extendByZeroComapₗᵢ 𝕜 μ hH f₀),
       (Measure.quasiMeasurePreserving_mul_right_of_regular μ (u : G)).ae h0] with x hx1 hx2 hxH
     have hzero : extendByZeroComapₗᵢ 𝕜 μ hH f₀ (x * (u : G)) = 0 :=
-      hx2 fun hmem ↦ hxH (by simpa [mul_inv_cancel_right] using mul_mem hmem (inv_mem u.2))
+      hx2 fun hmem ↦ hxH (by simpa [mul_inv_cancel_right] using mul_mem hmem (inv_mem u.property))
     simp [hx1, hzero]
   rw [← extendByZeroComapₗᵢ_restrictComapCLM_of_ae_restrict_compl_eq_zero (𝕜 := 𝕜) hH hoff,
     restrictComapCLM_rightTranslation, restrictComapCLM_extendByZeroComapₗᵢ]

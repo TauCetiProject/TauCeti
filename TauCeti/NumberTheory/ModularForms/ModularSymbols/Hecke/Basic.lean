@@ -46,6 +46,9 @@ integers once the period pairing is shown to be Hecke-equivariant and injective.
 
 ## Main results
 
+* `TauCeti.ModularSymbols.symbolIntRep_mul_apply`: the action of a product, on an element.
+* `TauCeti.ModularSymbols.mk_symbolIntRep_of_mem`: the image of `Γ₁` acts trivially on the
+  classes in `𝕄_w(Γ₁; R)`.
 * `TauCeti.ModularSymbols.symbolIntRep_mapGL`: on `SL(2, ℤ)` the action is `symbolRep`, and
   `TauCeti.ModularSymbols.mk_symbolIntRep_eq_of_rightCoset_eq`: the class of `δ · x` in
   `𝕄_w(Γ₁; R)` depends only on the right coset `Γ₁' δ`.
@@ -107,17 +110,25 @@ theorem symbolIntRep_mapGL (γ : SL(2, ℤ)) :
   rw [symbolIntRep_tmul, symbolRep_tmul, degreeZeroRep_apply, intMatrix_mapGL,
     binaryFormAdjugateRep_coe]
 
+/-- The action of a product of integral matrices is the composite of their actions, applied to
+an element: `(a b) · x = a · (b · x)`. -/
+theorem symbolIntRep_mul_apply {a b : GL (Fin 2) ℚ} (ha : a ∈ intEntries 2)
+    (hb : b ∈ intEntries 2) (x : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :
+    symbolIntRep R w ⟨a * b, mul_mem ha hb⟩ x =
+      symbolIntRep R w ⟨a, ha⟩ (symbolIntRep R w ⟨b, hb⟩ x) := by
+  rw [← Submonoid.mk_mul_mk, map_mul, mul_apply_eq_comp]
+
 /-- The class of `δ · (([α] - [β]) ⊗ P)` in `𝕄_w(Γ; R)` is the symbol
 `{δα, δβ} ⊗ (P ∣ adj δ)`. -/
 theorem mk_symbolIntRep_tmul (Γ : Subgroup SL(2, ℤ)) (δ : intEntries 2) (α β : OnePoint ℚ)
     (P : homogeneousSubmodule (Fin 2) R w) :
     (Coinvariants.mk _ : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w →ₗ[R]
         ModularSymbols R Γ w)
-        (symbolIntRep R w δ (⟨_, single_sub_single_mem_degreeZero α β⟩ ⊗ₜ P)) =
+        (symbolIntRep R w δ (divisor R β α ⊗ₜ P)) =
       symbol Γ ((δ : GL (Fin 2) ℚ) • α) ((δ : GL (Fin 2) ℚ) • β)
         (binaryFormRep R w (op (adjugate (intMatrix 2 δ))) P) := by
   rw [symbolIntRep_tmul, symbol_apply, binaryFormAdjugateRep_apply]
-  rw [degreeZeroGLRep_single_sub_single]
+  rw [degreeZeroGLRep_divisor]
 
 /-! ### The Hecke operator of a double coset -/
 
@@ -135,6 +146,16 @@ theorem mk_comp_symbolIntRep_of_mem {γ : GL (Fin 2) ℚ} (hγ : γ ∈ Γ₁.ma
   rw [symbolIntRep_mapGL]
   refine LinearMap.ext fun x ↦ ?_
   exact Coinvariants.mk_self_apply _ (⟨g, hg⟩ : Γ₁) x
+
+/-- The class in `𝕄_w(Γ₁; R)` of `γ · x` is the class of `x`, for `γ` in the image of `Γ₁`:
+`mk_comp_symbolIntRep_of_mem` applied to an element. -/
+@[simp]
+theorem mk_symbolIntRep_of_mem {γ : GL (Fin 2) ℚ} (hγ : γ ∈ Γ₁.map (mapGL ℚ))
+    (x : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :
+    (Coinvariants.mk _ : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w →ₗ[R]
+        ModularSymbols R Γ₁ w) (symbolIntRep R w ⟨γ, map_mapGL_le_intEntries 2 Γ₁ hγ⟩ x) =
+      Coinvariants.mk _ x :=
+  LinearMap.congr_fun (mk_comp_symbolIntRep_of_mem Γ₁ hγ) x
 
 /-- **The class of `δ · x` in `𝕄_w(Γ₁; R)` depends only on the right coset `Γ₁' δ`.** If
 `Γ₁' δ₁ = Γ₁' δ₂` then `δ₂ = (δ₂ δ₁⁻¹) δ₁` with `δ₂ δ₁⁻¹ ∈ Γ₁'` — so `δ₂` is integral along with
@@ -179,7 +200,8 @@ noncomputable def heckeSymbol : ModularSymbols R Γ₂ w →ₗ[R] ModularSymbol
     fun γ ↦ by
       have h := HeckeCoset.heckeSum_comp_of_mem D (symbolIntRep R w) hD
         (map_mapGL_le_intEntries 2 Γ₂) (map_mapGL_le_intEntries 2 Γ₁)
-        (fun _ hγ ↦ mk_comp_symbolIntRep_of_mem Γ₁ hγ) (Subgroup.mem_map_of_mem (mapGL ℚ) γ.2)
+        (fun _ hγ ↦ mk_comp_symbolIntRep_of_mem Γ₁ hγ) (Subgroup.mem_map_of_mem
+            (mapGL ℚ) γ.property)
       rwa [symbolIntRep_mapGL] at h
 
 /-- On the class of `x`, the Hecke operator is the Hecke sum `HeckeCoset.heckeSum` of the double
@@ -286,13 +308,13 @@ operator either way, and it is the index that is being constrained. -/
 noncomputable def heckeTSymbol (n : ℕ) [_hn : NeZero n] :
     Module.End R (ModularSymbols R (Gamma1 N) w) :=
   heckeSymbol (Gamma1 N) (Gamma1 N) (diagCosetGamma1 N n)
-    (Delta0_le_intEntries N (diagCosetGamma1 N n).out.2)
+    (Delta0_le_intEntries N (diagCosetGamma1 N n).out.property)
 
 /-- The defining equation of `heckeTSymbol`. -/
 theorem heckeTSymbol_def (n : ℕ) [NeZero n] :
     heckeTSymbol R w N n =
       heckeSymbol (Gamma1 N) (Gamma1 N) (diagCosetGamma1 N n)
-        (Delta0_le_intEntries N (diagCosetGamma1 N n).out.2) := (rfl)
+        (Delta0_le_intEntries N (diagCosetGamma1 N n).out.property) := (rfl)
 
 /-- **Transport `T_n` along an equality of indices.** -/
 theorem heckeTSymbol_congr {n m : ℕ} [NeZero n] [NeZero m] (h : n = m) :
