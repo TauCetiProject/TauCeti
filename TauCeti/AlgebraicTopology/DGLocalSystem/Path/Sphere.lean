@@ -537,17 +537,16 @@ theorem sphereLoopHomologyMulRightEquiv_homologyπ (q : ℕ)
   rw [smul_smul, ← mul_pow]
   simp
 
-/-- **The loops of `Sⁿ` have no homology in the degrees `1, …, n - 2`.** For the sphere `Sⁿ`,
-`n = m + 2`, the normalized cubical homology of the Moore loops at the pole vanishes in degree
-`j + 1` for `j < m`, with coefficients in any commutative ring `k`: it is the singular homology,
-which vanishes in the degrees not divisible by `n - 1`
-(`TauCeti.isZero_singularHomology_mooreLoopSpace_sphere`). -/
-theorem isZero_homology_sphereLoop {j : ℕ} (hj : j < m) :
+/-- **The loops of `Sⁿ` have no homology in the degrees not divisible by `n - 1`.** For the
+sphere `Sⁿ`, `n = m + 2`, the normalized cubical homology of the Moore loops at the pole vanishes
+in every degree `j` not divisible by `m + 1`, with coefficients in any commutative ring `k`; in
+particular in the degrees `1, …, n - 2`. It is the singular homology, which vanishes in these
+degrees (`TauCeti.isZero_singularHomology_mooreLoopSpace_sphere`). -/
+theorem isZero_homology_sphereLoop {j : ℕ} (hj : ¬ (m + 1) ∣ j) :
     IsZero (((normalizedCubicalChainComplex k).obj
-      (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).homology (j + 1)) :=
+      (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).homology j) :=
   (isZero_singularHomology_mooreLoopSpace_sphere (n := m + 2)
-    (by simp [finrank_euclideanSpace, h]) (by omega) (spherePolePoint h) k
-    (Nat.not_dvd_of_pos_of_lt (by omega) (by omega))).of_iso
-    (singularCubicalHomologyIso k _ (j + 1)).symm
+    (by simp [finrank_euclideanSpace, h]) (by omega) (spherePolePoint h) k hj).of_iso
+    (singularCubicalHomologyIso k _ j).symm
 
 end TauCeti

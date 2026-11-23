@@ -39,7 +39,8 @@ cycle `x` is the signed sum of the faces of the cube of Moore paths from the pol
 characteristic map of the top cell (`TauCeti.sphereAttachingCycle`), an `(n - 1)`-cycle of the
 Moore loops. Right multiplication by `x` is an isomorphism
 `H_q(Ω_b Sⁿ) ≅ H_{q+n-1}(Ω_b Sⁿ)` (`TauCeti.sphereLoopHomologyMulRightEquiv`), the loops have no
-homology in the degrees `1, …, n - 2` (`TauCeti.isZero_homology_sphereLoop`), and they form a path
+homology in the degrees not divisible by `n - 1`, among them `1, …, n - 2`
+(`TauCeti.isZero_homology_sphereLoop`), and they form a path
 connected space, since `Sⁿ` is simply connected. So both conditions hold
 (`TauCeti.exists_cubicalChainDifferential_eq_of_eq_mul_sphereAttachingChain`,
 `TauCeti.exists_mul_sphereAttachingChain_add_cubicalChainDifferential_eq`), and the module
@@ -116,6 +117,7 @@ theorem sphereAttachingChain_mem :
   cubicalChainLof_mem _ _ _
 
 /-- The attaching cycle is a cycle. -/
+@[simp]
 theorem cubicalChainDifferential_sphereAttachingChain :
     cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k
       (sphereAttachingChain h k) = 0 :=
@@ -156,6 +158,98 @@ theorem sphereCellCocycle_m_inr :
     (sphereCellCocycle h k).m (Sum.inr ()) =
       Finsupp.single (Sum.inl ()) (sphereAttachingChain h k) :=
   cycleCellCocycle_m_inr _ _
+
+/-- The cocycle is one-sided, so its free module is semi-free
+(`TauCeti.RowFiniteTwistingCocycle.wellFounded_mem_support`). -/
+theorem sphereCellCocycle_m_eq_zero_of_le {y z : Unit ⊕ Unit}
+    (hyz : Sum.elim (fun _ ↦ (0 : ℤ)) (fun _ ↦ ((m + 1 : ℕ) : ℤ) + 1) y ≤
+      Sum.elim (fun _ ↦ (0 : ℤ)) (fun _ ↦ ((m + 1 : ℕ) : ℤ) + 1) z) :
+    (sphereCellCocycle h k).m y z = 0 :=
+  cycleCellCocycle_m_eq_zero_of_le _ _ hyz
+
+/-- The differential of the free module of `TauCeti.sphereCellCocycle h k` on `α e₀ + β e₁`: the
+coefficient of `e₀` is `dα + κ(β) x`, with `κ` the Koszul sign twist and `x` the attaching cycle,
+and the coefficient of `e₁` is `dβ`. -/
+theorem sphereCellCocycle_differential_apply
+    (u : Unit ⊕ Unit →₀ loopChainAlgebra Sph (spherePolePoint h) k) :
+    rowFiniteTwistedDifferential (R := k) (A := loopChainAlgebra Sph (spherePolePoint h) k)
+      (𝒜 := cubicalChainGrading (MooreLoopSpace Sph (spherePolePoint h)) k)
+        (d := cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k)
+        (sphereCellCocycle h k).m u =
+      Finsupp.single (Sum.inl ())
+          (cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k (u (Sum.inl ())) +
+          (InternalGrading.ofDecomposition
+              (cubicalChainGrading (MooreLoopSpace Sph (spherePolePoint h)) k)).koszulTwist
+              1 (u (Sum.inr ())) * sphereAttachingChain h k) +
+        Finsupp.single (Sum.inr ())
+          (cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k (u (Sum.inr ()))) :=
+  cycleCellCocycle_differential_apply _ _ u
+
+/-- The coefficient of `e₀` in the differential of `u` is `d(u e₀) + κ(u e₁) x`, with `κ` the
+Koszul sign twist and `x` the attaching cycle. -/
+@[simp]
+theorem sphereCellCocycle_differential_apply_inl
+    (u : Unit ⊕ Unit →₀ loopChainAlgebra Sph (spherePolePoint h) k) :
+    rowFiniteTwistedDifferential (R := k) (A := loopChainAlgebra Sph (spherePolePoint h) k)
+      (𝒜 := cubicalChainGrading (MooreLoopSpace Sph (spherePolePoint h)) k)
+        (d := cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k)
+        (sphereCellCocycle h k).m u (Sum.inl ()) =
+      cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k (u (Sum.inl ())) +
+        (InternalGrading.ofDecomposition
+            (cubicalChainGrading (MooreLoopSpace Sph (spherePolePoint h)) k)).koszulTwist
+            1 (u (Sum.inr ())) * sphereAttachingChain h k :=
+  cycleCellCocycle_differential_apply_inl _ _ u
+
+/-- The coefficient of `e₁` in the differential of `u` is `d(u e₁)`. -/
+@[simp]
+theorem sphereCellCocycle_differential_apply_inr
+    (u : Unit ⊕ Unit →₀ loopChainAlgebra Sph (spherePolePoint h) k) :
+    rowFiniteTwistedDifferential (R := k) (A := loopChainAlgebra Sph (spherePolePoint h) k)
+      (𝒜 := cubicalChainGrading (MooreLoopSpace Sph (spherePolePoint h)) k)
+        (d := cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k)
+        (sphereCellCocycle h k).m u (Sum.inr ()) =
+      cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k (u (Sum.inr ())) :=
+  cycleCellCocycle_differential_apply_inr _ _ u
+
+/-- The differential of `α e₀` is `(dα) e₀`. -/
+@[simp]
+theorem sphereCellCocycle_differential_single_inl
+    (α : loopChainAlgebra Sph (spherePolePoint h) k) :
+    rowFiniteTwistedDifferential (R := k) (A := loopChainAlgebra Sph (spherePolePoint h) k)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace Sph (spherePolePoint h)) k)
+        (d := cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k)
+        (sphereCellCocycle h k).m (Finsupp.single (Sum.inl ()) α) =
+      Finsupp.single (Sum.inl ())
+        (cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k α) :=
+  cycleCellCocycle_differential_single_inl _ _ α
+
+/-- The differential of `β e₁` is `κ(β) x e₀ + (dβ) e₁`, with `κ` the Koszul sign twist and `x`
+the attaching cycle. -/
+theorem sphereCellCocycle_differential_single_inr
+    (β : loopChainAlgebra Sph (spherePolePoint h) k) :
+    rowFiniteTwistedDifferential (R := k) (A := loopChainAlgebra Sph (spherePolePoint h) k)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace Sph (spherePolePoint h)) k)
+        (d := cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k)
+        (sphereCellCocycle h k).m (Finsupp.single (Sum.inr ()) β) =
+      Finsupp.single (Sum.inl ())
+          ((InternalGrading.ofDecomposition
+              (cubicalChainGrading (MooreLoopSpace Sph (spherePolePoint h)) k)).koszulTwist 1 β *
+            sphereAttachingChain h k) +
+        Finsupp.single (Sum.inr ())
+          (cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k β) :=
+  cycleCellCocycle_differential_single_inr _ _ β
+
+/-- The augmentation vanishes on boundaries. -/
+@[simp]
+theorem loopCellAugmentation_sphereCellCocycle_differential
+    (u : Unit ⊕ Unit →₀ loopChainAlgebra Sph (spherePolePoint h) k) :
+    loopCellAugmentation Sph (spherePolePoint h) k
+        (rowFiniteTwistedDifferential (R := k) (A := loopChainAlgebra Sph (spherePolePoint h) k)
+          (𝒜 := cubicalChainGrading (MooreLoopSpace Sph (spherePolePoint h)) k)
+          (d := cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k)
+          (sphereCellCocycle h k).m u) = 0 :=
+  loopCellAugmentation_cycleCellCocycle_differential _ _
+    (loopChainAugmentation_sphereAttachingChain h k) u
 
 /-- A cycle `y` of dimension `j` of the loops of the sphere whose product with the attaching
 cycle is a boundary is a boundary, since right multiplication by the attaching class is injective
@@ -223,7 +317,8 @@ private theorem exists_boundary_eq_of_lt {i : ℕ} (hi : i < m)
       NormalizedCubicalChain.boundary _ k (i + 1) w = a := by
   rw [cubicalChainDifferential_lof_succ] at ha
   exact NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology
-    (X := TopCat.of (MooreLoopSpace Sph (spherePolePoint h))) (isZero_homology_sphereLoop h k hi)
+    (X := TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))
+    (isZero_homology_sphereLoop h k (Nat.not_dvd_of_pos_of_lt (by omega) (by omega)))
     (DirectSum.of_injective (β := fun n ↦ NormalizedCubicalChain _ k n) i
       (by simpa [DirectSum.lof_eq_of] using ha))
 
