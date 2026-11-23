@@ -85,6 +85,10 @@ theorem firstChernClass_pullback :
       TopCat.singularCohomologyMap (TopCat.ofHom f) 2 s.firstChernClass := by
   rw [firstChernClass_def, firstChernClass_def, lineFirstChernClass_def,
     lineFirstChernClass_def]
+  -- `determinantLine (s.pullback f)` unfolds to `AssociatedBundle _ (f *ᵖ s.P) _` only at
+  -- default transparency (`determinantLine` is an abbrev, but `s.pullback` is a def whose
+  -- frame bundle is `f *ᵖ s.P`). So `φ` typechecks, and the final step uses `exact`, which
+  -- unifies at that transparency, rather than `rw` or `simp`.
   refine complexEulerClass_eq_singularCohomologyMap_of_fiberwise (F := DeterminantModel n)
     (E := s.determinantLine) (F' := DeterminantModel n) (E' := determinantLine (s.pullback f))
     (g := f) (DeterminantModel.finrank_eq_one n) (DeterminantModel.finrank_eq_one n)

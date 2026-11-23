@@ -61,7 +61,9 @@ theorem pullbackContinuousLinearEquiv_apply (x : B')
   let q : ((f : B' → B) *ᵖ P) x := p
   obtain ⟨w, rfl⟩ := (mk_bijective (G := G) (P := (f : B' → B) *ᵖ P) (F := F) q).surjective u
   rw [pullbackEquiv_mk]
-  -- Unfolding the composite, `[q, w]` is sent to `[p, w]`, as `pullbackEquiv` does.
+  -- The composite applies `mkContinuousLinearEquiv (P := f *ᵖ P)` to the frame `p : P (f x)`,
+  -- which is `(f *ᵖ P) x` only at default transparency, so `simp` cannot use
+  -- `ContinuousLinearEquiv.trans_apply` here. `change` retypes that frame as `q`.
   change mkContinuousLinearEquiv 𝕜 G (P := P) (F := F) p
       ((mkContinuousLinearEquiv 𝕜 G (P := (f : B' → B) *ᵖ P) (F := F) q).symm (mk G q w)) = _
   simp [p]
