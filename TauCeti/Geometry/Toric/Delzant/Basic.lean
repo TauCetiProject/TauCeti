@@ -375,7 +375,8 @@ theorem ne_zero (j : ι) : u j ≠ 0 := fun h0 ↦ by
     exact NormedSpace.unbounded_univ ℝ (StrongDual ℝ V) hbd
   -- The vertex `0` then has the active normal `u j = 0` in a basis of `N`, which is absurd.
   have hext : (0 : StrongDual ℝ V) ∈ (facetPolyhedron i u c).extremePoints ℝ :=
-    ⟨hP ▸ mem_univ _, fun x _ y _ _ ↦ Subsingleton.elim _ _⟩
+    mem_extremePoints.2
+      ⟨hP ▸ mem_univ _, fun _ _ _ _ _ ↦ ⟨Subsingleton.elim _ _, Subsingleton.elim _ _⟩⟩
   obtain ⟨b, hb⟩ := hΔ.isSmoothVertex 0 hext
   have hj : j ∈ activeSet (facetPairing i u) c 0 := by simp [mem_activeSet, hcj]
   exact b.ne_zero ⟨j, hj⟩ ((hb ⟨j, hj⟩).trans h0)
