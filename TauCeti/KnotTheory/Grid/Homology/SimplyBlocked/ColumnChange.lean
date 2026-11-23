@@ -325,6 +325,30 @@ noncomputable def simplyBlockedHomologyColumnChangePieceEquiv (g : ℤ × ℤ) :
   hG.toOddComponentGridDiagram.bigradedHatHomologyPieceEquiv R i hG.toOddComponentGridDiagram j
     _ (hG.isHomogeneous_simplyBlockedHomologyColumnChangeEquiv R i j) g
 
+/-- On underlying classes, the piece equivalence is the total change of blocked column. -/
+@[simp↓]
+theorem coe_simplyBlockedHomologyColumnChangePieceEquiv (g : ℤ × ℤ)
+    (y : hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g) :
+    (hG.simplyBlockedHomologyColumnChangePieceEquiv R i j g y :
+        (Base j).obj (hG.simplyBlockedHomology R j)) =
+      hG.simplyBlockedHomologyColumnChangeEquiv R i j
+        (y : (Base i).obj (hG.simplyBlockedHomology R i)) :=
+  hG.toOddComponentGridDiagram.coe_bigradedHatHomologyPieceEquiv_apply R i
+    hG.toOddComponentGridDiagram j _ (hG.isHomogeneous_simplyBlockedHomologyColumnChangeEquiv R i j)
+    g y
+
+/-- The inverse piece equivalence is the inverse of the total change of blocked column. -/
+@[simp↓]
+theorem coe_simplyBlockedHomologyColumnChangePieceEquiv_symm_apply (g : ℤ × ℤ)
+    (y : hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R j g) :
+    ((hG.simplyBlockedHomologyColumnChangePieceEquiv R i j g).symm y :
+        (Base i).obj (hG.simplyBlockedHomology R i)) =
+      (hG.simplyBlockedHomologyColumnChangeEquiv R i j).symm
+        (y : (Base j).obj (hG.simplyBlockedHomology R j)) :=
+  hG.toOddComponentGridDiagram.coe_bigradedHatHomologyPieceEquiv_symm_apply R i
+    hG.toOddComponentGridDiagram j _ (hG.isHomogeneous_simplyBlockedHomologyColumnChangeEquiv R i j)
+    g y
+
 section Field
 
 variable (K : Type*) [Field K] [CharP K 2]
