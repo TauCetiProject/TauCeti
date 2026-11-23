@@ -341,8 +341,6 @@ end Homothety
 
 section Commutator
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
 variable {Φ : LinearMap.BilinForm R L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : R}
 
 local notation "UK" => CentralQuotient R (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a
@@ -368,12 +366,12 @@ private theorem envelopingι_mul_normalOrderedSummand_sub_mul (z x y : L) (k n m
   have hx : k + m = m + k := add_comm k m
   have hz : k + (n - m) = n + k - m := by ring
   have hm : m + k < k ↔ m < 0 := by omega
+  have hL (u v w : UK) : u * (v * w) - v * w * u = (u * v - v * u) * w + v * (u * w - w * u) := by
+    simp only [mul_sub, sub_mul, mul_assoc]
+    abel
   simp only [normalOrderedSummand_apply, hy, hm]
   by_cases h : m < 0 <;> simp only [h, ↓reduceIte] <;>
-  · rw [← Ring.lie_def, ← LieAlgebra.ad_apply R UK ι[z, k], ← coe_innerDerivation R,
-      derivationLieAlgebra.leibniz, coe_innerDerivation, LieAlgebra.ad_apply, LieAlgebra.ad_apply,
-      Ring.lie_def, Ring.lie_def, envelopingι_single_tmul_mul_sub_mul,
-      envelopingι_single_tmul_mul_sub_mul, hx, hz]
+  · rw [hL, envelopingι_single_tmul_mul_sub_mul, envelopingι_single_tmul_mul_sub_mul, hx, hz]
     simp only [mul_add, add_mul, Algebra.commutes]
     abel
 

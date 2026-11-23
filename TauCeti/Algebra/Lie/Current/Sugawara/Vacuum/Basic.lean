@@ -147,18 +147,17 @@ theorem limSmul_sugawaraMode_eq_smul_vacuumVectorField {c : K}
           (by rw [HahnSeries.orderTop_neg]; exact HahnSeries.zero_le_orderTop_single (by omega) 1)
           v := by
   obtain ⟨u, rfl⟩ := exists_smul_vacuum_eq v
-  have hd := congrArg (fun D : derivationLieAlgebra K Û ↦
-      (D : Module.End K Û) (toCompletedEnveloping Φ hΦ hΦs a u))
-    (innerDerivation_sugawaraMode_of_eq_smul_killingForm (hΦ := hΦ) (hΦs := hΦs) (a := a) h m)
-  simp only [coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def, SetLike.val_smul,
-    LinearMap.smul_apply, coe_toCompletedEnveloping,
-    vectorFieldCompletedEnvelopingDerivation_toLimQuotients] at hd
-  simp only [← coe_toCompletedEnveloping] at hd
+  have hd := sugawaraMode_mul_sub_mul_of_eq_smul_killingForm (hΦ := hΦ) (hΦs := hΦs) (a := a)
+    h m (toCompletedEnveloping Φ hΦ hΦs a u)
+  conv_rhs at hd =>
+    rw [coe_toCompletedEnveloping, vectorFieldCompletedEnvelopingDerivation_toLimQuotients]
   rw [sub_eq_iff_eq_add] at hd
   have hv := congrArg (fun x ↦ ModuleTower.limSmul hV x (vacuum Φ hΦ hΦs a)) hd
-  simpa only [mul_limSmul, limSmul_toCompletedEnveloping, ModuleTower.add_limSmul,
-    ModuleTower.smul_limSmul, limSmul_sugawaraMode_vacuum_eq_zero hm, smul_zero, add_zero,
-    vacuumVectorField_smul_vacuum] using hv
+  rw [mul_limSmul, limSmul_toCompletedEnveloping, ModuleTower.add_limSmul,
+    ModuleTower.smul_limSmul, limSmul_toCompletedEnveloping, mul_limSmul,
+    limSmul_sugawaraMode_vacuum_eq_zero hm, ModuleTower.limSmul_zero, add_zero,
+    ← vacuumVectorField_smul_vacuum] at hv
+  exact hv
 
 /-- **Away from the critical level, `Lₘ` (`m ≥ -1`) acts on the vacuum module as the regular Witt
 vector field `-t^{m+1} d/dt`.** -/
@@ -227,8 +226,9 @@ theorem sugawaraVacuum_eq_sum {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Mo
     simp only [Finset.mem_Ico, Finset.mem_singleton, Nat.cast_zero]
     omega
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp only [hIco, Finset.sum_singleton, normalOrderedSummand_apply, neg_one_lt_zero, ↓reduceIte]
-  norm_num
+  have hsub : (-2 : ℤ) - (-1) = -1 := by norm_num
+  simp only [hIco, Finset.sum_singleton, normalOrderedSummand_apply, neg_one_lt_zero, ↓reduceIte,
+    hsub]
 
 /-- **The quadratic Segal--Sugawara vector `S₋₂ |0⟩` has conformal weight `2`** for
 `vacuumDegreeOperator`, at every level and central value. -/
@@ -243,8 +243,9 @@ theorem sugawaraVacuum_mem_eigenspace_vacuumDegreeOperator :
     (Module.finBasis K L i) (-1) h1
   simp only [ncoeff_currentField, envelopingAction_apply, ← mul_smul, Int.cast_neg,
     Int.cast_one] at h2
-  convert h2 using 2
-  norm_num
+  -- The two `-1` modes raise the vacuum weight `0` to `0 - (-1) - (-1) = 2`.
+  have hwt : (0 - -(1 : K) - -(1 : K)) = 2 := by norm_num
+  rwa [hwt] at h2
 
 /-- **Action of a nonnegative current mode on `S₋₂ |0⟩`**: if `w` is Killing-dual to `Φ(z, ·)` and
 `0 ≤ k`, then `z_k (S₋₂ |0⟩) = k (z - 2 a w)_{k-2} |0⟩`. -/
@@ -290,10 +291,12 @@ theorem envelopingι_single_one_smul_sugawaraVacuum_of_eq_smul_killingForm {c : 
     ι[z, 1] • sugawaraVacuum Φ hΦ hΦs a = (1 - 2 * a * c) • (ι[z, -1] • vacuum Φ hΦ hΦs a) := by
   have hw (y : L) : killingForm K L (c • z) y = Φ z y := by
     simp [h]
-  rw [envelopingι_single_smul_sugawaraVacuum_of_nonneg hw zero_le_one, Int.cast_one, one_smul,
-    smul_smul, TensorProduct.tmul_sub, TensorProduct.tmul_smul, map_sub, map_smul, sub_smul,
-    smul_assoc, sub_smul, one_smul]
-  norm_num
+  have hidx : (1 - 2 : ℤ) = -1 := by norm_num
+  rw [envelopingι_single_smul_sugawaraVacuum_of_nonneg hw zero_le_one, hidx]
+  simp only [Int.cast_one, TensorProduct.tmul_sub, TensorProduct.tmul_smul, map_sub, map_smul,
+    sub_smul, smul_assoc]
+  generalize ι[z, -1] • vacuum Φ hΦ hΦs a = v₀
+  module
 
 /-- **At the critical level `2 a Φ = κ_L`, every nonnegative current in `L[[t]]` annihilates
 `S₋₂ |0⟩`**, making `S₋₂ |0⟩` a singular vector for `L[[t]]`. -/

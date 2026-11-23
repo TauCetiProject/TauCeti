@@ -77,8 +77,6 @@ namespace TauCeti.CurrentAlgebra
 
 section Commutator
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
   {Φ : LinearMap.BilinForm K L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : K}
@@ -104,10 +102,7 @@ private theorem sugawaraMode_mul_normalOrderedSummand_sub_mul {c : K}
   have hsub₂ : m + (n - j) = m + n - j := by ring
   have hadd : m + j = j + m := add_comm m j
   have hlt : j + m < m ↔ j < 0 := by omega
-  rw [← Ring.lie_def,
-    ← LieAlgebra.ad_apply K (CompletedEnveloping Φ hΦ hΦs a) (sugawaraMode Φ hΦ hΦs a m),
-    ← coe_innerDerivation K, innerDerivation_sugawaraMode_of_eq_smul_killingForm h m,
-    SetLike.val_smul, LinearMap.smul_apply]
+  rw [sugawaraMode_mul_sub_mul_of_eq_smul_killingForm h m]
   simp only [normalOrderedSummand_apply, hsub₁, hlt]
   by_cases hj : j < 0 <;> simp only [hj, ↓reduceIte, map_mul, derivationLieAlgebra.leibniz,
     vectorFieldCompletedEnvelopingDerivation_neg, NegMemClass.coe_neg, LinearMap.neg_apply,
@@ -143,6 +138,15 @@ private theorem combined_normalOrderedSummand_eq (c : K) (x y : L) (m n l : ℤ)
   rw [hite (Finset.Ico 0 m), hite (Finset.Ico m 0), Int.cast_sub]
   module
 
+omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
+/-- Multiplying the normally ordered summands at any cut by arbitrary `K`-scalar weights preserves
+summability in `Û`. -/
+private theorem hasSum_smul_normalOrderedSummand (p N : ℤ) (w : ℤ → K) (x y : L) :
+    HasSum (fun l : ℤ ↦ w l • toC (normalOrderedSummand Φ hΦ hΦs a p N l x y))
+      (∑' l : ℤ, w l • toC (normalOrderedSummand Φ hΦ hΦs a p N l x y)) := by
+  simpa only [algebraMap_smul] using ((orderQuotientTower Φ hΦ hΦs a).summable_smul
+    (summable_normalOrderedSummand Φ hΦ hΦs a p N x y) (fun l : ℤ ↦ algebraMap K UK (w l))).hasSum
+
 /-- **The commutator of a Segal--Sugawara mode with a normally ordered mode**, for `Φ = c • κ_L`
 over any field `K`. -/
 theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K}
@@ -153,30 +157,23 @@ theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K
         ((1 - 2 * a * c) * ((m * (m + 1) / 2 : ℤ) : K)) • toC ι[⁅x, y⁆, m + n] -
         algebraMap K (CompletedEnveloping Φ hΦ hΦs a)
           (if m + n = 0 then ((m ^ 3 - m) / 6 : ℤ) * (1 - 2 * a * c) * a * Φ x y else 0) := by
+  -- Stage 1: Distribute `[Sₘ, -]` over the normally ordered series for `:x y:_n`.
   have h₁ := ((hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) n x y).mul_left
     (sugawaraMode Φ hΦ hΦs a m)).sub
     ((hasSum_normalOrderedMode n x y).mul_right (sugawaraMode Φ hΦ hΦs a m))
   simp only [sugawaraMode_mul_normalOrderedSummand_sub_mul h] at h₁
-  have hA₀ : HasSum (fun l : ℤ ↦ ((1 - 2 * a * c) * -((l - m : ℤ) : K)) •
-      toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) l x y))
-      (∑' l : ℤ, ((1 - 2 * a * c) * -((l - m : ℤ) : K)) •
-        toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) l x y)) := by
-    simpa only [algebraMap_smul] using ((orderQuotientTower Φ hΦ hΦs a).summable_smul
-      (summable_normalOrderedSummand Φ hΦ hΦs a m (m + n) x y)
-      (fun l : ℤ ↦ algebraMap K UK ((1 - 2 * a * c) * -((l - m : ℤ) : K)))).hasSum
+  -- Stage 2: Sum the cut-`m` and cut-`0` weighted families separately, reindexing `j + m ↦ l`.
+  have hA₀ := hasSum_smul_normalOrderedSummand (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
+    m (m + n) (fun l ↦ (1 - 2 * a * c) * -((l - m : ℤ) : K)) x y
   have hA : HasSum (fun j : ℤ ↦ ((1 - 2 * a * c) * -(j : K)) •
       toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) (j + m) x y))
       (∑' l : ℤ, ((1 - 2 * a * c) * -((l - m : ℤ) : K)) •
         toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) l x y)) := by
     simpa only [Function.comp_def, Equiv.coe_addRight, add_sub_cancel_right] using
       (Equiv.addRight m).hasSum_iff.2 hA₀
-  have hB : HasSum (fun l : ℤ ↦ ((1 - 2 * a * c) * (l - n : K)) •
-      toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y))
-      (∑' l : ℤ, ((1 - 2 * a * c) * (l - n : K)) •
-        toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y)) := by
-    simpa only [algebraMap_smul] using ((orderQuotientTower Φ hΦ hΦs a).summable_smul
-      (summable_normalOrderedSummand Φ hΦ hΦs a 0 (m + n) x y)
-      (fun l : ℤ ↦ algebraMap K UK ((1 - 2 * a * c) * (l - n : K)))).hasSum
+  have hB := hasSum_smul_normalOrderedSummand (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
+    0 (m + n) (fun l ↦ (1 - 2 * a * c) * (l - n : K)) x y
+  -- Stage 3: Combine both families at cut `0` and extract the finite window between `0` and `m`.
   have hcomb := hA₀.add hB
   simp only [combined_normalOrderedSummand_eq] at hcomb
   let g (l : ℤ) : UK := ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l])
