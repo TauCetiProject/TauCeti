@@ -91,7 +91,7 @@ private theorem HasCompactSpatialSupport.integrable_superposition
       𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 u ζ)) (volume.prod volume) := by
   set G : CoordinateSpace n → CoordinateSpace n → W := fun θ ζ ↦
     𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 u ζ)
-  obtain ⟨B, hB0, hB⟩ := ha.exists_norm_iteratedFDeriv_fourier_slice_comp_smul_le 0 (n + 1)
+  obtain ⟨B, hB0, hB⟩ := ha.exists_norm_iteratedFDeriv_fourier_slice_smul_le 0 (n + 1)
   have hGle (θ ζ : CoordinateSpace n) : ‖G θ ζ‖ ≤
       (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * (B * (1 + ‖ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖) := by
     have h := hB θ ζ
@@ -182,52 +182,26 @@ private theorem HasCompactSpatialSupport.exists_integral_norm_fourierInv_cutoff_
       ∫ x, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ •
         𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ) x‖ ≤
         C * (2 ^ k) ^ m * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) := by
-  choose B _ hB using fun i : ℕ ↦ ha.exists_norm_iteratedFDeriv_fourier_slice_comp_smul_le i ρ
+  choose B hB0 hB using fun i : ℕ ↦ ha.exists_norm_iteratedFDeriv_fourier_slice_smul_le i ρ
   choose Bχ _ hBχ using fun k : ℕ ↦ φ.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le L k
   obtain ⟨α, β, hα, hαβ⟩ := φ.exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley L
   obtain ⟨C, hC⟩ := exists_integral_norm_fourierInv_cutoff_smul_le_of_finiteDimensional
-    (E := CoordinateSpace n) (G := V →L[ℂ] W) (m := m) (N := n + 1) (by simp; omega) B (b := β)
-    hα Bχ
-  refine ⟨C, fun θ k ↦ ?_⟩
-  -- Normalize the slice by the weight `w = ⟨θ⟩ ^ ρ`, which makes its estimates uniform in `θ`.
-  set w : ℝ := (1 + ‖θ‖ ^ 2) ^ (ρ / 2) with hw
-  have hw0 : 0 < w := by positivity
-  have hww : w * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) = 1 := by
-    rw [hw, ← Real.rpow_add (by positivity), show ρ / 2 + -ρ / 2 = 0 by ring, Real.rpow_zero]
-  set g : CoordinateSpace n → V →L[ℂ] W := fun ζ ↦ 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ
-  have hg : ContDiff ℝ ∞ fun ζ ↦ (w : ℂ) • g ζ :=
-    (ha.contDiff_fourier_slice_comp_smul θ).const_smul _
-  have hgm (i : ℕ) (_ : i ≤ n + 1) (ζ : CoordinateSpace n) :
-      ‖iteratedFDeriv ℝ i (fun ζ ↦ (w : ℂ) • g ζ) ζ‖ ≤ B i * (1 + ‖ζ‖ ^ 2) ^ ((m - i) / 2) := by
-    rw [iteratedFDeriv_const_smul_apply'
-      ((ha.contDiff_fourier_slice_comp_smul θ).contDiffAt.of_le (mod_cast le_top)), norm_smul,
-      Complex.norm_real, Real.norm_of_nonneg hw0.le]
-    calc w * ‖iteratedFDeriv ℝ i g ζ‖
-        ≤ w * (B i * (1 + ‖ζ‖ ^ 2) ^ ((m - i) / 2) * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2)) := by
+    (E := CoordinateSpace n) (G := V →L[ℂ] W) m (N := n + 1) (by simp; omega) (b := β) hα Bχ
+  -- One constant `S` serves all derivatives up to order `n + 1`.
+  set S := ∑ i ∈ Finset.range (n + 2), B i
+  refine ⟨C * S, fun θ k ↦ ?_⟩
+  have hgm (i : ℕ) (hi : i ≤ n + 1) (ζ : CoordinateSpace n) :
+      ‖iteratedFDeriv ℝ i (fun ζ ↦ 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ) ζ‖ ≤
+        S * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) * (1 + ‖ζ‖ ^ 2) ^ ((m - i) / 2) := by
+    calc _ ≤ B i * (1 + ‖ζ‖ ^ 2) ^ ((m - i) / 2) * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) := hB i θ ζ
+      _ ≤ S * (1 + ‖ζ‖ ^ 2) ^ ((m - i) / 2) * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) := by
           gcongr
-          exact hB i θ ζ
-      _ = B i * (1 + ‖ζ‖ ^ 2) ^ ((m - i) / 2) * (w * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2)) := by ring
-      _ = _ := by rw [hww, mul_one]
-  have hk := hC (fun ζ ↦ (w : ℂ) • g ζ) hg hgm (2 ^ k) (φ.enlargedLittlewoodPaley L k)
-    (by positivity) (φ.contDiff_enlargedLittlewoodPaley L k) (hαβ k) fun i _ ξ ↦ hBχ i k ξ
-  have hw' : (w : ℂ) ≠ 0 := by exact_mod_cast hw0.ne'
-  have heq (x : CoordinateSpace n) : 𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • g ζ) x =
-      (w⁻¹ : ℂ) • 𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • (w : ℂ) • g ζ) x := by
-    simp only [Real.fourierInv_eq, Circle.smul_def, ← integral_smul]
-    refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-    dsimp only
-    rw [smul_comm (φ.enlargedLittlewoodPaley L k ζ) (w : ℂ), smul_comm (w⁻¹ : ℂ),
-      inv_smul_smul₀ hw']
-  calc ∫ x, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • g ζ) x‖
-      = w⁻¹ * ∫ x, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • (w : ℂ) • g ζ) x‖ := by
-        rw [← integral_const_mul]
-        refine integral_congr_ae (.of_forall fun x ↦ ?_)
-        dsimp only
-        rw [heq, norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hw0.le]
-    _ ≤ w⁻¹ * (C * (2 ^ k) ^ m) := by gcongr
-    _ = C * (2 ^ k) ^ m * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) := by
-        rw [hw, ← Real.rpow_neg (by positivity), neg_div]
-        ring
+          exact Finset.single_le_sum (fun j _ ↦ hB0 j) (Finset.mem_range.2 (by omega))
+      _ = _ := by ring
+  refine (hC _ _ (ha.contDiff_fourier_slice_smul θ) hgm (2 ^ k) (φ.enlargedLittlewoodPaley L k)
+    (by positivity) (φ.contDiff_enlargedLittlewoodPaley L k) (hαβ k)
+    fun i _ ξ ↦ hBχ i k ξ).trans_eq ?_
+  ring
 
 omit [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W] [FiniteDimensional ℂ W] in
 /-- The translates `ζ ↦ ψⱼ (ζ + θ)` of the Littlewood–Paley pieces are compactly supported. -/
@@ -268,7 +242,7 @@ private theorem HasCompactSpatialSupport.integral_fourierChar_smul_eq_sum
       (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u
     exact ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).smul
       ((contDiff_inhomogeneousLittlewoodPaley_add φ j θ).continuous.smul
-        ((ha.contDiff_fourier_slice_comp_smul θ).continuous.clm_apply
+        ((ha.contDiff_fourier_slice_smul θ).continuous.clm_apply
           (𝓕 v).continuous))).integrable_of_hasCompactSupport
       ((hasCompactSupport_inhomogeneousLittlewoodPaley_add φ j θ).smul_right.smul_left)
   rw [← integral_finsetSum _ fun k _ ↦ hint k]
@@ -313,7 +287,7 @@ private theorem HasCompactSpatialSupport.norm_integral_fourierChar_smul_le
     θ).toSchwartzMap (contDiff_inhomogeneousLittlewoodPaley_add φ j θ)
   set σS : 𝓢(CoordinateSpace n, V →L[ℂ] W) :=
     ((φ.hasCompactSupport_enlargedLittlewoodPaley L k).smul_right (f' := g)).toSchwartzMap
-      ((φ.contDiff_enlargedLittlewoodPaley L k).smul (ha.contDiff_fourier_slice_comp_smul θ))
+      ((φ.contDiff_enlargedLittlewoodPaley L k).smul (ha.contDiff_fourier_slice_smul θ))
   have hρ : ⇑ρS = fun ζ ↦ (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) :=
     funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   have hσ : ⇑σS = fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • g ζ :=

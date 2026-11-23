@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.FDeriv.Const
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
-import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
 # Integrability of the applied derivative and of derivative energy densities
@@ -28,6 +32,13 @@ compact support. A weighted squared defect `c z * ‖fderiv w z e₁ + A z (fder
 integrable when it vanishes off a compact set on which `c` and `A` are continuous, so they need
 not be continuous elsewhere.
 
+Integrability of the squared norm of the derivative implies integrability of the squared norm of
+the derivative applied to any fixed vector. Conversely, for a map out of an `RCLike` field that
+satisfies a Cauchy--Riemann equation `∂ₜu = A (∂ₛu)` with `‖A‖` bounded, integrability of the
+squared norm of the real-direction derivative `∂ₛu` implies integrability of `‖du‖²`.
+Precomposing with a measure-preserving continuous linear equivalence does not change whether
+the squared norm of the derivative is integrable.
+
 On a Euclidean product `ℝ × V`, the derivative of such a function in a fixed direction is also
 integrable on the product of a half-line with `V`.
 
@@ -41,6 +52,13 @@ integrable on the product of a half-line with `V`.
   `TauCeti.integrable_norm_fderiv_sq_add`, `TauCeti.integrable_cutoff_sq_mul_norm_fderiv_sq`,
   `TauCeti.integrable_mul_norm_defect_sq`: integrability of the derivative energy densities
   in two directions.
+* `TauCeti.integrable_norm_fderiv_apply_sq`: integrability of `‖fderiv 𝕜 u z v‖ ^ 2` from
+  integrability of `‖fderiv 𝕜 u z‖ ^ 2`.
+* `TauCeti.integrableOn_norm_fderiv_sq_of_apply_I_eq`: integrability of `‖fderiv ℝ u z‖ ^ 2` from
+  integrability of `‖fderiv ℝ u z 1‖ ^ 2` under a Cauchy--Riemann equation.
+* `ContinuousLinearEquiv.integrable_norm_fderiv_comp_sq_iff`: integrability of
+  `‖fderiv (u ∘ e)‖ ^ 2` for a measure-preserving continuous linear equivalence `e` is that of
+  `‖fderiv u‖ ^ 2`.
 * `TauCeti.integrable_fderiv_apply_prod`: the directional derivative of a compactly supported
   `C¹` function on `ℝ × V` is integrable on the product of `Ioi a` with `V`.
 -/
@@ -130,7 +148,84 @@ theorem integrable_mul_norm_defect_sq (e₁ e₂ : E) {w : E → F} {c : E → �
     (hc.mul (((hdw.clm_apply continuousOn_const).add
       (hA.clm_apply (hdw.clm_apply continuousOn_const))).norm.pow 2)).integrableOn_compact hS
 
+/-- If the squared norm of the derivative of a map into a complete space is integrable, then so is
+the squared norm of the derivative applied to any fixed vector `v`: it is bounded by
+`‖v‖ ^ 2 * ‖fderiv 𝕜 u z‖ ^ 2`. -/
+theorem integrable_norm_fderiv_apply_sq [CompleteSpace F] {ν : Measure E} {u : E → F}
+    (h : Integrable (fun z ↦ ‖fderiv 𝕜 u z‖ ^ 2) ν) (v : E) :
+    Integrable (fun z ↦ ‖fderiv 𝕜 u z v‖ ^ 2) ν := by
+  borelize F
+  refine (h.const_mul (‖v‖ ^ 2)).mono'
+    ((measurable_fderiv_apply_const 𝕜 u v).norm.pow_const 2).aestronglyMeasurable
+    (.of_forall fun z ↦ ?_)
+  rw [norm_pow, norm_norm, ← mul_pow, mul_comm]
+  gcongr
+  exact (fderiv 𝕜 u z).le_opNorm v
+
 end Energy
+
+section CauchyRiemann
+
+variable {K : Type*} [RCLike K] [MeasurableSpace K] [OpensMeasurableSpace K] {G : Type*}
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+
+/-- **Energy from the real-direction energy.** If `u : K → G` out of an `RCLike` field satisfies the
+Cauchy--Riemann equation `∂ₜu = A z (∂ₛu)` on a measurable set `s`, with `‖A z‖ ≤ M` there, and
+`‖∂ₛu‖²` is integrable on `s`, then so is `‖du‖²`: it is bounded by `(1 + M)² ‖∂ₛu‖²`. -/
+theorem integrableOn_norm_fderiv_sq_of_apply_I_eq {ν : Measure K} {u : K → G}
+    {A : K → G →L[ℝ] G} {M : ℝ} {s : Set K} (hs : MeasurableSet s)
+    (hCR : ∀ z ∈ s, fderiv ℝ u z RCLike.I = A z (fderiv ℝ u z 1)) (hA : ∀ z ∈ s, ‖A z‖ ≤ M)
+    (h : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) s ν) :
+    IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) s ν := by
+  borelize (K →L[ℝ] G)
+  refine (h.const_mul ((1 + M) ^ 2)).mono'
+    ((measurable_fderiv ℝ u).norm.pow_const 2).aestronglyMeasurable
+    ((ae_restrict_iff' hs).2 (.of_forall fun z hz ↦ ?_))
+  rw [norm_pow, norm_norm, ← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _)
+    ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hA z hz) le_rfl) 2
+
+end CauchyRiemann
+section CompContinuousLinearEquiv
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
+  [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
+  {μ : Measure E} {ν : Measure F}
+
+/-- Precomposing a map with a measure-preserving continuous linear equivalence `e` does not change
+whether the squared norm of its derivative is integrable: the two derivatives differ by
+composition with `e` or with its inverse, which change norms by at most `‖e‖` and `‖e.symm‖`. -/
+theorem _root_.ContinuousLinearEquiv.integrable_norm_fderiv_comp_sq_iff (e : E ≃L[𝕜] F)
+    (he : MeasurePreserving e μ ν) {u : F → G} :
+    Integrable (fun w ↦ ‖fderiv 𝕜 (u ∘ e) w‖ ^ 2) μ ↔
+      Integrable (fun z ↦ ‖fderiv 𝕜 u z‖ ^ 2) ν := by
+  have hemb : MeasurableEmbedding e := by
+    simpa only [e.coe_toHomeomorph] using e.toHomeomorph.measurableEmbedding
+  rw [← he.integrable_comp_emb hemb]
+  have hcomp (w : E) : fderiv 𝕜 (u ∘ e) w = (fderiv 𝕜 u (e w)).comp (e : E →L[𝕜] F) :=
+    e.comp_right_fderiv
+  have hsq {a b c : ℝ} (ha : 0 ≤ a) (hab : a ≤ b * c) : ‖a ^ 2‖ ≤ c ^ 2 * b ^ 2 := by
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), ← mul_pow, mul_comm c]
+    gcongr
+  constructor
+  · intro h
+    refine (h.const_mul (‖(e.symm : F →L[𝕜] E)‖ ^ 2)).mono'
+      (((measurable_fderiv 𝕜 u).comp he.measurable).norm.pow_const 2).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun w ↦ hsq (norm_nonneg _) ?_)
+    have h' : fderiv 𝕜 u (e w) = (fderiv 𝕜 (u ∘ e) w).comp (e.symm : F →L[𝕜] E) := by
+      ext v
+      simp [hcomp]
+    rw [h']
+    exact ContinuousLinearMap.opNorm_comp_le _ _
+  · intro h
+    refine (h.const_mul (‖(e : E →L[𝕜] F)‖ ^ 2)).mono'
+      ((measurable_fderiv 𝕜 (u ∘ e)).norm.pow_const 2).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun w ↦ hsq (norm_nonneg _) ?_)
+    rw [hcomp]
+    exact ContinuousLinearMap.opNorm_comp_le _ _
+
+end CompContinuousLinearEquiv
+
 section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]

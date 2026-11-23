@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Interpolation.KFunctional
 public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 public import TauCeti.MeasureTheory.Function.DecreasingRearrangement
 public import TauCeti.MeasureTheory.Function.Lp.L1AddLinfty
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The `K`-functional of the couple `(L¹, L^∞)`
@@ -45,8 +46,12 @@ costs `‖c‖ μ A`, and no decomposition does better.
 
 The radial retraction attaining the infimum in
 `MeasureTheory.Measure.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm` scales vectors by
-real numbers, so for the formula `E` is assumed to be a real normed space in addition to a normed
-space over the scalar field `𝕜` of the couple.
+real numbers, so for the exact formula `E` is assumed to be a real normed space in addition to a
+normed space over the scalar field `𝕜` of the couple. Without `NormedSpace ℝ E`, truncating `f` by
+the indicator of `{‖f‖ > ‖f‖* t}` still gives the two-sided comparison
+`∫₀ᵗ ‖f‖* ≤ K(t, u) ≤ 2 ∫₀ᵗ ‖f‖*`
+(`TauCeti.CompatibleCouple.lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty`,
+`TauCeti.CompatibleCouple.ofReal_kFunctional_l1Linfty_le_two_mul`).
 
 ## References
 
@@ -66,23 +71,6 @@ namespace TauCeti.CompatibleCouple
 variable {𝕜 E : Type*} {α : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] {t : ℝ}
 
-/-- The cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions, in terms of `eLpNorm`. -/
-private theorem ofReal_norm_add_mul_norm {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-    (g : Lp E p μ) (h : Lp E q μ) (ht : 0 ≤ t) :
-    ENNReal.ofReal (‖g‖ + t * ‖h‖) = eLpNorm g p μ + ENNReal.ofReal t * eLpNorm h q μ := by
-  rw [ENNReal.ofReal_add (norm_nonneg _) (by positivity), ENNReal.ofReal_mul ht, Lp.norm_def,
-    Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g),
-    ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top h)]
-
-/-- A splitting of finite cost `‖f₀‖₁ + t ‖f₁‖_∞`, with `t > 0`, is a pair of `L¹` and `L^∞`
-functions. -/
-private theorem memLp_of_eLpNorm_add_mul_ne_top {f₀ f₁ : α → E} (ht : 0 < t)
-    (hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ ≠ ∞) :
-    MemLp f₀ 1 μ ∧ MemLp f₁ ∞ μ := by
-  obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_ne_top.1 hfin
-  refine ⟨memLp_iff.2 hfin₀.lt_top, memLp_iff.2 (lt_top_iff_ne_top.2 fun htop => hfin₁ ?_)⟩
-  rw [htop, ENNReal.mul_top (by simpa using ht)]
-
 /-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions, hence the same
 `K`-functional, read through the embedding of the sum space of the former into `L¹ + L^∞`. -/
 theorem kFunctional_l1Linfty_sumSpaceEmbed (ht : 0 ≤ t) (v : (lebesgue 𝕜 E μ 1 ∞).SumSpace) :
@@ -94,9 +82,20 @@ theorem kFunctional_l1Linfty_sumSpaceEmbed (ht : 0 ≤ t) (v : (lebesgue 𝕜 E 
   · rw [← hgh, lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum]
   · rw [lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum, hgh]
 
+/-- Any almost-everywhere splitting `f₀ + f₁ =ᵐ[μ] f` bounds `K(t, u)` (`t > 0`) by
+`‖f₀‖₁ + t ‖f₁‖_∞`. -/
+private theorem ofReal_kFunctional_l1Linfty_le_eLpNorm_add_mul {u : L1AddLinfty 𝕜 E μ}
+    {f f₀ f₁ : α → E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (hsum : f₀ + f₁ =ᵐ[μ] f)
+    (ht : 0 < t) :
+    ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) ≤
+      eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
+  obtain ⟨v, rfl⟩ := lebesgue_one_top_sumSpaceEmbed_surjective u
+  rw [kFunctional_l1Linfty_sumSpaceEmbed ht.le]
+  exact ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul hu hsum ht
+
 /-- Every decomposition `u = g + h` bounds `∫₀ᵗ ‖f‖*` by `‖g‖₁ + t ‖h‖_∞`, so `∫₀ᵗ ‖f‖*` is at most
-`K(t, u)`. -/
-private theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty
+`K(t, u)`. No real normed space structure on `E` is needed. -/
+theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty
     {u : L1AddLinfty 𝕜 E μ} {f : α → E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (ht : 0 ≤ t) :
     ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s ≤
       ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) := by
@@ -113,7 +112,7 @@ private theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty
             rw [← hy]
             exact eNorm_add_le (g y) (h y))
     _ = ENNReal.ofReal (‖g‖ + t * ‖h‖) := by
-        rw [ofReal_norm_add_mul_norm _ _ ht,
+        rw [Lp.ofReal_norm_add_mul_norm _ _ ht,
           eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable g),
           eLpNorm_exponent_top (Lp.aestronglyMeasurable h),
           eLpNormEssSup_eq_essSup_eNorm]
@@ -122,6 +121,98 @@ private theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty
     _ = ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) + ε := by
         rw [ENNReal.ofReal_add (kFunctional_nonneg ht) ε.coe_nonneg,
           ENNReal.ofReal_coe_nnreal]
+
+/-- Lower bound `∫₀ᵗ ‖f‖* ≤ K(t, v)` for the Lebesgue couple `(L¹, L^∞)`, without requiring a real
+normed space structure on `E`. -/
+theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_lebesgue_one_top
+    {v : (lebesgue 𝕜 E μ 1 ∞).SumSpace} {f : α → E}
+    (hv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v)) =ᵐ[μ] f)
+    (ht : 0 ≤ t) :
+    ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s ≤
+      ENNReal.ofReal ((lebesgue 𝕜 E μ 1 ∞).kFunctional t v) := by
+  rw [← kFunctional_l1Linfty_sumSpaceEmbed ht]
+  exact lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hv ht
+
+/-- Indicator truncation at height `‖f‖* t` bounds `K(t, u)` by `2 ∫₀ᵗ ‖f‖*` for `t > 0`, without
+requiring a real normed space structure on `E`. -/
+private theorem ofReal_kFunctional_l1Linfty_le_two_mul_of_pos {u : L1AddLinfty 𝕜 E μ} {f : α → E}
+    (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (ht : 0 < t) :
+    ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) ≤
+      2 * ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
+  -- Split `f = 1_S f + 1_{Sᶜ} f` at the rearrangement height `c = ‖f‖* t`.
+  have hf : AEStronglyMeasurable f μ := (AEEqFun.aestronglyMeasurable _).congr hu
+  have hsub := μ.lintegral_decreasingRearrangement_eq_lintegral_sub hf.eNorm t
+  set c := μ.decreasingRearrangement (‖f ·‖ₑ) t
+  set S := {y | c < ‖f y‖ₑ}
+  have hS : NullMeasurableSet S μ := nullMeasurableSet_lt aemeasurable_const hf.eNorm
+  have hμS : μ S ≤ ENNReal.ofReal t := μ.measure_setOf_decreasingRearrangement_lt_le _ t
+  -- Bound the `L¹` tail above `c` and the `L^∞` truncation below `c`.
+  have hest₀ :
+      eLpNorm (S.indicator f) 1 μ ≤ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
+    rw [eLpNorm_one_eq_lintegral_eNorm (hf.indicator₀ hS), hsub]
+    calc ∫⁻ y, ‖S.indicator f y‖ₑ ∂μ
+        ≤ ∫⁻ y, (‖f y‖ₑ - c) + S.indicator (fun _ => c) y ∂μ := lintegral_mono fun y => by
+          by_cases hy : y ∈ S
+          · simpa [hy] using le_tsub_add
+          · simp [hy]
+      _ ≤ ∫⁻ y, (‖f y‖ₑ - c) ∂μ + ENNReal.ofReal t * c := by
+          rw [lintegral_add_left' (hf.eNorm.sub_const c)]
+          gcongr
+          exact (lintegral_indicator_const_le S c).trans (by rw [mul_comm]; gcongr)
+  have hest₁ : eLpNorm (Sᶜ.indicator f) ∞ μ ≤ c := by
+    rw [eLpNorm_exponent_top (hf.indicator₀ hS.compl)]
+    refine eLpNormEssSup_le_of_ae_eNorm_bound (ae_of_all _ fun y => ?_)
+    by_cases hy : y ∈ S
+    · simp [hy]
+    · rw [Set.indicator_of_mem ((Set.mem_compl_iff S y).2 hy)]
+      exact not_lt.1 hy
+  -- Combine both bounds in the `K`-functional decomposition estimate.
+  calc ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u)
+      ≤ eLpNorm (S.indicator f) 1 μ + ENNReal.ofReal t * eLpNorm (Sᶜ.indicator f) ∞ μ :=
+        ofReal_kFunctional_l1Linfty_le_eLpNorm_add_mul hu
+          (Eventually.of_forall (Set.indicator_self_add_compl_apply S f)) ht
+    _ ≤ (∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s) +
+          (∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s) := by
+        gcongr
+        exact (mul_le_mul_right hest₁ _).trans (hsub ▸ le_add_self)
+    _ = 2 * ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := (two_mul _).symm
+
+/-- Indicator truncation bounds `K(t, u)` by `2 ∫₀ᵗ ‖f‖*` for `t ≥ 0`, over any normed field `𝕜`
+without requiring `NormedSpace ℝ E`. -/
+theorem ofReal_kFunctional_l1Linfty_le_two_mul {u : L1AddLinfty 𝕜 E μ} {f : α → E}
+    (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (ht : 0 ≤ t) :
+    ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) ≤
+      2 * ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
+  obtain rfl | ht := ht.eq_or_lt
+  · rw [Ioc_self, Measure.restrict_empty, lintegral_zero_measure, mul_zero]
+    have hfin : ∫⁻ s, μ.decreasingRearrangement (‖f ·‖ₑ) s ∂volume.restrict (Ioc 0 1) ≠ ∞ :=
+      ((lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu zero_le_one).trans_lt
+        ENNReal.ofReal_lt_top).ne
+    have hvol : Tendsto (volume.restrict (Ioc (0 : ℝ) 1) ∘ Ioc 0) (𝓝[>] 0) (𝓝 0) := by
+      refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => bot_le)
+        fun s => Measure.restrict_apply_le _ _
+      simpa [Real.volume_Ioc] using
+        (ENNReal.tendsto_ofReal (tendsto_id (x := 𝓝 (0 : ℝ)))).mono_left nhdsWithin_le_nhds
+    have hlim : Tendsto (fun s => 2 * ∫⁻ r in Ioc 0 s, μ.decreasingRearrangement (‖f ·‖ₑ) r
+        ∂volume.restrict (Ioc 0 1)) (𝓝[>] 0) (𝓝 0) := by
+      simpa using ENNReal.Tendsto.const_mul (tendsto_setLIntegral_zero hfin hvol) (Or.inr (by simp))
+    refine ge_of_tendsto hlim ?_
+    filter_upwards [Ioc_mem_nhdsGT zero_lt_one] with s ⟨hs, hs₁⟩
+    rw [Measure.restrict_restrict measurableSet_Ioc, Ioc_inter_Ioc, max_self, min_eq_left hs₁]
+    exact (ENNReal.ofReal_le_ofReal (kFunctional_mono le_rfl hs.le u)).trans
+      (ofReal_kFunctional_l1Linfty_le_two_mul_of_pos hu hs)
+  · exact ofReal_kFunctional_l1Linfty_le_two_mul_of_pos hu ht
+
+/-- Upper bound `K(t, v) ≤ 2 ∫₀ᵗ ‖f‖*` for the Lebesgue couple `(L¹, L^∞)`, without requiring a
+real normed space structure on `E`. -/
+theorem ofReal_kFunctional_lebesgue_one_top_le_two_mul {v : (lebesgue 𝕜 E μ 1 ∞).SumSpace}
+    {f : α → E}
+    (hv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v)) =ᵐ[μ] f)
+    (ht : 0 ≤ t) :
+    ENNReal.ofReal ((lebesgue 𝕜 E μ 1 ∞).kFunctional t v) ≤
+      2 * ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
+  rw [← kFunctional_l1Linfty_sumSpaceEmbed ht]
+  exact ofReal_kFunctional_l1Linfty_le_two_mul hv ht
 
 variable [NormedSpace ℝ E]
 
@@ -133,24 +224,10 @@ private theorem ofReal_kFunctional_l1Linfty_of_pos {u : L1AddLinfty 𝕜 E μ} {
   have hf : AEStronglyMeasurable f μ := (AEEqFun.aestronglyMeasurable _).congr hu
   refine le_antisymm ?_
     (lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu ht.le)
-  -- A splitting `f = f₀ + f₁` of finite cost gives a decomposition of `u` of the same cost.
+  -- A splitting `f = f₀ + f₁` gives a decomposition of `u` of at most the same cost.
   rw [μ.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm hf]
-  refine le_iInf fun f₀ => le_iInf fun f₁ => le_iInf fun hsum => ?_
-  by_cases hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ = ∞
-  · rw [hfin]
-    exact le_top
-  obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin
-  have hdec : (l1Linfty 𝕜 E μ).fstToSum (h₀.toLp f₀) + (l1Linfty 𝕜 E μ).sndToSum (h₁.toLp f₁) =
-      u := by
-    refine L1AddLinfty.fstToSum_add_sndToSum_eq_iff.2 ?_
-    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp, hu] with y hy₀ hy₁ hy
-    rw [Pi.add_apply, hy₀, hy₁, hy, ← Pi.add_apply, hsum]
-  calc ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u)
-      ≤ ENNReal.ofReal (‖h₀.toLp f₀‖ + t * ‖h₁.toLp f₁‖) :=
-        ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
-    _ = eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
-        rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
-          eLpNorm_congr_ae h₁.coeFn_toLp]
+  exact le_iInf fun f₀ => le_iInf fun f₁ => le_iInf fun hsum =>
+    ofReal_kFunctional_l1Linfty_le_eLpNorm_add_mul hu (hsum ▸ EventuallyEq.rfl) ht
 
 /-- **The `K`-functional of `(L¹, L^∞)`.** For `t ≥ 0` and an element `u` of `L¹ + L^∞`
 represented by `f`, `K(t, u) = ∫₀ᵗ ‖f‖*`. -/

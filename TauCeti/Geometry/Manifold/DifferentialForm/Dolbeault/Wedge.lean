@@ -62,9 +62,9 @@ namespace closedForms
 def wedgeWith (μ : F →L[ℂ] G →L[ℂ] H) (p q r s : ℕ) :
     closedForms E M F p q →ₗ[ℂ] closedForms E M G r s →ₗ[ℂ]
       closedForms E M H (p + r) (q + s) :=
-  LinearMap.mk₂ ℂ (fun φ ψ ↦ ⟨(ofComplexManifold E M).wedgeWithType μ p q r s φ.1 ψ.1, by
+  LinearMap.mk₂ ℂ (fun φ ψ ↦ ⟨(ofComplexManifold E M).wedgeWithType μ p q r s φ.val ψ.val, by
     rw [mem_closedForms, delBar_wedgeWithType,
-      (mem_closedForms p q φ.1).mp φ.2, (mem_closedForms r s ψ.1).mp ψ.2]
+      (mem_closedForms p q φ.val).mp φ.property, (mem_closedForms r s ψ.val).mp ψ.property]
     simp only [map_zero, LinearMap.zero_apply, smul_zero, add_zero]⟩)
     (fun _ _ _ ↦ Subtype.ext <| by simp only [Submodule.coe_add, map_add, LinearMap.add_apply])
     (fun _ _ _ ↦ Subtype.ext <| by simp only [Submodule.coe_smul, map_smul, LinearMap.smul_apply])
@@ -75,42 +75,43 @@ def wedgeWith (μ : F →L[ℂ] G →L[ℂ] H) (p q r s : ℕ) :
 @[simp]
 theorem coe_wedgeWith (μ : F →L[ℂ] G →L[ℂ] H) (p q r s : ℕ)
     (φ : closedForms E M F p q) (ψ : closedForms E M G r s) :
-    (wedgeWith μ p q r s φ ψ).1 = (ofComplexManifold E M).wedgeWithType μ p q r s φ.1 ψ.1 := (rfl)
+    (wedgeWith μ p q r s φ ψ).val = (ofComplexManifold E M).wedgeWithType μ p q r s φ.val ψ.val :=
+        (rfl)
 
 /-- Multiplying an exact left factor by a closed right factor gives an exact form. -/
 theorem wedgeWith_mem_exactForms_of_left_mem (μ : F →L[ℂ] G →L[ℂ] H) (p q r s : ℕ)
     (φ : closedForms E M F p q) (ψ : closedForms E M G r s)
-    (hφ : φ.1 ∈ exactForms E M F p q) :
-    (wedgeWith μ p q r s φ ψ).1 ∈ exactForms E M H (p + r) (q + s) := by
+    (hφ : φ.val ∈ exactForms E M F p q) :
+    (wedgeWith μ p q r s φ ψ).val ∈ exactForms E M H (p + r) (q + s) := by
   cases q with
   | zero =>
-    have hzero : φ.1 = 0 := by simpa using hφ
+    have hzero : φ.val = 0 := by simpa using hφ
     rw [coe_wedgeWith, hzero, LinearMap.map_zero₂]
     exact zero_mem _
   | succ q =>
-    obtain ⟨α, hα⟩ := (mem_exactForms_succ p q φ.1).mp hφ
+    obtain ⟨α, hα⟩ := (mem_exactForms_succ p q φ.val).mp hφ
     refine mem_exactForms_of_eq_delBar (by omega) _
-      ((ofComplexManifold E M).wedgeWithType μ p q r s α ψ.1) ?_
-    rw [delBar_wedgeWithType, (mem_closedForms r s ψ.1).mp ψ.2, hα]
+      ((ofComplexManifold E M).wedgeWithType μ p q r s α ψ.val) ?_
+    rw [delBar_wedgeWithType, (mem_closedForms r s ψ.val).mp ψ.property, hα]
     simp only [map_zero, smul_zero, add_zero,
       coe_wedgeWith, coe_wedgeWithType, SmoothForm.cast_cast]
 
 /-- Multiplying a closed left factor by an exact right factor gives an exact form. -/
 theorem wedgeWith_mem_exactForms_of_right_mem (μ : F →L[ℂ] G →L[ℂ] H) (p q r s : ℕ)
     (φ : closedForms E M F p q) (ψ : closedForms E M G r s)
-    (hψ : ψ.1 ∈ exactForms E M G r s) :
-    (wedgeWith μ p q r s φ ψ).1 ∈ exactForms E M H (p + r) (q + s) := by
+    (hψ : ψ.val ∈ exactForms E M G r s) :
+    (wedgeWith μ p q r s φ ψ).val ∈ exactForms E M H (p + r) (q + s) := by
   cases s with
   | zero =>
-    have hzero : ψ.1 = 0 := by simpa using hψ
+    have hzero : ψ.val = 0 := by simpa using hψ
     rw [coe_wedgeWith, hzero, map_zero]
     exact zero_mem _
   | succ s =>
-    obtain ⟨β, hβ⟩ := (mem_exactForms_succ r s ψ.1).mp hψ
+    obtain ⟨β, hβ⟩ := (mem_exactForms_succ r s ψ.val).mp hψ
     refine mem_exactForms_of_eq_delBar rfl _
-      ((-1 : ℂ) ^ (p + q) • (ofComplexManifold E M).wedgeWithType μ p q r s φ.1 β) ?_
+      ((-1 : ℂ) ^ (p + q) • (ofComplexManifold E M).wedgeWithType μ p q r s φ.val β) ?_
     rw [Submodule.coe_smul, map_smul, delBar_wedgeWithType,
-      (mem_closedForms p q φ.1).mp φ.2, hβ]
+      (mem_closedForms p q φ.val).mp φ.property, hβ]
     simp only [LinearMap.zero_apply, map_zero, zero_add,
       coe_wedgeWith, coe_wedgeWithType]
     -- The complex sign from the primitive cancels the real sign in the Leibniz rule.

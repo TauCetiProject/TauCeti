@@ -80,11 +80,12 @@ section Scalar
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+
+section
 
 variable {π : ContRepresentation 𝕜 G V} (hπ : Continuous π)
 
-omit [FiniteDimensional 𝕜 V] in
 /-- **A class function does not see a simultaneous move of the two defining vectors.**  Moving both
 vectors of a matrix coefficient by `π h` reparametrizes it by the conjugation `g ↦ h⁻¹ * g * h`,
 which fixes a class function and preserves the inner product. -/
@@ -97,7 +98,6 @@ theorem inner_matrixCoeffLp_map_map (hunitary : IsUnitary π) {f : Lp 𝕜 2 (ha
     _ = ⟪matrixCoeffLp π hπ v w, f⟫_𝕜 :=
       (conjLpₗᵢ (E := 𝕜) (p := 2) (μ := haarProb G) 𝕜 h⁻¹).toLinearIsometry.inner_map_map _ _
 
-omit [FiniteDimensional 𝕜 V] in
 /-- **An endomorphism that represents the pairing against a class function is an intertwiner.**
 If `⟪w, T v⟫ = ⟪(π)_{v,w}, f⟫` for all `v, w` and `f` is a class function, then `T` intertwines `π`
 with itself. -/
@@ -116,6 +116,10 @@ private lemma isIntertwiningMap_of_inner_matrixCoeffLp_eq (hunitary : IsUnitary 
     _ = ⟪π g⁻¹ u, T v⟫_𝕜 := (hT _ _).symm
     _ = ⟪π g (π g⁻¹ u), π g (T v)⟫_𝕜 := (hunitary.inner_map_map g _ _).symm
     _ = ⟪u, π g (T v)⟫_𝕜 := by rw [hu]
+
+end
+
+variable [FiniteDimensional 𝕜 V] {π : ContRepresentation 𝕜 G V} (hπ : Continuous π)
 
 /-- **Against a class function, the matrix coefficients of an irreducible collapse to one scalar.**
 For `π` irreducible unitary and `f` a class function there is a `c` with
@@ -239,10 +243,9 @@ end ContRepresentation
 section Completeness
 
 variable {𝕜 G ι : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [T2Space G] [MeasurableSpace G] [BorelSpace G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   {models : ι → IrrepModel 𝕜 G}
 
-omit [T2Space G] in
 /-- **Class-function completeness.**  A class function in `L²(G)` orthogonal to the character of
 every model in a skeleton of the unitary dual is zero.
 
@@ -285,10 +288,10 @@ theorem eq_zero_of_forall_inner_characterLp_eq_zero [IsAlgClosed 𝕜] (h : IsIr
 
 end Completeness
 
-section Basis
+section Family
 
-variable {𝕜 G ι : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] [CompactSpace G] [T2Space G] [MeasurableSpace G] [BorelSpace G]
+variable {𝕜 G ι : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
 
 /-- **The characters of a family of models, inside the class functions.**  A character is a class
 function (`ContRepresentation.characterLp_mem_classFunctionLp`), so it is an element of
@@ -299,16 +302,20 @@ noncomputable def characterFamily (models : ι → IrrepModel 𝕜 G) (i : ι) :
   ⟨ContRepresentation.characterLp (models i).rep (models i).continuous_rep,
     ContRepresentation.characterLp_mem_classFunctionLp _ _⟩
 
-omit [IsAlgClosed 𝕜] [T2Space G] in
 @[simp]
 theorem coe_characterFamily (models : ι → IrrepModel 𝕜 G) (i : ι) :
     (characterFamily models i : Lp 𝕜 2 (haarProb G)) =
       ContRepresentation.characterLp (models i).rep (models i).continuous_rep :=
   (rfl)
 
-variable {models : ι → IrrepModel 𝕜 G}
+end Family
 
-omit [T2Space G] in
+section Basis
+
+variable {𝕜 G ι : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  {models : ι → IrrepModel 𝕜 G}
+
 /-- **The characters of a pairwise inequivalent family are orthonormal in the class functions.**
 This is the character orthogonality of `ContRepresentation.orthonormal_characterLp`, read
 inside the subspace, where the inner product is the restriction of the one on `L²(G)`.  Only
@@ -322,7 +329,6 @@ theorem orthonormal_characterFamily
     (fun i ↦ (models i).isIrreducible) hne
   exact hL2.codRestrict _ fun i ↦ ContRepresentation.characterLp_mem_classFunctionLp _ _
 
-omit [T2Space G] in
 /-- **The characters of a skeleton are complete in the class functions.**  Their span is dense:
 its orthogonal complement inside `classFunctionLp` vanishes, which is
 `TauCeti.eq_zero_of_forall_inner_characterLp_eq_zero`. -/
@@ -335,13 +341,13 @@ theorem orthogonal_span_characterFamily_eq_bot (h : IsIrrepSkeleton models) :
     have := (Submodule.mem_orthogonal _ _).1 hf (characterFamily models i)
       (Submodule.subset_span ⟨i, rfl⟩)
     rwa [Submodule.coe_inner, coe_characterFamily] at this
-  exact Subtype.ext (eq_zero_of_forall_inner_characterLp_eq_zero h f.2 horth)
+  exact Subtype.ext (eq_zero_of_forall_inner_characterLp_eq_zero h f.property horth)
 
 /-- **The irreducible characters are a Hilbert basis of the class functions.**  For a skeleton of
-the unitary dual of a compact Hausdorff group, the characters of the models are an orthonormal
+the unitary dual of a compact group, the characters of the models are an orthonormal
 basis of the closed subspace `classFunctionLp` of `L²(G)`.
 
-This is the "central" restriction of Peter-Weyl: a class function sees only the trace direction of
+This is the central restriction of Peter-Weyl: a class function sees only the trace direction of
 each block of the Peter-Weyl basis, and that direction is spanned by the character. For a finite
 group it is the statement that the irreducible characters are a basis of the class functions. -/
 noncomputable def characterBasis (h : IsIrrepSkeleton models) :
@@ -349,7 +355,6 @@ noncomputable def characterBasis (h : IsIrrepSkeleton models) :
   HilbertBasis.mkOfOrthogonalEqBot (orthonormal_characterFamily h.pairwise_isEmpty_equiv)
     (orthogonal_span_characterFamily_eq_bot h)
 
-omit [T2Space G] in
 /-- **The class-function basis is the characters.**  As for `TauCeti.coe_peterWeylBasis`, the
 elements are on the nose the characters of the models, not merely some orthonormal basis whose
 existence is asserted. -/
@@ -367,7 +372,6 @@ noncomputable def stdCharacterBasis :
     HilbertBasis (IrrepClass 𝕜 G) 𝕜 (classFunctionLp 𝕜 𝕜 2 (haarProb G)) :=
   characterBasis (isIrrepSkeleton_model 𝕜 G)
 
-omit [T2Space G] in
 /-- The unconditional class-function basis is the characters of the chosen representatives. -/
 @[simp]
 theorem coe_stdCharacterBasis :

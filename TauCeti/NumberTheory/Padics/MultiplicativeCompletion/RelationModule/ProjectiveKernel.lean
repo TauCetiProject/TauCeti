@@ -65,12 +65,11 @@ variable (p : ℕ) [Fact p.Prime]
 section LocalField
 
 variable {K L : Type} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
-  [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] [CharZero K]
-  [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [CharZero L]
+  [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
   [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L] [Module.Finite ℚ_[p] L]
   [ValuativeExtension ℚ_[p] L]
 
-omit [CharZero K] [CharZero L] in
 /-- A map from the relation module to `A(L)` which is onto on `H²(G, -)` is bijective on
 `H-hat^2(S, -)` for every `p`-subgroup `S`: a class of `A(L)` restricting to a generator on every
 subgroup lies in its image, and both groups have `#S` elements. -/

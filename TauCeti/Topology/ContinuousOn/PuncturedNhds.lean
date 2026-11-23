@@ -34,6 +34,6 @@ namespace TauCeti
 of `↑x`. -/
 theorem tendsto_subtype_val_nhdsNE {p : α → Prop} (x : Subtype p) :
     Tendsto (Subtype.val : Subtype p → α) (𝓝[≠] x) (𝓝[≠] (x : α)) :=
-  continuous_subtype_val.continuousAt.tendsto_nhdsNE Subtype.val_injective
+  continuous_subtypeVal.continuousAt.tendsto_nhdsNE Subtype.val_injective
 
 end TauCeti

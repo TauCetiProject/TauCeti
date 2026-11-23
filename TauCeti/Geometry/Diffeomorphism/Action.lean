@@ -38,6 +38,8 @@ each diffeomorphism acts by a homeomorphism.
   its minimal period under `f` divides `k`.
 * `Diffeomorph.exists_zpow_apply_eq_iff`: the orbit of a periodic point under the integer powers
   of `f` consists of its iterates below the minimal period.
+* `Diffeomorph.apply_zpow_apply_of_invariant`: a function invariant under `f` is invariant under
+  every integer power of `f`.
 -/
 
 public section
@@ -95,6 +97,15 @@ theorem exists_zpow_apply_eq_iff {f : M ≃ₘ^n⟮I, I⟯ M} {x : M} (hx : x �
     rw [← hiter, Int.toNat_of_nonneg hnn, hk]
   · rintro ⟨j, -, rfl⟩
     exact ⟨j, hiter j⟩
+
+/-- A function invariant under a self-diffeomorphism `f` is invariant under every integer power
+of `f`. -/
+theorem apply_zpow_apply_of_invariant {β : Type*} {g : M → β} (f : M ≃ₘ^n⟮I, I⟯ M)
+    (hg : ∀ x, g (f x) = g x) (k : ℤ) (x : M) : g ((f ^ k) x) = g x := by
+  induction k using Int.induction_on generalizing x with
+  | zero => rfl
+  | succ k ih => rw [zpow_add_one, mul_apply, ih, hg]
+  | pred k ih => rw [zpow_sub_one, mul_apply, ih, inv_apply, ← hg, apply_symm_apply]
 
 /-- The tautological action of `M ≃ₘ^n⟮I, I⟯ M` on `M` is faithful. -/
 instance applyFaithfulSMul : FaithfulSMul (M ≃ₘ^n⟮I, I⟯ M) M :=

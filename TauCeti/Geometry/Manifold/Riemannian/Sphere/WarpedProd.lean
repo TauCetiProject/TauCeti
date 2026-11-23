@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Scalar
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Nonnegative
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Sectional
 import TauCeti.Geometry.Manifold.Riemannian.Restriction.Real
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
 
@@ -19,7 +19,9 @@ On any open subset of `ℝ`, the metric `dr² + f(r)² g_(Sⁿ)` has scalar curv
 `n(n-1)(1-f'²)/f² - 2n f''/f`. The warping function need only be smooth and
 nowhere zero on that open set. In particular, no standard-cap assumptions enter
 these computations. The sectional curvature is nonnegative when `f f'' ≤ 0` and
-`f'² ≤ 1` at the point.
+`f'² ≤ 1` at the point, and equals `k` when `f'' = -k f` and `f'² + k f² = 1` there. The
+latter holds for `f(r) = 2 sin (r / 2)` with `k = 1 / 4`, the profile of the round sphere of
+radius `2`.
 
 ## References
 
@@ -114,5 +116,49 @@ theorem sectionalCurvature_warpedProdTangentSpace_real_sphere_nonneg
     have hbound := mul_le_mul_of_nonneg_right hd hgram
     simp only [real_inner_comm b a] at *
     nlinarith
+
+/-- The metric `dr² + f(r)² g_(Sⁿ)` has sectional curvature `k` at a point where
+`f'' = -k f` and `f'² + k f² = 1`. These are the equations satisfied by the profiles
+`sin (√k r) / √k` of round spheres when `k > 0`. The warping function need only be smooth and
+nonzero on the open set; its sign is irrelevant. -/
+theorem hasSectionalCurvatureAt_warpedProdTangentSpace_real_sphere
+    (U : Opens ℝ) {f : ℝ → ℝ}
+    (hf : ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ (fun r : U ↦ f r))
+    (hf₀ : ∀ r : U, f r ≠ 0)
+    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
+    [Fact (Module.finrank ℝ V = n + 1)] (p : U × Metric.sphere (0 : V) 1) {k : ℝ}
+    (hdd : deriv (deriv f) p.1 = -(k * f p.1)) (hd : deriv f p.1 ^ 2 + k * f p.1 ^ 2 = 1) :
+    let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
+    letI : RiemannianBundle (fun q : U × Metric.sphere (0 : V) 1 ↦
+      TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+      ⟨((g.restrictOpenTangentSpace U).warpedProdTangentSpace (fun r ↦ f r) hf hf₀
+        ((sphereRoundMetric (E := V) (n := n)).ofLE (m := ∞) le_top)).toRiemannianMetric⟩
+    (leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))
+      (U × Metric.sphere (0 : V) 1)).HasSectionalCurvatureAt
+      (isMetricCompatible_leviCivitaConnection (𝓘(ℝ).prod (𝓡 n))) p k := by
+  let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
+  let g₁ := g.restrictOpenTangentSpace U
+  let g₂ := (sphereRoundMetric (E := V) (n := n)).ofLE (m := ∞) le_top
+  let : RiemannianBundle (fun r : U ↦ TangentSpace 𝓘(ℝ) r) := ⟨g₁.toRiemannianMetric⟩
+  let : RiemannianBundle (fun s : Metric.sphere (0 : V) 1 ↦ TangentSpace (𝓡 n) s) :=
+    ⟨g₂.toRiemannianMetric⟩
+  let : RiemannianBundle (fun q : U × Metric.sphere (0 : V) 1 ↦
+    TangentSpace (𝓘(ℝ).prod (𝓡 n)) q) :=
+    ⟨(g₁.warpedProdTangentSpace (fun r ↦ f r) hf hf₀ g₂).toRiemannianMetric⟩
+  have h : IsWarpedProduct 𝓘(ℝ) (𝓡 n) (Metric.sphere (0 : V) 1) (fun r : U ↦ f r) :=
+    ⟨fun q a b ↦ ContMDiffRiemannianMetric.warpedProdTangentSpace_inner _ _ _ _ _ q a b⟩
+  have hf₂ : ContDiffAt ℝ 2 f (p.1 : ℝ) :=
+    (contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1
+      hf.contMDiffAt)).of_le (by simp)
+  apply h.hasSectionalCurvatureAt_of_finrank_le_one hf (by simp) p
+  · rw [laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv U hf₂, hdd]
+    ring
+  · intro a b
+    have hR := g₂.isConstantCurvatureTensor_iff 1 |>.mp
+      isConstantCurvatureTensor_sphereRoundMetric_ofLE p.2 a b b
+    rw [hR, one_smul, sq_norm_mgradient_restrictOpenTangentSpace_real_eq_sq_deriv U
+      (hf₂.differentiableAt (by norm_num)), hd, one_mul, Matrix.real_det_gram_fin_two]
+    simp only [inner_sub_left, real_inner_smul_left, real_inner_comm b a]
+    ring
 
 end TauCeti

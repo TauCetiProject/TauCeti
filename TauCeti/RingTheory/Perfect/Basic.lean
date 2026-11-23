@@ -36,6 +36,9 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
   are radical, and extension along a homomorphism of perfect rings preserves radical ideals and
   their intersections. The first fails for general rings: in `ℚ[x, y]` the sum of the radical
   ideals `(x)` and `(x - y ^ 2)` is `(x, y ^ 2)`, which is not radical.
+* `Ideal.IsRadical.perfectRing_quotient`, `Ideal.Quotient.perfectRing_iff_isRadical`: the quotient
+  of a perfect ring by a radical ideal is perfect, and in prime characteristic this characterizes
+  radical ideals.
 -/
 
 public section
@@ -164,4 +167,37 @@ theorem map_inf (p : ℕ) [Fact p.Prime] [ExpChar R p] [PerfectRing R p] [ExpCha
     _ ≤ ((I ⊓ J).map φ).radical := radical_mono (map_mono mul_le_inf)
     _ = (I ⊓ J).map φ := ((hI.inf hJ).map p φ).radical
 
+/-- The quotient of a perfect ring of exponential characteristic `p` by a radical ideal is perfect,
+including the degenerate case `I = ⊤`. -/
+theorem perfectRing_quotient {A : Type*} [CommRing A] (p : ℕ) [ExpChar A p] [PerfectRing A p]
+    {I : Ideal A} (hI : I.IsRadical) : PerfectRing (A ⧸ I) p where
+  bijective_frobenius := by
+    refine ⟨?_, fun x ↦ ?_⟩
+    · intro x y h
+      obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+      obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
+      dsimp only at h
+      rw [← map_pow, ← map_pow, Ideal.Quotient.eq] at h
+      exact Ideal.Quotient.eq.mpr (hI ⟨p, by rwa [sub_pow_expChar]⟩)
+    · obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+      obtain ⟨b, rfl⟩ := (PerfectRing.bijective_frobenius (p := p)).2 a
+      exact ⟨Ideal.Quotient.mk I b, (map_pow _ b p).symm⟩
+
 end Ideal.IsRadical
+
+namespace Ideal.Quotient
+
+/-- For an ideal `I` of a perfect ring `A` of prime characteristic `p`, the quotient `A ⧸ I` is
+perfect if and only if `I` is radical. -/
+@[simp]
+theorem perfectRing_iff_isRadical {A : Type*} [CommRing A] (p : ℕ) [hp : Fact p.Prime]
+    [ExpChar A p] [PerfectRing A p] {I : Ideal A} :
+    PerfectRing (A ⧸ I) p ↔ I.IsRadical := by
+  refine ⟨fun _ ↦ (Ideal.isRadical_iff_pow_one_lt p hp.out.one_lt).mpr fun x hx ↦ ?_,
+    fun hI ↦ hI.perfectRing_quotient p⟩
+  rw [← Ideal.Quotient.eq_zero_iff_mem] at hx ⊢
+  exact PerfectRing.bijective_frobenius.1
+    (by rw [← map_pow, hx, zero_pow hp.out.ne_zero] :
+      (Ideal.Quotient.mk I x) ^ p = (0 : A ⧸ I) ^ p)
+
+end Ideal.Quotient
