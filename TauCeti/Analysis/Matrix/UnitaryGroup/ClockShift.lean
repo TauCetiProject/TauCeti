@@ -17,6 +17,7 @@ import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Matrix.Normal
 import TauCeti.Analysis.RCLike.Basic
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.UnitaryGroup
 
 /-!
@@ -187,15 +188,6 @@ theorem clockUnitary_shiftUnitary_phase_conj {r : ℕ} [NeZero r] {ζ : ℂ} (h�
   · simp only [P, Submonoid.coe_mul, star_mul, Matrix.mul_smul, Matrix.smul_mul]
     rw [hsplit, hSp, clockUnitary_pow_conj_shiftUnitary hζ q, smul_smul, mul_comm b (ζ ^ q)]
 
-/-- Left-multiplying a vector `w` by `star V` computes the Hermitian dot products with the columns
-of `V`. -/
-private theorem star_mulVec_apply_eq_dotProduct_col {n R : Type*} [Fintype n]
-    [NonUnitalNonAssocSemiring R] [Star R] (V : Matrix n n R) (w : n → R) (k : n) :
-    (star V *ᵥ w) k = dotProduct (star (V.col k)) w := by
-  rw [mulVec, dotProduct]
-  refine Finset.sum_congr rfl fun x _ => ?_
-  rw [star_apply, Pi.star_apply, col_apply]
-
 /-- Given `A₁ = diagonal d` and `B₁` in `U(r)` with `A₁ * B₁ = ζ • (B₁ * A₁)`, the orbit vectors
 `vNat m = B₁^m *ᵥ e₀` are unit eigenvectors of `A₁` with eigenvalues `ζ^m * d 0`, pairwise
 orthogonal for distinct `ζ`-powers, and form a unitary matrix `Vmat`. -/
@@ -244,11 +236,13 @@ private theorem eigenvectorOrbit_mem_unitary {r : ℕ} [NeZero r] {ζ : ℂ} (h�
         (Pi.single 0 1) (Pi.single 0 1)
   have hVu : Vmat ∈ unitaryGroup (Fin r) ℂ := by
     rw [mem_unitaryGroup_iff']
+    have hVcol (j : Fin r) : Vmat.col j = vNat j.val := by
+      ext i
+      rw [Matrix.col_apply]
     ext k l
     have hentry : (star Vmat * Vmat) k l = dotProduct (star (vNat k.val)) (vNat l.val) := by
       rw [← Matrix.col_apply (star Vmat * Vmat) l k, Matrix.col_mul_eq_mulVec_col,
-        star_mulVec_apply_eq_dotProduct_col]
-      rfl
+        Matrix.star_mulVec_apply_eq_dotProduct_col, hVcol k, hVcol l]
     rw [hentry]
     by_cases hkl : k = l
     · subst hkl; simp [hv_norm]
@@ -264,9 +258,12 @@ private theorem eigenvectorOrbit_return {r : ℕ} [NeZero r] {ζ : ℂ} (hζ : I
     ∃ β : Circle, vNat r = (β : ℂ) • vNat 0 := by
   let Vmat : Matrix (Fin r) (Fin r) ℂ := fun i k => vNat k.val i
   let β : ℂ := dotProduct (star (vNat 0)) (vNat r)
+  have hVcol (j : Fin r) : Vmat.col j = vNat j.val := by
+    ext i
+    rw [Matrix.col_apply]
   have hVr : star Vmat *ᵥ vNat r = β • Pi.single 0 1 := by
     ext k
-    rw [star_mulVec_apply_eq_dotProduct_col, show Vmat.col k = vNat k.val from rfl,
+    rw [Matrix.star_mulVec_apply_eq_dotProduct_col, hVcol k,
       Pi.smul_apply, smul_eq_mul]
     by_cases hk : k = 0
     · subst hk; simp [β]
@@ -281,8 +278,7 @@ private theorem eigenvectorOrbit_return {r : ℕ} [NeZero r] {ζ : ℂ} (hζ : I
     have h1 := congrArg (Vmat *ᵥ ·) hVr
     rw [mulVec_mulVec, mem_unitaryGroup_iff.mp hVu, one_mulVec, mulVec_smul] at h1
     have hVe0 : Vmat *ᵥ Pi.single 0 1 = vNat 0 := by
-      ext i
-      simp [Vmat, mulVec, dotProduct, Pi.single_apply]
+      rw [Matrix.mulVec_single_one, hVcol 0, Fin.val_zero]
     rwa [hVe0] at h1
   have hβnorm : ‖β‖ = 1 := by
     have h1 := hv_norm r
@@ -358,8 +354,8 @@ private theorem exists_unitary_conj_diagonal_to_clock_shift {r : ℕ} [NeZero r]
   have hW_col (k : Fin r) :
       (W : Matrix (Fin r) (Fin r) ℂ).col k = (((b⁻¹ : Circle) : ℂ) ^ k.val) • vNat k.val := by
     ext j
-    rw [Matrix.col_apply, show (W : Matrix (Fin r) (Fin r) ℂ) = Vmat * Dmat from rfl,
-      mul_diagonal, Pi.smul_apply, smul_eq_mul, mul_comm]
+    simp only [Matrix.col_apply, W, Submonoid.coe_mul]
+    rw [mul_diagonal, Pi.smul_apply, smul_eq_mul, mul_comm]
   have hAW : (A₁ : Matrix (Fin r) (Fin r) ℂ) * (W : Matrix (Fin r) (Fin r) ℂ) =
       (W : Matrix (Fin r) (Fin r) ℂ) *
         ((α : ℂ) • (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ)) := by

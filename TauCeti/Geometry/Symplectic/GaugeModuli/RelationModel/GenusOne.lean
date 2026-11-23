@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.GaugeModuli.RelationModel.Basic
 public import TauCeti.RepresentationTheory.SU2.BinaryDihedral
-import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Analysis.Matrix.UnitaryGroup.ClockShift
-import TauCeti.Analysis.RCLike.Basic
 import TauCeti.RepresentationTheory.SU2.Adjoint
 import TauCeti.Topology.Algebra.GroupAction.Transitive
 
@@ -33,12 +31,14 @@ As immediate consequences we also deduce nonemptiness of `relationSet r ζ g` an
 `relationModuli r ζ g` for every positive genus `g ≥ 1`, triviality of the central-twist
 `H¹(T²; μ_r)` action at genus one (`TauCeti.GaugeModuli.centerTwist_smul_relationModuli_genus_one`),
 and hence non-freeness of the central-twist action for every `r ≥ 2` and primitive `ζ`
-(`TauCeti.GaugeModuli.exists_ne_one_centerTwist_fix_genus_one`). Explicit rank-two checks
+(`TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`). Explicit rank-two checks
 confirm that the pair `(TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)`
-satisfies `⁅A, B⁆ = -1` (`TauCeti.GaugeModuli.rankTwoPair_mem_relationSet`), whereas at the
+satisfies `⁅A, B⁆ = -1`
+(`TauCeti.GaugeModuli.binaryDihedralRotation_two_weylElement_inv_mem_relationSet`), whereas at the
 non-coprime parameter `r = 2`, `ζ = 1`, the moduli `relationModuli 2 1 1` is not a subsingleton
 (`TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`) and the `SU(2)` action admits
-non-central stabilizers (`TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self`).
+non-central stabilizers
+(`TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one`).
 
 ## Main definitions
 
@@ -57,10 +57,10 @@ non-central stabilizers (`TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_
   `TauCeti.GaugeModuli.nonempty_relationModuli_of_pos`: nonemptiness of the relation set and moduli
   for every genus `g ≥ 1`.
 * `TauCeti.GaugeModuli.centerTwist_smul_relationModuli_genus_one` and
-  `TauCeti.GaugeModuli.exists_ne_one_centerTwist_fix_genus_one`: the central-twist action is
-  trivial at genus one, hence not free for any `r ≥ 2` and primitive `ζ`.
-* `TauCeti.GaugeModuli.rankTwoPair_mem_relationSet`,
-  `TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self`, and
+  `TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`: the central-twist action
+  is trivial at genus one, hence not free for any `r ≥ 2` and primitive `ζ`.
+* `TauCeti.GaugeModuli.binaryDihedralRotation_two_weylElement_inv_mem_relationSet`,
+  `TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one`, and
   `TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`: explicit rank-two checks
   for `ζ = -1` and the non-coprime contrast `ζ = 1`.
 
@@ -151,7 +151,7 @@ noncomputable def psuOrbitHomeomorphGenusOne {r : ℕ} {ζ : ℂ} (hζ : IsPrimi
   letI : MulAction.IsPretransitive (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ 1) :=
     isPretransitive_psu_relationSet_genus_one hζ
-  let htriv : ∀ ⦃p q : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+  have htriv : ∀ ⦃p q : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range⦄,
       QuotientGroup.leftRel (MulAction.stabilizer _ x₀) p q → p = q := by
     intro p q hpq
@@ -209,7 +209,7 @@ theorem centerTwist_smul_relationModuli_genus_one (r : ℕ) (ζ : ℂ) (hζ : Is
 /-- For every `r ≥ 2` and primitive `r`-th root of unity `ζ`, the central-twist `H¹(T²; μ_r)`
 action on `relationModuli r ζ 1` is not free: the nontrivial twist `(ζ • 1, 1)` fixes the unique
 point of `relationModuli r ζ 1`. -/
-theorem exists_ne_one_centerTwist_fix_genus_one {r : ℕ} (hr : 2 ≤ r) {ζ : ℂ}
+theorem exists_ne_one_centerTwist_smul_eq_self_genus_one {r : ℕ} (hr : 2 ≤ r) {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ r) :
     ∃ (ε : Fin 1 → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
         Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ))
@@ -237,7 +237,7 @@ section RankTwoChecks
 /-- For `r = 2`, `ζ = -1`, the pair
 `(TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)` satisfies `⁅A, B⁆ = -1` and
 hence belongs to `relationSet 2 (-1) 1`. -/
-theorem rankTwoPair_mem_relationSet :
+theorem binaryDihedralRotation_two_weylElement_inv_mem_relationSet :
     (fun _ : Fin 1 => (TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)) ∈
       relationSet 2 (-1) 1 := by
   rw [mem_relationSet_one_iff]
@@ -259,7 +259,7 @@ theorem rankTwoPair_mem_relationSet :
 /-- At the non-coprime parameter `r = 2`, `ζ = 1`, the simultaneous `SU(2)`-conjugation action on
 `relationSet 2 1 g` admits non-central stabilizers (for example
 `TauCeti.SU2.binaryDihedralRotation 2` fixes the trivial tuple `1`). -/
-theorem exists_notMem_center_conjAct_smul_eq_self (g : ℕ) :
+theorem exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one (g : ℕ) :
     ∃ (u : Matrix.specialUnitaryGroup (Fin 2) ℂ) (x : relationSet 2 1 g),
       u ∉ Subgroup.center (Matrix.specialUnitaryGroup (Fin 2) ℂ) ∧
         ConjAct.toConjAct u • x = x := by
