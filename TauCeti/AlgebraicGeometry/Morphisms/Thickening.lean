@@ -51,6 +51,9 @@ module of homomorphisms into `I`.
   `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.inclusion_pow_succ`: for ideal sheaves
   `I ≤ J`, the inclusion `V(J) ⟶ V(I)` is a first-order thickening if and only if `J ^ 2 ≤ I`,
   which holds in particular for successive positive powers `I ^ (n + 2) ≤ I ^ (n + 1)`.
+* `TauCeti.AlgebraicGeometry.IsThickening.factor_firstOrder`: a closed immersion whose ideal sheaf
+  `I` satisfies `I ^ (n + 2) = 0` factors through `V(I ^ (n + 1))` as a thickening with ideal of
+  vanishing `(n + 1)`-st power followed by a first-order thickening.
 * `TauCeti.AlgebraicGeometry.IsThickening.ker_le_ker`: a morphism from a reduced scheme kills the
   ideal sheaf of a thickening of its target, so it lifts along the thickening; the reduction
   `X.nilradical.subscheme ⟶ X` is a thickening.
@@ -307,5 +310,41 @@ theorem inclusion_pow_succ {I : X.IdealSheafData} {n : ℕ} (h : I ^ (n + 2) ≤
     exact pow_le_pow_of_le_one bot_le le_top (by omega)
 
 end IsFirstOrderThickening
+
+/-- The radical of a positive power of an ideal sheaf is the radical of the ideal sheaf. -/
+theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.radical_pow_succ (I : X.IdealSheafData)
+    (n : ℕ) : (I ^ (n + 1)).radical = I.radical := by
+  induction n with
+  | zero => rw [pow_one]
+  | succ n ih => rw [pow_succ, Scheme.IdealSheafData.radical_mul, ih, inf_idem]
+
+namespace IsThickening
+
+/-- A closed immersion `i : Z ⟶ X` whose ideal sheaf `I` satisfies `I ^ (n + 2) = 0` factors as
+`Z ⟶ X' ⟶ X` through the closed subscheme `X' = V(I ^ (n + 1))`, where `X' ⟶ X` is a first-order
+thickening (as `(I ^ (n + 1)) ^ 2 ≤ I ^ (n + 2) = 0`) and `Z ⟶ X'` is a thickening whose ideal
+sheaf `I / I ^ (n + 1)` has vanishing `(n + 1)`-st power. Inductively, a thickening with nilpotent
+ideal sheaf is a composite of first-order thickenings. -/
+theorem factor_firstOrder (i : Z ⟶ X) [IsClosedImmersion i] {n : ℕ} (h : i.ker ^ (n + 2) = ⊥) :
+    ∃ a : Z ⟶ (i.ker ^ (n + 1)).subscheme, a ≫ (i.ker ^ (n + 1)).subschemeι = i ∧
+      IsFirstOrderThickening (i.ker ^ (n + 1)).subschemeι ∧ IsThickening a ∧
+      a.ker ^ (n + 1) = ⊥ := by
+  have hle : i.ker ^ (n + 1) ≤ i.ker :=
+    (pow_le_pow_of_le_one bot_le le_top (by omega : 1 ≤ n + 1)).trans_eq (pow_one _)
+  -- The ideal sheaf of `Z ⟶ X'` is the inverse image of `I` along `X' ⟶ X`, and its
+  -- `(n + 1)`-st power is the inverse image of `I ^ (n + 1)`, which vanishes on `X'`.
+  have hker : (i.toImage ≫ Scheme.IdealSheafData.inclusion hle).ker ^ (n + 1) = ⊥ := by
+    rw [Scheme.Hom.ker_comp_of_isIso, Scheme.IdealSheafData.ker_inclusion,
+      ← Scheme.IdealSheafData.comap_pow]
+    simpa using (i.ker ^ (n + 1)).subschemeι.comap_ker_self
+  refine ⟨i.toImage ≫ Scheme.IdealSheafData.inclusion hle, ?_, ⟨?_⟩, ?_, hker⟩
+  · simp [Scheme.IdealSheafData.inclusion_subschemeι]
+  · rw [Scheme.IdealSheafData.ker_subschemeι, ← pow_add, ← le_bot_iff, ← h]
+    exact pow_le_pow_of_le_one bot_le le_top (by omega)
+  · rw [isThickening_iff_ker_le_nilradical, ← Scheme.IdealSheafData.radical_bot, ← hker,
+      Scheme.IdealSheafData.radical_pow_succ]
+    exact Scheme.IdealSheafData.le_radical _
+
+end IsThickening
 
 end TauCeti.AlgebraicGeometry
