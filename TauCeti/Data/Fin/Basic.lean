@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Batteries.Data.Fin.Fold
 public import Mathlib.Data.Fintype.Perm
 
 public import Mathlib.Algebra.BigOperators.Fin
@@ -120,6 +121,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
   adjacent entries of a tuple does not change the product (sum) of all its entries.
+* `Fin.eq_dfoldl_of_zero_of_succ`: a dependent family indexed by `Fin (n + 1)` satisfying the
+  zero and successor equations equals the restricted dependent left fold `Fin.dfoldl`.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`;
   `TauCeti.sub_one_ne_self` and `TauCeti.add_one_ne_sub_one` are the companions for subtraction.
@@ -766,6 +769,24 @@ theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
     have := succAbove_predAbove (p := l.castPred hl) (i := v)
       (by rwa [castSucc_castPred])
     rwa [castSucc_castPred] at this
+
+/-- A dependent family indexed by `Fin (n + 1)` that agrees with `x` at `0` and satisfies the step
+equation `g i.succ = f i (g i.castSucc)` equals the restricted dependent left fold `Fin.dfoldl` at
+every prefix index `k`. -/
+theorem eq_dfoldl_of_zero_of_succ {n : ℕ} {α : Fin (n + 1) → Type*}
+    (f : ∀ i : Fin n, α i.castSucc → α i.succ) (x : α 0) (g : ∀ k : Fin (n + 1), α k)
+    (h0 : g 0 = x) (hs : ∀ i : Fin n, g i.succ = f i (g i.castSucc)) (k : Fin (n + 1)) :
+    g k =
+      Fin.dfoldl k.val (fun j => α (Fin.castLE k.isLt j))
+        (fun j => f (Fin.castLE (Nat.le_of_lt_succ k.isLt) j)) x := by
+  induction k using Fin.induction with
+  | zero =>
+    refine h0.trans ?_
+    exact (Fin.dfoldl_zero (α := fun j => α (Fin.castLE (0 : Fin (n + 1)).isLt j)) _ x).symm
+  | succ i ih =>
+    rw [hs i, ih]
+    exact (Fin.dfoldl_succ_last (α := fun j => α (Fin.castLE i.succ.isLt j))
+      (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j)) x).symm
 
 end Fin
 

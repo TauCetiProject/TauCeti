@@ -302,24 +302,12 @@ theorem polynomialRealization_polynomialChainPrefix_eq_dfoldl
       Fin.dfoldl k.val (fun j => I (Fin.castLE k.isLt j) → K)
         (fun j => polynomialRealization (P (Fin.castLE (Nat.le_of_lt_succ k.isLt) j))
           (fun v => w ⟨Fin.castLE (Nat.le_of_lt_succ k.isLt) j, v⟩))
-        x := by
-  induction k using Fin.induction with
-  | zero =>
-    rw [polynomialRealization_polynomialChainPrefix_zero]
-    -- `Fin.castLE (0 : Fin (n + 1)).isLt 0` has `.val = 0` and is definitionally `0`.
-    exact (Fin.dfoldl_zero
-      (α := fun j => I (Fin.castLE (0 : Fin (n + 1)).isLt j) → K) _ x).symm
-  | succ i ih =>
-    rw [polynomialRealization_polynomialChainPrefix_succ, ih]
-    -- At `i.succ`, `(Fin.dfoldl_succ_last ...).symm` peels off the final step `Fin.last i.val`,
-    -- whose `Fin.castLE` image (`Fin.castLE_last i`) has `.val = i.val` and is definitionally `i`;
-    -- on the remaining steps `j.castSucc`, `Fin.castLE` (`Fin.castLE_castSucc`) agrees
-    -- definitionally with the `i.castSucc` fold in `ih`.
-    exact (Fin.dfoldl_succ_last
-      (α := fun j => I (Fin.castLE i.succ.isLt j) → K)
-      (fun j => polynomialRealization (P (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j))
-        (fun v => w ⟨Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j, v⟩))
-      x).symm
+        x :=
+  Fin.eq_dfoldl_of_zero_of_succ
+    (fun i => polynomialRealization (P i) (fun v => w ⟨i, v⟩))
+    x (fun j => polynomialRealization (polynomialChainPrefix P j) w x)
+    (congrFun (congrFun (polynomialRealization_polynomialChainPrefix_zero P) w) x)
+    (fun i => polynomialRealization_polynomialChainPrefix_succ P i w x) k
 
 /-- Evaluating `polynomialChain P` realizes the finite chain of layer realizations
 `chain (fun i => polynomialRealization (P i))` after currying the parameter coordinates with
@@ -363,25 +351,17 @@ theorem inputPolynomial_polynomialChainPrefix_succ
           MvPolynomial (Σ j, W j) K))
         (inputPolynomial (polynomialChainPrefix P i.castSucc))
         (inputPolynomial (P i) o) := by
-  rw [polynomialChainPrefix_succ_eq_rename_polynomialCompose_last, inputPolynomial_rename_sumMap,
-    inputPolynomial_polynomialCompose,
-    eval₂_comp_right (k := map ((rename (Sum.elim id (Sigma.mk (β := W) i)) :
-      MvPolynomial ((Σ j, W j) ⊕ W i) K →ₐ[K] MvPolynomial (Σ j, W j) K) :
-      MvPolynomial ((Σ j, W j) ⊕ W i) K →+* MvPolynomial (Σ j, W j) K)),
-    eval₂_map]
-  refine congrArg₂ (fun f g => eval₂ f g (inputPolynomial (P i) o)) ?_ (funext fun a => ?_)
-  · rw [← RingHom.comp_assoc, map_comp_C, RingHom.comp_assoc, ← AlgHom.comp_toRingHom,
-      rename_comp_rename, Sum.elim_comp_inr]
-  · simp only [Function.comp_apply, map_map]
-    have hid :
-        ((rename (Sum.elim id (Sigma.mk (β := W) i)) :
-            MvPolynomial ((Σ j, W j) ⊕ W i) K →ₐ[K] MvPolynomial (Σ j, W j) K).comp
-          (rename Sum.inl :
-            MvPolynomial (Σ j, W j) K →ₐ[K] MvPolynomial ((Σ j, W j) ⊕ W i) K)) =
-          AlgHom.id K _ := by
-      rw [rename_comp_rename, Sum.elim_comp_inl, rename_id]
-    rw [← AlgHom.comp_toRingHom, hid]
-    exact map_id _
+  have hrsig :
+      (bind₁ (fun w => X ⟨i, w⟩) : MvPolynomial (W i) K →ₐ[K] MvPolynomial (Σ j, W j) K) =
+        rename (Sigma.mk i) :=
+    (aeval_eq_bind₁ _).symm.trans (rename_eq_aeval (Sigma.mk i)).symm
+  have hstep :
+      polynomialChainPrefix P i.succ =
+        fun k => bind₁ (Sum.elim (fun w => rename Sum.inl (X ⟨i, w⟩))
+          (polynomialChainPrefix P i.castSucc)) (P i k) := by
+    funext k
+    simp [polynomialChainPrefix_succ]
+  rw [hstep, inputPolynomial_bind₁_sumElim, hrsig]
 
 /-- Reparametrizing each layer `i` by `R i` reparametrizes every prefix of `polynomialChainPrefix`
 by the induced substitution on `Σ i, W i`. -/

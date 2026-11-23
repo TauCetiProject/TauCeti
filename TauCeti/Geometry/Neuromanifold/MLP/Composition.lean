@@ -9,6 +9,7 @@ public import Batteries.Data.Fin.Fold
 public import TauCeti.Geometry.Neuromanifold.Activation
 public import TauCeti.Geometry.Neuromanifold.Dense
 public import TauCeti.Geometry.Neuromanifold.MLP.Basic
+import TauCeti.Data.Fin.Basic
 
 /-!
 # MLPs as iterated layer compositions
@@ -239,22 +240,13 @@ theorem evalPrefix_eq_dfoldl (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.w
           Neuromanifold.activation
               (A.layerActivation (Fin.castLE (Nat.le_of_lt_succ i.isLt) k)) () ∘
             dense (θ (Fin.castLE (Nat.le_of_lt_succ i.isLt) k)))
-        x := by
-  induction i using Fin.induction with
-  | zero =>
-    exact (A.evalPrefix_zero θ x).trans (Fin.dfoldl_zero
-      (α := fun k => Fin (A.width (Fin.castLE (0 : Fin (L + 1)).isLt k)) → K) _ x).symm
-  | succ i ih =>
-    rw [evalPrefix_succ_eq_activation_dense, ih]
-    -- At `i.succ`, `(Fin.dfoldl_succ_last ...).symm` peels off the final step `Fin.last i.val`,
-    -- whose `Fin.castLE` image has `.val = i.val` and is definitionally `i`; on the remaining
-    -- steps `k.castSucc`, `Fin.castLE` agrees definitionally with the `i.castSucc` fold in `ih`.
-    exact (Fin.dfoldl_succ_last
-      (α := fun k => Fin (A.width (Fin.castLE i.succ.isLt k)) → K)
-      (fun k =>
-        Neuromanifold.activation
-            (A.layerActivation (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) k)) () ∘
-          dense (θ (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) k))) x).symm
+        x :=
+  Fin.eq_dfoldl_of_zero_of_succ
+    (fun k => Neuromanifold.activation (A.layerActivation k) () ∘ dense (θ k))
+    x (A.evalPrefix θ x) (A.evalPrefix_zero θ x)
+    (fun k => by
+      simpa only [Function.comp_apply] using evalPrefix_succ_eq_activation_dense A θ x k)
+    i
 
 /-- Every bias-free prefix `A.evalPrefix (A.zeroBias w) x i` is the `i.val`-step dependent left
 fold `Fin.dfoldl` of the layer maps
