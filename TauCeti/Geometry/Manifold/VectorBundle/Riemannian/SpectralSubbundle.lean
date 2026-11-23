@@ -354,19 +354,6 @@ private theorem isUnit_frameMatrix (hb : ⇑b = (u · x)) (hA : Function.Injecti
   exact ContinuousLinearMap.isUnit_iff_bijective.mpr ⟨h, LinearMap.injective_iff_surjective.mp h⟩
 
 omit [TopologicalSpace B] in
-/-- In an orthonormal basis, the negative and positive spectral subspaces of the frame matrix of a
-symmetric injective operator have complementary dimensions. -/
-private theorem finrank_add_finrank_pointSpectralSubspace_frameMatrix (hb : ⇑b = (u · x))
-    (hsymm : (A x).toLinearMap.IsSymmetric) (hinj : Function.Injective (A x)) :
-    finrank ℝ (Module.End.pointSpectralSubspace (frameMatrix A u x).toLinearMap (Iio 0)) +
-      finrank ℝ (Module.End.pointSpectralSubspace (frameMatrix A u x).toLinearMap (Ioi 0)) =
-        finrank ℝ (EuclideanSpace ℝ (Fin d)) :=
-  Submodule.finrank_add_eq_of_isCompl <|
-    (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.mp (isSelfAdjoint_frameMatrix hb hsymm))
-      |>.isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero <| LinearMap.ker_eq_bot.mpr
-        (ContinuousLinearMap.isUnit_iff_bijective.mp (isUnit_frameMatrix hb hinj)).1
-
-omit [TopologicalSpace B] in
 /-- Coefficient vectors forming a basis of a point-spectral subspace of the frame matrix, read in
 an orthonormal basis given by the sections `u`, form a basis of the same point-spectral subspace
 of `A x`. -/
@@ -451,7 +438,11 @@ theorem exists_isSubbundleFrameOn_pointSpectralSubspace_Iio_zero (hW : IsOpen W)
     (eventually_linearIndependent_and_span_starProjection (hPN.continuousOn.continuousAt hW₁x₀)
       (hPP.continuousOn.continuousAt hW₁x₀) (eventually_of_mem hW₁x₀ fun x hx ↦
         (hob x hx.2).elim fun _ hb ↦
-          finrank_add_finrank_pointSpectralSubspace_frameMatrix hb (hsymm x hx.1) (hinj x hx.1))
+          (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.mp
+            (isSelfAdjoint_frameMatrix hb (hsymm x hx.1)))
+            |>.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero
+            <| LinearMap.ker_eq_bot.mpr (ContinuousLinearMap.isUnit_iff_bijective.mp
+              (isUnit_frameMatrix hb (hinj x hx.1))).1)
       bN).and hW₁x₀
   -- The frame is the projected basis read back in the orthonormal frame `u`.
   let PN (x : B) := (Module.End.pointSpectralSubspace (S x).toLinearMap (Iio 0)).starProjection

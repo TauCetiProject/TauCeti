@@ -9,8 +9,10 @@ public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Nilpotent.Basic
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 
+import Mathlib.Algebra.Group.Submonoid.Operations
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.Tactic.LinearCombination
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # Units along surjective ring homomorphisms
@@ -27,6 +29,14 @@ on units. This is the semilocal counterpart of Mathlib's
 `IsLocalRing.surjective_units_map_of_local_ringHom`; it needs no unit reflection. By the Chinese
 remainder theorem a lift of a unit can be corrected by an element of the kernel so that it avoids
 every maximal ideal.
+
+A surjective unit-reflecting map is `|ker f|`-to-one on units
+(`RingHom.natCard_units_eq_natCard_ker_mul`): the units are exactly the preimage of the units, and
+every fibre of the underlying additive map is a coset of the kernel. Applied to the matrix ring
+this counts the general linear group over `ℤ/pᵏ` from that over `𝔽_p`.
+
+Unit reflection also passes to subalgebras: if `R → S` reflects units then so does `R → T` for
+every subalgebra `T` of `S` (`Subalgebra.isLocalHom_algebraMap`).
 
 For a surjection of local rings `A → A'`, the image of the maximal ideal of `A` has radical the
 maximal ideal of `A'` (`TauCeti.IsLocalRing.radical_map_maximalIdeal_of_surjective`): the closed
@@ -82,7 +92,36 @@ theorem surjective_units_map_of_surjective [_root_.Finite (MaximalSpectrum R)] (
   have hfb : f b = 1 := by simpa [mem_ker.mp hk] using congrArg f hkb
   exact ⟨hunit.unit, Units.ext (by simp [ha, hfb, mem_ker.mp hk])⟩
 
+/-- **Units along a surjective local homomorphism.** If `f : R →+* S` is surjective and reflects
+units, then `|Rˣ| = |ker f| · |Sˣ|`: the units of `R` are the preimage of the units of `S`, and
+each fibre of `f` is a coset of its kernel. The rings need not be commutative, so this applies to
+matrix rings. As an identity of `Nat.card`s it also holds when the rings are infinite. -/
+theorem natCard_units_eq_natCard_ker_mul {R S : Type*} [Ring R] [Ring S] (f : R →+* S)
+    [IsLocalHom f] (hf : Function.Surjective f) :
+    Nat.card Rˣ = Nat.card (ker f) * Nat.card Sˣ := by
+  have hS : Nat.card Sˣ = Nat.card {y : S | IsUnit y} :=
+    Nat.card_congr <| Submonoid.unitsTypeEquivIsUnitSubmonoid.toEquiv.trans <|
+      Equiv.subtypeEquivRight fun y ↦ IsUnit.mem_submonoid_iff y
+  have hker : Nat.card (ker f) = Nat.card (f : R →+ S).ker :=
+    Nat.card_congr <| Equiv.subtypeEquivRight fun x ↦ by simp [mem_ker]
+  rw [hS, hker, mul_comm, ← AddMonoidHom.natCard_preimage_of_surjective (f : R →+ S) hf]
+  exact Nat.card_congr <| Submonoid.unitsTypeEquivIsUnitSubmonoid.toEquiv.trans <|
+    Equiv.subtypeEquivRight fun x ↦ by simp [IsUnit.mem_submonoid_iff, isUnit_map_iff]
+
 end RingHom
+
+namespace Subalgebra
+
+variable {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+
+/-- If `R → S` reflects units, then so does `R → T` for every subalgebra `T` of `S`. -/
+instance isLocalHom_algebraMap [IsLocalHom (algebraMap R S)] (T : Subalgebra R S) :
+    IsLocalHom (algebraMap R T) :=
+  have : IsLocalHom ((T.val : T →+* S).comp (algebraMap R T)) := by
+    rwa [T.val.comp_algebraMap]
+  isLocalHom_of_comp _ (T.val : T →+* S)
+
+end Subalgebra
 
 namespace TauCeti.IsLocalRing
 

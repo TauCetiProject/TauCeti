@@ -110,7 +110,7 @@ private theorem transition_mul {U V : X.AffineZariskiSite} (i : U ⟶ V) (m n : 
     (congrArg₂ (fun a b ↦ chartMul A W U m n a b) (h₂ s).symm (h₃ t).symm))
   exact Proj.res_twistingSheafMap_app_mul
     (A.restrictGradedSectionsGradedHom ((Scheme.AffineZariskiSite.toOpensFunctor X).map i))
-    (A.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) _ _ s t
+    (A.irrelevant_le_map_restrictGradedSections_toOpensFunctor i) _ _ s t
 
 /-- The products, in the charts, of the images of two sections of twisting sheaves of the relative
 `Proj` are compatible under the transition maps, hence the images of a single section. -/
@@ -300,27 +300,28 @@ open `D₊(f)` of an element `f` of degree one, the section of `𝒪(k)` whose i
 the basis section `fᵏ`. -/
 private def chartGen (f : A.gradedSectionsGrading U.toOpens 1)
     (hW : W ≤ (colimit.ι A.relativeProjGluingData.functor U).opensRange)
-    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.1) (k : ℤ) :
+    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.val) (k : ℤ) :
     Γ(A.relativeProjTwistingSheaf k, W) :=
   (Equiv.ofBijective _ (bijective_chartSection k hW)).symm
-    (chartGenerator k f.1 f.2 (chartOpen A W U) hf)
+    (chartGenerator k f.val f.property (chartOpen A W U) hf)
 
 private theorem chartSection_chartGen (f : A.gradedSectionsGrading U.toOpens 1)
     (hW : W ≤ (colimit.ι A.relativeProjGluingData.functor U).opensRange)
-    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.1) (k : ℤ) :
-    chartSection A k U (chartGen f hW hf k) = chartGenerator k f.1 f.2 (chartOpen A W U) hf :=
+    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.val) (k : ℤ) :
+    chartSection A k U (chartGen f hW hf k) = chartGenerator k f.val f.property (chartOpen A W U) hf
+        :=
   (Equiv.ofBijective _ (bijective_chartSection k hW)).apply_symm_apply _
 
 /-- The sections of `𝒪(k)` over `W` are free of rank one on the section `fᵏ`. -/
 private theorem bijective_smul_chartGen (f : A.gradedSectionsGrading U.toOpens 1)
     (hW : W ≤ (colimit.ι A.relativeProjGluingData.functor U).opensRange)
-    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.1) (k : ℤ) :
+    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.val) (k : ℤ) :
     Function.Bijective fun r : Γ(A.relativeProj, W) ↦ r • chartGen f hW hf k := by
   have h : (chartSection A k U ∘ fun r : Γ(A.relativeProj, W) ↦ r • chartGen f hW hf k) =
-      chartSectionsLinearEquiv k f.1 f.2 (chartOpen A W U) hf ∘ chartRes A U :=
+      chartSectionsLinearEquiv k f.val f.property (chartOpen A W U) hf ∘ chartRes A U :=
     funext fun r ↦ (chartSection_smul A k U r _).trans <|
       (congrArg (chartRes A U r • ·) (chartSection_chartGen f hW hf k)).trans
-        (chartSectionsLinearEquiv_apply k f.1 f.2 _ hf _).symm
+        (chartSectionsLinearEquiv_apply k f.val f.property _ hf _).symm
   refine (Function.Bijective.of_comp_iff' (bijective_chartSection k hW) _).mp ?_
   rw [h]
   exact (LinearEquiv.bijective _).comp (bijective_chartRes hW)
@@ -328,26 +329,27 @@ private theorem bijective_smul_chartGen (f : A.gradedSectionsGrading U.toOpens 1
 /-- The sections `fᵐ` and `fⁿ` multiply to `fᵐ⁺ⁿ`. -/
 private theorem mul_chartGen (f : A.gradedSectionsGrading U.toOpens 1)
     (hW : W ≤ (colimit.ι A.relativeProjGluingData.functor U).opensRange)
-    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.1) :
+    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.val) :
     A.relativeProjTwistingSheafMul W m n (chartGen f hW hf m) (chartGen f hW hf n) =
       chartGen f hW hf (m + n) :=
   (bijective_chartSection (m + n) hW).1 <|
     (chartSection_relativeProjTwistingSheafMul U _ _).trans <|
       (congrArg₂ (fun a b ↦ chartMul A W U m n a b) (chartSection_chartGen f hW hf m)
         (chartSection_chartGen f hW hf n)).trans <|
-      (mul_chartGenerator n f.1 f.2 _ hf m).trans (chartSection_chartGen f hW hf (m + n)).symm
+      (mul_chartGenerator n f.val f.property _ hf m).trans (chartSection_chartGen f hW hf
+          (m + n)).symm
 
 /-- The trivialization `r ↦ r • fᵏ` of the sections of `𝒪(k)` over `W`. -/
 private def chartLinearEquiv (f : A.gradedSectionsGrading U.toOpens 1)
     (hW : W ≤ (colimit.ι A.relativeProjGluingData.functor U).opensRange)
-    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.1) (k : ℤ) :
+    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.val) (k : ℤ) :
     Γ(A.relativeProj, W) ≃ₗ[Γ(A.relativeProj, W)] Γ(A.relativeProjTwistingSheaf k, W) :=
   LinearEquiv.ofBijective (LinearMap.toSpanSingleton _ _ (chartGen f hW hf k))
     (bijective_smul_chartGen f hW hf k)
 
 private theorem chartLinearEquiv_apply (f : A.gradedSectionsGrading U.toOpens 1)
     (hW : W ≤ (colimit.ι A.relativeProjGluingData.functor U).opensRange)
-    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.1) (k : ℤ)
+    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.val) (k : ℤ)
     (r : Γ(A.relativeProj, W)) :
     chartLinearEquiv f hW hf k r = r • chartGen f hW hf k :=
   (rfl)
@@ -358,7 +360,7 @@ standard open `D₊(f)`, multiplication of sections induces a bijection
 private theorem bijective_lift_relativeProjTwistingSheafMul
     (f : A.gradedSectionsGrading U.toOpens 1)
     (hW : W ≤ (colimit.ι A.relativeProjGluingData.functor U).opensRange)
-    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.1) :
+    (hf : chartOpen A W U ≤ Proj.basicOpen (A.gradedSectionsGrading U.toOpens) f.val) :
     Function.Bijective (TensorProduct.lift (A.relativeProjTwistingSheafMul W m n)) := by
   let e := TensorProduct.congr (chartLinearEquiv f hW hf m).symm
       (chartLinearEquiv f hW hf n).symm ≪≫ₗ TensorProduct.lid Γ(A.relativeProj, W) _ ≪≫ₗ
@@ -392,13 +394,14 @@ private theorem exists_le_bijective_lift {W : A.relativeProj.Opens} {x : A.relat
   obtain ⟨U, y, rfl⟩ : ∃ (U : X.AffineZariskiSite) (y : Proj (A.gradedSectionsGrading U.toOpens)),
       colimit.ι A.relativeProjGluingData.functor U y = x :=
     A.relativeProjCover.exists_eq x
-  obtain ⟨f, hy⟩ := TopologicalSpace.Opens.mem_iSup.mp ((h U.toOpens U.2).ge (Set.mem_univ y))
-  refine ⟨W ⊓ colimit.ι A.relativeProjGluingData.functor U ''ᵁ Proj.basicOpen _ f.1, inf_le_left,
+  obtain ⟨f, hy⟩ := TopologicalSpace.Opens.mem_iSup.mp ((h U.toOpens U.property).ge
+      (Set.mem_univ y))
+  refine ⟨W ⊓ colimit.ι A.relativeProjGluingData.functor U ''ᵁ Proj.basicOpen _ f.val, inf_le_left,
     ⟨hx, y, hy, rfl⟩, bijective_lift_relativeProjTwistingSheafMul f
       (inf_le_right.trans (Scheme.Hom.image_le_opensRange _ _)) fun z hz ↦ ?_⟩
   -- the chart is injective, so a point mapping into the image of `D₊(f)` lies in `D₊(f)`
   exact ((colimit.ι A.relativeProjGluingData.functor U).preimage_image_eq
-    (Proj.basicOpen _ f.1)).le hz.2
+    (Proj.basicOpen _ f.val)).le hz.2
 
 /-- Multiplication of sections is locally surjective on tensor products of sections. -/
 private theorem isLocallySurjective_relativeProjTwistingSheafTensorPresheafHom :
@@ -466,11 +469,12 @@ private theorem relativeProjTwistingSheafTensorProductIso_hom :
 
 /-- On a pure tensor `s ⊗ t` of sections over `W`, sent into `𝒪(m) ⊗ 𝒪(n)` by the unit of
 sheafification, the isomorphism `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` is multiplication of sections. -/
-@[simp]
 theorem _root_.CategoryTheory.CommMon.relativeProjTwistingSheafTensorProductIso_hom_tmul
     (W : A.relativeProj.Opens) (s : Γ(A.relativeProjTwistingSheaf m, W))
     (t : Γ(A.relativeProjTwistingSheaf n, W)) :
-    Scheme.Modules.Hom.app
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      Functor.id_obj]
+    (Scheme.Modules.Hom.app
       ((TauCeti.SheafOfModules.tensorProductIso A.relativeProj.sheaf (A.relativeProjTwistingSheaf m)
         (A.relativeProjTwistingSheaf n)).inv ≫
           (A.relativeProjTwistingSheafTensorProductIso m n h).hom) W
@@ -478,7 +482,7 @@ theorem _root_.CategoryTheory.CommMon.relativeProjTwistingSheafTensorProductIso_
         (PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := A.relativeProj.sheaf.obj)
           (A.relativeProjTwistingSheaf m).val (A.relativeProjTwistingSheaf n).val)).app (op W)
             (s ⊗ₜ t)) =
-      A.relativeProjTwistingSheafMul W m n s t := by
+      A.relativeProjTwistingSheafMul W m n s t) := by
   let P := PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := A.relativeProj.sheaf.obj)
     (A.relativeProjTwistingSheaf m).val (A.relativeProjTwistingSheaf n).val
   let F := PresheafOfModules.sheafification (R := A.relativeProj.ringCatSheaf)

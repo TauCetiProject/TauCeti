@@ -28,6 +28,9 @@ from its principal root is `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`.
   the power coordinate `I * w ^ (1 / β)`.
 * `TauCeti.cos_mul_norm_le_re_exp_mul_cpow` bounds `z ^ β` on the closed upper half-plane below
   by a cone inequality, for `0 ≤ β ≤ 2`.
+* `TauCeti.cos_mul_norm_le_re_cpow` is the same cone inequality on the closed right half-plane.
+* `TauCeti.cos_mul_pi_div_two_pos`: the cone constant `cos (β π / 2)` is positive for
+  `0 ≤ β < 1`.
 -/
 
 public section
@@ -50,9 +53,13 @@ theorem arg_mem_Icc_iff_norm_mul_cos_le_re {z : ℂ} {a : ℝ} (ha : a ∈ Icc (
 
 /-- The principal inverse power maps the sector of opening `βπ` into the open right
 half-plane. -/
-theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : 0 < β) (hz : z ≠ 0)
+theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hz : z ≠ 0)
     (harg : z.arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2)) :
     0 < (z ^ ((β⁻¹ : ℝ) : ℂ)).re := by
+  -- a nonempty sector has positive opening
+  have hβ : 0 < β := by
+    by_contra hb
+    nlinarith [harg.1.trans harg.2, mul_nonneg Real.pi_pos.le (neg_nonneg.2 (not_lt.1 hb))]
   rw [cpow_ofReal_re, ← div_eq_mul_inv]
   refine mul_pos (by positivity) (Real.cos_pos_of_mem_Ioo ⟨?_, ?_⟩)
   · rw [lt_div_iff₀ hβ]
@@ -100,6 +107,22 @@ theorem im_I_mul_cpow_inv_eq_zero {w : ℂ} {β : ℝ} (hβ : 0 < β)
       field_simp [hβ.ne']
     simp only [I_mul_im, cpow_ofReal_re]
     rw [← Real.cos_abs, heq, Real.cos_pi_div_two, mul_zero]
+
+/-- For `0 ≤ β < 1`, the cone constant `cos (β π / 2)` is positive. -/
+theorem cos_mul_pi_div_two_pos {β : ℝ} (hβ : 0 ≤ β) (hβ1 : β < 1) :
+    0 < Real.cos (β * Real.pi / 2) :=
+  Real.cos_pos_of_mem_Ioo ⟨by nlinarith [Real.pi_pos], by nlinarith [Real.pi_pos]⟩
+
+/-- In the closed right half-plane with `0 ≤ β ≤ 2`, the power `z ^ β` lies in the cone of real
+part at least `cos (β π / 2)` times the norm. -/
+theorem cos_mul_norm_le_re_cpow {z : ℂ} {β : ℝ} (hβ : 0 ≤ β) (hβ2 : β ≤ 2) (hz : 0 ≤ z.re) :
+    Real.cos (β * Real.pi / 2) * ‖z ^ (β : ℂ)‖ ≤ (z ^ (β : ℂ)).re := by
+  rw [cpow_ofReal_re, norm_cpow_real, mul_comm]
+  gcongr
+  have harg : |z.arg| ≤ Real.pi / 2 := abs_arg_le_pi_div_two_iff.mpr hz
+  rw [← Real.cos_abs (z.arg * β), abs_mul, abs_of_nonneg hβ]
+  refine Real.cos_le_cos_of_nonneg_of_le_pi (by positivity) (by nlinarith [Real.pi_pos]) ?_
+  nlinarith
 
 /-- In the closed upper half-plane with `0 ≤ β ≤ 2`, the power `z ^ β`, rotated by
 `exp (-(β π / 2) i)`, lies in the cone of real part at least `cos (β π / 2)` times the norm. -/
