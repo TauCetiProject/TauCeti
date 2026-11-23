@@ -79,8 +79,7 @@ universe u
 under `backward.isDefEq.respectTransparency`, so instance search does not find them here; they are
 supplied by name, as local instances. -/
 
-/-- Surjective flat morphisms are stable under base change. -/
-theorem _root_.TauCeti.isStableUnderBaseChange_surjective_inf_flat :
+private theorem isStableUnderBaseChange_surjective_inf_flat :
     IsStableUnderBaseChange (@Surjective.{u} ⊓ @Flat.{u} : MorphismProperty Scheme.{u}) :=
   IsStableUnderBaseChange.inf
 
@@ -92,7 +91,7 @@ private theorem isStableUnderComposition_surjective_inf_flat :
 private theorem isZariskiLocalAtTarget_isAffineHom : IsZariskiLocalAtTarget @IsAffineHom.{u} :=
   @HasAffineProperty.instIsZariskiLocalAtTarget _ _ instHasAffinePropertyIsAffineHomIsAffine
 
-attribute [local instance] TauCeti.isStableUnderBaseChange_surjective_inf_flat
+attribute [local instance] isStableUnderBaseChange_surjective_inf_flat
   isStableUnderComposition_surjective_inf_flat isZariskiLocalAtTarget_isAffineHom
 
 /-- Surjective local isomorphisms are surjective and flat: the condition under which

@@ -51,7 +51,7 @@ instance IsSeparated.descendsAlong_surjective_inf_flat_inf_quasiCompact :
   rw [IsSeparated.isSeparated_eq_diagonal_isClosedImmersion]
   -- At default transparency, stability of the nested intersection needs an explicit witness.
   have : IsStableUnderBaseChange (@Surjective.{u} ⊓ @Flat) :=
-    TauCeti.isStableUnderBaseChange_surjective_inf_flat
+    IsStableUnderBaseChange.inf
   have : IsStableUnderBaseChange (@Surjective.{u} ⊓ @Flat ⊓ @QuasiCompact) :=
     IsStableUnderBaseChange.inf
   -- Match Mathlib's diagonal descent instance before specializing the property.
