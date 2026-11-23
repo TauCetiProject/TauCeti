@@ -8,6 +8,8 @@ module
 public import TauCeti.Probability.MarkovChain.Visits
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
 public import TauCeti.Probability.Process.HittingTime.Orbit
+import TauCeti.Data.Set.Card
+import TauCeti.Probability.MarkovChain.Returns
 import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
@@ -216,14 +218,12 @@ chain started at `x` visits `x` infinitely often at positive times almost surely
 theorem isRecurrent_iff_ae_encard_setOf_succ_eq_eq_top :
     κ.IsRecurrent x ↔
       ∀ᵐ ω ∂markovChainLaw (Measure.dirac x) κ, {n | ω (n + 1) = x}.encard = ⊤ := by
-  refine ⟨κ.ae_encard_setOf_succ_eq_eq_top_markovChainLaw_dirac, fun h => ?_⟩
-  -- The return probability is the probability of at least one positive-time visit.
-  rw [isRecurrent_iff, ← pow_one (markovChainLaw _ _ _),
-    ← κ.markovChainLaw_dirac_setOf_le_encard_setOf_succ_eq x 1]
-  have hone : ∀ᵐ ω ∂markovChainLaw (Measure.dirac x) κ,
-      ω ∈ {ω : ℕ → S | ((1 : ℕ) : ℕ∞) ≤ {n | ω (n + 1) = x}.encard} :=
-    h.mono fun ω hω => by simp only [Set.mem_ofPred_eq, hω, le_top]
-  exact (measure_congr (ae_eq_univ.mpr (mem_ae_iff.mp hone))).trans measure_univ
+  rw [isRecurrent_iff, ← κ.ae_infinite_setOf_eq_markovChainLaw_dirac_iff x]
+  -- Started at `x`, the visits to `x` are time zero and the positive-time visits.
+  refine Filter.eventually_congr ((markovChainLaw_dirac_ae_apply_zero κ x).mono fun ω hω0 => ?_)
+  rw [← Set.encard_eq_top_iff, ← Set.encard_preimage_succ_add_one (s := {n | ω n = x}) hω0,
+    ENat.add_eq_top, or_iff_left ENat.one_ne_top]
+  rfl
 
 /-- A state is recurrent exactly when the chain started there has infinite mean number of
 positive-time visits to it. -/
@@ -241,7 +241,8 @@ theorem isRecurrent_iff_lintegral_encard_setOf_succ_eq_eq_top :
 by `ProbabilityTheory.Kernel.lintegral_encard_setOf_succ_eq_markovChainLaw_dirac`. -/
 theorem IsTransient.lintegral_encard_setOf_succ_eq_lt_top (hx : κ.IsTransient x) :
     ∫⁻ ω, ({n | ω (n + 1) = x}.encard : ℝ≥0∞) ∂markovChainLaw (Measure.dirac x) κ < ∞ :=
-  lt_top_iff_ne_top.mpr (isRecurrent_iff_lintegral_encard_setOf_succ_eq_eq_top.not.mp hx)
+  lt_top_iff_ne_top.mpr
+    (isRecurrent_iff_lintegral_encard_setOf_succ_eq_eq_top.not.mp (isTransient_iff.mp hx))
 
 /-- Recurrence is constant on communicating classes. -/
 theorem Communicates.isRecurrent_iff (hxy : κ.Communicates x y) :

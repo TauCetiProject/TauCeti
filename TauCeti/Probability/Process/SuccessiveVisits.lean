@@ -20,8 +20,7 @@ the state space is required; measurability of the singleton of `a` suffices.
 
 The finite-value characterization connects these stopping times to the combinatorial
 `visitTime`, whose value at nonexistent visits is zero. The visit indexed by `k` exists exactly
-when `k` is below the extended number of visits (`successiveVisit_ne_top_iff_lt_encard`), and for a
-path starting at the state this number is one plus the number of positive-time visits. The
+when `k` is below the extended number of visits (`successiveVisit_ne_top_iff_lt_encard`). The
 next-visit identity uses `hittingAfter` starting strictly after the current visit, including when
 there is no next visit. The natural-valued `returnGap` is the difference of consecutive
 combinatorial visit times; for realized consecutive visits it is the excursion length
@@ -135,33 +134,6 @@ theorem successiveVisit_ne_top_iff_lt_ncard (hf : {n | X n ω = a}.Finite) :
     refine ⟨visitTime (fun n => X n ω) a k, ?_, ?_⟩
     · simpa only [visitTime_def] using Nat.nth_mem k hcard
     · simpa only [visitCount_eq_count, visitTime_def] using Nat.count_nth hcard
-
-/-- For a path starting at `a`, its visit times to `a` are time zero and the successors of its
-positive-time visit times. -/
-private theorem setOf_eq_eq_insert_zero_image_succ {x : ℕ → α} {a : α} (h0 : x 0 = a) :
-    {n | x n = a} = insert 0 (Nat.succ '' {n | x (n + 1) = a}) := by
-  ext n
-  cases n with
-  | zero => simp [h0]
-  | succ n => simp
-
-/-- For a path starting at `a` with finitely many visits to `a`, the total visit count is
-one plus the positive-time visit count. -/
-theorem ncard_setOf_eq_eq_ncard_setOf_succ_add_one {x : ℕ → α} {a : α}
-    (hx : {n | x n = a}.Finite) (h0 : x 0 = a) :
-    {n | x n = a}.ncard = {n | x (n + 1) = a}.ncard + 1 := by
-  have hset := setOf_eq_eq_insert_zero_image_succ h0
-  have hsucc : (Nat.succ '' {n | x (n + 1) = a}).Finite :=
-    hx.subset (by rw [hset]; exact Set.subset_insert _ _)
-  rw [hset, Set.ncard_insert_of_notMem (by simp) hsucc,
-    Set.ncard_image_of_injective _ Nat.succ_injective]
-
-/-- For a path starting at `a`, the extended number of visits to `a` is one plus the extended
-number of positive-time visits; both sides are `⊤` when the visits are infinite. -/
-theorem encard_setOf_eq_eq_encard_setOf_succ_add_one {x : ℕ → α} {a : α} (h0 : x 0 = a) :
-    {n | x n = a}.encard = {n | x (n + 1) = a}.encard + 1 := by
-  rw [setOf_eq_eq_insert_zero_image_succ h0, Set.encard_insert_of_notMem (by simp),
-    Nat.succ_injective.encard_image]
 
 /-- At an existing visit, the stopping time agrees with the combinatorial enumeration. -/
 theorem successiveVisit_eq_visitTime
