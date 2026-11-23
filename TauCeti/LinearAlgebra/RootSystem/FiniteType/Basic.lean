@@ -115,16 +115,20 @@ namespace TauCeti
 
 variable {B : Type*} {A : Matrix B B ℤ}
 
-/-- A square integer matrix is **of finite type** when its index type is finite and it satisfies
-Mathlib's `Matrix.IsFiniteCartan` (generalized Cartan matrix with positive integer symmetrizer
-making `diagonal d * A` positive definite).
+/-- A square integer matrix is **of finite type** when its index type admits `Fintype` and
+`DecidableEq` instances making it satisfy Mathlib's `Matrix.IsFiniteCartan` (generalized Cartan
+matrix with positive integer symmetrizer making `diagonal d * A` positive definite).
 
-Finiteness of `B` is a conjunct of the condition rather than an instance argument. It has to be
-asked for explicitly: `Matrix.PosDef` tests only finitely supported vectors, so without the
-conjunct the condition would be strictly weaker than being a finite-type Cartan matrix, and the
-infinite path matrix on `ℕ` would satisfy it. Asking for it as a conjunct rather than as
-`[Finite B]` is what lets the consequences below take finiteness from the hypothesis instead of
-carrying an instance argument of their own.
+The `Fintype B` and `DecidableEq B` instances are bundled existentially inside the `Prop` rather
+than taken as instance arguments. Finiteness of `B` has to be asked for inside the predicate:
+`Matrix.PosDef` tests only finitely supported vectors, so without finiteness the condition would
+be strictly weaker than being a finite-type Cartan matrix, and the infinite path matrix on `ℕ`
+would satisfy it. Bundling `Fintype B` and `DecidableEq B` existentially inside `Prop` rather than
+requiring `[Fintype B] [DecidableEq B]` or `[Finite B]` as typeclass arguments lets consequences
+below such as `TauCeti.IsFiniteType.finite` and `TauCeti.IsFiniteType.submatrix` extract
+finiteness from the `IsFiniteType A` hypothesis instead of carrying instance arguments of their own.
+See `TauCeti.isFiniteType_iff` for the equivalent `Finite B ∧ A.IsGeneralizedCartan ∧ ℚ`-symmetrizer
+view.
 
 For finite `B` the Cartan matrices of finite root systems are exactly the matrices of this kind, up
 to irreducibility; `TauCeti.isFiniteType_cartanMatrix` proves one direction. -/
@@ -239,6 +243,13 @@ theorem isFiniteCartan [instF : Fintype B] [instD : DecidableEq B] (h : IsFinite
   cases Subsingleton.elim instF' instF
   cases Subsingleton.elim instD' instD
   exact hM
+
+/-- Under `[Fintype B] [DecidableEq B]`, `TauCeti.IsFiniteType` is equivalent to Mathlib's
+`Matrix.IsFiniteCartan`. -/
+@[simp]
+theorem _root_.TauCeti.isFiniteType_iff_isFiniteCartan [Fintype B] [DecidableEq B] :
+    IsFiniteType A ↔ A.IsFiniteCartan :=
+  ⟨IsFiniteType.isFiniteCartan, Matrix.IsFiniteCartan.isFiniteType⟩
 
 /-- Characterization of `TauCeti.IsFiniteType` in terms of finiteness, the generalized Cartan
 condition, and a positive rational symmetrizer whose symmetrization is positive definite. -/
