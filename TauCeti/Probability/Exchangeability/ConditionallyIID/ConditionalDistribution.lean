@@ -42,7 +42,7 @@ theorem ConditionallyIIDWith.condDistrib_block_ae_eq_pi [StandardBorelSpace α] 
       condDistrib (fun ω => fun i : Fin m => X (k i) ω) ν μ P =
         (ProbabilityMeasure.pi fun _ : Fin m => P).toMeasure := by
   let K : Kernel (ProbabilityMeasure α) (Fin m → α) :=
-    TauCeti.MeasureTheory.iidBlockKernel m
+    TauCeti.MeasureTheory.iidBlockKernel (Fin m)
   have hK : μ.map (fun ω => (ν ω, fun i : Fin m => X (k i) ω)) = μ.map ν ⊗ₘ K := by
     rw [h.jointLaw_eq_disintegration k hk, Measure.compProd_eq_comp_prod,
       Measure.bind_map h.measurable_directing.aemeasurable

@@ -104,8 +104,8 @@ theorem mem_hardySubmodule_iff (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))
         exact orthonormal_iff_ite.mp (fourierBasis (T := 1)).orthonormal n (k : ℤ)
           |>.trans (ite_eq_right hnk)
       · exact c.isClosed_ker
-    simpa only [LinearMap.mem_ker, c, ContinuousLinearMap.coe_coe, innerSL_apply_apply,
-      ← HilbertBasis.repr_apply_apply, fourierBasis_repr] using hle hf
+    simpa only [LinearMap.mem_ker, c, ContinuousLinearMap.coe_coe, innerSL_fourierBasis_apply]
+      using hle hf
   · intro hf
     apply isClosed_hardySubmodule.mem_of_tendsto
       ((fourierBasis (T := 1)).hasSum_repr f)
@@ -157,7 +157,7 @@ def hardyBasis : HilbertBasis ℕ ℂ HardySpace :=
     simp only [lp.coeFn_zero, Pi.zero_apply, fourierBasis_repr]
     by_cases hn : 0 ≤ n
     · obtain ⟨k, rfl⟩ := Int.eq_ofNat_of_zero_le hn
-      rw [← fourierBasis_repr, HilbertBasis.repr_apply_apply]
+      rw [← inner_fourierBasis_left]
       exact (Submodule.mem_orthogonal _ _).mp hx (hardyMode k)
         (Submodule.subset_span ⟨k, rfl⟩)
     · exact (mem_hardySubmodule_iff x.val).mp x.property n (by omega))
@@ -209,7 +209,7 @@ theorem hardyBasis_repr (f : HardySpace) (n : ℕ) :
       (n : ℤ) := by
   rw [HilbertBasis.repr_apply_apply, ← hardySubmodule.subtypeₗᵢ.inner_map_map]
   simp only [Submodule.coe_subtypeₗᵢ, Submodule.subtype_apply, coe_hardyBasis,
-    ← HilbertBasis.repr_apply_apply, fourierBasis_repr]
+    inner_fourierBasis_left]
 
 /-- Hardy functions have no negative Fourier coefficients. -/
 theorem HardySpace.fourierCoeff_eq_zero (f : HardySpace) {n : ℤ} (hn : n < 0) :
@@ -229,7 +229,7 @@ theorem hardyBasis_repr_orthogonalProjectionOnto
       fourierCoeff f (n : ℤ) := by
   rw [HilbertBasis.repr_apply_apply,
     Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left, coe_hardyBasis,
-    ← HilbertBasis.repr_apply_apply, fourierBasis_repr]
+    inner_fourierBasis_left]
 
 /-- Orthogonal Hardy projection deletes precisely the negative Fourier coefficients. -/
 @[simp]
@@ -249,7 +249,7 @@ theorem mem_hardySubmodule_orthogonal_iff
     f ∈ hardySubmoduleᗮ ↔ ∀ n : ℕ, fourierCoeff f (n : ℤ) = 0 := by
   constructor
   · intro hf n
-    rw [← fourierBasis_repr, HilbertBasis.repr_apply_apply]
+    rw [← inner_fourierBasis_left]
     exact hardySubmodule.inner_right_of_mem_orthogonal
       (fourierBasis_mem_hardySubmodule n) hf
   · intro hf
@@ -258,8 +258,7 @@ theorem mem_hardySubmodule_orthogonal_iff
     apply inner_eq_zero_symm.mp
     apply hardyBasis.inner_eq_zero_of_forall_inner_eq_zero (y := x) _ hx
     intro n
-    rw [coe_hardyBasis, inner_eq_zero_symm, ← HilbertBasis.repr_apply_apply,
-      fourierBasis_repr, hf n]
+    rw [coe_hardyBasis, inner_eq_zero_symm, inner_fourierBasis_left, hf n]
 
 /-- The negative Fourier modes span exactly the orthogonal complement of Hardy space.
 Together with `Submodule.isCompl_orthogonal`, this gives the orthogonal splitting of circle `L²`
@@ -291,7 +290,7 @@ theorem hardySubmodule_orthogonal_eq :
       rintro _ ⟨k, rfl⟩
       apply (mem_hardySubmodule_orthogonal_iff _).mpr
       intro n
-      rw [← fourierBasis_repr, HilbertBasis.repr_apply_apply]
+      rw [← inner_fourierBasis_left]
       have hne : (n : ℤ) ≠ -(k : ℤ) - 1 := by omega
       exact (orthonormal_iff_ite.mp (fourierBasis (T := 1)).orthonormal _ _).trans
         (ite_eq_right hne)
@@ -330,7 +329,7 @@ private theorem orthogonal_span_negativeMode_eq_bot :
   by_cases hn : n < 0
   · obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (by omega : 0 ≤ -n - 1)
     have heq : n = -(k : ℤ) - 1 := by omega
-    rw [heq, ← fourierBasis_repr, HilbertBasis.repr_apply_apply]
+    rw [heq, ← inner_fourierBasis_left]
     exact (Submodule.mem_orthogonal _ _).mp hx (negativeMode k)
       (Submodule.subset_span ⟨k, rfl⟩)
   · obtain ⟨k, rfl⟩ := Int.eq_ofNat_of_zero_le (by omega : 0 ≤ n)
@@ -354,7 +353,7 @@ theorem negativeHardyBasis_repr (f : ↥hardySubmoduleᗮ) (n : ℕ) :
       fourierCoeff (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) (-(n : ℤ) - 1) := by
   rw [HilbertBasis.repr_apply_apply, ← hardySubmoduleᗮ.subtypeₗᵢ.inner_map_map]
   simp only [Submodule.coe_subtypeₗᵢ, Submodule.subtype_apply, coe_negativeHardyBasis,
-    ← HilbertBasis.repr_apply_apply, fourierBasis_repr]
+    inner_fourierBasis_left]
 
 /-- The unitary flip from negative modes to Hardy space, sending `e₋ₙ₋₁` to `eₙ`. -/
 def hardyFlip : ↥hardySubmoduleᗮ ≃ₗᵢ[ℂ] HardySpace :=

@@ -127,8 +127,9 @@ theorem toIdealsAway_surjective (S : Finset (HeightOneSpectrum R)) :
 theorem integralIdealsAwayHom_toIntegralIdealsAway (S : Finset (HeightOneSpectrum R))
     (x : integralFiniteIdelesAway (K := K) S) :
     NumberFieldArithmetic.integralIdealsAwayHom K S (toIntegralIdealsAway S x) =
-      toIdealsAway K S ⟨(x.1 : 𝔸ᶠ[R, K]ˣ),
-        (mem_finiteIdelesAway_iff S _).mpr ((mem_integralFiniteIdelesAway_iff S x.1).mp x.2)⟩ := by
+      toIdealsAway K S ⟨(x.val : 𝔸ᶠ[R, K]ˣ),
+        (mem_finiteIdelesAway_iff S _).mpr ((mem_integralFiniteIdelesAway_iff S x.val).mp
+            x.property)⟩ := by
   apply Subtype.ext
   apply Units.ext
   simp only [NumberFieldArithmetic.coe_integralIdealsAwayHom, coe_toIntegralIdealsAway,

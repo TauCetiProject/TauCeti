@@ -69,7 +69,7 @@ theorem IsLatticeRational.fg_dualSemigroup (hσ : IsLatticeRational i σ)
     · intro hm
       refine ⟨fun a ↦ (m a).toNat, ?_⟩
       funext a
-      exact Int.toNat_of_nonneg (hm a a.2)
+      exact Int.toNat_of_nonneg (hm a a.property)
   exact heq ▸ hfg
 
 /-- The dual semigroup of every toric cone in an integral lattice is finitely generated. -/

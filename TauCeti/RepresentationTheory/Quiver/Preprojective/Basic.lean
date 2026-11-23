@@ -353,21 +353,13 @@ theorem linearIndependent_backtrackElem (v : Q) :
     · -- Two tail backtracks end in the formal reverse of the arrow.
       rw [Sum.inr.inj harr]
       rfl
-  have hfam : (Sum.elim (fun x : Σ i : Q, (i ⟶ v) => headBacktrackElem k x.2)
-      (fun x : Σ j : Q, (v ⟶ j) => tailBacktrackElem k x.2))
-      = fun x => (pathAlgebraBasis k (Symmetrify Q)) (F x) := by
-    funext x
-    cases x with
-    -- The formal reverse of `Sum.inl a` in the doubled quiver is `Sum.inr a`, since the reversal
-    -- of `Quiver.Symmetrify` is `Sum.swap`.
-    | inl x =>
-      simp only [hF, Sum.elim_inl, coe_pathAlgebraBasis]
-      exact (ofPath_headBacktrack_eq_headBacktrackElem k x.2).symm
-    | inr x =>
-      simp only [hF, Sum.elim_inr, coe_pathAlgebraBasis]
-      exact (ofPath_tailBacktrack_eq_tailBacktrackElem k x.2).symm
-  rw [hfam]
-  exact (pathAlgebraBasis k (Symmetrify Q)).linearIndependent.comp F hinj
+  convert (linearIndependent_ofPath k (Symmetrify Q)).comp F hinj using 1
+  funext x
+  cases x with
+  -- The formal reverse of `Sum.inl a` in the doubled quiver is `Sum.inr a`, since the reversal
+  -- of `Quiver.Symmetrify` is `Sum.swap`.
+  | inl x => exact (ofPath_headBacktrack_eq_headBacktrackElem k x.2).symm
+  | inr x => exact (ofPath_tailBacktrack_eq_tailBacktrackElem k x.2).symm
 
 end BacktrackIndependence
 
@@ -847,9 +839,8 @@ theorem gaugedPreprojectiveLift_unique
     (g : gaugedPreprojectiveAlgebra k ε →ₐ[k] B)
     (hg : g.comp (gaugedPreprojectiveMk k ε) = f) :
     g = gaugedPreprojectiveLift k ε f hf := by
-  refine AlgHom.ext fun y => ?_
-  obtain ⟨x, rfl⟩ := gaugedPreprojectiveMk_surjective k ε y
-  rw [gaugedPreprojectiveLift_gaugedPreprojectiveMk, ← hg, AlgHom.comp_apply]
+  apply Ideal.Quotient.algHom_ext
+  exact hg.trans (gaugedPreprojectiveLift_comp_gaugedPreprojectiveMk k ε f hf).symm
 
 end GaugedLift
 
@@ -899,9 +890,8 @@ determined by its composite with it. -/
 theorem preprojectiveLift_unique (hf : f (preprojectiveRelator k Q) = 0)
     (g : preprojectiveAlgebra k Q →ₐ[k] B) (hg : g.comp (preprojectiveMk k Q) = f) :
     g = preprojectiveLift f hf := by
-  refine AlgHom.ext fun y => ?_
-  obtain ⟨x, rfl⟩ := preprojectiveMk_surjective k Q y
-  rw [preprojectiveLift_preprojectiveMk, ← hg, AlgHom.comp_apply]
+  apply Ideal.Quotient.algHom_ext
+  exact hg.trans (preprojectiveLift_comp_preprojectiveMk f hf).symm
 
 /-- The local-relations form of the universal property: a map killing every vertex-corner relator
 descends to the preprojective algebra. -/
