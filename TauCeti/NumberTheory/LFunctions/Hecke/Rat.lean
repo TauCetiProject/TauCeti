@@ -16,7 +16,7 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 
 Over `ℚ`, `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter` identifies any ray
 class character `χ` of a modulus `𝔪` with a Dirichlet character `ψ = χ.toDirichletCharacter` modulo
-`Ideal.absNorm 𝔪.finitePart` (`TauCeti.GlobalNumberFields.lSeries_rayClassCharacter_rat_eq`). Since
+`Ideal.absNorm 𝔪.finitePart` (`TauCeti.GlobalNumberFields.LSeries_rayClassCharacter_rat_eq`). Since
 `DirichletCharacter.LFunction` is meromorphic on `ℂ` (entire when `ψ ≠ 1`, and agreeing with a
 finite Euler product times `riemannZeta` when `ψ = 1`), the canonical meromorphic continuation
 `TauCeti.LFunctions.heckeLFunctionC χ` equals
@@ -69,7 +69,7 @@ theorem heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat {𝔪 : Modulus ℚ}
         Set.univ := by
   have : NeZero (Ideal.absNorm 𝔪.finitePart) :=
     ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
-  rw [heckeLFunctionC_def, lSeries_rayClassCharacter_rat_eq χ]
+  rw [heckeLFunctionC_def, LSeries_rayClassCharacter_rat_eq χ]
   exact meromorphicContinuation_eq_toMeromorphicNFOn
     χ.toDirichletCharacter.meromorphic_LFunction
     (fun s (hs : 1 < s.re) ↦
@@ -101,7 +101,7 @@ theorem heckeLFunctionC_eq_LSeries_rat {𝔪 : Modulus ℚ} (χ : RayClassCharac
   rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,
     toMeromorphicNFOn_apply_of_analyticAt χ.toDirichletCharacter.meromorphic_LFunction
       (χ.toDirichletCharacter.analyticAt_LFunction (.inl fun h ↦ by simp [h] at hs)),
-    lSeries_rayClassCharacter_rat_eq χ,
+    LSeries_rayClassCharacter_rat_eq χ,
     DirichletCharacter.LFunction_eq_LSeries _ hs]
 
 /-- **Unconditional nonvanishing on `Re s ≥ 1` over `ℚ`.** For any modulus `𝔪` of `ℚ`, any ray

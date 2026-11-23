@@ -86,7 +86,7 @@ For any `L : ℂ → ℂ` agreeing with the `L`-series of `χ` on `{z | 1 < z.re
 theorem ne_zero_of_one_le_re {χ : RayClassCharacter 𝔪} {L : ℂ → ℂ}
     (hLL : EqOn L
       (LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction)) {z | 1 < z.re})
-    {s : ℂ} (hs : 1 ≤ s.re) (hLs : s.re = 1 → DifferentiableAt ℂ L s)
+    {s : ℂ} (hs : 1 ≤ s.re) (hLs : s.re = 1 → χ ^ 2 ≠ 1 ∨ s ≠ 1 → DifferentiableAt ℂ L s)
     (hsq_ne : s.re = 1 → χ ^ 2 ≠ 1 → ∃ L₂ : ℂ → ℂ, ContinuousAt L₂ (2 * s - 1) ∧
       EqOn L₂
         (LSeries (normCoeff K (χ ^ 2).toUnitaryIdealWeight.toIdealArithmeticFunction))
@@ -108,28 +108,23 @@ theorem ne_zero_of_one_le_re {χ : RayClassCharacter 𝔪} {L : ℂ → ℂ}
           {z | 1 < z.re} := by
         simpa only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
           val_toUnitaryIdealWeight] using hLL
-      rcases eq_or_ne s 1 with rfl | hs1
-      · obtain ⟨Z, hZ, hZζ, hL, hnot⟩ := hlandau hsq rfl
-        exact MultiplicativeIdealWeight.ne_zero_of_one_le_re_of_isTrivialOnGood_sq
-          (χ.isTrivialOnGood_sq_iff_sq_eq_one.mpr hsq) hZ hZζ hL hLL' hnot hs
-      · exact χ.toMultiplicativeIdealWeight.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq
-          ((MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr
-            (χ.isTrivialOnGood_sq_iff_sq_eq_one.mpr hsq))
-          hseq.symm (by simpa using hs1) (hLs hseq.symm) hLL'
+      exact MultiplicativeIdealWeight.ne_zero_of_one_le_re_of_isTrivialOnGood_sq
+        (χ.isTrivialOnGood_sq_iff_sq_eq_one.mpr hsq) hLL' hs
+        (fun hre hs1 ↦ hLs hre (.inr hs1)) (hlandau hsq)
     · obtain ⟨L₂, hL₂cont, hL₂eq⟩ := hsq_ne hseq.symm hsq
       have hpow : χ.toUnitaryIdealWeight ^ 2 = (χ ^ 2).toUnitaryIdealWeight := by
         rw [sq, sq, toUnitaryIdealWeight_mul]
-      exact χ.toUnitaryIdealWeight.ne_zero_of_eqOn_LSeries hseq.symm (hLs hseq.symm) hLL
-        hL₂cont fun z hz ↦ by rw [hpow]; exact hL₂eq hz
+      exact χ.toUnitaryIdealWeight.ne_zero_of_eqOn_LSeries hseq.symm
+        (hLs hseq.symm (.inl hsq)) hLL hL₂cont fun z hz ↦ by rw [hpow]; exact hL₂eq hz
 
 /-- **Pointwise meromorphic order zero on `Re s ≥ 1` for ray class L-functions.** Under the
 branch-minimal hypotheses of `ne_zero_of_one_le_re` together with meromorphic normal form at `s`
-when `s.re = 1`, `meromorphicOrderAt L s = 0`. -/
+when `s.re = 1` and `χ ^ 2 ≠ 1 ∨ s ≠ 1`, `meromorphicOrderAt L s = 0`. -/
 theorem meromorphicOrderAt_eq_zero_of_one_le_re {χ : RayClassCharacter 𝔪} {L : ℂ → ℂ}
     (hLL : EqOn L
       (LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction)) {z | 1 < z.re})
-    {s : ℂ} (hs : 1 ≤ s.re) (hLM : s.re = 1 → MeromorphicNFAt L s)
-    (hLs : s.re = 1 → DifferentiableAt ℂ L s)
+    {s : ℂ} (hs : 1 ≤ s.re) (hLM : s.re = 1 → χ ^ 2 ≠ 1 ∨ s ≠ 1 → MeromorphicNFAt L s)
+    (hLs : s.re = 1 → χ ^ 2 ≠ 1 ∨ s ≠ 1 → DifferentiableAt ℂ L s)
     (hsq_ne : s.re = 1 → χ ^ 2 ≠ 1 → ∃ L₂ : ℂ → ℂ, ContinuousAt L₂ (2 * s - 1) ∧
       EqOn L₂
         (LSeries (normCoeff K (χ ^ 2).toUnitaryIdealWeight.toIdealArithmeticFunction))
@@ -150,34 +145,41 @@ theorem meromorphicOrderAt_eq_zero_of_one_le_re {χ : RayClassCharacter 𝔪} {L
         analyticOnNhd_LSeries_of_unitary χ.toUnitaryIdealWeight s hsgt
       exact (hana.congr
         ((Filter.eventuallyEq_of_mem (hopen.mem_nhds hsgt) hLL).symm)).meromorphicNFAt
-    · exact hLM hseq.symm
+    · by_cases hboth : χ ^ 2 = 1 ∧ s = 1
+      · obtain ⟨_, _, _, hL, _⟩ := hlandau hboth.1 hboth.2
+        have hopen : IsOpen {z : ℂ | (1 / 2 : ℝ) < z.re} :=
+          isOpen_lt continuous_const Complex.continuous_re
+        exact (hL.analyticAt
+          (hopen.mem_nhds (by simp only [Set.mem_ofPred_eq]; linarith))).meromorphicNFAt
+      · exact hLM hseq.symm (not_and_or.mp hboth)
   exact hnf.meromorphicOrderAt_eq_zero_iff.mpr hne
 
 /-- **Nonvanishing on `Re s ≥ 1` of the cancellation-continued ray class L-function.**
-For any nontrivial ray class character `χ ≠ 1` of any modulus `𝔪`,
-`continuedLFunctionOfWeight χ.toUnitaryIdealWeight s ≠ 0` for every `s` with `1 ≤ s.re`,
-requiring `[K : ℚ] = 1` only in the exceptional case `χ ^ 2 = 1 ∧ s = 1` (via Landau's theorem).
-Away from `χ ^ 2 = 1 ∧ s = 1`, nonvanishing holds over any number field `K` via the Euler product
-on `Re s > 1` and `3-4-1` on `Re s = 1`. -/
+For any ray class character `χ` of any modulus `𝔪`,
+`continuedLFunctionOfWeight χ.toUnitaryIdealWeight s ≠ 0` for every `s` with `1 ≤ s.re` provided
+`χ ≠ 1` on `Re s = 1`, requiring `[K : ℚ] = 1` only in the exceptional case `χ ^ 2 = 1 ∧ s = 1`
+(via Landau's theorem). On `Re s > 1`, nonvanishing holds for every `χ` (including `χ = 1`) via
+the Euler product. -/
 theorem continuedLFunctionOfWeight_toUnitaryIdealWeight_ne_zero_of_one_le_re
-    {χ : RayClassCharacter 𝔪} (hχ : χ ≠ 1) {s : ℂ}
+    {χ : RayClassCharacter 𝔪} {s : ℂ} (hχ : s.re = 1 → χ ≠ 1)
     (hK : χ ^ 2 = 1 → s = 1 → Module.finrank ℚ K = 1) (hs : 1 ≤ s.re) :
     continuedLFunctionOfWeight χ.toUnitaryIdealWeight s ≠ 0 := by
   rcases hs.lt_or_eq with hsgt | hseq
   · exact continuedLFunctionOfWeight_ne_zero_of_one_lt_re _ hsgt
-  · by_cases hsq : χ ^ 2 = 1
+  · have hχne : χ ≠ 1 := hχ hseq.symm
+    by_cases hsq : χ ^ 2 = 1
     · have htriv : (χ.toUnitaryIdealWeight ^ 2).val.IsTrivialOnGood := by
         rw [UnitaryIdealWeight.val_pow, val_toUnitaryIdealWeight]
         exact χ.isTrivialOnGood_sq_iff_sq_eq_one.mpr hsq
       rcases eq_or_ne s 1 with rfl | hs1
       · exact continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq_of_finrank_eq_one
-          (hK hsq rfl) (hasCancellation_toUnitaryIdealWeight hχ) htriv hs
+          (hK hsq rfl) (hasCancellation_toUnitaryIdealWeight hχne) htriv hs
       · exact continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq
-          (hasCancellation_toUnitaryIdealWeight hχ) htriv hs hs1
+          (hasCancellation_toUnitaryIdealWeight hχne) htriv hs hs1
     · have hpow : χ.toUnitaryIdealWeight ^ 2 = (χ ^ 2).toUnitaryIdealWeight := by
         rw [sq, sq, toUnitaryIdealWeight_mul]
       exact continuedLFunctionOfWeight_ne_zero_of_hasCancellation_sq
-        (hasCancellation_toUnitaryIdealWeight hχ)
+        (hasCancellation_toUnitaryIdealWeight hχne)
         (hpow ▸ hasCancellation_toUnitaryIdealWeight hsq) hs
 
 end TauCeti.GlobalNumberFields.RayClassCharacter

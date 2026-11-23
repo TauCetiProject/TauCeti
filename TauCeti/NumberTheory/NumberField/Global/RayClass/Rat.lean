@@ -115,19 +115,25 @@ theorem asIdeal_mem_integralIdealsPrimeTo_ratModulus_iff {v : HeightOneSpectrum 
     (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm).trans <|
       Ideal.isPrimeTo_asIdeal_iff.trans mem_ratModulus_support_iff.not
 
+/-- Coprimality of the principal ideals `(k)` and `(n)` in `𝓞 ℚ` is equivalent to `k` being a
+unit modulo `n`. -/
+private theorem isCoprime_span_natCast_iff_isUnit {n : ℕ} (hn : n ≠ 0) (k : ℕ) :
+    IsCoprime (Ideal.span {(k : 𝓞 ℚ)}) (Ideal.span {(n : 𝓞 ℚ)}) ↔ IsUnit (k : ZMod n) := by
+  have : NeZero n := ⟨hn⟩
+  rw [Ideal.isCoprime_span_singleton_iff, NumberField.RingOfIntegers.isCoprime_natCast,
+    ZMod.isUnit_iff_coprime]
+
 variable {n hn} in
 /-- For `k ≠ 0`, `Ideal.span {(k : 𝓞 ℚ)}` is prime to `(ratModulus n hn).support` if and only if
 `k` is a unit modulo `n`. -/
 theorem isPrimeTo_span_natCast_ratModulus_iff_isUnit {k : ℕ} (hk : k ≠ 0) :
     (Ideal.span {(k : 𝓞 ℚ)}).IsPrimeTo (ratModulus n hn).support ↔ IsUnit (k : ZMod n) := by
-  have : NeZero n := ⟨hn⟩
   have hI_ne : Ideal.span {(k : 𝓞 ℚ)} ≠ ⊥ :=
     mt (fun h ↦ Ideal.span_singleton_eq_bot.mp h) (by exact_mod_cast hk)
   rw [Ideal.isPrimeTo_iff]
   simp only [Finset.mem_coe]
   rw [← Modulus.isCoprimeTo_iff, Modulus.isCoprimeTo_iff_sup_eq_top, ratModulus_finitePart,
-    ← Ideal.isCoprime_iff_sup_eq, Ideal.isCoprime_span_singleton_iff,
-    NumberField.RingOfIntegers.isCoprime_natCast, ZMod.isUnit_iff_coprime]
+    ← Ideal.isCoprime_iff_sup_eq, isCoprime_span_natCast_iff_isUnit hn k]
   simp [hI_ne]
 
 /-- **Reduction modulo the finite part of `ratModulus n hn` is reduction modulo `n`**, transported
@@ -270,7 +276,7 @@ theorem dvd_ratModulus_absNorm (𝔪 : Modulus ℚ) :
   dvd_ratModulus_iff.mpr dvd_rfl
 
 /-- Every modulus of `ℚ` has the same finite part as `ratModulus (Ideal.absNorm 𝔪.finitePart) _`. -/
-theorem finitePart_eq_ratModulus_absNorm (𝔪 : Modulus ℚ) :
+theorem finitePart_eq_ratModulus_absNorm_finitePart (𝔪 : Modulus ℚ) :
     𝔪.finitePart = (ratModulus (Ideal.absNorm 𝔪.finitePart)
       (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot)).finitePart :=
   (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm
@@ -280,7 +286,7 @@ modulo `Ideal.absNorm 𝔪.finitePart`. -/
 theorem isPrimeTo_span_natCast_iff_isUnit {𝔪 : Modulus ℚ} {k : ℕ} (hk : k ≠ 0) :
     (Ideal.span {(k : 𝓞 ℚ)}).IsPrimeTo 𝔪.support ↔
       IsUnit (k : ZMod (Ideal.absNorm 𝔪.finitePart)) := by
-  simp only [Modulus.support_eq_of_finitePart_eq (finitePart_eq_ratModulus_absNorm 𝔪)]
+  simp only [Modulus.support_eq_of_finitePart_eq (finitePart_eq_ratModulus_absNorm_finitePart 𝔪)]
   exact isPrimeTo_span_natCast_ratModulus_iff_isUnit hk
 
 /-- **The transition map from `(n)·∞` to `(d)·∞` is reduction modulo `d` on `(ZMod n)ˣ`.** -/

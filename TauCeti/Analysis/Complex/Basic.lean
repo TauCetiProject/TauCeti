@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Analysis.Complex.Order
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -77,8 +76,9 @@ through such a `z` has norm at least `(‖z‖ + s) / 2`
 (`Complex.norm_add_div_two_le_norm_add_ofReal_mul_I`).
 
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
-(`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`). On the nonnegative real ray, the
-`ComplexOrder` inequality `0 ≤ a ≤ b` implies `‖a‖ ≤ ‖b‖` (`Complex.norm_le_norm_of_nonneg_le`).
+(`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`). Continuity of `Z` at `σ₀` and `L` at
+`σ₀ + v` prevents `(Z σ * L (σ + v)).re` from tending to `+∞` as real `σ → σ₀⁺`
+(`Complex.not_tendsto_re_mul_add_atTop_of_continuousAt`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 -/
@@ -459,17 +459,19 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [h0, abs_neg] at h
     exact h.false
 
-section Order
-
-open scoped ComplexOrder
-
-/-- On the nonnegative real ray inside `ℂ`, `0 ≤ a ≤ b` implies `‖a‖ ≤ ‖b‖`. -/
-theorem norm_le_norm_of_nonneg_le {a b : ℂ} (ha : 0 ≤ a) (hab : a ≤ b) : ‖a‖ ≤ ‖b‖ := by
-  have hb : 0 ≤ b := ha.trans hab
-  rw [eq_coe_norm_of_nonneg ha, eq_coe_norm_of_nonneg hb] at hab
-  exact_mod_cast hab
-
-end Order
+/-- Continuity of `Z` at `σ₀` and of `L` at `σ₀ + v` prevents `(Z σ * L (σ + v)).re` from
+tending to `+∞` as real `σ → σ₀⁺`. -/
+theorem not_tendsto_re_mul_add_atTop_of_continuousAt {Z L : ℂ → ℂ} {σ₀ : ℝ} {v : ℂ}
+    (hZ : ContinuousAt Z (σ₀ : ℂ)) (hL : ContinuousAt L ((σ₀ : ℂ) + v)) :
+    ¬ Filter.Tendsto (fun σ : ℝ ↦ (Z σ * L ((σ : ℂ) + v)).re)
+      (nhdsWithin σ₀ (Set.Ioi σ₀)) Filter.atTop := by
+  have hLshift : ContinuousAt (fun z : ℂ ↦ L (z + v)) (σ₀ : ℂ) :=
+    hL.comp_of_eq (continuousAt_id.add_const v) rfl
+  have hcont : ContinuousAt (fun σ : ℝ ↦ (Z σ * L ((σ : ℂ) + v)).re) σ₀ :=
+    continuous_re.continuousAt.comp
+      ((hZ.comp continuous_ofReal.continuousAt).mul
+        (hLshift.comp continuous_ofReal.continuousAt))
+  exact not_tendsto_atTop_of_tendsto_nhds (hcont.tendsto.mono_left nhdsWithin_le_nhds)
 
 end Complex
 

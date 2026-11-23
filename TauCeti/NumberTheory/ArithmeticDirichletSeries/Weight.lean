@@ -1023,12 +1023,9 @@ namespace MultiplicativeIdealWeight
 every good ideal. -/
 theorem norm_apply_eq_one_of_isNormTwistOnGood_sq {χ : MultiplicativeIdealWeight K} {u : ℝ}
     (hχ : (χ ^ 2).IsNormTwistOnGood u) {I : Ideal (𝓞 K)} (hI : χ.IsGood I) : ‖χ I‖ = 1 := by
-  have hI' : I.IsPrimeTo χ.badPrimes := hI
   have hN : 0 < Ideal.absNorm I :=
     Nat.pos_of_ne_zero (Ideal.absNorm_eq_zero_iff.not.mpr hI.ne_bot)
-  have hval : (χ ^ 2) I = (Ideal.absNorm I : ℂ) ^ ((u : ℂ) * Complex.I) := by
-    have heq := congrArg (fun w : MultiplicativeIdealWeight K ↦ w I) (hχ.eq_normTwist rfl)
-    simpa [normTwist_apply, ofBadPrimes_apply, hI', badPrimes_pow _ two_ne_zero] using heq
+  have hval := hχ I ((isGood_pow_iff χ two_ne_zero).mpr hI)
   have hsq : ‖χ I‖ ^ 2 = 1 := by
     rw [← norm_pow, ← pow_apply _ two_ne_zero, hval, Complex.norm_natCast_cpow_of_pos hN]
     simp

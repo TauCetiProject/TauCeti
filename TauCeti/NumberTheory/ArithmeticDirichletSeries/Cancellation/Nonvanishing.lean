@@ -139,11 +139,13 @@ theorem continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq_of_finrank_eq
   have hopen : IsOpen {z : ℂ | (0 : ℝ) < z.re} :=
     isOpen_lt continuous_const Complex.continuous_re
   exact MultiplicativeIdealWeight.ne_zero_of_one_le_re_of_finrank_eq_one hK hχ₂
-    (hdiff.mono fun _ hz ↦ lt_trans (by norm_num : (0 : ℝ) < 1 / 2) hz)
     (fun z hz ↦ by
       rw [continuedLFunctionOfWeight_eq_LSeries χ hz,
         UnitaryIdealWeight.toIdealArithmeticFunction_eq_val])
-    (hdiff.differentiableAt (hopen.mem_nhds (by norm_num))).continuousAt hs
+    hs
+    (fun _ _ ↦ differentiableAt_continuedLFunctionOfWeight hχ hs)
+    fun _ ↦ ⟨hdiff.mono fun _ hz ↦ lt_trans (by norm_num : (0 : ℝ) < 1 / 2) hz,
+      (hdiff.differentiableAt (hopen.mem_nhds (by norm_num))).continuousAt⟩
 
 /-- **Nonvanishing of `continuedLFunctionOfWeight` on `Re s ≥ 1` when `[K : ℚ] = 1`, `χ` has
 cancellation (`HasCancellation χ`), and `(χ ^ 2).val.IsTrivialOnGood`.** No separate analytic

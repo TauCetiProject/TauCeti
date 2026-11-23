@@ -80,13 +80,17 @@ for any `s` with `1 ≤ s.re` under branch-minimal analytic hypotheses:
   `{z | 1 / 2 < z.re}`) such that `(Z σ * heckeLFunctionC χ σ).re` does not tend to `+∞` as
   real `σ → (1 / 2)⁺`.
 
-For a criterion requiring only half-plane data on `Re z > 1 / 2` for an arbitrary continuation `L`,
+For an arbitrary continuation `L` with branch-specific hypotheses in place of the whole-plane
+witness `hcont` (series agreement on `Re z > 1`, differentiability on `Re s = 1` away from
+`χ ^ 2 = 1 ∧ s = 1`, a continuous continuation of `L(χ ^ 2, ·)` when `χ ^ 2 ≠ 1`, and half-plane
+holomorphy of `ζ_K` and `L` together with the boundary limit condition at `χ ^ 2 = 1 ∧ s = 1`),
 use `TauCeti.GlobalNumberFields.RayClassCharacter.ne_zero_of_one_le_re`. -/
 theorem heckeLFunctionC_ne_zero_of_one_le_re {χ : RayClassCharacter 𝔪}
     (hcont : ∃ g : ℂ → ℂ, MeromorphicNFOn g univ ∧
       EqOn g (LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction))
         {z | 1 < z.re})
-    {s : ℂ} (hs : 1 ≤ s.re) (hLs : s.re = 1 → DifferentiableAt ℂ (heckeLFunctionC χ) s)
+    {s : ℂ} (hs : 1 ≤ s.re)
+    (hLs : s.re = 1 → χ ^ 2 ≠ 1 ∨ s ≠ 1 → DifferentiableAt ℂ (heckeLFunctionC χ) s)
     (hsq_ne : s.re = 1 → χ ^ 2 ≠ 1 → ∃ L₂ : ℂ → ℂ, ContinuousAt L₂ (2 * s - 1) ∧
       EqOn L₂
         (LSeries (normCoeff K (χ ^ 2).toUnitaryIdealWeight.toIdealArithmeticFunction))
@@ -107,13 +111,16 @@ theorem heckeLFunctionC_ne_zero_of_one_le_re {χ : RayClassCharacter 𝔪}
 whole-plane series-agreement witness and branch-minimal hypotheses of
 `heckeLFunctionC_ne_zero_of_one_le_re`, `meromorphicOrderAt (heckeLFunctionC χ) s = 0`.
 
-For a criterion requiring only half-plane data on `Re z > 1 / 2` for an arbitrary continuation `L`,
+For an arbitrary continuation `L` with branch-specific hypotheses in place of `hcont` (including
+half-plane holomorphy and the boundary limit condition at `χ ^ 2 = 1 ∧ s = 1`, together with
+meromorphic normal form on `Re s = 1` away from `χ ^ 2 = 1 ∧ s = 1`),
 see `TauCeti.GlobalNumberFields.RayClassCharacter.meromorphicOrderAt_eq_zero_of_one_le_re`. -/
 theorem meromorphicOrderAt_heckeLFunctionC_eq_zero_of_one_le_re {χ : RayClassCharacter 𝔪}
     (hcont : ∃ g : ℂ → ℂ, MeromorphicNFOn g univ ∧
       EqOn g (LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction))
         {z | 1 < z.re})
-    {s : ℂ} (hs : 1 ≤ s.re) (hLs : s.re = 1 → DifferentiableAt ℂ (heckeLFunctionC χ) s)
+    {s : ℂ} (hs : 1 ≤ s.re)
+    (hLs : s.re = 1 → χ ^ 2 ≠ 1 ∨ s ≠ 1 → DifferentiableAt ℂ (heckeLFunctionC χ) s)
     (hsq_ne : s.re = 1 → χ ^ 2 ≠ 1 → ∃ L₂ : ℂ → ℂ, ContinuousAt L₂ (2 * s - 1) ∧
       EqOn L₂
         (LSeries (normCoeff K (χ ^ 2).toUnitaryIdealWeight.toIdealArithmeticFunction))

@@ -103,20 +103,6 @@ theorem idealAbscissaOfAbsConv_convolution_le (f g : IdealArithmeticFunction K) 
 
 /-! ### Norm-regrouped convolution series -/
 
-/-- The norm-regrouped abscissa of absolute convergence of a convolution is at most the maximum
-of the two original norm-regrouped abscissae. -/
-theorem abscissaOfAbsConv_normCoeff_convolution_le (f g : IdealArithmeticFunction K) :
-    LSeries.abscissaOfAbsConv (normCoeff K (f.convolution g)) ≤
-      max (LSeries.abscissaOfAbsConv (normCoeff K f))
-        (LSeries.abscissaOfAbsConv (normCoeff K g)) := by
-  refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable' fun y hy ↦ ?_
-  have hf : LSeriesSummable (normCoeff K f) y :=
-    LSeriesSummable_of_abscissaOfAbsConv_lt_re (by simpa using (le_max_left ..).trans_lt hy)
-  have hg : LSeriesSummable (normCoeff K g) y :=
-    LSeriesSummable_of_abscissaOfAbsConv_lt_re (by simpa using (le_max_right ..).trans_lt hy)
-  rw [normCoeff_convolution]
-  exact ArithmeticFunction.LSeriesSummable_mul hf hg
-
 /-- **Product identity on `Re s > 1`.** Whenever the regrouped `L`-series of `f` converges
 absolutely at `s` with `1 < Re s`, the regrouped `L`-series of `1 * f` is `ζ_K(s) L(f, s)`. -/
 theorem LSeries_normCoeff_convolution_one_eq_dedekindZeta_mul {f : IdealArithmeticFunction K}

@@ -53,10 +53,8 @@ theorem pow_mem_nonZeroDivisors_iff (hn : n ≠ 0) : a ^ n ∈ M₀⁰ ↔ a ∈
     pow_mem_nonZeroDivisorsRight_iff hn]
 
 /-- Unique roots pass from a monoid with zero `M₀` to its submonoid `M₀⁰` of nonzerodivisors. -/
-instance instHasUniqueRootsNonZeroDivisors [HasUniqueRoots M₀] : HasUniqueRoots M₀⁰ where
-  pow_left_injective _ hn _ _ h :=
-    Subtype.ext (HasUniqueRoots.pow_left_injective hn
-      (by simpa only [SubmonoidClass.coe_pow] using congrArg Subtype.val h))
+instance instHasUniqueRootsNonZeroDivisors [HasUniqueRoots M₀] : HasUniqueRoots M₀⁰ :=
+  Function.Injective.hasUniqueRoots (nonZeroDivisors M₀).subtype Subtype.val_injective
 
 end TauCeti
 

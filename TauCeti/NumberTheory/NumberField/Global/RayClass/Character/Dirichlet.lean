@@ -61,11 +61,12 @@ Dirichlet character `χ.toDirichletCharacter` modulo `n = Ideal.absNorm 𝔪.fin
   `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_infinitePart_eq_empty_iff_even`: the
   conductor of a ray class character of `(n)·∞` is the conductor of its Dirichlet character, with
   the real place included exactly for an odd character.
-* `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter_ne_one_iff`,
-  `TauCeti.GlobalNumberFields.RayClassCharacter.mem_range_toDirichletCharacter_iff`: nontriviality
-  and range characterization for `toDirichletCharacter`.
+* `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter_apply`,
+  `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter_apply_natCast`, and
+  `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter_ne_one_iff`: evaluation
+  and nontriviality for `toDirichletCharacter`.
 * `TauCeti.GlobalNumberFields.normCoeff_rayClassCharacter_rat_eq` and
-  `TauCeti.GlobalNumberFields.lSeries_rayClassCharacter_rat_eq`: coefficientwise and `L`-series
+  `TauCeti.GlobalNumberFields.LSeries_rayClassCharacter_rat_eq`: coefficientwise and `L`-series
   identification between a ray class character over `ℚ` and its associated Dirichlet character.
 
 ## References
@@ -287,6 +288,15 @@ noncomputable def toDirichletCharacter {𝔪 : Modulus ℚ} :
     (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot)).toMonoidHom.comp
       (induced (dvd_ratModulus_absNorm 𝔪))
 
+/-- Applying `toDirichletCharacter` evaluates `ratDirichletEquiv` on the character induced to
+`(Ideal.absNorm 𝔪.finitePart)·∞`. -/
+theorem toDirichletCharacter_apply {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪) :
+    χ.toDirichletCharacter =
+      ratDirichletEquiv (Ideal.absNorm 𝔪.finitePart)
+        (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot)
+        (χ.induced (dvd_ratModulus_absNorm 𝔪)) := by
+  simp only [toDirichletCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+
 /-- The conversion from ray class characters of `𝔪` to Dirichlet characters modulo
 `Ideal.absNorm 𝔪.finitePart` is injective. -/
 theorem toDirichletCharacter_injective {𝔪 : Modulus ℚ} :
@@ -305,60 +315,36 @@ theorem toDirichletCharacter_ne_one_iff {𝔪 : Modulus ℚ} {χ : RayClassChara
     χ.toDirichletCharacter ≠ 1 ↔ χ ≠ 1 :=
   toDirichletCharacter_eq_one_iff.not
 
-/-- A Dirichlet character modulo `Ideal.absNorm 𝔪.finitePart` lies in the range of
-`toDirichletCharacter` if and only if either `𝔪` has a nonempty infinite part or the Dirichlet
-character is even. -/
-theorem mem_range_toDirichletCharacter_iff {𝔪 : Modulus ℚ}
-    {ψ : DirichletCharacter ℂ (Ideal.absNorm 𝔪.finitePart)} :
-    ψ ∈ Set.range (toDirichletCharacter (𝔪 := 𝔪)) ↔ (𝔪.infinitePart = ∅ → ψ.Even) := by
-  have hn : Ideal.absNorm 𝔪.finitePart ≠ 0 := Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot
-  let h𝔪 := dvd_ratModulus_absNorm 𝔪
-  let η : RayClassCharacter (ratModulus (Ideal.absNorm 𝔪.finitePart) hn) :=
-    (ratDirichletEquiv (Ideal.absNorm 𝔪.finitePart) hn).symm ψ
-  have hmem : ψ ∈ Set.range (toDirichletCharacter (𝔪 := 𝔪)) ↔
-      ∃ χ : RayClassCharacter 𝔪, χ.induced h𝔪 = η := by
-    simp only [Set.mem_range, toDirichletCharacter, MonoidHom.comp_apply,
-      MulEquiv.coe_toMonoidHom]
-    exact exists_congr fun χ ↦
-      (ratDirichletEquiv (Ideal.absNorm 𝔪.finitePart) hn).eq_symm_apply.symm
-  rw [hmem, exists_induced_eq_iff_of_finitePart_eq h𝔪 (finitePart_eq_ratModulus_absNorm 𝔪)]
-  by_cases hinf : 𝔪.infinitePart = ∅
-  · simp only [hinf, Finset.notMem_empty, false_implies, forall_const]
-    have heven := even_ratDirichletEquiv_iff η
-    rw [MulEquiv.apply_symm_apply] at heven
-    rw [heven]
-    refine ⟨fun h ↦ h _, fun h s ↦ ?_⟩
-    let w₀ : (ratModulus (Ideal.absNorm 𝔪.finitePart) hn).infinitePart :=
-      ⟨⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩, by simp⟩
-    rcases Int.units_eq_one_or (s w₀) with hs | hs
-    · have hs' : s = 1 := funext fun w ↦ by rw [Subsingleton.elim w w₀, hs, Pi.one_apply]
-      rw [hs', Prod.mk_one_one, map_one, map_one]
-    · have hs' : s = fun _ ↦ -1 := funext fun w ↦ by rw [Subsingleton.elim w w₀, hs]
-      rw [hs']
-      exact h
-  · simp only [hinf, false_implies, iff_true]
-    obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp hinf
-    intro s hs
-    have hs1 : s = 1 := funext fun w' ↦ by
-      have hw' : w'.val = w := Subtype.ext (Subsingleton.elim _ _)
-      rw [Pi.one_apply]
-      exact hs w' (hw' ▸ hw)
-    rw [hs1, Prod.mk_one_one, map_one, map_one]
-
-/-- When `𝔪` contains the real place, `toDirichletCharacter` is surjective onto Dirichlet
-characters modulo `Ideal.absNorm 𝔪.finitePart`. -/
-theorem surjective_toDirichletCharacter_of_infinitePart_nonempty {𝔪 : Modulus ℚ}
-    (hinf : 𝔪.infinitePart.Nonempty) :
-    Function.Surjective (toDirichletCharacter (𝔪 := 𝔪)) := by
-  intro ψ
-  exact (mem_range_toDirichletCharacter_iff (ψ := ψ)).mpr fun h ↦ absurd h hinf.ne_empty
-
-/-- When `𝔪` omits the real place, `toDirichletCharacter` has range precisely the even Dirichlet
-characters modulo `Ideal.absNorm 𝔪.finitePart`. -/
-theorem mem_range_toDirichletCharacter_iff_even {𝔪 : Modulus ℚ} (hinf : 𝔪.infinitePart = ∅)
-    {ψ : DirichletCharacter ℂ (Ideal.absNorm 𝔪.finitePart)} :
-    ψ ∈ Set.range (toDirichletCharacter (𝔪 := 𝔪)) ↔ ψ.Even := by
-  rw [mem_range_toDirichletCharacter_iff, imp_iff_right hinf]
+/-- For `k ≠ 0`, `χ.toDirichletCharacter k` equals `χ.toMultiplicativeIdealWeight` at the
+principal ideal `Ideal.span {(k : 𝓞 ℚ)}`. -/
+theorem toDirichletCharacter_apply_natCast {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪)
+    {k : ℕ} (hk : k ≠ 0) :
+    χ.toDirichletCharacter k = χ.toMultiplicativeIdealWeight (Ideal.span {(k : 𝓞 ℚ)}) := by
+  set n := Ideal.absNorm 𝔪.finitePart
+  have hn : n ≠ 0 := Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot
+  have : NeZero n := ⟨hn⟩
+  have h𝔪 : 𝔪 ∣ ratModulus n hn := dvd_ratModulus_absNorm 𝔪
+  rw [toDirichletCharacter_apply]
+  let I : Ideal (𝓞 ℚ) := Ideal.span {(k : 𝓞 ℚ)}
+  have hnorm : Ideal.absNorm I = k := by
+    simp only [I, Ideal.absNorm_span_natCast, NumberField.RingOfIntegers.rank,
+      Module.finrank_self, pow_one]
+  by_cases hI : I.IsPrimeTo 𝔪.support
+  · have hI' : I ∈ integralIdealsPrimeTo (ratModulus n hn) :=
+      Modulus.mem_integralIdealsPrimeTo.mpr
+        ((Modulus.isCoprimeTo_iff_of_finitePart_eq
+          (finitePart_eq_ratModulus_absNorm_finitePart 𝔪)).mp
+          (Modulus.isCoprimeTo_iff.mpr (Ideal.isPrimeTo_iff.mp hI)))
+    have hval := ratDirichletEquiv_absNorm (χ.induced h𝔪) ⟨I, hI'⟩
+    simp only [hnorm] at hval
+    have hincl : (⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
+        (Ideal.isPrimeTo_iff.mp hI)⟩ : integralIdealsPrimeTo 𝔪) =
+        integralIdealsPrimeToInclusion h𝔪 ⟨I, hI'⟩ :=
+      Subtype.ext (coe_integralIdealsPrimeToInclusion h𝔪 ⟨I, hI'⟩).symm
+    rw [hval, RayClassCharacter.onIdeals_induced h𝔪 χ ⟨I, hI'⟩, ← hincl,
+      toMultiplicativeIdealWeight_apply_of_isPrimeTo χ hI]
+  · have hnu : ¬ IsUnit (k : ZMod n) := (isPrimeTo_span_natCast_iff_isUnit hk).not.mp hI
+    rw [MulChar.map_nonunit _ hnu, toMultiplicativeIdealWeight_apply_of_not_isPrimeTo χ hI]
 
 end RayClassCharacter
 
@@ -374,12 +360,6 @@ theorem normCoeff_rayClassCharacter_rat_eq {𝔪 : Modulus ℚ} (χ : RayClassCh
     {k : ℕ} (hk : k ≠ 0) :
     normCoeff ℚ χ.toUnitaryIdealWeight.toIdealArithmeticFunction k =
       χ.toDirichletCharacter k := by
-  set n := Ideal.absNorm 𝔪.finitePart
-  have hn : n ≠ 0 := Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot
-  have : NeZero n := ⟨hn⟩
-  have h𝔪 : 𝔪 ∣ ratModulus n hn := dvd_ratModulus_absNorm 𝔪
-  dsimp only [RayClassCharacter.toDirichletCharacter, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom]
   let I : Ideal (𝓞 ℚ) := Ideal.span {(k : 𝓞 ℚ)}
   have hI_ne : I ≠ 0 := mt (fun h ↦ Ideal.span_singleton_eq_bot.mp h) (by exact_mod_cast hk)
   let I₀ : (Ideal (𝓞 ℚ))⁰ := ⟨I, mem_nonZeroDivisors_of_ne_zero hI_ne⟩
@@ -390,26 +370,11 @@ theorem normCoeff_rayClassCharacter_rat_eq {𝔪 : Modulus ℚ} (χ : RayClassCh
   rw [normCoeff_eq_sum_normFiber, ← hnorm, normFiber_rat_absNorm I₀, Finset.sum_singleton,
     UnitaryIdealWeight.toIdealArithmeticFunction_apply, RayClassCharacter.val_toUnitaryIdealWeight,
     hnorm, hI₀]
-  by_cases hI : I.IsPrimeTo 𝔪.support
-  · have hI' : I ∈ integralIdealsPrimeTo (ratModulus n hn) :=
-      Modulus.mem_integralIdealsPrimeTo.mpr
-        ((Modulus.isCoprimeTo_iff_of_finitePart_eq (finitePart_eq_ratModulus_absNorm 𝔪)).mp
-          (Modulus.isCoprimeTo_iff.mpr (Ideal.isPrimeTo_iff.mp hI)))
-    have hval := ratDirichletEquiv_absNorm (χ.induced h𝔪) ⟨I, hI'⟩
-    simp only [hnorm] at hval
-    have hincl : (⟨I, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-        (Ideal.isPrimeTo_iff.mp hI)⟩ : integralIdealsPrimeTo 𝔪) =
-        integralIdealsPrimeToInclusion h𝔪 ⟨I, hI'⟩ :=
-      Subtype.ext (coe_integralIdealsPrimeToInclusion h𝔪 ⟨I, hI'⟩).symm
-    rw [RayClassCharacter.toMultiplicativeIdealWeight_apply_of_isPrimeTo χ hI, hincl,
-      ← RayClassCharacter.onIdeals_induced h𝔪 χ ⟨I, hI'⟩, ← hval]
-  · have hnu : ¬ IsUnit (k : ZMod n) := (isPrimeTo_span_natCast_iff_isUnit hk).not.mp hI
-    rw [RayClassCharacter.toMultiplicativeIdealWeight_apply_of_not_isPrimeTo χ hI,
-      MulChar.map_nonunit _ hnu]
+  exact (χ.toDirichletCharacter_apply_natCast hk).symm
 
 /-- **Over `ℚ`, the norm-regrouped `L`-series of a ray class character equals the `L`-series of its
 associated Dirichlet character.** -/
-theorem lSeries_rayClassCharacter_rat_eq {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪) :
+theorem LSeries_rayClassCharacter_rat_eq {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪) :
     LSeries (normCoeff ℚ χ.toUnitaryIdealWeight.toIdealArithmeticFunction) =
       LSeries (χ.toDirichletCharacter ·) := by
   funext s

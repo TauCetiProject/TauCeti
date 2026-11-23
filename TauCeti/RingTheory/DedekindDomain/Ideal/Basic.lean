@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GroupWithZero.Torsion
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
-public import TauCeti.Algebra.GroupWithZero.NonZeroDivisors
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.RingTheory.UniqueFactorizationDomain.FactorSet
 

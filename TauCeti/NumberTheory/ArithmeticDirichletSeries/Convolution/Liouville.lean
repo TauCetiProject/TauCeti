@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Quadratic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Liouville
+import Mathlib.Algebra.GroupWithZero.Torsion
+import TauCeti.Algebra.GroupWithZero.NonZeroDivisors
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Multiplicative
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
@@ -34,7 +36,7 @@ collects the exact identities and sharpness counterexamples for `1 * λ_K` and `
   (`TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_liouville`);
 * on `Re s > 1`, `L(λ_K, s) = ζ_K(2s) / ζ_K(s)` extends holomorphically across `s = 1` to a
   function vanishing at `s = 1` (`TauCeti.MultiplicativeIdealWeight.`
-  `exists_differentiableOn_eqOn_LSeries_liouville_apply_one_eq_zero`),
+  `exists_differentiableOn_eqOn_LSeries_liouville_and_eval_one_eq_zero`),
   demonstrating that local analytic continuation across `s = 1` alone does not prevent `L 1 = 0`.
 
 ## Main results
@@ -48,7 +50,7 @@ collects the exact identities and sharpness counterexamples for `1 * λ_K` and `
   `TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_liouville`: totalized `L`-series identity
   and exact abscissa of absolute convergence `1 / 2`.
 * `TauCeti.MultiplicativeIdealWeight.`
-  `exists_differentiableOn_eqOn_LSeries_liouville_apply_one_eq_zero`:
+  `exists_differentiableOn_eqOn_LSeries_liouville_and_eval_one_eq_zero`:
   local continuation counterexample with `L 1 = 0`.
 
 ## References
@@ -153,10 +155,9 @@ private theorem term_normCoeff_convolution_one_liouville_sq (s : ℂ) (m : ℕ) 
       LSeries.term (normCoeff K (1 : IdealArithmeticFunction K)) (2 * s) m := by
   rcases eq_or_ne m 0 with rfl | hm0
   · simp
-  have hpow : ((m ^ 2 : ℕ) : ℂ) ^ s = (m : ℂ) ^ (2 * s) := by
-    simpa [Nat.cast_pow] using (Complex.natCast_cpow_natCast_mul m 2 s).symm
   rw [LSeries.term_of_ne_zero (pow_ne_zero 2 hm0), LSeries.term_of_ne_zero hm0,
-    normCoeff_convolution_one_liouville_sq, hpow]
+    normCoeff_convolution_one_liouville_sq, Nat.cast_pow, ← Complex.natCast_cpow_natCast_mul]
+  simp
 
 /-- Away from squares, the Dirichlet term of `1 * λ_K` vanishes. -/
 private theorem term_normCoeff_convolution_one_liouville_eq_zero_of_notMem_range (s : ℂ) {n : ℕ}
@@ -214,7 +215,7 @@ namespace MultiplicativeIdealWeight
 Dirichlet series `L(λ_K, s) = ζ_K(2s) / ζ_K(s)` continues holomorphically across `s = 1` to
 `Metric.ball 1 r ∪ {s | 1 < s.re}` and vanishes at `s = 1`. Thus local analytic continuation across
 `s = 1` alone cannot rule out `L 1 = 0`. -/
-theorem exists_differentiableOn_eqOn_LSeries_liouville_apply_one_eq_zero :
+theorem exists_differentiableOn_eqOn_LSeries_liouville_and_eval_one_eq_zero :
     ∃ r > 0, ∃ L : ℂ → ℂ,
       DifferentiableOn ℂ L (Metric.ball (1 : ℂ) r ∪ {s | 1 < s.re}) ∧
       Set.EqOn L (LSeries (normCoeff K (liouville K).toIdealArithmeticFunction)) {s | 1 < s.re} ∧

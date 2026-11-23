@@ -8,8 +8,10 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
+import Mathlib.Algebra.GroupWithZero.Torsion
 import Mathlib.Algebra.Ring.GeomSum
-import TauCeti.Analysis.Complex.Basic
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import TauCeti.Algebra.GroupWithZero.NonZeroDivisors
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Multiplicative
 import TauCeti.NumberTheory.LSeries.Positivity
@@ -203,11 +205,6 @@ theorem abscissaOfAbsConv_normCoeff_convolution_one_le_one {χ : MultiplicativeI
   abscissaOfAbsConv_normCoeff_convolution_one_le_one_of_bounded (C := 1) fun I ↦ by
     simpa using χ.norm_apply_le_one_of_isTrivialOnGood_sq hχ (I : Ideal (𝓞 K))
 
-/-- Complex power identity `((m ^ 2 : ℕ) : ℂ) ^ s = (m : ℂ) ^ (2 * s)`. -/
-private theorem natCast_sq_cpow (m : ℕ) (s : ℂ) :
-    ((m ^ 2 : ℕ) : ℂ) ^ s = (m : ℂ) ^ (2 * s) := by
-  simpa [Nat.cast_pow] using (Complex.natCast_cpow_natCast_mul m 2 s).symm
-
 /-- Termwise norm comparison between `ζ_K(2s)` and the square-indexed terms of `L(1 * χ, s)`. -/
 private theorem norm_term_normCoeff_one_two_mul_le {χ : MultiplicativeIdealWeight K}
     (hχ : (χ ^ 2).IsTrivialOnGood) (s : ℂ) (m : ℕ) :
@@ -218,10 +215,10 @@ private theorem norm_term_normCoeff_one_two_mul_le {χ : MultiplicativeIdealWeig
   · simp
   have hm2 : m ^ 2 ≠ 0 := pow_ne_zero 2 hm
   rw [LSeries.term_of_ne_zero hm, LSeries.term_of_ne_zero hm2, norm_div, norm_div,
-    natCast_sq_cpow]
+    Nat.cast_pow, ← Complex.natCast_cpow_natCast_mul, Nat.cast_ofNat]
   gcongr
-  exact Complex.norm_le_norm_of_nonneg_le (normCoeff_one_nonneg K m)
-    (normCoeff_one_le_normCoeff_convolution_one_sq hχ m)
+  exact CStarAlgebra.norm_le_norm_of_le_of_nonneg
+    (normCoeff_one_le_normCoeff_convolution_one_sq hχ m) (normCoeff_one_nonneg K m)
 
 /-- **Summability transfer from `L(1 * χ, s)` to `ζ_K(2s)`.** If `χ ^ 2` is trivial on its good
 ideals and `L(1 * χ, s)` converges absolutely at `s`, then `ζ_K(2s)` converges absolutely. -/
@@ -299,7 +296,8 @@ theorem abscissaOfAbsConv_normCoeff_convolution_one_one :
   apply not_LSeriesSummable_normCoeff_one K
   rw [LSeriesSummable, ← summable_norm_iff] at hsum ⊢
   refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hsum
-  refine LSeries.norm_term_le 1 (Complex.norm_le_norm_of_nonneg_le (normCoeff_one_nonneg K n) ?_)
+  refine LSeries.norm_term_le 1
+    (CStarAlgebra.norm_le_norm_of_le_of_nonneg ?_ (normCoeff_one_nonneg K n))
   rw [normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
   refine Finset.sum_le_sum fun A _ ↦ ?_
   rw [Pi.one_apply, MultiplicativeIdealWeight.toIdealArithmeticFunction_one,
