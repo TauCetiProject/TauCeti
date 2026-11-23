@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
@@ -12,6 +13,7 @@ import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Vector fields read in the charts of a manifold modelled on its own model space
@@ -29,6 +31,8 @@ of regular points.
 
 * `TauCeti.mfderiv_mpullback_apply`, `TauCeti.mvfderiv_mpullback_apply`,
   `TauCeti.contMDiffOn_mpullback`: the pullback of a vector field by a chart.
+* `TauCeti.mlieBracket_constVectorField`: two constant vector fields on the model space have zero
+  bracket.
 * `TauCeti.chartConstField`: a constant field in the preferred chart at a point, on the manifold.
 * `TauCeti.mvfderiv_chartConstField_apply`: the derivative of a function along a constant chart
   field, read in the chart.
@@ -124,6 +128,20 @@ theorem contMDiff_constVectorField (v : E) {n : WithTop ℕ∞} :
     ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n
       (fun z ↦ (⟨z, constVectorField v z⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
   contMDiff_tangentBundle_mk_const v
+
+omit [FiniteDimensional ℝ E] in
+/-- The constant vector field is differentiable. -/
+theorem mdifferentiable_constVectorField (v : E) :
+    MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ, E).tangent
+      (fun z ↦ (⟨z, constVectorField v z⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
+  (contMDiff_constVectorField v (n := 1)).mdifferentiable one_ne_zero
+
+omit [FiniteDimensional ℝ E] in
+/-- Two constant vector fields on the model space have zero Lie bracket. -/
+@[simp]
+theorem mlieBracket_constVectorField (v w : E) :
+    VectorField.mlieBracket 𝓘(ℝ, E) (constVectorField v) (constVectorField w) = 0 :=
+  funext (VectorField.mlieBracket_const_model_space v w)
 
 variable (E) in
 /-- The constant vector field with value `v` in the preferred chart at `p`, pulled back to the
