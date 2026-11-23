@@ -139,6 +139,16 @@ theorem compHomeomorphOfEq_toOpenPartialHomeomorph_symm_apply {Z' : Type*} [Topo
     (t.compHomeomorphOfEq h hproj).toOpenPartialHomeomorph.symm q =
       h.symm (t.toOpenPartialHomeomorph.symm q) := (rfl)
 
+/-- Coordinate changes between trivializations transported along the same homeomorphism equal the
+original coordinate changes. -/
+@[simp]
+theorem compHomeomorphOfEq_coordChange {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t₁ t₂ : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    (t₁.compHomeomorphOfEq h hproj).coordChange (t₂.compHomeomorphOfEq h hproj) =
+      t₁.coordChange t₂ := by
+  ext b v
+  simp [Trivialization.coordChange]
+
 /-- For a trivialization `e` of `proj`, the preimage of an open subset of `e.baseSet` is open. -/
 theorem isOpen_preimage (e : Trivialization F proj) {s : Set B} (hs : IsOpen s)
     (hsub : s ⊆ e.baseSet) : IsOpen (proj ⁻¹' s) := by

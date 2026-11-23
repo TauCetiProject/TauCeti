@@ -287,31 +287,29 @@ end
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [ChartedSpace HF G] [MulAction Gᵐᵒᵖ P]
 
-/-- **Descent of invariant maps.** Let the fibres of `proj` form a principal `G`-bundle for a
-`C^n` atlas of equivariant trivializations. Then a `C^n` map on `P` invariant under the action of
-`G` is the composite with `proj` of a unique `C^n` map on `B`, since the fibres of `proj` are the
-orbits of `G`. -/
+/-- **Descent of invariant maps.** Let `A` be a `C^n` atlas of `proj : P → B` whose chosen
+trivializations `A.trivAt b` are equivariant (additional charts in `A.charts` need not be
+equivariant). Then a `C^n` map on `P` invariant under the right action of `G` is the composite with
+`proj` of a unique `C^n` map on `B`, since on each fibre `proj p = proj q` the chosen chart
+`A.trivAt (proj p)` produces a group element carrying `p` to `q`. -/
 theorem existsUnique_contMDiff_comp_eq_of_smul {A : Atlas G proj}
     (hA : A.IsContMDiff n IB IF IP) (hproj : ∀ (g : Gᵐᵒᵖ) (p : P), proj (g • p) = proj p)
     (hequiv : ∀ b (p : P), proj p ∈ (A.trivAt b).baseSet → ∀ g : G,
       (A.trivAt b (op g • p)).2 = (A.trivAt b p).2 * g)
     {f : P → M} (hf : ContMDiff IP IM n f) (hinv : ∀ (g : G) (p : P), f (op g • p) = f p) :
     ∃! h : B → M, ContMDiff IB IM n h ∧ h ∘ proj = f := by
-  let A' : Atlas G proj := ofTrivAt A.trivAt A.mem_baseSet_trivAt
-  have hA' : A'.IsContMDiff n IB IF IP :=
-    ⟨by simpa [A'] using hA.contMDiffOn_trivAt,
-      by simpa [A'] using hA.contMDiffOn_trivAt_symm⟩
-  let := A'.fiberBundle
-  let := mulAction hproj
-  have := A'.principalBundle hproj (by simpa [A'] using hequiv)
-  refine hA'.existsUnique_contMDiff_comp_eq hf fun p q hpq ↦ ?_
-  -- In the fibre over `proj p`, `q` is obtained from `p` by the action of `division p q`.
-  let p' : MapFiber proj (proj p) := ⟨p, rfl⟩
-  let q' : MapFiber proj (proj p) := ⟨q, hpq.symm⟩
-  have h := congrArg Subtype.val (PrincipalBundle.smul_division (G := G) p' q')
-  rw [coe_smul hproj] at h
-  rw [← hinv (PrincipalBundle.division G p' q') p]
-  exact congrArg f h
+  refine hA.existsUnique_contMDiff_comp_eq hf fun p q hpq ↦ ?_
+  let t := A.trivAt (proj p)
+  have hp : proj p ∈ t.baseSet := A.mem_baseSet_trivAt (proj p)
+  have hq : proj q ∈ t.baseSet := hpq ▸ hp
+  let g : G := (t p).2⁻¹ * (t q).2
+  have hsrc : op g • p ∈ t.source := t.mem_source.2 (by rw [hproj (op g) p]; exact hp)
+  have hqp : op g • p = q := t.toOpenPartialHomeomorph.injOn hsrc (t.mem_source.2 hq) <|
+    Prod.ext (by rw [t.coe_coe, t.coe_fst hsrc, t.coe_fst (t.mem_source.2 hq),
+        hproj (op g) p, hpq])
+      (by rw [t.coe_coe]; dsimp only [t]; rw [hequiv (proj p) p hp g]; simp only [g, t,
+        mul_inv_cancel_left])
+  rw [← hinv g p, hqp]
 
 end IsContMDiff
 

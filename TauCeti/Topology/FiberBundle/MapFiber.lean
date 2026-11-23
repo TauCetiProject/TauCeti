@@ -192,9 +192,9 @@ theorem toMapFiber_source :
 trivializations of `proj` they come from. -/
 @[simp]
 theorem toMapFiber_coordChange (e' : Trivialization F proj) :
-    e.toMapFiber.coordChange e'.toMapFiber = e.coordChange e' := by
-  ext b v
-  simp [Trivialization.coordChange]
+    e.toMapFiber.coordChange e'.toMapFiber = e.coordChange e' :=
+  e.compHomeomorphOfEq_coordChange e' (MapFiber.totalSpaceHomeomorph F proj)
+    MapFiber.proj_totalSpaceHomeomorph
 
 /-- `t.toMapFiber` is `G`-equivariant iff `t` intertwines the right `G`-action on
 `proj ⁻¹' t.baseSet` with right multiplication on the second factor `G`. -/

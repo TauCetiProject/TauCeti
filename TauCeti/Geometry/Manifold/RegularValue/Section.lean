@@ -180,7 +180,7 @@ theorem isRegularPoint_of_contMDiffOn_section {𝕜 : Type*} [NontriviallyNormed
     (hs : ∀ b' ∈ U, p (s b') = b') {b : B} (hb : b ∈ U)
     (hp : ContMDiffAt IP IB n p (s b)) :
     IsRegularPoint IP IB p (s b) :=
-  isRegularPoint_iff.2 (surjective_mfderiv_of_eventuallyEq_id (hp.mdifferentiableAt hn)
+  isRegularPoint_iff.2 ((hp.mdifferentiableAt hn).surjective_mfderiv_of_eventuallyEq_id
     ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn)
     (Filter.eventually_of_mem (hU.mem_nhds hb) hs))
 
