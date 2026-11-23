@@ -17,6 +17,7 @@ public import TauCeti.Topology.FiberBundle.Countable
 public import TauCeti.Topology.FiberBundle.Separation
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Topology.Instances.ZMultiples
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The quotient of a cotangent bundle by the lattice of a coframe

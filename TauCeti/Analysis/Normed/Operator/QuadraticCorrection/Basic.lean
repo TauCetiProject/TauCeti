@@ -44,6 +44,13 @@ gluing constructions, with explicit radii.
   (`TauCeti.one_sub_mul_norm_sub_le_norm_add_apply`), and
   solutions of two different equations through the difference of the maps `z ↦ Q (e + N z)` and
   `z ↦ Q' (e' + N' z)` (`TauCeti.one_sub_mul_norm_sub_le_norm_apply_sub_apply`).
+  On a common ball of radius `r ≤ δ` with `C L r ≤ 1 / 2` the weight is at least `1 / 2`, so a
+  point `y` of the range lies within `2 C ‖e + D y + N y‖` of the solution
+  (`TauCeti.norm_sub_le_two_mul_mul_norm_add_add`), and solutions of two equations lie within
+  `2 ‖Q (e + N y) - Q' (e' + N' y)‖` of each other
+  (`TauCeti.norm_sub_le_two_mul_norm_apply_sub_apply`). These are the fast stability and graph
+  Lipschitz constants of a fast–slow recovery estimate
+  (`TauCeti.Analysis.Normed.Operator.QuadraticCorrection.Recovery`).
 * **Uniqueness.** Two solutions in the range of `Q` of norm at most `r ≤ δ` coincide as soon as
   `C L r < 1` (`TauCeti.eq_of_add_add_eq_zero`). The radius `r` may be much larger than the
   radius `2 C ‖e‖` where the solution is constructed.
@@ -131,6 +138,14 @@ theorem mem_range_and_add_add_eq_zero_iff (hDQ : ∀ y, D (Q y) = y) {x : E} :
 
 end AddCommGroup
 
+/-- On a ball of radius `r` with `C L r ≤ 1 / 2`, the weight `1 - C L (a + b) / 2` of the
+comparison estimates below is at least `1 / 2`. -/
+private lemma one_half_le_one_sub_mul {r : ℝ} (hr : C * L * r ≤ 1 / 2) {a b : ℝ} (ha : a ≤ r)
+    (hb : b ≤ r) : 1 / 2 ≤ 1 - C * (L / 2 * (a + b)) := by
+  have hCL : (0 : ℝ) ≤ C * L := mul_nonneg C.property L.property
+  have := mul_le_mul_of_nonneg_left (add_le_add ha hb) hCL
+  nlinarith
+
 section Seminormed
 
 variable [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [AddMonoidHomClass G F E]
@@ -214,12 +229,36 @@ theorem norm_sub_le_two_mul_mul_norm_sub {e' : F} {r : ℝ} (hrδ : r ≤ δ) (h
   have h := one_sub_mul_norm_sub_le_mul_norm_sub hDQ hQ hN
     (mem_closedBall_zero_iff.2 (hx.trans hrδ)) (mem_closedBall_zero_iff.2 (hy.trans hrδ)) hxQ hxe
     hyQ hye
-  -- The weight in the comparison estimate is at least `1 - C L r ≥ 1 / 2`.
-  have hw : 1 / 2 ≤ 1 - C * (L / 2 * (‖x‖ + ‖y‖)) := by
-    have hCL : (0 : ℝ) ≤ C * L := mul_nonneg C.property L.property
-    have := mul_le_mul_of_nonneg_left (add_le_add hx hy) hCL
-    nlinarith
-  nlinarith [mul_le_mul_of_nonneg_right hw (norm_nonneg (x - y))]
+  nlinarith [mul_le_mul_of_nonneg_right (one_half_le_one_sub_mul hr hx hy) (norm_nonneg (x - y))]
+
+/-- **Stability on a small ball.** A solution `x` of `e + D x + N x = 0` in the range of `Q` and a
+point `y` of the range, both of norm at most `r ≤ δ` with `C L r ≤ 1 / 2`, satisfy
+`‖x - y‖ ≤ 2 C ‖e + D y + N y‖`: the distance of `y` to the solution is controlled by its
+residual. -/
+theorem norm_sub_le_two_mul_mul_norm_add_add {r : ℝ} (hrδ : r ≤ δ) (hr : C * L * r ≤ 1 / 2)
+    {x y : E} (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
+    (hyQ : y ∈ range Q) : ‖x - y‖ ≤ 2 * C * ‖e + D y + N y‖ := by
+  have h := one_sub_mul_norm_sub_le_mul_norm_add_add hDQ hQ hN
+    (mem_closedBall_zero_iff.2 (hx.trans hrδ)) (mem_closedBall_zero_iff.2 (hy.trans hrδ)) hxQ hxe
+    hyQ
+  nlinarith [mul_le_mul_of_nonneg_right (one_half_le_one_sub_mul hr hx hy) (norm_nonneg (x - y))]
+
+/-- **Comparison of two equations on a small ball.** Let `x` solve `e + D x + N x = 0` in the range
+of `Q`, and `y` solve `e' + D' y + N' y = 0` in the range of an additive right inverse `Q'` of
+`D'`. If both have norm at most `r ≤ δ` with `C L r ≤ 1 / 2`, then
+`‖x - y‖ ≤ 2 ‖Q (e + N y) - Q' (e' + N' y)‖`. For a family of equations whose maps
+`z ↦ Q (e + N z)` depend Lipschitz-continuously on a parameter, uniformly on the ball, the
+solutions therefore do too, with twice the constant. -/
+theorem norm_sub_le_two_mul_norm_apply_sub_apply {F' G' : Type*} [AddCommGroup F']
+    [FunLike G' F' E] [AddMonoidHomClass G' F' E] {Q' : G'} {D' N' : E → F'} {e' : F'}
+    (hDQ' : ∀ y, D' (Q' y) = y) {r : ℝ} (hrδ : r ≤ δ) (hr : C * L * r ≤ 1 / 2) {x y : E}
+    (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
+    (hyQ : y ∈ range Q') (hye : e' + D' y + N' y = 0) :
+    ‖x - y‖ ≤ 2 * ‖Q (e + N y) - Q' (e' + N' y)‖ := by
+  have h := one_sub_mul_norm_sub_le_norm_apply_sub_apply hDQ hQ hN hDQ'
+    (mem_closedBall_zero_iff.2 (hx.trans hrδ)) (mem_closedBall_zero_iff.2 (hy.trans hrδ)) hxQ hxe
+    hyQ hye
+  nlinarith [mul_le_mul_of_nonneg_right (one_half_le_one_sub_mul hr hx hy) (norm_nonneg (x - y))]
 
 omit hDQ in
 /-- On the closed ball of radius `R ≤ δ`, the map `z ↦ Q (e + N z)` is Lipschitz with

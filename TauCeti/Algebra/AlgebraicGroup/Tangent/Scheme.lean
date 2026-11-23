@@ -8,9 +8,10 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 public import TauCeti.Algebra.Bialgebra.Augmentation
 public import TauCeti.AlgebraicGeometry.TangentSpace.Affine
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 
 /-!
-# The Zariski cotangent space at the augmentation point
+# Tangent schemes and the Zariski cotangent space at the augmentation point
 
 For a commutative bialgebra, specializing the generic augmented-algebra comparison from
 `TauCeti.AlgebraicGeometry.TangentSpace.Affine` to the counit identifies the cotangent space at the
@@ -18,8 +19,15 @@ identity of the represented affine monoid with the corresponding Zariski cotange
 additional Hopf-algebra structure, its `k`-dual is the Hopf-algebra model of `Lie(G)` for the
 represented affine group.
 
+Over a commutative base ring, the symmetric algebra of the augmentation cotangent space defines
+the affine scheme of tangent vectors. For a reflexive cotangent space, evaluation into the
+double dual identifies it with the spectrum of polynomial functions on the dual.
+
 ## Main declarations
 
+* `TauCeti.lieAlgebraScheme`: the affine scheme of tangent vectors at the identity.
+* `TauCeti.lieAlgebraSchemeIso`: its reflexive comparison with the spectrum of polynomial
+  functions on the dual cotangent space.
 * `Bialgebra.cotangentLinearEquivZariski`: the augmentation cotangent space is the Zariski
   cotangent space at the augmentation point.
 * `Bialgebra.finrank_cotangentSpace_eq_finrank_zariskiCotangentSpace`: equality of their
@@ -32,7 +40,30 @@ represented affine group.
 
 public section
 
-open AlgebraicGeometry IsLocalRing
+noncomputable section
+
+open CategoryTheory AlgebraicGeometry IsLocalRing
+
+namespace TauCeti
+
+universe u
+
+/-- The affine scheme of tangent vectors at the identity of the monoid represented by `H`. -/
+abbrev lieAlgebraScheme (k : Type u) [CommRing k] (H : Type u) [CommRing H] [Bialgebra k H] :
+    Scheme :=
+  Spec (.of (SymmetricAlgebra k (Bialgebra.CotangentSpace k H)))
+
+/-- For a reflexive cotangent space, evaluation into the double dual identifies the tangent
+scheme with the spectrum of polynomial functions on its dual. In particular, this applies to
+finite-dimensional cotangent spaces over a field. -/
+abbrev lieAlgebraSchemeIso (k : Type u) [CommRing k] (H : Type u) [CommRing H]
+    [Bialgebra k H] [Module.IsReflexive k (Bialgebra.CotangentSpace k H)] :
+    lieAlgebraScheme k H ≅ Spec (.of (SymmetricAlgebra k
+      (Module.Dual k (Module.Dual k (Bialgebra.CotangentSpace k H))))) :=
+  Scheme.Spec.mapIso (SymmetricAlgebra.mapEquiv k
+    (Module.evalEquiv k (Bialgebra.CotangentSpace k H))).symm.toRingEquiv.toCommRingCatIso.op
+
+end TauCeti
 
 namespace TauCeti.Bialgebra
 

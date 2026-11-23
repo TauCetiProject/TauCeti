@@ -9,8 +9,6 @@ public import Mathlib.NumberTheory.Padics.Measure.Topology
 public import Mathlib.LinearAlgebra.Finsupp.Pi
 public import TauCeti.Topology.ContinuousMap.FiberIndicator
 
-import Mathlib.Topology.Separation.DisjointCover
-
 /-!
 # Finite projections of abstract measures
 
@@ -92,21 +90,14 @@ theorem finiteProjection_comp [Finite A] [Finite B] [DiscreteTopology A] [Discre
   classical
   let _ := Fintype.ofFinite A
   ext b
-  rw [finiteProjection_apply, Finsupp.mapDomain_apply]
-  let g : A → R := fun a ↦ if t a = b then 1 else 0
-  calc
-    μ (fiberIndicator (t.comp q) b) =
-        μ ((ContinuousMap.equivFnOfDiscrete.symm g).comp q) := by
-      congr 1
-      ext x
-      simp [g, fiberIndicator_apply]
-    _ = ∑ a, g a * finiteProjection q μ a :=
-      apply_comp_eq_sum_finiteProjection q μ g
-    _ = (finiteProjection q μ).sum fun a m ↦ Finsupp.single (t a) m b := by
-      rw [Finsupp.sum_fintype _ _ (fun _ ↦ by simp)]
-      apply Finset.sum_congr rfl
-      intro a _
-      by_cases h : t a = b <;> simp [g, h]
+  -- The fibre of `t ∘ q` over `b` is the union of the fibres of `q` over the preimage of `b`.
+  have hb : fiberIndicator (R := R) (t.comp q) b =
+      (ContinuousMap.equivFnOfDiscrete.symm fun a ↦ if t a = b then 1 else 0).comp q := by
+    ext x
+    simp [fiberIndicator_apply]
+  rw [finiteProjection_apply, hb, apply_comp_eq_sum_finiteProjection, Finsupp.mapDomain_apply,
+    Finsupp.sum_fintype _ _ fun _ ↦ by simp]
+  simp [Finsupp.single_apply]
 
 /-- The sum of all finite coefficients is the total mass of the measure. -/
 @[simp]
@@ -115,16 +106,15 @@ theorem sum_finiteProjection [Finite A] [DiscreteTopology A]
     (finiteProjection q μ).sum (fun _ r ↦ r) = μ 1 := by
   classical
   let _ := Fintype.ofFinite A
-  calc
-    (finiteProjection q μ).sum (fun _ r ↦ r) =
-        ∑ a, finiteProjection q μ a := Finsupp.sum_fintype _ _ (fun _ ↦ rfl)
-    _ = ∑ a, (1 : R) * finiteProjection q μ a := by simp
-    _ = μ ((ContinuousMap.equivFnOfDiscrete.symm (fun _ : A ↦ (1 : R))).comp q) :=
-      (apply_comp_eq_sum_finiteProjection q μ (fun _ ↦ 1)).symm
-    _ = μ 1 := congrArg μ (by ext x; simp)
+  -- The constant function `1` factors through `q` as the constant coefficient function `1`.
+  have h1 : (ContinuousMap.equivFnOfDiscrete.symm fun _ : A ↦ (1 : R)).comp q = 1 := by
+    ext x
+    simp
+  rw [Finsupp.sum_fintype _ _ fun _ ↦ rfl, ← h1, apply_comp_eq_sum_finiteProjection]
+  simp
 
-/-- A finitely supported coefficient function on a finite discrete space defines the corresponding
-finite linear combination of Dirac measures. -/
+/-- A finitely supported coefficient function on `A` defines the corresponding finite linear
+combination of Dirac measures. -/
 def ofFiniteCoefficients :
     (A →₀ R) →ₗ[R] D(A, R) :=
   Finsupp.linearCombination R (dirac R)
@@ -161,17 +151,13 @@ theorem ofFiniteCoefficients_finiteProjection_id [Finite A] [DiscreteTopology A]
   classical
   let _ := Fintype.ofFinite A
   ext f
-  rw [ofFiniteCoefficients_apply,
-    Finsupp.sum_fintype _ _ (fun _ ↦ by simp)]
-  calc
-    ∑ i, finiteProjection (.id A) μ i * f i =
-        ∑ i, f i * finiteProjection (.id A) μ i := by
-      apply Finset.sum_congr rfl
-      intro i _
-      rw [mul_comm]
-    _ = μ ((ContinuousMap.equivFnOfDiscrete.symm f).comp (.id A)) :=
-      (apply_comp_eq_sum_finiteProjection (.id A) μ f).symm
-    _ = μ f := congrArg μ (by ext x; simp)
+  -- On a discrete space, `f` is the continuous function attached to its own values.
+  have hf : (ContinuousMap.equivFnOfDiscrete.symm f).comp (.id A) = f := by
+    ext x
+    simp
+  rw [ofFiniteCoefficients_apply, Finsupp.sum_fintype _ _ fun _ ↦ by simp]
+  conv_rhs => rw [← hf, apply_comp_eq_sum_finiteProjection]
+  simp_rw [mul_comm]
 
 /-- Measures on a finite discrete space are equivalent to their coefficient functions. -/
 def finiteProjectionEquiv [Finite A] [DiscreteTopology A] :
@@ -198,39 +184,30 @@ quotients. -/
 theorem finiteProjection_ext (μ ν : D(X, R))
     (h : ∀ q : C(X, Fin 2), finiteProjection q μ = finiteProjection q ν) :
     μ = ν := by
-  -- A binary quotient detects each fibre of an arbitrary finite quotient.
-  have hfinite (n : ℕ) (q : C(X, Fin n)) : finiteProjection q μ = finiteProjection q ν := by
-    classical
-    ext a
-    let t : C(Fin n, Fin 2) := ContinuousMap.equivFnOfDiscrete.symm
-      (fun b ↦ if b = a then 0 else 1)
-    have ha : fiberIndicator (R := R) (t.comp q) 0 = fiberIndicator q a := by
+  classical
+  -- Locally constant functions are dense, so it suffices to compare `μ` and `ν` on them.
+  have hlc (f : LocallyConstant X R) : μ f = ν f := by
+    -- `f` factors through its finite range, which is discrete since `R` is Hausdorff.
+    have : Finite (Set.range f) := f.range_finite.to_subtype
+    let _ := Fintype.ofFinite (Set.range f)
+    let q : C(X, Set.range f) := ⟨fun x ↦ ⟨f x, x, rfl⟩, f.continuous.subtype_mk _⟩
+    have hf : (f : C(X, R)) = (ContinuousMap.equivFnOfDiscrete.symm Subtype.val).comp q := by
       ext x
-      simp [t]
-    simpa only [finiteProjection_apply, ha] using
-      congrArg (fun c : Fin 2 →₀ R ↦ c 0) (h (t.comp q))
-  -- The density argument only needs the canonical uniformity of the additive group of `R`.
-  let := IsTopologicalAddGroup.rightUniformSpace R
-  let S : Set C(X, R) := {f | ∃ (n : ℕ) (q : C(X, Fin n)) (g : Fin n → R),
-    f = (ContinuousMap.equivFnOfDiscrete.symm g).comp q}
-  have hS : Dense S := by
-    intro f
-    refine (mem_closure_iff_nhds_basis
-      (nhds_basis_uniformity'
-        ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact)).mpr
-      fun V hV ↦ ?_
-    obtain ⟨n, q, g, hq, hfg⟩ :=
-      ContinuousMap.exists_finite_approximation_of_mem_nhds_diagonal f
-        (nhdsSet_diagonal_le_uniformity hV)
-    let q' : C(X, Fin n) := ⟨q, hq⟩
-    let f' : C(X, R) := (ContinuousMap.equivFnOfDiscrete.symm g).comp q'
-    exact ⟨f', ⟨n, q', g, rfl⟩, fun x ↦ hfg x⟩
-  have hEqOn : Set.EqOn μ ν S := by
-    rintro _ ⟨n, q, g, rfl⟩
-    rw [apply_comp_eq_sum_finiteProjection, apply_comp_eq_sum_finiteProjection, hfinite n q]
-  apply AbstractMeasure.ext
-  intro f
-  exact congrFun (Continuous.ext_on hS μ.continuous ν.continuous hEqOn) f
+      simp [q]
+    -- A binary quotient separates each fibre of `q` from its complement.
+    have hq : finiteProjection q μ = finiteProjection q ν := by
+      ext a
+      let t : C(Set.range f, Fin 2) := ContinuousMap.equivFnOfDiscrete.symm
+        (fun b ↦ if b = a then 0 else 1)
+      have ha : fiberIndicator (R := R) (t.comp q) 0 = fiberIndicator q a := by
+        ext x
+        simp [t]
+      simpa only [finiteProjection_apply, ha] using
+        congrArg (fun c : Fin 2 →₀ R ↦ c 0) (h (t.comp q))
+    rw [hf, apply_comp_eq_sum_finiteProjection, apply_comp_eq_sum_finiteProjection, hq]
+  ext f
+  exact congrFun (LocallyConstant.denseRange_toContinuousMap.equalizer μ.continuous ν.continuous
+    (funext hlc)) f
 
 end Profinite
 
@@ -245,10 +222,8 @@ theorem continuous_finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)
     @Continuous _ _ (WeakTopology (X := X) (R := R) (E := R)) inferInstance
       (fun μ : D(X, R) ↦ fun a ↦ finiteProjection q μ a) := by
   let : TopologicalSpace D(X, R) := WeakTopology
-  have heval : Continuous (fun μ : D(X, R) ↦ fun f : C(X, R) ↦ μ f) :=
-    continuous_induced_dom
   exact continuous_pi fun a ↦
-    (continuous_apply (fiberIndicator (R := R) q a)).comp heval
+    (continuous_apply (fiberIndicator (R := R) q a)).comp continuous_induced_dom
 
 end Normed
 
