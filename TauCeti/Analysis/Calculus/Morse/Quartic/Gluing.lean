@@ -50,9 +50,10 @@ coordinate leaving `0` towards `q i = ±1`, at rate `1`, is `q i * x / √(1 + x
 `x = e^{u i} ρ` (`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`), so the early point moves off
 the first piece linearly in `ρ`, with nonzero speed in every coordinate of the second block
 (`TauCeti.hasDerivAt_quarticGluingEarly_zero`). A coordinate arriving at `q i = ±1`, at rate `2`,
-is `q i / √(1 + y²)` for `y = e^{-u i} ρ` (`TauCeti.intervalBaseOrbit_one_sub_log`), so the late
-point depends on `ρ` only through `ρ²` (`TauCeti.quarticGluingLate_neg`) and has derivative zero
-in `ρ` at the break (`TauCeti.hasDerivAt_quarticGluingLate_zero`).
+is `q i / √(1 + y²)` for `y = e^{-u i} ρ`
+(`TauCeti.intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq`), so the late point depends on `ρ` only
+through `ρ²` (`TauCeti.quarticGluingLate_neg`) and has derivative zero in `ρ` at the break
+(`TauCeti.hasDerivAt_quarticGluingLate_zero`).
 
 ## Main definitions
 
@@ -226,7 +227,8 @@ theorem quarticGluingLate_of_pos (p r q : ι → ℝ) {ρ : ℝ} (hρ : 0 < ρ) 
     dsimp only
     split_ifs
     · rfl
-    · rw [intervalBaseOrbit_one_sub_log _ hρ]
+    · rw [intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq, one_mul, neg_sub', sub_neg_eq_add,
+        Real.exp_add, Real.exp_log hρ]
 
 /-- The flow of the quartic translates all time coordinates of the early point at once, for every
 gluing parameter `ρ`, including the break `ρ = 0`. -/

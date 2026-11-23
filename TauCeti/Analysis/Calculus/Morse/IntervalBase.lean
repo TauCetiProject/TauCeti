@@ -84,8 +84,8 @@ bijective.
 * `TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt` and
   `TauCeti.intervalBaseOrbit_eq_one_sub_exp_sq_mul`: `q` near its two ends in closed form in the
   gluing parameters `e^{C s}` and `e^{-C s}`.
-* `TauCeti.intervalBaseOrbit_one_sub_log`: the unit-rate trajectory at time `c + T` is
-  `1 / √(1 + y²)` for `y = e^{-c} ρ` in the gluing parameter `ρ = e^{-T}`, a function of `ρ²`.
+* `TauCeti.intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq`: `q` is `1 / √(1 + ε²)` in the gluing
+  parameter `ε = e^{-C s}` of its sink, a function of `ε²`.
 * `TauCeti.intervalBaseFlow_mul_inv_sqrt_one_add_sq` and
   `TauCeti.intervalBaseFlow_inv_sqrt_one_add_sq`: the flow acts on the end forms
   `x / √(1 + x²)` and `1 / √(1 + y²)` of the trajectory by scaling `x` with `e^{C s}` and `y` with
@@ -463,15 +463,6 @@ theorem one_sub_intervalBaseOrbit_sq (C s : ℝ) :
     1 - intervalBaseOrbit C s ^ 2 = Real.sigmoid (-(2 * C * s)) := by
   rw [intervalBaseOrbit_sq_eq_sigmoid, Real.sigmoid_neg]
 
-/-- **Arrival at rate `2`.** In the gluing parameter `ρ = e^{-T}`, the unit-rate trajectory at time
-`c + T` is `1 / √(1 + (e^{-c} ρ)²)`: it depends on `ρ` only through `ρ²`. -/
-theorem intervalBaseOrbit_one_sub_log (c : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
-    intervalBaseOrbit 1 (c - Real.log ρ) = (√(1 + (Real.exp (-c) * ρ) ^ 2))⁻¹ := by
-  -- Write `ρ² = e^{2 log ρ}` and compare exponents.
-  rw [intervalBaseOrbit_apply, mul_pow, ← Real.exp_log (pow_pos hρ 2), ← Real.exp_natCast_mul,
-    ← Real.exp_add, Real.log_pow]
-  ring_nf
-
 /-- **The end chart of `q` at its source.** In the gluing parameter `ε = e^{C s}`, which tends to
 `0` as `s → -∞` for `C > 0`, the trajectory is `q(s) = ε / √(1 + ε²)`. This theorem is only that
 identity; it shows (without formalizing it) that `q` is a smooth function of `ε` vanishing to first
@@ -485,6 +476,14 @@ theorem intervalBaseOrbit_eq_exp_mul_inv_sqrt (C s : ℝ) :
     ring
   rw [intervalBaseOrbit_apply, h, Real.sqrt_div' _ (by positivity), Real.sqrt_sq he.le]
   field_simp
+
+/-- **Arrival at its sink through `ε²`.** In the gluing parameter `ε = e^{-C s}` of the sink, the
+trajectory is `q(s) = 1 / √(1 + ε²)`: it depends on `ε` only through `ε²`, so that `q` approaches
+`1` at rate `2 C`. -/
+theorem intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq (C s : ℝ) :
+    intervalBaseOrbit C s = (√(1 + Real.exp (-(C * s)) ^ 2))⁻¹ := by
+  rw [intervalBaseOrbit_apply, ← Real.exp_natCast_mul,
+    show (2 : ℕ) * -(C * s) = -(2 * C * s) by push_cast; ring]
 
 /-- **The end chart of `q` at its sink.** In the gluing parameter `ε = e^{-C s}`, which tends to
 `0` as `s → ∞` for `C > 0`, the trajectory is `q(s) = 1 - ε² / (√(1 + ε²) (√(1 + ε²) + 1))`.
@@ -547,7 +546,7 @@ theorem intervalBaseFlow_mul_inv_sqrt_one_add_sq (C s x : ℝ) :
   · exact key x hx
 
 /-- The flow of the base for time `s` acts on the arriving form `1 / √(1 + y²)` of the trajectory
-(`TauCeti.intervalBaseOrbit_one_sub_log`) by `y ↦ e^{-C s} y`, for every real `y`. -/
+(`TauCeti.intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq`) by `y ↦ e^{-C s} y`, for every real `y`. -/
 theorem intervalBaseFlow_inv_sqrt_one_add_sq (C s y : ℝ) :
     intervalBaseFlow C s (√(1 + y ^ 2))⁻¹ = (√(1 + (Real.exp (-(C * s)) * y) ^ 2))⁻¹ := by
   -- The flow depends on `C` and `s` only through `C * s`, so reduce to the unit rate.
@@ -556,11 +555,13 @@ theorem intervalBaseFlow_inv_sqrt_one_add_sq (C s y : ℝ) :
   generalize C * s = s
   rcases eq_or_ne y 0 with rfl | hy
   · simp
-  have h0 := intervalBaseOrbit_one_sub_log 0 (abs_pos.2 hy)
-  have hs := intervalBaseOrbit_one_sub_log s (abs_pos.2 hy)
-  rw [neg_zero, Real.exp_zero, one_mul, sq_abs, zero_sub] at h0
-  rw [mul_pow, sq_abs, ← mul_pow] at hs
-  rw [← h0, intervalBaseFlow_intervalBaseOrbit, ← sub_eq_add_neg, hs]
+  have key (t : ℝ) :
+      intervalBaseOrbit 1 (t - Real.log |y|) = (√(1 + (Real.exp (-t) * y) ^ 2))⁻¹ := by
+    rw [intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq, one_mul, neg_sub', sub_neg_eq_add,
+      Real.exp_add, Real.exp_log (abs_pos.2 hy), mul_pow, sq_abs, ← mul_pow]
+  have h0 := key 0
+  rw [neg_zero, Real.exp_zero, one_mul, zero_sub] at h0
+  rw [← h0, intervalBaseFlow_intervalBaseOrbit, ← sub_eq_add_neg, key]
 
 /-- The trajectory `q` takes values in `(0, 1)`. -/
 theorem intervalBaseOrbit_mem_Ioo (C s : ℝ) : intervalBaseOrbit C s ∈ Ioo 0 1 := by
