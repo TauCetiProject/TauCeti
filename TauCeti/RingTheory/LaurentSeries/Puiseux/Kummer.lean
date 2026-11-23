@@ -80,7 +80,7 @@ private noncomputable def kummerAlgHom (ζ : PrimeToPTateModule 1 K) :
   map_zero' := Subtype.ext (map_zero _)
   map_add' x y := Subtype.ext (map_add _ _ _)
   commutes' f := Subtype.ext <| HahnSeries.ext <| funext fun q ↦ by
-    simp only [coeff_twistEquiv]
+    simp only [coeff_twistEquiv, smul_eq_mul]
     rw [coe_algebraMap_laurentSeries]
     by_cases hq : q.den = 1
     · rw [← Rat.intCast_num_of_den_eq_one hq, ratChar_ofAdd_intCast, Units.val_one, one_mul]
@@ -96,14 +96,17 @@ private theorem coe_kummerAlgHom_apply (ζ : PrimeToPTateModule 1 K) (x : puiseu
 multiplies the coefficient of `t ^ q` by `ζ_{q.den} ^ q.num`. -/
 noncomputable def kummer : PrimeToPTateModule 1 K →* Gal(puiseuxField K/K⸨X⸩) :=
   (AlgEquiv.algHomUnitsEquiv _ _).toMonoidHom.comp
+    -- `HahnSeries ℚ K` carries a second `K`-algebra structure, `powerSeriesAlgebra ℚ K`, not
+    -- definitionally equal to `instAlgebra` in the type of `twistEquiv`: pass the latter
+    -- explicitly to the `AlgEquiv` application lemmas.
     ({ toFun := kummerAlgHom K
-       map_one' := AlgHom.ext fun x ↦ Subtype.ext <| HahnSeries.ext <| funext fun q ↦ by
-         rw [coe_kummerAlgHom_apply, coeff_twistEquiv, map_one, MonoidHom.one_apply,
-           Units.val_one, one_mul, AlgHom.one_apply]
-       map_mul' ζ η := AlgHom.ext fun x ↦ Subtype.ext <| HahnSeries.ext <| funext fun q ↦ by
-         rw [coe_kummerAlgHom_apply, AlgHom.mul_apply, coe_kummerAlgHom_apply, coeff_twistEquiv,
-           coeff_twistEquiv, coe_kummerAlgHom_apply, coeff_twistEquiv, map_mul,
-           MonoidHom.mul_apply, Units.val_mul, mul_assoc] } :
+       map_one' := AlgHom.ext fun x ↦ Subtype.ext <| by
+         rw [AlgHom.one_apply, coe_kummerAlgHom_apply, map_one, map_one]
+         exact @AlgEquiv.one_apply _ _ _ _ instAlgebra _
+       map_mul' ζ η := AlgHom.ext fun x ↦ Subtype.ext <| by
+         rw [AlgHom.mul_apply, coe_kummerAlgHom_apply, coe_kummerAlgHom_apply,
+           coe_kummerAlgHom_apply, map_mul, map_mul]
+         exact @AlgEquiv.mul_apply _ _ _ _ instAlgebra _ _ _ } :
       PrimeToPTateModule 1 K →* (puiseuxField K →ₐ[K⸨X⸩] puiseuxField K)).toHomUnits
 
 variable {K}
@@ -111,8 +114,9 @@ variable {K}
 /-- As a Hahn series, the image of `x` under the automorphism attached to `ζ` is the twist of `x`
 by the character of `ζ`. -/
 theorem coe_kummer_apply (ζ : PrimeToPTateModule 1 K) (x : puiseuxField K) :
-    (kummer K ζ x : HahnSeries ℚ K) = twistEquiv (ratChar K ζ) x :=
-  (rfl)
+    (kummer K ζ x : HahnSeries ℚ K) = twistEquiv (ratChar K ζ) x := by
+  rw [kummer, AlgEquiv.algHomUnitsEquiv_comp_toHomUnits_apply, MonoidHom.coe_mk, OneHom.coe_mk,
+    coe_kummerAlgHom_apply]
 
 /-- The automorphism attached to `ζ` multiplies the coefficient of `t ^ q` by the value of the
 character of `ζ` at `q`, that is, by `ζ_{q.den} ^ q.num`. -/
@@ -120,7 +124,7 @@ character of `ζ` at `q`, that is, by `ζ_{q.den} ^ q.num`. -/
 theorem coeff_kummer (ζ : PrimeToPTateModule 1 K) (x : puiseuxField K) (q : ℚ) :
     (kummer K ζ x : HahnSeries ℚ K).coeff q =
       (ratChar K ζ (.ofAdd q) : K) * (x : HahnSeries ℚ K).coeff q := by
-  rw [coe_kummer_apply, coeff_twistEquiv]
+  rw [coe_kummer_apply, coeff_twistEquiv, smul_eq_mul]
 
 /-- The automorphism attached to `ζ` multiplies the coefficient of `t ^ (k / n)` by `ζₙ ^ k`. -/
 theorem coeff_kummer_intCast_div (ζ : PrimeToPTateModule 1 K) (x : puiseuxField K) (n : ℕ+)
@@ -137,8 +141,7 @@ where `ζ_{q.den} ^ q.num` is the value of the character of `ζ` at `q`. -/
 theorem kummer_single (ζ : PrimeToPTateModule 1 K) (q : ℚ) (a : K) :
     kummer K ζ (single K q a) = single K q ((ratChar K ζ (.ofAdd q) : K) * a) := by
   apply Subtype.ext
-  rw [coe_kummer_apply, coe_single, coe_single, twistEquiv_apply, twist_single,
-    MonoidHom.comp_apply, Units.coeHom_apply]
+  rw [coe_kummer_apply, coe_single, coe_single, twistEquiv_single, smul_eq_mul]
 
 /-- **Compatibility with the finite levels.** On the level-`n` subfield `K⸨t ^ (1 / n)⸩`, the
 automorphism attached to `ζ` is the Kummer automorphism `t ^ (1 / n) ↦ ζₙ t ^ (1 / n)`. -/

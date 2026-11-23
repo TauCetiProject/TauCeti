@@ -75,16 +75,30 @@ namespace Floer
 
 variable {M : Type*} {c : Puncture → ℝ → ℝ} {L : Puncture → ℝ}
 
-/-- Periodic normalizations `c_q` give period-one target-independent Hamiltonians. -/
-theorem periodic_const_target (hc : ∀ q, Periodic (c q) 1) (q : Puncture) :
-    Periodic (fun t (_ : M) ↦ c q t) 1 :=
+/-- Periodic normalizations `c_q` give target-independent Hamiltonians of the same period. -/
+theorem periodic_const_target {T : ℝ} (hc : ∀ q, Periodic (c q) T) (q : Puncture) :
+    Periodic (fun t (_ : M) ↦ c q t) T :=
   fun t ↦ funext fun _ ↦ hc q t
 
-/-- `C¹` normalizations `c_q` give `C¹` target-independent Hamiltonians on a manifold `M`. -/
+/-- Continuous periodic normalizations `c_q` give target-independent Hamiltonians with uniform
+bounds `B q`, as the energy identities take them. -/
+theorem exists_forall_abs_le_const_target {T : ℝ} (hc : ∀ q, Periodic (c q) T) (hT : T ≠ 0)
+    (hcs : ∀ q, Continuous (c q)) : ∃ B : Puncture → ℝ, ∀ q t (_ : M), |c q t| ≤ B q := by
+  choose B hB using fun q ↦ isBounded_iff_forall_norm_le.1
+    ((hc q).isBounded_of_continuous hT (hcs q))
+  exact ⟨B, fun q t _ ↦ hB q _ (mem_range_self t)⟩
+
+/-- `Cⁿ` normalizations `c_q` give `Cⁿ` target-independent Hamiltonians on a normed space. -/
+theorem contDiff_uncurry_const_target {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {n : WithTop ℕ∞} (hcs : ∀ q, ContDiff ℝ n (c q)) (q : Puncture) :
+    ContDiff ℝ n (uncurry fun t (_ : V) ↦ c q t) :=
+  (hcs q).comp contDiff_fst
+
+/-- `Cⁿ` normalizations `c_q` give `Cⁿ` target-independent Hamiltonians on a manifold `M`. -/
 theorem contMDiff_uncurry_const_target {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
-    (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
+    {n : WithTop ℕ∞} (hcs : ∀ q, ContDiff ℝ n (c q)) (q : Puncture) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry fun t (_ : M) ↦ c q t) :=
   (hcs q).contMDiff.comp contMDiff_fst
 
 /-- The components of the perturbation between target-independent Hamiltonians, as functions of

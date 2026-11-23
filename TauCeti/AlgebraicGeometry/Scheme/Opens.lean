@@ -236,6 +236,29 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_finite_affineOpens_cover
   exact ⟨s, hs.to_subtype, fun i ↦ e ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.property,
     by rw [e, iSup_subtype']⟩
 
+/-- A compact open admits a finite affine refinement whose members map into affine
+opens of the target of a given scheme morphism. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.exists_finite_affine_refinement
+    {Y S : Scheme.{u}} (p : Y ⟶ S) (V : Y.Opens) (hV : IsCompact (V : Set Y)) :
+    ∃ (U : V → Y.Opens), (∀ x, IsAffineOpen (U x)) ∧
+      (∀ x, U x ≤ V) ∧ ∃ (W : V → S.Opens), (∀ x, IsAffineOpen (W x)) ∧
+        (∀ x, U x ≤ p ⁻¹ᵁ W x) ∧ ∃ t : Finset V,
+          (V : Set Y) ⊆ ⋃ x ∈ t, (U x : Set Y) := by
+  classical
+  have hnbhd (x : V) : ∃ (U : Y.Opens), IsAffineOpen U ∧ x.val ∈ U ∧
+      U ≤ V ∧ ∃ W : S.Opens, IsAffineOpen W ∧ U ≤ p ⁻¹ᵁ W := by
+    obtain ⟨W, hW, hxW, _⟩ := exists_isAffineOpen_mem_and_subset
+      (X := S) (x := p x.val) (U := ⊤) (by trivial)
+    obtain ⟨U, hU, hxU, hUV⟩ := exists_isAffineOpen_mem_and_subset
+      (U := V ⊓ p ⁻¹ᵁ W) ⟨x.property, hxW⟩
+    exact ⟨U, hU, hxU, le_trans hUV inf_le_left, W, hW, le_trans hUV inf_le_right⟩
+  choose U hU hxU hUV W hW hUW using hnbhd
+  obtain ⟨t, ht⟩ := hV.elim_finite_subcover (fun x ↦ (U x : Set Y))
+    (fun x ↦ (U x).isOpen) (by
+      intro x hx
+      exact Set.mem_iUnion.mpr ⟨⟨x, hx⟩, hxU ⟨x, hx⟩⟩)
+  exact ⟨U, hU, hUV, W, hW, hUW, t, ht⟩
+
 /-- Along the open immersion `hU.fromSpec : Spec Γ(X, U) ⟶ X` onto an affine open `U`,
 restricting a section of `𝒪_X` from `U` to the image of an open `V` and transporting it to `V`
 gives the restriction to `V` of the corresponding global section of `Spec Γ(X, U)`. -/
