@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 public import TauCeti.LinearAlgebra.End.NilpotentCentralizer
+import TauCeti.Algebra.Lie.OfAssociative
 
 /-!
 # Dimensions of nilpotent orbits in `sl n`
@@ -58,12 +59,7 @@ private theorem finrank_ker_ad_matrix_eq_sum_sq_conjugate_parts (x : Matrix n n 
     (hx : IsNilpotent (toLinAlgEquiv' x)) :
     finrank K (LinearMap.ker (ad K (Matrix n n K) x)) =
       ((jordanPartition (toLinAlgEquiv' x) hx).conjugate.parts.map (· ^ 2)).sum := by
-  have hker : LinearMap.ker (ad K (Matrix n n K) x) =
-      Subalgebra.toSubmodule (Subalgebra.centralizer K {x}) := by
-    ext y
-    simp [Subalgebra.mem_centralizer_iff, LieRing.of_associative_ring_bracket, sub_eq_zero,
-      eq_comm]
-  rw [hker, Subalgebra.finrank_toSubmodule,
+  rw [ker_ad_eq_centralizer, Subalgebra.finrank_toSubmodule,
     Matrix.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
 
 /-- **The centralizer of a nilpotent matrix in `sl n`.** If the size of the matrices is nonzero
@@ -103,12 +99,12 @@ theorem finrank_range_ad_sl_add_sum_sq_conjugate_parts_le
       Fintype.card n ^ 2 := by
   -- `[sl n K, x]` lies in `[gl n K, x]`, which has dimension `n² - ∑ⱼ (λ'ⱼ)²` by rank-nullity.
   have hle : (LinearMap.range (ad K (SpecialLinear.sl n K) x)).map
-      (SpecialLinear.sl n K).toSubmodule.subtype ≤
+      ((SpecialLinear.sl n K).incl : SpecialLinear.sl n K →ₗ[K] Matrix n n K) ≤
         LinearMap.range (ad K (Matrix n n K) (x : Matrix n n K)) := by
-    rintro _ ⟨_, ⟨y, rfl⟩, rfl⟩
-    exact ⟨y, rfl⟩
+    rw [← LinearMap.range_comp, ← LieSubalgebra.ad_comp_incl_eq]
+    exact LinearMap.range_comp_le_range _ _
   have hmono := Submodule.finrank_mono hle
-  rw [Submodule.finrank_map_subtype_eq] at hmono
+  rw [← LinearEquiv.finrank_eq (Submodule.equivMapOfInjective _ Subtype.val_injective _)] at hmono
   have hrank := LinearMap.finrank_range_add_finrank_ker (ad K (Matrix n n K) (x : Matrix n n K))
   rw [finrank_ker_ad_matrix_eq_sum_sq_conjugate_parts _ hx, finrank_matrix, finrank_self,
     mul_one, ← sq] at hrank
