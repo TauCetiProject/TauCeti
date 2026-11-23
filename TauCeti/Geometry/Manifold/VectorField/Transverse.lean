@@ -45,6 +45,8 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
 
 ## Main results
 
+* `TauCeti.injective_smul_add_mfderiv_iff_notMem_range`: transversality at a point is the
+  injectivity of `(a, w) ↦ a Z (ι s) + dι_s w`.
 * `TauCeti.mvfderiv_eq_zero_of_comp_eventuallyEq_zero`: on a transverse slice of codimension one,
   a function vanishing on the slice and killed by `Z` has zero differential.
 * `TauCeti.isTransverseAlong_coe_scalarRegularLevel_iff`: transversality along a regular level is
@@ -87,11 +89,21 @@ theorem IsTransverseAlong.ne_zero {Z : (x : M) → TangentSpace I x} {ι : S →
     (h : IsTransverseAlong J Z ι) (s : S) : Z (ι s) ≠ 0 :=
   fun h0 ↦ h s (h0 ▸ Submodule.zero_mem _)
 
-/-- If `Z` is transverse along `ι` and the differential `dι_s` is injective, then
-`(a, w) ↦ a Z (ι s) + dι_s w` is injective. This is the differential of a flow-out at time zero. -/
-theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} {ι : S → M}
-    (h : IsTransverseAlong J Z ι) {s : S} (himm : Function.Injective (mfderiv J I ι s)) :
-    Function.Injective fun v : ℝ × E' ↦ v.1 • Z (ι s) + mfderiv J I ι s v.2 := by
+/-- **Transversality at a point as injectivity.** If the differential `dι_s` is injective, the map
+`(a, w) ↦ a Z (ι s) + dι_s w` is injective exactly when `Z (ι s)` is not in the range of `dι_s`.
+This map is the differential of a flow-out at time zero. -/
+theorem injective_smul_add_mfderiv_iff_notMem_range {Z : (x : M) → TangentSpace I x}
+    {ι : S → M} {s : S} (himm : Function.Injective (mfderiv J I ι s)) :
+    (Function.Injective fun v : ℝ × E' ↦ v.1 • Z (ι s) + mfderiv J I ι s v.2) ↔
+      Z (ι s) ∉ (mfderiv J I ι s).range := by
+  refine ⟨fun hinj ⟨w, hw⟩ ↦ ?_, fun h ↦ ?_⟩
+  · -- If `Z (ι s) = dι w`, then `(1, -w)` and `(0, 0)` have the same image.
+    have h10 : (1 : ℝ) • Z (ι s) + mfderiv J I ι s (-w) =
+        (0 : ℝ) • Z (ι s) + mfderiv J I ι s (0 : TangentSpace J s) := by
+      rw [ContinuousLinearMap.coe_coe] at hw
+      rw [map_neg, hw, map_zero, one_smul, zero_smul, add_neg_cancel, zero_add]
+    exact one_ne_zero (congrArg Prod.fst
+      (hinj (a₁ := ((1 : ℝ), -w)) (a₂ := ((0 : ℝ), (0 : TangentSpace J s))) h10))
   rintro ⟨a, w⟩ ⟨b, u⟩ hv
   -- `w` and `u` are tangent vectors at `s`, that is vectors of the model space `E'`.
   set d : TangentSpace J s := w - u
@@ -102,11 +114,18 @@ theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} 
     abel
   obtain hab : a - b = 0 := by
     by_contra hab
-    refine h s (LinearMap.mem_range.2 ⟨-(a - b)⁻¹ • d, ((mfderiv J I ι s).map_smul _ _).trans ?_⟩)
+    refine h (LinearMap.mem_range.2 ⟨-(a - b)⁻¹ • d, ((mfderiv J I ι s).map_smul _ _).trans ?_⟩)
     rw [eq_neg_of_add_eq_zero_right h0, smul_neg, smul_smul, neg_mul, inv_mul_cancel₀ hab,
       neg_smul, one_smul, neg_neg]
   rw [hab, zero_smul, zero_add, ← map_zero (mfderiv J I ι s)] at h0
   exact Prod.ext (sub_eq_zero.1 hab) (sub_eq_zero.1 (himm h0))
+
+/-- If `Z` is transverse along `ι` and the differential `dι_s` is injective, then
+`(a, w) ↦ a Z (ι s) + dι_s w` is injective. This is the differential of a flow-out at time zero. -/
+theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} {ι : S → M}
+    (h : IsTransverseAlong J Z ι) {s : S} (himm : Function.Injective (mfderiv J I ι s)) :
+    Function.Injective fun v : ℝ × E' ↦ v.1 • Z (ι s) + mfderiv J I ι s v.2 :=
+  (injective_smul_add_mfderiv_iff_notMem_range himm).2 (h s)
 
 /-- **Vanishing of the differential on a transverse slice.** Let `ι : S → M` have injective
 differential at `s`, with `Z (ι s)` outside its range, where `S` has one dimension less than `M`.
