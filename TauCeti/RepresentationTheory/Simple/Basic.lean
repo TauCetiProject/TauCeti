@@ -87,6 +87,8 @@ drag in the semisimple isotypic-component theory that only the comparison needs.
   lift of an isomorphism-invariant function.
 * `TauCeti.SimpleFDRepClasses.equivSimpleClasses`: canonical identification of
   `SimpleFDRepClasses k G` with `SimpleClasses (FDRep k G)`.
+* `TauCeti.SimpleFDRepClasses.resEquiv`: induced bijection on simple isomorphism classes along a
+  monoid isomorphism.
 * `TauCeti.SimpleFDRepClasses.finrank`, `TauCeti.SimpleFDRepClasses.trivial` (with
   `mk_tensorUnit` and `mk_eq_trivial_iff`), and `TauCeti.SimpleFDRepClasses.finrankHom` (with
   `finrankHom_zero`, `finrankHom_biprod`, and `finrankHom_simple`).
@@ -350,6 +352,54 @@ end SimpleFDRepClasses
 
 end Classes
 
+section ResEquiv
+
+variable {k : Type u} {G₁ : Type v} {G₂ : Type w} [Ring k] [Monoid G₁] [Monoid G₂]
+
+/-- Restricting a simple object of `FDRep k G₂` along a monoid isomorphism yields a simple
+object of `FDRep k G₁`. -/
+instance FDRep.simple_res (φ : G₁ ≃* G₂) (X : FDRep k G₂) [Simple X] :
+    Simple ((Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj X) :=
+  _root_.CategoryTheory.simple_obj (Action.resEquiv (FGModuleCat.{u} k) φ).functor X
+
+namespace SimpleFDRepClasses
+
+variable (k) in
+/-- Restricting along a monoid isomorphism `φ : G₁ ≃* G₂` induces a bijection between the simple
+isomorphism classes of `FDRep k G₂` and `FDRep k G₁`. -/
+noncomputable def resEquiv (φ : G₁ ≃* G₂) :
+    SimpleFDRepClasses k G₂ ≃ SimpleFDRepClasses k G₁ :=
+  (equivSimpleClasses k G₂).trans
+    ((SimpleClasses.equiv (Action.resEquiv (FGModuleCat.{u} k) φ)).trans
+      (equivSimpleClasses k G₁).symm)
+
+/-- Evaluating `SimpleFDRepClasses.resEquiv` on the class of a simple object `X` yields the class
+of its restriction along `φ`. -/
+@[simp]
+theorem resEquiv_mk (φ : G₁ ≃* G₂) (X : FDRep k G₂) [Simple X] :
+    resEquiv k φ (mk X) = mk ((Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj X) := by
+  simp only [resEquiv, Equiv.trans_apply, equivSimpleClasses_mk]
+  rw [SimpleClasses.equiv_apply_classOf]
+  exact equivSimpleClasses_symm_classOf ((Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj X)
+
+/-- Applying `(SimpleFDRepClasses.resEquiv k φ).symm` equals applying `resEquiv k φ.symm`. -/
+theorem resEquiv_symm_apply (φ : G₁ ≃* G₂) (c : SimpleFDRepClasses k G₁) :
+    (resEquiv k φ).symm c = resEquiv k φ.symm c := by
+  induction c using ind with
+  | h Y hY =>
+    apply (resEquiv k φ).injective
+    rw [Equiv.apply_symm_apply, resEquiv_mk, resEquiv_mk, mk_eq_mk_iff]
+    exact ⟨((Action.resEquiv (FGModuleCat.{u} k) φ).counitIso.app Y).symm⟩
+
+/-- The inverse equivalence of `SimpleFDRepClasses.resEquiv k φ` is `resEquiv k φ.symm`. -/
+theorem resEquiv_symm (φ : G₁ ≃* G₂) :
+    (resEquiv k φ).symm = resEquiv k φ.symm :=
+  Equiv.ext (resEquiv_symm_apply φ)
+
+end SimpleFDRepClasses
+
+end ResEquiv
+
 namespace SimpleFDRepClasses
 
 section Field
@@ -464,6 +514,53 @@ theorem finrankHom_simple [IsAlgClosed k] [DecidableEq (SimpleFDRepClasses k G)]
     exact ite_congr (propext (mk_eq_mk_iff X Y).symm) (fun _ ↦ rfl) (fun _ ↦ rfl)
 
 end Field
+
+section ResEquivField
+
+variable {k : Type u} {G₁ : Type v} {G₂ : Type w} [Field k] [Monoid G₁] [Monoid G₂]
+
+/-- Restricting along a monoid isomorphism preserves `SimpleFDRepClasses.finrank`. -/
+@[simp]
+theorem finrank_resEquiv (φ : G₁ ≃* G₂) (c : SimpleFDRepClasses k G₂) :
+    (resEquiv k φ c).finrank = c.finrank := by
+  induction c using ind with
+  | h X hX =>
+    rw [resEquiv_mk, finrank_mk, finrank_mk]
+    rfl
+
+/-- Restricting along a monoid isomorphism maps the trivial simple class to the trivial simple
+class. -/
+@[simp]
+theorem resEquiv_trivial (φ : G₁ ≃* G₂) :
+    resEquiv k φ (trivial k G₂) = trivial k G₁ := by
+  rw [← mk_tensorUnit, ← mk_tensorUnit, resEquiv_mk, mk_eq_mk_iff]
+  exact ⟨LinearEquiv.toFDRepIso (LinearEquiv.refl k _) fun _ _ ↦ rfl⟩
+
+/-- Restricting along a monoid isomorphism preserves `SimpleFDRepClasses.finrankHom`. -/
+@[simp]
+theorem finrankHom_resEquiv (φ : G₁ ≃* G₂) (c : SimpleFDRepClasses k G₂) (W : FDRep k G₂) :
+    (resEquiv k φ c).finrankHom ((Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj W) =
+      c.finrankHom W := by
+  induction c using ind with
+  | h X hX =>
+    rw [resEquiv_mk, finrankHom_mk, finrankHom_mk]
+    exact ({ toFun := fun f ↦
+               { hom := f.hom
+                 comm := fun g ↦ FGModuleCat.hom_ext <| by
+                   have h := FDRep.hom_hom_hom_comm f (φ.symm g)
+                   change f.hom.hom.hom ∘ₗ X.ρ (φ (φ.symm g)) =
+                     W.ρ (φ (φ.symm g)) ∘ₗ f.hom.hom.hom at h
+                   rw [φ.apply_symm_apply] at h
+                   exact h }
+             invFun := fun f ↦ (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).map f
+             left_inv := fun _ ↦ rfl
+             right_inv := fun _ ↦ rfl
+             map_add' := fun _ _ ↦ rfl
+             map_smul' := fun _ _ ↦ rfl } :
+      ((Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj X ⟶
+          (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj W) ≃ₗ[k] (X ⟶ W)).finrank_eq
+
+end ResEquivField
 
 end SimpleFDRepClasses
 

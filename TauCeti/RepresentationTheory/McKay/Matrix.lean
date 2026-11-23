@@ -41,7 +41,8 @@ the trivial class for faithful complex representations.
 
 * `TauCeti.mckayMatrix`: the matrix `(c₁, c₂) ↦ dim_k Hom_G(X, V ⊗ Y)` on `SimpleFDRepClasses k G`,
   with `TauCeti.mckayMatrix_apply_trivial`, `TauCeti.mckayMatrix_zero`,
-  `TauCeti.mckayMatrix_biprod`, `TauCeti.mckayMatrix_tensorUnit`, and `TauCeti.mckayMatrix_tensor`.
+  `TauCeti.mckayMatrix_biprod`, `TauCeti.mckayMatrix_tensorUnit`, `TauCeti.mckayMatrix_tensor`, and
+  `TauCeti.mckayMatrix_res_apply`.
 * `FDRep.finrank_hom_tensor_self_eq_zero` and `TauCeti.mckayMatrix_apply_self_eq_zero`:
   loop-freeness for faithful two-dimensional representations of determinant `1`.
 * `TauCeti.mckayMatrix_transpose`, `TauCeti.isSymm_mckayMatrix_of_equiv_dual`, and
@@ -73,7 +74,7 @@ public section
 open CategoryTheory MonoidalCategory Finset
 open scoped MonoidAlgebra TensorProduct
 
-universe u v
+universe u v w
 
 namespace FDRep
 
@@ -160,6 +161,26 @@ theorem mckayMatrix_congr [Monoid G] {V₁ V₂ : FDRep k G} (iso : V₁ ≅ V�
   | h Y hY =>
     rw [mckayMatrix_apply_mk, mckayMatrix_apply_mk]
     exact c₁.finrankHom_congr (whiskerRightIso iso Y)
+
+/-- **Naturality of the McKay matrix under a monoid isomorphism.** Restricting `V : FDRep k G₂`
+along `φ : G₁ ≃* G₂` pulls back `mckayMatrix V` along `SimpleFDRepClasses.resEquiv k φ`. -/
+@[simp]
+theorem mckayMatrix_res_apply {k : Type u} {G₁ : Type v} {G₂ : Type w} [Field k]
+    [Monoid G₁] [Monoid G₂] (φ : G₁ ≃* G₂) (V : FDRep k G₂)
+    (c₁ c₂ : SimpleFDRepClasses k G₂) :
+    mckayMatrix ((Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj V)
+        (SimpleFDRepClasses.resEquiv k φ c₁) (SimpleFDRepClasses.resEquiv k φ c₂) =
+      mckayMatrix V c₁ c₂ := by
+  induction c₂ using SimpleFDRepClasses.ind with
+  | h Y hY =>
+    rw [SimpleFDRepClasses.resEquiv_mk, mckayMatrix_apply_mk, mckayMatrix_apply_mk]
+    have hiso :
+        (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj V ⊗
+            (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj Y ≅
+          (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj (V ⊗ Y) :=
+      LinearEquiv.toFDRepIso (LinearEquiv.refl k _) fun _ _ ↦ rfl
+    rw [(SimpleFDRepClasses.resEquiv k φ c₁).finrankHom_congr hiso,
+      SimpleFDRepClasses.finrankHom_resEquiv]
 
 open scoped ZeroObject in
 /-- **Zero law for the McKay matrix.** -/

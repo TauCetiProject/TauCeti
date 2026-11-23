@@ -21,6 +21,8 @@ subgroup `H : Subgroup SU2` with its faithful two-dimensional complex representa
 * `TauCeti.SU2.stdRep` and `TauCeti.SU2.stdFDRep`: the tautological representation of
   `H : Subgroup SU2` on `Fin 2 → ℂ` and its `FDRep ℂ H` bundling, with faithfulness, determinant
   `1`, dimension `2`, and trace character lemmas.
+* `TauCeti.SU2.stdFDRepConjIso`: isomorphism between the conjugation restriction of
+  `stdFDRep K` and `stdFDRep H` when `K = H.map (MulAut.conj g : SU2 →* SU2)`.
 -/
 
 public section
@@ -79,5 +81,55 @@ theorem det_ρ_stdFDRep (H : Subgroup SU2) (h : H) : LinearMap.det ((stdFDRep H)
 theorem character_stdFDRep (H : Subgroup SU2) (h : H) :
     (stdFDRep H).character h = Matrix.trace (h.val : Matrix (Fin 2) (Fin 2) ℂ) := by
   rw [FDRep.character_of (stdRep H), char_stdRep]
+
+open CategoryTheory in
+/-- Conjugation by `g : SU2` induces an isomorphism in `FDRep ℂ H` from the restriction of
+`stdFDRep K` along conjugation `H ≃* K` (where `K = H.map (MulAut.conj g : SU2 →* SU2)`) to
+`stdFDRep H`. -/
+noncomputable def stdFDRepConjIso {H K : Subgroup SU2} {g : SU2}
+    (hK : K = H.map (MulAut.conj g : SU2 →* SU2)) :
+    (Action.res (FGModuleCat ℂ)
+        ((((MulAut.conj g).subgroupMap H).trans (MulEquiv.subgroupCongr hK.symm)) :
+          H →* K)).obj
+        (stdFDRep K) ≅
+      stdFDRep H :=
+  let e : (Fin 2 → ℂ) ≃ₗ[ℂ] (Fin 2 → ℂ) :=
+    { __ := Matrix.mulVecLin ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ)
+      invFun := fun v ↦ (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v
+      left_inv := fun v ↦ by
+        have hg : (g : Matrix (Fin 2) (Fin 2) ℂ) *
+            ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
+          rw [← coe_toGL, ← coe_toGL, map_inv, ← Units.val_mul, mul_inv_cancel, Units.val_one]
+        change (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ
+            (((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v) = v
+        rw [Matrix.mulVec_mulVec, hg, Matrix.one_mulVec]
+      right_inv := fun v ↦ by
+        have hg : ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *
+            (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
+          rw [← coe_toGL, ← coe_toGL, map_inv, ← Units.val_mul, inv_mul_cancel, Units.val_one]
+        change ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ
+            ((g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v) = v
+        rw [Matrix.mulVec_mulVec, hg, Matrix.one_mulVec] }
+  LinearEquiv.toFDRepIso e fun h v ↦ by
+    let v' : Fin 2 → ℂ := v
+    change ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ
+        (stdRep K
+          ((((MulAut.conj g).subgroupMap H).trans (MulEquiv.subgroupCongr hK.symm)) h) v') =
+      stdRep H h (((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v')
+    rw [stdRep_apply_apply, stdRep_apply_apply]
+    have hval :
+        (((((MulAut.conj g).subgroupMap H).trans (MulEquiv.subgroupCongr hK.symm)) h : K) :
+            SU2) =
+          g * h.val * g⁻¹ := rfl
+    rw [hval]
+    have hm :
+        ((g * h.val * g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
+          (g : Matrix (Fin 2) (Fin 2) ℂ) * (h.val : Matrix (Fin 2) (Fin 2) ℂ) *
+            ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) := rfl
+    have hg : ((g⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) *
+        (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 := by
+      rw [← coe_toGL, ← coe_toGL, map_inv, ← Units.val_mul, inv_mul_cancel, Units.val_one]
+    rw [hm, Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
+      hg, Matrix.one_mul]
 
 end TauCeti.SU2

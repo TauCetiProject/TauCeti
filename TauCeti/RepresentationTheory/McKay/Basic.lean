@@ -28,7 +28,10 @@ dimension null vector, and reachability to the trivial class from
 ## Main definitions and results
 
 * `TauCeti.IsMcKayLabelling`: an affine ADE labelling of `SimpleFDRepClasses ℂ G` relative to `V`,
-  characterized by `TauCeti.isMcKayLabelling_iff` and `TauCeti.isMcKayLabelling_iff_mckayMatrix`.
+  characterized by `TauCeti.isMcKayLabelling_iff` and `TauCeti.isMcKayLabelling_iff_mckayMatrix`,
+  with transport along representations and group isomorphisms (`TauCeti.IsMcKayLabelling.of_iso`,
+  `TauCeti.isMcKayLabelling_res_iff`, `TauCeti.IsMcKayLabelling.res`,
+  `TauCeti.IsMcKayLabelling.of_mulEquiv`).
 * `TauCeti.exists_isMcKayLabelling`: **the McKay correspondence**, and
   `TauCeti.IsMcKayLabelling.eq_of_valid`: uniqueness of the valid affine diagram `t`.
 
@@ -44,7 +47,7 @@ public section
 
 open CategoryTheory MonoidalCategory Finset
 
-universe u
+universe u v
 
 namespace TauCeti
 
@@ -186,6 +189,56 @@ theorem isMcKayLabelling_congr {G : Type u} [Group G] {V₁ V₂ : FDRep ℂ G} 
     (t : AffineDynkinType) (e : SimpleFDRepClasses ℂ G ≃ Fin t.nodes) :
     IsMcKayLabelling V₁ t e ↔ IsMcKayLabelling V₂ t e :=
   ⟨fun h ↦ h.of_iso iso, fun h ↦ h.of_iso iso.symm⟩
+
+/-- Restricting along a group isomorphism `φ : G₁ ≃* G₂` preserves McKay labellings via
+`SimpleFDRepClasses.resEquiv`. -/
+theorem isMcKayLabelling_res_iff {G₁ : Type u} {G₂ : Type v} [Group G₁] [Group G₂]
+    (φ : G₁ ≃* G₂) (V : FDRep ℂ G₂) (t : AffineDynkinType)
+    (e : SimpleFDRepClasses ℂ G₂ ≃ Fin t.nodes) :
+    IsMcKayLabelling ((Action.res (FGModuleCat ℂ) (φ : G₁ →* G₂)).obj V) t
+        ((SimpleFDRepClasses.resEquiv ℂ φ).symm.trans e) ↔
+      IsMcKayLabelling V t e := by
+  rw [isMcKayLabelling_iff_mckayMatrix, isMcKayLabelling_iff_mckayMatrix]
+  refine ⟨fun ⟨hM, hδ, hAff⟩ ↦ ⟨fun c₁ c₂ ↦ ?_, fun c ↦ ?_, ?_⟩,
+      fun ⟨hM, hδ, hAff⟩ ↦ ⟨fun c₁ c₂ ↦ ?_, fun c ↦ ?_, ?_⟩⟩
+  · have h := hM (SimpleFDRepClasses.resEquiv ℂ φ c₁) (SimpleFDRepClasses.resEquiv ℂ φ c₂)
+    rwa [mckayMatrix_res_apply, Equiv.trans_apply, Equiv.trans_apply,
+      Equiv.symm_apply_apply, Equiv.symm_apply_apply] at h
+  · have h := hδ (SimpleFDRepClasses.resEquiv ℂ φ c)
+    rwa [SimpleFDRepClasses.finrank_resEquiv, Equiv.trans_apply, Equiv.symm_apply_apply] at h
+  · rw [Equiv.trans_apply, ← SimpleFDRepClasses.resEquiv_trivial (k := ℂ) φ,
+      Equiv.symm_apply_apply] at hAff
+    exact hAff
+  · obtain ⟨c₁', rfl⟩ := (SimpleFDRepClasses.resEquiv ℂ φ).surjective c₁
+    obtain ⟨c₂', rfl⟩ := (SimpleFDRepClasses.resEquiv ℂ φ).surjective c₂
+    rw [mckayMatrix_res_apply, Equiv.trans_apply, Equiv.trans_apply,
+      Equiv.symm_apply_apply, Equiv.symm_apply_apply]
+    exact hM c₁' c₂'
+  · obtain ⟨c', rfl⟩ := (SimpleFDRepClasses.resEquiv ℂ φ).surjective c
+    rw [SimpleFDRepClasses.finrank_resEquiv, Equiv.trans_apply, Equiv.symm_apply_apply]
+    exact hδ c'
+  · rw [Equiv.trans_apply, ← SimpleFDRepClasses.resEquiv_trivial (k := ℂ) φ,
+      Equiv.symm_apply_apply]
+    exact hAff
+
+/-- Transport a McKay labelling of `V : FDRep ℂ G₂` along a group isomorphism `φ : G₁ ≃* G₂` to
+the restricted representation `(Action.res (FGModuleCat ℂ) (φ : G₁ →* G₂)).obj V`. -/
+theorem IsMcKayLabelling.res {G₁ : Type u} {G₂ : Type v} [Group G₁] [Group G₂]
+    (φ : G₁ ≃* G₂) {V : FDRep ℂ G₂} {t : AffineDynkinType}
+    {e : SimpleFDRepClasses ℂ G₂ ≃ Fin t.nodes} (h : IsMcKayLabelling V t e) :
+    IsMcKayLabelling ((Action.res (FGModuleCat ℂ) (φ : G₁ →* G₂)).obj V) t
+      ((SimpleFDRepClasses.resEquiv ℂ φ).symm.trans e) :=
+  (isMcKayLabelling_res_iff φ V t e).mpr h
+
+/-- Transport a McKay labelling along a group isomorphism `φ : G₁ ≃* G₂` and an intertwiner
+`(Action.res (FGModuleCat ℂ) (φ : G₁ →* G₂)).obj V₂ ≅ V₁`. -/
+theorem IsMcKayLabelling.of_mulEquiv {G₁ : Type u} {G₂ : Type v} [Group G₁] [Group G₂]
+    (φ : G₁ ≃* G₂) {V₁ : FDRep ℂ G₁} {V₂ : FDRep ℂ G₂}
+    (iso : (Action.res (FGModuleCat ℂ) (φ : G₁ →* G₂)).obj V₂ ≅ V₁)
+    {t : AffineDynkinType} {e : SimpleFDRepClasses ℂ G₂ ≃ Fin t.nodes}
+    (h : IsMcKayLabelling V₂ t e) :
+    IsMcKayLabelling V₁ t ((SimpleFDRepClasses.resEquiv ℂ φ).symm.trans e) :=
+  (h.res φ).of_iso iso
 
 /-- **The McKay correspondence** (McKay 1980; Steinberg 1985). For a nontrivial finite group `G`
 and a faithful two-dimensional complex representation `V` of determinant `1`, the McKay matrix of
