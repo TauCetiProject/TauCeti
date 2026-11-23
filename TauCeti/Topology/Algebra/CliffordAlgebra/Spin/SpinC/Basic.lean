@@ -29,8 +29,7 @@ is a continuous automorphism (`CliffordAlgebra.spinCGroup.chargeConjContinuousMu
 
 For a positive- or negative-definite form on a finite-dimensional real space, `Spinᶜ(Q)` is
 compact (`CliffordAlgebra.spinCGroup.compactSpace_of_posDef_or_negDef`), as a quotient of the
-compact group `Spin(Q) × U(1)`; in particular `Spinᶜ(n)` is compact
-(`CliffordAlgebra.instCompactSpaceRealCliffordSpinCGroupZero`). The quotient map
+compact group `Spin(Q) × U(1)`. The quotient map
 (`CliffordAlgebra.spinCGroup.continuous_mk`), the inclusions `s ↦ [s, 1]` and `z ↦ [1, z]`
 (`CliffordAlgebra.spinCGroup.continuous_ofSpin`, `CliffordAlgebra.spinCGroup.continuous_ofCircle`)
 and the map `[s, z] ↦ [f s, z]` induced by a quadratic isometry `f`
@@ -170,11 +169,6 @@ theorem compactSpace_of_posDef_or_negDef [FiniteDimensional ℝ M] (hdef : Q.Pos
     CompactSpace (spinCGroup Q hQ) := by
   have := compactSpace_spinGroup_of_posDef_or_negDef Q hdef
   infer_instance
-
-/-- `Spinᶜ(n)` is compact, as a quotient of `Spin(n) × U(1)`. -/
-instance _root_.CliffordAlgebra.instCompactSpaceRealCliffordSpinCGroupZero (n : ℕ) [NeZero n] :
-    CompactSpace (realCliffordSpinCGroupZero n) :=
-  compactSpace_of_posDef_or_negDef _ _ (.inl (posDef_realCliffordForm_zero n))
 
 /-- The rotation map on `Spinᶜ(Q)` is continuous into the special orthogonal group with its
 topology as a subgroup of the linear automorphisms. -/

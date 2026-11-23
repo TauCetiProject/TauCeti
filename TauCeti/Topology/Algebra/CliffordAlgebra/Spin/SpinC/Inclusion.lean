@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Inclusion
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Real
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Orbit.Bundle
 
 /-!

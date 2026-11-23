@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilizer
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Real
 
 /-!
 # The lower-rank subgroup `Spinᶜ(n) ⊆ Spinᶜ(n + 1)`
