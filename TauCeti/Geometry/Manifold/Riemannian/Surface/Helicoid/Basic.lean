@@ -36,7 +36,7 @@ def parametrization (a : ℝ) (p : P) : E₃ :=
     (a * p.1) • EuclideanSpace.basisFun (Fin 3) ℝ 2
 
 /-- The three Euclidean coordinates of the helicoid. -/
-theorem parametrization_def (a : ℝ) (p : P) :
+theorem parametrization_apply (a : ℝ) (p : P) :
     parametrization a p =
       (p.2 * Real.cos p.1) • EuclideanSpace.basisFun (Fin 3) ℝ 0 +
       (p.2 * Real.sin p.1) • EuclideanSpace.basisFun (Fin 3) ℝ 1 +
@@ -44,8 +44,8 @@ theorem parametrization_def (a : ℝ) (p : P) :
   simp only [parametrization, SurfaceOfRevolution.parametrization_def, id_eq,
     zero_smul, add_zero]
 
-/-- The helicoid parametrization is smooth for every pitch. -/
-theorem contDiff_parametrization (a : ℝ) : ContDiff ℝ ∞ (parametrization a) := by
+/-- The helicoid parametrization is `C^n` for every order, including analytic, and every pitch. -/
+theorem contDiff_parametrization (a : ℝ) {n : ℕ∞ω} : ContDiff ℝ n (parametrization a) := by
   unfold parametrization
   exact (SurfaceOfRevolution.contDiff_parametrization contDiff_id contDiff_const).add
     ((contDiff_const.mul contDiff_fst).smul contDiff_const)
@@ -58,12 +58,16 @@ theorem fderiv_parametrization (a : ℝ) (p w : P) :
       (w.2 * Real.sin p.1 + p.2 * Real.cos p.1 * w.1) •
         EuclideanSpace.basisFun (Fin 3) ℝ 1 +
       (a * w.1) • EuclideanSpace.basisFun (Fin 3) ℝ 2 := by
-  have hb := (SurfaceOfRevolution.contDiff_parametrization
-    (f := id) (g := fun _ ↦ 0) (n := ∞) contDiff_id contDiff_const).differentiable (by simp) p
+  have hb := SurfaceOfRevolution.differentiableAt_parametrization
+    (p := p) differentiableAt_id (differentiableAt_const 0)
   have hh := ((hasFDerivAt_fst (𝕜 := ℝ) (p := p)).const_mul a).smul_const
     (EuclideanSpace.basisFun (Fin 3) ℝ 2)
-  have h := (hb.hasFDerivAt.add hh).congr_of_eventuallyEq
-    (f₁ := parametrization a) (.of_forall fun _ ↦ rfl)
+  have h : HasFDerivAt (parametrization a)
+      (fderiv ℝ (SurfaceOfRevolution.parametrization id (fun _ ↦ 0)) p +
+        (a • ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight
+          (EuclideanSpace.basisFun (Fin 3) ℝ 2)) p := by
+    unfold parametrization
+    exact hb.hasFDerivAt.add hh
   rw [h.fderiv]
   simp only [add_apply, ContinuousLinearMap.smulRight_apply, smul_apply,
     ContinuousLinearMap.coe_fst', smul_eq_mul,
@@ -71,14 +75,24 @@ theorem fderiv_parametrization (a : ℝ) (p w : P) :
     deriv_id, deriv_const, id_eq, zero_mul, zero_smul, add_zero, one_mul]
 
 /-- The first fundamental form of the helicoid is diagonal with coefficients `a²+v²,1`. -/
-theorem inner_fderiv_parametrization (a : ℝ) (p w z : P) :
+@[simp] theorem inner_fderiv_parametrization (a : ℝ) (p w z : P) :
     inner ℝ (fderiv ℝ (parametrization a) p w) (fderiv ℝ (parametrization a) p z) =
       (a ^ 2 + p.2 ^ 2) * w.1 * z.1 + w.2 * z.2 := by
-  rw [fderiv_parametrization, fderiv_parametrization]
-  simp only [inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right,
-    EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
-  norm_num
-  linear_combination (p.2 ^ 2 * w.1 * z.1 + w.2 * z.2) * Real.sin_sq_add_cos_sq p.1
+  have hd (v : P) : fderiv ℝ (parametrization a) p v =
+      fderiv ℝ (SurfaceOfRevolution.parametrization id (fun _ ↦ 0)) p v +
+        (a * v.1) • EuclideanSpace.basisFun (Fin 3) ℝ 2 := by
+    rw [fderiv_parametrization, SurfaceOfRevolution.fderiv_parametrization
+      differentiableAt_id (differentiableAt_const 0)]
+    simp
+  rw [hd, hd]
+  simp only [inner_add_left, inner_add_right,
+    SurfaceOfRevolution.inner_fderiv_parametrization
+      differentiableAt_id (differentiableAt_const 0)]
+  simp [real_inner_smul_left, real_inner_smul_right, EuclideanSpace.basisFun_apply,
+    EuclideanSpace.inner_single_left, EuclideanSpace.inner_single_right,
+    SurfaceOfRevolution.fderiv_parametrization differentiableAt_id (differentiableAt_const 0),
+    SurfaceOfRevolution.profileSpeedSq_def]
+  ring
 
 /-- The metric is positive on a tangent vector exactly when its radial component is nonzero
 or its angular component is nonzero at a regular parameter point. -/
@@ -86,13 +100,13 @@ theorem firstFundamentalForm_pos_iff (a : ℝ) (p w : P) :
     0 < (a ^ 2 + p.2 ^ 2) * w.1 ^ 2 + w.2 ^ 2 ↔
       ((a ≠ 0 ∨ p.2 ≠ 0) ∧ w.1 ≠ 0) ∨ w.2 ≠ 0 := by
   have h : 0 ≤ (a ^ 2 + p.2 ^ 2) * w.1 ^ 2 := by positivity
-  rw [lt_iff_le_and_ne, and_iff_right (add_nonneg h (sq_nonneg _)), ne_comm, ne_eq,
-    add_eq_zero_iff_of_nonneg h (sq_nonneg _), mul_eq_zero, sq_add_sq_eq_zero,
-    sq_eq_zero_iff, sq_eq_zero_iff]
+  rw [(add_nonneg h (sq_nonneg _)).lt_iff_ne, ne_comm]
+  simp only [ne_eq, add_eq_zero_iff_of_nonneg h (sq_nonneg _), mul_eq_zero,
+    sq_add_sq_eq_zero, sq_eq_zero_iff]
   tauto
 
 /-- The helicoid differential is injective exactly where the pitch or signed radius is nonzero. -/
-theorem injective_fderiv_parametrization_iff (a : ℝ) (p : P) :
+@[simp] theorem injective_fderiv_parametrization_iff (a : ℝ) (p : P) :
     Function.Injective (fderiv ℝ (parametrization a) p) ↔ a ≠ 0 ∨ p.2 ≠ 0 := by
   rw [injective_iff_map_eq_zero]
   constructor
