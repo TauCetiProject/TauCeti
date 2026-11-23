@@ -5,14 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.WithLp
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Analysis.Matrix.Cartan.Realify
-public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.Matrix.SymplecticGroup.Maslov
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
-public import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # Polar coordinates on `Sp(2, ℝ)`: an open disc times a circle
@@ -42,11 +39,6 @@ of the open unit disc and the circle (`TauCeti.GLSymplectic.polarDiscHomeomorph`
 (`TauCeti.GLSymplectic.val_polarDiscHomeomorph_symm_apply`). It is the case `n = 1` of the
 Cartan decomposition `TauCeti.GLSymplectic.leftCartanHomeomorph` in the factor order `A = P U`.
 
-The parametrization `((a, b), z) ↦ exp [[a, b], [b, -a]] * realify (z)` is smooth on the plane
-times the complex numbers (`TauCeti.GLSymplectic.contDiff_exp_spSymmMatrix_mul_realify`). Since
-the circle coordinate is `ρ(A)`, the Maslov index of a loop in `Sp(2, ℝ)` is the winding number of
-its circle coordinate (`TauCeti.GLSymplectic.maslovIndex_eq_degree_polarDiscHomeomorph_snd`).
-
 ## Main definitions
 
 * `TauCeti.GLSymplectic.spSymmMatrix`: the matrix `[[a, b], [b, -a]]`, with scalar blocks.
@@ -64,11 +56,6 @@ its circle coordinate (`TauCeti.GLSymplectic.maslovIndex_eq_degree_polarDiscHome
 * `TauCeti.GLSymplectic.sqrt_mul_star_eq_exp_spSymmMatrix` and
   `TauCeti.GLSymplectic.coe_polarUnitary_eq_realify_diagonal_maslovPhase`: the two polar factors
   of `A` in these coordinates.
-* `TauCeti.GLSymplectic.contDiff_exp_spSymmMatrix_mul_realify`: the polar parametrization in
-  plane coordinates is smooth on the plane times the complex numbers. Recovering the inverse map
-  requires precomposing with `TauCeti.unitBallDiffeomorph` in the first factor.
-* `TauCeti.GLSymplectic.maslovIndex_eq_degree_polarDiscHomeomorph_snd`: the Maslov index of a loop
-  is the winding number of its circle coordinate.
 
 ## References
 
@@ -285,49 +272,5 @@ theorem coe_polarUnitary_eq_realify_diagonal_maslovPhase (A : GLSymplectic ι �
       (diagonal fun _ : ι ↦ (maslovPhase A : ℂ)).realify := by
   rw [← polarDiscHomeomorph_apply_snd]
   exact (polar_eq_polarDiscHomeomorph A).2
-
-/-! ### Smoothness and the Maslov index -/
-
-section Smooth
-
-open scoped ContDiff Matrix.Norms.L2Operator
-
-attribute [local instance] Matrix.l2OpNormedAlgebraReal
-
-omit [Unique ι] in
-/-- **The polar parametrization is smooth.** The map `((a, b), z) ↦ exp [[a, b], [b, -a]] *
-realify (z)`, with scalar blocks, from the plane and the complex numbers to the real
-`(ι ⊕ ι) × (ι ⊕ ι)` matrices is smooth. Its first argument is the plane point `(a, b)`, not the
-disc coordinate: when `ι` is a singleton (`[Unique ι]`), precomposed with the diffeomorphism
-`TauCeti.unitBallDiffeomorph` of the open disc onto the plane in the first factor and restricted
-to the unit circle in the second, it is the inverse of `TauCeti.GLSymplectic.polarDiscHomeomorph`
-(`TauCeti.GLSymplectic.val_polarDiscHomeomorph_symm_apply`). -/
-theorem contDiff_exp_spSymmMatrix_mul_realify {k : ℕ∞ω} :
-    ContDiff ℝ k fun p : EuclideanSpace ℝ (Fin 2) × ℂ ↦
-      NormedSpace.exp (spSymmMatrix ι (p.1 0) (p.1 1)) * (diagonal fun _ : ι ↦ p.2).realify := by
-  have hS (a b : ℝ) : spSymmMatrix ι a b =
-      a • (fromBlocks 1 0 0 (-1) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) + b • fromBlocks 0 1 1 0 := by
-    ext (i | i) (j | j) <;> by_cases h : i = j <;> simp [h]
-  simp only [hS, ← smul_one_eq_diagonal, realify_smul_one, RCLike.re_to_complex,
-    RCLike.im_to_complex]
-  have hv : ContDiff ℝ k fun v : EuclideanSpace ℝ (Fin 2) ↦
-      v 0 • (fromBlocks 1 0 0 (-1) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) + v 1 • fromBlocks 0 1 1 0 := by
-    have h₀ : ContDiff ℝ k fun v : EuclideanSpace ℝ (Fin 2) ↦ v 0 := contDiff_piLp_apply 2
-    have h₁ : ContDiff ℝ k fun v : EuclideanSpace ℝ (Fin 2) ↦ v 1 := contDiff_piLp_apply 2
-    exact (h₀.smul contDiff_const).add (h₁.smul contDiff_const)
-  have hz : ContDiff ℝ k fun z : ℂ ↦ z.re • (1 : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) + z.im • J ι ℝ :=
-    (Complex.reCLM.contDiff.smul contDiff_const).add (Complex.imCLM.contDiff.smul contDiff_const)
-  exact ((NormedSpace.contDiff_exp ℝ).comp (hv.comp contDiff_fst)).mul (hz.comp contDiff_snd)
-
-end Smooth
-
-/-- **The Maslov index is the winding number of the circle coordinate.** For a loop `γ` in
-`Sp(2, ℝ)`, the Maslov index is the degree of the loop traced by the circle coordinate of `γ` in
-the polar coordinates `TauCeti.GLSymplectic.polarDiscHomeomorph`. -/
-theorem maslovIndex_eq_degree_polarDiscHomeomorph_snd {A : GLSymplectic ι ℝ} (γ : Path A A) :
-    maslovIndex γ =
-      Circle.degree (γ.map (continuous_snd.comp (polarDiscHomeomorph ι).continuous)) := by
-  rw [maslovIndex_def]
-  exact Circle.degree_congr _ _ fun t ↦ (polarDiscHomeomorph_apply_snd (γ t)).symm
 
 end TauCeti.GLSymplectic
