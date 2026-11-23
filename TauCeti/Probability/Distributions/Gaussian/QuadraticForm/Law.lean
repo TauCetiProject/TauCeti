@@ -83,7 +83,7 @@ theorem map_quadForm_inv_multivariateGaussian (m : EuclideanSpace ℝ ι) (S : M
   have hq (x : EuclideanSpace ℝ ι) :
       WithLp.ofLp x ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp x) = ‖(CFC.sqrt S)⁻¹.toEuclideanLin x + 0‖ ^ 2 := by
     rw [add_zero, dotProduct_mulVec_eq_inner]
-    exact (hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt x).symm
+    simpa using (hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt x).symm
   have hnc : ‖(CFC.sqrt S)⁻¹.toEuclideanLin m + 0‖₊ ^ 2 =
       (WithLp.ofLp m ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp m)).toNNReal := by
     rw [hq m, ← coe_nnNorm, ← NNReal.coe_pow, Real.toNNReal_coe]
@@ -154,7 +154,7 @@ theorem map_norm_sq_multivariateGaussian_eq_map_sum_eigenvalues_mul_sq {S : Matr
         rw [multivariateGaussian_zero_eq_map_stdGaussian_sqrt,
           stdGaussian_eq_map_pi_orthonormalBasis b, Measure.map_map (by fun_prop) (by fun_prop),
           Measure.map_map (by fun_prop) (by fun_prop)]
-        rfl
+        simp only [Function.comp_def]
       _ = (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map
             (fun z ↦ ∑ j, hB.eigenvalues j * z j ^ 2) :=
         congrArg (Measure.map · _) (funext fun z ↦ by

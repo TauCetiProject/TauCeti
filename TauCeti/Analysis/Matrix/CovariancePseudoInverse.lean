@@ -285,8 +285,8 @@ theorem sqrt_mul_covariancePseudoInverse_mul_sqrt (C : Matrix ι ι ℝ) :
     CFC.sqrt C * C.covariancePseudoInverse * CFC.sqrt C = C.covariancePseudoInverse * C := by
   by_cases hC : C.PosSemidef
   · have hcomm : Commute (CFC.sqrt C) C.covariancePseudoInverse := by
-      simpa only [CFC.sqrt] using
-        Commute.cfcₙ_nnreal (commute_covariancePseudoInverse C) NNReal.sqrt
+      rw [CFC.sqrt_eq_cfc]
+      exact Commute.cfc_nnreal (commute_covariancePseudoInverse C) NNReal.sqrt
     rw [hcomm.eq, mul_assoc, CFC.sqrt_mul_sqrt_self C hC.nonneg]
   · have hn : ¬ 0 ≤ C := fun h ↦ hC (nonneg_iff_posSemidef.mp h)
     simp [hC, CFC.sqrt_of_not_nonneg hn]
