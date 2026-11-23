@@ -56,7 +56,7 @@ nonzero.
 
 Without an orientation and over an arbitrary ring, the group in the rank degree is
 the zeroth homology of `B` twisted by the orientation local system of `E`; this is
-`TauCeti.Topology.VectorBundle.Orientation.RingRankDegreeHomology`.
+`TauCeti.Topology.VectorBundle.Orientation.RankDegreeHomology`.
 
 ## The proof
 
