@@ -5,8 +5,9 @@ Authors: Kim Morrison
 -/
 module
 
+public import Mathlib.CategoryTheory.Sites.GlobalSections
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
-public import TauCeti.CategoryTheory.Sites.Whiskering
+public import TauCeti.CategoryTheory.Sites.Preadditive
 
 /-!
 # Sheaves under a homeomorphism across universes
