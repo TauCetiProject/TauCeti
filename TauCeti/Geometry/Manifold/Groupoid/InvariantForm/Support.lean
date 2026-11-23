@@ -587,7 +587,10 @@ variable [IsGroupoid D] [TauCeti.IsTopologicalGroupoid D]
 
 omit [TopologicalSpace (Quiver.Total C)] [IsManifold I ∞ C] [IsManifold I' ∞ D]
   [IsManifold J' ∞ (Quiver.Total D)] [TauCeti.IsTopologicalGroupoid D] in
-private theorem isProperMap_isomorphismClasses_map_of_etale (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
+/-- A full, essentially surjective functor reflecting isomorphisms whose object map is a local
+diffeomorphism into a groupoid with locally diffeomorphic source and target induces a proper map on
+isomorphism classes. -/
+theorem isProperMap_isomorphismClasses_map_of_etale (Φ : C ⥤ D) [Φ.Full] [Φ.EssSurj]
     [Φ.ReflectsIsomorphisms]
     (hs' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.left : Quiver.Total D → D))
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
@@ -665,9 +668,7 @@ theorem compactlySupportedInvariantFormsEquiv_apply
     (φ : compactlySupportedInvariantForms I' J' hs'.contMDiff ht'.contMDiff V k) :
     Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁ φ =
       Φ.compactlySupportedInvariantFormsPullback hΦ.contMDiff hΦ₁
-        (Φ.isProperMap_isomorphismClasses_map_of_essSurj hΦ.contMDiff.continuous hΦ.isOpenMap
-          (@TauCeti.isOpenQuotientMap_isomorphismClassesMk _ Groupoid.ofIsGroupoid _ _
-            hs'.contMDiff.continuous ht'.isOpenMap).isOpenMap) φ := by
+        (Φ.isProperMap_isomorphismClasses_map_of_etale hs' ht' hΦ) φ := by
   apply Subtype.ext
   change ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁
     ⟨φ.val, compactlySupportedInvariantForms_le_invariantForms φ.property⟩ :

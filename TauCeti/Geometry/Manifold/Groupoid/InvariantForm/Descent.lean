@@ -321,8 +321,8 @@ private theorem mpullback_descendedRoughForm [Φ.Full] [Φ.EssSurj]
         (hΦ x).localInverse_eventuallyEq_right.symm, Eventually.of_forall fun _ ↦ rfl⟩
   have heq : mpullback (F := V) (k := k) I I' Φ.obj (descendedRoughForm Φ ht' hΦ α.val) x =
       mpullback (F := V) (k := k) I I' Φ.obj
-        (mpullback (F := V) (k := k) I' I (hΦ x).localInverse α.val) x := by
-    ext v; rw [mpullback_apply, hpt, ← mpullback_apply]
+        (mpullback (F := V) (k := k) I' I (hΦ x).localInverse α.val) x :=
+    mpullback_apply_congr hpt
   rw [heq, ← mpullback_comp_at (hΦ.mdifferentiable (by simp) x)
       ((hΦ x).mdifferentiableAt_localInverse (by simp)),
     (hΦ x).localInverse_eventuallyEq_left.mpullback_eq, mpullback_id]
@@ -341,8 +341,8 @@ private theorem mpullback_left_eq_right_descendedRoughForm [Φ.Full] [Φ.EssSurj
     have hpt_l : mpullback (F := V) (k := k) J' I' Quiver.Total.left
           (descendedRoughForm Φ ht' hΦ α.val) a =
         mpullback (F := V) (k := k) J' I' Quiver.Total.left
-          (mpullback (F := V) (k := k) I' I (arrowLocalLift Φ ht' hΦ x₁ a₁) α.val) a := by
-      ext v; rw [mpullback_apply, descendedRoughForm, ← mpullback_apply]
+          (mpullback (F := V) (k := k) I' I (arrowLocalLift Φ ht' hΦ x₁ a₁) α.val) a :=
+      mpullback_apply_congr rfl
     rw [hpt_l, ← mpullback_comp_at (hs'.mdifferentiable (by simp) a)
       ((isLocalLiftAt_arrowLocalLift Φ ht' hΦ x₁ a₁ hs'
         (mem_arrowLocalLiftOpen Φ ht' hΦ x₁ a₁ rfl)).contMDiffAt.mdifferentiableAt (by simp))]
@@ -359,8 +359,8 @@ private theorem mpullback_left_eq_right_descendedRoughForm [Φ.Full] [Φ.EssSurj
         (descendedRoughForm Φ ht' hΦ α.val) a =
       mpullback (F := V) (k := k) J' I' Quiver.Total.right
         (mpullback (F := V) (k := k) I' I
-          (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) α.val) a := by
-    ext v; rw [mpullback_apply, hcomp_eq, ← mpullback_apply]
+          (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) α.val) a :=
+    mpullback_apply_congr hcomp_eq
   have hev_a : (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) ∘
       Quiver.Total.right =ᶠ[𝓝 a] arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left :=
     (ht' a).localInverse_eventuallyEq_left.fun_comp
