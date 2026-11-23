@@ -234,13 +234,11 @@ module structures, and projectivity transports along semilinear equivalences. -/
 theorem projective_restrictScalars_iff (e : R ≃+* S) (M : ModuleCat.{v} S) :
     Module.Projective R ((ModuleCat.restrictScalars e.toRingHom).obj M) ↔
       Module.Projective S M := by
-  have : RingHomInvPair e.toRingHom e.symm.toRingHom := RingHomInvPair.of_ringEquiv e
-  have : RingHomInvPair e.symm.toRingHom e.toRingHom := RingHomInvPair.of_ringEquiv_symm e
-  let φ : (ModuleCat.restrictScalars e.toRingHom).obj M ≃ₛₗ[e.toRingHom] M :=
-    { e.toRingHom.restrictScalarsSemilinearMap M with
-      invFun := fun m ↦ m
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
+  have : RingHomInvPair (e : R →+* S) (e.symm : S →+* R) := RingHomInvPair.of_ringEquiv e
+  have : RingHomInvPair (e.symm : S →+* R) (e : R →+* S) := RingHomInvPair.of_ringEquiv_symm e
+  let φ := e.restrictScalarsSemilinearEquiv M
+  change Module.Projective R ((ModuleCat.restrictScalars (e : R →+* S)).obj M) ↔
+    Module.Projective S M
   exact ⟨fun _ ↦ Module.Projective.of_equiv φ, fun _ ↦ Module.Projective.of_equiv φ.symm⟩
 
 end RingEquiv
