@@ -17,6 +17,7 @@ import TauCeti.Analysis.Convex.Measure
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.MeasureTheory.Function.Campanato
+import TauCeti.MeasureTheory.Function.LpSeminorm.Const
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
@@ -248,40 +249,6 @@ theorem W1p.lipschitzWith_preciseRepresentative (u : W1p μ ⊤ ∞) :
   rw [← lipschitzOnWith_univ]
   exact W1p.lipschitzOnWith_preciseRepresentative_of_convex u convex_univ subset_rfl
 
-/-- A function that is `L`-Lipschitz on `ball z r` and agrees almost everywhere there with a
-function of `Lᵖ` norm at most `N` on that ball is bounded at the centre by `L * r` plus `N` divided
-by the `p`-th root of the measure of the ball. -/
-private theorem norm_le_of_lipschitzOnWith_ball {X F : Type*} [PseudoMetricSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] {ν : Measure X} [ν.IsOpenPosMeasure]
-    [SeminormedAddCommGroup F] {f g : X → F} {L : ℝ≥0} {z : X} {r : ℝ} (hr : 0 < r)
-    (hf : LipschitzOnWith L f (ball z r)) (hfg : g =ᵐ[ν.restrict (ball z r)] f) {p : ℝ≥0∞}
-    (hp : p ≠ 0) {N : ℝ≥0∞} (hN : eLpNorm g p (ν.restrict (ball z r)) ≤ N) (hNtop : N ≠ ⊤) :
-    ‖f z‖ ≤ L * r + N.toReal / (ν (ball z r) ^ (1 / p.toReal)).toReal := by
-  suffices ‖f z‖ - L * r ≤ N.toReal / (ν (ball z r) ^ (1 / p.toReal)).toReal by linarith
-  rcases le_or_gt (‖f z‖ - L * r) 0 with ha | ha
-  · exact ha.trans (by positivity)
-  -- On the ball, `‖g‖` is at least `‖f z‖ - L * r`, which bounds the `Lᵖ` norm of `g` below.
-  have hbound : ∀ᵐ y ∂ν.restrict (ball z r), ‖‖f z‖ - L * r‖ ≤ ‖g y‖ := by
-    filter_upwards [hfg, ae_restrict_mem measurableSet_ball] with y hy hyB
-    rw [hy, Real.norm_of_nonneg ha.le]
-    have hd := hf.dist_le_mul z (mem_ball_self hr) y hyB
-    have := mul_le_mul_of_nonneg_left (mem_ball'.1 hyB).le L.coe_nonneg
-    rw [dist_eq_norm] at hd
-    linarith [norm_sub_norm_le (f z) (f y)]
-  have hle := (eLpNorm_mono_eNorm_ae (f := fun _ => ‖f z‖ - L * r) aestronglyMeasurable_const
-    (by simpa only [eNorm_le_iff_norm_le] using hbound)).trans hN
-  rw [eLpNorm_const _ hp (Measure.restrict_eq_zero.not.2 (measure_ball_pos ν z hr).ne'),
-    Measure.restrict_apply_univ] at hle
-  have hctop : ν (ball z r) ^ (1 / p.toReal) ≠ ⊤ := fun h => by
-    rw [h, ENNReal.mul_top (eNorm_ne_zero.2 ha.ne')] at hle
-    exact hNtop (top_le_iff.1 hle)
-  have hc : 0 < (ν (ball z r) ^ (1 / p.toReal)).toReal :=
-    ENNReal.toReal_pos (ENNReal.rpow_pos_of_nonneg (measure_ball_pos ν z hr) (by positivity)).ne'
-      hctop
-  have hle' := ENNReal.toReal_mono hNtop hle
-  rw [ENNReal.toReal_mul, toReal_eNorm, Real.norm_of_nonneg ha.le] at hle'
-  exact (le_div_iff₀ hc).2 hle'
-
 /-- A Sobolev function the precise representative of whose gradient is bounded on the
 `ρ`-thickening of a set `S` inside its domain has a precise representative that is bounded on the
 `ρ / 2`-thickening and Lipschitz on the balls of radius `ρ / 2` about its points, hence Hölder on
@@ -317,18 +284,18 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ
     rw [hy']
     exact (hg y (hVU hy)).trans (Real.le_coe_toNNReal _)
   -- Since the value lies in `Lᵖ`, the precise representative is bounded on the thickening.
-  have hval : (W1p.value u : E → ℝ) =ᵐ[μ.restrict Ω] preciseRepresentative μ (W1p.value u) :=
-    ae_eq_restrict_preciseRepresentative Ω.isOpen (W1p.hasWeakFDerivOn u).locallyIntegrableOn
   obtain ⟨B, hv⟩ : ∃ B : ℝ, ∀ x ∈ thickening (ρ / 2) S,
       ‖preciseRepresentative μ (W1p.value u) x‖ ≤ B := by
     refine ⟨M.toNNReal * (ρ / 2) + (eLpNorm (W1p.value u) p (μ.restrict Ω)).toReal /
-      (μ (ball 0 (ρ / 2)) ^ (1 / p.toReal)).toReal, fun x hx => ?_⟩
+      (μ (ball (0 : E) (ρ / 2))).toReal ^ (1 / p.toReal), fun x hx => ?_⟩
     have hB : μ.restrict (ball x (ρ / 2)) ≤ μ.restrict Ω :=
       Measure.restrict_mono ((hball x hx).trans hρS) le_rfl
-    have := norm_le_of_lipschitzOnWith_ball (ν := μ) (by positivity) (hlip x hx)
-      (hval.filter_mono (ae_mono hB)) (zero_lt_one.trans_le Fact.out).ne'
-      (eLpNorm_mono_measure _ hB) (Lp.eLpNorm_ne_top _)
-    rwa [Measure.addHaar_ball_center] at this
+    have hmono := eLpNorm_mono_measure (p := p) (W1p.value u) hB
+    have hle := norm_le_of_lipschitzOnWith_ball (measure_ball_pos μ x (by positivity)).ne'
+      (hlip x hx) ((W1p.ae_eq_preciseRepresentative u).filter_mono (ae_mono hB))
+      (zero_lt_one.trans_le Fact.out).ne' (ne_top_of_le_ne_top (Lp.eLpNorm_ne_top _) hmono)
+    rw [Measure.addHaar_ball_center] at hle
+    exact hle.trans (by gcongr; exact Lp.eLpNorm_ne_top _)
   have hρ2 : ((ρ / 2).toNNReal : ℝ) = ρ / 2 := Real.coe_toNNReal _ (by positivity)
   refine ⟨_, HolderOnWith.of_le_of_dist_le (K := M.toNNReal) (D := (2 * B).toNNReal)
     (δ := (ρ / 2).toNNReal) (β := 1) (fun x hx y _ hxy => ?_) (fun x hx y hy => ?_) hγ

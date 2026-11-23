@@ -311,7 +311,6 @@ theorem W1p.exists_norm_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
   have havg := le_toReal_eLpNorm_div_of_ae_le
     (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
     (fun h => (measure_ball_pos mu x hr).ne' (Measure.restrict_eq_zero.1 h))
-    (by rw [Measure.restrict_apply_univ]; exact measure_ball_lt_top.ne)
     (W1p.eLpNorm_value_restrict_ne_top u hBΩ) hae
   rw [Measure.restrict_apply_univ, ← measureReal_def] at havg
   linarith
