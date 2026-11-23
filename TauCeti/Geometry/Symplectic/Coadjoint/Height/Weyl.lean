@@ -375,13 +375,13 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   {F : ι → Submodule ℝ (GroupLieAlgebra I G)} {J : (i : ι) → End ℝ (F i)}
 
 omit [IsMulCommutative T] in
-/-- **A regular element of a root-plane decomposition is regular.** Let `T` be a subgroup, `B` an
-invariant form with trivial left radical, and `𝔤 = t + Σ F_i` a root-plane decomposition over the
-image `t` of the Lie algebra `𝔱` of `T`. If no root vanishes at `X ∈ t` and `e D = X`, then every
-derivation commuting with `D` lies in `𝔱`. -/
+/-- **A regular element of a root-plane decomposition is regular.** Let `T` be a subgroup, `B` a
+Lie-invariant form with trivial left radical, and `𝔤 = t + Σ F_i` a root-plane decomposition over
+the image `t` of the Lie algebra `𝔱` of `T`. If no root vanishes at `X ∈ t` and `e D = X`, then
+every derivation commuting with `D` lies in `𝔱`. -/
 theorem mem_lieSubalgebraOfSubgroup_of_lie_eq_zero [Finite ι]
     (hD : IsRootPlaneDecomposition B t α F J)
-    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
+    (hB : B.lieInvariant (GroupLieAlgebra I G))
     (hsep : B.SeparatingLeft)
     (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
       (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
@@ -391,9 +391,9 @@ theorem mem_lieSubalgebraOfSubgroup_of_lie_eq_zero [Finite ι]
       BoundarylessManifold.isInteriorPoint D = X)
     {Y : LeftInvariantDerivation I G} (hY : ⁅D, Y⁆ = 0) :
     Y ∈ lieSubalgebraOfSubgroup (I := I) T := by
-  have hYt := hD.mem_of_lie_eq_zero (lieInvariant_of_isInvariantForm_adjointRepresentation hB) hsep
-    hX (q := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-      BoundarylessManifold.isInteriorPoint Y) (by rw [← hDX, ← LieEquiv.map_lie, hY, map_zero])
+  have hYt := hD.mem_of_lie_eq_zero hB hsep hX (q := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (I := I) (G := G) BoundarylessManifold.isInteriorPoint Y)
+    (by rw [← hDX, ← LieEquiv.map_lie, hY, map_zero])
   rw [ht] at hYt
   obtain ⟨Y', hY', hY'Y⟩ := hYt
   rwa [← (LieEquiv.injective _) hY'Y]
@@ -420,7 +420,8 @@ theorem criticalPoints_eq_range_normalizerQuotientToCoadjointOrbit [CompactSpace
   have hDX := LieEquiv.apply_symm_apply (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I)
     (G := G) BoundarylessManifold.isInteriorPoint) X
   rw [← TauCeti.Lie.criticalPoints_eq_range_normalizerQuotientToCoadjointOrbit hT hB hsep μ
-    fun Y hY ↦ hD.mem_lieSubalgebraOfSubgroup_of_lie_eq_zero hB hsep ht hX hDX hY, hDX]
+    fun Y hY ↦ hD.mem_lieSubalgebraOfSubgroup_of_lie_eq_zero
+      (lieInvariant_of_isInvariantForm_adjointRepresentation hB) hsep ht hX hDX hY, hDX]
 
 /-- **The Weyl indexing of the critical points of a regular height in a root-plane
 decomposition.** Let `T` be a maximal torus of a compact Lie group, `B` an invariant form with
@@ -447,7 +448,8 @@ def weylQuotientEquivCriticalPoints [CompactSpace G] [Finite ι]
   have hDX := LieEquiv.apply_symm_apply (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I)
     (G := G) BoundarylessManifold.isInteriorPoint) X
   (TauCeti.Lie.weylQuotientEquivCriticalPoints B hT hB hsep μ
-    fun Y hY ↦ hD.mem_lieSubalgebraOfSubgroup_of_lie_eq_zero hB hsep ht hX hDX hY).trans
+    fun Y hY ↦ hD.mem_lieSubalgebraOfSubgroup_of_lie_eq_zero
+      (lieInvariant_of_isInvariantForm_adjointRepresentation hB) hsep ht hX hDX hY).trans
       (Set.equivOfEq (by rw [hDX]))
 
 /-- The Weyl indexing in a root-plane decomposition sends the class of `w` modulo `W_μ` to the
