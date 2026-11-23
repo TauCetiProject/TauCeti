@@ -35,25 +35,6 @@ universe w u v
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-namespace FDRep
-
-/-- On a finite-dimensional representation with its module topology, continuity of all
-matrix coefficients is equivalent to joint continuity of the action. -/
-theorem isContinuous_iff_continuous_action {k G : Type*} [Field k] [TopologicalSpace k]
-    [IsTopologicalRing k] [Monoid G] [TopologicalSpace G] (X : FDRep k G) [TopologicalSpace X]
-    [IsModuleTopology k X] :
-    isContinuous k G X ↔ Continuous fun p : G × X => X.ρ p.1 p.2 := by
-  rw [isContinuous_iff]
-  let b := Module.finBasis k X
-  refine ⟨fun h => ?_, fun h f x => ?_⟩
-  · apply (TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix b b X.ρ).2
-    exact continuous_matrix fun i j => by
-      simpa only [LinearMap.toMatrix_apply, Module.Basis.coord_apply] using h (b.coord i) (b j)
-  · exact (IsModuleTopology.continuous_of_linearMap f).comp
-      (h.comp (continuous_id.prodMk continuous_const))
-
-end FDRep
-
 namespace TauCeti
 
 variable (𝕜 : Type u) [NontriviallyNormedField 𝕜] (G : Type v) [Monoid G] [TopologicalSpace G]

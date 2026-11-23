@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Algebra.Category.FGModuleCat.Zero
 public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.RepresentationTheory.FDRep.Basic
+import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
 # Continuous finite-dimensional representations
@@ -80,6 +81,20 @@ variable {k G}
 theorem isContinuous_iff {V : FDRep k G} :
     isContinuous k G V ↔ ∀ (f : Module.Dual k V) (v : V), Continuous fun g => f (V.ρ g v) :=
   Iff.rfl
+
+/-- On a finite-dimensional representation with its module topology, continuity of all
+matrix coefficients is equivalent to joint continuity of the action. -/
+theorem isContinuous_iff_continuous_action [IsTopologicalRing k] (X : FDRep k G)
+    [TopologicalSpace X] [IsModuleTopology k X] :
+    isContinuous k G X ↔ Continuous fun p : G × X => X.ρ p.1 p.2 := by
+  rw [isContinuous_iff]
+  let b := Module.finBasis k X
+  refine ⟨fun h => ?_, fun h f x => ?_⟩
+  · apply (TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix b b X.ρ).2
+    exact continuous_matrix fun i j => by
+      simpa only [LinearMap.toMatrix_apply, Module.Basis.coord_apply] using h (b.coord i) (b j)
+  · exact (IsModuleTopology.continuous_of_linearMap f).comp
+      (h.comp (continuous_id.prodMk continuous_const))
 
 /-- The matrix coefficients of the image of a continuous representation under a morphism are
 continuous: `f (ρ g (φ x)) = (f ∘ φ) (ρ g x)`. -/
