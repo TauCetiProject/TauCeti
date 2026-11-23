@@ -79,20 +79,11 @@ private local instance : NormedSpace ℝ ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L
 
 section TerminalDataCLE
 
-/-- **The weighted terminal-value problem is well posed.** For `0 < α < 1`, `t₀ < t₁`, and
-bounded parabolic Hölder coefficients `a, r ∈ C_b^{α,α/2}(ℝ × [t₀, t₁])` with `a ≥ lam > 0`, the
-terminal-data map `u ↦ (P u, u(·, t₁))` of the weighted log-spot pricing operator `P` is an
-isomorphism of Banach spaces from `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
-theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL {α : ℝ≥0} {t₀ t₁ : ℝ}
-    {ht : t₀ < t₁} (hα₀ : 0 < α) (hα₁ : α < 1)
-    {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
-    (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) {lam : ℝ} (hlam : 0 < lam)
-    (ha : ∀ p, lam ≤ a p) :
-    ((weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
-      (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible := by
-  rw [weightedLogSpotPricingOperatorL_def]
-  exact isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real hα₀ hα₁ ht _ _ hlam
-    fun p ↦ (realSecondOrderCoeff_apply_mul a p).symm ▸ ha p
+private theorem realSecondOrderCoeff_ellipticity {α : ℝ≥0} {t₀ t₁ : ℝ}
+    {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} {δ : ℝ} (ha : ∀ p, δ ≤ a p)
+    (p : slab (E := ℝ) t₀ t₁) :
+    δ ≤ realSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) :=
+  (realSecondOrderCoeff_apply_mul a p).symm ▸ ha p
 
 /-- **The weighted log-spot terminal-data isomorphism.** For `0 < α < 1`, `t₀ < t₁`, and parabolic
 Hölder coefficients `a, r` on `ℝ × [t₀, t₁]` where `a` has a uniform positive lower bound
@@ -108,7 +99,7 @@ def weightedLogSpotTerminalDataCLE {α : ℝ≥0} {t₀ t₁ : ℝ} (hα₀ : 0 
     (realSecondOrderCoeff a)
     (weightedLogSpotFirstOrderCoeff hα₁.le a r)
     (weightedLogSpotZerothOrderCoeff hα₁.le r)
-    (ha.imp fun _ ⟨hδ, h⟩ ↦ ⟨hδ, fun p ↦ (realSecondOrderCoeff_apply_mul a p).symm ▸ h p⟩)
+    (ha.imp fun _ ⟨hδ, h⟩ ↦ ⟨hδ, realSecondOrderCoeff_ellipticity h⟩)
 
 section WeightedCLEProps
 
@@ -126,6 +117,23 @@ theorem weightedLogSpotTerminalDataCLE_apply (u : ParabolicC2HolderSpace α ℝ 
   dsimp only [weightedLogSpotTerminalDataCLE]
   rw [weightedLogSpotPricingOperatorL_def]
   exact realTerminalDataCLE_apply u
+
+/-- **The weighted terminal-value problem is well posed.** For `0 < α < 1`, `t₀ < t₁`, and
+bounded parabolic Hölder coefficients `a, r ∈ C_b^{α,α/2}(ℝ × [t₀, t₁])` with `a ≥ lam > 0`, the
+terminal-data map `u ↦ (P u, u(·, t₁))` of the weighted log-spot pricing operator `P` is an
+isomorphism of Banach spaces from `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
+theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL {α : ℝ≥0} {t₀ t₁ : ℝ}
+    {ht : t₀ < t₁} (hα₀ : 0 < α) (hα₁ : α < 1)
+    {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
+    (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) {lam : ℝ} (hlam : 0 < lam)
+    (ha : ∀ p, lam ≤ a p) :
+    ((weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
+      (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible := by
+  have heq : (weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
+        (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩) =
+      (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ⟨lam, hlam, ha⟩).toContinuousLinearMap :=
+    ContinuousLinearMap.ext fun u ↦ by simp [spatialTraceL_apply]
+  exact heq ▸ ContinuousLinearMap.isInvertible_equiv
 
 /-- The solution of the weighted log-spot terminal-value problem with forcing `f` and terminal
 datum `g` has backward pricing residual `f`. -/
@@ -223,7 +231,7 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_le {α : ℝ≥0} (hα�
   obtain ⟨h2, h1, h0⟩ := norm_weightedCoeffs_le hα₁.le hak hrk
   exact hest ht hTT₀ (realSecondOrderCoeff a)
     (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotZerothOrderCoeff hα₁.le r)
-    (fun p ↦ (realSecondOrderCoeff_apply_mul a p).symm ▸ ha p) h2 h1 h0
+    (realSecondOrderCoeff_ellipticity ha) h2 h1 h0
 
 /-- **Lipschitz dependence of the weighted log-spot solution operator on `(a, r)`.** Under the
 bounds of `exists_norm_weightedLogSpotTerminalDataCLE_symm_le`, the solution operators for `(a, r)`
@@ -249,8 +257,8 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le {α : ℝ≥0} (h
     (realSecondOrderCoeff a) (realSecondOrderCoeff a')
     (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotFirstOrderCoeff hα₁.le a' r')
     (weightedLogSpotZerothOrderCoeff hα₁.le r) (weightedLogSpotZerothOrderCoeff hα₁.le r')
-    (fun p ↦ (realSecondOrderCoeff_apply_mul a p).symm ▸ ha p)
-    (fun p ↦ (realSecondOrderCoeff_apply_mul a' p).symm ▸ ha' p)
+    (realSecondOrderCoeff_ellipticity ha)
+    (realSecondOrderCoeff_ellipticity ha')
     h2 h1 h0 h2' h1' h0'
   have hd2 : ‖realSecondOrderCoeff a - realSecondOrderCoeff a'‖ ≤ ‖a - a'‖ := by
     rw [← realSecondOrderCoeff_sub]

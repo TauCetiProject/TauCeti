@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight.Basic
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Backward
-public import TauCeti.Probability.Finance.WeightedLogSpot
-import TauCeti.Probability.Finance.LogSpot
+public import TauCeti.Probability.Finance.Pricing.WeightedLogSpot
+import TauCeti.Probability.Finance.Pricing.LogSpot
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeLine
 
 /-!
@@ -248,6 +248,42 @@ theorem one_add_exp_mul_weightedLogSpotPricingOperatorL
   -- The supplier uses the forward sign. Negate its identity and add twice the time identity.
   linear_combination -h - 2 * hd
 
+/-- The spot pricing residual of the reconstructed price `weightedLogSpotPrice v` (with within-slab
+time derivative) is `1 + s` times `weightedLogSpotPricingOperatorL` evaluated at `(log s, t)`. -/
+theorem pde_weightedLogSpotPrice_eq_mul (v : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ}
+    (hs : 0 < s) (t : Icc t₀ t₁) :
+    derivWithin (weightedLogSpotPrice v s) (Icc t₀ t₁) t +
+        a (slabMk (log s) t) * s ^ 2 * deriv (deriv fun x ↦ weightedLogSpotPrice v x t) s +
+        r (slabMk (log s) t) * (s * deriv (fun x ↦ weightedLogSpotPrice v x t) s -
+          weightedLogSpotPrice v s t) =
+      (1 + s) * weightedLogSpotPricingOperatorL hα a r v (slabMk (log s) t) := by
+  rw [pde_weightedLogSpotPrice v hs t (a (slabMk (log s) t)) (r (slabMk (log s) t)),
+    weightedLogSpotPricingOperatorL_apply, space_slabMk, sigmoid_def, exp_neg, exp_log hs]
+  have hs0 : s ≠ 0 := hs.ne'
+  have hs1 : 1 + s ≠ 0 := by positivity
+  have hs2 : s + 1 ≠ 0 := by positivity
+  field_simp [hs0, hs1, hs2]
+  ring
+
+/-- The reconstructed price `weightedLogSpotPrice v` solves the closed-slab spot pricing equation on
+`(0, ∞) × [t₀, t₁]` if and only if `weightedLogSpotPricingOperatorL hα a r v = 0`. -/
+theorem pde_weightedLogSpotPrice_eq_zero_iff (v : ParabolicC2HolderSpace α ℝ ℝ ht) :
+    (∀ s, 0 < s → ∀ t : Icc t₀ t₁,
+        derivWithin (weightedLogSpotPrice v s) (Icc t₀ t₁) t +
+          a (slabMk (log s) t) * s ^ 2 * deriv (deriv fun x ↦ weightedLogSpotPrice v x t) s +
+          r (slabMk (log s) t) * (s * deriv (fun x ↦ weightedLogSpotPrice v x t) s -
+            weightedLogSpotPrice v s t) = 0) ↔
+      weightedLogSpotPricingOperatorL hα a r v = 0 := by
+  constructor
+  · intro hv
+    refine HolderSpace.ext fun p ↦ ?_
+    obtain ⟨y, t, rfl⟩ : ∃ y t, slabMk y t = p := ⟨_, _, slabMk_space_slabTime p⟩
+    have hp := hv (exp y) (exp_pos y) t
+    rw [pde_weightedLogSpotPrice_eq_mul hα a r v (exp_pos y) t, log_exp] at hp
+    exact (mul_eq_zero.1 hp).resolve_left (by positivity)
+  · intro hv s hs t
+    rw [pde_weightedLogSpotPrice_eq_mul hα a r v hs t, hv, HolderSpace.zero_apply, mul_zero]
+
 /-- For any price `C` represented on `(0, ∞) × [t₀, t₁]` by `C(e^y, s) = (1 + e^y) v(y, s)` for
 `v ∈ C_b^{2+α,1+α/2}`, the spot regularity is forced by the representation and the constructed
 operator equals the spot pricing equation (with within-slab time derivative `derivWithin`,
@@ -263,46 +299,26 @@ theorem weightedLogSpotPricingOperatorL_eq_spot
         a (slabMk x t) * exp x ^ 2 * deriv (deriv fun s ↦ C s t) (exp x) +
         r (slabMk x t) * (exp x * deriv (fun s ↦ C s t) (exp x) - C (exp x) t)) /
       (1 + exp x) := by
-  have hw := one_add_exp_mul_weightedLogSpotPricingOperatorL hα a r v x t
-  have hs : (fun y ↦ (1 + exp y) * v (slabMk y t)) = fun y ↦ C (exp y) t :=
-    funext fun y ↦ (hC y t).symm
-  have htime : derivWithin (fun s ↦ (1 + exp x) * timeExtension ht.le v x s)
-      (Icc t₀ t₁) t = derivWithin (C (exp x)) (Icc t₀ t₁) t :=
+  have hW := pde_weightedLogSpotPrice_eq_mul hα a r v (exp_pos x) t
+  rw [log_exp] at hW
+  have htime : derivWithin (weightedLogSpotPrice v (exp x)) (Icc t₀ t₁) t =
+      derivWithin (C (exp x)) (Icc t₀ t₁) t :=
     derivWithin_congr
-      (fun s hs ↦ by
-        rw [timeExtension_of_mem ht.le v x ⟨s, hs⟩]
-        exact (hC x ⟨s, hs⟩).symm)
-      (by rw [timeExtension_of_mem ht.le v x t]; exact (hC x t).symm)
-  have hC_eq : (fun s ↦ C s t) =ᶠ[𝓝 (exp x)] fun s ↦ weightedLogSpotPrice v s t := by
+      (fun s hs ↦ by rw [weightedLogSpotPrice_of_mem v (exp x) ⟨s, hs⟩, log_exp, hC x ⟨s, hs⟩])
+      (by rw [weightedLogSpotPrice_of_mem v (exp x) t, log_exp, hC x t])
+  have hC_eq : (fun s ↦ weightedLogSpotPrice v s t) =ᶠ[𝓝 (exp x)] fun s ↦ C s t := by
     filter_upwards [Ioi_mem_nhds (exp_pos x)] with s hs'
-    simpa only [weightedLogSpotPrice_of_mem, exp_log hs'] using hC (log s) t
-  have hCss : DifferentiableAt ℝ (deriv fun s ↦ C s t) (exp x) :=
-    (((contDiffOn_weightedLogSpotPrice v t).contDiffAt
-      (Ioi_mem_nhds (exp_pos x))).congr_of_eventuallyEq hC_eq).derivWithin
-      (m := 1) (by norm_num) |>.differentiableAt one_ne_zero
-  have hsecond : fderiv ℝ (fderiv ℝ fun y ↦ C (exp y) t) x 1 1 =
-      deriv (deriv fun y ↦ C (exp y) t) x := by
-    simpa [_root_.iteratedFDeriv_two_apply, iteratedDeriv_succ, iteratedDeriv_one] using
-      (iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod (𝕜 := ℝ) (n := 2)
-        (f := fun y ↦ C (exp y) t) (x := x) (m := fun _ ↦ 1))
-  rw [hs, htime, hsecond, fderiv_apply_one_eq_deriv, ← hC x t] at hw
-  have hpde := pde_comp_exp (a (slabMk x t)) (r (slabMk x t)) hCss
-  apply (eq_div_iff (by positivity : 1 + exp x ≠ 0)).2
-  linear_combination hw + hpde
-
-/-- The spot pricing residual of the reconstructed price `weightedLogSpotPrice v` (with within-slab
-time derivative) is `1 + s` times `weightedLogSpotPricingOperatorL` evaluated at `(log s, t)`. -/
-theorem pde_weightedLogSpotPrice_eq_mul (v : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ}
-    (hs : 0 < s) (t : Icc t₀ t₁) :
-    derivWithin (weightedLogSpotPrice v s) (Icc t₀ t₁) t +
-        a (slabMk (log s) t) * s ^ 2 * deriv (deriv fun x ↦ weightedLogSpotPrice v x t) s +
-        r (slabMk (log s) t) * (s * deriv (fun x ↦ weightedLogSpotPrice v x t) s -
-          weightedLogSpotPrice v s t) =
-      (1 + s) * weightedLogSpotPricingOperatorL hα a r v (slabMk (log s) t) := by
-  have h := weightedLogSpotPricingOperatorL_eq_spot hα a r v (C := weightedLogSpotPrice v)
-    (fun y s' ↦ by rw [weightedLogSpotPrice_of_mem, log_exp]) (log s) t
-  rw [exp_log hs] at h
-  rw [h, mul_div_cancel₀ _ (by positivity)]
+    rw [weightedLogSpotPrice_of_mem v s t, ← exp_log hs', hC (log s) t, exp_log hs']
+  have hCss : deriv (fun s ↦ weightedLogSpotPrice v s t) (exp x) =
+      deriv (fun s ↦ C s t) (exp x) :=
+    hC_eq.deriv_eq
+  have hCss2 : deriv (deriv fun s ↦ weightedLogSpotPrice v s t) (exp x) =
+      deriv (deriv fun s ↦ C s t) (exp x) :=
+    hC_eq.deriv.deriv_eq
+  have hval : weightedLogSpotPrice v (exp x) t = C (exp x) t := hC_eq.self_of_nhds
+  rw [htime, hCss, hCss2, hval] at hW
+  rw [eq_div_iff (by positivity : 1 + exp x ≠ 0), mul_comm]
+  exact hW.symm
 
 /-- At an interior time `t ∈ (t₀, t₁)`, the spot pricing residual of `weightedLogSpotPrice v` (with
 ordinary time derivative) is `1 + s` times `weightedLogSpotPricingOperatorL` evaluated at
@@ -319,23 +335,39 @@ theorem pde_weightedLogSpotPrice_eq_mul_of_mem_Ioo (v : ParabolicC2HolderSpace �
   simpa only [derivWithin_of_mem_nhds (Icc_mem_nhds ht'.1 ht'.2)] using
     pde_weightedLogSpotPrice_eq_mul hα a r v hs ⟨t, Ioo_subset_Icc_self ht'⟩
 
-/-- At an interior time `t ∈ (t₀, t₁)`, if `u` solves
-`weightedLogSpotPricingOperatorL hα a rH u = 0` and `a`, `rH` agree with `σ² / 2` and `r` at
-`(log s, t)`, then `weightedLogSpotPrice u` solves the classical spot pricing PDE at `(s, t)`. -/
-theorem pde_weightedLogSpotPrice_eq_zero_of_mem_Ioo {σ : ℝ → ℝ → ℝ} {r : ℝ → ℝ}
+/-- On the closed slab `(0, ∞) × [t₀, t₁]`, if the weighted residual vanishes at `(log s, t)` and
+`a`, `rH` take values `a₀`, `r₀` there, then `weightedLogSpotPrice u` has vanishing closed-slab spot
+pricing residual (with within-slab `derivWithin`, one-sided at endpoints) at `(s, t)`. -/
+theorem pde_weightedLogSpotPrice_eq_zero
     {a rH : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
-    (u : ParabolicC2HolderSpace α ℝ ℝ ht)
-    (hPu : weightedLogSpotPricingOperatorL hα a rH u = 0)
-    {s : ℝ} (hs : 0 < s) {t : ℝ} (ht' : t ∈ Ioo t₀ t₁)
-    (ha_eq : a (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = σ s t ^ 2 / 2)
-    (hr_eq : rH (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = r t) :
-    deriv (weightedLogSpotPrice u s) t +
-        σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
-        r t * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
+    (u : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ} (hs : 0 < s) (t : Icc t₀ t₁) {a₀ r₀ : ℝ}
+    (hPu : weightedLogSpotPricingOperatorL hα a rH u (slabMk (log s) t) = 0)
+    (ha_eq : a (slabMk (log s) t) = a₀) (hr_eq : rH (slabMk (log s) t) = r₀) :
+    derivWithin (weightedLogSpotPrice u s) (Icc t₀ t₁) t +
+        a₀ * s ^ 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+        r₀ * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
           weightedLogSpotPrice u s t) = 0 := by
-  have hW := pde_weightedLogSpotPrice_eq_mul_of_mem_Ioo hα a rH u hs ht'
-  rw [ha_eq, hr_eq, hPu, HolderSpace.zero_apply, mul_zero] at hW
-  linear_combination hW
+  have hW := pde_weightedLogSpotPrice_eq_mul hα a rH u hs t
+  rw [ha_eq, hr_eq, hPu, mul_zero] at hW
+  exact hW
+
+/-- At an interior time `t ∈ (t₀, t₁)`, if the weighted residual vanishes at `(log s, t)` and
+`a`, `rH` take values `a₀`, `r₀` there, then `weightedLogSpotPrice u` solves the classical spot
+pricing PDE at `(s, t)`. -/
+theorem pde_weightedLogSpotPrice_eq_zero_of_mem_Ioo
+    {a rH : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
+    (u : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ} (hs : 0 < s) {t : ℝ} (ht' : t ∈ Ioo t₀ t₁)
+    {a₀ r₀ : ℝ}
+    (hPu : weightedLogSpotPricingOperatorL hα a rH u
+      (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = 0)
+    (ha_eq : a (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = a₀)
+    (hr_eq : rH (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = r₀) :
+    deriv (weightedLogSpotPrice u s) t +
+        a₀ * s ^ 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+        r₀ * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
+          weightedLogSpotPrice u s t) = 0 := by
+  simpa only [derivWithin_of_mem_nhds (Icc_mem_nhds ht'.1 ht'.2)] using
+    pde_weightedLogSpotPrice_eq_zero hα u hs ⟨t, Ioo_subset_Icc_self ht'⟩ hPu ha_eq hr_eq
 
 /-! ### The a priori bound and uniqueness for the terminal-value problem -/
 

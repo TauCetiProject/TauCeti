@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Finance.Pricing.Operator
-import TauCeti.Probability.Finance.Comparison
+import TauCeti.Probability.Finance.Pricing.Comparison.Basic
 
 /-!
 # Comparison of classical prices against weighted log-spot solutions
@@ -16,8 +16,9 @@ Given a weighted log-spot solution `u ∈ C_b^{2+α,1+α/2}(ℝ × [t₀, t₁])
 `r` at interior times `t ∈ (t₀, t₁)`,
 `TauCeti.Finance.eq_weightedLogSpotPrice_of_pde_eq_zero_of_terminal_eq` proves that every
 continuous linear-growth competitor `C` (`|C(s, t)| ≤ A (1 + s)`) that is twice continuously
-differentiable in spot and differentiable in time at interior times `t ∈ (t₀, t₁)` with matching
-terminal payoff agrees with `weightedLogSpotPrice u` on `(0, ∞) × [t₀, t₁]`.
+differentiable in spot and differentiable in time at interior times `t ∈ (t₀, t₁)`, solves the
+same pricing PDE at interior times `t ∈ (t₀, t₁)`, and attains the same terminal payoff `h` at
+`t₁` agrees with `weightedLogSpotPrice u` on `(0, ∞) × [t₀, t₁]`.
 
 This comparison step requires neither uniform ellipticity of `a` nor parabolic Schauder existence
 theory.
@@ -86,8 +87,9 @@ theorem eq_weightedLogSpotPrice_of_pde_eq_zero_of_terminal_eq (hα : α ≤ 1)
     hC_diff
     (fun s _ t ht' ↦ differentiableAt_weightedLogSpotPrice_time u s ht')
     (fun s hs t ht' ↦ by
-      have hW := pde_weightedLogSpotPrice_eq_zero_of_mem_Ioo hα u hPu hs ht'
-        (ha_eq hs ht') (hr_eq hs ht')
+      have hW := pde_weightedLogSpotPrice_eq_zero_of_mem_Ioo hα u hs ht'
+        (by rw [hPu, HolderSpace.zero_apply]) (ha_eq hs ht') (hr_eq hs ht')
+      rw [div_mul_eq_mul_div] at hW
       rw [hC_pde hs ht', hW])
     (fun s hs ↦ by
       dsimp only [W]

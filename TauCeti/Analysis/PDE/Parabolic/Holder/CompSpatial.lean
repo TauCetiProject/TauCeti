@@ -312,6 +312,13 @@ theorem compSpatialLIE_apply (e : E ≃ₗᵢ[ℝ] E') (u : ParabolicC2HolderSpa
     compSpatialLIE α F hab e u = compSpatialL α F hab e.toLinearIsometry.toContinuousLinearMap u :=
   (rfl)
 
+/-- Pointwise evaluation of `compSpatialLIE` precomposes with `slabSpaceIsometryEquiv`. -/
+theorem compSpatialLIE_apply_apply (e : E ≃ₗᵢ[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab)
+    (p : slab (E := E) a b) :
+    compSpatialLIE α F hab e u p = u (slabSpaceIsometryEquiv e.toIsometryEquiv p) := by
+  rw [compSpatialLIE_apply, compSpatialL_apply, slabSpaceIsometryEquiv_apply]
+  congr 1
+
 /-- The inverse of `compSpatialLIE α F hab e` is `compSpatialLIE α F hab e.symm`. -/
 @[simp]
 theorem compSpatialLIE_symm (e : E ≃ₗᵢ[ℝ] E') :

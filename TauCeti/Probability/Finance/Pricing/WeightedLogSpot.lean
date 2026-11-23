@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
-import TauCeti.Probability.Finance.LogSpot
+import TauCeti.Probability.Finance.Pricing.LogSpot
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Prices reconstructed from bounded weighted log-spot maps
 
-A bounded parabolic Hölder map `u(y,t)` represents a price of linear growth by
-`C(s,t) = (1+s) u(log s,t)` for positive spot. `weightedLogSpotPrice` performs this
+A bounded order-two parabolic Hölder profile `u ∈ C_b^{2+α,1+α/2}(ℝ × [a, b])` represents a
+price of linear growth by `C(s,t) = (1+s) u(log s,t)` for positive spot. `weightedLogSpotPrice`
+performs this
 reconstruction, using the canonical clamped extension in time. It preserves joint continuity
 of the price, its first and second spot derivatives, and its within-slab time derivative on
 `(0, ∞) × [a, b]`, twice continuous spatial differentiability, interior ordinary time
@@ -312,6 +313,23 @@ theorem weightedLogSpotPrice_terminal (u : ParabolicC2HolderSpace α ℝ ℝ hab
     {s : ℝ} (hs : 0 < s) : weightedLogSpotPrice u s b = h s := by
   rw [weightedLogSpotPrice_of_mem u s ⟨b, right_mem_Icc.mpr hab.le⟩, hu, exp_log hs]
   exact mul_div_cancel₀ _ (by positivity)
+
+/-- The reconstructed price attains the payoff `h` at maturity `b` on `(0, ∞)` if and only if
+the terminal trace of `u` equals the weighted log-spot profile `g` satisfying
+`g y = h (exp y) / (1 + exp y)`. -/
+theorem weightedLogSpotPrice_terminal_iff (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    {h : ℝ → ℝ} {g : CkHolderSpace 2 α ℝ ℝ} (hg : ∀ y, g y = h (exp y) / (1 + exp y)) :
+    (∀ s, 0 < s → weightedLogSpotPrice u s b = h s) ↔
+      u.spatialTrace ⟨b, right_mem_Icc.mpr hab.le⟩ = g := by
+  constructor
+  · intro hv
+    ext y
+    have hy := (weightedLogSpotPrice_of_mem u (exp y) ⟨b, right_mem_Icc.mpr hab.le⟩).symm.trans
+      (hv (exp y) (exp_pos y))
+    rw [log_exp] at hy
+    rw [spatialTrace_apply, hg, ← hy, mul_div_cancel_left₀ _ (by positivity)]
+  · intro hv s hs
+    exact weightedLogSpotPrice_terminal u (fun y ↦ by rw [← spatialTrace_apply, hv, hg]) hs
 
 /-- The financial pricing operator is the bounded weighted log-spot operator multiplied by
 `1+s`. Time differentiation is within the closed slab, so the identity uses the recorded

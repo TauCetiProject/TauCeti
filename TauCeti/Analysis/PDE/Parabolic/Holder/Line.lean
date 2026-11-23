@@ -10,7 +10,6 @@ import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
-import TauCeti.Analysis.PDE.Parabolic.Holder.CompSpatial
 
 /-!
 # Parabolic Cauchy problems on the real line
@@ -167,14 +166,14 @@ private theorem spatialOperatorL_compSpatialLIE_coord (hα : α ≤ 1)
     simp
   have hC (q) : C q (u q) = u q * C q 1 := by
     rw [← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
-  rw [spatialOperatorL_apply, HolderSpace.compIsometryEquivLIE_apply, spatialOperatorL_apply,
-    slabSpaceIsometryEquiv_apply]
+  have hq : slabSpaceIsometryEquiv (a := a) (b := b) coord.toIsometryEquiv p =
+      slabSpaceMap coord p := by
+    simp only [slabSpaceIsometryEquiv_apply, LinearIsometryEquiv.coe_toIsometryEquiv]
+  rw [spatialOperatorL_apply, HolderSpace.compIsometryEquivLIE_apply, spatialOperatorL_apply, hq]
   simp only [euclideanSecondOrderCoeff_apply, euclideanFirstOrderCoeff_apply,
     euclideanZerothOrderCoeff_apply, evalCoord_apply, Finset.univ_unique, Finset.sum_singleton,
     spatialSecondFDerivL_compSpatialLIE_coord_single,
-    spatialFDerivL_compSpatialLIE_coord_single]
-  simp only [compSpatialLIE_apply, compSpatialL_apply, LinearIsometry.coe_toContinuousLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry, LinearIsometryEquiv.coe_toIsometryEquiv, hA, hB, hC]
+    spatialFDerivL_compSpatialLIE_coord_single, compSpatialLIE_apply_apply, hq, hA, hB, hC]
   ring
 
 /-- **The forward operator on the line is the Euclidean operator on `ℝ¹`.** -/

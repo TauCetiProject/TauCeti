@@ -20,19 +20,20 @@ equation
 `C_t + σ² s² / 2 C_ss + r (s C_s - C) = 0`.
 
 Its spatial operator degenerates at `s = 0` and has coefficients growing with `s`. In the
-In the log-spot variable `y = log s`, with `C(s, t) = u(log s, t)` and `a = σ² / 2`, it becomes
+log-spot variable `y = log s`, with `C(s, t) = u(log s, t)` and `a = σ² / 2`, it becomes
 
 `u_t + a u_yy + (r - a) u_y - r u = 0`,
 
 an equation on the whole line with diffusion `a = σ² / 2`, drift `r - a` (the risk-neutral
 drift of the log-spot) and potential `-r`. These coefficients are bounded whenever `σ` and `r`
-are. The equation is backward parabolic, and whole-space parabolic existence and uniqueness
-theory applies to it, only under further hypotheses that this file does not impose: uniform
-ellipticity (`σ²` bounded below by a positive constant) and the regularity of the coefficients
-(for instance Hölder continuity) required by the existence theorem used. The identities proved
-here need neither: they are pointwise, assume only local differentiability of the price, and hold
-for arbitrary real `a` and `r` (including `a = 0`), which may be the values `σ(s, t)² / 2` and
-`r(t)` of a local half-variance and a time-dependent rate at the point under consideration.
+are. Whole-space parabolic Schauder existence theory applies to it under further hypotheses that
+this file does not impose: uniform ellipticity (`σ²` bounded below by a positive constant) and
+coefficient regularity (such as parabolic Hölder continuity). By contrast, comparison-based
+uniqueness holds for bounded, possibly degenerate coefficients (`a ≥ 0`) without uniform
+ellipticity or coefficient regularity. The identities proved here need none of these: they are
+pointwise, assume only local differentiability of the price, and hold for arbitrary real `a` and
+`r` (including `a = 0`), which may be the values `σ(s, t)² / 2` and `r(t)` of a local
+half-variance and a time-dependent rate at the point under consideration.
 
 Both directions of the change of variables are stated: `TauCeti.Finance.pde_comp_log` transports a
 function of the log-spot to a function of the spot, and `TauCeti.Finance.pde_comp_exp` a function

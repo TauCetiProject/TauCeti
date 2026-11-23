@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Finance.BlackScholes.Extension
 import TauCeti.Probability.Finance.BlackScholes.Smooth
-import TauCeti.Probability.Finance.Comparison
+import TauCeti.Probability.Finance.Pricing.Comparison.Basic
 
 /-!
 # Uniqueness of the Black–Scholes call and put prices
