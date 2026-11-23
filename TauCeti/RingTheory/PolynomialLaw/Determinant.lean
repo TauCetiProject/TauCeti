@@ -36,8 +36,8 @@ to be a ring.
   `D x` (the ground map of the law), multiplicative and homogeneous of degree `d`.
 * `TauCeti.Determinant.toMonoidHom`, `TauCeti.Determinant.isUnit_apply`: a determinant is a
   monoid map `R →* A`, so it sends units to units.
-* `TauCeti.Determinant.toFun_eq_one_of_dim_zero`: a determinant of dimension zero is constantly
-  `1`, and there is exactly one.
+* `TauCeti.Determinant.toFun_eq_one_of_dim_zero`, `TauCeti.Determinant.apply_eq_one_of_dim_zero`:
+  a determinant of dimension zero is constantly `1`, and there is exactly one.
 * `TauCeti.Determinant.charCoeff`: the characteristic coefficients `Λᵢ`, with
   `TauCeti.Determinant.toFun_tmul_add_tmul_one` and `TauCeti.Determinant.map_smul_add_algebraMap`
   computing `D(s x + t)` from them.
@@ -45,7 +45,8 @@ to be a ring.
 * `TauCeti.Determinant.charpoly`: the characteristic polynomial, monic of degree `d`, with
   `χ(x, 0) = (-1)ᵈ D x` and `χ(1, X) = (X - 1)ᵈ`.
 * `TauCeti.Determinant.algHomPow`: the `d`-th power of an algebra map `R →ₐ[A] A`, a
-  `d`-dimensional determinant with characteristic polynomial `(X - φ x)ᵈ`.
+  `d`-dimensional determinant with characteristic coefficients `d.choose i * φ x ^ i` and
+  characteristic polynomial `(X - φ x)ᵈ`.
 
 ## References
 
@@ -137,6 +138,12 @@ theorem toFun_eq_one_of_dim_zero (D : Determinant A R 0) (S : Type*) [CommSemiri
     D.isHomogeneousOfDegree.toFun_smul, pow_zero, one_smul, D.isMultiplicative.toFun_one] at h
   exact h.symm
 
+/-- A determinant of dimension zero is constantly `1`. -/
+@[simp]
+theorem apply_eq_one_of_dim_zero (D : Determinant A R 0) (x : R) : D x = 1 := by
+  rw [← ground_toLaw, PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun,
+    toFun_eq_one_of_dim_zero, Algebra.TensorProduct.one_def, TensorProduct.lid_tmul, one_smul]
+
 /-- There is exactly one determinant of dimension zero, the constant law `1`. -/
 instance : Unique (Determinant A R 0) where
   default :=
@@ -202,10 +209,9 @@ theorem toFun_tmul_add_tmul_one {S : Type*} [CommSemiring S] [Algebra A S] (s t 
 /-- After scalar extension to any commutative `A`-algebra `S`, `D(s ⊗ 1) = sᵈ ⊗ 1`. -/
 theorem toFun_tmul_one {S : Type*} [CommSemiring S] [Algebra A S] (s : S) :
     D.toLaw.toFun S (s ⊗ₜ[A] (1 : R)) = (s ^ d) ⊗ₜ 1 := by
-  have h : s ⊗ₜ[A] (1 : R) = s • (1 : S ⊗[A] R) := by
-    rw [Algebra.TensorProduct.one_def, smul_tmul', smul_eq_mul, mul_one]
-  rw [h, D.isHomogeneousOfDegree.toFun_smul, D.isMultiplicative.toFun_one,
-    Algebra.TensorProduct.one_def, smul_tmul', smul_eq_mul, mul_one]
+  have h := D.isHomogeneousOfDegree.toFun_smul s 1
+  rw [D.isMultiplicative.toFun_one] at h
+  simpa [Algebra.TensorProduct.one_def, smul_tmul'] using h
 
 /-- `D(s x + t) = ∑ᵢ sⁱ t^(d - i) Λᵢ(x)` for scalars `s, t ∈ A`. -/
 theorem map_smul_add_algebraMap (s t : A) (x : R) :
@@ -214,9 +220,10 @@ theorem map_smul_add_algebraMap (s t : A) (x : R) :
   have h := congrArg (TensorProduct.lid A A) (D.toFun_tmul_add_tmul_one s t x)
   rw [map_sum] at h
   simp only [TensorProduct.lid_tmul, smul_eq_mul] at h
+  have h₁ (a : A) (y : R) : (1 : A) ⊗ₜ[A] (a • y) = a ⊗ₜ y := by
+    rw [← smul_tmul, smul_eq_mul, mul_one]
   rw [← h, ← ground_toLaw, PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun, tmul_add,
-    tmul_smul, smul_tmul', smul_eq_mul, mul_one, Algebra.algebraMap_eq_smul_one, tmul_smul,
-    smul_tmul', smul_eq_mul, mul_one]
+    h₁, Algebra.algebraMap_eq_smul_one, h₁]
 
 /-- The characteristic coefficient `Λ₀` is `1`. -/
 @[simp]
@@ -372,6 +379,29 @@ theorem algHomPow_toFun' (φ : R →ₐ[A] A) (d : ℕ) (S : Type u) [CommSemiri
 theorem algHomPow_apply (φ : R →ₐ[A] A) (d : ℕ) (x : R) : algHomPow φ d x = φ x ^ d := by
   simp [← ground_toLaw, PolynomialLaw.ground_apply, algHomPow_toFun']
 
+/-- The characteristic coefficients of `algHomPow φ d` at `x` are `d.choose i * φ x ^ i`. -/
+@[simp]
+theorem charCoeff_algHomPow (φ : R →ₐ[A] A) (d i : ℕ) (x : R) :
+    (algHomPow φ d).charCoeff i x = d.choose i * φ x ^ i := by
+  rcases lt_or_ge d i with hi | hi
+  · rw [charCoeff_eq_zero _ hi, Nat.choose_eq_zero_of_lt hi, Nat.cast_zero, zero_mul]
+  have h := (algHomPow φ d).toFun_tmul_add_tmul_one (1 : A[X]) X x
+  rw [← PolynomialLaw.toFun'_eq_toFun, algHomPow_toFun'] at h
+  have h' := congrArg (fun p ↦ (Algebra.TensorProduct.rid A A A[X] p).coeff (d - i)) h
+  simp only [map_pow, map_add, map_sum, Algebra.TensorProduct.map_tmul, AlgHom.coe_id, id_eq,
+    _root_.map_one, Algebra.TensorProduct.rid_tmul, Algebra.smul_def, algebraMap_eq, mul_one,
+    one_mul, one_pow, add_comm _ X, coeff_X_add_C_pow, Nat.sub_sub_self hi, Nat.choose_symm hi,
+    finsetSum_coeff, coeff_C_mul, coeff_X_pow, mul_ite, mul_zero] at h'
+  rw [Finset.sum_eq_single_of_mem i (Finset.mem_range.mpr (by omega)) fun j hj hji ↦
+    ite_eq_right (by simp at hj; omega), ite_eq_left rfl] at h'
+  rw [← h', mul_comm]
+
+/-- The trace of `algHomPow φ d` at `x` is `d * φ x`. -/
+@[simp]
+theorem trace_algHomPow (φ : R →ₐ[A] A) (d : ℕ) (x : R) :
+    (algHomPow φ d).trace x = d * φ x := by
+  rw [trace_apply, charCoeff_algHomPow, Nat.choose_one_right, pow_one]
+
 end AlgHomPow
 
 section AlgHomPowCharpoly
@@ -383,17 +413,6 @@ variable {A : Type u} [CommRing A] {R : Type*} [Semiring R] [Algebra A R]
 theorem charpoly_algHomPow (φ : R →ₐ[A] A) (d : ℕ) (x : R) :
     (algHomPow φ d).charpoly x = (X - C (φ x)) ^ d := by
   simp [charpoly, algHomPow_toFun', Algebra.TensorProduct.rid_tmul, smul_eq_C_mul]
-
-/-- The trace of `algHomPow φ d` at `x` is `d * φ x`. -/
-@[simp]
-theorem trace_algHomPow (φ : R →ₐ[A] A) (d : ℕ) (x : R) :
-    (algHomPow φ d).trace x = d * φ x := by
-  rcases Nat.eq_zero_or_pos d with rfl | hd
-  · rw [trace_eq_zero_of_dim_zero, LinearMap.zero_apply, Nat.cast_zero, zero_mul]
-  rw [trace_eq_neg_charpoly_coeff _ hd, charpoly_algHomPow, sub_eq_add_neg, ← C_neg,
-    coeff_X_add_C_pow, Nat.sub_sub_self hd, pow_one, Nat.choose_symm hd,
-    Nat.choose_one_right]
-  ring
 
 end AlgHomPowCharpoly
 
