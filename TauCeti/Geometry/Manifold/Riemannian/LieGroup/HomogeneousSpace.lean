@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Section
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Homogeneous
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
+public import TauCeti.LinearAlgebra.Projection.KerCompl
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 
@@ -41,7 +42,8 @@ homogeneous metric*.
 * `Subgroup.homogeneousMetric`: the `G`-invariant metric on `G ⧸ K` determined by an
   isotropy-invariant inner product on `T_o(G ⧸ K)`.
 * `Subgroup.horizontalLiftOne`, `Subgroup.horizontalInnerOne`: the inverse of `dπ_1` on
-  `(ker dπ_1)^⊥` and the inner product it induces on `T_o(G ⧸ K)`.
+  `(ker dπ_1)^⊥` (`LinearMap.equivOfIsComplKer` for that complement) and the inner product it
+  induces on `T_o(G ⧸ K)`.
 * `Subgroup.normalHomogeneousMetric`: the normal homogeneous metric of an `Ad(G)`-invariant inner
   product at the identity of `G`.
 
@@ -345,7 +347,8 @@ variable (hK : IsClosed (K : Set G))
 variable [RiemannianBundle (fun g : G ↦ TangentSpace I g)]
 
 include hK in
-/-- The restriction of `dπ_1` to the orthogonal complement of its kernel is bijective. -/
+/-- The restriction of `dπ_1` to the orthogonal complement of its kernel is bijective: it is the
+forward map of `LinearMap.equivOfIsComplKer` for the complement `𝔨^⊥`. -/
 theorem bijective_mfderiv_quotientMk_one_orthogonal :
     letI := quotientChartedSpaceOfIsClosed I hK
     Bijective ((mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K)
@@ -353,34 +356,36 @@ theorem bijective_mfderiv_quotientMk_one_orthogonal :
         (QuotientGroup.mk : G → G ⧸ K) 1).kerᗮ.subtype) := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   set D := mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1
-  -- `𝔨^⊥ ≃ 𝔤 ⧸ 𝔨 ≃ T_o(G ⧸ K)`, the second map induced by the surjection `dπ_1`.
-  let e := (D.ker.quotientEquivOfIsCompl D.kerᗮ D.ker.isCompl_orthogonal).symm.trans
-    (D.toLinearMap.quotKerEquivOfSurjective
-      ((isSubmersion_quotientMk (I := I) hK).surjective_mfderiv (by simp) 1))
-  convert e.bijective
-  ext a
-  simp [e]
+  rw [← LinearMap.coe_equivOfIsComplKer D.toLinearMap
+    ((isSubmersion_quotientMk (I := I) hK).surjective_mfderiv (by simp) 1)
+    D.ker.isCompl_orthogonal]
+  exact LinearEquiv.bijective _
 
 variable (I K) in
 /-- **The horizontal lift at the identity.** The inverse of the restriction of `dπ_1` to the
 orthogonal complement `𝔪 = 𝔨^⊥` of its kernel `𝔨`, for the inner product at the identity, where
-`π` is the projection `G → G ⧸ K`. -/
+`π` is the projection `G → G ⧸ K`. This is `LinearMap.equivOfIsComplKer` for the complement
+`𝔨^⊥`, inverted and followed by the inclusion of `𝔨^⊥`. -/
 def horizontalLiftOne :
     letI := quotientChartedSpaceOfIsClosed I hK
     TangentSpace 𝓘(ℝ, QuotientModelSpace I K) ((1 : G) : G ⧸ K) →L[ℝ] TangentSpace I (1 : G) :=
   letI := quotientChartedSpaceOfIsClosed I hK
   LinearMap.toContinuousLinearMap ((mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
     (QuotientGroup.mk : G → G ⧸ K) 1).kerᗮ.subtype ∘ₗ
-      (LinearEquiv.ofBijective _
-        (bijective_mfderiv_quotientMk_one_orthogonal (I := I) hK)).symm.toLinearMap)
+      (LinearMap.equivOfIsComplKer _
+        ((isSubmersion_quotientMk (I := I) hK).surjective_mfderiv (by simp) 1)
+        (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
+          (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal).symm.toLinearMap)
 
 /-- The horizontal lift at the identity is the inverse of the restriction of `dπ_1` to `𝔨^⊥`,
 followed by the inclusion of `𝔨^⊥`. -/
 theorem horizontalLiftOne_apply :
     letI := quotientChartedSpaceOfIsClosed I hK
     ∀ u : TangentSpace 𝓘(ℝ, QuotientModelSpace I K) ((1 : G) : G ⧸ K),
-      horizontalLiftOne I K hK u = ((LinearEquiv.ofBijective _
-        (bijective_mfderiv_quotientMk_one_orthogonal (I := I) hK)).symm u :
+      horizontalLiftOne I K hK u = ((LinearMap.equivOfIsComplKer _
+        ((isSubmersion_quotientMk (I := I) hK).surjective_mfderiv (by simp) 1)
+        (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
+          (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal).symm u :
           TangentSpace I (1 : G)) :=
   fun _ ↦ (rfl)
 
@@ -403,8 +408,7 @@ theorem mfderiv_quotientMk_horizontalLiftOne :
         (horizontalLiftOne I K hK u) = u := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   intro u
-  exact (LinearEquiv.ofBijective _
-    (bijective_mfderiv_quotientMk_one_orthogonal (I := I) hK)).apply_symm_apply u
+  exact LinearMap.apply_equivOfIsComplKer_symm_apply _ _ _ u
 
 /-- A horizontal vector at the identity is the horizontal lift of its image. -/
 theorem horizontalLiftOne_mfderiv_quotientMk {a : TangentSpace I (1 : G)} :
@@ -414,12 +418,7 @@ theorem horizontalLiftOne_mfderiv_quotientMk {a : TangentSpace I (1 : G)} :
       (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 a) = a := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   intro ha
-  have h := (LinearEquiv.ofBijective _
-    (bijective_mfderiv_quotientMk_one_orthogonal (I := I) hK)).symm_apply_apply ⟨a, ha⟩
-  simp only [LinearEquiv.ofBijective_apply, LinearMap.coe_comp, Function.comp_apply,
-    Submodule.coe_subtype, ContinuousLinearMap.coe_coe] at h
-  rw [horizontalLiftOne_apply]
-  exact congrArg Subtype.val h
+  exact LinearMap.equivOfIsComplKer_symm_apply_of_mem _ _ _ ha
 
 variable (I K) in
 /-- **The horizontal inner product at the base point.** The inner product on `T_o(G ⧸ K)` that
