@@ -82,7 +82,7 @@ private noncomputable def polarizationSepClosure (hQ : Q.Nondegenerate) :
     TauCeti.SpinPolarizationData (Q.baseChange (SeparableClosure K)) :=
   letI := invertibleTwoSepClosure (K := K)
   TauCeti.SpinPolarizationData.ofNondegenerate _
-    (QuadraticForm.Nondegenerate.baseChange (L := SeparableClosure K) hQ)
+    (QuadraticForm.Nondegenerate.baseChange (A := SeparableClosure K) hQ)
 
 end Invertible
 
