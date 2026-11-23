@@ -59,6 +59,8 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 * `IsIdempotentElem.Corner.nontrivial`: the corner of a nonzero idempotent is nontrivial.
 * `CompleteOrthogonalIdempotents.algEquivOfIsMulCentral_apply_val`: the component of `x` in the
   corner `eᵢ A eᵢ` is `eᵢ x`.
+* `CompleteOrthogonalIdempotents.val_center`: a complete orthogonal family of idempotents of the
+  centre of an algebra is one of the algebra.
 
 ## References
 
@@ -523,5 +525,11 @@ theorem algEquivOfIsMulCentral_symm_apply (he : CompleteOrthogonalIdempotents e)
     (hc : ∀ i, IsMulCentral (e i)) (y : ∀ i, (he.idem i).Corner) :
     (he.algEquivOfIsMulCentral (R := R) hc).symm y = ∑ i, (y i).val := by
   rw [algEquivOfIsMulCentral, AlgEquiv.ofRingEquiv_symm_apply, ringEquivOfIsMulCentral_symm_apply]
+
+/-- A complete orthogonal family of idempotents of the centre of an `R`-algebra `A` is a complete
+orthogonal family of idempotents of `A`. -/
+theorem val_center {b : ι → Subalgebra.center R A} (hb : CompleteOrthogonalIdempotents b) :
+    CompleteOrthogonalIdempotents fun i ↦ (b i : A) :=
+  hb.map (Subalgebra.center R A).val.toRingHom
 
 end CompleteOrthogonalIdempotents

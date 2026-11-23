@@ -66,12 +66,6 @@ end IsBlockIdempotent
 
 variable {ι : Type*} [Fintype ι] {b : ι → Subalgebra.center R (MonoidAlgebra R G)}
 
-/-- A complete orthogonal family of idempotents of the centre of `R[G]` is a complete orthogonal
-family of idempotents of `R[G]`. -/
-theorem _root_.CompleteOrthogonalIdempotents.val_center (hb : CompleteOrthogonalIdempotents b) :
-    CompleteOrthogonalIdempotents fun i ↦ (b i : MonoidAlgebra R G) :=
-  hb.map (Subalgebra.center R (MonoidAlgebra R G)).val.toRingHom
-
 -- The corner `(hb.val_center.idem i).Corner` is `(hbp i).BlockAlgebra`: both are the corner of
 -- `(b i : R[G])`, with two proofs of idempotence, which are equal by proof irrelevance.
 /-- **The block decomposition of a group algebra.** A complete orthogonal family of block
