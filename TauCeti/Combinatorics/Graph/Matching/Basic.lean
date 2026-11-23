@@ -153,7 +153,7 @@ theorem edgeSet_matchingSubgraph : E(G.matchingSubgraph M) = Subtype.val '' M :=
     · rintro ⟨x, y, ⟨⟨heM, -⟩, -, -⟩⟩
       exact heM
     · rintro ⟨e, heM, rfl⟩
-      obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+      obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
       exact ⟨x, y, ⟨⟨⟨e, heM, rfl⟩, hxy⟩,
         ⟨e, heM, hxy.inc_left⟩, ⟨e, heM, hxy.inc_right⟩⟩⟩
 
@@ -165,7 +165,7 @@ theorem matchingSubgraph_isLink {e : β} {x y : α} :
     constructor
     · rintro ⟨⟨⟨f, hfM, hfe⟩, hxy⟩, -, -⟩
       subst e
-      exact ⟨f.2, hfM, hxy⟩
+      exact ⟨f.property, hfM, hxy⟩
     · rintro ⟨heG, heM, hxy⟩
       exact ⟨⟨⟨⟨e, heG⟩, heM, rfl⟩, hxy⟩,
         ⟨⟨e, heG⟩, heM, hxy.inc_left⟩, ⟨⟨e, heG⟩, heM, hxy.inc_right⟩⟩
@@ -247,7 +247,7 @@ theorem matchingSubgraph_exists_inc {x : α} (hx : x ∈ V(G.matchingSubgraph M)
     ∃ e, (G.matchingSubgraph M).Inc e x := by
   rw [vertexSet_matchingSubgraph, mem_matchingSupport] at hx
   obtain ⟨e, heM, hex⟩ := hx
-  exact ⟨e, matchingSubgraph_inc.mpr ⟨e.2, heM, hex⟩⟩
+  exact ⟨e, matchingSubgraph_inc.mpr ⟨e.property, heM, hex⟩⟩
 
 /-- A matching gives a loopless canonical subgraph. -/
 theorem IsMatching.matchingSubgraph_loopless (hM : G.IsMatching M) :
@@ -279,14 +279,14 @@ theorem isMatching_iff_matchingSubgraph :
   · rintro ⟨hloopless, hunique⟩
     constructor
     · intro e he x hex
-      exact hloopless.not_isLoopAt e x (matchingSubgraph_isLoopAt.mpr ⟨e.2, he, hex⟩)
+      exact hloopless.not_isLoopAt e x (matchingSubgraph_isLoopAt.mpr ⟨e.property, he, hex⟩)
     · intro e he f hf hef x hinc
       obtain ⟨y, hey⟩ := hinc.1
       obtain ⟨z, hfz⟩ := hinc.2
       have he' : (G.matchingSubgraph M).Inc e x :=
-        matchingSubgraph_inc.mpr ⟨e.2, he, ⟨y, hey⟩⟩
+        matchingSubgraph_inc.mpr ⟨e.property, he, ⟨y, hey⟩⟩
       have hf' : (G.matchingSubgraph M).Inc f x :=
-        matchingSubgraph_inc.mpr ⟨f.2, hf, ⟨z, hfz⟩⟩
+        matchingSubgraph_inc.mpr ⟨f.property, hf, ⟨z, hfz⟩⟩
       have hx : x ∈ V(G.matchingSubgraph M) := he'.vertex_mem
       exact hef (Subtype.ext ((hunique x hx).unique he' hf'))
 
@@ -299,7 +299,7 @@ theorem IsMatching.isPerfectMatching_iff_matchingSubgraph_spanning (hM : G.IsMat
     obtain ⟨e, heM, hex⟩ := h.2 ⟨x, hx⟩
     rw [vertexSet_matchingSubgraph, mem_matchingSupport]
     exact ⟨e, heM, hex⟩
-  · have hx : (x : α) ∈ V(G.matchingSubgraph M) := h.vertexSet_eq.symm ▸ x.2
+  · have hx : (x : α) ∈ V(G.matchingSubgraph M) := h.vertexSet_eq.symm ▸ x.property
     rw [vertexSet_matchingSubgraph, mem_matchingSupport] at hx
     exact hx
 
@@ -314,7 +314,7 @@ theorem isPerfectMatching_empty_iff : G.IsPerfectMatching ∅ ↔ V(G) = ∅ := 
     exact he
   · intro h
     refine ⟨isMatching_empty G, fun x ↦ ?_⟩
-    have : False := by simpa only [h, mem_empty_iff_false] using x.2
+    have : False := by simpa only [h, mem_empty_iff_false] using x.property
     exact this.elim
 
 /-- The unique edge of a two-vertex single-edge multigraph is a perfect matching. -/
@@ -325,12 +325,12 @@ theorem isPerfectMatching_univ_banana_singleton {u v : α} {e : β} (huv : u ≠
     · intro f _ x hloop
       exact huv (banana_isLoopAt.mp hloop).2.2
     · intro f _ g _ hfg x
-      have : f = g := Subtype.ext <| by simpa using f.2.trans g.2.symm
+      have : f = g := Subtype.ext <| by simpa using f.property.trans g.property.symm
       exact (hfg this).elim
   · intro x
     let f : E(banana u v {e}) := ⟨e, by simp⟩
     refine ⟨f, Set.mem_univ f, ?_⟩
-    simpa [f, banana_inc] using x.2
+    simpa [f, banana_inc] using x.property
 
 /-! ### Subgraphs and edge deletion -/
 
@@ -341,18 +341,18 @@ theorem IsMatching.image_inclusion (hHG : H ≤ G) {M : Set E(H)} (hM : H.IsMatc
     G.IsMatching (Set.inclusion hHG.edgeSet_mono '' M) := by
   refine ⟨?_, ?_⟩
   · rintro _ ⟨e, he, rfl⟩ x hx
-    exact hM.not_isLoopAt he x ((hHG.isLoopAt_congr e.2).2 hx)
+    exact hM.not_isLoopAt he x ((hHG.isLoopAt_congr e.property).2 hx)
   · rintro _ ⟨e, he, rfl⟩ _ ⟨f, hf, rfl⟩ hef x ⟨hex, hfx⟩
     exact hef <| congrArg _ <|
-      hM.eq_of_inc he hf ((hHG.inc_congr e.2).2 hex) ((hHG.inc_congr f.2).2 hfx)
+      hM.eq_of_inc he hf ((hHG.inc_congr e.property).2 hex) ((hHG.inc_congr f.property).2 hfx)
 
 /-- A perfect matching of a spanning subgraph is a perfect matching of the whole graph. -/
 theorem IsPerfectMatching.image_inclusion (hHG : H ≤s G) {M : Set E(H)}
     (hM : H.IsPerfectMatching M) :
     G.IsPerfectMatching (Set.inclusion hHG.le.edgeSet_mono '' M) := by
   refine ⟨hM.1.image_inclusion hHG.le, fun x ↦ ?_⟩
-  obtain ⟨e, he, hex⟩ := hM.2 ⟨x, hHG.vertexSet_eq.symm ▸ x.2⟩
-  exact ⟨_, ⟨e, he, rfl⟩, (hHG.le.inc_congr e.2).1 hex⟩
+  obtain ⟨e, he, hex⟩ := hM.2 ⟨x, hHG.vertexSet_eq.symm ▸ x.property⟩
+  exact ⟨_, ⟨e, he, rfl⟩, (hHG.le.inc_congr e.property).1 hex⟩
 
 /-- Exactly one edge of a perfect matching is incident with each actual vertex. -/
 theorem IsPerfectMatching.ncard_incidenceSet_inter (hM : G.IsPerfectMatching M) (x : V(G)) :

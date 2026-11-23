@@ -62,7 +62,7 @@ theorem pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero
       ).compLinearMap (LinearMap.ker f).subtype =
         (ψ.compContinuousLinearMap (LinearMap.ker f).subtypeL).toAlternatingMap := by
     ext w
-    have hw (i : Fin l) : a ![(w i : E)] = 0 := (hN _).1 (w i).2
+    have hw (i : Fin l) : a ![(w i : E)] = 0 := (hN _).1 (w i).property
     have hcast : (Matrix.vecCons r fun i ↦ (w i : E)) ∘ ⇑(finCongr (Nat.add_comm 1 l)) =
         Matrix.vecCons r (fun i ↦ (w i : E)) ∘ Fin.cast (Nat.add_comm 1 l) := by
       ext

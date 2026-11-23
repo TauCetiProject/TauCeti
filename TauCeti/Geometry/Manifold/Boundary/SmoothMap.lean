@@ -31,15 +31,11 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
 
 /-- A map to the induced boundary manifold is smooth within a set precisely when its ambient
 inclusion is smooth within that set. The evaluation point need not belong to the set. -/
-theorem contMDiffWithinAt_iff_comp_subtypeVal_boundary (hk : k ≠ 0)
+theorem contMDiffWithinAt_iff_comp_subtypeVal_boundary
     {f : X → (𝓡∂ (n + 1)).boundary M} {s : Set X} {x : X} :
-    let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
-      IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
     ContMDiffWithinAt I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) k f s x ↔
       ContMDiffWithinAt I (𝓡∂ (n + 1)) k (Subtype.val ∘ f) s x := by
-  let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
-    IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
-  let hi := isSmoothEmbedding_subtypeVal_boundary (n := n) M hk
+  let hi := isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k) M
   refine ⟨fun hf ↦ hi.contMDiff.contMDiffAt.comp_contMDiffWithinAt x hf, fun hf ↦ ?_⟩
   obtain ⟨V, hV, hxV, r, hr, hrf⟩ :=
     (hi.isImmersion.isImmersionAt (f x)).exists_contMDiffOn_retraction hi.isEmbedding
@@ -51,15 +47,11 @@ theorem contMDiffWithinAt_iff_comp_subtypeVal_boundary (hk : k ≠ 0)
   · exact (hrf (f x) hxV).symm
 
 /-- Smoothness of a map into the intrinsic boundary can be checked after ambient inclusion. -/
-theorem contMDiff_iff_comp_subtypeVal_boundary (hk : k ≠ 0)
+theorem contMDiff_iff_comp_subtypeVal_boundary
     {f : X → (𝓡∂ (n + 1)).boundary M} :
-    let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
-      IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
     ContMDiff I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) k f ↔
       ContMDiff I (𝓡∂ (n + 1)) k (Subtype.val ∘ f) := by
-  let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
-    IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
   simp only [ContMDiff, ← contMDiffWithinAt_univ,
-    contMDiffWithinAt_iff_comp_subtypeVal_boundary hk]
+    contMDiffWithinAt_iff_comp_subtypeVal_boundary]
 
 end TauCeti

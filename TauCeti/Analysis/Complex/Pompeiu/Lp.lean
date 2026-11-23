@@ -31,6 +31,9 @@ disc, `Lᵖ` convergence of the transforms on each output disc from `Lᵖ` conve
 (`TauCeti.tendsto_toLp_cauchyTransform`), and continuous dependence of the transform on data that
 depends continuously on a parameter (`TauCeti.continuous_toLp_cauchyTransform`).
 
+`TauCeti.cauchyTransform_comp_ae` states that Cauchy integration commutes almost everywhere
+with continuous complex-linear coefficient maps.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -105,7 +108,7 @@ private theorem lintegral_cauchyKernelL_le {c w : ℂ} (r R : ℝ≥0)
     _ = Real.pi⁻¹ * ∫ z in closedBall c (r : ℝ), ‖z - w‖⁻¹ := integral_const_mul _ _
     _ ≤ Real.pi⁻¹ * (2 * Real.pi * ((r : ℝ) + R)) := by
         gcongr
-        exact integral_norm_sub_inv_closedBall_le_add r.2 hw
+        exact integral_norm_sub_inv_closedBall_le_add r.property hw
     _ = (2 * (r + R) : ℝ≥0) := by
         push_cast
         field_simp
@@ -223,6 +226,26 @@ theorem ae_integrable_cauchyTransform {f : ℂ → F} {c : ℂ} {r R : ℝ≥0} 
     exact heq ▸ hw'.smul (Real.pi : ℂ)
   exact hi.integrable_of_forall_notMem_eq_zero fun z hz ↦ by
     rw [notMem_support.mp (fun h ↦ hz (hs h)), smul_zero]
+
+section CoefficientMaps
+
+variable [CompleteSpace F] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+  [CompleteSpace G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Cauchy integration commutes a.e. with a complex-linear coefficient map. -/
+theorem cauchyTransform_comp_ae (L : F →L[ℂ] G) {f : ℂ → F} {c : ℂ} {r R : ℝ≥0}
+    (hf : MemLp f p (volume.restrict (closedBall c (r : ℝ))))
+    (hs : support f ⊆ closedBall c (r : ℝ)) :
+    cauchyTransform (fun z ↦ L (f z)) =ᵐ[volume.restrict (closedBall c (R : ℝ))]
+      fun w ↦ L (cauchyTransform f w) := by
+  filter_upwards [ae_integrable_cauchyTransform (R := R) Fact.out hf hs] with w hw
+  simp only [cauchyTransform_apply, map_smul]
+  rw [← L.integral_comp_comm hw]
+  apply congrArg fun t : G ↦ (Real.pi : ℂ)⁻¹ • t
+  apply integral_congr_ae
+  exact .of_forall fun z ↦ (L.map_smul _ _).symm
+
+end CoefficientMaps
 
 /-- On data supported in the input disc, the bounded Cauchy operator `TauCeti.cauchyTransformLp`
 is the Cauchy transform. -/

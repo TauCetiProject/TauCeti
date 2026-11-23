@@ -132,7 +132,7 @@ private lemma map_sectionsIdeal_basicOpen (hD : D.IsEffective) (U : X.affineOpen
       Scheme.Modules.Hom.app (toRationalFunctions X) (X.basicOpen g) b :=
     (Set.ext_iff.mp ((-D).range_sheafι_app (X.basicOpen g)) _).mpr hb
   -- Some `gⁿ b` extends to a section `t₀` of `𝒪_X(-D)` over `U`, by quasi-coherence.
-  obtain ⟨n, t₀, ht⟩ := (-D).sheaf.exists_pow_smul_eq_map U.2 g rfl (X.basicOpen_le g) tb
+  obtain ⟨n, t₀, ht⟩ := (-D).sheaf.exists_pow_smul_eq_map U.property g rfl (X.basicOpen_le g) tb
   obtain ⟨a₀, ha₀⟩ := hD.exists_toRationalFunctions_app_eq ((-D).sheafι_app_mem U t₀)
   have ha₀I : a₀ ∈ sectionsIdeal D U :=
     (congrArg (· ∈ (-D).sections U) ha₀).mpr ((-D).sheafι_app_mem U t₀)
@@ -178,7 +178,8 @@ theorem IsEffective.mem_sections_sectionsIdealSheaf_iff (hD : D.IsEffective) {U 
   constructor
   · -- Both conditions are local: test the one for `𝒪_X(-D)` on affine neighbourhoods.
     refine fun ha ↦ mem_sections.mpr fun x hx f hf ↦ ?_
-    obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open hx U.2
+    obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open hx
+        U.is_open'
     have haV := hD.sectionsIdealSheaf.map_mem_sections (homOfLE hVU) ha
     rw [Scheme.IdealSheafData.sections_eq_ideal (U := ⟨V, hV⟩), mem_sectionsIdealSheaf_ideal_iff,
       toRationalFunctions_app_map] at haV
@@ -188,7 +189,8 @@ theorem IsEffective.mem_sections_sectionsIdealSheaf_iff (hD : D.IsEffective) {U 
     rwa [rationalFunctionsEquiv_map] at h
   · intro ha
     refine hD.sectionsIdealSheaf.mem_sections_of_forall_exists fun x hx ↦ ?_
-    obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open hx U.2
+    obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open hx
+        U.is_open'
     refine ⟨V, homOfLE hVU, hxV, ?_⟩
     rw [Scheme.IdealSheafData.sections_eq_ideal (U := ⟨V, hV⟩)]
     exact map_mem_sectionsIdeal (homOfLE hVU) ha

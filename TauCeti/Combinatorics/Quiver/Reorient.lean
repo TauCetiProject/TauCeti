@@ -141,13 +141,13 @@ theorem reorientHomEquiv_reorientFlip {i j : Q} (a : j ⟶ i) (h : σ a) :
 /-- The left summand of the elimination equivalence is an arrow `σ` leaves alone. -/
 @[simp]
 theorem reorientHomEquiv_symm_inl {i j : Q} (x : {a : i ⟶ j // ¬ σ a}) :
-    (reorientHomEquiv σ i j).symm (Sum.inl x) = reorientKeep σ x.1 x.2 :=
+    (reorientHomEquiv σ i j).symm (Sum.inl x) = reorientKeep σ x.val x.property :=
   (rfl)
 
 /-- The right summand of the elimination equivalence is an arrow `σ` turns around. -/
 @[simp]
 theorem reorientHomEquiv_symm_inr {i j : Q} (y : {a : j ⟶ i // σ a}) :
-    (reorientHomEquiv σ i j).symm (Sum.inr y) = reorientFlip σ y.1 y.2 :=
+    (reorientHomEquiv σ i j).symm (Sum.inr y) = reorientFlip σ y.val y.property :=
   (rfl)
 
 /-- **Case analysis on an arrow of a reorientation**: it is either an arrow of `Q` which `σ` leaves
@@ -172,8 +172,8 @@ theorem sum_reorientVertex {M : Type*} [AddCommMonoid M] [Fintype Q] (f : Reorie
 theorem sum_reorientHom {M : Type*} [AddCommMonoid M] [∀ i j : Q, Fintype (i ⟶ j)] (i j : Q)
     (f : (reorientVertex σ i ⟶ reorientVertex σ j) → M) :
     ∑ α : (reorientVertex σ i ⟶ reorientVertex σ j), f α
-      = (∑ x : {a : i ⟶ j // ¬ σ a}, f (reorientKeep σ x.1 x.2))
-        + ∑ y : {a : j ⟶ i // σ a}, f (reorientFlip σ y.1 y.2) :=
+      = (∑ x : {a : i ⟶ j // ¬ σ a}, f (reorientKeep σ x.val x.property))
+        + ∑ y : {a : j ⟶ i // σ a}, f (reorientFlip σ y.val y.property) :=
   Fintype.sum_sum_type _
 
 /-! ### The doubled quivers of two orientations agree -/
@@ -188,10 +188,10 @@ def reorientSymmetrify : Symmetrify (Reorient Q σ) ⥤q Symmetrify Q where
   obj := id
   map := fun {_ _} b =>
     match b with
-    | Sum.inl (Sum.inl a) => Sum.inl a.1
-    | Sum.inl (Sum.inr a) => Sum.inr a.1
-    | Sum.inr (Sum.inl a) => Sum.inr a.1
-    | Sum.inr (Sum.inr a) => Sum.inl a.1
+    | Sum.inl (Sum.inl a) => Sum.inl a.val
+    | Sum.inl (Sum.inr a) => Sum.inr a.val
+    | Sum.inr (Sum.inl a) => Sum.inr a.val
+    | Sum.inr (Sum.inr a) => Sum.inl a.val
 
 /-- The inverse comparison: an arrow of the doubled quiver is sorted into one of the four pieces of
 a hom set of `Symmetrify (Reorient Q σ)` according to whether it runs forwards or backwards in `Q`

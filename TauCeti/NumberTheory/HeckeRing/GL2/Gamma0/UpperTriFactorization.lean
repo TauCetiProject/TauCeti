@@ -119,7 +119,7 @@ results in `TauCeti/NumberTheory/ModularForms/HeckeSlash/UpperTri/Invariance.lea
       = ((γ 1 1 * γ 0 1 + (j : ℕ) * (γ 1 1 * γ 1 1) : ℤ) : ZMod p) := by
   have hA : ((γ 0 0 + (j : ℕ) * γ 1 0 : ℤ) : ZMod p) = ((γ 0 0 : ℤ) : ZMod p) := by
     push_cast
-    exact intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 hγp j
+    exact intCast_add_natCast_mul_of_mem_Gamma0 hγp j
   rw [upperTriShift_natCast, hA,
     ZMod.inv_eq_of_mul_eq_one _ _ ((γ 1 1 : ℤ) : ZMod p)
       (intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγp)]
@@ -171,7 +171,7 @@ private lemma upperTriRep_mul_mapGL_eq {p : ℕ} (j j' : Fin p) (γ γ' : SL(2, 
   fin_cases r <;> fin_cases t <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue,
       Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_fin_one,
       Matrix.cons_val_one, algebraMap_int_eq, Matrix.SpecialLinearGroup.map_apply_coe,
-      RingHom.mapMatrix_apply, Int.coe_castRingHom, Matrix.map_apply, one_mul, mul_one, mul_zero,
+      Int.coe_castRingHom, Matrix.map_apply, one_mul, mul_one, mul_zero,
       add_zero, zero_mul, zero_add] <;>
     [linear_combination -c00; linear_combination -c01 - ((j' : ℕ) : ℚ) * c00;
       linear_combination -c10; linear_combination -((j' : ℕ) : ℚ) * c10 - (p : ℚ) * c11]
@@ -217,7 +217,7 @@ theorem exists_mem_Gamma0_upperTriRep_mul_of_isUnit [NeZero p] {γ : SL(2, ℤ)}
     linear_combination hdet + (γ 1 0 : ℤ) * hb'
   -- the witness, with its four entries read off once, so that nothing below depends on how the
   -- `SL(2, ℤ)` subtype and the matrix literal reduce
-  set γ' : SL(2, ℤ) := ⟨_, hdet'⟩ with hγ'
+  set γ' : SL(2, ℤ) := .mk _ hdet' with hγ'
   have e00 : γ' 0 0 = γ 0 0 + (j : ℕ) * γ 1 0 := by simp [hγ']
   have e01 : γ' 0 1 = b' := by simp [hγ']
   have e10 : γ' 1 0 = (p : ℤ) * γ 1 0 := by simp [hγ']
@@ -234,7 +234,7 @@ theorem exists_mem_Gamma0_upperTriRep_mul [NeZero p] {γ : SL(2, ℤ)} (hγp : �
       (γ' 1 1 : ℤ) = γ 1 1 - γ 1 0 * ((upperTriShift p γ j : ℕ) : ℤ) ∧
       upperTriRep p j * mapGL ℚ γ = mapGL ℚ γ' * upperTriRep p (upperTriShift p γ j) :=
   exists_mem_Gamma0_upperTriRep_mul_of_isUnit
-    (isUnit_intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 hγp j) hpc
+    (isUnit_intCast_add_natCast_mul_of_mem_Gamma0 hγp j) hpc
 
 /-- **The coset factorisation at `γ ∈ Γ₀(N)`.** The specialisation of
 `exists_mem_Gamma0_upperTriRep_mul` that `p ∣ N` and `γ ∈ Γ₀(N)` afford: both hypotheses of the

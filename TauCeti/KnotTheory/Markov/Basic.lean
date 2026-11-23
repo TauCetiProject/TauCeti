@@ -46,13 +46,17 @@ This shared descent abstracts the signature construction in
 
 * `TauCeti.IsMarkovMove.liftWord_eq` and `TauCeti.MarkovEquiv.liftWord_eq`: word independence,
   rotation invariance, and stabilization invariance give a Markov invariant.
+* `TauCeti.MarkovBraid.componentCount_pos`, `TauCeti.MarkovBraid.componentCount_strandIncl`, and
+  `TauCeti.MarkovBraid.componentCount_mul_sigma_inv_mul`: every braid closure has at least one
+  component, an uncrossed strand adds one, and reversing a crossing sign preserves the count.
 * `TauCeti.MarkovBraid.componentCount_conj`, `TauCeti.MarkovBraid.componentCount_stabilize` and
   `TauCeti.MarkovBraid.componentCount_stabilizeInv`: each move separately preserves the number of
   components of the closure.
 * `TauCeti.MarkovEquiv.componentCount_eq`: Markov-equivalent braids have closures with the same
   number of components. This is the invariant that keeps the relation from being everything.
-* `TauCeti.markovEquiv_sigma_last_one_one`: the trivial braid on one strand and the single
-  crossing `σ₀` on two strands are Markov equivalent.
+* `TauCeti.markovEquiv_sigma_last_one_one` and `TauCeti.markovEquiv_sigma_last_inv_one_one`:
+  the trivial braid on one strand and either single crossing `σ₀^(±1)` on two strands are Markov
+  equivalent.
 * `TauCeti.not_markovEquiv_one_of_ne`: trivial braids on different numbers of strands are *not*
   Markov equivalent.
 * `TauCeti.not_markovEquiv_sigma_last_one_two`: the single crossing and the trivial braid on two
@@ -146,6 +150,30 @@ theorem componentCount_conj {n : ℕ} (b c : BraidGroup (n + 1)) :
   unfold componentCount
   rw [map_mul, map_mul, map_inv, orbitCount_conj]
 
+/-- Every braid closure has at least one component, as a braid has at least one strand. -/
+theorem componentCount_pos (β : MarkovBraid) : 0 < β.componentCount := by
+  unfold componentCount
+  exact Equiv.Perm.orbitCount_pos _
+
+/-- Adding an uncrossed strand adds one component, a split unknot, to the closure. -/
+@[simp]
+theorem componentCount_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
+    componentCount ⟨n + 1, strandIncl b⟩ = componentCount ⟨n, b⟩ + 1 := by
+  unfold componentCount
+  exact (orbitCount_add_one_eq_of_semiconj
+    (f := (Fin.castSucc : Fin (n + 1) → Fin (n + 2))) (p := Fin.last (n + 1))
+    (σ := permHom (n + 1) b) (τ := permHom (n + 2) (strandIncl b))
+    (Fin.castSucc_injective _) (fun i ↦ (Fin.castSucc_lt_last i).ne)
+    (fun _ hy ↦ Fin.eq_castSucc_of_ne_last hy) fun i ↦ (permHom_strandIncl_castSucc b i).symm).symm
+
+/-- Reversing the sign of a crossing does not change the number of components of the closure, as
+the underlying strand permutation of an elementary braid generator is an involution. -/
+theorem componentCount_mul_sigma_inv_mul {n : ℕ} (b c : BraidGroup (n + 1)) (i : Fin n) :
+    componentCount ⟨n, b * (sigma (n := n + 1) i)⁻¹ * c⟩ =
+      componentCount ⟨n, b * sigma (n := n + 1) i * c⟩ := by
+  unfold componentCount
+  simp only [map_mul, map_inv, permHom_sigma, transposition_eq_swap, Equiv.swap_inv]
+
 end MarkovBraid
 
 /-- The permutation-level content of both stabilization moves: adjoining an uncrossed strand adds
@@ -157,12 +185,10 @@ private theorem orbitCount_permHom_strandIncl_mul_swap {n : ℕ} (b : BraidGroup
       orbitCount (permHom (n + 1) b) := by
   have hsplice := orbitCount_mul_swap_add_one (τ := permHom (n + 2) (strandIncl b))
     (permHom_strandIncl_last b) (Fin.castSucc_lt_last (Fin.last n)).ne
-  have hextend := orbitCount_add_one_eq_of_semiconj
-    (f := (Fin.castSucc : Fin (n + 1) → Fin (n + 2))) (p := Fin.last (n + 1))
-    (σ := permHom (n + 1) b) (τ := permHom (n + 2) (strandIncl b))
-    (Fin.castSucc_injective _) (fun i ↦ (Fin.castSucc_lt_last i).ne)
-    (fun _ hy ↦ Fin.eq_castSucc_of_ne_last hy) fun i ↦ (permHom_strandIncl_castSucc b i).symm
-  omega
+  have hextend := MarkovBraid.componentCount_strandIncl b
+  unfold MarkovBraid.componentCount at hextend
+  dsimp only at hextend
+  exact Nat.add_right_cancel (hsplice.trans hextend)
 
 namespace MarkovBraid
 
@@ -212,7 +238,7 @@ namespace MarkovEquiv
 
 /-- Markov equivalence is an equivalence relation. -/
 theorem equivalence : Equivalence MarkovEquiv :=
-  Relation.EqvGen.is_equivalence IsMarkovMove
+  Relation.EqvGen.equivalence IsMarkovMove
 
 @[refl]
 theorem refl (β : MarkovBraid) : MarkovEquiv β β := Relation.EqvGen.refl β
@@ -342,6 +368,13 @@ by one stabilization. Informally, these are the two smallest braid presentations
 theorem markovEquiv_sigma_last_one_one :
     MarkovEquiv ⟨1, sigma (Fin.last 0)⟩ ⟨0, (1 : BraidGroup 1)⟩ := by
   have h := (IsMarkovMove.stabilize (1 : BraidGroup 1)).markovEquiv
+  rwa [map_one, one_mul] at h
+
+/-- The trivial braid on one strand and the single negative crossing on two strands are Markov
+equivalent, by one negative stabilization. -/
+theorem markovEquiv_sigma_last_inv_one_one :
+    MarkovEquiv ⟨1, (sigma (Fin.last 0))⁻¹⟩ ⟨0, (1 : BraidGroup 1)⟩ := by
+  have h := (IsMarkovMove.stabilizeInv (1 : BraidGroup 1)).markovEquiv
   rwa [map_one, one_mul] at h
 
 /-- **Markov equivalence is not the total relation.** Trivial braids on different numbers of

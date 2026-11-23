@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.CompMul
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
@@ -39,10 +38,6 @@ Under the change of variables `x = e^y` the operators `x d/dx` and `x² d²/dx²
 `(f ∘ exp)''(y) = e^y f'(e^y) + e^{2y} f''(e^y)`. These turn equations of Euler type, whose
 coefficients `x` and `x²` degenerate at `0`, into equations with constant coefficients.
 
-A function whose second derivative is at most `c` on an interval lies below each of its osculating
-parabolas there: `f t ≤ f τ + f' τ (t - τ) + c (t - τ)² / 2`. This is the comparison used to bound
-the time a motion with bounded-below deceleration can stay in a half-line.
-
 ## Main results
 
 * `TauCeti.iteratedDeriv_comp_mul_left`: the iterated derivatives of `fun x ↦ f (c * x)`, and
@@ -54,8 +49,6 @@ the time a motion with bounded-below deceleration can stay in a half-line.
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
 * `TauCeti.sq_mul_deriv_deriv_comp_log`, `TauCeti.deriv_deriv_comp_exp`: the second derivatives
   under the change of variables `x = e^y`.
-* `TauCeti.le_add_mul_sub_add_div_two_mul_sq_of_hasDerivAt`: a function with second derivative at
-  most `c` lies below its osculating parabolas.
 -/
 
 public section
@@ -110,6 +103,15 @@ theorem deriv_deriv_quadratic (a b c t : 𝕜) :
     funext fun s ↦ (hasDerivAt_quadratic a b c s).deriv
   rw [h]
   simp
+
+/-- Subtracting a quadratic subtracts its exact second derivative. -/
+theorem _root_.ContDiffAt.deriv_deriv_sub_quadratic {B : 𝕜 → 𝕜} {t : 𝕜}
+    (hB : ContDiffAt 𝕜 2 B t) (a b c : 𝕜) :
+    deriv (deriv (fun s ↦ B s - (a + b * s + c * s ^ 2))) t =
+      deriv (deriv B) t - 2 * c := by
+  have hpoly : ContDiffAt 𝕜 2 (fun s ↦ a + b * s + c * s ^ 2) t := by fun_prop
+  have h := iteratedDeriv_sub hB hpoly
+  simpa only [iteratedDeriv_succ, iteratedDeriv_zero, deriv_deriv_quadratic, Pi.sub_def] using h
 
 end Quadratic
 
@@ -190,49 +192,5 @@ theorem deriv_deriv_comp_exp (hf' : DifferentiableAt ℝ (deriv f) (exp y)) :
   ring
 
 end LogExp
-
-section Parabola
-
-/-- **A function with second derivative at most `c` lies below its osculating parabolas.** Let
-`f` have derivative `f'` and `f'` have derivative `f''` at every point of a preconnected set
-`s ⊆ ℝ`, with `f'' ≤ c` on `s`. Then for all `τ, t ∈ s`,
-
-`f t ≤ f τ + f' τ (t - τ) + c (t - τ)² / 2`.
-
-For `c = 0` this is the bound of a concave function by its tangent lines. -/
-theorem le_add_mul_sub_add_div_two_mul_sq_of_hasDerivAt {f f' f'' : ℝ → ℝ} {c : ℝ} {s : Set ℝ}
-    (hs : IsPreconnected s) (hf : ∀ t ∈ s, HasDerivAt f (f' t) t)
-    (hf' : ∀ t ∈ s, HasDerivAt f' (f'' t) t) (hc : ∀ t ∈ s, f'' t ≤ c) {τ t : ℝ} (hτ : τ ∈ s)
-    (ht : t ∈ s) : f t ≤ f τ + f' τ * (t - τ) + c / 2 * (t - τ) ^ 2 := by
-  -- Subtracting the parabola `c (u - τ)² / 2` leaves a concave function, which lies below its
-  -- tangent line at `τ`.
-  set g : ℝ → ℝ := fun u ↦ f u - c / 2 * (u - τ) ^ 2 with hg
-  have hg' (u : ℝ) (hu : u ∈ s) : HasDerivAt g (f' u - c * (u - τ)) u := by
-    refine ((hf u hu).sub ((((hasDerivAt_id' u).sub_const τ).pow 2).const_mul
-      (c / 2))).congr_deriv ?_
-    simp only [Nat.cast_ofNat, Nat.add_one_sub_one, pow_one, mul_one]
-    ring
-  have hg'' (u : ℝ) (hu : u ∈ s) :
-      HasDerivAt (fun u ↦ f' u - c * (u - τ)) (f'' u - c) u :=
-    ((hf' u hu).sub (((hasDerivAt_id' u).sub_const τ).const_mul c)).congr_deriv (by rw [mul_one])
-  have hconc : ConcaveOn ℝ s g :=
-    concaveOn_of_hasDerivWithinAt2_nonpos (Real.convex_iff_isPreconnected.2 hs)
-      (fun u hu ↦ (hg' u hu).continuousAt.continuousWithinAt)
-      (fun u hu ↦ (hg' u (interior_subset hu)).hasDerivWithinAt)
-      (fun u hu ↦ (hg'' u (interior_subset hu)).hasDerivWithinAt)
-      fun u hu ↦ sub_nonpos.2 (hc u (interior_subset hu))
-  have key : g t ≤ g τ + (f' τ - c * (τ - τ)) * (t - τ) := by
-    rcases lt_trichotomy τ t with h | rfl | h
-    · have h' := hconc.slope_le_of_hasDerivAt hτ ht h (hg' τ hτ)
-      rw [slope_def_field, div_le_iff₀ (sub_pos.2 h)] at h'
-      linarith
-    · simp
-    · have h' := hconc.le_slope_of_hasDerivAt ht hτ h (hg' τ hτ)
-      rw [slope_def_field, le_div_iff₀ (sub_pos.2 h)] at h'
-      linarith
-  simp only [hg, sub_self, mul_zero, sub_zero] at key
-  linarith
-
-end Parabola
 
 end TauCeti
