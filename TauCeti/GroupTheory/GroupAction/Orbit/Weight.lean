@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Data.Set.Card
 public import Mathlib.GroupTheory.Index
+public import TauCeti.GroupTheory.DoubleCoset.Orbits
 import Mathlib.Data.Set.Card.Arithmetic
 import TauCeti.Algebra.GroupAction.CosetRepresentation
 import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
@@ -58,10 +59,8 @@ Right cosets are the classes of `QuotientGroup.rightRel Γ`. Both counts are `Se
 infinite set of cosets or orbits has count zero, following `Nat.card`. No stability of `Y` under
 `Γ` is assumed in the definitions: a coset is counted when one of its elements keeps `v` in `Y`.
 
-`TauCeti.card_fiber_orbitOfCosetTranslate_eq_relIndex` counts the fibres of the analogous map on
-left cosets of `𝒢.subgroupOf ℋ` inside a subgroup `ℋ`. Here the cosets are right cosets of `Γ` in
-`G` itself, and the fibre count is proved directly on them rather than transported through
-`ℋ = ⊤` and the inversion `Γ g ↦ g⁻¹ Γ`.
+The map from counted cosets to counted orbits is `Subgroup.orbitOfRightCoset`, whose fibres are
+counted by `Subgroup.ncard_fiber_orbitOfRightCoset_eq_relIndex`.
 
 ## References
 
@@ -202,91 +201,30 @@ theorem orbitWeight_top (hv : v ∈ Y) : (⊤ : Subgroup G).orbitWeight Y v = 1 
 
 /-! ### The orbit map on cosets -/
 
-/-- The map `Γ g ↦ Γ (g • v)` from right cosets to `Γ`-orbits induced by the orbit map. -/
-private def cosetOrbit (Γ : Subgroup G) (v : α) :
-    Quotient (rightRel Γ) → orbitRel.Quotient Γ α :=
-  Quotient.lift (fun g ↦ Quotient.mk (orbitRel Γ α) (g • v)) fun a b hab ↦ by
-    refine Quotient.sound (orbitRel_apply.mpr ⟨⟨a * b⁻¹, ?_⟩, ?_⟩)
-    · simpa using inv_mem (rightRel_apply.mp hab)
-    · simp [Subgroup.smul_def, mul_smul]
-
-private theorem cosetOrbit_mk (g : G) :
-    cosetOrbit Γ v (Quotient.mk (rightRel Γ) g) = Quotient.mk (orbitRel Γ α) (g • v) :=
-  (rfl)
-
 /-- The counted cosets are the preimage of the counted orbits: a coset whose orbit meets `Y` has
 an element keeping `v` in `Y`. -/
-private theorem orbitWeightCosets_eq_preimage :
-    Γ.orbitWeightCosets Y v = cosetOrbit Γ v ⁻¹' Γ.orbitCountClasses Y v := by
+theorem orbitWeightCosets_eq_preimage :
+    Γ.orbitWeightCosets Y v = Γ.orbitOfRightCoset v ⁻¹' Γ.orbitCountClasses Y v := by
   ext c
   induction c using Quotient.inductionOn with
   | h g =>
-    simp only [mem_orbitWeightCosets, Set.mem_preimage, cosetOrbit_mk, mem_orbitCountClasses]
+    simp only [mem_orbitWeightCosets, Set.mem_preimage, orbitOfRightCoset_mk,
+      mem_orbitCountClasses]
     constructor
     · rintro ⟨h, hh, hhg⟩
       refine ⟨h • v, mem_orbit v h, hh, ?_⟩
-      rw [← cosetOrbit_mk, ← cosetOrbit_mk, hhg]
+      rw [← orbitOfRightCoset_mk, ← orbitOfRightCoset_mk, hhg]
     · rintro ⟨x, -, hx, hxg⟩
       obtain ⟨γ, hγ⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hxg))
       refine ⟨γ * g, by rwa [mul_smul, ← Subgroup.smul_def, hγ], Quotient.sound ?_⟩
       exact rightRel_apply.mpr (by simp)
 
 /-- The counted orbits are the image of the counted cosets. -/
-private theorem orbitCountClasses_eq_image :
-    Γ.orbitCountClasses Y v = cosetOrbit Γ v '' Γ.orbitWeightCosets Y v := by
+theorem orbitCountClasses_eq_image :
+    Γ.orbitCountClasses Y v = Γ.orbitOfRightCoset v '' Γ.orbitWeightCosets Y v := by
   rw [orbitWeightCosets_eq_preimage, Set.image_preimage_eq_of_subset]
   rintro _ ⟨x, ⟨⟨g, rfl⟩, -⟩, rfl⟩
-  exact ⟨Quotient.mk _ g, rfl⟩
-
-/-- **The fibre of the orbit map over the orbit of `x = g • v`** has
-`[stabilizer G x : Γ ⊓ stabilizer G x]` elements: the coset of `h * g` for `h` in the stabilizer
-of `x` runs through the fibre, and two such cosets agree exactly when the elements of the
-stabilizer differ by an element of `Γ`. -/
-private theorem ncard_cosetOrbit_fiber {x : α} (hx : x ∈ orbit G v) :
-    (cosetOrbit Γ v ⁻¹' {Quotient.mk (orbitRel Γ α) x}).ncard =
-      Γ.relIndex (stabilizer G x) := by
-  obtain ⟨g, rfl⟩ := hx
-  set K := stabilizer G (g • v)
-  have hrel : ∀ a b : K, (Quotient.mk (rightRel Γ) ((a : G) * g) =
-      Quotient.mk (rightRel Γ) ((b : G) * g)) ↔ rightRel (Γ.subgroupOf K) a b := by
-    intro a b
-    rw [Quotient.eq, rightRel_apply, rightRel_apply, mem_subgroupOf]
-    simp [mul_assoc]
-  let ψ : Quotient (rightRel (Γ.subgroupOf K)) → Quotient (rightRel Γ) :=
-    Quotient.lift (fun a : K ↦ Quotient.mk (rightRel Γ) ((a : G) * g))
-      fun a b hab ↦ (hrel a b).mpr hab
-  have hψ : Function.Injective ψ := by
-    intro c d hcd
-    induction c using Quotient.inductionOn
-    induction d using Quotient.inductionOn
-    exact Quotient.sound ((hrel _ _).mp hcd)
-  have hrange : Set.range ψ = cosetOrbit Γ v ⁻¹' {Quotient.mk (orbitRel Γ α) (g • v)} := by
-    ext c
-    induction c using Quotient.inductionOn with
-    | h k =>
-      simp only [Set.mem_range, Set.mem_preimage, Set.mem_singleton_iff, cosetOrbit_mk]
-      constructor
-      · rintro ⟨d, hd⟩
-        induction d using Quotient.inductionOn with
-        | h a =>
-          -- `ψ` evaluates on the class of `a` by the computation rule of `Quotient.lift`
-          have hk : Quotient.mk (rightRel Γ) k = Quotient.mk (rightRel Γ) ((a : G) * g) := hd.symm
-          rw [← cosetOrbit_mk, hk, cosetOrbit_mk, mul_smul, mem_stabilizer_iff.mp a.property]
-      · intro hk
-        obtain ⟨γ, hγ⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hk))
-        have ha : (γ : G)⁻¹ * k * g⁻¹ ∈ K := by
-          rw [mem_stabilizer_iff, mul_smul, mul_smul, inv_smul_smul, ← hγ, Subgroup.smul_def,
-            inv_smul_smul]
-        refine ⟨Quotient.mk _ ⟨_, ha⟩, Quotient.sound (rightRel_apply.mpr ?_)⟩
-        simp [mul_assoc]
-  rw [← hrange, ← Set.image_univ, Set.ncard_image_of_injective _ hψ, Set.ncard_univ,
-    Nat.card_congr (quotientRightRelEquivQuotientLeftRel _), relIndex, index_eq_card]
-
-/-- The fibres of the orbit map over counted orbits are nonempty. -/
-private theorem nonempty_cosetOrbit_fiber {x : α} (hx : x ∈ orbit G v) :
-    (cosetOrbit Γ v ⁻¹' {Quotient.mk (orbitRel Γ α) x}).Nonempty := by
-  obtain ⟨g, rfl⟩ := hx
-  exact ⟨Quotient.mk _ g, rfl⟩
+  exact ⟨Quotient.mk _ g, orbitOfRightCoset_mk g⟩
 
 /-- A point whose orbit is counted lies in `G • v`. -/
 private theorem mem_orbit_of_mk_mem_orbitCountClasses {y : α}
@@ -297,14 +235,14 @@ private theorem mem_orbit_of_mk_mem_orbitCountClasses {y : α}
   exact mem_orbit x (γ : G)
 
 /-- The fibre of the orbit map over a counted orbit consists of counted cosets. -/
-private theorem cosetOrbit_fiber_subset {o : orbitRel.Quotient Γ α}
+private theorem orbitOfRightCoset_fiber_subset {o : orbitRel.Quotient Γ α}
     (ho : o ∈ Γ.orbitCountClasses Y v) :
-    cosetOrbit Γ v ⁻¹' {o} ⊆ Γ.orbitWeightCosets Y v := by
+    Γ.orbitOfRightCoset v ⁻¹' {o} ⊆ Γ.orbitWeightCosets Y v := by
   rw [orbitWeightCosets_eq_preimage]
   exact Set.preimage_mono (Set.singleton_subset_iff.mpr ho)
 
 /-- Finitely many cosets are counted only when finitely many orbits are. -/
-private theorem finite_orbitCountClasses (hW : (Γ.orbitWeightCosets Y v).Finite) :
+theorem finite_orbitCountClasses (hW : (Γ.orbitWeightCosets Y v).Finite) :
     (Γ.orbitCountClasses Y v).Finite := by
   rw [orbitCountClasses_eq_image]
   exact hW.image _
@@ -321,14 +259,14 @@ theorem orbitWeight_eq_finsum_relIndex (hW : (Γ.orbitWeightCosets Y v).Finite)
       ∑ᶠ o ∈ Γ.orbitCountClasses Y v, Γ.relIndex (stabilizer G (σ o)) := by
   have hN := finite_orbitCountClasses hW
   have hfib : ∀ o ∈ Γ.orbitCountClasses Y v,
-      (cosetOrbit Γ v ⁻¹' {o}).ncard = Γ.relIndex (stabilizer G (σ o)) := by
+      (Γ.orbitOfRightCoset v ⁻¹' {o}).ncard = Γ.relIndex (stabilizer G (σ o)) := by
     intro o ho
     have hσo : σ o ∈ orbit G v :=
       mem_orbit_of_mk_mem_orbitCountClasses (by rwa [hσ o])
-    have h := ncard_cosetOrbit_fiber (Γ := Γ) hσo
+    have h := ncard_fiber_orbitOfRightCoset_eq_relIndex (Γ := Γ) hσo
     rwa [hσ o] at h
   rw [orbitWeight_def, orbitWeightCosets_eq_preimage, ← Set.biUnion_preimage_singleton,
-    hN.ncard_biUnion (fun o ho ↦ hW.subset (cosetOrbit_fiber_subset ho))
+    hN.ncard_biUnion (fun o ho ↦ hW.subset (orbitOfRightCoset_fiber_subset ho))
       (Set.pairwiseDisjoint_fiber _ _)]
   exact finsum_mem_congr rfl hfib
 
@@ -362,28 +300,30 @@ theorem orbitWeight_le_card_stabilizer_mul_orbitCount [Finite (stabilizer G v)] 
 
 /-- The orbit map is injective on the counted cosets exactly when `Γ` contains the stabilizer of
 every point of `G • v ∩ Y`, that is, when every fibre over a counted orbit is a single coset. -/
-private theorem injOn_cosetOrbit_iff :
-    Set.InjOn (cosetOrbit Γ v) (Γ.orbitWeightCosets Y v) ↔
+private theorem injOn_orbitOfRightCoset_iff :
+    Set.InjOn (Γ.orbitOfRightCoset v) (Γ.orbitWeightCosets Y v) ↔
       ∀ x ∈ orbit G v, x ∈ Y → stabilizer G x ≤ Γ := by
   have hmk : ∀ x ∈ orbit G v, x ∈ Y →
       Quotient.mk (orbitRel Γ α) x ∈ Γ.orbitCountClasses Y v :=
     fun x hxv hxY ↦ mem_orbitCountClasses.mpr ⟨x, hxv, hxY, rfl⟩
   constructor
   · intro hinj x hxv hxY
-    obtain ⟨c, hc⟩ := nonempty_cosetOrbit_fiber (Γ := Γ) hxv
-    have hsub := cosetOrbit_fiber_subset (hmk x hxv hxY)
-    have hsingle : cosetOrbit Γ v ⁻¹' {Quotient.mk (orbitRel Γ α) x} = {c} :=
+    obtain ⟨c, hc⟩ := nonempty_fiber_orbitOfRightCoset (Γ := Γ) hxv
+    have hsub := orbitOfRightCoset_fiber_subset (hmk x hxv hxY)
+    have hsingle : Γ.orbitOfRightCoset v ⁻¹' {Quotient.mk (orbitRel Γ α) x} = {c} :=
       Set.eq_singleton_iff_unique_mem.mpr ⟨hc, fun d hd ↦ hinj (hsub hd) (hsub hc)
         ((Set.mem_singleton_iff.mp hd).trans (Set.mem_singleton_iff.mp hc).symm)⟩
-    rw [← relIndex_eq_one, ← ncard_cosetOrbit_fiber hxv, hsingle, Set.ncard_singleton]
+    rw [← relIndex_eq_one, ← ncard_fiber_orbitOfRightCoset_eq_relIndex hxv, hsingle,
+      Set.ncard_singleton]
   · intro h c hc d hd hcd
     rw [orbitWeightCosets_eq_preimage] at hc
     obtain ⟨x, hxv, hxY, hx⟩ := mem_orbitCountClasses.mp hc
-    have hone := ncard_cosetOrbit_fiber (Γ := Γ) hxv
+    have hone := ncard_fiber_orbitOfRightCoset_eq_relIndex (Γ := Γ) hxv
     rw [relIndex_eq_one.mpr (h x hxv hxY), Set.ncard_eq_one] at hone
     obtain ⟨e, he⟩ := hone
-    have hce : c ∈ cosetOrbit Γ v ⁻¹' {Quotient.mk (orbitRel Γ α) x} := hx.symm
-    have hde : d ∈ cosetOrbit Γ v ⁻¹' {Quotient.mk (orbitRel Γ α) x} := hcd.symm.trans hx.symm
+    have hce : c ∈ Γ.orbitOfRightCoset v ⁻¹' {Quotient.mk (orbitRel Γ α) x} := hx.symm
+    have hde : d ∈ Γ.orbitOfRightCoset v ⁻¹' {Quotient.mk (orbitRel Γ α) x} :=
+      hcd.symm.trans hx.symm
     rw [he] at hce hde
     exact hce.trans hde.symm
 
@@ -393,14 +333,14 @@ is needed, as the orbit map is then a bijection from the counted cosets onto the
 theorem orbitWeight_eq_orbitCount (h : ∀ x ∈ orbit G v, x ∈ Y → stabilizer G x ≤ Γ) :
     Γ.orbitWeight Y v = Γ.orbitCount Y v := by
   rw [orbitCount_def, orbitWeight_def, orbitCountClasses_eq_image,
-    (injOn_cosetOrbit_iff.mpr h).ncard_image]
+    (injOn_orbitOfRightCoset_iff.mpr h).ncard_image]
 
 /-- **Equality of orbit weight and orbit count.** When finitely many cosets are counted, the orbit
 weight equals the orbit count exactly when `Γ` contains the stabilizer of every point of
 `G • v ∩ Y`, that is, when `Stab_Γ(x) = Stab_G(x)` for all such `x`. -/
 theorem orbitWeight_eq_orbitCount_iff (hW : (Γ.orbitWeightCosets Y v).Finite) :
     Γ.orbitWeight Y v = Γ.orbitCount Y v ↔ ∀ x ∈ orbit G v, x ∈ Y → stabilizer G x ≤ Γ := by
-  refine ⟨fun h ↦ injOn_cosetOrbit_iff.mp (Set.injOn_of_ncard_image_eq ?_ hW),
+  refine ⟨fun h ↦ injOn_orbitOfRightCoset_iff.mp (Set.injOn_of_ncard_image_eq ?_ hW),
     orbitWeight_eq_orbitCount⟩
   rw [← orbitCountClasses_eq_image, ← orbitCount_def, ← orbitWeight_def, h]
 
