@@ -107,6 +107,14 @@ theorem step_comp_step_apply (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) (n : �
     α (n + 1) (α n a) = seqTransHom α (Nat.le_add_right n 2) a :=
   DFunLike.congr_fun (step_comp_step α n) a
 
+/-- Applying a dependent family `ξ : ∀ n, A n → B` to `seqTransHom α` is invariant under
+replacing the target index by an equal index. -/
+theorem apply_seqTransHom_congr {B : Type*} (ξ : ∀ n, A n → B)
+    (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {m p q : ℕ} (hp : m ≤ p) (hq : m ≤ q) (hpq : p = q)
+    (a : A m) : ξ p (seqTransHom α hp a) = ξ q (seqTransHom α hq a) := by
+  subst hpq
+  rfl
+
 /-- Iterating step `⋆`-homomorphisms `α n : A n →⋆ₙₐ[R] A (n + 1)` forms a `DirectedSystem`. -/
 instance directedSystem_seqTransHom (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) :
     DirectedSystem (F := A) (fun _ _ h ↦ ⇑(seqTransHom α h)) where

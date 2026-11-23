@@ -153,15 +153,12 @@ private theorem cauchySeq_offset (hc : IsApproximateCocone α ξ F τ) (n : ℕ)
   obtain ⟨N₀, hN₀⟩ :=
     Metric.cauchySeq_iff.mp (hc.cauchySeq_offset_of_mem hxF) (ε / 3) (by positivity)
   refine ⟨k₀ + N₀, fun p hp q hq ↦ ?_⟩
-  have hcongr {p q : ℕ} (hp : n + k₀ ≤ p) (hq : n + k₀ ≤ q) (hpq : p = q) :
-      ξ p (seqTransHom α hp x) = ξ q (seqTransHom α hq x) := by
-    subst hpq
-    rfl
   have hclose (r : ℕ) (hr : k₀ + N₀ ≤ r) :
       dist (ξ (n + r) (seqTransHom α (Nat.le_add_right n r) a))
         (ξ ((n + k₀) + (r - k₀)) (seqTransHom α (Nat.le_add_right (n + k₀) (r - k₀)) x)) <
         ε / 3 := by
-    rw [hcongr (q := n + r) (Nat.le_add_right (n + k₀) (r - k₀)) (by omega) (by omega),
+    rw [apply_seqTransHom_congr (fun n ↦ ⇑(ξ n)) α (q := n + r)
+        (Nat.le_add_right (n + k₀) (r - k₀)) (by omega) (by omega),
       ← seqTransHom_comp_apply α (Nat.le_add_right n k₀) (by omega) a,
       dist_eq_norm, ← map_sub, ← map_sub]
     exact (le_trans (NonUnitalStarAlgHom.norm_apply_le _ _)
@@ -197,14 +194,10 @@ private theorem tendsto_stageHom (hc : IsApproximateCocone α ξ F τ) (n : ℕ)
 private theorem stageHom_seqTransHom (hc : IsApproximateCocone α ξ F τ) {m n : ℕ} (h : m ≤ n)
     (a : A m) : hc.stageHom n (seqTransHom α h a) = hc.stageHom m a := by
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
-  have hcongr {p q : ℕ} (hp : m ≤ p) (hq : m ≤ q) (hpq : p = q) :
-      ξ p (seqTransHom α hp a) = ξ q (seqTransHom α hq a) := by
-    subst hpq
-    rfl
   refine tendsto_nhds_unique (hc.tendsto_stageHom (m + d) (seqTransHom α h a)) ?_
   refine ((hc.tendsto_stageHom m a).comp (tendsto_add_atTop_nat d)).congr fun k ↦ ?_
   rw [Function.comp_apply, seqTransHom_comp_apply]
-  exact hcongr _ _ (by omega)
+  exact apply_seqTransHom_congr (fun n ↦ ⇑(ξ n)) α _ _ (by omega) a
 
 private theorem stageHom_comp (hc : IsApproximateCocone α ξ F τ) (n : ℕ) :
     (hc.stageHom (n + 1)).comp (α n) = hc.stageHom n := by
@@ -525,6 +518,93 @@ private noncomputable def zigZagSeq
     let i' : I (n + 1) := (hΦΨ (n + 1) j' G').choose
     ⟨i', j', F', G'⟩
 
+section
+
+variable {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1)}
+  {I J : ℕ → Type*} {j₀ : J 0}
+  {Φ : ∀ n, I n → A n →⋆ₙₐ[ℂ] B (n + 1)} {Ψ : ∀ n, J n → B n →⋆ₙₐ[ℂ] A n}
+  {δ ε : ℕ → ℝ}
+  {hΨΦ : ∀ n (i : I n) (F : Finset (A n)),
+    ∃ j : J (n + 1), ∀ a ∈ F, ‖Ψ (n + 1) j (Φ n i a) - α n a‖ ≤ δ n}
+  {hΦΨ : ∀ n (j : J n) (G : Finset (B n)),
+    ∃ i : I n, ∀ b ∈ G, ‖Φ n i (Ψ n j b) - β n b‖ ≤ ε n}
+
+private theorem zigZagSeq_G_zero :
+    (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ 0).G = denseSeed β 0 := rfl
+
+open Classical in
+private theorem zigZagSeq_F_zero :
+    (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ 0).F =
+      (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ 0).G.image (Ψ 0 (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ 0).j) ∪
+        denseSeed α 0 := rfl
+
+open Classical in
+private theorem zigZagSeq_G_succ (n : ℕ) :
+    (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ (n + 1)).G =
+      (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).G.image (β n) ∪
+        (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).F.image (Φ n (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).i) ∪
+        denseSeed β (n + 1) := rfl
+
+private theorem zigZagSeq_j_succ (n : ℕ) :
+    (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ (n + 1)).j =
+      (hΨΦ n (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).i (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).F).choose := rfl
+
+open Classical in
+private theorem zigZagSeq_F_succ (n : ℕ) :
+    (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ (n + 1)).F =
+      (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).F.image (α n) ∪
+        (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ (n + 1)).G.image
+          (Ψ (n + 1) (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ (n + 1)).j) ∪
+        denseSeed α (n + 1) := rfl
+
+private theorem zigZagSeq_i_eq (n : ℕ) :
+    (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).i =
+      (hΦΨ n (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).j (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).G).choose := by
+  cases n <;> rfl
+
+private theorem denseSeed_subset_zigZagSeq_F (m : ℕ) :
+    denseSeed α m ⊆ (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ m).F := by
+  classical
+  cases m with
+  | zero => rw [zigZagSeq_F_zero]; exact Finset.subset_union_right
+  | succ m => rw [zigZagSeq_F_succ]; exact Finset.subset_union_right
+
+private theorem denseSeed_subset_zigZagSeq_G (m : ℕ) :
+    denseSeed β m ⊆ (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ m).G := by
+  classical
+  cases m with
+  | zero => rw [zigZagSeq_G_zero]
+  | succ m => rw [zigZagSeq_G_succ]; exact Finset.subset_union_right
+
+open Classical in
+private theorem image_α_subset_zigZagSeq_F (n : ℕ) :
+    (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).F.image (α n) ⊆ (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ (n + 1)).F := by
+  rw [zigZagSeq_F_succ]
+  exact Finset.subset_union_left.trans Finset.subset_union_left
+
+open Classical in
+private theorem image_β_subset_zigZagSeq_G (n : ℕ) :
+    (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).G.image (β n) ⊆ (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ (n + 1)).G := by
+  rw [zigZagSeq_G_succ]
+  exact Finset.subset_union_left.trans Finset.subset_union_left
+
+open Classical in
+private theorem image_Φ_subset_zigZagSeq_G (n : ℕ) :
+    (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).F.image (Φ n (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).i) ⊆
+      (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ (n + 1)).G := by
+  rw [zigZagSeq_G_succ]
+  exact Finset.subset_union_right.trans Finset.subset_union_left
+
+open Classical in
+private theorem image_Ψ_subset_zigZagSeq_F (n : ℕ) :
+    (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).G.image (Ψ n (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).j) ⊆
+      (zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n).F := by
+  cases n with
+  | zero => rw [zigZagSeq_F_zero]; exact Finset.subset_union_left
+  | succ n => rw [zigZagSeq_F_succ]; exact Finset.subset_union_right.trans Finset.subset_union_left
+
+end
+
 /-- **Generic zig-zag approximate intertwining from finite-set approximation families.** Given
 sequential systems `(A, α)` and `(B, β)` of separable C⋆-algebras and indexed stage-map families
 `Φ n : I n → A n →⋆ₙₐ[ℂ] B (n + 1)` and `Ψ n : J n → B n →⋆ₙₐ[ℂ] A n` such that every member of
@@ -545,34 +625,24 @@ theorem IsApproximateIntertwining.exists_of_forall_finset_approx
         (fun n ↦ (F n : Set (A n))) (fun n ↦ (G n : Set (B n))) δ ε := by
   classical
   let s := zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ
-  have hseedA (m : ℕ) : (denseSeed α m : Set (A m)) ⊆ (s m).F := by
-    intro x hx
-    cases m <;> simp [s, zigZagSeq, Finset.mem_coe.mp hx]
-  have hseedB (m : ℕ) : (denseSeed β m : Set (B m)) ⊆ (s m).G := by
-    intro x hx
-    cases m <;> simp [s, zigZagSeq, Finset.mem_coe.mp hx]
   refine ⟨fun n ↦ (s n).i, fun n ↦ (s n).j, fun n ↦ (s n).F, fun n ↦ (s n).G, ?_⟩
   refine
-    { mapsTo_α := fun n a ha ↦ by
-        simp only [Finset.mem_coe, s, zigZagSeq, Finset.mem_union] at ha ⊢
-        grind [Finset.mem_image_of_mem]
-      mapsTo_β := fun n b hb ↦ by
-        simp only [Finset.mem_coe, s, zigZagSeq, Finset.mem_union] at hb ⊢
-        grind [Finset.mem_image_of_mem]
-      mapsTo_φ := fun n a ha ↦ by
-        simp only [Finset.mem_coe, s, zigZagSeq, Finset.mem_union] at ha ⊢
-        grind [Finset.mem_image_of_mem]
-      mapsTo_ψ := fun n b hb ↦ by
-        cases n <;>
-          simp only [Finset.mem_coe, s, zigZagSeq, Finset.mem_union] at hb ⊢ <;>
-          grind [Finset.mem_image_of_mem]
-      approx_A := exists_approx_of_denseSeed_subset α hseedA
-      approx_B := exists_approx_of_denseSeed_subset β hseedB
-      norm_ψ_φ_sub_le := fun n a ha ↦ (hΨΦ n (s n).i (s n).F).choose_spec a ha
+    { mapsTo_α := fun n a ha ↦ image_α_subset_zigZagSeq_F n (Finset.mem_image_of_mem _ ha)
+      mapsTo_β := fun n b hb ↦ image_β_subset_zigZagSeq_G n (Finset.mem_image_of_mem _ hb)
+      mapsTo_φ := fun n a ha ↦ image_Φ_subset_zigZagSeq_G n (Finset.mem_image_of_mem _ ha)
+      mapsTo_ψ := fun n b hb ↦ image_Ψ_subset_zigZagSeq_F n (Finset.mem_image_of_mem _ hb)
+      approx_A := exists_approx_of_denseSeed_subset α fun m x hx ↦
+        denseSeed_subset_zigZagSeq_F m (Finset.mem_coe.mp hx)
+      approx_B := exists_approx_of_denseSeed_subset β fun m x hx ↦
+        denseSeed_subset_zigZagSeq_G m (Finset.mem_coe.mp hx)
+      norm_ψ_φ_sub_le := fun n a ha ↦ by
+        dsimp only [s]
+        rw [zigZagSeq_j_succ]
+        exact (hΨΦ n (s n).i (s n).F).choose_spec a ha
       norm_φ_ψ_sub_le := fun n b hb ↦ by
-        cases n with
-        | zero => exact (hΦΨ 0 j₀ (denseSeed β 0)).choose_spec b hb
-        | succ n => exact (hΦΨ (n + 1) _ _).choose_spec b hb
+        dsimp only [s]
+        rw [zigZagSeq_i_eq]
+        exact (hΦΨ n (s n).j (s n).G).choose_spec b hb
       summable_δ := hδ
       summable_ε := hε }
 
