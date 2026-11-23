@@ -186,31 +186,21 @@ noncomputable def _root_.Module.Basis.stabilizerContinuousMulEquivGL (b : Basis 
     MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) ≃ₜ* GL ι R where
   __ := b.stabilizerMulEquivGL E
   continuous_toFun := by
-    have : IsModuleTopology E (Matrix ι ι E) := inferInstanceAs (IsModuleTopology E (ι → ι → E))
     let b' := b.extendOfIsFullLattice E
     let e := TauCeti.generalLinearContinuousMulEquiv (K := E) (V := V)
-    have he (g : V ≃ₗ[E] V) :
-        ((e.symm g : LinearMap.GeneralLinearGroup E V) : Module.End E V) = g :=
-      congrArg (fun φ : LinearMap.GeneralLinearGroup E V ≃* (V ≃ₗ[E] V) =>
-        (φ.symm g : Module.End E V)) TauCeti.coe_generalLinearContinuousMulEquiv
     -- Read in `E`, the matrix of `g` in `b` is the matrix of `g` in the ambient basis `b'`.
     refine (Topology.IsInducing.subtypeVal.matrix_map.units_map
       (f := (algebraMap R E).mapMatrix.toMonoidHom)).continuous_iff.mpr ?_
     refine ((Continuous.units_map (LinearMap.toMatrixAlgEquiv b').toMonoidHom
       (IsModuleTopology.continuous_of_linearMap (LinearMap.toMatrix b' b').toLinearMap)).comp
       (e.symm.continuous.comp continuous_subtypeVal)).congr fun g => Units.ext ?_
-    exact (congrArg (LinearMap.toMatrix b' b') (he g)).trans
+    exact (congrArg (LinearMap.toMatrix b' b')
+      (TauCeti.coe_generalLinearContinuousMulEquiv_symm_apply (g : V ≃ₗ[E] V))).trans
       (b.map_stabilizerMulEquivGL_apply g).symm
   continuous_invFun := by
-    have : IsModuleTopology E (Matrix ι ι E) := inferInstanceAs (IsModuleTopology E (ι → ι → E))
     have : ContinuousAdd (Module.End E V) := IsModuleTopology.toContinuousAdd E _
     let b' := b.extendOfIsFullLattice E
     let e := TauCeti.generalLinearContinuousMulEquiv (K := E) (V := V)
-    have he (u : LinearMap.GeneralLinearGroup E V) :
-        ((e u : V ≃ₗ[E] V) : Module.End E V) = u := by
-      rw [← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap]
-      exact congrArg (fun φ : LinearMap.GeneralLinearGroup E V ≃* (V ≃ₗ[E] V) =>
-        (φ u : Module.End E V)) TauCeti.coe_generalLinearContinuousMulEquiv
     -- The automorphism attached to `u` is the linear map with matrix `u` in the basis `b'`.
     refine Continuous.subtype_mk ((e.continuous.comp
       ((Continuous.units_map (Matrix.toLinAlgEquiv b').toMonoidHom
@@ -218,7 +208,8 @@ noncomputable def _root_.Module.Basis.stabilizerContinuousMulEquivGL (b : Basis 
       (Continuous.units_map (algebraMap R E).mapMatrix.toMonoidHom
         (continuous_id.matrix_map continuous_subtypeVal)))).congr fun u =>
       LinearEquiv.toLinearMap_injective ?_) _
-    exact (he _).trans (b.stabilizerMulEquivGL_symm_apply u).symm
+    exact (TauCeti.coe_generalLinearContinuousMulEquiv_apply _).trans
+      (b.stabilizerMulEquivGL_symm_apply u).symm
 
 /-- The topological isomorphism `b.stabilizerContinuousMulEquivGL` has the matrix isomorphism
 `b.stabilizerMulEquivGL E` as its underlying multiplicative equivalence. -/
@@ -226,6 +217,23 @@ noncomputable def _root_.Module.Basis.stabilizerContinuousMulEquivGL (b : Basis 
 theorem _root_.Module.Basis.coe_stabilizerContinuousMulEquivGL (b : Basis ι R L) :
     (b.stabilizerContinuousMulEquivGL :
       MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) ≃* GL ι R) = b.stabilizerMulEquivGL E :=
+  (rfl)
+
+/-- Applied to an automorphism, `b.stabilizerContinuousMulEquivGL` is the matrix isomorphism
+`b.stabilizerMulEquivGL E`. -/
+@[simp]
+theorem _root_.Module.Basis.stabilizerContinuousMulEquivGL_apply (b : Basis ι R L)
+    (g : MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)) :
+    b.stabilizerContinuousMulEquivGL g = b.stabilizerMulEquivGL E g :=
+  (rfl)
+
+/-- The inverse of `b.stabilizerContinuousMulEquivGL` is the inverse of the matrix isomorphism
+`b.stabilizerMulEquivGL E`. -/
+@[simp]
+theorem _root_.Module.Basis.stabilizerContinuousMulEquivGL_symm_apply (b : Basis ι R L)
+    (u : GL ι R) :
+    (b.stabilizerContinuousMulEquivGL (E := E) (V := V)).symm u =
+      (b.stabilizerMulEquivGL E).symm u :=
   (rfl)
 
 end Matrix
@@ -276,17 +284,13 @@ theorem IsFullLattice.isCompact_stabilizer :
       mul_mem' := fun hf hg => hf.comp hg
       one_mem' := mapsTo_id _ }
   let e := TauCeti.generalLinearContinuousMulEquiv (K := E) (V := V)
-  have he (u : LinearMap.GeneralLinearGroup E V) : ((e u : V ≃ₗ[E] V) : Module.End E V) = u := by
-    rw [← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap]
-    exact congrArg (fun φ : LinearMap.GeneralLinearGroup E V ≃* (V ≃ₗ[E] V) =>
-      (φ u : Module.End E V)) TauCeti.coe_generalLinearContinuousMulEquiv
   have h : (MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) : Set (V ≃ₗ[E] V)) =
       e '' (T.units : Set (LinearMap.GeneralLinearGroup E V)) := by
     ext g
     obtain ⟨u, rfl⟩ := e.surjective g
     rw [SetLike.mem_coe, TauCeti.mem_stabilizer_set_iff_mapsTo, e.injective.mem_set_image,
-      SetLike.mem_coe, Submonoid.mem_units_iff, ← map_inv, ← he u, ← he u⁻¹]
-    simp [T, LinearEquiv.smul_def]
+      SetLike.mem_coe, Submonoid.mem_units_iff, ← map_inv]
+    simp [T, e, LinearEquiv.smul_def, ← TauCeti.coe_generalLinearContinuousMulEquiv_apply]
   rw [h]
   exact (Submonoid.units_isCompact (IsFullLattice.isCompact_setOf_mapsTo L)).image e.continuous
 
