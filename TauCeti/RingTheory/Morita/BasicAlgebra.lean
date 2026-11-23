@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Jacobson.Semiperfect
-public import TauCeti.RingTheory.Morita.Corner
+public import TauCeti.RingTheory.Morita.Corner.Basic
 public import TauCeti.RingTheory.Semisimple.BasicAlgebra
 import TauCeti.RingTheory.Idempotents.Corner.Jacobson
 import TauCeti.RingTheory.Idempotents.Full
