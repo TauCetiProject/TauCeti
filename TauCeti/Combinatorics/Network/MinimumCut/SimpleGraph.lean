@@ -19,7 +19,9 @@ path edge recovers a minimum cut in the original graph.
 
 The results are stated on the original vertex type, rather than the vertex subtype of
 `Graph.ofSimpleGraph G`. The comparison with the multigraph cut theory uses the canonical vertex
-equivalence and preserves every cut side.
+equivalence and preserves every cut side. The unit cut-tree interface and its path-weight,
+threshold, cut-recovery, and global-connectivity proofs adapt
+`TauCeti.Combinatorics.Network.MinimumCut.Graph`.
 
 ## Main results
 
@@ -48,76 +50,12 @@ namespace SimpleGraph
 
 variable {V : Type*} (G : SimpleGraph V)
 
-open Classical in
-/-- The unit pair capacity of a simple graph: one on each edge and zero on every non-edge,
-including diagonal pairs. -/
-noncomputable def unitPairCapacity (e : Sym2 V) : ℕ :=
-  if e ∈ G.edgeSet then 1 else 0
-
-@[simp]
-theorem unitPairCapacity_eq_one_iff {e : Sym2 V} :
-    G.unitPairCapacity e = 1 ↔ e ∈ G.edgeSet := by
-  classical
-  simp [unitPairCapacity]
-
-@[simp]
-theorem unitPairCapacity_eq_zero_iff {e : Sym2 V} :
-    G.unitPairCapacity e = 0 ↔ e ∉ G.edgeSet := by
-  classical
-  simp [unitPairCapacity]
-
 /-- Every nonempty finite simple graph has a cut tree for unit edge capacities. -/
 theorem exists_isUnitCutTree [Fintype V] [Nonempty V] :
     ∃ (T : SimpleGraph V) (w : Sym2 V → ℕ),
       TauCeti.TerminalCut.IsCutTree (TauCeti.pairCutCapacity G.unitPairCapacity) T w := by
   exact TauCeti.TerminalCut.exists_isCutTree_pairCutCapacity G.unitPairCapacity
     fun _ _ _ ↦ Nat.zero_le _
-
-private theorem edgeCutCapacity_unit_eq_pairCutCapacity [Fintype V] (S : Finset V) :
-    (Graph.ofSimpleGraph G).edgeCutCapacity (fun _ ↦ (1 : ℕ))
-        (G.toOfSimpleGraphFinset S) =
-      TauCeti.pairCutCapacity G.unitPairCapacity S := by
-  have hcap : G.ofSimpleGraphCapacity G.unitPairCapacity = fun _ ↦ (1 : ℕ) := by
-    funext e
-    have he : e.val ∈ G.edgeSet := by
-      simpa [Graph.edgeSet_ofSimpleGraph] using e.property
-    simp [unitPairCapacity, he]
-  rw [← hcap]
-  exact G.edgeCutCapacity_eq_pairCutCapacity G.unitPairCapacity (by
-    intro p _ hnot
-    simp [unitPairCapacity, hnot]) S
-
-/-- For distinct vertices of a finite simple graph, native local edge reachability is the
-minimum unit pair-cut value, viewed in `ℕ∞`. -/
-theorem edgeReachability_eq_pairMinimumValue_unitPairCapacity [Fintype V] {s t : V}
-    (hst : s ≠ t) :
-    G.edgeReachability s t =
-      ((TauCeti.TerminalCut.pairMinimumValue
-        (TauCeti.pairCutCapacity G.unitPairCapacity) s t : ℕ) : ℕ∞) := by
-  let e : V ≃ (Graph.ofSimpleGraph G).vertexSet :=
-    Equiv.ofBijective G.toOfSimpleGraphVertex ⟨fun {x y} hxy ↦ by
-      simpa using congrArg Subtype.val hxy, fun x ↦
-        ⟨x.val, Subtype.ext (G.toOfSimpleGraphVertex_val x.val)⟩⟩
-  have heval (x : V) : (e x).val = x := by
-    change (G.toOfSimpleGraphVertex x).val = x
-    exact G.toOfSimpleGraphVertex_val x
-  have hemap (S : Finset V) :
-      S.map e.toEmbedding = G.toOfSimpleGraphFinset S := by
-    ext x
-    have hx : G.toOfSimpleGraphVertex x.val = x :=
-      Subtype.ext (G.toOfSimpleGraphVertex_val x.val)
-    rw [← hx, Finset.mem_map_equiv]
-    have he : e x.val = G.toOfSimpleGraphVertex x.val := rfl
-    rw [← he, Equiv.symm_apply_apply]
-    rw [he, G.mem_toOfSimpleGraphFinset]
-  have hst' : e s ≠ e t := e.injective.ne hst
-  have hmulti := (Graph.ofSimpleGraph G).edgeReachability_eq_pairMinimumValue hst'
-  rw [Graph.edgeReachability_ofSimpleGraph, heval s, heval t] at hmulti
-  have hmap := TauCeti.TerminalCut.pairMinimumValue_map
-    (f := TauCeti.pairCutCapacity G.unitPairCapacity) e
-    ((Graph.ofSimpleGraph G).edgeCutCapacity fun _ ↦ (1 : ℕ))
-    (fun S ↦ by rw [hemap]; exact G.edgeCutCapacity_unit_eq_pairCutCapacity S) s t
-  exact hmulti.trans (congrArg (Nat.cast : ℕ → ℕ∞) hmap)
 
 end SimpleGraph
 
@@ -128,8 +66,8 @@ open SimpleGraph
 variable {V : Type*} {G : SimpleGraph V} [Fintype V]
 variable {T : SimpleGraph V} {w : Sym2 V → ℕ}
 
-/-- On a unit-capacity simple-graph flow-equivalent tree, some edge on every nontrivial tree path
-has weight equal to the native local edge reachability of its endpoints. -/
+/-- On a unit-capacity simple-graph flow-equivalent tree, some edge on the path from `s` to `t`
+has weight equal to `G.edgeReachability s t`. -/
 theorem exists_weight_eq_simpleGraphEdgeReachability
     (hT : IsFlowEquivalentTree (TauCeti.pairCutCapacity G.unitPairCapacity) T w)
     {s t : V} (hst : s ≠ t) {p : T.Walk s t} (hp : p.IsPath) :
@@ -139,13 +77,14 @@ theorem exists_weight_eq_simpleGraphEdgeReachability
   rw [G.edgeReachability_eq_pairMinimumValue_unitPairCapacity hst, ← hwe]
 
 /-- Deleting the tree edges of weight below `k` leaves two vertices connected exactly when they
-are equal or their native local edge reachability is at least `k`. -/
+are natively `k`-edge-reachable. -/
 theorem reachable_deleteEdges_iff_simpleGraphEdgeReachability
     (hT : IsFlowEquivalentTree (TauCeti.pairCutCapacity G.unitPairCapacity) T w)
     (k : ℕ) {s t : V} :
     (T.deleteEdges {e | w e < k}).Reachable s t ↔
-      s = t ∨ (k : ℕ∞) ≤ G.edgeReachability s t := by
+      G.IsEdgeReachable k s t := by
   rw [hT.reachable_deleteEdges_iff]
+  rw [G.isEdgeReachable_iff_le_edgeReachability]
   by_cases hst : s = t
   · simp [hst]
   · simp only [hst, false_or]
@@ -189,28 +128,19 @@ theorem exists_edge_simpleGraphEdgeConnectivity_eq_weight [Nontrivial V]
     (hT : IsFlowEquivalentTree (TauCeti.pairCutCapacity G.unitPairCapacity) T w) :
     ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
       G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
-  have hTne : T ≠ ⊥ := by
-    intro h
-    rw [h] at hT
-    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
-  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
-  refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
-  · calc
-      G.edgeConnectivity ≤ G.edgeReachability u v :=
-        G.edgeConnectivity_le_edgeReachability u v
-      _ = ((TauCeti.TerminalCut.pairMinimumValue
-          (TauCeti.pairCutCapacity G.unitPairCapacity) u v : ℕ) : ℕ∞) :=
-        G.edgeReachability_eq_pairMinimumValue_unitPairCapacity huv.ne
-      _ = (w s(u, v) : ℕ∞) := by rw [hT.weight_eq huv]
-  · rw [G.edgeConnectivity_eq_iInf_edgeReachability]
-    refine le_iInf fun x ↦ le_iInf fun y ↦ ?_
-    by_cases hxy : x = y
-    · subst y
-      rw [G.edgeReachability_self]
-      exact le_top
-    · obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path x y
-      obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hxy hp
-      rw [G.edgeReachability_eq_pairMinimumValue_unitPairCapacity hxy]
-      exact_mod_cast (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
+  obtain ⟨u, v, huv, hmin, hvalue⟩ := hT.exists_edge_iInf_pairMinimumValue_eq_weight
+  refine ⟨u, v, huv, hmin, ?_⟩
+  rw [G.edgeConnectivity_eq_iInf_edgeReachability]
+  have hreach (s t : V) :
+      G.edgeReachability s t =
+        ⨅ (_ : s ≠ t),
+          ((TauCeti.TerminalCut.pairMinimumValue
+            (TauCeti.pairCutCapacity G.unitPairCapacity) s t : ℕ) : ℕ∞) := by
+    by_cases hst : s = t
+    · subst t
+      simp
+    · simp [hst, G.edgeReachability_eq_pairMinimumValue_unitPairCapacity hst]
+  simp_rw [hreach]
+  exact hvalue
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree

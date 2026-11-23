@@ -28,6 +28,8 @@ This file develops what these properties give, independently of how such a tree 
   minimizes `f` among all sets separating two vertices, with value that minimum weight.
 * `IsFlowEquivalentTree.card_image_pairMinimumValue_le`: the minimum cut values between distinct
   vertices take at most `|V| - 1` distinct values, since each is a tree-edge weight.
+* `IsFlowEquivalentTree.exists_edge_iInf_pairMinimumValue_eq_weight`: the least pair minimum
+  value, extended by `⊤` on the diagonal, is a minimum tree-edge weight.
 * `IsCutTree.of_isMinimum_edgeSide`: a tree whose edges all leave minimum cuts between their ends
   is a cut tree for the weights given by those minimum cut values.
 
@@ -106,6 +108,40 @@ theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t :
   obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact ⟨e, p.edges_subset_edgeSet he, hwe ▸ pairMinimumValue_le f hs ht⟩
+
+/-- A minimum-weight edge of a flow-equivalent tree has weight at most every minimum cut value
+between distinct vertices. The witness includes its minimum-weight certificate. -/
+theorem exists_edge_weight_le_pairMinimumValue (hT : IsFlowEquivalentTree f T w)
+    [Nontrivial V] :
+    ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
+      ∀ x y, x ≠ y → w s(u, v) ≤ pairMinimumValue f x y := by
+  have hTne : T ≠ ⊥ := by
+    intro h
+    rw [h] at hT
+    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
+  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
+  refine ⟨u, v, huv, hmin, fun x y hxy ↦ ?_⟩
+  obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path x y
+  obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hxy hp
+  exact (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
+
+/-- The least extended pair minimum value is the weight of a minimum-weight tree edge. The
+extended value is `⊤` on the diagonal, so the infimum uniformly covers all vertex pairs. -/
+theorem exists_edge_iInf_pairMinimumValue_eq_weight
+    {f : Finset V → ℕ} {T : SimpleGraph V} {w : Sym2 V → ℕ} [Nontrivial V]
+    (hT : IsFlowEquivalentTree f T w) :
+    ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
+      (⨅ s, ⨅ t, ⨅ (_ : s ≠ t), ((pairMinimumValue f s t : ℕ) : ℕ∞)) =
+        (w s(u, v) : ℕ∞) := by
+  obtain ⟨u, v, huv, hmin, hpair⟩ := hT.exists_edge_weight_le_pairMinimumValue
+  refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
+  · calc
+      (⨅ s, ⨅ t, ⨅ (_ : s ≠ t), ((pairMinimumValue f s t : ℕ) : ℕ∞)) ≤
+          ((pairMinimumValue f u v : ℕ) : ℕ∞) :=
+        iInf_le_of_le u (iInf_le_of_le v (iInf_le_of_le huv.ne le_rfl))
+      _ = (w s(u, v) : ℕ∞) := congrArg (Nat.cast : ℕ → ℕ∞) (hT.weight_eq huv).symm
+  · refine le_iInf fun s ↦ le_iInf fun t ↦ le_iInf fun hst ↦ ?_
+    exact_mod_cast hpair s t hst
 
 end IsFlowEquivalentTree
 

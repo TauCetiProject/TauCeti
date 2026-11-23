@@ -35,6 +35,8 @@ For a simple graph, the multigraph cut capacity of `Graph.ofSimpleGraph G` agree
 * `Graph.isSymmSubmodular_edgeCutCapacity`: the bundled symmetric-submodular result.
 * `SimpleGraph.edgeCutCapacity_eq_pairCutCapacity`: the simple-graph and multigraph cut-capacity
   interfaces agree.
+* `SimpleGraph.edgeCutCapacity_unit_eq_pairCutCapacity`: unit capacities agree under the same
+  comparison.
 -/
 
 public section
@@ -331,5 +333,21 @@ theorem edgeCutCapacity_eq_pairCutCapacity [Fintype V] [AddCommMonoid K]
       · by_cases hcross : p.Crosses (S : Set V)
         · simp [hp, hcross, hc p hcross.not_isDiag hp]
         · simp [hp, hcross]
+
+/-- The unit edge-cut capacity of `Graph.ofSimpleGraph G` agrees with the unit pair-cut capacity
+of `G`. -/
+theorem edgeCutCapacity_unit_eq_pairCutCapacity [Fintype V] (S : Finset V) :
+    (Graph.ofSimpleGraph G).edgeCutCapacity (fun _ ↦ (1 : ℕ))
+        (G.toOfSimpleGraphFinset S) =
+      TauCeti.pairCutCapacity G.unitPairCapacity S := by
+  have hcap : G.ofSimpleGraphCapacity G.unitPairCapacity = fun _ ↦ (1 : ℕ) := by
+    funext e
+    have he : e.val ∈ G.edgeSet := by
+      simpa [Graph.edgeSet_ofSimpleGraph] using e.property
+    simp [he]
+  rw [← hcap]
+  exact G.edgeCutCapacity_eq_pairCutCapacity G.unitPairCapacity (by
+    intro p _ hnot
+    exact G.unitPairCapacity_of_not_mem hnot) S
 
 end SimpleGraph

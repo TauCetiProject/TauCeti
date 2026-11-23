@@ -30,6 +30,8 @@ minimum cut values, such as cut trees, apply to the deletion-based invariant.
   minimum unit cut value, viewed in `ℕ∞`.
 * `Graph.edgeReachability_eq_pairMinimumValue_pairCapacity`: aggregating parallel unit edges by
   their unordered endpoint pairs preserves this value.
+* `SimpleGraph.edgeReachability_eq_pairMinimumValue_unitPairCapacity`: the corresponding
+  simple-graph minimum-cut value theorem.
 
 ## References
 
@@ -141,3 +143,37 @@ theorem edgeReachability_eq_pairMinimumValue_pairCapacity [Fintype V(G)] [Fintyp
   rw [hcut, edgeReachability_eq_pairMinimumValue hst]
 
 end Graph
+
+namespace SimpleGraph
+
+variable {V : Type*} (G : SimpleGraph V)
+
+/-- For distinct vertices of a finite simple graph, native local edge reachability is the
+minimum unit pair-cut value, viewed in `ℕ∞`. -/
+theorem edgeReachability_eq_pairMinimumValue_unitPairCapacity [Fintype V] {s t : V}
+    (hst : s ≠ t) :
+    G.edgeReachability s t =
+      ((TauCeti.TerminalCut.pairMinimumValue
+        (TauCeti.pairCutCapacity G.unitPairCapacity) s t : ℕ) : ℕ∞) := by
+  let e : V ≃ (Graph.ofSimpleGraph G).vertexSet := (Equiv.Set.univ V).symm
+  have heval (x : V) : (e x).val = x := rfl
+  have hemap (S : Finset V) :
+      S.map e.toEmbedding = G.toOfSimpleGraphFinset S := by
+    ext x
+    have hx : G.toOfSimpleGraphVertex x.val = x :=
+      Subtype.ext (G.toOfSimpleGraphVertex_val x.val)
+    rw [← hx, Finset.mem_map_equiv]
+    have he : e x.val = G.toOfSimpleGraphVertex x.val :=
+      Subtype.ext (by simpa using heval x.val)
+    rw [← he, Equiv.symm_apply_apply]
+    rw [he, G.mem_toOfSimpleGraphFinset]
+  have hst' : e s ≠ e t := e.injective.ne hst
+  have hmulti := (Graph.ofSimpleGraph G).edgeReachability_eq_pairMinimumValue hst'
+  rw [Graph.edgeReachability_ofSimpleGraph, heval s, heval t] at hmulti
+  have hmap := TauCeti.TerminalCut.pairMinimumValue_map
+    (f := TauCeti.pairCutCapacity G.unitPairCapacity) e
+    ((Graph.ofSimpleGraph G).edgeCutCapacity fun _ ↦ (1 : ℕ))
+    (fun S ↦ by rw [hemap]; exact G.edgeCutCapacity_unit_eq_pairCutCapacity S) s t
+  exact hmulti.trans (congrArg (Nat.cast : ℕ → ℕ∞) hmap)
+
+end SimpleGraph

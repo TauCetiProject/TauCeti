@@ -148,32 +148,21 @@ theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
     (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) :
     ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
       G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
-  have hTne : T ≠ ⊥ := by
-    intro h
-    rw [h] at hT
-    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
-  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
-  refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
-  · calc
-      G.edgeConnectivity ≤ G.edgeReachability u v :=
-        G.edgeConnectivity_le_edgeReachability u.property v.property
-      _ = ((TauCeti.TerminalCut.pairMinimumValue
-          (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) u v : ℕ) : ℕ∞) :=
-        G.edgeReachability_eq_pairMinimumValue huv.ne
-      _ = (w s(u, v) : ℕ∞) := by rw [hT.weight_eq huv]
-  · rw [G.edgeConnectivity_eq_iInf_edgeReachability]
-    refine le_iInf fun x ↦ le_iInf fun hx ↦ le_iInf fun y ↦ le_iInf fun hy ↦ ?_
-    let sx : V(G) := ⟨x, hx⟩
-    let sy : V(G) := ⟨y, hy⟩
-    by_cases hxy : sx = sy
-    · have hxy' : x = y := congrArg Subtype.val hxy
-      subst y
-      rw [G.edgeReachability_self hx]
-      exact le_top
-    · obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path sx sy
-      obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hxy hp
-      rw [G.edgeReachability_eq_pairMinimumValue hxy]
-      exact_mod_cast (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
+  obtain ⟨u, v, huv, hmin, hvalue⟩ := hT.exists_edge_iInf_pairMinimumValue_eq_weight
+  refine ⟨u, v, huv, hmin, ?_⟩
+  rw [G.edgeConnectivity_eq_iInf_edgeReachability, ← iInf_subtype'']
+  simp_rw [← iInf_subtype'']
+  have hreach (s t : V(G)) :
+      G.edgeReachability s t =
+        ⨅ (_ : s ≠ t),
+          ((TauCeti.TerminalCut.pairMinimumValue
+            (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) s t : ℕ) : ℕ∞) := by
+    by_cases hst : s = t
+    · subst t
+      simp [G.edgeReachability_self s.property]
+    · simp [hst, G.edgeReachability_eq_pairMinimumValue hst]
+  simp_rw [hreach]
+  exact hvalue
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 

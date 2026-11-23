@@ -22,6 +22,7 @@ support graph. Diagonal pairs never contribute to a cut and are ignored by the s
 
 * `TauCeti.pairCutCapacity`: the capacity of a cut for weights on unordered vertex pairs.
 * `TauCeti.capacitySupport`: the simple support graph of a pair-capacity function.
+* `SimpleGraph.unitPairCapacity`: capacity one on graph edges and zero elsewhere.
 
 ## Main result
 
@@ -156,3 +157,37 @@ theorem capacitySupport_eq_of_offDiagonal_eq [Zero K] [LT K]
   · rw [h x y hxy]
 
 end TauCeti
+
+namespace SimpleGraph
+
+variable {V : Type*} (G : SimpleGraph V)
+
+open Classical in
+/-- The unit pair capacity of a simple graph: one on each edge and zero on every non-edge,
+including diagonal pairs. -/
+noncomputable def unitPairCapacity (e : Sym2 V) : ℕ :=
+  if e ∈ G.edgeSet then 1 else 0
+
+@[simp]
+theorem unitPairCapacity_of_mem {e : Sym2 V} (he : e ∈ G.edgeSet) :
+    G.unitPairCapacity e = 1 := by
+  simp [unitPairCapacity, he]
+
+@[simp]
+theorem unitPairCapacity_of_not_mem {e : Sym2 V} (he : e ∉ G.edgeSet) :
+    G.unitPairCapacity e = 0 := by
+  simp [unitPairCapacity, he]
+
+@[simp]
+theorem unitPairCapacity_eq_one_iff {e : Sym2 V} :
+    G.unitPairCapacity e = 1 ↔ e ∈ G.edgeSet := by
+  classical
+  simp [unitPairCapacity]
+
+@[simp]
+theorem unitPairCapacity_eq_zero_iff {e : Sym2 V} :
+    G.unitPairCapacity e = 0 ↔ e ∉ G.edgeSet := by
+  classical
+  simp [unitPairCapacity]
+
+end SimpleGraph
