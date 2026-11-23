@@ -185,7 +185,7 @@ theorem exists_relationModule_surjective_of_presentation (hsurj : Function.Surje
             ⟨φ r, by
               rw [galoisSubgroup_toSubgroup, ← j.ker_restrictNormalHom,
                 MonoidHom.mem_ker, hφ]
-              exact MonoidHom.mem_ker.mp r.2⟩ := by
+              exact MonoidHom.mem_ker.mp r.property⟩ := by
   obtain ⟨ψ, hψ, haψ⟩ := exists_surjective_continuousMonoidHom p K L j φ hφ hsurj
   obtain ⟨β, hβ⟩ := exists_linearMap_of_equivariant p K L hg j φ hφ ψ haψ
   refine ⟨β, fun z ↦ ?_, fun r ↦ ?_⟩

@@ -41,9 +41,9 @@ piecewise-affine decomposition on that set. -/
 theorem IsPLOn.isPiecewiseAffineOn_of_isCompact (hf : IsPLOn f s) (hs : IsCompact s) :
     IsPiecewiseAffineOn f s := by
   classical
-  have hlocal (x : s) : ∃ C ∈ 𝓝 x.1, IsConvexPolyhedron C ∧
+  have hlocal (x : s) : ∃ C ∈ 𝓝 x.val, IsConvexPolyhedron C ∧
       IsPiecewiseAffineOn f (s ∩ C) := by
-    obtain ⟨V, hV, hpiece⟩ := isPLOn_iff.mp hf x.1 x.2
+    obtain ⟨V, hV, hpiece⟩ := isPLOn_iff.mp hf x.val x.property
     obtain ⟨U, hU, hUV⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp hV
     obtain ⟨C, hC, hpoly, hCU⟩ := exists_isConvexPolyhedron_mem_nhds_pi hU
     exact ⟨C, hC, hpoly, hpiece.mono (fun y hy => hUV ⟨hCU hy.2, hy.1⟩)⟩
@@ -53,11 +53,11 @@ theorem IsPLOn.isPiecewiseAffineOn_of_isCompact (hf : IsPLOn f s) (hs : IsCompac
   obtain ⟨t, ht⟩ := hs.elim_nhdsWithin_subcover'
     (fun x hx => C ⟨x, hx⟩) (fun x hx => nhdsWithin_le_nhds (hC ⟨x, hx⟩))
   choose n D A hD hcover heq using
-    fun x : t => isPiecewiseAffineOn_iff.mp (hpiece x.1)
+    fun x : t => isPiecewiseAffineOn_iff.mp (hpiece x.val)
   refine isPiecewiseAffineOn_of_finite (ι := Σ x : t, Fin (n x))
-    (C := fun p => D p.1 p.2 ∩ C p.1.1)
+    (C := fun p => D p.1 p.2 ∩ C p.1.val)
     (A := fun p => A p.1 p.2)
-    (fun p => (hD p.1 p.2).inter (hpoly p.1.1)) ?_ ?_
+    (fun p => (hD p.1 p.2).inter (hpoly p.1.val)) ?_ ?_
   · intro y hy
     obtain ⟨x, hx, hxy⟩ := mem_iUnion₂.mp (ht hy)
     obtain ⟨j, hj⟩ := mem_iUnion.mp (hcover ⟨x, hx⟩ ⟨hy, hxy⟩)

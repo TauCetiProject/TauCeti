@@ -49,7 +49,7 @@ theorem crossProduct_left_mem_supportedIn {A : Set X} {C : Set (X × Y)}
   rw [supportedIn_def] at ha
   obtain ⟨a, rfl⟩ := ha
   let f : C(A × Y, C) := ⟨fun x ↦ ⟨(x.1.val, x.2), hC ⟨x.1.property, Set.mem_univ _⟩⟩,
-    (continuous_subtype_val.comp continuous_fst).prodMk continuous_snd |>.subtype_mk _⟩
+    (continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd |>.subtype_mk _⟩
   rw [supportedIn_def]
   refine ⟨map R f (p + q) (crossProduct A Y R p q a b), ?_⟩
   have hf : (ContinuousMap.subtypeVal C).comp f =
@@ -66,7 +66,7 @@ theorem crossProduct_right_mem_supportedIn {B : Set Y} {C : Set (X × Y)}
   rw [supportedIn_def] at hb
   obtain ⟨b, rfl⟩ := hb
   let f : C(X × B, C) := ⟨fun x ↦ ⟨(x.1, x.2.val), hC ⟨Set.mem_univ _, x.2.property⟩⟩,
-    continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd) |>.subtype_mk _⟩
+    continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd) |>.subtype_mk _⟩
   rw [supportedIn_def]
   refine ⟨map R f (p + q) (crossProduct X B R p q a b), ?_⟩
   have hf : (ContinuousMap.subtypeVal C).comp f =

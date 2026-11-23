@@ -60,28 +60,28 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {IL : ModelWithCorners 𝕜 EL HL} {IR : ModelWithCorners 𝕜 ER HR}
   [ChartedSpace HXY {p : X × Y // f p.1 = g p.2}]
   [ChartedSpace HYZ {p : Y × Z // h p.1 = k p.2}]
-  [ChartedSpace HL {p : {q : X × Y // f q.1 = g q.2} × Z // h p.1.1.2 = k p.2}]
-  [ChartedSpace HR {p : X × {q : Y × Z // h q.1 = k q.2} // f p.1 = g p.2.1.1}]
+  [ChartedSpace HL {p : {q : X × Y // f q.1 = g q.2} × Z // h p.1.val.2 = k p.2}]
+  [ChartedSpace HR {p : X × {q : Y × Z // h q.1 = k q.2} // f p.1 = g p.2.val.1}]
   {n : ℕ∞ω}
   (hXY : Manifold.IsSmoothEmbedding IXY (IX.prod IY) n
     (Subtype.val : {p : X × Y // f p.1 = g p.2} → X × Y))
   (hYZ : Manifold.IsSmoothEmbedding IYZ (IY.prod IZ) n
     (Subtype.val : {p : Y × Z // h p.1 = k p.2} → Y × Z))
   (hL : Manifold.IsSmoothEmbedding IL (IXY.prod IZ) n
-    (Subtype.val : {p : {q : X × Y // f q.1 = g q.2} × Z // h p.1.1.2 = k p.2} →
+    (Subtype.val : {p : {q : X × Y // f q.1 = g q.2} × Z // h p.1.val.2 = k p.2} →
       {p : X × Y // f p.1 = g p.2} × Z))
   (hR : Manifold.IsSmoothEmbedding IR (IX.prod IYZ) n
-    (Subtype.val : {p : X × {q : Y × Z // h q.1 = k q.2} // f p.1 = g p.2.1.1} →
+    (Subtype.val : {p : X × {q : Y × Z // h q.1 = k q.2} // f p.1 = g p.2.val.1} →
       X × {p : Y × Z // h p.1 = k p.2}))
 
 /-- The canonical associator of iterated embedded fibre products. It preserves all three
 components and both matching equations. The four inclusion hypotheses hold, in particular,
 for the atlases of transverse fibre products when both iterated constructions are transverse. -/
 def fiberProductAssocDiffeomorph :
-    {p : {q : X × Y // f q.1 = g q.2} × Z // h p.1.1.2 = k p.2} ≃ₘ^n⟮IL, IR⟯
-      {p : X × {q : Y × Z // h q.1 = k q.2} // f p.1 = g p.2.1.1} where
-  toFun p := ⟨(p.1.1.1.1, ⟨(p.1.1.1.2, p.1.2), p.2⟩), p.1.1.2⟩
-  invFun p := ⟨(⟨(p.1.1, p.1.2.1.1), p.2⟩, p.1.2.1.2), p.1.2.2⟩
+    {p : {q : X × Y // f q.1 = g q.2} × Z // h p.1.val.2 = k p.2} ≃ₘ^n⟮IL, IR⟯
+      {p : X × {q : Y × Z // h q.1 = k q.2} // f p.1 = g p.2.val.1} where
+  toFun p := ⟨(p.val.1.val.1, ⟨(p.val.1.val.2, p.val.2), p.property⟩), p.val.1.property⟩
+  invFun p := ⟨(⟨(p.val.1, p.val.2.val.1), p.property⟩, p.val.2.val.2), p.val.2.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   contMDiff_toFun := by
@@ -98,17 +98,17 @@ def fiberProductAssocDiffeomorph :
 /-- The associator regroups a matching triple without changing its entries. -/
 @[simp]
 theorem fiberProductAssocDiffeomorph_apply
-    (p : {p : {q : X × Y // f q.1 = g q.2} × Z // h p.1.1.2 = k p.2}) :
+    (p : {p : {q : X × Y // f q.1 = g q.2} × Z // h p.1.val.2 = k p.2}) :
     fiberProductAssocDiffeomorph hXY hYZ hL hR p =
-      ⟨(p.1.1.1.1, ⟨(p.1.1.1.2, p.1.2), p.2⟩), p.1.1.2⟩ :=
+      ⟨(p.val.1.val.1, ⟨(p.val.1.val.2, p.val.2), p.property⟩), p.val.1.property⟩ :=
   (rfl)
 
 /-- The inverse associator regroups a matching triple in the other direction. -/
 @[simp]
 theorem fiberProductAssocDiffeomorph_symm_apply
-    (p : {p : X × {q : Y × Z // h q.1 = k q.2} // f p.1 = g p.2.1.1}) :
+    (p : {p : X × {q : Y × Z // h q.1 = k q.2} // f p.1 = g p.2.val.1}) :
     (fiberProductAssocDiffeomorph hXY hYZ hL hR).symm p =
-      ⟨(⟨(p.1.1, p.1.2.1.1), p.2⟩, p.1.2.1.2), p.1.2.2⟩ :=
+      ⟨(⟨(p.val.1, p.val.2.val.1), p.property⟩, p.val.2.val.2), p.val.2.property⟩ :=
   (rfl)
 
 end TauCeti

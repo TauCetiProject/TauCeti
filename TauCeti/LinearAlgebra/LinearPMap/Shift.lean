@@ -44,7 +44,7 @@ theorem subScalar_domain (A : X →ₗ.[R] X) (omega : R) :
 @[simp]
 theorem subScalar_apply (A : X →ₗ.[R] X) (omega : R) (x : (subScalar A omega).domain) :
     subScalar A omega x =
-      A ⟨x, (subScalar_domain A omega) ▸ x.2⟩ - omega • (x : X) := by
+      A ⟨x, (subScalar_domain A omega) ▸ x.property⟩ - omega • (x : X) := by
   -- Unfold the domain-preserving `VAdd` so both sides use its definitionally equal subtype.
   change (-omega) • (x : X) + A x = A x - omega • (x : X)
   module

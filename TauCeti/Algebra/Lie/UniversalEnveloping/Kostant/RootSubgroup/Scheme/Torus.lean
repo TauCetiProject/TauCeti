@@ -145,7 +145,7 @@ closed immersion. -/
 @[simp]
 theorem coe_weightTorusClosedSubgroup (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     let _ := isClosedImmersion_weightTorusRepresentation b wt hwt
-    (weightTorusClosedSubgroup b wt hwt).1 =
+    (weightTorusClosedSubgroup b wt hwt).val =
       Subobject.mk (weightTorusRepresentation b wt) := by
   have _ := isClosedImmersion_weightTorusRepresentation b wt hwt
   rw [weightTorusClosedSubgroup]
@@ -153,10 +153,9 @@ theorem coe_weightTorusClosedSubgroup (hwt : Submodule.span ℤ (Set.range wt) =
 
 section Points
 
-variable {V : Type} [AddCommGroup V] [Module ℚ V] (L : AddSubgroup V)
+variable {V : Type} [AddCommGroup V] (L : AddSubgroup V)
 variable (bL : Module.Basis (Fin n) ℤ L)
 
-omit [Module ℚ V] in
 private theorem groupSchemePoint_comp_weightTorusRepresentation
     (A : Type) [CommRing A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
@@ -214,7 +213,6 @@ private theorem groupSchemePoint_comp_weightTorusRepresentation
       Spec.map (CommRingCat.ofHom f.hom.toAlgHom.toRingHom) at hmapLeft
   rw [← Category.assoc, ← hmapLeft]
 
-omit [Module ℚ V] in
 /-- **On points, the represented split torus is the original diagonal action.** The matrix of the
 point `q` of `𝔾ₘ^κ` in the basis `bL` is the matrix of `kostantTorusPoints` at the coordinate
 family of `q`. -/
@@ -238,7 +236,6 @@ theorem pointToGeneralLinear_comp_diagonalCoordinateMap_eq_kostantTorusPoints_ap
   · simp [SplitTorus.charOfPoint_weightCharacter]
   · simp [Matrix.diagonal_apply_ne _ hij, Finsupp.single_eq_of_ne hij]
 
-omit [Module ℚ V] in
 /-- On scheme-valued points, the named weight-torus representation induces the diagonal action
 `kostantTorusPoints` associated to the same basis and weight data. -/
 @[simp]

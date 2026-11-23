@@ -89,7 +89,7 @@ theorem exists_openSubgroup_index_nsmul_eq_zero (n : ℕ) (x : continuousCohomol
   set K := homogeneousCochains X
   obtain ⟨z, rfl⟩ := K.homologyπ_surjective (n + 1) x
   set c := K.iCycles (n + 1) z
-  set f : C(G, (resolutionX X (n + 1)).V) := c.1
+  set f : C(G, (resolutionX X (n + 1)).V) := c.val
   -- `f` is locally constant, being a continuous map into a discrete space
   have hf : IsLocallyConstant f := (IsLocallyConstant.iff_continuous f).2 f.continuous
   let U : OpenSubgroup G := ⟨rightTranslationStabilizer f, isOpen_rightTranslationStabilizer hf⟩
@@ -103,7 +103,7 @@ theorem exists_openSubgroup_index_nsmul_eq_zero (n : ℕ) (x : continuousCohomol
     exact (homogeneousCochains.d_apply X (n + 1) c).symm.trans (congrArg Subtype.val h)
   -- the coset sum of `f` is a homogeneous cochain of degree `n`
   let b : K.X n := ⟨∑ q : G ⧸ (U : Subgroup G), f q.out,
-    ContRepresentation.sum_apply_out_mem_invariants c.2 le_rfl⟩
+    ContRepresentation.sum_apply_out_mem_invariants c.property le_rfl⟩
   have hb : K.toCycles n (n + 1) b = (U : Subgroup G).index • z := by
     refine K.iCycles_injective (n + 1) (Subtype.ext ?_)
     have h := ConcreteCategory.congr_hom (K.toCycles_i n (n + 1)) b
