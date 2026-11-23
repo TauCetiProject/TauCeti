@@ -80,8 +80,9 @@ coercive at every point for `1 + m τ > 0` (`TauCeti.GeodesicallyConvex.moreauYo
 
 * `TauCeti.PenalizedConvex m τ φ`: the penalized energies `φ + d(w, ·)² / (2τ)` are
   `(m + 1 / τ)`-convex along some curve between any two points of finite energy.
-* `TauCeti.ConvexWithDistSq m φ`: Ambrosio–Gigli Assumption 3.24, requiring `m`-convexity of `φ`
-  and `2`-convexity of `d(·, w)²` along a shared connecting curve.
+* `TauCeti.ConvexWithDistSq m φ`: Ambrosio–Gigli Assumption 3.24, a pointwise interpolation
+  condition requiring `m`-convexity of `φ` and `2`-convexity of `d(·, w)²` along a shared
+  interpolating map `γ : ℝ → X` (no continuity of `γ` is required).
 
 ## Main results
 
@@ -164,13 +165,16 @@ theorem PenalizedConvex.mono (h : PenalizedConvex m τ φ) (hm : m' ≤ m) :
   (h h₀ h₁).imp fun _ hγ ↦ ⟨hγ.1, hγ.2.1, hγ.2.2.mono (by linarith)⟩
 
 /-- An energy `φ : X → EReal` satisfies Ambrosio–Gigli Assumption 3.24 with parameter `m` if for
-every base point `w` and any two points `v₀`, `v₁` of `{z | φ z ≠ ⊤}` there is a curve `γ` from
-`v₀` to `v₁` along which `φ` is `m`-convex and `z ↦ d(z, w)²` is `2`-convex. -/
+every base point `w` and any two points `v₀`, `v₁` of `{z | φ z ≠ ⊤}` there is an interpolating map
+`γ : ℝ → X` with `γ 0 = v₀` and `γ 1 = v₁` along which `φ` is `m`-convex and `z ↦ d(z, w)²` is
+`2`-convex. This is a pointwise interpolation condition on `[0, 1]` and does not require or supply
+continuity of `γ`. -/
 def ConvexWithDistSq (m : ℝ) (φ : X → EReal) : Prop :=
   ∀ (w : X) ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
     ConvexAlong m φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z w ^ 2 : ℝ) : EReal)) γ
 
-/-- The defining condition of `ConvexWithDistSq`. -/
+/-- The defining pointwise interpolation condition of `ConvexWithDistSq` (no continuity of `γ` is
+required). -/
 theorem convexWithDistSq_def :
     ConvexWithDistSq m φ ↔ ∀ (w : X) ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ →
       ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
@@ -182,9 +186,10 @@ theorem ConvexWithDistSq.mono (h : ConvexWithDistSq m φ) (hm : m' ≤ m) :
     ConvexWithDistSq m' φ := fun w _ _ h₀ h₁ ↦
   (h w h₀ h₁).imp fun _ hγ ↦ ⟨hγ.1, hγ.2.1, hγ.2.2.1.mono hm, hγ.2.2.2⟩
 
-/-- **Penalized convexity from curve convexity of the energy and of the squared distance**
-(Ambrosio–Gigli, Assumption 3.24). An energy satisfying `ConvexWithDistSq m φ` is penalized convex
-with parameter `m` for every time step `τ`. -/
+/-- **Penalized convexity from joint pointwise convexity of the energy and squared distance**
+(Ambrosio–Gigli, Assumption 3.24). An energy satisfying `ConvexWithDistSq m φ` (no continuity of
+the interpolating maps is required) is penalized convex with parameter `m` for every time step
+`τ`. -/
 theorem ConvexWithDistSq.penalizedConvex (h : ConvexWithDistSq m φ) :
     PenalizedConvex m τ φ := by
   intro w v₀ v₁ h₀ h₁
@@ -730,10 +735,10 @@ theorem GeodesicallyConvex.exists_moreauYosida_ne_bot (h : GeodesicallyConvex m 
   ⟨⟨τ₀, hτ₀.le⟩, hτ₀, h.moreauYosida_ne_bot (τ := ⟨τ₀, hτ₀.le⟩) hx₀ hx₀top hx₀bot
     (one_add_mul_pos_of_abs_mul_le_half (δ := τ₀) hτ₀.le (hm hτ₀.le le_rfl)) x⟩
 
-/-- **Existence of resolvent steps under curve convexity of the energy and of the squared distance**
-(Ambrosio–Gigli, Assumption 3.24). In a complete pseudometric space, if `φ` is lower
-semicontinuous and satisfies `ConvexWithDistSq m φ`, then `J_τ x` is nonempty whenever `τ > 0` and
-`1 + m τ > 0`. -/
+/-- **Existence of resolvent steps under Assumption 3.24** (Ambrosio–Gigli, Assumption 3.24). In a
+complete pseudometric space, if `φ` is lower semicontinuous and satisfies the pointwise
+interpolation condition `ConvexWithDistSq m φ` (no path continuity required), then `J_τ x` is
+nonempty whenever `τ > 0` and `1 + m τ > 0`. -/
 theorem ConvexWithDistSq.moreauYosidaResolvent_nonempty [CompleteSpace X]
     (hφ : LowerSemicontinuous φ) (h : ConvexWithDistSq m φ)
     (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
@@ -749,8 +754,10 @@ theorem ConvexWithDistSq.moreauYosidaResolvent_nonempty [CompleteSpace X]
     · rw [moreauYosida_eq_top_of_forall_eq_top fun z _ ↦ not_ne_iff.1 fun hz ↦ hdom ⟨z, hz⟩]
       exact top_ne_bot
 
-/-- **Existence and uniqueness of resolvent steps under curve convexity of the energy and of the
-squared distance** (Ambrosio–Gigli, Assumption 3.24). -/
+/-- **Existence and uniqueness of resolvent steps under Assumption 3.24** (Ambrosio–Gigli,
+Assumption 3.24). In a complete metric space, if `φ` is lower semicontinuous, satisfies
+`ConvexWithDistSq m φ` (pointwise interpolation, no path continuity required), and is finite at
+some point `x₀`, then `J_τ x` contains a unique point whenever `τ > 0` and `1 + m τ > 0`. -/
 theorem ConvexWithDistSq.existsUnique_mem_moreauYosidaResolvent {X : Type*} [MetricSpace X]
     [CompleteSpace X] {φ : X → EReal} {x₀ : X} (hφ : LowerSemicontinuous φ)
     (h : ConvexWithDistSq m φ) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥)
@@ -759,10 +766,11 @@ theorem ConvexWithDistSq.existsUnique_mem_moreauYosidaResolvent {X : Type*} [Met
   h.penalizedConvex.existsUnique_mem_moreauYosidaResolvent hφ hτ hmτ
     (h.moreauYosida_ne_bot (hφ.lowerSemicontinuousAt x₀) hx₀top hx₀bot hmτ x) ⟨x₀, hx₀top⟩
 
-/-- **Existence of minimizing movement sequences under curve convexity of the energy and of the
-squared distance** (Ambrosio–Gigli, Assumption 3.24). In a complete pseudometric space, if `φ` is
-lower semicontinuous and satisfies `ConvexWithDistSq m φ`, then for every `τ > 0` with
-`1 + m τ > 0` and every `x₀ : X` there exists a minimizing movement sequence starting at `x₀`. -/
+/-- **Existence of minimizing movement sequences under Assumption 3.24** (Ambrosio–Gigli,
+Assumption 3.24). In a complete pseudometric space, if `φ` is lower semicontinuous and satisfies
+`ConvexWithDistSq m φ` (pointwise interpolation, no path continuity required), then for every
+`τ > 0` with `1 + m τ > 0` and every `x₀ : X` there exists a minimizing movement sequence starting
+at `x₀`. -/
 theorem ConvexWithDistSq.exists_forall_mem_moreauYosidaResolvent [CompleteSpace X]
     (hφ : LowerSemicontinuous φ) (h : ConvexWithDistSq m φ)
     (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x₀ : X) :

@@ -23,20 +23,20 @@ and uniqueness of each Jordan–Kinderlehrer–Otto (JKO) step
 `TauCeti.GeneralizedGeodesicallyConvex.existsUnique_mem_moreauYosidaResolvent`), and
 `TauCeti.PenalizedConvex` (`TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex`).
 
-Applying the metric `EVI_λ` convergence theory to `WassersteinSpace 2 E`, this file proves that from
-every initial law `μ₀` of finite energy (`φ μ₀ ≠ ⊤` and `φ μ₀ ≠ ⊥`) starts an `EVI_λ` gradient flow
-`u` (unique on `[0, ∞)` by `TauCeti.IsEVISolution.eqOn`), and that piecewise constant JKO
-interpolants converge uniformly to `u` on compact time intervals as the time step tends to `0`. When
-`φ` never takes the value `⊥`, existence extends by contraction and stability to every
-`μ₀ ∈ closure {μ | φ μ ≠ ⊤}`, characterizing the `EVI_λ` domain.
+Applying the metric `EVI_λ` convergence theory to `WassersteinSpace 2 E`, this file proves that when
+`φ` never takes the value `⊥`, from every initial law `μ₀ ∈ closure {μ | φ μ ≠ ⊤}` starts an
+`EVI_λ` gradient flow `u` (unique on `[0, ∞)` by `TauCeti.IsEVISolution.eqOn`), and that
+piecewise constant JKO interpolants converge uniformly to `u` on compact time intervals as the time
+step tends to `0`, without requiring finite or uniformly bounded initial energy; this characterizes
+`TauCeti.eviDomain lam φ = closure {μ | φ μ ≠ ⊤}`.
 
 ## Main results
 
-* `TauCeti.exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent`: from every `μ₀` with
-  `φ μ₀ ≠ ⊤` and `φ μ₀ ≠ ⊥` starts an `EVI_λ` gradient flow `u` with `u 0 = μ₀`, and all JKO
-  schemes with positive step sizes `τ j → 0`, initial laws `J j 0 → μ₀` in `W₂`, and uniformly
-  bounded initial energy converge uniformly to `u` on `[0, T]` (Ambrosio–Gigli–Savaré, Theorems
-  4.0.4 and 11.2.1; Ambrosio–Gigli, Theorem 3.25).
+* `TauCeti.exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent`: when `φ` never takes
+  `⊥`, from every `μ₀ ∈ closure {μ | φ μ ≠ ⊤}` starts an `EVI_λ` gradient flow `u` with
+  `u 0 = μ₀`, and all JKO schemes with positive step sizes `τ j → 0` and initial laws
+  `J j 0 → μ₀` in `W₂` converge uniformly to `u` on `[0, T]`, without bounded initial energy
+  (Ambrosio–Gigli–Savaré, Theorems 4.0.4 and 11.2.1; Ambrosio–Gigli, Theorem 3.25).
 * `TauCeti.exists_isEVISolution_of_mem_closure_of_generalizedGeodesicallyConvex`: when `φ` never
   takes `⊥`, an `EVI_λ` gradient flow starts from every `μ₀ ∈ closure {μ | φ μ ≠ ⊤}`.
 * `TauCeti.eviDomain_eq_closure_of_generalizedGeodesicallyConvex`: when `φ` never takes `⊥`,
@@ -80,24 +80,24 @@ private lemma exists_moreauYosida_ne_bot_and_penalizedConvex
 
 /-- **Existence of Wasserstein `EVI_λ` flows and uniform convergence of JKO schemes**
 (Ambrosio–Gigli–Savaré, Theorems 4.0.4 and 11.2.1; Ambrosio–Gigli, Theorem 3.25). Let
-`φ : WassersteinSpace 2 E → EReal` be lower semicontinuous and `lam`-convex along generalized
-geodesics based at every law of `P₂(E)`. Then for every `μ₀` of finite energy (`φ μ₀ ≠ ⊤` and
-`φ μ₀ ≠ ⊥`), there starts from `μ₀` an `EVI_λ` flow `u` (`u 0 = μ₀`) such that for all positive
-step sizes `τ j → 0` and all JKO sequences `J j` whose initial laws converge to `μ₀` in `W₂` with
-uniformly bounded initial energy, the piecewise constant interpolants `t ↦ J j ⌈t / τ j⌉₊`
-converge uniformly to `u` on `[0, T]` for every `T : ℝ`. -/
+`φ : WassersteinSpace 2 E → EReal` be lower semicontinuous, `lam`-convex along generalized
+geodesics based at every law of `P₂(E)`, and never equal to `⊥`. Then for every
+`μ₀ ∈ closure {μ | φ μ ≠ ⊤}`, there starts from `μ₀` an `EVI_λ` flow `u` (`u 0 = μ₀`) such that
+for all positive step sizes `τ j → 0` and all JKO sequences `J j` whose initial laws converge to
+`μ₀` in `W₂`, the piecewise constant interpolants `t ↦ J j ⌈t / τ j⌉₊` converge uniformly to `u`
+on `[0, T]` for every `T : ℝ` (without requiring bounded initial energy). -/
 theorem exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent
     (hφ : LowerSemicontinuous φ) (hconv : ∀ ν, GeneralizedGeodesicallyConvex lam φ ν)
-    {μ₀ : WassersteinSpace 2 E} (hμ₀ : φ μ₀ ≠ ⊤) (hμ₀bot : φ μ₀ ≠ ⊥) :
+    (hbot : ∀ ν, φ ν ≠ ⊥) {μ₀ : WassersteinSpace 2 E} (hμ₀ : μ₀ ∈ closure {μ | φ μ ≠ ⊤}) :
     ∃ u : ℝ → WassersteinSpace 2 E, u 0 = μ₀ ∧ IsEVISolution lam φ u ∧
       ∀ (τ : ℕ → ℝ≥0) (J : ℕ → ℕ → WassersteinSpace 2 E), (∀ᶠ j in atTop, 0 < τ j) →
         Tendsto τ atTop (𝓝 0) → Tendsto (fun j ↦ J j 0) atTop (𝓝 μ₀) →
-        (∃ S : ℝ, ∀ᶠ j in atTop, φ (J j 0) ≤ S) →
         (∀ᶠ j in atTop, ∀ k, J j (k + 1) ∈ moreauYosidaResolvent φ (τ j) (J j k)) →
         ∀ T : ℝ, TendstoUniformlyOn
           (fun j (t : ℝ) ↦ J j ⌈t / (τ j : ℝ)⌉₊) u atTop (Icc 0 T) := by
+  obtain ⟨μ₁, hμ₁, -⟩ := Metric.mem_closure_iff.1 hμ₀ 1 one_pos
   obtain ⟨τ₀, hτ₀, h₀, hpen⟩ :=
-    exists_moreauYosida_ne_bot_and_penalizedConvex hφ hconv hμ₀ hμ₀bot
+    exists_moreauYosida_ne_bot_and_penalizedConvex hφ hconv hμ₁ (hbot μ₁)
   exact exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ hτ₀ hpen h₀ hμ₀
 
 /-- **Characterization of the Wasserstein `EVI_λ` domain** (Ambrosio–Gigli–Savaré, Theorems 4.0.4
@@ -108,8 +108,8 @@ theorem eviDomain_eq_closure_of_generalizedGeodesicallyConvex
     (hφ : LowerSemicontinuous φ) (hconv : ∀ ν, GeneralizedGeodesicallyConvex lam φ ν)
     (hbot : ∀ ν, φ ν ≠ ⊥) : eviDomain lam φ = closure {μ | φ μ ≠ ⊤} :=
   eviDomain_eq_closure_of_subset hφ fun _ hμ ↦
-    let ⟨u, hu0, hu, _⟩ :=
-      exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent hφ hconv hμ (hbot _)
+    let ⟨u, hu0, hu, _⟩ := exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent hφ hconv
+      hbot (subset_closure hμ)
     mem_eviDomain.2 ⟨u, hu, hu0⟩
 
 /-- **Existence of Wasserstein `EVI_λ` flows on `closure {μ | φ μ ≠ ⊤}`**
