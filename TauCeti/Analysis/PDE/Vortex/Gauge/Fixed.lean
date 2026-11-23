@@ -152,6 +152,12 @@ theorem gaugeFixedOperator_apply_three (x y : ℂ → EuclideanSpace ℝ (Fin 4)
     gaugeFixedOperator x y z 3 = linearizedEquation x y z 2 := by
   rfl
 
+/-- The rows of `L_x` after the gauge-fixing row are those of the linearized equation. -/
+@[simp]
+theorem gaugeFixedOperator_apply_succ (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) (i : Fin 3) :
+    gaugeFixedOperator x y z i.succ = linearizedEquation x y z i := by
+  fin_cases i <;> rfl
+
 /-- The first connection component of `L_x*`. -/
 @[simp]
 theorem gaugeFixedAdjoint_apply_zero (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -822,6 +828,14 @@ theorem gaugeFixedAdjoint_eq_zero_of_notMem_tsupport {z : ℂ} (hz : z ∉ tsupp
 theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
     HasCompactSupport (gaugeFixedAdjoint x y) :=
   hy.mono' fun _ hz ↦ not_not.1 fun hn ↦ hz (gaugeFixedAdjoint_eq_zero_of_notMem_tsupport hn)
+
+/-- `L_x* y` lies in every `Lᵖ` space, for a continuous field and a compactly supported `C¹`
+argument. -/
+theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y)
+    (hyc : HasCompactSupport y) {p : ENNReal} {μ : Measure ℂ} [IsFiniteMeasureOnCompacts μ] :
+    MemLp (gaugeFixedAdjoint x y) p μ :=
+  (continuous_gaugeFixedAdjoint hx hy).memLp_of_hasCompactSupport
+    (hasCompactSupport_gaugeFixedAdjoint hyc)
 
 /-- The gauge-fixed operator is `Cⁿ` when the background is `Cⁿ` and the argument is `Cⁿ⁺¹`. -/
 theorem contDiff_gaugeFixedOperator {n : WithTop ℕ∞}

@@ -49,6 +49,7 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.coe_eq_coe_iff_exists_zsmul`: two elements have the same class in `AddCircle p`
   exactly when they differ by an integer multiple of `p`, and
   `AddCircle.eq_of_coe_eq_of_abs_sub_lt`: two such elements closer than `p` are equal.
+* `AddCircle.exists_pi_coe_eq`: every point of a torus `(𝕜 / pℤ)^ι` lifts to `𝕜^ι`.
 * `AddCircle.intCast_floor_equivIco_add`: the floor of the sum of two representatives in
   `[0, 1)` is their defect of additivity.
 * `AddCircle.natCard_torsionBy_le` and `AddCircle.natCard_torsionBy_pi_le`: when
@@ -74,6 +75,9 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   are ordered by divisibility, and pairwise distinct.
 * `AddCircle.forall_mem_zpowers_of_apply_ofMul_eq_coe_period_div`: an element at which a
   character of a finite group of order at most `n` takes the value `p / n` generates the group.
+* `AddCircle.range_nsmul_coe_rat` and `AddCircle.ncard_range_nsmul_coe_rat`: for a positive
+  period in a linearly ordered field, the `ℕ`-multiples of the class of a rational multiple
+  `q * p` of the period form the `q.den`-torsion, so there are exactly `q.den` of them.
 * `AddCircle.nsmul_coe_period_div` and `AddCircle.nsmul_coe_period_div_of_mul_eq`: scaling the
   class of `p / n` by a divisor `d` of `n` gives the class of `p / (n / d)`; when `n` is nonzero
   in `𝕜` these are the canonical generators of the `n`- and the `n / d`-torsion.
@@ -163,6 +167,19 @@ theorem eq_of_coe_eq_of_abs_sub_lt {𝕜 : Type*} [AddCommGroup 𝕜] [LinearOrd
     exact hd
   exact injOn_coe_Ico p (min a b) ⟨min_le_left a b, (le_max_left a b).trans_lt hd'⟩
     ⟨min_le_right a b, (le_max_right a b).trans_lt hd'⟩ hab
+
+/-- Every point of a torus `(𝕜 / pℤ)^ι` is the class of a family of representatives in `𝕜^ι`.
+This is `Function.Surjective.comp_left` for the quotient map, stated with the coordinatewise
+coercion so that `obtain ⟨t, rfl⟩` leaves terms that lemmas about coerced angles rewrite. -/
+theorem exists_pi_coe_eq {𝕜 ι : Type*} [AddCommGroup 𝕜] {p : 𝕜} (θ : ι → AddCircle p) :
+    ∃ t : ι → 𝕜, (fun j ↦ (t j : AddCircle p)) = θ :=
+  QuotientAddGroup.mk_surjective.comp_left θ
+
+/-- An integer reduces to zero in `AddCircle (1 : 𝕜)`. -/
+@[simp]
+theorem coe_intCast_eq_zero {𝕜 : Type*} [Ring 𝕜] (n : ℤ) :
+    ((n : 𝕜) : AddCircle (1 : 𝕜)) = 0 :=
+  (coe_eq_zero_iff (1 : 𝕜)).mpr ⟨n, by simp⟩
 
 /-- The floor of the sum of the representatives in `[0, 1)` of two points of `AddCircle (1 : 𝕜)`
 is the defect of additivity of the representatives. -/
@@ -410,6 +427,31 @@ theorem forall_mem_zpowers_of_apply_ofMul_eq_coe_period_div {G : Type*} [Group G
   exact hn.trans (Nat.le_of_dvd (orderOf_pos g) hdvd)
 
 end ExactOrder
+
+section RationalMultiple
+
+variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {p : 𝕜} [Fact (0 < p)]
+
+/-- The `ℕ`-orbit of the class of a rational multiple `q * p` of the period is the
+`q.den`-torsion of the circle. -/
+theorem range_nsmul_coe_rat (q : ℚ) :
+    Set.range (· • ((q * p : 𝕜) : AddCircle p) : ℕ → AddCircle p) =
+      ((AddCircle p)[(q.den : ℤ)] : Set (AddCircle p)) := by
+  have hfin : IsOfFinAddOrder ((q * p : 𝕜) : AddCircle p) := by
+    rw [← addOrderOf_pos_iff, addOrderOf_coe_rat]
+    exact q.pos
+  rw [← AddSubmonoid.coe_multiples, hfin.multiples_eq_zmultiples,
+    eq_torsionBy_of_natCard_eq p (Nat.cast_ne_zero.mpr q.den_nz)
+      (H := AddSubgroup.zmultiples _) (by rw [Nat.card_zmultiples, addOrderOf_coe_rat])]
+
+/-- The `ℕ`-orbit of the class of a rational multiple `q * p` of the period has exactly `q.den`
+points: a pulse of period `q * p` against a cycle of length `p` resolves after `q.den` beats. -/
+theorem ncard_range_nsmul_coe_rat (q : ℚ) :
+    (Set.range (· • ((q * p : 𝕜) : AddCircle p) : ℕ → AddCircle p)).ncard = q.den := by
+  rw [← AddSubmonoid.coe_multiples, ← Nat.card_coe_set_eq, SetLike.coe_sort_coe,
+    Nat.card_addSubmonoidMultiples, addOrderOf_coe_rat]
+
+end RationalMultiple
 
 section PeriodDiv
 

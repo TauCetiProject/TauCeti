@@ -72,6 +72,12 @@ theorem newtonianKernel_def (n : ℕ) (x : EuclideanSpace ℝ (Fin n)) :
       ‖x‖ ^ (2 - (n : ℝ)) := by
   rw [newtonianKernel]
 
+/-- The Newtonian kernel is measurable. -/
+@[fun_prop]
+theorem measurable_newtonianKernel (n : ℕ) : Measurable (newtonianKernel n) := by
+  rw [funext (newtonianKernel_def n)]
+  fun_prop
+
 /-- The totalized Newtonian kernel takes the value zero at its pole. -/
 @[simp]
 theorem newtonianKernel_zero (n : ℕ) :

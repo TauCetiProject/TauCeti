@@ -329,6 +329,45 @@ theorem isReduced_substituteVars_segment_of_le_of_le {w : Fin Ω.numItems → Li
   rw [← ht', ← ht, substituteVars_append, substituteVars_append] at h
   exact h.infix ⟨substituteVars w t', substituteVars w t, List.append_assoc _ _ _⟩
 
+/-- If two substituted segments `u[a, b] ^ ±1` and `u[c, d] ^ ±1` (with the same sign `s`) are
+reduced and `u[c, b] ^ ±1` is nonempty, then `u[a, d] ^ ±1` is reduced. -/
+theorem isReduced_substituteVars_segment_of_overlap {u : Fin Ω.numItems → List (A × Bool)}
+    {a b c d : ℕ} {s : Bool}
+    (h₁ : FreeGroup.IsReduced (substituteVars u (Ω.segment a b s)))
+    (h₂ : FreeGroup.IsReduced (substituteVars u (Ω.segment c d s)))
+    (hne : substituteVars u (Ω.segment c b s) ≠ []) :
+    FreeGroup.IsReduced (substituteVars u (Ω.segment a d s)) := by
+  rw [isReduced_substituteVars_segment_iff] at h₁ h₂ ⊢
+  have hne' : substituteVars u (Ω.segment c b true) ≠ [] := by
+    cases s
+    · rw [segment_false, substituteVars_invRev] at hne
+      exact fun h => hne (by rw [h, FreeGroup.invRev_empty])
+    · exact hne
+  rcases le_or_gt c a with hca | hac
+  · exact h₂.infix ((Ω.segment_suffix_segment hca).flatMap _).isInfix
+  rcases le_or_gt d b with hdb | hbd
+  · exact h₁.infix ((Ω.segment_prefix_segment hdb).flatMap _).isInfix
+  have hseg (x y : ℕ) : Ω.segment x y true = Ω.segment x (min y Ω.numItems) true := by
+    have hlen : (List.finRange Ω.numItems).take Ω.numItems = List.finRange Ω.numItems :=
+      List.take_of_length_le (by simp)
+    simp only [segment_true, ← List.take_take, hlen]
+  set b' := min b Ω.numItems
+  set d' := min d Ω.numItems
+  have hcb' : c < b' := by
+    by_contra h
+    apply hne'
+    have hnil : Ω.segment c b true = [] :=
+      List.eq_nil_of_length_eq_zero (by rw [length_segment]; omega)
+    rw [hnil, FreeGroup.substituteVars_nil]
+  have hb'd' : b' ≤ d' := min_le_min_right _ hbd.le
+  rw [hseg a b, ← Ω.segment_append hac.le hcb'.le, substituteVars_append] at h₁
+  rw [hseg c d, ← Ω.segment_append hcb'.le hb'd', substituteVars_append] at h₂
+  rw [hseg c b] at hne'
+  rw [hseg a d, ← Ω.segment_append (hac.le.trans hcb'.le) hb'd',
+    ← Ω.segment_append hac.le hcb'.le,
+    substituteVars_append, substituteVars_append]
+  exact h₁.append_overlap h₂ hne'
+
 /-- The basic equation `h[α(μ), β(μ)] ^ ε(μ) = h[α(Δμ), β(Δμ)] ^ ε(Δμ)` of a variable base. -/
 def basicEquation (μ : Fin Ω.numBases) :
     List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool) :=

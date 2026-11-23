@@ -15,7 +15,9 @@ A spanning tree bases any path at a chosen vertex by adjoining the tree paths to
 endpoints. In particular, the loop through a dart follows the tree to its source, crosses
 the dart, and returns through the tree. Basing respects concatenation and reversal, and
 paths contained in the tree give the identity. A closed path is the product of the tree loops of
-its darts, which expresses the tree loops of one spanning tree in those of another.
+its darts, which expresses the tree loops of one spanning tree in those of another. A closed path
+based through the tree is conjugated by a change of spanning tree, so the normal closure of a
+family of based closed paths does not depend on the tree.
 
 The comparison with spanning-tree presentations and free groups is developed in
 `TauCeti.GroupTheory.GraphOfGroups.PathGroup`.
@@ -130,6 +132,21 @@ theorem loop_eq_prod_loop (T' : Γ.SpanningTree) (e : Γ.E) :
       ((Path.darts Γ (T'.path (Γ.tgt e) v)).map (T.loop v)).prod := by
   rw [T'.loop_def, T.ofPath_eq_prod_loop]
   simp [mul_assoc]
+
+/-- A closed path based through the tree is the path based along the tree path to its start. -/
+theorem basedPath_eq_ofPath_comp_comp_reverse {a : Γ.V} (p : Γ.Path a a) :
+    T.basedPath v p = PathGroup.ofPath (((T.path v a).comp p).comp (T.path v a).reverse) := by
+  rw [basedPath_def, reverse_path]
+
+/-- The normal closure of a family of closed paths based at `v` through a spanning tree does not
+depend on the spanning tree. -/
+theorem normalClosure_range_basedPath (T' : Γ.SpanningTree) {ι : Sort*} {a : ι → Γ.V}
+    (p : ∀ i, Γ.Path (a i) (a i)) :
+    Subgroup.normalClosure (Set.range fun i => T.basedPath v (p i)) =
+      Subgroup.normalClosure (Set.range fun i => T'.basedPath v (p i)) := by
+  simpa only [basedPath_eq_ofPath_comp_comp_reverse] using
+    PathGroup.normalClosure_range_ofPath_comp_comp_reverse p (fun i => T.path v (a i))
+      (fun i => T'.path v (a i))
 
 end
 end TauCeti.SerreGraph.SpanningTree

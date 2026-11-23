@@ -38,6 +38,8 @@ cover. No separation axiom is assumed.
 * `TauCeti.Topology.isIso_toCechCohomology_app_of_forall_isIso`: if every open cover is refined by
   a finite cover of a given kind, and refinements between such covers induce isomorphisms on Čech
   cohomology, then every such cover computes the Čech cohomology.
+* `TauCeti.Topology.isIso_toCechCohomology_app_zero`: for a sheaf, `toCechCohomology` is an
+  isomorphism in degree `0` for every cover.
 * `TauCeti.Topology.toCechCohomology_comp_finiteCechCohomologyIso_inv`: the inverse of
   `finiteCechCohomologyIso` on the image of the Čech cohomology of a small open cover.
 
@@ -74,6 +76,14 @@ def toCechCohomology {ι : Type u} (U : ι → Opens X) (hU : IsOpenCover U) :
       cechCohomology X A n :=
   TauCeti.CategoryTheory.toCechCohomology A _ _ n (FormalCoproduct.mk ι U)
     (PointOpenCover.exists_refinement U hU)
+
+/-- `toCechCohomology` is the map `TauCeti.CategoryTheory.toCechCohomology` to the colimit over
+the point-neighborhood cover system. -/
+theorem toCechCohomology_def {ι : Type u} (U : ι → Opens X) (hU : IsOpenCover U) :
+    toCechCohomology A n U hU =
+      TauCeti.CategoryTheory.toCechCohomology A PointOpenCover.toFormalCoproduct
+        (fun _ _ h ↦ h) n (FormalCoproduct.mk ι U) (PointOpenCover.exists_refinement U hU) :=
+  (rfl)
 
 /-- For a point-neighborhood cover, `toCechCohomology` is the structure map of the colimit. -/
 @[simp]
@@ -177,6 +187,28 @@ theorem isIso_toCechCohomology_app_of_forall_isIso [HasColimitsOfSize.{u, u} A]
     (IsIso.comp_isIso'
       (inferInstance : IsIso ((TauCeti.CategoryTheory.cechCohomologyι E hE n j₀).app P))
       (inferInstance : IsIso (c.hom.app P)))
+
+/-- **Every cover computes degree `0` Čech cohomology of a sheaf.** For a sheaf `F` and any
+`u`-small open cover `U`, the map `H⁰(Č(U, F)) ⟶ H⁰(X, F)` to the cover-colimit Čech cohomology is
+an isomorphism: both sides are the global sections of `F`. -/
+theorem isIso_toCechCohomology_app_zero [HasZeroObject A] {ι : Type u} (U : ι → Opens X)
+    (hU : IsOpenCover U) (F : Sheaf (Opens.grothendieckTopology X) A) :
+    IsIso ((toCechCohomology A 0 U hU).app F.obj) := by
+  obtain ⟨V, ⟨ψ⟩⟩ := PointOpenCover.exists_refinement U hU
+  have := quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top U hU.iSup_eq_top F
+  have e := NatTrans.congr_app (toCechCohomology_eq A 0 U hU V ψ) F.obj
+  -- the composite is one of natural transformations between functors whose source is a wrapped
+  -- homology functor, which `rw` does not see through
+  erw [NatTrans.comp_app] at e
+  -- through the augmentation, `toCechCohomology` is the identification with global sections
+  let f := (HomologicalComplex.singleObjHomologySelfIso _ 0 _).inv ≫
+    HomologicalComplex.homologyMap (TauCeti.CategoryTheory.cechAugmentation U isTerminalTop F.obj) 0
+  have h : f ≫ (toCechCohomology A 0 U hU).app F.obj = (cechCohomologyZeroIso F).hom := by
+    rw [cechCohomologyZeroIso_hom F V, e, TauCeti.CategoryTheory.cechComplexHomologyMap_app,
+      Category.assoc, ← HomologicalComplex.homologyMap_comp_assoc,
+      TauCeti.CategoryTheory.cechAugmentation_comp_cechComplexMap]
+  have : IsIso (f ≫ (toCechCohomology A 0 U hU).app F.obj) := h ▸ inferInstance
+  exact IsIso.of_isIso_comp_left f _
 
 variable (X) [CompactSpace X] [HasColimitsOfShape (FiniteOpenCover X) A]
 

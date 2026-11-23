@@ -140,6 +140,7 @@ theorem inner_riemannianBundle (g : ContMDiffRiemannianMetric IB n F V) (x : B) 
     Inner.inner ℝ v w = g.inner x v w := by
   rfl
 
+
 end Bundle.ContMDiffRiemannianMetric
 
 namespace Bundle.IsContinuousRiemannianBundle
@@ -192,6 +193,16 @@ end IsContMDiffRiemannianBundle
 
 namespace Bundle.ContMDiffRiemannianMetric
 
+/-- The canonical Riemannian metric on the real line is multiplication of tangent vectors. -/
+theorem ofIsContMDiffRiemannianBundle_inner_real {n : ℕ∞ω} (s : ℝ) (a b : TangentSpace 𝓘(ℝ) s) :
+    (ofIsContMDiffRiemannianBundle (IB := 𝓘(ℝ)) (n := n) (F := ℝ)
+      (V := (TangentSpace 𝓘(ℝ) : ℝ → Type _))).inner s a b = @Mul.mul ℝ _ a b := by
+  rw [ofIsContMDiffRiemannianBundle_inner]
+  -- The tangent metric of the real line is induced by its usual scalar inner product.
+  change @Inner.inner ℝ ℝ _ a b = @Mul.mul ℝ _ a b
+  exact Real.inner_apply _ _
+
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [MetricSpace M] [ChartedSpace H M]
@@ -236,6 +247,17 @@ theorem mdifferentiableAt_of_inner_mfderiv {Φ : M → N} {x : M}
   have h := hinner v
   rw [hv, inner_zero_left] at h
   exact inner_self_eq_zero (𝕜 := ℝ) (E := TangentSpace I x) |>.1 h.symm
+
+/-- The standard Riemannian metric of a real inner product space pairs two tangent vectors by the
+inner product of the corresponding vectors of the space. -/
+@[simp]
+theorem riemannianMetricVectorSpace_inner {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (x : V) (v w : TangentSpace 𝓘(ℝ, V) x) :
+    (riemannianMetricVectorSpace V).inner x v w =
+      ⟪NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w⟫_ℝ :=
+  -- The metric is `innerSL ℝ` on each fibre, and `TangentSpace` is a type synonym for `V` whose
+  -- identification `fromTangentSpace` with `V` is the identity.
+  rfl
 
 end TauCeti
 
