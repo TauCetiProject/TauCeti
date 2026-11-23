@@ -12,10 +12,13 @@ import Mathlib.Order.Cofinal
 /-!
 # Measurability and measure extensionality on ordered Borel spaces
 
-A lower semicontinuous function into a second-countable linear order is Borel measurable
-(`LowerSemicontinuous.measurable`). The same holds when lower semicontinuity fails at countably
-many points: the restriction of `f` to the complement of these points is lower semicontinuous,
-hence measurable, and a function measurable off a countable set is measurable.
+Let `α` be a second-countable linear order with its order topology and Borel σ-algebra. A lower
+semicontinuous function `f : δ → α` on a topological space `δ` whose open sets are measurable is
+measurable (`LowerSemicontinuous.measurable`). If moreover the singletons of `δ` are measurable,
+the same holds when lower semicontinuity fails at countably many points: the restriction of `f`
+to the complement of these points is lower semicontinuous, hence measurable, and with measurable
+singletons a function measurable off a countable set is measurable
+(`measurable_of_measurable_on_compl_countable`).
 
 Such functions arise, for instance, as the perimeter of the superlevel sets `{u > t}` of a
 function `u` as a function of the level `t`, which is lower semicontinuous at every level whose
@@ -23,8 +26,9 @@ level set is null, hence off a countable set.
 
 ## Main results
 
-* `TauCeti.measurable_of_countable_not_lowerSemicontinuousAt`: a function that is lower
-  semicontinuous at all but countably many points is measurable.
+* `TauCeti.measurable_of_countable_not_lowerSemicontinuousAt`: a function, on a space whose open
+  sets and singletons are measurable, that is lower semicontinuous at all but countably many
+  points is measurable.
 * `MeasureTheory.Measure.ext_of_Iic'`: measures finite on initial intervals are determined by
   their masses on those intervals, without a finite-total-mass assumption.
 -/
@@ -40,7 +44,9 @@ variable {α δ : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSpace 
   [LinearOrder α] [OrderTopology α] [SecondCountableTopology α]
   [TopologicalSpace δ] [MeasurableSpace δ] [OpensMeasurableSpace δ] [MeasurableSingletonClass δ]
 
-/-- A function that is lower semicontinuous at all but countably many points is measurable. -/
+/-- Let `δ` be a topological space whose open sets and singletons are measurable, and `α` a
+second-countable linear order with its order topology and Borel σ-algebra. A function `f : δ → α`
+that is lower semicontinuous at all but countably many points is measurable. -/
 theorem measurable_of_countable_not_lowerSemicontinuousAt {f : δ → α}
     (hf : {x | ¬LowerSemicontinuousAt f x}.Countable) : Measurable f := by
   -- Off the countable exceptional set, `f` is lower semicontinuous, hence measurable.
