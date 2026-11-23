@@ -462,14 +462,13 @@ theorem addVal_integers {x : P.integers} (hx : x ≠ 0) :
   obtain ⟨t, ht⟩ := P.exists_isUniformizer
   have ht1 : P.ord t = 1 := P.isUniformizer_iff_ord_eq_one.mp ht
   have ht0 : t ≠ 0 := by rintro rfl; simp at ht1
-  let t₀ : P.integers := ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩
-  have htirr : Irreducible t₀ := P.irreducible_of_isUniformizer ht
+  have htirr : Irreducible (⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩ : P.integers) :=
+    P.irreducible_of_isUniformizer ht
   obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hx htirr
   have hu0 : ((u : P.integers) : F) ≠ 0 := ZeroMemClass.coe_eq_zero.not.mpr u.ne_zero
   have huord : P.ord ((u : P.integers) : F) = 0 := (P.isUnit_iff_ord_eq_zero hu0).mp u.isUnit
-  rw [IsDiscreteValuationRing.addVal_def' u htirr n, MulMemClass.coe_mul,
-    SubmonoidClass.coe_pow, P.ord_mul hu0 (pow_ne_zero n ht0), huord, zero_add, P.ord_pow, ht1,
-    mul_one, Int.toNat_natCast]
+  rw [IsDiscreteValuationRing.addVal_def' u htirr n]
+  simp [P.ord_mul hu0 (pow_ne_zero n ht0), P.ord_pow, ht1, huord]
 
 end Discrete
 

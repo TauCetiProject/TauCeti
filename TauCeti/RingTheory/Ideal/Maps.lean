@@ -24,7 +24,8 @@ element, and its annihilator to the annihilator of that ideal. The principal-ide
 to ideals extended from a common commutative semiring, without assuming the algebras commutative.
 
 If `t ∈ I` and `r • I ≤ (t)`, then `I` extends to the principal ideal `(f t)` along every ring
-homomorphism `f` for which `f r` is a unit.
+homomorphism `f` for which `f r` is a unit. An ideal extended along a ring homomorphism into a
+finite product is the product of its component extensions.
 -/
 
 public section
@@ -112,11 +113,15 @@ theorem map_eq_pi_of_map_evalRingHom {ι : Type*} [Finite ι] {A : Type*} {R : �
     [Semiring A] [∀ i, Semiring (R i)] (I : Ideal A) (f : A →+* ∀ i, R i)
     (J : ∀ i, Ideal (R i)) (h : ∀ i, I.map ((Pi.evalRingHom R i).comp f) = J i) :
     I.map f = pi J := by
-  apply piOrderIso.injective
-  funext i
-  simp only [piOrderIso, OrderIso.symm_mk, RelIso.coe_fn_mk, Equiv.coe_fn_symm_mk,
-    map_evalRingHom_pi, map_map]
-  exact h i
+  have hpi : I.map f = pi (piOrderIso (I.map f)) := by
+    conv_lhs => rw [← RelIso.symm_apply_apply piOrderIso (I.map f)]
+    ext x
+    rw [← SetLike.mem_coe, coe_piOrderIso_symm_apply]
+    simp [mem_pi]
+  rw [hpi]
+  congr 1
+  ext i : 1
+  rw [← map_evalRingHom_pi (I := piOrderIso (I.map f)) i, ← hpi, map_map, h i]
 
 end Ideal
 

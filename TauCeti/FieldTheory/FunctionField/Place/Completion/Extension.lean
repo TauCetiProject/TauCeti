@@ -263,16 +263,13 @@ instance isScalarTower_completionIntegersExtensionAlgebra :
 /-- The completed valuation ring `𝒪̂_{P'}` is torsion-free over `𝒪̂_P`. -/
 instance isTorsionFree_completionIntegers :
     letI := P.completionIntegersExtensionAlgebra P' hP
-    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers :=
-  letI := P.completionIntegersExtensionAlgebra P' hP
-  Module.isTorsionFree_iff_algebraMap_injective.mpr <| by
-    rw [algebraMap_completionIntegersExtensionAlgebra]
-    exact MonoidHom.restrict_injective
-      (M' := P.completionPlace.integers.toSubmonoid)
-      (N' := P'.completionPlace.integers.toSubmonoid)
-      (f := (P.completionExtension P' hP).toMonoidHom)
-      (fun _ hx ↦ P.completionExtension_mem_integers P' hP hx)
-      (P.completionExtension P' hP).injective
+    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers := by
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  refine Module.isTorsionFree_iff_algebraMap_injective.mpr fun a b hab ↦ Subtype.ext ?_
+  have hab' := congrArg Subtype.val hab
+  rw [P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP,
+    P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP] at hab'
+  exact (P.completionExtension P' hP).injective hab'
 
 end Integers
 

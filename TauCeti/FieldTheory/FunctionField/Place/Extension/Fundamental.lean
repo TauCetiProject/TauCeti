@@ -108,10 +108,9 @@ theorem moduleFinite_integralClosure_of_isFunctionField {k : Type u} {F : Type v
     P.mem_integers_iff.mpr
       (P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr hti r r.property)
   let p : HeightOneSpectrum R := P.center hR
-  let _ : Algebra R P.integers := ((algebraMap R F).codRestrict P.integers hR).toAlgebra
-  have : IsScalarTower R P.integers F := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower R P.integers F' := .of_algebraMap_eq fun x ↦
-    IsScalarTower.algebraMap_apply R F F' x
+  let _ := P.integersAlgebra hR
+  have := P.isScalarTower_integers hR
+  have := P.isScalarTower_integers_extension (F' := F') hR
   have : IsLocalization p.asIdeal.primeCompl P.integers :=
     P.isLocalization_integers_center hR
   exact TauCeti.finite_integralClosure_of_isLocalization p.asIdeal.primeCompl P.integers F'

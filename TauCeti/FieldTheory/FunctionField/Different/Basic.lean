@@ -268,10 +268,9 @@ theorem differentExponent_eq_zero_iff_formallyUnramified :
   let B := integralClosure O F'
   let q := centerIntegralClosure k F P'
   have hB := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  let _ : Algebra B P'.integers := ((algebraMap B F').codRestrict P'.integers hB).toAlgebra
-  have : IsScalarTower O B P'.integers := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower B P'.integers F' := .of_algebraMap_eq fun b ↦ by
-    rw [ValuationSubring.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+  let _ := P'.integersAlgebra hB
+  have := P'.isScalarTower_integers hB
+  have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
   have : IsLocalization q.asIdeal.primeCompl P'.integers :=
     P'.isLocalization_integers_center hB
   exact Algebra.FormallyUnramified.iff_of_equiv
