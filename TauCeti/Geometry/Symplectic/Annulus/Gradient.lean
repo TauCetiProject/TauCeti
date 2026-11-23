@@ -47,6 +47,8 @@ negative gradient is a `C^n` vector field on the quotient
 
 ## Main results
 
+* `TauCeti.diagonalQuotientRiemannianBundle_inner`: this metric is the dot product in the charts of
+  the quotient.
 * `TauCeti.mgradient_quotientCyclicAction`: the gradient of the descended cyclic action is
   `(Y_(i-1) - y_i)_i`.
 * `TauCeti.mgradient_quotientCyclicAction_eq_zero_iff`: its zeros are the classes of the critical
@@ -80,6 +82,15 @@ abbrev diagonalQuotientRiemannianBundle (ι : Type*) [Fintype ι] :
       TangentSpace 𝓘(ℝ, ι → ℝ) y) :=
   ⟨(AddSubgroup.zmultiples (1 : ι → ℝ)).quotientDotProductMetric.toRiemannianMetric⟩
 
+/-- The metric of the diagonal quotient is the dot product of the tangent vectors, read in the
+charts of the quotient. -/
+@[simp]
+theorem diagonalQuotientRiemannianBundle_inner {ι : Type*} [Fintype ι]
+    (y : (ι → ℝ) ⧸ AddSubgroup.zmultiples (1 : ι → ℝ)) (v w : TangentSpace 𝓘(ℝ, ι → ℝ) y) :
+    letI := diagonalQuotientRiemannianBundle ι
+    inner ℝ v w = dotProduct (v : ι → ℝ) w :=
+  (AddSubgroup.zmultiples (1 : ι → ℝ)).quotientDotProductMetric_inner y v w
+
 variable {N : ℕ} [NeZero N] {S : ZMod N → ℝ × ℝ → ℝ} (hS : ∀ i, Function.Periodic (S i) (1, 1))
 
 /-- **The gradient of the cyclic action on the diagonal quotient.** For the Euclidean metric
@@ -96,9 +107,7 @@ theorem mgradient_quotientCyclicAction {q : ZMod N → ℝ}
       fun i ↦ (stripGeneratingTarget (S (i - 1)) (q (i - 1), q i)).2 -
         (stripGeneratingSource (S i) (q i, q (i + 1))).2 := by
   let := diagonalQuotientRiemannianBundle (ZMod N)
-  rw [mgradient_eq_of_inner_eq_dotProduct fun v w ↦ by
-    rw [ContMDiffRiemannianMetric.inner_riemannianBundle,
-      AddSubgroup.quotientDotProductMetric_inner]]
+  rw [mgradient_eq_of_inner_eq_dotProduct (diagonalQuotientRiemannianBundle_inner _)]
   funext i
   -- the differential of the descended action is the derivative of `W`, since the differential of
   -- the projection is the identity
