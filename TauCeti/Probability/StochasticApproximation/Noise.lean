@@ -159,23 +159,12 @@ private lemma integral_truncStep_mul_sq_le [IsFiniteMeasure P] (hα : Adapted �
     (hw : ∀ t, Measurable[ℱ (t + 1)] (w t)) (hw₂ : ∀ t, MemLp (w t) 2 P) (k s : ℕ) :
     ∫ ω, (truncStep P ℱ α w k s ω * w s ω) ^ 2 ∂P ≤
       k * ∫ ω, truncStep P ℱ α w k s ω ^ 2 ∂P := by
-  have hpull := condExp_mul_of_stronglyMeasurable_left
-    (f := fun ω ↦ truncStep P ℱ α w k s ω ^ 2) (g := w s ^ 2) (m := ℱ s) (μ := P)
-    ((stronglyMeasurable_truncStep hα k s).pow 2)
-    ((memLp_truncStep_mul hα hw hw₂ k s).integrable_sq.congr
-      (ae_of_all _ fun ω ↦ mul_pow _ _ 2)) (hw₂ s).integrable_sq
-  calc ∫ ω, (truncStep P ℱ α w k s ω * w s ω) ^ 2 ∂P
-      = ∫ ω, P[(fun ω ↦ truncStep P ℱ α w k s ω ^ 2) * w s ^ 2 | ℱ s] ω ∂P := by
-        rw [integral_condExp (ℱ.le s)]
-        simp only [mul_pow, Pi.mul_apply, Pi.pow_apply]
-    _ = ∫ ω, truncStep P ℱ α w k s ω ^ 2 * P[w s ^ 2 | ℱ s] ω ∂P := integral_congr_ae hpull
-    _ ≤ ∫ ω, k * truncStep P ℱ α w k s ω ^ 2 ∂P := by
-        refine integral_mono_of_nonneg ?_ ((integrable_truncStep_sq hα k s).const_mul _)
-          (ae_of_all _ fun ω ↦ truncStep_sq_mul_condExp_le k s ω)
-        filter_upwards [condExp_nonneg (m := ℱ s) (μ := P) (f := w s ^ 2)
-          (ae_of_all _ fun ω ↦ sq_nonneg (w s ω))] with ω hω
-        exact mul_nonneg (sq_nonneg _) hω
-    _ = k * ∫ ω, truncStep P ℱ α w k s ω ^ 2 ∂P := integral_const_mul _ _
+  simp only [mul_pow]
+  exact MeasureTheory.integral_mul_le_of_condExp_le (ℱ.le s)
+    ((stronglyMeasurable_truncStep hα k s).pow 2).aestronglyMeasurable
+    (integrable_truncStep_sq hα k s) (hw₂ s).integrable_sq
+    ((memLp_truncStep_mul hα hw hw₂ k s).integrable_sq.congr (ae_of_all _ fun ω ↦ mul_pow _ _ 2))
+    (ae_of_all _ (truncStep_sq_mul_condExp_le k s))
 
 /-- For every cutoff `k`, the truncated noise series converges almost surely: its terms are
 martingale differences whose second moments sum to at most `k ^ 2 P univ`. -/
