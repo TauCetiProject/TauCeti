@@ -300,18 +300,17 @@ theorem enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p a : ℝ≥0�
     ‖∫ t, ⟪∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤
       M * K * volume W ^ p.toReal⁻¹ * eLpNorm (fun s ↦ eLpNorm (F s) a μ) 2 *
         eLpNorm (fun t ↦ ‖G t‖ₑ) 2 := by
+  set b := fun s ↦ eLpNorm (F s) a μ
+  have hb : AEMeasurable b := hF.aemeasurable_eLpNorm_Lp .rfl a
   -- For `p = 0` the dual estimate forces every window integral to vanish.
   rcases eq_or_ne p 0 with rfl | hp0
   · have h0 (t : ℝ) : ∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s) = 0 := by
       by_cases hi : IntegrableOn (fun s ↦ ((U s)†) (F s)) ((fun s ↦ s - t) ⁻¹' W)
       · have h := enorm_setIntegral_adjoint_le hK (measurable_sub_const t hW) hF.restrict hi
-        rwa [eLpNorm_exponent_zero (((hF.aemeasurable_eLpNorm_Lp .rfl a).indicator
-          (measurable_sub_const t hW)).aestronglyMeasurable), mul_zero, nonpos_iff_eq_zero,
-          eNorm_eq_zero] at h
+        rwa [eLpNorm_exponent_zero (hb.indicator (measurable_sub_const t hW)).aestronglyMeasurable,
+          mul_zero, nonpos_iff_eq_zero, eNorm_eq_zero] at h
       · exact integral_undef hi
     simp [h0]
-  set b := fun s ↦ eLpNorm (F s) a μ
-  have hb : AEMeasurable b := hF.aemeasurable_eLpNorm_Lp .rfl a
   have hGm : AEMeasurable fun t ↦ ‖G t‖ₑ := hG.eNorm
   -- The `L²` norms of `b` over the windows, and their measurability.
   set φ := fun t ↦ (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, b s ^ (2 : ℝ)) ^ (2⁻¹ : ℝ)
@@ -321,10 +320,9 @@ theorem enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p a : ℝ≥0�
   -- On each window, the dual estimate and Hölder's inequality in time.
   have hwin (t : ℝ) : ‖∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s)‖ₑ ≤ c * φ t := by
     by_cases hi : IntegrableOn (fun s ↦ ((U s)†) (F s)) ((fun s ↦ s - t) ⁻¹' W)
-    swap
+    · have h := enorm_setIntegral_adjoint_le_of_le_two hp hK hF (measurable_sub_const t hW) hi
+      rwa [(measurePreserving_sub_right volume t).measure_preimage hW.nullMeasurableSet] at h
     · simp [integral_undef hi]
-    have h := enorm_setIntegral_adjoint_le_of_le_two hp hK hF (measurable_sub_const t hW) hi
-    rwa [(measurePreserving_sub_right volume t).measure_preimage hW.nullMeasurableSet] at h
   have hp2 : (2⁻¹ : ℝ) ≤ p.toReal⁻¹ :=
     inv_anti₀ (ENNReal.toReal_pos hp0 (ne_top_of_le_ne_top ENNReal.ofNat_ne_top hp))
       (by simpa using ENNReal.toReal_mono ENNReal.ofNat_ne_top hp)
@@ -333,14 +331,14 @@ theorem enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p a : ℝ≥0�
       ≤ ∫⁻ t, c * M * (φ t * ‖G t‖ₑ) := lintegral_mono fun t ↦ by
         calc _ ≤ ‖∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s)‖ₑ * ‖((U t)†) (G t)‖ₑ :=
               eNorm_inner_le_eNorm _ _
-          _ ≤ c * φ t * (‖(U t)†‖ₑ * ‖G t‖ₑ) := by
+          _ ≤ c * φ t * (M * ‖G t‖ₑ) := by
               gcongr
               · exact hwin t
-              · exact ((U t)†).le_opENorm _
-          _ ≤ c * M * (φ t * ‖G t‖ₑ) := by
-              rw [ContinuousLinearMap.adjoint.eNorm_map]
-              calc _ ≤ c * φ t * (M * ‖G t‖ₑ) := by gcongr; exact hM t
-                _ = c * M * (φ t * ‖G t‖ₑ) := by ring
+              · refine (((U t)†).le_opENorm _).trans ?_
+                rw [ContinuousLinearMap.adjoint.eNorm_map]
+                gcongr
+                exact hM t
+          _ = c * M * (φ t * ‖G t‖ₑ) := by ring
     _ = c * M * ∫⁻ t, φ t * ‖G t‖ₑ := lintegral_const_mul'' _ (hφ.aemeasurable.mul hGm)
     _ ≤ c * M * (volume W ^ (2⁻¹ : ℝ) * eLpNorm b 2 * eLpNorm (fun t ↦ ‖G t‖ₑ) 2) := by
         gcongr
