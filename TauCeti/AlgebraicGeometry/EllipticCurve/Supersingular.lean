@@ -15,6 +15,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.AlgClo
 -- Proof-only: over an algebraically closed field, the `2`- and `3`-torsion in characteristic `2`
 -- and `3`, read off the roots of `ΨSqₙ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.Roots
+-- Proof-only: an elliptic curve over an algebraically closed field has a rational affine point.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.IsAlgClosed
 
 /-!
 # Supersingular and ordinary Weierstrass curves
@@ -50,6 +52,8 @@ respectively `(b₂x³ + b₈)²`, and on an elliptic curve it is a nonzero cons
 
 ## Main results
 
+* `WeierstrassCurve.not_isSupersingular_zero` and `WeierstrassCurve.isOrdinary_zero`: no elliptic
+  curve is supersingular at `0`.
 * `WeierstrassCurve.isSupersingular_iff_of_isAlgClosed`: the `p`-torsion may be read over any
   algebraically closed extension of `K`.
 * `WeierstrassCurve.isSupersingular_baseChange_iff`: supersingularity is invariant under an
@@ -136,6 +140,24 @@ theorem isSupersingular_iff_forall_pow :
 section Elliptic
 
 variable [W.IsElliptic]
+
+/-- **No elliptic curve is supersingular at `0`**: its group of geometric points is nontrivial, so
+its `0`-torsion subgroup (the whole group) is not `⊥`. -/
+@[simp]
+theorem not_isSupersingular_zero : ¬W.IsSupersingular 0 := by
+  classical
+  let Wbar := W.baseChange (AlgebraicClosure K)
+  have : Wbar.IsElliptic := inferInstanceAs (W.map _).IsElliptic
+  obtain ⟨b, hb⟩ := Wbar.toAffine.exists_point_on_curve 0
+  have : Nontrivial Wbar.toAffine.Point :=
+    ⟨⟨.some 0 b (Wbar.toAffine.equation_iff_nonsingular.mp hb), 0, by simp⟩⟩
+  simpa only [IsSupersingular, Nat.cast_zero] using
+    AddSubgroup.torsionBy_zero_ne_bot Wbar.toAffine.Point
+
+/-- **Every elliptic curve is ordinary at `0`.** -/
+@[simp]
+theorem isOrdinary_zero : W.IsOrdinary 0 :=
+  not_isSupersingular_zero
 
 /-- **Supersingularity may be read over any algebraically closed extension** `Ω` of `K`: the
 `p`-torsion of `W` over `Ω` is trivial exactly when it is over `AlgebraicClosure K`, since

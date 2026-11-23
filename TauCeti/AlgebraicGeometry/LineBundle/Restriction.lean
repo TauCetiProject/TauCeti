@@ -52,8 +52,7 @@ theorem surjective_tensorRestriction_of_high_degree
     (hdeg : 2 * (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) - 2 <
       L.eulerDegree k - (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s) :
     Function.Surjective (Scheme.Modules.Hom.app
-      ((ρ_ L.obj).inv ≫ L.obj ◁
-        SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom) ⊤) := by
+      ((ρ_ L.obj).inv ≫ L.obj ◁ I.toPushforwardSubscheme) ⊤) := by
   have : ConnectedSpace X :=
     GeometricallyConnected.connectedSpace_of_subsingleton (f := X ↘ Spec (.of k))
   have hIdeg := hI.eulerDegree_inv_mk_toInvertibleSheaf_of_smooth k I s

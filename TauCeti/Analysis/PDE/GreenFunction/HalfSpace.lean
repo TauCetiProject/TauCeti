@@ -190,7 +190,7 @@ private theorem ne_of_inner_eq_zero (v : U) {x y : E} (hx : 0 < ⟪(v : E), x⟫
 theorem halfSpacePoissonKernel_pos_on_hyperplane (v : U) {x : E} (hx : 0 < ⟪(v : E), x⟫_ℝ)
     (y : (ℝ ∙ (v : E))ᗮ) : 0 < halfSpacePoissonKernel n v x y :=
   halfSpacePoissonKernel_pos hx
-    (ne_of_inner_eq_zero v hx (Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.2))
+    (ne_of_inner_eq_zero v hx (Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.property))
 
 /-- **Comparison of Poisson kernels.** If `y` lies on the hyperplane and
 `‖y - x₁‖ ≤ A ‖y - x‖`, then `K(x, y) ≤ (⟪v, x⟫ / ⟪v, x₁⟫) Aⁿ K(x₁, y)` for poles `x` in the
@@ -223,7 +223,7 @@ theorem halfSpacePoissonKernel_le_of_norm_sub_le (v : U) {x x₀ y : E}
     (hx₀ : 0 < ⟪(v : E), x₀⟫_ℝ) (hx : ‖x - x₀‖ ≤ ⟪(v : E), x₀⟫_ℝ / 2) (hy : ⟪(v : E), y⟫_ℝ = 0) :
     0 < ⟪(v : E), x⟫_ℝ ∧
       halfSpacePoissonKernel n v x y ≤ 3 / 2 * 2 ^ n * halfSpacePoissonKernel n v x₀ y := by
-  have hv : ‖(v : E)‖ = 1 := v.2
+  have hv : ‖(v : E)‖ = 1 := v.property
   have hinner : |⟪(v : E), x⟫_ℝ - ⟪(v : E), x₀⟫_ℝ| ≤ ⟪(v : E), x₀⟫_ℝ / 2 := by
     rw [← inner_sub_right]
     exact (abs_real_inner_le_norm _ _).trans (by rwa [hv, one_mul])

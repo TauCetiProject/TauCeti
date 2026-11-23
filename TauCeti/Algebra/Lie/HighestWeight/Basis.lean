@@ -77,7 +77,7 @@ theorem isDominantIntegral_base_iff (b : LieAlgebra.Basis ι H) {lam : Module.Du
   let _ := b.isCartanSubalgebra
   let _ := b.isTriangularizable
   rw [TauCeti.isDominantIntegral_iff]
-  refine ⟨fun h i ↦ by simpa using h _ (b.baseSupportEquiv i).2, fun h j hj ↦ ?_⟩
+  refine ⟨fun h i ↦ by simpa using h _ (b.baseSupportEquiv i).property, fun h j hj ↦ ?_⟩
   obtain ⟨i, hi⟩ := b.baseSupportEquiv.surjective ⟨j, hj⟩
   obtain rfl : (b.baseSupportEquiv i : H.root) = j := congrArg Subtype.val hi
   simpa using h i

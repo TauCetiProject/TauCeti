@@ -447,7 +447,7 @@ instance instModuleFinite [Γ.FiniteIndex] : Module.Finite R (ModularSymbols R �
   obtain ⟨h, hr⟩ := QuotientGroup.mk_out_eq_mul Γ g⁻¹
   have hgr : g * (QuotientGroup.mk g⁻¹ : SL(2, ℤ) ⧸ Γ).out ∈ Γ := by
     rw [hr, ← mul_assoc, mul_inv_cancel, one_mul]
-    exact h.2
+    exact h.property
   dsimp only
   rw [← mul_inv_cancel_right g (QuotientGroup.mk g⁻¹ : SL(2, ℤ) ⧸ Γ).out, map_mul,
     mul_apply_eq_comp, mk_degreeZeroRep_tmul Γ hgr]
