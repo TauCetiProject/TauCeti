@@ -16,18 +16,21 @@ public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 The spaces `C^{k,α}` of `TauCeti.CkHolderSpace` (on the whole space) and
 `TauCeti.CkHolderSpaceOn` (on an open set) are both closed subspaces of a space of jets: bounded
 continuous derivative fields on a metric space `X` of orders below `k`, with the `ℓ¹` norm,
-together with a bounded Hölder field of order `k`. This file provides the jet space, its
-construction from fields, its field projections, through which both spaces state the derivative
-identities cutting them out, and the description of equality and of the norm of jets through the
-fields. The field domain `X` is `E` for the whole space and the open set for
+together with a bounded Hölder field of order `k`. The fields of a jet are arbitrary: a jet need
+not satisfy any derivative identity, and those identities cut out the two spaces. This file
+provides the jet space, its construction from fields, its field projections, through which both
+spaces state the derivative identities, and the description of equality and of the norm of jets
+through the fields. The field domain `X` is `E` for the whole space and the open set for
 `TauCeti.CkHolderSpaceOn`.
 
 ## Main declarations
 
 * `TauCeti.CkHolderJet k α X E F`: the jet space.
 * `TauCeti.CkHolderJet.ofFields`: the jet with given fields.
-* `TauCeti.CkHolderJet.fieldL`: the derivative field of order `i ≤ k`, as a continuous linear
-  map.
+* `TauCeti.CkHolderJet.fieldL`: the field of order `i ≤ k`, as a continuous linear map to the
+  bounded continuous functions; for `i = k` this forgets the Hölder structure.
+* `TauCeti.CkHolderJet.holderFieldL`: the field of order `k`, as a continuous linear map to the
+  bounded Hölder space.
 * `TauCeti.CkHolderJet.ext`, `TauCeti.CkHolderJet.norm_eq`: a jet is determined by its fields,
   and its norm is the sum of the supremum norms of the fields and the Hölder seminorm of the top
   field.
@@ -62,7 +65,8 @@ local instance CkHolderJet.instNormedSpaceBoundedContinuousFunction (n : ℕ) :
 
 /-- The jet space of `C^{k,α}` maps with derivative fields on `X`: bounded continuous fields of
 `i`-multilinear maps on `X` for orders `i < k`, with the `ℓ¹` norm, together with a bounded
-`α`-Hölder field of `k`-multilinear maps on `X`. -/
+`α`-Hölder field of `k`-multilinear maps on `X`. The fields are independent of each other: a jet
+need not satisfy any derivative identity. -/
 abbrev CkHolderJet := WithLp 1
   ((PiLp 1 fun i : Fin k ↦ X →ᵇ (E [×i]→L[ℝ] F)) × HolderSpace α X (E [×k]→L[ℝ] F))
 
@@ -70,7 +74,8 @@ namespace CkHolderJet
 
 variable {k α X E F}
 
-/-- The derivative field of order `i ≤ k` of a jet, as a bounded continuous field. -/
+/-- The field of order `i ≤ k` of a jet, as a bounded continuous field. For `i = k` this is the
+bounded continuous view of the Hölder field `holderFieldL`. -/
 def fieldL (i : Fin (k + 1)) : CkHolderJet k α X E F →L[ℝ] (X →ᵇ (E [×i]→L[ℝ] F)) :=
   Fin.lastCases (motive := fun i : Fin (k + 1) ↦
       CkHolderJet k α X E F →L[ℝ] (X →ᵇ (E [×i]→L[ℝ] F)))
@@ -90,6 +95,19 @@ theorem fieldL_last (J : CkHolderJet k α X E F) :
     CkHolderJet k α X E F →L[ℝ] (X →ᵇ (E [×i]→L[ℝ] F)))
     (last := HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
     (cast := fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)))).trans (by simp)
+
+/-- The Hölder field of order `k` of a jet, as an element of the bounded Hölder space. -/
+def holderFieldL : CkHolderJet k α X E F →L[ℝ] HolderSpace α X (E [×k]→L[ℝ] F) :=
+  WithLp.sndL 1 ℝ _ _
+
+/-- The Hölder field is the second factor. -/
+theorem holderFieldL_apply (J : CkHolderJet k α X E F) : holderFieldL J = J.ofLp.2 := by
+  rw [holderFieldL, WithLp.sndL_apply, WithLp.ofLp_snd]
+
+/-- The bounded continuous view of the Hölder field is the field of order `k`. -/
+theorem toBoundedContinuousFunction_holderFieldL (J : CkHolderJet k α X E F) :
+    (holderFieldL J).toBoundedContinuousFunction = fieldL (Fin.last k) J := by
+  rw [fieldL_last, holderFieldL_apply]
 
 /-- A jet is determined by its derivative fields. -/
 theorem ext {J K : CkHolderJet k α X E F} (h : ∀ i, fieldL i J = fieldL i K) : J = K := by
@@ -126,6 +144,12 @@ theorem fieldL_last_ofFields (g : ∀ j : Fin k, X →ᵇ (E [×j]→L[ℝ] F))
     (h : HolderSpace α X (E [×k]→L[ℝ] F)) :
     fieldL (Fin.last k) (ofFields g h) = h.toBoundedContinuousFunction := by
   rw [ofFields, fieldL_last]
+
+/-- The Hölder field of `ofFields g h` is `h`. -/
+theorem holderFieldL_ofFields (g : ∀ j : Fin k, X →ᵇ (E [×j]→L[ℝ] F))
+    (h : HolderSpace α X (E [×k]→L[ℝ] F)) :
+    holderFieldL (ofFields g h) = h := by
+  rw [ofFields, holderFieldL_apply]
 
 end CkHolderJet
 

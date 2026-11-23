@@ -233,7 +233,7 @@ def iteratedFDeriv (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) : Ω →ᵇ
 /-- The `k`-th derivative field of an element of `C^{k,α}(Ω)`, as an element of the bounded
 Hölder space on `Ω`. -/
 def iteratedFDerivHolder (f : CkHolderSpaceOn k α Ω F) : HolderSpace α Ω (E [×k]→L[ℝ] F) :=
-  (toJet f).ofLp.2
+  holderFieldL (toJet f)
 
 /-- The underlying function on `Ω` of an element of `C^{k,α}(Ω)`: its order-zero derivative
 field, evaluated on the empty tuple. Use the coercion `⇑f` instead. -/
@@ -333,7 +333,7 @@ theorem iteratedFDeriv_eq (f : CkHolderSpaceOn k α Ω F) {g : E → F} (hg : �
 @[simp]
 theorem toBoundedContinuousFunction_iteratedFDerivHolder (f : CkHolderSpaceOn k α Ω F) :
     f.iteratedFDerivHolder.toBoundedContinuousFunction = f.iteratedFDeriv (Fin.last k) := by
-  rw [iteratedFDeriv, fieldL_last, iteratedFDerivHolder]
+  rw [iteratedFDeriv, iteratedFDerivHolder, toBoundedContinuousFunction_holderFieldL]
 
 /-- The Hölder field is the derivative field of order `k`. -/
 @[simp]
@@ -461,21 +461,20 @@ theorem iteratedFDerivL_apply (i : Fin (k + 1)) (f : CkHolderSpaceOn k α Ω F) 
 /-- The `k`-th derivative field, as a continuous linear map to the bounded Hölder space on
 `Ω`. -/
 def iteratedFDerivHolderL : CkHolderSpaceOn k α Ω F →L[ℝ] HolderSpace α Ω (E [×k]→L[ℝ] F) :=
-  (WithLp.sndL 1 ℝ _ _).comp toJetL
+  holderFieldL.comp toJetL
 
 /-- The linear map `iteratedFDerivHolderL` sends an element to its `k`-th derivative field in the
 bounded Hölder space. -/
 @[simp]
 theorem iteratedFDerivHolderL_apply (f : CkHolderSpaceOn k α Ω F) :
     iteratedFDerivHolderL f = f.iteratedFDerivHolder := by
-  rw [iteratedFDerivHolderL, ContinuousLinearMap.comp_apply, toJetL_apply, WithLp.sndL_apply,
-    iteratedFDerivHolder, WithLp.ofLp_snd]
+  rw [iteratedFDerivHolderL, ContinuousLinearMap.comp_apply, toJetL_apply, iteratedFDerivHolder]
 
 /-- The Hölder-space norm of the `k`-th derivative field is controlled by the `C^{k,α}(Ω)`
 norm. -/
 theorem norm_iteratedFDerivHolder_le (f : CkHolderSpaceOn k α Ω F) :
     ‖f.iteratedFDerivHolder‖ ≤ ‖f‖ := by
-  rw [← norm_toJet, WithLp.prod_norm_eq_of_L1]
+  rw [← norm_toJet, WithLp.prod_norm_eq_of_L1, iteratedFDerivHolder, holderFieldL_apply]
   exact le_add_of_nonneg_left (norm_nonneg _)
 
 /-- The `k`-th derivative map to the bounded Hölder space has operator norm at most one. -/
@@ -711,11 +710,13 @@ private def jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
   ofFields
     (fun j : Fin k ↦ BoundedContinuousFunction.ofContinuousOn (_root_.iteratedFDeriv ℝ j g)
       (ContinuousOn.continuousOn_iteratedFDeriv hg Ω.isOpen (by exact_mod_cast j.isLt.le))
-      (hbdd j j.isLt.le).choose fun x hx ↦ (hbdd j j.isLt.le).choose_spec ⟨x, hx⟩)
+      ((hbdd j j.isLt.le).elim fun C hC ↦
+        isBounded_iff_forall_norm_le.2 ⟨C, Set.forall_mem_image.2 fun x hx ↦ hC ⟨x, hx⟩⟩))
     (HolderSpace.ofBoundedContinuousFunction
       (BoundedContinuousFunction.ofContinuousOn (_root_.iteratedFDeriv ℝ k g)
-        (ContinuousOn.continuousOn_iteratedFDeriv hg Ω.isOpen le_rfl) (hbdd k le_rfl).choose
-        fun x hx ↦ (hbdd k le_rfl).choose_spec ⟨x, hx⟩)
+        (ContinuousOn.continuousOn_iteratedFDeriv hg Ω.isOpen le_rfl)
+        ((hbdd k le_rfl).elim fun C hC ↦
+          isBounded_iff_forall_norm_le.2 ⟨C, Set.forall_mem_image.2 fun x hx ↦ hC ⟨x, hx⟩⟩))
       (by rwa [BoundedContinuousFunction.coe_ofContinuousOn]))
 
 private theorem fieldL_jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
@@ -726,10 +727,10 @@ private theorem fieldL_jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
   | last =>
     rw [jetOf, fieldL_last_ofFields,
       HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction]
-    exact BoundedContinuousFunction.ofContinuousOn_apply _ _ _ _ x
+    exact BoundedContinuousFunction.ofContinuousOn_apply _ _ _ x
   | cast j =>
     rw [jetOf, fieldL_castSucc_ofFields]
-    exact BoundedContinuousFunction.ofContinuousOn_apply _ _ _ _ x
+    exact BoundedContinuousFunction.ofContinuousOn_apply _ _ _ x
 
 private theorem isJetGraph_jetOf (g : E → F) (hg : ContDiffOn ℝ k g Ω)
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C)

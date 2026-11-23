@@ -178,6 +178,29 @@ theorem continuousAt_of_forall_apply_eq (hG : UniformContinuousOn G s) (hδ : 0 
 
 end PseudoMetricSpace
 
+section OfContinuousOn
+
+variable {α β : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {s : Set α}
+
+/-- The bounded continuous function on a set `s` given by a function continuous on `s` with bounded
+image of `s`. -/
+noncomputable def ofContinuousOn (f : α → β) (hf : ContinuousOn f s)
+    (hb : Bornology.IsBounded (f '' s)) : s →ᵇ β :=
+  ⟨⟨s.domRestrict f, continuousOn_iff_continuous_domRestrict.mp hf⟩,
+    (Metric.isBounded_iff.1 hb).imp fun _ hC x y ↦
+      hC (Set.mem_image_of_mem f x.property) (Set.mem_image_of_mem f y.property)⟩
+
+@[simp]
+theorem coe_ofContinuousOn (f : α → β) (hf : ContinuousOn f s)
+    (hb : Bornology.IsBounded (f '' s)) : ⇑(ofContinuousOn f hf hb) = s.domRestrict f :=
+  (rfl)
+
+theorem ofContinuousOn_apply (f : α → β) (hf : ContinuousOn f s)
+    (hb : Bornology.IsBounded (f '' s)) (x : s) : ofContinuousOn f hf hb x = f x :=
+  (rfl)
+
+end OfContinuousOn
+
 end BoundedContinuousFunction
 
 namespace ContinuousLinearMap
@@ -290,24 +313,6 @@ theorem compContinuousₗᵢ_symm_apply (s : S) (a b : C(α, α)) (hab : ∀ x, 
     ((compContinuousₗᵢ (𝕜 := 𝕜) s a b hab hba ha hb).symm f : α →ᵇ β) =
       (f : α →ᵇ β).compContinuous b :=
   (rfl)
-
-/-- The bounded continuous function on a set `s` given by a function continuous on `s` and bounded
-in norm by `C` on `s`. -/
-noncomputable def ofContinuousOn {X : Type*} [TopologicalSpace X] {s : Set X} (f : X → β)
-    (hf : ContinuousOn f s) (C : ℝ) (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : s →ᵇ β :=
-  ofNormedAddCommGroup (s.domRestrict f) (continuousOn_iff_continuous_domRestrict.mp hf) C
-    fun x ↦ hC x x.property
-
-@[simp]
-theorem coe_ofContinuousOn {X : Type*} [TopologicalSpace X] {s : Set X} (f : X → β)
-    (hf : ContinuousOn f s) (C : ℝ) (hC : ∀ x ∈ s, ‖f x‖ ≤ C) :
-    ⇑(ofContinuousOn f hf C hC) = s.domRestrict f :=
-  coe_ofNormedAddCommGroup _ _ _ _
-
-theorem ofContinuousOn_apply {X : Type*} [TopologicalSpace X] {s : Set X} (f : X → β)
-    (hf : ContinuousOn f s) (C : ℝ) (hC : ∀ x ∈ s, ‖f x‖ ≤ C) (x : s) :
-    ofContinuousOn f hf C hC x = f x := by
-  simp
 
 /-- On a discrete space, every bounded real function is a uniform limit of finite-valued
 bounded functions: `δ * ⌊f / δ⌋` is within `δ` of `f`. -/
