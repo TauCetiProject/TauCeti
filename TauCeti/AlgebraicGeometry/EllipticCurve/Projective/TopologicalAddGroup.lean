@@ -81,11 +81,11 @@ variable [TopologicalSpace F] [IsTopologicalRing F]
 /-- Negation of points is continuous: on homogeneous coordinates it is a linear map. -/
 instance : ContinuousNeg W.Point := by
   refine ⟨isOpenQuotientMap_mk.isQuotientMap.continuous_iff.mpr ?_⟩
-  have h := continuous_mk (W := W) (Projective.continuous_neg.comp continuous_subtype_val)
-    fun P : {P : Fin 3 → F // W.Nonsingular P} ↦ nonsingular_neg P.2
+  have h := continuous_mk (W := W) (Projective.continuous_neg.comp continuous_subtypeVal)
+    fun P : {P : Fin 3 → F // W.Nonsingular P} ↦ nonsingular_neg P.property
   convert h using 2 with P
   rw [Point.ext_iff]
-  exact negMap_eq P.1
+  exact negMap_eq P.val
 
 /-- Addition of points is continuous: near each pair of points it is given on homogeneous
 coordinates by one of the two polynomial addition laws `addXYZ` and `dblAddXYZ`. -/
@@ -95,17 +95,19 @@ instance [T1Space F] : ContinuousAdd W.Point := by
   -- Near each pair of representatives one of the two addition laws stays nonzero and gives
   -- continuous homogeneous coordinates of the sum.
   let p : {P : Fin 3 → F // W.Nonsingular P} × {P : Fin 3 → F // W.Nonsingular P} →
-      (Fin 3 → F) × (Fin 3 → F) := fun PQ ↦ (PQ.1.1, PQ.2.1)
+      (Fin 3 → F) × (Fin 3 → F) := fun PQ ↦ (PQ.1.val, PQ.2.val)
   have hp : Continuous p := by fun_prop
-  rcases addXYZ_ne_zero_or_dblAddXYZ_ne_zero PQ₀.1.2 PQ₀.2.2 with h | h
+  rcases addXYZ_ne_zero_or_dblAddXYZ_ne_zero PQ₀.1.property PQ₀.2.property with h | h
   · have hc := (continuous_addXYZ (W' := W)).comp hp
     refine continuousAt_of_eventually_eq_mk hc.continuousAt ?_
     filter_upwards [hc.continuousAt.eventually_ne h] with PQ hPQ
-    exact exists_mk_eq_mk_add_mk PQ.1.2 PQ.2.2 (add_of_addXYZ_ne_zero hPQ ▸ Setoid.refl _)
+    exact exists_mk_eq_mk_add_mk PQ.1.property PQ.2.property
+        (add_of_addXYZ_ne_zero hPQ ▸ Setoid.refl _)
   · have hc := (continuous_dblAddXYZ (W' := W)).comp hp
     refine continuousAt_of_eventually_eq_mk hc.continuousAt ?_
     filter_upwards [hc.continuousAt.eventually_ne h] with PQ hPQ
-    exact exists_mk_eq_mk_add_mk PQ.1.2 PQ.2.2 (dblAddXYZ_equiv_add PQ.1.2 PQ.2.2 hPQ)
+    exact exists_mk_eq_mk_add_mk PQ.1.property PQ.2.property (dblAddXYZ_equiv_add PQ.1.property
+        PQ.2.property hPQ)
 
 /-- **The points of a Weierstrass curve over a topological field form a topological group**, in
 the analytic topology induced from the projective plane. -/
@@ -125,18 +127,18 @@ noncomputable def continuousAddEquivVariableChange :
     refine isOpenQuotientMap_mk.isQuotientMap.continuous_iff.mpr ?_
     simpa only [Function.comp_def, AddEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe,
       AddEquiv.coe_toEquiv, addEquivVariableChange_mk] using
-      continuous_mk ((continuous_const.matrix_mulVec continuous_subtype_val))
+      continuous_mk ((continuous_const.matrix_mulVec continuous_subtypeVal))
         fun P : {P : Fin 3 → F // (C • W).toProjective.Nonsingular P} ↦
-          (nonsingular_variableChange W C P.1).mp P.2
+          (nonsingular_variableChange W C P.val).mp P.property
   continuous_invFun := by
     refine isOpenQuotientMap_mk.isQuotientMap.continuous_iff.mpr ?_
     simpa only [Function.comp_def, AddEquiv.toEquiv_eq_coe, Equiv.invFun_as_coe,
       AddEquiv.coe_toEquiv_symm, addEquivVariableChange_symm_mk] using
-      continuous_mk ((continuous_const.matrix_mulVec continuous_subtype_val))
+      continuous_mk ((continuous_const.matrix_mulVec continuous_subtypeVal))
         fun P : {P : Fin 3 → F // W.toProjective.Nonsingular P} ↦
           (nonsingular_variableChange W C _).mpr (by
             rw [mulVec_mulVec, VariableChange.toMatrix_mul_toMatrix_inv, one_mulVec]
-            exact P.2)
+            exact P.property)
 
 @[simp]
 theorem coe_continuousAddEquivVariableChange :

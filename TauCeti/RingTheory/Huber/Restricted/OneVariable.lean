@@ -128,10 +128,10 @@ noncomputable def restrictedMvPowerSeriesSubringOneEquiv :
     restrictedMvPowerSeriesSubring 1 R ≃+*
       PowerSeries.IsRestricted.subring (R := R) 1 where
   toFun f := ⟨MvPowerSeries.renameEquiv R finOneEquiv f,
-    isRestricted_renameEquiv_finOne_iff.mp (mem_restrictedMvPowerSeriesSubring.mp f.2)⟩
+    isRestricted_renameEquiv_finOne_iff.mp (mem_restrictedMvPowerSeriesSubring.mp f.property)⟩
   invFun f := ⟨(MvPowerSeries.renameEquiv R finOneEquiv).symm f,
     mem_restrictedMvPowerSeriesSubring.mpr <| isRestricted_renameEquiv_finOne_iff.mpr <| by
-      rw [AlgEquiv.apply_symm_apply]; exact f.2⟩
+      rw [AlgEquiv.apply_symm_apply]; exact f.property⟩
   left_inv f := Subtype.ext <| (MvPowerSeries.renameEquiv R finOneEquiv).left_inv f
   right_inv f := Subtype.ext <| (MvPowerSeries.renameEquiv R finOneEquiv).right_inv f
   map_mul' f g := Subtype.ext <| map_mul (MvPowerSeries.renameEquiv R finOneEquiv)

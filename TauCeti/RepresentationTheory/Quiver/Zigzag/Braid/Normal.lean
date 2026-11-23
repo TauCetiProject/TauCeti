@@ -283,6 +283,7 @@ theorem zigzagBraidNormalFirstDifferential_swap (i j : V) :
   apply biprod.hom_ext' <;> apply biprod.hom_ext <;>
     simp [zigzagBraidNormalFirstDifferential, biprod.braiding_hom]
 
+@[reassoc]
 private theorem normalSwap_evaluations (i j : V) :
     (biprod.braiding (U i) (U j)).hom ≫ biprod.desc (E j) (E i) =
       biprod.desc (E i) (E j) := by
@@ -319,6 +320,43 @@ private def normalSwapComponentIso (i j : V) (p : ℤ) :
       · exact (isZero_zigzagBraidNormalComplex_X k G i j h₂ h₁ h₀).iso
           (isZero_zigzagBraidNormalComplex_X k G j i h₂ h₁ h₀)
 
+@[simp]
+private theorem normalSwapComponentIso_minusTwo (i j : V) :
+    (normalSwapComponentIso k G i j (-2)).hom =
+      (zigzagBraidNormalComplexXMinusTwoIso k G i j).hom ≫
+        (biprod.braiding (T (U i) (U j)) (T (U j) (U i))).hom ≫
+          (zigzagBraidNormalComplexXMinusTwoIso k G j i).inv := by
+  simp [normalSwapComponentIso]
+
+@[simp]
+private theorem normalSwapComponentIso_minusOne (i j : V) :
+    (normalSwapComponentIso k G i j (-1)).hom =
+      (zigzagBraidNormalComplexXMinusOneIso k G i j).hom ≫
+        (biprod.braiding (U i) (U j)).hom ≫ (zigzagBraidNormalComplexXMinusOneIso k G j i).inv := by
+  simp [normalSwapComponentIso]
+
+@[simp]
+private theorem normalSwapComponentIso_zero (i j : V) :
+    (normalSwapComponentIso k G i j 0).hom =
+      (zigzagBraidNormalComplexXZeroIso k G i j).hom ≫
+        (zigzagBraidNormalComplexXZeroIso k G j i).inv := by
+  simp [normalSwapComponentIso]
+
+/-- The swap commutes with the differential out of degree `-2`. -/
+private theorem normalSwapComponentIso_comm_minusTwo (i j : V) :
+    (normalSwapComponentIso k G i j (-2)).hom ≫ (zigzagBraidNormalComplex k G j i).d (-2) (-1) =
+      (zigzagBraidNormalComplex k G i j).d (-2) (-1) ≫
+        (normalSwapComponentIso k G i j (-1)).hom := by
+  simp only [normalSwapComponentIso_minusTwo, normalSwapComponentIso_minusOne, normal_d_minusTwo,
+    Category.assoc, Iso.inv_hom_id_assoc, zigzagBraidNormalFirstDifferential_swap_assoc]
+
+/-- The swap commutes with the differential out of degree `-1`. -/
+private theorem normalSwapComponentIso_comm_minusOne (i j : V) :
+    (normalSwapComponentIso k G i j (-1)).hom ≫ (zigzagBraidNormalComplex k G j i).d (-1) 0 =
+      (zigzagBraidNormalComplex k G i j).d (-1) 0 ≫ (normalSwapComponentIso k G i j 0).hom := by
+  simp only [normalSwapComponentIso_minusOne, normalSwapComponentIso_zero, normal_d_minusOne,
+    Category.assoc, Iso.inv_hom_id_assoc, normalSwap_evaluations_assoc]
+
 /-- Exchange the ordered pair and vertex summands of the common evaluation complex. -/
 def zigzagBraidNormalSwapIso (i j : V) :
     zigzagBraidNormalComplex k G i j ≅ zigzagBraidNormalComplex k G j i :=
@@ -329,37 +367,12 @@ def zigzagBraidNormalSwapIso (i j : V) :
     · subst p
       have : q = -1 := by omega
       subst q
-      -- Compute the two selected cone-term components before using their differential API.
-      change ((zigzagBraidNormalComplexXMinusTwoIso k G i j).hom ≫
-          (biprod.braiding (T (U i) (U j))
-            (T (U j) (U i))).hom ≫
-          (zigzagBraidNormalComplexXMinusTwoIso k G j i).inv) ≫
-          (zigzagBraidNormalComplex k G j i).d (-2) (-1) =
-        (zigzagBraidNormalComplex k G i j).d (-2) (-1) ≫
-          (zigzagBraidNormalComplexXMinusOneIso k G i j).hom ≫
-          (biprod.braiding (U i) (U j)).hom ≫
-          (zigzagBraidNormalComplexXMinusOneIso k G j i).inv
-      rw [normal_d_minusTwo, normal_d_minusTwo]
-      simp only [Category.assoc, Iso.inv_hom_id_assoc]
-      exact congrArg (fun f ↦ (zigzagBraidNormalComplexXMinusTwoIso k G i j).hom ≫ f ≫
-        (zigzagBraidNormalComplexXMinusOneIso k G j i).inv)
-          (zigzagBraidNormalFirstDifferential_swap k G i j)
+      exact normalSwapComponentIso_comm_minusTwo k G i j
     · by_cases h₁ : p = -1
       · subst p
         have : q = 0 := by omega
         subst q
-        -- Compute the vertex and regular-term components of the swap.
-        change ((zigzagBraidNormalComplexXMinusOneIso k G i j).hom ≫
-            (biprod.braiding (U i) (U j)).hom ≫
-            (zigzagBraidNormalComplexXMinusOneIso k G j i).inv) ≫
-            (zigzagBraidNormalComplex k G j i).d (-1) 0 =
-          (zigzagBraidNormalComplex k G i j).d (-1) 0 ≫
-            (zigzagBraidNormalComplexXZeroIso k G i j).hom ≫
-            (zigzagBraidNormalComplexXZeroIso k G j i).inv
-        rw [normal_d_minusOne, normal_d_minusOne]
-        simp only [Category.assoc, Iso.inv_hom_id_assoc]
-        exact congrArg (fun f ↦ (zigzagBraidNormalComplexXMinusOneIso k G i j).hom ≫ f ≫
-          (zigzagBraidNormalComplexXZeroIso k G j i).inv) (normalSwap_evaluations k G i j)
+        exact normalSwapComponentIso_comm_minusOne k G i j
       · by_cases h₀ : p = 0
         · exact (isZero_zigzagBraidNormalComplex_X k G j i
             (by omega) (by omega) (by omega)).eq_of_tgt _ _

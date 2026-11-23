@@ -34,6 +34,9 @@ We define the valuation spectrum `Spv A` following Wedhorn, *Adic Spaces*
   `TauCeti.ValuationSpectrum.comap_ofValuation_valuation` and
   `TauCeti.ValuationSpectrum.valuationSubring_valuation_comap` : over a field, a point is the
   point of its valuation subring, compatibly with pullback.
+* `TauCeti.ValuationSpectrum.valuationSubring_valuation_injective` and
+  `TauCeti.ValuationSpectrum.comap_eq_comap_iff_valuationSubring_comap_eq` : over fields, points
+  and their pullbacks are compared through valuation subrings.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_inter` : **Wedhorn's step (i)** in the proof of
   Lemma 7.5, that the rational opens are stable under finite intersection.
 * `TauCeti.ValuationSpectrum.basicOpenFinset_image_mul_right` : scaling every numerator and the
@@ -408,7 +411,7 @@ lemma valuation_lt_iff (v : Spv A) (x y : A) :
 `v ∈ Spv(A)(f/s)` iff `v(f) ≤ v(s)` and `v(s) ≠ 0`. -/
 lemma mem_basicOpen_iff_valuation (f s : A) (v : Spv A) :
     v ∈ basicOpen f s ↔ v.valuation f ≤ v.valuation s ∧ v.valuation s ≠ 0 := by
-  rw [mem_basicOpen_iff, ← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
+  rw [mem_basicOpen_iff, ← valuation_le_iff, ← valuation_le_iff, map_zero, nonpos_iff_eq_zero]
 
 /-- The support of `v : Spv A` equals the support of its canonical valuation. -/
 lemma supp_eq_valuation_supp (v : Spv A) : v.supp = v.valuation.supp :=
@@ -494,6 +497,20 @@ theorem valuationSubring_valuation_comap (g : K →+* L) (w : Spv L) :
   have := valuation_le_iff (comap g w) x 1
   rw [map_one, comap_vle, ← valuation_le_iff, map_one] at this
   simpa [Valuation.mem_valuationSubring_iff] using this
+
+/-- A point of the valuation spectrum of a field is determined by its valuation subring. -/
+theorem valuationSubring_valuation_injective :
+    Function.Injective fun w : Spv K ↦ w.valuation.valuationSubring := by
+  intro y y' h
+  dsimp only at h
+  rw [← ofValuation_valuationSubring_valuation y, h, ofValuation_valuationSubring_valuation]
+
+/-- Over fields, two points have the same pullback exactly when their valuation subrings do. -/
+theorem comap_eq_comap_iff_valuationSubring_comap_eq (g : K →+* L) {y y' : Spv L} :
+    comap g y = comap g y' ↔
+      y.valuation.valuationSubring.comap g = y'.valuation.valuationSubring.comap g := by
+  rw [← valuationSubring_valuation_comap, ← valuationSubring_valuation_comap]
+  exact valuationSubring_valuation_injective.eq_iff.symm
 
 end Field
 

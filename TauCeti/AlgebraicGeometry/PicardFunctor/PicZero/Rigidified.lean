@@ -110,11 +110,11 @@ def rigidifiedPicardDegreeZeroFunctor : (Over S)ᵒᵖ ⥤ CommGrpCat.{u + 1} wh
   map g := CommGrpCat.ofHom <|
     (((rigidifiedPicardFunctor f x₀ hx₀).map g).hom.comp
       (rigidifiedPicardDegreeZeroSubgroup f x₀ hx₀ _).subtype).codRestrict _
-        fun a ↦ rigidifiedPicardDegreeZero_map_mem f x₀ hx₀ g a.2
+        fun a ↦ rigidifiedPicardDegreeZero_map_mem f x₀ hx₀ g a.property
   map_id T := CommGrpCat.ext fun a ↦ Subtype.ext <|
-    ConcreteCategory.congr_hom ((rigidifiedPicardFunctor f x₀ hx₀).map_id T) a.1
+    ConcreteCategory.congr_hom ((rigidifiedPicardFunctor f x₀ hx₀).map_id T) a.val
   map_comp g h := CommGrpCat.ext fun a ↦ Subtype.ext <|
-    ConcreteCategory.congr_hom ((rigidifiedPicardFunctor f x₀ hx₀).map_comp g h) a.1
+    ConcreteCategory.congr_hom ((rigidifiedPicardFunctor f x₀ hx₀).map_comp g h) a.val
 
 /-- The value of the degree-zero rigidified Picard functor at `T` is the subgroup of rigidified
 classes having degree zero on every geometric fibre. -/
@@ -175,7 +175,7 @@ lemma rigidifiedPicardDegreeZeroFunctorι_app_mem {T : (Over S)ᵒᵖ}
     (a : (rigidifiedPicardDegreeZeroFunctor f x₀ hx₀).obj T) :
     (rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀).app T a ∈
       rigidifiedPicardDegreeZeroSubgroup f x₀ hx₀ T :=
-  a.2
+  a.property
 
 /-- Forgetting the rigidification maps the degree-zero rigidified Picard functor to the
 degree-zero relative Picard functor. -/
