@@ -280,7 +280,7 @@ The other coefficients of a level-`d` series vanish
 theorem coeff_levelKummer (η : rootsOfUnity d K) (x : level K d) (k : ℤ) :
     ((levelKummer K d η x : puiseuxField K) : HahnSeries ℚ K).coeff ((k : ℚ) / d) =
       ((η : Kˣ) : K) ^ k * ((x : puiseuxField K) : HahnSeries ℚ K).coeff ((k : ℚ) / d) := by
-  obtain ⟨f, hf⟩ : ∃ f, levelEmbedding K d f = x := (mem_level_iff K d x).mp x.2
+  obtain ⟨f, hf⟩ : ∃ f, levelEmbedding K d f = x := (mem_level_iff K d x).mp x.property
   rw [coe_levelKummer_of_coe_eq η hf.symm, ← hf, coe_levelEmbedding, coe_levelEmbedding,
     coeff_ramifiedEmbedding_intCast_div, coeff_ramifiedEmbedding_intCast_div, coeff_rescale,
     Units.val_zpow_eq_zpow_val]
@@ -307,7 +307,7 @@ theorem levelKummer_inclusion {n m : ℕ+} (h : n ∣ m) (η : rootsOfUnity m K)
         (levelKummer K n (rootsOfUnityPowOfDvd (PNat.dvd_iff.mp h) η) x) := by
   obtain ⟨e, rfl⟩ := h
   have he : ((n * e : ℕ+) : ℕ) / n = e := by rw [PNat.mul_coe, Nat.mul_div_cancel_left _ n.pos]
-  obtain ⟨f, hf⟩ : ∃ f, levelEmbedding K n f = x := (mem_level_iff K n x).mp x.2
+  obtain ⟨f, hf⟩ : ∃ f, levelEmbedding K n f = x := (mem_level_iff K n x).mp x.property
   -- `x` is the level-`n * e` image of `f (X ^ e)`
   have hx : ((IntermediateField.inclusion (level_le_level_of_dvd K ⟨e, rfl⟩) x :
       level K (n * e)) : puiseuxField K) = levelEmbedding K (n * e) (expand K e f) := by
@@ -336,7 +336,7 @@ theorem levelKummer_mem_fixingSubgroup_restrict_iff (h : n ∣ m) (η : rootsOfU
     ext x : 1
     apply IntermediateField.inclusion_injective (level_le_level_of_dvd K h)
     rw [← levelKummer_inclusion h, AlgEquiv.one_apply]
-    exact hη _ ((IntermediateField.mem_restrict _ _).2 x.2)
+    exact hη _ ((IntermediateField.mem_restrict _ _).2 x.property)
   · intro hη x hx
     obtain ⟨y, rfl⟩ : ∃ y : level K n,
         IntermediateField.inclusion (level_le_level_of_dvd K h) y = x :=
@@ -353,7 +353,7 @@ theorem levelKummer_apply_eq_self_iff (h : n ∣ m) {ω : rootsOfUnity m K}
   · obtain ⟨e, rfl⟩ := h
     have he : ((n * e : ℕ+) : ℕ) / n = e := by rw [PNat.mul_coe, Nat.mul_div_cancel_left _ n.pos]
     rw [he] at hω
-    have hxm := x.2
+    have hxm := x.property
     rw [mem_level_iff, mem_range_levelEmbedding_iff, mem_range_ramifiedEmbedding_iff] at hxm ⊢
     intro q hq
     obtain ⟨k, rfl⟩ := (Rat.den_dvd_iff_exists_eq_intCast_div (n * e).ne_zero).mp (hxm q hq)

@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Equiv
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
@@ -36,7 +35,9 @@ cotangent bundle `T^* M` is `C^m`
 (`TauCeti.SmoothEmbedding.contMDiff_normalSpaceEquivOfIsLagrangianMap`).
 Since a smooth family of fibrewise linear equivalences has a smooth inverse, the normal bundle of a
 Lagrangian embedding is `C^m`-diffeomorphic to `T^* M` over the identity of `M`
-(`TauCeti.SmoothEmbedding.normalBundleDiffeomorphOfIsLagrangianMap`).
+(`TauCeti.SmoothEmbedding.normalBundleDiffeomorphOfIsLagrangianMap`). Both identifications are
+instances of `TauCeti.SmoothEmbedding.normalSpaceEquivOfKer` and
+`TauCeti.SmoothEmbedding.normalBundleDiffeomorphOfKer` for the family of pairing covectors.
 
 Combined with a tubular neighbourhood, this identifies a neighbourhood of a Lagrangian submanifold
 with a neighbourhood of the zero section of its cotangent bundle. It is the linear input of
@@ -132,7 +133,7 @@ theorem contMDiff_pairingCovector [IsManifold I 1 M] (σ : SmoothTwoForm J N) (h
     (hm' : m + 1 ≤ ∞) :
     ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m
       (fun p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (TotalSpace.mk' (E →L[ℝ] ℝ) p.proj (f.pairingCovector σ p.proj p.2) :
+        (TotalSpace.mk' (E →L[ℝ] ℝ) p.proj (f.pairingCovector σ p.proj p.snd) :
           CotangentBundle I M)) := by
   have : IsManifold J (m + 1) N := .of_le hm'
   have hfm : ContMDiff I J (m + 1) f := f.contMDiff.of_le hm
@@ -160,22 +161,13 @@ the normal class `[v]` of an ambient tangent vector `v` at `f x` corresponds to 
 def normalSpaceEquivOfIsLagrangianMap (hf : hσ.IsLagrangianMap I f) (hn : n ≠ 0) (x : M) :
     f.NormalSpace x hn ≃L[ℝ] (TangentSpace I x →L[ℝ] ℝ) :=
   haveI := f.finiteDimensional_tangentSpace x hn
-  let φ := f.normalLiftL x hn (f.pairingCovector σ x)
-    fun _ ↦ f.pairingCovector_eq_zero_of_mem_tangentRange hf.isIsotropicMap hn x
-  have hφ : ∀ v, φ (f.normalClass x hn v) = f.pairingCovector σ x v :=
-    f.normalLiftL_normalClass x hn _ _
-  have hinj : Function.Injective φ := by
-    refine (injective_iff_map_eq_zero φ).2 fun w hw ↦ ?_
-    obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn w
-    rw [hφ, f.pairingCovector_eq_zero_iff_mem_tangentRange hf hn] at hw
-    exact (f.normalClass_eq_zero_iff x hn v).2 hw
-  -- The normal space and the cotangent space both have the dimension of `T_x M`.
-  have hdim : finrank ℝ (f.NormalSpace x hn) = finrank ℝ (TangentSpace I x →L[ℝ] ℝ) := by
+  f.normalSpaceEquivOfKer x hn (f.pairingCovector σ x)
+    (f.pairingCovector_eq_zero_iff_mem_tangentRange hf hn x) <| by
+    -- The normal space and the cotangent space both have the dimension of `T_x M`.
     have h2 := hf.two_mul_finrank (f.isImmersion.mfderiv_injective hn x)
     rw [f.finrank_normalSpace x hn, ← LinearMap.toContinuousLinearMap.finrank_eq,
       Subspace.dual_finrank_eq, finrank_tangentSpace, finrank_tangentSpace]
     omega
-  (φ.toLinearMap.linearEquivOfInjective hinj hdim).toContinuousLinearEquiv
 
 /-- The normal class `[v]` of an ambient tangent vector at `f x` corresponds to the covector
 `σ_(f x)(df_x ·, v)`. -/
@@ -183,10 +175,9 @@ def normalSpaceEquivOfIsLagrangianMap (hf : hσ.IsLagrangianMap I f) (hn : n ≠
 theorem normalSpaceEquivOfIsLagrangianMap_normalClass (hf : hσ.IsLagrangianMap I f) (hn : n ≠ 0)
     (x : M) (v : TangentSpace J (f x)) :
     f.normalSpaceEquivOfIsLagrangianMap hf hn x (f.normalClass x hn v) =
-      f.pairingCovector σ x v := by
-  have := f.finiteDimensional_tangentSpace x hn
-  rw [normalSpaceEquivOfIsLagrangianMap, LinearEquiv.coe_toContinuousLinearEquiv',
-    LinearMap.linearEquivOfInjective_apply, ContinuousLinearMap.coe_coe, normalLiftL_normalClass]
+      f.pairingCovector σ x v :=
+  haveI := f.finiteDimensional_tangentSpace x hn
+  f.normalSpaceEquivOfKer_normalClass x hn _ _ _ v
 
 /-- The covector `σ_(f x)(df_x ·, v)` corresponds to the normal class `[v]`. -/
 @[simp]
@@ -194,8 +185,8 @@ theorem normalSpaceEquivOfIsLagrangianMap_symm_pairingCovector (hf : hσ.IsLagra
     (hn : n ≠ 0) (x : M) (v : TangentSpace J (f x)) :
     (f.normalSpaceEquivOfIsLagrangianMap hf hn x).symm (f.pairingCovector σ x v) =
       f.normalClass x hn v :=
-  (ContinuousLinearEquiv.symm_apply_eq _).2
-    (f.normalSpaceEquivOfIsLagrangianMap_normalClass hf hn x v).symm
+  haveI := f.finiteDimensional_tangentSpace x hn
+  f.normalSpaceEquivOfKer_symm_apply x hn _ _ _ v
 
 /-- The codimension of a Lagrangian embedding of a nonempty manifold into a finite-dimensional
 manifold is the dimension of its cotangent model fibre, so `E →L[ℝ] ℝ` is a model fibre for its
@@ -226,14 +217,13 @@ theorem contMDiff_normalSpaceEquivOfIsLagrangianMap (hf : hσ.IsLagrangianMap I 
     ContMDiff (I.prod 𝓘(ℝ, P)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m
       (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
         (TotalSpace.mk' (E →L[ℝ] ℝ) p.proj
-          (f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj p.2) : CotangentBundle I M)) := by
+          (f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj p.snd) : CotangentBundle I M)) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   have : IsManifold J (m + 1) N := .of_le hm'
-  let := f.normalSpaceFiberBundle hn hdim
-  rw [f.contMDiff_normalBundle_iff hn hm hdim]
-  refine (f.contMDiff_pairingCovector σ hm hm').congr fun ⟨x, v⟩ ↦ ?_
-  rw [Function.comp_apply, normalQuotientMap_apply,
-    f.normalSpaceEquivOfIsLagrangianMap_normalClass hf hn x v]
+  exact f.contMDiff_normalSpaceEquivOfKer hn hm hdim (f.pairingCovector σ)
+    (f.pairingCovector_eq_zero_iff_mem_tangentRange hf hn)
+    (fun x ↦ (f.normalSpaceEquivOfIsLagrangianMap hf hn x).toLinearEquiv.finrank_eq)
+    (f.contMDiff_pairingCovector σ hm hm')
 
 /-- **The normal bundle of a Lagrangian embedding is diffeomorphic to its cotangent bundle.** For
 a `C^n` embedding between finite-dimensional manifolds with Lagrangian tangent images,
@@ -247,10 +237,11 @@ def normalBundleDiffeomorphOfIsLagrangianMap (hf : hσ.IsLagrangianMap I f) (hn 
     TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^m⟮I.prod 𝓘(ℝ, P), I.prod 𝓘(ℝ, E →L[ℝ] ℝ)⟯
       CotangentBundle I M :=
   haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  letI := f.normalSpaceFiberBundle hn hdim
-  letI := f.normalSpaceVectorBundle hn hdim
-  TauCeti.bundleDiffeomorph (f.normalSpaceEquivOfIsLagrangianMap hf hn)
-    (f.contMDiff_normalSpaceEquivOfIsLagrangianMap hf hn hm hm' hdim)
+  haveI : IsManifold J (m + 1) N := .of_le hm'
+  f.normalBundleDiffeomorphOfKer hn hm hdim (f.pairingCovector σ)
+    (f.pairingCovector_eq_zero_iff_mem_tangentRange hf hn)
+    (fun x ↦ (f.normalSpaceEquivOfIsLagrangianMap hf hn x).toLinearEquiv.finrank_eq)
+    (f.contMDiff_pairingCovector σ hm hm')
 
 /-- The diffeomorphism sends a normal vector at `x` to its covector at `x`. -/
 @[simp]
@@ -260,11 +251,10 @@ theorem normalBundleDiffeomorphOfIsLagrangianMap_apply (hf : hσ.IsLagrangianMap
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     f.normalBundleDiffeomorphOfIsLagrangianMap hf hn hm hm' hdim p =
-      ⟨p.proj, f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj p.2⟩ := by
+      ⟨p.proj, f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj p.snd⟩ := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let := f.normalSpaceFiberBundle hn hdim
-  let := f.normalSpaceVectorBundle hn hdim
-  exact TauCeti.bundleDiffeomorph_apply _ _ p
+  have : IsManifold J (m + 1) N := .of_le hm'
+  exact f.normalBundleDiffeomorphOfKer_apply hn hm hdim _ _ _ _ p
 
 /-- The inverse diffeomorphism sends a covector at `x` to the corresponding normal vector at `x`. -/
 @[simp]
@@ -274,10 +264,9 @@ theorem normalBundleDiffeomorphOfIsLagrangianMap_symm_apply (hf : hσ.IsLagrangi
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     (f.normalBundleDiffeomorphOfIsLagrangianMap hf hn hm hm' hdim).symm p =
-      ⟨p.proj, (f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj).symm p.2⟩ := by
+      ⟨p.proj, (f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj).symm p.snd⟩ := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let := f.normalSpaceFiberBundle hn hdim
-  let := f.normalSpaceVectorBundle hn hdim
-  exact TauCeti.bundleDiffeomorph_symm_apply _ _ p
+  have : IsManifold J (m + 1) N := .of_le hm'
+  exact f.normalBundleDiffeomorphOfKer_symm_apply hn hm hdim _ _ _ _ p
 
 end TauCeti.SmoothEmbedding

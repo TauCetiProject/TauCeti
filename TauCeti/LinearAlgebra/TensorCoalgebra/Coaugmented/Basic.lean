@@ -243,20 +243,20 @@ included. -/
 noncomputable def deconcatenationComponent (n : ℕ) :
     TensorPower R n M →ₗ[R] TensorWords R M ⊗[R] TensorWords R M :=
   ∑ i : Fin (n + 1),
-    TensorProduct.map (of R M i.1) (of R M (n - i.1)) ∘ₗ
-      TensorPower.splitAt R M n i.1 (by have := i.isLt; omega)
+    TensorProduct.map (of R M i.val) (of R M (n - i.val)) ∘ₗ
+      TensorPower.splitAt R M n i.val (by have := i.isLt; omega)
 
 /-- On a pure tensor, deconcatenation is the sum of its prefix--suffix cuts. -/
 @[simp]
 theorem deconcatenationComponent_tprod (n : ℕ) (x : Fin n → M) :
     deconcatenationComponent R M n (PiTensorProduct.tprod R x) =
       ∑ i : Fin (n + 1),
-        of R M i.1
+        of R M i.val
             (PiTensorProduct.tprod R
-              (fun j : Fin i.1 ↦ x (Fin.castLE (by have := i.isLt; omega) j))) ⊗ₜ[R]
-          of R M (n - i.1)
+              (fun j : Fin i.val ↦ x (Fin.castLE (by have := i.isLt; omega) j))) ⊗ₜ[R]
+          of R M (n - i.val)
             (PiTensorProduct.tprod R
-              (fun j : Fin (n - i.1) ↦ x ⟨i.1 + j.1, by have := j.isLt; omega⟩)) := by
+              (fun j : Fin (n - i.val) ↦ x ⟨i.val + j.val, by have := j.isLt; omega⟩)) := by
   simp only [deconcatenationComponent, LinearMap.sum_apply, LinearMap.comp_apply,
     TensorPower.splitAt_tprod, TensorProduct.map_tmul]
 
@@ -326,14 +326,14 @@ It is zero when the requested block runs past the end of `x`, and is `1` when th
 and starts inside the tuple (`a ≤ n`); the intended range of the definition is `a + b ≤ n`. -/
 noncomputable def subword {n : ℕ} (x : Fin n → M) (a b : ℕ) : TensorWords R M :=
   if h : a + b ≤ n then
-    of R M b (PiTensorProduct.tprod R fun j : Fin b ↦ x ⟨a + j.1, by have := j.isLt; omega⟩)
+    of R M b (PiTensorProduct.tprod R fun j : Fin b ↦ x ⟨a + j.val, by have := j.isLt; omega⟩)
   else 0
 
 /-- On its intended range, a subword is the pure tensor of the selected block of letters. -/
 theorem subword_eq_of_tprod {n : ℕ} (x : Fin n → M) {a b : ℕ} (hab : a + b ≤ n) :
     subword R x a b =
       of R M b
-        (PiTensorProduct.tprod R fun j : Fin b ↦ x ⟨a + j.1, by have := j.isLt; omega⟩) := by
+        (PiTensorProduct.tprod R fun j : Fin b ↦ x ⟨a + j.val, by have := j.isLt; omega⟩) := by
   rw [subword, dite_eq_left hab]
 
 /-- A block running past the end of the tuple is zero. -/
@@ -354,7 +354,7 @@ theorem subword_length_zero {n : ℕ} (x : Fin n → M) {a : ℕ} (ha : a ≤ n)
 theorem of_tprod_eq_subword {n : ℕ} (x : Fin n → M) :
     of R M n (PiTensorProduct.tprod R x) = subword R x 0 n := by
   rw [subword_eq_of_tprod R x (by omega)]
-  exact of_tprod_congr R M fun j ↦ (congrArg x (Fin.ext (Nat.zero_add j.1))).symm
+  exact of_tprod_congr R M fun j ↦ (congrArg x (Fin.ext (Nat.zero_add j.val))).symm
 
 /-- A block of a tensor word depends only on its letters, not on the tuple carrying them nor on
 where the block sits inside it. -/
@@ -363,7 +363,7 @@ theorem subword_congr {n m : ℕ} (x : Fin n → M) (y : Fin m → M) {a a' b : 
     (h : ∀ (j : ℕ) (hj : j < b), x ⟨a + j, by omega⟩ = y ⟨a' + j, by omega⟩) :
     subword R x a b = subword R y a' b := by
   rw [subword_eq_of_tprod R x hab, subword_eq_of_tprod R y hab']
-  exact of_tprod_congr R M fun j ↦ h j.1 j.isLt
+  exact of_tprod_congr R M fun j ↦ h j.val j.isLt
 
 /-- A nonempty block is annihilated by the counit. -/
 @[simp]
@@ -381,15 +381,15 @@ theorem deconcatenation_subword {n : ℕ} (x : Fin n → M) {a b : ℕ} :
   · rw [subword_eq_of_tprod R x hab, deconcatenation_of, deconcatenationComponent_tprod]
     let g := fun c ↦ subword R x a c ⊗ₜ[R] subword R x (a + c) (b - c)
     calc
-      _ = ∑ i : Fin (b + 1), g i.1 := by
+      _ = ∑ i : Fin (b + 1), g i.val := by
         refine Finset.sum_congr rfl fun i _ ↦ ?_
         have hi := i.isLt
         dsimp only [g]
-        rw [subword_eq_of_tprod R x (a := a) (b := i.1) (by omega),
-          subword_eq_of_tprod R x (a := a + i.1) (b := b - i.1) (by omega)]
+        rw [subword_eq_of_tprod R x (a := a) (b := i.val) (by omega),
+          subword_eq_of_tprod R x (a := a + i.val) (b := b - i.val) (by omega)]
         congr 1
         exact of_tprod_congr R M fun j ↦
-          congrArg x (Fin.ext (Nat.add_assoc a i.1 j.1).symm)
+          congrArg x (Fin.ext (Nat.add_assoc a i.val j.val).symm)
       _ = _ := Fin.sum_univ_eq_sum_range g (b + 1)
   · rw [subword_eq_zero_of_lt_add R x (by omega), map_zero]
     symm
@@ -596,12 +596,12 @@ theorem coaugmentation_apply (r : R) :
 
 /-- The words of positive length inside all tensor words. -/
 noncomputable def reducedInclusion : ReducedTensorWords R M →ₗ[R] TensorWords R M :=
-  DirectSum.toModule R {n : ℕ // 0 < n} _ fun n ↦ of R M n.1
+  DirectSum.toModule R {n : ℕ // 0 < n} _ fun n ↦ of R M n.val
 
 /-- The inclusion of the reduced tensor words keeps each length component. -/
 @[simp]
-theorem reducedInclusion_of (n : {n : ℕ // 0 < n}) (z : TensorPower R n.1 M) :
-    reducedInclusion R M (ReducedTensorWords.of R M n z) = of R M n.1 z := by
+theorem reducedInclusion_of (n : {n : ℕ // 0 < n}) (z : TensorPower R n.val M) :
+    reducedInclusion R M (ReducedTensorWords.of R M n z) = of R M n.val z := by
   rw [reducedInclusion, ReducedTensorWords.toModule_of]
 
 /-- The included reduced word has precisely its positive-length components. -/
@@ -617,7 +617,7 @@ theorem reducedInclusion_of (n : {n : ℕ // 0 < n}) (z : TensorPower R n.1 M) :
   rw [LinearMap.comp_apply, reducedInclusion_of]
   by_cases hk : 0 < k
   · simp only [dite_eq_left hk]
-    by_cases hkn : k = n.1
+    by_cases hkn : k = n.val
     · subst k
       simp [component_of, ReducedTensorWords.component_of]
     · have hne : (⟨k, hk⟩ : {n : ℕ // 0 < n}) ≠ n := by
@@ -627,7 +627,7 @@ theorem reducedInclusion_of (n : {n : ℕ // 0 < n}) (z : TensorPower R n.1 M) :
         ReducedTensorWords.component_of_of_ne R M (Ne.symm hne)]
   · have hk0 : k = 0 := by omega
     subst k
-    simp [component_of_of_ne R M n.2.ne']
+    simp [component_of_of_ne R M n.property.ne']
 
 /-- The retraction of `TauCeti.TensorWords.reducedInclusion` that deletes the empty word. -/
 noncomputable def reducedProjection : TensorWords R M →ₗ[R] ReducedTensorWords R M :=
@@ -655,9 +655,9 @@ theorem reducedProjection_one : reducedProjection R M (1 : TensorWords R M) = 0 
 @[simp]
 theorem component_reducedProjection (p : {n : ℕ // 0 < n}) (w : TensorWords R M) :
     ReducedTensorWords.component R M p (reducedProjection R M w) =
-      component R M p.1 w := by
+      component R M p.val w := by
   suffices h : ReducedTensorWords.component R M p ∘ₗ reducedProjection R M =
-      component R M p.1 by
+      component R M p.val by
     exact LinearMap.congr_fun h w
   apply linearMap_ext R M
   intro n z
@@ -667,7 +667,7 @@ theorem component_reducedProjection (p : {n : ℕ // 0 < n}) (w : TensorWords R 
     by_cases h : (⟨n, hn⟩ : {n : ℕ // 0 < n}) = p
     · cases h
       rw [ReducedTensorWords.component_of, component_of]
-    · have hnp : n ≠ p.1 := by
+    · have hnp : n ≠ p.val := by
         intro he
         exact h (Subtype.ext he)
       rw [ReducedTensorWords.component_of_of_ne R M h,
@@ -675,7 +675,7 @@ theorem component_reducedProjection (p : {n : ℕ // 0 < n}) (w : TensorWords R 
   · have hn0 : n = 0 := by omega
     subst n
     rw [reducedProjection_of_zero, map_zero,
-      component_of_of_ne R M p.2.ne]
+      component_of_of_ne R M p.property.ne]
 
 /-- The projection is a retraction of the inclusion. -/
 @[simp]
@@ -683,7 +683,7 @@ theorem reducedProjection_comp_reducedInclusion :
     reducedProjection R M ∘ₗ reducedInclusion R M = LinearMap.id := by
   apply ReducedTensorWords.linearMap_ext R M
   intro n x
-  simp [reducedProjection_of_of_pos R M n.2]
+  simp [reducedProjection_of_of_pos R M n.property]
 
 /-- Projecting an included positive-length word returns that word. -/
 @[simp]
@@ -701,7 +701,7 @@ theorem reducedInclusion_injective : Function.Injective (reducedInclusion R M) :
 theorem counit_comp_reducedInclusion : counit R M ∘ₗ reducedInclusion R M = 0 := by
   apply ReducedTensorWords.linearMap_ext R M
   intro n x
-  rw [LinearMap.comp_apply, reducedInclusion_of, counit_of_of_ne_zero R M n.2.ne',
+  rw [LinearMap.comp_apply, reducedInclusion_of, counit_of_of_ne_zero R M n.property.ne',
     LinearMap.zero_apply]
 
 /-- The counit vanishes on every positive-length word. -/
@@ -782,25 +782,25 @@ theorem deconcatenation_comp_reducedInclusion :
   simp only [LinearMap.add_apply, LinearMap.comp_apply, TensorProduct.mk_apply,
     LinearMap.flip_apply]
   rw [reducedInclusion_of, of_tprod_eq_subword R x,
-    ReducedTensorWords.of_tprod_eq_subword R n.2 x, deconcatenation_subword R x,
+    ReducedTensorWords.of_tprod_eq_subword R n.property x, deconcatenation_subword R x,
     ReducedTensorWords.deconcatenation_subword R x, map_sum]
-  have hsplit : Finset.range (n.1 + 1) = insert 0 (insert n.1 (Finset.Ioo 0 n.1)) := by
+  have hsplit : Finset.range (n.val + 1) = insert 0 (insert n.val (Finset.Ioo 0 n.val)) := by
     ext c
     simp only [Finset.mem_range, Finset.mem_insert, Finset.mem_Ioo]
     omega
-  have h0 : (0 : ℕ) ∉ insert n.1 (Finset.Ioo 0 n.1) := by
+  have h0 : (0 : ℕ) ∉ insert n.val (Finset.Ioo 0 n.val) := by
     simp only [Finset.mem_insert, Finset.mem_Ioo]
     omega
-  have h1 : n.1 ∉ Finset.Ioo 0 n.1 := by simp
+  have h1 : n.val ∉ Finset.Ioo 0 n.val := by simp
   rw [hsplit, Finset.sum_insert h0, Finset.sum_insert h1]
   simp only [Nat.zero_add, Nat.sub_zero, Nat.sub_self]
   rw [subword_length_zero R x (a := 0) (Nat.zero_le _),
-    subword_length_zero R x (a := n.1) le_rfl, ← add_assoc]
+    subword_length_zero R x (a := n.val) le_rfl, ← add_assoc]
   congr 1
   refine Finset.sum_congr rfl fun c hc ↦ ?_
   simp only [Finset.mem_Ioo] at hc
   rw [TensorProduct.map_tmul, reducedInclusion_subword R x hc.1,
-    reducedInclusion_subword R x (b := n.1 - c) (by omega)]
+    reducedInclusion_subword R x (b := n.val - c) (by omega)]
 
 /-- The coproduct of an included positive-length word is its two degenerate cuts together with the
 included reduced coproduct. -/
@@ -865,12 +865,12 @@ length. This is the positive-length restriction of the coaugmented coproduct for
 theorem map_component_comp_deconcatenation (p q : {n : ℕ // 0 < n}) :
     TensorProduct.map (component R M p) (component R M q) ∘ₗ deconcatenation R M =
       (TensorPower.mulEquiv (R := R) (M := M)).symm.toLinearMap ∘ₗ
-        component R M ⟨p.1 + q.1, Nat.add_pos_left p.2 q.1⟩ := by
+        component R M ⟨p.val + q.val, Nat.add_pos_left p.property q.val⟩ := by
   have hc (k : {n : ℕ // 0 < n}) :
-      component R M k ∘ₗ TensorWords.reducedProjection R M = TensorWords.component R M k.1 :=
+      component R M k ∘ₗ TensorWords.reducedProjection R M = TensorWords.component R M k.val :=
     LinearMap.ext (TensorWords.component_reducedProjection R M k)
   have hi (k : {n : ℕ // 0 < n}) :
-      TensorWords.component R M k.1 ∘ₗ TensorWords.reducedInclusion R M = component R M k := by
+      TensorWords.component R M k.val ∘ₗ TensorWords.reducedInclusion R M = component R M k := by
     rw [← hc k, LinearMap.comp_assoc, TensorWords.reducedProjection_comp_reducedInclusion,
       LinearMap.comp_id]
   calc
@@ -879,13 +879,13 @@ theorem map_component_comp_deconcatenation (p q : {n : ℕ // 0 < n}) :
           (TensorWords.reducedProjection R M) ∘ₗ TensorWords.deconcatenation R M ∘ₗ
             TensorWords.reducedInclusion R M) := by
       rw [TensorWords.map_reducedProjection_comp_deconcatenation_comp_reducedInclusion]
-    _ = TensorProduct.map (TensorWords.component R M p.1) (TensorWords.component R M q.1) ∘ₗ
+    _ = TensorProduct.map (TensorWords.component R M p.val) (TensorWords.component R M q.val) ∘ₗ
         TensorWords.deconcatenation R M ∘ₗ TensorWords.reducedInclusion R M := by
       rw [← LinearMap.comp_assoc, ← LinearMap.comp_assoc, ← TensorProduct.map_comp, hc p, hc q,
         LinearMap.comp_assoc]
     _ = _ := by
       rw [← LinearMap.comp_assoc, TensorWords.map_component_comp_deconcatenation,
-        LinearMap.comp_assoc, hi ⟨p.1 + q.1, Nat.add_pos_left p.2 q.1⟩]
+        LinearMap.comp_assoc, hi ⟨p.val + q.val, Nat.add_pos_left p.property q.val⟩]
 
 end ReducedTensorWords
 

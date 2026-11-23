@@ -70,16 +70,16 @@ private theorem diagonal_coordinates
     u.2 ≠ 0 ∧ v = (u.2⁻¹, u.1 * u.2) := by
   let a : dualSemigroup affinePlaneBlowUpFan.lattice affinePlaneBlowUpDiagonalCone :=
     ⟨affinePlaneBlowUpUpperCharacter₁, dualSemigroup_anti _ upperFace.le
-      affinePlaneBlowUpUpperCharacter₁.2⟩
+      affinePlaneBlowUpUpperCharacter₁.property⟩
   let b : dualSemigroup affinePlaneBlowUpFan.lattice affinePlaneBlowUpDiagonalCone :=
     ⟨affinePlaneBlowUpUpperCharacter₂, dualSemigroup_anti _ upperFace.le
-      affinePlaneBlowUpUpperCharacter₂.2⟩
+      affinePlaneBlowUpUpperCharacter₂.property⟩
   let c : dualSemigroup affinePlaneBlowUpFan.lattice affinePlaneBlowUpDiagonalCone :=
     ⟨affinePlaneBlowUpLowerCharacter₁, dualSemigroup_anti _ lowerFace.le
-      affinePlaneBlowUpLowerCharacter₁.2⟩
+      affinePlaneBlowUpLowerCharacter₁.property⟩
   let d : dualSemigroup affinePlaneBlowUpFan.lattice affinePlaneBlowUpDiagonalCone :=
     ⟨affinePlaneBlowUpLowerCharacter₂, dualSemigroup_anti _ lowerFace.le
-      affinePlaneBlowUpLowerCharacter₂.2⟩
+      affinePlaneBlowUpLowerCharacter₂.property⟩
   have hbc : b + c = 0 := by ext n; simp [b, c]
   have hab : a + b = d := by ext n; simp [a, b, d]
   have hprod : x (MonoidAlgebra.single (ofAdd b) 1) *

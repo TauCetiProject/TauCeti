@@ -153,14 +153,14 @@ the cycles representing `α`. -/
 def homologyL1Seminorm (α : (X.homology (ModuleCat.of k V) n : ModuleCat.{u} k)) : ℝ :=
   ⨅ z : {z : (X.chainComplex (ModuleCat.of k V)).cycles n //
       (X.chainComplex (ModuleCat.of k V)).homologyπ n z = α},
-    X.chainL1Norm ((X.chainComplex (ModuleCat.of k V)).iCycles n z.1)
+    X.chainL1Norm ((X.chainComplex (ModuleCat.of k V)).iCycles n z.val)
 
 /-- The `ℓ¹`-seminorm of a class is the infimum of the `ℓ¹`-norms of its representing cycles. -/
 theorem homologyL1Seminorm_def (α : (X.homology (ModuleCat.of k V) n : ModuleCat.{u} k)) :
     X.homologyL1Seminorm α =
       ⨅ z : {z : (X.chainComplex (ModuleCat.of k V)).cycles n //
           (X.chainComplex (ModuleCat.of k V)).homologyπ n z = α},
-        X.chainL1Norm ((X.chainComplex (ModuleCat.of k V)).iCycles n z.1) :=
+        X.chainL1Norm ((X.chainComplex (ModuleCat.of k V)).iCycles n z.val) :=
   (rfl)
 
 /-- Every homology class is represented by a cycle
@@ -197,7 +197,7 @@ theorem le_mul_homologyL1Seminorm {α : (X.homology (ModuleCat.of k V) n : Modul
     x ≤ C * X.homologyL1Seminorm α := by
   have := X.nonempty_representative α
   rw [homologyL1Seminorm_def, Real.mul_iInf_of_nonneg hC]
-  exact le_ciInf fun z ↦ h z.1 z.2
+  exact le_ciInf fun z ↦ h z.val z.property
 
 /-- A lower bound on the `ℓ¹`-norm of every cycle representing `α` is a lower bound on the
 seminorm of `α`. -/
@@ -215,7 +215,7 @@ theorem exists_chainL1Norm_lt {α : (X.homology (ModuleCat.of k V) n : ModuleCat
       X.chainL1Norm ((X.chainComplex (ModuleCat.of k V)).iCycles n z) < r := by
   have := X.nonempty_representative α
   obtain ⟨z, hz⟩ := exists_lt_of_ciInf_lt h
-  exact ⟨z.1, z.2, hz⟩
+  exact ⟨z.val, z.property, hz⟩
 
 /-- The zero class has `ℓ¹`-seminorm `0`. -/
 @[simp]

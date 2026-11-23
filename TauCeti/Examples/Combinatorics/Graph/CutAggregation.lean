@@ -108,7 +108,7 @@ abbrev vertex (i : Fin 3) : V(graph) :=
 /-- The weights two and three lie on the parallel edges, seven lies on the loop, and the final
 edge has weight zero. -/
 def edgeCapacity (e : E(graph)) : ℕ :=
-  ![2, 3, 7, 0] e.1
+  ![2, 3, 7, 0] e.val
 
 /-- The first parallel edge has capacity two. -/
 @[simp]

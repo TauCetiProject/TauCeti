@@ -36,7 +36,7 @@ namespace TauCeti.Delineation
 
 variable {n : ℕ} {ι : Type*} {P : ι → Polynomial (MvPolynomial (Fin n) ℝ)}
   {S : Set (Fin n → ℝ)}
-  (D : Delineation fun i (x : S) ↦ (P i).map (MvPolynomial.eval x.1))
+  (D : Delineation fun i (x : S) ↦ (P i).map (MvPolynomial.eval x.val))
 
 /-- A member with a nonzero fiber has ambient Taylor order zero at every point
 of a sector of its delineation. Only nonnullification at that point is needed. -/
@@ -62,7 +62,7 @@ variable {n : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
 is exactly the order of its content. All basis fibers at the base point are
 assumed nonzero; the input itself may be nullified by its content. -/
 theorem orderAt_eq_content_of_mem_sectorSet (hB : F.IsSquarefreeBasis B)
-    (D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.1.map (MvPolynomial.eval x.1))
+    (D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.val.map (MvPolynomial.eval x.val))
     {f : Polynomial (MvPolynomial (Fin n) ℝ)} (hf : f ∈ F)
     {j : Fin (D.count + 1)} {a : Fin (n + 1) → ℝ}
     (hb : ∀ b ∈ B, b.map (MvPolynomial.eval (Fin.tail a)) ≠ 0)
@@ -81,7 +81,7 @@ across all sectors of a basis delineation, provided no basis member is nullified
 Vanishing contents and zero inputs are allowed. For McCallum lifting, the content
 order hypothesis follows from its membership in the projection. -/
 theorem orderAt_eq_of_mem_sectorSet (hB : F.IsSquarefreeBasis B)
-    (D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.1.map (MvPolynomial.eval x.1))
+    (D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.val.map (MvPolynomial.eval x.val))
     {f : Polynomial (MvPolynomial (Fin n) ℝ)} (hf : f ∈ F)
     (hc : ∀ x ∈ S, ∀ y ∈ S, f.content.orderAt x = f.content.orderAt y)
     (hb : ∀ b ∈ B, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)

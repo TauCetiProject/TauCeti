@@ -65,8 +65,8 @@ theorem span_Tw_mul_parabolicEigenSum :
   have hw (w : W) : Tw q cs w * C ∈ S := by
     obtain ⟨⟨d, v⟩, rfl⟩ := (cs.minimalCosetRepProdParabolicEquiv J).surjective w
     rw [minimalCosetRepProdParabolicEquiv_apply,
-      ← Tw_mul_Tw cs (cs.length_mul_of_isMinimalCosetRep d.2 v.2), mul_assoc,
-      Tw_mul_parabolicEigenSum cs J (by simp [sub_mul]) v.2, mul_smul_comm]
+      ← Tw_mul_Tw cs (cs.length_mul_of_isMinimalCosetRep d.property v.property), mul_assoc,
+      Tw_mul_parabolicEigenSum cs J (by simp [sub_mul]) v.property, mul_smul_comm]
     exact S.smul_mem _ (Submodule.subset_span ⟨d, rfl⟩)
   refine le_antisymm (Submodule.span_le.mpr ?_) ?_
   · rintro _ ⟨d, rfl⟩
@@ -122,7 +122,7 @@ theorem T_smul_permutationModuleBasis_of_descent
     T q i • permutationModuleBasis cs J d =
       ((q : R) - ↑q⁻¹) • permutationModuleBasis cs J d +
         permutationModuleBasis (q := q) cs J
-          ⟨cs.simple i * d, d.2.simple_mul_of_isLeftDescent cs hi⟩ := by
+          ⟨cs.simple i * d, d.property.simple_mul_of_isLeftDescent cs hi⟩ := by
   apply Subtype.ext
   simp only [Submodule.coe_smul, Submodule.coe_smul_of_tower, Submodule.coe_add,
     smul_eq_mul, coe_permutationModuleBasis]
@@ -136,13 +136,13 @@ theorem T_smul_permutationModuleBasis_of_not_minimal
     T q i • permutationModuleBasis cs J d =
       (q : R) • permutationModuleBasis (q := q) cs J d := by
   have hi : ¬cs.IsLeftDescent d i :=
-    fun h ↦ hmin (d.2.simple_mul_of_isLeftDescent cs h)
-  obtain ⟨j, hj, heq⟩ := (d.2.simple_mul_or_exists_eq_mul_simple cs i).resolve_left hmin
+    fun h ↦ hmin (d.property.simple_mul_of_isLeftDescent cs h)
+  obtain ⟨j, hj, heq⟩ := (d.property.simple_mul_or_exists_eq_mul_simple cs i).resolve_left hmin
   apply Subtype.ext
   simp only [Submodule.coe_smul, Submodule.coe_smul_of_tower, smul_eq_mul,
     coe_permutationModuleBasis]
   rw [← mul_assoc, T_mul_Tw_of_not_isLeftDescent cs hi, heq,
-    ← Tw_mul_T_of_not_isRightDescent cs (cs.isMinimalCosetRep_iff.mp d.2 j hj),
+    ← Tw_mul_T_of_not_isRightDescent cs (cs.isMinimalCosetRep_iff.mp d.property j hj),
     mul_assoc, T_mul_parabolicEigenSum cs J (by simp [sub_mul]) hj, mul_smul_comm]
 
 end TauCeti.TypeAHeckeAlgebra

@@ -76,10 +76,10 @@ theorem fiberMap_monodromy (hp : _root_.IsCoveringMap p)
   -- `Function.fiberMap` is not exposed, so its values do not reduce here. Put both fibre points
   -- in constructor form via `fiberMap_apply_coe` first, so the lifted path's endpoints match
   -- `monodromy_eq_of_map_eq` by projection alone.
-  have h₁ : Function.fiberMap f hf x e = ⟨f e, Function.mapsTo_fiber f hf x e.2⟩ :=
+  have h₁ : Function.fiberMap f hf x e = ⟨f e, Function.mapsTo_fiber f hf x e.property⟩ :=
     Subtype.ext (Function.fiberMap_apply_coe f hf x e)
   have h₂ : Function.fiberMap f hf y (hp.monodromy a e) =
-      ⟨f (hp.monodromy a e), Function.mapsTo_fiber f hf y (hp.monodromy a e).2⟩ :=
+      ⟨f (hp.monodromy a e), Function.mapsTo_fiber f hf y (hp.monodromy a e).property⟩ :=
     Subtype.ext (Function.fiberMap_apply_coe f hf y (hp.monodromy a e))
   rw [h₁, h₂]
   let Γ := hp.liftPathQuotient a e
@@ -105,14 +105,29 @@ theorem fiberMap_monodromy (hp : _root_.IsCoveringMap p)
   rw [hp.map_liftPathQuotient a e]
   exact (Path.Homotopic.Quotient.cast_heq _ _).trans (Path.Homotopic.Quotient.cast_heq _ _).symm
 
+/-- Monodromy along the image of a path under a map `g` carries the value at the start of the path
+of a continuous lift `s` of `g` through the covering to its value at the end: the lift lifts the
+image path. For `g` the identity this is `IsCoveringMap.monodromy_section`. -/
+theorem monodromy_map_of_lift (hp : _root_.IsCoveringMap p) {Y : Type*} [TopologicalSpace Y]
+    {g : C(Y, X)} {s : Y → E} (hs : Continuous s) (hps : ∀ y, s y ∈ p ⁻¹' {g y}) {y y' : Y}
+    (a : Path.Homotopic.Quotient y y') :
+    hp.monodromy (a.map g) ⟨s y, hps y⟩ = ⟨s y', hps y'⟩ := by
+  induction a using Path.Homotopic.Quotient.ind with | mk γ => ?_
+  rw [← Path.Homotopic.Quotient.mk_map]
+  refine Subtype.ext ((hp.monodromy_eq_apply_one (γ := γ.map g.continuous)
+    (Γ := ⟨s ∘ γ, hs.comp γ.continuous⟩)
+    (funext fun t ↦ Set.mem_singleton_iff.1 (hps (γ t))) ?_).trans ?_) <;> simp
+
 /-- Monodromy along a path carries the value of a continuous section of the covering at the start
 of the path to its value at the end: the section lifts the path. -/
 theorem monodromy_section (hp : _root_.IsCoveringMap p) {s : X → E}
     (hs : Continuous s) (hps : ∀ x, s x ∈ p ⁻¹' {x}) {x y : X} (a : Path.Homotopic.Quotient x y) :
     hp.monodromy a ⟨s x, hps x⟩ = ⟨s y, hps y⟩ := by
-  obtain ⟨γ⟩ := a
-  refine Subtype.ext ((hp.monodromy_eq_apply_one (Γ := ⟨s ∘ γ, hs.comp γ.continuous⟩)
-    (funext fun t ↦ hps (γ t)) ?_).trans ?_) <;> simp
+  have h := hp.monodromy_map_of_lift (g := ContinuousMap.id X) hs hps a
+  induction a using Path.Homotopic.Quotient.ind with | mk γ => ?_
+  rw [← Path.Homotopic.Quotient.mk_map] at h
+  -- `γ.map (ContinuousMap.id X).continuous` is `γ` up to eta for the structure `Path`.
+  exact h
 
 /-- A map of covers that preserves the numberings of two fibres identifies their numbered
 monodromy representations. -/
@@ -253,11 +268,11 @@ theorem compFiberEquiv_monodromy
   rw [Equiv.compFiberEquiv_apply_coe]
   set ex := Equiv.compFiberEquiv (p := p) h.toEquiv x e
   have hex : (ex : E) = e := Equiv.compFiberEquiv_apply_coe h.toEquiv x e
-  let Γ : C(I, E) := hp.liftPath (γ.map h.symm.continuous) ex (by simpa using ex.2.symm)
+  let Γ : C(I, E) := hp.liftPath (γ.map h.symm.continuous) ex (by simpa using ex.property.symm)
   have hΓ : Γ = (hp.homeomorph_comp h).liftPath γ e (by
-      simpa using e.2.symm) := by
+      simpa using e.property.symm) := by
     refine ((hp.homeomorph_comp h).eq_liftPath_iff' (γ_0 := by
-      simpa using e.2.symm)).2 ⟨?_, ?_⟩
+      simpa using e.property.symm)).2 ⟨?_, ?_⟩
     · funext t
       -- Expose the composite projection so the lift equation for `Γ` can be applied pointwise.
       change h (p (Γ t)) = γ t
@@ -309,9 +324,9 @@ theorem coe_monodromy_map (hp : _root_.IsCoveringMap p)
     (he : g e = e') :
     (hq.monodromy (a.map f) e' : F) = g (hp.monodromy a e) := by
   induction a using Path.Homotopic.Quotient.ind with | mk γ => ?_
-  have hΓ := hp.liftPath_lifts γ e (γ.source.trans e.2.symm)
+  have hΓ := hp.liftPath_lifts γ e (γ.source.trans e.property.symm)
   rw [← Path.Homotopic.Quotient.mk_map,
-    hq.monodromy_eq_apply_one (Γ := g.comp (hp.liftPath γ e (γ.source.trans e.2.symm))) ?_
+    hq.monodromy_eq_apply_one (Γ := g.comp (hp.liftPath γ e (γ.source.trans e.property.symm))) ?_
       (by simpa [hp.liftPath_zero] using he),
     hp.monodromy_eq_apply_one hΓ (hp.liftPath_zero ..), ContinuousMap.comp_apply]
   funext t

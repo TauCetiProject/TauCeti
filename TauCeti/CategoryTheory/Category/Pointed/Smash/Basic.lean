@@ -84,8 +84,8 @@ lemma point_def : (smash X Y).point = mk X.point Y.point := (rfl)
 /-- Two pairs have the same class exactly when they are equal or both lie in the wedge. -/
 lemma mk_eq_mk_iff {x x' : X} {y y' : Y} :
     mk x y = mk x' y' ↔
-      x = x' ∧ y = y' ∨ (x = X.point ∨ y = Y.point) ∧ (x' = X.point ∨ y' = Y.point) := by
-  exact Quotient.eq.trans (or_congr_left Prod.ext_iff)
+      x = x' ∧ y = y' ∨ (x = X.point ∨ y = Y.point) ∧ (x' = X.point ∨ y' = Y.point) :=
+  Quotient.eq.trans (or_congr_left Prod.ext_iff)
 
 /-- A pair represents the basepoint exactly when it lies in the wedge. -/
 @[simp]
@@ -169,11 +169,6 @@ def rightUnitor (X : Pointed.{u}) : smash X (of (none : Option PUnit.{u + 1})) �
 def braiding (X Y : Pointed.{u}) : smash X Y ≅ smash Y X where
   hom := lift (fun x y ↦ mk y x) (fun _ ↦ mk_point_right _) (fun _ ↦ mk_point_left _)
   inv := lift (fun y x ↦ mk x y) (fun _ ↦ mk_point_right _) (fun _ ↦ mk_point_left _)
-
-/- The braiding laws are proved before `β_` exists, so they use this private form; the public
-API is `Pointed.braiding_hom_mk` and `Pointed.braiding_inv_mk`. -/
-private lemma braiding_hom_mk (x : X) (y : Y) :
-    (braiding X Y).hom.toFun (mk x y) = mk y x := (rfl)
 
 end smash
 
@@ -263,30 +258,21 @@ instance monoidalCategory : MonoidalCategory Pointed.{u} where
   whiskerLeft_id _ _ := by ext; simp
   id_whiskerRight _ _ := by ext; simp
   associator_naturality _ _ _ := tensor_ext₃' fun _ _ _ ↦ by simp
-  leftUnitor_naturality f := by
-    ext o _
-    simp only [Hom.comp_toFun', Function.comp_apply, whiskerLeft_mk, leftUnitor_hom_mk]
-    cases o <;> simp [f.map_point]
-  rightUnitor_naturality f := by
-    ext _ o
-    simp only [Hom.comp_toFun', Function.comp_apply, whiskerRight_mk, rightUnitor_hom_mk]
-    cases o <;> simp [f.map_point]
+  leftUnitor_naturality f := by ext (_ | _) _ <;> simp [f.map_point]
+  rightUnitor_naturality f := by ext _ (_ | _) <;> simp [f.map_point]
   pentagon _ _ _ _ := tensor_ext₃' fun a _ _ ↦ by
     induction a using smash.ind
     simp
-  triangle _ _ := tensor_ext₃' fun _ o _ ↦ by
-    simp only [Hom.comp_toFun', Function.comp_apply, associator_hom_mk, whiskerLeft_mk,
-      whiskerRight_mk, leftUnitor_hom_mk, rightUnitor_hom_mk]
-    cases o <;> simp
+  triangle _ _ := tensor_ext₃' fun _ o _ ↦ by cases o <;> simp
 
 /-- The swap of factors makes the smash product symmetric monoidal. -/
 instance symmetricCategory : SymmetricCategory Pointed.{u} where
   braiding := smash.braiding
-  braiding_naturality_right _ _ _ _ := by ext; simp [smash.braiding_hom_mk]
-  braiding_naturality_left _ _ := by ext; simp [smash.braiding_hom_mk]
-  hexagon_forward _ _ _ := tensor_ext₃' fun _ _ _ ↦ by simp [smash.braiding_hom_mk]
-  hexagon_reverse _ _ _ := tensor_ext₃ fun _ _ _ ↦ by simp [smash.braiding_hom_mk]
-  symmetry _ _ := by ext; simp [smash.braiding_hom_mk]
+  braiding_naturality_right _ _ _ _ := by ext; simp [smash.braiding]
+  braiding_naturality_left _ _ := by ext; simp [smash.braiding]
+  hexagon_forward _ _ _ := tensor_ext₃' fun _ _ _ ↦ by simp [smash.braiding]
+  hexagon_reverse _ _ _ := tensor_ext₃ fun _ _ _ ↦ by simp [smash.braiding]
+  symmetry _ _ := by ext; simp [smash.braiding]
 
 @[simp]
 lemma braiding_hom_mk (x : X) (y : Y) :

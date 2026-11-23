@@ -45,7 +45,7 @@ public section
 /-- A prime, as an element of the subtype `Nat.Primes`, is prime: the `Fact` instance under which
 the prime-indexed API, for instance the `p`-adic integers `ℤ_[p]`, can be used for `p : Nat.Primes`.
 -/
-instance Nat.Primes.instFactPrime (p : Nat.Primes) : Fact (p : ℕ).Prime := ⟨p.2⟩
+instance Nat.Primes.instFactPrime (p : Nat.Primes) : Fact (p : ℕ).Prime := ⟨p.property⟩
 
 /-- **A prime at least `5` does not divide `6`**: the primes dividing `6` are `2` and `3`. -/
 theorem Nat.Prime.not_dvd_six_of_five_le {p : ℕ} (hp : p.Prime) (h5 : 5 ≤ p) : ¬ p ∣ 6 :=
