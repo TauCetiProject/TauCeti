@@ -41,7 +41,8 @@ This is how an almost-everywhere Hölder estimate becomes a Hölder continuous r
 of full measure for a measure that is positive on open sets is dense.
 
 Sums, differences and finite sums of Hölder functions, also with natural multiplicities, are
-Hölder, with the sum of the constants; a scalar multiple `a • f` is Hölder with the constant
+Hölder, with the sum of the constants, so a sum over a finite type with a common constant `C` is
+Hölder with constant `card ι * C`; a scalar multiple `a • f` is Hölder with the constant
 multiplied by `‖a‖₊`; the reciprocal of a Hölder function bounded away from zero is Hölder; the
 second differences `f (x + h) + f (x - h) - 2 f x` of a Hölder function on a normed group are
 bounded by twice its constant times `‖h‖ ^ r`; and a pointwise limit of Hölder functions with a
@@ -438,6 +439,14 @@ theorem HolderOnWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCo
     (hf : ∀ i ∈ s, HolderOnWith (C i) r (f i) t) :
     HolderOnWith (∑ i ∈ s, C i) r (fun x => ∑ i ∈ s, f i x) t :=
   HolderWith.restrict_iff.1 (HolderWith.sum fun i hi => (hf i hi).holderWith)
+
+/-- A sum over a finite type of functions that are Hölder on `t` with a common constant `C` is
+Hölder on `t` with constant `card ι * C`. -/
+theorem HolderOnWith.fintype_sum {ι X Y : Type*} [Fintype ι] [PseudoMetricSpace X]
+    [SeminormedAddCommGroup Y] {C r : ℝ≥0} {f : ι → X → Y} {t : Set X}
+    (hf : ∀ i, HolderOnWith C r (f i) t) :
+    HolderOnWith (Fintype.card ι * C) r (fun x => ∑ i, f i x) t := by
+  simpa using HolderOnWith.sum (s := Finset.univ) fun i _ => hf i
 
 /-- A scalar multiple `a • f` of a function that is Hölder on `s` is Hölder on `s`, with the
 constant multiplied by `‖a‖₊`. Compare Mathlib's `HolderWith.smul`. -/

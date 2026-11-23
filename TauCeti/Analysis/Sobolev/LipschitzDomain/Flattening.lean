@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.GraphFlattening
+public import TauCeti.Analysis.Calculus.GraphFlattening.Basic
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
