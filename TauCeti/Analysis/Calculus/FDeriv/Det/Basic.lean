@@ -255,15 +255,14 @@ theorem hasFDerivAt_det_one :
   let b := Module.finBasis 𝕜 E
   have h1 : toMatrixCLM b 1 = 1 := by
     rw [toMatrixCLM_apply, toLinearMap_one, Module.End.one_eq_id, LinearMap.toMatrix_id]
-  refine (((Matrix.differentiable_det _).hasFDerivAt.comp _ (toMatrixCLM b).hasFDerivAt)
+  have hdet : HasFDerivAt Matrix.det _ (toMatrixCLM b 1) := h1 ▸ Matrix.hasFDerivAt_det_one
+  refine ((hdet.comp 1 (toMatrixCLM b).hasFDerivAt)
     |>.congr_of_eventuallyEq (Filter.Eventually.of_forall fun f ↦ (det_toMatrixCLM b f).symm))
     |>.congr_fderiv ?_
   ext H
   -- The derivative carries the operator-norm topology on matrices and `toMatrixCLM` the product
-  -- topology; they are defeq but not syntactically equal, so the `toMatrixCLM` lemmas are
-  -- applied as terms rather than by rewriting.
-  refine (comp_apply _ _ H).trans <| (Matrix.fderiv_det_apply_adjugate _ _).trans ?_
-  rw [h1, Matrix.adjugate_one, one_mul]
+  -- topology; they are defeq but not syntactically equal, so `toMatrixCLM_apply` is applied as a
+  -- term rather than by rewriting.
   refine (congrArg Matrix.trace (toMatrixCLM_apply b H)).trans ?_
   rw [TauCeti.traceCLM_apply, LinearMap.trace_eq_matrix_trace 𝕜 b]
 
