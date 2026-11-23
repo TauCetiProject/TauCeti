@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Hierarchy.NormalForm.Basic
+import TauCeti.Data.List.TakeDrop
 import TauCeti.Data.PFun.Basic
 
 /-!
@@ -108,14 +109,6 @@ private def unpairFst (d : ℕ) (l : List ℕ) : List ℕ :=
 private def unpairSnd (d : ℕ) (l : List ℕ) : List ℕ :=
   (l.take d).map (fun y => y.unpair.2) ++ l.drop d
 
-private theorem length_unpairFst (d : ℕ) (l : List ℕ) : (unpairFst d l).length = l.length := by
-  simp [unpairFst]
-  omega
-
-private theorem length_unpairSnd (d : ℕ) (l : List ℕ) : (unpairSnd d l).length = l.length := by
-  simp [unpairSnd]
-  omega
-
 private def unpairFstBase : Code :=
   Code.mapTakeCode Code.left
 
@@ -198,6 +191,32 @@ theorem exists_or_iff (nf₁ nf₂ : NormalFormCode) :
     (∃ nf, nf₁.or nf₂ = some nf) ↔ nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity := by
   simpa [Option.isSome_iff_exists] using isSome_or_iff nf₁ nf₂
 
+/-- When the quantifier prefixes and arities agree, `and` returns `some` of the explicit
+conjunction normal-form code built from `Code.boolAnd`, `Code.paramCode`, and
+`Code.mapTakeCode`. -/
+theorem and_eq_some {nf₁ nf₂ : NormalFormCode}
+    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity) :
+    nf₁.and nf₂ = some ⟨nf₁.quantifiers, nf₁.arity,
+      Code.boolAnd
+        (Code.comp nf₁.matrix
+          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
+        (Code.comp nf₂.matrix
+          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth))⟩ := by
+  simp [and, hq, ha, unpairFstCode, unpairSndCode, unpairFstBase, unpairSndBase]
+
+/-- When the quantifier prefixes and arities agree, `or` returns `some` of the explicit
+disjunction normal-form code built from `Code.boolOr`, `Code.paramCode`, and
+`Code.mapTakeCode`. -/
+theorem or_eq_some {nf₁ nf₂ : NormalFormCode}
+    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity) :
+    nf₁.or nf₂ = some ⟨nf₁.quantifiers, nf₁.arity,
+      Code.boolOr
+        (Code.comp nf₁.matrix
+          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
+        (Code.comp nf₂.matrix
+          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth))⟩ := by
+  simp [or, hq, ha, unpairFstCode, unpairSndCode, unpairFstBase, unpairSndBase]
+
 /-- A successful conjunction witnesses that the operands have equal quantifier prefixes. -/
 theorem quantifiers_eq_of_and_eq_some {nf₁ nf₂ nf : NormalFormCode}
     (h : nf₁.and nf₂ = some nf) : nf₁.quantifiers = nf₂.quantifiers :=
@@ -224,6 +243,20 @@ theorem arity_and {nf₁ nf₂ nf : NormalFormCode} (h : nf₁.and nf₂ = some 
   cases h
   rfl
 
+/-- A successful conjunction builds its matrix program from `Code.boolAnd`, `Code.paramCode`, and
+`Code.mapTakeCode`. -/
+theorem matrix_and {nf₁ nf₂ nf : NormalFormCode} (h : nf₁.and nf₂ = some nf) :
+    nf.matrix =
+      Code.boolAnd
+        (Code.comp nf₁.matrix
+          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
+        (Code.comp nf₂.matrix
+          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth)) := by
+  have hsome :=
+    h.symm.trans (and_eq_some (quantifiers_eq_of_and_eq_some h) (arity_eq_of_and_eq_some h))
+  cases Option.some.inj hsome
+  rfl
+
 /-- A successful disjunction witnesses that the operands have equal quantifier prefixes. -/
 theorem quantifiers_eq_of_or_eq_some {nf₁ nf₂ nf : NormalFormCode}
     (h : nf₁.or nf₂ = some nf) : nf₁.quantifiers = nf₂.quantifiers :=
@@ -248,6 +281,20 @@ theorem arity_or {nf₁ nf₂ nf : NormalFormCode} (h : nf₁.or nf₂ = some nf
   unfold or at h
   split_ifs at h
   cases h
+  rfl
+
+/-- A successful disjunction builds its matrix program from `Code.boolOr`, `Code.paramCode`, and
+`Code.mapTakeCode`. -/
+theorem matrix_or {nf₁ nf₂ nf : NormalFormCode} (h : nf₁.or nf₂ = some nf) :
+    nf.matrix =
+      Code.boolOr
+        (Code.comp nf₁.matrix
+          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
+        (Code.comp nf₂.matrix
+          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth)) := by
+  have hsome :=
+    h.symm.trans (or_eq_some (quantifiers_eq_of_or_eq_some h) (arity_eq_of_or_eq_some h))
+  cases Option.some.inj hsome
   rfl
 
 /-- Conjunction is primitive recursive on normal-form codes. -/
@@ -319,9 +366,9 @@ private theorem eval_unpair_components {Z : Set ℕ} {nf₁ nf₂ : NormalFormCo
       encode b₂ ∈ Code.eval Z.oracle
         (Code.comp nf₂.matrix (unpairSndCode nf₁.quantifiers.depth)) (encode l) := by
   have hl₁ : (unpairFst nf₁.quantifiers.depth l).length = nf₁.quantifiers.depth + nf₁.arity := by
-    rw [length_unpairFst, hl]
+    rw [unpairFst, List.length_map_take_append_drop, hl]
   have hl₂ : (unpairSnd nf₁.quantifiers.depth l).length = nf₂.quantifiers.depth + nf₂.arity := by
-    rw [length_unpairSnd, hl, hq, ha]
+    rw [unpairSnd, List.length_map_take_append_drop, hl, hq, ha]
   obtain ⟨b₁, hb₁⟩ := isValid_iff.1 h₁ _ hl₁
   obtain ⟨b₂, hb₂⟩ := isValid_iff.1 h₂ _ hl₂
   refine ⟨b₁, b₂, hb₁, hb₂, ?_, ?_⟩

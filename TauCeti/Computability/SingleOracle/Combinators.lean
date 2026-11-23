@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Recursion
+import TauCeti.Data.List.TakeDrop
 import TauCeti.Data.PFun.Basic
 
 /-!
@@ -208,16 +209,12 @@ private theorem primrec_stepSplit : Primrec stepSplit :=
           (Primrec.const left)))
       (Primrec.const (comp right right)))
 
-private def stepSplitFn (f : ℕ → ℕ) : List ℕ × List ℕ → List ℕ × List ℕ
-  | (rl, []) => (rl, [])
-  | (rl, a :: l) => (f a :: rl, l)
-
 private theorem eval_stepSplit {O : ℕ →. ℕ} {proj : Code} {f : ℕ → ℕ}
     (hproj : ∀ y, eval O proj y = Part.some (f y)) (s : ℕ) :
     eval O (stepSplit proj) s =
       Part.some (Nat.pair
-        (encode (stepSplitFn f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-        (encode (stepSplitFn f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2)) := by
+        (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+        (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2)) := by
   have hc₀ : ∀ a, ∃ y, eval O (pair idCode zero) a = Part.some y := fun a =>
     ⟨Nat.pair a 0, by simp [eval_idCode, Seq.seq]⟩
   have hc₁ : ∀ a m, ∃ y, eval O
@@ -236,23 +233,10 @@ private theorem eval_stepSplit {O : ℕ →. ℕ} {proj : Code} {f : ℕ → ℕ
   cases l with
   | nil =>
     rw [stepSplit, encode_list_nil, eval_ifZeroCode_zero]
-    simp [stepSplitFn, eval_idCode, Seq.seq]
+    simp [eval_idCode, Seq.seq]
   | cons a l' =>
     rw [stepSplit, encode_list_cons, eval_ifZeroCode_succ hc₀ hc₁]
-    simp [stepSplitFn, hproj, Seq.seq]
-
-private theorem stepSplitFn_iterate (f : ℕ → ℕ) (d : ℕ) (rl l : List ℕ) :
-    (stepSplitFn f)^[d] (rl, l) = (((l.take d).map f).reverseAux rl, l.drop d) := by
-  induction d generalizing rl l with
-  | zero => simp
-  | succ d ih =>
-    cases l with
-    | nil =>
-      rw [Function.iterate_succ_apply, stepSplitFn]
-      simpa using ih rl []
-    | cons a l' =>
-      rw [Function.iterate_succ_apply, stepSplitFn, ih]
-      simp [List.take_succ_cons]
+    simp [hproj, Seq.seq]
 
 private def stepRev : Code :=
   comp
@@ -261,15 +245,11 @@ private def stepRev : Code :=
         (comp succ (pair (comp left right) left))))
     (pair right left)
 
-private def stepRevFn : List ℕ × List ℕ → List ℕ × List ℕ
-  | ([], l) => ([], l)
-  | (b :: rl, l) => (rl, b :: l)
-
 private theorem eval_stepRev (O : ℕ →. ℕ) (s : ℕ) :
     eval O stepRev s =
       Part.some (Nat.pair
-        (encode (stepRevFn (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-        (encode (stepRevFn (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2)) := by
+        (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+        (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2)) := by
   have hc₀ : ∀ a, ∃ y, eval O (pair zero idCode) a = Part.some y := fun a =>
     ⟨Nat.pair 0 a, by simp [eval_idCode, Seq.seq]⟩
   have hc₁ : ∀ a m, ∃ y, eval O
@@ -289,25 +269,10 @@ private theorem eval_stepRev (O : ℕ →. ℕ) (s : ℕ) :
   cases rl with
   | nil =>
     rw [encode_list_nil, eval_ifZeroCode_zero]
-    simp [stepRevFn, eval_idCode, Seq.seq]
+    simp [eval_idCode, Seq.seq]
   | cons b rl' =>
     rw [encode_list_cons, eval_ifZeroCode_succ hc₀ hc₁]
-    simp [stepRevFn, Seq.seq]
-
-private theorem stepRevFn_iterate (d : ℕ) (rl l : List ℕ) (hd : rl.length ≤ d) :
-    stepRevFn^[d] (rl, l) = ([], rl.reverseAux l) := by
-  induction d generalizing rl l with
-  | zero =>
-    obtain rfl : rl = [] := List.eq_nil_of_length_eq_zero (Nat.eq_zero_of_le_zero hd)
-    rfl
-  | succ d ih =>
-    cases rl with
-    | nil =>
-      rw [Function.iterate_succ_apply, stepRevFn]
-      exact ih [] l (Nat.zero_le d)
-    | cons b rl' =>
-      rw [Function.iterate_succ_apply, stepRevFn]
-      exact ih rl' (b :: l) (Nat.succ_le_succ_iff.1 hd)
+    simp [Seq.seq]
 
 /-- Program combinator that, given `Nat.pair d (encode l)`, maps `proj` over the first `d`
 entries of `l : List ℕ` while leaving `l.drop d` unchanged. -/
@@ -343,39 +308,40 @@ theorem eval_mapTakeCode {O : ℕ →. ℕ} {proj : Code} {f : ℕ → ℕ}
   have hiter1 := eval_iterCode hinit1 (eval_stepSplit hproj)
     (g₀ := fun a => Nat.pair (encode ([] : List ℕ)) (encode (ofNat (List ℕ) a)))
     (g := fun s => Nat.pair
-      (encode (stepSplitFn f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-      (encode (stepSplitFn f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))
+      (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+      (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))
   have hstep1 (k : ℕ) (p₁ p₂ : List ℕ) :
       (fun s => Nat.pair
-        (encode (stepSplitFn f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-        (encode (stepSplitFn f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))^[k]
+        (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+        (encode (List.splitStep f (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))^[k]
           (Nat.pair (encode p₁) (encode p₂)) =
-      Nat.pair (encode ((stepSplitFn f)^[k] (p₁, p₂)).1)
-        (encode ((stepSplitFn f)^[k] (p₁, p₂)).2) := by
+      Nat.pair (encode ((List.splitStep f)^[k] (p₁, p₂)).1)
+        (encode ((List.splitStep f)^[k] (p₁, p₂)).2) := by
     induction k generalizing p₁ p₂ with
     | zero => rfl
     | succ k ih =>
       rw [Function.iterate_succ_apply, Function.iterate_succ_apply]
       simpa [Nat.unpair_pair, ofNat_encode] using
-        ih (stepSplitFn f (p₁, p₂)).1 (stepSplitFn f (p₁, p₂)).2
+        ih (List.splitStep f (p₁, p₂)).1 (List.splitStep f (p₁, p₂)).2
   have hinit2 : ∀ a, eval O idCode a = Part.some a := eval_idCode O
   have hiter2 := eval_iterCode hinit2 (eval_stepRev O)
     (g₀ := id)
     (g := fun s => Nat.pair
-      (encode (stepRevFn (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-      (encode (stepRevFn (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))
+      (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+      (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))
   have hstep2 (k : ℕ) (p₁ p₂ : List ℕ) :
       (fun s => Nat.pair
-        (encode (stepRevFn (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
-        (encode (stepRevFn (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))^[k]
+        (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).1)
+        (encode (List.reverseStep (ofNat (List ℕ) s.unpair.1, ofNat (List ℕ) s.unpair.2)).2))^[k]
           (Nat.pair (encode p₁) (encode p₂)) =
-      Nat.pair (encode (stepRevFn^[k] (p₁, p₂)).1) (encode (stepRevFn^[k] (p₁, p₂)).2) := by
+      Nat.pair (encode (List.reverseStep^[k] (p₁, p₂)).1)
+        (encode (List.reverseStep^[k] (p₁, p₂)).2) := by
     induction k generalizing p₁ p₂ with
     | zero => rfl
     | succ k ih =>
       rw [Function.iterate_succ_apply, Function.iterate_succ_apply]
       simpa [Nat.unpair_pair, ofNat_encode] using
-        ih (stepRevFn (p₁, p₂)).1 (stepRevFn (p₁, p₂)).2
+        ih (List.reverseStep (p₁, p₂)).1 (List.reverseStep (p₁, p₂)).2
   have hphase1 :
       eval O (comp (iterCode (pair zero idCode) (stepSplit proj))
           (pair right left)) (Nat.pair d (encode l)) =
@@ -385,7 +351,7 @@ theorem eval_mapTakeCode {O : ℕ →. ℕ} {proj : Code} {f : ℕ → ℕ}
     have hswap : eval O (pair right left) (Nat.pair d (encode l)) =
         Part.some (Nat.pair (encode l) d) := by
       simp [Seq.seq]
-    rw [hswap, PFun.some_bind, hiter1, ofNat_encode, hstep1, stepSplitFn_iterate]
+    rw [hswap, PFun.some_bind, hiter1, ofNat_encode, hstep1, List.splitStep_iterate]
   have hlen : (((l.take d).map f).reverseAux []).length ≤ d := by
     simp
   rw [mapTakeCode, eval_comp, eval_comp]
@@ -397,7 +363,8 @@ theorem eval_mapTakeCode {O : ℕ →. ℕ} {proj : Code} {f : ℕ → ℕ}
         Part.some (Nat.pair
           (Nat.pair (encode (((l.take d).map f).reverseAux [])) (encode (l.drop d))) d) := by
     simp [eval_pair, hphase1, Seq.seq]
-  rw [hpair2, PFun.some_bind, hiter2, PFun.some_bind, id_eq, hstep2, stepRevFn_iterate _ _ _ hlen]
+  rw [hpair2, PFun.some_bind, hiter2, PFun.some_bind, id_eq, hstep2,
+    List.reverseStep_iterate_of_length_le hlen]
   simp
 
 /-! ### Auxiliary query-free programs -/

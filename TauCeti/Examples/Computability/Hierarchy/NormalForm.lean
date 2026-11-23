@@ -139,3 +139,38 @@ example (Z : Set ℕ) {nf₁ nf₂ nfAnd nfOr : NormalFormCode}
     matrixHolds_and h₁ h₂ hand hl, matrixHolds_or h₁ h₂ hor hl,
     QuantifierPrefix.eval_and_unpair_iff p R₁ R₂ xs₁ xs₂ xs,
     QuantifierPrefix.eval_or_unpair_iff p R₁ R₂ xs₁ xs₂ xs⟩
+
+-- Strict dual order simplification, Boolean closure of `IsClass`, and explicit code equations.
+example (Z : Set ℕ) (p q : QuantifierPrefix) {α : Type*} [Primcodable α] {P Q : α → Prop}
+    (hP : p.IsClass Z P) (hQ : p.IsClass Z Q) {nf₁ nf₂ nfAnd nfOr : NormalFormCode}
+    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
+    (hand : nf₁.and nf₂ = some nfAnd) (hor : nf₁.or nf₂ = some nfOr) :
+    (p.dual < q.dual ↔ p < q) ∧
+    p.IsClass Z (fun x => P x ∧ Q x) ∧
+    p.IsClass Z (fun x => P x ∨ Q x) ∧
+    nf₁.and nf₂ = some ⟨nf₁.quantifiers, nf₁.arity,
+      Code.boolAnd
+        (Code.comp nf₁.matrix
+          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
+        (Code.comp nf₂.matrix
+          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth))⟩ ∧
+    nf₁.or nf₂ = some ⟨nf₁.quantifiers, nf₁.arity,
+      Code.boolOr
+        (Code.comp nf₁.matrix
+          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
+        (Code.comp nf₂.matrix
+          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth))⟩ ∧
+    nfAnd.matrix =
+      Code.boolAnd
+        (Code.comp nf₁.matrix
+          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
+        (Code.comp nf₂.matrix
+          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth)) ∧
+    nfOr.matrix =
+      Code.boolOr
+        (Code.comp nf₁.matrix
+          (Code.paramCode (Code.mapTakeCode Code.left) nf₁.quantifiers.depth))
+        (Code.comp nf₂.matrix
+          (Code.paramCode (Code.mapTakeCode Code.right) nf₁.quantifiers.depth)) :=
+  ⟨by simp, hP.and hQ, hP.or hQ, and_eq_some hq ha, or_eq_some hq ha, matrix_and hand,
+    matrix_or hor⟩

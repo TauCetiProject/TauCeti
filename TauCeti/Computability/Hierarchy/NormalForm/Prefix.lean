@@ -26,7 +26,8 @@ This module provides:
   `eval_or_unpair_iff`), pulling out bound-variable-independent connectives, and dropping dummy
   variables;
 * `QuantifierPrefix.IsClass`, matching each prefix to the corresponding arithmetical pointclass
-  `IsSigma` or `IsPi`, together with closure under `addExists` and `addForall`.
+  `IsSigma` or `IsPi`, together with closure under conjunction, disjunction, `addExists`, and
+  `addForall`.
 
 ## References
 
@@ -360,6 +361,11 @@ theorem depth_mono {p q : QuantifierPrefix} (h : p ≤ q) : p.depth ≤ q.depth 
 @[simp]
 theorem dual_le_dual_iff {p q : QuantifierPrefix} : p.dual ≤ q.dual ↔ p ≤ q := by
   simp only [le_iff, dual_injective.eq_iff, depth_dual]
+
+/-- Dualization preserves and reflects the strict hierarchy order. -/
+@[simp]
+theorem dual_lt_dual_iff {p q : QuantifierPrefix} : p.dual < q.dual ↔ p < q := by
+  simp only [lt_iff, depth_dual]
 
 /-- Adding an existential quantifier moves up (or stays) in the hierarchy order. -/
 theorem le_addExists (p : QuantifierPrefix) : p ≤ p.addExists := by
@@ -879,6 +885,24 @@ theorem isClass_not_iff {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Primc
   | zero => exact isSigma_not_iff.trans isPi_zero_iff
   | sigma n => exact isSigma_not_iff
   | pi n => exact isPi_not_iff
+
+/-- Every prefix pointclass is closed under conjunction. -/
+theorem IsClass.and {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Primcodable α]
+    {P Q : α → Prop} (hP : p.IsClass Z P) (hQ : p.IsClass Z Q) :
+    p.IsClass Z (fun x => P x ∧ Q x) := by
+  cases p with
+  | zero => exact IsSigma.and hP hQ
+  | sigma _ => exact IsSigma.and hP hQ
+  | pi _ => exact IsPi.and hP hQ
+
+/-- Every prefix pointclass is closed under disjunction. -/
+theorem IsClass.or {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Primcodable α]
+    {P Q : α → Prop} (hP : p.IsClass Z P) (hQ : p.IsClass Z Q) :
+    p.IsClass Z (fun x => P x ∨ Q x) := by
+  cases p with
+  | zero => exact IsSigma.or hP hQ
+  | sigma _ => exact IsSigma.or hP hQ
+  | pi _ => exact IsPi.or hP hQ
 
 /-- Hierarchy order on prefixes corresponds to inclusion of arithmetical pointclasses. -/
 theorem IsClass.mono {Z : Set ℕ} {p q : QuantifierPrefix} {α : Type*} [Primcodable α]
