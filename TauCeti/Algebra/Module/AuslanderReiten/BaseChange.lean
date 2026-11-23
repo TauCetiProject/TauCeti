@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 
-import all TauCeti.Algebra.Module.AuslanderReiten.Transpose
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!
@@ -64,38 +63,19 @@ section CommRing
 variable {R P₀ P₁ : Type*} [CommRing R] [AddCommMonoid P₀] [Module R P₀]
   [AddCommMonoid P₁] [Module R P₁]
 
-private lemma restrictScalars_range_lcomp {S Q₀ Q₁ : Type*} [CommRing S]
+private lemma exact_dualMap_mk {S Q₀ Q₁ : Type*} [CommRing S]
     [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
     (p : Q₁ →ₗ[S] Q₀) :
-    (LinearMap.range (p.lcomp Sᵐᵒᵖ S)).restrictScalars S = LinearMap.range p.dualMap := by
-  ext φ
-  simp [LinearMap.lcomp_apply', LinearMap.dualMap_apply']
+    Function.Exact p.dualMap ((mk p).restrictScalars S) := by
+  rw [LinearMap.exact_iff, LinearMap.ker_restrictScalars, ker_mk,
+    ← LinearMap.range_restrictScalars, LinearMap.dualMap_eq_lcomp]
+  rfl
 
 private def cokernelDualMapEquiv {S Q₀ Q₁ : Type*} [CommRing S]
     [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
     (p : Q₁ →ₗ[S] Q₀) :
     AuslanderReitenTranspose p ≃ₗ[S] Module.Dual S Q₁ ⧸ LinearMap.range p.dualMap :=
-  (Submodule.Quotient.restrictScalarsEquiv S
-    (LinearMap.range (p.lcomp Sᵐᵒᵖ S))).symm.trans
-    (Submodule.quotEquivOfEq _ (LinearMap.range p.dualMap) (restrictScalars_range_lcomp p))
-
-@[simp]
-private theorem cokernelDualMapEquiv_mk {S Q₀ Q₁ : Type*} [CommRing S]
-    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
-    (p : Q₁ →ₗ[S] Q₀) (φ : Module.Dual S Q₁) :
-    cokernelDualMapEquiv p (mk p φ) = Submodule.Quotient.mk φ := by
-  change (Submodule.quotEquivOfEq _ (LinearMap.range p.dualMap) (restrictScalars_range_lcomp p))
-    ((Submodule.Quotient.restrictScalarsEquiv S (LinearMap.range (p.lcomp Sᵐᵒᵖ S))).symm
-      (Submodule.Quotient.mk φ)) = _
-  rw [Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.quotEquivOfEq_mk]
-
-@[simp]
-private theorem cokernelDualMapEquiv_symm_mk {S Q₀ Q₁ : Type*} [CommRing S]
-    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
-    (p : Q₁ →ₗ[S] Q₀) (φ : Module.Dual S Q₁) :
-    (cokernelDualMapEquiv p).symm (Submodule.Quotient.mk φ) = mk p φ := by
-  apply (cokernelDualMapEquiv p).injective
-  simp
+  ((exact_dualMap_mk p).linearEquivOfSurjective (mk_surjective p)).symm
 
 variable (A : Type*) [CommRing A] [Algebra R A]
 
@@ -122,10 +102,19 @@ theorem baseChangeHom_tmul_mk (f : P₁ →ₗ[R] P₀) (a : A) (φ : Module.Dua
       a • Module.Dual.baseChange A φ := by
     have ha : a ⊗ₜ[R] φ = a • (1 ⊗ₜ[R] φ) := by rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
     rw [ha, map_smul, TauCeti.Module.Dual.baseChangeEvaluation_one_tmul]
+  have hmk : cokernelDualMapEquiv f (mk f φ) = Submodule.Quotient.mk φ :=
+    (exact_dualMap_mk f).linearEquivOfSurjective_symm_apply (mk_surjective f) φ
+  have hsymm (ψ : Module.Dual A (A ⊗[R] P₁)) :
+      (cokernelDualMapEquiv (f.baseChange A)).symm (Submodule.Quotient.mk ψ) =
+        mk (f.baseChange A) ψ := by
+    apply (cokernelDualMapEquiv (f.baseChange A)).injective
+    rw [LinearEquiv.apply_symm_apply]
+    exact ((exact_dualMap_mk (f.baseChange A)).linearEquivOfSurjective_symm_apply
+      (mk_surjective _) ψ).symm
   simp only [baseChangeHom, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.baseChange_tmul, cokernelDualMapEquiv_mk, LinearMap.cokernelBaseChangeEquiv_tmul,
+    LinearEquiv.baseChange_tmul, hmk, LinearMap.cokernelBaseChangeEquiv_tmul,
     Submodule.mapQ_apply, heval]
-  rw [Submodule.Quotient.mk_smul, map_smul, cokernelDualMapEquiv_symm_mk]
+  rw [Submodule.Quotient.mk_smul, map_smul, hsymm]
 
 section FiniteProjective
 
