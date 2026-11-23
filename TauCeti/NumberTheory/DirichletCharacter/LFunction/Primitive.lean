@@ -39,8 +39,9 @@ For a nonzero modulus `n`, associating to each `χ : DirichletCharacter ℂ n` i
 * `DirichletCharacter.LFunction_eq_riemannZeta_of_eq_one`,
   `DirichletCharacter.LFunction_primitiveCharacter_one`: the continued `L`-function at level `1`
   (and of `(1 : DirichletCharacter ℂ n).primitiveCharacter`) equals `riemannZeta`.
-* `DirichletCharacter.IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq`: any primitive
-  lift of `χ` has the same continued `L`-function as `χ.primitiveCharacter`.
+* `DirichletCharacter.IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq`,
+  `DirichletCharacter.IsPrimitive.LFunction_primitiveCharacter`: any primitive lift of `χ` (and
+  `χ` itself when primitive) has the same continued `L`-function as `χ.primitiveCharacter`.
 * `DirichletCharacter.prod_LFunction_primitiveCharacter_eq_riemannZeta_mul`: separates `riemannZeta`
   from the `χ ≠ 1` factors of `∏ χ, χ.primitiveCharacter.LFunction s`.
 * `DirichletCharacter.prod_LFunction_primitiveCharacter_mul_prod_eq_prod_LFunction`: Euler-factor
@@ -82,6 +83,13 @@ theorem IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq {m n : ℕ
     ψ.LFunction = χ.primitiveCharacter.LFunction := by
   obtain ⟨rfl, rfl⟩ := hψ.eq_primitiveCharacter_of_changeLevel_eq hm hind
   rfl
+
+/-- For a primitive Dirichlet character `χ`, `χ.primitiveCharacter.LFunction` equals
+`χ.LFunction`. -/
+theorem IsPrimitive.LFunction_primitiveCharacter {n : ℕ} [NeZero n]
+    {χ : DirichletCharacter ℂ n} (hχ : χ.IsPrimitive) :
+    χ.primitiveCharacter.LFunction = χ.LFunction :=
+  (hχ.LFunction_eq_primitiveCharacter_of_changeLevel_eq dvd_rfl (changeLevel_self χ)).symm
 
 open scoped Classical in
 /-- Splitting off the principal character `χ = 1` separates `riemannZeta s` from the product of

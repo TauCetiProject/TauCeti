@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LFunctions.Hecke.Dirichlet
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Primitive
 import TauCeti.NumberTheory.LFunctions.Hecke.DedekindZeta
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.DedekindZeta
 
@@ -64,8 +63,8 @@ theorem zeroCount_dirichletData_entireCompletion_eq_heckeLFunctionC_ofDirichletC
       zeroCount (heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character)
         univ (R ∩ {s | s.re ∈ Ioo 0 1}) := by
   rw [zeroCount_dirichletData_entireCompletion_eq_LFunction_inter χ hχ R,
-    zeroCount_heckeLFunctionC_eq_LFunction, LFunction_toDirichletCharacter_ofDirichletCharacter,
-    ← hχ.LFunction_eq_primitiveCharacter_of_changeLevel_eq dvd_rfl (changeLevel_self χ)]
+    zeroCount_congr_nhdsNE fun s _ ↦
+      (heckeLFunctionC_ofDirichletCharacter_eventuallyEq_of_isPrimitive hχ s).symm]
 
 /-- **For the trivial primitive ray class character `1 : PrimitiveRayClassCharacter ℚ`, the zero
 count of `zetaEntireCompletion` on `R` equals the zero count of `heckeLFunctionC (1).character` on

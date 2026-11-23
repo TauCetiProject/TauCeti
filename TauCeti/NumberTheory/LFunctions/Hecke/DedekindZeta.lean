@@ -46,16 +46,8 @@ character is `dedekindZetaC K`.** -/
 @[simp]
 theorem heckeLFunctionC_one_modulus_one :
     heckeLFunctionC (1 : RayClassCharacter (Modulus.one K)) = dedekindZetaC K := by
-  have hw : (1 : RayClassCharacter (Modulus.one K)).toUnitaryIdealWeight = 1 := by
-    apply Subtype.ext
-    ext I
-    rw [RayClassCharacter.val_toUnitaryIdealWeight,
-      RayClassCharacter.toMultiplicativeIdealWeight_one,
-      MultiplicativeIdealWeight.ofBadPrimes_apply, Modulus.support_one]
-    by_cases hI : I = ⊥
-    · simp [hI, Ideal.isPrimeTo_iff]
-    · simp [hI, Ideal.isPrimeTo_iff]
-  rw [heckeLFunctionC_def, hw, UnitaryIdealWeight.toIdealArithmeticFunction_one, dedekindZetaC_def]
+  rw [heckeLFunctionC_def, RayClassCharacter.toUnitaryIdealWeight_one,
+    UnitaryIdealWeight.toIdealArithmeticFunction_one, dedekindZetaC_def]
   exact meromorphicContinuation_congr fun s _ ↦ (dedekindZeta_eq_LSeries_normCoeff_one K s).symm
 
 /-- **As punctured germs everywhere, the presented Hecke L-function of the trivial character of `𝔪`
