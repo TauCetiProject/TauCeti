@@ -33,7 +33,8 @@ A continuous function on `ℝ` with limits at `±∞` is bounded, and a function
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
 
-Near `0`, the product `‖x‖ * R` is eventually less than any positive bound.
+Near `0`, the product `‖x‖ * R` is eventually less than any positive bound. Eventual bounds
+`‖g i‖ < r` for every `r > s` pass to `f` along a filter on which `‖f i - g i‖ → 0`.
 
 A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
 
@@ -77,6 +78,8 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
 * `TauCeti.eventually_norm_mul_lt` -- eventually near `0`, `‖x‖ * R < ρ` for any `ρ > 0`.
+* `Filter.Tendsto.eventually_norm_lt_of_eventually_norm_lt` -- eventual bounds `‖g i‖ < r` for
+  all `r > s` pass to `f` when `‖f i - g i‖ → 0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 * `TauCeti.ne_zero_of_strictAnti_norm` -- the terms of a family with strictly decreasing norms,
   indexed without a maximum, are nonzero.
@@ -163,6 +166,18 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
 theorem eventually_norm_mul_lt {E : Type*} [SeminormedAddGroup E] (R : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
     ∀ᶠ x in 𝓝 (0 : E), ‖x‖ * R < ρ :=
   (tendsto_norm_zero.mul_const R).eventually (gt_mem_nhds (by rwa [zero_mul]))
+
+/-- **Eventual norm bounds survive a vanishing perturbation.** If `‖f i - g i‖ → 0` along `l` and
+every `r > s` eventually bounds `‖g i‖`, then every `r > s` eventually bounds `‖f i‖`. The
+seminormed group may vary with the index, as for matrices of growing size. -/
+theorem _root_.Filter.Tendsto.eventually_norm_lt_of_eventually_norm_lt {ι : Type*}
+    {E : ι → Type*} [∀ i, SeminormedAddGroup (E i)] {l : Filter ι} {f g : ∀ i, E i} {s : ℝ}
+    (hfg : Tendsto (fun i ↦ ‖f i - g i‖) l (𝓝 0)) (hg : ∀ r > s, ∀ᶠ i in l, ‖g i‖ < r) :
+    ∀ r > s, ∀ᶠ i in l, ‖f i‖ < r := by
+  intro r hr
+  filter_upwards [hg ((r + s) / 2) (by linarith),
+    hfg.eventually_lt_const (by linarith : (0 : ℝ) < (r - s) / 2)] with i hgi hfgi
+  exact (norm_le_norm_sub_add (f i) (g i)).trans_lt ((add_lt_add hfgi hgi).trans_eq (by ring))
 
 /-- A sum `z + a` with `‖a‖ < ‖z‖` is nonzero. -/
 theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :
