@@ -90,7 +90,7 @@ theorem exists_unit_conj_rootSubgroupPoints (g : D.weylSubgroup K) (γ : Fin t.n
       one_mem' := D.rescalesRoots_one K
       mul_mem' := RescalesRoots.mul D K
       inv_mem' := RescalesRoots.inv D K }
-  have htop : H = ⊤ := D.weylSubgroup_eq_top_of_mem H
+  have htop : H = ⊤ := D.subgroup_eq_top_of_torusPoints_mem_of_weylElement_mem H
     (fun s δ => ⟨torusCharacter s (D.coordinateRoot δ), fun u => by
       simp only [D.weylProjection_torusPoints, map_one, Equiv.Perm.one_apply]
       exact D.torusPoints_conj_rootSubgroupPoints δ K s u⟩)

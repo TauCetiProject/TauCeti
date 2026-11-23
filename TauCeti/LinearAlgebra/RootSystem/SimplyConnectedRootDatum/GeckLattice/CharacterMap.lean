@@ -86,14 +86,8 @@ theorem exists_geckWeightTorusPoints_eq_mul_inv {K : Type v} [CommRing K]
     {φ : Module.End ℤ (Fin t.rank → ℤ)} (hF : IsCharacterMap (t.geckWeightTorusPoints ht K) F φ)
     {n r : ℕ} (hr : 0 < r) (hφ : φ ^ n = (p ^ r : ℕ) • 1) (s : Fin t.rank → Kˣ) :
     ∃ u, t.geckWeightTorusPoints ht K s =
-      t.geckWeightTorusPoints ht K u * (F (t.geckWeightTorusPoints ht K u))⁻¹ := by
-  obtain hK | _ := subsingleton_or_nontrivial K
-  · exact ⟨s, Subsingleton.elim _ _⟩
-  have hpr : ((p ^ r : ℕ) : ℤ) ≠ 1 := by
-    rw [Nat.cast_ne_one, Ne, pow_eq_one_iff, not_or]
-    exact ⟨CharP.char_ne_one K p, hr.ne'⟩
-  exact hF.exists_eq_mul_inv
-    (injective_one_sub_of_pow_eq_smul_one (by rwa [Nat.cast_smul_eq_nsmul]) hpr) s
+      t.geckWeightTorusPoints ht K u * (F (t.geckWeightTorusPoints ht K u))⁻¹ :=
+  hF.exists_eq_mul_inv_of_charP p hr hφ s
 
 /-- **Lang's equation on the weight torus for the Frobenius.** Over a ring of prime characteristic
 `p` whose units are divisible, for instance an algebraically closed field, and for `k > 0`, every

@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Endomorphism.RootAction
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Gauss
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.HomExt
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Normalizer
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
+import TauCeti.Algebra.CharP.Lemmas
+import TauCeti.LinearAlgebra.End.Basic
+import TauCeti.LinearAlgebra.LinearIndependent.Basic
 
 /-!
 # Rigidity and torus conjugacy of standard endomorphisms
@@ -16,7 +20,7 @@ Over an infinite field `K` with divisible units (in particular an algebraically 
 two standard endomorphisms `F` and `F'` of the points of a Chevalley datum `D` that share the
 same injective character map `φ` agree on `D.rootTorusSubgroup K` up to left-composition with
 conjugation by a torus point, i.e., `F = Int(s) ∘ F'` on `D.rootTorusSubgroup K`
-(`ChevalleyDatum.exists_torusPoints_conj_eq_on_rootTorusSubgroup`).
+(`ChevalleyDatum.exists_torusPoints_eq_conj_comp_on_rootTorusSubgroup`).
 
 The proof combines three ingredients:
 * the root permutation and field automorphisms on root subgroups extracted from `φ` in
@@ -39,14 +43,12 @@ characteristic `p`.
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.exists_torusPoints_conj_eq_on_rootTorusSubgroup`: rigidity up
-  to left-composition with conjugation by a torus point (`F = Int(s) ∘ F'` on
+* `TauCeti.DynkinType.ChevalleyDatum.exists_torusPoints_eq_conj_comp_on_rootTorusSubgroup`: rigidity
+  up to left-composition with conjugation by a torus point (`F = Int(s) ∘ F'` on
   `D.rootTorusSubgroup K`) for standard endomorphisms with a common injective character map.
 * `TauCeti.DynkinType.ChevalleyDatum.exists_torusPoints_conjugate_on_rootTorusSubgroup`: conjugacy
   `F = Int(u) ∘ F' ∘ Int(u)⁻¹` on `D.rootTorusSubgroup K` by a torus point when `1 - φ` is
   injective.
-* `TauCeti.DynkinType.ChevalleyDatum.exists_torusPoints_eq_mul_inv_of_pow_eq_nsmul_one`: Lang's
-  equation on `D.torusPoints` when `φ ^ n = (p ^ r) • 1` with `r > 0` in characteristic `p`.
 * `ChevalleyDatum.exists_torusPoints_conjugate_on_rootTorusSubgroup_of_pow_eq_smul_one` and
   `ChevalleyDatum.exists_torusPoints_conjugate_on_rootTorusSubgroup_of_charP`:
   torus conjugacy when a power of `φ` is a nonzero scalar other than `1`, in particular a positive
@@ -71,35 +73,6 @@ universe v
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 /-! ## Rigidity up to the torus and torus conjugacy -/
-
-private theorem linearIndependent_of_smul_eq_smul {ι R M : Type*} [CommRing R] [IsDomain R]
-    [AddCommGroup M] [Module R M] {b v : ι → M} {m n : ι → R}
-    (hb : LinearIndependent R b) (hm : ∀ i, m i ≠ 0) (hn : ∀ i, n i ≠ 0)
-    (hmn : ∀ i, n i • v i = m i • b i) : LinearIndependent R v := by
-  classical
-  rw [linearIndependent_iff'] at hb ⊢
-  intro s f hf i hi
-  let N : R := ∏ j ∈ s, n j
-  have hscaled : ∑ j ∈ s, (f j * (∏ k ∈ s.erase j, n k) * m j) • b j = 0 := by
-    have h0 : ∑ j ∈ s, N • (f j • v j) = 0 := by rw [← Finset.smul_sum, hf, smul_zero]
-    refine (Finset.sum_congr rfl fun j hj => ?_).trans h0
-    have hN : N = (∏ k ∈ s.erase j, n k) * n j := by
-      dsimp only [N]
-      rw [mul_comm, Finset.mul_prod_erase s n hj]
-    calc
-      (f j * (∏ k ∈ s.erase j, n k) * m j) • b j
-          = (f j * ∏ k ∈ s.erase j, n k) • (m j • b j) := by rw [mul_smul]
-      _ = (f j * ∏ k ∈ s.erase j, n k) • (n j • v j) := by rw [hmn j]
-      _ = ((∏ k ∈ s.erase j, n k) * n j * f j) • v j := by
-        rw [← mul_smul]
-        congr 1
-        ring
-      _ = N • (f j • v j) := by rw [← hN, mul_smul]
-  have hc := hb s _ hscaled i hi
-  have hprod : (∏ k ∈ s.erase i, n k) * m i ≠ 0 :=
-    mul_ne_zero (Finset.prod_ne_zero_iff.mpr fun k _ => hn k) (hm i)
-  rw [mul_assoc] at hc
-  exact (mul_eq_zero.mp hc).resolve_right hprod
 
 private theorem opposite_simple_scalar_mul_eq_one {K : Type v} [Field K] [Infinite K]
     [RootableBy Kˣ ℕ] {G : D.points K →* D.points K} {φ : Module.End ℤ (Fin t.rank → ℤ)}
@@ -138,13 +111,14 @@ private theorem opposite_simple_scalar_mul_eq_one {K : Type v} [Field K] [Infini
 units (in particular an algebraically closed field), two standard endomorphisms `F` and `F'`
 sharing the same injective character map `φ` satisfy `F = Int(s) ∘ F'` on `D.rootTorusSubgroup K`
 for some torus point `D.torusPoints K s`. -/
-theorem exists_torusPoints_conj_eq_on_rootTorusSubgroup {K : Type v} [Field K] [Infinite K]
+theorem exists_torusPoints_eq_conj_comp_on_rootTorusSubgroup {K : Type v} [Field K] [Infinite K]
     [RootableBy Kˣ ℕ] {F F' : D.points K →* D.points K} {φ : Module.End ℤ (Fin t.rank → ℤ)}
     (hF : D.IsStandardEndomorphism K F) (hF' : D.IsStandardEndomorphism K F')
     (hFφ : IsCharacterMap (D.torusPoints K) F φ) (hF'φ : IsCharacterMap (D.torusPoints K) F' φ)
     (hinj : Function.Injective φ) :
     ∃ s : Fin t.rank → Kˣ, ∀ x ∈ D.rootTorusSubgroup K,
       F x = D.torusPoints K s * F' x * (D.torusPoints K s)⁻¹ := by
+  -- Step 1: extract root actions for `F` and `F'` and identify their root perms and field auts.
   obtain ⟨π, c, g, hF_root, hF_char, hπ_neg, _, hprop⟩ :=
     D.exists_rootPerm_of_isStandardEndomorphism hF hFφ hinj
   obtain ⟨π', c', g', hF'_root, hF'_char, hπ'_neg, _, _⟩ :=
@@ -153,11 +127,11 @@ theorem exists_torusPoints_conj_eq_on_rootTorusSubgroup {K : Type v} [Field K] [
     obtain ⟨h1, h2⟩ := D.eq_of_ringHom_torusCharacter_eq hinj
       (g₁ := (g α).toRingHom) (g₂ := (g' α).toRingHom) (hF_char α) (hF'_char α)
     exact ⟨h1, fun u => DFunLike.congr_fun h2 u⟩
+  -- Step 2: match scalar ratios `c / c'` on positive simple roots via a torus parameter `s`.
   have hlin_π : LinearIndependent ℤ
       (fun i : Fin t.rank => D.coordinateRoot (π (t.simpleIndex ht i))) := by
     choose m n hm hn hmn using fun i : Fin t.rank => hprop (t.simpleIndex ht i)
-    exact (linearIndependent_of_smul_eq_smul D.linearIndependent_coordinateRoot_simpleIndex
-      hm hn hmn).of_comp φ
+    exact (D.linearIndependent_coordinateRoot_simpleIndex.of_smul_eq_smul hm hn hmn).of_comp φ
   let ψ := Fintype.linearCombination ℤ
     (fun i : Fin t.rank => D.coordinateRoot (π (t.simpleIndex ht i)))
   have hψ_single (i : Fin t.rank) :
@@ -170,6 +144,7 @@ theorem exists_torusPoints_conj_eq_on_rootTorusSubgroup {K : Type v} [Field K] [
       torusCharacter s (D.coordinateRoot (π (t.simpleIndex ht i))) =
         c (t.simpleIndex ht i) / c' (t.simpleIndex ht i) := by
     simpa only [torusPointMap_apply, hψ_single] using congrFun hs i
+  -- Step 3: infer agreement on opposite simple roots via rank-1 normalizers, then extend.
   have hc_mul := D.opposite_simple_scalar_mul_eq_one hFφ hinj hF_root hπ_neg
   have hc'_mul := D.opposite_simple_scalar_mul_eq_one hF'φ hinj hF'_root hπ'_neg
   have hroot (α : Fin t.numRoots)
@@ -215,24 +190,9 @@ theorem exists_torusPoints_conjugate_on_rootTorusSubgroup {K : Type v} [Field K]
     ∃ u : Fin t.rank → Kˣ, ∀ x ∈ D.rootTorusSubgroup K,
       F x = D.torusPoints K u * F' ((D.torusPoints K u)⁻¹ * x * D.torusPoints K u) *
         (D.torusPoints K u)⁻¹ := by
-  obtain ⟨s, hs⟩ := D.exists_torusPoints_conj_eq_on_rootTorusSubgroup hF hF' hFφ hF'φ hinj
+  obtain ⟨s, hs⟩ := D.exists_torusPoints_eq_conj_comp_on_rootTorusSubgroup hF hF' hFφ hF'φ hinj
   obtain ⟨u, hu⟩ := hF'φ.exists_eq_mul_inv h1φ s
   exact ⟨u, fun x hx => by rw [hs x hx, hu, map_mul, map_mul, map_inv]; group⟩
-
-/-- **Lang's equation on the actual torus of a Chevalley datum.** Over a commutative ring of
-characteristic `p` with divisible units, if an endomorphism `F` has character map `φ` satisfying
-`φ ^ n = (p ^ r) • 1` with `r > 0`, then every torus point `D.torusPoints K s` equals
-`D.torusPoints K u * (F (D.torusPoints K u))⁻¹` for some `u`. -/
-theorem exists_torusPoints_eq_mul_inv_of_pow_eq_nsmul_one {K : Type v} [CommRing K]
-    [RootableBy Kˣ ℕ] (p : ℕ) [CharP K p] {F : D.points K →* D.points K}
-    {φ : Module.End ℤ (Fin t.rank → ℤ)} (hφ : IsCharacterMap (D.torusPoints K) F φ)
-    {n r : ℕ} (hr : 0 < r) (hpow : φ ^ n = (p ^ r : ℕ) • 1) (s : Fin t.rank → Kˣ) :
-    ∃ u, D.torusPoints K s = D.torusPoints K u * (F (D.torusPoints K u))⁻¹ := by
-  obtain hK | _ := subsingleton_or_nontrivial K
-  · exact ⟨s, Subsingleton.elim _ _⟩
-  have hpr : ((p ^ r : ℕ) : ℤ) ≠ 1 := by
-    rw [Nat.cast_ne_one, Ne, pow_eq_one_iff, not_or]; exact ⟨CharP.char_ne_one K p, hr.ne'⟩
-  exact hφ.exists_eq_mul_inv_of_pow_eq_smul_one hpr (by rwa [Nat.cast_smul_eq_nsmul]) s
 
 /-- **Torus conjugacy when a power of the character map is a nonzero scalar other than `1`.**
 Covers both Frobenius-type Steinberg character maps (`m = q > 1`) and negative scalings
@@ -245,24 +205,13 @@ theorem exists_torusPoints_conjugate_on_rootTorusSubgroup_of_pow_eq_smul_one {K 
     {n : ℕ} {m : ℤ} (hm0 : m ≠ 0) (hm1 : m ≠ 1) (hpow : φ ^ n = m • 1) :
     ∃ u : Fin t.rank → Kˣ, ∀ x ∈ D.rootTorusSubgroup K,
       F x = D.torusPoints K u * F' ((D.torusPoints K u)⁻¹ * x * D.torusPoints K u) *
-        (D.torusPoints K u)⁻¹ := by
-  have hinj : Function.Injective φ := (injective_iff_map_eq_zero φ).mpr fun x hx => by
-    cases n with
-    | zero =>
-      have hmx : x = m • x := by simpa [pow_zero] using LinearMap.congr_fun hpow x
-      have hsub : (m - 1) • x = 0 := by rw [sub_smul, one_smul, ← hmx, sub_self]
-      exact (smul_eq_zero.mp hsub).resolve_left (sub_ne_zero.mpr hm1)
-    | succ k =>
-      have hmx : m • x = 0 := by
-        simpa only [pow_succ, mul_apply_eq_comp, hx, map_zero, LinearMap.smul_apply,
-          one_apply_eq_self] using (LinearMap.congr_fun hpow x).symm
-      exact (smul_eq_zero.mp hmx).resolve_left hm0
-  exact D.exists_torusPoints_conjugate_on_rootTorusSubgroup hF hF' hFφ hF'φ hinj
-    (injective_one_sub_of_pow_eq_smul_one hpow hm1)
+        (D.torusPoints K u)⁻¹ :=
+  D.exists_torusPoints_conjugate_on_rootTorusSubgroup hF hF' hFφ hF'φ
+    (injective_of_pow_eq_smul_one hpow hm0 hm1) (injective_one_sub_of_pow_eq_smul_one hpow hm1)
 
 /-- **Torus conjugacy in positive characteristic `p` when `φ ^ n = (p ^ r) • 1` with `r > 0`.**
-Applies directly to Frobenius-type and twisted Steinberg endomorphisms over algebraically closed
-fields of prime characteristic. -/
+Applies to Frobenius-type and twisted Steinberg endomorphisms over algebraically closed fields of
+prime characteristic once shown to be standard with `φ ^ n = (p ^ r) • 1`. -/
 theorem exists_torusPoints_conjugate_on_rootTorusSubgroup_of_charP {K : Type v}
     [Field K] [Infinite K] [RootableBy Kˣ ℕ] (p : ℕ) [CharP K p] (hp : p ≠ 0)
     {F F' : D.points K →* D.points K} {φ : Module.End ℤ (Fin t.rank → ℤ)}
@@ -274,7 +223,6 @@ theorem exists_torusPoints_conjugate_on_rootTorusSubgroup_of_charP {K : Type v}
         (D.torusPoints K u)⁻¹ :=
   D.exists_torusPoints_conjugate_on_rootTorusSubgroup_of_pow_eq_smul_one
     hF hF' hFφ hF'φ (Nat.cast_ne_zero.mpr (pow_ne_zero r hp))
-    (by rw [Nat.cast_ne_one, Ne, pow_eq_one_iff, not_or]; exact ⟨CharP.char_ne_one K p, hr.ne'⟩)
-    (by rwa [Nat.cast_smul_eq_nsmul])
+    (Nat.cast_ne_one.mpr (pow_ne_one_of_charP K p hr)) (by rwa [Nat.cast_smul_eq_nsmul])
 
 end TauCeti.DynkinType.ChevalleyDatum

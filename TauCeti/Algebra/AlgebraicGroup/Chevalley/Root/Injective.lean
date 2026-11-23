@@ -9,18 +9,18 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 import TauCeti.FieldTheory.IsAlgClosed.Units
+import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Quotient
 import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
 # Injectivity and separation of Chevalley root subgroups over integral domains
 
-For an arbitrary Chevalley datum `D`, every root element with additive parameter one is
-nonidentity over every nontrivial commutative ring
-(`ChevalleyDatum.rootSubgroupPoints_ofAdd_one_ne_one`). Over any integral domain `A` — including
-`ℤ`, `𝔽₂`, and fields of small characteristic — every root subgroup `D.rootSubgroupPoints γ A` is
-injective, and root subgroups attached to distinct roots have trivial intersection; distinct
-roots have distinct root-subgroup images over every nontrivial commutative ring
-(`ChevalleyDatum.range_rootSubgroupPoints_eq_iff`).
+From `Chevalley.Weyl.Basic`, every root element with additive parameter one is nonidentity over
+every nontrivial commutative ring (`ChevalleyDatum.rootSubgroupPoints_ofAdd_one_ne_one`). Over
+any integral domain `A` — including `ℤ`, `𝔽₂`, and fields of small characteristic — every root
+subgroup `D.rootSubgroupPoints γ A` is injective, and root subgroups attached to distinct roots have
+trivial intersection; distinct roots have distinct root-subgroup images over every nontrivial
+commutative ring (`ChevalleyDatum.range_rootSubgroupPoints_eq_iff`).
 
 The argument reduces to an algebraically closed field by passing to
 `AlgebraicClosure (FractionRing A)`, where the units are divisible and the field is infinite:
@@ -62,6 +62,20 @@ universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
+private theorem map_algebraicClosure_rootSubgroupPoints {A : Type v} [CommRing A] [IsDomain A]
+    {α β : Fin t.numRoots} {a b : A}
+    (h : D.rootSubgroupPoints α A (ofAdd a) = D.rootSubgroupPoints β A (ofAdd b)) :
+    ∃ f : A →+* AlgebraicClosure (FractionRing A), Function.Injective f ∧
+      D.rootSubgroupPoints α (AlgebraicClosure (FractionRing A)) (ofAdd (f a)) =
+        D.rootSubgroupPoints β (AlgebraicClosure (FractionRing A)) (ofAdd (f b)) := by
+  let K := AlgebraicClosure (FractionRing A)
+  let f : A →+* K := (algebraMap (FractionRing A) K).comp (algebraMap A (FractionRing A))
+  have hf : Function.Injective f :=
+    (algebraMap (FractionRing A) K).injective.comp (IsFractionRing.injective A (FractionRing A))
+  have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation K) f) h
+  simp only [D.map_rootSubgroupPoints, toAdd_ofAdd] at hmap
+  exact ⟨f, hf, hmap⟩
+
 private theorem rootSubgroupPoints_injective_of_rootable (γ : Fin t.numRoots)
     (K : Type v) [Field K] [RootableBy Kˣ ℕ] :
     Function.Injective (D.rootSubgroupPoints γ K) := by
@@ -80,14 +94,15 @@ private theorem rootSubgroupPoints_injective_of_rootable (γ : Fin t.numRoots)
 /-- **Every root subgroup of a Chevalley datum is injective over every integral domain.** -/
 theorem rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v) [CommRing A] [IsDomain A] :
     Function.Injective (D.rootSubgroupPoints γ A) := by
-  intro u v huv
-  let K := AlgebraicClosure (FractionRing A)
-  let f : A →+* K := (algebraMap (FractionRing A) K).comp (algebraMap A (FractionRing A))
-  have hf : Function.Injective f :=
-    (algebraMap (FractionRing A) K).injective.comp (IsFractionRing.injective A (FractionRing A))
-  have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation K) f) huv
-  simp only [D.map_rootSubgroupPoints] at hmap
-  exact toAdd.injective (hf (congrArg toAdd (D.rootSubgroupPoints_injective_of_rootable γ K hmap)))
+  rw [injective_iff_map_eq_one]
+  intro u hu
+  have hu' : D.rootSubgroupPoints γ A (ofAdd (toAdd u)) =
+      D.rootSubgroupPoints γ A (ofAdd 0) := by simpa [ofAdd_toAdd] using hu
+  obtain ⟨f, hf, hmap⟩ := D.map_algebraicClosure_rootSubgroupPoints hu'
+  rw [map_zero, ofAdd_zero, map_one] at hmap
+  have h0 := toAdd.injective
+    (D.rootSubgroupPoints_injective_of_rootable γ _ (hmap.trans (map_one _).symm))
+  exact ofAdd_toAdd u ▸ congrArg ofAdd (hf (h0.trans (map_zero f).symm))
 
 private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K] [Infinite K]
     {α β : Fin t.numRoots} (hαβ : α ≠ β) {a b : K}
@@ -113,13 +128,10 @@ private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K]
       simpa using congrArg toAdd (D.rootSubgroupPoints_injective β K hconj)
     exact Units.ext ((mul_right_cancel₀ hb (by simpa using heq.symm)).trans rfl)
   obtain ⟨i, hi⟩ : ∃ i, D.coordinateRoot α i ≠ 0 := Function.ne_iff.mp (D.coordinateRoot_ne_zero α)
-  rcases D.eq_or_eq_neg_of_smul_coordinateRoot_eq hi
-      (smul_eq_smul_of_torusCharacter_eq_one hker i) with heq | hneg
-  · exact hαβ ((t.simplyConnectedRootDatum ht).root.injective heq)
-  · have hβ : β = (t.simplyConnectedRootDatum ht).reflectionPerm α α :=
-      (t.simplyConnectedRootDatum ht).root.injective <| by
-        rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self, hneg, neg_neg]
-    have hcontra {γ δ : Fin t.numRoots} {x y : K} (hy : y ≠ 0)
+  rcases D.eq_or_eq_reflectionPerm_of_smul_coordinateRoot_eq hi
+      (smul_eq_smul_of_torusCharacter_eq_one hker i) with heq | hα
+  · exact hαβ heq
+  · have hcontra {γ δ : Fin t.numRoots} {x y : K} (hy : y ≠ 0)
         (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
         (hδ : δ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
         (heq' : D.rootSubgroupPoints γ K (ofAdd x) = D.rootSubgroupPoints δ K (ofAdd y)) :
@@ -129,14 +141,14 @@ private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K]
       have h1 := (D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots K hδ _).mp hmem
       exact hy <| by
         simpa using congrArg toAdd (D.rootSubgroupPoints_injective δ K (h1.trans (map_one _).symm))
-    rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) α with
+    rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) β with
         hpos | hneg'
-    · exact hcontra hb hpos
-        (by rw [hβ, ← t.reflectionPerm_rationalRootSystem ht]
-            exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr hpos) h
-    · exact hcontra ha
-        (by rw [hβ, ← t.reflectionPerm_rationalRootSystem ht]
-            exact (reflectionPerm_self_mem_posRoots_iff_mem_negRoots _ _ _).mpr hneg') hneg' h.symm
+    · exact hcontra ha hpos
+        (by rwa [hα, ← t.reflectionPerm_rationalRootSystem ht,
+          reflectionPerm_self_mem_negRoots_iff_mem_posRoots]) h.symm
+    · exact hcontra hb
+        (by rwa [hα, ← t.reflectionPerm_rationalRootSystem ht,
+          reflectionPerm_self_mem_posRoots_iff_mem_negRoots]) hneg' h
 
 /-- Over an integral domain, if two root elements at distinct roots are equal then both
 additive parameters are zero. -/
@@ -144,12 +156,7 @@ theorem eq_zero_of_rootSubgroupPoints_eq {A : Type v} [CommRing A] [IsDomain A]
     {α β : Fin t.numRoots} (hαβ : α ≠ β) {a b : A}
     (h : D.rootSubgroupPoints α A (ofAdd a) = D.rootSubgroupPoints β A (ofAdd b)) :
     a = 0 ∧ b = 0 := by
-  let K := AlgebraicClosure (FractionRing A)
-  let f : A →+* K := (algebraMap (FractionRing A) K).comp (algebraMap A (FractionRing A))
-  have hf : Function.Injective f :=
-    (algebraMap (FractionRing A) K).injective.comp (IsFractionRing.injective A (FractionRing A))
-  have hmap := congrArg ((D.pointsPresentation A).map (D.pointsPresentation K) f) h
-  simp only [D.map_rootSubgroupPoints, toAdd_ofAdd] at hmap
+  obtain ⟨f, hf, hmap⟩ := D.map_algebraicClosure_rootSubgroupPoints h
   obtain ⟨ha, hb⟩ := D.eq_zero_of_rootSubgroupPoints_eq_infinite hαβ hmap
   exact ⟨hf (ha.trans (map_zero f).symm), hf (hb.trans (map_zero f).symm)⟩
 

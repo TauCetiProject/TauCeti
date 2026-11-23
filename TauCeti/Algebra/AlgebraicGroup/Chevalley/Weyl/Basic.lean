@@ -75,19 +75,20 @@ theorem weylElement_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) 
 
 /-- Any subgroup of `D.weylSubgroup A` containing the actual torus and all pinned simple Weyl
 representatives is the whole Weyl subgroup. -/
-theorem weylSubgroup_eq_top_of_mem {A : Type v} [CommRing A] (H : Subgroup (D.weylSubgroup A))
+theorem subgroup_eq_top_of_torusPoints_mem_of_weylElement_mem {A : Type v} [CommRing A]
+    (H : Subgroup (D.weylSubgroup A))
     (hT : ∀ s : Fin t.rank → Aˣ, ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ ∈ H)
     (hw : ∀ i : Fin t.rank,
       ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ ∈ H) :
     H = ⊤ := by
-  have hle : D.weylSubgroup A ≤ H.map (D.weylSubgroup A).subtype := by
-    refine (D.weylSubgroup_def A).le.trans ((Subgroup.closure_le _).mpr ?_)
-    rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
-    · exact ⟨_, hT s, rfl⟩
-    · exact ⟨_, hw i, rfl⟩
-  exact eq_top_iff.mpr fun g _ =>
-    let ⟨h, hh, heq⟩ := hle g.property
-    Subtype.ext heq ▸ hh
+  have htop : Subgroup.closure ((D.weylSubgroup A).subtype ⁻¹'
+      (Set.range (D.torusPoints A) ∪
+        Set.range (fun i => D.weylElement (t.simpleIndex ht i) A 1))) = ⊤ :=
+    (D.weylSubgroup_def A) ▸ Subgroup.closure_preimage_eq_top _
+  rw [eq_top_iff, ← htop, Subgroup.closure_le]
+  rintro ⟨_, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+  · exact hT s
+  · exact hw i
 
 private theorem map_weylElement_one {A : Type*} {B : Type*} [CommRing A] [CommRing B]
     (f : A →+* B) (i : Fin t.rank) :

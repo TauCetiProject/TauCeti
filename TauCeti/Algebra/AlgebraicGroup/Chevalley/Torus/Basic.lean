@@ -80,6 +80,12 @@ theorem weightLatticeEmbedding_coordinateWeight (j : Fin D.dim) :
   simpa only [Module.Basis.equivFun_symm_apply, Submodule.coe_sum, Submodule.coe_smul] using
     D.sum_coordinateWeight_smul j
 
+/-- Reconstructing a coordinate root through the lattice inclusion recovers the original root. -/
+@[simp]
+theorem weightLatticeEmbedding_coordinateRoot (γ : Fin t.numRoots) :
+    D.weightLatticeEmbedding (D.coordinateRoot γ) = (t.simplyConnectedRootDatum ht).root γ := by
+  simp [coordinateRoot_def]
+
 /-- The coordinate lattice inclusion is injective, even when the weight lattice is proper. -/
 theorem weightLatticeEmbedding_injective : Function.Injective D.weightLatticeEmbedding :=
   Subtype.val_injective.comp D.weightLatticeBasis.equivFun.symm.injective

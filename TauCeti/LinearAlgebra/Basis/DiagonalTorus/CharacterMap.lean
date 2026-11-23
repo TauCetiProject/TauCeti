@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.End.Basic
 -- Baer's criterion for divisible groups, used only in `torusPointMap_surjective_of_injective`.
 import Mathlib.Algebra.Category.Grp.Injective
+import TauCeti.Algebra.CharP.Lemmas
 
 /-!
 # Character maps of endomorphisms of a split torus
@@ -342,15 +343,14 @@ theorem IsCharacterMap.symm {F : G ≃* G} {φ : (κ → ℤ) ≃ₗ[ℤ] (κ �
     (h : IsCharacterMap T F.toMonoidHom φ.toLinearMap) :
     IsCharacterMap T F.symm.toMonoidHom φ.symm.toLinearMap := by
   intro s
-  let s' := torusPointMap φ.symm.toLinearMap s
-  have h1 : torusPointMap φ.toLinearMap s' = s := by
-    rw [← MonoidHom.comp_apply, ← torusPointMap_comp, LinearEquiv.comp_coe,
-      LinearEquiv.self_trans_symm, LinearEquiv.refl_toLinearMap, torusPointMap_id,
-      MonoidHom.id_apply]
-  have h2 := h.map_apply s'
-  rw [h1] at h2
-  have h3 := congrArg F.symm h2
-  simpa [s'] using h3.symm
+  have hcomp : φ.symm.toLinearMap ∘ₗ φ.toLinearMap = LinearMap.id := by ext; simp
+  have hhom : (torusPointMap (R := R) φ.toLinearMap).comp
+      (torusPointMap φ.symm.toLinearMap) = MonoidHom.id _ := by
+    rw [← torusPointMap_comp, hcomp, torusPointMap_id]
+  have hmap : torusPointMap φ.toLinearMap (torusPointMap φ.symm.toLinearMap s) = s :=
+    DFunLike.congr_fun hhom s
+  have hF := congrArg F.symm (h.map_apply (torusPointMap φ.symm.toLinearMap s))
+  simpa [hmap] using hF.symm
 
 /-- **Lang's equation on the torus.** If the units of `R` are divisible and `1 - φ` is injective,
 then every torus point is `T u * (F (T u))⁻¹` for some torus point `T u`: the homomorphism
@@ -364,13 +364,18 @@ theorem IsCharacterMap.exists_eq_mul_inv [RootableBy Rˣ ℕ] (h : IsCharacterMa
   rw [h, torusPointMap_sub, torusPointMap_one, MonoidHom.div_apply, MonoidHom.id_apply, map_div,
     div_eq_mul_inv]
 
-/-- **Lang's equation on the torus for a scalar-power character map.** If the units of `R` are
-divisible and `φ ^ n = m • 1` for some integer `m ≠ 1`, then every torus point is
-`T u * (F (T u))⁻¹` for some torus point `T u`. -/
-theorem IsCharacterMap.exists_eq_mul_inv_of_pow_eq_smul_one [RootableBy Rˣ ℕ]
-    (h : IsCharacterMap T F φ) {n : ℕ} {m : ℤ} (hm : m ≠ 1) (hpow : φ ^ n = m • 1)
-    (s : κ → Rˣ) : ∃ u, T s = T u * (F (T u))⁻¹ :=
-  h.exists_eq_mul_inv (injective_one_sub_of_pow_eq_smul_one hpow hm) s
+/-- **Lang's equation on the torus in characteristic `p`.** Over a commutative ring of
+characteristic `p` with divisible units, if `φ ^ n = (p ^ r) • 1` for some `r > 0`, then every
+torus point `T s` equals `T u * (F (T u))⁻¹` for some `u`. -/
+theorem IsCharacterMap.exists_eq_mul_inv_of_charP [RootableBy Rˣ ℕ] (p : ℕ) [CharP R p]
+    (h : IsCharacterMap T F φ) {n r : ℕ} (hr : 0 < r) (hpow : φ ^ n = (p ^ r : ℕ) • 1)
+    (s : κ → Rˣ) : ∃ u, T s = T u * (F (T u))⁻¹ := by
+  obtain hR | _ := subsingleton_or_nontrivial R
+  · refine ⟨1, ?_⟩
+    rw [Subsingleton.elim s 1, map_one, map_one, inv_one, mul_one]
+  exact h.exists_eq_mul_inv
+    (injective_one_sub_of_pow_eq_smul_one (by rwa [Nat.cast_smul_eq_nsmul])
+      (Nat.cast_ne_one.mpr (pow_ne_one_of_charP R p hr))) s
 
 end Group
 

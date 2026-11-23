@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
+import TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut
 
 /-!
 # Diagram automorphisms of the pinned simply connected root datum
@@ -134,23 +135,14 @@ theorem diagramRootPerm_mem_posRoots_iff (hσ : σ ∈ t.diagramSymmetry)
     (α : Fin t.numRoots) :
     t.diagramRootPerm ht hσ α ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) ↔
       α ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-  have hbase : (t.rationalBase ht).map (t.rationalDiagramAut ht hσ) = t.rationalBase ht := by
-    classical
-    refine RootPairing.Base.ext ?_
-    rw [(t.rationalBase ht).support_map_eq]
-    ext j
-    simp only [Finset.mem_image, rationalDiagramAut_indexEquiv]
-    refine ⟨?_, fun hj => ?_⟩
-    · rintro ⟨k, hk, rfl⟩
+  have hmem : t.rationalDiagramAut ht hσ ∈ (t.rationalBase ht).basedAut :=
+    RootPairing.Base.mem_basedAut_iff_forall_mem_support.mpr fun k hk => by
       obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hk
-      exact t.diagramRootPerm_simpleIndex ht hσ i ▸ simpleIndex_mem_support (σ i)
-    · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
-      exact ⟨t.simpleIndex ht (σ⁻¹ i), simpleIndex_mem_support _, by
-        rw [t.diagramRootPerm_simpleIndex ht hσ, Equiv.Perm.inv_def, Equiv.apply_symm_apply]⟩
-  have himg := posRoots_map (t.rationalRootSystem ht) (t.rationalBase ht)
-    (t.rationalDiagramAut ht hσ)
-  rw [hbase, rationalDiagramAut_indexEquiv] at himg
-  refine ⟨fun h => ?_, fun h => himg.symm ▸ ⟨α, h, rfl⟩⟩
+      rw [rationalDiagramAut_indexEquiv, diagramRootPerm_simpleIndex]
+      exact simpleIndex_mem_support (σ i)
+  have himg := RootPairing.Base.image_posRoots_of_mem_basedAut hmem
+  rw [rationalDiagramAut_indexEquiv] at himg
+  refine ⟨fun h => ?_, fun h => himg ▸ Set.mem_image_of_mem _ h⟩
   obtain ⟨γ, hγ, hγeq⟩ := himg ▸ h
   rwa [← (t.diagramRootPerm ht hσ).injective hγeq]
 

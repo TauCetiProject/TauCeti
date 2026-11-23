@@ -14,15 +14,12 @@ import TauCeti.Algebra.Group.Subgroup.Map
 
 Every pinned graph automorphism `TauCeti.DynkinType.chevalleyGraphAut` of the simply
 connected Chevalley datum `TauCeti.DynkinType.scChevalleyDatum` is a based endomorphism
-(`TauCeti.DynkinType.isBasedEndomorphism_chevalleyGraphAut`), and conjugating an endomorphism
-by it conjugates its character map (`TauCeti.DynkinType.isCharacterMap_conj_chevalleyGraphAut`).
+(`TauCeti.DynkinType.isBasedEndomorphism_chevalleyGraphAut`).
 
 ## Main results
 
 * `TauCeti.DynkinType.isBasedEndomorphism_chevalleyGraphAut`: every pinned graph
   automorphism of `scChevalleyDatum` is a based endomorphism over every commutative ring.
-* `TauCeti.DynkinType.isCharacterMap_conj_chevalleyGraphAut`: conjugating an endomorphism by
-  `chevalleyGraphAut` conjugates its character map by `(diagramAut ht hσ).toHom.weightMap`.
 
 ## References
 
@@ -59,21 +56,5 @@ theorem isBasedEndomorphism_chevalleyGraphAut {t : DynkinType} (ht : t.Valid)
         ⟨t.diagramRootPerm ht hσ α, hmap α⟩,
       fun α hα => ⟨t.diagramRootPerm ht hσ α,
         (t.diagramRootPerm_mem_posRoots_iff ht hσ α).mpr hα, hmap α⟩⟩
-
-/-- Conjugating an endomorphism `F` of `(t.scChevalleyDatum ht).points A` by the graph
-automorphism `γ_σ` conjugates its character map by `(diagramAut ht hσ).toHom.weightMap`. -/
-theorem isCharacterMap_conj_chevalleyGraphAut {t : DynkinType} (ht : t.Valid)
-    {σ : Equiv.Perm (Fin t.rank)} (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A]
-    {F : (t.scChevalleyDatum ht).points A →* (t.scChevalleyDatum ht).points A}
-    {φ : Module.End ℤ (Fin t.rank → ℤ)}
-    (hφ : IsCharacterMap ((t.scChevalleyDatum ht).torusPoints A) F φ) :
-    IsCharacterMap ((t.scChevalleyDatum ht).torusPoints A)
-      (((t.chevalleyGraphAut ht hσ A).toMonoidHom.comp F).comp
-        (t.chevalleyGraphAut ht hσ A)⁻¹.toMonoidHom)
-      ((diagramAut ht hσ).toHom.weightMap * φ * (diagramAut ht hσ)⁻¹.toHom.weightMap) := by
-  have hinv := t.isCharacterMap_chevalleyGraphAut ht (t.diagramSymmetry.inv_mem hσ) A
-  rw [chevalleyGraphAut_inv ht hσ A, diagramAut_inv ht hσ, inv_inv] at hinv
-  simpa only [mul_assoc] using
-    ((t.isCharacterMap_chevalleyGraphAut ht hσ A).comp hφ).comp hinv
 
 end TauCeti.DynkinType
