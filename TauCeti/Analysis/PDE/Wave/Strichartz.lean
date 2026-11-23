@@ -119,6 +119,31 @@ theorem two_le_finrank_of_waveAdmissible (hq : 2 < q) (hr0 : r ≠ 0)
     linarith [pos_of_mul_pos_right h (by linarith)]
   exact ⟨hn, hρ, ENNReal.two_le_of_toReal_inv_le hr0 hρ.le⟩
 
+/-- A wave-admissible pair `(q, r)` in dimension `n`, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with
+`2 < q < ∞` in extended reals is wave-admissible for the real exponent `q.toNNReal`, in the form of
+`TauCeti.two_le_finrank_of_waveAdmissible`. -/
+theorem waveAdmissible_toNNReal {n : ℝ} {q r : ℝ≥0∞} (hq : 2 < q) (hq_top : q ≠ ⊤)
+    (hqr : 2 * (q⁻¹).toReal + (n - 1) * (r⁻¹).toReal ≤ (n - 1) / 2) :
+    2 < q.toNNReal ∧ 2 / (q.toNNReal : ℝ) + (n - 1) * (r⁻¹).toReal ≤ (n - 1) / 2 := by
+  refine ⟨?_, ?_⟩
+  · rw [← ENNReal.coe_lt_coe, ENNReal.coe_toNNReal hq_top]
+    exact_mod_cast hq
+  · rwa [ENNReal.coe_toNNReal_eq_toReal, div_eq_mul_inv, ← ENNReal.toReal_inv]
+
+/-- In dimension `n ≥ 2`, a wave-admissible pair `2 / q + (n - 1) / r ≤ (n - 1) / 2` with
+extended real exponents and `r ≠ 0` has `r ≥ 2`, also for `q = ∞`. This is the form of
+`TauCeti.two_le_finrank_of_waveAdmissible` with `q ∈ ℝ≥0∞`, where the dimension bound is a
+hypothesis since the pairs `(∞, r)` are admissible in dimension `1`. -/
+theorem two_le_of_waveAdmissible {q r : ℝ≥0∞} (hr0 : r ≠ 0)
+    (hqr : 2 * (q⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) (hn : 2 ≤ Module.finrank ℝ E) :
+    2 ≤ r := by
+  have hn' : (0 : ℝ) < Module.finrank ℝ E - 1 := by
+    have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hn
+    linarith
+  refine ENNReal.two_le_of_toReal_inv_le hr0 (le_of_mul_le_mul_left ?_ hn')
+  linarith [ENNReal.toReal_nonneg (a := q⁻¹)]
+
 end WaveAdmissible
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
