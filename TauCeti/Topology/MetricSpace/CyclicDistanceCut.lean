@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 public import TauCeti.Topology.ContinuousMap.RestrictPreimage
 
@@ -364,19 +365,32 @@ theorem isClosed_basedCyclicDistanceCut [T1Space X] (δ : Fin (n + 1) → ℝ) (
     IsClosed (basedCyclicDistanceCut δ x) :=
   isClosed_singleton.preimage (map_continuous _)
 
-/-- In a compact space the based distance cut is compact: its tuples are those of the closed
-distance cut in the compact fibre `{x} × Xⁿ`. -/
-theorem isCompact_basedCyclicDistanceCut [CompactSpace X] (δ : Fin (n + 1) → ℝ) (x : X) :
+open Fin.NatCast in
+/-- In a proper space the based distance cut is compact: fixing the first vertex bounds the cut,
+since every vertex lies within `∑ i, |δ i|` of the first one along the chain of consecutive
+distances. So its tuples are those of the closed distance cut in a compact set
+`{x} × (closedBall x R)ⁿ`. -/
+theorem isCompact_basedCyclicDistanceCut [ProperSpace X] (δ : Fin (n + 1) → ℝ) (x : X) :
     IsCompact (basedCyclicDistanceCut δ x) := by
-  have hfib : (fun q : Fin (n + 1) → X ↦ q 0) ⁻¹' {x} =
-      Set.range fun r : Fin n → X ↦ (Fin.cons x r : Fin (n + 1) → X) := by
+  set R := ∑ i ∈ Finset.range n, |δ ((i + 1 : ℕ) : Fin (n + 1))|
+  have hfib : cyclicDistanceCut δ ∩ (fun q : Fin (n + 1) → X ↦ q 0) ⁻¹' {x} =
+      (fun r : Fin n → X ↦ (Fin.cons x r : Fin (n + 1) → X)) ''
+        Set.univ.pi (fun _ ↦ Metric.closedBall x R) ∩ cyclicDistanceCut δ := by
     ext q
-    refine ⟨fun h ↦ ⟨Fin.tail q, h ▸ Fin.cons_self_tail q⟩, ?_⟩
-    rintro ⟨r, rfl⟩
-    simp
+    refine ⟨fun ⟨hq, hx⟩ ↦ ⟨⟨Fin.tail q, fun j _ ↦ ?_, hx ▸ Fin.cons_self_tail q⟩, hq⟩, ?_⟩
+    · rw [Metric.mem_closedBall, ← (hx : q 0 = x), dist_comm]
+      have h := dist_le_range_sum_of_dist_le (f := fun i : ℕ ↦ q i) (j.succ : ℕ)
+        (d := fun i ↦ |δ ((i + 1 : ℕ) : Fin (n + 1))|) fun {i} _ ↦ by
+          refine (dist_comm _ _).trans_le (le_trans ?_ (le_abs_self _))
+          simpa using mem_cyclicDistanceCut.1 hq ((i + 1 : ℕ) : Fin (n + 1))
+      simp only [Nat.cast_zero, Fin.cast_val_eq_self] at h
+      refine h.trans (Finset.sum_le_sum_of_subset_of_nonneg ?_ fun _ _ _ ↦ abs_nonneg _)
+      exact Finset.range_subset_range.2 (by simp [j.isLt])
+    · rintro ⟨⟨r, -, rfl⟩, hq⟩
+      exact ⟨hq, by simp⟩
   rw [Subtype.isCompact_iff, image_val_basedCyclicDistanceCut, hfib]
-  exact (isCompact_range (continuous_const.finCons continuous_id)).inter_left
-    (isClosed_cyclicDistanceCut δ)
+  exact ((isCompact_univ_pi fun _ ↦ isCompact_closedBall x R).image
+    (continuous_const.finCons continuous_id)).inter_right (isClosed_cyclicDistanceCut δ)
 
 /-- The constant tuple at `x` lies in the based distance cut at `x` for nonnegative cut-offs. -/
 theorem const_mem_basedCyclicDistanceCut {δ : Fin (n + 1) → ℝ} (hδ : 0 ≤ δ) (x : X) :
