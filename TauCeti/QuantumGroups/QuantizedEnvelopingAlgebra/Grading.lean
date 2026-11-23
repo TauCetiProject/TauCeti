@@ -251,17 +251,18 @@ private theorem k_mul_word_mul_k_neg (y : Y) (l : List (Generator ι Y)) :
   induction l with
   | nil => simp
   | cons g l ih =>
-    rcases eq_or_ne q 0 with rfl | hq
-    · cases g with
-      | e _ | f _ => simp
-      | k z =>
-        simp only [List.map_cons, List.prod_cons, generator_k, generatorDegree_k, List.sum_cons,
-          zero_add]
-        rw [← mul_assoc (k D (0 : K) y), k_mul_k, add_comm y z, ← k_mul_k,
-          mul_assoc (k D (0 : K) z), mul_assoc (k D (0 : K) z), ih, mul_smul_comm]
-    · simp only [List.map_cons, List.prod_cons, List.sum_cons, map_add, LinearMap.add_apply]
+    cases g with
+    | k z =>
+      simp only [List.map_cons, List.prod_cons, List.sum_cons, generatorDegree_k, zero_add]
       rw [← kUnitsHom_conjAct_apply, map_mul, kUnitsHom_conjAct_apply, kUnitsHom_conjAct_apply,
-        k_mul_generator_mul_k_neg, ih, smul_mul_smul_comm, ← zpow_add₀ hq]
+        k_mul_generator_mul_k_neg, ih]
+      simp
+    | e _ | f _ =>
+      rcases eq_or_ne q 0 with rfl | hq
+      · simp
+      · simp only [List.map_cons, List.prod_cons, List.sum_cons, map_add, LinearMap.add_apply]
+        rw [← kUnitsHom_conjAct_apply, map_mul, kUnitsHom_conjAct_apply, kUnitsHom_conjAct_apply,
+          k_mul_generator_mul_k_neg, ih, smul_mul_smul_comm, ← zpow_add₀ hq]
 
 /-- Conjugating `x ∈ gradedPiece D q c` by `K_y` multiplies it by `q^⟨∑ cᵢ αᵢ, y⟩`. -/
 theorem k_mul_mul_k_neg_of_mem_gradedPiece {c : ι →₀ ℤ} (y : Y)
@@ -326,27 +327,31 @@ private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
       f i := of (fun c => gradedPiece D q c) (-Finsupp.single i 1) ⟨f D q i, f_mem_gradedPiece i⟩
       k y := of (fun c => gradedPiece D q c) 0 ⟨k D q y, k_mem_gradedPiece y⟩
       k_zero := by
-        rw [one_def]
-        refine of_eq_of_gradedMonoid_eq (Sigma.subtype_ext rfl ?_)
-        dsimp only [GradedMonoid.mk, Subtype.coe_mk]
-        exact k_zero D q
+        refine (DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_).symm
+        · exact SetLike.one_mem_graded _
+        · simp [k_zero]
       k_mul_k y z := by
-        rw [of_mul_of]
-        refine of_eq_of_gradedMonoid_eq (Sigma.subtype_ext (zero_add 0) ?_)
-        dsimp only [GradedMonoid.mk, Subtype.coe_mk]
-        simpa only [SetLike.coe_gMul] using k_mul_k D q y z
+        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_
+        · conv_lhs => rw [← zero_add (0 : ι →₀ ℤ)]
+          exact SetLike.mul_mem_graded
+            (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _)
+        · simp [DirectSum.coeAlgHom_of, k_mul_k]
       conjugate_e y i := by
-        rw [of_mul_of, of_mul_of, ← of_smul]
-        refine of_eq_of_gradedMonoid_eq (Sigma.subtype_ext ?_ ?_) <;>
-          dsimp only [GradedMonoid.mk, Subtype.coe_mk]
-        · simp
-        · simpa only [SetLike.coe_gMul, SetLike.val_smul] using k_mul_e_mul_k_neg D q y i
+        rw [← of_smul]
+        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_
+        · conv_lhs => rw [← zero_add (Finsupp.single i 1), ← add_zero (0 + Finsupp.single i 1)]
+          exact SetLike.mul_mem_graded (SetLike.mul_mem_graded
+            (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _))
+            (DirectSum.of_mem_summand (R := K) _ _)
+        · simp [DirectSum.coeAlgHom_of, k_mul_e_mul_k_neg]
       conjugate_f y i := by
-        rw [of_mul_of, of_mul_of, ← of_smul]
-        refine of_eq_of_gradedMonoid_eq (Sigma.subtype_ext ?_ ?_) <;>
-          dsimp only [GradedMonoid.mk, Subtype.coe_mk]
-        · simp
-        · simpa only [SetLike.coe_gMul, SetLike.val_smul] using k_mul_f_mul_k_neg D q y i
+        rw [← of_smul]
+        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_
+        · conv_lhs => rw [← zero_add (-Finsupp.single i 1), ← add_zero (0 + -Finsupp.single i 1)]
+          exact SetLike.mul_mem_graded (SetLike.mul_mem_graded
+            (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _))
+            (DirectSum.of_mem_summand (R := K) _ _)
+        · simp [DirectSum.coeAlgHom_of, k_mul_f_mul_k_neg]
       commutator_self i := by
         rw [← map_sub (of (fun c => gradedPiece D q c) 0), ← of_smul]
         refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_
@@ -360,10 +365,16 @@ private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
             ← simpleK_def, ← simpleKInv_def]
           exact e_mul_f_sub_f_mul_e_self D q i
       commutator_ne {i j} hij := by
-        rw [of_mul_of, of_mul_of, sub_eq_zero]
-        refine of_eq_of_gradedMonoid_eq (Sigma.subtype_ext (add_comm _ _) ?_)
-        dsimp only [GradedMonoid.mk, Subtype.coe_mk]
-        simpa only [SetLike.coe_gMul] using (commute_e_f D q hij).eq
+        rw [← map_zero (of (fun c => gradedPiece D q c) (Finsupp.single i 1 + -Finsupp.single j 1))]
+        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_
+        · refine Decomposition.sub_mem
+            (ℳ := DirectSum.summand K (fun c => ↥(gradedPiece D q c))) ?_ ?_
+          · exact SetLike.mul_mem_graded
+              (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _)
+          · exact (add_comm (Finsupp.single i (1 : ℤ)) (-Finsupp.single j 1)) ▸
+              SetLike.mul_mem_graded
+                (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _)
+        · simp [DirectSum.coeAlgHom_of, (commute_e_f D q hij).eq]
       serre_e {i j} hij := by
         rw [serreSum_of, show (⟨serreSum D q (fun l => e D q l) i j, _⟩ :
           gradedPiece D q (D.serreLength i j • Finsupp.single i 1 + Finsupp.single j 1)) = 0 from

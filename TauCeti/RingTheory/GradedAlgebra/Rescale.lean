@@ -127,47 +127,47 @@ section RescaleChar
 
 variable {ι R : Type*} [CommMonoid R]
 
+private noncomputable def rescaleCharFun (s : ι → Rˣ) : AddChar (ι →₀ ℤ) R :=
+  (Units.coeHom R).compAddChar
+    (AddChar.toAddMonoidHomEquiv.symm
+      (Finsupp.bilinearCombination ℤ ℤ (Additive.ofMul ∘ s)).toAddMonoidHom)
+
+private theorem rescaleCharFun_apply (s : ι → Rˣ) (c : ι →₀ ℤ) :
+    rescaleCharFun s c = ∏ i ∈ c.support, ((s i ^ c i : Rˣ) : R) := by
+  simp only [rescaleCharFun, MonoidHom.compAddChar_apply, Function.comp_apply,
+    AddChar.toAddMonoidHomEquiv_symm_apply, LinearMap.toAddMonoidHom_coe,
+    Finsupp.bilinearCombination_apply, Finsupp.linearCombination_apply, Finsupp.sum, toMul_sum,
+    toMul_zsmul, toMul_ofMul, map_prod, Units.coeHom_apply]
+
 /-- The additive character `c ↦ ∏ i ∈ c.support, ((s i ^ c i : Rˣ) : R)` on `ι →₀ ℤ` induced by a
 family of unit scalars `s : ι → Rˣ`, bundled as a monoid homomorphism
 `(ι → Rˣ) →* AddChar (ι →₀ ℤ) R`. -/
 noncomputable def rescaleChar : (ι → Rˣ) →* AddChar (ι →₀ ℤ) R where
-  toFun s :=
-    (Units.coeHom R).compAddChar
-      (AddChar.toAddMonoidHomEquiv.symm
-        (Finsupp.bilinearCombination ℤ ℤ (Additive.ofMul ∘ s)).toAddMonoidHom)
-  map_one' := by
-    have h0 : Additive.ofMul ∘ (1 : ι → Rˣ) = 0 := rfl
-    ext c
-    simp only [h0, map_zero, MonoidHom.compAddChar_apply, Function.comp_apply,
-      AddChar.toAddMonoidHomEquiv_symm_apply, LinearMap.toAddMonoidHom_coe, LinearMap.zero_apply,
-      toMul_zero, map_one, one_apply]
+  toFun := rescaleCharFun
+  map_one' := by ext c; simp [rescaleCharFun_apply]
   map_mul' s t := by
-    have hmul : Additive.ofMul ∘ (s * t) = Additive.ofMul ∘ s + Additive.ofMul ∘ t := rfl
     ext c
-    simp only [hmul, map_add, MonoidHom.compAddChar_apply, Function.comp_apply,
-      AddChar.toAddMonoidHomEquiv_symm_apply, LinearMap.toAddMonoidHom_coe, LinearMap.add_apply,
-      toMul_add, map_mul, mul_apply]
+    simp [rescaleCharFun_apply, mul_zpow, Finset.prod_mul_distrib]
 
 /-- Evaluating `rescaleChar s` at `c : ι →₀ ℤ` gives the finite product
 `∏ i ∈ c.support, ((s i ^ c i : Rˣ) : R)`. -/
 theorem rescaleChar_apply (s : ι → Rˣ) (c : ι →₀ ℤ) :
-    rescaleChar s c = ∏ i ∈ c.support, ((s i ^ c i : Rˣ) : R) := by
-  simp only [rescaleChar, MonoidHom.coe_mk, OneHom.coe_mk, MonoidHom.compAddChar_apply,
-    Function.comp_apply, AddChar.toAddMonoidHomEquiv_symm_apply, LinearMap.toAddMonoidHom_coe,
-    Finsupp.bilinearCombination_apply, Finsupp.linearCombination_apply, Finsupp.sum, toMul_sum,
-    toMul_zsmul, toMul_ofMul, map_prod, Units.coeHom_apply]
+    rescaleChar s c = ∏ i ∈ c.support, ((s i ^ c i : Rˣ) : R) :=
+  rescaleCharFun_apply s c
 
 /-- On a basis vector `Finsupp.single i 1`, `rescaleChar s` evaluates to `(s i : R)`. -/
 @[simp]
 theorem rescaleChar_single (s : ι → Rˣ) (i : ι) :
     rescaleChar s (Finsupp.single i 1) = (s i : R) := by
-  simp [rescaleChar, Finsupp.linearCombination_single]
+  rw [rescaleChar_apply]
+  simp
 
 /-- On `-Finsupp.single i 1`, `rescaleChar s` evaluates to `((s i)⁻¹ : Rˣ)`. -/
 @[simp]
 theorem rescaleChar_neg_single (s : ι → Rˣ) (i : ι) :
     rescaleChar s (-Finsupp.single i 1) = (((s i)⁻¹ : Rˣ) : R) := by
-  simp [rescaleChar, Finsupp.linearCombination_single]
+  rw [rescaleChar_apply]
+  simp
 
 end RescaleChar
 
