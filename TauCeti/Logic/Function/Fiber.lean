@@ -17,6 +17,7 @@ For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This fil
 elementary constructions on such fibres that the covering-space development uses. None needs a
 topology, so they are stated for bare functions and equivalences; a `ContinuousMap` or a
 `Homeomorph` is applied through its underlying function or equivalence.
+The finite-cover criteria use injectivity on each piece to bound preimages.
 
 * `Function.fiberMap`: a map `f : E → F` commuting with the projections to `X` restricts to the
   fibres over each point. It is `Set.MapsTo.restrict` for the fibre inclusion, so its application,
