@@ -63,6 +63,16 @@ theorem isLocalOrientation_iff_zmultiples_eq_top {M : Type w} [TopologicalSpace 
   rw [AddSubgroup.eq_top_iff']
   exact forall_congr' fun _ ↦ AddSubgroup.mem_zmultiples_iff.symm
 
+/-- An element of local homology is a local orientation exactly when it spans the whole group as a
+`ℤ`-module. -/
+theorem isLocalOrientation_iff_span_eq_top {M : Type w} [TopologicalSpace M] (x : M) (d : ℕ)
+    (z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
+      ({x} : Set M) d) :
+    IsLocalOrientation x d z ↔ Submodule.span ℤ {z} = ⊤ := by
+  rw [Submodule.span_singleton_eq_top_iff, isLocalOrientation_iff]
+  exact forall_congr' fun _ ↦ exists_congr fun c ↦
+    iff_of_eq (congrArg (· = _) (int_smul_eq_zsmul _ c _)).symm
+
 /-- The integral local homology group at `x` in degree `d`, with its local orientations. -/
 abbrev LocalOrientation (M : Type w) [TopologicalSpace M] (x : M) (d : ℕ) :=
   {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
