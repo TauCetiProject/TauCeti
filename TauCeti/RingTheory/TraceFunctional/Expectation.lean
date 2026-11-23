@@ -24,7 +24,7 @@ This is the algebraic form of the trace-preserving conditional expectation onto 
 * it carries `τ` to `σ`, `σ (E a) = τ a`;
 * when `f` carries `τ` to `σ`, it is unital and retracts `f`, `E (f x) = x`;
 * when both functionals are tracial, it is also left `B`-linear, `E (f x * a) = x * E a`;
-* when both functionals and `f` preserve stars, so does `E`;
+* when both functionals are tracial and, together with `f`, preserve stars, so does `E`;
 * it is the only right `B`-linear map carrying `τ` to `σ`.
 
 No positivity is assumed. The construction applies, for instance, to the quotients of the
