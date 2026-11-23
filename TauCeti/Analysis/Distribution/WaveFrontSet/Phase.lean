@@ -352,11 +352,11 @@ private theorem exists_forall_pow_mul_norm_complexPairing_le_of_forall {T : 𝓓
     ext x
     simp [fK, ContDiffMapSupportedIn.coe_of_support_subset]
   have hT := hasSum_localFourier_ofSupportedIn T hKΩ L
-    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.2 h)) (φ := fK) (χ := χK) (fun x hx ↦ by
+    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.property h)) (φ := fK) (χ := χK) (fun x hx ↦ by
       have hx' : x ∈ support f := by simpa [fK, ContDiffMapSupportedIn.coe_of_support_subset]
         using hx
       simpa [χK, ContDiffMapSupportedIn.coe_of_support_subset] using hχψ x (hsuppf hx')) 0
-  rw [hχK, hfK, localFourier_eq T f fun x ↦ by simp] at hT
+  rw [hχK, hfK, localFourier_eq T f (ψ := f) fun x ↦ by simp] at hT
   simp only [zero_sub, smul_eq_mul] at hT
   have hfK' : (fK : E → ℂ) = f := by
     ext x
