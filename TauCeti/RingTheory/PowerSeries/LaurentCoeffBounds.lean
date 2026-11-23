@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 import Mathlib.Tactic.Ring
-import TauCeti.RingTheory.LaurentSeries.Multiplication
+import TauCeti.RingTheory.HahnSeries.Multiplication
 
 /-!
 # Laurent-coefficient support bounds in `(R⸨X⸩)⟦X⟧`
@@ -63,7 +63,7 @@ theorem coeff_coeff_mul_eq_zero_of_lt_mul {R : Type*} [Semiring R] {m : ℤ} {G�
   have hab : (x.1 : ℤ) * m + (x.2 : ℤ) * m = (a : ℤ) * m := by
     have : x.1 + x.2 = a := Finset.HasAntidiagonal.mem_antidiagonal.mp hx
     push_cast [← this]; ring
-  exact LaurentSeries.coeff_mul_eq_zero_of_lt (h₁ x.1) (h₂ x.2) (hab ▸ hs)
+  exact HahnSeries.coeff_mul_eq_zero_of_lt (h₁ x.1) (h₂ x.2) (hab ▸ hs)
 
 /-- If every `a`-th `t`-coefficient of `G` vanishes below `q`-degree `a * m`, then the same holds
 for `G ^ n`. -/
@@ -95,7 +95,7 @@ theorem coeff_coeff_pow_eq_zero_of_lt_of_constantCoeff_eq_zero {R : Type*} [Semi
           zero_pow (Nat.succ_ne_zero d), zero_mul, HahnSeries.coeff_zero]
       · rcases eq_or_ne x.2 0 with h2 | h2
         · rw [h2, coeff_zero_eq_constantCoeff_apply, hG0, mul_zero, HahnSeries.coeff_zero]
-        · exact LaurentSeries.coeff_mul_eq_zero_of_lt
+        · exact HahnSeries.coeff_mul_eq_zero_of_lt
             (ih (Nat.succ_pos d) x.1 (Nat.pos_of_ne_zero h1))
             (hG x.2 (Nat.pos_of_ne_zero h2)) (by omega)
 
@@ -117,6 +117,6 @@ theorem coeff_coeff_mul_eq_left_of_lt_mul {R : Type*} [Semiring R] {G₁ G₂ : 
     have hx2 : 1 ≤ x.2 := Nat.pos_of_ne_zero fun h0 ↦ hne (Prod.ext (by omega) h0)
     have hxm : (k : ℤ) * m ≤ (x.1 : ℤ) * m :=
       mul_le_mul_of_nonpos_right (by exact_mod_cast (by omega : x.1 ≤ k)) hm
-    exact LaurentSeries.coeff_mul_eq_zero_of_lt (h₁ x.1) (h₂ x.2 hx2) (by omega)
+    exact HahnSeries.coeff_mul_eq_zero_of_lt (h₁ x.1) (h₂ x.2 hx2) (by omega)
 
 end PowerSeries

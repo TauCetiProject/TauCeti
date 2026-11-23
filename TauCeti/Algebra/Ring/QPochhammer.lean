@@ -240,10 +240,15 @@ theorem qPochhammer_inv_self (q : Rˣ) (n : ℕ) :
     simpa [mul_comm, add_comm] using Nat.triangle_succ n
   rw [qPochhammer_inv, hexp, pow_add, mul_assoc ((-1 : R) ^ n)]
 
+/-- At `q = 0`, `(x; 0)_{n + 1} = 1 - x`. -/
+@[simp]
+theorem qPochhammer_zero_right_succ (x : R) (n : ℕ) : qPochhammer x (0 : R) (n + 1) = 1 - x := by
+  simp [qPochhammer_succ']
+
 /-- At `q = 0` and `n ≠ 0`, `(x; 0)_n = 1 - x`. -/
 theorem qPochhammer_zero_right (x : R) {n : ℕ} (hn : n ≠ 0) : qPochhammer x (0 : R) n = 1 - x := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  simp [qPochhammer_succ']
+  exact qPochhammer_zero_right_succ x k
 
 /-- If `m ≤ n`, then `(x; q)_m` divides `(x; q)_n`. -/
 theorem qPochhammer_dvd_of_le (x q : R) {m n : ℕ} (h : m ≤ n) :

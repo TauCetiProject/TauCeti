@@ -59,18 +59,6 @@ theorem coeff_mul_eq_sum {R : Type*} [NonUnitalNonAssocSemiring R] {f g : R⸨X�
     have hj : n - i = j := by omega
     simp [hj]
 
-/-- If `x` vanishes below `M` and `y` vanishes below `N`, then `x * y` vanishes below `M + N`. -/
-theorem coeff_mul_eq_zero_of_lt {R : Type*} [NonUnitalNonAssocSemiring R] {x y : R⸨X⸩}
-    {M N r : ℤ} (hx : ∀ i < M, x.coeff i = 0) (hy : ∀ i < N, y.coeff i = 0) (hr : r < M + N) :
-    (x * y).coeff r = 0 := by
-  have hx' : (M : WithTop ℤ) ≤ x.orderTop :=
-    HahnSeries.le_orderTop_iff_forall.mpr fun i hi ↦ hx i (by exact_mod_cast hi)
-  have hy' : (N : WithTop ℤ) ≤ y.orderTop :=
-    HahnSeries.le_orderTop_iff_forall.mpr fun i hi ↦ hy i (by exact_mod_cast hi)
-  exact HahnSeries.coeff_eq_zero_of_lt_orderTop
-    ((WithTop.coe_lt_coe.mpr hr).trans_le
-      ((WithTop.coe_add M N ▸ add_le_add hx' hy').trans HahnSeries.orderTop_add_le_mul))
-
 end LaurentSeries
 
 namespace TauCeti

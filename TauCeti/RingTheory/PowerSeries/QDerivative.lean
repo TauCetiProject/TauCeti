@@ -8,24 +8,31 @@ module
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import TauCeti.Algebra.Polynomial.QDerivative
 import Mathlib.Algebra.Ring.GeomSum
-import Mathlib.Tactic.Ring
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Power-series Jackson derivatives
 
 This file develops the Jackson `q`-derivative and adapted Jackson `q`-derivative on formal power
-series over arbitrary commutative (semi)rings, without any division or invertibility assumptions:
+series, without any division or invertibility assumptions:
 
-* `PowerSeries.jacksonDeriv q`: `D_q (X ^ n) = [n]_q X ^ (n - 1)` on `A⟦X⟧`, agreeing with
-  `Polynomial.qDerivative q` on polynomials and specializing at `q = 1` to `d⁄dX`.
-* `PowerSeries.adaptedJacksonDeriv q`: `D'_q = (1 - q) D_q` on `A⟦X⟧`, agreeing with
-  `Polynomial.adaptedJacksonDeriv q` on polynomials.
+* `PowerSeries.jacksonDeriv q`: `D_q (X ^ n) = [n]_q X ^ (n - 1)` on `A⟦X⟧` over any commutative
+  semiring `A`, agreeing with `Polynomial.qDerivative q` on polynomials and specializing at `q = 1`
+  to `d⁄dX`.
+* `PowerSeries.adaptedJacksonDeriv q`: `D'_q = (1 - q) D_q` on `A⟦X⟧` over any commutative ring
+  `A`, agreeing with `Polynomial.adaptedJacksonDeriv q` on polynomials.
 
-Both operators hold over arbitrary commutative (semi)rings, including positive characteristic and
-roots of unity without inverting `1 - q`. Mathematically, the Jackson derivative characterizes the
-normalized `q`-exponential `jacksonExp` via `D_q f = f`, while the adapted derivative satisfies
-`X * D'_q f = f - f(q X)` and thereby yields the shift equation `(1 - t) U_q(t) = U_q(q t)` for
-the reciprocal `q`-Pochhammer series (`D'_q f = f`).
+The ordinary Jackson derivative works over arbitrary commutative semirings and the adapted
+derivative over arbitrary commutative rings, including in positive characteristic and at roots of
+unity; neither requires division or inverting `1 - q`. Mathematically, downstream in
+`TauCeti.RingTheory.QCalculus.Series`:
+
+* assuming every positive `q`-integer `[n + 1]_q` is a unit, `D_q f = f` together with
+  `constantCoeff f = 1` characterizes the normalized `q`-exponential `TauCeti.jacksonExp`;
+* assuming every `1 - q ^ n` for positive `n` is a unit, `D'_q f = f` together with
+  `constantCoeff f = 1` characterizes the reciprocal `q`-Pochhammer series
+  `TauCeti.qPochhammerInvSeries`, and `X * D'_q f = f - f(q X)` yields its shift equation
+  `(1 - t) U_q(t) = U_q(q t)`.
 
 ## References
 
@@ -89,32 +96,47 @@ theorem map_jacksonDeriv (φ : A →+* B) (q : A) (f : A⟦X⟧) :
 theorem jacksonDeriv_mul (q : A) (f g : A⟦X⟧) :
     jacksonDeriv q (f * g) = jacksonDeriv q f * g + rescale q f * jacksonDeriv q g := by
   ext n
-  rw [coeff_jacksonDeriv, map_add, coeff_mul, coeff_mul, coeff_mul,
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun a b ↦ coeff a f * coeff b g),
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-      (fun a b ↦ coeff a (jacksonDeriv q f) * coeff b g),
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-      (fun a b ↦ coeff a (rescale q f) * coeff b (jacksonDeriv q g))]
-  have h1 : ∑ k ∈ range (n + 1), coeff k (jacksonDeriv q f) * coeff (n - k) g =
-      ∑ k ∈ range (n + 2), (∑ i ∈ range k, q ^ i) * (coeff k f * coeff (n + 1 - k) g) := by
-    symm; rw [Finset.sum_range_succ']; simp [mul_assoc]
-  have h2 : ∑ k ∈ range (n + 1), coeff k (rescale q f) * coeff (n - k) (jacksonDeriv q g) =
-      ∑ k ∈ range (n + 2),
-        q ^ k * (∑ i ∈ range (n + 1 - k), q ^ i) * (coeff k f * coeff (n + 1 - k) g) := by
-    symm; rw [Finset.sum_range_succ]
-    simp only [Nat.sub_self, range_zero, sum_empty, mul_zero, zero_mul, add_zero, coeff_rescale,
-      coeff_jacksonDeriv]
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hkn : n + 1 - k = n - k + 1 := by have := mem_range.mp hk; omega
-    rw [hkn]; ring
-  rw [h1, h2, ← Finset.sum_add_distrib, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun k hk ↦ ?_
-  rw [← add_mul]
-  congr 1
-  have hle : k ≤ n + 1 := Nat.lt_succ_iff.mp (mem_range.mp hk)
-  conv_lhs => rw [← Nat.add_sub_of_le hle]
-  rw [Finset.sum_range_add, Finset.mul_sum]
-  exact congrArg _ (Finset.sum_congr rfl fun i _ ↦ pow_add q k i)
+  let pf : A[X] := trunc (n + 2) f
+  let pg : A[X] := trunc (n + 2) g
+  have htrunc (h : A⟦X⟧) : trunc (n + 2) ((trunc (n + 2) h : A[X]) : A⟦X⟧) = trunc (n + 2) h :=
+    trunc_eq_trunc_iff.mpr fun k hk ↦ by rw [Polynomial.coeff_coe, coeff_trunc, ite_eq_left hk]
+  have hjd (h₁ h₂ : A⟦X⟧) (hh : trunc (n + 2) h₁ = trunc (n + 2) h₂) :
+      trunc (n + 1) (jacksonDeriv q h₁) = trunc (n + 1) (jacksonDeriv q h₂) :=
+    trunc_eq_trunc_iff.mpr fun k hk ↦ by
+      simp only [coeff_jacksonDeriv]
+      rw [coeff_eq_of_trunc_eq hh (by omega)]
+  have hres : trunc (n + 1) (rescale q (pf : A⟦X⟧)) = trunc (n + 1) (rescale q f) :=
+    trunc_eq_trunc_iff.mpr fun k hk ↦ by
+      simp only [coeff_rescale]
+      rw [coeff_eq_of_trunc_eq (htrunc f) (by omega)]
+  have hlhs : coeff n (jacksonDeriv q (f * g)) =
+      coeff n ((Polynomial.qDerivative q (pf * pg) : A[X]) : A⟦X⟧) := by
+    rw [← jacksonDeriv_coe, Polynomial.coe_mul, coeff_jacksonDeriv, coeff_jacksonDeriv,
+      coeff_eq_of_trunc_eq (trunc_mul_eq_of_trunc_eq (htrunc f) (htrunc g)) (by omega)]
+  have hcomp :
+      ((pf.comp (Polynomial.C q * Polynomial.X) : A[X]) : A⟦X⟧) = rescale q (pf : A⟦X⟧) := by
+    induction pf using Polynomial.induction_on' with
+    | add p₁ p₂ hp₁ hp₂ => simp only [Polynomial.add_comp, Polynomial.coe_add, map_add, hp₁, hp₂]
+    | monomial k a =>
+      simp only [← Polynomial.C_mul_X_pow_eq_monomial, Polynomial.mul_comp, Polynomial.C_comp,
+        Polynomial.pow_comp, Polynomial.X_comp, Polynomial.coe_mul, Polynomial.coe_C,
+        Polynomial.coe_pow, Polynomial.coe_X]
+      rw [mul_pow, ← mul_assoc, ← map_pow C, ← map_mul C]
+      ext d
+      simp only [coeff_C_mul_X_pow, coeff_rescale]
+      split_ifs with h <;> simp [h, mul_comm]
+  have hrhs1 : coeff n (jacksonDeriv q f * g) =
+      coeff n ((Polynomial.qDerivative q pf * pg : A[X]) : A⟦X⟧) := by
+    rw [Polynomial.coe_mul, ← jacksonDeriv_coe]
+    exact coeff_eq_of_trunc_eq (trunc_mul_eq_of_trunc_eq (hjd f _ (htrunc f).symm)
+      (trunc_eq_of_trunc_eq_of_le (htrunc g).symm (by omega))) (Nat.lt_succ_self n)
+  have hrhs2 : coeff n (rescale q f * jacksonDeriv q g) =
+      coeff n ((pf.comp (Polynomial.C q * Polynomial.X) * Polynomial.qDerivative q pg : A[X]) :
+        A⟦X⟧) := by
+    rw [Polynomial.coe_mul, hcomp, ← jacksonDeriv_coe]
+    exact coeff_eq_of_trunc_eq (trunc_mul_eq_of_trunc_eq hres.symm (hjd g _ (htrunc g).symm))
+      (Nat.lt_succ_self n)
+  rw [hlhs, Polynomial.qDerivative_mul, Polynomial.coe_add, map_add, map_add, hrhs1, hrhs2]
 
 end Semiring
 

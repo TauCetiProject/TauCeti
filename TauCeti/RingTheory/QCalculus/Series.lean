@@ -8,19 +8,17 @@ module
 public import Mathlib.RingTheory.HahnSeries.PowerSeries
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.Algebra.Ring.QPochhammer
-public import TauCeti.RingTheory.QCalculus.Basic
+public import TauCeti.RingTheory.PowerSeries.Order
+public import TauCeti.RingTheory.PowerSeries.QDerivative
 import Mathlib.Tactic.Ring
-import TauCeti.RingTheory.PowerSeries.Evaluation
 import TauCeti.RingTheory.PowerSeries.Log
-import TauCeti.RingTheory.PowerSeries.Order
 import TauCeti.RingTheory.PowerSeries.Rescale
 
 /-!
-# Formal q-exponential, infinite q-Pochhammer series, and Euler's identities
+# Formal q-exponential and infinite q-Pochhammer series
 
 This file constructs the formal power series of elementary `q`-calculus and establishes their
-functional equations, formal logarithms, integral `q`-adic realization, and Euler's square-exponent
-product identity:
+functional equations, formal logarithms, and integral `q`-adic realization:
 
 * `TauCeti.jacksonExp q`: normalized Jackson `q`-exponential `∑_{n ≥ 0} t ^ n / [n]_q!`.
 * `TauCeti.qPochhammerSeries q`: `E_q(t) = ∑_{n ≥ 0} (-1) ^ n q ^ (n (n - 1) / 2) t ^ n / (q; q)_n`.
@@ -28,8 +26,6 @@ product identity:
 * `TauCeti.qBinomialSeries a q`: `∑_{n ≥ 0} (a; q)_n t ^ n / (q; q)_n`.
 * `TauCeti.integralQPochhammer R`: integral infinite product `∏_{i ≥ 0} (1 - q ^ i t)` in
   `(R⟦X⟧)⟦X⟧`, defined by `q`-adic coefficient stabilization of `qPochhammer X (C X) N`.
-* `TauCeti.eulerSqSeries R` and `TauCeti.eulerOddProd R`: the two sides of Euler's raw identity
-  `∑_{n ≥ 0} r ^ (n ^ 2) / (r ^ 2; r ^ 2)_n = ∏_{i ≥ 0} (1 + r ^ (2 i + 1))` in `R⟦X⟧`.
 
 Definitions of the `q`-exponential and `q`-Pochhammer series carry explicit unit hypotheses at
 construction (`∀ n, IsUnit (∑ i ∈ range (n + 1), q ^ i)` for `jacksonExp` over any `CommSemiring`,
@@ -39,17 +35,14 @@ and `∀ n, IsUnit (1 - q ^ (n + 1))` for `qPochhammerSeries`, `qPochhammerInvSe
 structure supplies the units `[n + 1]_1 = n + 1` automatically; by contrast, the formal logarithm
 identities `logOf_qPochhammerSeries` and `logOf_qPochhammerInvSeries` require `[Algebra ℚ A]`
 together with the explicit unit hypothesis `∀ n, IsUnit (1 - q ^ (n + 1))`. Meanwhile,
-`eulerOddProd` (over any `CommSemiring`), `integralQPochhammer`, and `eulerSqSeries_eq_eulerOddProd`
-(over any `CommRing`) require no unit hypotheses.
+`integralQPochhammer` requires no unit hypotheses.
 
 ## References
 
 * W. J. G. Ong, notes of P. Scholze's course *V5A2 – The Habiro Ring of a Number Field*, Bonn,
   winter 2024/25 (6 March 2025 version,
   https://wgabrielong.github.io/academic-writing/notes/bonn-winter-24-25/V5A2-Habiro-Rings/Habiro_Rings_Notes.pdf),
-  Propositions 1.5, 2.1, 2.2, 2.5, 2.7 and Corollary 2.6.
-* S. Garoufalidis, P. Scholze, C. Wheeler, D. Zagier, *The Habiro ring of a number field*,
-  arXiv:2412.04241v2, Section 2.1, (46).
+  Propositions 1.5, 2.1, 2.2, 2.5, and Corollary 2.6.
 -/
 
 public section
@@ -523,31 +516,28 @@ theorem integralQPochhammer_eq_one_sub_X_mul_rescale :
     · exact (hqPoch (m - k) k (m + 1) (by omega)).symm
     · rfl
 
-private theorem isUnit_one_sub_X_pow (n : ℕ) : IsUnit (1 - (X : R⟦X⟧) ^ (n + 1)) :=
-  isUnit_iff_constantCoeff.mpr (by simp)
-
 /-- The `q`-adically stabilized integral product `integralQPochhammer R` equals the formal series
 `qPochhammerSeries X` in `(R⟦X⟧)⟦X⟧`. -/
 theorem integralQPochhammer_eq_qPochhammerSeries :
     integralQPochhammer R =
-      qPochhammerSeries (X : R⟦X⟧) (fun _ ↦ isUnit_iff_constantCoeff.mpr (by simp)) :=
-  (eq_qPochhammerSeries_iff (isUnit_one_sub_X_pow (R := R))).mpr
+      qPochhammerSeries (X : R⟦X⟧) isUnit_one_sub_X_pow_succ :=
+  (eq_qPochhammerSeries_iff (isUnit_one_sub_X_pow_succ (R := R))).mpr
     ⟨integralQPochhammer_eq_one_sub_X_mul_rescale, constantCoeff_integralQPochhammer⟩
 
 /-- **Euler's reciprocal identity** for the integral infinite `q`-Pochhammer product in
 `(R⟦X⟧)⟦X⟧`. -/
 theorem integralQPochhammer_mul_qPochhammerInvSeries :
     integralQPochhammer R *
-        qPochhammerInvSeries (X : R⟦X⟧) (fun _ ↦ isUnit_iff_constantCoeff.mpr (by simp)) =
+        qPochhammerInvSeries (X : R⟦X⟧) isUnit_one_sub_X_pow_succ =
       1 := by
   rw [integralQPochhammer_eq_qPochhammerSeries]
-  exact qPochhammerSeries_mul_qPochhammerInvSeries (isUnit_one_sub_X_pow (R := R))
+  exact qPochhammerSeries_mul_qPochhammerInvSeries (isUnit_one_sub_X_pow_succ (R := R))
 
 /-- Base change of coefficients for `integralQPochhammer`. -/
 theorem map_integralQPochhammer (φ : R →+* S) :
     map (map φ) (integralQPochhammer R) = integralQPochhammer S := by
   rw [integralQPochhammer_eq_qPochhammerSeries, integralQPochhammer_eq_qPochhammerSeries,
-    map_qPochhammerSeries _ (isUnit_one_sub_X_pow (R := R))]
+    map_qPochhammerSeries _ (isUnit_one_sub_X_pow_succ (R := R))]
   ext n
   simp
 
@@ -558,9 +548,9 @@ theorem map_ofPowerSeries_integralQPochhammer :
       qPochhammerSeries (HahnSeries.single (1 : ℤ) (1 : R))
         (fun n ↦ by
           simpa [map_sub, map_one, map_pow, HahnSeries.ofPowerSeries_X] using
-            (isUnit_one_sub_X_pow (R := R) n).map (HahnSeries.ofPowerSeries ℤ R)) := by
+            (isUnit_one_sub_X_pow_succ (R := R) n).map (HahnSeries.ofPowerSeries ℤ R)) := by
   rw [integralQPochhammer_eq_qPochhammerSeries,
-    map_qPochhammerSeries _ (isUnit_one_sub_X_pow (R := R))]
+    map_qPochhammerSeries _ (isUnit_one_sub_X_pow_succ (R := R))]
   ext n
   simp [HahnSeries.ofPowerSeries_X]
 
@@ -592,159 +582,5 @@ theorem coeff_one_coeff_two_integralQPochhammer :
   simp [Polynomial.coeff_X, Polynomial.coeff_one, coeff_X]
 
 end IntegralPochhammer
-
-/-! ### Euler's square-exponent product identity in `R⟦X⟧` -/
-
-section EulerOddProd
-
-variable {R : Type*} [CommSemiring R]
-
-variable (R) in
-/-- The right-hand side `∏_{i ≥ 0} (1 + r ^ (2 i + 1))` of Euler's raw identity in `R⟦X⟧`,
-defined by coefficient stabilization. -/
-noncomputable def eulerOddProd : R⟦X⟧ :=
-  PowerSeries.mk fun k ↦ coeff k (∏ i ∈ range (k + 1), (1 + (X : R⟦X⟧) ^ (2 * i + 1)))
-
-/-- **Stabilization of `eulerOddProd`**: the `k`-th coefficient equals that of the finite product
-over `i < N` whenever `k < 2 * N + 1`. -/
-theorem coeff_eulerOddProd_eq_prod_of_lt (k : ℕ) {N : ℕ} (hN : k < 2 * N + 1) :
-    coeff k (eulerOddProd R) =
-      coeff k (∏ i ∈ range N, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) := by
-  have hmono : ∀ a b, k < 2 * a + 1 → a ≤ b →
-      coeff k (∏ i ∈ range b, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) =
-        coeff k (∏ i ∈ range a, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) := by
-    intro a b ha hab
-    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hab
-    induction d with
-    | zero => rfl
-    | succ d ih =>
-      rw [← Nat.add_assoc, prod_range_succ, coeff_mul_one_add_X_pow _ (by omega), ih (by omega)]
-  rw [eulerOddProd, coeff_mk]
-  rcases le_total N (k + 1) with hle | hle
-  · exact hmono N (k + 1) hN hle
-  · exact (hmono (k + 1) N (by omega) hle).symm
-
-/-- Constant coefficient of `eulerOddProd R` is `1`. -/
-@[simp] theorem constantCoeff_eulerOddProd : constantCoeff (eulerOddProd R) = 1 := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_eulerOddProd_eq_prod_of_lt 0 (N := 0) (by omega)]
-  simp
-
-/-- The degree-`1` coefficient of `eulerOddProd R` is `1`. -/
-theorem coeff_one_eulerOddProd : coeff 1 (eulerOddProd R) = 1 := by
-  rw [coeff_eulerOddProd_eq_prod_of_lt 1 (N := 1) (by omega)]; simp
-
-/-- The degree-`2` coefficient of `eulerOddProd R` is `0`. -/
-theorem coeff_two_eulerOddProd : coeff 2 (eulerOddProd R) = 0 := by
-  rw [coeff_eulerOddProd_eq_prod_of_lt 2 (N := 1) (by omega)]; simp [coeff_X]
-
-/-- The degree-`3` coefficient of `eulerOddProd R` is `1`. -/
-theorem coeff_three_eulerOddProd : coeff 3 (eulerOddProd R) = 1 := by
-  rw [coeff_eulerOddProd_eq_prod_of_lt 3 (N := 2) (by omega)]
-  have hpoly : (∏ i ∈ range 2, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) =
-      (((1 + Polynomial.X) * (1 + Polynomial.X ^ 3) : R[X]) : R⟦X⟧) := by simp [prod_range_succ]
-  rw [hpoly, Polynomial.coeff_coe]
-  simp [add_mul, mul_add, Polynomial.coeff_X_pow, Polynomial.coeff_one, Polynomial.coeff_X]
-
-/-- The degree-`8` coefficient of `eulerOddProd R` is `2`. -/
-theorem coeff_eight_eulerOddProd : coeff 8 (eulerOddProd R) = 2 := by
-  rw [coeff_eulerOddProd_eq_prod_of_lt 8 (N := 4) (by omega)]
-  have hpoly : (∏ i ∈ range 4, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) =
-      (((1 + Polynomial.X) * (1 + Polynomial.X ^ 3) * (1 + Polynomial.X ^ 5) *
-        (1 + Polynomial.X ^ 7) : R[X]) : R⟦X⟧) := by simp [prod_range_succ]
-  rw [hpoly, Polynomial.coeff_coe]
-  ring_nf
-  simp [Polynomial.coeff_X_pow, Polynomial.coeff_one, Polynomial.coeff_X]
-
-end EulerOddProd
-
-section EulerSquareIdentity
-
-variable {R : Type*} [CommRing R]
-
-variable (R) in
-/-- The left-hand side `∑_{n ≥ 0} r ^ (n ^ 2) / (r ^ 2; r ^ 2)_n` of Euler's raw identity in
-`R⟦X⟧`, defined by coefficient stabilization. -/
-noncomputable def eulerSqSeries : R⟦X⟧ :=
-  PowerSeries.mk fun k ↦
-    coeff k (∑ n ∈ range (k + 1),
-      (X : R⟦X⟧) ^ (n ^ 2) * Ring.inverse (qPochhammer (X ^ 2 : R⟦X⟧) (X ^ 2 : R⟦X⟧) n))
-
-/-- **Stabilization of `eulerSqSeries`**: the `k`-th coefficient equals that of the partial sum
-over `n < N` whenever `k < N ^ 2`. -/
-theorem coeff_eulerSqSeries_eq_sum_of_lt (k : ℕ) {N : ℕ} (hN : k < N ^ 2) :
-    coeff k (eulerSqSeries R) =
-      coeff k (∑ n ∈ range N,
-        (X : R⟦X⟧) ^ (n ^ 2) * Ring.inverse (qPochhammer (X ^ 2 : R⟦X⟧) (X ^ 2 : R⟦X⟧) n)) := by
-  have hzero : ∀ n, k < n ^ 2 →
-      coeff k ((X : R⟦X⟧) ^ (n ^ 2) *
-        Ring.inverse (qPochhammer (X ^ 2 : R⟦X⟧) (X ^ 2 : R⟦X⟧) n)) = 0 := fun n hlt ↦ by
-    rw [coeff_X_pow_mul']; simp [Nat.not_le.mpr hlt]
-  rw [eulerSqSeries, coeff_mk, map_sum, map_sum]
-  refine Finset.sum_congr_of_eq_on_inter (fun n _ hn ↦ hzero n ?_) (fun n _ hn ↦ hzero n ?_)
-    (fun _ _ _ ↦ rfl)
-  · exact lt_of_lt_of_le hN (Nat.pow_le_pow_left (Nat.le_of_not_lt (by simpa using hn)) 2)
-  · have : k + 1 ≤ n := Nat.le_of_not_lt (by simpa using hn); nlinarith
-
-private theorem isUnit_one_sub_X_sq_pow (n : ℕ) : IsUnit (1 - (X ^ 2 : R⟦X⟧) ^ (n + 1)) :=
-  isUnit_iff_constantCoeff.mpr (by simp)
-
-/-- Each summand `r ^ (n ^ 2) / (r ^ 2; r ^ 2)_n` equals `(-r) ^ n` times the `n`-th coefficient
-of `qPochhammerSeries (r ^ 2)`. -/
-private theorem neg_X_pow_mul_coeff_qPochhammerSeries_sq (n : ℕ) :
-    (-X : R⟦X⟧) ^ n * coeff n (qPochhammerSeries (X ^ 2 : R⟦X⟧) isUnit_one_sub_X_sq_pow) =
-      (X : R⟦X⟧) ^ (n ^ 2) * Ring.inverse (qPochhammer (X ^ 2 : R⟦X⟧) (X ^ 2 : R⟦X⟧) n) := by
-  rw [coeff_qPochhammerSeries, neg_eq_neg_one_mul, mul_pow, ← pow_mul]
-  have hexp : n + 2 * (n * (n - 1) / 2) = n ^ 2 := by
-    rw [Nat.mul_div_cancel' (Nat.two_dvd_mul_sub_one n)]
-    rcases n with _ | m <;> [rfl; (rw [Nat.add_sub_cancel]; ring)]
-  have hsign : (-1 : R⟦X⟧) ^ n * (-1 : R⟦X⟧) ^ n = 1 := by rw [← mul_pow]; simp
-  rw [← hexp, pow_add]
-  linear_combination
-    (X : R⟦X⟧) ^ n * (X : R⟦X⟧) ^ (2 * (n * (n - 1) / 2)) *
-      Ring.inverse (qPochhammer (X ^ 2 : R⟦X⟧) (X ^ 2 : R⟦X⟧) n) * hsign
-
-/-- Below `r`-degree `k + 1`, the coefficients of `qPochhammerSeries (r ^ 2)` agree with those of
-the finite polynomial product `qPochhammer t (r ^ 2) (k + 1)`. -/
-private theorem coeff_coeff_qPochhammerSeries_sq_eq (k n j : ℕ) (hj : j ≤ k) :
-    coeff j (coeff n (qPochhammerSeries (X ^ 2 : R⟦X⟧) isUnit_one_sub_X_sq_pow)) =
-      coeff j ((qPochhammer Polynomial.X (Polynomial.C (X ^ 2 : R⟦X⟧)) (k + 1)).coeff n) := by
-  let φ : R⟦X⟧ →+* R⟦X⟧ := (expand 2 two_ne_zero).toRingHom
-  have hF : map φ (integralQPochhammer R) =
-      qPochhammerSeries (X ^ 2 : R⟦X⟧) isUnit_one_sub_X_sq_pow := by
-    rw [integralQPochhammer_eq_qPochhammerSeries,
-      map_qPochhammerSeries _ (isUnit_one_sub_X_pow (R := R))]
-    ext m
-    simp [φ, expand_X]
-  have hp_map :
-      qPochhammer Polynomial.X (Polynomial.C (X ^ 2 : R⟦X⟧)) (k + 1) =
-        (qPochhammer (Polynomial.X : (R⟦X⟧)[X]) (Polynomial.C (X : R⟦X⟧)) (k + 1)).map φ := by
-    rw [Polynomial.map_qPochhammer]; simp [φ, expand_X]
-  rw [← hF, hp_map, Polynomial.coeff_map, coeff_map]
-  dsimp [φ]
-  rw [coeff_expand, coeff_expand]
-  split_ifs with hd
-  · exact coeff_coeff_integralQPochhammer_eq_of_lt (j / 2) n (by omega)
-  · rfl
-
-/-- **Euler's raw identity** in `R⟦X⟧`:
-`∑_{n ≥ 0} r ^ (n ^ 2) / (r ^ 2; r ^ 2)_n = ∏_{i ≥ 0} (1 + r ^ (2 i + 1))`. -/
-theorem eulerSqSeries_eq_eulerOddProd : eulerSqSeries R = eulerOddProd R := by
-  ext k
-  let p : (R⟦X⟧)[X] := qPochhammer Polynomial.X (Polynomial.C (X ^ 2 : R⟦X⟧)) (k + 1)
-  have hp_eval : p.eval (-X : R⟦X⟧) = ∏ i ∈ range (k + 1), (1 + (X : R⟦X⟧) ^ (2 * i + 1)) := by
-    rw [Polynomial.eval_qPochhammer, Polynomial.eval_X, Polynomial.eval_C, qPochhammer_def]
-    refine prod_congr rfl fun i _ ↦ ?_
-    rw [← pow_mul, neg_mul, sub_neg_eq_add, ← pow_succ']
-  rw [eulerSqSeries, eulerOddProd, coeff_mk, coeff_mk, ← hp_eval, map_sum,
-    coeff_eval_eq_sum_range p (by simp)]
-  refine sum_congr rfl fun n _ ↦ ?_
-  rw [mul_comm (p.coeff n), ← neg_X_pow_mul_coeff_qPochhammerSeries_sq n, neg_eq_neg_one_mul,
-    mul_pow, mul_assoc, mul_assoc, ← map_one C, ← map_neg, ← map_pow, coeff_C_mul, coeff_C_mul,
-    coeff_X_pow_mul', coeff_X_pow_mul']
-  split_ifs with hnk
-  · rw [coeff_coeff_qPochhammerSeries_sq_eq k n (k - n) (by omega)]
-  · rfl
-
-end EulerSquareIdentity
 
 end TauCeti

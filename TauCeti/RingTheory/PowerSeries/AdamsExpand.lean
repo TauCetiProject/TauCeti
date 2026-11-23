@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.PowerSeries.Exp
+public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 
 /-!
@@ -27,6 +29,7 @@ variable `q ↦ q ^ n` (via `LaurentSeries.expand`) and the outer power-series v
 * `PowerSeries.adamsExpand_one`, `PowerSeries.adamsExpand_adamsExpand`: identity and
   functoriality `ψ ^ m ∘ ψ ^ n = ψ ^ (m * n)`.
 * `PowerSeries.map_adamsExpand`: compatibility with coefficientwise ring homomorphisms.
+* `PowerSeries.adamsExpand_subst_exp`: compatibility with substitution into `PowerSeries.exp`.
 -/
 
 public section
@@ -147,6 +150,20 @@ theorem map_adamsExpand {S : Type*} [CommRing S] (φ : R →+* S) (n : ℕ+) (F 
     RingHom.ext (LaurentSeries.mapRingHom_expand φ n)
   rw [adamsExpand_apply, adamsExpand_apply, map_expand, ← RingHom.comp_apply,
     ← PowerSeries.map_comp, ← RingHom.comp_apply, ← PowerSeries.map_comp, hcomp]
+
+/-- Combined Adams dilation commutes with substitution into `PowerSeries.exp`. -/
+theorem adamsExpand_subst_exp {A : Type*} [CommRing A] [Algebra ℚ A] (n : ℕ+)
+    {G : (A⸨X⸩)⟦X⟧} (hG : HasSubst G) :
+    adamsExpand A n ((PowerSeries.exp A⸨X⸩).subst G) =
+      (PowerSeries.exp A⸨X⸩).subst (adamsExpand A n G) := by
+  have hsub' : HasSubst (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) :=
+    PowerSeries.hasSubst_iff.mpr (hG.const.map (LaurentSeries.expand A n).toRingHom)
+  have hmap :
+      PowerSeries.map (LaurentSeries.expand A n).toRingHom ((PowerSeries.exp A⸨X⸩).subst G) =
+        (PowerSeries.exp A⸨X⸩).subst (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) :=
+    (PowerSeries.map_subst hG (PowerSeries.exp A⸨X⸩)).trans (by rw [PowerSeries.map_exp]; rfl)
+  rw [adamsExpand_apply, hmap]
+  exact PowerSeries.expand_subst (n : ℕ) n.ne_zero hsub' (PowerSeries.exp A⸨X⸩)
 
 end AdamsExpand
 

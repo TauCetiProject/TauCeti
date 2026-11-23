@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Order
+import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # Self-multiplication cancellation and orders of power series
@@ -37,6 +38,10 @@ of `X ^ n` in `f`.
 * `PowerSeries.order_map_of_injective`: injective coefficient maps preserve orders.
 * `PowerSeries.exists_forall_le_order_sub`: a sequence whose consecutive terms agree below degree
   `n` has a limit agreeing with its `n`-th term below degree `n`.
+* `PowerSeries.isUnit_one_sub_of_constantCoeff_eq_zero`,
+  `PowerSeries.isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero`,
+  `PowerSeries.isUnit_one_sub_X_pow_succ`: `1 - f`, `1 - f ^ (n + 1)`, and `1 - X ^ (n + 1)` are
+  units when `constantCoeff f = 0`.
 
 * `PowerSeries.order_X_pow_mul_of_constantCoeff_ne_zero`: `X ^ k * f` has order `k` when `f` has
   nonzero constant coefficient.
@@ -126,6 +131,21 @@ theorem exists_forall_le_order_sub {f : ℕ → R⟦X⟧}
   have h := coeff_of_lt_order i ((hstab (i + 1) k).trans_lt' (by exact_mod_cast i.lt_succ_self))
   rw [map_sub, sub_eq_zero] at h
   rw [map_sub, coeff_mk, show i + k + 1 = i + 1 + k by omega, h, sub_self]
+
+/-- A power series of the form `1 - f` is a unit whenever `f` has zero constant coefficient. -/
+theorem isUnit_one_sub_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0) :
+    IsUnit (1 - f) :=
+  isUnit_iff_constantCoeff.mpr (by simp [hf])
+
+/-- A power series of the form `1 - f ^ (n + 1)` is a unit whenever `f` has zero constant
+coefficient. -/
+theorem isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0)
+    (n : ℕ) : IsUnit (1 - f ^ (n + 1)) :=
+  isUnit_one_sub_of_constantCoeff_eq_zero (by simp [hf])
+
+/-- Every series `1 - X ^ (n + 1)` is a unit in `R⟦X⟧`. -/
+theorem isUnit_one_sub_X_pow_succ (n : ℕ) : IsUnit (1 - (X : R⟦X⟧) ^ (n + 1)) :=
+  isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero constantCoeff_X n
 
 end Ring
 

@@ -55,7 +55,9 @@ The sum of the lower bounds bounds the support of the product
 (`HahnSeries.add_le_of_mem_support_mul`), and for powers `HahnSeries.nsmul_le_of_mem_support_pow`
 and `HahnSeries.coeff_pow_nsmul_of_forall_le` give the corresponding bound and coefficient.
 `HahnSeries.zero_le_orderTop_single` and `HahnSeries.zero_le_orderTop_one` record that monomials
-of nonnegative exponent, and in particular the constant `1`, have nonnegative order.
+of nonnegative exponent, and in particular the constant `1`, have nonnegative order, and
+`HahnSeries.coeff_mul_eq_zero_of_lt` records that if `x` vanishes below `M` and `y` below `N`, then
+`x * y` vanishes below `M + N`.
 -/
 
 public section
@@ -233,5 +235,15 @@ theorem coeff_pow_nsmul_of_forall_le [Semiring R] {x : HahnSeries Γ R} {a : Γ}
   | succ n ih =>
     rw [pow_succ, succ_nsmul, coeff_mul_add_of_forall_le (nsmul_le_of_mem_support_pow hx n) hx,
       ih, pow_succ]
+
+/-- If `x` vanishes below `M` and `y` vanishes below `N`, then `x * y` vanishes below `M + N`. -/
+theorem coeff_mul_eq_zero_of_lt {Γ R : Type*} [AddCommMonoid Γ] [LinearOrder Γ]
+    [IsOrderedCancelAddMonoid Γ] [NonUnitalNonAssocSemiring R] {x y : HahnSeries Γ R}
+    {M N r : Γ} (hx : ∀ i < M, x.coeff i = 0) (hy : ∀ i < N, y.coeff i = 0) (hr : r < M + N) :
+    (x * y).coeff r = 0 := by
+  by_contra h
+  have hle := add_le_of_mem_support_mul (fun i hi ↦ not_lt.mp fun hlt ↦ hi (hx i hlt))
+    (fun j hj ↦ not_lt.mp fun hlt ↦ hj (hy j hlt)) r h
+  exact hr.not_ge hle
 
 end HahnSeries
