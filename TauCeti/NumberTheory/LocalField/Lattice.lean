@@ -21,7 +21,9 @@ finitely generated and spans `V` over `E` (Mathlib's `Submodule.IsFullLattice E 
 shows that every lattice is a compact open subgroup of `V`, and that its stabilizer `GL(L)` in the
 group `V ≃ₗ[E] V` of linear automorphisms, with the forward-and-inverse topology of
 `TauCeti.Topology.Algebra.Module.GeneralLinearGroup`, is a compact open subgroup. These are the
-topological inputs of the stable-lattice theorem for compact groups acting on `V`.
+topological inputs of the stable-lattice theorem for compact groups acting on `V`. In an
+`𝒪[E]`-basis of `L`, taking matrices identifies this stabilizer with `GL_n(𝒪[E])` as a topological
+group, `n` being the size of the basis.
 
 The stabilizer is Mathlib's `MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)` for the pointwise
 action on subsets of `V`; it consists of the automorphisms `g` with `g L = L`. It is the group of
@@ -44,6 +46,8 @@ compactness uses that `𝒪[E]` is compact.
   the endomorphisms mapping a lattice into itself form a compact open subset of `Module.End E V`.
 * `Submodule.IsFullLattice.isOpen_stabilizer`, `Submodule.IsFullLattice.isCompact_stabilizer`: the
   stabilizer of a lattice in `V ≃ₗ[E] V` is open and compact.
+* `Module.Basis.stabilizerContinuousMulEquivGL`: in an `𝒪[E]`-basis of a lattice, the stabilizer of
+  the lattice is `GL_n(𝒪[E])` as a topological group.
 
 ## References
 
@@ -160,6 +164,68 @@ theorem IsFullLattice.isOpen_stabilizer :
   rw [h]
   exact ((IsFullLattice.isOpen_setOf_mapsTo L).preimage hc.1).inter
     ((IsFullLattice.isOpen_setOf_mapsTo L).preimage hc.2)
+
+section Matrix
+
+variable {L} {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **The stabilizer of a lattice is `GL_n(𝒪[E])` as a topological group.** For an `𝒪[E]`-basis
+`b` of a lattice `L ⊆ V`, the isomorphism `b.stabilizerMulEquivGL E` from the stabilizer of `L` in
+`V ≃ₗ[E] V` to `GL ι 𝒪[E]`, sending an automorphism to its matrix in `b`, is a homeomorphism for
+the subspace topology on the stabilizer and the unit topology on matrices over `𝒪[E]`. -/
+noncomputable def _root_.Module.Basis.stabilizerContinuousMulEquivGL (b : Basis ι 𝒪[E] L) :
+    MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) ≃ₜ* GL ι 𝒪[E] where
+  __ := b.stabilizerMulEquivGL E
+  continuous_toFun := by
+    have := Module.Finite.of_isFullLattice (A := E) L
+    have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
+    let b' := b.extendOfIsFullLattice E
+    -- Each matrix entry, read in `E`, is a coordinate of the image of a basis vector.
+    have hval : Continuous fun g : MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) =>
+        (b.stabilizerMulEquivGL E g : Matrix ι ι 𝒪[E]) := by
+      refine continuous_matrix fun i j => ?_
+      refine Topology.IsInducing.subtypeVal.continuous_iff.mpr ?_
+      have h (g : MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)) :
+          ((b.stabilizerMulEquivGL E g : Matrix ι ι 𝒪[E]) i j : E) =
+            b'.coord i ((g : V ≃ₗ[E] V) (b' j)) := by
+        have h := congrFun (congrFun (b.map_stabilizerMulEquivGL_apply g) i) j
+        rw [Matrix.map_apply, LinearMap.toMatrix_apply] at h
+        exact h
+      simp only [Function.comp_def, h]
+      exact (IsModuleTopology.continuous_of_linearMap (b'.coord i)).comp
+        ((IsModuleTopology.continuous_of_linearMap
+          (LinearMap.applyₗ (b' j) : Module.End E V →ₗ[E] V)).comp
+          (TauCeti.continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal))
+    refine Units.continuous_iff.mpr ⟨hval, ?_⟩
+    exact (hval.comp continuous_inv).congr fun g =>
+      congrArg Units.val (map_inv (b.stabilizerMulEquivGL E) g)
+  continuous_invFun := by
+    have := Module.Finite.of_isFullLattice (A := E) L
+    have : IsModuleTopology E (Matrix ι ι E) := inferInstanceAs (IsModuleTopology E (ι → ι → E))
+    let b' := b.extendOfIsFullLattice E
+    -- The automorphism attached to `u` is the linear map with matrix `u` in the basis `b'`.
+    have hfwd : Continuous fun u : GL ι 𝒪[E] =>
+        ((((b.stabilizerMulEquivGL E).symm u : V ≃ₗ[E] V)) : Module.End E V) := by
+      simp only [b.stabilizerMulEquivGL_symm_apply]
+      exact (IsModuleTopology.continuous_of_linearMap
+        (Matrix.toLin b' b').toLinearMap).comp
+        ((Units.continuous_val).matrix_map continuous_subtypeVal)
+    refine Continuous.subtype_mk (TauCeti.continuous_linearEquiv_iff.mpr ⟨hfwd, ?_⟩) _
+    have hinv (u : GL ι 𝒪[E]) : (((b.stabilizerMulEquivGL E).symm u : V ≃ₗ[E] V)⁻¹ :
+        V ≃ₗ[E] V) = ((b.stabilizerMulEquivGL E).symm u⁻¹ : V ≃ₗ[E] V) := by
+      rw [map_inv, Subgroup.coe_inv]
+    simp only [hinv]
+    exact hfwd.comp continuous_inv
+
+/-- The topological isomorphism `b.stabilizerContinuousMulEquivGL` has the matrix isomorphism
+`b.stabilizerMulEquivGL E` as its underlying multiplicative equivalence. -/
+@[simp]
+theorem _root_.Module.Basis.coe_stabilizerContinuousMulEquivGL (b : Basis ι 𝒪[E] L) :
+    (b.stabilizerContinuousMulEquivGL :
+      MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) ≃* GL ι 𝒪[E]) = b.stabilizerMulEquivGL E :=
+  (rfl)
+
+end Matrix
 
 end ValuativeTopology
 
