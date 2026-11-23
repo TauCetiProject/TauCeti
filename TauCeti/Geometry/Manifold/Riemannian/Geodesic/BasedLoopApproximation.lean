@@ -32,7 +32,7 @@ first sampled vertex (`TauCeti.Manifold.basepoint_sampleBrokenGeodesicLoopHomoto
 the slide of the vertices along a broken geodesic
 (`TauCeti.Manifold.coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply_zero`). So they
 restrict to the based loops (`TauCeti.MooreLoopSpace.homotopic_codRestrictFreeLoop`) and to the
-based distance cuts.
+based distance cuts (`TauCeti.homotopic_basedCyclicDistanceCutRestrict`).
 
 * **Compact-family approximation.** For a compact family `K` of Moore loops based at `x` and
   cut-offs bounded below by `ε > 0` and less than `r`, every sufficiently fine sampling maps `K`
@@ -192,15 +192,9 @@ cut-offs `δ'`, when `∑ i, δ i ≤ (m + 1) * δ' j` for every `j`. It is the 
 `TauCeti.Manifold.cyclicDistanceCutSampleBrokenGeodesic`. -/
 def basedCyclicDistanceCutSampleBrokenGeodesic {n : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r)
     (m : ℕ) {δ' : Fin (m + 1) → ℝ} (hm : ∀ j, ∑ i, δ i ≤ ((m + 1 : ℕ) : ℝ) * δ' j) (x : M) :
-    C(basedCyclicDistanceCut (X := M) δ x, basedCyclicDistanceCut (X := M) δ' x) where
-  toFun q := ⟨cyclicDistanceCutSampleBrokenGeodesic hr hδ m hm
-    ⟨q.val, (mem_basedCyclicDistanceCut.1 q.property).1⟩, mem_basedCyclicDistanceCut.2
-    ⟨(cyclicDistanceCutSampleBrokenGeodesic hr hδ m hm
-      ⟨q.val, (mem_basedCyclicDistanceCut.1 q.property).1⟩).property, by
-      rw [coe_cyclicDistanceCutSampleBrokenGeodesic_apply_zero]
-      exact (mem_basedCyclicDistanceCut.1 q.property).2⟩⟩
-  continuous_toFun := (continuous_subtypeVal.comp ((map_continuous _).comp
-    ((continuous_subtypeVal).subtype_mk _))).subtype_mk _
+    C(basedCyclicDistanceCut (X := M) δ x, basedCyclicDistanceCut (X := M) δ' x) :=
+  basedCyclicDistanceCutRestrict (cyclicDistanceCutSampleBrokenGeodesic hr hδ m hm)
+    (coe_cyclicDistanceCutSampleBrokenGeodesic_apply_zero hr hδ m hm) x
 
 @[simp]
 theorem coe_basedCyclicDistanceCutSampleBrokenGeodesic_apply {n : ℕ} {δ : Fin (n + 1) → ℝ}
@@ -209,8 +203,9 @@ theorem coe_basedCyclicDistanceCutSampleBrokenGeodesic_apply {n : ℕ} {δ : Fin
     (q : basedCyclicDistanceCut (X := M) δ x) :
     (basedCyclicDistanceCutSampleBrokenGeodesic hr hδ m hm x q : Fin (m + 1) → M) =
       (cyclicDistanceCutBrokenGeodesic hr hδ
-        ⟨q.val, (mem_basedCyclicDistanceCut.1 q.property).1⟩).toMoorePath.sample (m + 1) :=
-  coe_cyclicDistanceCutSampleBrokenGeodesic_apply hr hδ m hm _
+        ⟨q.val, (mem_basedCyclicDistanceCut.1 q.property).1⟩).toMoorePath.sample (m + 1) := by
+  rw [basedCyclicDistanceCutSampleBrokenGeodesic, coe_basedCyclicDistanceCutRestrict_apply,
+    coe_cyclicDistanceCutSampleBrokenGeodesic_apply]
 
 /-- **`ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ ≃ evₙ₊ₖ₊₁ ∘ geoⁿ` on based distance cuts.** For cut-offs `δ i < r` with
 `δ (j - k) ≤ δ' j` and `∑ i, δ i ≤ (n + k + 1) * δ' j` for every `j`, repeating the first vertex `k`
@@ -222,18 +217,12 @@ theorem homotopic_basedCyclicDistanceCutRepeatFirstIterate_sampleBrokenGeodesic 
     (hm : ∀ j, ∑ i, δ i ≤ ((n + k + 1 : ℕ) : ℝ) * δ' j) (x : M) :
     (basedCyclicDistanceCutRepeatFirstIterate (X := M) k hδδ' x).Homotopic
       (basedCyclicDistanceCutSampleBrokenGeodesic hr hδ (n + k) hm x) := by
-  -- The slide of the vertices along the broken geodesics keeps the first vertex, so it restricts
-  -- to the based distance cuts.
-  let F := cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ hδδ' hm
-  let j : C(basedCyclicDistanceCut (X := M) δ x, cyclicDistanceCut (X := M) δ) :=
-    ContinuousMap.inclusion (basedCyclicDistanceCut_subset δ x)
-  exact ⟨{ toFun := fun p ↦ ⟨F (p.1, j p.2), mem_basedCyclicDistanceCut.2
-              ⟨(F (p.1, j p.2)).property, by
-                rw [coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply_zero]
-                exact (mem_basedCyclicDistanceCut.1 p.2.property).2⟩⟩
-           continuous_toFun := (continuous_subtypeVal.comp ((map_continuous F).comp
-              (continuous_fst.prodMk ((map_continuous j).comp continuous_snd)))).subtype_mk _
-           map_zero_left := fun q ↦ Subtype.ext <| funext fun i ↦ by simp [j]
-           map_one_left := fun q ↦ Subtype.ext <| funext fun i ↦ by simp [j] }⟩
+  -- Both maps are restrictions of maps of distance cuts, and the slide of the vertices along the
+  -- broken geodesics between them keeps the first vertex.
+  rw [basedCyclicDistanceCutRepeatFirstIterate_eq_restrict,
+    basedCyclicDistanceCutSampleBrokenGeodesic]
+  exact homotopic_basedCyclicDistanceCutRestrict
+    (cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ hδδ' hm)
+    (coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply_zero hr hδ hδδ' hm) x
 
 end TauCeti.Manifold

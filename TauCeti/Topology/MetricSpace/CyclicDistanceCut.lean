@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
+public import Mathlib.Topology.Homotopy.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 import TauCeti.Data.Fin.Basic
@@ -60,7 +61,8 @@ The sampling of compact families of free Moore loops into these cuts is in
 * `TauCeti.cyclicDistanceCutRepeatFirstIterate`: the map between cuts repeating the first vertex
   several times.
 * `TauCeti.basedCyclicDistanceCut δ x`: the tuples of the cut with first vertex `x`, and
-  `TauCeti.basedCyclicDistanceCutRepeatFirstIterate`, the restriction of the previous map to them.
+  `TauCeti.basedCyclicDistanceCutRestrict`, the restriction to them of a map of cuts keeping the
+  first vertex, such as `TauCeti.basedCyclicDistanceCutRepeatFirstIterate`.
 * `TauCeti.cyclicDistanceCutFunctor`: the sequence of cuts for growing cut-offs.
 
 ## Main results
@@ -75,6 +77,8 @@ The sampling of compact families of free Moore loops into these cuts is in
   space is Hausdorff.
 * `TauCeti.cyclicDistanceCutFunctor_map_homOfLE`: the maps of the sequence of cuts repeat the
   first vertex.
+* `TauCeti.homotopic_basedCyclicDistanceCutRestrict`: homotopies of maps of cuts keeping the
+  first vertex restrict to the based distance cuts.
 
 ## References
 
@@ -299,6 +303,14 @@ theorem coe_cyclicDistanceCutRepeatFirstIterate_apply (k : ℕ) {δ : Fin (n + 1
     (cyclicDistanceCutRepeatFirstIterate k h q : Fin (n + k + 1) → X) j = q.val ⟨j - k, by omega⟩ :=
   (rfl)
 
+/-- Repeating the first vertex keeps the first vertex. -/
+theorem coe_cyclicDistanceCutRepeatFirstIterate_apply_zero (k : ℕ) {δ : Fin (n + 1) → ℝ}
+    {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    (q : cyclicDistanceCut (X := X) δ) :
+    (cyclicDistanceCutRepeatFirstIterate k h q : Fin (n + k + 1) → X) 0 = q.val 0 := by
+  rw [coe_cyclicDistanceCutRepeatFirstIterate_apply]
+  exact congrArg q.val (Fin.ext (Nat.zero_sub k))
+
 /-- Repeating the first vertex no more times is the inclusion of one distance cut into another. -/
 theorem coe_cyclicDistanceCutRepeatFirstIterate_zero_apply {δ δ' : Fin (n + 1) → ℝ}
     (h : δ ≤ δ') (q : cyclicDistanceCut (X := X) δ) :
@@ -370,27 +382,76 @@ theorem const_mem_basedCyclicDistanceCut {δ : Fin (n + 1) → ℝ} (hδ : 0 ≤
     (fun _ ↦ x) ∈ basedCyclicDistanceCut δ x :=
   ⟨const_mem_cyclicDistanceCut hδ x, rfl⟩
 
+/-- **Maps of distance cuts keeping the first vertex restrict to based distance cuts.** A
+continuous map `f` from the distance cut with cut-offs `δ` to the one with cut-offs `δ'` which
+keeps the first vertex maps the based distance cut at `x` into the based distance cut at `x`. -/
+def basedCyclicDistanceCutRestrict {m : ℕ} {δ : Fin (n + 1) → ℝ} {δ' : Fin (m + 1) → ℝ}
+    (f : C(cyclicDistanceCut (X := X) δ, cyclicDistanceCut (X := X) δ'))
+    (hf : ∀ q, (f q : Fin (m + 1) → X) 0 = q.val 0) (x : X) :
+    C(basedCyclicDistanceCut (X := X) δ x, basedCyclicDistanceCut (X := X) δ' x) where
+  toFun q := ⟨f ⟨q.val, basedCyclicDistanceCut_subset δ x q.property⟩,
+    mem_basedCyclicDistanceCut.2 ⟨(f _).property, (hf _).trans (mem_basedCyclicDistanceCut.1
+      q.property).2⟩⟩
+  continuous_toFun := (continuous_subtypeVal.comp
+    ((map_continuous f).comp (continuous_subtypeVal.subtype_mk
+      fun q ↦ basedCyclicDistanceCut_subset δ x q.property))).subtype_mk _
+
+@[simp]
+theorem coe_basedCyclicDistanceCutRestrict_apply {m : ℕ} {δ : Fin (n + 1) → ℝ}
+    {δ' : Fin (m + 1) → ℝ} (f : C(cyclicDistanceCut (X := X) δ, cyclicDistanceCut (X := X) δ'))
+    (hf : ∀ q, (f q : Fin (m + 1) → X) 0 = q.val 0) (x : X)
+    (q : basedCyclicDistanceCut (X := X) δ x) :
+    (basedCyclicDistanceCutRestrict f hf x q : Fin (m + 1) → X) =
+      f ⟨q.val, basedCyclicDistanceCut_subset δ x q.property⟩ :=
+  (rfl)
+
+/-- **Homotopies keeping the first vertex restrict to based distance cuts.** If two maps of
+distance cuts keeping the first vertex are homotopic through maps keeping the first vertex, their
+restrictions to the based distance cuts at `x` are homotopic. -/
+theorem homotopic_basedCyclicDistanceCutRestrict {m : ℕ} {δ : Fin (n + 1) → ℝ}
+    {δ' : Fin (m + 1) → ℝ} {f g : C(cyclicDistanceCut (X := X) δ, cyclicDistanceCut (X := X) δ')}
+    {hf : ∀ q, (f q : Fin (m + 1) → X) 0 = q.val 0}
+    {hg : ∀ q, (g q : Fin (m + 1) → X) 0 = q.val 0} (H : f.Homotopy g)
+    (hH : ∀ p, (H p : Fin (m + 1) → X) 0 = p.2.val 0) (x : X) :
+    (basedCyclicDistanceCutRestrict f hf x).Homotopic (basedCyclicDistanceCutRestrict g hg x) :=
+  ⟨{ toFun p := ⟨H (p.1, ⟨p.2.val, basedCyclicDistanceCut_subset δ x p.2.property⟩),
+        mem_basedCyclicDistanceCut.2 ⟨(H _).property, (hH _).trans (mem_basedCyclicDistanceCut.1
+          p.2.property).2⟩⟩
+     continuous_toFun := (continuous_subtypeVal.comp ((map_continuous H).comp
+        (continuous_fst.prodMk ((continuous_subtypeVal.subtype_mk
+          fun q ↦ basedCyclicDistanceCut_subset δ x q.property).comp
+            continuous_snd)))).subtype_mk _
+     map_zero_left q := Subtype.ext ((congrArg Subtype.val (H.apply_zero _)).trans
+        (coe_basedCyclicDistanceCutRestrict_apply f hf x q).symm)
+     map_one_left q := Subtype.ext ((congrArg Subtype.val (H.apply_one _)).trans
+        (coe_basedCyclicDistanceCutRestrict_apply g hg x q).symm) }⟩
+
 /-- **Repeating the first vertex several times maps based distance cuts into each other**: it
 keeps the first vertex. This is the restriction of
 `TauCeti.cyclicDistanceCutRepeatFirstIterate` to the based distance cuts at `x`. -/
 def basedCyclicDistanceCutRepeatFirstIterate (k : ℕ) {δ : Fin (n + 1) → ℝ}
     {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j) (x : X) :
-    C(basedCyclicDistanceCut (X := X) δ x, basedCyclicDistanceCut (X := X) δ' x) where
-  toFun q := ⟨cyclicDistanceCutRepeatFirstIterate k h ⟨q.val, q.property.1⟩,
-    (cyclicDistanceCutRepeatFirstIterate k h _).property,
-    by
-      rw [coe_cyclicDistanceCutRepeatFirstIterate_apply]
-      exact (congrArg q.val (Fin.ext (Nat.zero_sub k))).trans q.property.2⟩
-  continuous_toFun := (continuous_subtypeVal.comp
-    ((map_continuous _).comp (continuous_subtypeVal.subtype_mk _))).subtype_mk _
+    C(basedCyclicDistanceCut (X := X) δ x, basedCyclicDistanceCut (X := X) δ' x) :=
+  basedCyclicDistanceCutRestrict (cyclicDistanceCutRepeatFirstIterate k h)
+    (coe_cyclicDistanceCutRepeatFirstIterate_apply_zero k h) x
+
+/-- Repeating the first vertex on based distance cuts is the restriction of repeating it on
+distance cuts. -/
+theorem basedCyclicDistanceCutRepeatFirstIterate_eq_restrict (k : ℕ) {δ : Fin (n + 1) → ℝ}
+    {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j) (x : X) :
+    basedCyclicDistanceCutRepeatFirstIterate k h x =
+      basedCyclicDistanceCutRestrict (cyclicDistanceCutRepeatFirstIterate k h)
+        (coe_cyclicDistanceCutRepeatFirstIterate_apply_zero k h) x :=
+  (rfl)
 
 @[simp]
 theorem coe_basedCyclicDistanceCutRepeatFirstIterate_apply (k : ℕ) {δ : Fin (n + 1) → ℝ}
     {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j) (x : X)
     (q : basedCyclicDistanceCut (X := X) δ x) (j : Fin (n + k + 1)) :
     (basedCyclicDistanceCutRepeatFirstIterate k h x q : Fin (n + k + 1) → X) j =
-      q.val ⟨j - k, by omega⟩ :=
-  coe_cyclicDistanceCutRepeatFirstIterate_apply k h ⟨q.val, q.property.1⟩ j
+      q.val ⟨j - k, by omega⟩ := by
+  rw [basedCyclicDistanceCutRepeatFirstIterate_eq_restrict,
+    coe_basedCyclicDistanceCutRestrict_apply, coe_cyclicDistanceCutRepeatFirstIterate_apply]
 
 /-! ### The sequence of distance cuts -/
 
