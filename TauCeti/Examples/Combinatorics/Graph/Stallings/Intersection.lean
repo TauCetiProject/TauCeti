@@ -130,7 +130,7 @@ theorem closure_pair_conj_inf_zpowers_eq_bot {a b : α} (hab : a ≠ b) :
   refine eq_bot_iff.mpr ((inf_le_inf (closure_le_conjGraph a b) (petal_subgroup b).ge).trans ?_)
   rw [← prod_subgroup (conjGraph_isFolded hab) (petal_isFolded b) 0 ()]
   refine ((conjGraph a b).prod (petal b)).subgroup_le_of_forall_dart (fun v => ![1, of b] v.1)
-    (O := {e | e.1.1.2 = true}) ?_ ?_ (one_mem _)
+    (O := {e | e.val.1.2 = true}) ?_ ?_ (one_mem _)
   · rintro ⟨⟨⟨_, _ | _⟩, _⟩, _⟩
     exacts [Or.inr rfl, Or.inl rfl]
   · intro e he
@@ -172,7 +172,7 @@ the cycle reading `a b b⁻¹` accepts only the identity at the pair of base ver
 theorem petal_prod_unfoldedCycle_subgroup {a b : α} (hab : a ≠ b) :
     ((petal a).prod (unfoldedCycle a b)).subgroup ((), 0) = ⊥ := by
   refine eq_bot_iff.mpr (((petal a).prod (unfoldedCycle a b)).subgroup_le_of_forall_dart
-    (fun v => ![1, of a, 1] v.2) (O := {e | e.1.2.2 = true}) ?_ ?_ (one_mem _))
+    (fun v => ![1, of a, 1] v.2) (O := {e | e.val.2.2 = true}) ?_ ?_ (one_mem _))
   · rintro ⟨⟨_, _, _ | _⟩, _⟩
     exacts [Or.inr rfl, Or.inl rfl]
   · intro e he

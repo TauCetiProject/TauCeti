@@ -35,11 +35,12 @@ public section
 
 namespace PowerSeries
 
-variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
-  [CompleteSpace R] [T2Space R] [IsTopologicalRing R] [IsLinearTopology R R]
-  {I : Ideal R} [Fact (IsAdic I)] {f : R⟦X⟧}
+variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [CompleteSpace R]
 
-omit [IsLinearTopology R R] in
+section AdicIdeal
+
+variable [T2Space R] [IsTopologicalRing R] {I : Ideal R} [Fact (IsAdic I)] {f : R⟦X⟧}
+
 /-- Evaluation of a power series with zero constant term and unit linear coefficient is a
 bijection of every adic ideal onto itself. -/
 theorem bijOn_eval₂_of_isUnit (hf : constantCoeff f = 0) (ha : IsUnit (coeff 1 f)) :
@@ -71,7 +72,6 @@ theorem bijOn_eval₂_of_isUnit (hf : constantCoeff f = 0) (ha : IsUnit (coeff 1
     exact ⟨eval₂ (RingHom.id R) y g, hmem hy hg,
       hinv hy hg (subst_substInvOfIsUnit_right f hf ha)⟩
 
-omit [IsLinearTopology R R] in
 /-- If the linear coefficient `a` of `f` divides `c`, evaluation carries `c I` bijectively
 onto `a c I`, provided `a c` is regular. This permits nonunit linear coefficients. -/
 theorem bijOn_eval₂_span_singleton_mul (hf : constantCoeff f = 0)
@@ -107,12 +107,13 @@ theorem bijOn_eval₂_span_singleton_mul (hf : constantCoeff f = 0)
     exact ⟨c * s, Ideal.mem_span_singleton_mul.mpr ⟨s, hs, rfl⟩,
       by simpa only [heval hs] using congrArg (fun z ↦ (coeff 1 f * c) * z) hst⟩
 
+end AdicIdeal
+
 section DiscreteValuationRing
 
-variable [IsDomain R] [IsDiscreteValuationRing R]
+variable [IsTopologicalRing R] {f : R⟦X⟧} [IsDomain R] [IsDiscreteValuationRing R]
   [Fact (IsAdic (IsLocalRing.maximalIdeal R))]
 
-omit [IsLinearTopology R R] [T2Space R] in
 /-- Over a complete discrete valuation ring, a series with zero constant term and linear
 coefficient of valuation `e` maps `𝔪 ^ k` bijectively onto `𝔪 ^ (k + e)` when `e < k`. -/
 theorem bijOn_eval₂_maximalIdeal_pow (hf : constantCoeff f = 0) {e k : ℕ}

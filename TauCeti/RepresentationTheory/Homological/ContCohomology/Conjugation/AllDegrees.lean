@@ -81,7 +81,7 @@ variable (U V : Subgroup G) (g : G)
 /-- For `V = gUg⁻¹`, conjugation `V →ₜ* U`, `v ↦ g⁻¹ v g`: the group half of the compatible
 pair inducing `conjMap`. -/
 def conjHom (hVU : V = U.map (MulAut.conj g).toMonoidHom) : V →ₜ* U where
-  toFun v := ⟨(MulAut.conj g).symm v, Subgroup.mem_map_equiv.mp (hVU ▸ v.2)⟩
+  toFun v := ⟨(MulAut.conj g).symm v, Subgroup.mem_map_equiv.mp (hVU ▸ v.property)⟩
   map_one' := Subtype.ext (map_one _)
   map_mul' x y := Subtype.ext (map_mul _ _ _)
   continuous_toFun := by

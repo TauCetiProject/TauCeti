@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Exponent
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Prod
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Torsion
 import Mathlib.GroupTheory.FiniteAbelian.Basic
+import TauCeti.Algebra.Group.Equiv.Pi
 
 /-!
 # The exponent of an abelian group kills the homology of `K(A, 1)`
@@ -117,9 +118,7 @@ private lemma nsmul_classifyingSpace_pi_singularHomology_eq_zero (ι : Type) [Fi
   · -- reindexing along an equivalence of index types
     intro α β _ eqv h G _ hG
     exact nsmul_classifyingSpace_singularHomology_eq_zero_of_mulEquiv k
-      ({ Equiv.piCongrLeft' G eqv.symm with map_mul' := fun _ _ ↦ rfl } :
-        (∀ b, G b) ≃* ∀ a, G (eqv a)).symm
-      (h (fun a ↦ G (eqv a)) fun a ↦ hG (eqv a))
+      (MulEquiv.piCongrLeft G eqv) (h (fun a ↦ G (eqv a)) fun a ↦ hG (eqv a))
   · -- the empty product is the trivial group
     intro G _ _ n x
     have hx := natCard_nsmul_classifyingSpace_singularHomology_eq_zero k x
@@ -128,8 +127,7 @@ private lemma nsmul_classifyingSpace_pi_singularHomology_eq_zero (ι : Type) [Fi
   · -- split off the factor indexed by `none`
     intro α _ h G _ hG
     exact nsmul_classifyingSpace_singularHomology_eq_zero_of_mulEquiv k
-      ({ Equiv.piOptionEquivProd with map_mul' := fun _ _ ↦ rfl } :
-        (∀ i, G i) ≃* G none × ∀ a, G (some a)).symm
+      MulEquiv.piOptionEquivProd.symm
       (nsmul_classifyingSpace_prod_singularHomology_eq_zero _ _ k (hG none)
         (h (fun a ↦ G (some a)) fun a ↦ hG (some a)))
 

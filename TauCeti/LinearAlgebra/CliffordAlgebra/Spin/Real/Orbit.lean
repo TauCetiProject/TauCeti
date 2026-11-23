@@ -76,7 +76,7 @@ theorem isPretransitive_realCliffordUnitLevel (n : ℕ) (hn : 2 ≤ n) :
     MulAction.IsPretransitive (realCliffordSpinGroupZero n) (realCliffordUnitLevel n) where
   exists_smul_eq x y := by
     obtain ⟨s, hs⟩ :=
-      exists_realCliffordSpinGroupZero_spinVectorAction_eq n hn x.2 y.2
+      exists_realCliffordSpinGroupZero_spinVectorAction_eq n hn x.property y.property
     exact ⟨s, Subtype.ext (by simpa using hs)⟩
 
 end

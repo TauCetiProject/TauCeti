@@ -26,6 +26,9 @@ For a left module `M` over a possibly noncommutative semiring `R`, the dual
 A basis of `M` indexed by `ι` identifies this dual with the coordinate module `ι → Rᵐᵒᵖ`,
 by evaluating a functional at the basis vectors. No finiteness is assumed.
 
+Over a commutative semiring, the dual basis of the dual basis of a finite basis is the image of
+the basis under evaluation in the double dual.
+
 The linear dual of a free module over a commutative ring has the same `finrank` as the module: for a
 finite basis it is identified with its dual (`Module.Basis.toDualEquiv`), and otherwise both
 `finrank`s are `0`. Over a field this is Mathlib's `Subspace.dual_finrank_eq`.
@@ -37,6 +40,7 @@ finite basis it is identified with its dual (`Module.Basis.toDualEquiv`), and ot
 
 ## Main results
 
+* `Module.Basis.dualBasis_dualBasis`: the double dual basis is the evaluation image of the basis.
 * `TauCeti.Module.dual_finrank_eq`: `finrank R (Dual R M) = finrank R M` for a free module
   `M`.
 -/
@@ -66,6 +70,19 @@ theorem oppositeDualEquiv_apply (b : Basis ι R M) (φ : Module.Dual R M) (i : �
 theorem oppositeDualEquiv_symm_apply_self (b : Basis ι R M) (v : ι → Rᵐᵒᵖ) (i : ι) :
     b.oppositeDualEquiv.symm v (b i) = (v i).unop := by
   simp [oppositeDualEquiv]
+
+section DualBasis
+
+variable {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Finite ι]
+  [DecidableEq ι]
+
+/-- The dual basis of the dual basis of a finite basis is its image in the double dual. -/
+@[simp]
+theorem dualBasis_dualBasis (b : Basis ι R M) (i : ι) :
+    b.dualBasis.dualBasis i = Module.Dual.eval R M (b i) :=
+  b.dualBasis.ext fun j ↦ by simp
+
+end DualBasis
 
 end Module.Basis
 

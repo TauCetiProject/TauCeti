@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.LinearAlgebra.TensorProduct.Homology
 
 import TauCeti.RingTheory.Flat.Extensions
-import TauCeti.RingTheory.Flat.Reduced
+import TauCeti.RingTheory.Flat.Reduced.Basic
 import TauCeti.RingTheory.Spectrum.Prime.Semicontinuity
 import TauCeti.Topology.Semicontinuity.Basic
 

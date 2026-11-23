@@ -43,13 +43,15 @@ on that factor, without a domination assumption.
 
 For a compactly supported `C¹` factor `g`, the file also records the directional form
 `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g` of Mathlib's rule `HasCompactSupport.hasFDerivAt_convolution_right`, in
-which the derivative is a convolution with values in `F` rather than in a space of linear maps.
+which the derivative is a convolution with values in `F` rather than in a space of linear maps, and
+its counterpart `∂ᵥ (f ⋆ g) = ∂ᵥ f ⋆ g` for a compactly supported `C¹` kernel `f`.
 
 For mollification by a nonnegative compactly supported kernel `ρ` of integral `1`, the file
 records two bounds that need no regularity of the mollified function `u`. One-sided bounds on the
 forward differences of `u` in a direction pass to the directional derivative of `ρ ⋆ u`: this is
 how a nonsmooth subsolution of a Hamilton–Jacobi inequality, such as a Hopf–Lax function, becomes
-a smooth one. And a bounded `u` has a mollification with bounded derivative, hence Lipschitz.
+a smooth one. And a bounded `u` has a mollification with bounded derivatives of every order the
+kernel allows, hence Lipschitz.
 
 ## Main declarations
 
@@ -64,6 +66,8 @@ a smooth one. And a bounded `u` has a mollification with bounded derivative, hen
   compactly supported `C^N` `g` and `n ≤ N`.
 * `HasCompactSupport.fderiv_convolution_right_apply`: for `g` compactly supported, the
   directional derivative `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g`.
+* `HasCompactSupport.fderiv_convolution_left_apply`: for `f` compactly supported, the
+  directional derivative falls on the kernel, `∂ᵥ (f ⋆ g) = ∂ᵥ f ⋆ g`.
 * `HasCompactSupport.fderiv_fderiv_convolution_right_apply`: the same for two directional
   derivatives, `∂ᵥ ∂ᵥ' (f ⋆ g) = f ⋆ ∂ᵥ ∂ᵥ' g`.
 * `HasCompactSupport.fderiv_convolution_left_apply_le`: mollifying by a nonnegative kernel of
@@ -71,6 +75,8 @@ a smooth one. And a bounded `u` has a mollification with bounded derivative, hen
   the bound `∂_d (ρ ⋆ u) ≤ c` on the directional derivative.
 * `HasCompactSupport.norm_fderiv_convolution_left_le`: the mollification of a function bounded by
   `M` has derivative bounded by `M * ∫ ‖Dρ‖`.
+* `HasCompactSupport.norm_iteratedFDeriv_convolution_left_le`: its `n`-th derivative is bounded by
+  `M * ∫ ‖Dⁿρ‖`.
 * `HasCompactSupport.lipschitzWith_convolution_left`: so it is Lipschitz with constant
   `M * ∫ ‖Dρ‖`.
 -/
@@ -299,6 +305,14 @@ theorem _root_.HasCompactSupport.fderiv_convolution_right_apply (hcg : HasCompac
   rw [(hcg.hasFDerivAt_convolution_right L hf hg x).fderiv,
     convolution_precompR_apply L hf (hcg.fderiv (𝕜 := ℝ)) (hg.continuous_fderiv one_ne_zero) x v]
 
+/-- **Directional derivatives of a convolution, on the kernel.** If `f` is `C¹` with compact
+support and `g` is locally integrable, then the derivative of `f ⋆ g` in a direction `v` is the
+convolution of the derivative of `f` in the direction `v` with `g`. -/
+theorem _root_.HasCompactSupport.fderiv_convolution_left_apply [μ.IsNegInvariant]
+    (hcf : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (hg : LocallyIntegrable g μ) (x v : G) :
+    fderiv ℝ (f ⋆[L, μ] g) x v = ((fun y => fderiv ℝ f y v) ⋆[L, μ] g) x := by
+  rw [← convolution_flip, hcf.fderiv_convolution_right_apply L.flip hg hf, convolution_flip]
+
 /-- **Iterated directional derivatives of a convolution fall on the compactly supported
 factor.** If `f` is locally integrable and `g` is `C²` with compact support, then the derivative
 in the direction `v` of the derivative of `f ⋆ g` in the direction `w` is the convolution of `f`
@@ -373,6 +387,28 @@ theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasur
       _ = ‖fderiv ℝ ρ (x - y)‖ * (M * ‖d‖) := by ring
   · rw [integral_mul_const, integral_sub_left_eq_self (fun y ↦ ‖fderiv ℝ ρ y‖) μ x]
     ring
+
+/-- The mollification `ρ ⋆ u` of a function bounded by `M`, by a `C^N` compactly supported kernel
+`ρ`, has `n`-th derivative bounded by `M * ∫ ‖Dⁿρ‖` for every `n ≤ N`, uniformly in the point. -/
+theorem _root_.HasCompactSupport.norm_iteratedFDeriv_convolution_left_le
+    [IsFiniteMeasureOnCompacts μ] (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ N ρ) {n : ℕ}
+    (hn : n ≤ N) {u : G → E'} (hu : LocallyIntegrable u μ) (huM : ∀ y, ‖u y‖ ≤ M) (x : G) :
+    ‖iteratedFDeriv ℝ n (ρ ⋆[lsmul ℝ ℝ, μ] u) x‖ ≤
+      M * ∫ y, ‖iteratedFDeriv ℝ n ρ y‖ ∂μ := by
+  have hgi : Integrable (fun y ↦ ‖iteratedFDeriv ℝ n ρ y‖) μ :=
+    (hρ.continuous_iteratedFDeriv (by exact_mod_cast hn)).norm.integrable_of_hasCompactSupport
+      (hρc.iteratedFDeriv n).norm
+  rw [← convolution_flip, hρc.iteratedFDeriv_convolution_right _ hu hρ hn, convolution_def]
+  refine (norm_integral_le_of_norm_le ((hgi.comp_sub_left x).mul_const M)
+    (Eventually.of_forall fun y ↦ ?_)).trans_eq ?_
+  · calc _ ≤ ‖u y‖ * ‖iteratedFDeriv ℝ n ρ (x - y)‖ :=
+          (norm_compContinuousMultilinearMap_le _ _).trans_eq (by simp)
+      _ ≤ ‖iteratedFDeriv ℝ n ρ (x - y)‖ * M := by
+          rw [mul_comm]
+          gcongr
+          exact huM y
+  · rw [integral_mul_const, integral_sub_left_eq_self (fun y ↦ ‖iteratedFDeriv ℝ n ρ y‖) μ x,
+      mul_comm]
 
 omit [SFinite μ] in
 /-- The mollification `ρ ⋆ u` of a function bounded by `M`, by a `C¹` compactly supported kernel
