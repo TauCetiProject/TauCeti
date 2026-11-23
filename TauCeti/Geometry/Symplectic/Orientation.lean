@@ -9,9 +9,10 @@ public import Mathlib.LinearAlgebra.Orientation
 public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.Geometry.Symplectic.StandardCompatible
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+public import TauCeti.LinearAlgebra.Complex.Orientation
 public import TauCeti.LinearAlgebra.Orientation.Prod
 
-import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.ExistsCompatible
 import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import TauCeti.LinearAlgebra.Basis.Fin
@@ -79,6 +80,11 @@ space, and the product law computes the orientation of a product such as
   structure have the same symplectic orientation.
 * `TauCeti.AlmostComplexStructure.orientation_eq_of_tames`: the complex orientation of `J` is the
   symplectic orientation of any form taming `J`.
+* `TauCeti.AlmostComplexStructure.map_orientation`: complex linear equivalences carry complex
+  orientations to complex orientations.
+* `TauCeti.AlmostComplexStructure.orientation_ofComplexModule`: on a complex vector space, the
+  complex orientation of multiplication by `i` is the canonical orientation
+  `TauCeti.complexOrientation`.
 * `Module.Basis.orientation_eq_finTwoProd_of_apply_one_eq`: on the plane `ℝ × ℝ`, every complex
   frame `(e, (-e₂, e₁))` is positive for the orientation of the standard basis.
 
@@ -358,7 +364,8 @@ end SymplecticForm
 
 namespace AlmostComplexStructure
 
-variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V] {k : ℕ}
+variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  [AddCommGroup W] [Module ℝ W] [FiniteDimensional ℝ W] {k : ℕ}
 
 /-- The **complex orientation** of a finite-dimensional real vector space `V` with an almost
 complex structure `J`, where `finrank ℝ V = k`: the orientation in which the `J`-adapted bases
@@ -381,6 +388,45 @@ theorem orientation_reindex (J : AlmostComplexStructure V) {n : ℕ}
     (h : n * 2 = k) :
     (b.reindex (finProdFinEquiv.trans (finCongr h))).orientation = J.orientation hk := by
   rw [J.exists_tames.choose_spec.orientation_reindex hb hk h, orientation]
+
+/-- **The complex orientation is natural.** A real linear equivalence `e : V ≃ V'` with
+`e ∘ J = J' ∘ e` carries the complex orientation of `J` to that of `J'`. -/
+theorem map_orientation {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
+    {e : V ≃ₗ[ℝ] W} (he : IsComplexLinearMap J J' e.toLinearMap) (hk : finrank ℝ V = k) :
+    Orientation.map (Fin k) e (J.orientation hk) =
+      J'.orientation (e.finrank_eq.symm.trans hk) := by
+  -- `J'` is the transport of `J`, so it is tamed by the transport of a form taming `J`.
+  have hJ' : J.transport e = J' := ext fun w ↦ by
+    simpa using (isComplexLinearMap_iff_apply J J' _).1 he (e.symm w)
+  obtain ⟨ω, hω⟩ := J.exists_tames
+  rw [J.orientation_eq_of_tames hω hk,
+    (SymplecticForm.isSymplectomorphism_iff_transport_eq.2 rfl).map_orientation hk,
+    J'.orientation_eq_of_tames (hJ' ▸ hω.transport e)]
+
+/-- **The complex orientation of a complex vector space.** On a complex vector space `E`, the
+complex orientation of multiplication by `i` is the canonical orientation
+`TauCeti.complexOrientation E`, in which the real bases `(b₀, i b₀, b₁, i b₁, …)` underlying the
+complex bases `b` are positive. -/
+theorem orientation_ofComplexModule (E : Type*) [AddCommGroup E] [Module ℂ E] [Module ℝ E]
+    [IsScalarTower ℝ ℂ E] [FiniteDimensional ℂ E] [FiniteDimensional ℝ E]
+    (hk : finrank ℝ E = k) (h : 2 * finrank ℂ E = k) :
+    (ofComplexModule E).orientation hk =
+      Orientation.reindex ℝ E (finCongr h) (complexOrientation E) := by
+  set b := (finBasis ℂ E).complexToReal
+  have hb : ∀ i, b (i, 1) = ofComplexModule E (b (i, 0)) := fun i ↦ by
+    simp [b, ofComplexModule_apply]
+  rw [← (ofComplexModule E).orientation_reindex hb hk ((Nat.mul_comm _ _).trans h),
+    (finBasis ℂ E).complexOrientation_eq, ← Basis.orientation_reindex, ← Basis.orientation_reindex]
+  -- Both sides list `b` in the order `(b₀, i b₀, b₁, i b₁, …)`.
+  have he : finProdFinEquiv.trans (finCongr ((Nat.mul_comm _ _).trans h)) =
+      (complexRealIndexEquiv (finrank ℂ E)).trans (finCongr h) :=
+    Equiv.ext fun ⟨i, j⟩ ↦ Fin.ext <| by
+      simp only [Equiv.trans_apply, finCongr_apply, Fin.val_cast, finProdFinEquiv_apply_val,
+        complexRealIndexEquiv_apply_val]
+      ring
+  congr 1
+  exact Basis.eq_of_apply_eq fun i ↦ by
+    simp only [b, he, Basis.reindex_apply, Equiv.symm_trans_apply]
 
 end AlmostComplexStructure
 

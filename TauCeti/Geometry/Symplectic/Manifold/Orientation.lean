@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
@@ -15,7 +16,8 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Normed.Module.Alternating.Tame
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Symplectic.ExistsCompatible
-import TauCeti.Topology.VectorBundle.Coordinates
+import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ComplexTangentBundle
+import TauCeti.Topology.VectorBundle.Complex.Orientation
 
 /-!
 # The symplectic orientation of a symplectic manifold and the complex orientation of an almost
@@ -47,14 +49,17 @@ symplectic orientation.
 An almost complex structure `J` on `M` orients each tangent space by its complex orientation
 (`TauCeti.AlmostComplexStructure.orientation`), in which the `J`-adapted bases
 `(v₁, J v₁, …, vₙ, J vₙ)` are positive. These form the **complex orientation**
-`TauCeti.SmoothAlmostComplexStructure.orientation` of `M`. Local constancy is the same argument
-with the roles exchanged: read in a trivialization near `b`, `J_x` is a continuous family of
-endomorphisms of the model space, and a fixed symplectic form taming `J_b` still tames `J_x` for
-`x` near `b`. The symplectic orientation of any nondegenerate form taming `J` is the complex
-orientation (`TauCeti.SmoothTwoForm.IsNondegenerate.orientation_eq_of_tames`). A map between almost
+`TauCeti.SmoothAlmostComplexStructure.orientation` of `M`: it is the complex orientation
+`TauCeti.Bundle.ContinuousComplexStructure.orientation` of the tangent bundle, whose local
+constancy uses only the continuity of `J`. The symplectic orientation of any two-form taming `J`
+is the complex orientation (`TauCeti.SmoothTwoForm.Tames.orientation_eq`), and on a complex
+manifold the complex orientation is the canonical orientation
+(`TauCeti.SmoothAlmostComplexStructure.orientation_ofComplexManifold`). A map between almost
 complex manifolds of the same dimension whose differential is injective and complex linear
 preserves the complex orientations
-(`TauCeti.SmoothAlmostComplexStructure.isOrientationPreservingAt_orientation`).
+(`TauCeti.SmoothAlmostComplexStructure.isOrientationPreservingAt_orientation`), since complex
+linear equivalences carry complex orientations to complex orientations
+(`TauCeti.AlmostComplexStructure.map_orientation`).
 
 The symplectic orientation of a product form `σ ⊕ τ` on `M × N` is the product orientation of the
 symplectic orientations of `σ` and `τ`
@@ -78,8 +83,10 @@ constant symplectic form on a vector space is its constant linear symplectic ori
 * `TauCeti.SmoothAlmostComplexStructure.isOrientationPreservingAt_orientation`: maps with
   injective complex-linear differentials between almost complex manifolds of the same dimension
   preserve the complex orientations.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.orientation_eq_of_tames`: the symplectic orientation of a
-  form taming `J` is the complex orientation of `J`.
+* `TauCeti.SmoothTwoForm.Tames.orientation_eq`: the symplectic orientation of a form taming `J`
+  is the complex orientation of `J`.
+* `TauCeti.SmoothAlmostComplexStructure.orientation_ofComplexManifold`: on a complex manifold, the
+  complex orientation is the canonical orientation `TauCeti.complexManifoldOrientation`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isOrientationPreservingAt_orientation`: smooth maps
   between manifolds of the same dimension pulling one nondegenerate form back to another preserve
   the symplectic orientations.
@@ -113,81 +120,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   (J : SmoothAlmostComplexStructure I M) {k : ℕ} (hk : finrank ℝ E = k)
 
-/-- The endomorphisms `A` of `E` tamed by a fixed symplectic form `τ₀`, that is with
-`τ₀(u, A u) > 0` for `u ≠ 0`, form an open set. -/
-private theorem isOpen_setOf_forall_ne_zero_pos (τ₀ : SymplecticForm E) :
-    IsOpen {A : E →L[ℝ] E | ∀ u ≠ 0, 0 < τ₀ u (A u)} := by
-  -- `f` is `τ₀` as a continuous bilinear map, so `f u v = τ₀ u v`.
-  set f := LinearMap.toContinuousBilinearMap τ₀.toBilinForm
-  refine isOpen_iff_mem_nhds.2 fun A₀ hA₀ ↦ ?_
-  -- Positivity on the compact unit sphere persists near `A₀`.
-  have hsphere : ∀ᶠ A in 𝓝 A₀, ∀ u ∈ Metric.sphere (0 : E) 1, 0 < τ₀ u (A u) := by
-    refine (isCompact_sphere (0 : E) 1).eventually_forall_of_forall_eventually fun u hu ↦ ?_
-    have hc : ContinuousAt (fun z : (E →L[ℝ] E) × E ↦ f z.2 (z.1 z.2)) (A₀, u) := by fun_prop
-    exact hc.eventually (lt_mem_nhds (hA₀ u (ne_zero_of_mem_unit_sphere ⟨u, hu⟩)))
-  filter_upwards [hsphere] with A hA u hu
-  -- Rescale `u` to the unit sphere.
-  have hn : ‖u‖ ≠ 0 := norm_ne_zero_iff.2 hu
-  have h := hA (‖u‖⁻¹ • u) (by simp [norm_smul, hn])
-  rw [map_smul, map_smul, LinearMap.smul_apply, map_smul, smul_eq_mul, smul_eq_mul,
-    ← mul_assoc] at h
-  exact pos_of_mul_pos_right h (by positivity)
-
-/-- The tangent complex orientations are locally constant in the preferred trivializations of the
-tangent bundle. -/
-private theorem eventually_mapOrientation_orientation_eq (b : M) :
-    ∀ᶠ x in 𝓝 b, ∀ hx : x ∈ (trivializationAt E (TangentSpace I) b).baseSet,
-      (trivializationAt E (TangentSpace I) b).mapOrientation (Fin k) hx
-          ((J.almostComplexStructureAt x).orientation hk) =
-        (trivializationAt E (TangentSpace I) b).mapOrientation (Fin k)
-          (FiberBundle.mem_baseSet_trivializationAt' b)
-          ((J.almostComplexStructureAt b).orientation hk) := by
-  set e := trivializationAt E (TangentSpace I) b
-  have hb : b ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' b
-  -- `J` read in the trivialization at `b`; it depends continuously on the point.
-  set A : M → E →L[ℝ] E := fun x ↦
-    ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) b x b x
-      (J.toEndomorphism x)
-  have hA {x : M} (hx : x ∈ e.baseSet) (u : TangentSpace I x) :
-      A x (e.linearEquivAt ℝ x hx u) = e.linearEquivAt ℝ x hx (J x u) := by
-    simp [A, e, ContinuousLinearMap.inCoordinates_eq_conjContinuousAlgEquiv hx,
-      Trivialization.symm_apply_apply_mk _ hx]
-  have hAc : ContinuousAt A b :=
-    ((contMDiffAt_hom_bundle _).1 (J.toEndomorphism.contMDiff b)).2.continuousAt
-  -- If a symplectic form `τ₀` on `E` tames `A x`, then the orientation at `x` maps to that of `τ₀`.
-  have hmap {x : M} (hx : x ∈ e.baseSet) (τ₀ : SymplecticForm E)
-      (hτ₀ : ∀ u ≠ 0, 0 < τ₀ u (A x u)) :
-      e.mapOrientation (Fin k) hx ((J.almostComplexStructureAt x).orientation hk) =
-        τ₀.orientation hk := by
-    have hτ : (τ₀.transport (e.linearEquivAt ℝ x hx).symm).Tames (J.almostComplexStructureAt x) :=
-      fun u hu ↦ by
-        rw [SymplecticForm.transport_apply, LinearEquiv.symm_symm,
-          almostComplexStructureAt_apply, ← hA hx]
-        exact hτ₀ _ ((LinearEquiv.map_ne_zero_iff _).2 hu)
-    refine (congrArg (e.mapOrientation (Fin k) hx)
-      (AlmostComplexStructure.orientation_eq_of_tames hτ hk)).trans ?_
-    rw [Trivialization.mapOrientation_apply]
-    exact (SymplecticForm.isSymplectomorphism_iff_transport_eq.2
-      (τ₀.transport_transport_symm _)).map_orientation hk
-  -- A symplectic form on `E` taming `A b` also tames `A x` for `x` near `b`.
-  obtain ⟨τ₀, hτ₀⟩ := (J.almostComplexStructureAt b).exists_tames
-  set τE := τ₀.transport (e.linearEquivAt ℝ b hb)
-  have hτE : ∀ u ≠ 0, 0 < τE u (A b u) := fun u hu ↦ by
-    obtain ⟨v, rfl⟩ := (e.linearEquivAt ℝ b hb).surjective u
-    rw [hA hb, SymplecticForm.transport_apply_apply, ← almostComplexStructureAt_apply]
-    exact hτ₀ v fun hv ↦ hu (by rw [hv, map_zero])
-  filter_upwards [hAc.eventually_mem ((isOpen_setOf_forall_ne_zero_pos τE).mem_nhds hτE)]
-    with x hx hxe
-  rw [hmap hxe τE hx, hmap hb τE hτE]
-
 /-- The **complex orientation** of an almost complex manifold `(M, J)`: at each point it is the
 complex orientation of the tangent space, in which the `J`-adapted bases
 `(v₁, J v₁, …, vₙ, J vₙ)` are positive. -/
 def orientation : Manifold.Orientation I M (Fin k) :=
   Manifold.Orientation.ofVectorBundleOrientation (Module.finBasisOfFinrankEq ℝ E hk).orientation
     ((Fintype.card_fin k).trans hk.symm)
-    ⟨fun x ↦ (J.almostComplexStructureAt x).orientation hk,
-      J.eventually_mapOrientation_orientation_eq hk⟩
+    ((J.toContMDiff 0).toContinuousComplexStructure.orientation hk)
 
 /-- The tangent orientation of the complex orientation at `x` is the complex orientation of the
 tangent space at `x`. -/
@@ -195,7 +134,13 @@ tangent space at `x`. -/
 theorem orientationAt_orientation (x : M) :
     (J.orientation hk).orientationAt x = (J.almostComplexStructureAt x).orientation hk := by
   rw [orientation, Manifold.Orientation.orientationAt_ofVectorBundleOrientation,
-    VectorBundleOrientation.coe_mk]
+    Bundle.ContinuousComplexStructure.orientation_apply _ _ _ hk,
+    ContMDiffAlmostComplexStructure.toContinuousComplexStructure_almostComplexStructureAt]
+  -- Changing the regularity of `J` leaves its pointwise structures unchanged.
+  congr 1
+  ext v
+  rw [ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply, toContMDiff_apply,
+    almostComplexStructureAt_apply]
 
 /-- **`J`-adapted bases are positive for the complex orientation.** Every `J`-adapted basis
 `(v₁, J v₁, …, vₙ, J vₙ)` of the tangent space at `x`, listed in this interleaved order, is
@@ -239,24 +184,45 @@ theorem isOrientationPreservingAt_orientation (hk₂ : finrank ℝ E₂ = k) {f 
   -- The differential is invertible, since the two tangent spaces have the same dimension.
   let e := (LinearEquiv.ofInjectiveOfFinrankEq (mfderiv I I₂ f x).toLinearMap hinj
     (hk.trans hk₂.symm)).toContinuousLinearEquiv
-  rw [Manifold.Orientation.isOrientationPreservingAt_iff]
-  refine ⟨e, rfl, ?_⟩
-  rw [orientationAt_orientation, orientationAt_orientation]
-  -- A form `τ₀` taming `J₂` at `f x` pulls back along `e` to a form taming `J` at `x`.
-  obtain ⟨τ₀, hτ₀⟩ := (J₂.almostComplexStructureAt (f x)).exists_tames
-  have hτ : (τ₀.transport e.toLinearEquiv.symm).Tames (J.almostComplexStructureAt x) :=
-    fun u hu ↦ by
-      have h := hτ₀ (e u) ((LinearEquiv.map_ne_zero_iff _).2 hu)
-      rw [almostComplexStructureAt_apply] at h
-      rw [SymplecticForm.transport_apply, LinearEquiv.symm_symm, almostComplexStructureAt_apply]
-      convert h using 2
-      exact hD u
-  exact (congrArg _ (AlmostComplexStructure.orientation_eq_of_tames hτ hk)).trans
-    (((SymplecticForm.isSymplectomorphism_iff_transport_eq.2
-      (τ₀.transport_transport_symm _)).map_orientation hk).trans
-        (AlmostComplexStructure.orientation_eq_of_tames hτ₀ hk₂).symm)
+  have he : (e : TangentSpace I x →L[ℝ] TangentSpace I₂ (f x)) = mfderiv I I₂ f x :=
+    ContinuousLinearMap.ext fun v ↦
+      LinearMap.congr_fun (LinearEquiv.coe_ofInjectiveOfFinrankEq _ hinj (hk.trans hk₂.symm)) v
+  rw [Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ f x e he,
+    orientationAt_orientation, orientationAt_orientation]
+  -- The differential intertwines the two almost complex structures.
+  refine AlmostComplexStructure.map_orientation
+    ((isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ ?_) hk
+  have he' (w : TangentSpace I x) : e w = mfderiv I I₂ f x w := DFunLike.congr_fun he w
+  simp only [almostComplexStructureAt_toLinearMap, ContinuousLinearMap.coe_coe]
+  exact (he' _).trans ((hD v).trans (congrArg _ (he' v).symm))
 
 end Transport
+
+section ComplexManifold
+
+open scoped ComplexManifold
+
+variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
+
+/-- **The complex orientation of a complex manifold.** The complex orientation of the almost
+complex structure of a complex manifold is its canonical orientation
+`TauCeti.complexManifoldOrientation`. -/
+theorem orientation_ofComplexManifold :
+    (ofComplexManifold E M).orientation (finrank_real_of_complex E) =
+      complexManifoldOrientation E M :=
+  Manifold.Orientation.ext fun x ↦ by
+    -- On every tangent space, which is `E`, the structure is multiplication by `i`.
+    have h : (ofComplexManifold E M).almostComplexStructureAt x =
+        AlmostComplexStructure.ofComplexModule E :=
+      AlmostComplexStructure.ext fun v ↦ (almostComplexStructureAt_apply _ x v).trans
+        ((ofComplexManifold_apply (E := E) (M := M) x v).trans
+          (AlmostComplexStructure.ofComplexModule_apply (V := E) v).symm)
+    rw [orientationAt_orientation, orientationAt_complexManifoldOrientation_eq_complexOrientation,
+      h]
+    exact (AlmostComplexStructure.orientation_ofComplexModule E _ rfl).trans (by simp)
+
+end ComplexManifold
 
 end SmoothAlmostComplexStructure
 
@@ -342,15 +308,6 @@ theorem orientationAt_orientation (x : M) :
   rw [orientation, Manifold.Orientation.orientationAt_ofVectorBundleOrientation,
     VectorBundleOrientation.coe_mk]
 
-/-- **Forms taming `J` induce its complex orientation.** The symplectic orientation of a
-nondegenerate two-form `σ` taming an almost complex structure `J` is the complex orientation of
-`J`. -/
-theorem orientation_eq_of_tames {J : SmoothAlmostComplexStructure I M} (hJ : σ.Tames J) :
-    hσ.orientation hk = J.orientation hk :=
-  Manifold.Orientation.ext fun x ↦ by
-    rw [orientationAt_orientation, SmoothAlmostComplexStructure.orientationAt_orientation]
-    exact (AlmostComplexStructure.orientation_eq_of_tames ((hσ.tames_iff).1 hJ x) hk).symm
-
 section Transport
 
 variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂]
@@ -415,6 +372,17 @@ theorem orientation_prod (hτ : τ.IsNondegenerate) (hm : finrank ℝ E = m) (hn
 end Prod
 
 end IsNondegenerate
+
+/-- **Forms taming `J` induce its complex orientation.** The symplectic orientation of a two-form
+`σ` taming an almost complex structure `J`, which is nondegenerate, is the complex orientation of
+`J`. -/
+theorem Tames.orientation_eq {J : SmoothAlmostComplexStructure I M} (hJ : σ.Tames J)
+    (hk : finrank ℝ E = k) : hJ.isNondegenerate.orientation hk = J.orientation hk :=
+  Manifold.Orientation.ext fun x ↦ by
+    rw [IsNondegenerate.orientationAt_orientation,
+      SmoothAlmostComplexStructure.orientationAt_orientation]
+    exact (AlmostComplexStructure.orientation_eq_of_tames
+      ((hJ.isNondegenerate.tames_iff).1 hJ x) hk).symm
 
 end SmoothTwoForm
 

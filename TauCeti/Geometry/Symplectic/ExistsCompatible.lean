@@ -8,8 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Finrank
 public import TauCeti.Geometry.Symplectic.Restrict
 
-import Mathlib.LinearAlgebra.Matrix.BilinearForm
-import Mathlib.LinearAlgebra.Matrix.DotProduct
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # Every symplectic vector space carries a compatible almost complex structure
@@ -220,24 +219,18 @@ structure `J` on a finite-dimensional real vector space and any inner product `g
 `ω(u, v) = g(J u, v) - g(u, J v)` is alternating and `ω(v, J v) = g(J v, J v) + g(v, v) > 0` for
 `v ≠ 0`, so it is a symplectic form taming `J`. -/
 theorem exists_tames (J : AlmostComplexStructure V) : ∃ ω : SymplecticForm V, ω.Tames J := by
-  -- Any inner product on `V` will do; take the dot product in a basis.
-  let e := (Module.finBasis ℝ V).equivFun
-  let g : LinearMap.BilinForm ℝ V := (Matrix.toBilin' 1).compl₁₂ e.toLinearMap e.toLinearMap
-  have hge (v w : V) : g v w = e v ⬝ᵥ e w := by simp [g, Matrix.toBilin'_apply']
+  -- Any inner product `g` on `V` will do.
+  obtain ⟨Q, hQ⟩ := exists_posDef_quadraticForm ℝ V
+  let g := Q.associated
   let B : LinearMap.BilinForm ℝ V :=
     g.compl₁₂ J.toLinearMap LinearMap.id - g.compl₁₂ LinearMap.id J.toLinearMap
-  have hB (u v : V) : B u v = e (J u) ⬝ᵥ e v - e u ⬝ᵥ e (J v) := by simp [B, hge]
+  have hB (u v : V) : B u v = g (J u) v - g u (J v) := by simp [B]
+  have halt : B.IsAlt := fun v ↦ by rw [hB, QuadraticMap.associated_isSymm, sub_self]
   have hpos (v : V) (hv : v ≠ 0) : 0 < B v (J v) := by
-    rw [hB, J.apply_apply, map_neg, dotProduct_neg, sub_neg_eq_add]
-    exact add_pos_of_nonneg_of_pos (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg _)
-      (lt_of_le_of_ne (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg _)
-        (Ne.symm ((not_congr dotProduct_self_eq_zero).2 ((LinearEquiv.map_ne_zero_iff e).2 hv))))
-  have halt : B.IsAlt := fun v ↦ by rw [hB, dotProduct_comm, sub_self]
-  -- A form taming `J` is nondegenerate: `ω(v, J v) > 0` for `v ≠ 0`.
-  refine ⟨⟨B, halt, (LinearMap.IsRefl.nondegenerate_iff_separatingLeft halt.isRefl).2
-    fun v hv ↦ ?_⟩, hpos⟩
-  by_contra hv0
-  exact (hpos v hv0).ne' (hv (J v))
+    rw [hB, J.apply_apply, map_neg, sub_neg_eq_add, QuadraticMap.associated_eq_self_apply,
+      QuadraticMap.associated_eq_self_apply]
+    exact add_pos (hQ _ (J.map_ne_zero_iff.2 hv)) (hQ v hv)
+  exact ⟨SymplecticForm.ofTames B halt hpos, SymplecticForm.tames_ofTames halt hpos⟩
 
 end AlmostComplexStructure
 
