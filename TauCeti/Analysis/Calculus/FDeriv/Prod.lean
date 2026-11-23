@@ -97,8 +97,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   uniformly bounded derivatives, the derivatives of `x ↦ f (x, uᵢ x)` are uniformly bounded.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
-* `HasFDerivAt.hasDerivAt_comp_prodMk_of_fderiv_right_eq_zero`: the scalar derivative along
-  such a graph is the derivative of the fixed spatial slice, applied to `1`.
+* `HasFDerivAt.comp_graph_of_fderiv_right_eq_zero`: a derivative witness along such a graph
+  is the restriction of the ambient derivative to the first factor.
 * `DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices`: the derivative of a graph map from its
   horizontal derivative and its vertical identity derivative.
 -/
@@ -282,18 +282,18 @@ theorem _root_.HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_
     fderiv_slice_left hf.differentiableAt]
   simp
 
-/-- If the spatial derivative vanishes at `(t, u t)`, following a differentiable path through
-`u t` gives the same parameter derivative as holding the spatial point fixed at `u t`.
-In particular, this applies when the spatial slice is locally constant near `u t`. -/
-theorem _root_.HasFDerivAt.hasDerivAt_comp_prodMk_of_fderiv_right_eq_zero
-    {u : 𝕜 → F} {f : 𝕜 × F → G} {f' : 𝕜 × F →L[𝕜] G} {t : 𝕜}
-    (hf : HasFDerivAt f f' (t, u t)) (hu : DifferentiableAt 𝕜 u t)
-    (hzero : fderiv 𝕜 (fun y ↦ f (t, y)) (u t) = 0) :
-    HasDerivAt (fun s ↦ f (s, u s)) (f' (1, 0)) t := by
-  have hcomp := ((hf.comp_graph hu.hasFDerivAt).differentiableAt).hasFDerivAt.hasDerivAt
+/-- If the spatial derivative vanishes at `(a, u a)`, following a differentiable graph through
+`u a` gives the same parameter derivative as holding the spatial point fixed at `u a`.
+In particular, this applies when the spatial slice is locally constant near `u a`. -/
+theorem _root_.HasFDerivAt.comp_graph_of_fderiv_right_eq_zero
+    {u : E → F} {f : E × F → G} {f' : E × F →L[𝕜] G}
+    (hf : HasFDerivAt f f' (a, u a)) (hu : DifferentiableAt 𝕜 u a)
+    (hzero : fderiv 𝕜 (fun y ↦ f (a, y)) (u a) = 0) :
+    HasFDerivAt (fun x ↦ f (x, u x)) (f'.comp (ContinuousLinearMap.inl 𝕜 E F)) a := by
+  have hcomp := (hf.comp_graph hu.hasFDerivAt).differentiableAt.hasFDerivAt
   rw [hf.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero hu hzero,
     fderiv_slice_left hf.differentiableAt, hf.fderiv] at hcomp
-  simpa using hcomp
+  exact hcomp
 
 /-- If a differentiable function on a product has horizontal slice derivative `A` and vertical
 slice derivative the identity, then its graph map has derivative the canonical shear by `A`. -/
