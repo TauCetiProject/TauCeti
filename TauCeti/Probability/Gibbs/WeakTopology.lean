@@ -32,11 +32,13 @@ every point, `TauCeti.tendsto_of_forall_tendsto_fullShift_cylinder`.
 
 For `S = Bool` the *correlation functions* `ρ_F(μ) = μ{x : x = 1 on F}`, `F ⊆ I` finite
 (`MeasureTheory.ProbabilityMeasure.correlationFunction`), determine `μ`
-(`TauCeti.ext_of_correlationFunction`), and for countable `I` weak convergence is convergence of
-all correlation functions, `TauCeti.tendsto_iff_forall_tendsto_correlationFunction`. The set of
-configurations that are `1` on `A` and `0` on `B` is the set `{x = 1 on A}` minus the finite union
-of the sets `{x = 1 on A ∪ {b}}`, `b ∈ B`, so its mass is a difference of masses of finite unions
-of elements of the π-system of the sets `{x = 1 on F}`.
+(`TauCeti.ext_of_correlationFunction`), because the traces of the sets `{x : x = 1 on F}` generate
+the trace σ-algebra (`TauCeti.measurableSpace_eq_generateFrom_cylinder_true`), and for countable
+`I` weak convergence is convergence of all correlation functions,
+`TauCeti.tendsto_iff_forall_tendsto_correlationFunction`. The set of configurations that are `1`
+on `A` and `0` on `B` is the set `{x = 1 on A}` minus the finite union of the sets
+`{x = 1 on A ∪ {b}}`, `b ∈ B`, so its mass is a difference of masses of finite unions of elements
+of the π-system of the sets `{x = 1 on F}`.
 
 ## References
 
@@ -82,9 +84,9 @@ theorem isPiSystem_cylinder :
     exact ⟨fun j hj => (hw j (Or.inl hj)).trans (hzx j hj),
       fun j hj => (hw j (Or.inr hj)).trans (hzy j hj)⟩
 
-/-- The cylinder sets of a constant configuration form a π-system. -/
-theorem isPiSystem_cylinder_const (a : A) :
-    IsPiSystem {C : Set (G → A) | ∃ U : Finset G, C = FullShift.cylinder U fun _ => a} := by
+/-- The cylinder sets of a fixed configuration form a π-system. -/
+theorem isPiSystem_cylinder_fixed (x : G → A) :
+    IsPiSystem {C : Set (G → A) | ∃ U : Finset G, C = FullShift.cylinder U x} := by
   classical
   rintro _ ⟨U, rfl⟩ _ ⟨V, rfl⟩ -
   refine ⟨U ∪ V, ?_⟩
@@ -110,6 +112,12 @@ theorem isClopen_preimage_cylinder (s : Finset I) (t : Set (s → S)) :
     (isClopen_discrete t).preimage (continuous_pi fun i => continuous_apply (i : I))
   exact h.preimage continuous_subtypeVal
 
+omit [TopologicalSpace S] [DiscreteTopology S] in
+/-- The trace on a set of configurations of a cylinder set is measurable. -/
+theorem measurableSet_preimage_fullShift_cylinder [MeasurableSpace S] [MeasurableSingletonClass S]
+    (s : Finset I) (η : I → S) : MeasurableSet ((↑) ⁻¹' FullShift.cylinder s η : Set X) :=
+  measurable_subtypeVal (FullShift.measurableSet_cylinder s η)
+
 variable [MeasurableSpace S] [DiscreteMeasurableSpace S]
 
 omit [TopologicalSpace S] [DiscreteTopology S] in
@@ -132,7 +140,7 @@ theorem tendsto_of_forall_tendsto_fullShift_cylinder {ι : Type*} {l : Filter ι
   refine (FullShift.isPiSystem_cylinder.comap ((↑) : X → I → S)
     ).tendsto_probabilityMeasure_of_tendsto_of_mem ?_ ?_ ?_
   · rintro _ ⟨_, ⟨s, η, rfl⟩, rfl⟩
-    exact measurable_subtypeVal (FullShift.measurableSet_cylinder s η)
+    exact measurableSet_preimage_fullShift_cylinder s η
   · -- Every open set contains a cylinder neighbourhood of each of its points.
     intro u hu x hx
     obtain ⟨U, hU, rfl⟩ := isOpen_induced_iff.mp hu
@@ -194,13 +202,17 @@ section Bool
 
 variable {I : Type*} {X : Set (I → Bool)}
 
-/-- A cylinder set in `Bool`-valued configurations is the set where the configuration is `1` on
-`A` minus the union of the sets where it is `1` on `A ∪ {b}`, for `b ∈ B`. -/
-private theorem fullShift_cylinder_eq_diff [DecidableEq I] (s : Finset I) (η : I → Bool) :
-    FullShift.cylinder s η =
-      FullShift.cylinder (s.filter (η · = true)) (fun _ => true) \
-        ⋃ b ∈ s.filter (η · = false),
-          FullShift.cylinder (insert b (s.filter (η · = true))) fun _ => true := by
+/-- The trace of a cylinder set in `Bool`-valued configurations is the trace of the set where the
+configuration is `1` on `A` minus the union of the traces of the sets where it is `1` on
+`A ∪ {b}`, for `b ∈ B`. -/
+private theorem preimage_fullShift_cylinder_eq_diff [DecidableEq I] (s : Finset I) (η : I → Bool) :
+    ((↑) ⁻¹' FullShift.cylinder s η : Set X) =
+      (↑) ⁻¹' FullShift.cylinder (s.filter (η · = true)) (fun _ => true) \
+        ⋃ t ∈ (s.filter (η · = false)).image
+          (fun b => (↑) ⁻¹' FullShift.cylinder (insert b (s.filter (η · = true))) fun _ => true),
+          t := by
+  rw [Finset.set_biUnion_finset_image, ← preimage_iUnion₂, ← preimage_sdiff]
+  congr 1
   ext x
   simp only [FullShift.mem_cylinder, Set.mem_sdiff, mem_iUnion, Finset.mem_filter,
     Finset.mem_insert, exists_prop, not_exists, not_and]
@@ -227,19 +239,14 @@ private theorem apply_preimage_fullShift_cylinder [DecidableEq I] (ρ : Probabil
       ρ (⋃ t ∈ (s.filter (η · = false)).image
           (fun b => (↑) ⁻¹' FullShift.cylinder (insert b (s.filter (η · = true))) fun _ => true),
         t) := by
-  have hsub : (⋃ b ∈ s.filter (η · = false), ((↑) ⁻¹' FullShift.cylinder
-      (insert b (s.filter (η · = true))) fun _ => true : Set X)) ⊆
-      (↑) ⁻¹' FullShift.cylinder (s.filter (η · = true)) fun _ => true :=
-    iUnion₂_subset fun _ _ _ hx j hj => hx j (Finset.mem_insert_of_mem hj)
-  have hmeas : MeasurableSet (⋃ b ∈ s.filter (η · = false), ((↑) ⁻¹' FullShift.cylinder
-      (insert b (s.filter (η · = true))) fun _ => true : Set X)) :=
-    Finset.measurableSet_biUnion _ fun _ _ =>
-      measurable_subtypeVal (FullShift.measurableSet_cylinder _ _)
-  rw [Finset.set_biUnion_finset_image, ProbabilityMeasure.correlationFunction_def,
-    fullShift_cylinder_eq_diff, preimage_sdiff, preimage_iUnion₂, ← ENNReal.coe_inj,
-    ENNReal.coe_sub]
-  simp only [ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure]
-  exact measure_sdiff hsub hmeas.nullMeasurableSet (measure_ne_top _ _)
+  rw [preimage_fullShift_cylinder_eq_diff, ← ENNReal.coe_inj, ENNReal.coe_sub]
+  simp only [ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure,
+    ProbabilityMeasure.correlationFunction_def]
+  refine measure_sdiff (iUnion₂_subset fun t ht => ?_)
+    (Finset.measurableSet_biUnion _ fun t ht => ?_).nullMeasurableSet (measure_ne_top _ _) <;>
+  obtain ⟨b, -, rfl⟩ := Finset.mem_image.mp ht
+  · exact fun x hx j hj => hx j (Finset.mem_insert_of_mem hj)
+  · exact measurableSet_preimage_fullShift_cylinder _ _
 
 /-- **Weak convergence is convergence of correlation functions.** For probability measures on a
 set of `Bool`-valued configurations over a countable index set, weak convergence along a
@@ -258,44 +265,51 @@ theorem tendsto_iff_forall_tendsto_correlationFunction [Countable I] {ι : Type*
       (isClopen_preimage_cylinder F _)
   · -- A cylinder set is the difference of a correlation event and a finite union of correlation
     -- events, which lie in a π-system of measurable sets on which the masses converge.
-    have hC := (FullShift.isPiSystem_cylinder_const (G := I) true).comap ((↑) : X → I → Bool)
+    have hC := (FullShift.isPiSystem_cylinder_fixed (G := I) fun _ => true).comap
+      ((↑) : X → I → Bool)
     simp only [apply_preimage_fullShift_cylinder]
     refine (h _).sub (hC.tendsto_probabilityMeasure_biUnion ?_ ?_ ?_)
     · intro t ht
       obtain ⟨b, -, rfl⟩ := Finset.mem_image.mp ht
       exact ⟨_, ⟨_, rfl⟩, rfl⟩
     · rintro _ ⟨_, ⟨F, rfl⟩, rfl⟩
-      exact measurable_subtypeVal (FullShift.measurableSet_cylinder _ _)
+      exact measurableSet_preimage_fullShift_cylinder _ _
     · rintro _ ⟨_, ⟨F, rfl⟩, rfl⟩
       exact h F
+
+/-- The traces of the cylinder sets of the constant `1` generate the trace σ-algebra on a set of
+`Bool`-valued configurations. -/
+theorem measurableSpace_eq_generateFrom_cylinder_true :
+    (inferInstance : MeasurableSpace X) = MeasurableSpace.generateFrom
+      (range fun F : Finset I => (↑) ⁻¹' FullShift.cylinder F fun _ => true) := by
+  set C := range fun F : Finset I => ((↑) ⁻¹' FullShift.cylinder F fun _ => true : Set X)
+  refine le_antisymm (Measurable.comap_le ?_) (MeasurableSpace.generateFrom_le ?_)
+  · -- The set where a coordinate is `0` is the complement of the set where it is `1`.
+    let : MeasurableSpace X := MeasurableSpace.generateFrom C
+    refine measurable_pi_iff.mpr fun i => measurable_to_countable' fun b => ?_
+    have h1 := MeasurableSpace.measurableSet_generateFrom (s := C) ⟨{i}, rfl⟩
+    cases b
+    · convert h1.compl using 1
+      ext x
+      simp [FullShift.mem_cylinder]
+    · convert h1 using 1
+      ext x
+      simp [FullShift.mem_cylinder]
+  · rintro _ ⟨F, rfl⟩
+    exact measurableSet_preimage_fullShift_cylinder _ _
 
 /-- **Correlation functions determine the measure.** Two probability measures on a set of
 `Bool`-valued configurations with the same correlation functions are equal. -/
 theorem ext_of_correlationFunction {μ ν : ProbabilityMeasure X}
     (h : ∀ F : Finset I, μ.correlationFunction F = ν.correlationFunction F) : μ = ν := by
-  let C : Set (Set X) := {A | ∃ t ∈ {C : Set (I → Bool) | ∃ F : Finset I,
-    C = FullShift.cylinder F fun _ => true}, (↑) ⁻¹' t = A}
-  have hmem (F : Finset I) : ((↑) ⁻¹' FullShift.cylinder F fun _ => true : Set X) ∈ C :=
-    ⟨_, ⟨F, rfl⟩, rfl⟩
-  -- The traces of the cylinder sets of the constant `1` generate the trace σ-algebra, because
-  -- the set where a coordinate is `0` is the complement of the set where it is `1`.
-  have hgen : (inferInstance : MeasurableSpace X) = MeasurableSpace.generateFrom C := by
-    refine le_antisymm (Measurable.comap_le ?_) (MeasurableSpace.generateFrom_le ?_)
-    · let : MeasurableSpace X := MeasurableSpace.generateFrom C
-      refine measurable_pi_iff.mpr fun i => measurable_to_countable' fun b => ?_
-      have h1 := MeasurableSpace.measurableSet_generateFrom (hmem {i})
-      cases b
-      · convert h1.compl using 1
-        ext x
-        simp [FullShift.mem_cylinder]
-      · convert h1 using 1
-        ext x
-        simp [FullShift.mem_cylinder]
-    · rintro _ ⟨_, ⟨F, rfl⟩, rfl⟩
-      exact measurable_subtypeVal (FullShift.measurableSet_cylinder _ _)
-  refine ProbabilityMeasure.toMeasure_injective (ext_of_generate_finite C hgen
-    ((FullShift.isPiSystem_cylinder_const true).comap _) ?_ (by simp))
-  rintro _ ⟨_, ⟨F, rfl⟩, rfl⟩
+  have hC : IsPiSystem
+      (range fun F : Finset I => ((↑) ⁻¹' FullShift.cylinder F fun _ => true : Set X)) := by
+    convert (FullShift.isPiSystem_cylinder_fixed fun _ => true).comap ((↑) : X → I → Bool) using 1
+    ext
+    simp [eq_comm]
+  refine ProbabilityMeasure.toMeasure_injective
+    (ext_of_generate_finite _ measurableSpace_eq_generateFrom_cylinder_true hC ?_ (by simp))
+  rintro _ ⟨F, rfl⟩
   have := congrArg ((↑) : ℝ≥0 → ENNReal) (h F)
   simpa only [ProbabilityMeasure.correlationFunction_def,
     ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure] using this
