@@ -24,8 +24,9 @@ The pure-tensor map also restricts to the polar kernel of a vector, so orthogona
 be extended before passing to quotient spaces.
 It lifts isometries and isometric equivalences by extending their underlying linear maps, records
 the interaction with the additive operations on forms, compares direct and successive extension
-through a scalar tower, and proves that nondegenerate forms remain nondegenerate under any free
-scalar extension (in particular over a field extension), with no finiteness assumption. It also
+through a scalar tower, and proves that, over a ring in which `2` is invertible, nondegenerate
+forms remain nondegenerate under any free scalar extension (in particular over a field extension in
+characteristic not two), with no finiteness assumption. It also
 identifies the base change of a diagonal form with the diagonal form obtained by mapping its
 coefficients into the target algebra, extends orthogonal and special orthogonal automorphisms so a
 quadratic space's rational symmetries act on each scalar extension, and shows that extending scalars
@@ -400,8 +401,9 @@ theorem exists_isUnit_baseChange {Q : QuadraticForm R M} (hQ : ∃ v, IsUnit (Q 
   hQ.imp' (1 ⊗ₜ ·) fun _ hv ↦ by
     simpa [baseChange_tmul, Algebra.smul_def] using hv.map (algebraMap R A)
 
-/-- A nondegenerate quadratic form stays nondegenerate after a free scalar extension, with no
-finiteness assumption on the module; in particular after any extension of its base field. -/
+/-- Over a ring in which `2` is invertible, a nondegenerate quadratic form stays nondegenerate
+after any free scalar extension, with no finiteness assumption on the module; in particular after
+any extension of a base field of characteristic not two. -/
 theorem Nondegenerate.baseChange [Module.Free R A] {Q : QuadraticForm R M}
     (hQ : Q.Nondegenerate) : (Q.baseChange A).Nondegenerate := by
   let : Invertible (2 : A) :=
