@@ -5,26 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Free
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Projective
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Projective.Basic
 
 /-!
 # Graded-projective resolutions of curved right modules
 
-This file establishes the finite-dimension graded-projective replacement theorem and defines left
-resolutions in the closed abelian category of curved differential graded right modules.
-
-1. **Finite graded projective dimension replacement.** If the underlying graded right module of a
-   curved right module `N` has finite projective dimension `≤ d`, then there is a closed morphism
-   `f : Q ⟶ N` from a graded-projective curved module `Q` whose mapping cone is absolutely
-   acyclic. The proof proceeds by induction on `d`, covering `N` by a graded-projective curved
-   module via `exists_epi_contractible_gradedProjective`, resolving the kernel `K`, and taking the
-   mapping cone of `Q' ⟶ K ⟶ P`.
-2. **Left resolutions.** A `LeftResolution` of a curved module `M` is a sequence of short exact
-   sequences `0 ⟶ K_{n+1} ⟶ P_n ⟶ K_n ⟶ 0` in the closed abelian category starting from
-   `K_0 ≅ M`. Iterating `exists_epi_contractible_gradedProjective` and kernels produces a
-   canonical graded-projective left resolution `LeftResolution.ofGradedProjective M`.
+This file defines left resolutions in the closed abelian category of curved differential graded
+right modules. A `LeftResolution` of a curved module `M` is a sequence of short exact sequences
+`0 ⟶ K_{n+1} ⟶ P_n ⟶ K_n ⟶ 0` in the closed abelian category starting from `K_0 ≅ M`.
+Iterating `exists_epi_contractible_gradedProjective` and kernels produces a canonical
+graded-projective left resolution `LeftResolution.ofGradedProjective M`.
 
 ## Main definitions
 
@@ -39,9 +30,6 @@ resolutions in the closed abelian category of curved differential graded right m
 
 ## Main results
 
-* `TauCeti.CurvedDGRightModuleCat.exists_gradedProjective_absolutelyAcyclic_cone`: every curved
-  module whose underlying graded module has finite projective dimension admits a closed morphism
-  from a graded-projective curved module with absolutely acyclic cone.
 * `TauCeti.CurvedDGRightModuleCat.LeftResolution.projective_ofGradedProjective_term`: every term
   of `LeftResolution.ofGradedProjective M` is graded-projective.
 * `TauCeti.CurvedDGRightModuleCat.LeftResolution.exact_diff_aug` and
@@ -75,84 +63,6 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
 local instance : SetLike.GradedMonoid (InternalGrading.ofDecomposition 𝒜).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
-
-/-! ### Finite graded projective dimension replacement -/
-
-/-- If `g : Q' ⟶ K` becomes an isomorphism in the absolute derived category, then the induced
-comparison `cone (g ≫ ι) ⟶ cone ι` with `𝟙 P` on the target also becomes an isomorphism there. -/
-private theorem isIso_absoluteDerived_coneMap_id {Q' K P : CurvedDGRightModuleCat.{u, u, u} h}
-    (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q' ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) K)
-    (ι : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) K ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P)
-    (hg : IsIso ((AbsoluteDerivedCategory.Q R h).map ((dgClosedToHomotopy R).map g))) :
-    IsIso ((AbsoluteDerivedCategory.Q R h).map ((dgClosedToHomotopy R).map
-      (coneMap (g ≫ ι) ι g
-        (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P)) 0
-        (by intro x; simp)))) := by
-  let φ := (AbsoluteDerivedCategory.Q R h).mapTriangle.map
-    (coneTriangleMap (g ≫ ι) ι g
-      (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P)) 0 (by intro x; simp))
-  have hT₁ := (AbsoluteDerivedCategory.Q R h).map_distinguished _
-    (coneTriangle_distinguished (g ≫ ι))
-  have hT₂ := (AbsoluteDerivedCategory.Q R h).map_distinguished _
-    (coneTriangle_distinguished ι)
-  have h₂ : IsIso φ.hom₂ := by
-    simp only [φ, Functor.mapTriangle_map_hom₂, coneTriangleMap_hom₂]
-    infer_instance
-  exact isIso₃_of_isIso₁₂ φ hT₁ hT₂ hg h₂
-
-/-- Every curved right module whose underlying graded module has projective dimension `≤ d`
-admits a closed morphism from a graded-projective curved right module whose mapping cone is
-absolutely acyclic. -/
-theorem exists_gradedProjective_absolutelyAcyclic_cone
-    {N : CurvedDGRightModuleCat.{u, u, u} h} {d : ℕ}
-    (hd : HasProjectiveDimensionLE (toGradedModuleCat N) d) :
-    ∃ (Q : CurvedDGRightModuleCat.{u, u, u} h)
-      (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q ⟶
-        ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N),
-      Projective (toGradedModuleCat Q) ∧
-        absolutelyAcyclic R h (DGHomotopyCategory.of R (cone f)) := by
-  induction d generalizing N with
-  | zero =>
-    have hN : Projective (toGradedModuleCat N) :=
-      (projective_iff_hasProjectiveDimensionLE_zero _).2 hd
-    refine ⟨N, 𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N), hN, ?_⟩
-    exact (absolutelyAcyclic R h).prop_of_isZero (isZero_homotopy_cone_isIso _)
-  | succ d ih =>
-    obtain ⟨P, p, hp, hP, _⟩ := exists_epi_contractible_gradedProjective N
-    let K := kernelObj p
-    let ι := kernelι p
-    let S := ShortComplex.mk ι p (kernelι_comp p)
-    have : Epi p := hp
-    have hS : S.ShortExact := shortExact_kernelι p
-    have hSF := hS.map_of_exact (forgetDifferential (h := h))
-    have hK : HasProjectiveDimensionLE (toGradedModuleCat K) d :=
-      (hSF.hasProjectiveDimensionLT_X₃_iff d hP).1 hd
-    obtain ⟨Q', g, hQ', hg⟩ := ih hK
-    have hcomp : (g ≫ ι) ≫ p = 0 := by
-      rw [Category.assoc, kernelι_comp, Limits.comp_zero]
-    let f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone (g ≫ ι)) ⟶
-        ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N :=
-      coneDesc (g ≫ ι) p hcomp
-    refine ⟨cone (g ≫ ι), f, inferInstance, ?_⟩
-    let cMap := coneMap (g ≫ ι) ι g
-      (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P)) 0 (by intro x; simp)
-    have hfac : f = cMap ≫ coneDesc ι p (kernelι_comp p) := by
-      apply closedHom_ext
-      rintro ⟨x₁, x₂⟩
-      simp only [f, cMap, closedHom_comp, LinearMap.comp_apply, closedHom_coneDesc,
-        closedHom_coneMap_apply, closedHom_id, LinearMap.id_apply, Submodule.coe_zero,
-        LinearMap.zero_apply, add_zero]
-      rfl
-    have hcMapIso := isIso_absoluteDerived_coneMap_id g ι
-      ((AbsoluteDerivedCategory.isIso_Q_map_iff g).2 hg)
-    have hDescIso : IsIso ((AbsoluteDerivedCategory.Q R h).map
-        ((dgClosedToHomotopy R).map (coneDesc ι p (kernelι_comp p)))) := by
-      rw [AbsoluteDerivedCategory.isIso_Q_map_iff, ← totalization_eq S]
-      exact totalizations_le_absolutelyAcyclic R h _ (totalizations_totalization hS)
-    rw [← AbsoluteDerivedCategory.isIso_Q_map_iff, hfac, Functor.map_comp, Functor.map_comp]
-    infer_instance
 
 /-! ### Left resolutions in the closed abelian category -/
 
