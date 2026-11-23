@@ -142,25 +142,19 @@ theorem airyChi_zero : airyChi 0 = 1 := by
   simp only [airyChi_def, zero_div, zero_add, Real.Gamma_one, Real.Gamma_one_half_eq, mul_one,
     div_self hπ]
 
-/-- `Γ(3/2) = √π / 2`, the Gamma value in `χ(1)` and `χ(2)`: the case `n = 1` of
-`Real.Gamma_nat_add_half_eq_factorial`. -/
-private theorem Gamma_three_halves : Real.Gamma (3 / 2) = √π / 2 := by
-  have h := Real.Gamma_nat_add_half_eq_factorial 1
-  norm_num at h
-  rw [h]
-  ring
-
 /-- `χ(1) = π/2`. -/
 @[simp]
 theorem airyChi_one : airyChi 1 = π / 2 := by
-  norm_num [airyChi_def, Gamma_three_halves]
-  rw [← mul_div_assoc, Real.mul_self_sqrt Real.pi_pos.le]
+  have h1 : (1 : ℝ) / 2 + 1 = 3 / 2 := by norm_num
+  have h2 : (1 : ℝ) / 2 + 1 / 2 = 1 := by norm_num
+  rw [airyChi_def, h1, h2, Real.Gamma_three_halves, Real.Gamma_one, div_one, ← mul_div_assoc,
+    Real.mul_self_sqrt Real.pi_pos.le]
 
 /-- `χ(2) = 2`. -/
 @[simp]
 theorem airyChi_two : airyChi 2 = 2 := by
   have hπ : √π ≠ 0 := (Real.sqrt_pos.2 Real.pi_pos).ne'
-  norm_num [airyChi_def, Gamma_three_halves]
+  norm_num [airyChi_def, Real.Gamma_three_halves]
   field_simp
 
 /-- `χ` is strictly increasing on `(-1, ∞)`, in particular on `(0, ∞)`. -/

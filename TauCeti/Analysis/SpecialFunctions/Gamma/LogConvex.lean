@@ -247,6 +247,8 @@ theorem strictMonoOn_Gamma_add_div_Gamma {c : ℝ} (hc : 0 < c) :
     nlinarith
   refine (log_lt_log_iff (hratio hs).1 (hratio ht).1).1 ?_
   rw [(hratio hs).2, (hratio ht).2]
+  -- A tie at `s < t` would, after the shift `x ↦ x + 1` (`hshift`), contradict monotonicity at
+  -- `s + 1 ≤ t + 1`, because `log (x + c) - log x` is strictly decreasing (`hD`).
   refine (hmono hs hst.le).lt_of_ne fun heq => ?_
   have h := hmono (by linarith : 0 < s + 1) (by linarith : s + 1 ≤ t + 1)
   rw [hshift hs, hshift ht, heq] at h

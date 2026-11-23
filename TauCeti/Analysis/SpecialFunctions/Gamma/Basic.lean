@@ -58,6 +58,7 @@ sides of either limit being `0` at the poles `s = -k`. The second limit is the a
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
 * `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
 * `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
+* `Real.Gamma_three_halves` — `Γ(3 / 2) = √π / 2`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
@@ -204,6 +205,13 @@ theorem Gamma_nat_add_half_eq_factorial (n : ℕ) :
     rpow_neg zero_le_two, rpow_natCast] at h
   rw [eq_div_iff (by positivity), hfour, mul_left_comm, h]
   field_simp
+
+/-- The half-integer value `Γ(3 / 2) = √π / 2`: the case `n = 1` of
+`Real.Gamma_nat_add_half_eq_factorial`. -/
+theorem Gamma_three_halves : Gamma (3 / 2) = √π / 2 := by
+  rw [show (3 / 2 : ℝ) = (1 : ℕ) + 1 / 2 by norm_num, Gamma_nat_add_half_eq_factorial]
+  field_simp
+  norm_num [Nat.factorial]
 
 /-- **Euler's limit formula in ratio form.** For every real `s`, `Γ(n + 1 + s)` is asymptotic to
 `n ^ s * n!` as the natural number `n` tends to infinity: the case `x = n` of
