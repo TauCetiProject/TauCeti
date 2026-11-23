@@ -795,51 +795,8 @@ structure OfPairQuotientRationalSquare {A : Type u} [CommRing A] [TopologicalSpa
   mem : z ∈ openSet
   /-- Containment of `openSet` in `W`. -/
   le : openSet ≤ W
-  /-- The completed rational-localization ring over `openSet`. -/
-  Ring : Type u
-  [commRing : CommRing Ring]
-  [uniformSpace : UniformSpace Ring]
-  [isUniformAddGroup : IsUniformAddGroup Ring]
-  [isTopologicalRing : IsTopologicalRing Ring]
-  [completeSpace : CompleteSpace Ring]
-  [t2Space : T2Space Ring]
-  [isHuberRing : IsHuberRing Ring]
-  /-- The sheafy Huber pair on `Ring`. -/
-  pair : Pair Ring
-  /-- Sheafiness of `pair`. -/
-  isSheafy : IsSheafyForEveryPresentation pair.plus
-  /-- The closed ideal of `Ring` pulled back from `J`. -/
-  ideal : Ideal Ring
-  /-- Sheafiness of the quotient pair `pair.quotient ideal`. -/
-  isSheafyQuotient : IsSheafyForEveryPresentation (pair.quotient ideal).plus
-  [t2SpaceQuotient : T2Space (Ring ⧸ ideal)]
-  /-- Completeness of `Ring ⧸ ideal` for its canonical right uniformity. -/
-  completeSpaceQuotient : @CompleteSpace (Ring ⧸ ideal)
-    (IsTopologicalAddGroup.rightUniformSpace (Ring ⧸ ideal))
-  /-- Preservation of any nilpotency exponent of `J` on `ideal`. -/
-  pow_eq_bot : ∀ {n : ℕ}, J ^ n = ⊥ → ideal ^ n = ⊥
-  /-- The rational open immersion `Spa(Ring, pair⁺) ⟶ Spa(A, S⁺)` onto `openSet`. -/
-  targetMap : ofPair pair isSheafy ⟶ ofPair S hS
-  /-- The pulled-back rational open immersion `Spa(Ring ⧸ ideal, ...) ⟶ Spa(A ⧸ J, ...)`. -/
-  quotientMap : ofPair (pair.quotient ideal) isSheafyQuotient ⟶ ofPair (S.quotient J) hSJ
-  [isOpenImmersion_targetMap : PreAdicSpace.IsOpenImmersion targetMap.hom]
-  /-- The image of `targetMap` is `openSet`. -/
-  range_targetMap : Set.range targetMap.hom.base = (openSet : Set (ofPair S hS).obj)
-  [isOpenImmersion_quotientMap : PreAdicSpace.IsOpenImmersion quotientMap.hom]
-  /-- The image of `quotientMap` is the preimage of `openSet` in `Spa(A ⧸ J, ...)`. -/
-  range_quotientMap : Set.range quotientMap.hom.base =
-    (comapOfPair hS hSJ (Pair.quotientHom S J)).hom.base ⁻¹' (openSet : Set (ofPair S hS).obj)
-  /-- Commutativity of the pullback square. -/
-  comm : comapOfPair isSheafy isSheafyQuotient (Pair.quotientHom pair ideal) ≫ targetMap =
-    quotientMap ≫ comapOfPair hS hSJ (Pair.quotientHom S J)
-
-attribute [instance] OfPairQuotientRationalSquare.commRing
-  OfPairQuotientRationalSquare.uniformSpace OfPairQuotientRationalSquare.isUniformAddGroup
-  OfPairQuotientRationalSquare.isTopologicalRing OfPairQuotientRationalSquare.completeSpace
-  OfPairQuotientRationalSquare.t2Space OfPairQuotientRationalSquare.isHuberRing
-  OfPairQuotientRationalSquare.t2SpaceQuotient
-  OfPairQuotientRationalSquare.isOpenImmersion_targetMap
-  OfPairQuotientRationalSquare.isOpenImmersion_quotientMap
+  /-- The rational-localization pullback square over `openSet`. -/
+  square : OfPairQuotientOpenSquare S hS J hSJ openSet
 
 /-- **Existence of a rational-localization square for an ideal quotient of a sheafy Huber pair.**
 Around any point `z` in an open `W` of `ofPair S hS`, there exists an
@@ -862,22 +819,7 @@ theorem exists_ofPair_quotient_rational_square (S : Pair A)
     have hy' : (ofPairHomeomorph S hS).symm (ofPairHomeomorph S hS y) ∈ (W : Set _) := hR₀W hy
     rwa [(ofPairHomeomorph S hS).symm_apply_apply] at hy'
   obtain ⟨sq⟩ := exists_ofPair_quotient_open_square S hS J hSJ F s hF
-  exact ⟨{
-    openSet := O
-    mem := hzR₀
-    le := hOW
-    Ring := sq.Ring
-    pair := sq.pair
-    isSheafy := sq.isSheafy
-    ideal := sq.ideal
-    isSheafyQuotient := sq.isSheafyQuotient
-    completeSpaceQuotient := sq.completeSpaceQuotient
-    pow_eq_bot := sq.pow_eq_bot
-    targetMap := sq.targetMap
-    quotientMap := sq.quotientMap
-    range_targetMap := sq.range_targetMap
-    range_quotientMap := sq.range_quotientMap
-    comm := sq.comm }⟩
+  exact ⟨{ openSet := O, mem := hzR₀, le := hOW, square := sq }⟩
 
 end OfPair
 

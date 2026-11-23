@@ -43,6 +43,8 @@ fibres.
 ## Main definitions
 
 * `TauCeti.AdicSpace.IsFiniteEtale`: finite étale morphisms of adic spaces.
+* `TauCeti.AdicSpace.IsFiniteEtale.OfPairData`: finite étale pair data for complete Hausdorff Tate
+  sheafy Huber pairs.
 * `TauCeti.AdicSpace.IsFiniteEtale.OfPairChart`: local `AdicSpace.ofPair`-based charts.
 
 ## Main results
@@ -225,13 +227,10 @@ theorem isFiniteEtale_iff_of_isIso (f : X ⟶ Y) [IsIso f] : IsFiniteEtale f ↔
 
 /-! ### `ofPair` charts and affinoid `comapOfPair` -/
 
-/-- A local `AdicSpace.ofPair`-based chart for `IsFiniteEtale f` around `y : Y.obj`. -/
-structure IsFiniteEtale.OfPairChart {X Y : AdicSpace.{u}} (f : X ⟶ Y) (y : Y.obj) :
-    Type (u + 1) where
-  /-- Open neighbourhood of `y` in the target. -/
-  V : Opens Y.obj
-  /-- Membership of `y` in `V`. -/
-  mem : y ∈ V
+/-- A finite étale morphism of complete Hausdorff Tate sheafy Huber pairs, serving as the common
+affinoid model data for `IsFiniteEtale.OfPairChart` and
+`IsEtaleLocalDescription.AffinoidFactorization`. -/
+structure IsFiniteEtale.OfPairData : Type (u + 1) where
   /-- Target coefficient ring. -/
   Target : Type u
   [commRingTarget : CommRing Target]
@@ -262,24 +261,36 @@ structure IsFiniteEtale.OfPairChart {X Y : AdicSpace.{u}} (f : X ⟶ Y) (y : Y.o
   pairHom : Pair.Hom targetPair sourcePair
   /-- Proof that `pairHom` is finite étale. -/
   isFiniteEtale : pairHom.IsFiniteEtale
-  /-- Identification of `Y|_V` with `(ofPair targetPair isSheafyTarget).obj`. -/
-  targetIso : Y.obj.restrict V.isOpenEmbedding ≅ (ofPair targetPair isSheafyTarget).obj
-  /-- Identification of `X|_{f⁻¹(V)}` with `(ofPair sourcePair isSheafySource).obj`. -/
-  sourceIso : X.obj.restrict ((Opens.map f.hom.base).obj V).isOpenEmbedding ≅
-    (ofPair sourcePair isSheafySource).obj
-  /-- Compatibility of `f` over `V` with `comapOfPair isSheafyTarget isSheafySource pairHom`. -/
-  fac : X.obj.ofRestrict _ ≫ f.hom =
-    sourceIso.hom ≫ (comapOfPair isSheafyTarget isSheafySource pairHom).hom ≫
-      targetIso.inv ≫ Y.obj.ofRestrict _
 
-attribute [instance] IsFiniteEtale.OfPairChart.commRingTarget
-  IsFiniteEtale.OfPairChart.uniformSpaceTarget IsFiniteEtale.OfPairChart.isUniformAddGroupTarget
-  IsFiniteEtale.OfPairChart.isTopologicalRingTarget IsFiniteEtale.OfPairChart.completeSpaceTarget
-  IsFiniteEtale.OfPairChart.t2SpaceTarget IsFiniteEtale.OfPairChart.isTateRingTarget
-  IsFiniteEtale.OfPairChart.commRingSource IsFiniteEtale.OfPairChart.uniformSpaceSource
-  IsFiniteEtale.OfPairChart.isUniformAddGroupSource
-  IsFiniteEtale.OfPairChart.isTopologicalRingSource IsFiniteEtale.OfPairChart.completeSpaceSource
-  IsFiniteEtale.OfPairChart.t2SpaceSource IsFiniteEtale.OfPairChart.isTateRingSource
+attribute [instance] IsFiniteEtale.OfPairData.commRingTarget
+  IsFiniteEtale.OfPairData.uniformSpaceTarget IsFiniteEtale.OfPairData.isUniformAddGroupTarget
+  IsFiniteEtale.OfPairData.isTopologicalRingTarget IsFiniteEtale.OfPairData.completeSpaceTarget
+  IsFiniteEtale.OfPairData.t2SpaceTarget IsFiniteEtale.OfPairData.isTateRingTarget
+  IsFiniteEtale.OfPairData.commRingSource IsFiniteEtale.OfPairData.uniformSpaceSource
+  IsFiniteEtale.OfPairData.isUniformAddGroupSource
+  IsFiniteEtale.OfPairData.isTopologicalRingSource IsFiniteEtale.OfPairData.completeSpaceSource
+  IsFiniteEtale.OfPairData.t2SpaceSource IsFiniteEtale.OfPairData.isTateRingSource
+
+/-- A local `AdicSpace.ofPair`-based chart for `IsFiniteEtale f` around `y : Y.obj`. -/
+structure IsFiniteEtale.OfPairChart {X Y : AdicSpace.{u}} (f : X ⟶ Y) (y : Y.obj) :
+    Type (u + 1) where
+  /-- Open neighbourhood of `y` in the target. -/
+  V : Opens Y.obj
+  /-- Membership of `y` in `V`. -/
+  mem : y ∈ V
+  /-- Underlying finite étale morphism of complete Hausdorff Tate sheafy Huber pairs. -/
+  data : IsFiniteEtale.OfPairData.{u}
+  /-- Identification of `Y|_V` with `(ofPair data.targetPair data.isSheafyTarget).obj`. -/
+  targetIso : Y.obj.restrict V.isOpenEmbedding ≅
+    (ofPair data.targetPair data.isSheafyTarget).obj
+  /-- Identification of `X|_{f⁻¹(V)}` with `(ofPair data.sourcePair data.isSheafySource).obj`. -/
+  sourceIso : X.obj.restrict ((Opens.map f.hom.base).obj V).isOpenEmbedding ≅
+    (ofPair data.sourcePair data.isSheafySource).obj
+  /-- Compatibility of `f` over `V` with
+  `comapOfPair data.isSheafyTarget data.isSheafySource data.pairHom`. -/
+  fac : X.obj.ofRestrict _ ≫ f.hom =
+    sourceIso.hom ≫ (comapOfPair data.isSheafyTarget data.isSheafySource data.pairHom).hom ≫
+      targetIso.inv ≫ Y.obj.ofRestrict _
 
 private theorem isSheaf_of_restrict_iso {A : Type u} [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsHuberRing A] {S : Pair A} {P : PairOfDefinition A}
@@ -323,14 +334,15 @@ theorem IsFiniteEtale.exists_ofPair_chart {f : X ⟶ Y} (hf : IsFiniteEtale f) (
   refine ⟨{
     V := V
     mem := hy
-    Target := A
-    targetPair := S
-    isSheafyTarget := hS
-    Source := B
-    sourcePair := T
-    isSheafySource := hT
-    pairHom := φ
-    isFiniteEtale := hφ
+    data :=
+      { Target := A
+        targetPair := S
+        isSheafyTarget := hS
+        Source := B
+        sourcePair := T
+        isSheafySource := hT
+        pairHom := φ
+        isFiniteEtale := hφ }
     targetIso := eV ≪≫ iS.symm
     sourceIso := eU ≪≫ iT.symm
     fac := ?_ }⟩
@@ -339,31 +351,55 @@ theorem IsFiniteEtale.exists_ofPair_chart {f : X ⟶ Y} (hf : IsFiniteEtale f) (
 
 private noncomputable def IsFiniteEtale.OfPairChart.sourceHomeomorph
     {f : X ⟶ Y} {y : Y.obj} (c : IsFiniteEtale.OfPairChart f y) :
-    ↥((Opens.map f.hom.base).obj c.V) ≃ₜ spa c.sourcePair.plus :=
+    ↥((Opens.map f.hom.base).obj c.V) ≃ₜ spa c.data.sourcePair.plus :=
   (TopCat.homeoOfIso (forgetToTop.mapIso c.sourceIso)).trans
-    (ofPairHomeomorph c.sourcePair c.isSheafySource)
+    (ofPairHomeomorph c.data.sourcePair c.data.isSheafySource)
 
 private noncomputable def IsFiniteEtale.OfPairChart.targetHomeomorph
     {f : X ⟶ Y} {y : Y.obj} (c : IsFiniteEtale.OfPairChart f y) :
-    ↥c.V ≃ₜ spa c.targetPair.plus :=
+    ↥c.V ≃ₜ spa c.data.targetPair.plus :=
   (TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)).trans
-    (ofPairHomeomorph c.targetPair c.isSheafyTarget)
+    (ofPairHomeomorph c.data.targetPair c.data.isSheafyTarget)
 
 private theorem IsFiniteEtale.OfPairChart.targetHomeomorph_restrictPreimage
     {f : X ⟶ Y} {y : Y.obj} (c : IsFiniteEtale.OfPairChart f y)
     (x : (Opens.map f.hom.base).obj c.V) :
     c.targetHomeomorph ((c.V : Set Y.obj).restrictPreimage f.hom.base x) =
-      c.pairHom.spaComap (c.sourceHomeomorph x) := by
-  have hfac := congrArg (fun k ↦ ConcreteCategory.hom (forgetToTop.map k)) c.fac
-  simp only [Functor.map_comp, TopCat.hom_comp] at hfac
+      c.data.pairHom.spaComap (c.sourceHomeomorph x) := by
+  let x' : X.obj.restrict ((Opens.map f.hom.base).obj c.V).isOpenEmbedding := x
+  have hpt := congrArg (fun m ↦ m.base x') c.fac
+  simp only [PreAdicSpace.comp_base, TopCat.coe_comp] at hpt
+  rw [Function.comp_apply, Function.comp_apply, Function.comp_apply, Function.comp_apply] at hpt
+  have hL :
+      (X.obj.ofRestrict ((Opens.map f.hom.base).obj c.V).isOpenEmbedding).base x' = x.val :=
+    (congrArg (fun g ↦ g x') (PreAdicSpace.ofRestrict_base _ _)).trans
+      (congrFun Opens.coe_inclusion' x')
+  have hR (z : Y.obj.restrict c.V.isOpenEmbedding) :
+      (Y.obj.ofRestrict c.V.isOpenEmbedding).base z = z.val :=
+    (congrArg (fun g ↦ g z) (PreAdicSpace.ofRestrict_base _ _)).trans
+      (congrFun Opens.coe_inclusion' z)
+  rw [hL, hR] at hpt
+  have hs := TopCat.homeoOfIso_apply (forgetToTop.mapIso c.sourceIso) x
+  simp only [Functor.mapIso_hom, PreAdicSpace.forgetToTop_map] at hs
+  have ht := TopCat.homeoOfIso_symm_apply (forgetToTop.mapIso c.targetIso)
+    ((comapOfPair c.data.isSheafyTarget c.data.isSheafySource c.data.pairHom).hom.base
+      (TopCat.homeoOfIso (forgetToTop.mapIso c.sourceIso) x))
+  simp only [Functor.mapIso_inv, PreAdicSpace.forgetToTop_map] at ht
   have hres : (c.V : Set Y.obj).restrictPreimage f.hom.base x =
       (TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)).symm
-        ((comapOfPair c.isSheafyTarget c.isSheafySource c.pairHom).hom.base
-          (TopCat.homeoOfIso (forgetToTop.mapIso c.sourceIso) x)) :=
-    Subtype.ext (congrArg (fun k ↦ k x) hfac)
+        ((comapOfPair c.data.isSheafyTarget c.data.isSheafySource c.data.pairHom).hom.base
+          (TopCat.homeoOfIso (forgetToTop.mapIso c.sourceIso) x)) := by
+    apply Subtype.ext
+    refine (Set.restrictPreimage_coe (c.V : Set Y.obj) f.hom.base
+      ⟨x.val, Opens.mem_map.mp x.property⟩).trans (hpt.trans ?_)
+    exact (congrArg (fun z ↦ (c.targetIso.inv.base
+        ((comapOfPair c.data.isSheafyTarget c.data.isSheafySource
+          c.data.pairHom).hom.base z)).val) hs.symm).trans
+      (congrArg Subtype.val ht.symm)
   have h1 := (congrArg (TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)) hres).trans
     ((TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)).apply_symm_apply _)
-  exact (congrArg (ofPairHomeomorph c.targetPair c.isSheafyTarget) h1).trans
+  dsimp only [targetHomeomorph, sourceHomeomorph, Homeomorph.trans_apply]
+  exact (congrArg (ofPairHomeomorph c.data.targetPair c.data.isSheafyTarget) h1).trans
     (ofPairHomeomorph_comapOfPair_apply _ _ _ _)
 
 /-- **`Spa(φ)` is finite étale for a finite étale morphism of sheafy Huber pairs** over a complete
@@ -403,8 +439,8 @@ theorem IsFiniteEtale.comapOfPair {A : Type u} [CommRing A] [UniformSpace A] [Is
 theorem IsFiniteEtale.finite_preimage_singleton {f : X ⟶ Y} (hf : IsFiniteEtale f) (y : Y.obj) :
     (f.hom.base ⁻¹' {y}).Finite := by
   obtain ⟨c⟩ := hf.exists_ofPair_chart y
-  have hfin : (c.pairHom.spaComap ⁻¹' {c.targetHomeomorph ⟨y, c.mem⟩}).Finite :=
-    (c.isFiniteEtale.finite_fibre _).1
+  have hfin : (c.data.pairHom.spaComap ⁻¹' {c.targetHomeomorph ⟨y, c.mem⟩}).Finite :=
+    (c.data.isFiniteEtale.finite_fibre _).1
   refine (hfin.image fun w ↦ (c.sourceHomeomorph.symm w).val).subset fun x hx ↦ ?_
   have hxV : f.hom.base x ∈ c.V := (Set.mem_singleton_iff.mp hx).symm ▸ c.mem
   refine ⟨c.sourceHomeomorph ⟨x, hxV⟩, ?_,
@@ -470,14 +506,15 @@ theorem IsFiniteEtale.isClopen_range {f : X ⟶ Y} (hf : IsFiniteEtale f) :
       y ∈ V ∧ IsClopen (Set.range ((V : Set Y.obj).restrictPreimage f.hom.base)) := by
     obtain ⟨c⟩ := hf.exists_ofPair_chart y
     have hr : Set.range ((c.V : Set Y.obj).restrictPreimage f.hom.base) =
-        c.targetHomeomorph ⁻¹' Set.range c.pairHom.spaComap := by
+        c.targetHomeomorph ⁻¹' Set.range c.data.pairHom.spaComap := by
       refine Set.ext fun z ↦ ⟨fun ⟨x, hx⟩ ↦ ?_, fun ⟨w, hw⟩ ↦ ?_⟩
       · exact ⟨c.sourceHomeomorph x,
           (c.targetHomeomorph_restrictPreimage x).symm.trans (congrArg c.targetHomeomorph hx)⟩
       · exact ⟨c.sourceHomeomorph.symm w, c.targetHomeomorph.injective
           ((c.targetHomeomorph_restrictPreimage _).trans
-            ((congrArg c.pairHom.spaComap (c.sourceHomeomorph.apply_symm_apply w)).trans hw))⟩
-    exact ⟨c.V, c.mem, hr ▸ c.isFiniteEtale.isClopen_range_spaComap.preimage
+            ((congrArg c.data.pairHom.spaComap (c.sourceHomeomorph.apply_symm_apply w)).trans
+              hw))⟩
+    exact ⟨c.V, c.mem, hr ▸ c.data.isFiniteEtale.isClopen_range_spaComap.preimage
       c.targetHomeomorph.continuous⟩
   choose V hV hcl using hlocal
   have hcov : IsOpenCover V := eq_top_iff.mpr fun y _ ↦ Opens.mem_iSup.mpr ⟨y, hV y⟩
