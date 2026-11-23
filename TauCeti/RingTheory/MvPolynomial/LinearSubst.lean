@@ -12,7 +12,7 @@ public import TauCeti.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Rescale
 import Mathlib.Algebra.MvPolynomial.Coeff
-import TauCeti.Algebra.MvPolynomial.Monad
+import TauCeti.Algebra.MvPolynomial.Degrees
 import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
@@ -271,7 +271,7 @@ theorem homogeneousComponent_linearSubst (M : Matrix σ σ R) (n : ℕ) (p : MvP
 theorem totalDegree_linearSubst_le (M : Matrix σ σ R) (p : MvPolynomial σ R) :
     (linearSubst M p).totalDegree ≤ p.totalDegree := by
   rw [linearSubst_eq_aeval]
-  refine (totalDegree_bind₁_le (D := 1) (fun i ↦ ?_) p).trans_eq (mul_one _)
+  refine (totalDegree_aeval_le (D := 1) p fun i _ ↦ ?_).trans_eq (mul_one _)
   exact (IsHomogeneous.sum _ _ _ fun j _ ↦ isHomogeneous_C_mul_X (M i j) j).totalDegree_le
 
 /-- A linear change of variables whose determinant is a nonzerodivisor is injective over any
