@@ -319,8 +319,9 @@ theorem capCoverDeckEquiv_capCoverPeriodHom_symm_apply_mk (x : X)
     (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x))
     (e : UniversalCover (constContractibleLoop x)) :
     (capCoverDeckEquiv ω c x (capCoverPeriodHom ω c x g)).val.symm (Quotient.mk'' e) =
-      Quotient.mk'' (g⁻¹ • e) := by
-  rw [Homeomorph.symm_apply_eq, capCoverDeckEquiv_capCoverPeriodHom_apply_mk, smul_inv_smul]
+      Quotient.mk'' (g⁻¹ • e) :=
+  deckAdditiveKerEquiv_fundamentalGroupHomOfAdditive_symm_apply_mk _ _
+    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x) g e
 
 /-- The deck transformation of the period class of a loop `a` of contractible free loops acts on
 the cap cover through the action of `a` on the universal cover of `𝓛₀X`. -/

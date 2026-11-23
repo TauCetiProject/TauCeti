@@ -121,6 +121,18 @@ theorem deckAdditiveKerEquiv_fundamentalGroupHomOfAdditive_apply_mk (hf : Functi
   -- `fundamentalGroupHomOfAdditive x₀ f`
   deckSubgroupQuotientProjKerEquivOfSurjective_symm_apply_mk _ _ _ g e
 
+/-- The inverse of the deck transformation labelled by the value of `f` on a class `g` of the
+fundamental group acts on the cover attached to the kernel of `f` through the action of `g⁻¹` on
+the universal cover. -/
+@[simp]
+theorem deckAdditiveKerEquiv_fundamentalGroupHomOfAdditive_symm_apply_mk
+    (hf : Function.Surjective f) (g : FundamentalGroup X x₀) (e : UniversalCover x₀) :
+    (deckAdditiveKerEquiv x₀ f hf (fundamentalGroupHomOfAdditive x₀ f g)).val.symm
+        (Quotient.mk'' e) =
+      Quotient.mk'' (g⁻¹ • e) := by
+  rw [Homeomorph.symm_apply_eq, deckAdditiveKerEquiv_fundamentalGroupHomOfAdditive_apply_mk,
+    smul_inv_smul]
+
 /-- The deck transformation labelled by `f a` acts on the cover attached to the kernel of `f`
 through the action of `a` on the universal cover. -/
 @[simp]

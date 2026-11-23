@@ -248,14 +248,18 @@ def sectionLoop : C(SeamedPath φ, C(Circle, MappingTorus φ)) where
     (Homeomorph.refl _)).continuous.comp
       (continuous_subtypeVal.comp (sectionHomeomorph φ).continuous)
 
+/-- The free loop of a seamed path `γ` is its section read through the inverse of
+`AddCircle.homeomorphCircle`. -/
+theorem sectionLoop_apply (γ : SeamedPath φ) (z : Circle) :
+    sectionLoop φ γ z =
+      (sectionHomeomorph φ γ).val ((AddCircle.homeomorphCircle one_ne_zero).symm z) :=
+  (rfl)
+
 /-- The free loop of a seamed path `γ` passes through `mk φ (γ t) t` at `exp (2πit)`. -/
 @[simp]
 theorem sectionLoop_unitToCircle (γ : SeamedPath φ) (t : I) :
     sectionLoop φ γ (unitToCircle t) = mk φ (γ.val t) t := by
-  -- `Homeomorph.arrowCongr` precomposes with the inverse of its first homeomorphism by definition.
-  change (sectionHomeomorph φ γ).val ((AddCircle.homeomorphCircle one_ne_zero).symm
-    (unitToCircle t)) = _
-  rw [homeomorphCircle_symm_unitToCircle, sectionHomeomorph_apply]
+  rw [sectionLoop_apply, homeomorphCircle_symm_unitToCircle, sectionHomeomorph_apply]
 
 end SeamedPath
 

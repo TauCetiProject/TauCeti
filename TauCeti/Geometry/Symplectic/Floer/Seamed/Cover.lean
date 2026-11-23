@@ -284,6 +284,20 @@ theorem referenceCylinderCoverDeckEquiv_seamedPeriodClass_apply_mk
       Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) :=
   deckAdditiveKerEquiv_apply_mk _ _ (seamedPeriodClass_surjective γ₀) a e
 
+/-- The inverse of the deck transformation of the period class of a loop `a` of seamed paths acts
+on the reference-cylinder cover through the action of `a⁻¹` on the universal cover of the path
+component of `γ₀`. -/
+@[simp]
+theorem referenceCylinderCoverDeckEquiv_seamedPeriodClass_symm_apply_mk
+    (a : HomotopyGroup (Fin 1) (pathComponent γ₀) (pathComponentSelf γ₀))
+    (e : UniversalCover (pathComponentSelf γ₀)) :
+    (referenceCylinderCoverDeckEquiv γ₀ Iω Ic (Multiplicative.ofAdd
+        (seamedPeriodClass γ₀ Iω Ic (Additive.ofMul a)))).val.symm
+        (Quotient.mk'' e) =
+      Quotient.mk'' ((HomotopyGroup.pi1MulEquivFundamentalGroup a)⁻¹ • e) := by
+  rw [Homeomorph.symm_apply_eq, referenceCylinderCoverDeckEquiv_seamedPeriodClass_apply_mk,
+    smul_inv_smul]
+
 /-- The period group acts on the reference-cylinder cover through its deck group. -/
 noncomputable instance instAddActionReferenceCylinderCover :
     AddAction (seamedPeriodGroup γ₀ Iω Ic) (ReferenceCylinderCover γ₀ Iω Ic) :=
