@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.AdicCompletion.Principal
 public import TauCeti.RingTheory.Ideal.Quotient.Frobenius
 public import TauCeti.RingTheory.Perfect.Basic
 public import TauCeti.RingTheory.Perfectoid.FontaineTheta
+import TauCeti.RingTheory.WittVector.MapEquiv
 
 /-!
 # Integral perfectoid rings
@@ -58,6 +59,7 @@ unique map to `A` has principal kernel anyway.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_bijective_frobeniusModPow`: if `A` is `π`-adically
   complete for a nonzerodivisor `π` with `π ^ p ∣ p` and bijective relative Frobenius
   `A ⧸ (π) → A ⧸ (π ^ p)`, then `A` is integral perfectoid (Bhatt–Morrow–Scholze, Lemma 3.10(ii)).
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.of_ringEquiv`: transport along a ring isomorphism.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_perfectRing`: a perfect ring of characteristic `p`
   is integral perfectoid; the kernel of `θ` is `(p)` (`WittVector.ker_fontaineTheta_eq_span_p`).
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_subsingleton`: so is the zero ring.
@@ -196,6 +198,68 @@ theorem of_bijective_frobeniusModPow {π : A} {hdvd : π ^ p ∣ (p : A)}
     obtain ⟨ξ, -, -, hker⟩ :=
       WittVector.exists_isDistinguished_mem_nonZeroDivisors_ker_fontaineTheta hreg hbij
     exact ⟨⟨ξ, hker⟩⟩
+
+variable {A} in
+/-- **Transport of integral perfectoid rings along a ring isomorphism.** -/
+theorem of_ringEquiv {B : Type*} [CommRing B] [IsIntegralPerfectoid p A] (e : A ≃+* B) :
+    IsIntegralPerfectoid p B := by
+  have heMod_eq : span {(p : B)} = (span {(p : A)}).map (e : A →+* B) := by
+    rw [Ideal.map_span, Set.image_singleton, RingEquiv.coe_toRingHom, map_natCast]
+  let eMod : ModP A p ≃+* ModP B p := Ideal.quotientEquiv _ _ e heMod_eq
+  refine ⟨?_, ?_, ?_⟩
+  · obtain ⟨π, hdvd, hc⟩ := exists_adic_element (p := p) (A := A)
+    have hmap : (span {π}).map (e : A →+* B) = span {e π} := by
+      rw [Ideal.map_span, Set.image_singleton, RingEquiv.coe_toRingHom]
+    exact ⟨e π, map_pow e π p ▸ map_natCast e p ▸ map_dvd e hdvd,
+      hmap ▸ (IsAdicComplete.congr_ringEquiv (span {π}) e).mpr hc⟩
+  · intro y
+    obtain ⟨x, hx⟩ := frobenius_surjective (p := p) (eMod.symm y)
+    dsimp only at hx ⊢
+    exact ⟨eMod x, by rw [← map_pow, hx, eMod.apply_symm_apply]⟩
+  · intro hpB hcB
+    have hpA : ¬IsUnit (p : A) := fun h ↦ hpB (by simpa using h.map e)
+    let : Fact (¬IsUnit (p : A)) := ⟨hpA⟩
+    let : Fact (¬IsUnit (p : B)) := ⟨hpB⟩
+    let : IsAdicComplete (span {(p : B)}) B := hcB
+    let ePerf : Perfection (ModP A p) p ≃+* Perfection (ModP B p) p :=
+      { __ := Perfection.map p (eMod : ModP A p →+* ModP B p)
+        invFun := Perfection.map p (eMod.symm : ModP B p →+* ModP A p)
+        left_inv x := Perfection.ext fun n ↦ eMod.symm_apply_apply _
+        right_inv y := Perfection.ext fun n ↦ eMod.apply_symm_apply _ }
+    let eTilt : PreTilt A p ≃+* PreTilt B p :=
+      PreTilt.equivPerfection.trans (ePerf.trans PreTilt.equivPerfection.symm)
+    have huntilt (x : PreTilt A p) : (eTilt x).untilt = e x.untilt := by
+      rw [← PreTilt.teichmuller₀_equivPerfection]
+      refine Perfection.teichmuller₀_spec fun n ↦ ?_
+      refine ⟨e ((((frobeniusEquiv (PreTilt A p) p).symm^[n]) x).untilt), ?_, ?_⟩
+      · have hmk : Ideal.Quotient.mk (span {(p : A)})
+            ((((frobeniusEquiv (PreTilt A p) p).symm^[n]) x).untilt) =
+            PreTilt.coeff n x := by
+          rw [PreTilt.mk_untilt_eq_coeff_zero, PreTilt.coeff_iterate_frobeniusEquiv_symm,
+            zero_add]
+        have hcoe : (Ideal.Quotient.mk (span {(p : B)}))
+            (e ((((frobeniusEquiv (PreTilt A p) p).symm^[n]) x).untilt)) =
+            eMod (Ideal.Quotient.mk (span {(p : A)})
+              ((((frobeniusEquiv (PreTilt A p) p).symm^[n]) x).untilt)) := rfl
+        rw [hcoe, hmk]
+        simp only [eTilt, RingEquiv.trans_apply, RingEquiv.apply_symm_apply]
+        rw [← PreTilt.coeff_equivPerfection x n]
+        rfl
+      · rw [← map_pow, PreTilt.untilt_iterate_frobeniusEquiv_symm_pow]
+    have hcomp : (WittVector.fontaineTheta B p).comp (WittVector.mapEquiv eTilt).toRingHom =
+        e.toRingHom.comp (WittVector.fontaineTheta A p) := by
+      refine WittVector.ringHom_ext_teichmuller fun a ↦ ?_
+      simp [WittVector.fontaineTheta_teichmuller, huntilt]
+    have hker : RingHom.ker (WittVector.fontaineTheta B p) =
+        (RingHom.ker (WittVector.fontaineTheta A p)).map
+          (WittVector.mapEquiv eTilt).toRingHom := by
+      rw [← RingHom.ker_comp_of_injective (WittVector.fontaineTheta A p)
+          (f := e.toRingHom) e.injective, ← hcomp, ← RingHom.comap_ker]
+      exact (Ideal.map_comap_of_surjective _ (WittVector.mapEquiv eTilt).surjective _).symm
+    obtain ⟨ξ, hξ⟩ := isPrincipal_ker_fontaineTheta (p := p) (A := A)
+    refine ⟨⟨WittVector.mapEquiv eTilt ξ, ?_⟩⟩
+    rw [hker, hξ, Ideal.map_span, Set.image_singleton]
+    rfl
 
 end IsIntegralPerfectoid
 

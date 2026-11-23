@@ -18,9 +18,9 @@ These checks exercise `TauCeti.RingTheory.Perfectoid.PrimitiveUntilt.Map` on:
 * the perfectoid tilt `(ℂ_p♭, ℂ_p♭°)` and a mixed-characteristic primitive element `ξ = p - [ϖ]`,
   checking `sharp (ϖ ^ 2) = p ^ 2`, non-additivity of `sharp` for `p = 2` (`sharp (ϖ + ϖ) = 0`
   while `sharp ϖ + sharp ϖ = 4 ≠ 0`), and the quotient identification `A⁺ ⧸ (sharp ϖ) ≃+* R⁺ ⧸ (ϖ)`;
-* functoriality `untilt.map` for enlarging `(p)` to `⊤`, reducing `(p ^ 2)` to `(p)` (non-injective:
-  the nonzero class of `p` is sent to `0`), and the first projection on the non-domain product
-  `ℂ_p♭ × ℂ_p♭` (sending `sharp (1, 0) ↦ 1` and `sharp (0, 1) ↦ 0`);
+* functoriality `untilt.map` for enlarging `(p)` to `⊤`, enlarging `(p ^ 2)` to `(p)`
+  (non-injective: the nonzero class of `p` is sent to `0`), and the first projection on the
+  non-domain product `ℂ_p♭ × ℂ_p♭` (sending `sharp (1, 0) ↦ 1` and `sharp (0, 1) ↦ 0`);
 * characteristic-`p` recovery `spanPEquivSelf : untilt p (ℂ_p♭, ℂ_p♭°) (p) ≃+* ℂ_p♭` and its
   homeomorphism property.
 -/
@@ -72,14 +72,12 @@ example :
     rw [← hsp]
     exact (untilt.isPseudoUniformizer_sharp (isPseudoUniformizer_varpi 2)).isUnit
   refine ⟨by rw [hadd, map_zero], ?_⟩
-  rw [hsp, show (2 : untilt 2 (pair 2) (span {xi 2})) + 2 = 2 * 2 by ring]
+  rw [hsp, ← two_mul]
   exact (hu2.mul hu2).ne_zero
 
 -- `quotientSharpEquiv` identifies `A⁺ ⧸ (sharp ϖ)` with `ℂ_p♭° ⧸ (ϖ)` along `ξ = p - [ϖ]`.
 example (a : (pair p).plus) :
-    have hξ₀ : varpi p ∣ (xi p).coeff 0 := by
-      refine ⟨-1, ?_⟩
-      simp [xi, WittVector.sub_coeff_zero, WittVector.coeff_p_zero]
+    have hξ₀ : varpi p ∣ (xi p).coeff 0 := ⟨-1, by rw [coeff_zero_xi p, mul_neg_one]⟩
     untilt.quotientSharpEquiv (isPrimitive_xi p) hξ₀
       (Ideal.Quotient.mk _ ⟨untilt.sharp p (pair p) (span {xi p}) a,
         untilt.sharp_mem_untiltPlus a⟩) =
@@ -103,7 +101,7 @@ example :
     (untilt.spanPEquivSelf p (pair p)).toRingHom.domain_nontrivial
   refine ⟨by rw [map_one]; exact one_ne_zero, Subsingleton.elim _ _⟩
 
--- Decreasing the ideal from `(p)` to `(p ^ 2)` gives a non-injective map killing the nonzero
+-- Enlarging the ideal from `(p ^ 2)` to `(p)` gives a non-injective map killing the nonzero
 -- class of `p`.
 example :
     let J₂ : Ideal (WittVector p (pair p).plus) := span {(p : WittVector p (pair p).plus) ^ 2}
@@ -135,7 +133,7 @@ example :
     have hlhs : (teichmuller p a * (p : WittVector p (pair p).plus)).coeff 1 = a ^ p := by
       rw [WittVector.mul_charP_coeff_succ, WittVector.teichmuller_coeff_zero]
     have hrhs : (((p : WittVector p (pair p).plus) ^ 2) * c).coeff 1 = 0 := by
-      rw [sq, show (p : WittVector p (pair p).plus) * p * c = (c * p) * p by ring,
+      rw [sq, mul_comm ((p : WittVector p (pair p).plus) * p) c, ← mul_assoc,
         WittVector.mul_charP_coeff_succ, WittVector.mul_charP_coeff_zero,
         zero_pow hp.out.ne_zero]
     rw [hlhs, hrhs] at hcoeff

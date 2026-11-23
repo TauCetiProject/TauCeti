@@ -100,15 +100,8 @@ theorem continuous_iterateFrobeniusEquiv_symm (p : ℕ) [Fact p.Prime] [CharP R 
   induction n with
   | zero => simp [continuous_id]
   | succ n ih =>
-    have heq : ⇑(iterateFrobeniusEquiv R p (n + 1)).symm =
-        ⇑(frobeniusEquiv R p).symm ∘ ⇑(iterateFrobeniusEquiv R p n).symm := by
-      ext x
-      apply (iterateFrobeniusEquiv R p (n + 1)).injective
-      rw [(iterateFrobeniusEquiv R p (n + 1)).apply_symm_apply, Function.comp_apply,
-        iterateFrobeniusEquiv_def, pow_succ', pow_mul, frobeniusEquiv_symm_pow_p,
-        ← iterateFrobeniusEquiv_def, (iterateFrobeniusEquiv R p n).apply_symm_apply]
-    rw [heq]
-    exact h1.comp ih
+    rw [iterateFrobeniusEquiv_symm_add, iterateFrobeniusEquiv_one, RingEquiv.coe_trans]
+    exact ih.comp h1
 
 /-- **A perfect complete Hausdorff Tate ring of characteristic `p` is uniform** (Scholze, *Étale
 cohomology of diamonds*, proof of Proposition 3.5): its power-bounded subring `R°` is bounded. -/

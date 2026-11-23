@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.RingTheory.Huber.Uniform
+import TauCeti.Algebra.Ring.NonZeroDivisors
 
 /-!
 # The Tate ring `A₀[1/π]` of an element `π`
@@ -40,8 +42,9 @@ own topology instance; `TauCeti.Huber.hasBasis_nhds_zero_awayTopology` supplies 
 
 * `TauCeti.Huber.isTopologicalRing_awayTopology`, `TauCeti.Huber.nonarchimedeanRing_awayTopology`:
   `awayTopology` is a nonarchimedean ring topology.
-* `TauCeti.Huber.hasBasis_awayNhd_of_pow_associated`: `π`-adic and `w`-adic neighbourhood bases of
-  zero coincide when `π` is associated to `w ^ n`.
+* `TauCeti.Huber.hasBasis_awayNhd_of_pow_associated`: the `π`-adic and `w`-adic neighbourhood
+  bases are cofinal and give the same neighbourhood filter of zero when `π` is associated to
+  `w ^ n` with `n ≠ 0`.
 * `TauCeti.Huber.algebraMap_mem_awayNhd_iff`,
   `TauCeti.Huber.sModEq_iff_algebraMap_sub_mem_awayNhd`: if `π` is a nonzerodivisor, `πⁿ A₀`
   restricts to the ideal `(πⁿ)` of `A₀`.
@@ -55,6 +58,10 @@ own topology instance; `TauCeti.Huber.hasBasis_nhds_zero_awayTopology` supplies 
   `π`-adically separated.
 * `TauCeti.Huber.completeSpace_of_hasBasis`: `A` is complete if `π` is a nonzerodivisor and `A₀`
   is `π`-adically precomplete.
+* `TauCeti.Huber.algebraMap_mul_mem_range_of_isPowerBounded`: `π x ∈ A₀` for every power-bounded
+  `x ∈ A`, whenever `π` is a nonzerodivisor with `π ^ p ∣ a ^ p → π ∣ a` (`1 < p`).
+* `TauCeti.Huber.isUniform_of_dvd_of_pow_dvd_pow`: `A = A₀[1/π]` is uniform under the same
+  hypotheses.
 
 ## References
 
@@ -233,7 +240,7 @@ theorem t2Space_of_hasBasis [IsTopologicalAddGroup A] (hπ : π ∈ A₀⁰)
 
 omit [IsLocalization.Away π A] in
 /-- If `π` is associated to `w ^ n` with `n ≠ 0`, the `π`-adic and `w`-adic neighbourhood bases of
-zero coincide on `A`. -/
+zero are cofinal and give the same neighbourhood filter of zero on `A`. -/
 theorem hasBasis_awayNhd_of_pow_associated {w : A₀} {n : ℕ} (hn : n ≠ 0)
     (hass : Associated π (w ^ n)) :
     (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun k ↦ (awayNhd w A k : Set A) := by
@@ -256,6 +263,54 @@ theorem hasBasis_awayNhd_of_pow_associated {w : A₀} {n : ℕ} (hn : n ≠ 0)
           ring
       _ = π ^ k * a := by
           rw [← hu, mul_pow, mul_assoc (π ^ k), ← mul_pow, Units.mul_inv, one_pow, mul_one]
+
+/-- **`π A° ⊆ A₀`**: in `A = A₀[1/π]` with the `π`-adic topology, if `π` is a nonzerodivisor
+satisfying `π ^ p ∣ a ^ p → π ∣ a` for some `p > 1`, then multiplying any power-bounded element of
+`A` by `π` lands in the image of `A₀`. -/
+theorem algebraMap_mul_mem_range_of_isPowerBounded [IsTopologicalRing A] {p : ℕ} (hp : 1 < p)
+    (hπ : π ∈ A₀⁰) (hroot : ∀ a : A₀, π ^ p ∣ a ^ p → π ∣ a)
+    {x : A} (hx : IsPowerBounded x) :
+    algebraMap A₀ A π * x ∈ (algebraMap A₀ A).range := by
+  have hopen := isOpen_range_algebraMap_of_hasBasis h
+  have hϖ := isPseudoUniformizer_algebraMap_of_hasBasis h
+  obtain ⟨k, hk⟩ := (isPowerBounded_iff.mp hx).exists_pow_mul_subset
+    hϖ.isTopologicallyNilpotent (hopen.mem_nhds (zero_mem _))
+  obtain ⟨r, a, ha⟩ := IsLocalization.Away.surj π x
+  cases r with
+  | zero =>
+    rw [pow_zero, mul_one] at ha
+    exact ⟨π * a, by rw [map_mul, ha]⟩
+  | succ s =>
+    have hle : k ≤ p ^ k := (Nat.lt_pow_self hp).le
+    have hkx : algebraMap A₀ A π ^ k * x ^ p ^ k ∈ (algebraMap A₀ A).range :=
+      hk (Set.mul_mem_mul (Set.mem_singleton _) (Set.mem_range_self (p ^ k)))
+    obtain ⟨b, hb⟩ : ∃ b : A₀, algebraMap A₀ A b = (algebraMap A₀ A π * x) ^ p ^ k := by
+      obtain ⟨b₀, hb₀⟩ := hkx
+      refine ⟨π ^ (p ^ k - k) * b₀, ?_⟩
+      rw [map_mul, map_pow, hb₀, mul_pow, ← mul_assoc, ← pow_add, Nat.sub_add_cancel hle]
+    have hap : a ^ p ^ k = π ^ (s * p ^ k) * b := by
+      apply IsLocalization.injective A (Submonoid.powers_le.mpr hπ)
+      rw [map_pow, ← ha, map_mul, map_pow, hb, mul_pow, mul_pow, ← pow_mul, add_one_mul, pow_add]
+      ring
+    obtain ⟨c, hc⟩ := TauCeti.pow_dvd_of_pow_mul_pow_dvd_pow hπ hroot k s a ⟨b, hap⟩
+    refine ⟨c, ?_⟩
+    have hu : IsUnit (algebraMap A₀ A π ^ s) := (IsLocalization.Away.algebraMap_isUnit π).pow s
+    refine hu.mul_right_cancel ?_
+    rw [← map_pow, ← map_mul, mul_comm c, ← hc, ← ha, map_pow]
+    ring
+
+/-- **Uniformity of `A₀[1/π]`**: under the hypotheses of
+`algebraMap_mul_mem_range_of_isPowerBounded`, the power-bounded elements lie in `π⁻¹ A₀` and are
+therefore bounded, so `A` is uniform. -/
+theorem isUniform_of_dvd_of_pow_dvd_pow [IsTopologicalRing A] {p : ℕ} (hp : 1 < p)
+    (hπ : π ∈ A₀⁰) (hroot : ∀ a : A₀, π ^ p ∣ a ^ p → π ∣ a) : IsUniform A := by
+  let hunit := IsLocalization.Away.algebraMap_isUnit (S := A) π
+  refine isUniform_iff.mpr <|
+    ((isBounded_singleton (↑hunit.unit⁻¹ : A)).mul
+      (isBounded_range_algebraMap_of_hasBasis h)).subset fun x hx ↦ ?_
+  refine Set.mem_mul.mpr ⟨↑hunit.unit⁻¹, Set.mem_singleton _, algebraMap A₀ A π * x,
+    algebraMap_mul_mem_range_of_isPowerBounded h hp hπ hroot hx, ?_⟩
+  exact hunit.unit.inv_mul_cancel_left x
 
 end HasBasis
 

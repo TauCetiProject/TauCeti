@@ -25,8 +25,8 @@ These checks exercise `TauCeti.RingTheory.Perfectoid.PrimitiveUntilt.Perfectoid`
   - `tiltEquiv : A♭ ≃+* ℂ_p♭` is a homeomorphism whose inverse sends compatible pseudouniformiser
     roots `(ϖ_n)` and `(ϖ_{n+1})` so that their sum maps to `ϖ_0 + ϖ_1`, while `(ϖ_n)` does NOT
     map to `ϖ_0 ^ p` (distinguishing `tiltEquiv` from `φ ∘ tiltEquiv`);
-  - `ker_theta_eq` and `ker_fontaineTheta_eq` recover `Ideal.span {ξ}` as the kernel of Fontaine's
-    `θ` on `A⁺`;
+  - `map_ker_theta_eq_span` and `map_ker_fontaineTheta_eq_span` recover `Ideal.span {ξ}` as the
+    image of the kernel of Fontaine's `θ` on `A⁺`;
   - `almostSetupPlus_isAlmostZero_powerBounded_quotient` verifies that `A° ⧸ A⁺` is almost zero for
     `(A⁺, A°°)`.
 -/
@@ -110,7 +110,7 @@ example :
       rw [← norm_pow, ← map_pow, ← hc]
     have hpu : IsPseudoUniformizer (uniformTilt.coeff p ℂ_[p] 0 (w 0)) := by
       rw [hw0]
-      simpa [varpi] using (parameter p).isPseudoUniformizer_root_zero
+      exact isPseudoUniformizer_coeff_zero_varpi p
     obtain ⟨h0, hlt⟩ := isPseudoUniformizer_iff_norm_lt_one.mp hpu
     have hpos : 0 < ‖uniformTilt.coeff p ℂ_[p] 0 (w 0)‖ := norm_pos_iff.mpr h0
     have hpow_lt : ‖uniformTilt.coeff p ℂ_[p] 0 (w 0)‖ ^ p <
@@ -125,16 +125,6 @@ example :
 section
 
 local instance : Nontrivial (untilt p (pair p) (span {xi p})) := nontrivial_untilt_xi p
-
-local instance : Fact ¬IsUnit (p : untiltPlus p (pair p) (span {xi p})) :=
-  ⟨(untilt.isRingOfIntegralElements_untiltPlus
-    (isPrimitive_xi p)).not_isUnit_natCast_of_isTopologicallyNilpotent p
-      (untilt.isTopologicallyNilpotent_natCast (isPrimitive_xi p))⟩
-
-local instance : IsAdicComplete (span {(p : untiltPlus p (pair p) (span {xi p}))})
-    (untiltPlus p (pair p) (span {xi p})) :=
-  (untilt.isRingOfIntegralElements_untiltPlus (isPrimitive_xi p)).isAdicComplete_span_natCast p
-    (untilt.isTopologicallyNilpotent_natCast (isPrimitive_xi p))
 
 local instance : Fact (1 < p) := ⟨hp.out.one_lt⟩
 
@@ -155,7 +145,7 @@ local instance : IsScalarTower (untiltPlus p (pair p) (span {xi p}))
     (untilt p (pair p) (span {xi p})) :=
   IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
 
--- Both `ker_theta_eq` and `ker_fontaineTheta_eq` recover `Ideal.span {ξ}`.
+-- Both `map_ker_theta_eq_span` and `map_ker_fontaineTheta_eq_span` recover `Ideal.span {ξ}`.
 example :
     (RingHom.ker (uniformTilt.theta p
         (untilt.isRingOfIntegralElements_untiltPlus (isPrimitive_xi p)))).map
@@ -164,7 +154,7 @@ example :
       (RingHom.ker (WittVector.fontaineTheta (untiltPlus p (pair p) (span {xi p})) p)).map
         (WittVector.map (untilt.preTiltEquiv (p := p) (P := pair p) (ξ := xi p)).toRingHom) =
         span {xi p} :=
-  ⟨untilt.ker_theta_eq, untilt.ker_fontaineTheta_eq⟩
+  ⟨untilt.map_ker_theta_eq_span, untilt.map_ker_fontaineTheta_eq_span⟩
 
 -- `A° ⧸ A⁺` is almost zero for the almost setup `(A⁺, A°°)`.
 example :

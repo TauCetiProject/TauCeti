@@ -7,13 +7,12 @@ module
 
 public import TauCeti.RingTheory.Huber.Uniform
 public import TauCeti.RingTheory.Perfectoid.PrimitiveUntilt.Basic
-public import TauCeti.RingTheory.WittVector.Primitive.Quotient
 
 import Mathlib.Algebra.CharP.Subring
 import TauCeti.RingTheory.Huber.Pair.Complete
 
 /-!
-# Functoriality, quotients, and `p`-recovery of untilts
+# Functoriality and `p`-recovery of untilts
 
 This file develops the morphisms attached to the untilt `untilt p P J` of a Huber pair
 `P = (R, R⁺)` along an ideal `J ⊆ 𝕎 R⁺`:
@@ -25,8 +24,6 @@ This file develops the morphisms attached to the untilt `untilt p P J` of a Hube
   `untiltPlus` (`untilt.map_mem_untiltPlus`). No primitivity assumption on `J` or `J'` is needed;
   when `R` and `S` are Tate rings and `f` is continuous, `untilt.map` is continuous
   (`untilt.continuous_map`).
-* **Quotients along a primitive element** `ξ`: convenience lemmas for `untilt.quotientSharpEquiv`
-  and `untilt.quotientEquivUntiltPlus` on sharp images.
 * **Recovery along `(p)`**: for a perfect Tate ring `R` of characteristic `p`,
   `untilt.spanPEquivSelf` specialises `untilt.spanPEquiv` to `untilt p P (span {p}) ≃+* R` whose
   inverse is `untilt.sharp`, identifies `untiltPlus` with `R⁺`, and is a homeomorphism whenever
@@ -42,8 +39,6 @@ This file develops the morphisms attached to the untilt `untilt p P J` of a Hube
 * `TauCeti.Perfectoid.untilt.map_algebraMap`, `TauCeti.Perfectoid.untilt.map_sharpPlus`,
   `TauCeti.Perfectoid.untilt.map_sharp`, `TauCeti.Perfectoid.untilt.map_id`,
   `TauCeti.Perfectoid.untilt.map_comp`, `TauCeti.Perfectoid.untilt.continuous_map`.
-* `TauCeti.Perfectoid.untilt.quotientEquivUntiltPlus_mk_teichmuller`,
-  `TauCeti.Perfectoid.untilt.quotientSharpEquiv_symm_mk`.
 * `TauCeti.Perfectoid.untilt.spanPEquivSelf_algebraMap`,
   `TauCeti.Perfectoid.untilt.spanPEquivSelf_symm_apply`,
   `TauCeti.Perfectoid.untilt.spanPEquivSelf_sharp`,
@@ -79,18 +74,14 @@ noncomputable def map (f : R →+* S) (hfplus : ∀ x ∈ P.plus, f x ∈ Q.plus
     (hJ : J ≤ J'.comap (WittVector.map (f.restrict P.plus Q.plus hfplus))) :
     untilt p P J →+* untilt p Q J' :=
   let g : WittVector p P.plus ⧸ J →+* WittVector p Q.plus ⧸ J' :=
-    Ideal.Quotient.lift J ((Ideal.Quotient.mk J').comp (WittVector.map (f.restrict _ _ hfplus)))
-      fun _ ha ↦ Ideal.Quotient.eq_zero_iff_mem.mpr (hJ ha)
-  IsLocalization.lift (M := (untiltDenominators p P).map (Ideal.Quotient.mk J))
-    (g := (algebraMap (WittVector p Q.plus ⧸ J') (untilt p Q J')).comp g) <| by
-    rintro ⟨_, _, hx, rfl⟩
+    Ideal.quotientMap J' (WittVector.map (f.restrict _ _ hfplus)) hJ
+  IsLocalization.map (M := (untiltDenominators p P).map (Ideal.Quotient.mk J))
+    (T := (untiltDenominators p Q).map (Ideal.Quotient.mk J')) (untilt p Q J') g <| by
+    rintro _ ⟨_, hx, rfl⟩
     obtain ⟨a, ha, rfl⟩ := mem_untiltDenominators.mp hx
-    dsimp only [RingHom.comp_apply, g]
-    rw [Ideal.Quotient.lift_mk, RingHom.comp_apply, map_teichmuller]
-    exact IsLocalization.map_units (untilt p Q J')
-      ⟨Ideal.Quotient.mk J' (teichmuller p (f.restrict P.plus Q.plus hfplus a)),
-        Submonoid.mem_map_of_mem _ (mem_untiltDenominators.mpr
-          ⟨f.restrict P.plus Q.plus hfplus a, ha.map f, rfl⟩)⟩
+    rw [Submonoid.mem_comap, Ideal.quotientMap_mk, map_teichmuller]
+    exact Submonoid.mem_map_of_mem _ (mem_untiltDenominators.mpr
+      ⟨f.restrict P.plus Q.plus hfplus a, ha.map f, rfl⟩)
 
 /-- `untilt.map` commutes with the canonical map from `𝕎 R⁺`. -/
 @[simp]
@@ -199,31 +190,6 @@ theorem continuous_map (f : R →+* S) (hf : Continuous f) (hfplus : ∀ x ∈ P
 
 end TateMap
 
-/-! ### Quotients along a primitive element -/
-
-section Quotient
-
-variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] [TopologicalSpace R]
-  [IsTopologicalRing R] [IsTateRing R] [CharP R p] [PerfectRing R p] {P : Pair R}
-  {ξ : WittVector p P.plus}
-
-/-- `quotientEquivUntiltPlus` carries the class of `[a]` to `sharp a`. -/
-@[simp]
-theorem quotientEquivUntiltPlus_mk_teichmuller (hξ : ξ.IsPrimitive) (a : P.plus) :
-    quotientEquivUntiltPlus hξ (Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p a)) =
-      ⟨sharp p P (Ideal.span {ξ}) a, sharp_mem_untiltPlus a⟩ :=
-  Subtype.ext ((coe_quotientEquivUntiltPlus_apply hξ _).trans (sharp_apply a).symm)
-
-/-- The inverse of `quotientSharpEquiv` sends the class of `a` to the class of `sharp a`. -/
-@[simp]
-theorem quotientSharpEquiv_symm_mk (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0)
-    (a : P.plus) :
-    (quotientSharpEquiv hξ hξ₀).symm (Ideal.Quotient.mk (Ideal.span {ϖ}) a) =
-      Ideal.Quotient.mk _ ⟨sharp p P (Ideal.span {ξ}) a, sharp_mem_untiltPlus a⟩ := by
-  rw [RingEquiv.symm_apply_eq, quotientSharpEquiv_mk_sharp]
-
-end Quotient
-
 /-! ### Recovery along `(p)` -/
 
 section SpanPEquivSelf
@@ -274,6 +240,7 @@ theorem spanPEquivSelf_sharp (x : R) :
     spanPEquivSelf p P (sharp p P (Ideal.span {(p : WittVector p P.plus)}) x) = x := by
   rw [← spanPEquivSelf_symm_apply, RingEquiv.apply_symm_apply]
 
+-- Not `@[simp]`: `TauCeti.Perfectoid.mem_untiltPlus` already simplifies the LHS.
 /-- Under `spanPEquivSelf`, `untiltPlus` corresponds to `P.plus`. -/
 theorem mem_untiltPlus_iff_spanPEquivSelf_mem
     {x : untilt p P (Ideal.span {(p : WittVector p P.plus)})} :
