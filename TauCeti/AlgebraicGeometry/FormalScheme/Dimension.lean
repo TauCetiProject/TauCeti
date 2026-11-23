@@ -89,11 +89,8 @@ theorem dim_eq_bot_iff : X.dim = ⊥ ↔ IsEmpty X := by
 immersion identifies local rings. -/
 theorem dim_le_of_isOpenImmersion (f : X ⟶ Y)
     [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] : X.dim ≤ Y.dim :=
-  dim_le_iff.mpr fun x ↦
-    have := LocallyRingedSpace.IsOpenImmersion.stalk_iso (forgetToLocallyRingedSpace.map f) x
-    have e : Y.presheaf.stalk (f.hom.base x) ≃+* X.presheaf.stalk x :=
-      (asIso ((forgetToLocallyRingedSpace.map f).stalkMap x)).commRingCatIsoToRingEquiv
-    (ringKrullDim_eq_of_ringEquiv e).ge.trans (ringKrullDim_stalk_le_dim _)
+  dim_le_iff.mpr fun x ↦ (ringKrullDim_eq_of_ringEquiv
+    (stalkRingEquivOfIsOpenImmersion f x)).ge.trans (ringKrullDim_stalk_le_dim _)
 
 /-- The dimension of the formal spectrum of a noetherian adic ring `A` is the Krull dimension
 of `A`. The local ring at the open prime `𝔭` has the dimension of `A_𝔭`, which is at most
@@ -108,11 +105,8 @@ theorem dim_ofSpf (A : Type u) [CommRing A] [TopologicalSpace A] [IsTopologicalR
   refine le_antisymm (dim_le_iff.mpr fun p ↦ ?_) ((ringKrullDim_le_iff_isMaximal_height_le _).mpr
     fun m hm ↦ ?_)
   · exact (hstalk p).trans_le Ideal.height_le_ringKrullDim_of_isPrime
-  · have hI := IsAdicRing.ideal_spec A
-    have : IsAdicComplete (IsAdicRing.ideal A) A := hI.2.2
-    let p : Spf.carrier A := ⟨⟨m, hm.isPrime⟩,
-      Spf.mem_carrier_of_isMaximal hI.2.1 (IsAdicComplete.le_jacobson _) hm⟩
-    exact (hstalk p).ge.trans (ringKrullDim_stalk_le_dim (X := ofSpf A) p)
+  · exact (hstalk (Spf.pointOfIsMaximal m)).ge.trans
+      (ringKrullDim_stalk_le_dim (X := ofSpf A) (Spf.pointOfIsMaximal m))
 
 /-- An ordinary scheme, regarded as a formal scheme, has the dimension of its underlying
 topological space: the local ring at a point has the dimension of the codimension of the

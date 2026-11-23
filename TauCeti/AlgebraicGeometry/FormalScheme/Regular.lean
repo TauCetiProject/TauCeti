@@ -101,14 +101,6 @@ instance (priority := 100) IsRegular.isCohenMacaulay [X.IsRegular] : X.IsCohenMa
 
 /-! ### Open immersions -/
 
-/-- An open immersion `f : X ⟶ Y` identifies the local ring of `Y` at `f x` with the local ring of
-`X` at `x`. -/
-private noncomputable def stalkRingEquivOfIsOpenImmersion (f : X ⟶ Y)
-    [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] (x : X) :
-    Y.presheaf.stalk (f.hom.base x) ≃+* X.presheaf.stalk x :=
-  have := LocallyRingedSpace.IsOpenImmersion.stalk_iso (forgetToLocallyRingedSpace.map f) x
-  (asIso ((forgetToLocallyRingedSpace.map f).stalkMap x)).commRingCatIsoToRingEquiv
-
 /-- The source of an open immersion into a regular formal scheme is regular. -/
 theorem IsRegular.of_isOpenImmersion (f : X ⟶ Y)
     [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] [Y.IsRegular] :
@@ -170,13 +162,6 @@ section Spf
 
 variable (A : Type u) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
 
-/-- The point of `Spf A` given by a maximal ideal of `A`, which is open since `A` is complete for
-an ideal of definition. -/
-private noncomputable def maximalPoint (m : Ideal A) [hm : m.IsMaximal] : Spf.carrier A :=
-  have hI := IsAdicRing.ideal_spec A
-  have : IsAdicComplete (IsAdicRing.ideal A) A := hI.2.2
-  ⟨⟨m, hm.isPrime⟩, Spf.mem_carrier_of_isMaximal hI.2.1 (IsAdicComplete.le_jacobson _) hm⟩
-
 /-- For a noetherian adic ring `A`, the formal spectrum `Spf A` is regular exactly when `A` is a
 regular ring. Regularity of `A` may be tested at maximal ideals, which are points of `Spf A`,
 where the local ring of `Spf A` is regular exactly when the localization of `A` is. -/
@@ -184,8 +169,8 @@ theorem isRegular_ofSpf_iff [IsNoetherianRing A] : (ofSpf A).IsRegular ↔ IsReg
   -- the local rings of `ofSpf A` are those of `Spf A`, by `ofSpf_toLocallyRingedSpace`
   refine ⟨fun h ↦ (isRegularRing_iff_localization_maximal A).mpr fun m _ ↦ ?_,
     fun _ ↦ ⟨fun p ↦ (Spf.isRegularLocalRing_stalk_iff p).mpr inferInstance⟩⟩
-  exact (Spf.isRegularLocalRing_stalk_iff (maximalPoint A m)).mp
-    (h.isRegularLocalRing_stalk (maximalPoint A m))
+  exact (Spf.isRegularLocalRing_stalk_iff (Spf.pointOfIsMaximal m)).mp
+    (h.isRegularLocalRing_stalk (Spf.pointOfIsMaximal m))
 
 instance [IsRegularRing A] : (ofSpf A).IsRegular :=
   (isRegular_ofSpf_iff A).mpr inferInstance
@@ -200,7 +185,7 @@ theorem isCohenMacaulay_ofSpf_iff [IsNoetherianRing A] :
     Ring.isCohenMacaulay_iff_forall_isMaximal.mpr fun m _ ↦ ?_, fun h p ↦
     ⟨Spf.isNoetherianRing_stalk p, (Spf.isCohenMacaulay_stalk_iff p).mpr
       (h.isCohenMacaulay_localization _)⟩⟩
-  exact (Spf.isCohenMacaulay_stalk_iff (maximalPoint A m)).mp (h (maximalPoint A m)).2
+  exact (Spf.isCohenMacaulay_stalk_iff (Spf.pointOfIsMaximal m)).mp (h (Spf.pointOfIsMaximal m)).2
 
 instance [Ring.IsCohenMacaulay A] : (ofSpf A).IsCohenMacaulay :=
   (isCohenMacaulay_ofSpf_iff A).mpr inferInstance

@@ -50,11 +50,18 @@ theorem asIdeal_eq_maximalIdeal (x : Spf.carrier ℤ_[p]) :
   ((maximalIdeal.isMaximal _).eq_of_le (x : PrimeSpectrum ℤ_[p]).isPrime.ne_top
     ((Spf.mem_carrier_iff_le Huber.PadicInt.isAdic_maximalIdeal).mp x.property)).symm
 
--- Hence the underlying space of `Spf ℤ_[p]` has Krull dimension `0`.
-example : topologicalKrullDim (Spf.carrier ℤ_[p]) ≤ 0 :=
+-- The maximal ideal `(p)` is a point of `Spf ℤ_[p]`, since `ℤ_[p]` is `p`-adically complete.
+example : (Spf.pointOfIsMaximal (maximalIdeal ℤ_[p]) : PrimeSpectrum ℤ_[p]).asIdeal =
+    maximalIdeal ℤ_[p] :=
+  Spf.pointOfIsMaximal_asIdeal _
+
+-- Hence the underlying space of `Spf ℤ_[p]` is a single point, of Krull dimension `0`.
+example : topologicalKrullDim (Spf.carrier ℤ_[p]) = 0 :=
   have : Subsingleton (Spf.carrier ℤ_[p]) := ⟨fun x y ↦ Subtype.ext <| PrimeSpectrum.ext <|
     (asIdeal_eq_maximalIdeal p x).trans (asIdeal_eq_maximalIdeal p y).symm⟩
-  topologicalKrullDim_zero_of_discreteTopology _
+  have : Nonempty (TopologicalSpace.IrreducibleCloseds (Spf.carrier ℤ_[p])) :=
+    ⟨⟨{Spf.pointOfIsMaximal (maximalIdeal ℤ_[p])}, isIrreducible_singleton, isClosed_discrete _⟩⟩
+  (topologicalKrullDim_zero_of_discreteTopology _).antisymm Order.krullDim_nonneg
 
 -- The point of `Spf ℤ_[p]` is closed.
 example (x : Spf.carrier ℤ_[p]) : IsClosed ({x} : Set (Spf.carrier ℤ_[p])) :=

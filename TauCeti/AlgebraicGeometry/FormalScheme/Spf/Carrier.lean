@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
@@ -38,6 +39,8 @@ exactly when `f` is nilpotent modulo `I`.
 * `TauCeti.FormalScheme.Spf.basicOpen f`: the basic open set `D(f)` of the underlying space.
 * `TauCeti.FormalScheme.Spf.comap`: the continuous map of underlying spaces induced by a
   continuous ring homomorphism.
+* `TauCeti.FormalScheme.Spf.pointOfIsMaximal`: the point of `Spf A` given by a maximal ideal of
+  an adic ring `A`.
 
 ## Main results
 
@@ -122,6 +125,26 @@ theorem mem_carrier_of_isMaximal (hI : IsAdic I) (hIJ : I ≤ Ring.jacobson A)
     {m : PrimeSpectrum A} (hm : m.asIdeal.IsMaximal) : m ∈ carrier A :=
   have := hm
   (mem_carrier_iff_le hI).mpr (hIJ.trans (Ring.jacobson_le_of_isMaximal _))
+
+section IsAdicRing
+
+variable [IsTopologicalRing A] [IsAdicRing A]
+
+/-- The point of the formal spectrum of an adic ring `A` given by a maximal ideal `m` of `A`,
+which is open since `A` is complete for an ideal of definition (`mem_carrier_of_isMaximal`).
+The body is exposed so the point's ideal is `m` by definition, matching its local ring with
+`Localization.AtPrime m`. -/
+@[expose] def pointOfIsMaximal (m : Ideal A) [hm : m.IsMaximal] : carrier A :=
+  have hI := IsAdicRing.ideal_spec A
+  have : IsAdicComplete (IsAdicRing.ideal A) A := hI.2.2
+  ⟨⟨m, hm.isPrime⟩, mem_carrier_of_isMaximal hI.2.1 (IsAdicComplete.le_jacobson _) hm⟩
+
+@[simp]
+theorem pointOfIsMaximal_asIdeal (m : Ideal A) [m.IsMaximal] :
+    (pointOfIsMaximal m : PrimeSpectrum A).asIdeal = m :=
+  rfl
+
+end IsAdicRing
 
 /-- For a discrete ring every prime is open, so the formal spectrum has the same points as the
 spectrum. -/
