@@ -52,6 +52,8 @@ consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of
   of a face and the faces of a string with an appended arrow.
 * `CategoryTheory.nerve.δ₀_mk₃_eq`, …, `CategoryTheory.nerve.δ₃_mk₃_eq`: the faces of the
   `3`-simplex of the nerve given by three composable morphisms.
+* `CategoryTheory.nerveMap_app_nerveEquiv_symm`: the map of nerves induced by a functor sends the
+  vertex of an object to the vertex of its image.
 -/
 
 public section
@@ -279,3 +281,14 @@ theorem δ₃_mk₃_eq :
 end Faces
 
 end CategoryTheory.nerve
+
+namespace CategoryTheory
+
+/-- The map of nerves induced by a functor `F` sends the vertex of an object `X` to the vertex of
+`F.obj X`: Mathlib's `nerveMap_app_mk₀`, stated for vertices written with `nerveEquiv`. -/
+@[simp]
+lemma nerveMap_app_nerveEquiv_symm {C D : Type u} [Category.{v} C] [Category.{v} D] (F : C ⥤ D)
+    (X : C) : (nerveMap F).app (Opposite.op ⦋0⦌) (nerveEquiv.symm X) = nerveEquiv.symm (F.obj X) :=
+  nerveMap_app_mk₀ F X
+
+end CategoryTheory
