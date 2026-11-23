@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
-public import TauCeti.Analysis.Normed.Operator.Compact.Pi
+public import TauCeti.Analysis.Normed.Operator.Compact.Domination
 public import TauCeti.Analysis.Sobolev.Wkp.FiniteCover
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Exponent
@@ -46,10 +46,10 @@ The chart image `A.image j` is covered by the finitely many pieces `A.chart j ''
 (`TauCeti.FiniteBundleAtlas.exists_transfer_cover`). On each piece the chart-`j` data are
 transferred from the chart-`i` data restricted to `A.chart i '' D i`, which has compact closure
 inside `A.image i`, so the piece data depend compactly on the section from order `k + 1` to order
-`k`. Compactness on the pieces gives compactness on `A.image j`
-(`TauCeti.Wkp.isCompactOperator_of_restrictL`), and compactness of every chart component gives
-compactness into the Sobolev sections, which are closed in the product of the chartwise Sobolev
-spaces (`TauCeti.SectionChartData.isCompactOperator_of_forall_apply`).
+`k`. The finite-cover norm estimate and domination by these compact restrictions give compactness
+on `A.image j` (`IsCompactOperator.of_norm_le_mul_sum`), and compactness of every chart component
+gives compactness into the Sobolev sections, which are closed in the product of the chartwise
+Sobolev spaces (`TauCeti.SectionChartData.isCompactOperator_of_forall_apply`).
 
 Changing the exponent gives the Rellich–Kondrachov theorem. Let `n ≥ 2` be the dimension, `r ≥ 1`
 and `1 ≤ q < ∞` with `1/p < 1/q + r/n`. Then `W^{k+r,p}(V) → W^{k,q}(V)` is compact
@@ -169,12 +169,21 @@ theorem isCompactOperator_lowerOrderL [T2Space M] :
     fun j m ↦ ?_
   -- The pieces `P i j` cover the image of chart `j`, and on `P i j` the chart-`j` data are
   -- transferred from the chart-`i` data on `Q i`.
-  refine Wkp.isCompactOperator_of_restrictL (fun i ↦ hPj i j) (hcov j) fun i ↦ ?_
-  convert (hrel i).clm_comp ((ContinuousLinearMap.proj m).comp
-    (A.transferL μ p k i j (hPc i j) (hPD i j) (hPQ i j))) using 1
-  funext w
-  exact A.restrictL_eq_transferL μ p k (A.sectionChartData.lowerOrderL μ p k w).property (hP i j)
-    (hPc i j) (hPD i j) (hQi i) (hPQ i j) m
+  let T : SobolevSection A μ p (k + 1) →L[ℝ] Wkp μ (A.image j) p k :=
+    ((ContinuousLinearMap.proj m).comp ((ContinuousLinearMap.proj j).comp
+    (A.sectionChartData.sobolevSections μ p k).subtypeL)).comp
+      (A.sectionChartData.lowerOrderL μ p k)
+  refine IsCompactOperator.of_norm_le_mul_sum T.toLinearMap
+    (fun i ↦ (Wkp.restrictL (hPj i j) k).comp T) (fun i ↦ ?_) (C := 1) ?_
+  · convert (hrel i).clm_comp ((ContinuousLinearMap.proj m).comp
+      (A.transferL μ p k i j (hPc i j) (hPD i j) (hPQ i j))) using 1
+    funext w
+    exact A.restrictL_eq_transferL μ p k (A.sectionChartData.lowerOrderL μ p k w).property (hP i j)
+      (hPc i j) (hPD i j) (hQi i) (hPQ i j) m
+  · intro w
+    simpa only [one_mul, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_coe,
+      Function.comp_apply] using
+      Wkp.norm_le_sum_norm_restrictL (fun i ↦ hPj i j) (hcov j) k (T w)
 
 /-- **Rellich's theorem for Sobolev sections**, for any loss of derivatives: the inclusion
 `W^{k+d+1,p}(V) → W^{k,p}(V)` is a compact operator for `1 ≤ p ≤ ∞`. -/

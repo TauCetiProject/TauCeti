@@ -153,8 +153,10 @@ theorem abs_deriv_preciseRepresentative_le_of_abs_mul_iteratedGradient_le
   have hab : a < b := hx.1.trans hx.2
   have hd := Wkp.differentiableOn_preciseRepresentative_Ioo u
   have hMū (z : ℝ) (hz : z ∈ Ioo a b) : |ū z| ≤ M :=
-    Wkp.abs_preciseRepresentative_le (by simpa using (Fact.out : 1 ≤ p)) u isOpen_Ioo
-      subset_rfl hM hz
+    Wkp.abs_preciseRepresentative_le (by
+      rw [Module.finrank_self, Nat.cast_one]
+      exact ENNReal.one_lt_two.trans_le
+        (le_mul_of_one_le_right (by positivity) (Fact.out : 1 ≤ p))) u isOpen_Ioo subset_rfl hM hz
   have hosc (y : ℝ) (hy : y ∈ Ioo a b) : |deriv ū x - deriv ū y| ≤ I / lam :=
     abs_deriv_preciseRepresentative_sub_le_integral_div hlam hσ hu hf hx hy
   -- On `[a + ε, b - ε]` the mean value theorem gives a point where `|ū'| ≤ 2 M / (b - a - 2 ε)`.
