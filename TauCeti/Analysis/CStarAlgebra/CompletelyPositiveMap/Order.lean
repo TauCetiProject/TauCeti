@@ -23,8 +23,7 @@ linear functional is completely positive (`PositiveLinearMap.toCompletelyPositiv
 Equipping `A₁ →CP A₂` with the *completely positive order* `ψ ≤ φ ↔ ∃ θ : A₁ →CP A₂, φ = ψ + θ`
 makes it a partially ordered cancellative `ℝ≥0`-cone with bottom element `0`, used in Arveson's
 Radon–Nikodym theorem. On a unital domain `D`, this file also records the subunital Kadison–Schwarz
-inequality `CompletelyPositiveMap.star_map_mul_map_le_of_map_one_le` (`φ 1 ≤ 1`) and the
-contractivity bound `CompletelyPositiveMap.norm_toContinuousLinearMap_le_one_of_map_one_le`.
+inequality `CompletelyPositiveMap.star_map_mul_map_le_of_map_one_le` (`φ 1 ≤ 1`).
 
 ## References
 
@@ -250,14 +249,6 @@ theorem star_map_mul_map_le_of_map_one_le (φ : D →CP E) (hφ : φ 1 ≤ 1) (a
     _ ≤ (1 : ℝ) • φ (star a * a) :=
         smul_le_smul_of_nonneg_right hnorm (map_nonneg φ (star_mul_self_nonneg a))
     _ = φ (star a * a) := one_smul ℝ _
-
-/-- A subunital completely positive map (`φ 1 ≤ 1`) between unital C⋆-algebras is contractive. -/
-theorem norm_toContinuousLinearMap_le_one_of_map_one_le (φ : D →CP E) (hφ : φ 1 ≤ 1) :
-    ‖φ.toContinuousLinearMap‖ ≤ 1 :=
-  calc ‖φ.toContinuousLinearMap‖
-      = ‖((PositiveContinuousLinearMap.ofClass φ : D →P[ℂ] E) : D →L[ℂ] E)‖ := rfl
-    _ = ‖φ 1‖ := CompletelyPositiveMapClass.opNorm_ofClass_eq_norm_map_one φ
-    _ ≤ 1 := (CStarAlgebra.norm_le_one_iff_of_nonneg (φ 1) (map_nonneg φ zero_le_one)).mpr hφ
 
 end KadisonSchwarz
 
