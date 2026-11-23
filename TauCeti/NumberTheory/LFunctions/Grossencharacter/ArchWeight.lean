@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Harmonic
-public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Coordinates
 
 /-!
 # Regularity, triviality, and radial scaling for `Grossencharacter.archWeight`
@@ -44,15 +43,15 @@ variable {K : Type*} [Field K] [NumberField K] {𝔪 : Modulus K}
 /-- When `harmonicDegree` vanishes, `archWeight` is identically `1`. -/
 theorem archWeight_of_harmonicDegree_eq_zero {χ : Grossencharacter K 𝔪}
     (h : χ.harmonicDegree = 0) (y : realSpace K) : χ.archWeight y = 1 := by
-  have hw : ∀ w, χ.harmonicExponent w = 0 := by
-    classical simpa [harmonicDegree_def] using h
-  simp [archWeight_def, hw]
+  rw [archWeight_eq_infinityType]
+  exact χ.toHeckeCharacter.infinityType.archWeight_of_harmonicDegree_eq_zero
+    (χ.harmonicDegree_eq_infinityType ▸ h) y
 
+/-- `archWeight` is continuous on `realSpace K`. -/
 @[fun_prop]
 theorem continuous_archWeight (χ : Grossencharacter K 𝔪) : Continuous χ.archWeight := by
-  rw [funext χ.archWeight_def]
-  exact continuous_finsetProd _ fun w _ ↦ (continuous_apply w).rpow_const fun _ ↦
-    Or.inr (by positivity)
+  simpa only [funext χ.archWeight_eq_infinityType] using
+    χ.toHeckeCharacter.infinityType.continuous_archWeight
 
 /-- **Radial scaling of `archWeight`** (Neukirch VII (8.3)): for `0 ≤ t`, scaling by
 `surfaceScale x t` multiplies `archWeight x` by `t ^ (Tr(p) / (2 [K : ℚ]))`. -/
@@ -60,18 +59,7 @@ theorem archWeight_surfaceScale (χ : Grossencharacter K 𝔪) (x : realSpace K)
     (ht : 0 ≤ t) :
     χ.archWeight (surfaceScale x t) =
       χ.archWeight x * t ^ ((χ.harmonicDegree : ℝ) / (2 * Module.finrank ℚ K)) := by
-  have hsplit : χ.archWeight (surfaceScale x t) =
-      χ.archWeight x *
-        ∏ w : InfinitePlace K, t ^ ((χ.harmonicExponent w : ℝ) / (2 * Module.finrank ℚ K)) := by
-    rw [archWeight_def, archWeight_def, ← Finset.prod_mul_distrib]
-    refine Finset.prod_congr rfl fun w _ ↦ ?_
-    rw [surfaceScale_apply, mul_comm (x w), Real.mul_rpow_of_nonneg_left (Real.rpow_nonneg ht _),
-      mul_comm, ← Real.rpow_mul ht]
-    congr 2
-    ring
-  rw [hsplit]
-  congr 1
-  rw [← Real.rpow_sum_of_nonneg ht fun _ _ ↦ by positivity, ← Finset.sum_div, ← Nat.cast_sum,
-    ← harmonicDegree_def]
+  simp only [archWeight_eq_infinityType, harmonicDegree_eq_infinityType]
+  exact χ.toHeckeCharacter.infinityType.archWeight_surfaceScale x ht
 
 end TauCeti.LFunctions.Grossencharacter

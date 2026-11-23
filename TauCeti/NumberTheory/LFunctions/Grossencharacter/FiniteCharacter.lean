@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
+import Mathlib.NumberTheory.MulChar.Lemmas
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Ideal.Quotient.Representative
 
@@ -75,6 +76,8 @@ integer `0` is `0`. Accordingly the comparison is stated for nonzero integers on
   integers not prime to `𝔪`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter_unit`: on a unit it is the archimedean
   value.
+* `TauCeti.LFunctions.Grossencharacter.norm_finiteCharacter_le_one`: every finite character value
+  has norm at most `1`.
 
 ## References
 
@@ -298,6 +301,23 @@ theorem finiteCharacter_eq_residueCharacter (χ : Grossencharacter K 𝔪) {a : 
   · rw [χ.finiteCharacter_eq_zero_of_not_isCoprimeTo hcop, MulChar.map_nonunit]
     exact fun hu ↦ hcop (Modulus.isCoprimeTo_iff_sup_eq_top.mpr
       ⟨Ideal.span_singleton_eq_bot.not.mpr ha, Ideal.Quotient.isUnit_mk_iff.mp hu⟩)
+
+/-- Every finite character value of `χ` has norm at most `1`. -/
+theorem norm_finiteCharacter_le_one (χ : Grossencharacter K 𝔪) (a : 𝓞 K) :
+    ‖χ.finiteCharacter a‖ ≤ 1 := by
+  by_cases ha : a = 0
+  · simp [ha]
+  rw [χ.finiteCharacter_eq_residueCharacter ha]
+  have : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
+    Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
+  by_cases hu : IsUnit (Ideal.Quotient.mk 𝔪.finitePart a)
+  · obtain ⟨u, hu⟩ := hu
+    let := Fintype.ofFinite (𝓞 K ⧸ 𝔪.finitePart)ˣ
+    rw [← hu, ← MulChar.coe_equivToUnitHom]
+    exact (Complex.norm_eq_one_of_mem_rootsOfUnity
+      (χ.residueCharacter.apply_mem_rootsOfUnity u)).le
+  · rw [MulChar.map_nonunit _ hu, norm_zero]
+    exact zero_le_one
 
 /-- **The finite character only sees residues modulo `𝔪₀`**: nonzero integers congruent modulo
 the finite part of `𝔪` have the same finite character. -/

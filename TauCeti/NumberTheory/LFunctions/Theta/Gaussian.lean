@@ -238,6 +238,29 @@ theorem norm_latticeTheta_le (L : Submodule ℤ (mixedSpace K))
     ((summable_norm_archGaussian L y hy).tsum_le_tsum (fun x ↦ norm_archGaussian_le h x)
       (summable_norm_archGaussian L y' hy'))
 
+/-- A weighted sum of archimedean Gaussians is continuous at every positive parameter `y₀`,
+provided its terms are summable in norm at every positive constant parameter `δ > 0`. -/
+theorem continuousAt_tsum_mul_archGaussian {α : Type*} (c : α → ℂ) (emb : α → mixedSpace K)
+    (hc : ∀ δ > 0, Summable fun x : α ↦ ‖c x * archGaussian (fun _ ↦ δ) (emb x)‖)
+    {y₀ : realSpace K} (hy₀ : ∀ w, 0 < y₀ w) :
+    ContinuousAt (fun y ↦ ∑' x : α, c x * archGaussian y (emb x)) y₀ := by
+  obtain ⟨w₀, -, hw₀⟩ := Finset.exists_min_image Finset.univ y₀ Finset.univ_nonempty
+  set δ := y₀ w₀ / 2
+  have hδ : 0 < δ := half_pos (hy₀ w₀)
+  have hU : IsOpen {y : realSpace K | ∀ w, δ < y w} := by
+    rw [Set.ofPred_forall]
+    exact isOpen_iInter_of_finite fun w ↦ isOpen_lt continuous_const (continuous_apply w)
+  have hy₀U : y₀ ∈ {y : realSpace K | ∀ w, δ < y w} := fun w ↦
+    (half_lt_self (hy₀ w₀)).trans_le (hw₀ w (Finset.mem_univ w))
+  have hcont : ContinuousOn (fun y ↦ ∑' x : α, c x * archGaussian y (emb x))
+      {y : realSpace K | ∀ w, δ < y w} :=
+    continuousOn_tsum (fun x ↦ (continuous_const.mul (continuous_archGaussian _)).continuousOn)
+      (hc δ hδ) fun x y hy ↦ by
+        rw [norm_mul, norm_mul]
+        exact mul_le_mul_of_nonneg_left (norm_archGaussian_le (fun w ↦ (hy w).le) _)
+          (norm_nonneg _)
+  exact hcont.continuousAt (hU.mem_nhds hy₀U)
+
 /-- The theta series is continuous at every positive parameter: for a discrete lattice, on the
 parameters bounded below by a positive constant, its terms are dominated by the Gaussian at that
 constant. -/
@@ -249,19 +272,13 @@ theorem continuousAt_latticeTheta (L : Submodule ℤ (mixedSpace K))
       funext (latticeTheta_eq_zero_of_not_discreteTopology L hL)
     rw [hzero]
     exact continuousAt_const
-  obtain ⟨w₀, -, hw₀⟩ := Finset.exists_min_image Finset.univ y₀ Finset.univ_nonempty
-  set δ := y₀ w₀ / 2
-  have hδ : 0 < δ := half_pos (hy₀ w₀)
-  have hU : IsOpen {y : realSpace K | ∀ w, δ < y w} := by
-    rw [Set.ofPred_forall]
-    exact isOpen_iInter_of_finite fun w ↦ isOpen_lt continuous_const (continuous_apply w)
-  have hy₀U : y₀ ∈ {y : realSpace K | ∀ w, δ < y w} := fun w ↦
-    (half_lt_self (hy₀ w₀)).trans_le (hw₀ w (Finset.mem_univ w))
-  have hcont : ContinuousOn (latticeTheta L) {y : realSpace K | ∀ w, δ < y w} :=
-    continuousOn_tsum (fun x ↦ (continuous_archGaussian (x : mixedSpace K)).continuousOn)
-      (summable_norm_archGaussian L (fun _ ↦ δ) fun _ ↦ hδ)
-      fun x y hy ↦ norm_archGaussian_le (fun w ↦ (hy w).le) x
-  exact hcont.continuousAt (hU.mem_nhds hy₀U)
+  have hθ : latticeTheta L = fun y ↦ ∑' x : L, (1 : ℂ) * archGaussian y (x : mixedSpace K) := by
+    ext y
+    simp [latticeTheta_def]
+  rw [hθ]
+  exact continuousAt_tsum_mul_archGaussian
+    (fun _ : L ↦ (1 : ℂ)) (fun x ↦ (x : mixedSpace K))
+    (fun δ hδ ↦ by simpa using summable_norm_archGaussian L (fun _ ↦ δ) fun _ ↦ hδ) hy₀
 
 /-- The theta series of an ideal lattice descends to the quotient of positive parameters
 by the unit action. No restriction on the unit rank is needed. -/

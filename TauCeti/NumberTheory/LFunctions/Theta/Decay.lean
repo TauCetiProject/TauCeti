@@ -41,7 +41,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- A Gaussian at parameters at least `t`, `t ≥ 1`, is bounded by a fixed summable Gaussian
 times an exponentially decreasing factor, provided the vector has squared length at least `δ`. -/
-private theorem norm_archGaussian_le_exp_mul {x : mixedSpace K} {δ t : ℝ}
+theorem norm_archGaussian_le_exp_mul {x : mixedSpace K} {δ t : ℝ}
     (hδ : δ ≤ mixedInner K x x) (ht : 1 ≤ t) {y : realSpace K} (hy : ∀ w, t ≤ y w) :
     ‖archGaussian y x‖ ≤ Real.exp (-(Real.pi * δ / 2) * t) *
       ‖archGaussian (fun _ ↦ (1 / 2 : ℝ)) x‖ := by
@@ -59,6 +59,55 @@ private theorem norm_archGaussian_le_exp_mul {x : mixedSpace K} {δ t : ℝ}
   rw [← Finset.mul_sum, ← mixedInner_self_eq_sum]
   nlinarith [Real.pi_pos]
 
+/-- Exponential decay of a weighted Gaussian sum whose embedding vectors have squared mixed
+length bounded below by `δ > 0` and whose terms are summable in norm at parameter `1 / 2`. -/
+theorem exists_norm_tsum_mul_archGaussian_le {α : Type*} (c : α → ℂ) (emb : α → mixedSpace K)
+    {δ : ℝ} (hδ : 0 < δ) (hL : ∀ x : α, δ ≤ mixedInner K (emb x) (emb x))
+    (hc : Summable fun x : α ↦ ‖c x * archGaussian (fun _ ↦ (1 / 2 : ℝ)) (emb x)‖) :
+    ∃ c₀ > 0, ∃ C ≥ 0, ∀ t : ℝ, 1 ≤ t → ∀ y : realSpace K, (∀ w, t ≤ y w) →
+      ‖∑' x : α, c x * archGaussian y (emb x)‖ ≤ C * Real.exp (-c₀ * t) := by
+  let a : α → ℝ := fun x ↦ ‖c x * archGaussian (fun _ ↦ (1 / 2 : ℝ)) (emb x)‖
+  refine ⟨Real.pi * δ / 2, by positivity, ∑' x, a x,
+    tsum_nonneg (fun _ ↦ norm_nonneg _), fun t ht y hy ↦ ?_⟩
+  calc
+    ‖∑' x : α, c x * archGaussian y (emb x)‖
+        ≤ ∑' x, Real.exp (-(Real.pi * δ / 2) * t) * a x :=
+          tsum_of_norm_bounded (hc.mul_left _).hasSum fun x ↦ by
+            rw [norm_mul]
+            calc
+              ‖c x‖ * ‖archGaussian y (emb x)‖
+                  ≤ ‖c x‖ * (Real.exp (-(Real.pi * δ / 2) * t) *
+                      ‖archGaussian (fun _ ↦ (1 / 2 : ℝ)) (emb x)‖) :=
+                    mul_le_mul_of_nonneg_left (norm_archGaussian_le_exp_mul (hL x) ht hy)
+                      (norm_nonneg _)
+              _ = Real.exp (-(Real.pi * δ / 2) * t) * a x := by
+                  simp only [a, norm_mul]; ring
+    _ = (∑' x, a x) * Real.exp (-(Real.pi * δ / 2) * t) := by
+        rw [tsum_mul_left, mul_comm]
+
+/-- Any function on `realSpace K` that decays as `C * exp (-c * t)` whenever all coordinates
+are at least `t ≥ 1` decays uniformly as `C * exp (-c' * u ^ (1 / [K : ℚ]))` along
+`surfaceScale x u` for `x` in any bounded subset of `normOneSurface K`. -/
+theorem exists_norm_surfaceScale_le_of_forall_le {f : realSpace K → ℂ} {c C : ℝ}
+    (hc : 0 < c) (hC : 0 ≤ C)
+    (hf : ∀ t : ℝ, 1 ≤ t → ∀ y : realSpace K, (∀ w, t ≤ y w) → ‖f y‖ ≤ C * Real.exp (-c * t))
+    {D : Set (realSpace K)} (hD : Bornology.IsBounded D) (hS : D ⊆ normOneSurface K) :
+    ∃ c' > 0, ∃ C' ≥ 0, ∀ᶠ u : ℝ in atTop, ∀ x ∈ D,
+      ‖f (surfaceScale x u)‖ ≤ C' * Real.exp (-c' * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
+  obtain ⟨b, hb, hbx⟩ := exists_pos_le_of_isBounded_normOneSurface hD hS
+  have hn : 0 < (Module.finrank ℚ K : ℝ)⁻¹ :=
+    inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K)))
+  have hu : Tendsto (fun u : ℝ ↦ b * u ^ (Module.finrank ℚ K : ℝ)⁻¹) atTop atTop :=
+    (tendsto_rpow_atTop hn).const_mul_atTop hb
+  refine ⟨c * b, mul_pos hc hb, C, hC, ?_⟩
+  filter_upwards [hu.eventually_ge_atTop 1, eventually_ge_atTop (0 : ℝ)] with u hu hu0 x hx
+  have h := hf (b * u ^ (Module.finrank ℚ K : ℝ)⁻¹) hu (surfaceScale x u) fun w ↦ by
+    rw [surfaceScale_apply]
+    simpa only [one_div] using
+      mul_le_mul_of_nonneg_right (hbx x hx w)
+        (Real.rpow_nonneg hu0 (Module.finrank ℚ K : ℝ)⁻¹)
+  simpa only [neg_mul, mul_assoc] using h
+
 /-- The theta kernel minus its constant term `1` is bounded by `C * exp (-c * t)` whenever
 every archimedean parameter is at least `t ≥ 1`. The constants depend only on the discrete
 lattice. -/
@@ -68,21 +117,15 @@ theorem exists_norm_latticeTheta_sub_one_le (L : Submodule ℤ (mixedSpace K))
       ‖latticeTheta L y - 1‖ ≤ C * Real.exp (-c * t) := by
   classical
   obtain ⟨δ, hδ, hL⟩ := exists_pos_le_mixedInner L
-  let a : {x : L // x ≠ 0} → ℝ := fun x ↦
-    ‖archGaussian (fun _ ↦ (1 / 2 : ℝ)) ((x : L) : mixedSpace K)‖
-  have ha : Summable a :=
-    (summable_archGaussian L (fun _ ↦ (1 / 2 : ℝ)) (fun _ ↦ by norm_num)).norm.subtype _
-  refine ⟨Real.pi * δ / 2, by positivity, ∑' x, a x,
-    tsum_nonneg (fun _ ↦ norm_nonneg _), fun t ht y hy ↦ ?_⟩
+  obtain ⟨c, hc, C, hC, h⟩ := exists_norm_tsum_mul_archGaussian_le
+    (fun _ : {x : L // x ≠ 0} ↦ (1 : ℂ)) (fun x ↦ (x.val : mixedSpace K)) hδ
+    (fun x ↦ hL x x.property)
+    (by simpa only [one_mul, Function.comp_def] using
+      (summable_archGaussian L (fun _ ↦ 1 / 2) fun _ ↦ by norm_num).norm.subtype _)
+  refine ⟨c, hc, C, hC, fun t ht y hy ↦ ?_⟩
   rw [latticeTheta_eq_one_add L y (fun w ↦ lt_of_lt_of_le zero_lt_one (ht.trans (hy w))),
     add_sub_cancel_left]
-  calc
-    ‖∑' x : {x : L // x ≠ 0}, archGaussian y (x : L)‖
-        ≤ ∑' x, Real.exp (-(Real.pi * δ / 2) * t) * a x :=
-      tsum_of_norm_bounded (ha.mul_left _).hasSum fun x ↦
-        norm_archGaussian_le_exp_mul (hL x x.property) ht hy
-    _ = (∑' x, a x) * Real.exp (-(Real.pi * δ / 2) * t) := by
-      rw [tsum_mul_left, mul_comm]
+  simpa using h t ht y hy
 
 /-- Uniform stretched-exponential decay of the theta kernel minus its constant term `1` along
 the radial decomposition of any bounded subset of the norm-one surface. No fundamental-domain
@@ -93,20 +136,8 @@ theorem exists_norm_latticeTheta_surfaceScale_sub_one_le
     ∃ c > 0, ∃ C ≥ 0, ∀ᶠ u : ℝ in atTop, ∀ x ∈ D,
       ‖latticeTheta L (surfaceScale x u) - 1‖ ≤
         C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
-  obtain ⟨b, hb, hbx⟩ := exists_pos_le_of_isBounded_normOneSurface hD hS
-  obtain ⟨c, hc, C, hC, htheta⟩ := exists_norm_latticeTheta_sub_one_le L
-  have hn : 0 < (Module.finrank ℚ K : ℝ)⁻¹ :=
-    inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K)))
-  have hu : Tendsto (fun u : ℝ ↦ b * u ^ (Module.finrank ℚ K : ℝ)⁻¹) atTop atTop :=
-    (tendsto_rpow_atTop hn).const_mul_atTop hb
-  refine ⟨c * b, mul_pos hc hb, C, hC, ?_⟩
-  filter_upwards [hu.eventually_ge_atTop 1, eventually_ge_atTop (0 : ℝ)] with u hu hu0 x hx
-  have h := htheta (b * u ^ (Module.finrank ℚ K : ℝ)⁻¹) hu (surfaceScale x u) fun w ↦ by
-    rw [surfaceScale_apply]
-    simpa only [one_div] using
-      mul_le_mul_of_nonneg_right (hbx x hx w)
-        (Real.rpow_nonneg hu0 (Module.finrank ℚ K : ℝ)⁻¹)
-  simpa only [neg_mul, mul_assoc] using h
+  obtain ⟨c, hc, C, hC, h⟩ := exists_norm_latticeTheta_sub_one_le L
+  exact exists_norm_surfaceScale_le_of_forall_le hc hC h hD hS
 
 /-- If `x u` eventually lies in a fixed bounded subset of the norm-one surface, then
 `latticeTheta L (surfaceScale (x u) u) - 1` is `O(u^r)` for every real `r` as `u → ∞`.
