@@ -492,11 +492,49 @@ def fixedIntegerHiveEquivLRTableauOfShift {lam μ γ : DominantWeight n} {a b : 
     (hgc : (γ.shift (a + b)).IsPolynomial) :
     FixedIntegerHive (productBoundary lam μ γ) ≃
       LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape :=
-  (fixedIntegerHiveShiftEquiv lam μ γ a b).trans <| by
-    have h := fixedIntegerHiveEquivLRTableau (DominantWeight.colLen_zero_shape_le (lam.shift a))
+  ((fixedIntegerHiveShiftEquiv lam μ γ a b).trans
+    (Equiv.subtypeEquivRight fun _ => by
+      rw [weightOfShape_shape hla, weightOfShape_shape hmb, weightOfShape_shape hgc])).trans
+    (fixedIntegerHiveEquivLRTableau (DominantWeight.colLen_zero_shape_le (lam.shift a))
       (DominantWeight.colLen_zero_shape_le (γ.shift (a + b)))
-      (DominantWeight.colLen_zero_shape_le (μ.shift b))
-    rwa [weightOfShape_shape hla, weightOfShape_shape hmb, weightOfShape_shape hgc] at h
+      (DominantWeight.colLen_zero_shape_le (μ.shift b)))
+
+/-- The hive of a shifted Littlewood–Richardson tableau `T` takes the value
+`λ₀ + ⋯ + λⱼ₋₁ + (∑_{k < i, r < j} T.rowCount r k) - i * b` at the product-chart vertex
+`(i, j)`. -/
+@[simp]
+theorem fixedIntegerHiveEquivLRTableauOfShift_symm_apply_ofChart {lam μ γ : DominantWeight n}
+    {a b : ℤ} (hla : (lam.shift a).IsPolynomial) (hmb : (μ.shift b).IsPolynomial)
+    (hgc : (γ.shift (a + b)).IsPolynomial)
+    (T : LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape)
+    {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
+    ((fixedIntegerHiveEquivLRTableauOfShift hla hmb hgc).symm T).val
+        (Vertex.ofChart n i j hij hj) =
+      prefixSum j lam.val + ∑ k ∈ range i, ∑ r ∈ range j, (T.val.rowCount r k : ℤ) -
+        (i : ℤ) * b := by
+  simp only [fixedIntegerHiveEquivLRTableauOfShift, Equiv.symm_trans_apply,
+    fixedIntegerHiveShiftEquiv_symm_apply_coe, Equiv.subtypeEquivRight_symm_apply,
+    Pi.sub_apply, fixedIntegerHiveEquivLRTableau_symm_apply_ofChart, weightOfShape_shape hla,
+    Hive.affine_apply, Vertex.ofChart_y, Vertex.ofChart_z, nsmul_eq_mul]
+  have hpre : prefixSum j (lam.shift a).val = prefixSum j lam.val + (j : ℤ) * a := by
+    rw [TauCeti.prefixSum_eq_sum_castLE hj, TauCeti.prefixSum_eq_sum_castLE hj]
+    simp [sum_add_distrib]
+  rw [hpre, Int.ofNat_sub hij]
+  ring
+
+/-- The shifted Littlewood–Richardson tableau of a hive `h` has
+`(h.val.toGTPattern.shift b) k (r + 1) - (h.val.toGTPattern.shift b) k r` letters `k` in each
+row `r < n`. -/
+theorem natCast_rowCount_fixedIntegerHiveEquivLRTableauOfShift {lam μ γ : DominantWeight n}
+    {a b : ℤ} (hla : (lam.shift a).IsPolynomial) (hmb : (μ.shift b).IsPolynomial)
+    (hgc : (γ.shift (a + b)).IsPolynomial)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) {r : ℕ} (hr : r < n) (k : ℕ) :
+    ((fixedIntegerHiveEquivLRTableauOfShift hla hmb hgc h).val.rowCount r k : ℤ) =
+      (h.val.toGTPattern.shift b) k (r + 1) - (h.val.toGTPattern.shift b) k r := by
+  simp only [fixedIntegerHiveEquivLRTableauOfShift, Equiv.trans_apply,
+    natCast_rowCount_fixedIntegerHiveEquivLRTableau _ _ _ _ hr k,
+    Equiv.subtypeEquivRight_apply, fixedIntegerHiveShiftEquiv_apply_coe, toGTPattern_add,
+    toGTPattern_affine, add_sub_cancel_left, ← GTPattern.shift_eq_add_const]
 
 /-- Canonical determinant-shifted equivalence between `FixedIntegerHive (productBoundary lam μ γ)`
 and Littlewood–Richardson tableaux of shapes `lam.detShiftShape` and `μ.detShiftShape`, whenever
@@ -505,31 +543,56 @@ def fixedIntegerHiveDetShiftEquivLRTableau {lam μ γ : DominantWeight n}
     (hdet : lam.detShift + μ.detShift ≤ γ.detShift) :
     FixedIntegerHive (productBoundary lam μ γ) ≃
       LRTableau lam.detShiftShape
-        (γ.shift (-(lam.detShift + μ.detShift))).shape μ.detShiftShape := by
-  have hneg : -lam.detShift + -μ.detShift = -(lam.detShift + μ.detShift) := by omega
-  have hgc : (γ.shift (-lam.detShift + -μ.detShift)).IsPolynomial := by
-    rw [hneg, DominantWeight.isPolynomial_iff_zero_le_detShift]
+        (γ.shift (-(lam.detShift + μ.detShift))).shape μ.detShiftShape :=
+  have hgc : (γ.shift (-(lam.detShift + μ.detShift))).IsPolynomial := by
+    rw [DominantWeight.isPolynomial_iff_zero_le_detShift]
     match n, lam, μ, γ, hdet with
     | 0, _, _, _, _ => simp
     | _ + 1, _, _, _, hdet => rw [DominantWeight.detShift_shift]; omega
-  have hsh (w : DominantWeight n) : (w.shift (-w.detShift)).shape = w.detShiftShape := by
-    rw [← w.weightOfShape_detShiftShape, shape_weightOfShape w.colLen_zero_detShiftShape_le]
-  rw [← hsh lam, ← hsh μ, ← hneg]
-  exact fixedIntegerHiveEquivLRTableauOfShift lam.isPolynomial_shift_neg_detShift
-    μ.isPolynomial_shift_neg_detShift hgc
+  ((fixedIntegerHiveShiftEquiv lam μ γ (-lam.detShift) (-μ.detShift)).trans
+    (Equiv.subtypeEquivRight fun _ => by
+      rw [lam.weightOfShape_detShiftShape, μ.weightOfShape_detShiftShape,
+        weightOfShape_shape hgc, neg_add])).trans
+    (fixedIntegerHiveEquivLRTableau lam.colLen_zero_detShiftShape_le
+      (DominantWeight.colLen_zero_shape_le _) μ.colLen_zero_detShiftShape_le)
 
-open scoped Classical in
-/-- **Shift independence of Littlewood–Richardson hive counts**: for any shifts `a, b : ℤ` making
-`lam.shift a` and `μ.shift b` polynomial, the shifted tableau count equals
-`hiveCount (productBoundary lam μ γ)` and hence does not depend on `(a, b)`. -/
-theorem hiveCount_productBoundary_eq_ite_shift {lam μ : DominantWeight n} (γ : DominantWeight n)
-    {a b : ℤ} (hla : (lam.shift a).IsPolynomial) (hmb : (μ.shift b).IsPolynomial) :
-    hiveCount (productBoundary lam μ γ) =
-      if (γ.shift (a + b)).IsPolynomial then
-        Nat.card (LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape)
-      else 0 := by
-  rw [← hiveCount_productBoundary_shift lam μ γ a b,
-    hiveCount_productBoundary_of_isPolynomial hla hmb]
+/-- The hive of a determinant-shifted Littlewood–Richardson tableau `T` takes the value
+`λ₀ + ⋯ + λⱼ₋₁ + (∑_{k < i, r < j} T.rowCount r k) + i * μ.detShift` at the product-chart
+vertex `(i, j)`. -/
+@[simp]
+theorem fixedIntegerHiveDetShiftEquivLRTableau_symm_apply_ofChart {lam μ γ : DominantWeight n}
+    (hdet : lam.detShift + μ.detShift ≤ γ.detShift)
+    (T : LRTableau lam.detShiftShape
+      (γ.shift (-(lam.detShift + μ.detShift))).shape μ.detShiftShape)
+    {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
+    ((fixedIntegerHiveDetShiftEquivLRTableau hdet).symm T).val (Vertex.ofChart n i j hij hj) =
+      prefixSum j lam.val + ∑ k ∈ range i, ∑ r ∈ range j, (T.val.rowCount r k : ℤ) +
+        (i : ℤ) * μ.detShift := by
+  simp only [fixedIntegerHiveDetShiftEquivLRTableau, Equiv.symm_trans_apply,
+    fixedIntegerHiveShiftEquiv_symm_apply_coe, Equiv.subtypeEquivRight_symm_apply,
+    Pi.sub_apply, fixedIntegerHiveEquivLRTableau_symm_apply_ofChart,
+    lam.weightOfShape_detShiftShape, Hive.affine_apply, Vertex.ofChart_y, Vertex.ofChart_z,
+    nsmul_eq_mul]
+  have hpre : prefixSum j (lam.shift (-lam.detShift)).val =
+      prefixSum j lam.val + (j : ℤ) * (-lam.detShift) := by
+    rw [TauCeti.prefixSum_eq_sum_castLE hj, TauCeti.prefixSum_eq_sum_castLE hj]
+    simp [sum_add_distrib]
+  rw [hpre, Int.ofNat_sub hij]
+  ring
+
+/-- The determinant-shifted Littlewood–Richardson tableau of a hive `h` has
+`(h.val.toGTPattern.shift (-μ.detShift)) k (r + 1) - (h.val.toGTPattern.shift (-μ.detShift)) k r`
+letters `k` in each row `r < n`. -/
+theorem natCast_rowCount_fixedIntegerHiveDetShiftEquivLRTableau {lam μ γ : DominantWeight n}
+    (hdet : lam.detShift + μ.detShift ≤ γ.detShift)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) {r : ℕ} (hr : r < n) (k : ℕ) :
+    ((fixedIntegerHiveDetShiftEquivLRTableau hdet h).val.rowCount r k : ℤ) =
+      (h.val.toGTPattern.shift (-μ.detShift)) k (r + 1) -
+        (h.val.toGTPattern.shift (-μ.detShift)) k r := by
+  simp only [fixedIntegerHiveDetShiftEquivLRTableau, Equiv.trans_apply,
+    natCast_rowCount_fixedIntegerHiveEquivLRTableau _ _ _ _ hr k,
+    Equiv.subtypeEquivRight_apply, fixedIntegerHiveShiftEquiv_apply_coe, toGTPattern_add,
+    toGTPattern_affine, add_sub_cancel_left, ← GTPattern.shift_eq_add_const]
 
 open scoped Classical in
 /-- **Littlewood–Richardson formula for `hiveCount` on arbitrary signed dominant weights** via the

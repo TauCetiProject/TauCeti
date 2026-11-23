@@ -733,6 +733,36 @@ theorem hiveCount_two_std_std_det :
     (productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![1, 1], by decide⟩)
   omega
 
+/-- Rank-`2` hive classification for `λ = μ = (1, 0)`: `hiveCount (productBoundary λ μ γ)` is `1`
+for `γ = (2, 0)` and `γ = (1, 1)`, and `0` for every other dominant weight `γ`. -/
+theorem hiveCount_two_std_std_eq (γ : DominantWeight 2) :
+    hiveCount (productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ γ) =
+      if γ = ⟨![2, 0], by decide⟩ ∨ γ = ⟨![1, 1], by decide⟩ then 1 else 0 := by
+  let std : DominantWeight 2 := ⟨![1, 0], by decide⟩
+  let sym₂ : DominantWeight 2 := ⟨![2, 0], by decide⟩
+  let det₂ : DominantWeight 2 := ⟨![1, 1], by decide⟩
+  have hstd : std.IsPolynomial := by rw [DominantWeight.isPolynomial_def]; decide
+  rcases eq_or_ne γ sym₂ with rfl | hne₂
+  · dsimp only [sym₂]
+    simp only [true_or, ↓reduceIte]
+    exact hiveCount_two_std_std_sym
+  · rcases eq_or_ne γ det₂ with rfl | hne₁
+    · dsimp only [det₂]
+      simp only [or_true, ↓reduceIte]
+      exact hiveCount_two_std_std_det
+    · dsimp only [sym₂, det₂] at hne₂ hne₁
+      simp only [hne₂, hne₁, or_self, ↓reduceIte]
+      refine hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => ?_⟩
+      have hpol : γ.IsPolynomial := isPolynomial_of_productBoundary hb hstd hstd
+      have h0 : 0 ≤ γ.val 1 := (DominantWeight.isPolynomial_def γ).mp hpol 1
+      have hanti : γ.val 1 ≤ γ.val 0 := γ.antitone (by decide)
+      have hsum := sum_eq_of_productBoundary hb
+      simp only [Fin.sum_univ_two, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one] at hsum
+      rcases (by omega : (γ.val 0 = 2 ∧ γ.val 1 = 0) ∨ (γ.val 0 = 1 ∧ γ.val 1 = 1)) with
+        ⟨ha, hb'⟩ | ⟨ha, hb'⟩
+      · exact hne₂ (Subtype.ext (funext fun i => by fin_cases i <;> assumption))
+      · exact hne₁ (Subtype.ext (funext fun i => by fin_cases i <;> assumption))
+
 /-- Rank-`2` exclusion check: `λ = μ = (1, 0)` and `γ = (3, -1)` have equal total degree
 `|λ| + |μ| = 2 = |γ|` but violate both `(λ + μ).Dominates γ` (`γ₁ = 3 > 2 = λ₁ + μ₁`) and the
 last-coordinate bound `λ₂ + μ₂ ≤ γ₂` (`0 ≤ -1`), so `last_le_of_productBoundary` excludes `γ`. -/
