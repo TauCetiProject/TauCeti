@@ -530,12 +530,10 @@ noncomputable def diagramCutoff {σ : Type*} [Finite σ] [LinearOrder σ] (D : S
 private theorem diagramCutoff_eq_of_orderIsoFin {σ : Type*} [Finite σ] [LinearOrder σ] {d : ℕ}
     (e : Fin d ≃o σ) (D : Set (σ →₀ ℕ)) :
     D.diagramCutoff = diagramCutoffFin (Finsupp.equivMapDomain e.toEquiv ⁻¹' D) := by
-  rw [diagramCutoff]; set ft : Fintype σ := Fintype.ofFinite σ
-  obtain rfl : @Fintype.card σ ft = d := by
-    simpa using (@Fintype.card_congr (Fin d) σ _ ft e.toEquiv).symm
-  rw [show @Fintype.orderIsoFinOfCardEq σ _ ft _ rfl = e from RelIso.ext fun i ↦
-    (OrderIso.symm_apply_eq e).mp (Fin.ext (Fin.coe_orderIso_apply
-      ((@Fintype.orderIsoFinOfCardEq σ _ ft _ rfl).trans e.symm) i))]
+  let : Fintype σ := Fintype.ofFinite σ
+  obtain rfl : Fintype.card σ = d :=
+    (Fintype.card_congr e.toEquiv).symm.trans (Fintype.card_fin d)
+  rw [diagramCutoff, Subsingleton.elim (Fintype.orderIsoFinOfCardEq σ rfl) e]
 
 /-- `Set.diagramCutoff` is invariant under pulling a diagram back along an order isomorphism of
 variable sets. -/

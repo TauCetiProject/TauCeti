@@ -383,13 +383,15 @@ theorem existsUnique_homogeneous_division_iff_span_eq {D : Set (σ →₀ ℕ)} 
   let R := restrictSupport A {γ | γ ∉ D ∧ γ.degree = ℓ}
   let hsupp : ((∀ v, Q v) × R) ≃ {qr : (D.diagramVertices → MvPolynomial σ A) × MvPolynomial σ A //
       (∀ v, qr.1 v ∈ Q v) ∧ qr.2 ∈ R} :=
-    (Equiv.prodCongr Equiv.subtypePiEquivPi.symm (Equiv.refl _)).trans
-      Equiv.subtypeProdEquivProd.symm
+    { toFun := fun x ↦ ⟨(fun v ↦ x.1 v, x.2), fun v ↦ (x.1 v).property, x.2.property⟩
+      invFun := fun qr ↦ (fun v ↦ ⟨qr.val.1 v, qr.property.1 v⟩, ⟨qr.val.2, qr.property.2⟩)
+      left_inv := fun ⟨_, _⟩ ↦ rfl
+      right_inv := fun ⟨⟨_, _⟩, _⟩ ↦ rfl }
   let heqv (G : homogeneousSubmodule σ A ℓ) :=
     (((D.diagramQREquiv hD_up ℓ).toEquiv.trans hsupp).subtypeEquiv
       (p := fun P ↦ D.diagramDivisionEnd H hH ℓ P = G)
       (q := fun qr ↦ ∑ v, qr.val.1 v * H v + qr.val.2 = G.val) fun P ↦ by
-        simp [Subtype.ext_iff, coe_diagramDivisionEnd_eq_diagramQREquiv hD_up hH]; rfl).trans <|
+        simp [Subtype.ext_iff, coe_diagramDivisionEnd_eq_diagramQREquiv hD_up hH, hsupp]).trans <|
       (Equiv.subtypeSubtypeEquivSubtypeInter _
         (fun qr : (D.diagramVertices → MvPolynomial σ A) × MvPolynomial σ A ↦
           ∑ v, qr.1 v * H v + qr.2 = G.val)).trans (Equiv.subtypeEquivRight fun _ ↦ and_assoc)
