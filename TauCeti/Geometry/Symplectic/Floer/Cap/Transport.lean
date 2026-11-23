@@ -158,9 +158,9 @@ theorem transport_bijective (p : Path x y) : Function.Bijective (transport (γ :
   refine ⟨fun D D' h => ?_, fun D' => ?_⟩
   · have : Nonempty (RawCap γ) := ⟨D⟩
     have : Nonempty (RawCap (p.conjLoop γ)) := ⟨transport p D⟩
-    rw [← vsub_eq_zero_iff_eq (G := Additive (π_ 2 X x)), ← toMul_eq_one,
-      ← (homotopyGroupMulEquivOfPath p).map_eq_one_iff, homotopyGroupMulEquivOfPath_apply,
-      ← ofMul_eq_zero, ← transport_vsub_transport, h, vsub_self]
+    -- base-point change is injective and sends the difference `D -ᵥ D'` to `0`
+    refine eq_of_vsub_eq_zero ?_
+    simpa [h, ← homotopyGroupMulEquivOfPath_apply] using (transport_vsub_transport p D D').symm
   · -- a cap of `p.conjLoop γ` shows that `γ` is null-homotopic
     obtain ⟨D₀⟩ : Nonempty (RawCap γ) := RawCap.nonempty_iff.2 <|
       Path.Homotopic.of_conj_nullhomotopic (α := p.symm) <| by
@@ -246,9 +246,7 @@ theorem transportAlong_vsub_transportAlong
 /-- **Transport of raw caps along a free homotopy of loops is a bijection.** -/
 theorem transportAlong_bijective (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1) :
     Function.Bijective (transportAlong F) :=
-  .comp (f := transport F.basepointPath) (g := (inv F.conjLoopHom ≫ ·))
-    ⟨fun _ _ h => (cancel_epi _).1 h, fun D => ⟨F.conjLoopHom ≫ D, IsIso.inv_hom_id_assoc _ _⟩⟩
-    (transport_bijective F.basepointPath)
+  (asIso F.conjLoopHom).homFromEquiv.bijective.comp (transport_bijective F.basepointPath)
 
 /-- **Transport along a homotopy of loops with a fixed base point** is gluing the homotopy of
 loops `F.loopPath h` backwards, the gluing of `TauCeti.Floer.RawCap`. -/
