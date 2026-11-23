@@ -1,0 +1,163 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Dynamics.Ergodic.Action.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+
+/-!
+# Weak mixing of actions of `ℝ`
+
+Let `ℝ` act on a measurable space `X` carrying a measure `μ`. The action is *weakly mixing*
+(`TauCeti.IsWeaklyMixing`) when for all measurable sets `A` and `B` the time averages
+`T⁻¹ ∫₀ᵀ |μ((t +ᵥ ·)⁻¹' A ∩ B) − μ(A)μ(B)| dt` tend to `0` as `T → ∞`, with the measures read as
+real numbers. The definition is used for probability measures invariant under a jointly
+measurable action, where the integrand is measurable in `t` and bounded by `1`.
+
+A weakly mixing action preserving a probability measure is ergodic
+(`TauCeti.IsWeaklyMixing.ergodicVAdd`): an almost invariant measurable set `A` makes the integrand
+for `A = B` the constant `μ(A) − μ(A)²`, which must therefore vanish. The converse fails: the
+translation flow on `AddCircle 1` is ergodic and has the nonconstant eigenfunction
+`x ↦ exp(2πix)`.
+
+## Main results
+
+* `TauCeti.IsWeaklyMixing`: weak mixing of a measure under an action of `ℝ`;
+* `TauCeti.IsWeaklyMixing.ergodicVAdd`: weak mixing of a finite invariant measure implies
+  ergodicity;
+* `MeasurableEmbedding.isWeaklyMixing_map_iff`: along an equivariant measurable embedding, the
+  pushforward is weakly mixing exactly when the measure is; in particular weak mixing is
+  invariant under measure-preserving isomorphism of actions
+  (`MeasureTheory.MeasurePreserving.isWeaklyMixing_iff`);
+* `TauCeti.isWeaklyMixing_of_subsingleton`: the action on a one-point probability space is
+  weakly mixing.
+
+## References
+
+* M. Hochman, *Notes on ergodic theory*, 2012, Section 6.1 (for actions of `ℤ`).
+-/
+
+public section
+
+open Filter MeasureTheory Set Topology
+
+namespace TauCeti
+
+variable {X : Type*} [MeasurableSpace X] [AddAction ℝ X] {μ : Measure X}
+
+/-- An action of `ℝ` on `X` is *weakly mixing* for the measure `μ` if for all measurable sets
+`A` and `B` the time averages `T⁻¹ ∫₀ᵀ |μ((t +ᵥ ·)⁻¹' A ∩ B) − μ(A)μ(B)| dt` tend to `0` as
+`T → ∞`, the measures being read as real numbers. It is used for probability measures invariant
+under a jointly measurable action. -/
+def IsWeaklyMixing (μ : Measure X) : Prop :=
+  ∀ A B : Set X, MeasurableSet A → MeasurableSet B →
+    Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T,
+        |μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ B) - μ.real A * μ.real B|) atTop (𝓝 0)
+
+/-- Unfolding `IsWeaklyMixing`. -/
+theorem isWeaklyMixing_def : IsWeaklyMixing μ ↔ ∀ A B : Set X, MeasurableSet A → MeasurableSet B →
+    Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T,
+        |μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ B) - μ.real A * μ.real B|) atTop (𝓝 0) :=
+  Iff.rfl
+
+/-- If the time averages `T⁻¹ ∫₀ᵀ c dt` of a constant tend to `0`, the constant vanishes. -/
+private theorem eq_zero_of_tendsto_average_const {c : ℝ}
+    (h : Tendsto (fun T : ℝ => T⁻¹ * ∫ _ in (0 : ℝ)..T, c) atTop (𝓝 0)) : c = 0 := by
+  refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) h
+  filter_upwards [eventually_gt_atTop 0] with T hT
+  rw [intervalIntegral.integral_const, sub_zero, smul_eq_mul, inv_mul_cancel_left₀ hT.ne']
+
+/-- The total mass of a weakly mixing finite measure is `0` or `1`: for `A = B = univ` the
+integrand is the constant `|μ(X) − μ(X)²|`. -/
+theorem IsWeaklyMixing.measureReal_univ_eq_zero_or_one (h : IsWeaklyMixing μ) :
+    μ.real univ = 0 ∨ μ.real univ = 1 := by
+  have h0 := h univ univ .univ .univ
+  simp_rw [preimage_univ, inter_self] at h0
+  have hc := abs_eq_zero.1 (eq_zero_of_tendsto_average_const h0)
+  have hc' : μ.real univ * (1 - μ.real univ) = 0 := by linear_combination hc
+  exact (mul_eq_zero.1 hc').imp id fun h1 => (sub_eq_zero.1 h1).symm
+
+/-- The zero-one law behind `IsWeaklyMixing.ergodicVAdd`, for a probability measure. -/
+private theorem IsWeaklyMixing.eventuallyEmptyOrUniv [IsProbabilityMeasure μ]
+    (h : IsWeaklyMixing μ) {s : Set X} (hs : MeasurableSet s)
+    (hinv : ∀ t : ℝ, (fun x => t +ᵥ x) ⁻¹' s =ᵐ[μ] s) : EventuallyEmptyOrUniv s (ae μ) := by
+  have hconst : ∀ t : ℝ, μ.real ((fun x => t +ᵥ x) ⁻¹' s ∩ s) = μ.real s := fun t => by
+    have hs' : s =ᵐ[μ] s := by rfl
+    rw [measureReal_congr ((hinv t).inter hs'), inter_self]
+  have h0 := h s s hs hs
+  simp_rw [hconst] at h0
+  have hc := abs_eq_zero.1 (eq_zero_of_tendsto_average_const h0)
+  have hc' : μ.real s * (1 - μ.real s) = 0 := by linear_combination hc
+  rw [eventuallyEmptyOrUniv_iff', ae_eq_empty, ae_eq_univ, prob_compl_eq_zero_iff hs]
+  rcases mul_eq_zero.1 hc' with h1 | h1
+  · exact Or.inl ((measureReal_eq_zero_iff).1 h1)
+  · refine Or.inr ?_
+    rw [← ENNReal.toReal_eq_one_iff]
+    exact (sub_eq_zero.1 h1).symm
+
+/-- **Weak mixing implies ergodicity.** A weakly mixing action of `ℝ` preserving a finite measure
+is ergodic. The measure is then zero or a probability measure
+(`IsWeaklyMixing.measureReal_univ_eq_zero_or_one`), and for a probability measure an almost
+invariant measurable set `A` makes the integrand for `A = B` the constant `|μ(A) − μ(A)²|`, so
+`μ(A)` is `0` or `1`. -/
+theorem IsWeaklyMixing.ergodicVAdd [IsFiniteMeasure μ] [VAddInvariantMeasure ℝ X μ]
+    (h : IsWeaklyMixing μ) : ErgodicVAdd ℝ X μ where
+  aeconst_of_forall_preimage_vadd_ae_eq {s} hs hinv := by
+    rcases h.measureReal_univ_eq_zero_or_one with h1 | h1
+    · rw [measureReal_eq_zero_iff, Measure.measure_univ_eq_zero] at h1
+      subst h1
+      simp
+    · have : IsProbabilityMeasure μ := ⟨(ENNReal.toReal_eq_one_iff _).1 h1⟩
+      exact h.eventuallyEmptyOrUniv hs hinv
+
+/-- The action of `ℝ` on a one-point probability space is weakly mixing: every integrand
+vanishes. -/
+theorem isWeaklyMixing_of_subsingleton [Subsingleton X] [IsProbabilityMeasure μ] :
+    IsWeaklyMixing μ := by
+  intro A B _ _
+  have hA : ∀ t : ℝ, (fun x => t +ᵥ x) ⁻¹' A = A := fun t => by
+    ext x
+    rw [mem_preimage, Subsingleton.elim (t +ᵥ x) x]
+  have hzero : ∀ t : ℝ, |μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ B) - μ.real A * μ.real B| = 0 :=
+    fun t => by
+      rw [hA t]
+      rcases Subsingleton.set_cases (p := fun s => s = ∅ ∨ s = univ) (.inl rfl) (.inr rfl) A
+        with rfl | rfl <;> simp
+  simp_rw [hzero, intervalIntegral.integral_zero, mul_zero]
+  exact tendsto_const_nhds
+
+end TauCeti
+
+namespace MeasurableEmbedding
+
+variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] [AddAction ℝ X] [AddAction ℝ Y]
+  {μ : Measure X} {f : X → Y}
+
+/-- **Weak mixing along an equivariant embedding**: the pushforward of a measure along an
+equivariant measurable embedding is weakly mixing exactly when the measure is. -/
+theorem isWeaklyMixing_map_iff (hf : MeasurableEmbedding f)
+    (hfg : ∀ (t : ℝ) x, f (t +ᵥ x) = t +ᵥ f x) :
+    TauCeti.IsWeaklyMixing (μ.map f) ↔ TauCeti.IsWeaklyMixing μ := by
+  have key : ∀ (t : ℝ) (A B : Set Y),
+      f ⁻¹' ((fun y => t +ᵥ y) ⁻¹' A ∩ B) = (fun x => t +ᵥ x) ⁻¹' (f ⁻¹' A) ∩ f ⁻¹' B :=
+    fun t A B => by ext x; simp [hfg]
+  refine ⟨fun h A B hA hB => ?_, fun h A B hA hB => ?_⟩
+  · have := h (f '' A) (f '' B) (hf.measurableSet_image' hA) (hf.measurableSet_image' hB)
+    simpa only [measureReal_def, hf.map_apply, key, hf.injective.preimage_image] using this
+  · have := h (f ⁻¹' A) (f ⁻¹' B) (hf.measurable hA) (hf.measurable hB)
+    simpa only [measureReal_def, hf.map_apply, key] using this
+
+end MeasurableEmbedding
+
+/-- **Weak mixing is invariant under isomorphism**: along an equivariant measure-preserving
+measurable embedding, the target measure is weakly mixing exactly when the source measure is. -/
+theorem MeasureTheory.MeasurePreserving.isWeaklyMixing_iff {X Y : Type*} [MeasurableSpace X]
+    [MeasurableSpace Y] [AddAction ℝ X] [AddAction ℝ Y] {μ : Measure X} {ν : Measure Y}
+    {f : X → Y} (hfμ : MeasurePreserving f μ ν) (hf : MeasurableEmbedding f)
+    (hfg : ∀ (t : ℝ) x, f (t +ᵥ x) = t +ᵥ f x) :
+    TauCeti.IsWeaklyMixing ν ↔ TauCeti.IsWeaklyMixing μ := by
+  rw [← hfμ.map_eq]
+  exact hf.isWeaklyMixing_map_iff hfg
