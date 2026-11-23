@@ -16,7 +16,8 @@ Elementary facts about Hölder exponents: the missing exponent `r` of a triple w
 exponents below by `1` and the conjugate exponent of `p` above by `q`; the conjugate exponent
 is antitone, finite for `p > 1` and greater than `1` for finite `p`; and the exponent
 conjugate to `p > 2` is less than `2`, as for the supercritical exponents of planar Sobolev and
-Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most `2`.
+Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most `2`. An exponent
+`p > 2` satisfies `1/p + 1/p < 1`.
 
 ## Main declarations
 
@@ -25,6 +26,7 @@ Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most
   `1/p + 1/q ≤ 1` forces `1 ≤ p` and `1 ≤ q`.
 * `ENNReal.conjExponent_le_of_inv_add_inv_le_one`: `1/p + 1/q ≤ 1` forces `p' ≤ q` for the
   conjugate exponent `p'` of `p`.
+* `ENNReal.inv_add_inv_lt_one_of_two_lt`: an exponent `p > 2` satisfies `1/p + 1/p < 1`.
 * `ENNReal.one_lt_conjExponent`, `ENNReal.conjExponent_ne_top`, `ENNReal.inv_toReal_conjExponent`,
   `ENNReal.conjExponent_le_conjExponent`: the conjugate exponent `p'` of a finite `p` exceeds `1`,
   is finite with `1/p' = 1 - 1/p` when `p > 1`, and decreases as `p` increases.
@@ -87,6 +89,11 @@ theorem inv_toReal_conjExponent (hp1 : 1 < p) (hp : p ≠ ⊤) :
 theorem conjExponent_le_conjExponent (hpq : p ≤ q) : q.conjExponent ≤ p.conjExponent := by
   rw [ENNReal.conjExponent, ENNReal.conjExponent]
   gcongr
+
+/-- An exponent `p > 2` satisfies the strict Hölder condition `1/p + 1/p < 1` with itself. -/
+theorem inv_add_inv_lt_one_of_two_lt (hp : 2 < p) : p⁻¹ + p⁻¹ < 1 := by
+  rw [← ENNReal.inv_two_add_inv_two]
+  exact ENNReal.add_lt_add (ENNReal.inv_lt_inv.2 hp) (ENNReal.inv_lt_inv.2 hp)
 
 end ENNReal
 

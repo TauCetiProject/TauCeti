@@ -185,16 +185,6 @@ private theorem linearizedCoeff_of_cauchyRiemann (hΩ : IsOpen Ω) (hA : ContDif
   filter_upwards [(hC.continuousAt (hΩ.mem_nhds hz)).norm.eventually
     (gt_mem_nhds (lt_add_one _))] with w hw using hw.le
 
-omit [FiniteDimensional ℝ E] in
-/-- `∂ₜu` vanishes exactly where `∂ₛu` does, since `∂ₜu = A ∂ₛu` and `∂ₛu = -A ∂ₜu`. -/
-private theorem fderiv_I_eq_zero_iff {z : ℂ} (hAA : A z ∘L A z = -ContinuousLinearMap.id ℝ E)
-    (hCR : fderiv ℝ u z I = A z (fderiv ℝ u z 1)) :
-    fderiv ℝ u z I = 0 ↔ fderiv ℝ u z 1 = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [hCR, h, map_zero]⟩
-  have h1 := congrArg (A z) hCR
-  rw [h, map_zero, ← ContinuousLinearMap.comp_apply, hAA] at h1
-  simpa using h1.symm
-
 /-- The hypotheses of the weak unique continuation theorems for `ξ = ∂ₜu`, at the exponent `3`:
 `A ∈ W^{1,3}_loc`, the coefficient `∂ₜA` is locally `L³`, and `ξ` solves the linearized equation
 `∂ₛξ + A ∂ₜξ + (∂ₜA) ξ = 0` weakly
@@ -225,7 +215,8 @@ theorem eqOn_const_of_cauchyRiemann_of_eventually_fderiv_eq_zero (hΩ : IsOpen �
     hΩc hAw hA.continuousOn hAA hC hξ (hto.inter hΩ) ⟨z₀, hz₀t, hz₀⟩ inter_subset_right
     fun z hz ↦ by simp [ht z hz.1]
   refine eqOn_const_of_cauchyRiemann_of_eqOn_zero hΩ hΩc (hu.differentiableOn one_ne_zero) hCR
-    (fun z hz ↦ (fderiv_I_eq_zero_iff (hAA z hz) (hCR z hz)).1 (h hz)) hz₀
+    (fun z hz ↦ (ContinuousLinearMap.apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq
+      (hAA z hz) (hCR z hz)).1 (h hz)) hz₀
 
 /-- **Unique continuation for critical points of infinite order.** Let `u` be of class `C¹` on a
 connected open set `Ω` and solve the Cauchy–Riemann equation `∂ₜu = A ∂ₛu` there, for a `C¹`
@@ -243,7 +234,8 @@ theorem eqOn_const_of_cauchyRiemann_of_forall_fderiv_isBigO (hΩ : IsOpen Ω)
     (by norm_num) hΩc hAw hA.continuousOn hAA hC hξ hz₀
     fun n ↦ ((ContinuousLinearMap.apply ℝ E I).isBigO_comp _ _).trans (h₀ n)
   exact eqOn_const_of_cauchyRiemann_of_eqOn_zero hΩ hΩc (hu.differentiableOn one_ne_zero) hCR
-    (fun z hz ↦ (fderiv_I_eq_zero_iff (hAA z hz) (hCR z hz)).1 (h hz)) hz₀
+    (fun z hz ↦ (ContinuousLinearMap.apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq
+      (hAA z hz) (hCR z hz)).1 (h hz)) hz₀
 
 /-- **Isolated critical points.** Let `u` be of class `C¹` on a connected open set `Ω` and solve
 the Cauchy–Riemann equation `∂ₜu = A ∂ₛu` there, for a `C¹` field `A` of complex structures,
@@ -260,7 +252,8 @@ theorem setOf_fderiv_ne_zero_mem_codiscreteWithin_of_cauchyRiemann (hΩ : IsOpen
   refine Filter.mem_of_superset
     (setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn (Ω := ⟨Ω, hΩ⟩)
       (by norm_num) hΩc hAw hA.continuousOn hAA hC hξ
-      ⟨z₁, hz₁, fun h ↦ h₁ ((fderiv_I_eq_zero_iff (hAA z₁ hz₁) (hCR z₁ hz₁)).1 h)⟩)
+      ⟨z₁, hz₁, fun h ↦ h₁ ((ContinuousLinearMap.apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq
+        (hAA z₁ hz₁) (hCR z₁ hz₁)).1 h)⟩)
     fun z hz h₀ ↦ ?_
   exact hz (by simp [h₀])
 
