@@ -416,6 +416,16 @@ theorem isPretransitive_fiberAddAction :
 
 /-! ### The orbit maps of the action -/
 
+/-- The orbit map of a point of the fibre is the orbit map of the coordinate flow action, composed
+with the dual coordinates. -/
+private theorem fiberAction_apply_eq_comp (x : π ⁻¹' {b}) :
+    (fun α ↦ (h.fiberAction hσc b α x : M)) =
+      (fun v ↦ ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction (h.contMDiff_coord_comp b)
+        (h.poissonBracket_coord_comp b) (h.isCompleteVectorField_coord_comp b) v).toMul
+          (x : M)) ∘ h.dualCoord b := by
+  funext α
+  rw [coe_fiberAction, hamiltonianFlowActionComp, Function.comp_apply]
+
 /-- The orbit map of a point of the fibre is the orbit map of the coordinate flow action, read in
 dual coordinates. -/
 private theorem hasMFDerivAt_fiberAction_apply (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) :
@@ -424,15 +434,17 @@ private theorem hasMFDerivAt_fiberAction_apply (x : π ⁻¹' {b}) (α : F →L[
           (fun v ↦ ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction (h.contMDiff_coord_comp b)
             (h.poissonBracket_coord_comp b) (h.isCompleteVectorField_coord_comp b) v).toMul
               (x : M))
-          (h.dualCoord b α)).comp (h.dualCoord b : (F →L[ℝ] ℝ) →L[ℝ] Fin (finrank ℝ F) → ℝ)) :=
-  (((⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_apply _ _ _
+          (h.dualCoord b α)).comp (h.dualCoord b : (F →L[ℝ] ℝ) →L[ℝ] Fin (finrank ℝ F) → ℝ)) := by
+  rw [h.fiberAction_apply_eq_comp hσc b x]
+  exact (((⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_apply _ _ _
     x).mdifferentiableAt (by simp)).hasMFDerivAt.comp α
     (h.dualCoord b : (F →L[ℝ] ℝ) →L[ℝ] Fin (finrank ℝ F) → ℝ).hasMFDerivAt
 
 /-- **The orbit maps of the action of `T*_b B` are smooth.** -/
 theorem contMDiff_fiberAction_apply (x : π ⁻¹' {b}) :
-    ContMDiff 𝓘(ℝ, F →L[ℝ] ℝ) I ∞ fun α ↦ (h.fiberAction hσc b α x : M) :=
-  ((⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_apply _ _ _ x).comp
+    ContMDiff 𝓘(ℝ, F →L[ℝ] ℝ) I ∞ fun α ↦ (h.fiberAction hσc b α x : M) := by
+  rw [h.fiberAction_apply_eq_comp hσc b x]
+  exact ((⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_apply _ _ _ x).comp
     (h.dualCoord b : (F →L[ℝ] ℝ) →L[ℝ] Fin (finrank ℝ F) → ℝ).contMDiff
 
 /-- The orbit maps of the action of `T*_b B` are continuous. -/
