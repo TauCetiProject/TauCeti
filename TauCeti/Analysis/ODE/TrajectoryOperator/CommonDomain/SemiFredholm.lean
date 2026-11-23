@@ -38,8 +38,11 @@ the Aubin–Lions lemma `TauCeti.WeakDerivStep.isCompactOperator_restrictBaseL_c
 lemma gives that `D_A` has finite-dimensional kernel
 (`TauCeti.WeakDerivStep.finiteDimensional_ker_familyDomainTrajectoryOperator`) and closed range
 (`TauCeti.WeakDerivStep.isClosed_range_familyDomainTrajectoryOperator`). These are the first two
-of the three properties making `D_A` Fredholm; the finite dimension of its cokernel is not proved
-here.
+of the three properties making `D_A` Fredholm. Under the stronger hypotheses of a global bound
+`‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s` and `ι`-symmetry of `A(s)` for almost every `s`,
+its cokernel is identified with the kernel of the formal adjoint, and `D_A` is shown to be
+Fredholm, in `TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Cokernel`
+(`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`).
 
 The estimate is spliced from three pieces by smooth cutoffs `χ₋`, `χ₀ = 1 - χ₋ - χ₊` and `χ₊`
 supported in `(-∞, -a]`, `[-a - 1, a + 1]` and `[a, ∞)`

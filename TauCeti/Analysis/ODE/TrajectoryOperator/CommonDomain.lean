@@ -41,11 +41,12 @@ the autonomous operator is derived from that of the family. Taking `D = H¹(AddC
 `H = H⁰(AddCircle T, E)` feeds `CircleSobolev.cylinderOperator`
 (`TauCeti/Analysis/Sobolev/Circle/LinearODE/Cylinder.lean`).
 
-After proving `1`-Lipschitz dependence on `A`, weak-ODE characterizations, intertwining with
-`trajectoryOperator` under `postcompBaseL`, classical derivative agreement, and time reflection
-`reflectEvolutionEquiv` (`s ↦ u(-s)` conjugating `∂s - A` to `-(∂s + A)`) over Banach spaces, the
-second half develops the whole-line `L²(ℝ)` theory (`Ω = ⊤`, `p = 2`) for Hilbert `H` and
-`ι`-symmetric `A` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`): orthogonality and the Pythagorean identity
+After proving `1`-Lipschitz dependence on `A`, weak-ODE characterizations, mode intertwining,
+intertwining with `trajectoryOperator` under `postcompBaseL`, classical derivative agreement, and
+time reflection `reflectEvolutionEquiv` (`s ↦ u(-s)` conjugating `∂s - A` to `-(∂s + A)`) over
+Banach spaces, the second half develops the whole-line `L²(ℝ)` theory (`Ω = ⊤`, `p = 2`) for
+Hilbert `H` and `ι`-symmetric `A` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`): orthogonality, the integration by
+parts `⟪(ι ∘ u)', ι ∘ w⟫ = -⟪ι ∘ u, (ι ∘ w)'⟫`, the Pythagorean identity
 `‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`, unconditional injectivity for injective `ι`,
 invertibility of `∂s ± A` with improved upper bound `≤ max ‖A⁻¹‖ 1` for invertible `A`, failure of
 closed range when `A.ker ≠ ⊥`, equivalence of closed range / Fredholmness / invertibility with
@@ -121,7 +122,7 @@ theorem norm_familyDomainTrajectoryOperator_le (ι : D →L[ℝ] H) (A : Lp (D �
     ‖familyDomainTrajectoryOperator (p := p) ι A‖ ≤ 1 + ‖A‖ := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
   rw [familyDomainTrajectoryOperator_apply]; refine (norm_add_le _ _).trans ?_
-  rw [ContinuousLinearMap.norm_apply_one_compLpL_apply, one_add_mul]
+  rw [ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.norm_apply_one_compLp, one_add_mul]
   exact add_le_add (norm_weakFDeriv_le _ u) ((Lp.norm_operatorMultiplication_apply_le _ _).trans
     (mul_le_mul_of_nonneg_left (norm_prev_le _ u) (norm_nonneg _)))
 
@@ -315,7 +316,8 @@ theorem norm_weakFDeriv_le_norm_domainTrajectoryOperator_add (ι A : D →L[ℝ]
     (u : WeakDerivStep mu Omega p (ι.compLpL p μΩ)) :
     ‖weakFDeriv (ι.compLpL p μΩ) u‖ ≤
       ‖domainTrajectoryOperator ι A u‖ + ‖A‖ * ‖prev (ι.compLpL p μΩ) u‖ := by
-  rw [← ContinuousLinearMap.norm_apply_one_compLpL_apply,
+  rw [← ContinuousLinearMap.norm_apply_one_compLp (weakFDeriv (ι.compLpL p μΩ) u),
+    ← ContinuousLinearMap.compLpL_apply,
     eq_sub_of_add_eq (domainTrajectoryOperator_apply ι A u).symm]
   exact (norm_sub_le _ _).trans (by gcongr; exact A.norm_compLp_le _)
 
@@ -582,6 +584,26 @@ theorem inner_weakFDeriv_apply_one_compLpL_eq_zero (hSymm : ∀ x y : D, ⟪A x,
     rw [hs1, hs2]; simp [L, d]
   rw [hint_eq]; linarith
 
+/-- **Integration by parts in `W^{1,2}(ℝ, H)`.** For paths `u` and `w` of the graph space,
+`⟪(ι ∘ u)', ι ∘ w⟫ = -⟪ι ∘ u, (ι ∘ w)'⟫` in `L²(ℝ, H)`. -/
+theorem inner_weakFDeriv_apply_one_compLpL_eq_neg_inner
+    (u w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
+    ⟪(ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL 2 μ₀ (weakFDeriv (ι.compLpL 2 μ₀) u),
+        ι.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) w)⟫_ℝ =
+      -⟪ι.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) u),
+        (ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL 2 μ₀
+          (weakFDeriv (ι.compLpL 2 μ₀) w)⟫_ℝ := by
+  -- Polarize `⟪(ι ∘ z)', ι ∘ z⟫ = 0`, the case `A = ι` of the orthogonality of `(ι ∘ z)'` and
+  -- `A ∘ z`, at `z = u + w`.
+  have h (z : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :=
+    inner_weakFDeriv_apply_one_compLpL_eq_zero (A := ι) (fun _ _ ↦ rfl) z
+  have huw := h (u + w)
+  simp only [← weakFDerivL_apply, ← prevL_apply, map_add, inner_add_left, inner_add_right] at huw
+  simp only [weakFDerivL_apply, prevL_apply, h u, h w, zero_add, add_zero] at huw
+  linarith [real_inner_comm
+    ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL 2 μ₀ (weakFDeriv (ι.compLpL 2 μ₀) w))
+    (ι.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) u))]
+
 /-- Pythagorean identity on `L²(ℝ)` for `ι`-symmetric `A`:
 `‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`. -/
 theorem norm_domainTrajectoryOperator_sq (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ)
@@ -590,7 +612,7 @@ theorem norm_domainTrajectoryOperator_sq (hSymm : ∀ x y : D, ⟪A x, ι y⟫_�
       ‖weakFDeriv (ι.compLpL 2 μ₀) u‖ ^ 2 + ‖A.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) u)‖ ^ 2 := by
   rw [domainTrajectoryOperator_apply, norm_add_sq_real,
     inner_weakFDeriv_apply_one_compLpL_eq_zero hSymm u, mul_zero, add_zero,
-    ContinuousLinearMap.norm_apply_one_compLpL_apply]
+    ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.norm_apply_one_compLp]
 
 /-- On `L²(ℝ)` for `ι`-symmetric `A`, `‖(ι ∘ u)'‖ ≤ ‖(∂s ∘ ι + A) u‖`. -/
 theorem norm_weakFDeriv_le_norm_domainTrajectoryOperator
