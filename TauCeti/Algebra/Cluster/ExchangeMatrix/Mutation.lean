@@ -42,6 +42,8 @@ square matrix is still one after mutation, so mutation acts on exchange matrices
   relabelling of rows and columns.
 * `TauCeti.matrixMutation_fromBlocks_inl`, `TauCeti.matrixMutation_fromBlocks_inr`: mutation
   of a block diagonal matrix mutates one block and fixes the other.
+* `Matrix.IsSkewSymmetrizer.matrixMutation_apply_of_row_nonneg_or_nonpos`: source or sink
+  mutation reverses only incident entries.
 * `Matrix.IsSkewSymmetrizer.matrixMutation`: a skew-symmetrizer of a square matrix is a
   skew-symmetrizer of each of its mutations.
 * `TauCeti.ExchangeMatrix.mutation_mutation`: mutation of exchange matrices is an involution.
@@ -294,6 +296,31 @@ theorem matrixMutation_refl_apply_of_ne {i j : K} (hi : i ≠ k) (hj : j ≠ k) 
     matrixMutation (Function.Embedding.refl K) B k i j =
       B i j + (B i k)⁺ * (B k j)⁺ - (B i k)⁻ * (B k j)⁻ :=
   matrixMutation_apply_of_ne hi hj
+
+/-- Away from its incident row and column, mutation at a nonnegative row fixes entries. -/
+theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation_apply_of_row_nonneg
+    (h : B.IsSkewSymmetrizer s) {k i j : K}
+    (hk : ∀ l, 0 ≤ B k l) (hi : i ≠ k) (hj : j ≠ k) :
+    TauCeti.matrixMutation (Function.Embedding.refl K) B k i j = B i j := by
+  have hcol : B i k ≤ 0 := by
+    exact le_of_not_gt fun hi ↦ (not_lt_of_ge (hk i)) (h.apply_pos_iff.mp hi)
+  rw [TauCeti.matrixMutation_apply_of_ne hi hj]
+  simp [posPart_eq_zero.mpr hcol, negPart_eq_zero.mpr (hk j)]
+
+/-- Source or sink mutation only reverses the incident entries. -/
+theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation_apply_of_row_nonneg_or_nonpos
+    (h : B.IsSkewSymmetrizer s) (k i j : K)
+    (hk : (∀ l, 0 ≤ B k l) ∨ ∀ l, B k l ≤ 0) :
+    TauCeti.matrixMutation (Function.Embedding.refl K) B k i j =
+      if i = k ∨ j = k then -B i j else B i j := by
+  split_ifs with hij
+  · simp [TauCeti.matrixMutation_apply, hij]
+  · obtain ⟨hi, hj⟩ := not_or.mp hij
+    rcases hk with hk | hk
+    · exact h.matrixMutation_apply_of_row_nonneg hk hi hj
+    · have hneg : ∀ l, 0 ≤ (-B) k l := fun l ↦ neg_nonneg.mpr (hk l)
+      have heq := h.neg.matrixMutation_apply_of_row_nonneg hneg hi hj
+      simpa only [TauCeti.matrixMutation_neg, Matrix.neg_apply, neg_inj] using heq
 
 /-- A skew-symmetrizer of a square matrix is a skew-symmetrizer of each of its mutations. -/
 protected theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation (h : B.IsSkewSymmetrizer s)
