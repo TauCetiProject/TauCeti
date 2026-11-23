@@ -25,9 +25,12 @@ The main point of this file is that on a manifold modelled on the quadrant `[0, 
 is itself a manifold, without boundary and of the expected dimension, although the closed faces
 are not: on the quadrant `[0, ∞)²` the boundary, an L-shaped union of two half-axes, is not a
 manifold at the origin, whereas its strata are the two open half-axes, of depth `1`, and the
-origin, of depth `2`. The depth-`k` stratum of a `C^r` manifold modelled on `[0, ∞)ⁿ` is a `C^r`
-manifold modelled on `ℝⁿ⁻ᵏ` (`TauCeti.isManifold_depthStratum`) whose inclusion is a smooth
-embedding (`TauCeti.isSmoothEmbedding_subtypeVal_depthStratum`). Its topology is the subspace
+origin, of depth `2`. The depth-`k` stratum of a `C^1` manifold modelled on `[0, ∞)ⁿ` is a
+manifold modelled on `ℝⁿ⁻ᵏ`, of class `C^r` whenever the ambient manifold is
+(`TauCeti.isManifold_depthStratum`), and its inclusion is a `C^r` smooth embedding
+(`TauCeti.isSmoothEmbedding_subtypeVal_depthStratum`). The ambient `C^1` structure
+(`[IsManifold (𝓡c n) 1 M]`) is needed already to form the charts: without it the depth may depend
+on the chart. Its topology is the subspace
 topology, so it inherits Hausdorffness and second countability from `M`. This is what lets
 statements proved for manifolds without boundary, such as Sard's theorem, be applied to manifolds
 with corners one stratum at a time.
@@ -52,17 +55,28 @@ coordinate face and composed with linear coordinate maps, so it is `C^r`.
   `ModelWithCorners.depthStratum_eq_empty_of_finrank_lt`: the strata partition the manifold, and
   only the strata of depth at most its dimension are nonempty.
 * `ModelWithCorners.depthStratum_zero`: the depth-zero stratum is the interior.
-* `ModelWithCorners.depthStratum_modelWithCornersEuclideanHalfSpace_one`: on a manifold modelled
-  on the half-space, the depth-one stratum is the boundary.
-* `TauCeti.isManifold_depthStratum`: the depth-`k` stratum is a `C^r` manifold without boundary.
+* `ModelWithCorners.depthStratum_modelWithCornersEuclideanHalfSpace_one`,
+  `ModelWithCorners.depthStratum_modelWithCornersEuclideanHalfSpace_eq_empty_of_one_lt`: on a
+  manifold modelled on the half-space, the depth-one stratum is the boundary and there are no
+  strata of higher depth.
+* `TauCeti.isManifold_depthStratum`: the depth-`k` stratum of a `C^1` manifold modelled on the
+  quadrant that is `C^r` is a `C^r` manifold without boundary.
 * `TauCeti.isImmersion_subtypeVal_depthStratum`,
-  `TauCeti.isSmoothEmbedding_subtypeVal_depthStratum`: its inclusion is a `C^r` immersion and a
-  `C^r` smooth embedding.
+  `TauCeti.isSmoothEmbedding_subtypeVal_depthStratum`: under the same hypotheses its inclusion is a
+  `C^r` immersion and a `C^r` smooth embedding.
 
 ## References
 
 * D. Joyce, *On manifolds with corners*, in Advances in Geometric Analysis, Adv. Lect. Math. 21,
   International Press, 2012, 225–258, §2 (the depth stratification).
+
+The formal construction of the stratum charts follows that of the boundary charts of a manifold
+modelled on the half-space, `TauCeti.boundaryChartedSpace` in
+`TauCeti.Geometry.Manifold.Boundary.Charts`: an ambient chart is restricted to a coordinate face
+with `OpenPartialHomeomorph.subtypeCoord` and composed with the deletion of the vanishing
+coordinates, and the transition maps are ambient transition maps precomposed with a coordinate
+insertion and followed by a coordinate deletion. Here the face is cut out by the `k` coordinates
+vanishing at the base point rather than by the zeroth coordinate of the half-space.
 -/
 
 public section
@@ -85,11 +99,17 @@ def depthStratum (k : ℕ) : Set M :=
 
 variable {I M}
 
-@[simp]
+@[simp, grind =]
 theorem mem_depthStratum {k : ℕ} {x : M} : x ∈ I.depthStratum M k ↔ I.depth x = k :=
   Iff.rfl
 
+/-- A point of the depth-`k` stratum has depth `k`. -/
+@[simp, grind =]
+theorem depth_coe {k : ℕ} (p : I.depthStratum M k) : I.depth (p : M) = k :=
+  p.prop
+
 /-- Every point lies in the stratum of its depth. -/
+@[simp]
 theorem iUnion_depthStratum : ⋃ k, I.depthStratum M k = univ :=
   eq_univ_of_forall fun x ↦ mem_iUnion.2 ⟨I.depth x, rfl⟩
 
@@ -126,6 +146,15 @@ theorem depthStratum_modelWithCornersEuclideanHalfSpace_one {d : ℕ} [NeZero d]
   ext x
   simp [ModelWithCorners.boundary]
 
+/-- On a manifold modelled on the half-space, there are no strata of depth larger than one. -/
+theorem depthStratum_modelWithCornersEuclideanHalfSpace_eq_empty_of_one_lt {d k : ℕ} [NeZero d]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace d) M] (hk : 1 < k) :
+    (𝓡∂ d).depthStratum M k = ∅ :=
+  eq_empty_of_forall_notMem fun x hx ↦ by
+    have := depth_modelWithCornersEuclideanHalfSpace_le_one (n := d) x
+    rw [mem_depthStratum] at hx
+    omega
+
 end ModelWithCorners
 
 namespace TauCeti
@@ -158,7 +187,7 @@ private theorem forall_fst_splitEquiv_iff (P : ℝ → Prop) (x : EuclideanSpace
     LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.piLpCongrLeft_apply,
     Equiv.piCongrLeft'_apply, EuclideanSpace.sumComplEquivProd_apply_fst]
   exact ⟨fun h i hi ↦ by simpa using h (outEquiv Z hZ ⟨i, hi⟩),
-    fun h j ↦ h _ ((outEquiv Z hZ).symm j).2⟩
+    fun h j ↦ h _ ((outEquiv Z hZ).symm j).prop⟩
 
 private theorem forall_snd_splitEquiv_iff (P : ℝ → Prop) (x : EuclideanSpace ℝ (Fin n)) :
     (∀ j, P ((splitEquiv Z hZ x).2 j)) ↔ ∀ i ∈ Z, P (x i) := by
@@ -166,7 +195,7 @@ private theorem forall_snd_splitEquiv_iff (P : ℝ → Prop) (x : EuclideanSpace
     LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.piLpCongrLeft_apply,
     Equiv.piCongrLeft'_apply, EuclideanSpace.sumComplEquivProd_apply_snd]
   exact ⟨fun h i hi ↦ by simpa using h (inEquiv Z hZ ⟨i, not_not.2 hi⟩),
-    fun h j ↦ h _ (not_not.1 ((inEquiv Z hZ).symm j).2)⟩
+    fun h j ↦ h _ (not_not.1 ((inEquiv Z hZ).symm j).prop)⟩
 
 /-- A vector vanishing on `Z` is recovered from its coordinates outside `Z`. -/
 private theorem splitEquiv_symm_fst {x : EuclideanSpace ℝ (Fin n)} (hx : ∀ i ∈ Z, x i = 0) :
@@ -197,25 +226,25 @@ variable {n k : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanQu
 variable (n) in
 /-- The coordinates vanishing at the image of `x` in its preferred chart. -/
 private def zeroCoords (x : M) : Finset (Fin n) :=
-  {i | (chartAt (EuclideanQuadrant n) x x).1 i = 0}
+  {i | (chartAt (EuclideanQuadrant n) x x).val i = 0}
 
 variable (n) in
 /-- The part of the preferred chart domain at `x` on which the coordinates that do not vanish at
 `x` stay positive. -/
 private def stratumDomain (x : M) : Set M :=
   (chartAt (EuclideanQuadrant n) x).source ∩
-    {y | ∀ i ∉ zeroCoords n x, 0 < (chartAt (EuclideanQuadrant n) x y).1 i}
+    {y | ∀ i ∉ zeroCoords n x, 0 < (chartAt (EuclideanQuadrant n) x y).val i}
 
 private theorem isOpen_stratumDomain (x : M) : IsOpen (stratumDomain n x) := by
-  have : IsOpen {h : EuclideanQuadrant n | ∀ i ∉ zeroCoords n x, 0 < h.1 i} := by
+  have : IsOpen {h : EuclideanQuadrant n | ∀ i ∉ zeroCoords n x, 0 < h.val i} := by
     simp only [ofPred_forall]
     exact isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun _ ↦
-      isOpen_lt continuous_const ((PiLp.continuous_apply 2 _ i).comp continuous_subtype_val)
+      isOpen_lt continuous_const ((PiLp.continuous_apply 2 _ i).comp continuous_subtypeVal)
   exact (chartAt _ x).continuousOn.isOpen_inter_preimage (chartAt _ x).open_source this
 
 private theorem mem_stratumDomain (x : M) : x ∈ stratumDomain n x := by
   refine ⟨mem_chart_source _ x, fun i hi ↦
-    lt_of_le_of_ne ((chartAt (EuclideanQuadrant n) x x).2 i) (Ne.symm ?_)⟩
+    lt_of_le_of_ne ((chartAt (EuclideanQuadrant n) x x).prop i) (Ne.symm ?_)⟩
   simpa [zeroCoords] using hi
 
 variable (n) in
@@ -247,7 +276,7 @@ private theorem stratumParam_eq_of_nonneg {x : M} {hx : #(zeroCoords n x) = k}
 
 private theorem stratumParam_apply_of_mem {x : M} {hx : #(zeroCoords n x) = k}
     (w : EuclideanSpace ℝ (Fin (n - k))) {i : Fin n} (hi : i ∈ zeroCoords n x) :
-    (stratumParam k x hx w).1 i = 0 := by
+    (stratumParam k x hx w).val i = 0 := by
   simp [stratumParam, modelWithCornersEuclideanQuadrant_symm_apply,
     splitEquiv_symm_apply_of_mem w hi]
 
@@ -261,8 +290,8 @@ private theorem coe_stratumAmbientChart_symm (x : M) :
 
 private theorem stratumAmbientChart_source (x : M) :
     (stratumAmbientChart n x).source = stratumDomain n x := by
-  rw [stratumAmbientChart, OpenPartialHomeomorph.restrOpen_source,
-    inter_eq_right.2 inter_subset_left]
+  rw [stratumAmbientChart, OpenPartialHomeomorph.restrOpen_source]
+  exact inter_eq_right.2 inter_subset_left
 
 private theorem mem_stratumAmbientChart_target {x : M} {h : EuclideanQuadrant n} :
     h ∈ (stratumAmbientChart n x).target ↔
@@ -288,12 +317,25 @@ private theorem stratumProj_stratumParam {x : M} {hx : #(zeroCoords n x) = k}
   rw [stratumProj, stratumParam_eq_of_nonneg fun j ↦ (pos_of_mem_target hw j).le,
     ContinuousLinearEquiv.apply_symm_apply]
 
+private theorem continuous_stratumParam (x : M) (hx : #(zeroCoords n x) = k) :
+    Continuous (stratumParam k x hx) :=
+  (𝓡c n).continuous_symm.comp ((splitEquiv _ _).symm.continuous.comp (Continuous.prodMk_left 0))
+
+private theorem continuous_stratumProj (x : M) (hx : #(zeroCoords n x) = k) :
+    Continuous (stratumProj x hx) :=
+  continuous_fst.comp ((splitEquiv _ _).continuous.comp (𝓡c n).continuous)
+
+private theorem leftInvOn_stratumProj_stratumParam (x : M) (hx : #(zeroCoords n x) = k) :
+    LeftInvOn (stratumProj x hx) (stratumParam k x hx)
+      (stratumParam k x hx ⁻¹' (stratumAmbientChart n x).target) :=
+  fun _ hw ↦ stratumProj_stratumParam hw
+
 variable [IsManifold (𝓡c n) 1 M]
 
 /-- The depth of a point `y` of the domain of the preferred chart at `x` counts the vanishing
 coordinates of its image in that chart. -/
 private theorem depth_eq_card {x y : M} (hy : y ∈ (chartAt (EuclideanQuadrant n) x).source) :
-    (𝓡c n).depth y = #{i | (chartAt (EuclideanQuadrant n) x y).1 i = 0} := by
+    (𝓡c n).depth y = #{i | (chartAt (EuclideanQuadrant n) x y).val i = 0} := by
   rw [ModelWithCorners.depth_modelWithCornersEuclideanQuadrant one_ne_zero
     (IsManifold.chart_mem_maximalAtlas x) hy, Nat.card_eq_fintype_card, Fintype.card_subtype]
 
@@ -304,9 +346,9 @@ private theorem card_zeroCoords (x : M) : #(zeroCoords n x) = (𝓡c n).depth x 
 `x` vanishes on `zeroCoords n x`. -/
 private theorem depth_eq_iff {x y : M} (hy : y ∈ stratumDomain n x) :
     (𝓡c n).depth y = (𝓡c n).depth x ↔
-      ∀ i ∈ zeroCoords n x, (chartAt (EuclideanQuadrant n) x y).1 i = 0 := by
+      ∀ i ∈ zeroCoords n x, (chartAt (EuclideanQuadrant n) x y).val i = 0 := by
   rw [depth_eq_card hy.1, ← card_zeroCoords]
-  have hsub : ({i | (chartAt (EuclideanQuadrant n) x y).1 i = 0} : Finset (Fin n)) ⊆
+  have hsub : ({i | (chartAt (EuclideanQuadrant n) x y).val i = 0} : Finset (Fin n)) ⊆
       zeroCoords n x :=
     fun i hi ↦ by_contra fun h ↦ (hy.2 i h).ne' (by simpa using hi)
   refine ⟨fun h i hi ↦ ?_, fun h ↦ congrArg _ <| hsub.antisymm fun i hi ↦ by simpa using h i hi⟩
@@ -332,50 +374,56 @@ private theorem stratumParam_stratumProj {x : M} {hx : #(zeroCoords n x) = k} {y
   rw [coe_stratumAmbientChart, stratumParam, stratumProj,
     splitEquiv_symm_fst (by simpa using hZ), ModelWithCorners.left_inv]
 
-private theorem card_zeroCoords_eq (p : (𝓡c n).depthStratum M k) : #(zeroCoords n p.1) = k :=
-  (card_zeroCoords p.1).trans p.2
+private theorem card_zeroCoords_eq (p : (𝓡c n).depthStratum M k) : #(zeroCoords n p.val) = k :=
+  (card_zeroCoords p.val).trans p.prop
 
 /-- The chart of the depth-`k` stratum at `p`: the ambient chart at `p`, restricted to the stratum
 near `p`, with the coordinates vanishing at `p` deleted. -/
 private def stratumChart (p : (𝓡c n).depthStratum M k) :
     OpenPartialHomeomorph ((𝓡c n).depthStratum M k) (EuclideanSpace ℝ (Fin (n - k))) :=
-  (stratumAmbientChart n p.1).subtypeCoord _ ⟨p⟩ (stratumParam k p.1 (card_zeroCoords_eq p))
-    (stratumProj p.1 (card_zeroCoords_eq p)) (fun hw ↦ symm_stratumParam_mem hw)
-    (fun hy hyk ↦ stratumParam_stratumProj hy hyk) (fun _ hw ↦ stratumProj_stratumParam hw)
-    ((𝓡c n).continuous_symm.comp ((splitEquiv _ _).symm.continuous.comp
-      (Continuous.prodMk_left 0)))
-    (Continuous.continuousOn (continuous_fst.comp ((splitEquiv _ _).continuous.comp
-      (𝓡c n).continuous)))
+  (stratumAmbientChart n p.val).subtypeCoord _ ⟨p⟩ (stratumParam k p.val (card_zeroCoords_eq p))
+    (stratumProj p.val (card_zeroCoords_eq p)) (fun hw ↦ symm_stratumParam_mem hw)
+    (fun hy hyk ↦ stratumParam_stratumProj hy hyk) 
+    (leftInvOn_stratumProj_stratumParam _ _) (continuous_stratumParam _ _)
+    (continuous_stratumProj _ _).continuousOn
 
 private theorem stratumChart_apply (p q : (𝓡c n).depthStratum M k) :
     stratumChart p q =
-      stratumProj p.1 (card_zeroCoords_eq p) (chartAt (EuclideanQuadrant n) p.1 q.1) := by
-  rw [stratumChart, OpenPartialHomeomorph.subtypeCoord_apply, coe_stratumAmbientChart]
+      stratumProj p.val (card_zeroCoords_eq p) (chartAt (EuclideanQuadrant n) p.val q.val) := by
+  rw [← coe_stratumAmbientChart, stratumChart]
+  apply OpenPartialHomeomorph.subtypeCoord_apply
+  exacts [symm_stratumParam_mem, stratumParam_stratumProj]
 
 private theorem stratumChart_source (p : (𝓡c n).depthStratum M k) :
-    (stratumChart p).source = Subtype.val ⁻¹' stratumDomain n p.1 := by
-  rw [stratumChart, OpenPartialHomeomorph.subtypeCoord_source, stratumAmbientChart_source]
+    (stratumChart p).source = Subtype.val ⁻¹' stratumDomain n p.val := by
+  rw [← stratumAmbientChart_source, stratumChart]
+  apply OpenPartialHomeomorph.subtypeCoord_source
+  exacts [symm_stratumParam_mem, stratumParam_stratumProj]
 
 private theorem stratumChart_target (p : (𝓡c n).depthStratum M k) :
     (stratumChart p).target =
-      stratumParam k p.1 (card_zeroCoords_eq p) ⁻¹' (stratumAmbientChart n p.1).target := by
-  rw [stratumChart, OpenPartialHomeomorph.subtypeCoord_target]
+      stratumParam k p.val (card_zeroCoords_eq p) ⁻¹' (stratumAmbientChart n p.val).target := by
+  rw [stratumChart]
+  apply OpenPartialHomeomorph.subtypeCoord_target
+  exacts [symm_stratumParam_mem, stratumParam_stratumProj]
 
 private theorem coe_stratumChart_symm_apply (p : (𝓡c n).depthStratum M k)
     {w : EuclideanSpace ℝ (Fin (n - k))} (hw : w ∈ (stratumChart p).target) :
     ((stratumChart p).symm w : M) =
-      (chartAt (EuclideanQuadrant n) p.1).symm (stratumParam k p.1 (card_zeroCoords_eq p) w) := by
+      (chartAt (EuclideanQuadrant n) p.val).symm
+        (stratumParam k p.val (card_zeroCoords_eq p) w) := by
   rw [stratumChart_target] at hw
-  rw [stratumChart, OpenPartialHomeomorph.coe_subtypeCoord_symm_apply _ _ _ _ _ _ _ _ _ _ hw,
-    coe_stratumAmbientChart_symm]
+  rw [← coe_stratumAmbientChart_symm, stratumChart]
+  apply OpenPartialHomeomorph.coe_subtypeCoord_symm_apply
+  exacts [symm_stratumParam_mem, stratumParam_stratumProj, hw]
 
 /-- A point of the target of the stratum chart at `p` is sent into the target of the ambient
 chart at `p`, where the quadrant inclusion reads it as a coordinate insertion. -/
 private theorem stratumParam_mem_target_of_mem {p : (𝓡c n).depthStratum M k}
     {w : EuclideanSpace ℝ (Fin (n - k))} (hw : w ∈ (stratumChart p).target) :
-    stratumParam k p.1 (card_zeroCoords_eq p) w ∈ (chartAt (EuclideanQuadrant n) p.1).target ∧
-      (𝓡c n) (stratumParam k p.1 (card_zeroCoords_eq p) w) =
-        (splitEquiv (zeroCoords n p.1) (card_zeroCoords_eq p)).symm (w, 0) := by
+    stratumParam k p.val (card_zeroCoords_eq p) w ∈ (chartAt (EuclideanQuadrant n) p.val).target ∧
+      (𝓡c n) (stratumParam k p.val (card_zeroCoords_eq p) w) =
+        (splitEquiv (zeroCoords n p.val) (card_zeroCoords_eq p)).symm (w, 0) := by
   rw [stratumChart_target, mem_preimage] at hw
   exact ⟨(mem_stratumAmbientChart_target.1 hw).1,
     stratumParam_eq_of_nonneg fun j ↦ (pos_of_mem_target hw j).le⟩
@@ -386,20 +434,21 @@ private theorem contDiffOn_stratumChart_symm_trans {r : WithTop ℕ∞} [IsManif
     (p q : (𝓡c n).depthStratum M k) :
     ContDiffOn ℝ r ((stratumChart p).symm ≫ₕ stratumChart q)
       ((stratumChart p).symm ≫ₕ stratumChart q).source := by
-  have hg : (chartAt (EuclideanQuadrant n) p.1).symm ≫ₕ chartAt (EuclideanQuadrant n) q.1 ∈
+  have hg : (chartAt (EuclideanQuadrant n) p.val).symm ≫ₕ chartAt (EuclideanQuadrant n) q.val ∈
       contDiffGroupoid r (𝓡c n) :=
     StructureGroupoid.compatible _ (chart_mem_atlas _ _) (chart_mem_atlas _ _)
   rw [contDiffGroupoid, mem_groupoid_of_pregroupoid] at hg
   -- The ambient transition map, read between the two coordinate splittings.
   set A := (ContinuousLinearMap.fst ℝ _ _).comp
-    (splitEquiv (zeroCoords n q.1) (card_zeroCoords_eq q) :
+    (splitEquiv (zeroCoords n q.val) (card_zeroCoords_eq q) :
       EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin (n - k)) × EuclideanSpace ℝ (Fin k))
-  set B := ((splitEquiv (zeroCoords n p.1) (card_zeroCoords_eq p)).symm :
+  set B := ((splitEquiv (zeroCoords n p.val) (card_zeroCoords_eq p)).symm :
       EuclideanSpace ℝ (Fin (n - k)) × EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin n)).comp
     (ContinuousLinearMap.inl ℝ _ _)
   refine ContDiffOn.congr (f := A ∘
-      ((𝓡c n) ∘ ((chartAt (EuclideanQuadrant n) p.1).symm ≫ₕ chartAt (EuclideanQuadrant n) q.1) ∘
-        (𝓡c n).symm) ∘ B)
+      ((𝓡c n) ∘
+        ((chartAt (EuclideanQuadrant n) p.val).symm ≫ₕ chartAt (EuclideanQuadrant n) q.val) ∘
+          (𝓡c n).symm) ∘ B)
     (A.contDiff.comp_contDiffOn (hg.1.comp B.contDiff.contDiffOn fun w hw ↦ ?_)) fun w hw ↦ ?_
   · rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hw
     obtain ⟨hw₁, hw₂⟩ := hw
@@ -424,7 +473,7 @@ the `k` coordinates vanishing at `p` deleted. The implementation is opaque; use
   chartAt := stratumChart
   mem_chart_source p := by
     rw [stratumChart_source]
-    exact mem_stratumDomain p.1
+    exact mem_stratumDomain p.val
   chart_mem_atlas := mem_range_self
 
 private theorem depthStratumChartedSpace_chartAt (p : (𝓡c n).depthStratum M k) :
@@ -440,8 +489,9 @@ theorem depthStratumChartedSpace_atlas :
   unfold atlas chartAt depthStratumChartedSpace
   rfl
 
-/-- **The depth-`k` stratum of a `C^r` manifold modelled on the quadrant `[0, ∞)ⁿ` is a `C^r`
-manifold without boundary**, modelled on `ℝⁿ⁻ᵏ`. -/
+/-- **The depth-`k` stratum of a `C^1` manifold modelled on the quadrant `[0, ∞)ⁿ` that is `C^r`
+is a `C^r` manifold without boundary**, modelled on `ℝⁿ⁻ᵏ`. Both `[IsManifold (𝓡c n) 1 M]` and
+`[IsManifold (𝓡c n) r M]` are assumed. -/
 instance isManifold_depthStratum {r : WithTop ℕ∞} [IsManifold (𝓡c n) r M] :
     IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin (n - k))) r ((𝓡c n).depthStratum M k) := by
   refine isManifold_of_contDiffOn _ r _ ?_
@@ -449,18 +499,19 @@ instance isManifold_depthStratum {r : WithTop ℕ∞} [IsManifold (𝓡c n) r M]
   rintro _ _ ⟨p, rfl⟩ ⟨q, rfl⟩
   simpa [depthStratumChartedSpace_chartAt] using contDiffOn_stratumChart_symm_trans p q
 
-/-- The inclusion of the depth-`k` stratum of a `C^r` manifold modelled on the quadrant `[0, ∞)ⁿ`
-is a `C^r` immersion: in the stratum chart and the ambient chart at a point it is a linear
-coordinate inclusion `ℝⁿ⁻ᵏ → ℝⁿ`, with complement `ℝᵏ`. -/
+/-- The inclusion of the depth-`k` stratum of a `C^1` manifold modelled on the quadrant `[0, ∞)ⁿ`
+that is `C^r` is a `C^r` immersion. -/
 theorem isImmersion_subtypeVal_depthStratum {r : WithTop ℕ∞} [IsManifold (𝓡c n) r M] :
     Manifold.IsImmersion 𝓘(ℝ, EuclideanSpace ℝ (Fin (n - k))) (𝓡c n) r
       (Subtype.val : (𝓡c n).depthStratum M k → M) := by
+  -- In the stratum chart and the ambient chart at a point, the inclusion is the coordinate
+  -- insertion `ℝⁿ⁻ᵏ → ℝⁿ`, with complement `ℝᵏ`.
   apply Manifold.IsImmersionOfComplement.isImmersion (F := EuclideanSpace ℝ (Fin k))
   intro p
-  apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt continuous_subtype_val.continuousAt
-    (splitEquiv (zeroCoords n p.1) (card_zeroCoords_eq p)).symm (chartAt _ p)
-    (chartAt (EuclideanQuadrant n) p.1) (mem_chart_source _ p) (mem_chart_source _ p.1)
-    (IsManifold.chart_mem_maximalAtlas p) (IsManifold.chart_mem_maximalAtlas p.1)
+  apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt continuous_subtypeVal.continuousAt
+    (splitEquiv (zeroCoords n p.val) (card_zeroCoords_eq p)).symm (chartAt _ p)
+    (chartAt (EuclideanQuadrant n) p.val) (mem_chart_source _ p) (mem_chart_source _ p.val)
+    (IsManifold.chart_mem_maximalAtlas p) (IsManifold.chart_mem_maximalAtlas p.val)
   intro w hw
   rw [OpenPartialHomeomorph.extend_target, depthStratumChartedSpace_chartAt] at hw
   have hw₁ : w ∈ (stratumChart p).target := by simpa using hw.1
@@ -468,10 +519,10 @@ theorem isImmersion_subtypeVal_depthStratum {r : WithTop ℕ∞} [IsManifold (�
   simp only [comp_apply, OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
     modelWithCornersSelf_coe_symm, id_eq, depthStratumChartedSpace_chartAt,
     coe_stratumChart_symm_apply p hw₁]
-  rw [(chartAt (EuclideanQuadrant n) p.1).right_inv hw₂, hw₃]
+  rw [(chartAt (EuclideanQuadrant n) p.val).right_inv hw₂, hw₃]
 
-/-- The inclusion of the depth-`k` stratum of a `C^r` manifold modelled on the quadrant `[0, ∞)ⁿ`
-is a `C^r` smooth embedding. -/
+/-- The inclusion of the depth-`k` stratum of a `C^1` manifold modelled on the quadrant `[0, ∞)ⁿ`
+that is `C^r` is a `C^r` smooth embedding. -/
 theorem isSmoothEmbedding_subtypeVal_depthStratum {r : WithTop ℕ∞} [IsManifold (𝓡c n) r M] :
     Manifold.IsSmoothEmbedding 𝓘(ℝ, EuclideanSpace ℝ (Fin (n - k))) (𝓡c n) r
       (Subtype.val : (𝓡c n).depthStratum M k → M) :=

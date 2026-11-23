@@ -470,7 +470,7 @@ number of vanishing coordinates of its image in any chart of the maximal atlas. 
 theorem depth_modelWithCornersEuclideanQuadrant (hr : r ≠ 0)
     {e : OpenPartialHomeomorph M (EuclideanQuadrant n)}
     (he : e ∈ IsManifold.maximalAtlas (𝓡c n) r M) {x : M} (hx : x ∈ e.source) :
-    (𝓡c n).depth x = Nat.card {i // (e x).1 i = 0} := by
+    (𝓡c n).depth x = Nat.card {i // (e x).val i = 0} := by
   rw [← depthAt_extend_eq_depth hr he hx, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
     depthAt_modelWithCornersEuclideanQuadrant (mem_range_self _),
     modelWithCornersEuclideanQuadrant_apply]
