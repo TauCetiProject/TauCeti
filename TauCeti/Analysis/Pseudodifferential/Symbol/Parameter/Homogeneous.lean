@@ -140,8 +140,7 @@ private theorem IsQuasiHomogeneous.fderiv_apply {a : ParameterSymbol n Λ V W m}
     exact ha q hq t ht hDq
   have hchain := ((a.differentiableAt_coefficient htp).hasFDerivAt.comp p D.hasFDerivAt).fderiv
   rw [← ContinuousLinearMap.comp_apply, ← hchain, heq.fderiv_eq,
-    fderiv_fun_const_smul (a.differentiableAt_coefficient hp)]
-  rfl
+    fderiv_fun_const_smul (a.differentiableAt_coefficient hp), smul_apply]
 
 /-- A position derivative of a quasi-homogeneous symbol is quasi-homogeneous of the same
 degree. -/
@@ -168,7 +167,7 @@ theorem IsQuasiHomogeneous.frequencyDeriv {a : ParameterSymbol n Λ V W m}
   rw [coefficient_frequencyDeriv_eq_fderiv a w x _ htz,
     coefficient_frequencyDeriv_eq_fderiv a w x ξ hz]
   refine smul_right_injective _ ht.ne' ?_
-  simp only
+  beta_reduce
   rw [h, smul_smul, Real.rpow_sub_one ht.ne', mul_div_cancel₀ _ ht.ne']
 
 /-- A quasi-homogeneous function of degree `m` is a quasi-homogeneous symbol of degree `m`. -/
