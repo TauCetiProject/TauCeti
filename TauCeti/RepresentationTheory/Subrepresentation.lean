@@ -54,9 +54,9 @@ being additive and preserving both summands, supplies the equivariance.  Being a
 `Submodule.prodEquivOfIsCompl`, it asks for the coefficients to be a ring and the module to be a
 group, as that construction does.  Its first component is the projection
 `Submodule.projectionOnto` along the complement, which therefore intertwines
-(`Subrepresentation.isIntertwiningMap_projectionOnto`); transposing it extends linear forms on
-`ρ₁` by zero on `ρ₂`, which includes the dual of `ρ₁` equivariantly into the dual of `ρ`
-(`Subrepresentation.isIntertwiningMap_dualMap_projectionOnto`).
+(`Subrepresentation.isIntertwiningMap_projectionOnto`); its transpose, given by
+`Representation.IsIntertwiningMap.dualMap`, extends linear forms on `ρ₁` by zero on `ρ₂`, which
+includes the dual of `ρ₁` equivariantly into the dual of `ρ`.
 
 The subrepresentations whose underlying submodule is finitely generated form a join-semilattice
 (`Subrepresentation.instSemilatticeSupFG`), as the finitely generated submodules do in Mathlib, so
@@ -98,7 +98,6 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
 * `Subrepresentation.isIntertwiningMap_projectionOnto`
-* `Subrepresentation.isIntertwiningMap_dualMap_projectionOnto`
 * `Subrepresentation.instSemilatticeSupFG`
 -/
 
@@ -412,18 +411,6 @@ theorem isIntertwiningMap_projectionOnto {ρ₁ ρ₂ : Subrepresentation ρ} (h
       (equivProdOfIsCompl h).toIntertwiningMap,
       LinearMap.ext fun v => by simp [equivProdOfIsCompl_apply]⟩
   exact hf ▸ ⟨f.isIntertwining⟩
-
-/-- **Extending linear forms by zero along a complementary subrepresentation intertwines.** For
-complementary subrepresentations `τ₁` and `τ₂` of `τ`, the transpose of `Submodule.projectionOnto`
-sends a linear form `η` on `τ₁` to the linear form on `V` that agrees with `η` on `τ₁` and
-vanishes on `τ₂`. It intertwines the dual of `τ₁` with the dual of `τ`, so it includes `τ₁*` into
-`V*` equivariantly. -/
-theorem isIntertwiningMap_dualMap_projectionOnto {k H V : Type*} [CommRing k] [Group H]
-    [AddCommGroup V] [Module k V] {τ : Representation k H V} {τ₁ τ₂ : Subrepresentation τ}
-    (h : IsCompl τ₁ τ₂) :
-    Representation.IsIntertwiningMap τ₁.toRepresentation.dual τ.dual
-      (τ₁.toSubmodule.projectionOnto τ₂.toSubmodule (isCompl_toSubmodule.mpr h)).dualMap :=
-  (isIntertwiningMap_projectionOnto h).dualMap
 
 end Splitting
 

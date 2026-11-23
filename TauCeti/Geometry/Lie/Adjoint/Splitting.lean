@@ -31,8 +31,9 @@ A complement determines the inclusion of the dual of each summand into `𝔤*`: 
 summand is extended by zero on the complementary sum, that is, composed with the projection along
 it. For invariant summands this inclusion intertwines the dual of the adjoint action of `H` on the
 summand with the coadjoint action of `H` on `𝔤*`: this is
-`Subrepresentation.isIntertwiningMap_dualMap_projectionOnto`, since the coadjoint representation
-of `H` is the dual of its adjoint representation (`TauCeti.Lie.coadjointRepresentation_def` and
+`(Subrepresentation.isIntertwiningMap_projectionOnto h).dualMap`
+(`Representation.IsIntertwiningMap.dualMap`), since the coadjoint representation of `H` is the
+dual of its adjoint representation (`TauCeti.Lie.coadjointRepresentation_def` and
 `Representation.dual_comp`). Applied to the splitting above, it includes `𝔥*` and `𝔪*`
 equivariantly into `𝔤*`.
 

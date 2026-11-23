@@ -22,13 +22,10 @@ and, as its cocycle vanishes at `p`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.momentCocycle_eq_zero`), `𝔥 ≤ 𝔨`
 (`TauCeti.SmoothTwoForm.isotropy_le_lieAnnihilator_of_momentCocycle_eq_zero`). Both `𝔥` and `𝔨`
 are subrepresentations of the adjoint representation of `H`
-(`TauCeti.isotropySubrepresentation`, `TauCeti.Lie.lieAnnihilatorSubrepresentation`), with
-`𝔥 ≤ 𝔨` as subrepresentations (`isotropySubrepresentation_le_lieAnnihilatorSubrepresentation` in
-the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`). That inclusion only uses that the
-cocycle of `μ` vanishes at `p`, not that `μ` is a moment map, and holds for any subgroup of
-`G_p ⊓ G_ν`, without finite-dimensionality of `G`
-(`isotropySubrepresentation_le_lieAnnihilatorSubrepresentation_of_momentCocycle_eq_zero` in the
-namespace `TauCeti.SmoothTwoForm`).
+(`TauCeti.isotropySubrepresentation`, `TauCeti.Lie.lieAnnihilatorSubrepresentation`), so `𝔥 ≤ 𝔨`
+also holds as subrepresentations, as their carriers are the isotropy algebra and the
+infinitesimal coadjoint stabilizer (`TauCeti.mem_isotropySubrepresentation_iff`,
+`TauCeti.Lie.mem_lieAnnihilatorSubrepresentation_iff`).
 
 When `H` is compact, as it is for a proper action, `𝔤` therefore splits as
 
@@ -36,8 +33,8 @@ When `H` is compact, as it is for a proper action, `𝔤` therefore splits as
 
 with `Ad(H)`-invariant `𝔪` and `𝔮`
 (`exists_isotropySubrepresentation_sup_eq_lieAnnihilatorSubrepresentation_and_isCompl_of_isCompact`
-in the same namespace). No `Ad(G)`-invariant inner product is used, and `G` need be neither
-compact nor connected. The point-level splitting
+in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`). No `Ad(G)`-invariant inner
+product is used, and `G` need be neither compact nor connected. The point-level splitting
 `TauCeti.SmoothTwoForm.IsNondegenerate.exists_subrepresentation_complements` gives such
 complements under other hypotheses: a nondegenerate two-form preserved by `H` and a vanishing
 moment cocycle at `p`, from which the symplectic linear algebra at `p` gives
@@ -45,22 +42,14 @@ moment cocycle at `p`, from which the symplectic linear algebra at `p` gives
 not be nondegenerate. This is the splitting of the Marle–Guillemin–Sternberg local model
 `G ×_H (𝔪* × V)` of the action near the orbit of `p`: `𝔪*` is included into `𝔤*` by extending
 forms by zero on `𝔥 ⊕ 𝔮`, which is equivariant for the coadjoint action
-(`Subrepresentation.isIntertwiningMap_dualMap_projectionOnto`, rewritten by
+(`(Subrepresentation.isIntertwiningMap_projectionOnto h).dualMap`, rewritten by
 `TauCeti.Lie.coadjointRepresentation_def` and `Representation.dual_comp`), and the
 `𝔮`-summand carries the Kirillov–Kostant–Souriau form of the coadjoint orbit of `ν`.
 
 ## Main results
 
-The following is in the namespace `TauCeti.SmoothTwoForm`:
+The following is in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`:
 
-* `isotropySubrepresentation_le_lieAnnihilatorSubrepresentation_of_momentCocycle_eq_zero`:
-  if the cocycle of `μ` vanishes at `p`, `𝔤_p ≤ 𝔤_{μ(p)}` as subrepresentations of the adjoint
-  representation of a subgroup of `G_p ⊓ G_{μ(p)}`.
-
-The following are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`:
-
-* `isotropySubrepresentation_le_lieAnnihilatorSubrepresentation`: `𝔤_p ≤ 𝔤_{μ(p)}` as
-  subrepresentations of the adjoint representation of a subgroup of `G_p`.
 * For a compact stabilizer `G_p`, `Ad(G_p)`-invariant complements `𝔤 = 𝔤_p ⊕ 𝔪 ⊕ 𝔮` with
   `𝔤_p ⊕ 𝔪 = 𝔤_{μ(p)}`:
   `exists_isotropySubrepresentation_sup_eq_lieAnnihilatorSubrepresentation_and_isCompl_of_isCompact`
@@ -81,52 +70,22 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.SmoothTwoForm
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
   {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
   [ContMDiffSMul I I' ∞ G M]
   {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
 
-attribute [local instance] lieGroupOne
+/-- A smooth Lie group has the finite regularity `minSmoothness ℝ 3` at which equivariant moment
+maps are stated. -/
+local instance lieGroupMinSmoothness : LieGroup I (minSmoothness ℝ 3) G :=
+  LieGroup.of_le (I := I) (G := G) (n := ∞) (by simp)
 
-section Cocycle
-
-variable [CompleteSpace E]
-
-/-- **The isotropy algebra lies in the coadjoint stabilizer, as subrepresentations.** If the
-cocycle of `μ` for the action by fundamental vector fields vanishes at `p`, and `K` is a subgroup
-of both the stabilizer `G_p` and the coadjoint stabilizer `G_{μ(p)}`, the isotropy algebra `𝔤_p`
-lies in the infinitesimal coadjoint stabilizer `𝔤_{μ(p)}` as subrepresentations of the adjoint
-representation of `K`. -/
-theorem isotropySubrepresentation_le_lieAnnihilatorSubrepresentation_of_momentCocycle_eq_zero
-    {p : M} (hc : σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ p = 0)
-    {K : Subgroup G} (hK : K ≤ MulAction.stabilizer G p)
-    (hK' : K ≤ (Lie.coadjointRepresentation ℝ I G).stabilizer (μ p)) :
-    isotropySubrepresentation I I' p hK ≤ Lie.lieAnnihilatorSubrepresentation (μ p) hK' :=
-  fun _ hξ ↦ Lie.mem_lieAnnihilatorSubrepresentation_iff.mpr
-    (isotropy_le_lieAnnihilator_of_momentCocycle_eq_zero hc
-      (mem_isotropySubrepresentation_iff.mp hξ))
-
-end Cocycle
 
 namespace IsEquivariantMomentMap
-
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
-
-/-- **The isotropy algebra lies in the coadjoint stabilizer, as subrepresentations.** For a
-coadjoint-equivariant moment map `μ` and a subgroup `K` of the stabilizer `G_p`, the isotropy
-algebra `𝔤_p` lies in the infinitesimal coadjoint stabilizer `𝔤_{μ(p)}` as subrepresentations of
-the adjoint representation of `K`. -/
-theorem isotropySubrepresentation_le_lieAnnihilatorSubrepresentation
-    (h : σ.IsEquivariantMomentMap μ) {p : M} {K : Subgroup G} (hK : K ≤ MulAction.stabilizer G p) :
-    isotropySubrepresentation I I' p hK ≤
-      Lie.lieAnnihilatorSubrepresentation (μ p)
-        (hK.trans (h.stabilizer_le_stabilizer_coadjointRepresentation p)) :=
-  isotropySubrepresentation_le_lieAnnihilatorSubrepresentation_of_momentCocycle_eq_zero
-    (h.momentCocycle_eq_zero p) hK _
 
 /-- **The invariant splitting of the Lie algebra at a point with compact stabilizer.** For a
 coadjoint-equivariant moment map `μ` and a point `p` whose stabilizer `H = G_p` is compact, there
@@ -146,8 +105,10 @@ theorem
           (h.stabilizer_le_stabilizer_coadjointRepresentation p)) 𝔮 ∧
         IsCompl (isotropySubrepresentation I I' p le_rfl) (𝔪 ⊔ 𝔮) ∧
         IsCompl 𝔪 (isotropySubrepresentation I I' p le_rfl ⊔ 𝔮) :=
-  Lie.exists_sup_eq_and_isCompl_of_isCompact hp
-    (h.isotropySubrepresentation_le_lieAnnihilatorSubrepresentation le_rfl)
+  Lie.exists_sup_eq_and_isCompl_of_isCompact hp fun _ hξ ↦
+    Lie.mem_lieAnnihilatorSubrepresentation_iff.mpr
+      (isotropy_le_lieAnnihilator_of_momentCocycle_eq_zero (h.momentCocycle_eq_zero p)
+        (mem_isotropySubrepresentation_iff.mp hξ))
 
 end IsEquivariantMomentMap
 
