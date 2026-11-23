@@ -45,10 +45,13 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   location `Re z` and scale `Im z`, the Cauchy density when `Im z > 0` (for `Im z = 0` both vanish);
   hence `TauCeti.integral_upperHalfPlanePoissonKernel`, `∫ P(z, x) dx = 1` on `ℂ₊`.
 * `TauCeti.upperHalfPlanePoissonKernel_le`: `P(z, x) ≤ C(z) / (1 + x ^ 2)`.
-* `TauCeti.poissonMeasure`, `TauCeti.IsPoissonFinite`: the measure `dx / (1 + x ^ 2)`, which is `π`
-  times the standard Cauchy distribution, and Poisson-finite measures.
+* `TauCeti.upperHalfPlanePoissonMeasure`, `TauCeti.IsPoissonFinite`: the Poisson measure
+  `dx / (1 + x ^ 2)`, which is `π` times the standard Cauchy distribution, and Poisson-finite
+  measures.
 * `TauCeti.upperHalfPlanePoissonIntegral`, `TauCeti.upperHalfPlaneSchwarzIntegral`: the Poisson and
-  Schwarz integrals of a measure on `ℝ`.
+  Schwarz integrals of a measure on `ℝ`, which vanish off the real axis for a measure that is not
+  Poisson-finite (`TauCeti.upperHalfPlanePoissonIntegral_of_not_isPoissonFinite`,
+  `TauCeti.upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite`).
 * `TauCeti.upperHalfPlanePoissonLIntegral`: the extended Poisson integral in `[0, ∞]`, infinite on
   `ℂ₊` exactly for measures that are not Poisson-finite
   (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`).
@@ -57,9 +60,8 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
 * `TauCeti.subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel`: the imaginary part
   of the Schwarz kernel is `π P(z, x)`.
 * `TauCeti.differentiableOn_upperHalfPlaneSchwarzIntegral`: `S[ν]` is holomorphic on `ℂ₊`.
-* `TauCeti.re_upperHalfPlaneSchwarzIntegral`: `Re S[ν] = P[ν]` for Poisson-finite `ν`.
-* `TauCeti.harmonicOnNhd_upperHalfPlanePoissonIntegral`: `P[ν]` is harmonic on `ℂ₊` for
-  Poisson-finite `ν`.
+* `TauCeti.re_upperHalfPlaneSchwarzIntegral`: `Re S[ν] = P[ν]`.
+* `TauCeti.harmonicOnNhd_upperHalfPlanePoissonIntegral`: `P[ν]` is harmonic on `ℂ₊`.
 
 ## References
 
@@ -179,20 +181,22 @@ theorem upperHalfPlanePoissonKernel_le {z : ℂ} (hz : 0 ≤ z.im) (x : ℝ) :
 
 /-! ### Poisson-finite measures -/
 
-/-- The **Poisson measure** `Π = dx / (1 + x ^ 2)` on the real line, which is `π` times the standard
-Cauchy distribution (`TauCeti.poissonMeasure_eq_withDensity`). -/
-def poissonMeasure : Measure ℝ :=
+/-- The **Poisson measure** `Π = dx / (1 + x ^ 2)` on the real line, the boundary weight of the
+upper half-plane Poisson kernel. It is `π` times the standard Cauchy distribution
+(`TauCeti.upperHalfPlanePoissonMeasure_eq_withDensity`). -/
+def upperHalfPlanePoissonMeasure : Measure ℝ :=
   ENNReal.ofReal π • ProbabilityTheory.cauchyMeasure 0 1
 
-/-- The defining formula of `TauCeti.poissonMeasure`. -/
-theorem poissonMeasure_def :
-    poissonMeasure = ENNReal.ofReal π • ProbabilityTheory.cauchyMeasure 0 1 := by
-  rw [poissonMeasure]
+/-- The defining formula of `TauCeti.upperHalfPlanePoissonMeasure`. -/
+theorem upperHalfPlanePoissonMeasure_def :
+    upperHalfPlanePoissonMeasure = ENNReal.ofReal π • ProbabilityTheory.cauchyMeasure 0 1 := by
+  rw [upperHalfPlanePoissonMeasure]
 
 /-- The Poisson measure has density `1 / (1 + x ^ 2)` with respect to Lebesgue measure. -/
-theorem poissonMeasure_eq_withDensity :
-    poissonMeasure = volume.withDensity fun x ↦ ENNReal.ofReal (1 + x ^ 2)⁻¹ := by
-  rw [poissonMeasure_def, ProbabilityTheory.cauchyMeasure_of_scale_ne_zero _ one_ne_zero,
+theorem upperHalfPlanePoissonMeasure_eq_withDensity :
+    upperHalfPlanePoissonMeasure = volume.withDensity fun x ↦ ENNReal.ofReal (1 + x ^ 2)⁻¹ := by
+  rw [upperHalfPlanePoissonMeasure_def,
+    ProbabilityTheory.cauchyMeasure_of_scale_ne_zero _ one_ne_zero,
     ← withDensity_smul _ (ProbabilityTheory.measurable_cauchyPDF _ _)]
   congr 1
   funext x
@@ -204,12 +208,14 @@ theorem poissonMeasure_eq_withDensity :
 
 /-- The Poisson measure has total mass `π`. -/
 @[simp]
-theorem poissonMeasure_univ : poissonMeasure univ = ENNReal.ofReal π := by
-  simp [poissonMeasure_def]
+theorem upperHalfPlanePoissonMeasure_univ :
+    upperHalfPlanePoissonMeasure univ = ENNReal.ofReal π := by
+  simp [upperHalfPlanePoissonMeasure_def]
 
 /-- The Poisson measure is finite. -/
-instance instIsFiniteMeasurePoissonMeasure : IsFiniteMeasure poissonMeasure :=
-  ⟨by simp [poissonMeasure_univ]⟩
+instance instIsFiniteMeasureUpperHalfPlanePoissonMeasure :
+    IsFiniteMeasure upperHalfPlanePoissonMeasure :=
+  ⟨by simp [upperHalfPlanePoissonMeasure_univ]⟩
 
 /-- A measure `ν` on `ℝ` is **Poisson-finite** when `∫ dν / (1 + x ^ 2) < ∞`, that is when
 `x ↦ 1 / (1 + x ^ 2)` is `ν`-integrable. -/
@@ -240,6 +246,7 @@ theorem isPoissonFinite_of_isFiniteMeasure (ν : Measure ℝ) [IsFiniteMeasure �
     exact inv_le_one_of_one_le₀ (by nlinarith [sq_nonneg x])
 
 /-- Reflecting the pole in the real axis changes the sign of the Poisson kernel. -/
+@[simp]
 theorem upperHalfPlanePoissonKernel_conj (z : ℂ) (x : ℝ) :
     upperHalfPlanePoissonKernel (conj z) x = -upperHalfPlanePoissonKernel z x := by
   rw [upperHalfPlanePoissonKernel_eq, upperHalfPlanePoissonKernel_eq, conj_im, neg_div,
@@ -256,7 +263,7 @@ theorem IsPoissonFinite.integrable_upperHalfPlanePoissonKernel {ν : Measure ℝ
   rcases le_total 0 z.im with hz | hz
   · exact key z hz
   · have h : upperHalfPlanePoissonKernel z = fun x ↦ -upperHalfPlanePoissonKernel (conj z) x :=
-      funext fun x ↦ by simpa using upperHalfPlanePoissonKernel_conj (conj z) x
+      funext fun x ↦ by simp
     rw [h]
     exact (key (conj z) (by simpa using hz)).neg
 
@@ -282,7 +289,8 @@ theorem isPoissonFinite_iff_integrable_upperHalfPlanePoissonKernel {ν : Measure
 
 /-- The **Poisson integral** `P[ν](z) = ∫ P(z, x) dν(x)` of a measure `ν` on `ℝ`, as a real
 number. It is meaningful for a Poisson-finite measure `ν`; otherwise the Bochner integral takes the
-junk value `0` on `ℂ₊`, and the divergent case `P[ν] = ∞` is expressed by the extended integral
+junk value `0` (`TauCeti.upperHalfPlanePoissonIntegral_of_not_isPoissonFinite`), and the divergent
+case `P[ν] = ∞` is expressed by the extended integral
 `TauCeti.upperHalfPlanePoissonLIntegral` (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`). -/
 def upperHalfPlanePoissonIntegral (ν : Measure ℝ) (z : ℂ) : ℝ :=
   ∫ x, upperHalfPlanePoissonKernel z x ∂ν
@@ -291,6 +299,15 @@ def upperHalfPlanePoissonIntegral (ν : Measure ℝ) (z : ℂ) : ℝ :=
 theorem upperHalfPlanePoissonIntegral_def (ν : Measure ℝ) (z : ℂ) :
     upperHalfPlanePoissonIntegral ν z = ∫ x, upperHalfPlanePoissonKernel z x ∂ν := by
   rw [upperHalfPlanePoissonIntegral]
+
+/-- For a measure that is not Poisson-finite, the Poisson integral takes the junk value `0`: off the
+real axis the Poisson kernel is not integrable, and on it the kernel vanishes. -/
+theorem upperHalfPlanePoissonIntegral_of_not_isPoissonFinite {ν : Measure ℝ}
+    (hν : ¬IsPoissonFinite ν) (z : ℂ) : upperHalfPlanePoissonIntegral ν z = 0 := by
+  rcases eq_or_ne z.im 0 with hz | hz
+  · simp [upperHalfPlanePoissonIntegral_def, upperHalfPlanePoissonKernel_eq, hz]
+  · rw [upperHalfPlanePoissonIntegral_def,
+      integral_undef ((isPoissonFinite_iff_integrable_upperHalfPlanePoissonKernel hz).not.1 hν)]
 
 /-- The Poisson integral of a measure is nonnegative on the closed upper half-plane. -/
 theorem upperHalfPlanePoissonIntegral_nonneg (ν : Measure ℝ) {z : ℂ} (hz : 0 ≤ z.im) :
@@ -325,14 +342,18 @@ theorem upperHalfPlanePoissonLIntegral_eq_top_iff {ν : Measure ℝ} {z : ℂ} (
     upperHalfPlanePoissonLIntegral_def]
   simp [(measurable_upperHalfPlanePoissonKernel z).aestronglyMeasurable, lt_top_iff_ne_top]
 
-/-- For a Poisson-finite measure and a pole in the closed upper half-plane, the real-valued Poisson
-integral is the extended one. -/
-theorem ofReal_upperHalfPlanePoissonIntegral {ν : Measure ℝ} (hν : IsPoissonFinite ν) {z : ℂ}
-    (hz : 0 ≤ z.im) :
+/-- For a Poisson-finite measure, the real-valued Poisson integral is the extended one. In the
+lower half-plane both vanish, since the kernel is nonpositive there. -/
+theorem ofReal_upperHalfPlanePoissonIntegral {ν : Measure ℝ} (hν : IsPoissonFinite ν) (z : ℂ) :
     ENNReal.ofReal (upperHalfPlanePoissonIntegral ν z) = upperHalfPlanePoissonLIntegral ν z := by
-  rw [upperHalfPlanePoissonIntegral_def, upperHalfPlanePoissonLIntegral_def,
-    ofReal_integral_eq_lintegral_ofReal (hν.integrable_upperHalfPlanePoissonKernel z)
+  rw [upperHalfPlanePoissonIntegral_def, upperHalfPlanePoissonLIntegral_def]
+  rcases le_total 0 z.im with hz | hz
+  · rw [ofReal_integral_eq_lintegral_ofReal (hν.integrable_upperHalfPlanePoissonKernel z)
       (.of_forall (upperHalfPlanePoissonKernel_nonneg hz))]
+  · have hP (x : ℝ) : upperHalfPlanePoissonKernel z x ≤ 0 := by
+      simpa using upperHalfPlanePoissonKernel_nonneg (z := conj z) (by simpa using hz) x
+    rw [ENNReal.ofReal_of_nonpos (integral_nonpos hP)]
+    simp [ENNReal.ofReal_of_nonpos, hP]
 
 /-! ### The Schwarz integral -/
 
@@ -356,6 +377,14 @@ theorem upperHalfPlaneSchwarzIntegral_def (ν : Measure ℝ) (z : ℂ) :
       ((π : ℂ) * I)⁻¹ * ∫ x, subtractedResolventKernel z x ∂ν := by
   rw [upperHalfPlaneSchwarzIntegral]
 
+/-- Off the real axis, the Schwarz integral of a measure that is not Poisson-finite takes the junk
+value `0`, since the subtracted resolvent kernel is not integrable there. -/
+theorem upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite {ν : Measure ℝ}
+    (hν : ¬IsPoissonFinite ν) {z : ℂ} (hz : z.im ≠ 0) : upperHalfPlaneSchwarzIntegral ν z = 0 := by
+  rw [upperHalfPlaneSchwarzIntegral_def, integral_undef fun h ↦ hν
+    ((isPoissonFinite_iff_lintegral_lt_top ν).2
+      ((integrable_subtractedResolventKernel_iff hz).1 h)), mul_zero]
+
 /-- At `z = i` the Schwarz integral is real: `S[ν](i) = (1 / π) ∫ dν / (1 + x ^ 2)`. -/
 @[simp]
 theorem upperHalfPlaneSchwarzIntegral_I (ν : Measure ℝ) :
@@ -365,34 +394,34 @@ theorem upperHalfPlaneSchwarzIntegral_I (ν : Measure ℝ) :
   push_cast
   field_simp
 
-/-- **The Poisson integral is the real part of the Schwarz integral**: `Re S[ν] = P[ν]` for a
-Poisson-finite measure `ν`. -/
-theorem re_upperHalfPlaneSchwarzIntegral {ν : Measure ℝ} (hν : IsPoissonFinite ν) (z : ℂ) :
+/-- **The Poisson integral is the real part of the Schwarz integral**: `Re S[ν] = P[ν]`. For a
+measure that is not Poisson-finite both sides take the junk value `0`. -/
+theorem re_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) (z : ℂ) :
     (upperHalfPlaneSchwarzIntegral ν z).re = upperHalfPlanePoissonIntegral ν z := by
-  rw [upperHalfPlaneSchwarzIntegral_def, upperHalfPlanePoissonIntegral_def]
+  rw [upperHalfPlaneSchwarzIntegral_def]
   by_cases hK : Integrable (subtractedResolventKernel z) ν
   · have him := integral_im (𝕜 := ℂ) hK
     simp only [RCLike.im_to_complex,
       subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel, integral_const_mul] at him
-    rw [mul_inv, inv_I, ← ofReal_inv, mul_neg, neg_mul, neg_re, mul_assoc, re_ofReal_mul,
-      I_mul_re, ← him, mul_neg, neg_neg, ← mul_assoc, inv_mul_cancel₀ Real.pi_ne_zero, one_mul]
-  · have hz : z.im = 0 := by
-      by_contra hz
-      exact hK (integrable_subtractedResolventKernel
-        ((isPoissonFinite_iff_lintegral_lt_top ν).1 hν) hz)
-    rw [integral_undef hK, mul_zero, zero_re]
-    simp [upperHalfPlanePoissonKernel_eq, hz]
+    have hre (w : ℂ) : (((π : ℂ) * I)⁻¹ * w).re = π⁻¹ * w.im := by
+      simp [← ofReal_inv]
+    rw [hre, ← him, upperHalfPlanePoissonIntegral_def]
+    field_simp
+  · rw [integral_undef hK, mul_zero, zero_re]
+    rcases eq_or_ne z.im 0 with hz | hz
+    · simp [upperHalfPlanePoissonIntegral_def, upperHalfPlanePoissonKernel_eq, hz]
+    · refine (upperHalfPlanePoissonIntegral_of_not_isPoissonFinite (fun hν ↦ hK ?_) z).symm
+      exact integrable_subtractedResolventKernel ((isPoissonFinite_iff_lintegral_lt_top ν).1 hν) hz
 
-/-- **The Schwarz integral is holomorphic** on the upper half-plane. For a measure that is not
-Poisson-finite it vanishes there. -/
+/-- **The Schwarz integral is holomorphic** on the upper half-plane, for every measure `ν`. For a
+measure that is not Poisson-finite it is the junk value `0` there
+(`TauCeti.upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite`). -/
 theorem differentiableOn_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) :
     DifferentiableOn ℂ (upperHalfPlaneSchwarzIntegral ν) UpperHalfPlane.upperHalfPlaneSet := by
   by_cases hν : IsPoissonFinite ν
   swap
-  · refine (differentiableOn_const (0 : ℂ)).congr fun z hz ↦ ?_
-    rw [upperHalfPlaneSchwarzIntegral_def, integral_undef fun h ↦ hν
-      ((isPoissonFinite_iff_lintegral_lt_top ν).2
-        ((integrable_subtractedResolventKernel_iff (ne_of_gt hz)).1 h)), mul_zero]
+  · exact (differentiableOn_const (0 : ℂ)).congr fun z hz ↦
+      upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite hν (ne_of_gt hz)
   -- The Cayley factor of `norm_subtractedResolventKernel_le` is continuous on `ℂ₊`, hence locally
   -- bounded, which gives a local integrable bound `(C + 1) / (1 + x ^ 2)`.
   set c : ℂ → ℝ := fun w ↦ (‖w + I‖ + ‖w - I‖) / (‖w + I‖ - ‖w - I‖)
@@ -402,11 +431,7 @@ theorem differentiableOn_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) :
     (.of_forall fun x w hw ↦ ?_)
   · exact fun z hz ↦ ((hS z hz).differentiableAt.const_mul _).differentiableWithinAt
   · have hz₀' : 0 < z₀.im := hz₀
-    have hlt : ‖z₀ - I‖ < ‖z₀ + I‖ := by
-      refine lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) ?_
-      rw [← normSq_eq_norm_sq, ← normSq_eq_norm_sq]
-      simp only [normSq_apply, sub_re, sub_im, add_re, add_im, I_re, I_im]
-      nlinarith
+    have hlt : ‖z₀ - I‖ < ‖z₀ + I‖ := norm_sub_I_lt_norm_add_I_iff.2 hz₀'
     have hc : ContinuousAt c z₀ :=
       ((by fun_prop : Continuous fun w : ℂ ↦ ‖w + I‖ + ‖w - I‖).continuousAt).div
         ((by fun_prop : Continuous fun w : ℂ ↦ ‖w + I‖ - ‖w - I‖).continuousAt)
@@ -423,16 +448,16 @@ theorem differentiableOn_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) :
     exact ((((differentiableAt_const _).sub differentiableAt_id).inv hxw).sub_const
       _).differentiableWithinAt
 
-/-- **The Poisson integral is harmonic** on the upper half-plane, for a Poisson-finite measure
-`ν`. -/
-theorem harmonicOnNhd_upperHalfPlanePoissonIntegral {ν : Measure ℝ} (hν : IsPoissonFinite ν) :
+/-- **The Poisson integral is harmonic** on the upper half-plane, for every measure `ν` (for a
+measure that is not Poisson-finite it is the junk value `0` there). -/
+theorem harmonicOnNhd_upperHalfPlanePoissonIntegral (ν : Measure ℝ) :
     HarmonicOnNhd (upperHalfPlanePoissonIntegral ν) UpperHalfPlane.upperHalfPlaneSet := by
   intro z hz
   have hS : AnalyticAt ℂ (upperHalfPlaneSchwarzIntegral ν) z :=
     (differentiableOn_upperHalfPlaneSchwarzIntegral ν).analyticAt
       (UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds hz)
   have h : upperHalfPlanePoissonIntegral ν = fun w ↦ (upperHalfPlaneSchwarzIntegral ν w).re :=
-    funext fun w ↦ (re_upperHalfPlaneSchwarzIntegral hν w).symm
+    funext fun w ↦ (re_upperHalfPlaneSchwarzIntegral ν w).symm
   rw [h]
   exact hS.harmonicAt_re
 

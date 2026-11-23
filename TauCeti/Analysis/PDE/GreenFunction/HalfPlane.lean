@@ -259,7 +259,7 @@ theorem halfSpacePoissonKernel_orthonormalBasisOneI_repr (v : U) (a z : ℂ) :
   rw [halfSpacePoissonKernel_eq_div, LinearIsometryEquiv.inner_map_map, ← map_sub,
     LinearIsometryEquiv.norm_map, hvol]
   push_cast
-  rw [mul_assoc (2 : ℝ), mul_div_mul_left _ _ two_ne_zero]
+  ring
 
 /-- **The outward normal derivative of the half-plane Green kernel is minus the Poisson kernel.**
 On the boundary line, the derivative of `G(a, ·)` in the outward normal direction `-v` is minus

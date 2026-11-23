@@ -96,7 +96,7 @@ theorem norm_subtractedResolventKernel_le {z : ℂ} (hz : 0 < z.im) (t : ℝ) :
       (‖z + I‖ + ‖z - I‖) / (‖z + I‖ - ‖z - I‖) * (1 + t ^ 2)⁻¹ := by
   have h := nevanlinnaKernel_eq_one_add_sq_mul_subtractedResolventKernel
     (ofReal_sub_ne_zero_of_im_ne_zero hz.ne' t)
-  have hcast : 1 + (t : ℂ) ^ 2 = ((1 + t ^ 2 : ℝ) : ℂ) := by push_cast; rfl
+  have hcast : 1 + (t : ℂ) ^ 2 = ((1 + t ^ 2 : ℝ) : ℂ) := by push_cast; ring
   have hnorm : ‖nevanlinnaKernel z t‖ = (1 + t ^ 2) * ‖subtractedResolventKernel z t‖ := by
     rw [h, hcast, norm_mul, norm_real, Real.norm_of_nonneg (by positivity)]
   calc ‖subtractedResolventKernel z t‖ = ‖nevanlinnaKernel z t‖ * (1 + t ^ 2)⁻¹ := by
