@@ -369,20 +369,6 @@ section NumberField
 
 variable [NumberField K]
 
-/-- **Odd degree.** A number field of odd degree has no CM subfield, so `E_K = K⁺`. For instance
-`E_K = ℚ` for `K = ℚ(2^(1/3))`. -/
-theorem maximalRealOrCMSubfield_eq_maximalRealSubfield_of_odd (h : Odd (Module.finrank ℚ K)) :
-    maximalRealOrCMSubfield K = maximalRealSubfield K := by
-  refine le_antisymm (isTotallyReal_iff_le_maximalRealSubfield.mp
-    ((isTotallyReal_or_isCMField_maximalRealOrCMSubfield K).resolve_right fun hE ↦ ?_))
-    (maximalRealSubfield_le_maximalRealOrCMSubfield K)
-  set E := maximalRealOrCMSubfield K
-  have := Algebra.IsIntegral.of_injective E.subtype.toRatAlgHom E.subtype_injective
-  rw [← Module.finrank_mul_finrank ℚ E K, ← Module.finrank_mul_finrank ℚ (maximalRealSubfield E) E,
-    Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield E) E] at h
-  simp only [Nat.odd_mul] at h
-  exact Nat.not_odd_iff_even.mpr even_two h.1.2
-
 variable {Ω : Type*} [Field Ω] [CharZero Ω] [IsAlgClosure ℚ Ω]
 
 /-- **Embeddings of a number field agreeing on `E_K`.** Two embeddings `τ, τ' : K →+* Ω` of a
@@ -401,6 +387,21 @@ theorem exists_mem_cmSubgroup_iff (τ τ' : K →+* Ω) :
     (Subgroup.isOpen_mono le_sup_right (fixingSubgroup_isOpen _))
 
 end NumberField
+
+/-- **Odd degree.** A field of odd degree over `ℚ` has no CM subfield, so `E_K = K⁺`. For
+instance `E_K = ℚ` for `K = ℚ(2^(1/3))`. -/
+theorem maximalRealOrCMSubfield_eq_maximalRealSubfield_of_odd [CharZero K]
+    (h : Odd (Module.finrank ℚ K)) : maximalRealOrCMSubfield K = maximalRealSubfield K := by
+  have : FiniteDimensional ℚ K := Module.finite_of_finrank_pos h.pos
+  refine le_antisymm (isTotallyReal_iff_le_maximalRealSubfield.mp
+    ((isTotallyReal_or_isCMField_maximalRealOrCMSubfield K).resolve_right fun hE ↦ ?_))
+    (maximalRealSubfield_le_maximalRealOrCMSubfield K)
+  set E := maximalRealOrCMSubfield K
+  have := Algebra.IsIntegral.of_injective E.subtype.toRatAlgHom E.subtype_injective
+  rw [← Module.finrank_mul_finrank ℚ E K, ← Module.finrank_mul_finrank ℚ (maximalRealSubfield E) E,
+    Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield E) E] at h
+  simp only [Nat.odd_mul] at h
+  exact Nat.not_odd_iff_even.mpr even_two h.1.2
 
 section ArtinWeil
 
