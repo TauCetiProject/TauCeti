@@ -139,25 +139,19 @@ theorem multiplicativeGroupPoints_mapDomain_multiplicativeGroupDiagonal
     multiplicativeGroupPoints A B T (BialgHom.mapDomain (multiplicativeGroupDiagonal A B) x) =
       Units.map (Algebra.TensorProduct.includeRight : T →ₐ[A] B ⊗[A] T).toMonoidHom
         (MultiplicativeGroup.pointsMulEquiv x) := by
-  ext
   have hpt :
-      (multiplicativeGroupPoints A B T
-          (BialgHom.mapDomain (multiplicativeGroupDiagonal A B) x) : B ⊗[A] T) =
-        Algebra.TensorProduct.lTensor (R := A) (S := B) B x.ofConv
-          ((AddMonoidAlgebra.scalarTensorBialgEquiv A B (G := ℤ)).symm
-            (LaurentPolynomial.T 1)) := by
+      pointsMulEquiv A B B[T;T⁻¹] T (BialgHom.mapDomain (multiplicativeGroupDiagonal A B) x) =
+        BialgHom.mapDomain (AddMonoidAlgebra.scalarTensorBialgEquiv A B (G := ℤ)).symm.toBialgHom
+          (TauCeti.AlgHom.pointsLTensor B x) := by
     rw [multiplicativeGroupDiagonal, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
-      multiplicativeGroupPoints, MulEquiv.trans_apply, pointsMulEquiv_mapDomain_mapBialgHom,
-      pointsMulEquiv_mapDomain_diagonal, MultiplicativeGroup.pointsMulEquiv_apply,
-      laurentEvalEquiv_symm_apply, BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
-      TauCeti.AlgHom.ofConv_pointsLTensor, BialgHom.coe_toAlgHom, BialgEquiv.toBialgHom_eq_coe,
-      BialgEquiv.coe_toBialgHom]
+      pointsMulEquiv_mapDomain_mapBialgHom, pointsMulEquiv_mapDomain_diagonal]
   have hT :
       (AddMonoidAlgebra.scalarTensorBialgEquiv A B (G := ℤ)).symm (LaurentPolynomial.T 1) =
         (1 : B) ⊗ₜ[A] LaurentPolynomial.T 1 :=
     AddMonoidAlgebra.scalarTensorBialgEquiv_symm_single A B (1 : ℤ) (1 : B)
-  rw [hpt, hT]
-  simp
+  ext
+  rw [multiplicativeGroupPoints, MulEquiv.trans_apply, hpt]
+  simp [hT]
 
 /-- The unit of `B ⊗[A] U` classifying a bialgebra map `WeilRestriction A B B[T;T⁻¹] →ₐc[A] U`
 is group-like over `B`. -/

@@ -12,24 +12,22 @@ public import TauCeti.RingTheory.TensorProduct.Complex
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
+import TauCeti.Algebra.AlgebraicGroup.SplitTorus.CoordinateIso
 import TauCeti.Algebra.AlgebraicGroup.Torus.Splitting
-import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Equiv
-import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Product
-import TauCeti.Data.Finsupp.Fin
 
 /-!
 # The splitting of the Deligne torus over `ℂ`
 
-Over `ℂ` the Deligne torus `S = Res_{ℂ/ℝ} 𝔾ₘ` splits: `S_ℂ ≅ 𝔾ₘ × 𝔾ₘ`. On points, for a complex
-algebra `R` with a compatible real algebra structure, the points `S(R) = (ℂ ⊗[ℝ] R)ˣ` are
-identified with `Rˣ × Rˣ` (`TauCeti.DeligneTorus.complexSplitting R`) through the splitting
-`ℂ ⊗[ℝ] R ≃ R × R`, `a ⊗ x ↦ (a • x, conj a • x)` (`TauCeti.complexTensorProductEquivProd`). With
-this normalization:
+Over `ℂ` the Deligne torus `S = Res_{ℂ/ℝ} 𝔾ₘ` splits: `S_ℂ ≅ 𝔾ₘ × 𝔾ₘ`. Throughout the point-level
+sections below, `R` denotes a commutative `ℂ`-algebra equipped with a compatible `ℝ`-algebra
+structure (`[Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]`). Over such an algebra `R`, the
+points `S(R) = (ℂ ⊗[ℝ] R)ˣ` are identified with `Rˣ × Rˣ`
+(`TauCeti.DeligneTorus.complexSplitting R`) through the splitting `ℂ ⊗[ℝ] R ≃ R × R`,
+`a ⊗ x ↦ (a • x, conj a • x)` (`TauCeti.complexTensorProductEquivProd`). With this normalization:
 
 * a real point `z ∈ S(ℝ) = ℂˣ` goes to `(z, conj z)` in `S(ℂ)`
   (`TauCeti.DeligneTorus.complexSplitting_real`), so the real point `i` goes to `(i, -i)`, which
-  fixes the order of the two factors, whereas the scalar point `1 ⊗ i` goes to `(i, i)`
-  (`TauCeti.DeligneTorus.complexSplitting_scalar_I`);
+  fixes the order of the two factors, whereas the scalar point `1 ⊗ i` goes to `(i, i)`;
 * complex conjugation of `S(ℂ)` acts by `(z₁, z₂) ↦ (conj z₂, conj z₁)`
   (`TauCeti.DeligneTorus.complexSplitting_conj`), cutting out `S(ℝ)` as its fixed locus
   (`TauCeti.DeligneTorus.mem_mrange_mapValue_ofId_iff`);
@@ -40,11 +38,13 @@ this normalization:
 
 The cocharacter `μ : 𝔾_{m,ℂ} → S_ℂ` is `z ↦ (z, 1)` (`TauCeti.DeligneTorus.mu`). It is not
 defined over `ℝ`: `μ(-1) = (-1, 1)` is not of the form `(z, conj z)`
-(`TauCeti.DeligneTorus.mu_neg_one_notMem_range_mapValue`). The algebraic characters of `S_ℂ` are
-classified by the pairs `(p, q) ∈ ℤ²`; on points over any complex algebra `R` they evaluate to the
-homomorphisms `(z₁, z₂) ↦ z₁ ^ p * z₂ ^ q` (`TauCeti.DeligneTorus.characterGroup R`), and complex
-conjugation exchanges `(p, q)` and `(q, p)`. These are the conventions in which a real Hodge
-structure of type `(p, q)` is a representation of `S` on which `z ∈ S(ℝ)` acts on the
+(`TauCeti.DeligneTorus.mu_neg_one_notMem_range_mapValue`). Over any `R` as above, integer pairs
+`(p, q) ∈ ℤ²` evaluate on points to the homomorphisms `(z₁, z₂) ↦ z₁ ^ p * z₂ ^ q`
+(`TauCeti.DeligneTorus.characterGroup R`), distinct pairs yield distinct characters of `S(ℂ)`
+(`TauCeti.DeligneTorus.characterGroup_injective`), and complex conjugation exchanges `(p, q)` and
+`(q, p)`; the algebraic character-lattice isomorphism `X*(S_ℂ) ≃+ ℤ × ℤ` is established in
+`TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Characters`. These are the conventions in which a
+real Hodge structure of type `(p, q)` is a representation of `S` on which `z ∈ S(ℝ)` acts on the
 `(p, q)`-summand by `z^{-p} conj(z)^{-q}`, and through which a cocharacter `μ` of a Shimura datum
 is defined.
 
@@ -59,10 +59,10 @@ satisfies `g ^ 2 = 1` (`TauCeti.DeligneTorus.isEmpty_realPoints_mulEquiv_pi`).
 
 ## Main definitions
 
-* `TauCeti.DeligneTorus.complexSplitting R`: `S(R) ≃* Rˣ × Rˣ` for a complex algebra `R`.
-* `TauCeti.DeligneTorus.mu R`: the cocharacter `μ : z ↦ (z, 1)` on points over a complex algebra.
-* `TauCeti.DeligneTorus.characterGroup R`: evaluation of the algebraic characters `(p, q) ∈ ℤ²` of
-  `S_ℂ` on `R`-points, sending `(p, q)` to `(z₁, z₂) ↦ z₁ ^ p * z₂ ^ q` on `S(R)`.
+* `TauCeti.DeligneTorus.complexSplitting R`: `S(R) ≃* Rˣ × Rˣ` for `R` as above.
+* `TauCeti.DeligneTorus.mu R`: the cocharacter `μ : z ↦ (z, 1)` on `R`-points.
+* `TauCeti.DeligneTorus.characterGroup R`: evaluation of integer pairs `(p, q) ∈ ℤ²` on
+  `R`-points, sending `(p, q)` to `(z₁, z₂) ↦ z₁ ^ p * z₂ ^ q` on `S(R)`.
 * `TauCeti.DeligneTorus.baseChangeComplex`: the base change of `S` from `ℝ` to `ℂ` as a
   finite-type commutative Hopf `ℂ`-algebra, with point identification
   `TauCeti.DeligneTorus.baseChangeComplexPointsMulEquiv`.
@@ -76,9 +76,9 @@ satisfies `g ^ 2 = 1` (`TauCeti.DeligneTorus.isEmpty_realPoints_mulEquiv_pi`).
 
 * `TauCeti.DeligneTorus.complexSplitting_mapValue`, `TauCeti.DeligneTorus.mapValue_mu`,
   `TauCeti.DeligneTorus.characterGroup_mapValue`: naturality in `R`.
-* `TauCeti.DeligneTorus.complexSplitting_real`, `TauCeti.DeligneTorus.complexSplitting_scalar_I`,
-  `TauCeti.DeligneTorus.mem_mrange_mapValue_ofId_iff`: real points versus complex scalar points,
-  and characterization of `S(ℝ)` inside `S(ℂ)`.
+* `TauCeti.DeligneTorus.complexSplitting_real`,
+  `TauCeti.DeligneTorus.mem_mrange_mapValue_ofId_iff`: real points and characterization of `S(ℝ)`
+  inside `S(ℂ)`.
 * `TauCeti.DeligneTorus.complexSplitting_conj`: complex conjugation on `S(ℂ)` is
   `(z₁, z₂) ↦ (conj z₂, conj z₁)`.
 * `TauCeti.DeligneTorus.complexSplitting_diagonal`, `TauCeti.DeligneTorus.complexSplitting_weight`,
@@ -91,6 +91,9 @@ satisfies `g ^ 2 = 1` (`TauCeti.DeligneTorus.isEmpty_realPoints_mulEquiv_pi`).
   `(q, p)`.
 * `TauCeti.DeligneTorus.characterGroup_mu`, `TauCeti.DeligneTorus.characterGroup_weight`: the
   character `(p, q)` is `z ↦ z ^ p` on `μ(z)` and `r ↦ r ^ (-(p + q))` on the weight.
+* `TauCeti.DeligneTorus.mapDomain_baseChangeComplexBialgEquiv` and
+  `TauCeti.DeligneTorus.mapDomain_baseChangeComplexBialgEquiv_symm`: point compatibility in both
+  directions for `baseChangeComplexBialgEquiv`.
 * `TauCeti.DeligneTorus.infinite_isOfFinOrder_realPoints`: `S(ℝ)` has infinitely many elements of
   finite order.
 * `TauCeti.DeligneTorus.torusCommHopfAlgProperty_S` and
@@ -142,35 +145,6 @@ theorem coe_complexSplitting_snd (f : WithConv (S →ₐ[ℝ] R)) :
     ((complexSplitting R f).2 : R) = (complexTensorProductEquivProd R (pointsMulEquiv R f)).2 :=
   (rfl)
 
-/-- The pair of values in `R` underlying `complexSplitting R f` is the image of the unit
-`pointsMulEquiv R f` of `ℂ ⊗[ℝ] R` under `complexTensorProductEquivProd R`. -/
-theorem coe_complexSplitting_apply (f : WithConv (S →ₐ[ℝ] R)) :
-    (((complexSplitting R f).1 : R), ((complexSplitting R f).2 : R)) =
-      complexTensorProductEquivProd R (pointsMulEquiv R f) :=
-  Prod.ext (coe_complexSplitting_fst f) (coe_complexSplitting_snd f)
-
-/-- On a unit `u` of `ℂ ⊗[ℝ] R` whose underlying element is a pure tensor `a ⊗ b`, the two
-components of `complexSplitting R ((pointsMulEquiv R).symm u)` are `a • b` and `conj a • b`. -/
-theorem coe_complexSplitting_components_of_val_eq_tmul {u : (ℂ ⊗[ℝ] R)ˣ} {a : ℂ} {b : R}
-    (hu : (u : ℂ ⊗[ℝ] R) = a ⊗ₜ[ℝ] b) :
-    ((complexSplitting R ((pointsMulEquiv R).symm u)).1 : R) = a • b ∧
-      ((complexSplitting R ((pointsMulEquiv R).symm u)).2 : R) = starRingEnd ℂ a • b := by
-  have h := coe_complexSplitting_apply ((pointsMulEquiv R).symm u)
-  rw [MulEquiv.apply_symm_apply, hu, complexTensorProductEquivProd_tmul] at h
-  exact Prod.mk.inj h
-
-/-- The element of `ℂ ⊗[ℝ] R` underlying `(complexSplitting R).symm p`. -/
-theorem coe_pointsMulEquiv_complexSplitting_symm (p : Rˣ × Rˣ) :
-    ↑(pointsMulEquiv R ((complexSplitting R).symm p)) =
-      (complexTensorProductEquivProd R).symm ((p.1 : R), (p.2 : R)) := by
-  apply (complexTensorProductEquivProd R).injective
-  rw [AlgEquiv.apply_symm_apply]
-  exact Prod.ext
-    ((coe_complexSplitting_fst ((complexSplitting R).symm p)).symm.trans
-      (by rw [MulEquiv.apply_symm_apply]))
-    ((coe_complexSplitting_snd ((complexSplitting R).symm p)).symm.trans
-      (by rw [MulEquiv.apply_symm_apply]))
-
 /-- **Naturality of the splitting in `R`**: post-composing a point with a complex algebra map
 `h : R → R'` applies `h` to both components. -/
 theorem complexSplitting_mapValue {R' : Type*} [CommRing R'] [Algebra ℝ R'] [Algebra ℂ R']
@@ -180,14 +154,6 @@ theorem complexSplitting_mapValue {R' : Type*} [CommRing R'] [Algebra ℝ R'] [A
         Units.map (h : R →* R') (complexSplitting R f).2) := by
   ext <;> simp only [coe_complexSplitting_fst, coe_complexSplitting_snd, pointsMulEquiv_mapValue,
     Units.coe_map, MonoidHom.coe_ofClass, complexTensorProductEquivProd_lTensor]
-
-/-- Inverse naturality of `complexSplitting` along `ℂ`-algebra homomorphisms. -/
-theorem mapValue_complexSplitting_symm {R' : Type*} [CommRing R'] [Algebra ℝ R'] [Algebra ℂ R']
-    [IsScalarTower ℝ ℂ R'] (h : R →ₐ[ℂ] R') (p : Rˣ × Rˣ) :
-    AlgHom.mapValue (h.restrictScalars ℝ) ((complexSplitting R).symm p) =
-      (complexSplitting R').symm (Units.map (h : R →* R') p.1, Units.map (h : R →* R') p.2) := by
-  apply (complexSplitting R').injective
-  rw [complexSplitting_mapValue, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
 
 /-- **The diagonal over a complex algebra** is `d(r) = (r, r)`. -/
 @[simp]
@@ -254,7 +220,7 @@ example : complexSplitting ℂ (AlgHom.mapValue (Algebra.ofId ℝ ℂ)
 
 /-- **Scalar `I` versus real `I`**: the `ℂ`-point corresponding to `1 ⊗ I` in `(ℂ ⊗[ℝ] ℂ)ˣ` maps to
 `(I, I)`, whereas the real point `I` (corresponding to `I ⊗ 1`) maps to `(I, -I)`. -/
-theorem complexSplitting_scalar_I :
+example :
     complexSplitting ℂ ((pointsMulEquiv ℂ).symm
         (Units.map (Algebra.TensorProduct.includeRight : ℂ →ₐ[ℝ] ℂ ⊗[ℝ] ℂ).toMonoidHom
           (Units.mk0 Complex.I Complex.I_ne_zero))) =
@@ -487,6 +453,38 @@ noncomputable def baseChangeComplexBialgEquiv :
       (Y := Opposite.op (_root_.CommHopfAlgCat.of ℂ baseChangeComplex))
       baseChangeProductPointsNatIso.symm).unop
 
+private lemma baseChangeComplexBialgEquiv_toBialgHom :
+    baseChangeComplexBialgEquiv.toBialgHom =
+      (CommHopfAlgCat.homOfPointsMap
+        (H := _root_.CommHopfAlgCat.of ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]))
+        (K := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
+        baseChangeProductPointsNatIso.inv).hom := by
+  rw [baseChangeComplexBialgEquiv, BialgEquiv.toBialgHom_eq_coe, CommHopfAlgCat.coe_ofIso]
+  change ((CommHopfAlgCat.pointsFunctor (R := ℂ)).preimage
+    (X := Opposite.op (_root_.CommHopfAlgCat.of ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹])))
+    (Y := Opposite.op (_root_.CommHopfAlgCat.of ℂ baseChangeComplex))
+    baseChangeProductPointsNatIso.inv).unop.hom = _
+  exact congrArg CommHopfAlgCat.Hom.hom
+    ((CommHopfAlgCat.homOfPointsMap_mapPointsFunctor _).symm.trans
+      (congrArg CommHopfAlgCat.homOfPointsMap
+        (Functor.map_preimage
+          (CommHopfAlgCat.pointsFunctor (R := ℂ) :
+            (_root_.CommHopfAlgCat ℂ)ᵒᵖ ⥤ CommAlgCat ℂ ⥤ GrpCat)
+          (X := Opposite.op (_root_.CommHopfAlgCat.of ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹])))
+          (Y := Opposite.op (_root_.CommHopfAlgCat.of ℂ baseChangeComplex))
+          baseChangeProductPointsNatIso.inv)))
+
+private lemma mapValue_baseChangeProductPointsMulEquiv_symm_id {R : Type*} [CommRing R]
+    [Algebra ℂ R] (g : WithConv ((ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]) →ₐ[ℂ] R)) :
+    AlgHom.mapValue (H := baseChangeComplex) g.ofConv
+        ((baseChangeProductPointsMulEquiv (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹])).symm
+          (toConv (AlgHom.id ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹])))) =
+      (baseChangeProductPointsMulEquiv R).symm g := by
+  rw [mapValue_baseChangeProductPointsMulEquiv_symm]
+  congr 1
+  apply WithConv.ofConv_injective
+  simp [AlgHom.mapValue_apply]
+
 /-- **Compatibility of `baseChangeComplexBialgEquiv` with `complexSplitting` on points** over every
 commutative `ℂ`-algebra `R` with compatible `ℝ`-algebra structure. -/
 @[simp↓]
@@ -499,51 +497,42 @@ theorem mapDomain_baseChangeComplexBialgEquiv {R : Type*} [CommRing R] [Algebra 
         ((complexSplitting R).symm
           (MultiplicativeGroup.pointsMulEquiv p.1, MultiplicativeGroup.pointsMulEquiv p.2)) := by
   let H := ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]
-  let f : WithConv (H →ₐ[ℂ] R) := AffineGroup.Product.pointsMulEquiv.symm p
-  let idH : WithConv (H →ₐ[ℂ] H) := toConv (AlgHom.id ℂ H)
-  have hhom : baseChangeComplexBialgEquiv.toBialgHom =
-      (CommHopfAlgCat.homOfPointsMap
-        (H := _root_.CommHopfAlgCat.of ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]))
-        (K := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
-        baseChangeProductPointsNatIso.inv).hom := by
-    rw [baseChangeComplexBialgEquiv, BialgEquiv.toBialgHom_eq_coe, CommHopfAlgCat.coe_ofIso]
-    congr 1
-    apply Quiver.Hom.op_inj
-    apply (CommHopfAlgCat.pointsFunctor (R := ℂ) :
-      (_root_.CommHopfAlgCat ℂ)ᵒᵖ ⥤ CommAlgCat ℂ ⥤ GrpCat).map_injective
-    rw [Iso.unop_hom, Quiver.Hom.op_unop]
-    have hlhs :
-        (CommHopfAlgCat.pointsFunctor (R := ℂ) :
-          (_root_.CommHopfAlgCat ℂ)ᵒᵖ ⥤ CommAlgCat ℂ ⥤ GrpCat).map
-            ((CommHopfAlgCat.pointsFunctor (R := ℂ)).preimageIso
-              (X := Opposite.op (_root_.CommHopfAlgCat.of ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹])))
-              (Y := Opposite.op (_root_.CommHopfAlgCat.of ℂ baseChangeComplex))
-              baseChangeProductPointsNatIso.symm).hom =
-          baseChangeProductPointsNatIso.inv :=
-      Functor.map_preimage
-        (CommHopfAlgCat.pointsFunctor (R := ℂ) :
-          (_root_.CommHopfAlgCat ℂ)ᵒᵖ ⥤ CommAlgCat ℂ ⥤ GrpCat)
-        _
-    rw [hlhs, CommHopfAlgCat.pointsFunctor_map, Quiver.Hom.unop_op,
-      CommHopfAlgCat.mapPointsFunctor_homOfPointsMap]
   have hdom := CommHopfAlgCat.mapDomain_homOfPointsMap_of_natural
     (H := _root_.CommHopfAlgCat.of ℂ H)
     (K := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
     baseChangeProductPointsNatIso.inv
-    ((baseChangeProductPointsMulEquiv H).symm idH)
+    ((baseChangeProductPointsMulEquiv H).symm (toConv (AlgHom.id ℂ H)))
     (baseChangeProductPointsMulEquiv R).symm
     (by simp only [baseChangeProductPointsNatIso, NatIso.ofComponents_inv_app]; rfl)
-    (fun g ↦ by
-      rw [mapValue_baseChangeProductPointsMulEquiv_symm]
-      congr 1
-      apply WithConv.ofConv_injective
-      apply AlgHom.ext
-      intro x
-      simp only [idH, AlgHom.mapValue_apply]
-      rfl)
-    f
-  rw [hhom, hdom]
+    mapValue_baseChangeProductPointsMulEquiv_symm_id
+    (AffineGroup.Product.pointsMulEquiv.symm p)
+  rw [baseChangeComplexBialgEquiv_toBialgHom, hdom]
   exact baseChangeProductPointsMulEquiv_symm_eq _ _ p
+
+/-- **Compatibility of `baseChangeComplexBialgEquiv.symm` with `complexSplitting` on points** over
+every commutative `ℂ`-algebra `R` with compatible `ℝ`-algebra structure. -/
+@[simp↓]
+theorem mapDomain_baseChangeComplexBialgEquiv_symm {R : Type*} [CommRing R] [Algebra ℝ R]
+    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
+    BialgHom.mapDomain baseChangeComplexBialgEquiv.symm.toBialgHom g =
+      AffineGroup.Product.pointsMulEquiv.symm
+        ((MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := R)).symm
+            (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).1,
+          (MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := R)).symm
+            (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).2) := by
+  have hg : BialgHom.mapDomain baseChangeComplexBialgEquiv.toBialgHom
+      (AffineGroup.Product.pointsMulEquiv.symm
+        ((MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := R)).symm
+            (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).1,
+          (MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := R)).symm
+            (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).2)) = g := by
+    rw [mapDomain_baseChangeComplexBialgEquiv]
+    simp
+  -- Rewrite only the LHS `g` via `hg`; `rw [← hg]` would also rewrite `g` inside the RHS.
+  nth_rw 1 [← hg]
+  rw [← MonoidHom.comp_apply, ← BialgHom.mapDomain_comp,
+    BialgEquiv.toBialgHom_eq_coe, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.comp_symm,
+    BialgHom.mapDomain_id, MonoidHom.id_apply]
 
 end SchemeSplitting
 
@@ -551,78 +540,11 @@ end SchemeSplitting
 
 section TorusAndNotSplit
 
-private noncomputable def finTwoFinsuppMulEquiv :
-    Multiplicative (ULift.{0} (Fin 2) →₀ ℤ) ≃* Multiplicative ℤ × Multiplicative ℤ :=
-  let eAdd : (ULift.{0} (Fin 2) →₀ ℤ) ≃+ ℤ × ℤ :=
-    (Finsupp.domCongr (M := ℤ) Equiv.ulift).trans (Finsupp.finTwoAddEquiv ℤ)
-  { toFun x := (Multiplicative.ofAdd (eAdd x.toAdd).1, Multiplicative.ofAdd (eAdd x.toAdd).2)
-    invFun p := Multiplicative.ofAdd (eAdd.symm (p.1.toAdd, p.2.toAdd))
-    left_inv x := by simp [toAdd_ofAdd]
-    right_inv p := by simp [eAdd.apply_symm_apply]
-    map_mul' x y := by simp [map_add, ofAdd_add] }
-
-private lemma finTwoFinsuppMulEquiv_single_zero :
-    finTwoFinsuppMulEquiv (Multiplicative.ofAdd (Finsupp.single ⟨0⟩ 1)) =
-      (Multiplicative.ofAdd (1 : ℤ), 1) := by
-  simp [finTwoFinsuppMulEquiv, Equiv.ulift, ofAdd_zero]
-
-private lemma finTwoFinsuppMulEquiv_single_one :
-    finTwoFinsuppMulEquiv (Multiplicative.ofAdd (Finsupp.single ⟨1⟩ 1)) =
-      (1, Multiplicative.ofAdd (1 : ℤ)) := by
-  simp [finTwoFinsuppMulEquiv, Equiv.ulift, ofAdd_zero]
-
-private noncomputable def splitTorusTensorBialgEquiv :
-    MonoidAlgebra ℂ (Multiplicative (ULift.{0} (Fin 2) →₀ ℤ)) ≃ₐc[ℂ]
-      ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹] :=
-  let eL := (AddMonoidAlgebra.toMultiplicativeBialgEquiv ℂ ℂ ℤ).symm
-  let eTensor :
-      MonoidAlgebra ℂ (Multiplicative ℤ) ⊗[ℂ] MonoidAlgebra ℂ (Multiplicative ℤ) ≃ₐc[ℂ]
-        ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹] :=
-    BialgEquiv.ofBialgHom
-      (_root_.Bialgebra.TensorProduct.map eL.toBialgHom eL.toBialgHom)
-      (_root_.Bialgebra.TensorProduct.map eL.symm.toBialgHom eL.symm.toBialgHom)
-      (Bialgebra.TensorProduct.map_comp_map_eq_id eL.comp_symm eL.comp_symm)
-      (Bialgebra.TensorProduct.map_comp_map_eq_id eL.symm_comp eL.symm_comp)
-  (MonoidAlgebra.domCongrBialgEquiv ℂ ℂ finTwoFinsuppMulEquiv).trans
-    ((MonoidAlgebra.prodTensorBialgEquiv ℂ).trans eTensor)
-
-private lemma splitTorusTensorBialgEquiv_single_zero :
-    splitTorusTensorBialgEquiv
-        (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single ⟨0⟩ (1 : ℤ))) (1 : ℂ)) =
-      LaurentPolynomial.T 1 ⊗ₜ[ℂ] (1 : ℂ[T;T⁻¹]) := by
-  let eL := (AddMonoidAlgebra.toMultiplicativeBialgEquiv ℂ ℂ ℤ).symm
-  change (_root_.Bialgebra.TensorProduct.map eL.toBialgHom eL.toBialgHom)
-      ((MonoidAlgebra.prodTensorBialgEquiv ℂ)
-        ((MonoidAlgebra.domCongr ℂ ℂ finTwoFinsuppMulEquiv)
-          (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single ⟨0⟩ (1 : ℤ))) (1 : ℂ)))) =
-    _
-  rw [MonoidAlgebra.domCongr_single, finTwoFinsuppMulEquiv_single_zero,
-    MonoidAlgebra.prodTensorBialgEquiv_single, _root_.Bialgebra.TensorProduct.map_tmul]
-  simp only [eL, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom,
-    AddMonoidAlgebra.toMultiplicativeBialgEquiv_symm_single, toAdd_ofAdd, toAdd_one]
-  exact congrArg₂ (· ⊗ₜ[ℂ] ·) rfl LaurentPolynomial.T_zero
-
-private lemma splitTorusTensorBialgEquiv_single_one :
-    splitTorusTensorBialgEquiv
-        (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single ⟨1⟩ (1 : ℤ))) (1 : ℂ)) =
-      (1 : ℂ[T;T⁻¹]) ⊗ₜ[ℂ] LaurentPolynomial.T 1 := by
-  let eL := (AddMonoidAlgebra.toMultiplicativeBialgEquiv ℂ ℂ ℤ).symm
-  change (_root_.Bialgebra.TensorProduct.map eL.toBialgHom eL.toBialgHom)
-      ((MonoidAlgebra.prodTensorBialgEquiv ℂ)
-        ((MonoidAlgebra.domCongr ℂ ℂ finTwoFinsuppMulEquiv)
-          (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single ⟨1⟩ (1 : ℤ))) (1 : ℂ)))) =
-    _
-  rw [MonoidAlgebra.domCongr_single, finTwoFinsuppMulEquiv_single_one,
-    MonoidAlgebra.prodTensorBialgEquiv_single, _root_.Bialgebra.TensorProduct.map_tmul]
-  simp only [eL, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom,
-    AddMonoidAlgebra.toMultiplicativeBialgEquiv_symm_single, toAdd_ofAdd, toAdd_one]
-  exact congrArg₂ (· ⊗ₜ[ℂ] ·) LaurentPolynomial.T_zero rfl
-
 /-- Coordinate bialgebra isomorphism identifying the rank-two split torus with `baseChangeComplex`.
 -/
 noncomputable def baseChangeSplitTorusBialgEquiv :
     MonoidAlgebra ℂ (Multiplicative (ULift.{0} (Fin 2) →₀ ℤ)) ≃ₐc[ℂ] baseChangeComplex :=
-  splitTorusTensorBialgEquiv.trans baseChangeComplexBialgEquiv.symm
+  (SplitTorus.rankTwoTensorBialgEquiv.{0} ℂ).trans baseChangeComplexBialgEquiv.symm
 
 /-- **Isomorphism between the base change of `S` to `ℂ` and the rank-two split torus.** -/
 noncomputable def baseChangeSplitTorusIso :
@@ -644,37 +566,13 @@ theorem pointsMulEquiv_mapDomain_baseChangeSplitTorusIso {R : Type*} [CommRing R
     (SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) ⟨0⟩,
       SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) ⟨1⟩) =
       complexSplitting R (baseChangeComplexPointsMulEquiv R g) := by
-  let c := complexSplitting R (baseChangeComplexPointsMulEquiv R g)
-  let p : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R) × WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R) :=
-    (MultiplicativeGroup.pointsMulEquiv.symm c.1, MultiplicativeGroup.pointsMulEquiv.symm c.2)
-  have hg : BialgHom.mapDomain (baseChangeComplexBialgEquiv : _ →ₐc[ℂ] _)
-      (AffineGroup.Product.pointsMulEquiv.symm p) = g := by
-    rw [← BialgEquiv.toBialgHom_eq_coe, mapDomain_baseChangeComplexBialgEquiv]
-    simp only [p, c, MulEquiv.apply_symm_apply, Prod.mk.eta, MulEquiv.symm_apply_apply]
-  have hcancel : BialgHom.mapDomain (baseChangeComplexBialgEquiv.symm : _ →ₐc[ℂ] _) g =
-      AffineGroup.Product.pointsMulEquiv.symm p := by
-    rw [← hg, ← MonoidHom.comp_apply, ← BialgHom.mapDomain_comp,
-      BialgEquiv.comp_symm, BialgHom.mapDomain_id, MonoidHom.id_apply]
-  have hcomp : BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g =
-      BialgHom.mapDomain splitTorusTensorBialgEquiv.toBialgHom
-        (AffineGroup.Product.pointsMulEquiv.symm p) := by
-    rw [baseChangeSplitTorusIso_hom_hom_hom, baseChangeSplitTorusBialgEquiv,
-      BialgEquiv.toBialgHom_eq_coe, BialgEquiv.trans_toBialgHom, BialgHom.mapDomain_comp,
-      MonoidHom.comp_apply, hcancel, BialgEquiv.toBialgHom_eq_coe]
-  rw [hcomp]
-  apply Prod.ext <;> apply Units.ext
-  · simp only [SplitTorus.pointsMulEquiv_apply_coe, BialgHom.mapDomain_apply,
-      AlgHom.comp_apply, BialgHom.coe_toAlgHom, BialgEquiv.toBialgHom_eq_coe,
-      BialgEquiv.coe_toBialgHom, splitTorusTensorBialgEquiv_single_zero,
-      AffineGroup.Product.pointsMulEquiv_symm_apply, Algebra.TensorProduct.productMap_apply_tmul,
-      map_one, mul_one, p, MultiplicativeGroup.pointsMulEquiv_symm_apply,
-      laurentEval_T, zpow_one, c]
-  · simp only [SplitTorus.pointsMulEquiv_apply_coe, BialgHom.mapDomain_apply,
-      AlgHom.comp_apply, BialgHom.coe_toAlgHom, BialgEquiv.toBialgHom_eq_coe,
-      BialgEquiv.coe_toBialgHom, splitTorusTensorBialgEquiv_single_one,
-      AffineGroup.Product.pointsMulEquiv_symm_apply, Algebra.TensorProduct.productMap_apply_tmul,
-      map_one, one_mul, p, MultiplicativeGroup.pointsMulEquiv_symm_apply,
-      laurentEval_T, zpow_one, c]
+  rw [baseChangeSplitTorusIso_hom_hom_hom, baseChangeSplitTorusBialgEquiv,
+    BialgEquiv.toBialgHom_eq_coe, BialgEquiv.trans_toBialgHom, BialgHom.mapDomain_comp,
+    MonoidHom.comp_apply]
+  simp only [← BialgEquiv.toBialgHom_eq_coe]
+  rw [mapDomain_baseChangeComplexBialgEquiv_symm,
+    SplitTorus.pointsMulEquiv_mapDomain_rankTwoTensorBialgEquiv]
+  simp
 
 @[simp↓]
 theorem pointsMulEquiv_mapDomain_baseChangeSplitTorusIso_zero {R : Type*} [CommRing R]
@@ -714,9 +612,9 @@ theorem infinite_isOfFinOrder_realPoints :
     (Complex.isPrimitiveRoot_exp (k + 1) (Nat.succ_ne_zero k)).isUnit_unit
       (Nat.succ_ne_zero k)
   refine Infinite.of_injective
-    (fun k : ℕ ↦ ⟨realPointsMulEquiv.symm (u k),
-      isOfFinOrder_iff_pow_eq_one.2
-        ⟨k + 1, Nat.succ_pos k, by rw [← map_pow, (hprim k).pow_eq_one, map_one]⟩⟩)
+    (fun k : ℕ ↦ ⟨realPointsMulEquiv.symm (u k), by
+      obtain ⟨n, hn, hpow⟩ := ((hprim k).isOfFinOrder (Nat.succ_ne_zero k)).exists_pow_eq_one
+      exact isOfFinOrder_iff_pow_eq_one.2 ⟨n, hn, by rw [← map_pow, hpow, map_one]⟩⟩)
     fun k l hkl ↦ ?_
   have hu : u k = u l :=
     realPointsMulEquiv.symm.injective (congrArg Subtype.val hkl)
@@ -729,20 +627,17 @@ theorem infinite_isOfFinOrder_realPoints :
 theorem isEmpty_realPoints_mulEquiv_pi (σ : Type*) :
     IsEmpty (WithConv (S →ₐ[ℝ] ℝ) ≃* (σ → ℝˣ)) := by
   refine ⟨fun e ↦ ?_⟩
-  let uI : ℂˣ := Units.mk0 Complex.I Complex.I_ne_zero
+  let uI : ℂˣ := (Complex.isPrimitiveRoot_I.isUnit (by norm_num)).unit
   let ψ : ℂˣ ≃* (σ → ℝˣ) := realPointsMulEquiv.symm.trans e
-  have huI4 : uI ^ 4 = 1 := Units.ext Complex.I_pow_four
-  have hg4 : ψ uI ^ 4 = 1 := by rw [← map_pow, huI4, map_one]
-  have hg2 : ψ uI ^ 2 = 1 := funext fun i ↦ Units.ext <| by
+  have hprim : IsPrimitiveRoot (ψ uI) 4 :=
+    (Complex.isPrimitiveRoot_I.isUnit_unit (by norm_num)).map_of_injective ψ.injective
+  have h2 : ψ uI ^ 2 = 1 := funext fun i ↦ Units.ext <| by
     have hi4 : ((ψ uI i : ℝˣ) : ℝ) ^ 4 = 1 := by
-      rw [← Units.val_pow_eq_pow_val, ← Pi.pow_apply, hg4, Pi.one_apply, Units.val_one]
+      rw [← Units.val_pow_eq_pow_val, ← Pi.pow_apply, hprim.pow_eq_one, Pi.one_apply, Units.val_one]
     rcases (pow_eq_one_iff_of_ne_zero (by positivity : 4 ≠ 0)).mp hi4 with h1 | ⟨hm1, -⟩
     · simp [h1]
-    · norm_num [hm1]
-  have huI2 : uI ^ 2 = 1 := ψ.injective (by rw [map_pow, map_one, hg2])
-  have hval := congrArg Units.val huI2
-  rw [Units.val_pow_eq_pow_val, Units.val_mk0, sq, Complex.I_mul_I, Units.val_one] at hval
-  norm_num at hval
+    · simp [hm1]
+  exact absurd (hprim.dvd_of_pow_eq_one 2 h2) (by norm_num)
 
 /-- **Non-example: the Deligne torus is not split over `ℝ`**, because `S(ℝ) ≃* ℂˣ` is not
 multiplicatively isomorphic to `(ℝˣ)ⁿ` (`isEmpty_realPoints_mulEquiv_pi`). -/

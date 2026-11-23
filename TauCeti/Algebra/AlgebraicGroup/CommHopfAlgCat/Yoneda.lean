@@ -638,7 +638,7 @@ theorem mapDomain_homOfPointsMap_id {H K : _root_.CommHopfAlgCat.{u} R}
 theorem mapDomain_homOfPointsMap {H K : _root_.CommHopfAlgCat.{u} R}
     (α : HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
       HopfAlgebra.pointsFunctor (R := R) (H := K))
-    {S : Type*} [CommRing S] [Algebra R S] (g : WithConv (H →ₐ[R] S)) :
+    {S : Type*} [CommSemiring S] [Algebra R S] (g : WithConv (H →ₐ[R] S)) :
     BialgHom.mapDomain (homOfPointsMap α).hom g =
       AlgHom.mapValue (H := K) g.ofConv
         (α.app (CommAlgCat.of R H) (toConv (AlgHom.id R H))) := by
@@ -654,7 +654,7 @@ whenever `α` agrees at `id_H` with a point `pH` whose `mapValue` along `g` is `
 theorem mapDomain_homOfPointsMap_of_natural {H K : _root_.CommHopfAlgCat.{u} R}
     (α : HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
       HopfAlgebra.pointsFunctor (R := R) (H := K))
-    {S : Type*} [CommRing S] [Algebra R S]
+    {S : Type*} [CommSemiring S] [Algebra R S]
     (pH : WithConv (K →ₐ[R] H))
     (ψS : WithConv (H →ₐ[R] S) → WithConv (K →ₐ[R] S))
     (hid : α.app (CommAlgCat.of R H) (toConv (AlgHom.id R H)) = pH)

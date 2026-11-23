@@ -26,8 +26,8 @@ a torus: for `k' = k[ε]/(ε²)` over a field `k` of characteristic zero it cont
 
 This file defines the norm on points and its kernel, computes the norm on the diagonal
 `Rˣ → (k' ⊗[k] R)ˣ` and on the units of `k'`, and proves its naturality in `R`. By the Yoneda
-lemma, the norm of the universal point of `Res_{k'/k} 𝔾ₘ` is the coordinate algebra map
-`TauCeti.NormTorus.normHom` of the norm morphism, which induces the norm on points of every
+lemma, the norm of the universal point of `Res_{k'/k} 𝔾ₘ` gives the coordinate bialgebra map
+`TauCeti.NormTorus.normBialgHom` of the norm morphism, which induces the norm on points of every
 `k`-algebra. The file also defines the image `μ_n(R) → μ_n(k' ⊗[k] R)` of the roots of unity
 along the diagonal, whose quotient is the abstract group `μ_n(k' ⊗[k] R) / μ_n(R)`.
 
@@ -37,8 +37,8 @@ along the diagonal, whose quotient is the abstract group `μ_n(k' ⊗[k] R) / μ
   `R ⊗[k] k'` over `R` after commuting the tensor factors.
 * `TauCeti.NormTorus.normOne k k' R`: its kernel; for `k'` free of finite rank over `k`, the points
   over `R` of the norm kernel, which is the norm-one torus when `k'/k` is finite separable.
-* `TauCeti.NormTorus.normHom k k'` and `TauCeti.NormTorus.normBialgHom k k'`: the norm morphism
-  `Res_{k'/k} 𝔾ₘ → 𝔾ₘ`, as an algebra map and as a bialgebra map of coordinate algebras.
+* `TauCeti.NormTorus.normBialgHom k k'`: the norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ`, as a bialgebra map
+  of coordinate algebras.
 * `TauCeti.NormTorus.diagonalRootsOfUnity k k' R n`: the image of `μ_n(R)` in `μ_n(k' ⊗[k] R)`.
 
 ## Main results
@@ -50,9 +50,8 @@ along the diagonal, whose quotient is the abstract group `μ_n(k' ⊗[k] R) / μ
 * `TauCeti.NormTorus.norm_unitsMap_lTensor`: the norm is natural in the coefficient algebra `R`.
 * `TauCeti.NormTorus.norm_self`: for the trivial extension `k' = k` the norm is the identity, so
   the norm kernel is trivial (`TauCeti.NormTorus.normOne_self`).
-* `TauCeti.NormTorus.pointsMulEquiv_comp_normHom` and
-  `TauCeti.NormTorus.pointsMulEquiv_mapDomain_normBialgHom`: on points, `normHom` and
-  `normBialgHom` induce `norm`.
+* `TauCeti.NormTorus.pointsMulEquiv_mapDomain_normBialgHom`: on points, `normBialgHom` induces
+  `norm`.
 
 ## References
 
@@ -198,20 +197,16 @@ section NormHom
 
 variable (k k') [Module.Free k k'] [Module.Finite k k']
 
-/-- **The norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ`**, as the map `k[T;T⁻¹] →ₐ[k] Res_{k'/k} k'[T;T⁻¹]`
-of coordinate algebras. It sends the coordinate `T` of `𝔾ₘ` to the norm of the universal point of
-`Res_{k'/k} 𝔾ₘ`; on points over every `k`-algebra it induces `TauCeti.NormTorus.norm`, see
-`TauCeti.NormTorus.pointsMulEquiv_comp_normHom`. -/
-noncomputable def normHom : k[T;T⁻¹] →ₐ[k] Algebra.WeilRestriction k k' k'[T;T⁻¹] :=
+/-- **The norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ`**, as the underlying algebra map
+`k[T;T⁻¹] →ₐ[k] Res_{k'/k} k'[T;T⁻¹]` sending `T` to the norm of the universal point of
+`Res_{k'/k} 𝔾ₘ`. -/
+private noncomputable def normHom : k[T;T⁻¹] →ₐ[k] Algebra.WeilRestriction k k' k'[T;T⁻¹] :=
   laurentEval <| norm k k' _ <| Algebra.WeilRestriction.multiplicativeGroupPoints k k' _ <|
     toConv (AlgHom.id k _)
 
 variable {k k'}
 
-/-- **The norm morphism on points.** For a point `f` of `Res_{k'/k} 𝔾ₘ` over a commutative
-`k`-algebra `R`, the point `f ∘ normHom` of `𝔾ₘ` is the norm of the unit of `k' ⊗[k] R`
-attached to `f`. -/
-theorem pointsMulEquiv_comp_normHom
+private theorem pointsMulEquiv_comp_normHom
     (f : WithConv (Algebra.WeilRestriction k k' k'[T;T⁻¹] →ₐ[k] R)) :
     MultiplicativeGroup.pointsMulEquiv (toConv (f.ofConv.comp (normHom k k'))) =
       norm k k' R (Algebra.WeilRestriction.multiplicativeGroupPoints k k' R f) := by
@@ -231,8 +226,8 @@ private theorem toConv_comp_normHom {S : Type*} [CommRing S] [Algebra k S]
 
 variable (k k') in
 /-- **The norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ` as a bialgebra homomorphism** of coordinate Hopf
-algebras. Its underlying algebra map is `TauCeti.NormTorus.normHom`, and on points it induces
-`TauCeti.NormTorus.norm` (`TauCeti.NormTorus.pointsMulEquiv_mapDomain_normBialgHom`). -/
+algebras. On points over every `k`-algebra it induces `TauCeti.NormTorus.norm`
+(`TauCeti.NormTorus.pointsMulEquiv_mapDomain_normBialgHom`). -/
 noncomputable def normBialgHom :
     k[T;T⁻¹] →ₐc[k] Algebra.WeilRestriction k k' k'[T;T⁻¹] :=
   BialgHom.ofAlgHom (normHom k k')
@@ -245,14 +240,6 @@ noncomputable def normBialgHom :
     (TauCeti.Bialgebra.map_comp_comulAlgHom_of_mul (normHom k k') fun f g ↦ by
       simp only [toConv_comp_normHom, map_mul])
 
-variable (k k') in
-/-- The algebra homomorphism underlying `TauCeti.NormTorus.normBialgHom` is `normHom`. -/
-@[simp]
-theorem normBialgHom_toAlgHom :
-    (normBialgHom k k' : k[T;T⁻¹] →ₐ[k] Algebra.WeilRestriction k k' k'[T;T⁻¹]) =
-      normHom k k' :=
-  (rfl)
-
 /-- **The norm bialgebra homomorphism on points.** Precomposing a point `f` of `Res_{k'/k} 𝔾ₘ` over
 `R` with `normBialgHom k k'` gives the norm of the unit of `k' ⊗[k] R` attached to `f`. -/
 @[simp↓]
@@ -260,7 +247,7 @@ theorem pointsMulEquiv_mapDomain_normBialgHom
     (f : WithConv (Algebra.WeilRestriction k k' k'[T;T⁻¹] →ₐ[k] R)) :
     MultiplicativeGroup.pointsMulEquiv (BialgHom.mapDomain (normBialgHom k k') f) =
       norm k k' R (Algebra.WeilRestriction.multiplicativeGroupPoints k k' R f) := by
-  rw [BialgHom.mapDomain_apply, normBialgHom_toAlgHom]
+  rw [BialgHom.mapDomain_apply]
   exact pointsMulEquiv_comp_normHom f
 
 end NormHom
