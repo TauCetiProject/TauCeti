@@ -32,20 +32,22 @@ state in `stateSpace B` (`TauCeti.exists_mem_stateSpace_apply_eq_of_mem_spectrum
 
 Passing to the minimal unitization `A⁺¹` and restricting norm-attaining states back to `A` via
 `TauCeti.pullbackFunctional_inr_mem_stateSpace_of_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`
-yields the `stateSpace A` norm-attainment and state-existence theorems for possibly nonunital
-C⋆-algebras:
+yields the `stateSpace A` norm-attainment theorem for normal elements of possibly nonunital
+C⋆-algebras (`TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero` and
+`TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal`), while
+`CStarAlgebra.exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq` gives the nonnegative,
+`star a * a`, and nonemptiness results directly:
 
 * `TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero` and
   `TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal`: for normal `a` (assuming
   `a ≠ 0`, or `[Nontrivial A]`), a state attains `‖a‖` in modulus.
-* `TauCeti.exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero` and
-  `TauCeti.exists_mem_stateSpace_apply_eq_norm_of_nonneg`: for `0 ≤ a` (assuming `a ≠ 0`, or
-  `[Nontrivial A]`), a state takes the value `‖a‖` at `a`.
-* `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero` and
-  `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq`: assuming `a ≠ 0` (or
-  `[Nontrivial A]`), a state takes the value `‖a‖ ^ 2` at `star a * a`.
-* `TauCeti.stateSpace_nonempty_iff` and `TauCeti.stateSpace_nonempty`: `A` admits a state if and
-  only if `A` is nontrivial.
+* `TauCeti.exists_mem_stateSpace_apply_eq_norm_of_nonneg` and
+  `TauCeti.exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero`: for `0 ≤ a` (assuming
+  `[Nontrivial A]`, or `a ≠ 0`), a state takes the value `‖a‖` at `a`.
+* `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq` and
+  `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero`: assuming
+  `[Nontrivial A]` (or `a ≠ 0`), a state takes the value `‖a‖ ^ 2` at `star a * a`.
+* `TauCeti.stateSpace_nonempty_iff`: `A` admits a state if and only if `A` is nontrivial.
 * `TauCeti.norm_eq_iSup_norm_apply_stateSpace_of_isStarNormal`: for normal `a` (without
   `[Nontrivial A]`), `‖a‖ = ⨆ φ : stateSpace A, ‖φ.1 a‖`.
 
@@ -219,6 +221,50 @@ section NonUnitalStateSpace
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
+/-- On a nontrivial C⋆-algebra, every nonnegative element `a` (including `0`) has a state taking
+the value `‖a‖` at `a`. -/
+theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg [Nontrivial A] {a : A} (ha : 0 ≤ a) :
+    ∃ φ ∈ stateSpace A, φ a = ‖a‖ := by
+  obtain ⟨ω, hn, h1, -⟩ :=
+    CStarAlgebra.exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq ha
+  exact ⟨StrongDual.toWeakDual (ω : A →L[ℂ] ℂ), ω.toWeakDual_mem_stateSpace_iff.2 hn,
+    by simpa using h1⟩
+
+/-- **Norm attainment on nonnegative elements.** For any nonzero nonnegative element `a` of a
+possibly nonunital C⋆-algebra `A`, there is a state `φ ∈ stateSpace A` with `φ a = ‖a‖`. -/
+theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero {a : A} (ha : 0 ≤ a)
+    (ha0 : a ≠ 0) : ∃ φ ∈ stateSpace A, φ a = ‖a‖ :=
+  have : Nontrivial A := ⟨a, 0, ha0⟩
+  exists_mem_stateSpace_apply_eq_norm_of_nonneg ha
+
+/-- On a nontrivial C⋆-algebra, every element `a` has a state taking the value `‖a‖ ^ 2` at
+`star a * a`. -/
+theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq [Nontrivial A] (a : A) :
+    ∃ φ ∈ stateSpace A, φ (star a * a) = ‖a‖ ^ 2 := by
+  obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_apply_eq_norm_of_nonneg (star_mul_self_nonneg a)
+  exact ⟨φ, hφ, by simpa [CStarRing.norm_star_mul_self, sq] using hφa⟩
+
+/-- For any nonzero element `a` of a possibly nonunital C⋆-algebra `A`, there is a state
+`φ ∈ stateSpace A` with `φ (star a * a) = ‖a‖ ^ 2`. -/
+theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero {a : A} (ha : a ≠ 0) :
+    ∃ φ ∈ stateSpace A, φ (star a * a) = ‖a‖ ^ 2 :=
+  have : Nontrivial A := ⟨a, 0, ha⟩
+  exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq a
+
+/-- **Existence of states on possibly nonunital C⋆-algebras.** A C⋆-algebra has a state if and only
+if it is nontrivial. -/
+theorem stateSpace_nonempty_iff : (stateSpace A).Nonempty ↔ Nontrivial A := by
+  refine ⟨fun ⟨φ, hφ⟩ => ?_, fun h => ?_⟩
+  · by_contra htriv
+    rw [not_nontrivial_iff_subsingleton] at htriv
+    simp [stateSpace_eq_empty] at hφ
+  · obtain ⟨φ, hφ, -⟩ := exists_mem_stateSpace_apply_eq_norm_of_nonneg (le_refl (0 : A))
+    exact ⟨φ, hφ⟩
+
+/-- Every nontrivial C⋆-algebra has a nonempty state space. -/
+instance [Nontrivial A] : Nonempty (stateSpace A) :=
+  (stateSpace_nonempty_iff.2 ‹Nontrivial A›).to_subtype
+
 /-- **Norm attainment on normal elements.** For any nonzero normal element `a` of a possibly
 nonunital C⋆-algebra `A`, there is a state `φ ∈ stateSpace A` with `‖φ a‖ = ‖a‖`. -/
 theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero {a : A}
@@ -236,68 +282,14 @@ theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero {a :
       hψ ha hψ_norm,
     by simpa using hψ_norm⟩
 
-/-- **Norm attainment on nonnegative elements.** For any nonzero nonnegative element `a` of a
-possibly nonunital C⋆-algebra `A`, there is a state `φ ∈ stateSpace A` with `φ a = ‖a‖`. -/
-theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero {a : A} (ha : 0 ≤ a)
-    (ha0 : a ≠ 0) : ∃ φ ∈ stateSpace A, φ a = ‖a‖ := by
-  have := ha.isSelfAdjoint.isStarNormal
-  obtain ⟨φ, hφ, hφa⟩ :=
-    exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero ha0
-  exact ⟨φ, hφ, (Complex.norm_of_nonneg' (map_nonneg_of_mem_stateSpace hφ ha)).symm.trans
-    (congr_arg Complex.ofReal hφa)⟩
-
-/-- For any nonzero element `a` of a possibly nonunital C⋆-algebra `A`, there is a state
-`φ ∈ stateSpace A` with `φ (star a * a) = ‖a‖ ^ 2`. -/
-theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero {a : A} (ha : a ≠ 0) :
-    ∃ φ ∈ stateSpace A, φ (star a * a) = ‖a‖ ^ 2 := by
-  have hne : star a * a ≠ 0 := star_mul_self_eq_zero.not.2 ha
-  obtain ⟨φ, hφ, hφa⟩ :=
-    exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero (star_mul_self_nonneg a) hne
-  exact ⟨φ, hφ, by simpa [CStarRing.norm_star_mul_self, sq] using hφa⟩
-
-/-- **Existence of states on possibly nonunital C⋆-algebras.** A C⋆-algebra has a state if and only
-if it is nontrivial. -/
-theorem stateSpace_nonempty_iff : (stateSpace A).Nonempty ↔ Nontrivial A := by
-  refine ⟨fun ⟨φ, hφ⟩ => ?_, fun h => ?_⟩
-  · by_contra htriv
-    rw [not_nontrivial_iff_subsingleton] at htriv
-    simp [stateSpace_eq_empty] at hφ
-  · obtain ⟨a, ha⟩ := exists_ne (0 : A)
-    obtain ⟨φ, hφ, -⟩ := exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero ha
-    exact ⟨φ, hφ⟩
-
-/-- **Existence of states.** Every nontrivial C⋆-algebra (possibly nonunital) admits a state. -/
-theorem stateSpace_nonempty [Nontrivial A] : (stateSpace A).Nonempty :=
-  stateSpace_nonempty_iff.2 ‹Nontrivial A›
-
-/-- Every nontrivial C⋆-algebra has a nonempty state space. -/
-instance [Nontrivial A] : Nonempty (stateSpace A) :=
-  stateSpace_nonempty.to_subtype
-
 /-- On a nontrivial C⋆-algebra, every normal element `a` (including `0`) has a state attaining
 `‖a‖` in modulus. -/
 theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal [Nontrivial A] (a : A)
     [IsStarNormal a] : ∃ φ ∈ stateSpace A, ‖φ a‖ = ‖a‖ := by
   rcases eq_or_ne a 0 with rfl | ha
-  · obtain ⟨φ, hφ⟩ := stateSpace_nonempty (A := A)
+  · obtain ⟨φ, hφ, -⟩ := exists_mem_stateSpace_apply_eq_norm_of_nonneg (le_refl (0 : A))
     exact ⟨φ, hφ, by simp⟩
   · exact exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero ha
-
-/-- On a nontrivial C⋆-algebra, every nonnegative element `a` (including `0`) has a state taking
-the value `‖a‖` at `a`. -/
-theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg [Nontrivial A] {a : A} (ha : 0 ≤ a) :
-    ∃ φ ∈ stateSpace A, φ a = ‖a‖ := by
-  have := ha.isSelfAdjoint.isStarNormal
-  obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal a
-  exact ⟨φ, hφ, (Complex.norm_of_nonneg' (map_nonneg_of_mem_stateSpace hφ ha)).symm.trans
-    (congr_arg Complex.ofReal hφa)⟩
-
-/-- On a nontrivial C⋆-algebra, every element `a` has a state taking the value `‖a‖ ^ 2` at
-`star a * a`. -/
-theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq [Nontrivial A] (a : A) :
-    ∃ φ ∈ stateSpace A, φ (star a * a) = ‖a‖ ^ 2 := by
-  obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_apply_eq_norm_of_nonneg (star_mul_self_nonneg a)
-  exact ⟨φ, hφ, by simpa [CStarRing.norm_star_mul_self, sq] using hφa⟩
 
 /-- **Norm recovery from states.** For every normal element `a` of a C⋆-algebra `A` (possibly
 nonunital or trivial), `‖a‖` is the supremum of `‖φ a‖` over all states `φ ∈ stateSpace A`. -/

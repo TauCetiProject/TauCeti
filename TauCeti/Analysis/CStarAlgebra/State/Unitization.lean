@@ -8,30 +8,22 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 import TauCeti.Algebra.Star.Basic
-import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Analysis.StarAlgebra.GNS.Basic
 
 /-!
-# Extending positive functionals and states to the unitization
+# Extending positive functionals to the unitization
 
 A positive functional `τ` on a possibly nonunital C⋆-algebra `A` extends to the minimal unitization
-`A⁺¹ = Unitization ℂ A` in two complementary ways:
+`A⁺¹ = Unitization ℂ A` by `τ⁺¹ (λ + a) = λ ‖τ‖ + τ a`. This is the unique positive extension with
+the same norm, so it is additive on positive functionals and preserves faithfulness when `A` has no
+unit. That the extension of a tracial state is again a tracial state is
+`PositiveContinuousLinearMap.isTracialState_unitization_iff`, in
+`TauCeti.Analysis.CStarAlgebra.State.Tracial`.
 
-1. **Norm-preserving extension of positive functionals**
-   (`PositiveContinuousLinearMap.unitization`): `τ⁺¹ (λ + a) = λ ‖τ‖ + τ a`. This is the unique
-   positive extension with the same norm, so it is additive on positive functionals and preserves
-   faithfulness when `A` has no unit. That the extension of a tracial state is again a tracial state
-   is `PositiveContinuousLinearMap.isTracialState_unitization_iff`, in
-   `TauCeti.Analysis.CStarAlgebra.State.Tracial`.
-2. **Affine extension on the weak-* dual** (`WeakDual.unitizationFunctional`): sending `c + a` to
-   `c + φ a` for any `φ : WeakDual ℂ A`. Conversely, restricting along the canonical embedding
-   `Unitization.inrNonUnitalStarAlgHom ℂ A : A →⋆ₙₐ[ℂ] A⁺¹` via `TauCeti.pullbackFunctional`
-   recovers `φ`. These two maps match `TauCeti.stateSpace A⁺¹` bijectively with the positive
-   contractive functionals (quasistates)
-   `{φ : WeakDual ℂ A | (∀ a, 0 ≤ a → 0 ≤ φ a) ∧ ‖toStrongDual φ‖ ≤ 1}` of `A`. In particular,
-   every state of `A` extends uniquely to a state of `A⁺¹`, and the restriction of a state of `A⁺¹`
-   to `A` is a state of `A` whenever its restriction has norm one — for instance whenever it attains
-   the norm of some nonzero element of `A`.
+Conversely, restricting a state of `A⁺¹` along `Unitization.inrNonUnitalStarAlgHom ℂ A` yields a
+positive contractive functional on `A`, which is a state of `A` whenever its norm on `A` is one
+— for instance whenever it attains the norm of some nonzero element of `A`
+(`pullbackFunctional_inr_mem_stateSpace_of_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`).
 
 ## Main declarations
 
@@ -52,17 +44,7 @@ A positive functional `τ` on a possibly nonunital C⋆-algebra `A` extends to t
 * `PositiveContinuousLinearMap.eq_zero_of_unitization_map_star_mul_self_eq_zero`: if `τ` is
   faithful, `τ (star a * a) = 0 → a = 0`, and `A` has no two-sided unit, then `τ⁺¹` is faithful
   too.
-* `WeakDual.unitizationFunctional`: the weak-* continuous affine extension `WeakDual ℂ A →
-  WeakDual ℂ A⁺¹` sending `x` to `x.fst + φ x.snd`.
-* `TauCeti.unitizationFunctional_mem_stateSpace_iff`: `φ.unitizationFunctional` is a state of
-  `A⁺¹` if and only if `φ` is nonnegative on nonnegative elements and has norm at most one.
-* `TauCeti.bijOn_unitizationFunctional`: `WeakDual.unitizationFunctional` maps the positive
-  contractive functionals of `A` bijectively onto `stateSpace A⁺¹`, with inverse given by
-  restriction along `Unitization.inrNonUnitalStarAlgHom ℂ A`
-  (`TauCeti.unitizationFunctional_pullbackFunctional_inr_of_map_one`).
-* `TauCeti.existsUnique_mem_stateSpace_unitization`: every state of `A` extends uniquely to a
-  state of `A⁺¹`.
-* `TauCeti.pullbackFunctional_inr_mem_stateSpace_of_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`
+* `pullbackFunctional_inr_mem_stateSpace_of_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`:
   restricts a state of `A⁺¹` attaining `‖a‖` on a nonzero `a : A` to a state of `A`.
 
 ## Implementation notes
@@ -84,7 +66,6 @@ Without the hypothesis on units this fails: for `A = ℂ` and `τ = id`, `τ⁺�
 * A. Tikuisis, S. White, W. Winter, *Quasidiagonality of nuclear C⋆-algebras*, Ann. of Math.
   185 (2017), Remark 1.5.
 * G. J. Murphy, *C⋆-Algebras and Operator Theory*, Academic Press, 1990, Theorem 3.3.9.
-* B. Blackadar, *Operator Algebras*, Springer, 2006, II.6.2.5.
 -/
 
 public section
@@ -251,201 +232,14 @@ theorem eq_zero_of_unitization_map_star_mul_self_eq_zero
 
 end PositiveContinuousLinearMap
 
-section WeakDualUnitization
+section Order
 
-open Set WeakDual
+open WeakDual
 open scoped CStarAlgebra
-
-namespace WeakDual
-
-variable {A : Type*} [NonUnitalCStarAlgebra A]
-
-/-- Extend a functional `φ` in the weak-* dual of `A` to the minimal unitization `A⁺¹` by sending
-`x` to `x.fst + φ x.snd`. -/
-noncomputable def unitizationFunctional (φ : WeakDual ℂ A) : WeakDual ℂ A⁺¹ :=
-  StrongDual.toWeakDual
-    { toLinearMap := (Unitization.fstHom ℂ A).toLinearMap +
-        (toStrongDual φ : A →ₗ[ℂ] ℂ).comp (Unitization.sndHom ℂ ℂ A)
-      cont := Unitization.continuous_fst.add
-        ((toStrongDual φ).continuous.comp Unitization.continuous_snd) }
-
-/-- `φ.unitizationFunctional` evaluates at `x : A⁺¹` as `x.fst + φ x.snd`. -/
-@[simp]
-theorem unitizationFunctional_apply (φ : WeakDual ℂ A) (x : A⁺¹) :
-    φ.unitizationFunctional x = x.fst + φ x.snd :=
-  (rfl)
-
-/-- `φ.unitizationFunctional` takes the value `1` at the unit of `A⁺¹`. -/
-theorem unitizationFunctional_one (φ : WeakDual ℂ A) : φ.unitizationFunctional 1 = 1 := by
-  simp
-
-/-- `φ.unitizationFunctional` restricts to `φ` on `A ↪ A⁺¹`. -/
-theorem unitizationFunctional_inr (φ : WeakDual ℂ A) (a : A) :
-    φ.unitizationFunctional (a : A⁺¹) = φ a := by
-  simp
-
-/-- `φ.unitizationFunctional` acts as the identity on scalars `Unitization.inl c`. -/
-theorem unitizationFunctional_inl (φ : WeakDual ℂ A) (c : ℂ) :
-    φ.unitizationFunctional (Unitization.inl c) = c := by
-  simp
-
-/-- `WeakDual.unitizationFunctional` is weak-* continuous. -/
-@[fun_prop]
-theorem continuous_unitizationFunctional :
-    Continuous (unitizationFunctional : WeakDual ℂ A → WeakDual ℂ A⁺¹) :=
-  continuous_of_continuous_eval fun x => continuous_const.add (eval_continuous x.snd)
-
-/-- `WeakDual.unitizationFunctional` preserves affine combinations. -/
-theorem unitizationFunctional_combo (φ ψ : WeakDual ℂ A) {s t : ℝ} (hst : s + t = 1) :
-    (s • φ + t • ψ).unitizationFunctional =
-      s • φ.unitizationFunctional + t • ψ.unitizationFunctional :=
-  DFunLike.ext _ _ fun x => by
-    simp only [unitizationFunctional_apply, add_apply, WeakDual.real_smul_apply]
-    have hst' : (s : ℂ) + t = 1 := by exact_mod_cast hst
-    linear_combination -x.fst * hst'
-
-/-- `WeakDual.unitizationFunctional` is injective. -/
-theorem unitizationFunctional_injective :
-    Function.Injective (unitizationFunctional : WeakDual ℂ A → WeakDual ℂ A⁺¹) := fun φ ψ h =>
-  DFunLike.ext _ _ fun a => by simpa using congr($h (a : A⁺¹))
-
-/-- Two functionals have the same unitization extension if and only if they are equal. -/
-@[simp]
-theorem unitizationFunctional_inj {φ ψ : WeakDual ℂ A} :
-    φ.unitizationFunctional = ψ.unitizationFunctional ↔ φ = ψ :=
-  unitizationFunctional_injective.eq_iff
-
-end WeakDual
 
 namespace TauCeti
 
-section Order
-
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  {φ : WeakDual ℂ A}
-
-/-- Restricting `φ.unitizationFunctional` along `inr` recovers `φ`. -/
-@[simp]
-theorem pullbackFunctional_inr_unitizationFunctional {φ : WeakDual ℂ A} :
-    pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) φ.unitizationFunctional = φ :=
-  DFunLike.ext _ _ fun a => by simp
-
-/-- Any functional `ψ` on `A⁺¹` normalized by `ψ 1 = 1` is the unitization extension of its
-restriction to `A`. -/
-theorem unitizationFunctional_pullbackFunctional_inr_of_map_one {ψ : WeakDual ℂ A⁺¹}
-    (hψ : ψ 1 = 1) :
-    (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ).unitizationFunctional = ψ :=
-  DFunLike.ext _ _ fun x => by
-    conv_rhs => rw [← Unitization.inl_fst_add_inr_snd_eq x, ← Unitization.algebraMap_eq_inl,
-      Algebra.algebraMap_eq_smul_one]
-    simp [map_add, map_smul, hψ]
-
-/-- Key square-positivity step: for a positive contractive functional `φ` on `A`, its unitization
-extension is nonnegative on every element of the form `star s * s` in `A⁺¹`. -/
-private theorem unitizationFunctional_star_mul_self_nonneg
-    (hpos : ∀ a, 0 ≤ a → 0 ≤ φ a) (hnorm : ‖toStrongDual φ‖ ≤ 1) (s : A⁺¹) :
-    0 ≤ φ.unitizationFunctional (star s * s) := by
-  set c : ℂ := s.fst
-  set a : A := s.snd
-  set r : ℝ := ‖φ (star a * a)‖
-  have hw_eq : φ (star a * a) = (r : ℂ) :=
-    (Complex.norm_of_nonneg' (hpos _ (star_mul_self_nonneg a))).symm
-  have hcs : ‖φ a‖ ^ 2 ≤ r :=
-    (WeakDual.norm_apply_sq_le_mul_of_map_nonneg hpos a).trans
-      (mul_le_of_le_one_left (norm_nonneg _) hnorm)
-  have hstar : φ (star a) = star (φ a) := WeakDual.map_star_of_map_nonneg hpos a
-  -- Complete the square:
-  -- `‖c‖² + star c * φ a + c * star (φ a) + φ (a⋆ * a) = ‖c + φ a‖² + (φ (a⋆ * a) - ‖φ a‖²)`.
-  have hid : φ.unitizationFunctional (star s * s) =
-      ((‖c + φ a‖ ^ 2 + (r - ‖φ a‖ ^ 2) : ℝ) : ℂ) := by
-    simp only [unitizationFunctional_apply, Unitization.fst_mul, Unitization.fst_star,
-      Unitization.snd_mul, Unitization.snd_star, map_add, map_smul, smul_eq_mul]
-    rw [hstar, hw_eq]
-    have hnorm_sq (z : ℂ) : (‖z‖ : ℂ) ^ 2 = star z * z := (Complex.conj_mul' z).symm
-    push_cast
-    rw [hnorm_sq (c + φ a), hnorm_sq (φ a)]
-    simp only [star_add]
-    ring
-  rw [hid]
-  exact Complex.zero_le_real.2 (by linarith [sq_nonneg ‖c + φ a‖])
-
-/-- **Characterization of unitized states.** The unitization extension `φ.unitizationFunctional`
-is a state of `A⁺¹` if and only if `φ` is nonnegative on nonnegative elements of `A` and has
-operator norm at most `1`. -/
-theorem unitizationFunctional_mem_stateSpace_iff :
-    φ.unitizationFunctional ∈ stateSpace A⁺¹ ↔
-      (∀ a, 0 ≤ a → 0 ≤ φ a) ∧ ‖toStrongDual φ‖ ≤ 1 := by
-  rw [mem_stateSpace_iff_map_one]
-  refine ⟨fun ⟨hpos, _⟩ => ⟨fun a ha => ?_, ?_⟩, fun ⟨hpos, hnorm⟩ => ⟨fun x hx => ?_, by simp⟩⟩
-  · simpa using hpos (a : A⁺¹) ((Unitization.inr_nonneg_iff ℂ).2 ha)
-  · refine (toStrongDual φ).opNorm_le_bound zero_le_one fun a => ?_
-    have hψ : φ.unitizationFunctional ∈ stateSpace A⁺¹ :=
-      mem_stateSpace_iff_map_one.2 ⟨hpos, by simp⟩
-    simpa [Unitization.norm_inr] using norm_apply_le_of_mem_stateSpace hψ (a : A⁺¹)
-  · rw [StarOrderedRing.nonneg_iff] at hx
-    refine AddSubmonoid.closure_induction ?_ (by simp)
-      (fun u v _ _ hu hv => by simpa [map_add] using add_nonneg hu hv) hx
-    rintro _ ⟨s, rfl⟩
-    exact unitizationFunctional_star_mul_self_nonneg hpos hnorm s
-
-/-- Every state of `A` extends via `WeakDual.unitizationFunctional` to a state of `A⁺¹`. -/
-theorem unitizationFunctional_mem_stateSpace_of_mem_stateSpace (hφ : φ ∈ stateSpace A) :
-    φ.unitizationFunctional ∈ stateSpace A⁺¹ :=
-  unitizationFunctional_mem_stateSpace_iff.2
-    ⟨fun _ => map_nonneg_of_mem_stateSpace hφ, (norm_toStrongDual_of_mem_stateSpace hφ).le⟩
-
-/-- Every state `φ : stateSpace A` extends via `WeakDual.unitizationFunctional` to a state of
-`A⁺¹`. -/
-@[simp]
-theorem StateSpace.unitizationFunctional_mem_stateSpace (φ : stateSpace A) :
-    φ.val.unitizationFunctional ∈ stateSpace A⁺¹ :=
-  unitizationFunctional_mem_stateSpace_of_mem_stateSpace φ.property
-
-/-- The zero functional on `A` extends via `WeakDual.unitizationFunctional` to the character
-`x ↦ x.fst`, which is a state of `A⁺¹`. -/
-@[simp]
-theorem unitizationFunctional_zero_mem_stateSpace :
-    (0 : WeakDual ℂ A).unitizationFunctional ∈ stateSpace A⁺¹ :=
-  unitizationFunctional_mem_stateSpace_iff.2
-    ⟨fun _ _ => by simp [← toStrongDual_apply], by simp⟩
-
-private theorem pullbackFunctional_inr_pos_and_norm_le_one {ψ : WeakDual ℂ A⁺¹}
-    (hψ : ψ ∈ stateSpace A⁺¹) :
-    (∀ a, 0 ≤ a → 0 ≤ pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ a) ∧
-      ‖toStrongDual (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ)‖ ≤ 1 :=
-  unitizationFunctional_mem_stateSpace_iff.1 <|
-    (unitizationFunctional_pullbackFunctional_inr_of_map_one
-      (map_one_of_mem_stateSpace hψ)).symm ▸ hψ
-
-/-- `WeakDual.unitizationFunctional` maps the positive contractive functionals of `A` bijectively
-onto the state space of `A⁺¹`. -/
-theorem bijOn_unitizationFunctional :
-    BijOn (unitizationFunctional (A := A))
-      {φ : WeakDual ℂ A | (∀ a, 0 ≤ a → 0 ≤ φ a) ∧ ‖toStrongDual φ‖ ≤ 1}
-      (stateSpace A⁺¹) := by
-  refine ⟨fun φ hφ => unitizationFunctional_mem_stateSpace_iff.2 hφ,
-    unitizationFunctional_injective.injOn, fun ψ hψ => ?_⟩
-  exact ⟨pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ,
-    pullbackFunctional_inr_pos_and_norm_le_one hψ,
-    unitizationFunctional_pullbackFunctional_inr_of_map_one (map_one_of_mem_stateSpace hψ)⟩
-
-/-- States of `A⁺¹` are determined by their restrictions to `A`. -/
-theorem injOn_pullbackFunctional_inr_stateSpace :
-    InjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A)) (stateSpace A⁺¹) := by
-  intro ψ₁ hψ₁ ψ₂ hψ₂ h
-  rw [← unitizationFunctional_pullbackFunctional_inr_of_map_one (map_one_of_mem_stateSpace hψ₁),
-    ← unitizationFunctional_pullbackFunctional_inr_of_map_one (map_one_of_mem_stateSpace hψ₂), h]
-
-/-- **Unique extension of states to the unitization.** Every state of `A` extends to a unique state
-of `A⁺¹`. -/
-theorem existsUnique_mem_stateSpace_unitization (hφ : φ ∈ stateSpace A) :
-    ∃! ψ : WeakDual ℂ A⁺¹, ψ ∈ stateSpace A⁺¹ ∧ ∀ a : A, ψ a = φ a := by
-  refine ⟨φ.unitizationFunctional,
-    ⟨unitizationFunctional_mem_stateSpace_of_mem_stateSpace hφ, fun a => by simp⟩, ?_⟩
-  rintro ψ ⟨hψ, hψφ⟩
-  rw [← unitizationFunctional_pullbackFunctional_inr_of_map_one (map_one_of_mem_stateSpace hψ)]
-  congr 1
-  exact DFunLike.ext _ _ fun a => by simpa using hψφ a
 
 /-- Restricting a state of `A⁺¹` along `inr` produces a functional that is nonnegative on
 nonnegative elements of `A`. -/
@@ -458,7 +252,8 @@ theorem map_nonneg_pullbackFunctional_inr_of_mem_stateSpace {ψ : WeakDual ℂ A
 theorem norm_toStrongDual_pullbackFunctional_inr_le_one_of_mem_stateSpace {ψ : WeakDual ℂ A⁺¹}
     (hψ : ψ ∈ stateSpace A⁺¹) :
     ‖toStrongDual (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ)‖ ≤ 1 :=
-  (pullbackFunctional_inr_pos_and_norm_le_one hψ).2
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a => by
+    simpa [Unitization.norm_inr] using norm_apply_le_of_mem_stateSpace hψ (a : A⁺¹)
 
 /-- The restriction of a state of `A⁺¹` to `A` is a state of `A` if and only if its norm on `A` is
 one. -/
@@ -483,8 +278,6 @@ theorem pullbackFunctional_inr_mem_stateSpace_of_mem_stateSpace_of_norm_apply_eq
     simpa [φ, hnorm] using (toStrongDual φ).le_opNorm a
   exact (le_mul_iff_one_le_left ha_pos).1 hle
 
-end Order
-
 end TauCeti
 
-end WeakDualUnitization
+end Order

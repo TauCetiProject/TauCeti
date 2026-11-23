@@ -88,9 +88,14 @@ theorem apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (f : A →
 normalization is needed. -/
 theorem gnsNonUnitalStarAlgHom_injective (f : A →ₚ[ℂ] ℂ)
     (hf : ∀ a, f (star a * a) = 0 → a = 0) :
-    Function.Injective f.gnsNonUnitalStarAlgHom :=
-  (injective_iff_map_eq_zero f.gnsNonUnitalStarAlgHom).mpr fun a ha =>
-    hf a (f.apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero ha)
+    Function.Injective f.gnsNonUnitalStarAlgHom := by
+  have hclass : Function.Injective f.toGNS :=
+    (injective_iff_map_eq_zero f.toGNS).mpr fun a ha => hf a ((f.toGNS_eq_zero_iff a).mp ha)
+  refine (injective_iff_map_eq_zero f.gnsNonUnitalStarAlgHom).mpr fun a ha => ?_
+  have hzero : f.toGNS (a * star a) = 0 := by
+    simpa [toGNS_apply] using DFunLike.congr_fun ha (f.toGNS (star a))
+  have hmul : a * star a = 0 := hclass (by simpa using hzero)
+  exact mul_star_self_eq_zero.mp hmul
 
 end PositiveLinearMap
 

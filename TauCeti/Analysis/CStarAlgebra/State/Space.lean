@@ -38,7 +38,8 @@ For unital `A`:
   and `TauCeti.mem_stateSpace_iff_norm_eq_one_and_map_one`: a functional is a state exactly when
   `‖φ‖ = φ 1 = 1`, with positivity then automatic.
 * `TauCeti.isCompact_stateSpace`: the state space is weak-* compact, by Banach–Alaoglu.
-* `TauCeti.stateSpace_complex`: the state space of `ℂ` is the single functional `z ↦ z`.
+* `TauCeti.stateSpace_nonempty`: if `A` is nonzero it has a state, by Hahn–Banach. The state
+  space of `ℂ` is the single functional `z ↦ z`, `TauCeti.stateSpace_complex`.
 * `TauCeti.closure_convexHull_extremePoints_stateSpace`: the state space is the weak-* closed
   convex hull of its extreme points, the pure states, by the Krein–Milman theorem; in particular
   a nonzero unital C⋆-algebra has a pure state, `TauCeti.extremePoints_stateSpace_nonempty`.
@@ -87,29 +88,6 @@ theorem norm_toStrongDual_of_mem_stateSpace (hφ : φ ∈ stateSpace A) : ‖toS
 theorem norm_apply_le_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) : ‖φ a‖ ≤ ‖a‖ := by
   simpa [norm_toStrongDual_of_mem_stateSpace hφ] using (toStrongDual φ).le_opNorm a
 
-/-- Normalizing a nonzero positive functional by its norm produces a state. -/
-theorem inv_norm_toStrongDual_smul_mem_stateSpace_of_map_nonneg_of_ne_zero
-    (hpos : ∀ a, 0 ≤ a → 0 ≤ φ a) (hφ : φ ≠ 0) :
-    ‖toStrongDual φ‖⁻¹ • φ ∈ stateSpace A := by
-  have hnorm : 0 < ‖toStrongDual φ‖ := by simp [hφ]
-  refine mem_stateSpace_iff.2 ⟨fun a ha => smul_nonneg (inv_nonneg.2 hnorm.le) (hpos a ha), ?_⟩
-  rw [WeakDual.real_smul_eq_coe_smul]
-  simp [norm_smul, hnorm.ne']
-
-/-- If `0 ≤ φ a` for every state `φ` of `A`, then `0 ≤ φ a` for every positive functional
-`φ : WeakDual ℂ A`. -/
-theorem map_nonneg_of_forall_mem_stateSpace {a : A} (h : ∀ φ ∈ stateSpace A, 0 ≤ φ a)
-    (hφ : ∀ x, 0 ≤ x → 0 ≤ φ x) : 0 ≤ φ a := by
-  by_cases hφ0 : φ = 0
-  · subst hφ0
-    simp [← toStrongDual_apply]
-  · have hpos : 0 < ‖toStrongDual φ‖ := by simp [hφ0]
-    have hnorm : 0 ≤ (‖toStrongDual φ‖⁻¹ • φ) a :=
-      h _ (inv_norm_toStrongDual_smul_mem_stateSpace_of_map_nonneg_of_ne_zero hφ hφ0)
-    have hmul : 0 ≤ ‖toStrongDual φ‖ • (‖toStrongDual φ‖⁻¹ • φ) a :=
-      smul_nonneg hpos.le hnorm
-    rwa [smul_apply, smul_smul, mul_inv_cancel₀ hpos.ne', one_smul] at hmul
-
 /-- A subsingleton C⋆-algebra has no states. -/
 @[simp]
 theorem stateSpace_eq_empty [Subsingleton A] : stateSpace A = ∅ := by
@@ -119,15 +97,6 @@ theorem stateSpace_eq_empty [Subsingleton A] : stateSpace A = ∅ := by
 /-- A subsingleton C⋆-algebra has empty state space. -/
 instance [Subsingleton A] : IsEmpty (stateSpace A) := by
   simp [Set.isEmpty_coe_sort]
-
-namespace StateSpace
-
-/-- Every state has operator norm one. -/
-@[simp]
-theorem norm_toStrongDual (φ : stateSpace A) : ‖toStrongDual φ.val‖ = 1 :=
-  norm_toStrongDual_of_mem_stateSpace φ.property
-
-end StateSpace
 
 /-- In the norm topology of the continuous dual, the state space is closed. -/
 theorem isClosed_preimage_toWeakDual_stateSpace :
@@ -186,11 +155,6 @@ theorem toContinuousLinearMap_ofClass_toPositiveLinearMap (φ : stateSpace A) :
       toStrongDual φ.val := by
   simp [toPositiveLinearMap]
 
-/-- As a continuous positive functional, `StateSpace.toPositiveLinearMap φ` has norm one. -/
-theorem norm_toContinuousLinearMap_ofClass_toPositiveLinearMap (φ : stateSpace A) :
-    ‖(PositiveContinuousLinearMap.ofClass (toPositiveLinearMap φ) : A →L[ℂ] ℂ)‖ = 1 := by
-  simp
-
 /-- `StateSpace.toPositiveLinearMap` is injective. -/
 theorem toPositiveLinearMap_injective :
     Function.Injective (toPositiveLinearMap (A := A)) := fun _ _ h =>
@@ -210,7 +174,7 @@ theorem mem_stateSpace_iff_exists_positiveLinearMap :
     φ ∈ stateSpace A ↔ ∃ ω : A →ₚ[ℂ] ℂ, ‖(PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ)‖ = 1 ∧
       StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = φ := by
   refine ⟨fun hφ => ⟨StateSpace.toPositiveLinearMap ⟨φ, hφ⟩,
-    StateSpace.norm_toContinuousLinearMap_ofClass_toPositiveLinearMap ⟨φ, hφ⟩, by simp⟩,
+    by simp [norm_toStrongDual_of_mem_stateSpace hφ], by simp⟩,
     fun ⟨ω, hω, h⟩ =>
       h ▸ (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω⟩
 
@@ -284,15 +248,6 @@ theorem mem_stateSpace_iff_map_one :
 theorem map_one_of_mem_stateSpace (hφ : φ ∈ stateSpace A) : φ 1 = 1 :=
   (mem_stateSpace_iff_map_one.1 hφ).2
 
-namespace StateSpace
-
-/-- Every state of a unital C⋆-algebra takes the value `1` at `1`. -/
-@[simp]
-theorem map_one (φ : stateSpace A) : φ.val 1 = 1 :=
-  map_one_of_mem_stateSpace φ.property
-
-end StateSpace
-
 /-- On a unital C⋆-algebra, a functional is a state exactly when `‖φ‖ = φ 1 = 1`. Positivity is
 then automatic: it follows from `φ 1 = ‖φ‖ = 1`. -/
 theorem mem_stateSpace_iff_norm_eq_one_and_map_one :
@@ -319,6 +274,13 @@ theorem isCompact_stateSpace : IsCompact (stateSpace A) := by
     fun φ hφ => ?_
   simp [norm_toStrongDual_of_mem_stateSpace hφ]
 
+/-- **Existence of states.** A nonzero unital C⋆-algebra has a state. -/
+theorem stateSpace_nonempty [Nontrivial A] : (stateSpace A).Nonempty := by
+  -- by Hahn–Banach there is a functional of norm one attaining the norm `‖1‖ = 1` at `1`
+  obtain ⟨g, hg, hg1⟩ := exists_dual_vector ℂ (1 : A) (by simp)
+  refine ⟨StrongDual.toWeakDual g, mem_stateSpace_iff_norm_eq_one_and_map_one.2 ⟨hg, ?_⟩⟩
+  simpa using hg1
+
 /-- **Krein–Milman for states.** For unital `A`, the state space is the weak-* closed convex hull
 of its extreme points, the pure states. -/
 theorem closure_convexHull_extremePoints_stateSpace :
@@ -327,11 +289,8 @@ theorem closure_convexHull_extremePoints_stateSpace :
 
 /-- **Existence of pure states.** A nonzero unital C⋆-algebra has an extreme state. -/
 theorem extremePoints_stateSpace_nonempty [Nontrivial A] :
-    (extremePoints ℝ (stateSpace A)).Nonempty := by
-  -- by Hahn–Banach there is a functional of norm one attaining the norm `‖1‖ = 1` at `1`
-  obtain ⟨g, hg, hg1⟩ := exists_dual_vector ℂ (1 : A) (by simp)
-  exact isCompact_stateSpace.extremePoints_nonempty
-    ⟨StrongDual.toWeakDual g, mem_stateSpace_iff_norm_eq_one_and_map_one.2 ⟨hg, by simpa using hg1⟩⟩
+    (extremePoints ℝ (stateSpace A)).Nonempty :=
+  isCompact_stateSpace.extremePoints_nonempty stateSpace_nonempty
 
 /-- The only state of `ℂ` is the identity functional. -/
 theorem stateSpace_complex :
