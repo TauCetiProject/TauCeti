@@ -22,6 +22,8 @@ and avoid exposing the definitional equality of the objects being transported.
   only be definitional, leaves a composite unchanged.
 * `TauCeti.eqToHom_conjugate_cancel`: transporting a morphism and then transporting it back leaves
   it unchanged.
+* `TauCeti.eqToHom_conj_conj`: composing two successive endpoint transports agrees with
+  transporting directly along the composite equalities.
 * `TauCeti.eqToHom_conjugate_eq_id`, `TauCeti.eqToHom_conjugate_eq_comp` and
   `TauCeti.eqToHom_conjugate_add`: transporting an identity, a composite or a sum gives the
   identity, the composite of the transports or the sum of the transports.
@@ -70,6 +72,15 @@ theorem eqToHom_conjugate_cancel {C : Type*} [Category* C] {X X' Y Y' : C}
     eqToHom hX.symm ≫ (eqToHom hX ≫ f ≫ eqToHom hY.symm) ≫ eqToHom hY = f := by
   subst X'
   subst Y'
+  simp
+
+/-- Composing two successive endpoint transports around a morphism `m` agrees with transporting
+directly along the composite object equalities. -/
+theorem eqToHom_conj_conj {C : Type*} [Category* C] {a b c d e f : C}
+    (h₁ : a = b) (h₂ : b = c) (m : c ⟶ d) (h₃ : d = e) (h₄ : e = f) :
+    eqToHom h₁ ≫ (eqToHom h₂ ≫ m ≫ eqToHom h₃) ≫ eqToHom h₄ =
+      eqToHom (h₁.trans h₂) ≫ m ≫ eqToHom (h₃.trans h₄) := by
+  subst h₁ h₂ h₃ h₄
   simp
 
 /-- **A transported identity is the identity**: conjugating a morphism equal to `𝟙 Y` by the

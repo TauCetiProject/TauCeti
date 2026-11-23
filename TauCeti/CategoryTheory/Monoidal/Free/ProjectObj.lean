@@ -107,4 +107,14 @@ theorem projectObjIso_eqToIso (h : ∀ a, f a = g a) (X : FreeMonoidalCategory C
     rw [hX, hY]
     exact TauCeti.eqToIso_tensorIso_eqToIso (projectObj_congr h X) (projectObj_congr h Y)
 
+/-- Transporting `projectObjIso e` along an equality of tensor words `w = w'` conjugates its
+component by `eqToHom`. -/
+theorem projectObjIso_congr_word (e : ∀ a, f a ≅ g a)
+    {w w' : FreeMonoidalCategory C} (hw : w = w') :
+    (projectObjIso e w).hom =
+      eqToHom (congrArg (projectObj f) hw) ≫ (projectObjIso e w').hom ≫
+        eqToHom (congrArg (projectObj g) hw).symm := by
+  subst hw
+  simp
+
 end CategoryTheory.FreeMonoidalCategory
