@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.VanishingIdeal
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import Mathlib.Topology.Algebra.Module.FiniteDimension
