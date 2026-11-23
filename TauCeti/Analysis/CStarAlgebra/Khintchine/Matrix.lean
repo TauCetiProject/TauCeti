@@ -11,6 +11,7 @@ public import TauCeti.Analysis.CStarAlgebra.SquareFunction
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Moment
 
+import TauCeti.Algebra.Group.Pi.Lemmas
 import TauCeti.Analysis.CStarAlgebra.Khintchine.Dual
 import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 import TauCeti.Analysis.InnerProductSpace.Polar.Finite
@@ -44,7 +45,8 @@ prove this by combining:
 * `TauCeti.norm_sum_trace_mul_le_norm_rowSquare_mul_matrixLpGauge_one_columnSquare`,
   `TauCeti.norm_rowSquare_le_of_forall_norm_sum_trace_mul_le`
 * `TauCeti.isGreatest_rowColumnSumGauge_one`, `TauCeti.rowColumnSumGauge_one_eq_sSup`,
-  `TauCeti.isGreatest_randomSumGauge_one`, `TauCeti.randomSumGauge_one_eq_sSup`
+  `TauCeti.sum_trace_rademacherCoeff_mul`, `TauCeti.isGreatest_randomSumGauge_one`,
+  `TauCeti.randomSumGauge_one_eq_sSup`
 * `TauCeti.randomSumGauge_one_le_columnSquare`, `TauCeti.randomSumGauge_one_le_rowSquare`
 * `TauCeti.matrix_khintchine_one`
 
@@ -194,7 +196,7 @@ theorem randomSumGauge_comp_equiv {κ : Type*} [Fintype κ] [DecidableEq κ] (e 
     (matrixLpGauge p · ^ (p : ℝ)) <| Finset.sum_congr rfl fun _ _ => by simp [mul_smul]
 
 /-- Padding a family with zeros preserves `randomSumGauge`. -/
-theorem randomSumGauge_sumElim_zero {κ : Type*} [Fintype κ] [DecidableEq κ] (p : ℝ≥0)
+@[simp] theorem randomSumGauge_sumElim_zero {κ : Type*} [Fintype κ] [DecidableEq κ] (p : ℝ≥0)
     (a : ι → CStarMatrix m m ℂ) :
     randomSumGauge p (Sum.elim a (0 : κ → CStarMatrix m m ℂ)) = randomSumGauge p a := by
   rw [randomSumGauge_eq_expect_units, randomSumGauge_eq_expect_units]; congr 1
@@ -234,15 +236,8 @@ theorem randomSumGauge_extend_zero {κ : Type*} [Fintype κ] [DecidableEq κ] {f
 /-- The `randomSumGauge p` of a single-entry family `Pi.single i x` equals `matrixLpGauge p x`. -/
 @[simp] theorem randomSumGauge_single (p : ℝ≥0) (i : ι) (x : CStarMatrix m m ℂ) :
     randomSumGauge p (Pi.single i x) = matrixLpGauge p x := by
-  have h : Pi.single i x = Function.extend (fun _ : Unit => i) (fun _ => x) 0 := by
-    funext j
-    by_cases hj : j = i
-    · subst hj
-      rw [Pi.single_eq_same,
-        (Function.injective_of_subsingleton (fun _ : Unit => j)).extend_apply (fun _ => x) 0 ()]
-    · rw [Pi.single_eq_of_ne hj, Function.extend_apply' _ _ _ (by simp [Ne.symm hj])]
-      rfl
-  rw [h, randomSumGauge_extend_zero (Function.injective_of_subsingleton _) p,
+  rw [← Function.extend_const_eq_single (fun _ : Unit => i) x,
+    randomSumGauge_extend_zero (Function.injective_of_subsingleton _) p,
     randomSumGauge_unique]
 
 /-- Triangle inequality for `randomSumGauge p` when `1 ≤ p`. -/
@@ -453,7 +448,7 @@ theorem rowColumnSumGauge_extend_zero {κ : Type*} [Fintype κ] {f : κ → ι}
         (matrixLpGauge_rowSquare_comp_le hf hp c)
 
 /-- Padding a family with zeros preserves `rowColumnSumGauge`. -/
-theorem rowColumnSumGauge_sumElim_zero {κ : Type*} [Fintype κ] (p : ℝ≥0)
+@[simp] theorem rowColumnSumGauge_sumElim_zero {κ : Type*} [Fintype κ] (p : ℝ≥0)
     (a : ι → CStarMatrix m m ℂ) :
     rowColumnSumGauge p (Sum.elim a (0 : κ → CStarMatrix m m ℂ)) = rowColumnSumGauge p a := by
   have h : Sum.elim a (0 : κ → CStarMatrix m m ℂ) = Function.extend Sum.inl a 0 := by
@@ -479,15 +474,8 @@ for `1 ≤ p`. -/
 @[simp] theorem rowColumnSumGauge_single [DecidableEq ι] {p : ℝ≥0} (hp : 1 ≤ p) (i : ι)
     (x : CStarMatrix m m ℂ) :
     rowColumnSumGauge p (Pi.single i x) = matrixLpGauge p x := by
-  have h : Pi.single i x = Function.extend (fun _ : Unit => i) (fun _ => x) 0 := by
-    funext j
-    by_cases hj : j = i
-    · subst hj
-      rw [Pi.single_eq_same,
-        (Function.injective_of_subsingleton (fun _ : Unit => j)).extend_apply (fun _ => x) 0 ()]
-    · rw [Pi.single_eq_of_ne hj, Function.extend_apply' _ _ _ (by simp [Ne.symm hj])]
-      rfl
-  rw [h, rowColumnSumGauge_extend_zero (Function.injective_of_subsingleton _),
+  rw [← Function.extend_const_eq_single (fun _ : Unit => i) x,
+    rowColumnSumGauge_extend_zero (Function.injective_of_subsingleton _),
     rowColumnSumGauge_unique hp]
 
 /-- Flipping signs by `δ : ι → ℤˣ` preserves `rowColumnSumGauge`. -/
@@ -626,7 +614,7 @@ theorem norm_rowSquare_le_of_forall_norm_sum_trace_mul_le
         ← ContinuousLinearMap.adjoint_inner_left, ← ContinuousLinearMap.star_eq_adjoint, ← map_star,
         inner_self_eq_norm_sq_to_K]; norm_cast
   have hbound := h b
-  rw [hpair, matrixLpGauge_one_columnSquare_rankOne η hξ, ← hR_sq,
+  rw [hpair, matrixLpGauge_columnSquare_rankOne zero_lt_one η hξ, ← hR_sq,
     Real.sqrt_sq (norm_nonneg _), Complex.norm_real, Real.norm_of_nonneg (sq_nonneg _),
     sq] at hbound
   exact (norm_nonneg (R ξ)).eq_or_lt.elim (fun h0 => by linarith) (le_of_mul_le_mul_right hbound)
@@ -716,7 +704,9 @@ section KhintchineOne
 
 variable {ι m : Type*} [Fintype ι] [DecidableEq ι] [Fintype m]
 
-private theorem sum_trace_rademacherCoeff_mul
+/-- **Fourier-coefficient trace pairing**: the trace pairing of `rademacherCoeff ℝ Φ` with `a`
+equals the expectation over `ε : ι → ℤˣ` of `tr(Φ ε * ∑ k, ε k • a k)`. -/
+theorem sum_trace_rademacherCoeff_mul
     (Φ : (ι → ℤˣ) → CStarMatrix m m ℂ) (a : ι → CStarMatrix m m ℂ) :
     ∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (rademacherCoeff ℝ Φ k * a k)) =
       𝔼 ε : ι → ℤˣ, Matrix.trace (CStarMatrix.ofMatrix.symm (Φ ε * ∑ k, ε k • a k)) := by
@@ -808,8 +798,10 @@ theorem inv_sqrt_three_mul_rowColumnSumGauge_le_randomSumGauge_one (a : ι → C
   have hΦ_le (ε : ι → ℤˣ) : ‖Φ ε‖ ≤ Real.sqrt 3 :=
     (hΦ_norm ε).trans <| mul_le_of_le_one_right (Real.sqrt_nonneg 3) (max_le hx_col hx_row)
   have hbound := norm_sum_trace_rademacherCoeff_mul_le hΦ_le a
-  erw [hΦ_avg] at hbound
-  rw [htr, Complex.norm_real, Real.norm_of_nonneg (rowColumnSumGauge_nonneg 1 a)] at hbound
+  -- Re-elaborate `hΦ_avg` with the concrete `CStarMatrix` `Module ℝ` instance
+  -- (rather than `NonUnitalCStarAlgebra`'s `complexToReal` instance) so `rw` matches syntactically.
+  have hΦ_eq : rademacherCoeff ℝ Φ = x := hΦ_avg
+  rw [hΦ_eq, htr, Complex.norm_real, Real.norm_of_nonneg (rowColumnSumGauge_nonneg 1 a)] at hbound
   exact (inv_mul_le_iff₀ (Real.sqrt_pos.mpr (by norm_num))).mpr hbound
 
 /-- **The `p = 1` noncommutative Khintchine inequality for matrices** (Lust-Piquard–Pisier,

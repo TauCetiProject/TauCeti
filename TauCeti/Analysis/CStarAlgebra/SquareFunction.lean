@@ -59,8 +59,12 @@ theorem rowSquare_def (a : ι → A) : rowSquare a = CFC.sqrt (∑ k, a k * star
 /-- `columnSquare a` is nonnegative in the C⋆-algebra order. -/
 theorem columnSquare_nonneg (a : ι → A) : 0 ≤ columnSquare a := CFC.sqrt_nonneg _
 
+grind_pattern columnSquare_nonneg => columnSquare a
+
 /-- `rowSquare a` is nonnegative in the C⋆-algebra order. -/
 theorem rowSquare_nonneg (a : ι → A) : 0 ≤ rowSquare a := CFC.sqrt_nonneg _
+
+grind_pattern rowSquare_nonneg => rowSquare a
 
 /-- `columnSquare a` is self-adjoint. -/
 theorem isSelfAdjoint_columnSquare (a : ι → A) : IsSelfAdjoint (columnSquare a) :=
@@ -180,12 +184,12 @@ theorem rowSquare_extend_zero {κ : Type*} [Fintype κ] {f : κ → ι}
     ← rowSquare_eq_columnSquare_star]
 
 /-- Padding a family with zeros preserves `columnSquare`. -/
-theorem columnSquare_sumElim_zero {κ : Type*} [Fintype κ] (a : ι → A) :
+@[simp] theorem columnSquare_sumElim_zero {κ : Type*} [Fintype κ] (a : ι → A) :
     columnSquare (Sum.elim a (0 : κ → A)) = columnSquare a := by
   simp [columnSquare_def, Fintype.sum_sum_type]
 
 /-- Padding a family with zeros preserves `rowSquare`. -/
-theorem rowSquare_sumElim_zero {κ : Type*} [Fintype κ] (a : ι → A) :
+@[simp] theorem rowSquare_sumElim_zero {κ : Type*} [Fintype κ] (a : ι → A) :
     rowSquare (Sum.elim a (0 : κ → A)) = rowSquare a := by
   simp [rowSquare_def, Fintype.sum_sum_type]
 

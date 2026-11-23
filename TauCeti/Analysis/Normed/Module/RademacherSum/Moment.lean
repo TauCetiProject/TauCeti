@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.BigOperators.Expect
 public import Mathlib.Analysis.Normed.Lp.PiLp
 
 import Mathlib.Analysis.MeanInequalitiesPow
+import TauCeti.Algebra.Group.Pi.Lemmas
 
 /-!
 # General moments of finite Rademacher sums
@@ -241,15 +242,8 @@ theorem rademacherMoment_extend_zero {κ : Type*} [Fintype κ] [DecidableEq κ] 
 @[simp]
 theorem rademacherMoment_single {p : ℝ} (hp : p ≠ 0) (i : ι) (x : E) :
     rademacherMoment p (Pi.single i x) = ‖x‖ := by
-  have h : Pi.single i x = Function.extend (fun _ : Unit ↦ i) (fun _ ↦ x) 0 := by
-    ext j
-    by_cases hj : j = i
-    · subst hj
-      simpa using ((Function.injective_of_subsingleton (fun _ : Unit ↦ j)).extend_apply
-        (fun _ ↦ x) 0 ()).symm
-    · rw [Pi.single_eq_of_ne hj, Function.extend_apply' _ _ _ (by simp [Ne.symm hj])]
-      rfl
-  rw [h, rademacherMoment_extend_zero (Function.injective_of_subsingleton _) p,
+  rw [← Function.extend_const_eq_single (fun _ : Unit ↦ i) x,
+    rademacherMoment_extend_zero (Function.injective_of_subsingleton _) p,
     rademacherMoment_unique hp]
 
 /-- Restricting a family on a finite index type to `Finset.univ` leaves its Rademacher `p`-th

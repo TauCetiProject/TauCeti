@@ -13,6 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Scha
 
 import Mathlib.Analysis.InnerProductSpace.SingularValues
 import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
+import TauCeti.Analysis.InnerProductSpace.SingularValues
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 
 /-!
@@ -30,7 +31,8 @@ modulus identification `operatorAbs_columnEuclideanLM`, and the Schatten realiza
 
 ## Main declarations
 
-* `TauCeti.matrixLpGauge`, `TauCeti.matrixLpGauge_eq_singularValues_sum`
+* `TauCeti.matrixLpGauge`, `TauCeti.matrixLpGauge_eq_singularValues_sum`,
+  `TauCeti.matrixLpGauge_of_isStarProjection`
 * `TauCeti.matrixLpGauge_eq_schatten`, `TauCeti.matrixLpGauge_one_eq_nuclear`,
   `TauCeti.matrixLpSeminorm`
 * `TauCeti.matrixLpGauge_unitary_mul`, `TauCeti.matrixLpGauge_mul_unitary`,
@@ -41,8 +43,8 @@ modulus identification `operatorAbs_columnEuclideanLM`, and the Schatten realiza
 * `TauCeti.columnEuclideanLM`, `TauCeti.norm_columnSquare_apply_sq_eq`,
   `TauCeti.norm_rowSquare_apply_sq_eq`, `TauCeti.matrixLpGauge_columnSquare_eq_schatten`,
   `TauCeti.matrixLpGauge_rowSquare_eq_schatten`, `TauCeti.matrixLpGauge_two_columnSquare_sq`,
-  `TauCeti.matrixLpGauge_two_rowSquare_sq`, `TauCeti.matrixLpGauge_columnSquare_rankOne`,
-  `TauCeti.matrixLpGauge_one_columnSquare_rankOne`
+  `TauCeti.matrixLpGauge_two_rowSquare_sq`, `TauCeti.star_toEuclideanCLM_symm_rankOne_mul_self`,
+  `TauCeti.matrixLpGauge_columnSquare_rankOne`
 
 ## References
 
@@ -148,6 +150,22 @@ theorem matrixLpGauge_one_of_nonneg {x : CStarMatrix n n ℂ} (hx : 0 ≤ x) :
     matrixLpGauge 1 x = (Matrix.trace (CStarMatrix.ofMatrix.symm x)).re := by
   rw [matrixLpGauge_one, hx.star_eq, CFC.sqrt_mul_self x hx]
 
+/-- For `0 < p`, the Schatten `p`-gauge of a star projection `x` equals `(tr x).re ^ (1 / p)`. -/
+theorem matrixLpGauge_of_isStarProjection {p : ℝ≥0} (hp : 0 < p) {x : CStarMatrix n n ℂ}
+    (hx : IsStarProjection x) :
+    matrixLpGauge p x = (Matrix.trace (CStarMatrix.ofMatrix.symm x)).re ^ (1 / (p : ℝ)) := by
+  have hsqrt : CFC.sqrt (star x * x) = x := by
+    rw [hx.isSelfAdjoint.star_eq]
+    exact CFC.sqrt_mul_self x hx.nonneg
+  have hnnrpow : CFC.nnrpow x p = x := by
+    rw [CFC.nnrpow_eq_pow, CFC.nnrpow_eq_cfcₙ_real x p]
+    refine (cfcₙ_congr (f := fun t : ℝ => t ^ (p : ℝ)) (g := id) fun t ht => ?_).trans
+      (cfcₙ_id' ℝ x hx.isSelfAdjoint)
+    rcases hx.isIdempotentElem.quasispectrum_subset ℝ ht with rfl | rfl
+    · exact Real.zero_rpow (NNReal.coe_pos.mpr hp).ne'
+    · exact Real.one_rpow _
+  rw [matrixLpGauge_def, hsqrt, hnnrpow]
+
 /-- At `p = 2`, `matrixLpGauge 2 x ^ 2 = (tr(x⋆ x)).re`. -/
 theorem matrixLpGauge_two_sq (x : CStarMatrix n n ℂ) :
     matrixLpGauge 2 x ^ 2 = (Matrix.trace (CStarMatrix.ofMatrix.symm (star x * x))).re := by
@@ -219,48 +237,6 @@ theorem matrixLpGauge_one_eq_nuclear [DecidableEq n] (x : CStarMatrix n n ℂ) :
       map_star, ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.adjoint_toLinearMap,
       LinearMap.singularValues_adjoint]
 
-/-- Lifting a pointwise singular-value bound `σᵢ(A) ≤ c * σᵢ(B)` (with `0 ≤ c`) to the rooted
-singular-value `Lᵖ` sums for `0 < p`. -/
-private theorem singularValues_rpow_sum_le_mul {E F₁ F₂ : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace ℂ E] [FiniteDimensional ℂ E]
-    [NormedAddCommGroup F₁] [InnerProductSpace ℂ F₁] [FiniteDimensional ℂ F₁]
-    [NormedAddCommGroup F₂] [InnerProductSpace ℂ F₂] [FiniteDimensional ℂ F₂]
-    {p : ℝ} (hp : 0 < p) (A : E →ₗ[ℂ] F₁) (B : E →ₗ[ℂ] F₂) {c : ℝ} (hc : 0 ≤ c)
-    (hσ : ∀ i : ℕ, A.singularValues i ≤ c * B.singularValues i) :
-    (A.singularValues.sum fun _ s => s ^ p) ^ (1 / p) ≤
-      c * (B.singularValues.sum fun _ s => s ^ p) ^ (1 / p) := by
-  have hsum : A.singularValues.sum (fun _ s => s ^ p) ≤
-      c ^ p * B.singularValues.sum (fun _ s => s ^ p) := by
-    rw [← A.sum_fin_singularValues (· ^ p) (Real.zero_rpow hp.ne'),
-      ← B.sum_fin_singularValues (· ^ p) (Real.zero_rpow hp.ne'), Finset.mul_sum]
-    refine Finset.sum_le_sum fun i _ => ?_
-    rw [← Real.mul_rpow hc (B.singularValues_nonneg i)]
-    exact Real.rpow_le_rpow (A.singularValues_nonneg i) (hσ i) hp.le
-  have hA : 0 ≤ A.singularValues.sum (fun _ s => s ^ p) :=
-    Finsupp.sum_nonneg fun i _ => Real.rpow_nonneg (A.singularValues_nonneg i) _
-  have hB : 0 ≤ B.singularValues.sum (fun _ s => s ^ p) :=
-    Finsupp.sum_nonneg fun i _ => Real.rpow_nonneg (B.singularValues_nonneg i) _
-  refine (Real.rpow_le_rpow hA hsum (by positivity)).trans_eq ?_
-  rw [Real.mul_rpow (Real.rpow_nonneg hc _) hB, one_div, Real.rpow_rpow_inv hc hp.ne']
-
-/-- Lifting a pointwise singular-value scaling `σᵢ(A) = c * σᵢ(B)` (with `0 ≤ c`) to the rooted
-singular-value `Lᵖ` sums for `0 < p`. -/
-private theorem singularValues_rpow_sum_eq_mul {E F₁ F₂ : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace ℂ E] [FiniteDimensional ℂ E]
-    [NormedAddCommGroup F₁] [InnerProductSpace ℂ F₁] [FiniteDimensional ℂ F₁]
-    [NormedAddCommGroup F₂] [InnerProductSpace ℂ F₂] [FiniteDimensional ℂ F₂]
-    {p : ℝ} (hp : 0 < p) (A : E →ₗ[ℂ] F₁) (B : E →ₗ[ℂ] F₂) {c : ℝ} (hc : 0 ≤ c)
-    (hσ : ∀ i : ℕ, A.singularValues i = c * B.singularValues i) :
-    (A.singularValues.sum fun _ s => s ^ p) ^ (1 / p) =
-      c * (B.singularValues.sum fun _ s => s ^ p) ^ (1 / p) := by
-  rcases hc.eq_or_lt with rfl | hc_pos
-  · have hA : A.singularValues = 0 := Finsupp.ext fun i => by simpa using hσ i
-    simp [hA, Real.zero_rpow (inv_ne_zero hp.ne')]
-  · refine le_antisymm (singularValues_rpow_sum_le_mul hp A B hc_pos.le fun i => (hσ i).le) ?_
-    have hinv : ∀ i, B.singularValues i ≤ c⁻¹ * A.singularValues i := fun i => by
-      rw [hσ i, inv_mul_cancel_left₀ hc_pos.ne']
-    exact (le_inv_mul_iff₀ hc_pos).mp (singularValues_rpow_sum_le_mul hp B A (by positivity) hinv)
-
 /-- For `0 < p`, a pointwise singular-value bound `σᵢ(x) ≤ c * σᵢ(y)` (with `0 ≤ c`) lifts to
 `matrixLpGauge p x ≤ c * matrixLpGauge p y`. -/
 theorem matrixLpGauge_le_mul_of_singularValues_le [DecidableEq n] {p : ℝ≥0} (hp : 0 < p)
@@ -269,7 +245,7 @@ theorem matrixLpGauge_le_mul_of_singularValues_le [DecidableEq n] {p : ℝ≥0} 
       c * (CStarMatrix.toEuclideanCLM y).toLinearMap.singularValues i) :
     matrixLpGauge p x ≤ c * matrixLpGauge p y := by
   rw [matrixLpGauge_eq_singularValues_sum hp, matrixLpGauge_eq_singularValues_sum hp]
-  exact singularValues_rpow_sum_le_mul (NNReal.coe_pos.mpr hp) _ _ hc hσ
+  exact LinearMap.singularValues_rpow_sum_le_mul (NNReal.coe_pos.mpr hp) _ _ hc hσ
 
 /-- For `0 < p`, a pointwise Euclidean operator bound `‖x ξ‖ ≤ c * ‖y ξ‖` (with `0 ≤ c`) lifts to
 `matrixLpGauge p x ≤ c * matrixLpGauge p y`. -/
@@ -295,8 +271,8 @@ theorem matrixLpGauge_smul {p : ℝ≥0} (hp : 0 < p) (c : ℂ) (x : CStarMatrix
   classical
   rw [matrixLpGauge_eq_singularValues_sum hp, matrixLpGauge_eq_singularValues_sum hp, map_smul,
     ContinuousLinearMap.toLinearMap_smul]
-  exact singularValues_rpow_sum_eq_mul (NNReal.coe_pos.mpr hp) _ _ (norm_nonneg c) fun i => by
-    rw [LinearMap.singularValues_smul, Finsupp.smul_apply, smul_eq_mul]
+  exact LinearMap.singularValues_rpow_sum_eq_mul (NNReal.coe_pos.mpr hp) _ _ (norm_nonneg c)
+    fun i => by rw [LinearMap.singularValues_smul, Finsupp.smul_apply, smul_eq_mul]
 
 /-- If `0 ≤ y` and `y * y = star x * x`, then `matrixLpGauge p y = matrixLpGauge p x`. -/
 theorem matrixLpGauge_eq_of_mul_self (p : ℝ≥0) {y x : CStarMatrix n n ℂ} (hy : 0 ≤ y)
@@ -538,6 +514,20 @@ theorem matrixLpGauge_rowSquare_unique [Fintype ι] [Unique ι] (p : ℝ≥0)
     matrixLpGauge p (rowSquare a) = matrixLpGauge p (a default) := by
   rw [rowSquare_eq_columnSquare_star, matrixLpGauge_columnSquare_unique, matrixLpGauge_star]
 
+/-- **Rank-one Gram identity** in `CStarMatrix`:
+`star (rankOne ℂ η ξ) * rankOne ℂ η ξ = (‖η‖ ^ 2) • rankOne ℂ ξ ξ` under `toEuclideanCLM`. -/
+theorem star_toEuclideanCLM_symm_rankOne_mul_self (η ξ : EuclideanSpace ℂ m) :
+    star (CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ η ξ)) *
+      CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ η ξ) =
+      (‖η‖ ^ 2) • CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ ξ ξ) := by
+  refine EquivLike.injective CStarMatrix.toEuclideanCLM ?_
+  rw [← algebraMap_smul ℂ (‖η‖ ^ 2), map_mul, map_star, map_smul,
+    StarAlgEquiv.apply_symm_apply, StarAlgEquiv.apply_symm_apply,
+    ContinuousLinearMap.star_eq_adjoint, InnerProductSpace.adjoint_rankOne,
+    ContinuousLinearMap.mul_def, InnerProductSpace.rankOne_comp_rankOne,
+    inner_self_eq_norm_sq_to_K, RCLike.ofReal_eq_complex_ofReal, Complex.coe_algebraMap,
+    Complex.ofReal_pow]
+
 /-- For `0 < p`, the Schatten `p`-gauge of `columnSquare` of a family of rank-one operators with
 common unit source vector `ξ` is `√(∑ k, ‖η k‖ ^ 2)`. -/
 theorem matrixLpGauge_columnSquare_rankOne [Fintype ι] {p : ℝ≥0} (hp : 0 < p)
@@ -549,55 +539,22 @@ theorem matrixLpGauge_columnSquare_rankOne [Fintype ι] {p : ℝ≥0} (hp : 0 < 
   let b := fun k => CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ (η k) ξ)
   set s : ℝ := √(∑ k, ‖η k‖ ^ 2)
   have hs_nonneg : 0 ≤ s := Real.sqrt_nonneg _
-  have hs_sq : s ^ 2 = ∑ k, ‖η k‖ ^ 2 :=
-    Real.sq_sqrt (Finset.sum_nonneg fun _ _ => sq_nonneg _)
   have hP : IsStarProjection P :=
     (InnerProductSpace.isStarProjection_rankOne_self hξ).map CStarMatrix.toEuclideanCLM.symm
-  have hgram : (∑ k, star (b k) * b k) = (s ^ 2) • P :=
-    EquivLike.injective CStarMatrix.toEuclideanCLM <| by
-      rw [map_sum, hs_sq, Finset.sum_smul, map_sum]
-      exact Finset.sum_congr rfl fun k _ => by
-        rw [← algebraMap_smul ℂ (‖η k‖ ^ 2) P, map_mul, map_star, map_smul,
-          StarAlgEquiv.apply_symm_apply, StarAlgEquiv.apply_symm_apply,
-          ContinuousLinearMap.star_eq_adjoint, InnerProductSpace.adjoint_rankOne,
-          ContinuousLinearMap.mul_def, InnerProductSpace.rankOne_comp_rankOne,
-          inner_self_eq_norm_sq_to_K, RCLike.ofReal_eq_complex_ofReal, Complex.coe_algebraMap,
-          Complex.ofReal_pow]
-  have hcol : columnSquare b = s • P :=
-    columnSquare_eq_of_mul_self
-      (by rw [hgram, smul_mul_assoc, mul_smul_comm, smul_smul, ← sq, hP.isIdempotentElem.eq])
-      (smul_nonneg hs_nonneg hP.nonneg)
+  have hcol : columnSquare b = s • P := columnSquare_eq_of_mul_self (by
+    rw [smul_mul_assoc, mul_smul_comm, smul_smul, ← sq, Real.sq_sqrt (by positivity),
+      hP.isIdempotentElem.eq, Finset.sum_smul]
+    exact (Finset.sum_congr rfl fun k _ =>
+      star_toEuclideanCLM_symm_rankOne_mul_self (η k) ξ).symm)
+    (smul_nonneg hs_nonneg hP.nonneg)
   have htrP : Matrix.trace (CStarMatrix.ofMatrix.symm P) = 1 := by
     rw [← CStarMatrix.trace_toEuclideanCLM, StarAlgEquiv.apply_symm_apply,
       InnerProductSpace.trace_rankOne, inner_self_eq_norm_sq_to_K, hξ]
     norm_num
-  have hnnrpow : CFC.nnrpow (CFC.sqrt (star P * P)) p = P := by
-    have hsqrt : CFC.sqrt (star P * P) = P := by
-      rw [hP.isSelfAdjoint.star_eq]
-      exact CFC.sqrt_mul_self P hP.nonneg
-    rw [hsqrt, CFC.nnrpow_eq_pow, CFC.nnrpow_eq_cfcₙ_real P p]
-    refine (cfcₙ_congr (f := fun t : ℝ => t ^ (p : ℝ)) (g := id) fun t ht => ?_).trans
-      (cfcₙ_id' ℝ P hP.isSelfAdjoint)
-    rcases hP.isIdempotentElem.quasispectrum_subset ℝ ht with rfl | rfl
-    · exact Real.zero_rpow (NNReal.coe_pos.mpr hp).ne'
-    · exact Real.one_rpow _
   have hP_gauge : matrixLpGauge p P = 1 := by
-    have hp' : (p : ℝ) ≠ 0 := (NNReal.coe_pos.mpr hp).ne'
-    have hpow : matrixLpGauge p P ^ (p : ℝ) = 1 := by
-      rw [matrixLpGauge_rpow hp P, hnnrpow, htrP, Complex.one_re]
-    simpa [one_div, Real.rpow_rpow_inv (matrixLpGauge_nonneg p P) hp'] using
-      congrArg (· ^ (1 / (p : ℝ))) hpow
+    rw [matrixLpGauge_of_isStarProjection hp hP, htrP, Complex.one_re, Real.one_rpow]
   rw [hcol, ← algebraMap_smul ℂ s P, Complex.coe_algebraMap, matrixLpGauge_smul hp,
     Complex.norm_real, Real.norm_of_nonneg hs_nonneg, hP_gauge, mul_one]
-
-/-- The Schatten `1`-gauge (trace norm) of `columnSquare` of a family of rank-one operators with
-common unit source vector `ξ` is `√(∑ k, ‖η k‖ ^ 2)`. -/
-theorem matrixLpGauge_one_columnSquare_rankOne [Fintype ι]
-    (η : ι → EuclideanSpace ℂ m) {ξ : EuclideanSpace ℂ m} (hξ : ‖ξ‖ = 1) :
-    matrixLpGauge 1 (columnSquare fun k =>
-      CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ (η k) ξ)) =
-      √(∑ k, ‖η k‖ ^ 2) :=
-  matrixLpGauge_columnSquare_rankOne zero_lt_one η hξ
 
 end ColumnRow
 

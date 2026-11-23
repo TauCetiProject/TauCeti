@@ -150,26 +150,6 @@ private theorem norm_sum_conj_sum_sq_le {x : ι → A} (hx : ∀ i, IsSelfAdjoin
   have hstar (i : ι) : star (x i) = x i := (hx i).star_eq
   simpa only [hstar, sq] using h
 
-private theorem norm_sum_alternating_four_le {x : ι → A} (hx : ∀ i, IsSelfAdjoint (x i)) :
-    ‖∑ i, ∑ j, x i * x j * x i * x j‖ ≤ ‖∑ i, x i * x i‖ ^ 2 := by
-  let a : ι × ι → A := fun p => x p.1 * x p.2
-  have hle (S : A) (hS : S = ∑ i, x i * (∑ j, x j * x j) * x i) : √‖S‖ ≤ ‖∑ i, x i * x i‖ :=
-    (Real.sqrt_le_sqrt (hS ▸ norm_sum_conj_sum_sq_le hx)).trans_eq (Real.sqrt_sq (norm_nonneg _))
-  have hrow : ‖rowSquare a‖ ≤ ‖∑ i, x i * x i‖ := by
-    rw [norm_rowSquare]; refine hle _ ?_; rw [Fintype.sum_prod_type]
-    exact Finset.sum_congr rfl fun _ _ => by
-      simp [a, Finset.mul_sum, Finset.sum_mul, (hx _).star_eq, mul_assoc]
-  have hcol : ‖columnSquare a‖ ≤ ‖∑ i, x i * x i‖ := by
-    rw [norm_columnSquare]; refine hle _ ?_; rw [Fintype.sum_prod_type_right]
-    exact Finset.sum_congr rfl fun _ _ => by
-      simp [a, Finset.mul_sum, Finset.sum_mul, (hx _).star_eq, mul_assoc]
-  have hprod : (∑ i, ∑ j, x i * x j * x i * x j) = ∑ p : ι × ι, a p * a p := by
-    rw [Fintype.sum_prod_type]
-    simp only [a, mul_assoc]
-  rw [hprod]
-  exact (norm_sum_mul_le_norm_rowSquare_mul_norm_columnSquare a a).trans <|
-    (mul_le_mul hrow hcol (norm_nonneg _) (norm_nonneg _)).trans_eq (sq _).symm
-
 /-- **Pisier–Haagerup fourth-moment inequality**: for any finite family `x : ι → A` of self-adjoint
 elements in a non-unital C⋆-algebra,
 `‖|ι → ℤˣ|⁻¹ • ∑ ε, (∑ i, ε i • x i)^4‖ ≤ 3 * ‖∑ i, x i * x i‖ ^ 2`. -/
@@ -192,7 +172,8 @@ theorem norm_inv_card_smul_sum_units_smul_mul₄_le [DecidableEq ι] {x : ι →
           ‖∑ i, x i * (∑ j, x j * x j) * x i‖ := norm_add₃_le
     _ ≤ ‖∑ i, x i * x i‖ ^ 2 + ‖∑ i, x i * x i‖ ^ 2 + ‖∑ i, x i * x i‖ ^ 2 :=
         add_le_add (add_le_add (by simpa only [sq] using norm_mul_le (∑ i, x i * x i) _)
-          (norm_sum_alternating_four_le hx)) (norm_sum_conj_sum_sq_le hx)
+          (Finset.norm_sum_alternating_four_le Finset.univ fun i _ => hx i))
+          (norm_sum_conj_sum_sq_le hx)
     _ = 3 * ‖∑ i, x i * x i‖ ^ 2 := by ring
 
 end FourthMoment
