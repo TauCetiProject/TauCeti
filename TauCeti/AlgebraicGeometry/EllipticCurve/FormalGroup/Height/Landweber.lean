@@ -53,9 +53,7 @@ Landweber regular whenever the classifying map `ℤ[a₁, ⋯, a₆] → R` of a
 (`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_of_span_c₄_Δ_eq_top`,
 `WeierstrassCurve.isLandweberRegular_formalGroup_of_flat`). In particular, the formal group of
 the universal elliptic curve over `ℤ[a₁, ⋯, a₆][Δ⁻¹]` is Landweber regular
-(`WeierstrassCurve.Universal.isLandweberRegular_formalGroup_ellipticCurve`), and flat base change
-from `ℤ[a₁, ⋯, a₆][Δ⁻¹]` gives Landweber regularity whenever `W.specializeElliptic` is flat
-(`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_elliptic`).
+(`WeierstrassCurve.Universal.isLandweberRegular_formalGroup_ellipticCurve`).
 
 Flatness of the classifying map `Spec R → M_ell` to the moduli stack is a weaker condition. The
 Weierstrass cubics form a smooth surjective atlas `Spec ℤ[a₁, ⋯, a₆]` of the stack of cubic
@@ -86,9 +84,8 @@ regular on `R` (`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_univers
 * `WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_of_span_c₄_Δ_eq_top` and
   `WeierstrassCurve.isLandweberRegular_formalGroup_of_flat`: Landweber regularity when the
   classifying map `ℤ[a₁, ⋯, a₆] → R` is flat.
-* `WeierstrassCurve.Universal.isLandweberRegular_formalGroup_ellipticCurve` and
-  `WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_elliptic`: Landweber regularity of the
-  universal elliptic curve and along flat `W.specializeElliptic`.
+* `WeierstrassCurve.Universal.isLandweberRegular_formalGroup_ellipticCurve`: Landweber regularity
+  of the universal elliptic curve.
 * `WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_universalChange`: Landweber regularity
   when the classifying map to the moduli stack is flat, tested on the Weierstrass atlas.
 
@@ -253,16 +250,6 @@ theorem isLandweberRegular_formalGroup_ellipticCurve :
     fun _ hp ↦ isWeaklyRegular_natCast_coeff_invariantDifferential_ellipticCurve hp
 
 end Universal
-
-/-- **Landweber regularity for elliptic curves with flat elliptic classifying morphism.** If `W`
-is an elliptic Weierstrass curve over `R` whose classifying morphism
-`W.specializeElliptic : ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹] →+* R` is flat, then `formalGroup W` is
-Landweber regular on `R`. -/
-theorem isLandweberRegular_formalGroup_of_flat_elliptic (hflat : W.specializeElliptic.Flat) :
-    (formalGroup W).IsLandweberRegular R := by
-  have h := Universal.isLandweberRegular_formalGroup_ellipticCurve.map_of_flat hflat
-  rwa [← Universal.ellipticCurve.map_formalGroup W.specializeElliptic,
-    W.map_specializeElliptic] at h
 
 end Elliptic
 

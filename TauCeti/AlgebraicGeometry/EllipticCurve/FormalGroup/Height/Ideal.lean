@@ -246,14 +246,9 @@ theorem isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat
   algebraize [W.specialize]
   have h :=
     (Universal.isRegular_natCast_coeff_invariantDifferential hp).toIsWeaklyRegular.of_flat (S := R)
-  have hA : algebraMap (MvPolynomial Coeff ℤ) R
-      (PowerSeries.coeff (p - 1)
-        (formalGroup Universal.curve).invariantDifferential) =
-      PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential := by
-    rw [RingHom.algebraMap_toAlgebra,
-      ← Universal.curve.coeff_invariantDifferential_formalGroup_map W.specialize]
-    simp only [W.map_specialize]
-  simpa [← hA] using h
+  rw [← W.map_specialize]
+  simpa only [List.map_cons, List.map_nil, map_natCast, RingHom.algebraMap_toAlgebra,
+    map_formalGroup, FormalGroup.coeff_invariantDifferential_map] using h
 
 namespace Universal
 
