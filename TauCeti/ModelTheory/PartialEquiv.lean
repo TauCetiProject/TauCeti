@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.ModelTheory.PartialEquiv
+import TauCeti.ModelTheory.Basic
 
 /-!
 # Composition of partial equivalences
@@ -28,6 +29,9 @@ the image under `g` of the codomain of `f`. It is monotone in both partial equiv
 * `FirstOrder.Language.PartialEquiv.cod_comp_eq_cod_iff`: a composite has the codomain of the
   second partial equivalence exactly when the codomain of the first is the domain of the second.
 * `FirstOrder.Language.PartialEquiv.comp_le_comp`: composition is monotone in both arguments.
+* `FirstOrder.Language.DirectLimit.exists_equiv_of_iSup_eq_top`: a directed system of partial
+  equivalences whose domains and codomains cover both structures assembles into an isomorphism
+  extending every member.
 * `FirstOrder.Language.FGEquiv.exists_le_and_le_dom_of_fg`: in a family of finitely generated
   partial equivalences closed under forth extensions, every member extends to cover any finitely
   generated substructure.
@@ -48,17 +52,14 @@ theorem toEquiv_apply_of_le {f g : M ≃ₚ[L] N} (h : f ≤ g) {x : M} (hx : x 
   congrArg Subtype.val (toEquiv_inclusion_apply h ⟨x, hx⟩)
 
 /-- A partial equivalence preserves binary relations on elements of its domain. -/
+@[simp]
 theorem map_rel_two (f : M ≃ₚ[L] N) (R : L.Relations 2) (x y : f.dom) :
     Structure.RelMap R ![(f.toEquiv x : N), f.toEquiv y] ↔
       Structure.RelMap R ![x.val, y.val] := by
-  have h1 : (fun i => (f.toEquiv (![x, y] i) : N)) = ![(f.toEquiv x : N), f.toEquiv y] :=
-    funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
-  have h2 : (fun i => ((![x, y] i : f.dom) : M)) = ![x.val, y.val] :=
-    funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
-  have h : Structure.RelMap R (fun i => (f.toEquiv (![x, y] i) : N)) ↔
-      Structure.RelMap R (fun i => ((![x, y] i : f.dom) : M)) :=
-    f.toEquiv.map_rel R ![x, y]
-  simpa only [h1, h2] using h
+  change Structure.RelMap R ![f.cod.subtype (f.toEquiv x), f.cod.subtype (f.toEquiv y)] ↔
+    Structure.RelMap R ![f.dom.subtype x, f.dom.subtype y]
+  rw [StrongHomClass.map_rel_two f.cod.subtype, StrongHomClass.map_rel_two f.dom.subtype]
+  exact StrongHomClass.map_rel_two f.toEquiv R x y
 
 section comp
 
@@ -149,5 +150,17 @@ theorem FGEquiv.exists_le_and_le_dom_of_fg {T : Set (L.FGEquiv M N)}
     refine ⟨g₂, hg₂, ?_, hgg₁.trans hg₁g₂⟩
     rw [Finset.coe_insert, Set.insert_subset_iff]
     exact ⟨ha, hs.trans (dom_le_dom hg₁g₂)⟩
+
+/-- A directed system of partial equivalences whose domains and codomains cover both structures
+assembles into a global isomorphism lying above every member. -/
+theorem DirectLimit.exists_equiv_of_iSup_eq_top {ι : Type*} [Preorder ι] [Nonempty ι]
+    [IsDirectedOrder ι] (C : ι →o M ≃ₚ[L] N)
+    (hdom : (⨆ i, (C i).dom) = ⊤) (hcod : (⨆ i, (C i).cod) = ⊤) :
+    ∃ e : M ≃[L] N, ∀ i, C i ≤ e.toEmbedding.toPartialEquiv := by
+  have hdom' : (DirectLimit.partialEquivLimit C).dom = ⊤ := hdom
+  have hcod' : (DirectLimit.partialEquivLimit C).cod = ⊤ := hcod
+  refine ⟨PartialEquiv.toEquivOfEqTop hdom' hcod', fun i => ?_⟩
+  rw [PartialEquiv.toEquivOfEqTop_toEmbedding, Embedding.toPartialEquiv_toEmbedding hdom']
+  exact DirectLimit.le_partialEquivLimit C i
 
 end FirstOrder.Language

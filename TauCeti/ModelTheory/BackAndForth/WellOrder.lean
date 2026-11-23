@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.BackAndForth.PotentialIso
-public import TauCeti.ModelTheory.Order
+public import Mathlib.ModelTheory.Order
 
 /-!
 # Potential isomorphism of well-ordered structures
@@ -132,16 +132,14 @@ theorem exists_forall_le_equiv_of_isWellOrder_rel {S : Set (L.FGEquiv M N)} (hS 
     exact (pair_right_unique hforth hback hrel ⟨f.val, f.property, hx, rfl⟩
       ⟨h, hh, hdom hx, rfl⟩).symm⟩
   let C : S →o M ≃ₚ[L] N := ⟨fun f => f.val.val, fun _ _ h => h⟩
-  let F := DirectLimit.partialEquivLimit C
-  have hdom : F.dom = ⊤ := top_unique fun m _ => by
+  have hdom : (⨆ f : S, (C f).dom) = ⊤ := top_unique fun m _ => by
     obtain ⟨g, hg, hm, -⟩ := hforth f₀ hf₀ m
-    exact PartialEquiv.dom_le_dom (DirectLimit.le_partialEquivLimit C ⟨g, hg⟩) hm
-  have hcod : F.cod = ⊤ := top_unique fun n _ => by
+    exact le_iSup (fun f : S => (C f).dom) ⟨g, hg⟩ hm
+  have hcod : (⨆ f : S, (C f).cod) = ⊤ := top_unique fun n _ => by
     obtain ⟨g, hg, hn, -⟩ := hback f₀ hf₀ n
-    exact PartialEquiv.cod_le_cod (DirectLimit.le_partialEquivLimit C ⟨g, hg⟩) hn
-  refine ⟨PartialEquiv.toEquivOfEqTop hdom hcod, fun f hf => ?_⟩
-  rw [PartialEquiv.toEquivOfEqTop_toEmbedding, Embedding.toPartialEquiv_toEmbedding hdom]
-  exact DirectLimit.le_partialEquivLimit C ⟨f, hf⟩
+    exact le_iSup (fun f : S => (C f).cod) ⟨g, hg⟩ hn
+  obtain ⟨e, he⟩ := DirectLimit.exists_equiv_of_iSup_eq_top C hdom hcod
+  exact ⟨e, fun f hf => he ⟨f, hf⟩⟩
 
 /-- Potential isomorphism out of a structure carrying a well-ordering preserved by all finitely
 generated partial equivalences yields an isomorphism, with no cardinality assumption on either

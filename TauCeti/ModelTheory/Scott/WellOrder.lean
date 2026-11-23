@@ -37,8 +37,8 @@ its models.
 
 ## Main results
 
-* `TauCeti.realize_ordinalScottSentence_iff`: the countable models of the Scott sentence of a
-  countable ordinal are exactly the orders isomorphic to that ordinal.
+* `TauCeti.realize_ordinalScottSentence_iff`: the models of the Scott sentence of a
+  countable ordinal, of any cardinality, are exactly the orders isomorphic to that ordinal.
 * `TauCeti.realize_scottSentenceAt_iff_of_isWellOrder` and
   `TauCeti.realize_scottSentence_iff_of_isWellOrder`: for a countable relational structure
   well-ordered by a binary relation symbol, its Scott sentence holds in a structure of any
@@ -155,16 +155,7 @@ theorem scott_isomorphism_of_isWellOrder {L : Language.{u, v}}
       (inferInstance : IsWellOrder M (fun x y => RelMap lt ![x, y]))
   exact realize_scottSentence_iff_of_isWellOrder (L := L.graphLanguage) M (GraphRelation.base lt) N
 
-private theorem nonempty_equiv_order_iff {M : Type w} {N : Type w'}
-    [Language.order.Structure M] [LE M] [Language.order.OrderedStructure M]
-    [Language.order.Structure N] [LE N] [Language.order.OrderedStructure N] :
-    Nonempty (M ≃[Language.order] N) ↔ Nonempty (M ≃o N) := by
-  refine ⟨fun ⟨e⟩ => ?_, fun ⟨e⟩ => ⟨StrongHomClass.toEquiv e⟩⟩
-  let := StrongHomClass.toOrderIsoClass Language.order M N (M ≃[Language.order] N)
-  exact ⟨OrderIso.ofClass e⟩
-
 /-- A countable ordinal satisfies its own Scott sentence. -/
-@[simp]
 theorem realize_ordinalScottSentence_self {β : Ordinal.{w}} (hβ : β < ω₁) :
     letI := orderStructure β.ToType
     SentenceInf.Realize (ordinalScottSentence β hβ) β.ToType := by
@@ -173,16 +164,16 @@ theorem realize_ordinalScottSentence_self {β : Ordinal.{w}} (hβ : β < ω₁) 
   rw [ordinalScottSentence_def]
   exact realize_scottSentence_self _
 
-/-- The Scott sentence of a countable ordinal `β` holds in a countable ordered structure, in any
-universe, exactly when that structure is order-isomorphic to `β`. -/
+/-- The Scott sentence of a countable ordinal `β` holds in an ordered structure of any
+cardinality, in any universe, exactly when that structure is order-isomorphic to `β`. -/
 @[simp]
 theorem realize_ordinalScottSentence_iff {β : Ordinal.{w}} (hβ : β < ω₁) (N : Type w')
-    [Language.order.Structure N] [LE N] [Language.order.OrderedStructure N] [Countable N] :
+    [Language.order.Structure N] [LE N] [Language.order.OrderedStructure N] :
     SentenceInf.Realize (ordinalScottSentence β hβ) N ↔ Nonempty (β.ToType ≃o N) := by
   let := orderStructure β.ToType
   have := Cardinal.countable_toType_of_lt_omega_one hβ
-  rw [ordinalScottSentence_def, realize_scottSentence_iff]
-  exact nonempty_equiv_order_iff
+  rw [ordinalScottSentence_def, realize_scottSentence_iff_of_wellFoundedLT]
+  exact order.nonempty_equiv_order_iff
 
 /-- Every countable order `M` has an `Lω₁ω` sentence in the language of orders that holds in a
 countable order, in any universe, exactly when that order is isomorphic to `M`. For a countable
@@ -194,7 +185,7 @@ theorem exists_sentenceω_realize_iff_nonempty_orderIso (M : Type w) [LE M] [Cou
       SentenceInf.Realize σ N ↔ Nonempty (M ≃o N) := by
   let := orderStructure M
   obtain ⟨σ, -, hσ⟩ := scott_isomorphism.{_, _, _, w'} (L := Language.order) M
-  exact ⟨σ, fun N _ _ _ _ => (hσ N).trans nonempty_equiv_order_iff⟩
+  exact ⟨σ, fun N _ _ _ _ => (hσ N).trans order.nonempty_equiv_order_iff⟩
 
 /-- Every countable well-order `M` has an `Lω₁ω` sentence in the language of orders that holds in
 an order `N` of any cardinality, in any universe, exactly when `N` is isomorphic to `M`. -/
@@ -206,6 +197,6 @@ theorem exists_sentenceω_realize_iff_nonempty_orderIso_of_wellFoundedLT
   let := orderStructure M
   exact ⟨scottSentence (L := Language.order) M, fun N _ _ _ =>
     (realize_scottSentence_iff_of_wellFoundedLT (L := Language.order) M N).trans
-      nonempty_equiv_order_iff⟩
+      order.nonempty_equiv_order_iff⟩
 
 end TauCeti

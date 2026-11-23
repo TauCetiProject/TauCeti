@@ -13,6 +13,7 @@ public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Order.Filter.Ultrafilter.Basic
 public import Mathlib.Order.OrderIsoNat
 import Mathlib.Order.InitialSeg
+import TauCeti.ModelTheory.Basic
 
 /-!
 # Ordered structures from the order of a type, and non-well-founded models
@@ -41,6 +42,8 @@ the copies of `M` as its models.
 
 ## Main results
 
+* `FirstOrder.Language.order.nonempty_equiv_order_iff`: isomorphism in `Language.order` between
+  ordered structures is equivalent to order isomorphism.
 * `FirstOrder.Language.Equiv.subsingleton_of_isWellOrder_rel`,
   `FirstOrder.Language.Equiv.subsingleton_of_isWellOrder`,
   `FirstOrder.Language.Equiv.subsingleton_of_wellFoundedLT`: rigidity of well-ordered structures.
@@ -64,6 +67,16 @@ theorem finite_linearOrderTheory (L : Language) [L.IsOrdered] : L.linearOrderThe
 instance orderedStructure_orderStructure (M : Type*) [LE M] :
     @OrderedStructure Language.order M _ _ (orderStructure M) :=
   @OrderedStructure.mk _ _ _ _ (orderStructure M) fun _ ↦ Iff.rfl
+
+/-- An isomorphism in `Language.order` between ordered structures is equivalent to an order
+isomorphism. -/
+theorem order.nonempty_equiv_order_iff {M N : Type*}
+    [Language.order.Structure M] [LE M] [Language.order.OrderedStructure M]
+    [Language.order.Structure N] [LE N] [Language.order.OrderedStructure N] :
+    Nonempty (M ≃[Language.order] N) ↔ Nonempty (M ≃o N) := by
+  refine ⟨fun ⟨e⟩ => ?_, fun ⟨e⟩ => ⟨StrongHomClass.toEquiv e⟩⟩
+  let := StrongHomClass.toOrderIsoClass Language.order M N (M ≃[Language.order] N)
+  exact ⟨OrderIso.ofClass e⟩
 
 /-- Expanding a language by the order symbol preserves the interpretation of `≤`. -/
 instance orderedStructure_sum [L.Structure M] [LE M] [Language.order.Structure M]
@@ -94,9 +107,7 @@ theorem subsingleton_of_isWellOrder (lt : L.Relations 2)
     [IsWellOrder M (fun x y => RelMap lt ![x, y])] : Subsingleton (M ≃[L] N) :=
   subsingleton_of_isWellOrder_rel
     (r := fun x y => RelMap lt ![x, y]) (s := fun x y => RelMap lt ![x, y])
-    fun e x y => by
-      have h : (e ∘ ![x, y]) = ![e x, e y] := funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
-      simpa only [h] using (e.map_rel lt ![x, y]).symm
+    fun e x y => (StrongHomClass.map_rel_two e lt x y).symm
 
 /-- If `M` is an ordered structure whose order is a well-order, there is at most one
 `L`-isomorphism `M ≃[L] N`, with no order assumption on `N`. -/
@@ -106,12 +117,9 @@ theorem subsingleton_of_wellFoundedLT [IsOrdered L] [LinearOrder M] [WellFounded
     (r := (· < ·))
     (s := fun x y => RelMap (leSymb (L := L)) ![x, y] ∧ ¬ RelMap (leSymb (L := L)) ![y, x])
     fun e x y => by
-      have hmap (a b : M) : RelMap (leSymb (L := L)) ![a, b] ↔
-          RelMap (leSymb (L := L)) ![e a, e b] := by
-        have h : (e ∘ ![a, b]) = ![e a, e b] := funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
-        simpa only [h] using (e.map_rel (leSymb (L := L)) ![a, b]).symm
       simpa only [lt_iff_le_not_ge, relMap_leSymb, Matrix.cons_val_zero, Matrix.cons_val_one] using
-        and_congr (hmap x y) (not_congr (hmap y x))
+        and_congr (StrongHomClass.map_rel_two e (leSymb (L := L)) x y).symm
+          (not_congr (StrongHomClass.map_rel_two e (leSymb (L := L)) y x).symm)
 
 end Equiv
 

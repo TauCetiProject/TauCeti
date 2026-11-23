@@ -7,14 +7,14 @@ module
 
 public import TauCeti.ModelTheory.Scott.WellOrder
 import Mathlib.Algebra.Order.Ring.Rat
-import TauCeti.ModelTheory.WellOrdering
 import TauCeti.ModelTheory.WellOrdering.Bounded
 
 /-!
 # Well-orders of bounded type and rational chains
 
-Examples exercising `TauCeti.ModelTheory.WellOrdering`, `TauCeti.ModelTheory.WellOrdering.Bounded`,
-`TauCeti.ModelTheory.BackAndForth.WellOrder`, and `TauCeti.ModelTheory.Scott.WellOrder`:
+Examples exercising `TauCeti.ModelTheory.WellOrdering.Basic`,
+`TauCeti.ModelTheory.WellOrdering.Bounded`, `TauCeti.ModelTheory.BackAndForth.WellOrder`, and
+`TauCeti.ModelTheory.Scott.WellOrder`:
 * `boundedWellOrderSentence` on `Language.order` (interpreting `.le` as `<`) characterizes
   well-orders of order type below a countable ordinal `α`, and `α` itself is not a model;
 * rational `lt`-chains witness ill-foundedness both via `wellFounded_iff_isEmpty_descending_chain`

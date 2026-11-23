@@ -64,28 +64,19 @@ theorem exists_le_equiv_of_cg {S : Set (L.FGEquiv M N)}
   let C : ℕ →o M ≃ₚ[L] N :=
     ⟨fun n => (Order.sequenceOfCofinals (⟨g, hg⟩ : S) D n).val.val,
       fun _ _ hij => Order.sequenceOfCofinals.monotone (⟨g, hg⟩ : S) D hij⟩
-  let F := DirectLimit.partialEquivLimit C
-  have hXdom : X ⊆ F.dom := by
-    intro x hx
-    have hxmem := Order.sequenceOfCofinals.encode_mem (⟨g, hg⟩ : S) D
-      (Sum.inl (⟨x, hx⟩ : X))
-    exact PartialEquiv.dom_le_dom (DirectLimit.le_partialEquivLimit C
-      (Encodable.encode (Sum.inl (⟨x, hx⟩ : X) : X ⊕ Y) + 1)) hxmem
-  have hYcod : Y ⊆ F.cod := by
-    intro y hy
-    have hymem := Order.sequenceOfCofinals.encode_mem (⟨g, hg⟩ : S) D
-      (Sum.inr (⟨y, hy⟩ : Y))
-    exact PartialEquiv.cod_le_cod (DirectLimit.le_partialEquivLimit C
-      (Encodable.encode (Sum.inr (⟨y, hy⟩ : Y) : X ⊕ Y) + 1)) hymem
-  have hdom : F.dom = ⊤ := by
+  have hXdom : X ⊆ (⨆ n, (C n).dom : L.Substructure M) := fun x hx =>
+    le_iSup (fun n => (C n).dom) (Encodable.encode (Sum.inl (⟨x, hx⟩ : X) : X ⊕ Y) + 1)
+      (Order.sequenceOfCofinals.encode_mem (⟨g, hg⟩ : S) D (Sum.inl (⟨x, hx⟩ : X)))
+  have hYcod : Y ⊆ (⨆ n, (C n).cod : L.Substructure N) := fun y hy =>
+    le_iSup (fun n => (C n).cod) (Encodable.encode (Sum.inr (⟨y, hy⟩ : Y) : X ⊕ Y) + 1)
+      (Order.sequenceOfCofinals.encode_mem (⟨g, hg⟩ : S) D (Sum.inr (⟨y, hy⟩ : Y)))
+  have hdom : (⨆ n, (C n).dom) = ⊤ := by
     rwa [← top_le_iff, ← hXgen, Substructure.closure_le]
-  have hcod : F.cod = ⊤ := by
+  have hcod : (⨆ n, (C n).cod) = ⊤ := by
     rwa [← top_le_iff, ← hYgen, Substructure.closure_le]
-  refine ⟨PartialEquiv.toEquivOfEqTop hdom hcod, ?_⟩
+  obtain ⟨e, he⟩ := DirectLimit.exists_equiv_of_iSup_eq_top C hdom hcod
   -- The chain starts at `g`: this is the defining equation of `Order.sequenceOfCofinals` at `0`.
-  have hC0 : C 0 = g.val := rfl
-  rw [PartialEquiv.toEquivOfEqTop_toEmbedding, Embedding.toPartialEquiv_toEmbedding hdom]
-  exact hC0 ▸ DirectLimit.le_partialEquivLimit C 0
+  exact ⟨e, he 0⟩
 
 /-- Potentially isomorphic countably generated structures are isomorphic. Countable generation
 suffices even when function symbols generate uncountably many elements. -/

@@ -24,6 +24,8 @@ Additions to Mathlib's `Mathlib.ModelTheory.Basic`.
   `FirstOrder.Language.nonempty_structure_of_isRelational`: a type carries some `L`-structure
   when it is nonempty, and over any type when `L` is relational. On the empty type a constant
   symbol has no interpretation, so some such hypothesis is needed.
+* `FirstOrder.Language.StrongHomClass.map_rel_two`: strong homomorphisms preserve binary relation
+  symbols on explicit pairs `![x, y]`.
 
 ## Main definitions
 
@@ -65,6 +67,14 @@ every relation empty. -/
 instance nonempty_structure_of_isRelational [L.IsRelational] (M : Type*) :
     Nonempty (L.Structure M) :=
   ⟨⟨fun f => isEmptyElim f, fun _ _ => False⟩⟩
+
+/-- Strong homomorphisms preserve binary relation symbols on pairs. -/
+theorem StrongHomClass.map_rel_two {M N : Type*} [L.Structure M] [L.Structure N]
+    {F : Type*} [FunLike F M N] [L.StrongHomClass F M N]
+    (f : F) (R : L.Relations 2) (x y : M) :
+    Structure.RelMap R ![f x, f y] ↔ Structure.RelMap R ![x, y] := by
+  simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq] using
+    StrongHomClass.map_rel f R ![x, y]
 
 /-- The `L`-structure on `M` interpreting the binary relation symbol `lt` by `r`, every other
 relation symbol as empty and every function symbol as the constant `m`. -/

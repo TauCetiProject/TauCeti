@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Symbols
-public import TauCeti.ModelTheory.WellOrdering
-import Mathlib.SetTheory.Cardinal.Regular
+public import TauCeti.ModelTheory.Scott.Sentence
+public import TauCeti.ModelTheory.WellOrdering.Basic
+import TauCeti.ModelTheory.Order
 import TauCeti.ModelTheory.Scott.WellOrder
-import TauCeti.ModelTheory.Sublanguage
 
 /-!
 # Definability of well-orderings of bounded countable type
@@ -20,10 +20,10 @@ any universe) are precisely the structures in which `lt` is a well-order of orde
 sentence `boundedWellOrderSentence lt α hα` whose models are precisely the structures in which `lt`
 is a well-order of order type strictly below `α`.
 
-The construction restricts to the single-relation sublanguage `symbSublang ∅ {⟨2, lt⟩}`, forms the
-canonical Scott sentence of each countable well-order `(β.ToType, <)`, pushes it forward into `L`,
-and takes the countable disjunction over `β < α`. Because potential isomorphism out of a
-well-ordered structure is isomorphism without any cardinality restriction
+The construction installs `lt` as `≤` via `IsOrdered L := ⟨lt⟩`, forms the canonical Scott sentence
+of each countable well-order `(β.ToType, <)` in `Language.order`, pushes it forward into `L` along
+`orderLHom L`, and takes the countable disjunction over `β < α`. Because potential isomorphism out
+of a well-ordered structure is isomorphism without any cardinality restriction
 (`TauCeti.realize_scottSentence_iff_of_isWellOrder`), these sentences characterize the well-order
 type among all models, not only countable ones, and mention no function symbols and no relation
 symbol other than `lt`.
@@ -44,10 +44,14 @@ among countable nonempty structures) if and only if `α < ω₁`. Moreover, for 
 
 ## Main results
 
-* `FirstOrder.Language.realize_wellOrderTypeSentence_iff` and
+* `FirstOrder.Language.wellOrderTypeSentence_def` and
+  `FirstOrder.Language.boundedWellOrderSentence_def`: construction equations for the sentences.
+* `FirstOrder.Language.realize_wellOrderTypeSentence_iff_nonempty_relIso`,
+  `FirstOrder.Language.realize_wellOrderTypeSentence_iff`, and
   `FirstOrder.Language.realize_wellOrderTypeSentence_iff_eq`: semantics of `wellOrderTypeSentence`
   across arbitrary universes and cardinalities.
-* `FirstOrder.Language.realize_boundedWellOrderSentence_iff` and
+* `FirstOrder.Language.realize_boundedWellOrderSentence_iff_exists`,
+  `FirstOrder.Language.realize_boundedWellOrderSentence_iff`, and
   `FirstOrder.Language.realize_boundedWellOrderSentence_iff_lt`: semantics of
   `boundedWellOrderSentence` across arbitrary universes and cardinalities.
 * `FirstOrder.Language.le_of_forall_type_lt_of_realize_boundedWellOrderSentence`: sharpness of the
@@ -75,65 +79,6 @@ open scoped Ordinal
 
 variable {L : Language.{u, v}}
 
-/-! ### Single-relation sublanguage helpers -/
-
-/-- The single-relation sublanguage of `L` retaining only `lt`. -/
-private abbrev ltSublang (lt : L.Relations 2) : Language.{u, v} :=
-  symbSublang (∅ : Set (Σ n, L.Functions n)) {⟨2, lt⟩}
-
-/-- The sole binary relation symbol of `ltSublang lt`. -/
-private def ltSymb (lt : L.Relations 2) : (ltSublang lt).Relations 2 :=
-  ⟨lt, Set.mem_singleton _⟩
-
-/-- The `ltSublang lt`-structure on a type with `<`, interpreting `ltSymb lt` as `<`. -/
-@[instance_reducible]
-private def ltSublangStructure (lt : L.Relations 2) (α : Type*) [LT α] :
-    (ltSublang lt).Structure α where
-  funMap f := isEmptyElim f
-  RelMap {n} _ xs :=
-    match n, xs with
-    | 2, xs => xs 0 < xs 1
-    | _, _ => False
-
-private theorem ltSublangStructure_relMap (lt : L.Relations 2) {α : Type*} [LT α]
-    (R : (ltSublang lt).Relations 2) (xs : Fin 2 → α) :
-    (ltSublangStructure lt α).RelMap R xs ↔ xs 0 < xs 1 :=
-  Iff.rfl
-
-private theorem nonempty_equiv_ltSublang_iff (lt : L.Relations 2) (α : Type o) [LT α]
-    (M : Type w) [L.Structure M] :
-    letI := ltSublangStructure lt α
-    letI := (symbSublangIncl (∅ : Set (Σ n, L.Functions n)) {⟨2, lt⟩}).reduct M
-    Nonempty (α ≃[ltSublang lt] M) ↔
-      Nonempty ((· < · : α → α → Prop) ≃r fun x y : M => RelMap lt ![x, y]) := by
-  let := ltSublangStructure lt α
-  let ι := symbSublangIncl (∅ : Set (Σ n, L.Functions n)) {⟨2, lt⟩}
-  let := ι.reduct M
-  have hreduct (R : (ltSublang lt).Relations 2) (ys : Fin 2 → M) :
-      (ι.reduct M).RelMap R ys ↔ RelMap lt ys := by
-    have hR : R.val = lt := by simpa using Set.mem_singleton_iff.mp R.property
-    have h := (ι.map_onRelation (M := M) R ys).symm
-    rw [symbSublangIncl_onRelation, hR] at h
-    exact Iff.of_eq h
-  constructor
-  · rintro ⟨e⟩
-    refine ⟨⟨e.toEquiv, fun {a b} => ?_⟩⟩
-    have hmap := e.map_rel (ltSymb lt) ![a, b]
-    have hcomp : (e ∘ ![a, b]) = ![e.toEquiv a, e.toEquiv b] :=
-      funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
-    rw [hcomp, hreduct, ltSublangStructure_relMap] at hmap
-    simpa only [Matrix.cons_val_zero, Matrix.cons_val_one] using hmap
-  · rintro ⟨e⟩
-    refine ⟨{ toEquiv := e.toEquiv, map_fun' := fun f => isEmptyElim f, map_rel' := ?_ }⟩
-    intro n R xs
-    rcases R with ⟨r, hr⟩
-    rw [Set.mem_singleton_iff] at hr
-    cases hr
-    have hcomp : (e.toFun ∘ xs) = ![e (xs 0), e (xs 1)] :=
-      funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
-    rw [hcomp, hreduct, ltSublangStructure_relMap]
-    exact e.map_rel_iff
-
 private theorem type_eq_of_relMap_iff (lt : L.Relations 2) (γ : Ordinal.{w})
     [L.Structure γ.ToType] (hrel : ∀ x y : γ.ToType, RelMap lt ![x, y] ↔ x < y)
     (hwo : IsWellOrder γ.ToType (fun x y => RelMap lt ![x, y])) :
@@ -148,18 +93,26 @@ private theorem type_eq_of_relMap_iff (lt : L.Relations 2) (γ : Ordinal.{w})
 precisely when `lt` well-orders `M` with order type equal to the countable ordinal `α`. -/
 noncomputable def wellOrderTypeSentence (lt : L.Relations 2) (α : Ordinal.{o})
     (hα : α < ω₁) : L.Sentenceω :=
-  letI := ltSublangStructure lt α.ToType
+  letI : L.IsOrdered := ⟨lt⟩
+  letI := @orderStructure α.ToType ⟨(· < ·)⟩
   haveI : Countable α.ToType := Cardinal.countable_toType_of_lt_omega_one hα
-  haveI : Countable ({(⟨2, lt⟩ : Σ n, L.Relations n)} : Set _) :=
-    (Set.countable_singleton _).to_subtype
-  (symbSublangIncl (∅ : Set (Σ n, L.Functions n)) {⟨2, lt⟩}).onBoundedFormulaInf
-    (TauCeti.scottSentence (L := ltSublang lt) α.ToType)
+  (orderLHom L).onBoundedFormulaInf (TauCeti.scottSentence (L := Language.order) α.ToType)
+
+/-- `wellOrderTypeSentence lt α hα` is the pushforward along `orderLHom L` (with `lt` as `≤`) of
+the canonical Scott sentence of `(α.ToType, <)`. -/
+theorem wellOrderTypeSentence_def (lt : L.Relations 2) (α : Ordinal.{o}) (hα : α < ω₁) :
+    wellOrderTypeSentence lt α hα =
+      letI : L.IsOrdered := ⟨lt⟩
+      letI := @orderStructure α.ToType ⟨(· < ·)⟩
+      haveI : Countable α.ToType := Cardinal.countable_toType_of_lt_omega_one hα
+      (orderLHom L).onBoundedFormulaInf (TauCeti.scottSentence (L := Language.order) α.ToType) :=
+  (rfl)
 
 /-- `wellOrderTypeSentence` mentions no function symbols. -/
 @[simp]
 theorem functionsIn_wellOrderTypeSentence (lt : L.Relations 2) {α : Ordinal.{o}} (hα : α < ω₁) :
     (wellOrderTypeSentence lt α hα).functionsIn = ∅ := by
-  rw [wellOrderTypeSentence, LHom.functionsIn_onBoundedFormulaInf]
+  rw [wellOrderTypeSentence_def, LHom.functionsIn_onBoundedFormulaInf]
   ext ⟨n, f⟩
   simp only [Set.mem_image, Set.mem_empty_iff_false, iff_false, not_exists, not_and]
   intro s _
@@ -168,27 +121,40 @@ theorem functionsIn_wellOrderTypeSentence (lt : L.Relations 2) {α : Ordinal.{o}
 /-- `wellOrderTypeSentence` mentions no relation symbol other than `lt`. -/
 theorem relationsIn_wellOrderTypeSentence_subset (lt : L.Relations 2) {α : Ordinal.{o}}
     (hα : α < ω₁) : (wellOrderTypeSentence lt α hα).relationsIn ⊆ {⟨2, lt⟩} := by
-  rw [wellOrderTypeSentence, LHom.relationsIn_onBoundedFormulaInf]
+  let : L.IsOrdered := ⟨lt⟩
+  rw [wellOrderTypeSentence_def, LHom.relationsIn_onBoundedFormulaInf]
   rintro _ ⟨⟨n, r⟩, -, rfl⟩
-  simpa only [symbSublangIncl_onRelation] using r.property
+  cases r
+  simp only [Set.mem_singleton_iff]
+  rfl
 
-private theorem realize_wellOrderTypeSentence_iff_nonempty_relIso (lt : L.Relations 2)
+/-- A structure `M` of any cardinality, in any universe, satisfies `wellOrderTypeSentence lt α hα`
+if and only if `(α.ToType, <)` is relation-isomorphic to `(M, lt)`. -/
+theorem realize_wellOrderTypeSentence_iff_nonempty_relIso (lt : L.Relations 2)
     {α : Ordinal.{o}} (hα : α < ω₁) (M : Type w) [L.Structure M] :
     SentenceInf.Realize (wellOrderTypeSentence lt α hα) M ↔
       Nonempty ((· < · : α.ToType → α.ToType → Prop) ≃r fun x y : M => RelMap lt ![x, y]) := by
-  let := ltSublangStructure lt α.ToType
+  let : L.IsOrdered := ⟨lt⟩
+  let instLEα : LE α.ToType := ⟨(· < ·)⟩
+  let instStructα : Language.order.Structure α.ToType := @orderStructure α.ToType instLEα
+  let instOrdα : @Language.order.OrderedStructure α.ToType _ instLEα instStructα :=
+    @orderedStructure_orderStructure α.ToType instLEα
   have : Countable α.ToType := Cardinal.countable_toType_of_lt_omega_one hα
-  have : Countable ({(⟨2, lt⟩ : Σ n, L.Relations n)} : Set _) :=
-    (Set.countable_singleton _).to_subtype
   have : IsWellOrder α.ToType (fun x y =>
-      (ltSublangStructure lt α.ToType).RelMap (ltSymb lt) ![x, y]) := by
-    simpa only [ltSublangStructure_relMap, Matrix.cons_val_zero, Matrix.cons_val_one] using
-      (inferInstance : IsWellOrder α.ToType (· < ·))
-  let ι := symbSublangIncl (∅ : Set (Σ n, L.Functions n)) {⟨2, lt⟩}
-  let := ι.reduct M
-  rw [wellOrderTypeSentence, ι.realize_sentenceInf_onBoundedFormulaInf,
-    TauCeti.realize_scottSentence_iff_of_isWellOrder (L := ltSublang lt) α.ToType (ltSymb lt) M]
-  exact nonempty_equiv_ltSublang_iff lt α.ToType M
+      instStructα.RelMap (leSymb : Language.order.Relations 2) ![x, y]) := by
+    change IsWellOrder α.ToType (· < ·)
+    infer_instance
+  let instStructM : Language.order.Structure M := (orderLHom L).reduct M
+  let instLEM : LE M := ⟨fun x y => RelMap lt ![x, y]⟩
+  let instOrdM : @Language.order.OrderedStructure M _ instLEM instStructM :=
+    ⟨fun x => by
+      change RelMap lt x ↔ RelMap lt ![x 0, x 1]
+      rw [← (finTwoArrowEquiv M).symm_apply_apply x]
+      rfl⟩
+  rw [wellOrderTypeSentence_def, (orderLHom L).realize_sentenceInf_onBoundedFormulaInf,
+    TauCeti.realize_scottSentence_iff_of_isWellOrder (L := Language.order) α.ToType leSymb M]
+  exact @order.nonempty_equiv_order_iff α.ToType M instStructα instLEα instOrdα
+    instStructM instLEM instOrdM
 
 /-- **Semantics of `wellOrderTypeSentence`.** A structure `M` of any cardinality, in any universe,
 satisfies `wellOrderTypeSentence lt α hα` if and only if `lt` well-orders `M` with order type `α`
@@ -245,25 +211,38 @@ noncomputable def boundedWellOrderSentence (lt : L.Relations 2) (α : Ordinal.{o
     (TauCeti.IndexCoding.ofEncodableWith (Encodable.ofCountable (Set.Iio α)))
     fun β => wellOrderTypeSentence lt β.val (β.property.trans hα)
 
+/-- `boundedWellOrderSentence lt α hα` is the countable disjunction of `wellOrderTypeSentence`
+over all ordinals `β < α`. -/
+theorem boundedWellOrderSentence_def (lt : L.Relations 2) (α : Ordinal.{o}) (hα : α < ω₁) :
+    boundedWellOrderSentence lt α hα =
+      haveI : Countable (Set.Iio α) := (Cardinal.countable_Iio_of_lt_omega_one hα).to_subtype
+      BoundedFormulaInf.iSupAlong
+        (TauCeti.IndexCoding.ofEncodableWith (Encodable.ofCountable (Set.Iio α)))
+        fun β => wellOrderTypeSentence lt β.val (β.property.trans hα) :=
+  (rfl)
+
 /-- `boundedWellOrderSentence` mentions no function symbols. -/
 @[simp]
 theorem functionsIn_boundedWellOrderSentence (lt : L.Relations 2) {α : Ordinal.{o}} (hα : α < ω₁) :
     (boundedWellOrderSentence lt α hα).functionsIn = ∅ := by
-  rw [boundedWellOrderSentence, BoundedFormulaInf.functionsIn_iSupAlong]
+  rw [boundedWellOrderSentence_def, BoundedFormulaInf.functionsIn_iSupAlong]
   simp
 
 /-- `boundedWellOrderSentence` mentions no relation symbol other than `lt`. -/
 theorem relationsIn_boundedWellOrderSentence_subset (lt : L.Relations 2) {α : Ordinal.{o}}
     (hα : α < ω₁) : (boundedWellOrderSentence lt α hα).relationsIn ⊆ {⟨2, lt⟩} := by
-  rw [boundedWellOrderSentence, BoundedFormulaInf.relationsIn_iSupAlong]
+  rw [boundedWellOrderSentence_def, BoundedFormulaInf.relationsIn_iSupAlong]
   exact Set.iUnion_subset fun β => relationsIn_wellOrderTypeSentence_subset lt (β.property.trans hα)
 
-private theorem realize_boundedWellOrderSentence_iff_exists (lt : L.Relations 2)
+/-- A structure `M` of any cardinality, in any universe, satisfies
+`boundedWellOrderSentence lt α hα` if and only if it satisfies `wellOrderTypeSentence lt β` for
+some ordinal `β < α`. -/
+theorem realize_boundedWellOrderSentence_iff_exists (lt : L.Relations 2)
     {α : Ordinal.{o}} (hα : α < ω₁) (M : Type w) [L.Structure M] :
     SentenceInf.Realize (boundedWellOrderSentence lt α hα) M ↔
       ∃ (β : Ordinal.{o}) (hβ : β < α),
         SentenceInf.Realize (wellOrderTypeSentence lt β (hβ.trans hα)) M := by
-  simp only [boundedWellOrderSentence, SentenceInf.realize_def, FormulaInf.realize_def,
+  simp only [boundedWellOrderSentence_def, SentenceInf.realize_def, FormulaInf.realize_def,
     BoundedFormulaInf.realize_iSupAlong, Subtype.exists, Set.mem_Iio]
 
 /-- **Semantics of `boundedWellOrderSentence`.** A structure `M` of any cardinality, in any
