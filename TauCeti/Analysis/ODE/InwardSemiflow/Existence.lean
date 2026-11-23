@@ -359,13 +359,11 @@ theorem Convex.eventually_notMem_nhdsLT_forwardSemiflow {C U : Set E} (hC : Conv
     (hb : IsLUB (forwardSemiflowInterval X (U ∩ C) x) b) {K : Set E} (hK : IsCompact K)
     (hKU : K ⊆ U ∩ C) (hX_in : ∀ y ∈ K, X y ∈ strictInwardCone C y) :
     ∀ᶠ t in 𝓝[<] b, forwardSemiflow X (U ∩ C) t x ∉ K := by
-  by_contra h
-  obtain ⟨z, hzK, hz⟩ := hK.exists_mapClusterPt_of_frequently (by simpa [not_eventually] using h)
+  refine hX.eventually_notMem_nhdsLT_forwardSemiflow ⟨0, h0⟩ hb hK fun z hzK ↦ ?_
   obtain ⟨r, hr, τ, hτ, _, _, _, hsub, -⟩ :=
     hC.exists_local_forwardSemiflow_continuousOn hU hX (hKU hzK) (hX_in z hzK)
-  exact hX.not_mapClusterPt_nhdsLT_forwardSemiflow ⟨0, h0⟩ hb
-    ⟨ball z r, Metric.ball_mem_nhds z hr, τ, hτ, fun y hy ↦
-      hsub y ⟨hy.1, hy.2.2⟩ ⟨hτ.le, by linarith⟩⟩ hz
+  exact ⟨ball z r, Metric.ball_mem_nhds z hr, τ, hτ,
+    fun y hy ↦ hsub y ⟨hy.1, hy.2.2⟩ ⟨hτ.le, by linarith⟩⟩
 
 /-- **Global forward existence under compact trapping.** If a trajectory of `forwardSemiflow` stays
 inside a compact subset `K ⊆ U ∩ C` on which `X` is strictly inward to `C`, then it is defined on
@@ -377,12 +375,11 @@ theorem Convex.forwardSemiflowInterval_eq_Ici_of_isCompact_of_mapsTo {C U : Set 
     (hmem : MapsTo (fun t ↦ forwardSemiflow X (U ∩ C) t x)
       (forwardSemiflowInterval X (U ∩ C) x) K) :
     forwardSemiflowInterval X (U ∩ C) x = Ici 0 := by
-  refine forwardSemiflowInterval_eq_Ici_of_not_bddAbove fun hbdd ↦ ?_
-  have hlub := isLUB_csSup ⟨0, h0⟩ hbdd
-  obtain ⟨t, ht, htK⟩ := ((eventually_mem_set.mpr
-    (Ioo_mem_nhdsLT (pos_of_isLUB_forwardSemiflowInterval h0 hlub))).and
-      (hC.eventually_notMem_nhdsLT_forwardSemiflow hU hX h0 hlub hK hKU hX_in)).exists
-  exact htK (hmem (hlub.forwardSemiflowInterval_eq_Ico ▸ ⟨ht.1.le, ht.2⟩))
+  refine hX.forwardSemiflowInterval_eq_Ici_of_isCompact_of_mapsTo ⟨0, h0⟩ hK (fun z hzK ↦ ?_) hmem
+  obtain ⟨r, hr, τ, hτ, _, _, _, hsub, -⟩ :=
+    hC.exists_local_forwardSemiflow_continuousOn hU hX (hKU hzK) (hX_in z hzK)
+  exact ⟨ball z r, Metric.ball_mem_nhds z hr, τ, hτ,
+    fun y hy ↦ hsub y ⟨hy.1, hy.2.2⟩ ⟨hτ.le, by linarith⟩⟩
 
 /-- **Global forward completeness on a compact convex set.** Every locally Lipschitz strictly inward
 vector field on a compact convex set `C` generates a forward semiflow defined for all `t ≥ 0`. -/

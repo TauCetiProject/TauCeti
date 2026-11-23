@@ -18,7 +18,8 @@ Defines `TauCeti.forwardSemiflowInterval`, `TauCeti.forwardSemiflowDomain`, and
 `TauCeti.forwardSemiflow` for an autonomous vector field `X` on an arbitrary state subset `S`, and
 proves maximal interval characterization, forward uniqueness, trajectory derivatives, the semiflow
 cocycle law, Grönwall spatial Lipschitz/continuity propagation, cocycle continuation of local
-product-neighborhood properties, and non-accumulation under uniform local restart.
+product-neighborhood properties, and non-accumulation, compact escape, and global completeness
+under uniform local restart.
 
 ## References
 
@@ -513,5 +514,39 @@ theorem not_mapClusterPt_nhdsLT_forwardSemiflow (hX : LocallyLipschitzOn S X) {x
     hsub _ ⟨hs_V, forwardSemiflow_mem hsJ⟩
   linarith [hb.1 ((hX.add_mem_forwardSemiflowInterval_iff hsJ hτ.le).mpr huJ),
     (le_max_right 0 (b - τ)).trans_lt hs_Ioo.1]
+
+/-- **Forward compact-escape lemma under uniform local restart.** If `X` is locally Lipschitz on
+`S`, `forwardSemiflowInterval X S x` is nonempty with finite least upper bound `b`, and every point
+of a compact set `K` admits a neighborhood in `S` with a uniform positive forward existence time,
+then `forwardSemiflow X S · x` eventually leaves `K` as `t → b⁻`. -/
+theorem eventually_notMem_nhdsLT_forwardSemiflow (hX : LocallyLipschitzOn S X) {x : E} {b : ℝ}
+    (hne : (forwardSemiflowInterval X S x).Nonempty)
+    (hb : IsLUB (forwardSemiflowInterval X S x) b) {K : Set E} (hK : IsCompact K)
+    (hrest : ∀ z ∈ K, ∃ V ∈ 𝓝 z, ∃ τ > 0, ∀ y ∈ V ∩ S, τ ∈ forwardSemiflowInterval X S y) :
+    ∀ᶠ t in 𝓝[<] b, forwardSemiflow X S t x ∉ K := by
+  by_contra h
+  obtain ⟨z, hzK, hz⟩ := hK.exists_mapClusterPt_of_frequently (by simpa [not_eventually] using h)
+  exact hX.not_mapClusterPt_nhdsLT_forwardSemiflow hne hb (hrest z hzK) hz
+
+/-- **Global forward existence under compact trapping and uniform local restart.** If `X` is
+locally Lipschitz on `S`, `forwardSemiflowInterval X S x` is nonempty, every point of a compact
+set `K` admits a neighborhood in `S` with a uniform positive forward existence time, and
+`forwardSemiflow X S · x` maps `forwardSemiflowInterval X S x` into `K`, then
+`forwardSemiflowInterval X S x = Ici 0`. -/
+theorem forwardSemiflowInterval_eq_Ici_of_isCompact_of_mapsTo (hX : LocallyLipschitzOn S X)
+    {x : E} (hne : (forwardSemiflowInterval X S x).Nonempty) {K : Set E} (hK : IsCompact K)
+    (hrest : ∀ z ∈ K, ∃ V ∈ 𝓝 z, ∃ τ > 0, ∀ y ∈ V ∩ S, τ ∈ forwardSemiflowInterval X S y)
+    (hmem : MapsTo (fun t ↦ forwardSemiflow X S t x) (forwardSemiflowInterval X S x) K) :
+    forwardSemiflowInterval X S x = Ici 0 := by
+  obtain ⟨t₀, ht₀⟩ := hne
+  have h0 : (0 : ℝ) ∈ forwardSemiflowInterval X S x :=
+    Icc_subset_forwardSemiflowInterval_of_mem ht₀
+      ⟨le_rfl, nonneg_of_mem_forwardSemiflowInterval ht₀⟩
+  refine forwardSemiflowInterval_eq_Ici_of_not_bddAbove fun hbdd ↦ ?_
+  have hlub := isLUB_csSup ⟨0, h0⟩ hbdd
+  obtain ⟨t, ht, htK⟩ := ((eventually_mem_set.mpr
+    (Ioo_mem_nhdsLT (pos_of_isLUB_forwardSemiflowInterval h0 hlub))).and
+      (hX.eventually_notMem_nhdsLT_forwardSemiflow ⟨0, h0⟩ hlub hK hrest)).exists
+  exact htK (hmem (hlub.forwardSemiflowInterval_eq_Ico ▸ ⟨ht.1.le, ht.2⟩))
 
 end LocallyLipschitzOn
