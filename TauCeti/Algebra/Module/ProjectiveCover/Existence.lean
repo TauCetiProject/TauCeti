@@ -118,7 +118,7 @@ theorem exists_isProjectiveCover_comp_subtype [IsSemiprimaryRing R] {N : Type w}
   · -- `range e` is a direct summand of the projective module `N`, hence projective.
     exact Module.Projective.of_split (LinearMap.range e).subtype
       (e.codRestrict (LinearMap.range e) fun x => LinearMap.mem_range_self e x)
-      (LinearMap.ext fun x => Subtype.ext (hfix _ x.2))
+      (LinearMap.ext fun x => Subtype.ext (hfix _ x.property))
   · -- The image of `P` spans `M` modulo the superfluous `J • M`, hence is all of `M`.
     rw [← LinearMap.range_eq_top, LinearMap.range_comp, Submodule.range_subtype]
     refine hsuperM.eq_top_of_sup_eq_top (top_le_iff.mp fun x _ => ?_)

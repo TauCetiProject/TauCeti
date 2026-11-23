@@ -11,7 +11,7 @@ import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Analytic.ExtractZeros
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
-import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodPair
+import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 
 /-!
@@ -137,7 +137,7 @@ private theorem thetaExp_ne_zero (hτ : 0 < τ.im) {z : ℂ}
     (hz : z ∉ (UpperHalfPlane.periodPair ⟨τ, hτ⟩).lattice) : thetaExp τ z ≠ 0 := by
   refine mul_ne_zero (exp_ne_zero _) (qTheta_ne_zero (norm_exp_two_pi_I_mul_lt_one hτ)
     fun k hk ↦ hz ?_)
-  rw [← Complex.exp_int_mul, ← mul_assoc, mul_comm (k : ℂ), mul_assoc] at hk
+  rw [← Complex.exp_intCast_mul, ← mul_assoc, mul_comm (k : ℂ), mul_assoc] at hk
   obtain ⟨n, hn⟩ := Complex.exp_eq_exp_iff_exists_int.mp hk
   refine PeriodPair.mem_lattice.mpr ⟨k, n, ?_⟩
   have h2 : 2 * π * I ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
@@ -165,7 +165,7 @@ private theorem hasDerivAt_thetaInv_zero (hτ : 0 < τ.im) :
   · funext z
     simp [thetaInv]
   rw [tprod_one_sub_pow_eq_exp_mul_eta, tprod_one_sub_pow_eq_exp_mul_eta, mul_pow, mul_pow,
-    ModularForm.eta_neg_one_div_sq hτ, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul]
+    ModularForm.eta_neg_one_div_sq hτ, ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul]
   have he : cexp (π * I * (1 / 6 / τ + τ / 6)) * cexp (((2 : ℕ) : ℂ) * -(2 * π * I * τ / 24)) =
       cexp (((2 : ℕ) : ℂ) * -(2 * π * I * (-1 / τ) / 24)) := by
     rw [← Complex.exp_add]

@@ -45,7 +45,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
-open scoped TensorProduct AdicCompletionExtension NumberField.LiesOver
+open scoped TensorProduct AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -199,7 +200,7 @@ norms from the completions of `L` at the places above `v`. -/
 theorem isFiniteLocalNorm_iff (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
     IsFiniteLocalNorm K L v x ↔
       ∃ u : (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
-          (w.1.adicCompletion L)ˣ,
+          (w.val.adicCompletion L)ˣ,
         (∏ᶠ w, Algebra.normUnits (v.adicCompletion K) (u w)) =
           Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x :=
   mem_range_normUnits_adicCompletion_iff K L v _
@@ -208,7 +209,7 @@ theorem isFiniteLocalNorm_iff (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
 norms from the completions of `L` at the places above `w`. -/
 theorem isInfiniteLocalNorm_iff (w : InfinitePlace K) (x : Kˣ) :
     IsInfiniteLocalNorm K L w x ↔
-      ∃ u : (w' : {w' : InfinitePlace L // w'.LiesOver w}) → w'.1.Completionˣ,
+      ∃ u : (w' : {w' : InfinitePlace L // w'.LiesOver w}) → w'.val.Completionˣ,
         (∏ᶠ w', Algebra.normUnits w.Completion (u w')) =
           Units.map (algebraMap K w.Completion).toMonoidHom x :=
   mem_range_normUnits_completion_iff K L w _

@@ -123,7 +123,7 @@ noncomputable def harmonicRep (d : ℕ) :
     Representation R (Matrix.orthogonalGroup σ R) (harmonicSubmodule σ R d) where
   toFun g := (linearSubst (g : Matrix σ σ R)ᵀ).toLinearMap.restrict fun _ hp ↦
     linearSubst_mem_harmonicSubmodule
-      (by rw [transpose_transpose, ← mem_orthogonalGroup_iff']; exact g.2) hp
+      (by rw [transpose_transpose, ← mem_orthogonalGroup_iff']; exact g.property) hp
   map_one' := LinearMap.ext fun p ↦ Subtype.ext <| by simp
   map_mul' g h := LinearMap.ext fun p ↦ Subtype.ext <|
     (congrArg (linearSubst · (p : MvPolynomial σ R))

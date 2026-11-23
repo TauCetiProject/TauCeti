@@ -13,8 +13,7 @@ public import TauCeti.Geometry.Lie.Interior
 
 This file proves a tangent-to-identity power limit for finite-dimensional real Lie groups and
 applies it to the product of two exponential curves. The resulting Trotter formula supplies the
-addition-closure input for the subgroup Lie algebra in Deliverable A, Layer 2 of the Lie-groups
-roadmap.
+addition-closure input for the Lie subalgebra of a closed subgroup.
 
 ## Main results
 
@@ -31,8 +30,6 @@ roadmap.
 
 * [H. Liu, *Notes for Lie Groups & Representations*](https://member.ipmu.jp/henry.liu/notes/f16-lie-groups.pdf),
   notes from Andrei Okounkov's Fall 2016 course, Proposition 2.4.3.
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 2, "The Lie subalgebra of a subgroup".
 -/
 
 public section

@@ -58,7 +58,7 @@ theorem mem_checkerboardSpinorSubgroup_iff (hn : Even n)
     (x : (checkerboardLattice n).DiscriminantGroup) :
     x ∈ checkerboardSpinorSubgroup n ↔ x = 0 ∨ x = checkerboardSpinorClass n := by
   rw [checkerboardSpinorSubgroup]
-  exact mem_zmultiples_checkerboardSpinorClass_iff n hn x
+  exact mem_zmultiples_checkerboardSpinorClass_iff_of_even n hn x
 
 /-- The spinor subgroup has order two in even positive rank. -/
 theorem natCard_checkerboardSpinorSubgroup [NeZero n] (hn : Even n) :
@@ -74,7 +74,7 @@ noncomputable def checkerboardPlusCarrier : (checkerboardLattice n).Intermediate
 /-- In even rank, the spinor enlargement is the union of `Dₙ` and its spinor coset. -/
 @[simp]
 theorem mem_checkerboardPlusCarrier_iff (hn : Even n) (x : Fin n → ℚ) :
-    x ∈ (checkerboardPlusCarrier n).1 ↔
+    x ∈ (checkerboardPlusCarrier n).val ↔
       x ∈ (checkerboardLattice n).carrier ∨
         x - checkerboardSpinor n ∈ (checkerboardLattice n).carrier := by
   rw [checkerboardPlusCarrier, checkerboardSpinorSubgroup, checkerboardSpinorClass_def]
@@ -87,7 +87,7 @@ theorem mem_checkerboardPlusCarrier_iff (hn : Even n) (x : Fin n → ℚ) :
 to the spinor modulo `Dₙ`. -/
 theorem mem_checkerboardPlusCarrier_iff_of_sub_mem (hn : Even n) {g : Fin n → ℚ}
     (hg : g - checkerboardSpinor n ∈ checkerboardCarrier n) (x : Fin n → ℚ) :
-    x ∈ (checkerboardPlusCarrier n).1 ↔
+    x ∈ (checkerboardPlusCarrier n).val ↔
       x ∈ checkerboardCarrier n ∨ x - g ∈ checkerboardCarrier n := by
   rw [mem_checkerboardPlusCarrier_iff n hn, checkerboardLattice_carrier,
     ← sub_add_sub_cancel x g (checkerboardSpinor n), Submodule.add_mem_iff_left _ hg]
@@ -174,7 +174,7 @@ theorem toIntegralLattice_eq_checkerboardPlusLattice (hn : 8 ∣ n)
 /-- The carrier of `Dₙ⁺` is the inverse image of the spinor subgroup. -/
 @[simp]
 theorem checkerboardPlusLattice_carrier (hn : 8 ∣ n) :
-    (checkerboardPlusLattice n hn).carrier = (checkerboardPlusCarrier n).1 := by
+    (checkerboardPlusLattice n hn).carrier = (checkerboardPlusCarrier n).val := by
   rw [checkerboardPlusLattice, IntermediateCarrier.IsIntegral.toIntegralLattice_carrier]
 
 /-- Isotropic gluing along the spinor subgroup recovers the concrete spinor enlargement. -/
@@ -240,8 +240,8 @@ theorem mem_checkerboardLattice_carrier_of_mem_vectorsOfNorm_two (hn : 8 ∣ n) 
     {x : checkerboardPlusLattice n hn}
     (hx : x ∈ (checkerboardPlusLattice n hn).vectorsOfNorm 2) :
     (x : Fin n → ℚ) ∈ (checkerboardLattice n).carrier := by
-  have hmem : (x : Fin n → ℚ) ∈ (checkerboardPlusCarrier n).1 :=
-    checkerboardPlusLattice_carrier n hn ▸ x.2
+  have hmem : (x : Fin n → ℚ) ∈ (checkerboardPlusCarrier n).val :=
+    checkerboardPlusLattice_carrier n hn ▸ x.property
   rw [mem_checkerboardPlusCarrier_iff n (even_iff_two_dvd.mpr (dvd_trans (by decide) hn))] at hmem
   refine hmem.resolve_right fun hs ↦ ?_
   rw [checkerboardLattice_carrier] at hs

@@ -110,12 +110,12 @@ def deFinettiEquiv [StandardBorelSpace α] :
       have h' : Measure.deFinettiBarycenter π₁.toMeasure =
           Measure.deFinettiBarycenter π₂.toMeasure :=
         congrArg (fun r : {ρ : ProbabilityMeasure (ℕ → α) // ExchangeableLaw ρ.toMeasure} =>
-          ProbabilityMeasure.toMeasure r.1) h
+          ProbabilityMeasure.toMeasure r.val) h
       simp only [Measure.deFinettiBarycenter_def] at h'
       exact ProbabilityMeasure.toMeasure_injective
         (TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq h'),
       fun ρ => by
-        obtain ⟨π, hπ, -⟩ := ρ.2.existsUnique_mixingLaw
+        obtain ⟨π, hπ, -⟩ := ρ.property.existsUnique_mixingLaw
         exact ⟨π, Subtype.ext (ProbabilityMeasure.toMeasure_injective hπ.symm)⟩⟩
 
 @[simp]
@@ -217,14 +217,17 @@ carried by the extreme — equivalently i.i.d. — exchangeable laws
 (`infinitePi_mem_extremePoints_exchangeable`), degenerating exactly on the extreme points
 themselves. -/
 theorem deFinettiBarycenter_mem_extremePoints_iff [StandardBorelSpace α]
-    {π : Measure (ProbabilityMeasure α)} [IsProbabilityMeasure π] :
+    {π : Measure (ProbabilityMeasure α)} :
     Measure.deFinettiBarycenter π ∈ extremePoints ℝ≥0∞ (exchangeableProbabilityMeasures α) ↔
       ∃ P : ProbabilityMeasure α, π = Measure.dirac P := by
-  rw [exchangeable_extreme_iff_iid]
-  refine ⟨fun ⟨P, hP⟩ => ⟨P, TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq ?_⟩,
-    fun ⟨P, hP⟩ => ⟨P, ?_⟩⟩
-  · simp only [← Measure.deFinettiBarycenter_def, hP, Measure.deFinettiBarycenter_dirac]
+  refine ⟨fun h => ?_, fun ⟨P, hP⟩ => ?_⟩
+  · have hπ : IsProbabilityMeasure π := (Measure.isProbabilityMeasure_deFinettiBarycenter_iff π).1
+      (mem_exchangeableProbabilityMeasures_iff.1 h.1).2
+    obtain ⟨P, hP⟩ := exchangeable_extreme_iff_iid.1 h
+    exact ⟨P, TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq (by
+      simp only [← Measure.deFinettiBarycenter_def, hP, Measure.deFinettiBarycenter_dirac])⟩
   · rw [hP, Measure.deFinettiBarycenter_dirac]
+    exact infinitePi_mem_extremePoints_exchangeable P
 
 end Probability
 

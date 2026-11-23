@@ -9,6 +9,9 @@ public import TauCeti.Topology.Covering.Quotient
 public import TauCeti.Topology.Homotopy.GenLoop.Contractible
 public import TauCeti.Topology.Homotopy.GenLoop.Covering
 public import TauCeti.Topology.Homotopy.GenLoop.Loop
+public import TauCeti.Topology.PathSpace.Moore.Covering
+public import TauCeti.Topology.PathSpace.Moore.Homotopy
+public import Mathlib.Topology.Homotopy.Affine
 
 /-!
 # Higher loop spaces of tori are contractible
@@ -29,12 +32,21 @@ In particular `Ω²Tⁿ` is path connected, as `π₂(Tⁿ) = 0`, and it is cont
 contractible: a torus is the basic aspherical space whose double loop space has the homology of a
 point. These statements are for the fixed-interval loop spaces with the compact-open topology.
 
+The same holds for the double Moore loop space `Ω_1 Ω_x (E / L)`, the strictly associative model:
+the double Moore loop map of the covering `E → E / L` is a homeomorphism
+(`IsCoveringMap.doubleMooreLoopSpaceHomeomorph`), and the straight-line contraction of `E` onto
+`e`, which fixes `e`, contracts the double Moore loops of `E`
+(`TauCeti.MooreLoopSpace.contractibleSpace_of_homotopicRel`). The single Moore loop space of a
+torus is not contractible: its path components are the elements of `π₁`.
+
 ## Main results
 
 * `AddSubgroup.contractibleSpace_genLoop_orbitRelQuotient`: `Ω^ N (E / L) x` is contractible for
   nontrivial `N`.
 * `AddSubgroup.contractibleSpace_loopSpace_loopSpace_orbitRelQuotient`: `Ω²(E / L)` is
   contractible.
+* `AddSubgroup.contractibleSpace_mooreLoopSpace_mooreLoopSpace_orbitRelQuotient`: the double Moore
+  loop space of `E / L` is contractible.
 
 ## References
 
@@ -71,5 +83,25 @@ theorem contractibleSpace_loopSpace_loopSpace_orbitRelQuotient
   have := L.contractibleSpace_genLoop_orbitRelQuotient (N := Fin 2) x
   ((GenLoop.homeomorphOfUnique (Fin 1)).symm.trans (GenLoop.genLoopLoopHomeomorph x 1))
     |>.contractibleSpace
+
+/-- **The double Moore loop space of a torus is contractible**: for a discrete subgroup `L` of a
+real topological vector space `E`, the double Moore loop space `Ω_1 Ω_x (E / L)` is contractible at
+every basepoint. -/
+theorem contractibleSpace_mooreLoopSpace_mooreLoopSpace_orbitRelQuotient
+    (x : AddAction.orbitRel.Quotient L E) :
+    ContractibleSpace
+      (TauCeti.MooreLoopSpace (TauCeti.MooreLoopSpace (AddAction.orbitRel.Quotient L E) x) 1) := by
+  obtain ⟨e, rfl⟩ := Quotient.mk_surjective x
+  -- `E` contracts onto `e` along straight lines, which fix `e`; so do its double Moore loops.
+  have hE : (ContinuousMap.id E).HomotopicRel (ContinuousMap.const E e) {e} :=
+    ⟨{ toHomotopy := .affine _ _
+       prop' t z hz := by
+         rw [Set.mem_singleton_iff] at hz
+         subst hz
+         simp }⟩
+  have := TauCeti.MooreLoopSpace.contractibleSpace_of_homotopicRel
+    (TauCeti.MooreLoopSpace.homotopicRel_id_const_one hE)
+  exact (IsCoveringMap.doubleMooreLoopSpaceHomeomorph (p := ⟨_, continuous_quotient_mk'⟩)
+    L.isAddQuotientCoveringMap_quotientMk.isCoveringMap e).symm.contractibleSpace
 
 end AddSubgroup

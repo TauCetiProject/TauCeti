@@ -45,7 +45,7 @@ theorem exists_isCompl_isHomogeneous_of_invariant
       linHom_apply, LinearMap.comp_apply]
   have hPmem (x : V) : P x ∈ U := by
     rw [hP_apply]
-    exact U.smul_mem _ <| U.sum_mem fun g _ ↦ hρU g (p (ρ g⁻¹ x)).2
+    exact U.smul_mem _ <| U.sum_mem fun g _ ↦ hρU g (p (ρ g⁻¹ x)).property
   have hPdeg : ∀ i, Set.MapsTo P (𝒱 i) (𝒱 i) := by
     intro i x hx
     rw [hP_apply]
@@ -53,7 +53,7 @@ theorem exists_isCompl_isHomogeneous_of_invariant
       h𝒱 g i (hpdeg i _ (h𝒱 g⁻¹ i hx))
   have hPid (x : U) : P x = x := by
     have hq (g : G) : q (ρ g⁻¹ x) = ρ g⁻¹ x := by
-      exact congrArg U.subtype (hp ⟨_, hρU g⁻¹ x.2⟩)
+      exact congrArg U.subtype (hp ⟨_, hρU g⁻¹ x.property⟩)
     rw [hP_apply]
     simp only [hq, ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one,
       one_apply_eq_self, Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul k,

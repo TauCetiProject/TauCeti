@@ -19,6 +19,8 @@ by `min a b * ‖x‖ ^ n`, provided at least one coefficient is nonnegative. Th
 may be negative, allowing the estimate to apply to quadratic forms with a signed mass term.
 `Prod.norm_mul_self_le_sq_add_sq_add_sq` bounds the squared sup norm on `ℝ³` by the sum of the
 squares of the coordinates.
+`TauCeti.exists_setOf_norm_fst_sq_add_norm_snd_sq_lt_subset` shows that the round balls
+`‖z.1‖² + ‖z.2‖² < r²` form a basis of neighbourhoods of the origin.
 -/
 
 public section
@@ -42,3 +44,21 @@ theorem Prod.norm_mul_self_le_sq_add_sq_add_sq (v : ℝ × ℝ × ℝ) :
     refine norm_prod_le_iff.2 ⟨?_, norm_prod_le_iff.2 ⟨?_, ?_⟩⟩ <;>
       refine Real.abs_le_sqrt ?_ <;> nlinarith [sq_nonneg v.1, sq_nonneg v.2.1, sq_nonneg v.2.2]
   exact (mul_self_le_mul_self (norm_nonneg v) hv).trans (Real.mul_self_sqrt (by positivity)).le
+
+namespace TauCeti
+
+open Topology
+
+/-- Every neighbourhood of the origin of a product of seminormed groups contains a round ball
+`‖z.1‖² + ‖z.2‖² < r²` with `r > 0`. -/
+theorem exists_setOf_norm_fst_sq_add_norm_snd_sq_lt_subset {E F : Type*} [SeminormedAddGroup E]
+    [SeminormedAddGroup F] {U : Set (E × F)} (hU : U ∈ 𝓝 0) :
+    ∃ r > 0, {z : E × F | ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 < r ^ 2} ⊆ U := by
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 hU
+  refine ⟨r, hr, fun z hz ↦ hball ?_⟩
+  have h1 : ‖z.1‖ < r := lt_of_pow_lt_pow_left₀ 2 hr.le (by nlinarith [sq_nonneg ‖z.2‖, hz.out])
+  have h2 : ‖z.2‖ < r := lt_of_pow_lt_pow_left₀ 2 hr.le (by nlinarith [sq_nonneg ‖z.1‖, hz.out])
+  rw [Metric.mem_ball, dist_zero_right, Prod.norm_def]
+  exact max_lt h1 h2
+
+end TauCeti

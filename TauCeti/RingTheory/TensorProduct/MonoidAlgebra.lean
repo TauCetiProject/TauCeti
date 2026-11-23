@@ -99,7 +99,7 @@ end Equiv
 group `G` is nonzero, then the base change `R[G] ⊗[R] k` of the group algebra over any commutative
 ring `R` mapping to `k` is a semisimple ring, being isomorphic to `k[G]`. -/
 instance isSemisimpleRing_tensor (R : Type*) [CommRing R] (k : Type*) [Field k] [Algebra R k]
-    (G : Type*) [Group G] [Finite G] [NeZero (Nat.card G : k)] :
+    (G : Type*) [Group G] [NeZero (Nat.card G : k)] :
     IsSemisimpleRing (MonoidAlgebra R G ⊗[R] k) :=
   (tensorAlgEquiv R k G).symm.toRingEquiv.isSemisimpleRing
 

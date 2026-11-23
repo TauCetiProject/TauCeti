@@ -46,6 +46,11 @@ public counting equivalence is stated using Mathlib's `DyckWord`.
 ## Main results
 
 * `TauCeti.TreeWalk.isTreeWalk_walkOf`: the walk of a Dyck pattern is a tree walk.
+* `TauCeti.TreeWalk.IsTreeWalk.up_and_down_of_lt_of_sym2_eq`,
+  `TauCeti.TreeWalk.IsTreeWalk.eq_and_eq_of_ne_of_sym2_eq`: the two steps traversing an unordered
+  edge are an up step and a down step in opposite directions.
+* `TauCeti.TreeWalk.IsTreeWalk.sym2_ne_of_lt_of_lt_of_lt_of_sym2_eq`: equal-edge step pairs do not
+  interleave.
 * `TauCeti.TreeWalk.closedTreeWalkEquiv`: closed tree walks of length `2 * k` (padded by zeros)
   are in bijection with Dyck words of semilength `k`.
 * `TauCeti.TreeWalk.card_closedTreeWalk`: there are `catalan k` of them.
@@ -288,6 +293,25 @@ private theorem not_exists_iterate_par_walkOf_eq_of_down {j c : ℕ} (hj : s j =
         rw [Function.iterate_succ_apply] at hn
         exact ih ⟨n, by simpa [par] using hn⟩
 
+/-- While no down step leaves `c` on `[c, M)`, the walk remains in the subtree of `c`. -/
+private theorem exists_iterate_par_walkOf_eq {c M : ℕ} (hcW : walkOf s c = c)
+    (hno : ∀ m, c ≤ m → m < M → s m = false → walkOf s m ≠ c) {m : ℕ} (hcm : c ≤ m)
+    (hmM : m ≤ M) :
+    ∃ n, (par (walkOf s))^[n] (walkOf s m) = c := by
+  induction m, hcm using Nat.le_induction with
+  | base => exact ⟨0, by simpa using hcW⟩
+  | succ m hm ih =>
+    obtain ⟨n, hn⟩ := ih (Nat.le_of_succ_le hmM)
+    cases hsm : s m
+    · have hne : walkOf s m ≠ c := hno m hm hmM hsm
+      cases n with
+      | zero => exact absurd (by simpa using hn) hne
+      | succ n =>
+        rw [Function.iterate_succ_apply] at hn
+        exact ⟨n, by rw [walkOf_down s hsm]; exact hn⟩
+    · exact ⟨n + 1, by
+        rw [walkOf_up s hsm, Function.iterate_succ_apply]; simpa [par] using hn⟩
+
 end Ancestors
 
 namespace IsDyckPattern
@@ -300,23 +324,7 @@ private theorem exists_down (hs : IsDyckPattern k s) {c : ℕ} (hc1 : 1 ≤ c) (
     ∃ m, c ≤ m ∧ m < 2 * k ∧ s m = false ∧ walkOf s m = c := by
   by_contra hno
   push Not at hno
-  have key : ∀ m, c ≤ m → m ≤ 2 * k → ∃ n, (par (walkOf s))^[n] (walkOf s m) = c := by
-    intro m hm
-    induction m, hm using Nat.le_induction with
-    | base => intro _; exact ⟨0, by simpa using hcW⟩
-    | succ m hm ih =>
-      intro hm2
-      obtain ⟨n, hn⟩ := ih (by omega)
-      cases hsm : s m
-      · have hne : walkOf s m ≠ c := hno m hm (by omega) hsm
-        cases n with
-        | zero => exact absurd (by simpa using hn) hne
-        | succ n =>
-          rw [Function.iterate_succ_apply] at hn
-          exact ⟨n, by rw [walkOf_down s hsm]; exact hn⟩
-      · exact ⟨n + 1, by
-          rw [walkOf_up s hsm, Function.iterate_succ_apply]; simpa [par] using hn⟩
-  obtain ⟨n, hn⟩ := key (2 * k) hc2 le_rfl
+  obtain ⟨n, hn⟩ := exists_iterate_par_walkOf_eq s hcW hno hc2 le_rfl
   rw [hs.walkOf_two_mul, iterate_par_zero] at hn
   omega
 
@@ -439,7 +447,8 @@ namespace IsTreeWalk
 variable {k : ℕ} {w : ℕ → ℕ} (hw : IsTreeWalk k w)
 include hw
 
-private theorem card_up : #{j ∈ range (2 * k) | w (j + 1) = j + 1} = k := by
+/-- A tree walk of length `2 * k` discovers a new vertex at exactly `k` steps. -/
+theorem card_up : #{j ∈ range (2 * k) | w (j + 1) = j + 1} = k := by
   have h := hw.card_vertices
   rw [card_filter, sum_range_succ'] at h
   have : ∑ i ∈ range (2 * k), (if w (i + 1) = i + 1 then 1 else 0) = k := by
@@ -447,8 +456,19 @@ private theorem card_up : #{j ∈ range (2 * k) | w (j + 1) = j + 1} = k := by
   rw [card_filter]
   exact this
 
+/-- Distinct discovery steps traverse distinct unordered edges. -/
+theorem injOn_edge_up :
+    Set.InjOn (fun i ↦ s(w i, w (i + 1)))
+      (↑{i ∈ range (2 * k) | w (i + 1) = i + 1} : Set ℕ) := by
+  intro i hi j hj he
+  simp only [mem_coe, mem_filter, mem_range] at hi hj
+  have hli := hw.le_self i hi.1.le
+  have hlj := hw.le_self j hj.1.le
+  simp only [hi.2, hj.2, Sym2.eq_iff] at he
+  omega
+
 /-- Every edge of a tree walk is the edge discovered by some up step. -/
-private theorem exists_up_edge {j : ℕ} (hj : j < 2 * k) :
+theorem exists_up_edge {j : ℕ} (hj : j < 2 * k) :
     ∃ i < 2 * k, w (i + 1) = i + 1 ∧ s(w j, w (j + 1)) = s(w i, i + 1) := by
   set U := {j ∈ range (2 * k) | w (j + 1) = j + 1} with hU
   set e : ℕ → Sym2 ℕ := fun j => s(w j, w (j + 1)) with he
@@ -462,13 +482,7 @@ private theorem exists_up_edge {j : ℕ} (hj : j < 2 * k) :
     rw [← h1] at h2
     simp at h2
     omega
-  have hinj : Set.InjOn e U := by
-    intro i hi i' hi' h
-    simp only [Finset.mem_coe, hU, mem_filter, mem_range] at hi hi'
-    have a1 := hw.le_self i (by omega)
-    have a2 := hw.le_self i' (by omega)
-    simp only [he, hi.2, hi'.2, Sym2.eq_iff] at h
-    omega
+  have hinj : Set.InjOn e U := hw.injOn_edge_up
   have hsub : U.image e ⊆ E := image_subset_image (filter_subset _ _)
   have hcard : #(U.image e) = k := by rw [card_image_of_injOn hinj, hU, hw.card_up]
   have heq : U.image e = E := eq_of_subset_of_card_le hsub (by omega)
@@ -539,6 +553,40 @@ theorem step_down {j : ℕ} (hj : j < 2 * k) (hn : ¬ w (j + 1) = j + 1) :
   simp only [nsmul_eq_mul, mul_neg, mul_one] at hlt
   linarith
 
+private theorem reverse_step_of_edge_eq {i j : ℕ} (hi : i < 2 * k) (hj : j < 2 * k)
+    (hup : w (i + 1) = i + 1) (hne : j ≠ i)
+    (he : s(w j, w (j + 1)) = s(w i, w (i + 1))) :
+    w j = i + 1 ∧ w (j + 1) = w i := by
+  rcases Sym2.eq_iff.mp he with h | h
+  · by_cases hjup : w (j + 1) = j + 1
+    · omega
+    · have hd := hw.step_down hj hjup
+      have hu := depth_succ_of_le (hw.le_self i hi.le)
+      rw [h.1, h.2, hup] at hd
+      omega
+  · exact ⟨h.1.trans hup, h.2⟩
+
+/-- An edge discovered at step `i` has precisely two occurrences: step `i` and a unique
+return step, with the opposite orientation. -/
+theorem exists_edge_fiber_eq_pair {i : ℕ} (hi : i < 2 * k) (hup : w (i + 1) = i + 1) :
+    ∃ j < 2 * k, w j = i + 1 ∧ w (j + 1) = w i ∧
+      {t ∈ range (2 * k) | s(w t, w (t + 1)) = s(w i, w (i + 1))} = {i, j} := by
+  let S := {t ∈ range (2 * k) | s(w t, w (t + 1)) = s(w i, w (i + 1))}
+  have hiS : i ∈ S := by simp [S, hi]
+  obtain ⟨a, b, hab, hS⟩ := card_eq_two.mp (hw.card_edge i hi)
+  have hS' : S = {a, b} := hS
+  have hj : ∃ j, j ≠ i ∧ S = {i, j} := by
+    rw [hS'] at hiS
+    simp only [mem_insert, mem_singleton] at hiS
+    rcases hiS with rfl | rfl
+    · exact ⟨b, hab.symm, hS'⟩
+    · exact ⟨a, hab, hS'.trans (pair_comm _ _)⟩
+  obtain ⟨j, hji, hpair⟩ := hj
+  have hjS : j ∈ S := by rw [hpair]; simp
+  obtain ⟨hj, he⟩ := mem_filter.mp hjS
+  obtain ⟨h₁, h₂⟩ := hw.reverse_step_of_edge_eq hi (mem_range.mp hj) hup hji he
+  exact ⟨j, mem_range.mp hj, h₁, h₂, hpair⟩
+
 /-- Up steps reconstruct the original tree walk on its full interval of definition. -/
 theorem walkOf_upSteps : ∀ j ≤ 2 * k, walkOf (upSteps k w) j = w j := by
   intro j
@@ -600,6 +648,70 @@ theorem isDyckPattern_upSteps : IsDyckPattern k (upSteps k w) where
   eq_false j hj := by
     simp only [upSteps, decide_eq_false_iff_not]
     omega
+
+/-- No step of a tree walk is a self-loop. -/
+theorem apply_ne_apply_succ {i : ℕ} (hi : i < 2 * k) : w i ≠ w (i + 1) := by
+  obtain ⟨u, hu, _, he⟩ := hw.exists_up_edge hi
+  have hle := hw.le_self u hu.le
+  intro h
+  rw [h, Sym2.eq_iff] at he
+  omega
+
+/-- When two steps `i < j < 2 * k` of a tree walk traverse the same unordered edge, the earlier
+step is the up step discovering vertex `i + 1` and the later step returns along the same edge from
+`i + 1` to `w i`. -/
+theorem up_and_down_of_lt_of_sym2_eq {i j : ℕ} (hij : i < j) (hj : j < 2 * k)
+    (he : s(w i, w (i + 1)) = s(w j, w (j + 1))) :
+    w (i + 1) = i + 1 ∧ w j = i + 1 ∧ w (j + 1) = w i := by
+  have hi : i < 2 * k := hij.trans hj
+  obtain ⟨u, hu, hu_up, heu⟩ := hw.exists_up_edge hi
+  have heu' : s(w i, w (i + 1)) = s(w u, w (u + 1)) := by simpa only [hu_up] using heu
+  obtain ⟨v, hv, hv1, hv2, hpair⟩ := hw.exists_edge_fiber_eq_pair hu hu_up
+  have huv : u < v := by have := hw.le_self v hv.le; omega
+  have hi_mem : i ∈ ({u, v} : Finset ℕ) := hpair ▸ mem_filter.mpr ⟨mem_range.mpr hi, heu'⟩
+  have hj_mem : j ∈ ({u, v} : Finset ℕ) :=
+    hpair ▸ mem_filter.mpr ⟨mem_range.mpr hj, he.symm.trans heu'⟩
+  simp only [mem_insert, mem_singleton] at hi_mem hj_mem
+  obtain ⟨rfl, rfl⟩ : i = u ∧ j = v := by omega
+  exact ⟨hu_up, hv1, hv2⟩
+
+/-- Distinct steps of a tree walk that traverse the same unordered edge traverse it in opposite
+directions. -/
+theorem eq_and_eq_of_ne_of_sym2_eq {i j : ℕ} (hi : i < 2 * k) (hj : j < 2 * k) (hij : i ≠ j)
+    (he : s(w i, w (i + 1)) = s(w j, w (j + 1))) :
+    w i = w (j + 1) ∧ w (i + 1) = w j := by
+  rcases lt_or_gt_of_ne hij with hlt | hlt
+  · obtain ⟨hi1, hj0, hj1⟩ := hw.up_and_down_of_lt_of_sym2_eq hlt hj he
+    exact ⟨hj1.symm, hi1.trans hj0.symm⟩
+  · obtain ⟨hj1, hi0, hi1⟩ := hw.up_and_down_of_lt_of_sym2_eq hlt hi he.symm
+    exact ⟨hi0.trans hj1.symm, hi1⟩
+
+/-- Equal-edge step pairs of a tree walk do not interleave. -/
+theorem sym2_ne_of_lt_of_lt_of_lt_of_sym2_eq {i₁ i₂ j₁ j₂ : ℕ} (h₁ : i₁ < i₂) (h₂ : i₂ < j₁)
+    (h₃ : j₁ < j₂) (h₄ : j₂ < 2 * k)
+    (he₁ : s(w i₁, w (i₁ + 1)) = s(w j₁, w (j₁ + 1))) :
+    s(w i₂, w (i₂ + 1)) ≠ s(w j₂, w (j₂ + 1)) := by
+  intro he₂
+  obtain ⟨hi₁, hj₁, hj₁_ret⟩ := hw.up_and_down_of_lt_of_sym2_eq (h₁.trans h₂) (by omega) he₁
+  obtain ⟨hi₂, hj₂, -⟩ := hw.up_and_down_of_lt_of_sym2_eq (h₂.trans h₃) h₄ he₂
+  set s := upSteps k w
+  have hw_eq (m : ℕ) (hm : m ≤ 2 * k) : walkOf s m = w m := hw.walkOf_upSteps m hm
+  have hsj₁ : s j₁ = false := by
+    have hle := hw.le_self i₁ (by omega)
+    simp only [s, upSteps, decide_eq_false_iff_not]
+    omega
+  -- Between `i₁ + 1` and `j₁`, the walk stays in the subtree of `i₁ + 1`, since leaving it by a
+  -- down step before `j₁` would prevent returning to `i₁ + 1` at time `j₁`.
+  obtain ⟨n, hn⟩ := exists_iterate_par_walkOf_eq s (M := j₁)
+    (by rw [hw_eq (i₁ + 1) (by omega), hi₁])
+    (fun m _ hm_lt hsm hm_eq ↦
+      not_exists_iterate_par_walkOf_eq_of_down s hsm hm_eq (by omega) j₁ hm_lt
+        ⟨0, by simp [hw_eq j₁ (by omega), hj₁]⟩)
+    (Nat.succ_le_succ h₁.le) (Nat.succ_le_of_lt h₂)
+  rw [hw_eq (i₂ + 1) (by omega), hi₂] at hn
+  exact not_exists_iterate_par_walkOf_eq_of_down s hsj₁
+    (by rw [hw_eq j₁ (by omega), hj₁]) (by omega) j₂ (by omega)
+    ⟨n, by rwa [hw_eq j₂ h₄.le, hj₂]⟩
 
 end IsTreeWalk
 
@@ -734,21 +846,21 @@ abbrev ClosedTreeWalk (k : ℕ) : Type := {w : ℕ → ℕ // IsTreeWalk k w ∧
 /-- Closed tree walks traversing every edge twice correspond to Dyck words: the Dyck word
 records which steps discover a new vertex. -/
 def closedTreeWalkEquiv (k : ℕ) : ClosedTreeWalk k ≃ {p : DyckWord // p.semilength = k} where
-  toFun w := ⟨dyckWordOf w.2.1.isDyckPattern_upSteps, semilength_dyckWordOf _⟩
+  toFun w := ⟨dyckWordOf w.property.1.isDyckPattern_upSteps, semilength_dyckWordOf _⟩
   invFun p :=
-    have hs : IsDyckPattern k (stepsOf p.1.toList) := by
-      have h := isDyckPattern_stepsOf p.1
-      rwa [p.2] at h
-    ⟨walkOf (stepsOf p.1.toList), isTreeWalk_walkOf hs, fun _ hi => hs.walkOf_eq_zero hi.le⟩
+    have hs : IsDyckPattern k (stepsOf p.val.toList) := by
+      have h := isDyckPattern_stepsOf p.val
+      rwa [p.property] at h
+    ⟨walkOf (stepsOf p.val.toList), isTreeWalk_walkOf hs, fun _ hi => hs.walkOf_eq_zero hi.le⟩
   left_inv w := by
     refine Subtype.ext (funext fun i => ?_)
-    have hs := w.2.1.isDyckPattern_upSteps
+    have hs := w.property.1.isDyckPattern_upSteps
     -- Unfold the equivalence's function and subtype projections to expose the walk equality.
-    change walkOf (stepsOf (dyckWordOf hs).toList) i = w.1 i
+    change walkOf (stepsOf (dyckWordOf hs).toList) i = w.val i
     rw [stepsOf_dyckWordOf hs]
     rcases le_or_gt i (2 * k) with hi | hi
-    · exact w.2.1.walkOf_upSteps i hi
-    · rw [hs.walkOf_eq_zero hi.le, w.2.2 i hi]
+    · exact w.property.1.walkOf_upSteps i hi
+    · rw [hs.walkOf_eq_zero hi.le, w.property.2 i hi]
   right_inv := by
     rintro ⟨p, rfl⟩
     refine Subtype.ext ?_
@@ -760,19 +872,23 @@ def closedTreeWalkEquiv (k : ℕ) : ClosedTreeWalk k ≃ {p : DyckWord // p.semi
 
 /-- The Dyck word corresponding to a closed tree walk is the word of its up-step pattern. -/
 @[simp] theorem closedTreeWalkEquiv_apply_coe (k : ℕ) (w : ClosedTreeWalk k) :
-    ((closedTreeWalkEquiv k w).1).toList =
-      List.ofFn fun i : Fin (2 * k) => if upSteps k w.1 i then DyckStep.U else DyckStep.D := by
+    ((closedTreeWalkEquiv k w).val).toList =
+      List.ofFn fun i : Fin (2 * k) => if upSteps k w.val i then DyckStep.U else DyckStep.D := by
   simp [closedTreeWalkEquiv, dyckWordOf]
 
 /-- The closed tree walk corresponding to a Dyck word is the walk of its step pattern. -/
 @[simp] theorem closedTreeWalkEquiv_symm_apply_coe (k : ℕ)
     (p : {p : DyckWord // p.semilength = k}) :
-    ((closedTreeWalkEquiv k).symm p).1 =
-      walkOf (fun j => decide (p.1.toList[j]? = some DyckStep.U)) := by
+    ((closedTreeWalkEquiv k).symm p).val =
+      walkOf (fun j => decide (p.val.toList[j]? = some DyckStep.U)) := by
   simp only [closedTreeWalkEquiv]
   apply congrArg walkOf
   funext j
   rfl
+
+/-- Closed tree walks of semilength `k` form a finite type via `closedTreeWalkEquiv`. -/
+instance instFintypeClosedTreeWalk (k : ℕ) : Fintype (ClosedTreeWalk k) :=
+  Fintype.ofEquiv _ (closedTreeWalkEquiv k).symm
 
 /-- There are `catalan k` closed walks of length `2 * k` in first-visit labelling that visit
 `k + 1` vertices and traverse every edge exactly twice. -/

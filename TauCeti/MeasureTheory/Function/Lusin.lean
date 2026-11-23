@@ -116,7 +116,7 @@ theorem _root_.Measurable.exists_isClosed_measure_sdiff_lt_continuousOn (hf : Me
   obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_pos_sum_of_countable' hε2 B
   have hδ2 : ∀ U : B, δ U / 2 ≠ 0 := fun U ↦ (ENNReal.half_pos (hδ U).ne').ne'
   have hU : ∀ U : B, MeasurableSet (f ⁻¹' U) := fun U ↦
-    hf (TopologicalSpace.isOpen_of_mem_countableBasis U.2).measurableSet
+    hf (TopologicalSpace.isOpen_of_mem_countableBasis U.property).measurableSet
   have hne : ∀ u, u ⊆ t → μ u ≠ ∞ := fun u hu ↦ ne_top_of_le_ne_top hμt (measure_mono hu)
   obtain ⟨K, hKt, hKclosed, hKμ⟩ := ht.exists_isClosed_sdiff_lt hμt hε2
   choose F hFsub hFclosed hFμ using fun U : B ↦
@@ -180,7 +180,7 @@ theorem _root_.MeasureTheory.StronglyMeasurable.exists_isClosed_measure_sdiff_lt
   obtain ⟨F, hFs, hF, hFμ, hFg⟩ :=
     (hg.measurable.subtype_mk : Measurable (rangeFactorization g))
       |>.exists_isClosed_measure_sdiff_lt_continuousOn hs hμs hε
-  exact ⟨F, hFs, hF, hFμ, continuous_subtype_val.comp_continuousOn hFg⟩
+  exact ⟨F, hFs, hF, hFμ, continuous_subtypeVal.comp_continuousOn hFg⟩
 
 /-- **Lusin's theorem** for an almost-everywhere strongly measurable map into a pseudometrizable
 space: it is continuous on a closed set `F ⊆ s` with `μ (s \ F) < ε`, for every null measurable set

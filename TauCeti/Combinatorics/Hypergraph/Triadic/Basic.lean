@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Complex.Basic
 public import TauCeti.Combinatorics.Hypergraph.Polyad.TopRegular
-public import TauCeti.Data.Fintype.CardEmbedding
+public import TauCeti.Data.Fintype.Card.Embedding
 public import Mathlib.Order.Partition.Equipartition
+import TauCeti.Combinatorics.Hypergraph.Polyad.Rank
 
 /-!
 # Triadic complexes
@@ -57,14 +58,21 @@ exceptional mass instead.
 
 * `TauCeti.TriadicComplex3.complexity_le`: the complexity is bounded by the lower data.
 * `TauCeti.TriadicComplex3.faces_three`: the triple faces are the selected support triples.
+* `TauCeti.TriadicComplex3.isPolyadDecomposition_of_polyads_eq_univ`: selecting all polyads gives
+  a polyad decomposition.
 * `TauCeti.TriadicComplex3.isPolyadDecomposition_iff_forall_mem_of_nonempty`: a polyad
   family is a decomposition exactly when it contains every polyad with nonempty support.
 * `TauCeti.TriadicComplex3.IsPolyadDecomposition.sum_card_support`: the selected supports have
   `|V|.descFactorial 3` triples in total.
 * `TauCeti.TriadicComplex3.sum_card_support_le`: in general they have at most that many.
+* `TauCeti.Colored3Graph.card_filter_color_eq_sum_card_support_mul_relativeDensity`: over a
+  polyad decomposition, the number of injective triples of a color is the support-weighted sum
+  of its relative densities.
 * `TauCeti.TriadicComplex3.VertexCellsControlled.card_le`: controlled cells are small.
 * `TauCeti.Colored3Graph.topRegularOverMostPolyads_iff_sum_card_support_le`: the support of
   the irregular polyads is at most an `ε`-proportion of the selected support.
+* `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_rank_one`: rank-one top regularity over
+  most polyads upgrades to any rank `r` with explicit parameter loss.
 * `TauCeti.Colored3Graph.exceptional_route_mass_le`: the embeddings of `Fin k` meeting an
   irregular polyad in an increasing triple are at most a `k.choose 3` multiple of the exceptional
   mass, at scale `|V| ^ k`.
@@ -139,12 +147,12 @@ theorem complexity_le :
 /-- The unordered triples underlying the supports of the selected polyads. -/
 noncomputable def topFaces : Finset (Finset V) :=
   C.polyads.biUnion fun P ↦ P.support.image fun x ↦
-    (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩).val
+    (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩).val
 
 /-- A top face is the underlying triple of a triple supported by a selected polyad. -/
 @[simp]
 theorem mem_topFaces {s : Finset V} :
-    s ∈ C.topFaces ↔ ∃ P ∈ C.polyads, ∃ x ∈ P.support, univ.map ⟨x.1, x.2⟩ = s := by
+    s ∈ C.topFaces ↔ ∃ P ∈ C.polyads, ∃ x ∈ P.support, univ.map ⟨x.val, x.property⟩ = s := by
   simp [topFaces]
 
 /-- Every top face has three elements. -/
@@ -215,6 +223,11 @@ theorem isPolyadDecomposition_iff_ofTriple_mem :
   rintro ⟨P, hP, hx⟩
   rwa [← Polyad3.mem_support_iff_eq_ofTriple.1 hx]
 
+/-- Selecting all polyads of a skeleton gives a polyad decomposition. -/
+theorem isPolyadDecomposition_of_polyads_eq_univ (h : C.polyads = univ) :
+    C.IsPolyadDecomposition :=
+  C.isPolyadDecomposition_iff_ofTriple_mem.2 fun _ ↦ h ▸ mem_univ _
+
 /-- The selected polyads form a decomposition exactly when they contain every polyad over the
 skeleton with nonempty support. -/
 theorem isPolyadDecomposition_iff_forall_mem_of_nonempty :
@@ -282,6 +295,37 @@ theorem VertexCellsControlled.card_le (h : C.VertexCellsControlled t₀) (ht₀ 
   exact hle.trans (Nat.add_le_add_right (Nat.div_le_div_left h.2 ht₀) 1)
 
 end TriadicComplex3
+
+/-! ### Colors over a polyad decomposition -/
+
+namespace Colored3Graph
+
+variable {κ : Type*} [DecidableEq κ] {C : TriadicComplex3 V}
+
+/-- **Counting triples of a color over a polyad decomposition.** When the selected polyads of `C`
+decompose the injective triples, the number of injective triples whose underlying triple has
+color `c` is the sum over the selected polyads of the support size times the relative density
+of `c`. -/
+theorem card_filter_color_eq_sum_card_support_mul_relativeDensity
+    (hC : C.IsPolyadDecomposition) (H : Colored3Graph κ V) (c : κ) :
+    (#{x : {x : Fin 3 → V // Function.Injective x} |
+        H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ) =
+      ∑ P ∈ C.polyads, (#P.support : ℝ) * (H.relativeDensity c P : ℝ) := by
+  have hcover : ({x : {x : Fin 3 → V // Function.Injective x} |
+      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : Finset _) =
+      C.polyads.biUnion fun P ↦
+        {x ∈ P.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} := by
+    ext x
+    obtain ⟨P, hP, hx⟩ := (C.isPolyadDecomposition_iff.1 hC) x
+    simp only [mem_filter, mem_univ, true_and, mem_biUnion]
+    exact ⟨fun h ↦ ⟨P, hP, hx, h⟩, fun ⟨_, _, _, h⟩ ↦ h⟩
+  rw [hcover, card_biUnion fun P _ Q _ hPQ ↦ disjoint_filter_filter
+    (Polyad3.pairwise_disjoint_support hPQ), Nat.cast_sum]
+  refine sum_congr rfl fun P _ ↦ ?_
+  rw [mul_comm, relativeDensity_def]
+  exact_mod_cast (H.relDensityOn_mul_card c P.support).symm
+
+end Colored3Graph
 
 /-! ### Exceptional polyads -/
 
@@ -407,6 +451,34 @@ theorem TopRegularOverMostPolyads.mono (h : H.TopRegularOverMostPolyads C η ε 
     (hη : η ≤ η') (hε : ε ≤ ε') (hr : r' ≤ r) : H.TopRegularOverMostPolyads C η' ε' r' :=
   ((exceptionalPolyadMass_le_exceptionalPolyadMass hη hr).trans h).trans hε
 
+/-- Rank-one exceptional mass bounds rank-`r` exceptional mass whenever `2 ^ r * δ ≤ η ^ 2` and
+`η` is positive. -/
+theorem exceptionalPolyadMass_le_of_rank_one {δ : ℝ} (hη : 0 < η)
+    (hδη : (2 : ℝ) ^ r * δ ≤ η ^ 2) :
+    H.exceptionalPolyadMass C η r ≤ H.exceptionalPolyadMass C δ 1 := by
+  classical
+  rw [exceptionalPolyadMass_def, exceptionalPolyadMass_def]
+  refine div_le_div_of_nonneg_right (sum_le_sum_of_subset_of_nonneg ?_
+    fun _ _ _ ↦ Nat.cast_nonneg _) (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)
+  intro P
+  simp only [mem_filter]
+  exact fun ⟨hP, h⟩ ↦ ⟨hP, fun h' ↦ h (h'.of_rank_one hη hδη)⟩
+
+/-- Rank-one top regularity over most polyads implies rank-`r` top regularity over most polyads
+whenever `2 ^ r * δ ≤ η ^ 2` and `η` is positive. -/
+theorem TopRegularOverMostPolyads.of_rank_one {δ : ℝ} (h : H.TopRegularOverMostPolyads C δ ε 1)
+    (hη : 0 < η) (hδη : (2 : ℝ) ^ r * δ ≤ η ^ 2) :
+    H.TopRegularOverMostPolyads C η ε r :=
+  (exceptionalPolyadMass_le_of_rank_one hη hδη).trans h
+
+/-- The explicit calibration `η ^ 2 / 2 ^ r` of rank-one top regularity over most polyads
+suffices for rank-`r` top regularity over most polyads at every positive parameter `η`. -/
+theorem TopRegularOverMostPolyads.of_rank_one_div_pow
+    (h : H.TopRegularOverMostPolyads C (η ^ 2 / (2 : ℝ) ^ r) ε 1) (hη : 0 < η) :
+    H.TopRegularOverMostPolyads C η ε r := by
+  refine h.of_rank_one hη ?_
+  rw [mul_div_cancel₀ _ (pow_ne_zero _ two_ne_zero)]
+
 /-- A coloring top-regular over every selected polyad is top-regular over most polyads, for every
 nonnegative exceptional proportion. -/
 theorem topRegularOverMostPolyads_of_forall
@@ -433,7 +505,7 @@ count that top regularity does not control. Since `k.choose 3 ≤ k ^ 3`, the bo
 `k ^ 3 * H.exceptionalPolyadMass C η r * |V| ^ k`. -/
 theorem exceptional_route_mass_le (k : ℕ) (η : ℝ) (r : ℕ) :
     (#{f : Fin k ↪ V | ∃ P ∈ C.polyads, ¬H.IsTopRegularOverPolyad P η r ∧
-        ∃ i j l : Fin k, i < j ∧ j < l ∧ ∃ x ∈ P.support, x.1 = ![f i, f j, f l]} : ℝ) ≤
+        ∃ i j l : Fin k, i < j ∧ j < l ∧ ∃ x ∈ P.support, x.val = ![f i, f j, f l]} : ℝ) ≤
       k.choose 3 * H.exceptionalPolyadMass C η r * (Fintype.card V : ℝ) ^ k := by
   set n := Fintype.card V
   -- The triples supported by the irregular selected polyads.
@@ -444,7 +516,7 @@ theorem exceptional_route_mass_le (k : ℕ) (η : ℝ) (r : ℕ) :
     exact_mod_cast card_biUnion_le.trans_eq (by simp)
   -- Each such embedding sends the increasing enumeration of some triple into `T`.
   have hsub : #{f : Fin k ↪ V | ∃ P ∈ C.polyads, ¬H.IsTopRegularOverPolyad P η r ∧
-      ∃ i j l : Fin k, i < j ∧ j < l ∧ ∃ x ∈ P.support, x.1 = ![f i, f j, f l]} ≤
+      ∃ i j l : Fin k, i < j ∧ j < l ∧ ∃ x ∈ P.support, x.val = ![f i, f j, f l]} ≤
       Nat.card {f : Fin k ↪ V // ∃ g : Fin 3 ↪o Fin k, ⇑f ∘ g ∈ T} := by
     rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
     refine card_le_card fun f hf ↦ ?_

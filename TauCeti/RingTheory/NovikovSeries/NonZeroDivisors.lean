@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.AffineMonoid.UniqueSums
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import TauCeti.GroupTheory.Finiteness
-public import TauCeti.RingTheory.Localization.FractionRing
+public import TauCeti.RingTheory.Localization.Defs
 public import TauCeti.RingTheory.NovikovSeries.FiniteIndex
 public import TauCeti.RingTheory.NovikovSeries.LeadingTerm
 

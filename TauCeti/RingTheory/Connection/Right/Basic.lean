@@ -18,8 +18,9 @@ algebra derivations use `TauCeti.derivationLieAlgebra`.
 
 Connections along a fixed derivation differ by right-module endomorphisms. For two commuting
 derivations, the commutator of connections is a right-module endomorphism: their curvature.
-Adding endomorphisms changes the curvature by their derivatives and commutator, and the
-right-module automorphisms act on connections by gauge transformations `c ↦ u c u⁻¹`, which
+Changing the connections by endomorphisms `α₁, α₂` changes the curvature by
+`[∇₁, α₂] - [∇₂, α₁] + [α₁, α₂]` (`TauCeti.RightConnection.curvature_eq_curvature_add`).
+The right-module automorphisms act on connections by gauge transformations `c ↦ u c u⁻¹`, which
 conjugate the curvature.
 The coordinate connection on a coordinate product supplies concrete flat connections and the
 ambient connections from which Grassmann connections are obtained by projection. For finite
@@ -142,6 +143,16 @@ theorem derivativeEnd_mul (c : RightConnection (E := E) D) (T S : E →ₗ[Aᵐ�
   simp only [derivativeEnd_apply, mul_apply_eq_comp, LinearMap.add_apply, map_sub]
   abel
 
+/-- Changing the connection changes the induced derivative by the commutator with the
+difference of the connections. -/
+theorem derivativeEnd_sub_derivativeEnd (c c' : RightConnection (E := E) D)
+    (T : E →ₗ[Aᵐᵒᵖ] E) :
+    derivativeEnd c T - derivativeEnd c' T = difference c c' * T - T * difference c c' := by
+  ext x
+  simp only [LinearMap.sub_apply, derivativeEnd_apply, mul_apply_eq_comp, difference_apply,
+    map_sub]
+  abel
+
 variable [IsScalarTower k Aᵐᵒᵖ E]
 
 /-- Adding a right-module endomorphism to a connection gives a connection along the same
@@ -204,6 +215,20 @@ theorem curvature_apply (c₁ : RightConnection (E := E) D₁)
     curvature c₁ c₂ hD x = c₁ (c₂ x) - c₂ (c₁ x) := (rfl)
 
 omit [IsScalarTower k Aᵐᵒᵖ E] in
+/-- **Change of connection.** Writing `cⱼ = c'ⱼ + αⱼ` with `αⱼ = cⱼ - c'ⱼ`, the curvature
+changes by `[c'₁, α₂] - [c'₂, α₁] + [α₁, α₂]`. -/
+theorem curvature_eq_curvature_add (c₁ c₁' : RightConnection (E := E) D₁)
+    (c₂ c₂' : RightConnection (E := E) D₂)
+    (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) :
+    curvature c₁ c₂ hD = curvature c₁' c₂' hD + derivativeEnd c₁' (difference c₂ c₂') -
+      derivativeEnd c₂' (difference c₁ c₁') +
+      (difference c₁ c₁' * difference c₂ c₂' - difference c₂ c₂' * difference c₁ c₁') := by
+  ext x
+  simp only [curvature_apply, LinearMap.add_apply, LinearMap.sub_apply, derivativeEnd_apply,
+    mul_apply_eq_comp, difference_apply, map_sub]
+  abel
+
+omit [IsScalarTower k Aᵐᵒᵖ E] in
 /-- Swapping the connections negates their curvature. -/
 theorem curvature_swap (c₁ : RightConnection (E := E) D₁)
     (c₂ : RightConnection (E := E) D₂)
@@ -211,18 +236,6 @@ theorem curvature_swap (c₁ : RightConnection (E := E) D₁)
     curvature c₂ c₁ hD.symm = -curvature c₁ c₂ hD := by
   ext x
   simp
-
-/-- **Change of connection.** Adding right-module endomorphisms `T` and `S` to connections
-`c₁` and `c₂` changes their curvature by `[c₁,S] - [c₂,T] + [T,S]`. -/
-theorem curvature_addEnd (c₁ : RightConnection (E := E) D₁)
-    (c₂ : RightConnection (E := E) D₂)
-    (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) (T S : E →ₗ[Aᵐᵒᵖ] E) :
-    curvature (addEnd c₁ T) (addEnd c₂ S) hD =
-      curvature c₁ c₂ hD + derivativeEnd c₁ S - derivativeEnd c₂ T + ⁅T, S⁆ := by
-  ext x
-  simp only [curvature_apply, addEnd_apply, map_add, LinearMap.add_apply, LinearMap.sub_apply,
-    derivativeEnd_apply, Ring.lie_def, mul_apply_eq_comp]
-  abel
 
 /-- The gauge group `E ≃ₗ[Aᵐᵒᵖ] E` acts on connections by conjugation, `u • c = u c u⁻¹`. -/
 instance : MulAction (E ≃ₗ[Aᵐᵒᵖ] E) (RightConnection (E := E) D) where

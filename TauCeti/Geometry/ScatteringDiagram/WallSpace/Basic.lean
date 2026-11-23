@@ -105,15 +105,8 @@ theorem wall_eq_of_ker_eq {Λ : Type*} [AddCommGroup Λ]
     {ρ : Γ →+ Λ} {ℒ : Γ → Submodule R L} (H : DirectedWallSpaces ρ ℒ)
     (n : Γ) {m m' : Λ →+ ℤ} (hker : m.ker = m'.ker) :
     H.wall n m = H.wall n m' := by
-  by_cases hm : m = 0
-  · subst m
-    have hm' : m' = 0 := by
-      apply AddMonoidHom.ker_eq_top_iff.mp
-      rw [← hker]
-      simp
-    rw [hm']
-  · obtain ⟨c, e, hc, he, hme⟩ := m.exists_ne_zero_zsmul_eq_of_ker_eq m' hm hker
-    rw [← H.rescale n m c hc, hme, H.rescale n m' e he]
+  obtain ⟨c, e, hc, he, hme⟩ := m.exists_ne_zero_zsmul_eq_of_ker_eq m' hker
+  rw [← H.rescale n m c hc, hme, H.rescale n m' e he]
 
 /-- Directed wall spaces are determined by their wall submodules. -/
 @[ext]

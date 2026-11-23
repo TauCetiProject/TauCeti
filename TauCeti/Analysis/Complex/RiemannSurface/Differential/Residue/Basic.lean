@@ -27,7 +27,9 @@ holomorphic, in particular off the support of the divisor of `ω` on a compact R
 meromorphic function has residue `0` (`TauCeti.RiemannSurface.OneForm.residue_mvfderiv`), and the
 logarithmic differential `df / f` has residue the order of `f`
 (`TauCeti.RiemannSurface.OneForm.residue_inv_smul_mvfderiv`). These are the local facts behind the
-residue pairing of Serre duality and the vanishing of the degree of a principal divisor.
+residue pairing of Serre duality and the vanishing of the degree of a principal divisor. On a
+compact Riemann surface a `1`-form meromorphic everywhere has nonzero residue at only finitely many
+points (`TauCeti.RiemannSurface.OneForm.finite_support_residue`).
 
 ## References
 
@@ -121,6 +123,13 @@ theorem residue_eq_of_mem_maximalAtlas (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (
     (chart_mem_maximalAtlas x) hx hcx).filter_mono nhdsWithin_le_nhds), ← hψx]
   exact Contour.residue_comp_mul_deriv hψ hψ'
 
+/-- On a compact Riemann surface, a `1`-form meromorphic everywhere has nonzero residue at only
+finitely many points: a nonzero residue forces a pole. -/
+theorem finite_support_residue [CompactSpace X] (hω : ∀ x, ω.MeromorphicAt x) :
+    (support ω.residue).Finite :=
+  (finite_support_untop₀_order hω).subset fun _ hy h0 ↦
+    hy (residue_eq_zero_of_order_nonneg (WithTop.untop₀_nonneg.1 h0.ge))
+
 section Compact
 
 variable [CompactSpace X]
@@ -145,7 +154,8 @@ variable {f : X → ℂ}
 @[simp]
 theorem residue_mvfderiv (hf : RiemannSurface.MeromorphicAt f x) :
     residue (mvfderiv 𝓘(ℂ) f) x = 0 := by
-  rw [residue_def, Contour.residue_congr_nhdsNE (coeff_mvfderiv_eventuallyEq hf)]
+  rw [residue_def, Contour.residue_congr_nhdsNE
+    (coeff_mvfderiv_eventuallyEq.filter_mono nhdsWithin_le_nhds)]
   exact Contour.residue_deriv_eq_zero ((RiemannSurface.meromorphicAt_def f x).1 hf)
 
 /-- **The residue of `df / f` is the order of `f`.** For a function `f` meromorphic at `x` of
@@ -155,7 +165,7 @@ theorem residue_inv_smul_mvfderiv {n : ℤ} (hf : RiemannSurface.MeromorphicAt f
     residue (f⁻¹ • mvfderiv 𝓘(ℂ) f) x = n := by
   have hev : coeff (f⁻¹ • mvfderiv 𝓘(ℂ) f) (chartAt ℂ x) =ᶠ[𝓝[≠] (chartAt ℂ x x)]
       logDeriv (f ∘ (chartAt ℂ x).symm) := by
-    filter_upwards [coeff_mvfderiv_eventuallyEq hf] with z hz
+    filter_upwards [coeff_mvfderiv_eventuallyEq.filter_mono nhdsWithin_le_nhds] with z hz
     rw [coeff_smul, Pi.mul_apply, hz, logDeriv_apply, div_eq_inv_mul]
     rfl
   rw [residue_def, Contour.residue_congr_nhdsNE hev]

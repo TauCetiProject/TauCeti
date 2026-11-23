@@ -127,7 +127,7 @@ theorem transvectionParameterEquiv_mk (e : Q₁.IsometryEquiv Q₂)
     e.transvectionParameterEquiv u (Submodule.Quotient.mk w) =
       Submodule.Quotient.mk ⟨e w, by
         rw [LinearMap.mem_ker, polarBilin_apply_apply, e.polar_apply]
-        exact LinearMap.mem_ker.mp w.2⟩ := by
+        exact LinearMap.mem_ker.mp w.property⟩ := by
   rw [transvectionParameterEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
   congr 1
   apply Subtype.ext
@@ -147,7 +147,7 @@ theorem transvectionParameterEquiv_symm_mk (e : Q₁.IsometryEquiv Q₂)
             (e.polar_apply u (e.symm (w : M₂))).symm
           _ = polar Q₂ (e u) w := congrArg (polar Q₂ (e u)) (e.apply_symm_apply w)
           _ = 0 := by
-            simpa only [polarBilin_apply_apply] using LinearMap.mem_ker.mp w.2⟩ := by
+            simpa only [polarBilin_apply_apply] using LinearMap.mem_ker.mp w.property⟩ := by
   rw [LinearEquiv.symm_apply_eq, transvectionParameterEquiv_mk]
   congr 1
   apply Subtype.ext
@@ -338,18 +338,18 @@ orthogonal to `u`. It descends to `u^⊥ / R ∙ u` as `transvectionHom`. -/
 private noncomputable def transvectionAddHom (hu : Q u = 0) :
     LinearMap.ker (Q.polarBilin u) →+ Additive (specialOrthogonalGroup Q) :=
   AddMonoidHom.mk' (fun w => Additive.ofMul
-      ⟨transvection Q hu (LinearMap.mem_ker.mp w.2),
-        transvection_mem_specialOrthogonalGroup hu (LinearMap.mem_ker.mp w.2)⟩)
+      ⟨transvection Q hu (LinearMap.mem_ker.mp w.property),
+        transvection_mem_specialOrthogonalGroup hu (LinearMap.mem_ker.mp w.property)⟩)
     fun w w' => by
       apply Additive.toMul.injective
       rw [toMul_add, toMul_ofMul, toMul_ofMul, toMul_ofMul]
       refine Subtype.ext ?_
       rw [Subgroup.coe_mul]
-      exact transvection_add hu (LinearMap.mem_ker.mp w.2) (LinearMap.mem_ker.mp w'.2)
+      exact transvection_add hu (LinearMap.mem_ker.mp w.property) (LinearMap.mem_ker.mp w'.property)
 
 private theorem coe_toMul_transvectionAddHom (hu : Q u = 0) (w : LinearMap.ker (Q.polarBilin u)) :
     ((Additive.toMul (transvectionAddHom hu w) : specialOrthogonalGroup Q) : M ≃ₗ[R] M) =
-      transvection Q hu (LinearMap.mem_ker.mp w.2) := by
+      transvection Q hu (LinearMap.mem_ker.mp w.property) := by
   rw [transvectionAddHom, AddMonoidHom.mk'_apply, toMul_ofMul]
 
 variable (Q) in

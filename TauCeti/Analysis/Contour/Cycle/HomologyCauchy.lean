@@ -63,9 +63,9 @@ namespace TauCeti.Contour.Cycle
 /-- An open set containing the trace of a nonzero cycle contains a point outside that trace. -/
 private theorem exists_mem_not_mem_trace {C : Cycle} {U : Set ℂ} (hU : IsOpen U)
     (hCU : IsIn C U) (hC : C ≠ 0) : ∃ w ∈ U, w ∉ trace C := by
-  have hsupp : (FreeAbelianGroup.support C).Nonempty := by
+  have hsupp : (FreeAddCommGroup.support C).Nonempty := by
     by_contra h
-    rw [Finset.not_nonempty_iff_eq_empty, FreeAbelianGroup.support_eq_empty] at h
+    rw [Finset.not_nonempty_iff_eq_empty, FreeAddCommGroup.support_eq_empty] at h
     exact hC h
   obtain ⟨γ, hγ⟩ := hsupp
   have htrace_ne : (trace C).Nonempty :=
@@ -82,13 +82,13 @@ private theorem exists_mem_not_mem_trace {C : Cycle} {U : Set ℂ} (hU : IsOpen 
 
 /-- Dixon's first auxiliary function, additively extended over the support of a cycle. -/
 private def cycleDixonH1 (f : ℂ → ℂ) (C : Cycle) (w : ℂ) : ℂ :=
-  ∑ γ ∈ FreeAbelianGroup.support C,
-    (FreeAbelianGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH1 f γ γ.a γ.b w
+  ∑ γ ∈ FreeAddCommGroup.support C,
+    (FreeAddCommGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH1 f γ γ.a γ.b w
 
 /-- Dixon's second auxiliary function, additively extended over the support of a cycle. -/
 private def cycleDixonH2 (f : ℂ → ℂ) (C : Cycle) (w : ℂ) : ℂ :=
-  ∑ γ ∈ FreeAbelianGroup.support C,
-    (FreeAbelianGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH2 f γ γ.a γ.b w
+  ∑ γ ∈ FreeAddCommGroup.support C,
+    (FreeAddCommGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH2 f γ γ.a γ.b w
 
 /-- Dixon's glued function for a cycle: the finite sum of `h₁` terms on `U` and of `h₂` terms
 off `U`. -/
@@ -99,7 +99,7 @@ private def cycleDixonFunction (f : ℂ → ℂ) (U : Set ℂ) (C : Cycle) (w : 
 
 /-- Every supported curve of a cycle contained in `U` maps its parameter interval into `U`. -/
 private theorem mapsTo_of_mem_support {C : Cycle} {U : Set ℂ} (hCU : IsIn C U)
-    {γ : PiecewiseC1ClosedCurve} (hγ : γ ∈ FreeAbelianGroup.support C) :
+    {γ : PiecewiseC1ClosedCurve} (hγ : γ ∈ FreeAddCommGroup.support C) :
     ∀ t ∈ uIcc γ.a γ.b, γ t ∈ U := by
   intro t ht
   exact isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)
@@ -111,7 +111,7 @@ private theorem cycleDixonH1_eq_cycleDixonH2_sub {f : ℂ → ℂ} {C : Cycle} {
     cycleDixonH1 f C w = cycleDixonH2 f C w -
       2 * (Real.pi : ℂ) * Complex.I * windingNumber w C * f w := by
   rw [cycleDixonH1, cycleDixonH2, windingNumber_eq_sum_support]
-  have hterm : ∀ γ ∈ FreeAbelianGroup.support C,
+  have hterm : ∀ γ ∈ FreeAddCommGroup.support C,
       TauCeti.Contour.dixonH1 f γ γ.a γ.b w =
         TauCeti.Contour.dixonH2 f γ γ.a γ.b w -
           2 * (Real.pi : ℂ) * Complex.I *
@@ -125,16 +125,16 @@ private theorem cycleDixonH1_eq_cycleDixonH2_sub {f : ℂ → ℂ} {C : Cycle} {
       (TauCeti.Contour.intervalIntegrable_inv_sub_mul_deriv γ.continuousOn hoff
         γ.intervalIntegrable_deriv)
   calc
-    ∑ γ ∈ FreeAbelianGroup.support C,
-        (FreeAbelianGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH1 f γ γ.a γ.b w =
-      ∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℂ) *
+    ∑ γ ∈ FreeAddCommGroup.support C,
+        (FreeAddCommGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH1 f γ γ.a γ.b w =
+      ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℂ) *
         (TauCeti.Contour.dixonH2 f γ γ.a γ.b w - 2 * (Real.pi : ℂ) * Complex.I *
           TauCeti.Contour.windingNumber γ γ.a γ.b w * f w) :=
       Finset.sum_congr rfl fun γ hγ ↦ by rw [hterm γ hγ]
-    _ = (∑ γ ∈ FreeAbelianGroup.support C,
-          (FreeAbelianGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH2 f γ γ.a γ.b w) -
+    _ = (∑ γ ∈ FreeAddCommGroup.support C,
+          (FreeAddCommGroup.coeff γ C : ℂ) * TauCeti.Contour.dixonH2 f γ γ.a γ.b w) -
         2 * (Real.pi : ℂ) * Complex.I *
-          (∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℂ) *
+          (∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℂ) *
             TauCeti.Contour.windingNumber γ γ.a γ.b w) * f w := by
       simp only [Finset.mul_sum, Finset.sum_mul, ← Finset.sum_sub_distrib]
       exact Finset.sum_congr rfl fun _ _ ↦ by ring
@@ -161,7 +161,7 @@ private theorem differentiable_cycleDixonFunction {f : ℂ → ℂ} {C : Cycle} 
     exact DifferentiableOn.fun_sum fun γ hγ ↦
       (TauCeti.Contour.differentiableOn_dixonH1 hU hf γ.continuousOn
         (mapsTo_of_mem_support hCU hγ) γ.intervalIntegrable_deriv).const_mul
-          (FreeAbelianGroup.coeff γ C : ℂ)
+          (FreeAddCommGroup.coeff γ C : ℂ)
   intro w
   by_cases hwU : w ∈ U
   · refine (hH1.differentiableAt (hU.mem_nhds hwU)).congr_of_eventuallyEq ?_
@@ -172,11 +172,8 @@ private theorem differentiable_cycleDixonFunction {f : ℂ → ℂ} {C : Cycle} 
       unfold cycleDixonH2
       exact DifferentiableAt.fun_sum fun γ hγ ↦ by
         have hoff := avoids_of_mem_support hwtrace hγ
-        exact (TauCeti.Contour.hasDerivAt_dixonH2 γ.continuousOn hoff
-          (TauCeti.Contour.cauchy_integrand_intervalIntegrable hf.continuousOn γ.continuousOn
-            (mapsTo_of_mem_support hCU hγ) γ.intervalIntegrable_deriv
-              hoff)).differentiableAt.const_mul
-              (FreeAbelianGroup.coeff γ C : ℂ)
+        exact (TauCeti.Contour.hasDerivAt_dixonH2 (f := f) γ.continuousOn
+          hoff).differentiableAt.const_mul (FreeAddCommGroup.coeff γ C : ℂ)
     obtain ⟨ε, hε, hball⟩ :=
       Metric.isOpen_iff.mp (isCompact_trace C).isClosed.isOpen_compl w hwtrace
     refine hH2.congr_of_eventuallyEq ?_
@@ -195,8 +192,8 @@ private theorem cycleDixonH2_tendsto_zero {f : ℂ → ℂ} {C : Cycle} {U : Set
     (hf : DifferentiableOn ℂ f U) (hCU : IsIn C U) :
     Tendsto (cycleDixonH2 f C) (cocompact ℂ) (nhds 0) := by
   unfold cycleDixonH2
-  have hterm : ∀ γ ∈ FreeAbelianGroup.support C,
-      Tendsto (fun w ↦ (FreeAbelianGroup.coeff γ C : ℂ) *
+  have hterm : ∀ γ ∈ FreeAddCommGroup.support C,
+      Tendsto (fun w ↦ (FreeAddCommGroup.coeff γ C : ℂ) *
         TauCeti.Contour.dixonH2 f γ γ.a γ.b w) (cocompact ℂ) (nhds 0) := by
     intro γ hγ
     obtain ⟨R, hR⟩ := isCompact_uIcc.exists_bound_of_continuousOn γ.continuousOn
@@ -206,7 +203,7 @@ private theorem cycleDixonH2_tendsto_zero {f : ℂ → ℂ} {C : Cycle} {U : Set
     simpa using (tendsto_const_nhds.mul
       (TauCeti.Contour.dixonH2_tendsto_zero_of_integrable
         (fun t ht ↦ hR t (uIoc_subset_uIcc ht)) hint))
-  simpa using tendsto_finsetSum (FreeAbelianGroup.support C) hterm
+  simpa using tendsto_finsetSum (FreeAddCommGroup.support C) hterm
 
 /-- The cycle Dixon function vanishes by Liouville's theorem. -/
 private theorem cycleDixonFunction_eq_zero {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ}
@@ -227,7 +224,7 @@ private theorem cycleDixonH2_twist_eq_integral {f : ℂ → ℂ} {C : Cycle} {w 
   rw [cycleDixonH2, integral_eq_sum_support]
   refine Finset.sum_congr rfl fun γ hγ ↦ ?_
   rw [← Int.cast_smul_eq_zsmul ℂ, smul_eq_mul]
-  apply congrArg (fun z : ℂ ↦ (FreeAbelianGroup.coeff γ C : ℂ) * z)
+  apply congrArg (fun z : ℂ ↦ (FreeAddCommGroup.coeff γ C : ℂ) * z)
   rw [TauCeti.Contour.dixonH2_def]
   refine intervalIntegral.integral_congr fun t ht ↦ ?_
   rw [mul_div_cancel_left₀ _ (sub_ne_zero.mpr
