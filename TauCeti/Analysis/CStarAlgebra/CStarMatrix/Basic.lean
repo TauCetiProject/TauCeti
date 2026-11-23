@@ -187,6 +187,14 @@ lemma ofMatrix_symm_conjTranspose {m : Type*} [Star A] (M : CStarMatrix m n A) :
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
 
+/-- `ofMatrix.symm p` is a star projection iff `p` is a star projection. -/
+@[simp]
+theorem isStarProjection_ofMatrix_symm_iff {m : Type*} [Fintype m] [AddCommMonoid A] [Mul A]
+    [Star A] {p : CStarMatrix m m A} : IsStarProjection (ofMatrix.symm p) ↔ IsStarProjection p := by
+  rw [isStarProjection_iff, isStarProjection_iff, IsIdempotentElem, IsIdempotentElem,
+    IsSelfAdjoint, IsSelfAdjoint, ← ofMatrix_symm_mul, Matrix.star_eq_conjTranspose,
+    ← ofMatrix_symm_star, ofMatrix.symm.injective.eq_iff, ofMatrix.symm.injective.eq_iff]
+
 /-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
 @[simp]
 lemma ofMatrix_symm_zero {m : Type*} [Zero A] :
@@ -415,6 +423,30 @@ theorem conjTranspose_injective [InvolutiveStar A] :
 @[simp] theorem conjTranspose_eq_one [DecidableEq n] [NonAssocSemiring A] [StarRing A]
     {M : CStarMatrix n n A} : M.conjTranspose = 1 ↔ M = 1 := by
   conv_lhs => rw [← conjTranspose_one, conjTranspose_inj]
+/-- Right-multiplying `M` by a star projection `p` gives `(M * p) * (M * p)ᴴ = M * p * Mᴴ`. -/
+theorem self_mul_conjTranspose_mul_of_isStarProjection [Fintype n] [NonUnitalSemiring A]
+    [StarRing A] (M : CStarMatrix m n A) {p : CStarMatrix n n A} (hp : IsStarProjection p) :
+    (M * p) * (M * p).conjTranspose = M * p * M.conjTranspose := by
+  rw [conjTranspose_mul, hp.isSelfAdjoint.conjTranspose_eq, mul_assoc_rectangular,
+    ← mul_assoc_rectangular p, hp.isIdempotentElem.eq, mul_assoc_rectangular]
+section
+variable [Fintype m] [Fintype n] [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix n n A}
+/-- If `uᴴ * u` acts as the identity on the range of a star projection `p`, then
+`(u * p)ᴴ * (u * p) = p`. -/
+theorem _root_.IsStarProjection.conjTranspose_mul_self_mul_of_conjTranspose_mul_self_mul_eq
+    (hp : IsStarProjection p) {u : CStarMatrix m n A} (hu : u.conjTranspose * u * p = p) :
+    (u * p).conjTranspose * (u * p) = p := by
+  rw [conjTranspose_mul, hp.isSelfAdjoint.conjTranspose_eq, mul_assoc_rectangular,
+    ← mul_assoc_rectangular u.conjTranspose, hu, hp.isIdempotentElem.eq]
+end
+section
+variable [Fintype m] [Fintype n] [DecidableEq n] [Semiring A] [StarRing A] {p : CStarMatrix n n A}
+/-- Initial projection of `u * p` for an isometry `u` (`uᴴ * u = 1`) and star projection `p`. -/
+theorem _root_.IsStarProjection.conjTranspose_mul_self_mul_of_conjTranspose_mul_self_eq_one
+    (hp : IsStarProjection p) {u : CStarMatrix m n A} (hu : u.conjTranspose * u = 1) :
+    (u * p).conjTranspose * (u * p) = p :=
+  hp.conjTranspose_mul_self_mul_of_conjTranspose_mul_self_mul_eq (by rw [hu, CStarMatrix.one_mul])
+end
 section
 variable [NonUnitalSemiring A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
 /-- Over a star-ordered ring with proper star, `M.conjTranspose * M = 0` iff `M = 0`. -/

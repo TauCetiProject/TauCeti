@@ -118,6 +118,20 @@ theorem ext_iff_blocks {M N : CStarMatrix (m ⊕ o) (l ⊕ n) A} :
     ofMatrix_symm_toBlocks₁₂, ofMatrix_symm_toBlocks₂₁, ofMatrix_symm_toBlocks₂₂]
   exact Matrix.ext_iff_blocks
 section
+variable (R : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
+  (M : CStarMatrix (m ⊕ o) (l ⊕ n) A)
+/-- The upper-right block `toBlocks₁₂` equals the upper-left block after swapping columns. -/
+theorem toBlocks₁₂_eq_toBlocks₁₁_reindexₗ :
+    M.toBlocks₁₂ = (reindexₗ R A (.refl _) (.sumComm l n) M).toBlocks₁₁ := by ext; rfl
+/-- The lower-left block `toBlocks₂₁` equals the upper-left block after swapping rows. -/
+theorem toBlocks₂₁_eq_toBlocks₁₁_reindexₗ :
+    M.toBlocks₂₁ = (reindexₗ R A (.sumComm m o) (.refl _) M).toBlocks₁₁ := by ext; rfl
+/-- The lower-right block `toBlocks₂₂` equals the upper-left block after swapping rows and
+columns. -/
+theorem toBlocks₂₂_eq_toBlocks₁₁_reindexₗ :
+    M.toBlocks₂₂ = (reindexₗ R A (.sumComm m o) (.sumComm l n) M).toBlocks₁₁ := by ext; rfl
+end
+section
 variable [Zero A]
 @[simp] theorem toBlocks₁₁_zero : (0 : CStarMatrix (m ⊕ o) (l ⊕ n) A).toBlocks₁₁ = 0 := (rfl)
 @[simp] theorem toBlocks₁₂_zero : (0 : CStarMatrix (m ⊕ o) (l ⊕ n) A).toBlocks₁₂ = 0 := (rfl)
@@ -475,6 +489,25 @@ variable {P : CStarMatrix m m A} {Q : CStarMatrix n n A}
     IsStarProjection (blockSum P Q) ↔ IsStarProjection P ∧ IsStarProjection Q := by
   simp [isStarProjection_iff, and_and_and_comm]
 end
+/-- For a star projection `p`, `fromRows p 0 * (fromRows p 0)ᴴ = blockSum p 0`. -/
+theorem _root_.IsStarProjection.fromRows_zero_mul_conjTranspose_fromRows_zero [Fintype m]
+    [NonUnitalNonAssocSemiring A] [StarAddMonoid A] {p : CStarMatrix m m A}
+    (hp : IsStarProjection p) :
+    fromRows p (0 : CStarMatrix n m A) * (fromRows p (0 : CStarMatrix n m A)).conjTranspose =
+      blockSum p (0 : CStarMatrix n n A) := by
+  rw [fromRows_mul_conjTranspose_fromRows]
+  simp [hp.isSelfAdjoint.conjTranspose_eq, hp.isIdempotentElem.eq, blockSum_def]
+/-- For orthogonal projections `p₁, p₂`, `fromRows p₁ p₂ * (fromRows p₁ p₂)ᴴ = blockSum p₁ p₂`. -/
+theorem _root_.IsStarProjection.fromRows_mul_conjTranspose_fromRows_eq_blockSum [Fintype n]
+    [NonUnitalNonAssocSemiring A] [StarRing A] {p₁ p₂ : CStarMatrix n n A}
+    (hp₁ : IsStarProjection p₁) (hp₂ : IsStarProjection p₂) (h₁₂ : p₁ * p₂ = 0) :
+    fromRows p₁ p₂ * (fromRows p₁ p₂).conjTranspose = blockSum p₁ p₂ := by
+  have h₂₁ : p₂ * p₁ = 0 := by
+    simpa [hp₁.isSelfAdjoint.conjTranspose_eq, hp₂.isSelfAdjoint.conjTranspose_eq] using
+      congrArg CStarMatrix.conjTranspose h₁₂
+  rw [fromRows_mul_conjTranspose_fromRows, hp₁.isSelfAdjoint.conjTranspose_eq,
+    hp₂.isSelfAdjoint.conjTranspose_eq, hp₁.isIdempotentElem.eq,
+    hp₂.isIdempotentElem.eq, h₁₂, h₂₁, ← blockSum_def]
 section
 variable [Semiring R] [AddCommMonoid A] [Module R A]
 @[simp] theorem reindexₗ_sumAssoc_blockSum (M₁ : CStarMatrix m₁ n₁ A) (M₂ : CStarMatrix m₂ n₂ A)
@@ -773,33 +806,15 @@ theorem norm_toBlocks₁₁_le : ‖M.toBlocks₁₁‖ ≤ ‖M‖ := by
   simpa [hinner, ← norm_def, hv', hw', mul_assoc, mul_left_comm, mul_comm] using hle
 /-- Extracting the upper-right block does not increase the operator norm. -/
 theorem norm_toBlocks₁₂_le : ‖M.toBlocks₁₂‖ ≤ ‖M‖ := by
-  have h : M.toBlocks₁₂ = (reindexₗ ℂ A (.refl _) (.sumComm l n) M).toBlocks₁₁ :=
-    ofMatrix.symm.injective <| by
-      rw [ofMatrix_symm_toBlocks₁₂, ofMatrix_symm_toBlocks₁₁, ofMatrix_symm_reindexₗ,
-        Matrix.reindex_apply]
-      ext i j
-      simp [Matrix.toBlocks₁₂, Matrix.toBlocks₁₁, Matrix.submatrix_apply]
-  rw [h]
+  rw [toBlocks₁₂_eq_toBlocks₁₁_reindexₗ ℂ]
   exact (norm_toBlocks₁₁_le _).trans_eq (norm_reindexₗ ..)
 /-- Extracting the lower-left block does not increase the operator norm. -/
 theorem norm_toBlocks₂₁_le : ‖M.toBlocks₂₁‖ ≤ ‖M‖ := by
-  have h : M.toBlocks₂₁ = (reindexₗ ℂ A (.sumComm m o) (.refl _) M).toBlocks₁₁ :=
-    ofMatrix.symm.injective <| by
-      rw [ofMatrix_symm_toBlocks₂₁, ofMatrix_symm_toBlocks₁₁, ofMatrix_symm_reindexₗ,
-        Matrix.reindex_apply]
-      ext i j
-      simp [Matrix.toBlocks₂₁, Matrix.toBlocks₁₁, Matrix.submatrix_apply]
-  rw [h]
+  rw [toBlocks₂₁_eq_toBlocks₁₁_reindexₗ ℂ]
   exact (norm_toBlocks₁₁_le _).trans_eq (norm_reindexₗ ..)
 /-- Extracting the lower-right block does not increase the operator norm. -/
 theorem norm_toBlocks₂₂_le : ‖M.toBlocks₂₂‖ ≤ ‖M‖ := by
-  have h : M.toBlocks₂₂ = (reindexₗ ℂ A (.sumComm m o) (.sumComm l n) M).toBlocks₁₁ :=
-    ofMatrix.symm.injective <| by
-      rw [ofMatrix_symm_toBlocks₂₂, ofMatrix_symm_toBlocks₁₁, ofMatrix_symm_reindexₗ,
-        Matrix.reindex_apply]
-      ext i j
-      simp [Matrix.toBlocks₂₂, Matrix.toBlocks₁₁, Matrix.submatrix_apply]
-  rw [h]
+  rw [toBlocks₂₂_eq_toBlocks₁₁_reindexₗ ℂ]
   exact (norm_toBlocks₁₁_le _).trans_eq (norm_reindexₗ ..)
 end
 /-- Operator norm bound for a four-block `CStarMatrix` via its diagonal and off-diagonal blocks. -/

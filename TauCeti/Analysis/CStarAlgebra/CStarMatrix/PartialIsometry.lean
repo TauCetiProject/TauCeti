@@ -157,71 +157,28 @@ protected theorem amplify (k : Type*) [Fintype k] [DecidableEq k] [NonUnitalNonA
 end IsPartialIsometry
 end
 
-/-- For a star projection `p`, `fromRows p 0 * (fromRows p 0)ᴴ = blockSum p 0`. -/
-theorem _root_.IsStarProjection.fromRows_zero_mul_conjTranspose_fromRows_zero [Fintype m]
-    [NonUnitalNonAssocSemiring A] [StarAddMonoid A] {p : CStarMatrix m m A}
-    (hp : IsStarProjection p) :
-    fromRows p (0 : CStarMatrix n m A) * (fromRows p (0 : CStarMatrix n m A)).conjTranspose =
-      blockSum p (0 : CStarMatrix n n A) := by
-  rw [fromRows_mul_conjTranspose_fromRows]
-  simp [hp.isSelfAdjoint.conjTranspose_eq, hp.isIdempotentElem.eq, blockSum_def]
-section
-variable [Fintype n] [NonUnitalNonAssocSemiring A] [StarRing A]
-  {p₁ p₂ : CStarMatrix n n A} (hp₁ : IsStarProjection p₁) (hp₂ : IsStarProjection p₂)
-  (h₁₂ : p₁ * p₂ = 0)
-include hp₁ hp₂ h₁₂
-/-- For orthogonal projections `p₁, p₂`, `fromRows p₁ p₂ * (fromRows p₁ p₂)ᴴ = blockSum p₁ p₂`. -/
-theorem _root_.IsStarProjection.fromRows_mul_conjTranspose_fromRows_eq_blockSum :
-    fromRows p₁ p₂ * (fromRows p₁ p₂).conjTranspose = blockSum p₁ p₂ := by
-  have h₂₁ : p₂ * p₁ = 0 := by
-    simpa [hp₁.isSelfAdjoint.conjTranspose_eq, hp₂.isSelfAdjoint.conjTranspose_eq] using
-      congrArg CStarMatrix.conjTranspose h₁₂
-  rw [fromRows_mul_conjTranspose_fromRows, hp₁.isSelfAdjoint.conjTranspose_eq,
-    hp₂.isSelfAdjoint.conjTranspose_eq, hp₁.isIdempotentElem.eq,
-    hp₂.isIdempotentElem.eq, h₁₂, h₂₁, ← blockSum_def]
 /-- Vertical row stack `fromRows p₁ p₂` of two orthogonal star projections is a partial isometry. -/
-theorem _root_.IsStarProjection.isPartialIsometry_fromRows_of_mul_eq_zero :
+theorem _root_.IsStarProjection.isPartialIsometry_fromRows_of_mul_eq_zero [Fintype n]
+    [NonUnitalNonAssocSemiring A] [StarRing A] {p₁ p₂ : CStarMatrix n n A}
+    (hp₁ : IsStarProjection p₁) (hp₂ : IsStarProjection p₂) (h₁₂ : p₁ * p₂ = 0) :
     (fromRows p₁ p₂).IsPartialIsometry := by
   rw [isPartialIsometry_iff, hp₁.fromRows_mul_conjTranspose_fromRows_eq_blockSum hp₂ h₁₂,
     blockSum_mul_fromRows, hp₁.isIdempotentElem.eq, hp₂.isIdempotentElem.eq]
-end
-/-- Right-multiplying `M` by a star projection `p` gives `(M * p) * (M * p)ᴴ = M * p * Mᴴ`. -/
-theorem self_mul_conjTranspose_mul_of_isStarProjection [Fintype n] [NonUnitalSemiring A]
-    [StarRing A] (M : CStarMatrix m n A) {p : CStarMatrix n n A} (hp : IsStarProjection p) :
-    (M * p) * (M * p).conjTranspose = M * p * M.conjTranspose := by
-  rw [conjTranspose_mul, hp.isSelfAdjoint.conjTranspose_eq, mul_assoc_rectangular,
-    ← mul_assoc_rectangular p, hp.isIdempotentElem.eq, mul_assoc_rectangular]
-section
-variable [Fintype m] [Fintype n] [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix n n A}
-/-- If `uᴴ * u` acts as the identity on the range of a star projection `p`, then
-`(u * p)ᴴ * (u * p) = p`. -/
-theorem _root_.IsStarProjection.conjTranspose_mul_self_mul_of_conjTranspose_mul_self_mul_eq
-    (hp : IsStarProjection p) {u : CStarMatrix m n A} (hu : u.conjTranspose * u * p = p) :
-    (u * p).conjTranspose * (u * p) = p := by
-  rw [conjTranspose_mul, hp.isSelfAdjoint.conjTranspose_eq, mul_assoc_rectangular,
-    ← mul_assoc_rectangular u.conjTranspose, hu, hp.isIdempotentElem.eq]
 /-- If `uᴴ * u` acts as the identity on the range of a star projection `p`, then `u * p` is a
 partial isometry. -/
 theorem IsPartialIsometry.mul_of_conjTranspose_mul_self_mul_eq_of_isStarProjection
+    [Fintype m] [Fintype n] [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix n n A}
     {u : CStarMatrix m n A} (hu : u.conjTranspose * u * p = p) (hp : IsStarProjection p) :
     (u * p).IsPartialIsometry := by
   rw [isPartialIsometry_iff, mul_assoc_rectangular,
     hp.conjTranspose_mul_self_mul_of_conjTranspose_mul_self_mul_eq hu, mul_assoc_rectangular,
     hp.isIdempotentElem.eq]
-end
-section
-variable [Fintype m] [Fintype n] [DecidableEq n] [Semiring A] [StarRing A] {p : CStarMatrix n n A}
-/-- Initial projection of `u * p` for an isometry `u` (`uᴴ * u = 1`) and star projection `p`. -/
-theorem _root_.IsStarProjection.conjTranspose_mul_self_mul_of_conjTranspose_mul_self_eq_one
-    (hp : IsStarProjection p) {u : CStarMatrix m n A} (hu : u.conjTranspose * u = 1) :
-    (u * p).conjTranspose * (u * p) = p :=
-  hp.conjTranspose_mul_self_mul_of_conjTranspose_mul_self_mul_eq (by rw [hu, CStarMatrix.one_mul])
 /-- Left-multiplying a star projection `p` by an isometry `u` yields a partial isometry. -/
 theorem IsPartialIsometry.mul_of_conjTranspose_mul_self_eq_one_of_isStarProjection
+    [Fintype m] [Fintype n] [DecidableEq n] [Semiring A] [StarRing A] {p : CStarMatrix n n A}
     {u : CStarMatrix m n A} (hu : u.conjTranspose * u = 1) (hp : IsStarProjection p) :
     (u * p).IsPartialIsometry :=
   mul_of_conjTranspose_mul_self_mul_eq_of_isStarProjection (by rw [hu, CStarMatrix.one_mul]) hp
-end
 
 section
 variable [Fintype k] [Fintype l] [Fintype m] [Fintype n] [Fintype o]
