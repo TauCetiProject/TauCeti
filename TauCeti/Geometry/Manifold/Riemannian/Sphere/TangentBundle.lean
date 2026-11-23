@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.OrthogonalComplement
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Projection
 
 /-!
@@ -18,21 +19,23 @@ import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Projection
 
 For an `(n + 1)`-dimensional real inner product space `E`, `TauCeti.sphereTangentEquiv x`
 identifies the native tangent space `TangentSpace (𝓡 n) x` at `x : sphere (0 : E) 1` isometrically
-with the orthogonal complement `(ℝ ∙ (x : E))ᗮ`, with continuous linear inverse
-`TauCeti.sphereTangentProj x` (in `Sphere/Basic.lean`). Building on
-`TauCeti.contMDiff_coe_sphereTangentEquiv` (in `Sphere/Basic.lean`),
+with the orthogonal complement `(ℝ ∙ (x : E))ᗮ`, and
+`TauCeti.sphereTangentProj x : E →L[ℝ] TangentSpace (𝓡 n) x` (in `Sphere/Basic.lean`) is the
+tangential projection: it restricts to `(TauCeti.sphereTangentEquiv x).symm` on `(ℝ ∙ (x : E))ᗮ` and
+kills `x`. Building on `TauCeti.contMDiff_coe_sphereTangentEquiv` (in `Sphere/Basic.lean`),
 `TauCeti.contMDiff_sphereTangentEquiv_symm` (in `Sphere/Gradient.lean`), and
-`TauCeti.contMDiff_starProjection_orthogonal_span_singleton` (in
-`VectorBundle/Riemannian/Projection.lean`), this file promotes those pointwise identifications to
-`C^k` manifold and vector-bundle equivalences at every regularity `k : ℕ∞ω`:
+`TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalSpan` (in
+`VectorBundle/Riemannian/OrthogonalComplement.lean`), this file promotes those pointwise
+identifications to `C^k` manifold and vector-bundle equivalences at every regularity `k : ℕ∞ω`:
 
-* `TauCeti.contMDiff_sphereTangentProj`: the tangential projection `sphereTangentProj` is `C^k` on
-  total spaces for all `k : ℕ∞ω`.
-* `TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalSpan`,
-  `TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalSpanSphere`, and
-  `TauCeti.sphereTangentSubbundleDiffeomorph`: the orthogonal complements `(ℝ ∙ s b)ᗮ` of any
-  nowhere-zero `C^k` map `s` form a `C^k` subbundle of `Bundle.Trivial B E`, and on the sphere
-  `sphereTangentEquiv` gives a `C^k` bundle diffeomorphism onto its total space.
+* `TauCeti.contMDiff_sphereTangentProj`: for any `C^k` base map `f : M → sphere (0 : E) 1` and
+  `C^k` ambient map `u : M → E`, the tangential projection
+  `z ↦ ⟨f z, sphereTangentProj (f z) (u z)⟩` into `TangentBundle (𝓡 n) (sphere (0 : E) 1)` is
+  `C^k` for all `k : ℕ∞ω`.
+* `TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalSpanSphere` and
+  `TauCeti.sphereTangentSubbundleDiffeomorph`: the orthogonal complements `(ℝ ∙ (x : E))ᗮ` form a
+  `C^k` subbundle of `Bundle.Trivial (sphere (0 : E) 1) E`, and `sphereTangentEquiv` gives a `C^k`
+  bundle diffeomorphism onto its total space.
 * `TauCeti.sphereTangentProdRealEquiv`, `TauCeti.sphereTangentProdTrivialDiffeomorph`, and
   `TauCeti.sphereTangentProdRealDiffeomorph`: adjoining the radial normal line `ℝ ∙ (x : E)`
   splits the ambient trivial bundle as `TSⁿ ⊕ ε¹ ≅ εⁿ⁺¹`, with explicit inverse
@@ -60,47 +63,29 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-! ### Smooth tangential projection -/
 
-/-- Projecting an ambient vector `(x, u) : sphere (0 : E) 1 × E` tangentially into
+/-- For any `C^k` base map `f : M → sphere (0 : E) 1` and `C^k` ambient map `u : M → E`, the
+tangential projection `z ↦ ⟨f z, sphereTangentProj (f z) (u z)⟩` into
 `TangentBundle (𝓡 n) (sphere (0 : E) 1)` is `C^k` at every regularity `k : ℕ∞ω`. -/
-theorem contMDiff_sphereTangentProj {k : ℕ∞ω} :
-    ContMDiff ((𝓡 n).prod 𝓘(ℝ, E)) (𝓡 n).tangent k
-      (fun p : sphere (0 : E) 1 × E ↦
-        (⟨p.1, sphereTangentProj p.1 p.2⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) := by
-  have hu : ContMDiff ((𝓡 n).prod 𝓘(ℝ, E)) 𝓘(ℝ, E) k
-      (fun p : sphere (0 : E) 1 × E ↦ ((ℝ ∙ (p.1 : E))ᗮ.orthogonalProjectionOnto p.2 : E)) :=
+theorem contMDiff_sphereTangentProj {E' H' M : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace M] [ChartedSpace H' M]
+    {k : ℕ∞ω} {f : M → sphere (0 : E) 1} {u : M → E}
+    (hf : ContMDiff J (𝓡 n) k f) (hu : ContMDiff J 𝓘(ℝ, E) k u) :
+    ContMDiff J (𝓡 n).tangent k
+      (fun z ↦ (⟨f z, sphereTangentProj (f z) (u z)⟩ :
+        TangentBundle (𝓡 n) (sphere (0 : E) 1))) := by
+  have hu' : ContMDiff J 𝓘(ℝ, E) k
+      (fun z ↦ ((ℝ ∙ (f z : E))ᗮ.orthogonalProjectionOnto (u z) : E)) :=
     (contMDiff_starProjection_orthogonal_span_singleton
-      (contMDiff_coe_sphere.comp contMDiff_fst) contMDiff_snd
-      fun p ↦ ne_zero_of_mem_unit_sphere p.1).congr fun p ↦
+      (contMDiff_coe_sphere.comp hf) hu
+      fun z ↦ ne_zero_of_mem_unit_sphere (f z)).congr fun z ↦
         (Submodule.coe_orthogonalProjectionOnto_apply _ _).symm
-  have h := contMDiff_sphereTangentEquiv_symm contMDiff_fst hu fun p ↦
-    ((ℝ ∙ (p.1 : E))ᗮ.orthogonalProjectionOnto p.2).property
-  exact h.congr fun p ↦ congrArg (TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) p.1)
+  have h := contMDiff_sphereTangentEquiv_symm hf hu' fun z ↦
+    ((ℝ ∙ (f z : E))ᗮ.orthogonalProjectionOnto (u z)).property
+  exact h.congr fun z ↦ congrArg (TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) (f z))
     (by simp only [sphereTangentProj_apply, Subtype.coe_eta])
 
 /-! ### The smooth subbundle `(ℝ ∙ x)ᗮ` and bundle equivalence with `TSⁿ` -/
-
-/-- For any nowhere-zero `C^k` map `s : B → E` into an `(n + 1)`-dimensional real inner product
-space, the orthogonal hyperplanes `(ℝ ∙ s b)ᗮ` admit `C^k` local subbundle frames of rank `n`
-inside the ambient trivial bundle `Bundle.Trivial B E` at every regularity `k : ℕ∞ω`. -/
-theorem hasLocalContMDiffSubbundleFrames_orthogonalSpan
-    {X H B : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    [TopologicalSpace H] {IB : ModelWithCorners ℝ X H}
-    [TopologicalSpace B] [ChartedSpace H B]
-    {k : ℕ∞ω} {s : B → E} (hs : ContMDiff IB 𝓘(ℝ, E) k s) (hsne : ∀ b, s b ≠ 0) :
-    HasLocalContMDiffSubbundleFrames IB k E (Fin n)
-      (fun b : B ↦ ((ℝ ∙ s b)ᗮ : Submodule ℝ (Bundle.Trivial B E b))) := by
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  have hproj : ContMDiff (IB.prod 𝓘(ℝ, E)) (IB.prod 𝓘(ℝ, E)) k
-      (fun p : TotalSpace E (Bundle.Trivial B E) ↦
-        (⟨p.proj, (ℝ ∙ s p.proj)ᗮ.starProjection p.snd⟩ : TotalSpace E (Bundle.Trivial B E))) :=
-    Bundle.Trivial.contMDiff_mk_iff.mpr ⟨Bundle.contMDiff_proj _,
-      contMDiff_starProjection_orthogonal_span_singleton (hs.comp (Bundle.contMDiff_proj _))
-        (Bundle.Trivial.contMDiff_mk_iff.mp contMDiff_id).2 fun p ↦ hsne p.proj⟩
-  exact hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range
-    (fun b ↦ ((ℝ ∙ s b)ᗮ.starProjection : E →ₗ[ℝ] E))
-    hproj
-    (fun b ↦ Submodule.range_starProjection _)
-    fun b ↦ Submodule.finrank_orthogonal_span_singleton (hsne b)
 
 /-- The tangent hyperplanes `(ℝ ∙ (x : E))ᗮ` admit `C^k` local subbundle frames of rank `n` inside
 the ambient trivial bundle `Bundle.Trivial (sphere (0 : E) 1) E` at every regularity `k : ℕ∞ω`. -/
@@ -159,19 +144,21 @@ def sphereTangentSubbundleDiffeomorph {k : ℕ∞ω} :
   exact (bundleDiffeomorph
     (fun x ↦ (sphereTangentEquiv (n := n) x).symm.toContinuousLinearEquiv) hinv).symm
 
+/-- Forward formula for `TauCeti.sphereTangentSubbundleDiffeomorph`. -/
 @[simp]
 theorem sphereTangentSubbundleDiffeomorph_apply {k : ℕ∞ω}
     (p : TangentBundle (𝓡 n) (sphere (0 : E) 1)) :
     sphereTangentSubbundleDiffeomorph (k := k) p = ⟨p.proj, sphereTangentEquiv p.proj p.snd⟩ := by
   simp [sphereTangentSubbundleDiffeomorph]
 
+/-- Inverse formula for `TauCeti.sphereTangentSubbundleDiffeomorph`. -/
 @[simp]
 theorem sphereTangentSubbundleDiffeomorph_symm_apply {k : ℕ∞ω}
     (q : TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ)) :
     (sphereTangentSubbundleDiffeomorph (k := k)).symm q =
       ⟨q.proj, (sphereTangentEquiv q.proj).symm q.snd⟩ := by
   rw [sphereTangentSubbundleDiffeomorph, Diffeomorph.symm_symm]
-  exact bundleDiffeomorph_apply _ _ q
+  simp [bundleDiffeomorph_apply]
 
 /-! ### Radial-normal splitting `TSⁿ ⊕ ε¹ ≅ εⁿ⁺¹` -/
 
@@ -191,8 +178,9 @@ def sphereTangentProdRealEquiv (x : sphere (0 : E) 1) :
 @[simp]
 theorem sphereTangentProdRealEquiv_apply (x : sphere (0 : E) 1)
     (p : TangentSpace (𝓡 n) x × ℝ) :
-    sphereTangentProdRealEquiv x p = (sphereTangentEquiv x p.1 : E) + p.2 • (x : E) :=
-  (rfl)
+    sphereTangentProdRealEquiv x p = (sphereTangentEquiv x p.1 : E) + p.2 • (x : E) := by
+  simp [sphereTangentProdRealEquiv, Submodule.coe_prodEquivOfIsCompl',
+    LinearIsometryEquiv.toSpanUnitSingleton_apply]
 
 /-- Inverse formula for `TauCeti.sphereTangentProdRealEquiv`, recovering the tangential
 projection and radial inner product. -/
