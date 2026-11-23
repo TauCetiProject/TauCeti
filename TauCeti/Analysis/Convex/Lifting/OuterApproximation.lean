@@ -481,6 +481,21 @@ end Analytic
 
 section Separation
 
+private lemma not_fst_image_sharedOA_subset_directOA_of_rows
+    {g : ℝ → Fin 2 → ℝ} {h : (Fin 2 → ℝ) → ℝ} {a : Fin 1 → ℝ}
+    {Dg : Fin 1 → ℝ →L[ℝ] (Fin 2 → ℝ)} {Dh : Fin 1 → (Fin 2 → ℝ) →L[ℝ] ℝ}
+    (hcomp : ∀ i x, componentRow g (a i) (Dg i) x = ![x, -2 * x - 1])
+    (houter : ∀ i y, outerRow g h (a i) (Dh i) y = -2 * y 0 + y 1 - 1) :
+    ¬ Prod.fst '' sharedOA Set.univ Set.univ g h a Dg Dh 2 ⊆ directOA Set.univ g h a Dg Dh 2 :=
+  fun hsub => by
+    have hmem : ((-2 : ℝ), ![0, 3]) ∈ sharedOA Set.univ Set.univ g h a Dg Dh 2 :=
+      mem_sharedOA.2 ⟨mem_univ _, mem_univ _, fun i => by
+        rw [hcomp i, houter i]
+        exact ⟨fun j => by fin_cases j <;> norm_num, by norm_num⟩⟩
+    have hdir := (mem_directOA.1 (hsub ⟨((-2 : ℝ), ![0, 3]), hmem, rfl⟩)).2 0
+    rw [← outerRow_componentRow, houter 0, hcomp 0] at hdir
+    norm_num at hdir
+
 /-- Exact rows on selected coordinates strictly extend the monotone-derivative comparison: there
 exist `g : ℝ → Fin 2 → ℝ`, `h : (Fin 2 → ℝ) → ℝ`, an anchor `a : Fin 1 → ℝ`, and actual Fréchet
 derivatives `Dg`, `Dh` satisfying all hypotheses of `affine_coordinate_comparison` for `J = {0}` on
@@ -527,15 +542,7 @@ theorem exists_affine_coordinate_comparison_not_monotone :
   have houter (i : Fin 1) (y : Fin 2 → ℝ) : outerRow g h (a i) Dh0 y = -2 * y 0 + y 1 - 1 := by
     simp [outerRow_apply, g, h, a, Dh0, Matrix.vecHead, Matrix.vecTail]
     ring
-  have hnotSub : ¬ Prod.fst '' sharedOA Set.univ Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 ⊆
-      directOA Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 := fun hsub => by
-    have hmem : ((-2 : ℝ), ![0, 3]) ∈
-        sharedOA Set.univ Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 :=
-      mem_sharedOA.2 ⟨mem_univ _, mem_univ _, fun i => by
-        rw [hcomp i, houter i]
-        exact ⟨fun j => by fin_cases j <;> norm_num, by norm_num⟩⟩
-    have hdir := (mem_directOA.1 (hsub ⟨((-2 : ℝ), ![0, 3]), hmem, rfl⟩)).2 0
-    rw [← outerRow_componentRow, houter 0, hcomp 0] at hdir; norm_num at hdir
+  have hnotSub := not_fst_image_sharedOA_subset_directOA_of_rows hcomp houter
   have haff : ∀ i : Fin 1, ∀ x : ℝ, ∀ j ∈ ({0} : Set (Fin 2)),
       componentRow g (a i) Dg0 x j = g x j := fun i x j hj => by
     rw [mem_singleton_iff.1 hj, hcomp i, Matrix.cons_val_zero]

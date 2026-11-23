@@ -23,12 +23,16 @@ Mathlib defines `HasFDerivAtFilter` and `HasFDerivAt` on arbitrary topological v
 * `hasFDerivAtFilter_pi'` / `hasFDerivAt_pi'` in `Mathlib.Analysis.Calculus.FDeriv.Prod` allow
   arbitrary index types `ι`, but assume normed spaces on `E` and each coordinate space `F i`.
 
-This module provides the topological-vector-space versions directly via `Asymptotics.IsLittleOTVS`,
-adapting the proofs from those Mathlib modules to drop the norm hypotheses—specifically, for
-products, `HasFDerivAtFilter.proj` and `HasFDerivAt.proj` give the forward projection implication
-for arbitrary (possibly infinite) index types without normed-space hypotheses, rather than the full
-product equivalence. Where Mathlib already exposes a normed-space theorem under the unsuffixed
-name, we use the `_tvs` suffix to avoid name collisions.
+This module provides topological-vector-space versions of these rules via `Asymptotics.IsLittleOTVS`
+without normed-space hypotheses. In particular, for products over arbitrary (possibly infinite)
+index types, `HasFDerivAtFilter.proj` and `HasFDerivAt.proj` give the forward implication that a
+derivative into a product induces each coordinate derivative (rather than the full product
+equivalence). Where Mathlib already exposes a normed-space theorem under the unsuffixed name, we use
+the `_tvs` suffix to avoid name collisions.
+
+The affine, composition, and chain-rule proofs are adapted from
+`Mathlib.Analysis.Calculus.FDeriv.Affine`, `Mathlib.Analysis.Calculus.FDeriv.Comp`, and
+`Mathlib.Analysis.Calculus.FDeriv.Prod`.
 
 ## Main results
 

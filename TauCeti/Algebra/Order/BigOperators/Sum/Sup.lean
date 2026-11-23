@@ -16,10 +16,11 @@ import Mathlib.Algebra.Order.Group.CompleteLattice
 # Sums of componentwise maxima and mixed-choice sums
 
 For a finite family of nonempty finite index sets `H : ι → Finset I` and a family of values
-`f : ι → I → β` in a linearly ordered additive commutative monoid, the sum of the componentwise
-maxima `∑ j, (H j).sup' (hne j) (f j)` equals the maximum of the mixed-choice sums
-`∑ j, f j (choice j)` over all selections `choice ∈ Fintype.piFinset H`. Consequently, bounding
-the sum of componentwise maxima by `b` is equivalent to bounding every mixed-choice sum by `b`.
+`f : ι → I → β` in a linearly ordered additive commutative monoid with order-preserving addition,
+the sum of the componentwise maxima `∑ j, (H j).sup' (hne j) (f j)` equals the maximum of the
+mixed-choice sums `∑ j, f j (choice j)` over all selections `choice ∈ Fintype.piFinset H`.
+Consequently, bounding the sum of componentwise maxima by `b` is equivalent to bounding every
+mixed-choice sum by `b`.
 
 The conditional-supremum variant allows an arbitrary nonempty common index type when the codomain is
 a conditionally complete lattice with an additive commutative group structure and order-preserving

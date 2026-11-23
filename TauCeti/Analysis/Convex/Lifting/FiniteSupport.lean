@@ -293,6 +293,39 @@ end SumOuterCorrespondence
 
 section Separation
 
+private lemma not_fst_image_sharedOA_sum_subset_sq
+    (D : Set (Fin 2 → ℝ)) {a : Fin 2 → Fin 2 → ℝ} {Dg : Fin 2 → (Fin 2 → ℝ) →L[ℝ] (Fin 2 → ℝ)}
+    (hD : (![1, 1 / 4] : Fin 2 → ℝ) ∈ D)
+    (hrow : ∀ i x j, componentRow (fun x j => x j ^ 2) (a i) (Dg i) x j =
+      2 * (if i = 0 then (1 : ℝ) else -1) * x j - 1) :
+    ¬ Prod.fst '' sharedOA D Set.univ (fun x j => x j ^ 2) (fun y => ∑ j, y j) a Dg
+        (fun _ => ∑ j, ContinuousLinearMap.proj (R := ℝ) j) (1 / 2) ⊆
+      {x ∈ D | (∑ j, x j ^ 2) ≤ 1 / 2} := fun hsub => by
+  have horig := (hsub ⟨(![1, 1 / 4], ![1, -1 / 2]), mem_sharedOA_sum.2
+      ⟨hD, Set.mem_univ _, fun i j => by rw [hrow]; fin_cases i <;> fin_cases j <;> norm_num,
+        by norm_num [Fin.sum_univ_two]⟩, rfl⟩).2
+  norm_num [Fin.sum_univ_two] at horig
+
+private lemma not_directOA_sum_subset_fst_image_sharedOA_sq
+    (D : Set (Fin 2 → ℝ)) {g : (Fin 2 → ℝ) → Fin 2 → ℝ} {a : Fin 2 → Fin 2 → ℝ}
+    {Dg : Fin 2 → (Fin 2 → ℝ) →L[ℝ] (Fin 2 → ℝ)}
+    (hD : (![1, -1] : Fin 2 → ℝ) ∈ D)
+    (hrow : ∀ i x j, componentRow g (a i) (Dg i) x j =
+      2 * (if i = 0 then (1 : ℝ) else -1) * x j - 1) :
+    ¬ directOA D g (fun y => ∑ j, y j) a Dg
+        (fun _ => ∑ j, ContinuousLinearMap.proj (R := ℝ) j) (1 / 2) ⊆
+      Prod.fst '' sharedOA D Set.univ g (fun y => ∑ j, y j) a Dg
+        (fun _ => ∑ j, ContinuousLinearMap.proj (R := ℝ) j) (1 / 2) := fun hsub => by
+  have hmem : (![1, -1] : Fin 2 → ℝ) ∈ directOA D g (fun y => ∑ j, y j) a Dg
+      (fun _ => ∑ j, ContinuousLinearMap.proj (R := ℝ) j) (1 / 2) :=
+    mem_directOA.2 ⟨hD, fun i => by
+      rw [directRow_sum]
+      simp only [Fin.sum_univ_two, hrow]
+      fin_cases i <;> norm_num⟩
+  have hsh := (mem_fst_image_sharedOA_sum_iff_forall_choice.1 (hsub hmem)).2 ![0, 1]
+  simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, hrow] at hsh
+  norm_num at hsh
+
 /-- Strict separation of the original feasible set, shared-height projection
 (`Prod.fst '' sharedOA`), and direct outer approximation (`directOA`) — bridged to `sharedRows`
 and `independentRows` by `sharedOA_sum_eq_sharedRows` and
@@ -340,25 +373,12 @@ theorem exists_strict_sharedOA_ssubset_directOA :
   have hcmp := fullspace_analytic_comparison (1 / 2)
     (fun _ _ hxy => sum_le_sum fun j _ => hxy j) hc hhc ha hg hh
   have hrow (i : Fin 2) (x : Fin 2 → ℝ) (j : Fin 2) :
-      componentRow g (a i) (Dg i) x j = 2 * a i j * x j - 1 := by
+      componentRow g (a i) (Dg i) x j = 2 * (if i = 0 then (1 : ℝ) else -1) * x j - 1 := by
     by_cases hi : i = 0 <;> simp [componentRow_apply, g, a, Dg, hi] <;> ring
-  have hstrict1 : ¬ Prod.fst '' sharedOA D Set.univ g h a Dg Dh (1 / 2) ⊆
-      {x ∈ D | h (g x) ≤ 1 / 2} := fun hsub => by
-    have horig := (hsub ⟨(![1, 1 / 4], ![1, -1 / 2]), mem_sharedOA_sum.2
-        ⟨Set.mem_pi.mpr fun j _ => by fin_cases j <;> norm_num, Set.mem_univ _,
-          fun i j => by rw [hrow]; fin_cases i <;> fin_cases j <;> norm_num [a],
-          by norm_num [Fin.sum_univ_two]⟩, rfl⟩).2
-    norm_num [h, g, Fin.sum_univ_two] at horig
-  have hstrict2 : ¬ directOA D g h a Dg Dh (1 / 2) ⊆
-      Prod.fst '' sharedOA D Set.univ g h a Dg Dh (1 / 2) := fun hsub => by
-    have hmem : (![1, -1] : Fin 2 → ℝ) ∈ directOA D g h a Dg Dh (1 / 2) :=
-      mem_directOA.2 ⟨Set.mem_pi.mpr fun j _ => by fin_cases j <;> norm_num, fun i => by
-        simp only [h, Dh, directRow_sum]
-        simp only [Fin.sum_univ_two, hrow]
-        fin_cases i <;> norm_num [a]⟩
-    have hsh := (mem_fst_image_sharedOA_sum_iff_forall_choice.1 (hsub hmem)).2 ![0, 1]
-    simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, hrow] at hsh
-    norm_num [a] at hsh
+  have hstrict1 := not_fst_image_sharedOA_sum_subset_sq D
+    (Set.mem_pi.mpr fun j _ => by fin_cases j <;> norm_num) hrow
+  have hstrict2 := not_directOA_sum_subset_fst_image_sharedOA_sq D
+    (Set.mem_pi.mpr fun j _ => by fin_cases j <;> norm_num) hrow
   exact ⟨D, g, h, a, Dg, Dh, 1 / 2, ha, hg, hh,
     ssubset_iff_subset_ne.2 ⟨hcmp.1, fun heq => hstrict1 heq.symm.subset⟩,
     ssubset_iff_subset_ne.2 ⟨hcmp.2, fun heq => hstrict2 heq.symm.subset⟩⟩

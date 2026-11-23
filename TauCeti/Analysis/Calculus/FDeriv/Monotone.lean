@@ -14,9 +14,8 @@ If a map `f : E → F` between preordered real topological vector spaces is mono
 neighbourhood of `x` and has Fréchet derivative `f'` at `x`, then `f'` is monotone, provided
 addition preserves order in both `E` and `F` (`IsOrderedAddMonoid`), positive scaling preserves
 order in `E` (`PosSMulMono ℝ E`), and upper rays `Set.Ici` in `F` are closed
-(`ClosedIciTopology F`). The proof tests the integer-scaled directional difference quotients
-`n • (f (x + (n : ℝ)⁻¹ • v) - f x)` as `n → ∞` and passes to the limit in `Set.Ici 0` via
-`ClosedIciTopology F`, requiring no scalar-monotonicity hypothesis on `F`.
+(`ClosedIciTopology F`). In particular, the codomain `F` requires no scalar-monotonicity
+hypothesis.
 
 ## Main results
 
@@ -54,6 +53,9 @@ theorem HasFDerivAt.monotone_of_monotoneOn {f : E → F} {f' : E →L[ℝ] F} {x
   have hmem : ∀ᶠ n : ℕ in atTop, x + (n : ℝ)⁻¹ • v ∈ s :=
     (by simpa using hd.const_add x :
       Tendsto (fun n : ℕ => x + (n : ℝ)⁻¹ • v) atTop (𝓝 x)).eventually hs
+  -- Test the integer-scaled directional difference quotients `n • (f (x + (n : ℝ)⁻¹ • v) - f x)`
+  -- as `n → ∞` and pass to the limit in `Set.Ici 0` via `ClosedIciTopology F`, requiring no
+  -- scalar-monotonicity hypothesis on `F`.
   have hslope : Tendsto (fun n : ℕ => (n : ℝ) • (f (x + (n : ℝ)⁻¹ • v) - f x))
       atTop (𝓝 (f' v)) := by
     refine hf.hasFDerivWithinAt.lim hd (Eventually.of_forall fun _ => mem_univ _)
