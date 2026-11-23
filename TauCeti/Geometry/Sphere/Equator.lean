@@ -114,6 +114,30 @@ theorem surjective_orthogonalSphereToEquator (u : V) :
     Function.Surjective (orthogonalSphereToEquator u) :=
   (LinearIsometryEquiv.refl ℝ (ℝ ∙ u)ᗮ).surjective_sphereToEquator
 
+variable (u : V) in
+/-- The unit sphere of the orthogonal complement `u⊥` is homeomorphic to the equator of the unit
+sphere orthogonal to `u`, through `TauCeti.orthogonalSphereToEquator`; the inverse sends a point of
+the equator, a unit vector orthogonal to `u`, to itself. -/
+def orthogonalSphereHomeomorphEquator : sphere (0 : (ℝ ∙ u)ᗮ) 1 ≃ₜ sphereEquator u where
+  toFun := orthogonalSphereToEquator u
+  invFun q := ⟨⟨q.val.val, Submodule.mem_orthogonal_singleton_iff_inner_left.2
+      (mem_sphereEquator.1 q.property)⟩, by simp [norm_eq_of_mem_sphere]⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (orthogonalSphereToEquator u).continuous
+  continuous_invFun := by fun_prop
+
+@[simp]
+theorem orthogonalSphereHomeomorphEquator_apply (u : V) (s : sphere (0 : (ℝ ∙ u)ᗮ) 1) :
+    orthogonalSphereHomeomorphEquator u s = orthogonalSphereToEquator u s :=
+  (rfl)
+
+@[simp]
+theorem coe_orthogonalSphereHomeomorphEquator_symm_apply (u : V) (q : sphereEquator u) :
+    ((((orthogonalSphereHomeomorphEquator u).symm q : sphere (0 : (ℝ ∙ u)ᗮ) 1) : (ℝ ∙ u)ᗮ) :
+      V) = q :=
+  (rfl)
+
 /-- **The unit sphere has points other than `±p`** in dimension at least two, for instance any unit
 vector orthogonal to `p`. -/
 theorem exists_ne_and_ne_neg_sphere (hV : 1 < finrank ℝ V) (p : sphere (0 : V) 1) :

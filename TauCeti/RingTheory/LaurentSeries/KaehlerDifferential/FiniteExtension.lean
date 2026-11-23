@@ -213,7 +213,7 @@ theorem residue_eq_coeff_equivLevelContinuousKaehlerDifferential
         (Level.ContinuousKaehlerDifferential.equivLevel K d
           (equivLevelContinuousKaehlerDifferential K d ω))).coeff (-1) := by
   rw [residue_apply, ← trace_equivLevelContinuousKaehlerDifferential,
-    Level.ContinuousKaehlerDifferential.coeff_neg_one_equivLaurentSeries_trace]
+    Level.ContinuousKaehlerDifferential.residue_trace]
 
 /-- On a finite separable ramified level `Level K d` (`[NeZero ((d : ℕ) : K)]`), the intrinsic
 differential residue `residue K (Level K d)` agrees with `Level.residue K d` on the `dt`-coordinate
@@ -315,7 +315,7 @@ theorem residueBaseChange_eq_coeff (e : L ≃ₐ[K⸨X⸩] TauCeti.LaurentSeries
         (TauCeti.LaurentSeries.Level.ContinuousKaehlerDifferential.equivLevel K d
           (e.laurentDifferentialTensorEquiv η))).coeff (-1) := by
   rw [residueBaseChange_apply, ← trace_laurentDifferentialTensorEquiv e]
-  exact coeff_neg_one_equivLaurentSeries_trace _
+  exact residue_trace _
 
 /-- **Independence of the level chart.** Two isomorphisms with ramified levels give
 the same coefficient residue on scalar-extended forms. The levels need not be
@@ -441,7 +441,7 @@ theorem residue_eq_coeff_laurentDifferentialEquiv (e : L ≃ₐ[K⸨X⸩] Level 
         (Level.ContinuousKaehlerDifferential.equivLevel K d
           (e.laurentDifferentialEquiv ω))).coeff (-1) := by
   rw [Extension.ContinuousKaehlerDifferential.residue_apply, ← trace_laurentDifferentialEquiv e,
-    coeff_neg_one_equivLaurentSeries_trace]
+    residue_trace]
 
 /-- When `L` carries the `K⸨X⸩`-module topology, `e.laurentDifferentialEquiv` upgrades to a
 continuous `K⸨X⸩`-linear equivalence with the valuation-topologized level one-forms. -/

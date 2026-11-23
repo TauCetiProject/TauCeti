@@ -92,8 +92,7 @@ theorem ringKrullDim_le_one_of_isPrincipal_maximalIdeal {R : Type*} [CommRing R]
   obtain ⟨u, hu⟩ := h
   refine (ringKrullDim_le_spanFinrank_maximalIdeal R).trans ?_
   rw [hu]
-  exact_mod_cast (Submodule.spanFinrank_span_le_ncard_of_finite (Set.finite_singleton u)).trans
-    (Set.ncard_singleton u).le
+  exact_mod_cast (Submodule.spanFinrank_span_le_encard {u}).trans_eq (Set.encard_singleton u)
 
 /-- The maximal ideal of a Noetherian local ring of dimension greater than one is not
 principal. -/
@@ -108,7 +107,9 @@ namespace TauCeti.IsLocalRing
 
 open _root_.IsLocalRing Ideal
 
-variable {R : Type*} [CommRing R] [IsLocalRing R]
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R] [IsLocalRing R]
 
 /-- The first element of a pair generating the maximal ideal lies in the maximal ideal. -/
 theorem mem_maximalIdeal_of_span_pair_eq_maximalIdeal {x y : R}
@@ -128,11 +129,14 @@ theorem ne_zero_of_span_pair_eq_maximalIdeal (hprin : ¬ (maximalIdeal R).IsPrin
   notMem_span_singleton_of_span_pair_eq_maximalIdeal hprin (Set.pair_comm x y ▸ hxy)
     (h ▸ zero_mem _)
 
+end CommSemiring
+
 /-- In a local ring whose maximal ideal is not principal, each element of a pair
-generating the maximal ideal is a regular parameter: it does not lie in the square of the maximal
-ideal. -/
-theorem notMem_sq_of_span_pair_eq_maximalIdeal (hprin : ¬ (maximalIdeal R).IsPrincipal)
-    {x y : R} (hxy : span {x, y} = maximalIdeal R) : x ∉ maximalIdeal R ^ 2 := fun hx ↦ by
+generating the maximal ideal does not lie in the square of the maximal ideal: its image in the
+cotangent space `maximalIdeal R / maximalIdeal R ^ 2` is nonzero. -/
+theorem notMem_sq_of_span_pair_eq_maximalIdeal {R : Type*} [CommRing R] [IsLocalRing R]
+    (hprin : ¬ (maximalIdeal R).IsPrincipal) {x y : R} (hxy : span {x, y} = maximalIdeal R) :
+    x ∉ maximalIdeal R ^ 2 := fun hx ↦ by
   -- By Nakayama's lemma `y` alone would generate the maximal ideal.
   have hle : maximalIdeal R ≤ span {y} := by
     refine Submodule.le_of_le_smul_of_le_jacobson (hxy ▸ Submodule.fg_span (Set.toFinite _))
