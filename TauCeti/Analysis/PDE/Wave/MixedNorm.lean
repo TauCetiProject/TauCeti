@@ -416,17 +416,15 @@ private theorem integral_inner_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
   simp_rw [inner_setIntegral_Iio_phasePropagator_sub _ hZ, halfWavePropagator_neg]
 
 /-- For integrable `F : ℝ → L²(E)` and every time `t`, the frequency-localized Duhamel integrand
-`s ↦ D⁻¹ sin((t - s)D) Pⱼ Pⱼ F(s)` of the wave equation is integrable: at frequencies
+`s ↦ D⁻¹ sin((t - s)D) Pⱼ F(s)` of the wave equation is integrable: at frequencies
 `‖ξ‖ ≈ 2^j` the operators `D⁻¹ sin(τD)` are bounded uniformly in `τ`. -/
 theorem integrable_waveSinPropagator_sub_littlewoodPaley {j : ℤ}
     {m : Lp ℂ ∞ (volume : Measure E)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
     {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : Integrable F) (t : ℝ) :
-    Integrable fun s ↦ waveSinPropagator ℂ (t - s)
-      (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s))) := by
+    Integrable fun s ↦ waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ m (F s)) := by
   have hZ := (Lp.fourierMultiplierCLM ℂ m).integrable_comp
-    ((Lp.fourierMultiplierCLM ℂ m).integrable_comp
-      ((φ.dyadicMultiplier ℂ φ.invCutoff j).integrable_comp hF))
-  simp_rw [φ.waveSinPropagator_littlewoodPaley_littlewoodPaley_eq hm, halfWavePropagator_neg]
+    ((φ.dyadicMultiplier ℂ φ.invCutoff j).integrable_comp hF)
+  simp_rw [φ.waveSinPropagator_littlewoodPaley_eq hm, halfWavePropagator_neg]
   exact Integrable.smul (((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹ : ℂ)
     ((integrable_phasePropagator_apply sqrtNegLaplacianSymbol
       (continuous_sub_left t).aestronglyMeasurable hZ).sub (integrable_phasePropagator_apply

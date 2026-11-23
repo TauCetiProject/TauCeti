@@ -83,24 +83,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### The retarded estimate -/
 
-variable [MeasurableSpace E] [BorelSpace E]
-
-omit [FiniteDimensional ℝ E] in
-/-- Shifting the index by `d` costs the factor `2^{dσ}`:
-`∑ₗ ∑_{d ∈ S} 2^{(d + l)σ} Yₗ = (∑_{d ∈ S} 2^{dσ}) ∑ₗ 2^{lσ} Yₗ`. -/
-private theorem tsum_sum_ofReal_two_zpow_add_rpow_mul (σ : ℝ) (S : Finset ℤ) (Y : ℤ → ℝ≥0∞) :
-    ∑' l, ∑ d ∈ S, ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) * Y l =
-      ((∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) : ℝ≥0∞) *
-        ∑' l, ENNReal.ofReal (((2 : ℝ) ^ l) ^ σ) * Y l := by
-  rw [← ENNReal.tsum_mul_left]
-  refine tsum_congr fun l ↦ ?_
-  rw [ENNReal.ofNNReal_finsetSum, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun d _ ↦ ?_
-  rw [ENNReal.ofNNReal_toNNReal, zpow_add₀ two_ne_zero,
-    Real.mul_rpow (by positivity) (by positivity), ENNReal.ofReal_mul (by positivity)]
-  ring
-
-variable [Nontrivial E]
+variable [MeasurableSpace E] [BorelSpace E] [Nontrivial E]
 
 /-- At each time, the retarded Duhamel integral `u(t)` satisfies
 `‖u(t)‖_r ≤ ∑ₗ ∑_{|d| < L} ‖Φ_{d + l, l}(t)‖_r`, where `Φⱼₗ` is the retarded integral of
@@ -132,7 +115,8 @@ private theorem eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum {L : �
     have hH := (φ.dyadicMultiplier ℂ φ.invSumSq l).integrable_comp
       ((Lp.fourierMultiplierCLM ℂ (m l)).integrable_comp hF)
     rw [integral_finsetSum _ fun d _ ↦
-        (φ.integrable_waveSinPropagator_sub_littlewoodPaley (hm (d + l)) hH t).integrableOn,
+        (φ.integrable_waveSinPropagator_sub_littlewoodPaley (hm (d + l))
+          ((Lp.fourierMultiplierCLM ℂ (m (d + l))).integrable_comp hH) t).integrableOn,
       eLpNorm_congr_ae (Lp.coeFn_finsetSum _ _)]
     exact eLpNorm_sum_le hr
   · rw [integral_undef hint, eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]

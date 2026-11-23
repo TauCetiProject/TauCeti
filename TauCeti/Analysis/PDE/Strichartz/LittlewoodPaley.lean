@@ -71,32 +71,31 @@ public section
 open Filter MeasureTheory Topology
 open scoped ENNReal NNReal
 
+namespace TauCeti
+
+/-- **Shifting a dyadic weight.** In a sum over `l ∈ ℤ` of weighted terms `Yₗ`, shifting the index
+of the weight `2^{lσ}` by `d` costs the factor `2^{dσ}`:
+`∑ₗ ∑_{d ∈ S} 2^{(d + l)σ} Yₗ = (∑_{d ∈ S} 2^{dσ}) ∑ₗ 2^{lσ} Yₗ`. -/
+theorem tsum_sum_ofReal_two_zpow_add_rpow_mul (σ : ℝ) (S : Finset ℤ) (Y : ℤ → ℝ≥0∞) :
+    ∑' l, ∑ d ∈ S, ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) * Y l =
+      ((∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) : ℝ≥0∞) *
+        ∑' l, ENNReal.ofReal (((2 : ℝ) ^ l) ^ σ) * Y l := by
+  rw [← ENNReal.tsum_mul_left]
+  refine tsum_congr fun l ↦ ?_
+  rw [ENNReal.ofNNReal_finsetSum, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [ENNReal.ofNNReal_toNNReal, zpow_add₀ two_ne_zero,
+    Real.mul_rpow (by positivity) (by positivity), ENNReal.ofReal_mul (by positivity)]
+  ring
+
+end TauCeti
+
 namespace ContDiffBump
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] [Nontrivial V] (φ : ContDiffBump (0 : V))
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
   {β : Type*} {mβ : MeasurableSpace β} {ρ : Measure β}
-
-/-- **The `Lʳ` norm is at most the sum of the `Lʳ` norms of the blocks.** On a nontrivial space,
-for a bounded operator `A` on `L²(V, F)`, every `f ∈ L²` and every `1 ≤ r ≤ ∞`,
-`‖A f‖_r ≤ ∑ⱼ ‖A Pⱼ f‖_r`, where `Pⱼ` is the `L²` Fourier multiplier with symbol `ψⱼ`. Neither
-side is assumed finite. -/
-theorem eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM
-    {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
-    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
-    (A : Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V))
-    (f : Lp F 2 (volume : Measure V)) {r : ℝ≥0∞} (hr : 1 ≤ r) :
-    eLpNorm (A f) r volume ≤ ∑' j, eLpNorm (A (Lp.fourierMultiplierCLM F (m j) f)) r volume := by
-  by_contra! h
-  have hlim := (A.continuous.tendsto f).comp
-    (φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm f)
-  obtain ⟨N, hN⟩ := (hlim.eventually (TauCeti.lowerSemicontinuous_eLpNorm_Lp
-    (Measure.AbsolutelyContinuous.refl volume) r (A f) _ h)).exists
-  rw [Function.comp_apply, map_sum] at hN
-  dsimp only at hN
-  rw [eLpNorm_congr_ae (Lp.coeFn_finsetSum _ _)] at hN
-  exact (hN.trans_le ((eLpNorm_sum_le hr).trans (sum_le_tsum _))).false
 
 omit [Nontrivial V] in
 /-- The frequency-localized estimate applied to `x = Pⱼ f` bounds `‖T(·) Pⱼ f‖_{L^q L^r}` by

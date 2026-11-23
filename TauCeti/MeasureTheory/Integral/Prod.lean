@@ -113,7 +113,8 @@ theorem aestronglyMeasurable_setIntegral_of_measurableSet [SFinite μ] {K : γ �
   dsimp only
   have hRt : MeasurableSet {x | R t x} := measurable_prodMk_left hR
   rw [← integral_indicator hRt]
-  rfl
+  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+  by_cases h : R t x <;> simp [Set.indicator, h]
 
 /-- **Tonelli for a weighted integral of truncated integrals.** For a jointly measurable
 truncating relation `R` and a.e.-measurable integrand and weight, integrating first in `x` and then

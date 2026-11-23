@@ -118,7 +118,10 @@ together with the reconstruction `∑_{-N < j ≤ N} Pⱼ f → f`
 (`ContDiffBump.tendsto_sum_fourierMultiplierCLM_littlewoodPaley`) this gives the duality of the
 dyadic `ℓ¹` and `ℓ^∞` norms: if `‖Pₖ g‖₂ ≤ A 2^{kγ}` for every `k`, then
 `|⟪f, g⟫| ≤ K A ∑ⱼ 2^{jγ} ‖Pⱼ f‖₂` (`ContDiffBump.exists_enorm_inner_le_mul_tsum`), the pairing of
-the homogeneous Besov spaces `\dot B^γ_{2,1}` and `\dot B^{-γ}_{2,∞}`.
+the homogeneous Besov spaces `\dot B^γ_{2,1}` and `\dot B^{-γ}_{2,∞}`. Since the `Lʳ` seminorm
+is lower semicontinuous on `L²`, the reconstruction also gives `‖A f‖_r ≤ ∑ⱼ ‖A Pⱼ f‖_r` for
+every bounded operator `A` on `L²` and `1 ≤ r ≤ ∞`
+(`ContDiffBump.eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM`).
 
 ## Dyadic multipliers and squared blocks
 
@@ -840,6 +843,28 @@ theorem tendsto_sum_fourierMultiplierCLM_littlewoodPaley [Nontrivial V]
       (Complex.continuous_ofReal.tendsto _).comp
         ((φ.hasSum_littlewoodPaley hξ).comp (Finset.tendsto_Ioc_neg (R := ℤ)))
 
+/-- **The `Lʳ` norm is at most the sum of the `Lʳ` norms of the blocks.** On a nontrivial space,
+for a bounded operator `A` on `L²(V, F)`, every `f ∈ L²` and every `1 ≤ r ≤ ∞`,
+`‖A f‖_r ≤ ∑ⱼ ‖A Pⱼ f‖_r`, where `Pⱼ` is the `L²` Fourier multiplier with symbol `ψⱼ`: the partial
+sums of the blocks converge to `f` in `L²`, and the `Lʳ` seminorm is lower semicontinuous on `L²`.
+Neither side is assumed finite. -/
+theorem eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM [Nontrivial V]
+    (φ : ContDiffBump (0 : V)) {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
+    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
+    (A : Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V))
+    (f : Lp F 2 (volume : Measure V)) {r : ℝ≥0∞} (hr : 1 ≤ r) :
+    eLpNorm (A f) r volume ≤ ∑' j, eLpNorm (A (Lp.fourierMultiplierCLM F (m j) f)) r volume := by
+  by_contra! h
+  have hlim := (A.continuous.tendsto f).comp
+    (φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm f)
+  obtain ⟨N, hN⟩ := (hlim.eventually (TauCeti.lowerSemicontinuous_eLpNorm_Lp
+    (Measure.AbsolutelyContinuous.refl volume) r (A f) _ h)).exists
+  rw [Function.comp_apply, map_sum] at hN
+  dsimp only at hN
+  rw [eLpNorm_congr_ae (Lp.coeFn_finsetSum _ _)] at hN
+  exact (hN.trans_le ((eLpNorm_sum_le hr).trans (sum_le_tsum _))).false
+
+
 end ContDiffBump
 
 namespace TauCeti
@@ -1125,6 +1150,7 @@ def dyadicDilate (σ : 𝓢(V, ℂ)) (j : ℤ) : 𝓢(V, ℂ) :=
       (mul_pos (zpow_pos two_pos j) (half_pos φ.rIn_pos)).ne'))) σ
 
 /-- The values of the dyadic dilate `σ ((2^j φ.rIn / 2)⁻¹ ·)`. -/
+@[simp]
 theorem dyadicDilate_apply (σ : 𝓢(V, ℂ)) (j : ℤ) (ξ : V) :
     φ.dyadicDilate σ j ξ = σ (((2 : ℝ) ^ j * (φ.rIn / 2))⁻¹ • ξ) := by
   rw [dyadicDilate, SchwartzMap.compCLMOfContinuousLinearEquiv_apply, Function.comp_apply,
@@ -1238,11 +1264,7 @@ theorem sum_littlewoodPaley_mul_littlewoodPaley_mul_dyadicDilate_invSumSq {L : �
   have key := φ.dyadicDilate_invSumSq_mul_sumSqLittlewoodPaley h
   rw [hsum] at key
   push_cast at key
-  rw [← Finset.sum_congr rfl fun d _ ↦ (by ring :
-      (φ.littlewoodPaley (d + l) ξ : ℂ) ^ 2 *
-          (φ.dyadicDilate φ.invSumSq l ξ * (φ.littlewoodPaley l ξ : ℂ)) =
-        (φ.littlewoodPaley (d + l) ξ : ℂ) * ((φ.littlewoodPaley (d + l) ξ : ℂ) *
-          (φ.dyadicDilate φ.invSumSq l ξ * (φ.littlewoodPaley l ξ : ℂ)))), ← Finset.sum_mul]
+  simp only [← mul_assoc, ← sq, ← Finset.sum_mul]
   linear_combination (φ.littlewoodPaley l ξ : ℂ) * key
 
 variable [MeasurableSpace V] [BorelSpace V]
