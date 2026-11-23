@@ -236,7 +236,9 @@ instance [NeZero ε] {n : ℕ∞ω} :
   contMDiff_smul := by
     have hrot : (Subtype.val ∘ fun p : Circle × weightedEllipsoid a b ε ↦ p.1 • p.2) =
         fun p ↦ ((p.1 : ℂ) ^ a * (p.2 : ℂ × ℂ).1, (p.1 : ℂ) ^ b * (p.2 : ℂ × ℂ).2) :=
-      funext fun p ↦ Prod.ext (weightedRotation_fst _ _) (weightedRotation_snd _ _)
+      funext fun p ↦ by
+        rw [Function.comp_apply, coe_smul_weightedEllipsoid]
+        exact Prod.ext (weightedRotation_fst _ _) (weightedRotation_snd _ _)
     have hu : ContMDiff ((𝓡 1).prod 𝓘(ℝ, Fin 3 → ℝ)) 𝓘(ℝ, ℂ) n
         fun p : Circle × weightedEllipsoid a b ε ↦ (p.1 : ℂ) :=
       contMDiff_coe_sphere.comp contMDiff_fst
