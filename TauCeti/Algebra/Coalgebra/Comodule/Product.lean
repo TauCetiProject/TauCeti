@@ -34,6 +34,9 @@ The file also records that the four standard linear maps for a product, `fst`, `
 ## References
 
 The construction is the standard direct sum of comodules; see Sweedler, *Hopf Algebras*, Chapter 2.
+`binaryProductLimitCone` and its characteristic simp lemmas follow Mathlib's
+`ModuleCat.binaryProductLimitCone` and `ModuleCat.binaryProductLimitCone_cone_Ï€_app_left`/`_right`
+for modules.
 -/
 
 public section
@@ -592,7 +595,7 @@ theorem prod_hom_ext' {M N P : ComoduleCat.{u, v, w} R C} {f g : prod R C M N âŸ
 open CategoryTheory.Limits
 
 /-- The concrete product of comodules, with its two projections, is a limit cone over
-`pair M N`. -/
+`pair M N`. This is the comodule analogue of Mathlib's `ModuleCat.binaryProductLimitCone`. -/
 def binaryProductLimitCone (M N : ComoduleCat.{u, v, w} R C) :
     LimitCone (pair M N) where
   cone := BinaryFan.mk (prodFst M N) (prodSnd M N)

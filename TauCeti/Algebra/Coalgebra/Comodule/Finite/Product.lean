@@ -13,6 +13,7 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Preadditive
 public import TauCeti.Algebra.Coalgebra.Comodule.Product
+import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 
 /-!
 # Products of finitely generated comodules
@@ -57,18 +58,12 @@ namespace ComoduleCat
 isomorphic to the concrete product comodule on the product of the underlying modules. -/
 instance isFG_isClosedUnderBinaryProducts :
     (isFG.{u, v, w} R C).IsClosedUnderBinaryProducts := by
-  refine ObjectProperty.IsClosedUnderLimitsOfShape.mk' ?_
-  rintro _ ⟨F, hF⟩
-  let M := F.obj ⟨.left⟩
-  let N := F.obj ⟨.right⟩
-  have : Module.Finite R M := (isFG_iff R C M).mp (hF _)
-  have : Module.Finite R N := (isFG_iff R C N).mp (hF _)
-  have hprod : isFG R C (binaryProductLimitCone M N).cone.pt := by
-    rw [binaryProductLimitCone_cone_pt]
-    exact (isFG_iff R C (prod R C M N)).mpr (Module.Finite.prod : Module.Finite R (M × N))
-  exact (isFG R C).prop_of_iso
-    ((limit.isoLimitCone (binaryProductLimitCone M N)).symm ≪≫
-      (HasLimit.isoOfNatIso (diagramIsoPair F)).symm) hprod
+  refine (isFG R C).isClosedUnderBinaryProducts_of_exists_isLimit fun M N hM hN ↦
+    ⟨_, ⟨(binaryProductLimitCone M N).isLimit⟩, ?_⟩
+  have : Module.Finite R M := (isFG_iff R C M).mp hM
+  have : Module.Finite R N := (isFG_iff R C N).mp hN
+  rw [binaryProductLimitCone_cone_pt]
+  exact (isFG_iff R C (prod R C M N)).mpr (Module.Finite.prod : Module.Finite R (M × N))
 
 /-- Finitely generated comodules are closed under finite products. -/
 instance isFG_isClosedUnderFiniteProducts :
