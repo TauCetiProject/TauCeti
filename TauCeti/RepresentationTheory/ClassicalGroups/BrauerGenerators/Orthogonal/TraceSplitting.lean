@@ -9,8 +9,6 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Harmonic
 public import TauCeti.RepresentationTheory.Subrepresentation
--- Supplies `TauCeti.finrank_piTensorPower`.
-import TauCeti.LinearAlgebra.Dimension.TensorProduct
 
 /-!
 # The trace splitting of the orthogonal tensor powers
@@ -294,7 +292,7 @@ theorem finrank_harmonicTensors_two [NeZero n] :
     Module.finrank k (harmonicTensors k n 2) + 1 = n ^ 2 := by
   have h := LinearMap.finrank_range_add_finrank_ker (orthogonalCap k n)
   rw [LinearMap.range_eq_top.2 (orthogonalCap_surjective k n), finrank_top,
-    Module.finrank_self, finrank_piTensorPower, Nat.card_fin, Nat.card_fin] at h
+    Module.finrank_self, finrank_tensorPower] at h
   rw [harmonicTensors_two_eq_ker_orthogonalCap]
   omega
 
@@ -388,7 +386,7 @@ theorem isCompl_harmonicTensors_iSup_range_orthogonalCupCapAt :
     IsCompl (harmonicTensors k n d)
       (⨆ (i : Fin d) (j : Fin d) (_ : i ≠ j), LinearMap.range (orthogonalCupCapAt k n d i j)) := by
   have h := LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix
-    (piTensorPowerBasis k (Fin d) (Fin n))
+    (tensorPowerBasis k n d)
     (fun p : {p : Fin d × Fin d // p.1 ≠ p.2} => orthogonalCupCapAt k n d p.val.1 p.val.2)
     fun _ => isHermitian_toMatrix_orthogonalCupCapAt
   simpa only [iInf_subtype, iSup_subtype, iInf_prod, iSup_prod, harmonicTensors_def] using h

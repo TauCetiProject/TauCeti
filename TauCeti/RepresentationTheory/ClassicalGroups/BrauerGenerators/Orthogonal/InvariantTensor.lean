@@ -114,8 +114,7 @@ output slots, are the products of their coordinates. -/
 theorem repr_tmulEquiv_tmul (a x : ⨂[R] _ : Fin k, Fin n → R) (u v : Fin k → Fin n) :
     (boundaryTensorBasis R n k).repr (PiTensorProduct.tmulEquiv R (Fin n → R) (a ⊗ₜ[R] x))
         (Sum.elim u v) =
-      (piTensorPowerBasis R (Fin k) (Fin n)).repr a u *
-        (piTensorPowerBasis R (Fin k) (Fin n)).repr x v := by
+      (tensorPowerBasis R n k).repr a u * (tensorPowerBasis R n k).repr x v := by
   induction a using PiTensorProduct.induction_on with
   | add a₁ a₂ h₁ h₂ =>
     simp only [TensorProduct.add_tmul, map_add, Finsupp.add_apply, h₁, h₂, add_mul]
@@ -126,7 +125,7 @@ theorem repr_tmulEquiv_tmul (a x : ⨂[R] _ : Fin k, Fin n → R) (u v : Fin k �
     | smul_tprod s x =>
       simp only [TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', map_smul,
         PiTensorProduct.tmulEquiv_apply, Finsupp.smul_apply, smul_eq_mul,
-        repr_boundaryTensorBasis_tprod, piTensorPowerBasis_def,
+        repr_boundaryTensorBasis_tprod, tensorPowerBasis_def,
         Basis.piTensorProduct_repr_tprod_apply, Fintype.prod_sum_type, Sum.elim_inl, Sum.elim_inr,
         Pi.basisFun_repr]
       ring
@@ -147,9 +146,8 @@ and the output slots. By `TauCeti.boundaryTensorEquiv_dualTensorHom` the identif
 its dual is the one induced by the dot product on `Rⁿ`. -/
 noncomputable def boundaryTensorEquiv :
     Module.End R (⨂[R] _ : Fin k, Fin n → R) ≃ₗ[R] ⨂[R] _ : Fin k ⊕ Fin k, Fin n → R :=
-  (dualTensorHomEquivOfBasis (piTensorPowerBasis R (Fin k) (Fin n))).symm.trans
-    ((TensorProduct.congr (piTensorPowerBasis R (Fin k) (Fin n)).toDualEquiv.symm
-        (LinearEquiv.refl R _)).trans
+  (dualTensorHomEquivOfBasis (tensorPowerBasis R n k)).symm.trans
+    ((TensorProduct.congr (tensorPowerBasis R n k).toDualEquiv.symm (LinearEquiv.refl R _)).trans
       (PiTensorProduct.tmulEquiv R (Fin n → R)))
 
 variable {R n k}
@@ -159,15 +157,13 @@ inputs with their images. -/
 theorem boundaryTensorEquiv_eq_sum (f : Module.End R (⨂[R] _ : Fin k, Fin n → R)) :
     boundaryTensorEquiv R n k f =
       ∑ u, PiTensorProduct.tmulEquiv R (Fin n → R)
-        (piTensorPowerBasis R (Fin k) (Fin n) u ⊗ₜ[R]
-          f (piTensorPowerBasis R (Fin k) (Fin n) u)) := by
-  have hsymm : (dualTensorHomEquivOfBasis (piTensorPowerBasis R (Fin k) (Fin n))).symm f =
-      ∑ u, (piTensorPowerBasis R (Fin k) (Fin n)).toDual
-          (piTensorPowerBasis R (Fin k) (Fin n) u) ⊗ₜ[R]
-        f (piTensorPowerBasis R (Fin k) (Fin n) u) := by
+        (tensorPowerBasis R n k u ⊗ₜ[R] f (tensorPowerBasis R n k u)) := by
+  have hsymm : (dualTensorHomEquivOfBasis (tensorPowerBasis R n k)).symm f =
+      ∑ u, (tensorPowerBasis R n k).toDual (tensorPowerBasis R n k u) ⊗ₜ[R]
+        f (tensorPowerBasis R n k u) := by
     rw [LinearEquiv.symm_apply_eq, map_sum]
     refine LinearMap.ext fun x => ?_
-    conv_lhs => rw [← (piTensorPowerBasis R (Fin k) (Fin n)).sum_repr x, map_sum]
+    conv_lhs => rw [← (tensorPowerBasis R n k).sum_repr x, map_sum]
     rw [LinearMap.sum_apply]
     refine Fintype.sum_congr _ _ fun u => ?_
     rw [dualTensorHomEquivOfBasis_apply, dualTensorHom_apply, Module.Basis.toDual_apply_right,
@@ -185,8 +181,7 @@ coefficient of the basis tensor `e_v` in `f e_u`. -/
 theorem repr_boundaryTensorEquiv (f : Module.End R (⨂[R] _ : Fin k, Fin n → R))
     (u v : Fin k → Fin n) :
     (boundaryTensorBasis R n k).repr (boundaryTensorEquiv R n k f) (Sum.elim u v) =
-      LinearMap.toMatrix (piTensorPowerBasis R (Fin k) (Fin n))
-        (piTensorPowerBasis R (Fin k) (Fin n)) f v u := by
+      LinearMap.toMatrix (tensorPowerBasis R n k) (tensorPowerBasis R n k) f v u := by
   simp only [boundaryTensorEquiv_eq_sum, map_sum, Finsupp.finsetSum_apply, repr_tmulEquiv_tmul,
     Module.Basis.repr_self, Finsupp.single_apply, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq',
     Finset.mem_univ, ite_true, LinearMap.toMatrix_apply]
@@ -198,10 +193,9 @@ private theorem repr_piTensorProductMap (A : Matrix (Fin n) (Fin n) R)
       ∑ m, (∏ s, A (ℓ s) (m s)) * (boundaryTensorBasis R n k).repr x m := by
   have h := LinearMap.toMatrix_mulVec_repr (boundaryTensorBasis R n k) (boundaryTensorBasis R n k)
     (PiTensorProduct.map fun _ : Fin k ⊕ Fin k => A.mulVecLin) x
-  rw [boundaryTensorBasis, ← piTensorPowerBasis_def,
-    A.toMatrix_piTensorProductMap_mulVecLin] at h
-  simpa only [boundaryTensorBasis, piTensorPowerBasis_def, Matrix.mulVec, dotProduct,
-    Matrix.kroneckerPower_apply] using (congrFun h ℓ).symm
+  rw [boundaryTensorBasis, A.toMatrix_piTensorProductMap_mulVecLin] at h
+  simpa only [boundaryTensorBasis, Matrix.mulVec, dotProduct, Matrix.kroneckerPower_apply] using
+    (congrFun h ℓ).symm
 
 /-- **Two-sided multiplication is the action on all the slots.** Composing `f` with the tensor power
 of `A` on the outputs and of its transpose on the inputs applies `A` in all `2 * k` slots of the
@@ -223,10 +217,9 @@ theorem boundaryTensorEquiv_piTensorProductMap_comp_comp (A : Matrix (Fin n) (Fi
   have hsymm : ∀ p : (Fin k → Fin n) × (Fin k → Fin n),
       (Equiv.sumArrowEquivProdArrow (Fin k) (Fin k) (Fin n)).symm p = Sum.elim p.1 p.2 := fun p =>
     funext fun x => by cases x <;> rfl
-  rw [repr_piTensorProductMap, repr_boundaryTensorEquiv,
-    LinearMap.toMatrix_comp _ (piTensorPowerBasis R (Fin k) (Fin n)),
-    LinearMap.toMatrix_comp _ (piTensorPowerBasis R (Fin k) (Fin n)),
-    A.toMatrix_piTensorProductMap_mulVecLin, Aᵀ.toMatrix_piTensorProductMap_mulVecLin,
+  rw [repr_piTensorProductMap, repr_boundaryTensorEquiv, LinearMap.toMatrix_comp _
+      (tensorPowerBasis R n k), LinearMap.toMatrix_comp _ (tensorPowerBasis R n k),
+    A.toMatrix_piTensorProductMap_tensorPowerBasis, Aᵀ.toMatrix_piTensorProductMap_tensorPowerBasis,
     ← Matrix.transpose_kroneckerPower, ← Matrix.mul_assoc,
     ← (Equiv.sumArrowEquivProdArrow (Fin k) (Fin k) (Fin n)).symm.sum_comp, Fintype.sum_prod_type]
   simp only [Matrix.mul_apply, Matrix.transpose_apply, Finset.sum_mul, hsymm, hprod,
@@ -341,16 +334,15 @@ theorem boundaryTensorEquiv_dualTensorHom (a : Fin k → Fin n → R) (w : ⨂[R
       PiTensorProduct.tmulEquiv R (Fin n → R) (PiTensorProduct.tprod R a ⊗ₜ[R] w) := by
   have hdual : PiTensorProduct.dualDistrib (PiTensorProduct.tprod R fun i =>
       stdOrthogonalRepToDual R n (a i)) =
-        (piTensorPowerBasis R (Fin k) (Fin n)).toDualEquiv (PiTensorProduct.tprod R a) := by
-    refine (piTensorPowerBasis R (Fin k) (Fin n)).ext fun u => ?_
-    rw [Module.Basis.toDualEquiv_apply, Module.Basis.toDual_apply_left, piTensorPowerBasis_apply,
-      PiTensorProduct.dualDistrib_apply, piTensorPowerBasis_def,
+        (tensorPowerBasis R n k).toDualEquiv (PiTensorProduct.tprod R a) := by
+    refine (tensorPowerBasis R n k).ext fun u => ?_
+    rw [Module.Basis.toDualEquiv_apply, Module.Basis.toDual_apply_left, tensorPowerBasis_apply,
+      PiTensorProduct.dualDistrib_apply, tensorPowerBasis_def,
       Basis.piTensorProduct_repr_tprod_apply]
     simp [stdOrthogonalRepToDual_apply]
   rw [boundaryTensorEquiv, LinearEquiv.trans_apply, ← dualTensorHomEquivOfBasis_apply
-      (piTensorPowerBasis R (Fin k) (Fin n)), LinearEquiv.symm_apply_apply,
-    LinearEquiv.trans_apply, TensorProduct.congr_tmul, hdual, LinearEquiv.symm_apply_apply,
-    LinearEquiv.refl_apply]
+      (tensorPowerBasis R n k), LinearEquiv.symm_apply_apply, LinearEquiv.trans_apply,
+    TensorProduct.congr_tmul, hdual, LinearEquiv.symm_apply_apply, LinearEquiv.refl_apply]
 
 /-- **Equivariance of the identification.** For `g` in the orthogonal group, conjugating `f` by the
 action of `g` on `(Rⁿ)^{⊗k}` acts on the tensor of `f` by `g` in all `2 * k` slots. -/

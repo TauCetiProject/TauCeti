@@ -112,8 +112,7 @@ over the oriented arcs of `D.framing`, multiplied by `sign D.framing`. When `W` 
 this is independent of the framing (`TauCeti.BrauerDiagram.skewArcProd_eq_of_isFraming`). -/
 noncomputable def skewArcProd (D : BrauerDiagram k)
     (W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R) : R :=
-  ((Equiv.Perm.sign D.framing : ℤ) : R) *
-    ∏ r : Fin k, W (D.framing (Sum.inl r)) (D.framing (Sum.inr r))
+  rawArcProd W D.framing
 
 /-- Defining formula of `TauCeti.BrauerDiagram.skewArcProd` in terms of `D.framing`. -/
 theorem skewArcProd_def (D : BrauerDiagram k)
@@ -121,17 +120,11 @@ theorem skewArcProd_def (D : BrauerDiagram k)
     D.skewArcProd W = ((Equiv.Perm.sign D.framing : ℤ) : R) *
       ∏ r : Fin k, W (D.framing (Sum.inl r)) (D.framing (Sum.inr r)) := (rfl)
 
-/-- `skewArcProd` is `rawArcProd` evaluated at the chosen framing `D.framing`. -/
-private theorem skewArcProd_eq_rawArcProd (D : BrauerDiagram k)
-    (W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R) :
-    D.skewArcProd W = rawArcProd W D.framing :=
-  (rfl)
-
 /-- Applying a ring homomorphism commutes with `TauCeti.BrauerDiagram.skewArcProd`. -/
 theorem map_skewArcProd {S : Type*} [CommRing S] (f : R →+* S) (D : BrauerDiagram k)
     (W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R) :
     f (D.skewArcProd W) = D.skewArcProd (W.map f) := by
-  simp [skewArcProd]
+  simp [skewArcProd_def]
 
 /-- **Framing independence of the signed arc product**: for a skew-symmetric matrix `W`,
 `D.skewArcProd W` can be computed using *any* framing `π` of `D`. -/
@@ -142,7 +135,7 @@ theorem skewArcProd_eq_of_isFraming (D : BrauerDiagram k)
       ((Equiv.Perm.sign π : ℤ) : R) * ∏ r : Fin k, W (π (Sum.inl r)) (π (Sum.inr r)) := by
   obtain ⟨σ, τ, hdecomp⟩ := exists_mul_sumCongr_mul_of_congr_permToBrauer_one_eq
     (((D.isFraming_def π).mp hπ).trans ((D.isFraming_def D.framing).mp D.isFraming_framing).symm)
-  rw [skewArcProd_eq_rawArcProd, hdecomp, rawArcProd_mul_prodCongrLeft hW, rawArcProd_mul_sumCongr]
+  rw [skewArcProd, hdecomp, rawArcProd_mul_prodCongrLeft hW, rawArcProd_mul_sumCongr]
   rfl
 
 /-- On the identity diagram, the signed arc product is `∏ r, W (Sum.inl r) (Sum.inr r)`. -/
@@ -190,7 +183,7 @@ theorem skewArcProd_congr (D : BrauerDiagram k) (ρ : Equiv.Perm (Fin k ⊕ Fin 
     {W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R} (hW : ∀ x y, W y x = -W x y) :
     skewArcProd (PerfectMatching.congr ρ D) W =
       ((Equiv.Perm.sign ρ : ℤ) : R) * D.skewArcProd (W.submatrix ρ ρ) := by
-  rw [skewArcProd_eq_of_isFraming _ hW (D.isFraming_framing.congr ρ), skewArcProd]
+  rw [skewArcProd_eq_of_isFraming _ hW (D.isFraming_framing.congr ρ), skewArcProd_def]
   simp only [map_mul, Units.val_mul, Int.cast_mul, mul_assoc, Matrix.submatrix_apply,
     Equiv.Perm.mul_apply]
 

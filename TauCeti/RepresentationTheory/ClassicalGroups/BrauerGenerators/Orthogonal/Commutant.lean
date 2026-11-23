@@ -306,7 +306,7 @@ theorem range_brauerActionOrth_two_eq_centralizer_of_sq_add_sq_eq_one (n : ℕ) 
     (brauerActionOrth K n 2).range =
       Subalgebra.centralizer K (Set.range ((stdOrthogonalRep K n).tensorPower 2)) := by
   refine le_antisymm (range_brauerActionOrth_le_centralizer K n 2) fun T hT ↦ ?_
-  set b := piTensorPowerBasis K (Fin 2) (Fin n)
+  set b := tensorPowerBasis K n 2
   -- The matrix of `T` commutes with the Kronecker square of every orthogonal matrix.
   have hM (g : Matrix.orthogonalGroup (Fin n) K) :
       LinearMap.toMatrix b b T * (g : Matrix (Fin n) (Fin n) K).kroneckerPower (Fin 2) =
@@ -315,7 +315,7 @@ theorem range_brauerActionOrth_two_eq_centralizer_of_sq_add_sq_eq_one (n : ℕ) 
     have h := congrArg (LinearMap.toMatrix b b) (hT _ ⟨g, rfl⟩)
     rw [Representation.tensorPower_apply] at h
     simp only [stdOrthogonalRep_apply, LinearMap.toMatrix_mul, b,
-      Matrix.toMatrix_piTensorProductMap_mulVecLin] at h
+      Matrix.toMatrix_piTensorProductMap_tensorPowerBasis] at h
     exact h.symm
   obtain ⟨q, r, p, hqrp⟩ := exists_eq_smul_add_smul_add_smul h2 hcs hc hs hM
   refine ⟨q • BrauerAlgebra.of (permToBrauer 1) +

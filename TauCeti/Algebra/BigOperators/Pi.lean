@@ -20,9 +20,8 @@ degree `∑ j, α j` controls the decomposition of `α` into unit vectors `Pi.si
 an induction principle over the exponent vectors of a fixed degree `d`: starting from the pure
 power `Pi.single i d`, every such vector is reached by moving one unit at a time from the
 coordinate `i` to another coordinate. For general dependent functions over a finite index type,
-taking the product or sum over all functions agreeing with a fixed function `v` outside two
-distinct coordinates `a ≠ b` reduces to the double product or sum over the two free values at `a`
-and `b`.
+summing over all functions agreeing with a fixed function `v` outside two distinct coordinates
+`a ≠ b` reduces to the double sum over the two free values at `a` and `b`.
 
 ## Main results
 
@@ -30,9 +29,8 @@ and `b`.
   or sum of `Pi.mulSingle i (Pi.mulSingle j (f i j))` / `Pi.single i (Pi.single j (f i j))` equals
   `f`.
 * `Fintype.prod_pow_pi_single`: `∏ j, f j ^ Pi.single i a j = f i ^ a`.
-* `Fintype.prod_ite_eq_off_pair`, `Fintype.sum_ite_eq_off_pair`: product or sum over dependent
-  functions agreeing with `v` outside two distinct coordinates `a ≠ b` equals the double product or
-  sum over the values at `a` and `b`.
+* `Fintype.sum_ite_eq_off_pair`: sum over dependent functions agreeing with `v` outside two
+  distinct coordinates `a ≠ b` equals the double sum over the values at `a` and `b`.
 * `Fintype.sum_intCast_sub_pi_single_mul`: lowering the integer weight at `i` by `c` lowers
   `∑ j, χ j g j` by `c g i`.
 * `Pi.exists_eq_add_single_one`: an exponent vector with a positive `i`-th entry is `γ + e_i`.
@@ -134,18 +132,14 @@ theorem Pi.induction_on_single_of_sum_eq [Fintype ι] [DecidableEq ι] {d : ℕ}
     simp [hji.symm] at hm ⊢
     omega
 
-/-- Taking the product over dependent functions agreeing with `v` outside `{a, b}` (`a ≠ b`), with
-all other factors equal to `1`, is taking the double product over the two free values at `a` and
-`b`. -/
-@[to_additive /-- Summing over dependent functions agreeing with `v` outside `{a, b}` (`a ≠ b`),
-with all other terms equal to `0`, is taking the double sum over the two free values at `a` and
-`b`. -/]
-theorem Fintype.prod_ite_eq_off_pair [Fintype ι] [DecidableEq ι] {α : ι → Type*}
-    [∀ i, Fintype (α i)] {M : Type*} [CommMonoid M] {a b : ι} (hab : a ≠ b) (v : ∀ i, α i)
+/-- Summing over dependent functions agreeing with `v` outside `{a, b}` (`a ≠ b`), with all other
+terms equal to `0`, is taking the double sum over the two free values at `a` and `b`. -/
+theorem Fintype.sum_ite_eq_off_pair [Fintype ι] [DecidableEq ι] {α : ι → Type*}
+    [∀ i, Fintype (α i)] {M : Type*} [AddCommMonoid M] {a b : ι} (hab : a ≠ b) (v : ∀ i, α i)
     [DecidablePred fun m : ∀ i, α i => ∀ r, r ≠ a → r ≠ b → v r = m r]
     (F : (∀ i, α i) → M) :
-    (∏ m : ∀ i, α i, if ∀ r, r ≠ a → r ≠ b → v r = m r then F m else 1) =
-      ∏ x : α a, ∏ y : α b, F (Function.update (Function.update v a x) b y) := by
+    (∑ m : ∀ i, α i, if ∀ r, r ≠ a → r ≠ b → v r = m r then F m else 0) =
+      ∑ x : α a, ∑ y : α b, F (Function.update (Function.update v a x) b y) := by
   let e : α a × α b ≃ {m : ∀ i, α i // ∀ r, r ≠ a → r ≠ b → v r = m r} :=
     { toFun p := ⟨Function.update (Function.update v a p.1) b p.2, fun r hra hrb => by
         simp [hra, hrb]⟩
@@ -157,9 +151,9 @@ theorem Fintype.prod_ite_eq_off_pair [Fintype ι] [DecidableEq ι] {α : ι → 
         rcases eq_or_ne r a with rfl | hra
         · simp [hab]
         · simpa [hra, hrb] using m.property r hra hrb }
-  rw [← Finset.prod_filter,
-    Finset.prod_subtype (p := fun m => ∀ r, r ≠ a → r ≠ b → v r = m r) _ (fun _ => by simp),
-    ← e.prod_comp, ← Finset.univ_product_univ, Finset.prod_product]
+  rw [← Finset.sum_filter,
+    Finset.sum_subtype (p := fun m => ∀ r, r ≠ a → r ≠ b → v r = m r) _ (fun _ => by simp),
+    ← e.sum_comp, ← Finset.univ_product_univ, Finset.sum_product]
   rfl
 
 namespace TauCeti
