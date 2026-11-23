@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.TaylorIntegral
 import TauCeti.Analysis.BoundedVariation.Approximation
 import TauCeti.Analysis.BoundedVariation.Countable
 import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
@@ -119,10 +120,7 @@ private theorem totalVariationOn_line_eq_lintegral {w : E → ℝ} (hw : ContDif
   rw [hc.locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv,
     Opens.coe_top, Measure.restrict_univ]
   refine lintegral_congr fun t => ?_
-  have hl : HasDerivAt (fun s : ℝ => y + s • e) e t := by
-    simpa using ((hasDerivAt_id t).smul_const e).const_add y
-  have hd := ((hw.differentiable one_ne_zero (y + t • e)).hasFDerivAt.comp_hasDerivAt t hl).deriv
-  rw [← hd]
+  rw [← (hw.differentiable one_ne_zero (y + t • e)).deriv_comp_add_smul]
   simp only [eNorm_eq_nnNorm, ENNReal.coe_inj]
   exact NNReal.eq (norm_deriv_eq_norm_fderiv (f := fun s : ℝ => w (y + s • e))).symm
 

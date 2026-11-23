@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
-import TauCeti.Analysis.Distribution.TestFunction.AffineLine
+import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
@@ -42,8 +42,8 @@ proof of Federer's criterion for finite perimeter that passes from line sections
 ambient set.
 
 The proof restricts the test function `ψ` to each line, giving a test function
-(`TauCeti.lineTestFunction`) on the open set of parameters whose derivative is `∂_e ψ` along the
-line, and splits the integral over `Ω` along the lines by Fubini's theorem in orthogonal line
+(`TestFunction.lineTestFunction`) on the open set of parameters whose derivative is `∂_e ψ` along
+the line, and splits the integral over `Ω` along the lines by Fubini's theorem in orthogonal line
 coordinates.
 
 ## Main results
