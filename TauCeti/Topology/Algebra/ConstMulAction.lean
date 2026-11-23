@@ -15,6 +15,7 @@ public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.LocallyFinite
+public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 
 import TauCeti.Topology.Compactness.Compact
 
@@ -35,7 +36,8 @@ Conversely, for a scalar action of a `T₁` topological space `G` with continuou
 finiteness of the translates of any nonempty set forces the topology on `G` to be discrete.
 Likewise, a nonempty open set disjoint from all of its nontrivial translates forces the acting
 group, with any topology for which the orbit maps are continuous, to be discrete, and on such a
-set the orbit projection is an open embedding.
+set the orbit projection is an open embedding. More generally, on any open set where it is
+injective, the orbit projection is an open partial homeomorphism onto its image.
 
 ## Main results
 
@@ -67,6 +69,8 @@ set the orbit projection is an open embedding.
   under such an action of a group is closed.
 * `TauCeti.isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul`: the orbit projection is an
   open embedding on an open set disjoint from its nontrivial translates.
+* `TauCeti.quotientMkOn`: the orbit projection restricted to an open set on which it is
+  injective, as an open partial homeomorphism onto its image.
 * `TauCeti.discreteTopology_of_disjoint_smul`: the existence of a nonempty such open set makes the
   acting group discrete.
 -/
@@ -156,12 +160,51 @@ theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul (hU_open : IsOpe
     IsOpenEmbedding
       (U.domRestrict (Quotient.mk'' : X → MulAction.orbitRel.Quotient G X)) := by
   refine .of_continuous_injective_isOpenMap
-    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (continuous_quot_mk.comp continuous_subtypeVal) ?_
     (MulAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
   intro x y hxy
-  exact Subtype.ext (injOn_quotientMk_of_disjoint_smul hU x.2 y.2 hxy)
+  exact Subtype.ext (injOn_quotientMk_of_disjoint_smul hU x.property y.property hxy)
 
 end DisjointTranslates
+
+section QuotientMkOn
+
+open Set
+
+variable {G X : Type*} [Group G] [MulAction G X] [TopologicalSpace X] [ContinuousConstSMul G X]
+  [Nonempty X] {s : Set X} (hs : IsOpen s)
+  (hinj : InjOn (Quotient.mk (MulAction.orbitRel G X)) s)
+
+/-- The orbit projection restricted to an open set on which it is injective, as an open partial
+homeomorphism onto the image. -/
+noncomputable def quotientMkOn :
+    OpenPartialHomeomorph X (MulAction.orbitRel.Quotient G X) :=
+  OpenPartialHomeomorph.ofContinuousOpen (hinj.toPartialEquiv _ s) continuous_quot_mk.continuousOn
+    isOpenMap_quotient_mk'_mul hs
+
+/-- The source of `TauCeti.quotientMkOn` is the given open set. -/
+@[simp]
+theorem quotientMkOn_source : (quotientMkOn hs hinj).source = s :=
+  (rfl)
+
+/-- The target of `TauCeti.quotientMkOn` is the image of the open set in the orbit space. -/
+@[simp]
+theorem quotientMkOn_target :
+    (quotientMkOn hs hinj).target = Quotient.mk (MulAction.orbitRel G X) '' s :=
+  (rfl)
+
+/-- `TauCeti.quotientMkOn` is the orbit projection. -/
+@[simp]
+theorem coe_quotientMkOn : ⇑(quotientMkOn hs hinj) = Quotient.mk (MulAction.orbitRel G X) :=
+  (rfl)
+
+/-- The inverse of `TauCeti.quotientMkOn` picks the representative in the open set. -/
+@[simp]
+theorem coe_quotientMkOn_symm :
+    ⇑(quotientMkOn hs hinj).symm = Function.invFunOn (Quotient.mk (MulAction.orbitRel G X)) s :=
+  (rfl)
+
+end QuotientMkOn
 
 section DisjointTranslatesAdd
 
@@ -191,10 +234,10 @@ theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_vadd (hU_open : IsOpe
     IsOpenEmbedding
       (U.domRestrict (Quotient.mk'' : X → AddAction.orbitRel.Quotient A X)) := by
   refine .of_continuous_injective_isOpenMap
-    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (continuous_quot_mk.comp continuous_subtypeVal) ?_
     (AddAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
   intro x y hxy
-  exact Subtype.ext (injOn_quotientMk_of_disjoint_vadd hU x.2 y.2 hxy)
+  exact Subtype.ext (injOn_quotientMk_of_disjoint_vadd hU x.property y.property hxy)
 
 end DisjointTranslatesAdd
 
@@ -292,13 +335,13 @@ theorem properlyDiscontinuousSMul_of_conjAct_smul_eq {G X : Type*} [Group G] [To
     let φ : H → (ConjAct.toConjAct g • H : _root_.Subgroup G) := fun k ↦
       ⟨g * k * g⁻¹, by
         simpa [ConjAct.toConjAct_smul] using
-          _root_.Subgroup.smul_mem_pointwise_smul _ (ConjAct.toConjAct g) H k.2⟩
+          _root_.Subgroup.smul_mem_pointwise_smul _ (ConjAct.toConjAct g) H k.property⟩
     refine ((ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := H)
       (hK.image (continuous_const_smul g⁻¹)) (hL.image (continuous_const_smul g⁻¹))).image
         φ).subset ?_
     intro k hk
     have hk' : g⁻¹ * k * g ∈ H := by
-      have := _root_.Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.2
+      have := _root_.Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.property
       rwa [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] at this
     refine ⟨⟨g⁻¹ * k * g, hk'⟩, ?_, Subtype.ext (by simp [φ, mul_assoc])⟩
     -- a point `x ∈ K` with `k • x ∈ L` gives `g⁻¹ • x ∈ g⁻¹ • K` moved into `g⁻¹ • L`
@@ -348,7 +391,7 @@ namespace SubMulAction
 /-- A properly discontinuous action remains properly discontinuous on every invariant subspace. -/
 theorem properlyDiscontinuousSMul {G X : Type*} [TopologicalSpace X] [SMul G X]
     [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S :=
-  continuous_subtype_val.properlyDiscontinuousSMul fun _ _ ↦ rfl
+  continuous_subtypeVal.properlyDiscontinuousSMul fun _ _ ↦ rfl
 
 end SubMulAction
 

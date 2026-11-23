@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Field.Rat
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # Natural numbers invertible in semirings and algebras
@@ -16,16 +17,24 @@ stated over an extension, such as the separable closure `Kˢ`, often need `(m : 
 hypothesis available is `IsUnit (m : K)`, which holds for every `m ≠ 0` in a `ℚ`-algebra.
 Likewise a subalgebra over `K` is closed under division by such a natural number.
 
+Because natural-number casts commute with every element of a semiring, any divisor of an invertible
+natural cast is again a unit, and a nonzero natural number casts to a unit if and only if each of
+its prime factors does.
+
 In a `ℚ`-algebra every positive natural number is invertible, so dividing by `k + 1` and
 multiplying by `k + 1` cancel. This is how termwise integration of power series inverts
 differentiation.
 
 ## Main results
 
+* `IsUnit.ofNat_of_algebra`: if a numeral is a unit in `K` then it is a unit in `L`.
 * `IsUnit.natCast_ne_zero_of_algebra`: if `(m : K)` is a unit then `(m : L) ≠ 0`.
 * `IsUnit.neZero_natCast`: a natural number invertible in a nontrivial semiring is nonzero.
+* `IsUnit.natCast_of_dvd`: a divisor of a natural number casting to a unit also casts to a unit.
 * `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
   exactly when it contains `t`.
+* `TauCeti.isUnit_natCast_of_forall_prime_dvd`, `TauCeti.isUnit_natCast_iff_forall_prime_dvd`: a
+  nonzero natural number casts to a unit in a semiring if and only if all of its prime divisors do.
 * `TauCeti.isUnit_natCast_of_ne_zero`, `TauCeti.isUnit_natCast_add_of_ne_zero`,
   `TauCeti.isUnit_natCast_add_one`: every nonzero natural number (in particular `(m : K) + k` for
   `k ≠ 0` and `(m : K) + 1`) is a unit in a `ℚ`-algebra.
@@ -38,6 +47,12 @@ differentiation.
 
 public section
 
+/-- A numeral invertible in `K` is invertible in every `K`-algebra `L`; for instance `2` is
+invertible in every real algebra. -/
+theorem IsUnit.ofNat_of_algebra {K L : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
+    {m : ℕ} [m.AtLeastTwo] (hm : IsUnit (ofNat(m) : K)) : IsUnit (ofNat(m) : L) := by
+  simpa only [map_ofNat] using hm.map (algebraMap K L)
+
 /-- A natural number invertible in `K` is nonzero in every nontrivial `K`-algebra `L`. -/
 theorem IsUnit.natCast_ne_zero_of_algebra {K L : Type*} [CommSemiring K] [Semiring L]
     [Nontrivial L] [Algebra K L] {m : ℕ} (hm : IsUnit (m : K)) : (m : L) ≠ 0 := by
@@ -48,6 +63,13 @@ theorem IsUnit.neZero_natCast {R : Type*} [Semiring R] [Nontrivial R] {m : ℕ}
     (hm : IsUnit (m : R)) : NeZero m :=
   ⟨fun h ↦ hm.ne_zero (by rw [h, Nat.cast_zero])⟩
 
+/-- A divisor of a natural number casting to a unit in a semiring also casts to a unit. -/
+theorem IsUnit.natCast_of_dvd {R : Type*} [Semiring R] {m n : ℕ}
+    (hn : IsUnit (n : R)) (hmn : m ∣ n) : IsUnit (m : R) := by
+  obtain ⟨k, rfl⟩ := hmn
+  rw [Nat.cast_mul, (Nat.cast_commute m (k : R)).isUnit_mul_iff] at hn
+  exact hn.1
+
 /-- A subalgebra over `K` contains `m * t` exactly when it contains `t`, provided the natural
 number `m` is invertible in `K`. -/
 theorem Subalgebra.natCast_mul_mem_iff {K L : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
@@ -56,6 +78,31 @@ theorem Subalgebra.natCast_mul_mem_iff {K L : Type*} [CommSemiring K] [Semiring 
   exact Submodule.smul_mem_iff_of_isUnit (Subalgebra.toSubmodule T) hm
 
 namespace TauCeti
+
+/-- A nonzero natural number casts to a unit in a semiring whenever all of its prime divisors do. -/
+theorem isUnit_natCast_of_forall_prime_dvd {R : Type*} [Semiring R] {n : ℕ} (hn : n ≠ 0)
+    (hp : ∀ p : ℕ, p.Prime → p ∣ n → IsUnit (p : R)) : IsUnit (n : R) := by
+  induction n using Nat.strongRecOn with
+  | ind n ih =>
+    rcases eq_or_ne n 1 with rfl | hn1
+    · rw [Nat.cast_one]
+      exact isUnit_one
+    · have hp_prime : n.minFac.Prime := Nat.minFac_prime hn1
+      have hp_dvd : n.minFac ∣ n := n.minFac_dvd
+      have hdiv_pos : 0 < n / n.minFac := Nat.div_pos (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) hp_dvd)
+        hp_prime.pos
+      have hdiv_lt : n / n.minFac < n := Nat.div_lt_self (Nat.pos_of_ne_zero hn) hp_prime.one_lt
+      have heq : n = n.minFac * (n / n.minFac) := (Nat.mul_div_cancel' hp_dvd).symm
+      rw [heq, Nat.cast_mul]
+      exact (hp n.minFac hp_prime hp_dvd).mul
+        (ih (n / n.minFac) hdiv_lt hdiv_pos.ne' fun q hq hqd ↦
+          hp q hq (hqd.trans ⟨n.minFac, by rw [mul_comm]; exact heq⟩))
+
+/-- A nonzero natural number casts to a unit in a semiring if and only if all of its prime divisors
+cast to units. -/
+theorem isUnit_natCast_iff_forall_prime_dvd {R : Type*} [Semiring R] {n : ℕ} (hn : n ≠ 0) :
+    IsUnit (n : R) ↔ ∀ p : ℕ, p.Prime → p ∣ n → IsUnit (p : R) :=
+  ⟨fun hu _ _ hpn ↦ hu.natCast_of_dvd hpn, isUnit_natCast_of_forall_prime_dvd hn⟩
 
 /-- Every nonzero natural number is a unit in a `ℚ`-algebra. -/
 theorem isUnit_natCast_of_ne_zero {K : Type*} [Semiring K] [Algebra ℚ K] {m : ℕ}

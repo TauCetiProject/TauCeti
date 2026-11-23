@@ -91,7 +91,7 @@ def continuationAlmostComplex (h₀ : ω.Compatible J₀) (J₁ J₂ : ℝ → M
 /-- The continuation homotopy is tamed by `ω`. -/
 theorem tames_continuationAlmostComplex (h₀ : ω.Compatible J₀) (z : ℝ × ℝ) (x : M) :
     ω.Tames (continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ z x) :=
-  (h₀.cayleyEquiv.symm _).2
+  (h₀.cayleyEquiv.symm _).property
 
 /-- The Cayley transform of the continuation homotopy, relative to `J₀`, at `z = (s, t)` is
 `(1 - β(s)) • cayley (J₁ t x) + β(s) • cayley (J₂ t x)`. This characterizes the structure, since

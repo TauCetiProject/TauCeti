@@ -29,6 +29,8 @@ indicator of `[0, c]` when only finitely many spectral values lie in `[-c, c]`.
 * `Set.Finite.continuousOn_mulIndicator`, `Set.Finite.continuousOn_indicator`: the indicator
   `s.indicator f` is continuous on `t` if `s ⊆ u`, the frontier of `u` avoids `t`, and `t ∩ u` is
   finite.
+* `ContinuousOn.continuousOn_indicator_of_continuousOn_indicator_one`: if `s.indicator 1` is
+  continuous on `t`, then so is `s.indicator f` for every `f` continuous within `t` on `s ∩ t`.
 -/
 
 public section
@@ -74,3 +76,27 @@ theorem Set.Finite.continuousOn_mulIndicator [T1Space α] {u : Set α} (hfin : (
       exact Set.mulIndicator_of_notMem (fun hys ↦ hy (subset_closure (hsu hys))) f
     exact continuousWithinAt_const.congr_of_eventuallyEq hev
       (Set.mulIndicator_of_notMem (fun hxs ↦ hxu (subset_closure (hsu hxs))) f)
+
+/-- If the indicator `s.indicator 1` is continuous on `t`, then near each point of `t` the points of
+`t` lie all in `s` or all outside it. So the indicator `s.indicator f` is continuous on `t` as soon
+as `f` is continuous within `t` at the points of `s ∩ t`, even where `f` is not continuous outside
+`s`. -/
+theorem ContinuousOn.continuousOn_indicator_of_continuousOn_indicator_one {γ M : Type*} [Zero γ]
+    [One γ] [NeZero (1 : γ)] [TopologicalSpace γ] [T1Space γ] [Zero M] [TopologicalSpace M]
+    {f : α → M} (h₁ : ContinuousOn (s.indicator (1 : α → γ)) t)
+    (hf : ∀ y ∈ s ∩ t, ContinuousWithinAt f t y) : ContinuousOn (s.indicator f) t := by
+  intro y hy
+  by_cases hys : y ∈ s
+  · have hev : ∀ᶠ z in 𝓝[t] y, z ∈ s := by
+      filter_upwards [(h₁ y hy).eventually (isOpen_compl_singleton.mem_nhds
+        (show s.indicator (1 : α → γ) y ∈ ({0}ᶜ : Set γ) by simp [hys]))] with z hz
+      by_contra hzs
+      simp [hzs] at hz
+    exact (hf y ⟨hys, hy⟩).congr_of_eventuallyEq
+      (hev.mono fun z hz ↦ Set.indicator_of_mem hz f) (Set.indicator_of_mem hys f)
+  · have hev : ∀ᶠ z in 𝓝[t] y, z ∉ s := by
+      filter_upwards [(h₁ y hy).eventually (isOpen_compl_singleton.mem_nhds
+        (show s.indicator (1 : α → γ) y ∈ ({1}ᶜ : Set γ) by simp [hys]))] with z hz hzs
+      simp [hzs] at hz
+    exact continuousWithinAt_const.congr_of_eventuallyEq
+      (hev.mono fun z hz ↦ Set.indicator_of_notMem hz f) (Set.indicator_of_notMem hys f)

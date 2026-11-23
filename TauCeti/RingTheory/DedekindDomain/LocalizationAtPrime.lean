@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
-public import TauCeti.RingTheory.Localization.AtPrime
+public import TauCeti.RingTheory.Localization.AtPrime.FractionRing
 
 /-!
 # The localisation of a Dedekind domain at a height-one prime, inside its fraction field
@@ -17,10 +17,10 @@ Mathlib's `IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain` sa
 localisation `Oᵥ := Localization.AtPrime v.asIdeal` is a discrete valuation ring, as a theorem with
 the nonzero-prime hypothesis explicit. This file records it as an instance for height-one primes,
 which carry that hypothesis as `v.ne_bot`. Together with the `Algebra Oᵥ K`, `IsScalarTower O Oᵥ K`
-and `IsFractionRing Oᵥ K` instances of `TauCeti/RingTheory/Localization/AtPrime.lean`, every result
-Mathlib states over a discrete valuation ring `R` with fraction field `K` — in particular its theory
-of integral and minimal Weierstrass equations — now applies to `Oᵥ ⊆ K` by instance search, for
-arbitrary `O` and `K`.
+and `IsFractionRing Oᵥ K` instances of `TauCeti/RingTheory/Localization/AtPrime/FractionRing.lean`,
+every result Mathlib states over a discrete valuation ring `R` with fraction field `K` — in
+particular its theory of integral and minimal Weierstrass equations — now applies to `Oᵥ ⊆ K` by
+instance search, for arbitrary `O` and `K`.
 
 The remaining results are the two bridges between `v` and `Oᵥ`. Downwards: an element of `K` that
 comes from `Oᵥ` has `v`-adic valuation at most one; hence, by Mathlib's
@@ -65,8 +65,8 @@ variable {O : Type*} [CommRing O] [IsDedekindDomain O] {K : Type*} [Field K] [Al
 
 /-- The localisation of a Dedekind domain at a height-one prime is a discrete valuation ring. With
 the `Algebra`, `IsScalarTower` and `IsFractionRing` instances of
-`TauCeti/RingTheory/Localization/AtPrime.lean`, this is what lets Mathlib's theory over a discrete
-valuation ring and its fraction field apply at each height-one prime of `O`. -/
+`TauCeti/RingTheory/Localization/AtPrime/FractionRing.lean`, this is what lets Mathlib's theory over
+a discrete valuation ring and its fraction field apply at each height-one prime of `O`. -/
 instance isDiscreteValuationRing_localizationAtPrime :
     IsDiscreteValuationRing (Localization.AtPrime v.asIdeal) :=
   IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain O v.ne_bot _
@@ -86,7 +86,7 @@ theorem integers_valuation_of_isLocalizationAtPrime (S : Type*) [CommRing S]
     dsimp only
     rw [← IsLocalization.mk'_eq_algebraMap_mk'_of_submonoid_le (S := S) (T := K)
       v.asIdeal.primeCompl_le_nonZeroDivisors, valuation_of_mk',
-      (v.intValuation_eq_one_iff_mem_primeCompl s).mpr s.2, div_one]
+      (v.intValuation_eq_one_iff_mem_primeCompl s).mpr s.property, div_one]
     exact v.intValuation_le_one r
   exists_of_le_one {x} hx := by
     obtain ⟨a, s, hs⟩ := v.exists_primeCompl_mul_eq_of_integer x hx

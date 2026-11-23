@@ -409,7 +409,7 @@ theorem exists_eq_forall_mem_Icc_hasDerivWithinAt_circleContinuationSlope {δ a 
     hm.trans_le (mul_one_sub_sq_le ha hb ht)
   set L : ℝ≥0 := ⟨2 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) hm.le⟩
   have hPL : IsPicardLindelof (circleContinuationSlope δ r) (tmin := a) (tmax := b) ⟨t₀, ht₀⟩ θ₀
-      ⟨2 * |δ| / (a * (1 - b ^ 2)) * (b - a), mul_nonneg L.2 (sub_nonneg.2 hab)⟩ 0 L
+      ⟨2 * |δ| / (a * (1 - b ^ 2)) * (b - a), mul_nonneg L.property (sub_nonneg.2 hab)⟩ 0 L
       ⟨4 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) hm.le⟩ := by
     refine ⟨fun t ht ↦ (lipschitzWith_circleContinuationSlope r hm (ha.trans_le ht.1)
         (ht.2.trans_lt hb) (mul_one_sub_sq_le ha hb ht)).lipschitzOnWith,
@@ -454,6 +454,13 @@ theorem eqOn_Ioo_of_hasDerivAt_circleContinuationSlope {δ : ℝ} {r Θ₁ Θ₂
 theorem circleContinuationSlope_eq_zero {δ : ℝ} {r : ℝ → ℝ} {t θ : ℝ}
     (h : sin (2 * (θ - r t)) = 0) : circleContinuationSlope δ r t θ = 0 := by
   simp [circleContinuationSlope_def, h]
+
+/-- The slope is `π`-periodic in the angle, so translating a solution by a multiple of `π` gives
+a solution: in particular, the equation descends to the circle. -/
+theorem circleContinuationSlope_add_int_mul_pi (δ : ℝ) (r : ℝ → ℝ) (t θ : ℝ) (m : ℤ) :
+    circleContinuationSlope δ r t (θ + m * π) = circleContinuationSlope δ r t θ := by
+  rw [circleContinuationSlope_def, circleContinuationSlope_def,
+    show 2 * (θ + m * π - r t) = 2 * (θ - r t) + m * (2 * π) by ring, sin_add_int_mul_two_pi]
 
 /-- The constant angle `m` solves the slope equation at the parameters where
 `sin (2 (m - r t)) = 0`. -/

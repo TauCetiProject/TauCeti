@@ -65,8 +65,8 @@ def continuousUnitizationAugmentationPullback (n : ℕ) :
 @[simp]
 theorem continuousUnitizationScalarRestriction_apply (n : ℕ)
     (φ : continuousCyclicCochains 𝕜 (Unitization 𝕜 A) M n) (a : Fin (n + 1) → 𝕜) :
-    (continuousUnitizationScalarRestriction 𝕜 A M n φ).1 a =
-      φ.1 (fun i ↦ algebraMap 𝕜 (Unitization 𝕜 A) (a i)) := by
+    (continuousUnitizationScalarRestriction 𝕜 A M n φ).val a =
+      φ.val (fun i ↦ algebraMap 𝕜 (Unitization 𝕜 A) (a i)) := by
   simp only [continuousUnitizationScalarRestriction, ContinuousLinearMap.coe_mk',
     coe_continuousCyclicCochainsMap_apply, ContinuousMultilinearMap.compContinuousLinearMap_apply]
   -- The bundled continuous map evaluates by its underlying algebra homomorphism.
@@ -75,8 +75,8 @@ theorem continuousUnitizationScalarRestriction_apply (n : ℕ)
 @[simp]
 theorem continuousUnitizationAugmentationPullback_apply (n : ℕ)
     (φ : continuousCyclicCochains 𝕜 𝕜 M n) (a : Fin (n + 1) → Unitization 𝕜 A) :
-    (continuousUnitizationAugmentationPullback 𝕜 A M n φ).1 a =
-      φ.1 (fun i ↦ (a i).fst) := by
+    (continuousUnitizationAugmentationPullback 𝕜 A M n φ).val a =
+      φ.val (fun i ↦ (a i).fst) := by
   simp only [continuousUnitizationAugmentationPullback, ContinuousLinearMap.coe_mk',
     coe_continuousCyclicCochainsMap_apply, ContinuousMultilinearMap.compContinuousLinearMap_apply]
   -- The bundled continuous map evaluates by its underlying augmentation homomorphism.
@@ -119,7 +119,7 @@ theorem mem_continuousRelativeCyclicCochains_iff_forall {n : ℕ}
     {φ : continuousCyclicCochains 𝕜 (Unitization 𝕜 A) M n} :
     φ ∈ continuousRelativeCyclicCochains 𝕜 A M n ↔
       ∀ a : Fin (n + 1) → 𝕜,
-        φ.1 (fun i ↦ algebraMap 𝕜 (Unitization 𝕜 A) (a i)) = 0 := by
+        φ.val (fun i ↦ algebraMap 𝕜 (Unitization 𝕜 A) (a i)) = 0 := by
   rw [mem_continuousRelativeCyclicCochains_iff, Subtype.ext_iff,
     ContinuousMultilinearMap.ext_iff]
   simp
@@ -160,7 +160,7 @@ theorem continuousUnitizationCyclicCochainsEquiv_fst {n : ℕ}
 theorem continuousUnitizationCyclicCochainsEquiv_symm_apply {n : ℕ}
     (φ : continuousCyclicCochains 𝕜 𝕜 M n) (ψ : continuousRelativeCyclicCochains 𝕜 A M n) :
     (continuousUnitizationCyclicCochainsEquiv 𝕜 A M n).symm (φ, ψ) =
-      continuousUnitizationAugmentationPullback 𝕜 A M n φ + ψ.1 := (rfl)
+      continuousUnitizationAugmentationPullback 𝕜 A M n φ + ψ.val := (rfl)
 
 /-- Projection to relative cochains by subtracting the pullback of scalar restriction. -/
 def continuousRelativeCyclicProjection (n : ℕ) :
@@ -194,8 +194,8 @@ theorem continuousRelativeCyclicProjection_coe {n : ℕ}
     continuousRelativeCyclicProjection 𝕜 A M n φ = φ := by
   apply Subtype.ext
   rw [coe_continuousRelativeCyclicProjection,
-    (mem_continuousRelativeCyclicCochains_iff 𝕜 A M).1 φ.2, map_zero]
-  exact sub_zero φ.1
+    (mem_continuousRelativeCyclicCochains_iff 𝕜 A M).1 φ.property, map_zero]
+  exact sub_zero φ.val
 
 variable [IsTopologicalAddGroup A] [ContinuousMul A] [ContinuousSMul 𝕜 A]
 
@@ -325,7 +325,7 @@ def continuousRelativeCyclicCocycles.toUnitization (n : ℕ) :
 theorem continuousRelativeCyclicCocycles.coe_toUnitization {n : ℕ}
     (φ : continuousRelativeCyclicCocycles 𝕜 A M n) :
     (continuousRelativeCyclicCocycles.toUnitization 𝕜 A M n φ :
-      continuousCyclicCochains 𝕜 (Unitization 𝕜 A) M n) = φ.1.1 := (rfl)
+      continuousCyclicCochains 𝕜 (Unitization 𝕜 A) M n) = φ.val.val := (rfl)
 
 /-- Actual relative continuous coboundaries, without taking a closure. -/
 def continuousRelativeCyclicCoboundaries :
@@ -357,7 +357,7 @@ continuous cyclic primitive on the forced unitization. -/
 theorem mem_continuousRelativeCyclicCoboundaries_iff {n : ℕ}
     (φ : continuousRelativeCyclicCochains 𝕜 A M n) :
     φ ∈ continuousRelativeCyclicCoboundaries 𝕜 A M n ↔
-      φ.1 ∈ continuousCyclicCoboundaries 𝕜 (Unitization 𝕜 A) M n := by
+      φ.val ∈ continuousCyclicCoboundaries 𝕜 (Unitization 𝕜 A) M n := by
   cases n with
   | zero =>
     rw [continuousRelativeCyclicCoboundaries_zero, continuousCyclicCoboundaries_zero,
@@ -368,7 +368,7 @@ theorem mem_continuousRelativeCyclicCoboundaries_iff {n : ℕ}
       mem_continuousCyclicCoboundaries_succ_iff]
     constructor
     · rintro ⟨ψ, rfl⟩
-      exact ⟨ψ.1, (coe_continuousRelativeCyclicHochschildCoboundary 𝕜 A M ψ).symm⟩
+      exact ⟨ψ.val, (coe_continuousRelativeCyclicHochschildCoboundary 𝕜 A M ψ).symm⟩
     · rintro ⟨ψ, hψ⟩
       exact ⟨continuousRelativeCyclicProjection 𝕜 A M n ψ, by
         rw [← continuousRelativeCyclicProjection_continuousCyclicHochschildCoboundary, hψ,
@@ -397,13 +397,13 @@ theorem mk_surjective (n : ℕ) : Function.Surjective (mk 𝕜 A M n) :=
 
 @[simp]
 theorem mk_eq_zero_iff {n : ℕ} (φ : continuousRelativeCyclicCocycles 𝕜 A M n) :
-    mk 𝕜 A M n φ = 0 ↔ φ.1 ∈ continuousRelativeCyclicCoboundaries 𝕜 A M n :=
+    mk 𝕜 A M n φ = 0 ↔ φ.val ∈ continuousRelativeCyclicCoboundaries 𝕜 A M n :=
   Submodule.Quotient.mk_eq_zero _
 
 /-- Equality of relative cohomology classes is equality modulo actual relative coboundaries. -/
 theorem mk_eq_mk_iff {n : ℕ} (φ ψ : continuousRelativeCyclicCocycles 𝕜 A M n) :
     mk 𝕜 A M n φ = mk 𝕜 A M n ψ ↔
-      φ.1 - ψ.1 ∈ continuousRelativeCyclicCoboundaries 𝕜 A M n := by
+      φ.val - ψ.val ∈ continuousRelativeCyclicCoboundaries 𝕜 A M n := by
   rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff]
   simp
 
@@ -411,12 +411,12 @@ variable {𝕜 A M} {N : Type*} [AddCommGroup N] [Module 𝕜 N] [TopologicalSpa
 
 /-- The continuous linear universal property of relative continuous cyclic cohomology. -/
 def desc {n : ℕ} (f : continuousRelativeCyclicCocycles 𝕜 A M n →L[𝕜] N)
-    (hf : ∀ φ, φ.1 ∈ continuousRelativeCyclicCoboundaries 𝕜 A M n → f φ = 0) :
+    (hf : ∀ φ, φ.val ∈ continuousRelativeCyclicCoboundaries 𝕜 A M n → f φ = 0) :
     continuousRelativeCyclicCohomology 𝕜 A M n →L[𝕜] N := Submodule.liftQL _ f hf
 
 @[simp]
 theorem desc_mk {n : ℕ} (f : continuousRelativeCyclicCocycles 𝕜 A M n →L[𝕜] N)
-    (hf : ∀ φ, φ.1 ∈ continuousRelativeCyclicCoboundaries 𝕜 A M n → f φ = 0)
+    (hf : ∀ φ, φ.val ∈ continuousRelativeCyclicCoboundaries 𝕜 A M n → f φ = 0)
     (φ : continuousRelativeCyclicCocycles 𝕜 A M n) :
     desc f hf (mk 𝕜 A M n φ) = f φ := (rfl)
 
@@ -437,7 +437,7 @@ def toUnitization (n : ℕ) : continuousRelativeCyclicCohomology 𝕜 A M n →L
   desc ((continuousCyclicCohomology.mk 𝕜 (Unitization 𝕜 A) M n).comp
     (continuousRelativeCyclicCocycles.toUnitization 𝕜 A M n)) fun φ hφ ↦
       (continuousCyclicCohomology.mk_eq_zero_iff 𝕜 (Unitization 𝕜 A) M _).2
-        ((mem_continuousRelativeCyclicCoboundaries_iff 𝕜 A M φ.1).1 hφ)
+        ((mem_continuousRelativeCyclicCoboundaries_iff 𝕜 A M φ.val).1 hφ)
 
 @[simp]
 theorem toUnitization_mk {n : ℕ} (φ : continuousRelativeCyclicCocycles 𝕜 A M n) :
@@ -453,7 +453,7 @@ theorem toUnitization_injective (n : ℕ) : Function.Injective (toUnitization �
   obtain ⟨φ, rfl⟩ := mk_surjective 𝕜 A M n z
   rw [toUnitization_mk, continuousCyclicCohomology.mk_eq_zero_iff] at hz
   exact (mk_eq_zero_iff 𝕜 A M φ).2
-    ((mem_continuousRelativeCyclicCoboundaries_iff 𝕜 A M φ.1).2 hz)
+    ((mem_continuousRelativeCyclicCoboundaries_iff 𝕜 A M φ.val).2 hz)
 
 end continuousRelativeCyclicCohomology
 

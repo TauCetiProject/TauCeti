@@ -395,7 +395,7 @@ theorem surjective_of_mem_range {D : Type*} [CommRing D] [Algebra K D] (hD : IsA
     (huniq _ ⟨fun x ↦ congrArg Subtype.val (hσl x), fun y ↦ congrArg Subtype.val (hσr y)⟩).trans
       (huniq _ ⟨fun _ ↦ rfl, fun _ ↦ rfl⟩).symm
   intro p
-  obtain ⟨d, hd⟩ := (σ p).2
+  obtain ⟨d, hd⟩ := (σ p).property
   exact ⟨d, hd.trans congr($hσ p)⟩
 
 include hA in

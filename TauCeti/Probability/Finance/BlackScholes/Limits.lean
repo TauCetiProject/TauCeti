@@ -378,7 +378,7 @@ theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hσ : 0 <
     rcases hsK.lt_or_gt with hsK | hsK
     · exact (tendsto_dPlus_maturity_atBot (r := r) hσ hs hsK).mono_right atBot_le_cocompact
     · exact (tendsto_dPlus_maturity_atTop (r := r) hσ hK hsK).mono_right atTop_le_cocompact
-  have h := (tendsto_mul_gaussianPDFReal_zero_one_cocompact.comp hd).div hA
+  have h := ((tendsto_mul_gaussianPDFReal_cocompact 0 1).comp hd).div hA
     (mul_ne_zero hs.ne' hlog)
   rw [zero_div] at h
   refine h.congr' ?_

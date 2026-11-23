@@ -263,7 +263,7 @@ private theorem extendPerm_apply_of_mem (E : PerfectMatching {x : α // x ≠ a 
     (hx : x ≠ a ∧ x ≠ b) : extendPerm E x = (E.val ⟨x, hx⟩ : α) := by
   have hmem : Equiv.Perm.ofSubtype E.val x = (E.val ⟨x, hx⟩ : α) :=
     Equiv.Perm.ofSubtype_apply_of_mem E.val hx
-  have hne := (E.val ⟨x, hx⟩).2
+  have hne := (E.val ⟨x, hx⟩).property
   rw [extendPerm, Equiv.Perm.mul_apply, hmem, Equiv.swap_apply_of_ne_of_ne hne.1 hne.2]
 
 /-- The extended permutation sends `a` to `b`. -/
@@ -283,7 +283,7 @@ private theorem extendPerm_apply_right (E : PerfectMatching {x : α // x ≠ a �
 def extend (hab : a ≠ b) (E : PerfectMatching {x : α // x ≠ a ∧ x ≠ b}) : PerfectMatching α := by
   refine ⟨extendPerm E, fun x => ?_, fun x => ?_⟩
   · by_cases hx : x ≠ a ∧ x ≠ b
-    · rw [extendPerm_apply_of_mem E hx, extendPerm_apply_of_mem E (E.val ⟨x, hx⟩).2]
+    · rw [extendPerm_apply_of_mem E hx, extendPerm_apply_of_mem E (E.val ⟨x, hx⟩).property]
       exact congrArg Subtype.val (E.apply_apply ⟨x, hx⟩)
     · rcases not_and_or.mp hx with hx | hx
       · rw [not_ne_iff.mp hx, extendPerm_apply_left, extendPerm_apply_right]
@@ -315,7 +315,7 @@ theorem extend_apply_right (hab : a ≠ b) (E : PerfectMatching {x : α // x ≠
 theorem restrict_extend (hab : a ≠ b) (E : PerfectMatching {x : α // x ≠ a ∧ x ≠ b}) :
     (extend hab E).restrict (extend_apply_left hab E) = E := by
   refine Subtype.ext (Equiv.ext fun x => Subtype.ext ?_)
-  rw [restrict_apply_coe, extend_apply_of_mem hab E x.2]
+  rw [restrict_apply_coe, extend_apply_of_mem hab E x.property]
 
 /-- Restricting away an arc and then adjoining it back recovers the original matching. -/
 @[simp]
@@ -333,15 +333,15 @@ theorem extend_restrict (hab : a ≠ b) (D : PerfectMatching α) (h : D.val a = 
 of `α` joining `a` to `b` are the perfect matchings of the complement of `{a, b}`. -/
 def fiberEquiv (hab : a ≠ b) :
     {D : PerfectMatching α // D.val a = b} ≃ PerfectMatching {x : α // x ≠ a ∧ x ≠ b} where
-  toFun D := D.1.restrict D.2
+  toFun D := D.val.restrict D.property
   invFun E := ⟨extend hab E, extend_apply_left hab E⟩
-  left_inv D := Subtype.ext (extend_restrict hab D.1 D.2)
+  left_inv D := Subtype.ext (extend_restrict hab D.val D.property)
   right_inv E := restrict_extend hab E
 
 /-- The fiber equivalence restricts away the arc joining `a` to `b`. -/
 @[simp]
 theorem fiberEquiv_apply (hab : a ≠ b) (D : {D : PerfectMatching α // D.val a = b}) :
-    fiberEquiv hab D = D.1.restrict D.2 := (rfl)
+    fiberEquiv hab D = D.val.restrict D.property := (rfl)
 
 /-- The inverse of the fiber equivalence adjoins the arc joining `a` to `b`. -/
 @[simp]
@@ -353,14 +353,14 @@ def partnerEquiv (a : α) : PerfectMatching α ≃
     (b : {b : α // b ≠ a}) × PerfectMatching {x : α // x ≠ a ∧ x ≠ b.val} :=
   (Equiv.sigmaSubtypeFiberEquiv (fun D : PerfectMatching α ↦ D.val a)
     (· ≠ a) (fun D ↦ D.apply_ne a)).symm.trans
-      (Equiv.sigmaCongrRight fun b ↦ fiberEquiv b.2.symm)
+      (Equiv.sigmaCongrRight fun b ↦ fiberEquiv b.property.symm)
 
 /-- The matching reconstructed from a partner and a matching of the complement adjoins
 exactly that pair. -/
 @[simp]
 theorem partnerEquiv_symm_apply (a : α)
     (p : (b : {b : α // b ≠ a}) × PerfectMatching {x : α // x ≠ a ∧ x ≠ b.val}) :
-    (partnerEquiv a).symm p = extend p.1.2.symm p.2 := by
+    (partnerEquiv a).symm p = extend p.1.property.symm p.2 := by
   rcases p with ⟨b, E⟩
   simp [partnerEquiv, Equiv.sigmaSubtypeFiberEquiv, Equiv.sigmaSubtypeEquivOfSubset,
     Equiv.subtypeSigmaEquiv, Equiv.sigmaCongrRight]
@@ -426,6 +426,11 @@ theorem congr_trans (e : α ≃ β) (e' : β ≃ γ) (D : PerfectMatching α) :
     rw [congr_val_apply, congr_val_apply, congr_val_apply, Equiv.symm_trans_apply,
       Equiv.trans_apply]
 
+/-- Transporting along a product of permutations applies the right factor and then the left. -/
+theorem congr_mul (σ τ : Equiv.Perm α) (D : PerfectMatching α) :
+    congr (σ * τ) D = congr σ (congr τ D) := by
+  rw [Equiv.Perm.mul_def, congr_trans]
+
 /-- Transporting back along `e` is transporting along `e.symm`, since transports compose. -/
 @[simp]
 theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm :=
@@ -460,6 +465,19 @@ transposition of `D.val a` with `b`. The arcs at `a` and `b` are distinct when `
 `b ≠ D.val a`; when `b = D.val a` the transposition is trivial and the result is `D` itself. -/
 def reconnect (D : PerfectMatching α) (a b : α) : PerfectMatching α :=
   congr (Equiv.swap (D.val a) b) D
+
+/-- Reconnecting two arcs is transporting the perfect matching along `Equiv.swap (D.val a) b`. -/
+theorem reconnect_def (D : PerfectMatching α) (a b : α) :
+    D.reconnect a b = congr (Equiv.swap (D.val a) b) D :=
+  (rfl)
+
+/-- Transporting a perfect matching along an equivalence commutes with reconnecting two arcs. -/
+@[simp]
+theorem congr_reconnect [DecidableEq β] (e : α ≃ β) (D : PerfectMatching α) (a b : α) :
+    congr e (D.reconnect a b) = (congr e D).reconnect (e a) (e b) := by
+  have he : (Equiv.swap (D.val a) b).trans e = e.trans (Equiv.swap (e (D.val a)) (e b)) :=
+    Equiv.ext (e.injective.map_swap (D.val a) b)
+  rw [reconnect_def, reconnect_def, congr_val_apply_apply, congr_trans, congr_trans, he]
 
 /-- The involution underlying a reconnected matching is the old one conjugated by the
 transposition of `D.val a` with `b`. -/
@@ -683,7 +701,7 @@ theorem IsPerfectMatching.sign_eq [Fintype α] [DecidableEq α] {f : Equiv.Perm 
     Equiv.Perm.sign f = (-1 : ℤˣ) ^ (Fintype.card α / 2) := by
   have hsq : f ^ 2 = 1 := Equiv.ext fun a => by simp [sq, hf.1 a]
   have hfix : Fintype.card (Function.fixedPoints f) = 0 :=
-    Fintype.card_eq_zero_iff.mpr ⟨fun a => hf.2 a a.2⟩
+    Fintype.card_eq_zero_iff.mpr ⟨fun a => hf.2 a a.property⟩
   rw [Equiv.Perm.sign_of_pow_two_eq_one hsq, hfix, Nat.sub_zero]
 
 /-- **A perfect matching has half as many orbits as points**: its orbits are its pairs. -/

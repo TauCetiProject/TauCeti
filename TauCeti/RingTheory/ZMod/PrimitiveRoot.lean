@@ -58,7 +58,7 @@ search over all residues modulo `p` succeeds exactly when `ZMod p` contains a pr
 root of unity. -/
 theorem isSome_primitiveRoot?_iff {p k : ℕ} [NeZero p] (hk : k ≠ 0) :
     (primitiveRoot? p k).isSome ↔ ∃ ζ : ZMod p, IsPrimitiveRoot ζ k := by
-  refine ⟨fun h ↦ ⟨_, ((primitiveRoot? p k).get h).2⟩, fun ⟨ζ, hζ⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ ⟨_, ((primitiveRoot? p k).get h).property⟩, fun ⟨ζ, hζ⟩ ↦ ?_⟩
   simp only [primitiveRoot?, List.findSome?_isSome_iff, List.mem_range, Option.isSome_dite]
   refine ⟨ζ.val, ζ.val_lt, ?_⟩
   rw [ZMod.natCast_zmod_val]

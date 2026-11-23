@@ -72,10 +72,11 @@ theorem latticeDifferentialOnGenerator_apply [DecidableEq (PlumbingCube V)]
     (P : PlumbingGraph V) (k : P.characteristicVectors) (C D : PlumbingCube V) :
     P.latticeDifferentialOnGenerator k C D =
       ∑ v ∈ C.directions.attach,
-        ((if C.lowerFace v.1 v.2 = D then
-            Polynomial.X ^ PlumbingCube.characteristicLowerFaceExponent P k C v.1 else 0) +
-          if C.upperFace v.1 v.2 = D then
-            Polynomial.X ^ PlumbingCube.characteristicUpperFaceExponent P k C v.2 else 0) := by
+        ((if C.lowerFace v.val v.property = D then
+            Polynomial.X ^ PlumbingCube.characteristicLowerFaceExponent P k C v.val else 0) +
+          if C.upperFace v.val v.property = D then
+            Polynomial.X ^ PlumbingCube.characteristicUpperFaceExponent P k C v.property else 0)
+                := by
   rw [latticeDifferentialOnGenerator_def, Finsupp.finsetSum_apply]
   exact Finset.sum_congr rfl fun v _ => by simp [Finsupp.add_apply, Finsupp.single_apply]
 
@@ -135,8 +136,9 @@ theorem latticeDifferential_ne_zero_of_directions_eq
     intro C hCmem hCne
     rw [latticeDifferentialOnGenerator_apply]
     refine Finset.sum_eq_zero fun w _ => ?_
-    rw [ite_eq_right (lowerFace_ne_upperFace w.2 hvC₀ (hC₀max C hCmem)),
-      ite_eq_right fun hface => hCne (eq_of_upperFace_eq (hdir C hCmem) (hdir C₀ hC₀mem) hv w.2 hvC₀
+    rw [ite_eq_right (lowerFace_ne_upperFace w.property hvC₀ (hC₀max C hCmem)),
+      ite_eq_right fun hface => hCne (eq_of_upperFace_eq (hdir C hCmem)
+          (hdir C₀ hC₀mem) hv w.property hvC₀
         hface).2]
     exact add_zero 0
   -- The cube `C₀` itself contributes exactly one power of `U`.
@@ -145,9 +147,9 @@ theorem latticeDifferential_ne_zero_of_directions_eq
     rw [latticeDifferentialOnGenerator_apply]
     refine (Finset.sum_eq_single_of_mem ⟨v, hvC₀⟩ (Finset.mem_attach _ _) ?_).trans ?_
     · intro w _ hwv
-      rw [ite_eq_right (lowerFace_ne_upperFace w.2 hvC₀ le_rfl),
+      rw [ite_eq_right (lowerFace_ne_upperFace w.property hvC₀ le_rfl),
         ite_eq_right fun hface => hwv (Subtype.ext
-          (eq_of_upperFace_eq (hdir C₀ hC₀mem) (hdir C₀ hC₀mem) hv w.2 hvC₀ hface).1)]
+          (eq_of_upperFace_eq (hdir C₀ hC₀mem) (hdir C₀ hC₀mem) hv w.property hvC₀ hface).1)]
       exact add_zero 0
     · rw [ite_eq_right (lowerFace_ne_upperFace hvC₀ hvC₀ le_rfl), ite_eq_left rfl]
       exact zero_add _
