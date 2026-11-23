@@ -123,6 +123,14 @@ theorem eq_ofRangeEq_iff {α β : Sort*} {γ : Type*} {f : α → γ} {g : β �
   · ext x
     exact hg ((congrFun he x).trans (apply_ofRangeEq hf hg h x).symm)
 
+/-- `Equiv.ofRangeEq hf hg h x` equals `y` if and only if `f x = g y`. -/
+@[simp]
+theorem ofRangeEq_apply_eq_iff {α β : Sort*} {γ : Type*} {f : α → γ} {g : β → γ}
+    (hf : f.Injective) (hg : g.Injective) (h : Set.range f = Set.range g) (x : α) (y : β) :
+    ofRangeEq hf hg h x = y ↔ f x = g y :=
+  ⟨fun hxy ↦ hxy ▸ (apply_ofRangeEq hf hg h x).symm,
+    fun hxy ↦ hg ((apply_ofRangeEq hf hg h x).trans hxy)⟩
+
 /-- Comparing an injective map with itself gives the identity equivalence. -/
 @[simp]
 theorem ofRangeEq_self {α : Sort*} {γ : Type*} {f : α → γ}

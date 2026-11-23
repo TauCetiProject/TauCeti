@@ -265,6 +265,15 @@ theorem eq_diffeomorphOfRangeEq_iff {f : M → N'} {g : N → N'}
     exact hg.isEmbedding.injective
       ((congrFun he x).trans (hf.apply_diffeomorphOfRangeEq hg h x).symm)
 
+/-- `hf.diffeomorphOfRangeEq hg h x` equals `y` if and only if `f x = g y`. -/
+@[simp]
+theorem diffeomorphOfRangeEq_apply_eq_iff {f : M → N'} {g : N → N'}
+    (hf : Manifold.IsSmoothEmbedding I J' n f)
+    (hg : Manifold.IsSmoothEmbedding J J' n g)
+    (h : Set.range f = Set.range g) (x : M) (y : N) :
+    hf.diffeomorphOfRangeEq hg h x = y ↔ f x = g y :=
+  Equiv.ofRangeEq_apply_eq_iff hf.isEmbedding.injective hg.isEmbedding.injective h x y
+
 /-- Comparing a smooth embedding with itself gives the identity diffeomorphism. -/
 @[simp]
 theorem diffeomorphOfRangeEq_self {f : M → N'}
@@ -575,6 +584,14 @@ theorem eq_diffeomorphOfRangeEq_iff
     (h : Set.range f = Set.range g) (e : M ≃ₘ^n⟮I, J⟯ N) :
     e = f.diffeomorphOfRangeEq g h ↔ ⇑g ∘ ⇑e = ⇑f :=
   f.isSmoothEmbedding.eq_diffeomorphOfRangeEq_iff g.isSmoothEmbedding h e
+
+/-- `f.diffeomorphOfRangeEq g h x` equals `y` if and only if `f x = g y`. -/
+@[simp]
+theorem diffeomorphOfRangeEq_apply_eq_iff
+    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
+    (h : Set.range f = Set.range g) (x : M) (y : N) :
+    f.diffeomorphOfRangeEq g h x = y ↔ f x = g y :=
+  f.isSmoothEmbedding.diffeomorphOfRangeEq_apply_eq_iff g.isSmoothEmbedding h x y
 
 /-- Comparing a bundled smooth embedding with itself gives the identity diffeomorphism. -/
 @[simp]
