@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Translation
@@ -1331,7 +1330,11 @@ end Global
 
 section Local
 
-variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
+variable [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
+
+section CompleteSpace
+
+variable [CompleteSpace E]
 
 /-- Let `X` be a jointly `C^n` field, `1 ≤ n`, and let `σ`, `τ` and `c` be `C^n` at `z`, with the
 flow from `(σ z, c z)` defined at time `τ z`. Then `y ↦ timeDependentFlowOf X (σ y) (τ y) (c y)`
@@ -1427,6 +1430,14 @@ theorem eventually_curveVelocity_timeDependentFlowOf_eq {α : Type*} [Topologica
     ((isOpen_timeDependentFlowDomain hX).mem_nhds h)] with r hr
   exact curveVelocity_timeDependentFlowOf hX hr
 
+end CompleteSpace
+
+section FiniteDimensional
+
+variable [FiniteDimensional ℝ E] (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+    (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+include hX
+
 /-- The transverse velocity of the trajectories through a curve of initial points is the
 derivative of the flow applied to the velocity of the curve. -/
 theorem curveVelocity_timeDependentFlowOf_comp {c : ℝ → M} {q : ℝ}
@@ -1445,6 +1456,8 @@ theorem injective_mfderiv_timeDependentFlowOf (h : ((s, t), x) ∈ timeDependent
     Function.Injective (mfderiv I I (timeDependentFlowOf X s t) x) :=
   (((timeDependentFlowPartialDiffeomorph le_rfl hX s t).isLocalDiffeomorphAt I I 1
     h).isInvertible_mfderiv one_ne_zero).injective
+
+end FiniteDimensional
 
 end Local
 
