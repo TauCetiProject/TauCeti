@@ -31,6 +31,9 @@ value and of the fields of any such chain.
 * `TauCeti.Wkp.ae_eq_iteratedGradient_and_eLpNorm_le_of_chain`: a weak derivative chain of the
   value of an element of `Wkp` recovers its highest recorded derivative, with `Lᵖ` bounds by the
   graph norm.
+* `TauCeti.Wkp.iteratedGradient_ae_eq_of_value_ae_eq`: elements of `Wkp`, possibly for different
+  exponents, with almost everywhere equal values have almost everywhere equal highest recorded
+  derivatives.
 * `TauCeti.Wkp.norm_le_norm_value_add_sum_eLpNorm_of_chain`: conversely, the graph norm is at
   most the sum of the `Lᵖ` norms of the value and of the fields of a weak derivative chain.
 * `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto_of_chain`: convergence in `Wkp` gives `Lᵖ`
@@ -193,6 +196,18 @@ theorem ae_eq_iteratedGradient_and_eLpNorm_le_of_chain :
     · obtain ⟨hm, hle⟩ := hb i (by omega)
       exact ⟨hm, hle.trans (ENNReal.ofReal_le_ofReal (norm_lowerOrder_le _ y))⟩
     · exact memLp_and_eLpNorm_le_of_ae_eq_iteratedGradient hGn1
+
+/-- **Highest weak derivatives are determined by values, across exponents.** If
+`z₁ ∈ W^{k+1,p}(Ω)` and `z₂ ∈ W^{k+1,r}(Ω)` have almost everywhere equal values on `Ω`, then their
+highest weak derivatives `iteratedGradient k` agree almost everywhere on `Ω`: weak derivatives are
+unique. For `k = 1` this says that the weak Hessians agree. -/
+theorem iteratedGradient_ae_eq_of_value_ae_eq {r : ℝ≥0∞} [Fact (1 ≤ r)] (k : ℕ)
+    {z₁ : Wkp mu Omega p (k + 1)} {z₂ : Wkp mu Omega r (k + 1)}
+    (h : (value (k + 1) z₁ : E → ℝ) =ᵐ[mu.restrict Omega] value (k + 1) z₂) :
+    (iteratedGradient k z₁ : E → IteratedGradient E k) =ᵐ[mu.restrict Omega]
+      iteratedGradient k z₂ := by
+  obtain ⟨G, h0, hG, -, -, hGn⟩ := exists_iteratedGradient_chain k z₁
+  exact hGn.symm.trans (ae_eq_iteratedGradient_and_eLpNorm_le_of_chain k z₂ h.symm h0 hG).1
 
 /-- **The graph norm from a weak derivative chain.** Let `y ∈ W^{n+1,p}(Ω)` and let
 `G 0, …, G n` be a chain of iterated weak gradients on `Ω` of a representative `f` of the value of

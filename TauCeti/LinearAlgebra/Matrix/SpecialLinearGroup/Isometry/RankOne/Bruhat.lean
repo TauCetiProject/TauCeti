@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary.Basic
 public import TauCeti.GroupTheory.TitsSystem.RankOne
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.Points
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.RootAction
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRankOne
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
@@ -21,17 +20,18 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.UpperTriangular
 Let `Q` be the three-dimensional signed reversal matrix `!![0, 0, 1; 0, -1, 0; 1, 0, 0]`, realized
 as `TauCeti.typeAGraphConjugator 2`, and let `G = Matrix.specialIsometryGroup Q σ` be the special
 isometry group of the `σ`-sesquilinear form of Gram matrix `Q`. Building on the diagonal torus
-`TauCeti.UnitaryRankOne.torus` (parametrized by `TauCeti.UnitaryRankOne.torusHom`) and the
+`TauCeti.UnitaryRankOne.torus` (parametrized by `TauCeti.UnitaryRankOne.torusHom`), the
 involutive Weyl representative `TauCeti.UnitaryRankOne.weyl` from
-`TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRankOne`, this file constructs the
-upper-unitriangular root subgroup and Borel data in `G` and establishes its two-cell Bruhat
+`TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRankOne`, and the upper root
+embedding `TauCeti.UnitaryRankOne.upperRootHom` from
+`TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.RootAction`, this file defines the
+upper-unitriangular unipotent subgroup and Borel data in `G` and establishes its two-cell Bruhat
 decomposition and irreducible Tits system of rank one.
 
 Over a commutative ring `R` with an endomorphism `σ : R →+* R`:
 
-* `TauCeti.UnitaryRankOne.unipotentHom` embeds the unitary Heisenberg subgroup
-  `TauCeti.HeisenbergGroup.unitarySubgroup σ` into `G` as its upper-unitriangular subgroup
-  `TauCeti.UnitaryRankOne.unipotentSubgroup`, which is nilpotent;
+* `TauCeti.UnitaryRankOne.unipotentSubgroup` is the range of `TauCeti.UnitaryRankOne.upperRootHom`,
+  which is nilpotent;
 * `TauCeti.UnitaryRankOne.weyl` conjugates upper-unitriangular root elements to
   lower-unitriangular ones;
 * when `σ` is involutive, `TauCeti.UnitaryRankOne.torusHom` embeds `Rˣ` onto the diagonal
@@ -50,7 +50,6 @@ restriction on `(K, σ)`.
 
 ## Main definitions
 
-* `TauCeti.UnitaryRankOne.unipotentHom`: the upper-unitriangular root-group embedding into `G`.
 * `TauCeti.UnitaryRankOne.unipotentSubgroup`: the upper-unitriangular subgroup `U` of `G`.
 * `TauCeti.UnitaryRankOne.borelSubgroup`: the stabilizer `B` of `infinity K σ` in `G`.
 * `TauCeti.UnitaryRankOne.titsSystem`: the irreducible rank-one Tits system `(B, ⟨w⟩)` on `G`.
@@ -60,7 +59,7 @@ restriction on `(K, σ)`.
 * `TauCeti.UnitaryRankOne.torus_inf_unipotentSubgroup_eq_bot`: `H ⊓ U = ⊥`.
 * `TauCeti.UnitaryRankOne.torus_le_normalizer_unipotentSubgroup`: `H` normalizes `U`.
 * `TauCeti.UnitaryRankOne.mem_borelSubgroup_iff`: `g ∈ B` if and only if `g 2 0 = 0`.
-* `TauCeti.UnitaryRankOne.weyl_mul_unipotentHom_mul_weyl_mem_borelSubgroup_iff`:
+* `TauCeti.UnitaryRankOne.weyl_mul_upperRootHom_mul_weyl_mem_borelSubgroup_iff`:
   `w u(a) w ∈ B` if and only if `a = 1`.
 * `TauCeti.UnitaryRankOne.borelSubgroup_eq_sup`: `B = H ⊔ U` for involutive `σ`.
 * `TauCeti.UnitaryRankOne.borelSubgroup_le_normalizer_unipotentSubgroup`: `B` normalizes `U`.
@@ -90,42 +89,18 @@ section CommRing
 variable {R : Type*} [CommRing R] {σ : R →+* R}
 
 variable (R σ) in
-/-- The upper-unitriangular root-group homomorphism from `HeisenbergGroup.unitarySubgroup σ` into
-the special isometry group of the three-dimensional signed reversal form. -/
-def unipotentHom :
-    HeisenbergGroup.unitarySubgroup σ →* UnitaryRankOne.Group R σ :=
-  (HeisenbergGroup.toSpecialLinear.comp (HeisenbergGroup.unitarySubgroup σ).subtype).codRestrict
-    ((typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ) fun a ↦ by
-      have ha :=
-        HeisenbergGroup.mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mp a.property
-      rw [Matrix.mem_specialIsometryGroup_iff, coe_typeAGraphConjugator_two]
-      simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype,
-        HeisenbergGroup.coe_toSpecialLinear] using ha
-
-/-- The underlying special linear matrix of `unipotentHom` is `HeisenbergGroup.toSpecialLinear`. -/
-@[simp]
-theorem coe_unipotentHom (a : HeisenbergGroup.unitarySubgroup σ) :
-    (unipotentHom R σ a : Matrix.SpecialLinearGroup (Fin 3) R) =
-      HeisenbergGroup.toSpecialLinear a := (rfl)
-
-variable (R σ) in
-/-- The upper-unitriangular root-group embedding is injective. -/
-theorem unipotentHom_injective : Function.Injective (unipotentHom R σ) :=
-  fun _ _ h ↦ Subtype.ext (HeisenbergGroup.toSpecialLinear_injective (congrArg Subtype.val h))
-
-variable (R σ) in
 /-- The upper-unitriangular unipotent subgroup of the rank-one special isometry group. -/
 def unipotentSubgroup : Subgroup (UnitaryRankOne.Group R σ) :=
-  (unipotentHom R σ).range
+  (upperRootHom R σ).range
 
 variable (R σ) in
-/-- The unipotent subgroup is the range of `unipotentHom`. -/
-theorem unipotentSubgroup_def : unipotentSubgroup R σ = (unipotentHom R σ).range := (rfl)
+/-- The unipotent subgroup is the range of `upperRootHom`. -/
+theorem unipotentSubgroup_def : unipotentSubgroup R σ = (upperRootHom R σ).range := (rfl)
 
-/-- Every image of `unipotentHom` lies in `unipotentSubgroup`. -/
+/-- Every image of `upperRootHom` lies in `unipotentSubgroup`. -/
 @[simp]
-theorem unipotentHom_mem_unipotentSubgroup (a : HeisenbergGroup.unitarySubgroup σ) :
-    unipotentHom R σ a ∈ unipotentSubgroup R σ :=
+theorem upperRootHom_mem_unipotentSubgroup (a : HeisenbergGroup.unitarySubgroup σ) :
+    upperRootHom R σ a ∈ unipotentSubgroup R σ :=
   ⟨a, rfl⟩
 
 /-- An element of the rank-one special isometry group lies in `unipotentSubgroup` if and only if
@@ -133,39 +108,19 @@ its matrix is upper unitriangular. -/
 theorem mem_unipotentSubgroup_iff {g : UnitaryRankOne.Group R σ} :
     g ∈ unipotentSubgroup R σ ↔
       ((g : Matrix.SpecialLinearGroup (Fin 3) R) :
-        Matrix (Fin 3) (Fin 3) R).IsUpperUnitriangular := by
-  let K := (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ
-  let f := HeisenbergGroup.toSpecialLinear.comp (HeisenbergGroup.unitarySubgroup σ).subtype
-  have hle : f.range ≤ K := by
-    rintro _ ⟨a, rfl⟩
-    exact (unipotentHom R σ a).property
-  have hrange :
-      f.range.subgroupOf K =
-        (HeisenbergGroup.toSpecialLinear : HeisenbergGroup R →* _).range.subgroupOf K := by
-    refine le_antisymm ?_ ?_
-    · rintro x ⟨a, ha⟩
-      exact ⟨a, ha⟩
-    · rintro x ⟨a, ha⟩
-      refine ⟨⟨a, ?_⟩, ha⟩
-      have hx := Matrix.mem_specialIsometryGroup_iff.mp x.property
-      have ha' : (HeisenbergGroup.toSpecialLinear a : Matrix (Fin 3) (Fin 3) R) =
-          (x : Matrix.SpecialLinearGroup (Fin 3) R) := congrArg Subtype.val ha
-      rw [← ha', HeisenbergGroup.coe_toSpecialLinear, coe_typeAGraphConjugator_two] at hx
-      exact HeisenbergGroup.mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mpr hx
-  have hunip : unipotentHom R σ = f.codRestrict K fun a ↦ hle ⟨a, rfl⟩ := rfl
-  rw [unipotentSubgroup_def, hunip, ← MonoidHom.subgroupOf_range_eq_of_le f hle, hrange,
-    Subgroup.mem_subgroupOf, HeisenbergGroup.mem_range_toSpecialLinear_iff]
+        Matrix (Fin 3) (Fin 3) R).IsUpperUnitriangular :=
+  mem_range_upperRootHom_iff g
 
 /-- The unipotent subgroup is nilpotent, being a homomorphic image of a subgroup of the Heisenberg
 group. -/
 instance : Group.IsNilpotent (unipotentSubgroup R σ) :=
-  Group.nilpotent_of_surjective (unipotentHom R σ).rangeRestrict
-    (unipotentHom R σ).rangeRestrict_surjective
+  Group.nilpotent_of_surjective (upperRootHom R σ).rangeRestrict
+    (upperRootHom R σ).rangeRestrict_surjective
 
 /-- Conjugating an upper-unitriangular root element by `weyl` gives the lower-unitriangular matrix
 with off-diagonal coordinates `-σ x`, `z`, and `-x`. -/
-theorem coe_weyl_mul_unipotentHom_mul_weyl (a : HeisenbergGroup.unitarySubgroup σ) :
-    (((weyl R σ * unipotentHom R σ a * weyl R σ : UnitaryRankOne.Group R σ) :
+theorem coe_weyl_mul_upperRootHom_mul_weyl (a : HeisenbergGroup.unitarySubgroup σ) :
+    (((weyl R σ * upperRootHom R σ a * weyl R σ : UnitaryRankOne.Group R σ) :
         Matrix.SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
       !![1, 0, 0; -σ (a : HeisenbergGroup R).x, 1, 0;
         (a : HeisenbergGroup R).z, -(a : HeisenbergGroup R).x, 1] := by
@@ -193,11 +148,11 @@ theorem torus_inf_unipotentSubgroup_eq_bot :
 /-- Conjugating a root element `unitaryMk σ hσ x z hz` by `torusHom R σ hσ t` rescales `x` by
 `t² σ(t⁻¹)` and `z` by `t σ(t)`. -/
 @[simp]
-theorem torusHom_mul_unipotentHom_unitaryMk_mul_inv (hσ : Function.Involutive σ) (t : Rˣ)
+theorem torusHom_mul_upperRootHom_unitaryMk_mul_inv (hσ : Function.Involutive σ) (t : Rˣ)
     (x z : R) (hz : z + σ z = x * σ x) :
-    torusHom R σ hσ t * unipotentHom R σ (HeisenbergGroup.unitaryMk σ hσ x z hz) *
+    torusHom R σ hσ t * upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ x z hz) *
         (torusHom R σ hσ t)⁻¹ =
-      unipotentHom R σ (HeisenbergGroup.unitaryMk σ hσ
+      upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ
         ((t : R) ^ 2 * σ ((t⁻¹ : Rˣ) : R) * x) ((t : R) * σ (t : R) * z) (by
           simp only [map_mul, map_pow, hσ (t : R), hσ ((t⁻¹ : Rˣ) : R)]
           linear_combination (t : R) * σ (t : R) * hz -
@@ -207,7 +162,7 @@ theorem torusHom_mul_unipotentHom_unitaryMk_mul_inv (hσ : Function.Involutive �
   apply Subtype.ext
   apply Matrix.SpecialLinearGroup.ext
   intro i j
-  simp only [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, coe_torusHom, coe_unipotentHom,
+  simp only [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, coe_torusHom, coe_upperRootHom,
     HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.coe_unitaryMk, inv_inv,
     Matrix.mul_diagonal, Matrix.diagonal_mul]
   fin_cases i <;> fin_cases j <;>
@@ -224,8 +179,8 @@ theorem torus_le_normalizer_unipotentSubgroup (hσ : Function.Involutive σ) :
   rw [torus_eq_range_torusHom R σ hσ]
   exact Subgroup.le_normalizer_iff.mpr <| by
     rintro _ ⟨t, rfl⟩ _ ⟨a, rfl⟩
-    rw [← HeisenbergGroup.unitaryMk_eta hσ a, torusHom_mul_unipotentHom_unitaryMk_mul_inv]
-    exact unipotentHom_mem_unipotentSubgroup _
+    rw [← HeisenbergGroup.unitaryMk_eta hσ a, torusHom_mul_upperRootHom_unitaryMk_mul_inv]
+    exact upperRootHom_mem_unipotentSubgroup _
 
 end CommRing
 
@@ -295,11 +250,11 @@ theorem unipotentSubgroup_le_borelSubgroup : unipotentSubgroup K σ ≤ borelSub
   rw [mem_borelSubgroup_iff]
   simp [HeisenbergGroup.toMatrix_apply]
 
-/-- Every image of `unipotentHom` lies in the Borel subgroup. -/
+/-- Every image of `upperRootHom` lies in the Borel subgroup. -/
 @[simp]
-theorem unipotentHom_mem_borelSubgroup (a : HeisenbergGroup.unitarySubgroup σ) :
-    unipotentHom K σ a ∈ borelSubgroup K σ :=
-  unipotentSubgroup_le_borelSubgroup K σ (unipotentHom_mem_unipotentSubgroup a)
+theorem upperRootHom_mem_borelSubgroup (a : HeisenbergGroup.unitarySubgroup σ) :
+    upperRootHom K σ a ∈ borelSubgroup K σ :=
+  unipotentSubgroup_le_borelSubgroup K σ (upperRootHom_mem_unipotentSubgroup a)
 
 /-- Every diagonal torus element lies in the Borel subgroup. -/
 @[simp]
@@ -324,12 +279,12 @@ theorem weyl_notMem_borelSubgroup : weyl K σ ∉ borelSubgroup K σ := by
 /-- A `weyl`-conjugated root element lies in the Borel subgroup if and only if the root element is
 trivial. -/
 @[simp]
-theorem weyl_mul_unipotentHom_mul_weyl_mem_borelSubgroup_iff
+theorem weyl_mul_upperRootHom_mul_weyl_mem_borelSubgroup_iff
     (a : HeisenbergGroup.unitarySubgroup σ) :
-    weyl K σ * unipotentHom K σ a * weyl K σ ∈ borelSubgroup K σ ↔ a = 1 := by
+    weyl K σ * upperRootHom K σ a * weyl K σ ∈ borelSubgroup K σ ↔ a = 1 := by
   constructor
   · intro h
-    rw [mem_borelSubgroup_iff, coe_weyl_mul_unipotentHom_mul_weyl] at h
+    rw [mem_borelSubgroup_iff, coe_weyl_mul_upperRootHom_mul_weyl] at h
     have hz : (a : HeisenbergGroup K).z = 0 := by simpa using h
     have hx0 : (a : HeisenbergGroup K).x * σ (a : HeisenbergGroup K).x = 0 := by
       have htr := HeisenbergGroup.unitarySubgroup.z_add_map_z a
@@ -434,16 +389,16 @@ theorem borelSubgroup_le_normalizer_unipotentSubgroup (hσ : Function.Involutive
   rw [borelSubgroup_eq_sup hσ]
   exact sup_le (torus_le_normalizer_unipotentSubgroup hσ) Subgroup.le_normalizer
 
-/-- Acting on `infinity K σ` by `unipotentHom (unitaryMk σ hσ (σ c.val.2) c.val.1 _) * weyl`
+/-- Acting on `infinity K σ` by `upperRootHom (unitaryMk σ hσ (σ c.val.2) c.val.1 _) * weyl`
 produces the affine isotropic point `point K σ c`. -/
-theorem unipotentHom_mul_weyl_smul_infinity (hσ : Function.Involutive σ)
+theorem upperRootHom_mul_weyl_smul_infinity (hσ : Function.Involutive σ)
     (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
-    (unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
+    (upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
         (by simpa [hσ c.val.2] using c.property)) * weyl K σ) • infinity K σ =
       point K σ c := by
   apply Subtype.ext
   rw [SubMulAction.val_smul, coe_infinity, coe_point, Subgroup.smul_def, Projectivization.smul_mk]
-  have hvec : ((unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
+  have hvec : ((upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
         (by simpa [hσ c.val.2] using c.property)) * weyl K σ : UnitaryRankOne.Group K σ) :
       Matrix.SpecialLinearGroup (Fin 3) K) • ![1, 0, 0] = ![c.val.1, c.val.2, 1] := by
     rw [Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec, vec_one_zero_zero_eq_single,
@@ -460,7 +415,7 @@ theorem disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup :
   rw [Subgroup.disjoint_def]
   rintro _ ⟨a, rfl⟩ hb
   rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, weyl_inv,
-    weyl_mul_unipotentHom_mul_weyl_mem_borelSubgroup_iff] at hb
+    weyl_mul_upperRootHom_mul_weyl_mem_borelSubgroup_iff] at hb
   simp [hb]
 
 /-- **Sharp rank-one Bruhat decomposition**: every element outside the Borel subgroup factors as
@@ -472,13 +427,13 @@ theorem exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup (hσ : Funct
     simpa [borelSubgroup_def, MulAction.mem_stabilizer_iff] using hg
   obtain ⟨c, hc⟩ := exists_point hg'
   let u : unipotentSubgroup K σ :=
-    ⟨unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
-      (by simpa [hσ c.val.2] using c.property)), unipotentHom_mem_unipotentSubgroup _⟩
+    ⟨upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
+      (by simpa [hσ c.val.2] using c.property)), upperRootHom_mem_unipotentSubgroup _⟩
   have horb : MulAction.orbitRel (unipotentSubgroup K σ) _
       (g • infinity K σ) (weyl K σ • infinity K σ) := by
     rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
     refine ⟨u, ?_⟩
-    rw [Subgroup.smul_def, smul_smul, unipotentHom_mul_weyl_smul_infinity, hc]
+    rw [Subgroup.smul_def, smul_smul, upperRootHom_mul_weyl_smul_infinity, hc]
   obtain ⟨u', hu', b, hb, rfl⟩ := DoubleCoset.mem_doubleCoset.mp
     ((orbitRel_smul_iff_mem_doubleCoset_stabilizer (unipotentSubgroup K σ)
       (infinity K σ) g (weyl K σ)).mp horb)
@@ -514,11 +469,11 @@ theorem exists_mem_unipotentSubgroup_weyl_conj_notMem_borelSubgroup (hσ : Funct
     ∃ u ∈ unipotentSubgroup K σ, weyl K σ * u * (weyl K σ)⁻¹ ∉ borelSubgroup K σ := by
   by_cases h2 : (2 : K) = 0
   · let a := HeisenbergGroup.unitaryMk σ hσ 0 1 (by simp [← two_mul, h2])
-    refine ⟨unipotentHom K σ a, unipotentHom_mem_unipotentSubgroup a, ?_⟩
+    refine ⟨upperRootHom K σ a, upperRootHom_mem_unipotentSubgroup a, ?_⟩
     simp [a]
   · let a := HeisenbergGroup.unitaryMk σ hσ 1 (2 : K)⁻¹
       (by rw [map_inv₀, map_ofNat, ← two_mul, mul_inv_cancel₀ h2]; simp)
-    refine ⟨unipotentHom K σ a, unipotentHom_mem_unipotentSubgroup a, ?_⟩
+    refine ⟨upperRootHom K σ a, upperRootHom_mem_unipotentSubgroup a, ?_⟩
     simp [a, h2]
 
 variable (K σ) in

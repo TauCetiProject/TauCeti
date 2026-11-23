@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Contractible
 public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
+public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
+public import TauCeti.AlgebraicTopology.Singular.Twisted.LivesOver
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Excision
 
 /-!
@@ -60,6 +62,17 @@ then `TauCeti.TopCat.singularHomologyComplFiberIso`.
 * `TauCeti.TopCat.isZero_twistedHomology_complFiber`: `Hₘ(E, E ∖ p⁻¹(b); p*L) = 0` for `m < r`.
 * `TauCeti.TopCat.twistedHomologyMap_excisionMap_comp_twistedHomologyComplFiberConstantIso_hom`:
   the defining square of the comparison after excision.
+* `TauCeti.TopCat.twistedHomologyπ_comp_twistedHomologyComplFiberIso_hom_ne_zero_iff`: a class of
+  `Hₙ₊ᵣ(E; p*L)` is detected by the twisted shriek map exactly when its localization along the
+  fibre is nonzero, independently of the chart.
+* `TauCeti.TopCat.twistedHomologyComplFiberIso_hom_constant`: for a constant system the
+  isomorphism is the untwisted `TauCeti.TopCat.singularHomologyComplFiberIso`.
+* `LocalCoefficientSystem.livesOverFundamentalClass_iff_twistedHomologyComplFiberIso_hom_ne_zero`:
+  a class of `Hₙ₊ᵣ(E; p*L)` lives over the fundamental class at `b`
+  (`TauCeti.LocalCoefficientSystem.LivesOverFundamentalClass`) exactly when its image under the
+  twisted shriek map is nonzero.
+* `TauCeti.LocalCoefficientSystem.LivesOverFundamentalClass.finrank_le`: such a class has degree at
+  least the dimension of the base.
 
 ## References
 
@@ -211,6 +224,37 @@ lemma twistedHomologyMap_excisionMap_comp_twistedHomologyComplFiberConstantIso_h
           (L.obj (FundamentalGroupoid.mk b)) m := by
   simp [twistedHomologyComplFiberConstantIso]
 
+/-- For a constant system `M` on `B`, the comparison
+`TauCeti.TopCat.twistedHomologyComplFiberConstantIso` is the change of coefficients along
+`p*M ≅ M` followed by the comparison of twisted homology with constant coefficients with ordinary
+homology. -/
+lemma twistedHomologyComplFiberConstantIso_hom_constant (M : ModuleCat.{u} R) (hε₀ : 0 < ε)
+    (m : ℕ) :
+    (twistedHomologyComplFiberConstantIso ((constantFunctor B).obj M) e hb hε hε₀ m).hom =
+      (TopPair.ofSubset (p ⁻¹' {b})ᶜ).twistedHomologyCoefficientMap
+          (pullbackConstantIso p.hom M).hom m ≫
+        ((TopPair.ofSubset (p ⁻¹' {b})ᶜ).twistedHomologyConstantIso M m).hom := by
+  have := isIso_twistedHomologyMap_excisionMap_chartBall (p := p) e hb hε₀
+    ((pullback p.hom).obj ((constantFunctor B).obj M)) m
+  refine (cancel_epi (TopPair.twistedHomologyMap
+      (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ)
+      ((pullback p.hom).obj ((constantFunctor B).obj M)) m)).1 ?_
+  -- The ambient space of `(E, E ∖ p⁻¹(b))` is `E` only up to unfolding `TopPair.ofSubset`, so the
+  -- naturality squares along the excision inclusion are applied with `erw`.
+  rw [twistedHomologyMap_excisionMap_comp_twistedHomologyComplFiberConstantIso_hom]
+  erw [TopPair.twistedHomologyMap_naturality_assoc]
+  erw [TopPair.twistedHomologyConstantIso_hom_pair_naturality M
+    (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) m]
+  erw [← TopPair.twistedHomologyCoefficientMap_comp_assoc]
+  congr 2
+  -- Both coefficient maps are the identity of `M` at every point: transport in a constant system
+  -- is trivial, and pulling back a constant system is the identity.
+  refine NatTrans.ext (funext fun z ↦ ?_)
+  rw [chartBallPullbackIsoConstant_hom_app]
+  erw [NatTrans.comp_app, pullback_map_app, pullbackConstantIso_hom_app,
+    pullbackConstantIso_hom_app]
+  exact (constantFunctor_obj_map B M _).trans (Category.comp_id _).symm
+
 variable [FiniteDimensional ℝ V]
 
 /-- **The homology of a Serre fibration with pulled-back coefficients, modulo the complement of a
@@ -258,4 +302,71 @@ theorem isZero_twistedHomology_complFiber (hp : serreFibrations p) {m : ℕ}
   exact (isZero_singularHomology_complFiber _ e hb hp hm).of_iso
     (twistedHomologyComplFiberConstantIso L e hb hε hε₀ m)
 
+/-- A class `α ∈ Hₘ(E; p*L)` is detected by the shriek map
+`Hₘ(E; p*L) → Hₘ(E, E ∖ p⁻¹(b); p*L) ≅ Hₙ(p⁻¹(b); L_b)` of the inclusion of `b`, for
+`m = n + dim V`, exactly when its localization along the fibre is nonzero. In particular whether
+it is detected does not depend on the chart. -/
+theorem twistedHomologyπ_comp_twistedHomologyComplFiberIso_hom_ne_zero_iff (hε₀ : 0 < ε)
+    (hp : serreFibrations p) (n m : ℕ) (h : n + finrank ℝ V = m)
+    (α : ((pullback p.hom).obj L).twistedHomology m) :
+    ((TopPair.ofSubset (p ⁻¹' {b})ᶜ).twistedHomologyπ _ m ≫
+        (twistedHomologyComplFiberIso L e hb hε hε₀ hp n m h).hom).hom α ≠ 0 ↔
+      ((TopPair.ofSubset (p ⁻¹' {b})ᶜ).twistedHomologyπ _ m).hom α ≠ 0 :=
+  not_congr (twistedHomologyComplFiberIso L e hb hε hε₀ hp n m h).toLinearEquiv.map_eq_zero_iff
+
+/-- For a constant system `M` on `B`, the isomorphism
+`TauCeti.TopCat.twistedHomologyComplFiberIso` is the comparison of twisted homology with constant
+coefficients and ordinary homology, followed by the untwisted
+`TauCeti.TopCat.singularHomologyComplFiberIso`. -/
+lemma twistedHomologyComplFiberIso_hom_constant (M : ModuleCat.{u} R) (hε₀ : 0 < ε)
+    (hp : serreFibrations p) (n m : ℕ) (h : n + finrank ℝ V = m) :
+    (twistedHomologyComplFiberIso ((constantFunctor B).obj M) e hb hε hε₀ hp n m h).hom =
+      (TopPair.ofSubset (p ⁻¹' {b})ᶜ).twistedHomologyCoefficientMap
+          (pullbackConstantIso p.hom M).hom m ≫
+        ((TopPair.ofSubset (p ⁻¹' {b})ᶜ).twistedHomologyConstantIso M m).hom ≫
+          (singularHomologyComplFiberIso M e hb hε hε₀ hp n m h).hom :=
+  -- The coefficient fibre `((constantFunctor B).obj M).obj b` is `M` only by definition, so the
+  -- two factors are composed in term mode rather than by rewriting.
+  (congrArg (· ≫ _) (twistedHomologyComplFiberConstantIso_hom_constant e hb hε M hε₀ m)).trans
+    (Category.assoc _ _ _)
+
 end TauCeti.TopCat
+
+/-! ### Classes living over the fundamental class -/
+
+namespace TauCeti.LocalCoefficientSystem
+
+variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {E B : _root_.TopCat.{u}} [T1Space B] {p : E ⟶ B} {R : Type*} [Ring R]
+  {L : LocalCoefficientSystem.{_, u, u} R B} (e : OpenPartialHomeomorph B V) {b : B}
+  (hb : b ∈ e.source)
+
+/-- **Living over the fundamental class through the twisted shriek map.** For a Serre fibration
+`p : E ⟶ B` over a `T₁` space with a chart `e` of dimension `r` at `b`, and a local system `L` on
+`B`, a class `α ∈ Hₙ₊ᵣ(E; p*L)` lives over the fundamental class at `b` exactly when its image under
+the twisted shriek map `Hₙ₊ᵣ(E; p*L) → Hₙ₊ᵣ(E, E ∖ p⁻¹(b); p*L) ≅ Hₙ(p⁻¹(b); L_b)` of the inclusion
+of `b` is nonzero, for any ball about `e b` inside the target of `e`. -/
+theorem livesOverFundamentalClass_iff_twistedHomologyComplFiberIso_hom_ne_zero {ε : ℝ}
+    (hε : ball (e b) ε ⊆ e.target) (hε₀ : 0 < ε) (hp : TopCat.serreFibrations p) {n m : ℕ}
+    (h : n + finrank ℝ V = m) (α : ((pullback p.hom).obj L).twistedHomology m) :
+    ((pullback p.hom).obj L).LivesOverFundamentalClass p b α ↔
+      (TopCat.twistedHomologyComplFiberIso L e hb hε hε₀ hp n m h).hom.hom
+        ((((pullback p.hom).obj L).fiberLocalization p b m).hom α) ≠ 0 :=
+  (livesOverFundamentalClass_iff _ _ _ α).trans
+    (TopCat.twistedHomologyπ_comp_twistedHomologyComplFiberIso_hom_ne_zero_iff L e hb hε hε₀ hp n
+      m h α).symm
+
+include hb in
+/-- **A class living over the fundamental class has degree at least the dimension of the base.**
+For a Serre fibration `p : E ⟶ B` over a `T₁` space with a chart of dimension `r` at `b`, and a
+local system `L` on `B`, the local homology `Hₖ(E, E ∖ p⁻¹(b); p*L)` vanishes for `k < r`, so no
+class of `Hₖ(E; p*L)` of degree below `r` lives over the fundamental class at `b`. -/
+theorem LivesOverFundamentalClass.finrank_le
+    (hp : TopCat.serreFibrations p) {d : ℕ} {α : ((pullback p.hom).obj L).twistedHomology d}
+    (h : ((pullback p.hom).obj L).LivesOverFundamentalClass p b α) : finrank ℝ V ≤ d := by
+  by_contra hd
+  have := ModuleCat.isZero_iff_subsingleton.1
+    (TopCat.isZero_twistedHomology_complFiber L e hb hp (not_le.1 hd))
+  exact (livesOverFundamentalClass_iff _ _ _ _).1 h (Subsingleton.elim _ _)
+
+end TauCeti.LocalCoefficientSystem

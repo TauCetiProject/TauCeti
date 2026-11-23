@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.OpenSet
+public import TauCeti.Analysis.Holder.Product
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.SegmentChain
 import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.Calculus.MeanValue
@@ -20,9 +20,11 @@ On a convex open set, the derivative fields of an element of `C^{k,α}(Ω)` belo
 file proves both statements on a bounded Lipschitz domain, which need not be convex: nearby points
 of such a domain are joined inside it by three segments of total length comparable to their
 distance (`Set.IsLipschitzDomain.exists_segment_chain`), and the mean value inequality along them
-bounds the increments of each lower derivative field at small scales. The domains of the global
-Schauder theory, bounded domains with `C^{k,α}` boundary for `k ≥ 1`, are bounded Lipschitz
-domains.
+bounds the increments of each lower derivative field at small scales. The same Hölder bounds give
+the order-`k` Leibniz estimate `‖B (f, g)‖_{C^{k,α}(Ω)} ≤ C ‖B‖ ‖f‖_{C^{k,α}(Ω)} ‖g‖_{C^{k,α}(Ω)}`
+for a continuous bilinear map `B`, so that coefficients in `C^{k,α}(Ω)` act on `C^{k,α}(Ω)` by
+bounded multiplication. The domains of the global Schauder theory, bounded domains with
+`C^{k,α}` boundary for `k ≥ 1`, are bounded Lipschitz domains.
 
 ## Main declarations
 
@@ -35,6 +37,12 @@ domains.
 * `TauCeti.CkHolderSpaceOn.inclusionSuccLOfIsLipschitzDomain`: the inclusion
   `C^{k+1,α}(Ω) → C^{k,α}(Ω)` as a continuous linear map, built by
   `TauCeti.CkHolderSpaceOn.inclusionSuccLOfHolderOnWith` from that constant.
+* `ContinuousLinearMap.compCkHolderOn₂OfIsLipschitzDomain`: pointwise application of a continuous
+  bilinear map `B` to `C^{k,α}(Ω)`, as a continuous bilinear map, built by
+  `ContinuousLinearMap.compCkHolderOn₂OfHolderOnWith` from that constant.
+* `ContinuousLinearMap.exists_norm_compCkHolderOn₂OfIsLipschitzDomain_apply_le`: the order-`k`
+  Leibniz estimate on a bounded Lipschitz domain, with a constant independent of `B` and of the
+  factors.
 
 ## References
 
@@ -158,3 +166,57 @@ theorem iteratedFDeriv_inclusionSuccLOfIsLipschitzDomain (hΩ : (Ω : Set E).IsL
 end CkHolderSpaceOn
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+open TauCeti
+
+variable {k : ℕ} {Ω : Opens E} {F₁ : Type*} {F₂ : Type*} {F₃ : Type*}
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+
+/-- On a bounded Lipschitz domain and for `α ≤ 1`, pointwise application of a continuous bilinear
+map to `C^{k,α}` functions on `Ω`. Fixing the first argument gives bounded multiplication by a
+coefficient field in `C^{k,α}(Ω)`. Compare `ContinuousLinearMap.compCkHolderOn₂`, on a convex open
+set. -/
+def compCkHolderOn₂OfIsLipschitzDomain (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hΩ : (Ω : Set E).IsLipschitzDomain E') (hb : Bornology.IsBounded (Ω : Set E)) (hα : α ≤ 1) :
+    CkHolderSpaceOn k α Ω F₁ →L[ℝ] CkHolderSpaceOn k α Ω F₂ →L[ℝ] CkHolderSpaceOn k α Ω F₃ :=
+  have hC := CkHolderSpaceOn.exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain hΩ hb hα
+  have hD := CkHolderSpaceOn.exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain hΩ hb hα
+  B.compCkHolderOn₂OfHolderOnWith hC.choose hD.choose
+    (fun f _ hj ↦ hC.choose_spec f f.extend_apply hj)
+    (fun g _ hj ↦ hD.choose_spec g g.extend_apply hj)
+
+/-- The lifted bilinear operation on `C^{k,α}(Ω)` of a bounded Lipschitz domain is pointwise the
+original one. -/
+@[simp]
+theorem compCkHolderOn₂OfIsLipschitzDomain_apply (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hΩ : (Ω : Set E).IsLipschitzDomain E') (hb : Bornology.IsBounded (Ω : Set E)) (hα : α ≤ 1)
+    (f : CkHolderSpaceOn k α Ω F₁) (g : CkHolderSpaceOn k α Ω F₂) (x : Ω) :
+    B.compCkHolderOn₂OfIsLipschitzDomain hΩ hb hα f g x = B (f x) (g x) :=
+  compCkHolderOn₂OfHolderOnWith_apply _ _ _ _ _ f g x
+
+/-- On a bounded Lipschitz domain and for `α ≤ 1`, the lifted bilinear map on `C^{k,α}(Ω)` has
+operator norm at most `C ‖B‖`, for a constant `C` independent of `B`. -/
+theorem exists_norm_compCkHolderOn₂OfIsLipschitzDomain_le
+    (hΩ : (Ω : Set E).IsLipschitzDomain E') (hb : Bornology.IsBounded (Ω : Set E)) (hα : α ≤ 1) :
+    ∃ C : ℝ, ∀ B : F₁ →L[ℝ] F₂ →L[ℝ] F₃,
+      ‖B.compCkHolderOn₂OfIsLipschitzDomain (k := k) hΩ hb hα‖ ≤ C * ‖B‖ :=
+  ⟨_, fun B ↦ norm_compCkHolderOn₂OfHolderOnWith_le B _ _ _ _⟩
+
+/-- **The order-`k` Leibniz estimate** in `C^{k,α}(Ω)` on a bounded Lipschitz domain, for `α ≤ 1`:
+`‖B (f, g)‖_{C^{k,α}(Ω)} ≤ C ‖B‖ ‖f‖_{C^{k,α}(Ω)} ‖g‖_{C^{k,α}(Ω)}` for a constant `C` independent
+of `B`, `f` and `g`. Compare `ContinuousLinearMap.norm_compCkHolderOn₂_apply_le`, with the explicit
+constant `(k + 7) 2^k`, on a convex open set. -/
+theorem exists_norm_compCkHolderOn₂OfIsLipschitzDomain_apply_le
+    (hΩ : (Ω : Set E).IsLipschitzDomain E') (hb : Bornology.IsBounded (Ω : Set E)) (hα : α ≤ 1) :
+    ∃ C : ℝ, ∀ (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (f : CkHolderSpaceOn k α Ω F₁)
+      (g : CkHolderSpaceOn k α Ω F₂),
+      ‖B.compCkHolderOn₂OfIsLipschitzDomain hΩ hb hα f g‖ ≤ C * ‖B‖ * ‖f‖ * ‖g‖ := by
+  obtain ⟨C, hC⟩ := exists_norm_compCkHolderOn₂OfIsLipschitzDomain_le (k := k) (F₁ := F₁)
+    (F₂ := F₂) (F₃ := F₃) hΩ hb hα
+  exact ⟨C, fun B f g ↦ ((B.compCkHolderOn₂OfIsLipschitzDomain hΩ hb hα).le_opNorm₂ f g).trans
+    (by gcongr; exact hC B)⟩
+
+end ContinuousLinearMap

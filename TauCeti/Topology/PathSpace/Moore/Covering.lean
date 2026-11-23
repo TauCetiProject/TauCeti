@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Lifting
-public import TauCeti.Topology.PathSpace.Moore.Lifting
+public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
+public import TauCeti.Topology.PathSpace.Moore.Replacement.Basic
 
 /-!
 # Lifting Moore paths along a covering map
@@ -17,6 +18,15 @@ uniqueness). The lifts depend continuously on the point and the path, so they fo
 function for `p` on Moore paths (`IsCoveringMap.mooreLiftingFunction`), and by uniqueness every
 lifting function of `p` is this one (`IsCoveringMap.subsingleton_mooreLiftingFunction`) and is
 transitive (`IsCoveringMap.isTransitive`).
+
+The end point of the lift of `γ` from `e` is the image of `e` under Mathlib's monodromy
+`IsCoveringMap.monodromy` along the homotopy class of `γ`, read as a path on the unit interval
+(`IsCoveringMap.target_lift_eq_monodromy`). So the transport `F' → F` from the fibre of the
+Moore-path replacement to the fibre of `p` is monodromy along the path of each pair
+(`IsCoveringMap.coe_transport_eq_monodromy`), and the strict action of the Moore loops on the fibre
+is the monodromy action of the fundamental group (`IsCoveringMap.coe_fiberAct_eq_monodromy`,
+`IsCoveringMap.coe_fiberAct_eq_monodromyPerm`). In particular a Moore loop acts on the fibre only
+through its homotopy class (`IsCoveringMap.fiberAct_eq_of_fundamentalGroupHom_eq`).
 
 The lift of a Moore path `γ` from `e` is read off Mathlib's homotopy lifting for covering maps
 (`IsCoveringMap.liftHomotopy`), applied to the family of paths `t ↦ γ (t m)` on the unit interval,
@@ -39,6 +49,10 @@ in general, since a loop in `B` whose lift from `e` does not close up has no pre
 * `IsCoveringMap.mooreLiftingFunction`: the lifting function of a covering map on Moore paths.
 * `IsCoveringMap.subsingleton_mooreLiftingFunction`, `IsCoveringMap.isTransitive`: it is the only
   lifting function of `p`, and every lifting function of `p` is transitive.
+* `IsCoveringMap.target_lift_eq_monodromy`: lifts of Moore paths end at the monodromy.
+* `IsCoveringMap.coe_transport_eq_monodromy`: transport along a lifting function is monodromy.
+* `IsCoveringMap.coe_fiberAct_eq_monodromy`, `IsCoveringMap.coe_fiberAct_eq_monodromyPerm`: the
+  action of the Moore loops on the fibre is the monodromy action of the fundamental group.
 * `IsCoveringMap.doubleMooreLoopSpaceHomeomorph`: the double Moore loop map of a covering map is a
   homeomorphism.
 
@@ -165,6 +179,69 @@ theorem subsingleton_mooreLiftingFunction : Subsingleton (MooreLiftingFunction p
 concatenation of the lifts are both lifts from the same point, so they agree. -/
 theorem isTransitive (Φ : MooreLiftingFunction p) : Φ.IsTransitive :=
   ⟨fun e γ δ hγ h ↦ hp.moorePath_eq_of_map_eq (by simp) (by simp)⟩
+
+/-! ### Lifts end at the monodromy -/
+
+/-- The end point of the lift of `γ` is the monodromy along any path on the unit interval that
+traces `γ` at constant speed. -/
+private theorem coe_monodromy_eq_target_lift (Φ : MooreLiftingFunction p) {x y : B}
+    (δ : Path x y) (e : p ⁻¹' {x}) (γ : MoorePath B) (h : γ.source = p e)
+    (hδ : ∀ s, δ s = γ.toUnitPath s) :
+    (hp.monodromy (.mk δ) e : E) = (Φ.lift e γ h).target := by
+  refine (hp.monodromy_eq_apply_one (Γ := (Φ.lift e γ h).toUnitPath) (funext fun s ↦ ?_) ?_).trans
+    (MoorePath.toUnitPath_one _)
+  · rw [Function.comp_apply, hδ, MoorePath.toUnitPath_apply, MoorePath.toUnitPath_apply,
+      Φ.length_lift, Φ.apply_lift]
+  · rw [MoorePath.toUnitPath_zero, Φ.source_lift]
+
+/-- **The lift of a Moore path along a covering map ends at its monodromy**: for every lifting
+function `Φ` of `p`, the lift of a Moore path `γ` from `e` ends where Mathlib's monodromy
+`IsCoveringMap.monodromy` sends `e` along the homotopy class of `γ`, read as a path on the unit
+interval. -/
+theorem target_lift_eq_monodromy (Φ : MooreLiftingFunction p) (e : E) (γ : MoorePath B)
+    (h : γ.source = p e) :
+    (Φ.lift e γ h).target = hp.monodromy (.mk γ.toPath) ⟨e, h.symm⟩ :=
+  (hp.coe_monodromy_eq_target_lift Φ γ.toPath ⟨e, h.symm⟩ γ h fun s ↦ by
+    rw [MoorePath.toPath_apply, MoorePath.toUnitPath_apply]).symm
+
+/-- **Transport along a lifting function of a covering map is monodromy**: a point `(e, γ)` of the
+fibre `F'` of the Moore-path replacement is sent to the image of `e` under the monodromy along the
+homotopy class of `γ`. -/
+theorem coe_transport_eq_monodromy (Φ : MooreLiftingFunction p) (b : B)
+    (x : MooreReplacement.Fiber p b) :
+    (Φ.transport b x : E) =
+      hp.monodromy (.mk x.val.path.toPath) ⟨x.val.point, x.val.source_path.symm⟩ := by
+  rw [MooreLiftingFunction.coe_transport, hp.target_lift_eq_monodromy]
+
+/-- **The action of the Moore loops on the fibre of a covering map is monodromy**: through any
+lifting function, a Moore loop `ω` at `b` sends a point `f` of the fibre over `b` to its image
+under the monodromy along the homotopy class of `ω`. -/
+theorem coe_fiberAct_eq_monodromy (Φ : MooreLiftingFunction p) (b : B) (f : {e // p e = b})
+    (ω : MooreLoopSpace B b) :
+    (Φ.fiberAct b f ω : E) = hp.monodromy (.mk ω.toPath) ⟨f, f.property⟩ := by
+  rw [MooreLiftingFunction.coe_fiberAct]
+  exact (hp.coe_monodromy_eq_target_lift Φ ω.toPath ⟨f, f.property⟩ ω.toMoorePath _ fun s ↦ by
+    rw [MooreLoopSpace.toPath_apply, MoorePath.toUnitPath_apply]).symm
+
+/-- The action of the Moore loops on the fibre of a covering map, in terms of the fundamental
+group: a Moore loop `ω` acts by Mathlib's monodromy permutation `IsCoveringMap.monodromyPerm` of the
+inverse of its multiplicative class `MooreLoopSpace.fundamentalGroupHom b ω`. The inverse converts
+the right action of the Moore loops into the left action of the fundamental group. -/
+theorem coe_fiberAct_eq_monodromyPerm (Φ : MooreLiftingFunction p) (b : B) (f : {e // p e = b})
+    (ω : MooreLoopSpace B b) :
+    (Φ.fiberAct b f ω : E) =
+      hp.monodromyPerm b (MooreLoopSpace.fundamentalGroupHom b ω)⁻¹ ⟨f, f.property⟩ := by
+  rw [MooreLoopSpace.fundamentalGroupHom_apply, inv_inv, coe_monodromyPerm,
+    hp.coe_fiberAct_eq_monodromy]
+
+/-- **A Moore loop acts on the fibre of a covering map through its homotopy class**: two Moore
+loops with the same class in the fundamental group act in the same way. -/
+theorem fiberAct_eq_of_fundamentalGroupHom_eq (Φ : MooreLiftingFunction p) {b : B}
+    {ω ω' : MooreLoopSpace B b}
+    (h : MooreLoopSpace.fundamentalGroupHom b ω = MooreLoopSpace.fundamentalGroupHom b ω')
+    (f : {e // p e = b}) :
+    Φ.fiberAct b f ω = Φ.fiberAct b f ω' :=
+  Subtype.ext <| by rw [hp.coe_fiberAct_eq_monodromyPerm, hp.coe_fiberAct_eq_monodromyPerm, h]
 
 /-! ### Double Moore loops -/
 

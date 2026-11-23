@@ -958,6 +958,16 @@ theorem coefficient_const_id_sharp [CompleteSpace W] (hb : b.HasCompactSpatialSu
         simp [coefficient_const, Circle.smul_def]
     _ = b.coefficient (x, ξ) := by rw [hinv, ← hf]
 
+/-- Composing multiplication by a Schwartz function `ψ` with a symbol `a` multiplies `a` pointwise
+by `ψ`: `(ψ # a)(x, ξ) = ψ(x) a(x, ξ)`. -/
+theorem coefficient_ofSpatial_smul_id_sharp [CompleteSpace W] {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (ψ : 𝓢(CoordinateSpace n, ℂ)) (x ξ : CoordinateSpace n) :
+    ((ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
+      ((ψ.smooth ⊤).smul contDiff_const)).sharp a ha).coefficient (x, ξ) =
+      ψ x • a.coefficient (x, ξ) := by
+  rw [coefficient_sharp_of_coefficient_eq_smul (a := const (ContinuousLinearMap.id ℂ W)) ha
+    (t := ψ x) (fun _ ↦ by simp [coefficient_const]), coefficient_const_id_sharp]
+
 end Sharp
 
 /-! ### The composition of the quantizations -/
@@ -1105,7 +1115,9 @@ theorem smul_quantizeSchwartzValue_sharp_eq_add [CompleteSpace V] [CompleteSpace
         quantizeSchwartzValue_congr_left (fun ξ => by simpa [hId] using h ξ) u
     _ = _ := by
         rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_coefficient_add, hId,
-          quantizeSchwartzValue_id, smul_add, quantizeSchwartzValue_ofSpatial_smul_id_comp]
+          quantizeSchwartzValue_id, smul_add, ← quantizeSchwartzValue_smul_left]
+        exact congrArg _ (quantizeSchwartzValue_congr_left (fun ξ ↦ by
+          simp [coefficient_comp, ← Complex.coe_smul]) u)
 
 /-- **Composition of uniform quantizations.** For a symbol `b` with compact spatial support,
 `Op(a # b) = Op(a) ∘ Op(b)` on Schwartz space. -/
@@ -1156,8 +1168,9 @@ theorem coefficient_coordSubSymbol (z : CoordinateSpace n) (j : Fin n)
 theorem quantizeSchwartzValue_coordSubSymbol_comp (b : Symbol n V W m) (z : CoordinateSpace n)
     (j : Fin n) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue ((coordSubSymbol z j).comp b).coefficient u x =
-      ((x - z) j : ℂ) • quantizeSchwartzValue b.coefficient u x :=
-  quantizeSchwartzValue_ofSpatial_smul_id_comp b _ u x
+      ((x - z) j : ℂ) • quantizeSchwartzValue b.coefficient u x := by
+  rw [quantizeSchwartzValue_congr_left (b := ((x - z) j : ℂ) • b.coefficient) (fun ξ ↦ by
+      simp [coefficient_comp, ← Complex.coe_smul]), quantizeSchwartzValue_smul_left]
 
 /-- **Commutator with a coordinate function.** For a symbol `b` with compact spatial support,
 `(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`: multiplying `Op(a) (Op(b) u)` by

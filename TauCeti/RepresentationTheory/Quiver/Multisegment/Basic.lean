@@ -236,6 +236,17 @@ theorem mem_of_shorten_eq_some {s t : IntInterval} (h : s.shorten = some t) (a :
   rw [NonemptyInterval.mem_def, h1, h2]
   omega
 
+/-- A point belongs to a surviving shortening of `[b, e]` exactly when it lies in `[b, e)`.
+Both conditions are false for a singleton. -/
+@[simp]
+theorem exists_shorten_eq_some_and_mem_iff (s : IntInterval) (a : ℤ) :
+    (∃ t, s.shorten = some t ∧ a ∈ t) ↔ s.fst ≤ a ∧ a < s.snd := by
+  cases h : s.shorten with
+  | none =>
+    have he := (shorten_eq_none_iff s).mp h
+    simp [he]
+  | some t => simp [mem_of_shorten_eq_some h]
+
 /-- Right shortening decreases interval length by `1`. -/
 theorem length_of_shorten_eq_some {s t : IntInterval} (h : s.shorten = some t) :
     t.length + 1 = s.length := by
@@ -243,6 +254,15 @@ theorem length_of_shorten_eq_some {s t : IntInterval} (h : s.shorten = some t) :
   have := s.coe_length
   have := t.coe_length
   omega
+
+/-- Counting a deleted singleton as zero, right shortening always decreases length by `1`. -/
+@[simp, grind =]
+theorem getD_map_length_shorten_add_one (s : IntInterval) :
+    (s.shorten.map length).getD 0 + 1 = s.length := by
+  cases h : s.shorten with
+  | none =>
+    simpa using ((length_eq_one_iff s).mpr ((shorten_eq_none_iff s).mp h)).symm
+  | some t => simpa using length_of_shorten_eq_some h
 
 /-- Right shortening commutes with integer translation. -/
 theorem shorten_shift (s : IntInterval) (c : ℤ) :
@@ -567,17 +587,10 @@ theorem totalLength_rightTruncate_add_card (m : Multisegment) :
   | empty => simp
   | cons s m ih =>
     rw [rightTruncate_cons, Multiset.card_cons, totalLength_cons]
-    cases h : s.shorten with
-    | none =>
-      have hs : s.length = 1 :=
-        (IntInterval.length_eq_one_iff s).mpr ((IntInterval.shorten_eq_none_iff s).mp h)
-      dsimp only
-      omega
-    | some t =>
-      have hs : t.length + 1 = s.length := IntInterval.length_of_shorten_eq_some h
-      dsimp only
-      rw [totalLength_cons]
-      omega
+    have hs := s.getD_map_length_shorten_add_one
+    generalize s.shorten = t at hs ⊢
+    cases t <;> simp only [Option.map_none, Option.map_some, Option.getD_none,
+      Option.getD_some, totalLength_cons] at hs ⊢ <;> omega
 
 /-- Right truncation strictly decreases `totalLength` for every nonempty multisegment. -/
 theorem totalLength_rightTruncate_lt {m : Multisegment} (hm : m ≠ 0) :

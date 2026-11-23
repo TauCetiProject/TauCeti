@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Algebra.Module.LinearMap.Basic
 public import Mathlib.LinearAlgebra.BilinearMap
-public import TauCeti.Algebra.Group.AddChar
+public import TauCeti.Algebra.Group.AddChar.Basic
 
 /-!
 # The annihilator of an additive subgroup under a character pairing

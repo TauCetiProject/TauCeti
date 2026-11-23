@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.AddChar
+public import TauCeti.Algebra.Group.AddChar.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import TauCeti.FieldTheory.Trace

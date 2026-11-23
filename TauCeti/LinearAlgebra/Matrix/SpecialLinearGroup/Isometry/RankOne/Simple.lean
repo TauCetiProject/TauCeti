@@ -116,22 +116,22 @@ private theorem map_inv_add_map_map_inv_eq (hσ : Function.Involutive σ) {x c :
 theorem weyl_mul_torusHom_eq (hσ : Function.Involutive σ) {x : R} {z : Rˣ}
     (hz : (z : R) + σ (z : R) = x * σ x) :
     weyl R σ * torusHom R σ hσ z =
-      unipotentHom R σ (HeisenbergGroup.unitaryMk σ hσ (x * σ ((z⁻¹ : Rˣ) : R))
+      upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ (x * σ ((z⁻¹ : Rˣ) : R))
           (σ ((z⁻¹ : Rˣ) : R))
           (by exact map_inv_add_map_map_inv_eq hσ hz (by simp [hσ ((z⁻¹ : Rˣ) : R), mul_comm]))) *
-        (weyl R σ * unipotentHom R σ (HeisenbergGroup.unitaryMk σ hσ x (z : R) hz) * weyl R σ) *
-        unipotentHom R σ (HeisenbergGroup.unitaryMk σ hσ (x * ((z⁻¹ : Rˣ) : R))
+        (weyl R σ * upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ x (z : R) hz) * weyl R σ) *
+        upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ (x * ((z⁻¹ : Rˣ) : R))
           (σ ((z⁻¹ : Rˣ) : R)) (by exact map_inv_add_map_map_inv_eq hσ hz rfl)) := by
   symm
-  set L := weyl R σ * unipotentHom R σ (HeisenbergGroup.unitaryMk σ hσ x (z : R) hz) * weyl R σ
+  set L := weyl R σ * upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ x (z : R) hz) * weyl R σ
   have hL : ((L : Matrix.SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
       !![1, 0, 0; -σ x, 1, 0; (z : R), -x, 1] := by
-    simpa [L] using coe_weyl_mul_unipotentHom_mul_weyl
+    simpa [L] using coe_weyl_mul_upperRootHom_mul_weyl
       (HeisenbergGroup.unitaryMk σ hσ x (z : R) hz)
   apply Subtype.ext
   apply Matrix.SpecialLinearGroup.ext
   intro i j
-  simp only [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, hL, coe_unipotentHom,
+  simp only [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, hL, coe_upperRootHom,
     HeisenbergGroup.coe_toSpecialLinear, coe_weyl, coe_typeAGraphConjugator_two, coe_torusHom,
     HeisenbergGroup.coe_unitaryMk, Matrix.mul_apply, Fin.sum_univ_three]
   fin_cases i <;> fin_cases j <;>
@@ -160,11 +160,11 @@ private theorem weyl_mul_torusHom_mem_normalClosure (hσ : Function.Involutive �
     (hz : (z : K) + σ (z : K) = x * σ x) :
     weyl K σ * torusHom K σ hσ z ∈ Subgroup.normalClosure (unipotentSubgroup K σ : Set _) := by
   rw [weyl_mul_torusHom_eq hσ hz]
-  refine mul_mem (mul_mem (Subgroup.subset_normalClosure (unipotentHom_mem_unipotentSubgroup _))
-    ?_) (Subgroup.subset_normalClosure (unipotentHom_mem_unipotentSubgroup _))
+  refine mul_mem (mul_mem (Subgroup.subset_normalClosure (upperRootHom_mem_unipotentSubgroup _))
+    ?_) (Subgroup.subset_normalClosure (upperRootHom_mem_unipotentSubgroup _))
   have hconj :=
     (inferInstance : (Subgroup.normalClosure (unipotentSubgroup K σ : Set _)).Normal).conj_mem _
-      (Subgroup.subset_normalClosure (unipotentHom_mem_unipotentSubgroup
+      (Subgroup.subset_normalClosure (upperRootHom_mem_unipotentSubgroup
         (HeisenbergGroup.unitaryMk σ hσ x (z : K) hz))) (weyl K σ)
   rwa [weyl_inv] at hconj
 
@@ -254,32 +254,32 @@ theorem normalCore_borelSubgroup_eq_center (hσ : Function.Involutive σ)
     rwa [normalClosure_unipotentSubgroup_eq_top hσ hadm, Subgroup.coe_top,
       Subgroup.centralizer_univ] at hcenter
   · obtain ⟨d, hd0, hd⟩ := hadm
-    let u := unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 d (by simpa using hd))
+    let u := upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 d (by simpa using hd))
     have hcomm : g * u = u * g := (Subgroup.mem_center_iff.mp hg u).symm
     have hmul :
         ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 * d = 0 := by
       have h22 := congrArg (fun m : UnitaryRankOne.Group K σ ↦
         ((m : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 2) hcomm
-      simpa [u, Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, coe_unipotentHom,
+      simpa [u, Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, coe_upperRootHom,
         HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.toMatrix_apply,
         Matrix.mul_apply, Fin.sum_univ_three] using h22
     exact mem_borelSubgroup_iff.mpr ((mul_eq_zero.mp hmul).resolve_right hd0)
 
 /-! ### Commutator generation, perfectness, and simplicity -/
 
-private theorem unipotentHom_unitaryMk_zero_mem_commutator (hσ : Function.Involutive σ)
+private theorem upperRootHom_unitaryMk_zero_mem_commutator (hσ : Function.Involutive σ)
     (htr : ∃ t : K, t + σ t = 1) {z₀ : K} (hz₀ : z₀ + σ z₀ = 0) :
-    unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀)) ∈
+    upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀)) ∈
       commutator (UnitaryRankOne.Group K σ) := by
   obtain ⟨b, c, hbc⟩ := HeisenbergGroup.unitarySubgroup.exists_commutatorElement_eq_of_mem_zAxis
     hσ htr (HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀)) (by simp)
   rw [← hbc, map_commutatorElement]
   exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
 
-private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involutive σ)
+private theorem exists_upperRootHom_mem_commutator_x_eq (hσ : Function.Involutive σ)
     (htr : ∃ t : K, t + σ t = 1) (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) (x : K) :
     ∃ b : HeisenbergGroup.unitarySubgroup σ, (b : HeisenbergGroup K).x = x ∧
-      unipotentHom K σ b ∈ commutator (UnitaryRankOne.Group K σ) := by
+      upperRootHom K σ b ∈ commutator (UnitaryRankOne.Group K σ) := by
   obtain ⟨a, ha0, ha⟩ := hunit
   have hσa : σ a ≠ 0 := (map_ne_zero σ).mpr ha0
   let c : K := a ^ 2 * (σ a)⁻¹ - 1
@@ -289,7 +289,7 @@ private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involuti
   let x₁ : K := c⁻¹ * x
   obtain ⟨u₁, hu₁⟩ := HeisenbergGroup.unitarySubgroup.exists_coe_x_eq hσ htr x₁
   let t : Kˣ := Units.mk0 a ha0
-  have hconj := torusHom_mul_unipotentHom_unitaryMk_mul_inv hσ t
+  have hconj := torusHom_mul_upperRootHom_unitaryMk_mul_inv hσ t
     (u₁ : HeisenbergGroup K).x (u₁ : HeisenbergGroup K).z
     (HeisenbergGroup.unitarySubgroup.z_add_map_z u₁)
   rw [HeisenbergGroup.unitaryMk_eta hσ u₁] at hconj
@@ -302,7 +302,7 @@ private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involuti
       Units.val_mk0, Units.val_inv_eq_inv_val, map_inv₀, hu₁]
     calc a ^ 2 * (σ a)⁻¹ * x₁ + -x₁ = c * x₁ := by simp only [c]; ring
       _ = x := mul_inv_cancel_left₀ hc0 x
-  · have hb_eq : unipotentHom K σ (u₂ * u₁⁻¹) = ⁅torusHom K σ hσ t, unipotentHom K σ u₁⁆ := by
+  · have hb_eq : upperRootHom K σ (u₂ * u₁⁻¹) = ⁅torusHom K σ hσ t, upperRootHom K σ u₁⁆ := by
       rw [commutatorElement_def, hconj, ← map_inv, ← map_mul]
     rw [hb_eq]
     exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
@@ -318,15 +318,15 @@ private theorem unipotentSubgroup_le_commutator_of_exists_add_map_ne_zero
   rw [unipotentSubgroup_def]
   rintro _ ⟨a₀, rfl⟩
   obtain ⟨b₁, hb₁_x, hb₁_mem⟩ :=
-    exists_unipotentHom_mem_commutator_x_eq hσ htr hunit (a₀ : HeisenbergGroup K).x
+    exists_upperRootHom_mem_commutator_x_eq hσ htr hunit (a₀ : HeisenbergGroup K).x
   let b₀ : HeisenbergGroup.unitarySubgroup σ := b₁⁻¹ * a₀
   have hb₀_x : (b₀ : HeisenbergGroup K).x = 0 := by simp [b₀, hb₁_x]
   have hb₀_z : (b₀ : HeisenbergGroup K).z + σ (b₀ : HeisenbergGroup K).z = 0 := by
     simpa [hb₀_x] using HeisenbergGroup.unitarySubgroup.z_add_map_z b₀
-  have hb₀_mem : unipotentHom K σ b₀ ∈ commutator (UnitaryRankOne.Group K σ) := by
+  have hb₀_mem : upperRootHom K σ b₀ ∈ commutator (UnitaryRankOne.Group K σ) := by
     rw [← HeisenbergGroup.unitaryMk_eta hσ b₀]
     simp only [hb₀_x]
-    exact unipotentHom_unitaryMk_zero_mem_commutator hσ htr hb₀_z
+    exact upperRootHom_unitaryMk_zero_mem_commutator hσ htr hb₀_z
   rw [← mul_inv_cancel_left b₁ a₀, map_mul]
   exact mul_mem hb₁_mem hb₀_mem
 
@@ -353,7 +353,7 @@ private theorem unipotentSubgroup_le_commutator_of_add_map_eq_zero
   have hz₁ : z₁ + σ z₁ = 0 * σ 0 := by simp [htr0 z₁]
   let u₁ := HeisenbergGroup.unitaryMk σ hσ 0 z₁ hz₁
   let t : Kˣ := Units.mk0 a ha0
-  have hconj := torusHom_mul_unipotentHom_unitaryMk_mul_inv hσ t 0 z₁ hz₁
+  have hconj := torusHom_mul_upperRootHom_unitaryMk_mul_inv hσ t 0 z₁ hz₁
   set u₂ := HeisenbergGroup.unitaryMk σ hσ ((t : K) ^ 2 * σ ((t⁻¹ : Kˣ) : K) * 0)
     ((t : K) * σ (t : K) * z₁) _
   have ha₀_eq : u₂ * u₁⁻¹ = a₀ := by

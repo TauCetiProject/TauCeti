@@ -22,8 +22,8 @@ property is `Distribution.existsUnique_gluing`.
 * `Distribution.restrictCLM`: the restriction `T|_{Ω'}`, with `Distribution.restrictCLM_apply`.
 * `Distribution.restrictCLM_self`, `Distribution.restrictCLM_restrictCLM`: restriction to `Ω`
   itself is the identity, and restrictions compose.
-* `Distribution.restrictCLM_smulLeftCLM`: restriction commutes with multiplication by smooth
-  functions.
+* `Distribution.restrictCLM_smulLeftCLM`, `Distribution.mapCLM_restrictCLM`: restriction commutes
+  with multiplication by smooth functions and with continuous linear maps of the values.
 * `Distribution.complexPairing_restrictCLM`: the pairing of `T|_{Ω'}` with a complex test function.
 
 ## References
@@ -76,6 +76,14 @@ theorem restrictCLM_restrictCLM (h₁ : Ω'' ≤ Ω') (h₂ : Ω' ≤ Ω) (T : �
 @[simp]
 theorem restrictCLM_smulLeftCLM {g : E → ℝ} (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :
     (restrictCLM (smulLeftCLM hg T) : 𝓓'^{n}(Ω', F)) = smulLeftCLM hg (restrictCLM T) := by
+  ext φ
+  simp
+
+/-- Restriction commutes with applying a continuous linear map to the values. -/
+@[simp]
+theorem mapCLM_restrictCLM {F' : Type*} [AddCommGroup F'] [Module ℝ F'] [TopologicalSpace F']
+    [IsTopologicalAddGroup F'] [ContinuousSMul ℝ F'] (A : F →L[ℝ] F') (T : 𝓓'^{n}(Ω, F)) :
+    mapCLM A (restrictCLM T : 𝓓'^{n}(Ω', F)) = restrictCLM (mapCLM A T) := by
   ext φ
   simp
 
