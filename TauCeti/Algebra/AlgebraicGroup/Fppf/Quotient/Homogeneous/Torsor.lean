@@ -19,6 +19,8 @@ Normality is unnecessary: the quotient is a sheaf of sets, and need not be a gro
 This identifies the fibers needed when realizing a homogeneous quotient as the orbit
 of a line with stabilizer `N`. It does not assert representability of that orbit.
 The base ring, ambient group, subgroup, and value algebras may all be nonreduced.
+Evaluating the pullback square on sections identifies the fibres of
+`fppfHomogeneousQuotientProjection` with left cosets (`fppfHomogeneousQuotientProjection_eq_iff`).
 
 The action and product comparisons are those of
 `TauCeti.CommHopfAlgCat.pointwiseQuotientTorsorAction` and
@@ -176,5 +178,61 @@ theorem isPullback_fppfHomogeneousQuotientTorsor :
       sheafify_pointwiseQuotientTorsorAction H I
   · simp [fppfHomogeneousQuotientSheafProjection, F]
   · simp [fppfHomogeneousQuotientSheafProjection, F]
+
+private theorem isPullback_fppfHomogeneousQuotientProjection :
+    let q := eqToHom ((pointsPresheafGrp_X_eq H).trans
+      (pointsGroupPresheaf_ulift_forget_eq_pointsPresheaf_ulift H)) ≫
+        fppfHomogeneousQuotientProjection H I
+    IsPullback (CartesianMonoidalCategory.fst _ _) (pointwiseQuotientTorsorAction H I) q q := by
+  let J := CommAlgCat.fppfTopology R
+  let G := sheafToPresheaf J (Type (u + 1))
+  have hsheaf (K : _root_.CommHopfAlgCat.{u} R) : Presheaf.IsSheaf J (pointsPresheafGrp K).X := by
+    rw [pointsPresheafGrp_X_eq, pointsGroupPresheaf_ulift_forget_eq_pointsPresheaf_ulift]
+    exact ((sheafCompose J CategoryTheory.uliftFunctor.{u + 1, u}).obj
+      ⟨HopfAlgebra.pointsPresheaf K, HopfAlgebra.pointsPresheaf_isSheaf K⟩).property
+  have hHN := (Presheaf.isSheaf_of_iso_iff (CartesianMonoidalCategory.prodComparisonIso G
+      ⟨_, hsheaf H⟩ ⟨_, hsheaf (quotient H I)⟩)).mp
+    ((⟨_, hsheaf H⟩ ⊗ ⟨_, hsheaf (quotient H I)⟩ : Sheaf J (Type (u + 1))).property)
+  let eH := isoSheafify J (hsheaf H) ≪≫
+    eqToIso (congrArg (fun X : Sheaf J (Type (u + 1)) ↦ X.obj) (pointsFppfGroupObject_X_eq H).symm)
+  let eProd := isoSheafify J hHN ≪≫ G.mapIso (fppfQuotientTorsorProductIso H I).symm
+  have hcomm {p : (pointsPresheafGrp H).X ⊗ (pointsPresheafGrp (quotient H I)).X ⟶ _} {q}
+      (hpq : (fppfQuotientTorsorProductIso H I).hom ≫ (presheafToSheaf J _).map p ≫
+        eqToHom (pointsFppfGroupObject_X_eq H).symm = q) : G.map q ≫ eH.inv = eProd.inv ≫ p := by
+    rw [Iso.eq_inv_comp, ← Category.assoc, Iso.comp_inv_eq, ← hpq]
+    simp only [eProd, eH, Iso.trans_hom, isoSheafify_hom, Functor.mapIso_hom, Iso.symm_hom,
+      eqToIso.hom, Category.assoc, ← Functor.map_comp, Iso.inv_hom_id_assoc]
+    rw [Functor.map_comp, eqToHom_map]
+    simp only [G, sheafToPresheaf, ObjectProperty.ι_map, ← toSheafify_naturality_assoc]
+  refine ((isPullback_fppfHomogeneousQuotientTorsor H I).map G).of_iso
+    eProd.symm eH.symm eH.symm (Iso.refl _)
+    (hcomm (sheafify_pointwiseQuotientTorsorFst H I))
+    (hcomm (sheafify_pointwiseQuotientTorsorAction H I)) ?_ ?_
+  all_goals
+    rw [Iso.refl_hom, Category.comp_id, Iso.symm_hom, Iso.eq_inv_comp]
+    simpa only [eH, G, sheafToPresheaf, Iso.trans_hom, isoSheafify_hom, eqToIso.hom,
+      Category.assoc, ObjectProperty.ι_obj, ObjectProperty.ι_map] using
+      toSheafify_comp_fppfHomogeneousQuotientSheafProjection H I
+
+/-- **Fibres of `fppfHomogeneousQuotientProjection` on `A`-valued points.** Two `A`-valued points
+of `G` have the same image in `G/N` if and only if they lie in the same left coset of `N(A)`. -/
+theorem fppfHomogeneousQuotientProjection_eq_iff (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (g g' : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    (fppfHomogeneousQuotientProjection H I).app A (ULift.up g) =
+        (fppfHomogeneousQuotientProjection H I).app A (ULift.up g') ↔
+      g⁻¹ * g' ∈ quotientPointsSubgroup H I A.unop.unop := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨⟨x, n⟩, hx, hxn⟩ := Types.exists_of_isPullback
+      ((isPullback_fppfHomogeneousQuotientProjection H I).map ((evaluation _ _).obj A))
+      (ULift.up g) (ULift.up g') h
+    rw [evaluation_obj_map, Functor.Monoidal.fst_app] at hx
+    rw [evaluation_obj_map, pointwiseQuotientTorsorAction_app] at hxn
+    obtain rfl : x = ULift.up g := hx
+    have hmul : g * quotientPointsHom H I A.unop.unop n.down = g' := congrArg ULift.down hxn
+    rw [← hmul, inv_mul_cancel_left]
+    exact quotientPointsHom_mem_quotientPointsSubgroup H I A.unop.unop n.down
+  · rw [fppfHomogeneousQuotientProjection_def]
+    simp only [NatTrans.comp_app, ConcreteCategory.comp_apply,
+      (homogeneousQuotientPresheafProjection_eq_iff H I A g g').mpr h]
 
 end CommHopfAlgCat

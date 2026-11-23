@@ -53,7 +53,7 @@ identity on the new letters. -/
 def map (f : G →* K) (u : G) (n : ℕ) : CentralizerExt u n →* CentralizerExt (f u) n :=
   -- Naming `f c` spares the elaborator a costly unification of `(of.comp f) c` with `of ?c`.
   lift (of.comp f) t commute_t_t fun c hc => commute_of_t (c := f c) <| by
-    simpa using (f.centralizerMap Set.image_singleton.superset ⟨c, hc⟩).2
+    simpa using (f.centralizerMap Set.image_singleton.superset ⟨c, hc⟩).property
 
 @[simp]
 theorem map_of (f : G →* K) (u : G) (n : ℕ) (g : G) : map f u n (of g) = of (f g) :=
@@ -118,7 +118,7 @@ theorem map_injective {f : G →* K} (hf : Function.Injective f) (u : G) (n : �
     rw [centralizerExtMap_false] at hc ⊢
     refine ⟨⟨g, mem_centralizer_singleton_iff.2 (hf ?_)⟩, rfl⟩
     -- `hc` says `c = f g`: `factorMap f u n false` is `f` by definition.
-    rw [map_mul, map_mul, ← show (c : K) = f g from hc, mem_centralizer_singleton_iff.1 c.2]
+    rw [map_mul, map_mul, ← show (c : K) = f g from hc, mem_centralizer_singleton_iff.1 c.property]
   · -- A letter `(c, v)` of `C_G(u) × ℤⁿ` whose image lies in `C_K(f u) × 1` has `v = 1`.
     rintro ⟨c, v⟩ ⟨c', hc'⟩
     rw [centralizerExtMap_true] at hc' ⊢

@@ -208,10 +208,8 @@ private theorem evalAt_conjLoopReflHomotopy (x : X) :
   -- every point of both paths is the constant loop
   refine Path.ext (funext fun u => ?_)
   have h : (conjLoopReflHomotopy x).evalAt (refl x) u = refl x := by
-    rw [ContinuousMap.Homotopy.evalAt_apply]
-    ext t
-    -- `Path.Homotopy.reparam` evaluates the constant loop, so it is constant by definition
-    exact (congrArg (fun ℓ : Ω X x => ℓ t) (reparamHomotopy_apply _ _ _ _ u _)).trans rfl
+    rw [ContinuousMap.Homotopy.evalAt_apply, conjLoopReflHomotopy,
+      ContinuousMap.Homotopy.cast_apply, reparamHomotopy_apply, Homotopy.reparam_refl_eval]
   exact h.trans (conjLoopContraction_refl_apply (σ u)).symm
 
 /-- The path in `Ω X x` from a loop `ℓ` to its conjugate `(Path.refl x).conjLoop ℓ` by the

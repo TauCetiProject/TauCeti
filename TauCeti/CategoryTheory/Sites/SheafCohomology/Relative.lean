@@ -109,7 +109,7 @@ def relativeFreeYonedaSheafHomEquiv {U V : C} (i : U ⟶ V) (F : Sheaf J AddComm
   invFun s := cokernel.desc _ ((freeYonedaSheafSectionsEquiv J V F).symm s) <| by
     apply (freeYonedaSheafSectionsEquiv J U F).injective
     rw [freeYonedaSheafSectionsEquiv_naturality_left, AddEquiv.apply_symm_apply, map_zero]
-    exact s.2
+    exact s.property
   left_inv g := by
     refine (cancel_epi (cokernel.π _)).1 ?_
     exact (cokernel.π_desc _ _ _).trans (AddEquiv.symm_apply_apply _ _)

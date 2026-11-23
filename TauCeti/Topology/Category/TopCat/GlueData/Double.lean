@@ -66,10 +66,10 @@ identity. -/
         by_cases h : i = j
         · simp [h]
         · simpa [h] using U.isOpen⟩
-      t := fun _ _ ↦ TopCat.ofHom ⟨fun x ↦ ⟨x.1, x.2.imp Eq.symm id⟩, by fun_prop⟩
+      t := fun _ _ ↦ TopCat.ofHom ⟨fun x ↦ ⟨x.val, x.property.imp Eq.symm id⟩, by fun_prop⟩
       V_id := fun _ ↦ eq_top_iff.2 fun _ _ ↦ Or.inl rfl
       t_id := fun _ ↦ rfl
-      t_inter := fun _ _ _ x hx ↦ x.2.elim (fun h ↦ hx.imp (h ▸ id) id) Or.inr
+      t_inter := fun _ _ _ x hx ↦ x.property.elim (fun h ↦ hx.imp (h ▸ id) id) Or.inr
       cocycle := fun _ _ _ _ _ ↦ rfl }
 
 /-- The double is indexed by `ULift Bool`, one index for each copy of `X`. -/
@@ -88,13 +88,13 @@ identity. -/
 of `X`. -/
 @[simp] theorem doubleGlueData_f (i j : (doubleGlueData X U).J) :
     (doubleGlueData X U).f i j =
-      TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C({x : X // i = j ∨ x ∈ U}, X)) :=
+      TopCat.ofHom (⟨Subtype.val, continuous_subtypeVal⟩ : C({x : X // i = j ∨ x ∈ U}, X)) :=
   (rfl)
 
 /-- The transition maps of the double are the identity on underlying points of `X`. -/
 @[simp] theorem doubleGlueData_t (i j : (doubleGlueData X U).J) :
     (doubleGlueData X U).t i j =
-      TopCat.ofHom (⟨fun x ↦ ⟨x.1, x.2.imp Eq.symm id⟩, by fun_prop⟩ :
+      TopCat.ofHom (⟨fun x ↦ ⟨x.val, x.property.imp Eq.symm id⟩, by fun_prop⟩ :
         C({x : X // i = j ∨ x ∈ U}, {x : X // j = i ∨ x ∈ U})) :=
   (rfl)
 

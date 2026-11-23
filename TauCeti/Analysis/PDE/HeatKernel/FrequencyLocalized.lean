@@ -13,8 +13,11 @@ import Mathlib.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Bochner.Fourier.Nonneg
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
@@ -42,6 +45,14 @@ costs a factor `√t (1 + √t ‖ξ‖)`, which the remaining Gaussian factor a
 Plancherel bound for kernels of band-limited symbols then gives
 `∫ ‖𝓕⁻ σ‖ ≤ C exp(-π² r² ν² t / 4)`, and Young's inequality finishes the estimate.
 
+On a function whose Fourier transform lives in a ball, the heat flow instead tends to the
+identity as `t → 0`, uniformly over all such functions and in every `Lᵖ` norm, `p = ∞` included:
+`‖e^{tΔ} f - f‖_p ≤ c(t) ‖f‖_p` with `c(t) → 0`. There `e^{tΔ} - 1` is the multiplier by the
+Schwartz symbol `χ (exp(-4π² t ‖ξ‖²) - 1)`, for a cutoff `χ` equal to `1` near the ball, and its
+kernel is `e^{tΔ} κ - κ` with `κ = 𝓕⁻ χ`, which tends to `0` in `L¹` by the strong continuity of
+the heat semigroup on `L¹`. This is the strong continuity of the heat semigroup on each
+Littlewood–Paley block, from which it follows on the Besov spaces `B^s_{p,q}`, `q < ∞`.
+
 ## Main declarations
 
 * `TauCeti.exists_integral_norm_fourierInv_mul_exp_le`: the `L¹` norm of the kernel of the
@@ -57,6 +68,8 @@ Plancherel bound for kernels of band-limited symbols then gives
   a block `Δⱼ u`, `j ≥ 1`, of a tempered distribution that is an `Lᵖ` function, for every
   `1 ≤ p ≤ ∞`, including `p = ∞`.
 * `TemperedDistribution.littlewoodPaleyBlock_heatSemigroup_comm`: `Δⱼ e^{tΔ} = e^{tΔ} Δⱼ`.
+* `TauCeti.exists_heatSemigroup_sub_eq_and_norm_le_of_isVanishingOn_fourier`: the heat flow of a
+  function band-limited to a ball tends to the function in `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le`: the heat
   estimate `‖Δⱼ e^{tΔ} u‖_p ≤ C exp(-c (4^j - 1) t) ‖Δⱼ u‖_p` for every block, `j = 0` included.
 
@@ -465,8 +478,7 @@ theorem exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le
     rw [TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM,
       TemperedDistribution.littlewoodPaleyBlock_apply,
       TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
-        (by exact Complex.hasTemperateGrowth_ofReal.comp
-              (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))),
+        (TemperedDistribution.hasTemperateGrowth_heatSymbol t),
       TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
         σ.hasTemperateGrowth, hσψ]
   obtain ⟨g, hg, hgn⟩ := TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le σ f
@@ -478,7 +490,7 @@ theorem exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le
     rw [← pow_mul, mul_comm, pow_mul]
     norm_num
   have h22 : (2 : ℝ) ^ 2 = 4 := by norm_num
-  refine (hσ ▸ hC _ hν t t.2).trans_eq ?_
+  refine (hσ ▸ hC _ hν t t.property).trans_eq ?_
   rw [h4, div_pow, h22]
   ring_nf
 
@@ -502,9 +514,7 @@ theorem littlewoodPaleyBlock_heatSemigroup_comm (j : ℕ) (t : ℝ≥0) (u : �
     littlewoodPaleyBlock F φ j (heatSemigroup E F t u) =
       heatSemigroup E F t (littlewoodPaleyBlock F φ j u) := by
   rw [heatSemigroup_eq_fourierMultiplierCLM]
-  exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ
-    (by exact Complex.hasTemperateGrowth_ofReal.comp
-          (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))) j u
+  exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ (hasTemperateGrowth_heatSymbol t) j u
 
 variable [CompleteSpace F]
 
@@ -542,3 +552,108 @@ theorem exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le :
     linarith [mul_nonneg hc.le t.coe_nonneg]
 
 end TemperedDistribution
+
+/-! ### The heat flow of band-limited functions at small times -/
+
+namespace TauCeti
+
+open MeasureTheory Metric Real Filter Topology FourierTransform Distribution Semigroups
+open scoped NNReal ENNReal SchwartzMap
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- On a tempered distribution `u` whose Fourier transform vanishes off the closed ball of radius
+`R`, `e^{tΔ} u - u` is the Fourier multiplier by `χ (exp(-4π² t ‖ξ‖²) - 1)`, for every Schwartz
+`χ` equal to one near that ball. -/
+private theorem heatSemigroup_sub_eq_fourierMultiplierCLM {χ : 𝓢(E, ℂ)} {R : ℝ}
+    (hχ1 : tsupport (⇑χ - 1) ⊆ (closedBall 0 R)ᶜ) {t : ℝ≥0} {u : 𝓢'(E, F)}
+    (hu : IsVanishingOn (𝓕 u : 𝓢'(E, F)) (closedBall 0 R)ᶜ) :
+    TemperedDistribution.heatSemigroup E F t u - u =
+      TemperedDistribution.fourierMultiplierCLM F
+        ⇑(SchwartzMap.smulLeftCLM ℂ (fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) χ -
+          χ) u := by
+  set h : E → ℂ := fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)
+  have hh : h.HasTemperateGrowth := TemperedDistribution.hasTemperateGrowth_heatSymbol t
+  have hσ : ⇑(SchwartzMap.smulLeftCLM ℂ h χ - χ) = ⇑χ * h - ⇑χ := by
+    funext ξ
+    simp [SchwartzMap.smulLeftCLM_apply_apply hh, mul_comm]
+  -- Since `u` is reproduced by `χ`, `χ(D) u = u` and `(χ e^{tΔ})(D) u = e^{tΔ} u`.
+  have hχu : TemperedDistribution.fourierMultiplierCLM F χ u = u :=
+    TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn hu χ.hasTemperateGrowth hχ1
+  have hχh : TemperedDistribution.fourierMultiplierCLM F (⇑χ * h) u =
+      TemperedDistribution.heatSemigroup E F t u := by
+    rw [← TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply
+      χ.hasTemperateGrowth hh, hχu, TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM]
+  -- The multiplier is linear in its symbol.
+  have hsub : TemperedDistribution.fourierMultiplierCLM F (⇑χ * h - ⇑χ) u =
+      TemperedDistribution.fourierMultiplierCLM F (⇑χ * h) u -
+        TemperedDistribution.fourierMultiplierCLM F χ u := by
+    simp only [TemperedDistribution.fourierMultiplierCLM_apply, TemperedDistribution.smulLeftCLM_sub
+      (χ.hasTemperateGrowth.mul hh) χ.hasTemperateGrowth, sub_apply,
+      FourierTransform.fourierInv_sub]
+  rw [hσ, hsub, hχh, hχu]
+
+variable [CompleteSpace F]
+
+/-- **The heat flow of band-limited functions tends to the identity, uniformly.** For every `R`
+there is a function `c` of time, depending on `R` but not on `p` or `f`, with `c t → 0` as
+`t → 0`, such that for every `1 ≤ p ≤ ∞`, every `t ≥ 0` and every `f ∈ Lᵖ` whose Fourier
+transform vanishes outside the closed ball of radius `R`, `e^{tΔ} f - f` is an `Lᵖ` function `g`
+with `‖g‖_p ≤ c t ‖f‖_p`. This includes `p = ∞`, where the heat semigroup is not strongly
+continuous on all of `L^∞`. -/
+theorem exists_heatSemigroup_sub_eq_and_norm_le_of_isVanishingOn_fourier (R : ℝ) :
+    ∃ c : ℝ≥0 → ℝ, Tendsto c (𝓝 0) (𝓝 0) ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (t : ℝ≥0)
+      (f : Lp F p (volume : Measure E)),
+      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ →
+      ∃ g : Lp F p (volume : Measure E),
+        TemperedDistribution.heatSemigroup E F t (f : 𝓢'(E, F)) - f = g ∧ ‖g‖ ≤ c t * ‖f‖ := by
+  -- A smooth cutoff `χ`, equal to one near the closed ball, reproduces `f`.
+  obtain ⟨χ, -, -, hχ⟩ :=
+    (isCompact_closedBall (0 : E) R).exists_schwartzMap_cutoff isOpen_univ (Set.subset_univ _)
+  have hχ1 : tsupport (⇑χ - 1) ⊆ (closedBall 0 R)ᶜ := fun ξ hξ hξR ↦
+    notMem_tsupport_iff_eventuallyEq.2
+      ((eventually_nhdsSet_iff_forall.1 hχ ξ hξR).mono fun η hη ↦ by simp [hη]) hξ
+  -- The heat symbol at time `t`.
+  set h : ℝ≥0 → E → ℂ := fun t ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)
+  have hh (t : ℝ≥0) : (h t).HasTemperateGrowth :=
+    TemperedDistribution.hasTemperateGrowth_heatSymbol t
+  -- The kernel `κ = 𝓕⁻ χ` of the reproducing multiplier, as an `L¹` function. The kernel of the
+  -- multiplier `χ e^{tΔ}` is its heat flow `e^{tΔ} κ`.
+  have hp1 : (1 : ℝ≥0∞) ≠ ∞ := ENNReal.one_ne_top
+  set κ : Lp ℂ 1 (volume : Measure E) := (𝓕⁻ χ).toLp 1
+  have hκ (t : ℝ≥0) : (𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ)).toLp 1 =
+      heatSemigroup (E := E) (F := ℂ) hp1 t κ := by
+    -- On Schwartz functions, the multiplier `e^{tΔ}` sends `𝓕⁻ χ` to `𝓕⁻ (χ e^{tΔ})`.
+    have hS : SchwartzMap.fourierMultiplierCLM ℂ (h t) (𝓕⁻ χ) =
+        𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ) := by
+      rw [SchwartzMap.fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq]
+    have hT : TemperedDistribution.heatSemigroup E ℂ t ((𝓕⁻ χ : 𝓢(E, ℂ)) : 𝓢'(E, ℂ)) =
+        ((𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ) : 𝓢(E, ℂ)) : 𝓢'(E, ℂ)) := by
+      rw [TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM,
+        TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq (hh t), hS]
+    refine Lp.toTemperedDistribution_injective ?_
+    dsimp only
+    rw [← TemperedDistribution.heatSemigroup_toTemperedDistribution hp1,
+      Lp.toTemperedDistribution_toLp_eq, Lp.toTemperedDistribution_toLp_eq, hT]
+  refine ⟨fun t ↦ ‖heatSemigroup (E := E) (F := ℂ) hp1 t κ - κ‖, ?_, fun {p} _ t f hf ↦ ?_⟩
+  · have h0 := (heatSemigroup (E := E) (F := ℂ) hp1).continuousAt_zero_tendsto κ
+    simpa using (tendsto_iff_norm_sub_tendsto_zero.1 h0)
+  -- The symbol `χ e^{tΔ} - χ`, whose multiplier is `e^{tΔ} - 1` on functions band-limited to the
+  -- ball.
+  set σ : 𝓢(E, ℂ) := SchwartzMap.smulLeftCLM ℂ (h t) χ - χ
+  obtain ⟨g, hg, -, hgn⟩ :=
+    TemperedDistribution.exists_fourierMultiplierCLM_toTemperedDistribution_eq σ f (q := p)
+      (r := 1) le_rfl (by rw [inv_one, add_comm])
+  refine ⟨g, ?_, hgn.trans_eq ?_⟩
+  · rw [← hg, heatSemigroup_sub_eq_fourierMultiplierCLM hχ1 hf]
+  · -- The kernel of `σ` is `e^{tΔ} κ - κ`.
+    have h𝓕σ : (𝓕⁻ σ).toLp 1 = heatSemigroup (E := E) (F := ℂ) hp1 t κ - κ := by
+      have hL := map_sub (SchwartzMap.toLpCLM ℂ ℂ 1 (volume : Measure E))
+        (𝓕⁻ (SchwartzMap.smulLeftCLM ℂ (h t) χ)) (𝓕⁻ χ)
+      simp only [SchwartzMap.toLpCLM_apply] at hL
+      rw [← hκ, FourierTransform.fourierInv_sub, hL]
+    dsimp only
+    rw [← h𝓕σ, SchwartzMap.norm_toLp, SchwartzMap.fourierInv_coe]
+
+end TauCeti

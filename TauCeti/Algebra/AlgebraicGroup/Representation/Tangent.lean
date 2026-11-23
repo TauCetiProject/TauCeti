@@ -6,10 +6,12 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Coordinate
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.InvariantDerivation
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Exponential
+import TauCeti.Algebra.AlgebraicGroup.Representation.Kernel
 
 /-!
 # Tangent matrices of representations
@@ -17,7 +19,9 @@ import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Exponential
 Differentiating a representation's coordinate morphism differentiates its coefficient matrix
 entrywise. For an upper-unitriangular coefficient matrix, the tangent matrix is strictly upper
 triangular and hence nilpotent. If the coordinate morphism is also surjective, local nilpotence
-of the invariant derivation descends from the general-linear coordinate algebra.
+of the invariant derivation descends from the general-linear coordinate algebra, whether nilpotence
+comes from an upper-unitriangular coefficient matrix or directly from nilpotence of the
+differentiated comodule action.
 
 These statements work over arbitrary commutative base rings. Tangent matrix entries may take
 values in any commutative coefficient algebra. No reducedness or characteristic assumption is
@@ -34,6 +38,9 @@ needed.
   that tangent matrix is nilpotent.
 * `Derivation.exists_iterate_leftInvariantDerivation_eq_zero_of_isUpperUnitriangular`:
   a faithful upper-unitriangular representation gives locally nilpotent invariant derivations.
+* `Derivation.exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_differential`:
+  a surjective coordinate representation with nilpotent differentiated action makes the invariant
+  derivation locally nilpotent.
 
 ## References
 
@@ -46,6 +53,8 @@ public section
 namespace Derivation
 
 open TauCeti
+
+section Monoid
 
 variable {R H M B : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
   [AddCommMonoid M] [Module R M] [Comodule R H M] [CommRing B] [Algebra R B] {n : ℕ}
@@ -100,5 +109,28 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero_of_isUpperUnitriangular
     (Comodule.coordinateBialgHom (H := H) b) hf d
     (GeneralLinear.exists_iterate_leftInvariantDerivation_eq_zero n _
       (d.isNilpotent_tangentMatrix_derivationComp_coordinateBialgHom_of_isUpperUnitriangular b hb))
+
+end Monoid
+
+section Differential
+
+variable {R H M : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable [AddCommGroup M] [Module R M] [Comodule R H M] {n : ℕ}
+
+/-- **Nilpotence in a faithful representation forces local nilpotence of the invariant derivation.**
+If the coordinate map of a finite basis `b` is surjective and `Comodule.differential d` is
+nilpotent on `M`, then `Bialgebra.leftInvariantDerivation d` is locally nilpotent on `H`. -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_differential
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (b : Module.Basis (Fin n) R M)
+    (hf : Function.Surjective (Comodule.coordinateBialgHom (H := H) b))
+    (hd : IsNilpotent (Comodule.differential (R := R) (H := H) (M := M) d)) :
+    ∀ h, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0 := by
+  refine BialgHom.exists_iterate_leftInvariantDerivation_eq_zero_of_surjective
+    (Comodule.coordinateBialgHom (H := H) b) hf d
+    (GeneralLinear.exists_iterate_leftInvariantDerivation_eq_zero n _ ?_)
+  rw [d.tangentMatrix_comp_coordinateBialgHom b]
+  exact hd.map (LinearMap.toMatrixAlgEquiv b).toRingHom
+
+end Differential
 
 end Derivation

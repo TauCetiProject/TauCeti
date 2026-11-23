@@ -54,12 +54,12 @@ theorem exists_mem_isometryMatrices_mulVec_eq [NeZero (2 : F)] {A : Matrix ι ι
     simp [B, Matrix.toBilin'_apply']
   have hB : B.IsSymm := Matrix.isSymm_toBilin'_iff_isSymm.mpr hA
   set g := B.toQuadraticMap.reflectionTransport x y (by rw [hQ, hQ, hxy]) (by rwa [hQ])
-  set G : (ι → F) ≃ₗ[F] (ι → F) := g.1
+  set G : (ι → F) ≃ₗ[F] (ι → F) := g.val
   refine ⟨LinearMap.toMatrix' G, ?_, ?_⟩
   · -- `G` preserves the polar form `2 B`, hence `B` itself, and `B` has Gram matrix `A`.
     have hiso : TauCeti.BilinForm.IsIsometry B G.toLinearMap :=
       TauCeti.BilinForm.isIsometry_iff.mpr fun u v => by
-        have h := TauCeti.QuadraticMap.polar_apply_of_mem_orthogonalGroup g.2 u v
+        have h := TauCeti.QuadraticMap.polar_apply_of_mem_orthogonalGroup g.property u v
         rw [LinearMap.BilinMap.polar_toQuadraticMap, LinearMap.BilinMap.polar_toQuadraticMap,
           hB.eq (G v) (G u), hB.eq v u, ← two_mul, ← two_mul] at h
         exact mul_left_cancel₀ (NeZero.ne 2) h
@@ -90,9 +90,9 @@ theorem natCard_isometryMatrices_eq_mul_natCard_stabilizer [NeZero (2 : F)]
   -- `X ↦ toLin' X` identifies the matrices preserving `A` with the isometry group of `B`, which
   -- acts on the coordinate vectors.
   let φ : isometryMatrices A ≃ B.isometryGroup :=
-    { toFun X := ((hmem X).mpr X.2).toIsometryGroup hB
+    { toFun X := ((hmem X).mpr X.property).toIsometryGroup hB
       invFun g := ⟨LinearMap.toMatrix' (g : (ι → F) →ₗ[F] (ι → F)),
-        (hmem _).mp (by simpa using LinearMap.BilinForm.mem_isometryGroup.mp g.2)⟩
+        (hmem _).mp (by simpa using LinearMap.BilinForm.mem_isometryGroup.mp g.property)⟩
       left_inv X := Subtype.ext (by simp)
       right_inv g := Subtype.ext (LinearEquiv.toLinearMap_injective (by simp)) }
   have hφ (X : isometryMatrices A) (x : ι → F) : φ X • x = (X : Matrix ι ι F) *ᵥ x := by
@@ -106,7 +106,7 @@ theorem natCard_isometryMatrices_eq_mul_natCard_stabilizer [NeZero (2 : F)]
     simp only [hφ]
     constructor
     · rintro ⟨X, rfl⟩
-      exact mulVec_dotProduct_mulVec_mulVec_of_mem_isometryMatrices X.2 e e
+      exact mulVec_dotProduct_mulVec_mulVec_of_mem_isometryMatrices X.property e e
     · intro hx
       obtain ⟨X, hX, hXe⟩ :=
         hA.exists_mem_isometryMatrices_mulVec_eq hx.symm (by rw [hx]; exact he)
@@ -173,15 +173,16 @@ theorem natCard_isometryMatrices_fromBlocks [NeZero (2 : F)] {A' : Matrix κ κ 
   rw [hA.natCard_isometryMatrices_eq_mul_natCard_stabilizer hAdet (hee ▸ hc), hee]
   congr 1
   refine Nat.card_congr
-    { toFun := fun X => ⟨(X.1 : Matrix (κ ⊕ Unit) (κ ⊕ Unit) F).toBlocks₁₁, ?_⟩
-      invFun := fun Y => ⟨⟨fromBlocks Y.1 0 0 1, fromBlocks_mem_isometryMatrices_iff.mpr Y.2⟩, ?_⟩
+    { toFun := fun X => ⟨(X.val : Matrix (κ ⊕ Unit) (κ ⊕ Unit) F).toBlocks₁₁, ?_⟩
+      invFun := fun Y => ⟨⟨fromBlocks Y.val 0 0 1, fromBlocks_mem_isometryMatrices_iff.mpr
+          Y.property⟩, ?_⟩
       left_inv := fun X => Subtype.ext (Subtype.ext ?_)
       right_inv := fun Y => Subtype.ext ?_ }
   · rw [← fromBlocks_mem_isometryMatrices_iff (c := c), ← eq_fromBlocks_of_mem_isometryMatrices hc
-      X.1.2 X.2]
-    exact X.1.2
+      X.val.property X.property]
+    exact X.val.property
   · ext (i | i) <;> simp [e]
-  · exact (eq_fromBlocks_of_mem_isometryMatrices hc X.1.2 X.2).symm
+  · exact (eq_fromBlocks_of_mem_isometryMatrices hc X.val.property X.property).symm
   · simp
 
 end Matrix

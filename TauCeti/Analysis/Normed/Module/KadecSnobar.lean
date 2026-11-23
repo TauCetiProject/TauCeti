@@ -10,7 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 
 import Mathlib.Analysis.Normed.Module.DoubleDual
-import TauCeti.Analysis.InnerProductSpace.Frame
+import TauCeti.Analysis.InnerProductSpace.Frame.Basic
 import TauCeti.Analysis.InnerProductSpace.JohnEllipsoid
 
 /-!
