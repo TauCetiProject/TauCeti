@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.Analysis.Normed.Module.TensorProduct.FiniteDimension
+public import TauCeti.LinearAlgebra.Determinant.Semilinear
 public import TauCeti.LinearAlgebra.Determinant.TensorProduct
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The normalized determinant of a complex-linear automorphism
@@ -30,6 +32,8 @@ loop of determinants.
   between isomorphisms `E ≃ G`.
 * `ContinuousLinearEquiv.normalizedDet_trans_trans_symm`: it is invariant under conjugation by an
   isomorphism `E' ≃ E`.
+* `ContinuousLinearEquiv.normalizedDet_conjₛₗ`: conjugating by a conjugate-linear isomorphism
+  inverts the normalized determinant.
 * `ContinuousLinearEquiv.normalizedDet_prodCongr`: the normalized determinant of `A × B` is the
   product of those of `A` and `B`.
 * `ContinuousLinearEquiv.normalizedDet_eq_pow_mul_pow_of_apply_tmul`: the normalized determinant
@@ -37,6 +41,8 @@ loop of determinants.
   `normalizedDet A₁ ^ dim E₂ * normalizedDet A₂ ^ dim E₁`.
 * `Continuous.normalizedDet`, `ContinuousOn.normalizedDet`: a continuous family of automorphisms
   has continuous normalized determinant.
+* `Module.Basis.normalizedDet_coordConjL_trans_trans_coordConjL`: conjugating an automorphism by
+  the conjugation of the coordinates inverts its normalized determinant.
 -/
 
 public section
@@ -112,6 +118,20 @@ theorem normalizedDet_trans_trans_symm {E' : Type*} [NormedAddCommGroup E'] [Nor
   ext1
   simp only [coe_normalizedDet, hdet]
 
+/-- **Conjugation by a conjugate-linear isomorphism.** Transporting `A` along a conjugate-linear
+isomorphism `K : E ≃ E'` conjugates its determinant, so it inverts its normalized determinant. -/
+@[simp]
+theorem normalizedDet_conjₛₗ {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+    (A : E ≃L[ℂ] E) (K : E ≃L⋆[ℂ] E') :
+    ((K.symm.trans A).trans K : E' ≃L[ℂ] E').normalizedDet = A.normalizedDet⁻¹ := by
+  have h : (((K.symm.trans A).trans K : E' ≃L[ℂ] E').toLinearEquiv : E' →ₗ[ℂ] E') =
+      (K.toLinearEquiv : E →ₗ⋆[ℂ] E') ∘ₛₗ (A.toLinearEquiv : E →ₗ[ℂ] E) ∘ₛₗ
+        (K.toLinearEquiv.symm : E' →ₗ⋆[ℂ] E) :=
+    LinearMap.ext fun _ ↦ rfl
+  ext1
+  rw [coe_normalizedDet, h, LinearMap.det_conjₛₗ, Circle.coe_inv_eq_conj]
+  simp [coe_normalizedDet, map_div₀]
+
 /-- The normalized determinant of a product of automorphisms is the product of their normalized
 determinants. -/
 @[simp]
@@ -180,3 +200,28 @@ theorem ContinuousOn.normalizedDet {X : Type*} [TopologicalSpace X] {A : X → E
     ContinuousOn (fun x => (A x).normalizedDet) s := by
   rw [continuousOn_iff_continuous_domRestrict] at hA ⊢
   exact Continuous.normalizedDet (A := fun x : s => A x) hA
+
+/-! ### Conjugation by the conjugation of the coordinates -/
+
+namespace Module.Basis
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {ι : Type*} [Fintype ι] (b : Basis ι ℂ F)
+
+/-- **Conjugating an automorphism by the conjugation of the coordinates inverts its normalized
+determinant**, since it conjugates the determinant
+(`Module.Basis.det_coordConj_comp_comp_coordConj`) and complex conjugation inverts points of the
+circle. -/
+@[simp]
+theorem normalizedDet_coordConjL_trans_trans_coordConjL (A : F ≃L[ℂ] F) :
+    (b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).normalizedDet =
+      A.normalizedDet⁻¹ := by
+  have h : ((b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).toLinearEquiv : F →ₗ[ℂ] F) =
+      b.coordConj.toLinearMap ∘ₛₗ (A.toLinearEquiv : F →ₗ[ℂ] F) ∘ₛₗ b.coordConj.toLinearMap :=
+    LinearMap.ext fun v ↦ by simp
+  ext1
+  rw [Circle.coe_inv_eq_conj, ContinuousLinearEquiv.coe_normalizedDet,
+    ContinuousLinearEquiv.coe_normalizedDet, h, det_coordConj_comp_comp_coordConj]
+  simp
+
+end Module.Basis

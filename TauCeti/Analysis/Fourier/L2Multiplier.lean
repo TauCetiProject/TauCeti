@@ -72,6 +72,9 @@ defined, it agrees with Mathlib's multipliers.
   then `T_{m i} f → T_{m₀} f` in `L²`.
 * `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply_self`: symbols uniformly bounded and
   tending to `1` almost everywhere give `T_{m i} f → f` in `L²`.
+* `MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_of_tendsto`: if the partial sums of the
+  symbols are uniformly bounded and converge to `1` almost everywhere, the partial sums of the
+  multipliers converge to the identity in `L²`.
 * `MeasureTheory.Lp.hasDerivAt_fourierMultiplierCLM_toLp_apply`: if symbols `m s` depending on a
   real parameter are differentiable in `s` at almost every frequency, with derivative `a ξ m' ξ`
   and increments bounded by `C ‖a ξ‖ |s - t|`, then `s ↦ T_{m s} f` has derivative `T_{m'} h` in
@@ -243,6 +246,17 @@ theorem fourierMultiplierCLM_fourierMultiplierCLM_apply :
     fourierMultiplierCLM F m₁ (fourierMultiplierCLM F m₂ f) =
       fourierMultiplierCLM F (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) f := by
   rw [← fourierMultiplierCLM_compL_fourierMultiplierCLM, comp_apply]
+
+/-- Two multipliers commute, since their symbols do. -/
+theorem fourierMultiplierCLM_fourierMultiplierCLM_comm :
+    fourierMultiplierCLM F m₁ (fourierMultiplierCLM F m₂ f) =
+      fourierMultiplierCLM F m₂ (fourierMultiplierCLM F m₁ f) := by
+  have h : (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) = m₂ • m₁ := by
+    apply Lp.ext
+    filter_upwards [coeFn_lpSMul (r := ∞) m₁ m₂, coeFn_lpSMul (r := ∞) m₂ m₁] with ξ h₁ h₂
+    rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', smul_eq_mul, smul_eq_mul, mul_comm]
+  rw [fourierMultiplierCLM_fourierMultiplierCLM_apply,
+    fourierMultiplierCLM_fourierMultiplierCLM_apply, h]
 
 /-- The adjoint of the multiplier with symbol `m` is the multiplier with the complex conjugate
 symbol `star m`. In particular a real symbol gives a self-adjoint multiplier. -/
@@ -467,6 +481,30 @@ theorem tendsto_fourierMultiplierCLM_apply_self {ι : Type*} {l : Filter ι}
   have h := tendsto_fourierMultiplierCLM_apply (F := F) (m₀ := h1.toLp _) hC'
     (by filter_upwards [hm, h1.coeFn_toLp] with ξ h₁ h₂; rwa [h₂]) f
   rwa [fourierMultiplierCLM_of_ae_eq_const h1.coeFn_toLp, one_smul, id_apply] at h
+
+/-- If the partial sums `∑_{i ∈ t N} ψᵢ` of symbols are uniformly bounded by `C` and converge
+to `1` almost everywhere, then the partial sums `∑_{i ∈ t N} T_{m i} f` of the Fourier multipliers
+with these symbols converge to `f` in `L²` for every `f ∈ L²`. -/
+theorem tendsto_sum_fourierMultiplierCLM_of_tendsto {ι : Type*}
+    {ψ : ι → E → ℂ} {m : ι → Lp ℂ ∞ (volume : Measure E)}
+    (hm : ∀ i, m i =ᵐ[volume] ψ i) (t : ℕ → Finset ι) {C : ℝ}
+    (hle : ∀ N ξ, ‖∑ i ∈ t N, ψ i ξ‖ ≤ C)
+    (hlim : ∀ᵐ ξ ∂(volume : Measure E), Tendsto (fun N ↦ ∑ i ∈ t N, ψ i ξ) atTop (𝓝 1))
+    (f : Lp F 2 (volume : Measure E)) :
+    Tendsto (fun N ↦ ∑ i ∈ t N, fourierMultiplierCLM F (m i) f) atTop (𝓝 f) := by
+  -- The partial sums are the multipliers with the symbols `∑_{i ∈ t N} ψᵢ`.
+  have hae : ∀ᵐ ξ ∂(volume : Measure E), ∀ N, (∑ i ∈ t N, m i) ξ = ∑ i ∈ t N, ψ i ξ := by
+    refine ae_all_iff.2 fun N ↦ ?_
+    filter_upwards [coeFn_fun_finsetSum (t N) m, (eventually_all_finset (t N)).2 fun i _ ↦ hm i]
+      with ξ h₁ h₂
+    rw [h₁]
+    exact Finset.sum_congr rfl fun i hi ↦ h₂ i hi
+  have h := tendsto_fourierMultiplierCLM_apply_self (F := F) (l := atTop)
+    (m := fun N ↦ ∑ i ∈ t N, m i) (C := C) (Eventually.of_forall fun N ↦ by
+      filter_upwards [hae] with ξ hξ
+      rw [hξ N]
+      exact hle N ξ) (by filter_upwards [hae, hlim] with ξ h₁ h₂; simpa only [h₁] using h₂) f
+  simpa only [fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply] using h
 
 /-- The `L²` distance between a difference quotient of `s ↦ T_{m s} f` and `T_{m'} h`, computed on
 the Fourier side. -/
