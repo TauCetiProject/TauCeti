@@ -190,3 +190,22 @@ theorem localTriv_pointIndexedCoreHomeomorph_symm (b : B) (p : TotalSpace F E)
     congrArg (trivializationAt F E b) ((pointIndexedCoreHomeomorph 𝕜 F E).apply_symm_apply p)
 
 end TauCeti
+
+namespace VectorBundleCore
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {ι : Type*} (Z : VectorBundleCore 𝕜 B F ι)
+
+/-- The domain of the preferred core chart at `p.proj` is a neighbourhood of `p`. -/
+theorem localTrivAt_source_mem_nhds (p : Z.TotalSpace) :
+    (Z.localTrivAt p.proj).source ∈ nhds p :=
+  (Z.localTrivAt p.proj).open_source.mem_nhds (Z.mem_source_at p.proj p.snd)
+
+/-- The fibre coordinate in the preferred core chart at `p.proj` is continuous at `p`. -/
+theorem continuousAt_localTrivAt_snd (p : Z.TotalSpace) :
+    ContinuousAt (fun q : Z.TotalSpace ↦ (Z.localTrivAt p.proj q).2) p :=
+  ((Z.localTrivAt p.proj).continuousOn.continuousAt (Z.localTrivAt_source_mem_nhds p)).snd
+
+end VectorBundleCore

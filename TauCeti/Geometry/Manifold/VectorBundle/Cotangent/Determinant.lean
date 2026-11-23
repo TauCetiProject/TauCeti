@@ -37,8 +37,8 @@ line bundle `TauCeti.CanonicalBundle I M`. Under this top-exterior-power convent
   coefficient of `CanonicalBundle.coordForm I x₀ b`
   (`TauCeti.detCotangentTotalSpaceDiffeomorph_apply_snd_eq_smul_coordForm`);
 * changing the model basis from `b₁` to `b₂` via
-  `FiniteRankBundleCore.ofBundleDualDetChangeDiffeomorph` commutes strictly with
-  `detCotangentTotalSpaceDiffeomorph`
+  `FiniteRankBundleCore.ofBundleDualDetChangeDiffeomorph b₁.equivFunL b₂.equivFunL` commutes
+  strictly with `detCotangentTotalSpaceDiffeomorph`
   (`TauCeti.detCotangentTotalSpaceDiffeomorph_changeDiffeomorph`).
 
 General determinant-of-dual and basis-change isomorphisms on cores (`dualDetIsoDetDual`,
@@ -90,7 +90,7 @@ theorem coordChange_det_cotangentFiniteRankCore (b : Basis (Fin r) 𝕜 E) {x₀
   have h : ((trivializationAt E (TangentSpace I) x₁).coordChangeL 𝕜
       (trivializationAt E (TangentSpace I) x₀) x : E →L[𝕜] E) = tangentCoordChange I x₁ x₀ x :=
     (tangentBundleCore I M).trivializationAt_coordChangeL (α := x₁) (β := x₀) (x := x) ⟨hx₁, hx₀⟩
-  exact (FiniteRankBundleCore.coordChange_ofBundle_dual_det b.equivFunL (TangentSpace I)
+  exact (FiniteRankBundleCore.coordChange_det_dual_ofBundle b.equivFunL (TangentSpace I)
     x₀ x₁ x).trans
     (congrArg (fun T : E →L[𝕜] E ↦ LinearMap.det (T : E →ₗ[𝕜] E) •
       ContinuousLinearMap.id 𝕜 (Fin (cotangentFiniteRankCore I M b).det.rank → 𝕜)) h)
@@ -209,7 +209,8 @@ theorem detCotangentTotalSpaceDiffeomorph_changeDiffeomorph
     (b₁ b₂ : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (n : ℕ∞ω)
     (p : (cotangentFiniteRankCore I M b₁).det.core.TotalSpace) :
     detCotangentTotalSpaceDiffeomorph I M b₂ n
-        (FiniteRankBundleCore.ofBundleDualDetChangeDiffeomorph b₁ b₂ (TangentSpace I) I n p) =
+        (FiniteRankBundleCore.ofBundleDualDetChangeDiffeomorph
+          b₁.equivFunL b₂.equivFunL (TangentSpace I) I n p) =
       detCotangentTotalSpaceDiffeomorph I M b₁ n p :=
   FiniteRankBundleCore.ofBundleDualDetTotalSpaceDiffeomorph_changeDiffeomorph b₁ b₂
     (TangentSpace I) p

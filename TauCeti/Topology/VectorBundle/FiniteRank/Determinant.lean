@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.ExteriorPower
-public import TauCeti.Topology.VectorBundle.FiniteRank.ModelEquiv
+public import TauCeti.Topology.VectorBundle.FiniteRank.Dual
 public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Topology.Algebra.Module.Determinant
@@ -16,7 +16,8 @@ import TauCeti.Topology.Algebra.Module.Determinant
 
 For any finite-rank bundle core `A`, its determinant line `A.det = ⋀^{rank A} A` has rank one, so
 its coordinate fibre `Fin A.det.rank → 𝕜` is canonically identified with the scalar field `𝕜` by
-`TauCeti.FiniteRankBundleCore.detScalarEquiv A`.
+`TauCeti.FiniteRankBundleCore.detScalarEquiv A` (defined in
+`TauCeti.Topology.VectorBundle.FiniteRank.ExteriorPower`).
 
 Over a complete scalar field, the determinant of the dual core `A.dual.det` and the dual of the
 determinant line `A.det.dual` both have transitions given by multiplication by the determinant of
@@ -29,17 +30,18 @@ For a vector bundle `V` with model fibre `F` equipped with a coordinate equivale
 `e : F ≃L[𝕜] (Fin r → 𝕜)`, the transition functions of `(ofBundle 𝕜 e V).dual.det` are
 multiplication by
 `LinearMap.det ((trivializationAt F V j).coordChangeL 𝕜 (trivializationAt F V i) x)`, independent
-of `e` (`coordChange_ofBundle_dual_det`). When `e = b.equivFunL` comes from a basis
-`b : Module.Basis (Fin r) 𝕜 F`, the fibre equivalence `ofBundleDualDetFiberEquiv b V x` identifies
-`(ofBundle 𝕜 b.equivFunL V).dual.det` with Mathlib's top-degree alternating form bundle
-`fun x ↦ V x [⋀^Fin r]→L[𝕜] 𝕜`, glueing to a homeomorphism of total spaces
-`ofBundleDualDetTotalSpaceHomeomorph b V`. Under this top-exterior-power convention, the unit
-coordinate `fun _ ↦ 1` over `x` corresponds to `b.continuousDet` pulled back along the preferred
-trivialization at `x`, and inversely a top-degree form `ω` is sent to its value on the local frame
-`i ↦ (trivializationAt F V x).symm x (b i)`. Changing the basis from `b₁` to `b₂` acts by the
-functorial image of `ofBundleChangeIso` under `dualFunctor` and `exteriorPower`
-(`ofBundleDualDetChangeIso b₁ b₂ V`), scaling scalar coordinates by `b₁.det b₂` and commuting
-strictly with `ofBundleDualDetFiberEquiv`.
+of `e` (`coordChange_det_dual_ofBundle`). Changing the coordinate equivalence from `e₁` to `e₂`
+acts by the functorial image of `ofBundleChangeIso` under `dualFunctor` and `exteriorPower`
+(`ofBundleDualDetChangeIso e₁ e₂ V`), scaling scalar coordinates by
+`LinearMap.det (e₂.symm.trans e₁).toLinearEquiv.toLinearMap`. When `e = b.equivFunL` comes from
+a basis `b : Module.Basis (Fin r) 𝕜 F`, the fibre equivalence `ofBundleDualDetFiberEquiv b V x`
+identifies `(ofBundle 𝕜 b.equivFunL V).dual.det` with Mathlib's top-degree alternating form
+bundle `fun x ↦ V x [⋀^Fin r]→L[𝕜] 𝕜`, glueing to a homeomorphism of total spaces
+`ofBundleDualDetTotalSpaceHomeomorph b V` that commutes strictly with `ofBundleDualDetChangeIso`
+and scales by `b₁.det b₂` (`detScalarEquiv_ofBundleDualDetChangeIso_basis_hom`). Under this
+top-exterior-power convention, the unit coordinate `fun _ ↦ 1` over `x` corresponds to
+`b.continuousDet` pulled back along the preferred trivialization at `x`, and inversely a top-degree
+form `ω` is sent to its value on the local frame `i ↦ (trivializationAt F V x).symm x (b i)`.
 
 ## References
 
@@ -55,35 +57,6 @@ open Bundle CategoryTheory FiberBundle Set VectorBundleCore
 namespace TauCeti.FiniteRankBundleCore
 
 variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
-
-section DetScalar
-
-/-- Canonical identification of the rank-one coordinate fibre `Fin A.det.rank → 𝕜` of the
-determinant line bundle core with the scalar field `𝕜`. -/
-noncomputable def detScalarEquiv (A : FiniteRankBundleCore 𝕜 B) :
-    (Fin A.det.rank → 𝕜) ≃L[𝕜] 𝕜 :=
-  (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin 1 ↦ 𝕜) (finCongr A.rank_det)).trans
-    (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜)
-
-theorem detScalarEquiv_apply (A : FiniteRankBundleCore 𝕜 B) (v : Fin A.det.rank → 𝕜) :
-    detScalarEquiv A v = v ⟨0, A.rank_det ▸ Nat.zero_lt_one⟩ := (rfl)
-
-@[simp]
-theorem detScalarEquiv_symm_apply (A : FiniteRankBundleCore 𝕜 B) (c : 𝕜) (i : Fin A.det.rank) :
-    (detScalarEquiv A).symm c i = c := (rfl)
-
-@[simp]
-theorem detScalarEquiv_const (A : FiniteRankBundleCore 𝕜 B) (c : 𝕜) :
-    detScalarEquiv A (fun _ ↦ c) = c := (rfl)
-
-/-- Every coordinate vector in the rank-one fibre `Fin A.det.rank → 𝕜` is constant with value
-`detScalarEquiv A v`. -/
-theorem det_fiber_eq_const (A : FiniteRankBundleCore 𝕜 B) (v : Fin A.det.rank → 𝕜)
-    (i : Fin A.det.rank) :
-    v i = detScalarEquiv A v :=
-  congrArg v (Fin.ext (Nat.lt_one_iff.mp (A.rank_det ▸ i.isLt)))
-
-end DetScalar
 
 section DualDet
 
@@ -160,7 +133,7 @@ variable [CompleteSpace 𝕜] {F : Type*} [NormedAddCommGroup F] [NormedSpace �
 /-- The transition of `(ofBundle 𝕜 e V).dual.det` from chart `i` to chart `j` is scalar
 multiplication by the determinant of the reverse transition of `V` from `j` to `i`, independent of
 the coordinate equivalence `e`. -/
-theorem coordChange_ofBundle_dual_det {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type*)
+theorem coordChange_det_dual_ofBundle {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type*)
     [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
     [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
     [FiberBundle F V] [VectorBundle 𝕜 F V] (i j x : B) :
@@ -170,9 +143,17 @@ theorem coordChange_ofBundle_dual_det {r : ℕ} (e : F ≃L[𝕜] (Fin r → �
         ContinuousLinearMap.id 𝕜 (Fin (ofBundle 𝕜 e V).dual.det.rank → 𝕜) := by
   rw [coordChange_det_dual, coordChange_ofBundle]
   congr 1
-  exact LinearMap.det_conj
-    (((trivializationAt F V j).coordChangeL 𝕜 (trivializationAt F V i) x : F →L[𝕜] F) : F →ₗ[𝕜] F)
-    e.toLinearEquiv
+  have hconj : ((e.toContinuousLinearMap.comp
+      (((trivializationAt F V j).coordChangeL 𝕜 (trivializationAt F V i) x : F →L[𝕜] F).comp
+        e.symm.toContinuousLinearMap) : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)) :
+        (Fin r → 𝕜) →ₗ[𝕜] (Fin r → 𝕜)) =
+      e.toLinearEquiv.conj
+        (((trivializationAt F V j).coordChangeL 𝕜 (trivializationAt F V i) x : F →L[𝕜] F) :
+          F →ₗ[𝕜] F) := by
+    ext v k
+    simp [LinearEquiv.conj_apply]
+  rw [ContinuousLinearMap.det, hconj]
+  exact LinearMap.det_conj _ e.toLinearEquiv
 
 section TopFormBundle
 
@@ -197,10 +178,16 @@ theorem ofBundleDualDetFiberEquiv_apply_apply (x : B)
     (v : Fin (ofBundle 𝕜 b.equivFunL V).dual.det.rank → 𝕜) (u : Fin r → V x) :
     ofBundleDualDetFiberEquiv b V x v u =
       detScalarEquiv (ofBundle 𝕜 b.equivFunL V).dual v *
-        b.det (fun i ↦ (trivializationAt F V x ⟨x, u i⟩).2) :=
-  b.topFormEquiv_symm_apply
-    (detScalarEquiv (ofBundle 𝕜 b.equivFunL V).dual v)
-    (fun i ↦ (trivializationAt F V x ⟨x, u i⟩).2)
+        b.det (fun i ↦ (trivializationAt F V x ⟨x, u i⟩).2) := by
+  refine (congrFun (congrArg DFunLike.coe
+    (ContinuousLinearEquiv.trans_apply (detScalarEquiv (ofBundle 𝕜 b.equivFunL V).dual) _ v))
+    u).trans ?_
+  rw [ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.continuousAlternatingMapCongrLeft_apply,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  exact (b.topFormEquiv_symm_apply _ _).trans <|
+    congrArg (detScalarEquiv (ofBundle 𝕜 b.equivFunL V).dual v * ·) <|
+      congrArg b.det <| funext fun i ↦ by simp [VectorBundle.continuousLinearEquivAt]
 
 /-- Explicit top-exterior-power formula on fibres: `ofBundleDualDetFiberEquiv b V x v` scales the
 pullback of `b.continuousDet` along `(trivializationAt F V x).continuousLinearMapAt 𝕜 x` by
@@ -273,7 +260,7 @@ theorem trivializationAt_ofBundleDualDetFiberEquiv_snd (a : B) {x : B}
         Fin (ofBundle 𝕜 b.equivFunL V).dual.det.rank → 𝕜) =
         LinearMap.det (T : F →ₗ[𝕜] F) • v := by
       rw [VectorBundleCore.localTriv_apply]; dsimp only
-      rw [(ofBundle 𝕜 b.equivFunL V).dual.det.indexAt_eq, coordChange_ofBundle_dual_det]
+      rw [(ofBundle 𝕜 b.equivFunL V).dual.det.indexAt_eq, coordChange_det_dual_ofBundle]
       simp only [smul_apply, ContinuousLinearMap.id_apply, T]
     rw [h1, map_smul, smul_eq_mul]
   rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd, htriv]
@@ -303,7 +290,9 @@ theorem eventuallyEq_trivializationAt_ofBundleDualDetFiberEquiv_snd
       (trivializationAt F V i).baseSet :=
     (localTriv_baseSet_det (ofBundle 𝕜 b.equivFunL V).dual i).trans
       (baseSet_ofBundle b.equivFunL V i)
-  filter_upwards [(ofBundle 𝕜 b.equivFunL V).dual.det.localTriv_source_mem_nhds p₀] with q hq
+  have hnhds := (ofBundle 𝕜 b.equivFunL V).dual.det.core.localTrivAt_source_mem_nhds p₀
+  rw [VectorBundleCore.localTrivAt, (ofBundle 𝕜 b.equivFunL V).dual.det.indexAt_eq] at hnhds
+  filter_upwards [hnhds] with q hq
   exact trivializationAt_ofBundleDualDetFiberEquiv_snd b V p₀.proj
     ((hbase p₀.proj) ▸
       ((ofBundle 𝕜 b.equivFunL V).dual.det.core.mem_localTriv_source p₀.proj q).1 hq) q.snd
@@ -318,8 +307,13 @@ theorem continuous_ofBundleDualDetFiberEquiv :
   rw [FiberBundle.continuousAt_totalSpace]
   refine ⟨(ofBundle 𝕜 b.equivFunL V).dual.det.core.continuous_proj.continuousAt, ?_⟩
   let L := (detScalarEquiv (ofBundle 𝕜 b.equivFunL V).dual).trans b.topFormEquiv.symm
-  exact (L.continuous.continuousAt.comp
-    ((ofBundle 𝕜 b.equivFunL V).dual.det.continuousAt_localTriv_self_snd p)).congr_of_eventuallyEq
+  have hc : ContinuousAt
+      (fun q : (ofBundle 𝕜 b.equivFunL V).dual.det.core.TotalSpace ↦
+        ((ofBundle 𝕜 b.equivFunL V).dual.det.core.localTriv p.proj q).2) p := by
+    simpa only [VectorBundleCore.localTrivAt,
+      (ofBundle 𝕜 b.equivFunL V).dual.det.indexAt_eq] using
+      (ofBundle 𝕜 b.equivFunL V).dual.det.core.continuousAt_localTrivAt_snd p
+  exact (L.continuous.continuousAt.comp hc).congr_of_eventuallyEq
     (eventuallyEq_trivializationAt_ofBundleDualDetFiberEquiv_snd b V p)
 
 /-- The reconstructed total space of `(ofBundle 𝕜 b.equivFunL V).dual.det` is homeomorphic to
@@ -347,6 +341,111 @@ theorem ofBundleDualDetTotalSpaceHomeomorph_symm_apply
 
 end TopFormBundle
 
+section EquivChange
+
+variable {r : ℕ} (e₁ e₂ : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type*)
+  [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- Changing the coordinate equivalence from `e₁` to `e₂` induces a canonical isomorphism between
+the determinant line bundles `(ofBundle 𝕜 e₁ V).dual.det` and `(ofBundle 𝕜 e₂ V).dual.det`,
+defined functorially from `ofBundleChangeIso` via `dualFunctor` and `exteriorPower`. -/
+noncomputable def ofBundleDualDetChangeIso :
+    (ofBundle 𝕜 e₁ V).dual.det ≅ (ofBundle 𝕜 e₂ V).dual.det :=
+  eqToIso (det_def (ofBundle 𝕜 e₁ V).dual) ≪≫
+    (exteriorPower 𝕜 B r).mapIso
+      ((dualFunctor 𝕜 B).mapIso (ofBundleChangeIso e₂ e₁ V).op) ≪≫
+    (eqToIso (det_def (ofBundle 𝕜 e₂ V).dual)).symm
+
+/-- The coordinate-change isomorphism `ofBundleDualDetChangeIso` has forward morphism given by the
+functorial image of `ofBundleChangeIso e₂ e₁ V` under `dualMap` and `exteriorPower`. -/
+theorem ofBundleDualDetChangeIso_hom_eq_exteriorPower_dualMap :
+    (ofBundleDualDetChangeIso e₁ e₂ V).hom =
+      (eqToIso (det_def (ofBundle 𝕜 e₁ V).dual)).hom ≫
+        (exteriorPower 𝕜 B r).map
+          (dualMap (ofBundleChangeIso e₂ e₁ V).hom) ≫
+        (eqToIso (det_def (ofBundle 𝕜 e₂ V).dual)).inv :=
+  congrArg ((eqToIso (det_def (ofBundle 𝕜 e₁ V).dual)).hom ≫ ·) <|
+    Iso.trans_hom ((exteriorPower 𝕜 B r).mapIso
+      ((dualFunctor 𝕜 B).mapIso (ofBundleChangeIso e₂ e₁ V).op))
+      (eqToIso (det_def (ofBundle 𝕜 e₂ V).dual)).symm
+
+/-- Reversing the coordinate equivalences `e₁` and `e₂` gives the inverse isomorphism of
+`ofBundleDualDetChangeIso`. -/
+theorem ofBundleDualDetChangeIso_symm :
+    (ofBundleDualDetChangeIso e₁ e₂ V).symm = ofBundleDualDetChangeIso e₂ e₁ V := by
+  have hop : (ofBundleChangeIso e₂ e₁ V).op.symm = (ofBundleChangeIso e₁ e₂ V).op :=
+    Iso.ext <| Quiver.Hom.unop_inj (ofBundleChangeIso_inv e₂ e₁ V)
+  have hmid :
+      ((exteriorPower 𝕜 B r).mapIso
+          ((dualFunctor 𝕜 B).mapIso (ofBundleChangeIso e₂ e₁ V).op)).symm =
+        (exteriorPower 𝕜 B r).mapIso
+          ((dualFunctor 𝕜 B).mapIso (ofBundleChangeIso e₁ e₂ V).op) :=
+    (Functor.mapIso_symm _ _).symm.trans <|
+      congrArg (exteriorPower 𝕜 B r).mapIso <|
+        (Functor.mapIso_symm _ _).symm.trans (congrArg (dualFunctor 𝕜 B).mapIso hop)
+  calc (ofBundleDualDetChangeIso e₁ e₂ V).symm
+      = ((exteriorPower 𝕜 B r).mapIso
+            ((dualFunctor 𝕜 B).mapIso (ofBundleChangeIso e₂ e₁ V).op) ≪≫
+            (eqToIso (det_def (ofBundle 𝕜 e₂ V).dual)).symm).symm ≪≫
+          (eqToIso (det_def (ofBundle 𝕜 e₁ V).dual)).symm :=
+        Iso.trans_symm _ _
+    _ = ((eqToIso (det_def (ofBundle 𝕜 e₂ V).dual)).symm.symm ≪≫
+            ((exteriorPower 𝕜 B r).mapIso
+              ((dualFunctor 𝕜 B).mapIso (ofBundleChangeIso e₂ e₁ V).op)).symm) ≪≫
+          (eqToIso (det_def (ofBundle 𝕜 e₁ V).dual)).symm :=
+        congrArg (· ≪≫ (eqToIso (det_def (ofBundle 𝕜 e₁ V).dual)).symm) (Iso.trans_symm _ _)
+    _ = ofBundleDualDetChangeIso e₂ e₁ V := by
+        rw [Iso.symm_symm_eq, hmid]
+        exact Iso.trans_assoc _ _ _
+
+theorem ofBundleDualDetChangeIso_inv :
+    (ofBundleDualDetChangeIso e₁ e₂ V).inv = (ofBundleDualDetChangeIso e₂ e₁ V).hom :=
+  congrArg Iso.hom (ofBundleDualDetChangeIso_symm e₁ e₂ V)
+
+@[simp]
+theorem detScalarEquiv_ofBundleDualDetChangeIso_hom (x : B)
+    (v : Fin (ofBundle 𝕜 e₁ V).dual.det.rank → 𝕜) :
+    detScalarEquiv (ofBundle 𝕜 e₂ V).dual
+        ((ofBundleDualDetChangeIso e₁ e₂ V).hom.fiberMap x v) =
+      LinearMap.det (e₂.symm.trans e₁).toLinearEquiv.toLinearMap *
+        detScalarEquiv (ofBundle 𝕜 e₁ V).dual v := by
+  rw [ofBundleDualDetChangeIso_hom_eq_exteriorPower_dualMap]
+  let c : 𝕜 := LinearMap.det (e₂.symm.trans e₁).toLinearEquiv.toLinearMap
+  have h1 : ((dualMap (ofBundleChangeIso e₂ e₁ V).hom).fiberMap x :
+        (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)) =
+      (e₂.symm.trans e₁).toContinuousLinearMap.piTranspose :=
+    (fiberMap_dualMap _ x).trans (congrArg ContinuousLinearMap.piTranspose
+      (fiberMap_ofBundleChangeIso_hom e₂ e₁ V x))
+  have hdet : (e₂.symm.trans e₁).toContinuousLinearMap.piTranspose.det = c := by
+    rw [ContinuousLinearMap.det_piTranspose, ContinuousLinearMap.det]
+    exact congrArg LinearMap.det (LinearMap.ext fun u ↦ by simp)
+  have hmap :
+      (((exteriorPower 𝕜 B r).map
+          (dualMap (ofBundleChangeIso e₂ e₁ V).hom)).fiberMap x :
+        (Fin (r.choose r) → 𝕜) →L[𝕜] (Fin (r.choose r) → 𝕜)) =
+      c • ContinuousLinearMap.id 𝕜 (Fin (r.choose r) → 𝕜) :=
+    (fiberMap_exteriorPower_map r _ x).trans <|
+      (congrArg (ContinuousLinearMap.exteriorPowerCoords r) h1).trans <|
+        (ContinuousLinearMap.exteriorPowerCoords_self _).trans <|
+          congrArg (· • ContinuousLinearMap.id 𝕜 (Fin (r.choose r) → 𝕜)) hdet
+  refine detScalarEquiv_eqToIso_hom_comp_inv (det_def (ofBundle 𝕜 e₁ V).dual)
+    (det_def (ofBundle 𝕜 e₂ V).dual) _ x v c fun u j₁ j₂ hj ↦ ?_
+  rw [Fin.ext hj]
+  exact congrArg (fun S : (Fin (r.choose r) → 𝕜) →L[𝕜] (Fin (r.choose r) → 𝕜) ↦ S u j₂) hmap
+
+@[simp]
+theorem detScalarEquiv_ofBundleDualDetChangeIso_inv (x : B)
+    (v : Fin (ofBundle 𝕜 e₂ V).dual.det.rank → 𝕜) :
+    detScalarEquiv (ofBundle 𝕜 e₁ V).dual
+        ((ofBundleDualDetChangeIso e₁ e₂ V).inv.fiberMap x v) =
+      LinearMap.det (e₁.symm.trans e₂).toLinearEquiv.toLinearMap *
+        detScalarEquiv (ofBundle 𝕜 e₂ V).dual v := by
+  rw [ofBundleDualDetChangeIso_inv, detScalarEquiv_ofBundleDualDetChangeIso_hom]
+
+end EquivChange
+
 section BasisChange
 
 variable {r : ℕ} (b₁ b₂ : Module.Basis (Fin r) 𝕜 F) (V : B → Type*)
@@ -354,99 +453,24 @@ variable {r : ℕ} (b₁ b₂ : Module.Basis (Fin r) 𝕜 F) (V : B → Type*)
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
 
-/-- Changing the model basis from `b₁` to `b₂` induces a canonical isomorphism between the
-determinant line bundles `(ofBundle 𝕜 b₁.equivFunL V).dual.det` and
-`(ofBundle 𝕜 b₂.equivFunL V).dual.det`, defined functorially from `ofBundleChangeIso` via
-`dualFunctor` and `exteriorPower`. -/
-noncomputable def ofBundleDualDetChangeIso :
-    (ofBundle 𝕜 b₁.equivFunL V).dual.det ≅ (ofBundle 𝕜 b₂.equivFunL V).dual.det :=
-  eqToIso (det_def (ofBundle 𝕜 b₁.equivFunL V).dual) ≪≫
-    (exteriorPower 𝕜 B r).mapIso
-      ((dualFunctor 𝕜 B).mapIso (ofBundleChangeIso b₂.equivFunL b₁.equivFunL V).op) ≪≫
-    (eqToIso (det_def (ofBundle 𝕜 b₂.equivFunL V).dual)).symm
-
-/-- The basis-change isomorphism `ofBundleDualDetChangeIso` has forward morphism given by the
-functorial image of `ofBundleChangeIso b₂.equivFunL b₁.equivFunL V` under `dualMap` and
-`exteriorPower`. -/
-theorem ofBundleDualDetChangeIso_hom_eq_exteriorPower_dualMap :
-    (ofBundleDualDetChangeIso b₁ b₂ V).hom =
-      (eqToIso (det_def (ofBundle 𝕜 b₁.equivFunL V).dual)).hom ≫
-        (exteriorPower 𝕜 B r).map
-          (dualMap (ofBundleChangeIso b₂.equivFunL b₁.equivFunL V).hom) ≫
-        (eqToIso (det_def (ofBundle 𝕜 b₂.equivFunL V).dual)).inv := by
-  simp [ofBundleDualDetChangeIso]
-  rfl
-
-theorem ofBundleDualDetChangeIso_inv :
-    (ofBundleDualDetChangeIso b₁ b₂ V).inv = (ofBundleDualDetChangeIso b₂ b₁ V).hom := by
-  rw [← Category.id_comp (ofBundleDualDetChangeIso b₂ b₁ V).hom,
-    ← (ofBundleDualDetChangeIso b₁ b₂ V).inv_hom_id, Category.assoc]
-  suffices h : (ofBundleDualDetChangeIso b₁ b₂ V).hom ≫
-      (ofBundleDualDetChangeIso b₂ b₁ V).hom = 𝟙 _ by
-    rw [h, Category.comp_id]
-  have hcancel : ∀ {Y₁ Y₂ : FiniteRankBundleCore 𝕜 B}
-      (h₁ : Y₁.det = (exteriorPower 𝕜 B r).obj Y₁)
-      (h₂ : Y₂.det = (exteriorPower 𝕜 B r).obj Y₂)
-      (f : Y₁ ⟶ Y₂) (g : Y₂ ⟶ Y₁), f ≫ g = 𝟙 Y₁ →
-      ((eqToIso h₁).hom ≫ (exteriorPower 𝕜 B r).map f ≫ (eqToIso h₂).inv) ≫
-        ((eqToIso h₂).hom ≫ (exteriorPower 𝕜 B r).map g ≫ (eqToIso h₁).inv) = 𝟙 Y₁.det := by
-    intro Y₁ Y₂ h₁ h₂ f g hfg
-    simp only [Category.assoc]
-    rw [← Category.assoc (eqToIso h₂).inv, Iso.inv_hom_id, Category.id_comp,
-      ← Category.assoc ((exteriorPower 𝕜 B r).map f), ← CategoryTheory.Functor.map_comp, hfg,
-      CategoryTheory.Functor.map_id, Category.id_comp, Iso.hom_inv_id]
-  rw [ofBundleDualDetChangeIso_hom_eq_exteriorPower_dualMap,
-    ofBundleDualDetChangeIso_hom_eq_exteriorPower_dualMap]
-  exact hcancel (det_def _) (det_def _) _ _ (dualMap_changeIso_comp b₂.equivFunL b₁.equivFunL V)
-
-@[simp]
-theorem detScalarEquiv_ofBundleDualDetChangeIso_hom (x : B)
+/-- Specialization of `detScalarEquiv_ofBundleDualDetChangeIso_hom` to basis equivalences, where
+the scaling factor is `b₁.det b₂`. -/
+theorem detScalarEquiv_ofBundleDualDetChangeIso_basis_hom (x : B)
     (v : Fin (ofBundle 𝕜 b₁.equivFunL V).dual.det.rank → 𝕜) :
     detScalarEquiv (ofBundle 𝕜 b₂.equivFunL V).dual
-        ((ofBundleDualDetChangeIso b₁ b₂ V).hom.fiberMap x v) =
+        ((ofBundleDualDetChangeIso b₁.equivFunL b₂.equivFunL V).hom.fiberMap x v) =
       b₁.det b₂ * detScalarEquiv (ofBundle 𝕜 b₁.equivFunL V).dual v := by
-  have h1 : ((dualMap (ofBundleChangeIso b₂.equivFunL b₁.equivFunL V).hom).fiberMap x :
-        (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)) =
-      (b₂.equivFunL.symm.trans b₁.equivFunL).toContinuousLinearMap.piTranspose :=
-    (fiberMap_dualMap _ x).trans (congrArg ContinuousLinearMap.piTranspose
-      (fiberMap_ofBundleChangeIso_hom b₂.equivFunL b₁.equivFunL V x))
-  have hmap :
-      (((exteriorPower 𝕜 B r).map
-          (dualMap (ofBundleChangeIso b₂.equivFunL b₁.equivFunL V).hom)).fiberMap x :
-        (Fin (r.choose r) → 𝕜) →L[𝕜] (Fin (r.choose r) → 𝕜)) =
-      b₁.det b₂ • ContinuousLinearMap.id 𝕜 (Fin (r.choose r) → 𝕜) :=
-    (fiberMap_exteriorPower_map r _ x).trans <|
-      (congrArg (ContinuousLinearMap.exteriorPowerCoords r) h1).trans <|
-        (ContinuousLinearMap.exteriorPowerCoords_self _).trans <|
-          congrArg (· • ContinuousLinearMap.id 𝕜 (Fin (r.choose r) → 𝕜))
-            ((ContinuousLinearMap.det_piTranspose _).trans (b₁.det_equivFunL_symm_trans b₂))
-  have hconj : ∀ {Y₁ Y₂ Z₁ Z₂ : FiniteRankBundleCore 𝕜 B} (h₁ : Y₁ = Z₁) (h₂ : Y₂ = Z₂)
-      (g : Z₁ ⟶ Z₂) (w : Fin Y₁.rank → 𝕜) (i₁ : Fin Y₁.rank) (i₂ : Fin Y₂.rank)
-      (_ : i₁.val = i₂.val) (c : 𝕜)
-      (_ : ∀ u (j : Fin Z₂.rank) (j' : Fin Z₁.rank), j'.val = j.val → g.fiberMap x u j = c * u j'),
-      ((eqToIso h₁).hom ≫ g ≫ (eqToIso h₂).inv).fiberMap x w i₂ = c * w i₁ := by
-    intro Y₁ Y₂ Z₁ Z₂ h₁ h₂ g w i₁ i₂ hidx c hg
-    subst h₁ h₂
-    simp only [eqToIso_refl, Iso.refl_hom, Iso.refl_inv, Category.id_comp, Category.comp_id]
-    exact hg w i₂ i₁ hidx
-  refine (detScalarEquiv_apply _ _).trans ?_
-  rw [ofBundleDualDetChangeIso_hom_eq_exteriorPower_dualMap]
-  refine (hconj (det_def (ofBundle 𝕜 b₁.equivFunL V).dual)
-    (det_def (ofBundle 𝕜 b₂.equivFunL V).dual) _ v
-    ⟨0, (ofBundle 𝕜 b₁.equivFunL V).dual.rank_det ▸ Nat.zero_lt_one⟩
-    ⟨0, (ofBundle 𝕜 b₂.equivFunL V).dual.rank_det ▸ Nat.zero_lt_one⟩ rfl (b₁.det b₂)
-    fun u j j' hjj ↦ ?_).trans ?_
-  · rw [Fin.ext hjj]
-    exact congrArg (fun S : (Fin (r.choose r) → 𝕜) →L[𝕜] (Fin (r.choose r) → 𝕜) ↦ S u j) hmap
-  · exact congrArg (b₁.det b₂ * ·) (detScalarEquiv_apply (ofBundle 𝕜 b₁.equivFunL V).dual v).symm
+  rw [detScalarEquiv_ofBundleDualDetChangeIso_hom]
+  exact congrArg (· * _) (b₁.det_equivFunL_symm_trans b₂)
 
-@[simp]
-theorem detScalarEquiv_ofBundleDualDetChangeIso_inv (x : B)
+/-- Specialization of `detScalarEquiv_ofBundleDualDetChangeIso_inv` to basis equivalences, where
+the scaling factor is `b₂.det b₁`. -/
+theorem detScalarEquiv_ofBundleDualDetChangeIso_basis_inv (x : B)
     (v : Fin (ofBundle 𝕜 b₂.equivFunL V).dual.det.rank → 𝕜) :
     detScalarEquiv (ofBundle 𝕜 b₁.equivFunL V).dual
-        ((ofBundleDualDetChangeIso b₁ b₂ V).inv.fiberMap x v) =
+        ((ofBundleDualDetChangeIso b₁.equivFunL b₂.equivFunL V).inv.fiberMap x v) =
       b₂.det b₁ * detScalarEquiv (ofBundle 𝕜 b₂.equivFunL V).dual v := by
-  rw [ofBundleDualDetChangeIso_inv, detScalarEquiv_ofBundleDualDetChangeIso_hom]
+  rw [ofBundleDualDetChangeIso_inv, detScalarEquiv_ofBundleDualDetChangeIso_basis_hom]
 
 end BasisChange
 
@@ -462,11 +486,11 @@ variable {r : ℕ} (b₁ b₂ : Module.Basis (Fin r) 𝕜 F) (V : B → Type*)
 theorem ofBundleDualDetFiberEquiv_changeIso (x : B)
     (v : Fin (ofBundle 𝕜 b₁.equivFunL V).dual.det.rank → 𝕜) :
     ofBundleDualDetFiberEquiv b₂ V x
-        ((ofBundleDualDetChangeIso b₁ b₂ V).hom.fiberMap x v) =
+        ((ofBundleDualDetChangeIso b₁.equivFunL b₂.equivFunL V).hom.fiberMap x v) =
       ofBundleDualDetFiberEquiv b₁ V x v := by
   ext u
   rw [ofBundleDualDetFiberEquiv_apply_apply, ofBundleDualDetFiberEquiv_apply_apply,
-    detScalarEquiv_ofBundleDualDetChangeIso_hom, b₁.det.eq_smul_basis_det b₂]
+    detScalarEquiv_ofBundleDualDetChangeIso_basis_hom, b₁.det.eq_smul_basis_det b₂]
   simp only [smul_apply, smul_eq_mul, b₂.det_self, mul_one]; ring
 
 end BasisChangeTopForm

@@ -31,6 +31,10 @@ charts.
 On `Fin`-indexed Kronecker coordinates, `ContinuousLinearMap.piTranspose_kronecker_eq_homCoordConj`
 identifies `S.piTranspose.kronecker R` with operator conjugation
 `ContinuousLinearMap.homCoordConj S R`.
+
+For a continuous linear equivalence `e : (ι → 𝕜) ≃L[𝕜] (κ → 𝕜)`, `ContinuousLinearEquiv.piTranspose`
+packages `e.piTranspose` and `e.symm.piTranspose` into the transposed equivalence
+`(κ → 𝕜) ≃L[𝕜] (ι → 𝕜)`.
 -/
 
 public section
@@ -171,3 +175,43 @@ theorem piTranspose_kronecker_eq_homCoordConj (S : (Fin m' → 𝕜) →L[𝕜] 
 end Kronecker
 
 end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 ι κ : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+
+/-- The transpose of a continuous linear equivalence between finite coordinate spaces, with
+forward map `(e : (ι → 𝕜) →L[𝕜] (κ → 𝕜)).piTranspose` and inverse
+`(e.symm : (κ → 𝕜) →L[𝕜] (ι → 𝕜)).piTranspose`. -/
+noncomputable def piTranspose (e : (ι → 𝕜) ≃L[𝕜] (κ → 𝕜)) :
+    (κ → 𝕜) ≃L[𝕜] (ι → 𝕜) :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    (e : (ι → 𝕜) →L[𝕜] (κ → 𝕜)).piTranspose
+    (e.symm : (κ → 𝕜) →L[𝕜] (ι → 𝕜)).piTranspose
+    (by
+      rw [← ContinuousLinearMap.piTranspose_comp]
+      have h : (e.symm : (κ → 𝕜) →L[𝕜] (ι → 𝕜)).comp (e : (ι → 𝕜) →L[𝕜] (κ → 𝕜)) =
+          ContinuousLinearMap.id 𝕜 (ι → 𝕜) := e.coe_symm_comp_coe
+      rw [h, ContinuousLinearMap.piTranspose_id])
+    (by
+      rw [← ContinuousLinearMap.piTranspose_comp]
+      have h : (e : (ι → 𝕜) →L[𝕜] (κ → 𝕜)).comp (e.symm : (κ → 𝕜) →L[𝕜] (ι → 𝕜)) =
+          ContinuousLinearMap.id 𝕜 (κ → 𝕜) := e.coe_comp_coe_symm
+      rw [h, ContinuousLinearMap.piTranspose_id])
+
+@[simp] theorem coe_piTranspose (e : (ι → 𝕜) ≃L[𝕜] (κ → 𝕜)) :
+    (e.piTranspose : (κ → 𝕜) →L[𝕜] (ι → 𝕜)) =
+      (e : (ι → 𝕜) →L[𝕜] (κ → 𝕜)).piTranspose := (rfl)
+
+@[simp] theorem coe_piTranspose_symm (e : (ι → 𝕜) ≃L[𝕜] (κ → 𝕜)) :
+    (e.piTranspose.symm : (ι → 𝕜) →L[𝕜] (κ → 𝕜)) =
+      (e.symm : (κ → 𝕜) →L[𝕜] (ι → 𝕜)).piTranspose := (rfl)
+
+@[simp] theorem piTranspose_apply (e : (ι → 𝕜) ≃L[𝕜] (κ → 𝕜)) (w : κ → 𝕜) :
+    e.piTranspose w = (e : (ι → 𝕜) →L[𝕜] (κ → 𝕜)).piTranspose w := (rfl)
+
+@[simp] theorem piTranspose_symm_apply (e : (ι → 𝕜) ≃L[𝕜] (κ → 𝕜)) (v : ι → 𝕜) :
+    e.piTranspose.symm v = (e.symm : (κ → 𝕜) →L[𝕜] (ι → 𝕜)).piTranspose v := (rfl)
+
+end ContinuousLinearEquiv

@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.VectorBundle.FiniteRank.ModelEquiv
 public import TauCeti.Geometry.Manifold.VectorBundle.Core.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
 # Smooth and holomorphic cores from a coordinate equivalence of the model fibre
@@ -24,12 +23,8 @@ This file lifts the coordinate-model constructions of
   of `ofBundle 𝕜 e V` is `C^n` diffeomorphic to `TotalSpace F V` over the identity of the base,
   without smoothness or completeness hypotheses;
 * `TauCeti.FiniteRankBundleCore.ofBundleChangeDiffeomorph`: changing the coordinate equivalence
-  from `e₁` to `e₂` induces a `C^n` diffeomorphism of core total spaces commuting with
-  `ofBundleTotalSpaceDiffeomorph`;
-* `TauCeti.FiniteRankBundleCore.ofBundleDualTotalSpaceDiffeomorph` and
-  `TauCeti.FiniteRankBundleCore.ofBundleDualChangeDiffeomorph`: over a complete scalar field,
-  the dual core `(ofBundle 𝕜 e V).dual` is `C^n` diffeomorphic to Mathlib's dual bundle
-  `fun x ↦ V x →L[𝕜] 𝕜`, compatibly with changes of coordinate equivalence.
+  from `e₁` to `e₂` induces a `C^n` diffeomorphism of core total spaces lifting
+  `ofBundleChangeIso e₁ e₂ V` and commuting with `ofBundleTotalSpaceDiffeomorph`.
 
 ## References
 
@@ -131,33 +126,33 @@ variable {r₁ r₂ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F �
   [FiberBundle F V] [VectorBundle 𝕜 F V]
 
 /-- Changing the coordinate equivalence from `e₁` to `e₂` induces a `C^n` diffeomorphism of core
-total spaces over the identity of the base, with fibre map `e₂ ∘ e₁⁻¹`. -/
+total spaces over the identity of the base, lifting `ofBundleChangeIso e₁ e₂ V` with fibre map
+`e₂ ∘ e₁⁻¹`. -/
 noncomputable def ofBundleChangeDiffeomorph
     (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
     (ofBundle 𝕜 e₁ V).core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin (ofBundle 𝕜 e₁ V).rank → 𝕜),
       I.prod 𝓘(𝕜, Fin (ofBundle 𝕜 e₂ V).rank → 𝕜)⟯ (ofBundle 𝕜 e₂ V).core.TotalSpace :=
-  constIsoDiffeomorph
+  isoToDiffeomorphOfConst (ofBundleChangeIso e₁ e₂ V)
     (fun i ↦ (baseSet_ofBundle e₁ V i).trans (baseSet_ofBundle e₂ V i).symm)
-    (e₁.symm.trans e₂) fun i j x _ _ ↦ by
-      rw [coordChange_ofBundle, coordChange_ofBundle]
-      exact ContinuousLinearMap.ext fun _ ↦
-        congrArg e₂ <| (e₁.symm_apply_apply _).trans (congrArg _ (e₂.symm_apply_apply _).symm)
+    (e₁.symm.trans e₂)
+    (fun i j x _ _ ↦ coordChange_ofBundle_intertwines e₁ e₂ V i j x)
+    (fiberMap_ofBundleChangeIso_hom e₁ e₂ V)
 
 @[simp]
 theorem ofBundleChangeDiffeomorph_apply (p : (ofBundle 𝕜 e₁ V).core.TotalSpace) :
     ofBundleChangeDiffeomorph e₁ e₂ V I n p = ⟨p.proj, e₂ (e₁.symm p.snd)⟩ := by
   rcases p with ⟨x, v⟩
-  rw [ofBundleChangeDiffeomorph, coe_constIsoDiffeomorph, CoordinateHom.totalSpaceMap_mk,
-    fiberMap_constIso_hom]
-  rfl
+  rw [ofBundleChangeDiffeomorph, coe_isoToDiffeomorphOfConst, CoordinateHom.totalSpaceMap_mk,
+    fiberMap_ofBundleChangeIso_hom]
+  exact congrArg (TotalSpace.mk x) (ContinuousLinearEquiv.trans_apply e₁.symm e₂ v)
 
 @[simp]
 theorem ofBundleChangeDiffeomorph_symm_apply (p : (ofBundle 𝕜 e₂ V).core.TotalSpace) :
     (ofBundleChangeDiffeomorph e₁ e₂ V I n).symm p = ⟨p.proj, e₁ (e₂.symm p.snd)⟩ := by
   rcases p with ⟨x, v⟩
-  rw [ofBundleChangeDiffeomorph, coe_constIsoDiffeomorph_symm, CoordinateHom.totalSpaceMap_mk,
-    fiberMap_constIso_inv]
-  rfl
+  rw [ofBundleChangeDiffeomorph, coe_isoToDiffeomorphOfConst_symm, CoordinateHom.totalSpaceMap_mk,
+    fiberMap_ofBundleChangeIso_inv]
+  exact congrArg (TotalSpace.mk x) (ContinuousLinearEquiv.trans_apply e₂.symm e₁ v)
 
 /-- Changing the coordinate equivalence commutes with `ofBundleTotalSpaceDiffeomorph`. -/
 theorem ofBundleTotalSpaceDiffeomorph_changeDiffeomorph
@@ -171,170 +166,5 @@ theorem ofBundleTotalSpaceDiffeomorph_changeDiffeomorph
   exact congrArg (TotalSpace.mk' F p.proj) h
 
 end ChangeEquiv
-
-section DualBundle
-
-variable [CompleteSpace 𝕜] {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type*)
-  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V]
-
-/-- Reading dual-core coordinates as functionals on `V` is `C^n` on total spaces. -/
-theorem contMDiff_ofBundleDualFiberEquiv :
-    ContMDiff (I.prod 𝓘(𝕜, Fin (ofBundle 𝕜 e V).dual.rank → 𝕜))
-      (I.prod 𝓘(𝕜, F →L[𝕜] 𝕜)) n
-      (fun p : (ofBundle 𝕜 e V).dual.core.TotalSpace ↦
-        TotalSpace.mk' (F →L[𝕜] 𝕜) (E := fun x ↦ V x →L[𝕜] 𝕜) p.proj
-          (ofBundleDualFiberEquiv e V p.proj p.snd)) := by
-  intro p
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_proj _, ?_⟩
-  let L : (Fin (ofBundle 𝕜 e V).dual.rank → 𝕜) →L[𝕜] (F →L[𝕜] 𝕜) :=
-    ((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm.trans
-      (e.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜))).toContinuousLinearMap
-  exact (L.contDiff.comp_contMDiffAt
-    ((ofBundle 𝕜 e V).dual.contMDiffAt_localTriv_snd (I := I) (n := n) p)).congr_of_eventuallyEq
-      (eventuallyEq_inCoordinates_ofBundleDualFiberEquiv e V p)
-
-/-- The reconstructed total space of `(ofBundle 𝕜 e V).dual` is `C^n` diffeomorphic to Mathlib's
-dual bundle `fun x ↦ V x →L[𝕜] 𝕜`, over the identity of the base and fibrewise `𝕜`-linear via
-`ofBundleDualFiberEquiv`. No smoothness assumption on `V` is required. -/
-noncomputable def ofBundleDualTotalSpaceDiffeomorph
-    (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
-    (ofBundle 𝕜 e V).dual.core.TotalSpace ≃ₘ^n⟮
-      I.prod 𝓘(𝕜, Fin (ofBundle 𝕜 e V).dual.rank → 𝕜), I.prod 𝓘(𝕜, F →L[𝕜] 𝕜)⟯
-      TotalSpace (F →L[𝕜] 𝕜) (fun x ↦ V x →L[𝕜] 𝕜) :=
-  bundleDiffeomorph (ofBundleDualFiberEquiv e V)
-    (contMDiff_ofBundleDualFiberEquiv (I := I) (n := n) e V)
-
-@[simp]
-theorem ofBundleDualTotalSpaceDiffeomorph_toHomeomorph :
-    (ofBundleDualTotalSpaceDiffeomorph e V I n).toHomeomorph =
-      ofBundleDualTotalSpaceHomeomorph e V :=
-  Homeomorph.ext fun p ↦
-    (bundleDiffeomorph_apply _ _ p).trans (ofBundleDualTotalSpaceHomeomorph_apply e V p).symm
-
-@[simp]
-theorem ofBundleDualTotalSpaceDiffeomorph_apply
-    (p : (ofBundle 𝕜 e V).dual.core.TotalSpace) :
-    ofBundleDualTotalSpaceDiffeomorph e V I n p =
-      ⟨p.proj, ofBundleDualFiberEquiv e V p.proj p.snd⟩ :=
-  bundleDiffeomorph_apply _ _ p
-
-@[simp]
-theorem ofBundleDualTotalSpaceDiffeomorph_symm_apply
-    (p : TotalSpace (F →L[𝕜] 𝕜) (fun x ↦ V x →L[𝕜] 𝕜)) :
-    (ofBundleDualTotalSpaceDiffeomorph e V I n).symm p =
-      ⟨p.proj, (ofBundleDualFiberEquiv e V p.proj).symm p.snd⟩ :=
-  bundleDiffeomorph_symm_apply _ _ p
-
-end DualBundle
-
-section DualChange
-
-variable [CompleteSpace 𝕜] {r₁ r₂ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜))
-  (V : B → Type*) [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V]
-
-private noncomputable def dualChangeFiberEquiv :
-    (Fin (ofBundle 𝕜 e₁ V).dual.rank → 𝕜) ≃L[𝕜] (Fin (ofBundle 𝕜 e₂ V).dual.rank → 𝕜) :=
-  let T : (Fin r₁ → 𝕜) →L[𝕜] (Fin r₂ → 𝕜) := (e₂.symm.trans e₁).toContinuousLinearMap.piTranspose
-  let S : (Fin r₂ → 𝕜) →L[𝕜] (Fin r₁ → 𝕜) := (e₁.symm.trans e₂).toContinuousLinearMap.piTranspose
-  { toFun := T
-    map_add' := T.map_add
-    map_smul' := T.map_smul
-    invFun := S
-    left_inv := fun v ↦ by
-      have hcomp : S.comp T = ContinuousLinearMap.id 𝕜 (Fin r₁ → 𝕜) := by
-        rw [← ContinuousLinearMap.piTranspose_comp]
-        have h : (e₂.symm.trans e₁).toContinuousLinearMap.comp
-            (e₁.symm.trans e₂).toContinuousLinearMap = ContinuousLinearMap.id 𝕜 (Fin r₁ → 𝕜) := by
-          ext u; simp
-        rw [h, ContinuousLinearMap.piTranspose_id]
-      exact congrFun (congrArg DFunLike.coe hcomp) v
-    right_inv := fun v ↦ by
-      have hcomp : T.comp S = ContinuousLinearMap.id 𝕜 (Fin r₂ → 𝕜) := by
-        rw [← ContinuousLinearMap.piTranspose_comp]
-        have h : (e₁.symm.trans e₂).toContinuousLinearMap.comp
-            (e₂.symm.trans e₁).toContinuousLinearMap = ContinuousLinearMap.id 𝕜 (Fin r₂ → 𝕜) := by
-          ext u; simp
-        rw [h, ContinuousLinearMap.piTranspose_id]
-      exact congrFun (congrArg DFunLike.coe hcomp) v
-    continuous_toFun := T.continuous
-    continuous_invFun := S.continuous }
-
-/-- Changing the coordinate equivalence from `e₁` to `e₂` induces a `C^n` diffeomorphism of dual
-core total spaces, given by the dual morphism `dualMap (ofBundleChangeIso e₂ e₁ V).hom`. -/
-noncomputable def ofBundleDualChangeDiffeomorph
-    (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
-    (ofBundle 𝕜 e₁ V).dual.core.TotalSpace ≃ₘ^n⟮
-      I.prod 𝓘(𝕜, Fin (ofBundle 𝕜 e₁ V).dual.rank → 𝕜),
-      I.prod 𝓘(𝕜, Fin (ofBundle 𝕜 e₂ V).dual.rank → 𝕜)⟯
-      (ofBundle 𝕜 e₂ V).dual.core.TotalSpace :=
-  constIsoDiffeomorph
-    (A := (ofBundle 𝕜 e₁ V).dual) (D := (ofBundle 𝕜 e₂ V).dual)
-    (fun i ↦ by
-      rw [VectorBundleCore.baseSet_at, VectorBundleCore.baseSet_at, localTriv_baseSet_dual,
-        localTriv_baseSet_dual, baseSet_ofBundle, baseSet_ofBundle])
-    (dualChangeFiberEquiv e₁ e₂ V)
-    fun i j x _ _ ↦ by
-      rw [coordChange_dual, coordChange_dual]
-      have hcomp : ((e₂.symm.trans e₁).toContinuousLinearMap.piTranspose.comp
-            ((ofBundle 𝕜 e₁ V).core.coordChange j i x).piTranspose) =
-          ((ofBundle 𝕜 e₂ V).core.coordChange j i x).piTranspose.comp
-            (e₂.symm.trans e₁).toContinuousLinearMap.piTranspose := by
-        rw [← ContinuousLinearMap.piTranspose_comp, ← ContinuousLinearMap.piTranspose_comp]
-        congr 1; ext u
-        simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-          ContinuousLinearEquiv.trans_apply, coordChange_ofBundle,
-          ContinuousLinearEquiv.symm_apply_apply]
-      ext v : 1
-      exact congrFun (congrArg DFunLike.coe hcomp) v
-
-@[simp]
-theorem ofBundleDualChangeDiffeomorph_apply
-    (p : (ofBundle 𝕜 e₁ V).dual.core.TotalSpace) :
-    ofBundleDualChangeDiffeomorph e₁ e₂ V I n p =
-      (dualMap (ofBundleChangeIso e₂ e₁ V).hom).totalSpaceMap p := by
-  rcases p with ⟨x, v⟩
-  rw [ofBundleDualChangeDiffeomorph, coe_constIsoDiffeomorph, CoordinateHom.totalSpaceMap_mk,
-    CoordinateHom.totalSpaceMap_mk, fiberMap_constIso_hom, fiberMap_dualMap,
-    fiberMap_ofBundleChangeIso_hom]
-  rfl
-
-@[simp]
-theorem ofBundleDualChangeDiffeomorph_symm_apply
-    (p : (ofBundle 𝕜 e₂ V).dual.core.TotalSpace) :
-    (ofBundleDualChangeDiffeomorph e₁ e₂ V I n).symm p =
-      (dualMap (ofBundleChangeIso e₁ e₂ V).hom).totalSpaceMap p := by
-  rcases p with ⟨x, v⟩
-  rw [ofBundleDualChangeDiffeomorph, coe_constIsoDiffeomorph_symm, CoordinateHom.totalSpaceMap_mk,
-    CoordinateHom.totalSpaceMap_mk, fiberMap_constIso_inv, fiberMap_dualMap,
-    fiberMap_ofBundleChangeIso_hom]
-  rfl
-
-end DualChange
-
-section DualChangeCompat
-
-variable [CompleteSpace 𝕜] {r₁ r₂ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜))
-  (V : B → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V]
-
-/-- Changing the coordinate equivalence commutes with `ofBundleDualTotalSpaceDiffeomorph`. -/
-theorem ofBundleDualTotalSpaceDiffeomorph_changeDiffeomorph
-    (p : (ofBundle 𝕜 e₁ V).dual.core.TotalSpace) :
-    ofBundleDualTotalSpaceDiffeomorph e₂ V I n
-        (ofBundleDualChangeDiffeomorph e₁ e₂ V I n p) =
-      ofBundleDualTotalSpaceDiffeomorph e₁ V I n p := by
-  rcases p with ⟨x, v⟩
-  rw [ofBundleDualChangeDiffeomorph_apply, ofBundleDualTotalSpaceDiffeomorph_apply,
-    ofBundleDualTotalSpaceDiffeomorph_apply, CoordinateHom.totalSpaceMap_mk]
-  exact congrArg (TotalSpace.mk' (F →L[𝕜] 𝕜) x)
-    (ofBundleDualFiberEquiv_dualMap_changeIso e₁ e₂ V x v)
-
-end DualChangeCompat
 
 end TauCeti.FiniteRankBundleCore
