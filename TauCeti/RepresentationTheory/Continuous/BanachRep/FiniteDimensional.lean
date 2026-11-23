@@ -130,8 +130,8 @@ noncomputable def fullyFaithfulToContFDRep : (toContFDRep 𝕜 G).FullyFaithful 
     exact toContFDRepPreimage_apply f x
   preimage_map f := by
     ext x
-    rw [toContFDRepPreimage_apply, toContFDRep_map_hom_hom_hom_hom]
-    rfl
+    simp only [toContFDRepPreimage_apply, toContFDRep_map_hom_hom_hom_hom,
+      ContinuousLinearMap.coe_coe]
 
 /-- The lifted continuous intertwiner agrees with the original intertwiner on every vector. -/
 @[simp]
@@ -152,15 +152,15 @@ open BanachRep
 /-- Equip the original carrier of a continuous finite-dimensional representation with the
 sup norm in finite-basis coordinates, giving a Banach realization of its action. -/
 @[expose] noncomputable def toBanachRep (X : ContFDRep 𝕜 G) :
-    (isFiniteDimensional.{u} 𝕜 G).FullSubcategory := by
+    (isFiniteDimensional.{u} 𝕜 G).FullSubcategory :=
   let e := (Module.finBasis 𝕜 X.obj).equivFun
-  let := NormedAddCommGroup.induced _ _ e e.injective
-  let := NormedSpace.induced 𝕜 _ _ e
-  have := FiniteDimensional.completeSpace 𝕜 X.obj
-  have : IsModuleTopology 𝕜 X.obj := isModuleTopologyOfFiniteDimensional
+  letI := NormedAddCommGroup.induced _ _ e e.injective
+  letI := NormedSpace.induced 𝕜 _ _ e
+  haveI := FiniteDimensional.completeSpace 𝕜 X.obj
+  haveI : IsModuleTopology 𝕜 X.obj := isModuleTopologyOfFiniteDimensional
   let ρ : ContinuousRep G 𝕜 X.obj :=
     ⟨X.obj.ρ, (FDRep.isContinuous_iff_continuous_action X.obj).1 X.property⟩
-  exact ⟨of ρ, (isFiniteDimensional_iff _).2 (inferInstanceAs (FiniteDimensional 𝕜 X.obj))⟩
+  ⟨of ρ, (isFiniteDimensional_iff _).2 (inferInstanceAs (FiniteDimensional 𝕜 X.obj))⟩
 
 /-- The Banach realization has the original carrier and linear action. -/
 @[simp]
