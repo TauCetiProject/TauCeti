@@ -421,6 +421,66 @@ private lemma dpow_comp_add_universal {x y : A} (hx : x ∈ I) (hy : y ∈ I)
     have hsum := iterWeightX_add_iterWeightY hk
     exact mem_range.mpr (by omega)
 
+private lemma ratAlgebra_dpow_X_mul_coeff
+    [DecidablePred (· ∈ (⊤ : Ideal (MvPolynomial (Fin 2) ℚ)))] (p q a b : ℕ) :
+    ((DividedPowers.RatAlgebra.dividedPowers (⊤ : Ideal (MvPolynomial (Fin 2) ℚ))).dpow p
+        (MvPolynomial.X 0) *
+      (DividedPowers.RatAlgebra.dividedPowers (⊤ : Ideal (MvPolynomial (Fin 2) ℚ))).dpow q
+        (MvPolynomial.X 1)).coeff (Finsupp.single 0 a + Finsupp.single 1 b) =
+      if p = a ∧ q = b then (p ! : ℚ)⁻¹ * (q ! : ℚ)⁻¹ else 0 := by
+  let γ : DividedPowers (⊤ : Ideal (MvPolynomial (Fin 2) ℚ)) :=
+    DividedPowers.RatAlgebra.dividedPowers ⊤
+  let X0 : MvPolynomial (Fin 2) ℚ := MvPolynomial.X 0
+  let X1 : MvPolynomial (Fin 2) ℚ := MvPolynomial.X 1
+  have hX0 : γ.dpow p X0 = ((p ! : ℚ)⁻¹ : ℚ) • X0 ^ p := by
+    simpa [Ring.inverse_eq_inv'] using
+      DividedPowers.RatAlgebra.dpow_eq_inv_fact_smul (⊤ : Ideal (MvPolynomial (Fin 2) ℚ)) γ
+        (n := p) (x := X0) Submodule.mem_top
+  have hX1 : γ.dpow q X1 = ((q ! : ℚ)⁻¹ : ℚ) • X1 ^ q := by
+    simpa [Ring.inverse_eq_inv'] using
+      DividedPowers.RatAlgebra.dpow_eq_inv_fact_smul (⊤ : Ideal (MvPolynomial (Fin 2) ℚ)) γ
+        (n := q) (x := X1) Submodule.mem_top
+  rw [show γ.dpow p X0 * γ.dpow q X1 = ((p ! : ℚ)⁻¹ : ℚ) • X0 ^ p * (((q ! : ℚ)⁻¹ : ℚ) • X1 ^ q)
+      from by rw [← hX0, ← hX1],
+    smul_mul_smul_comm, MvPolynomial.coeff_smul, smul_eq_mul]
+  have hmon : X0 ^ p * X1 ^ q =
+      MvPolynomial.monomial (Finsupp.single 0 p + Finsupp.single 1 q) (1 : ℚ) := by
+    simp only [X0, X1, MvPolynomial.X_pow_eq_monomial, MvPolynomial.monomial_mul_monomial,
+      one_mul]
+  rw [hmon, MvPolynomial.coeff_monomial]
+  have hiff : Finsupp.single (0 : Fin 2) p + Finsupp.single 1 q =
+      Finsupp.single 0 a + Finsupp.single 1 b ↔ p = a ∧ q = b := by
+    constructor
+    · intro h
+      exact ⟨by simpa using congrArg (fun f : Fin 2 →₀ ℕ ↦ f 0) h,
+        by simpa using congrArg (fun f : Fin 2 →₀ ℕ ↦ f 1) h⟩
+    · rintro ⟨rfl, rfl⟩
+      rfl
+  rw [if_congr hiff rfl rfl]
+  split_ifs <;> simp
+
+private lemma ratAlgebra_dpow_X_sum_coeff
+    [DecidablePred (· ∈ (⊤ : Ideal (MvPolynomial (Fin 2) ℚ)))] (f : ℕ → ℕ) (N a : ℕ)
+    (ha : a ≤ N) :
+    (∑ p ∈ range (N + 1),
+      (f p : MvPolynomial (Fin 2) ℚ) *
+        ((DividedPowers.RatAlgebra.dividedPowers (⊤ : Ideal (MvPolynomial (Fin 2) ℚ))).dpow p
+          (MvPolynomial.X 0) *
+        (DividedPowers.RatAlgebra.dividedPowers (⊤ : Ideal (MvPolynomial (Fin 2) ℚ))).dpow
+          (N - p) (MvPolynomial.X 1))).coeff
+      (Finsupp.single 0 a + Finsupp.single 1 (N - a)) =
+    (f a : ℚ) * ((a ! : ℚ)⁻¹ * ((N - a)! : ℚ)⁻¹) := by
+  rw [MvPolynomial.coeff_sum, Finset.sum_eq_single a]
+  · have hnat : (f a : MvPolynomial (Fin 2) ℚ) = MvPolynomial.C (f a : ℚ) := by simp
+    rw [hnat, MvPolynomial.coeff_C_mul, ratAlgebra_dpow_X_mul_coeff]
+    simp
+  · intro p _ hpa
+    have hnat : (f p : MvPolynomial (Fin 2) ℚ) = MvPolynomial.C (f p : ℚ) := by simp
+    rw [hnat, MvPolynomial.coeff_C_mul, ratAlgebra_dpow_X_mul_coeff]
+    simp [hpa]
+  · intro ha'
+    exact absurd (mem_range.mpr (Nat.lt_succ_of_le ha)) ha'
+
 private lemma iterTotalCoeff_eq_uniformBell (m : ℕ) {n : ℕ} (hn : n ≠ 0) {a : ℕ} (ha : a ≤ m * n) :
     iterTotalCoeff m n a = Nat.uniformBell m n := by
   classical
@@ -428,6 +488,7 @@ private lemma iterTotalCoeff_eq_uniformBell (m : ℕ) {n : ℕ} (hn : n ≠ 0) {
     DividedPowers.RatAlgebra.dividedPowers ⊤
   let X0 : MvPolynomial (Fin 2) ℚ := MvPolynomial.X 0
   let X1 : MvPolynomial (Fin 2) ℚ := MvPolynomial.X 1
+  -- Expand `γ.dpow m (γ.dpow n (X0 + X1))` via the universal formula and via `dpow_comp`.
   have huniv :=
     γ.toAdditiveDividedPowers.dpow_comp_add_universal (x := X0) (y := X1)
       Submodule.mem_top Submodule.mem_top
@@ -442,60 +503,13 @@ private lemma iterTotalCoeff_eq_uniformBell (m : ℕ) {n : ℕ} (hn : n ≠ 0) {
             (γ.dpow p X0 * γ.dpow (m * n - p) X1) := by
     rw [γ.dpow_comp hn Submodule.mem_top, γ.dpow_add' Submodule.mem_top Submodule.mem_top,
       Finset.mul_sum]
-  have heq :
-      ∑ p ∈ range (m * n + 1),
-        (iterTotalCoeff m n p : MvPolynomial (Fin 2) ℚ) *
-          (γ.dpow p X0 * γ.dpow (m * n - p) X1) =
-      ∑ p ∈ range (m * n + 1),
-        (Nat.uniformBell m n : MvPolynomial (Fin 2) ℚ) *
-          (γ.dpow p X0 * γ.dpow (m * n - p) X1) :=
-    huniv.symm.trans hcomp
-  let d : Fin 2 →₀ ℕ := Finsupp.single 0 a + Finsupp.single 1 (m * n - a)
-  have hcoeff_prod : ∀ p q : ℕ,
-      (γ.dpow p X0 * γ.dpow q X1).coeff d =
-        if p = a ∧ q = m * n - a then (p ! : ℚ)⁻¹ * (q ! : ℚ)⁻¹ else 0 := by
-    intro p q
-    have hX0 : γ.dpow p X0 = ((p ! : ℚ)⁻¹ : ℚ) • X0 ^ p := by
-      simpa [Ring.inverse_eq_inv'] using
-        DividedPowers.RatAlgebra.dpow_eq_inv_fact_smul (⊤ : Ideal (MvPolynomial (Fin 2) ℚ)) γ
-          (n := p) (x := X0) Submodule.mem_top
-    have hX1 : γ.dpow q X1 = ((q ! : ℚ)⁻¹ : ℚ) • X1 ^ q := by
-      simpa [Ring.inverse_eq_inv'] using
-        DividedPowers.RatAlgebra.dpow_eq_inv_fact_smul (⊤ : Ideal (MvPolynomial (Fin 2) ℚ)) γ
-          (n := q) (x := X1) Submodule.mem_top
-    rw [hX0, hX1, smul_mul_smul_comm, MvPolynomial.coeff_smul, smul_eq_mul]
-    have hmon : X0 ^ p * X1 ^ q =
-        MvPolynomial.monomial (Finsupp.single 0 p + Finsupp.single 1 q) (1 : ℚ) := by
-      simp only [X0, X1, MvPolynomial.X_pow_eq_monomial, MvPolynomial.monomial_mul_monomial,
-        one_mul]
-    rw [hmon, MvPolynomial.coeff_monomial]
-    have hiff : Finsupp.single (0 : Fin 2) p + Finsupp.single 1 q = d ↔
-        p = a ∧ q = m * n - a := by
-      constructor
-      · intro h
-        exact ⟨by simpa [d] using congrArg (fun f : Fin 2 →₀ ℕ ↦ f 0) h,
-          by simpa [d] using congrArg (fun f : Fin 2 →₀ ℕ ↦ f 1) h⟩
-      · rintro ⟨rfl, rfl⟩
-        rfl
-    rw [if_congr hiff rfl rfl]
-    split_ifs <;> simp
-  have hcoeff_sum : ∀ f : ℕ → ℕ,
-      (∑ p ∈ range (m * n + 1),
-        (f p : MvPolynomial (Fin 2) ℚ) * (γ.dpow p X0 * γ.dpow (m * n - p) X1)).coeff d =
-      (f a : ℚ) * ((a ! : ℚ)⁻¹ * ((m * n - a)! : ℚ)⁻¹) := by
-    intro f
-    rw [MvPolynomial.coeff_sum, Finset.sum_eq_single a]
-    · have hnat : (f a : MvPolynomial (Fin 2) ℚ) = MvPolynomial.C (f a : ℚ) := by simp
-      rw [hnat, MvPolynomial.coeff_C_mul, hcoeff_prod]
-      simp
-    · intro p _ hpa
-      have hnat : (f p : MvPolynomial (Fin 2) ℚ) = MvPolynomial.C (f p : ℚ) := by simp
-      rw [hnat, MvPolynomial.coeff_C_mul, hcoeff_prod]
-      simp [hpa]
-    · intro ha'
-      exact absurd (mem_range.mpr (Nat.lt_succ_of_le ha)) ha'
-  have hval := congrArg (fun p : MvPolynomial (Fin 2) ℚ ↦ p.coeff d) heq
-  rw [hcoeff_sum (iterTotalCoeff m n), hcoeff_sum (fun _ ↦ Nat.uniformBell m n)] at hval
+  -- Extract the coefficient of `X0 ^ a * X1 ^ (m * n - a)` and cancel the nonzero factorial factor.
+  have hval := congrArg
+    (fun p : MvPolynomial (Fin 2) ℚ ↦ p.coeff (Finsupp.single 0 a + Finsupp.single 1 (m * n - a)))
+    (huniv.symm.trans hcomp)
+  simp only [DividedPowers.toAdditiveDividedPowers_dpow, γ, X0, X1] at hval
+  rw [ratAlgebra_dpow_X_sum_coeff (iterTotalCoeff m n) (m * n) a ha,
+    ratAlgebra_dpow_X_sum_coeff (fun _ ↦ Nat.uniformBell m n) (m * n) a ha] at hval
   have hne : (a ! : ℚ)⁻¹ * ((m * n - a)! : ℚ)⁻¹ ≠ 0 :=
     mul_ne_zero (inv_ne_zero (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)))
       (inv_ne_zero (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)))
@@ -620,6 +634,94 @@ theorem _root_.DividedPowers.toAdditiveDividedPowers_toDividedPowers (hI : Divid
 
 /-! ### Strictness of `AdditiveDividedPowers` -/
 
+private lemma mem_span_inr_iff (x : TrivSqZeroExt (ZMod 2) (ZMod 2)) :
+    x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} ↔ x.fst = 0 := by
+  constructor
+  · intro hx
+    rw [Ideal.mem_span_singleton] at hx
+    rcases hx with ⟨a, rfl⟩
+    simp
+  · intro hx
+    rw [Ideal.mem_span_singleton]
+    refine ⟨TrivSqZeroExt.inl x.snd, ?_⟩
+    ext
+    · simp [hx]
+    · simp
+
+private lemma mul_eq_zero_of_mem_span_inr {x y : TrivSqZeroExt (ZMod 2) (ZMod 2)}
+    (hx : x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)})
+    (hy : y ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}) : x * y = 0 := by
+  have hx0 := (mem_span_inr_iff x).mp hx
+  have hy0 := (mem_span_inr_iff y).mp hy
+  ext <;> simp [hx0, hy0]
+
+private noncomputable def counterexampleDpow (n : ℕ)
+    (x : TrivSqZeroExt (ZMod 2) (ZMod 2)) : TrivSqZeroExt (ZMod 2) (ZMod 2) := by
+  classical
+  exact if x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} then
+    match n with
+    | 0 => 1
+    | 1 => x
+    | 3 => x
+    | _ => 0
+  else 0
+
+private lemma counterexampleDpow_mem {n : ℕ} (hn : n ≠ 0)
+    {x : TrivSqZeroExt (ZMod 2) (ZMod 2)}
+    (hx : x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}) :
+    counterexampleDpow n x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} := by
+  classical
+  match n with
+  | 0 => exact absurd rfl hn
+  | 1 | 2 | 3 | _ + 4 => simp [counterexampleDpow, hx]
+
+private noncomputable def counterexampleAdditiveDividedPowers :
+    AdditiveDividedPowers
+      (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} : Ideal (TrivSqZeroExt (ZMod 2) (ZMod 2))) where
+  dpow := counterexampleDpow
+  dpow_null hx := by
+    classical
+    simp [counterexampleDpow, hx]
+  dpow_zero hx := by
+    classical
+    simp [counterexampleDpow, hx]
+  dpow_one hx := by
+    classical
+    simp [counterexampleDpow, hx]
+  dpow_mem hn hx := counterexampleDpow_mem hn hx
+  dpow_add {n x y} hx hy := by
+    classical
+    have hxy : x + y ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} := Ideal.add_mem _ hx hy
+    match n with
+    | 0 => simp [counterexampleDpow, hx, hy, hxy]
+    | 1 =>
+      rw [Finset.Nat.sum_antidiagonal_succ]
+      simp [counterexampleDpow, hx, hy, hxy, add_comm]
+    | k + 2 =>
+      rw [Finset.Nat.sum_antidiagonal_succ, Finset.Nat.sum_antidiagonal_succ']
+      have hmid : ∑ p ∈ antidiagonal k,
+          counterexampleDpow (p.1 + 1) x * counterexampleDpow (p.2 + 1) y = 0 :=
+        Finset.sum_eq_zero fun p _ ↦ mul_eq_zero_of_mem_span_inr
+          (counterexampleDpow_mem p.1.succ_ne_zero hx) (counterexampleDpow_mem p.2.succ_ne_zero hy)
+      rw [hmid, add_zero]
+      match k with
+      | 0 | 1 => simp [counterexampleDpow, hx, hy, hxy, add_comm]
+      | _ + 2 => simp [counterexampleDpow, hx, hy, hxy]
+  dpow_mul {n a x} hx := by
+    classical
+    have hax : a * x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} := Ideal.mul_mem_left _ a hx
+    match n with
+    | 0 | 1 | 2 | _ + 4 => simp [counterexampleDpow, hx, hax]
+    | 3 =>
+      simp only [counterexampleDpow, hx, hax, ↓reduceIte]
+      have hx0 := (mem_span_inr_iff x).mp hx
+      have hcube : a.fst * a.fst * a.fst = a.fst := by
+        have : ∀ u : ZMod 2, u * u * u = u := by decide
+        exact this a.fst
+      ext
+      · simp [hx0]
+      · simp [hx0, pow_succ, hcube]
+
 /-- Not every `AdditiveDividedPowers` structure underlies a `DividedPowers` structure: on the
 dual numbers `𝔽₂[ε]/(ε²)` with `I = (ε)`, the family `δ₀ = 1`, `δ₁ = δ₃ = id`, and `δₙ = 0` for
 `n = 2` and `n ≥ 4` satisfies all additive divided power axioms, yet fails `mul_dpow` at
@@ -631,80 +733,16 @@ theorem exists_not_dividedPowers :
           hI.dpow (1 + 2) (TrivSqZeroExt.inr 1) ∧
       ∀ h : DividedPowers (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}), h.dpow ≠ hI.dpow := by
   classical
-  let I : Ideal (TrivSqZeroExt (ZMod 2) (ZMod 2)) := Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}
-  have hmem_iff : ∀ x : TrivSqZeroExt (ZMod 2) (ZMod 2), x ∈ I ↔ x.fst = 0 := by
-    intro x
-    constructor
-    · intro hx
-      rw [Ideal.mem_span_singleton] at hx
-      rcases hx with ⟨a, rfl⟩
-      simp
-    · intro hx
-      rw [Ideal.mem_span_singleton]
-      refine ⟨TrivSqZeroExt.inl x.snd, ?_⟩
-      ext
-      · simp [hx]
-      · simp
-  have hmul_zero : ∀ {x y : TrivSqZeroExt (ZMod 2) (ZMod 2)}, x ∈ I → y ∈ I → x * y = 0 := by
-    intro x y hx hy
-    have hx0 := (hmem_iff x).mp hx
-    have hy0 := (hmem_iff y).mp hy
-    ext <;> simp [hx0, hy0]
-  let f : ℕ → TrivSqZeroExt (ZMod 2) (ZMod 2) → TrivSqZeroExt (ZMod 2) (ZMod 2) := fun n x ↦
-    if x ∈ I then
-      match n with
-      | 0 => 1
-      | 1 => x
-      | 3 => x
-      | _ => 0
-    else 0
-  have hf_mem : ∀ {n : ℕ} {x : TrivSqZeroExt (ZMod 2) (ZMod 2)}, n ≠ 0 → x ∈ I → f n x ∈ I := by
-    intro n x hn hx
-    match n with
-    | 0 => exact absurd rfl hn
-    | 1 | 2 | 3 | _ + 4 => simp [f, hx]
-  let hI : AdditiveDividedPowers I := {
-    dpow := f
-    dpow_null := fun hx ↦ by simp [f, hx]
-    dpow_zero := fun hx ↦ by simp [f, hx]
-    dpow_one := fun hx ↦ by simp [f, hx]
-    dpow_mem := hf_mem
-    dpow_add := fun {n x y} hx hy ↦ by
-      have hxy : x + y ∈ I := I.add_mem hx hy
-      match n with
-      | 0 => simp [f, hx, hy, hxy]
-      | 1 =>
-        rw [Finset.Nat.sum_antidiagonal_succ]
-        simp [f, hx, hy, hxy, add_comm]
-      | k + 2 =>
-        rw [Finset.Nat.sum_antidiagonal_succ, Finset.Nat.sum_antidiagonal_succ']
-        have hmid : ∑ p ∈ antidiagonal k, f (p.1 + 1) x * f (p.2 + 1) y = 0 :=
-          Finset.sum_eq_zero fun p _ ↦
-            hmul_zero (hf_mem p.1.succ_ne_zero hx) (hf_mem p.2.succ_ne_zero hy)
-        rw [hmid, add_zero]
-        match k with
-        | 0 | 1 => simp [f, hx, hy, hxy, add_comm]
-        | _ + 2 => simp [f, hx, hy, hxy]
-    dpow_mul := fun {n a x} hx ↦ by
-      have hax : a * x ∈ I := I.mul_mem_left a hx
-      match n with
-      | 0 | 1 | 2 | _ + 4 => simp [f, hx, hax]
-      | 3 =>
-        simp only [f, hx, hax, ↓reduceIte]
-        have hx0 := (hmem_iff x).mp hx
-        have hcube : a.fst * a.fst * a.fst = a.fst := by
-          have : ∀ u : ZMod 2, u * u * u = u := by decide
-          exact this a.fst
-        ext
-        · simp [hx0]
-        · simp [hx0, pow_succ, hcube]
-  }
-  have hε : TrivSqZeroExt.inr (1 : ZMod 2) ∈ I := Ideal.subset_span rfl
+  let hI := counterexampleAdditiveDividedPowers
+  have hε : TrivSqZeroExt.inr (1 : ZMod 2) ∈
+      (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} : Ideal (TrivSqZeroExt (ZMod 2) (ZMod 2))) :=
+    Ideal.subset_span rfl
+  -- Verify `mul_dpow` fails at `(m, n) = (1, 2)` on `ε = TrivSqZeroExt.inr 1`.
   have hlhs : hI.dpow 1 (TrivSqZeroExt.inr 1) * hI.dpow 2 (TrivSqZeroExt.inr 1) = 0 := by
-    simp [hI, f, hε]
+    simp [hI, counterexampleAdditiveDividedPowers, counterexampleDpow, hε]
   have hrhs : (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) *
       hI.dpow (1 + 2) (TrivSqZeroExt.inr 1) = TrivSqZeroExt.inr 1 := by
-    simp only [hI, f, hε, ↓reduceIte]
+    simp only [hI, counterexampleAdditiveDividedPowers, counterexampleDpow, hε, ↓reduceIte]
     have h3 : (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) = 1 := by
       ext <;> decide
     rw [h3, one_mul]
@@ -713,6 +751,7 @@ theorem exists_not_dividedPowers :
         hI.dpow (1 + 2) (TrivSqZeroExt.inr 1) := by
     rw [hlhs, hrhs]
     exact fun h01 ↦ zero_ne_one (congrArg TrivSqZeroExt.snd h01)
+  -- No `DividedPowers` structure can share `hI.dpow`, since it would satisfy `mul_dpow`.
   refine ⟨hI, hne, fun h hh ↦ hne ?_⟩
   have hmul := h.mul_dpow (m := 1) (n := 2) hε
   rwa [hh] at hmul

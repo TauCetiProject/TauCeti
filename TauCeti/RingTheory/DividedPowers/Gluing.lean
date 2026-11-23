@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DividedPowers.DPMorphism
-public import TauCeti.RingTheory.DividedPowers.FromGens
+import TauCeti.RingTheory.DividedPowers.FromGens
 
 /-!
 # Gluing divided power structures on sums of ideals
@@ -22,9 +22,9 @@ The construction proceeds in three steps:
    semiring).
 2. Over a commutative ring, when `hI` and `hJ` agree on `I ⊓ J`, prove that `dpowConv hI hJ n x y`
    depends only on the sum `x + y` (`dpowConv_eq_of_add_eq`) via `DividedPowers.exp_add`.
-3. Assemble the induced additive divided power candidate `DividedPowers.supAdditive hI hJ h` on
-   `I ⊔ J` and upgrade it to `DividedPowers.sup hI hJ h : DividedPowers (I ⊔ J)` via the generator
-   criterion `TauCeti.AdditiveDividedPowers.toDividedPowers` on `(I : Set A) ∪ (J : Set A)`.
+3. Assemble the induced additive divided power candidate on `I ⊔ J` and upgrade it to
+   `DividedPowers.sup hI hJ h : DividedPowers (I ⊔ J)` via the generator criterion
+   `TauCeti.AdditiveDividedPowers.toDividedPowers` on `(I : Set A) ∪ (J : Set A)`.
 
 When `I ⊓ J = I * J`, agreement on `I ⊓ J` is automatic by `DividedPowers.coincide_on_smul`,
 yielding an unconditional glued divided power structure on `I ⊔ J`.
@@ -36,10 +36,6 @@ yielding an unconditional glued divided power structure on `I ⊔ J`.
 * `DividedPowers.coeff_exp_mul_exp`: `dpowConv` computes the coefficients of `hI.exp x * hJ.exp y`.
 * `DividedPowers.dpowConv_eq_of_add_eq`: independence of `dpowConv` from the decomposition
   `z = x + y` when `hI` and `hJ` agree on `I ⊓ J`.
-* `DividedPowers.supAdditive`: the glued additive divided power candidate on `I ⊔ J` for
-  compatible `hI` and `hJ`, with evaluation `DividedPowers.supAdditive_dpow_add`, restrictions
-  `DividedPowers.supAdditive_dpow_left`, `DividedPowers.supAdditive_dpow_right`, and uniqueness
-  `DividedPowers.eq_supAdditive_iff`.
 * `DividedPowers.sup`: the glued divided power structure on `I ⊔ J` for compatible `hI` and `hJ`.
 * `DividedPowers.isDPMorphism_sup_iff`: universal property of `DividedPowers.sup` with respect to
   divided power morphisms.
@@ -258,9 +254,11 @@ private lemma supDpow_add_eq (hI : DividedPowers I) (hJ : DividedPowers J)
   have hspec2 := hspec.2.choose_spec
   exact hI.dpowConv_eq_of_add_eq hJ h hspec.1 hx hspec2.1 hy hspec2.2
 
-/-- The glued additive divided power candidate on `I ⊔ J` constructed from `hI` and `hJ`
-when they agree on `I ⊓ J` in every degree. -/
-noncomputable def supAdditive (hI : DividedPowers I) (hJ : DividedPowers J)
+private lemma sup_eq_span_union (I J : Ideal A) :
+    I ⊔ J = Ideal.span ((I : Set A) ∪ (J : Set A)) := by
+  rw [Ideal.span_union, Ideal.span_eq, Ideal.span_eq]
+
+private noncomputable def supAdditive (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
     TauCeti.AdditiveDividedPowers (I ⊔ J) where
   dpow := supDpow hI hJ
@@ -295,47 +293,23 @@ private lemma supAdditive_dpow (hI : DividedPowers I) (hJ : DividedPowers J)
     (supAdditive hI hJ h).dpow = supDpow hI hJ := by
   rfl
 
-/-- On a sum `x + y` with `x ∈ I` and `y ∈ J`, `(hI.supAdditive hJ h).dpow n (x + y)` equals
-the antidiagonal convolution `hI.dpowConv hJ n x y`. -/
-theorem supAdditive_dpow_add (hI : DividedPowers I) (hJ : DividedPowers J)
+private lemma supAdditive_dpow_add (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w)
     (n : ℕ) {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
     (hI.supAdditive hJ h).dpow n (x + y) = hI.dpowConv hJ n x y := by
   simpa only [supAdditive_dpow] using supDpow_add_eq hI hJ h n hx hy
 
-/-- The glued additive divided power candidate `hI.supAdditive hJ h` agrees with `hI` on `I`. -/
-@[simp]
-theorem supAdditive_dpow_left (hI : DividedPowers I) (hJ : DividedPowers J)
+private lemma supAdditive_dpow_left (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) (n : ℕ) {x : A} (hx : x ∈ I) :
     (hI.supAdditive hJ h).dpow n x = hI.dpow n x := by
   simpa only [add_zero] using
     (hI.supAdditive_dpow_add hJ h n hx J.zero_mem).trans (hI.dpowConv_zero_right hJ n x)
 
-/-- The glued additive divided power candidate `hI.supAdditive hJ h` agrees with `hJ` on `J`. -/
-@[simp]
-theorem supAdditive_dpow_right (hI : DividedPowers I) (hJ : DividedPowers J)
+private lemma supAdditive_dpow_right (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) (n : ℕ) {y : A} (hy : y ∈ J) :
     (hI.supAdditive hJ h).dpow n y = hJ.dpow n y := by
   simpa only [zero_add] using
     (hI.supAdditive_dpow_add hJ h n I.zero_mem hy).trans (hI.dpowConv_zero_left hJ n y)
-
-/-- An additive divided power structure `θ` on `I ⊔ J` equals `hI.supAdditive hJ h` if and only if
-it restricts to `hI` on `I` and to `hJ` on `J`. -/
-theorem eq_supAdditive_iff (hI : DividedPowers I) (hJ : DividedPowers J)
-    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w)
-    {θ : TauCeti.AdditiveDividedPowers (I ⊔ J)} :
-    θ = hI.supAdditive hJ h ↔
-      (∀ n, ∀ x ∈ I, θ.dpow n x = hI.dpow n x) ∧ (∀ n, ∀ y ∈ J, θ.dpow n y = hJ.dpow n y) := by
-  constructor
-  · rintro rfl
-    exact ⟨fun n _ hx ↦ hI.supAdditive_dpow_left hJ h n hx,
-      fun n _ hy ↦ hI.supAdditive_dpow_right hJ h n hy⟩
-  · rintro ⟨hθI, hθJ⟩
-    refine (hI.supAdditive hJ h).dpow_eq_from_gens θ
-      (by rw [← Ideal.span_eq I, ← Ideal.span_eq J, ← Ideal.span_union]) ?_
-    rintro n s (hsI | hsJ)
-    · rw [hI.supAdditive_dpow_left hJ h n hsI, hθI n s hsI]
-    · rw [hI.supAdditive_dpow_right hJ h n hsJ, hθJ n s hsJ]
 
 /-- Stacks Project, Lemma 23.2.5 (tag `07GQ`): given divided power structures `hI` on `I` and
 `hJ` on `J` that agree on `I ⊓ J` in every degree, construct the unique divided power structure on
@@ -344,7 +318,7 @@ noncomputable def sup (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
     DividedPowers (I ⊔ J) :=
   (supAdditive hI hJ h).toDividedPowers
-    (by rw [← Ideal.span_eq I, ← Ideal.span_eq J, ← Ideal.span_union])
+    (sup_eq_span_union I J)
     (by
       rintro s (hsI | hsJ) m n
       · simp only [supAdditive_dpow_left hI hJ h _ hsI, hI.mul_dpow hsI]
@@ -357,14 +331,6 @@ noncomputable def sup (hI : DividedPowers I) (hJ : DividedPowers J)
       · rw [supAdditive_dpow_right hI hJ h n hsJ,
           supAdditive_dpow_right hI hJ h m (hJ.dpow_mem hn hsJ),
           supAdditive_dpow_right hI hJ h (m * n) hsJ, hJ.dpow_comp hn hsJ])
-
-/-- Forgetting the multiplication and composition axioms of `hI.sup hJ h` recovers
-`hI.supAdditive hJ h`. -/
-@[simp]
-theorem sup_toAdditiveDividedPowers (hI : DividedPowers I) (hJ : DividedPowers J)
-    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
-    (hI.sup hJ h).toAdditiveDividedPowers = hI.supAdditive hJ h := by
-  rw [sup, TauCeti.AdditiveDividedPowers.toDividedPowers_toAdditiveDividedPowers]
 
 /-- On a sum `x + y` with `x ∈ I` and `y ∈ J`, `(hI.sup hJ h).dpow n (x + y)` equals the
 antidiagonal convolution `hI.dpowConv hJ n x y`. -/
@@ -381,8 +347,8 @@ theorem sup_dpow_left (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w)
     (n : ℕ) {x : A} (hx : x ∈ I) :
     (hI.sup hJ h).dpow n x = hI.dpow n x := by
-  simpa only [add_zero] using
-    (hI.sup_dpow_add hJ h n hx J.zero_mem).trans (hI.dpowConv_zero_right hJ n x)
+  rw [sup, TauCeti.AdditiveDividedPowers.toDividedPowers_dpow,
+    hI.supAdditive_dpow_left hJ h n hx]
 
 /-- The glued divided power structure `hI.sup hJ h` agrees with `hJ` on `J`. -/
 @[simp]
@@ -390,8 +356,8 @@ theorem sup_dpow_right (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w)
     (n : ℕ) {y : A} (hy : y ∈ J) :
     (hI.sup hJ h).dpow n y = hJ.dpow n y := by
-  simpa only [zero_add] using
-    (hI.sup_dpow_add hJ h n I.zero_mem hy).trans (hI.dpowConv_zero_left hJ n y)
+  rw [sup, TauCeti.AdditiveDividedPowers.toDividedPowers_dpow,
+    hI.supAdditive_dpow_right hJ h n hy]
 
 /-- Gluing is symmetric in the two ideals and divided power structures. -/
 theorem sup_dpow_comm (hI : DividedPowers I) (hJ : DividedPowers J)
@@ -405,71 +371,46 @@ theorem sup_dpow_comm (hI : DividedPowers I) (hJ : DividedPowers J)
   · have hz' : z ∉ J ⊔ I := by rwa [sup_comm]
     rw [(hI.sup hJ h).dpow_null hz, (hJ.sup hI _).dpow_null hz']
 
+/-- When `J ≤ I`, gluing `hI` and `hJ` recovers the operations of `hI` on all of `A`. -/
+theorem sup_dpow_of_le_left (hI : DividedPowers I) (hJ : DividedPowers J) (hJI : J ≤ I)
+    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) (n : ℕ) (z : A) :
+    (hI.sup hJ h).dpow n z = hI.dpow n z := by
+  by_cases hz : z ∈ I
+  · exact hI.sup_dpow_left hJ h n hz
+  · have hz' : z ∉ I ⊔ J := by rwa [_root_.sup_of_le_left hJI]
+    rw [(hI.sup hJ h).dpow_null hz', hI.dpow_null hz]
+
+/-- When `I ≤ J`, gluing `hI` and `hJ` recovers the operations of `hJ` on all of `A`. -/
+theorem sup_dpow_of_le_right (hI : DividedPowers I) (hJ : DividedPowers J) (hIJ : I ≤ J)
+    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) (n : ℕ) (z : A) :
+    (hI.sup hJ h).dpow n z = hJ.dpow n z := by
+  rw [sup_dpow_comm, hJ.sup_dpow_of_le_left hI hIJ]
+
 /-- Gluing a divided power structure with itself recovers the original operations on all of `A`. -/
 @[simp]
 theorem sup_dpow_self (hI : DividedPowers I)
     (h : ∀ n, ∀ w ∈ I ⊓ I, hI.dpow n w = hI.dpow n w) (n : ℕ) (z : A) :
-    (hI.sup hI h).dpow n z = hI.dpow n z := by
-  by_cases hz : z ∈ I
-  · exact hI.sup_dpow_left hI h n hz
-  · have hz' : z ∉ I ⊔ I := by simpa only [sup_idem] using hz
-    rw [(hI.sup hI h).dpow_null hz', hI.dpow_null hz]
+    (hI.sup hI h).dpow n z = hI.dpow n z :=
+  hI.sup_dpow_of_le_left hI le_rfl h n z
 
 /-- Gluing `hI` with `dividedPowersBot A` recovers the original operations of `hI` on all of `A`. -/
 @[simp]
 theorem sup_dpow_bot (hI : DividedPowers I)
     (h : ∀ n, ∀ w ∈ I ⊓ (⊥ : Ideal A), hI.dpow n w = (dividedPowersBot A).dpow n w)
     (n : ℕ) (z : A) :
-    (hI.sup (dividedPowersBot A) h).dpow n z = hI.dpow n z := by
-  by_cases hz : z ∈ I
-  · exact hI.sup_dpow_left (dividedPowersBot A) h n hz
-  · have hz' : z ∉ I ⊔ (⊥ : Ideal A) := by simpa only [sup_bot_eq] using hz
-    rw [(hI.sup (dividedPowersBot A) h).dpow_null hz', hI.dpow_null hz]
+    (hI.sup (dividedPowersBot A) h).dpow n z = hI.dpow n z :=
+  hI.sup_dpow_of_le_left (dividedPowersBot A) bot_le h n z
 
 /-- Gluing `dividedPowersBot A` with `hI` recovers the original operations of `hI` on all of `A`. -/
 @[simp]
 theorem bot_sup_dpow (hI : DividedPowers I)
     (h : ∀ n, ∀ w ∈ (⊥ : Ideal A) ⊓ I, (dividedPowersBot A).dpow n w = hI.dpow n w)
     (n : ℕ) (z : A) :
-    ((dividedPowersBot A).sup hI h).dpow n z = hI.dpow n z := by
-  rw [sup_dpow_comm, sup_dpow_bot]
-
-/-- Gluing a divided power structure with itself via `supAdditive` recovers the original
-operations on all of `A`. -/
-@[simp]
-theorem supAdditive_dpow_self (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ I ⊓ I, hI.dpow n w = hI.dpow n w) (n : ℕ) (z : A) :
-    (hI.supAdditive hI h).dpow n z = hI.dpow n z := by
-  rw [← hI.sup_toAdditiveDividedPowers hI h, toAdditiveDividedPowers_dpow, hI.sup_dpow_self h n z]
-
-/-- Gluing `hI` with `dividedPowersBot A` via `supAdditive` recovers the original operations of `hI`
-on all of `A`. -/
-@[simp]
-theorem supAdditive_dpow_bot (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ I ⊓ (⊥ : Ideal A), hI.dpow n w = (dividedPowersBot A).dpow n w)
-    (n : ℕ) (z : A) :
-    (hI.supAdditive (dividedPowersBot A) h).dpow n z = hI.dpow n z := by
-  rw [← hI.sup_toAdditiveDividedPowers (dividedPowersBot A) h, toAdditiveDividedPowers_dpow,
-    hI.sup_dpow_bot h n z]
-
-/-- Gluing `dividedPowersBot A` with `hI` via `supAdditive` recovers the original operations of `hI`
-on all of `A`. -/
-@[simp]
-theorem bot_supAdditive_dpow (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ (⊥ : Ideal A) ⊓ I, (dividedPowersBot A).dpow n w = hI.dpow n w)
-    (n : ℕ) (z : A) :
-    ((dividedPowersBot A).supAdditive hI h).dpow n z = hI.dpow n z := by
-  rw [← (dividedPowersBot A).sup_toAdditiveDividedPowers hI h, toAdditiveDividedPowers_dpow,
-    bot_sup_dpow hI h n z]
+    ((dividedPowersBot A).sup hI h).dpow n z = hI.dpow n z :=
+  (dividedPowersBot A).sup_dpow_of_le_right hI bot_le h n z
 
 private lemma eqRec_dpow {I₁ I₂ : Ideal A} (e : I₁ = I₂) (h₁ : DividedPowers I₁) (n : ℕ) (z : A) :
     (e ▸ h₁).dpow n z = h₁.dpow n z := by
-  cases e
-  rfl
-
-private lemma eqRec_toAdditiveDividedPowers {I₁ I₂ : Ideal A} (e : I₁ = I₂)
-    (h₁ : DividedPowers I₁) :
-    (e ▸ h₁).toAdditiveDividedPowers = e ▸ h₁.toAdditiveDividedPowers := by
   cases e
   rfl
 
@@ -482,61 +423,45 @@ protected theorem sup_comm (hI : DividedPowers I) (hJ : DividedPowers J)
   ext n z _
   rw [eqRec_dpow, hI.sup_dpow_comm hJ h n z]
 
+/-- When `J ≤ I`, gluing `hI` and `hJ` recovers `hI` as a bundled `DividedPowers` structure up to
+transport along `sup_of_le_left`. -/
+protected theorem sup_of_le_left (hI : DividedPowers I) (hJ : DividedPowers J) (hJI : J ≤ I)
+    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
+    (_root_.sup_of_le_left hJI ▸ hI.sup hJ h) = hI := by
+  ext n z _
+  rw [eqRec_dpow, hI.sup_dpow_of_le_left hJ hJI h n z]
+
+/-- When `I ≤ J`, gluing `hI` and `hJ` recovers `hJ` as a bundled `DividedPowers` structure up to
+transport along `sup_of_le_right`. -/
+protected theorem sup_of_le_right (hI : DividedPowers I) (hJ : DividedPowers J) (hIJ : I ≤ J)
+    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
+    (_root_.sup_of_le_right hIJ ▸ hI.sup hJ h) = hJ := by
+  ext n z _
+  rw [eqRec_dpow, hI.sup_dpow_of_le_right hJ hIJ h n z]
+
 /-- Gluing a divided power structure with itself recovers `hI` as a bundled `DividedPowers`
 structure up to transport along `sup_idem`. -/
 theorem sup_self (hI : DividedPowers I)
     (h : ∀ n, ∀ w ∈ I ⊓ I, hI.dpow n w = hI.dpow n w) :
     (sup_idem I ▸ hI.sup hI h) = hI := by
-  ext n z _
-  rw [eqRec_dpow, hI.sup_dpow_self h n z]
+  rw [Subsingleton.elim (sup_idem I) (_root_.sup_of_le_left (le_refl I)),
+    hI.sup_of_le_left hI le_rfl h]
 
 /-- Gluing `hI` with `dividedPowersBot A` recovers `hI` as a bundled `DividedPowers` structure up
 to transport along `sup_bot_eq`. -/
 theorem sup_bot (hI : DividedPowers I)
     (h : ∀ n, ∀ w ∈ I ⊓ (⊥ : Ideal A), hI.dpow n w = (dividedPowersBot A).dpow n w) :
     (sup_bot_eq I ▸ hI.sup (dividedPowersBot A) h) = hI := by
-  ext n z _
-  rw [eqRec_dpow, hI.sup_dpow_bot h n z]
+  rw [Subsingleton.elim (sup_bot_eq I) (_root_.sup_of_le_left (bot_le : (⊥ : Ideal A) ≤ I)),
+    hI.sup_of_le_left (dividedPowersBot A) bot_le h]
 
 /-- Gluing `dividedPowersBot A` with `hI` recovers `hI` as a bundled `DividedPowers` structure up
 to transport along `bot_sup_eq`. -/
 theorem bot_sup (hI : DividedPowers I)
     (h : ∀ n, ∀ w ∈ (⊥ : Ideal A) ⊓ I, (dividedPowersBot A).dpow n w = hI.dpow n w) :
     (bot_sup_eq I ▸ (dividedPowersBot A).sup hI h) = hI := by
-  ext n z _
-  rw [eqRec_dpow, bot_sup_dpow hI h n z]
-
-/-- Gluing additive divided power candidates is symmetric as a bundled `AdditiveDividedPowers`
-structure up to transport along `sup_comm`. -/
-theorem supAdditive_comm (hI : DividedPowers I) (hJ : DividedPowers J)
-    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
-    (_root_.sup_comm I J ▸ hI.supAdditive hJ h) =
-      hJ.supAdditive hI fun m w hw ↦ (h m w ⟨hw.2, hw.1⟩).symm := by
-  rw [← hI.sup_toAdditiveDividedPowers hJ h, ← eqRec_toAdditiveDividedPowers,
-    hI.sup_comm hJ h, sup_toAdditiveDividedPowers]
-
-/-- Gluing a divided power structure with itself via `supAdditive` recovers
-`hI.toAdditiveDividedPowers` up to transport along `sup_idem`. -/
-theorem supAdditive_self (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ I ⊓ I, hI.dpow n w = hI.dpow n w) :
-    (sup_idem I ▸ hI.supAdditive hI h) = hI.toAdditiveDividedPowers := by
-  rw [← hI.sup_toAdditiveDividedPowers hI h, ← eqRec_toAdditiveDividedPowers, hI.sup_self h]
-
-/-- Gluing `hI` with `dividedPowersBot A` via `supAdditive` recovers
-`hI.toAdditiveDividedPowers` up to transport along `sup_bot_eq`. -/
-theorem supAdditive_bot (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ I ⊓ (⊥ : Ideal A), hI.dpow n w = (dividedPowersBot A).dpow n w) :
-    (sup_bot_eq I ▸ hI.supAdditive (dividedPowersBot A) h) = hI.toAdditiveDividedPowers := by
-  rw [← hI.sup_toAdditiveDividedPowers (dividedPowersBot A) h, ← eqRec_toAdditiveDividedPowers,
-    hI.sup_bot h]
-
-/-- Gluing `dividedPowersBot A` with `hI` via `supAdditive` recovers
-`hI.toAdditiveDividedPowers` up to transport along `bot_sup_eq`. -/
-theorem bot_supAdditive (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ (⊥ : Ideal A) ⊓ I, (dividedPowersBot A).dpow n w = hI.dpow n w) :
-    (bot_sup_eq I ▸ (dividedPowersBot A).supAdditive hI h) = hI.toAdditiveDividedPowers := by
-  rw [← (dividedPowersBot A).sup_toAdditiveDividedPowers hI h, ← eqRec_toAdditiveDividedPowers,
-    hI.bot_sup h]
+  rw [Subsingleton.elim (bot_sup_eq I) (_root_.sup_of_le_right (bot_le : (⊥ : Ideal A) ≤ I)),
+    (dividedPowersBot A).sup_of_le_right hI bot_le h]
 
 /-- The identity ring homomorphism is a divided power morphism from `(I, hI)` to
 `(I ⊔ J, hI.sup hJ h)`. -/
@@ -569,8 +494,7 @@ theorem isDPMorphism_sup_iff (hI : DividedPowers I) (hJ : DividedPowers J)
     exact ⟨hg.comp hK (hI.isDPMorphism_id_sup_left hJ h),
       hg.comp hK (hI.isDPMorphism_id_sup_right hJ h)⟩
   · rintro ⟨hgI, hgJ⟩
-    refine IsDPMorphism.on_span (hI.sup hJ h) hK
-      (by rw [← Ideal.span_eq I, ← Ideal.span_eq J, ← Ideal.span_union]) ?_ ?_
+    refine IsDPMorphism.on_span (hI.sup hJ h) hK (sup_eq_span_union I J) ?_ ?_
     · rintro s (hsI | hsJ)
       · exact hgI.ideal_comp (Ideal.mem_map_of_mem g hsI)
       · exact hgJ.ideal_comp (Ideal.mem_map_of_mem g hsJ)
@@ -589,8 +513,7 @@ theorem eq_sup_iff (hI : DividedPowers I) (hJ : DividedPowers J)
   · rintro rfl
     exact ⟨fun n _ hx ↦ hI.sup_dpow_left hJ h n hx, fun n _ hy ↦ hI.sup_dpow_right hJ h n hy⟩
   · rintro ⟨hθI, hθJ⟩
-    refine (hI.sup hJ h).dpow_eq_from_gens θ
-      (by rw [← Ideal.span_eq I, ← Ideal.span_eq J, ← Ideal.span_union]) ?_
+    refine (hI.sup hJ h).dpow_eq_from_gens θ (sup_eq_span_union I J) ?_
     rintro n s (hsI | hsJ)
     · rw [hI.sup_dpow_left hJ h n hsI, hθI n s hsI]
     · rw [hI.sup_dpow_right hJ h n hsJ, hθJ n s hsJ]
