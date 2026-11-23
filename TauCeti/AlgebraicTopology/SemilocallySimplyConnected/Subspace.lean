@@ -92,7 +92,7 @@ theorem SemilocallySimplyConnectedAt.of_mem_nhds {U : Set X} {x : X} (hU : U ∈
   refine semilocallySimplyConnectedAt_def.2 ⟨(↑) '' V, image_val_mem_nhds hU hV, fun γ hγ ↦ ?_⟩
   have hmem (t : I) : γ t ∈ U := by
     obtain ⟨y, -, hy⟩ := hγ ⟨t, rfl⟩
-    exact hy ▸ y.2
+    exact hy ▸ y.property
   have hγV : range (γ.codRestrict (x := ⟨x, hx⟩) (y := ⟨x, hx⟩) hmem) ⊆ V := by
     rintro _ ⟨t, rfl⟩
     obtain ⟨y, hyV, hy⟩ := hγ ⟨t, rfl⟩
@@ -145,7 +145,7 @@ theorem TauCeti.SemilocallySimplyConnectedSpace.subtype_of_pathComponent_subset
       exact hγ ⟨t, rfl⟩)
     -- At each time `t`, the homotopy runs in the path component of `γ t`, which lies in `S`.
     have hmem : ∀ p : I × I, H p ∈ S := fun ⟨s, t⟩ ↦
-      hS _ (γ t).2 ((H.evalAt t).mem_pathComponent s)
+      hS _ (γ t).property ((H.evalAt t).mem_pathComponent s)
     exact Path.homotopic_of_continuous_square (fun p ↦ ⟨H p, hmem p⟩)
       (H.continuous.subtype_mk hmem) (fun t ↦ Subtype.ext (by simp)) (fun t ↦ Subtype.ext (by simp))
       (fun t ↦ Subtype.ext (by simp)) (fun t ↦ Subtype.ext (by simp))
