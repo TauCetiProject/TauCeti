@@ -13,6 +13,8 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 import TauCeti.MeasureTheory.Function.Holder
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # Representation of continuous functionals on `Lᵖ`
@@ -31,11 +33,17 @@ continuous dual of `Lᵠ(μ; H)` by `g ↦ (f ↦ ∫ g x (f x) dμ)`, with `H�
 norm is computed by testing against the pointwise Riesz representative of `g`, and surjectivity
 again follows from reflexivity of `Lᵠ(μ; H)`, which is uniformly convex.
 
+For a real inner product space `E` with a finite orthonormal basis `b`, the dual of the product
+`(Lᵠ)ᶥ` is represented by `Lᵖ(α; E)`: a functional `Λ` is `g ↦ ∑ᵢ ∫ ⟪H, bᵢ⟫ gᵢ` for a field
+`H ∈ Lᵖ` with `‖H‖_{Lᵖ} ≤ |ι| ‖Λ‖` (`MeasureTheory.Lp.exists_memLp_forall_dual_pi_apply_eq`).
+
 ## Main declarations
 
 * `MeasureTheory.Lp.dualEquiv`: the isometric isomorphism `Lᵖ(μ) ≃ (Lᵠ(μ))⋆`.
 * `MeasureTheory.Lp.strongDualEquiv`: the isometric isomorphism `Lᵖ(μ; H⋆) ≃ (Lᵠ(μ; H))⋆` for a
   Hilbert space `H`.
+* `MeasureTheory.Lp.exists_memLp_forall_dual_pi_apply_eq`: the representation of functionals on
+  `(Lᵠ)ᶥ` by `Lᵖ(α; E)`.
 
 ## References
 
@@ -47,7 +55,7 @@ again follows from reflexivity of `Lᵠ(μ; H)`, which is uniformly convex.
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 namespace MeasureTheory.Lp
 
@@ -88,6 +96,49 @@ theorem integral_dualEquiv_symm_mul (hq : 1 < q) (hq_top : q ≠ ∞)
     (Λ : StrongDual 𝕜 (Lp 𝕜 q μ)) (f : Lp 𝕜 q μ) :
     ∫ x, (dualEquiv 𝕜 μ p q hq hq_top).symm Λ x * f x ∂μ = Λ f := by
   rw [← dualEquiv_apply hq hq_top, LinearIsometryEquiv.apply_symm_apply]
+
+/-- **Representation of functionals on `(Lᵠ)ᶥ`.** Let `b` be a finite orthonormal basis of a real
+inner product space `E`. A continuous functional `Λ` on `(Lᵠ)ᶥ` is `g ↦ ∑ᵢ ∫ ⟪H, bᵢ⟫ gᵢ` for a
+field `H ∈ Lᵖ(α; E)` with `‖H‖_{Lᵖ} ≤ |ι| ‖Λ‖`. -/
+theorem exists_memLp_forall_dual_pi_apply_eq {ι E : Type*} [Fintype ι] [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (hq : 1 < q) (hq_top : q ≠ ∞) (b : OrthonormalBasis ι ℝ E)
+    (Λ : StrongDual ℝ (ι → Lp ℝ q μ)) :
+    ∃ H : α → E, MemLp H p μ ∧ eLpNorm H p μ ≤ Fintype.card ι * ENNReal.ofReal ‖Λ‖ ∧
+      ∀ g, Λ g = ∑ i, ∫ x, ⟪H x, b i⟫_ℝ * g i x ∂μ := by
+  classical
+  let Λc : ι → StrongDual ℝ (Lp ℝ q μ) := fun i =>
+    Λ.comp (ContinuousLinearMap.single ℝ (fun _ : ι => Lp ℝ q μ) i)
+  let Hc : ι → Lp ℝ p μ := fun i => (dualEquiv ℝ μ p q hq hq_top).symm (Λc i)
+  have hHc (i : ι) : ‖Hc i‖ ≤ ‖Λ‖ := by
+    simp only [Hc, LinearIsometryEquiv.norm_map]
+    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun g => ?_
+    calc ‖Λc i g‖ ≤ ‖Λ‖ * ‖Pi.single (M := fun _ : ι => Lp ℝ q μ) i g‖ := Λ.le_opNorm _
+      _ = ‖Λ‖ * ‖g‖ := by rw [Pi.norm_single]
+  have hHi (i : ι) : MemLp (fun x => (Hc i : α → ℝ) x • b i) p μ :=
+    (Lp.memLp (Hc i)).smul (memLp_top_const (b i))
+  have hsum : (fun x => ∑ i, (Hc i : α → ℝ) x • b i) = ∑ i, fun x => (Hc i : α → ℝ) x • b i :=
+    (Finset.sum_fn _ _).symm
+  have hinner (x : α) (i : ι) : ⟪∑ j, (Hc j : α → ℝ) x • b j, b i⟫_ℝ = Hc i x := by
+    simp [sum_inner, real_inner_smul_left, b.inner_eq_ite]
+  refine ⟨fun x => ∑ i, (Hc i : α → ℝ) x • b i, ?_, ?_, fun g => ?_⟩
+  · rw [hsum]
+    exact memLp_finsetSum' Finset.univ fun i _ => hHi i
+  · calc eLpNorm (fun x => ∑ i, (Hc i : α → ℝ) x • b i) p μ
+        ≤ ∑ i, eLpNorm (fun x => (Hc i : α → ℝ) x • b i) p μ := by
+          rw [hsum]
+          exact eLpNorm_sum_le Fact.out
+      _ ≤ ∑ _i : ι, ENNReal.ofReal ‖Λ‖ := by
+          refine Finset.sum_le_sum fun i _ => ?_
+          rw [eLpNorm_congr_norm_ae (hHi i).aestronglyMeasurable (Lp.aestronglyMeasurable (Hc i))
+            (ae_of_all _ fun x => by rw [norm_smul, b.orthonormal.1 i, mul_one]), ← Lp.eNorm_def,
+            ← ofReal_norm]
+          exact ENNReal.ofReal_le_ofReal (hHc i)
+      _ = Fintype.card ι * ENNReal.ofReal ‖Λ‖ := by simp
+  · conv_lhs => rw [← Finset.univ_sum_single g]
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    simp_rw [hinner]
+    exact (integral_dualEquiv_symm_mul (p := p) hq hq_top (Λc i) (g i)).symm
 
 /-! ### Functionals on `Lᵠ` with values in a Hilbert space -/
 

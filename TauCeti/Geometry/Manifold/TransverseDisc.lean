@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Analysis.Calculus.TangentCone.Chart
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity

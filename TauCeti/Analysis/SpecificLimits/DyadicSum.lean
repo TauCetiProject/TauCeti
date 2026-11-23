@@ -72,6 +72,8 @@ dyadic series.
   `E D^δ C^(1 - δ) d^δ r^(-(s + δ))`.
 * `TauCeti.tsum_two_rpow_neg_mul_abs_ne_top`, `TauCeti.tsum_two_rpow_neg_mul_abs_sub_le`: the
   two-sided series `∑_{m ∈ ℤ} 2^{-ε |m|}` is finite and bounds its shifts by `σ`-separated points.
+* `TauCeti.sum_range_sub_le_tsum`: a sum over the truncation `-N ≤ k < N` of `ℤ` is at most the
+  sum over all of `ℤ`.
 * `AntitoneOn.le_tsum_indicator_Ioc`, `AntitoneOn.le_tsum_indicator_Ico`: a function antitone on
   `(0, ∞)` is bounded on `(0, s]` and on `[s, ∞)` by its values at the left endpoints of the
   intervals between consecutive scales `b ^ n s`.
@@ -392,6 +394,13 @@ theorem tsum_two_rpow_neg_mul_abs_sub_le {σ ε : ℝ} (hσ : 1 ≤ σ) (hε : 0
     _ = _ := by
         congr 1
         exact (Equiv.subRight n).tsum_eq fun m : ℤ ↦ (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|))
+
+/-- A sum over the truncation `-N ≤ k < N` is at most the sum over all of `ℤ`. -/
+theorem sum_range_sub_le_tsum (f : ℤ → ℝ≥0∞) (N : ℕ) :
+    ∑ i ∈ Finset.range (2 * N), f ((i : ℤ) - N) ≤ ∑' k, f k := by
+  rw [← Finset.sum_image (g := fun i : ℕ ↦ (i : ℤ) - N) (f := f)
+    fun i _ i' _ h ↦ by simpa using h]
+  exact sum_le_tsum _
 
 end TauCeti
 
