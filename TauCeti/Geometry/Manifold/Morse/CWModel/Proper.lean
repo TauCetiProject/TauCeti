@@ -219,7 +219,6 @@ private theorem IsMorse.exists_sublevelCWModel_tower (hf : IsMorse I f) (hp : Is
   have : IsEmpty {x | f x ≤ a 0} := ⟨fun x ↦ (not_le.2 (ha0 x)) x.property⟩
   have hcell0 (m : ℕ) : cell (univ : Set PEmpty.{u + 1}) m ≃
       ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (a 0) | manifoldMorseIndex I f x = m} :=
-    have : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) := ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
     have : IsEmpty ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (a 0) | manifoldMorseIndex I f x = m} :=
       ⟨fun x ↦ (not_le.2 (ha0 x.val)) x.property.1.2⟩
     Equiv.equivOfIsEmpty _ _
@@ -285,8 +284,6 @@ private theorem IsMorse.exists_cwComplex_subcomplex_witness_of_finiteDimensional
   -- The cells of `X` are the new cells of all stages, which are the critical points in the bands
   -- `(a k, a (k + 1)]`.
   have : IsEmpty (F.obj 0) := ⟨fun w ↦ (not_le.2 (ha0 _)) ((S 0).h w).property⟩
-  have hempty (m : ℕ) : IsEmpty (cell (univ : Set (F.obj 0)) m) :=
-    ⟨fun j ↦ isEmptyElim (map m j 0)⟩
   let eX (m : ℕ) := (cwComplexOfIsColimitCellEquiv hF hιc hc m).trans <|
     (Equiv.emptySum _ _).trans <|
       (Equiv.sigmaCongrRight fun k ↦ (e k m).complRangeSymmInl).trans
@@ -300,7 +297,7 @@ private theorem IsMorse.exists_cwComplex_subcomplex_witness_of_finiteDimensional
   -- A new cell of the stage `k' + 1` belongs to the stage `k` exactly when `k' < k`, and its
   -- critical point has value in `(a k', a (k' + 1)]`.
   obtain ⟨s | ⟨k', x⟩, rfl⟩ := (cwComplexOfIsColimitCellEquiv hF hιc hc m).symm.surjective j
-  · exact (hempty m).elim s
+  · exact isEmptyElim s
   have hx := ((e k' m).complRangeSymmInl x).property.1.2
   refine (cwComplexOfIsColimitCellEquiv_symm_inr_mem_I_iff hF hιc hc _).trans ?_
   simp only [eX, Equiv.trans_apply, Equiv.apply_symm_apply]
@@ -329,10 +326,6 @@ private theorem IsMorse.exists_cwComplex_subcomplex_witness (hf : IsMorse I f)
   rcases isEmpty_or_nonempty M with hM | _
   · let W : ℕ → Subcomplex (univ : Set PEmpty.{u + 1}) :=
       fun _ ↦ ⟨∅, fun _ ↦ ∅, isClosed_empty, by simp⟩
-    have hcellEmpty (m : ℕ) : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) :=
-      ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
-    have hWempty (k m : ℕ) : IsEmpty (cell (W k : Set PEmpty.{u + 1}) m) :=
-      ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
     have (k : ℕ) : IsEmpty {x : M | f x ≤ (k : ℝ)} := ⟨fun x ↦ hM.elim x.val⟩
     let e (m : ℕ) : cell (univ : Set PEmpty.{u + 1}) m ≃
         ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m} :=
@@ -344,12 +337,9 @@ private theorem IsMorse.exists_cwComplex_subcomplex_witness (hf : IsMorse I f)
       Nat.strictMono_cast, tendsto_natCast_atTop_atTop, isEmptyElim,
       fun _ ↦ isRegularValue_of_notMem_range fun ⟨x, _⟩ ↦ hM.elim x,
       monotone_const, rfl, eq_univ_of_forall isEmptyElim,
-      fun k ↦ RelCWComplex.finite_of_finite_cells
-        (have : IsEmpty (Σ n, cell (W k : Set PEmpty.{u + 1}) n) :=
-          ⟨fun ⟨n, j⟩ ↦ (hWempty k n).elim j⟩
-        inferInstance),
+      fun _ ↦ RelCWComplex.finite_of_finite_cells inferInstance,
       fun _ x ↦ PEmpty.elim x.val, fun _ x ↦ hM.elim x,
-      fun _ m j ↦ (hcellEmpty m).elim j, fun _ _ ↦ ⟨0, fun x _ ↦ PEmpty.elim x⟩⟩
+      fun _ _ j ↦ isEmptyElim j, fun _ _ ↦ ⟨0, fun x _ ↦ PEmpty.elim x⟩⟩
   · have := hp.weaklyLocallyCompactSpace
     have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
     exact hf.exists_cwComplex_subcomplex_witness_of_finiteDimensional hp hbdd
