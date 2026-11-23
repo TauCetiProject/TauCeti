@@ -85,9 +85,6 @@ namespace TauCeti.HurewiczOne
 /-- The parametrization of the standard `1`-simplex by the unit interval, as a continuous map. -/
 local notation "toI" => (StdSimplex.homeomorphI : C(StdSimplex ℝ (Fin 2), I))
 
-/-- The point of the standard `1`-simplex with a given parameter, as a continuous map. -/
-local notation "ofI" => (StdSimplex.homeomorphI.symm : C(I, StdSimplex ℝ (Fin 2)))
-
 variable {R : Type u} [Ring R] {X : TopCat.{u}}
 
 /-- The inclusion of the `i`-th facet of the standard `2`-simplex. -/
@@ -371,26 +368,13 @@ lemma H₁.lift_mk (f : ((singularChains R).obj X).X 1 →ₗ[R] A)
     (@ModuleCat.ofHom R _ _ _ _ (cycles₁ R X).module _ _ (f.comp (cycles₁ R X).subtype))
     (ModuleCat.hom_ext (LinearMap.ext hf))).hom c)
 
-/-- An edge of the standard `2`-simplex, as a path. -/
-private def edgePath (i : Fin 3) :
-    Path (face i (StdSimplex.single 0)) (face i (StdSimplex.single 1)) where
-  toContinuousMap := (face i).comp ofI
-  source' := by simp
-  target' := by simp
-
-private lemma face_single (i : Fin 3) (j : Fin 2) :
-    face i (StdSimplex.single j) = StdSimplex.single (i.succAbove j) :=
-  StdSimplex.map_single _ _
-
-/-- The path of the `i`-th face of a singular `2`-simplex is the image of the `i`-th edge of the
-standard `2`-simplex. -/
-private lemma path₁_δ (τ : (TopCat.toSSet.obj X) _⦋2⦌) (i : Fin 3) :
-    path₁ ((TopCat.toSSet.obj X).δ i τ) = (edgePath i).map (X.toSSetObjEquiv _ τ).continuous := by
-  ext t
-  rw [path₁_apply, TopCat.toSSetObjEquiv_δ_apply]
-  -- By definition of `edgePath`, the right-hand side is `τ` at the image of
-  -- `homeomorphI.symm t` under the inclusion `face i` of the facet.
-  rfl
+/-- The path of the `i`-th face of a singular `2`-simplex is the image of the path along the
+`i`-th edge of the standard `2`-simplex. -/
+private lemma path₁_δ_apply (τ : (TopCat.toSSet.obj X) _⦋2⦌) (i : Fin 3) (t : I) :
+    path₁ ((TopCat.toSSet.obj X).δ i τ) t =
+      (StdSimplex.edgePath i.succAbove).map (X.toSSetObjEquiv _ τ).continuous t := by
+  rw [path₁_apply, TopCat.toSSetObjEquiv_δ_apply, Path.map_coe, Function.comp_apply,
+    StdSimplex.edgePath_apply]
 
 variable (f : ∀ {y z : X}, Path.Homotopic.Quotient y z → A)
 
@@ -407,13 +391,21 @@ private lemma map_eq_imageValue {Y : Type} [TopologicalSpace Y] [SimplyConnected
   rw [imageValue, Subsingleton.elim (Path.Homotopic.Quotient.mk γ)]
 
 omit [AddCommGroup A] in
+/-- The value of `f` on the class of a path depends only on the path as a function, its endpoints
+being its values at `0` and `1`. -/
+private lemma apply_mk_eq_of_coe_eq {y z y' z' : X} (γ : Path y z) (γ' : Path y' z')
+    (h : ⇑γ = ⇑γ') : f (.mk γ) = f (.mk γ') := by
+  obtain rfl : y = y' := γ.source.symm.trans ((congrFun h 0).trans γ'.source)
+  obtain rfl : z = z' := γ.target.symm.trans ((congrFun h 1).trans γ'.target)
+  rw [Path.ext h]
+
+omit [AddCommGroup A] in
 /-- The value of `f` on the path of the `i`-th face of a singular `2`-simplex `τ`. -/
 private lemma apply_path₁_δ (τ : (TopCat.toSSet.obj X) _⦋2⦌) (i : Fin 3) :
     f (.mk (path₁ ((TopCat.toSSet.obj X).δ i τ))) = imageValue f (X.toSSetObjEquiv _ τ)
       (StdSimplex.single (i.succAbove 0)) (StdSimplex.single (i.succAbove 1)) := by
-  rw [← face_single, ← face_single, ← map_eq_imageValue f _ (edgePath i),
-    ← Path.Homotopic.Quotient.mk_map]
-  exact congrArg (fun γ ↦ f (Path.Homotopic.Quotient.mk γ)) (path₁_δ τ i)
+  rw [← map_eq_imageValue f _ (StdSimplex.edgePath i.succAbove), ← Path.Homotopic.Quotient.mk_map]
+  exact apply_mk_eq_of_coe_eq f _ _ (funext (path₁_δ_apply τ i))
 
 variable {f}
 variable (hf : ∀ {y z w : X} (p : Path.Homotopic.Quotient y z) (q : Path.Homotopic.Quotient z w),
