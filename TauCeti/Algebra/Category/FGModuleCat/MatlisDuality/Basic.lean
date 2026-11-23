@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.CategoryTheory.Generator.Basic
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.FiniteLength
@@ -15,7 +16,6 @@ public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 
 import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 import TauCeti.Algebra.Category.FGModuleCat.Projective
-import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
 
 /-!
 # The Matlis duality between left and right modules over an Artin algebra
@@ -48,6 +48,8 @@ direct sum of copies of `D A`.
 
 * `TauCeti.IsInjectiveEnvelope.injective_fgModuleCatMatlisDualRegular`: `D A` is injective in
   `mod A`.
+* `TauCeti.IsInjectiveEnvelope.isCoseparator_fgModuleCatMatlisDualRegular`: `D A` is a
+  coseparator of `mod A`.
 * `TauCeti.IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_injective`: every
   injective object of `mod A` lies in `add (D A)`.
 
@@ -235,19 +237,20 @@ instance IsInjectiveEnvelope.injective_fgModuleCatMatlisDualRegular (hf : IsInje
     (hf.fgModuleCatMatlisDuality.symm.map_projective_iff _).2 inferInstance
   exact inferInstanceAs (Injective (unop _))
 
+/-- `D A` is a coseparator of `mod A`, as the dual of the separator `Aᵐᵒᵖ` of `mod Aᵐᵒᵖ`. -/
+theorem IsInjectiveEnvelope.isCoseparator_fgModuleCatMatlisDualRegular
+    (hf : IsInjectiveEnvelope f) : IsCoseparator (hf.fgModuleCatMatlisDualRegular (A := A)) := by
+  rw [hf.fgModuleCatMatlisDualRegular_def, isCoseparator_unop_iff]
+  exact (FGModuleCat.isSeparator Aᵐᵒᵖ).of_equivalence hf.fgModuleCatMatlisDuality.symm
+
 /-- **Finitely generated injective modules are summands of finite sums of `D A`**: an injective
-object of `mod A` lies in `add (D A)`. This is the dual of the
-statement that finitely generated projective modules over `Aᵐᵒᵖ` lie in `add Aᵐᵒᵖ`. -/
+object of `mod A` lies in `add (D A)`. This is the case of the coseparator `D A` in
+`CategoryTheory.IsCoseparator.additiveClosure_of_injective`. -/
 theorem IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_injective
     (hf : IsInjectiveEnvelope f) (I : FGModuleCat.{v} A) [Injective I] :
-    additiveClosure (hf.fgModuleCatMatlisDualRegular (A := A)) I := by
-  let Φ := hf.fgModuleCatMatlisDuality (A := A)
-  have : Projective (Φ.functor.obj (op I)) := (Φ.map_projective_iff _).2 inferInstance
-  rw [← Φ.additiveClosure_functor_obj_op_iff]
-  exact (hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A)).symm.retract
-    |>.additiveClosure_le _
-      (FGModuleCat.additiveClosure_of_isGenerator_of_projective (FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ)
-        (Φ.functor.obj (op I)))
+    additiveClosure (hf.fgModuleCatMatlisDualRegular (A := A)) I :=
+  have := IsArtinianRing.of_finite R A
+  hf.isCoseparator_fgModuleCatMatlisDualRegular.additiveClosure_of_injective I
 
 end Regular
 
