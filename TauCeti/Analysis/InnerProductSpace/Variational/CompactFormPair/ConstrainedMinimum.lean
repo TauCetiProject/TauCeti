@@ -39,7 +39,7 @@ This file establishes the direct variational theory of `P.energy` on `P.unitCons
   lower semicontinuity of `P.energy`.
 * Weak compactness of bounded parts `P.unitConstraint W ∩ closedBall 0 R` and of energy sublevels
   `{u ∈ P.unitConstraint W | P.energy u ≤ b}` in reflexive spaces, together with norm compactness
-  and weak compactness of the set of constrained minimizers.
+  of the set of constrained minimizers.
 * Attainment of the constrained Rayleigh minimum (`CompactFormPair.exists_minimum_on_unitConstraint`
   and its reflexive form `exists_minimum_on_unitConstraint_of_surjective`), its Rayleigh-quotient
   characterization, and identification with `‖IsCoercive.formSolutionOperator‖⁻¹` over `ℝ`.
@@ -216,28 +216,35 @@ theorem unitConstraint_nonempty_iff (P : CompactFormPair 𝕜 E H) (W : Submodul
   rintro ⟨u, huW, hu⟩
   exact ⟨_, P.inv_norm_smul_mem_unitConstraint huW hu⟩
 
+private theorem image_energy_unitConstraint (P : CompactFormPair 𝕜 E H) (W : Submodule 𝕜 H) :
+    P.energy '' P.unitConstraint W =
+      {r : ℝ | ∃ v : E, P.inclusion v ∈ W ∧ P.inclusion v ≠ 0 ∧
+        P.energy v / ‖P.inclusion v‖ ^ 2 = r} := by
+  ext r
+  constructor
+  · rintro ⟨v, hv, rfl⟩
+    exact ⟨v, hv.1, P.inclusion_ne_zero_of_mem_unitConstraint hv, by simp [hv.2]⟩
+  · rintro ⟨v, hvW, hvne, rfl⟩
+    refine ⟨((‖P.inclusion v‖⁻¹ : ℝ) : 𝕜) • v, P.inv_norm_smul_mem_unitConstraint hvW hvne, ?_⟩
+    have hpos : 0 < ‖P.inclusion v‖ := norm_pos_iff.mpr hvne
+    rw [P.energy_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.mpr hpos), inv_pow, div_eq_inv_mul]
+
 /-- A vector `u` minimizes `P.energy` on `P.unitConstraint W` if and only if
 `P.energy u * ‖P.inclusion v‖² ≤ P.energy v` for every `v` with `P.inclusion v ∈ W`. -/
 theorem isMinOn_unitConstraint_iff_forall_mul_norm_sq_le (P : CompactFormPair 𝕜 E H)
     {W : Submodule 𝕜 H} {u : E} :
     IsMinOn P.energy (P.unitConstraint W) u ↔
       ∀ v : E, P.inclusion v ∈ W → P.energy u * ‖P.inclusion v‖ ^ 2 ≤ P.energy v := by
-  refine ⟨fun hmin v hvW => ?_, fun hle v hv => ?_⟩
-  · by_cases hv0 : P.inclusion v = 0
-    · have hvz : v = 0 := (P.inclusion.toLinearMap.map_eq_zero_iff P.injective).mp hv0
+  rw [isMinOn_iff, ← forall_mem_image (f := P.energy) (s := P.unitConstraint W)
+    (p := (P.energy u ≤ ·)), P.image_energy_unitConstraint W]
+  refine ⟨fun h v hvW => ?_, fun h r ⟨v, hvW, hvne, hr⟩ => ?_⟩
+  · by_cases hvne : P.inclusion v = 0
+    · have hvz : v = 0 := (P.inclusion.toLinearMap.map_eq_zero_iff P.injective).mp hvne
       simp [hvz]
-    · have hpos : 0 < ‖P.inclusion v‖ := norm_pos_iff.mpr hv0
-      have hnorm : ((‖P.inclusion v‖⁻¹ : ℝ) : 𝕜) • v ∈ P.unitConstraint W :=
-        P.inv_norm_smul_mem_unitConstraint hvW hv0
-      have hle' : P.energy u ≤ P.energy (((‖P.inclusion v‖⁻¹ : ℝ) : 𝕜) • v) := hmin hnorm
-      rw [P.energy_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.mpr hpos)] at hle'
-      have hmul := mul_le_mul_of_nonneg_right hle' (sq_nonneg ‖P.inclusion v‖)
-      have hcancel : (‖P.inclusion v‖⁻¹) ^ 2 * P.energy v * ‖P.inclusion v‖ ^ 2 = P.energy v := by
-        field_simp
-      linarith
-  · have h := hle v hv.1
-    rw [hv.2] at h
-    simpa using h
+    · have hpos : (0 : ℝ) < ‖P.inclusion v‖ ^ 2 := sq_pos_of_pos (norm_pos_iff.mpr hvne)
+      exact (le_div_iff₀ hpos).mp (h _ ⟨v, hvW, hvne, rfl⟩)
+  · rw [← hr, le_div_iff₀ (sq_pos_of_pos (norm_pos_iff.mpr hvne))]
+    exact h v hvW
 
 /-- Rayleigh-quotient characterization of constrained minimizers: `u ∈ P.unitConstraint W`
 minimizes `P.energy` on `P.unitConstraint W` if and only if `P.energy u` is the least value of
@@ -247,17 +254,9 @@ theorem isMinOn_unitConstraint_iff_isLeast_rayleighQuotient (P : CompactFormPair
     IsMinOn P.energy (P.unitConstraint W) u ↔
       IsLeast {r : ℝ | ∃ v : E, P.inclusion v ∈ W ∧ P.inclusion v ≠ 0 ∧
         P.energy v / ‖P.inclusion v‖ ^ 2 = r} (P.energy u) := by
-  rw [P.isMinOn_unitConstraint_iff_forall_mul_norm_sq_le]
-  refine ⟨fun hle => ⟨⟨u, hu.1, P.inclusion_ne_zero_of_mem_unitConstraint hu, by simp [hu.2]⟩,
-    ?_⟩, fun ⟨_, hlb⟩ v hvW => ?_⟩
-  · rintro r ⟨v, hvW, hvne, rfl⟩
-    rw [le_div_iff₀ (sq_pos_of_pos (norm_pos_iff.mpr hvne))]
-    exact hle v hvW
-  · by_cases hvne : P.inclusion v = 0
-    · have hvz : v = 0 := (P.inclusion.toLinearMap.map_eq_zero_iff P.injective).mp hvne
-      simp [hvz]
-    · have hpos : (0 : ℝ) < ‖P.inclusion v‖ ^ 2 := sq_pos_of_pos (norm_pos_iff.mpr hvne)
-      exact (le_div_iff₀ hpos).mp (hlb ⟨v, hvW, hvne, rfl⟩)
+  rw [← P.image_energy_unitConstraint W]
+  exact ⟨fun hmin => ⟨mem_image_of_mem P.energy hu, forall_mem_image.mpr hmin⟩,
+    fun hleast _ hv => hleast.2 (mem_image_of_mem P.energy hv)⟩
 
 end Normalization
 
@@ -446,16 +445,6 @@ theorem isCompact_minimizers_unitConstraint_of_surjective (P : CompactFormPair �
     fun n => le_antisymm ((hu (φ n)).2 hxmin.1) (hxmin.2 (hu (φ n)).1)
   exact tendsto_const_nhds.congr fun n => (heq_energy n).symm
 
-/-- Weak compactness of the set of constrained minimizers in a reflexive space. -/
-theorem isCompact_toWeakSpace_minimizers_unitConstraint_of_surjective (P : CompactFormPair 𝕜 E H)
-    (hE : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 E))
-    (W : Submodule 𝕜 H) (hW : IsClosed (W : Set H)) :
-    IsCompact (toWeakSpace 𝕜 E ''
-      {u ∈ P.unitConstraint W | IsMinOn P.energy (P.unitConstraint W) u}) := by
-  simpa only [toWeakSpaceCLM_eq_toWeakSpace] using
-    (P.isCompact_minimizers_unitConstraint_of_surjective hE W hW).image
-      (toWeakSpaceCLM 𝕜 E).continuous
-
 /-- **Constrained Rayleigh minimum** (reflexive form): if `E` is reflexive and `W ≤ H` is a
 norm-closed submodule containing a nonzero image of `P.inclusion`, then `P.energy` attains its
 minimum on `P.unitConstraint W`. -/
@@ -473,14 +462,14 @@ theorem exists_minimum_on_unitConstraint_of_surjective (P : CompactFormPair 𝕜
         (toWeakSpace 𝕜 E '' S₀) := by
     rw [lowerSemicontinuousOn_iff_preimage_Iic]
     intro b
-    refine ⟨toWeakSpace 𝕜 E '' {v ∈ P.unitConstraint W | P.energy v ≤ min (P.energy u₀) b},
-      (P.isCompact_toWeakSpace_sublevel_unitConstraint hE W hW (min (P.energy u₀) b)).isClosed, ?_⟩
-    ext w
-    refine ⟨fun ⟨hw, hvb⟩ => ⟨hw, ?_⟩, fun ⟨hw, hwC⟩ => ⟨hw, ?_⟩⟩
-    · obtain ⟨v, ⟨hvW, hvu₀⟩, rfl⟩ := hw
-      exact ⟨v, ⟨hvW, le_min hvu₀ (by simpa using hvb)⟩, rfl⟩
-    · obtain ⟨v', ⟨_, hv'min⟩, rfl⟩ := hwC
-      simpa using (le_min_iff.mp hv'min).2
+    refine ⟨toWeakSpace 𝕜 E '' {v ∈ P.unitConstraint W | P.energy v ≤ b},
+      (P.isCompact_toWeakSpace_sublevel_unitConstraint hE W hW b).isClosed, ?_⟩
+    rw [← Set.image_inter_preimage, ← Set.image_inter (toWeakSpace 𝕜 E).injective]
+    congr 1
+    ext v
+    simp only [mem_inter_iff, mem_preimage, mem_Iic, LinearEquiv.symm_apply_apply,
+      mem_ofPred_eq, S₀]
+    exact ⟨fun ⟨⟨hvW, hvu₀⟩, hvb⟩ => ⟨⟨hvW, hvu₀⟩, hvW, hvb⟩, fun ⟨h1, _, hvb⟩ => ⟨h1, hvb⟩⟩
   exact TauCeti.exists_isMinOn_of_isCompact_toWeakSpace_sublevel ⟨u₀, hu₀, le_rfl⟩ hcomp hlsc
 
 end WeakCompactness

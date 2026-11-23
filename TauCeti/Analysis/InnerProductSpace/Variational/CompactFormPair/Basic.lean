@@ -186,6 +186,14 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
 private def shiftForm (P : CompactFormPair 𝕜 E H) (α : ℝ) : E →L⋆[𝕜] E →L[𝕜] 𝕜 :=
   P.form + (α : 𝕜) • (innerSL 𝕜).bilinearComp P.inclusion P.inclusion
 
+private theorem shiftForm_apply (P : CompactFormPair 𝕜 E H) (α : ℝ) (u v : E) :
+    shiftForm P α u v = P.form u v + (α : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 := by
+  simp [shiftForm, ContinuousLinearMap.bilinearComp_apply]
+
+private theorem re_shiftForm_self (P : CompactFormPair 𝕜 E H) (α : ℝ) (u : E) :
+    RCLike.re (shiftForm P α u u) = P.energy u + α * ‖P.inclusion u‖ ^ 2 := by
+  rw [shiftForm_apply, map_add, RCLike.re_ofReal_mul, inner_self_eq_norm_sq, energy_def]
+
 /-- Shift a compact form pair by a real multiple `α` of the ambient inner product:
 `a_α(u, v) = a(u, v) + α ⟪j u, j v⟫_𝕜`. -/
 def shift (P : CompactFormPair 𝕜 E H) (α : ℝ) : CompactFormPair 𝕜 E H where
@@ -195,8 +203,7 @@ def shift (P : CompactFormPair 𝕜 E H) (α : ℝ) : CompactFormPair 𝕜 E H w
   compact := P.compact
   form := shiftForm P α
   hermitian u v := by
-    change P.form u v + (α : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 =
-      star (P.form v u + (α : 𝕜) * ⟪P.inclusion v, P.inclusion u⟫_𝕜)
+    rw [shiftForm_apply, shiftForm_apply]
     simp only [star_add, star_mul', RCLike.star_def, RCLike.conj_ofReal,
       inner_conj_symm, P.hermitian u v]
   exists_shifted_lower_bound := by
@@ -204,9 +211,7 @@ def shift (P : CompactFormPair 𝕜 E H) (α : ℝ) : CompactFormPair 𝕜 E H w
     refine ⟨c, ω - α, hc, fun u => ?_⟩
     have hu := hbound u
     rw [← energy_def] at hu
-    change c * ‖u‖ ^ 2 ≤ RCLike.re (P.form u u + (α : 𝕜) * ⟪P.inclusion u, P.inclusion u⟫_𝕜) +
-      (ω - α) * ‖P.inclusion u‖ ^ 2
-    rw [map_add, RCLike.re_ofReal_mul, inner_self_eq_norm_sq, ← energy_def]
+    rw [re_shiftForm_self]
     linarith
 
 @[simp]
@@ -217,13 +222,13 @@ theorem shift_inclusion (P : CompactFormPair 𝕜 E H) (α : ℝ) :
 @[simp]
 theorem shift_form_apply (P : CompactFormPair 𝕜 E H) (α : ℝ) (u v : E) :
     (P.shift α).form u v = P.form u v + (α : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 :=
-  (rfl)
+  shiftForm_apply P α u v
 
 @[simp]
 theorem shift_energy (P : CompactFormPair 𝕜 E H) (α : ℝ) (u : E) :
     (P.shift α).energy u = P.energy u + α * ‖P.inclusion u‖ ^ 2 := by
-  rw [energy_def, shift_form_apply, map_add, RCLike.re_ofReal_mul, inner_self_eq_norm_sq,
-    ← energy_def]
+  rw [energy_def]
+  exact re_shiftForm_self P α u
 
 @[simp]
 theorem shift_zero (P : CompactFormPair 𝕜 E H) : P.shift 0 = P := by
@@ -282,7 +287,10 @@ def mapLinearIsometryEquiv (P : CompactFormPair 𝕜 E H) (U : H ≃ₗᵢ[𝕜]
   hermitian := P.hermitian
   exists_shifted_lower_bound := by
     obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
-    exact ⟨c, ω, hc, fun u => by simpa [U.norm_map] using hbound u⟩
+    refine ⟨c, ω, hc, fun u => ?_⟩
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv, U.norm_map]
+    exact hbound u
 
 @[simp]
 theorem mapLinearIsometryEquiv_inclusion_apply (P : CompactFormPair 𝕜 E H) (U : H ≃ₗᵢ[𝕜] H')
@@ -440,6 +448,12 @@ private def piProj (𝕜 : Type*) [RCLike 𝕜] {ι : Type*} (E : ι → Type*)
   (ContinuousLinearMap.proj (R := 𝕜) i).comp
     (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap
 
+omit [Fintype ι] in
+private theorem piProj_apply (u : PiLp 2 E) (i : ι) :
+    piProj 𝕜 E i u = u i := by
+  rw [piProj, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearMap.proj_apply, PiLp.continuousLinearEquiv_apply]
+
 private def piInclusion (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
     PiLp 2 E →L[𝕜] PiLp 2 H :=
   (PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap.comp
@@ -456,9 +470,23 @@ private theorem coe_piInclusion (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearMap.coe_piMap']
 
+omit [Fintype ι] in
+private theorem piInclusion_apply (P : ∀ i, CompactFormPair 𝕜 (E i) (H i))
+    (u : PiLp 2 E) (i : ι) :
+    piInclusion P u i = (P i).inclusion (u i) := by
+  have h := congrFun (coe_piInclusion P) u
+  rw [Function.comp_apply, Function.comp_apply, PiLp.continuousLinearEquiv_symm_apply] at h
+  simpa [Pi.map_apply, PiLp.continuousLinearEquiv_apply] using congrArg (fun x => x i) h
+
 private def piForm (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
     PiLp 2 E →L⋆[𝕜] PiLp 2 E →L[𝕜] 𝕜 :=
   ∑ i : ι, (P i).form.bilinearComp (piProj 𝕜 E i) (piProj 𝕜 E i)
+
+private theorem piForm_apply (P : ∀ i, CompactFormPair 𝕜 (E i) (H i))
+    (u v : PiLp 2 E) :
+    piForm P u v = ∑ i : ι, (P i).form (u i) (v i) := by
+  simp only [piForm, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.bilinearComp_apply,
+    piProj_apply]
 
 /-- Finite `ℓ²`-direct sum of compact form pairs. -/
 def pi (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
@@ -487,20 +515,13 @@ def pi (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
       (PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap
   form := piForm P
   hermitian u v := by
-    have hform (x y : PiLp 2 E) : piForm P x y = ∑ i : ι, (P i).form (x i) (y i) := by
-      simp only [piForm, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.bilinearComp_apply]
-      rfl
-    simp only [hform, star_sum, fun i => (P i).hermitian (u i) (v i)]
+    simp only [piForm_apply, star_sum, fun i => (P i).hermitian (u i) (v i)]
   exists_shifted_lower_bound := by
-    have hinc (u : PiLp 2 E) (i : ι) : piInclusion P u i = (P i).inclusion (u i) := rfl
-    have hform (u v : PiLp 2 E) : piForm P u v = ∑ i : ι, (P i).form (u i) (v i) := by
-      simp only [piForm, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.bilinearComp_apply]
-      rfl
     choose c ω hc hbound using fun i => (P i).exists_shifted_lower_bound
     by_cases hne : (Finset.univ : Finset ι).Nonempty
     · refine ⟨Finset.univ.inf' hne c, Finset.univ.sup' hne ω,
         (Finset.lt_inf'_iff hne).mpr fun i _ => hc i, fun u => ?_⟩
-      simp only [PiLp.norm_sq_eq_of_L2, hform, hinc, map_sum,
+      simp only [PiLp.norm_sq_eq_of_L2, piForm_apply, piInclusion_apply, map_sum,
         Finset.mul_sum, ← Finset.sum_add_distrib]
       refine Finset.sum_le_sum fun i _ => ?_
       have hc_le : Finset.univ.inf' hne c * ‖u i‖ ^ 2 ≤ c i * ‖u i‖ ^ 2 :=
@@ -511,19 +532,17 @@ def pi (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
       linarith [hbound i (u i)]
     · rw [Finset.not_nonempty_iff_eq_empty] at hne
       refine ⟨1, 0, zero_lt_one, fun u => ?_⟩
-      simp [PiLp.norm_sq_eq_of_L2, hform, hne]
+      simp [PiLp.norm_sq_eq_of_L2, piForm_apply, hne]
 
 @[simp]
 theorem pi_inclusion_apply (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) (u : PiLp 2 E) (i : ι) :
     (CompactFormPair.pi P).inclusion u i = (P i).inclusion (u i) :=
-  (rfl)
+  piInclusion_apply P u i
 
 @[simp]
 theorem pi_form_apply (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) (u v : PiLp 2 E) :
-    (CompactFormPair.pi P).form u v = ∑ i : ι, (P i).form (u i) (v i) := by
-  change piForm P u v = _
-  simp only [piForm, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.bilinearComp_apply]
-  rfl
+    (CompactFormPair.pi P).form u v = ∑ i : ι, (P i).form (u i) (v i) :=
+  piForm_apply P u v
 
 @[simp]
 theorem pi_energy (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) (u : PiLp 2 E) :
@@ -546,9 +565,21 @@ private def formAsRealLinear (P : CompactFormPair 𝕜 E H) : E →L[ℝ] Strong
       RingHom.id_apply, ← RCLike.real_smul_eq_coe_smul (K := 𝕜)]
   cont := P.form.continuous
 
+omit [NormedSpace ℝ H] [IsScalarTower ℝ 𝕜 H] in
+private theorem formAsRealLinear_apply (P : CompactFormPair 𝕜 E H) (u : E) :
+    formAsRealLinear P u = P.form u :=
+  (rfl)
+
 private def restrictScalarsForm (P : CompactFormPair 𝕜 E H) : E →L⋆[ℝ] E →L[ℝ] ℝ :=
   (StrongDual.extendRCLikeL (𝕜 := 𝕜) (F := E)).symm.toContinuousLinearMap.comp
     (formAsRealLinear P)
+
+omit [NormedSpace ℝ H] [IsScalarTower ℝ 𝕜 H] in
+private theorem restrictScalarsForm_apply (P : CompactFormPair 𝕜 E H) (u v : E) :
+    restrictScalarsForm P u v = RCLike.re (P.form u v) := by
+  rw [restrictScalarsForm, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    StrongDual.extendRCLikeL_symm_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_restrictScalars', RCLike.reCLM_apply, formAsRealLinear_apply]
 
 /-- View a compact form pair over `𝕜` as a real compact form pair on the same underlying spaces
 with real symmetric bilinear form `(u, v) ↦ Re (P.form u v)`. -/
@@ -559,13 +590,11 @@ def restrictScalars (P : CompactFormPair 𝕜 E H) : CompactFormPair ℝ E H whe
   compact := P.compact
   form := restrictScalarsForm P
   hermitian u v := by
-    change RCLike.re (P.form u v) = star (RCLike.re (P.form v u))
-    simp only [star_trivial, P.re_form_symm u v]
+    rw [restrictScalarsForm_apply, restrictScalarsForm_apply, star_trivial, P.re_form_symm u v]
   exists_shifted_lower_bound := by
-    have hform (u : E) : restrictScalarsForm P u u = RCLike.re (P.form u u) := rfl
     obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
     exact ⟨c, ω, hc, fun u => by
-      simpa only [hform, RCLike.re_to_real,
+      simpa only [restrictScalarsForm_apply, RCLike.re_to_real,
         ContinuousLinearMap.coe_restrictScalars'] using hbound u⟩
 
 @[simp]
@@ -576,12 +605,12 @@ theorem restrictScalars_inclusion (P : CompactFormPair 𝕜 E H) :
 @[simp]
 theorem restrictScalars_form_apply (P : CompactFormPair 𝕜 E H) (u v : E) :
     P.restrictScalars.form u v = RCLike.re (P.form u v) :=
-  (rfl)
+  restrictScalarsForm_apply P u v
 
 @[simp]
 theorem restrictScalars_energy (P : CompactFormPair 𝕜 E H) (u : E) :
-    P.restrictScalars.energy u = P.energy u :=
-  (rfl)
+    P.restrictScalars.energy u = P.energy u := by
+  rw [energy_def, restrictScalars_form_apply, RCLike.re_to_real, energy_def]
 
 end RestrictScalars
 
