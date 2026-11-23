@@ -31,11 +31,11 @@ domains in `ℂ` and targets in a normed space to such maps:
   one point is constant (`TauCeti.eq_of_isPseudoholomorphic_of_eventually_eq`);
 * **isolated fibres**: if such a map is not constant, each of its fibres is a discrete subset of
   `S` (`TauCeti.setOf_ne_mem_codiscrete_of_isPseudoholomorphic`);
-* **isolated critical points**: if it is moreover `C²`, its critical points, where its manifold
-  derivative vanishes, form a discrete subset of `S`
+* **isolated critical points**: if such a map is not constant, its critical points, where its
+  manifold derivative vanishes, form a discrete subset of `S`
   (`TauCeti.setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic`).
 
-On a compact connected Riemann surface a nonconstant `C²` pseudoholomorphic map therefore has
+On a compact connected Riemann surface a nonconstant `C¹` pseudoholomorphic map therefore has
 finitely many critical points (`TauCeti.finite_setOf_mfderiv_eq_zero_of_isPseudoholomorphic`) and
 finite fibres (`TauCeti.finite_preimage_singleton_of_isPseudoholomorphic`), so the preimage
 `u⁻¹(u(Crit u))` of its critical values is finite
@@ -59,12 +59,12 @@ changes of the charts are invertible.
 * `TauCeti.setOf_ne_mem_codiscrete_of_isPseudoholomorphic`: the fibres of a nonconstant
   pseudoholomorphic map are discrete.
 * `TauCeti.setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic`: the critical points of a
-  nonconstant `C²` pseudoholomorphic map are isolated.
+  nonconstant `C¹` pseudoholomorphic map are isolated.
 * `TauCeti.finite_preimage_singleton_of_isPseudoholomorphic`,
   `TauCeti.finite_setOf_mfderiv_eq_zero_of_isPseudoholomorphic`,
   `TauCeti.finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic`: on a compact
-  connected Riemann surface the fibres of a nonconstant `C¹` pseudoholomorphic map are finite, and
-  so are the critical set and the preimage of the critical values of a nonconstant `C²` one.
+  connected Riemann surface the fibres, the critical set and the preimage of the critical values of
+  a nonconstant `C¹` pseudoholomorphic map are finite.
 
 ## References
 
@@ -260,15 +260,14 @@ theorem setOf_ne_mem_codiscrete_of_isPseudoholomorphic [PreconnectedSpace S]
     exact nhdsWithin_le_nhds (hu.continuous.continuousAt.eventually_ne hxy)
 
 /-- **The critical points of a pseudoholomorphic curve are isolated.** On a connected Riemann
-surface, the critical points of a nonconstant `C²` pseudoholomorphic map into an almost complex
+surface, the critical points of a nonconstant `C¹` pseudoholomorphic map into an almost complex
 manifold, the points where its manifold derivative vanishes, form a discrete subset. -/
 theorem setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic [PreconnectedSpace S]
-    (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
+    (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
     (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) : {x | mfderiv 𝓘(ℝ, ℂ) I u x ≠ 0} ∈ codiscrete S := by
   refine mem_codiscrete_iff_forall_mem_nhdsNE.2 fun x ↦ ?_
-  have hu₁ : ContMDiff 𝓘(ℝ, ℂ) I 1 u := hu.of_le one_le_two
-  obtain ⟨B, hBo, hBc, hxB, -, hBs, hcd, hJ, hCR⟩ := exists_chartBall 2 hu hJu x
-  obtain ⟨z, hz, hzne⟩ := exists_ne_of_isPseudoholomorphic hu₁ hJu hne hBo hxB hBs
+  obtain ⟨B, hBo, hBc, hxB, -, hBs, hcd, hJ, hCR⟩ := exists_chartBall 1 hu hJu x
+  obtain ⟨z, hz, hzne⟩ := exists_ne_of_isPseudoholomorphic hu hJu hne hBo hxB hBs
   have hdisc := setOf_fderiv_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_comp hBo hBc
     (fun z hz ↦ (hJ z hz).1) (fun z hz ↦ (hJ z hz).2) hcd hCR
     ⟨z, hz, _, hxB, by rwa [writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)]⟩
@@ -293,10 +292,10 @@ theorem finite_preimage_singleton_of_isPseudoholomorphic [CompactSpace S] [Preco
   ext x
   simp
 
-/-- **Finitely many critical points.** On a compact connected Riemann surface, a nonconstant `C²`
+/-- **Finitely many critical points.** On a compact connected Riemann surface, a nonconstant `C¹`
 pseudoholomorphic map into an almost complex manifold has finitely many critical points. -/
 theorem finite_setOf_mfderiv_eq_zero_of_isPseudoholomorphic [CompactSpace S] [PreconnectedSpace S]
-    (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
+    (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
     (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) : {x | mfderiv 𝓘(ℝ, ℂ) I u x = 0}.Finite := by
   have h := isCompact_univ.finite_sdiff_of_mem_codiscreteWithin
     (setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic hu hJu hne)
@@ -305,13 +304,13 @@ theorem finite_setOf_mfderiv_eq_zero_of_isPseudoholomorphic [CompactSpace S] [Pr
   simp
 
 /-- **The preimage of the critical values is finite.** On a compact connected Riemann surface, a
-nonconstant `C²` pseudoholomorphic map `u` into an almost complex manifold has finitely many
+nonconstant `C¹` pseudoholomorphic map `u` into an almost complex manifold has finitely many
 points in `u⁻¹(u(Crit u))`, the preimage of the images of its critical points. -/
 theorem finite_preimage_image_setOf_mfderiv_eq_zero_of_isPseudoholomorphic [CompactSpace S]
-    [PreconnectedSpace S] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
+    [PreconnectedSpace S] (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u)
     (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) :
     (u ⁻¹' (u '' {x | mfderiv 𝓘(ℝ, ℂ) I u x = 0})).Finite :=
   ((finite_setOf_mfderiv_eq_zero_of_isPseudoholomorphic hu hJu hne).image u).preimage' fun y _ ↦
-    finite_preimage_singleton_of_isPseudoholomorphic (hu.of_le one_le_two) hJu hne y
+    finite_preimage_singleton_of_isPseudoholomorphic hu hJu hne y
 
 end TauCeti
