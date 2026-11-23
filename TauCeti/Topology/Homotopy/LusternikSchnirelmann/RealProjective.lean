@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Cohomology
+public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Cup
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.CupLength
 
@@ -37,12 +38,17 @@ that it needs at least three categorical open sets.
   nontrivial commutative ring in which `2` is a unit is `1` for odd `N` and `0` for even `N`.
 * `TauCeti.lsCupLength_projectivization_real_of_isUnit_two`: the same for the projectivization
   `ℙ ℝ (Fin (N + 1) → ℝ)`.
+* `TauCeti.lsCupLength_realProjectiveSpace_le`: if `2 = 0` or `2` is a unit, the cup length of
+  `RPᴺ` is at most `N`.
 * `TauCeti.two_le_lsCupLength_realProjectiveSpace_zmod_two` and
   `TauCeti.two_le_lsCupLength_projectivization_real_zmod_two`: for `N ≥ 2` the cup length of `RPᴺ`
   over `ZMod 2` is at least `2`.
 * `TauCeti.lsCupLength_realProjectiveSpace_two_zmod_two` and
   `TauCeti.lsCupLength_projectivization_real_fin_three_zmod_two`: the cup length of the real
   projective plane over `ZMod 2` is `2`.
+* `TauCeti.three_le_lsCategoryCount_univ_realProjectiveSpace` and
+  `TauCeti.three_le_lsCategoryCount_univ_projectivization_real`: for `N ≥ 2`, the
+  Lusternik–Schnirelmann count of `RPᴺ` is at least `3`.
 
 ## References
 
@@ -91,6 +97,13 @@ theorem lsCupLength_projectivization_real_of_isUnit_two (h2 : IsUnit (2 : k)) :
   rw [← (homeomorphProjectivization N).toHomotopyEquiv.lsCupLength_eq,
     lsCupLength_realProjectiveSpace_of_isUnit_two h2]
 
+omit [Nontrivial k] in
+/-- **The cup length of real projective space is at most its dimension**, over a commutative ring
+`k` in which `2 = 0` or `2` is a unit, since the cohomology of `RPᴺ` vanishes above degree `N`. -/
+theorem lsCupLength_realProjectiveSpace_le (h2 : (2 : k) = 0 ∨ IsUnit (2 : k)) :
+    lsCupLength (RealProjectiveSpace N) k ≤ N :=
+  lsCupLength_le_of_subsingleton fun _ hp ↦ subsingleton_singularCohomology_of_lt h2 _ hp
+
 /-- **The mod-two cup length of real projective space is at least two**: for `N ≥ 2`, the cup
 length of `RPᴺ` over `ZMod 2` is at least `2`. -/
 theorem two_le_lsCupLength_realProjectiveSpace_zmod_two (hN : 2 ≤ N) :
@@ -126,5 +139,19 @@ theorem lsCupLength_projectivization_real_fin_three_zmod_two :
     lsCupLength (ℙ ℝ (Fin 3 → ℝ)) (ZMod 2) = 2 := by
   rw [← (homeomorphProjectivization 2).toHomotopyEquiv.lsCupLength_eq,
     lsCupLength_realProjectiveSpace_two_zmod_two]
+
+/-- **Real projective space needs three categorical open sets.** For `N ≥ 2`, the
+Lusternik–Schnirelmann count of `RPᴺ` is at least `3`, by the cup-length bound over `ZMod 2`. -/
+theorem three_le_lsCategoryCount_univ_realProjectiveSpace (hN : 2 ≤ N) :
+    3 ≤ lsCategoryCount (RealProjectiveSpace N) Set.univ :=
+  (add_le_add_left (two_le_lsCupLength_realProjectiveSpace_zmod_two hN) 1).trans
+    (lsCupLength_add_one_le_lsCategoryCount_univ (R := ZMod 2))
+
+/-- For `N ≥ 2`, the Lusternik–Schnirelmann count of the projectivization of `ℝᴺ⁺¹` is at least
+`3`. -/
+theorem three_le_lsCategoryCount_univ_projectivization_real (hN : 2 ≤ N) :
+    3 ≤ lsCategoryCount (ℙ ℝ (Fin (N + 1) → ℝ)) Set.univ := by
+  rw [← (homeomorphProjectivization N).toHomotopyEquiv.lsCategoryCount_univ_eq]
+  exact three_le_lsCategoryCount_univ_realProjectiveSpace hN
 
 end TauCeti

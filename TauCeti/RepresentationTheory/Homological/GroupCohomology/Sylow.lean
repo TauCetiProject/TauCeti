@@ -11,13 +11,14 @@ public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestric
 /-!
 # Torsion of group cohomology and restriction to Sylow subgroups
 
-For a finite group `G`, the composite `Cor ∘ Res : Hⁿ(G, A) ⟶ Hⁿ(S, A) ⟶ Hⁿ(G, A)` is
-multiplication by the index `[G : S]`. Taking `S` trivial shows that `Hⁿ(G, A)` is killed by the
-order of `G` for `n ≥ 1`; taking `S` a Sylow `p`-subgroup shows that restriction to `S` is
-injective on the `p`-primary part of `Hⁿ(G, A)`, because `[G : S]` is prime to `p`. Consequently
-`Hⁿ(G, A)` vanishes for `n ≥ 1` as soon as, for every prime `p` dividing the order of `G`,
-`Hⁿ(P, A)` vanishes for some Sylow `p`-subgroup `P`, which is the reduction step of Tate's
-cohomological triviality criterion.
+For any group `G` and finite-index subgroup `S`, the composite
+`Cor ∘ Res : Hⁿ(G, A) ⟶ Hⁿ(S, A) ⟶ Hⁿ(G, A)` is multiplication by the index `[G : S]`. Taking `S`
+to be a finite-index Sylow `p`-subgroup shows that restriction to `S` is injective on the
+`p`-primary part of `Hⁿ(G, A)` — and on all of `Hⁿ(G, A)` when `A` is an additive `p`-group —
+because `[G : S]` is prime to `p`. When `G` is finite, taking `S` trivial shows that `Hⁿ(G, A)` is
+killed by the order of `G` for `n ≥ 1`, and consequently `Hⁿ(G, A)` vanishes for `n ≥ 1` as soon
+as, for every prime `p` dividing the order of `G`, `Hⁿ(P, A)` vanishes for some Sylow `p`-subgroup
+`P`, which is the reduction step of Tate's cohomological triviality criterion.
 
 ## Main statements
 
@@ -47,7 +48,7 @@ universe u
 
 open CategoryTheory Limits Rep
 
-variable {k G : Type u} [CommRing k] [Group G] [Finite G]
+variable {k G : Type u} [CommRing k] [Group G]
 
 namespace TauCeti.groupCohomology
 
@@ -55,7 +56,6 @@ open _root_.groupCohomology
 
 variable (A : Rep k G) (n : ℕ)
 
-omit [Finite G] in
 /-- **Restriction to a finite-index Sylow `p`-subgroup is injective on the `p`-primary part**
 (Milne II 1.33): an element of `Hⁿ(G, A)` killed by a power of `p` whose restriction to a Sylow
 `p`-subgroup `P` of finite index vanishes is zero. -/
@@ -67,7 +67,6 @@ theorem eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero
   eq_zero_of_nsmul_eq_zero_of_map_eq_zero (P : Subgroup G)
     (Nat.Prime.coprime_pow_of_not_dvd Fact.out P.not_dvd_index) hx h
 
-omit [Finite G] in
 /-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(P, Res_P A)` to a Sylow `p`-subgroup `P` of finite index is
 injective in every degree `n` when `A` is `p`-primary torsion (`IsAddPGroup p A`). -/
 theorem map_sylow_injective_of_isAddPGroup
@@ -76,9 +75,11 @@ theorem map_sylow_injective_of_isAddPGroup
   map_subtype_injective_of_bijective_nsmul (P : Subgroup G)
     (hA.nsmulEquiv' P.not_dvd_index).bijective n
 
-/-- **Restriction to the Sylow subgroups is jointly injective** (Milne II 1.33): an element of
-`Hⁿ⁺¹(G, A)` whose restriction vanishes, for every prime `p` dividing the order of `G`, on some
-Sylow `p`-subgroup is zero. -/
+variable [Finite G]
+
+/-- **Restriction to the Sylow subgroups is jointly injective** (Milne II 1.33): for a finite
+group `G`, an element of `Hⁿ⁺¹(G, A)` whose restriction vanishes, for every prime `p` dividing the
+order of `G`, on some Sylow `p`-subgroup is zero. -/
 theorem eq_zero_of_map_sylow_eq_zero {x : groupCohomology A (n + 1)}
     (h : ∀ (p : ℕ) [Fact p.Prime], p ∣ Nat.card G → ∃ P : Sylow p G,
       map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) (n + 1) x = 0) :
@@ -104,9 +105,9 @@ theorem eq_zero_of_map_sylow_eq_zero {x : groupCohomology A (n + 1)}
       (eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero A (n + 1) p P (j := m)
         (by rw [← mul_smul, hy]) (by rw [map_nsmul, hP, smul_zero])) hres
 
-/-- **The Sylow reduction of Tate's triviality criterion** (Milne II 3.10, last paragraph): if,
-for every prime `p` dividing the order of `G`, `Hⁿ⁺¹(P, A) = 0` for some Sylow `p`-subgroup `P`,
-then `Hⁿ⁺¹(G, A) = 0`. -/
+/-- **The Sylow reduction of Tate's triviality criterion** (Milne II 3.10, last paragraph): for a
+finite group `G`, if for every prime `p` dividing the order of `G`, `Hⁿ⁺¹(P, A) = 0` for some
+Sylow `p`-subgroup `P`, then `Hⁿ⁺¹(G, A) = 0`. -/
 theorem isZero_of_isZero_sylow (h : ∀ (p : ℕ) [Fact p.Prime], p ∣ Nat.card G →
       ∃ P : Sylow p G, IsZero (groupCohomology (res (P : Subgroup G).subtype A) (n + 1))) :
     IsZero (groupCohomology A (n + 1)) := by

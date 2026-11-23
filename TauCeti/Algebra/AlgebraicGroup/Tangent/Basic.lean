@@ -561,12 +561,12 @@ noncomputable def derivationMulEquivTangentKer :
     Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B)) ≃*
       tangentKer R A B where
   toFun d := ⟨toConv
-      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).1,
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).val,
     toConv_mem_ker_iff.mpr
-      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).2⟩
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).property⟩
   invFun ψ := .ofAdd <|
     (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B)).symm
-      ⟨ψ.1.ofConv, toConv_mem_ker_iff.mp ψ.2⟩
+      ⟨ψ.val.ofConv, toConv_mem_ker_iff.mp ψ.property⟩
   left_inv d :=
     congrArg Multiplicative.ofAdd <|
       (derivationToTrivSqZeroExtEquivLift R A
@@ -574,17 +574,17 @@ noncomputable def derivationMulEquivTangentKer :
   right_inv ψ := by
     have h :=
       (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B)).apply_symm_apply
-        ⟨ψ.1.ofConv, toConv_mem_ker_iff.mp ψ.2⟩
+        ⟨ψ.val.ofConv, toConv_mem_ker_iff.mp ψ.property⟩
     rw [Subtype.ext_iff] at h
-    exact Subtype.ext ((congrArg toConv h).trans (toConv_ofConv ψ.1))
+    exact Subtype.ext ((congrArg toConv h).trans (toConv_ofConv ψ.val))
   map_mul' d₁ d₂ := by
     have h₁ := toConv_mem_ker_iff.mpr
-      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d₁.toAdd).2
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d₁.toAdd).property
     have h₂ := toConv_mem_ker_iff.mpr
-      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d₂.toAdd).2
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d₂.toAdd).property
     have hprod := toConv_mem_ker_iff.mpr
       (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B)
-        (d₁.toAdd + d₂.toAdd)).2
+        (d₁.toAdd + d₂.toAdd)).property
     refine Subtype.ext (ofConv_injective (AlgHom.ext fun a => TrivSqZeroExt.ext ?_ ?_))
     · exact (fst_apply_of_mem_tangentKer hprod a).trans
         (fst_apply_of_mem_tangentKer (mul_mem h₁ h₂) a).symm

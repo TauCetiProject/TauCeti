@@ -189,7 +189,7 @@ theorem proj_stateCovector (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
 vector `u`. -/
 @[simp]
 theorem stateCovector_snd_apply (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) (u : ℝ) :
-    (χ.stateCovector x).2 u = u * x.2 :=
+    (χ.stateCovector x).snd u = u * x.2 :=
   -- The fibre `TangentSpace 𝓘(ℝ) [s] →L[ℝ] ℝ` is `ℝ →L[ℝ] ℝ` by definition; the value is `u • v`.
   (rfl)
 
@@ -209,8 +209,8 @@ theorem exists_fst_eq_and_fst_billiardMap_eq {a b : AddCircle χ.period} (h : a 
   induction a using QuotientAddGroup.induction_on with | H s => ?_
   -- Lift `b` into the window `(s, s + L)`; it is not `s`, since `b ≠ [s]`.
   set t := AddCircle.equivIco χ.period s b
-  have ht : (t : ℝ) ∈ Ioo s (s + χ.period) := ⟨lt_of_le_of_ne t.2.1 fun hst ↦
-    h ((congrArg ((↑) : ℝ → AddCircle χ.period) hst).trans AddCircle.coe_equivIco), t.2.2⟩
+  have ht : (t : ℝ) ∈ Ioo s (s + χ.period) := ⟨lt_of_le_of_ne t.property.1 fun hst ↦
+    h ((congrArg ((↑) : ℝ → AddCircle χ.period) hst).trans AddCircle.coe_equivIco), t.property.2⟩
   refine ⟨((s : AddCircle χ.period), ⟨_, χ.inner_deriv_chordDir_mem_Ioo s t⟩), rfl, ?_⟩
   rw [billiardMap_coe, χ.nextParam_inner_deriv_chordDir ht, AddCircle.coe_equivIco]
 
@@ -223,21 +223,21 @@ theorem generatingCorrespondence_billiardMap (x : AddCircle χ.period × Ioo (-1
         (x.1, (χ.billiardMap x).1) = (χ.stateCovector x, χ.stateCovector (χ.billiardMap x)) := by
   obtain ⟨θ, v⟩ := x
   induction θ using QuotientAddGroup.induction_on with | H s => ?_
-  have hne := χ.apply_nextParam_ne (s := s) v.2
+  have hne := χ.apply_nextParam_ne (s := s) v.property
   rw [billiardMap_coe, CotangentBundle.generatingCorrespondence_apply]
   refine Prod.ext (CotangentBundle.ext (by simp) fun u ↦ ?_)
     (CotangentBundle.ext (by simp) fun u ↦ ?_)
   · -- The first covector is `∂_s S(s, t) = v`.
     rw [CotangentBundle.generatingSource_snd]
     simp only
-    rw [χ.mvfderiv_circleGeneratingFunction_left hne, χ.inner_deriv_chordDir_nextParam v.2]
+    rw [χ.mvfderiv_circleGeneratingFunction_left hne, χ.inner_deriv_chordDir_nextParam v.property]
     refine Eq.trans ?_ (χ.stateCovector_snd_apply _ u).symm
     -- The tangent line is `ℝ` by definition, and `(1.smulRight v) u = u • v`.
     rfl
   · -- The second covector is `-∂_t S(s, t) = w`.
     rw [CotangentBundle.generatingTarget_snd]
     simp only
-    rw [χ.mvfderiv_circleGeneratingFunction_right hne, χ.chordDir_nextParam v.2]
+    rw [χ.mvfderiv_circleGeneratingFunction_right hne, χ.chordDir_nextParam v.property]
     refine Eq.trans ?_ (χ.stateCovector_snd_apply _ u).symm
     simp only [nextTangential_def, real_inner_comm]
     -- The tangent line is `ℝ` by definition, and `(1.smulRight w) u = u • w`.
@@ -265,10 +265,10 @@ theorem exists_equiv_periodic_billiardMap (N : ℕ) [NeZero N] :
         {q : ZMod N → AddCircle χ.period // (∀ i, q i ≠ q (i + 1)) ∧
           mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ 𝓘(ℝ))
             (cyclicAction fun _ ↦ χ.circleGeneratingFunction) q = 0},
-      (∀ x i, (e x : ZMod N → AddCircle χ.period) i = (x.1 i).1) ∧
+      (∀ x i, (e x : ZMod N → AddCircle χ.period) i = (x.val i).1) ∧
         ∀ q i, χ.stateCovector ((e.symm q : ZMod N → AddCircle χ.period × Ioo (-1 : ℝ) 1) i) =
           CotangentBundle.generatingSource 𝓘(ℝ) χ.circleGeneratingFunction
-            (q.1 i, q.1 (i + 1)) := by
+            (q.val i, q.val (i + 1)) := by
   classical
   -- The billiard map, transported to the covectors of collision states.
   let φ (z : CotangentBundle 𝓘(ℝ) (AddCircle χ.period)) :
@@ -294,12 +294,15 @@ theorem exists_equiv_periodic_billiardMap (N : ℕ) [NeZero N] :
         ∀ i, χ.billiardMap (x i) = x (i + 1)} ≃
       {z : ZMod N → CotangentBundle 𝓘(ℝ) (AddCircle χ.period) //
         ∀ i, z i ∈ range χ.stateCovector ∧ φ (z i) = z (i + 1)} :=
-    { toFun := fun x ↦ ⟨fun i ↦ χ.stateCovector (x.1 i), fun i ↦ ⟨⟨_, rfl⟩, by rw [hφ, x.2 i]⟩⟩
-      invFun := fun z ↦ ⟨fun i ↦ (z.2 i).1.choose, fun i ↦ χ.stateCovector_injective <| by
-        rw [← hφ, (z.2 i).1.choose_spec, (z.2 i).2, (z.2 (i + 1)).1.choose_spec]⟩
+    { toFun := fun x ↦ ⟨fun i ↦ χ.stateCovector (x.val i), fun i ↦ ⟨⟨_, rfl⟩, by rw [hφ,
+        x.property i]⟩⟩
+      invFun := fun z ↦ ⟨fun i ↦ (z.property i).1.choose, fun i ↦ χ.stateCovector_injective <| by
+        rw [← hφ, (z.property i).1.choose_spec, (z.property i).2, (z.property
+            (i + 1)).1.choose_spec]⟩
       left_inv := fun x ↦ Subtype.ext <| funext fun i ↦ χ.stateCovector_injective <|
-        Exists.choose_spec (p := fun y ↦ χ.stateCovector y = χ.stateCovector (x.1 i)) ⟨x.1 i, rfl⟩
-      right_inv := fun z ↦ Subtype.ext <| funext fun i ↦ (z.2 i).1.choose_spec }
+        Exists.choose_spec (p := fun y ↦ χ.stateCovector y = χ.stateCovector (x.val i)) ⟨x.val i,
+            rfl⟩
+      right_inv := fun z ↦ Subtype.ext <| funext fun i ↦ (z.property i).1.choose_spec }
   refine ⟨e₁.trans e₀, fun x i ↦ he₀ _ i, fun q i ↦ ?_⟩
   rw [← he₀' q i]
   exact congrFun (congrArg Subtype.val (e₁.apply_symm_apply (e₀.symm q))) i
@@ -343,11 +346,11 @@ theorem exists_isPeriodicPt_billiardMap {N : ℕ} (hN : 2 ≤ N) :
   set x := e.symm ⟨fun k ↦ (s k : AddCircle χ.period), fun k h ↦
     (hs k).1 (χ.apply_eq_apply_iff.2 h).symm, hcrit⟩
   -- Along the periodic trajectory, the `n`-th iterate of the billiard map moves `x_0` to `x_n`.
-  have hiter (n : ℕ) : χ.billiardMap^[n] (x.1 0) = x.1 n := by
+  have hiter (n : ℕ) : χ.billiardMap^[n] (x.val 0) = x.val n := by
     induction n with
     | zero => simp
-    | succ n ih => rw [iterate_succ_apply', ih, x.2, Nat.cast_succ]
-  exact ⟨x.1 0, (hiter N).trans (by rw [ZMod.natCast_self])⟩
+    | succ n ih => rw [iterate_succ_apply', ih, x.property, Nat.cast_succ]
+  exact ⟨x.val 0, (hiter N).trans (by rw [ZMod.natCast_self])⟩
 
 end StrictConvexBilliardTable
 

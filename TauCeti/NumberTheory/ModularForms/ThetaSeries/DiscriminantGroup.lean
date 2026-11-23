@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.DiscriminantCharacter
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
+import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 
 /-!
@@ -42,8 +43,10 @@ finite-dimensional `E`), sublattice monotonicity yields
 (`ZLattice.thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero`). Whenever `L^∨ ≤ L` the
 discriminant group is trivial, so the sum over `A_L` reduces to `θ_0 = Θ_L`, and the identity holds
 for every `τ` if and only if `L` is integral
-(`ZLattice.forall_thetaSeries_dual_eq_sum_iff_isIntegral`). Concretely, for `L = ½ ℤ ⊆ ℝ` the dual
-`L^∨ = 2 ℤ` is a proper sublattice of `L`, the discriminant group is trivial, and
+(`ZLattice.forall_thetaSeries_dual_eq_sum_iff_isIntegral`). Without assuming `L` discrete, the
+identity fails at every point of the imaginary axis whenever `L^∨ < L`
+(`ZLattice.thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt`). Concretely, for `L = ½ ℤ ⊆ ℝ`
+the dual `L^∨ = 2 ℤ` is a proper sublattice of `L`, the discriminant group is trivial, and
 `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)` (`ZLattice.thetaSeries_span_two_I_ne_thetaSeries_span_one_half_I`,
 `ZLattice.thetaSeries_dual_span_one_half_I_ne_sum`).
 
@@ -67,6 +70,9 @@ for every `τ` if and only if `L` is integral
 * `ZLattice.thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero`: in finite-dimensional `E`, for
   discrete `L` with finite `A_L`, on the imaginary axis `Θ_{L^∨}(τ) = ∑_{γ ∈ A_L} θ_γ(τ)` holds if
   and only if `L` is integral.
+* `ZLattice.thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt`: in finite-dimensional `E`, when
+  `L^∨ < L` (with `L` not necessarily discrete), `Θ_{L^∨}(τ) ≠ ∑_{γ ∈ A_L} θ_γ(τ)` on the imaginary
+  axis.
 * `ZLattice.finsum_thetaCosetClass_of_dual_le`, `ZLattice.sum_thetaCosetClass_of_dual_le`: when
   `L^∨ ≤ L`, the sum of `θ_γ` over `A_L` reduces to `Θ_L`.
 * `ZLattice.forall_thetaSeries_dual_eq_sum_iff_isIntegral`: when `L^∨ ≤ L`, the dual decomposition
@@ -133,7 +139,7 @@ theorem thetaCosetClass_intCast_vadd_of_level_dvd (hL : IsEven L) (γ : Discrimi
     {N : ℤ} (hN : (level L : ℤ) ∣ N) (τ : ℍ) :
     thetaCosetClass L γ ((N : ℝ) +ᵥ τ) = thetaCosetClass L γ τ := by
   induction γ using Submodule.Quotient.induction_on with
-  | H x => exact hL.thetaCoset_intCast_vadd_of_level_dvd x.2 hN τ
+  | H x => exact hL.thetaCoset_intCast_vadd_of_level_dvd x.property hN τ
 
 /-- For an even lattice `L` and `γ : DiscriminantGroup L`, `θ_γ` has period `level L`. -/
 @[simp]
@@ -147,7 +153,7 @@ theorem thetaCosetClass_slash_T_zpow_of_level_dvd (hL : IsEven L) (γ : Discrimi
     (k : ℤ) {N : ℤ} (hN : (level L : ℤ) ∣ N) :
     thetaCosetClass L γ ∣[k] (ModularGroup.T ^ N) = thetaCosetClass L γ := by
   induction γ using Submodule.Quotient.induction_on with
-  | H x => exact hL.thetaCoset_slash_T_zpow_of_level_dvd x.2 k hN
+  | H x => exact hL.thetaCoset_slash_T_zpow_of_level_dvd x.property k hN
 
 /-- For an even lattice `L` and `γ : DiscriminantGroup L`, `θ_γ` is invariant under
 `T ^ (level L : ℤ)` in every weight. -/
@@ -202,9 +208,9 @@ theorem thetaSeries_sup_dual_eq_sum [DiscreteTopology L] [Fintype (DiscriminantG
     rw [LinearEquiv.coe_toEquiv, discriminantGroupEquivQuotientSup_mk, thetaCosetClass_mk]
     refine congrFun (thetaCoset_eq_of_sub_mem L ?_) τ
     have hq : Submodule.Quotient.mk
-        (Quotient.out (Submodule.Quotient.mk (⟨x, mem_sup_right x.2⟩ : ↥(L ⊔ dual L)) :
+        (Quotient.out (Submodule.Quotient.mk (⟨x, mem_sup_right x.property⟩ : ↥(L ⊔ dual L)) :
           ↥(L ⊔ dual L) ⧸ L.submoduleOf (L ⊔ dual L))) =
-        Submodule.Quotient.mk (⟨x, mem_sup_right x.2⟩ : ↥(L ⊔ dual L)) :=
+        Submodule.Quotient.mk (⟨x, mem_sup_right x.property⟩ : ↥(L ⊔ dual L)) :=
       Submodule.Quotient.mk_out _
     simpa [submoduleOf] using (Submodule.Quotient.eq _).mp hq
 
@@ -249,6 +255,26 @@ theorem thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero [DiscreteTopology L
     thetaSeries_eq_iff_eq_of_le_of_re_eq_zero (L := L ⊔ dual L) le_sup_right hτ, eq_comm,
     sup_eq_right, ← isIntegral_iff_le_dual]
 
+/-- When `L^∨ < L` in a finite-dimensional real inner product space `E` (with `L` not necessarily
+discrete), the dual decomposition `Θ_{L^∨}(τ) = ∑_{γ ∈ A_L} θ_γ(τ)` fails at every point `τ` of
+the imaginary axis: the sum over the trivial discriminant group is `Θ_L`, and
+`Θ_{L^∨}(τ) ≠ Θ_L(τ)`, by sublattice monotonicity when `L` is discrete and because
+`Θ_L = 0 ≠ Θ_{L^∨}(τ)` otherwise. -/
+theorem thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt (h : dual L < L)
+    [Fintype (DiscriminantGroup L)] {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries (dual L) τ ≠ ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ := by
+  by_cases hL : DiscreteTopology L
+  · exact fun heq ↦ h.not_ge (isIntegral_iff_le_dual.mp
+      ((thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero hτ).mp heq))
+  · rw [sum_thetaCosetClass_of_dual_le h.le τ]
+    have : DiscreteTopology (dual L) :=
+      IsIntegral.discreteTopology (isIntegral_iff_le_dual.mpr (dual_anti h.le))
+    have h0 : thetaCoset L 0 = 0 :=
+      thetaCoset_eq_zero_of_forall_not_summable L 0 fun y hy hs ↦
+        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L 0 (by positivity) hs)
+    rw [← thetaCoset_zero L, h0, Pi.zero_apply]
+    exact thetaSeries_ne_zero_of_re_eq_zero (dual L) hτ
+
 end DualDecomposition
 
 /-! ### Even full lattices -/
@@ -266,8 +292,8 @@ theorem thetaCosetClass_intCast_vadd (hL : IsEven L) (γ : DiscriminantGroup L) 
       hL.discriminantQuadraticChar γ ^ n * thetaCosetClass L γ τ := by
   induction γ using Submodule.Quotient.induction_on with
   | H x =>
-    rw [thetaCosetClass_mk, hL.thetaCoset_intCast_vadd x.2, hL.discriminantQuadraticChar_mk,
-      ← Complex.exp_int_mul]
+    rw [thetaCosetClass_mk, hL.thetaCoset_intCast_vadd x.property, hL.discriminantQuadraticChar_mk,
+      ← Complex.exp_intCast_mul]
     congr 2
     ring
 
@@ -285,8 +311,8 @@ theorem thetaCosetClass_slash_T_zpow (hL : IsEven L) (γ : DiscriminantGroup L) 
       (hL.discriminantQuadraticChar γ ^ n) • thetaCosetClass L γ := by
   induction γ using Submodule.Quotient.induction_on with
   | H x =>
-    rw [thetaCosetClass_mk, hL.thetaCoset_slash_T_zpow x.2, hL.discriminantQuadraticChar_mk,
-      ← Complex.exp_int_mul]
+    rw [thetaCosetClass_mk, hL.thetaCoset_slash_T_zpow x.property, hL.discriminantQuadraticChar_mk,
+      ← Complex.exp_intCast_mul]
     congr 2
     ring
 

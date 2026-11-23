@@ -115,8 +115,9 @@ theorem HasWeakLineDerivOn.nonpos_of_gelfandDual (hP : Continuous P) (hPb : ∀ 
     have hc := intervalIntegral.integral_const_mul (μ := volume) (a := a) (b := s)
       (2 * max β 0) y
     linarith
-  have hyt := le_mul_exp_of_le_add_mul_integral hy
-    (mul_nonneg zero_le_two (le_max_right β 0)) hbound t ht
+  have hyt := le_mul_exp_of_le_add_mul_integral hy.integrableOn_Icc
+    (mul_nonneg zero_le_two (le_max_right β 0)) (ae_restrict_of_forall_mem measurableSet_Icc hbound)
+    ht (hbound t ht)
   rw [zero_mul] at hyt
   have hpos : Lp.posPart (w t) = 0 := by
     have : ‖Lp.posPart (w t)‖ ^ 2 = 0 := le_antisymm hyt (by positivity)

@@ -98,7 +98,7 @@ theorem explicitCor2_eq_explicitCoeff2_trace :
         (factorizationTransversal_mk w) hU, explicitCor2Transversal_mk]
     congr 1
     refine Subtype.ext (funext fun ⟨γ, η⟩ => ?_)
-    rw [coe_cocyclesCor2, ← trace_coindCochain2 w hw hwmul (mem_Z2_iff.1 c.2).1 γ η]
+    rw [coe_cocyclesCor2, ← trace_coindCochain2 w hw hwmul (mem_Z2_iff.1 c.property).1 γ η]
     -- `rw [cocyclesMap2_apply]` fails here: `explicitCoeff2` states its equivariance proof through
     -- the `MulActionHom` coercion of the trace, so the motive is not type-correct at reducible
     -- transparency. Unifying against the lemma instead leaves only the coercions to unfold.

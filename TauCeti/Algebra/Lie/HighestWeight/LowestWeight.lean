@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.Reflection
-public import TauCeti.LinearAlgebra.RootSystem.Opposition
+public import TauCeti.LinearAlgebra.RootSystem.Opposition.Basic
 
 /-!
 # The lowest weight of an irreducible highest weight module

@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Homology.ShortComplex.Limit
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.Additivity
+public import TauCeti.Topology.Category.TopCat.Monoidal
+import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 
 /-!
@@ -21,7 +23,10 @@ cochain complex of the disjoint union with the product of the cochain complexes 
 Products of modules over a ring are always exact, so taking cohomology preserves this product:
 the singular cohomology of a disjoint union is the product of the singular cohomologies of its
 summands. Both universal properties use the maps induced by the canonical inclusions into the
-disjoint union.
+disjoint union. In particular, when `X` is a discrete `Small.{v}` space, the product decomposition
+`TopCat.sigmaConstIsoProd` implies that classes in `Hⁿ(X × Y; R, M)` are determined by their
+restrictions along the fibre inclusions `TopCat.prodFiberInclusion X Y x`
+(`TopCat.singularCohomology_prod_ext_of_discreteTopology`).
 
 ## Main results
 
@@ -136,3 +141,34 @@ theorem singularCohomology_prod_ext_of_discreteTopology {X Y : TopCat.{w}} [Disc
 end Discrete
 
 end TauCeti
+
+namespace TopCat
+
+open MonoidalCategory CartesianMonoidalCategory
+
+/-- **Fibre-restriction extensionality for a product with a discrete space**: when `X` is a
+discrete `Small.{v}` space, classes of `Hⁿ(X × Y; R, M)` are determined by their restrictions along
+the fibre inclusions `TopCat.prodFiberInclusion X Y x`. -/
+theorem singularCohomology_prod_ext_of_discreteTopology {C : Type u} [Category.{v} C]
+    [HasCoproducts.{w} C] [Abelian C] {R : C} {k : Type*} [Ring k] [Linear k C] {M : C}
+    (X Y : TopCat.{w}) [DiscreteTopology X] [Small.{v} X] {n : ℕ}
+    {φ ψ : (X ⊗ Y).singularCohomology R k M n}
+    (h : ∀ x : X, TopCat.singularCohomologyMap (prodFiberInclusion X Y x) n φ =
+      TopCat.singularCohomologyMap (prodFiberInclusion X Y x) n ψ) : φ = ψ := by
+  have : PreservesLimitsOfShape (Discrete (X : Type w)) (forget (ModuleCat.{v} k)) :=
+    preservesLimitsOfShape_of_equiv (Discrete.equivalence (equivShrink.{v} (X : Type w))).symm _
+  let e := sigmaConstIsoProd X Y
+  let L := TauCeti.isLimitFanSingularCohomology (fun _ : X ↦ Y) C R k M n
+  have heq : TopCat.singularCohomologyMap e.hom n φ = TopCat.singularCohomologyMap e.hom n ψ :=
+    Concrete.isLimit_ext _ L _ _ fun ⟨x⟩ ↦ by
+      dsimp only [Fan.mk_pt, Fan.mk_π_app]
+      rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+        ← TopCat.singularCohomologyMap_comp, sigmaι_comp_sigmaConstIsoProd_hom]
+      exact h x
+  have hinv (z : (X ⊗ Y).singularCohomology R k M n) :
+      TopCat.singularCohomologyMap e.inv n (TopCat.singularCohomologyMap e.hom n z) = z := by
+    rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, Iso.inv_hom_id,
+      TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
+  rw [← hinv φ, ← hinv ψ, heq]
+
+end TopCat

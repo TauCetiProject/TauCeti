@@ -180,7 +180,7 @@ theorem mem_intrinsicInterior_of_sub_smul_mem_intrinsicInterior_sweep
         B.vadd_mem_of_mem_direction (B.direction.neg_mem (B.direction.smul_mem t hnB))
           (hAB z.property)⟩
   have hf : Continuous f :=
-    (continuous_subtype_val.sub continuous_const).subtype_mk _
+    (continuous_subtypeVal.sub continuous_const).subtype_mk _
   let xA : A := ⟨x, subset_affineSpan ℝ P hx⟩
   have hfy : f xA ∈ interior (Subtype.val ⁻¹' sweep ℝ P n : Set B) := by
     obtain ⟨y, hy, he⟩ := hy
@@ -249,8 +249,8 @@ noncomputable def sweepHomeomorph (hn : n ∉ vectorSpan ℝ P) :
     rw [Equiv.toFun_as_coe]
     apply continuous_induced_rng.mpr
     simp only [Function.comp_def, sweepEquiv_apply]
-    exact (continuous_subtype_val.comp continuous_fst).sub
-      ((continuous_subtype_val.comp continuous_snd).smul continuous_const)
+    exact (continuous_subtypeVal.comp continuous_fst).sub
+      ((continuous_subtypeVal.comp continuous_snd).smul continuous_const)
   continuous_invFun := by
     rw [Equiv.invFun_as_coe]
     rcases P.eq_empty_or_nonempty with rfl | hP
@@ -261,12 +261,12 @@ noncomputable def sweepHomeomorph (hn : n ∉ vectorSpan ℝ P) :
     · obtain ⟨f, c, hfn, hfP⟩ := exists_sweep_height hP hn
       let f' := LinearMap.toContinuousLinearMap f
       have hf : Continuous (fun y : sweep ℝ P n => f (y : V)) :=
-        f'.continuous.comp continuous_subtype_val
+        f'.continuous.comp continuous_subtypeVal
       have hproj : Continuous (fun y : sweep ℝ P n =>
           (y : V) + (c - f y) • n) := by
         simpa only [Function.comp_def, sweepProjection_apply, f',
           LinearMap.coe_toContinuousLinearMap'] using
-          (sweepProjection f' c n).continuous.comp continuous_subtype_val
+          (sweepProjection f' c n).continuous.comp continuous_subtypeVal
       rw [funext (sweepEquiv_symm_apply hn f c hfn hfP)]
       exact (Continuous.subtype_mk hproj _).prodMk
         (Continuous.subtype_mk (continuous_const.sub hf) _)
@@ -285,7 +285,7 @@ theorem sweepHomeomorph_symm_apply (hn : n ∉ vectorSpan ℝ P) (y : sweep ℝ 
 @[simp]
 theorem sweepHomeomorph_apply (hn : n ∉ vectorSpan ℝ P)
     (z : P × {t : ℝ // 0 ≤ t}) :
-    (sweepHomeomorph hn z : V) = z.1.1 - z.2.1 • n := by
+    (sweepHomeomorph hn z : V) = z.1.val - z.2.val • n := by
   exact sweepEquiv_apply P n hn z
 
 end Set

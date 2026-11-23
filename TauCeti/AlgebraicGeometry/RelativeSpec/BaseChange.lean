@@ -129,8 +129,8 @@ private def baseChangeHomEquiv {T : Scheme.{u}} (q : T ⟶ Y) :
 private lemma baseChangeHomEquiv_comp {T T' : Scheme.{u}} {q : T ⟶ Y} (g : T' ⟶ T)
     (t : {t : T ⟶ ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpec //
       t ≫ ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpecToBase = q}) :
-    (baseChangeHomEquiv A f (g ≫ q) ⟨g ≫ t.1, by rw [Category.assoc, t.2]⟩).1 =
-      g ≫ (baseChangeHomEquiv A f q t).1 := by
+    (baseChangeHomEquiv A f (g ≫ q) ⟨g ≫ t.val, by rw [Category.assoc, t.property]⟩).val =
+      g ≫ (baseChangeHomEquiv A f q t).val := by
   simp only [baseChangeHomEquiv, Equiv.trans_apply, CommMon.relativeSpecHomEquiv_apply,
     CommMon.relativeSpecHomEquiv_symm_apply_coe, Iso.homToEquiv_apply]
   rw [← CommMon.relativeSpecLift_comp_pushforwardStructureAlgebraMap g (Category.assoc _ _ _).symm]
@@ -147,10 +147,10 @@ private lemma baseChangeHomEquiv_relativeSpecMap {A' : QuasicoherentAlgebra X} (
     {T : Scheme.{u}} {q : T ⟶ Y}
     (t : {t : T ⟶ ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpec //
       t ≫ ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpecToBase = q}) :
-    (baseChangeHomEquiv A' f q ⟨t.1 ≫
+    (baseChangeHomEquiv A' f q ⟨t.val ≫
         CommMon.relativeSpecMap ((QuasicoherentAlgebra.pullback f).map b).hom, by
-          rw [Category.assoc, CommMon.relativeSpecMap_relativeSpecToBase, t.2]⟩).1 =
-      (baseChangeHomEquiv A f q t).1 ≫ CommMon.relativeSpecMap b.hom := by
+          rw [Category.assoc, CommMon.relativeSpecMap_relativeSpecToBase, t.property]⟩).val =
+      (baseChangeHomEquiv A f q t).val ≫ CommMon.relativeSpecMap b.hom := by
   simp only [baseChangeHomEquiv, Equiv.trans_apply, Iso.homToEquiv_apply,
     CommMon.relativeSpecHomEquiv_symm_apply_coe]
   rw [← CommMon.relativeSpecLift_comp, CommMon.relativeSpecHomEquiv_comp_relativeSpecMap,
@@ -163,7 +163,7 @@ identification of `f^* A` with the functions on `Spec_Y (f^* A)`
 def relativeSpecPullbackFst :
     ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpec ⟶ A.obj.relativeSpec :=
   (baseChangeHomEquiv A f ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpecToBase
-    ⟨𝟙 _, Category.id_comp _⟩).1
+    ⟨𝟙 _, Category.id_comp _⟩).val
 
 /-- The projection `Spec_Y (f^* A) ⟶ Spec_X A` is the lift of the algebra map adjoint to the
 identification of `f^* A` with the functions on its relative spectrum, followed by the
@@ -185,12 +185,12 @@ lemma relativeSpecPullbackFst_relativeSpecToBase :
     relativeSpecPullbackFst A f ≫ A.obj.relativeSpecToBase =
       ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpecToBase ≫ f :=
   (baseChangeHomEquiv A f ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpecToBase
-    ⟨𝟙 _, Category.id_comp _⟩).2
+    ⟨𝟙 _, Category.id_comp _⟩).property
 
 private lemma baseChangeHomEquiv_apply {T : Scheme.{u}} {q : T ⟶ Y}
     (t : {t : T ⟶ ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpec //
       t ≫ ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpecToBase = q}) :
-    (baseChangeHomEquiv A f q t).1 = t.1 ≫ relativeSpecPullbackFst A f := by
+    (baseChangeHomEquiv A f q t).val = t.val ≫ relativeSpecPullbackFst A f := by
   obtain ⟨t, rfl⟩ := t
   have h : (⟨t ≫ 𝟙 _, by rw [Category.comp_id]⟩ :
       {s : T ⟶ ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpec //
@@ -208,9 +208,9 @@ theorem isPullback_relativeSpecPullbackFst :
       ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpecToBase
       A.obj.relativeSpecToBase f :=
   ⟨⟨relativeSpecPullbackFst_relativeSpecToBase A f⟩, ⟨PullbackCone.IsLimit.mk _
-    (fun s ↦ ((baseChangeHomEquiv A f s.snd).symm ⟨s.fst, s.condition⟩).1)
+    (fun s ↦ ((baseChangeHomEquiv A f s.snd).symm ⟨s.fst, s.condition⟩).val)
     (fun s ↦ by rw [← baseChangeHomEquiv_apply, Equiv.apply_symm_apply])
-    (fun s ↦ ((baseChangeHomEquiv A f s.snd).symm ⟨s.fst, s.condition⟩).2)
+    (fun s ↦ ((baseChangeHomEquiv A f s.snd).symm ⟨s.fst, s.condition⟩).property)
     (fun s m hfst hsnd ↦ congrArg Subtype.val
       (((baseChangeHomEquiv A f s.snd).symm_apply_apply ⟨m, hsnd⟩).symm.trans (congrArg _
         (Subtype.ext ((baseChangeHomEquiv_apply A f _).trans hfst)))))⟩⟩
@@ -334,8 +334,8 @@ identification `f_* q_* 𝒪_T ≅ (q ≫ f)_* 𝒪_T`. -/
 lemma relativeSpecHomEquiv_comp_relativeSpecPullbackFst {T : Scheme.{u}} {q : T ⟶ Y}
     (t : {t : T ⟶ ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpec //
       t ≫ ((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpecToBase = q}) :
-    A.obj.relativeSpecHomEquiv (q ≫ f) ⟨t.1 ≫ relativeSpecPullbackFst A f, by
-        rw [Category.assoc, relativeSpecPullbackFst_relativeSpecToBase, reassoc_of% t.2]⟩ =
+    A.obj.relativeSpecHomEquiv (q ≫ f) ⟨t.val ≫ relativeSpecPullbackFst A f, by
+        rw [Category.assoc, relativeSpecPullbackFst_relativeSpecToBase, reassoc_of% t.property]⟩ =
       QuasicoherentAlgebra.pullbackHomEquiv f A _
           (((QuasicoherentAlgebra.pullback f).obj A).obj.relativeSpecHomEquiv q t) ≫
         (q.pushforwardStructureAlgebraCompIso f).hom :=
@@ -402,6 +402,21 @@ theorem relativeSpecPullbackFst_comp :
   -- On sections over `U`, every composition isomorphism of pushforwards is the identity of
   -- `Γ(Spec_Z ((g ≫ f)^* A), (p ≫ g ≫ f)⁻¹ U)`.
   rfl
+
+/-- Compatibility of `relativeSpecPullbackFst` with composition along a commuting triangle
+`g ≫ f = h`: the relative-Spec map of `pullbackComp g f ≪≫ eqToIso _` followed by the two
+base-change projections is the projection for `h`. -/
+@[reassoc]
+theorem relativeSpecMap_pullbackComp_eqToIso_fst {h : Z ⟶ X} (hgf : g ≫ f = h) :
+    CommMon.relativeSpecMap
+        ((QuasicoherentAlgebra.pullbackComp g f ≪≫
+          eqToIso (congrArg QuasicoherentAlgebra.pullback hgf)).hom.app A).hom ≫
+      relativeSpecPullbackFst ((QuasicoherentAlgebra.pullback f).obj A) g ≫
+        relativeSpecPullbackFst A f =
+      relativeSpecPullbackFst A h := by
+  subst hgf
+  simp only [eqToIso_refl, Iso.trans_refl]
+  exact (relativeSpecPullbackFst_comp A f g).symm
 
 /-- **Base change of relative spectra along the identity.** The projection
 `Spec_X (𝟙^* A) ⟶ Spec_X A` is the identification induced by the identity isomorphism

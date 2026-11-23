@@ -371,7 +371,7 @@ private theorem sdiff_eq_empty_or_mem_link_of_mem_closedStar (hρ : ρ ∈ close
     ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ := by
   by_cases h : ρ \ σ = ∅
   · exact Or.inl h
-  · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr h,
+  · exact Or.inr (mem_link_nonempty.mpr ⟨ne_empty_iff_nonempty.mp h,
       sdiff_disjoint, by simpa only [sdiff_union_self_eq_union] using
         (mem_closedStar_nonempty.mp hρ).2⟩)
 

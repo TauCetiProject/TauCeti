@@ -448,7 +448,7 @@ theorem isSyzygy_succ_iff_exists_mono {X : C} {n : ℕ} :
     have := hL.mono_f
     exact ⟨L.X₂, e.hom ≫ L.f, inferInstance, hI, (P.IsSyzygy n).prop_of_iso
       (hL.gIsCokernel.coconePointUniqueUpToIso (cokernelIsCokernel L.f) ≪≫
-        (cokernelEpiComp e.hom L.f).symm) h⟩
+        (cokernelEpiComp L.f e.hom).symm) h⟩
   · rintro ⟨I, ι, hι, hI, h⟩
     exact ⟨ShortComplex.mk ι (cokernel.π ι) (cokernel.condition ι),
       ⟨ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel ι)⟩, ⟨Iso.refl _⟩, hI, h⟩
@@ -475,7 +475,7 @@ theorem isSyzygy_iff_exists_isCoresolution {X : C} {n : ℕ} :
     · rintro ⟨S, hS, ⟨e⟩, hP⟩
       have := hS.mono_map'_one_two (by omega)
       refine ⟨S.obj' 2, e.inv ≫ S.map' 1 2, inferInstance, hP 0 (by omega), ih.2
-        ⟨hS.tail, hS.isCoresolution_tail, ⟨(cokernelEpiComp e.inv (S.map' 1 2)).symm⟩,
+        ⟨hS.tail, hS.isCoresolution_tail, ⟨(cokernelEpiComp (S.map' 1 2) e.inv).symm⟩,
           fun i hi ↦ hP (i + 1) (by omega)⟩⟩
 
 /-- `X` is a first syzygy relative to `P` exactly when it embeds into an object satisfying `P`. -/
@@ -544,7 +544,7 @@ theorem IsSyzygy.of_shortExact (hP : ∀ Y, P Y → Injective Y)
     refine isSyzygy_succ_iff_exists_mono.2
       ⟨Q ⊞ I, b ≫ s.isoBinaryBiproduct.hom, inferInstance, hPb _ _ hQ hI, ?_⟩
     exact (P.IsSyzygy n).prop_of_iso (hb.gIsCokernel.coconePointUniqueUpToIso
-      (cokernelIsCokernel b) ≪≫ (cokernelCompIsIso b _).symm) (ih hv hβ' hω')
+      (cokernelIsCokernel b) ≪≫ (cokernelCompIsIso _ b).symm) (ih hv hβ' hω')
 
 /-- **Syzygies of retracts.** Let `P` be a property of injective objects closed under binary
 biproducts. Then a retract of an `n`-th syzygy relative to `P` is an `n`-th syzygy. -/
@@ -558,7 +558,7 @@ theorem IsSyzygy.of_retract (hP : ∀ Y, P Y → Injective Y)
     obtain ⟨I, ι, hι, hI, hY'⟩ := isSyzygy_succ_iff_exists_mono.1 hY
     refine isSyzygy_succ_iff_exists_mono.2 ⟨I, r.i ≫ ι, inferInstance, hI, ?_⟩
     exact IsSyzygy.of_shortExact hP hPb
-      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact r.i ι)
+      (TauCeti.cokernelCompSequence_shortExact r.i ι)
       (ih (binaryBiconeOfIsSplitMonoOfCokernel (cokernelIsCokernel r.i)).retract_right hY.of_succ)
       hY'
 

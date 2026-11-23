@@ -154,7 +154,7 @@ theorem of_isLocalization_of_le_powers {x : R} (hx : x ∈ nonZeroDivisors R)
     exact Polynomial.dvd_pow_natDegree_of_eval₂_eq_zero hinj hp x a w hpw ha
   refine isIntegrallyClosedIn_iff.mpr ⟨hinj, fun {z} hz ↦ ?_⟩
   obtain ⟨⟨a, m⟩, ha⟩ := IsLocalization.surj M z
-  obtain ⟨n, hn⟩ := hM m.2
+  obtain ⟨n, hn⟩ := hM m.property
   rw [← hn] at ha
   clear hn
   -- induction on the exponent of the denominator `x ^ n` of `z`
@@ -211,7 +211,7 @@ theorem mem_of_pow_mem_of_isIntegrallyClosedIn {S : Subring A} [IsIntegrallyClos
     {n : ℕ} (hn : 0 < n) (ha : a ^ n ∈ S) : a ∈ S := by
   have hpow : IsIntegral S (a ^ n) := isIntegral_algebraMap (R := S) (x := (⟨a ^ n, ha⟩ : S))
   obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow hn hpow
-  exact hy ▸ y.2
+  exact hy ▸ y.property
 
 /-- **A subring integrally closed in a perfect ring is perfect**: the `p`-th root in `A` of an
 element of `S` has a power in `S`, so it lies in `S`. -/
@@ -224,7 +224,7 @@ instance perfectRing_of_isIntegrallyClosedIn (S : Subring A) [IsIntegrallyClosed
   have hy : y ^ p = x := hy
   rcases Nat.eq_zero_or_pos p with rfl | hp
   · exact ⟨1, Subtype.ext (by simpa using hy)⟩
-  · exact ⟨⟨y, mem_of_pow_mem_of_isIntegrallyClosedIn hp (hy ▸ x.2)⟩, Subtype.ext hy⟩
+  · exact ⟨⟨y, mem_of_pow_mem_of_isIntegrallyClosedIn hp (hy ▸ x.property)⟩, Subtype.ext hy⟩
 
 /-- A surjective ring homomorphism carries an integrally closed subring to an integrally closed
 subring if its kernel is contained in that subring. -/
@@ -271,10 +271,10 @@ theorem Function.LeftInverse.isIntegrallyClosed_of_nonZeroDivisors_le {R A : Typ
     (hz.map_of_comp_eq i f (IsLocalization.map_comp hnzd).symm)
   obtain ⟨⟨a, b⟩, hzb⟩ := IsLocalization.surj (nonZeroDivisors R) z
   dsimp only at hzb
-  have hyb : y * i b.1 = i a := IsFractionRing.injective A (FractionRing A) <| by
-    rw [map_mul, hy, ← hf b.1, ← map_mul, hzb, hf a]
+  have hyb : y * i b.val = i a := IsFractionRing.injective A (FractionRing A) <| by
+    rw [map_mul, hy, ← hf b.val, ← map_mul, hzb, hf a]
   refine ⟨π y, (IsLocalization.map_units (FractionRing R) b).mul_right_cancel ?_⟩
-  rw [hzb, ← h a, ← hyb, map_mul, h b.1, map_mul]
+  rw [hzb, ← h a, ← hyb, map_mul, h b.val, map_mul]
 
 /-- **A ring retract of an integrally closed ring without zero divisors is integrally closed.** If
 `i : R →+* A` admits a left inverse `π : A →+* R` and `A` is integrally closed without zero

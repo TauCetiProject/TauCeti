@@ -26,6 +26,10 @@ The construction uses Mathlib's `SSet.isColimitChainComplexXCofan` and
 These coordinates allow comparison of coefficient rings without changing cochain values. Over a
 commutative ring they are `k`-linear (`TauCeti.cochainValuesLinearEquiv`).
 
+For chains with coefficients in an object `R` of a `k`-linear category with coproducts, a cochain
+with values in `M` is likewise the family of its restrictions to the summands of the simplices,
+a family of morphisms `R ⟶ M` (`TauCeti.cochainComponentsLinearEquiv`).
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 3.1.
@@ -167,6 +171,61 @@ lemma cochainValuesEquiv_linearYonedaObj_d (n : ℕ)
   rw [ChainComplex.linearYonedaObj_d_apply]
   exact cochainValuesEquiv_d k M K n φ σ
 
+/-- The values of the coboundary of a `0`-cochain in `Hom(C(K; k), M)` on a `1`-simplex `σ`: the
+value at its endpoint `δ₀ σ` minus the value at its starting point `δ₁ σ`. -/
+lemma cochainValuesEquiv_linearYonedaObj_d_zero_one
+    (φ : ((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).X 0) (σ : K _⦋1⦌) :
+    cochainValuesEquiv k M K 1
+        (((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).d 0 1 φ) σ =
+      cochainValuesEquiv k M K 0 φ (K.δ 0 σ) - cochainValuesEquiv k M K 0 φ (K.δ 1 σ) := by
+  refine (cochainValuesEquiv_linearYonedaObj_d k M K 0 φ σ).trans ?_
+  simp [Fin.sum_univ_two, sub_eq_add_neg]
+
+/-- The values of the coboundary of a `1`-cochain in `Hom(C(K; k), M)` on a `2`-simplex `σ`: the
+alternating sum of its values on the edges `δ₀ σ`, `δ₁ σ` and `δ₂ σ`. -/
+lemma cochainValuesEquiv_linearYonedaObj_d_one_two
+    (φ : ((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).X 1) (σ : K _⦋2⦌) :
+    cochainValuesEquiv k M K 2
+        (((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).d 1 2 φ) σ =
+      cochainValuesEquiv k M K 1 φ (K.δ 0 σ) - cochainValuesEquiv k M K 1 φ (K.δ 1 σ) +
+        cochainValuesEquiv k M K 1 φ (K.δ 2 σ) := by
+  refine (cochainValuesEquiv_linearYonedaObj_d k M K 1 φ σ).trans ?_
+  simp [Fin.sum_univ_three, sub_eq_add_neg]
+
 end CommRing
+
+section Linear
+
+variable {C : Type*} [Category C] [HasCoproducts.{u} C] [Preadditive C] (k : Type*) [Ring k]
+  [Linear k C] (K : SSet.{u}) (R M : C)
+
+/-- **Cochains with coefficients in a linear category are families of morphisms, one per
+simplex.** The simplicial `n`-chains of `K` with coefficients in `R` are a coproduct of copies of
+`R`, one for each `n`-simplex, so a morphism from them to `M` is the family of its restrictions to
+the summands. The identification is `k`-linear. -/
+def cochainComponentsLinearEquiv (n : ℕ) :
+    ((K.chainComplex R).X n ⟶ M) ≃ₗ[k] (K _⦋n⦌ → (R ⟶ M)) where
+  toFun φ σ := K.ιChainComplex σ ≫ φ
+  invFun v := Cofan.IsColimit.desc (K.isColimitChainComplexXCofan R n) v
+  left_inv _ := SSet.chainComplex_hom_ext fun σ ↦
+    Cofan.IsColimit.fac (K.isColimitChainComplexXCofan R n) _ σ
+  right_inv v := funext fun σ ↦ Cofan.IsColimit.fac (K.isColimitChainComplexXCofan R n) v σ
+  map_add' _ _ := funext fun _ ↦ Preadditive.comp_add _ _ _ _ _ _
+  map_smul' _ _ := funext fun _ ↦ Linear.comp_smul _ _ _ _ _ _
+
+/-- The component of a cochain at a simplex is its restriction to the summand of that simplex. -/
+@[simp]
+lemma cochainComponentsLinearEquiv_apply (n : ℕ) (φ : (K.chainComplex R).X n ⟶ M)
+    (σ : K _⦋n⦌) : cochainComponentsLinearEquiv k K R M n φ σ = K.ιChainComplex σ ≫ φ :=
+  (rfl)
+
+/-- The cochain with prescribed components restricts to the prescribed component on the summand of
+each simplex. -/
+@[reassoc (attr := simp)]
+lemma ιChainComplex_cochainComponentsLinearEquiv_symm_apply (n : ℕ) (v : K _⦋n⦌ → (R ⟶ M))
+    (σ : K _⦋n⦌) : K.ιChainComplex σ ≫ (cochainComponentsLinearEquiv k K R M n).symm v = v σ :=
+  Cofan.IsColimit.fac (K.isColimitChainComplexXCofan R n) v σ
+
+end Linear
 
 end TauCeti

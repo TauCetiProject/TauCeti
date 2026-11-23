@@ -14,7 +14,7 @@ import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # Taylor series of digamma and `logGamma` at `1`

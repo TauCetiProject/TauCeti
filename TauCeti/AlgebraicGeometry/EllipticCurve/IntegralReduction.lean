@@ -23,7 +23,7 @@ Thus counting points on the equation over `ZMod p` gives the order of the reduce
 and that order annihilates every reduced rational point. These comparisons let finite point
 counts supply torsion certificates for rational curves.
 
-Over the completion `F_u` at a height-one prime `u` with finite residue field, the ring of
+Over the completion `F_u` at a height-one prime `u`, the ring of
 integers `𝒪[F_u]` of the valuative relation is `O_u`. Integrality and minimality of an equation
 over `F_u` therefore agree between `O_u` and `𝒪[F_u]`, an elliptic equation over `O_u` has good
 reduction at `𝒪[F_u]` (`WeierstrassCurve.hasGoodReduction_baseChange_adicCompletion`), and the
@@ -124,8 +124,6 @@ theorem isIntegral_adicCompletion_iff (V : WeierstrassCurve (u.adicCompletion F)
 instance isIntegral_adicCompletion (V : WeierstrassCurve (u.adicCompletion F))
     [IsIntegral (u.adicCompletionIntegers F) V] : V.IsIntegral 𝒪[u.adicCompletion F] :=
   (isIntegral_adicCompletion_iff V).mpr inferInstance
-
-variable [Finite (A ⧸ u.asIdeal)]
 
 /-- Minimality of a Weierstrass curve over `F_u` at the valuative ring of integers `𝒪[F_u]` agrees
 with minimality at `O_u`. -/

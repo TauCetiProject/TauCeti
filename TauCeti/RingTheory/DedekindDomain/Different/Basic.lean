@@ -23,7 +23,10 @@ The multiplicity lemmas express divisibility by powers of an ideal and Dedekind'
 For finite separable fraction-field extensions, the different is nonzero. When it is principal,
 membership in the trace dual is tested by multiplication by a generator, and division by that
 generator identifies `S` with its trace dual. This equivalence feeds the length computation of
-the complementary-module quotient.
+the complementary-module quotient. Finally, `FractionalIdeal.dualEquiv` packages
+`FractionalIdeal.dual` as an involutive permutation of the invertible fractional ideals, and
+`FractionalIdeal.trace_mem_range_of_mem_dual_one` records that an element of the trace dual of one
+has its trace in the base ring.
 -/
 
 public section
@@ -387,5 +390,84 @@ theorem map_differentIdeal_of_equiv :
       (by rwa [eB.apply_symm_apply]), eB.apply_symm_apply y⟩⟩
 
 end RingEquiv
+
+namespace FractionalIdeal
+
+variable (R K : Type*) {S L : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+  [Field K] [Algebra R K] [IsFractionRing R K] [Field L] [Algebra K L] [FiniteDimensional K L]
+  [Algebra.IsSeparable K L] [CommRing S] [IsDedekindDomain S] [Algebra R L] [Algebra R S]
+  [Algebra S L] [IsScalarTower R K L] [IsScalarTower R S L] [IsFractionRing S L]
+  [IsIntegralClosure S R L]
+
+variable {R K} in
+/-- An element of the trace dual of one (the inverse different) has its trace in the base ring. -/
+theorem trace_mem_range_of_mem_dual_one {x : L} (hx : x ∈ dual R K (1 : FractionalIdeal S⁰ L)) :
+    Algebra.trace K L x ∈ (algebraMap R K).range := by
+  simpa using (mem_dual one_ne_zero).1 hx 1 (one_mem_one _)
+
+section DualEquiv
+
+/-- In a finite separable extension of fraction fields of Dedekind domains, the trace dual
+`FractionalIdeal.dual` restricts to an involutive permutation of `(FractionalIdeal S⁰ L)ˣ`. -/
+noncomputable def dualEquiv : Equiv.Perm (FractionalIdeal S⁰ L)ˣ where
+  toFun I := Units.mk0 (dual R K (I : FractionalIdeal S⁰ L)) (dual_ne_zero R K I.ne_zero)
+  invFun I := Units.mk0 (dual R K (I : FractionalIdeal S⁰ L)) (dual_ne_zero R K I.ne_zero)
+  left_inv I := Units.ext (dual_dual R K (I : FractionalIdeal S⁰ L))
+  right_inv I := Units.ext (dual_dual R K (I : FractionalIdeal S⁰ L))
+
+/-- Coercion of `FractionalIdeal.dualEquiv` to `FractionalIdeal S⁰ L` is `FractionalIdeal.dual`. -/
+@[simp]
+theorem coe_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+    ((dualEquiv R K I : (FractionalIdeal S⁰ L)ˣ) : FractionalIdeal S⁰ L) =
+      dual R K (I : FractionalIdeal S⁰ L) :=
+  (rfl)
+
+/-- `FractionalIdeal.dualEquiv` is its own inverse. -/
+@[simp]
+theorem dualEquiv_symm :
+    (dualEquiv R K : Equiv.Perm (FractionalIdeal S⁰ L)ˣ).symm = dualEquiv R K :=
+  (rfl)
+
+/-- Applying `FractionalIdeal.dualEquiv` twice is the identity. -/
+@[simp]
+theorem dualEquiv_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K (dualEquiv R K I) = I :=
+  (dualEquiv R K).symm_apply_apply I
+
+/-- The trace dual of an invertible fractional ideal `I` is the inverse different `dualEquiv R K 1`
+times `I⁻¹`. -/
+theorem dualEquiv_eq_mul_inv (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K I = dualEquiv R K 1 * I⁻¹ :=
+  Units.ext <| by
+    rw [Units.val_mul, coe_dualEquiv, coe_dualEquiv, Units.val_one, Units.val_inv_eq_inv_val,
+      dual_eq_mul_inv]
+
+/-- The trace dual of `I⁻¹` is the inverse different `dualEquiv R K 1` times `I`. -/
+theorem dualEquiv_inv (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K I⁻¹ = dualEquiv R K 1 * I := by
+  rw [dualEquiv_eq_mul_inv, inv_inv]
+
+/-- Multiplying `dualEquiv R K I` on the right by `I` yields the inverse different
+`dualEquiv R K 1`. -/
+theorem dualEquiv_mul_self (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K I * I = dualEquiv R K 1 := by
+  rw [dualEquiv_eq_mul_inv, mul_assoc, inv_mul_cancel, mul_one]
+
+/-- Multiplying `I` on the right by `dualEquiv R K I` yields the inverse different
+`dualEquiv R K 1`. -/
+theorem self_mul_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+    I * dualEquiv R K I = dualEquiv R K 1 := by
+  rw [mul_comm, dualEquiv_mul_self]
+
+/-- The quotient of the trace duals of `J` and `I` is `I / J`. -/
+@[simp]
+theorem dualEquiv_div_dualEquiv (J I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K J / dualEquiv R K I = I / J := by
+  rw [dualEquiv_eq_mul_inv R K J, dualEquiv_eq_mul_inv R K I, mul_div_mul_comm, div_self', one_mul,
+    inv_div_inv]
+
+end DualEquiv
+
+end FractionalIdeal
 
 end

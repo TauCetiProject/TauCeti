@@ -52,7 +52,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
   [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
@@ -67,7 +67,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 local notation "A" => fun j l Z y ↦
   hs.coeff l y (cov (s j) y (Z y))
 
-omit [FiniteDimensional 𝕜 F] in
 include hn hu in
 /-- The curvature matrix in a C² moving frame is `dA + A∧A`, evaluated on arbitrary C¹
 vector fields. The exterior derivative includes the noncoordinate term `-A([X,Y])`. -/
@@ -108,7 +107,7 @@ end Bundle
 section Tangent
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 3 M]
   {ι : Type*} [Fintype ι] {s : ι → Π x : M, TangentSpace I x} {u : Set M}
@@ -118,7 +117,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 
 local notation "Γ" => fun i j l y ↦ hs.coeff l y (cov (s j) y (s i y))
 
-omit [FiniteDimensional 𝕜 E] in
 include hu in
 /-- The curvature coefficients in a C² tangent frame, with the Lie bracket expanded in the
 same frame. Its structure coefficients supply the correction absent from a coordinate frame. -/

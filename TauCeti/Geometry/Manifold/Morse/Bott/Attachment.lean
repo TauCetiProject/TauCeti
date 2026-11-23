@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Morse.Deformation
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.Morse.MilnorFunction
 import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.ContinuousMap.ApplyProdMk
 import TauCeti.Topology.Homotopy.DeformationRetract
@@ -102,7 +103,7 @@ private def retractionScale (s t : M → ℝ) (ε : ℝ) (τ : unitInterval) (x 
   ⟨(1 - τ) * min 1 √((s x - ε) / t x) + τ, by
     have h₀ : 0 ≤ min 1 √((s x - ε) / t x) := le_min zero_le_one (Real.sqrt_nonneg _)
     have h₁ : min 1 √((s x - ε) / t x) ≤ 1 := min_le_left _ _
-    constructor <;> nlinarith [τ.2.1, τ.2.2]⟩
+    constructor <;> nlinarith [τ.property.1, τ.property.2]⟩
 
 private theorem coe_retractionScale (τ : unitInterval) (x : M) :
     (retractionScale s t ε τ x : ℝ) = (1 - τ) * min 1 √((s x - ε) / t x) + τ :=
@@ -188,14 +189,14 @@ private theorem tubeRetraction_zero_mem (hf : ∀ x ∈ W, f x = c - s x + t x)
   rw [tubeRetraction_of_mem _ hx]
   set y := φ (retractionScale s t ε 0 x, ⟨x, hx⟩)
   rcases lt_or_ge (s x) ε with hs | hs
-  · refine .inr ⟨y.2, ?_, ?_⟩
+  · refine .inr ⟨y.property, ?_, ?_⟩
     · rw [hφt, retractionScale_zero_eq_zero (ht₀ x hx) hs]
       simp
     · rw [hφs]
       exact hs.le
   · refine .inl ?_
     simp only [mem_ofPred_eq]
-    rw [hf _ y.2, hφs, hφt]
+    rw [hf _ y.property, hφs, hφt]
     linarith [retractionScale_zero_sq_mul_le (ht₀ x hx) hs]
 
 include hφ₀ in
@@ -208,7 +209,7 @@ private theorem continuous_tubeRetraction (hW : IsOpen W) (hs : ContinuousOn s W
     (hfix : ∀ x ∈ X, x ∉ C → ∀ τ, tubeRetraction φ s t ε τ x = x) :
     Continuous fun p : unitInterval × X ↦ tubeRetraction φ s t ε p.1 p.2 := by
   have hval : Continuous fun p : unitInterval × X ↦ (p.2 : M) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
   by_cases hp₀ : (p₀.2 : M) ∈ W
   swap
@@ -216,33 +217,35 @@ private theorem continuous_tubeRetraction (hW : IsOpen W) (hs : ContinuousOn s W
     have hpC : (p₀.2 : M) ∉ C := fun h ↦ hp₀ (hCW h)
     refine hval.continuousAt.congr (eventually_of_mem
       ((hC.isOpen_compl.preimage hval).mem_nhds hpC) fun q hq ↦ ?_)
-    exact (hfix q.2 q.2.2 hq q.1).symm
+    exact (hfix q.2 q.2.property hq q.1).symm
   -- On the tube, read the retraction on the open set of pairs whose point lies in `W`.
   set U := {p : unitInterval × X | (p.2 : M) ∈ W}
   have hU : IsOpen U := hW.preimage hval
   refine ContinuousWithinAt.continuousAt ?_ (hU.mem_nhds hp₀)
   rw [continuousWithinAt_iff_continuousAt_domRestrict _ (show p₀ ∈ U from hp₀)]
-  set w : U → W := fun q ↦ ⟨q.1.2, q.2⟩
-  have hw : Continuous w := (hval.comp continuous_subtype_val).subtype_mk _
+  set w : U → W := fun q ↦ ⟨q.val.2, q.property⟩
+  have hw : Continuous w := (hval.comp continuous_subtypeVal).subtype_mk _
   have heq : U.domRestrict (fun p : unitInterval × X ↦ tubeRetraction φ s t ε p.1 p.2) =
-      fun q ↦ (φ (retractionScale s t ε q.1.1 q.1.2, w q) : M) :=
-    funext fun q ↦ tubeRetraction_of_mem (x := (q.1.2 : M)) q.1.1 q.2
+      fun q ↦ (φ (retractionScale s t ε q.val.1 q.val.2, w q) : M) :=
+    funext fun q ↦ tubeRetraction_of_mem (x := (q.val.2 : M)) q.val.1 q.property
   rw [heq]
   -- Where `t ≠ 0`, the scaling factor is continuous; where `t = 0`, `φ` fixes the point at all
   -- times, so the tube lemma over the compact `[0, 1]` applies whatever the scaling factor.
   have hst (g : M → ℝ) (hg : ContinuousOn g W) (q : U) :
-      ContinuousAt (fun p : U ↦ g p.1.2) q :=
-    ContinuousAt.comp (f := fun q : U ↦ ((q.1.2 : X) : M)) (hg.continuousAt (hW.mem_nhds q.2))
-      (hval.comp continuous_subtype_val).continuousAt
+      ContinuousAt (fun p : U ↦ g p.val.2) q :=
+    ContinuousAt.comp (f := fun q : U ↦ ((q.val.2 : X) : M)) (hg.continuousAt
+        (hW.mem_nhds q.property))
+      (hval.comp continuous_subtypeVal).continuousAt
   have hκ (q : U) (hq : w q ∉ {y : W | t y = 0}) :
-      ContinuousAt (fun p : U ↦ retractionScale s t ε p.1.1 p.1.2) q := by
-    refine ContinuousAt.codRestrict (f := fun q : U ↦ (1 - (q.1.1 : ℝ)) *
-      min 1 √((s q.1.2 - ε) / t q.1.2) + q.1.1) (fun q ↦ (retractionScale s t ε _ _).2) ?_
-    have hτ : Continuous fun q : U ↦ (q.1.1 : ℝ) :=
-      continuous_subtype_val.comp (continuous_fst.comp continuous_subtype_val)
+      ContinuousAt (fun p : U ↦ retractionScale s t ε p.val.1 p.val.2) q := by
+    refine ContinuousAt.codRestrict (f := fun q : U ↦ (1 - (q.val.1 : ℝ)) *
+      min 1 √((s q.val.2 - ε) / t q.val.2) + q.val.1) (fun q ↦ (retractionScale s t ε _ _).property)
+          ?_
+    have hτ : Continuous fun q : U ↦ (q.val.1 : ℝ) :=
+      continuous_subtypeVal.comp (continuous_fst.comp continuous_subtypeVal)
     exact ((continuous_const.sub hτ).continuousAt.mul (continuousAt_const.min
       (((hst s hs q).sub continuousAt_const).div (hst t ht q) hq).sqrt)).add hτ.continuousAt
-  exact (continuous_subtype_val.comp (φ.continuous_apply_prodMk_of_fixed
+  exact (continuous_subtypeVal.comp (φ.continuous_apply_prodMk_of_fixed
     (A := {y : W | t y = 0}) (fun τ y hy ↦ hφ₀ τ y hy) hw hκ)).continuousAt
 
 include hφs hφt hφ₁ hφ₀ in
@@ -281,11 +284,11 @@ private theorem exists_inter_sublevel_union_negativeDiscBundle_deformation (hW :
       exact .inl (hXC x hxX fun h ↦ hx (hCW h))
   have hcont : Continuous fun p : unitInterval × X ↦ tubeRetraction φ s t ε p.1 p.2 :=
     continuous_tubeRetraction hφ₀ hW hs ht hC hCW fun x hxX hxC ↦ hfixS (.inl (hXC x hxX hxC))
-  refine ⟨⟨fun x ↦ ⟨tubeRetraction φ s t ε 0 x, hGX x.2 0, hG0S x.2⟩,
+  refine ⟨⟨fun x ↦ ⟨tubeRetraction φ s t ε 0 x, hGX x.property 0, hG0S x.property⟩,
       (hcont.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩,
-    fun x ↦ Subtype.ext (hfixS x.2.2 0), ⟨?_⟩⟩
+    fun x ↦ Subtype.ext (hfixS x.property.2 0), ⟨?_⟩⟩
   exact
-    { toFun p := ⟨tubeRetraction φ s t ε p.1 p.2, hGX p.2.2 p.1⟩
+    { toFun p := ⟨tubeRetraction φ s t ε p.1 p.2, hGX p.2.property p.1⟩
       continuous_toFun := hcont.subtype_mk _
       map_zero_left x := rfl
       map_one_left x := Subtype.ext (tubeRetraction_one hφ₁ x)
@@ -301,20 +304,16 @@ variable {M : Type*} {f s t : M → ℝ} {c ε : ℝ} {W : Set M} {μ : ℝ → 
 
 variable (f s t W μ) in
 /-- Milnor's function `f - μ(s + 2t)`, lowered on the tube `W` and equal to `f` off it. -/
-private def tubeMilnorFunction (x : M) : ℝ :=
-  f x - W.indicator (fun y ↦ μ (s y + 2 * t y)) x
+private def tubeMilnorFunction : M → ℝ :=
+  lowerOn (fun _ : Unit ↦ W) (fun _ y ↦ μ (s y + 2 * t y)) f
 
 private theorem tubeMilnorFunction_of_mem (hx : x ∈ W) :
-    tubeMilnorFunction f s t W μ x = f x - μ (s x + 2 * t x) := by
-  rw [tubeMilnorFunction, indicator_of_mem hx]
-
-private theorem tubeMilnorFunction_of_notMem (hx : x ∉ W) :
-    tubeMilnorFunction f s t W μ x = f x := by
-  rw [tubeMilnorFunction, indicator_of_notMem hx, sub_zero]
+    tubeMilnorFunction f s t W μ x = f x - μ (s x + 2 * t x) :=
+  lowerOn_of_mem (i := ()) Subsingleton.pairwise hx
 
 private theorem tubeMilnorFunction_le (hμ : ∀ r, 0 ≤ μ r) (x : M) :
     tubeMilnorFunction f s t W μ x ≤ f x :=
-  sub_le_self _ (indicator_nonneg (fun _ _ ↦ hμ _) _)
+  lowerOn_le (fun _ _ _ ↦ hμ _) x
 
 variable (hs₀ : ∀ x ∈ W, 0 ≤ s x) (ht₀ : ∀ x ∈ W, 0 ≤ t x) (hf : ∀ x ∈ W, f x = c - s x + t x)
   (hμ₀ : ∀ r, 2 * ε ≤ r → μ r = 0)
@@ -323,58 +322,35 @@ include hs₀ hf hμ₀ in
 /-- Milnor's function has the same sublevel `{F ≤ c + ε}` as `f`: where it is lowered,
 `s + 2t < 2ε`, so `f = c - s + t < c + ε`. -/
 private theorem setOf_tubeMilnorFunction_le (hμ : ∀ r, 0 ≤ μ r) :
-    {x | tubeMilnorFunction f s t W μ x ≤ c + ε} = {x | f x ≤ c + ε} := by
-  ext x
-  refine ⟨fun hx ↦ ?_, fun hx ↦ (tubeMilnorFunction_le hμ x).trans hx⟩
-  simp only [mem_ofPred_eq] at hx ⊢
-  by_cases hxW : x ∈ W
-  · rw [tubeMilnorFunction_of_mem hxW] at hx
-    rcases le_or_gt (2 * ε) (s x + 2 * t x) with h | h
-    · rwa [hμ₀ _ h, sub_zero] at hx
-    · rw [hf x hxW]
-      linarith [hs₀ x hxW]
-  · rwa [tubeMilnorFunction_of_notMem hxW] at hx
+    {x | tubeMilnorFunction f s t W μ x ≤ c + ε} = {x | f x ≤ c + ε} :=
+  setOf_lowerOn_le Subsingleton.pairwise (fun _ _ _ ↦ hμ _) fun _ x hxW hμx ↦ by
+    have h : s x + 2 * t x < 2 * ε := not_le.1 fun h ↦ hμx (hμ₀ _ h)
+    rw [hf x hxW]
+    linarith [hs₀ x hxW]
 
 include hμ₀ in
-/-- Away from the part `{s + 2t ≤ 2ε}` of the tube, Milnor's function is `f`. -/
-private theorem tubeMilnorFunction_eq_of_notMem
-    (hx : x ∉ {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) : tubeMilnorFunction f s t W μ x = f x := by
-  by_cases hxW : x ∈ W
-  · rw [tubeMilnorFunction_of_mem hxW, hμ₀ _ (not_le.1 fun h ↦ hx ⟨hxW, h⟩).le, sub_zero]
-  · exact tubeMilnorFunction_of_notMem hxW
+/-- The lowering term of Milnor's function vanishes on the tube away from its part
+`{s + 2t ≤ 2ε}`. -/
+private theorem eqOn_zero_of_notMem_tube :
+    EqOn (fun y ↦ μ (s y + 2 * t y)) 0 (W \ {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) :=
+  fun _ hy ↦ hμ₀ _ (not_le.1 fun h ↦ hy.2 ⟨hy.1, h⟩).le
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
   (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε})
 
 include hμ₀ hK in
-/-- Away from the part `{s + 2t ≤ 2ε}` of the tube, Milnor's function agrees with `f` near each
-point. -/
-private theorem tubeMilnorFunction_eventuallyEq
-    (hx : x ∉ {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) : tubeMilnorFunction f s t W μ =ᶠ[𝓝 x] f :=
-  eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hx) fun _ hy ↦
-    tubeMilnorFunction_eq_of_notMem hμ₀ hy
-
-include hμ₀ hK in
 /-- **Milnor's function is smooth.** The lowering term is supported in the compact part
 `{s + 2t ≤ 2ε}` of the open tube, where it is smooth. -/
 private theorem contMDiff_tubeMilnorFunction (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hW : IsOpen W)
     (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W) (ht : ContMDiffOn I 𝓘(ℝ) ∞ t W) (hμs : ContDiff ℝ ∞ μ) :
-    ContMDiff I 𝓘(ℝ) ∞ (tubeMilnorFunction f s t W μ) := by
-  refine ContMDiff.sub hfs (contMDiff_of_tsupport fun y hy ↦ ?_)
-  have hsub : tsupport (W.indicator fun y ↦ μ (s y + 2 * t y)) ⊆
-      {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε} :=
-    closure_minimal (fun y hy ↦ by_contra fun h ↦ hy (by
-      rw [indicator_apply_eq_zero]
-      exact fun hyW ↦ hμ₀ _ (not_le.1 fun h' ↦ h ⟨hyW, h'⟩).le)) hK.isClosed
-  have hyW : y ∈ W := (hsub hy).1
-  have hterm : ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ μ (s y + 2 * t y)) y :=
+    ContMDiff I 𝓘(ℝ) ∞ (tubeMilnorFunction f s t W μ) :=
+  contMDiff_lowerOn (K := fun _ ↦ {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε})
+    (fun _ ↦ eqOn_zero_of_notMem_tube hμ₀) (fun _ ↦ hK.isClosed) (fun _ ↦ hW)
+    (fun _ _ hx ↦ hx.1) hfs fun _ ↦
     -- `μ (a + 2 b)` is a smooth function of `(a, b) = (s y, t y)`.
     have hg : ContDiff ℝ ∞ fun p : ℝ × ℝ ↦ μ (p.1 + 2 * p.2) := hμs.comp (by fun_prop)
-    hg.contMDiff.contMDiffAt.comp y ((hs.contMDiffAt (hW.mem_nhds hyW)).prodMk_space
-      (ht.contMDiffAt (hW.mem_nhds hyW)))
-  exact hterm.congr_of_eventuallyEq
-    (eventually_of_mem (hW.mem_nhds hyW) fun z hz ↦ indicator_of_mem hz _)
+    hg.contMDiff.comp_contMDiffOn (hs.prodMk_space ht)
 
 omit [T2Space M] in
 include hf in
@@ -495,20 +471,21 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation (hfs : ContMDiff I 
           linarith [hs₀ x hxW]
         · linarith [hμ_nonneg (s x)]
       · exact mfderiv_tubeMilnorFunction_ne_zero hf hW hs ht hμ hμa hdir hxW htx
-    · have hFx : F x = f x := tubeMilnorFunction_of_notMem hxW
-      rw [(tubeMilnorFunction_eventuallyEq hμ₀ hK fun h ↦ hxW h.1).mfderiv_eq]
-      exact fun h0 ↦ hxW (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, hFx ▸ h₁, hFx ▸ h₂⟩)
+    · exact mfderiv_lowerOn_ne_zero_of_forall_notMem (K := fun _ ↦ K)
+        (fun _ ↦ eqOn_zero_of_notMem_tube hμ₀) (fun _ ↦ hK.isClosed) (fun _ _ hx ↦ hx.1)
+        (hcrit.trans (subset_iUnion (fun _ : Unit ↦ W) ())) (fun _ ↦ hxW) ⟨h₁, h₂⟩
   -- Off `K`, a point of `{F ≤ c - ε}` lies in `{f ≤ c - ε}`.
   have hXK (x : M) (hx : x ∈ {x | F x ≤ c - ε}) (hxK : x ∉ K) : f x ≤ c - ε :=
-    (tubeMilnorFunction_eq_of_notMem hμ₀ hxK).symm.trans_le hx
+    (lowerOn_eq_of_notMem (K := fun _ ↦ K) (fun _ ↦ eqOn_zero_of_notMem_tube hμ₀)
+      (by rwa [iUnion_const])).symm.trans_le hx
   -- Scaling the positive directions does not increase `F`.
   have hXφ (τ : unitInterval) (x : W) (hx : (x : M) ∈ {x | F x ≤ c - ε}) :
       (φ (τ, x) : M) ∈ {x | F x ≤ c - ε} := by
-    have hτ : (τ : ℝ) ^ 2 ≤ 1 := pow_le_one₀ τ.2.1 τ.2.2
-    have htx := ht₀ x x.2
+    have hτ : (τ : ℝ) ^ 2 ≤ 1 := pow_le_one₀ τ.property.1 τ.property.2
+    have htx := ht₀ x x.property
     have hle := hμa (show s x + 2 * ((τ : ℝ) ^ 2 * t x) ≤ s x + 2 * t x by nlinarith)
-    rw [mem_ofPred_eq, hF_of_mem x.2] at hx
-    rw [mem_ofPred_eq, hF_of_mem (φ (τ, x)).2, hφs, hφt]
+    rw [mem_ofPred_eq, hF_of_mem x.property] at hx
+    rw [mem_ofPred_eq, hF_of_mem (φ (τ, x)).property, hφs, hφt]
     nlinarith
   -- `{F ≤ c + ε}` retracts onto `{F ≤ c - ε}`, as `F` has no critical points in the compact band,
   -- which retracts onto `S` by scaling the positive directions.
@@ -609,21 +586,23 @@ private theorem exists_continuousMap_iUnion_image (Θ : ∀ a, PartialDiffeomorp
     (Θ a).toOpenPartialHomeomorph.isOpen_image_of_subset_source (hWo a) (hWΘ a)
   -- On the part over `T a`, the scaling is the one of `Θ a`.
   let ψ (a : ι) : C({p : unitInterval × ⋃ b, T b | (p.2 : M) ∈ T a}, ⋃ b, T b) :=
-    ⟨fun p ↦ ⟨Θ a (ρ a p.1.1 ((Θ a).toPartialEquiv.symm p.1.2)), mem_iUnion_of_mem a
-      (mem_image_of_mem _ (hρW a _ _ ((image_subset_target_and_symm_mem _ (hWΘ a)).2 _ p.2)))⟩,
+    ⟨fun p ↦ ⟨Θ a (ρ a p.val.1 ((Θ a).toPartialEquiv.symm p.val.2)), mem_iUnion_of_mem a
+      (mem_image_of_mem _ (hρW a _ _ ((image_subset_target_and_symm_mem _
+          (hWΘ a)).2 _ p.property)))⟩,
     ((Θ a).contMDiffOn.continuousOn.comp_continuous ((hρ a).comp
-      ((continuous_subtype_val.comp (continuous_fst.comp continuous_subtype_val)).prodMk
+      ((continuous_subtypeVal.comp (continuous_fst.comp continuous_subtypeVal)).prodMk
         ((Θ a).symm.contMDiffOn.continuousOn.comp_continuous
-          (continuous_subtype_val.comp (continuous_snd.comp continuous_subtype_val))
-          fun p ↦ (image_subset_target_and_symm_mem _ (hWΘ a)).1 p.2)))
-      fun p ↦ hWΘ a (hρW a _ _ ((image_subset_target_and_symm_mem _ (hWΘ a)).2 _ p.2))).subtype_mk
+          (continuous_subtypeVal.comp (continuous_snd.comp continuous_subtypeVal))
+          fun p ↦ (image_subset_target_and_symm_mem _ (hWΘ a)).1 p.property)))
+      fun p ↦ hWΘ a (hρW a _ _ ((image_subset_target_and_symm_mem _
+          (hWΘ a)).2 _ p.property))).subtype_mk
         _⟩
   refine ⟨ContinuousMap.liftCover (fun a ↦ {p | (p.2 : M) ∈ T a}) ψ
     (fun a b p ha hb ↦ ?_) (fun p ↦ ?_), fun a τ x hx ↦ ?_⟩
   · obtain rfl : a = b := by_contra fun hab ↦ (hd hab).ne_of_mem ha hb rfl
     rfl
-  · obtain ⟨a, ha⟩ := mem_iUnion.1 p.2.2
-    exact ⟨a, ((hTo a).preimage (continuous_subtype_val.comp continuous_snd)).mem_nhds ha⟩
+  · obtain ⟨a, ha⟩ := mem_iUnion.1 p.2.property
+    exact ⟨a, ((hTo a).preimage (continuous_subtypeVal.comp continuous_snd)).mem_nhds ha⟩
   · rw [ContinuousMap.liftCover_coe (i := a) ⟨_, mem_image_of_mem _ hx⟩]
     -- By definition `ψ a` sends `(τ, Θ a x)` to `Θ a (ρ a τ (Θ a⁻¹ (Θ a x)))`.
     exact congrArg (fun y ↦ Θ a (ρ a τ y)) ((Θ a).left_inv (hWΘ a hx))
@@ -757,7 +736,7 @@ private theorem exists_sublevel_union_iUnion_image_deformation_of_tube
   obtain ⟨φ, hφ⟩ := exists_continuousMap_iUnion_image Θ ρ hρ hWo hWΘ hρW hWd
   have hT (y : T) : ∃ a x, ∃ hx : x ∈ W a,
       y = ⟨Θ a x, mem_iUnion_of_mem a (mem_image_of_mem _ hx)⟩ := by
-    obtain ⟨a, x, hx, hxy⟩ := mem_iUnion.1 y.2
+    obtain ⟨a, x, hx, hxy⟩ := mem_iUnion.1 y.property
     exact ⟨a, x, hx, Subtype.ext hxy.symm⟩
   have key := exists_sublevel_union_negativeDiscBundle_deformation hfs hTo (hsmooth s hs)
     (hsmooth t ht) (fun y _ ↦ hglue₀ s hs₀ y) (fun y _ ↦ hglue₀ t ht₀ y) ?_ ?_ φ ?_ ?_ ?_ ?_ hε ?_
@@ -807,9 +786,10 @@ submanifolds of `f` on the level `c`.
 
 Then there is an `ε₀ > 0` such that for `0 < ε < ε₀`, if the band `f⁻¹[c - ε, c + ε]` is compact
 and its critical points lie in the union of the `Θ a '' Z a`, each disc bundle
-`D a ε = {t a = 0, s a ≤ ε}` lies in the source of `Θ a` and `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a ε)` is a
-strong deformation retract of `{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a
-homotopy in `{f ≤ c + ε}` from this retraction to the identity which fixes it pointwise. This is
+`D a ε = {t a = 0, s a ≤ ε}` lies in the source of `Θ a`, the images `Θ a (D a ε)` are pairwise
+disjoint, and `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a ε)` is a strong deformation retract of
+`{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}`
+from this retraction to the identity which fixes it pointwise. This is
 `TauCeti.exists_sublevel_union_negativeDiscBundle_deformation` for the tube
 `⋃ a, Θ a '' {s a + 2 t a < m}` with `m > 0` so small that these pieces are disjoint. -/
 theorem exists_sublevel_union_iUnion_image_deformation [∀ a, LocallyCompactSpace (X a)]
@@ -829,6 +809,7 @@ theorem exists_sublevel_union_iUnion_image_deformation [∀ a, LocallyCompactSpa
     ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀, IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
       criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ a, Θ a '' Z a →
       (∀ a, {x | t a x = 0 ∧ s a x ≤ ε} ⊆ (Θ a).source) ∧
+      Pairwise (Disjoint on fun a ↦ Θ a '' {x | t a x = 0 ∧ s a x ≤ ε}) ∧
       ∃ r : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c + ε} ∩
           ({y | f y ≤ c - ε} ∪ ⋃ a, Θ a '' {x | t a x = 0 ∧ s a x ≤ ε}))),
         (∀ y, r (ContinuousMap.inclusion inter_subset_left y) = y) ∧
@@ -857,12 +838,15 @@ theorem exists_sublevel_union_iUnion_image_deformation [∀ a, LocallyCompactSpa
     simp only [hq_def, ht, mul_zero, add_zero]
     linarith [hε.1]
   refine ⟨fun a x hx ↦ hmΘ a (hD a x hx.1 hx.2),
+    fun a b hab ↦ (hmd hab).mono (image_mono fun x hx ↦ hD a x hx.1 hx.2)
+      (image_mono fun x hx ↦ hD b x hx.1 hx.2),
     exists_sublevel_union_iUnion_image_deformation_of_tube hfs Θ hs ht hs₀ ht₀ hf
     (fun a ↦ σ a 1) (fun a ↦ (hσ a).comp ((continuous_const.prodMk continuous_fst).prodMk
       continuous_snd)) hσd (fun a b x ↦ by rw [hσs, one_pow, one_mul])
     (fun a ↦ hσt a 1) (fun a ↦ hσ₁ a) (fun a ↦ hσ₀ a) (W := fun a ↦ {x | q a x < m})
     (fun a ↦ isOpen_lt (hq a) continuous_const) hmΘ
-    (fun a τ x hx ↦ (hq_le a 1 τ (by norm_num) (pow_le_one₀ τ.2.1 τ.2.2) x).trans_lt hx) hmd hε.1
+    (fun a τ x hx ↦ (hq_le a 1 τ
+        (by norm_num) (pow_le_one₀ τ.property.1 τ.property.2) x).trans_lt hx) hmd hε.1
     hD (fun a ↦ ?_) hcompact (hcrit.trans (iUnion_mono fun a ↦ image_mono fun x hx ↦ ?_))⟩
   · have hset : {x | x ∈ {x | q a x < m} ∧ s a x + 2 * t a x ≤ 2 * ε} = {x | q a x ≤ 2 * ε} :=
       Set.ext fun x ↦ ⟨fun hx ↦ hx.2, fun hx ↦ ⟨lt_of_le_of_lt hx hεm, hx⟩⟩

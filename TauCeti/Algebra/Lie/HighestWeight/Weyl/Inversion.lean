@@ -82,10 +82,10 @@ theorem coeff_irreducibleFormalCharacter_mul_weylDenominator_of_isDominantIntegr
     (lam : {l : Dual K H // IsDominantIntegral b l}) {nu : Dual K H}
     (hnu : IsDominantIntegral b nu) :
     (irreducibleFormalCharacter b lam * weylDenominator (IsKilling.rootSystem H) b).coeff nu =
-      if lam.1 = nu then 1 else 0 := by
-  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral lam.2
-  have hv := isHighestWeightVector_irreducibleQuotientGenerator b lam.1
-  have hgen := lieSpan_irreducibleQuotientGenerator_eq_top b lam.1
+      if lam.val = nu then 1 else 0 := by
+  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral lam.property
+  have hv := isHighestWeightVector_irreducibleQuotientGenerator b lam.val
+  have hgen := lieSpan_irreducibleQuotientGenerator_eq_top b lam.val
   rw [irreducibleFormalCharacter_def]
   split_ifs with h
   · subst h
@@ -115,7 +115,7 @@ theorem coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity [Finit
       map_add' := fun x y ↦ by simp [add_mul] }
   have hφ : ∀ x, φ x = (x * weylDenominator (IsKilling.rootSystem H) b).coeff nu := fun _ ↦ rfl
   have hsupp : Function.HasFiniteSupport fun lam : {l : Dual K H // IsDominantIntegral b l} ↦
-      (LieModule.isotypicMultiplicity K L M (irreducibleQuotient b lam.1) : ℤ) •
+      (LieModule.isotypicMultiplicity K L M (irreducibleQuotient b lam.val) : ℤ) •
         irreducibleFormalCharacter b lam := by
     refine (((formalCharacter K H M).coeff.support : Set (Dual K H)).toFinite.preimage
       Subtype.val_injective.injOn).subset fun lam hlam ↦ ?_
@@ -125,7 +125,7 @@ theorem coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity [Finit
       hlam ?_
     simp [h0]
   have hφ_smul (c : ℤ) (lam : {l : Dual K H // IsDominantIntegral b l}) :
-      φ (c • irreducibleFormalCharacter b lam) = c * (if lam.1 = nu then 1 else 0) := by
+      φ (c • irreducibleFormalCharacter b lam) = c * (if lam.val = nu then 1 else 0) := by
     rw [map_zsmul]
     simp [hφ, coeff_irreducibleFormalCharacter_mul_weylDenominator_of_isDominantIntegral b lam hnu]
   rw [← hφ, formalCharacter_eq_finsum_isotypicMultiplicity_smul b, φ.map_finsum hsupp,

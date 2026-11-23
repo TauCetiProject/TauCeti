@@ -134,7 +134,7 @@ from the cap on the two right points, `of 1 ◁ cap`. In the first the bottom-le
 to its neighbour, in the second to the top point. -/
 example : TLDiagCat.cap ▷ TLDiagCat.of 1 ≠ TLDiagCat.of 1 ◁ TLDiagCat.cap := by
   intro h
-  have := congrArg (fun f => (f.diagram.matching.1.val 0 : ℕ)) h
+  have := congrArg (fun f => (f.diagram.matching.val.val 0 : ℕ)) h
   have e₁ := PlanarMatching.coe_insertBlock_val_castAdd_castAdd TLDiagram.cap.matching
     (PlanarMatching.nested 1) (0 : Fin 2)
   have e₂ := PlanarMatching.coe_insertBlock_val_castAdd_castAdd (PlanarMatching.nested 1)

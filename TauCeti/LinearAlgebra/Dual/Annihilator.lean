@@ -76,7 +76,8 @@ theorem coe_dualAnnihilatorEquivOfIsCompl_symm_apply (h : IsCompl p q) (ψ : Mod
   (LinearMap.ofIsCompl_eq h
     (fun x ↦ by rw [← dualAnnihilatorEquivOfIsCompl_apply p q h, LinearEquiv.apply_symm_apply])
     fun x ↦
-      ((mem_dualAnnihilator _).1 ((dualAnnihilatorEquivOfIsCompl p q h).symm ψ).2 x x.2).symm).symm
+      ((mem_dualAnnihilator _).1 ((dualAnnihilatorEquivOfIsCompl p q h).symm ψ).property x
+          x.property).symm).symm
 
 end IsCompl
 

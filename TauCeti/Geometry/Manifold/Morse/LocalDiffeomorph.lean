@@ -31,6 +31,8 @@ preimages of those of `f`, with the same nondegeneracy and indices.
   nondegenerate critical points.
 * `IsLocalDiffeomorphAt.manifoldMorseIndex_comp`: at a critical point the Morse index of `f ∘ π`
   at `x` is that of `f` at `π x`.
+* `IsLocalDiffeomorphAt.ker_criticalHessian_eq_map`: at a critical point the differential of `π`
+  carries the kernel of the critical Hessian of `f ∘ π` onto that of `f`.
 * `TauCeti.IsMorse.comp_isLocalDiffeomorph`: a Morse function pulls back to a Morse function along
   a smooth local diffeomorphism, for instance to every open submanifold.
 
@@ -91,6 +93,34 @@ theorem manifoldMorseIndex_comp
     manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas (π x))
       (mem_chart_source H (π x)) hf (mem_criticalPoints.1 hcrit),
     morseIndex_congr_of_eventuallyEq hcomp', hpt]
+
+omit [IsManifold I n M] [IsManifold I n M'] in
+/-- **The kernel of the critical Hessian under a local diffeomorphism.** If `π` is a `C^n` local
+diffeomorphism at `x` with `2 ≤ n`, and `π x` is a critical point of a function `f` which is `C²`
+there, then the differential of `π` at `x` carries the kernel of the critical Hessian of `f ∘ π`
+at `x` onto the kernel of the critical Hessian of `f` at `π x`. This is how a degenerate direction,
+such as the tangent direction of a Morse–Bott critical submanifold, is read on a covering space. -/
+theorem ker_criticalHessian_eq_map
+    (hπ : IsLocalDiffeomorphAt I I n π x) (hn : 2 ≤ n) {f : M' → ℝ}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f (π x)) (hcrit : π x ∈ criticalPoints I f) :
+    (criticalHessian I f (π x)).ker =
+      (criticalHessian I (f ∘ π) x).ker.map (mfderiv I I π x).toLinearMap := by
+  have hD := hπ.isInvertible_mfderiv (two_pos.trans_le hn).ne'
+  -- The second-order chain rule at the critical point `π x`.
+  have hcomp (u w : TangentSpace I x) : criticalHessian I (f ∘ π) x u w =
+      criticalHessian I f (π x) (mfderiv I I π x u) (mfderiv I I π x w) :=
+    criticalHessian_comp_apply rfl hf (hπ.contMDiffAt.of_le hn) hcrit u w
+  ext v
+  simp only [Submodule.mem_map, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
+  constructor
+  · intro hv
+    obtain ⟨u, rfl⟩ := hD.surjective v
+    refine ⟨u, ContinuousLinearMap.ext fun w ↦ ?_, rfl⟩
+    rw [hcomp, hv, zero_apply, zero_apply]
+  · rintro ⟨u, hu, rfl⟩
+    refine ContinuousLinearMap.ext fun w ↦ ?_
+    obtain ⟨w, rfl⟩ := hD.surjective w
+    rw [← hcomp, hu, zero_apply, zero_apply]
 
 end IsLocalDiffeomorphAt
 

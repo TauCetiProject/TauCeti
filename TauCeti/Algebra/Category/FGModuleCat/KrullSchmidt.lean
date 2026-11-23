@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.RingTheory.Artinian.Defs
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
-public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Basic
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
@@ -45,30 +45,32 @@ universe w v
 
 variable {A : Type v} [Ring A]
 
+/-- Every finitely generated Artinian module, for instance any finitely generated module over a left
+Artinian ring, is isomorphic, in `FGModuleCat A`, to a finite biproduct of finitely generated
+indecomposable modules. -/
+theorem exists_indecomposable_iso_biproduct (X : FGModuleCat.{w} A) [IsArtinian A X.obj] :
+    ∃ (n : ℕ) (F : Fin n → FGModuleCat.{w} A), (∀ j, Indecomposable (F j).obj) ∧
+      Nonempty (X ≅ ⨁ F) := by
+  obtain ⟨n, Q, hQ, ⟨d⟩⟩ := TauCeti.exists_indecomposable_iso_biproduct X.obj
+  -- Each summand is a quotient of `X`, hence finitely generated.
+  let F (j : Fin n) : FGModuleCat.{w} A := ⟨Q j, (ModuleCat.isFG_iff _).mpr
+    (Module.Finite.of_surjective (d.hom ≫ biproduct.π Q j).hom
+      ((ModuleCat.epi_iff_surjective _).mp inferInstance))⟩
+  -- The inclusion into `ModuleCat A` preserves the biproduct.
+  exact ⟨n, F, hQ, ⟨(ObjectProperty.fullyFaithfulι _).preimageIso
+    (d ≪≫ ((ObjectProperty.ι _).mapBiproduct F).symm)⟩⟩
+
 /-- Every finitely generated Artinian module `X` is a direct summand of a finite sum of finitely
 generated indecomposable modules `W j`, in the form of morphisms `a j : X ⟶ W j` and
 `b j : W j ⟶ X` with `∑ j, a j ≫ b j = 𝟙 X`. -/
 theorem exists_indecomposable_sum_comp_eq_id (X : FGModuleCat.{w} A) [IsArtinian A X.obj] :
     ∃ (n : ℕ) (W : Fin n → FGModuleCat.{w} A) (a : ∀ j, X ⟶ W j) (b : ∀ j, W j ⟶ X),
       (∀ j, Indecomposable (W j).obj) ∧ ∑ j, a j ≫ b j = 𝟙 X := by
-  obtain ⟨n, Q, hQ, ⟨d⟩⟩ := TauCeti.exists_indecomposable_iso_biproduct X.obj
-  -- Each summand is a quotient of `X`, hence finitely generated.
-  have hQf (j : Fin n) : Module.Finite A (Q j) := by
-    refine Module.Finite.of_surjective (d.hom ≫ biproduct.π Q j).hom fun y ↦
-      ⟨(biproduct.ι Q j ≫ d.inv).hom y, ?_⟩
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp]
-    simp
-  refine ⟨n, fun j ↦ ⟨Q j, (ModuleCat.isFG_iff _).mpr (hQf j)⟩,
-    fun j ↦ ObjectProperty.homMk (d.hom ≫ biproduct.π Q j),
-    fun j ↦ ObjectProperty.homMk (biproduct.ι Q j ≫ d.inv), hQ, ?_⟩
-  have h : ∑ j, (d.hom ≫ biproduct.π Q j) ≫ biproduct.ι Q j ≫ d.inv = 𝟙 X.obj :=
-    calc _ = d.hom ≫ (∑ j, biproduct.π Q j ≫ biproduct.ι Q j) ≫ d.inv := by
-          simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
-      _ = 𝟙 X.obj := by simp [biproduct.total]
-  -- Check the identity after the faithful inclusion into `ModuleCat A`.
-  apply (ObjectProperty.ι _).map_injective
-  rw [Functor.map_sum, CategoryTheory.Functor.map_id]
-  simpa using h
+  obtain ⟨n, F, hF, ⟨e⟩⟩ := exists_indecomposable_iso_biproduct X
+  refine ⟨n, F, fun j ↦ e.hom ≫ biproduct.π F j, fun j ↦ biproduct.ι F j ≫ e.inv, hF, ?_⟩
+  calc _ = e.hom ≫ (∑ j, biproduct.π F j ≫ biproduct.ι F j) ≫ e.inv := by
+        simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
+    _ = 𝟙 X := by simp [biproduct.total]
 
 /-- **Fitting's lemma** in `FGModuleCat A`: a finitely generated indecomposable module of finite
 length (Noetherian and Artinian) has a local endomorphism ring. -/

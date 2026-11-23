@@ -169,6 +169,6 @@ theorem tendsto_eLpNorm_polynomialGrowth_geometricBrownianMotion
         ⟨geometricBrownianMotion_pos hs μ σ W _ ω, hb n⟩
     exact hCt.tendsto.comp hp
   exact tendsto_Lp_finite_of_tendsto_ae hp hp_top hC
-    (hUI.memLp_of_ae_tendsto hlim) hUI.1 hlim
+    (hUI.memLp_of_ae_tendsto hlim) hUI.unifIntegrable hlim
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

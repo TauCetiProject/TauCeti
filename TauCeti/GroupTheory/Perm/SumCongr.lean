@@ -11,6 +11,7 @@ public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.SwapFactors
 import Mathlib.Data.Finite.Perm
+import Mathlib.GroupTheory.Perm.Finite
 import Mathlib.Tactic.Abel
 import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.WreathProduct.Basic
@@ -51,7 +52,8 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
 * `Equiv.Perm.finSumPermHom_injective`: a block permutation determines its two blocks, so
   `Equiv.Perm.finSumPermEquivRange` identifies `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)` with the
-  block subgroup, of order `m! n!` (`Equiv.Perm.card_range_finSumPermHom`).
+  block subgroup, of order `m! n!` (`Equiv.Perm.card_range_finSumPermHom`), whose elements are
+  characterized by preserving `{x | (x : ℕ) < m}` (`Equiv.Perm.mem_range_finSumPermHom_iff`).
 * `Equiv.Perm.sign_finSumPerm`: its sign is the product of the signs of the two blocks.
 * `Equiv.Perm.finRotate_add_eq_swap_mul_finSumPerm`: the cyclic rotation of `Fin (m + n)` is the
   blockwise rotation followed by one transposition between the blocks.
@@ -422,6 +424,26 @@ theorem card_range_finSumPermHom (m n : ℕ) :
   rw [← Nat.card_congr (finSumPermEquivRange m n).toEquiv, Nat.card_prod, Nat.card_perm,
     Nat.card_perm, Nat.card_eq_fintype_card, Fintype.card_fin, Nat.card_eq_fintype_card,
     Fintype.card_fin]
+
+/-- **A permutation lies in `Sₘ × Sₙ` exactly when it preserves the first `m` letters.** -/
+theorem mem_range_finSumPermHom_iff {π : Perm (Fin (m + n))} :
+    π ∈ (finSumPermHom m n).range ↔ ∀ x : Fin (m + n), (π x : ℕ) < m ↔ (x : ℕ) < m := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨⟨σ, τ⟩, rfl⟩ x
+    induction x using Fin.addCases with
+    | left i => simp [i.isLt]
+    | right j => simp
+  · have hmaps : Set.MapsTo (finSumFinEquiv.symm.permCongr π)
+        (Set.range Sum.inl) (Set.range Sum.inl) := by
+      rintro _ ⟨i, rfl⟩
+      have hi : (π (Fin.castAdd n i) : ℕ) < m := (h (Fin.castAdd n i)).mpr i.isLt
+      refine ⟨⟨π (Fin.castAdd n i), hi⟩, ?_⟩
+      apply finSumFinEquiv.injective
+      simp [finSumFinEquiv_apply_left]
+    obtain ⟨p, hp⟩ := mem_sumCongrHom_range_of_perm_mapsTo_inl hmaps
+    refine ⟨p, ?_⟩
+    ext x
+    simp [finSumPermHom, hp]
 
 @[simp]
 theorem finSumPerm_one :

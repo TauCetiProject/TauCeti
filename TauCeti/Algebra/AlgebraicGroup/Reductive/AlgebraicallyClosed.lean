@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.FieldTheory.Perfect
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Descent
 

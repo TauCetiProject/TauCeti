@@ -280,7 +280,7 @@ theorem map_stabilizer_eq_zpowers_cycleMap {j : Fin n} {z : ℍ} (hz : P.vertex 
   simp only [Subgroup.mem_map, MulAction.mem_stabilizer_iff, Subgroup.coe_subtype]
   refine ⟨fun ⟨γ, hγ, hγg⟩ ↦ ?_, fun hg ↦ ?_⟩
   · rw [← hγg]
-    exact (σ.smul_eq_self_iff_mem_zpowers_cycleMap hz hmap hdisj γ.2).1 hγ
+    exact (σ.smul_eq_self_iff_mem_zpowers_cycleMap hz hmap hdisj γ.property).1 hγ
   · have hgΓ : g ∈ Γ := (Subgroup.zpowers_le.2 (σ.cycleMap_mem hmap j)) hg
     exact ⟨⟨g, hgΓ⟩, (σ.smul_eq_self_iff_mem_zpowers_cycleMap hz hmap hdisj hgΓ).2 hg, rfl⟩
 

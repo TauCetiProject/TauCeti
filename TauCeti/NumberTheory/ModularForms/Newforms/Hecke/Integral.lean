@@ -52,14 +52,16 @@ all diamond operators. -/
 def heckeTDiamondCuspNewIntegralAlgebra :
     Subalgebra ℤ (Module.End ℂ (cuspFormsNew N k)) :=
   Algebra.adjoin ℤ
-    (Set.range (fun p : {p : ℕ // p.Prime ∧ Nat.Coprime p N} ↦ heckeTCuspNewEnd N k p.2.1 p.2.2) ∪
+    (Set.range (fun p : {p : ℕ // p.Prime ∧ Nat.Coprime p N} ↦ heckeTCuspNewEnd N k p.property.1
+        p.property.2) ∪
       Set.range (diamondOpCuspNewEnd N k))
 
 /-- The defining generators of the integral newspace Hecke algebra. -/
 theorem heckeTDiamondCuspNewIntegralAlgebra_def :
     heckeTDiamondCuspNewIntegralAlgebra N k = Algebra.adjoin ℤ
       (Set.range (fun p : {p : ℕ // p.Prime ∧ Nat.Coprime p N} ↦
-        heckeTCuspNewEnd N k p.2.1 p.2.2) ∪ Set.range (diamondOpCuspNewEnd N k)) := (rfl)
+        heckeTCuspNewEnd N k p.property.1 p.property.2) ∪ Set.range (diamondOpCuspNewEnd N k)) :=
+            (rfl)
 
 /-- Each good prime Hecke operator belongs to the integral newspace Hecke algebra. -/
 @[simp]
@@ -97,7 +99,7 @@ theorem heckeTDiamondCuspNewIntegralAlgebra_le :
 def heckeTDiamondCuspNewIntegralAlgebraToComplex :
     heckeTDiamondCuspNewIntegralAlgebra N k →ₐ[ℤ] heckeTDiamondCuspNewAlgebra N k :=
   (heckeTDiamondCuspNewIntegralAlgebra N k).val.codRestrict _ fun T ↦
-    heckeTDiamondCuspNewIntegralAlgebra_le N k T.2
+    heckeTDiamondCuspNewIntegralAlgebra_le N k T.property
 
 @[simp]
 theorem coe_heckeTDiamondCuspNewIntegralAlgebraToComplex
@@ -138,11 +140,11 @@ theorem heckeTDiamondCuspNewIntegralAlgebra_finite (hk : 2 ≤ k) :
   let P := ((ModularSymbols.periodMap ℤ (Gamma1 N) hw).comp
     (cuspFormsNew N k).subtype).restrictScalars ℤ
   let t := Sum.elim
-    (fun p : {p : ℕ // p.Prime ∧ Nat.Coprime p N} ↦ heckeTCuspNewEnd N k p.2.1 p.2.2)
+    (fun p : {p : ℕ // p.Prime ∧ Nat.Coprime p N} ↦ heckeTCuspNewEnd N k p.property.1 p.property.2)
     (diamondOpCuspNewEnd N k)
   let u : {p : ℕ // p.Prime ∧ Nat.Coprime p N} ⊕ (ZMod N)ˣ →
       Module.End ℤ (ModularSymbols ℤ (Gamma1 N) w) := Sum.elim
-    (fun p ↦ @ModularSymbols.heckeTSymbol ℤ _ w N _ p.1 ⟨p.2.1.ne_zero⟩)
+    (fun p ↦ @ModularSymbols.heckeTSymbol ℤ _ w N _ p.val ⟨p.property.1.ne_zero⟩)
     (ModularSymbols.diamondSymbol ℤ w N)
   have hP : Function.Injective P :=
     (ModularSymbols.periodMap_injective hw).comp Subtype.val_injective
@@ -153,9 +155,10 @@ theorem heckeTDiamondCuspNewIntegralAlgebra_finite (hk : 2 ≤ k) :
   | inl p =>
       simpa only [P, t, u, Sum.elim, LinearMap.restrictScalars_apply, LinearMap.comp_apply,
         Submodule.subtype_apply, coe_heckeTCuspNewEnd_apply] using LinearMap.congr_fun
-        (@ModularSymbols.periodMap_heckeTCuspNat ℤ _ _ k w N _ p.1 ⟨p.2.1.ne_zero⟩ hw f.1) x
+        (@ModularSymbols.periodMap_heckeTCuspNat ℤ _ _ k w N _ p.val
+            ⟨p.property.1.ne_zero⟩ hw f.val) x
   | inr d =>
-      have h := ModularSymbols.periodMap_diamondOpCusp (R := ℤ) N d hw f.1
+      have h := ModularSymbols.periodMap_diamondOpCusp (R := ℤ) N d hw f.val
       simpa only [P, t, u, Sum.elim, LinearMap.restrictScalars_apply, LinearMap.comp_apply,
         Submodule.subtype_apply, coe_diamondOpCuspNewEnd_apply] using LinearMap.congr_fun h x
 

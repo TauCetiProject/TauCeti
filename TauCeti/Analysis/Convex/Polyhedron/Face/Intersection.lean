@@ -26,7 +26,7 @@ public section
 namespace IsExtreme
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
-  [IsTopologicalAddGroup V] {P Q F : Set V}
+  {P Q F : Set V}
 
 /-- A nonempty convex extreme subset of an intersection of polyhedra is the
 intersection of nonempty exposed faces of the original polyhedra. -/
@@ -76,7 +76,7 @@ end IsExtreme
 namespace IsExposed
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
-  [IsTopologicalAddGroup V] {P Q F : Set V}
+  {P Q F : Set V}
 
 /-- Every nonempty exposed face of an intersection of polyhedra splits into
 nonempty exposed faces of the two original polyhedra. -/
