@@ -145,7 +145,7 @@ theorem free_hom_ext {M : GradedModuleCat.{max uA uI} 𝒜} {f g : free 𝒜 d �
 @[simp]
 theorem freeLift_comp {M N : GradedModuleCat.{max uA uI} 𝒜}
     (x : ∀ i, M.grading.piece (d i)) (g : M ⟶ N) :
-    freeLift x ≫ g = freeLift (fun i => ⟨g.hom (x i), map_mem g (x i).2⟩) := by
+    freeLift x ≫ g = freeLift (fun i => ⟨g.hom (x i), map_mem g (x i).property⟩) := by
   apply free_hom_ext
   intro i
   simp only [hom_comp, LinearMap.comp_apply, freeLift_generator]
@@ -181,7 +181,7 @@ def regularShiftHomEquiv (M : GradedModuleCat.{uA} 𝒜) (n : ℤ) :
   invFun m := ofHom (LinearMap.toSpanSingleton A M m) <|
     LinearMap.isHomogeneous_def.2 fun p x hx => by
       have hx' : x ∈ 𝒜 (p - n) := by simpa [sub_eq_add_neg] using hx
-      simpa using SetLike.GradedSMul.smul_mem hx' m.2
+      simpa using SetLike.GradedSMul.smul_mem hx' m.property
   left_inv f := hom_ext (LinearMap.ext_ring (by simp))
   right_inv m := Subtype.ext (by simp)
   map_add' f g := Subtype.ext (by simp)

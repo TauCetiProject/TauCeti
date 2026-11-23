@@ -96,12 +96,12 @@ theorem mem_range_map_iff_coord_mem_integers_of_derivativeOfSeparating_mem (htP 
       obtain ⟨z, rfl⟩ := hη
       rw [KaehlerDifferential.map_D]
       simpa only [Module.Basis.coord_apply, kaehlerBasisOfSeparating_repr_D,
-        ValuationSubring.algebraMap_apply] using hD z z.2
+        ValuationSubring.algebraMap_apply] using hD z z.property
     | zero => simp
     | add a b _ _ ha hb => simpa using P.integers.add_mem _ _ ha hb
     | smul a b _ hb =>
       simpa [← IsScalarTower.algebraMap_smul F a, Algebra.smul_def] using
-        P.integers.mul_mem _ _ a.2 hb
+        P.integers.mul_mem _ _ a.property hb
   · intro hω
     refine ⟨(⟨(kaehlerBasisOfSeparating htr).coord () ω, hω⟩ : P.integers) •
       D k P.integers ⟨t, htP⟩, ?_⟩
@@ -149,7 +149,7 @@ theorem coord_mem_integers_iff_forall_traceResidue_coord_smul_eq_zero
     have hu : (a * t)⁻¹ ∈ P.integers := by
       rw [P.mem_integers_iff_ord_nonneg, P.ord_inv, P.ord_mul ha0 ht0, ht]
       omega
-    have hzero := h (c * (a * t)⁻¹) (P.integers.mul_mem _ _ c.2 hu)
+    have hzero := h (c * (a * t)⁻¹) (P.integers.mul_mem _ _ c.property hu)
     have hmul : c * (a * t)⁻¹ * a = c * t⁻¹ := by
       field_simp
     rw [hmul, traceResidue_mul_inv_uniformizer, hc] at hzero
@@ -193,10 +193,10 @@ theorem mem_range_map_iff_weilDifferentialOrder_nonneg_of_uniformizer
     (hω : (ω : Module.Dual k ↥(repartitionSpace k F)) ≠ 0) :
     (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx).symm ω ∈
         (KaehlerDifferential.map k k P.integers F).range ↔
-      0 ≤ weilDifferentialOrder hF hex ω.2 hω P := by
+      0 ≤ weilDifferentialOrder hF hex ω.property hω P := by
   rw [P.mem_range_map_iff_forall_repartitionDualComponent_eq_zero_of_uniformizer
       hP ht htr hF hex hx,
-    LinearEquiv.apply_symm_apply, le_weilDifferentialOrder_iff hF hex ω.2 hω P 0]
+    LinearEquiv.apply_symm_apply, le_weilDifferentialOrder_iff hF hex ω.property hω P 0]
   simp only [WithZero.exp_zero, ← P.mem_integers_iff]
 
 end WithUniformizer
@@ -218,13 +218,13 @@ theorem mem_range_map_iff_weilDifferentialOrder_nonneg_of_span_D_eq_top {z : F}
     (ω : weilDifferentialSpace k F) (hω : (ω : Module.Dual k ↥(repartitionSpace k F)) ≠ 0) :
     (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx).symm ω ∈
         (KaehlerDifferential.map k k P.integers F).range ↔
-      0 ≤ weilDifferentialOrder hF hex ω.2 hω P := by
+      0 ≤ weilDifferentialOrder hF hex ω.property hω P := by
   let := weilDifferentialSpaceModule hF
   -- The differential of every function regular at `P` is an integral multiple of `dz`.
   have key (s : F) (hs : s ∈ P.integers) : ∃ c ∈ P.integers, c • D k F z = D k F s := by
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp (hΩ ▸ Submodule.mem_top :
       D k P.integers ⟨s, hs⟩ ∈ Submodule.span P.integers {D k P.integers ⟨z, hzP⟩})
-    refine ⟨c, c.2, ?_⟩
+    refine ⟨c, c.property, ?_⟩
     have := congrArg (KaehlerDifferential.map k k P.integers F) hc
     rwa [map_smul, KaehlerDifferential.map_D, KaehlerDifferential.map_D,
       ← IsScalarTower.algebraMap_smul F c] at this
@@ -257,8 +257,8 @@ theorem mem_range_map_iff_weilDifferentialOrder_nonneg_of_span_D_eq_top {z : F}
   have hωa : a • weilDifferentialOfSeparating hF hz = ω := by
     simpa [a, Module.Basis.coord_apply] using
       (weilDifferentialBasisOfSeparating hF hex hz).sum_repr ω
-  rw [weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul hF hex ω.2 hω
-      (weilDifferentialOfSeparating hF hz).2 (coe_weilDifferentialOfSeparating_ne_zero hF hz)
+  rw [weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul hF hex ω.property hω
+      (weilDifferentialOfSeparating hF hz).property (coe_weilDifferentialOfSeparating_ne_zero hF hz)
       (by rw [← hωa, coe_weilDifferentialSpaceModule_smul]) P,
     weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero_of_span_D_eq_top hF hex hz hzP hΩ,
     add_zero, P.mem_integers_iff_ord_nonneg]
@@ -274,10 +274,11 @@ theorem mem_range_map_iff_weilDifferentialOrder_nonneg_of_finrank_eq_one
     (ω : weilDifferentialSpace k F) (hω : (ω : Module.Dual k ↥(repartitionSpace k F)) ≠ 0) :
     (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx).symm ω ∈
         (KaehlerDifferential.map k k P.integers F).range ↔
-      0 ≤ weilDifferentialOrder hF hex ω.2 hω P := by
+      0 ≤ weilDifferentialOrder hF hex ω.property hω P := by
   obtain ⟨_, ⟨z, rfl⟩, hz⟩ := IsLocalRing.exists_mem_span_singleton_eq_top_of_finrank_eq_one hP
     (span_range_derivation k P.integers)
-  exact P.mem_range_map_iff_weilDifferentialOrder_nonneg_of_span_D_eq_top hF hex hx z.2 hz ω hω
+  exact P.mem_range_map_iff_weilDifferentialOrder_nonneg_of_span_D_eq_top hF hex hx z.property hz ω
+      hω
 
 end Smooth
 
@@ -326,9 +327,9 @@ theorem mem_range_map_iff_weilDifferentialOrder_nonneg
     (hω : (ω : Module.Dual k ↥(repartitionSpace k F)) ≠ 0) :
     (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx).symm ω ∈
         (KaehlerDifferential.map k k P.integers F).range ↔
-      0 ≤ weilDifferentialOrder hF hex ω.2 hω P := by
+      0 ≤ weilDifferentialOrder hF hex ω.property hω P := by
   rw [P.mem_range_map_iff_forall_repartitionDualComponent_eq_zero hF hex hx,
-    LinearEquiv.apply_symm_apply, le_weilDifferentialOrder_iff hF hex ω.2 hω P 0]
+    LinearEquiv.apply_symm_apply, le_weilDifferentialOrder_iff hF hex ω.property hω P 0]
   simp only [WithZero.exp_zero, ← P.mem_integers_iff]
 
 end TauCeti.Place

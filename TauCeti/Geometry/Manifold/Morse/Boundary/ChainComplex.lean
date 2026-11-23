@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Differential
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
+public import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
 public import TauCeti.Geometry.Manifold.Morse.EulerCharacteristic
 public import Mathlib.Algebra.Field.ZMod
 
@@ -29,6 +30,8 @@ boundary squares to zero because the total one does
 The terms are finite-dimensional, of dimension the number `cₙ` of critical points of index `n`
 (`IsMorseSmale.finrank_morseComplex_X`), and vanish above the dimension `m` of `M`. Hence the
 homology is finite-dimensional, bounded by the critical counts, and vanishes above `m`. Its
+dimensions satisfy the strong Morse inequalities
+(`IsMorseSmale.sum_range_neg_one_pow_mul_finrank_homology_morseComplex_le`). Its
 Euler characteristic is the signed critical count `∑ᵢ (-1)ⁱ cᵢ`, and so the Euler characteristic
 of `M` (`IsMorseSmale.sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`).
 In terms of Mathlib's Euler characteristics of a complex, both `(h.morseComplex hf).eulerChar` and
@@ -46,11 +49,14 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 * `morseBoundaryAt`: the mod-two Morse boundary from index `n + 1` to index `n`.
 * `morseBoundaryAt_comp_morseBoundaryAt`: consecutive graded boundaries compose to zero.
 * `mapDomain_morseBoundaryAt`: the graded boundary is the restriction of the total boundary.
+* `morseBoundary_mapDomain_eq_zero_of_index_zero`: chains of index zero are cycles.
 * `morseComplex`: the mod-two Morse chain complex, indexed by `ℕ`.
 * `finrank_morseComplex_X`: its term in degree `n` has dimension the number of critical points of
   index `n`.
 * `finite_homology_morseComplex`: the Morse homology is finite-dimensional.
 * `isZero_homology_morseComplex_of_finrank_lt`: the Morse homology vanishes above the dimension.
+* `sum_range_neg_one_pow_mul_finrank_homology_morseComplex_le`: the strong Morse inequalities for
+  the Morse homology.
 * `sum_range_neg_one_pow_mul_finrank_homology_morseComplex`: the Euler characteristic of the Morse
   homology is the signed count of critical points.
 * `sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`: it is the Euler
@@ -70,6 +76,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
   Chapter 4 (the Morse complex and its homology).
 * M. Hutchings, *Lecture notes on Morse homology (with an eye towards Floer theory and
   pseudoholomorphic curves)*, 2002, §2.
+* J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
+  Section 5 (the Morse inequalities).
 -/
 
 public section
@@ -134,9 +142,21 @@ theorem mapDomain_morseBoundaryAt {n : ℕ}
       (h.morseBoundaryAt_apply hf c ⟨r, hr⟩)
   · -- Outside index `n` both sides vanish: the left side by support, the right side because every
     -- boundary coefficient from index `n + 1` to `r` is zero.
-    rw [Finsupp.mapDomain_of_notMem_range _ _ fun ⟨q, hq⟩ ↦ hr (hq ▸ q.2), Finsupp.sum]
+    rw [Finsupp.mapDomain_of_notMem_range _ _ fun ⟨q, hq⟩ ↦ hr (hq ▸ q.property), Finsupp.sum]
     refine (Finset.sum_eq_zero fun p _ ↦ ?_).symm
     rw [h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf (by grind), mul_zero]
+
+/-- **Chains of index zero are cycles.** The total mod-two Morse boundary vanishes on chains of
+critical points of index zero, since a critical point of index zero bounds no trajectories to a
+critical point of lower index. -/
+theorem morseBoundary_mapDomain_eq_zero_of_index_zero
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = 0} →₀ ZMod 2) :
+    h.morseBoundary hf (c.mapDomain Subtype.val) = 0 := by
+  ext r
+  rw [morseBoundary_apply, Finsupp.sum_mapDomain_index (fun _ ↦ zero_mul _) fun _ _ _ ↦ add_mul ..]
+  refine Finset.sum_eq_zero fun p _ ↦ ?_
+  dsimp only
+  rw [h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf (by grind), mul_zero]
 
 /-- **The graded mod-two Morse boundary squares to zero.** -/
 @[simp]
@@ -218,7 +238,7 @@ theorem isZero_morseComplex_X_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
     IsZero ((h.morseComplex hf).X n) := by
   rw [morseComplex_X, ModuleCat.isZero_iff_subsingleton]
   have : IsEmpty {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} :=
-    ⟨fun p ↦ (manifoldMorseIndex_le_finrank.trans_lt hn).ne p.2⟩
+    ⟨fun p ↦ (manifoldMorseIndex_le_finrank.trans_lt hn).ne p.property⟩
   infer_instance
 
 /-- The mod-two Morse homology is finite-dimensional. -/
@@ -232,6 +252,17 @@ dimension at most the number of critical points of index `n`. -/
 theorem finrank_homology_morseComplex_le (n : ℕ) :
     finrank (ZMod 2) ((h.morseComplex hf).homology n) ≤ (criticalCount 𝓘(ℝ, E) f n).toNat :=
   (h.morseComplex hf).finrank_homology_le_finrank_X n |>.trans_eq (h.finrank_morseComplex_X hf n)
+
+/-- **The strong Morse inequalities for Morse homology.** Writing `bᵢ` for the dimension of the
+`i`-th mod-two Morse homology and `cᵢ` for the number of critical points of index `i`,
+`bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`. -/
+theorem sum_range_neg_one_pow_mul_finrank_homology_morseComplex_le (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1),
+        (-1 : ℤ) ^ (n - i) * finrank (ZMod 2) ((h.morseComplex hf).homology i) ≤
+      ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * (criticalCount 𝓘(ℝ, E) f i).toNat := by
+  simpa only [h.finrank_morseComplex_X hf] using
+    (h.morseComplex hf).sum_range_neg_one_pow_mul_finrank_homology_le n
+      fun i _ ↦ h.finite_morseComplex_X hf i
 
 /-- The mod-two Morse homology vanishes above the dimension of `M`. -/
 theorem isZero_homology_morseComplex_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
