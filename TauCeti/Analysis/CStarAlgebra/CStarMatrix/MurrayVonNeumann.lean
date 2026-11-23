@@ -10,10 +10,10 @@ public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Block
+public import TauCeti.Analysis.CStarAlgebra.Exponential
 public import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import TauCeti.Algebra.Star.Projection.Basic
-import TauCeti.Analysis.CStarAlgebra.Exponential
 import TauCeti.Data.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
 
@@ -44,7 +44,7 @@ equivalent projections in matrix C⋆-algebras:
 * `CStarMatrix.murrayVonNeumannSetoid`: setoid of Murray–von Neumann equivalence on star projections
   of fixed finite size `n`.
 * `CStarMatrix.stabilizedSymmetry`, `CStarMatrix.rotationProjection`,
-  `CStarMatrix.rotationUnitary`, `CStarMatrix.rotationPath`,
+  `CStarMatrix.rotationPath`,
   `CStarMatrix.MurrayVonNeumannEquiv.joined_inl_inr`,
   `CStarMatrix.MurrayVonNeumannEquiv.joined_inl_inl`: stabilized unitary conjugacy and
   projection homotopy.
@@ -71,6 +71,23 @@ private theorem inr_snd_eq_of_fst_eq_zero {R A : Type*} [AddZeroClass R] [AddZer
     {z : Unitization R A} (hz : z.fst = 0) : (z.snd : Unitization R A) = z := by
   simpa [hz] using Unitization.inl_fst_add_inr_snd_eq z
 
+private theorem unitization_conj_snd_eq_and_isStarProjection {R M : Type*}
+    [CommSemiring R] [StarRing R] [NonUnitalSemiring M] [StarRing M] [Module R M]
+    [IsScalarTower R M M] [SMulCommClass R M M] [StarModule R M]
+    {x : M} (hx : IsStarProjection x) {u : Unitization R M} (hu : u ∈ unitary (Unitization R M)) :
+    ((u * (x : Unitization R M) * star u).snd : Unitization R M) =
+        u * (x : Unitization R M) * star u ∧
+      IsStarProjection (u * (x : Unitization R M) * star u).snd := by
+  have hcoe : ((u * (x : Unitization R M) * star u).snd : Unitization R M) =
+      u * (x : Unitization R M) * star u :=
+    inr_snd_eq_of_fst_eq_zero (by simp [Unitization.fst_mul, Unitization.fst_inr])
+  have hprojU : IsStarProjection (u * (x : Unitization R M) * star u) := by
+    have h := hx.inr.map (Unitary.conjStarAlgAut R (Unitization R M) ⟨u, hu⟩)
+    rw [Unitary.conjStarAlgAut_apply] at h
+    exact h
+  rw [← hcoe] at hprojU
+  exact ⟨hcoe, hprojU.of_inr⟩
+
 /-- If two matrix projections `p, q : CStarMatrix n n A` over a possibly non-unital `⋆`-algebra `A`
 become unitarily conjugate inside the unitization `Unitization R (CStarMatrix n n A)`, then `p` and
 `q` are Murray–von Neumann equivalent inside `CStarMatrix n n A`. -/
@@ -88,11 +105,9 @@ theorem murrayVonNeumannEquiv_of_unitization_unitary_conj [Fintype n]
   have hv_coe : (v : Unitization R M) = u * (p : Unitization R M) :=
     inr_snd_eq_of_fst_eq_zero (by simp [Unitization.fst_mul, Unitization.fst_inr])
   have hp_coe : IsStarProjection (p : Unitization R M) := hp.inr
-  have hq_coe : IsStarProjection (q : Unitization R M) := by
-    have h := hp_coe.map (Unitary.conjStarAlgAut R (Unitization R M) ⟨u, hu⟩)
-    rw [Unitary.conjStarAlgAut_apply, hconj] at h
-    exact h
-  have hq : IsStarProjection q := hq_coe.of_inr
+  have hq : IsStarProjection q := by
+    have hq_snd := (unitization_conj_snd_eq_and_isStarProjection hp hu).2
+    rwa [hconj, Unitization.snd_inr] at hq_snd
   refine (murrayVonNeumannEquiv_iff hp hq).mpr ⟨v, Unitization.inr_injective (R := R) ?_,
     Unitization.inr_injective (R := R) ?_⟩
   · rw [Unitization.inr_mul, ← star_eq_conjTranspose, Unitization.inr_star, hv_coe]
@@ -233,7 +248,7 @@ unital. Over a complex star-ordered ring with proper star, whenever `p` is idemp
 under the same hypotheses, conjugating `fromBlocks p 0 0 0` by the exponential unitary path
 `t ↦ expUnitary ((π * t) • ⟨rotationProjection p q v, _⟩)` in
 `Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)` sends `t = 0` to `fromBlocks p 0 0 0` and `t = 1`
-to `fromBlocks 0 0 0 q` (see `rotationUnitary` and `rotationPath`). -/
+to `fromBlocks 0 0 0 q` (see `rotationPath`). -/
 def rotationProjection {m n A : Type*} [Neg A] [Star A] [SMul ℂ A]
     (p : CStarMatrix m m A) (q : CStarMatrix n n A)
     (v : CStarMatrix n m A) : CStarMatrix (m ⊕ n) (m ⊕ n) A :=
@@ -327,83 +342,6 @@ private theorem unitization_one_sub_two_mul_rotationProjection_conj
       (by simpa [ofMatrix_symm_mul] using congrArg ofMatrix.symm hvq)
       (by simpa [ofMatrix_symm_mul] using congrArg ofMatrix.symm hvp_mul)
 
-/-- The one-parameter family of unitaries `expUnitary ((π * t) • ⟨rotationProjection p q v, _⟩)` in
-`Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)` whose conjugation rotates `inl p` to `inr q` on
-`[0, 1]`. -/
-def rotationUnitary {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
-    (hp : IsIdempotentElem p) (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q)
-    (t : ℝ) : unitary (Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) :=
-  selfAdjoint.expUnitary ((Real.pi * t) •
-    ⟨(rotationProjection p q v : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)),
-      selfAdjoint.mem_iff.mpr
-        ((isStarProjection_rotationProjection hp hvp hvq).map
-          (Unitization.inrNonUnitalStarAlgHom ℂ _)).isSelfAdjoint⟩)
-
-/-- At `t = 0`, `rotationUnitary` evaluates to the identity unitary `1`. -/
-@[simp] theorem rotationUnitary_zero {p : CStarMatrix m m A} {q : CStarMatrix n n A}
-    {v : CStarMatrix n m A} (hp : IsIdempotentElem p)
-    (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
-    rotationUnitary hp hvp hvq 0 = 1 := by
-  rw [rotationUnitary, mul_zero, ← selfAdjoint.expUnitary_zero]
-  exact congrArg _ (Subtype.ext (zero_smul ℝ _))
-
-/-- At `t = 1`, `rotationUnitary` evaluates in the unitization to
-`1 - 2 * rotationProjection p q v`. -/
-theorem coe_rotationUnitary_one {p : CStarMatrix m m A} {q : CStarMatrix n n A}
-    {v : CStarMatrix n m A} (hp : IsIdempotentElem p)
-    (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
-    (rotationUnitary hp hvp hvq 1 : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) =
-      1 - 2 * (rotationProjection p q v : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) := by
-  rw [rotationUnitary, mul_one]
-  exact ((isStarProjection_rotationProjection hp hvp hvq).map
-    (Unitization.inrNonUnitalStarAlgHom ℂ _)).coe_expUnitary_pi_smul
-
-/-- `rotationUnitary` varies continuously with `t : ℝ`. -/
-theorem continuous_rotationUnitary {p : CStarMatrix m m A} {q : CStarMatrix n n A}
-    {v : CStarMatrix n m A} (hp : IsIdempotentElem p)
-    (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
-    Continuous (rotationUnitary hp hvp hvq) :=
-  selfAdjoint.continuous_expUnitary.comp (by fun_prop)
-
-private theorem rotationUnitary_conj_inl_snd_eq_and_isStarProjection
-    {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
-    (hp : IsStarProjection p) (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q)
-    (t : ℝ) :
-    (((rotationUnitary hp.isIdempotentElem hvp hvq t :
-          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) *
-        (inl (n := n) (R := ℂ) p : CStarMatrix (m ⊕ n) (m ⊕ n) A) *
-        star (rotationUnitary hp.isIdempotentElem hvp hvq t :
-          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A))).snd :
-        Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) =
-      (rotationUnitary hp.isIdempotentElem hvp hvq t :
-          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) *
-        (inl (n := n) (R := ℂ) p : CStarMatrix (m ⊕ n) (m ⊕ n) A) *
-        star (rotationUnitary hp.isIdempotentElem hvp hvq t :
-          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) ∧
-    IsStarProjection
-      ((rotationUnitary hp.isIdempotentElem hvp hvq t :
-          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) *
-        (inl (n := n) (R := ℂ) p : CStarMatrix (m ⊕ n) (m ⊕ n) A) *
-        star (rotationUnitary hp.isIdempotentElem hvp hvq t :
-          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A))).snd := by
-  set u := (rotationUnitary hp.isIdempotentElem hvp hvq t :
-    Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A))
-  set x := ((inl (n := n) (R := ℂ) p : CStarMatrix (m ⊕ n) (m ⊕ n) A) :
-    Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A))
-  have hxU : IsStarProjection x :=
-    (hp.map (inl (n := n) (R := ℂ))).map (Unitization.inrNonUnitalStarAlgHom ℂ _)
-  have hcoe : ((u * x * star u).snd : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) =
-      u * x * star u :=
-    inr_snd_eq_of_fst_eq_zero (by simp [x, Unitization.fst_mul, Unitization.fst_inr])
-  have hprojU : IsStarProjection (u * x * star u) := by
-    have h := hxU.map (Unitary.conjStarAlgAut ℂ
-      (Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A))
-      (rotationUnitary hp.isIdempotentElem hvp hvq t))
-    rw [Unitary.conjStarAlgAut_apply] at h
-    exact h
-  rw [← hcoe] at hprojU
-  exact ⟨hcoe, hprojU.of_inr⟩
-
 /-- Explicit norm-continuous path of star projections in `CStarMatrix (m ⊕ n) (m ⊕ n) A` from
 `inl p` to `inr q` associated to a concrete rectangular matrix `v` implementing `p ∼ q`, over any
 (possibly non-unital) C⋆-algebra `A`. -/
@@ -413,50 +351,56 @@ def rotationPath {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatri
     Path
       (⟨inl (n := n) (R := ℂ) p, hp.map (inl (n := n) (R := ℂ))⟩ :
         {P : CStarMatrix (m ⊕ n) (m ⊕ n) A // IsStarProjection P})
-      ⟨inr (m := m) (R := ℂ) q, hq.map (inr (m := m) (R := ℂ))⟩ where
-  toFun t :=
-    ⟨((rotationUnitary hp.isIdempotentElem hvp hvq t :
-          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) *
-        (inl (n := n) (R := ℂ) p : CStarMatrix (m ⊕ n) (m ⊕ n) A) *
-        star (rotationUnitary hp.isIdempotentElem hvp hvq t :
-          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A))).snd,
-      (rotationUnitary_conj_inl_snd_eq_and_isStarProjection hp hvp hvq t).2⟩
-  continuous_toFun := by
-    have hu : Continuous fun t : unitInterval ↦
-        (rotationUnitary hp.isIdempotentElem hvp hvq t :
-          Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) :=
-      continuous_subtypeVal.comp
-        ((continuous_rotationUnitary hp.isIdempotentElem hvp hvq).comp continuous_subtypeVal)
-    exact Continuous.subtype_mk
-      (Unitization.continuous_snd.comp ((hu.mul continuous_const).mul (continuous_star.comp hu))) _
-  source' := by
-    refine Subtype.ext (Unitization.inr_injective (R := ℂ) ?_)
-    rw [(rotationUnitary_conj_inl_snd_eq_and_isStarProjection hp hvp hvq (0 : unitInterval)).1]
-    simp
-  target' := by
-    have hrU : IsStarProjection
-        (rotationProjection p q v : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) :=
-      (isStarProjection_rotationProjection hp.isIdempotentElem hvp hvq).map
-        (Unitization.inrNonUnitalStarAlgHom ℂ _)
-    refine Subtype.ext (Unitization.inr_injective (R := ℂ) ?_)
-    rw [(rotationUnitary_conj_inl_snd_eq_and_isStarProjection hp hvp hvq (1 : unitInterval)).1]
-    simp only [Set.Icc.coe_one, coe_rotationUnitary_one, hrU.isSelfAdjoint_one_sub_two_mul.star_eq,
-      inl_apply, inr_apply]
-    exact unitization_one_sub_two_mul_rotationProjection_conj hp.isIdempotentElem hvp hvq
+      ⟨inr (m := m) (R := ℂ) q, hq.map (inr (m := m) (R := ℂ))⟩ :=
+  let uPath := ((isStarProjection_rotationProjection hp.isIdempotentElem hvp hvq).inr
+    (R := ℂ)).expUnitaryPath
+  let x : CStarMatrix (m ⊕ n) (m ⊕ n) A := inl (n := n) (R := ℂ) p
+  have hx : IsStarProjection x := hp.map (inl (n := n) (R := ℂ))
+  { toFun := fun t ↦
+      ⟨((uPath t : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) *
+          (x : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) *
+          star (uPath t : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A))).snd,
+        (unitization_conj_snd_eq_and_isStarProjection hx (SetLike.coe_mem (uPath t))).2⟩
+    continuous_toFun := by
+      have hu : Continuous fun t : unitInterval ↦
+          (uPath t : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) :=
+        continuous_subtypeVal.comp uPath.continuous
+      exact Continuous.subtype_mk (Unitization.continuous_snd.comp
+        ((hu.mul continuous_const).mul (continuous_star.comp hu))) _
+    source' := by
+      refine Subtype.ext (Unitization.inr_injective (R := ℂ) ?_)
+      rw [(unitization_conj_snd_eq_and_isStarProjection hx (SetLike.coe_mem (uPath 0))).1,
+        uPath.source]
+      simp [x]
+    target' := by
+      refine Subtype.ext (Unitization.inr_injective (R := ℂ) ?_)
+      rw [(unitization_conj_snd_eq_and_isStarProjection hx (SetLike.coe_mem (uPath 1))).1]
+      have hu1 : (uPath 1 : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) =
+          1 - 2 * (rotationProjection p q v : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) :=
+        congrArg Subtype.val uPath.target
+      have hrU : IsStarProjection
+          (rotationProjection p q v : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) :=
+        (isStarProjection_rotationProjection hp.isIdempotentElem hvp hvq).inr
+      rw [hu1, hrU.isSelfAdjoint_one_sub_two_mul.star_eq]
+      simp only [x, inl_apply, inr_apply]
+      exact unitization_one_sub_two_mul_rotationProjection_conj hp.isIdempotentElem hvp hvq }
 
 /-- Evaluated inside `Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)`, `rotationPath` is conjugation
-of `inl p` by `rotationUnitary`. -/
+of `inl p` by `IsStarProjection.expUnitaryPath` applied to `rotationProjection p q v`. -/
 theorem inr_coe_rotationPath_apply {p : CStarMatrix m m A} {q : CStarMatrix n n A}
     {v : CStarMatrix n m A} (hp : IsStarProjection p) (hq : IsStarProjection q)
     (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) (t : unitInterval) :
     ((rotationPath hp hq hvp hvq t : CStarMatrix (m ⊕ n) (m ⊕ n) A) :
         Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) =
-      (rotationUnitary hp.isIdempotentElem hvp hvq t :
+      (((isStarProjection_rotationProjection hp.isIdempotentElem hvp hvq).inr
+          (R := ℂ)).expUnitaryPath t :
           Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) *
         (inl (n := n) (R := ℂ) p : CStarMatrix (m ⊕ n) (m ⊕ n) A) *
-        star (rotationUnitary hp.isIdempotentElem hvp hvq t :
+        star (((isStarProjection_rotationProjection hp.isIdempotentElem hvp hvq).inr
+          (R := ℂ)).expUnitaryPath t :
           Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)) :=
-  (rotationUnitary_conj_inl_snd_eq_and_isStarProjection hp hvp hvq t).1
+  (unitization_conj_snd_eq_and_isStarProjection (hp.map (inl (n := n) (R := ℂ)))
+    (SetLike.coe_mem _)).1
 
 namespace MurrayVonNeumannEquiv
 

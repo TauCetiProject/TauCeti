@@ -19,14 +19,16 @@ In a complete normed complex star-algebra `A`, applying the idempotent exponenti
 projection `p` gives
 `selfAdjoint.expUnitary (t • ⟨p, hp.isSelfAdjoint⟩) = 1 + (Complex.exp (I * t) - 1) • p`
 (`IsStarProjection.coe_expUnitary_smul`), which evaluates at `t = π` to the self-adjoint unitary
-`1 - 2 * p` (`IsStarProjection.expUnitary_pi_smul`) and joins `1` to `1 - 2 * p` in `unitary A`
-(`IsStarProjection.joined_one_one_sub_two_mul`).
+`1 - 2 * p` (`IsStarProjection.expUnitary_pi_smul`) and gives an explicit path from `1` to
+`1 - 2 * p` in `unitary A` (`IsStarProjection.expUnitaryPath` and
+`IsStarProjection.joined_one_one_sub_two_mul`).
 
 ## Main declarations
 
 * `selfAdjoint.star_expUnitary`: `star (expUnitary b) = expUnitary (-b)`.
 * `IsStarProjection.coe_expUnitary_smul`, `IsStarProjection.coe_expUnitary_pi_smul`,
-  `IsStarProjection.expUnitary_pi_smul`, `IsStarProjection.joined_one_one_sub_two_mul`:
+  `IsStarProjection.expUnitary_pi_smul`, `IsStarProjection.expUnitaryPath`,
+  `IsStarProjection.joined_one_one_sub_two_mul`:
   closed form and path to `1 - 2 * p` in `unitary A`.
 
 ## References
@@ -82,14 +84,20 @@ theorem expUnitary_pi_smul (hp : IsStarProjection p) :
       ⟨1 - 2 * p, hp.one_sub_two_mul_mem_unitary⟩ :=
   Subtype.ext (coe_expUnitary_pi_smul hp)
 
+/-- Explicit path `t ↦ expUnitary ((π * t) • ⟨p, _⟩)` from `1` to `⟨1 - 2 * p, _⟩` in
+`unitary A`. -/
+def expUnitaryPath (hp : IsStarProjection p) :
+    Path (1 : unitary A) ⟨1 - 2 * p, hp.one_sub_two_mul_mem_unitary⟩ where
+  toFun t := selfAdjoint.expUnitary (((Real.pi * (t : ℝ)) : ℝ) • ⟨p, hp.isSelfAdjoint⟩)
+  continuous_toFun := selfAdjoint.continuous_expUnitary.comp (by fun_prop)
+  source' := by simp
+  target' := by simpa using expUnitary_pi_smul hp
+
 /-- For any star projection `p`, the reflection unitary `1 - 2 * p` lies in the path component of
 `1` in `unitary A`, joined by `t ↦ expUnitary ((π * t) • ⟨p, _⟩)`. -/
 theorem joined_one_one_sub_two_mul (hp : IsStarProjection p) :
     Joined (1 : unitary A) ⟨1 - 2 * p, hp.one_sub_two_mul_mem_unitary⟩ :=
-  ⟨{ toFun := fun t ↦ selfAdjoint.expUnitary (((Real.pi * (t : ℝ)) : ℝ) • ⟨p, hp.isSelfAdjoint⟩)
-     continuous_toFun := selfAdjoint.continuous_expUnitary.comp (by fun_prop)
-     source' := by simp
-     target' := by simpa using expUnitary_pi_smul hp }⟩
+  ⟨hp.expUnitaryPath⟩
 
 end Exponential
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Algebra.Star.PartialIsometry
+import TauCeti.Algebra.Star.Projection.Basic
 import TauCeti.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Hermitian
 import Mathlib.Data.Matrix.ColumnRowPartitioned
@@ -261,10 +262,9 @@ theorem murrayVonNeumannEquiv_unitary_conj [Semiring B] [StarRing B] [DecidableE
         ← mul_assoc (star (u : CStarMatrix m m B)), Unitary.coe_star_mul_self,
         one_mul, ← mul_assoc p, hp.isIdempotentElem.eq], hp.isSelfAdjoint.conjugate u⟩
   refine ⟨hp, hq, (u : CStarMatrix m m B) * p, ?_, ?_⟩
-  · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq]
-    simp only [mul_assoc, ← mul_assoc (star (u : CStarMatrix m m B)),
-      Unitary.coe_star_mul_self, one_mul, hp.isIdempotentElem.eq]
-  · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq]
-    simp only [mul_assoc, ← mul_assoc p, hp.isIdempotentElem.eq]
+  · rw [← star_eq_conjTranspose]
+    exact hp.star_mul_mul_self_of_mem_unitary u.property
+  · rw [← star_eq_conjTranspose]
+    exact hp.mul_star_mul_eq_mul_mul_star _
 
 end CStarMatrix

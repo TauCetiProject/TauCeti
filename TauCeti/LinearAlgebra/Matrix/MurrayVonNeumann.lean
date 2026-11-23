@@ -425,12 +425,8 @@ theorem isSelfAdjoint_fromBlocks_one_sub {p : Matrix m m R} {q : Matrix n n R} {
     rw [IsHermitian, ← hvp, conjTranspose_mul, conjTranspose_conjTranspose]
   have hq : IsHermitian q := by
     rw [IsHermitian, ← hvq, conjTranspose_mul, conjTranspose_conjTranspose]
-  have h1m : IsHermitian (1 : Matrix m m R) := by
-    rw [IsHermitian, conjTranspose_one]
-  have h1n : IsHermitian (1 : Matrix n n R) := by
-    rw [IsHermitian, conjTranspose_one]
-  exact (IsHermitian.fromBlocks (h1m.sub hp) (conjTranspose_conjTranspose v)
-    (h1n.sub hq)).isSelfAdjoint
+  exact (IsHermitian.fromBlocks (isHermitian_one.sub hp) (conjTranspose_conjTranspose v)
+    (isHermitian_one.sub hq)).isSelfAdjoint
 
 end NonAssocRing
 
