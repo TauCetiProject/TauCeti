@@ -99,6 +99,15 @@ theorem continuous_ofCircle : Continuous (ofCircle Q hQ) := by
         (continuous_const.prodMk continuous_id)
   exact h.congr fun z ↦ (ofCircle_apply Q hQ z).symm
 
+/-- The inclusion `Spin(Q) → Spinᶜ(Q)`, `s ↦ [s, 1]`, is continuous for the quotient topology. -/
+@[fun_prop]
+theorem continuous_ofSpin : Continuous (ofSpin Q hQ) := by
+  have h : Continuous (fun g : spinGroup Q ↦ mk Q hQ (g, 1)) := by
+    simpa only [coe_mk, Function.comp_def, id_eq] using
+      (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous.comp
+        (continuous_id.prodMk continuous_const)
+  exact h.congr fun g ↦ (ofSpin_apply Q hQ g).symm
+
 /-- Charge conjugation `[s, z] ↦ [s, z⁻¹]` is continuous for the quotient topology. -/
 @[fun_prop]
 theorem continuous_chargeConj : Continuous (chargeConj Q hQ) := by
