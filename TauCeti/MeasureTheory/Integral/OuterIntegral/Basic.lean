@@ -421,15 +421,15 @@ theorem outerLIntegral_ofReal_eq {μ : Measure α} {f : α → ℝ}
 
 /-- `outerIntegral` of the constant zero function is `0`. -/
 @[simp]
-theorem outerIntegral_zero_apply (μ : Measure α) : outerIntegral μ (fun _ ↦ 0) = 0 := by
+theorem outerIntegral_zero (μ : Measure α) : outerIntegral μ (fun _ ↦ 0) = 0 := by
   have h := outerIntegral_eq_integral_of_measurable (f := fun _ : α ↦ (0 : ℝ))
     measurable_const (integrable_zero α ℝ μ)
   simpa using h
 
 /-- `outerIntegral` of the zero function is `0`. -/
 @[simp]
-theorem outerIntegral_zero (μ : Measure α) : outerIntegral μ 0 = 0 := by
-  rw [Pi.zero_def, outerIntegral_zero_apply]
+theorem outerIntegral_zero_fun (μ : Measure α) : outerIntegral μ 0 = 0 := by
+  rw [Pi.zero_def, outerIntegral_zero]
 
 /-- `outerIntegral` with respect to the zero measure is `0`. -/
 @[simp]
@@ -640,7 +640,8 @@ theorem abs_outerIntegral_sub_le {μ : Measure α} {f g : α → ℝ}
   have hfg : outerIntegral μ f ≤ outerIntegral μ g + outerIntegral μ (fun ω ↦ |f ω - g ω|) := by
     obtain ⟨w, hw_meas, hw_int, hdw⟩ := hdu
     calc outerIntegral μ f ≤ outerIntegral μ (g + fun ω ↦ |f ω - g ω|) :=
-          outerIntegral_mono (fun ω ↦ by simp; linarith [le_abs_self (f ω - g ω)])
+          outerIntegral_mono
+            (fun ω ↦ by simp only [Pi.add_apply]; linarith [le_abs_self (f ω - g ω)])
             ⟨ug + w, hug_meas.add hw_meas, hug_int.add hw_int, add_le_add hug hdw⟩
             ⟨lf, hlf_int, ae_of_all _ hlf⟩
       _ ≤ outerIntegral μ g + outerIntegral μ (fun ω ↦ |f ω - g ω|) :=
@@ -649,7 +650,8 @@ theorem abs_outerIntegral_sub_le {μ : Measure α} {f g : α → ℝ}
   have hgf : outerIntegral μ g ≤ outerIntegral μ f + outerIntegral μ (fun ω ↦ |f ω - g ω|) := by
     obtain ⟨w, hw_meas, hw_int, hdw⟩ := hdu
     calc outerIntegral μ g ≤ outerIntegral μ (f + fun ω ↦ |f ω - g ω|) :=
-          outerIntegral_mono (fun ω ↦ by simp; linarith [neg_abs_le (f ω - g ω)])
+          outerIntegral_mono
+            (fun ω ↦ by simp only [Pi.add_apply]; linarith [neg_abs_le (f ω - g ω)])
             ⟨uf + w, huf_meas.add hw_meas, huf_int.add hw_int, add_le_add huf hdw⟩
             ⟨lg, hlg_int, ae_of_all _ hlg⟩
       _ ≤ outerIntegral μ f + outerIntegral μ (fun ω ↦ |f ω - g ω|) :=
@@ -678,15 +680,15 @@ theorem outerIntegral_neg (μ : Measure α) (f : α → ℝ) :
 
 /-- `innerIntegral` of the constant zero function is `0`. -/
 @[simp]
-theorem innerIntegral_zero_apply (μ : Measure α) : innerIntegral μ (fun _ ↦ 0) = 0 := by
+theorem innerIntegral_zero (μ : Measure α) : innerIntegral μ (fun _ ↦ 0) = 0 := by
   rw [innerIntegral_def]
   have h : -(fun _ : α ↦ (0 : ℝ)) = fun _ ↦ 0 := by ext; simp
-  rw [h, outerIntegral_zero_apply, neg_zero]
+  rw [h, outerIntegral_zero, neg_zero]
 
 /-- `innerIntegral` of the zero function is `0`. -/
 @[simp]
-theorem innerIntegral_zero (μ : Measure α) : innerIntegral μ 0 = 0 := by
-  rw [Pi.zero_def, innerIntegral_zero_apply]
+theorem innerIntegral_zero_fun (μ : Measure α) : innerIntegral μ 0 = 0 := by
+  rw [Pi.zero_def, innerIntegral_zero]
 
 /-- `innerIntegral` with respect to the zero measure is `0`. -/
 @[simp]
@@ -778,7 +780,7 @@ theorem innerIntegral_le_outerIntegral {μ : Measure α} {f : α → ℝ}
     have hsum := outerIntegral_add_le ⟨u, hu_meas, hu_int, hfu⟩
       ⟨-l, hl_meas.neg, hl_int.neg, neg_le_neg hlf⟩
       ⟨l, hl_int, ae_of_all _ hlf⟩ ⟨-u, hu_int.neg, ae_of_all _ (neg_le_neg hfu)⟩
-    rwa [add_neg_cancel, outerIntegral_zero] at hsum
+    rwa [add_neg_cancel, outerIntegral_zero_fun] at hsum
   linarith
 
 /-- Monotonicity of `innerIntegral` with respect to almost-everywhere inequality. -/

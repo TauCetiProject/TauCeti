@@ -27,7 +27,7 @@ condition, so `outerLIntegral μ f = ∞` whenever `f` admits no integrable meas
 
 ## Main results
 
-* `TauCeti.measure_le_le_outerLIntegral_div`: Markov's inequality for `outerLIntegral`, measuring
+* `TauCeti.meas_ge_le_outerLIntegral_div`: Markov's inequality for `outerLIntegral`, measuring
   superlevel sets by Mathlib's outer measure `μ`.
 * `TauCeti.outerLIntegral_indicator_const` and `TauCeti.outerLIntegral_indicator_one`: the outer
   Lebesgue integral of a constant indicator recovers the outer measure `c * μ s`.
@@ -142,7 +142,7 @@ theorem outerLIntegral_zero_measure (f : α → ℝ≥0∞) :
   rw [outerLIntegral_eq_lintegral aemeasurable_zero_measure, lintegral_zero_measure]
 
 /-- Multiplicative form of Markov's inequality for `outerLIntegral`. -/
-theorem mul_measure_le_le_outerLIntegral (μ : Measure α) (f : α → ℝ≥0∞) (t : ℝ≥0∞) :
+theorem mul_meas_ge_le_outerLIntegral (μ : Measure α) (f : α → ℝ≥0∞) (t : ℝ≥0∞) :
     t * μ {ω | t ≤ f ω} ≤ outerLIntegral μ f :=
   le_outerLIntegral fun g hg hfg ↦
     have hsub : {ω | t ≤ f ω} ⊆ {ω | t ≤ g ω} := fun _ hω ↦ le_trans hω (hfg _)
@@ -150,11 +150,11 @@ theorem mul_measure_le_le_outerLIntegral (μ : Measure α) (f : α → ℝ≥0�
 
 /-- **Markov's inequality for outer Lebesgue integrals.** The measure of a possibly non-measurable
 superlevel set is Mathlib's outer measure. -/
-theorem measure_le_le_outerLIntegral_div (μ : Measure α) (f : α → ℝ≥0∞)
+theorem meas_ge_le_outerLIntegral_div (μ : Measure α) (f : α → ℝ≥0∞)
     {t : ℝ≥0∞} (ht : t ≠ 0) (ht' : t ≠ ⊤) :
     μ {ω | t ≤ f ω} ≤ outerLIntegral μ f / t := by
   rw [ENNReal.le_div_iff_mul_le (Or.inl ht) (Or.inl ht'), mul_comm]
-  exact mul_measure_le_le_outerLIntegral μ f t
+  exact mul_meas_ge_le_outerLIntegral μ f t
 
 /-- The outer Lebesgue integral of a constant indicator `s.indicator (fun _ ↦ c)` is `c * μ s`,
 for any (not necessarily measurable) set `s`. -/
@@ -171,7 +171,7 @@ theorem outerLIntegral_indicator_const (μ : Measure α) (s : Set α) (c : ℝ�
       _ = c * μ (toMeasurable μ s) := lintegral_indicator_const (measurableSet_toMeasurable μ s) c
       _ = c * μ s := by rw [measure_toMeasurable]
   · refine (mul_le_mul_right (measure_mono ?_) c).trans
-      (mul_measure_le_le_outerLIntegral μ (s.indicator fun _ ↦ c) c)
+      (mul_meas_ge_le_outerLIntegral μ (s.indicator fun _ ↦ c) c)
     intro ω hω
     simp [hω]
 
