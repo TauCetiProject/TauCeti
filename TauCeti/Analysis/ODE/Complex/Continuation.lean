@@ -6,49 +6,34 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Complex.SolutionGerm
-public import TauCeti.Analysis.ODE.Complex.OrdinaryPoint
 public import TauCeti.Analysis.Complex.Conformal.GlobalBranch
 
 /-!
-# Continuation of solutions of analytic linear equations, and global solutions
+# Continuation of solutions of complex linear differential equations
 
-Let `E : TauCeti.LinearEquation U n` be a monic analytic linear equation on an open domain `U`.
-A solution germ of `E` at a point of `U` continues analytically along every path in `U`, and every
-germ met along the way is again a solution germ. Consequently, on a simply connected domain every
-local solution is the germ of a solution on the whole domain, and the unscaled initial jet at any
-point of the domain is a linear isomorphism from the solution space onto `Fin n → ℂ`.
+A local solution of a monic analytic linear equation continues along every continuous path in
+an arbitrary open coefficient domain. The continuation remains a local solution at every point
+of the path.
 
-## Main results
+`LinearEquation.IsSolutionNear.exists_isAnalyticContinuationAlong` constructs the continuation.
+`LinearEquation.IsSolutionNear.continuesInside` supplies the hypothesis of the monodromy theorem.
+`IsAnalyticContinuationAlong.isSolutionNear` preserves the equation for a caller's continuation.
 
-* `LinearEquation.IsSolutionNear.exists_isAnalyticContinuationAlong`: a local solution at the
-  starting point of a path in `U` has an analytic continuation along the path all of whose germs
-  are local solutions.
-* `IsAnalyticContinuationAlong.isSolutionNear`: **continuation preserves the equation** — any
-  analytic continuation along a path in `U` that starts at a solution germ consists of solution
-  germs.
-* `LinearEquation.IsSolutionNear.continuesInside`: a solution germ continues inside `U`, in the
-  sense of `TauCeti.ContinuesInside`.
-* `LinearEquation.IsSolutionNear.exists_isSolution`: on a simply connected domain every local
-  solution is the germ of a global solution.
-* `LinearEquation.exists_isSolution_of_isSimplyConnected`: **the global initial-value theorem** —
-  on a simply connected domain every unscaled initial jet has a solution on the whole domain,
-  unique there.
-* `LinearEquation.initialJetEquivOfIsSimplyConnected` and
-  `LinearEquation.finrank_solutionSpace_of_isSimplyConnected`: on a simply connected domain the
-  unscaled initial jet at any point is a linear isomorphism onto `Fin n → ℂ`, so the solution
-  space has dimension `n`.
+The subdivision `exists_monotone_Icc_subset_open_cover_unitInterval` splits the compact parameter
+interval into pieces whose images lie in discs inside the domain. The disc initial-value theorem
+`LinearEquation.initialJetEquivOfEqEBall` and germ uniqueness
+`LinearEquation.initialJetGermEquiv_symm_apply` supply
+`LinearEquation.IsSolutionNear.exists_isSolutionNear_eball` to extend the germ across each piece.
+`IsAnalyticContinuationAlong.union` glues the pieces.
 
-## Implementation notes
-
-Continuation along a path `c : I → ℂ` is proved by a connectedness argument on the parameter
-interval: the set of times `T` such that the germ continues, through solution germs, along `c` over
-`[0, T]` is locally constant in `T`. Near a time `T`, the path stays in an open disc inside `U`
-around `c T`; on that disc the disc initial-value theorem
-(`LinearEquation.initialJetEquivOfEqEBall`) extends the solution germ reached at any nearby time to
-a solution on the whole disc, which continues the germ further as a constant family. Global
-solutions on a simply connected domain then come from the monodromy theorem
-`TauCeti.ContinuesInside.exists_analyticOnNhd`; the branch it produces solves the equation because
-continuation preserves the equation.
+On a simply connected domain, the monodromy theorem `TauCeti.ContinuesInside.exists_analyticOnNhd`
+turns every local solution into the germ of a global solution
+(`LinearEquation.IsSolutionNear.exists_isSolution`); the global branch solves the equation because
+continuation preserves it. Hence every unscaled initial jet has a unique solution on the whole
+domain (`LinearEquation.exists_isSolution_of_isSimplyConnected`), the initial jet at any point is a
+linear isomorphism `LinearEquation.initialJetEquivOfIsSimplyConnected` from the solution space onto
+`Fin n → ℂ`, and the solution space has dimension `n`
+(`LinearEquation.finrank_solutionSpace_of_isSimplyConnected`).
 
 ## References
 
@@ -56,129 +41,132 @@ continuation preserves the equation.
   its proof.
 -/
 
-public noncomputable section
+public section
 
-open Filter Metric Set Topology TopologicalSpace unitInterval
-open scoped ENNReal
+open Filter Set Topology TopologicalSpace
+open scoped unitInterval
 
-namespace TauCeti
+namespace TauCeti.LinearEquation
 
-namespace LinearEquation
+variable {U : Opens ℂ} {n : ℕ} {E : LinearEquation U n}
+
+private theorem continuation_step {γ : I → ℂ} (hγ : Continuous γ) {a b : I} (hab : a ≤ b)
+    {F : I → ℂ → ℂ} (hF : IsAnalyticContinuationAlong F γ (Iic a))
+    (hsol : ∀ t ≤ a, E.IsSolutionNear (γ t) (F t)) {g : ℂ → ℂ}
+    (hg : ∀ t ∈ Icc a b, E.IsSolutionNear (γ t) g)
+    (hga : g =ᶠ[𝓝 (γ a)] F a) :
+    ∃ G : I → ℂ → ℂ, IsAnalyticContinuationAlong G γ (Iic b) ∧
+      (∀ t ≤ b, E.IsSolutionNear (γ t) (G t)) ∧ G 0 = F 0 := by
+  let G : I → ℂ → ℂ := fun t ↦ if t ≤ a then F t else g
+  have hleft : IsAnalyticContinuationAlong G γ (Iic a) :=
+    hF.congr fun t ht ↦ by simp [G, mem_Iic.mp ht]
+  have hright : IsAnalyticContinuationAlong G γ (Icc a b) := by
+    apply (IsAnalyticContinuationAlong.const hγ.continuousOn
+      (fun t ht ↦ (hg t ht).analyticAt)).congr
+    intro t ht
+    by_cases hta : t ≤ a
+    · have hta' : t = a := le_antisymm hta ht.1
+      subst t
+      simpa only [G, ite_eq_left le_rfl] using hga.symm
+    · simp [G, hta]
+  refine ⟨G, ?_, ?_, by simp [G]⟩
+  · simpa only [Iic_union_Icc_eq_Iic hab] using hleft.union hright isClosed_Iic isClosed_Icc
+  · intro t ht
+    dsimp only [G]
+    split_ifs with hta
+    · exact hsol t hta
+    · exact hg t ⟨le_of_not_ge hta, ht⟩
+
+/-- A local solution of an analytic linear equation continues along every continuous path in its
+coefficient domain, remaining a local solution throughout the path. -/
+theorem IsSolutionNear.exists_isAnalyticContinuationAlong {γ : I → ℂ} {f : ℂ → ℂ}
+    (hf : E.IsSolutionNear (γ 0) f) (hγ : Continuous γ) (hγU : ∀ t, γ t ∈ U) :
+    ∃ F : I → ℂ → ℂ, IsAnalyticContinuationAlong F γ univ ∧
+      F 0 =ᶠ[𝓝 (γ 0)] f ∧ ∀ t, E.IsSolutionNear (γ t) (F t) := by
+  choose r hr hball using fun t ↦ Metric.isOpen_iff.mp U.isOpen (γ t) (hγU t)
+  obtain ⟨t, ht0, htmono, ⟨m, hm⟩, htsub⟩ :=
+    exists_monotone_Icc_subset_open_cover_unitInterval
+      (fun i ↦ Metric.isOpen_ball.preimage hγ)
+      (fun u _ ↦ mem_iUnion.mpr ⟨u, Metric.mem_ball_self (hr u)⟩)
+  have hind : ∀ k, ∃ F : I → ℂ → ℂ, IsAnalyticContinuationAlong F γ (Iic (t k)) ∧
+      (∀ u ≤ t k, E.IsSolutionNear (γ u) (F u)) ∧ F 0 =ᶠ[𝓝 (γ 0)] f := by
+    intro k
+    induction k with
+    | zero =>
+      rw [ht0]
+      have hlocal : ∀ u ≤ (0 : I), E.IsSolutionNear (γ u) f := by
+        intro u hu
+        obtain rfl : u = 0 := le_antisymm hu unitInterval.nonneg'
+        exact hf
+      exact ⟨fun _ ↦ f, IsAnalyticContinuationAlong.const hγ.continuousOn
+        (fun u hu ↦ (hlocal u hu).analyticAt), hlocal, .rfl⟩
+    | succ k ih =>
+      obtain ⟨F, hF, hsol, hF0⟩ := ih
+      obtain ⟨i, hi⟩ := htsub k
+      have hak := hi ⟨le_rfl, htmono k.le_succ⟩
+      have hdisc :
+          (⟨Metric.eball (γ i) (ENNReal.ofReal (r i)), Metric.isOpen_eball⟩ : Opens ℂ) ≤ U := by
+        apply SetLike.coe_subset_coe.mp
+        simpa only [Opens.coe_mk, Metric.eball_ofReal] using hball i
+      obtain ⟨g, hg, hga⟩ := (hsol (t k) le_rfl).exists_isSolutionNear_eball hdisc
+        (by simpa only [Metric.eball_ofReal, mem_preimage] using hak)
+      obtain ⟨G, hG, hGsol, hG0⟩ := continuation_step hγ (htmono k.le_succ) hF hsol
+        (fun u hu ↦ hg (γ u) (by simpa only [Metric.eball_ofReal, mem_preimage] using hi hu)) hga
+      exact ⟨G, hG, hGsol, hG0 ▸ hF0⟩
+  obtain ⟨F, hF, hsol, hF0⟩ := hind m
+  rw [hm m le_rfl] at hF hsol
+  have hIic : Iic (1 : I) = univ := eq_univ_of_forall fun _ ↦ unitInterval.le_one'
+  rw [hIic] at hF
+  exact ⟨F, hF, hF0, fun u ↦ hsol u unitInterval.le_one'⟩
+
+/-- A germ solving an analytic linear equation continues inside its coefficient domain. -/
+theorem IsSolutionNear.continuesInside {a : ℂ} {f : ℂ → ℂ} (hf : E.IsSolutionNear a f) :
+    ContinuesInside f U a := by
+  apply ContinuesInside.of_forall
+  intro γ hγ hγU hγ0
+  obtain ⟨F, hF, hF0, -⟩ := (hγ0 ▸ hf).exists_isAnalyticContinuationAlong hγ hγU
+  exact continuesAlong_iff_exists.mpr ⟨F, hF, hF0⟩
+
+end TauCeti.LinearEquation
+
+namespace TauCeti.IsAnalyticContinuationAlong
+
+/-- A continuation inside the coefficient domain of an analytic linear equation over a
+preconnected parameter set remains a local solution wherever its germ at one parameter solves the
+equation. -/
+theorem isSolutionNear {X : Type*} [TopologicalSpace X] {U : Opens ℂ} {n : ℕ}
+    {E : LinearEquation U n} {F : X → ℂ → ℂ} {γ : X → ℂ} {s : Set X}
+    (hF : IsAnalyticContinuationAlong F γ s) (hs : IsPreconnected s)
+    (hγU : MapsTo γ s U) {a b : X} (ha : a ∈ s) (hb : b ∈ s)
+    (hsol : E.IsSolutionNear (γ a) (F a)) : E.IsSolutionNear (γ b) (F b) := by
+  rw [LinearEquation.isSolutionNear_iff] at hsol ⊢
+  let R : X → ℂ → ℂ := fun t z ↦ iteratedDeriv n (F t) z +
+    ∑ j, HolomorphicFunctions.extend (E.coeff j) z * iteratedDeriv j (F t) z
+  have hderiv (t : X) (ht : t ∈ s) (k : ℕ) :
+      AnalyticAt ℂ (iteratedDeriv k (F t)) (γ t) := by
+    simpa only [iteratedDeriv_eq_iterate] using (hF.analyticAt t ht).iterated_deriv k
+  have hR : IsAnalyticContinuationAlong R γ s := by
+    refine ⟨hF.continuousOn, ?_, ?_⟩
+    · intro t ht
+      exact (hderiv t ht n).add (Finset.analyticAt_fun_sum _ fun j _ ↦
+        (HolomorphicFunctions.analyticOnNhd_extend (s := U) Subset.rfl (E.coeff j)
+          (γ t) (hγU ht)).mul (hderiv t ht j))
+    · intro t ht
+      filter_upwards [hF.locallyEq t ht] with u hu
+      filter_upwards [hu.eventuallyEq_nhds] with z hz
+      simp only [R, hz.iteratedDeriv_eq]
+  have hzero : R b =ᶠ[𝓝 (γ b)] 0 :=
+    hR.eventuallyEq (IsAnalyticContinuationAlong.const hF.continuousOn
+      (fun _ _ ↦ analyticAt_const)) hs ha hb (hsol.mono fun _ hz ↦ hz.2.2)
+  filter_upwards [U.isOpen.mem_nhds (hγU hb), (hF.analyticAt b hb).eventually_analyticAt,
+    hzero] with z hzU hzF hz
+  exact ⟨hzU, hzF, hz⟩
+
+end TauCeti.IsAnalyticContinuationAlong
+
+namespace TauCeti.LinearEquation
 
 variable {U : Opens ℂ} {n : ℕ} {E : LinearEquation U n} {a : ℂ} {y : ℂ → ℂ}
-
-/-- A solution of `E` near a point `a` of an open disc `V` contained in the domain agrees near `a`
-with a solution of the equation restricted to `V`. Once global solutions are available, this is the
-special case of `IsSolutionNear.exists_isSolution` for the restricted equation on a disc. -/
-private theorem IsSolutionNear.exists_isSolution_restrict (hy : E.IsSolutionNear a y) {V : Opens ℂ}
-    (hVU : V ≤ U) {z : ℂ} {r : ℝ≥0∞} (hV : (V : Set ℂ) = eball z r) (haV : a ∈ V) :
-    ∃ w : ℂ → ℂ, (E.restrict hVU).IsSolution w ∧ w =ᶠ[𝓝 a] y := by
-  let e := (E.restrict hVU).initialJetEquivOfEqEBall hV haV
-  let w := HolomorphicFunctions.extend (e.symm fun j ↦ iteratedDeriv j y a).val
-  have hw : (E.restrict hVU).IsSolution w :=
-    ((E.restrict hVU).mem_solutionSpace _).mp (e.symm _).property
-  have hwy : E.IsSolutionNear a w :=
-    (isSolutionNear_restrict_iff hVU haV).mp (hw.isSolutionNear haV)
-  have hjet : E.initialJetGerm hy.mem ⟨w, (coe_mem_solutionGerms _).mpr hwy⟩ =
-      E.initialJetGerm hy.mem ⟨y, (coe_mem_solutionGerms _).mpr hy⟩ :=
-    funext fun j ↦ by
-      simp only [initialJetGerm_mk, w, e, iteratedDeriv_extend_initialJetEquivOfEqEBall_symm]
-  exact ⟨w, hw, Germ.coe_eq.mp (congrArg Subtype.val (initialJetGerm_injective hy.mem hjet))⟩
-
-/-! ### Continuation along a path -/
-
-/-- The germ of `y` continues along `c` over the parameter times `[0, T]`, through solution germs
-of `E`, with the continuation starting at `y` itself. -/
-private def ContinuesUpTo (E : LinearEquation U n) (c : I → ℂ) (y : ℂ → ℂ) (T : I) : Prop :=
-  ∃ f : I → ℂ → ℂ, IsAnalyticContinuationAlong f c (Iic T) ∧ f 0 = y ∧
-    ∀ t ∈ Iic T, E.IsSolutionNear (c t) (f t)
-
-/-- The germ of a local solution at `c 0` continues over the single time `0`. -/
-private theorem continuesUpTo_zero {c : I → ℂ} (hc : Continuous c)
-    (hy : E.IsSolutionNear (c 0) y) : ContinuesUpTo E c y 0 := by
-  have h0 : ∀ t ∈ Iic (0 : I), t = 0 := fun t ht ↦ le_antisymm ht nonneg'
-  exact ⟨fun _ ↦ y, .const hc.continuousOn fun t ht ↦ h0 t ht ▸ hy.analyticAt, rfl,
-    fun t ht ↦ h0 t ht ▸ hy⟩
-
-/-- **The extension step.** If the path stays in an open disc inside the domain between the times
-`s ≤ t`, a continuation through solution germs up to time `s` extends to one up to time `t`: the
-germ reached at time `s` extends to a solution on the disc, carried on as a constant family. -/
-private theorem ContinuesUpTo.of_le {c : I → ℂ} (hc : Continuous c) {s t : I} (hst : s ≤ t)
-    {V : Opens ℂ} (hVU : V ≤ U) {z : ℂ} {r : ℝ≥0∞} (hV : (V : Set ℂ) = eball z r)
-    (hcV : ∀ u ∈ Icc s t, c u ∈ V) (h : ContinuesUpTo E c y s) : ContinuesUpTo E c y t := by
-  classical
-  obtain ⟨f, hf, hf0, hfE⟩ := h
-  obtain ⟨w, hw, hwf⟩ :=
-    (hfE s le_rfl).exists_isSolution_restrict hVU hV (hcV s ⟨le_rfl, hst⟩)
-  refine ⟨fun u ↦ if u ≤ s then f u else w, ?_, ite_eq_left nonneg' |>.trans hf0, fun u hu ↦ ?_⟩
-  · rw [← Iic_union_Icc_eq_Iic hst]
-    refine .union (hf.congr fun u hu ↦ .of_eq (ite_eq_left hu))
-      ((IsAnalyticContinuationAlong.const hc.continuousOn fun u hu ↦
-        hw.analyticOnNhd _ (hcV u hu)).congr fun u hu ↦ ?_) isClosed_Iic isClosed_Icc
-    by_cases hus : u ≤ s
-    · obtain rfl := le_antisymm hus hu.1
-      exact (EventuallyEq.of_eq (ite_eq_left le_rfl)).trans hwf.symm
-    · exact .of_eq (ite_eq_right hus)
-  · by_cases hus : u ≤ s
-    · simpa only [ite_eq_left hus] using hfE u hus
-    · have huV := hcV u ⟨(not_le.mp hus).le, hu⟩
-      simpa only [ite_eq_right hus] using
-        (isSolutionNear_restrict_iff hVU huV).mp (hw.isSolutionNear huV)
-
-/-- **Continuability through solution germs is locally constant in the time.** Near a time `T`, the
-path stays in an open disc inside the domain around `c T`, across which continuations extend
-(`ContinuesUpTo.of_le`) and to which they restrict. -/
-private theorem eventually_continuesUpTo_eq {c : I → ℂ} (hc : Continuous c)
-    (hcU : ∀ t, c t ∈ U) (T : I) :
-    ∀ᶠ u in 𝓝 T, ContinuesUpTo E c y u = ContinuesUpTo E c y T := by
-  obtain ⟨r, hr, hrU⟩ := EMetric.isOpen_iff.mp U.isOpen (c T) (hcU T)
-  obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.mp
-    (hc.continuousAt.preimage_mem_nhds (isOpen_eball.mem_nhds (mem_eball_self hr)))
-  have hball : (ball T ε).OrdConnected :=
-    (Real.ball_eq_Ioo (T : ℝ) ε ▸ ordConnected_Ioo).preimage_mono (Subtype.mono_coe _)
-  have key : ∀ s ∈ ball T ε, ∀ t ∈ ball T ε, ContinuesUpTo E c y s → ContinuesUpTo E c y t := by
-    intro s hs t ht h
-    rcases le_total s t with hst | hts
-    · exact h.of_le (V := ⟨eball (c T) r, isOpen_eball⟩) hc hst hrU rfl
-        fun u hu ↦ hεV (hball.out hs ht hu)
-    · obtain ⟨f, hf, hf0, hfE⟩ := h
-      exact ⟨f, hf.mono (Iic_subset_Iic.mpr hts), hf0, fun u hu ↦ hfE u (le_trans hu hts)⟩
-  filter_upwards [ball_mem_nhds T hε] with u hu
-  exact propext ⟨key u hu T (mem_ball_self hε), key T (mem_ball_self hε) u hu⟩
-
-/-- **Continuation of solutions along a path.** A solution of `E` near the starting point of a path
-`c` in the domain has an analytic continuation along `c` that starts at the solution itself and
-whose germ at every time is a solution germ of `E`. -/
-theorem IsSolutionNear.exists_isAnalyticContinuationAlong {c : I → ℂ}
-    (hy : E.IsSolutionNear (c 0) y) (hc : Continuous c) (hcU : ∀ t, c t ∈ U) :
-    ∃ f : I → ℂ → ℂ, IsAnalyticContinuationAlong f c univ ∧ f 0 = y ∧
-      ∀ t, E.IsSolutionNear (c t) (f t) := by
-  have h1 : ContinuesUpTo E c y 1 :=
-    isPreconnected_univ.apply_eq_of_eventually_eq (f := ContinuesUpTo E c y)
-      (fun T _ ↦ by simpa only [nhdsWithin_univ] using eventually_continuesUpTo_eq hc hcU T)
-      (mem_univ 0) (mem_univ 1) ▸ continuesUpTo_zero hc hy
-  obtain ⟨f, hf, hf0, hfE⟩ := h1
-  have hI : Iic (1 : I) = univ := eq_univ_of_forall fun _ ↦ le_one'
-  exact ⟨f, hI ▸ hf, hf0, fun t ↦ hfE t le_one'⟩
-
-/-- A solution germ of `E` continues along every path in the domain issuing from its base point. -/
-theorem IsSolutionNear.continuesInside (hy : E.IsSolutionNear a y) :
-    ContinuesInside y U a :=
-  .of_forall fun c hc hcU hc0 ↦ by
-    subst hc0
-    obtain ⟨f, hf, hf0, -⟩ := hy.exists_isAnalyticContinuationAlong hc hcU
-    exact continuesAlong_iff_exists.mpr ⟨f, hf, .of_eq hf0⟩
-
-/-- **Analytic continuation preserves the equation.** An analytic continuation along a path in the
-domain of `E` whose initial germ is a solution germ of `E` carries a solution germ of `E` at every
-time. -/
-theorem _root_.TauCeti.IsAnalyticContinuationAlong.isSolutionNear {f : I → ℂ → ℂ} {c : I → ℂ}
-    (hf : IsAnalyticContinuationAlong f c univ) (hcU : ∀ t, c t ∈ U)
-    (h0 : E.IsSolutionNear (c 0) (f 0)) (t : I) : E.IsSolutionNear (c t) (f t) := by
-  obtain ⟨g, hg, hg0, hgE⟩ :=
-    h0.exists_isAnalyticContinuationAlong (continuousOn_univ.mp hf.continuousOn) hcU
-  exact (hgE t).congr
-    (hg.eventuallyEq hf isPreconnected_univ (mem_univ 0) (mem_univ t) (.of_eq hg0))
 
 /-! ### Global solutions on simply connected domains -/
 
@@ -196,7 +184,8 @@ theorem IsSolutionNear.exists_isSolution (hU : IsSimplyConnected (U : Set ℂ))
     rw [hjoin.somePath.source]
     exact hy.congr hFy.symm
   simpa only [hjoin.somePath.target] using
-    (isSolutionNear_iff.mp (hcont.isSolutionNear hjoin.somePath_mem h0 1)).self_of_nhds.2.2
+    (isSolutionNear_iff.mp (hcont.isSolutionNear isPreconnected_univ
+      (fun t _ ↦ hjoin.somePath_mem t) (mem_univ 0) (mem_univ 1) h0)).self_of_nhds.2.2
 
 /-- On a simply connected domain, every unscaled initial jet at a point of the domain is the jet of
 a solution on the whole domain. -/
@@ -220,7 +209,8 @@ variable (E) in
 /-- **The initial-jet isomorphism on a simply connected domain.** On a simply connected domain, the
 unscaled initial jet at any point of the domain is a complex linear isomorphism from the solution
 space onto `Fin n → ℂ`: every jet has exactly one solution on the whole domain. -/
-def initialJetEquivOfIsSimplyConnected (hU : IsSimplyConnected (U : Set ℂ)) (ha : a ∈ U) :
+noncomputable def initialJetEquivOfIsSimplyConnected (hU : IsSimplyConnected (U : Set ℂ))
+    (ha : a ∈ U) :
     E.solutionSpace ≃ₗ[ℂ] (Fin n → ℂ) :=
   LinearEquiv.ofBijective (E.initialJet ha)
     ⟨E.initialJet_injective_of_isPreconnected hU.isPathConnected.isConnected.isPreconnected ha,
@@ -287,6 +277,4 @@ theorem finrank_solutionSpace_of_isSimplyConnected (hU : IsSimplyConnected (U : 
   obtain ⟨a, ha⟩ := hU.isPathConnected.nonempty
   simpa using (E.initialJetEquivOfIsSimplyConnected hU ha).finrank_eq
 
-end LinearEquation
-
-end TauCeti
+end TauCeti.LinearEquation

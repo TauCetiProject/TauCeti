@@ -40,6 +40,12 @@ into it.
   non-isolated point has that point in its closure.
 * `TauCeti.mapsTo_of_tendsto_of_isClosed`: pointwise limits of maps into a closed set map into
   it.
+* `TauCeti.subset_closure_range_domRestrict_preimage`: the values of a family that lie in an open
+  set contained in the closure of its range are dense in that set.
+* `TauCeti.subset_closure_range_subtypeVal_inter`: the points of `L` lying in an open set
+  contained in the closure of `L` are dense in that set.
+* `TauCeti.subset_closure_range_subtypeVal_inter_of_subset`: if the points of `L` lying in `s`
+  are dense in `s`, those lying in an open subset of `s` are dense in it.
 -/
 
 public section
@@ -93,5 +99,28 @@ theorem mapsTo_of_tendsto_of_isClosed {α ι : Type*} {l : Filter ι} [l.NeBot] 
     (hv : ∀ s ∈ S, Filter.Tendsto (fun m ↦ u m s) l (𝓝 (v s))) :
     MapsTo v S L :=
   fun s hs ↦ hL.mem_of_tendsto (hv s hs) (Filter.Eventually.of_forall fun m ↦ hu m hs)
+
+/-- When an open set `s` lies in the closure of the values of `c`, the values of `c` lying in `s`
+are dense in `s`. -/
+theorem subset_closure_range_domRestrict_preimage {α : Type*} {c : α → X} {s : Set X}
+    (hs : IsOpen s) (h : s ⊆ closure (range c)) :
+    s ⊆ closure (range ((c ⁻¹' s).domRestrict c)) := by
+  rw [range_domRestrict, image_preimage_eq_inter_range]
+  exact fun x hx ↦ hs.inter_closure ⟨hx, h hx⟩
+
+/-- When an open set `s` lies in the closure of `L`, the points of `L` lying in `s` are dense in
+`s`. -/
+theorem subset_closure_range_subtypeVal_inter {L s : Set X} (hs : IsOpen s)
+    (h : s ⊆ closure L) : s ⊆ closure (range (Subtype.val : ↥(L ∩ s) → X)) := by
+  rw [Subtype.range_coe, inter_comm]
+  exact fun x hx ↦ hs.inter_closure ⟨hx, h hx⟩
+
+/-- When the points of `L` lying in `s` are dense in `s`, the points of `L` lying in an open subset
+`t` of `s` are dense in `t`. -/
+theorem subset_closure_range_subtypeVal_inter_of_subset {L s t : Set X} (ht : IsOpen t)
+    (hts : t ⊆ s) (h : s ⊆ closure (range (Subtype.val : ↥(L ∩ s) → X))) :
+    t ⊆ closure (range (Subtype.val : ↥(L ∩ t) → X)) :=
+  subset_closure_range_subtypeVal_inter ht fun _ hx ↦
+    closure_mono (range_subset_iff.2 fun d ↦ d.property.1) (h (hts hx))
 
 end TauCeti

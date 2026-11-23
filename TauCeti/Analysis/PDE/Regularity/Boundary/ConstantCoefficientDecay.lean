@@ -11,8 +11,9 @@ import TauCeti.Analysis.InnerProductSpace.Transvection
 import TauCeti.Analysis.InnerProductSpace.Reflection
 import TauCeti.Analysis.PDE.EnergyForm.ConstantCoefficient
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.InterBall
 
 /-!
 # Decay estimates at a flat boundary for constant coefficients
@@ -339,12 +340,6 @@ end ShearMap
 
 /-! ### The weak equation in sheared coordinates -/
 
-omit [DecidableEq ι] in
-/-- A half-ball `B(z, r) ∩ H` has finite measure. -/
-private theorem volume_ball_inter_ne_top (z : EuclideanSpace ℝ ι) (r : ℝ)
-    (H : Set (EuclideanSpace ℝ ι)) : volume (ball z r ∩ H) ≠ ⊤ :=
-  ne_top_of_le_ne_top measure_ball_lt_top.ne (measure_mono inter_subset_left)
-
 section Transfer
 
 variable {A : Matrix ι ι ℝ} {ν z : EuclideanSpace ℝ ι} {c₀ r κ : ℝ}
@@ -619,7 +614,7 @@ private theorem setIntegral_ball_inter_norm_gradient_sub_sq_le_of_comp_boundaryS
   have hPe := P.measurableEmbedding
   have hgint : IntegrableOn (fun x => ‖W1p.gradient u x - t • ν‖ ^ 2) (ball z r ∩ H) :=
     (Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
-      (inter_subset_left.trans hball) (volume_ball_inter_ne_top z r H) (t • ν)
+      (inter_subset_left.trans hball) measure_ball_inter_ne_top (t • ν)
   -- The shear maps `B(z, r / κ) ∩ H` into `B(z, r) ∩ H`.
   have hYP : ball z (r / κ) ∩ (H : Set (EuclideanSpace ℝ ι)) ⊆ P ⁻¹' (ball z r ∩ H) :=
     fun y hy => ⟨mapsTo_boundaryShear_ball hs hz hκ hL hy.1,
@@ -669,7 +664,7 @@ private theorem setIntegral_ball_inter_norm_gradient_sub_sq_le_of_boundaryShear
   have hgint : IntegrableOn (fun x => ‖W1p.gradient u x - transvectionL s (-ν) c‖ ^ 2)
       (ball z ρ ∩ H) :=
     (Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
-      (inter_subset_left.trans hρU) (volume_ball_inter_ne_top z ρ H) _
+      (inter_subset_left.trans hρU) measure_ball_inter_ne_top _
   have hwint : IntegrableOn (fun y => ‖W1p.gradient w y - c‖ ^ 2) (ball z r) :=
     (Lp.memLp (W1p.gradient w)).integrableOn_norm_sub_sq_of_subset subset_rfl
       measure_ball_lt_top.ne c
@@ -877,7 +872,7 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sq_le {lam Lam : ℝ} (hlam 
   refine le_mul_div_pow_mul_of_le n (le_add_of_nonneg_right (div_nonneg hLam hlam.le)) hρ0 hρr hI
     (by positivity) (fun hsmall => ?_) (setIntegral_mono_set
       (by simpa using ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
-        (inter_subset_left.trans hball) (volume_ball_inter_ne_top z r H) 0))
+        (inter_subset_left.trans hball) measure_ball_inter_ne_top 0))
       (Filter.Eventually.of_forall fun _ => by positivity)
       (Filter.Eventually.of_forall (inter_subset_inter_left _ (ball_subset_ball hρr))))
   obtain ⟨B, M, w, hB, hB', hw, hT, -, -, hR⟩ :=
@@ -908,9 +903,9 @@ boundary hyperplane, and let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ`
 `∫_{B_ρ⁺} ‖∇u - p_ρ‖² ≤ C (ρ / r)^(n + 2) ∫_{B_r⁺} ‖∇u - t ν‖²`,
 
 where `p_ρ = (⟪(∇u)_{B_ρ⁺}, ν⟫ / ‖ν‖²) ν` is the multiple of `ν` closest to `∇u` in `L²(B_ρ⁺)`
-(`TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le`), so that the estimate can be
-iterated. The multiples of `ν` are the gradients of the linear functions `t (⟪x, ν⟫ - c₀)`, which
-vanish on the hyperplane and solve the equation. -/
+(`TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset`), so that the
+estimate can be iterated. The multiples of `ν` are the gradients of the linear functions
+`t (⟪x, ν⟫ - c₀)`, which vanish on the hyperplane and solve the equation. -/
 theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smul_sq_le
     {lam Lam : ℝ} (hlam : 0 < lam) :
     ∃ C : ℝ, 0 < C ∧ ∀ {U H : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
@@ -937,17 +932,12 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
   rcases hρ.eq_or_lt with rfl | hρ0
   · rw [ball_zero, empty_inter, Measure.restrict_empty, integral_zero_measure]
     positivity
-  -- Among the multiples of `ν`, the projection of the average of `∇u` is the best constant.
-  have hmin := setIntegral_norm_sub_inner_setAverage_div_smul_sq_le
-    (volume_ball_inter_ne_top z ρ H) ((Lp.memLp (W1p.gradient u)).mono_measure
-      (Measure.restrict_mono (inter_subset_left.trans ((ball_subset_ball hρr).trans hball))
-        le_rfl)) ν
   refine le_mul_div_pow_mul_of_le (n + 2) (le_add_of_nonneg_right (div_nonneg hLam hlam.le)) hρ0
-    hρr hI (by positivity) (fun hsmall => ?_) ((hmin t).trans (setIntegral_mono_set
-      ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
-        (inter_subset_left.trans hball) (volume_ball_inter_ne_top z r H) _)
-      (Filter.Eventually.of_forall fun _ => by positivity)
-      (Filter.Eventually.of_forall (inter_subset_inter_left _ (ball_subset_ball hρr)))))
+    hρr hI (by positivity) (fun hsmall => ?_)
+    (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset
+      (inter_subset_inter_left _ (ball_subset_ball hρr)) measure_ball_inter_ne_top
+      ((Lp.memLp (W1p.gradient u)).mono_measure
+        (Measure.restrict_mono (inter_subset_left.trans hball) le_rfl)) ν t)
   obtain ⟨B, M, w, hB, hB', hw, hT, hM, hodd, hR⟩ :=
     exists_boundaryReflection hlam hA hA' hν hH hz hball hu0 hu
   have : 0 < κ := add_pos_of_pos_of_nonneg one_pos (div_nonneg hLam hlam.le)
@@ -959,7 +949,13 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
       (mapsTo_hyperplaneReflection_ball hz _) measurableSet_ball
       (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hsmall) hodd)
   have hMm : M m = (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν := (congrArg M hm).trans (hM _)
-  calc _ ≤ ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x - M m‖ ^ 2 := by rw [hMm]; exact hmin _
+  -- Among the multiples of `ν`, the projection of the average of `∇u` is the best constant.
+  calc _ ≤ ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x - M m‖ ^ 2 := by
+        rw [hMm]
+        exact setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset subset_rfl
+          measure_ball_inter_ne_top ((Lp.memLp (W1p.gradient u)).mono_measure
+            (Measure.restrict_mono (inter_subset_left.trans ((ball_subset_ball hρr).trans hball))
+              le_rfl)) ν _
     _ ≤ κ ^ 2 * ∫ y in ball z (κ * ρ), ‖W1p.gradient w y - m‖ ^ 2 :=
         hT ρ hsmall ((ball_subset_ball hρr).trans hball) m
     _ ≤ κ ^ 2 * (D * (κ * ρ / (r / κ)) ^ (n + 2) *

@@ -6,7 +6,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import TauCeti.AlgebraicGeometry.Limits.Affine.FinitePresentation
-public import TauCeti.AlgebraicGeometry.Limits.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Limits.Finite.Presentation
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
 public import TauCeti.AlgebraicGeometry.Gluing.Separated
 public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
@@ -294,6 +294,17 @@ private lemma ModelWithOpenAt.exists_overlap_pullback_iso {T U V : Scheme.{u}}
       (pullback.fst (diagram.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by exact hb₁.symm)) :=
     (MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq
       (.isomorphisms Scheme) hji ha hb₁ hb₂).mpr (inferInstance : IsIso a.hom)
+  have : CompactSpace ↥(pullback (diagram.map hji) p) :=
+    QuasiCompact.compactSpace_of_compactSpace (pullback.fst (diagram.map hji) p)
+  have : CompactSpace ↥(pullback (diagram.map hji) q) :=
+    QuasiCompact.compactSpace_of_compactSpace (pullback.fst (diagram.map hji) q)
+  have : QuasiSeparatedSpace ↥(pullback (diagram.map hji) q) :=
+    quasiSeparatedSpace_of_quasiSeparated (pullback.fst (diagram.map hji) q)
+  have : LocallyOfFinitePresentation b := by
+    have : LocallyOfFinitePresentation (b ≫ pullback.fst (diagram.map hji) q) := by
+      rw [hb₁]
+      infer_instance
+    exact locallyOfFinitePresentation_of_comp b (pullback.fst (diagram.map hji) q)
   obtain ⟨k, hkj, hk⟩ := limit.exists_isIso_pullbackMap b hb₁
   let ψ {Z : Scheme.{u}} (r : Z ⟶ diagram.obj i) :
       pullback (diagram.map hkj) (pullback.fst (diagram.map hji) r) ≅
