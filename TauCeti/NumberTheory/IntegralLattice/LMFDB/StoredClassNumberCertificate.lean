@@ -79,8 +79,8 @@ structure StoredClassNumberCertificate (n : ℕ) extends StoredGenusCertificate 
   /-- The reciprocal orders of the isometry groups of the stored representatives sum to the
   mass. -/
   sum_inv_natCard_isometry_reps_eq_mass :
-    (reps.map fun H ↦ ((Nat.card (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.1 H.2)
-      (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.1 H.2)) : ℚ))⁻¹).sum = mass
+    (reps.map fun H ↦ ((Nat.card (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.val H.property)
+      (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.val H.property)) : ℚ))⁻¹).sum = mass
   /-- The label component `class_number`. -/
   classNumber : ℕ
   /-- The stored class number is the number of stored representatives. -/
@@ -121,7 +121,7 @@ theorem classNumber_eq_classNumber_lattice : c.classNumber = c.lattice.classNumb
 lattice, in any rational vector space, is isometric to the lattice of a stored representative. -/
 theorem exists_mem_reps_nonempty_isometry {W : Type*} [AddCommGroup W] [Module ℚ W]
     {M : IntegralLattice W} (hM : c.lattice.SameGenus M) :
-    ∃ H ∈ c.reps, Nonempty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.1 H.2) M) :=
+    ∃ H ∈ c.reps, Nonempty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.val H.property) M) :=
   c.exists_mem_reps_nonempty_isometry_of_length_eq
     (c.classNumber_eq_length_reps.symm.trans c.classNumber_eq_classNumber_lattice) hM
 
@@ -130,7 +130,8 @@ every lattice in the genus of the stored lattice, in any rational vector space, 
 the lattice of exactly one stored representative. -/
 theorem existsUnique_mem_reps_nonempty_isometry {W : Type*} [AddCommGroup W] [Module ℚ W]
     {M : IntegralLattice W} (hM : c.lattice.SameGenus M) :
-    ∃! H, H ∈ c.reps ∧ Nonempty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.1 H.2) M) := by
+    ∃! H, H ∈ c.reps ∧ Nonempty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.val H.property) M)
+        := by
   obtain ⟨H, hH, ⟨e⟩⟩ := c.exists_mem_reps_nonempty_isometry hM
   refine ⟨H, ⟨hH, ⟨e⟩⟩, fun H' ⟨hH', ⟨e'⟩⟩ ↦ ?_⟩
   obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hH'

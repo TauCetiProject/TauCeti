@@ -21,6 +21,8 @@ This file collects the rearrangements of such powers that these arguments need.
   `(R^{a-b} c)² R^{d+2b}`.
 * A power `(r / R)^γ` of the ratio splits as `R^{-γ} r^γ`, and shrinking the outer radius by a
   factor `θ` multiplies it by `θ^{-γ}`.
+* Shrinking a radius `R` to `R / N`, `N ≥ 1`, costs at most a factor `N` in `R^{-α}` for `α ≤ 1`.
+* A bound `βR ≤ σλ` on a dimensionless ratio gives `(1 + (βR/λ)²)ⁿ ≤ (1 + σ²)ⁿ`.
 * A constant of the form `(R^{d/2+a} Q)²`, which is the natural scale of an `L²` quantity on a
   ball of radius `R` in dimension `d`, equals `R^d (R^a Q)²` and bounds `c² R^{d+2a}` for
   `0 ≤ c ≤ Q`. So for `b ≤ a` and `R^{a-b} c ≤ Q`, a quantity `r^{2a} c² r^d` of order
@@ -76,6 +78,21 @@ theorem div_mul_rpow_eq {r θ R γ : ℝ} (hr : 0 ≤ r) (hθ : 0 < θ) (hR : 0 
     (r / (θ * R)) ^ γ = θ ^ (-γ) * (r / R) ^ γ := by
   rw [div_mul_eq_div_div_swap, div_eq_inv_mul (r / R), mul_rpow (inv_nonneg.2 hθ.le)
     (div_nonneg hr hR.le), inv_rpow hθ.le, rpow_neg hθ.le]
+
+/-- Shrinking the radius from `R` to `R / N`, `N ≥ 1`, costs at most a factor `N` in `R^{-α}` for
+`α ≤ 1`: `(R / N)^{-α} ≤ N R^{-α}`. -/
+theorem div_rpow_neg_le_mul_rpow_neg {N R α : ℝ} (hα1 : α ≤ 1) (hN : 1 ≤ N) (hR : 0 ≤ R) :
+    (R / N) ^ (-α) ≤ N * R ^ (-α) := by
+  have hN0 : 0 ≤ N := zero_le_one.trans hN
+  rw [div_rpow hR hN0, rpow_neg hN0, div_inv_eq_mul, mul_comm]
+  gcongr
+  exact rpow_le_self_of_one_le hN hα1
+
+/-- `(1 + (x/λ)²)ⁿ ≤ (1 + σ²)ⁿ` for `0 ≤ x`, `0 < λ` and `x ≤ σλ`. -/
+theorem one_add_div_sq_pow_le {x lam σ : ℝ} (n : ℕ) (hx : 0 ≤ x) (hlam : 0 < lam)
+    (hxσ : x ≤ σ * lam) : (1 + (x / lam) ^ 2) ^ n ≤ (1 + σ ^ 2) ^ n := by
+  gcongr
+  exact (div_le_iff₀ hlam).2 hxσ
 
 /-- `(R^{d/2+a} Q)² = R^d (R^a Q)²`. -/
 theorem rpow_div_two_add_mul_sq {R d a : ℝ} (Q : ℝ) (hR : 0 < R) :

@@ -261,8 +261,8 @@ theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl (f : C^∞⟮I, M;
   let A : c.ι → Set M := fun i ↦ (extChartAt I (c.center i)).symm ''
     (Subtype.val '' (c.compact i : Set (extChartAt I (c.center i)).target))
   have hA : ∀ i, IsCompact (A i) := fun i ↦
-    ((c.compact i).isCompact.image continuous_subtype_val).image_of_continuousOn
-      ((continuousOn_extChartAt_symm (c.center i)).mono (by rintro _ ⟨z, -, rfl⟩; exact z.2))
+    ((c.compact i).isCompact.image continuous_subtypeVal).image_of_continuousOn
+      ((continuousOn_extChartAt_symm (c.center i)).mono (by rintro _ ⟨z, -, rfl⟩; exact z.property))
   let p : c.ι → Seminorm ℝ C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ := fun i ↦
     chartCkSeminorm (c.center i) (c.compact i) c.order c.order_le
   obtain ⟨g, hgp, hgm, hgε, hgs⟩ := exists_isMorse_of_seminorms f hC hfC A p

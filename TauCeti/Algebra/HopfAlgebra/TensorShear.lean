@@ -97,6 +97,63 @@ theorem tensorShearMulRight_symm_tmul (a b : H) :
     simp [HopfAlgebra.antipodeAlgHom]
   | add x y hx hy => simp [hx, hy]
 
+section BaseChange
+
+variable (A : Type*) [CommSemiring A] [Algebra R A]
+
+-- Scalar extension of the shear, expressed using the associators of algebras.
+private noncomputable def tensorShearMulRightBaseChangeAux :
+    (A ⊗[R] H) ⊗[R] H ≃ₐ[R] (A ⊗[R] H) ⊗[R] H :=
+  (Algebra.TensorProduct.assoc R R R A H H).trans
+    ((Algebra.TensorProduct.congr (AlgEquiv.refl : A ≃ₐ[R] A)
+      (tensorShearMulRight (R := R) (H := H))).trans
+        (Algebra.TensorProduct.assoc R R R A H H).symm)
+
+/-- The Hopf tensor shear after scalar extension to `A`, regarded as an automorphism over
+`A ⊗[R] H`: pullback by `(x, g, h) ↦ (x, g, gh)` fixes the coordinates `(x, g)`. -/
+noncomputable def tensorShearMulRightBaseChange :
+    (A ⊗[R] H) ⊗[R] H ≃ₐ[A ⊗[R] H] (A ⊗[R] H) ⊗[R] H :=
+  AlgEquiv.ofRingEquiv (f := (tensorShearMulRightBaseChangeAux A).toRingEquiv) fun z ↦ by
+    simp only [Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
+    induction z with
+    | tmul a h => simp [tensorShearMulRightBaseChangeAux]
+    | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
+
+/-- The scalar-extended shear is pullback along the point map `(x, u, v) ↦ (x, u, uv)`. On a
+pure tensor this sends `(a ⊗ g) ⊗ h` to `a ⊗ ((g ⊗ 1) * Δ(h))`, up to reassociation: the first
+tensor factor is fixed, and the last factor `h` is replaced by its comultiplication, multiplied
+by `g` in the middle factor. -/
+@[simp]
+theorem tensorShearMulRightBaseChange_tmul (a : A) (g h : H) :
+    tensorShearMulRightBaseChange A ((a ⊗ₜ[R] g) ⊗ₜ[R] h) =
+      (Algebra.TensorProduct.assoc R R R A H H).symm
+        (a ⊗ₜ[R] ((g ⊗ₜ[R] 1) * Coalgebra.comul (R := R) h)) := by
+  simp [tensorShearMulRightBaseChange, tensorShearMulRightBaseChangeAux]
+
+/-- The inverse scalar-extended shear is pullback along the point map `(x, u, v) ↦ (x, u, u⁻¹v)`.
+On a pure tensor this sends `(a ⊗ g) ⊗ h` to `a ⊗ ((g ⊗ 1) * (S ⊗ id)(Δ(h)))`, up to
+reassociation, where `S` is the antipode. -/
+@[simp]
+theorem tensorShearMulRightBaseChange_symm_tmul (a : A) (g h : H) :
+    (tensorShearMulRightBaseChange A).symm ((a ⊗ₜ[R] g) ⊗ₜ[R] h) =
+      (Algebra.TensorProduct.assoc R R R A H H).symm
+        (a ⊗ₜ[R] ((g ⊗ₜ[R] 1) * TensorProduct.map (HopfAlgebraStruct.antipode R) LinearMap.id
+          (Coalgebra.comul (R := R) h))) := by
+  simp [tensorShearMulRightBaseChange, tensorShearMulRightBaseChangeAux]
+
+/-- On tensors from `A ⊗[R] H` included in the first and last factors, the scalar-extended shear
+is comultiplication of the `H` factor: it sends the image of `a ⊗ h` to `(a ⊗ h₍₁₎) ⊗ h₍₂₎`. -/
+theorem tensorShearMulRightBaseChange_rTensor_includeLeft (z : A ⊗[R] H) :
+    tensorShearMulRightBaseChange A
+        (Algebra.TensorProduct.rTensor H (includeLeft : A →ₐ[R] A ⊗[R] H) z) =
+      (Algebra.TensorProduct.assoc R R R A H H).symm
+        ((Coalgebra.comul (R := R) (A := H)).lTensor A z) := by
+  induction z with
+  | tmul a h => simp [← Algebra.TensorProduct.one_def]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end BaseChange
+
 /-- The mirror tensor shear, which pulls back along `(g, h) ↦ (g h, h⁻¹)`. -/
 noncomputable def tensorShearMulLeftInvRight : H ⊗[R] H →ₐ[R] H ⊗[R] H :=
   lift (Bialgebra.comulAlgHom R H) (includeRight.comp (HopfAlgebra.antipodeAlgHom R H))

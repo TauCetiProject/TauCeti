@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.GroupTheory.Perm.Fin
+public import TauCeti.GroupTheory.Perm.Fin
 public import TauCeti.Geometry.Convex.ConvexSpace.Barycenter
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 
@@ -111,16 +111,11 @@ cancel in pairs. -/
 lemma sum_sign_face_succ_eq_zero (F : (Fin (n + 1) → StdSimplex ℝ (Fin (n + 2))) → A)
     (k : Fin (n + 1)) :
     ∑ π : Perm (Fin (n + 2)), π.sign • F (vertex π ∘ k.succ.succAbove) = 0 := by
-  refine Finset.sum_involution (fun π _ ↦ π * swap k.castSucc k.succ) (fun π _ ↦ ?_)
-    (fun π _ _ ↦ ?_) (fun _ _ ↦ Finset.mem_univ _) (fun π _ ↦ by simp [mul_assoc])
-  · have hv : vertex (π * swap k.castSucc k.succ) ∘ k.succ.succAbove =
-        vertex π ∘ k.succ.succAbove := by
-      funext i
-      exact vertex_mul_swap π k (Fin.succAbove_ne _ _)
-    rw [hv, Perm.sign_mul, Perm.sign_swap k.castSucc_lt_succ.ne]
-    simp
-  · rw [Ne, mul_eq_left, swap_eq_one_iff]
-    exact k.castSucc_lt_succ.ne
+  apply TauCeti.sum_sign_smul_eq_zero_of_mul_swap _ k.castSucc k.succ k.castSucc_lt_succ.ne
+  intro π
+  apply congrArg F
+  funext i
+  exact vertex_mul_swap π k (Fin.succAbove_ne _ _)
 
 /-- The faces of the subdivision simplices of `Δⁿ⁺¹` which omit the barycenter of `Δⁿ⁺¹` are the
 subdivision simplices of the facets of `Δⁿ⁺¹`, with the signs of the simplicial boundary. -/
@@ -128,15 +123,13 @@ lemma sum_sign_face_zero (F : (Fin (n + 1) → StdSimplex ℝ (Fin (n + 2))) →
     ∑ π : Perm (Fin (n + 2)), π.sign • F (vertex π ∘ Fin.succ) =
       ∑ j : Fin (n + 2), ((-1 : ℤ) ^ (j : ℕ)) •
         ∑ π : Perm (Fin (n + 1)), π.sign • F (StdSimplex.map j.succAbove ∘ vertex π) := by
-  rw [← Perm.decomposeFin'.symm.sum_comp, Fintype.sum_prod_type]
+  rw [TauCeti.sum_sign_smul_eq_sum_consFin (n + 1)]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [Finset.smul_sum]
+  apply congrArg (((-1 : ℤ) ^ (j : ℕ)) • ·)
   refine Finset.sum_congr rfl fun π _ ↦ ?_
-  have hv : vertex (Perm.decomposeFin'Symm j π) ∘ Fin.succ =
-      StdSimplex.map j.succAbove ∘ vertex π :=
-    funext (vertex_decomposeFin'Symm_succ j π)
-  rw [Perm.decomposeFin'_symm, hv, Perm.sign_decomposeFin'Symm, mul_smul]
-  simp [Units.smul_def]
+  rw [Perm.consFin_eq_decomposeFin'Symm]
+  apply congrArg (π.sign • ·)
+  exact congrArg F (funext (vertex_decomposeFin'Symm_succ j π))
 
 /-- **Boundary formula for the barycentric subdivision of the standard simplex.** The signed
 sum of the faces of the subdivision simplices of `Δⁿ⁺¹` equals the signed sum, over the facets of

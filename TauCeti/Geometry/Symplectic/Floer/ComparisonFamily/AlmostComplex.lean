@@ -113,7 +113,7 @@ def cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀) (J : ℝ × ℝ → X �
 /-- Every member of the family is tamed by `ω`. -/
 theorem tames_cutoffNeckAlmostComplex (h₀ : ω.Compatible J₀) (R : ℝ) (z : ℝ × ℝ) (x : X) :
     ω.Tames (cutoffNeckAlmostComplex h₀ J hJ ρ L c R z x) :=
-  (h₀.cayleyEquiv.symm _).2
+  (h₀.cayleyEquiv.symm _).property
 
 /-- The Cayley coordinate of a member of the family is the clamped cutoff times the Cayley
 coordinate of the stretched structure. This characterizes the member, since the Cayley transform
@@ -297,13 +297,13 @@ theorem exists_pos_forall_mul_norm_sq_le_cutoffNeckAlmostComplex (h₀ : ω.Comp
       dsimp only
       rw [← h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley (h𝒦t J' hJ') (abs_le.2 hb) hA
         (LinearMap.coe_toContinuousLinearMap _)]
-      exact (h₀.cayleyEquiv.symm _).2 v hv)
+      exact (h₀.cayleyEquiv.symm _).property v hv)
   obtain ⟨M, hM⟩ := hT.isBounded.exists_norm_le
   refine ⟨a, ha, M, fun ρ L c R z x v ↦ ?_⟩
   set F := cutoffNeckAlmostComplex h₀ J (fun z x ↦ h𝒦t _ (hJ𝒦 z x)) ρ L c R z x
   have hmem : e F ∈ T :=
     ⟨((projIcc (-1) 1 (by norm_num) (ρ R) : ℝ), e (J (neckCollapse c (L R) z.1, z.2) x)),
-      ⟨(projIcc (-1) 1 (by norm_num) (ρ R)).2, mem_image_of_mem e (hJ𝒦 _ _)⟩,
+      ⟨(projIcc (-1) 1 (by norm_num) (ρ R)).property, mem_image_of_mem e (hJ𝒦 _ _)⟩,
       (toContinuousLinearMap_cutoffNeckAlmostComplex h₀ R z x).symm⟩
   have hFv : e F v = F v := by simp [e]
   refine ⟨hle _ hmem v, ?_⟩

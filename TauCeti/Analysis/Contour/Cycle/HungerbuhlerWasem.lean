@@ -88,15 +88,15 @@ over the generators of the cycle, each of which may wind arbitrarily around the 
 theorem hasCauchyPV_analyticRemainder_add_residue_sum (decomp : PolarPartDecomposition f S U)
     (hU : IsOpen U) (h_ord : ∀ s : S, decomp.order s = meromorphicPolarOrderAt f ↑s)
     (hSU : (S : Set ℂ) ⊆ U) (hCU : IsIn C U)
-    (h_imm : ∀ γ ∈ FreeAbelianGroup.support C, IsPwC1ImmersionOn (⇑γ) γ.a γ.b)
-    (hbase : ∀ γ ∈ FreeAbelianGroup.support C, γ γ.a ∉ (S : Set ℂ))
-    (hA : ∀ γ ∈ FreeAbelianGroup.support C, ConditionAprime (⇑γ) γ.a γ.b f S)
-    (hB : ∀ γ ∈ FreeAbelianGroup.support C, ConditionB (⇑γ) γ.a γ.b f) :
+    (h_imm : ∀ γ ∈ FreeAddCommGroup.support C, IsPwC1ImmersionOn (⇑γ) γ.a γ.b)
+    (hbase : ∀ γ ∈ FreeAddCommGroup.support C, γ γ.a ∉ (S : Set ℂ))
+    (hA : ∀ γ ∈ FreeAddCommGroup.support C, ConditionAprime (⇑γ) γ.a γ.b f S)
+    (hB : ∀ γ ∈ FreeAddCommGroup.support C, ConditionB (⇑γ) γ.a γ.b f) :
     HasCauchyPV C f (integral decomp.analyticRemainder C
       + 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s) := by
   classical
   -- The single-curve splitting, applied to each generator in the canonical support.
-  have hgen : ∀ γ ∈ FreeAbelianGroup.support C, TauCeti.Contour.HasCauchyPV (⇑γ) γ.a γ.b f
+  have hgen : ∀ γ ∈ FreeAddCommGroup.support C, TauCeti.Contour.HasCauchyPV (⇑γ) γ.a γ.b f
       ((∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
         + 2 * (Real.pi : ℂ) * Complex.I *
             ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s * residue f s) := fun γ hγ ↦
@@ -104,7 +104,7 @@ theorem hasCauchyPV_analyticRemainder_add_residue_sum (decomp : PolarPartDecompo
       γ.source_eq_target (hbase γ hγ)
       (fun t ht ↦ isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)) (hA γ hγ)
       (hB γ hγ)
-  have hval : (∑ γ ∈ FreeAbelianGroup.support C, FreeAbelianGroup.coeff γ C •
+  have hval : (∑ γ ∈ FreeAddCommGroup.support C, FreeAddCommGroup.coeff γ C •
         ((∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
           + 2 * (Real.pi : ℂ) * Complex.I *
               ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s * residue f s))
@@ -138,11 +138,11 @@ immersions nor the conditions. -/
 theorem hungerbuhlerWasem_residueTheorem (hU : IsOpen U) (S : Finset ℂ)
     (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
     (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s) (hCU : IsIn C U)
-    (h_imm : ∀ γ ∈ FreeAbelianGroup.support C, IsPwC1ImmersionOn (⇑γ) γ.a γ.b)
-    (hbase : ∀ γ ∈ FreeAbelianGroup.support C, γ γ.a ∉ (S : Set ℂ))
+    (h_imm : ∀ γ ∈ FreeAddCommGroup.support C, IsPwC1ImmersionOn (⇑γ) γ.a γ.b)
+    (hbase : ∀ γ ∈ FreeAddCommGroup.support C, γ γ.a ∉ (S : Set ℂ))
     (hnull : IsNullHomologous C U)
-    (hA : ∀ γ ∈ FreeAbelianGroup.support C, ConditionAprime (⇑γ) γ.a γ.b f S)
-    (hB : ∀ γ ∈ FreeAbelianGroup.support C, ConditionB (⇑γ) γ.a γ.b f) :
+    (hA : ∀ γ ∈ FreeAddCommGroup.support C, ConditionAprime (⇑γ) γ.a γ.b f S)
+    (hB : ∀ γ ∈ FreeAddCommGroup.support C, ConditionB (⇑γ) γ.a γ.b f) :
     HasCauchyPV C f
       (2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s) := by
   classical
@@ -175,13 +175,13 @@ at those outside `U`: they carry winding number zero by null-homology and drop o
 theorem hungerbuhlerWasem_residueTheorem_of_simple_poles (hU : IsOpen U) (S : Finset ℂ)
     (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
     (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s) (hCU : IsIn C U)
-    (h_imm : ∀ γ ∈ FreeAbelianGroup.support C, IsPwC1ImmersionOn (⇑γ) γ.a γ.b)
-    (hbase : ∀ γ ∈ FreeAbelianGroup.support C, γ γ.a ∉ (S : Set ℂ))
+    (h_imm : ∀ γ ∈ FreeAddCommGroup.support C, IsPwC1ImmersionOn (⇑γ) γ.a γ.b)
+    (hbase : ∀ γ ∈ FreeAddCommGroup.support C, γ γ.a ∉ (S : Set ℂ))
     (hnull : IsNullHomologous C U)
     (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     HasCauchyPV C f
       (2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s) := by
-  have hγU : ∀ γ ∈ FreeAbelianGroup.support C, ∀ t ∈ uIcc γ.a γ.b, γ t ∈ U := fun γ hγ t ht ↦
+  have hγU : ∀ γ ∈ FreeAddCommGroup.support C, ∀ t ∈ uIcc γ.a γ.b, γ t ∈ U := fun γ hγ t ht ↦
     isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)
   exact hungerbuhlerWasem_residueTheorem hU S hf hmero hCU h_imm hbase hnull
     (fun γ hγ ↦ conditionAprime_of_simple_poles (h_imm γ hγ) (hγU γ hγ) (by

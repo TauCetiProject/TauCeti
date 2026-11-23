@@ -59,6 +59,42 @@ theorem coe_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : ⋀[R]^p M) (b :
         ExteriorAlgebra.map (LinearMap.inr R M N) b := by
   simp [wedgeTensor]
 
+/-- On pure exterior products, `wedgeTensor` concatenates the left and right vector families. -/
+@[simp]
+theorem wedgeTensor_tmul_ιMulti (p q n : ℕ) (h : p + q = n) (u : Fin p → M) (v : Fin q → N) :
+    wedgeTensor R M N p q n h
+      (_root_.exteriorPower.ιMulti R p u ⊗ₜ _root_.exteriorPower.ιMulti R q v) =
+    _root_.exteriorPower.ιMulti R n
+      (Fin.append (LinearMap.inl R M N ∘ u) (LinearMap.inr R M N ∘ v) ∘ Fin.cast h.symm) := by
+  subst h
+  apply Subtype.ext
+  simp [coe_wedgeTensor_tmul, ExteriorAlgebra.ιMulti_mul_ιMulti]
+
+/-- `wedgeTensor` intertwines the tensor product of exterior-power maps with the exterior power
+of the product map. -/
+theorem map_prodMap_comp_wedgeTensor {M' N' : Type*} [AddCommGroup M'] [Module R M']
+    [AddCommGroup N'] [Module R N'] (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+    (p q n : ℕ) (h : p + q = n) :
+    _root_.exteriorPower.map n (f.prodMap g) ∘ₗ wedgeTensor R M N p q n h =
+      wedgeTensor R M' N' p q n h ∘ₗ
+        TensorProduct.map (_root_.exteriorPower.map p f) (_root_.exteriorPower.map q g) := by
+  have hinl : (f.prodMap g) ∘ₗ LinearMap.inl R M N = LinearMap.inl R M' N' ∘ₗ f :=
+    LinearMap.ext fun _ ↦ by simp
+  have hinr : (f.prodMap g) ∘ₗ LinearMap.inr R M N = LinearMap.inr R M' N' ∘ₗ g :=
+    LinearMap.ext fun _ ↦ by simp
+  refine TensorProduct.ext' fun a b ↦ Subtype.ext ?_
+  simp only [LinearMap.comp_apply, TensorProduct.map_tmul, _root_.exteriorPower.coe_map,
+    coe_wedgeTensor_tmul, map_mul, ← AlgHom.comp_apply, ExteriorAlgebra.map_comp_map, hinl, hinr]
+
+/-- Pointwise form of `map_prodMap_comp_wedgeTensor`. -/
+theorem map_prodMap_wedgeTensor_apply {M' N' : Type*} [AddCommGroup M'] [Module R M']
+    [AddCommGroup N'] [Module R N'] (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+    (p q n : ℕ) (h : p + q = n) (z : ⋀[R]^p M ⊗[R] ⋀[R]^q N) :
+    _root_.exteriorPower.map n (f.prodMap g) (wedgeTensor R M N p q n h z) =
+      wedgeTensor R M' N' p q n h
+        (TensorProduct.map (_root_.exteriorPower.map p f) (_root_.exteriorPower.map q g) z) :=
+  DFunLike.congr_fun (map_prodMap_comp_wedgeTensor f g p q n h) z
+
 /-- In degree `n`, the wedge products of the bidegree-`(i, n - i)` components of an element of
 `⋀ M ⊗ ⋀ N` add up to the degree-`n` component of its image in `⋀ (M × N)` under
 `ExteriorAlgebra.prodEquivTensor`. -/
@@ -87,8 +123,8 @@ theorem sum_coe_wedgeTensor_map_proj (n : ℕ) (y : ExteriorAlgebra R M ⊗[R] E
               ⋀[R]^(p + q) (M × N) := by
           rw [← _root_.exteriorPower.coe_map, ← _root_.exteriorPower.coe_map]
           exact SetLike.mul_mem_graded (Submodule.coe_mem _) (Submodule.coe_mem _)
-        simp only [TensorProduct.map_tmul, coe_wedgeTensor_tmul, coe_proj_of_mem a.2,
-          coe_proj_of_mem b.2]
+        simp only [TensorProduct.map_tmul, coe_wedgeTensor_tmul, coe_proj_of_mem a.property,
+          coe_proj_of_mem b.property]
         rw [← GradedTensorProduct.tmul, ExteriorAlgebra.prodEquivTensor_symm_tmul,
           coe_proj_of_mem hab]
         by_cases hpq : p + q = n
