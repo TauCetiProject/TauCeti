@@ -26,11 +26,12 @@ space `E`. This file says when `T` is a `C^{k,α}` function near a point `x`
 integration against a bounded `C^k` function `f` whose derivatives through order `k` are bounded
 and whose `k`-th derivative is globally `α`-Hölder (an element of `TauCeti.CkHolderSpace k α E ℂ`),
 that is `T ψ = ∫ ψ • f` for every real test function `ψ` supported in `U`. Only the values of `f`
-on `U` enter, and the global bounds on `f` are no restriction: a function that is `C^k` on a convex
-neighbourhood of `x`, with bounded derivatives and `α`-Hölder `k`-th derivative there, agrees near
-`x` with such an `f` (`Distribution.IsLocallyCkHolderAt.of_contDiffOn`, by a cutoff). This is the
-form of regularity in which the Schauder estimates conclude: an elliptic operator of order `m`
-whose image `P T` is `C^{k,α}` near `x` forces `T` to be `C^{k + m,α}` near `x`.
+on `U` enter, and for `α ≤ 1` the global bounds on `f` are no restriction: a function that is `C^k`
+on an open convex neighbourhood `s ⊆ Ω` of `x`, with bounded derivatives and `α`-Hölder `k`-th
+derivative there, agrees near `x` with such an `f`
+(`Distribution.IsLocallyCkHolderAt.of_contDiffOn`, by a cutoff). This is the form of regularity
+in which the Schauder estimates conclude: an elliptic operator of order `m` whose image `P T` is
+`C^{k,α}` near `x` forces `T` to be `C^{k + m,α}` near `x`.
 
 For `0 < α < 1` the notion is local membership in the Hölder–Zygmund space
 `𝒞^{k+α} = B^{k+α}_{∞,∞}`: `T` is `C^{k,α}` near `x` exactly when it is `B^{k+α}_{∞,∞}` near `x`
@@ -53,8 +54,9 @@ The argument for the identification:
 * `Distribution.IsLocallyCkHolderAt`: `T` is a `C^{k,α}` function near `x`, with
   `Distribution.isLocallyCkHolderAt_iff`, `Distribution.IsLocallyCkHolderAt.mem` and
   `Distribution.isOpen_setOf_isLocallyCkHolderAt`; every bounded `C^{k,α}` function is one
-  (`Distribution.isLocallyCkHolderAt_ofFun`), and it suffices that `T` is a `C^{k,α}` function on
-  a convex neighbourhood of `x` (`Distribution.IsLocallyCkHolderAt.of_contDiffOn`). The notion is
+  (`Distribution.isLocallyCkHolderAt_ofFun`), and for `α ≤ 1` it suffices that `T` is a `C^{k,α}`
+  function on an open convex neighbourhood `s ⊆ Ω` of `x`
+  (`Distribution.IsLocallyCkHolderAt.of_contDiffOn`). The notion is
   stable under the linear operations (`Distribution.isLocallyCkHolderAt_zero_iff`,
   `Distribution.IsLocallyCkHolderAt.smul`, `Distribution.IsLocallyCkHolderAt.add`,
   `Distribution.IsLocallyCkHolderAt.sub`), smooth multipliers
