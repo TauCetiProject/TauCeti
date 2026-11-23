@@ -294,47 +294,39 @@ theorem im_resolventTransform_pos (hμ : μ ≠ 0) {z : ℂ} (hz : 0 < z.im) :
   · simpa only [RCLike.im_eq_complex_im, Complex.im_resolvent_real] using hi.im
 
 /-- For the transform of a finite measure and real `t`, the point `z - t m_μ(z)` lies in the upper
-half-plane whenever `Im z > |t| μ(ℝ) + 1`. -/
-theorem im_sub_mul_resolventTransform_pos {t : ℝ} {z : ℂ}
-    (hz : |t| * μ.real Set.univ + 1 < z.im) : 0 < (z - t * resolventTransform μ z).im := by
-  have hM : 0 ≤ |t| * μ.real Set.univ := mul_nonneg (abs_nonneg t) measureReal_nonneg
-  have hz1 : 1 < z.im := by linarith
-  have hz0 : 0 < z.im := zero_lt_one.trans hz1
-  have hm := norm_resolventTransform_le (μ := μ) hz0.ne'
-  rw [abs_of_pos hz0] at hm
+half-plane whenever `Im z > 0` and `|t| μ(ℝ) < (Im z)²`. -/
+theorem im_sub_mul_resolventTransform_pos {t : ℝ} {z : ℂ} (hz : 0 < z.im)
+    (h : |t| * μ.real Set.univ < z.im ^ 2) : 0 < (z - t * resolventTransform μ z).im := by
+  have hm := norm_resolventTransform_le (μ := μ) hz.ne'
+  rw [abs_of_pos hz] at hm
   have h₁ : t * (resolventTransform μ z).im ≤ |t| * (z.im⁻¹ * μ.real Set.univ) := by
     calc _ ≤ |t * (resolventTransform μ z).im| := le_abs_self _
       _ = |t| * |(resolventTransform μ z).im| := abs_mul _ _
       _ ≤ _ := by gcongr; exact (abs_im_le_norm _).trans hm
-  have h₂ : |t| * (z.im⁻¹ * μ.real Set.univ) ≤ |t| * μ.real Set.univ := by
-    gcongr
-    exact mul_le_of_le_one_left measureReal_nonneg (inv_le_one_of_one_le₀ hz1.le)
+  have h₂ : |t| * (z.im⁻¹ * μ.real Set.univ) < z.im := by
+    rw [mul_left_comm, ← div_eq_inv_mul, div_lt_iff₀ hz]
+    simpa [sq] using h
   simp only [sub_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
   linarith
 
 /-- For the transform of a finite measure and real `t`, the map `z ↦ z - t m_μ(z)` is injective on
-`{Im z > |t| μ(ℝ) + 1}`. -/
-theorem eq_of_sub_mul_resolventTransform_eq {t : ℝ} {a b : ℂ}
-    (ha : |t| * μ.real Set.univ + 1 < a.im) (hb : |t| * μ.real Set.univ + 1 < b.im)
+pairs of points `a`, `b` of the upper half-plane with `|t| μ(ℝ) < Im a Im b`. -/
+theorem eq_of_sub_mul_resolventTransform_eq {t : ℝ} {a b : ℂ} (ha : 0 < a.im) (hb : 0 < b.im)
+    (h : |t| * μ.real Set.univ < a.im * b.im)
     (hab : a - t * resolventTransform μ a = b - t * resolventTransform μ b) : a = b := by
-  have hM : 0 ≤ |t| * μ.real Set.univ := mul_nonneg (abs_nonneg t) measureReal_nonneg
-  have ha0 : 0 < a.im := by linarith
-  have hb0 : 0 < b.im := by linarith
   by_contra hne
   have hpos : 0 < ‖a - b‖ := norm_pos_iff.2 (sub_ne_zero.2 hne)
-  have hlip := norm_resolventTransform_sub_le (μ := μ) ha0.ne' hb0.ne'
-  rw [abs_of_pos ha0, abs_of_pos hb0] at hlip
+  have hlip := norm_resolventTransform_sub_le (μ := μ) ha.ne' hb.ne'
+  rw [abs_of_pos ha, abs_of_pos hb] at hlip
   have hab' : a - b = t * (resolventTransform μ a - resolventTransform μ b) := by
     linear_combination hab
-  have hlt : |t| * μ.real Set.univ < a.im * b.im := by
-    nlinarith [mul_lt_mul'' ha hb (by positivity) (by positivity)]
   have : ‖a - b‖ ≤ |t| * μ.real Set.univ * (‖a - b‖ / (a.im * b.im)) := by
     calc ‖a - b‖ = |t| * ‖resolventTransform μ a - resolventTransform μ b‖ := by
           rw [hab', norm_mul, Complex.norm_real, Real.norm_eq_abs]
       _ ≤ |t| * (‖a - b‖ / (a.im * b.im) * μ.real Set.univ) := by gcongr
       _ = _ := by ring
   rw [mul_div_assoc', le_div_iff₀ (by positivity)] at this
-  nlinarith [mul_lt_mul_of_pos_left hlt hpos]
+  nlinarith [mul_lt_mul_of_pos_left h hpos]
 
 variable (μ) in
 open Filter Topology in
@@ -349,6 +341,11 @@ theorem eqOn_of_eq_sub_mul_resolventTransform (t : ℝ) {f g : ℂ → ℂ}
     Set.EqOn f g {w : ℂ | 0 < w.im} := by
   set r := |t| * μ.real Set.univ + 1
   have hr : 0 < r := by positivity
+  have hlt {x y : ℝ} (hx : r < x) (hy : r < y) : |t| * μ.real Set.univ < x * y := by
+    have hM : 0 ≤ |t| * μ.real Set.univ := mul_nonneg (abs_nonneg t) measureReal_nonneg
+    nlinarith [mul_lt_mul'' hx hy hr.le hr.le]
+  have hpos {x : ℂ} (hx : r < x.im) : 0 < (x - t * resolventTransform μ x).im :=
+    im_sub_mul_resolventTransform_pos (hr.trans hx) (sq x.im ▸ hlt hx hx)
   set z₀ : ℂ := ⟨0, 2 * r⟩
   have hz₀ : r < z₀.im := show r < 2 * r by linarith
   have hU : {z : ℂ | r < z.im} ∈ 𝓝 z₀ := (isOpen_im_gt _).mem_nhds hz₀
@@ -361,14 +358,15 @@ theorem eqOn_of_eq_sub_mul_resolventTransform (t : ℝ) {f g : ℂ → ℂ}
     refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
       (hcont.tendsto.mono_left nhdsWithin_le_nhds) ?_
     filter_upwards [eventually_nhdsWithin_of_eventually_nhds hU, self_mem_nhdsWithin] with z hz hne
-    exact fun h ↦ hne (eq_of_sub_mul_resolventTransform_eq hz hz₀ h)
+    exact fun h ↦ hne (eq_of_sub_mul_resolventTransform_eq (hr.trans hz) (hr.trans hz₀)
+      (hlt hz hz₀) h)
   have hfreq : ∃ᶠ z in 𝓝[≠] z₀, f (z - t * resolventTransform μ z) =
       g (z - t * resolventTransform μ z) := by
     refine Eventually.frequently ?_
     filter_upwards [eventually_nhdsWithin_of_eventually_nhds hU] with z hz
-    exact hfg z (hr.trans hz) (im_sub_mul_resolventTransform_pos hz)
+    exact hfg z (hr.trans hz) (hpos hz)
   exact hf.eqOn_of_preconnected_of_frequently_eq hg (convex_halfSpace_im_gt 0).isPreconnected
-    (im_sub_mul_resolventTransform_pos hz₀) (htend.frequently hfreq)
+    (hpos hz₀) (htend.frequently hfreq)
 
 omit [IsFiniteMeasure μ] in
 /-- The resolvent transform of the pushforward by a real affine map is obtained by the

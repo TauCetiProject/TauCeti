@@ -27,16 +27,16 @@ transforms `m_t(z) = ∫ (x - z)⁻¹ dμ_t(x)` solve the complex Burgers equati
 
 `TauCeti.Probability.IsBurgersFlow μ` states the equation in the integrated form
 `m_t(z) = m_0(z) + ∫₀ᵗ m_s(z) ∂_z m_s(z) ds` for every `z` in the upper half-plane, with an
-integrable integrand. This file shows that the equation determines the family from its initial
-measure. Along a solution the transforms are Lipschitz in time, so the equation holds in
-differentiated form. Along each straight characteristic `s ↦ z - s m_0(z)`, Grönwall's inequality
-then shows that `m_s` is constant, equal to `m_0(z)`, as long as the characteristic stays in the
-upper half-plane. These characteristics are injective near `i ∞`, so the identity theorem and
-Stieltjes inversion recover each `μ_t` from `μ_0`. The same argument gives the Pastur
-(subordination) equation `m_t(w) = m_0(w + t m_t(w))` on the whole upper half-plane. The
-semicircle laws of variance `t` centred at `a` form a Burgers flow: their transforms solve
-`t m² + (z - a) m + 1 = 0`, and differentiating this quadratic in `t` and in `z` gives the
-equation. So they are the unique flow started at the point mass at `a`.
+integrable integrand. This file shows that the equation determines a family of probability
+measures from its initial measure. Along a solution of probability measures the transforms are
+Lipschitz in time, so the equation holds in differentiated form. Along each straight
+characteristic `s ↦ z - s m_0(z)`, Grönwall's inequality then shows that `m_s` is constant, equal
+to `m_0(z)`, as long as the characteristic stays in the upper half-plane. These characteristics
+are injective near `i ∞`, so the identity theorem and Stieltjes inversion recover each `μ_t` from
+`μ_0`. The same argument gives the Pastur (subordination) equation `m_t(w) = m_0(w + t m_t(w))`
+on the whole upper half-plane. The semicircle laws of variance `t` centred at `a` form a Burgers
+flow: their transforms solve `t m² + (z - a) m + 1 = 0`, and differentiating this quadratic in `t`
+and in `z` gives the equation. So they are the unique flow started at the point mass at `a`.
 
 ## Main definitions
 
@@ -441,11 +441,11 @@ variable {a : ℝ}
 /-- **The semicircle flow.** The semicircle laws `semicircleReal a t` of variance `t` centred at
 `a` form a Burgers flow. -/
 theorem isBurgersFlow_semicircleReal (a : ℝ) : IsBurgersFlow fun t ↦ semicircleReal a t :=
-  .of_hasDerivWithinAt (fun _ hz ↦ continuous_resolventTransform_semicircleReal hz)
-    (fun _ hz _ ↦ (((continuous_resolventTransform_semicircleReal hz).mul
-      (continuous_deriv_resolventTransform_semicircleReal hz)).comp
+  .of_hasDerivWithinAt (fun _ hz ↦ continuous_resolventTransform_semicircleReal_variance hz)
+    (fun _ hz _ ↦ (((continuous_resolventTransform_semicircleReal_variance hz).mul
+      (continuous_deriv_resolventTransform_semicircleReal_variance hz)).comp
         continuous_real_toNNReal).intervalIntegrable _ _)
-    fun _ hz _ ↦ hasDerivWithinAt_resolventTransform_semicircleReal hz
+    fun _ hz _ ↦ hasDerivWithinAt_resolventTransform_semicircleReal_variance hz
 
 /-- **The Burgers flow from a point mass.** A Burgers flow of probability measures started at the
 point mass at `a` is the semicircle flow `t ↦ semicircleReal a t`. -/
