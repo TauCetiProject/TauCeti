@@ -83,7 +83,7 @@ theorem windingNumber_fdBoundarySegment1_eq_log (hw : w.re < 1 / 2) :
         Complex.log (((ρ : ℂ) + 1 - w) / (1 / 2 + H * Complex.I - w)) := by
   have h01 : uIcc (0 : ℝ) 1 = Icc 0 1 := uIcc_of_le (by norm_num)
   have hre : ∀ t ∈ uIcc (0 : ℝ) 1, 0 < (fdBoundary H t - w).re := fun t ht => by
-    rw [Complex.sub_re, re_fdBoundarySegment1 H (h01 ▸ ht)]
+    rw [Complex.sub_re, re_fdBoundary_of_le_one (H := H) (h01 ▸ ht : t ∈ Icc (0 : ℝ) 1).2]
     linarith
   rw [windingNumber_fdBoundary_eq_log_of_slit (by norm_num)
       (by rw [← h01]; exact h01 ▸ Icc_subset_Icc le_rfl (by norm_num))
@@ -135,7 +135,7 @@ theorem windingNumber_fdBoundarySegment5_eq_log (hw : w.im < H) :
         Complex.log ((1 / 2 + H * Complex.I - w) / (-1 / 2 + H * Complex.I - w)) := by
   have h45 : uIcc (4 : ℝ) 5 = Icc 4 5 := uIcc_of_le (by norm_num)
   have him : ∀ t ∈ uIcc (4 : ℝ) 5, 0 < (fdBoundary H t - w).im := fun t ht => by
-    rw [Complex.sub_im, im_fdBoundarySegment5 H (h45 ▸ ht)]
+    rw [Complex.sub_im, im_fdBoundary_of_four_le (H := H) (h45 ▸ ht : t ∈ Icc (4 : ℝ) 5).1]
     linarith
   rw [windingNumber_fdBoundary_eq_log_of_slit (by norm_num)
       (Icc_subset_Icc (by norm_num) le_rfl)

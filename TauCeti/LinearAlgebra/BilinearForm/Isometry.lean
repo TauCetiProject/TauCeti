@@ -90,6 +90,8 @@ Two statements are worth singling out.
   left-separating form on a finite free module is bijective.
 * `TauCeti.BilinForm.IsIsometry.map_orthogonal`: a surjective isometry carries `B`-orthogonal
   complements to `B`-orthogonal complements.
+* `LinearMap.BilinForm.equivalent_of_toMatrix_eq_isotropic`: binary forms with Gram matrices
+  `!![0, β; β, γ]` and `!![0, β; β, 2tμβ + μ²γ]`, for a unit `μ`, are isometric.
 
 ## Implementation notes
 
@@ -226,7 +228,7 @@ theorem mem_isometryGroup_iff {e : M ≃ₗ[R] M} :
 same data, the subgroup adding the group structure. -/
 def isometryGroupEquivIsometryEquiv (B : BilinForm R M) :
     isometryGroup B ≃ B.IsometryEquiv B where
-  toFun e := ⟨e.1, fun x y => (mem_isometryGroup.mp e.2).apply x y⟩
+  toFun e := ⟨e.val, fun x y => (mem_isometryGroup.mp e.property).apply x y⟩
   invFun e := ⟨e.toLinearEquiv,
     mem_isometryGroup.mpr (isIsometry_iff.mpr fun x y => e.map_app y x)⟩
   left_inv _ := rfl
@@ -398,7 +400,7 @@ preserves `Q`. -/
 def isometryGroupBaseChange (B : BilinForm R M) :
     isometryGroup B →* isometryGroup (LinearMap.BilinForm.baseChange A B) where
   toFun e := ⟨LinearEquiv.baseChange R A M M (e : M ≃ₗ[R] M),
-    mem_isometryGroup.mpr (IsIsometry.baseChange A (mem_isometryGroup.mp e.2))⟩
+    mem_isometryGroup.mpr (IsIsometry.baseChange A (mem_isometryGroup.mp e.property))⟩
   map_one' := Subtype.ext (by simp)
   map_mul' a b := Subtype.ext (by simp [_root_.LinearEquiv.baseChange_mul])
 
@@ -650,7 +652,7 @@ theorem mem_specialIsometryWithin_iff {g : isometryGroup B} :
 theorem specialIsometryWithin_eq_subgroupOf :
     specialIsometryWithin B = (specialIsometryGroup B).subgroupOf (isometryGroup B) := by
   ext g
-  simp [Subgroup.mem_subgroupOf, g.2]
+  simp [Subgroup.mem_subgroupOf, g.property]
 
 /-- The inclusion from determinant-one isometries to all isometries. -/
 noncomputable def specialIsometryToIsometry (B : BilinForm R M) :
@@ -666,7 +668,7 @@ theorem coe_specialIsometryToIsometry (g : specialIsometryGroup B) :
 @[simp]
 theorem det_coe_specialIsometryGroup (g : specialIsometryGroup B) :
     LinearEquiv.det (g : M ≃ₗ[R] M) = 1 :=
-  (mem_specialIsometryGroup_iff.mp g.2).2
+  (mem_specialIsometryGroup_iff.mp g.property).2
 
 /-- Inclusion of determinant-one isometries into all isometries is injective. -/
 theorem specialIsometryToIsometry_injective :
@@ -757,10 +759,10 @@ variable (A : Type*) [CommRing A] [Algebra R A] [Module.Free R M] [Module.Finite
 def specialIsometryGroupBaseChange (B : BilinForm R M) :
     specialIsometryGroup B →* specialIsometryGroup (LinearMap.BilinForm.baseChange A B) where
   toFun g := ⟨isometryGroupBaseChange A B
-      ⟨g, specialIsometryGroup_le_isometryGroup B g.2⟩, by
-    refine mem_specialIsometryGroup_iff.mpr ⟨(isometryGroupBaseChange A B _).2, ?_⟩
+      ⟨g, specialIsometryGroup_le_isometryGroup B g.property⟩, by
+    refine mem_specialIsometryGroup_iff.mpr ⟨(isometryGroupBaseChange A B _).property, ?_⟩
     rw [coe_isometryGroupBaseChange, LinearEquiv.det_baseChange,
-      (mem_specialIsometryGroup_iff.mp g.2).2, map_one]⟩
+      (mem_specialIsometryGroup_iff.mp g.property).2, map_one]⟩
   map_one' := Subtype.ext (by simp [isometryGroupBaseChange])
   map_mul' g h := Subtype.ext (by simp [isometryGroupBaseChange, LinearEquiv.baseChange_mul])
 
@@ -775,5 +777,45 @@ theorem coe_specialIsometryGroupBaseChange (B : BilinForm R M)
 end BaseChange
 
 end CommRing
+
+end LinearMap.BilinForm
+
+/-! ### Binary forms with an isotropic basis vector -/
+
+namespace LinearMap.BilinForm
+
+open Module
+open LinearMap (BilinForm)
+
+variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+  [Module R M']
+
+/-- **Binary forms with an isotropic first basis vector.** Suppose that `B` and `B'` have Gram
+matrices `!![0, β; β, γ]` and `!![0, β; β, γ']` in bases `v` and `w`. If `γ' = 2tμβ + μ²γ` for a
+unit `μ`, then `B` and `B'` are isometric. -/
+theorem equivalent_of_toMatrix_eq_isotropic {B : BilinForm R M} {B' : BilinForm R M'}
+    (v : Basis (Fin 2) R M) (w : Basis (Fin 2) R M') {β γ γ' t : R} (μ : Rˣ)
+    (hB : toMatrix v B = !![0, β; β, γ]) (hB' : toMatrix w B' = !![0, β; β, γ'])
+    (h : γ' = 2 * t * μ * β + μ ^ 2 * γ) : B.Equivalent B' := by
+  -- In the basis `μ⁻¹ v₀, t v₀ + μ v₁` the form `B` has the Gram matrix of `B'`.
+  let P : Matrix (Fin 2) (Fin 2) R := !![((μ⁻¹ : Rˣ) : R), t; 0, μ]
+  have hP : IsUnit P.det := by simp [P, Matrix.det_fin_two_of]
+  let E := v.map (Matrix.toLinearEquiv v P hP)
+  have hE0 : E 0 = ((μ⁻¹ : Rˣ) : R) • v 0 := by
+    simp [E, P, Matrix.toLinearEquiv_apply, Matrix.toLin_self, Fin.sum_univ_two]
+  have hE1 : E 1 = t • v 0 + (μ : R) • v 1 := by
+    simp [E, P, Matrix.toLinearEquiv_apply, Matrix.toLin_self, Fin.sum_univ_two]
+  have hv (i j : Fin 2) : B (v i) (v j) = !![0, β; β, γ] i j := by
+    rw [← hB, toMatrix_apply]
+  refine ⟨E.isometryEquivOfToMatrixEq w ?_⟩
+  rw [hB', h]
+  ext i j
+  fin_cases i <;> fin_cases j
+  · simp [toMatrix_apply, hE0, hv]
+  · simp [toMatrix_apply, hE0, hE1, hv]
+  · simp [toMatrix_apply, hE0, hE1, hv]
+  · -- The `(1, 1)` entry is `B (t v₀ + μ v₁) (t v₀ + μ v₁) = 2tμβ + μ²γ`.
+    simp [toMatrix_apply, hE1, hv]
+    ring
 
 end LinearMap.BilinForm

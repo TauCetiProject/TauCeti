@@ -54,8 +54,7 @@ namespace ContCohomology
 
 universe u
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [TotallyDisconnectedSpace G]
+variable {G : Type u} [Group G]
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass continuousSMul_trivialF2
 
@@ -63,7 +62,11 @@ private noncomputable def f2One : H0 G (trivialF2 G).V :=
   ⟨(trivialF2Equiv G).symm 1, fun g => by
     rw [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]⟩
 
-omit [TotallyDisconnectedSpace G] in
+section TopologicalGroup
+
+variable [TopologicalSpace G] [IsTopologicalGroup G]
+
+variable [CompactSpace G] in
 private theorem explicitDelta0_f2One (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2) :
     letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
     (DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
@@ -80,7 +83,6 @@ private theorem explicitDelta0_f2One (U : OpenSubgroup G) (hU : U.toSubgroup.ind
   · simp [indexTwoConnectingCocycle_apply, hg, f2One]
   · simp [indexTwoConnectingCocycle_apply, hg, f2One]
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 /-- Transport of the unit class along `ofDiscreteModule_trivialF2` is the explicit unit
 `f2One`, read in canonical continuous cohomology. -/
 private theorem eqToHom_cohomF2_one :
@@ -100,7 +102,6 @@ private theorem eqToHom_cohomF2_one :
   congr 1
   exact eqToHom_ofDiscreteModule_trivialF2_symm_apply G _
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 private theorem discreteTrivialF2_cup_one_right (n : ℕ)
     (x : continuousCohomology n (ofDiscreteModule ℤ G (trivialF2 G).V)) :
     (ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)).cup n 0 x
@@ -117,8 +118,8 @@ private theorem discreteTrivialF2_cup_one_right (n : ℕ)
     simp only [trivialF2Pairing_apply, AddEquiv.apply_symm_apply, mul_one]
   exact hright a
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G] in
+end TopologicalGroup
+
 private theorem discreteTrivialF2_pairing_transport (a b : (trivialF2 G).V) :
     eqToHom (ofDiscreteModule_trivialF2 G)
         ((ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)).bil a b) =
@@ -139,11 +140,10 @@ open CategoryTheory TauCeti TauCeti.ContCohomology
 universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [TotallyDisconnectedSpace G]
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass continuousSMul_trivialF2
 
-omit [TotallyDisconnectedSpace G] in
+variable [CompactSpace G] in
 /-- **The degree-zero connecting map of the index-two coinduced sequence sends `1` to the
 subgroup character.** The unit class of `H⁰(G, 𝔽₂)` is sent to `χ_U ∈ H¹(G, 𝔽₂)`; the transports
 identify the discrete coefficient module with `trivialF2 G`. -/
@@ -161,7 +161,6 @@ theorem indexTwoDelta0_one (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2) :
     indexTwoCharacterClass_def]
   simp
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 private theorem indexTwoShortExact_pairing_incl (U : OpenSubgroup G)
     [U.toSubgroup.FiniteIndex] (hU : U.toSubgroup.index = 2) :
     let S := DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
@@ -183,7 +182,6 @@ private theorem indexTwoShortExact_pairing_incl (U : OpenSubgroup G)
   rw [DiscreteCoind.pairing_apply, DiscreteCoind.unit_apply, DiscreteCoind.unit_apply,
     trivialF2Pairing_smul_smul]
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 private theorem indexTwoShortExact_pairing_proj (U : OpenSubgroup G)
     [U.toSubgroup.FiniteIndex] (hU : U.toSubgroup.index = 2) :
     let S := DiscreteCoind.indexTwoShortExact G U.toSubgroup (trivialF2 G).V hU U.isOpen'
@@ -206,7 +204,8 @@ private theorem indexTwoShortExact_pairing_proj (U : OpenSubgroup G)
   exact DiscreteCoind.trace_pairing U.toSubgroup U.isOpen'
     (trivialF2Pairing G) (trivialF2Pairing_smul_smul G) a b
 
-omit [TotallyDisconnectedSpace G] in
+variable [CompactSpace G]
+
 /-- **The connecting map of the index-two coinduced sequence is cup product by the subgroup
 character in every degree.** The transports identify the discrete coefficient module with
 `trivialF2 G`. Placing the character on the right keeps the resulting degree `n + 1`. -/
@@ -250,6 +249,8 @@ theorem indexTwoDelta_eq_cup_character (U : OpenSubgroup G)
   · rw [h, neg_one_zsmul] at hcup
     rw [hcup, map_neg, hnat, indexTwoDelta0_one U hU]
     exact ZModModule.neg_eq_self _
+
+variable [TotallyDisconnectedSpace G]
 
 /-- **The index-two cup--restriction sequence is exact in every degree.** A class in
 `Hⁿ⁺¹(G, 𝔽₂)` restricts to zero on `U` exactly when it is the cup product of a class in

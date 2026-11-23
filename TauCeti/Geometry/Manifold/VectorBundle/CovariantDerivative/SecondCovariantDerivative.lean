@@ -237,6 +237,21 @@ theorem eq_secondCovariantDerivative_iff (hσ : CMDiff ∞ (T% σ)) (x : M)
     obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
     rw [h Y hY u, secondCovariantDerivative_apply cov covT hσ x hY u]
 
+/-- The second covariant derivative only depends on the values of the connection on smooth
+sections: two smooth connections that agree there have the same second covariant derivative. -/
+theorem secondCovariantDerivative_congr (cov' : _root_.CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov' ∞]
+    (h : ∀ τ : Π y : M, V y, CMDiff ∞ (T% τ) → cov τ = cov' τ) :
+    cov.secondCovariantDerivative covT σ = cov'.secondCovariantDerivative covT σ := by
+  funext x
+  by_cases hσ : CMDiff ∞ (T% σ)
+  · have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
+    refine ((eq_secondCovariantDerivative_iff cov covT hσ x _).2 fun Y hY u ↦ ?_).symm
+    rw [secondCovariantDerivative_apply cov' covT hσ x hY u, h σ hσ,
+      h _ (cov'.contMDiff_apply hY hσ')]
+  · rw [secondCovariantDerivative_of_not_contMDiff cov covT hσ,
+      secondCovariantDerivative_of_not_contMDiff cov' covT hσ]
+
 /-- The second covariant derivative is additive in the section. -/
 theorem secondCovariantDerivative_add {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ))
     (hτ : CMDiff ∞ (T% τ)) (x : M) :
@@ -310,8 +325,8 @@ theorem secondCovariantDerivative_smul_apply {f : M → ℝ} (hf : ContMDiff I �
     secondCovariantDerivative_apply cov covT hσ x hY,
     covariantDerivative_covariantDerivative_smul_section (k := ∞) (X := X) (by simp) cov hf' hY
       hσ' x,
-    cov.covariantDerivative_smul_section_apply (hf.mdifferentiable (by simp) x)
-      (hσ.mdifferentiable (by simp) x)]
+    cov.isCovariantDerivativeOnUniv.leibniz_apply (hσ.mdifferentiable (by simp) x)
+      (hf.mdifferentiable (by simp) x)]
   module
 
 /-- **The double commutator of the second covariant derivative with multiplication.** For smooth
@@ -330,8 +345,8 @@ theorem secondCovariantDerivative_smul_smul_sub {f g : M → ℝ} (hf : ContMDif
   rw [secondCovariantDerivative_smul_apply cov covT hf (hg.smul_section hσ) x hY,
     secondCovariantDerivative_smul_apply cov covT hf hσ x hY,
     secondCovariantDerivative_smul_apply cov covT hg hσ x hY,
-    cov.covariantDerivative_smul_section_apply hgd hσd,
-    cov.covariantDerivative_smul_section_apply hgd hσd]
+    cov.isCovariantDerivativeOnUniv.leibniz_apply hσd hgd,
+    cov.isCovariantDerivativeOnUniv.leibniz_apply hσd hgd]
   simp only [Pi.smul_apply']
   module
 

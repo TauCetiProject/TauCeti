@@ -166,7 +166,7 @@ theorem exists_temporal_cutoff (hα : α ≤ 2) :
     rw [hv]
     simpa only [ParabolicSpaceTime.time_slabMk] using
       (hder t).hasDerivWithinAt.congr_of_mem (f₁ := timeExtension hab.le u x)
-        (fun r hr ↦ by simp [timeExtension_def, u, projIcc_of_mem hab.le hr]) t.2
+        (fun r hr ↦ by simp [timeExtension_def, u, projIcc_of_mem hab.le hr]) t.property
   have hxx (t : Icc a b) (x : E) :
       HasFDerivAt (fun y ↦ (0 : ParabolicSpaceTime.slab (E := E) a b →ᵇ (E →L[ℝ] ℝ))
         (ParabolicSpaceTime.slabMk y t))

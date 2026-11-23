@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Conformal
 
 /-!
@@ -103,6 +103,19 @@ theorem relativeVolumeDensity_rescale_left {n' : ℕ∞ω}
       relativeVolumeDensity g g' x / f x ^ ((Module.finrank ℝ E : ℝ) / 2) := by
   rw [← inv_relativeVolumeDensity g' _, relativeVolumeDensity_rescale_right]
   simp only [mul_inv_rev, inv_relativeVolumeDensity, div_eq_mul_inv]
+
+/-- Rescaling a metric by `c²` multiplies its volume density by `c^dim` for `c > 0`. -/
+theorem relativeVolumeDensity_homothety
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    {c : ℝ} (hc : 0 < c) (x : M) :
+    relativeVolumeDensity g
+      (g.rescale (fun _ : M ↦ c ^ 2) contMDiff_const (fun _ ↦ pow_pos hc 2)) x =
+      c ^ Module.finrank ℝ E := by
+  rw [relativeVolumeDensity_rescale]
+  rw [← Real.rpow_natCast c 2, ← Real.rpow_mul hc.le,
+    ← Real.rpow_natCast c (Module.finrank ℝ E)]
+  congr 1
+  ring
 
 end Bundle.ContMDiffRiemannianMetric
 

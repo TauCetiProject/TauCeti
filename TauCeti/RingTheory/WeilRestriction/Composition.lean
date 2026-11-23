@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import TauCeti.RingTheory.WeilRestriction.Basic
-public import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Composition of Weil restrictions
@@ -63,7 +63,7 @@ of the two restrictions. Its effect on points is `homEquiv_compAlgEquiv`. The de
 instances on the direct extension are obtained by transitivity. -/
 def compAlgEquiv
     (hfin : Module.Finite A C := Module.Finite.trans B C)
-    (hproj : Module.Projective A C := Module.Projective.trans B C) :
+    (hproj : Module.Projective A C := Module.Projective.trans A B C) :
     WeilRestriction A B (WeilRestriction B C D) ≃ₐ[A] WeilRestriction A C D :=
   let f := (compHomEquiv A B C D _).symm (universalPoint A C D)
   let g := (homEquiv A C D _).symm

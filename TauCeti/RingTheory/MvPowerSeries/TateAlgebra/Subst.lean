@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPolynomial.NormCoeff
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # Substituting polynomials into Tate algebras
@@ -154,11 +155,17 @@ theorem IsRestricted.subst_of_totalDegree_le [Finite σ] {a : σ → MvPolynomia
   have hdeg (d : σ →₀ ℕ) (e : τ →₀ ℕ) (he : (d.prod fun s n ↦ a s ^ n).coeff e ≠ 0) :
       ρ' ^ e.degree ≤ ρ ^ d.degree := by
     have hle : e.degree ≤ A * d.degree := by
-      refine (MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr he)).trans
-        ((MvPolynomial.totalDegree_finsetProd _ _).trans ?_)
-      rw [Finsupp.degree_apply, Finset.mul_sum]
-      exact Finset.sum_le_sum fun s _ ↦ (MvPolynomial.totalDegree_pow _ _).trans
-        (by rw [mul_comm]; exact Nat.mul_le_mul_right _ (hA s))
+      have h := MvPolynomial.totalDegree_aeval_le (MvPolynomial.monomial d (1 : R))
+        fun s _ ↦ hA s
+      rw [MvPolynomial.aeval_monomial, map_one, one_mul] at h
+      have hd : (MvPolynomial.monomial d (1 : R)).totalDegree ≤ d.degree := by
+        refine (MvPolynomial.totalDegree_monomial_le d 1).trans_eq ?_
+        rw [Finsupp.degree_apply, Finsupp.sum]
+        simp only [id]
+      have he' : e.degree ≤ (d.prod fun s n ↦ a s ^ n).totalDegree := by
+        simpa only [Finsupp.degree_apply, Finsupp.sum] using
+          MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr he)
+      exact he'.trans <| h.trans <| (Nat.mul_le_mul_right A hd).trans_eq (mul_comm _ _)
     calc ρ' ^ e.degree ≤ ρ' ^ (A * d.degree) := pow_le_pow_right₀ hρ' hle
       _ = (ρ' ^ A) ^ d.degree := pow_mul _ _ _
       _ ≤ ρ ^ d.degree := pow_le_pow_left₀ (by positivity) hρ _
@@ -202,7 +209,7 @@ noncomputable def restrictedSubst :
     IsRestricted.subring (R := R) (fun _ : σ ↦ 1) →ₐ[R]
       IsRestricted.subring (R := R) (fun _ : τ ↦ 1) where
   toFun f := ⟨(f : MvPowerSeries σ R).subst fun s ↦ (a s : MvPowerSeries τ R),
-    IsRestricted.subst ha₀ ha₁ f.2⟩
+    IsRestricted.subst ha₀ ha₁ f.property⟩
   map_one' := Subtype.ext <| by simpa using map_one (substAlgHom (hasSubst_coe ha₀))
   map_mul' f g := Subtype.ext <| by simp [subst_mul (hasSubst_coe ha₀)]
   map_zero' := Subtype.ext <| by simpa using map_zero (substAlgHom (hasSubst_coe ha₀))

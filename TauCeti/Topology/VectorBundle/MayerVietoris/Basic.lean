@@ -157,7 +157,7 @@ theorem singularHomology_thomPairOver_hom_ext {T : C}
   refine singularHomology_prodThomPair_hom_ext fun b ↦ ?_
   rw [← TopPair.singularHomologyMap_comp_assoc, ← TopPair.singularHomologyMap_comp_assoc,
     e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b,
-    TopPair.singularHomologyMap_comp_assoc, TopPair.singularHomologyMap_comp_assoc, h b b.2]
+    TopPair.singularHomologyMap_comp_assoc, TopPair.singularHomologyMap_comp_assoc, h b b.property]
 
 end Bundle.Trivialization
 
@@ -177,7 +177,8 @@ theorem isZero_singularHomology_thomPairOver_empty (n : ℕ) :
   exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
     (TopCat.ofHom (X := π F E ⁻¹' (∅ : Set B))
       (Y := ↥(π F E ⁻¹' (∅ : Set B) ∩ zeroSectionCompl F E))
-      ⟨fun v ↦ v.2.elim, continuous_of_const fun v ↦ v.2.elim⟩) (by ext v; exact v.2.elim) n
+      ⟨fun v ↦ v.property.elim, continuous_of_const fun v ↦ v.property.elim⟩)
+          (by ext v; exact v.property.elim) n
 
 end Empty
 
@@ -191,7 +192,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E :
 open sets `U` and `V` of the base need to be open: the preimages of `U` and `V` are open in the
 total space, hence in any subspace, and their traces on a subspace of nonzero vectors are the traces
 of the preimages themselves. -/
-private theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V) :
+theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V) :
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∪ π F E ⁻¹' V) → TotalSpace F E) ⁻¹' (π F E ⁻¹' U)) ∧
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∪ π F E ⁻¹' V) → TotalSpace F E) ⁻¹' (π F E ⁻¹' V)) ∧
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∩ zeroSectionCompl F E ∪ π F E ⁻¹' V ∩ zeroSectionCompl F E) →
@@ -200,7 +201,7 @@ private theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V
       TotalSpace F E) ⁻¹' (π F E ⁻¹' V ∩ zeroSectionCompl F E)) := by
   have hopen {W : Set B} (hW : IsOpen W) (T : Set (TotalSpace F E)) :
       IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W)) :=
-    (hW.preimage (FiberBundle.continuous_proj F E)).preimage continuous_subtype_val
+    (hW.preimage (FiberBundle.continuous_proj F E)).preimage continuous_subtypeVal
   have hopen₀ {W : Set B} (hW : IsOpen W) {T : Set (TotalSpace F E)}
       (hT : T ⊆ zeroSectionCompl F E) :
       IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W ∩ zeroSectionCompl F E)) := by

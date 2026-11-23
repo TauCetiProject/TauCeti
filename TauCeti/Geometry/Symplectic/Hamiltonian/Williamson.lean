@@ -31,6 +31,15 @@ This is the elliptic case of Williamson's normal forms: a positive definite quad
 lies in the span of the elliptic blocks of a Darboux basis, which form a nondegenerate family
 (`TauCeti.SymplecticForm.IsDarbouxBasis.isNondegenerateQuadraticFamily_elliptic`).
 
+Williamson's theorem is an instance of a normal form for every element `A ∈ sp(V, ω)` which is
+complex linear for a complex structure `J` compatible with `ω`, without any positivity: in a
+Darboux basis with `pₖ = J qₖ`, `A` rotates each plane `span(qₖ, pₖ)` with a real angular
+frequency `νₖ`, and its quadratic Hamiltonian `½ ω(A v, v)` is `∑ₖ νₖ Iₖ`
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic`).
+Every frequency contributes two squares of the same sign, so the indices of inertia of this
+Hamiltonian are even (`TauCeti.SymplecticForm.even_sigNeg_hamiltonianEndEquiv_symm`,
+`TauCeti.SymplecticForm.even_sigPos_hamiltonianEndEquiv_symm`).
+
 The proof constructs a complex structure `J` compatible with `ω` that commutes with `A_Q`
 (`TauCeti.SymplecticForm.exists_compatible_isComplexLinearMap_hamiltonianEnd_of_posDef`). It is the
 polar normalization `TauCeti.SymplecticForm.polarComplexStructure` of `ω` for the inner product
@@ -85,6 +94,72 @@ theorem exists_compatible_isComplexLinearMap_hamiltonianEnd_of_posDef (hQ : Q.Po
   refine ⟨ω.polarComplexStructure, ω.compatible_polarComplexStructure,
     (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ ω.innerOperator_injective ?_⟩
   rw [hKA, ← polarComplexStructure_apply_innerOperator, hKA]
+
+section ComplexLinear
+
+variable {ω} {J : AlmostComplexStructure V}
+
+/-- **Normal form of a compact element of `sp(V, ω)`.** Let `A ∈ sp(V, ω)` be complex linear for a
+complex structure `J` compatible with `ω`. Then there are a Darboux basis `(q₁, p₁, …, qₙ, pₙ)`
+with `pₖ = J qₖ` and real numbers `ν₁, …, νₙ` such that `A` rotates every plane `span(qₖ, pₖ)`
+with angular frequency `νₖ`, `A qₖ = -νₖ pₖ` and `A pₖ = νₖ qₖ`, and its quadratic Hamiltonian
+`v ↦ ½ ω(A v, v)` is `∑ₖ νₖ Iₖ`, for the elliptic blocks `Iₖ = (xₖ² + yₖ²) / 2` of the basis. -/
+theorem exists_isDarbouxBasis_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic
+    (hJ : ω.Compatible J) (A : skewAdjointLieSubalgebra ω.toBilinForm)
+    (hA : IsComplexLinearMap J J (A : Module.End ℝ V)) :
+    ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (ν : Fin n → ℝ), ω.IsDarbouxBasis b ∧
+      (∀ k, b (k, 1) = J (b (k, 0))) ∧
+      (∀ k, (A : Module.End ℝ V) (b (k, 0)) = -ν k • b (k, 1) ∧
+        (A : Module.End ℝ V) (b (k, 1)) = ν k • b (k, 0)) ∧
+      ω.hamiltonianEndEquiv.symm A = ∑ k, ν k • elliptic b k := by
+  obtain ⟨n, b, c, hb, hbJ, hc⟩ := exists_isDarbouxBasis_forall_apply_eq_of_skewAdjoint hJ
+    (fun _ : Unit ↦ (A : Module.End ℝ V)) (fun _ _ h ↦ absurd rfl h) (fun _ ↦ A.property) fun _ ↦ hA
+  -- `A` acts on `span(qₖ, pₖ)` by `a + b i`, and `ω(A qₖ, pₖ) = -ω(qₖ, A pₖ)` reads `a = -a`.
+  have hre (k : Fin n) : (c () k).re = 0 := by
+    have h : ω ((A : Module.End ℝ V) (b (k, 0))) (b (k, 1)) =
+        -ω (b (k, 0)) ((A : Module.End ℝ V) (b (k, 1))) :=
+      skewAdjointLieSubalgebra.apply_left A _ _
+    rw [(hc () k).1, (hc () k).2] at h
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+      hb.apply_fst_snd, hb.apply_snd_snd, hb.apply_fst_fst] at h
+    simp at h
+    linarith
+  have hfst (k : Fin n) : (A : Module.End ℝ V) (b (k, 0)) = -(-(c () k).im) • b (k, 1) := by
+    rw [(hc () k).1, hre, zero_smul, zero_add, neg_neg]
+  have hsnd (k : Fin n) : (A : Module.End ℝ V) (b (k, 1)) = -(c () k).im • b (k, 0) := by
+    rw [(hc () k).2, hre, zero_smul, add_zero]
+  refine ⟨n, b, fun k ↦ -(c () k).im, hb, hbJ, fun k ↦ ⟨hfst k, hsnd k⟩,
+    ω.hamiltonianEndEquiv.symm_apply_eq.2 (Subtype.ext (b.ext fun ⟨j, a⟩ ↦ ?_))⟩
+  rw [coe_hamiltonianEndEquiv_apply]
+  obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
+  · rw [hfst, hb.hamiltonianEnd_sum_smul_elliptic_apply_fst]
+  · rw [hsnd, hb.hamiltonianEnd_sum_smul_elliptic_apply_snd]
+
+/-- **The negative index of a compact element of `sp(V, ω)` is even.** If `A ∈ sp(V, ω)` is complex
+linear for a complex structure compatible with `ω`, the quadratic Hamiltonian `½ ω(A v, v)` has
+even negative index of inertia. -/
+theorem even_sigNeg_hamiltonianEndEquiv_symm (hJ : ω.Compatible J)
+    (A : skewAdjointLieSubalgebra ω.toBilinForm)
+    (hA : IsComplexLinearMap J J (A : Module.End ℝ V)) :
+    Even (sigNeg (ω.hamiltonianEndEquiv.symm A)) := by
+  obtain ⟨n, b, ν, -, -, -, h⟩ :=
+    exists_isDarbouxBasis_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic hJ A hA
+  rw [h, sigNeg_sum_smul_elliptic]
+  exact even_two_mul _
+
+/-- **The positive index of a compact element of `sp(V, ω)` is even.** If `A ∈ sp(V, ω)` is complex
+linear for a complex structure compatible with `ω`, the quadratic Hamiltonian `½ ω(A v, v)` has
+even positive index of inertia. -/
+theorem even_sigPos_hamiltonianEndEquiv_symm (hJ : ω.Compatible J)
+    (A : skewAdjointLieSubalgebra ω.toBilinForm)
+    (hA : IsComplexLinearMap J J (A : Module.End ℝ V)) :
+    Even (sigPos (ω.hamiltonianEndEquiv.symm A)) := by
+  obtain ⟨n, b, ν, -, -, -, h⟩ :=
+    exists_isDarbouxBasis_hamiltonianEndEquiv_symm_eq_sum_smul_elliptic hJ A hA
+  rw [h, sigPos_sum_smul_elliptic]
+  exact even_two_mul _
+
+end ComplexLinear
 
 variable {ω} in
 /-- If the Hamiltonian endomorphism of a quadratic form `R` acts on the plane `span(qₖ, pₖ)` of a
