@@ -796,11 +796,12 @@ theorem exists_preciseRepresentative_le_mul_add_of_sum_mul_iteratedGradient_eq
   exact H u hΩ ha hLam hnonneg (heq.mono fun x hx ↦ hx ▸ (Real.norm_eq_abs _).ge) hf.norm
 
 /-- **The Harnack inequality of Krylov and Safonov, almost everywhere** (Gilbarg–Trudinger,
-Theorem 9.22). For every `κ` there is `C > 0`, depending only on the dimension `n ≥ 1` and on `κ`,
-with the following property. Let `Ω ⊇ B(x₀, 2 r)` be open, let `a` be uniformly elliptic on
-`B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` be nonnegative almost
-everywhere in `B(x₀, 2 r)`, with `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere there for the weak
-Hessian, where `f ∈ Lⁿ(B(x₀, 2 r))`. Then for almost every `x` and almost every `y` in `B(x₀, r)`,
+Corollary 9.25; Caffarelli–Cabré, Theorem 4.3). For every `κ` there is `C > 0`, depending only on
+the dimension `n ≥ 1` and on `κ`, with the following property. Let `Ω ⊇ B(x₀, 2 r)` be open, let
+`a` be uniformly elliptic on `B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` be
+nonnegative almost everywhere in `B(x₀, 2 r)`, with `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere there
+for the weak Hessian, where `f ∈ Lⁿ(B(x₀, 2 r))`. Then for almost every `x` and almost every `y`
+in `B(x₀, r)`,
 
 `u(x) ≤ C (u(y) + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
 
@@ -838,10 +839,10 @@ theorem exists_ae_value_le_mul_add_of_abs_sum_mul_iteratedGradient_le
   exact H u hΩ ha hLam hnonneg habs hf x hx.1 y hy.1
 
 /-- **The Harnack inequality of Krylov and Safonov for strong solutions, almost everywhere**
-(Gilbarg–Trudinger, Theorem 9.22). For every `κ` there is `C > 0`, depending only on the dimension
-`n ≥ 1` and on `κ`, with the following property. Let `Ω ⊇ B(x₀, 2 r)` be open, let `a` be uniformly
-elliptic on `B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` be a strong
-solution of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` in `B(x₀, 2 r)`, nonnegative almost everywhere there, where
+(Gilbarg–Trudinger, Corollary 9.25). For every `κ` there is `C > 0`, depending only on the
+dimension `n ≥ 1` and on `κ`, with the following property. Let `Ω ⊇ B(x₀, 2 r)` be open, let `a` be
+uniformly elliptic on `B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, and let `u ∈ W^{2,n}(Ω)` be a
+strong solution of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` in `B(x₀, 2 r)`, nonnegative almost everywhere there, where
 `f ∈ Lⁿ(B(x₀, 2 r))`. Then for almost every `x` and almost every `y` in `B(x₀, r)`,
 
 `u(x) ≤ C (u(y) + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
