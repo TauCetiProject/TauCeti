@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Frame
+public import TauCeti.Analysis.InnerProductSpace.Frame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family

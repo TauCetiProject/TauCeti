@@ -101,7 +101,7 @@ theorem contMDiffOn_overlapOperator [IsContMDiffRiemannianBundle IB n F V] {d k 
     simp [overlapOperator_def, map_sum, map_smul]
   rw [hsum]
   exact contMDiffOn_finsetSum fun j _ ↦
-    ((ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ (Fin k)) (EuclideanSpace ℝ (Fin d))
+    ((StrongDual.smulRightL ℝ (EuclideanSpace ℝ (Fin k)) (EuclideanSpace ℝ (Fin d))
       (EuclideanSpace.proj j)).contDiff (n := n)).contMDiff.comp_contMDiffOn (hw j)
 
 end TauCeti

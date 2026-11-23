@@ -120,7 +120,7 @@ theorem injective_mfderiv_comp_subtype :
     Injective ((mfderiv I J f x : TangentSpace I x →ₗ[𝕜] TangentSpace J (f x)) ∘ₗ
       (Hz x).subtype) := by
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦ Subtype.ext ?_
-  have hmem : (v : TangentSpace I x) ∈ (mfderiv I J f x).ker ⊓ Hz x := ⟨hv, v.2⟩
+  have hmem : (v : TangentSpace I x) ∈ (mfderiv I J f x).ker ⊓ Hz x := ⟨hv, v.property⟩
   rwa [(h.isCompl_ker x).inf_eq_bot, Submodule.mem_bot] at hmem
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 E']
@@ -162,7 +162,7 @@ theorem coe_mfderivEquiv_symm_apply (w : TangentSpace J (f x)) :
 
 /-- The horizontal lift is horizontal. -/
 theorem horizontalLift_mem (w : TangentSpace J (f x)) : h.horizontalLift x w ∈ Hz x :=
-  ((h.mfderivEquiv x).symm w).2
+  ((h.mfderivEquiv x).symm w).property
 
 /-- The horizontal lift is a right inverse of the derivative. -/
 @[simp]
