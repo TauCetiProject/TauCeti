@@ -34,8 +34,9 @@ of the `p`-primary components.
   components are orthogonal elementwise.
 * `TauCeti.FiniteBilinearModule.primaryComponent_le_orthogonalComplement_primaryComponent`: the
   corresponding inclusion of additive subgroups.
-* `TauCeti.FiniteBilinearModule.isNondegenerate_restrict_primaryComponent`: a nondegenerate
-  pairing restricts nondegenerately to each prime-primary component.
+* `TauCeti.FiniteBilinearModule.isNondegenerate_primaryComponent` and
+  `TauCeti.FiniteQuadraticModule.isNondegenerate_primaryComponent`: a nondegenerate pairing
+  restricts nondegenerately to each prime-primary component.
 * `TauCeti.FiniteBilinearModule.pairing_sum_eq_sum_pairing_of_mem_primaryComponent`: a bilinear
   pairing of primary decompositions is the sum of the component pairings.
 * `TauCeti.FiniteQuadraticModule.quadratic_sum_of_mem_primaryComponent`: a quadratic value on a
@@ -81,6 +82,18 @@ def primaryComponentAddEquiv (p : ℕ) :
     A.primaryComponent p ≃+ AddCommGroup.primaryComponent A p :=
   AddEquiv.refl (AddCommGroup.primaryComponent A p)
 
+/-- `primaryComponentAddEquiv` acts as the identity on elements of
+`AddCommGroup.primaryComponent A p`. -/
+@[simp]
+theorem primaryComponentAddEquiv_apply (p : ℕ) (x : A.primaryComponent p) :
+    A.primaryComponentAddEquiv p x = x := (rfl)
+
+/-- The inverse of `primaryComponentAddEquiv` acts as the identity on elements of
+`AddCommGroup.primaryComponent A p`. -/
+@[simp]
+theorem primaryComponentAddEquiv_symm_apply (p : ℕ) (x : AddCommGroup.primaryComponent A p) :
+    (A.primaryComponentAddEquiv p).symm x = x := (rfl)
+
 /-! ## Orthogonality -/
 
 /-- Elements in the primary components for two distinct primes pair to zero. -/
@@ -120,7 +133,7 @@ private theorem ordCompl_natCard_nsmul_mem_primaryComponent (p : ℕ) (x : A) :
 
 /-- The restriction of a nondegenerate finite bilinear module to any prime-primary component is
 nondegenerate. -/
-theorem isNondegenerate_restrict_primaryComponent (hA : A.IsNondegenerate) {p : ℕ}
+theorem isNondegenerate_primaryComponent (hA : A.IsNondegenerate) {p : ℕ}
     (hp : p.Prime) :
     (A.primaryComponent p).IsNondegenerate := by
   -- For `x` in the radical of the restricted pairing and arbitrary `z`, pairing `x` with
@@ -201,12 +214,24 @@ def primaryComponentAddEquiv (p : ℕ) :
     A.primaryComponent p ≃+ AddCommGroup.primaryComponent A p :=
   AddEquiv.refl (AddCommGroup.primaryComponent A p)
 
+/-- `primaryComponentAddEquiv` acts as the identity on elements of
+`AddCommGroup.primaryComponent A p`. -/
+@[simp]
+theorem primaryComponentAddEquiv_apply (p : ℕ) (x : A.primaryComponent p) :
+    A.primaryComponentAddEquiv p x = x := (rfl)
+
+/-- The inverse of `primaryComponentAddEquiv` acts as the identity on elements of
+`AddCommGroup.primaryComponent A p`. -/
+@[simp]
+theorem primaryComponentAddEquiv_symm_apply (p : ℕ) (x : AddCommGroup.primaryComponent A p) :
+    (A.primaryComponentAddEquiv p).symm x = x := (rfl)
+
 /-- The polar pairing of a nondegenerate finite quadratic module restricts nondegenerately to each
 prime-primary component. -/
-theorem isNondegenerate_restrict_primaryComponent (hA : A.IsNondegenerate) {p : ℕ}
+theorem isNondegenerate_primaryComponent (hA : A.IsNondegenerate) {p : ℕ}
     (hp : p.Prime) :
     (A.primaryComponent p).IsNondegenerate :=
-  A.toFiniteBilinearModule.isNondegenerate_restrict_primaryComponent hA hp
+  A.toFiniteBilinearModule.isNondegenerate_primaryComponent hA hp
 
 /-- A quadratic map is additive on elements belonging to primary components for distinct primes. -/
 theorem quadratic_add_of_mem_primaryComponent {p q : ℕ} (hp : p.Prime) (hq : q.Prime)

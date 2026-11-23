@@ -169,22 +169,25 @@ theorem rank_pi_eq_sup_of_coprime_card {ι : Type*} [Fintype ι] (M : ι → Typ
   simp_rw [AddGroup.rank_eq_spanFinrank]
   exact TauCeti.AddCommGroup.spanFinrank_pi_eq_sup_of_coprime_card M hcop
 
+private abbrev finTwoPair {α : Sort*} (a b : α) : Fin 2 → α
+  | 0 => a
+  | 1 => b
+
+private theorem rank_prod_eq_rank_piFinTwo.{u} (F : Fin 2 → Type u) [∀ i, AddCommGroup (F i)]
+    [∀ i, AddGroup.FG (F i)] :
+    AddGroup.rank (F 0 × F 1) = AddGroup.rank (∀ i, F i) :=
+  AddGroup.rank_congr (LinearEquiv.piFinTwo ℤ F).symm.toAddEquiv
+
 private theorem rank_prod_eq_max_of_coprime_card_aux.{u} {M N : Type u}
-    [AddCommGroup M] [AddCommGroup N] [AddGroup.FG M] [AddGroup.FG N]
+    [instM : AddCommGroup M] [instN : AddCommGroup N] [hM : AddGroup.FG M] [hN : AddGroup.FG N]
     (hcop : (Nat.card M).Coprime (Nat.card N)) :
     AddGroup.rank (M × N) = max (AddGroup.rank M) (AddGroup.rank N) := by
-  let F : Fin 2 → Type u := fun i ↦ match i with | 0 => M | 1 => N
-  let _ : ∀ i, AddCommGroup (F i) := fun i ↦ match i with | 0 => inferInstance | 1 => inferInstance
-  have : ∀ i, AddGroup.FG (F i) := fun i ↦ match i with | 0 => inferInstance | 1 => inferInstance
+  let F : Fin 2 → Type u := finTwoPair M N
+  let _ : ∀ i, AddCommGroup (F i) := fun | 0 => instM | 1 => instN
+  have : ∀ i, AddGroup.FG (F i) := fun | 0 => hM | 1 => hN
   have hF : Pairwise fun i j ↦ (Nat.card (F i)).Coprime (Nat.card (F j)) := by
-    intro i j hij
-    match i, j with
-    | 0, 0 => exact (hij rfl).elim
-    | 0, 1 => exact hcop
-    | 1, 0 => exact hcop.symm
-    | 1, 1 => exact (hij rfl).elim
-  have e : (M × N) ≃+ ∀ i, F i := (LinearEquiv.piFinTwo ℤ F).symm.toAddEquiv
-  rw [AddGroup.rank_congr e, rank_pi_eq_sup_of_coprime_card F hF]
+    simpa [Pairwise, Fin.forall_fin_two, F] using ⟨hcop, hcop.symm⟩
+  rw [rank_prod_eq_rank_piFinTwo F, rank_pi_eq_sup_of_coprime_card F hF]
   have huniv : (Finset.univ : Finset (Fin 2)) = {0, 1} := by decide
   rw [huniv, Finset.sup_insert, Finset.sup_singleton]
 
@@ -217,15 +220,11 @@ theorem rank_prod_zmod (m n : ℕ) :
       AddGroup.rank_zmod, AddGroup.rank_zmod]
     split_ifs <;> simp_all
   · obtain ⟨p, hp, hp_dvd⟩ := Nat.exists_prime_and_dvd hcop
-    let F : Fin 2 → ℕ := fun i ↦ match i with | 0 => m | 1 => n
-    have hdvd : ∀ i : Fin 2, p ∣ F i := by
-      intro i
-      match i with
-      | 0 => exact hp_dvd.trans (Nat.gcd_dvd_left m n)
-      | 1 => exact hp_dvd.trans (Nat.gcd_dvd_right m n)
-    have e : (ZMod m × ZMod n) ≃+ ∀ i : Fin 2, ZMod (F i) :=
-      (LinearEquiv.piFinTwo ℤ (fun i : Fin 2 ↦ ZMod (F i))).symm.toAddEquiv
-    rw [AddGroup.rank_congr e, AddGroup.rank_pi_zmod _ hp hdvd, Fintype.card_fin]
+    let F : Fin 2 → ℕ := finTwoPair m n
+    have hdvd : ∀ i : Fin 2, p ∣ F i := Fin.forall_fin_two.2
+      ⟨hp_dvd.trans (Nat.gcd_dvd_left m n), hp_dvd.trans (Nat.gcd_dvd_right m n)⟩
+    rw [rank_prod_eq_rank_piFinTwo (fun i ↦ ZMod (F i)),
+      AddGroup.rank_pi_zmod _ hp hdvd, Fintype.card_fin]
 
 /-- For prime `p` and `k₁, k₂ > 0`, `ZMod (p ^ k₁) × ZMod (p ^ k₂)` has generator rank `2`. -/
 theorem rank_prod_zmod_prime_pow {p k₁ k₂ : ℕ} (hp : p.Prime) (hk₁ : 0 < k₁) (hk₂ : 0 < k₂) :

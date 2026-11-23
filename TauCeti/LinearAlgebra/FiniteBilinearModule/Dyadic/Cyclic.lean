@@ -104,6 +104,16 @@ theorem dyadicCyclic_pairing_intCast (i j : ℤ) :
 def dyadicCyclicAddEquiv : dyadicCyclic k θ ≃+ ZMod (2 ^ k) :=
   AddEquiv.refl (ZMod (2 ^ k))
 
+/-- `dyadicCyclicAddEquiv` acts as the identity on the underlying `ZMod (2 ^ k)` carrier. -/
+@[simp]
+theorem dyadicCyclicAddEquiv_apply (x : dyadicCyclic k θ) :
+    dyadicCyclicAddEquiv k θ x = x := (rfl)
+
+/-- The inverse of `dyadicCyclicAddEquiv` acts as the identity on `ZMod (2 ^ k)`. -/
+@[simp]
+theorem dyadicCyclicAddEquiv_symm_apply (x : ZMod (2 ^ k)) :
+    (dyadicCyclicAddEquiv k θ).symm x = x := (rfl)
+
 /-- `q_θ^{(2)}(2^k)` has `2^k` elements. Its carrier is `ℤ/2^k` by definition. -/
 @[simp]
 theorem natCard_dyadicCyclic : Nat.card (dyadicCyclic k θ) = 2 ^ k :=

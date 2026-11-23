@@ -366,15 +366,16 @@ theorem realizationDet_eq_realizationUnit_mul_natCard (g : NikulinGenerator) :
 theorem IsAdmissible.isCoprime_prime_realizationUnit {g : NikulinGenerator} (hg : g.IsAdmissible) :
     IsCoprime (g.prime : ℤ) g.realizationUnit := by
   cases g with
-  | oddCyclic p k hp _ θ =>
-      exact (Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd.mpr hg.2
-  | dyadicCyclic _ _ θ =>
-      obtain ⟨m, rfl⟩ := hg
-      exact ⟨-m, 1, by simp only [prime, realizationUnit]; ring⟩
+  | oddCyclic p k hp hodd θ =>
+      exact (Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd.mpr
+        ((isAdmissible_oddCyclic_iff p k hp hodd θ).mp hg).2
+  | dyadicCyclic k hk θ =>
+      obtain ⟨m, rfl⟩ := (isAdmissible_dyadicCyclic_iff k hk θ).mp hg
+      exact ⟨-m, 1, by simp only [prime_dyadicCyclic, realizationUnit_dyadicCyclic]; ring⟩
   | dyadicU _ =>
-      exact ⟨0, -1, by norm_num [prime, realizationUnit]⟩
+      exact ⟨0, -1, by norm_num [prime_dyadicU, realizationUnit_dyadicU]⟩
   | dyadicV _ =>
-      exact ⟨-1, 1, by norm_num [prime, realizationUnit]⟩
+      exact ⟨-1, 1, by norm_num [prime_dyadicV, realizationUnit_dyadicV]⟩
 
 /-- For any list of admissible generators of prime `p`, the product of their `realizationUnit`s
 is coprime to `p` in `ℤ`. -/
@@ -409,20 +410,22 @@ theorem IsAdmissible.rank_toFiniteQuadraticModule {g : NikulinGenerator} (hg : g
   | oddCyclic p k hp hodd θ =>
       rw [toFiniteQuadraticModule_oddCyclic, rank_oddCyclic,
         AddGroup.rank_congr (oddCyclicAddEquiv (p ^ k) hodd.pow θ)]
-      exact AddGroup.rank_zmod_prime_pow hp hg.1
+      exact AddGroup.rank_zmod_prime_pow hp ((isAdmissible_oddCyclic_iff p k hp hodd θ).mp hg).1
   | dyadicCyclic k hk θ =>
       have : NeZero k := ⟨hk.ne'⟩
       rw [toFiniteQuadraticModule_dyadicCyclic, rank_dyadicCyclic,
         AddGroup.rank_congr (dyadicCyclicAddEquiv k θ)]
       exact AddGroup.rank_zmod_prime_pow Nat.prime_two hk
   | dyadicU k =>
+      have hk : 0 < k := (isAdmissible_dyadicU_iff k).mp hg
       rw [toFiniteQuadraticModule_dyadicU, rank_dyadicU,
         AddGroup.rank_congr (dyadicUAddEquiv k)]
-      exact AddGroup.rank_prod_zmod_prime_pow Nat.prime_two hg hg
+      exact AddGroup.rank_prod_zmod_prime_pow Nat.prime_two hk hk
   | dyadicV k =>
+      have hk : 0 < k := (isAdmissible_dyadicV_iff k).mp hg
       rw [toFiniteQuadraticModule_dyadicV, rank_dyadicV,
         AddGroup.rank_congr (dyadicVAddEquiv k)]
-      exact AddGroup.rank_prod_zmod_prime_pow Nat.prime_two hg hg
+      exact AddGroup.rank_prod_zmod_prime_pow Nat.prime_two hk hk
 
 end NikulinGenerator
 
@@ -881,15 +884,16 @@ theorem nonempty_nikulinDecomposition_iff {A : FiniteQuadraticModule.{u}} :
   have hadm : ∀ g ∈ gs, g.IsAdmissible := by
     simp only [gs, List.mem_append, List.mem_ofFn]
     rintro g (⟨i, rfl⟩ | ⟨i, rfl⟩ | ⟨i, rfl⟩ | ⟨i, rfl⟩)
-    · refine ⟨hn i, fun hdvd ↦ ?_⟩
+    · rw [NikulinGenerator.isAdmissible_oddCyclic_iff]
+      refine ⟨hn i, fun hdvd ↦ ?_⟩
       -- A prime dividing `θ i` would divide `gcd(m i, θ i) = 1`.
       have hcop : IsCoprime (p i : ℤ) (θ i) :=
         (IsCoprime.pow_left_iff (hn i)).mp (by exact_mod_cast hpn i ▸ (hmθ i).2)
       exact (Nat.prime_iff_prime_int.mp (hp i)).not_isUnit
         (hcop.isUnit_of_dvd' (dvd_refl _) hdvd)
-    · exact hη i
-    · exact Nat.succ_pos _
-    · exact Nat.succ_pos _
+    · exact (NikulinGenerator.isAdmissible_dyadicCyclic_iff _ _ _).mpr (hη i)
+    · exact (NikulinGenerator.isAdmissible_dyadicU_iff _).mpr (Nat.succ_pos _)
+    · exact (NikulinGenerator.isAdmissible_dyadicV_iff _).mpr (Nat.succ_pos _)
   -- The labels of the odd generators name the modules of the native decomposition.
   have eodd (i : Fin a) : Isometry (oddCyclic (m i) (hm i) (θ i)) (odd i).toFiniteQuadraticModule :=
     Isometry.ofEq <| by
@@ -950,7 +954,8 @@ theorem NikulinDecomposition.hasCyclicTwoSummand_of_mem {A : FiniteQuadraticModu
     (hmem : NikulinGenerator.dyadicCyclic 1 hk θ ∈ D.generators) :
     HasCyclicTwoSummand A := by
   obtain ⟨gs₁, gs₂, hsplit⟩ := List.append_of_mem hmem
-  have hθ : Odd θ := D.isAdmissible _ hmem
+  have hθ : Odd θ :=
+    (NikulinGenerator.isAdmissible_dyadicCyclic_iff 1 hk θ).mp (D.isAdmissible _ hmem)
   refine ⟨θ, (orthogonalSumNikulinGenerators gs₁).prod (orthogonalSumNikulinGenerators gs₂),
     hθ, ⟨?_⟩⟩
   exact D.isometry.trans
