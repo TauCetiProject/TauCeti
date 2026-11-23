@@ -124,16 +124,7 @@ theorem trace_symmMap₂ (f g : Module.End R M) :
     rw [nsmul_eq_mul, Nat.cast_ofNat, ← mul_assoc, ← mul_assoc, invOf_mul_self, one_mul,
       one_mul] at h2
     rw [htr, h2]
-  · have hnotfin : ¬ Module.Finite R (⋀[R]^2 M) := by
-      intro hext
-      let I := Module.Free.ChooseBasisIndex R M
-      let b := Module.Free.chooseBasis R M
-      have : Infinite I := by
-        by_contra hI
-        exact hfin (have := not_infinite_iff_finite.1 hI; Module.Finite.of_basis b)
-      let _ : LinearOrder I := linearOrderOfSTO WellOrderingRel
-      have := Module.Finite.finite_basis (b.exteriorPower 2)
-      exact not_finite (Set.powersetCard I 2)
+  · have hnotfin : ¬ Module.Finite R (⋀[R]^2 M) := not_finite_of_not_finite hfin (by decide)
     rw [TauCeti.LinearMap.trace_eq_zero_of_not_finite hnotfin,
       TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin]
     simp

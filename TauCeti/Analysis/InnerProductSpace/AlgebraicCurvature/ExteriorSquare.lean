@@ -42,7 +42,6 @@ Under this dictionary, `curvatureEndomorphism (kulkarniNomizu h k) =
 
 * `TauCeti.FourTensor.inner_curvatureEndomorphism_ιMulti_of_antisymm`,
   `TauCeti.FourTensor.curvatureEndomorphism_ext_iff_inner_ιMulti_two_of_antisymm`,
-  `TauCeti.FourTensor.mem_range_ofBivectorEnd_iff`,
   `TauCeti.FourTensor.isBivectorSymmetric_ofBivectorEnd_iff`,
   `TauCeti.FourTensor.curvatureEndomorphism_ofBivectorEnd`,
   `TauCeti.FourTensor.coe_bivectorSymmetricEquivSelfAdjoint`,
@@ -57,10 +56,13 @@ Under this dictionary, `curvatureEndomorphism (kulkarniNomizu h k) =
   `TauCeti.FourTensor.curvatureEndomorphism_kulkarniNomizu_innerₗ_comp`,
   `TauCeti.FourTensor.curvatureEndomorphism_constantCurvature`,
   `TauCeti.FourTensor.ricci_eq_sum_inner_curvatureEndomorphism_of_antisymm`,
+  `TauCeti.FourTensor.ricci_ofBivectorEnd`,
   `TauCeti.FourTensor.two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id_of_antisymm`,
   `TauCeti.FourTensor.scalar_eq_two_mul_trace_curvatureEndomorphism_of_antisymm`,
+  `TauCeti.FourTensor.scalar_ofBivectorEnd`,
   `ContinuousLinearMap.curvatureEndomorphism_compContinuousLinearMap`,
-  `ContinuousLinearMap.inner_curvatureEndomorphism_compContinuousLinearMap`, and
+  `ContinuousLinearMap.inner_curvatureEndomorphism_compContinuousLinearMap`,
+  `ContinuousLinearMap.ofBivectorEnd_compContinuousLinearMap`, and
   `LinearIsometryEquiv.map_comp_curvatureEndomorphism_compContinuousLinearMap`.
 
 ## References
@@ -169,16 +171,6 @@ theorem ofBivectorEnd_apply (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
       ⟪T (exteriorPower.ιMulti ℝ 2 ![u, v]), exteriorPower.ιMulti ℝ 2 ![z, w]⟫ := by
   simp [ofBivectorEnd]
 
-/-- Every four-tensor in the image of `ofBivectorEnd` is antisymmetric in its first pair. -/
-theorem ofBivectorEnd_antisymm_first (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
-    ofBivectorEnd T ![u, v, z, w] = -ofBivectorEnd T ![v, u, z, w] :=
-  ofExteriorSquareBilin_antisymm_first _ u v z w
-
-/-- Every four-tensor in the image of `ofBivectorEnd` is antisymmetric in its last pair. -/
-theorem ofBivectorEnd_antisymm_last (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
-    ofBivectorEnd T ![u, v, z, w] = -ofBivectorEnd T ![u, v, w, z] :=
-  ofExteriorSquareBilin_antisymm_last _ u v z w
-
 /-- `ofBivectorEnd T` is bivector-symmetric if and only if `T` is symmetric. -/
 @[simp]
 theorem isBivectorSymmetric_ofBivectorEnd_iff {T : Module.End ℝ (⋀[ℝ]^2 V)} :
@@ -190,15 +182,11 @@ theorem isBivectorSymmetric_ofBivectorEnd_iff {T : Module.End ℝ (⋀[ℝ]^2 V)
 /-- `curvatureEndomorphism` is a left inverse to `ofBivectorEnd`. -/
 @[simp]
 theorem curvatureEndomorphism_ofBivectorEnd (T : Module.End ℝ (⋀[ℝ]^2 V)) :
-    curvatureEndomorphism (ofBivectorEnd T) = T := by
-  rw [curvatureEndomorphism_ext_iff_inner_ιMulti_two_of_antisymm
-    (ofBivectorEnd_antisymm_first T) (ofBivectorEnd_antisymm_last T)]
-  intro u v z w
-  rw [ofBivectorEnd_apply]
-
-/-- `ofBivectorEnd` is injective. -/
-theorem ofBivectorEnd_injective : Function.Injective (ofBivectorEnd (V := V)) :=
-  Function.LeftInverse.injective curvatureEndomorphism_ofBivectorEnd
+    curvatureEndomorphism (ofBivectorEnd T) = T :=
+  (curvatureEndomorphism_ext_iff_inner_ιMulti_two_of_antisymm (r := ofBivectorEnd T)
+    (ofExteriorSquareBilin_antisymm_first (bilinFormToEnd.symm T))
+    (ofExteriorSquareBilin_antisymm_last (bilinFormToEnd.symm T)) T).2 fun u v z w ↦
+      (ofBivectorEnd_apply T u v z w).symm
 
 /-- On pair-antisymmetric four-tensors, `ofBivectorEnd ∘ curvatureEndomorphism` is the identity. -/
 theorem ofBivectorEnd_curvatureEndomorphism_of_antisymm {r : FourTensor V}
@@ -207,14 +195,6 @@ theorem ofBivectorEnd_curvatureEndomorphism_of_antisymm {r : FourTensor V}
     ofBivectorEnd (curvatureEndomorphism r) = r := by
   refine ext_vec fun u v z w ↦ ?_
   rw [ofBivectorEnd_apply, inner_curvatureEndomorphism_ιMulti_of_antisymm h₁ h₂]
-
-/-- The range of `ofBivectorEnd` consists of the pair-antisymmetric four-tensors. -/
-theorem mem_range_ofBivectorEnd_iff {r : FourTensor V} :
-    r ∈ LinearMap.range (ofBivectorEnd (V := V)) ↔
-      (∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) ∧
-        (∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) := by
-  simpa only [ofBivectorEnd, LinearEquiv.coe_coe, LinearEquiv.range_comp] using
-    (mem_range_ofExteriorSquareBilin_iff (r := r))
 
 /-- If a four-tensor is symmetric under pair interchange, its bivector operator is symmetric. -/
 theorem isSymmetric_curvatureEndomorphism_of_swap_pairs {r : FourTensor V}
@@ -409,6 +389,15 @@ theorem ricci_eq_sum_inner_curvatureEndomorphism_of_antisymm {ι : Type*} [Finty
   exact Finset.sum_congr rfl fun i _ ↦
     (inner_curvatureEndomorphism_ιMulti_of_antisymm h₁ h₂ (b i) u (b i) v).symm
 
+/-- In an orthonormal basis, the Ricci contraction of `ofBivectorEnd T` is the sum of
+`⟪T (b i ∧ u), b i ∧ v⟫`. -/
+theorem ricci_ofBivectorEnd {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v : V) :
+    ricci (ofBivectorEnd T) u v =
+      ∑ i, ⟪T (exteriorPower.ιMulti ℝ 2 ![b i, u]), exteriorPower.ιMulti ℝ 2 ![b i, v]⟫ := by
+  rw [ricci_apply_orthonormalBasis b]
+  simp only [ofBivectorEnd_apply]
+
 /-- For pair-antisymmetric `r`, `2 * tr(R ∘ₗ symmMap₂ A id) = tr((ricci r).compLeft A)`. -/
 theorem two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id_of_antisymm {r : FourTensor V}
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
@@ -467,6 +456,14 @@ theorem IsAlgebraicCurvature.scalar_eq_two_mul_trace_curvatureEndomorphism {r : 
     scalar r = 2 * LinearMap.trace ℝ (⋀[ℝ]^2 V) (curvatureEndomorphism r) :=
   hr.isBivectorSymmetric.scalar_eq_two_mul_trace_curvatureEndomorphism
 
+/-- The scalar contraction of `ofBivectorEnd T` is `2 * tr T`. -/
+@[simp] theorem scalar_ofBivectorEnd (T : Module.End ℝ (⋀[ℝ]^2 V)) :
+    scalar (ofBivectorEnd T) = 2 * LinearMap.trace ℝ (⋀[ℝ]^2 V) T :=
+  (scalar_eq_two_mul_trace_curvatureEndomorphism_of_antisymm (r := ofBivectorEnd T)
+    (ofExteriorSquareBilin_antisymm_first (bilinFormToEnd.symm T))
+    (ofExteriorSquareBilin_antisymm_last (bilinFormToEnd.symm T))).trans <| by
+      rw [curvatureEndomorphism_ofBivectorEnd]
+
 end TauCeti.FourTensor
 
 namespace ContinuousLinearMap
@@ -496,6 +493,17 @@ theorem inner_curvatureEndomorphism_compContinuousLinearMap (f : W →L[ℝ] V) 
         exteriorPower.map 2 f.toLinearMap ω'⟫ := by
   rw [f.curvatureEndomorphism_compContinuousLinearMap, LinearMap.comp_apply,
     LinearMap.adjoint_inner_left, LinearMap.comp_apply]
+
+/-- Pulling back `ofBivectorEnd T` along a continuous linear map `f : W →L[ℝ] V` conjugates `T`
+by `exteriorPower.map 2 f.toLinearMap` and its adjoint. -/
+theorem ofBivectorEnd_compContinuousLinearMap (f : W →L[ℝ] V)
+    (T : Module.End ℝ (⋀[ℝ]^2 V)) :
+    (ofBivectorEnd T).compContinuousLinearMap (fun _ ↦ f) =
+      ofBivectorEnd (LinearMap.adjoint (exteriorPower.map 2 f.toLinearMap) ∘ₗ T ∘ₗ
+        exteriorPower.map 2 f.toLinearMap) := by
+  refine ext_vec fun u v z w ↦ ?_
+  simp only [compContinuousLinearMap_apply_vec, ofBivectorEnd_apply, LinearMap.comp_apply,
+    LinearMap.adjoint_inner_left, exteriorPower.map_apply_ιMulti_two, ContinuousLinearMap.coe_coe]
 
 end ContinuousLinearMap
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import TauCeti.LinearAlgebra.Multilinear.CurvatureDimThree
 
 /-!
 # The algebraic Schouten form of a four-tensor
@@ -24,8 +25,9 @@ scalar correction vanishes so `schouten r = -ricci r` (which vanishes whenever `
 Away from dimension `2` (and assuming `scalar r = 0` in dimension `1`),
 `bilinFormTrace (schouten r) = scalar r / (2 * (n - 1))` and
 `ricci r = (n - 2) • schouten r + bilinFormTrace (schouten r) • innerₗ V`. In dimension at least
-`3`, `schouten (constantCurvature V) = (1 / 2) • innerₗ V`, and `schouten` is equivariant under
-linear isometric equivalences.
+`3`, `schouten (constantCurvature V) = (1 / 2) • innerₗ V`; in dimension `3`, every
+pair-antisymmetric four-tensor satisfies `r = kulkarniNomizu (schouten r) (innerₗ V)`; and
+`schouten` is equivariant under linear isometric equivalences.
 
 ## Main definitions
 
@@ -35,11 +37,15 @@ linear isometric equivalences.
 
 * `TauCeti.FourTensor.schouten_apply`, `TauCeti.FourTensor.schouten_apply_apply`, and
   `TauCeti.FourTensor.schouten_eq_zero_of_finrank_eq_two`: evaluation and dimension-two vanishing.
-* `TauCeti.FourTensor.isSymm_schouten_of_isSymm_ricci` and `TauCeti.FourTensor.isSymm_schouten_iff`:
-  symmetry of the Schouten form.
+* `TauCeti.FourTensor.isSymm_schouten_of_isSymm_ricci`,
+  `TauCeti.FourTensor.isSymm_schouten_iff`,
+  `TauCeti.FourTensor.isSymm_schouten_of_swap_pairs`, and
+  `TauCeti.FourTensor.IsBivectorSymmetric.isSymm_schouten`: symmetry of the Schouten form.
 * `TauCeti.FourTensor.bilinFormTrace_schouten` and `TauCeti.FourTensor.ricci_eq_smul_schouten_add`:
   metric trace and Ricci reconstruction away from dimension `2`.
 * `TauCeti.FourTensor.schouten_constantCurvature`: Schouten form of the constant-curvature tensor.
+* `TauCeti.FourTensor.eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm`: dimension-three
+  Schouten reconstruction.
 * `LinearIsometryEquiv.schouten_compContinuousLinearMap`: orthogonal equivariance.
 
 ## References
@@ -103,6 +109,17 @@ theorem isSymm_schouten_iff (hdim : Module.finrank ℝ V ≠ 2) {r : FourTensor 
     real_inner_comm u v] at heq
   linarith
 
+/-- The Schouten form of a four-tensor symmetric under pair interchange is symmetric. -/
+theorem isSymm_schouten_of_swap_pairs {r : FourTensor V}
+    (hswap : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]) :
+    (schouten r).IsSymm :=
+  isSymm_schouten_of_isSymm_ricci (isSymm_ricci_of_swap_pairs hswap)
+
+/-- The Schouten form of a bivector-symmetric four-tensor is symmetric. -/
+theorem IsBivectorSymmetric.isSymm_schouten {r : FourTensor V} (hr : IsBivectorSymmetric r) :
+    (schouten r).IsSymm :=
+  isSymm_schouten_of_swap_pairs hr.swap_pairs
+
 /-- Away from dimension `2` (and assuming `scalar r = 0` in dimension `1`), the metric trace of
 `schouten r` is `scalar r / (2 * (dim V - 1))`. -/
 theorem bilinFormTrace_schouten {r : FourTensor V} (h2 : Module.finrank ℝ V ≠ 2)
@@ -144,6 +161,39 @@ theorem schouten_constantCurvature (hn : 3 ≤ Module.finrank ℝ V) :
     LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul]
   field_simp
   ring
+
+/-- In dimension `3`, every pair-antisymmetric four-tensor is the Kulkarni–Nomizu product of its
+Schouten tensor with the inner product. -/
+theorem eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm
+    (hdim : Module.finrank ℝ V = 3) {r : FourTensor V}
+    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
+    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
+    r = kulkarniNomizu (schouten r) (innerₗ V) := by
+  let q : FourTensor V := r - kulkarniNomizu (schouten r) (innerₗ V)
+  have hq₁ (u v z w : V) : q ![u, v, z, w] = -q ![v, u, z, w] := by
+    simp only [q, sub_apply]
+    rw [h₁ u v z w, kulkarniNomizu_antisymm_first]
+    ring
+  have hq₂ (u v z w : V) : q ![u, v, z, w] = -q ![u, v, w, z] := by
+    simp only [q, sub_apply]
+    rw [h₂ u v z w, kulkarniNomizu_antisymm_last]
+    ring
+  have hric : ricci q = 0 := by
+    rw [map_sub, ricci_kulkarniNomizu_innerₗ,
+      ricci_eq_smul_schouten_add (by omega) (fun h1 ↦ by omega), sub_self]
+  let b := stdOrthonormalBasis ℝ V
+  have hq0 : toLinearMap₄ q = 0 :=
+    LinearMap.eq_zero_of_sum_basis_eq_zero_of_card_eq_three
+      ((two_ne_zero (α := ℝ)).isUnit.isSMulRegular ℝ) b.toBasis (by rw [Fintype.card_fin, hdim])
+      (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hq₁ ..)
+      (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hq₂ ..)
+      fun u v ↦ by
+        have h := congr($hric u v)
+        simp only [ricci_apply_orthonormalBasis b, LinearMap.zero_apply] at h
+        simp_rw [toLinearMap₄_apply, OrthonormalBasis.coe_toBasis, hq₂ _ u v,
+          Finset.sum_neg_distrib, neg_eq_zero]
+        exact h
+  exact sub_eq_zero.mp <| toLinearMap₄_injective (hq0.trans (map_zero _).symm)
 
 end TauCeti.FourTensor
 

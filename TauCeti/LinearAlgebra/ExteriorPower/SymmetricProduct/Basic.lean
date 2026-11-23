@@ -147,10 +147,15 @@ theorem exteriorPower_arrowCongr_symmMap₂ (e₁ : M ≃ₗ[R] M') (e₂ : N �
     (f g : M →ₗ[R] N) :
     ((e₁.exteriorPower 2).arrowCongr (e₂.exteriorPower 2)) (exteriorPower.symmMap₂ f g) =
       exteriorPower.symmMap₂ (e₁.arrowCongr e₂ f) (e₁.arrowCongr e₂ g) := by
-  change (e₂.exteriorPower 2).toLinearMap ∘ₗ exteriorPower.symmMap₂ f g ∘ₗ
-      (e₁.exteriorPower 2).symm.toLinearMap =
-    exteriorPower.symmMap₂ (e₂.toLinearMap ∘ₗ f ∘ₗ e₁.symm.toLinearMap)
-      (e₂.toLinearMap ∘ₗ g ∘ₗ e₁.symm.toLinearMap)
+  have hcomp₁ : ((e₁.exteriorPower 2).arrowCongr (e₂.exteriorPower 2))
+      (exteriorPower.symmMap₂ f g) =
+      (e₂.exteriorPower 2).toLinearMap ∘ₗ exteriorPower.symmMap₂ f g ∘ₗ
+        (e₁.exteriorPower 2).symm.toLinearMap :=
+    LinearMap.ext fun x ↦ LinearEquiv.arrowCongr_apply _ _ _ x
+  have hcomp₂ (h : M →ₗ[R] N) :
+      e₁.arrowCongr e₂ h = e₂.toLinearMap ∘ₗ h ∘ₗ e₁.symm.toLinearMap :=
+    LinearMap.ext fun x ↦ LinearEquiv.arrowCongr_apply _ _ _ x
+  rw [hcomp₁, hcomp₂, hcomp₂]
   simp only [LinearEquiv.exteriorPower_symm, LinearEquiv.exteriorPower_toLinearMap,
     exteriorPower.symmMap₂_comp_map, exteriorPower.map_comp_symmMap₂]
 

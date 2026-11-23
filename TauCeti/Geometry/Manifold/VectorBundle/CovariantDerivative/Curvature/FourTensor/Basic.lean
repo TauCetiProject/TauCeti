@@ -25,6 +25,10 @@ Its algebraic Ricci and scalar contractions match `CovariantDerivative.ricciTens
 * `CovariantDerivative.ricci_curvatureFourTensor`
 * `CovariantDerivative.scalar_curvatureFourTensor`
 * `CovariantDerivative.curvatureFourTensor_eq_smul_constantCurvature`
+* `CovariantDerivative.IsMetricCompatible.isAlgebraicCurvature_curvatureFourTensor`
+* `CovariantDerivative.IsMetricCompatible.algebraicCurvature`
+* `CovariantDerivative.IsMetricCompatible.coe_algebraicCurvature`
+* `CovariantDerivative.curvatureFourTensor_leviCivitaConnection_mem_algebraicCurvatureSubmodule`
 
 ## References
 
@@ -92,6 +96,59 @@ theorem curvatureFourTensor_eq_smul_constantCurvature (x : M) {κ : ℝ}
   refine ext_vec fun u v z w ↦ ?_
   rw [_root_.smul_apply, curvatureFourTensor_apply, smul_eq_mul]
   exact inner_eq_mul_constantCurvature h _ _ _ _
+
+section MetricCompatible
+
+variable [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
+
+/-- For a metric-compatible torsion-free connection, `curvatureFourTensor x` satisfies the
+algebraic curvature symmetries. -/
+theorem IsMetricCompatible.isAlgebraicCurvature_curvatureFourTensor
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (ht : cov.torsion = 0) (x : M) : IsAlgebraicCurvature (cov.curvatureFourTensor x) where
+  antisymm_first u v z w := by
+    simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
+      cov.riemannCurvatureTensor_antisymm_first x u v w z
+  antisymm_last u v z w := by
+    simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
+      hcov.riemannCurvatureTensor_antisymm_last cov x u v w z
+  swap_pairs u v z w := by
+    simp only [cov.curvatureFourTensor_eq_riemannCurvatureTensor]
+    rw [hcov.riemannCurvatureTensor_swap_pairs cov ht x u v w z,
+      cov.riemannCurvatureTensor_antisymm_first x w z u v,
+      hcov.riemannCurvatureTensor_antisymm_last cov x z w u v, neg_neg]
+  cyclic_eq_zero u v z w := by
+    simp only [cov.curvatureFourTensor_eq_riemannCurvatureTensor]
+    linarith [cov.riemannCurvatureTensor_cyclic_eq_zero ht x u v z w,
+      hcov.riemannCurvatureTensor_antisymm_last cov x u v w z,
+      hcov.riemannCurvatureTensor_antisymm_last cov x v z w u,
+      hcov.riemannCurvatureTensor_antisymm_last cov x z u w v]
+
+/-- `curvatureFourTensor x` bundled in `algebraicCurvatureSubmodule (TangentSpace I x)`. -/
+def IsMetricCompatible.algebraicCurvature
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (ht : cov.torsion = 0) (x : M) : algebraicCurvatureSubmodule (TangentSpace I x) :=
+  ⟨cov.curvatureFourTensor x, mem_algebraicCurvatureSubmodule.2
+    (hcov.isAlgebraicCurvature_curvatureFourTensor cov ht x)⟩
+
+/-- Coercion of `IsMetricCompatible.algebraicCurvature` to `FourTensor`. -/
+@[simp]
+theorem IsMetricCompatible.coe_algebraicCurvature
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (ht : cov.torsion = 0) (x : M) :
+    (hcov.algebraicCurvature cov ht x).val = cov.curvatureFourTensor x := (rfl)
+
+end MetricCompatible
+
+/-- The curvature four-tensor of the Levi-Civita connection of the fibre metric is an algebraic
+curvature tensor at every point. -/
+theorem curvatureFourTensor_leviCivitaConnection_mem_algebraicCurvatureSubmodule
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] (x : M) :
+    (leviCivitaConnection I M).curvatureFourTensor x ∈
+      algebraicCurvatureSubmodule (TangentSpace I x) :=
+  mem_algebraicCurvatureSubmodule.mpr <|
+    (isMetricCompatible_leviCivitaConnection I).isAlgebraicCurvature_curvatureFourTensor _
+      (torsion_leviCivitaConnection_eq_zero I) x
 
 end FourTensor
 

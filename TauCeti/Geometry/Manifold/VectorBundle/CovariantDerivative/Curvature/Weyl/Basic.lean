@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Schouten
-import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Decomposition
+import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Schouten
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor.Basic
 
 /-!
@@ -206,27 +206,6 @@ theorem IsMetricCompatible.weylTensor_swap_pairs
     IsMetricCompatible.riemannCurvatureTensor_swap_pairs (cov := cov) hcov ht x u v w z,
     hP.kulkarniNomizu_swap_pairs (isSymm_iff.mpr isSymm_inner)]
 
-/-- In dimension `3`, the Weyl tensor of a metric-compatible connection vanishes. -/
-theorem IsMetricCompatible.weylTensor_eq_zero_of_finrank_eq_three
-    (hcov : CovariantDerivative.IsMetricCompatible
-      (V := fun y : M ↦ TangentSpace I y) cov)
-    (x : M) (hn : Module.finrank ℝ (TangentSpace I x) = 3) :
-    cov.weylTensor x = 0 := by
-  have hweyl : TauCeti.FourTensor.weyl (cov.curvatureFourTensor x) = 0 :=
-    TauCeti.FourTensor.weyl_eq_zero_of_finrank_le_three_of_antisymm hn.le
-      (fun u v z w ↦ by
-        simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
-          cov.riemannCurvatureTensor_antisymm_first x u v w z)
-      (fun u v z w ↦ by
-        simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
-          hcov.riemannCurvatureTensor_antisymm_last cov x u v w z)
-  ext u v w z
-  have hval := congr($hweyl ![u, v, z, w])
-  rw [TauCeti.FourTensor.weyl_eq_sub_kulkarniNomizu_schouten (by omega)] at hval
-  simpa [cov.curvatureFourTensor_eq_riemannCurvatureTensor,
-    TauCeti.FourTensor.kulkarniNomizu_apply, TauCeti.FourTensor.schouten_apply_apply,
-    cov.ricci_curvatureFourTensor, cov.scalar_curvatureFourTensor] using hval
-
 /-- In dimension `3`, the curvature tensor of a metric-compatible connection is the
 Kulkarni–Nomizu product `Rm = P ⊙ g` of its Schouten tensor with the metric, so it is determined
 by the Ricci curvature. -/
@@ -236,8 +215,29 @@ theorem IsMetricCompatible.riemannCurvatureTensor_eq_kulkarniNomizu_of_finrank_e
     (x : M) (hn : Module.finrank ℝ (TangentSpace I x) = 3) (u v w z : TangentSpace I x) :
     cov.riemannCurvatureTensor x u v w z =
       kulkarniNomizu (cov.schoutenTensor x) (innerₗ _) u v w z := by
-  have h := IsMetricCompatible.weylTensor_eq_zero_of_finrank_eq_three (cov := cov) hcov x hn
-  rw [← sub_eq_zero, ← weylTensor_apply, h]
+  have h := TauCeti.FourTensor.eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm
+    (r := cov.curvatureFourTensor x) hn
+    (fun a b c d ↦ by
+      simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
+        cov.riemannCurvatureTensor_antisymm_first x a b d c)
+    (fun a b c d ↦ by
+      simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
+        hcov.riemannCurvatureTensor_antisymm_last cov x a b d c)
+  have hval := congr($h ![u, v, z, w])
+  rwa [cov.curvatureFourTensor_eq_riemannCurvatureTensor,
+    TauCeti.FourTensor.kulkarniNomizu_apply_eq, cov.schouten_curvatureFourTensor x] at hval
+
+/-- In dimension `3`, the Weyl tensor of a metric-compatible connection vanishes. -/
+theorem IsMetricCompatible.weylTensor_eq_zero_of_finrank_eq_three
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov)
+    (x : M) (hn : Module.finrank ℝ (TangentSpace I x) = 3) :
+    cov.weylTensor x = 0 := by
+  ext u v w z
+  rw [weylTensor_apply,
+    IsMetricCompatible.riemannCurvatureTensor_eq_kulkarniNomizu_of_finrank_eq_three
+      (cov := cov) hcov x hn u v w z,
+    sub_self]
   simp only [LinearMap.zero_apply]
 
 end CovariantDerivative

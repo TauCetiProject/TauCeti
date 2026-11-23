@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSqua
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Schouten
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
-import TauCeti.LinearAlgebra.Multilinear.CurvatureDimThree
 
 /-!
 # Orthogonal Ricci–Weyl decomposition of algebraic curvature tensors
@@ -46,9 +45,8 @@ orthogonal to both in every dimension.
   `TauCeti.FourTensor.weyl_eq_sub_kulkarniNomizu_schouten`, the nine unconditional
   projection laws, `TauCeti.FourTensor.ricci_weyl_of_antisymm`,
   `TauCeti.FourTensor.curvatureEndomorphism_eq_add`, trace-pairing orthogonality (coinciding with
-  Hilbert–Schmidt orthogonality when at least one factor is self-adjoint),
-  `TauCeti.FourTensor.weyl_eq_zero_of_finrank_le_three_of_antisymm`, and
-  `TauCeti.FourTensor.eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm`.
+  Hilbert–Schmidt orthogonality when at least one factor is self-adjoint), and
+  `TauCeti.FourTensor.weyl_eq_zero_of_finrank_le_three_of_antisymm`.
 
 ## References
 
@@ -214,11 +212,6 @@ theorem IsAlgebraicCurvature.isSymmetric_tracelessRicciEndomorphism {r : FourTen
 @[simp] theorem trace_tracelessRicciEndomorphism (r : FourTensor V) :
     LinearMap.trace ℝ V (tracelessRicciEndomorphism r) = 0 :=
   (tracelessRicci r).trace_bilinFormToEnd.trans (bilinFormTrace_tracelessRicci r)
-
-/-- The Schouten form of a bivector-symmetric four-tensor is symmetric. -/
-theorem IsBivectorSymmetric.isSymm_schouten {r : FourTensor V} (hr : IsBivectorSymmetric r) :
-    (schouten r).IsSymm :=
-  isSymm_schouten_of_isSymm_ricci hr.isSymm_ricci
 
 /-! ### Scalar, trace-free Ricci, and Weyl curvature parts -/
 
@@ -604,17 +597,8 @@ private theorem weyl_eq_zero_of_finrank_eq_three_of_antisymm {r : FourTensor V}
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
     weyl r = 0 := by
-  let b := stdOrthonormalBasis ℝ V
-  refine toLinearMap₄_injective <| by
-    rw [map_zero]
-    refine LinearMap.eq_zero_of_sum_basis_eq_zero_of_card_eq_three
-      ((two_ne_zero (α := ℝ)).isUnit.isSMulRegular ℝ) b.toBasis (by rw [Fintype.card_fin, hdim])
-      (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using weyl_antisymm_first h₁ ..)
-      (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using weyl_antisymm_last h₂ ..)
-      fun u v ↦ ?_
-    have h := congr($(ricci_weyl_of_antisymm h₁ h₂) u v)
-    simp only [ricci_apply_orthonormalBasis b, LinearMap.zero_apply] at h
-    simpa [weyl_antisymm_last h₂ _ u v] using h
+  rw [weyl_eq_sub_kulkarniNomizu_schouten (by omega) r,
+    ← eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm hdim h₁ h₂, sub_self]
 
 /-- **In dimension at most `3`, the Weyl part of every pair-antisymmetric four-tensor vanishes.** -/
 theorem weyl_eq_zero_of_finrank_le_three_of_antisymm {r : FourTensor V}
@@ -645,17 +629,6 @@ theorem IsAlgebraicCurvature.eq_tracelessRicciPart_add_scalarPart_of_finrank_le_
     r = FourTensor.tracelessRicciPart r + scalarPart r :=
   eq_tracelessRicciPart_add_scalarPart_of_finrank_le_three_of_antisymm hdim hr.antisymm_first
       hr.antisymm_last
-
-/-- In dimension `3`, every pair-antisymmetric four-tensor is the Kulkarni–Nomizu product of its
-Schouten tensor with the inner product. -/
-theorem eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm
-    (hdim : Module.finrank ℝ V = 3) {r : FourTensor V}
-    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
-    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
-    r = kulkarniNomizu (schouten r) (innerₗ V) := by
-  have h := weyl_eq_zero_of_finrank_le_three_of_antisymm hdim.le h₁ h₂
-  rw [weyl_eq_sub_kulkarniNomizu_schouten (by omega) r] at h
-  exact sub_eq_zero.mp h
 
 end TauCeti.FourTensor
 

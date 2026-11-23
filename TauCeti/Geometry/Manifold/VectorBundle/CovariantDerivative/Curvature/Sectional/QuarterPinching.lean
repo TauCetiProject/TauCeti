@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.QuarterPinching
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor.Regularity
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!

@@ -130,10 +130,10 @@ def symmBilinEquivSelfAdjoint :
   bilinFormToEnd.ofSubmodules (BilinForm.symmSubmodule ℝ E)
     (selfAdjoint.submodule ℝ (Module.End ℝ E)) <| by
     ext T
-    rw [Submodule.mem_map_equiv, BilinForm.mem_symmSubmodule]
-    change (bilinFormToEnd.symm T).IsSymm ↔ IsSelfAdjoint T
-    rw [← LinearMap.isSymmetric_iff_isSelfAdjoint, ← isSymmetric_bilinFormToEnd_iff,
-      LinearEquiv.apply_symm_apply]
+    rw [Submodule.mem_map_equiv, BilinForm.mem_symmSubmodule,
+      ← Submodule.mem_toAddSubgroup, selfAdjoint.toAddSubgroup_submodule,
+      selfAdjoint.mem_iff, ← isSelfAdjoint_iff, ← LinearMap.isSymmetric_iff_isSelfAdjoint,
+      ← isSymmetric_bilinFormToEnd_iff, LinearEquiv.apply_symm_apply]
 
 /-- Coercion of `symmBilinEquivSelfAdjoint` is `bilinFormToEnd`. -/
 @[simp] theorem coe_symmBilinEquivSelfAdjoint (B : BilinForm.symmSubmodule ℝ E) :

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Schouten
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
-import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Schouten
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor.Basic
 
 /-!
 # The Schouten tensor of a smooth connection
@@ -31,6 +31,8 @@ zero and returns `0`.
 ## Main declarations
 
 * `CovariantDerivative.schoutenTensor`: the Schouten tensor.
+* `CovariantDerivative.schouten_curvatureFourTensor`: algebraic Schouten form of
+  `curvatureFourTensor`.
 * `CovariantDerivative.bilinFormTrace_schoutenTensor`: `tr_g P = Scal / (2 (n - 1))`.
 * `CovariantDerivative.ricciTensor_eq_smul_schoutenTensor_add`: `Ric = (n - 2) P + (tr_g P) g`.
 * `CovariantDerivative.schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub`: constant
@@ -71,6 +73,12 @@ a Riemannian tangent bundle of real dimension `n`. -/
 def schoutenTensor (x : M) : TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ] ℝ :=
   TauCeti.FourTensor.schouten (cov.curvatureFourTensor x)
 
+/-- The algebraic Schouten form of `curvatureFourTensor` is `schoutenTensor`. -/
+@[simp]
+theorem schouten_curvatureFourTensor (x : M) :
+    TauCeti.FourTensor.schouten (cov.curvatureFourTensor x) = cov.schoutenTensor x :=
+  (rfl)
+
 /-- Evaluation of the Schouten tensor. -/
 @[simp]
 theorem schoutenTensor_apply (x : M) (u v : TangentSpace I x) :
@@ -78,7 +86,7 @@ theorem schoutenTensor_apply (x : M) (u v : TangentSpace I x) :
       ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 2)⁻¹ *
         (cov.ricciTensor x u v - cov.scalarCurvature x /
           (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1)) * inner ℝ u v) := by
-  rw [schoutenTensor, TauCeti.FourTensor.schouten_apply_apply,
+  rw [← cov.schouten_curvatureFourTensor x, TauCeti.FourTensor.schouten_apply_apply,
     cov.ricci_curvatureFourTensor, cov.scalar_curvatureFourTensor]
 
 /-- The metric trace of the Schouten tensor is `Scal / (2 (n - 1))`, away from dimension `2`. -/
@@ -86,11 +94,10 @@ theorem bilinFormTrace_schoutenTensor (x : M)
     (hn : Module.finrank ℝ (TangentSpace I x) ≠ 2) :
     TauCeti.bilinFormTrace (cov.schoutenTensor x) =
       cov.scalarCurvature x / (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1)) := by
-  rw [schoutenTensor, ← cov.scalar_curvatureFourTensor x]
-  exact TauCeti.FourTensor.bilinFormTrace_schouten hn fun hn1 ↦ by
-    rw [cov.scalar_curvatureFourTensor]
-    exact cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x
-      (cov.curvatureTensor_eq_zero_of_finrank_le_one x hn1.le)
+  rw [← cov.schouten_curvatureFourTensor x, ← cov.scalar_curvatureFourTensor x]
+  exact TauCeti.FourTensor.bilinFormTrace_schouten hn fun hn1 ↦
+    (cov.scalar_curvatureFourTensor x).trans
+      (cov.scalarCurvature_eq_zero_of_finrank_le_one x hn1.le)
 
 /-- Away from dimension `2`, Ricci curvature decomposes as `Ric = (n - 2) P + (tr_g P) g` in
 terms of the Schouten tensor `P`. -/
@@ -99,11 +106,10 @@ theorem ricciTensor_eq_smul_schoutenTensor_add (x : M)
     cov.ricciTensor x =
       ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 2) • cov.schoutenTensor x +
         TauCeti.bilinFormTrace (cov.schoutenTensor x) • innerₗ (TangentSpace I x) := by
-  rw [← cov.ricci_curvatureFourTensor x, schoutenTensor]
-  exact TauCeti.FourTensor.ricci_eq_smul_schouten_add hn fun hn1 ↦ by
-    rw [cov.scalar_curvatureFourTensor]
-    exact cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x
-      (cov.curvatureTensor_eq_zero_of_finrank_le_one x hn1.le)
+  rw [← cov.ricci_curvatureFourTensor x, ← cov.schouten_curvatureFourTensor x]
+  exact TauCeti.FourTensor.ricci_eq_smul_schouten_add hn fun hn1 ↦
+    (cov.scalar_curvatureFourTensor x).trans
+      (cov.scalarCurvature_eq_zero_of_finrank_le_one x hn1.le)
 
 /-- The Schouten tensor of a metric-compatible torsion-free connection is a symmetric bilinear
 form. -/
@@ -112,7 +118,7 @@ theorem IsMetricCompatible.schoutenTensor_isSymm
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0) (x : M) :
     (cov.schoutenTensor x).IsSymm := by
-  rw [schoutenTensor]
+  rw [← cov.schouten_curvatureFourTensor x]
   exact LinearMap.BilinForm.isSymm_iff.mp <|
     TauCeti.FourTensor.isSymm_schouten_of_isSymm_ricci <|
       LinearMap.BilinForm.isSymm_iff.mpr <| by
@@ -133,8 +139,8 @@ theorem schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ)
     (h : ∀ w u v, curvature x w u v =
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
     cov.schoutenTensor x = (k / 2) • innerₗ (TangentSpace I x) := by
-  rw [schoutenTensor, cov.curvatureFourTensor_eq_smul_constantCurvature x h, map_smul,
-    TauCeti.FourTensor.schouten_constantCurvature hn, smul_smul, mul_one_div]
+  rw [← cov.schouten_curvatureFourTensor x, cov.curvatureFourTensor_eq_smul_constantCurvature x h,
+    map_smul, TauCeti.FourTensor.schouten_constantCurvature hn, smul_smul, mul_one_div]
 
 /-- For a smooth metric, the Schouten tensor of a smooth connection pairs two vector fields
 differentiable at `x` to a function differentiable at `x`. -/

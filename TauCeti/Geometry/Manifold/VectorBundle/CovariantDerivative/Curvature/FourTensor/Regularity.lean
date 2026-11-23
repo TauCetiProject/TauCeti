@@ -10,32 +10,28 @@ public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Sectional
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ExteriorSquare
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 
 /-!
-# Continuity and algebraic curvature symmetries of `curvatureFourTensor`
+# Continuity and sectional-curvature bridges for `curvatureFourTensor`
 
-For a metric-compatible torsion-free connection, in particular the Levi-Civita connection,
-`CovariantDerivative.curvatureFourTensor cov x` (defined in `FourTensor.Basic`) lies in
-`algebraicCurvatureSubmodule`. Diagonal pairings recover `sectionalCurvature`, its values on pure
-bivectors are those of `curvatureEndomorphism` on the exterior square, evaluated on four `C^n`
-vector fields it is a `C^n` function, and local `C^0` Gram–Schmidt frames give continuity of
-`‖curvatureFourTensor ·‖`, `sectionalMin`, `sectionalMax`, and `pic2Min`.
+Evaluated on four `C^n` vector fields, `CovariantDerivative.curvatureFourTensor cov x` (defined in
+`FourTensor.Basic`) is a `C^n` function, and local `C^0` Gram–Schmidt frames give continuity of
+`‖curvatureFourTensor ·‖`, `sectionalMin`, `sectionalMax`, and `pic2Min`. Diagonal pairings recover
+`sectionalCurvature`, and its values on pure bivectors are those of `curvatureEndomorphism` on the
+exterior square.
 
 ## Main definitions & statements
 
-* `IsMetricCompatible.algebraicCurvature`, `sectionalCurvature_eq_curvatureFourTensor_div`,
+* `contMDiff_curvatureFourTensor_apply`, `continuous_norm_curvatureFourTensor`,
+  `continuous_sectionalMin_curvatureFourTensor`, `continuous_sectionalMax_curvatureFourTensor`,
+  `continuous_pic2Min_curvatureFourTensor`, `sectionalCurvature_eq_curvatureFourTensor_div`,
+  `sectionalCurvature_eq_curvatureFourTensor_of_orthonormal`,
   `curvatureFourTensor_apply_eq_sectionalCurvature_mul`,
-  `IsMetricCompatible.isAlgebraicCurvature_curvatureFourTensor`,
-  `curvatureFourTensor_leviCivitaConnection_mem_algebraicCurvatureSubmodule`,
-  `inner_curvatureEndomorphism_ιMulti_eq_curvatureFourTensor`,
-  `contMDiff_curvatureFourTensor_apply`,
-  `continuous_norm_curvatureFourTensor`, `continuous_sectionalMin_curvatureFourTensor`,
-  `continuous_sectionalMax_curvatureFourTensor`, `continuous_pic2Min_curvatureFourTensor`.
+  `inner_curvatureEndomorphism_ιMulti_eq_curvatureFourTensor`.
 
 ## References
 
@@ -204,54 +200,7 @@ theorem inner_curvatureEndomorphism_ιMulti_eq_curvatureFourTensor
       exteriorPower.ιMulti ℝ 2 v⟫_ℝ = cov.curvatureFourTensor x ![u 0, u 1, v 0, v 1] := by
   rw [inner_curvatureEndomorphism_ιMulti, curvatureFourTensor_apply]
 
-/-- For a metric-compatible torsion-free connection, `curvatureFourTensor x` satisfies the
-algebraic curvature symmetries. -/
-theorem IsMetricCompatible.isAlgebraicCurvature_curvatureFourTensor
-    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
-    (ht : cov.torsion = 0) (x : M) : IsAlgebraicCurvature (cov.curvatureFourTensor x) where
-  antisymm_first u v z w := by
-    simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
-      cov.riemannCurvatureTensor_antisymm_first x u v w z
-  antisymm_last u v z w := by
-    simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
-      hcov.riemannCurvatureTensor_antisymm_last cov x u v w z
-  swap_pairs u v z w := by
-    simp only [cov.curvatureFourTensor_eq_riemannCurvatureTensor]
-    rw [hcov.riemannCurvatureTensor_swap_pairs cov ht x u v w z,
-      cov.riemannCurvatureTensor_antisymm_first x w z u v,
-      hcov.riemannCurvatureTensor_antisymm_last cov x z w u v, neg_neg]
-  cyclic_eq_zero u v z w := by
-    simp only [cov.curvatureFourTensor_eq_riemannCurvatureTensor]
-    linarith [cov.riemannCurvatureTensor_cyclic_eq_zero ht x u v z w,
-      hcov.riemannCurvatureTensor_antisymm_last cov x u v w z,
-      hcov.riemannCurvatureTensor_antisymm_last cov x v z w u,
-      hcov.riemannCurvatureTensor_antisymm_last cov x z u w v]
-
-/-- `curvatureFourTensor x` bundled in `algebraicCurvatureSubmodule (TangentSpace I x)`. -/
-def IsMetricCompatible.algebraicCurvature
-    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
-    (ht : cov.torsion = 0) (x : M) : algebraicCurvatureSubmodule (TangentSpace I x) :=
-  ⟨cov.curvatureFourTensor x, mem_algebraicCurvatureSubmodule.2
-    (hcov.isAlgebraicCurvature_curvatureFourTensor cov ht x)⟩
-
-/-- Coercion of `IsMetricCompatible.algebraicCurvature` to `FourTensor`. -/
-@[simp]
-theorem IsMetricCompatible.coe_algebraicCurvature
-    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
-    (ht : cov.torsion = 0) (x : M) :
-    (hcov.algebraicCurvature cov ht x).val = cov.curvatureFourTensor x := (rfl)
-
 end MetricCompatible
-
-/-- The curvature four-tensor of the Levi-Civita connection of the fibre metric is an algebraic
-curvature tensor at every point. -/
-theorem curvatureFourTensor_leviCivitaConnection_mem_algebraicCurvatureSubmodule
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] (x : M) :
-    (leviCivitaConnection I M).curvatureFourTensor x ∈
-      algebraicCurvatureSubmodule (TangentSpace I x) :=
-  mem_algebraicCurvatureSubmodule.mpr <|
-    (isMetricCompatible_leviCivitaConnection I).isAlgebraicCurvature_curvatureFourTensor _
-      (torsion_leviCivitaConnection_eq_zero I) x
 
 end FourTensor
 

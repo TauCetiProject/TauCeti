@@ -65,6 +65,9 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
 * `TauCeti.FourTensor.IsAlgebraicCurvature`: the pair antisymmetries, pair interchange and the
   first Bianchi identity.
 * `TauCeti.FourTensor.algebraicCurvatureSubmodule`: the submodule of algebraic curvature tensors.
+* `TauCeti.FourTensor.IsBivectorSymmetric` and
+  `TauCeti.FourTensor.bivectorSymmetricSubmodule`: pair-antisymmetric, pair-interchange-symmetric
+  four-tensors and their submodule.
 * `TauCeti.FourTensor.ofLinearMap₄`, `TauCeti.FourTensor.toLinearMap₄`, and
   `TauCeti.FourTensor.toLinearMap₄Equiv`: currying four-tensors into four-fold linear forms and the
   finite-dimensional linear equivalence between them.
@@ -94,6 +97,8 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   `TauCeti.FourTensor.comap_compContinuousLinearMapL_algebraicCurvatureSubmodule`, and
   `TauCeti.FourTensor.coe_algebraicCurvatureLinearIsometryEquiv`: linear/isometric equivalences
   identify algebraic curvature tensors.
+* `TauCeti.FourTensor.IsBivectorSymmetric.isSymm_ricci`: the Ricci contraction of a
+  bivector-symmetric four-tensor is symmetric.
 * `TauCeti.FourTensor.ricci_apply_orthonormalBasis` and
   `TauCeti.FourTensor.scalar_apply_orthonormalBasis`: the contractions in an orthonormal basis.
 * `TauCeti.FourTensor.ricci_compContinuousLinearMap_linearIsometryEquiv` and
@@ -258,6 +263,37 @@ def algebraicCurvatureSubmodule : Submodule ℝ (FourTensor V) where
 theorem mem_algebraicCurvatureSubmodule {r : FourTensor V} :
     r ∈ algebraicCurvatureSubmodule V ↔ IsAlgebraicCurvature r :=
   Iff.rfl
+
+/-- Pair-antisymmetric, pair-interchange-symmetric four-tensors (symmetric forms on `⋀[ℝ]^2 V`). -/
+structure IsBivectorSymmetric (r : FourTensor V) : Prop where
+  /-- Antisymmetry in the first pair of arguments. -/
+  antisymm_first : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]
+  /-- Antisymmetry in the last pair of arguments. -/
+  antisymm_last : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]
+  /-- Symmetry under interchanging the two pairs of arguments. -/
+  swap_pairs : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]
+
+/-- Every algebraic curvature tensor is bivector-symmetric. -/
+theorem IsAlgebraicCurvature.isBivectorSymmetric {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
+    IsBivectorSymmetric r := ⟨hr.antisymm_first, hr.antisymm_last, hr.swap_pairs⟩
+
+variable (V) in
+/-- The submodule of bivector-symmetric four-tensors on `V`. -/
+def bivectorSymmetricSubmodule : Submodule ℝ (FourTensor V) where
+  carrier := {r | IsBivectorSymmetric r}
+  zero_mem' := ⟨by simp, by simp, by simp⟩
+  add_mem' hr hq := ⟨fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.antisymm_first,
+      hq.antisymm_first, neg_add],
+    fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.antisymm_last, hq.antisymm_last, neg_add],
+    fun _ _ _ _ ↦ by simp only [add_apply]; rw [hr.swap_pairs, hq.swap_pairs]⟩
+  smul_mem' _ _ hr := ⟨fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.antisymm_first,
+      mul_neg],
+    fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.antisymm_last, mul_neg],
+    fun _ _ _ _ ↦ by simp only [smul_apply, smul_eq_mul]; rw [hr.swap_pairs]⟩
+
+/-- Membership in `bivectorSymmetricSubmodule V` is `IsBivectorSymmetric`. -/
+@[simp] theorem mem_bivectorSymmetricSubmodule {r : FourTensor V} :
+    r ∈ bivectorSymmetricSubmodule V ↔ IsBivectorSymmetric r := (Iff.rfl)
 
 /-- The algebraic curvature tensors form a closed subspace: each of their defining identities is
 the vanishing of a continuous linear functional of the tensor. -/
@@ -599,6 +635,10 @@ theorem isSymm_ricci_of_swap_pairs {r : FourTensor V}
 
 /-- The Ricci contraction of an algebraic curvature tensor is symmetric. -/
 theorem IsAlgebraicCurvature.isSymm_ricci {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
+    (ricci r).IsSymm := isSymm_ricci_of_swap_pairs hr.swap_pairs
+
+/-- The Ricci contraction of a bivector-symmetric four-tensor is symmetric. -/
+theorem IsBivectorSymmetric.isSymm_ricci {r : FourTensor V} (hr : IsBivectorSymmetric r) :
     (ricci r).IsSymm := isSymm_ricci_of_swap_pairs hr.swap_pairs
 
 /-- The Ricci contraction is equivariant under linear isometric equivalences: the Ricci contraction
