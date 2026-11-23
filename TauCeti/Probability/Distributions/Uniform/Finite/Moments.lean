@@ -23,7 +23,9 @@ For a finite type, take the sampling set to be `Finset.univ`. The integration re
 `Uniform.Finite.Basic` apply even to labels and observables that are not globally measurable.
 The formulas hold for the empty sampling set, where the law is zero. Real observables have
 full exponential-integrability domain even on arbitrary sampling sets: on infinite sets
-`uniformOn` is zero. The `HasLaw` corollaries allow any source measure with the stated law.
+`uniformOn` is zero. The `HasLaw` corollaries start from a native uniform random element.
+Use `HasLaw.integral_comp_uniformOn_finset` for its labelled mean and
+`HasLaw.map_uniformOn` for its law after labelling.
 -/
 
 public section
@@ -109,14 +111,6 @@ theorem charFun_map_uniformOn_finset (s : Finset α) (f : α → ℝ) (t : ℝ) 
   push_cast
   ring
 
-/-- For natural labels, the pgf of a finite uniform sample is the average monomial. This
-polynomial formula holds at every real argument. -/
-theorem pgf_map_uniformOn_finset (s : Finset α) (f : α → ℕ) (z : ℝ) :
-    pgf id ((uniformOn (s : Set α)).map f) z =
-      (s.card : ℝ)⁻¹ * ∑ i ∈ s, z ^ f i := by
-  simpa only [pgf_def, id_eq, smul_eq_mul] using
-    s.integral_map_uniformOn_finset f (fun k : ℕ ↦ z ^ k)
-
 /-- The pgf of a natural-valued observable of a finite uniform sample is the average monomial,
 at every real argument. -/
 theorem pgf_uniformOn_finset (s : Finset α) (f : α → ℕ) (z : ℝ) :
@@ -128,24 +122,13 @@ end Finset
 namespace ProbabilityTheory.HasLaw
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-  [MeasurableSingletonClass α] {P : Measure Ω} {s : Finset α}
+  [MeasurableSingletonClass α] {P : Measure Ω} {s : Finset α} {Y : Ω → α}
 
-variable {X : Ω → ℝ} {f : α → ℝ}
-
-/-- Natural moments of a random variable with a finitely labelled uniform law are average
-label powers. -/
-theorem integral_pow_map_uniformOn_finset
-    (hX : HasLaw X ((uniformOn (s : Set α)).map f) P) (n : ℕ) :
-    ∫ ω, X ω ^ n ∂P = (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i ^ n := by
-  simpa only [smul_eq_mul] using hX.integral_comp_map_uniformOn_finset (fun x ↦ x ^ n)
-
-/-- The mean of a random variable with a finitely labelled uniform law is the average label. -/
-theorem integral_map_uniformOn_finset
-    (hX : HasLaw X ((uniformOn (s : Set α)).map f) P) :
-    ∫ ω, X ω ∂P = (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i := by
-  simpa only [id_eq, smul_eq_mul] using hX.integral_comp_map_uniformOn_finset id
-
-variable {Y : Ω → α}
+/-- A raw moment of a labelled uniform random element is the average of the label powers. -/
+theorem integral_pow_comp_uniformOn_finset
+    (hY : HasLaw Y (uniformOn (s : Set α)) P) (label : α → ℝ) (n : ℕ) :
+    ∫ ω, label (Y ω) ^ n ∂P = (s.card : ℝ)⁻¹ * ∑ i ∈ s, label i ^ n := by
+  simpa only [smul_eq_mul] using hY.integral_comp_uniformOn_finset (fun i ↦ label i ^ n)
 
 /-- The variance of a labelled uniform random element is the empirical variance of its labels. -/
 theorem variance_comp_uniformOn_finset
@@ -162,7 +145,7 @@ theorem integrableExpSet_comp_uniformOn {s : Set α}
     integrableExpSet (fun ω ↦ label (Y ω)) P = Set.univ := by
   ext t
   simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
-  exact hY.integrable_comp_uniformOn (fun i ↦ Real.exp (t * label i))
+  exact hY.integrable_comp (s.integrable_uniformOn fun i ↦ Real.exp (t * label i))
 
 /-- The mgf of a labelled uniform random element is its normalized exponential sum. -/
 theorem mgf_comp_uniformOn_finset

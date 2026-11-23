@@ -350,31 +350,12 @@ theorem integral_comp_uniformOn_finset {s : Finset α} {X : Ω → α}
   (hX.integral_comp (Set.integrable_uniformOn (s : Set α) g).aestronglyMeasurable).trans
     (s.integral_uniformOn_finset g)
 
-/-- Every observable of a native uniform random variable is integrable, including for infinite
-sampling sets, where the law is zero. -/
-theorem integrable_comp_uniformOn {s : Set α} {X : Ω → α} [SeminormedAddGroup E]
-    (hX : HasLaw X (uniformOn s) P) (g : α → E) :
-    Integrable (fun ω ↦ g (X ω)) P :=
-  hX.integrable_comp (s.integrable_uniformOn g)
-
-/-- A native uniform random variable is integrable, including for infinite sampling sets. -/
-theorem integrable_uniformOn [SeminormedAddGroup α] {s : Set α} {X : Ω → α}
-    (hX : HasLaw X (uniformOn s) P) : Integrable X P :=
-  hX.integrable_comp_uniformOn id
-
 /-- Assigning arbitrary labels to a native uniform random variable gives the mapped uniform
 law, without requiring the labels to be globally measurable. -/
 theorem map_uniformOn {s : Set α} [MeasurableSpace β] {X : Ω → α}
     (hX : HasLaw X (uniformOn s) P) (f : α → β) :
     HasLaw (fun ω ↦ f (X ω)) ((uniformOn s).map f) P :=
   (hasLaw_map (s.aemeasurable_uniformOn f)).fun_comp hX
-
-/-- Every observable of a random variable with a labelled uniform law is integrable. -/
-theorem integrable_comp_map_uniformOn {s : Set α} [MeasurableSpace β]
-    [MeasurableSingletonClass β] [SeminormedAddGroup E] {X : Ω → β} {f : α → β}
-    (hX : HasLaw X ((uniformOn s).map f) P) (g : β → E) :
-    Integrable (fun ω ↦ g (X ω)) P :=
-  hX.integrable_comp (s.integrable_map_uniformOn f g)
 
 /-- The expectation of any observable of a finitely labelled uniform random variable is its
 average over the sampling inputs, without global measurability assumptions. -/
