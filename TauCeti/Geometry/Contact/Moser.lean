@@ -168,6 +168,28 @@ theorem eq_contactMoserVectorField_iff_of_isContactFormAt (h : IsContactFormAt �
       mextDeriv_contactMoserVectorField_left_of_isContactFormAt h, RoughForm.mem_ker.1 hw]
     linarith
 
+/-- At a point where `α` is a contact form, the contact-Moser vector depends only on the
+restriction of the variation to `ker α_x`. -/
+theorem contactMoserVectorField_eq_iff_of_isContactFormAt (h : IsContactFormAt α.val x) :
+    α.contactMoserVectorField β x = α.contactMoserVectorField γ x ↔
+      ∀ w ∈ α.kerDistribution x, β.val x ![w] = γ.val x ![w] := by
+  rw [eq_contactMoserVectorField_iff_of_isContactFormAt h]
+  simp only [apply_contactMoserVectorField_of_isContactFormAt h,
+    mextDeriv_contactMoserVectorField_left_of_isContactFormAt h, true_and]
+  constructor <;> intro hβγ w hw
+  · have := hβγ w hw
+    rw [mem_kerDistribution.1 hw] at this
+    linarith
+  · rw [mem_kerDistribution.1 hw, hβγ w hw]
+    ring
+
+/-- At a point where `α` is a contact form, the contact-Moser vector vanishes if and only if the
+variation annihilates `ker α_x`. -/
+theorem contactMoserVectorField_eq_zero_iff_of_isContactFormAt (h : IsContactFormAt α.val x) :
+    α.contactMoserVectorField β x = 0 ↔
+      ∀ w ∈ α.kerDistribution x, β.val x ![w] = 0 := by
+  simpa using contactMoserVectorField_eq_iff_of_isContactFormAt (β := β) (γ := 0) h
+
 end Pointwise
 
 namespace IsContactForm
@@ -209,23 +231,17 @@ theorem eq_contactMoserVectorField_iff {x : M} {v : TangentSpace I x} :
 /-- The contact-Moser vector depends only on the restriction of the variation to `ker α`. -/
 theorem contactMoserVectorField_eq_iff {x : M} :
     α.contactMoserVectorField β x = α.contactMoserVectorField γ x ↔
-      ∀ w ∈ α.kerDistribution x, β.val x ![w] = γ.val x ![w] := by
-  rw [hα.eq_contactMoserVectorField_iff]
-  simp only [hα.apply_contactMoserVectorField, hα.mextDeriv_contactMoserVectorField_left,
-    true_and]
-  constructor <;> intro h w hw
-  · have := h w hw
-    rw [mem_kerDistribution.1 hw] at this
-    linarith
-  · rw [mem_kerDistribution.1 hw, h w hw]
-    ring
+      ∀ w ∈ α.kerDistribution x, β.val x ![w] = γ.val x ![w] :=
+  contactMoserVectorField_eq_iff_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα x)
 
 /-- In particular, the field vanishes wherever the variation annihilates the contact plane.
 This is the pointwise stationary-locus criterion for a relative contact deformation. -/
 theorem contactMoserVectorField_eq_zero_iff {x : M} :
     α.contactMoserVectorField β x = 0 ↔
-      ∀ w ∈ α.kerDistribution x, β.val x ![w] = 0 := by
-  simpa using (hα.contactMoserVectorField_eq_iff (β := β) (γ := 0) (x := x))
+      ∀ w ∈ α.kerDistribution x, β.val x ![w] = 0 :=
+  contactMoserVectorField_eq_zero_iff_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα x)
 
 /-- The horizontal contact-Moser vector field of a smooth variation is smooth. -/
 theorem contMDiff_contactMoserVectorField (β : SmoothForm I M ℝ 1) :
