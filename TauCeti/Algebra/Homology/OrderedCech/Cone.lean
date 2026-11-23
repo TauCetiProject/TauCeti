@@ -85,7 +85,8 @@ private lemma map_single_of_eq {p : ℕ} {s t : Finset ι} (h : t ⊆ s) (e : t 
 
 private lemma hom_ext {p : ℕ} {Y : C} {f g : F.orderedCechComplex.X p ⟶ Y}
     (h : ∀ s : Finset ι, #s = p + 1 → single F p s ≫ f = single F p s ≫ g) : f = g :=
-  F.orderedCechComplex_hom_ext fun s ↦ by simpa only [single_of_card_eq F s.2] using h s.1 s.2
+  F.orderedCechComplex_hom_ext fun s ↦ by
+      simpa only [single_of_card_eq F s.property] using h s.val s.property
 
 private lemma single_d {p : ℕ} {s : Finset ι} (hs : #s = p + 1 + 1) :
     single F (p + 1) s ≫ F.orderedCechComplex.d (p + 1) p =
@@ -93,7 +94,7 @@ private lemma single_d {p : ℕ} {s : Finset ι} (hs : #s = p + 1 + 1) :
         (F.map (homOfLE (erase_subset i s)).op ≫ single F p (s.erase i)) := by
   rw [single_of_card_eq F hs, F.ι_orderedCechComplex_d (s := ⟨s, hs⟩), ← sum_coe_sort s]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [single_of_card_eq F (by rw [card_erase_of_mem i.2, hs, Nat.add_sub_cancel])]
+  rw [single_of_card_eq F (by rw [card_erase_of_mem i.property, hs, Nat.add_sub_cancel])]
 
 variable (v : ι) (hF : ∀ s : Finset ι, s.Nonempty → IsIso (F.map (homOfLE (subset_insert v s)).op))
 
@@ -132,8 +133,8 @@ private lemma cone_single_of_mem {p : ℕ} {s : Finset ι} (hs : s.Nonempty) (hc
 /-- The components of the contracting homotopy: the summand `F(s)` goes to `± F(s ∪ {v})`. The
 sign makes `v` the vertex of a cone. -/
 private def homotopy (p j : ℕ) : F.orderedCechComplex.X p ⟶ F.orderedCechComplex.X j :=
-  F.orderedCechComplexDesc fun s ↦ ((-1 : ℤ) ^ #{k ∈ s.1 | k < v}) •
-    (cone F v hF s.1 ≫ single F j (insert v s.1))
+  F.orderedCechComplexDesc fun s ↦ ((-1 : ℤ) ^ #{k ∈ s.val | k < v}) •
+    (cone F v hF s.val ≫ single F j (insert v s.val))
 
 private lemma single_homotopy {p : ℕ} (j : ℕ) {s : Finset ι} (hs : #s = p + 1) :
     single F p s ≫ homotopy F v hF p j =
@@ -221,7 +222,7 @@ private lemma coneFace_zero {s : Finset ι} (hs : #s = 0 + 1) :
 
 /-- The augmentation in degree `0`, sending the summand `F({i})` to `F({v})`. -/
 private def augmentationX : F.orderedCechComplex.X 0 ⟶ F.obj (op {v}) :=
-  F.orderedCechComplexDesc fun s ↦ toVertex F v hF s.1
+  F.orderedCechComplexDesc fun s ↦ toVertex F v hF s.val
 
 private lemma single_augmentationX {s : Finset ι} (hs : #s = 0 + 1) :
     single F 0 s ≫ augmentationX F v hF = toVertex F v hF s := by

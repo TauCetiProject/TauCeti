@@ -60,7 +60,8 @@ Whether `β` is still a homeomorphism when `χ` is only `C¹` is not treated her
   direction and of `∂_s S`, jointly in both endpoints.
 * `TauCeti.StrictConvexBilliardTable.contDiffAt_nextParam`,
   `TauCeti.StrictConvexBilliardTable.contDiffAt_nextTangential`,
-  `TauCeti.StrictConvexBilliardTable.contDiffOn_nextCollision`: the next-collision map is `C^n`
+  `TauCeti.StrictConvexBilliardTable.contDiffOn_nextCollision`,
+  `TauCeti.StrictConvexBilliardTable.contDiffAt_nextCollision`: the next-collision map is `C^n`
   on the strip when `χ` is `C^(n+1)`.
 * `TauCeti.StrictConvexBilliardTable.nextCollisionPartialDiffeomorph`: the next-collision map as a
   `C^n` diffeomorphism of the strip, with inverse `τ⁻¹ ∘ ι ∘ B ∘ ι`.
@@ -147,19 +148,20 @@ private theorem exists_hasFDerivAt_inner_deriv_chordDir (hn : n ≠ 0) (hχ : Co
     simp only [map_add, map_smul, smul_eq_mul]
     ring
   -- The derivative is the map `(a, b) ↦ (a, α a + c b)`, inverted by `(a, z) ↦ (a, (z - α a) / c)`.
-  refine ⟨ContinuousLinearEquiv.equivOfInverse ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod G')
+  refine ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod G')
     ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod
       (c⁻¹ • (ContinuousLinearMap.snd ℝ ℝ ℝ - α • ContinuousLinearMap.fst ℝ ℝ ℝ)))
-    (fun p ↦ ?_) (fun p ↦ ?_), hasFDerivAt_fst.prodMk hG1⟩
-  · ext
-    · simp
-    · simp [hG']
-      field_simp
+    (ContinuousLinearMap.ext fun p ↦ ?_) (ContinuousLinearMap.ext fun p ↦ ?_),
+    hasFDerivAt_fst.prodMk hG1⟩
   · ext
     · simp
     · simp [hG']
       field_simp
       ring
+  · ext
+    · simp
+    · simp [hG']
+      field_simp
 
 /-- **Smoothness of the next collision parameter.** If `χ` is `C^(n+1)` with `n ≠ 0`, the next
 collision parameter `t(s, v)` is `C^n`, jointly in `s` and `v`, on the strip `ℝ × (-1, 1)`. It is
@@ -227,6 +229,13 @@ theorem contDiffOn_nextCollision (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) 
     funext χ.nextCollision_apply]
   exact ((χ.contDiffAt_nextParam hn hχ hv).prodMk
     (χ.contDiffAt_nextTangential hn hχ hv)).contDiffWithinAt
+
+/-- **Smoothness of the billiard map at a state.** If `χ` is `C^(n+1)` with `n ≠ 0`, the
+next-collision map is `C^n` at every state of the open strip `ℝ × (-1, 1)`. -/
+theorem contDiffAt_nextCollision (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) {x : ℝ × ℝ}
+    (hx : x.2 ∈ Ioo (-1) 1) : ContDiffAt ℝ n χ.nextCollision x :=
+  (χ.contDiffOn_nextCollision hn hχ).contDiffAt
+    ((isOpen_univ.prod isOpen_Ioo).mem_nhds ⟨mem_univ _, hx⟩)
 
 /-- The inverse `(t, w) ↦ (s - L, -v)` of the next-collision map, where `(s, v)` is the next
 collision of `(t, -w)`, is `C^n` on the strip when `χ` is `C^(n+1)` with `n ≠ 0`. -/
@@ -300,14 +309,14 @@ private theorem continuous_restrict_strip {f : ℝ × ℝ → ℝ × ℝ}
     (hmaps : ∀ x : ℝ × Ioo (-1 : ℝ) 1, (f (x.1, x.2)).2 ∈ Ioo (-1 : ℝ) 1) :
     Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦
       ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : Ioo (-1 : ℝ) 1)) := by
-  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
-    fun x ↦ ⟨mem_univ _, x.2.2⟩
+  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
+    fun x ↦ ⟨mem_univ _, x.2.property⟩
   exact (continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk hmaps)
 
 /-- The next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is `C²`. -/
 theorem continuous_nextCollisionEquiv (hχ : ContDiff ℝ 2 χ) : Continuous χ.nextCollisionEquiv :=
   (continuous_restrict_strip (χ.contDiffOn_nextCollision one_ne_zero hχ).continuousOn
-    fun x ↦ by simpa using χ.nextTangential_mem_Ioo x.2.2).congr fun x ↦ by simp
+    fun x ↦ by simpa using χ.nextTangential_mem_Ioo x.2.property).congr fun x ↦ by simp
 
 /-- The inverse of the next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is
 `C²`. -/

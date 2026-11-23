@@ -8,7 +8,7 @@ module
 public import Mathlib.Order.Hom.Basic
 
 /-!
-# Pointwise order and strictly monotone equivalence for order embeddings
+# Order embeddings and order isomorphisms
 
 For any `[LE α]`, an order embedding `f : α ↪o β` carries the pointwise preorder and partial order
 lifted from `α → β` (`f ≤ g ↔ ∀ x, f x ≤ g x`), matching the Mathlib instances on `α →o β`.
@@ -17,6 +17,9 @@ When `α` is a linear order, a strictly monotone map out of `α` is an order emb
 (`OrderEmbedding.ofStrictMono`), and every order embedding is strictly monotone. Together these
 identify `α ↪o β` with the subtype of strictly monotone maps `α → β`
 (`OrderEmbedding.equivSubtypeStrictMono`).
+
+`OrderIso.toOrderEmbedding_toEmbedding` records that viewing an order isomorphism `e : α ≃o β`
+as an order embedding preserves its underlying `Function.Embedding`.
 -/
 
 public section
@@ -57,10 +60,22 @@ variable {α β : Type*} [LinearOrder α] [Preorder β]
 @[expose, simps]
 def equivSubtypeStrictMono : (α ↪o β) ≃ {f : α → β // StrictMono f} where
   toFun f := ⟨f, f.strictMono⟩
-  invFun f := ofStrictMono f.1 f.2
+  invFun f := ofStrictMono f.val f.property
   left_inv _ := DFunLike.coe_injective (coe_ofStrictMono _)
   right_inv _ := Subtype.ext (coe_ofStrictMono _)
 
 end StrictMono
 
 end OrderEmbedding
+
+namespace OrderIso
+
+/-- Viewing an order isomorphism as an order embedding preserves the underlying
+`Function.Embedding`. -/
+@[simp]
+theorem toOrderEmbedding_toEmbedding {α β : Type*} [LE α] [LE β] (e : α ≃o β) :
+    e.toOrderEmbedding.toEmbedding = e.toEmbedding := by
+  ext x
+  rw [RelEmbedding.coe_toEmbedding, coe_toOrderEmbedding, ← RelIso.coe_toEmbedding]
+
+end OrderIso

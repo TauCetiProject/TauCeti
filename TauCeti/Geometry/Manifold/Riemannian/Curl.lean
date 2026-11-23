@@ -95,7 +95,7 @@ theorem curl_apply (α : SmoothForm I M ℝ 1) :
 
 /-- The curl at a point is the fibrewise Hodge star of the exterior derivative. -/
 theorem coe_curl_apply (α : SmoothForm I M ℝ 1) (x : M) :
-    (curl o α).1 x = formHodgeStarCLM o (k := 2) (l := 1) rfl x ((mextDerivₗ I 1 α).1 x) := by
+    (curl o α).val x = formHodgeStarCLM o (k := 2) (l := 1) rfl x ((mextDerivₗ I 1 α).val x) := by
   rw [curl_apply, coe_hodgeStar, RoughForm.hodgeStar_eq_formHodgeStarCLM]
 
 /-- Reversing the orientation negates the curl. -/
@@ -146,14 +146,16 @@ commutator `[curl, f] α = ⋆(df ∧ α)` is the principal symbol of the curl a
 product with `df`. -/
 theorem coe_curl_funSMulₗ (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ 1) :
     (curl o (funSMulₗ f α) : RoughForm I M ℝ 1) = fun x ↦
-      f x • (curl o α).1 x + formHodgeStarCLM o (k := 2) (l := 1) rfl x
-        ((mextDeriv (RoughForm.ofFunction I f) x).wedge (α.1 x)) := by
+      f x • (curl o α).val x + formHodgeStarCLM o (k := 2) (l := 1) rfl x
+        ((mextDeriv (RoughForm.ofFunction I f) x).wedge (α.val x)) := by
   funext x
-  -- The degree transport `0 + 1 + 1 = 1 + 1` is a cast along a definitional equality of
-  -- numerals, so `cast_eq` removes it.
-  rw [coe_curl_apply, mextDerivₗ_funSMulₗ, LinearEquiv.cast_apply, cast_eq, Submodule.coe_add,
-    Pi.add_apply, coe_wedge_apply, mextDerivₗ_apply, coe_ofFunction, coe_funSMulₗ, map_add,
-    map_smul, add_comm, coe_curl_apply]
+  rw [coe_curl_apply, mextDerivₗ_funSMulₗ]
+  simp only [Submodule.coe_add, Pi.add_apply, coe_funSMulₗ, map_add, map_smul, coe_curl_apply]
+  rw [add_comm]
+  congr 2
+  ext v
+  simp only [extDerivWedgeₗ_apply, RoughForm.wedge_def, RoughForm.wedgeWith_apply', Fin.cast_refl,
+    CompTriple.comp_eq, ContinuousAlternatingMap.wedge_def]
 
 /-- **The curl has order one**: its double commutators with multiplication operators vanish,
 `[[curl, f], g] = 0`. -/
@@ -188,14 +190,14 @@ compactly supported. -/
 theorem integralTopForm_inner_curl_eq_inner_curl (α β : SmoothForm I M ℝ 1)
     (h : α ∈ compactlySupportedForms I M 1 ∨ β ∈ compactlySupportedForms I M 1) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 1
-        ((curl o α).1 x) (β.1 x) • riemannianVolumeForm o x) =
+        ((curl o α).val x) (β.val x) • riemannianVolumeForm o x) =
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 1
-        (α.1 x) ((curl o β).1 x) • riemannianVolumeForm o x) := by
+        (α.val x) ((curl o β).val x) • riemannianVolumeForm o x) := by
   -- Pointwise `⟨⋆dα, β⟩ = ⟨⋆⋆dα, ⋆β⟩ = ⟨dα, ⋆β⟩`, since `⋆` is an isometry and `⋆⋆ = 1` on
   -- two-forms.
-  have hpt (x : M) : alternatingFormInner (TangentSpace I x) 1 ((curl o α).1 x) (β.1 x) =
-      alternatingFormInner (TangentSpace I x) 2 ((mextDerivₗ I 1 α).1 x)
-        ((hodgeStar o (k := 1) (l := 2) rfl β).1 x) := by
+  have hpt (x : M) : alternatingFormInner (TangentSpace I x) 1 ((curl o α).val x) (β.val x) =
+      alternatingFormInner (TangentSpace I x) 2 ((mextDerivₗ I 1 α).val x)
+        ((hodgeStar o (k := 1) (l := 2) rfl β).val x) := by
     rw [← alternatingFormInner_formHodgeStarCLM o (k := 1) (l := 2) rfl x, coe_curl_apply,
       ← ContinuousLinearMap.comp_apply, formHodgeStarCLM_comp_formHodgeStarCLM, coe_hodgeStar,
       RoughForm.hodgeStar_eq_formHodgeStarCLM]

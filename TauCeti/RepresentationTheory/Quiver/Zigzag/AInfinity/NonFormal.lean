@@ -185,7 +185,7 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_four_le_degree [Nontri
   obtain ⟨ι⟩ : Nonempty (Fin 4 ↪ G.neighborSet v) := Function.Embedding.nonempty_of_card_le
     (by rwa [Fintype.card_fin, SimpleGraph.card_neighborSet_eq_degree])
   exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_single
-    (δ := fun i ↦ ⟨((ι i : V), v), (ι i).2.symm⟩)
+    (δ := fun i ↦ ⟨((ι i : V), v), (ι i).property.symm⟩)
     (fun i j h ↦ ι.injective (Subtype.ext (congrArg (·.fst) h))) (v := v) fun _ ↦ rfl⟩
 
 /-- **The zigzag algebra of a graph with a vertex of degree at least four is not intrinsically
@@ -263,8 +263,8 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_three_le_degree [Nontr
   obtain ⟨n, hn⟩ : ∃ n, p.length = n + 1 :=
     Nat.exists_eq_add_one.mpr (Nat.pos_of_ne_zero fun h ↦ hvw (p.eq_of_length_eq_zero h))
   have hinj {i j : ℕ} (hi : i ≤ n + 1) (hj : j ≤ n + 1) (h : p.getVert i = p.getVert j) : i = j :=
-    hp.getVert_injOn (by simp only [Set.mem_ofPred_eq]; omega)
-      (by simp only [Set.mem_ofPred_eq]; omega) h
+    hp.getVert_injOn (by simp only [Set.mem_Iic]; omega)
+      (by simp only [Set.mem_Iic]; omega) h
   let f : Fin (n + 1) → G.Dart := fun t ↦
     ⟨(p.getVert t, p.getVert (t + 1)), p.adj_getVert_succ (by omega)⟩
   obtain ⟨a, b, ha, hb, hab, hau, hbu⟩ := G.exists_adj_adj_ne_of_three_le_degree hv (p.getVert 1)

@@ -163,7 +163,7 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan
     ⟨c, c', h, t, s₀, ε, w, hw, hs₀, hh, hL, hz⟩
   · -- A closed valley word on an arm rotates into a power of the backtrack into the arm.
     obtain rfl : s = r := by
-      have := (eArm_eq_eArm (hs.trans hr.symm) (hs ▸ a.2)).1
+      have := (eArm_eq_eArm (hs.trans hr.symm) (hs ▸ a.isLt)).1
       omega
     obtain ⟨s, rfl⟩ : ∃ s', s = s' + 1 := ⟨s - 1, by omega⟩
     have hd : eDown k n c (m + s) * π (vertexIdempotent k (vertex G a)) = eDown k n c (m + s) := by
@@ -172,7 +172,7 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan
     rw [hz, ← ladderValley_mul_d, mul_assoc, hd, ladderValley_mul_d]
     exact zsmul_mem (ladderValley_mem_commutatorSubmodule_of_u_eq_zero k
       (eDown_mul_eUp_add k hn c) hN m s.succ_pos) ε
-  obtain ⟨rfl, hc⟩ := eArm_eq_eArm (hh.trans hs₀.symm) (hh ▸ a.2)
+  obtain ⟨rfl, hc⟩ := eArm_eq_eArm (hh.trans hs₀.symm) (hh ▸ a.isLt)
   rcases Nat.eq_zero_or_pos h with rfl | hpos
   · -- At the branch node the path is the word `w`, which is nonempty.
     obtain ⟨t, rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩

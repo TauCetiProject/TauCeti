@@ -77,7 +77,7 @@ theorem apply_const_eq_zero_of_mem_cyclicCoboundaries {n : ℕ} (hn : Even n)
       hochschildCoboundary_apply_const_of_isIdempotentElem _ he]
     simp only [hodd, ↓reduceIte]
     -- Cyclicity in odd degree gives `v = -v` for the value `v = ψ(e, …, e)`, so `2 • v = 0`.
-    have h := apply_const_eq_neg_of_mem_cyclicCochains ψ.2 (Nat.not_even_iff_odd.1 hodd) e
+    have h := apply_const_eq_neg_of_mem_cyclicCochains ψ.property (Nat.not_even_iff_odd.1 hodd) e
     apply (isUnit_of_invertible (2 : R)).smul_eq_zero.mp
     simpa only [two_smul] using eq_neg_iff_add_eq_zero.mp h
 

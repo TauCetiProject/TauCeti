@@ -22,7 +22,8 @@ in the apex already have a common image somewhere deeper in the diagram
 `TauCeti.AddCommGrpCat.isColimitOfJointlySurjective`, reflected along the forgetful functor to
 `AddCommGrpCat`, which reflects colimits whatever the universes of the ring and the modules. This
 covers modules of chains with local coefficients, whose universe is that of the space rather than
-that of the ring.
+that of the ring. Over a directed order, injectivity only needs checking on elements mapped to zero
+in the apex (`TauCeti.ModuleCat.isColimitOfJointlySurjectiveOfMapEqZero`).
 -/
 
 public noncomputable section
@@ -64,5 +65,24 @@ def isColimitOfJointlySurjective (t : Cocone F)
     AddCommGrpCat.isColimitOfJointlySurjective (Φ.mapCocone t) hsurj hinj
   have : HasColimit (F ⋙ Φ) := ⟨⟨_, hc⟩⟩
   exact isColimitOfReflects Φ hc
+
+/-- A cocone on a diagram of modules indexed by a directed order is colimiting as soon as its legs
+are jointly surjective and every element mapped to zero in the apex is already mapped to zero
+somewhere further along the diagram. -/
+def isColimitOfJointlySurjectiveOfMapEqZero {ι : Type u} [Preorder ι] [IsDirectedOrder ι]
+    {F : ι ⥤ _root_.ModuleCat.{v} R} (t : Cocone F)
+    (hsurj : ∀ x : t.pt, ∃ (j : ι) (y : F.obj j), (t.ι.app j).hom y = x)
+    (hzero : ∀ (i : ι) (x : F.obj i), (t.ι.app i).hom x = 0 →
+      ∃ (j : ι) (hij : i ≤ j), (F.map (homOfLE hij)).hom x = 0) :
+    IsColimit t :=
+  isColimitOfJointlySurjective t hsurj fun i j xi xj hij ↦ by
+    obtain ⟨l, hil, hjl⟩ := exists_ge_ge i j
+    -- the difference of the two images at a common upper bound vanishes in the apex
+    obtain ⟨m, hlm, hm⟩ := hzero l ((F.map (homOfLE hil)).hom xi - (F.map (homOfLE hjl)).hom xj)
+      (by rwa [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, Cocone.w,
+        ← ConcreteCategory.comp_apply, Cocone.w])
+    refine ⟨m, homOfLE (hil.trans hlm), homOfLE (hjl.trans hlm), ?_⟩
+    rwa [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+      ← F.map_comp, ← F.map_comp] at hm
 
 end TauCeti.ModuleCat

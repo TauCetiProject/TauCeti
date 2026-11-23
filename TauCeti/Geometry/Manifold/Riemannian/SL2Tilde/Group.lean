@@ -133,21 +133,21 @@ theorem ker_baseIsomHom : baseIsomHom.ker = fiberTranslationHom.range := by
 The inverse reads the fibre coordinate of the image of the origin. -/
 def fiberTranslationKerEquiv : Multiplicative ℝ ≃* baseIsomHom.ker where
   toFun c := ⟨fiberTranslationHom c, (mem_ker_baseIsomHom_iff _).mpr ⟨c.toAdd, rfl⟩⟩
-  invFun Φ := Multiplicative.ofAdd ((Φ.1 (mk 0 0 0)).z)
+  invFun Φ := Multiplicative.ofAdd ((Φ.val (mk 0 0 0)).z)
   left_inv c := by simp
   right_inv Φ := by
     apply Subtype.ext
-    obtain ⟨c, hc⟩ := (mem_ker_baseIsomHom_iff Φ.1).mp Φ.2
+    obtain ⟨c, hc⟩ := (mem_ker_baseIsomHom_iff Φ.val).mp Φ.property
     simp [hc]
   map_mul' c d := Subtype.ext (map_mul fiberTranslationHom c d)
 
 /-- The kernel equivalence acts by vertical translation. -/
 @[simp] theorem fiberTranslationKerEquiv_apply (c : Multiplicative ℝ) :
-    (fiberTranslationKerEquiv c).1 = translate 0 0 c.toAdd := (rfl)
+    (fiberTranslationKerEquiv c).val = translate 0 0 c.toAdd := (rfl)
 
 /-- Recover the translation parameter from the image of the origin. -/
 @[simp] theorem fiberTranslationKerEquiv_symm_apply (Φ : baseIsomHom.ker) :
-    fiberTranslationKerEquiv.symm Φ = Multiplicative.ofAdd ((Φ.1 (mk 0 0 0)).z) := (rfl)
+    fiberTranslationKerEquiv.symm Φ = Multiplicative.ofAdd ((Φ.val (mk 0 0 0)).z) := (rfl)
 
 /-- Two lifts of one hyperbolic isometry differ by exactly one vertical translation. -/
 theorem baseIsomHom_eq_iff_existsUnique_translate_mul (Φ Ψ : Isom J SL2Tilde) :

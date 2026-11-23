@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Topology.Maps.LocalSections
 
 -- Access the body of `Manifold.IsSubmersionOfComplement`, which Mathlib does not expose, to supply
 -- its missing pointwise characterization.
@@ -37,8 +38,10 @@ is the preimage under `dφ` of the fixed subspace `L⁻¹ (0 × F)` of the model
 
 When the model of the source has no boundary, a submersion at `x` has a `C^n` local section through
 `x` over an open neighbourhood of `f x`, read off from the normal-form charts
-(`Manifold.IsSubmersionAt.exists_contMDiffOn_section`). Consequently smoothness descends along a
-submersion: `g` is `C^m` at `f x` exactly when `g ∘ f` is `C^m` at `x`
+(`Manifold.IsSubmersionAt.exists_contMDiffOn_section`). These sections can be chosen through every
+point `y` near `x` at once, jointly smooth in `y`
+(`Manifold.IsSubmersionAt.exists_contMDiffOn_uncurry_section`). Consequently smoothness descends
+along a submersion: `g` is `C^m` at `f x` exactly when `g ∘ f` is `C^m` at `x`
 (`Manifold.IsSubmersionAt.contMDiffAt_comp_iff`), and along a surjective submersion a `C^m` map
 constant on the fibres factors through a unique `C^m` map
 (`Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`).
@@ -46,6 +49,9 @@ constant on the fibres factors through a unique `C^m` map
 ## Main results
 
 * `Manifold.isSubmersionOfComplement_iff`: a submersion with complement `F` is one at every point.
+* `Manifold.IsSubmersion.of_le`, together with its `Manifold.IsSubmersionAt`,
+  `Manifold.IsSubmersionOfComplement` and `Manifold.IsSubmersionAtOfComplement` forms: lowering the
+  regularity order preserves submersions.
 * `Manifold.IsSubmersionAtOfComplement.mfderiv_extend_comp_mfderiv`: the derivative of a
   submersion in its normal-form charts.
 * `Manifold.IsSubmersionAtOfComplement.surjective_mfderiv`,
@@ -61,6 +67,12 @@ constant on the fibres factors through a unique `C^m` map
   `Manifold.IsSubmersionAt.exists_contMDiffOn_section`,
   `Manifold.IsSubmersion.exists_contMDiffOn_section`, and
   `Manifold.IsSubmersion.exists_contMDiffOn_section_of_surjective`: local sections of a submersion.
+* `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_uncurry_section`,
+  `Manifold.IsSubmersionAt.exists_contMDiffOn_uncurry_section`: local sections through every
+  nearby point of the source, depending smoothly on that point.
+* `Manifold.IsSubmersion.isOpenMap`: a submersion from a boundaryless manifold is an open map.
+* `Manifold.IsSubmersion.finrank_le`: a submersion out of a nonempty manifold does not raise
+  dimension.
 * `Manifold.IsSubmersionAt.contMDiffAt_comp_iff`, `Manifold.IsSubmersion.contMDiff_comp_iff`:
   smoothness descends along a submersion.
 * `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
@@ -112,6 +124,41 @@ theorem isSubmersionOfComplement_fst [IsManifold I n M] [IsManifold J n N] :
 theorem isSubmersion_fst [IsManifold I n M] [IsManifold J n N] :
     IsSubmersion (I.prod J) I n (@Prod.fst M N) :=
   isSubmersionOfComplement_fst.isSubmersion
+
+section OfLe
+
+variable {m : WithTop ℕ∞}
+
+/-- Lowering the regularity order preserves the submersion normal form at a point, with the same
+complement. -/
+theorem IsSubmersionAtOfComplement.of_le {x : M}
+    (h : IsSubmersionAtOfComplement F I J m f x) (hnm : n ≤ m) :
+    IsSubmersionAtOfComplement F I J n f x :=
+  IsSubmersionAtOfComplement.mk_of_charts h.equiv h.domChart h.codChart
+    h.mem_domChart_source h.mem_codChart_source
+    (IsManifold.maximalAtlas_subset_of_le hnm h.domChart_mem_maximalAtlas)
+    (IsManifold.maximalAtlas_subset_of_le hnm h.codChart_mem_maximalAtlas)
+    h.source_subset_preimage_source h.writtenInCharts
+
+/-- Lowering the regularity order preserves being a submersion at a point. -/
+theorem IsSubmersionAt.of_le {x : M}
+    (h : IsSubmersionAt I J m f x) (hnm : n ≤ m) :
+    IsSubmersionAt I J n f x :=
+  (h.isSubmersionAtOfComplement_complement.of_le hnm).isSubmersionAt
+
+/-- Lowering the regularity order preserves submersions with a fixed complement. -/
+theorem IsSubmersionOfComplement.of_le
+    (h : IsSubmersionOfComplement F I J m f) (hnm : n ≤ m) :
+    IsSubmersionOfComplement F I J n f :=
+  fun x ↦ (h x).of_le hnm
+
+/-- Lowering the regularity order preserves submersions. -/
+theorem IsSubmersion.of_le
+    (h : IsSubmersion I J m f) (hnm : n ≤ m) :
+    IsSubmersion I J n f :=
+  (h.isSubmersionOfComplement_complement.of_le hnm).isSubmersion
+
+end OfLe
 
 end Pointwise
 
@@ -254,6 +301,15 @@ theorem IsSubmersion.hasRightInverse_mfderiv (h : IsSubmersion I J n f) (hn : n 
     (mfderiv I J f x).HasRightInverse :=
   (h.isSubmersionAt x).hasRightInverse_mfderiv hn
 
+/-- **A submersion does not raise dimension**: a `C^n` submersion, `n ≠ 0`, out of a nonempty
+manifold with finite-dimensional model has target model of dimension at most that of the source
+model. -/
+theorem IsSubmersion.finrank_le [FiniteDimensional 𝕜 E] [Nonempty M] (h : IsSubmersion I J n f)
+    (hn : n ≠ 0) : Module.finrank 𝕜 E'' ≤ Module.finrank 𝕜 E := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  exact LinearMap.finrank_le_finrank_of_surjective (f := (mfderiv I J f x).toLinearMap)
+    (h.surjective_mfderiv hn x)
+
 end Derivative
 
 section LocalSection
@@ -273,49 +329,76 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω} {f : M → N} {x : M}
 
+/-- **Smooth families of local sections of a submersion.** If `f` is a `C^n` submersion at `x` and
+the model of `M` has no boundary, there is a family of maps `s y : N → M`, jointly `C^n` in `(y, w)`
+on an open neighbourhood `W` of `(x, f x)`, such that `f (s y w) = w` on `W` and `s y (f y) = y`
+for `y` near `x`. So each `s y` is a local section of `f` through `y`, depending smoothly on `y`.
+In the normal-form charts `φ` and `ψ` it is `s y w = φ⁻¹ (L⁻¹ (ψ w, c y))`, where `c y` is the
+second component of `L (φ y)`. -/
+theorem IsSubmersionAtOfComplement.exists_contMDiffOn_uncurry_section [I.Boundaryless]
+    (h : IsSubmersionAtOfComplement F I J n f x) :
+    ∃ W : Set (M × N), IsOpen W ∧ (x, f x) ∈ W ∧ ∃ s : M → N → M,
+      ContMDiffOn (I.prod J) I n (uncurry s) W ∧ (∀ p ∈ W, f (s p.1 p.2) = p.2) ∧
+      ∀ᶠ y in 𝓝 x, s y (f y) = y := by
+  set e := h.domChart.extend I
+  set c := h.codChart.extend J
+  set S := h.domChart.source ×ˢ h.codChart.source
+  -- The affine slice `w ↦ L⁻¹ (w, z)` through `φ y` of the projection `u ↦ (L u).1`.
+  set g : M × N → E := fun p ↦ h.equiv.symm (c p.2, (h.equiv (e p.1)).2) with hg_def
+  have hg : ContMDiffOn (I.prod J) 𝓘(𝕜, E) n g S :=
+    h.equiv.symm.contDiff.contMDiff.comp_contMDiffOn <|
+      ((h.codChart.contMDiffOn_extend h.codChart_mem_maximalAtlas).comp contMDiffOn_snd
+        mapsTo_snd_prod).prodMk_space <|
+        ((ContinuousLinearMap.snd 𝕜 E'' F).comp (h.equiv : E →L[𝕜] E'' × F)).contMDiff
+          |>.comp_contMDiffOn <|
+          (h.domChart.contMDiffOn_extend h.domChart_mem_maximalAtlas).comp contMDiffOn_fst
+            mapsTo_fst_prod
+  have hgy {y : M} (hy : y ∈ h.domChart.source) : g (y, f y) = e y := by
+    simp only [hg_def, c, h.codChart_extend_apply hy, projection_apply, Prod.mk.eta,
+      ContinuousLinearEquiv.symm_apply_apply, e]
+  refine ⟨S ∩ g ⁻¹' e.target, hg.continuousOn.isOpen_inter_preimage
+      (h.domChart.open_source.prod h.codChart.open_source) h.domChart.isOpen_extend_target,
+    ⟨⟨h.mem_domChart_source, h.mem_codChart_source⟩, ?_⟩, fun y w ↦ e.symm (g (y, w)), ?_, ?_, ?_⟩
+  · rw [mem_preimage, hgy h.mem_domChart_source]
+    exact e.map_source (by rw [OpenPartialHomeomorph.extend_source]; exact h.mem_domChart_source)
+  · exact (contMDiffOn_extend_symm h.domChart_mem_maximalAtlas).comp (hg.mono inter_subset_left)
+      fun p hp ↦ by rw [← OpenPartialHomeomorph.extend_target']; exact hp.2
+  · rintro p ⟨hp, hpt⟩
+    have hsp : e.symm (g p) ∈ h.domChart.source := by
+      rw [← h.domChart.extend_source (I := I)]
+      exact e.map_target hpt
+    refine (h.codChart.extend J).injOn
+      (by rw [h.codChart.extend_source]; exact h.source_subset_preimage_source hsp)
+      (by rw [h.codChart.extend_source]; exact hp.2) ?_
+    rw [h.codChart_extend_apply hsp, e.right_inv hpt, projection_apply]
+    simp only [hg_def, ContinuousLinearEquiv.apply_symm_apply, c]
+  · filter_upwards [h.domChart.open_source.mem_nhds h.mem_domChart_source] with y hy
+    rw [hgy hy]
+    exact e.left_inv (by rw [OpenPartialHomeomorph.extend_source]; exact hy)
+
 /-- **Local sections of a submersion.** If `f` is a `C^n` submersion at `x` and the model of `M`
 has no boundary, then over an open neighbourhood `U` of `f x` there is a `C^n` section of `f`
-through `x`: a map `s` with `s (f x) = x`, `f (s y) = y` for `y ∈ U`, and `C^n` on `U`. In the
-normal-form charts `φ` and `ψ` it is `y ↦ φ⁻¹ (L⁻¹ (ψ y, c))`, where `c` is the second component
-of `L (φ x)`. -/
+through `x`: a map `s` with `s (f x) = x`, `f (s y) = y` for `y ∈ U`, and `C^n` on `U`. It is the
+member through `x` of the family of
+`Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_uncurry_section`. -/
 theorem IsSubmersionAtOfComplement.exists_contMDiffOn_section [I.Boundaryless]
     (h : IsSubmersionAtOfComplement F I J n f x) :
     ∃ U : Set N, IsOpen U ∧ f x ∈ U ∧ ∃ s : N → M, s (f x) = x ∧ ContMDiffOn J I n s U ∧
       ∀ y ∈ U, f (s y) = y := by
-  set e := h.domChart.extend I
-  set c := h.codChart.extend J
-  -- The affine slice `w ↦ L⁻¹ (w, z)` through `φ x` of the projection `u ↦ (L u).1`.
-  set g : E'' → E := fun w ↦ h.equiv.symm (w, (h.equiv (e x)).2) with hg_def
-  have hg : ContDiff 𝕜 n g :=
-    h.equiv.symm.contDiff.comp (contDiff_id.prodMk contDiff_const)
-  have hxe : x ∈ e.source := by
-    rw [OpenPartialHomeomorph.extend_source]
-    exact h.mem_domChart_source
-  have hgc : g (c (f x)) = e x := by
-    simp only [hg_def, c, h.codChart_extend_apply h.mem_domChart_source, projection_apply,
-      Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply, e]
-  refine ⟨h.codChart.source ∩ c ⁻¹' (g ⁻¹' e.target),
-    h.codChart.isOpen_extend_preimage (h.domChart.isOpen_extend_target.preimage hg.continuous),
-    ⟨h.mem_codChart_source, ?_⟩, e.symm ∘ g ∘ c, ?_, ?_, ?_⟩
-  · rw [mem_preimage, mem_preimage, hgc]
-    exact e.map_source hxe
-  · rw [comp_apply, comp_apply, hgc]
-    exact e.left_inv hxe
-  · refine (contMDiffOn_extend_symm h.domChart_mem_maximalAtlas).comp
-      (hg.contMDiff.comp_contMDiffOn
-        ((h.codChart.contMDiffOn_extend h.codChart_mem_maximalAtlas).mono inter_subset_left))
-      fun y hy ↦ ?_
-    rw [← OpenPartialHomeomorph.extend_target']
-    exact hy.2
-  · rintro y ⟨hy, hyt⟩
-    have hsy : e.symm (g (c y)) ∈ h.domChart.source := by
-      rw [← h.domChart.extend_source (I := I)]
-      exact e.map_target hyt
-    refine (h.codChart.extend J).injOn
-      (by rw [h.codChart.extend_source]; exact h.source_subset_preimage_source hsy)
-      (by rwa [h.codChart.extend_source]) ?_
-    rw [comp_apply, comp_apply, h.codChart_extend_apply hsy, e.right_inv hyt, projection_apply]
-    simp only [hg_def, ContinuousLinearEquiv.apply_symm_apply, c]
+  obtain ⟨W, hW, hxW, s, hs, hfs, hsx⟩ := h.exists_contMDiffOn_uncurry_section
+  exact ⟨Prod.mk x ⁻¹' W, hW.preimage (Continuous.prodMk_right x), hxW, s x, hsx.self_of_nhds,
+    hs.comp (contMDiffOn_const.prodMk contMDiffOn_id) fun _ hw ↦ hw,
+    fun w hw ↦ hfs (x, w) hw⟩
+
+/-- **Smooth families of local sections of a submersion.** If `f` is a `C^n` submersion at `x`
+and the model of `M` has no boundary, there are local sections `s y` of `f` through every `y` near
+`x`, jointly `C^n` in `(y, w)` on an open neighbourhood `W` of `(x, f x)`. -/
+theorem IsSubmersionAt.exists_contMDiffOn_uncurry_section [I.Boundaryless]
+    (h : IsSubmersionAt I J n f x) :
+    ∃ W : Set (M × N), IsOpen W ∧ (x, f x) ∈ W ∧ ∃ s : M → N → M,
+      ContMDiffOn (I.prod J) I n (uncurry s) W ∧ (∀ p ∈ W, f (s p.1 p.2) = p.2) ∧
+      ∀ᶠ y in 𝓝 x, s y (f y) = y :=
+  h.isSubmersionAtOfComplement_complement.exists_contMDiffOn_uncurry_section
 
 /-- **Local sections of a submersion.** If `f` is a `C^n` submersion at `x` and the model of `M`
 has no boundary, then over an open neighbourhood `U` of `f x` there is a `C^n` section `s` of `f`
@@ -345,6 +428,15 @@ theorem IsSubmersion.exists_contMDiffOn_section_of_surjective [I.Boundaryless]
   obtain ⟨x, rfl⟩ := hsurj y
   obtain ⟨U, hU, hxU, s, _, hs, hfs⟩ := h.exists_contMDiffOn_section x
   exact ⟨U, hU, hxU, s, hs, hfs⟩
+
+omit [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
+/-- **A submersion from a boundaryless manifold is an open map.** Every point has a continuous
+local section through it by `exists_contMDiffOn_section`. -/
+theorem IsSubmersion.isOpenMap [I.Boundaryless] (h : IsSubmersion I J n f) : IsOpenMap f := by
+  refine .of_local_sections fun y ↦ ?_
+  obtain ⟨U, hU, hyU, s, hsy, hs, hfs⟩ := h.exists_contMDiffOn_section y
+  exact ⟨s, hs.continuousOn.continuousAt (hU.mem_nhds hyU), hsy,
+    eventually_of_mem (hU.mem_nhds hyU) hfs⟩
 
 section Descent
 

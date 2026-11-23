@@ -169,7 +169,7 @@ theorem mulHeight_eq_mul_of_injOn {γ : Type*} {x : α →₀ K} {y : β →₀ 
     obtain ⟨b, hb⟩ := Finsupp.support_nonempty_iff.2 hy
     exact Function.ne_iff.2 ⟨⟨b, hb⟩, mem_support_iff.1 hb⟩
   have hzE : (fun c : s ↦ z c) ∘ E = fun p : x.support × y.support ↦ x p.1 * y p.2 :=
-    funext fun p ↦ hz _ p.1.2 _ p.2.2
+    funext fun p ↦ hz _ p.1.property _ p.2.property
   rw [mulHeight_eq_of_support_subset z s hs, ← Height.mulHeight_comp_equiv E, hzE,
     Height.mulHeight_fun_mul_eq hx' hy']
   -- `Finsupp.mulHeight` is by definition the height of the restriction to the support.
@@ -194,11 +194,11 @@ theorem mulHeight_le_of_forall_exists_eq {x : α →₀ K} {y : β →₀ K}
     (h : ∀ b ∈ y.support, ∃ a, y b = x a) :
     y.mulHeight ≤ x.mulHeight := by
   classical
-  have h' : ∀ b : y.support, ∃ a : x.support, y b.1 = x a.1 := fun ⟨b, hb⟩ ↦ by
+  have h' : ∀ b : y.support, ∃ a : x.support, y b.val = x a.val := fun ⟨b, hb⟩ ↦ by
     obtain ⟨a, ha⟩ := h b hb
     exact ⟨⟨a, mem_support_iff.mpr (ha ▸ mem_support_iff.mp hb)⟩, ha⟩
   choose f hf using h'
-  have hcomp : (fun b : y.support ↦ y b.1) = (fun a : x.support ↦ x a.1) ∘ f := funext hf
+  have hcomp : (fun b : y.support ↦ y b.val) = (fun a : x.support ↦ x a.val) ∘ f := funext hf
   rw [mulHeight_eq_of_support_subset y y.support subset_rfl,
     mulHeight_eq_of_support_subset x x.support subset_rfl, hcomp]
   exact Height.mulHeight_comp_le f _

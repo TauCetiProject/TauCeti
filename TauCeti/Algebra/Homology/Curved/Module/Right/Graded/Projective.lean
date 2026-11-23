@@ -126,11 +126,11 @@ private theorem exists_comp_eq_of_surjective [Projective (toGradedModuleCat P)]
     (hg : Function.Surjective (closedHom g)) {p : ℤ}
     (u : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading) (ℳN := N.grading) p) :
     ∃ v : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading) (ℳN := M.grading) p,
-      ∀ x, closedHom g (v.1 x) = u.1 x := by
+      ∀ x, closedHom g (v.val x) = u.val x := by
   have : Epi ((forgetDifferential (h := h)).map g) := (GradedModuleCat.epi_iff_surjective _).2 hg
   obtain ⟨v, hv, hvu⟩ := GradedModuleCat.exists_isHomogeneous_comp_eq_of_epi
-    (toGradedModuleCat P) ((forgetDifferential (h := h)).map g) (p := p) u.1
-    ((isHomogeneous_toGradedModuleCat_iff _).2 u.2)
+    (toGradedModuleCat P) ((forgetDifferential (h := h)).map g) (p := p) u.val
+    ((isHomogeneous_toGradedModuleCat_iff _).2 u.property)
   exact ⟨⟨v, (isHomogeneous_toGradedModuleCat_iff _).1 hv⟩,
     fun x ↦ congrArg (fun l : P →ₗ[Aᵐᵒᵖ] N ↦ l x) hvu⟩
 
@@ -141,13 +141,13 @@ private theorem exists_comp_eq_of_injective
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
     (hf : Function.Injective (closedHom f)) {p : ℤ}
     (χ : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading) (ℳN := N.grading) p)
-    (hχ : ∀ x, χ.1 x ∈ LinearMap.range (closedHom f)) :
+    (hχ : ∀ x, χ.val x ∈ LinearMap.range (closedHom f)) :
     ∃ a : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading) (ℳN := M.grading) p,
-      ∀ x, closedHom f (a.1 x) = χ.1 x := by
+      ∀ x, closedHom f (a.val x) = χ.val x := by
   obtain ⟨a, ha, hfa⟩ := InternalGrading.exists_isHomogeneous_comp_eq_of_injective
     (toGradedModuleCat M).grading (toGradedModuleCat N).grading (toGradedModuleCat P).grading hf
     ((forgetDifferential (h := h)).map f).isHomogeneous
-    ((isHomogeneous_toGradedModuleCat_iff _).2 χ.2)
+    ((isHomogeneous_toGradedModuleCat_iff _).2 χ.property)
     (by rintro _ ⟨x, rfl⟩; exact hχ x)
   exact ⟨⟨a, (isHomogeneous_toGradedModuleCat_iff _).1 ha⟩,
     fun x ↦ congrArg (fun l : P →ₗ[Aᵐᵒᵖ] N ↦ l x) hfa⟩
@@ -184,22 +184,22 @@ private theorem exists_comp_coneDesc_eq
   -- Its commutator with the differentials is killed by `g`, so it factors through `f`.
   obtain ⟨δ, hδ⟩ : ∃ δ : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading)
       (ℳN := L.grading) (0 + 1),
-      ∀ x, δ.1 x = L.differential (u'.1 x) - u'.1 (P.differential x) :=
+      ∀ x, δ.val x = L.differential (u'.val x) - u'.val (P.differential x) :=
     ⟨dgRightModuleCochains.curvedDifferential (hM := P.isCurvedDGRightModule)
       (hN := L.isCurvedDGRightModule) 0 u', fun x ↦ by
       rw [dgRightModuleCochains.curvedDifferential_apply, Int.negOnePow_zero, one_smul]⟩
   obtain ⟨v, hv⟩ := exists_comp_eq_of_injective f hf δ fun x ↦
     (hex _).1 (by
       rw [hδ, map_sub, ← differential_closedHom, hu', hu', differential_closedHom, sub_self])
-  have hdv (x : P) : K.differential (v.1 x) = -v.1 (P.differential x) := by
+  have hdv (x : P) : K.differential (v.val x) = -v.val (P.differential x) := by
     apply hf
     rw [← differential_closedHom, map_neg, hv, hv]
     simp only [hδ, map_sub, L.isCurvedDGRightModule.sq_eq, P.isCurvedDGRightModule.sq_eq,
       LinearMap.map_smul]
     abel
   -- The lift `x ↦ (-v x, u' x)`, computed on the cone's product carrier.
-  have hφ₀ (x : P) : ((-v.1).prod u'.1 : P →ₗ[Aᵐᵒᵖ] cone f) x = (-v.1 x, u'.1 x) := rfl
-  refine ⟨closedHomOf (M := P) (N := cone f) ((-v.1).prod u'.1) (fun p x hx ↦ ?_) (fun x ↦ ?_),
+  have hφ₀ (x : P) : ((-v.val).prod u'.val : P →ₗ[Aᵐᵒᵖ] cone f) x = (-v.val x, u'.val x) := rfl
+  refine ⟨closedHomOf (M := P) (N := cone f) ((-v.val).prod u'.val) (fun p x hx ↦ ?_) (fun x ↦ ?_),
     closedHom_ext fun x ↦ ?_⟩
   · rw [cone_grading, hφ₀]
     exact ⟨(K.grading (p + 1)).neg_mem (by simpa using dgRightModuleCochains.map_mem v hx),
@@ -222,11 +222,11 @@ private theorem exists_cochain_eq_snd_sub
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f))
     (k' : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading) (ℳN := L.grading) (-1)) :
     ∃ ψ : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading)
-      (ℳN := L.grading) 0, ∀ x, ψ.1 x = (closedHom φ x).2 -
-        (L.differential (k'.1 x) + k'.1 (P.differential x)) := by
+      (ℳN := L.grading) 0, ∀ x, ψ.val x = (closedHom φ x).2 -
+        (L.differential (k'.val x) + k'.val (P.differential x)) := by
   refine ⟨⟨(LinearMap.snd _ _ _).comp (closedHom φ) -
     (dgRightModuleCochains.curvedDifferential (hM := P.isCurvedDGRightModule)
-      (hN := L.isCurvedDGRightModule) (-1) k').1, Submodule.sub_mem _ ?_ (by simp)⟩,
+      (hN := L.isCurvedDGRightModule) (-1) k').val, Submodule.sub_mem _ ?_ (by simp)⟩,
     fun x ↦ ?_⟩
   · rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
     intro p x hx
@@ -268,10 +268,10 @@ private theorem quotient_map_eq_zero_of_comp_coneDesc
     rw [← this]
     abel
   -- The contracting homotopy `x ↦ (a x, k' x)`, computed on the cone's product carrier.
-  have hH (x : P) : (a.1.prod k'.1 : P →ₗ[Aᵐᵒᵖ] cone f) x = (a.1 x, k'.1 x) := rfl
+  have hH (x : P) : (a.val.prod k'.val : P →ₗ[Aᵐᵒᵖ] cone f) x = (a.val x, k'.val x) := rfl
   -- Addition on the cone's carrier is componentwise.
   have hadd (y z : cone f) : y + z = (y.1 + z.1, y.2 + z.2) := rfl
-  refine ⟨⟨a.1.prod k'.1, ?_⟩, fun x ↦ ?_⟩
+  refine ⟨⟨a.val.prod k'.val, ?_⟩, fun x ↦ ?_⟩
   · rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
     intro p x hx
     rw [LinearMap.restrictScalars_apply, hH, cone_grading, (by ring : p + -1 + 1 = p + 0)]

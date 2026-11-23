@@ -180,7 +180,7 @@ theorem adjoin_range_map_genericMatrix :
       GeneralLinear.map_antipode_genericMatrix, ← Matrix.map_apply (f := q),
       GeneralLinear.map_inv_genericMatrix, BialgHom.coe_toAlgHom]
     rw [hinv]
-    exact (M.adjugate i j).2
+    exact (M.adjugate i j).property
 
 /-- The special-linear coordinate Hopf algebra bundled with its finite-type algebra property. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=

@@ -36,8 +36,9 @@ The conjugation action is explicit rather than a global instance. The additive
 coefficient action uses `Additive.distribMulAction`, and kernels use the existing
 `groupCohomology.zeroLocus` rather than a second notion of cocycle kernel.
 The crossed projection is the first component of Mathlib's complement decomposition
-(and of the inverse of `SemidirectProduct.mulEquivSubgroup`); its quotient-splitting
-formula supplies the crossed identity.
+(hence sends `1` to `1`, commutes with left multiplication from `N`, ignores right
+multiplication from the complement, and satisfies `c g = n ↔ n⁻¹ * g ∈ D`);
+its quotient-splitting formula supplies the crossed identity.
 
 ## References
 
@@ -77,7 +78,6 @@ theorem mulEquivSubgroup_symm_left_eq_crossedProjection (g : G) :
 
 omit [N.Normal] in
 /-- The projection of a product of the two factors is its normal component. -/
-@[simp]
 theorem crossedProjection_mul (n : N) (d : D) :
     h.crossedProjection ((n : G) * d) = n :=
   congrArg Prod.fst (h.equiv.apply_symm_apply (n, d))
@@ -93,6 +93,27 @@ omit [N.Normal] in
 @[simp]
 theorem crossedProjection_coe_right (d : D) : h.crossedProjection d = 1 :=
   h.equiv_fst_eq_one_of_mem_of_one_mem N.one_mem d.property
+
+omit [N.Normal] in
+/-- The crossed projection sends `1` to `1`. -/
+@[simp]
+theorem crossedProjection_one : h.crossedProjection 1 = 1 :=
+  congrArg Prod.fst (h.equiv_one N.one_mem D.one_mem)
+
+omit [N.Normal] in
+/-- Left multiplication by an element of `N` multiplies the crossed projection on the left. -/
+@[simp]
+theorem crossedProjection_mul_left (n : N) (g : G) :
+    h.crossedProjection ((n : G) * g) = n * h.crossedProjection g :=
+  congrArg Prod.fst (h.equiv_mul_left n g)
+
+omit [N.Normal] in
+/-- Right multiplication by an element of the complement leaves the crossed projection
+unchanged. -/
+@[simp]
+theorem crossedProjection_mul_right (g : G) (d : D) :
+    h.crossedProjection (g * d) = h.crossedProjection g :=
+  (Prod.ext_iff.mp (h.equiv_mul_right g d)).1
 
 theorem coe_crossedProjection (g : G) :
     (h.crossedProjection g : G) = g * (h.quotientSplitting (g : G ⧸ N))⁻¹ := by
@@ -116,6 +137,13 @@ theorem crossedProjection_eq_one_iff (g : G) : h.crossedProjection g = 1 ↔ g �
   rw [← Subtype.coe_inj]
   exact h.coe_equiv_fst_eq_one_iff_mem N.one_mem
 
+omit [N.Normal] in
+/-- The crossed projection of `g` equals `n` if and only if `n⁻¹ * g` lies in the complement. -/
+theorem crossedProjection_eq_iff (g : G) (n : N) :
+    h.crossedProjection g = n ↔ (n : G)⁻¹ * g ∈ D := by
+  rw [eq_comm, ← inv_mul_eq_one, ← h.crossedProjection_mul_left n⁻¹ g, Subgroup.coe_inv,
+    h.crossedProjection_eq_one_iff]
+
 /-- **Equivariance of crossed projections.** The crossed projection along the conjugate
 complement `g D g⁻¹` is `x ↦ g • c (g⁻¹ * x * g)`, where `c` is the crossed projection along
 `D`. -/
@@ -125,7 +153,7 @@ theorem crossedProjection_conj_smul (g x : G) :
     h.equiv_fst_mul_equiv_snd _
   have hd : g * (h.equiv (g⁻¹ * x * g)).2 * g⁻¹ ∈ MulAut.conj g • D := by
     rw [mem_pointwise_smul_iff_inv_smul_mem]
-    convert (h.equiv (g⁻¹ * x * g)).2.2 using 1
+    convert (h.equiv (g⁻¹ * x * g)).2.property using 1
     simp [mul_assoc]
   have hx : x = ((g • h.crossedProjection (g⁻¹ * x * g) : N) : G) *
       (⟨_, hd⟩ : ↥(MulAut.conj g • D)) := by
@@ -167,6 +195,15 @@ theorem IsLocalComplement.leftProjection_top_eq_crossedProjection {D : Subgroup 
     (h : N.IsLocalComplement D ⊤) (x : (⊤ : Subgroup G)) :
     h.leftProjection x = (isLocalComplement_top_iff.mp h).crossedProjection x :=
   h.leftProjection_top x
+
+omit [N.Normal] in
+/-- When a local complement `K` of `N` in `H` is contained in a global complement `D` of `N`, its
+left projection is the restriction of the crossed projection along `D`. -/
+theorem IsLocalComplement.leftProjection_eq_crossedProjection {K H D : Subgroup G}
+    [(N.subgroupOf H).Normal] (h : N.IsLocalComplement K H) (hD : N.IsComplement' D)
+    (hKD : K ≤ D) (x : H) :
+    h.leftProjection x = hD.crossedProjection x :=
+  ((hD.crossedProjection_eq_iff (x : G) _).mpr (hKD ((h.leftProjection_eq_iff x _).mp rfl))).symm
 
 /-- The left projection of a local complement `K` of `N` in `H` satisfies the crossed identity
 for the conjugation action of `H` on `N`. -/

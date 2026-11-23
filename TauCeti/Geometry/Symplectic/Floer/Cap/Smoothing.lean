@@ -242,7 +242,7 @@ private theorem contMDiffOn_capModel {E H : Type*} [NormedAddCommGroup E] [Norme
 /-- The path in the loop space traced by the model on the unit square. -/
 private def capModelPath (hg : Continuous g) : Path γ (Path.refl x) :=
   Path.ofContinuousFamily (fun s t : unitInterval ↦ capModel g P (s, t))
-    ((continuous_capModel hgγ hg).comp (continuous_subtype_val.prodMap continuous_subtype_val))
+    ((continuous_capModel hgγ hg).comp (continuous_subtypeVal.prodMap continuous_subtypeVal))
     (fun s ↦ by rw [Icc.coe_zero, capModel_seam_zero hgγ])
     (fun s ↦ by rw [Icc.coe_one, capModel_seam_one hgγ])
     (fun t ↦ by rw [Icc.coe_zero, capModel_zero, hgγ])
@@ -264,8 +264,8 @@ private theorem homotopic_capModelPath (hg : Continuous g) :
     projIcc 0 1 zero_le_one (q.1 * capRamp q.2)
   have hσ : Continuous σ := continuous_projIcc.comp (by fun_prop)
   have hρ : Continuous ρ := continuous_projIcc.comp
-    ((continuous_subtype_val.comp continuous_fst).mul
-      (contDiff_capRamp.continuous.comp (continuous_subtype_val.comp continuous_snd)))
+    ((continuous_subtypeVal.comp continuous_fst).mul
+      (contDiff_capRamp.continuous.comp (continuous_subtypeVal.comp continuous_snd)))
   let K := Path.continuousFamily (x₀ := x) (x₁ := x)
     (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦
       P (σ q) (collaredSmoothTransitionLineMapUnit (ρ q) t))
@@ -285,13 +285,13 @@ private theorem homotopic_capModelPath (hg : Continuous g) :
     rw [h₁, h₂, capModelPath_apply, capModel_eq_of_mem hgγ]
   · have h₁ : σ (a, 0) = 0 := by
       simp only [σ, Icc.coe_zero, mul_zero, zero_add, zero_sub]
-      rw [projIcc_of_le_left _ (by nlinarith [a.2.1]), Icc.mk_zero]
+      rw [projIcc_of_le_left _ (by nlinarith [a.property.1]), Icc.mk_zero]
     have h₂ : ρ (a, 0) = 0 := by
       simp [ρ, capRamp_of_le (by norm_num : (0 : ℝ) ≤ 1 / 6)]
     rw [h₁, h₂, collaredSmoothTransitionLineMapUnit_zero_left, P.source]
   · have h₁ : σ (a, 1) = 1 := by
       simp only [σ, Icc.coe_one]
-      rw [projIcc_of_right_le _ (by nlinarith [a.2.1]), Icc.mk_one]
+      rw [projIcc_of_right_le _ (by nlinarith [a.property.1]), Icc.mk_one]
     rw [h₁, P.target, Path.refl_apply, Path.refl_apply]
 
 end Model
@@ -369,8 +369,8 @@ private theorem homotopic_capModelPath_toPath (hgp : Periodic g 1)
   have hR : Continuous fun q : (unitInterval × unitInterval) × unitInterval ↦
       R (q.1.1, ((q.1.2 : ℝ), (q.2 : ℝ))) :=
     R.continuous.comp ((continuous_fst.comp continuous_fst).prodMk
-      ((continuous_subtype_val.comp (continuous_snd.comp continuous_fst)).prodMk
-        (continuous_subtype_val.comp continuous_snd)))
+      ((continuous_subtypeVal.comp (continuous_snd.comp continuous_fst)).prodMk
+        (continuous_subtypeVal.comp continuous_snd)))
   let K := Path.continuousFamily (x₀ := x) (x₁ := x)
     (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦ R (q.1, ((q.2 : ℝ), (t : ℝ)))) hR
     (fun q ↦ by
@@ -388,12 +388,12 @@ private theorem homotopic_capModelPath_toPath (hgp : Periodic g 1)
     exact R.apply_zero _
   · -- At `t = 1` the periodization reads `G` at `t = 0`, where both values are `x`.
     rw [R.apply_one, IsSmoothBasedHomotopy.toPath_apply]
-    rcases eq_or_lt_of_le t.2.2 with h | h
+    rcases eq_or_lt_of_le t.property.2 with h | h
     · rw [h, Int.fract_one,
         ← R.fst_eq_snd (x := ((s : ℝ), 1)) (mem_capFixedSet_of_snd (Or.inr (by norm_num))),
         ← R.fst_eq_snd (x := ((s : ℝ), 0)) (mem_capFixedSet_of_snd (Or.inl (by norm_num)))]
       exact (capModel_seam_one hgγ _).trans (capModel_seam_zero hgγ _).symm
-    · rw [Int.fract_eq_self.2 ⟨t.2.1, h⟩]
+    · rw [Int.fract_eq_self.2 ⟨t.property.1, h⟩]
   · rw [Icc.coe_zero]
     exact (R.eq_fst _ (mem_capFixedSet_of_fst (Or.inl (by norm_num)))).trans
       ((capModel_zero t).trans (hgγ t))

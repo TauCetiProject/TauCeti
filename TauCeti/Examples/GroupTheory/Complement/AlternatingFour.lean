@@ -168,7 +168,8 @@ example :
 
 -- The zero locus of the normalized additive crossed map for `3` recovers `⟨(0 1 2)⟩`.
 example :
-    groupCohomology.zeroLocus (kleinFourCrossedProjectionEquiv (Nat.card_fin 4) (3 : Fin 4)).2.1 =
+    groupCohomology.zeroLocus (kleinFourCrossedProjectionEquiv (Nat.card_fin 4)
+        (3 : Fin 4)).property.1 =
       Subgroup.zpowers threeCycle012 := by
   rw [zeroLocus_kleinFourCrossedProjectionEquiv_apply (Nat.card_fin 4) (3 : Fin 4),
     stabilizer_three_eq_zpowers]
@@ -256,7 +257,7 @@ example :
       (IsPGroup.of_card (p := 3) (n := 1) hA3)
       (by decide)
       (fun a n hn => (inferInstance : (alternatingGroup.kleinFour (Fin 4)).Normal).conj_mem n hn
-        a.1)
+        a.val)
       P
       ⟨⊥, by simp [hP]⟩
     exact ⟨D, hD, Subgroup.le_normalizer_iff.mpr fun a ha d hd => hinv ⟨a, ha⟩ d hd⟩

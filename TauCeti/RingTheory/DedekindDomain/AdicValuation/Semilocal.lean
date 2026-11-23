@@ -76,19 +76,19 @@ variable (K B L) in
 def adicCompletionIntegersSemilocalHom :
     v.adicCompletionIntegers K ⊗[R] B →ₐ[v.adicCompletionIntegers K]
       ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-        w.1.adicCompletionIntegers L :=
+        w.val.adicCompletionIntegers L :=
   letI : ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-      Algebra R (w.1.adicCompletionIntegers L) := fun w ↦
-    ((algebraMap (v.adicCompletionIntegers K) (w.1.adicCompletionIntegers L)).comp
+      Algebra R (w.val.adicCompletionIntegers L) := fun w ↦
+    ((algebraMap (v.adicCompletionIntegers K) (w.val.adicCompletionIntegers L)).comp
       (algebraMap R (v.adicCompletionIntegers K))).toAlgebra
   letI : ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-      IsScalarTower R (v.adicCompletionIntegers K) (w.1.adicCompletionIntegers L) :=
+      IsScalarTower R (v.adicCompletionIntegers K) (w.val.adicCompletionIntegers L) :=
     fun _ ↦ .of_algebraMap_eq fun _ ↦ rfl
   Algebra.TensorProduct.lift (Algebra.ofId _ _) (AlgHom.pi fun w ↦
-    { algebraMap B (w.1.adicCompletionIntegers L) with
+    { algebraMap B (w.val.adicCompletionIntegers L) with
       commutes' := fun r ↦ by
         rw [RingHom.toFun_eq_coe, IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K)
-            (w.1.adicCompletionIntegers L), algebraMap_adicCompletionIntegersExtensionAlgebra,
+            (w.val.adicCompletionIntegers L), algebraMap_adicCompletionIntegersExtensionAlgebra,
           adicCompletionIntegersExtension_algebraMap] }) fun _ _ ↦ .all _ _
 
 /-- `adicCompletionIntegersSemilocalHom` sends a pure tensor `a ⊗ b` to `(a · b)_{w ∣ v}`. -/
@@ -96,36 +96,36 @@ def adicCompletionIntegersSemilocalHom :
 theorem adicCompletionIntegersSemilocalHom_tmul (a : v.adicCompletionIntegers K) (b : B)
     (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
     v.adicCompletionIntegersSemilocalHom K B L (a ⊗ₜ b) w =
-      algebraMap (v.adicCompletionIntegers K) (w.1.adicCompletionIntegers L) a *
-        algebraMap B (w.1.adicCompletionIntegers L) b := by
+      algebraMap (v.adicCompletionIntegers K) (w.val.adicCompletionIntegers L) a *
+        algebraMap B (w.val.adicCompletionIntegers L) b := by
   simp [adicCompletionIntegersSemilocalHom]
 
 variable (K B L) in
 /-- The canonical `K_v`-algebra map from `K_v ⊗[K] L` to `∏_{w ∣ v} L_w`. -/
 def adicCompletionSemilocalHom :
     v.adicCompletion K ⊗[K] L →ₐ[v.adicCompletion K]
-      ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}, w.1.adicCompletion L :=
+      ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}, w.val.adicCompletion L :=
   letI : ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-      Algebra K (w.1.adicCompletion L) := fun w ↦
-    ((algebraMap (v.adicCompletion K) (w.1.adicCompletion L)).comp
+      Algebra K (w.val.adicCompletion L) := fun w ↦
+    ((algebraMap (v.adicCompletion K) (w.val.adicCompletion L)).comp
       (algebraMap K (v.adicCompletion K))).toAlgebra
   letI : ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-      IsScalarTower K (v.adicCompletion K) (w.1.adicCompletion L) :=
+      IsScalarTower K (v.adicCompletion K) (w.val.adicCompletion L) :=
     fun _ ↦ .of_algebraMap_eq fun _ ↦ rfl
   Algebra.TensorProduct.lift (Algebra.ofId _ _) (AlgHom.pi fun w ↦
-    { algebraMap L (w.1.adicCompletion L) with
+    { algebraMap L (w.val.adicCompletion L) with
       commutes' := fun x ↦ by
         rw [RingHom.toFun_eq_coe,
-          IsScalarTower.algebraMap_apply K (v.adicCompletion K) (w.1.adicCompletion L),
-          v.algebraMap_adicCompletionExtension_algebraMap w.1] }) fun _ _ ↦ .all _ _
+          IsScalarTower.algebraMap_apply K (v.adicCompletion K) (w.val.adicCompletion L),
+          v.algebraMap_adicCompletionExtension_algebraMap w.val] }) fun _ _ ↦ .all _ _
 
 /-- `adicCompletionSemilocalHom` sends a pure tensor `a ⊗ x` to `(a · x)_{w ∣ v}`. -/
 @[simp]
 theorem adicCompletionSemilocalHom_tmul (a : v.adicCompletion K) (x : L)
     (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
     v.adicCompletionSemilocalHom K B L (a ⊗ₜ x) w =
-      algebraMap (v.adicCompletion K) (w.1.adicCompletion L) a *
-        algebraMap L (w.1.adicCompletion L) x := by
+      algebraMap (v.adicCompletion K) (w.val.adicCompletion L) a *
+        algebraMap L (w.val.adicCompletion L) x := by
   simp [adicCompletionSemilocalHom]
 
 end General
@@ -147,16 +147,16 @@ theorem adicCompletionIntegersSemilocalHom_surjective :
   set I := IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)
   have : IsPrecomplete I (v.adicCompletionIntegers K ⊗[R] B) := .of_finite I _
   have _ (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-      IsHausdorff I (w.1.adicCompletionIntegers L) :=
+      IsHausdorff I (w.val.adicCompletionIntegers L) :=
     .of_map (IsLocalRing.map_maximalIdeal_le
-      (algebraMap (v.adicCompletionIntegers K) (w.1.adicCompletionIntegers L)))
+      (algebraMap (v.adicCompletionIntegers K) (w.val.adicCompletionIntegers L)))
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
   have hI : I = Ideal.span {π} := hπ.maximalIdeal_eq
   refine surjective_of_mkQ_comp_surjective (I := I)
     (f := (v.adicCompletionIntegersSemilocalHom K B L).toLinearMap) fun y ↦ ?_
   obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
   let s : Finset (HeightOneSpectrum B) :=
-    (Finset.univ : Finset {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}).image (·.1)
+    (Finset.univ : Finset {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}).image (·.val)
   obtain ⟨b, hb⟩ := exists_forall_valued_sub_le (K := L) s
     (fun w ↦ if hw : w.asIdeal.LiesOver v.asIdeal then y ⟨w, hw⟩ else 0)
     (fun w ↦ w.asIdeal.ramificationIdx R)
@@ -164,14 +164,14 @@ theorem adicCompletionIntegersSemilocalHom_surjective :
   simp only [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.Quotient.eq, hI,
     Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists]
   have hsub (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-      ∃ q : w.1.adicCompletionIntegers L,
+      ∃ q : w.val.adicCompletionIntegers L,
         π • q = (v.adicCompletionIntegersSemilocalHom K B L (1 ⊗ₜ b) - y) w := by
-    have hbw := hb w.1 (Finset.mem_image.mpr ⟨w, Finset.mem_univ w, rfl⟩)
-    simp only [dite_eq_left w.2] at hbw
-    refine (v.exists_smul_eq_adicCompletionIntegers_iff_valued_le w.1 hπ).mpr ?_
+    have hbw := hb w.val (Finset.mem_image.mpr ⟨w, Finset.mem_univ w, rfl⟩)
+    simp only [dite_eq_left w.property] at hbw
+    refine (v.exists_smul_eq_adicCompletionIntegers_iff_valued_le w.val hπ).mpr ?_
     rw [Pi.sub_apply, AddSubgroupClass.coe_sub, adicCompletionIntegersSemilocalHom_tmul, map_one,
       one_mul, Valuation.map_sub_swap,
-      ← ValuationSubring.algebraMap_apply (a := algebraMap B (w.1.adicCompletionIntegers L) b),
+      ← ValuationSubring.algebraMap_apply (a := algebraMap B (w.val.adicCompletionIntegers L) b),
       ← algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers]
     exact hbw
   choose q hq using hsub
@@ -247,7 +247,7 @@ theorem adicCompletionIntegersSemilocalToField_tmul (a : v.adicCompletionInteger
 
 private theorem adicCompletionSemilocalHom_toField (z : v.adicCompletionIntegers K ⊗[R] B) :
     v.adicCompletionSemilocalHom K B L (v.adicCompletionIntegersSemilocalToField K B L z) =
-      fun w ↦ (v.adicCompletionIntegersSemilocalHom K B L z w : w.1.adicCompletion L) := by
+      fun w ↦ (v.adicCompletionIntegersSemilocalHom K B L z w : w.val.adicCompletion L) := by
   induction z using TensorProduct.inductionOn with
   | add _ _ hx hy =>
     funext w; simp only [map_add, Pi.add_apply]
@@ -269,7 +269,7 @@ theorem adicCompletionSemilocalHom_surjective :
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
   have hπ0 : (π : v.adicCompletion K) ≠ 0 := ZeroMemClass.coe_eq_zero.not.mpr hπ.ne_zero
   choose N hN using fun w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ↦
-    v.exists_forall_pow_smul_mem_adicCompletionIntegers w.1
+    v.exists_forall_pow_smul_mem_adicCompletionIntegers w.val
       ((adicCompletionIntegers.integers K v).valuation_irreducible_lt_one hπ) (y w)
   let M : ℕ := Finset.univ.sup N
   obtain ⟨t, ht⟩ := v.adicCompletionIntegersSemilocalHom_surjective (K := K) (L := L)
@@ -295,7 +295,7 @@ theorem finrank_adicCompletionIntegers_of_finite (w : HeightOneSpectrum B)
   have hs : p.primesOver (w.adicCompletionIntegers L) = {Q} := IsLocalRing.primesOver_eq _ hp0
   rw [← Ideal.sum_ramification_inertia_eq_finrank p (w.adicCompletionIntegers L),
     Finset.sum_eq_single ⟨Q, by rw [hs]; exact Set.mem_singleton _⟩
-      (fun P _ hPQ ↦ absurd (Subtype.ext (by simpa [hs] using P.2)) hPQ) (by simp)]
+      (fun P _ hPQ ↦ absurd (Subtype.ext (by simpa [hs] using P.property)) hPQ) (by simp)]
   refine congrArg₂ (· * ·) ?_ (TauCeti.IsLocalRing.inertiaDeg_maximalIdeal.trans
     (v.finrank_residueField_adicCompletionIntegers (K := K) (L := L) w))
   rw [Ideal.IsDedekindDomain.ramificationIdx_eq_multiplicity p Q hp_map,
@@ -314,16 +314,16 @@ theorem finrank_adicCompletion_of_finite (w : HeightOneSpectrum B) [w.asIdeal.Li
 theorem sum_finrank_adicCompletion_of_finite
     [Fintype {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}] :
     (∑ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-      Module.finrank (v.adicCompletion K) (w.1.adicCompletion L)) = Module.finrank K L := by
+      Module.finrank (v.adicCompletion K) (w.val.adicCompletion L)) = Module.finrank K L := by
   classical
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   have : Module.IsTorsionFree R B :=
     Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R B)
   have : NeZero v.asIdeal := ⟨v.ne_bot⟩
   let _ : Fintype (v.asIdeal.primesOver B) := Fintype.ofEquiv _ (liesOverEquivPrimesOver B v)
-  rw [Finset.sum_congr rfl fun w _ ↦ v.finrank_adicCompletion_of_finite (K := K) (L := L) w.1,
+  rw [Finset.sum_congr rfl fun w _ ↦ v.finrank_adicCompletion_of_finite (K := K) (L := L) w.val,
     Fintype.sum_equiv (liesOverEquivPrimesOver B v) _
-      (fun P : v.asIdeal.primesOver B ↦ P.1.ramificationIdx R * P.1.inertiaDeg R)
+      (fun P : v.asIdeal.primesOver B ↦ P.val.ramificationIdx R * P.val.inertiaDeg R)
       fun w ↦ by rw [liesOverEquivPrimesOver_apply],
     Ideal.sum_ramification_inertia_eq_finrank v.asIdeal B, IsFractionRing.finrank_eq R K B L]
 
@@ -337,7 +337,7 @@ theorem adicCompletionSemilocalHom_injective :
   have hfin : Module.finrank (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) =
       Module.finrank (v.adicCompletion K)
         (∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-          w.1.adicCompletion L) := by
+          w.val.adicCompletion L) := by
     rw [Module.finrank_tensorProduct, Module.finrank_self, one_mul, Module.finrank_pi_fintype,
       v.sum_finrank_adicCompletion_of_finite (K := K) (B := B) (L := L)]
   exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin).mpr
@@ -347,7 +347,7 @@ variable (K B L) in
 /-- **The field semilocal isomorphism** `K_v ⊗[K] L ≃ₐ[K_v] ∏_{w ∣ v} L_w`. -/
 def adicCompletionSemilocalEquiv :
     v.adicCompletion K ⊗[K] L ≃ₐ[v.adicCompletion K]
-      ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}, w.1.adicCompletion L :=
+      ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}, w.val.adicCompletion L :=
   -- The `show Function.Bijective ...` ascription is load-bearing: `Function.Bijective` is
   -- semireducible, so without it `AlgEquiv.coe_ofBijective` and `ofBijective_apply` fail to match.
   AlgEquiv.ofBijective (v.adicCompletionSemilocalHom K B L)
@@ -369,8 +369,8 @@ theorem toAlgHom_adicCompletionSemilocalEquiv :
 theorem adicCompletionSemilocalEquiv_tmul (a : v.adicCompletion K) (x : L)
     (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
     v.adicCompletionSemilocalEquiv K B L (a ⊗ₜ x) w =
-      algebraMap (v.adicCompletion K) (w.1.adicCompletion L) a *
-        algebraMap L (w.1.adicCompletion L) x :=
+      algebraMap (v.adicCompletion K) (w.val.adicCompletion L) a *
+        algebraMap L (w.val.adicCompletion L) x :=
   (congrFun (v.coe_adicCompletionSemilocalEquiv (K := K) (B := B) (L := L)) (a ⊗ₜ x) ▸
     v.adicCompletionSemilocalHom_tmul a x w)
 
@@ -379,14 +379,14 @@ theorem adicCompletionSemilocalEquiv_tmul (a : v.adicCompletion K) (x : L)
 theorem adicCompletionSemilocalEquiv_symm_algebraMap (x : L) :
     (v.adicCompletionSemilocalEquiv K B L).symm
         (fun w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ↦
-          algebraMap L (w.1.adicCompletion L) x) = 1 ⊗ₜ[K] x :=
+          algebraMap L (w.val.adicCompletion L) x) = 1 ⊗ₜ[K] x :=
   (v.adicCompletionSemilocalEquiv K B L).symm_apply_eq.mpr (funext fun w ↦ by simp)
 
 /-- Compatibility of the integral and field semilocal maps under inclusion into the completions. -/
 theorem adicCompletionIntegersSemilocalHom_fieldCompatibility
     (z : v.adicCompletionIntegers K ⊗[R] B) :
     v.adicCompletionSemilocalEquiv K B L (v.adicCompletionIntegersSemilocalToField K B L z) =
-      fun w ↦ (v.adicCompletionIntegersSemilocalHom K B L z w : w.1.adicCompletion L) :=
+      fun w ↦ (v.adicCompletionIntegersSemilocalHom K B L z w : w.val.adicCompletion L) :=
   congrFun (v.coe_adicCompletionSemilocalEquiv (K := K) (B := B) (L := L)) _ ▸
     v.adicCompletionSemilocalHom_toField z
 
@@ -418,7 +418,7 @@ variable (K B L) in
 def adicCompletionIntegersSemilocalEquiv :
     v.adicCompletionIntegers K ⊗[R] B ≃ₐ[v.adicCompletionIntegers K]
       ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-        w.1.adicCompletionIntegers L :=
+        w.val.adicCompletionIntegers L :=
   -- Keep `Function.Bijective` explicit so `AlgEquiv.coe_ofBijective` and `ofBijective_apply` match.
   AlgEquiv.ofBijective (v.adicCompletionIntegersSemilocalHom K B L)
     (show Function.Bijective (v.adicCompletionIntegersSemilocalHom K B L) from
@@ -443,8 +443,8 @@ theorem toAlgHom_adicCompletionIntegersSemilocalEquiv :
 theorem adicCompletionIntegersSemilocalEquiv_tmul (a : v.adicCompletionIntegers K) (b : B)
     (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
     v.adicCompletionIntegersSemilocalEquiv K B L (a ⊗ₜ b) w =
-      algebraMap (v.adicCompletionIntegers K) (w.1.adicCompletionIntegers L) a *
-        algebraMap B (w.1.adicCompletionIntegers L) b :=
+      algebraMap (v.adicCompletionIntegers K) (w.val.adicCompletionIntegers L) a *
+        algebraMap B (w.val.adicCompletionIntegers L) b :=
   congrFun (v.coe_adicCompletionIntegersSemilocalEquiv (K := K) (B := B) (L := L)) (a ⊗ₜ b) ▸
     v.adicCompletionIntegersSemilocalHom_tmul a b w
 
@@ -453,14 +453,14 @@ theorem adicCompletionIntegersSemilocalEquiv_tmul (a : v.adicCompletionIntegers 
 theorem adicCompletionIntegersSemilocalEquiv_symm_algebraMap (b : B) :
     (v.adicCompletionIntegersSemilocalEquiv K B L).symm
         (fun w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ↦
-          algebraMap B (w.1.adicCompletionIntegers L) b) = 1 ⊗ₜ[R] b :=
+          algebraMap B (w.val.adicCompletionIntegers L) b) = 1 ⊗ₜ[R] b :=
   (v.adicCompletionIntegersSemilocalEquiv K B L).symm_apply_eq.mpr (funext fun w ↦ by simp)
 
 /-- Compatibility of `adicCompletionIntegersSemilocalEquiv` with `adicCompletionSemilocalEquiv`. -/
 theorem adicCompletionIntegersSemilocalEquiv_fieldCompatibility
     (z : v.adicCompletionIntegers K ⊗[R] B) :
     v.adicCompletionSemilocalEquiv K B L (v.adicCompletionIntegersSemilocalToField K B L z) =
-      fun w ↦ (v.adicCompletionIntegersSemilocalEquiv K B L z w : w.1.adicCompletion L) :=
+      fun w ↦ (v.adicCompletionIntegersSemilocalEquiv K B L z w : w.val.adicCompletion L) :=
   v.adicCompletionIntegersSemilocalHom_fieldCompatibility z
 
 /-- The norm of `K_v ⊗[K] L` over `K_v` is the product of the local norms of its components. -/
@@ -478,7 +478,7 @@ theorem algebraMap_norm_eq_prod_norm_adicCompletion
     [Fintype {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}] (x : L) :
     algebraMap K (v.adicCompletion K) (Algebra.norm K x) =
       ∏ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.norm (v.adicCompletion K) (algebraMap L (w.1.adicCompletion L) x) := by
+        Algebra.norm (v.adicCompletion K) (algebraMap L (w.val.adicCompletion L) x) := by
   have := TauCeti.IsFractionRing.finiteDimensional_of_finite R B K L
   rw [← Algebra.norm_baseChange_tmul (A := v.adicCompletion K) (B := L) x,
     v.norm_eq_prod_norm_adicCompletionSemilocalEquiv (B := B)]
@@ -493,7 +493,7 @@ theorem trace_adicCompletionIntegersSemilocalToField_tmul_mul (a : v.adicComplet
         algebraMap K (v.adicCompletion K) (Algebra.trace K L (algebraMap B L b * d)) := by
   have := TauCeti.IsFractionRing.finiteDimensional_of_finite R B K L
   rw [adicCompletionIntegersSemilocalToField_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_one,
-    ← Algebra.trace_baseChange_tmul (K := K) (A := v.adicCompletion K), ← smul_eq_mul a.1,
+    ← Algebra.trace_baseChange_tmul (K := K) (A := v.adicCompletion K), ← smul_eq_mul a.val,
     ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
 
 /-- The trace of `K_v ⊗[K] L` over `K_v` is the sum of the local traces of its components. -/
@@ -502,7 +502,7 @@ theorem trace_eq_sum_trace_adicCompletionSemilocalEquiv
     (ξ : v.adicCompletion K ⊗[K] L) :
     Algebra.trace (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) ξ =
       ∑ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.trace (v.adicCompletion K) (w.1.adicCompletion L)
+        Algebra.trace (v.adicCompletion K) (w.val.adicCompletion L)
           (v.adicCompletionSemilocalEquiv K B L ξ w) := by
   classical
   rw [← Algebra.trace_eq_of_algEquiv (v.adicCompletionSemilocalEquiv K B L), Algebra.trace_pi]
@@ -530,8 +530,8 @@ theorem algebraMap_trace_eq_sum_trace_adicCompletion
     [Fintype {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}] (x : L) :
     algebraMap K (v.adicCompletion K) (Algebra.trace K L x) =
       ∑ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.trace (v.adicCompletion K) (w.1.adicCompletion L)
-          (algebraMap L (w.1.adicCompletion L) x) := by
+        Algebra.trace (v.adicCompletion K) (w.val.adicCompletion L)
+          (algebraMap L (w.val.adicCompletion L) x) := by
   have := TauCeti.IsFractionRing.finiteDimensional_of_finite R B K L
   rw [← Algebra.trace_baseChange_tmul (A := v.adicCompletion K) (B := L) x,
     v.trace_eq_sum_trace_adicCompletionSemilocalEquiv (B := B)]

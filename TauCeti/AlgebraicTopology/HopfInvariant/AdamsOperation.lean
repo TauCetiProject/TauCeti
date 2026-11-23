@@ -7,10 +7,9 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.Basis.Defs
-import Mathlib.RingTheory.Int.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
-import TauCeti.NumberTheory.Multiplicity
+import TauCeti.AlgebraicTopology.HopfInvariant.PowerDivisibility
 
 /-!
 # The Adams-operation divisibility test for Hopf invariant one
@@ -29,7 +28,7 @@ and additive maps `ψ²`, `ψ³` of this shape:
   `sʳ (sʳ - 1) b_t = tʳ (tʳ - 1) b_s`;
 * the congruence `ψ² x ≡ x² (mod 2)` makes `b₂ ≡ H(f) (mod 2)`, so `b₂` is odd when `H(f)` is;
 * taking `s = 2` and `t = 3`, the power `2ʳ` then divides `3ʳ - 1`, which happens only for
-  `r ∈ {1, 2, 4}` (`Nat.two_pow_dvd_three_pow_sub_one_iff`).
+  `r ∈ {1, 2, 4}` (`TauCeti.eq_one_or_eq_two_or_eq_four_of_odd_mul_eq`).
 
 ## Main results
 
@@ -100,16 +99,6 @@ theorem eq_one_or_eq_two_or_eq_four_of_adamsOperation [Mul A] (b : Module.Basis 
     rintro ⟨n, hn, h0⟩
     exact hn (by simpa using congrArg (fun z ↦ b.repr z 1) h0)
   have key := pow_mul_pow_sub_one_mul_eq_pow_mul_pow_sub_one_mul hy h₂x h₂y h₃x h₃y hcomm
-  -- Hence `2 ^ r` divides `(3 ^ r * b₂) * (3 ^ r - 1)`, and `3 ^ r * b₂` is odd.
-  have hdvd : (2 : ℤ) ^ r ∣ 3 ^ r - 1 := by
-    have hcop : IsCoprime ((2 : ℤ) ^ r) (3 ^ r * b₂) :=
-      (Int.isCoprime_two_left.mpr ((Odd.pow (by decide)).mul hb₂)).pow_left
-    exact hcop.dvd_of_dvd_mul_left ⟨(2 ^ r - 1) * b₃, by linear_combination -key⟩
-  have hdvd' : 2 ^ r ∣ 3 ^ r - 1 := by
-    rw [← Int.natCast_dvd_natCast, Nat.cast_sub (Nat.one_le_pow _ _ (by norm_num))]
-    exact_mod_cast hdvd
-  obtain h0 | h' := Nat.two_pow_dvd_three_pow_sub_one_iff.mp hdvd'
-  · exact absurd h0 hr
-  · exact h'
+  exact eq_one_or_eq_two_or_eq_four_of_odd_mul_eq (Nat.pos_of_ne_zero hr) hb₂ key.symm
 
 end TauCeti

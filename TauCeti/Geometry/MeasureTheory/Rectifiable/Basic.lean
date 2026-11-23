@@ -149,7 +149,7 @@ theorem image (hs : CountablyRectifiable k s) {g : X → Y} {K : ℝ≥0}
   let F (i : ℕ) : B i → Y := fun x ↦ g (f i (p i x))
   have hF (i : ℕ) : LipschitzWith (K * L i) (F i) := by
     have hpi : LipschitzWith 1 (p i) :=
-      (LipschitzWith.subtype_val (B i)).subtype_mk (fun x ↦ x.property.choose)
+      (LipschitzWith.subtypeVal (B i)).subtype_mk (fun x ↦ x.property.choose)
     simpa only [mul_one, Function.comp_def, Set.domRestrict_apply, F] using
       hg.to_restrict.comp (((hL i).comp hpi).subtype_mk (hp i))
   refine ⟨B, F, fun i ↦ ⟨K * L i, hF i⟩, ?_⟩
@@ -205,7 +205,7 @@ theorem mono_dim {m : ℕ} (hs : CountablyRectifiable m s) (hmk : m ≤ k) :
   obtain ⟨A, f, hf, hcover⟩ := hs
   choose K hK using hf
   let ι := LinearIsometry.piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hmk)
-  let e (i : ℕ) := (ι.isometry.comp (isometry_subtype_coe (s := A i))).isometryEquivOnRange
+  let e (i : ℕ) := (ι.isometry.comp (isometry_subtypeVal (s := A i))).isometryEquivOnRange
   let B (i : ℕ) : Set (EuclideanSpace ℝ (Fin k)) := range fun x : A i ↦ ι x
   let g (i : ℕ) : B i → X := f i ∘ (e i).symm
   refine ⟨B, g, fun i ↦ ⟨K i, ?_⟩, ?_⟩

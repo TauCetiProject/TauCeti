@@ -97,10 +97,10 @@ theorem exists_homeomorph_sphere_eq_equatorInclusion
     isClosed_closure isClosed_closure hAC (eA.trans B) (eC.trans B)
     (fun z ↦ by
       rw [Homeomorph.trans_apply, hB, ← mem_sphere_zero_iff_norm, hnA]
-      simpa only [mem_inter_iff, A, C, z.2, true_and] using Set.ext_iff.1 hinter z)
+      simpa only [mem_inter_iff, A, C, z.property, true_and] using Set.ext_iff.1 hinter z)
     (fun z ↦ by
       rw [Homeomorph.trans_apply, hB, ← mem_sphere_zero_iff_norm, hnC]
-      simpa only [mem_inter_iff, A, C, z.2, and_true] using Set.ext_iff.1 hinter z)
+      simpa only [mem_inter_iff, A, C, z.property, and_true] using Set.ext_iff.1 hinter z)
   refine ⟨h, fun x ↦ ?_, hhpos, fun z ↦ not_le.symm.trans (hhpos z).not⟩
   have hxA : σ x ∈ A := hA ▸ Or.inr (mem_range_self x)
   rw [hhA ⟨σ x, hxA⟩]

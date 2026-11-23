@@ -165,21 +165,21 @@ theorem extendSection_genericSection (M : Model R K C toK) [M.IsProper]
 def sectionEquiv (M : Model R K C toK) [M.IsProper] :
     {s : Spec (.of R) ⟶ M.total // s ≫ M.toBase = 𝟙 _} ≃
       {p : Spec (.of K) ⟶ C // p ≫ toK = 𝟙 _} where
-  toFun s := ⟨M.genericSection s.1 s.2, M.genericSection_toK s.1 s.2⟩
-  invFun p := ⟨M.extendSection p.1 p.2, M.extendSection_toBase p.1 p.2⟩
-  left_inv s := Subtype.ext (M.extendSection_genericSection s.1 s.2)
-  right_inv p := Subtype.ext (M.genericSection_extendSection p.1 p.2)
+  toFun s := ⟨M.genericSection s.val s.property, M.genericSection_toK s.val s.property⟩
+  invFun p := ⟨M.extendSection p.val p.property, M.extendSection_toBase p.val p.property⟩
+  left_inv s := Subtype.ext (M.extendSection_genericSection s.val s.property)
+  right_inv p := Subtype.ext (M.genericSection_extendSection p.val p.property)
 
 @[simp]
 theorem sectionEquiv_apply (M : Model R K C toK) [M.IsProper]
     (s : {s : Spec (.of R) ⟶ M.total // s ≫ M.toBase = 𝟙 _}) :
-    (M.sectionEquiv s).1 = M.genericSection s.1 s.2 :=
+    (M.sectionEquiv s).val = M.genericSection s.val s.property :=
   (rfl)
 
 @[simp]
 theorem sectionEquiv_symm_apply (M : Model R K C toK) [M.IsProper]
     (p : {p : Spec (.of K) ⟶ C // p ≫ toK = 𝟙 _}) :
-    (M.sectionEquiv.symm p).1 = M.extendSection p.1 p.2 :=
+    (M.sectionEquiv.symm p).val = M.extendSection p.val p.property :=
   (rfl)
 
 /-- A morphism between proper models carries an extended marking to the same extended marking. -/

@@ -25,7 +25,10 @@ continuous function on the closure of an open set is determined by its values al
 the set.
 
 On a discrete space, such a measure charges every point, so the only null set is empty and
-almost everywhere means everywhere.
+almost everywhere means everywhere. If such a measure gives every point measure zero, on the other
+hand, it charges every punctured neighbourhood of a point, so a function tending to `∞` at a point
+agrees almost everywhere near it with no function continuous there. The same holds within an open
+set whose closure contains the point, for any measure positive on nonempty open sets.
 
 ## Main results
 
@@ -46,6 +49,10 @@ almost everywhere means everywhere.
   continuous on `U` holds at every point of `U`.
 * `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
   open sets, almost everywhere means everywhere.
+* `TauCeti.not_continuousAt_of_tendsto_of_ae_eq`,
+  `TauCeti.not_continuousWithinAt_of_tendsto_of_ae_eq`: a function tending at a point to a filter
+  disjoint from the neighbourhoods of a value, such as `atTop`, has no almost everywhere
+  representative continuous there.
 -/
 
 public section
@@ -84,7 +91,7 @@ theorem ext_closure_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Space Y] {U : S
   have hyV : (y : X) ∈ V := by
     have : y ∈ (Subtype.val ⁻¹' V : Set (closure U)) := hVS ▸ hy
     exact this
-  have hne' : (V ∩ U).Nonempty := mem_closure_iff.1 y.2 V hV hyV
+  have hne' : (V ∩ U).Nonempty := mem_closure_iff.1 y.property V hV hyV
   have hpos : 0 < μ (V ∩ U) := (hV.inter hU).measure_pos μ hne'
   have hnull : μ (V ∩ U) = 0 := by
     refine measure_mono_null (fun x hx ↦ ?_) (ae_iff.1 h)
@@ -177,6 +184,52 @@ theorem _root_.MeasureTheory.ae_eq_top_of_discreteTopology {α : Type*} [Topolog
     [DiscreteTopology α] [MeasurableSpace α] (μ : Measure α) [μ.IsOpenPosMeasure] :
     ae μ = ⊤ :=
   ae_eq_top.2 fun x => (isOpen_discrete {x}).measure_ne_zero μ (Set.singleton_nonempty x)
+
+/-- **No continuous representative across a jump to a disjoint filter.** Let `u` be an open set
+with `x` in its closure and `u ⊆ t`. If `f` tends along `𝓝[u] x` to a filter `l` disjoint from the
+neighbourhoods of `g x`, and `g = f` almost everywhere on `u` for a measure positive on nonempty
+open sets, then `g` is not continuous at `x` within `t`: near `x` the open set `u` has positive
+measure on which `g` stays near `g x` while `f` lies in `l`. -/
+theorem not_continuousWithinAt_of_tendsto_of_ae_eq {X Y : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] [TopologicalSpace Y] {f g : X → Y}
+    {x : X} {u t : Set X} {l : Filter Y} (hu : IsOpen u) (hx : x ∈ closure u) (hut : u ⊆ t)
+    (hf : Tendsto f (𝓝[u] x) l) (hl : Disjoint (𝓝 (g x)) l) (hg : g =ᵐ[μ.restrict u] f) :
+    ¬ ContinuousWithinAt g t x := by
+  intro hc
+  obtain ⟨A, hA, B, hB, hAB⟩ := Filter.disjoint_iff.1 hl
+  have hgA : ∀ᶠ y in 𝓝[u] x, g y ∈ A := nhdsWithin_mono x hut (hc hA)
+  obtain ⟨o, ho, hxo, hos⟩ := mem_nhdsWithin.1 (hgA.and (hf hB))
+  -- The open set `o ∩ u` is nonempty, so it has positive measure, but `g ≠ f` on it.
+  have hpos : 0 < μ (o ∩ u) := (ho.inter hu).measure_pos μ (mem_closure_iff.1 hx o ho hxo)
+  have hsub : o ∩ u ⊆ {y | ¬ g y = f y} ∩ u := fun y hy => by
+    obtain ⟨h1, h2⟩ := hos hy
+    exact ⟨fun h => Set.disjoint_left.1 hAB h1 (h ▸ h2), hy.2⟩
+  exact hpos.ne' (le_antisymm ((measure_mono hsub).trans
+    ((Measure.le_restrict_apply _ _).trans (ae_iff.1 hg).le)) zero_le)
+
+/-- **No continuous representative at a jump to a disjoint filter.** If `f` tends along the
+punctured neighbourhoods of `x` to a filter `l` disjoint from the neighbourhoods of `g x`, and
+`g = f` almost everywhere on a neighbourhood `s` of `x`, for a measure positive on nonempty open
+sets that gives every point measure zero, then `g` is not continuous at `x`. For instance `l` is
+`atTop` when `f` tends to `∞` at `x`. -/
+theorem not_continuousAt_of_tendsto_of_ae_eq {X Y : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] [NullSingletonClass μ]
+    [TopologicalSpace Y] {f g : X → Y} {x : X} {s : Set X} {l : Filter Y}
+    (hf : Tendsto f (𝓝[≠] x) l) (hl : Disjoint (𝓝 (g x)) l) (hs : s ∈ 𝓝 x)
+    (hg : g =ᵐ[μ.restrict s] f) : ¬ ContinuousAt g x := by
+  intro hc
+  obtain ⟨A, hA, B, hB, hAB⟩ := Filter.disjoint_iff.1 hl
+  have hgA : ∀ᶠ y in 𝓝[≠] x, g y ∈ A := nhdsWithin_le_nhds (hc hA)
+  obtain ⟨o, ho, hxo, hos⟩ := mem_nhdsWithin.1 ((hgA.and (hf hB)).and (nhdsWithin_le_nhds hs))
+  -- The punctured neighbourhood `o \ {x}` has positive measure and lies in `{g ≠ f} ∩ s`.
+  have hpos : 0 < μ (o \ {x}) := by
+    rw [measure_sdiff_null (measure_singleton _)]
+    exact ho.measure_pos μ ⟨x, hxo⟩
+  have hsub : o \ {x} ⊆ {y | ¬ g y = f y} ∩ s := fun y hy => by
+    obtain ⟨⟨h1, h2⟩, h3⟩ := hos ⟨hy.1, hy.2⟩
+    exact ⟨fun h => Set.disjoint_left.1 hAB h1 (h ▸ h2), h3⟩
+  exact hpos.ne' (le_antisymm ((measure_mono hsub).trans
+    ((Measure.le_restrict_apply _ _).trans (ae_iff.1 hg).le)) zero_le)
 
 end TauCeti
 

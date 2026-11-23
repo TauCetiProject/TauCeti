@@ -215,7 +215,7 @@ private theorem card_stabilizer_map_smul_of_zpow {z₀ : ℍ} {E : SL(2, ℤ)} {
           inv_smul_smul, hE]
       · have hmem : γ * E * γ⁻¹ ∈ Subgroup.center SL(2, ℤ) := by
           rw [← sl2zToPSL2R_ker, MonoidHom.mem_ker]
-          exact congrArg (fun x ↦ x.1.1) h1
+          exact congrArg (fun x ↦ x.val.val) h1
         simpa [mul_assoc] using hN.conj_mem' _ hmem γ
   split_ifs with h
   · rcases hp.eq_one_or_self_of_dvd _ hdvd with h1 | hp'

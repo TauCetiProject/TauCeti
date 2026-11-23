@@ -381,15 +381,15 @@ abbrev PluckerRightInit {I J : Fin d ↪o Fin n} (hIJ : ¬ I ≤ J) : Type :=
 `σ ∘ Sum.inl`-shuffled entries for `pluckerPivot hIJ ≤ c`. -/
 noncomputable def pluckerLeftRow {I J : Fin d ↪o Fin n} (hIJ : ¬ I ≤ J)
     (σ : Perm (PluckerLeftTail hIJ ⊕ PluckerRightInit hIJ)) : Fin d → Fin n :=
-  Sum.elim (fun a : {a : Fin d // a < pluckerPivot hIJ} ↦ I a.1)
-    (Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.1) (fun b : PluckerRightInit hIJ ↦ J b.1) ∘
+  Sum.elim (fun a : {a : Fin d // a < pluckerPivot hIJ} ↦ I a.val)
+    (Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.val) (fun b : PluckerRightInit hIJ ↦ J b.val) ∘
       σ ∘ Sum.inl) ∘ (Equiv.sumCompl (· < pluckerPivot hIJ)).symm
 
 theorem pluckerLeftRow_def {I J : Fin d ↪o Fin n} (hIJ : ¬ I ≤ J)
     (σ : Perm (PluckerLeftTail hIJ ⊕ PluckerRightInit hIJ)) :
     pluckerLeftRow hIJ σ =
-      Sum.elim (fun a : {a : Fin d // a < pluckerPivot hIJ} ↦ I a.1)
-        (Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.1) (fun b : PluckerRightInit hIJ ↦ J b.1) ∘
+      Sum.elim (fun a : {a : Fin d // a < pluckerPivot hIJ} ↦ I a.val)
+        (Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.val) (fun b : PluckerRightInit hIJ ↦ J b.val) ∘
           σ ∘ Sum.inl) ∘ (Equiv.sumCompl (· < pluckerPivot hIJ)).symm := (rfl)
 
 theorem pluckerLeftRow_apply_of_lt {I J : Fin d ↪o Fin n} (hIJ : ¬ I ≤ J)
@@ -401,22 +401,22 @@ theorem pluckerLeftRow_apply_of_le {I J : Fin d ↪o Fin n} (hIJ : ¬ I ≤ J)
     (σ : Perm (PluckerLeftTail hIJ ⊕ PluckerRightInit hIJ)) {c : Fin d}
     (hc : pluckerPivot hIJ ≤ c) :
     pluckerLeftRow hIJ σ c =
-      Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.1) (fun b : PluckerRightInit hIJ ↦ J b.1)
+      Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.val) (fun b : PluckerRightInit hIJ ↦ J b.val)
         (σ (Sum.inl ⟨c, not_lt.2 hc⟩)) := by simp [pluckerLeftRow_def, Equiv.sumCompl, not_lt.2 hc]
 
 /-- Right row tuple for a shuffle `σ`: keeps `J c` for `pluckerPivot hIJ < c` and inserts
 `σ ∘ Sum.inr`-shuffled entries for `c ≤ pluckerPivot hIJ`. -/
 noncomputable def pluckerRightRow {I J : Fin d ↪o Fin n} (hIJ : ¬ I ≤ J)
     (σ : Perm (PluckerLeftTail hIJ ⊕ PluckerRightInit hIJ)) : Fin d → Fin n :=
-  Sum.elim (fun a : {a : Fin d // pluckerPivot hIJ < a} ↦ J a.1)
-    (Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.1) (fun b : PluckerRightInit hIJ ↦ J b.1) ∘
+  Sum.elim (fun a : {a : Fin d // pluckerPivot hIJ < a} ↦ J a.val)
+    (Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.val) (fun b : PluckerRightInit hIJ ↦ J b.val) ∘
       σ ∘ Sum.inr) ∘ (Equiv.sumCompl (pluckerPivot hIJ < ·)).symm
 
 theorem pluckerRightRow_def {I J : Fin d ↪o Fin n} (hIJ : ¬ I ≤ J)
     (σ : Perm (PluckerLeftTail hIJ ⊕ PluckerRightInit hIJ)) :
     pluckerRightRow hIJ σ =
-      Sum.elim (fun a : {a : Fin d // pluckerPivot hIJ < a} ↦ J a.1)
-        (Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.1) (fun b : PluckerRightInit hIJ ↦ J b.1) ∘
+      Sum.elim (fun a : {a : Fin d // pluckerPivot hIJ < a} ↦ J a.val)
+        (Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.val) (fun b : PluckerRightInit hIJ ↦ J b.val) ∘
           σ ∘ Sum.inr) ∘ (Equiv.sumCompl (pluckerPivot hIJ < ·)).symm := (rfl)
 
 theorem pluckerRightRow_apply_of_lt {I J : Fin d ↪o Fin n} (hIJ : ¬ I ≤ J)
@@ -428,7 +428,7 @@ theorem pluckerRightRow_apply_of_le {I J : Fin d ↪o Fin n} (hIJ : ¬ I ≤ J)
     (σ : Perm (PluckerLeftTail hIJ ⊕ PluckerRightInit hIJ)) {c : Fin d}
     (hc : c ≤ pluckerPivot hIJ) :
     pluckerRightRow hIJ σ c =
-      Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.1) (fun b : PluckerRightInit hIJ ↦ J b.1)
+      Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.val) (fun b : PluckerRightInit hIJ ↦ J b.val)
         (σ (Sum.inr ⟨c, not_lt.2 hc⟩)) := by simp [pluckerRightRow_def, Equiv.sumCompl, not_lt.2 hc]
 
 /-- Finset of `(PluckerLeftTail hIJ, PluckerRightInit hIJ)`-shuffles, i.e. permutations `σ`
@@ -500,8 +500,8 @@ theorem pluckerQuadric_mem_pluckerIdeal (R : Type*) [CommRing R] {I J : Fin d �
   simp_rw [Units.smul_def, map_zsmul, map_mul, pluckerEval_pluckerLift, ← Units.smul_def]
   exact Matrix.sum_sign_smul_mvPolynomialMinor_mul_mvPolynomialMinor_eq_zero R id
     (Equiv.sumCompl (· < pluckerPivot hIJ)).symm (Equiv.sumCompl (pluckerPivot hIJ < ·)).symm
-    (fun a ↦ I a.1) (fun a ↦ J a.1)
-    (Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.1) (fun b : PluckerRightInit hIJ ↦ J b.1))
+    (fun a ↦ I a.val) (fun a ↦ J a.val)
+    (Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.val) (fun b : PluckerRightInit hIJ ↦ J b.val))
     (card_lt_pluckerShuffle hIJ) (isComplement_pluckerShuffleFinset hIJ)
 
 /-- Every quadratic Plücker straightening relation is homogeneous of degree `2`. -/
@@ -528,10 +528,10 @@ private theorem toLex_sorted_pluckerLeftRow_lt {I J : Fin d ↪o Fin n} (hIJ : �
   set I' := OrderEmbedding.ofStrictMono (r₁ ∘ Tuple.sort r₁) (Tuple.strictMono_comp_sort hr₁)
   obtain ⟨hσl, hσr⟩ := mem_pluckerShuffleFinset.1 hσ
   obtain ⟨a₀, b₀, hab⟩ := Perm.exists_apply_inl_eq_inr_of_strictMono_toLex_of_ne_one hσl hσr hne
-  have hr₁_a₀ : r₁ a₀.1 < I (pluckerPivot hIJ) :=
-    (by rw [hr₁_def, pluckerLeftRow_apply_of_le hIJ σ (not_lt.1 a₀.2), hab, Sum.elim_inr] :
-      r₁ a₀.1 = J b₀.1).trans_lt
-      ((J.monotone (le_of_not_gt b₀.2)).trans_lt (apply_pluckerPivot_lt hIJ))
+  have hr₁_a₀ : r₁ a₀.val < I (pluckerPivot hIJ) :=
+    (by rw [hr₁_def, pluckerLeftRow_apply_of_le hIJ σ (not_lt.1 a₀.property), hab, Sum.elim_inr] :
+      r₁ a₀.val = J b₀.val).trans_lt
+      ((J.monotone (le_of_not_gt b₀.property)).trans_lt (apply_pluckerPivot_lt hIJ))
   refine OrderEmbedding.toLex_lt_of_forall_lt_mem_range (k := pluckerPivot hIJ)
     (fun c hc ↦ by
       simp only [I', OrderEmbedding.coe_ofStrictMono, Tuple.range_comp_sort,
@@ -543,14 +543,15 @@ private theorem toLex_sorted_pluckerLeftRow_lt {I J : Fin d ↪o Fin n} (hIJ : �
     rw [card_filter, card_filter]
     convert Equiv.sum_comp (Tuple.sort r₁) (fun x ↦ if r₁ x < I (pluckerPivot hIJ) then 1 else 0)
     rfl
-  have hle := card_le_card (s := insert a₀.1 (univ.filter (· < pluckerPivot hIJ)))
+  have hle := card_le_card (s := insert a₀.val (univ.filter (· < pluckerPivot hIJ)))
     (t := univ.filter (fun x ↦ r₁ x < I (pluckerPivot hIJ))) fun x hx ↦ by
       rcases mem_insert.1 hx with rfl | hx
       · exact mem_filter.2 ⟨mem_univ _, hr₁_a₀⟩
       · have hxk := (mem_filter.1 hx).2
         exact mem_filter.2 ⟨mem_univ _,
           (pluckerLeftRow_apply_of_lt hIJ σ hxk).trans_lt (I.strictMono hxk)⟩
-  rw [card_insert_of_notMem (by simpa using a₀.2), Finset.filter_gt_eq_Iio, Fin.card_Iio] at hle
+  rw [card_insert_of_notMem (by simpa using a₀.property), Finset.filter_gt_eq_Iio,
+      Fin.card_Iio] at hle
   exact hcard_eq ▸ Nat.lt_of_succ_le hle
 
 /-- Separating `1` splits `pluckerQuadric R hIJ` into `X (pluckerVar I) * X (pluckerVar J)` plus
@@ -618,7 +619,7 @@ private theorem pluckerPivot_fin_two {I J : Fin 2 ↪o Fin n} (hIJ : ¬ I ≤ J)
 private noncomputable def pluckerFinThreeEquiv {I J : Fin 2 ↪o Fin n} {hIJ : ¬ I ≤ J}
     (hpiv : pluckerPivot hIJ = 1) : Fin 3 ≃ PluckerLeftTail hIJ ⊕ PluckerRightInit hIJ where
   toFun := ![Sum.inl ⟨1, by simp [hpiv]⟩, Sum.inr ⟨0, by simp [hpiv]⟩, Sum.inr ⟨1, by simp [hpiv]⟩]
-  invFun := Sum.elim (fun _ ↦ 0) (fun b ↦ if b.1 = 0 then 1 else 2)
+  invFun := Sum.elim (fun _ ↦ 0) (fun b ↦ if b.val = 0 then 1 else 2)
   left_inv i := by fin_cases i <;> rfl
   right_inv := by
     rintro (⟨a, ha⟩ | ⟨b, hb⟩)
@@ -627,7 +628,7 @@ private noncomputable def pluckerFinThreeEquiv {I J : Fin 2 ↪o Fin n} {hIJ : �
 
 private theorem sumElim_pluckerFinThreeEquiv {I J : Fin 2 ↪o Fin n} {hIJ : ¬ I ≤ J}
     (hpiv : pluckerPivot hIJ = 1) (i : Fin 3) :
-    Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.1) (fun b : PluckerRightInit hIJ ↦ J b.1)
+    Sum.elim (fun a : PluckerLeftTail hIJ ↦ I a.val) (fun b : PluckerRightInit hIJ ↦ J b.val)
       (pluckerFinThreeEquiv hpiv i) = ![I 1, J 0, J 1] i := by fin_cases i <;> rfl
 
 private theorem pluckerShuffleFinset_fin_two {I J : Fin 2 ↪o Fin n} {hIJ : ¬ I ≤ J}

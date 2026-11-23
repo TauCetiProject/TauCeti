@@ -162,9 +162,9 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     (hes.contMDiffAt (e.open_target.mem_nhds hy)).mdifferentiableAt (by simp)
   -- The form read in `e`: a closed `ρ`-invariant form on the target of `e`, equal to `form x₀` at
   -- the origin.
-  let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := mpullback 𝓘(ℝ, E) I e.symm form.1
-  have hηe {x : M} (hx : x ∈ e.source) : mpullback I 𝓘(ℝ, E) e η x = form.1 x :=
-    e.mpullback_mpullback_symm_apply form.1 hx
+  let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := mpullback 𝓘(ℝ, E) I e.symm form.val
+  have hηe {x : M} (hx : x ∈ e.source) : mpullback I 𝓘(ℝ, E) e η x = form.val x :=
+    e.mpullback_mpullback_symm_apply form.val hx
       ((he.contMDiffAt (e.open_source.mem_nhds hx)).mdifferentiableAt (by simp))
       (hds (e.map_source hx))
   have hη0 (a b : TangentSpace I x₀) : η 0 ![a, b] = form.eval₂ x₀ a b := by

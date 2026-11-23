@@ -71,14 +71,14 @@ theorem mem_smoothLocus_of_isRegularLocalRing (f : X ⟶ S) [LocallyOfFinitePres
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f (σ s))) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.2.preimage f.continuous)
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.is_open'.preimage f.continuous)
   have := f.finitePresentation_appLE hU hV hVU
   algebraize [(f.appLE U V hVU).hom]
   rw [mem_smoothLocus, formallySmooth_stalkMap_iff U hU V hV hVU hxV]
   let p := (hU.primeIdealOf ⟨f (σ s), hVU hxV⟩).asIdeal
   let q := (hV.primeIdealOf ⟨σ s, hxV⟩).asIdeal
   have : q.LiesOver p :=
-    ⟨congr($(IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hxV).1).symm⟩
+    ⟨congr($(IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hxV).asIdeal).symm⟩
   let e := IsAffineOpen.arrowStalkMapIso f U hU V hV hVU hxV
   have : IsRegularLocalRing (Localization.AtPrime p) :=
     .of_ringEquiv (R := S.presheaf.stalk (f (σ s)))

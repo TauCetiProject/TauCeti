@@ -118,7 +118,7 @@ theorem mem_quadraticNormSubgroup_iff_exists_zpow_mul {a b : Kˣ}
       rw [show (c : K) = (u : K) ^ 2 - (a : K) * ((u : K) * (t : K)) ^ 2 by rw [hcval]; ring]
       exact (valuation_sq_sub_mul_sq_eq_one_iff ha (u : K) ((u : K) * (t : K))).mpr
         ⟨(Valuation.integer.integers (valuation K)).valuation_unit u,
-          (Valuation.mem_integer_iff _ _).mp (mul_mem (u : 𝒪[K]).2 t.2)⟩
+          (Valuation.mem_integer_iff _ _).mp (mul_mem (u : 𝒪[K]).property t.property)⟩
     exact ⟨n, c, (mem_quadraticNormSubgroup_iff_of_isUniformizer ha hcv).mpr ⟨u, t, hcval⟩, hcv,
       by simp [c, zpow_neg, mul_left_comm]⟩
 

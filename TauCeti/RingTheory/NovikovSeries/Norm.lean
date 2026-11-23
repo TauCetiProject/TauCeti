@@ -147,7 +147,7 @@ def normNonnegSubring : nonnegSubring R N →* nonnegSubring R (N.comp K.subtype
   toFun a := ⟨Algebra.norm (NovikovSeries R K (N.comp K.subtype)) (a : NovikovSeries R H N),
     mem_nonnegSubring.2 <| mem_periodFiltration.1 <| by
       simpa using algebraNorm_mem_periodFiltration K
-        (mem_periodFiltration.2 (mem_nonnegSubring.1 a.2))⟩
+        (mem_periodFiltration.2 (mem_nonnegSubring.1 a.property))⟩
   map_one' := Subtype.ext (_root_.map_one _)
   map_mul' a b := Subtype.ext (_root_.map_mul _ _ _)
 
@@ -161,7 +161,7 @@ theorem coe_normNonnegSubring (a : nonnegSubring R N) :
 @[fun_prop]
 theorem continuous_normNonnegSubring : Continuous (normNonnegSubring (R := R) (N := N) K) := by
   apply Continuous.subtype_mk
-  exact (continuous_algebraNorm K).comp continuous_subtype_val
+  exact (continuous_algebraNorm K).comp continuous_subtypeVal
 
 /-- A perturbation of `1` supported in periods at least a nonnegative cutoff has norm
 agreeing with `1` below that same cutoff, without a loss depending on coset representatives. -/

@@ -85,11 +85,11 @@ theorem mem_completedPlusSubring_iff_forall_mem_rationalSubset_vle_one (P : Pair
   have _ := isHuberRing_completion_locTopology P T s S hden
   -- `A₀ ≤ A⁺` supplies in particular the image of the ideal of definition, which is all that the
   -- two conditions 7.52 (1) puts on a plus ring ask for
-  have _ := isIntegrallyClosedIn_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) T s S hden
+  have _ := isIntegrallyClosedIn_completedPlusSubring P Aplus (fun j _ ↦ hP j.property) T s S hden
   -- 7.52 (1) quantifies over `Spa (A⟨T/s⟩, A_U⁺)`; the homeomorphism carries that quantifier
   -- to one over `R(T/s)`
   exact fun g ↦ (mem_iff_forall_vle_one
-      (isOpen_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) T s S hden)).trans <|
+      (isOpen_completedPlusSubring P Aplus (fun j _ ↦ hP j.property) T s S hden)).trans <|
     (Subtype.forall (q := fun v ↦ (v : Spv (Completion S)).toValuativeRel.vle g 1)).symm.trans <|
       (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm.surjective.forall.trans
         Subtype.forall

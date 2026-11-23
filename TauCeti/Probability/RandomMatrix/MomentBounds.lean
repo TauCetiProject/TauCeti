@@ -42,7 +42,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper �
 /-- A bound on the `k`th absolute moments of the entries in the `n × n` corner passes to Wigner
 entries with normalization factor `(√n)⁻ᵏ`. -/
 theorem integral_norm_wignerMatrix_apply_pow_le {k n : ℕ} {B : ℝ}
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ k ∂P ≤ B)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ k ∂P ≤ B)
     (hη : ∀ i < n, ∫ ω, ‖η i ω‖ ^ k ∂P ≤ B) (i j : Fin n) :
     ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ k ∂P ≤ (Real.sqrt n)⁻¹ ^ k * B := by
   have hc : ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
@@ -63,9 +63,9 @@ entries of the `n × n` Wigner matrix, indexed by a finite nonempty type `ι` of
 The positions may repeat, and no independence or centering is required. -/
 theorem norm_integral_prod_wignerMatrix_apply_le {ι : Type*} [Fintype ι] [Nonempty ι]
     {n : ℕ} {B : ℝ}
-    (hξp : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) (Fintype.card ι) P)
+    (hξp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) (Fintype.card ι) P)
     (hηp : ∀ i < n, MemLp (η i) (Fintype.card ι) P)
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ Fintype.card ι ∂P ≤ B)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ Fintype.card ι ∂P ≤ B)
     (hη : ∀ i < n, ∫ ω, ‖η i ω‖ ^ Fintype.card ι ∂P ≤ B) (u v : ι → Fin n) :
     ‖∫ ω, ∏ t, wignerMatrix ξ η n ω (u t) (v t) ∂P‖ ≤
       (Real.sqrt n)⁻¹ ^ Fintype.card ι * B := by
@@ -85,9 +85,9 @@ theorem norm_integral_prod_wignerMatrix_apply_le {ι : Type*} [Fintype ι] [None
 collection of length-`k` cyclic Wigner words visiting at most `r` vertices has norm at most
 `r^k n^r (√n)⁻ᵏ B`, for `k ≠ 0`. No independence or centering is required. -/
 theorem norm_sum_integral_prod_wignerMatrix_le {k n r : ℕ} (hk : k ≠ 0) {B : ℝ}
-    (hξp : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) k P)
+    (hξp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) k P)
     (hηp : ∀ i < n, MemLp (η i) k P)
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ k ∂P ≤ B)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ k ∂P ≤ B)
     (hη : ∀ i < n, ∫ ω, ‖η i ω‖ ^ k ∂P ≤ B)
     (S : Finset (Fin k → Fin n)) (hS : ∀ w ∈ S, #(univ.image w) ≤ r) :
     ‖∑ w ∈ S, ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate k t)) ∂P‖ ≤
@@ -125,13 +125,13 @@ assumption `m ≠ 0` excludes the zeroth moment, whose empty word has no visited
 theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le {m n : ℕ} (hm : m ≠ 0)
     {B : ℝ}
     (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P)
-    (hξzero : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
+    (hξzero : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
     (hηzero : ∀ i < n, ∫ ω, η i ω ∂P = 0)
-    (hξp : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) (2 * m : ℕ) P)
+    (hξp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) (2 * m : ℕ) P)
     (hηp : ∀ i < n, MemLp (η i) (2 * m : ℕ) P)
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ (2 * m) ∂P ≤ B)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ (2 * m) ∂P ≤ B)
     (hη : ∀ i < n, ∫ ω, ‖η i ω‖ ^ (2 * m) ∂P ≤ B) :
     ‖(n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) -
       ∑ w : Fin (2 * m) → Fin n with
@@ -177,13 +177,13 @@ bounded by `B`, the expected normalized odd Wigner moment has norm at most
 theorem norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le {m n : ℕ}
     {B : ℝ}
     (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P)
-    (hξzero : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
+    (hξzero : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
     (hηzero : ∀ i < n, ∫ ω, η i ω ∂P = 0)
-    (hξp : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) (2 * m + 1 : ℕ) P)
+    (hξp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) (2 * m + 1 : ℕ) P)
     (hηp : ∀ i < n, MemLp (η i) (2 * m + 1 : ℕ) P)
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ (2 * m + 1) ∂P ≤ B)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ (2 * m + 1) ∂P ≤ B)
     (hη : ∀ i < n, ∫ ω, ‖η i ω‖ ^ (2 * m + 1) ∂P ≤ B) :
     ‖(n : ℂ)⁻¹ * ∫ ω, (wignerMatrix ξ η n ω ^ (2 * m + 1)).trace ∂P‖ ≤
       (m + 1 : ℝ) ^ (2 * m + 1) * B / Real.sqrt n := by
