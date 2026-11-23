@@ -7,10 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.Order
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
-public import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
-public import Mathlib.RingTheory.TensorProduct.Quotient
 public import TauCeti.Algebra.MonoidAlgebra.Face
-public import TauCeti.RingTheory.TensorProduct.MonoidAlgebra
 
 /-!
 # The integral boundary of a regular toric chart
@@ -37,14 +34,18 @@ and by their partial intersections.
   `TauCeti.Toric.boundaryQuotientBasis_repr_quotientMap`), with no flatness hypothesis. The
   formation of the boundary commutes with base change: for every `R`-algebra `S`, the scalar
   extension `S ⊗[R] (A_R ⧸ (t))` is the boundary `A_S ⧸ (t)` over `S`
-  (`TauCeti.Toric.boundaryQuotientTensorEquiv`).
+  (`TauCeti.Toric.boundaryQuotientTensorEquiv`, a case of
+  `AddMonoidAlgebra.quotientSpanOf'ImageTensorEquiv`).
 * The intersection of the divisors indexed by `J ⊆ ι` has ideal `(x_j : j ∈ J)`, which is the
   monomial ideal of the face of exponents vanishing on `J`
   (`TauCeti.Toric.span_boundaryCoordinate_image`). Over a domain, when `Q` has unique sums, it is
-  prime; consequently `(t)` is a radical ideal over every reduced coefficient ring
-  (`TauCeti.Toric.isRadical_span_boundaryMonomial`), and the boundary quotient is then reduced.
-  Through the base-change equivalence, the geometric fibres of the boundary over an arbitrary `R`
-  are reduced: `S ⊗[R] (A_R ⧸ (t))` is reduced for every reduced `R`-algebra `S`, such as a field.
+  prime.
+* Assume from here on that the torus directions `Q` have unique sums, as a lattice `κ →₀ ℤ` does.
+  Then `(t)` is a radical ideal over every reduced coefficient ring
+  (`TauCeti.Toric.isRadical_span_boundaryMonomial`), so the boundary quotient over a reduced ring,
+  such as a field, is reduced. Through the base-change equivalence, the geometric fibres of the
+  boundary over an arbitrary `R` are then reduced: when `Q` has unique sums,
+  `S ⊗[R] (A_R ⧸ (t))` is reduced for every reduced `R`-algebra `S`, such as a field.
 
 The union ideal `(t)` and the intersection ideals `(x_j : j ∈ J)` are different ideals, and
 neither is replaced by its radical. These are the coordinate descriptions of the boundary used by
@@ -135,8 +136,11 @@ theorem mapRingHom_boundaryCoordinate {S : Type*} [CommSemiring S] (φ : R →+*
     mapRingHom _ φ (boundaryCoordinate R Q i) = boundaryCoordinate S Q i := by
   simp [boundaryCoordinate]
 
-/-- The exponents with every `a_i ≠ 0` are stable under translation. -/
-private theorem add_mem_setOf_forall_ne_zero (d p : (ι →₀ ℕ) × Q)
+/-- The exponents with every `a_i ≠ 0` are stable under translation, so the general monomial-ideal
+API of `AddMonoidAlgebra` (for instance `AddMonoidAlgebra.mem_ideal_span_of'_image_iff` and
+`AddMonoidAlgebra.quotientSpanOf'ImageBasis`) applies to their monomial ideal, the ideal of the
+boundary (`TauCeti.Toric.span_boundaryMonomial_eq_span_of'_image`). -/
+theorem add_mem_setOf_forall_ne_zero (d p : (ι →₀ ℕ) × Q)
     (hp : p ∈ {p : (ι →₀ ℕ) × Q | ∀ i, p.1 i ≠ 0}) : d + p ∈ {p : (ι →₀ ℕ) × Q | ∀ i, p.1 i ≠ 0} :=
   fun i h ↦ hp i <| Nat.eq_zero_of_add_eq_zero_left <| by rwa [Prod.fst_add, Finsupp.add_apply] at h
 
@@ -307,11 +311,10 @@ extension `S ⊗[R] (A_R ⧸ (t))` of the boundary over `R` is the boundary `A_S
 noncomputable def boundaryQuotientTensorEquiv (S : Type*) [CommRing S] [Algebra R S] :
     S ⊗[R] (AddMonoidAlgebra R ((ι →₀ ℕ) × Q) ⧸ Ideal.span {boundaryMonomial R ι Q}) ≃ₐ[S]
       AddMonoidAlgebra S ((ι →₀ ℕ) × Q) ⧸ Ideal.span {boundaryMonomial S ι Q} :=
-  (Algebra.TensorProduct.tensorQuotientEquiv S _ S _).trans <|
-    Ideal.quotientEquivAlg _ _ (AddMonoidAlgebra.scalarTensorEquiv R S) <| by
-      simp only [Ideal.map_span, Set.image_singleton, Algebra.TensorProduct.includeRight_apply,
-        RingHom.coe_coe, scalarTensorEquiv_tmul, one_smul, mapAlgHom_ofId_apply,
-        mapRingHom_boundaryMonomial]
+  (Algebra.TensorProduct.congr AlgEquiv.refl
+      (Ideal.quotientEquivAlgOfEq R span_boundaryMonomial_eq_span_of'_image)).trans <|
+    (quotientSpanOf'ImageTensorEquiv S _).trans
+      (Ideal.quotientEquivAlgOfEq S span_boundaryMonomial_eq_span_of'_image.symm)
 
 open TensorProduct in
 /-- The base-change equivalence of boundaries sends `s ⊗ [f]` to the class of `s` times the image
@@ -321,9 +324,7 @@ theorem boundaryQuotientTensorEquiv_tmul (S : Type*) [CommRing S] [Algebra R S] 
     (f : AddMonoidAlgebra R ((ι →₀ ℕ) × Q)) :
     boundaryQuotientTensorEquiv S (s ⊗ₜ Ideal.Quotient.mk _ f) =
       Ideal.Quotient.mk _ (s • mapRingHom _ (algebraMap R S) f) := by
-  simp only [boundaryQuotientTensorEquiv, AlgEquiv.trans_apply,
-    Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul, Ideal.quotientEquivAlg_mk,
-    AddMonoidAlgebra.scalarTensorEquiv_tmul, mapAlgHom_ofId_apply]
+  simp [boundaryQuotientTensorEquiv, Algebra.TensorProduct.congr_apply]
 
 end Quotient
 
@@ -345,8 +346,8 @@ theorem isPrime_span_boundaryCoordinate_image {R : Type*} [CommSemiring R] [NoZe
 variable {R : Type*} [CommRing R] [Fintype ι]
 
 /-- Over a reduced coefficient ring, the ideal of the boundary of a regular chart is radical,
-when the torus directions have unique sums. In particular, the boundary over a field is
-reduced. -/
+when the torus directions have unique sums. In particular, when `Q` has unique sums, the boundary
+over a field is reduced. -/
 theorem isRadical_span_boundaryMonomial [IsReduced R] :
     (Ideal.span {boundaryMonomial R ι Q}).IsRadical := by
   intro f ⟨n, hn⟩
@@ -370,7 +371,8 @@ theorem isRadical_span_boundaryMonomial [IsReduced R] :
   rwa [coeff_mapRingHom, Ideal.Quotient.eq_zero_iff_mem] at this
 
 /-- Over a reduced coefficient ring, the boundary of a regular chart is reduced when the torus
-directions have unique sums. In particular, the boundary over a field is reduced. -/
+directions have unique sums. In particular, when `Q` has unique sums, the boundary over a field is
+reduced. -/
 instance [IsReduced R] :
     IsReduced (AddMonoidAlgebra R ((ι →₀ ℕ) × Q) ⧸ Ideal.span {boundaryMonomial R ι Q}) :=
   (Ideal.isRadical_iff_quotient_reduced _).mp isRadical_span_boundaryMonomial

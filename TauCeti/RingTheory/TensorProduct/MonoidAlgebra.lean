@@ -32,10 +32,6 @@ of the group algebra over any commutative ring `R` mapping to `k`. The rationali
 
 * `MonoidAlgebra.isSemisimpleRing_tensor`: `R[G] ⊗[R] k` is a semisimple ring when `k` is
   a field in which the order of the finite group `G` is nonzero.
-* `MonoidAlgebra.mapAlgHom_ofId_apply`: the coefficient change `mapAlgHom M (Algebra.ofId R S)`
-  appearing in `tensorAlgEquiv_tmul` and in Mathlib's `scalarTensorEquiv_tmul` is the ring-hom
-  coefficient change `mapRingHom M (algebraMap R S)`, with additive form
-  `AddMonoidAlgebra.mapAlgHom_ofId_apply`.
 -/
 
 public section
@@ -98,22 +94,6 @@ theorem tensorAlgEquiv_symm_single (m : G) (s : S) :
   (AlgEquiv.symm_apply_eq _).mpr (by simp)
 
 end Equiv
-
-section OfId
-
-variable {R : Type*} [CommSemiring R] (S : Type*) [Semiring S] [Algebra R S] {M : Type*} [Monoid M]
-
-/-- The coefficient change along the structure map of an `R`-algebra `S`, as an algebra map, is
-the ring-hom coefficient change `mapRingHom M (algebraMap R S)`. -/
-@[to_additive (dont_translate := R S)
-/-- The coefficient change along the structure map of an `R`-algebra `S`, as an algebra map, is
-the ring-hom coefficient change `mapRingHom M (algebraMap R S)`. -/]
-theorem mapAlgHom_ofId_apply (f : MonoidAlgebra R M) :
-    mapAlgHom M (Algebra.ofId R S) f = mapRingHom M (algebraMap R S) f := by
-  ext
-  simp
-
-end OfId
 
 /-- **Maschke's theorem after base change.** If `k` is a field in which the order of the finite
 group `G` is nonzero, then the base change `R[G] ⊗[R] k` of the group algebra over any commutative
