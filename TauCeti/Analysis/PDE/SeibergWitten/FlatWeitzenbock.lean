@@ -5,98 +5,93 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.CovariantDeriv
+public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
+public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
-import TauCeti.Analysis.InnerProductSpace.Trace.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
+import TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr
+import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.OrthonormalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
-# The Weitzenböck formula for the twisted Dirac operator on a flat space
+# The flat Weitzenböck formula for the Seiberg–Witten Dirac operator
 
-Let `V` be a finite-dimensional real inner product space and `W` a complex Clifford module of `V`,
-`ρ : Cl(V, Q) → End_ℂ W` with `Q v = -‖v‖²`, so that `c(v)² = -‖v‖²` for `c(v) = ρ (ι v)`. A
-spinor field `ψ : V → W` twisted by a Hermitian line with imaginary connection form `a = i b` has
-the covariant derivative `∇ψ = dψ + i b ψ` (`TauCeti.SeibergWitten.covariantDeriv`) and the
-**twisted Dirac operator**
+Let `V` be a finite-dimensional real inner product space and `W` a Hermitian Clifford module,
+`c(v) = ρ (ι Q v)` with `Q v = -‖v‖²`. A spinor field `ψ : V → W` and a real one-form `b` on `V`,
+the imaginary connection form `a = i b` of a line, give the covariant derivative and the Dirac
+operator
 
-`D_b ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`     (`TauCeti.SeibergWitten.twistedDirac`),
+`∇_v ψ = dψ(v) + i b(v) ψ`  (`TauCeti.SeibergWitten.covariantDeriv`),
+`D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`  (`flatDirac`),
 
-for any orthonormal basis `e` of `V` (`TauCeti.SeibergWitten.twistedDirac_eq_sum`). This file
-proves the **Weitzenböck formula** for `D_b` on the flat space `V`:
+for any orthonormal basis `(eₖ)` (`flatDirac_eq_sum`); this is the Dirac operator of the twisted
+spinors on a flat chart in which the background connection is trivial. For `ψ = α u₀` with `u₀`
+constant it is the operator of the flat limiting equations of
+`TauCeti.Analysis.PDE.SeibergWitten.FlatLimit` (`flatDirac_smul_const`). Since the `c(eₖ)`
+satisfy the Clifford relations and the commutator of covariant derivatives is the curvature,
+`∇_v ∇_w ψ - ∇_w ∇_v ψ = i db(v, w) ψ` (`covariantDeriv_sub_swap`), the square of `D` is
 
-`D_b D_b ψ = -∑ₖ ∇²_{eₖ, eₖ} ψ - i c₂(F) ψ`     (`TauCeti.SeibergWitten.twistedDirac_twistedDirac`),
+`D (D ψ) = -∑ₖ ∇_{eₖ} ∇_{eₖ} ψ + i c₂(db) ψ`
 
-where `∇²_{v, w} ψ = ∇_v (∇ψ)(w)` is the second covariant derivative, so that the first term is
-the connection Laplacian `∇*∇ψ`, and `F ∈ ⋀² V` is the two-vector of the real curvature form
-`i F_a = -db` of the line, `⟪F, u ∧ w⟫ = -db(u, w)`. It acts through the Clifford map `c₂` of
-two-vectors (`CliffordAlgebra.bivectorExterior`). On the positive half-spinors of a four-space
-`i c₂(F)` is the Clifford map `C(iF)` (`TauCeti.SeibergWitten.cliffordRestriction`), which only
-sees the self-dual part of `F`, and the formula reads `D_b⁻ D_b⁺ = ∇*∇ - C(iF)`. Since `F` indexes
-the imaginary curvature `F_a = -iF`, the last term is the Clifford action of `F_a⁺`, that is
-`C(F_A⁺) / 2` for the determinant connection `A = 2a` in the usual form
-`D_A⁻ D_A⁺ = ∇*∇ + s / 4 + C(F_A⁺) / 2` of the Weitzenböck formula; the scalar curvature `s`
-vanishes on flat space.
+(`flatDirac_flatDirac`, the **Weitzenböck formula**), where `c₂` is the Clifford action
+`CliffordAlgebra.bivectorExterior` of two-vectors and `db` is read as a two-vector through the
+inner product. Pairing with `ψ` turns the rough Laplacian into the Laplacian of `|ψ|²`,
 
-The proof is the classical one. The Clifford relations `c(eⱼ) c(eₖ) + c(eₖ) c(eⱼ) = -2 δⱼₖ` split
-`D_b D_b ψ = ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) ∇²_{eⱼ, eₖ} ψ`
-(`TauCeti.SeibergWitten.twistedDirac_twistedDirac_eq_sum_sum`) into the trace
-`-∑ₖ ∇²_{eₖ, eₖ} ψ` and the antisymmetric part
-`½ ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) (∇²_{eⱼ, eₖ} - ∇²_{eₖ, eⱼ}) ψ`
-(`TauCeti.sum_sum_apply_apply_eq_of_clifford_relation`). The Ricci identity
-`∇²_{v, w} ψ - ∇²_{w, v} ψ = i db(v, w) ψ`
-(`TauCeti.SeibergWitten.covariantDeriv_covariantDeriv_sub`) and the expansion
-`∑ⱼ ∑ₖ ⟪F, eⱼ ∧ eₖ⟫ c(eⱼ) c(eₖ) = 2 c₂(F)` (`OrthonormalBasis.sum_sum_inner_smul_ι_mul_ι`)
-identify the latter with the curvature term.
+`Δ |ψ|² / 2 = Re ⟪ψ, ∑ₖ ∇_{eₖ} ∇_{eₖ} ψ⟫ + ∑ₖ |∇_{eₖ} ψ|²`
 
-## Large-parameter Seiberg–Witten equations
+(`laplacian_norm_sq_eq`), with `Δ = div ∘ grad`. On the positive half-spinors of an oriented
+four-space the Clifford action of `db` pairs with `ψ` through the quadratic two-form `q`,
+`Re ⟪ψ, i c₂(db) ψ⟫ = 4 ⟪q(ψ), db⟫` (`TauCeti.SeibergWitten.inner_quadraticTwoForm_eq_re_inner`),
+so a solution of the Dirac equation `D ψ = 0` taking a value in `W⁺` at `x` satisfies, at `x`,
 
-In Taubes's analysis of the Seiberg–Witten equations on a symplectic four-manifold with a large
-parameter `r`, a solution is a connection `a = i b` on the line `E` and a positive spinor
-`Ψ = √r ψ`, `ψ = φ + β` with `φ` in the `2`-eigenspace of `C(iω)` (the canonical line `α u₀`) and
-`β` in the `-2`-eigenspace, solving
+`Δ |ψ|² / 2 = ∑ₖ |∇_{eₖ} ψ|² + 4 ⟪q(ψ), db⟫`
 
-`D_b ψ = 0`,    `F + ⋆F = (r / 4) ω - q(√r ψ) - η`,
+(`laplacian_norm_sq_eq_of_flatDirac_eq_zero`).
 
-where `F = i F_a` is indexed by a real two-form, as in
-`TauCeti.SeibergWitten.inner_div_two_eq_of_add_hodgeStar_eq`, and `η` is the self-dual forcing.
-On flat space, with the constant canonical spinor and the trivial canonical connection, the
-Weitzenböck formula turns these equations into Taubes's projected second-order system
-(`TauCeti.SeibergWitten.neg_sum_covariantDeriv_covariantDeriv_eq_of_add_hodgeStar_eq`):
+For Taubes's large-parameter equations, with real curvature `F = i F_a = -db` as in
+`TauCeti.Analysis.PDE.SeibergWitten.LargeParameterCurvature`, the curvature equation for the
+normalized spinor `χ = Ψ / √r` reads `F + ⋆F = (r / 4) ω - r q(χ) - η`, where `ω` is the
+symplectic form, self-dual of norm `√2`, and `η` is a perturbation. Since
+`C(i ω) = 2 (P_α - P_β)` and `C(i q(χ)) χ = |χ|² χ / 2`, the Weitzenböck formula becomes the
+forced equation
 
-`∇*∇ψ + (r / 4) (|ψ|² - 1) ψ + (r / 2) β + C(iη) ψ / 2 = 0`.
+`∇*∇ χ + (r / 4) (|χ|² - 1) χ + (r / 2) P_β χ + C(i η) χ / 2 = 0`
 
-Its inner product with `ψ` is the Ginzburg–Landau identity behind the maximum-principle bound
-`|ψ|² ≤ 1 + C / r`, and its components along `φ` and `β` are the equations for `α` and `β`.
-On a curved almost-Kähler manifold the same computation acquires the scalar curvature, the
-curvature of the canonical connection and the torsion terms of `∇u₀`, which this flat statement
-does not contain.
+(`sum_covariantDeriv_eq_of_add_hodgeStar_eq`), the flat form of the equation assumed in
+`CovariantDerivative.IsMetricCompatible.norm_sq_le_max_of_roughLaplacian_add_eq_zero`. Pairing
+with `χ`, `⟪q(χ), ω⟫ = (|P_α χ|² - |P_β χ|²) / 2` and `|q(χ)|² = |χ|⁴ / 8` give **Taubes's
+identity**
 
-## Main definitions
+`Δ |χ|² / 2 = ∑ₖ |∇_{eₖ} χ|² + (r / 4) (|χ|⁴ - |P_α χ|² + |P_β χ|²) + 2 ⟪q(χ), η⟫`
 
-* `TauCeti.SeibergWitten.twistedDirac ρ b ψ`: the twisted Dirac operator `∑ₖ c(eₖ) ∇_{eₖ} ψ`.
+(`laplacian_norm_sq_eq_of_add_hodgeStar_eq`). Writing `χ = α u₀ + β`, the potential is
+`(r / 4) (|χ|² - 1) |χ|² + (r / 2) |β|²`. At a local maximum of `|χ|²` the left side is
+nonpositive, which gives the pointwise inequality
 
-## Main results
+`|χ|² ≤ 1 + 2 √2 |η| / r`
 
-* `TauCeti.SeibergWitten.twistedDirac_eq_sum`: `D_b ψ` may be computed in any orthonormal basis.
-* `TauCeti.SeibergWitten.twistedDirac_add`, `TauCeti.SeibergWitten.twistedDirac_const_smul`:
-  `D_b` is complex-linear on differentiable spinor fields.
-* `TauCeti.SeibergWitten.twistedDirac_twistedDirac_eq_sum_sum`: the expansion
-  `D_b D_b ψ = ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) ∇²_{eⱼ, eₖ} ψ`.
-* `TauCeti.SeibergWitten.twistedDirac_twistedDirac`: the Weitzenböck formula
-  `D_b D_b ψ = -∑ₖ ∇²_{eₖ, eₖ} ψ - i c₂(F) ψ`.
-* `TauCeti.SeibergWitten.cliffordRestriction_apply_of_add_hodgeStar_eq`: the action of the
-  curvature on the spinor of a solution of the large-parameter curvature equation.
-* `TauCeti.SeibergWitten.neg_sum_covariantDeriv_covariantDeriv_eq_of_add_hodgeStar_eq`: the
-  projected second-order system of a solution of the large-parameter equations.
+at that point (`norm_sq_le_one_add_of_isLocalMax`), the key step of Taubes's coarse bound
+`|α|² + |β|² ≤ 1 + C / r`. The coarse bound itself follows by the maximum principle on a
+compact manifold, which this file does not provide. For the flat limiting equations,
+`r = 1 / 2` and `η = 0`, so `|χ| ≤ 1` at every local maximum of `|χ|`. On a manifold the same
+computation acquires the scalar curvature, the curvature of the canonical connection `A₀` and
+the derivatives of `u₀`; here the chart is flat and these terms are absent.
 
 ## References
 
-* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press (1989),
-  Chapter II, Theorem 8.17 (the general Bochner identity for Dirac bundles).
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press, 1989,
+  Chapter II, §8 (the Bochner–Weitzenböck formula for Dirac operators).
 * J. W. Morgan, *The Seiberg–Witten equations and applications to the topology of smooth
-  four-manifolds*, Mathematical Notes 44, Princeton University Press, 1996, §5.1.
-* C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
+  four-manifolds*, Mathematical Notes 44, Princeton University Press, 1996, Chapter 5.
+* C. H. Taubes, *The Seiberg–Witten invariants and symplectic forms*, Math. Res. Lett. 1 (1994),
+  809–822.
+* C. H. Taubes, *SW ⇒ Gr: From the Seiberg–Witten equations to pseudo-holomorphic curves*,
   J. Amer. Math. Soc. 9 (1996), 845–918, Section 2.
 -/
 
@@ -104,230 +99,422 @@ public section
 
 noncomputable section
 
-open CliffordAlgebra Complex Filter Module TensorProduct
-open scoped RealInnerProductSpace InnerProductSpace Topology
-
 namespace TauCeti.SeibergWitten
 
-section Dirac
+open CliffordAlgebra Module Complex
+open InnerProductSpace Laplacian Filter
+open scoped RealInnerProductSpace InnerProductSpace Topology
+
+section CovariantDeriv
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+  {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ : V → W} {x : V}
+
+/-! ### The covariant derivative -/
+
+/-- The covariant derivative of `α u₀` for a constant spinor `u₀` is `(∇_a α) u₀`. -/
+theorem covariantDeriv_smul_const {α : V → ℂ} (hα : DifferentiableAt ℝ α x) (u₀ : W)
+    (v : V) :
+    covariantDeriv b (fun y ↦ α y • u₀) x v = covariantDeriv b α x v • u₀ := by
+  rw [covariantDeriv_apply, fderiv_smul_const hα, covariantDeriv_apply]
+  simp only [ContinuousLinearMap.smulRight_apply, add_smul, smul_assoc]
+
+/-! ### Second covariant derivatives and the curvature -/
+
+/-- The second covariant derivative `∇_v ∇_w ψ` of a spinor field, expanded: the second derivative
+of `ψ`, the derivative of `b`, the mixed terms and the quadratic term in `b`. -/
+theorem covariantDeriv_covariantDeriv_apply (hψ : DifferentiableAt ℝ ψ x)
+    (hψ' : DifferentiableAt ℝ (fderiv ℝ ψ) x) (hb : DifferentiableAt ℝ b x) (v w : V) :
+    covariantDeriv b (fun y ↦ covariantDeriv b ψ y w) x v =
+      fderiv ℝ (fderiv ℝ ψ) x v w + fderiv ℝ (fun y ↦ b y fun _ ↦ w) x v • I • ψ x +
+        b x (fun _ ↦ w) • I • fderiv ℝ ψ x v + b x (fun _ ↦ v) • I • fderiv ℝ ψ x w -
+        (b x (fun _ ↦ v) * b x (fun _ ↦ w)) • ψ x := by
+  have hbw : HasFDerivAt (fun y ↦ b y fun _ ↦ w) (fderiv ℝ (fun y ↦ b y fun _ ↦ w) x) x :=
+    (hb.hasFDerivAt.continuousAlternatingMap_apply_const _).differentiableAt.hasFDerivAt
+  have H : HasFDerivAt (fun y ↦ fderiv ℝ ψ y w + b y (fun _ ↦ w) • I • ψ y) _ x :=
+    (hψ'.hasFDerivAt.clm_apply (hasFDerivAt_const w x)).add
+      (hbw.smul (hψ.hasFDerivAt.const_smul I))
+  simp only [covariantDeriv_apply]
+  rw [H.fderiv]
+  simp only [_root_.add_apply, ContinuousLinearMap.comp_apply, _root_.zero_apply,
+    ContinuousLinearMap.flip_apply, _root_.smul_apply, ContinuousLinearMap.smulRight_apply,
+    _root_.map_zero, zero_add, smul_add, I_smul_smul_I_smul]
+  module
+
+/-- **The curvature of the covariant derivative**: for a `C²` spinor field and a differentiable
+connection form, `∇_v ∇_w ψ - ∇_w ∇_v ψ = db(v, w) i ψ`. -/
+theorem covariantDeriv_sub_swap (hψ : ContDiffAt ℝ 2 ψ x) (hb : DifferentiableAt ℝ b x)
+    (v w : V) :
+    covariantDeriv b (fun y ↦ covariantDeriv b ψ y w) x v -
+        covariantDeriv b (fun y ↦ covariantDeriv b ψ y v) x w =
+      extDeriv b x ![v, w] • I • ψ x := by
+  have hψ₁ : DifferentiableAt ℝ ψ x := hψ.differentiableAt (by norm_num)
+  have hψ₂ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
+    (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  rw [covariantDeriv_covariantDeriv_apply hψ₁ hψ₂ hb,
+    covariantDeriv_covariantDeriv_apply hψ₁ hψ₂ hb,
+    extDeriv_apply_pair_of_differentiableAt hb, hψ.isSymmSndFDerivAt (by simp) v w]
+  module
+
+/-- The covariant derivative of a field whose derivative is differentiable at `x` is
+differentiable at `x`, for a connection form differentiable at `x`. -/
+theorem differentiableAt_covariantDeriv_apply (hψ : DifferentiableAt ℝ ψ x)
+    (hψ' : DifferentiableAt ℝ (fderiv ℝ ψ) x) (hb : DifferentiableAt ℝ b x) (w : V) :
+    DifferentiableAt ℝ (fun y ↦ covariantDeriv b ψ y w) x := by
+  simp only [covariantDeriv_apply]
+  exact (hψ'.clm_apply (differentiableAt_const w)).add
+    ((hb.hasFDerivAt.continuousAlternatingMap_apply_const _).differentiableAt.smul
+      (hψ.const_smul I))
+
+/-- The covariant derivative commutes with constant complex-linear maps and with finite sums:
+`∇_v (∑ₖ fₖ gₖ) = ∑ₖ fₖ (∇_v gₖ)`. -/
+theorem covariantDeriv_sum_apply [FiniteDimensional ℂ W] {κ : Type*} [Fintype κ]
+    (f : κ → Module.End ℂ W)
+    {g : κ → V → W} (hg : ∀ k, DifferentiableAt ℝ (g k) x) (v : V) :
+    covariantDeriv b (fun y ↦ ∑ k, f k (g k y)) x v =
+      ∑ k, f k (covariantDeriv b (g k) x v) := by
+  have H : HasFDerivAt (fun y ↦ ∑ k, f k (g k y))
+      (∑ k, ((f k).restrictScalars ℝ).toContinuousLinearMap.comp (fderiv ℝ (g k) x)) x :=
+    HasFDerivAt.fun_sum fun k _ ↦
+      ((f k).restrictScalars ℝ).toContinuousLinearMap.hasFDerivAt.comp x (hg k).hasFDerivAt
+  rw [covariantDeriv_apply, H.fderiv]
+  simp [Finset.smul_sum, ← Finset.sum_add_distrib, map_smul, LinearMap.map_smul_of_tower]
+
+/-- The covariant derivative of a field vanishing near `x` vanishes at `x`. -/
+theorem covariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 x] 0) :
+    covariantDeriv b φ x = 0 := by
+  ext v
+  simp [covariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
+
+end CovariantDeriv
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {Q : QuadraticForm ℝ V}
-  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W]
   (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
   {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ : V → W} {x : V}
-  {κ : Type*} [Fintype κ]
 
-/-! ### The Dirac operator -/
+/-! ### The Laplacian of `|ψ|²` -/
 
-/-- The real bilinear map `(v, w) ↦ c(v) (L w)` of a real-linear map `L : V → W`. Its trace over
-an orthonormal basis is the Clifford contraction `∑ₖ c(eₖ) (L eₖ)`. -/
-private def cliffordBilin (L : V →L[ℝ] W) : V →ₗ[ℝ] V →ₗ[ℝ] W :=
+/-- The connection terms cancel from `Re ⟪ψ, ∇_v ∇_v ψ⟫ + |∇_v ψ|²`, which is half the second
+derivative of `|ψ|²` along `v`. -/
+private theorem re_inner_add_norm_sq_covariantDeriv (hψ : DifferentiableAt ℝ ψ x)
+    (hψ' : DifferentiableAt ℝ (fderiv ℝ ψ) x) (hb : DifferentiableAt ℝ b x) (v : V) :
+    (⟪ψ x, covariantDeriv b (fun y ↦ covariantDeriv b ψ y v) x v⟫_ℂ).re +
+        ‖covariantDeriv b ψ x v‖ ^ 2 =
+      (⟪ψ x, fderiv ℝ (fderiv ℝ ψ) x v v⟫_ℂ).re + ‖fderiv ℝ ψ x v‖ ^ 2 := by
+  let := InnerProductSpace.complexToReal (G := W)
+  have hre (u w : W) : (⟪u, w⟫_ℂ).re = ⟪u, w⟫_ℝ := by
+    rw [real_inner_eq_re_inner ℂ, RCLike.re_to_complex]
+  have h₁ (z : W) : ⟪z, I • z⟫_ℝ = 0 := real_inner_I_smul_self ℂ z
+  have h₂ (u w : W) : ⟪u, I • w⟫_ℝ + ⟪w, I • u⟫_ℝ = 0 := by
+    rw [← hre, ← hre, inner_smul_right, inner_smul_right, ← inner_conj_symm u w]
+    simp only [Complex.mul_re, I_re, I_im, Complex.conj_re, Complex.conj_im]
+    ring
+  have h₃ (z : W) : ⟪I • z, I • z⟫_ℝ = ⟪z, z⟫_ℝ := by
+    rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, norm_smul, norm_I, one_mul]
+  rw [covariantDeriv_covariantDeriv_apply hψ hψ' hb, covariantDeriv_apply,
+    hre, hre, ← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq]
+  simp only [inner_add_left, inner_add_right, inner_sub_right, real_inner_smul_left,
+    real_inner_smul_right, h₁, h₃]
+  linear_combination (2 * b x fun _ ↦ v) * h₂ (ψ x) (fderiv ℝ ψ x v) +
+    (b x fun _ ↦ v) * real_inner_comm (fderiv ℝ ψ x v) (I • ψ x)
+
+/-- **The Laplacian of `|ψ|²` through the covariant derivative**: for a `C²` spinor field and a
+differentiable connection form, in any orthonormal basis `(eₖ)`,
+
+`Δ |ψ|² = 2 ∑ₖ (Re ⟪ψ, ∇_{eₖ} ∇_{eₖ} ψ⟫ + |∇_{eₖ} ψ|²)`.
+
+The connection terms cancel because `|ψ|²` is gauge invariant. -/
+theorem laplacian_norm_sq_eq [FiniteDimensional ℝ V] (hψ : ContDiffAt ℝ 2 ψ x)
+    (hb : DifferentiableAt ℝ b x) {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
+    Δ (fun y ↦ ‖ψ y‖ ^ 2) x =
+      2 * ∑ k, ((⟪ψ x, covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x
+        (e k)⟫_ℂ).re + ‖covariantDeriv b ψ x (e k)‖ ^ 2) := by
+  have hψ₁ : DifferentiableAt ℝ ψ x := hψ.differentiableAt (by norm_num)
+  have hψ₂ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
+    (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  rw [laplacian_eq_iteratedFDeriv_orthonormalBasis _ e, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [re_inner_add_norm_sq_covariantDeriv hψ₁ hψ₂ hb, iteratedFDeriv_two_apply]
+  let := InnerProductSpace.complexToReal (G := W)
+  simpa [real_inner_eq_re_inner ℂ, real_inner_self_eq_norm_sq, add_comm] using
+    fderiv_fderiv_norm_sq_sub_comp_apply (a := (0 : W)) hψ (e k) (e k)
+
+/-! ### The Dirac operator and the Weitzenböck formula -/
+
+/-- The real-bilinear pairing `(v, w) ↦ c(v) (L w)` of a linear map `L : V → W`, whose contraction
+along the metric is the Clifford contraction `∑ₖ c(eₖ) (L eₖ)`. -/
+private def cliffordPairing (L : V →L[ℝ] W) : V →ₗ[ℝ] V →ₗ[ℝ] W :=
   LinearMap.mk₂ ℝ (fun v w ↦ ρ (ι Q v) (L w))
-    (fun v₁ v₂ w ↦ by simp)
-    (fun c v w ↦ by simp [LinearMap.smul_apply])
-    (fun v w₁ w₂ ↦ by simp)
-    (fun c v w ↦ by simp [LinearMap.map_smul_of_tower])
+    (fun _ _ _ ↦ by simp)
+    (fun c v w ↦ by rw [map_smul, map_smul, LinearMap.smul_apply])
+    (fun _ _ _ ↦ by simp)
+    (fun c v w ↦ by rw [map_smul, LinearMap.map_smul_of_tower])
+
+section Dirac
 
 variable [FiniteDimensional ℝ V]
 
-/-- The **twisted Dirac operator** `D_b ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ` of a spinor field `ψ : V → W` for
-the imaginary connection form `a = i b`, where `c(v) = ρ (ι v)` is Clifford multiplication and
-`∇ψ = dψ + i b ψ` (`TauCeti.SeibergWitten.covariantDeriv`). It is computed in the standard
-orthonormal basis of `V`, and any other orthonormal basis gives the same value
-(`TauCeti.SeibergWitten.twistedDirac_eq_sum`). -/
-def twistedDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) : W :=
-  ∑ k, ρ (ι Q (stdOrthonormalBasis ℝ V k)) (covariantDeriv b ψ x (stdOrthonormalBasis ℝ V k))
+/-- The **flat Dirac operator** `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ` of the connection `d + i b`, defined
+without a basis as the metric contraction of `(v, w) ↦ c(v) ∇_w ψ`. -/
+def flatDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) : W :=
+  TensorProduct.lift (cliffordPairing ρ (covariantDeriv b ψ x))
+    (canonicalCovariantTensor V)
 
-/-- The twisted Dirac operator in an arbitrary orthonormal basis `e`:
-`D_b ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`. -/
-theorem twistedDirac_eq_sum (e : OrthonormalBasis κ ℝ V) (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
-    (ψ : V → W) (x : V) :
-    twistedDirac ρ b ψ x = ∑ k, ρ (ι Q (e k)) (covariantDeriv b ψ x (e k)) :=
-  sum_apply_apply_eq_of_orthonormalBasis (cliffordBilin ρ (covariantDeriv b ψ x))
-    (stdOrthonormalBasis ℝ V) e
+/-- The flat Dirac operator in an orthonormal basis: `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`. -/
+theorem flatDirac_eq_sum {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V)
+    (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) :
+    flatDirac ρ b ψ x = ∑ k, ρ (ι Q (e k)) (covariantDeriv b ψ x (e k)) := by
+  simp [flatDirac, canonicalCovariantTensor_eq_sum V e, cliffordPairing]
 
-/-- The twisted Dirac operator of the zero spinor field vanishes. -/
-@[simp]
-theorem twistedDirac_zero : twistedDirac ρ b (0 : V → W) x = 0 := by
-  simp [twistedDirac]
-
-/-- The twisted Dirac operator is additive on spinor fields differentiable at `x`. -/
-theorem twistedDirac_add {φ : V → W} (hψ : DifferentiableAt ℝ ψ x)
-    (hφ : DifferentiableAt ℝ φ x) :
-    twistedDirac ρ b (ψ + φ) x = twistedDirac ρ b ψ x + twistedDirac ρ b φ x := by
-  simp [twistedDirac, covariantDeriv_add hψ hφ, Finset.sum_add_distrib]
-
-/-- The twisted Dirac operator commutes with multiplication of a spinor field differentiable at
-`x` by a complex constant. -/
-theorem twistedDirac_const_smul (c : ℂ) (hψ : DifferentiableAt ℝ ψ x) :
-    twistedDirac ρ b (c • ψ) x = c • twistedDirac ρ b ψ x := by
-  simp [twistedDirac, covariantDeriv_const_smul c hψ, Finset.smul_sum]
-
-/-- The twisted Dirac operator vanishes at a point near which the spinor field vanishes. -/
-theorem twistedDirac_eq_zero_of_eventuallyEq_zero (hψ : ψ =ᶠ[𝓝 x] 0) :
-    twistedDirac ρ b ψ x = 0 := by
-  have hd : fderiv ℝ ψ x = 0 := by simp [hψ.fderiv_eq]
-  have h0 : ψ x = 0 := hψ.eq_of_nhds
-  simp [twistedDirac, covariantDeriv_apply_eq_add_smul, hd, h0]
-
-/-! ### The Weitzenböck formula -/
-
-/-- The antisymmetric part of the second covariant derivative contracted with Clifford
-multiplication is the curvature term: by the Ricci identity,
-`∑ⱼ ∑ₖ c(eⱼ) c(eₖ) (∇²_{eⱼ, eₖ} - ∇²_{eₖ, eⱼ}) ψ = -2i c₂(F) ψ`. -/
-private theorem sum_sum_ι_apply_ι_apply_covariantDeriv_covariantDeriv_sub
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (e : OrthonormalBasis κ ℝ V) (hψ : ContDiffAt ℝ 2 ψ x)
-    (hb : DifferentiableAt ℝ b x) {F : ⋀[ℝ]^2 V}
-    (hF : ∀ u w, ⟪F, exteriorPower.ιMulti ℝ 2 ![u, w]⟫ = -extDeriv b x ![u, w]) :
-    ∑ j, ∑ k, ρ (ι Q (e j)) (ρ (ι Q (e k))
-        (covariantDeriv b (covariantDeriv b ψ) x (e j) (e k) -
-          covariantDeriv b (covariantDeriv b ψ) x (e k) (e j))) =
-      (-(2 : ℂ) * I) • ρ (bivectorExterior Q F) (ψ x) := by
-  have hX (j k : κ) :
-      covariantDeriv b (covariantDeriv b ψ) x (e j) (e k) -
-          covariantDeriv b (covariantDeriv b ψ) x (e k) (e j) =
-        (-⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫) • I • ψ x := by
-    rw [covariantDeriv_covariantDeriv_sub hψ hb, hF, neg_neg]
-  have h := congrArg (fun T : CliffordAlgebra Q ↦ ρ T (ψ x)) (e.sum_sum_inner_smul_ι_mul_ι hQ F)
-  simp only [map_sum, map_smul, map_mul, LinearMap.sum_apply, LinearMap.smul_apply,
-    mul_apply_eq_comp] at h
-  calc _ = (-I) • ∑ j, ∑ k, ⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫ •
-          ρ (ι Q (e j)) (ρ (ι Q (e k)) (ψ x)) := by
-        simp only [hX, map_neg, map_smul, LinearMap.map_smul_of_tower, Finset.smul_sum,
-          neg_smul, smul_comm I (⟪F, _⟫ : ℝ)]
-    _ = (-(2 : ℂ) * I) • ρ (bivectorExterior Q F) (ψ x) := by
-        rw [h, RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul]
-        congr 1
-        push_cast
-        ring
+/-- The flat Dirac operator of `α u₀` for a constant spinor `u₀`:
+`D (α u₀) = ∑ₖ (∇_a α)(eₖ) c(eₖ) u₀`. On the canonical line this is the flat limiting Dirac
+operator of `TauCeti.SeibergWitten.sum_covariantDeriv_smul_ι_apply_eq_zero_iff`. -/
+theorem flatDirac_smul_const {α : V → ℂ} (hα : DifferentiableAt ℝ α x) (u₀ : W) {κ : Type*}
+    [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
+    flatDirac ρ b (fun y ↦ α y • u₀) x = ∑ k, covariantDeriv b α x (e k) • ρ (ι Q (e k)) u₀ := by
+  simp [flatDirac_eq_sum ρ e, covariantDeriv_smul_const hα]
 
 variable [FiniteDimensional ℂ W]
 
-/-- The square of the twisted Dirac operator in an orthonormal basis `e`: if `∇ψ` is
-differentiable at `x`, then `D_b D_b ψ = ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) ∇²_{eⱼ, eₖ} ψ` at `x`. -/
-theorem twistedDirac_twistedDirac_eq_sum_sum (e : OrthonormalBasis κ ℝ V)
-    (hcov : DifferentiableAt ℝ (covariantDeriv b ψ) x) :
-    twistedDirac ρ b (twistedDirac ρ b ψ) x =
-      ∑ j, ∑ k, ρ (ι Q (e j)) (ρ (ι Q (e k))
-        (covariantDeriv b (covariantDeriv b ψ) x (e j) (e k))) := by
-  have hcovk (k : κ) : DifferentiableAt ℝ (fun y ↦ covariantDeriv b ψ y (e k)) x :=
-    hcov.clm_apply (differentiableAt_const _)
-  rw [twistedDirac_eq_sum ρ e, funext (twistedDirac_eq_sum ρ e b ψ)]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [covariantDeriv_fun_sum (f := fun k y ↦ ρ (ι Q (e k)) (covariantDeriv b ψ y (e k)))
-    fun k ↦ ((LinearMap.toContinuousLinearMap (ρ (ι Q (e k)))).restrictScalars
-      ℝ).differentiableAt.comp x (hcovk k), sum_apply, map_sum]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [covariantDeriv_comp_apply _ (hcovk k), ← covariantDeriv_apply_apply hcov]
+/-- **The Weitzenböck formula for the flat Dirac operator**: for a `C²` spinor field and a
+differentiable connection form `b`, in any orthonormal basis `(eₖ)`,
 
-/-- **The Weitzenböck formula for the twisted Dirac operator** on a flat space: for a `C²` spinor
-field `ψ`, a connection form `b` differentiable at `x`, and the two-vector `F` of the curvature
-`i F_a = -db`, `⟪F, u ∧ w⟫ = -db(u, w)`,
+`D (D ψ) = -∑ₖ ∇_{eₖ} ∇_{eₖ} ψ + i c₂(db) ψ`,
 
-`D_b D_b ψ = -∑ₖ ∇²_{eₖ, eₖ} ψ - i c₂(F) ψ`
-
-in any orthonormal basis `e`. The first term is the connection Laplacian `∇*∇ψ`. -/
-theorem twistedDirac_twistedDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (e : OrthonormalBasis κ ℝ V)
-    (hψ : ContDiffAt ℝ 2 ψ x) (hb : DifferentiableAt ℝ b x) {F : ⋀[ℝ]^2 V}
-    (hF : ∀ u w, ⟪F, exteriorPower.ιMulti ℝ 2 ![u, w]⟫ = -extDeriv b x ![u, w]) :
-    twistedDirac ρ b (twistedDirac ρ b ψ) x =
-      -∑ k, covariantDeriv b (covariantDeriv b ψ) x (e k) (e k) -
-        I • ρ (bivectorExterior Q F) (ψ x) := by
-  classical
-  have hcov : DifferentiableAt ℝ (covariantDeriv b ψ) x :=
-    differentiableAt_covariantDeriv
-      ((hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero)
-      (hψ.differentiableAt two_ne_zero) hb
-  have hrel (j k : κ) : ρ (ι Q (e j)) * ρ (ι Q (e k)) + ρ (ι Q (e k)) * ρ (ι Q (e j)) =
-      if j = k then -2 else 0 := by
-    rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap_of_orthonormal hQ e j k]
-    split_ifs <;> simp [map_ofNat]
-  rw [twistedDirac_twistedDirac_eq_sum_sum ρ e hcov,
-    TauCeti.sum_sum_apply_apply_eq_of_clifford_relation _ _ hrel,
-    sum_sum_ι_apply_ι_apply_covariantDeriv_covariantDeriv_sub ρ hQ e hψ hb hF, smul_smul,
-    sub_eq_add_neg, ← neg_smul]
-  congr 2
-  ring
+where the curvature `db` is read as a two-vector through the inner product. -/
+theorem flatDirac_flatDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hψ : ContDiffAt ℝ 2 ψ x)
+    (hb : DifferentiableAt ℝ b x) {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
+    flatDirac ρ b (flatDirac ρ b ψ) x =
+      -∑ k, covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x (e k) +
+        I • ρ (bivectorExterior Q ((alternatingFormEquiv V 2).symm (extDeriv b x))) (ψ x) := by
+  have hψ₁ : DifferentiableAt ℝ ψ x := hψ.differentiableAt (by norm_num)
+  have hψ₂ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
+    (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hD : flatDirac ρ b ψ = fun y ↦ ∑ k, ρ (ι Q (e k)) (covariantDeriv b ψ y (e k)) :=
+    funext (flatDirac_eq_sum ρ e b ψ)
+  -- `∇_{eⱼ} (D ψ) = ∑ₖ c(eₖ) ∇_{eⱼ} ∇_{eₖ} ψ`, since the `c(eₖ)` are constant.
+  have hDD (j : κ) : covariantDeriv b (flatDirac ρ b ψ) x (e j) =
+      ∑ k, ρ (ι Q (e k)) (covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x
+        (e j)) := by
+    rw [hD]
+    exact covariantDeriv_sum_apply (fun k ↦ ρ (ι Q (e k)))
+      (g := fun k y ↦ covariantDeriv b ψ y (e k))
+      (fun k ↦ differentiableAt_covariantDeriv_apply hψ₁ hψ₂ hb (e k)) (e j)
+  rw [flatDirac_eq_sum ρ e, Finset.sum_congr rfl fun j _ ↦ congrArg (ρ (ι Q (e j))) (hDD j),
+    sum_ι_sum_ι_apply ρ hQ e _ (I • ψ x), map_smul]
+  intro j k
+  rw [covariantDeriv_sub_swap hψ hb, inner_alternatingFormEquiv_symm_ιMulti]
 
 end Dirac
 
-/-! ### The large-parameter Seiberg–Witten equations -/
+/-! ### Solutions of the Dirac equation in dimension four -/
 
-section LargeParameter
+section SeibergWitten
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
-  {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
-  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
-  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
-  {ω : ⋀[ℝ]^2 V} (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
-  (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-  (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) {φ β : positiveHalfSpinors o ρ}
-  (hφ : cliffordProjection o ρ ω φ = φ) (hβ : cliffordProjection o ρ ω β = 0) {r : ℝ}
-  {F η : ⋀[ℝ]^2 V}
+variable [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] (o : Orientation ℝ V (Fin 4)) {ρ}
+  (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
 
+-- The dimension `Fact` makes the oriented four-space finite-dimensional.
 attribute [local instance] finiteDimensional_of_finrank_four
 
-include hQ hkl hρ h₂ hφ hβ in
-/-- **The curvature term on a solution of the large-parameter equations.** If
-`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η`, with `φ` and `β` in the `2`- and `-2`-eigenspaces of
-`C(iω)`, then the Clifford map of `F` acts on `ψ = φ + β` by
+include hQ in
+/-- At a solution of the Dirac equation the rough Laplacian is the Clifford action of the
+curvature: `∑ₖ ∇_{eₖ} ∇_{eₖ} ψ = i c₂(db) ψ`. -/
+private theorem sum_covariantDeriv_eq_of_flatDirac_eq_zero (hψ : ContDiffAt ℝ 2 ψ x)
+    (hb : DifferentiableAt ℝ b x) (hD : flatDirac ρ b ψ =ᶠ[𝓝 x] 0) {κ : Type*} [Fintype κ]
+    (e : OrthonormalBasis κ ℝ V) :
+    ∑ k, covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x (e k) =
+      I • ρ (bivectorExterior Q ((alternatingFormEquiv V 2).symm (extDeriv b x))) (ψ x) := by
+  have h := flatDirac_flatDirac ρ hQ hψ hb e
+  rw [flatDirac_eq_sum ρ e, covariantDeriv_eq_zero_of_eventuallyEq hD] at h
+  simp only [_root_.zero_apply, _root_.map_zero, Finset.sum_const_zero] at h
+  exact neg_add_eq_zero.1 h.symm
 
-`C(iF) ψ = (r / 4) (1 - |ψ|²) ψ - (r / 2) β - C(iη) ψ / 2`.
+include hQ in
+/-- **The Weitzenböck identity for `|ψ|²` at a solution of the Dirac equation.** If `ψ` is `C²`,
+solves `D ψ = 0` near `x` and takes a value `φ ∈ W⁺` at `x`, then, in any orthonormal basis,
 
-Only the self-dual part `(F + ⋆F) / 2` of `F` acts on positive spinors; `ω` acts by `±2` on the two
-eigenspaces and `C(i q(ψ)) ψ = (|ψ|² / 2) ψ`. -/
-theorem cliffordRestriction_apply_of_add_hodgeStar_eq (hr : 0 ≤ r)
+`Δ |ψ|² = 2 (∑ₖ |∇_{eₖ} ψ|² + 4 ⟪q(φ), db⟫)`
+
+at `x`, where `q` is the quadratic two-form and the curvature `db` is read as a two-vector. -/
+theorem laplacian_norm_sq_eq_of_flatDirac_eq_zero (hψ : ContDiffAt ℝ 2 ψ x)
+    (hb : DifferentiableAt ℝ b x) (hD : flatDirac ρ b ψ =ᶠ[𝓝 x] 0)
+    {φ : positiveHalfSpinors o ρ} (hφ : ψ x = φ) {κ : Type*} [Fintype κ]
+    (e : OrthonormalBasis κ ℝ V) :
+    Δ (fun y ↦ ‖ψ y‖ ^ 2) x =
+      2 * (∑ k, ‖covariantDeriv b ψ x (e k)‖ ^ 2 +
+        4 * ⟪(quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V),
+          (alternatingFormEquiv V 2).symm (extDeriv b x)⟫) := by
+  rw [laplacian_norm_sq_eq hψ hb e, Finset.sum_add_distrib, ← Complex.re_sum, ← inner_sum,
+    sum_covariantDeriv_eq_of_flatDirac_eq_zero hQ hψ hb hD e,
+    inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl, hφ, ← coe_cliffordRestriction_apply,
+    Submodule.coe_inner]
+  ring
+
+/-- The curvature `db`, read as a two-vector, is minus the real curvature `F = -db`. -/
+private theorem alternatingFormEquiv_symm_extDeriv :
+    (alternatingFormEquiv V 2).symm (extDeriv b x) =
+      -(alternatingFormEquiv V 2).symm (-extDeriv b x) := by
+  rw [map_neg, neg_neg]
+
+/-- The pairing of `q(φ)` with the curvature under the large-parameter curvature equation
+`F + ⋆F = (r / 4) ω - r q(φ) - η`:
+`4 ⟪q(φ), -F⟫ = 2 r |q(φ)|² - (r / 2) ⟪q(φ), ω⟫ + 2 ⟪q(φ), η⟫`. -/
+private theorem four_mul_inner_quadraticTwoForm_neg {r : ℝ} {ω η F : ⋀[ℝ]^2 V}
+    (φ : positiveHalfSpinors o ρ)
     (hF : F + o.hodgeStar hkl F =
-      (r / 4) • ω - (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η) :
-    cliffordRestriction o ρ F (φ + β) =
-      (r / 4 * (1 - ‖φ + β‖ ^ 2)) • (φ + β) - (r / 2) • β -
-        (2⁻¹ : ℝ) • cliffordRestriction o ρ η (φ + β) := by
-  have hω₁ : cliffordRestriction o ρ ω φ = (2 : ℂ) • φ :=
-    (cliffordProjection_apply_eq_self_iff o ρ).1 hφ
-  have hω₂ : cliffordRestriction o ρ ω β = (-2 : ℂ) • β :=
-    (cliffordProjection_apply_eq_zero_iff o ρ).1 hβ
-  have hq : cliffordRestriction o ρ
-      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) (φ + β) =
-        (r * ‖φ + β‖ ^ 2 / 2 : ℝ) • (φ + β) := by
-    simp only [quadraticTwoForm_sqrt_smul o ρ hkl hr, Submodule.coe_smul, map_smul, smul_apply,
-      cliffordRestriction_quadraticTwoForm_apply_self o hQ hkl hρ h₂]
-    module
-  -- Only the self-dual part of `F` acts on positive spinors.
-  rw [cliffordRestriction_eq_inv_two_smul_add_hodgeStar o ρ hQ hkl, hF]
-  simp only [map_sub, map_smul, sub_apply, smul_apply, hq, map_add (cliffordRestriction o ρ ω),
-    hω₁, hω₂]
+      (r / 4) • ω - r • (quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V) - η) :
+    4 * ⟪(quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V), -F⟫ =
+      2 * r * ‖(quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V)‖ ^ 2 -
+        r / 2 * ⟪(quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V), ω⟫ +
+        2 * ⟪(quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V), η⟫ := by
+  set q := (quadraticTwoForm o ρ hkl φ : ⋀[ℝ]^2 V)
+  -- `q` is self-dual, so it pairs with `F + ⋆F` as with `2 F`.
+  have hstar : ⟪q, o.hodgeStar hkl F⟫ = ⟪q, F⟫ :=
+    Orientation.inner_hodgeStar_right_of_hodgeStar_eq_self o even_two hkl
+      (Orientation.hodgeStar_coe_of_mem_eigenspace_one o hkl (quadraticTwoForm o ρ hkl φ)) F
+  have h := congrArg (⟪q, ·⟫) hF
+  simp only [inner_add_right, inner_sub_right, real_inner_smul_right, hstar,
+    real_inner_self_eq_norm_sq] at h
+  rw [inner_neg_right]
+  linarith
+
+variable (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+  (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+
+include hQ hρ h₂ in
+/-- **The forced Weitzenböck equation of the large-parameter equations.** Let `ψ` be a `C²`
+normalized spinor field solving the Dirac equation `D ψ = 0` near `x`, with value `χ ∈ W⁺` at `x`,
+and suppose the real curvature `F = -db` satisfies `F + ⋆F = (r / 4) ω - r q(χ) - η` at `x`. Then
+at `x`, in any orthonormal basis,
+
+`∑ₖ ∇_{eₖ} ∇_{eₖ} ψ = (r / 4) (|χ|² - 1) χ + (r / 2) P_β χ + C(i η) χ / 2`,
+
+that is, `∇*∇ψ + (r / 4) (|ψ|² - 1) ψ + (r / 2) β + C(i η) ψ / 2 = 0` with `β = P_β ψ`. -/
+theorem sum_covariantDeriv_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 ψ x)
+    (hb : DifferentiableAt ℝ b x) (hD : flatDirac ρ b ψ =ᶠ[𝓝 x] 0)
+    {χ : positiveHalfSpinors o ρ} (hχ : ψ x = χ) {r : ℝ} {ω η : ⋀[ℝ]^2 V}
+    (hF : (alternatingFormEquiv V 2).symm (-extDeriv b x) +
+        o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b x)) =
+      (r / 4) • ω - r • (quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V) - η)
+    {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
+    ∑ k, covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x (e k) =
+      (((r / 4 * (‖χ‖ ^ 2 - 1)) • χ + (r / 2) • cliffordProjection o ρ (-ω) χ +
+        (2⁻¹ : ℝ) • cliffordRestriction o ρ η χ : positiveHalfSpinors o ρ) : W) := by
+  rw [sum_covariantDeriv_eq_of_flatDirac_eq_zero hQ hψ hb hD e,
+    alternatingFormEquiv_symm_extDeriv]
+  set F := (alternatingFormEquiv V 2).symm (-extDeriv b x)
+  -- `C` kills the anti-self-dual part `F - ⋆F`, so `C(F + ⋆F) = 2 C(F)`.
+  have hCχ : (2 : ℝ) • cliffordRestriction o ρ F χ = cliffordRestriction o ρ
+      ((r / 4) • ω - r • (quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V) - η) χ := by
+    rw [← hF, map_add, _root_.add_apply, cliffordRestriction_hodgeStar o ρ hQ hkl, two_smul]
+  simp only [map_sub, map_smul, _root_.sub_apply, _root_.smul_apply,
+    cliffordRestriction_quadraticTwoForm_apply_self o hQ hkl hρ h₂,
+    cliffordRestriction_eq_cliffordProjection o ρ ω] at hCχ
+  have hP : cliffordProjection o ρ ω χ = χ - cliffordProjection o ρ (-ω) χ := by
+    rw [cliffordProjection_neg_apply]
+    abel
+  rw [hχ, ← coe_cliffordRestriction_apply, map_neg, _root_.neg_apply]
+  congr 1
+  refine smul_right_injective _ (two_ne_zero (α := ℝ)) ?_
+  simp only [smul_neg, hCχ, hP, one_apply_eq_self, ← Complex.coe_smul]
+  push_cast
   module
 
-include hQ hkl hρ h₂ hφ hβ in
-/-- **Taubes's projected second-order system on flat space.** Let `ψ` be a `C²` spinor field and
-`a = i b` a connection form differentiable at `x`, with `D_b ψ = 0` near `x`. Suppose that at `x`
-the two-vector `F` of the curvature `i F_a = -db` satisfies the large-parameter curvature equation
-`F + ⋆F = (r / 4) ω - q(√r ψ) - η`, where `ψ(x) = φ + β` with `φ` and `β` in the `2`- and
-`-2`-eigenspaces of `C(iω)`. Then, in any orthonormal basis `e`,
+include hQ hρ h₂ in
+/-- **Taubes's Weitzenböck identity for the large-parameter equations.** Let `ψ` be a `C²`
+normalized spinor field solving the Dirac equation `D ψ = 0` near `x`, with value `χ ∈ W⁺` at `x`,
+and suppose the real curvature `F = -db` satisfies the large-parameter curvature equation
 
-`∇*∇ψ = -∑ₖ ∇²_{eₖ, eₖ} ψ = (r / 4) (1 - |ψ|²) ψ - (r / 2) β - C(iη) ψ / 2`
+`F + ⋆F = (r / 4) ω - r q(χ) - η`
 
-at `x`. -/
-theorem neg_sum_covariantDeriv_covariantDeriv_eq_of_add_hodgeStar_eq {κ : Type*} [Fintype κ]
-    (e : OrthonormalBasis κ ℝ V) {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ : V → W}
-    {x : V} (hψ : ContDiffAt ℝ 2 ψ x) (hb : DifferentiableAt ℝ b x)
-    (hD : twistedDirac ρ b ψ =ᶠ[𝓝 x] 0)
-    (hFb : ∀ u w, ⟪F, exteriorPower.ιMulti ℝ 2 ![u, w]⟫ = -extDeriv b x ![u, w])
-    (hψx : ψ x = (φ : W) + β) (hr : 0 ≤ r)
-    (hF : F + o.hodgeStar hkl F =
-      (r / 4) • ω - (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η) :
-    -∑ k, covariantDeriv b (covariantDeriv b ψ) x (e k) (e k) =
-      (r / 4 * (1 - ‖ψ x‖ ^ 2)) • ψ x - (r / 2) • (β : W) -
-        (2⁻¹ : ℝ) • (cliffordRestriction o ρ η (φ + β) : W) := by
-  have h := twistedDirac_twistedDirac ρ hQ e hψ hb hFb
-  rw [twistedDirac_eq_zero_of_eventuallyEq_zero ρ hD, eq_comm, sub_eq_zero] at h
-  have hC := congrArg Subtype.val
-    (cliffordRestriction_apply_of_add_hodgeStar_eq hQ hkl hρ h₂ hφ hβ hr hF)
-  rw [coe_cliffordRestriction_apply, Submodule.coe_add, ← hψx] at hC
-  rw [h, hC, hψx]
-  simp [Submodule.coe_add]
+at `x`. Then at `x`, in any orthonormal basis,
 
-end LargeParameter
+`Δ |ψ|² / 2 = ∑ₖ |∇_{eₖ} ψ|² + (r / 4) (|χ|⁴ - |P_α χ|² + |P_β χ|²) + 2 ⟪q(χ), η⟫`,
+
+where `P_α = cliffordProjection o ρ ω` and `P_β = cliffordProjection o ρ (-ω)`. -/
+theorem laplacian_norm_sq_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 ψ x)
+    (hb : DifferentiableAt ℝ b x) (hD : flatDirac ρ b ψ =ᶠ[𝓝 x] 0)
+    {χ : positiveHalfSpinors o ρ} (hχ : ψ x = χ) {r : ℝ} {ω η : ⋀[ℝ]^2 V}
+    (hF : (alternatingFormEquiv V 2).symm (-extDeriv b x) +
+        o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b x)) =
+      (r / 4) • ω - r • (quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V) - η)
+    {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
+    Δ (fun y ↦ ‖ψ y‖ ^ 2) x / 2 =
+      ∑ k, ‖covariantDeriv b ψ x (e k)‖ ^ 2 +
+        r / 4 * (‖χ‖ ^ 4 - ‖cliffordProjection o ρ ω χ‖ ^ 2 +
+          ‖cliffordProjection o ρ (-ω) χ‖ ^ 2) +
+        2 * ⟪(quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V), η⟫ := by
+  rw [laplacian_norm_sq_eq_of_flatDirac_eq_zero o hQ hkl hψ hb hD hχ e,
+    alternatingFormEquiv_symm_extDeriv,
+    four_mul_inner_quadraticTwoForm_neg o hkl χ hF, Submodule.norm_coe,
+    norm_quadraticTwoForm_sq o hQ hkl hρ h₂,
+    inner_quadraticTwoForm o hQ hkl]
+  ring
+
+include hQ hρ h₂ in
+/-- **Taubes's pointwise bound at a local maximum of `|ψ|²`.** Under the hypotheses of
+`laplacian_norm_sq_eq_of_add_hodgeStar_eq`, with `r > 0` and `‖ω‖ ≤ √2`, if `|ψ|²` has a local
+maximum at `x`, then
+
+`|χ|² ≤ 1 + 2 √2 |η| / r`.
+
+This pointwise inequality at a local maximum is the key step of Taubes's coarse bound
+`|α|² + |β|² ≤ 1 + C / r`; for the flat limiting equations (`r = 1 / 2`, `η = 0`) it gives
+`|χ| ≤ 1`. -/
+theorem norm_sq_le_one_add_of_isLocalMax (hψ : ContDiffAt ℝ 2 ψ x)
+    (hb : DifferentiableAt ℝ b x) (hD : flatDirac ρ b ψ =ᶠ[𝓝 x] 0)
+    {χ : positiveHalfSpinors o ρ} (hχ : ψ x = χ) {r : ℝ} (hr : 0 < r) {ω η : ⋀[ℝ]^2 V}
+    (hω : ‖ω‖ ≤ √2)
+    (hF : (alternatingFormEquiv V 2).symm (-extDeriv b x) +
+        o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b x)) =
+      (r / 4) • ω - r • (quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V) - η)
+    (hmax : IsLocalMax (fun y ↦ ‖ψ y‖ ^ 2) x) :
+    ‖χ‖ ^ 2 ≤ 1 + 2 * √2 * ‖η‖ / r := by
+  set q := (quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V)
+  have hΔ := laplacian_nonpos_of_isLocalMax (ContDiffAt.norm_sq ℂ hψ) hmax
+  have hid := laplacian_norm_sq_eq_of_add_hodgeStar_eq o hQ hkl hρ h₂ hψ hb hD hχ hF
+    (stdOrthonormalBasis ℝ V)
+  have hP := inner_quadraticTwoForm o hQ hkl (ω := ω) χ
+  have hsum : 0 ≤ ∑ k, ‖covariantDeriv b ψ x (stdOrthonormalBasis ℝ V k)‖ ^ 2 :=
+    Finset.sum_nonneg fun _ _ ↦ by positivity
+  -- `|q(χ)| = |χ|² / (2 √2)` and `|ω| ≤ √2` bound the two pairings of `q(χ)`.
+  have hq : ‖q‖ = ‖χ‖ ^ 2 / (2 * √2) :=
+    (Submodule.norm_coe _).trans (norm_quadraticTwoForm o hQ hkl hρ h₂ χ)
+  have hs : √2 ^ 2 = 2 := Real.sq_sqrt zero_le_two
+  have h₁ : ⟪q, ω⟫ ≤ ‖χ‖ ^ 2 / 2 := by
+    refine ((real_inner_le_norm q ω).trans
+      (mul_le_mul_of_nonneg_left hω (norm_nonneg q))).trans_eq ?_
+    rw [hq]
+    field_simp
+  have hη : -⟪q, η⟫ ≤ ‖χ‖ ^ 2 / (2 * √2) * ‖η‖ := by
+    have h := abs_le.1 (abs_real_inner_le_norm q η)
+    rw [← hq]
+    linarith
+  -- Hence `|χ|² (r (|χ|² - 1) - 2 √2 |η|) ≤ 0`.
+  set t := ‖χ‖ ^ 2 with ht
+  have ht₀ : 0 ≤ t := by positivity
+  have hkey : t * (r * (t - 1) - 2 * √2 * ‖η‖) ≤ 0 := by
+    have h4 : ‖χ‖ ^ 4 = t ^ 2 := by rw [ht]; ring
+    have hη' : -⟪q, η⟫ ≤ t * ‖η‖ * √2 / 4 := by
+      refine hη.trans_eq ?_
+      field_simp
+      rw [hs]
+      ring
+    rw [h4] at hid
+    nlinarith [mul_le_mul_of_nonneg_left h₁ hr.le, congrArg (r * ·) hP]
+  rcases ht₀.eq_or_lt with h0 | hpos
+  · rw [← h0]
+    positivity
+  · have : r * (t - 1) ≤ 2 * √2 * ‖η‖ := by
+      by_contra hc
+      nlinarith [not_le.1 hc]
+    rw [← sub_le_iff_le_add', le_div_iff₀ hr]
+    linarith
+
+end SeibergWitten
 
 end TauCeti.SeibergWitten

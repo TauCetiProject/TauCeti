@@ -132,7 +132,7 @@ theorem exists_hom_isRoot_sub_mem (B : Neighbourhood.{u, u} I) {p : B.obj[X]} (h
     · rw [hmk, eval_mul, hqa, map_mul]
       exact hu.mul hu
   have hPbij : Function.Bijective (reducedMap J P.Ring) := by
-    convert P.algebraMap_quotient_bijective_of_hasMap J hσ hxa
+    convert (P.algebraMap_quotient_bijective_iff_hasMap J hxa).mpr hσ
     exact Ideal.Quotient.ringHom_ext (RingHom.ext (reducedMap_mk J P.Ring))
   -- The standard étale algebra is an étale neighbourhood of `(R, I)` over `B`.
   let : Algebra R P.Ring := ((algebraMap B.obj P.Ring).comp (algebraMap R B.obj)).toAlgebra

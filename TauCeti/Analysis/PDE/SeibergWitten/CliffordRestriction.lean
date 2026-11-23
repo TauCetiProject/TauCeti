@@ -59,8 +59,7 @@ operator norm of `C` is `‖C(iα)‖ = √2 ‖α‖` on self-dual forms.
   `TauCeti.SeibergWitten.cliffordRestriction_mem_traceFreeSelfAdjoint`: `C(iα)` is self-adjoint and
   trace free.
 * `TauCeti.SeibergWitten.cliffordRestriction_eq_zero_of_hodgeStar_eq_neg`: anti-self-dual forms
-  act by zero on `W⁺`, so `C(iα) = ½ C(i(α + ⋆α))`
-  (`TauCeti.SeibergWitten.cliffordRestriction_eq_inv_two_smul_add_hodgeStar`).
+  act by zero on `W⁺`, so `C(i ⋆α) = C(iα)` (`TauCeti.SeibergWitten.cliffordRestriction_hodgeStar`).
 * `TauCeti.SeibergWitten.coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero`:
   `C(i (a ∧ b)) = i c(a) c(b)` on `W⁺` for orthogonal `a` and `b`.
 * `TauCeti.SeibergWitten.cliffordRestriction_mul_add_swap`: the Clifford relation of `C`.
@@ -179,7 +178,7 @@ theorem cliffordRestriction_mul_add_swap (hkl : 2 + 2 = finrank ℝ V) (x y : �
         cliffordRestriction o ρ y * cliffordRestriction o ρ x =
       ((2 * (⟪x, y⟫ + ⟪o.hodgeStar hkl x, y⟫) : ℝ) : ℂ) • 1 := by
   ext ψ
-  have hψ := mem_positiveHalfSpinors.1 ψ.2
+  have hψ := mem_positiveHalfSpinors.1 ψ.property
   have h := congrArg (fun a ↦ ρ a (ψ : W))
     (bivectorExterior_mul_bivectorExterior_add_swap o hQ hkl x y)
   simp only [map_add, map_mul, map_sub, map_smul, AlgHom.commutes, LinearMap.add_apply,
@@ -206,7 +205,7 @@ private theorem trace_restrictBivector (x : ⋀[ℝ]^2 V) :
     rw [mem_positiveHalfSpinors, ← mul_apply_eq_comp, ← map_mul, hΓ]
   have hres : restrictBivector o ρ x = (ρ a).restrict (fun w _ ↦ hmem w) := by
     ext ψ
-    have hψ := mem_positiveHalfSpinors.1 ψ.2
+    have hψ := mem_positiveHalfSpinors.1 ψ.property
     simp [coe_restrictBivector_apply, ha, add_mul,
       (commute_chirality_bivectorExterior (Q := Q) o x).eq, hψ]
     module
@@ -239,23 +238,21 @@ theorem trace_cliffordRestriction_mul (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[�
 theorem cliffordRestriction_eq_zero_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = -x) : cliffordRestriction o ρ x = 0 := by
   ext ψ
-  have hψ := mem_positiveHalfSpinors.1 ψ.2
+  have hψ := mem_positiveHalfSpinors.1 ψ.property
   have h : ρ (bivectorExterior Q x) ψ = -ρ (bivectorExterior Q x) ψ := by
     conv_lhs => rw [← hψ, ← mul_apply_eq_comp, ← map_mul,
       bivectorExterior_mul_chirality_of_hodgeStar_eq_neg o hQ hkl hx, map_neg, LinearMap.neg_apply]
   rw [eq_neg_iff_add_eq_zero, ← two_smul ℂ, smul_eq_zero] at h
   simp [h.resolve_left two_ne_zero]
 
-/-- Only the self-dual part of a two-form acts on `W⁺`: `C(iα) = ½ C(i(α + ⋆α))`. -/
-theorem cliffordRestriction_eq_inv_two_smul_add_hodgeStar (hkl : 2 + 2 = finrank ℝ V)
-    (x : ⋀[ℝ]^2 V) :
-    cliffordRestriction o ρ x = (2⁻¹ : ℝ) • cliffordRestriction o ρ (x + o.hodgeStar hkl x) := by
-  -- The anti-self-dual part `x - ⋆x` acts by zero, so `x` and `⋆x` act alike.
-  have h : cliffordRestriction o ρ (o.hodgeStar hkl x) = cliffordRestriction o ρ x := by
-    rw [← sub_eq_zero, ← map_sub]
-    refine cliffordRestriction_eq_zero_of_hodgeStar_eq_neg o ρ hQ hkl ?_
-    rw [map_sub, o.hodgeStar_hodgeStar_of_even even_two hkl, neg_sub]
-  rw [map_add, h, ← two_smul ℝ, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+/-- Only the self-dual part of a two-form acts on `W⁺`, so `α` and `⋆α` act alike:
+`C(i ⋆α) = C(iα)`. -/
+theorem cliffordRestriction_hodgeStar (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[ℝ]^2 V) :
+    cliffordRestriction o ρ (o.hodgeStar hkl x) = cliffordRestriction o ρ x := by
+  -- The anti-self-dual part `x - ⋆x` acts by zero.
+  rw [← sub_eq_zero, ← map_sub, ← neg_sub, map_neg, neg_eq_zero]
+  exact cliffordRestriction_eq_zero_of_hodgeStar_eq_neg o ρ hQ hkl (by
+    rw [map_sub, o.hodgeStar_hodgeStar_of_even even_two hkl, neg_sub])
 
 /-- A self-dual two-form squares to `2 ‖α‖²` under the Clifford map: `C(iα)² = 2 ‖α‖²`. -/
 theorem cliffordRestriction_mul_self_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)

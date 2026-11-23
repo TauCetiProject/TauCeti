@@ -100,7 +100,7 @@ theorem isRegular_symmetricAlgebraInvariants_dual_of_pseudoreflectionSubgroup_eq
       (List.ofFn fun i ↦ (f i : SymmetricAlgebra K (Module.Dual K V))) := by
   have := ρ.faithfullyFlat_symmetricAlgebra_dual_of_finrank_quotient_eq_one
     (s := ((↑) : {g : G // Module.finrank K (V ⧸ (ρ g).fixedSubmodule) = 1} → G))
-    (by rwa [Subtype.range_coe_subtype, ← pseudoreflectionSubgroup_def]) (fun g ↦ g.2)
+    (by rwa [Subtype.range_coe_subtype, ← pseudoreflectionSubgroup_def]) (fun g ↦ g.property)
   exact ρ.dual.isRegular_symmetricAlgebraInvariants_of_flat f hf hbij
 
 end Field

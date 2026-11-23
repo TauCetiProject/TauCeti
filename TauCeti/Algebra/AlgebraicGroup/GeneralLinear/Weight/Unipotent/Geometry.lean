@@ -103,12 +103,12 @@ private theorem weightUnipotentPolynomialGenericMatrix_toSquareBlock
   classical
   apply Matrix.ext
   intro i j
-  have hweight : w i.1 = w j.1 := by
-    exact congrArg OrderDual.ofDual (i.2.trans j.2.symm)
+  have hweight : w i.val = w j.val := by
+    exact congrArg OrderDual.ofDual (i.property.trans j.property.symm)
   by_cases hij : i = j
   · subst j
     simp [Matrix.toSquareBlock_def]
-  · have hij' : i.1 ≠ j.1 := fun h ↦ hij (Subtype.ext h)
+  · have hij' : i.val ≠ j.val := fun h ↦ hij (Subtype.ext h)
     simp [Matrix.toSquareBlock_def,
       weightUnipotentPolynomialGenericMatrix_apply_of_le R w hweight.le, hij, hij']
 
@@ -165,7 +165,7 @@ private def weightUnipotentPolynomialToQuotient (w : Fin N → ℤ) :
       weightUnipotentCoordinateHopfAlgebra R w :=
   MvPolynomial.aeval fun ij ↦
     Ideal.Quotient.mkₐ R (weightUnipotentDefiningHopfIdeal R w).toIdeal
-      ((genericMatrix R N) ij.1.1 ij.1.2)
+      ((genericMatrix R N) ij.val.1 ij.val.2)
 
 private theorem weightUnipotentQuotientToPolynomial_mk_genericMatrix_apply
     (w : Fin N → ℤ) (i j : Fin N) :
@@ -189,7 +189,7 @@ private theorem weightUnipotentQuotientToPolynomial_comp_polynomialToQuotient
   rw [AlgHom.comp_apply, weightUnipotentPolynomialToQuotient,
     MvPolynomial.aeval_X,
     weightUnipotentQuotientToPolynomial_mk_genericMatrix_apply,
-    weightUnipotentPolynomialGenericMatrix_apply_of_lt R w ij.2,
+    weightUnipotentPolynomialGenericMatrix_apply_of_lt R w ij.property,
     AlgHom.id_apply]
 
 private theorem weightUnipotentPolynomialToQuotient_comp_quotientToPolynomial
@@ -267,11 +267,11 @@ theorem weightUnipotentCoordinateAlgEquiv_symm_X
     (w : Fin N → ℤ) (ij : WeightUnipotentIndex w) :
     (weightUnipotentCoordinateAlgEquiv R w).symm (MvPolynomial.X ij) =
       Ideal.Quotient.mkₐ R (weightUnipotentDefiningHopfIdeal R w).toIdeal
-        ((genericMatrix R N) ij.1.1 ij.1.2) := by
+        ((genericMatrix R N) ij.val.1 ij.val.2) := by
   apply (weightUnipotentCoordinateAlgEquiv R w).injective
   rw [AlgEquiv.apply_symm_apply,
     weightUnipotentCoordinateAlgEquiv_mk_genericMatrix_apply,
-    weightUnipotentPolynomialGenericMatrix_apply_of_lt R w ij.2]
+    weightUnipotentPolynomialGenericMatrix_apply_of_lt R w ij.property]
 
 /-- The weight-unipotent coordinate algebra is smooth over its base ring. -/
 instance instSmoothWeightUnipotentCoordinateHopfAlgebra (w : Fin N → ℤ) :

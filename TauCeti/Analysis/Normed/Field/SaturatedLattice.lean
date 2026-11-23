@@ -139,7 +139,8 @@ theorem exists_eq_span_singleton_of_isValuationSaturated
     rintro rfl
     simp [← ha] at hs
   have hmem (b : maximalIdeal (Valued.integer K)) : (b : Valued.integer K) • a ∈ M := by
-    have hb1 : ‖((b : Valued.integer K) : K)‖ < 1 := Valued.integer.mem_maximalIdeal_iff.1 b.2
+    have hb1 : ‖((b : Valued.integer K) : K)‖ < 1 := Valued.integer.mem_maximalIdeal_iff.1
+        b.property
     have hlt' : ‖(b : Valued.integer K) • a‖ < s := by
       rw [Valued.integer.smul_def, norm_smul, ha]
       exact mul_lt_of_lt_one_left hs hb1
@@ -159,7 +160,7 @@ theorem exists_eq_span_singleton_of_isValuationSaturated
       exact Subtype.ext (Subtype.ext (mul_right_cancel₀ ha0 h))
     · have hy1 : ‖(y : K) / a‖ < 1 := by
         rw [norm_div, ha, div_lt_one hs]
-        exact hlt y.2
+        exact hlt y.property
       refine ⟨⟨⟨y / a, Valued.integer.mem_iff.2 hy1.le⟩,
         Valued.integer.mem_maximalIdeal_iff.2 hy1⟩, Subtype.ext ?_⟩
       rw [hfa]
@@ -272,8 +273,8 @@ private theorem isValuationSaturated_map_proj {ι : Type*}
   -- The basis vectors `e j` span the part of `M` on which the `i`-th coordinate vanishes.
   have hN (x : ι → K) : x ∈ M ⊓ LinearMap.ker (LinearMap.proj i) ↔ x ∈ M ∧ x i = 0 := by simp
   let e : Fin k → ι → K := fun j ↦ (b j : ι → K)
-  have he (j : Fin k) : e j ∈ M := ((hN _).1 (b j).2).1
-  have hei (j : Fin k) : e j i = 0 := ((hN _).1 (b j).2).2
+  have he (j : Fin k) : e j ∈ M := ((hN _).1 (b j).property).1
+  have hei (j : Fin k) : e j i = 0 := ((hN _).1 (b j).property).2
   have hrepr (y : ι → K) (hy : y ∈ M) (hyi : y i = 0) :
       ∃ s : Fin k → Valued.integer K, y = ∑ j, s j • e j := by
     have hyN := (hN y).2 ⟨hy, hyi⟩
@@ -283,14 +284,14 @@ private theorem isValuationSaturated_map_proj {ι : Type*}
       ∃ s : Fin k → Valued.integer K, ∑ j, t j • e j = ∑ j, s j • e j :=
     hrepr _ ht (by simp [Finset.sum_apply, hei])
   -- A point `z` over `q`: `z = a⁻¹ • m₀` for some `m₀ ∈ M` over `a * q`.
-  obtain ⟨m₀, hm₀, hm₀i⟩ := Submodule.mem_map.1 (f ⟨a, ham⟩).2
+  obtain ⟨m₀, hm₀, hm₀i⟩ := Submodule.mem_map.1 (f ⟨a, ham⟩).property
   rw [hq, LinearMap.proj_apply] at hm₀i
   -- Every `c • z` with `c ∈ 𝓂[K]` lies in `M` modulo the span of the kernel basis `e`: lift `c • q`
   -- to `mc ∈ M`; then `a • mc - c • m₀ ∈ M` has vanishing `i`-th coordinate, so it is
   -- `∑ j, s j • e j`, and `c • a⁻¹ • m₀ + ∑ j, (a⁻¹ * s j) • e j = mc ∈ M`.
   have hz (c : Valued.integer K) (hc : c ∈ maximalIdeal (Valued.integer K)) :
       ∃ t : Fin k → K, c • (a : K)⁻¹ • m₀ + ∑ j, t j • e j ∈ M := by
-    obtain ⟨mc, hmc, hmci⟩ := Submodule.mem_map.1 (f ⟨c, hc⟩).2
+    obtain ⟨mc, hmc, hmci⟩ := Submodule.mem_map.1 (f ⟨c, hc⟩).property
     rw [hq, LinearMap.proj_apply] at hmci
     obtain ⟨s, hs⟩ := hrepr (a • mc - c • m₀) (M.sub_mem (M.smul_mem a hmc) (M.smul_mem c hm₀))
       (by simp [Valued.integer.smul_def, hmci, hm₀i, mul_left_comm])
@@ -334,7 +335,7 @@ theorem exists_basis_of_isValuationSaturated (hK : ∀ r : ℝ, 0 < r → ∃ x 
   induction s using Finset.induction_on generalizing M with
   | empty =>
     have : Subsingleton M := ⟨fun x y ↦ Subtype.ext (funext fun j ↦ by
-      rw [hMs x x.2 j (Finset.notMem_empty j), hMs y y.2 j (Finset.notMem_empty j)])⟩
+      rw [hMs x x.property j (Finset.notMem_empty j), hMs y y.property j (Finset.notMem_empty j)])⟩
     exact ⟨0, le_rfl, ⟨Module.Basis.empty M⟩⟩
   | insert i s hi ih =>
     -- The part `N` of `M` on which the `i`-th coordinate vanishes is free by induction.

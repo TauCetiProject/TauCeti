@@ -18,6 +18,9 @@ complete family of subgroup relators, not merely relations valid in a quotient i
 This is the normal-generation step in the Reidemeister–Schreier theorem. It is independent
 of freeness, finiteness and the choice of generators for `H`.
 
+Conjugate elements have the same normal closure (`IsConj.normalClosure_singleton_eq`),
+so a relator may be replaced by any of its conjugates without changing the presented group.
+
 ## References
 
 * D. L. Johnson, *Presentations of Groups*, second edition, Chapter 9.
@@ -58,5 +61,10 @@ theorem normalClosure_conjugates_eq_subgroupOf (H : Subgroup G) (R T : Set G)
   intro x hx
   obtain ⟨y, hy, hxy⟩ := hmap (mem_subgroupOf.mp hx)
   exact (Subtype.ext hxy : y = x) ▸ hy
+
+/-- Conjugate elements have the same normal closure. -/
+theorem _root_.IsConj.normalClosure_singleton_eq {a b : G} (h : IsConj a b) :
+    normalClosure {a} = normalClosure {b} := by
+  simp only [normalClosure, Group.conjugatesOfSet, Set.biUnion_singleton, h.conjugatesOf_eq]
 
 end Subgroup

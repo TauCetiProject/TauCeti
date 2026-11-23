@@ -75,8 +75,9 @@ theorem toTotallyRealPath_trans (Λ Γ : TotallyRealLoop E) (h : Λ 0 = Γ 0) :
 theorem trans_apply (Λ Γ : TotallyRealLoop E) (h : Λ 0 = Γ 0) (t : I) :
     Λ.trans Γ h t =
       if ht : (t : ℝ) ≤ 1 / 2 then
-        Λ ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, ht⟩⟩
-      else Γ ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.2.2⟩⟩ := by
+        Λ ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.property.1, ht⟩⟩
+      else Γ ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.property.2⟩⟩
+          := by
   simp only [trans, TotallyRealPath.toTotallyRealLoop_apply, TotallyRealPath.trans_apply,
     toTotallyRealPath_apply]
 
@@ -107,9 +108,10 @@ and `Λ` on `[0, s]` at double speed after. -/
 theorem shift_apply (Λ : TotallyRealLoop E) (s t : I) :
     Λ.shift s t =
       if ht : (t : ℝ) ≤ 1 / 2 then
-        Λ (Set.Icc.convexComb s 1 ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, ht⟩⟩)
+        Λ (Set.Icc.convexComb s 1 ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2
+            ⟨t.property.1, ht⟩⟩)
       else Λ (Set.Icc.convexComb 0 s
-        ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.2.2⟩⟩) := by
+        ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.property.2⟩⟩) := by
   simp only [shift, TotallyRealPath.toTotallyRealLoop_apply, TotallyRealPath.trans_apply,
     TotallyRealPath.subpath_apply, toTotallyRealPath_apply]
 
