@@ -54,11 +54,11 @@ relative singular homology classes, such as fundamental classes along compact su
 * `TauCeti.smoothSingularPairι I U`: its inclusion into the singular pair of `(M, U)`.
 * `TauCeti.smoothSingularPairMap hf hUV`: the map of smooth singular pairs induced by a smooth map
   of pairs.
-* `TauCeti.smoothSingularRelativeHomologyIso I U R n`: smooth relative homology is relative
+* `TauCeti.smoothSingularRelativeHomologyIso I R U n`: smooth relative homology is relative
   singular homology.
-* `TauCeti.smoothSingularPairChainHomotopyEquiv I U R`: the relative smoothing chain homotopy
+* `TauCeti.smoothSingularPairChainHomotopyEquiv I R U`: the relative smoothing chain homotopy
   equivalence for projective coefficients.
-* `TauCeti.smoothSingularRelativeCohomologyIso I U R k Y n`: relative singular cohomology is smooth
+* `TauCeti.smoothSingularRelativeCohomologyIso I R k Y U n`: relative singular cohomology is smooth
   relative cohomology.
 
 ## Main results
@@ -72,6 +72,7 @@ relative singular homology classes, such as fundamental classes along compact su
 * `TauCeti.quasiIso_cochainComplexMap_smoothSingularPairι`: the relative smoothing theorem for
   cochains.
 * `TauCeti.smoothSingularRelativeCohomologyIso_hom_naturality`,
+  `TauCeti.smoothSingularRelativeCohomologyIso_inv_naturality`,
   `TauCeti.singularCohomologyπ_comp_smoothSingularCohomologyIso_hom` and
   `TauCeti.singularCohomologyδ_comp_smoothSingularRelativeCohomologyIso_hom`: naturality of the
   cohomology isomorphism and its compatibility with the long exact sequences.
@@ -452,11 +453,21 @@ theorem smoothSingularRelativeCohomologyIso_hom_naturality {f : M → N} (hf : C
     (smoothSingularPairMap_comp_smoothSingularPairι hf hUV)
   rw [SSetPair.cochainComplexMap_comp, SSetPair.cochainComplexMap_comp,
     HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp] at h
-  rw [smoothSingularRelativeCohomologyIso_hom, smoothSingularRelativeCohomologyIso_hom]
-  -- `TopPair.singularCohomologyMap g` is by definition the cohomology map of
-  -- `SSetPair.cochainComplexMap (TopPair.toSSetPair.map g)`
-  -- (`TopPair.singularCochainComplexMap_eq`).
+  rw [smoothSingularRelativeCohomologyIso_hom, smoothSingularRelativeCohomologyIso_hom,
+    TopPair.singularCohomologyMap_eq]
   exact h.symm
+
+/-- The inverse of `smoothSingularRelativeCohomologyIso` is natural in smooth maps of pairs. -/
+@[reassoc]
+theorem smoothSingularRelativeCohomologyIso_inv_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) (n : ℕ) :
+    HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (smoothSingularPairMap hf hUV)) n ≫
+        (smoothSingularRelativeCohomologyIso I R k Y U n).inv =
+      (smoothSingularRelativeCohomologyIso J R k Y V n).inv ≫
+        TopPair.singularCohomologyMap
+          (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) n := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
+    smoothSingularRelativeCohomologyIso_hom_naturality R k Y hf hUV]
 
 end Projective
 
