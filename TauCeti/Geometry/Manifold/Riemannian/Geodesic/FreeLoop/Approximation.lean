@@ -322,19 +322,14 @@ theorem exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic {K : Set (MooreFre
   by_cases hr0 : 0 < r
   swap
   · exact ⟨0, fun n _ δ hεδ hδ ↦ absurd ((hε.trans_le (hεδ 0)).trans (hδ 0)) hr0⟩
-  obtain ⟨N₁, -, hN₁⟩ := MoorePath.exists_subset_arcsWithin
-    (hK.image MooreFreeLoopSpace.continuous_toMoorePath) (Metric.dist_mem_uniformity hr0)
-  obtain ⟨N₂, hN₂⟩ := MooreFreeLoopSpace.exists_mapsTo_sample_cyclicDistanceCut hK hε
-  refine ⟨max N₁ N₂, fun n hn δ hεδ hδ ↦ ?_⟩
-  have hKA (γ : K) : (γ : MooreFreeLoopSpace M) ∈
-      MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1) :=
-    MooreFreeLoopSpace.mem_arcsWithin.2
-      (MoorePath.mem_arcsWithin.1 (hN₁ (n + 1) (by omega) ⟨γ, γ.property, rfl⟩))
-  have hmaps := hN₂ n (le_of_max_le_right hn) δ hεδ
+  obtain ⟨N, hN⟩ :=
+    MooreFreeLoopSpace.exists_subset_arcsWithin_mapsTo_sample_cyclicDistanceCut hK hr0 hε
+  refine ⟨N, fun n hn δ hεδ hδ ↦ ?_⟩
+  obtain ⟨hKA, hmaps⟩ := hN n hn
   let ι : C(K, MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) :=
-    ⟨fun γ ↦ ⟨γ, hKA γ⟩, continuous_subtypeVal.subtype_mk _⟩
+    ⟨fun γ ↦ ⟨γ, hKA γ.property⟩, continuous_subtypeVal.subtype_mk _⟩
   let e : C(K, cyclicDistanceCut (X := M) δ) :=
-    ⟨fun γ ↦ ⟨_, hmaps γ.property⟩, ((MooreFreeLoopSpace.continuous_sample _).comp
+    ⟨fun γ ↦ ⟨_, hmaps δ hεδ γ.property⟩, ((MooreFreeLoopSpace.continuous_sample _).comp
       continuous_subtypeVal).subtype_mk _⟩
   refine ⟨e, fun γ ↦ rfl, ?_⟩
   -- On `K`, `geoⁿ ∘ evₙ` is the closed broken geodesic through the sampled vertices.
@@ -342,8 +337,8 @@ theorem exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic {K : Set (MooreFre
       (sampleBrokenGeodesicLoop hr n).comp ι :=
     ContinuousMap.ext fun γ ↦ by
       simp only [ContinuousMap.comp_apply, cyclicDistanceCutBrokenGeodesic_apply, e, ι,
-        ContinuousMap.coe_mk, sampleBrokenGeodesicLoop_apply hr n ⟨γ, hKA γ⟩
-          (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin (hKA γ))]
+        ContinuousMap.coe_mk, sampleBrokenGeodesicLoop_apply hr n ⟨γ, hKA γ.property⟩
+          (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin (hKA γ.property))]
   rw [he]
   exact ⟨((sampleBrokenGeodesicLoopHomotopy hr n).compContinuousMap ι).symm⟩
 

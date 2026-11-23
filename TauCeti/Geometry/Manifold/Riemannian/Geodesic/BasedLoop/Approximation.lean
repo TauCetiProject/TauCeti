@@ -97,10 +97,10 @@ first vertex `x`, as a continuous map to the Moore loops based at `x`. It is the
 def basedCyclicDistanceCutBrokenGeodesic {n : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : ∀ i, δ i < r)
     (x : M) : C(basedCyclicDistanceCut (X := M) δ x, MooreLoopSpace M x) :=
   MooreLoopSpace.codRestrictFreeLoop ((cyclicDistanceCutBrokenGeodesic hr hδ).comp
-    (ContinuousMap.inclusion (basedCyclicDistanceCut_subset δ x))) fun q ↦ by
+    (ContinuousMap.subtypeVal _)) fun q ↦ by
       rw [ContinuousMap.comp_apply, cyclicDistanceCutBrokenGeodesic_apply,
         basepoint_brokenGeodesicLoop]
-      exact (mem_basedCyclicDistanceCut.1 q.property).2
+      exact mem_basedCyclicDistanceCut.1 q.property
 
 /-- The broken geodesic through a tuple of the based distance cut, read as a free loop, is the
 broken geodesic through the same tuple of the distance cut. -/
@@ -108,7 +108,7 @@ broken geodesic through the same tuple of the distance cut. -/
 theorem toFreeLoop_basedCyclicDistanceCutBrokenGeodesic_apply {n : ℕ} {δ : Fin (n + 1) → ℝ}
     (hδ : ∀ i, δ i < r) (x : M) (q : basedCyclicDistanceCut (X := M) δ x) :
     (basedCyclicDistanceCutBrokenGeodesic hr hδ x q).toFreeLoop =
-      cyclicDistanceCutBrokenGeodesic hr hδ ⟨q.val, (mem_basedCyclicDistanceCut.1 q.property).1⟩ :=
+      cyclicDistanceCutBrokenGeodesic hr hδ q :=
   MooreLoopSpace.toFreeLoop_codRestrictFreeLoop_apply _ _ q
 
 /-! ### Compact families of based loops -/
@@ -143,27 +143,26 @@ theorem exists_basedCyclicDistanceCutBrokenGeodesic_comp_homotopic {x : M}
   swap
   · exact ⟨0, fun n _ δ hεδ hδ ↦ absurd ((hε.trans_le (hεδ 0)).trans (hδ 0)) hr0⟩
   -- The loops of `K`, read as free loops, form a compact family.
-  have hK' : IsCompact (MooreLoopSpace.toFreeLoop '' K) :=
-    hK.image MooreLoopSpace.continuous_toFreeLoop
-  obtain ⟨N₁, -, hN₁⟩ := MoorePath.exists_subset_arcsWithin
-    (hK'.image MooreFreeLoopSpace.continuous_toMoorePath) (Metric.dist_mem_uniformity hr0)
-  obtain ⟨N₂, hN₂⟩ := MooreFreeLoopSpace.exists_mapsTo_sample_cyclicDistanceCut hK' hε
-  refine ⟨max N₁ N₂, fun n hn δ hεδ hδ ↦ ?_⟩
-  have hKA (γ : K) : (γ : MooreLoopSpace M x).toFreeLoop ∈
+  obtain ⟨N, hN⟩ := MooreFreeLoopSpace.exists_subset_arcsWithin_mapsTo_sample_cyclicDistanceCut
+    (hK.image MooreLoopSpace.continuous_toFreeLoop) hr0 hε
+  refine ⟨N, fun n hn δ hεδ hδ ↦ ?_⟩
+  obtain ⟨hKA, hmaps⟩ := hN n hn
+  replace hKA (γ : K) : (γ : MooreLoopSpace M x).toFreeLoop ∈
       MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1) :=
-    MooreFreeLoopSpace.mem_arcsWithin.2 (MoorePath.mem_arcsWithin.1
-      (hN₁ (n + 1) (by omega) ⟨_, ⟨γ, γ.property, rfl⟩, rfl⟩))
-  have hmaps := hN₂ n (le_of_max_le_right hn) δ hεδ
+    hKA ⟨γ, γ.property, rfl⟩
+  have hcut (γ : K) :
+      (γ : MooreLoopSpace M x).toMoorePath.sample (n + 1) ∈ cyclicDistanceCut δ := by
+    simpa only [MooreLoopSpace.toMoorePath_toFreeLoop] using hmaps δ hεδ ⟨γ, γ.property, rfl⟩
   let ι : C(K, MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) :=
     ⟨fun γ ↦ ⟨(γ : MooreLoopSpace M x).toFreeLoop, hKA γ⟩,
       (MooreLoopSpace.continuous_toFreeLoop.comp continuous_subtypeVal).subtype_mk _⟩
+  have hbase (γ : K) : (⟨_, hcut γ⟩ : cyclicDistanceCut (X := M) δ) ∈
+      basedCyclicDistanceCut δ x := by
+    simp only [mem_basedCyclicDistanceCut, MoorePath.sample_zero, MooreLoopSpace.source_eq]
   let e : C(K, basedCyclicDistanceCut (X := M) δ x) :=
-    ⟨fun γ ↦ ⟨(γ : MooreLoopSpace M x).toMoorePath.sample (n + 1),
-        mem_basedCyclicDistanceCut.2
-          ⟨by simpa only [MooreLoopSpace.toMoorePath_toFreeLoop] using hmaps ⟨γ, γ.property, rfl⟩,
-            by rw [MoorePath.sample_zero, MooreLoopSpace.source_eq]⟩⟩,
-      ((MoorePath.continuous_sample _).comp
-        (MooreLoopSpace.continuous_toMoorePath.comp continuous_subtypeVal)).subtype_mk _⟩
+    ⟨fun γ ↦ ⟨_, hbase γ⟩, (((MoorePath.continuous_sample _).comp
+      (MooreLoopSpace.continuous_toMoorePath.comp continuous_subtypeVal)).subtype_mk
+        hcut).subtype_mk hbase⟩
   refine ⟨e, fun γ ↦ rfl, ?_⟩
   -- On `K`, the inclusion is the family `ι` of free loops and `geoⁿ ∘ evₙ` is the family of broken
   -- geodesics through their sampled vertices, both read as based loops.
@@ -202,8 +201,7 @@ theorem coe_basedCyclicDistanceCutSampleBrokenGeodesic_apply {n : ℕ} {δ : Fin
     (hm : ∀ j, ∑ i, δ i ≤ ((m + 1 : ℕ) : ℝ) * δ' j) (x : M)
     (q : basedCyclicDistanceCut (X := M) δ x) :
     (basedCyclicDistanceCutSampleBrokenGeodesic hr hδ m hm x q : Fin (m + 1) → M) =
-      (cyclicDistanceCutBrokenGeodesic hr hδ
-        ⟨q.val, (mem_basedCyclicDistanceCut.1 q.property).1⟩).toMoorePath.sample (m + 1) := by
+      (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.sample (m + 1) := by
   rw [basedCyclicDistanceCutSampleBrokenGeodesic, coe_basedCyclicDistanceCutRestrict_apply,
     coe_cyclicDistanceCutSampleBrokenGeodesic_apply]
 
