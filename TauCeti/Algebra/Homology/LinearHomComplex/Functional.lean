@@ -108,7 +108,7 @@ theorem linearHomComplexDualDistrib_comp_linearHomComplexCurryIso_hom :
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul,
       ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply]
     rw [Cochain.smul_linearHomComplex_v, ModuleCat.hom_smul, LinearMap.smul_apply]
-    exact leftUnitor_hom_f_zero_ιTensorObj_tmul _ _
+    exact HomologicalComplex.leftUnitor_hom_f_ιTensorObj_tmul _ 0 _ _
   · -- The form `f` vanishes on `Aᵖ`, whose image lies in a zero term of `R[0]`.
     have hf : f.v p (p + j) rfl = 0 :=
       (HomologicalComplex.isZero_single_obj_X _ _ _ _ hp).eq_of_tgt _ _
