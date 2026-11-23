@@ -49,7 +49,6 @@ variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜
 
 /-- Projecting a rank-one `Lᵖ` function `x ↦ f x • w` along `v` scales `f` by `⟪v, w⟫`, for any
 exponent `p : ℝ≥0∞`. -/
-@[simp]
 theorem compLp_innerSL_compLp_toSpanSingleton {p : ℝ≥0∞} (v w : E) (f : Lp 𝕜 p μ) :
     (innerSL 𝕜 v).compLp ((toSpanSingleton 𝕜 w).compLp f) = ⟪v, w⟫_𝕜 • f := by
   rw [compLp_compLp, innerSL_comp_toSpanSingleton, smul_compLp, id_compLp]
