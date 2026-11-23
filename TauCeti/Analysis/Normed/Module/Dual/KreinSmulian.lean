@@ -61,8 +61,8 @@ theorem exists_finset_forall_one_lt_re_apply {S : Set (WeakDual 𝕜 E)} (hS : I
     (fun x : closedBall (0 : E) ρ⁻¹ ↦ {f : WeakDual 𝕜 E | re (f x) ≤ 1})
     (fun x ↦ isClosed_le (continuous_re.comp (eval_continuous _)) continuous_const) <| by
       refine Set.disjoint_left.2 fun f hf hf' ↦ (hSρ f hf).not_ge ?_
-      have := StrongDual.re_apply_add_mul_norm_le (f := toStrongDual f) (x := 0)
-        (inv_nonneg.2 hρ.le) fun y hy ↦ mem_iInter.1 hf' ⟨y, hy⟩
+      have := (StrongDual.re_apply_add_mul_norm_le_iff (f := toStrongDual f) (x := 0)
+        (inv_nonneg.2 hρ.le)).2 fun y hy ↦ mem_iInter.1 hf' ⟨y, hy⟩
       rw [map_zero, map_zero, zero_add, inv_mul_le_iff₀ hρ, mul_one] at this
       exact this
   refine ⟨u.map (.subtype _), fun x hx ↦ ?_, fun f hf ↦ ?_⟩
