@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.Little
+public import TauCeti.Analysis.Holder.Little.Basic
 public import TauCeti.Analysis.Holder.OpenSet
 
 /-!

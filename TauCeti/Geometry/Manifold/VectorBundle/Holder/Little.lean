@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.LittleOpenSet
+public import TauCeti.Analysis.Holder.Little.OpenSet
 public import TauCeti.Geometry.Manifold.VectorBundle.Holder.ContMDiffSection
 
 /-!
@@ -16,7 +16,8 @@ be a finite bundle atlas, so that the Hölder space `C^{k,α}(V)` of `TauCeti.Ho
 is defined. The **little Hölder space** `h^{k,α}(V)` (`TauCeti.HolderSection.littleHolder`) is
 the closure in `C^{k,α}(V)` of the smooth sections (`TauCeti.HolderSection.smoothSections`). It
 is a closed subspace, hence a Banach space when the model fibre is, and the smooth sections are
-dense in it by construction: it is the completion of the smooth sections in the `C^{k,α}` norm.
+dense in it by construction. When the model fibre is complete, it is the completion of the smooth
+sections in the `C^{k,α}` norm.
 For `α ≤ 1` the smooth sections in `C^{k,α}(V)` are exactly the images of the smooth sections of
 `V` under `TauCeti.HolderSection.ofContMDiffSection`.
 
@@ -84,6 +85,7 @@ def littleHolder : Submodule ℝ (HolderSection A k α) :=
 variable {A k α}
 
 /-- Membership in the smooth sections of `C^{k,α}(V)`. -/
+@[simp]
 theorem mem_smoothSections_iff {w : HolderSection A k α} :
     w ∈ smoothSections A k α ↔
       ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) ∞ fun x ↦ TotalSpace.mk' F x (toSection w x) :=
@@ -144,13 +146,7 @@ theorem mem_littleHolder_component_of_mem_smoothSections (hα : α < 1)
   obtain ⟨g, hg⟩ := A.memHolderSection_iff.1
     (A.memHolderSection_of_contMDiff (k := k) (α := 1) (by simp) le_rfl hw) i
   refine CkHolderSpaceOn.mem_littleHolder_of_memHolder hα ?_
-  have heq : ((w : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F) i).iteratedFDeriv
-      (Fin.last k) = g.iteratedFDeriv (Fin.last k) := by
-    ext1 x
-    rw [← g.iteratedFDeriv_eq (g := g.extend) (fun y ↦ g.extend_apply y),
-      ← CkHolderSpaceOn.iteratedFDeriv_eq _ (g := g.extend) fun y ↦ by
-        rw [g.extend_apply, hg, coord_toSection]]
-  rw [heq]
+  rw [CkHolderSpaceOn.iteratedFDeriv_eq_of_coe_eq fun x ↦ by rw [hg, coord_toSection]]
   exact g.memHolder_iteratedFDeriv
 
 /-- **Vanishing small-scale modulus.** For `α < 1`, every chart reading of an element of the
