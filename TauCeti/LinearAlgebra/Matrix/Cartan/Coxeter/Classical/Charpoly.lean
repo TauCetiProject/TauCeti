@@ -56,7 +56,7 @@ theorem charpoly_coxeterElement_C {n : ℕ} (hn : 1 ≤ n) :
 blocks the negacyclic shift on `ℤ^{m+2}` and `-1`. -/
 theorem charpoly_negaD (m : ℕ) : (negaD m).charpoly = (X ^ (m + 2) + 1) * (X + 1) := by
   rw [← charpoly_reindex (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3)).symm,
-    reindex_negaD, charpoly_fromBlocks_zero₁₂, charpoly_negaShift (by omega), charpoly_of_unique]
+    reindex_negaD, charpoly_fromBlocks_zero₁₂, charpoly_negaShift (by omega), charpoly_unique]
   simp
 
 /-- **The Coxeter element of type `Dₙ` has characteristic polynomial `(X^{n-1} + 1)(X + 1)`** for

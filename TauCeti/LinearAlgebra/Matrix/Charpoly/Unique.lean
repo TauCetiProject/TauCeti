@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 # The characteristic polynomial of a `1 × 1` matrix
 
 For a singleton index type `n` (`[Unique n]`), the characteristic polynomial of `M : Matrix n n R`
-is `X - C m`, where `m = M default default` is its only entry (`Matrix.charpoly_of_unique`).
+is `X - C m`, where `m = M default default` is its only entry (`Matrix.charpoly_unique`).
 
 The lemma takes `[Fintype n]` alongside `[Unique n]`, so that it applies with any ambient `Fintype`
 instance (such as the one on `Fin 1`).
@@ -27,7 +27,7 @@ variable {n R : Type*} [Unique n] [Fintype n] [DecidableEq n] [CommRing R]
 
 /-- **The characteristic polynomial of a `1 × 1` matrix** is `X - C m`, where `m` is its only
 entry. -/
-theorem charpoly_of_unique (M : Matrix n n R) : M.charpoly = X - C (M default default) := by
+theorem charpoly_unique (M : Matrix n n R) : M.charpoly = X - C (M default default) := by
   rw [charpoly, det_unique, charmatrix_apply_eq]
 
 end Matrix

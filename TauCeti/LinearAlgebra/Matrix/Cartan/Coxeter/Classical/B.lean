@@ -18,7 +18,7 @@ In the `ε`-model of type `Bₙ` (Mathlib's numbering, short simple root last) t
 matrix `TauCeti.Coxeter.epsA` without its last row; it is unimodular, with inverse the partial-sum
 matrix `TauCeti.Coxeter.epsBInv`). The simple reflections become the transpositions `(i i+1)` and
 the sign change of the last coordinate, and the Coxeter element becomes the negacyclic shift
-`Matrix.negaShift n`: `εᵢ ↦ εᵢ₊₁`, `ε_{n-1} ↦ -ε₀`, whose `n`-th power is `-1`. Hence for `n ≥ 1`
+`Matrix.negaShift ℤ n`: `εᵢ ↦ εᵢ₊₁`, `ε_{n-1} ↦ -ε₀`, whose `n`-th power is `-1`. Hence for `n ≥ 1`
 the order is `2n`.
 -/
 
@@ -70,7 +70,7 @@ theorem epsB_mul_reflMatrix_last_apply (i : Fin n) (hi : i.val + 1 = n) (a j : F
 
 /-- **The Coxeter element of type `Bₙ` is the negacyclic shift** in the `ε`-model. -/
 theorem epsB_mul_coxeterElement :
-    epsB n * coxeterElement (CartanMatrix.B n) = negaShift n * epsB n := by
+    epsB n * coxeterElement (CartanMatrix.B n) = negaShift ℤ n * epsB n := by
   rcases n with _ | m
   · exact Subsingleton.elim _ _
   rw [coxeterElement, mul_prod_map_finRange_succ_eq_permMatrixHom_finRotate_mul_mul
@@ -115,7 +115,7 @@ theorem isLeftRegular_epsB : IsLeftRegular (epsB n) :=
 theorem orderOf_coxeterElement_B (hn : 1 ≤ n) :
     orderOf (coxeterElement (CartanMatrix.B n)) = 2 * n := by
   rw [orderOf_eq_orderOf_of_isLeftRegular epsB_mul_coxeterElement isLeftRegular_epsB,
-    orderOf_negaShift hn]
+    orderOf_negaShift hn (by decide)]
 
 /-- The path `0, 1, …, n - 1` is a one-degenerate order of the Dynkin diagram of type `Bₙ`. -/
 theorem isOneDegenerateOrder_B (n : ℕ) :

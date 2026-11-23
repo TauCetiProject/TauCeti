@@ -76,6 +76,7 @@ theorem nodup_aExponents (n : ℕ) : (aExponents n).Nodup :=
 theorem nodup_bExponents (n : ℕ) : (bExponents n).Nodup :=
   List.nodup_range.map fun a b h => by omega
 
+@[simp]
 theorem mem_aExponents_iff {n e : ℕ} : e ∈ aExponents n ↔ 1 ≤ e ∧ e ≤ n := by
   simp only [aExponents, List.mem_map, List.mem_range]
   constructor
@@ -84,6 +85,7 @@ theorem mem_aExponents_iff {n e : ℕ} : e ∈ aExponents n ↔ 1 ≤ e ∧ e �
   · intro h
     exact ⟨e - 1, by omega, by omega⟩
 
+@[simp]
 theorem mem_bExponents_iff {n e : ℕ} : e ∈ bExponents n ↔ Odd e ∧ e < 2 * n := by
   simp only [bExponents, List.mem_map, List.mem_range]
   constructor
@@ -106,9 +108,10 @@ theorem count_bExponents (n e : ℕ) :
   · exact List.count_eq_one_of_mem (nodup_bExponents n) (mem_bExponents_iff.2 h)
   · exact List.count_eq_zero_of_not_mem (mt mem_bExponents_iff.1 h)
 
+@[simp]
 theorem mem_dExponents_iff {n e : ℕ} :
     e ∈ dExponents n ↔ (Odd e ∧ e < 2 * (n - 1)) ∨ e = n - 1 := by
-  simp [dExponents, mem_bExponents_iff]
+  simp [dExponents]
 
 /-- The multiplicity of `e` among the exponents of `Dₙ`: `n - 1` occurs once more than among the
 odd numbers below `2n - 2`, so twice when `n` is positive and even. -/

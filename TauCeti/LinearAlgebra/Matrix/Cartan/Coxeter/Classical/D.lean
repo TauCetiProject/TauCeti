@@ -164,14 +164,14 @@ shift on the first `m + 2` coordinates and `-1` on the last. -/
 def negaD (m : ℕ) : Matrix (Fin (m + 3)) (Fin (m + 3)) ℤ :=
   reindex (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3))
     (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3))
-    (fromBlocks (negaShift (m + 2)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ))
+    (fromBlocks (negaShift ℤ (m + 2)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ))
 
 /-- `negaD m` is block diagonal: the negacyclic shift on the first `m + 2` coordinates, `-1` on
 the last. -/
 theorem reindex_negaD (m : ℕ) :
     reindex (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3)).symm
         (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3)).symm (negaD m) =
-      fromBlocks (negaShift (m + 2)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ) := by
+      fromBlocks (negaShift ℤ (m + 2)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ) := by
   rw [negaD, ← reindex_symm, Equiv.symm_apply_apply]
 
 theorem negaD_apply (a b : Fin (m + 3)) :
@@ -217,89 +217,63 @@ theorem epsD_mul_coxeterElement :
     split_ifs <;> omega
 
 /-- **The `Dₙ` Coxeter matrix `negaD` has order `2n - 2`**, the order of its block
-`negaShift (n - 1)`. -/
+`negaShift ℤ (n - 1)`. -/
 theorem orderOf_negaD : orderOf (negaD m) = 2 * (m + 2) := by
-  have h := MulEquiv.orderOf_eq (reindexAlgEquiv ℤ ℤ
-    (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3)).symm).toRingEquiv.toMulEquiv (negaD m)
-  rw [RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv, AlgEquiv.coe_toRingEquiv,
-    coe_reindexAlgEquiv, reindex_negaD] at h
-  rw [← h]
-  refine (orderOf_eq_orderOf_iff.2 fun k => ?_).trans (orderOf_negaShift (by omega))
-  rw [fromBlocks_diagonal_pow, ← fromBlocks_one, fromBlocks_inj]
-  refine ⟨fun h => h.1, fun h => ⟨h, rfl, rfl, ?_⟩⟩
-  have hdvd := orderOf_dvd_of_pow_eq_one h
-  rw [orderOf_negaShift (by omega)] at hdvd
-  exact (even_iff_two_dvd.2 ((dvd_mul_right 2 _).trans hdvd)).neg_one_pow
+  have hS := orderOf_negaShift (R := ℤ) (n := m + 2) (by omega) (by decide)
+  -- `negaD m` is the image of the block matrix under the ring isomorphism `reindex`
+  have h : orderOf (negaD m) =
+      orderOf (fromBlocks (negaShift ℤ (m + 2)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ)) :=
+    orderOf_injective (reindexAlgEquiv ℤ ℤ finSumFinEquiv).toRingEquiv.toMonoidHom
+      (reindexAlgEquiv ℤ ℤ finSumFinEquiv).injective _
+  rw [h, orderOf_fromBlocks_zero_zero_neg_one (hS ▸ dvd_mul_right 2 _), hS]
 
-private theorem epsD_mul_apply {k : Type*} (Z : Matrix (Fin (m + 3)) k ℤ) (a : Fin (m + 3))
-    (j : k) :
-    (epsD m * Z) a j =
-      (if a.val < m + 2 then Z a j else 0) -
-        (if h : 1 ≤ a.val then Z ⟨a.val - 1, by omega⟩ j else 0) +
-        (if a.val = m + 1 ∨ a.val = m + 2 then Z (Fin.last (m + 2)) j else 0) := by
-  have hsplit : ∀ c, epsD m a c * Z c j =
-      (if c = a then (if a.val < m + 2 then Z c j else 0) else 0) -
-        (if a.val = c.val + 1 ∧ c.val < m + 2 then Z c j else 0) +
-        (if c = Fin.last (m + 2) then (if a.val = m + 1 ∨ a.val = m + 2 then Z c j else 0)
-          else 0) := by
-    intro c
-    simp only [epsD_apply, Fin.ext_iff, Fin.val_last]
-    split_ifs <;> omega
-  rw [Matrix.mul_apply, Finset.sum_congr rfl fun c _ => hsplit c, Finset.sum_add_distrib,
-    Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.sum_ite_eq']
-  simp only [Finset.mem_univ, ite_true]
-  congr 2
-  by_cases ha : 1 ≤ a.val
-  · rw [dite_eq_left ha, Finset.sum_eq_single ⟨a.val - 1, by omega⟩]
-    · rw [ite_eq_left (by simp; omega)]
-    · intro c _ hc
-      exact ite_eq_right_iff.2 fun h => absurd (Fin.ext (by simp; omega)) hc
-    · simp
-  · rw [dite_eq_right ha]
-    exact Finset.sum_eq_zero fun c _ => ite_eq_right_iff.2 fun h => absurd h.1 (by omega)
+/-- Right multiplication by `epsD m`: column `k` is the difference of columns `k` and `k + 1`
+for `k < m + 2`, and the sum of the last two columns for `k = m + 2`. -/
+private theorem mul_epsD_apply {l : Type*} (Z : Matrix l (Fin (m + 3)) ℤ) (i : l)
+    (k : Fin (m + 3)) :
+    (Z * epsD m) i k = if h : k.val < m + 2 then Z i k - Z i ⟨k.val + 1, by omega⟩
+      else Z i ⟨m + 1, by omega⟩ + Z i ⟨m + 2, by omega⟩ := by
+  simp only [Matrix.mul_apply, epsD_apply]
+  split_ifs with hk
+  · simp only [mul_sub, mul_ite, mul_one, mul_zero, Finset.sum_sub_distrib]
+    rw [Finset.sum_eq_single k (fun a _ ha => ite_eq_right_iff.2 fun h => absurd (Fin.ext h) ha)
+        (by simp),
+      Finset.sum_eq_single ⟨k.val + 1, by omega⟩
+        (fun a _ ha => ite_eq_right_iff.2 fun h => absurd (Fin.ext h) ha) (by simp),
+      ite_eq_left rfl, ite_eq_left rfl]
+  · simp only [mul_add, mul_ite, mul_one, mul_zero, Finset.sum_add_distrib]
+    rw [Finset.sum_eq_single ⟨m + 1, by omega⟩
+        (fun a _ ha => ite_eq_right_iff.2 fun h => absurd (Fin.ext h) ha) (by simp),
+      Finset.sum_eq_single (⟨m + 2, by omega⟩ : Fin (m + 3))
+        (fun a _ ha => ite_eq_right_iff.2 fun h => absurd (Fin.ext h) ha) (by simp),
+      ite_eq_left rfl, ite_eq_left rfl]
 
-/-- `epsD` can be cancelled on the left (it has determinant `2` and `ℤ` is torsion-free). -/
+/-- Twice the rational inverse of `epsD m` (its adjugate, since `epsD m` has determinant `2`). Row
+`i` holds the coordinates of `2 εⱼ` on the simple roots: `εⱼ = αⱼ + ⋯ + α_{n-3} +
+(α_{n-2} + α_{n-1}) / 2` for `j ≤ n - 2`, and `ε_{n-1} = (α_{n-1} - α_{n-2}) / 2`. -/
+private def epsDAdj (m : ℕ) : Matrix (Fin (m + 3)) (Fin (m + 3)) ℤ :=
+  Matrix.of fun i j =>
+    if j.val < m + 2 then
+      (if j.val ≤ i.val ∧ i.val < m + 1 then 2 else if m + 1 ≤ i.val then 1 else 0)
+    else if i.val = m + 1 then -1 else if i.val = m + 2 then 1 else 0
+
+private theorem epsDAdj_mul_epsD : epsDAdj m * epsD m = (2 : ℤ) • 1 := by
+  ext i k
+  rw [mul_epsD_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul]
+  simp only [epsDAdj, Matrix.of_apply, Fin.ext_iff]
+  split_ifs <;> omega
+
+/-- `epsD` can be cancelled on the left: `epsDAdj m * epsD m = 2 • 1`, and `2` can be cancelled in
+`ℤ`. -/
 theorem isLeftRegular_epsD : IsLeftRegular (epsD m) := fun X Y h => by
-  replace h : epsD m * X = epsD m * Y := h
-  have hZ : epsD m * (X - Y) = 0 := by rw [Matrix.mul_sub, h, sub_self]
-  rw [← sub_eq_zero]
-  ext c j
-  let v : ℕ → ℤ := fun t => if ht : t < m + 3 then (X - Y) ⟨t, ht⟩ j else 0
-  have hv : ∀ c : Fin (m + 3), (X - Y) c j = v c.val := fun c => by simp [v, c.isLt]
-  have row : ∀ t, t < m + 3 →
-      (if t < m + 2 then v t else 0) - (if 1 ≤ t then v (t - 1) else 0) +
-        (if t = m + 1 ∨ t = m + 2 then v (m + 2) else 0) = 0 := by
-    intro t ht
-    have := congrFun (congrFun hZ ⟨t, ht⟩) j
-    rw [epsD_mul_apply] at this
-    simpa [hv] using this
-  have chain : ∀ t ≤ m, v t = 0 := by
-    intro t
-    induction t with
-    | zero =>
-      intro _
-      have := row 0 (by omega)
-      rw [ite_eq_left (by omega), ite_eq_right (by omega), ite_eq_right (by omega)] at this
-      omega
-    | succ t ih =>
-      intro ht
-      have := row (t + 1) (by omega)
-      have := ih (by omega)
-      simp only [Nat.add_sub_cancel] at *
-      split_ifs at * <;> omega
-  have h1 := row (m + 1) (by omega)
-  have h2 := row (m + 2) (by omega)
-  have hm := chain m le_rfl
-  rw [ite_eq_left (by omega), ite_eq_left (by omega), ite_eq_left (Or.inl rfl)] at h1
-  rw [ite_eq_right (by omega), ite_eq_left (by omega), ite_eq_left (Or.inr rfl)] at h2
-  have hm1 : m + 2 - 1 = m + 1 := rfl
-  simp only [Nat.add_sub_cancel, hm1] at h1 h2
-  rw [Matrix.zero_apply, hv]
-  have hc := c.isLt
-  by_cases hcm : c.val ≤ m
-  · exact chain _ hcm
-  · obtain hh | hh : c.val = m + 1 ∨ c.val = m + 2 := by omega
-    all_goals rw [hh]; omega
+  replace h : epsDAdj m * epsD m * X = epsDAdj m * epsD m * Y := by
+    rw [Matrix.mul_assoc, Matrix.mul_assoc]
+    exact congrArg (epsDAdj m * ·) h
+  rw [epsDAdj_mul_epsD, Matrix.smul_mul, Matrix.smul_mul, Matrix.one_mul, Matrix.one_mul] at h
+  ext a j
+  have := congrFun (congrFun h a) j
+  simp only [Matrix.smul_apply, smul_eq_mul] at this
+  omega
 
 /-- **The Coxeter element of type `Dₙ` has order `2n - 2`** for `n ≥ 3`. -/
 theorem orderOf_coxeterElement_D {n : ℕ} (hn : 3 ≤ n) :
@@ -312,16 +286,14 @@ theorem orderOf_coxeterElement_D {n : ℕ} (hn : 3 ≤ n) :
 (`n = m + 3`): the fork node `n - 1` has the single earlier neighbour `n - 3`. -/
 theorem isOneDegenerateOrder_D (m : ℕ) :
     List.IsOneDegenerateOrder (fun i j : Fin (m + 3) => CartanMatrix.D (m + 3) i j ≠ 0)
-      (List.finRange (m + 3)) := by
-  refine List.isOneDegenerateOrder_iff.2 fun S₁ z S₂ hS x hx y hy hzx hzy => ?_
-  have hlt := (List.pairwise_append.1 (hS ▸ List.pairwise_lt_finRange (m + 3))).2.2
-  have key : ∀ w : Fin (m + 3), w ∈ S₁ → CartanMatrix.D (m + 3) z w ≠ 0 →
-      (z.val ≤ m + 1 ∧ w.val + 1 = z.val) ∨ (z.val = m + 2 ∧ w.val = m) := by
-    intro w hw h
-    have hwz : w.val < z.val := hlt w hw z List.mem_cons_self
-    simp only [CartanMatrix.D, Matrix.of_apply] at h
-    split_ifs at h with h₁ h₂ h₃ h₄ h₅ h₆ <;> first | exact absurd rfl h | (subst h₁; omega) | omega
-  rcases key x hx hzx with h | h <;> rcases key y hy hzy with h' | h' <;> ext <;> omega
+      (List.finRange (m + 3)) :=
+  List.isOneDegenerateOrder_finRange_of_earlier_eq
+    (fun z => if z.val = m + 2 then m else z.val - 1) fun z w hwz h => by
+      have key : (z.val ≤ m + 1 ∧ w.val + 1 = z.val) ∨ (z.val = m + 2 ∧ w.val = m) := by
+        simp only [CartanMatrix.D, Matrix.of_apply] at h
+        split_ifs at h with h₁ h₂ h₃ h₄ h₅ h₆ <;>
+          first | exact absurd rfl h | (subst h₁; omega) | omega
+      split_ifs <;> omega
 
 end TauCeti.Coxeter
 
