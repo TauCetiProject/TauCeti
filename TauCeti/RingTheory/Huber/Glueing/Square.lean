@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Maps.Strict.Basic
 public import TauCeti.RingTheory.Huber.Basic
-public import TauCeti.RingTheory.Huber.Glueing.Datum
+public import TauCeti.RingTheory.Glueing.Datum
 import Mathlib.Topology.Algebra.Algebra
 import Mathlib.Topology.Baire.CompleteMetrizable
 import TauCeti.RingTheory.Huber.OpenMapping
@@ -17,7 +17,7 @@ import TauCeti.RingTheory.Huber.OpenMapping
 
 Kedlaya and Liu abstract Kiehl's descent of finite projective modules across two-piece rational
 covers into a *glueing square* of complete Hausdorff Tate rings (`R → R₁, R₂ → R₁₂`) together with
-algebraic *glueing data* (`TauCeti.Huber.GlueingDatum`).
+algebraic *glueing data* (`TauCeti.GlueingDatum`).
 
 Following Kedlaya–Liu Proposition 2.7.5, `TauCeti.Huber.GlueingSquare` phrases condition (c) of
 Definition 2.7.3 directly through its algebraic prime-contraction consequence (every maximal ideal
@@ -75,10 +75,6 @@ continuous algebra maps making `0 → R → R₁ × R₂ → R₁₂ → 0`, `(r
 strict exact, with `algebraMap R₂ R₁₂` of dense range and every maximal ideal of `R` the
 contraction of a prime ideal of `R₁ × R₂`. -/
 structure GlueingSquare : Prop where
-  /-- Continuity of `R → R₁`. -/
-  continuous_algebraMap₁ : Continuous (algebraMap R R₁)
-  /-- Continuity of `R → R₂`. -/
-  continuous_algebraMap₂ : Continuous (algebraMap R R₂)
   /-- Continuity of `R₁ → R₁₂`. -/
   continuous_algebraMap₁₂ : Continuous (algebraMap R₁ R₁₂)
   /-- Continuity of `R₂ → R₁₂`. -/
@@ -103,6 +99,16 @@ structure GlueingSquare : Prop where
     p.comap ((algebraMap R R₁).prod (algebraMap R R₂)) = m
 
 variable {R R₁ R₂ R₁₂}
+
+/-- The structure map `R → R₁` of a glueing square is continuous. -/
+theorem GlueingSquare.continuous_algebraMap₁ (h : GlueingSquare R R₁ R₂ R₁₂) :
+    Continuous (algebraMap R R₁) :=
+  continuous_fst.comp h.isInducing.continuous
+
+/-- The structure map `R → R₂` of a glueing square is continuous. -/
+theorem GlueingSquare.continuous_algebraMap₂ (h : GlueingSquare R R₁ R₂ R₁₂) :
+    Continuous (algebraMap R R₂) :=
+  continuous_snd.comp h.isInducing.continuous
 
 /-- The two composite ring homomorphisms `R →+* R₁₂` in a glueing square agree. -/
 theorem GlueingSquare.comp_algebraMap_eq (h : GlueingSquare R R₁ R₂ R₁₂) :
@@ -165,8 +171,6 @@ have dense image when `f` is not invertible in `R⟨f⟩`. -/
 theorem GlueingSquare.symm [ContinuousNeg R₁₂] (h : GlueingSquare R R₁ R₂ R₁₂)
     (hd₁ : DenseRange (algebraMap R₁ R₁₂)) :
     GlueingSquare R R₂ R₁ R₁₂ where
-  continuous_algebraMap₁ := h.continuous_algebraMap₂
-  continuous_algebraMap₂ := h.continuous_algebraMap₁
   continuous_algebraMap₁₂ := h.continuous_algebraMap₂₁₂
   continuous_algebraMap₂₁₂ := h.continuous_algebraMap₁₂
   injective _ _ heq := h.injective (Prod.ext (congrArg Prod.snd heq) (congrArg Prod.fst heq))
@@ -234,9 +238,7 @@ theorem GlueingSquare.congr {L₁ L₂ L₁₂ : Type*}
       (AddMonoidHom.ext fun r ↦ Prod.ext (e₁.commutes r).symm (e₂.commutes r).symm)
       (AddMonoidHom.ext fun ⟨x₁, x₂⟩ ↦ by
         simp [δL, δR, hcomp₁, hcomp₂]; rfl)).mpr h.exact_sub
-  exact ⟨(funext fun r ↦ (e₁.commutes r).symm) ▸ he₁.comp h.continuous_algebraMap₁,
-    (funext fun r ↦ (e₂.commutes r).symm) ▸ he₂.comp h.continuous_algebraMap₂,
-    hmap₁ ▸ he₁₂.comp (h.continuous_algebraMap₁₂.comp he₁_symm),
+  exact ⟨hmap₁ ▸ he₁₂.comp (h.continuous_algebraMap₁₂.comp he₁_symm),
     hmap₂ ▸ he₁₂.comp (h.continuous_algebraMap₂₁₂.comp he₂_symm),
     hι ▸ (H₁.prodCongr H₂).injective.comp h.injective,
     hexact,
@@ -311,15 +313,13 @@ theorem GlueingSquare.of_exact
   have hι_emb : Topology.IsEmbedding ι :=
     Topology.isEmbedding_iff_isStrictMap_injective.mpr
       ⟨ι.isStrictMap_of_isClosed_range_of_isTateRing hι_cont.continuousAt hclosed, hinj⟩
-  exact ⟨hc₁, hc₂, hc₁₂, hc₂₁₂, hinj, hexact, hsurj, hι_emb.isInducing,
+  exact ⟨hc₁₂, hc₂₁₂, hinj, hexact, hsurj, hι_emb.isInducing,
     (δ.isQuotientMap_of_isTateRing hsurj hδ_cont.continuousAt).isStrictMap, hdense, hprime⟩
 
 /-- The identity glueing square `R → R, R → R` on any topological ring `R` with continuous
 subtraction. -/
 theorem GlueingSquare.id (R : Type*) [CommRing R] [TopologicalSpace R] [ContinuousSub R] :
     GlueingSquare R R R R where
-  continuous_algebraMap₁ := continuous_id
-  continuous_algebraMap₂ := continuous_id
   continuous_algebraMap₁₂ := continuous_id
   continuous_algebraMap₂₁₂ := continuous_id
   injective _ _ h := congrArg Prod.fst h
@@ -342,8 +342,6 @@ theorem GlueingSquare.of_subsingleton_right {R R₂ R₁₂ : Type*} [CommRing R
     [CommRing R₁₂] [TopologicalSpace R] [TopologicalSpace R₂] [TopologicalSpace R₁₂]
     [Algebra R R₂] [Algebra R R₁₂] [Algebra R₂ R₁₂] [Subsingleton R₂] [Subsingleton R₁₂] :
     GlueingSquare R R R₂ R₁₂ where
-  continuous_algebraMap₁ := continuous_id
-  continuous_algebraMap₂ := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
   continuous_algebraMap₁₂ := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
   continuous_algebraMap₂₁₂ := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
   injective _ _ h := congrArg Prod.fst h

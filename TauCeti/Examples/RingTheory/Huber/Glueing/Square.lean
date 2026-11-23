@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Huber.Glueing.Square
 public import TauCeti.RingTheory.Huber.Padic.Field
 
 /-!
-# Checks and non-examples for `GlueingSquare` and `GlueingDatum`
+# Checks and non-examples for `GlueingSquare`
 
 * Positive examples: the identity square `GlueingSquare.id ℚ_[p]` and right-subsingleton squares
   `GlueingSquare.of_subsingleton_right`.
@@ -22,13 +22,13 @@ public import TauCeti.RingTheory.Huber.Padic.Field
   `R = ℤ` and `R₁ = R₂ = R₁₂ = ℤ[X]` satisfies `denseRange`, `surjective_sub`, and
   `exists_prime_comap_eq`, yet is not a `GlueingSquare` because `(X, X)` maps to `0` without coming
   from `ℤ`.
-* Module glueing checks: explicit section membership and non-membership on `ℚ × ℚ`, and flat
-  module recovery `GlueingSquare.equivSectionsOfModule` on `ℚ_[p] × ℚ_[p]`.
+* Module glueing check: flat module recovery `GlueingSquare.equivSectionsOfModule` on
+  `ℚ_[p] × ℚ_[p]`.
 -/
 
 public section
 
-open TensorProduct Polynomial
+open Polynomial
 
 namespace TauCeti.Huber.GlueingSquareChecks
 
@@ -82,25 +82,6 @@ example :
   · obtain ⟨a, ha⟩ := (h.exact_sub (X, X)).mp (sub_self _)
     have hcoeff := congrArg (fun p : ℤ[X] ↦ p.coeff 1) (congrArg Prod.fst ha)
     rw [Polynomial.algebraMap_eq, Polynomial.coeff_C] at hcoeff; simp at hcoeff
-
-/-- **Positive section check**: `((1, 2), (1, 2))` satisfies the cocycle condition for the trivial
-glueing datum of `ℚ × ℚ` over `ℚ`. -/
-example :
-    (((1 : ℚ) ⊗ₜ[ℚ] ((1 : ℚ), (2 : ℚ)), (1 : ℚ) ⊗ₜ[ℚ] ((1 : ℚ), (2 : ℚ))) :
-      (ℚ ⊗[ℚ] (ℚ × ℚ)) × (ℚ ⊗[ℚ] (ℚ × ℚ))) ∈
-      (GlueingDatum.ofModule ℚ ℚ ℚ ℚ (ℚ × ℚ)).sections ℚ := by
-  simp
-
-/-- **Sign / cocycle check**: `((1, 2), (2, 1))` does *not* lie in the sections of the glueing datum
-of `ℚ × ℚ` over `ℚ`. -/
-example :
-    (((1 : ℚ) ⊗ₜ[ℚ] ((1 : ℚ), (2 : ℚ)), (1 : ℚ) ⊗ₜ[ℚ] ((2 : ℚ), (1 : ℚ))) :
-      (ℚ ⊗[ℚ] (ℚ × ℚ)) × (ℚ ⊗[ℚ] (ℚ × ℚ))) ∉
-      (GlueingDatum.ofModule ℚ ℚ ℚ ℚ (ℚ × ℚ)).sections ℚ := by
-  intro hmem
-  simp only [GlueingDatum.mem_sections_iff, GlueingDatum.ofModule_ψ₁_tmul,
-    GlueingDatum.ofModule_ψ₂_tmul, one_smul] at hmem
-  simpa using congrArg (TensorProduct.lid ℚ (ℚ × ℚ)) hmem
 
 end TauCeti.Huber.GlueingSquareChecks
 

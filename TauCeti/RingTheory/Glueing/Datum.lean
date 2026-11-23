@@ -23,14 +23,14 @@ canonically as `N ≃ₗ[R] (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).sectio
 
 ## Main definitions
 
-* `TauCeti.Huber.GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂`: modules `M₁`, `M₂`, `M₁₂` equipped with
+* `TauCeti.GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂`: modules `M₁`, `M₂`, `M₁₂` equipped with
   `R₁₂`-linear isomorphisms `ψᵢ : R₁₂ ⊗_{Rᵢ} Mᵢ ≃ₗ[R₁₂] M₁₂`.
-* `TauCeti.Huber.GlueingDatum.diff`, `TauCeti.Huber.GlueingDatum.sections R D`,
-  `TauCeti.Huber.GlueingDatum.sectionsEquivSymm`, `TauCeti.Huber.GlueingDatum.fst`,
-  `TauCeti.Huber.GlueingDatum.snd`, `TauCeti.Huber.GlueingDatum.lift`,
-  `TauCeti.Huber.GlueingDatum.baseChangeFst`, `TauCeti.Huber.GlueingDatum.baseChangeSnd`,
-  `TauCeti.Huber.GlueingDatum.ofModule`, `TauCeti.Huber.GlueingDatum.toSectionsOfModule`, and
-  `TauCeti.Huber.GlueingDatum.equivSectionsOfModule`: the difference map, global sections of a
+* `TauCeti.GlueingDatum.diff`, `TauCeti.GlueingDatum.sections R D`,
+  `TauCeti.GlueingDatum.sectionsEquivSymm`, `TauCeti.GlueingDatum.fst`,
+  `TauCeti.GlueingDatum.snd`, `TauCeti.GlueingDatum.lift`,
+  `TauCeti.GlueingDatum.baseChangeFst`, `TauCeti.GlueingDatum.baseChangeSnd`,
+  `TauCeti.GlueingDatum.ofModule`, `TauCeti.GlueingDatum.toSectionsOfModule`, and
+  `TauCeti.GlueingDatum.equivSectionsOfModule`: the difference map, global sections of a
   glueing datum, symmetry transport, projections and their universal lift and base changes, the
   canonical datum of an `R`-module, and recovery for flat modules.
 
@@ -44,7 +44,7 @@ public section
 
 open TensorProduct
 
-namespace TauCeti.Huber
+namespace TauCeti
 
 section GlueingDatum
 
@@ -425,6 +425,6 @@ end OfModule
 
 end GlueingDatum
 
-end TauCeti.Huber
+end TauCeti
 
 end

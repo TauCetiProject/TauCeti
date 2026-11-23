@@ -26,12 +26,16 @@ and universal properties of `ratLoc`.
 
 * `TauCeti.Huber.IsRationalCompletion P T s hT B`: `B` is isomorphic as a topological `A`-algebra
   to the completed rational localisation `A⟨T/s⟩`.
+* `TauCeti.Huber.IsRationalCompletion.ratLocEquiv`: a chosen bicontinuous `A`-algebra equivalence
+  `ratLoc P T s _ ≃ₐ[A] B`.
 
 ## Main results
 
-* `TauCeti.Huber.isRationalCompletion_iff_ratLoc`, `TauCeti.Huber.isRationalCompletion_ratLoc`, and
-  `TauCeti.Huber.IsRationalCompletion.congr_pairOfDefinition`: comparison with `ratLoc` and
-  independence of the pair of definition `P`.
+* `TauCeti.Huber.isRationalCompletion_iff_ratLoc`, `TauCeti.Huber.isRationalCompletion_ratLoc`,
+  `TauCeti.Huber.IsRationalCompletion.continuous_ratLocEquiv`,
+  `TauCeti.Huber.IsRationalCompletion.continuous_ratLocEquiv_symm`, and
+  `TauCeti.Huber.IsRationalCompletion.congr_pairOfDefinition`: comparison with `ratLoc`,
+  bicontinuity of `ratLocEquiv`, and independence of the pair of definition `P`.
 * `TauCeti.Huber.IsRationalCompletion.isTopologicalRing`,
   `TauCeti.Huber.IsRationalCompletion.completeSpace`,
   `TauCeti.Huber.IsRationalCompletion.t2Space`,
@@ -121,6 +125,22 @@ section ModelProperties
 variable {P : PairOfDefinition A} {T : Finset A} {s : A}
   {hT : IsOpen (Ideal.span (T : Set A) : Set A)}
   {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
+
+/-- A chosen bicontinuous `A`-algebra equivalence `ratLoc P T s _ ≃ₐ[A] B` witnessing
+`IsRationalCompletion P T s hT B`. -/
+noncomputable def IsRationalCompletion.ratLocEquiv (h : IsRationalCompletion P T s hT B) :
+    ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT) ≃ₐ[A] B :=
+  h.choose
+
+/-- `IsRationalCompletion.ratLocEquiv` is continuous. -/
+theorem IsRationalCompletion.continuous_ratLocEquiv (h : IsRationalCompletion P T s hT B) :
+    Continuous h.ratLocEquiv :=
+  h.choose_spec.1
+
+/-- The inverse of `IsRationalCompletion.ratLocEquiv` is continuous. -/
+theorem IsRationalCompletion.continuous_ratLocEquiv_symm (h : IsRationalCompletion P T s hT B) :
+    Continuous h.ratLocEquiv.symm :=
+  h.choose_spec.2
 
 /-- `IsRationalCompletion` is independent of the chosen pair of definition `P`. -/
 theorem IsRationalCompletion.congr_pairOfDefinition (h : IsRationalCompletion P T s hT B)

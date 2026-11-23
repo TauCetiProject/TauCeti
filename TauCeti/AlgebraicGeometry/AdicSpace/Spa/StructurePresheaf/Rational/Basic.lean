@@ -374,14 +374,14 @@ noncomputable def rationalSectionRingEquiv :
     presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) ≃+* B :=
   (((forget₂ TopCommRingCat CommRingCat).mapIso
       (rationalSectionTopIso P hAplus T s hT)).commRingCatIsoToRingEquiv).trans
-    ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose.toRingEquiv
+    hB.ratLocEquiv.toRingEquiv
 
 /-- Explicit evaluation formula for `rationalSectionRingEquiv`. -/
 private theorem rationalSectionRingEquiv_apply
     (z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)) :
     let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
     rationalSectionRingEquiv P hAplus T s hT hB z =
-      ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose
+      hB.ratLocEquiv
         ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
           ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val z)) := by
   rw [rationalSectionRingEquiv, rationalSectionTopIso]
@@ -390,14 +390,12 @@ private theorem rationalSectionRingEquiv_apply
 /-- `rationalSectionRingEquiv` is continuous. -/
 theorem continuous_rationalSectionRingEquiv :
     Continuous (rationalSectionRingEquiv P hAplus T s hT hB) :=
-  ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose_spec.1.comp
-    (rationalSectionTopIso P hAplus T s hT).hom.property
+  hB.continuous_ratLocEquiv.comp (rationalSectionTopIso P hAplus T s hT).hom.property
 
 /-- The inverse of `rationalSectionRingEquiv` is continuous. -/
 theorem continuous_rationalSectionRingEquiv_symm :
     Continuous (rationalSectionRingEquiv P hAplus T s hT hB).symm :=
-  (rationalSectionTopIso P hAplus T s hT).inv.property.comp
-    ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose_spec.2
+  (rationalSectionTopIso P hAplus T s hT).inv.property.comp hB.continuous_ratLocEquiv_symm
 
 end RationalSection
 
@@ -419,12 +417,10 @@ theorem rationalSectionRingEquiv_map_le (P : PairOfDefinition A) {Aplus : Subrin
   have : T2Space B' := hB'.t2Space
   let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
   let q : Presentation P := ⟨T', s', P.hasDenominatorPower_of_isOpen_span T' s' _ hT'⟩
-  let e := ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose
-  let e' := ((isRationalCompletion_iff_ratLoc P T' s' hT' B').mp hB').choose
-  have he_symm : Continuous e.symm :=
-    ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose_spec.2
-  have he' : Continuous e' :=
-    ((isRationalCompletion_iff_ratLoc P T' s' hT' B').mp hB').choose_spec.1
+  let e := hB.ratLocEquiv
+  let e' := hB'.ratLocEquiv
+  have he_symm : Continuous e.symm := hB.continuous_ratLocEquiv_symm
+  have he' : Continuous e' := hB'.continuous_ratLocEquiv
   have hsub : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den :=
     spaBasicOpen_le_spaBasicOpen_iff.mp hle
   let σ := ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _ p.hasDenominatorPower
@@ -533,7 +529,7 @@ theorem rationalSectionRingEquiv_symm_algebraMap
     rw [ha]
     exact (eqToIso
       (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).hom_inv_id_apply _
-  rw [h1, ← algebraMap_ratLoc, ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose.commutes]
+  rw [h1, ← algebraMap_ratLoc, hB.ratLocEquiv.commutes]
 
 end TauCeti.ValuationSpectrum
 

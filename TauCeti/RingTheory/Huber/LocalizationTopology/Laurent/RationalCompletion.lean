@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.RationalCompletion
 import TauCeti.RingTheory.Huber.LocalizationTopology.Evaluation
+import TauCeti.RingTheory.Huber.LocalizationTopology.ModelEvaluation
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Laurent.Basic
 
@@ -43,72 +44,6 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
 section SimpleLaurent
 
 variable [CompleteSpace A] [T0Space A]
-
-section ModelEval
-
-variable (P : PairOfDefinition A) {T : Finset A} {s : A}
-  (hT : IsOpen (Ideal.span (T : Set A) : Set A))
-  {B : Type*} [CommRing B] [Algebra A B]
-  (e : ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT) ≃ₐ[A] B)
-  {k : ℕ} (t : Fin k → A) (ht : ∀ i, t i ∈ T)
-
-/-- Evaluation `A⟨X₁, …, Xₖ⟩ → B` from the uncompleted restricted power series ring into a model
-`B` of `A⟨T/s⟩`. -/
-private noncomputable def modelEvalHom :
-    letI := P.toNonarchimedeanRing
-    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →+* B :=
-  letI := P.toNonarchimedeanRing
-  e.toRingHom.comp ((P.rationalEvalHom T s (Localization.Away s)
-    (P.hasDenominatorPower_of_isOpen_span T s _ hT) t ht).comp
-      (restrictedMvPowerSeriesCompletionEquiv k A).symm.toRingHom)
-
-private theorem continuous_modelEvalHom [TopologicalSpace B] (he : Continuous e) :
-    letI := P.toNonarchimedeanRing; Continuous (modelEvalHom P hT e t ht) :=
-  letI := P.toNonarchimedeanRing
-  he.comp ((P.continuous_rationalEvalHom T s _ _ t ht).comp
-    uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm.continuous)
-
-private theorem modelEvalHom_apply (x : letI := P.toNonarchimedeanRing
-    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    letI := P.toNonarchimedeanRing
-    modelEvalHom P hT e t ht x = e (P.rationalEvalHom T s (Localization.Away s)
-      (P.hasDenominatorPower_of_isOpen_span T s _ hT) t ht
-      ((restrictedMvPowerSeriesCompletionEquiv k A).symm x)) := by
-  let _ := P.toNonarchimedeanRing
-  simp only [modelEvalHom, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-    AlgEquiv.coe_toRingEquiv]
-
-private theorem modelEvalHom_weightedC (a : A) :
-    letI := P.toNonarchimedeanRing
-    modelEvalHom P hT e t ht (weightedC _ isWeightFamily_one_weight a) = algebraMap A B a := by
-  let _ := P.toNonarchimedeanRing
-  rw [modelEvalHom_apply, restrictedMvPowerSeriesCompletionEquiv_symm_apply,
-    P.rationalEvalHom_coe_weightedC, ← algebraMap_ratLoc, e.commutes]
-
-private theorem modelEvalHom_X_eq_algebraMap_of_mul (i : Fin k) {a : A} (hti : t i = s * a) :
-    letI := P.toNonarchimedeanRing
-    modelEvalHom P hT e t ht (weightedX _ isWeightFamily_one_weight i) = algebraMap A B a := by
-  let _ := P.toNonarchimedeanRing
-  rw [modelEvalHom_apply, restrictedMvPowerSeriesCompletionEquiv_symm_apply,
-    P.rationalEvalHom_coe_weightedX, hti, divBy_mul_cancel_left a s, ← P.toCompletionLoc_apply,
-    ← algebraMap_ratLoc, e.commutes]
-
-private theorem modelEvalHom_X_mul_inv (i : Fin k) (hti : t i = 1) :
-    letI := P.toNonarchimedeanRing
-    algebraMap A B s * modelEvalHom P hT e t ht (weightedX _ isWeightFamily_one_weight i) = 1 := by
-  let _ := P.toNonarchimedeanRing
-  let S := Localization.Away s
-  let hden := P.hasDenominatorPower_of_isOpen_span T s S hT
-  let _ := P.locUniformSpace T s S hden
-  have _ := P.isUniformAddGroup_locUniformSpace T s S hden
-  have _ := P.isTopologicalRing_locUniformSpace T s S hden
-  rw [modelEvalHom_apply, restrictedMvPowerSeriesCompletionEquiv_symm_apply,
-    P.rationalEvalHom_coe_weightedX, ← e.commutes s, ← map_mul, algebraMap_ratLoc,
-    P.toCompletionLoc_apply, ← Completion.coe_mul, hti, divBy_one,
-    IsLocalization.Away.mul_invSelf]
-  exact map_one e
-
-end ModelEval
 
 private theorem comp_modelEvalHom_eq_weightedRename (P : PairOfDefinition A)
     {T₁ T₂ : Finset A} {s₁ s₂ : A} (hT₁ : IsOpen (Ideal.span (T₁ : Set A) : Set A))
@@ -160,6 +95,8 @@ private theorem modelEvalHom_surjective_overlap (P : PairOfDefinition A) (f : A)
     rcases Finset.mem_insert.mp hy with rfl | hy
     · exact ⟨0, rfl⟩
     · rcases Finset.mem_singleton.mp hy with rfl; exact ⟨1, rfl⟩
+  rw [show (modelEvalHom P hT₁₂ e₁₂ ![f * f, 1] (Fin.forall_fin_two.mpr ⟨by simp, by simp⟩) :
+      _ → B₁₂) = _ from funext (modelEvalHom_apply P hT₁₂ e₁₂ ![f * f, 1] _)]
   exact e₁₂.surjective.comp ((P.rationalEvalHom_surjective {f * f, 1} f _ _ ![f * f, 1] _
     hspan hTt).comp (restrictedMvPowerSeriesCompletionEquiv 2 A).symm.surjective)
 
@@ -184,9 +121,12 @@ theorem IsRationalCompletion.surjective_sub_laurent
     Function.Surjective fun x : B₁ × B₂ ↦ ρ₁ x.1 - ρ₂ x.2 := by
   let _ := P.toNonarchimedeanRing
   have _ : T2Space B₁₂ := h₁₂.t2Space
-  obtain ⟨e₁, he₁, -⟩ := (isRationalCompletion_iff_ratLoc _ _ _ _ _).mp h₁
-  obtain ⟨e₂, he₂, -⟩ := (isRationalCompletion_iff_ratLoc _ _ _ _ _).mp h₂
-  obtain ⟨e₁₂, he₁₂, -⟩ := (isRationalCompletion_iff_ratLoc _ _ _ _ _).mp h₁₂
+  let e₁ := h₁.ratLocEquiv
+  let he₁ := h₁.continuous_ratLocEquiv
+  let e₂ := h₂.ratLocEquiv
+  let he₂ := h₂.continuous_ratLocEquiv
+  let e₁₂ := h₁₂.ratLocEquiv
+  let he₁₂ := h₁₂.continuous_ratLocEquiv
   have ht₁ : ∀ i : Fin 1, ![f] i ∈ ({f, 1} : Finset A) := fun i ↦ by fin_cases i; simp
   have ht₂ : ∀ i : Fin 1, ![1] i ∈ ({1} : Finset A) := fun i ↦ by fin_cases i; simp
   have ht₁₂ : ∀ i : Fin 2, ![f * f, 1] i ∈ ({f * f, 1} : Finset A) :=

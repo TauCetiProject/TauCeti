@@ -118,8 +118,7 @@ theorem exists_prime_comap_eq_of_mem_rationalSubset {P P₀ : PairOfDefinition A
     (hB : IsRationalCompletion P T s hT B) {v : Spv A}
     (hvb : v ∈ rationalSubset Aplus T s) (hm : v.supp.IsMaximal) :
     ∃ q : Ideal B, q.IsPrime ∧ q.comap (algebraMap A B) = v.supp := by
-  obtain ⟨e, -, -⟩ := (isRationalCompletion_iff_ratLoc P₀ T s hT B).mp
-    (hB.congr_pairOfDefinition P₀)
+  let e := (hB.congr_pairOfDefinition P₀).ratLocEquiv
   let hden := P₀.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
   have hcomp : e.toRingHom.comp (P₀.toCompletionLoc T s _ hden) = algebraMap A B :=
     RingHom.ext fun a ↦ by simpa [algebraMap_ratLoc] using e.commutes a

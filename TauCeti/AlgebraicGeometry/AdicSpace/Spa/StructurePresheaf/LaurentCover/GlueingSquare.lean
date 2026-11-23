@@ -75,9 +75,15 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] (S : Pair R)
     (h₂ : IsRationalCompletion P {1} f hT₂ R₂) (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ R₁₂)
     (hc₁ : Continuous (algebraMap R₁ R₁₂)) (hc₂ : Continuous (algebraMap R₂ R₁₂)) :
     GlueingSquare R R₁ R₂ R₁₂ := by
-  obtain ⟨e₁, he₁, he₁'⟩ := (isRationalCompletion_iff_ratLoc P {f, 1} 1 hT₁ R₁).mp h₁
-  obtain ⟨e₂, he₂, he₂'⟩ := (isRationalCompletion_iff_ratLoc P {1} f hT₂ R₂).mp h₂
-  obtain ⟨e₁₂, he₁₂, he₁₂'⟩ := (isRationalCompletion_iff_ratLoc P {f * f, 1} f hT₁₂ R₁₂).mp h₁₂
+  let e₁ := h₁.ratLocEquiv
+  let he₁ := h₁.continuous_ratLocEquiv
+  let he₁' := h₁.continuous_ratLocEquiv_symm
+  let e₂ := h₂.ratLocEquiv
+  let he₂ := h₂.continuous_ratLocEquiv
+  let he₂' := h₂.continuous_ratLocEquiv_symm
+  let e₁₂ := h₁₂.ratLocEquiv
+  let he₁₂ := h₁₂.continuous_ratLocEquiv
+  let he₁₂' := h₁₂.continuous_ratLocEquiv_symm
   let L₁ := ratLoc P {f, 1} 1 (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₁)
   let L₂ := ratLoc P {1} f (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₂)
   let L₁₂ := ratLoc P {f * f, 1} f (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₁₂)
