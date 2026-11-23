@@ -562,57 +562,48 @@ variable {R : Type*} [CommRing R] {δ : R}
 /-- The sign isomorphism preserves and reflects membership in the trace radical, since `(-1) ^ n`
 is a unit in every commutative ring. -/
 theorem signEquiv_mem_traceRadical_iff {n : ℕ} (x : TemperleyLieb R δ n) :
-    signEquiv δ n x ∈ (tr' n).traceRadical (htr'.map_mul_comm n) ↔
-      x ∈ (tr n).traceRadical (htr.map_mul_comm n) := by
-  simp only [LinearMap.mem_traceRadical]
+    signEquiv δ n x ∈ htr'.traceRadical n ↔ x ∈ htr.traceRadical n := by
+  simp only [mem_traceRadical_iff]
   rw [← (signEquiv δ n).toEquiv.forall_congr_right]
   simp only [AlgEquiv.toEquiv_eq_coe, EquivLike.coe_coe, ← map_mul, htr.map_signEquiv htr',
     (isUnit_one.neg.pow n).mul_right_eq_zero]
 
 /-- The inverse sign isomorphism preserves and reflects membership in the trace radical. -/
 theorem signEquiv_symm_mem_traceRadical_iff {n : ℕ} (x : TemperleyLieb R (-δ) n) :
-    (signEquiv δ n).symm x ∈ (tr n).traceRadical (htr.map_mul_comm n) ↔
-      x ∈ (tr' n).traceRadical (htr'.map_mul_comm n) := by
+    (signEquiv δ n).symm x ∈ htr.traceRadical n ↔ x ∈ htr'.traceRadical n := by
   simpa using (htr.signEquiv_mem_traceRadical_iff htr' ((signEquiv δ n).symm x)).symm
 
 /-- Pulling back the trace radical at `-δ` along `signEquiv` yields the trace radical at `δ`. -/
 theorem comap_traceRadical_signEquiv (n : ℕ) :
     Ideal.comap (signEquiv δ n : TemperleyLieb R δ n →+* TemperleyLieb R (-δ) n)
-      ((tr' n).traceRadical (htr'.map_mul_comm n)) =
-        (tr n).traceRadical (htr.map_mul_comm n) :=
+      (htr'.traceRadical n) = htr.traceRadical n :=
   Ideal.ext fun x ↦ htr.signEquiv_mem_traceRadical_iff htr' x
 
 /-- Mapping the trace radical at `δ` forward along `signEquiv` yields the trace radical at `-δ`. -/
 theorem map_traceRadical_signEquiv (n : ℕ) :
     Ideal.map (signEquiv δ n : TemperleyLieb R δ n →+* TemperleyLieb R (-δ) n)
-      ((tr n).traceRadical (htr.map_mul_comm n)) =
-        (tr' n).traceRadical (htr'.map_mul_comm n) := by
+      (htr.traceRadical n) = htr'.traceRadical n := by
   rw [← htr.comap_traceRadical_signEquiv htr' n, Ideal.map_coe, Ideal.comap_coe,
     Ideal.map_comap_of_surjective _ (signEquiv δ n).surjective]
 
 /-- The algebra isomorphism between the trace-radical quotients at `δ` and `-δ` induced by
 `TauCeti.TemperleyLieb.signEquiv`. -/
-def quotientSignEquiv (n : ℕ) :
-    (TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) ≃ₐ[R]
-      (TemperleyLieb R (-δ) n ⧸ (tr' n).traceRadical (htr'.map_mul_comm n)) :=
+def quotientSignEquiv (n : ℕ) : htr.Quotient n ≃ₐ[R] htr'.Quotient n :=
   Ideal.quotientEquivAlg _ _ (signEquiv δ n) (htr.map_traceRadical_signEquiv htr' n).symm
 
 /-- `quotientSignEquiv` acts on quotient classes by applying `signEquiv` to representatives. -/
 @[simp]
 theorem quotientSignEquiv_mk (n : ℕ) (x : TemperleyLieb R δ n) :
-    htr.quotientSignEquiv htr' n
-      (Ideal.Quotient.mk ((tr n).traceRadical (htr.map_mul_comm n)) x) =
-        Ideal.Quotient.mk ((tr' n).traceRadical (htr'.map_mul_comm n)) (signEquiv δ n x) := by
+    htr.quotientSignEquiv htr' n (Ideal.Quotient.mk (htr.traceRadical n) x) =
+      Ideal.Quotient.mk (htr'.traceRadical n) (signEquiv δ n x) := by
   rw [quotientSignEquiv, Ideal.quotientEquivAlg_mk]
 
 /-- The inverse of `quotientSignEquiv` acts on quotient classes by applying `(signEquiv δ n).symm`
 to representatives. -/
 @[simp]
 theorem quotientSignEquiv_symm_mk (n : ℕ) (x : TemperleyLieb R (-δ) n) :
-    (htr.quotientSignEquiv htr' n).symm
-      (Ideal.Quotient.mk ((tr' n).traceRadical (htr'.map_mul_comm n)) x) =
-        Ideal.Quotient.mk ((tr n).traceRadical (htr.map_mul_comm n))
-          ((signEquiv δ n).symm x) := by
+    (htr.quotientSignEquiv htr' n).symm (Ideal.Quotient.mk (htr'.traceRadical n) x) =
+      Ideal.Quotient.mk (htr.traceRadical n) ((signEquiv δ n).symm x) := by
   rw [quotientSignEquiv, Ideal.quotientEquivAlg_symm, Ideal.quotientEquivAlg_mk]
 
 /-- The quotient sign isomorphisms commute with the strand maps `quotientStrandIncl`
@@ -624,20 +615,10 @@ theorem quotientSignEquiv_quotientStrandIncl (n : ℕ) (x : htr.Quotient n) :
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
   cases n with
   | zero =>
-    rw [eq_algebraMap_aug_zero x, Ideal.Quotient.mk_algebraMap, AlgHom.commutes]
-    erw [AlgEquiv.commutes, AlgEquiv.commutes, AlgHom.commutes]
-    rfl
+    rw [eq_algebraMap_aug_zero x, Ideal.Quotient.mk_algebraMap, AlgHom.commutes,
+      AlgEquiv.commutes, AlgEquiv.commutes, AlgHom.commutes]
   | succ n =>
-    rw [htr.quotientStrandIncl_mk, strandInclAll_succ]
-    change htr.quotientSignEquiv htr' (n + 2)
-        (Ideal.Quotient.mk ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))) (strandIncl x)) =
-      htr'.quotientStrandIncl (n + 1) (htr.quotientSignEquiv htr' (n + 1)
-        (Ideal.Quotient.mk ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) x))
-    rw [htr.quotientSignEquiv_mk, htr.quotientSignEquiv_mk]
-    change Ideal.Quotient.mk (htr'.traceRadical (n + 2)) (signEquiv δ (n + 2) (strandIncl x)) =
-      htr'.quotientStrandIncl (n + 1)
-        (Ideal.Quotient.mk (htr'.traceRadical (n + 1)) (signEquiv δ (n + 1) x))
-    simp
+    simp [strandInclAll_succ]
 
 /-- The inverse quotient sign isomorphisms commute with `quotientStrandIncl`. -/
 @[simp]
@@ -645,13 +626,12 @@ theorem quotientSignEquiv_symm_quotientStrandIncl (n : ℕ) (x : htr'.Quotient n
     (htr.quotientSignEquiv htr' (n + 1)).symm (htr'.quotientStrandIncl n x) =
       htr.quotientStrandIncl n ((htr.quotientSignEquiv htr' n).symm x) :=
   (htr.quotientSignEquiv htr' (n + 1)).injective (by
-    erw [htr.quotientSignEquiv_quotientStrandIncl, AlgEquiv.apply_symm_apply,
+    rw [htr.quotientSignEquiv_quotientStrandIncl, AlgEquiv.apply_symm_apply,
       AlgEquiv.apply_symm_apply])
 
 /-- On the trace-radical quotients, `quotientSignEquiv` multiplies `quotientTrace` by `(-1) ^ n`. -/
 @[simp]
-theorem quotientTrace_quotientSignEquiv (n : ℕ)
-    (x : TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+theorem quotientTrace_quotientSignEquiv (n : ℕ) (x : htr.Quotient n) :
     (tr' n).quotientTrace (htr'.map_mul_comm n) (htr.quotientSignEquiv htr' n x) =
       (-1) ^ n * (tr n).quotientTrace (htr.map_mul_comm n) x := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
@@ -659,8 +639,7 @@ theorem quotientTrace_quotientSignEquiv (n : ℕ)
 
 /-- On the trace-radical quotients, `quotientSignEquiv` preserves the normalized trace
 `Ring.inverse (δ ^ n) * quotientTrace`. -/
-theorem inverse_pow_mul_quotientTrace_quotientSignEquiv (n : ℕ)
-    (x : TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+theorem inverse_pow_mul_quotientTrace_quotientSignEquiv (n : ℕ) (x : htr.Quotient n) :
     Ring.inverse ((-δ) ^ n) *
         (tr' n).quotientTrace (htr'.map_mul_comm n) (htr.quotientSignEquiv htr' n x) =
       Ring.inverse (δ ^ n) * (tr n).quotientTrace (htr.map_mul_comm n) x := by
@@ -723,8 +702,7 @@ variable (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' tr') (h : δ 
 
 /-- `signEquivOfAddEqZero` preserves and reflects membership in the trace radical. -/
 theorem signEquivOfAddEqZero_mem_traceRadical_iff {n : ℕ} (x : TemperleyLieb R δ n) :
-    signEquivOfAddEqZero h n x ∈ (tr' n).traceRadical (htr'.map_mul_comm n) ↔
-      x ∈ (tr n).traceRadical (htr.map_mul_comm n) := by
+    signEquivOfAddEqZero h n x ∈ htr'.traceRadical n ↔ x ∈ htr.traceRadical n := by
   obtain rfl := eq_neg_of_add_eq_zero_right h
   exact htr.signEquiv_mem_traceRadical_iff htr' x
 
@@ -732,34 +710,28 @@ theorem signEquivOfAddEqZero_mem_traceRadical_iff {n : ℕ} (x : TemperleyLieb R
 `δ`. -/
 theorem comap_traceRadical_signEquivOfAddEqZero (n : ℕ) :
     Ideal.comap (signEquivOfAddEqZero h n : TemperleyLieb R δ n →+* TemperleyLieb R δ' n)
-        ((tr' n).traceRadical (htr'.map_mul_comm n)) =
-      (tr n).traceRadical (htr.map_mul_comm n) :=
+        (htr'.traceRadical n) = htr.traceRadical n :=
   Ideal.ext fun x ↦ htr.signEquivOfAddEqZero_mem_traceRadical_iff htr' h x
 
 /-- Pushing forward the trace radical at `δ` along `signEquivOfAddEqZero` gives the trace radical
 at `δ'`. -/
 theorem map_traceRadical_signEquivOfAddEqZero (n : ℕ) :
     Ideal.map (signEquivOfAddEqZero h n : TemperleyLieb R δ n →+* TemperleyLieb R δ' n)
-        ((tr n).traceRadical (htr.map_mul_comm n)) =
-      (tr' n).traceRadical (htr'.map_mul_comm n) := by
+        (htr.traceRadical n) = htr'.traceRadical n := by
   rw [← htr.comap_traceRadical_signEquivOfAddEqZero htr' h n]
   exact Ideal.map_comap_of_surjective _ (signEquivOfAddEqZero h n).surjective _
 
 /-- The **sign isomorphism on trace-radical quotients** for opposite loop parameters
 `δ + δ' = 0`. -/
-def quotientSignEquivOfAddEqZero (n : ℕ) :
-    (TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) ≃ₐ[R]
-      (TemperleyLieb R δ' n ⧸ (tr' n).traceRadical (htr'.map_mul_comm n)) :=
+def quotientSignEquivOfAddEqZero (n : ℕ) : htr.Quotient n ≃ₐ[R] htr'.Quotient n :=
   Ideal.quotientEquivAlg _ _ (signEquivOfAddEqZero h n)
     (htr.map_traceRadical_signEquivOfAddEqZero htr' h n).symm
 
 /-- `quotientSignEquivOfAddEqZero` acts on quotient classes via `signEquivOfAddEqZero`. -/
 @[simp]
 theorem quotientSignEquivOfAddEqZero_mk (n : ℕ) (x : TemperleyLieb R δ n) :
-    htr.quotientSignEquivOfAddEqZero htr' h n
-        (Ideal.Quotient.mk ((tr n).traceRadical (htr.map_mul_comm n)) x) =
-      Ideal.Quotient.mk ((tr' n).traceRadical (htr'.map_mul_comm n))
-        (signEquivOfAddEqZero h n x) := by
+    htr.quotientSignEquivOfAddEqZero htr' h n (Ideal.Quotient.mk (htr.traceRadical n) x) =
+      Ideal.Quotient.mk (htr'.traceRadical n) (signEquivOfAddEqZero h n x) := by
   rw [quotientSignEquivOfAddEqZero, Ideal.quotientEquivAlg_mk]
 
 /-- `quotientSignEquivOfAddEqZero` intertwines the quotient strand maps `quotientStrandIncl`. -/
@@ -770,26 +742,14 @@ theorem quotientSignEquivOfAddEqZero_quotientStrandIncl (n : ℕ) (q : htr.Quoti
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
   cases n with
   | zero =>
-    rw [eq_algebraMap_aug_zero x, Ideal.Quotient.mk_algebraMap, AlgHom.commutes]
-    erw [AlgEquiv.commutes, AlgEquiv.commutes, AlgHom.commutes]
-    rfl
+    rw [eq_algebraMap_aug_zero x, Ideal.Quotient.mk_algebraMap, AlgHom.commutes,
+      AlgEquiv.commutes, AlgEquiv.commutes, AlgHom.commutes]
   | succ n =>
-    rw [htr.quotientStrandIncl_mk, strandInclAll_succ]
-    change htr.quotientSignEquivOfAddEqZero htr' h (n + 2)
-        (Ideal.Quotient.mk ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))) (strandIncl x)) =
-      htr'.quotientStrandIncl (n + 1) (htr.quotientSignEquivOfAddEqZero htr' h (n + 1)
-        (Ideal.Quotient.mk ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) x))
-    rw [htr.quotientSignEquivOfAddEqZero_mk, htr.quotientSignEquivOfAddEqZero_mk]
-    change Ideal.Quotient.mk (htr'.traceRadical (n + 2))
-        (signEquivOfAddEqZero h (n + 2) (strandIncl x)) =
-      htr'.quotientStrandIncl (n + 1)
-        (Ideal.Quotient.mk (htr'.traceRadical (n + 1)) (signEquivOfAddEqZero h (n + 1) x))
-    simp
+    simp [strandInclAll_succ]
 
 /-- `quotientSignEquivOfAddEqZero` scales `quotientTrace` by `(-1) ^ n`. -/
 @[simp]
-theorem quotientTrace_quotientSignEquivOfAddEqZero (n : ℕ)
-    (q : TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+theorem quotientTrace_quotientSignEquivOfAddEqZero (n : ℕ) (q : htr.Quotient n) :
     (tr' n).quotientTrace (htr'.map_mul_comm n) (htr.quotientSignEquivOfAddEqZero htr' h n q) =
       (-1) ^ n * (tr n).quotientTrace (htr.map_mul_comm n) q := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
@@ -807,10 +767,8 @@ def quotientSignStarAlgEquivOfAddEqZero {δ δ' : R} [Fact (IsSelfAdjoint δ)]
     [Fact (IsSelfAdjoint δ')] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     {tr' : ∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R}
     (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
-    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar] :
-    (TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) ≃⋆ₐ[R]
-      (TemperleyLieb R δ' n ⧸ (tr' n).traceRadical (htr'.map_mul_comm n)) :=
+    [(htr.traceRadical n).IsStar] [(htr'.traceRadical n).IsStar] :
+    htr.Quotient n ≃⋆ₐ[R] htr'.Quotient n :=
   Ideal.quotientEquivStarAlg _ _ (signStarAlgEquivOfAddEqZero h n)
     (htr.map_traceRadical_signEquivOfAddEqZero htr' h n).symm
 
@@ -821,8 +779,7 @@ theorem toAlgEquiv_quotientSignStarAlgEquivOfAddEqZero {δ δ' : R} [Fact (IsSel
     [Fact (IsSelfAdjoint δ')] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     {tr' : ∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R}
     (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
-    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar] :
+    [(htr.traceRadical n).IsStar] [(htr'.traceRadical n).IsStar] :
     (htr.quotientSignStarAlgEquivOfAddEqZero htr' h n).toAlgEquiv =
       htr.quotientSignEquivOfAddEqZero htr' h n :=
   Ideal.toAlgEquiv_quotientEquivStarAlg _ _ _ _
@@ -834,9 +791,8 @@ theorem quotientSignStarAlgEquivOfAddEqZero_apply {δ δ' : R} [Fact (IsSelfAdjo
     [Fact (IsSelfAdjoint δ')] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     {tr' : ∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R}
     (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
-    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar]
-    (q : TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    [(htr.traceRadical n).IsStar] [(htr'.traceRadical n).IsStar]
+    (q : htr.Quotient n) :
     htr.quotientSignStarAlgEquivOfAddEqZero htr' h n q =
       htr.quotientSignEquivOfAddEqZero htr' h n q :=
   Ideal.quotientEquivStarAlg_apply _ _ _ _ q
@@ -846,10 +802,8 @@ def quotientSignStarAlgEquiv {δ : R} [Fact (IsSelfAdjoint δ)] [Fact (IsSelfAdj
     {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     {tr' : ∀ n : ℕ, TemperleyLieb R (-δ) n →ₗ[R] R}
     (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
-    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar] :
-    (TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) ≃⋆ₐ[R]
-      (TemperleyLieb R (-δ) n ⧸ (tr' n).traceRadical (htr'.map_mul_comm n)) :=
+    [(htr.traceRadical n).IsStar] [(htr'.traceRadical n).IsStar] :
+    htr.Quotient n ≃⋆ₐ[R] htr'.Quotient n :=
   htr.quotientSignStarAlgEquivOfAddEqZero htr' (add_neg_cancel δ) n
 
 /-- Forgetting the star structure on `quotientSignStarAlgEquiv` recovers `quotientSignEquiv`. -/
@@ -858,8 +812,7 @@ theorem toAlgEquiv_quotientSignStarAlgEquiv {δ : R} [Fact (IsSelfAdjoint δ)]
     [Fact (IsSelfAdjoint (-δ))] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     {tr' : ∀ n : ℕ, TemperleyLieb R (-δ) n →ₗ[R] R}
     (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
-    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar] :
+    [(htr.traceRadical n).IsStar] [(htr'.traceRadical n).IsStar] :
     (htr.quotientSignStarAlgEquiv htr' n).toAlgEquiv = htr.quotientSignEquiv htr' n :=
   htr.toAlgEquiv_quotientSignStarAlgEquivOfAddEqZero htr' (add_neg_cancel δ) n
 
@@ -869,9 +822,8 @@ theorem quotientSignStarAlgEquiv_apply {δ : R} [Fact (IsSelfAdjoint δ)]
     [Fact (IsSelfAdjoint (-δ))] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
     {tr' : ∀ n : ℕ, TemperleyLieb R (-δ) n →ₗ[R] R}
     (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
-    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar]
-    (q : TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    [(htr.traceRadical n).IsStar] [(htr'.traceRadical n).IsStar]
+    (q : htr.Quotient n) :
     htr.quotientSignStarAlgEquiv htr' n q = htr.quotientSignEquiv htr' n q :=
   htr.quotientSignStarAlgEquivOfAddEqZero_apply htr' (add_neg_cancel δ) n q
 

@@ -77,7 +77,7 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
   `TauCeti.StarPositiveFunctional` at admissible parameters.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.quotientStarPositiveFunctional`: the faithful
   `TauCeti.StarPositiveFunctional` induced by `tr n` directly on the canonical trace-radical
-  quotient `TemperleyLieb ℂ (δ : ℂ) n ⧸ (tr n).traceRadical (htr.map_mul_comm n)`.
+  quotient `htr.Quotient n`.
 
 ## Main results
 
@@ -525,36 +525,30 @@ theorem traceRadical_starPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) 
     (hδ : δ ∈ jonesLoopParameters) (n : ℕ) :
     (htr.starPositiveFunctional hδ n).toLinearMap.traceRadical
         (htr.starPositiveFunctional_mul_comm hδ n) =
-      (tr n).traceRadical (htr.map_mul_comm n) := by
+      htr.traceRadical n := by
   simp
 
 /-- At an admissible loop parameter `δ ∈ jonesLoopParameters`, the Markov trace on the canonical
-trace-radical quotient `TemperleyLieb ℂ (δ : ℂ) n ⧸ (tr n).traceRadical (htr.map_mul_comm n)`,
-packaged as a faithful `TauCeti.StarPositiveFunctional` whose underlying linear map is
-`LinearMap.quotientTrace`. Supply the star-stable radical instance via `htr.isStar_traceRadical n`.
--/
+trace-radical quotient `htr.Quotient n`, packaged as a faithful `TauCeti.StarPositiveFunctional`
+whose underlying linear map is `LinearMap.quotientTrace`. -/
 def quotientStarPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar] :
-    StarPositiveFunctional (TemperleyLieb ℂ (δ : ℂ) n ⧸
-      (tr n).traceRadical (htr.map_mul_comm n)) :=
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar] :
+    StarPositiveFunctional (htr.Quotient n) :=
   (htr.starPositiveFunctional hδ n).quotientTrace (htr.map_mul_comm n)
 
 /-- Forgetting positivity of `quotientStarPositiveFunctional` recovers the algebraic quotient trace
 `LinearMap.quotientTrace`. -/
 @[simp]
 theorem toLinearMap_quotientStarPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar] :
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar] :
     (htr.quotientStarPositiveFunctional hδ n).toLinearMap =
       (tr n).quotientTrace (htr.map_mul_comm n) :=
   (htr.starPositiveFunctional hδ n).toLinearMap_quotientTrace (htr.map_mul_comm n)
 
 /-- Evaluating `quotientStarPositiveFunctional` computes `LinearMap.quotientTrace`. -/
 theorem quotientStarPositiveFunctional_apply (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
-    (x : TemperleyLieb ℂ (δ : ℂ) n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar]
+    (x : htr.Quotient n) :
     htr.quotientStarPositiveFunctional hδ n x =
       (tr n).quotientTrace (htr.map_mul_comm n) x :=
   LinearMap.congr_fun (htr.toLinearMap_quotientStarPositiveFunctional hδ n) x
@@ -562,25 +556,22 @@ theorem quotientStarPositiveFunctional_apply (htr : IsMarkovTrace ℂ (δ : ℂ)
 /-- On a quotient class `mk x`, `quotientStarPositiveFunctional` evaluates to `tr n x`. -/
 @[simp]
 theorem quotientStarPositiveFunctional_mk (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar] (x : TemperleyLieb ℂ (δ : ℂ) n) :
-    htr.quotientStarPositiveFunctional hδ n
-      (Ideal.Quotient.mk ((tr n).traceRadical (htr.map_mul_comm n)) x) = tr n x :=
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar]
+    (x : TemperleyLieb ℂ (δ : ℂ) n) :
+    htr.quotientStarPositiveFunctional hδ n (Ideal.Quotient.mk (htr.traceRadical n) x) = tr n x :=
   (htr.starPositiveFunctional hδ n).quotientTrace_mk (htr.map_mul_comm n) x
 
 /-- Evaluating `quotientStarPositiveFunctional` at `1` gives `δ ^ n`. -/
 @[simp]
 theorem quotientStarPositiveFunctional_one (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar] :
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar] :
     htr.quotientStarPositiveFunctional hδ n 1 = (δ : ℂ) ^ n := by
   rw [htr.quotientStarPositiveFunctional_apply, LinearMap.quotientTrace_one, htr.map_one]
 
 /-- The positive quotient trace is tracial. -/
 theorem quotientStarPositiveFunctional_mul_comm (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
-    (x y : TemperleyLieb ℂ (δ : ℂ) n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar]
+    (x y : htr.Quotient n) :
     htr.quotientStarPositiveFunctional hδ n (x * y) =
       htr.quotientStarPositiveFunctional hδ n (y * x) :=
   (htr.starPositiveFunctional hδ n).quotientTrace_mul_comm (htr.map_mul_comm n) x y
@@ -590,16 +581,14 @@ exactly when `x = 0`. -/
 @[simp]
 theorem quotientStarPositiveFunctional_star_mul_self_eq_zero_iff
     (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
-    (x : TemperleyLieb ℂ (δ : ℂ) n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    [(htr.traceRadical n).IsStar] (x : htr.Quotient n) :
     htr.quotientStarPositiveFunctional hδ n (star x * x) = 0 ↔ x = 0 :=
   (htr.starPositiveFunctional hδ n).quotientTrace_star_mul_self_eq_zero_iff
     (htr.map_mul_comm n) x
 
 /-- The positive quotient trace has trivial GNS null space. -/
 theorem nullSubmodule_quotientStarPositiveFunctional (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : δ ∈ jonesLoopParameters) (n : ℕ)
-    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar] :
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar] :
     (htr.quotientStarPositiveFunctional hδ n).nullSubmodule = ⊥ :=
   (htr.starPositiveFunctional hδ n).nullSubmodule_quotientTrace (htr.map_mul_comm n)
 
@@ -614,7 +603,7 @@ theorem norm_map_star_mul_sq_le (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
 `{x | tr n (x⋆ * x) = 0}`. -/
 theorem mem_traceRadical_iff_map_star_mul_self_eq_zero (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
     (hδ : δ ∈ jonesLoopParameters) {n : ℕ} (x : TemperleyLieb ℂ (δ : ℂ) n) :
-    x ∈ (tr n).traceRadical (htr.map_mul_comm n) ↔ tr n (star x * x) = 0 :=
+    x ∈ htr.traceRadical n ↔ tr n (star x * x) = 0 :=
   (htr.starPositiveFunctional hδ n).mem_traceRadical_iff_apply_star_mul_self_eq_zero
     (htr.map_mul_comm n) x
 

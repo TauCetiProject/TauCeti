@@ -43,16 +43,18 @@ variable {R : Type*} [CommRing R] {δ : R}
   (htr : IsMarkovTrace R δ tr)
 
 /-- The multiplication-pairing radical of a Markov trace at level `n`. -/
-@[expose] def traceRadical (n : ℕ) : Ideal (TemperleyLieb R δ n) :=
+abbrev traceRadical (n : ℕ) : Ideal (TemperleyLieb R δ n) :=
   (tr n).traceRadical (htr.map_mul_comm n)
+
+/-- Unfolding `htr.traceRadical n` to the underlying `LinearMap.traceRadical`. -/
+theorem traceRadical_def (n : ℕ) :
+    htr.traceRadical n = (tr n).traceRadical (htr.map_mul_comm n) :=
+  rfl
 
 /-- Membership in `htr.traceRadical n` is vanishing of `tr n (x * y)` for all `y`. -/
 theorem mem_traceRadical_iff {n : ℕ} {x : TemperleyLieb R δ n} :
     x ∈ htr.traceRadical n ↔ ∀ y, tr n (x * y) = 0 :=
   (tr n).mem_traceRadical (htr.map_mul_comm n)
-
-instance instIsTwoSidedTraceRadical (n : ℕ) : (htr.traceRadical n).IsTwoSided :=
-  inferInstanceAs ((tr n).traceRadical (htr.map_mul_comm n)).IsTwoSided
 
 /-- The trace-radical quotient of `TemperleyLieb R δ n` for a Markov trace `htr`. -/
 abbrev Quotient (n : ℕ) := TemperleyLieb R δ n ⧸ htr.traceRadical n
@@ -158,9 +160,8 @@ theorem quotientTrace_quotientStrandIncl (n : ℕ) (x : htr.Quotient n) :
 No invertibility assumption is imposed on that next quantum integer. -/
 theorem jonesWenzl_mem_traceRadical_iff {n : ℕ}
     (h : ∀ k ∈ Finset.Icc 1 n, IsUnit (qInt R δ k)) :
-    jonesWenzl δ n ∈ (tr n).traceRadical (htr.map_mul_comm n) ↔
-      qInt R δ (n + 1) = 0 := by
-  rw [LinearMap.mem_traceRadical]
+    jonesWenzl δ n ∈ htr.traceRadical n ↔ qInt R δ (n + 1) = 0 := by
+  rw [mem_traceRadical_iff]
   constructor
   · intro hf
     have hz := hf 1
