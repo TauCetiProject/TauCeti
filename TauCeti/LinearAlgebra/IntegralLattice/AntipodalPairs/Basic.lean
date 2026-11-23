@@ -83,20 +83,20 @@ theorem finite_antipodalPairs {L : IntegralLattice V} {n : ℚ}
 /-- Each antipodal pair on a nonzero norm shell has exactly two vector representatives. -/
 theorem card_antipodalPairs_fiber {L : IntegralLattice V} {n : ℚ} (hn : n ≠ 0)
     {p : Sym2 L} (hp : p ∈ L.antipodalPairs n) :
-    Nat.card {x : L.vectorsOfNorm n // s(x.1, -x.1) = p} = 2 := by
+    Nat.card {x : L.vectorsOfNorm n // s(x.val, -x.val) = p} = 2 := by
   obtain ⟨x, hx, hp⟩ := hp
-  let a : {y : L.vectorsOfNorm n // s(y.1, -y.1) = p} := ⟨⟨x, hx⟩, hp⟩
-  let b : {y : L.vectorsOfNorm n // s(y.1, -y.1) = p} :=
+  let a : {y : L.vectorsOfNorm n // s(y.val, -y.val) = p} := ⟨⟨x, hx⟩, hp⟩
+  let b : {y : L.vectorsOfNorm n // s(y.val, -y.val) = p} :=
     ⟨⟨-x, (neg_mem_vectorsOfNorm_iff x).mpr hx⟩,
       by simpa only [neg_neg, Sym2.eq_swap] using hp⟩
   apply Nat.card_eq_two_iff.mpr
   refine ⟨a, b, ?_, ?_⟩
   · intro hab
     exact neg_ne_self_of_mem_vectorsOfNorm hn hx
-      (congrArg (fun z ↦ z.1.1) hab).symm
+      (congrArg (fun z ↦ z.val.val) hab).symm
   · apply Set.eq_univ_iff_forall.mpr
     intro z
-    have hz : s(z.1.1, -z.1.1) = s(x, -x) := z.2.trans hp.symm
+    have hz : s(z.val.val, -z.val.val) = s(x, -x) := z.property.trans hp.symm
     rcases Sym2.eq_iff.mp hz with ⟨h, -⟩ | ⟨h, -⟩
     · exact Set.mem_insert_iff.mpr (Or.inl (Subtype.ext (Subtype.ext h)))
     · exact Set.mem_insert_iff.mpr (Or.inr (Set.mem_singleton_iff.mpr
@@ -108,11 +108,11 @@ theorem ncard_vectorsOfNorm_eq_two_mul_ncard_antipodalPairs {L : IntegralLattice
     (L.vectorsOfNorm n).ncard = 2 * (L.antipodalPairs n).ncard := by
   classical
   let f : L.vectorsOfNorm n → L.antipodalPairs n :=
-    fun x ↦ ⟨s(x.1, -x.1), (mk_mem_antipodalPairs_iff x.1).mpr x.2⟩
+    fun x ↦ ⟨s(x.val, -x.val), (mk_mem_antipodalPairs_iff x.val).mpr x.property⟩
   let := hfin.fintype
   let := (finite_antipodalPairs hfin).fintype
   have hfiber (p : L.antipodalPairs n) : Nat.card {x // f x = p} = 2 := by
-    simpa only [f, Subtype.ext_iff] using card_antipodalPairs_fiber hn p.2
+    simpa only [f, Subtype.ext_iff] using card_antipodalPairs_fiber hn p.property
   rw [← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq]
   calc
     Nat.card (L.vectorsOfNorm n) = Nat.card (Σ p, {x // f x = p}) :=
@@ -149,7 +149,7 @@ theorem map_mem_antipodalPairs_iff (e : Isometry L M) (n : ℚ) (p : Sym2 L) :
 /-- A lattice isometry induces an equivalence of antipodal norm shells. -/
 def antipodalPairsEquiv (e : Isometry L M) (n : ℚ) :
     L.antipodalPairs n ≃ M.antipodalPairs n where
-  toFun p := ⟨Sym2.map e.carrierEquiv p, (e.map_mem_antipodalPairs_iff n p).mpr p.2⟩
+  toFun p := ⟨Sym2.map e.carrierEquiv p, (e.map_mem_antipodalPairs_iff n p).mpr p.property⟩
   invFun p := ⟨Sym2.map e.carrierEquiv.symm p,
     (e.map_mem_antipodalPairs_iff n _).mp (by
       simp [Sym2.map_map])⟩

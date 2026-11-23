@@ -78,7 +78,7 @@ valuation rings of the stalk valuations. -/
 noncomputable def presentationLimitPlusSubring (V : Opens ↥(spa Aplus)) :
     Subring ((presentationLimitPresheafInCommRingCat P Aplus).obj (Opposite.op V)) :=
   ⨅ x : V, (presentationLimitStalkValuation hAplus hP x).valuation.integer.comap
-    ((presentationLimitPresheafInCommRingCat P Aplus).germ V x x.2).hom
+    ((presentationLimitPresheafInCommRingCat P Aplus).germ V x x.property).hom
 
 /-- **Membership in `𝒪_X⁺(V)`**: a section over `V` lies in the plus subring exactly when its germ
 at every point `x ∈ V` is sub-unit for the stalk valuation at `x`. -/

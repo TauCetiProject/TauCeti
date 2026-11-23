@@ -96,7 +96,7 @@ noncomputable def spinGroupEquivSymplecticGroup (Q : QuadraticForm K V) (hQ : Q.
       have hx : ((evenUnitaryGroupEquivSymplecticGroup Q e he).symm g : (CliffordAlgebra Q)ˣ) ∈
           (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range := by
         rw [range_spinGroup_toUnits_eq_evenUnitaryGroup Q hQ hV0 hV]
-        exact ((evenUnitaryGroupEquivSymplecticGroup Q e he).symm g).2
+        exact ((evenUnitaryGroupEquivSymplecticGroup Q e he).symm g).property
       obtain ⟨s, hs⟩ := hx
       refine ⟨s, ?_⟩
       have hs' : spinGroupToEvenUnitary Q s =
@@ -254,7 +254,7 @@ theorem exists_injective_spinGroup_symplecticGroup_of_finrank_eq_five
     obtain ⟨s, hs⟩ : (x : (CliffordAlgebra Q)ˣ) ∈
         (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range := by
       rw [range_spinGroup_toUnits_eq_evenUnitaryGroup Q hQ (by omega) hV.le]
-      exact x.2
+      exact x.property
     exact ⟨s, Subtype.ext (Units.ext (by rw [coe_spinGroupToEvenUnitary_apply, ← hs]))⟩
   rw [hsurj, ← MonoidHom.range_eq_map]
 

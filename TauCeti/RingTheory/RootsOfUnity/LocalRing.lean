@@ -60,7 +60,7 @@ theorem rootsOfUnityResidue_injective {n : ℕ} (hn : IsUnit (n : R)) :
     have h := congrArg
       (fun x : rootsOfUnity n (ResidueField R) ↦ ((x : (ResidueField R)ˣ) : ResidueField R)) hζ
     simpa using h
-  have hpow : ((ζ : Rˣ) : R) ^ n = 1 := (mem_rootsOfUnity' n _).mp ζ.2
+  have hpow : ((ζ : Rˣ) : R) ^ n = 1 := (mem_rootsOfUnity' n _).mp ζ.property
   let s := ∑ i ∈ Finset.range n, ((ζ : Rˣ) : R) ^ i
   have hs : IsUnit s := by
     rw [← residue_ne_zero_iff_isUnit]

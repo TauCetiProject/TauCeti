@@ -53,11 +53,11 @@ def tildeRestrictScalarsIsoPushforward :
 
 /-- The affine pushforward comparison preserves the global section associated
 with an element of the module. -/
-@[simp]
 theorem tildeRestrictScalarsIsoPushforward_hom_toOpen (m : M) :
-    ((tildeRestrictScalarsIsoPushforward φ M).hom.val.app (.op ⊤))
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    (((tildeRestrictScalarsIsoPushforward φ M).hom.val.app (.op ⊤))
         (tilde.toOpen ((ModuleCat.restrictScalars φ.hom).obj M) ⊤ m) =
-      tilde.toOpen M ⊤ m := by
+      tilde.toOpen M ⊤ m) := by
   dsimp only [tildeRestrictScalarsIsoPushforward, Iso.trans_hom, Functor.mapIso_hom,
     Iso.symm_hom, asIso_hom]
   -- Full transparency identifies scheme modules with their underlying sheaf category.

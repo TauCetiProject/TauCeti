@@ -121,7 +121,7 @@ private theorem exists_pow_lt_of_isCofinalElement {Γ : Type*} [CommGroup Γ] [L
     (hcof : IsCofinalElement H u) {γ : WithZero H} (hγ : 0 < γ) :
     ∃ n : ℕ, ((⟨u, hu⟩ : H) : WithZero H) ^ n < γ := by
   obtain ⟨h, rfl⟩ := WithZero.ne_zero_iff_exists.mp hγ.ne'
-  obtain ⟨n, hn⟩ := isCofinalElement_def.mp hcof (h : Γ) h.2
+  obtain ⟨n, hn⟩ := isCofinalElement_def.mp hcof (h : Γ) h.property
   exact ⟨n, by rw [← WithZero.coe_pow, WithZero.coe_lt_coe]; exact_mod_cast hn⟩
 
 /-- **Cofinality of a value, checked in the ambient codomain.** `Valuation.CofinalValue` is
@@ -165,7 +165,7 @@ private theorem exists_valuationSubring_of_not_isIntegral [IsDomain R] (P : Pair
   -- The ring of definition maps into `R₀` through `ι`; `hφ_apply` is the only fact about `φ`
   -- used below.
   set φ : P.ringOfDefinition →+* R₀ :=
-    (ι.comp P.ringOfDefinition.subtype).codRestrict R₀ fun a ↦ hmemR₀ _ (hA₀B a.2) with hφ
+    (ι.comp P.ringOfDefinition.subtype).codRestrict R₀ fun a ↦ hmemR₀ _ (hA₀B a.property) with hφ
   have hφ_apply : ∀ a : P.ringOfDefinition, (φ a : FractionRing R) = ι (a : R) := fun a ↦ by
     rw [hφ, RingHom.codRestrict_apply, RingHom.comp_apply, Subring.coe_subtype]
   set J : Ideal R₀ := P.idealOfDefinition.map φ with hJ
@@ -181,7 +181,7 @@ private theorem exists_valuationSubring_of_not_isIntegral [IsDomain R] (P : Pair
     have hmem := Submodule.mem_colon_singleton.mp (hcolon ha)
     rw [Algebra.smul_def] at hmem
     obtain ⟨y, hy⟩ := Submodule.mem_one.mp hmem
-    exact hy ▸ y.2
+    exact hy ▸ y.property
   obtain ⟨V, hR₀V, hxV, hJlt⟩ :=
     Subring.exists_le_valuationSubring_notMem_valuation_lt_one_of_pow_mul_mem R₀ hxR₀ hJpow
   refine ⟨V, fun b hb ↦ hR₀V (hmemR₀ b hb), hxV, fun a ha ↦ ?_⟩
@@ -273,7 +273,7 @@ theorem PairOfDefinition.exists_continuous_coarsened_extension_of_valuation
     v₀.restrictToConvex H habs with hvr
   have hvrt₀ne : vr t₀ ≠ 0 := by
     simp [hvr, restrictToConvex_apply_of_mem v₀ H habs hne humem]
-  have hsA₀ : (t₀ : R) ∈ P.ringOfDefinition := t₀.2
+  have hsA₀ : (t₀ : R) ∈ P.ringOfDefinition := t₀.property
   have hst₀ : (⟨(t₀ : R), hsA₀⟩ : P.ringOfDefinition) = t₀ := Subtype.coe_eta t₀ hsA₀
   have hsnil : IsTopologicallyNilpotent ((t₀ : P.ringOfDefinition) : R) :=
     P.isTopologicallyNilpotent_of_mem_idealOfDefinition ht₀I
@@ -331,7 +331,7 @@ private theorem exists_continuous_valuation_of_forall_le (P : PairOfDefinition R
   classical
   set v₀ : Valuation P.ringOfDefinition Γ₀ :=
     w₀.comap P.ringOfDefinition.subtype with hv₀
-  have hA₀le : ∀ a : P.ringOfDefinition, v₀ a ≤ 1 := fun a ↦ hBle _ (hA₀B a.2)
+  have hA₀le : ∀ a : P.ringOfDefinition, v₀ a ≤ 1 := fun a ↦ hBle _ (hA₀B a.property)
   have hw₀app : ∀ a : P.ringOfDefinition, w₀ (a : R) = v₀ a := fun a ↦ by
     simp only [hv₀, Valuation.comap_apply, Subring.coe_subtype]
   have hv₀t₀ne : v₀ t₀ ≠ 0 := hw₀app t₀ ▸ hne
@@ -366,7 +366,7 @@ private theorem exists_continuous_valuation_of_not_isIntegral_of_isDomain [IsDom
     (ValuationSubring.valuation_le_one_iff V _).mpr (hBV b hb)
   have hxgt : 1 < w₀ x :=
     not_le.mp fun h ↦ hxV ((ValuationSubring.valuation_le_one_iff V _).mp h)
-  have hA₀le : ∀ a : P.ringOfDefinition, v₀ a ≤ 1 := fun a ↦ hBle _ (hA₀B a.2)
+  have hA₀le : ∀ a : P.ringOfDefinition, v₀ a ≤ 1 := fun a ↦ hBle _ (hA₀B a.property)
   -- The two pullbacks, applied: `v₀` is `w₀` on the underlying element, which is `V.valuation`
   -- after `ι`.
   have hw₀app : ∀ a : P.ringOfDefinition, w₀ (a : R) = v₀ a := fun a ↦ by
@@ -392,7 +392,7 @@ private theorem exists_continuous_valuation_of_not_isIntegral_of_isDomain [IsDom
     obtain ⟨t₀, ht₀S, ht₀max⟩ :=
       S.exists_max_image (fun t ↦ w₀ ((t : P.ringOfDefinition) : R)) ⟨t₁, ht₁S⟩
     have ht₀ne : w₀ ((t₀ : P.ringOfDefinition) : R) ≠ 0 :=
-      ne_of_gt (lt_of_lt_of_le (zero_lt_iff.mpr ((hw₀app t₁).symm ▸ ht₁ne)) (ht₀max t₁ ht₁S))
+      ne_of_gt (lt_of_lt_of_le (pos_iff_ne_zero.mpr ((hw₀app t₁).symm ▸ ht₁ne)) (ht₀max t₁ ht₁S))
     exact exists_continuous_valuation_of_forall_le P hA₀B w₀ hBle hxgt hS (hgenmem t₀ ht₀S)
       (fun t ht ↦ ht₀max t (Finset.mem_coe.mp ht))
       ((hw₀app t₀).symm ▸ hgenlt t₀ ht₀S) ht₀ne

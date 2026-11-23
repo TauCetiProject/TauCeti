@@ -32,6 +32,9 @@ the diagonal torus.
 * `Matrix.exists_mem_unitaryGroup_star_mul_mul_eq_diagonal`: **the spectral theorem for normal
   matrices**, a normal complex matrix is diagonalized by a unitary matrix.
 
+* `Matrix.rootMultiplicity_charpoly_of_isStarNormal`: the algebraic multiplicity of an
+  eigenvalue of a normal complex matrix is its geometric multiplicity.
+
 ## References
 
 * S. Axler, *Linear Algebra Done Right*, 3rd ed., Springer (2015), Theorem 7.24 (the complex
@@ -90,5 +93,14 @@ theorem exists_mem_unitaryGroup_star_mul_mul_eq_diagonal (A : Matrix n n ℂ) [I
   obtain ⟨U, hU, d, hd⟩ := TauCeti.exists_mem_unitaryGroup_forall_star_mul_mul_eq_diagonal
     (fun _ : Unit => A) (fun _ => inferInstance) (fun _ _ _ => Commute.refl _)
   exact ⟨U, hU, d (), hd ()⟩
+
+open Module Module.End in
+/-- For a normal complex matrix the algebraic multiplicity of an eigenvalue, its multiplicity as a
+root of the characteristic polynomial, is its geometric multiplicity. -/
+theorem rootMultiplicity_charpoly_of_isStarNormal (A : Matrix n n ℂ) [IsStarNormal A]
+    (μ : ℂ) : A.charpoly.rootMultiplicity μ = finrank ℂ (eigenspace (toEuclideanLin A) μ) := by
+  rw [← (toEuclideanLin A).rootMultiplicity_charpoly_of_isStarNormal,
+    toEuclideanLin_eq_toLin_orthonormal,
+    ← LinearMap.charpoly_toMatrix _ (EuclideanSpace.basisFun n ℂ).toBasis, LinearMap.toMatrix_toLin]
 
 end Matrix

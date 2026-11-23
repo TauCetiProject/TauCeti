@@ -5,61 +5,64 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Graph
-public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.HigherIntegrability
-public import TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative
+public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.Analysis.InnerProductSpace.ProdL2
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
-import TauCeti.Geometry.Symplectic.Complex.Line
-import TauCeti.Geometry.Symplectic.Prod.Basic
-import TauCeti.Geometry.Symplectic.SymplecticTransport
-import TauCeti.Geometry.Symplectic.Transport
+import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
+import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
+import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.HigherIntegrability
+import TauCeti.Geometry.Symplectic.JHolomorphic.Line
+import TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity
+import TauCeti.MeasureTheory.Integral.EnergyConcentration
 
 /-!
-# Removal of finite-energy punctures for Floer solutions
+# Removal of finite-energy punctures of Floer solutions
 
-In local coordinates `z = s + i t ∈ ℂ` on the domain and `x ∈ V` on the target, the
-inhomogeneous Cauchy–Riemann equation of Hamiltonian Floer theory reads
+A finite-energy solution of the inhomogeneous Floer equation `(du - X_K)^{0,1} = 0` on a punctured
+disc, with image in a compact set and tame almost complex structures, extends continuously across
+the puncture. In Gromov–Floer compactness, a sequence of Floer solutions of bounded energy
+converges off finitely many bubbling points (`TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`);
+this is the first step in extending the limit across those points. It is the inhomogeneous
+counterpart of `TauCeti.SymplecticForm.exists_continuousOn_update_of_finite_energy` for
+pseudoholomorphic curves.
 
-`∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`,
+The proof reduces to that case by Gromov's graph construction
+(`TauCeti.Geometry.Symplectic.Floer.Graph.Basic`). Rescale the domain coordinate of the graph by a
+scale `μ > 0`: the map `U(w) = (μ w, u w)` into `ℂ × V` solves the Cauchy–Riemann equation of
+Gromov's structure `graphStructure J' X'` for the rescaled data `J'(ζ, x) = J(μ⁻¹ ζ, x)` and
+`X'(ζ, x) = μ⁻¹ X(μ⁻¹ ζ, x)` (`TauCeti.Floer.fderiv_toLp_smul_prodMk_I_eq_graphStructure_iff`).
+The split form `σ ⊕ ω` of the standard area form `σ` on `ℂ` and `ω`
+tames Gromov's structure as soon as the Hamiltonian term is small compared with the taming
+constant of `J` (`TauCeti.Floer.mul_norm_sq_le_prodL2_graphStructure`), which a large `μ`
+achieves. The graph has finite energy
+`∫ (μ² + ‖∂ₛu‖²)` on the disc, so the removal theorem for pseudoholomorphic curves applies to it,
+and the second coordinate of its extension extends `u`. The higher integrability of the
+differential of a pseudoholomorphic curve near a puncture
+(`TauCeti.SymplecticForm.exists_pos_two_lt_memLp_fderiv_of_finite_energy`) applies to the graph
+as well, and the differential of the graph dominates that of `u`.
 
-for a domain-dependent structure `J(z, x)` on `V` and the Hamiltonian one-form
-`X(z, x) : ℂ →L[ℝ] V`. This file proves that a solution on a punctured neighbourhood `Ω \ {z₀}` of
-a point, with image in a compact set, tame structures `J(z, u z)` and finite energy `∫ ‖∂ₛu‖²`,
-extends continuously across the puncture
-(`TauCeti.Floer.exists_continuousOn_update_of_finite_energy`). The extension is weakly
-differentiable on `Ω`, with weak derivative the classical differential of `u`, and that
-differential lies in `Lᵖ` near the puncture for some `p > 2`
-(`TauCeti.Floer.exists_hasWeakFDerivOn_update_of_finite_energy`).
+## Main results
 
-In Gromov–Floer compactness the limit of a sequence of Floer solutions is first obtained off
-finitely many bubbling points
-(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`). Where that limit
-is a `C³` solution of finite energy, the results here extend it across a bubbling point; its value
-there is the point at which the bubble is attached.
+* `TauCeti.Floer.exists_continuousOn_update_of_finite_energy`: the coordinate form, for a
+  solution of `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` on a punctured disc in `ℂ`.
+* `TauCeti.Floer.exists_hasWeakFDerivOn_update_of_finite_energy`: the extension of such a
+  solution is weakly differentiable on the disc, with weak derivative the classical differential of
+  `u`, which lies in `Lᵖ` near the puncture for some `p > 2`.
+* `TauCeti.SymplecticForm.exists_continuousOn_update_of_floer`: the Floer form, for a solution of
+  `(du - X_K)^{0,1} = 0` on `Ω \ {z₀}` for an open `Ω ⊆ ℝ × ℝ`, with integrable Floer energy
+  density and `J` tamed by `ω`.
 
-The proof is Gromov's graph construction. The map `U(z) = (λ z, u z)` into the Euclidean product
-`WithLp 2 (ℂ × V)` solves `∂ₜU = J'(U) ∂ₛU` for the structure `J' = TauCeti.Floer.graphStructure`
-of the rescaled data `J(λ⁻¹ ζ, x)` and `λ⁻¹ X(λ⁻¹ ζ, x)`. If `ω(·, J₀ ·)` is the inner product of
-`V` and `ω` tames `J(z, u z)` with a uniform constant, then for `λ` large, depending only on the
-bounds of `J` and `X` near the puncture, the constant split form `ω_std ⊕ ω` tames `J'` along `U`:
-the rescaling makes the off-diagonal terms of `J'` coming from `X` small. The removal theorems for
-pseudoholomorphic curves with tame varying structures
-(`TauCeti.SymplecticForm.exists_continuousOn_update_of_finite_energy`,
-`TauCeti.SymplecticForm.exists_pos_forall_memLp_fderiv_of_finite_energy`) then apply to `U`, whose
-energy density is `λ² + ‖∂ₛu‖²`, and `u` is the second component of `U`.
-
-Smoothness of the extension at the puncture, which requires elliptic regularity, is not treated
-here.
+None of these results asserts differentiability at the puncture; that needs elliptic regularity
+of the extension.
 
 ## References
 
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed.,
+  Section 4.5 (removal of singularities) and Section 8.1 (the graph construction for the
+  inhomogeneous equation).
 * M. Gromov, *Pseudo holomorphic curves in symplectic manifolds*, Invent. Math. 82 (1985),
   307–347.
-* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Section 4.5
-  (removal of singularities) and Section 8.1 (the graph construction for the inhomogeneous
-  equation).
 -/
 
 public section
@@ -69,370 +72,378 @@ open Complex Filter MeasureTheory Metric Set Topology
 namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
 
-section GraphForm
+omit [InnerProductSpace ℝ V] in
+/-- Updating a map continuous on `s \ {z₀}` at `z₀` to its limit there gives a map continuous on
+`s`, with values in `K` if the map and the limit lie in `K`. -/
+private theorem continuousOn_update_mapsTo {α : Type*} [TopologicalSpace α] [T1Space α]
+    [DecidableEq α] {s : Set α} {z₀ : α} {u : α → V} {K : Set V} {q : V}
+    (hu : ContinuousOn u (s \ {z₀})) (huK : MapsTo u (s \ {z₀}) K)
+    (hqK : q ∈ K) (hlim : Tendsto u (𝓝[≠] z₀) (𝓝 q)) :
+    ContinuousOn (Function.update u z₀ q) s ∧ MapsTo (Function.update u z₀ q) s K := by
+  refine ⟨continuousOn_update_iff.2 ⟨hu, fun _ ↦
+    hlim.mono_left (nhdsWithin_mono _ (sdiff_subset_compl _ _))⟩, fun y hy ↦ ?_⟩
+  rcases eq_or_ne y z₀ with rfl | hyz
+  · simpa using hqK
+  · simpa [Function.update_of_ne hyz] using huK ⟨hy, hyz⟩
 
-variable (ω : SymplecticForm V) (J₀ : AlmostComplexStructure V)
+section Euclidean
 
-/-- The split symplectic form `ω_std ⊕ ω` on the Euclidean product `WithLp 2 (ℂ × V)`. -/
-private noncomputable def graphForm : SymplecticForm (WithLp 2 (ℂ × V)) :=
-  (stdComplexSymplecticForm.prod ω).transport (WithLp.linearEquiv 2 ℝ (ℂ × V)).symm
-
-/-- The split structure `i ⊕ J₀` on the Euclidean product `WithLp 2 (ℂ × V)`. -/
-private noncomputable def graphJ₀ : AlmostComplexStructure (WithLp 2 (ℂ × V)) :=
-  ((AlmostComplexStructure.ofComplexModule ℂ).prod J₀).transport
-    (WithLp.linearEquiv 2 ℝ (ℂ × V)).symm
-
-private theorem graphForm_apply (ξ η : WithLp 2 (ℂ × V)) :
-    graphForm ω ξ η = stdComplexSymplecticForm ξ.fst η.fst + ω ξ.snd η.snd :=
-  rfl
-
-private theorem graphJ₀_apply (η : WithLp 2 (ℂ × V)) :
-    graphJ₀ J₀ η = WithLp.toLp 2 (I * η.fst, J₀ η.snd) := by
-  simp [graphJ₀, AlmostComplexStructure.ofComplexModule_apply]
-
-variable {ω J₀}
-
-/-- The split form `ω_std ⊕ ω` and the split structure `i ⊕ J₀` give the Euclidean inner product
-of `WithLp 2 (ℂ × V)` when `ω` and `J₀` give the inner product of `V`. -/
-private theorem graphForm_graphJ₀ (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
-    (ξ η : WithLp 2 (ℂ × V)) : graphForm ω ξ (graphJ₀ J₀ η) = inner ℝ ξ η := by
-  simp only [graphForm_apply, graphJ₀_apply, WithLp.prod_inner_apply, WithLp.toLp_fst,
-    WithLp.toLp_snd, WithLp.ofLp_fst, WithLp.ofLp_snd, hg, stdComplexSymplecticForm_apply,
-    Complex.inner, mul_re, mul_im, I_re, I_im, conj_re, conj_im]
-  ring
-
-/-- **The split form tames the graph structure of small one-forms.** Let `ω(·, J₀ ·)` be the inner
-product of `V`, and let `ω` tame `A = J(z, x)` with constant `c > 0`. If `‖A‖ ≤ M` and the one-form
-`Y = X(z, x)` satisfies `‖Y‖ ≤ N` with `N (M + 1) ≤ min 1 c`, then `ω_std ⊕ ω` tames Gromov's
-structure at `(z, x)` with constant `min 1 c / 2`. -/
-private theorem mul_norm_sq_le_graphForm_graphStructure (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
-    {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {p : WithLp 2 (ℂ × V)} {c M N : ℝ}
-    (hc : 0 < c) (htame : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J p.ofLp v)) (hM : ‖J p.ofLp‖ ≤ M)
-    (hN : ‖X p.ofLp‖ ≤ N) (hsmall : N * (M + 1) ≤ min 1 c) (ξ : WithLp 2 (ℂ × V)) :
-    min 1 c / 2 * ‖ξ‖ ^ 2 ≤ graphForm ω ξ (graphStructure J X p ξ) := by
-  set a := ‖ξ.fst‖
-  set b := ‖ξ.snd‖
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans hM
-  -- The two cross terms coming from the one-form are bounded by `b M N a` and `b N a`.
-  have h₁ : |ω ξ.snd (J p.ofLp (X p.ofLp ξ.fst))| ≤ b * (M * N * a) := by
-    refine (ω.abs_apply_le_norm_mul_norm hg _ _).trans
-      (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-    calc ‖J p.ofLp (X p.ofLp ξ.fst)‖ ≤ ‖J p.ofLp‖ * (‖X p.ofLp‖ * a) :=
-          (ContinuousLinearMap.le_opNorm _ _).trans
-            (mul_le_mul_of_nonneg_left (ContinuousLinearMap.le_opNorm _ _) (norm_nonneg _))
-      _ ≤ M * (N * a) := by gcongr
-      _ = M * N * a := by ring
-  have h₂ : |ω ξ.snd (X p.ofLp (I * ξ.fst))| ≤ b * (N * a) := by
-    refine (ω.abs_apply_le_norm_mul_norm hg _ _).trans
-      (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-    calc ‖X p.ofLp (I * ξ.fst)‖ ≤ ‖X p.ofLp‖ * ‖I * ξ.fst‖ := ContinuousLinearMap.le_opNorm _ _
-      _ ≤ N * a := by rw [norm_mul, norm_I, one_mul]; gcongr
-  have hstd : stdComplexSymplecticForm ξ.fst (I * ξ.fst) = a ^ 2 := by
-    rw [stdComplexSymplecticForm_apply, Complex.sq_norm, Complex.normSq_apply]
-    simp only [mul_re, mul_im, I_re, I_im]
-    ring
-  have hval : graphForm ω ξ (graphStructure J X p ξ) = a ^ 2 + ω ξ.snd (J p.ofLp ξ.snd) -
-      ω ξ.snd (J p.ofLp (X p.ofLp ξ.fst)) + ω ξ.snd (X p.ofLp (I * ξ.fst)) := by
-    simp only [graphForm_apply, graphStructure_apply, WithLp.toLp_fst, WithLp.toLp_snd, hstd,
-      map_sub, map_add]
-    ring
-  have hnorm : ‖ξ‖ ^ 2 = a ^ 2 + b ^ 2 := WithLp.prod_norm_sq_eq_of_L2 ξ
-  have hcb := htame ξ.snd
-  have hm1 : min 1 c ≤ 1 := min_le_left _ _
-  have hmc : min 1 c ≤ c := min_le_right _ _
-  have hm0 : 0 < min 1 c := lt_min one_pos hc
-  have hab : b * (M * N * a) + b * (N * a) ≤ min 1 c * (a * b) := by
-    have : b * (M * N * a) + b * (N * a) = N * (M + 1) * (a * b) := by ring
-    rw [this]
-    exact mul_le_mul_of_nonneg_right hsmall (by positivity)
-  rw [hval, hnorm]
-  nlinarith [abs_le.mp h₁, abs_le.mp h₂, sq_nonneg (a - b), sq_nonneg a, sq_nonneg b,
-    mul_nonneg (norm_nonneg ξ.fst) (norm_nonneg ξ.snd)]
-
-end GraphForm
-
-variable [FiniteDimensional ℝ V] {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
-  {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {W : Set (ℂ × V)} {K : Set V} {Ω : Set ℂ}
-  {u : ℂ → V} {z₀ : ℂ} {c : ℝ}
+variable [FiniteDimensional ℝ V] {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V}
+  {W : Set (ℂ × V)} {K : Set V} {u : ℂ → V} {z₀ : ℂ} {R c : ℝ}
 
 omit [FiniteDimensional ℝ V] in
-/-- The graph `z ↦ (λ z, u z)` of a solution of the inhomogeneous equation solves `∂ₜU = J'(U) ∂ₛU`
-for Gromov's structure of the rescaled data `J(λ⁻¹ ζ, x)` and `λ⁻¹ X(λ⁻¹ ζ, x)`. -/
-private theorem fderiv_toLp_smul_prodMk_I_eq_graphStructure {lam : ℝ} (hlam : lam ≠ 0) {y : ℂ}
-    (hu : DifferentiableAt ℝ u y)
-    (hfl : fderiv ℝ u y I - X (y, u y) I = J (y, u y) (fderiv ℝ u y 1 - X (y, u y) 1)) :
-    fderiv ℝ (fun w ↦ WithLp.toLp 2 (lam • w, u w)) y I =
-      graphStructure (fun q ↦ J (lam⁻¹ • q.1, q.2)) (fun q ↦ lam⁻¹ • X (lam⁻¹ • q.1, q.2))
-        (WithLp.toLp 2 (lam • y, u y))
-        (fderiv ℝ (fun w ↦ WithLp.toLp 2 (lam • w, u w)) y 1) := by
-  have hs : DifferentiableAt ℝ (fun w : ℂ ↦ lam • w) y := (differentiableAt_id).const_smul lam
-  have hsd (v : ℂ) : fderiv ℝ (fun w : ℂ ↦ lam • w) y v = lam • v := by
-    have h : HasFDerivAt (fun w : ℂ ↦ lam • w) (lam • ContinuousLinearMap.id ℝ ℂ) y :=
-      (hasFDerivAt_id y).const_smul lam
-    rw [h.fderiv]
-    rfl
-  have hy : lam⁻¹ • lam • y = y := inv_smul_smul₀ hlam y
-  have hI : I * (lam • (1 : ℂ)) = lam • I := by rw [mul_smul_comm, mul_one]
-  rw [fderiv_toLp_prodMk_apply hs hu, fderiv_toLp_prodMk_apply hs hu, graphStructure_apply]
-  simp only [WithLp.toLp_fst, WithLp.toLp_snd, hsd, hy, hI, map_smul,
-    smul_apply, smul_smul, mul_inv_cancel₀ hlam, one_smul, WithLp.toLp.injEq,
-    Prod.mk.injEq, true_and]
-  exact eq_add_of_sub_eq hfl
+/-- **Choosing the scale of the graph.** Given a taming constant `c > 0` and bounds `B` for `J`
+and `M` for `X`, there is a scale `μ > 0` such that at every point `(z, x)` where these hold, the
+split form `σ ⊕ ω` tames Gromov's structure of the rescaled data `J(μ⁻¹ ζ, x)`, `μ⁻¹ X(μ⁻¹ ζ, x)`
+at `(μ z, x)`, with constant `min 1 c / 4`. -/
+private theorem exists_pos_forall_mul_norm_sq_le_prodL2 (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
+    (hc : 0 < c) (B M : ℝ) :
+    ∃ μ : ℝ, 0 < μ ∧ ∀ ⦃z : ℂ⦄ ⦃x : V⦄, (∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (z, x) v)) →
+      ‖J (z, x)‖ ≤ B →
+      ‖X (z, x)‖ ≤ M → ∀ ζ, min 1 c / 4 * ‖ζ‖ ^ 2 ≤ stdComplexSymplecticForm.prodL2 ω ζ
+        (graphStructure (fun q ↦ J (μ⁻¹ • q.1, q.2)) (fun q ↦ μ⁻¹ • X (μ⁻¹ • q.1, q.2))
+          (WithLp.toLp 2 (μ • z, x)) ζ) := by
+  have hlim : Tendsto (fun μ : ℝ ↦ μ⁻¹ * |M|) atTop (𝓝 0) := by
+    simpa using tendsto_inv_atTop_zero.mul_const |M|
+  have hlim2 : Tendsto (fun μ : ℝ ↦ 2 * (μ⁻¹ * |M| * (B + 1)) ^ 2) atTop (𝓝 0) := by
+    simpa using ((hlim.mul_const (B + 1)).pow 2).const_mul 2
+  obtain ⟨μ, hμ, hμ1, hμ2⟩ : ∃ μ : ℝ, 0 < μ ∧ μ⁻¹ * |M| ≤ 1 / 2 ∧
+      2 * (μ⁻¹ * |M| * (B + 1)) ^ 2 ≤ c :=
+    (((eventually_gt_atTop 0).and (hlim.eventually (ge_mem_nhds (by norm_num)))).and
+      (hlim2.eventually (ge_mem_nhds hc))).exists.imp fun _ h ↦ ⟨h.1.1, h.1.2, h.2⟩
+  refine ⟨μ, hμ, fun z x htame hJ hX ζ ↦ ?_⟩
+  have hp : (μ⁻¹ • (WithLp.toLp 2 (μ • z, x)).ofLp.1, (WithLp.toLp 2 (μ • z, x)).ofLp.2) =
+      (z, x) := by simp only [inv_smul_smul₀ hμ.ne']
+  refine mul_norm_sq_le_prodL2_graphStructure hg hc (by positivity) hμ1 hμ2
+    (fun v ↦ by simpa only [hp] using htame v) (by simpa only [hp] using hJ) ?_ ζ
+  simp only [hp]
+  rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hμ.le)]
+  exact mul_le_mul_of_nonneg_left (hX.trans (le_abs_self M)) (inv_nonneg.2 hμ.le)
 
 omit [FiniteDimensional ℝ V] in
-/-- The rescaled graph structure `J'` of the data `J(λ⁻¹ ζ, x)` and `λ⁻¹ X(λ⁻¹ ζ, x)` is `C²` on an
-open set `W'` containing a compact set `K'`, on which it squares to `-1`; `K'` consists of the
-points `(λ z, x)` for `(z, x)` in a compact set `S` where `J` and `X` are `C²` and `J² = -1`. -/
-private theorem exists_rescaled_graphStructure_data {lam : ℝ} (hlam : lam ≠ 0) {S : Set (ℂ × V)}
-    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W) (hS : IsCompact S)
-    (hSW : S ⊆ W) (hJsq : ∀ q ∈ S, ∀ v, J q (J q v) = -v) :
-    ∃ W' K' : Set (WithLp 2 (ℂ × V)), IsOpen W' ∧
-      ContDiffOn ℝ 2
-        (graphStructure (fun q ↦ J (lam⁻¹ • q.1, q.2)) (fun q ↦ lam⁻¹ • X (lam⁻¹ • q.1, q.2)))
-        W' ∧ IsCompact K' ∧ K' ⊆ W' ∧
-      (∀ p ∈ K', ∀ ζ, graphStructure (fun q ↦ J (lam⁻¹ • q.1, q.2))
-        (fun q ↦ lam⁻¹ • X (lam⁻¹ • q.1, q.2)) p (graphStructure (fun q ↦ J (lam⁻¹ • q.1, q.2))
-          (fun q ↦ lam⁻¹ • X (lam⁻¹ • q.1, q.2)) p ζ) = -ζ) ∧
-      (∀ q ∈ S, WithLp.toLp 2 (lam • q.1, q.2) ∈ K') ∧
-      ∀ p ∈ K', (lam⁻¹ • p.fst, p.snd) ∈ S := by
-  set σ : ℂ × V → ℂ × V := fun q ↦ (lam⁻¹ • q.1, q.2)
-  have hσ : ContDiff ℝ 2 σ := (contDiff_fst.const_smul _).prodMk contDiff_snd
-  set e : ℂ × V → WithLp 2 (ℂ × V) := fun q ↦ WithLp.toLp 2 (lam • q.1, q.2)
-  have he : Continuous e :=
-    (WithLp.contDiff_toLp (𝕜 := ℝ) (n := 0)).continuous.comp
-      ((continuous_fst.const_smul lam).prodMk continuous_snd)
-  have hσe (q : ℂ × V) : σ (e q).ofLp = q := by
-    simp only [σ, e, inv_smul_smul₀ hlam]
-  refine ⟨WithLp.ofLp ⁻¹' (σ ⁻¹' W), e '' S,
-    (hW.preimage hσ.continuous).preimage (WithLp.contDiff_ofLp (𝕜 := ℝ) (n := 0)).continuous,
-    contDiffOn_graphStructure (hJ.comp hσ.contDiffOn (mapsTo_preimage σ W))
-      ((hX.comp hσ.contDiffOn (mapsTo_preimage σ W)).const_smul _),
-    hS.image he, ?_, ?_, fun q hq ↦ ⟨q, hq, rfl⟩, ?_⟩
-  · rintro _ ⟨q, hq, rfl⟩
-    change σ (e q).ofLp ∈ W
-    rw [hσe]
-    exact hSW hq
-  · rintro _ ⟨q, hq, rfl⟩ ζ
-    exact graphStructure_graphStructure (fun v ↦ by
-      change J (σ (e q).ofLp) (J (σ (e q).ofLp) v) = -v
-      rw [hσe]
-      exact hJsq q hq v) ζ
-  · rintro _ ⟨q, hq, rfl⟩
-    change σ (e q).ofLp ∈ S
-    rw [hσe]
-    exact hq
-
-omit [FiniteDimensional ℝ V] in
-/-- The graph `z ↦ (λ z, u z)` has energy density `λ² + ‖∂ₛu‖²`, so it has finite energy on a disc
-on which `u` has finite energy. -/
-private theorem integrableOn_norm_fderiv_toLp_smul_prodMk_sq (lam : ℝ) {r : ℝ}
-    (hdiff : ∀ z ∈ ball z₀ r \ {z₀}, DifferentiableAt ℝ u z)
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ r)) :
-    IntegrableOn (fun z ↦ ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (lam • w, u w)) z 1‖ ^ 2)
-      (ball z₀ r) := by
-  refine ((integrableOn_const (C := lam ^ 2) measure_ball_lt_top.ne).add henergy).congr_fun_ae ?_
-  filter_upwards [ae_restrict_mem measurableSet_ball,
-    ae_restrict_of_ae (volume.ae_ne z₀)] with z hz hzne
-  have hs : DifferentiableAt ℝ (fun w : ℂ ↦ lam • w) z := differentiableAt_fun_id.const_smul lam
-  rw [Pi.add_apply, norm_fderiv_toLp_prodMk_apply_sq hs (hdiff z ⟨hz, hzne⟩),
-    fderiv_fun_const_smul differentiableAt_fun_id, fderiv_fun_id]
+/-- The graph `w ↦ (μ w, u w)` has energy density `‖∂ₛ(μ w, u w)‖² = μ² + ‖∂ₛu‖²`, so it has finite
+energy on a disc wherever `u` does. -/
+private theorem integrableOn_norm_fderiv_toLp_smul_prodMk_sq (μ : ℝ)
+    (hdiff : ∀ z ∈ ball z₀ R \ {z₀}, DifferentiableAt ℝ u z)
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
+    IntegrableOn (fun z ↦ ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (μ • w, u w)) z 1‖ ^ 2)
+      (ball z₀ R) := by
+  have hint : IntegrableOn (fun z ↦ μ ^ 2 + ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R \ {z₀}) :=
+    ((integrableOn_const measure_ball_lt_top.ne).add henergy).mono_set sdiff_subset
+  refine (hint.congr_fun (fun z hz ↦ ?_) (measurableSet_ball.diff
+    (measurableSet_singleton _))).congr_set_ae (sdiff_null_ae_eq_self (measure_singleton _)).symm
+  have hfd : HasFDerivAt (fun w : ℂ ↦ μ • w) (μ • ContinuousLinearMap.id ℝ ℂ) z :=
+    (hasFDerivAt_id z).const_smul μ
+  rw [norm_fderiv_toLp_prodMk_apply_sq hfd.differentiableAt (hdiff z hz), hfd.fderiv]
   simp
 
-/-- **Reduction to the graph, for a given rescaling.** Let `J` and `X` be bounded by `M` and `N` on
-`D × K`, for the closed disc `D` of radius `r` about `z₀`, and let `λ > 0` make
-`λ⁻¹ N (M + 1) ≤ min 1 c`. Then a tamed solution of finite energy on `Ω \ {z₀}` has a limit `q` at
-`z₀`, and its differential lies in `Lᵖ` on a small disc about `z₀` for some `p > 2`. -/
-private theorem exists_tendsto_memLp_fderiv_of_rescale
-    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
-    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
-    (hK : IsCompact K) (hΩ : IsOpen Ω) {r : ℝ} (hr : 0 < r) (hrΩ : closedBall z₀ r ⊆ Ω)
-    (hΩKW : Ω ×ˢ K ⊆ W) (hJsq : ∀ z ∈ Ω, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
-    (hu : ContDiffOn ℝ 3 u (Ω \ {z₀}))
-    (hfl : ∀ z ∈ Ω \ {z₀},
-      fderiv ℝ u z I - X (z, u z) I = J (z, u z) (fderiv ℝ u z 1 - X (z, u z) 1))
-    (huK : MapsTo u (Ω \ {z₀}) K)
-    (htame : ∀ z ∈ Ω \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (z, u z) v))
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) Ω) {M N lam : ℝ}
-    (hM : ∀ q ∈ closedBall z₀ r ×ˢ K, ‖J q‖ ≤ M) (hN : ∀ q ∈ closedBall z₀ r ×ˢ K, ‖X q‖ ≤ N)
-    (hlam : 0 < lam) (hsmall : lam⁻¹ * N * (M + 1) ≤ min 1 c) :
-    ∃ q ∈ K, Tendsto u (𝓝[≠] z₀) (𝓝 q) ∧ ∃ ε > 0, ball z₀ ε ⊆ Ω ∧ ∃ p : ℝ, 2 < p ∧
-      MemLp (fderiv ℝ u) (ENNReal.ofReal p) (volume.restrict (ball z₀ ε)) := by
-  have hDK := (isCompact_closedBall z₀ r).prod hK
-  obtain ⟨W', K', hW', hJ', hK', hK'W', hJsq', hK'mem, hK'S⟩ := exists_rescaled_graphStructure_data
-    hlam.ne' hW hJ hX hDK ((prod_mono hrΩ subset_rfl).trans hΩKW)
-    fun q hq ↦ hJsq q.1 (hrΩ hq.1) q.2 hq.2
-  obtain ⟨B₀, hB₀⟩ := IsCompact.exists_bound_of_continuousOn
-    (E := WithLp 2 (ℂ × V) →L[ℝ] WithLp 2 (ℂ × V)) hK' (hJ'.continuousOn.mono hK'W')
-  -- The graph `U` on the punctured disc `P = B_r(z₀) \ {z₀}`.
-  set U : ℂ → WithLp 2 (ℂ × V) := fun z ↦ WithLp.toLp 2 (lam • z, u z)
-  have hPΩ : ball z₀ r \ {z₀} ⊆ Ω \ {z₀} :=
-    sdiff_subset_sdiff_left (ball_subset_closedBall.trans hrΩ)
-  have hdiff (z : ℂ) (hz : z ∈ Ω \ {z₀}) : DifferentiableAt ℝ u z :=
-    (hu.differentiableOn (by norm_num)).differentiableAt ((hΩ.sdiff isClosed_singleton).mem_nhds hz)
-  have hq (z : ℂ) (hz : z ∈ ball z₀ r \ {z₀}) : (z, u z) ∈ closedBall z₀ r ×ˢ K :=
-    ⟨ball_subset_closedBall hz.1, huK (hPΩ hz)⟩
-  have hUK : MapsTo U (ball z₀ r \ {z₀}) K' := fun z hz ↦ hK'mem _ (hq z hz)
-  have hσU (z : ℂ) : (lam⁻¹ • (U z).ofLp.1, (U z).ofLp.2) = (z, u z) := by
-    simp only [U]
-    rw [inv_smul_smul₀ hlam.ne']
-  -- Along `U`, the split form tames the rescaled graph structure with constant `min 1 c / 2`.
-  have htame' (z : ℂ) (hz : z ∈ ball z₀ r \ {z₀}) (ξ : WithLp 2 (ℂ × V)) :
-      min 1 c / 2 * ‖ξ‖ ^ 2 ≤ graphForm ω ξ (graphStructure (fun q ↦ J (lam⁻¹ • q.1, q.2))
-        (fun q ↦ lam⁻¹ • X (lam⁻¹ • q.1, q.2)) (U z) ξ) := by
-    refine mul_norm_sq_le_graphForm_graphStructure hg hc (M := M) (N := lam⁻¹ * N)
-      (fun v ↦ by rw [hσU]; exact htame z (hPΩ hz) v) (by rw [hσU]; exact hM _ (hq z hz)) ?_
-      hsmall ξ
-    rw [hσU, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hlam.le)]
-    exact mul_le_mul_of_nonneg_left (hN _ (hq z hz)) (inv_nonneg.2 hlam.le)
-  have hU : ContDiffOn ℝ 3 U (ball z₀ r \ {z₀}) := WithLp.contDiff_toLp.comp_contDiffOn
-    ((contDiffOn_id.const_smul lam).prodMk (hu.mono hPΩ))
-  have hCR (z : ℂ) (hz : z ∈ ball z₀ r \ {z₀}) := fderiv_toLp_smul_prodMk_I_eq_graphStructure
-    hlam.ne' (hdiff z (hPΩ hz)) (hfl z (hPΩ hz))
-  have henergy' := integrableOn_norm_fderiv_toLp_smul_prodMk_sq lam (fun z hz ↦ hdiff z (hPΩ hz))
-    (henergy.mono_set (ball_subset_closedBall.trans hrΩ))
-  have hm2 : 0 < min 1 c / 2 := half_pos (lt_min one_pos hc)
-  -- Apply the removal theorems for pseudoholomorphic curves to `U`.
-  obtain ⟨q', hq', hlim, -, -⟩ := (graphForm ω).exists_continuousOn_update_of_finite_energy
-    (graphForm_graphJ₀ hg) hm2 hr hW' hJ' hK' hK'W' hJsq' hU hCR hUK htame' henergy'
-  obtain ⟨ε, hε, hεr, hmem⟩ := (graphForm ω).exists_pos_forall_memLp_fderiv_of_finite_energy
-    (graphForm_graphJ₀ hg) hm2 hr hW' hJ' hK' hK'W' hJsq' hU hCR hUK htame'
-    (fun z hz ↦ (hB₀ _ (hUK hz)).trans (le_max_left B₀ 0)) henergy'
-  obtain ⟨β, hβdef⟩ : ∃ β, β = min 1 c / 2 / (1 + max B₀ 0) ^ 2 := ⟨_, rfl⟩
-  have hβ : 0 < β := by rw [hβdef]; positivity
-  refine ⟨q'.snd, (hK'S q' hq').2, ?_, ε, hε, (ball_subset_ball hεr.le).trans
-    (ball_subset_closedBall.trans hrΩ), 2 + β, by linarith, ?_⟩
-  · -- `u` is the second component of `U`.
-    exact (((WithLp.sndL 2 ℝ ℂ V).continuous.tendsto _).comp hlim).congr fun z ↦ by simp [U]
-  · -- The differential of `u` is dominated by that of its graph.
-    refine (hmem (2 + β) (by linarith) (by rw [← hβdef]; nlinarith [sq_nonneg β])).of_le
-      (measurable_fderiv ℝ u).aestronglyMeasurable (Eventually.of_forall fun z ↦ ?_)
-    exact norm_fderiv_le_norm_fderiv_toLp_prodMk_right (differentiableAt_fun_id.const_smul lam)
+omit [FiniteDimensional ℝ V] in
+/-- Gromov's structure of the data `J(μ⁻¹ ζ, x)`, `μ⁻¹ X(μ⁻¹ ζ, x)` rescaled by `μ ≠ 0` is `C²` on
+an open set containing the compact image of `S` under `(z, x) ↦ (μ z, x)`, and squares to `-1` on
+that image, when `J` and `X` are `C²` on an open `W ⊇ S` and `J² = -1` on the compact set `S`. -/
+private theorem exists_rescaled_graphStructure_data {μ : ℝ} (hμ : μ ≠ 0) {S : Set (ℂ × V)}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W) (hS : IsCompact S)
+    (hSW : S ⊆ W) (hJsq : ∀ p ∈ S, ∀ v, J p (J p v) = -v) :
+    ∃ W' : Set (WithLp 2 (ℂ × V)), IsOpen W' ∧
+      ContDiffOn ℝ 2
+        (graphStructure (fun q ↦ J (μ⁻¹ • q.1, q.2)) (fun q ↦ μ⁻¹ • X (μ⁻¹ • q.1, q.2))) W' ∧
+      IsCompact ((fun q ↦ WithLp.toLp 2 (μ • q.1, q.2)) '' S) ∧
+      (fun q ↦ WithLp.toLp 2 (μ • q.1, q.2)) '' S ⊆ W' ∧
+      ∀ p ∈ (fun q ↦ WithLp.toLp 2 (μ • q.1, q.2)) '' S, ∀ ζ,
+        graphStructure (fun q ↦ J (μ⁻¹ • q.1, q.2)) (fun q ↦ μ⁻¹ • X (μ⁻¹ • q.1, q.2)) p
+          (graphStructure (fun q ↦ J (μ⁻¹ • q.1, q.2)) (fun q ↦ μ⁻¹ • X (μ⁻¹ • q.1, q.2)) p ζ) =
+          -ζ := by
+  set g : ℂ × V → ℂ × V := fun q ↦ (μ⁻¹ • q.1, q.2)
+  have hgc : ContDiff ℝ ⊤ g := (contDiff_fst.const_smul _).prodMk contDiff_snd
+  have hge (q : ℂ × V) : g (WithLp.toLp 2 (μ • q.1, q.2)).ofLp = q := by
+    simp only [g, inv_smul_smul₀ hμ]
+  refine ⟨WithLp.ofLp ⁻¹' (g ⁻¹' W),
+    (hW.preimage hgc.continuous).preimage (WithLp.prod_continuous_ofLp 2 ℂ V),
+    contDiffOn_graphStructure (hJ.comp (hgc.of_le le_top).contDiffOn (mapsTo_preimage _ _))
+      ((hX.comp (hgc.of_le le_top).contDiffOn (mapsTo_preimage _ _)).const_smul _),
+    hS.image ((WithLp.prod_continuous_toLp 2 ℂ V).comp
+      ((continuous_fst.const_smul μ).prodMk continuous_snd)), ?_, ?_⟩
+  · rintro _ ⟨q, hq, rfl⟩
+    simpa only [mem_preimage, hge] using hSW hq
+  · rintro _ ⟨q, hq, rfl⟩ ζ
+    exact graphStructure_graphStructure (fun v ↦ by
+      simpa only [WithLp.ofLp_toLp, inv_smul_smul₀ hμ] using hJsq q hq v) ζ
 
-/-- **Reduction to the graph.** A solution of the inhomogeneous equation on a punctured
-neighbourhood of `z₀`, tamed and of finite energy, has a limit `q` at `z₀`, and its differential
-lies in `Lᵖ` on a small disc about `z₀` for some `p > 2`. -/
+/-- **Reduction to the graph.** Under the hypotheses of
+`TauCeti.Floer.exists_continuousOn_update_of_finite_energy`, `u` has a limit `q ∈ K` at the
+puncture, and its differential lies in `Lᵖ` on a smaller disc about `z₀` for some `p > 2`. Both are
+read off the graph `w ↦ (μ w, u w)`, pseudoholomorphic for Gromov's structure of the data rescaled
+by a scale `μ` at which the split form `σ ⊕ ω` tames it along the graph. -/
 private theorem exists_tendsto_memLp_fderiv_of_finite_energy
-    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
-    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
-    (hK : IsCompact K) (hΩ : IsOpen Ω) (hz₀ : z₀ ∈ Ω) (hΩKW : Ω ×ˢ K ⊆ W)
-    (hJsq : ∀ z ∈ Ω, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
-    (hu : ContDiffOn ℝ 3 u (Ω \ {z₀}))
-    (hfl : ∀ z ∈ Ω \ {z₀},
+    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R)
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W) (hK : IsCompact K)
+    (hKW : closedBall z₀ R ×ˢ K ⊆ W)
+    (hJsq : ∀ p ∈ closedBall z₀ R ×ˢ K, ∀ v, J p (J p v) = -v)
+    (hu : ContDiffOn ℝ 3 u (ball z₀ R \ {z₀}))
+    (hF : ∀ z ∈ ball z₀ R \ {z₀},
       fderiv ℝ u z I - X (z, u z) I = J (z, u z) (fderiv ℝ u z 1 - X (z, u z) 1))
-    (huK : MapsTo u (Ω \ {z₀}) K)
-    (htame : ∀ z ∈ Ω \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (z, u z) v))
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) Ω) :
-    ∃ q ∈ K, Tendsto u (𝓝[≠] z₀) (𝓝 q) ∧ ∃ ε > 0, ball z₀ ε ⊆ Ω ∧ ∃ p : ℝ, 2 < p ∧
+    (huK : MapsTo u (ball z₀ R \ {z₀}) K)
+    (htame : ∀ z ∈ ball z₀ R \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (z, u z) v))
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
+    ∃ q ∈ K, Tendsto u (𝓝[≠] z₀) (𝓝 q) ∧ ∃ ε > 0, ε < R ∧ ∃ p : ℝ, 2 < p ∧
       MemLp (fderiv ℝ u) (ENNReal.ofReal p) (volume.restrict (ball z₀ ε)) := by
-  -- A closed disc about `z₀` in `Ω`, and bounds for `J` and `X` over it.
-  obtain ⟨r, hr, hrΩ⟩ := nhds_basis_closedBall.mem_iff.1 (hΩ.mem_nhds hz₀)
-  have hDK := (isCompact_closedBall z₀ r).prod hK
-  have hDKW : closedBall z₀ r ×ˢ K ⊆ W := (prod_mono hrΩ subset_rfl).trans hΩKW
-  obtain ⟨M₀, hM₀⟩ := hDK.exists_bound_of_continuousOn (hJ.continuousOn.mono hDKW)
-  obtain ⟨N₀, hN₀⟩ := hDK.exists_bound_of_continuousOn (hX.continuousOn.mono hDKW)
-  set M := max M₀ 0
-  set N := max N₀ 0
-  have hm : 0 < min 1 c := lt_min one_pos hc
-  -- The rescaling factor, large enough that `ω_std ⊕ ω` tames the rescaled graph structure.
-  set lam := N * (M + 1) / min 1 c + 1
-  have hlam : 0 < lam := by positivity
-  refine exists_tendsto_memLp_fderiv_of_rescale hg hc hW hJ hX hK hΩ hr hrΩ hΩKW hJsq hu hfl huK
-    htame henergy (fun q hq ↦ (hM₀ q hq).trans (le_max_left M₀ 0))
-    (fun q hq ↦ (hN₀ q hq).trans (le_max_left N₀ 0)) hlam ?_
-  have hle : N * (M + 1) ≤ min 1 c * lam := by
-    have : min 1 c * lam = N * (M + 1) + min 1 c := by
-      change min 1 c * (N * (M + 1) / min 1 c + 1) = _
-      rw [mul_add, mul_div_cancel₀ _ hm.ne', mul_one]
-    linarith
-  calc lam⁻¹ * N * (M + 1) = lam⁻¹ * (N * (M + 1)) := by ring
-    _ ≤ lam⁻¹ * (min 1 c * lam) := mul_le_mul_of_nonneg_left hle (inv_nonneg.2 hlam.le)
-    _ = min 1 c := by field_simp
+  -- Pass to the graph `U w = (μ w, u w)`, pseudoholomorphic for Gromov's structure of the data
+  -- rescaled by a scale `μ` at which the split form `σ ⊕ ω` tames it along the graph.
+  have hBK : IsCompact (closedBall z₀ R ×ˢ K) := (isCompact_closedBall z₀ R).prod hK
+  obtain ⟨B, hBd⟩ := hBK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
+  obtain ⟨M, hMd⟩ := hBK.exists_bound_of_continuousOn (hX.continuousOn.mono hKW)
+  obtain ⟨μ, hμ, htameμ⟩ := exists_pos_forall_mul_norm_sq_le_prodL2 (J := J) (X := X) hg hc B M
+  set e : ℂ × V → WithLp 2 (ℂ × V) := fun q ↦ WithLp.toLp 2 (μ • q.1, q.2)
+  set U : ℂ → WithLp 2 (ℂ × V) := fun w ↦ WithLp.toLp 2 (μ • w, u w)
+  obtain ⟨W', hW', hJ', hK', hK'W', hJsq'⟩ :=
+    exists_rescaled_graphStructure_data hμ.ne' hW hJ hX hBK hKW hJsq
+  have hdiff : ∀ z ∈ ball z₀ R \ {z₀}, DifferentiableAt ℝ u z := fun z hz ↦
+    (hu.differentiableOn (by norm_num)).differentiableAt
+      ((isOpen_ball.sdiff isClosed_singleton).mem_nhds hz)
+  have hmem : ∀ z ∈ ball z₀ R \ {z₀}, (z, u z) ∈ closedBall z₀ R ×ˢ K := fun z hz ↦
+    ⟨ball_subset_closedBall hz.1, huK hz⟩
+  -- The remaining hypotheses of the removal theorems for pseudoholomorphic curves, for `U`.
+  have hg' := SymplecticForm.prodL2_apply_prodL2_eq_inner
+    stdComplexSymplecticForm_apply_ofComplexModule_eq_inner hg
+  have hc' : 0 < min 1 c / 4 := by positivity
+  have hU : ContDiffOn ℝ 3 U (ball z₀ R \ {z₀}) :=
+    WithLp.contDiff_toLp.comp_contDiffOn ((contDiff_id.const_smul μ).contDiffOn.prodMk hu)
+  have hCR (z : ℂ) (hz : z ∈ ball z₀ R \ {z₀}) :=
+    (fderiv_toLp_smul_prodMk_I_eq_graphStructure_iff hμ.ne' (hdiff z hz)).2 (hF z hz)
+  have hUK : MapsTo U (ball z₀ R \ {z₀}) (e '' (closedBall z₀ R ×ˢ K)) := fun z hz ↦
+    ⟨(z, u z), hmem z hz, rfl⟩
+  have htame' (z : ℂ) (hz : z ∈ ball z₀ R \ {z₀}) :=
+    htameμ (htame z hz) (hBd _ (hmem z hz)) (hMd _ (hmem z hz))
+  have henergy' := integrableOn_norm_fderiv_toLp_smul_prodMk_sq μ hdiff henergy
+  obtain ⟨q', hq'K, hq'lim, -, -⟩ :=
+    (stdComplexSymplecticForm.prodL2 ω).exists_continuousOn_update_of_finite_energy hg' hc' hR hW'
+      hJ' hK' hK'W' hJsq' hU hCR hUK htame' henergy'
+  obtain ⟨ε, hε, hεR, p, hp, hLp⟩ :=
+    (stdComplexSymplecticForm.prodL2 ω).exists_pos_two_lt_memLp_fderiv_of_finite_energy hg' hc'
+      hR hW' hJ' hK' hK'W' hJsq' hU hCR hUK htame' henergy'
+  -- Read off the second coordinate of the graph; its differential dominates that of `u`.
+  obtain ⟨⟨z, x⟩, hzx, rfl⟩ := hq'K
+  have hsnd : Continuous fun ζ : WithLp 2 (ℂ × V) ↦ ζ.snd :=
+    continuous_snd.comp (WithLp.prod_continuous_ofLp 2 ℂ V)
+  refine ⟨x, hzx.2, by simpa [U, e, Function.comp_def] using (hsnd.tendsto _).comp hq'lim,
+    ε, hε, hεR, p, hp, hLp.of_le (measurable_fderiv ℝ u).aestronglyMeasurable
+      (Eventually.of_forall fun y ↦ ?_)⟩
+  exact norm_fderiv_le_norm_fderiv_toLp_prodMk_right (differentiableAt_fun_id.const_smul μ)
 
-omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
 open Classical in
-/-- Updating a map continuous on `Ω \ {z₀}` at `z₀` to its limit there gives a map continuous on
-`Ω`, with values in `K` if the map and the limit lie in `K`. -/
-private theorem continuousOn_update_mapsTo {q : V} (hu : ContinuousOn u (Ω \ {z₀}))
-    (huK : MapsTo u (Ω \ {z₀}) K) (hqK : q ∈ K) (hlim : Tendsto u (𝓝[≠] z₀) (𝓝 q)) :
-    ContinuousOn (Function.update u z₀ q) Ω ∧ MapsTo (Function.update u z₀ q) Ω K := by
-  refine ⟨continuousOn_update_iff.2 ⟨hu, fun _ ↦
-    hlim.mono_left (nhdsWithin_mono _ (sdiff_subset_compl _ _))⟩, fun z hz ↦ ?_⟩
-  by_cases hzz : z = z₀
-  · subst z
-    simpa using hqK
-  · simpa [Function.update_of_ne hzz] using huK ⟨hz, hzz⟩
+/-- **Continuous removal of a finite-energy puncture of a Floer solution.** Let `J(z, x)` and
+the Hamiltonian one-form `X(z, x)` be `C²` on an open set containing `closedBall z₀ R ×ˢ K` for a
+compact `K ⊆ V`, with `J² = -1` on `closedBall z₀ R ×ˢ K`, and let `u` be a `C³` solution of the
+inhomogeneous Cauchy–Riemann equation `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` on the
+punctured disc `ball z₀ R \ {z₀}`, with image in `K`, finite energy `∫ ‖∂ₛu‖²` and `J(z, u z)`
+uniformly tamed by `ω`. Then `u` has a limit `q ∈ K` at the puncture, and updating `u` at `z₀` to
+`q` gives a continuous map on the whole disc with image in `K`.
 
-open Classical in
-/-- **Continuous removal of a finite-energy puncture for Floer solutions.** Let `J` and `X` be `C²`
-on an open set `W ⊆ ℂ × V` containing `Ω × K`, for an open neighbourhood `Ω` of `z₀` and a compact
-`K ⊆ V`, with `J(z, x)² = -1` on `Ω × K`. Let `ω(·, J₀ ·)` be the inner product of `V`. Let `u` be
-`C³` on `Ω \ {z₀}` with image in `K`, solving `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)`, such
-that `ω` tames `J(z, u z)` with a uniform constant `c > 0` and the energy `∫_Ω ‖∂ₛu‖²` is finite.
-Then `u` has a limit `q ∈ K` at `z₀`, and updating `u` at `z₀` to `q` gives a continuous map on
-`Ω` with image in `K`. -/
+The fixed structure `J₀` identifies the given inner product with a symplectic metric. No
+regularity at the puncture is assumed or concluded beyond continuity. -/
 theorem exists_continuousOn_update_of_finite_energy
-    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
-    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
-    (hK : IsCompact K) (hΩ : IsOpen Ω) (hz₀ : z₀ ∈ Ω) (hΩKW : Ω ×ˢ K ⊆ W)
-    (hJsq : ∀ z ∈ Ω, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
-    (hu : ContDiffOn ℝ 3 u (Ω \ {z₀}))
-    (hfl : ∀ z ∈ Ω \ {z₀},
+    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R)
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W) (hK : IsCompact K)
+    (hKW : closedBall z₀ R ×ˢ K ⊆ W)
+    (hJsq : ∀ p ∈ closedBall z₀ R ×ˢ K, ∀ v, J p (J p v) = -v)
+    (hu : ContDiffOn ℝ 3 u (ball z₀ R \ {z₀}))
+    (hF : ∀ z ∈ ball z₀ R \ {z₀},
       fderiv ℝ u z I - X (z, u z) I = J (z, u z) (fderiv ℝ u z 1 - X (z, u z) 1))
-    (huK : MapsTo u (Ω \ {z₀}) K)
-    (htame : ∀ z ∈ Ω \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (z, u z) v))
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) Ω) :
+    (huK : MapsTo u (ball z₀ R \ {z₀}) K)
+    (htame : ∀ z ∈ ball z₀ R \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (z, u z) v))
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
     ∃ q ∈ K, Tendsto u (𝓝[≠] z₀) (𝓝 q) ∧
-      ContinuousOn (Function.update u z₀ q) Ω ∧ MapsTo (Function.update u z₀ q) Ω K := by
-  obtain ⟨q, hqK, hlim, -⟩ := exists_tendsto_memLp_fderiv_of_finite_energy hg hc hW hJ hX hK hΩ
-    hz₀ hΩKW hJsq hu hfl huK htame henergy
+      ContinuousOn (Function.update u z₀ q) (ball z₀ R) ∧
+      MapsTo (Function.update u z₀ q) (ball z₀ R) K := by
+  obtain ⟨q, hqK, hlim, -⟩ := exists_tendsto_memLp_fderiv_of_finite_energy hg hc hR hW hJ hX hK
+    hKW hJsq hu hF huK htame henergy
   exact ⟨q, hqK, hlim, continuousOn_update_mapsTo hu.continuousOn huK hqK hlim⟩
 
 open Classical in
-/-- **Weak differentiability across a finite-energy puncture for Floer solutions.** Under the
+/-- **Weak differentiability across a finite-energy puncture of a Floer solution.** Under the
 hypotheses of `TauCeti.Floer.exists_continuousOn_update_of_finite_energy`, the continuous extension
-of `u` across `z₀` is weakly differentiable on `Ω`, with weak derivative the classical differential
-of `u` off `z₀`, and this differential lies in `Lᵖ` on a disc about `z₀` for some `p > 2`. No
-differentiability at `z₀` is asserted. -/
+of `u` across `z₀` is weakly differentiable on the disc, with weak derivative the classical
+differential of `u` off `z₀`, and this differential lies in `Lᵖ` on a smaller disc about `z₀` for
+some `p > 2`. No differentiability at `z₀` is asserted. -/
 theorem exists_hasWeakFDerivOn_update_of_finite_energy
-    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
-    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
-    (hK : IsCompact K) (hΩ : IsOpen Ω) (hz₀ : z₀ ∈ Ω) (hΩKW : Ω ×ˢ K ⊆ W)
-    (hJsq : ∀ z ∈ Ω, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v)
-    (hu : ContDiffOn ℝ 3 u (Ω \ {z₀}))
-    (hfl : ∀ z ∈ Ω \ {z₀},
+    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R)
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W) (hK : IsCompact K)
+    (hKW : closedBall z₀ R ×ˢ K ⊆ W)
+    (hJsq : ∀ p ∈ closedBall z₀ R ×ˢ K, ∀ v, J p (J p v) = -v)
+    (hu : ContDiffOn ℝ 3 u (ball z₀ R \ {z₀}))
+    (hF : ∀ z ∈ ball z₀ R \ {z₀},
       fderiv ℝ u z I - X (z, u z) I = J (z, u z) (fderiv ℝ u z 1 - X (z, u z) 1))
-    (huK : MapsTo u (Ω \ {z₀}) K)
-    (htame : ∀ z ∈ Ω \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (z, u z) v))
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) Ω) :
-    ∃ q ∈ K, ContinuousOn (Function.update u z₀ q) Ω ∧ MapsTo (Function.update u z₀ q) Ω K ∧
-      HasWeakFDerivOn volume ⟨Ω, hΩ⟩ (Function.update u z₀ q) (fderiv ℝ u) ∧
-      ∃ ε > 0, ball z₀ ε ⊆ Ω ∧ ∃ p : ℝ, 2 < p ∧
+    (huK : MapsTo u (ball z₀ R \ {z₀}) K)
+    (htame : ∀ z ∈ ball z₀ R \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (z, u z) v))
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
+    ∃ q ∈ K, ContinuousOn (Function.update u z₀ q) (ball z₀ R) ∧
+      MapsTo (Function.update u z₀ q) (ball z₀ R) K ∧
+      HasWeakFDerivOn volume ⟨ball z₀ R, isOpen_ball⟩ (Function.update u z₀ q) (fderiv ℝ u) ∧
+      ∃ ε > 0, ε < R ∧ ∃ p : ℝ, 2 < p ∧
         MemLp (fderiv ℝ u) (ENNReal.ofReal p) (volume.restrict (ball z₀ ε)) := by
-  obtain ⟨q, hqK, hlim, ε, hε, hεΩ, p, hp, hmem⟩ := exists_tendsto_memLp_fderiv_of_finite_energy
-    hg hc hW hJ hX hK hΩ hz₀ hΩKW hJsq hu hfl huK htame henergy
+  obtain ⟨q, hqK, hlim, ε, hε, hεR, p, hp, hmem⟩ := exists_tendsto_memLp_fderiv_of_finite_energy
+    hg hc hR hW hJ hX hK hKW hJsq hu hF huK htame henergy
   obtain ⟨hcont, hmaps⟩ := continuousOn_update_mapsTo hu.continuousOn huK hqK hlim
-  have hP : IsOpen (Ω \ {z₀}) := hΩ.sdiff isClosed_singleton
+  have hP : IsOpen (ball z₀ R \ {z₀}) := isOpen_ball.sdiff isClosed_singleton
   -- The differential is integrable near `z₀` by higher integrability, and continuous elsewhere.
-  have hloc : LocallyIntegrableOn (fderiv ℝ u) Ω := by
-    intro x hx
-    by_cases hxz : x = z₀
-    · subst x
-      have : IsFiniteMeasure (volume.restrict (ball z₀ ε)) :=
-        ⟨by simpa using measure_ball_lt_top⟩
-      exact ⟨ball z₀ ε, mem_nhdsWithin_of_mem_nhds (ball_mem_nhds z₀ hε),
+  have hloc : LocallyIntegrableOn (fderiv ℝ u) (ball z₀ R) := by
+    intro y hy
+    rcases eq_or_ne y z₀ with rfl | hyz
+    · have : IsFiniteMeasure (volume.restrict (ball y ε)) := ⟨by simpa using measure_ball_lt_top⟩
+      exact ⟨ball y ε, mem_nhdsWithin_of_mem_nhds (ball_mem_nhds y hε),
         hmem.integrable (by
           rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal (by linarith))⟩
     · have h := (hu.continuousOn_fderiv_of_isOpen hP (by norm_num)).integrableAt_nhdsWithin
-        (μ := volume) hP.measurableSet ⟨hx, hxz⟩
+        (μ := volume) hP.measurableSet ⟨hy, hyz⟩
       rwa [sdiff_eq, nhdsWithin_inter_of_mem'
-        (mem_nhdsWithin_of_mem_nhds (isOpen_compl_singleton.mem_nhds hxz))] at h
+        (mem_nhdsWithin_of_mem_nhds (isOpen_compl_singleton.mem_nhds hyz))] at h
   refine ⟨q, hqK, hcont, hmaps, hasWeakFDerivOn_of_hasFDerivAt_off_countable
-    (countable_singleton z₀) hcont hloc fun z hz ↦ ?_, ε, hε, hεΩ, p, hp, hmem⟩
+    (countable_singleton z₀) hcont hloc fun z hz ↦ ?_, ε, hε, hεR, p, hp, hmem⟩
   have hdu := ((hu.differentiableOn (by norm_num)) z hz).differentiableAt (hP.mem_nhds hz)
   have heq : Function.update u z₀ q =ᶠ[𝓝 z] u := by
     filter_upwards [isOpen_compl_singleton.mem_nhds hz.2] with w hw
     exact Function.update_of_ne hw _ _
   exact hdu.hasFDerivAt.congr_of_eventuallyEq heq
 
+end Euclidean
+
 end TauCeti.Floer
+
+namespace TauCeti.SymplecticForm
+
+open Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+  {J : ℝ × ℝ → V → AlmostComplexStructure V} {W : Set ((ℝ × ℝ) × V)} {K : Set V}
+  {Ω : Set (ℝ × ℝ)} {z₀ : ℝ × ℝ} {u : ℝ × ℝ → V}
+
+/-- The Hamiltonian one-form of a `C³` perturbation, read in the complex coordinate
+`equivRealProdCLM`, is `C²`. -/
+private theorem contDiffOn_hamiltonianOneForm_equivRealProdCLM (hW : IsOpen W)
+    (hKs : ContDiffOn ℝ 3 (Function.uncurry Ks) W) (hKt : ContDiffOn ℝ 3 (Function.uncurry Kt) W) :
+    ContDiffOn ℝ 2 (fun q : ℂ × V ↦
+        ω.hamiltonianOneForm Ks Kt (equivRealProdCLM q.1) q.2 ∘L (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ))
+      ((fun q : ℂ × V ↦ (equivRealProdCLM q.1, q.2)) ⁻¹' W) := by
+  have h := ω.contDiffOn_hamiltonianOneForm (n := 2) (P := ℝ) (Ks := fun _ ↦ Ks)
+    (Kt := fun _ ↦ Kt) (isOpen_univ.prod hW)
+    (hKs.comp contDiff_snd.contDiffOn fun q hq ↦ hq.2)
+    (hKt.comp contDiff_snd.contDiffOn fun q hq ↦ hq.2)
+  have he : ContDiff ℝ 2 fun q : ℂ × V ↦ ((0 : ℝ), (equivRealProdCLM q.1, q.2)) :=
+    contDiff_const.prodMk ((equivRealProdCLM.contDiff.comp contDiff_fst).prodMk contDiff_snd)
+  exact (h.comp he.contDiffOn fun q hq ↦ ⟨trivial, hq⟩).clm_comp contDiffOn_const
+
+/-- The removal of a puncture, read in the complex coordinate `y = equivRealProdCLM⁻¹ z`: a
+finite-energy Floer solution on a punctured disc about `y₀` has a limit at `y₀`. -/
+private theorem exists_mem_tendsto_comp_equivRealProdCLM (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
+    (hW : IsOpen W) (hKs : ContDiffOn ℝ 3 (Function.uncurry Ks) W)
+    (hKt : ContDiffOn ℝ 3 (Function.uncurry Kt) W)
+    (hJ : ContDiffOn ℝ 2
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hK : IsCompact K) {y₀ : ℂ} {r : ℝ} (hr : 0 < r)
+    (hDW : closedBall y₀ r ×ˢ K ⊆ (fun q : ℂ × V ↦ (equivRealProdCLM q.1, q.2)) ⁻¹' W)
+    (hJt : ∀ y ∈ closedBall y₀ r, ∀ x ∈ K, ω.Tames (J (equivRealProdCLM y) x))
+    (hu : ContDiffOn ℝ 3 (u ∘ equivRealProdCLM) (ball y₀ r \ {y₀}))
+    (hfl : ∀ y ∈ ball y₀ r \ {y₀}, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J (equivRealProdCLM y) (u (equivRealProdCLM y)))
+      (ω.perturbedFDeriv Ks Kt u (equivRealProdCLM y) : ℝ × ℝ →ₗ[ℝ] V))
+    (huK : MapsTo (u ∘ equivRealProdCLM) (ball y₀ r \ {y₀}) K)
+    (hint : IntegrableOn (fun y ↦ ω.floerEnergyDensity Ks Kt u (equivRealProdCLM y))
+      (ball y₀ r)) :
+    ∃ q ∈ K, Tendsto (u ∘ equivRealProdCLM) (𝓝[≠] y₀) (𝓝 q) := by
+  set J' : ℂ × V → V →L[ℝ] V := fun q ↦
+    (J (equivRealProdCLM q.1) q.2).toLinearMap.toContinuousLinearMap
+  set X' : ℂ × V → ℂ →L[ℝ] V := fun q ↦
+    ω.hamiltonianOneForm Ks Kt (equivRealProdCLM q.1) q.2 ∘L (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)
+  have hD : IsCompact (closedBall y₀ r ×ˢ K) := (isCompact_closedBall y₀ r).prod hK
+  have hJ' : ContDiffOn ℝ 2 J' ((fun q : ℂ × V ↦ (equivRealProdCLM q.1, q.2)) ⁻¹' W) :=
+    hJ.comp ((equivRealProdCLM.contDiff.comp contDiff_fst).prodMk contDiff_snd).contDiffOn
+      (mapsTo_preimage _ _)
+  have hX' := contDiffOn_hamiltonianOneForm_equivRealProdCLM (ω := ω) hW hKs hKt
+  -- A uniform taming constant `c` and a bound `M` for `X` on the compact disc.
+  obtain ⟨c, hc, hJc⟩ := hD.exists_pos_forall_mul_norm_sq_le
+    (b := fun q ↦ ((ContinuousLinearMap.compL ℝ V V ℝ).flip (J' q)).comp
+      ω.toBilinForm.toContinuousBilinearMap)
+    (((ContinuousLinearMap.compL ℝ V V ℝ).flip.continuous.comp_continuousOn
+      (hJ'.continuousOn.mono hDW)).clm_comp continuousOn_const)
+    (fun q hq v hv ↦ by simpa [J'] using hJt _ hq.1 _ hq.2 v hv)
+  obtain ⟨M, hM⟩ := hD.exists_bound_of_continuousOn (hX'.continuousOn.mono hDW)
+  have hmem : ∀ y ∈ ball y₀ r \ {y₀}, (y, (u ∘ equivRealProdCLM) y) ∈ closedBall y₀ r ×ˢ K :=
+    fun y hy ↦ ⟨ball_subset_closedBall hy.1, huK hy⟩
+  have htame : ∀ y ∈ ball y₀ r \ {y₀}, ∀ v,
+      c * ‖v‖ ^ 2 ≤ ω v (J' (y, (u ∘ equivRealProdCLM) y) v) := fun y hy v ↦ by
+    simpa [J'] using hJc _ (hmem y hy) v
+  -- The energy density bounds `‖∂ₛu‖²`, so `∫ ‖∂ₛu‖²` is finite on the disc.
+  have hS : MeasurableSet (ball y₀ r \ {y₀}) := measurableSet_ball.diff (measurableSet_singleton _)
+  have henergy : IntegrableOn (fun y ↦ ‖fderiv ℝ (u ∘ equivRealProdCLM) y 1‖ ^ 2) (ball y₀ r) := by
+    refine (integrableOn_of_le_mul_add (g := fun y ↦ ‖fderiv ℝ (u ∘ equivRealProdCLM) y 1‖ ^ 2)
+      (A := 2 / c) (B := 2 * M ^ 2) hS
+      ((measure_mono sdiff_subset).trans_lt measure_ball_lt_top).ne
+      ((((hu.continuousOn_fderiv_of_isOpen (isOpen_ball.sdiff isClosed_singleton)
+        (by norm_num)).clm_apply continuousOn_const).norm.pow 2).aestronglyMeasurable hS)
+      (hint.mono_set sdiff_subset) (fun _ _ ↦ by positivity) fun y hy ↦ ?_).congr_set_ae
+      (sdiff_null_ae_eq_self (measure_singleton _)).symm
+    rw [fderiv_comp_equivRealProdCLM_one]
+    refine (ω.norm_fderiv_stdComplexLineReal_sq_le hc (htame y hy) (hfl y hy)).trans ?_
+    have h := ((X' _).le_opNorm 1).trans (mul_le_mul_of_nonneg_right (hM _ (hmem y hy))
+      (norm_nonneg _))
+    have hXs : ‖ω.hamiltonianVectorField (Ks (equivRealProdCLM y)) (u (equivRealProdCLM y))‖ ≤
+        M := by simpa [X', equivRealProdCLM_one, hamiltonianOneForm_apply] using h
+    gcongr
+  exact (Floer.exists_continuousOn_update_of_finite_energy hg hc hr
+    (hW.preimage ((equivRealProdCLM.continuous.comp continuous_fst).prodMk continuous_snd))
+    hJ' hX' hK hDW (fun _ _ v ↦ by simp [J']) hu
+    (fun y hy ↦ ω.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub.1
+      (hfl y hy)) huK htame
+    henergy).imp fun _ h ↦ ⟨h.1, h.2.1⟩
+
+open Classical in
+/-- **A finite-energy Floer solution extends continuously across a puncture.** Let the
+Hamiltonian perturbation `(Ks, Kt)` be `C³` and `J(z, x)` be `C²` on an open set
+`W ⊆ (ℝ × ℝ) × V` containing `Ω × K`, for an open `Ω ∋ z₀` and a compact `K ⊆ V`, with `J(z, x)`
+tamed by `ω` on `Ω × K`. Let `u` be a `C³` solution of the Floer equation `(du - X)^{0,1} = 0`
+for the Hamiltonian one-form `X = ds ⊗ X_{Ks} + dt ⊗ X_{Kt}` on `Ω \ {z₀}`, with image in `K` and
+integrable Floer energy density `ω(∂ₛu - X_{Ks}, ∂ₜu - X_{Kt})`. Then `u` has a limit `q ∈ K` at
+`z₀`, and updating `u` at `z₀` to `q` gives a continuous map on `Ω` with image in `K`.
+
+The fixed structure `J₀` identifies the given inner product with a symplectic metric. No
+regularity at `z₀` is assumed or concluded beyond continuity. -/
+theorem exists_continuousOn_update_of_floer (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
+    (hW : IsOpen W) (hKs : ContDiffOn ℝ 3 (Function.uncurry Ks) W)
+    (hKt : ContDiffOn ℝ 3 (Function.uncurry Kt) W)
+    (hJ : ContDiffOn ℝ 2
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hK : IsCompact K) (hΩ : IsOpen Ω) (hΩKW : Ω ×ˢ K ⊆ W) (hz₀ : z₀ ∈ Ω)
+    (hJt : ∀ z ∈ Ω, ∀ x ∈ K, ω.Tames (J z x)) (hu : ContDiffOn ℝ 3 u (Ω \ {z₀}))
+    (hfl : ∀ z ∈ Ω \ {z₀}, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
+    (huK : MapsTo u (Ω \ {z₀}) K) (henergy : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω) :
+    ∃ q ∈ K, Tendsto u (𝓝[≠] z₀) (𝓝 q) ∧ ContinuousOn (Function.update u z₀ q) Ω ∧
+      MapsTo (Function.update u z₀ q) Ω K := by
+  set L := equivRealProdCLM
+  set y₀ := L.symm z₀
+  -- A disc about `y₀ = L⁻¹ z₀` inside `L⁻¹ Ω`, in the complex coordinate.
+  obtain ⟨r, hr, hrΩ⟩ := Metric.nhds_basis_closedBall.mem_iff.1
+    ((hΩ.preimage L.continuous).mem_nhds (show L y₀ ∈ Ω by simpa [y₀] using hz₀))
+  have hmaps : MapsTo L (ball y₀ r \ {y₀}) (Ω \ {z₀}) := fun y hy ↦
+    ⟨hrΩ (ball_subset_closedBall hy.1), fun h ↦ hy.2 (by
+      simpa [y₀] using congrArg L.symm (mem_singleton_iff.1 h))⟩
+  have hint : IntegrableOn (fun y ↦ ω.floerEnergyDensity Ks Kt u (L y)) (ball y₀ r) :=
+    ((volume_preserving_equiv_real_prod.integrableOn_comp_preimage
+      measurableEquivRealProd.measurableEmbedding).2 henergy).mono_set
+        fun y hy ↦ hrΩ (ball_subset_closedBall hy)
+  obtain ⟨q, hqK, hlim⟩ := exists_mem_tendsto_comp_equivRealProdCLM hg hW hKs hKt hJ hK hr
+    (fun q hq ↦ hΩKW ⟨hrΩ hq.1, hq.2⟩) (fun y hy ↦ hJt _ (hrΩ hy))
+    (hu.comp L.contDiff.contDiffOn hmaps)
+    (fun y hy ↦ hfl _ (hmaps hy)) (huK.comp hmaps) hint
+  -- Back to the real coordinates `ℝ × ℝ`.
+  have hlimu : Tendsto u (𝓝[≠] z₀) (𝓝 q) := by
+    have hmap : map L (𝓝[≠] y₀) = 𝓝[≠] z₀ := by
+      simpa [y₀] using L.toHomeomorph.map_punctured_nhds_eq y₀
+    rw [← hmap, tendsto_map'_iff]
+    exact hlim
+  exact ⟨q, hqK, hlimu, continuousOn_update_mapsTo hu.continuousOn huK hqK hlimu⟩
+
+end TauCeti.SymplecticForm

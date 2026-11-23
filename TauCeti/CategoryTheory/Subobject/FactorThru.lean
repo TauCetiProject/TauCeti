@@ -12,13 +12,16 @@ public import Mathlib.CategoryTheory.Subobject.FactorThru
 
 This file records elementary forms of the universal property of a subobject. Factoring is
 unchanged by precomposition with a split epimorphism (for instance an isomorphism, or one induced
-by an equality of objects), it is transported along an isomorphism of ambient objects, and a
-factorization through a subobject is unique because its representing arrow is a monomorphism.
+by an equality of objects), morphisms carrying subobjects into subobjects compose, factoring is
+transported along an isomorphism of ambient objects, and a factorization through a subobject is
+unique because its representing arrow is a monomorphism.
 
 ## Main declarations
 
 * `CategoryTheory.Subobject.factors_comp_iff_of_isSplitEpi`: precomposition by a split
   epimorphism does not change whether a morphism factors through a subobject.
+* `CategoryTheory.Subobject.factors_comp_of_factors`: morphisms carrying `P` into `Q` and `Q`
+  into `R` compose to a morphism carrying `P` into `R`.
 * `CategoryTheory.Subobject.factors_mapIsoToOrderIso_iff`: factoring through a subobject
   transported along an isomorphism of ambient objects.
 * `CategoryTheory.Subobject.factors_iff_existsUnique`: factoring through a subobject is equivalent
@@ -41,6 +44,14 @@ as an isomorphism or the morphism `eqToHom h` induced by an equality of objects.
 theorem factors_comp_iff_of_isSplitEpi (P : Subobject Z) (g : X ⟶ Y) [IsSplitEpi g]
     (f : Y ⟶ Z) : P.Factors (g ≫ f) ↔ P.Factors f :=
   ⟨fun h ↦ by simpa using factors_of_factors_right (section_ g) h, factors_of_factors_right g⟩
+
+/-- If `f` carries the subobject `P` into `Q` and `g` carries `Q` into `R`, then `f ≫ g` carries
+`P` into `R`. -/
+theorem factors_comp_of_factors {P : Subobject X} {Q : Subobject Y} {R : Subobject Z}
+    {f : X ⟶ Y} {g : Y ⟶ Z} (hf : Q.Factors (P.arrow ≫ f)) (hg : R.Factors (Q.arrow ≫ g)) :
+    R.Factors (P.arrow ≫ f ≫ g) := by
+  rw [← Category.assoc, ← factorThru_arrow _ _ hf, Category.assoc]
+  exact factors_of_factors_right _ hg
 
 /-- A morphism factors through the image of a subobject under an isomorphism `e` of ambient
 objects exactly when its composite with `e.inv` factors through the original subobject. -/

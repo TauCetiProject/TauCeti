@@ -45,6 +45,9 @@ generators as well.
 * `TauCeti.FiniteQuadraticModule.exists_isometry_pi_oddCyclic`: a nondegenerate finite quadratic
   module of odd order is isometric to an orthogonal sum of odd cyclic modules of prime-power order
   with coefficients prime to that order.
+* `TauCeti.FiniteQuadraticModule.exists_isometry_pi_oddCyclic_of_natCard_eq_pow`: for an odd
+  prime `p`, a nondegenerate finite quadratic module of order `p^N` is isometric to an orthogonal
+  sum of the generators `q_θ^{(p)}(p^k)`, `k ≥ 1`, with `θ` prime to `p`.
 
 ## References
 
@@ -151,6 +154,34 @@ theorem exists_isometry_pi_oddCyclic (A : FiniteQuadraticModule.{u}) (hA : A.IsN
   refine ⟨n + 1, Fin.cons (Nat.card C) m, Fin.cases hCodd hm, Fin.cons θ₀ θ,
     Fin.cases ⟨hCcard ▸ hp.isPrimePow.pow hk.ne', hθ₀⟩ hmθ, ⟨?_⟩⟩
   exact (QuadraticMap.IsometryEquiv.consPi _).symm.trans ((g.prod f).trans e)
+
+/-- **Nikulin's decomposition at an odd prime.** A nondegenerate finite quadratic module of order
+`p^N`, for an odd prime `p`, is isometric to an orthogonal sum of odd cyclic generators
+`q_θ^{(p)}(p^k)` with `k ≥ 1` and `θ` prime to `p`. -/
+theorem exists_isometry_pi_oddCyclic_of_natCard_eq_pow {p : ℕ} [Fact p.Prime] (hp : Odd p)
+    (A : FiniteQuadraticModule.{u}) (hA : A.IsNondegenerate) {N : ℕ} (hN : Nat.card A = p ^ N) :
+    ∃ (n : ℕ) (k : Fin n → ℕ) (θ : Fin n → ℤ), (∀ i, 0 < k i ∧ IsCoprime (p : ℤ) (θ i)) ∧
+      Nonempty (Isometry (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i)) A) := by
+  obtain ⟨n, m, hm, θ, hmθ, ⟨f⟩⟩ := A.exists_isometry_pi_oddCyclic hA (hN ▸ hp.pow)
+  -- Each summand order `m i` divides `#A = p^N`, so it is a power of `p`.
+  have hdvd (i : Fin n) : m i ∣ p ^ N := by
+    rw [← hN, ← Nat.card_congr f.toLinearEquiv.toEquiv, Nat.card_pi]
+    simpa using Finset.dvd_prod_of_mem (fun j ↦ Nat.card (oddCyclic (m j) (hm j) (θ j)))
+      (Finset.mem_univ i)
+  choose k _ hk using fun i ↦ (Nat.dvd_prime_pow Fact.out).1 (hdvd i)
+  -- The exponent is positive because `m i` is a prime power, hence not `1`.
+  have hk0 (i : Fin n) : k i ≠ 0 := fun h ↦
+    not_isPrimePow_one (by simpa [hk i, h] using (hmθ i).1)
+  have heq (i : Fin n) : oddCyclic (p ^ k i) hp.pow (θ i) = oddCyclic (m i) (hm i) (θ i) := by
+    congr 1
+    exact (hk i).symm
+  let g : Isometry (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i))
+      (pi fun i ↦ oddCyclic (m i) (hm i) (θ i)) :=
+    QuadraticMap.IsometryEquiv.pi fun i ↦ Isometry.ofEq (heq i)
+  refine ⟨n, k, θ, fun i ↦ ⟨Nat.pos_of_ne_zero (hk0 i), ?_⟩, ⟨g.trans f⟩⟩
+  have h := (hmθ i).2
+  rw [hk i, Nat.cast_pow] at h
+  exact h.of_isCoprime_of_dvd_left (dvd_pow_self _ (hk0 i))
 
 end FiniteQuadraticModule
 
