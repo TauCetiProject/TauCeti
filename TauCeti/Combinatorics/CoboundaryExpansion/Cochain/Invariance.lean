@@ -358,14 +358,16 @@ def relabelEquiv (X : TwoComplex V) (e : V ≃ W) : Cochain X G ≃ Cochain (X.r
 @[simp] theorem edgeCost_relabel (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → G) (e : V ≃ W)
     (s : Finset W) :
     (α.relabel e).edgeCost ℓ γ s = α.edgeCost ℓ (γ ∘ e) (s.map e.symm.toEmbedding) := by
-  simpa [edgeCost, relabel_apply, Function.comp_apply] using
-    X.edgeEval_relabel e (fun u v _ => (α.relabel e).norm_inv_mul_apply_mul_swap ℓ γ u v) s
+  rw [edgeCost, edgeCost, X.edgeEval_relabel e
+    (fun u v _ => (α.relabel e).norm_inv_mul_apply_mul_swap ℓ γ u v)]
+  congr 1; funext u v; simp [relabel_apply]
 
 @[simp 1100] theorem edgeCost_relabel_map (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → G)
     (e : V ≃ W) (s : Finset V) :
     (α.relabel e).edgeCost ℓ γ (s.map e.toEmbedding) = α.edgeCost ℓ (γ ∘ e) s := by
-  rw [α.edgeCost_relabel ℓ γ e]
-  congr 1; ext; simp
+  rw [edgeCost, edgeCost, X.edgeEval_relabel_map e
+    (fun u v _ => (α.relabel e).norm_inv_mul_apply_mul_swap ℓ γ u v)]
+  congr 1; funext u v; simp [relabel_apply]
 
 /-- Relabelling a cochain along `e : V ≃ W` pulls the gauge back along `e` in `cost`. -/
 @[simp] theorem cost_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
