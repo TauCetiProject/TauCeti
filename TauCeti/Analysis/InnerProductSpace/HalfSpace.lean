@@ -12,19 +12,22 @@ public import Mathlib.Analysis.Normed.Affine.Isometry
 /-!
 # Inner-product half-spaces
 
-A translation orthogonal to the normal vector preserves a strict half-space. The ball of radius
-`r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`, and more generally a
-closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν⟫ + r * ‖ν‖ < c`
-(`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}` whenever
-`c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`); an open ball `ball w r` lies
-in `{y | c < ⟪y, ν⟫}` already when `c + r * ‖ν‖ ≤ ⟪w, ν⟫` (`TauCeti.ball_subset_setOf_lt_inner`).
+A translation orthogonal to the normal vector preserves a strict half-space, and the open and
+closed half-spaces are convex (`TauCeti.convex_of_halfSpace`, `TauCeti.convex_setOf_le_inner`).
+The ball of radius `r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`, and
+more generally a closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever
+`⟪w, ν⟫ + r * ‖ν‖ < c` (`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}`
+whenever `c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`); an open ball
+`ball w r` lies in `{y | c < ⟪y, ν⟫}` already when `c + r * ‖ν‖ ≤ ⟪w, ν⟫`
+(`TauCeti.ball_subset_setOf_lt_inner`).
 For `x` in the closed half-space `{z | c ≤ ⟪z, ν⟫}`, the open ball of radius `ρ` about
 `x + (ρ / ‖ν‖) ν` lies in the open half-space `{z | c < ⟪z, ν⟫}`
 (`TauCeti.ball_add_smul_subset_setOf_lt_inner`).
 The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}` and
 does not increase norms, and neither does the projection `(⟪z, ν⟫ / ‖ν‖²) ν` onto the line
 `ℝ ∙ ν`. The foot `x - ((⟪x, ν⟫ - c) / ‖ν‖²) ν` of the perpendicular from `x` lies on the
-hyperplane `{y | ⟪y, ν⟫ = c}`, at distance `|⟪x, ν⟫ - c| / ‖ν‖` from `x`, and every point of that
+hyperplane `{y | ⟪y, ν⟫ = c}`, at distance `|⟪x, ν⟫ - c| / ‖ν‖` from `x`
+(`TauCeti.exists_inner_eq_and_dist_eq`), and every point of that
 hyperplane lies at distance at least `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. Relative to an
 orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
 projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
@@ -53,6 +56,11 @@ theorem convex_of_halfSpace {E : Type*} [SeminormedAddCommGroup E] [InnerProduct
   have h : s = {x | c < innerSL ℝ ν x} := Set.ext fun x => by simp [hΩ x, real_inner_comm]
   rw [h]
   exact convex_halfSpace_gt (innerSL ℝ ν).toLinearMap.isLinear c
+
+/-- The closed half-space `{x | c ≤ ⟪x, ν⟫}` is convex. -/
+theorem convex_setOf_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (ν : E) (c : ℝ) : Convex ℝ {x : E | c ≤ ⟪x, ν⟫_ℝ} :=
+  convex_halfSpace_ge ⟨fun x y => inner_add_left x y ν, fun a x => real_inner_smul_left x ν a⟩ c
 
 /-- The inner product of a unit vector `x` with `z` is at least `1 - ‖z - x‖`. -/
 theorem one_sub_norm_sub_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -164,6 +172,15 @@ theorem div_norm_le_dist_of_inner_eq {E : Type*} [NormedAddCommGroup E] [InnerPr
   · simp
   rw [div_le_iff₀ (norm_pos_iff.2 hν), dist_eq_norm, ← hw, ← inner_sub_left]
   exact real_inner_le_norm _ _
+
+/-- **The foot of the perpendicular.** For `ν ≠ 0`, some point of the hyperplane
+`{y | ⟪y, ν⟫ = c}` lies at distance exactly `|⟪w, ν⟫ - c| / ‖ν‖` from `w`, namely
+`w - ((⟪w, ν⟫ - c) / ‖ν‖²) ν`. -/
+theorem exists_inner_eq_and_dist_eq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {ν : E} (hν : ν ≠ 0) (w : E) (c : ℝ) :
+    ∃ z, ⟪z, ν⟫_ℝ = c ∧ dist w z = |⟪w, ν⟫_ℝ - c| / ‖ν‖ :=
+  ⟨w - ((⟪w, ν⟫_ℝ - c) / ‖ν‖ ^ 2) • ν, real_inner_sub_div_norm_sq_smul_self_eq hν w c, by
+    rw [dist_eq_norm, sub_sub_cancel, norm_div_norm_sq_smul_self]⟩
 
 end TauCeti
 
