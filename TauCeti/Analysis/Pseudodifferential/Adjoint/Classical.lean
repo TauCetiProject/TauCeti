@@ -49,6 +49,8 @@ The homogeneous symbols `TauCeti.HomogeneousSymbol.adjointTerm k a` and the form
 * `TauCeti.ClassicalSymbol.principal_adjoint`: the principal symbol of `a*` is `a_m†`.
 * `TauCeti.ClassicalSymbol.coefficient_term_one_adjoint`: the term of degree `m - 1` of `a*`.
 * `TauCeti.ClassicalSymbol.isElliptic_adjoint_iff`: `a*` is elliptic exactly when `a` is.
+* `TauCeti.ClassicalSymbol.exists_inclusion_eq_adjoint_sub_map`: `a* - a†` is a classical symbol
+  of order `m - 1`, with principal symbol `-i ∑ⱼ (∂_{xⱼ} ∂_{ξⱼ} a_m)†`.
 
 ## References
 
@@ -200,6 +202,27 @@ theorem coefficient_term_one_adjoint (z : CoordinateSpace n × CoordinateSpace n
 @[simp]
 theorem isElliptic_adjoint_iff : (a.adjoint ha).IsElliptic ↔ a.IsElliptic := by
   rw [isElliptic_def, isElliptic_def, principal_adjoint, HomogeneousSymbol.isElliptic_adjoint_iff]
+
+/-- **The adjoint modulo lower order.** For a classical symbol `a` of order `m` with compact
+spatial support, the difference `a* - a†` between the adjoint symbol and the pointwise adjoint is
+a classical symbol of order `m - 1`, with principal symbol `-i ∑ⱼ (∂_{xⱼ} ∂_{ξⱼ} a_m)†`. -/
+theorem exists_inclusion_eq_adjoint_sub_map :
+    ∃ c : ClassicalSymbol n W V (m - 1),
+      inclusion 1 (by simp) c = a.adjoint ha - a.map adjointRealCLM ∧
+      ∀ z, c.principal.coefficient z =
+        -Complex.I • ∑ j, ContinuousLinearMap.adjoint
+          (((a.principal.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
+            (EuclideanSpace.single j 1)).coefficient z) := by
+  have h0 : (a.adjoint ha - a.map adjointRealCLM).principal = 0 := by
+    ext1
+    funext z
+    simp [adjointRealCLM_apply]
+  obtain ⟨c, hc⟩ := (principal_eq_zero_iff_exists_inclusion _).1 h0
+  refine ⟨c, hc, fun z => ?_⟩
+  -- The principal symbol of `c` is the term of index `1` of the difference.
+  have hterm := congrArg (fun d => (d.term 1).coefficient z) hc
+  simp only [term_inclusion_self, coefficient_castDegree] at hterm
+  simp [hterm, coefficient_term_one_adjoint, -term_adjoint, adjointRealCLM_apply]
 
 end Adjoint
 
