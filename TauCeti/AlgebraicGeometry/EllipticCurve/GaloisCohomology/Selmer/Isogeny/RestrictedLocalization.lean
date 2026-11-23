@@ -54,14 +54,27 @@ private theorem eventually_localization_mem_localKummerCondition
 
 /-- The diagonal localization of global kernel cohomology into the all-place restricted
 product relative to the local Kummer conditions. -/
-abbrev restrictedKerLocalization :
+def restrictedKerLocalization :
     H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff →+
       Πʳ v : GlobalNumberFields.Place K,
         [H1 (AbsoluteGaloisGroup v.Completion) (ofIsogeny (φ.baseChange v.Completion)).KerCoeff,
           ((φ.baseChange v.Completion).localKummerCondition : Set _)] :=
   addRationalDiagonal (φ.selmerStructure τ).localization
     (fun v ↦ (φ.baseChange v.Completion).localKummerCondition)
-    (by exact eventually_localization_mem_localKummerCondition φ τ)
+    (eventually_localization_mem_localKummerCondition φ τ)
+
+/-- Restricted kernel localization is the generic diagonal of the caller's restriction maps
+relative to the canonical local Kummer conditions. -/
+@[simp] theorem restrictedKerLocalization_def :
+    φ.restrictedKerLocalization τ =
+      addRationalDiagonal (fun v ↦ φ.kerRes (τ v))
+        (fun v ↦ (φ.baseChange v.Completion).localKummerCondition)
+        (φ.eventually_kerRes_mem_localKummerCondition τ) := by
+  apply AddMonoidHom.ext
+  intro c
+  apply RestrictedProduct.ext
+  intro v
+  simp only [restrictedKerLocalization, addRationalDiagonal_apply, selmerStructure_localization]
 
 /-- The Selmer group is the pullback, along restricted localization, of the subgroup satisfying
 the local Kummer condition at every place. -/
@@ -71,7 +84,7 @@ theorem selmerGroup_eq_comap_restrictedKerLocalization :
         (φ.baseChange v.Completion).localKummerCondition).comap
           (φ.restrictedKerLocalization τ) := by
   have hcond := funext (selmerStructure_localCondition φ τ)
-  rw [selmerGroup_def, ← integralAddSubgroupOf_self]
+  rw [selmerGroup_def, restrictedKerLocalization, ← integralAddSubgroupOf_self]
   have h := (φ.selmerStructure τ).selmerGroup_eq_comap_addRationalDiagonal _
     (eventually_localization_mem_localKummerCondition φ τ)
   rw [hcond] at h

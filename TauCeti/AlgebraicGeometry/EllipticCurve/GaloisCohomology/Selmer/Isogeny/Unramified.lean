@@ -102,9 +102,9 @@ No valuation or good-reduction assumption is made at indices `j ≠ i`. -/
 theorem localCondition_selmerStructure_le_unramifiedKerCohomology
     (hdeg : (φ.degree : 𝓀[L i]) ≠ 0) :
     (φ.selmerStructure τ).localCondition i ≤ (φ.baseChange (L i)).unramifiedKerCohomology := by
-  rw [selmerStructure_localCondition, localKummerCondition_def]
+  rw [selmerStructure_localCondition]
   have hd : (φ.baseChange (L i)).degree = φ.degree := degree_map φ _
-  exact (φ.baseChange (L i)).ker_explicitCoeff1_kerCoeffIncl_le_unramifiedKerCohomology
+  exact (φ.baseChange (L i)).localKummerCondition_le_unramifiedKerCohomology
     (by rwa [hd])
 
 /-- For an arbitrary localization family `τ`, every `φ`-Selmer class restricts into the unramified
@@ -149,9 +149,9 @@ theorem localCondition_selmerStructure_eq_unramifiedKerCohomology (v : HeightOne
     (φ.selmerStructure τ).localCondition v =
       (φ.baseChange (v.adicCompletion K)).unramifiedKerCohomology := by
   have hd : (φ.baseChange (v.adicCompletion K)).degree = φ.degree := degree_map φ _
-  rw [selmerStructure_localCondition, localKummerCondition_def]
+  rw [selmerStructure_localCondition]
   exact
-    (φ.baseChange (v.adicCompletion K)).ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCohomology
+    (φ.baseChange (v.adicCompletion K)).localKummerCondition_eq_unramifiedKerCohomology
       v (by rwa [hd])
 
 end DedekindSinglePlace

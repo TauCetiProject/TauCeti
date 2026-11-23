@@ -162,7 +162,7 @@ theorem mem_selmerGroup_iff {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCo
       explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology c ∈
         W₁.shafarevichTateGroup τ := by
   simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
-    selmerStructure_localCondition, localKummerCondition_def, AddMonoidHom.mem_ker,
+    selmerStructure_localCondition, mem_localKummerCondition_iff,
     mem_shafarevichTateGroup_iff, pointRes_kerCoeffIncl]
 
 /-- Imposing the local conditions along a subfamily `τ ∘ f` of the localisations gives a larger
@@ -218,7 +218,7 @@ variable [DecidableEq K]
 `φ`-Selmer group, since it already vanishes in `H¹(G_K, E₁(Kˢ))`. -/
 theorem kummerMap_mem_selmerGroup (P : W₂.toAffine.Point) : φ.kummerMap P ∈ φ.selmerGroup τ := by
   have h : φ.kummerMap P ∈ φ.kummerMap.range := ⟨P, rfl⟩
-  rw [range_kummerMap, localKummerCondition_def, AddMonoidHom.mem_ker] at h
+  rw [range_kummerMap, mem_localKummerCondition_iff] at h
   rw [mem_selmerGroup_iff, h]
   exact zero_mem _
 
@@ -270,7 +270,7 @@ theorem exact_kummerSelmerMap_selmerShaMap [DecidableEq K] :
   have hker : φ.selmerShaMap τ c = 0 ↔
       explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology c = 0 := by
     simp only [← Subtype.val_inj, coe_selmerShaMap, ZeroMemClass.coe_zero]
-  rw [hker, ← AddMonoidHom.mem_ker, ← localKummerCondition_def, ← range_kummerMap φ]
+  rw [hker, ← mem_localKummerCondition_iff, ← range_kummerMap φ]
   refine ⟨fun ⟨P, hP⟩ ↦ ⟨QuotientAddGroup.mk P, Subtype.ext ?_⟩, fun ⟨x, hx⟩ ↦ ?_⟩
   · rw [coe_kummerSelmerMap, kummerClassMap_mk, hP]
   · induction x using QuotientAddGroup.induction_on with
