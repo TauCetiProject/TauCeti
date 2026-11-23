@@ -101,7 +101,7 @@ private theorem continuous_of_continuousAt_zero (S : StronglyContinuousSemigroup
   · have hSt : ‖S t‖ ≤ C := by
       have hbt : ‖S t‖ ≤ M * Real.exp (max ω 0 * t₀) := by
         rw [← S.realOperator_coe]
-        exact hb.norm_le_mul_exp_max_zero_mul_of_le t.2 (by exact_mod_cast htt₀)
+        exact hb.norm_le_mul_exp_max_zero_mul_of_le t.property (by exact_mod_cast htt₀)
       dsimp [C]
       linarith [le_max_right ‖S t₀‖ (M * Real.exp (max ω 0 * t₀))]
     rw [dist_comm]

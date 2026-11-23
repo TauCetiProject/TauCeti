@@ -230,7 +230,7 @@ theorem isBipartition_star : star.IsBipartition {vtx 0, vtx 3} {vtx 1, vtx 2} wh
 
 /-- Capacities two, zero, one and one at the vertices `0`, `1`, `2` and `3` of `star`. -/
 def capacity (v : V(star)) : ℕ :=
-  match v.1 with
+  match v.val with
   | 0 => 2
   | 1 => 0
   | 2 => 1
@@ -316,7 +316,7 @@ theorem sup_deficiency_eq_two :
 
 /-- Capacities one, zero, one and zero at the vertices `0`, `1`, `2` and `3` of `star`. -/
 def balancedCapacity (v : V(star)) : ℕ :=
-  match v.1 with
+  match v.val with
   | 0 => 1
   | 1 => 0
   | 2 => 1

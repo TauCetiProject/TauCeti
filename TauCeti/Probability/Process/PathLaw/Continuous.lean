@@ -81,12 +81,12 @@ theorem exists_measurable_basedMap_ae_eq
     (hcont : ∀ᵐ ω ∂μ, Continuous (fun t ↦ X t ω))
     (hstart : ∀ᵐ ω ∂μ, X t₀ ω = x₀) :
     ∃ F : Ω → BasedMap T E t₀ x₀, Measurable F ∧
-      ∀ᵐ ω ∂μ, ∀ t, (F ω).1 t = X t ω := by
+      ∀ᵐ ω ∂μ, ∀ t, (F ω).val t = X t ω := by
   classical
   obtain ⟨F, -, hF⟩ := exists_measurable_continuousMap_ae_eq hX hcont
   let G : Ω → BasedMap T E t₀ x₀ := fun ω ↦
     if h : F ω t₀ = x₀ then ⟨F ω, h⟩ else ⟨ContinuousMap.const T x₀, rfl⟩
-  have hG : ∀ᵐ ω ∂μ, ∀ t, (G ω).1 t = X t ω := by
+  have hG : ∀ᵐ ω ∂μ, ∀ t, (G ω).val t = X t ω := by
     filter_upwards [hF, hstart] with ω hf hs t
     simp [G, (hf t₀).trans hs, hf t]
   have hGm : AEMeasurable G μ := BasedMap.aemeasurable_iff_eval.2 fun t ↦
@@ -124,10 +124,10 @@ theorem existsUnique_basedMap_measure_forall_finset_map_restrict_eq [IsFiniteMea
     (hcont : ∀ᵐ ω ∂μ, Continuous (fun t ↦ X t ω))
     (hstart : ∀ᵐ ω ∂μ, X t₀ ω = x₀) :
     ∃! ν : Measure (BasedMap T E t₀ x₀),
-      ∀ I : Finset T, ν.map (fun γ ↦ I.restrict (γ.1 : T → E)) =
+      ∀ I : Finset T, ν.map (fun γ ↦ I.restrict (γ.val : T → E)) =
         μ.map (fun ω ↦ I.restrict (X · ω)) := by
   obtain ⟨F, hFm, hF⟩ := exists_measurable_basedMap_ae_eq hX hcont hstart
-  have hlaw (I : Finset T) : (μ.map F).map (fun γ ↦ I.restrict (γ.1 : T → E)) =
+  have hlaw (I : Finset T) : (μ.map F).map (fun γ ↦ I.restrict (γ.val : T → E)) =
       μ.map (fun ω ↦ I.restrict (X · ω)) := by
     rw [Measure.map_map (BasedMap.measurable_finsetRestrict I) hFm]
     apply Measure.map_congr

@@ -29,6 +29,9 @@ as well as identity, composition, and modification coherence equations.
   `Cat.comp_whiskerLeft_eq_whiskerRight_comp_associators`: componentwise criteria for
   identity and composition coherence.
 * `Cat.whiskerLeft_comp_eq_comp_whiskerRight`: a componentwise modification criterion.
+* `Cat.whiskerRight_comp_associator_hom_comp_whiskerLeft_eq_associator_hom_comp_whiskerLeft`:
+  a componentwise compatibility criterion for whiskering a 2-morphism between composite
+  1-morphisms across associators and left-whiskered 2-morphisms.
 -/
 
 public section
@@ -149,6 +152,23 @@ lemma whiskerLeft_comp_eq_rightUnitor_hom_comp_leftUnitor_inv_comp_whiskerRight
     T ◁ ι' ≫ ((α_ T Q S).inv ≫ m ▷ S ≫ (α_ P U S).hom ≫
         P ◁ n ≫ (α_ P R T).inv) =
       ((ρ_ T).hom ≫ (λ_ T).inv) ≫ ι ▷ T := by
+  ext X
+  simpa using h X
+
+/-- Compatibility of a 2-morphism between two composite 1-morphisms in `Cat` with
+associators and left-whiskered 2-morphisms follows from its componentwise identity,
+without requiring the participating 2-morphisms to be invertible. -/
+lemma whiskerRight_comp_associator_hom_comp_whiskerLeft_eq_associator_hom_comp_whiskerLeft
+    {C D₁ D₂ D E : Cat.{v, w}}
+    {F₁ : C ⟶ D₁} {G₁ : D₁ ⟶ D} {F₂ : C ⟶ D₂} {G₂ : D₂ ⟶ D}
+    {H : D ⟶ E} {K₁ : D₁ ⟶ E} {K₂ : D₂ ⟶ E} {K : C ⟶ E}
+    (m : F₁ ≫ G₁ ⟶ F₂ ≫ G₂) (β₁ : G₁ ≫ H ⟶ K₁) (α₁ : F₁ ≫ K₁ ⟶ K)
+    (β₂ : G₂ ≫ H ⟶ K₂) (α₂ : F₂ ≫ K₂ ⟶ K)
+    (h : ∀ X, H.toFunctor.map (m.toNatTrans.app X) ≫
+        β₂.toNatTrans.app (F₂.toFunctor.obj X) ≫ α₂.toNatTrans.app X =
+      β₁.toNatTrans.app (F₁.toFunctor.obj X) ≫ α₁.toNatTrans.app X) :
+    m ▷ H ≫ (α_ F₂ G₂ H).hom ≫ F₂ ◁ β₂ ≫ α₂ =
+      (α_ F₁ G₁ H).hom ≫ F₁ ◁ β₁ ≫ α₁ := by
   ext X
   simpa using h X
 

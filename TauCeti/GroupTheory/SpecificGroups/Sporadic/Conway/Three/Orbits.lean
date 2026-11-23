@@ -7,37 +7,55 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Conway.Three.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
+import TauCeti.GroupTheory.GroupAction.Closure
+import TauCeti.GroupTheory.GroupAction.Orbit.Basic
 import TauCeti.GroupTheory.GroupAction.Orbit.Closure
+import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.Logic.Function.Rigidity
 import Mathlib.Algebra.Group.Action.Prod
 import Mathlib.Data.Nat.Bits
 
 /-!
-# The first three basic orbits of the third Conway group
+# The basic orbits and base of the third Conway group
 
-The degree-276 ATLAS model `TauCeti.Sporadic.Co3` is `2`-transitive, and the orbit of `2` under
-its pointwise stabilizer of `0, 1` has length `162`, not `274`. Along the points `0, 1, 2, …`, the
-first three basic orbits therefore have lengths `276`, `275` and `162`, and the order of the
-model is `12295800 = 276 * 275 * 162` times the order of its pointwise stabilizer of `0, 1, 2`.
+The degree-276 ATLAS model `TauCeti.Sporadic.Co3` is `2`-transitive, and along the points
+`0, 1, 2, 3, 4, 5` its six basic orbits have lengths `276`, `275`, `162`, `56`, `45` and `16`,
+with trivial six-point stabilizer. Consequently the pointwise stabilizer of `0` has order
+`1796256000 = 275 * 162 * 56 * 45 * 16`, and the model itself has order `495766656000` (recorded in
+`TauCeti.GroupTheory.SpecificGroups.Sporadic.Conway.Three.Order`).
 
 Explicit words in the two ATLAS generators witness the lower bounds: they send `(0, 1)` to
-`(0, x)` for every point `x ≠ 0`, and `(0, 1, 2)` to `(0, 1, x)` for every point `x` of the
-third orbit. The upper bound on the third orbit comes from the regular two-graph on the 276
-points preserved by `Co₃`. A graph on the points is given whose switching class is that
-two-graph: each generator maps it to the graph obtained from it by Seidel switching with respect
-to an explicit set of points. Switching does not change the parity of the number of edges among
-three points, so every element of the model preserves this parity on triples, and an element
-fixing `0` and `1` sends `2` to one of the 162 points `x` for which `0, 1, x` span an odd number
-of edges.
-The graph, the switching sets and the words are private computation data, found by breadth-first
-search on ordered pairs and triples of points; only their kernel-checked evaluations enter the
-proofs.
+`(0, x)` for every point `x ≠ 0` and `(0, 1, 2)` to `(0, 1, x)` for every point `x` of the third
+orbit, while two words in the pointwise stabilizer of `0, 1, 2` supply short words reaching every
+point of the fourth, fifth and sixth basic orbits.
+
+The upper bounds and base rigidity come from the regular two-graph on the 276 points preserved by
+`Co₃`. A graph on the points is given whose switching class is that two-graph: each generator maps
+it to the graph obtained from it by Seidel switching with respect to an explicit set of points.
+Switching does not change the parity of the number of edges among three points, so every element of
+the model preserves this parity on triples. Because `0` is isolated in that graph, every element of
+`Co3` fixing `0` preserves its adjacency relation directly. Adjacency to `{1, 2}` on points other
+than `1` and adjacency to `{1, 2, 3}` cut out the exact 56-point and 45-point fourth and fifth
+orbits; adjacency to `{1, 2, 3, 4}` together with the number of common neighbors with `{1, 2, 3, 4}`
+cuts out the exact 16-point sixth orbit; and `Function.apply_eq_self_of_rank` with short lists of
+earlier anchors (as in `HigmanSims.Orbits` and `McLaughlin.Orbits`) shows that fixing `0, …, 5`
+fixes all 276 points. The graph, switching sets, words and anchor tables are private computation
+data; only their kernel-checked evaluations enter the proofs.
 
 ## Main declarations
 
 * `TauCeti.Sporadic.Co3.instIsMultiplyPretransitive`: the model is `2`-transitive.
-* `TauCeti.Sporadic.Co3.orbit_stabilizerChain_two`: the third basic orbit.
+* `TauCeti.Sporadic.Co3.orbit_stabilizerChain_two`,
+  `TauCeti.Sporadic.Co3.orbit_stabilizerChain_three`,
+  `TauCeti.Sporadic.Co3.orbit_stabilizerChain_four`,
+  `TauCeti.Sporadic.Co3.orbit_stabilizerChain_five`: the third through sixth basic orbits, of
+  lengths `162`, `56`, `45` and `16`.
 * `TauCeti.Sporadic.Co3.card_eq_12295800_mul_card_stabilizerChain`: the order of the model is
   `12295800` times the order of its pointwise stabilizer of `0, 1, 2`.
+* `TauCeti.Sporadic.Co3.stabilizerChain_six_eq_bot`: the points `0, 1, 2, 3, 4, 5` form a base.
+* `TauCeti.Sporadic.Co3.card_stabilizerChain_one` through
+  `TauCeti.Sporadic.Co3.card_stabilizerChain_five`: the orders `1796256000`, `6531840`, `40320`,
+  `720` and `16` of the successive pointwise stabilizers.
 
 ## References
 
@@ -45,7 +63,7 @@ proofs.
   version 3, representation `Co3G1-p276B0`, <https://brauer.maths.qmul.ac.uk/Atlas/v3/>.
 * D. E. Taylor, *Regular 2-graphs*, Proc. London Math. Soc. (3) 35 (1977), 257–274.
 * Á. Seress, *Permutation Group Algorithms*, Cambridge Tracts in Mathematics 152,
-  Cambridge University Press, 2003, §4.1 (basic orbits and the order formula).
+  Cambridge University Press, 2003, §4.1 (bases, basic orbits and the order formula).
 -/
 
 public section
@@ -66,19 +84,27 @@ private theorem basePoint_one : basePoint 1 = 1 := (rfl)
 
 private theorem basePoint_two : basePoint 2 = 2 := (rfl)
 
+private theorem basePoint_three : basePoint 3 = 3 := (rfl)
+
+private theorem basePoint_four : basePoint 4 = 4 := (rfl)
+
+private theorem basePoint_five : basePoint 5 = 5 := (rfl)
+
 /-! ### Words in the generators -/
 
-/- A word is encoded by its letters, least significant bit first, followed by a terminal 1-bit;
-the bit `0` stands for `a` and the bit `1` for `b`. The word is the product of its letters in
-that order, so its last letter acts first. -/
-private def word (w : ℕ) : Equiv.Perm (Fin 276) :=
-  (w.bits.dropLast.map fun t ↦ if t then b else a).prod
+/- A word in two permutations is encoded by its letters, least significant bit first, followed by
+a terminal 1-bit; the bit `0` stands for the first permutation and the bit `1` for the second. The
+word is the product of its letters in that order, so its last letter acts first. -/
+private def word (u v : Equiv.Perm (Fin 276)) (w : ℕ) : Equiv.Perm (Fin 276) :=
+  (w.bits.dropLast.map fun t ↦ if t then v else u).prod
 
-private theorem word_mem (w : ℕ) : word w ∈ Co3 := by
+private theorem word_mem {H : Subgroup (Equiv.Perm (Fin 276))}
+    {u v : Equiv.Perm (Fin 276)} (hu : u ∈ H) (hv : v ∈ H) (w : ℕ) :
+    word u v w ∈ H := by
   apply Subgroup.list_prod_mem
   intro g hg
   obtain ⟨t, _, rfl⟩ := List.mem_map.mp hg
-  cases t <;> simp [a_mem, b_mem]
+  cases t <;> simp [hu, hv]
 
 /-! ### Two-transitivity -/
 
@@ -121,7 +147,7 @@ private def pairWord (i : Fin 276) : ℕ :=
     |>.getD (i.val % 23) 1
 
 private theorem pairWord_spec : ∀ x : Fin 276, x ≠ 0 →
-    word (pairWord x) 0 = 0 ∧ word (pairWord x) 1 = x := by
+    word a b (pairWord x) 0 = 0 ∧ word a b (pairWord x) 1 = x := by
   decide +kernel
 
 /-- Any two distinct points are sent to `0` and `1` by some element of the model. -/
@@ -133,8 +159,8 @@ private theorem exists_apply_eq_zero_one {x y : Fin 276} (hxy : x ≠ y) :
   have hz : (g : Equiv.Perm (Fin 276)) y ≠ 0 :=
     hg ▸ (g : Equiv.Perm (Fin 276)).injective.ne hxy.symm
   obtain ⟨h0, h1⟩ := pairWord_spec _ hz
-  refine ⟨(word (pairWord ((g : Equiv.Perm (Fin 276)) y)))⁻¹ * g,
-    mul_mem (inv_mem (word_mem _)) g.2, ?_, ?_⟩
+  refine ⟨(word a b (pairWord ((g : Equiv.Perm (Fin 276)) y)))⁻¹ * g,
+    mul_mem (inv_mem (word_mem a_mem b_mem _)) g.property, ?_, ?_⟩
   · rw [Equiv.Perm.mul_apply, hg, Equiv.Perm.inv_eq_iff_eq, h0]
   · rw [Equiv.Perm.mul_apply, Equiv.Perm.inv_eq_iff_eq, h1]
 
@@ -527,15 +553,24 @@ private def tripleWord (i : Fin 276) : ℕ :=
     |>.getD (i.val % 23) 1
 
 private theorem tripleWord_spec : ∀ x : Fin 276, triangleParity (0, 1, x) = true →
-    word (tripleWord x) 0 = 0 ∧ word (tripleWord x) 1 = 1 ∧ word (tripleWord x) 2 = x := by
+    word a b (tripleWord x) 0 = 0 ∧ word a b (tripleWord x) 1 = 1 ∧
+      word a b (tripleWord x) 2 = x := by
   decide +kernel
+
+private theorem mem_stabilizerChain_two_of_apply {g : Equiv.Perm (Fin 276)}
+    (hg : g ∈ Co3) (h0 : g 0 = 0) (h1 : g 1 = 1) :
+    g ∈ Co3.stabilizerChain basePoint 2 := by
+  rw [Co3.stabilizerChain_succ, Co3.stabilizerChain_succ, Co3.stabilizerChain_zero]
+  simp only [Subgroup.mem_inf, mem_stabilizer_iff, basePoint_zero, basePoint_one,
+    Equiv.Perm.smul_def]
+  exact ⟨⟨hg, h0⟩, h1⟩
 
 private theorem mem_orbit_stabilizerChain_two_iff (x : Fin 276) :
     x ∈ orbit (Co3.stabilizerChain basePoint 2) (2 : Fin 276) ↔
       triangleParity (0, 1, x) = true := by
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.2
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.property
     have h0 : (g : Equiv.Perm (Fin 276)) 0 = 0 := by
       simpa only [basePoint_zero, Equiv.Perm.smul_def] using hfix 0 two_pos
     have h1 : (g : Equiv.Perm (Fin 276)) 1 = 1 := by
@@ -545,12 +580,8 @@ private theorem mem_orbit_stabilizerChain_two_iff (x : Fin 276) :
       Subgroup.smul_def] using h
   · intro hx
     obtain ⟨h0, h1, h2⟩ := tripleWord_spec x hx
-    have hmem : word (tripleWord x) ∈ Co3.stabilizerChain basePoint 2 := by
-      refine (Subgroup.mem_stabilizerChain_iff _ _).mpr ⟨word_mem _, fun j hj ↦ ?_⟩
-      interval_cases j
-      · simpa only [basePoint_zero, Equiv.Perm.smul_def] using h0
-      · simpa only [basePoint_one, Equiv.Perm.smul_def] using h1
-    refine mem_orbit_iff.mpr ⟨⟨_, hmem⟩, ?_⟩
+    refine mem_orbit_iff.mpr
+      ⟨⟨_, mem_stabilizerChain_two_of_apply (word_mem a_mem b_mem _) h0 h1⟩, ?_⟩
     simpa only [Subgroup.mk_smul, Equiv.Perm.smul_def] using h2
 
 /-- The third basic orbit: the pointwise stabilizer of `0, 1` moves `2` to 162 of the 274 other
@@ -586,6 +617,514 @@ theorem card_eq_12295800_mul_card_stabilizerChain :
   simp only [Finset.prod_range_succ, Finset.prod_range_zero, one_mul] at h
   rw [basePoint_zero, basePoint_one, basePoint_two, ncard_orbit_stabilizerChain_zero,
     ncard_orbit_stabilizerChain_one, ncard_orbit_stabilizerChain_two] at h
+  omega
+
+/-! ### Graph automorphisms in the stabilizer of zero -/
+
+private theorem triangleParity_smul_of_mem {g : Equiv.Perm (Fin 276)} (hg : g ∈ Co3) :
+    ∀ p : Fin 276 × Fin 276 × Fin 276, triangleParity (g • p) = triangleParity p := by
+  rw [Co3_def] at hg
+  exact TauCeti.apply_eq_of_mem_closure (by
+    rintro _ (rfl | rfl)
+    · exact triangleParity_smul adj_a
+    · exact triangleParity_smul adj_b) hg
+
+private theorem adj_zero_left : ∀ x : Fin 276, adj 0 x = false := by
+  decide +kernel
+
+/-- Because `0` is isolated in `adj`, every element of `Co3` fixing `0` preserves `adj`. -/
+private theorem adj_apply_of_fix_zero {g : Equiv.Perm (Fin 276)} (hg : g ∈ Co3) (h0 : g 0 = 0)
+    (x y : Fin 276) : adj (g x) (g y) = adj x y := by
+  have h := triangleParity_smul_of_mem hg (0, x, y)
+  simpa only [triangleParity, Prod.smul_mk, Equiv.Perm.smul_def, h0, adj_zero_left,
+    Bool.false_xor, Bool.xor_false] using h
+
+private theorem apply_eq_of_mem_stabilizerChain {k : ℕ} {g : Equiv.Perm (Fin 276)}
+    (hg : g ∈ Co3.stabilizerChain basePoint k) (x : Fin 276) (hx : x.val < k) :
+    g x = x := by
+  have h := ((Subgroup.mem_stabilizerChain_iff _ _).mp hg).2 x.val hx
+  simpa only [basePoint, Fin.ofNat_eq_cast, Fin.cast_val_eq_self, Equiv.Perm.smul_def] using h
+
+private theorem adj_apply_of_mem_stabilizerChain {k : ℕ} {g : Equiv.Perm (Fin 276)}
+    (hg : g ∈ Co3.stabilizerChain basePoint k) (hk : 0 < k) (x y : Fin 276) :
+    adj (g x) (g y) = adj x y :=
+  adj_apply_of_fix_zero (Co3.stabilizerChain_le basePoint k hg)
+    (apply_eq_of_mem_stabilizerChain hg 0 hk) x y
+
+private theorem adj_of_mem_stabilizerChain {k : ℕ} {g : Equiv.Perm (Fin 276)}
+    (hg : g ∈ Co3.stabilizerChain basePoint k) (z : Fin 276) (hz : z.val < k) (x : Fin 276) :
+    adj z (g x) = adj z x := by
+  simpa only [apply_eq_of_mem_stabilizerChain hg z hz] using
+    adj_apply_of_mem_stabilizerChain hg (Nat.zero_lt_of_lt hz) z x
+
+/-! ### Words in the three-point stabilizer and remaining basic orbits -/
+
+/- Two permutations fixing `0, 1, 2`, tabulated with inverses for fast kernel evaluation and
+certified equal to words in `a` and `b`. -/
+private def stabGenA : Equiv.Perm (Fin 276) :=
+  let f (i : Fin 276) : Fin 276 :=
+    (#[#[0, 1, 2, 3, 223, 27, 38, 100, 139, 123, 206, 275,
+        174, 106, 49, 199, 122, 145, 15, 102, 203, 171, 110],
+      #[132, 81, 120, 238, 233, 28, 8, 20, 48, 194, 180, 153,
+        165, 164, 113, 52, 170, 227, 136, 202, 146, 86, 232],
+      #[31, 177, 94, 14, 18, 176, 130, 157, 68, 160, 245, 209,
+        273, 97, 17, 175, 168, 189, 169, 250, 47, 109, 265],
+      #[126, 16, 71, 241, 269, 192, 219, 179, 114, 198, 261, 158,
+        237, 25, 61, 66, 162, 213, 29, 78, 242, 161, 216],
+      #[137, 82, 46, 236, 234, 141, 151, 45, 188, 101, 186, 32,
+        183, 184, 42, 196, 108, 121, 34, 21, 79, 167, 235],
+      #[181, 54, 240, 76, 201, 93, 255, 226, 4, 124, 154, 263,
+        103, 248, 19, 6, 80, 107, 220, 243, 259, 104, 264],
+      #[44, 87, 191, 274, 200, 99, 144, 147, 73, 60, 148, 185,
+        262, 65, 30, 22, 163, 112, 10, 257, 172, 24, 64],
+      #[115, 210, 193, 134, 91, 166, 195, 214, 55, 74, 187, 131,
+        256, 56, 251, 51, 84, 92, 224, 222, 90, 182, 41],
+      #[133, 57, 129, 111, 230, 63, 204, 72, 39, 125, 127, 37,
+        23, 5, 252, 50, 142, 119, 13, 152, 11, 221, 268],
+      #[212, 270, 149, 217, 211, 95, 138, 231, 228, 35, 85, 246,
+        215, 105, 58, 247, 9, 118, 239, 70, 253, 75, 260],
+      #[7, 62, 143, 197, 229, 271, 207, 159, 26, 244, 117, 140,
+        128, 36, 272, 12, 218, 33, 89, 40, 98, 83, 88],
+      #[249, 254, 67, 173, 267, 258, 150, 96, 155, 135, 266, 178,
+        116, 69, 53, 156, 43, 208, 77, 225, 205, 59, 190]] : Array (Array (Fin 276)))
+      |>.getD (i.val / 23) #[]
+      |>.getD (i.val % 23) 0
+  let g (i : Fin 276) : Fin 276 :=
+    (#[#[0, 1, 2, 3, 123, 197, 130, 230, 29, 223, 156, 204,
+        245, 202, 49, 18, 70, 60, 50, 129, 30, 111, 153],
+      #[196, 159, 82, 238, 5, 28, 87, 152, 46, 103, 247, 110,
+        216, 243, 195, 6, 192, 249, 183, 106, 269, 138, 99],
+      #[94, 66, 31, 14, 199, 176, 38, 267, 116, 169, 174, 185,
+        221, 274, 147, 83, 231, 189, 160, 151, 84, 255, 54],
+      #[266, 226, 71, 191, 146, 170, 228, 118, 271, 88, 112, 131,
+        24, 93, 251, 177, 217, 44, 139, 252, 248, 181, 165],
+      #[178, 120, 48, 212, 260, 59, 250, 143, 7, 101, 19, 127,
+        136, 220, 13, 132, 108, 67, 22, 187, 155, 37, 77],
+      #[161, 265, 240, 224, 201, 25, 109, 16, 9, 124, 193, 69,
+        194, 242, 186, 52, 172, 23, 184, 164, 262, 41, 92],
+      #[213, 8, 241, 97, 200, 232, 144, 17, 43, 145, 148, 209,
+        259, 98, 203, 34, 125, 261, 268, 53, 80, 237, 55],
+      #[90, 85, 154, 36, 35, 166, 113, 62, 64, 39, 21, 158,
+        256, 12, 61, 51, 47, 264, 76, 33, 115, 182, 104],
+      #[105, 149, 102, 171, 100, 63, 275, 140, 74, 163, 32, 167,
+        107, 233, 78, 15, 142, 119, 42, 20, 190, 273, 10],
+      #[236, 270, 57, 162, 211, 207, 86, 168, 219, 91, 210, 246,
+        75, 133, 205, 180, 4, 179, 272, 122, 40, 215, 234],
+      #[188, 214, 45, 27, 96, 114, 95, 81, 26, 225, 117, 72,
+        89, 134, 239, 56, 218, 222, 128, 253, 65, 175, 198],
+      #[227, 254, 121, 173, 157, 258, 135, 229, 79, 150, 126, 137,
+        68, 263, 257, 206, 73, 208, 235, 244, 58, 141, 11]] : Array (Array (Fin 276)))
+      |>.getD (i.val / 23) #[]
+      |>.getD (i.val % 23) 0
+  { toFun := f
+    invFun := g
+    left_inv := by decide +kernel
+    right_inv := by decide +kernel }
+
+private def stabGenB : Equiv.Perm (Fin 276) :=
+  let f (i : Fin 276) : Fin 276 :=
+    (#[#[0, 1, 2, 232, 37, 63, 199, 157, 141, 203, 154, 110,
+        128, 260, 185, 195, 152, 105, 106, 158, 173, 262, 81],
+      #[100, 93, 196, 73, 156, 134, 248, 50, 79, 236, 265, 132,
+        221, 218, 18, 123, 70, 83, 116, 256, 189, 149, 143],
+      #[69, 186, 65, 264, 45, 136, 225, 44, 215, 270, 8, 67,
+        101, 119, 112, 104, 72, 219, 153, 27, 91, 109, 231],
+      #[180, 74, 14, 184, 68, 229, 77, 222, 133, 187, 233, 243,
+        148, 267, 206, 245, 228, 159, 205, 238, 273, 30, 29],
+      #[22, 137, 118, 47, 13, 258, 271, 226, 34, 131, 97, 80,
+        151, 94, 122, 257, 42, 160, 82, 43, 10, 117, 198],
+      #[240, 140, 4, 197, 172, 178, 208, 113, 9, 247, 168, 163,
+        36, 35, 84, 39, 144, 25, 227, 174, 147, 31, 86],
+      #[55, 165, 179, 216, 266, 192, 102, 200, 261, 5, 188, 190,
+        124, 126, 239, 92, 142, 88, 176, 71, 12, 121, 49],
+      #[90, 155, 145, 87, 274, 57, 96, 75, 23, 130, 268, 177,
+        3, 66, 60, 250, 164, 237, 220, 162, 182, 20, 125],
+      #[249, 211, 56, 26, 64, 54, 204, 263, 161, 78, 103, 202,
+        169, 191, 235, 99, 61, 242, 16, 108, 107, 59, 214],
+      #[89, 24, 120, 252, 275, 129, 255, 241, 251, 95, 114, 201,
+        98, 171, 246, 62, 15, 85, 254, 234, 183, 217, 272],
+      #[209, 193, 244, 146, 115, 224, 127, 213, 46, 223, 6, 210,
+        32, 207, 181, 139, 19, 33, 28, 259, 269, 253, 40],
+      #[111, 167, 230, 38, 53, 58, 76, 52, 51, 150, 17, 166,
+        21, 175, 138, 41, 48, 11, 135, 170, 194, 212, 7]] : Array (Array (Fin 276)))
+      |>.getD (i.val / 23) #[]
+      |>.getD (i.val % 23) 0
+  let g (i : Fin 276) : Fin 276 :=
+    (#[#[0, 1, 2, 173, 117, 147, 240, 275, 56, 123, 112, 270,
+        158, 96, 71, 223, 202, 263, 37, 246, 182, 265, 92],
+      #[169, 208, 132, 187, 65, 248, 91, 90, 136, 242, 247, 100,
+        128, 127, 4, 256, 130, 252, 268, 108, 111, 53, 50],
+      #[238, 95, 269, 160, 30, 261, 260, 257, 189, 138, 186, 166,
+        258, 205, 175, 200, 222, 5, 188, 48, 174, 57, 73],
+      #[46, 39, 157, 62, 26, 70, 168, 259, 75, 193, 31, 103,
+        22, 110, 40, 129, 224, 137, 164, 155, 207, 161, 66],
+      #[153, 24, 105, 216, 167, 102, 219, 199, 23, 58, 144, 194,
+        61, 17, 18, 204, 203, 67, 11, 253, 60, 122, 217],
+      #[234, 41, 113, 94, 59, 209, 159, 106, 38, 150, 183, 151,
+        236, 12, 212, 170, 101, 34, 77, 28, 271, 51, 93],
+      #[267, 245, 116, 8, 154, 45, 131, 163, 233, 135, 81, 44,
+        262, 104, 16, 64, 10, 162, 27, 7, 19, 86, 109],
+      #[192, 180, 126, 177, 139, 264, 254, 125, 196, 272, 220, 119,
+        20, 134, 266, 156, 172, 120, 140, 69, 244, 181, 227],
+      #[72, 14, 47, 78, 148, 43, 149, 197, 143, 231, 273, 15,
+        25, 118, 114, 6, 145, 218, 195, 9, 190, 87, 83],
+      #[243, 121, 230, 241, 185, 274, 237, 206, 54, 141, 228, 36,
+        63, 179, 35, 76, 239, 235, 52, 99, 133, 85, 74],
+      #[255, 68, 3, 79, 226, 198, 32, 178, 88, 152, 115, 214,
+        201, 80, 232, 84, 221, 124, 29, 184, 176, 215, 210],
+      #[251, 225, 213, 42, 107, 97, 249, 13, 146, 21, 191, 49,
+        33, 142, 82, 171, 250, 55, 98, 229, 89, 165, 211]] : Array (Array (Fin 276)))
+      |>.getD (i.val / 23) #[]
+      |>.getD (i.val % 23) 0
+  { toFun := f
+    invFun := g
+    left_inv := by decide +kernel
+    right_inv := by decide +kernel }
+
+private theorem stabGenA_apply :
+    ∀ x : Fin 276, stabGenA x = word a b 3192139406738 x := by
+  decide +kernel
+
+private theorem stabGenB_apply :
+    ∀ x : Fin 276, stabGenB x = word a b 188222839641502868 x := by
+  decide +kernel
+
+private theorem stabGen_fix :
+    (stabGenA 0 = 0 ∧ stabGenA 1 = 1 ∧ stabGenA 2 = 2) ∧
+      (stabGenB 0 = 0 ∧ stabGenB 1 = 1 ∧ stabGenB 2 = 2) := by
+  decide +kernel
+
+private theorem mem_stabilizerChain_three_of_apply {g : Equiv.Perm (Fin 276)}
+    (hg : g ∈ Co3) (h0 : g 0 = 0) (h1 : g 1 = 1) (h2 : g 2 = 2) :
+    g ∈ Co3.stabilizerChain basePoint 3 := by
+  rw [Co3.stabilizerChain_succ, Subgroup.mem_inf, mem_stabilizer_iff, basePoint_two,
+    Equiv.Perm.smul_def]
+  exact ⟨mem_stabilizerChain_two_of_apply hg h0 h1, h2⟩
+
+private theorem stabGenA_mem : stabGenA ∈ Co3.stabilizerChain basePoint 3 := by
+  obtain ⟨⟨h0, h1, h2⟩, _⟩ := stabGen_fix
+  exact mem_stabilizerChain_three_of_apply
+    (Equiv.ext stabGenA_apply ▸ word_mem a_mem b_mem _) h0 h1 h2
+
+private theorem stabGenB_mem : stabGenB ∈ Co3.stabilizerChain basePoint 3 := by
+  obtain ⟨_, ⟨h0, h1, h2⟩⟩ := stabGen_fix
+  exact mem_stabilizerChain_three_of_apply
+    (Equiv.ext stabGenB_apply ▸ word_mem a_mem b_mem _) h0 h1 h2
+
+private theorem word_mem_stabilizerChain_four {w : ℕ}
+    (h3 : word stabGenA stabGenB w 3 = 3) :
+    word stabGenA stabGenB w ∈ Co3.stabilizerChain basePoint 4 := by
+  rw [Co3.stabilizerChain_succ, Subgroup.mem_inf, mem_stabilizer_iff, basePoint_three,
+    Equiv.Perm.smul_def]
+  exact ⟨word_mem stabGenA_mem stabGenB_mem w, h3⟩
+
+private theorem word_mem_stabilizerChain_five {w : ℕ}
+    (h : word stabGenA stabGenB w 3 = 3 ∧ word stabGenA stabGenB w 4 = 4) :
+    word stabGenA stabGenB w ∈ Co3.stabilizerChain basePoint 5 := by
+  rw [Co3.stabilizerChain_succ, Subgroup.mem_inf, mem_stabilizer_iff, basePoint_four,
+    Equiv.Perm.smul_def]
+  exact ⟨word_mem_stabilizerChain_four h.1, h.2⟩
+
+private def fourthOrbitWords : List ℕ :=
+  [1, 437, 118, 226, 463, 227, 100, 246, 63, 61, 460, 236, 26, 507, 24, 123, 409, 50, 58, 30,
+    231, 12, 493, 253, 401, 54, 218, 200, 452, 59, 6, 201, 27, 115, 29, 127, 15, 31, 13, 230,
+    237, 461, 126, 113, 28, 25, 102, 3, 51, 56, 109, 7, 57, 254, 204, 14]
+
+/-- The fourth basic orbit: the pointwise stabilizer of `0, 1, 2` moves `3` to 56 points. -/
+theorem orbit_stabilizerChain_three :
+    orbit (Co3.stabilizerChain basePoint 3) (3 : Fin 276) =
+      (({3, 4, 6, 9, 13, 15, 16, 18, 20, 30, 37, 38, 39, 42, 45, 50, 52, 70, 74, 90, 96, 99, 106,
+        108, 113, 115, 117, 122, 123, 130, 143, 152, 161, 167, 170, 173, 181, 182, 192, 195, 199,
+        202, 203, 223, 225, 226, 229, 232, 234, 239, 240, 244, 254, 256, 260, 272} :
+        Finset (Fin 276)) : Set (Fin 276)) :=
+  orbit_eq_of_invariant_list (fun x ↦ (decide (x = 1), adj 1 x, adj 2 x))
+    (fourthOrbitWords.map (word stabGenA stabGenB))
+    (fun g hg ↦ by
+      rw [Equiv.Perm.smul_def]
+      have h1 : decide (g 3 = 1) = decide ((3 : Fin 276) = 1) :=
+        Bool.decide_congr (by
+          simpa only [apply_eq_of_mem_stabilizerChain hg 1 (by decide)] using
+            g.injective.eq_iff (a := 3) (b := 1))
+      simp only [h1, adj_of_mem_stabilizerChain hg 1 (by decide),
+        adj_of_mem_stabilizerChain hg 2 (by decide)])
+    (by simp only [Finset.mem_coe]; decide +kernel)
+    (fun g hg ↦ by
+      obtain ⟨w, _, rfl⟩ := List.mem_map.mp hg
+      exact word_mem stabGenA_mem stabGenB_mem w)
+    (by
+      simp only [Finset.mem_coe, List.map_map, Function.comp_def, Equiv.Perm.smul_def]
+      decide +kernel)
+
+/-- The fourth basic orbit has length 56. -/
+@[simp]
+theorem ncard_orbit_stabilizerChain_three :
+    (orbit (Co3.stabilizerChain basePoint 3) (3 : Fin 276)).ncard = 56 := by
+  rw [orbit_stabilizerChain_three, Set.ncard_coe_finset]
+  decide +kernel
+
+private def fifthOrbitWords : List ℕ :=
+  [1, 4, 1782, 2553, 10038, 17747, 1403, 2009, 6822, 4601, 4815, 1947, 10212, 5019, 3058, 1494,
+    1964, 2427, 6395, 13644, 1006, 20076, 8, 982, 2283, 15661, 1529, 3486, 6116, 3411, 5106, 891,
+    2806, 2, 1998, 5081, 5976, 491, 2988, 2295, 503, 1271, 1743, 747, 999]
+
+private theorem fifthOrbitWords_fix :
+    ∀ w ∈ fifthOrbitWords, word stabGenA stabGenB w 3 = 3 := by
+  decide +kernel
+
+/-- The fifth basic orbit: the pointwise stabilizer of `0, 1, 2, 3` moves `4` to 45 points. -/
+theorem orbit_stabilizerChain_four :
+    orbit (Co3.stabilizerChain basePoint 4) (4 : Fin 276) =
+      (({4, 9, 13, 15, 16, 18, 20, 30, 37, 39, 42, 45, 50, 70, 74, 96, 99, 106, 108, 113, 117,
+        122, 123, 143, 152, 167, 170, 173, 192, 195, 199, 202, 203, 223, 225, 226, 229, 232, 234,
+        239, 240, 244, 256, 260, 272} : Finset (Fin 276)) : Set (Fin 276)) :=
+  orbit_eq_of_invariant_list (fun x ↦ (adj 1 x, adj 2 x, adj 3 x))
+    (fifthOrbitWords.map (word stabGenA stabGenB))
+    (fun _ hg ↦ by
+      simp only [Equiv.Perm.smul_def, adj_of_mem_stabilizerChain hg 1 (by decide),
+        adj_of_mem_stabilizerChain hg 2 (by decide), adj_of_mem_stabilizerChain hg 3 (by decide)])
+    (by simp only [Finset.mem_coe]; decide +kernel)
+    (fun g hg ↦ by
+      obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hg
+      exact word_mem_stabilizerChain_four (fifthOrbitWords_fix w hw))
+    (by
+      simp only [Finset.mem_coe, List.map_map, Function.comp_def, Equiv.Perm.smul_def]
+      decide +kernel)
+
+/-- The fifth basic orbit has length 45. -/
+@[simp]
+theorem ncard_orbit_stabilizerChain_four :
+    (orbit (Co3.stabilizerChain basePoint 4) (4 : Fin 276)).ncard = 45 := by
+  rw [orbit_stabilizerChain_four, Set.ncard_coe_finset]
+  decide +kernel
+
+private def commonDegFour (x : Fin 276) : ℕ :=
+  (Finset.univ.filter fun y : Fin 276 ↦
+    adj 1 y && adj 2 y && adj 3 y && adj 4 y && adj x y).card
+
+private theorem commonDegFour_apply_of_mem_stabilizerChain {g : Equiv.Perm (Fin 276)}
+    (hg : g ∈ Co3.stabilizerChain basePoint 5) (x : Fin 276) :
+    commonDegFour (g x) = commonDegFour x := by
+  let f : Fin 276 → Bool := fun y ↦ adj 1 y && adj 2 y && adj 3 y && adj 4 y && adj (g x) y
+  have hf (y : Fin 276) :
+      f (g y) = (adj 1 y && adj 2 y && adj 3 y && adj 4 y && adj x y) := by
+    simp only [f, adj_of_mem_stabilizerChain hg 1 (by decide),
+      adj_of_mem_stabilizerChain hg 2 (by decide), adj_of_mem_stabilizerChain hg 3 (by decide),
+      adj_of_mem_stabilizerChain hg 4 (by decide), adj_apply_of_mem_stabilizerChain hg (by decide)]
+  simpa only [commonDegFour, hf] using (TauCeti.card_filter_comp_perm f g true).symm
+
+private def sixthOrbitWords : List ℕ :=
+  [1, 3033, 8109, 192858, 148939, 1017, 420947, 113578, 96945, 38441, 44260, 759, 9611, 24237,
+    76511, 32433]
+
+private theorem sixthOrbitWords_fix :
+    ∀ w ∈ sixthOrbitWords,
+      word stabGenA stabGenB w 3 = 3 ∧ word stabGenA stabGenB w 4 = 4 := by
+  decide +kernel
+
+/-- The sixth basic orbit: the pointwise stabilizer of `0, 1, 2, 3, 4` moves `5` to 16 points. -/
+theorem orbit_stabilizerChain_five :
+    orbit (Co3.stabilizerChain basePoint 5) (5 : Fin 276) =
+      (({5, 21, 26, 48, 83, 105, 111, 112, 183, 197, 200, 215, 220, 259, 261, 262} :
+        Finset (Fin 276)) : Set (Fin 276)) :=
+  orbit_eq_of_invariant_list
+    (fun x ↦ (adj 1 x, adj 2 x, adj 3 x, adj 4 x, commonDegFour x))
+    (sixthOrbitWords.map (word stabGenA stabGenB))
+    (fun _ hg ↦ by
+      simp only [Equiv.Perm.smul_def, adj_of_mem_stabilizerChain hg 1 (by decide),
+        adj_of_mem_stabilizerChain hg 2 (by decide), adj_of_mem_stabilizerChain hg 3 (by decide),
+        adj_of_mem_stabilizerChain hg 4 (by decide),
+        commonDegFour_apply_of_mem_stabilizerChain hg])
+    (by simp only [Finset.mem_coe]; decide +kernel)
+    (fun g hg ↦ by
+      obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hg
+      exact word_mem_stabilizerChain_five (sixthOrbitWords_fix w hw))
+    (by
+      simp only [Finset.mem_coe, List.map_map, Function.comp_def, Equiv.Perm.smul_def]
+      decide +kernel)
+
+/-- The sixth basic orbit has length 16. -/
+@[simp]
+theorem ncard_orbit_stabilizerChain_five :
+    (orbit (Co3.stabilizerChain basePoint 5) (5 : Fin 276)).ncard = 16 := by
+  rw [orbit_stabilizerChain_five, Set.ncard_coe_finset]
+  decide +kernel
+
+/-! ### Base rigidity and stabilizer orders -/
+
+/- Ranks and short lists of earlier anchors certify that fixing `0, …, 5` determines all 276
+points one by one. -/
+private def rigidRank (i : Fin 276) : ℕ :=
+  (#[
+    #[0, 1, 2, 3, 4, 5, 6, 41, 42, 43, 44, 9, 45, 46, 47, 48, 49, 50, 7, 10, 51, 52, 53],
+    #[54, 11, 55, 56, 57, 58, 59, 60, 61, 62, 270, 63, 64, 65, 66, 8, 67, 12, 68, 69, 70, 71,
+      72],
+    #[73, 74, 13, 75, 76, 77, 78, 79, 80, 81, 82, 14, 83, 84, 85, 86, 87, 88, 89, 90, 91, 15,
+      92],
+    #[93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 16, 104, 105, 106, 17, 107, 108, 109,
+      110, 111, 112, 113],
+    #[114, 115, 116, 117, 118, 119, 271, 120, 121, 122, 18, 123, 272, 124, 125, 126, 127, 128,
+      129, 130, 131, 132, 133],
+    #[134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 19, 150,
+      20, 151, 152, 153, 154],
+    #[21, 155, 22, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170,
+      171, 172, 173, 174, 175],
+    #[176, 273, 177, 178, 179, 180, 181, 182, 23, 183, 184, 24, 185, 186, 187, 188, 25, 189,
+      190, 191, 26, 192, 193],
+    #[194, 27, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 28,
+      210, 211, 29, 212, 213],
+    #[214, 215, 216, 217, 218, 219, 30, 220, 221, 222, 274, 31, 223, 224, 32, 225, 226, 227,
+      228, 33, 229, 230, 231],
+    #[34, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 35, 243, 244, 245, 246, 36,
+      37, 247, 248, 249, 250],
+    #[275, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 38, 261, 262, 263, 264, 265, 266,
+      267, 39, 268, 269, 40]
+    ] : Array (Array ℕ))
+    |>.getD (i.val / 23) #[]
+    |>.getD (i.val % 23) 0
+
+private def rigidAnchors (i : Fin 276) : List (Fin 276) :=
+  (#[
+    #[[], [], [], [], [], [], [1, 3, 2, 4, 5], [1, 38, 48, 181, 6], [2, 24, 38, 172, 7],
+      [1, 7, 11, 4, 57, 5], [3, 11, 18, 5, 8], [1, 3, 6, 2, 18], [2, 11, 248, 1, 6],
+      [1, 11, 5, 19, 2], [1, 4, 6, 2, 8], [1, 11, 138, 2, 7], [1, 11, 272, 2, 5],
+      [3, 8, 204, 1, 13], [1, 4, 2, 5, 6], [2, 11, 5, 1, 3, 4], [1, 13, 2, 226, 3],
+      [4, 14, 3, 9, 12], [1, 3, 4, 5, 201]],
+    #[[1, 11, 2, 14, 18], [1, 4, 38, 2, 5], [1, 6, 5, 7, 12], [4, 38, 248, 1, 2],
+      [6, 14, 9, 48, 1], [2, 22, 213, 1, 4], [2, 7, 22, 1, 3], [1, 14, 17, 28, 4],
+      [6, 11, 13, 30, 2], [2, 7, 177, 1, 6], [3, 11, 36, 1, 4], [1, 3, 67, 2, 4],
+      [2, 22, 3, 18, 1], [2, 7, 14, 1, 4], [1, 13, 14, 2, 8], [1, 3, 2, 4, 6], [1, 6, 2, 9, 8],
+      [4, 5, 2, 3, 24, 1], [6, 8, 131, 1, 2], [1, 14, 275, 2, 5], [3, 6, 2, 5, 9],
+      [1, 6, 7, 31, 12], [1, 9, 230, 2, 5]],
+    #[[5, 6, 2, 13, 15], [2, 11, 23, 1, 3], [4, 18, 2, 38, 1], [1, 11, 2, 14, 8],
+      [1, 14, 23, 2, 3], [3, 8, 9, 11, 14], [1, 3, 2, 9, 8], [1, 6, 5, 37, 15],
+      [3, 8, 22, 1, 4], [1, 6, 39, 2, 5], [2, 7, 3, 23, 14], [1, 3, 38, 2, 48],
+      [2, 14, 13, 16, 6], [2, 12, 22, 1, 3], [3, 8, 4, 11, 5], [6, 8, 10, 14, 3],
+      [3, 22, 47, 1, 5], [3, 11, 47, 1, 4], [1, 15, 226, 2, 3], [3, 11, 12, 17, 8],
+      [2, 7, 44, 1, 5], [1, 3, 4, 18, 6], [3, 6, 84, 1, 2]],
+    #[[3, 8, 17, 1, 5], [1, 7, 38, 2, 3], [1, 4, 5, 11, 3], [3, 8, 52, 1, 2],
+      [3, 11, 54, 1, 14], [1, 4, 22, 2, 6], [6, 8, 44, 1, 10], [6, 11, 15, 19, 1],
+      [5, 8, 52, 1, 6], [5, 11, 63, 1, 7], [5, 6, 11, 1, 7], [2, 24, 3, 1, 18, 5],
+      [1, 6, 18, 31, 7], [1, 4, 5, 13, 3], [4, 6, 35, 1, 2], [2, 24, 4, 5, 6, 1],
+      [3, 6, 29, 1, 2], [1, 6, 81, 2, 10], [2, 7, 16, 19, 4], [5, 6, 242, 1, 12],
+      [2, 7, 55, 1, 12], [1, 3, 22, 2, 6], [2, 19, 55, 1, 3]],
+    #[[1, 4, 22, 2, 3], [1, 11, 2, 36, 3], [6, 11, 41, 1, 13], [2, 12, 1, 36, 4],
+      [1, 4, 71, 2, 6], [2, 7, 67, 1, 3], [3, 22, 165, 1, 5], [1, 7, 11, 23, 3],
+      [1, 4, 10, 30, 5], [2, 8, 24, 1, 4], [2, 11, 24, 1, 4], [2, 14, 3, 13, 5],
+      [5, 11, 66, 1, 4], [4, 6, 97, 1, 2], [1, 11, 49, 2, 4], [1, 14, 15, 2, 4],
+      [1, 14, 49, 2, 3], [1, 3, 181, 2, 10], [1, 3, 8, 51, 6], [4, 6, 2, 10, 20],
+      [4, 6, 87, 1, 2], [1, 4, 82, 2, 6], [4, 14, 65, 1, 3]],
+    #[[1, 3, 34, 2, 5], [3, 29, 7, 19, 9], [1, 6, 44, 2, 3], [6, 11, 12, 1, 14],
+      [2, 12, 67, 1, 3], [1, 6, 44, 2, 7], [1, 3, 22, 2, 4], [1, 7, 22, 2, 6], [1, 6, 2, 15, 8],
+      [3, 11, 9, 34, 1], [6, 11, 18, 21, 13], [3, 8, 67, 1, 4], [2, 22, 35, 1, 10],
+      [2, 7, 87, 1, 5], [2, 22, 169, 1, 5], [1, 3, 204, 2, 5], [2, 57, 102, 1, 11],
+      [1, 6, 8, 18, 7], [5, 6, 2, 40, 4], [2, 11, 24, 1, 3], [4, 22, 7, 42, 13],
+      [6, 11, 61, 1, 7], [1, 6, 123, 2, 5]],
+    #[[1, 4, 18, 2, 3], [2, 7, 25, 1, 12], [3, 6, 2, 18, 40, 4], [2, 14, 107, 1, 6],
+      [7, 10, 226, 1, 3], [1, 4, 100, 2, 6], [2, 7, 67, 1, 5], [3, 11, 126, 1, 4],
+      [3, 11, 65, 1, 4], [3, 11, 36, 1, 5], [1, 3, 7, 19, 4], [1, 3, 130, 2, 8],
+      [6, 11, 9, 19, 1], [3, 22, 242, 1, 4], [1, 6, 81, 2, 3], [1, 3, 109, 2, 4],
+      [6, 11, 56, 1, 7], [4, 10, 264, 1, 3], [3, 34, 54, 1, 4], [1, 9, 109, 2, 3],
+      [2, 11, 49, 1, 6], [1, 6, 123, 2, 9], [1, 6, 25, 2, 5]],
+    #[[1, 3, 110, 2, 6], [3, 8, 38, 1, 2], [6, 8, 15, 40, 2], [2, 7, 25, 1, 6],
+      [2, 11, 144, 1, 3], [1, 3, 148, 2, 5], [1, 11, 24, 2, 7], [3, 11, 66, 1, 4],
+      [1, 6, 19, 5, 48, 18], [1, 9, 53, 2, 5], [4, 17, 139, 1, 3], [2, 11, 19, 1, 18],
+      [1, 11, 213, 2, 4], [2, 22, 121, 1, 4], [6, 25, 91, 1, 15], [3, 10, 128, 1, 7],
+      [2, 24, 4, 5, 18, 1], [1, 4, 149, 2, 3], [8, 15, 22, 1, 6], [3, 22, 141, 1, 4],
+      [1, 3, 2, 140, 6], [1, 3, 148, 2, 5], [4, 6, 28, 1, 2]],
+    #[[5, 8, 22, 1, 6], [1, 3, 6, 2, 5], [2, 7, 149, 1, 4], [4, 10, 67, 1, 8], [1, 4, 6, 2, 7],
+      [3, 6, 97, 1, 2], [1, 3, 52, 2, 5], [3, 10, 67, 1, 15], [1, 4, 2, 10, 7],
+      [5, 6, 53, 1, 7], [2, 11, 71, 1, 6], [1, 9, 120, 2, 5], [1, 6, 39, 2, 7],
+      [4, 14, 101, 1, 3], [4, 21, 91, 1, 7], [1, 4, 149, 2, 6], [4, 6, 56, 1, 2],
+      [2, 19, 57, 1, 3], [1, 6, 53, 2, 3], [1, 14, 110, 2, 5], [1, 3, 5, 2, 4, 6],
+      [2, 7, 14, 1, 5], [3, 11, 51, 1, 4]],
+    #[[2, 7, 56, 1, 3], [1, 3, 4, 65, 5], [1, 3, 52, 2, 4], [3, 29, 69, 1, 5], [1, 6, 53, 2, 5],
+      [2, 14, 23, 1, 5], [1, 11, 2, 204, 4], [3, 8, 51, 1, 9], [4, 14, 36, 1, 3],
+      [2, 8, 132, 1, 4], [3, 8, 67, 1, 7], [2, 67, 169, 1, 4], [6, 12, 84, 1, 2],
+      [4, 5, 109, 1, 10], [2, 67, 80, 1, 3], [3, 6, 164, 1, 2], [1, 15, 44, 2, 5],
+      [6, 28, 185, 1, 7], [1, 4, 2, 15, 7], [1, 6, 169, 2, 3], [6, 8, 163, 1, 11],
+      [6, 8, 186, 1, 2], [1, 9, 11, 2, 7]],
+    #[[1, 6, 169, 2, 57], [3, 6, 8, 1, 2], [1, 7, 67, 2, 5], [6, 25, 154, 1, 13],
+      [1, 6, 132, 2, 3], [6, 8, 32, 1, 2], [2, 11, 186, 1, 3], [1, 6, 132, 2, 8],
+      [6, 11, 125, 1, 7], [1, 11, 93, 2, 4], [1, 14, 173, 2, 10], [3, 8, 60, 1, 4],
+      [2, 24, 201, 1, 5], [2, 24, 137, 1, 4], [1, 6, 25, 2, 3], [2, 11, 36, 1, 6],
+      [2, 8, 22, 1, 10], [3, 6, 201, 1, 2], [2, 11, 3, 177, 1], [4, 18, 87, 1, 2],
+      [3, 8, 36, 1, 2], [11, 16, 69, 1, 4], [6, 8, 183, 1, 10]],
+    #[[5, 11, 70, 1, 4], [1, 3, 208, 2, 5], [1, 3, 110, 2, 8], [1, 7, 96, 2, 4],
+      [1, 4, 192, 2, 3], [2, 14, 49, 1, 6], [4, 6, 32, 1, 2], [1, 13, 25, 2, 10],
+      [4, 10, 177, 1, 3], [4, 5, 101, 1, 8], [3, 8, 22, 1, 10], [1, 4, 24, 2, 11],
+      [3, 10, 207, 1, 4], [3, 29, 60, 1, 4], [1, 4, 225, 2, 3], [3, 6, 35, 1, 2],
+      [3, 8, 101, 1, 2], [1, 3, 208, 2, 4], [5, 6, 8, 1, 10], [1, 11, 18, 48, 2],
+      [2, 7, 44, 1, 6], [2, 23, 81, 1, 7], [1, 3, 38, 2, 18]]
+    ] : Array (Array (List (Fin 276))))
+    |>.getD (i.val / 23) #[]
+    |>.getD (i.val % 23) []
+
+private theorem rigidRank_lt : ∀ x : Fin 276, rigidRank x < 276 := by
+  decide +kernel
+
+private theorem rigidAnchors_rank :
+    ∀ x : Fin 276, ∀ z ∈ rigidAnchors x, rigidRank z < rigidRank x := by
+  decide +kernel
+
+private theorem rigidAnchors_unique :
+    ∀ x : Fin 276, 6 ≤ x.val → ∀ y : Fin 276,
+      (rigidAnchors x).map (adj · y) = (rigidAnchors x).map (adj · x) → y = x := by
+  decide +kernel
+
+private theorem eq_one_of_mem_stabilizerChain_six {g : Equiv.Perm (Fin 276)}
+    (hg : g ∈ Co3.stabilizerChain basePoint 6) : g = 1 := by
+  refine Equiv.ext fun x ↦ Function.apply_eq_self_of_rank (⇑g)
+    (rank := rigidRank) (seed := fun y ↦ y.val < 6)
+    (adj_apply_of_mem_stabilizerChain hg (by decide)) 276
+    (fun y _ hy ↦ apply_eq_of_mem_stabilizerChain hg y hy) (fun y _ hy w hw ↦ ?_)
+    x (rigidRank_lt x)
+  exact rigidAnchors_unique y (Nat.not_lt.mp hy) w
+    (List.map_congr_left fun z hz ↦ hw z (rigidAnchors_rank y z hz))
+
+/-- The points `0, 1, 2, 3, 4, 5` form a base of the ATLAS model of `Co₃`: only the identity
+fixes all six points. -/
+theorem stabilizerChain_six_eq_bot : Co3.stabilizerChain basePoint 6 = ⊥ :=
+  (Subgroup.eq_bot_iff_forall _).mpr fun _ ↦ eq_one_of_mem_stabilizerChain_six
+
+/-- The pointwise stabilizer of `0, 1, 2, 3, 4` in the ATLAS model of `Co₃` has order `16`. -/
+-- Simplify before the subtype's membership predicate expands the stabilizer chain.
+@[simp↓]
+theorem card_stabilizerChain_five : Nat.card (Co3.stabilizerChain basePoint 5) = 16 := by
+  have h := Co3.ncard_orbit_mul_card_stabilizerChain_succ basePoint 5
+  rw [basePoint_five, ncard_orbit_stabilizerChain_five, stabilizerChain_six_eq_bot,
+    Subgroup.card_bot, mul_one] at h
+  exact h.symm
+
+/-- The pointwise stabilizer of `0, 1, 2, 3` in the ATLAS model of `Co₃` has order
+`720 = 45 * 16`. -/
+@[simp↓]
+theorem card_stabilizerChain_four : Nat.card (Co3.stabilizerChain basePoint 4) = 720 := by
+  have h := Co3.ncard_orbit_mul_card_stabilizerChain_succ basePoint 4
+  rw [basePoint_four, ncard_orbit_stabilizerChain_four, card_stabilizerChain_five] at h
+  omega
+
+/-- The pointwise stabilizer of `0, 1, 2` in the ATLAS model of `Co₃` has order
+`40320 = 56 * 45 * 16`. -/
+@[simp↓]
+theorem card_stabilizerChain_three : Nat.card (Co3.stabilizerChain basePoint 3) = 40320 := by
+  have h := Co3.ncard_orbit_mul_card_stabilizerChain_succ basePoint 3
+  rw [basePoint_three, ncard_orbit_stabilizerChain_three, card_stabilizerChain_four] at h
+  omega
+
+/-- The pointwise stabilizer of `0, 1` in the ATLAS model of `Co₃` has order
+`6531840 = 162 * 40320`. -/
+@[simp↓]
+theorem card_stabilizerChain_two : Nat.card (Co3.stabilizerChain basePoint 2) = 6531840 := by
+  have h := Co3.ncard_orbit_mul_card_stabilizerChain_succ basePoint 2
+  rw [basePoint_two, ncard_orbit_stabilizerChain_two, card_stabilizerChain_three] at h
+  omega
+
+/-- The stabilizer of `0` in the ATLAS model of `Co₃` has order
+`1796256000 = 275 * 6531840`. -/
+@[simp↓]
+theorem card_stabilizerChain_one : Nat.card (Co3.stabilizerChain basePoint 1) = 1796256000 := by
+  have h := Co3.ncard_orbit_mul_card_stabilizerChain_succ basePoint 1
+  rw [basePoint_one, ncard_orbit_stabilizerChain_one, card_stabilizerChain_two] at h
   omega
 
 end TauCeti.Sporadic.Co3

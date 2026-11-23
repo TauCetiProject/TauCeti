@@ -10,14 +10,14 @@ public import Mathlib.MeasureTheory.Measure.QuasiMeasurePreserving
 /-!
 # Quasi-measure-preserving maps with dominated pushforward
 
-A measurable map `f` with `μ.map f ≤ C • ν` is quasi-measure preserving from `μ` to `ν`, since
-domination by a multiple implies absolute continuity
+An almost everywhere measurable map `f` with `μ.map f ≤ C • ν` is quasi-measure preserving from `μ`
+to `ν`, since domination by a multiple implies absolute continuity
 (`MeasureTheory.Measure.absolutelyContinuous_of_le_smul`).
 
 ## Main declarations
 
-* `MeasureTheory.QuasiMeasurePreserving.of_map_le_smul`: a measurable map whose pushforward is
-  dominated by a multiple of `ν` is quasi-measure preserving.
+* `MeasureTheory.QuasiMeasurePreserving.of_map_le_smul`: an almost everywhere measurable map whose
+  pushforward is dominated by a multiple of `ν` is quasi-measure preserving.
 -/
 
 public section
@@ -29,10 +29,10 @@ namespace MeasureTheory
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α} {ν : Measure β}
   {f : α → β} {C : ℝ≥0∞}
 
-/-- A measurable map whose pushforward is dominated by a multiple of `ν` is quasi-measure
-preserving. -/
-theorem QuasiMeasurePreserving.of_map_le_smul (hf : Measurable f) (hmap : μ.map f ≤ C • ν) :
+/-- An almost everywhere measurable map whose pushforward is dominated by a multiple of `ν` is
+quasi-measure preserving. -/
+theorem QuasiMeasurePreserving.of_map_le_smul (hf : AEMeasurable f μ) (hmap : μ.map f ≤ C • ν) :
     QuasiMeasurePreserving f μ ν :=
-  ⟨hf.aemeasurable, Measure.absolutelyContinuous_of_le_smul hmap⟩
+  ⟨hf, Measure.absolutelyContinuous_of_le_smul hmap⟩
 
 end MeasureTheory
