@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DeRham.Harmonic
-import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Regularity
+import TauCeti.Geometry.Manifold.Riemannian.Poisson.Smooth
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
 
@@ -36,8 +36,8 @@ at most that of `a`
   (`TauCeti.SmoothForm.integral_codifferential_eq_zero`).
 * **Existence**: on a closed connected manifold, `d*a` is therefore a smooth function of integral
   zero, so it is `Δf = d*df` for a smooth function `f` of integral zero, by the smooth Poisson
-  equation (`TauCeti.Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq`), and then
-  `d*(a - df) = 0` (`TauCeti.SmoothForm.exists_codifferential_sub_mextDerivₗ_eq_zero`).
+  equation (`TauCeti.Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq`),
+  and then `d*(a - df) = 0` (`TauCeti.SmoothForm.exists_codifferential_sub_mextDerivₗ_eq_zero`).
 * **Uniqueness**: if `a - df` and `a - dg` are both coclosed, then `df = dg`, so on a connected
   manifold `f - g` is constant, hence zero when `f` and `g` both have integral zero
   (`TauCeti.SmoothForm.existsUnique_codifferential_sub_mextDerivₗ_eq_zero`).
@@ -127,12 +127,14 @@ theorem exists_codifferential_sub_mextDerivₗ_eq_zero [PreconnectedSpace M]
     ∃ f : SmoothForm I M ℝ 0, ∫ x, f.val x 0 ∂riemannianVolume I M = 0 ∧
       codifferential o hkl (a - mextDerivₗ I 0 f) = 0 := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  obtain ⟨u, hu₀, hu⟩ := Manifold.SobolevH1.exists_neg_laplaceBeltrami_eq
-    (contMDiff_apply_zero (codifferential o hkl a))
-    (integral_codifferential_eq_zero o hkl (by simp [compactlySupportedForms_eq_top]))
-  refine ⟨ofFunction u, by rwa [ofFunction_apply_zero], ?_⟩
+  obtain ⟨u, ⟨hu_smooth, hu₀, hu⟩, _⟩ :=
+    Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq
+      (contMDiff_apply_zero (codifferential o hkl a))
+      (integral_codifferential_eq_zero o hkl (by simp [compactlySupportedForms_eq_top]))
+  let u₀ : C^∞⟮I, M; ℝ⟯ := ⟨u, hu_smooth⟩
+  refine ⟨ofFunction u₀, by rwa [ofFunction_apply_zero], ?_⟩
   -- `d*df = Δf = -div grad u = d*a`.
-  have hΔ : codifferential o hkl (mextDerivₗ I 0 (ofFunction u)) = codifferential o hkl a := by
+  have hΔ : codifferential o hkl (mextDerivₗ I 0 (ofFunction u₀)) = codifferential o hkl a := by
     rw [← hodgeLaplacian_zero_add_one o (show 0 + (l + 1) = m by omega) hkl]
     apply Subtype.ext
     rw [hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami, ofFunction_apply_zero,
