@@ -19,7 +19,7 @@ import Mathlib.RingTheory.Unramified.Field
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.MinimalPrime
-import TauCeti.RingTheory.LocalRing.Localization
+import TauCeti.RingTheory.RamificationInertia.Unramified
 import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.IntegralClosure.Transfer
@@ -577,7 +577,8 @@ theorem isSeparable_residueField_localization_abhyankarModel (hϖ : ϖ ∈ maxim
   have : M.LiesOver (maximalIdeal B) :=
     ⟨by rw [← IsLocalization.AtPrime.under_maximalIdeal (Localization.AtPrime M) M,
       Ideal.under_under, ← Ideal.over_def _ (maximalIdeal B)]⟩
-  exact isSeparable_residueField_localization M (isSeparable_abhyankarModel_quotient M hϖ hu he hd)
+  exact (Ideal.isSeparable_quotient_iff_residueField M).mp
+    (isSeparable_abhyankarModel_quotient M hϖ hu he hd)
 
 end LocalRing
 

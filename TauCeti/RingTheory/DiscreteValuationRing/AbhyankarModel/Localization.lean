@@ -138,7 +138,8 @@ theorem exists_algEquiv_localization_abhyankarModel (hϖ : Irreducible ϖ) (hu :
     rw [hβ, isUnit_map_iff, IsUnit.mul_iff, isUnit_pow_iff he₀] at this
     exact hϖ.not_isUnit this.2
   -- `γ = β ^ d / ϖ` lies in the integrally closed ring `S`, and `γ ^ e = u`.
-  obtain ⟨γ, hγ', hγ⟩ := exists_pow_eq_mul_of_pow_mul_eq hϖS he₀ (by rw [hβ, map_mul, map_pow])
+  obtain ⟨γ, hγ', hγ⟩ := exists_eq_mul_of_pow_eq_mul_pow (b := β ^ d) hϖS he₀
+    (by rw [← pow_mul, mul_comm, hβ, map_mul, map_pow])
   set φ := abhyankarModelLift hγ hγ'
   have hφx : φ (abhyankarModelRoot ϖ u e d) = β := abhyankarModelLift_root hγ hγ'
   have hφy := abhyankarModelLift_algebraMap_root hγ hγ'

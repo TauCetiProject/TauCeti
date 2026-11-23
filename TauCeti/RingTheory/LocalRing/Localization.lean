@@ -5,9 +5,7 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.Ideal.Over
-public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 
@@ -34,10 +32,6 @@ A homomorphism `ψ : R →+* T` to a local ring which inverts the complement of 
 at `p`. For instance, a homomorphism to a field factors locally through the localization at its
 kernel.
 
-Localizing at a maximal ideal `m` does not change the residue field, so for a local ring `A`
-below `m`, separability of `(B ⧸ m) / (A ⧸ 𝔪_A)` is separability of the residue field extension
-of the localization of `B` at `m` over `A`.
-
 ## Main results
 
 * `IsLocalRing.algEquivLocalizationAtMaximalIdeal R S`: the `R`-algebra isomorphism from a local
@@ -50,8 +44,6 @@ of the localization of `B` at `m` over `A`.
 * `TauCeti.algebraMap_notMem_maximalIdeal_pow`: an element whose image under `f : A →+* R` is not
   in `𝔪_Rⁿ` does not lie in the `n`-th power of the maximal ideal of a localization of `A` at
   `f⁻¹(𝔪_R)`.
-* `TauCeti.isSeparable_residueField_localization`: separability of `B ⧸ m` over the residue field
-  of `A` passes to the residue field of the localization of `B` at `m`.
 -/
 
 public section
@@ -128,8 +120,6 @@ namespace TauCeti
 
 open _root_.IsLocalRing Ideal
 
-section MaximalIdealPow
-
 variable {A R : Type*} [CommSemiring A] [CommSemiring R] [IsLocalRing R]
 
 /-- Let `f : A →+* R` be a ring homomorphism to a local ring. An element of `A` whose image under
@@ -146,25 +136,5 @@ theorem algebraMap_notMem_maximalIdeal_pow {L : Type*} [CommSemiring L] [Algebra
   refine fun h ↦ ha ?_
   rw [← IsLocalization.lift_eq (S := L) hf a]
   exact le_comap_pow _ n (maximalIdeal_comap (IsLocalization.lift (S := L) hf) ▸ h)
-
-end MaximalIdealPow
-
-section ResidueField
-
-variable {A B : Type*} [CommRing A] [IsLocalRing A] [CommRing B] [Algebra A B]
-
-/-- Localizing at a maximal ideal `m` does not change the residue field, so separability of
-`(B ⧸ m) / (A ⧸ 𝔪_A)` is separability of the residue extension of `A → B_m`. -/
-theorem isSeparable_residueField_localization (m : Ideal B) [m.IsMaximal]
-    [m.LiesOver (maximalIdeal A)] [IsLocalHom (algebraMap A (Localization.AtPrime m))]
-    (h : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ m)) :
-    Algebra.IsSeparable (ResidueField A) (ResidueField (Localization.AtPrime m)) := by
-  let σ := (IsLocalization.AtPrime.equivQuotMaximalIdeal m
-    (Localization.AtPrime m)).restrictScalars A
-  let τ := σ.extendScalarsOfSurjective (R := A) (S := A ⧸ maximalIdeal A)
-    Ideal.Quotient.mk_surjective
-  exact (AlgEquiv.Algebra.isSeparable_iff τ).mp h
-
-end ResidueField
 
 end TauCeti
