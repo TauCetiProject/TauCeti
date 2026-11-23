@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Wave.HalfWave
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The wave propagators `cos(tD)` and `D⁻¹ sin(tD)` on `L²`
@@ -335,20 +336,11 @@ everywhere strongly measurable `G : ℝ → L²` is almost everywhere strongly m
 integral does not exist it takes the value `0`. -/
 theorem aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
     {G : ℝ → Lp F 2 (volume : Measure E)} (hG : AEStronglyMeasurable G) :
-    AEStronglyMeasurable fun t ↦ ∫ s in Set.Iio t, waveSinPropagator F (t - s) (G s) := by
-  -- The integrand on the half-plane `s < t`, as a function of `(t, s)`.
-  set K : ℝ × ℝ → Lp F 2 (volume : Measure E) := {q : ℝ × ℝ | q.2 < q.1}.indicator
-    fun q ↦ waveSinPropagator F (q.1 - q.2) (G q.2)
-  have hK : AEStronglyMeasurable K (volume.prod volume) :=
+    AEStronglyMeasurable fun t ↦ ∫ s in Set.Iio t, waveSinPropagator F (t - s) (G s) :=
+  aestronglyMeasurable_setIntegral_of_measurableSet (R := fun t s ↦ s < t)
     (continuous_waveSinPropagator_uncurry.comp_aestronglyMeasurable
-      ((continuous_fst.sub continuous_snd).aestronglyMeasurable.prodMk hG.comp_snd)).indicator
-      (measurableSet_lt measurable_snd measurable_fst)
-  refine hK.integral_prod_right'.congr (ae_of_all _ fun t ↦ ?_)
-  dsimp only
-  rw [← integral_indicator measurableSet_Iio]
-  refine integral_congr_ae (ae_of_all _ fun s ↦ ?_)
-  -- `(t, s)` lies in the half-plane `s < t` exactly when `s ∈ Iio t`.
-  by_cases hs : s < t <;> simp [K, hs]
+      ((continuous_fst.sub continuous_snd).aestronglyMeasurable.prodMk hG.comp_snd))
+    (measurableSet_lt measurable_snd measurable_fst)
 
 /-- `cos(tD) = (W₊(t) + W₋(t)) / 2`, where `W₊(t) = exp(itD)` is the half-wave propagator and
 `W₋(t) = W₊(-t)`. -/

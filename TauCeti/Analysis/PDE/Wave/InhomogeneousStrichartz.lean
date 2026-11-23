@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Wave.MixedNorm
-import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
-import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
@@ -49,8 +47,9 @@ over the blocks as follows.
   on `E \ {0}`, and invariant under `ξ ↦ 2 ξ`. Let `Qₗ` be the multiplier whose symbol is a
   Schwartz function equal to `1 / Ψ` on the support of `ψₗ`, the dilate by `2^l` of a fixed one.
   Its kernel is the `L¹`-normalised dilate of a fixed Schwartz function, so `Qₗ` is bounded on
-  `L^{r₁'}` uniformly in `l`. Since only the `ψⱼ` with `|j - l| < L` meet the support of `ψₗ`,
-  `Pₗ = ∑_{|j - l| < L} Pⱼ Pⱼ Qₗ Pₗ`.
+  `L^{r₁'}` uniformly in `l` (`ContDiffBump.eLpNorm_eLpNorm_dyadicMultiplier_le`). Since only the
+  `ψⱼ` with `|j - l| < L` meet the support of `ψₗ`, `Pₗ = ∑_{|j - l| < L} Pⱼ Pⱼ Qₗ Pₗ`
+  (`ContDiffBump.sum_fourierMultiplierCLM_fourierMultiplierCLM_dyadicMultiplier_invSumSq`).
 * **Summation.** At each time, `‖u(t)‖_r ≤ ∑ₗ ‖Pₗ u(t)‖_r`
   (`ContDiffBump.eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM`), and `Pₗ u(t)` is the
   sum over `|j - l| < L` of the retarded integrals of `Pⱼ Pⱼ (Qₗ Pₗ F)`. Minkowski's inequality in
@@ -82,247 +81,9 @@ namespace ContDiffBump
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   (φ : ContDiffBump (0 : E))
 
-/-! ### The sum of the squares of the cutoffs -/
-
-/-- The sum `Ψ ξ = ∑ⱼ ψⱼ ξ²` of the squares of the Littlewood–Paley cutoffs. -/
-private def sumSq (ξ : E) : ℝ :=
-  ∑' j : ℤ, φ.littlewoodPaley j ξ ^ 2
-
-/-- If only the cutoffs indexed by `s` can be nonzero at `ξ`, then `Ψ ξ` is a finite sum. -/
-private theorem sumSq_eq_sum {s : Finset ℤ} {ξ : E} (h : ∀ j ∉ s, φ.littlewoodPaley j ξ = 0) :
-    φ.sumSq ξ = ∑ j ∈ s, φ.littlewoodPaley j ξ ^ 2 :=
-  tsum_eq_sum fun j hj ↦ by rw [h j hj, sq, zero_mul]
-
-/-- Near a point `ξ₀ ≠ 0`, only finitely many cutoffs are nonzero. -/
-private theorem exists_finset_eventually_littlewoodPaley_eq_zero {ξ₀ : E} (hξ₀ : ξ₀ ≠ 0) :
-    ∃ s : Finset ℤ, ∀ᶠ ξ in 𝓝 ξ₀, ∀ j ∉ s, φ.littlewoodPaley j ξ = 0 := by
-  set c := ‖ξ₀‖
-  have hc : 0 < c := norm_pos_iff.2 hξ₀
-  obtain ⟨a, ha⟩ := pow_unbounded_of_one_lt (2 * φ.rOut / c) one_lt_two
-  obtain ⟨b, hb⟩ := pow_unbounded_of_one_lt (4 * c / φ.rIn) one_lt_two
-  rw [div_lt_iff₀ hc] at ha
-  rw [div_lt_iff₀ φ.rIn_pos] at hb
-  refine ⟨Finset.Ioo (-(a : ℤ)) (b + 1), ?_⟩
-  have hU : ∀ᶠ ξ in 𝓝 ξ₀, ‖ξ‖ ∈ Set.Ioo (c / 2) (2 * c) :=
-    continuous_norm.continuousAt (x := ξ₀) (Ioo_mem_nhds (by linarith) (by linarith))
-  filter_upwards [hU] with ξ hξ j hj
-  rw [Finset.mem_Ioo, not_and_or, not_lt, not_lt] at hj
-  have h2a : (0 : ℝ) < 2 ^ a := by positivity
-  rcases hj with hj | hj
-  · -- Low indices: `2^j φ.rOut ≤ c / 2 < ‖ξ‖`.
-    refine φ.littlewoodPaley_eq_zero_of_le_norm (le_trans ?_ hξ.1.le)
-    have h1 : (2 : ℝ) ^ j ≤ (2 ^ a)⁻¹ := by
-      rw [← zpow_natCast, ← zpow_neg]
-      exact zpow_le_zpow_right₀ one_le_two hj
-    calc 2 ^ j * φ.rOut ≤ (2 ^ a)⁻¹ * φ.rOut := mul_le_mul_of_nonneg_right h1 φ.rOut_pos.le
-      _ ≤ c / 2 := by rw [inv_mul_le_iff₀ h2a]; linarith
-  · -- High indices: `‖ξ‖ < 2 c ≤ 2^{j - 1} φ.rIn`.
-    refine φ.littlewoodPaley_eq_zero_of_norm_le (le_trans hξ.2.le ?_)
-    have h1 : (2 : ℝ) ^ b ≤ 2 ^ (j - 1) := by
-      rw [← zpow_natCast]
-      exact zpow_le_zpow_right₀ one_le_two (by omega)
-    nlinarith [mul_le_mul_of_nonneg_right h1 φ.rIn_pos.le]
-
-/-- `Ψ` is positive away from the origin, where the cutoffs sum to `1`. -/
-private theorem sumSq_pos {ξ : E} (hξ : ξ ≠ 0) : 0 < φ.sumSq ξ := by
-  obtain ⟨s, hs⟩ := φ.exists_finset_eventually_littlewoodPaley_eq_zero hξ
-  have hs := hs.self_of_nhds
-  obtain ⟨j, hj⟩ : ∃ j, φ.littlewoodPaley j ξ ≠ 0 := by
-    by_contra! h
-    have h0 : HasSum (fun j ↦ φ.littlewoodPaley j ξ) 0 := by
-      simp only [h]
-      exact hasSum_zero
-    exact one_ne_zero ((φ.hasSum_littlewoodPaley hξ).unique h0)
-  have hjs : j ∈ s := by
-    by_contra h
-    exact hj (hs j h)
-  rw [φ.sumSq_eq_sum hs]
-  exact lt_of_lt_of_le (by positivity) (Finset.single_le_sum (fun i _ ↦ sq_nonneg _) hjs)
-
-/-- `Ψ` is smooth away from the origin, where it is locally a finite sum. -/
-private theorem contDiffAt_sumSq {n : ℕ∞} {ξ₀ : E} (hξ₀ : ξ₀ ≠ 0) :
-    ContDiffAt ℝ n φ.sumSq ξ₀ := by
-  obtain ⟨s, hs⟩ := φ.exists_finset_eventually_littlewoodPaley_eq_zero hξ₀
-  exact (ContDiff.contDiffAt (ContDiff.sum fun j _ ↦ (φ.contDiff_littlewoodPaley j).pow 2)
-    ).congr_of_eventuallyEq (hs.mono fun ξ hξ ↦ φ.sumSq_eq_sum hξ)
-
-/-- `Ψ` is invariant under the dilations by powers of `2`. -/
-private theorem sumSq_two_zpow_inv_smul (l : ℤ) (ξ : E) :
-    φ.sumSq (((2 : ℝ) ^ l)⁻¹ • ξ) = φ.sumSq ξ := by
-  have h (j : ℤ) :
-      φ.littlewoodPaley j (((2 : ℝ) ^ l)⁻¹ • ξ) = φ.littlewoodPaley (j + l) ξ := by
-    rw [φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply, smul_smul, ← mul_inv,
-      ← zpow_add₀ two_ne_zero, ← φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply]
-  simp only [sumSq, h]
-  exact (Equiv.addRight l).tsum_eq fun j ↦ φ.littlewoodPaley j ξ ^ 2
-
-/-! ### The inverse of `Ψ` on a dyadic annulus -/
-
-/-- A Schwartz function `θ₀` equal to `1 / Ψ ((φ.rIn / 2) • η)` on the annulus
-`1 ≤ ‖η‖ ≤ 2 φ.rOut / φ.rIn`: `1 / Ψ` is smooth away from the origin. -/
-private theorem exists_invSumSq : ∃ σ : 𝓢(E, ℂ), Set.EqOn σ
-    (fun η ↦ (((φ.sumSq ((φ.rIn / 2) • η))⁻¹ : ℝ) : ℂ))
-    {η | 1 ≤ ‖η‖ ∧ ‖η‖ ≤ 2 * φ.rOut / φ.rIn} := by
-  have ha : φ.rIn / 2 ≠ 0 := (half_pos φ.rIn_pos).ne'
-  refine SchwartzMap.exists_eqOn_annulus_of_contDiffOn
-    (Complex.ofRealCLM.contDiff.comp_contDiffOn (ContDiffOn.inv (fun η hη ↦ ?_) fun η hη ↦ ?_)) _
-  · exact ((φ.contDiffAt_sumSq (smul_ne_zero ha hη)).comp η
-      (contDiff_const_smul _).contDiffAt).contDiffWithinAt
-  · exact (φ.sumSq_pos (smul_ne_zero ha hη)).ne'
-
-/-- The Schwartz function `θ₀` of `exists_invSumSq`. -/
-private def invSumSq : 𝓢(E, ℂ) :=
-  φ.exists_invSumSq.choose
-
-/-- The symbol `θ(2^{-j} ·)` as a Schwartz function, where `θ = θ₀((φ.rIn / 2)⁻¹ ·)` equals `1 / Ψ`
-on the annulus `φ.rIn / 2 ≤ ‖ξ‖ ≤ φ.rOut` containing the support of `ψ₀`. -/
-private def invSumSqSchwartz (j : ℤ) : 𝓢(E, ℂ) :=
-  SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.smulLeft
-    (Units.mk0 ((2 : ℝ) ^ j * (φ.rIn / 2))⁻¹ (inv_ne_zero
-      (mul_pos (zpow_pos two_pos j) (half_pos φ.rIn_pos)).ne'))) φ.invSumSq
-
-/-- The values of `θ(2^{-j} ·)`. -/
-private theorem invSumSqSchwartz_apply (j : ℤ) (ξ : E) :
-    φ.invSumSqSchwartz j ξ = φ.invSumSq (((2 : ℝ) ^ j * (φ.rIn / 2))⁻¹ • ξ) := by
-  rw [invSumSqSchwartz, SchwartzMap.compCLMOfContinuousLinearEquiv_apply, Function.comp_apply,
-    ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_mk0]
-
-/-- On the support of `ψⱼ`, `θ(2^{-j} ·)` inverts `Ψ`. -/
-private theorem invSumSqSchwartz_mul_sumSq {j : ℤ} {ξ : E} (hξ : φ.littlewoodPaley j ξ ≠ 0) :
-    φ.invSumSqSchwartz j ξ * (φ.sumSq ξ : ℂ) = 1 := by
-  have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
-  have hb : (0 : ℝ) < 2 ^ j * (φ.rIn / 2) := mul_pos h2j (half_pos φ.rIn_pos)
-  have h1 : 2 ^ (j - 1) * φ.rIn < ‖ξ‖ := by
-    by_contra h
-    exact hξ (φ.littlewoodPaley_eq_zero_of_norm_le (not_lt.1 h))
-  have h2 : ‖ξ‖ < 2 ^ j * φ.rOut := by
-    by_contra h
-    exact hξ (φ.littlewoodPaley_eq_zero_of_le_norm (not_lt.1 h))
-  rw [zpow_sub_one₀ two_ne_zero] at h1
-  have hξ0 : ξ ≠ 0 := by
-    rintro rfl
-    exact hξ (φ.littlewoodPaley_apply_zero j)
-  set η := ((2 : ℝ) ^ j * (φ.rIn / 2))⁻¹ • ξ
-  have hη : ‖η‖ = ‖ξ‖ / (2 ^ j * (φ.rIn / 2)) := by
-    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hb.le), inv_mul_eq_div]
-  have hmem : 1 ≤ ‖η‖ ∧ ‖η‖ ≤ 2 * φ.rOut / φ.rIn := by
-    rw [hη, le_div_iff₀ hb, div_le_div_iff₀ hb φ.rIn_pos]
-    constructor <;> nlinarith [φ.rIn_pos]
-  have haη : (φ.rIn / 2) • η = ((2 : ℝ) ^ j)⁻¹ • ξ := by
-    rw [smul_smul, mul_inv, ← mul_assoc, mul_comm (φ.rIn / 2), mul_assoc,
-      mul_inv_cancel₀ (half_pos φ.rIn_pos).ne', mul_one]
-  rw [invSumSqSchwartz_apply, invSumSq, φ.exists_invSumSq.choose_spec hmem]
-  beta_reduce
-  rw [haη, sumSq_two_zpow_inv_smul, Complex.ofReal_inv]
-  exact inv_mul_cancel₀ (Complex.ofReal_ne_zero.2 (φ.sumSq_pos hξ0).ne')
-
-/-- **Reassembling a block from squared blocks**, pointwise: if the cutoffs whose indices differ
-by at least `L` have disjoint supports, then `∑_{|d| < L} ψ_{d + l}² θ(2^{-l} ·) ψₗ = ψₗ`. -/
-private theorem sum_littlewoodPaley_mul_littlewoodPaley_mul_invSumSqSchwartz {L : ℕ}
-    (hL : ∀ j k : ℤ, j + L ≤ k → ∀ ξ : E, φ.littlewoodPaley j ξ * φ.littlewoodPaley k ξ = 0)
-    (l : ℤ) (ξ : E) :
-    ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, (φ.littlewoodPaley (d + l) ξ : ℂ) *
-        ((φ.littlewoodPaley (d + l) ξ : ℂ) *
-          (φ.invSumSqSchwartz l ξ * (φ.littlewoodPaley l ξ : ℂ))) =
-      φ.littlewoodPaley l ξ := by
-  by_cases h : φ.littlewoodPaley l ξ = 0
-  · simp only [h, Complex.ofReal_zero, mul_zero, Finset.sum_const_zero]
-  -- Only the cutoffs `ψⱼ` with `|j - l| < L` are nonzero at `ξ`, so they sum their squares to `Ψ`.
-  have hs : ∀ j ∉ (Finset.Ioo (-(L : ℤ)) L).map (addRightEmbedding l),
-      φ.littlewoodPaley j ξ = 0 := by
-    intro j hj
-    rw [Finset.map_add_right_Ioo, Finset.mem_Ioo, not_and_or, not_lt, not_lt] at hj
-    rcases hj with hj | hj
-    · exact (mul_eq_zero.1 (hL j l (by omega) ξ)).resolve_right h
-    · exact (mul_eq_zero.1 (hL l j (by omega) ξ)).resolve_left h
-  have hsum := φ.sumSq_eq_sum hs
-  rw [Finset.sum_map] at hsum
-  simp only [addRightEmbedding_apply] at hsum
-  have key := φ.invSumSqSchwartz_mul_sumSq h
-  rw [hsum] at key
-  push_cast at key
-  rw [← Finset.sum_congr rfl fun d _ ↦ (by ring :
-      (φ.littlewoodPaley (d + l) ξ : ℂ) ^ 2 *
-          (φ.invSumSqSchwartz l ξ * (φ.littlewoodPaley l ξ : ℂ)) =
-        (φ.littlewoodPaley (d + l) ξ : ℂ) * ((φ.littlewoodPaley (d + l) ξ : ℂ) *
-          (φ.invSumSqSchwartz l ξ * (φ.littlewoodPaley l ξ : ℂ)))), ← Finset.sum_mul]
-  linear_combination (φ.littlewoodPaley l ξ : ℂ) * key
+/-! ### The retarded estimate -/
 
 variable [MeasurableSpace E] [BorelSpace E]
-
-/-- The kernel of the multiplier `θ(2^{-j} ·)` has the same `L¹` norm for every `j`. -/
-private theorem eLpNorm_fourierInv_invSumSqSchwartz (j : ℤ) :
-    eLpNorm (𝓕⁻ ⇑(φ.invSumSqSchwartz j)) 1 volume =
-      eLpNorm (𝓕⁻ ⇑(φ.invSumSqSchwartz 0)) 1 volume := by
-  have h : ⇑(φ.invSumSqSchwartz j) =
-      fun ξ ↦ (⇑(φ.invSumSqSchwartz 0)) (((2 : ℝ) ^ j)⁻¹ • ξ) :=
-    funext fun ξ ↦ by
-      rw [invSumSqSchwartz_apply, invSumSqSchwartz_apply, smul_smul, zpow_zero, one_mul,
-        ← mul_inv, mul_comm (φ.rIn / 2)]
-  rw [h, TauCeti.eLpNorm_fourierInv_comp_inv_smul _ (zpow_pos two_pos j)]
-  simp
-
-/-- The kernel `𝓕⁻ θ` is integrable, so its `L¹` norm is a finite constant. -/
-private theorem coe_toNNReal_eLpNorm_fourierInv_invSumSqSchwartz :
-    ((eLpNorm (𝓕⁻ ⇑(φ.invSumSqSchwartz 0)) 1 volume).toNNReal : ℝ≥0∞) =
-      eLpNorm (𝓕⁻ ⇑(φ.invSumSqSchwartz 0)) 1 volume := by
-  rw [← SchwartzMap.fourierInv_coe]
-  exact ENNReal.coe_toNNReal ((𝓕⁻ (φ.invSumSqSchwartz 0)).memLp 1 volume).eLpNorm_ne_top
-
-/-- The multiplier `Qⱼ` with symbol `θ(2^{-j} ·)`: on frequencies `‖ξ‖ ≈ 2^j` it is `1 / Ψ`. -/
-private def invSumSqMultiplier (j : ℤ) :
-    Lp ℂ 2 (volume : Measure E) →L[ℂ] Lp ℂ 2 (volume : Measure E) :=
-  Lp.fourierMultiplierCLM ℂ ((φ.invSumSqSchwartz j).toLp ∞)
-
-/-- `Qⱼ` costs at most the factor `‖𝓕⁻ θ‖₁` in every mixed norm `L^p_t L^r_x` with `r ≥ 1`. -/
-private theorem eLpNorm_eLpNorm_invSumSqMultiplier_le (j : ℤ)
-    {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : AEStronglyMeasurable F) {p r : ℝ≥0∞}
-    (hp : 0 < p) (hr : 1 ≤ r) :
-    eLpNorm (fun s ↦ eLpNorm (φ.invSumSqMultiplier j (F s)) r volume) p volume ≤
-      eLpNorm (𝓕⁻ ⇑(φ.invSumSqSchwartz 0)) 1 volume *
-        eLpNorm (fun s ↦ eLpNorm (F s) r volume) p volume :=
-  calc _ ≤ eLpNorm (fun s ↦ eLpNorm (𝓕⁻ ⇑(φ.invSumSqSchwartz 0)) 1 volume *
-        eLpNorm (F s) r volume) p volume :=
-      eLpNorm_mono_eNorm (((φ.invSumSqMultiplier j).continuous.comp_aestronglyMeasurable
-        hF).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun s ↦ by
-        rw [eNorm_eq_self, eNorm_eq_self, ← φ.eLpNorm_fourierInv_invSumSqSchwartz j]
-        exact (φ.invSumSqSchwartz j).eLpNorm_fourierMultiplierCLM_toLp_le (F s) hr
-    _ = _ := eLpNorm_const_mul_ennreal_of_pos hp
-
-/-- **Reassembling a block from squared blocks.** If the cutoffs whose indices differ by at least
-`L` have disjoint supports, then `Pₗ g = ∑_{|d| < L} P_{d + l} P_{d + l} Qₗ Pₗ g` for `g ∈ L²`. -/
-private theorem sum_fourierMultiplierCLM_fourierMultiplierCLM_invSumSqMultiplier {L : ℕ}
-    (hL : ∀ j k : ℤ, j + L ≤ k → ∀ ξ : E, φ.littlewoodPaley j ξ * φ.littlewoodPaley k ξ = 0)
-    {m : ℤ → Lp ℂ ∞ (volume : Measure E)}
-    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (l : ℤ)
-    (g : Lp ℂ 2 (volume : Measure E)) :
-    ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, Lp.fourierMultiplierCLM ℂ (m (d + l))
-        (Lp.fourierMultiplierCLM ℂ (m (d + l))
-          (φ.invSumSqMultiplier l (Lp.fourierMultiplierCLM ℂ (m l) g))) =
-      Lp.fourierMultiplierCLM ℂ (m l) g := by
-  set θ : Lp ℂ ∞ (volume : Measure E) := (φ.invSumSqSchwartz l).toLp ∞ volume
-  -- As symbols in `L^∞`, `∑_{|d| < L} ψ_{d + l} ψ_{d + l} θ ψₗ = ψₗ`.
-  have hsym : ∑ d ∈ Finset.Ioo (-(L : ℤ)) L,
-      (m (d + l) • m (d + l) • θ • m l : Lp ℂ ∞ (volume : Measure E)) = m l := by
-    apply Lp.ext
-    filter_upwards [Lp.coeFn_finsetSum (Finset.Ioo (-(L : ℤ)) L)
-        (fun d ↦ (m (d + l) • m (d + l) • θ • m l : Lp ℂ ∞ (volume : Measure E))),
-      (Filter.eventually_all_finset _).2 fun d _ ↦
-        Lp.coeFn_lpSMul (r := ∞) (m (d + l)) (m (d + l) • θ • m l),
-      (Filter.eventually_all_finset _).2 fun d _ ↦ Lp.coeFn_lpSMul (r := ∞) (m (d + l)) (θ • m l),
-      (Filter.eventually_all_finset _).2 fun d _ ↦ hm (d + l),
-      Lp.coeFn_lpSMul (r := ∞) θ (m l), (φ.invSumSqSchwartz l).coeFn_toLp ∞ volume, hm l]
-      with ξ h₁ h₂ h₃ h₄ h₅ h₆ h₇
-    rw [h₁, Finset.sum_apply, h₇,
-      ← φ.sum_littlewoodPaley_mul_littlewoodPaley_mul_invSumSqSchwartz hL l ξ]
-    refine Finset.sum_congr rfl fun d hd ↦ ?_
-    rw [h₂ d hd, Pi.smul_apply', h₃ d hd, Pi.smul_apply', h₅, Pi.smul_apply', h₄ d hd, h₆, h₇,
-      smul_eq_mul, smul_eq_mul, smul_eq_mul]
-  simp only [invSumSqMultiplier, Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
-  conv_rhs => rw [← hsym]
-  rw [Lp.fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply]
-
-/-! ### The retarded estimate -/
 
 omit [FiniteDimensional ℝ E] in
 /-- Shifting the index by `d` costs the factor `2^{dσ}`:
@@ -354,7 +115,7 @@ private theorem eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum {L : �
       ∑' l, ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, eLpNorm ((∫ s in Set.Iio t,
         waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ (m (d + l))
           (Lp.fourierMultiplierCLM ℂ (m (d + l))
-            (φ.invSumSqMultiplier l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
+            (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
           Lp ℂ 2 (volume : Measure E))) r volume := by
   by_cases hint : IntegrableOn (fun s ↦ waveSinPropagator ℂ (t - s) (F s)) (Set.Iio t)
   · refine (φ.eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM hm
@@ -364,11 +125,11 @@ private theorem eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum {L : �
         Lp.fourierMultiplierCLM ℂ (m l) (waveSinPropagator ℂ (t - s) (F s)) =
           ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, waveSinPropagator ℂ (t - s)
             (Lp.fourierMultiplierCLM ℂ (m (d + l)) (Lp.fourierMultiplierCLM ℂ (m (d + l))
-              (φ.invSumSqMultiplier l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) := by
+              (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) := by
       rw [fourierMultiplierCLM_waveSinPropagator_apply, ← map_sum,
-        φ.sum_fourierMultiplierCLM_fourierMultiplierCLM_invSumSqMultiplier hL hm l (F s)]
+        φ.sum_fourierMultiplierCLM_fourierMultiplierCLM_dyadicMultiplier_invSumSq hL hm l (F s)]
     simp_rw [hdec]
-    have hH := (φ.invSumSqMultiplier l).integrable_comp
+    have hH := (φ.dyadicMultiplier ℂ φ.invSumSq l).integrable_comp
       ((Lp.fourierMultiplierCLM ℂ (m l)).integrable_comp hF)
     rw [integral_finsetSum _ fun d _ ↦
         (φ.integrable_waveSinPropagator_sub_littlewoodPaley (hm (d + l)) hH t).integrableOn,
@@ -414,18 +175,18 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
   obtain ⟨C, hC⟩ :=
     φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le
       (p₁ := p₁) (r₁' := r₁') hq hq_top hqr hq₁ hqr₁
-  have hK := φ.coe_toNNReal_eLpNorm_fourierInv_invSumSqSchwartz
-  set K := eLpNorm (𝓕⁻ ⇑(φ.invSumSqSchwartz 0)) 1 volume
+  have hK := ENNReal.coe_toNNReal (φ.memLp_fourierInv_dyadicDilate φ.invSumSq 0 1).eLpNorm_ne_top
+  set K := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invSumSq 0)) 1 volume
   set S := Finset.Ioo (-(L : ℤ)) L
   set σ := ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal) +
     ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r₁⁻¹).toReal - (q₁⁻¹).toReal) - 1
   refine ⟨C * K.toNNReal * ∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal, fun m hm F hF ↦ ?_⟩
   -- `Hₗ = Qₗ Pₗ F` and `a j l t = ‖Φⱼₗ(t)‖_r`, with `Φⱼₗ` the retarded integral of `Pⱼ Pⱼ Hₗ`.
   have hPF (l : ℤ) := (Lp.fourierMultiplierCLM ℂ (m l)).integrable_comp hF
-  have hH (l : ℤ) := (φ.invSumSqMultiplier l).integrable_comp (hPF l)
+  have hH (l : ℤ) := (φ.dyadicMultiplier ℂ φ.invSumSq l).integrable_comp (hPF l)
   set a : ℤ → ℤ → ℝ → ℝ≥0∞ := fun j l t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
     (Lp.fourierMultiplierCLM ℂ (m j) (Lp.fourierMultiplierCLM ℂ (m j)
-      (φ.invSumSqMultiplier l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
+      (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
         Lp ℂ 2 (volume : Measure E))) r volume
   have hpt := φ.eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum hL hm hF
     (one_le_two.trans hr2)
@@ -450,7 +211,7 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
           (hC (d + l) (m (d + l)) (hm (d + l)) _ (hH l)).trans <| by
             rw [mul_assoc, mul_assoc, mul_left_comm K]
             gcongr
-            exact φ.eLpNorm_eLpNorm_invSumSqMultiplier_le l (hPF l).aestronglyMeasurable
+            exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invSumSq l (hPF l).aestronglyMeasurable
               (ENNReal.HolderConjugate.pos p₁ q₁) (ENNReal.HolderConjugate.one_le r₁' r₁)
     _ = _ := by
         simp_rw [← Finset.mul_sum]

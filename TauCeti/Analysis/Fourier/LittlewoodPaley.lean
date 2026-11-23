@@ -18,6 +18,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.Lp.One
@@ -118,6 +119,19 @@ together with the reconstruction `∑_{-N < j ≤ N} Pⱼ f → f`
 dyadic `ℓ¹` and `ℓ^∞` norms: if `‖Pₖ g‖₂ ≤ A 2^{kγ}` for every `k`, then
 `|⟪f, g⟫| ≤ K A ∑ⱼ 2^{jγ} ‖Pⱼ f‖₂` (`ContDiffBump.exists_enorm_inner_le_mul_tsum`), the pairing of
 the homogeneous Besov spaces `\dot B^γ_{2,1}` and `\dot B^{-γ}_{2,∞}`.
+
+## Dyadic multipliers and squared blocks
+
+A symbol `a` smooth and nonvanishing away from the origin is inverted on the support of every `ψⱼ`
+by the dyadic dilates `σ (2^{-j} ·)` of one Schwartz function `σ`
+(`ContDiffBump.exists_eqOn_inv_of_contDiffOn`, `ContDiffBump.dyadicDilate`,
+`ContDiffBump.dyadicDilate_apply_of_littlewoodPaley_ne_zero`). The kernels of the corresponding
+multipliers are `L¹`-normalised dilates of `𝓕⁻ σ`, so the multipliers are bounded on every `Lᵖ`
+and in every mixed norm uniformly in `j` (`ContDiffBump.eLpNorm_dyadicMultiplier_le`,
+`ContDiffBump.eLpNorm_eLpNorm_dyadicMultiplier_le`). For the sum of squares `Ψ = ∑ⱼ ψⱼ²`
+(`ContDiffBump.sumSqLittlewoodPaley`) the inverting multipliers `Qₗ` reassemble a block from
+squared blocks: `Pₗ = ∑_{|j - l| < L} Pⱼ Pⱼ Qₗ Pₗ`
+(`ContDiffBump.sum_fourierMultiplierCLM_fourierMultiplierCLM_dyadicMultiplier_invSumSq`).
 
 ## References
 
@@ -1093,5 +1107,237 @@ theorem exists_enorm_inner_le_mul_tsum [Nontrivial V] (γ : ℝ) :
     fun N ↦ ?_
   rw [Function.comp_apply, inner_sum, mul_comm _ A, mul_assoc, ← hsum, ← ENNReal.tsum_mul_left]
   exact (eNorm_sum_le _ _).trans ((sum_le_tsum _).trans (tsum_le_tsum hk))
+
+end ContDiffBump
+
+/-! ### Dyadic multipliers and squared blocks -/
+
+namespace ContDiffBump
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] (φ : ContDiffBump (0 : V))
+
+/-- The **dyadic dilate** `σ ((2^j φ.rIn / 2)⁻¹ ·)` of a Schwartz function `σ`. It carries the
+annulus `1 ≤ ‖η‖ ≤ 2 φ.rOut / φ.rIn` onto the annulus `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`, which
+contains the support of `ψⱼ`. -/
+def dyadicDilate (σ : 𝓢(V, ℂ)) (j : ℤ) : 𝓢(V, ℂ) :=
+  SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.smulLeft
+    (Units.mk0 ((2 : ℝ) ^ j * (φ.rIn / 2))⁻¹ (inv_ne_zero
+      (mul_pos (zpow_pos two_pos j) (half_pos φ.rIn_pos)).ne'))) σ
+
+/-- The values of the dyadic dilate `σ ((2^j φ.rIn / 2)⁻¹ ·)`. -/
+theorem dyadicDilate_apply (σ : 𝓢(V, ℂ)) (j : ℤ) (ξ : V) :
+    φ.dyadicDilate σ j ξ = σ (((2 : ℝ) ^ j * (φ.rIn / 2))⁻¹ • ξ) := by
+  rw [dyadicDilate, SchwartzMap.compCLMOfContinuousLinearEquiv_apply, Function.comp_apply,
+    ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_mk0]
+
+/-- Each dyadic dilate of `σ` is the rescaling of the one at scale `0`:
+`σⱼ ξ = σ₀ (2^{-j} ξ)`. -/
+theorem dyadicDilate_apply_eq_dyadicDilate_zero_apply (σ : 𝓢(V, ℂ)) (j : ℤ) (ξ : V) :
+    φ.dyadicDilate σ j ξ = φ.dyadicDilate σ 0 (((2 : ℝ) ^ j)⁻¹ • ξ) := by
+  rw [dyadicDilate_apply, dyadicDilate_apply, smul_smul, zpow_zero, one_mul, ← mul_inv,
+    mul_comm (φ.rIn / 2)]
+
+/-- **Dyadic dilates invert a symbol on the supports of the cutoffs.** If `σ` equals
+`1 / a ((φ.rIn / 2) • η)` on the annulus `1 ≤ ‖η‖ ≤ 2 φ.rOut / φ.rIn`, then wherever `ψⱼ ξ ≠ 0`
+the `j`-th dyadic dilate of `σ` is `1 / a (2^{-j} ξ)`. -/
+theorem dyadicDilate_apply_of_littlewoodPaley_ne_zero {a : V → ℝ} {σ : 𝓢(V, ℂ)}
+    (hσ : Set.EqOn σ (fun η ↦ (((a ((φ.rIn / 2) • η))⁻¹ : ℝ) : ℂ))
+      {η | 1 ≤ ‖η‖ ∧ ‖η‖ ≤ 2 * φ.rOut / φ.rIn})
+    {j : ℤ} {ξ : V} (hξ : φ.littlewoodPaley j ξ ≠ 0) :
+    φ.dyadicDilate σ j ξ = (((a (((2 : ℝ) ^ j)⁻¹ • ξ))⁻¹ : ℝ) : ℂ) := by
+  have hb : (0 : ℝ) < 2 ^ j * (φ.rIn / 2) := mul_pos (zpow_pos two_pos j) (half_pos φ.rIn_pos)
+  have h1 : 2 ^ (j - 1) * φ.rIn < ‖ξ‖ := by
+    by_contra h
+    exact hξ (φ.littlewoodPaley_eq_zero_of_norm_le (not_lt.1 h))
+  have h2 : ‖ξ‖ < 2 ^ j * φ.rOut := by
+    by_contra h
+    exact hξ (φ.littlewoodPaley_eq_zero_of_le_norm (not_lt.1 h))
+  rw [zpow_sub_one₀ two_ne_zero] at h1
+  set η := ((2 : ℝ) ^ j * (φ.rIn / 2))⁻¹ • ξ
+  have hη : ‖η‖ = ‖ξ‖ / (2 ^ j * (φ.rIn / 2)) := by
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hb.le), inv_mul_eq_div]
+  have hmem : 1 ≤ ‖η‖ ∧ ‖η‖ ≤ 2 * φ.rOut / φ.rIn := by
+    rw [hη, le_div_iff₀ hb, div_le_div_iff₀ hb φ.rIn_pos]
+    constructor <;> nlinarith [φ.rIn_pos]
+  have haη : (φ.rIn / 2) • η = ((2 : ℝ) ^ j)⁻¹ • ξ := by
+    rw [smul_smul, mul_inv, ← mul_assoc, mul_comm (φ.rIn / 2), mul_assoc,
+      mul_inv_cancel₀ (half_pos φ.rIn_pos).ne', mul_one]
+  rw [dyadicDilate_apply, hσ hmem]
+  beta_reduce
+  rw [haη]
+
+variable [FiniteDimensional ℝ V]
+
+/-- A real symbol `a` smooth and nonvanishing away from the origin is inverted on an annulus by a
+Schwartz function: some `σ` equals `1 / a ((φ.rIn / 2) • η)` for `1 ≤ ‖η‖ ≤ 2 φ.rOut / φ.rIn`, so
+its dyadic dilates invert `a (2^{-j} ·)` on the support of `ψⱼ`
+(`ContDiffBump.dyadicDilate_apply_of_littlewoodPaley_ne_zero`). -/
+theorem exists_eqOn_inv_of_contDiffOn {a : V → ℝ} (ha : ContDiffOn ℝ ∞ a {0}ᶜ)
+    (ha0 : ∀ ξ ≠ 0, a ξ ≠ 0) :
+    ∃ σ : 𝓢(V, ℂ), Set.EqOn σ (fun η ↦ (((a ((φ.rIn / 2) • η))⁻¹ : ℝ) : ℂ))
+      {η | 1 ≤ ‖η‖ ∧ ‖η‖ ≤ 2 * φ.rOut / φ.rIn} := by
+  have hr : φ.rIn / 2 ≠ 0 := (half_pos φ.rIn_pos).ne'
+  refine SchwartzMap.exists_eqOn_annulus_of_contDiffOn
+    (Complex.ofRealCLM.contDiff.comp_contDiffOn (ContDiffOn.inv (fun η hη ↦ ?_) fun η hη ↦ ?_)) _
+  · exact (ha.comp (contDiff_const_smul _).contDiffOn fun ξ hξ ↦ smul_ne_zero hr hξ) η hη
+  · exact ha0 _ (smul_ne_zero hr hη)
+
+/-- A Schwartz function `θ` equal to `1 / Ψ ((φ.rIn / 2) • η)` on the annulus
+`1 ≤ ‖η‖ ≤ 2 φ.rOut / φ.rIn`, where `Ψ = ∑ⱼ ψⱼ²`: `1 / Ψ` is smooth away from the origin. -/
+private theorem exists_invSumSq : ∃ σ : 𝓢(V, ℂ), Set.EqOn σ
+    (fun η ↦ (((φ.sumSqLittlewoodPaley ((φ.rIn / 2) • η))⁻¹ : ℝ) : ℂ))
+    {η | 1 ≤ ‖η‖ ∧ ‖η‖ ≤ 2 * φ.rOut / φ.rIn} :=
+  φ.exists_eqOn_inv_of_contDiffOn
+    (fun _ hξ ↦ (φ.contDiffAt_sumSqLittlewoodPaley hξ).contDiffWithinAt)
+    fun _ hξ ↦ (φ.sumSqLittlewoodPaley_pos hξ).ne'
+
+/-- A Schwartz function equal to `1 / Ψ ((φ.rIn / 2) • η)` on the annulus
+`1 ≤ ‖η‖ ≤ 2 φ.rOut / φ.rIn`, where `Ψ = ∑ⱼ ψⱼ²` is `ContDiffBump.sumSqLittlewoodPaley`. Its
+`j`-th dyadic dilate inverts `Ψ` on the support of `ψⱼ`
+(`ContDiffBump.dyadicDilate_invSumSq_mul_sumSqLittlewoodPaley`). -/
+def invSumSq : 𝓢(V, ℂ) :=
+  φ.exists_invSumSq.choose
+
+/-- On the support of `ψⱼ`, the `j`-th dyadic dilate of `ContDiffBump.invSumSq` inverts
+`Ψ = ∑ⱼ ψⱼ²`. -/
+theorem dyadicDilate_invSumSq_mul_sumSqLittlewoodPaley {j : ℤ} {ξ : V}
+    (hξ : φ.littlewoodPaley j ξ ≠ 0) :
+    φ.dyadicDilate φ.invSumSq j ξ * (φ.sumSqLittlewoodPaley ξ : ℂ) = 1 := by
+  have hξ0 : ξ ≠ 0 := by
+    rintro rfl
+    exact hξ (φ.littlewoodPaley_apply_zero j)
+  rw [φ.dyadicDilate_apply_of_littlewoodPaley_ne_zero (σ := φ.invSumSq)
+      φ.exists_invSumSq.choose_spec hξ,
+    sumSqLittlewoodPaley_two_zpow_inv_smul, Complex.ofReal_inv]
+  exact inv_mul_cancel₀ (Complex.ofReal_ne_zero.2 (φ.sumSqLittlewoodPaley_pos hξ0).ne')
+
+/-- **Reassembling a cutoff from squared cutoffs.** If the cutoffs whose indices differ by at least
+`L` have disjoint supports, as for the `L` of `ContDiffBump.exists_littlewoodPaley_mul_eq_zero φ`,
+then `∑_{|d| < L} ψ_{d + l}² θₗ ψₗ = ψₗ`, where `θₗ` is the `l`-th dyadic dilate of
+`ContDiffBump.invSumSq`. -/
+theorem sum_littlewoodPaley_mul_littlewoodPaley_mul_dyadicDilate_invSumSq {L : ℕ}
+    (hL : ∀ j k : ℤ, j + L ≤ k → ∀ ξ : V, φ.littlewoodPaley j ξ * φ.littlewoodPaley k ξ = 0)
+    (l : ℤ) (ξ : V) :
+    ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, (φ.littlewoodPaley (d + l) ξ : ℂ) *
+        ((φ.littlewoodPaley (d + l) ξ : ℂ) *
+          (φ.dyadicDilate φ.invSumSq l ξ * (φ.littlewoodPaley l ξ : ℂ))) =
+      φ.littlewoodPaley l ξ := by
+  by_cases h : φ.littlewoodPaley l ξ = 0
+  · simp only [h, Complex.ofReal_zero, mul_zero, Finset.sum_const_zero]
+  -- Only the cutoffs `ψⱼ` with `|j - l| < L` are nonzero at `ξ`, so they sum their squares to `Ψ`.
+  have hs : ∀ j ∉ (Finset.Ioo (-(L : ℤ)) L).map (addRightEmbedding l),
+      φ.littlewoodPaley j ξ = 0 := by
+    intro j hj
+    rw [Finset.map_add_right_Ioo, Finset.mem_Ioo, not_and_or, not_lt, not_lt] at hj
+    rcases hj with hj | hj
+    · exact (mul_eq_zero.1 (hL j l (by omega) ξ)).resolve_right h
+    · exact (mul_eq_zero.1 (hL l j (by omega) ξ)).resolve_left h
+  have hsum := φ.sumSqLittlewoodPaley_eq_sum hs
+  rw [Finset.sum_map] at hsum
+  simp only [addRightEmbedding_apply] at hsum
+  have key := φ.dyadicDilate_invSumSq_mul_sumSqLittlewoodPaley h
+  rw [hsum] at key
+  push_cast at key
+  rw [← Finset.sum_congr rfl fun d _ ↦ (by ring :
+      (φ.littlewoodPaley (d + l) ξ : ℂ) ^ 2 *
+          (φ.dyadicDilate φ.invSumSq l ξ * (φ.littlewoodPaley l ξ : ℂ)) =
+        (φ.littlewoodPaley (d + l) ξ : ℂ) * ((φ.littlewoodPaley (d + l) ξ : ℂ) *
+          (φ.dyadicDilate φ.invSumSq l ξ * (φ.littlewoodPaley l ξ : ℂ)))), ← Finset.sum_mul]
+  linear_combination (φ.littlewoodPaley l ξ : ℂ) * key
+
+variable [MeasurableSpace V] [BorelSpace V]
+
+/-- The kernel `𝓕⁻ σⱼ` of a dyadic dilate of a Schwartz function is a Schwartz function, so it lies
+in every `Lᵖ`. -/
+theorem memLp_fourierInv_dyadicDilate (σ : 𝓢(V, ℂ)) (j : ℤ) (p : ℝ≥0∞) :
+    MemLp (𝓕⁻ ⇑(φ.dyadicDilate σ j)) p volume := by
+  rw [← SchwartzMap.fourierInv_coe]
+  exact (𝓕⁻ (φ.dyadicDilate σ j)).memLp p volume
+
+/-- The kernels of the dyadic dilates of `σ` all have the same `L¹` norm. -/
+theorem eLpNorm_fourierInv_dyadicDilate (σ : 𝓢(V, ℂ)) (j : ℤ) :
+    eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ j)) 1 volume =
+      eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) 1 volume := by
+  have h : ⇑(φ.dyadicDilate σ j) = fun ξ ↦ (⇑(φ.dyadicDilate σ 0)) (((2 : ℝ) ^ j)⁻¹ • ξ) :=
+    funext (φ.dyadicDilate_apply_eq_dyadicDilate_zero_apply σ j)
+  rw [h, TauCeti.eLpNorm_fourierInv_comp_inv_smul _ (zpow_pos two_pos j)]
+  simp
+
+variable (F : Type*) [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- The **dyadic multiplier**: the `L²` Fourier multiplier whose symbol is the `j`-th dyadic dilate
+of the Schwartz function `σ`. -/
+def dyadicMultiplier (σ : 𝓢(V, ℂ)) (j : ℤ) :
+    Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V) :=
+  Lp.fourierMultiplierCLM F ((φ.dyadicDilate σ j).toLp ∞)
+
+/-- Unfolding `ContDiffBump.dyadicMultiplier`. -/
+theorem dyadicMultiplier_def (σ : 𝓢(V, ℂ)) (j : ℤ) :
+    φ.dyadicMultiplier F σ j = Lp.fourierMultiplierCLM F ((φ.dyadicDilate σ j).toLp ∞) :=
+  (rfl)
+
+variable {F}
+
+/-- **Dyadic multipliers are bounded on `Lᵖ` uniformly in the scale.** For every `f ∈ L²(V, F)`
+and `1 ≤ p ≤ ∞`, `‖Mⱼ f‖_p ≤ ‖𝓕⁻ σ₀‖₁ ‖f‖_p`, where `Mⱼ` is the multiplier with symbol the `j`-th
+dyadic dilate `σⱼ` of `σ`: its kernel `𝓕⁻ σⱼ` has the same `L¹` norm as `𝓕⁻ σ₀`. -/
+theorem eLpNorm_dyadicMultiplier_le (σ : 𝓢(V, ℂ)) (j : ℤ) (f : Lp F 2 (volume : Measure V))
+    {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (φ.dyadicMultiplier F σ j f) p volume ≤
+      eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) 1 volume * eLpNorm f p volume := by
+  rw [← φ.eLpNorm_fourierInv_dyadicDilate σ j]
+  exact (φ.dyadicDilate σ j).eLpNorm_fourierMultiplierCLM_toLp_le f hp
+
+/-- **Dyadic multipliers in mixed norms.** For an almost everywhere strongly measurable
+`G : β → L²(V, F)`, the multiplier `Mⱼ` with symbol the `j`-th dyadic dilate of `σ` costs at most
+the factor `‖𝓕⁻ σ₀‖₁` in every mixed norm `L^p_b L^r_x` with `r ≥ 1`, uniformly in `j`. -/
+theorem eLpNorm_eLpNorm_dyadicMultiplier_le (σ : 𝓢(V, ℂ)) (j : ℤ) {β : Type*}
+    [MeasurableSpace β] {ρ : Measure β} {G : β → Lp F 2 (volume : Measure V)}
+    (hG : AEStronglyMeasurable G ρ) {p r : ℝ≥0∞} (hp : 0 < p) (hr : 1 ≤ r) :
+    eLpNorm (fun b ↦ eLpNorm (φ.dyadicMultiplier F σ j (G b)) r volume) p ρ ≤
+      eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) 1 volume *
+        eLpNorm (fun b ↦ eLpNorm (G b) r volume) p ρ :=
+  calc _ ≤ eLpNorm (fun b ↦ eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) 1 volume *
+        eLpNorm (G b) r volume) p ρ :=
+      eLpNorm_mono_eNorm (((φ.dyadicMultiplier F σ j).continuous.comp_aestronglyMeasurable
+        hG).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun b ↦ by
+        simpa only [eNorm_eq_self] using φ.eLpNorm_dyadicMultiplier_le σ j (G b) hr
+    _ = _ := eLpNorm_const_mul_ennreal_of_pos hp
+
+/-- **Reassembling a block from squared blocks.** If the cutoffs whose indices differ by at least
+`L` have disjoint supports, as for the `L` of `ContDiffBump.exists_littlewoodPaley_mul_eq_zero φ`,
+then `Pₗ f = ∑_{|d| < L} P_{d + l} P_{d + l} Qₗ Pₗ f` for every `f ∈ L²(V, F)`. Here `Pⱼ` is the
+`L²` Fourier multiplier with any symbol in `L^∞` almost everywhere equal to `ψⱼ`, and `Qₗ` is the
+dyadic multiplier of `ContDiffBump.invSumSq`, which inverts `∑ⱼ ψⱼ²` on the support of `ψₗ`. -/
+theorem sum_fourierMultiplierCLM_fourierMultiplierCLM_dyadicMultiplier_invSumSq {L : ℕ}
+    (hL : ∀ j k : ℤ, j + L ≤ k → ∀ ξ : V, φ.littlewoodPaley j ξ * φ.littlewoodPaley k ξ = 0)
+    {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
+    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (l : ℤ)
+    (f : Lp F 2 (volume : Measure V)) :
+    ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, Lp.fourierMultiplierCLM F (m (d + l))
+        (Lp.fourierMultiplierCLM F (m (d + l))
+          (φ.dyadicMultiplier F φ.invSumSq l (Lp.fourierMultiplierCLM F (m l) f))) =
+      Lp.fourierMultiplierCLM F (m l) f := by
+  set θ : Lp ℂ ∞ (volume : Measure V) := (φ.dyadicDilate φ.invSumSq l).toLp ∞ volume
+  -- As symbols in `L^∞`, `∑_{|d| < L} ψ_{d + l} ψ_{d + l} θ ψₗ = ψₗ`.
+  have hsym : ∑ d ∈ Finset.Ioo (-(L : ℤ)) L,
+      (m (d + l) • m (d + l) • θ • m l : Lp ℂ ∞ (volume : Measure V)) = m l := by
+    apply Lp.ext
+    filter_upwards [Lp.coeFn_finsetSum (Finset.Ioo (-(L : ℤ)) L)
+        (fun d ↦ (m (d + l) • m (d + l) • θ • m l : Lp ℂ ∞ (volume : Measure V))),
+      (Filter.eventually_all_finset _).2 fun d _ ↦
+        Lp.coeFn_lpSMul (r := ∞) (m (d + l)) (m (d + l) • θ • m l),
+      (Filter.eventually_all_finset _).2 fun d _ ↦ Lp.coeFn_lpSMul (r := ∞) (m (d + l)) (θ • m l),
+      (Filter.eventually_all_finset _).2 fun d _ ↦ hm (d + l),
+      Lp.coeFn_lpSMul (r := ∞) θ (m l), (φ.dyadicDilate φ.invSumSq l).coeFn_toLp ∞ volume, hm l]
+      with ξ h₁ h₂ h₃ h₄ h₅ h₆ h₇
+    rw [h₁, Finset.sum_apply, h₇,
+      ← φ.sum_littlewoodPaley_mul_littlewoodPaley_mul_dyadicDilate_invSumSq hL l ξ]
+    refine Finset.sum_congr rfl fun d hd ↦ ?_
+    rw [h₂ d hd, Pi.smul_apply', h₃ d hd, Pi.smul_apply', h₅, Pi.smul_apply', h₄ d hd, h₆, h₇,
+      smul_eq_mul, smul_eq_mul, smul_eq_mul]
+  simp only [dyadicMultiplier_def, Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
+  conv_rhs => rw [← hsym]
+  rw [Lp.fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply]
 
 end ContDiffBump
