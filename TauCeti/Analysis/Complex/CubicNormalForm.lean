@@ -112,45 +112,46 @@ open TauCeti
 
 /-! ### Local inflection decomposition -/
 
-/-- **Local inflection curve and quadratic remainder of `∂p/∂t`.** Let `p(α, t)` be analytic at
-`(α₀, t₀)` with `∂²p/∂t² (α₀, t₀) = 0` and `∂³p/∂t³ (α₀, t₀) ≠ 0`. Then there exist analytic
-functions `τ` and `c` at `α₀` and `U` at `(α₀, 0)` such that `τ(α₀) = t₀`,
-`∂²p/∂t² (α, τ(α)) = 0` near `α₀`, and `∂p/∂t (α, τ(α) + s) = c(α) + s ^ 2 * U(α, s)` near
-`(α₀, 0)`, with `c(α₀) = ∂p/∂t (α₀, t₀)`, `c'(α₀) = ∂²p/∂α∂t (α₀, t₀)`, and
-`U(α₀, 0) = ½ ∂³p/∂t³ (α₀, t₀)`. -/
-theorem exists_deriv_eq_add_sq_mul {p : ℂ × ℂ → ℂ} {α₀ t₀ : ℂ} (hp : AnalyticAt ℂ p (α₀, t₀))
+/-- **Local inflection curve and quadratic remainder of `∂p/∂t`.** Let `p : E × 𝕜 → 𝕜` (over
+`RCLike 𝕜`, with `E` a complete `𝕜`-normed space) be analytic at `(α₀, t₀)` with
+`∂²p/∂t² (α₀, t₀) = 0` and `∂³p/∂t³ (α₀, t₀) ≠ 0`. Then there exist analytic functions `τ` and `c`
+at `α₀` and `U` at `(α₀, 0)` such that `τ(α₀) = t₀`, `∂²p/∂t² (α, τ(α)) = 0` near `α₀`, and
+`∂p/∂t (α, τ(α) + s) = c(α) + s ^ 2 * U(α, s)` near `(α₀, 0)`, with `c(α₀) = ∂p/∂t (α₀, t₀)`,
+`fderiv 𝕜 c α₀ = fderiv 𝕜 (fun α => ∂p/∂t (α, t₀)) α₀`, and `U(α₀, 0) = ½ ∂³p/∂t³ (α₀, t₀)`. -/
+theorem exists_deriv_eq_add_sq_mul {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [CompleteSpace E] {p : E × 𝕜 → 𝕜} {α₀ : E} {t₀ : 𝕜}
+    (hp : AnalyticAt 𝕜 p (α₀, t₀))
     (h₂ : deriv (deriv fun t => p (α₀, t)) t₀ = 0)
     (h₃ : deriv (deriv (deriv fun t => p (α₀, t))) t₀ ≠ 0) :
-    ∃ τ c : ℂ → ℂ, ∃ U : ℂ × ℂ → ℂ,
-      AnalyticAt ℂ τ α₀ ∧ AnalyticAt ℂ c α₀ ∧ AnalyticAt ℂ U (α₀, 0) ∧
+    ∃ τ c : E → 𝕜, ∃ U : E × 𝕜 → 𝕜,
+      AnalyticAt 𝕜 τ α₀ ∧ AnalyticAt 𝕜 c α₀ ∧ AnalyticAt 𝕜 U (α₀, 0) ∧
       τ α₀ = t₀ ∧ c α₀ = deriv (fun t => p (α₀, t)) t₀ ∧
-      deriv c α₀ = deriv (fun α => deriv (fun t => p (α, t)) t₀) α₀ ∧
+      fderiv 𝕜 c α₀ = fderiv 𝕜 (fun α => deriv (fun t => p (α, t)) t₀) α₀ ∧
       U (α₀, 0) = deriv (deriv (deriv fun t => p (α₀, t))) t₀ / 2 ∧
       (∀ᶠ α in 𝓝 α₀, deriv (deriv fun t => p (α, t)) (τ α) = 0) ∧
       ∀ᶠ q in 𝓝 (α₀, 0),
         deriv (fun t => p (q.1, t)) (τ q.1 + q.2) = c q.1 + q.2 ^ 2 * U q := by
-  set p₁ : ℂ × ℂ → ℂ := fun q => deriv (fun t => p (q.1, t)) q.2
-  set p₂ : ℂ × ℂ → ℂ := fun q => deriv (deriv fun t => p (q.1, t)) q.2
-  have hp₁ : AnalyticAt ℂ p₁ (α₀, t₀) := hp.deriv_snd
-  have hp₂ : AnalyticAt ℂ p₂ (α₀, t₀) := hp₁.deriv_snd
+  set p₁ : E × 𝕜 → 𝕜 := fun q => deriv (fun t => p (q.1, t)) q.2
+  set p₂ : E × 𝕜 → 𝕜 := fun q => deriv (deriv fun t => p (q.1, t)) q.2
+  have hp₁ : AnalyticAt 𝕜 p₁ (α₀, t₀) := hp.deriv_snd
+  have hp₂ : AnalyticAt 𝕜 p₂ (α₀, t₀) := hp₁.deriv_snd
   obtain ⟨τ, hτ, hτ0, hτeq, -⟩ := hp₂.exists_analyticAt_eventually_eq_zero_iff h₂ h₃
   dsimp only at hτ hτ0 hτeq
-  set c : ℂ → ℂ := fun α => p₁ (α, τ α)
-  have hc : AnalyticAt ℂ c α₀ := hp₁.comp_of_eq (analyticAt_id.prod hτ) (by simp [hτ0])
-  have hc_deriv : deriv c α₀ = deriv (fun α => p₁ (α, t₀)) α₀ := by
-    have hp₁_at : HasFDerivAt p₁ (fderiv ℂ p₁ (α₀, τ α₀)) (α₀, τ α₀) :=
+  set c : E → 𝕜 := fun α => p₁ (α, τ α)
+  have hc : AnalyticAt 𝕜 c α₀ := hp₁.comp_of_eq (analyticAt_id.prod hτ) (by simp [hτ0])
+  have hc_deriv : fderiv 𝕜 c α₀ = fderiv 𝕜 (fun α => p₁ (α, t₀)) α₀ := by
+    have hp₁_at : HasFDerivAt p₁ (fderiv 𝕜 p₁ (α₀, τ α₀)) (α₀, τ α₀) :=
       (hτ0.symm ▸ hp₁.differentiableAt).hasFDerivAt
-    have hzero : fderiv ℂ (fun t => p₁ (α₀, t)) (τ α₀) = 0 := by
+    have hzero : fderiv 𝕜 (fun t => p₁ (α₀, t)) (τ α₀) = 0 := by
       ext
       simpa [hτ0, p₁] using h₂
-    have hf := hp₁_at.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero
-      hτ.differentiableAt hzero
-    simpa [c, hτ0, fderiv_apply_one_eq_deriv] using congrArg (· (1 : ℂ)) hf
-  set g : ℂ × ℂ → ℂ := fun q => p₁ (q.1, τ q.1 + q.2)
-  have hg : AnalyticAt ℂ g (α₀, 0) :=
+    simpa [c, hτ0] using
+      hp₁_at.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero hτ.differentiableAt hzero
+  set g : E × 𝕜 → 𝕜 := fun q => p₁ (q.1, τ q.1 + q.2)
+  have hg : AnalyticAt 𝕜 g (α₀, 0) :=
     hp₁.comp_of_eq (analyticAt_fst.prod
       ((hτ.comp_of_eq analyticAt_fst rfl).add analyticAt_snd)) (by simp [hτ0])
-  have hg_sub : AnalyticAt ℂ (fun q : ℂ × ℂ => g q - c q.1) (α₀, 0) :=
+  have hg_sub : AnalyticAt 𝕜 (fun q : E × 𝕜 => g q - c q.1) (α₀, 0) :=
     hg.sub (hc.comp_of_eq analyticAt_fst rfl)
   have hord : ∀ᶠ α in 𝓝 α₀, ((2 : ℕ) : ℕ∞) ≤ analyticOrderAt (fun s => g (α, s) - c α) 0 := by
     filter_upwards [hτeq, hg_sub.eventually_analyticAt_curry_right] with α hα hGα
@@ -164,10 +165,10 @@ theorem exists_deriv_eq_add_sq_mul {p : ℂ × ℂ → ℂ} {α₀ t₀ : ℂ} (
     hGU.mono fun q hq => by simp only [sub_zero, smul_eq_mul] at hq; linear_combination hq
   have hU0' : U (α₀, 0) = deriv (deriv (deriv fun t => p (α₀, t))) t₀ / 2 := by
     have hgs : (fun s => g (α₀, s)) =ᶠ[𝓝 0] fun s => c α₀ + s ^ 2 * U (α₀, s) :=
-      ((continuous_const.prodMk continuous_id).tendsto (0 : ℂ)).eventually hgeq
+      ((continuous_const.prodMk continuous_id).tendsto (0 : 𝕜)).eventually hgeq
     have hdd : iteratedDeriv 2 (fun s => g (α₀, s)) 0 = 2 * U (α₀, 0) := by
       rw [hgs.iteratedDeriv_eq 2, iteratedDeriv_const_add (by norm_num : 0 < 2)]
-      simpa using TauCeti.iteratedDeriv_pow_sub_smul_self (n := 2) (a := (0 : ℂ))
+      simpa using TauCeti.iteratedDeriv_pow_sub_smul_self (n := 2) (a := (0 : 𝕜))
         hU.curry_right.contDiffAt
     have htrans : iteratedDeriv 2 (fun s => g (α₀, s)) 0 =
         deriv (deriv (deriv fun t => p (α₀, t))) t₀ := by
@@ -210,9 +211,12 @@ private theorem ker_cubicLinearCLM {R : ℝ} (hR : 0 < R) :
     rw [← hx]
     apply Subtype.ext
     ext z
-    rw [← DiscAlgebra.extend_apply _ z, ← DiscAlgebra.extend_apply _ z]
-    simp [q₁, cubicLinearCLM, sq]
-    ring
+    rw [ContinuousLinearMap.coe_coe, cubicLinearCLM_apply_coe, ← DiscAlgebra.extend_apply _ z]
+    simp only [q₁, DiscAlgebra.extend_add, DiscAlgebra.extend_mul, DiscAlgebra.extend_sub,
+      Pi.add_apply, Pi.mul_apply, Pi.sub_apply, DiscAlgebra.extend_coord z.property,
+      DiscAlgebra.extend_algebraMap _ z.property]
+    rw [DiscAlgebra.extend_apply δu z]
+    linear_combination
   obtain ⟨hq₁, hη⟩ := (DiscAlgebra.coord_sub_algebraMap_mul_add_eq_iff h0).1 h_eq1
   simp only [map_zero, DiscAlgebra.extend_zero, Pi.zero_apply] at hq₁ hη
   have h_eq2 : (DiscAlgebra.coord 0 R - algebraMap ℂ (discAlgebra 0 R) 0) * δu +
@@ -315,15 +319,17 @@ private theorem exists_analyticAt_ball_closedBall {E : Type*} [NormedAddCommGrou
     exact max_lt ((mem_ball.1 hβ).trans hR_lt_r₁) ((mem_closedBall.1 hs).trans_lt hR_lt_r₁)
   · exact mem_ball.2 ((mem_closedBall.1 hs).trans_lt hR_lt_r₂)
 
-/-- Normalized cubic normal-form existence when `F(0, s) = s ^ 3 / 3` near `s = 0`. -/
-private theorem exists_cubic_normal_form_of_normalized {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [FiniteDimensional ℂ E] {F : E × ℂ → ℂ} (hF : AnalyticAt ℂ F (0, 0))
-    (hF0 : ∀ᶠ s in 𝓝 (0 : ℂ), F (0, s) = s ^ 3 / 3) :
-    ∃ ζ₀ η₀ : E → ℂ, ∃ W : E × ℂ → ℂ,
-      AnalyticAt ℂ ζ₀ 0 ∧ AnalyticAt ℂ η₀ 0 ∧ AnalyticAt ℂ W (0, 0) ∧
-      ζ₀ 0 = 0 ∧ η₀ 0 = 0 ∧ W (0, 0) = 0 ∧ deriv (fun s => W (0, s)) 0 = 1 ∧
-      ∀ᶠ q in 𝓝 ((0 : E), (0 : ℂ)), F q = W q ^ 3 / 3 - ζ₀ q.1 * W q + η₀ q.1 := by
-  obtain ⟨δ, R, hδ, hR, hFδ, hF0_cb⟩ := exists_analyticAt_ball_closedBall hF hF0
+/-- Local right inverse of `cubicMap R` sending `β` near `0` to `(W(β, ·), (ζ₀(β), η₀(β)))`
+solving `cubicMap R (Φ β) = F(β, ·)` on `closedBall 0 R`. -/
+private theorem exists_analyticAt_cubicMap_eq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [FiniteDimensional ℂ E] {F : E × ℂ → ℂ} {δ R : ℝ}
+    (hδ : 0 < δ) (hR : 0 < R)
+    (hFδ : ∀ β ∈ ball (0 : E) δ, ∀ s ∈ closedBall (0 : ℂ) R, AnalyticAt ℂ F (β, s))
+    (hF0_cb : ∀ s ∈ closedBall (0 : ℂ) R, F (0, s) = s ^ 3 / 3) :
+    ∃ Φ : E → discAlgebra 0 R × (ℂ × ℂ),
+      AnalyticAt ℂ Φ 0 ∧ Φ 0 = (DiscAlgebra.coord 0 R, (0, 0)) ∧
+      ∀ᶠ β in 𝓝 (0 : E), ∀ s : closedBall (0 : ℂ) R,
+        (cubicMap R (Φ β) : C(closedBall (0 : ℂ) R, ℂ)) s = F (β, s.val) := by
   set x₀ : discAlgebra 0 R × (ℂ × ℂ) := (DiscAlgebra.coord 0 R, (0, 0))
   have hfderiv : fderiv ℂ (cubicMap R) x₀ = ↑(cubicLinearEquiv hR) := by
     rw [(hasFDerivAt_cubicMap R).fderiv, cubicLinearEquiv, ContinuousLinearEquiv.coe_ofBijective]
@@ -332,48 +338,56 @@ private theorem exists_cubic_normal_form_of_normalized {E : Type*} [NormedAddCom
   let slice : E → discAlgebra 0 R := fun β => DiscAlgebra.mkD 0 R (fun s => F (β, s)) 0
   have hslice_apply {β : E} (hβ : β ∈ ball (0 : E) δ) (s : closedBall (0 : ℂ) R) :
       (slice β : C(closedBall (0 : ℂ) R, ℂ)) s = F (β, s.val) :=
-    DiscAlgebra.mkD_apply_of_analyticOnNhd
-      (fun z hz => (hFδ β hβ z hz).curry_right) s
+    DiscAlgebra.mkD_apply_of_analyticOnNhd (fun z hz => (hFδ β hβ z hz).curry_right) s
   have hslice_eq : slice 0 = cubicMap R x₀ := by
-    apply Subtype.ext
-    ext s
+    apply Subtype.ext; ext s
     rw [hslice_apply (mem_ball_self hδ)]
     simpa [cubicMap_apply_coe, x₀] using hF0_cb s.val s.property
   have hslice_an : AnalyticAt ℂ slice 0 :=
     DiscAlgebra.analyticAt_mkD_of_analyticAt (hFδ 0 (mem_ball_self hδ))
   have hmem_tgt : slice 0 ∈ Θ.target := by rw [hslice_eq, ← hΘ]; exact Θ.map_source hx₀_src
   set Φ : E → discAlgebra 0 R × (ℂ × ℂ) := Θ.symm ∘ slice
-  have hΦ_an : AnalyticAt ℂ Φ 0 := (hΘsymm _ hmem_tgt).comp hslice_an
-  have hΦ0 : Φ 0 = x₀ := by
-    simp only [Φ, Function.comp_apply, hslice_eq, ← hΘ]
-    exact Θ.left_inv hx₀_src
+  refine ⟨Φ, (hΘsymm _ hmem_tgt).comp hslice_an, ?_, ?_⟩
+  · simpa only [Φ, Function.comp_apply, hslice_eq, ← hΘ] using Θ.left_inv hx₀_src
+  · have hev_tgt : ∀ᶠ β in 𝓝 (0 : E), slice β ∈ Θ.target :=
+      hslice_an.continuousAt.eventually (Θ.open_target.mem_nhds hmem_tgt)
+    filter_upwards [hev_tgt, ball_mem_nhds 0 hδ] with β hβ_tgt hβ_δ s
+    have hright : cubicMap R (Φ β) = slice β := by simpa [Φ, hΘ] using Θ.right_inv hβ_tgt
+    rw [hright, hslice_apply hβ_δ s]
+
+/-- Normalized cubic normal-form existence when `F(0, s) = s ^ 3 / 3` near `s = 0`. -/
+private theorem exists_cubic_normal_form_of_normalized {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [FiniteDimensional ℂ E] {F : E × ℂ → ℂ} (hF : AnalyticAt ℂ F (0, 0))
+    (hF0 : ∀ᶠ s in 𝓝 (0 : ℂ), F (0, s) = s ^ 3 / 3) :
+    ∃ ζ₀ η₀ : E → ℂ, ∃ W : E × ℂ → ℂ,
+      AnalyticAt ℂ ζ₀ 0 ∧ AnalyticAt ℂ η₀ 0 ∧ AnalyticAt ℂ W (0, 0) ∧
+      ζ₀ 0 = 0 ∧ η₀ 0 = 0 ∧ W (0, 0) = 0 ∧ deriv (fun s => W (0, s)) 0 = 1 ∧
+      ∀ᶠ q in 𝓝 ((0 : E), (0 : ℂ)), F q = W q ^ 3 / 3 - ζ₀ q.1 * W q + η₀ q.1 := by
+  -- 1. Invert the disc-algebra operator on a small polydisc `ball 0 δ ×ˢ closedBall 0 R`.
+  obtain ⟨δ, R, hδ, hR, hFδ, hF0_cb⟩ := exists_analyticAt_ball_closedBall hF hF0
+  obtain ⟨Φ, hΦ_an, hΦ0, hΦ_eq⟩ := exists_analyticAt_cubicMap_eq hδ hR hFδ hF0_cb
+  -- 2. Extract the coordinate change `W` and verify its normalization at `β = 0`.
   set W : E × ℂ → ℂ := fun q => DiscAlgebra.extend (Φ q.1).1 q.2
   have hW_an : AnalyticAt ℂ W (0, 0) :=
     DiscAlgebra.analyticAt_extend_of_analyticAt (mem_ball_self hR)
       (((ContinuousLinearMap.fst ℂ (discAlgebra 0 R) (ℂ × ℂ)).analyticAt _).comp hΦ_an)
   have hW0_slice : ∀ s ∈ closedBall (0 : ℂ) R, W (0, s) = s := fun s hs => by
-    simp [W, hΦ0, x₀, hs]
+    simp [W, hΦ0, hs]
   have hW_deriv : deriv (fun s => W (0, s)) 0 = 1 := by
     have heq : (fun s => W (0, s)) =ᶠ[𝓝 0] id := by
       filter_upwards [closedBall_mem_nhds (0 : ℂ) hR] with s hs using hW0_slice s hs
     rw [heq.deriv_eq, deriv_id]
+  -- 3. Read off the normal form pointwise on `ball 0 R` from `cubicMap R (Φ β) = F(β, ·)`.
   refine ⟨fun β => (Φ β).2.1, fun β => (Φ β).2.2, W,
     (((ContinuousLinearMap.fst ℂ ℂ ℂ).comp
       (.snd ℂ (discAlgebra 0 R) (ℂ × ℂ))).analyticAt _).comp hΦ_an,
     (((ContinuousLinearMap.snd ℂ ℂ ℂ).comp
       (.snd ℂ (discAlgebra 0 R) (ℂ × ℂ))).analyticAt _).comp hΦ_an,
-    hW_an, by simp [hΦ0, x₀], by simp [hΦ0, x₀], hW0_slice 0 (mem_closedBall_self hR.le),
-    hW_deriv, ?_⟩
-  have hev_tgt : ∀ᶠ β in 𝓝 (0 : E), slice β ∈ Θ.target :=
-    hslice_an.continuousAt.eventually (Θ.open_target.mem_nhds hmem_tgt)
-  filter_upwards [prod_mem_nhds (hev_tgt.and (ball_mem_nhds 0 hδ)) (ball_mem_nhds 0 hR)]
-    with ⟨β, s⟩ ⟨⟨hβ_tgt, hβ_δ⟩, hs_R⟩
-  have hs_cb : s ∈ closedBall (0 : ℂ) R := ball_subset_closedBall hs_R
-  have hright : cubicMap R (Φ β) = slice β := by simpa [Φ, hΘ] using Θ.right_inv hβ_tgt
-  have hval := congrArg (fun f : discAlgebra 0 R => (f : C(closedBall (0 : ℂ) R, ℂ)) ⟨s, hs_cb⟩)
-    hright
-  rw [cubicMap_apply_coe, hslice_apply hβ_δ] at hval
-  simpa [W, DiscAlgebra.extend_apply _ ⟨s, hs_cb⟩] using hval.symm
+    hW_an, by simp [hΦ0], by simp [hΦ0], hW0_slice 0 (mem_closedBall_self hR.le), hW_deriv, ?_⟩
+  filter_upwards [prod_mem_nhds hΦ_eq (ball_mem_nhds 0 hR)] with ⟨β, s⟩ ⟨hβ, hs_R⟩
+  have hval := hβ ⟨s, ball_subset_closedBall hs_R⟩
+  rw [cubicMap_apply_coe] at hval
+  simpa [W, DiscAlgebra.extend_apply _ ⟨s, ball_subset_closedBall hs_R⟩] using hval.symm
 
 end DiscAlgebraOperator
 
