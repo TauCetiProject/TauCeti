@@ -10,6 +10,7 @@ public import TauCeti.Algebra.BrauerGroup.Group
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import Mathlib.RingTheory.IsAdjoinRoot
 import TauCeti.Algebra.BrauerGroup.Trivial
 
 /-!
@@ -46,6 +47,8 @@ isomorphism by counting dimensions; so `(a, 1)_ζ` is split and its Brauer class
 
 * `TauCeti.SymbolAlgebra.isSimpleRing`: the cyclic algebra is simple.
 * `TauCeti.SymbolAlgebra.isCentral`: the cyclic algebra is central.
+* `TauCeti.SymbolAlgebra.brauerClass_eq_mk`: the Brauer class is that of `(a, b)_ζ` as a
+  central simple algebra.
 * `TauCeti.SymbolAlgebra.brauerClass_one_right`: the Brauer class of `(a, 1)_ζ` is trivial.
 
 ## References
@@ -253,13 +256,15 @@ noncomputable def brauerClass (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) (hb : 
   have := finite (a := a) (b := b) hζ.pow_eq_one
   BrauerGroup.mk (CSA.of K (SymbolAlgebra n ζ a b))
 
-/-- `K[X]/(X ^ n - a)` has dimension `n`. -/
-private theorem finrank_adjoinRoot (a : K) : Module.finrank K (AdjoinRoot (X ^ n - C a)) = n := by
-  rw [(AdjoinRoot.powerBasis' (monic_X_pow_sub_C a (NeZero.ne n))).finrank,
-    AdjoinRoot.powerBasis'_dim, natDegree_X_pow_sub_C]
-
-private theorem nontrivial_adjoinRoot (a : K) : Nontrivial (AdjoinRoot (X ^ n - C a)) :=
-  Module.nontrivial_of_finrank_pos (R := K) (by rw [finrank_adjoinRoot]; exact NeZero.pos n)
+/-- The Brauer class of the cyclic algebra `(a, b)_ζ` is the class of `(a, b)_ζ` as a central
+simple algebra, for any instances of centrality, simplicity and finite dimensionality (such as
+`isCentral`, `isSimpleRing` and `finite`). -/
+theorem brauerClass_eq_mk (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) (hb : b ≠ 0)
+    [Algebra.IsCentral K (SymbolAlgebra n ζ a b)] [IsSimpleRing (SymbolAlgebra n ζ a b)]
+    [FiniteDimensional K (SymbolAlgebra n ζ a b)] :
+    brauerClass hζ ha hb = BrauerGroup.mk (CSA.of K (SymbolAlgebra n ζ a b)) := by
+  -- The instance arguments are propositions, so they agree with those chosen in `brauerClass`.
+  rw [brauerClass]
 
 /-- `(a, 1)_ζ` is the endomorphism algebra of the `n`-dimensional space `K[X]/(X ^ n - a)`, through
 its representation `TauCeti.SymbolAlgebra.toEndAdjoinRoot`. -/
@@ -269,13 +274,18 @@ noncomputable def algEquivEndAdjoinRoot (hζ : IsPrimitiveRoot ζ n) (ha : a ≠
   have := finite (a := a) (b := 1) hζ.pow_eq_one
   have := (monic_X_pow_sub_C a (NeZero.ne n)).finite_adjoinRoot
   have := (monic_X_pow_sub_C a (NeZero.ne n)).free_adjoinRoot
-  have := nontrivial_adjoinRoot (n := n) a
+  have : Nontrivial (AdjoinRoot (X ^ n - C a)) := AdjoinRoot.nontrivial _ (by
+    rw [degree_X_pow_sub_C (NeZero.pos n)]
+    exact_mod_cast NeZero.ne n)
   AlgEquiv.ofBijective (toEndAdjoinRoot a hζ.pow_eq_one) <| by
     have hinj := (toEndAdjoinRoot a hζ.pow_eq_one).toRingHom.injective
+    have hfin : Module.finrank K (AdjoinRoot (X ^ n - C a)) = n :=
+      (AdjoinRoot.isAdjoinRootMonic _ (monic_X_pow_sub_C a (NeZero.ne n))).finrank.trans
+        (natDegree_X_pow_sub_C (n := n) a)
     refine ⟨hinj, ?_⟩
     exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f :=
       (toEndAdjoinRoot a hζ.pow_eq_one).toLinearMap)
-      (by rw [finrank_eq hζ.pow_eq_one, Module.finrank_linearMap, finrank_adjoinRoot, sq])).1 hinj
+      (by rw [finrank_eq hζ.pow_eq_one, Module.finrank_linearMap, hfin, sq])).1 hinj
 
 @[simp]
 theorem algEquivEndAdjoinRoot_apply (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0)
@@ -288,8 +298,13 @@ theorem algEquivEndAdjoinRoot_apply (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0)
 theorem brauerClass_one_right (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) :
     brauerClass hζ ha one_ne_zero = 1 := by
   have := (monic_X_pow_sub_C a (NeZero.ne n)).finite_adjoinRoot
-  have := nontrivial_adjoinRoot (n := n) a
-  rw [brauerClass, BrauerGroup.mk_eq_one_iff]
+  have : Nontrivial (AdjoinRoot (X ^ n - C a)) := AdjoinRoot.nontrivial _ (by
+    rw [degree_X_pow_sub_C (NeZero.pos n)]
+    exact_mod_cast NeZero.ne n)
+  have := isCentral hζ ha one_ne_zero
+  have := isSimpleRing hζ ha one_ne_zero
+  have := finite (a := a) (b := 1) hζ.pow_eq_one
+  rw [brauerClass_eq_mk, BrauerGroup.mk_eq_one_iff]
   exact (IsBrauerEquivalent.of_algEquiv K (algEquivEndAdjoinRoot hζ ha)).trans
     (isBrauerTrivial_end K _)
 

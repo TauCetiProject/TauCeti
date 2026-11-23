@@ -11,6 +11,7 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.AdjoinRoot
+public import TauCeti.RingTheory.AdjoinRoot.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.RingTheory.TensorProduct.Basic
 
@@ -51,7 +52,8 @@ zero.
 * `TauCeti.SymbolAlgebra.lift`: the universal property.
 * `TauCeti.SymbolAlgebra.basis`: the monomial basis `x ^ i * y ^ j`, `i, j < n`.
 * `TauCeti.SymbolAlgebra.toEndAdjoinRoot`: the representation of `(a, 1)_ζ` on `R[X]/(X ^ n - a)`
-  in which `x` multiplies by the class of `X` and `y` acts by `X ↦ ζ X`.
+  in which `x` multiplies by the class of `X` and `y` acts by the twist `X ↦ ζ X`
+  (`AdjoinRoot.twistXPowSubC`).
 
 ## Main results
 
@@ -150,10 +152,12 @@ theorem y_pow : (y : SymbolAlgebra n ζ a b) ^ n = algebraMap R _ b := by
     (b := b))
 
 /-- The third defining relation: `y * x = ζ • (x * y)`. -/
+@[simp]
 theorem y_mul_x : (y : SymbolAlgebra n ζ a b) * x = ζ • (x * y) := by
   simpa [mkAlgHom_ι] using mkAlgHom_rel (Rel.y_mul_x (n := n) (ζ := ζ) (a := a) (b := b))
 
 /-- Moving `y` past a power of `x`: `y * x ^ i = ζ ^ i • (x ^ i * y)`. -/
+@[simp]
 theorem y_mul_x_pow (i : ℕ) :
     (y : SymbolAlgebra n ζ a b) * x ^ i = ζ ^ i • (x ^ i * y) := by
   induction i with
@@ -163,6 +167,7 @@ theorem y_mul_x_pow (i : ℕ) :
       ← pow_succ, mul_assoc, pow_succ]
 
 /-- Moving a power of `y` past a power of `x`: `y ^ j * x ^ i = ζ ^ (i * j) • (x ^ i * y ^ j)`. -/
+@[simp]
 theorem y_pow_mul_x_pow (i j : ℕ) :
     (y : SymbolAlgebra n ζ a b) ^ j * x ^ i = ζ ^ (i * j) • (x ^ i * y ^ j) := by
   induction j with
@@ -328,62 +333,36 @@ private theorem span_monomial [NeZero n] :
 
 /-! ### Linear independence, through a representation -/
 
-/-- The class of `X` in `R[X]/(X ^ n - a)` has `n`-th power `a`. -/
-private theorem root_pow (n : ℕ) (a : R) :
-    AdjoinRoot.root (X ^ n - C a) ^ n = AdjoinRoot.of (X ^ n - C a) a := by
-  have := AdjoinRoot.eval₂_root (X ^ n - C a)
-  rwa [eval₂_sub, eval₂_X_pow, eval₂_C, sub_eq_zero] at this
-
-variable (n ζ a) in
-/-- The `R`-algebra endomorphism of `R[X]/(X ^ n - a)` sending the class of `X` to `ζ` times it. -/
-private noncomputable def twist (hζ : ζ ^ n = 1) :
-    AdjoinRoot (X ^ n - C a) →ₐ[R] AdjoinRoot (X ^ n - C a) :=
-  AdjoinRoot.liftAlgHom _ (Algebra.ofId R _) (ζ • AdjoinRoot.root _) <| by
-    rw [eval₂_sub, eval₂_X_pow, eval₂_C, smul_pow, hζ, one_smul, root_pow, sub_eq_zero]
-    rfl
-
-private theorem twist_root (hζ : ζ ^ n = 1) :
-    twist n ζ a hζ (AdjoinRoot.root _) = ζ • AdjoinRoot.root _ :=
-  AdjoinRoot.liftAlgHom_root _ _ _ _
-
-private theorem twist_pow_eq_one (hζ : ζ ^ n = 1) : twist n ζ a hζ ^ n = 1 := by
-  have h : ∀ k : ℕ, (twist n ζ a hζ ^ k) (AdjoinRoot.root _) = ζ ^ k • AdjoinRoot.root _ := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih => rw [pow_succ', AlgHom.mul_apply, ih, map_smul, twist_root, smul_smul, pow_succ]
-  exact AdjoinRoot.algHom_ext (by rw [h, hζ, one_smul]; rfl)
-
 variable (n ζ a b) in
 /-- The representation space `R[X]/(X ^ n - a) ⊗[R] R[Y]/(Y ^ n - b)`. -/
 private abbrev Rep := AdjoinRoot (X ^ n - C a) ⊗[R] AdjoinRoot (X ^ n - C b)
 
 variable (a b) in
-/-- The action of `y` on the representation space: twist the first factor, then multiply by the
-class of `Y` in the second. -/
+/-- The action of `y` on the representation space: twist the first factor
+(`AdjoinRoot.twistXPowSubC`), then multiply by the class of `Y` in the second. -/
 private noncomputable def repY (hζ : ζ ^ n = 1) : Module.End R (Rep n a b) :=
   LinearMap.mulLeft R (1 ⊗ₜ AdjoinRoot.root _) ∘ₗ
-    (Algebra.TensorProduct.map (twist n ζ a hζ) (AlgHom.id R _)).toLinearMap
+    (Algebra.TensorProduct.map (AdjoinRoot.twistXPowSubC n a hζ) (AlgHom.id R _)).toLinearMap
 
 private theorem repY_pow_tmul (hζ : ζ ^ n = 1) (k : ℕ) (p q) :
     (repY a b hζ ^ k) (p ⊗ₜ q) =
-      (twist n ζ a hζ ^ k) p ⊗ₜ (AdjoinRoot.root (X ^ n - C b) ^ k * q) := by
+      (AdjoinRoot.twistXPowSubC n a hζ ^ k) p ⊗ₜ (AdjoinRoot.root (X ^ n - C b) ^ k * q) := by
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ', mul_apply_eq_comp, ih, repY, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-      Algebra.TensorProduct.map_tmul, LinearMap.mulLeft_apply, Algebra.TensorProduct.tmul_mul_tmul,
-      one_mul, pow_succ', AlgHom.mul_apply, AlgHom.id_apply, pow_succ', mul_assoc]
+    rw [pow_succ', mul_apply_eq_comp, ih]
+    simp [repY, pow_succ', mul_assoc, Algebra.TensorProduct.tmul_mul_tmul, AlgHom.mul_apply]
 
 private theorem repX_pow : LinearMap.mulLeft R (AdjoinRoot.root _ ⊗ₜ 1 : Rep n a b) ^ n =
     algebraMap R _ a := by
   ext p q
-  simp [LinearMap.pow_mulLeft, Algebra.TensorProduct.tmul_pow, root_pow, Algebra.smul_def,
+  simp [LinearMap.pow_mulLeft, Algebra.TensorProduct.tmul_pow, Algebra.smul_def,
     Algebra.TensorProduct.algebraMap_apply, AdjoinRoot.algebraMap_eq]
 
 private theorem repY_pow (hζ : ζ ^ n = 1) : repY a b hζ ^ n = algebraMap R _ b := by
   refine TensorProduct.ext' fun p q => ?_
-  rw [repY_pow_tmul, twist_pow_eq_one, AlgHom.one_apply, root_pow, ← AdjoinRoot.algebraMap_eq,
+  rw [repY_pow_tmul, AdjoinRoot.twistXPowSubC_pow_eq_one, AlgHom.one_apply,
+    AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq,
     ← Algebra.smul_def, TensorProduct.tmul_smul, Module.algebraMap_end_apply]
 
 private theorem repY_mul_repX (hζ : ζ ^ n = 1) :
@@ -391,7 +370,8 @@ private theorem repY_mul_repX (hζ : ζ ^ n = 1) :
       ζ • (LinearMap.mulLeft R (AdjoinRoot.root _ ⊗ₜ 1) * repY a b hζ) := by
   refine LinearMap.ext fun w => ?_
   simp only [repY, mul_apply_eq_comp, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-    LinearMap.mulLeft_apply, map_mul, Algebra.TensorProduct.map_tmul, twist_root, map_one,
+    LinearMap.mulLeft_apply, map_mul, Algebra.TensorProduct.map_tmul,
+    AdjoinRoot.twistXPowSubC_root, map_one,
     LinearMap.smul_apply, ← TensorProduct.smul_tmul', smul_mul_assoc, mul_smul_comm]
   congr 1
   ring
@@ -404,10 +384,8 @@ private noncomputable def rep (hζ : ζ ^ n = 1) :
 private theorem rep_monomial_one (hζ : ζ ^ n = 1) (i j : ℕ) :
     rep hζ ((x : SymbolAlgebra n ζ a b) ^ i * y ^ j) 1 =
       (AdjoinRoot.root (X ^ n - C a) ^ i) ⊗ₜ (AdjoinRoot.root (X ^ n - C b) ^ j) := by
-  rw [map_mul, map_pow, map_pow, rep, lift_x, lift_y, mul_apply_eq_comp,
-    Algebra.TensorProduct.one_def, repY_pow_tmul, map_one, mul_one, LinearMap.pow_mulLeft,
-    LinearMap.mulLeft_apply, Algebra.TensorProduct.tmul_pow, one_pow,
-    Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+  simp [rep, mul_apply_eq_comp, Algebra.TensorProduct.one_def, repY_pow_tmul,
+    LinearMap.pow_mulLeft, Algebra.TensorProduct.tmul_pow]
 
 /-- The tensor products `X ^ i ⊗ Y ^ j` of power-basis vectors, `i, j < n`, are linearly
 independent. -/
@@ -419,9 +397,11 @@ private theorem linearIndependent_root_pow_tmul [NeZero n] :
   have hb : ∀ c : R, ∃ B : Module.Basis (Fin n) R (AdjoinRoot (X ^ n - C c)),
       ∀ i, B i = AdjoinRoot.root _ ^ (i : ℕ) := fun c => by
     let pb := AdjoinRoot.powerBasis' (monic_X_pow_sub_C c (NeZero.ne n))
-    refine ⟨pb.basis.reindex (finCongr (natDegree_X_pow_sub_C (n := n) c)), fun i => ?_⟩
+    refine ⟨pb.basis.reindex
+      (finCongr ((AdjoinRoot.powerBasis'_dim _).trans (natDegree_X_pow_sub_C (n := n) c))),
+      fun i => ?_⟩
     rw [Module.Basis.reindex_apply, PowerBasis.basis_eq_pow, AdjoinRoot.powerBasis'_gen]
-    rfl
+    simp
   obtain ⟨Ba, hBa⟩ := hb a
   obtain ⟨Bb, hBb⟩ := hb b
   convert (Ba.tensorProduct Bb).linearIndependent with p
@@ -436,14 +416,6 @@ private theorem linearIndependent_monomial [NeZero n] (hζ : ζ ^ n = 1) :
 
 /-! ### The split representation of `(a, 1)_ζ` -/
 
-/-- Powers of an algebra endomorphism, as a linear map, are the linear maps of its powers. -/
-private theorem twist_toLinearMap_pow (hζ : ζ ^ n = 1) (k : ℕ) (q) :
-    ((twist n ζ a hζ).toLinearMap ^ k) q = (twist n ζ a hζ ^ k) q := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [pow_succ', mul_apply_eq_comp, ih, pow_succ', AlgHom.mul_apply,
-      AlgHom.toLinearMap_apply]
-
 variable (a) in
 /-- The representation of the symbol algebra `(a, 1)_ζ` on `R[X]/(X ^ n - a)`, in which `x`
 multiplies by the class of `X` and `y` acts by the algebra automorphism `X ↦ ζ X`. Over a field,
@@ -452,16 +424,15 @@ endomorphism algebra of this `n`-dimensional space
 (`TauCeti.SymbolAlgebra.algEquivEndAdjoinRoot`), so `(a, 1)_ζ` is split. -/
 noncomputable def toEndAdjoinRoot (hζ : ζ ^ n = 1) :
     SymbolAlgebra n ζ a 1 →ₐ[R] Module.End R (AdjoinRoot (X ^ n - C a)) :=
-  lift (LinearMap.mulLeft R (AdjoinRoot.root _)) (twist n ζ a hζ).toLinearMap
+  lift (LinearMap.mulLeft R (AdjoinRoot.root _)) (AdjoinRoot.twistXPowSubC n a hζ).toLinearMap
     (LinearMap.ext fun q => by
-      rw [LinearMap.pow_mulLeft, LinearMap.mulLeft_apply, root_pow, ← AdjoinRoot.algebraMap_eq,
-        ← Algebra.smul_def, Module.algebraMap_end_apply])
+      rw [LinearMap.pow_mulLeft, LinearMap.mulLeft_apply, AdjoinRoot.root_X_pow_sub_C_pow,
+        ← AdjoinRoot.algebraMap_eq, ← Algebra.smul_def, Module.algebraMap_end_apply])
+    (by
+      -- `AlgHom.toEnd` is `AlgHom.toLinearMap` as a monoid homomorphism.
+      rw [← AlgHom.toEnd_apply, ← map_pow, AdjoinRoot.twistXPowSubC_pow_eq_one, map_one, map_one])
     (LinearMap.ext fun q => by
-      simp [twist_toLinearMap_pow, twist_pow_eq_one])
-    (LinearMap.ext fun q => by
-      rw [mul_apply_eq_comp, LinearMap.smul_apply, mul_apply_eq_comp,
-        AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, LinearMap.mulLeft_apply,
-        LinearMap.mulLeft_apply, map_mul, twist_root, smul_mul_assoc])
+      simp [mul_apply_eq_comp])
 
 /-- In the split representation, `x` multiplies by the class of `X`. -/
 @[simp]
@@ -469,11 +440,16 @@ theorem toEndAdjoinRoot_x (hζ : ζ ^ n = 1) :
     toEndAdjoinRoot a hζ x = LinearMap.mulLeft R (AdjoinRoot.root (X ^ n - C a : R[X])) :=
   lift_x ..
 
-/-- In the split representation, `y` sends the class of `X` to `ζ` times it. -/
+/-- In the split representation, `y` acts by the twist `X ↦ ζ X` of `R[X]/(X ^ n - a)`. -/
 @[simp]
+theorem toEndAdjoinRoot_y (hζ : ζ ^ n = 1) :
+    toEndAdjoinRoot a hζ y = (AdjoinRoot.twistXPowSubC n a hζ).toLinearMap :=
+  lift_y ..
+
+/-- In the split representation, `y` sends the class of `X` to `ζ` times it. -/
 theorem toEndAdjoinRoot_y_root (hζ : ζ ^ n = 1) :
     toEndAdjoinRoot a hζ y (AdjoinRoot.root (X ^ n - C a)) = ζ • AdjoinRoot.root _ := by
-  rw [toEndAdjoinRoot, lift_y, AlgHom.toLinearMap_apply, twist_root]
+  simp
 
 /-! ### The monomial basis -/
 
