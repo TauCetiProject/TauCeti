@@ -189,7 +189,7 @@ theorem enrichedId_f_zero_apply (X : C) (r : R) :
 theorem leftUnitor_inv_enrichedId_enrichedComp (X Y : C) :
     (λ_ (D.hom X Y)).inv ≫ D.enrichedId X ▷ D.hom X Y ≫ D.enrichedComp X X Y = 𝟙 _ := by
   ext j : 1
-  rw [comp_f, comp_f, leftUnitor_inv_f, leftUnitor'_inv, Category.assoc, Category.assoc,
+  rw [comp_f, comp_f, leftUnitor_inv_f, Category.assoc, Category.assoc,
     ι_whiskerRight_assoc, ι_enrichedComp, id_f]
   ext f
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
@@ -203,7 +203,7 @@ theorem leftUnitor_inv_enrichedId_enrichedComp (X Y : C) :
 theorem rightUnitor_inv_enrichedId_enrichedComp (X Y : C) :
     (ρ_ (D.hom X Y)).inv ≫ D.hom X Y ◁ D.enrichedId Y ≫ D.enrichedComp X Y Y = 𝟙 _ := by
   ext j : 1
-  rw [comp_f, comp_f, rightUnitor_inv_f, rightUnitor'_inv, Category.assoc, Category.assoc,
+  rw [comp_f, comp_f, rightUnitor_inv_f, Category.assoc, Category.assoc,
     ι_whiskerLeft_assoc, ι_enrichedComp, id_f]
   ext f
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,

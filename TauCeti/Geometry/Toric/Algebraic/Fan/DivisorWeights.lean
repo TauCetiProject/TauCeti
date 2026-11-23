@@ -6,23 +6,53 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Ray
+public import TauCeti.Geometry.Toric.Algebraic.Ray.Generation
 
 /-!
-# Character weights of toric divisors
+# Character weights of invariant divisors
 
-An integer ray coefficient family `a` allows precisely the characters `u` with
-`u(vρ) + a ρ ≥ 0`, where `vρ` is the primitive generator of the ray `ρ`. On a cone chart
-only the rays in that cone contribute. These weight sets index the monomials in the
-corresponding divisor section modules, independently of the coefficient ring.
+An invariant divisor `D = ∑ a_ρ D_ρ` on the toric variety of a fan is recorded by its integer
+coefficients `a : Phi.Ray → ℤ`, one for each ray. Its *character weights* are the integral
+characters `u : N →+ ℤ` with `u v_ρ ≥ -a_ρ` for the primitive generator `v_ρ` of every ray `ρ`.
+The global sections of `O(D)` are spanned by the characters `χ ^ u` with `u` a weight
+(Cox–Little–Schenck, Proposition 4.3.3), so the weights index the monomial basis of the module of
+sections. For a single cone `σ` of the fan only the inequalities for the rays of `σ` are imposed;
+these local weights index the monomial sections of `O(D)` over the affine chart of `σ`.
 
-When a character `m` takes the values `-a ρ` on the rays of a cone, the chart weight set
-is the translate by `m` of the dual semigroup. On a regular cone such an `m` exists, and
-the difference of two chart generators is invertible as a character on their overlap.
+The global weights are the intersection of the local ones. The local weights of `σ` are stable
+under adding characters of the dual semigroup `P_σ` of `σ`, which is the module structure of the
+sections over the affine chart. The weights of `0` on `σ` are exactly `P_σ`. If a character
+`m_σ` satisfies the Cartier equations `m_σ v_ρ = -a_ρ` on the rays of `σ`, the local weights are
+the translate `m_σ + P_σ`, and on a regular cone such a character always exists. Adding the
+divisor of a character `χ ^ m`, whose coefficient at `ρ` is `m v_ρ`, translates the weights by
+`-m`, and weights of two divisors add to weights of their sum.
+
+No effectivity or ampleness is assumed: the weights need not contain `0` (this happens exactly
+when `D` is effective), and they need not be closed under addition.
+
+## Main declarations
+
+* `TauCeti.Toric.Fan.characterDivisor`: the coefficients `u v_ρ` of the divisor of a character.
+* `TauCeti.Toric.Fan.divisorWeights`: the character weights of an invariant divisor.
+* `TauCeti.Toric.Fan.coneDivisorWeights`: the character weights on a single cone.
+* `TauCeti.Toric.Fan.divisorWeights_add_characterDivisor`: adding the divisor of `χ ^ m`
+  translates the weights by `-m`.
+* `TauCeti.Toric.Fan.divisorWeights_add_subset`: weights of two divisors add to weights of their
+  sum.
+* `TauCeti.Toric.Fan.iInter_coneDivisorWeights`: the global weights are the intersection of the
+  local ones.
+* `TauCeti.Toric.Fan.add_mem_coneDivisorWeights`: the local weights are stable under the dual
+  semigroup.
+* `TauCeti.Toric.Fan.coneDivisorWeights_eq_vadd`: Cartier data `m_σ` identify the local weights
+  with `m_σ + P_σ`, and `TauCeti.Toric.Fan.exists_coneDivisorWeights_eq_vadd` provides it on a
+  regular cone.
 
 ## References
 
-* P. Scholze, *Perfectoid spaces*, §8, Definition/Proposition 8.4 and the proof of
-  Proposition 8.7.
+* P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), §8, Definition/Proposition 8.4
+  and the proof of Proposition 8.7.
+* W. Fulton, *Introduction to Toric Varieties*, §§3.3 and 3.4.
+* D. Cox, J. Little and H. Schenck, *Toric Varieties*, §4.2 and Proposition 4.3.3.
 -/
 
 public section
@@ -31,158 +61,217 @@ open scoped Pointwise
 
 namespace TauCeti.Toric.Fan
 
-variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
-  {i : N →+ V} {Φ : Fan i}
+variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
+  (Phi : Fan i)
 
-/-- The primitive lattice vector pointing along a ray of a fan. -/
-noncomputable def Ray.primitiveGenerator (ρ : Φ.Ray) : N :=
-  Toric.primitiveGenerator Φ.lattice (Φ.isToricCone ρ.toCone.property)
-    (ρ.toToricRay Φ ρ.toCone le_rfl)
+/-! ### The divisor of a character -/
 
-/-- The vector selected for a fan ray is also the primitive generator when the ray is viewed
-inside any containing cone. -/
+/-- The coefficients of the divisor of the character `χ ^ u` along the invariant divisors: the
+coefficient at a ray is the value of `u` on its primitive generator. -/
+noncomputable def characterDivisor : (N →+ ℤ) →+ (Phi.Ray → ℤ) :=
+  AddMonoidHom.pi fun rho ↦ AddMonoidHom.eval rho.primitiveGenerator
+
 @[simp]
-theorem Ray.primitiveGenerator_toToricRay (ρ : Φ.Ray) (σ : Φ.cones) (h : ρ.toCone ≤ σ) :
-    Toric.primitiveGenerator Φ.lattice (Φ.isToricCone σ.property) (ρ.toToricRay Φ σ h) =
-      ρ.primitiveGenerator := by
-  have hv : IsPrimitiveGenerator i (ρ.toToricRay Φ ρ.toCone le_rfl) ρ.primitiveGenerator :=
-    isPrimitiveGenerator_primitiveGenerator _ _ _
-  have hmem : i ρ.primitiveGenerator ∈ (ρ.toToricRay Φ ρ.toCone le_rfl).toPointedCone := hv.mem
-  have hmem' : i ρ.primitiveGenerator ∈ (ρ.toToricRay Φ σ h).toPointedCone := by
-    simpa only [Ray.toPointedCone_toToricRay] using hmem
-  have hv' : IsPrimitiveGenerator i (ρ.toToricRay Φ σ h) ρ.primitiveGenerator :=
-    isPrimitiveGenerator_iff.mpr ⟨hmem', hv.isPrimitive⟩
-  exact (hv'.eq_primitiveGenerator Φ.lattice (Φ.isToricCone σ.property)).symm
+theorem characterDivisor_apply (u : N →+ ℤ) (rho : Phi.Ray) :
+    Phi.characterDivisor u rho = u rho.primitiveGenerator :=
+  (rfl)
 
-/-- The ray coefficients of the divisor of a character. -/
-noncomputable def characterDivisor (Φ : Fan i) : (N →+ ℤ) →+ (Φ.Ray →₀ ℤ) :=
-  (Finsupp.linearEquivFunOnFinite ℤ ℤ Φ.Ray).symm.toAddEquiv.toAddMonoidHom.comp
-    (AddMonoidHom.pi fun ρ ↦ AddMonoidHom.eval ρ.primitiveGenerator)
+/-! ### Global character weights -/
 
-/-- The coefficient of the character divisor at a ray is the character evaluated at its
-primitive generator. -/
+/-- The character weights of the invariant divisor with ray coefficients `a`: the integral
+characters `u` with `u v_ρ ≥ -a ρ` for the primitive generator `v_ρ` of every ray `ρ`. -/
+def divisorWeights (a : Phi.Ray → ℤ) : Set (N →+ ℤ) :=
+  {u | ∀ rho, -a rho ≤ u rho.primitiveGenerator}
+
+variable {Phi}
+
 @[simp]
-theorem characterDivisor_apply (u : N →+ ℤ) (ρ : Φ.Ray) :
-    Φ.characterDivisor u ρ = u ρ.primitiveGenerator := by
-  simp [characterDivisor]
+theorem mem_divisorWeights {a : Phi.Ray → ℤ} {u : N →+ ℤ} :
+    u ∈ Phi.divisorWeights a ↔ ∀ rho, -a rho ≤ u rho.primitiveGenerator :=
+  Iff.rfl
 
-/-- The characters satisfying all the ray inequalities for the given divisor coefficients. -/
-def divisorWeights (Φ : Fan i) (a : Φ.Ray →₀ ℤ) : Set (N →+ ℤ) :=
-  {u | ∀ ρ : Φ.Ray, 0 ≤ u ρ.primitiveGenerator + a ρ}
+/-- Membership in the character weights is the nonnegativity of `u v_ρ + a ρ` at every ray. -/
+theorem mem_divisorWeights_iff_add_nonneg {a : Phi.Ray → ℤ} {u : N →+ ℤ} :
+    u ∈ Phi.divisorWeights a ↔ ∀ rho, 0 ≤ u rho.primitiveGenerator + a rho := by
+  simp only [mem_divisorWeights, neg_le_iff_add_nonneg]
 
-/-- The chart weights impose just the divisor inequalities for rays contained in the cone. -/
-def coneDivisorWeights (Φ : Fan i) (σ : Φ.cones) (a : Φ.Ray →₀ ℤ) : Set (N →+ ℤ) :=
-  {u | ∀ ρ : Φ.Ray, ρ.toCone ≤ σ → 0 ≤ u ρ.primitiveGenerator + a ρ}
+/-- The trivial character is a weight exactly when the divisor is effective. -/
+theorem zero_mem_divisorWeights_iff {a : Phi.Ray → ℤ} : 0 ∈ Phi.divisorWeights a ↔ 0 ≤ a := by
+  simp [Pi.le_def]
 
-/-- A global divisor weight satisfies the inequalities at every ray. -/
+/-- Enlarging the divisor enlarges its character weights. -/
+@[gcongr]
+theorem divisorWeights_mono {a b : Phi.Ray → ℤ} (h : a ≤ b) :
+    Phi.divisorWeights a ⊆ Phi.divisorWeights b :=
+  fun _ hu rho ↦ (neg_le_neg (h rho)).trans (hu rho)
+
+/-- A fan without rays imposes no conditions: every character is a weight. -/
 @[simp]
-theorem mem_divisorWeights_iff {a : Φ.Ray →₀ ℤ} {u : N →+ ℤ} :
-    u ∈ Φ.divisorWeights a ↔ ∀ ρ : Φ.Ray, 0 ≤ u ρ.primitiveGenerator + a ρ :=
-  (Iff.rfl)
+theorem divisorWeights_of_isEmpty [IsEmpty Phi.Ray] (a : Phi.Ray → ℤ) :
+    Phi.divisorWeights a = Set.univ :=
+  Set.eq_univ_of_forall fun _ rho ↦ isEmptyElim rho
 
-/-- A chart divisor weight satisfies the inequalities at the rays below its cone. -/
-@[simp]
-theorem mem_coneDivisorWeights_iff {σ : Φ.cones} {a : Φ.Ray →₀ ℤ} {u : N →+ ℤ} :
-    u ∈ Φ.coneDivisorWeights σ a ↔
-      ∀ ρ : Φ.Ray, ρ.toCone ≤ σ → 0 ≤ u ρ.primitiveGenerator + a ρ :=
-  (Iff.rfl)
+/-- `u` is a weight of `D + div χ ^ m` exactly when `u + m` is a weight of `D`. -/
+theorem mem_divisorWeights_add_characterDivisor {a : Phi.Ray → ℤ} {m u : N →+ ℤ} :
+    u ∈ Phi.divisorWeights (a + Phi.characterDivisor m) ↔ u + m ∈ Phi.divisorWeights a := by
+  simp only [mem_divisorWeights, Pi.add_apply, characterDivisor_apply, AddMonoidHom.add_apply]
+  exact forall_congr' fun _ ↦ by omega
 
-/-- Global admissibility is exactly simultaneous admissibility on every cone chart. -/
-theorem divisorWeights_eq_iInter (a : Φ.Ray →₀ ℤ) :
-    Φ.divisorWeights a = ⋂ σ : Φ.cones, Φ.coneDivisorWeights σ a := by
+/-- Adding the divisor of the character `χ ^ m` translates the character weights by `-m`. -/
+theorem divisorWeights_add_characterDivisor (a : Phi.Ray → ℤ) (m : N →+ ℤ) :
+    Phi.divisorWeights (a + Phi.characterDivisor m) = -m +ᵥ Phi.divisorWeights a := by
   ext u
-  simp only [Set.mem_iInter, mem_divisorWeights_iff, mem_coneDivisorWeights_iff]
-  exact ⟨fun h _ ρ _ ↦ h ρ, fun h ρ ↦ h ρ.toCone ρ le_rfl⟩
+  rw [mem_divisorWeights_add_characterDivisor, Set.mem_vadd_set_iff_neg_vadd_mem, neg_neg,
+    vadd_eq_add, add_comm]
 
-/-- Restricting to a face only drops inequalities. -/
-theorem coneDivisorWeights_antitone (a : Φ.Ray →₀ ℤ) :
-    Antitone (fun σ : Φ.cones ↦ Φ.coneDivisorWeights σ a) := by
-  intro σ τ h u hu
-  exact mem_coneDivisorWeights_iff.mpr fun ρ hρ ↦ mem_coneDivisorWeights_iff.mp hu ρ (hρ.trans h)
+/-- The sum of weights of two divisors is a weight of their sum. -/
+theorem add_mem_divisorWeights_add {a b : Phi.Ray → ℤ} {u w : N →+ ℤ}
+    (hu : u ∈ Phi.divisorWeights a) (hw : w ∈ Phi.divisorWeights b) :
+    u + w ∈ Phi.divisorWeights (a + b) := fun rho ↦ by
+  have := hu rho
+  have := hw rho
+  simp only [Pi.add_apply, AddMonoidHom.add_apply]
+  omega
 
-/-- On each chart, addition of weights is compatible with addition of divisor coefficients. -/
-theorem add_mem_coneDivisorWeights {σ : Φ.cones} {a b : Φ.Ray →₀ ℤ} {u w : N →+ ℤ}
-    (hu : u ∈ Φ.coneDivisorWeights σ a) (hw : w ∈ Φ.coneDivisorWeights σ b) :
-    u + w ∈ Φ.coneDivisorWeights σ (a + b) := by
-  simp only [mem_coneDivisorWeights_iff, AddMonoidHom.add_apply, Finsupp.add_apply] at *
-  intro ρ hρ
-  linarith [hu ρ hρ, hw ρ hρ]
+/-- The weights of two divisors add to weights of their sum. -/
+theorem divisorWeights_add_subset (a b : Phi.Ray → ℤ) :
+    Phi.divisorWeights a + Phi.divisorWeights b ⊆ Phi.divisorWeights (a + b) :=
+  Set.add_subset_iff.2 fun _ hu _ hw ↦ add_mem_divisorWeights_add hu hw
 
-/-- The sum of two global weights is a global weight for the sum of the divisors. -/
-theorem add_mem_divisorWeights {a b : Φ.Ray →₀ ℤ} {u w : N →+ ℤ}
-    (hu : u ∈ Φ.divisorWeights a) (hw : w ∈ Φ.divisorWeights b) :
-    u + w ∈ Φ.divisorWeights (a + b) := by
-  simp only [divisorWeights_eq_iInter, Set.mem_iInter] at *
-  exact fun σ ↦ add_mem_coneDivisorWeights (hu σ) (hw σ)
+/-! ### Character weights on a cone -/
 
-/-- Adding the divisor of `m` translates the global weight set by `-m`. -/
-theorem divisorWeights_add_characterDivisor (a : Φ.Ray →₀ ℤ) (m : N →+ ℤ) :
-    Φ.divisorWeights (a + Φ.characterDivisor m) = -m +ᵥ Φ.divisorWeights a := by
-  ext u
-  simp only [Set.mem_vadd_set_iff_neg_vadd_mem, neg_neg, vadd_eq_add, mem_divisorWeights_iff,
-    Finsupp.add_apply, characterDivisor_apply, AddMonoidHom.add_apply]
-  exact forall_congr' fun ρ ↦ by omega
+variable (Phi) in
+/-- The character weights on the cone `σ` of the invariant divisor with ray coefficients `a`: the
+integral characters `u` with `u v_ρ ≥ -a ρ` for the primitive generator `v_ρ` of every ray `ρ`
+contained in `σ`. -/
+def coneDivisorWeights (sigma : Phi.cones) (a : Phi.Ray → ℤ) : Set (N →+ ℤ) :=
+  {u | ∀ rho : Phi.Ray, rho.toCone ≤ sigma → -a rho ≤ u rho.primitiveGenerator}
 
-/-- The chart weights for the zero divisor are exactly the dual semigroup. -/
 @[simp]
-theorem coneDivisorWeights_zero (σ : Φ.cones) :
-    Φ.coneDivisorWeights σ 0 = (dualSemigroup Φ.lattice σ.val : Set (N →+ ℤ)) := by
+theorem mem_coneDivisorWeights {sigma : Phi.cones} {a : Phi.Ray → ℤ} {u : N →+ ℤ} :
+    u ∈ Phi.coneDivisorWeights sigma a ↔
+      ∀ rho : Phi.Ray, rho.toCone ≤ sigma → -a rho ≤ u rho.primitiveGenerator :=
+  Iff.rfl
+
+/-- Enlarging the divisor enlarges its character weights on a cone. -/
+@[gcongr]
+theorem coneDivisorWeights_mono (sigma : Phi.cones) {a b : Phi.Ray → ℤ} (h : a ≤ b) :
+    Phi.coneDivisorWeights sigma a ⊆ Phi.coneDivisorWeights sigma b :=
+  fun _ hu rho hrho ↦ (neg_le_neg (h rho)).trans (hu rho hrho)
+
+/-- Passing to a smaller cone imposes fewer conditions and enlarges the character weights. -/
+theorem coneDivisorWeights_anti {sigma tau : Phi.cones} (h : tau ≤ sigma) (a : Phi.Ray → ℤ) :
+    Phi.coneDivisorWeights sigma a ⊆ Phi.coneDivisorWeights tau a :=
+  fun _ hu rho hrho ↦ hu rho (hrho.trans h)
+
+/-- The global character weights are weights on every cone. -/
+theorem divisorWeights_subset_coneDivisorWeights (sigma : Phi.cones) (a : Phi.Ray → ℤ) :
+    Phi.divisorWeights a ⊆ Phi.coneDivisorWeights sigma a :=
+  fun _ hu rho _ ↦ hu rho
+
+/-- The global character weights are the intersection of the character weights on the cones of
+the fan: each ray is itself a cone of the fan. -/
+theorem iInter_coneDivisorWeights (a : Phi.Ray → ℤ) :
+    ⋂ sigma : Phi.cones, Phi.coneDivisorWeights sigma a = Phi.divisorWeights a := by
+  refine Set.Subset.antisymm (fun u hu rho ↦ ?_) fun _ hu ↦
+    Set.mem_iInter.2 fun sigma ↦ divisorWeights_subset_coneDivisorWeights sigma a hu
+  exact Set.mem_iInter.1 hu rho.toCone rho le_rfl
+
+/-- `u` is a weight of `D + div χ ^ m` on a cone exactly when `u + m` is a weight of `D` there. -/
+theorem mem_coneDivisorWeights_add_characterDivisor {sigma : Phi.cones} {a : Phi.Ray → ℤ}
+    {m u : N →+ ℤ} :
+    u ∈ Phi.coneDivisorWeights sigma (a + Phi.characterDivisor m) ↔
+      u + m ∈ Phi.coneDivisorWeights sigma a := by
+  simp only [mem_coneDivisorWeights, Pi.add_apply, characterDivisor_apply,
+    AddMonoidHom.add_apply]
+  exact forall_congr' fun _ ↦ imp_congr_right fun _ ↦ by omega
+
+/-- Adding the divisor of the character `χ ^ m` translates the character weights on a cone by
+`-m`. -/
+theorem coneDivisorWeights_add_characterDivisor (sigma : Phi.cones) (a : Phi.Ray → ℤ)
+    (m : N →+ ℤ) :
+    Phi.coneDivisorWeights sigma (a + Phi.characterDivisor m) =
+      -m +ᵥ Phi.coneDivisorWeights sigma a := by
   ext u
-  rw [mem_coneDivisorWeights_iff, SetLike.mem_coe,
-    mem_dualSemigroup_iff_primitiveGenerator Φ.lattice (Φ.isToricCone σ.property)]
-  simp only [Finsupp.zero_apply, add_zero]
-  constructor
-  · intro h ρ
-    let r := (Φ.rayEquiv σ).symm ρ
-    have hr : r.val.toToricRay Φ σ r.property = ρ := by
-      rw [← rayEquiv_apply, Equiv.apply_symm_apply]
-    rw [← hr, Ray.primitiveGenerator_toToricRay]
-    exact h r.val r.property
-  · intro h ρ hρ
-    simpa only [Ray.primitiveGenerator_toToricRay] using h (ρ.toToricRay Φ σ hρ)
+  rw [mem_coneDivisorWeights_add_characterDivisor, Set.mem_vadd_set_iff_neg_vadd_mem, neg_neg,
+    vadd_eq_add, add_comm]
 
-/-- Adding a dual-semigroup character to a chart weight preserves its divisor inequalities. -/
-theorem add_mem_coneDivisorWeights_of_mem_dualSemigroup {σ : Φ.cones} {a : Φ.Ray →₀ ℤ}
-    {u p : N →+ ℤ} (hu : u ∈ Φ.coneDivisorWeights σ a) (hp : p ∈ dualSemigroup Φ.lattice σ.val) :
-    u + p ∈ Φ.coneDivisorWeights σ a := by
-  rw [← SetLike.mem_coe, ← coneDivisorWeights_zero] at hp
-  simpa only [add_zero] using add_mem_coneDivisorWeights hu hp
+/-- The sum of weights of two divisors on a cone is a weight of their sum on that cone. -/
+theorem add_mem_coneDivisorWeights_add {sigma : Phi.cones} {a b : Phi.Ray → ℤ} {u w : N →+ ℤ}
+    (hu : u ∈ Phi.coneDivisorWeights sigma a) (hw : w ∈ Phi.coneDivisorWeights sigma b) :
+    u + w ∈ Phi.coneDivisorWeights sigma (a + b) := fun rho hrho ↦ by
+  have := hu rho hrho
+  have := hw rho hrho
+  simp only [Pi.add_apply, AddMonoidHom.add_apply]
+  omega
 
-/-- A chart character with value `-a ρ` on each ray gives a translation of the dual semigroup
-onto the chart weights. -/
-theorem coneDivisorWeights_eq_vadd (σ : Φ.cones) (a : Φ.Ray →₀ ℤ) (m : N →+ ℤ)
-    (hm : ∀ ρ : Φ.Ray, ρ.toCone ≤ σ → m ρ.primitiveGenerator = -a ρ) :
-    Φ.coneDivisorWeights σ a = m +ᵥ (dualSemigroup Φ.lattice σ.val : Set (N →+ ℤ)) := by
-  rw [← coneDivisorWeights_zero]
+/-- The weights of two divisors on a cone add to weights of their sum on that cone. -/
+theorem coneDivisorWeights_add_subset (sigma : Phi.cones) (a b : Phi.Ray → ℤ) :
+    Phi.coneDivisorWeights sigma a + Phi.coneDivisorWeights sigma b ⊆
+      Phi.coneDivisorWeights sigma (a + b) :=
+  Set.add_subset_iff.2 fun _ hu _ hw ↦ add_mem_coneDivisorWeights_add hu hw
+
+/-- The character weights on a cone are stable under adding characters of the dual semigroup of
+the cone. -/
+theorem add_mem_coneDivisorWeights {sigma : Phi.cones} {a : Phi.Ray → ℤ} {u p : N →+ ℤ}
+    (hu : u ∈ Phi.coneDivisorWeights sigma a) (hp : p ∈ dualSemigroup Phi.lattice sigma.val) :
+    u + p ∈ Phi.coneDivisorWeights sigma a := fun rho hrho ↦ by
+  have := hu rho hrho
+  have := (Phi.mem_dualSemigroup_iff_forall_ray_le sigma p).1 hp rho hrho
+  rw [AddMonoidHom.add_apply]
+  omega
+
+/-- The character weights of the zero divisor on a cone are its dual semigroup. -/
+@[simp]
+theorem coneDivisorWeights_zero (sigma : Phi.cones) :
+    Phi.coneDivisorWeights sigma 0 = dualSemigroup Phi.lattice sigma.val := by
   ext u
-  simp only [Set.mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, mem_coneDivisorWeights_iff,
-    Finsupp.zero_apply, add_zero, AddMonoidHom.add_apply, AddMonoidHom.neg_apply]
-  exact forall_congr' fun ρ ↦ imp_congr_right fun hρ ↦ by rw [hm ρ hρ, neg_neg, add_comm]
+  rw [SetLike.mem_coe, mem_dualSemigroup_iff_forall_ray_le, mem_coneDivisorWeights]
+  simp only [Pi.zero_apply, neg_zero]
 
-/-- Every integral ray coefficient family has a local Cartier character on a regular cone. -/
-theorem exists_cartierCharacter (σ : Φ.cones) (hσ : IsRegularCone i σ.val) (a : Φ.Ray →₀ ℤ) :
-    ∃ m : N →+ ℤ, ∀ ρ : Φ.Ray, ρ.toCone ≤ σ → m ρ.primitiveGenerator = -a ρ := by
-  obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
-  let f : ToricRay σ.val ⊕ Fin l → ℤ := Sum.elim (fun ρ ↦ -a (Ray.ofToricRay Φ σ ρ)) 0
-  refine ⟨(b.constr ℤ f).toAddMonoidHom, fun ρ hρ ↦ ?_⟩
-  let r := ρ.toToricRay Φ σ hρ
-  have hr : Ray.ofToricRay Φ σ r = ρ := by
-    simpa only [rayEquiv_apply, rayEquiv_symm_apply, Subtype.coe_mk, r] using
-      congrArg Subtype.val ((Φ.rayEquiv σ).symm_apply_apply ⟨ρ, hρ⟩)
-  have hv : b (Sum.inl r) = ρ.primitiveGenerator := by
-    rw [(hb r).eq_primitiveGenerator Φ.lattice (Φ.isToricCone σ.property)]
-    exact ρ.primitiveGenerator_toToricRay σ hρ
-  rw [← hv]
-  simp [f, hr]
+/-- If `m` satisfies the Cartier equations `m v_ρ = -a ρ` on the rays of a cone, then the character
+weights on that cone are the translate of its dual semigroup by `m`. -/
+theorem coneDivisorWeights_eq_vadd {sigma : Phi.cones} {a : Phi.Ray → ℤ} {m : N →+ ℤ}
+    (hm : ∀ rho : Phi.Ray, rho.toCone ≤ sigma → m rho.primitiveGenerator = -a rho) :
+    Phi.coneDivisorWeights sigma a = m +ᵥ (dualSemigroup Phi.lattice sigma.val : Set (N →+ ℤ)) := by
+  ext u
+  rw [Set.mem_vadd_set_iff_neg_vadd_mem, SetLike.mem_coe, mem_dualSemigroup_iff_forall_ray_le,
+    mem_coneDivisorWeights]
+  refine forall_congr' fun rho ↦ imp_congr_right fun hrho ↦ ?_
+  rw [vadd_eq_add, AddMonoidHom.add_apply, AddMonoidHom.neg_apply, ← hm rho hrho]
+  omega
 
-/-- Local Cartier characters for the same coefficients have a difference lying in the dual
-semigroup of the overlap. Applying this in the reverse order gives its inverse there. -/
-theorem sub_mem_dualSemigroup_inf {σ τ : Φ.cones} {a : Φ.Ray →₀ ℤ} {m n : N →+ ℤ}
-    (hm : ∀ ρ : Φ.Ray, ρ.toCone ≤ σ → m ρ.primitiveGenerator = -a ρ)
-    (hn : ∀ ρ : Φ.Ray, ρ.toCone ≤ τ → n ρ.primitiveGenerator = -a ρ) :
-    m - n ∈ dualSemigroup Φ.lattice (σ ⊓ τ).val := by
-  rw [← SetLike.mem_coe, ← coneDivisorWeights_zero, mem_coneDivisorWeights_iff]
-  intro ρ hρ
-  simp [hm ρ (hρ.trans inf_le_left), hn ρ (hρ.trans inf_le_right)]
+/-- On a regular cone the Cartier equations `m v_ρ = -a ρ` on the rays of the cone have an integral
+solution, because the primitive ray generators extend to an integral basis of the lattice. -/
+theorem exists_forall_ray_le_eq_neg {sigma : Phi.cones} (hsigma : IsRegularCone i sigma.val)
+    (a : Phi.Ray → ℤ) :
+    ∃ m : N →+ ℤ, ∀ rho : Phi.Ray, rho.toCone ≤ sigma → m rho.primitiveGenerator = -a rho := by
+  obtain ⟨n, b, r, hb⟩ := hsigma.exists_basis
+  let g : ToricRay sigma.val → ℤ := fun rho ↦ -a (Ray.ofToricRay Phi sigma rho)
+  refine ⟨(b.constr ℤ (Function.extend r g 0)).toAddMonoidHom, fun rho hrho ↦ ?_⟩
+  -- The basis vector at the index of the ray is the primitive generator of the fan ray.
+  have hgen : b (r (rho.toToricRay Phi sigma hrho)) = rho.primitiveGenerator := by
+    rw [(hb.isPrimitiveGenerator_apply _).eq_primitiveGenerator Phi.lattice
+      hsigma.toIsToricCone, Ray.primitiveGenerator_toToricRay]
+  rw [← hgen, LinearMap.toAddMonoidHom_coe, Module.Basis.constr_basis,
+    r.injective.extend_apply]
+  simp only [g, Ray.ofToricRay_toToricRay]
+
+/-- On a regular cone the character weights are a translate `m_σ + P_σ` of the dual semigroup. -/
+theorem exists_coneDivisorWeights_eq_vadd {sigma : Phi.cones}
+    (hsigma : IsRegularCone i sigma.val) (a : Phi.Ray → ℤ) :
+    ∃ m : N →+ ℤ,
+      Phi.coneDivisorWeights sigma a = m +ᵥ (dualSemigroup Phi.lattice sigma.val : Set (N →+ ℤ)) :=
+  (exists_forall_ray_le_eq_neg hsigma a).imp fun _ ↦ coneDivisorWeights_eq_vadd
+
+/-- The difference of two local Cartier characters for the same divisor belongs to the
+dual semigroup of their overlap. Swapping the charts gives the inverse transition character. -/
+theorem sub_mem_dualSemigroup_inf {sigma tau : Phi.cones} {a : Phi.Ray → ℤ} {m n : N →+ ℤ}
+    (hm : ∀ rho : Phi.Ray, rho.toCone ≤ sigma → m rho.primitiveGenerator = -a rho)
+    (hn : ∀ rho : Phi.Ray, rho.toCone ≤ tau → n rho.primitiveGenerator = -a rho) :
+    m - n ∈ dualSemigroup Phi.lattice (sigma ⊓ tau).val := by
+  rw [mem_dualSemigroup_iff_forall_ray_le]
+  intro rho hrho
+  simp [hm rho (hrho.trans inf_le_left), hn rho (hrho.trans inf_le_right)]
 
 end TauCeti.Toric.Fan

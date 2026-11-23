@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.FreeGroup.Commuting
-public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.Center
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.Data.List.CommonPrefix
+import Mathlib.Tactic.Group
+import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.Algebra.Group.Torsion
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
@@ -17,11 +17,13 @@ import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 /-!
 # Centralizers in free groups
 
-Mathlib's `FreeGroup.center_eq_bot_of_nontrivial` says that a free group on at least two
-generators has trivial centre. Consequently, a free group with a nontrivial central element is
-commutative, and, since subgroups of free groups are free (Nielsen–Schreier), commutation is
-transitive on the nontrivial elements of a free group. The centralizer of a nontrivial element of
-a free group is therefore abelian; Mathlib's `IsFreeGroup.isCyclic_centralizer` says it is cyclic.
+Mathlib's `FreeGroup.centralizer_of` says that the centralizer of a generator `of a` of a free
+group is the cyclic subgroup it generates, and `FreeGroup.center_eq_bot_of_nontrivial` says that
+a free group on at least two generators has trivial centre. Consequently, a free group with a
+nontrivial central element is commutative, and, since subgroups of free groups are free
+(Nielsen–Schreier), commutation is transitive on the nontrivial elements of a free group. The
+centralizer of a nontrivial element of a free group is therefore abelian; Mathlib's
+`IsFreeGroup.isCyclic_centralizer` says it is cyclic.
 
 These are the facts from which maximal roots of elements of a free group are built, in
 `TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic`. Free groups are also shown to have unique
@@ -39,10 +41,6 @@ arbitrarily small fraction of the lengths of the powers.
 
 ## Main results
 
-* `FreeGroup.mem_zpowers_of_of_commute`: an element commuting with a generator `of a` is a power
-  of `of a`.
-* `FreeGroup.centralizer_singleton_of`: the centralizer of a generator `of a` is the cyclic
-  subgroup it generates.
 * `FreeGroup.eq_one_of_commute_of_of_commute_of`: an element commuting with two distinct generators
   is trivial.
 * `FreeGroup.commute_of_zpow_of_zpow_iff`: nonzero powers of distinct generators do not commute.
@@ -75,27 +73,11 @@ namespace FreeGroup
 
 variable {α : Type*}
 
-/-- An element of a free group commuting with a generator `of a` is a power of `of a`. -/
-theorem mem_zpowers_of_of_commute {a : α} {z : FreeGroup α} (h : Commute z (of a)) :
-    z ∈ Subgroup.zpowers (of a) := by
-  obtain ⟨r, m, n, rfl, hr⟩ := (IsFreeGroup.commute_iff_exists_common_zpow z (of a)).1 h
-  have hn : n * n = 1 := by
-    obtain hn | hn := Int.natAbs_eq_iff.1 (natAbs_eq_one_of_of_eq_zpow hr) <;> simp [hn]
-  have hra : r = of a ^ n := by rw [hr, ← zpow_mul, hn, zpow_one]
-  rw [hra, ← zpow_mul]
-  exact Subgroup.zpow_mem_zpowers _ _
-
-/-- The centralizer of a generator `of a` of a free group is the cyclic subgroup it generates. -/
-theorem centralizer_singleton_of (a : α) : Subgroup.centralizer {of a} = Subgroup.zpowers (of a) :=
-  le_antisymm
-    (fun _ hz => mem_zpowers_of_of_commute (Subgroup.mem_centralizer_singleton_iff.1 hz))
-    (Subgroup.zpowers_le_centralizer_singleton _)
-
 /-- An element of a free group commuting with two distinct generators is trivial. -/
 theorem eq_one_of_commute_of_of_commute_of {a b : α} (hab : a ≠ b) {z : FreeGroup α}
     (ha : Commute z (of a)) (hb : Commute z (of b)) : z = 1 := by
-  obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute ha)
-  obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute hb)
+  obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.1 (commute_of_iff.mp ha.symm)
+  obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.1 (commute_of_iff.mp hb.symm)
   rw [(eq_of_of_zpow_eq_of_zpow hab hn.symm).1, zpow_zero]
 
 end FreeGroup

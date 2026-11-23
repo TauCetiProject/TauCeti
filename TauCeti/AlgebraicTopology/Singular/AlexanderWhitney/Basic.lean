@@ -44,6 +44,9 @@ of singular cochains and cap products of singular chains with singular cochains 
 * `TopCat.ιChainComplex_alexanderWhitneyDiagonal_f_tensorCochain`: the tensor product of two
   cochains, precomposed with the Alexander–Whitney diagonal, on a singular simplex.
 
+* `TopCat.alexanderWhitneyDiagonal_coefficient_naturality`: compatible maps between coefficient
+  diagonals give the corresponding square of native singular chain maps.
+
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
@@ -259,6 +262,30 @@ lemma alexanderWhitneyDiagonal_comp_tensorHom (X : TopCat.{w}) (u : T ⟶ R ⊗ 
   rw [alexanderWhitneyDiagonal, alexanderWhitneyDiagonal, Functor.map_comp, NatTrans.comp_app,
     Category.assoc, Category.assoc, Category.assoc, ← alexanderWhitney_coefficient_naturality,
     ← ((SSet.chainComplexFunctor C).map (f ⊗ₘ g)).naturality_assoc]
+
+section Coefficients
+
+variable {R' S' T' : C}
+
+/-- If `c ≫ u = u' ≫ (a ⊗ b)`, the singular Alexander–Whitney diagonals commute with
+the chain maps induced by `a`, `b` and `c`. -/
+theorem alexanderWhitneyDiagonal_coefficient_naturality (X : TopCat.{w})
+    (u : T ⟶ R ⊗ S) (u' : T' ⟶ R' ⊗ S')
+    (a : R' ⟶ R) (b : S' ⟶ S) (c : T' ⟶ T)
+    (hu : c ≫ u = u' ≫ (a ⊗ₘ b)) :
+    ((SSet.chainComplexFunctor C).map c).app (toSSet.obj X) ≫
+        X.alexanderWhitneyDiagonal u =
+      X.alexanderWhitneyDiagonal u' ≫ HomologicalComplex.tensorHom
+        (((SSet.chainComplexFunctor C).map a).app (toSSet.obj X))
+        (((SSet.chainComplexFunctor C).map b).app (toSSet.obj X)) := by
+  calc
+    _ = X.alexanderWhitneyDiagonal (c ≫ u) := by
+      simp only [alexanderWhitneyDiagonal, Functor.map_comp,
+        NatTrans.comp_app, Category.assoc]
+    _ = X.alexanderWhitneyDiagonal (u' ≫ (a ⊗ₘ b)) := congrArg _ hu
+    _ = _ := alexanderWhitneyDiagonal_comp_tensorHom X u' a b
+
+end Coefficients
 
 end AlexanderWhitneyDiagonal
 
