@@ -50,6 +50,11 @@ global continuity is unnecessary for this inclusion.
 * `MeasureTheory.Measure.isCompact_support_cond` and
   `MeasureTheory.Measure.compactSpace_support_cond` — Boolean selection between compactly
   supported measures preserves compact support.
+* `MeasureTheory.Measure.IsCompactProbabilityMeasure` — predicate for probability measures with
+  compact topological support.
+* `MeasureTheory.Measure.isCompact_support_map_homeomorph_iff` and
+  `MeasureTheory.Measure.isCompactProbabilityMeasure_map_homeomorph_iff` — pushforward along a
+  homeomorphism preserves compact support and being a compactly supported probability measure.
 -/
 
 public section
@@ -175,6 +180,12 @@ instance compactSpace_support_cond {X : Type*} [TopologicalSpace X] [MeasurableS
     CompactSpace (cond b μ ν).support :=
   Bool.rec hν hμ b
 
+/-- A measure on a topological measurable space is a compactly supported probability measure if it
+is a probability measure and its topological support is compact. -/
+abbrev IsCompactProbabilityMeasure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    (μ : Measure X) : Prop :=
+  IsProbabilityMeasure μ ∧ IsCompact μ.support
+
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
 
@@ -217,6 +228,20 @@ theorem support_map_of_isInducing_of_isClosed_range (μ : Measure X) {f : X → 
 theorem support_map_homeomorph (μ : Measure X) (e : X ≃ₜ Y) :
     (μ.map e).support = e '' μ.support :=
   support_map_of_isInducing_of_isClosed_range μ e.isInducing e.isClosedEmbedding.isClosed_range
+
+/-- Pushing a measure forward along a homeomorphism preserves compactness of its topological
+support. -/
+@[simp]
+theorem isCompact_support_map_homeomorph_iff (μ : Measure X) (e : X ≃ₜ Y) :
+    IsCompact (μ.map e).support ↔ IsCompact μ.support := by
+  rw [support_map_homeomorph, e.isCompact_image]
+
+/-- Pushing a measure forward along a homeomorphism preserves being a compactly supported
+probability measure. -/
+@[simp]
+theorem isCompactProbabilityMeasure_map_homeomorph_iff (μ : Measure X) (e : X ≃ₜ Y) :
+    (μ.map e).IsCompactProbabilityMeasure ↔ μ.IsCompactProbabilityMeasure := by
+  simp [IsCompactProbabilityMeasure, Measure.isProbabilityMeasure_map_iff e.measurable.aemeasurable]
 
 /-- Casting a natural-valued law to the reals casts its support: the cast is a closed embedding,
 so no new real limit points appear. -/

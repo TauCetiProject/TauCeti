@@ -11,7 +11,7 @@ public import TauCeti.Probability.FreeProbability.Law.Series
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Measure.Dirac
-import TauCeti.MeasureTheory.Measure.Support
+public import TauCeti.MeasureTheory.Measure.Support
 import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
@@ -62,14 +62,11 @@ open scoped ComplexOrder ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
-private abbrev IsCompactProb (μ : Measure ℝ) : Prop :=
-  IsProbabilityMeasure μ ∧ IsCompact μ.support
-
 open scoped Classical in
 /-- **Free additive convolution** of compactly supported Borel probability measures on `ℝ`: the law
 of `a + b` in the canonical reduced C⋆-free product realization of `(μ, ν)`, and `0` otherwise. -/
 def freeConv (μ ν : Measure ℝ) : Measure ℝ :=
-  if h : IsCompactProb μ ∧ IsCompactProb ν then
+  if h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure then
     have := h.1.1; have := h.2.1
     have := isCompact_iff_compactSpace.mp h.1.2
     have := isCompact_iff_compactSpace.mp h.2.2
@@ -81,7 +78,7 @@ def freeConv (μ ν : Measure ℝ) : Measure ℝ :=
 /-- Scoped notation `μ ⊞ ν` for the free additive convolution of measures on `ℝ`. -/
 scoped[FreeProbability] infixr:80 " ⊞ " => MeasureTheory.Measure.freeConv
 
-private theorem freeConv_def_of_isCompactProb {μ ν : Measure ℝ}
+private theorem freeConv_def_of_isCompactProbabilityMeasure {μ ν : Measure ℝ}
     [hμp : IsProbabilityMeasure μ] [hνp : IsProbabilityMeasure ν]
     (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     have := isCompact_iff_compactSpace.mp hμ
@@ -89,13 +86,13 @@ private theorem freeConv_def_of_isCompactProb {μ ν : Measure ℝ}
     μ.freeConv ν = (TauCeti.FreeLawRealization.state (cond · μ ν)).law
       (TauCeti.FreeLawRealization.generator (cond · μ ν) true +
         TauCeti.FreeLawRealization.generator (cond · μ ν) false) := by
-  simp [freeConv, IsCompactProb, hμp, hνp, hμ, hν]
+  simp [freeConv, IsCompactProbabilityMeasure, hμp, hνp, hμ, hν]
 
 /-- Outside compactly supported probability measures, `freeConv` returns `0`. -/
 theorem freeConv_eq_zero_of_not {μ ν : Measure ℝ}
-    (h : ¬((IsProbabilityMeasure μ ∧ IsCompact μ.support) ∧
-      (IsProbabilityMeasure ν ∧ IsCompact ν.support))) : μ.freeConv ν = 0 := by
-  simp [freeConv, IsCompactProb, h]
+    (h : ¬(μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure)) :
+    μ.freeConv ν = 0 := by
+  simp [freeConv, h]
 
 /-- Convolving the zero measure on the left gives `0`. -/
 @[simp] theorem zero_freeConv (μ : Measure ℝ) : (0 : Measure ℝ).freeConv μ = 0 :=
@@ -111,7 +108,7 @@ theorem isProbabilityMeasure_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasur
     IsProbabilityMeasure (μ.freeConv ν) := by
   have := isCompact_iff_compactSpace.mp hμ
   have := isCompact_iff_compactSpace.mp hν
-  rw [freeConv_def_of_isCompactProb hμ hν]
+  rw [freeConv_def_of_isCompactProbabilityMeasure hμ hν]
   exact PositiveLinearMap.isProbabilityMeasure_law _ (TauCeti.FreeLawRealization.state_one _)
     ((TauCeti.FreeLawRealization.isSelfAdjoint_generator _ true).add
       (TauCeti.FreeLawRealization.isSelfAdjoint_generator _ false))
@@ -119,15 +116,15 @@ theorem isProbabilityMeasure_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasur
 /-- `μ.freeConv ν` is always either `0` or a probability measure (hence a finite measure). -/
 instance isZeroOrProbabilityMeasure_freeConv (μ ν : Measure ℝ) :
     IsZeroOrProbabilityMeasure (μ.freeConv ν) := by
-  by_cases h : IsCompactProb μ ∧ IsCompactProb ν
+  by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
   · have := h.1.1; have := h.2.1; have := isProbabilityMeasure_freeConv h.1.2 h.2.2; infer_instance
   · rw [freeConv_eq_zero_of_not h]; infer_instance
 
 /-- The free additive convolution of any two measures has compact topological support. -/
 theorem isCompact_support_freeConv (μ ν : Measure ℝ) : IsCompact (μ.freeConv ν).support := by
-  by_cases h : IsCompactProb μ ∧ IsCompactProb ν
+  by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
   · have := h.1.1; have := h.2.1
-    rw [freeConv_def_of_isCompactProb h.1.2 h.2.2]
+    rw [freeConv_def_of_isCompactProbabilityMeasure h.1.2 h.2.2]
     exact PositiveLinearMap.isCompact_support_law _ _
   · simp [freeConv_eq_zero_of_not h]
 
@@ -135,17 +132,14 @@ theorem isCompact_support_freeConv (μ ν : Measure ℝ) : IsCompact (μ.freeCon
 measures. -/
 theorem isProbabilityMeasure_freeConv_iff {μ ν : Measure ℝ} :
     IsProbabilityMeasure (μ.freeConv ν) ↔
-      (IsProbabilityMeasure μ ∧ IsCompact μ.support) ∧
-        (IsProbabilityMeasure ν ∧ IsCompact ν.support) :=
+      μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure :=
   ⟨fun hp => by by_contra h; exact not_isProbabilityMeasure_zero (freeConv_eq_zero_of_not h ▸ hp),
     fun ⟨⟨_, hμc⟩, ⟨_, hνc⟩⟩ => isProbabilityMeasure_freeConv hμc hνc⟩
 
 /-- `μ.freeConv ν` equals `0` iff at least one of `μ` or `ν` is not a compactly supported
 probability measure. -/
 theorem freeConv_eq_zero_iff {μ ν : Measure ℝ} :
-    μ.freeConv ν = 0 ↔
-      ¬(IsProbabilityMeasure μ ∧ IsCompact μ.support) ∨
-        ¬(IsProbabilityMeasure ν ∧ IsCompact ν.support) := by
+    μ.freeConv ν = 0 ↔ ¬μ.IsCompactProbabilityMeasure ∨ ¬ν.IsCompactProbabilityMeasure := by
   have h : μ.freeConv ν = 0 ↔ ¬IsProbabilityMeasure (μ.freeConv ν) :=
     ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
       fun hnp => (eq_zero_or_isProbabilityMeasure (μ.freeConv ν)).resolve_right hnp⟩
@@ -173,7 +167,8 @@ theorem exists_isFreelyIndependentElements_law_add_eq_freeConv {μ ν : Measure 
     TauCeti.FreeLawRealization.spectrum_generator τ true,
     TauCeti.FreeLawRealization.spectrum_generator τ false,
     TauCeti.FreeLawRealization.law_generator τ true,
-    TauCeti.FreeLawRealization.law_generator τ false, (freeConv_def_of_isCompactProb hμ hν).symm⟩
+    TauCeti.FreeLawRealization.law_generator τ false,
+    (freeConv_def_of_isCompactProbabilityMeasure hμ hν).symm⟩
 
 end MeasureTheory.Measure
 
@@ -246,7 +241,7 @@ namespace MeasureTheory.Measure
 
 /-- Free additive convolution is commutative, unconditionally for all measures on `ℝ`. -/
 theorem freeConv_comm (μ ν : Measure ℝ) : μ.freeConv ν = ν.freeConv μ := by
-  by_cases h : IsCompactProb μ ∧ IsCompactProb ν
+  by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
   · have := h.1.1; have := h.2.1
     obtain ⟨A, _, _, _, φ, g, hφ, hg_free, hg1, hg2, -, -, hg1_law, hg2_law, hadd_law⟩ :=
       exists_isFreelyIndependentElements_law_add_eq_freeConv h.1.2 h.2.2
@@ -258,7 +253,8 @@ instance : Std.Commutative (α := Measure ℝ) freeConv := ⟨freeConv_comm⟩
 /-- Free additive convolution is associative, unconditionally for all measures on `ℝ`. -/
 theorem freeConv_assoc (μ ν ρ : Measure ℝ) :
     (μ.freeConv ν).freeConv ρ = μ.freeConv (ν.freeConv ρ) := by
-  by_cases h : IsCompactProb μ ∧ IsCompactProb ν ∧ IsCompactProb ρ
+  by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure ∧
+      ρ.IsCompactProbabilityMeasure
   · rcases h with ⟨⟨hμp, hμc⟩, ⟨hνp, hνc⟩, ⟨hρp, hρc⟩⟩
     let τ : Fin 3 → Measure ℝ := ![μ, ν, ρ]
     have : ∀ i : Fin 3, IsProbabilityMeasure (τ i) := fun i => by fin_cases i <;> assumption
@@ -313,12 +309,10 @@ theorem freeConv_map_affine {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsP
 /-- Translating `μ` by `a` and `ν` by `b` translates `μ.freeConv ν` by `a + b`, unconditionally. -/
 theorem freeConv_map_add (μ ν : Measure ℝ) (a b : ℝ) :
     (μ.map (a + ·)).freeConv (ν.map (b + ·)) = (μ.freeConv ν).map (a + b + ·) := by
-  have hcp (σ : Measure ℝ) (c : ℝ) : IsCompactProb (σ.map (c + ·)) → IsCompactProb σ :=
-    fun ⟨hp, hc⟩ => ⟨isProbabilityMeasure_iff.mpr <| by
-        simpa [Measure.map_apply (measurable_const_add c) .univ] using hp.measure_univ,
-      (Homeomorph.addLeft c).isCompact_image.mp <| by
-        rwa [← σ.support_map_homeomorph (Homeomorph.addLeft c)]⟩
-  by_cases h : IsCompactProb μ ∧ IsCompactProb ν
+  have hcp (σ : Measure ℝ) (c : ℝ) :
+      (σ.map (c + ·)).IsCompactProbabilityMeasure → σ.IsCompactProbabilityMeasure :=
+    (σ.isCompactProbabilityMeasure_map_homeomorph_iff (Homeomorph.addLeft c)).mp
+  by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
   · have := h.1.1; have := h.2.1; simpa using freeConv_map_affine h.1.2 h.2.2 a b 1
   · rw [freeConv_eq_zero_of_not fun ⟨h1, h2⟩ => h ⟨hcp μ a h1, hcp ν b h2⟩,
       freeConv_eq_zero_of_not h, Measure.map_zero]
@@ -331,15 +325,15 @@ theorem freeConv_map_mul {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsProb
 
 /-- Free additive convolution commutes with `Measure.neg` for all measures on `ℝ`. -/
 theorem neg_freeConv_neg (μ ν : Measure ℝ) : μ.neg.freeConv ν.neg = (μ.freeConv ν).neg := by
-  have hcomp (σ : Measure ℝ) : IsCompact σ.neg.support ↔ IsCompact σ.support := by
-    rw [Measure.neg_def, ← Homeomorph.coe_neg, σ.support_map_homeomorph (Homeomorph.neg ℝ),
-      (Homeomorph.neg ℝ).isCompact_image]
-  by_cases h : IsCompactProb μ ∧ IsCompactProb ν
+  have hcp (σ : Measure ℝ) :
+      σ.neg.IsCompactProbabilityMeasure → σ.IsCompactProbabilityMeasure := by
+    rw [Measure.neg_def, ← Homeomorph.coe_neg,
+      σ.isCompactProbabilityMeasure_map_homeomorph_iff (Homeomorph.neg ℝ)]
+    exact id
+  by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
   · have := h.1.1; have := h.2.1; simpa [Measure.neg_def] using freeConv_map_mul h.1.2 h.2.2 (-1)
-  · have h' : ¬(IsCompactProb μ.neg ∧ IsCompactProb ν.neg) := fun ⟨⟨_, hc1⟩, ⟨_, hc2⟩⟩ =>
-      h ⟨⟨by simpa using Measure.isProbabilityMeasure_neg μ.neg, (hcomp μ).mp hc1⟩,
-        ⟨by simpa using Measure.isProbabilityMeasure_neg ν.neg, (hcomp ν).mp hc2⟩⟩
-    rw [freeConv_eq_zero_of_not h', freeConv_eq_zero_of_not h]; simp [Measure.neg_def]
+  · rw [freeConv_eq_zero_of_not fun ⟨h1, h2⟩ => h ⟨hcp μ h1, hcp ν h2⟩,
+      freeConv_eq_zero_of_not h]; simp [Measure.neg_def]
 
 /-- Convolving on the left with `Measure.dirac a` translates `μ` by `a`. -/
 @[simp] theorem dirac_freeConv (a : ℝ) {μ : Measure ℝ} [IsProbabilityMeasure μ]

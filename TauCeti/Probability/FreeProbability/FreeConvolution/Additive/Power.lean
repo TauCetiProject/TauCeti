@@ -25,12 +25,17 @@ convolution power `MeasureTheory.Measure.freeConvolutionPower` (`μ^{⊞ n}`).
 ## Main results
 
 * `MeasureTheory.Measure.isProbabilityMeasure_fold_freeConv_iff`,
+  `MeasureTheory.Measure.fold_freeConv_map_affine`,
+  `MeasureTheory.Measure.fold_freeConv_map_add`,
+  `MeasureTheory.Measure.fold_freeConv_map_mul`,
+  `MeasureTheory.Measure.fold_freeConv_neg`,
   `MeasureTheory.Measure.rSeries_integral_fold_freeConv`,
   `MeasureTheory.Measure.freeCumulant_integral_fold_freeConv`,
   `MeasureTheory.Measure.eq_fold_freeConv_iff_rSeries_integral_eq`,
   `MeasureTheory.Measure.eq_fold_freeConv_iff_forall_freeCumulant_integral_eq`,
-  `MeasureTheory.Measure.support_fold_freeConv_subset_Icc`: validity, formal series, cumulants,
-  determinacy, and support bounds for finite `Finset.fold`s of `freeConv`.
+  `MeasureTheory.Measure.support_fold_freeConv_subset_Icc`: validity, affine/reflection,
+  formal series, cumulants, determinacy, and support bounds for finite `Finset.fold`s of
+  `freeConv`.
 * `TauCeti.IsFreelyIndependentElements.law_sum`, `TauCeti.IsFreelyIndependent.law_sum`:
   C⋆- and von Neumann finite-sum transport.
 * `MeasureTheory.Measure.freeConvolutionPower_add`,
@@ -87,21 +92,21 @@ instance isZeroOrProbabilityMeasure_fold_freeConv (μ : ι → Measure ℝ) :
 measure in `s` is a compactly supported probability measure (including when `s = ∅`). -/
 theorem isProbabilityMeasure_fold_freeConv_iff :
     IsProbabilityMeasure (s.fold freeConv (Measure.dirac 0) μ) ↔
-      ∀ i ∈ s, IsProbabilityMeasure (μ i) ∧ IsCompact (μ i).support := by
+      ∀ i ∈ s, (μ i).IsCompactProbabilityMeasure := by
   classical
   induction s using Finset.induction_on with
   | empty =>
       simp only [Finset.fold_empty, notMem_empty, IsEmpty.forall_iff, implies_true, iff_true]
       infer_instance
   | @insert i s hi ih =>
-      rw [Finset.fold_insert hi, isProbabilityMeasure_freeConv_iff,
-        and_iff_left (isCompact_support_fold_freeConv s μ), ih, Finset.forall_mem_insert]
+      rw [Finset.fold_insert hi, isProbabilityMeasure_freeConv_iff, Finset.forall_mem_insert]
+      exact and_congr_right fun _ => (and_iff_left (isCompact_support_fold_freeConv s μ)).trans ih
 
 /-- Folding `freeConv` with base `Measure.dirac 0` yields `0` iff some indexed measure in `s` is
 not a compactly supported probability measure. -/
 theorem fold_freeConv_eq_zero_iff :
     s.fold freeConv (Measure.dirac 0) μ = 0 ↔
-      ∃ i ∈ s, ¬(IsProbabilityMeasure (μ i) ∧ IsCompact (μ i).support) := by
+      ∃ i ∈ s, ¬(μ i).IsCompactProbabilityMeasure := by
   have h : s.fold freeConv (Measure.dirac 0) μ = 0 ↔
       ¬IsProbabilityMeasure (s.fold freeConv (Measure.dirac 0) μ) :=
     ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
@@ -128,6 +133,55 @@ theorem support_fold_freeConv_subset_Icc {m M : ι → ℝ}
       rw [Finset.fold_insert hi, sum_insert hi, sum_insert hi]
       exact support_freeConv_subset_Icc (hI i (mem_insert_self i s))
         (ih fun j hj => hI j (mem_insert_of_mem hj))
+
+/-- **Affine equivariance of finite free additive convolution.** Pushing each `μ i` (`i ∈ s`)
+forward by `x ↦ a i + b * x` and folding with `freeConv` pushes the folded convolution forward by
+`x ↦ (∑ i ∈ s, a i) + b * x` (valid for all real slopes `b`, including `b = 0` and `b < 0`, and
+including `s = ∅`). -/
+theorem fold_freeConv_map_affine (hprob : ∀ i ∈ s, IsProbabilityMeasure (μ i))
+    (hcomp : ∀ i ∈ s, IsCompact (μ i).support) (a : ι → ℝ) (b : ℝ) :
+    (s.fold freeConv (Measure.dirac 0) fun i => (μ i).map fun x => a i + b * x) =
+      (s.fold freeConv (Measure.dirac 0) μ).map fun x => (∑ i ∈ s, a i) + b * x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+      have hp' := fun j hj => hprob j (mem_insert_of_mem hj)
+      have hc' := fun j hj => hcomp j (mem_insert_of_mem hj)
+      have := hprob i (mem_insert_self i s)
+      have := isProbabilityMeasure_fold_freeConv s hp' hc'
+      rw [Finset.fold_insert hi, Finset.fold_insert hi, ih hp' hc', Finset.sum_insert hi,
+        freeConv_map_affine (hcomp i (mem_insert_self i s))
+          (isCompact_support_fold_freeConv s μ) (a i) (∑ j ∈ s, a j) b]
+
+/-- Translating each `μ i` (`i ∈ s`) by `a i` translates the folded free convolution by
+`∑ i ∈ s, a i`, unconditionally for all measures on `ℝ` (including `s = ∅`). -/
+theorem fold_freeConv_map_add (μ : ι → Measure ℝ) (a : ι → ℝ) :
+    (s.fold freeConv (Measure.dirac 0) fun i => (μ i).map (a i + ·)) =
+      (s.fold freeConv (Measure.dirac 0) μ).map ((∑ i ∈ s, a i) + ·) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+      rw [Finset.fold_insert hi, Finset.fold_insert hi, ih, Finset.sum_insert hi, freeConv_map_add]
+
+/-- Scaling each `μ i` (`i ∈ s`) by `b` scales the folded free convolution by `b` (including
+`s = ∅` and `b = 0`). -/
+theorem fold_freeConv_map_mul (hprob : ∀ i ∈ s, IsProbabilityMeasure (μ i))
+    (hcomp : ∀ i ∈ s, IsCompact (μ i).support) (b : ℝ) :
+    (s.fold freeConv (Measure.dirac 0) fun i => (μ i).map (b * ·)) =
+      (s.fold freeConv (Measure.dirac 0) μ).map (b * ·) := by
+  simpa using fold_freeConv_map_affine s hprob hcomp (fun _ => 0) b
+
+/-- Reflection `Measure.neg` commutes with finite folded free convolution unconditionally. -/
+theorem fold_freeConv_neg (μ : ι → Measure ℝ) :
+    (s.fold freeConv (Measure.dirac 0) fun i => (μ i).neg) =
+      (s.fold freeConv (Measure.dirac 0) μ).neg := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [Measure.neg_def, Measure.map_dirac' measurable_neg]
+  | @insert i s hi ih =>
+      rw [Finset.fold_insert hi, Finset.fold_insert hi, ih, neg_freeConv_neg]
 
 /-- The formal R-series of a finite `Finset.fold` of `freeConv` is the sum of the individual formal
 R-series, including `s = ∅`. -/
@@ -271,7 +325,7 @@ instance isZeroOrProbabilityMeasure_freeConvolutionPower (μ : Measure ℝ) :
 
 /-- For `n ≠ 0`, outside compactly supported probability measures `freeConvolutionPower` is `0`. -/
 theorem freeConvolutionPower_eq_zero_of_not {μ : Measure ℝ} {n : ℕ} (hn : n ≠ 0)
-    (h : ¬(IsProbabilityMeasure μ ∧ IsCompact μ.support)) : μ.freeConvolutionPower n = 0 := by
+    (h : ¬μ.IsCompactProbabilityMeasure) : μ.freeConvolutionPower n = 0 := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
   exact freeConv_eq_zero_of_not fun h' => h h'.2
 
@@ -294,7 +348,7 @@ theorem isProbabilityMeasure_freeConvolutionPower {μ : Measure ℝ} [IsProbabil
 probability measure. -/
 theorem isProbabilityMeasure_freeConvolutionPower_iff {μ : Measure ℝ} {n : ℕ} :
     IsProbabilityMeasure (μ.freeConvolutionPower n) ↔
-      n = 0 ∨ (IsProbabilityMeasure μ ∧ IsCompact μ.support) := by
+      n = 0 ∨ μ.IsCompactProbabilityMeasure := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp only [freeConvolutionPower_zero, true_or, iff_true]; infer_instance
   · simp only [hn, false_or]
@@ -306,8 +360,7 @@ theorem isProbabilityMeasure_freeConvolutionPower_iff {μ : Measure ℝ} {n : �
 /-- `μ.freeConvolutionPower n` equals `0` iff `n ≠ 0` and `μ` is not a compactly supported
 probability measure. -/
 theorem freeConvolutionPower_eq_zero_iff {μ : Measure ℝ} {n : ℕ} :
-    μ.freeConvolutionPower n = 0 ↔
-      n ≠ 0 ∧ ¬(IsProbabilityMeasure μ ∧ IsCompact μ.support) := by
+    μ.freeConvolutionPower n = 0 ↔ n ≠ 0 ∧ ¬μ.IsCompactProbabilityMeasure := by
   have h : μ.freeConvolutionPower n = 0 ↔ ¬IsProbabilityMeasure (μ.freeConvolutionPower n) :=
     ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
       fun hnp => (eq_zero_or_isProbabilityMeasure _).resolve_right hnp⟩
@@ -324,7 +377,7 @@ theorem freeConvolutionPower_add (μ : Measure ℝ) (m n : ℕ) :
       (μ.freeConvolutionPower m).freeConv (μ.freeConvolutionPower n) := by
   induction n with
   | zero =>
-      by_cases h : IsProbabilityMeasure μ ∧ IsCompact μ.support
+      by_cases h : μ.IsCompactProbabilityMeasure
       · have := h.1; have := isProbabilityMeasure_freeConvolutionPower h.2 m
         exact (freeConv_dirac_zero (isCompact_support_freeConvolutionPower μ m)).symm
       · rcases eq_or_ne m 0 with rfl | hm
@@ -336,6 +389,15 @@ theorem freeConvolutionPower_add (μ : Measure ℝ) (m n : ℕ) :
 /-- Left recursion `μ^{⊞ (n + 1)} = μ ⊞ μ^{⊞ n}`, unconditionally for all measures on `ℝ`. -/
 theorem freeConvolutionPower_succ' (μ : Measure ℝ) (n : ℕ) :
     μ.freeConvolutionPower (n + 1) = μ.freeConv (μ.freeConvolutionPower n) := freeConv_comm _ _
+
+/-- Folding `freeConv` over a constant measure on `s` gives `μ.freeConvolutionPower #s`. -/
+theorem fold_freeConv_const {ι : Type*} (s : Finset ι) (μ : Measure ℝ) :
+    s.fold freeConv (Measure.dirac 0) (fun _ => μ) = μ.freeConvolutionPower #s := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+      rw [Finset.fold_insert hi, card_insert_of_notMem hi, ih, freeConvolutionPower_succ']
 
 /-- Free convolution powers of a Dirac mass add its atom `n` times. -/
 @[simp] theorem freeConvolutionPower_dirac (a : ℝ) (n : ℕ) :
@@ -358,23 +420,16 @@ theorem freeConvolutionPower_map_affine {μ : Measure ℝ} [IsProbabilityMeasure
     (hμ : IsCompact μ.support) (a b : ℝ) (n : ℕ) :
     (μ.map fun x => a + b * x).freeConvolutionPower n =
       (μ.freeConvolutionPower n).map fun x => (n : ℝ) * a + b * x := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-      have := isProbabilityMeasure_freeConvolutionPower hμ n
-      rw [freeConvolutionPower_succ, ih,
-        freeConv_map_affine (isCompact_support_freeConvolutionPower μ n) hμ ((n : ℝ) * a) a b,
-        ← freeConvolutionPower_succ]
-      congr 1; funext x; push_cast; ring
+  simpa [fold_freeConv_const, nsmul_eq_mul] using fold_freeConv_map_affine
+    (univ : Finset (Fin n)) (μ := fun _ => μ) (fun _ _ => inferInstance)
+    (fun _ _ => hμ) (fun _ => a) b
 
 /-- Translating `μ` by `a` translates `μ.freeConvolutionPower n` by `n • a`, unconditionally for
 all measures on `ℝ`. -/
 theorem freeConvolutionPower_map_add (μ : Measure ℝ) (a : ℝ) (n : ℕ) :
     (μ.map (a + ·)).freeConvolutionPower n = (μ.freeConvolutionPower n).map (n • a + ·) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-      rw [freeConvolutionPower_succ, ih, freeConv_map_add, ← freeConvolutionPower_succ, succ_nsmul]
+  simpa [fold_freeConv_const] using
+    fold_freeConv_map_add (univ : Finset (Fin n)) (fun _ => μ) (fun _ => a)
 
 /-- Scaling `μ` by `b` scales `μ.freeConvolutionPower n` by `b` (including `n = 0` and `b = 0`). -/
 theorem freeConvolutionPower_map_mul {μ : Measure ℝ} [IsProbabilityMeasure μ]
@@ -385,18 +440,7 @@ theorem freeConvolutionPower_map_mul {μ : Measure ℝ} [IsProbabilityMeasure μ
 /-- Reflection `Measure.neg` commutes with free convolution powers unconditionally. -/
 theorem freeConvolutionPower_neg (μ : Measure ℝ) (n : ℕ) :
     μ.neg.freeConvolutionPower n = (μ.freeConvolutionPower n).neg := by
-  induction n with
-  | zero => simp [Measure.neg_def, Measure.map_dirac' measurable_neg]
-  | succ n ih => rw [freeConvolutionPower_succ, ih, neg_freeConv_neg, freeConvolutionPower_succ]
-
-/-- Folding `freeConv` over a constant measure on `s` gives `μ.freeConvolutionPower #s`. -/
-theorem fold_freeConv_const {ι : Type*} (s : Finset ι) (μ : Measure ℝ) :
-    s.fold freeConv (Measure.dirac 0) (fun _ => μ) = μ.freeConvolutionPower #s := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert i s hi ih =>
-      rw [Finset.fold_insert hi, card_insert_of_notMem hi, ih, freeConvolutionPower_succ']
+  simpa [fold_freeConv_const] using fold_freeConv_neg (univ : Finset (Fin n)) (fun _ => μ)
 
 /-- Interval support bounds scale by `n` under `freeConvolutionPower`, unconditionally for all
 measures on `ℝ` and including `n = 0`. -/
