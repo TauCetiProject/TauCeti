@@ -591,7 +591,7 @@ theorem exists_singularHomologyMap_ofSubsetMap_tensorHom_eq (hA : IsOpen A) (hB 
   let g : E ⊗ TopCat.of B ⟶ E ⊗ Y := 𝟙 E ⊗ₘ (TopPair.ofSubset B).map
   have hgA : Set.MapsTo g (fst E (TopCat.of B) ⁻¹' A) (fst E Y ⁻¹' A) :=
     mapsTo_tensorHom_preimage_fst _ _ fun _ hx ↦ hx
-  have hgZ : ∀ x, g x ∈ Z := fun x ↦ hBZ x.2.2
+  have hgZ : ∀ x, g x ∈ Z := fun x ↦ hBZ x.2.property
   let f : TopPair.ofSubset (fst E (TopCat.of B) ⁻¹' A) ⟶ TopTriple.innerPair.obj T :=
     TopPair.ofHom (TopCat.ofHom ⟨Set.codRestrict g Z hgZ, g.hom.continuous.codRestrict hgZ⟩)
       (TopCat.ofHom ⟨Set.MapsTo.restrict g _ _ hgA, g.hom.continuous.restrict hgA⟩) rfl
@@ -602,20 +602,20 @@ theorem exists_singularHomologyMap_ofSubsetMap_tensorHom_eq (hA : IsOpen A) (hB 
         else Subtype.val ⁻¹' (snd E Y ⁻¹' B)) ?_ ?_ ?_ n
     · exact (Topology.IsEmbedding.id.prodMap Topology.IsEmbedding.subtypeVal).codRestrict Z hgZ
     · rintro x ⟨y, hy⟩
-      have hy' : y.1 = g x := congrArg Subtype.val hy
-      have hyA : y.1 ∈ fst E Y ⁻¹' A := y.2
+      have hy' : y.val = g x := congrArg Subtype.val hy
+      have hyA : y.val ∈ fst E Y ⁻¹' A := y.property
       rw [hy'] at hyA
       exact ⟨⟨x, hyA⟩, rfl⟩
     · rintro (_ | _)
-      · exact (hB.preimage (snd E Y).hom.continuous).preimage continuous_subtype_val
-      · exact (hA.preimage (fst E Y).hom.continuous).preimage continuous_subtype_val
+      · exact (hB.preimage (snd E Y).hom.continuous).preimage continuous_subtypeVal
+      · exact (hA.preimage (fst E Y).hom.continuous).preimage continuous_subtypeVal
     · refine Set.eq_univ_of_forall fun z ↦ Set.mem_iUnion.2 ?_
-      rcases hZ z.2 with hz | hz
+      rcases hZ z.property with hz | hz
       · exact ⟨true, hz⟩
       · exact ⟨false, hz⟩
     · rintro (_ | _)
-      · exact Or.inr fun z hz ↦ ⟨(z.1.1, ⟨z.1.2, hz⟩), rfl⟩
-      · exact Or.inl fun z hz ↦ ⟨⟨z.1, hz⟩, rfl⟩
+      · exact Or.inr fun z hz ↦ ⟨(z.val.1, ⟨z.val.2, hz⟩), rfl⟩
+      · exact Or.inl fun z hz ↦ ⟨⟨z.val, hz⟩, rfl⟩
   obtain ⟨y₀, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
     (inferInstance : Epi (TopPair.singularHomologyMap f R n)) y
   refine ⟨y₀, ?_⟩

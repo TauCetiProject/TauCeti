@@ -679,8 +679,8 @@ theorem LivesOverFundamentalClass.right_of_singularHomologyCross_prodMap {p : E 
     refine hnat.trans ?_
     exact (_ ≫= homologyMap_comp_fiberLocalization_eq_zero (R ⊗ S)
       (ContinuousMap.prodMap (ContinuousMap.id E)
-        (⟨Subtype.val, continuous_subtype_val⟩ : C(((q ⁻¹' {c})ᶜ : Set Y), Y)))
-      (p := Prod.map p q) (b := (b, c)) (fun x hx ↦ x.2.2 (congrArg Prod.snd hx :)) n).trans
+        (⟨Subtype.val, continuous_subtypeVal⟩ : C(((q ⁻¹' {c})ᶜ : Set Y), Y)))
+      (p := Prod.map p q) (b := (b, c)) (fun x hx ↦ x.2.property (congrArg Prod.snd hx :)) n).trans
       comp_zero
   have h₁ := congrArg (fun φ ↦ φ.hom (α ⊗ₜ β')) key
   simp only [ModuleCat.hom_zero, LinearMap.zero_apply] at h₁
