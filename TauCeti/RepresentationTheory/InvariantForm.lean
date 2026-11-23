@@ -9,7 +9,7 @@ public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
-public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.Dual.Invariants
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.Irreducible
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Ramification
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
-import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.Dual.Invariants
 
 /-!
 # The Jacobian of a system of invariants

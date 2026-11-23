@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Squares
-public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.Dual.Invariants
 public import TauCeti.RepresentationTheory.ExteriorPower
 public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.SymmetricPower

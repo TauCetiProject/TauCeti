@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Finrank
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.PresentedGroup
 public import TauCeti.RepresentationTheory.InvariantForm
 import TauCeti.RepresentationTheory.Coinvariants
-import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.Dual.Invariants
 
 /-!
 # One-cocycles and first cohomology of closed surface groups

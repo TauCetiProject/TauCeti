@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import TauCeti.LinearAlgebra.Dual.Lemmas
-public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.Dual.Invariants
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.DividedDifference
 
 /-!

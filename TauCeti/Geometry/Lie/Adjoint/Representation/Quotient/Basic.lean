@@ -19,7 +19,7 @@ to a representation of the quotient group `G ⧸ N` on `𝔤 ⧸ 𝔫`,
 `Subgroup.quotientAdjointRepresentation N`, by `[g] · [ξ] = [Ad_g ξ]`; its pullback to `G` is the
 quotient representation of `G` on `𝔤 ⧸ 𝔫`. Its definition uses no Lie group structure on
 `G ⧸ N`. Its comparison with the adjoint representation of the quotient Lie group `G ⧸ N` is in
-`TauCeti.Geometry.Lie.Adjoint.Representation.QuotientLieGroup`.
+`TauCeti.Geometry.Lie.Adjoint.Representation.Quotient.LieGroup`.
 
 ## Main definitions
 

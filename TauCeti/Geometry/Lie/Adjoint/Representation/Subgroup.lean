@@ -16,7 +16,7 @@ in the tangent Lie algebra `𝔤`. The adjoint action `Ad_g` of an element `g` o
 `K` preserves `𝔨`, so for a normal subgroup `N` the Lie algebra `𝔫` is a subrepresentation of the
 adjoint representation. If moreover `N` is closed, then `Ad_n ξ - ξ ∈ 𝔫` for `n ∈ N` and every
 `ξ ∈ 𝔤`, so `N` acts trivially on `𝔤 ⧸ 𝔫`
-(`TauCeti.Geometry.Lie.Adjoint.Representation.Quotient`).
+(`TauCeti.Geometry.Lie.Adjoint.Representation.Quotient.Basic`).
 
 ## Main results
 

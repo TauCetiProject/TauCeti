@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Pseudoreflection
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Molien
 import TauCeti.LinearAlgebra.Charpoly.FixedSubmodule
 import TauCeti.LinearAlgebra.End.FiniteOrder
-import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.Dual.Invariants
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 import TauCeti.RingTheory.PowerSeries.CoeffProd
 import TauCeti.RingTheory.PowerSeries.Evaluation

@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.CMField
 public import Mathlib.RepresentationTheory.Subrepresentation
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Embeddings
-public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.Dual.Invariants
 public import TauCeti.RepresentationTheory.GaloisLattice.Basic
 public import TauCeti.RepresentationTheory.Smooth.Basic
 

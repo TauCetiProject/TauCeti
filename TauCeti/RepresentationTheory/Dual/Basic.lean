@@ -13,7 +13,8 @@ public import Mathlib.RepresentationTheory.Basic
 The dual `ρ.dual` of a representation acts on functionals by `ψ ↦ ψ ∘ ρ g⁻¹`. Restricting a
 representation along a group homomorphism `f : H →* G` and then dualizing gives the restriction of
 the dual along `f` (`Representation.dual_comp`). This law needs only Mathlib's definition of the
-dual representation; the invariants of the dual are in `TauCeti.RepresentationTheory.Dual`.
+dual representation; the invariants of the dual are in
+`TauCeti.RepresentationTheory.Dual.Invariants`.
 -/
 
 public section

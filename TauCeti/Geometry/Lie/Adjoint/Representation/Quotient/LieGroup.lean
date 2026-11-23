@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Quotient
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Quotient.Basic
 public import TauCeti.Geometry.Lie.Subgroup.NormalQuotient
 
 /-!

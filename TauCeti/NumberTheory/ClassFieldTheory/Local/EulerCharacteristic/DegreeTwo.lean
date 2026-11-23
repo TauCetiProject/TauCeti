@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.FiniteQuotient
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Cardinality
-public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.Dual.Invariants
 
 import Mathlib.FieldTheory.Finite.GaloisField
 import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.DegreeTwo

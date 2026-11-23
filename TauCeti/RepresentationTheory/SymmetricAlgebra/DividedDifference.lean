@@ -26,7 +26,8 @@ The main example is a pseudoreflection. Let `ρ` be a representation on a vector
 field `K`, and let `g` fix pointwise a hyperplane `ker ℓ`, cut out by a nonzero linear form `ℓ`.
 Then `φ - g • φ` is a multiple of `ℓ` for every linear form `φ`, where `G` acts on `V*` by the
 contragredient representation `Representation.dual`
-(`Representation.sub_dual_apply_mem_span_singleton`, in `TauCeti.RepresentationTheory.Dual`).
+(`Representation.sub_dual_apply_mem_span_singleton`, in
+`TauCeti.RepresentationTheory.Dual.Invariants`).
 Hence `g` has a divided-difference operator `δ_g f = (f - g • f) / ℓ` on the polynomial functions
 `Sym(V*)`, which is linear over the polynomial invariants `Sym(V*)^G`, lowers degrees by one, and
 satisfies the operator identity `1 - g = m_ℓ ∘ δ_g`. These operators are the basic tool of the

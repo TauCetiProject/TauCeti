@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Invariants
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.Basic
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Projection
-import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.Dual.Invariants
 
 /-!
 # Tensor-invariant dimensions of lines and of the regular representation

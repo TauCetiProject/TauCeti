@@ -11,7 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.LeftTranslation
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.CoordinateMap
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Naturality
-public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.Dual.Invariants
 
 /-!
 # Translation invariance of projective orbit images

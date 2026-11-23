@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.IntegralDomain
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.Algebra.Ring.SquareZero
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Prime
-public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.Dual.Invariants
 public import TauCeti.RepresentationTheory.Pseudoreflection
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
