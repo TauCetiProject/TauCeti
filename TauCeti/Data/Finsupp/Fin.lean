@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finsupp.Fin
 public import Mathlib.Data.Finsupp.Lex
 public import Mathlib.Order.Fin.Tuple
+import TauCeti.Order.Fin.Tuple
 
 /-!
 # `Finsupp.cons`, `Finsupp.snoc` and their lexicographic comparison
@@ -104,12 +105,8 @@ theorem eq_snoc_iff {t : Fin (n + 1) →₀ M} {s : Fin n →₀ M} {y : M} :
 compares the last entries when the initial parts are equal. -/
 theorem toLex_snoc_lt_toLex_snoc_iff [LT M] {x y : M} {s t : Fin n →₀ M} :
     toLex (snoc s x) < toLex (snoc t y) ↔ toLex s < toLex t ∨ s = t ∧ x < y := by
-  -- Modelled on Mathlib's `Fin.pi_lex_lt_cons_cons`, but the quantifiers of the lexicographic
-  -- order are split at the last index instead of the first.
-  simp only [Lex.lt_iff, ofLex_toLex, coe_snoc, Fin.exists_fin_succ', Fin.forall_fin_succ',
-    Fin.snoc_castSucc, Fin.snoc_last, Fin.castSucc_lt_castSucc_iff, Fin.castSucc_lt_last,
-    (Fin.castSucc_lt_last _).not_gt, lt_self_iff_false, Finsupp.ext_iff, false_imp_iff,
-    true_imp_iff, and_true]
+  simp only [Lex.lt_iff, ofLex_toLex, coe_snoc, ← DFunLike.coe_injective.eq_iff]
+  exact Fin.pi_lex_lt_snoc_snoc (α := fun _ ↦ M) (s := fun {_} ↦ (· < ·))
 
 end Snoc
 
