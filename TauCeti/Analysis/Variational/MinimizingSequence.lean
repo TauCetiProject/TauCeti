@@ -9,10 +9,9 @@ public import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
 public import TauCeti.Analysis.Variational.BoundedSublevels
 import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
-import TauCeti.Order.Filter.Extr
+import TauCeti.Analysis.Variational.DirectMethod
 import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 import TauCeti.Topology.Algebra.Module.WeakSpace.Semicontinuity
-import TauCeti.Topology.Semicontinuity.Basic
 
 /-!
 # Minimizing sequences and the sequential direct method
@@ -272,8 +271,10 @@ theorem exists_isMinOn_of_isSeqClosed_sublevel
       (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b})) :
     ∃ u ∈ S, IsMinOn E S u := by
   have hcompact := isCompact_toWeakSpace_of_isBounded_of_isSeqClosed hV hb hclosed
-  exact (toWeakSpace 𝕜 V).toEquiv.exists_isMinOn_of_isCompact_sublevel hne hcompact
-    ((lowerSemicontinuousOn_weakSpace_iff_seqLowerSemicontinuousOn hcompact).2 hE)
+  have hlsc := (lowerSemicontinuousOn_weakSpace_iff_seqLowerSemicontinuousOn hcompact).2 hE
+  obtain ⟨u, hu, hmin⟩ :=
+    exists_isMinOn_of_weak_closed hV hne hcompact.isClosed hlsc (hb.hasBoundedSublevelsOn E)
+  exact ⟨u, hu.1, (isMinOn_sublevel_iff hu.2).1 hmin⟩
 
 /-- A single nonempty norm-bounded sublevel suffices for the sequential direct method on a
 sequentially weakly closed admissible set, without assuming a lower bound on the energy or a

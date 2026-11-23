@@ -9,7 +9,6 @@ public import TauCeti.Order.Filter.Extr
 public import TauCeti.Analysis.Variational.BoundedSublevels
 public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Topology.Semicontinuity.Basic
-import TauCeti.Topology.Semicontinuity.Basic
 
 /-!
 # The direct method in the weak topology
@@ -51,8 +50,9 @@ theorem isCompact_toWeakSpace_sublevel
   have heq : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} =
       (toWeakSpace 𝕜 V '' S) ∩
         (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u)) ⁻¹' Iic b := by
-    simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm]
-    rfl
+    ext u
+    simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, mem_preimage,
+      mem_ofPred_eq, mem_inter_iff, mem_Iic]
   obtain ⟨C, hC, hEC⟩ := lowerSemicontinuousOn_iff_preimage_Iic.1 hE b
   have hclosed : IsClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
     rw [heq, hEC]
@@ -67,9 +67,16 @@ theorem exists_isMinOn_of_weak_closed_of_isBounded_sublevel
     (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
       (toWeakSpace 𝕜 V '' S))
     {b : β} (hne : {u ∈ S | E u ≤ b}.Nonempty)
-    (hb : IsBounded {u ∈ S | E u ≤ b}) : ∃ u ∈ S, IsMinOn E S u :=
-  (toWeakSpace 𝕜 V).toEquiv.exists_isMinOn_of_isCompact_sublevel hne
-    (isCompact_toWeakSpace_sublevel hV hS hE b hb) (hE.mono (image_mono fun _ hx ↦ hx.1))
+    (hb : IsBounded {u ∈ S | E u ≤ b}) : ∃ u ∈ S, IsMinOn E S u := by
+  have hcompact := isCompact_toWeakSpace_sublevel hV hS hE b hb
+  have hsubset : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} ⊆ toWeakSpace 𝕜 V '' S :=
+    image_mono fun _ hx ↦ hx.1
+  obtain ⟨w, hw, hmin⟩ :=
+    LowerSemicontinuousOn.exists_isMinOn (hne.image _) hcompact (hE.mono hsubset)
+  obtain ⟨u, hu, rfl⟩ := hw
+  refine ⟨u, hu.1, (isMinOn_sublevel_iff hu.2).1 fun x hx ↦ ?_⟩
+  simpa only [mem_ofPred_eq, LinearEquiv.symm_apply_apply] using
+    hmin (mem_image_of_mem (toWeakSpace 𝕜 V) hx)
 
 /-- **The direct method.** A weakly lower semicontinuous energy with bounded sublevels on
 a nonempty weakly closed set in a reflexive space attains its minimum. -/

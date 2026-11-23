@@ -15,9 +15,6 @@ An equivalence `e : α ≃ β` carries `s` onto `t`, in the sense that `e x ∈ 
 
 The preimage of `{y}` under `e` is `{e.symm y}` (`Equiv.preimage_singleton`). Together with
 `Set.preimage_comp`, this identifies fibres after relabelling the base by an equivalence.
-Similarly, an equivalence transports universal quantification over a point in `e '' t` and a
-family valued in `e '' s` to quantification over `t` and families valued in `s`
-(`Equiv.forall_mem_image_fun_iff`).
 
 A map `g : α → β` that agrees on `s` with an equivalence `s ≃ t` is a bijection from `s` onto `t`
 (`Equiv.bijOn_of_coe_eq`). This is a converse to `Set.BijOn.equiv`, which turns a bijection
@@ -36,19 +33,6 @@ namespace Equiv
 theorem preimage_singleton {α β : Type*} (e : α ≃ β) (y : β) :
     e ⁻¹' {y} = {e.symm y} := by
   rw [← e.image_symm_eq_preimage, Set.image_singleton]
-
-/-- An equivalence `e : α ≃ β` transports universal quantification over a point `y ∈ e '' t` and
-a family `u : ι → β` valued in `e '' s` to quantification over `x ∈ t` and a family `u : ι → α`
-valued in `s`. -/
-theorem forall_mem_image_fun_iff {ι : Sort*} {α β : Type*} (e : α ≃ β) (s t : Set α)
-    (P : β → (ι → β) → Prop) :
-    (∀ y ∈ e '' t, ∀ ⦃u : ι → β⦄, (∀ n, u n ∈ e '' s) → P y u) ↔
-      ∀ (u : ι → α) (x : α), (∀ n, u n ∈ s) → x ∈ t → P (e x) (fun n ↦ e (u n)) := by
-  refine ⟨fun h u x hu hx ↦ h (e x) (Set.mem_image_of_mem e hx)
-      (fun n ↦ Set.mem_image_of_mem e (hu n)), fun h y hy u hu ↦ ?_⟩
-  obtain ⟨x, hx, rfl⟩ := hy
-  simpa only [e.apply_symm_apply] using
-    h (fun n ↦ e.symm (u n)) x (fun n ↦ Set.mem_image_equiv.1 (hu n)) hx
 
 /-- An equivalence carries `s` onto `t` exactly when it maps `s` into `t` and its inverse maps `t`
 into `s`. -/

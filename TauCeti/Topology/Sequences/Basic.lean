@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Sequences
-import TauCeti.Logic.Equiv.Set
 
 /-!
 # Sequential closedness under equivalences and sequential compactness
@@ -27,12 +26,12 @@ theorem Equiv.isSeqClosed_image_iff {X Y : Type*} [TopologicalSpace Y] (e : X �
     IsSeqClosed (e '' s) ↔
       ∀ ⦃u : ℕ → X⦄ ⦃v : X⦄, (∀ n, u n ∈ s) →
         Tendsto (fun n ↦ e (u n)) atTop (𝓝 (e v)) → v ∈ s := by
-  have h := e.forall_mem_image_fun_iff (ι := ℕ) s univ
-    (fun y u ↦ Tendsto u atTop (𝓝 y) → y ∈ e '' s)
-  simp only [image_univ, EquivLike.range_eq_univ, mem_univ, forall_true_left,
-    e.injective.mem_set_image] at h
-  exact ⟨fun hs u v hu hlim ↦ h.1 (fun y u hu hlim ↦ hs hu hlim) u v hu hlim,
-    fun hs u y hu hlim ↦ h.2 (fun u v hu hlim ↦ hs hu hlim) y hu hlim⟩
+  refine ⟨fun hs u v hu hlim ↦ ?_, fun hs x p hx hlim ↦ ?_⟩
+  · obtain ⟨w, hw, hwv⟩ := hs (fun n ↦ mem_image_of_mem e (hu n)) hlim
+    rwa [← e.injective hwv]
+  · choose u hu hux using hx
+    refine ⟨e.symm p, hs hu ?_, e.apply_symm_apply p⟩
+    simpa only [hux, Equiv.apply_symm_apply] using hlim
 
 /-- In a Hausdorff space, every sequentially compact set is sequentially closed. -/
 protected theorem IsSeqCompact.isSeqClosed {X : Type*} [TopologicalSpace X] [T2Space X]
