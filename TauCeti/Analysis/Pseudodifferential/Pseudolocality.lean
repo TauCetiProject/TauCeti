@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 
 /-!
 # Pseudolocality of pseudodifferential operators
@@ -103,34 +104,49 @@ theorem memSobolev_smulLeftCLM_quantizeSobolev_of_memSobolev_smulLeftCLM {a : Sy
   rwa [← smulLeftCLM_toDistr_quantizeSobolev ha hF, zero_add] at h
 
 /-- **The pseudolocal estimate.** Let `a` be a symbol of order `m` with compact spatial support,
-and let the compactly supported Schwartz function `χ` equal `1` on a neighbourhood of the support
-of `ψ`. For all real `r ≤ t` there is a constant `C` with
-`‖ψ Op(a) v‖_{H^{t - m}} ≤ C (‖χ v‖_{H^t} + ‖v‖_{H^r})` for every `v ∈ H^t`. -/
+and let the Schwartz function `χ` equal `1` on a neighbourhood of the support of `ψ`. For all real
+`r ≤ t` there is a constant `C` with `‖ψ Op(a) v‖_{H^{t - m}} ≤ C (‖χ v‖_{H^t} + ‖v‖_{H^r})` for
+every `v ∈ H^t`. -/
 theorem exists_norm_smulLeftCLM_quantizeSobolev_le {a : Symbol n V W m}
-    (ha : a.HasCompactSpatialSupport) {ψ χ : 𝓢(CoordinateSpace n, ℂ)} (hχ : HasCompactSupport χ)
+    (ha : a.HasCompactSpatialSupport) {ψ χ : 𝓢(CoordinateSpace n, ℂ)}
     (hχψ : ∀ᶠ x in 𝓝ˢ (tsupport ψ), χ x = 1) {r t : ℝ} (hrt : r ≤ t) :
     ∃ C, ∀ v : H^{t}(CoordinateSpace n, V),
       ‖BesselPotentialSpace.smulLeftCLM (t - m) ψ (a.quantizeSobolev ha t v)‖ ≤
         C * (‖BesselPotentialSpace.smulLeftCLM t χ v‖ +
           ‖BesselPotentialSpace.inclusion hrt v‖) := by
-  have hψ : HasCompactSupport ψ :=
-    hχ.of_forall_mem_support_eq_one fun x hx ↦ hχψ.self_of_nhdsSet x (subset_tsupport ψ hx)
-  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := W) hψ
+  obtain ⟨U, hU, hψU, hUχ⟩ := eventually_nhdsSet_iff_exists.1 hχψ
+  -- `χ` tends to `0` at infinity, so `χ = 1` only on a compact set, which contains `tsupport ψ`.
+  obtain ⟨K, hK, hKχ⟩ :=
+    Filter.mem_cocompact.1 (χ.tendsto_cocompact.eventually (eventually_ne_nhds zero_ne_one))
+  have hψ : HasCompactSupport ψ := hK.of_isClosed_subset (isClosed_tsupport ψ) fun x hx ↦
+    by_contra fun hxK ↦ hKχ hxK (hUχ x (hψU hx))
+  -- Replace `χ` by a compactly supported cutoff `η` with `χ η = η`.
+  obtain ⟨η, hη, hηU, hηψ⟩ := hψ.isCompact.exists_schwartzMap_cutoff hU hψU
+  have hχη : (χ : CoordinateSpace n → ℂ) * η = η := funext fun x ↦ by
+    by_cases hx : x ∈ tsupport η
+    · simp [hUχ x (hηU hx)]
+    · simp [image_eq_zero_of_notMem_tsupport hx]
   have hc := ha.smulLeft (ψ.smooth ⊤)
   -- `ψ a` vanishes at positions outside the support of `ψ`.
   obtain ⟨C, hC⟩ := exists_norm_quantizeSobolev_le_smulLeftCLM hc
-    (fun x hx ξ ↦ by simp [image_eq_zero_of_notMem_tsupport hx]) hχ hχψ hrt
-  refine ⟨C, fun v ↦ ?_⟩
-  -- `ψ Op(a) = Op(ψ # a)` and `ψ # a = ψ a`.
-  have hv : BesselPotentialSpace.smulLeftCLM (t - m) ψ (a.quantizeSobolev ha t v) =
-      (smulLeft (ψ.smooth ⊤) a).quantizeSobolev hc t v := by
-    refine BesselPotentialSpace.ext ?_
-    rw [BesselPotentialSpace.toDistr_smulLeftCLM, smulLeftCLM_toDistr_quantizeSobolev ha hF]
-    exact toDistr_quantizeSobolev_congr
-      (funext fun p ↦ (coefficient_ofSpatial_smul_id_sharp ha ψ p.1 p.2).trans
-        (coefficient_smulLeft _ a p).symm) _ _ rfl
-  rw [hv]
-  exact hC v
+    (fun x hx ξ ↦ by simp [image_eq_zero_of_notMem_tsupport hx]) hη hηψ hrt
+  set M := ‖(BesselPotentialSpace.smulLeftCLM t η : H^{t}(CoordinateSpace n, V) →L[ℂ] _)‖
+  refine ⟨|C| * (M + 1), fun v ↦ ?_⟩
+  have hηv : ‖BesselPotentialSpace.smulLeftCLM t η v‖ ≤
+      M * ‖BesselPotentialSpace.smulLeftCLM t χ v‖ := by
+    have h : BesselPotentialSpace.smulLeftCLM t η v =
+        BesselPotentialSpace.smulLeftCLM t η (BesselPotentialSpace.smulLeftCLM t χ v) :=
+      BesselPotentialSpace.ext (by simp [TemperedDistribution.smulLeftCLM_smulLeftCLM_apply
+        χ.hasTemperateGrowth η.hasTemperateGrowth, hχη])
+    rw [h]
+    exact ContinuousLinearMap.le_opNorm _ _
+  rw [← ContinuousLinearMap.comp_apply,
+    smulLeftCLM_comp_quantizeSobolev_eq_quantizeSobolev_smulLeft ha hψ, mul_assoc]
+  refine (hC v).trans ((mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity)).trans
+    (mul_le_mul_of_nonneg_left ?_ (abs_nonneg C)))
+  nlinarith [norm_nonneg (BesselPotentialSpace.smulLeftCLM t χ v),
+    norm_nonneg (BesselPotentialSpace.inclusion hrt v), norm_nonneg
+      (BesselPotentialSpace.smulLeftCLM t η : H^{t}(CoordinateSpace n, V) →L[ℂ] _)]
 
 /-- **Pseudodifferential operators do not enlarge the singular support.** Let `a` have compact
 spatial support, and let the compactly supported Schwartz function `χ` equal `1` on a neighbourhood
