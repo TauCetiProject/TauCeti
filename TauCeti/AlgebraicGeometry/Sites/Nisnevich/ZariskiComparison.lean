@@ -36,12 +36,16 @@ and Nisnevich sheafification preserves them (`[HasSheafify (smallNisnevichTopolo
 
 * `AlgebraicGeometry.Scheme.opensToEtale`: open subschemes as étale `X`-schemes.
 * `AlgebraicGeometry.Scheme.etaleToOpens`: the image of an étale `X`-scheme.
-* `AlgebraicGeometry.Scheme.etaleToOpensAdjunction`: `etaleToOpens X ⊣ opensToEtale X`.
+* `AlgebraicGeometry.Scheme.etaleToOpensAdjunction`: `etaleToOpens X ⊣ opensToEtale X`; its counit
+  is an isomorphism, so `opensToEtale X` is fully faithful
+  (`AlgebraicGeometry.Scheme.fullyFaithfulOpensToEtale`).
 * `AlgebraicGeometry.Scheme.nisnevichToZariskiPushforward`: Nisnevich sheaves as Zariski
   sheaves.
 * `AlgebraicGeometry.Scheme.nisnevichToZariskiPullback`: the inverse image of Zariski sheaves.
 * `AlgebraicGeometry.Scheme.nisnevichToZariskiAdjunction`: the inverse image is left adjoint to
   the direct image.
+* `AlgebraicGeometry.Scheme.nisnevichToZariskiPullbackIso`: the inverse image agrees with the
+  general pullback `Functor.sheafPullback` along `opensToEtale X`.
 
 ## References
 
@@ -69,7 +73,6 @@ noncomputable def opensToEtale : X.Opens ⥤ X.Etale where
 
 /-- The image of an étale `X`-scheme `V`, an open subset of `X` since étale morphisms are open
 maps. -/
-@[expose]
 noncomputable def etaleToOpens : X.Etale ⥤ X.Opens where
   obj V := ⟨Set.range V.hom, V.hom.isOpenMap.isOpen_range⟩
   map {V W} φ := homOfLE <| by
@@ -80,7 +83,19 @@ noncomputable def etaleToOpens : X.Etale ⥤ X.Opens where
 @[simp]
 theorem coe_etaleToOpens_obj (V : X.Etale) :
     ((etaleToOpens X).obj V : Set X) = Set.range V.hom :=
-  rfl
+  (rfl)
+
+/-- A point lies in the image of an étale `X`-scheme `V` when it is the image of a point of `V`. -/
+@[simp]
+theorem mem_etaleToOpens_obj (V : X.Etale) (x : X) :
+    x ∈ (etaleToOpens X).obj V ↔ ∃ y : V.left, V.hom y = x :=
+  (Set.ext_iff.mp (coe_etaleToOpens_obj X V) x).trans Set.mem_range
+
+/-- The image of the open subscheme `U`, as an étale `X`-scheme, is `U`. -/
+@[simp]
+theorem etaleToOpens_obj_opensToEtale_obj (U : X.Opens) :
+    (etaleToOpens X).obj ((opensToEtale X).obj U) = U :=
+  SetLike.coe_injective <| (coe_etaleToOpens_obj X _).trans U.range_ι
 
 /-- There is at most one morphism over `X` from an étale `X`-scheme to an open subscheme of `X`,
 since open immersions are monomorphisms. -/
@@ -95,13 +110,14 @@ noncomputable def etaleToOpensAdjunction : etaleToOpens X ⊣ opensToEtale X :=
   Adjunction.mkOfHomEquiv
     { homEquiv (V : X.Etale) (U : X.Opens) :=
         { toFun i := MorphismProperty.Over.homMk
+            -- The ascription makes `IsOpenImmersion U.ι` visible to instance search: the expected
+            -- type `((opensToEtale X).obj U).left` only reduces to `U` by unfolding `Etale.mk`.
             (show V.left ⟶ U from IsOpenImmersion.lift U.ι V.hom
-              (by rw [Scheme.Opens.range_ι]; exact i.le))
+              (U.range_ι.symm ▸ (coe_etaleToOpens_obj X V).symm.subset.trans i.le))
             (IsOpenImmersion.lift_fac (Scheme.Opens.ι U) V.hom _)
           invFun φ := homOfLE <| by
-            rintro _ ⟨x, rfl⟩
-            rw [← MorphismProperty.Over.w φ, Scheme.Hom.comp_apply]
-            exact (φ.left x).property
+            rw [← etaleToOpens_obj_opensToEtale_obj X U]
+            exact ((etaleToOpens X).map φ).le
           left_inv _ := Subsingleton.elim _ _
           right_inv _ := Subsingleton.elim _ _ }
       homEquiv_naturality_left_symm _ _ := Subsingleton.elim _ _
@@ -109,6 +125,23 @@ noncomputable def etaleToOpensAdjunction : etaleToOpens X ⊣ opensToEtale X :=
 
 instance isRightAdjoint_opensToEtale : (opensToEtale X).IsRightAdjoint :=
   (etaleToOpensAdjunction X).isRightAdjoint
+
+/-- The counit of `etaleToOpens X ⊣ opensToEtale X` is an isomorphism: the image of an open
+subscheme `U` is `U`. -/
+instance isIso_etaleToOpensAdjunction_counit : IsIso (etaleToOpensAdjunction X).counit :=
+  have (U : X.Opens) : IsIso ((etaleToOpensAdjunction X).counit.app U) :=
+    homOfLE_isIso_of_eq _ (etaleToOpens_obj_opensToEtale_obj X U)
+  NatIso.isIso_of_isIso_app _
+
+/-- The functor `opensToEtale X` is fully faithful. -/
+noncomputable def fullyFaithfulOpensToEtale : (opensToEtale X).FullyFaithful :=
+  (etaleToOpensAdjunction X).fullyFaithfulROfIsIsoCounit
+
+instance full_opensToEtale : (opensToEtale X).Full :=
+  (fullyFaithfulOpensToEtale X).full
+
+instance faithful_opensToEtale : (opensToEtale X).Faithful :=
+  (fullyFaithfulOpensToEtale X).faithful
 
 instance representablyFlat_opensToEtale : RepresentablyFlat (opensToEtale X) :=
   flat_of_preservesFiniteLimits _
@@ -126,6 +159,9 @@ theorem coverPreserving_opensToEtale :
     · rw [ofArrows_mem_smallNisnevichTopology_iff]
       refine isNisnevichCovering_of_zariski ?_
       rw [AlgebraicGeometry.Scheme.ofArrows_mem_precoverage_iff]
+      -- `((opensToEtale X).obj U).left` is `U` by definition, and its morphisms are the inclusions
+      -- `X.homOfLE`. The `simps` lemmas for `opensToEtale` do not help here: rewriting with them
+      -- leaves terms that are not type-correct at instance transparency.
       refine ⟨fun x ↦ ?_, fun i ↦ inferInstanceAs (IsOpenImmersion (X.homOfLE i.val.snd.le))⟩
       obtain ⟨V, f, hf, hx⟩ := hR x.val x.property
       exact ⟨⟨⟨V, f⟩, hf⟩, ⟨x.val, hx⟩, Subtype.ext (X.homOfLE_apply f.le ⟨x.val, hx⟩)⟩
@@ -167,6 +203,18 @@ noncomputable def nisnevichToZariskiAdjunction :
 noncomputable instance isLeftAdjoint_nisnevichToZariskiPullback :
     (nisnevichToZariskiPullback X A).IsLeftAdjoint :=
   (nisnevichToZariskiAdjunction X A).isLeftAdjoint
+
+noncomputable instance isRightAdjoint_nisnevichToZariskiPushforward :
+    (nisnevichToZariskiPushforward X A).IsRightAdjoint :=
+  (nisnevichToZariskiAdjunction X A).isRightAdjoint
+
+/-- The inverse image `nisnevichToZariskiPullback X A` is the general pullback of sheaves along the
+continuous functor `opensToEtale X`. -/
+noncomputable def nisnevichToZariskiPullbackIso :
+    (opensToEtale X).sheafPullback A (Opens.grothendieckTopology X) (smallNisnevichTopology X) ≅
+      nisnevichToZariskiPullback X A :=
+  ((opensToEtale X).sheafAdjunctionContinuous A _ _).leftAdjointUniq
+    (nisnevichToZariskiAdjunction X A)
 
 end
 
