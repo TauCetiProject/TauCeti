@@ -76,7 +76,7 @@ theorem coeff_enhancedStateSum_eq_zero_of_mod_two_ne (hD : D.toPDCode.IsPlanar) 
   refine Finset.sum_eq_zero fun e _ ↦ ?_
   have hne : D.enhancedQuantumDegree e ≠ j := fun h ↦
     hj (h ▸ D.enhancedQuantumDegree_mod_two hD e)
-  rw [AddMonoidAlgebra.coeff_smul_apply, LaurentPolynomial.T, AddMonoidAlgebra.coeff_single]
+  rw [AddMonoidAlgebra.coeff_smul_apply, LaurentPolynomial.T_apply]
   simp [hne]
 
 end TauCeti.OrientedPDCode
