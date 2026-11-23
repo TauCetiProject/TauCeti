@@ -18,8 +18,8 @@ Let `ϕ` be a flow of `ℝ` on a topological space `α` and let `P` be a subset 
 times `t ≥ 0` such that the trajectory of `x` stays in `P` during `[0, t]`. It is `0` outside `P`
 and on the points of `P` leaving it immediately, and `∞` exactly on the points whose forward orbit
 stays in `P` (`Flow.exitTime_eq_top_iff`). Flowing for a time `s` up to the exit time lowers the
-exit time by `s` (`Flow.exitTime_apply`). When `P` is closed, the trajectory of a point of `P`
-stays in `P` up to and including its exit time (`Flow.le_exitTime_iff`).
+exit time by `s` (`Flow.exitTime_flow_eq_sub`). When `P` is closed, the trajectory of a point of
+`P` stays in `P` up to and including its exit time (`Flow.le_exitTime_iff`).
 
 These are the data of the index-pair arguments of Conley index theory. For `t ≥ 0` the sets
 
@@ -64,7 +64,7 @@ the identity (`Flow.homotopic_id_restrict` in `TauCeti/Dynamics/Flow/Basic.lean`
 
 * `Flow.le_exitTime_iff`: from a point of a closed set `P`, the trajectory stays in `P` during
   `[0, t]` exactly when `t` is at most the exit time.
-* `Flow.exitTime_apply`: the exit time decreases at unit speed along the trajectory.
+* `Flow.exitTime_flow_eq_sub`: the exit time decreases at unit speed along the trajectory.
 * `Flow.isClosed_setOf_le_exitTime`, `Flow.isClosed_setOf_exitTime_le`: the sets `N_t` and `E_t`
   are closed.
 * `Flow.homotopicRel_stopAtExitMap`: the stopped flow is homotopic to the identity relative to
@@ -150,7 +150,7 @@ theorem exitTime_eq_top_iff : ϕ.exitTime P x = ∞ ↔ ∀ s : ℝ, 0 ≤ s →
 
 /-- **The exit time decreases at unit speed.** Flowing a point for a time `s` at most its exit time
 lowers the exit time by `s`. -/
-theorem exitTime_apply {s : ℝ≥0} (hs : (s : ℝ≥0∞) ≤ ϕ.exitTime P x) :
+theorem exitTime_flow_eq_sub {s : ℝ≥0} (hs : (s : ℝ≥0∞) ≤ ϕ.exitTime P x) :
     ϕ.exitTime P (ϕ s x) = ϕ.exitTime P x - s := by
   -- the trajectory of `ϕ s x` during `[0, r]` is that of `x` during `[s, s + r]`, and the
   -- trajectory of `x` lies in `P` during `[0, s)`
@@ -173,9 +173,9 @@ theorem exitTime_apply {s : ℝ≥0} (hs : (s : ℝ≥0∞) ≤ ϕ.exitTime P x)
     linarith [hq.2]
 
 /-- At a finite exit time, the trajectory reaches a point of exit time zero. -/
-theorem exitTime_apply_exitTime (h : ϕ.exitTime P x ≠ ∞) :
+theorem exitTime_flow_exitTime_eq_zero (h : ϕ.exitTime P x ≠ ∞) :
     ϕ.exitTime P (ϕ (ϕ.exitTime P x).toReal x) = 0 := by
-  rw [← ENNReal.coe_toNNReal_eq_toReal, exitTime_apply ENNReal.coe_toNNReal_le_self,
+  rw [← ENNReal.coe_toNNReal_eq_toReal, exitTime_flow_eq_sub ENNReal.coe_toNNReal_le_self,
     ENNReal.coe_toNNReal h, tsub_self]
 
 /-- The points of a closed set `P` staying in `P` for time `t` form a closed set. -/
@@ -260,7 +260,7 @@ theorem mapsTo_stopAtExit_setOf_exitTime_le (hP : IsClosed P) (t : ℝ≥0) :
     MapsTo (ϕ.stopAtExit P t) {x ∈ P | ϕ.exitTime P x ≤ t} {x ∈ P | ϕ.exitTime P x = 0} :=
   fun x hx ↦ ⟨mapsTo_stopAtExit hP t hx.1, by
     rw [stopAtExit_of_exitTime_le hx.2]
-    exact exitTime_apply_exitTime (ne_top_of_le_ne_top ENNReal.coe_ne_top hx.2)⟩
+    exact exitTime_flow_exitTime_eq_zero (ne_top_of_le_ne_top ENNReal.coe_ne_top hx.2)⟩
 
 /-- If the exit time is continuous on `P`, so is the stopped flow. -/
 theorem continuousOn_stopAtExit (hτ : ContinuousOn (ϕ.exitTime P) P) (t : ℝ≥0) :
@@ -323,7 +323,8 @@ of `P`. -/
 theorem eventually_mapsTo_setOf_exitTime_eq_top [T2Space α] (hP : IsCompact P) {U : Set α}
     (hU : IsOpen U) (hPU : {x | ∀ t, ϕ t x ∈ P} ⊆ U) :
     ∀ᶠ t in atTop, MapsTo (ϕ t) {x | ϕ.exitTime P x = ∞} U :=
-  eventually_mapsTo_of_isCompact_of_isOpen hP
+  eventually_mapsTo_of_isCompact_of_isOpen
+    (fun t ↦ tendsto_atTop_add_const_left _ t tendsto_id) hP
     (eventually_ge_atTop 0 |>.mono fun _ ht _ hx ↦ exitTime_eq_top_iff.1 hx _ ht) hU hPU
 
 end Limit
