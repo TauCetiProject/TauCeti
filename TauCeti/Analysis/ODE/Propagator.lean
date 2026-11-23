@@ -131,13 +131,6 @@ private theorem eqOn_sol (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
     (fun r hr ↦ (h₁ r hr).trans (picard_mul P N₁ s r).symm)
     (fun r hr ↦ (h₂ r hr).trans (picard_mul P N₂ s r).symm)
 
-omit [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] in
-private theorem intervalIntegrable_comp (hP : IntegrableOn P (Icc a b)) (hab : a ≤ b)
-    {N : ℝ → E →L[𝕜] E} (hN : ContinuousOn N (Icc a b)) :
-    IntervalIntegrable (fun u ↦ P u ∘L N u) volume a b := by
-  simpa [ContinuousLinearMap.mul_def] using
-    (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 (hP.mul_continuousOn hN isCompact_Icc)
-
 private theorem intervalIntegrable_apply (hP : IntegrableOn P (Icc a b)) (hab : a ≤ b)
     {x : ℝ → E} (hx : ContinuousOn x (Icc a b)) :
     IntervalIntegrable (fun u ↦ P u (x u)) volume a b := by
@@ -224,8 +217,7 @@ theorem propagator_apply_eq_add_integral (hP : IntegrableOn P (Icc a b)) (hs : s
     (ht : t ∈ Icc a b) (y : E) :
     propagator P t s y = y + ∫ u in s..t, P u (propagator P u s y) := by
   have hI : IntervalIntegrable (fun u ↦ P u ∘L propagator P u s) volume s t :=
-    (intervalIntegrable_comp hP (hs.1.trans hs.2) (continuousOn_propagator_left hP hs)).mono_set
-      (uIcc_subset_uIcc (Icc_subset_uIcc hs) (Icc_subset_uIcc ht))
+    hP.intervalIntegrable_clm_comp (continuousOn_propagator_left hP hs) hs ht
   conv_lhs => rw [propagator_eq_one_add_integral hP hs ht]
   rw [add_apply, one_apply_eq_self,
     ContinuousLinearMap.intervalIntegral_apply hI]
@@ -355,11 +347,9 @@ theorem propagator_eq_of_hasDerivAt (hP : IntegrableOn P (Icc a b)) (hs : s ∈ 
     (ht : t ∈ Icc a b) {X : ℝ → E →L[𝕜] E} (hX : ∀ r ∈ Icc a b, HasDerivAt X (P r ∘L X r) r)
     (hXs : X s = 1) : propagator P t s = X t := by
   have hc : ContinuousOn X (Icc a b) := fun r hr ↦ (hX r hr).continuousAt.continuousWithinAt
-  have hI := intervalIntegrable_comp hP (hs.1.trans hs.2) hc
   refine propagator_eq_of_forall_mem_Icc hP hs ht hc fun r hr ↦ ?_
-  have hsub := uIcc_subset_uIcc (Icc_subset_uIcc hs) (Icc_subset_uIcc hr)
   rw [integral_eq_sub_of_hasDerivAt (fun u hu ↦ hX u (uIcc_subset_Icc hs hr hu))
-    (hI.mono_set hsub), hXs, add_sub_cancel]
+    (hP.intervalIntegrable_clm_comp hc hs hr), hXs, add_sub_cancel]
 
 /-- **Constant coefficients.** For a constant coefficient `A`,
 `N_P(t, s) = exp ((t - s) A)`. -/
@@ -451,13 +441,11 @@ private theorem propagator_sub_propagator_eq_picard {P' : ℝ → E →L[𝕜] E
       ODE.picard (fun u Y ↦ ContinuousLinearMap.mul ℝ (E →L[𝕜] E) (P u) Y +
         (P' u - P u) ∘L propagator P' u s) s 0
         (fun u ↦ propagator P' u s - propagator P u s) r := by
-  have hab : a ≤ b := hs.1.trans hs.2
   have hN' := continuousOn_propagator_left hP' hs
   have hN := continuousOn_propagator_left hP hs
   intro r hr
-  have hsr := uIcc_subset_uIcc (Icc_subset_uIcc hs) (Icc_subset_uIcc hr)
-  have h₁ := (intervalIntegrable_comp hP' hab hN').mono_set hsr
-  have h₂ := (intervalIntegrable_comp hP hab hN).mono_set hsr
+  have h₁ := hP'.intervalIntegrable_clm_comp hN' hs hr
+  have h₂ := hP.intervalIntegrable_clm_comp hN hs hr
   rw [ODE.picard_apply, propagator_eq_one_add_integral hP' hs hr,
     propagator_eq_one_add_integral hP hs hr, add_sub_add_left_eq_sub, zero_add,
     ← intervalIntegral.integral_sub h₁ h₂]
