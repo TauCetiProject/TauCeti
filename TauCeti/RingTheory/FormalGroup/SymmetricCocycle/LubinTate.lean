@@ -10,13 +10,14 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Coboundary
 import Mathlib.Algebra.DualNumber
-import Mathlib.Algebra.TrivSqZeroExt.Ideal
 import Mathlib.RingTheory.PowerSeries.CoeffMulMem
+import TauCeti.Algebra.TrivSqZeroExt.Ideal
 import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Height
 import TauCeti.RingTheory.MvPowerSeries.Derivative
 import TauCeti.RingTheory.MvPowerSeries.Ideal
+import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -684,8 +685,7 @@ private theorem isSymmetricCocycle_universalLubinTateCocycle (n : ℕ+) :
   let inlR := algebraMap LazardRing (DualNumber LazardRing)
   have hcoc := (formalGroup.map inlR).isSymmetricCocycle_deformationCocycle
     (formalGroup.map (shiftGeneratorHom n))
-    ((pow_two (TrivSqZeroExt.kerIdeal LazardRing LazardRing)).symm.trans
-      (TrivSqZeroExt.kerIdeal_sq LazardRing LazardRing)) fun d ↦ by
+    (TrivSqZeroExt.kerIdeal_mul_self LazardRing LazardRing) fun d ↦ by
       simp only [TrivSqZeroExt.kerIdeal, RingHom.mem_ker, TrivSqZeroExt.fstHom_apply]
       simp [inlR, FormalGroup.map_toPowerSeries, fst_shiftGeneratorHom,
         TrivSqZeroExt.algebraMap_eq_inl]
@@ -707,24 +707,19 @@ theorem isSymmetricCocycle_lubinTateCocycle {R : Type*} [CommRing R] (F : Formal
   simpa [lubinTateCocycle, LazardRing.map_lift] using
     (isSymmetricCocycle_universalLubinTateCocycle n).map (LazardRing.lift ⟨F, inferInstance⟩)
 
+/-- `F.lubinTateCocycle n` vanishes below total degree `n + 1`. -/
+theorem le_order_lubinTateCocycle {R : Type*} [CommRing R] (F : FormalGroup R) [F.IsComm]
+    (n : ℕ+) : (((n : ℕ) + 1 : ℕ) : ℕ∞) ≤ (F.lubinTateCocycle n).order :=
+  ((_root_.zero_add _).symm.le.trans
+    ((add_le_add zero_le (le_order_universalShiftSeries n)).trans le_order_mul)).trans
+    (MvPowerSeries.le_order_map _)
+
 /-- `F.lubinTateCocycle n` has zero constant coefficient. -/
 @[simp]
 theorem constantCoeff_lubinTateCocycle {R : Type*} [CommRing R] (F : FormalGroup R) [F.IsComm]
-    (n : ℕ+) : constantCoeff (F.lubinTateCocycle n) = 0 := by
-  have h0 : constantCoeff (universalShiftSeries n) = 0 := by
-    rw [← coeff_zero_eq_constantCoeff_apply]
-    exact coeff_of_lt_order (lt_of_lt_of_le (by simp) (le_order_universalShiftSeries n))
-  rw [lubinTateCocycle, ← coeff_zero_eq_constantCoeff_apply, coeff_map,
-    coeff_zero_eq_constantCoeff_apply, universalLubinTateCocycle, map_mul, h0, mul_zero, map_zero]
-
-/-- `F.lubinTateCocycle n` vanishes below total degree `n + 1`. -/
-theorem le_order_lubinTateCocycle {R : Type*} [CommRing R] (F : FormalGroup R) [F.IsComm]
-    (n : ℕ+) : (((n : ℕ) + 1 : ℕ) : ℕ∞) ≤ (F.lubinTateCocycle n).order := by
-  have hu : (((n : ℕ) + 1 : ℕ) : ℕ∞) ≤ (universalLubinTateCocycle n).order :=
-    (_root_.zero_add _).symm.le.trans
-      ((add_le_add zero_le (le_order_universalShiftSeries n)).trans le_order_mul)
-  exact le_order fun d hd ↦ by
-    rw [lubinTateCocycle, coeff_map, coeff_of_lt_order (hd.trans_le hu), map_zero]
+    (n : ℕ+) : constantCoeff (F.lubinTateCocycle n) = 0 :=
+  one_le_order_iff_constCoeff_eq_zero.mp <|
+    (by simp : (1 : ℕ∞) ≤ (((n : ℕ) + 1 : ℕ) : ℕ∞)).trans (F.le_order_lubinTateCocycle n)
 
 /-- The degree-`(n + 1)` homogeneous component of `F.lubinTateCocycle n` is the Lazard cocycle
 `C_(n + 1)`. -/
@@ -733,21 +728,15 @@ theorem homogeneousComponent_lubinTateCocycle {R : Type*} [CommRing R] (F : Form
     [F.IsComm] (n : ℕ+) :
     homogeneousComponent ((n : ℕ) + 1) (F.lubinTateCocycle n) =
       ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) R) := by
-  set P1 := PowerSeries.subst formalGroup.toPowerSeries formalGroup.invariantDifferential - 1
-  have hrem : (((n : ℕ) + 1 : ℕ) : ℕ∞) < (P1 * universalShiftSeries n).order :=
-    (Nat.cast_lt.mpr (by omega : (n : ℕ) + 1 < 1 + ((n : ℕ) + 1))).trans_le <| by
-      rw [Nat.cast_add, Nat.cast_one]
-      exact (add_le_add (one_le_order_iff_constCoeff_eq_zero.mpr (by
-        simp [P1, PowerSeries.constantCoeff_subst_of_constantCoeff_zero
-          formalGroup.zero_constantCoeff, formalGroup.constantCoeff_invariantDifferential]))
-        (le_order_universalShiftSeries n)).trans le_order_mul
-  have huniv_eq : universalLubinTateCocycle n =
-      universalShiftSeries n + P1 * universalShiftSeries n := by
-    dsimp only [universalLubinTateCocycle, P1]; ring
   have huniv : homogeneousComponent ((n : ℕ) + 1) (universalLubinTateCocycle n) =
       ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) LazardRing) := by
-    rw [huniv_eq, map_add, homogeneousComponent_of_lt_order_eq_zero hrem, _root_.add_zero,
-      homogeneousComponent_universalShiftSeries]
+    conv_lhs =>
+      rw [universalLubinTateCocycle, ← _root_.zero_add ((n : ℕ) + 1),
+        homogeneousComponent_mul_of_le_order zero_le (le_order_universalShiftSeries n),
+        homogeneousComponent_zero,
+        PowerSeries.constantCoeff_subst_of_constantCoeff_zero formalGroup.zero_constantCoeff,
+        formalGroup.constantCoeff_invariantDifferential, Algebra.algebraMap_self_apply, map_one,
+        one_mul, homogeneousComponent_universalShiftSeries]
   ext d; rw [coeff_homogeneousComponent, lubinTateCocycle, coeff_map, MvPolynomial.coeff_coe]
   have hd := congrArg (coeff d) huniv
   rw [coeff_homogeneousComponent, MvPolynomial.coeff_coe] at hd

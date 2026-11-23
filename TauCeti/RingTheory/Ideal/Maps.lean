@@ -24,7 +24,8 @@ element, and its annihilator to the annihilator of that ideal. The principal-ide
 to ideals extended from a common commutative semiring, without assuming the algebras commutative.
 
 If `t ∈ I` and `r • I ≤ (t)`, then `I` extends to the principal ideal `(f t)` along every ring
-homomorphism `f` for which `f r` is a unit.
+homomorphism `f` for which `f r` is a unit. Moreover, the kernel of a ring homomorphism is
+contained in the kernel of any postcomposition (`RingHom.ker_le_ker_comp`).
 -/
 
 public section
@@ -138,3 +139,12 @@ theorem map_eq_span_singleton_and_annihilator {A L L' : Type*} [CommSemiring A]
       congrArg e (hx (e.symm y) (by simpa only [e.apply_symm_apply] using hy))
 
 end AlgEquiv
+
+namespace RingHom
+
+/-- The kernel of a ring homomorphism is contained in the kernel of any postcomposition. -/
+theorem ker_le_ker_comp {R S T : Type*} [Semiring R] [Semiring S] [Semiring T]
+    (f : R →+* S) (g : S →+* T) : ker f ≤ ker (g.comp f) :=
+  (Ideal.ker_le_comap (K := ker g) f).trans_eq (comap_ker g f)
+
+end RingHom
