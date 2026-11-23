@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Gamma.LogConvex
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -34,9 +35,9 @@ series with coefficients `1 / Γ(b + n)`, such as hypergeometric and Bessel seri
 For a complex parameter the corresponding estimate is the factorial decay of `1 / Γ(s + n)` on
 the half-plane `1 ≤ Re s`.
 
-Finally, the rising factorial is recorded as a quotient of real Gamma values, and Mathlib's Euler
-limit formula `Real.GammaSeq_tendsto_Gamma` is recast as the asymptotic
-equivalence `Γ(n + 1 + s) ~ n ^ s * n!` along the natural numbers, valid for every real shift `s`.
+Finally, the rising factorial is recorded as a quotient of real Gamma values, and the asymptotic
+equivalence `Γ(n + 1 + s) ~ n ^ s * n!` along the natural numbers, valid for every real shift `s`,
+is read off from the real-variable Gamma-ratio asymptotic proved from Wendel's inequalities.
 This is the form in which polynomial decay of Gamma quotients such as `Γ(n + a) / Γ(n + b)` enters
 summability and moment arguments for discrete laws with Beta-function masses. Euler's reflection
 formula is also recorded in the reciprocal form `Γ(s) sin (π s) = π / Γ(1 - s)` for `s ∉ -ℕ`,
@@ -204,51 +205,24 @@ theorem Gamma_nat_add_half_eq_factorial (n : ℕ) :
   rw [eq_div_iff (by positivity), hfour, mul_left_comm, h]
   field_simp
 
-/-- The positive-shift case of `isEquivalent_Gamma_natCast_add_one_add`, read off from Euler's
-limit `GammaSeq s n → Γ s`. -/
-private theorem isEquivalent_Gamma_natCast_add_one_add_of_pos {s : ℝ} (hs : 0 < s) :
-    (fun n : ℕ => Gamma (n + 1 + s)) ~[atTop] fun n => (n : ℝ) ^ s * n ! := by
-  refine isEquivalent_of_tendsto_one ?_
-  have hΓ := (Gamma_pos_of_pos hs).ne'
-  have hlim : Tendsto (fun n => Gamma s / GammaSeq s n) atTop (𝓝 1) := by
-    have := (tendsto_const_nhds (x := Gamma s)).div (GammaSeq_tendsto_Gamma s) hΓ
-    rwa [div_self hΓ] at this
-  refine hlim.congr' ?_
-  filter_upwards [eventually_ne_atTop 0] with n hn
-  have hprod := prod_range_add_mul_Gamma hs (n + 1)
-  rw [Pi.div_apply, GammaSeq, show (n : ℝ) + 1 + s = s + ((n + 1 : ℕ) : ℝ) by push_cast; ring,
-    ← hprod]
-  field_simp
-
 /-- **Euler's limit formula in ratio form.** For every real `s`, `Γ(n + 1 + s)` is asymptotic to
-`n ^ s * n!` as the natural number `n` tends to infinity. -/
+`n ^ s * n!` as the natural number `n` tends to infinity: the case `x = n` of
+`Γ(x + 1)/Γ(x + (1 + s)) ∼ x^{-s}` (`Real.isEquivalent_Gamma_add_one_div_Gamma_add`), inverted
+and multiplied by `Γ(n + 1) = n!`. -/
 theorem isEquivalent_Gamma_natCast_add_one_add (s : ℝ) :
     (fun n : ℕ => Gamma (n + 1 + s)) ~[atTop] fun n => (n : ℝ) ^ s * n ! := by
-  -- Lower the shift one unit at a time, starting from a positive value of the shift.
-  suffices h : ∀ N : ℕ, ∀ s : ℝ, 0 < s + N →
-      (fun n : ℕ => Gamma (n + 1 + s)) ~[atTop] fun n => (n : ℝ) ^ s * (n ! : ℝ) by
-    obtain ⟨N, hN⟩ := exists_nat_gt (-s)
-    exact h N s (by linarith)
-  intro N
-  induction N with
-  | zero => exact fun s hs => isEquivalent_Gamma_natCast_add_one_add_of_pos (by simpa using hs)
-  | succ N ih =>
-    intro s hs
-    have hshift := ih (s + 1) (by push_cast at hs; linarith)
-    have hlin : (fun n : ℕ => (n : ℝ) + (1 + s)) ~[atTop] fun n => (n : ℝ) :=
-      IsEquivalent.refl.add_isLittleO
-        ((isLittleO_const_id_atTop (1 + s)).comp_tendsto tendsto_natCast_atTop_atTop)
-    refine ((hshift.div hlin).congr_left ?_).congr_right ?_
-    · filter_upwards [tendsto_natCast_atTop_atTop.eventually_gt_atTop (-(1 + s))] with n hn
-      have hne : (n : ℝ) + 1 + s ≠ 0 := by linarith
-      simp only [Pi.div_apply]
-      rw [show (n : ℝ) + 1 + (s + 1) = (n + 1 + s) + 1 by ring, Gamma_add_one hne, add_assoc,
-        mul_div_cancel_left₀ _ (by rwa [← add_assoc])]
-    · filter_upwards [eventually_ne_atTop 0] with n hn
-      have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
-      simp only [Pi.div_apply]
-      rw [rpow_add_one hn'.ne']
-      field_simp
+  have h := (((isEquivalent_Gamma_add_one_div_Gamma_add (1 + s)).comp_tendsto
+    tendsto_natCast_atTop_atTop).inv).mul (IsEquivalent.refl (u := fun n : ℕ => (n ! : ℝ)))
+  refine (h.congr_left ?_).congr_right ?_
+  · refine Eventually.of_forall fun n => ?_
+    have hfac : (n ! : ℝ) ≠ 0 := by positivity
+    simp only [Function.comp_apply, Pi.inv_apply, Pi.mul_apply]
+    rw [Gamma_nat_eq_factorial, add_assoc]
+    field_simp
+  · filter_upwards [eventually_ne_atTop 0] with n hn
+    have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
+    simp only [Function.comp_apply, Pi.inv_apply, Pi.mul_apply]
+    rw [sub_add_cancel_left, rpow_neg hn'.le, inv_inv]
 
 /-- The Gamma quotients `Γ(n + a) / Γ(n + b)` tend to zero along the natural numbers when `a < b`,
 since they decay like `n ^ (a - b)`. -/

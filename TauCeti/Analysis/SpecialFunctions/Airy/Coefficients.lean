@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.LogConvex
 
 /-!
@@ -141,10 +142,12 @@ theorem airyChi_zero : airyChi 0 = 1 := by
   simp only [airyChi_def, zero_div, zero_add, Real.Gamma_one, Real.Gamma_one_half_eq, mul_one,
     div_self hπ]
 
-/-- `Γ(3/2) = √π / 2`, the Gamma value in `χ(1)` and `χ(2)`. -/
+/-- `Γ(3/2) = √π / 2`, the Gamma value in `χ(1)` and `χ(2)`: the case `n = 1` of
+`Real.Gamma_nat_add_half_eq_factorial`. -/
 private theorem Gamma_three_halves : Real.Gamma (3 / 2) = √π / 2 := by
-  have h : (3 / 2 : ℝ) = 1 / 2 + 1 := by norm_num
-  rw [h, Real.Gamma_add_one (by norm_num), Real.Gamma_one_half_eq]
+  have h := Real.Gamma_nat_add_half_eq_factorial 1
+  norm_num at h
+  rw [h]
   ring
 
 /-- `χ(1) = π/2`. -/
