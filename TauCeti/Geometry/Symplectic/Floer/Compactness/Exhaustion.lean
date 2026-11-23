@@ -86,9 +86,9 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_discrete (ω : SymplecticFor
   set Kx := CompactExhaustion.choice Ω
   set D : ℕ → Set (ℝ × ℝ) := fun j ↦ (↑) '' Kx j
   set O : ℕ → Set (ℝ × ℝ) := fun j ↦ (↑) '' interior (Kx j)
-  have hDc (j : ℕ) : IsCompact (D j) := (Kx.isCompact j).image continuous_subtype_val
+  have hDc (j : ℕ) : IsCompact (D j) := (Kx.isCompact j).image continuous_subtypeVal
   have hDΩ (j : ℕ) : D j ⊆ Ω := Subtype.coe_image_subset _ _
-  have hO (j : ℕ) : IsOpen (O j) := hΩ.isOpenMap_subtype_val _ isOpen_interior
+  have hO (j : ℕ) : IsOpen (O j) := hΩ.isOpenMap_subtypeVal _ isOpen_interior
   have hOD (j : ℕ) : O j ⊆ D j := image_mono interior_subset
   have hCO : ∀ C, IsCompact C → C ⊆ Ω → ∃ j, C ⊆ O j := by
     intro C hC hCΩ
