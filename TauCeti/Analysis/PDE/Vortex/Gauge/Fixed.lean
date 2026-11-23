@@ -43,6 +43,8 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   `gaugeFixedOperatorSymbol` and `gaugeFixedAdjointSymbol`; both symbols scale norms by the norm
   of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`), and the
   adjoint symbol is minus the transpose of the operator symbol (`inner_gaugeFixedOperatorSymbol`).
+* `norm_sq_gaugeFixedOperator_fun_smul_le`: the resulting Leibniz bound
+  `|L_x (w y)|² ≤ 2 w² |L_x y|² + 2 |dw|² |y|²`.
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
   with `φ = α / 2`, `η = (ξ, ζ)`, `∇ = d + a` and the complex defect `E = ∂bar_a α`, it reads
@@ -525,6 +527,22 @@ theorem gaugeFixedOperator_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
     simp [gaugeFixedOperatorSymbol_def, gaugeFixedOperator_apply_zero,
       gaugeFixedOperator_apply_one, gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three,
       hd] <;> ring
+
+/-- The Leibniz rule bounds the gauge-fixed operator on a weighted variation:
+`|L_x (w y)|² ≤ 2 w² |L_x y|² + 2 |dw|² |y|²`. No equation for `x` is needed. -/
+theorem norm_sq_gaugeFixedOperator_fun_smul_le (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {w : ℂ → ℝ} {z : ℂ} (hw : DifferentiableAt ℝ w z)
+    (hy : DifferentiableAt ℝ y z) :
+    ‖gaugeFixedOperator x (fun t ↦ w t • y t) z‖ ^ 2 ≤
+      2 * (w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2) + 2 * (‖fderiv ℝ w z‖ ^ 2 * ‖y z‖ ^ 2) := by
+  rw [gaugeFixedOperator_fun_smul x hw hy]
+  have ha : ‖w z • gaugeFixedOperator x y z‖ ^ 2 = w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2 := by
+    rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
+  rw [← ha, ← norm_sq_gaugeFixedOperatorSymbol]
+  nlinarith [norm_add_le (w z • gaugeFixedOperator x y z)
+      (gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z)),
+    sq_nonneg (‖w z • gaugeFixedOperator x y z‖ - ‖gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z)‖),
+    norm_nonneg (w z • gaugeFixedOperator x y z + gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z))]
 
 /-- The infinitesimal gauge action `d₀ f` is differentiable at a point where the phase `f` is
 `C²` and the section coordinates of the field are differentiable. -/
