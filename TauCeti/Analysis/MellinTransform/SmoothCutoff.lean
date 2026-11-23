@@ -285,12 +285,10 @@ with transform `mellin ν (εs) / s`. -/
 theorem hasMellin_smoothCutoff (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
     (hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0)) (hε : 0 < ε) {s : ℂ} (hs : 0 < s.re) :
     HasMellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) s (mellin (fun x ↦ (ν x : ℂ)) (ε * s) / s) := by
-  have h1 := hasMellin_one_Ioc hs
-  have h := hasMellin_integral_mul_div h1.1
-    ((mellinConvergent_deltaSpike_iff hε).mpr
-      (mellinConvergent_ofReal_of_support_subset_Icc (by norm_num) hνs hνi _))
-  rw [h1.2, mellin_deltaSpike ν hε, one_div_mul_eq_div] at h
-  exact (hasMellin_congr fun x hx ↦ smoothCutoff_eq_integral_mul_div ν ε hx).mpr h
+  have h := hasMellin_mellinCutoffKernel ((mellinConvergent_deltaSpike_iff hε).mpr
+    (mellinConvergent_ofReal_of_support_subset_Icc (by norm_num) hνs hνi _)) hs
+  rw [mellin_deltaSpike ν hε] at h
+  exact (hasMellin_congr fun x hx ↦ smoothCutoff_eq_mellinCutoffKernel ν ε hx).mpr h
 
 /-- For `ν` supported in `[1/2, 2]` with `x ↦ ν x / x` integrable on `(0, ∞)`, `ε > 0` and
 `Re s > 0`, the Mellin transform of the smoothed cutoff is `mellin χ_ε s = mellin ν (εs) / s`. -/

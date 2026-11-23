@@ -10,6 +10,7 @@ import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.MellinTransform.Convolution
 import TauCeti.Analysis.MellinTransform.Decay
+import TauCeti.Topology.Instances.Real.TSupport
 
 /-!
 # The Mellin cutoff kernels of an approximate functional equation
@@ -73,6 +74,11 @@ noncomputable def mellinCutoffKernel (φ : ℝ → ℂ) (x : ℝ) : ℂ :=
 theorem mellinCutoffKernel_def (φ : ℝ → ℂ) (x : ℝ) :
     mellinCutoffKernel φ x = ∫ y in Ioi x, φ y / y := (rfl)
 
+/-- The cutoff kernel of the zero cutoff vanishes. -/
+@[simp]
+theorem mellinCutoffKernel_zero (x : ℝ) : mellinCutoffKernel 0 x = 0 := by
+  simp [mellinCutoffKernel_def]
+
 variable {φ : ℝ → ℂ} {x : ℝ}
 
 /-- If `φ` vanishes on `(x, ∞)`, its cutoff kernel vanishes at `x`. -/
@@ -113,20 +119,8 @@ theorem mellinCutoffKernel_comp_div (φ : ℝ → ℂ) {c : ℝ} (hc : 0 < c) (x
 
 /-- If `y ↦ φ y / y` is integrable on `(a, ∞)`, the cutoff kernel is continuous on `[a, ∞)`. -/
 theorem continuousOn_mellinCutoffKernel {a : ℝ} (h : IntegrableOn (fun y ↦ φ y / y) (Ioi a)) :
-    ContinuousOn (mellinCutoffKernel φ) (Ici a) := by
-  set g : ℝ → ℂ := (Ioi a).indicator fun y ↦ φ y / y
-  have hg : Integrable g := (integrable_indicator_iff measurableSet_Ioi).mpr h
-  have heq : EqOn (fun x ↦ (∫ y in Ioi a, φ y / y) - ∫ y in a..x, g y)
-      (mellinCutoffKernel φ) (Ici a) := fun x hx ↦ by
-    have hint : ∫ y in a..x, g y = ∫ y in a..x, φ y / y :=
-      intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun y hy ↦ by
-        rw [uIoc_of_le (mem_Ici.mp hx)] at hy
-        simp [g, indicator_of_mem (show y ∈ Ioi a from hy.1)])
-    dsimp only
-    rw [hint, ← intervalIntegral.integral_Ioi_sub_Ioi h (mem_Ici.mp hx), sub_sub_cancel,
-      mellinCutoffKernel_def]
-  exact (continuous_const.sub (intervalIntegral.continuous_primitive
-    (fun _ _ ↦ hg.intervalIntegrable) a)).continuousOn.congr heq.symm
+    ContinuousOn (mellinCutoffKernel φ) (Ici a) :=
+  h.continuousOn_Ici_primitive_Ioi
 
 /-- For `x > 0` the cutoff kernel is the Mellin convolution
 `(1_(0,1] ⋆ φ)(x) = ∫_{(0,∞)} 1_(0,1](y) φ(x/y) dy/y`, by the substitution `z = x/y`. -/
@@ -163,7 +157,8 @@ positive closed support, `σ > 0` and `x > 0`,
 theorem mellinCutoffKernel_eq_mellinInv (hφ : ContDiffOn ℝ 1 φ (Ioi 0))
     (hc : IsCompact (tsupport φ ∩ Ioi 0)) {σ : ℝ} (hσ : 0 < σ) (hx : 0 < x) :
     mellinCutoffKernel φ x = mellinInv σ (fun s ↦ mellin φ s / s) x := by
-  have hconv := mellinConvergent_of_isCompact_tsupport hφ.continuousOn hc
+  have hconv := mellinConvergent_of_isCompact_tsupport
+    (hφ.continuousOn.locallyIntegrableOn measurableSet_Ioi) hc
   have hM (s : ℂ) (hs : 0 < s.re) := hasMellin_mellinCutoffKernel (hconv s) hs
   have hline (t : ℝ) : mellin (mellinCutoffKernel φ) (σ + t * I) =
       mellin φ (σ + t * I) / (σ + t * I) := (hM _ (by simpa using hσ)).2
@@ -200,28 +195,11 @@ theorem dualMellinCutoffKernel_zero (φ : ℝ → ℂ) (β : ℂ) (x : ℝ) :
     dualMellinCutoffKernel φ 0 β x = 0 := by
   simp [dualMellinCutoffKernel_def, mellinInv]
 
-/-- Reflecting a cutoff `y ↦ φ (1 / y)` preserves the hypotheses of Mellin inversion. -/
-private lemma isCompact_tsupport_comp_inv_inter_Ioi (hc : IsCompact (tsupport φ ∩ Ioi 0)) :
-    IsCompact (tsupport (fun y ↦ φ y⁻¹) ∩ Ioi 0) := by
-  set K : Set ℝ := Inv.inv '' (tsupport φ ∩ Ioi 0)
-  have hK : IsCompact K :=
-    hc.image_of_continuousOn (continuousOn_inv₀.mono fun y hy ↦ ne_of_gt hy.2)
-  have hKpos : K ⊆ Ioi 0 := by
-    rintro _ ⟨y, ⟨-, hy⟩, rfl⟩
-    exact inv_pos.mpr hy
-  have hsupp : tsupport (fun y ↦ φ y⁻¹) ⊆ K ∪ Iic 0 := by
-    refine closure_minimal (fun y hy ↦ ?_) (hK.isClosed.union isClosed_Iic)
-    rcases le_or_gt y 0 with h | h
-    · exact Or.inr h
-    · exact Or.inl ⟨y⁻¹, ⟨subset_tsupport φ hy, inv_pos.mpr h⟩, inv_inv y⟩
-  have heq : tsupport (fun y ↦ φ y⁻¹) ∩ Ioi 0 = tsupport (fun y ↦ φ y⁻¹) ∩ K := by
-    ext y
-    refine ⟨fun hy ↦ ⟨hy.1, ?_⟩, fun hy ↦ ⟨hy.1, hKpos hy.2⟩⟩
-    rcases hsupp hy.1 with h | h
-    · exact h
-    · exact absurd h (not_le.mpr hy.2)
-  rw [heq]
-  exact hK.inter_left (isClosed_tsupport _)
+/-- The dual kernel of the zero cutoff `φ = 0` vanishes. -/
+@[simp]
+theorem dualMellinCutoffKernel_zero_left (G : ℂ → ℂ) (β : ℂ) (x : ℝ) :
+    dualMellinCutoffKernel 0 G β x = 0 := by
+  simp [dualMellinCutoffKernel_def, mellinInv, mellin]
 
 /-- For `G = 1` the dual kernel is the cutoff kernel of the reflected cutoff `y ↦ φ (1 / y)`:
 `F₂(φ, 1, β, x) = F₁(φ ∘ inv, x)` for `φ` of class `C¹` on `(0, ∞)` with compact positive
