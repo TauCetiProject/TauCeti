@@ -407,10 +407,11 @@ theorem compactIntegral_sub (f g : C(K, E)) :
   (compactIntegralₗ μ ℝ).map_sub f g
 
 /-- The integral is continuous on `C(K, E)` with its compact-open topology, the topology of uniform
-convergence on the compact space `K`. If every value of `f` lies in a convex neighbourhood `C` of
-`0` contained in a closed set `D`, every Riemann sum lies in `(μ univ + 1) • C`, so the integral
-lies in `(μ univ + 1) • D`. -/
+convergence on the compact space `K`. -/
 theorem continuous_compactIntegral : Continuous fun f : C(K, E) ↦ f.compactIntegral μ := by
+  -- By linearity it suffices to prove continuity at `0`. If every value of `f` lies in a convex
+  -- neighbourhood `C` of `0` contained in a closed set `D`, every Riemann sum lies in
+  -- `(μ univ + 1) • C`, so the integral lies in `(μ univ + 1) • D`.
   refine continuous_of_continuousAt_zero (compactIntegralₗ μ ℝ) fun W hW ↦ ?_
   rw [map_zero] at hW
   have hW' : ((μ.real univ + 1) • ·) ⁻¹' W ∈ 𝓝 (0 : E) :=
