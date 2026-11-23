@@ -128,7 +128,7 @@ theorem slobodeckijEnergy_precomp_le (hs : 0 ≤ 1 + 2 * s) (hK : LipschitzWith 
   have hgm : Measurable g := hu.stronglyMeasurable_mk.measurable
   have hgφ : toLpₗᵢ T (precomp T hφm hC hmap a) =ᵐ[haarAddCircle] g ∘ φ :=
     (toLpₗᵢ_precomp hφm hC hmap a).trans
-      ((QuasiMeasurePreserving.of_map_le_smul hφm hmap).ae_eq_comp hu.ae_eq_mk)
+      ((QuasiMeasurePreserving.of_map_le_smul hφm.aemeasurable hmap).ae_eq_comp hu.ae_eq_mk)
   rw [slobodeckijEnergy_eq_lintegral_lintegral T (hgm.comp hφm) hgφ,
     slobodeckijEnergy_eq_lintegral_lintegral T hgm hu.ae_eq_mk]
   -- The integrand of the energy of `a`, as a function on the square.

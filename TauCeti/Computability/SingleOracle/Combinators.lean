@@ -88,9 +88,7 @@ theorem eval_boolOr (O : ℕ →. ℕ) (c₁ c₂ : Code) (n : ℕ) (b₁ b₂ :
     eval O (boolOr c₁ c₂) n = Part.some (encode (b₁ || b₂)) := by
   have he₁ : eval O c₁ n = Part.some (encode b₁) := Part.eq_some_iff.2 h₁
   have he₂ : eval O c₂ n = Part.some (encode b₂) := Part.eq_some_iff.2 h₂
-  have hid (x : ℕ) : eval O (pair left right) x = Part.some x := by
-    simp [Seq.seq]
-  cases b₁ <;> cases b₂ <;> simp [boolOr, he₁, he₂, hid, Seq.seq]
+  cases b₁ <;> cases b₂ <;> simp [boolOr, he₁, he₂, Seq.seq]
 
 /-! ### Parameterized program specialization -/
 
@@ -132,7 +130,7 @@ def idCode : Code :=
 /-- Evaluating `idCode` returns the input unchanged, relative to every partial oracle. -/
 @[simp]
 theorem eval_idCode (O : ℕ →. ℕ) (n : ℕ) : eval O idCode n = Part.some n := by
-  simp [idCode, Seq.seq]
+  simp [idCode]
 
 private def ifZeroCode (c₀ c₁ : Code) : Code :=
   prec c₀ (comp c₁ (pair left (comp left right)))

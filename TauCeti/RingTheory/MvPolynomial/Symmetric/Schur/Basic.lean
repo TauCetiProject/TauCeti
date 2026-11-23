@@ -95,7 +95,7 @@ variable {N : ℕ} {μ : YoungDiagram}
 /-- The letters a bounded tableau uses all come from the alphabet, so its content is supported on
 the image of `Fin N`. -/
 private theorem support_content_subset_range (T : BoundedSSYT N μ) :
-    ↑(SemistandardYoungTableau.content T.1).support ⊆ Set.range (Fin.val : Fin N → ℕ) := by
+    ↑(SemistandardYoungTableau.content T.val).support ⊆ Set.range (Fin.val : Fin N → ℕ) := by
   intro x hx
   simp only [Finset.mem_coe, SemistandardYoungTableau.support_content, Finset.mem_image] at hx
   obtain ⟨c, hc, rfl⟩ := hx
@@ -105,24 +105,24 @@ private theorem support_content_subset_range (T : BoundedSSYT N μ) :
 alphabet `Fin N`. This is the exponent of the monomial the tableau contributes to
 `TauCeti.diagramSchurPoly`. -/
 noncomputable def weight (T : BoundedSSYT N μ) : Fin N →₀ ℕ :=
-  Finsupp.comapDomain Fin.val (SemistandardYoungTableau.content T.1) Fin.val_injective.injOn
+  Finsupp.comapDomain Fin.val (SemistandardYoungTableau.content T.val) Fin.val_injective.injOn
 
 @[simp]
 theorem weight_apply (T : BoundedSSYT N μ) (i : Fin N) :
-    weight T i = SemistandardYoungTableau.content T.1 i :=
+    weight T i = SemistandardYoungTableau.content T.val i :=
   Finsupp.comapDomain_apply _ _ _ _
 
 /-- Extending the weight of a bounded tableau by zero recovers its content: no letter outside the
 alphabet occurs. -/
 theorem mapDomain_weight (T : BoundedSSYT N μ) :
-    Finsupp.mapDomain Fin.val (weight T) = SemistandardYoungTableau.content T.1 :=
+    Finsupp.mapDomain Fin.val (weight T) = SemistandardYoungTableau.content T.val :=
   Finsupp.mapDomain_comapDomain _ Fin.val_injective _ (support_content_subset_range T)
 
 /-- The sum of the weight of a bounded tableau of shape `μ` is the number of cells of `μ`: every
 cell carries exactly one letter. -/
 theorem sum_weight (T : BoundedSSYT N μ) : ∑ i, weight T i = μ.card := by
   simp only [weight_apply]
-  rw [Fin.sum_univ_eq_sum_range fun i => SemistandardYoungTableau.content T.1 i]
+  rw [Fin.sum_univ_eq_sum_range fun i => SemistandardYoungTableau.content T.val i]
   exact SemistandardYoungTableau.sum_content_eq_card fun c hc =>
     entry_lt T ((YoungDiagram.mem_cells _).mp hc)
 
@@ -142,7 +142,7 @@ private theorem lt_of_content_eq {T : _root_.SemistandardYoungTableau μ} {d : F
 /-- The weight of a bounded tableau whose content is an exponent vector extended by zero is that
 exponent vector. -/
 private theorem weight_eq_of_content_eq (T : BoundedSSYT N μ) {d : Fin N →₀ ℕ}
-    (h : ⇑(SemistandardYoungTableau.content T.1) = ⇑(Finsupp.mapDomain Fin.val d)) :
+    (h : ⇑(SemistandardYoungTableau.content T.val) = ⇑(Finsupp.mapDomain Fin.val d)) :
     weight T = d := by
   ext i
   rw [weight_apply, congrFun h i, Finsupp.mapDomain_apply_of_injective Fin.val_injective]
@@ -155,8 +155,9 @@ private noncomputable def weightFiberEquivContentFiber (N : ℕ) (μ : YoungDiag
     {T : BoundedSSYT N μ // weight T = d} ≃
       {T : _root_.SemistandardYoungTableau μ //
         ⇑(SemistandardYoungTableau.content T) = ⇑(Finsupp.mapDomain Fin.val d)} where
-  toFun T := ⟨T.1.1, by rw [← mapDomain_weight T.1, T.2]⟩
-  invFun T := ⟨⟨T.1, fun _ _ hic => lt_of_content_eq T.2 hic⟩, weight_eq_of_content_eq _ T.2⟩
+  toFun T := ⟨T.val.val, by rw [← mapDomain_weight T.val, T.property]⟩
+  invFun T := ⟨⟨T.val, fun _ _ hic => lt_of_content_eq T.property hic⟩,
+      weight_eq_of_content_eq _ T.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -361,10 +362,10 @@ partitions with at most `N` rows: the Schur polynomials of the others vanish. -/
 theorem sum_nsmul_diagramSchurPoly_eq_sum_colLen_le (c : n.Partition → ℕ) :
     ∑ ν, c ν • diagramSchurPoly N R (ofPartition ν) =
       ∑ ν : {ν : n.Partition // (ofPartition ν).colLen 0 ≤ N},
-        c ν.1 • diagramSchurPoly N R (ofPartition ν.1) := by
+        c ν.val • diagramSchurPoly N R (ofPartition ν.val) := by
   rw [← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ N,
     Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ N} => _) fun ν => by
-      rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.2), smul_zero],
+      rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.property), smul_zero],
     add_zero]
 
 end Partition

@@ -8,7 +8,8 @@ module
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.SheafOfModules
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Flat
 public import TauCeti.Algebra.Homology.CochainComplex.ProjectiveResolution
-public import TauCeti.Algebra.Homology.Monoidal.KFlat.Resolution
+public import TauCeti.Algebra.Homology.Monoidal.KFlat.DerivabilityStructure
+import Mathlib.CategoryTheory.Adjunction.FullyFaithful
 
 /-!
 # K-flat resolutions of complexes of sheaves of modules
@@ -35,12 +36,22 @@ countable coproducts of sheaves of modules are exact and commute with tensor pro
 attachment construction `CochainComplex.kFlatResolution` along these quotient maps is a K-flat
 resolution of `K` with flat terms.
 
+The cover of a sheaf of modules by the sheafification of the free presheaf of modules on its
+underlying presheaf of sets is functorial and flat
+(`PresheafOfModules.preservesFiniteLimits_tensorLeft_sheafification_free_obj`), and it is the
+counit of the composite of the free-forgetful adjunction of presheaves of modules with the
+sheafification adjunction, hence an epimorphism. The functorial cell attachment construction
+along it makes the inclusion of K-flat complexes a left derivability structure for
+quasi-isomorphisms
+(`CochainComplex.KFlat.instIsLeftDerivabilityStructureLocalizerMorphismSheafOfModules`).
+
 These are the K-flat replacements from which derived tensor products of complexes of sheaves of
-modules are computed.
+modules are computed (`TauCeti.derivedTensor`).
 
 ## References
 
 * The Stacks Project, Cohomology on Sites, Section 21.17, Flat resolutions.
+* N. Spaltenstein, *Resolutions of unbounded complexes*, Compositio Math. 65 (1988), 121–154.
 -/
 
 public section
@@ -57,6 +68,21 @@ variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
 variable [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
 variable [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
 variable {R : Sheaf J CommRingCat.{u}}
+
+/-- Graded objects of sheaves of modules have the totalized tensor products of Mathlib's monoidal
+structure on graded objects, since tensor products of sheaves of modules preserve coproducts.
+This shortcut lets instance search find the family of these instances, indexed by all pairs of
+graded objects, within its default size limit for the structure sheaf of a scheme. -/
+instance
+    (K L : GradedObject ℤ (SheafOfModules.{u} (ringCatSheaf R))) : GradedObject.HasTensor K L :=
+  inferInstance
+
+/-- Cochain complexes of sheaves of modules have totalized tensor products. This shortcut lets
+instance search find the family of these instances, indexed by all pairs of complexes, within its
+default size limit for the structure sheaf of a scheme. -/
+instance (K L : CochainComplex (SheafOfModules.{u} (ringCatSheaf R)) ℤ) :
+    HomologicalComplex.HasTensor K L :=
+  inferInstance
 
 /-- A cochain complex of sheaves of modules over a sheaf of commutative rings which is strictly
 bounded above by `n` receives a quasi-isomorphism from a K-flat complex of flat sheaves of modules
@@ -117,5 +143,40 @@ theorem exists_quasiIso_isKFlat_sheafOfModules
   have : HasFiniteBiproducts (SheafOfModules.{u} (ringCatSheaf R)) := Abelian.hasFiniteBiproducts
   have : CountableAB4 (SheafOfModules.{u} (ringCatSheaf R)) := CountableAB4.of_countableAB5 _
   exact ⟨_, kFlatResolution.π E p K, inferInstance, inferInstance, inferInstance⟩
+
+namespace KFlat
+
+/-- **The K-flat left derivability structure on complexes of sheaves of modules.** Over a sheaf of
+commutative rings on a small site, the inclusion of K-flat cochain complexes of sheaves of modules
+into all cochain complexes is a left derivability structure with respect to quasi-isomorphisms. -/
+instance instIsLeftDerivabilityStructureLocalizerMorphismSheafOfModules :
+    (localizerMorphism (SheafOfModules.{u} (ringCatSheaf R))).IsLeftDerivabilityStructure := by
+  -- the free sheaf of modules on a presheaf of sets is left adjoint to the underlying presheaf of
+  -- sets, whose counit is the functorial flat cover
+  let F := (SheafOfModules.forget (ringCatSheaf R) ⋙
+    PresheafOfModules.restrictScalars (𝟙 (ringCatSheaf R).obj)) ⋙
+      PresheafOfModules.toPresheaf (ringCatSheaf R).obj ⋙
+        (Functor.whiskeringRight Cᵒᵖ Ab (Type u)).obj (forget Ab)
+  let adj : PresheafOfModules.free (ringCatSheaf R).obj ⋙
+      PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj) ⊣ F :=
+    (PresheafOfModules.freeAdjunction (ringCatSheaf R).obj).comp
+      (PresheafOfModules.sheafificationAdjunction.{u} (𝟙 (ringCatSheaf R).obj))
+  -- filtered colimits of sheaves of modules are exact, also for the small index categories `ℕ`
+  -- and `Discrete ℤ`
+  have : AB5OfSize.{0, 0} (SheafOfModules.{u} (ringCatSheaf R)) :=
+    AB5OfSize_of_univLE.{0, 0, u, u} _
+  -- `CountableAB4.of_countableAB5` assumes finite biproducts, which abelian categories have by
+  -- the theorem `Abelian.hasFiniteBiproducts`
+  have : HasFiniteBiproducts (SheafOfModules.{u} (ringCatSheaf R)) := Abelian.hasFiniteBiproducts
+  have : CountableAB4 (SheafOfModules.{u} (ringCatSheaf R)) := CountableAB4.of_countableAB5 _
+  -- the cover `(F ⋙ free ⋙ sheafification).obj X` unfolds to the sheafification of a free
+  -- presheaf of modules only through `Functor.comp_obj`, which instance search does not unfold
+  have (X : SheafOfModules.{u} (ringCatSheaf R)) : PreservesFiniteLimits (tensorLeft
+      ((F ⋙ PresheafOfModules.free (ringCatSheaf R).obj ⋙
+        PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)).obj X)) :=
+    PresheafOfModules.preservesFiniteLimits_tensorLeft_sheafification_free_obj (F.obj X)
+  exact isLeftDerivabilityStructure_localizerMorphism _ adj.counit
+
+end KFlat
 
 end CochainComplex

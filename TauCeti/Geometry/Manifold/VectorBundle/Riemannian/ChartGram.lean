@@ -47,6 +47,7 @@ API replace them.
   the basis of the model space.
 * `Riemannian.Tensor.mvfderiv_chartLocalFrame`: on a boundaryless manifold, differentiating along
   the frame is taking coordinate partial derivatives in the chart.
+* `Riemannian.Tensor.contMDiffAt_chartLocalFrame`: smoothness of the frame at its base point.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
 * `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
   inner product in the basis given by the trivialization.
@@ -63,6 +64,8 @@ API replace them.
   trace of a bilinear form is the contraction `gⁱʲ B(eᵢ, eⱼ)` in the chart-local frame.
 * `Riemannian.Tensor.inner_chartDualFrame` and
   `Riemannian.Tensor.sum_inner_chartDualFrame_smul`: duality and vector expansion in the frames.
+* `Riemannian.Tensor.sum_apply_chartDualFrame_eq_sum`: the sum `∑ᵢ B(Fᵢ, Dᵢ)` over the chart-local
+  frame and its metric-dual frame is the metric trace of a vector-valued bilinear map `B`.
 * `Riemannian.Tensor.contMDiffAt_chartDualFrame`: regularity of the metric-dual frame.
 * `Riemannian.Tensor.mvfderiv_chartGramMatrix_apply`,
   `Riemannian.Tensor.mvfderiv_det_chartGramMatrix`: the derivatives of the Gram matrix and of its
@@ -171,6 +174,14 @@ theorem contMDiffOn_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
     TangentBundle.contMDiffVectorBundle
   exact (trivializationAt E (TangentSpace I) α).contMDiffOn_localFrame_baseSet
     (n := n) (Module.finBasis ℝ E) i
+
+/-- Each member of `chartLocalFrame α` is `C^n` at the base point `α`. -/
+theorem contMDiffAt_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    (α : M) (i : Fin (Module.finrank ℝ E)) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E)) n
+      (fun x ↦ TotalSpace.mk' E x (chartLocalFrame (I := I) α i x)) α :=
+  (contMDiffOn_chartLocalFrame α i).contMDiffAt
+    ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds (by simp))
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
@@ -416,6 +427,27 @@ theorem sum_inner_chartDualFrame_smul (α : M) {y : M} (hy : y ∈ (chartAt H α
     refine InnerProductSpace.ext_inner_right_basis b fun k ↦ ?_
     simp only [hb, sum_inner, real_inner_smul_left, inner_chartDualFrame α hy, mul_ite, mul_one,
       mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, real_inner_comm w]
+
+/-- On the chart domain, the sum `∑ᵢ B(Fᵢ, Dᵢ)` over the chart-local frame `Fᵢ` at `α` and its
+metric-dual frame `Dᵢ` is the metric trace `∑ₖ B(eₖ, eₖ)` of `B` in any orthonormal basis `eₖ`. The
+bilinear map `B` takes values in any real topological vector space, such as a fibre of a vector
+bundle. -/
+theorem sum_apply_chartDualFrame_eq_sum (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
+    {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W] [IsTopologicalAddGroup W]
+    [ContinuousSMul ℝ W] (B : TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] W)
+    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ (TangentSpace I y)) :
+    ∑ i, B (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) =
+      ∑ k, B (e k) (e k) := by
+  set F := chartLocalFrame (I := I) α
+  set D := chartDualFrame (I := I) α
+  calc ∑ i, B (F i y) (D i y) = ∑ i, B (∑ k, inner ℝ (e k) (F i y) • e k) (D i y) := by
+        simp only [e.sum_repr']
+    _ = ∑ k, B (e k) (∑ i, inner ℝ (F i y) (e k) • D i y) := by
+        simp only [map_sum, map_smul, FunLike.coe_sum, FunLike.coe_smul,
+          Finset.sum_apply, Pi.smul_apply, real_inner_comm (e _)]
+        exact Finset.sum_comm
+    _ = ∑ k, B (e k) (e k) := by
+        simp only [F, D, (sum_inner_chartDualFrame_smul α hy _).2]
 
 section Smooth
 

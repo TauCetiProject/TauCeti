@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.List.Basic
+public import Mathlib.Data.List.TakeDrop
 public import Mathlib.Logic.Function.Iterate
 
 /-!
-# Prefix-mapping length and two-stack list-iteration steps
+# List `take`/`drop` windowing, prefix-mapping length, and two-stack list-iteration steps
 
-This file provides reusable helpers for transforming prefixes of lists:
+This file provides reusable `List.take`/`List.drop` helpers:
 
+* `List.drop_take_append_drop_of_le`: for `m ≤ n`, the suffix `l.drop m` splits at `n` into the
+  window `(l.take n).drop m` and the suffix `l.drop n`.
 * `List.length_map_take_append_drop`: mapping over `l.take d` while preserving `l.drop d` keeps
   the length `l.length`.
 * `List.splitStep` and `List.splitStep_iterate`: iterating the one-step prefix-splitting
@@ -26,6 +29,21 @@ This file provides reusable helpers for transforming prefixes of lists:
 public section
 
 namespace List
+
+section Windowing
+
+variable {α : Type*}
+
+/-- For `m ≤ n`, the suffix `l.drop m` is the window `(l.take n).drop m` followed by the suffix
+`l.drop n`. -/
+theorem drop_take_append_drop_of_le (l : List α) {m n : ℕ} (h : m ≤ n) :
+    (l.take n).drop m ++ l.drop n = l.drop m := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  simp [drop_take]
+
+end Windowing
+
+section SplitReverse
 
 variable {α β : Type*}
 
@@ -101,5 +119,7 @@ theorem reverseStep_iterate (d : ℕ) (rl l : List α) :
 theorem reverseStep_iterate_of_length_le {d : ℕ} {rl : List α} (hd : rl.length ≤ d) (l : List α) :
     reverseStep^[d] (rl, l) = ([], rl.reverseAux l) := by
   rw [reverseStep_iterate, drop_eq_nil_of_le hd, take_of_length_le hd]
+
+end SplitReverse
 
 end List

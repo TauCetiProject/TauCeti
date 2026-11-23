@@ -350,7 +350,7 @@ theorem isCompactOperator_of_mem_finiteSubmodule_logarithmic {T : E →L[𝕜] F
     refine h'.congr fun N ↦ ?_
     ring
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-    (fun N ↦ (T.singularValue N).2) fun N ↦ ?_
+    (fun N ↦ (T.singularValue N).property) fun N ↦ ?_
   -- `(N + 1) a_N(T) ≤ K_(N+1)(T) ≤ C log (N + 2)`.
   have hK : ((N : ℝ) + 1) * T.singularValue N ≤ C * Real.log (N + 2) := by
     have h1 := hC (N + 1)

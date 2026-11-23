@@ -98,7 +98,7 @@ theorem exists_isCAD_lazardValuationReindex_eq (F : Finset (MvPolynomial (Fin n)
       simpa only [lazardValuationReindex_rename_symm, Function.comp_assoc, Equiv.self_comp_symm,
         Function.comp_id] using hv _ (Finset.mem_image_of_mem _ hq) C hC _ hx _ hy
     have hD (C) (hC : C ∈ 𝓓) : Nonempty (LazardDelineation
-        (fun f : A ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm f.1))
+        (fun f : A ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm f.val))
         ((fun x ↦ x ∘ Fin.revPerm.symm.symm) ⁻¹' C)) := by
       obtain ⟨d, hd⟩ := ha C hC
       -- Permuting coordinates is a homeomorphism, so the reordered cell stays preconnected.

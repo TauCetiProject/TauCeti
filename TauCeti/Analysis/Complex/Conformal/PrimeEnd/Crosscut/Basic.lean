@@ -100,7 +100,7 @@ theorem IsCrosscut.source_ne_target (hγ : IsCrosscut γ U) : x ≠ y := by
 theorem IsCrosscut.range_subset_closure (hγ : IsCrosscut γ U) :
     range γ ⊆ closure U := by
   rintro z ⟨t, rfl⟩
-  rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.2 with ht | ht | ht
+  rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.property with ht | ht | ht
   · have : t = 0 := Subtype.ext ht
     subst t
     simpa using frontier_subset_closure hγ.source_mem_frontier
@@ -115,7 +115,7 @@ theorem IsCrosscut.range_inter_frontier (hγ : IsCrosscut γ U) (hU : IsOpen U) 
   ext z
   constructor
   · rintro ⟨⟨t, rfl⟩, htfr⟩
-    rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.2 with ht | ht | ht
+    rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.property with ht | ht | ht
     · left
       have : t = 0 := Subtype.ext ht
       subst t
@@ -148,7 +148,7 @@ theorem IsCrosscut.range_inter_eq_image_Ioo (hγ : IsCrosscut γ U) (hU : IsOpen
   ext z
   constructor
   · rintro ⟨⟨t, rfl⟩, htU⟩
-    rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.2 with ht | ht | ht
+    rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.property with ht | ht | ht
     · have : t = 0 := Subtype.ext ht
       subst t
       exact ((hU.frontier_eq.subset hγ.source_mem_frontier).2 (by simpa using htU)).elim
