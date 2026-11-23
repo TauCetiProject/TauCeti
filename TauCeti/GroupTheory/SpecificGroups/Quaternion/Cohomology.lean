@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupExtension.Cyclic.Cohomology
+public import TauCeti.GroupTheory.GroupExtension.Cyclic.Inversion
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Cohomology
 public import TauCeti.GroupTheory.GroupExtension.Relabel
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Extension
-import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
 # Non-splitting second cohomology classes of generalized quaternion groups

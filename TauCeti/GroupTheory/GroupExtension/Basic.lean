@@ -253,8 +253,8 @@ section at `eG.symm g'`. -/
   original section at `eG.symm g'`. -/]
 theorem sectionRelabelEquiv_apply (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
     (eN : N' ≃* N) (eG : G ≃* G') (σ : S.Section) (g' : G') :
-    S.sectionRelabelEquiv eN eG σ g' = σ (eG.symm g') :=
-  (rfl)
+    S.sectionRelabelEquiv eN eG σ g' = σ (eG.symm g') := by
+  rw [sectionRelabelEquiv, Equiv.coe_fn_mk, Section.relabel_apply]
 
 /-- Evaluating the inverse relabelling equivalence on a section at `g` evaluates the relabelled
 section at `eG g`. -/

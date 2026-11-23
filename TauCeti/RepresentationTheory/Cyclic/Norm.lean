@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Invariants
+public import Mathlib.RepresentationTheory.Rep.Basic
 public import Mathlib.GroupTheory.OrderOfElement
-import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Algebra.GroupAction.Inversion
+import TauCeti.GroupTheory.GroupAction.Norm
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
 # The norm of a representation of a finite cyclic group
@@ -63,15 +65,25 @@ section Negation
 
 variable [AddCommGroup V] [Module k V] (ρ : Representation k G V) {g : G}
 
+@[instance_reducible]
+private def distribMulActionOfRep : DistribMulAction G V :=
+  DistribMulAction.compHom V
+    ({ toFun := fun x ↦ (ρ x).toAddMonoidHom
+       map_one' := by
+         ext x
+         change (ρ 1) x = x
+         simp
+       map_mul' := fun x y ↦ by
+         ext z
+         change (ρ (x * y)) z = (ρ x) ((ρ y) z)
+         simp } : G →* AddMonoid.End V)
+
 /-- If `g` acts by negation, then `g ^ j` fixes every vector for even `j` and negates it for
 odd `j`. -/
 theorem pow_apply_of_apply_eq_neg (hneg : ∀ v : V, ρ g v = -v) (j : ℕ) (v : V) :
     ρ (g ^ j) v = if Even j then v else -v := by
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    rw [pow_succ', map_mul, mul_apply_eq_comp, ih, hneg]
-    by_cases hj : Even j <;> simp [hj, Nat.even_add_one]
+  let _ : DistribMulAction G V := distribMulActionOfRep ρ
+  exact TauCeti.pow_smul_of_smul_eq_neg (G := G) (M := V) hneg j v
 
 /-- **The norm vanishes for a negation action of an even-order cyclic group.** If `G` is generated
 by an element `g` of even order acting as `-1`, then consecutive terms `v + (-v)` cancel in pairs,
@@ -79,17 +91,9 @@ so `∑ x : G, ρ x v = 0`. -/
 theorem norm_apply_eq_zero_of_apply_eq_neg [Fintype G] (hg : ∀ x, x ∈ Subgroup.zpowers g)
     (hord : Even (orderOf g)) (hneg : ∀ v : V, ρ g v = -v) (v : V) :
     ρ.norm v = 0 := by
-  rw [Representation.norm, LinearMap.sum_apply, ← sum_range_orderOf_eq_sum g hg (fun x ↦ ρ x v)]
-  obtain ⟨q, hq⟩ := hord
-  rw [hq, ← two_mul]
-  clear hq
-  induction q with
-  | zero => simp
-  | succ q ih =>
-    have hsucc : 2 * (q + 1) = (2 * q + 1) + 1 := by omega
-    rw [hsucc, Finset.sum_range_succ, Finset.sum_range_succ, ih, zero_add,
-      pow_apply_of_apply_eq_neg ρ hneg, pow_apply_of_apply_eq_neg ρ hneg]
-    simp
+  rw [Representation.norm, LinearMap.sum_apply]
+  let _ : DistribMulAction G V := distribMulActionOfRep ρ
+  exact TauCeti.sum_smul_eq_zero_of_smul_eq_neg (G := G) (M := V) hg hord hneg v
 
 end Negation
 

@@ -29,6 +29,8 @@ registered as a global instance; install it locally where needed via
 
 * `TauCeti.invMulDistribMulAction_smul`: pointwise formula for the inversion action.
 * `TauCeti.invMulDistribMulAction_ofAdd_one_smul`: the generator `ofAdd 1` acts by inversion.
+* `TauCeti.pow_smul_of_smul_eq_inv`, `TauCeti.pow_smul_of_smul_eq_neg`: powers of an element acting
+  by inversion or negation act by the parity of the exponent.
 -/
 
 public section
@@ -90,5 +92,19 @@ theorem _root_.MonoidHom.map_invMulDistribMulAction_smul {N : Type*} [CommGroup 
   split_ifs <;> simp
 
 end InvActionSmul
+
+/-- If `g : G` acts on `M` by inversion, then `g ^ j` fixes every element for even `j` and inverts
+it for odd `j`. -/
+@[to_additive (dont_translate := G) pow_smul_of_smul_eq_neg
+  /-- If `g : G` acts on `M` by negation, then `g ^ j` fixes every element for even `j` and
+  negates it for odd `j`. -/]
+theorem pow_smul_of_smul_eq_inv {G M : Type*} [Monoid G] [Group M] [MulDistribMulAction G M]
+    {g : G} (hinv : ∀ m : M, g • m = m⁻¹) (j : ℕ) (m : M) :
+    (g ^ j) • m = if Even j then m else m⁻¹ := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [pow_succ', mul_smul, ih, hinv]
+    by_cases hj : Even j <;> simp [hj, Nat.even_add_one]
 
 end TauCeti

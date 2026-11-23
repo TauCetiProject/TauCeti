@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Rep.Res
-public import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # Additive representations from multiplicative distributive actions
@@ -101,7 +100,9 @@ theorem mem_ker_applyAsHom_sub_of_smul_eq_self [CommMonoid G] [CommGroup M]
     [MulDistribMulAction G M] {g : G} {a : M} (ha : g • a = a) :
     (Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul a) ∈ LinearMap.ker
       (Rep.applyAsHom (Rep.ofMulDistribMulAction G M) g - 𝟙 _).hom.toLinearMap := by
-  rw [LinearMap.mem_ker, Rep.applyAsHom_sub_id_apply]
+  rw [LinearMap.mem_ker, Rep.sub_hom, Representation.IntertwiningMap.coe_toLinearMap,
+    Representation.IntertwiningMap.coe_sub, Pi.sub_apply, Rep.applyAsHom_apply, Rep.hom_id,
+    Representation.IntertwiningMap.id_apply]
   apply (Rep.toAdditive (M := G) (G := M)).injective
   rw [map_sub, map_zero, toAdditive_ofMulDistribMulAction_ρ_apply, AddEquiv.apply_symm_apply,
     toMul_ofMul, ha, sub_self]
@@ -127,8 +128,10 @@ theorem toAdditive_ofMulDistribMulActionLinearEquiv {G M G' M' : Type*}
     [Monoid G'] [CommGroup M'] [MulDistribMulAction G' M']
     (eM : M' ≃* M) (a : Rep.ofMulDistribMulAction G M) :
     Rep.toAdditive (M := G') (G := M') (ofMulDistribMulActionLinearEquiv G G' eM a) =
-      Additive.ofMul (eM.symm (Additive.toMul (Rep.toAdditive (M := G) (G := M) a))) :=
-  (rfl)
+      Additive.ofMul (eM.symm (Additive.toMul (Rep.toAdditive (M := G) (G := M) a))) := by
+  rw [ofMulDistribMulActionLinearEquiv, AddEquiv.coe_toIntLinearEquiv,
+    AddEquiv.trans_apply, AddEquiv.trans_apply, AddEquiv.apply_symm_apply,
+    MulEquiv.toAdditive_apply_apply]
 
 /-- The inverse of `ofMulDistribMulActionLinearEquiv` is induced by `eM.symm`. -/
 @[simp]
@@ -188,8 +191,8 @@ theorem ofMulDistribMulActionResHom_hom_toLinearMap {G G' : Type*} {M M' : Type 
     (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
     (ofMulDistribMulActionResHom eM eG hsmul).hom.toLinearMap =
       (ofMulDistribMulActionLinearEquiv G G' eM :
-        (Rep.ofMulDistribMulAction G M).V →ₗ[ℤ] (Rep.ofMulDistribMulAction G' M').V) :=
-  (rfl)
+        (Rep.ofMulDistribMulAction G M).V →ₗ[ℤ] (Rep.ofMulDistribMulAction G' M').V) := by
+  exact congrArg Representation.IntertwiningMap.toLinearMap (Rep.hom_ofHom _)
 
 /-- Pointwise evaluation of `Rep.ofMulDistribMulActionResHom` in additive coordinates. -/
 theorem toAdditive_ofMulDistribMulActionResHom_hom {G G' : Type*} {M M' : Type _}

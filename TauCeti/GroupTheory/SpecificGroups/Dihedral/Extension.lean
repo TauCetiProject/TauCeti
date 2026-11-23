@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.GroupAction.Inversion
-public import TauCeti.GroupTheory.GroupExtension.Quotient.Action
+public import TauCeti.GroupTheory.GroupExtension.Quotient.InversionAction
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 
 /-!

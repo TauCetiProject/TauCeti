@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupExtension.Cyclic.Cohomology
+public import TauCeti.GroupTheory.GroupExtension.Cyclic.Inversion
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Cohomology
 public import TauCeti.GroupTheory.GroupExtension.Relabel
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Extension
-import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
 # Second cohomology class of the dihedral rotation extension
@@ -102,34 +101,20 @@ theorem relabelCohomologyIso_dihedral_cohomologyClass (n : ℕ)
     (dihedralRotations (2 * n)).quotientExtension_inducesAction _ _
     (dihedralExtension_inducesAction (2 * n))
 
-/-- The dihedral extension class maps to `0 : ZMod 2` under
-`Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo n`, because the reflection lift `sr 0`
-satisfies `(sr 0) ^ 2 = 1`. -/
+/-- The dihedral extension class vanishes in `H²(C₂, C_{2n}^{inv})`. -/
 @[simp]
+theorem dihedralEvenExtensionClass_eq_zero (n : ℕ) : dihedralEvenExtensionClass n = 0 := by
+  let σ := GroupExtension.normalizeSection
+    (dihedralRotations (2 * n)).quotientExtension.surjInvRightHom
+  have hσ : σ 1 = 1 := GroupExtension.normalizeSection_one _
+  rw [← relabelCohomologyIso_dihedral_cohomologyClass n σ hσ,
+    cohomologyClass_dihedralRotations_eq_zero (2 * n) σ hσ, map_zero]
+
+/-- The dihedral extension class maps to `0 : ZMod 2` under
+`Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo n`. -/
 theorem groupCohomologyTwoInvEquivZModTwo_dihedralEvenExtensionClass (n : ℕ) [NeZero n] :
     Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo n
       (dihedralEvenExtensionClass n) = 0 := by
-  rw [dihedralEvenExtensionClass]
-  let σ := (dihedralExtension (2 * n)).cyclicPowerSection (Multiplicative.ofAdd 1)
-    Multiplicative.mem_zpowers_ofAdd_one (e := DihedralGroup.sr 0) (by simp)
-  refine (σ.groupCohomologyTwoInvEquivZModTwo_cohomologyClass_factorSet_iff
-    ((dihedralExtension (2 * n)).cyclicPowerSection_one _ _ _)
-    (dihedralExtension_inducesAction (2 * n)) (e := DihedralGroup.sr 0) (by simp)
-    (a := (0 : ZMod (2 * n))) ?_ 0).2 (by simp)
-  simp [sq]
-
-/-- The dihedral extension class vanishes in `H²(C₂, C_{2n}^{inv})`. -/
-theorem dihedralEvenExtensionClass_eq_zero (n : ℕ) : dihedralEvenExtensionClass n = 0 := by
-  have hsq : (dihedralExtension (2 * n)).inl 1 = (DihedralGroup.sr (0 : ZMod (2 * n))) ^
-      orderOf (Multiplicative.ofAdd (1 : ZMod 2)) := by
-    rw [orderOf_ofAdd_one_zmod, map_one, sq, DihedralGroup.sr_mul_sr,
-      sub_self, DihedralGroup.r_zero]
-  exact (_root_.GroupExtension.Section.cohomologyClass_factorSet_eq_zero_iff_eq_one_of_smul_eq_inv
-    ((dihedralExtension (2 * n)).cyclicPowerSection (Multiplicative.ofAdd 1)
-      Multiplicative.mem_zpowers_ofAdd_one (e := DihedralGroup.sr 0) (by simp))
-    ((dihedralExtension (2 * n)).cyclicPowerSection_one _ _ _)
-    (dihedralExtension_inducesAction (2 * n)) Multiplicative.mem_zpowers_ofAdd_one
-    ((orderOf_ofAdd_one_zmod 2).symm ▸ even_two)
-    invMulDistribMulAction_ofAdd_one_smul (e := DihedralGroup.sr 0) (by simp) hsq).2 rfl
+  rw [dihedralEvenExtensionClass_eq_zero, map_zero]
 
 end TauCeti
