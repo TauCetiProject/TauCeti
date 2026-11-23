@@ -97,8 +97,9 @@ function `Z.coordChange i j x 1`. -/
 theorem det_coordChangeL_localTriv (Z : VectorBundleCore 𝕜 B 𝕜 κ) {i j : κ} {x : B}
     (hi : x ∈ Z.baseSet i) (hj : x ∈ Z.baseSet j) :
     LinearMap.det (((Z.localTriv i).coordChangeL 𝕜 (Z.localTriv j) x).toLinearEquiv :
-      𝕜 →ₗ[𝕜] 𝕜) = Z.coordChange i j x 1 :=
-  (LinearMap.det_ring _).trans (Z.localTriv_coordChange_eq i j ⟨hi, hj⟩ 1)
+      𝕜 →ₗ[𝕜] 𝕜) = Z.coordChange i j x 1 := by
+  rw [LinearMap.det_ring, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
+  exact Z.localTriv_coordChange_eq i j ⟨hi, hj⟩ 1
 
 /-- The fibres of a vector bundle core are topological additive groups, as is the model fibre.
 This makes the Hom bundle between two cores available. -/
