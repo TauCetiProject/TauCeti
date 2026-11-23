@@ -8,8 +8,7 @@ module
 public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Contact.Standard
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Contact.Darboux.Basic
-import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Geometry.Contact.Darboux.Strict
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -49,18 +48,12 @@ smooth contact distribution `ξ` (`TauCeti.IsContactDistribution`), the local de
 smooth partial diffeomorphism to `ℝⁿ × ℝⁿ × ℝ` whose differential carries `ξ_x` onto the standard
 contact hyperplane `ker α_std` at `chart x`, for every `x` in its source.
 
-The proof reads `α` in the preferred extended chart at `x₀`. There it is a smooth one-form on the
-interior of the chart target which is a contact form at the chart image of `x₀`
-(`TauCeti.isContactFormAt_inChartAt_iff`), so the contact Darboux theorem on normed spaces
-(`TauCeti.exists_diffeomorph_eventually_innerProductContactForm_apply_fderiv_eq_mul`) gives a
-diffeomorphism `Φ` onto `ℝⁿ × ℝⁿ × ℝ` pulling `α_std` back to a positive multiple of the coordinate
-expression of `α` near that point. The chart is `Φ` composed with the extended chart, restricted
-to the inverse image of a neighbourhood on which this identity holds.
+The conformal form-level theorem is derived immediately with constant factor `g ≡ 1` from the
+strict contact Darboux theorem
+(`TauCeti.IsContactFormAt.exists_strictDarbouxChart_of_isInteriorPoint`).
 
 ## Main results
 
-* `TauCeti.IsContactFormAt.exists_inChartAt_pullback`: coordinate reduction and chart lifting
-  for local contact forms at an interior point.
 * `TauCeti.IsContactFormAt.exists_darbouxChart_of_isInteriorPoint`: Darboux charts for a locally
   defined one-form which is a contact form at an interior point.
 * `TauCeti.IsContactFormAt.exists_darbouxChart_of_finrank_eq_of_isInteriorPoint`: the same, with the
@@ -99,59 +92,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
-omit [FiniteDimensional ℝ E] in
-/-- **Coordinate reduction and chart lifting for local contact forms at an interior point.**
-Given a one-form `α` smooth on an open set `U` and contact at an interior point `x₀ ∈ U`, this
-produces the coordinate domain
-`W = interior (extChartAt I x₀).target ∩ (extChartAt I x₀).symm ⁻¹' U`
-around `extChartAt I x₀ x₀` on which `α.inChartAt x₀` is smooth and contact at `extChartAt I x₀ x₀`,
-together with a lifting map sending any model-space partial diffeomorphism `Φ` on `W` with
-`Φ (extChartAt I x₀ x₀) = 0` to a manifold partial diffeomorphism `chart` with
-`x₀ ∈ chart.source ⊆ U`, `chart x₀ = 0`, and the chain-rule identification of `mvfderiv I chart`
-and `α`. -/
-theorem IsContactFormAt.exists_inChartAt_pullback {α : RoughForm I M ℝ 1} {U : Set M}
-    {x₀ : M} (hc : IsContactFormAt α x₀) (hU : IsOpen U) (hx₀U : x₀ ∈ U)
-    (hα : ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) ∞
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U)
-    (hx₀ : I.IsInteriorPoint x₀) :
-    ∃ W : Set E, IsOpen W ∧ extChartAt I x₀ x₀ ∈ W ∧
-      ContDiffOn ℝ ∞ (α.inChartAt x₀) W ∧
-      IsContactFormAt (I := 𝓘(ℝ, E)) (α.inChartAt x₀) (extChartAt I x₀ x₀) ∧
-      ∀ {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-        (Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, F) E F ∞),
-        extChartAt I x₀ x₀ ∈ Φ.source → Φ.source ⊆ W → Φ (extChartAt I x₀ x₀) = 0 →
-        ∃ chart : PartialDiffeomorph I 𝓘(ℝ, F) M F ∞,
-          x₀ ∈ chart.source ∧ chart.source ⊆ U ∧ chart x₀ = 0 ∧
-          ∀ x ∈ chart.source, extChartAt I x₀ x ∈ Φ.source ∧
-            chart x = Φ (extChartAt I x₀ x) ∧
-            ∀ v : TangentSpace I x,
-              mvfderiv I chart x v =
-                fderiv ℝ Φ (extChartAt I x₀ x) (mvfderiv I (extChartAt I x₀) x v) ∧
-              α x ![v] = α.inChartAt x₀ (extChartAt I x₀ x)
-                ![mvfderiv I (extChartAt I x₀) x v] := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  set e := extChartAt I x₀
-  set W : Set E := interior e.target ∩ e.symm ⁻¹' U
-  have hW : IsOpen W :=
-    ((continuousOn_extChartAt_symm x₀).mono interior_subset).isOpen_inter_preimage
-      isOpen_interior hU
-  have hy₀W : e x₀ ∈ W :=
-    ⟨I.isInteriorPoint_iff.1 hx₀, by rw [mem_preimage, extChartAt_to_inv]; exact hx₀U⟩
-  refine ⟨W, hW, hy₀W, α.contDiffOn_inChartAt_of_contMDiffOn hU hα x₀,
-    (isContactFormAt_inChartAt_iff hx₀).2 hc, fun Φ hy₀Φ hΦW hΦ₀ ↦ ?_⟩
-  obtain ⟨chart, hsrc, hcoe, hmvf⟩ :=
-    exists_partialDiffeomorph_comp_extChartAt I ∞ x₀ hW inter_subset_left (by simp) Φ
-  have hx₀_src : x₀ ∈ chart.source := hsrc ▸ ⟨mem_extChartAt_source x₀, hy₀W, hy₀Φ⟩
-  refine ⟨chart, hx₀_src, fun x hx ↦ ?_, by rw [hcoe, hΦ₀], fun x hx ↦ ?_⟩
-  · rw [hsrc] at hx
-    have hU' := (hΦW hx.2.2).2
-    rwa [mem_preimage, e.left_inv hx.1] at hU'
-  · have hxS := hsrc ▸ hx
-    refine ⟨hxS.2.2, hcoe x, fun v ↦ ⟨hmvf x hx v, ?_⟩⟩
-    rw [RoughForm.apply_eq_inChartAt_mvfderiv α hxS.1]
-    simp only [Matrix.vec_single_eq_const, e]
-
 /-- **The contact Darboux theorem** for a locally defined one-form. Let `α` be a one-form on `M`
 which is smooth on an open set `U` and is a contact form at an interior point `x₀ ∈ U`. Then there
 are `n` with `dim E = 2n + 1`, a smooth partial diffeomorphism `chart` from `M` to `ℝⁿ × ℝⁿ × ℝ`
@@ -170,34 +110,10 @@ theorem IsContactFormAt.exists_darbouxChart_of_isInteriorPoint {α : RoughForm I
       ∀ x ∈ chart.source, 0 < g x ∧ ∀ v : TangentSpace I x,
         (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
           ![mvfderiv I chart x v] = g x * α x ![v] := by
-  obtain ⟨W, hW, hy₀W, hη, hc_in, hlift⟩ := hc.exists_inChartAt_pullback hU hx₀U hα hx₀
-  -- The contact Darboux theorem on the model space, around the chart image of `x₀`.
-  obtain ⟨n, Φ, g, hΦ₀, hev⟩ :=
-    exists_diffeomorph_eventually_innerProductContactForm_apply_fderiv_eq_mul (r := ⊤) le_top hW
-      hy₀W (hη.of_le (by simp)) hc_in
-  obtain ⟨V₁, hV₁, hV₁o, hy₀V₁⟩ := eventually_nhds_iff.1 hev
-  let Φ' := Φ.toPartialDiffeomorph.restrOpen (V₁ ∩ W) (hV₁o.inter hW)
-  have hΦ'_coe : (Φ' : E → _) = Φ := funext fun z ↦ by
-    simp only [Φ', PartialDiffeomorph.coe_restrOpen,
-      Diffeomorph.toPartialDiffeomorph_toPartialEquiv, Equiv.toPartialEquiv_apply]
-    rfl
-  have hΦ'_src : Φ'.source = V₁ ∩ W := by
-    rw [PartialDiffeomorph.restrOpen_source]
-    simp [Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
-  obtain ⟨chart, hx₀_src, hsubU, hchart_x₀, hchart⟩ :=
-    hlift Φ' (hΦ'_src ▸ ⟨hy₀V₁, hy₀W⟩) (hΦ'_src ▸ inter_subset_right) (hΦ'_coe ▸ hΦ₀)
-  -- The dimension count, from the derivative of `Φ` at the chart image of `x₀`.
-  have hdim : finrank ℝ E = 2 * n + 1 := by
-    have L : E ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ :=
-      (Φ.mfderivToContinuousLinearEquiv (by simp) (extChartAt I x₀ x₀)).toLinearEquiv
-    rw [L.finrank_eq, finrank_prod, finrank_prod, finrank_euclideanSpace_fin, finrank_self]
-    ring
-  refine ⟨n, chart, fun x ↦ g (extChartAt I x₀ x), hdim, hx₀_src, hsubU, hchart_x₀,
-    fun x hx ↦ ?_⟩
-  obtain ⟨hxΦ, hcx, hmvf⟩ := hchart x hx
-  obtain ⟨hg, hΦ⟩ := hV₁ _ (hΦ'_src ▸ hxΦ).1
-  refine ⟨hg, fun v ↦ ?_⟩
-  rw [hcx, (hmvf v).1, hΦ'_coe, hΦ, (hmvf v).2]
+  obtain ⟨n, chart, hdim, hx₀', hsubU, h0, hchart⟩ :=
+    hc.exists_strictDarbouxChart_of_isInteriorPoint hU hx₀U hα hx₀
+  exact ⟨n, chart, fun _ ↦ 1, hdim, hx₀', hsubU, h0, fun x hx ↦
+    ⟨one_pos, fun v ↦ by simpa using hchart x hx v⟩⟩
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
 /-- A partial diffeomorphism from a manifold of dimension `2 n + 1` to `ℝᵐ × ℝᵐ × ℝ` with nonempty
