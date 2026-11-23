@@ -51,18 +51,10 @@ public section
 
 open UniformSpace
 
-open TauCeti.Huber.PairOfDefinition in
-local macro "withLocHuber " P:term:max T:term:max s:term:max S:term:max hden:term:max
-    " in " t:term : term =>
-  `(letI := locUniformSpace $P $T $s $S $hden
-    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
-    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
-    letI := isHuberRing_completion_locTopology $P $T $s $S $hden
-    $t)
-
 namespace TauCeti.Huber.PairOfDefinition
 
 open ValuationSpectrum
+open scoped TauCeti.Huber.PairOfDefinition
 
 section GeometricUniversalProperty
 

@@ -38,52 +38,7 @@ Combining the fixed-base comparison `toRationalLocalization` / `ofRationalLocali
 public section
 
 open UniformSpace
-open scoped Pointwise
-
-open TauCeti.Huber TauCeti.Huber.PairOfDefinition in
-local macro "withLoc " P:term:max T:term:max s:term:max S:term:max hden:term:max
-    " in " t:term : term =>
-  `(letI := locUniformSpace $P $T $s $S $hden
-    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
-    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
-    $t)
-
-open TauCeti.Huber TauCeti.Huber.PairOfDefinition in
-local macro "withLocHuber " P:term:max T:term:max s:term:max S:term:max hden:term:max
-    " in " t:term : term =>
-  `(withLoc $P $T $s $S $hden in
-    letI := isHuberRing_completion_locTopology $P $T $s $S $hden
-    $t)
-
-open TauCeti.Huber TauCeti.Huber.PairOfDefinition in
-local macro "withRationalTensor " A:term:max B:term:max C:term:max
-    P:term:max T:term:max s:term:max S:term:max hden:term:max
-    P':term:max T':term:max s':term:max S':term:max hden':term:max
-    Q:term:max S'':term:max hden'':term:max " in " t:term : term =>
-  `(withLoc $P $T $s $S $hden in withLoc $P' $T' $s' $S' $hden' in
-    letI : Algebra $A (Completion $S) :=
-      ((toCompletionLoc $P $T $s $S $hden).comp (algebraMap $A $B)).toAlgebra
-    letI : Algebra $A (Completion $S') :=
-      ((toCompletionLoc $P' $T' $s' $S' $hden').comp (algebraMap $A $C)).toAlgebra
-    haveI : IsAdicHom (algebraMap $A (Completion $S)) :=
-      IsAdicHom.comp (isAdicHom_toCompletionLoc $P $T $s $S $hden)
-        (inferInstanceAs (IsAdicHom (algebraMap $A $B)))
-    haveI : IsAdicHom (algebraMap $A (Completion $S')) :=
-      IsAdicHom.comp (isAdicHom_toCompletionLoc $P' $T' $s' $S' $hden')
-        (inferInstanceAs (IsAdicHom (algebraMap $A $C)))
-    withLoc $Q _ _ $S'' $hden'' in
-    $t)
-
-open TauCeti.Huber TauCeti.Huber.PairOfDefinition in
-local macro "withRationalTensorHuber " A:term:max B:term:max C:term:max
-    P:term:max T:term:max s:term:max S:term:max hden:term:max
-    P':term:max T':term:max s':term:max S':term:max hden':term:max
-    Q:term:max S'':term:max hden'':term:max " in " t:term : term =>
-  `(withRationalTensor $A $B $C $P $T $s $S $hden $P' $T' $s' $S' $hden' $Q $S'' $hden'' in
-    letI := isHuberRing_completion_locTopology $P $T $s $S $hden
-    letI := isHuberRing_completion_locTopology $P' $T' $s' $S' $hden'
-    letI := isHuberRing_completion_locTopology $Q _ _ $S'' $hden''
-    $t)
+open scoped Pointwise TauCeti.Huber.PairOfDefinition TauCeti.Huber.CompletedTensor
 
 namespace TauCeti.Huber.Pair.completedTensor
 
@@ -144,7 +99,7 @@ theorem isCompletedPushout_rationalLocalizationPair
             (inferInstanceAs (IsAdicHom (algebraMap A C))))
       let fwd := (toRationalLocalization P UB T s S hden P' UC T' s' S' hden' Q S'' hden''
           hP hP' hQ).comp
-        (toBaseLocalization P₀ T₀ s₀ S₀ hden₀
+        (ofBaseLocalization P₀ T₀ s₀ S₀ hden₀
           (rationalLocalizationPair P UB hP T s S hden)
           (rationalLocalizationPair P' UC hP' T' s' S' hden')
           f₀.toRingHom g₀.toRingHom f₀.continuous_toRingHom g₀.continuous_toRingHom hf₀ hg₀)
@@ -153,7 +108,7 @@ theorem isCompletedPushout_rationalLocalizationPair
   withLocHuber P₀ T₀ s₀ S₀ hden₀ in
   withRationalTensorHuber A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in by
     intro f₀ g₀ hf₀ hg₀ _ _ _ _ fwd
-    let inv := (ofBaseLocalization P₀ T₀ s₀ S₀ hden₀
+    let inv := (toBaseLocalization P₀ T₀ s₀ S₀ hden₀
         (rationalLocalizationPair P UB hP T s S hden)
         (rationalLocalizationPair P' UC hP' T' s' S' hden')
         f₀.toRingHom g₀.toRingHom f₀.continuous_toRingHom g₀.continuous_toRingHom hf₀ hg₀).comp
@@ -162,26 +117,14 @@ theorem isCompletedPushout_rationalLocalizationPair
       dsimp only [fwd, inv]
       rw [Hom.comp_assoc, ← Hom.comp_assoc (ofRationalLocalization ..),
         ofRationalLocalization_comp_toRationalLocalization, Hom.id_comp,
-        ofBaseLocalization_comp_toBaseLocalization]
+        toBaseLocalization_comp_ofBaseLocalization]
     have hfwd_inv : fwd.comp inv = Hom.id _ := by
       dsimp only [fwd, inv]
-      rw [Hom.comp_assoc, ← Hom.comp_assoc (toBaseLocalization ..),
-        toBaseLocalization_comp_ofBaseLocalization, Hom.id_comp,
+      rw [Hom.comp_assoc, ← Hom.comp_assoc (ofBaseLocalization ..),
+        ofBaseLocalization_comp_toBaseLocalization, Hom.id_comp,
         toRationalLocalization_comp_ofRationalLocalization]
-    have hpush := isCompletedPushout f₀ g₀ (RingHom.algebraMap_toAlgebra f₀.toRingHom)
-      (RingHom.algebraMap_toAlgebra g₀.toRingHom)
-    refine ⟨by rw [Hom.comp_assoc, hpush.condition, ← Hom.comp_assoc],
-      fun D _ _ _ _ _ _ _ V a b hab ↦ ?_⟩
-    obtain ⟨h₀, ⟨hh₀l, hh₀r⟩, hh₀uniq⟩ := hpush.existsUnique_desc D V a b hab
-    refine ⟨h₀.comp inv,
-      ⟨by rw [Hom.comp_assoc, ← Hom.comp_assoc inv fwd, hinv_fwd, Hom.id_comp, hh₀l],
-        by rw [Hom.comp_assoc, ← Hom.comp_assoc inv fwd, hinv_fwd, Hom.id_comp, hh₀r]⟩,
-      fun k ⟨hkl, hkr⟩ ↦ ?_⟩
-    have hk : k.comp fwd = h₀ :=
-      hh₀uniq (k.comp fwd) ⟨by rwa [Hom.comp_assoc], by rwa [Hom.comp_assoc]⟩
-    calc k = k.comp (fwd.comp inv) := by rw [hfwd_inv, Hom.comp_id]
-      _ = (k.comp fwd).comp inv := (Hom.comp_assoc k fwd inv).symm
-      _ = h₀.comp inv := by rw [hk]
+    exact (isCompletedPushout f₀ g₀ (RingHom.algebraMap_toAlgebra f₀.toRingHom)
+      (RingHom.algebraMap_toAlgebra g₀.toRingHom)).of_iso fwd inv hinv_fwd hfwd_inv
 
 end Pushout
 

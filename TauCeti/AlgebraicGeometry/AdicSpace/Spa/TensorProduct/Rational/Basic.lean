@@ -31,8 +31,6 @@ preimages `p_B⁻¹(R(T/s))`, `p_C⁻¹(R(T'/s'))`, and their intersection
 * `TauCeti.Huber.Pair.completedTensor.inl_spaComap_preimage_mem_spaRationalFamily`,
   `TauCeti.Huber.Pair.completedTensor.inr_spaComap_preimage_mem_spaRationalFamily`: preimages of
   `spaRationalFamily` members stay in `spaRationalFamily`.
-* `TauCeti.Huber.Pair.completedTensor.inl_preimage_singleton_one_inter`,
-  `TauCeti.Huber.Pair.completedTensor.inl_preimage_zero_inter_inr_preimage`: degenerate cases.
 
 ## References
 
@@ -132,23 +130,6 @@ theorem completedTensor.inl_preimage_inter_inr_preimage_mem_spaRationalFamily
       (mem_spaRationalFamily_iff.mpr ⟨T, s, hT, rfl⟩))
     (completedTensor.inr_spaComap_preimage_mem_spaRationalFamily UB UC
       (mem_spaRationalFamily_iff.mpr ⟨T', s', hT', rfl⟩))
-
-/-- Degenerate case `U = Spa(B, B⁺)` (`T = {1}`, `s = 1`): intersecting with `p_B⁻¹(R({1}/1))`
-leaves `p_C⁻¹(V)` unchanged. -/
-theorem completedTensor.inl_preimage_singleton_one_inter (V : Set (spa UC.plus)) :
-    (completedTensor.inl A UB UC).spaComap ⁻¹'
-        (Subtype.val ⁻¹' rationalSubset UB.plus {1} 1) ∩
-      (completedTensor.inr A UB UC).spaComap ⁻¹' V =
-      (completedTensor.inr A UB UC).spaComap ⁻¹' V := by
-  rw [rationalSubset_singleton_one, Subtype.coe_preimage_self, Set.preimage_univ, Set.univ_inter]
-
-/-- Degenerate case `s = 0`: `p_B⁻¹(R(T/0)) ∩ p_C⁻¹(R(T'/s'))` is empty. -/
-theorem completedTensor.inl_preimage_zero_inter_inr_preimage
-    (T : Finset B) (T' : Finset C) (s' : C) :
-    (completedTensor.inl A UB UC).spaComap ⁻¹' (Subtype.val ⁻¹' rationalSubset UB.plus T 0) ∩
-      (completedTensor.inr A UB UC).spaComap ⁻¹'
-        (Subtype.val ⁻¹' rationalSubset UC.plus T' s') = ∅ := by
-  ext x; simp
 
 end Preimage
 

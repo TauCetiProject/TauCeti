@@ -68,8 +68,39 @@ open UniformSpace
 namespace TauCeti.Huber.CompletedTensor
 
 open PairOfDefinition
+open scoped Pointwise TauCeti.Huber.PairOfDefinition
 
-open scoped Pointwise
+/-- Bring the localisation and completed-tensor algebra/adic instances for `completionLocEquiv`
+into scope. -/
+scoped macro "withRationalTensor " A:term:max B:term:max C:term:max
+    P:term:max T:term:max s:term:max S:term:max hden:term:max
+    P':term:max T':term:max s':term:max S':term:max hden':term:max
+    Q:term:max S'':term:max hden'':term:max " in " t:term : term =>
+  `(withLoc $P $T $s $S $hden in withLoc $P' $T' $s' $S' $hden' in
+    letI : Algebra $A (UniformSpace.Completion $S) :=
+      ((PairOfDefinition.toCompletionLoc $P $T $s $S $hden).comp (algebraMap $A $B)).toAlgebra
+    letI : Algebra $A (UniformSpace.Completion $S') :=
+      ((PairOfDefinition.toCompletionLoc $P' $T' $s' $S' $hden').comp (algebraMap $A $C)).toAlgebra
+    haveI : IsAdicHom (algebraMap $A (UniformSpace.Completion $S)) :=
+      IsAdicHom.comp (PairOfDefinition.isAdicHom_toCompletionLoc $P $T $s $S $hden)
+        (inferInstanceAs (IsAdicHom (algebraMap $A $B)))
+    haveI : IsAdicHom (algebraMap $A (UniformSpace.Completion $S')) :=
+      IsAdicHom.comp (PairOfDefinition.isAdicHom_toCompletionLoc $P' $T' $s' $S' $hden')
+        (inferInstanceAs (IsAdicHom (algebraMap $A $C)))
+    withLoc $Q _ _ $S'' $hden'' in
+    $t)
+
+/-- Bring `withRationalTensor` and the `IsHuberRing` instances for the three completed
+localisations into scope. -/
+scoped macro "withRationalTensorHuber " A:term:max B:term:max C:term:max
+    P:term:max T:term:max s:term:max S:term:max hden:term:max
+    P':term:max T':term:max s':term:max S':term:max hden':term:max
+    Q:term:max S'':term:max hden'':term:max " in " t:term : term =>
+  `(withRationalTensor $A $B $C $P $T $s $S $hden $P' $T' $s' $S' $hden' $Q $S'' $hden'' in
+    letI := PairOfDefinition.isHuberRing_completion_locTopology $P $T $s $S $hden
+    letI := PairOfDefinition.isHuberRing_completion_locTopology $P' $T' $s' $S' $hden'
+    letI := PairOfDefinition.isHuberRing_completion_locTopology $Q _ _ $S'' $hden''
+    $t)
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C] [Algebra A B]
   [Algebra A C] [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
@@ -912,161 +943,53 @@ open TensorProduct TauCeti.Localization
 /-- On pure tensors of images of `b ∈ B` and `c ∈ C`, `completionLocEquiv` sends
 `ρ_B(b) ⊗ ρ_C(c)` to `ρ_D(b ⊗ c)`. -/
 theorem completionLocEquiv_toCompletion_tmul (b : B) (c : C) :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    letI := locUniformSpace P' T' s' S' hden'
-    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
-    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
-    letI : Algebra A (Completion S) :=
-      ((toCompletionLoc P T s S hden).comp (algebraMap A B)).toAlgebra
-    letI : Algebra A (Completion S') :=
-      ((toCompletionLoc P' T' s' S' hden').comp (algebraMap A C)).toAlgebra
-    haveI : IsAdicHom (algebraMap A (Completion S)) :=
-      IsAdicHom.comp (isAdicHom_toCompletionLoc P T s S hden)
-        (inferInstanceAs (IsAdicHom (algebraMap A B)))
-    haveI : IsAdicHom (algebraMap A (Completion S')) :=
-      IsAdicHom.comp (isAdicHom_toCompletionLoc P' T' s' S' hden')
-        (inferInstanceAs (IsAdicHom (algebraMap A C)))
-    letI := locUniformSpace Q _ _ S'' hden''
-    letI := isUniformAddGroup_locUniformSpace Q _ _ S'' hden''
-    letI := isTopologicalRing_locUniformSpace Q _ _ S'' hden''
+    withRationalTensor A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in
     completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden''
         (toCompletion A (Completion S) (Completion S')
           (toCompletionLoc P T s S hden b ⊗ₜ[A] toCompletionLoc P' T' s' S' hden' c)) =
-      toCompletionLoc Q _ _ S'' hden'' (toCompletion A B C (b ⊗ₜ[A] c)) := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  let _ := locUniformSpace P' T' s' S' hden'
-  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
-  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
-  let _ : Algebra A (Completion S) :=
-    ((toCompletionLoc P T s S hden).comp (algebraMap A B)).toAlgebra
-  let _ : Algebra A (Completion S') :=
-    ((toCompletionLoc P' T' s' S' hden').comp (algebraMap A C)).toAlgebra
-  have _ : IsAdicHom (algebraMap A (Completion S)) :=
-    IsAdicHom.comp (isAdicHom_toCompletionLoc P T s S hden)
-      (inferInstanceAs (IsAdicHom (algebraMap A B)))
-  have _ : IsAdicHom (algebraMap A (Completion S')) :=
-    IsAdicHom.comp (isAdicHom_toCompletionLoc P' T' s' S' hden')
-      (inferInstanceAs (IsAdicHom (algebraMap A C)))
-  let _ := locUniformSpace Q _ _ S'' hden''
-  have _ := isUniformAddGroup_locUniformSpace Q _ _ S'' hden''
-  have _ := isTopologicalRing_locUniformSpace Q _ _ S'' hden''
-  simp only [toCompletion_tmul, map_mul, toCompletionLoc_apply,
-    completionLocEquiv_inl_toCompletionLoc, completionLocEquiv_inr_toCompletionLoc,
-    ← Completion.coe_mul]
+      toCompletionLoc Q _ _ S'' hden'' (toCompletion A B C (b ⊗ₜ[A] c)) :=
+  withRationalTensor A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in by
+    simp only [toCompletion_tmul, map_mul, toCompletionLoc_apply,
+      completionLocEquiv_inl_toCompletionLoc, completionLocEquiv_inr_toCompletionLoc,
+      ← Completion.coe_mul]
 
 /-- `completionLocEquiv` sends `(b/s) ⊗ 1` to `(inl(b) · inr(s')) / (inl(s) · inr(s'))` in
 `D⟨T''/s''⟩`. -/
 @[simp] theorem completionLocEquiv_inl_divBy (b : B) :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    letI := locUniformSpace P' T' s' S' hden'
-    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
-    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
-    letI : Algebra A (Completion S) :=
-      ((toCompletionLoc P T s S hden).comp (algebraMap A B)).toAlgebra
-    letI : Algebra A (Completion S') :=
-      ((toCompletionLoc P' T' s' S' hden').comp (algebraMap A C)).toAlgebra
-    haveI : IsAdicHom (algebraMap A (Completion S)) :=
-      IsAdicHom.comp (isAdicHom_toCompletionLoc P T s S hden)
-        (inferInstanceAs (IsAdicHom (algebraMap A B)))
-    haveI : IsAdicHom (algebraMap A (Completion S')) :=
-      IsAdicHom.comp (isAdicHom_toCompletionLoc P' T' s' S' hden')
-        (inferInstanceAs (IsAdicHom (algebraMap A C)))
-    letI := locUniformSpace Q _ _ S'' hden''
-    letI := isUniformAddGroup_locUniformSpace Q _ _ S'' hden''
-    letI := isTopologicalRing_locUniformSpace Q _ _ S'' hden''
+    withRationalTensor A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in
     completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden''
         (inl A (Completion S) (Completion S') ((divBy b s : S) : Completion S)) =
       ((divBy (inl A B C b * inr A B C s') (inl A B C s * inr A B C s') : S'') :
-        Completion S'') := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  let _ := locUniformSpace P' T' s' S' hden'
-  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
-  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
-  let _ : Algebra A (Completion S) :=
-    ((toCompletionLoc P T s S hden).comp (algebraMap A B)).toAlgebra
-  let _ : Algebra A (Completion S') :=
-    ((toCompletionLoc P' T' s' S' hden').comp (algebraMap A C)).toAlgebra
-  have _ : IsAdicHom (algebraMap A (Completion S)) :=
-    IsAdicHom.comp (isAdicHom_toCompletionLoc P T s S hden)
-      (inferInstanceAs (IsAdicHom (algebraMap A B)))
-  have _ : IsAdicHom (algebraMap A (Completion S')) :=
-    IsAdicHom.comp (isAdicHom_toCompletionLoc P' T' s' S' hden')
-      (inferInstanceAs (IsAdicHom (algebraMap A C)))
-  let _ := locUniformSpace Q _ _ S'' hden''
-  have _ := isUniformAddGroup_locUniformSpace Q _ _ S'' hden''
-  have _ := isTopologicalRing_locUniformSpace Q _ _ S'' hden''
-  symm
-  rw [← RingEquiv.symm_apply_eq,
-    map_divBy_eq_iff Q _ _ S'' hden'' (inl A B C b * inr A B C s')
-      (completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').symm]
-  simp only [map_mul, toCompletionLoc_apply, completionLocEquiv_symm_toCompletionLoc_inl,
-    completionLocEquiv_symm_toCompletionLoc_inr, ← mul_assoc]
-  rw [← toCompletionLoc_apply P T s S hden s,
-    map_divBy_mul_toCompletionLoc P T s S hden b (inl A (Completion S) (Completion S')),
-    toCompletionLoc_apply]
+        Completion S'') :=
+  withRationalTensor A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in by
+    symm
+    rw [← RingEquiv.symm_apply_eq,
+      map_divBy_eq_iff Q _ _ S'' hden'' (inl A B C b * inr A B C s')
+        (completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').symm]
+    simp only [map_mul, toCompletionLoc_apply, completionLocEquiv_symm_toCompletionLoc_inl,
+      completionLocEquiv_symm_toCompletionLoc_inr, ← mul_assoc]
+    rw [← toCompletionLoc_apply P T s S hden s,
+      map_divBy_mul_toCompletionLoc P T s S hden b (inl A (Completion S) (Completion S')),
+      toCompletionLoc_apply]
 
 /-- `completionLocEquiv` sends `1 ⊗ (c/s')` to `(inl(s) · inr(c)) / (inl(s) · inr(s'))` in
 `D⟨T''/s''⟩`. -/
 @[simp] theorem completionLocEquiv_inr_divBy (c : C) :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    letI := locUniformSpace P' T' s' S' hden'
-    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
-    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
-    letI : Algebra A (Completion S) :=
-      ((toCompletionLoc P T s S hden).comp (algebraMap A B)).toAlgebra
-    letI : Algebra A (Completion S') :=
-      ((toCompletionLoc P' T' s' S' hden').comp (algebraMap A C)).toAlgebra
-    haveI : IsAdicHom (algebraMap A (Completion S)) :=
-      IsAdicHom.comp (isAdicHom_toCompletionLoc P T s S hden)
-        (inferInstanceAs (IsAdicHom (algebraMap A B)))
-    haveI : IsAdicHom (algebraMap A (Completion S')) :=
-      IsAdicHom.comp (isAdicHom_toCompletionLoc P' T' s' S' hden')
-        (inferInstanceAs (IsAdicHom (algebraMap A C)))
-    letI := locUniformSpace Q _ _ S'' hden''
-    letI := isUniformAddGroup_locUniformSpace Q _ _ S'' hden''
-    letI := isTopologicalRing_locUniformSpace Q _ _ S'' hden''
+    withRationalTensor A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in
     completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden''
         (inr A (Completion S) (Completion S') ((divBy c s' : S') : Completion S')) =
       ((divBy (inl A B C s * inr A B C c) (inl A B C s * inr A B C s') : S'') :
-        Completion S'') := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  let _ := locUniformSpace P' T' s' S' hden'
-  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
-  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
-  let _ : Algebra A (Completion S) :=
-    ((toCompletionLoc P T s S hden).comp (algebraMap A B)).toAlgebra
-  let _ : Algebra A (Completion S') :=
-    ((toCompletionLoc P' T' s' S' hden').comp (algebraMap A C)).toAlgebra
-  have _ : IsAdicHom (algebraMap A (Completion S)) :=
-    IsAdicHom.comp (isAdicHom_toCompletionLoc P T s S hden)
-      (inferInstanceAs (IsAdicHom (algebraMap A B)))
-  have _ : IsAdicHom (algebraMap A (Completion S')) :=
-    IsAdicHom.comp (isAdicHom_toCompletionLoc P' T' s' S' hden')
-      (inferInstanceAs (IsAdicHom (algebraMap A C)))
-  let _ := locUniformSpace Q _ _ S'' hden''
-  have _ := isUniformAddGroup_locUniformSpace Q _ _ S'' hden''
-  have _ := isTopologicalRing_locUniformSpace Q _ _ S'' hden''
-  symm
-  rw [← RingEquiv.symm_apply_eq,
-    map_divBy_eq_iff Q _ _ S'' hden'' (inl A B C s * inr A B C c)
-      (completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').symm]
-  simp only [map_mul, toCompletionLoc_apply, completionLocEquiv_symm_toCompletionLoc_inl,
-    completionLocEquiv_symm_toCompletionLoc_inr]
-  rw [mul_left_comm, ← toCompletionLoc_apply P' T' s' S' hden' s',
-    map_divBy_mul_toCompletionLoc P' T' s' S' hden' c (inr A (Completion S) (Completion S')),
-    toCompletionLoc_apply]
+        Completion S'') :=
+  withRationalTensor A B C P T s S hden P' T' s' S' hden' Q S'' hden'' in by
+    symm
+    rw [← RingEquiv.symm_apply_eq,
+      map_divBy_eq_iff Q _ _ S'' hden'' (inl A B C s * inr A B C c)
+        (completionLocEquiv P T s S hden P' T' s' S' hden' Q S'' hden'').symm]
+    simp only [map_mul, toCompletionLoc_apply, completionLocEquiv_symm_toCompletionLoc_inl,
+      completionLocEquiv_symm_toCompletionLoc_inr]
+    rw [mul_left_comm, ← toCompletionLoc_apply P' T' s' S' hden' s',
+      map_divBy_mul_toCompletionLoc P' T' s' S' hden' c (inr A (Completion S) (Completion S')),
+      toCompletionLoc_apply]
 
 end
 

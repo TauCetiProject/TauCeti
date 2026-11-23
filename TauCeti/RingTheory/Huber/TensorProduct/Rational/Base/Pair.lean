@@ -16,12 +16,12 @@ and `A → A⟨T₀/s₀⟩` a completed rational localisation of `A`. Building 
 equivalence `TauCeti.Huber.CompletedTensor.completionLocBaseEquiv` (from `Rational.Base.Basic`),
 this file identifies the completed tensor plus rings of `(B, B⁺) ⊗̂_{A⟨T₀/s₀⟩} (C, C⁺)` and
 `(B, B⁺) ⊗̂_A (C, C⁺)` (`Pair.completedTensor.map_plus_completionLocBaseEquiv`) and packages the
-comparison as mutually inverse Huber-pair morphisms `toBaseLocalization` and `ofBaseLocalization`.
+comparison as mutually inverse Huber-pair morphisms `ofBaseLocalization` and `toBaseLocalization`.
 
 ## Main definitions
 
-* `TauCeti.Huber.Pair.completedTensor.toBaseLocalization`,
-  `TauCeti.Huber.Pair.completedTensor.ofBaseLocalization`: mutually inverse morphisms of Huber
+* `TauCeti.Huber.Pair.completedTensor.ofBaseLocalization`,
+  `TauCeti.Huber.Pair.completedTensor.toBaseLocalization`: mutually inverse morphisms of Huber
   pairs for `completionLocBaseEquiv`.
 
 ## Main results
@@ -42,51 +42,10 @@ public section
 
 open TensorProduct UniformSpace
 
-open TauCeti.Huber TauCeti.Huber.PairOfDefinition in
-local macro "withCompletionLocBase " A:term:max B:term:max C:term:max
-    P:term:max T:term:max s:term:max S:term:max hden:term:max
-    α:ident β:ident hαc:ident hβc:ident hα:ident hβ:ident " in " t:term : term =>
-  `(letI := locUniformSpace $P $T $s $S $hden
-    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
-    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
-    ∀ ($α : Completion $S →+* $B) ($β : Completion $S →+* $C)
-      ($hαc : Continuous $α) ($hβc : Continuous $β)
-      ($hα : ($α).comp (toCompletionLoc $P $T $s $S $hden) = algebraMap $A $B)
-      ($hβ : ($β).comp (toCompletionLoc $P $T $s $S $hden) = algebraMap $A $C),
-      letI : Algebra (Completion $S) $B := ($α).toAlgebra
-      letI : Algebra (Completion $S) $C := ($β).toAlgebra
-      haveI : IsAdicHom (algebraMap (Completion $S) $B) :=
-        isAdicHom_of_comp_toCompletionLoc $P $T $s $S $hden $hαc
-          (($hα).symm ▸ inferInstanceAs (IsAdicHom (algebraMap $A $B)))
-      haveI : IsAdicHom (algebraMap (Completion $S) $C) :=
-        isAdicHom_of_comp_toCompletionLoc $P $T $s $S $hden $hβc
-          (($hβ).symm ▸ inferInstanceAs (IsAdicHom (algebraMap $A $C)))
-      $t)
-
-open TauCeti.Huber TauCeti.Huber.PairOfDefinition in
-local macro "funCompletionLocBase " A:term:max B:term:max C:term:max
-    P:term:max T:term:max s:term:max S:term:max hden:term:max
-    α:ident β:ident hαc:ident hβc:ident hα:ident hβ:ident " => " t:term : term =>
-  `(letI := locUniformSpace $P $T $s $S $hden
-    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
-    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
-    fun ($α : Completion $S →+* $B) ($β : Completion $S →+* $C)
-      ($hαc : Continuous $α) ($hβc : Continuous $β)
-      ($hα : ($α).comp (toCompletionLoc $P $T $s $S $hden) = algebraMap $A $B)
-      ($hβ : ($β).comp (toCompletionLoc $P $T $s $S $hden) = algebraMap $A $C) ↦
-      letI : Algebra (Completion $S) $B := ($α).toAlgebra
-      letI : Algebra (Completion $S) $C := ($β).toAlgebra
-      haveI : IsAdicHom (algebraMap (Completion $S) $B) :=
-        isAdicHom_of_comp_toCompletionLoc $P $T $s $S $hden $hαc
-          (($hα).symm ▸ inferInstanceAs (IsAdicHom (algebraMap $A $B)))
-      haveI : IsAdicHom (algebraMap (Completion $S) $C) :=
-        isAdicHom_of_comp_toCompletionLoc $P $T $s $S $hden $hβc
-          (($hβ).symm ▸ inferInstanceAs (IsAdicHom (algebraMap $A $C)))
-      $t)
-
 namespace TauCeti.Huber.Pair.completedTensor
 
 open CompletedTensor PairOfDefinition
+open scoped TauCeti.Huber.CompletedTensor
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra A C]
@@ -137,7 +96,7 @@ theorem map_plus_completionLocBaseEquiv :
 
 /-- Membership in the completed tensor plus ring is preserved and reflected by
 `completionLocBaseEquiv`. -/
-@[simp] theorem mem_completedTensor_plus_iff_completionLocBaseEquiv :
+theorem mem_completedTensor_plus_iff_completionLocBaseEquiv :
     withCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ in
     ∀ x : CompletedTensor (Completion S₀) B C,
       x ∈ (UB.completedTensor (Completion S₀) UC).plus ↔
@@ -147,8 +106,9 @@ theorem map_plus_completionLocBaseEquiv :
     rw [← map_plus_completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ]
     exact (completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ).injective.mem_set_image.symm
 
-/-- The forward Huber-pair morphism `(B, B⁺) ⊗̂_{A⟨T₀/s₀⟩} (C, C⁺) → (B, B⁺) ⊗̂_A (C, C⁺)`. -/
-noncomputable def toBaseLocalization :
+/-- The forward Huber-pair morphism `(B, B⁺) ⊗̂_{A⟨T₀/s₀⟩} (C, C⁺) → (B, B⁺) ⊗̂_A (C, C⁺)` out of
+the localised base. -/
+noncomputable def ofBaseLocalization :
     withCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ in
     Hom (UB.completedTensor (Completion S₀) UC) (UB.completedTensor A UC) :=
   funCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ =>
@@ -159,8 +119,9 @@ noncomputable def toBaseLocalization :
         (mem_completedTensor_plus_iff_completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ UB UC
           α β hαc hβc hα hβ x).mp hx }
 
-/-- The inverse Huber-pair morphism `(B, B⁺) ⊗̂_A (C, C⁺) → (B, B⁺) ⊗̂_{A⟨T₀/s₀⟩} (C, C⁺)`. -/
-noncomputable def ofBaseLocalization :
+/-- The inverse Huber-pair morphism `(B, B⁺) ⊗̂_A (C, C⁺) → (B, B⁺) ⊗̂_{A⟨T₀/s₀⟩} (C, C⁺)` into the
+localised base. -/
+noncomputable def toBaseLocalization :
     withCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ in
     Hom (UB.completedTensor A UC) (UB.completedTensor (Completion S₀) UC) :=
   funCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ =>
@@ -171,33 +132,33 @@ noncomputable def ofBaseLocalization :
         (mem_completedTensor_plus_iff_completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ UB UC
           α β hαc hβc hα hβ _).mpr (by simpa using hy) }
 
-/-- The underlying ring homomorphism of `toBaseLocalization`. -/
-@[simp] theorem toRingHom_toBaseLocalization :
-    withCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ in
-    (toBaseLocalization P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ).toRingHom =
-      (completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ).toRingHom :=
-  funCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ => (rfl)
-
 /-- The underlying ring homomorphism of `ofBaseLocalization`. -/
 @[simp] theorem toRingHom_ofBaseLocalization :
     withCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ in
     (ofBaseLocalization P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ).toRingHom =
-      (completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ).symm.toRingHom :=
+      (completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ).toRingHom :=
   funCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ => (rfl)
 
-/-- `ofBaseLocalization` is a left inverse to `toBaseLocalization`. -/
-@[simp] theorem ofBaseLocalization_comp_toBaseLocalization :
+/-- The underlying ring homomorphism of `toBaseLocalization`. -/
+@[simp] theorem toRingHom_toBaseLocalization :
     withCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ in
-    (ofBaseLocalization P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ).comp
-        (toBaseLocalization P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ) = Hom.id _ :=
-  funCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ => by
-    ext x; simp
+    (toBaseLocalization P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ).toRingHom =
+      (completionLocBaseEquiv P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ).symm.toRingHom :=
+  funCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ => (rfl)
 
 /-- `toBaseLocalization` is a left inverse to `ofBaseLocalization`. -/
 @[simp] theorem toBaseLocalization_comp_ofBaseLocalization :
     withCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ in
     (toBaseLocalization P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ).comp
         (ofBaseLocalization P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ) = Hom.id _ :=
+  funCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ => by
+    ext x; simp
+
+/-- `ofBaseLocalization` is a left inverse to `toBaseLocalization`. -/
+@[simp] theorem ofBaseLocalization_comp_toBaseLocalization :
+    withCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ in
+    (ofBaseLocalization P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ).comp
+        (toBaseLocalization P₀ T₀ s₀ S₀ hden₀ UB UC α β hαc hβc hα hβ) = Hom.id _ :=
   funCompletionLocBase A B C P₀ T₀ s₀ S₀ hden₀ α β hαc hβc hα hβ => by
     ext x; simp
 
