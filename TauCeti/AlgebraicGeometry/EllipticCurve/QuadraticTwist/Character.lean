@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Aut
 import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Classification
 import TauCeti.FieldTheory.Galois.SqrtCharacter
+import TauCeti.FieldTheory.Kummer.Degree
 
 /-!
 # Quadratic twists by a Galois character
@@ -118,12 +119,9 @@ theorem IsQuadraticTwistBy.exists_smul_baseChange_eq (h2 : (2 : K) ≠ 0)
           (η g : ℤ) • (ρ.u : AlgebraicClosure K) := by
   obtain ⟨d, a, ha, hg, C, hC⟩ := h
   have h2Ω : (2 : AlgebraicClosure K) ≠ 0 := by
-    rw [← map_ofNat (algebraMap K (AlgebraicClosure K)) 2]
-    exact (map_ne_zero _).mpr h2
-  have ha₀ : a ≠ 0 := by
-    rintro rfl
-    simpa using ha.symm
-  have hv : -2 * a ≠ 0 := mul_ne_zero (neg_ne_zero.mpr h2Ω) ha₀
+    simpa only [map_ofNat] using (map_ne_zero (algebraMap K (AlgebraicClosure K))).mpr h2
+  have hv : -2 * a ≠ 0 :=
+    mul_ne_zero (neg_ne_zero.mpr h2Ω) (ne_zero_of_pow_eq_algebraMap ha)
   -- the twist by `(0, -d)` is the split twist by the roots `±a` over `Kᵃˡᵍ`
   set V := (W.baseChange (AlgebraicClosure K)).quadraticTwistOfVariableChange 1 0
     (Units.mk0 _ hv) a
@@ -180,6 +178,8 @@ theorem IsQuadraticTwistBy.unique [W.IsElliptic] (h2 : (2 : K) ≠ 0) (hj₀ : W
     rcases hu with hu | hu
     · rwa [hu] at this
     · rwa [hu, map_neg, smul_neg, neg_inj] at this
+  -- `Field.absoluteGaloisGroup K` is by definition `Gal(Kᵃˡᵍ/K)` with its Krull topology, so
+  -- `eq_sqrtCharacter` applies to characters of it as they stand
   exact (eq_sqrtCharacter hc h2 ρ.u.ne_zero hρg).trans
     (eq_sqrtCharacter hc h2 ρ.u.ne_zero hρg'').symm
 
@@ -219,6 +219,8 @@ theorem existsUnique_isQuadraticTwistBy_of_j_eq [E.IsElliptic] [W.IsElliptic] (h
   rw [hd] at hC'
   obtain ⟨a, ha⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap K (AlgebraicClosure K) d)
     two_pos
+  -- `sqrtCharacter ha` is a character of `Gal(Kᵃˡᵍ/K)`, which is by definition
+  -- `Field.absoluteGaloisGroup K` with its Krull topology
   have hη : E.IsQuadraticTwistBy W (sqrtCharacter ha) :=
     ⟨d, a, ha, apply_eq_sqrtCharacter_smul ha, (C' * C)⁻¹, by
       rw [inv_smul_eq_iff, mul_smul, hC, hC']⟩
@@ -238,11 +240,10 @@ theorem isQuadraticTwistBy_one_iff (h2 : (2 : K) ≠ 0) :
     obtain ⟨C, hC⟩ := W.exists_smul_eq_quadraticTwistOf_add_mul x (-x) (isUnit_iff_ne_zero.mpr hx2)
     exact ⟨C, hC.trans (by congr 1 <;> ring)⟩
   refine ⟨fun ⟨d, a, ha, hg, C, hC⟩ ↦ ?_, fun ⟨C, hC⟩ ↦ ?_⟩
-  · have ha₀ : a ≠ 0 := by
-      rintro rfl
-      simpa using ha.symm
+  · -- `Field.absoluteGaloisGroup K` is by definition `Gal(Kᵃˡᵍ/K)` with its Krull topology, so
+    -- the trivial character of the former is compared with `sqrtCharacter ha` directly
     have h1 : (1 : Field.absoluteGaloisGroup K →ₜ* ℤˣ) = sqrtCharacter ha :=
-      eq_sqrtCharacter ha h2 ha₀ hg
+      eq_sqrtCharacter ha h2 (ne_zero_of_pow_eq_algebraMap ha) hg
     obtain ⟨x, rfl⟩ := ((sqrtCharacter_eq_one_iff ha h2).mp h1.symm)
     have hd : (d : K) = x ^ 2 :=
       FaithfulSMul.algebraMap_injective K (AlgebraicClosure K) (by rw [map_pow, ha])

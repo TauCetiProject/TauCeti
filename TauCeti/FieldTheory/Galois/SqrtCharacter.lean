@@ -109,10 +109,8 @@ theorem apply_eq_sqrtCharacter_smul (g : Gal(L/K)) : g a = (sqrtCharacter ha g :
 continuous character `η` with `g a = η g • a` for every `g` is `sqrtCharacter`. -/
 theorem eq_sqrtCharacter (h2 : (2 : K) ≠ 0) (ha₀ : a ≠ 0) {η : Gal(L/K) →ₜ* ℤˣ}
     (hη : ∀ g : Gal(L/K), g a = (η g : ℤ) • a) : η = sqrtCharacter ha := by
-  have h2a : (2 : L) * a ≠ 0 := by
-    refine mul_ne_zero ?_ ha₀
-    rw [← map_ofNat (algebraMap K L) 2]
-    exact (map_ne_zero _).mpr h2
+  have h2a : (2 : L) * a ≠ 0 :=
+    mul_ne_zero (by simpa only [map_ofNat] using (map_ne_zero (algebraMap K L)).mpr h2) ha₀
   refine ContinuousMonoidHom.ext fun g ↦ ?_
   have h := (hη g).symm.trans (apply_eq_sqrtCharacter_smul ha g)
   -- both values are signs, and `a = -a` is impossible since `2 a ≠ 0`
