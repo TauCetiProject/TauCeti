@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 public import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # A point is removable for bounded weakly divergence-free fields
@@ -104,18 +105,11 @@ theorem setIntegral_inner_gradient_eq_zero_of_forall_notMem_tsupport
     have hpt (x : E) (hx : x ∈ Ω) : ‖η x * fderiv ℝ φ x (V x) + φ x * fderiv ℝ η x (V x)‖ ≤
         C' * A + B * (K / ε) * C' := by
       obtain ⟨hηnonneg, hηle⟩ := hη01 x
-      have h1 : ‖fderiv ℝ φ x (V x)‖ ≤ C' * A := by
-        rw [mul_comm]
-        exact ((fderiv ℝ φ x).le_opNorm _).trans
-          (mul_le_mul (hA x) (hC' x hx) (norm_nonneg _) ((norm_nonneg _).trans (hA x)))
-      have h2 : ‖fderiv ℝ η x (V x)‖ ≤ K / ε * C' :=
-        ((fderiv ℝ η x).le_opNorm _).trans
-          (mul_le_mul (hηd x) (hC' x hx) (norm_nonneg _) ((norm_nonneg _).trans (hηd x)))
-      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-      · rw [norm_mul, Real.norm_of_nonneg hηnonneg]
-        exact (mul_le_of_le_one_left (norm_nonneg _) hηle).trans h1
-      · rw [norm_mul, mul_assoc]
-        exact mul_le_mul (hB x) h2 (norm_nonneg _) ((norm_nonneg _).trans (hB x))
+      simpa only [smul_eq_mul, mul_comm A C'] using
+        (fderiv ℝ φ x).norm_smul_apply_add_smul_apply_le (fderiv ℝ η x)
+          (a := η x) (b := φ x) (v := V x) (w := V x)
+          (by simpa only [Real.norm_of_nonneg hηnonneg] using hηle)
+          (hB x) (hA x) (hηd x) (hC' x hx) (hC' x hx)
     have hφi := integrableOn_inner_gradient (μ := μ) hV hC hφ1 φ.hasCompactSupport
     have hψi := integrableOn_inner_gradient (μ := μ) hV hC hψ1 ψ.hasCompactSupport
     have hI : I = ∫ x in Ω, (η x * fderiv ℝ φ x (V x) + φ x * fderiv ℝ η x (V x)) ∂μ := by
