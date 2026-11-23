@@ -125,17 +125,16 @@ theorem leadingCoeff_toLaurent (p : Polynomial R) :
     p.toLaurent.leadingCoeff ((↑) : ℤ → WithBot ℤ) = p.leadingCoeff := by
   rcases eq_or_ne p 0 with rfl | hp
   · simp
-  have hc (k : ℕ) : p.toLaurent.coeff (k : ℤ) = p.coeff k := by
-    rw [← coeff_trunc, Polynomial.trunc_toLaurent]
-  -- The exponent `p.natDegree` is in the support and bounds every exponent of the support.
-  have hd : p.toLaurent.supDegree ((↑) : ℤ → WithBot ℤ) = ↑(p.natDegree : ℤ) := by
-    refine supDegree_eq_of_isMaxOn ?_ (isMaxOn_iff.mpr fun a ha => ?_)
-    · rw [Finsupp.mem_support_iff, hc]
-      exact Polynomial.leadingCoeff_ne_zero.mpr hp
-    · rw [support_coeff_toLaurent] at ha
-      obtain ⟨k, hk, rfl⟩ := Finset.mem_map.1 ha
-      exact WithBot.coe_le_coe.mpr (Nat.cast_le.mpr (Polynomial.le_natDegree_of_mem_supp k hk))
-  rw [leadingCoeff, hd, Function.leftInverse_invFun WithBot.coe_injective, hc,
+  -- Transport `p.degree` along the monotone map `WithBot.map Nat.cast`.
+  have hd : p.toLaurent.supDegree ((↑) : ℤ → WithBot ℤ) =
+      WithBot.map (Nat.cast : ℕ → ℤ) p.degree := by
+    rw [← Polynomial.supDegree_eq_degree, supDegree, supDegree,
+      Finset.apply_sup_eq_sup_comp_of_linearOrder (WithBot.map (Nat.cast : ℕ → ℤ))
+        Nat.mono_cast.withBot_map (WithBot.map_bot _)]
+    simp only [support_coeff_toLaurent, Finset.sup_map, Function.comp_def,
+      Nat.castEmbedding_apply, WithBot.map_coe, Polynomial.support]
+  rw [leadingCoeff, hd, Polynomial.degree_eq_natDegree hp, Nat.cast_withBot, WithBot.map_coe,
+    Function.leftInverse_invFun WithBot.coe_injective, ← coeff_trunc, Polynomial.trunc_toLaurent,
     Polynomial.coeff_natDegree]
 
 /-- Shifting an arbitrary Laurent polynomial preserves its highest coefficient. -/
@@ -145,15 +144,17 @@ theorem leadingCoeff_mul_T (f : LaurentPolynomial R) (n : ℤ) :
       f.leadingCoeff ((↑) : ℤ → WithBot ℤ) := by
   rcases eq_or_ne f 0 with rfl | hf
   · simp
-  obtain ⟨a, ha, he⟩ := exists_supDegree_mem_support ((↑) : ℤ → WithBot ℤ) hf
-  -- The exponent `a + n` is in the support and bounds every exponent of the support.
-  have hd : (f * T n).supDegree ((↑) : ℤ → WithBot ℤ) = ↑(a + n) := by
-    refine supDegree_eq_of_isMaxOn ?_ (isMaxOn_iff.mpr fun b hb => ?_)
-    · simpa using ha
-    · have hle : ((b - n : ℤ) : WithBot ℤ) ≤ ↑a := he ▸ Finset.le_sup (by simpa using hb)
-      exact WithBot.coe_le_coe.mpr (by have := WithBot.coe_le_coe.mp hle; omega)
-  simp only [leadingCoeff, hd, he, Function.leftInverse_invFun WithBot.coe_injective _,
-    coeff_mul_T, add_sub_cancel_right]
+  -- Transport `f.supDegree` along the monotone shift `WithBot.map (· + n)`.
+  have hd : (f * T n).supDegree ((↑) : ℤ → WithBot ℤ) =
+      WithBot.map (· + n) (f.supDegree ((↑) : ℤ → WithBot ℤ)) := by
+    rw [supDegree, supDegree,
+      Finset.apply_sup_eq_sup_comp_of_linearOrder (WithBot.map (· + n))
+        (Monotone.withBot_map fun _ _ h => add_le_add_left h n) (WithBot.map_bot _)]
+    simp only [T, support_coeff_mul_single f 1 (by simp) n, Finset.sup_map,
+      Function.comp_def, addRightEmbedding_apply, WithBot.map_coe]
+  obtain ⟨a, -, he⟩ := exists_supDegree_mem_support ((↑) : ℤ → WithBot ℤ) hf
+  simp only [leadingCoeff, hd, he, WithBot.map_coe,
+    Function.leftInverse_invFun WithBot.coe_injective _, coeff_mul_T, add_sub_cancel_right]
 
 /-- Shifting an ordinary polynomial by any Laurent monomial preserves its leading coefficient. -/
 theorem leadingCoeff_toLaurent_mul_T (p : Polynomial R) (n : ℤ) :

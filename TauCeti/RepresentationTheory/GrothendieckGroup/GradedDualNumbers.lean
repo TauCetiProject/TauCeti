@@ -156,7 +156,7 @@ private theorem finrank_dualNumberIntegerGrade (p : ℤ) :
   rcases eq_or_ne n 2 with rfl | h2
   · simp [(dualNumberGradeTwoEquiv k).finrank_eq]
   rw [dualNumberGrade_eq_bot k h0 h2, finrank_bot]
-  simp [h0, show (2 : ℤ) ≠ n by exact_mod_cast h2.symm]
+  simpa [h0] using (Nat.cast_injective (R := ℤ)).ne h2.symm
 
 /-- **The graded Cartan matrix of the dual numbers is `1 + q²`**, with `ε` in degree two, in the
 bases `[A]` and `[S]`: the regular module has the graded composition factors `S` and `S{2}`. At
