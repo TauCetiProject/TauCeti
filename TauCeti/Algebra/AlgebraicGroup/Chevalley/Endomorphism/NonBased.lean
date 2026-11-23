@@ -73,6 +73,13 @@ variable {D} {K : Type v} [Field K] [Infinite K]
   Equiv.ext fun γ => (D.isStandard_conj_weylElement i K).rootPerm_eq_of_map_range
     (D.map_range_rootSubgroupPoints_conj_weylElement i K γ)
 
+/-- The additive root-parameter map of simple Weyl conjugation is scaling by the Weyl sign. -/
+@[simp] theorem IsStandard.rootParamHom_conj_weylElement (γ : Fin t.numRoots) :
+    (D.isStandard_conj_weylElement i K).rootParamHom γ =
+      AddMonoidHom.mulLeft ((t.chevalleyWeylSign ht (t.simpleIndex ht i) γ : ℤ) : K) :=
+  (D.isStandard_conj_weylElement i K).rootParamHom_eq_of_map_rootSubgroupPoints fun u => by
+    simp [D.weylElement_conj_rootSubgroupPoints]
+
 private theorem IsStandard.conj_weylElement_invariants [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
     Units.map (Int.castRingHom K).toMonoidHom
         (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) =
@@ -197,6 +204,15 @@ variable {D} {K : Type v} [Field K] [Infinite K] [ExpChar K p] [PerfectRing K p]
   Equiv.ext fun γ => (D.isStandard_weylFrobenius i p k K).rootPerm_eq_of_map_range
     (D.map_range_rootSubgroupPoints_weylFrobenius i p k K γ)
 
+/-- The additive root-parameter map of `D.weylFrobenius i p k K` composes
+`iterateFrobenius K p k` with scaling by the Weyl sign. -/
+@[simp] theorem IsStandard.rootParamHom_weylFrobenius (γ : Fin t.numRoots) :
+    (D.isStandard_weylFrobenius i p k K).rootParamHom γ =
+      (AddMonoidHom.mulLeft ((t.chevalleyWeylSign ht (t.simpleIndex ht i) γ : ℤ) : K)).comp
+        (iterateFrobenius K p k).toAddMonoidHom :=
+  (D.isStandard_weylFrobenius i p k K).rootParamHom_eq_of_map_rootSubgroupPoints fun u => by
+    simp [iterateFrobenius_def]
+
 private theorem IsStandard.weylFrobenius_invariants [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
     Units.map (Int.castRingHom K).toMonoidHom
         (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) =
@@ -223,7 +239,7 @@ private theorem IsStandard.weylFrobenius_invariants [RootableBy Kˣ ℕ] (γ : F
 end Field
 
 /-- **Over any nontrivial ring, `D.weylFrobenius` does not preserve `D.borelSubgroup A`.** -/
-theorem not_map_borelSubgroup_weylFrobenius_le [Nontrivial A] :
+@[simp] theorem not_map_borelSubgroup_weylFrobenius_le [Nontrivial A] :
     ¬ (D.borelSubgroup A).map (D.weylFrobenius i p k A) ≤ D.borelSubgroup A := fun hle => by
   have himg : D.weylFrobenius i p k A (D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd 1)) ∈
       D.borelSubgroup A := hle ⟨_, D.positivePoints_le_borelSubgroup A

@@ -88,7 +88,7 @@ theorem a1ReflectionIsogeny_ne_of_isBased (b : (typeASimplyConnectedRootDatum 1)
   fun heq => not_isBased_a1ReflectionIsogeny b c (heq ▸ hf)
 
 /-- **`a1ReflectionIsogeny c` does not equal any positive scaling `smulId _ d`.** -/
-theorem a1ReflectionIsogeny_ne_smulId (c d : ℕ+) :
+@[simp] theorem a1ReflectionIsogeny_ne_smulId (c d : ℕ+) :
     a1ReflectionIsogeny c ≠ smulId (typeASimplyConnectedRootDatum 1) d :=
   a1ReflectionIsogeny_ne_of_isBased (typeASimplyConnectedBase 1) c
     (RootPairingIsogeny.isBased_smulId _ (typeASimplyConnectedBase 1) d)
