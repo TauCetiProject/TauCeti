@@ -40,8 +40,10 @@ the metric that a manifold with a geometric structure receives through its chart
   `C^n` section.
 * `Bundle.contMDiffAt_bilinearForm_pullback`: the pullback of a family of bilinear forms that is
   `C^n` at `f x₀`, along a map `f` that is `C^(n+1)` at `x₀`, is a `C^n` section at `x₀`.
-* `Bundle.RiemannianMetric.pullback`: the bare Riemannian metric pulled back along a map with
-  injective manifold derivative.
+* `Bundle.RiemannianMetric.pullback`, `Bundle.RiemannianMetric.pullback_id`,
+  `Bundle.RiemannianMetric.pullback_comp_inner`, and
+  `Bundle.RiemannianMetric.pullback_comp`: the bare Riemannian metric pulled back along a map
+  with injective manifold derivative and its identity/composition laws.
 * `Bundle.ContMDiffRiemannianMetric.contMDiffAt_pullback`: the special case of a `C^n` Riemannian
   metric.
 * `Bundle.ContMDiffRiemannianMetric.pullback` and
@@ -50,7 +52,8 @@ the metric that a manifold with a geometric structure receives through its chart
   and its orthonormality criterion.
 * `Bundle.ContMDiffRiemannianMetric.pullback_id`,
   `Bundle.ContMDiffRiemannianMetric.pullback_comp_inner`, and
-  `Bundle.ContMDiffRiemannianMetric.pullback_comp`: the functoriality laws for pullback metrics.
+  `Bundle.ContMDiffRiemannianMetric.pullback_comp`: the functoriality laws for smooth pullback
+  metrics, derived from the bare laws.
 * `Bundle.ContMDiffRiemannianMetric.pullback_rescale`: pulling back commutes with conformal
   rescaling, `f^* (h g) = (h ∘ f) f^* g`.
 * `Bundle.ContMDiffRiemannianMetric.conformalClass_pullback`: along a map with a `C^n` left
@@ -260,6 +263,56 @@ theorem pullback_inner (g : RiemannianMetric (fun y : N ↦ TangentSpace J y)) (
     (g.pullback f hinj).inner x v w =
       g.inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) := by rfl
 
+omit [IsManifold I 1 M] in
+/-- Pulling a bare Riemannian metric back along the identity leaves it unchanged. -/
+@[simp]
+theorem pullback_id (g : RiemannianMetric (fun y : M ↦ TangentSpace I y))
+    (hinj : ∀ x, Function.Injective (mfderiv I I id x)) :
+    g.pullback id hinj = g := by
+  cases g with
+  | mk ginner gsymm gpos gcont gisVonNBounded =>
+    dsimp only [pullback]
+    congr 1; funext x; ext v w
+    simp [ContinuousLinearMap.precomp_apply, mfderiv_id]
+
+section Comp
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+
+omit [IsManifold I 1 M] [IsManifold J 1 N] in
+/-- For a composite map `h ∘ f`, the bare pullback metric `(h ∘ f)^* g` at `x` evaluates as
+`h^* g` applied to the differential of `f` at `x`. -/
+theorem pullback_comp_inner [FiniteDimensional ℝ F]
+    (g : RiemannianMetric (fun z : P ↦ TangentSpace K z)) {h : N → P} {f : M → N} {x : M}
+    (hh : MDifferentiableAt J K h (f x)) (hf : MDifferentiableAt I J f x)
+    (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
+    (hinj : ∀ z, Function.Injective (mfderiv I K (h ∘ f) z))
+    (v w : TangentSpace I x) :
+    (g.pullback (h ∘ f) hinj).inner x v w =
+      (g.pullback h hinjh).inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) := by
+  rw [pullback_inner, pullback_inner, mfderiv_comp x hh hf,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Function.comp_apply]
+
+omit [IsManifold I 1 M] [IsManifold J 1 N] in
+/-- Pulling a bare metric back along a composite is the same as pulling it back successively. -/
+theorem pullback_comp [FiniteDimensional ℝ F]
+    (g : RiemannianMetric (fun z : P ↦ TangentSpace K z)) (h : N → P) (f : M → N)
+    (hh : MDifferentiable J K h) (hf : MDifferentiable I J f)
+    (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
+    (hinjf : ∀ x, Function.Injective (mfderiv I J f x)) :
+    g.pullback (h ∘ f)
+        (fun x ↦ by
+          rw [mfderiv_comp x (hh (f x)) (hf x)]
+          exact (hinjh (f x)).comp (hinjf x)) =
+      (g.pullback h hinjh).pullback f hinjf := by
+  dsimp only [pullback]
+  congr 1; funext x; ext v w
+  simp [ContinuousLinearMap.precomp_apply, mfderiv_comp x (hh (f x)) (hf x)]
+
+end Comp
+
 end RiemannianMetric
 
 namespace ContMDiffRiemannianMetric
@@ -356,11 +409,8 @@ theorem pullback_id
     (g : ContMDiffRiemannianMetric I n E (fun y : M ↦ TangentSpace I y))
     (hf : ContMDiff I I (n + 1) id)
     (hinj : ∀ x, Function.Injective (mfderiv I I id x)) :
-    g.pullback id hf hinj = g := by
-  apply ext
-  intro x v w
-  rw [pullback_inner]
-  simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq]
+    g.pullback id hf hinj = g :=
+  ext fun x v w ↦ congrArg (fun m ↦ m.inner x v w) (g.toRiemannianMetric.pullback_id hinj)
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
@@ -378,9 +428,8 @@ theorem pullback_comp_inner
     (hinj : ∀ z, Function.Injective (mfderiv I K (h ∘ f) z))
     (v w : TangentSpace I x) :
     (g.pullback (h ∘ f) hhf hinj).inner x v w =
-      (g.pullback h hh hinjh).inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) := by
-  rw [pullback_inner, pullback_inner, mfderiv_comp x (hh.mdifferentiableAt (by simp)) hf,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Function.comp_apply]
+      (g.pullback h hh hinjh).inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) :=
+  g.toRiemannianMetric.pullback_comp_inner (hh.mdifferentiableAt (by simp)) hf hinjh hinj v w
 
 /-- Pulling a metric back along a composite is the same as pulling it back successively. -/
 theorem pullback_comp
@@ -395,11 +444,10 @@ theorem pullback_comp
           rw [mfderiv_comp x (hh.mdifferentiableAt (by simp))
             (hf.mdifferentiableAt (by simp))]
           exact (hinjh (f x)).comp (hinjf x)) =
-      (g.pullback h hh hinjh).pullback f hf hinjf := by
-  apply ext
-  intro x v w
-  exact (g.pullback_comp_inner hh (hf.mdifferentiableAt (by simp)) _ hinjh _ v w).trans
-    ((g.pullback h hh hinjh).pullback_inner f hf hinjf x v w).symm
+      (g.pullback h hh hinjh).pullback f hf hinjf :=
+  ext fun x v w ↦ congrArg (fun m ↦ m.inner x v w)
+    (g.toRiemannianMetric.pullback_comp h f (hh.mdifferentiable (by simp))
+      (hf.mdifferentiable (by simp)) hinjh hinjf)
 
 variable {g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)} {f : M → N}
   {hf : ContMDiff I J (n + 1) f} {hinj : ∀ x, Function.Injective (mfderiv I J f x)}

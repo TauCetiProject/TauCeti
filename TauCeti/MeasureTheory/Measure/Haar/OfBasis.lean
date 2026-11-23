@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -30,6 +31,8 @@ carries the normalized Haar measure of the first to that of the second.
   is the Dirac mass at `0`.
 * `Module.Basis.measurePreserving_equiv` — the linear equivalence matching two bases carries the
   additive Haar measure of one to that of the other.
+* `Module.Basis.setIntegral_addHaar_congr_measurableSpace` — set integrals against `b.addHaar` do
+  not depend on the choice of Borel measurable-space instance.
 
 ## Attribution
 
@@ -129,6 +132,18 @@ theorem measurePreserving_equiv (b : Basis ι ℝ E) (b' : Basis ι' ℝ F) (e :
     LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, hmap, addHaar_reindex]
 
 end Equiv
+
+/-- Set integrals against `b.addHaar` are independent of the choice of Borel measurable-space
+instance on the ambient vector space. -/
+theorem setIntegral_addHaar_congr_measurableSpace
+    {V ι F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [Fintype ι]
+    (b : Basis ι ℝ V) (s : Set V) (f : V → F)
+    (ms₁ ms₂ : MeasurableSpace V) (hb₁ : @BorelSpace V _ ms₁) (hb₂ : @BorelSpace V _ ms₂) :
+    ∫ v in s, f v ∂(@Basis.addHaar _ _ _ _ _ ms₁ hb₁ b) =
+      ∫ v in s, f v ∂(@Basis.addHaar _ _ _ _ _ ms₂ hb₂ b) := by
+  obtain rfl : ms₁ = ms₂ := hb₁.measurable_eq.trans hb₂.measurable_eq.symm
+  rfl
 
 end Module.Basis
 

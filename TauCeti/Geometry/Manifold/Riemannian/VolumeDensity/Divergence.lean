@@ -153,25 +153,6 @@ variable {m : ℕ} {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin m)) H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
 
-private theorem chartLocalFrame_eq_sum_stdLocalFrame (α : M) {y : M}
-    (hy : y ∈ (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).baseSet)
-    (j : Fin m) :
-    chartLocalFrame (I := I) α ((finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))).symm j)
-        y =
-      ∑ i : Fin m,
-        (EuclideanSpace.basisFun (Fin m) ℝ).toBasis.repr
-          ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
-            (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))) j) i •
-          (trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).localFrame
-            (EuclideanSpace.basisFun (Fin m) ℝ).toBasis i y := by
-  set stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
-  set finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
-  set finB := Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))
-  rw [chartLocalFrame_eq_symmL, (Module.Basis.reindex_apply finB finσ j).symm]
-  conv_lhs => rw [← stdB.sum_repr (finB.reindex finσ j)]
-  rw [map_sum]
-  simp_rw [map_smul, symmL_basis_eq_localFrame _ hy]
-
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 private theorem stdChartVolumeDensity_mul_localFrameCoeff_eventuallyEq_sum
@@ -197,18 +178,11 @@ private theorem stdChartVolumeDensity_mul_localFrameCoeff_eventuallyEq_sum
   set finB := Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))
   set finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
   filter_upwards [e.open_baseSet.mem_nhds hy] with z hz
-  rw [e.localFrameCoeff_apply_of_mem_baseSet stdB hz]
-  have hw : (e.basisAt stdB hz).repr (X z) i = ∑ j : Fin m,
-      stdB.repr (finB.reindex finσ j) i * (e.basisAt finB hz).repr (X z) (finσ.symm j) := by
-    rw [← Finsupp.lapply_apply (R := ℝ) i]
-    conv_lhs => rw [← (e.basisAt (finB.reindex finσ) hz).sum_repr (X z)]
-    rw [map_sum, map_sum]
-    exact Finset.sum_congr rfl fun j _ ↦ by
-      simp [Trivialization.basisAt, e.apply_mk_symm hz, mul_comm]
-  rw [hw, stdChartVolumeDensity_def, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun j _ ↦ by
-    rw [← e.localFrameCoeff_apply_of_mem_baseSet (I := I) finB hz X (finσ.symm j), smul_eq_mul]
-    ring
+  rw [e.localFrameCoeff_eq_coeff (I := I) hz, ← stdB.sum_repr_mul_repr (finB.reindex finσ) _ i,
+    stdChartVolumeDensity_def, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [e.localFrameCoeff_eq_coeff (I := I) hz, Module.Basis.repr_reindex_apply, smul_eq_mul]
+  ring
 
 /-- Chart divergence formula `ρ_std div X = ∑ᵢ ∂ᵢ (ρ_std Xⁱ)` in the standard Euclidean basis
 frame. -/
@@ -247,8 +221,12 @@ theorem stdChartVolumeDensity_mul_divergence
           mvfderiv I (g (finσ.symm j)) y (e.localFrame stdB i y) := by
           rw [Finset.mul_sum, Finset.sum_comm]
           refine Finset.sum_congr rfl fun j _ ↦ ?_
-          rw [chartLocalFrame_eq_sum_stdLocalFrame α hy j, map_sum, Finset.mul_sum]
-          exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, smul_eq_mul]; ring
+          rw [chartLocalFrame_def,
+            stdB.eq_sum_repr_continuousLinearMapAt_smul_localFrame hy
+              (e.localFrame finB (finσ.symm j) y),
+            continuousLinearMapAt_localFrame finB hy, map_sum, Finset.mul_sum]
+          exact Finset.sum_congr rfl fun i _ ↦ by
+            rw [map_smul, smul_eq_mul, ← Module.Basis.reindex_apply finB finσ j]; ring
     _ = _ := by
           refine Finset.sum_congr rfl fun i _ ↦ Eq.symm ?_
           rw [(stdChartVolumeDensity_mul_localFrameCoeff_eventuallyEq_sum α hy X i).mvfderiv_eq,

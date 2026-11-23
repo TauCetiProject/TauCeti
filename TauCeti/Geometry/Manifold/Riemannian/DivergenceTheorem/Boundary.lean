@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Boundary.Chart
-import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Geometry.Manifold.Riemannian.Boundary.Flux
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Integration
 
 /-!
 # The divergence theorem on a Riemannian manifold with boundary
@@ -91,12 +93,16 @@ theorem integral_divergence_eq_boundaryFlux {X : (x : M) → TangentSpace (𝓡�
   have hclosed_bdry := (𝓡∂ (n + 1)).isClosed_boundary (M := M) (by norm_num : (2 : ℕ∞ω) ≠ 0)
   let U : M → Set M := fun i ↦ (chartAt (EuclideanHalfSpace (n + 1)) i).source ∩
     if i ∈ (𝓡∂ (n + 1)).boundary M then univ else ((𝓡∂ (n + 1)).boundary M)ᶜ
-  obtain ⟨ι, _, c, Y, hY, hK, hsub, hsum, hdiv⟩ :=
-    exists_subordinate_vectorField_sum hX hc (U := U) fun x _ ↦ Filter.inter_mem
+  obtain ⟨ι, _, c, Y, hY, hK, hsub, hsum⟩ :=
+    hc.exists_subordinate_vectorField_sum (𝓡∂ (n + 1)) hX (U := U) fun x _ ↦ Filter.inter_mem
       (chart_source_mem_nhds (EuclideanHalfSpace (n + 1)) x)
       (by
         split_ifs with hx
         exacts [Filter.univ_mem, hclosed_bdry.isOpen_compl.mem_nhds hx])
+  have hdiv (x : M) : divergence (𝓡∂ (n + 1)) X x = ∑ i, divergence (𝓡∂ (n + 1)) (Y i) x := by
+    rw [← divergence_finsetSum (𝓡∂ (n + 1)) Finset.univ Y x fun i _ ↦
+      (hY i x).mdifferentiableAt one_ne_zero]
+    exact congrArg (divergence (𝓡∂ (n + 1)) · x) (funext hsum)
   rw [integral_congr_ae (Filter.Eventually.of_forall hdiv),
     integral_finsetSum _ fun i _ ↦ integrable_divergence (hY i) (hK i),
     integral_congr_ae (Filter.Eventually.of_forall fun x : (𝓡∂ (n + 1)).boundary M ↦

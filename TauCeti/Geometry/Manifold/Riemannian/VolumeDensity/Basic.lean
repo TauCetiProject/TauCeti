@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.InnerProductSpace.Gram.VolumeDensity
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -71,6 +72,18 @@ theorem chartVolumeDensity_sq (α x : M) :
   rw [chartVolumeDensity_def]
   exact Real.sq_sqrt (chartGramMatrix_det_nonneg α x)
 
+private theorem chartVolumeDensity_eq_metricVolumeDensity (α : M) {x : M}
+    (hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet) :
+    chartVolumeDensity (I := I) α x =
+      ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx).metricVolumeDensity
+        (innerSL ℝ) := by
+  rw [chartVolumeDensity_def, Module.Basis.metricVolumeDensity_def]
+  congr 2
+  ext i j
+  simp only [chartGramMatrix_apply, chartLocalFrame_apply_of_mem_chart_source α
+    (by simpa only [TangentBundle.trivializationAt_baseSet] using hx)]
+  rfl
+
 /-- A `C^n` metric has a `C^n` volume density in every chart of a `C^(n+1)` manifold. -/
 theorem contMDiffOn_chartVolumeDensity {n : ℕ∞ω} [IsManifold I (n + 1) M]
     [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)] (α : M) :
@@ -91,16 +104,9 @@ theorem chartVolumeDensity_changeFrame (α β : M) {x : M}
       |(((trivializationAt E (TangentSpace I) β).basisAt (Module.finBasis ℝ E) hβ).toMatrix
         ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hα)).det| *
         chartVolumeDensity (I := I) β x := by
-  let bα := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hα
-  let bβ := (trivializationAt E (TangentSpace I) β).basisAt (Module.finBasis ℝ E) hβ
-  have hdet : (chartGramMatrix (I := I) α x).det =
-      (bβ.toMatrix bα).det ^ 2 * (chartGramMatrix (I := I) β x).det := by
-    rw [chartGramMatrix_eq_toMatrix α hα, chartGramMatrix_eq_toMatrix β hβ,
-      ← LinearMap.BilinForm.toMatrix_mul_basis_toMatrix bβ bα (innerₗ (TangentSpace I x))]
-    simp only [Matrix.det_mul, Matrix.det_transpose]
-    ring
-  rw [chartVolumeDensity_def, hdet, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs,
-    chartVolumeDensity_def]
+  rw [chartVolumeDensity_eq_metricVolumeDensity α hα,
+    chartVolumeDensity_eq_metricVolumeDensity β hβ]
+  exact Module.Basis.metricVolumeDensity_change_basis _ _ (innerSL ℝ)
 
 section Derivative
 
@@ -175,30 +181,27 @@ theorem stdChartVolumeDensity_eq_sqrt_det_gram (α : M) {y : M}
       √(Matrix.gram ℝ ((trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α).basisAt
         (EuclideanSpace.basisFun (Fin m) ℝ).toBasis hy)).det := by
   set e := trivializationAt (EuclideanSpace ℝ (Fin m)) (TangentSpace I) α
-  set bil := innerₗ (TangentSpace I y)
   set stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
   set finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
-  set finB := (Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex finσ
+  set finB := Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))
   set B_std := e.basisAt stdB hy
-  set B_fin := e.basisAt finB hy
-  have hdet_pos : 0 < |stdB.det finB| := lt_of_le_of_ne (abs_nonneg _) (stdBasisDet_ne_zero m).symm
-  have hmat : B_std.toMatrix B_fin = stdB.toMatrix finB := by
+  set B_fin := e.basisAt (finB.reindex finσ) hy
+  have hdet_pos : 0 < |stdB.det (finB.reindex finσ)| :=
+    lt_of_le_of_ne (abs_nonneg _) (stdBasisDet_ne_zero m).symm
+  have hmat : B_std.toMatrix B_fin = stdB.toMatrix (finB.reindex finσ) := by
     ext i j
-    simp [Module.Basis.toMatrix_apply, B_std, B_fin, Trivialization.basisAt, e.apply_mk_symm hy]
-  have hgram_std : LinearMap.BilinForm.toMatrix B_std bil = Matrix.gram ℝ B_std := by
-    ext i j; simp [LinearMap.BilinForm.toMatrix_apply, Matrix.gram_apply, bil]
-  have hgram_fin : (LinearMap.BilinForm.toMatrix B_fin bil).det =
-      (chartGramMatrix (I := I) α y).det := by
-    rw [← Matrix.det_submatrix_equiv_self finσ.symm (chartGramMatrix (I := I) α y)]; congr 1
-    rw [← gram_basisAt_finBasis_reindex finσ α hy]
-    ext i j; simp [LinearMap.BilinForm.toMatrix_apply, Matrix.gram_apply, B_fin, finB, e, bil]
-  have hdet : (chartGramMatrix (I := I) α y).det =
-      |stdB.det finB| ^ 2 * (Matrix.gram ℝ B_std).det := by
-    rw [← hgram_fin, ← LinearMap.BilinForm.toMatrix_mul_basis_toMatrix B_std B_fin bil, hgram_std,
-      Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose, hmat, ← Module.Basis.det_apply]
-    simp only [sq_abs]; ring
-  rw [stdChartVolumeDensity_def, chartVolumeDensity_def, hdet, Real.sqrt_mul (sq_nonneg _),
-    Real.sqrt_sq hdet_pos.le, inv_mul_cancel_left₀ hdet_pos.ne']
+    simp [Module.Basis.toMatrix_apply, B_std, B_fin, Bundle.Trivialization.basisAt,
+      e.apply_mk_symm hy]
+  have hchart : chartVolumeDensity (I := I) α y = B_fin.metricVolumeDensity (innerSL ℝ) := by
+    rw [chartVolumeDensity_eq_metricVolumeDensity α hy,
+      ← Module.Basis.metricVolumeDensity_reindex _ finσ (innerSL ℝ)]
+    rfl
+  have hstd : B_std.metricVolumeDensity (innerSL ℝ) = √(Matrix.gram ℝ B_std).det := by
+    rw [Module.Basis.metricVolumeDensity_def]
+    rfl
+  have hcov := Module.Basis.metricVolumeDensity_change_basis B_std B_fin (innerSL ℝ)
+  rw [hmat, ← Module.Basis.det_apply, ← hchart] at hcov
+  rw [stdChartVolumeDensity_def, hcov, ← hstd, inv_mul_cancel_left₀ hdet_pos.ne']
 
 /-- A `C^n` metric has a `C^n` standard-frame volume density on every chart source of a `C^(n+1)`
 manifold. -/

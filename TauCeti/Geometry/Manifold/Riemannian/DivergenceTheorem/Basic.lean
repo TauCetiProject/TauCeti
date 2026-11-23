@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Integration
 import TauCeti.Analysis.Calculus.FDeriv.Integral
-import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
 import TauCeti.Geometry.Manifold.VectorField.Chart.Flux
@@ -46,8 +44,6 @@ manifolds. No orientation is used: the measure is the orientation-free `TauCeti.
   `∫ f Δg dV = ∫ (Δf) g dV`.
 * `TauCeti.Manifold.integral_mul_eq_zero_of_laplaceBeltrami_eq_neg_mul`: `L²`-orthogonality of
   `C²` Laplace–Beltrami eigenfunctions with distinct eigenvalues.
-* `TauCeti.Manifold.integrable_divergence`: the divergence of a compactly supported `C¹` field is
-  integrable.
 
 ## Implementation notes
 
@@ -56,8 +52,8 @@ and frame coefficients `Xᵏ`, the coordinate formula `ρ div X = ∑ₖ ∂ₖ 
 (`TauCeti.chartVolumeDensity_mul_divergence`) turns the integral of the divergence of a field
 supported in the chart into a sum of integrals of partial derivatives of compactly supported `C¹`
 functions on the model space, each of which vanishes. A finite partition of unity built from
-`IsCompact.exists_smoothBumpCovering_isSubordinate` reduces a general compactly supported field to
-finitely many such fields on any `C²` Hausdorff Lindelöf manifold with a `C¹` metric.
+`HasCompactSupport.exists_subordinate_vectorField_sum` reduces a general compactly supported field
+to finitely many such fields on any `C²` Hausdorff Lindelöf manifold with a `C¹` metric.
 
 ## References
 
@@ -75,130 +71,6 @@ open Bundle FiberBundle MeasureTheory Riemannian.Tensor Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
-
-section Helpers
-
-universe u
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- Decompose a compactly supported `C¹` vector field `X` into a finite sum of compactly
-supported `C¹` vector fields `Y i`, each supported in `U (c i)`, for any family of neighbourhoods
-`U x ∈ 𝓝 x` covering `tsupport X`. -/
-theorem exists_subordinate_vectorField_sum [IsManifold I 2 M] [T2Space M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-    {X : (x : M) → TangentSpace I x} (hX : ContMDiff I I.tangent 1 (T% X))
-    (hc : HasCompactSupport (β := E) X) {U : M → Set M}
-    (hU : ∀ x ∈ tsupport (α := E) X, U x ∈ 𝓝 x) :
-    ∃ (ι : Type u) (_ : Fintype ι) (c : ι → M) (Y : ι → (x : M) → TangentSpace I x),
-      (∀ i, ContMDiff I I.tangent 1 (T% (Y i))) ∧
-      (∀ i, HasCompactSupport (β := E) (Y i)) ∧
-      (∀ i, tsupport (α := E) (Y i) ⊆ U (c i)) ∧
-      (∀ x, X x = ∑ i, Y i x) ∧
-      (∀ x, divergence I X x = ∑ i, divergence I (Y i) x) := by
-  classical
-  have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
-  obtain ⟨ι, _, bc, hbc⟩ := hc.exists_smoothBumpCovering_isSubordinate I hU
-  let bc' : BumpCovering ι M (tsupport (α := E) X) :=
-    { toFun i := ⟨bc i, (SmoothBumpFunction.contMDiff_of_isManifold (n := 1) (bc i)).continuous⟩
-      locallyFinite' := bc.locallyFinite
-      nonneg' i _ := (bc i).nonneg
-      le_one' i _ := (bc i).le_one
-      eventuallyEq_one' := bc.eventuallyEq_one' }
-  let ρ := bc'.toPartitionOfUnity
-  have hρ_diff (i : ι) : ContMDiff I 𝓘(ℝ) 1 (ρ i) := by
-    have hfun : (ρ i : M → ℝ) = fun x ↦
-        bc i x * ∏ j ∈ Finset.univ with WellOrderingRel j i, (1 - bc j x) :=
-      funext fun x ↦ bc'.toPartitionOfUnity_eq_mul_prod i x Finset.univ
-        fun _ _ _ ↦ Finset.mem_univ _
-    rw [hfun]
-    exact (SmoothBumpFunction.contMDiff_of_isManifold (n := 1) (bc i)).mul <|
-      contMDiff_finsetProd fun j _ ↦
-        contMDiff_const.sub (SmoothBumpFunction.contMDiff_of_isManifold (n := 1) (bc j))
-  let Y : ι → (x : M) → TangentSpace I x := fun i x ↦ ρ i x • X x
-  have hY (i : ι) : ContMDiff I I.tangent 1 (T% (Y i)) := (hρ_diff i).smul_section hX
-  have hsum (x : M) : X x = ∑ i, Y i x := by
-    by_cases hx : x ∈ tsupport (α := E) X
-    · have h1 : ∑ i, ρ i x = 1 := by
-        rw [← finsum_eq_sum_of_fintype]
-        exact ρ.sum_eq_one hx
-      rw [← Finset.sum_smul, h1, one_smul]
-    · have hx0 : X x = 0 := image_eq_zero_of_notMem_tsupport (α := E) hx
-      simp [Y, hx0]
-  refine ⟨ι, inferInstance, bc.c, Y, hY,
-    fun i ↦ hc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _),
-    fun i ↦ (tsupport_smul_subset_left _ _).trans <|
-      (closure_mono (bc'.support_toPartitionOfUnity_subset i)).trans (hbc i),
-    hsum, fun x ↦ ?_⟩
-  rw [← divergence_finsetSum I Finset.univ Y x fun i _ ↦ (hY i x).mdifferentiableAt one_ne_zero]
-  exact congrArg (divergence I · x) (funext hsum)
-
-variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-
-/-- The divergence of a compactly supported `C¹` vector field is integrable against the Riemannian
-volume. -/
-theorem integrable_divergence {X : (x : M) → TangentSpace I x}
-    (hX : ContMDiff I I.tangent 1 (T% X)) (hc : HasCompactSupport (β := E) X) :
-    Integrable (divergence I X) (riemannianVolume I M) :=
-  (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
-    (by simpa using hX)).continuous.integrable_of_hasCompactSupport (hc.divergence I)
-
-/-- Integration-by-parts decomposition for the divergence of `f • X`, assuming `f • X` has
-compact support and `f * div X` is integrable. -/
-theorem integral_mul_divergence_eq_integral_divergence_smul_sub {f : M → ℝ}
-    {X : (x : M) → TangentSpace I x} (hf : ContMDiff I 𝓘(ℝ) 1 f)
-    (hX : ContMDiff I I.tangent 1 (T% X))
-    (hfXc : HasCompactSupport (β := E) (fun x ↦ f x • X x))
-    (hint : Integrable (fun x ↦ f x * divergence I X x) (riemannianVolume I M)) :
-    ∫ x, f x * divergence I X x ∂riemannianVolume I M =
-      (∫ x, divergence I (fun x ↦ f x • X x) x ∂riemannianVolume I M) -
-        ∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M := by
-  have hfX : ContMDiff I I.tangent 1 (T% (fun x ↦ f x • X x)) := hf.smul_section hX
-  have hpt (x : M) : divergence I (fun x ↦ f x • X x) x =
-      f x * divergence I X x + mvfderiv I f x (X x) :=
-    divergence_smul_function I f X x ((hf x).mdifferentiableAt one_ne_zero)
-      ((hX x).mdifferentiableAt one_ne_zero)
-  have hint' : Integrable (fun x ↦ mvfderiv I f x (X x)) (riemannianVolume I M) :=
-    ((integrable_divergence hfX hfXc).sub hint).congr
-      (Filter.Eventually.of_forall fun x ↦ by simp only [Pi.sub_apply, hpt]; ring)
-  have hdiv : ∫ x, divergence I (fun x ↦ f x • X x) x ∂riemannianVolume I M =
-      (∫ x, f x * divergence I X x ∂riemannianVolume I M) +
-        ∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M := by
-    rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_add hint hint']
-  linarith
-
-/-- Integration-by-parts decomposition for `f * div X` when `f` has compact support. -/
-theorem integral_mul_divergence_eq_integral_divergence_smul_sub_of_hasCompactSupport_left
-    {f : M → ℝ} {X : (x : M) → TangentSpace I x} (hf : ContMDiff I 𝓘(ℝ) 1 f)
-    (hfc : HasCompactSupport f) (hX : ContMDiff I I.tangent 1 (T% X)) :
-    ∫ x, f x * divergence I X x ∂riemannianVolume I M =
-      (∫ x, divergence I (fun x ↦ f x • X x) x ∂riemannianVolume I M) -
-        ∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M :=
-  integral_mul_divergence_eq_integral_divergence_smul_sub hf hX
-    (hfc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _))
-    ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
-      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport hfc.mul_right)
-
-/-- Integration-by-parts decomposition for `f * div X` when `X` has compact support. -/
-theorem integral_mul_divergence_eq_integral_divergence_smul_sub_of_hasCompactSupport_right
-    {f : M → ℝ} {X : (x : M) → TangentSpace I x} (hf : ContMDiff I 𝓘(ℝ) 1 f)
-    (hX : ContMDiff I I.tangent 1 (T% X)) (hXc : HasCompactSupport (β := E) X) :
-    ∫ x, f x * divergence I X x ∂riemannianVolume I M =
-      (∫ x, divergence I (fun x ↦ f x • X x) x ∂riemannianVolume I M) -
-        ∫ x, mvfderiv I f x (X x) ∂riemannianVolume I M :=
-  integral_mul_divergence_eq_integral_divergence_smul_sub hf hX
-    (hXc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _))
-    ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
-      (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport
-      (hXc.divergence I).mul_left)
-
-end Helpers
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -295,8 +167,12 @@ supported `C¹` vector field has integral zero against the Riemannian volume. -/
 theorem integral_divergence_eq_zero (hX : ContMDiff I I.tangent 1 (T% X))
     (hc : HasCompactSupport (β := E) X) :
     ∫ x, divergence I X x ∂riemannianVolume I M = 0 := by
-  obtain ⟨ι, _, c, Y, hY, hK, hsub, _, hdiv⟩ :=
-    exists_subordinate_vectorField_sum hX hc fun x _ ↦ chart_source_mem_nhds H x
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  obtain ⟨ι, _, c, Y, hY, hK, hsub, hsum⟩ :=
+    hc.exists_subordinate_vectorField_sum I hX fun x _ ↦ chart_source_mem_nhds H x
+  have hdiv (x : M) : divergence I X x = ∑ i, divergence I (Y i) x := by
+    rw [← divergence_finsetSum I Finset.univ Y x fun i _ ↦ (hY i x).mdifferentiableAt one_ne_zero]
+    exact congrArg (divergence I · x) (funext hsum)
   rw [integral_congr_ae (Filter.Eventually.of_forall hdiv),
     integral_finsetSum _ fun i _ ↦ integrable_divergence (hY i) (hK i)]
   exact Finset.sum_eq_zero fun i _ ↦

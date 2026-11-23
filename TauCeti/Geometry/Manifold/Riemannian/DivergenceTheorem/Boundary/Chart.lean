@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Boundary
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Volume
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.OutwardUnitNormal
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace

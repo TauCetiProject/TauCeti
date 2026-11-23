@@ -288,19 +288,11 @@ theorem setIntegral_riemannianVolume_std_of_subset {m : ℕ} {H : Type*} [Topolo
       ENNReal.ofReal |stdB.det (finB.reindex finσ)|⁻¹ • (volume : Measure _) := by
     rw [← Module.Basis.addHaar_reindex _ finσ, Module.Basis.addHaar_eq_smul_of_basis stdB]
     simp only [stdB, OrthonormalBasis.addHaar_eq_volume, abs_inv]
-  have hcongr (ms₁ ms₂ : MeasurableSpace (EuclideanSpace ℝ (Fin m)))
-      (hb₁ : @BorelSpace (EuclideanSpace ℝ (Fin m)) _ ms₁)
-      (hb₂ : @BorelSpace (EuclideanSpace ℝ (Fin m)) _ ms₂) :
-      ∫ z in (extChartAt I α) '' s,
-          chartVolumeDensity (I := I) α ((extChartAt I α).symm z) • φ ((extChartAt I α).symm z)
-          ∂(@Module.Basis.addHaar _ _ _ _ _ ms₁ hb₁ finB) =
-        ∫ z in (extChartAt I α) '' s,
-          chartVolumeDensity (I := I) α ((extChartAt I α).symm z) • φ ((extChartAt I α).symm z)
-          ∂(@Module.Basis.addHaar _ _ _ _ _ ms₂ hb₂ finB) := by
-    obtain rfl : ms₁ = ms₂ := hb₁.measurable_eq.trans hb₂.measurable_eq.symm
-    rfl
   rw [setIntegral_riemannianVolume_of_subset hs hs' φ,
-    hcongr (@extChartAtMeasurableSpaceE (EuclideanSpace ℝ (Fin m)) _) inferInstance
+    Module.Basis.setIntegral_addHaar_congr_measurableSpace finB ((extChartAt I α) '' s)
+      (fun z ↦
+        chartVolumeDensity (I := I) α ((extChartAt I α).symm z) • φ ((extChartAt I α).symm z))
+      (@extChartAtMeasurableSpaceE (EuclideanSpace ℝ (Fin m)) _) inferInstance
       (@extChartAtBorelSpaceE (EuclideanSpace ℝ (Fin m)) _) inferInstance,
     hhaar, Measure.restrict_smul, integral_smul_measure,
     ENNReal.toReal_ofReal (inv_nonneg.2 (abs_nonneg _)), ← integral_smul]
@@ -333,9 +325,8 @@ theorem riemannianVolume_eq_count_of_subsingleton
   have _ : Subsingleton H := I.injective.subsingleton
   have _ : DiscreteTopology M := ChartedSpace.discreteTopology H M
   have _ : Countable M := countable_of_Lindelof_of_discrete
-  have hsource (x : M) : (chartAt H x).source = {x} := Set.ext fun y ↦
-    ⟨fun hy ↦ (chartAt H x).injOn hy (mem_chart_source H x) (Subsingleton.elim _ _),
-      fun hy ↦ hy.symm ▸ mem_chart_source H x⟩
+  have hsource (x : M) : (chartAt H x).source = {x} := by
+    simpa only [extChartAt_source] using (extChartAt_source_zeroDim (I := I) x)
   refine Measure.ext_of_singleton fun x ↦ ?_
   have _ : IsEmpty (Fin (Module.finrank ℝ E)) :=
     Module.finrank_zero_of_subsingleton (R := ℝ) (M := E) ▸ inferInstanceAs (IsEmpty (Fin 0))
