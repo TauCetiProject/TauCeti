@@ -47,17 +47,13 @@ section NonUnital
 variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℂ A]
   [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] [CompleteSpace A]
 
-private theorem unitizationInrL_unitizationSndL_holomorphicCalculus (a : A)
+private theorem fst_holomorphicCalculus_eq_zero (a : A)
     (g : holomorphicGerms.vanishingAt (quasispectrum ℂ a) 0 (quasispectrum.zero_mem ℂ a)) :
-    WithLp.unitizationInrL ℂ A (WithLp.unitizationSndL ℂ A
-      (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-        (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val))) =
-      holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-        (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val) :=
-  WithLp.unitizationInrL_unitizationSndL_of_fst_eq_zero <| by
-    rw [← WithLp.unitizationFstA_apply, ← WithLp.mem_range_unitizationInrL_iff,
-      WithLp.holomorphicCalculus_mem_range_unitizationInrL_iff]
-    simp
+    (WithLp.ofLp (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
+      (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val))).fst = 0 := by
+  rw [← WithLp.unitizationFstA_apply, ← WithLp.mem_range_unitizationInrL_iff,
+    WithLp.holomorphicCalculus_mem_range_unitizationInrL_iff]
+  simp
 
 /-- **Nonunital holomorphic functional calculus.** For an element `a` of a nonunital complex Banach
 algebra `A`, evaluating holomorphic germs near `quasispectrum ℂ a` that vanish at `0` in the `ℓ¹`
@@ -72,7 +68,7 @@ def nonUnitalHolomorphicCalculus (a : A) :
   map_mul' g₁ g₂ := by
     apply (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := A)).injective
     simp only [← WithLp.unitizationInrL_apply, WithLp.unitizationInrL_mul,
-      unitizationInrL_unitizationSndL_holomorphicCalculus]
+      WithLp.unitizationInrL_unitizationSndL_of_fst_eq_zero (fst_holomorphicCalculus_eq_zero a _)]
     simp only [MulMemClass.coe_mul, map_mul]
 
 /-- Formula for `nonUnitalHolomorphicCalculus a g` via the `ℓ¹` unitization. -/
@@ -119,9 +115,8 @@ theorem toLp_inr_nonUnitalHolomorphicCalculus (a : A)
     WithLp.toLp 1 (nonUnitalHolomorphicCalculus a g : Unitization ℂ A) =
       holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
         (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val) := by
-  rw [nonUnitalHolomorphicCalculus_apply]
-  simpa only [WithLp.unitizationInrL_apply] using
-    unitizationInrL_unitizationSndL_holomorphicCalculus a g
+  rw [nonUnitalHolomorphicCalculus_apply, ← WithLp.unitizationInrL_apply]
+  exact WithLp.unitizationInrL_unitizationSndL_of_fst_eq_zero (fst_holomorphicCalculus_eq_zero a g)
 
 /-- The nonunital holomorphic functional calculus sends the coordinate germ `z ↦ z` to `a`. -/
 @[simp]
