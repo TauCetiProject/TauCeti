@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import TauCeti.RingTheory.DeltaRing.Basic
 
 /-!
@@ -23,10 +22,12 @@ descended one (Bhatt and Scholze, *Prisms and prismatic cohomology*, Lemma 2.9).
 ## Main results
 
 * `TauCeti.DeltaRing.isDeltaMap_quotient_mk`: the quotient map is a `δ`-map.
-* `TauCeti.DeltaRing.eq_of_isDeltaMap_of_surjective`: a surjective ring homomorphism determines
-  the `δ`-structure on its target making it a `δ`-map.
-* `TauCeti.DeltaRing.existsUnique_isDeltaMap_quotient_mk_iff`: `δ` maps `I` into `I` if and only if
-  there is a unique `δ`-structure on `A ⧸ I` making the quotient map a `δ`-map.
+* `TauCeti.DeltaRing.isDeltaMap_quotient_lift`: a `δ`-map killing `I` induces a `δ`-map on
+  `A ⧸ I`.
+* `TauCeti.DeltaRing.existsUnique_isDeltaMap_quotient_mk_iff`: there is a unique `δ`-structure on
+  `A ⧸ I` making the quotient map a `δ`-map if and only if `δ` maps `I` into `I`. Uniqueness is
+  `TauCeti.DeltaRing.eq_of_isDeltaMap_of_surjective`: at most one `δ`-structure on the target of a
+  surjective ring homomorphism makes it a `δ`-map.
 
 ## References
 
@@ -42,30 +43,9 @@ namespace DeltaRing
 
 variable {p : ℕ} {A : Type*} [CommRing A]
 
-/-- A surjective ring homomorphism out of a `δ`-ring determines the `δ`-structure on its target
-for which it is a `δ`-map. -/
-theorem eq_of_isDeltaMap_of_surjective {B : Type*} [CommRing B] [DeltaRing p A]
-    {f : A →+* B} (hf : Function.Surjective f) {δ₁ δ₂ : DeltaRing p B}
-    (h₁ : @IsDeltaMap p A _ B _ _ δ₁ f) (h₂ : @IsDeltaMap p A _ B _ _ δ₂ f) : δ₁ = δ₂ := by
-  ext y
-  obtain ⟨x, rfl⟩ := hf y
-  exact (@IsDeltaMap.map_delta p A _ B _ _ δ₁ f h₁ x).symm.trans
-    (@IsDeltaMap.map_delta p A _ B _ _ δ₂ f h₂ x)
-
 section Quotient
 
 variable [DeltaRing p A] {I : Ideal A}
-
-/-- If `δ` maps `I` into `I`, then `δ x - δ y ∈ I` whenever `x - y ∈ I`. -/
-theorem delta_sub_delta_mem (hI : ∀ x ∈ I, delta p x ∈ I) {x y : A} (h : x - y ∈ I) :
-    delta p x - delta p y ∈ I := by
-  have hx : delta p x - delta p y = delta p (x - y) + addCorrection p (x - y) y := by
-    have h' := delta_add (p := p) (x - y) y
-    rw [sub_add_cancel] at h'
-    rw [h']
-    ring
-  rw [hx]
-  exact I.add_mem (hI _ h) (addCorrection_mem_of_mem_left y h)
 
 variable (I) in
 /-- The `δ`-structure on `A ⧸ I` induced by `δ`, for an ideal `I` with `δ I ⊆ I` (Bhatt and
@@ -94,6 +74,7 @@ def quotient (hI : ∀ x ∈ I, delta p x ∈ I) : DeltaRing p (A ⧸ I) where
       (by simp only [map_add, map_mul, map_pow, map_natCast]; rfl)
 
 /-- The `δ`-operation of `quotient I hI` on the class of `x` is the class of `δ x`. -/
+@[simp]
 theorem delta_quotient_mk (hI : ∀ x ∈ I, delta p x ∈ I) (x : A) :
     @delta p (A ⧸ I) _ (quotient I hI) (Ideal.Quotient.mk I x) =
       Ideal.Quotient.mk I (delta p x) :=
@@ -105,6 +86,25 @@ theorem isDeltaMap_quotient_mk (hI : ∀ x ∈ I, delta p x ∈ I) :
   letI := quotient I hI
   ⟨fun x => (delta_quotient_mk hI x).symm⟩
 
+/-- The Frobenius of `quotient I hI` on the class of `x` is the class of `φ x`. -/
+@[simp]
+theorem frobenius_quotient_mk [Fact p.Prime] (hI : ∀ x ∈ I, delta p x ∈ I) (x : A) :
+    @frobenius p (A ⧸ I) _ _ (quotient I hI) (Ideal.Quotient.mk I x) =
+      Ideal.Quotient.mk I (frobenius p A x) := by
+  let := quotient I hI
+  rw [frobenius_apply, frobenius_apply, delta_quotient_mk, map_add, map_mul, map_pow,
+    map_natCast]
+
+/-- A `δ`-map `f : A →+* B` vanishing on `I` induces a `δ`-map `A ⧸ I →+* B` for
+`quotient I hI`. -/
+theorem isDeltaMap_quotient_lift {B : Type*} [CommRing B] [DeltaRing p B]
+    (hI : ∀ x ∈ I, delta p x ∈ I) {f : A →+* B} (hf : IsDeltaMap p f) (hfI : ∀ a ∈ I, f a = 0) :
+    @IsDeltaMap p (A ⧸ I) _ B _ (quotient I hI) _ (Ideal.Quotient.lift I f hfI) := by
+  let := quotient I hI
+  refine ⟨fun x => ?_⟩
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rw [delta_quotient_mk, Ideal.Quotient.lift_mk, Ideal.Quotient.lift_mk, hf.map_delta]
+
 /-- If some `δ`-structure on `A ⧸ I` makes the quotient map a `δ`-map, then `δ` maps `I` into
 `I`. -/
 theorem delta_mem_of_isDeltaMap_quotient_mk {d : DeltaRing p (A ⧸ I)}
@@ -114,14 +114,14 @@ theorem delta_mem_of_isDeltaMap_quotient_mk {d : DeltaRing p (A ⧸ I)}
     @delta_zero p _ _ d]
 
 variable (I) in
-/-- `δ` maps `I` into `I` if and only if there is a unique `δ`-structure on `A ⧸ I` for which the
-quotient map is a `δ`-map (Bhatt and Scholze, *Prisms and prismatic cohomology*, Lemma 2.9). -/
+/-- There is a unique `δ`-structure on `A ⧸ I` for which the quotient map is a `δ`-map if and only
+if `δ` maps `I` into `I` (Bhatt and Scholze, *Prisms and prismatic cohomology*, Lemma 2.9). -/
 theorem existsUnique_isDeltaMap_quotient_mk_iff :
-    (∀ x ∈ I, delta p x ∈ I) ↔
-      ∃! d : DeltaRing p (A ⧸ I), @IsDeltaMap p A _ (A ⧸ I) _ _ d (Ideal.Quotient.mk I) := by
-  refine ⟨fun hI => ⟨quotient I hI, isDeltaMap_quotient_mk hI, fun d hd =>
-    eq_of_isDeltaMap_of_surjective Ideal.Quotient.mk_surjective hd (isDeltaMap_quotient_mk hI)⟩,
-    fun ⟨d, hd, _⟩ _ hx => delta_mem_of_isDeltaMap_quotient_mk hd hx⟩
+    (∃! d : DeltaRing p (A ⧸ I), @IsDeltaMap p A _ (A ⧸ I) _ _ d (Ideal.Quotient.mk I)) ↔
+      ∀ x ∈ I, delta p x ∈ I := by
+  refine ⟨fun ⟨d, hd, _⟩ _ hx => delta_mem_of_isDeltaMap_quotient_mk hd hx, fun hI =>
+    ⟨quotient I hI, isDeltaMap_quotient_mk hI, fun d hd =>
+      eq_of_isDeltaMap_of_surjective Ideal.Quotient.mk_surjective hd (isDeltaMap_quotient_mk hI)⟩⟩
 
 end Quotient
 

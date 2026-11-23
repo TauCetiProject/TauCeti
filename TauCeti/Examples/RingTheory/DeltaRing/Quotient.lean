@@ -28,8 +28,7 @@ example (hI : ∀ x ∈ (⊥ : Ideal A), delta p x ∈ (⊥ : Ideal A)) (x : A �
     RingEquiv.quotientBot A (@delta p _ _ (quotient ⊥ hI) x) =
       delta p (RingEquiv.quotientBot A x) := by
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  rw [delta_quotient_mk]
-  rfl
+  simp only [delta_quotient_mk, RingEquiv.quotientBot_mk]
 
 example : ∀ x ∈ (⊥ : Ideal A), delta p x ∈ (⊥ : Ideal A) := by
   simp

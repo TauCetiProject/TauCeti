@@ -31,11 +31,11 @@ namespace TauCeti.Examples
 open DeltaRing TrivSqZeroExt
 
 /-- The opposite action of `ℤ` on `ZMod 2`, through `ℤᵐᵒᵖ ≃+* ℤ`. -/
-instance instModuleMulOppositeIntZModTwo : Module ℤᵐᵒᵖ (ZMod 2) :=
+local instance instModuleMulOppositeIntZModTwo : Module ℤᵐᵒᵖ (ZMod 2) :=
   Module.compHom (ZMod 2) (RingEquiv.toOpposite ℤ).symm.toRingHom
 
 /-- The opposite action of `ℤ` on `ZMod 2` agrees with the integer action. -/
-instance instIsCentralScalarIntZModTwo : IsCentralScalar ℤ (ZMod 2) :=
+local instance instIsCentralScalarIntZModTwo : IsCentralScalar ℤ (ZMod 2) :=
   ⟨fun _ _ => rfl⟩
 
 -- On `ℤ ⊕ ZMod 2 ε`, `δ_c (a, b) = ((a - a ^ 2) / 2, (c - ā) b)`.
@@ -78,8 +78,8 @@ example (c : ZMod 2) :
 example : ((2 : ℕ) : TrivSqZeroExt ℤ (ZMod 2)) * inr 1 = 0 := by
   ext
   · simp
-  · simp
-    rfl
+  · simp only [snd_mul, fst_natCast, snd_natCast, snd_inr, fst_inr, smul_zero, add_zero,
+      Nat.cast_smul_eq_nsmul, nsmul_eq_mul, mul_one, ZMod.natCast_self, snd_zero]
 
 -- The parameters `0` and `1` give `δ₀ ε = 0` and `δ₁ ε = ε ≠ 0`.
 example : @delta 2 _ _ (trivSqZeroExt ℤ 0) (inr 1) = 0 := by
@@ -105,7 +105,8 @@ example :
         (@frobenius 2 _ _ _ (trivSqZeroExt ℤ 1)).comp (RingHom.id _) ∧
       ¬ @IsDeltaMap 2 _ _ (TrivSqZeroExt ℤ (ZMod 2)) _ (trivSqZeroExt ℤ 0) (trivSqZeroExt ℤ 1)
         (RingHom.id _) :=
-  not_isDeltaMap_id_trivSqZeroExt (by decide)
+  ⟨by rw [RingHom.id_comp, RingHom.comp_id, frobenius_trivSqZeroExt_eq],
+    not_isDeltaMap_id_trivSqZeroExt (by decide)⟩
 
 -- For `δ₁`, `φ ε = ε ^ 2 = 0` although `δ₁ ε ≠ 0`.
 example : @frobenius 2 _ _ _ (trivSqZeroExt ℤ 1) (inr 1) = 0 ∧
