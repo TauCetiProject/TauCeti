@@ -38,7 +38,7 @@ gauge action is a left action and curvature transforms by `Ad(O)`.
 * `TauCeti.rightMaurerCartan`: the right Maurer–Cartan form `O;x = (∂O) O⁻¹`.
 * `TauCeti.gaugeAction`: the gauge action `O·A = Ad(O) A - O;x`.
 * `TauCeti.connectionCurvature`: the curvature `F_{vw} = ∂ᵥA_w - ∂_wA_v + [A_v, A_w]`.
-* `TauCeti.connectionCovariantDeriv`: the covariant derivative `D_v B = ∂ᵥB + [A_v, B]`.
+* `TauCeti.connectionCovariantDerivative`: the covariant derivative `D_v B = ∂ᵥB + [A_v, B]`.
 
 ## Main results
 
@@ -47,10 +47,10 @@ gauge action is a left action and curvature transforms by `Ad(O)`.
 * `TauCeti.rightMaurerCartan_mul`, `TauCeti.rightMaurerCartan_ringInverse`:
   `(OO');x = O;x + Ad(O)(O';x)` and `(O⁻¹);x = -Ad(O⁻¹)(O;x)`.
 * `TauCeti.fderiv_mul_mul_ringInverse_apply`: `∂ᵥ(Ad(O)B) = Ad(O)∂ᵥB + [O;v, Ad(O)B]`.
-* `TauCeti.connectionCovariantDeriv_gaugeAction`: `D(O·A)(Ad(O)B) = Ad(O)(D(A)B)`.
+* `TauCeti.connectionCovariantDerivative_gaugeAction`: `D(O·A)(Ad(O)B) = Ad(O)(D(A)B)`.
 * `TauCeti.connectionCurvature_gaugeAction`: `F[O·A] = Ad(O) F[A]`.
-* `TauCeti.connectionCovariantDeriv_sub_connectionCovariantDeriv_swap`: the Ricci identity
-  `D_vD_wB - D_wD_vB = [F_{vw}, B]`.
+* `TauCeti.connectionCovariantDerivative_sub_connectionCovariantDerivative_swap`: the Ricci
+  identity `D_vD_wB - D_wD_vB = [F_{vw}, B]`.
 * `TauCeti.connectionCurvature_bianchi`: the Bianchi identity
   `D_uF_{vw} + D_vF_{wu} + D_wF_{uv} = 0`.
 * `TauCeti.gaugeAction_eq_sub`, `TauCeti.connectionCurvature_apply_of_comm`: for commutative
@@ -97,7 +97,7 @@ def connectionCurvature (A : E → E →L[𝕜] 𝔸) (x : E) : E →L[𝕜] E �
 
 /-- The **covariant derivative** `D_v B = ∂ᵥB + [A_v, B]` of an `𝔸`-valued function `B` for the
 connection `A`, acting on `B` through the adjoint representation `ad(A_v) = [A_v, ·]`. -/
-def connectionCovariantDeriv (A : E → E →L[𝕜] 𝔸) (B : E → 𝔸) (x : E) : E →L[𝕜] 𝔸 :=
+def connectionCovariantDerivative (A : E → E →L[𝕜] 𝔸) (B : E → 𝔸) (x : E) : E →L[𝕜] 𝔸 :=
   fderiv 𝕜 B x + ((mul 𝕜 𝔸).flip (B x) - mul 𝕜 𝔸 (B x)) ∘L A x
 
 variable {𝕜}
@@ -118,9 +118,9 @@ theorem connectionCurvature_apply (A : E → E →L[𝕜] 𝔸) (x v w : E) :
   simp [connectionCurvature, Ring.lie_def]
 
 @[simp]
-theorem connectionCovariantDeriv_apply (A : E → E →L[𝕜] 𝔸) (B : E → 𝔸) (x v : E) :
-    connectionCovariantDeriv 𝕜 A B x v = fderiv 𝕜 B x v + ⁅A x v, B x⁆ := by
-  simp [connectionCovariantDeriv, Ring.lie_def]
+theorem connectionCovariantDerivative_apply (A : E → E →L[𝕜] 𝔸) (B : E → 𝔸) (x v : E) :
+    connectionCovariantDerivative 𝕜 A B x v = fderiv 𝕜 B x v + ⁅A x v, B x⁆ := by
+  simp [connectionCovariantDerivative, Ring.lie_def]
 
 /-- The curvature is antisymmetric: `F_{wv} = -F_{vw}`. -/
 theorem connectionCurvature_apply_swap (A : E → E →L[𝕜] 𝔸) (x v w : E) :
@@ -219,12 +219,12 @@ theorem fderiv_mul_mul_ringInverse_apply {B : E → 𝔸} (hO : DifferentiableAt
   abel
 
 /-- **Covariance of the covariant derivative**: `D(O·A)(Ad(O)B) = Ad(O)(D(A)B)`. -/
-theorem connectionCovariantDeriv_gaugeAction {B : E → 𝔸} (hO : DifferentiableAt 𝕜 O x)
+theorem connectionCovariantDerivative_gaugeAction {B : E → 𝔸} (hO : DifferentiableAt 𝕜 O x)
     (hOx : IsUnit (O x)) (hB : DifferentiableAt 𝕜 B x) (A : E → E →L[𝕜] 𝔸) :
-    connectionCovariantDeriv 𝕜 (gaugeAction 𝕜 O A) (fun y ↦ O y * B y * (O y)⁻¹ʳ) x =
-      mulLeftRight 𝕜 𝔸 (O x) (O x)⁻¹ʳ ∘L connectionCovariantDeriv 𝕜 A B x := by
+    connectionCovariantDerivative 𝕜 (gaugeAction 𝕜 O A) (fun y ↦ O y * B y * (O y)⁻¹ʳ) x =
+      mulLeftRight 𝕜 𝔸 (O x) (O x)⁻¹ʳ ∘L connectionCovariantDerivative 𝕜 A B x := by
   ext v
-  rw [connectionCovariantDeriv_apply, fderiv_mul_mul_ringInverse_apply hO hOx hB]
+  rw [connectionCovariantDerivative_apply, fderiv_mul_mul_ringInverse_apply hO hOx hB]
   simp [Ring.lie_def, mul_sub, sub_mul, mul_add, add_mul, mul_assoc,
     Ring.inverse_mul_cancel_left _ _ hOx]
   abel
@@ -267,11 +267,11 @@ omit [HasSummableGeomSeries 𝔸]
 
 /-- **The Ricci identity**: covariant derivatives commute up to curvature,
 `D_v(D_w B) - D_w(D_v B) = [F_{vw}, B]`, for `B` twice continuously differentiable at `x`. -/
-theorem connectionCovariantDeriv_sub_connectionCovariantDeriv_swap {n : ℕ∞ω} {A : E → E →L[𝕜] 𝔸}
-    {B : E → 𝔸} (hB : ContDiffAt 𝕜 n B x) (hn : minSmoothness 𝕜 2 ≤ n)
+theorem connectionCovariantDerivative_sub_connectionCovariantDerivative_swap {n : ℕ∞ω}
+    {A : E → E →L[𝕜] 𝔸} {B : E → 𝔸} (hB : ContDiffAt 𝕜 n B x) (hn : minSmoothness 𝕜 2 ≤ n)
     (hA : DifferentiableAt 𝕜 A x) (v w : E) :
-    connectionCovariantDeriv 𝕜 A (fun y ↦ connectionCovariantDeriv 𝕜 A B y w) x v -
-        connectionCovariantDeriv 𝕜 A (fun y ↦ connectionCovariantDeriv 𝕜 A B y v) x w =
+    connectionCovariantDerivative 𝕜 A (fun y ↦ connectionCovariantDerivative 𝕜 A B y w) x v -
+        connectionCovariantDerivative 𝕜 A (fun y ↦ connectionCovariantDerivative 𝕜 A B y v) x w =
       ⁅connectionCurvature 𝕜 A x v w, B x⁆ := by
   have hn2 : (2 : ℕ∞ω) ≤ n := le_minSmoothness.trans hn
   have hB1 : HasFDerivAt B (fderiv 𝕜 B x) x :=
@@ -279,7 +279,7 @@ theorem connectionCovariantDeriv_sub_connectionCovariantDeriv_swap {n : ℕ∞ω
   have hAu (u : E) := hA.hasFDerivAt.clm_apply (hasFDerivAt_const u x)
   have hderiv (u : E) := ((hB.hasFDerivAt_fderiv_apply hn2 u).fun_add
     (((hAu u).fun_mul' hB1).fun_sub (hB1.fun_mul' (hAu u)))).fderiv
-  simp only [connectionCovariantDeriv_apply, connectionCurvature_apply, Ring.lie_def]
+  simp only [connectionCovariantDerivative_apply, connectionCurvature_apply, Ring.lie_def]
   rw [hderiv, hderiv]
   -- The second derivatives of `B` cancel by symmetry; the rest is the Jacobi identity.
   simp [hB.isSymmSndFDerivAt hn w v, mul_sub, sub_mul, mul_add, add_mul, mul_assoc]
@@ -289,9 +289,9 @@ theorem connectionCovariantDeriv_sub_connectionCovariantDeriv_swap {n : ℕ∞ω
 twice continuously differentiable at `x`. -/
 theorem connectionCurvature_bianchi {n : ℕ∞ω} {A : E → E →L[𝕜] 𝔸} (hA : ContDiffAt 𝕜 n A x)
     (hn : minSmoothness 𝕜 2 ≤ n) (u v w : E) :
-    connectionCovariantDeriv 𝕜 A (fun y ↦ connectionCurvature 𝕜 A y v w) x u +
-        connectionCovariantDeriv 𝕜 A (fun y ↦ connectionCurvature 𝕜 A y w u) x v +
-        connectionCovariantDeriv 𝕜 A (fun y ↦ connectionCurvature 𝕜 A y u v) x w = 0 := by
+    connectionCovariantDerivative 𝕜 A (fun y ↦ connectionCurvature 𝕜 A y v w) x u +
+        connectionCovariantDerivative 𝕜 A (fun y ↦ connectionCurvature 𝕜 A y w u) x v +
+        connectionCovariantDerivative 𝕜 A (fun y ↦ connectionCurvature 𝕜 A y u v) x w = 0 := by
   have hn2 : (2 : ℕ∞ω) ≤ n := le_minSmoothness.trans hn
   have hA1 : HasFDerivAt A (fderiv 𝕜 A x) x :=
     (hA.differentiableAt (zero_lt_two.trans_le hn2).ne').hasFDerivAt
@@ -303,7 +303,7 @@ theorem connectionCurvature_bianchi {n : ℕ∞ω} {A : E → E →L[𝕜] 𝔸}
     (((hAa a).fun_mul' (hAa b)).fun_sub ((hAa b).fun_mul' (hAa a)))).fderiv
   have hS (a b : E) : fderiv 𝕜 (fderiv 𝕜 A) x a b = fderiv 𝕜 (fderiv 𝕜 A) x b a :=
     hA.isSymmSndFDerivAt hn a b
-  simp only [connectionCovariantDeriv_apply, connectionCurvature_apply, Ring.lie_def]
+  simp only [connectionCovariantDerivative_apply, connectionCurvature_apply, Ring.lie_def]
   rw [hderiv, hderiv, hderiv]
   -- The second derivatives of `A` cancel by symmetry; the rest is the Jacobi identity.
   simp [hS v u, hS w u, hS w v, mul_sub, sub_mul, mul_add, add_mul, mul_assoc]
