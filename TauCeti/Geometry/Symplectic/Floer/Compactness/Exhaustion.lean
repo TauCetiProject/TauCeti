@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.Order.Filter.AtTopBot
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Compactness.SigmaCompact
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -43,19 +44,6 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {Ks Kt : ℝ × ℝ → V → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V}
-
-/-- A bound holding eventually on a neighbourhood within a compact set `C` of each of its points
-holds eventually on all of `C`. -/
-private theorem exists_eventually_forall_norm_le_of_isCompact {ι X F : Type*} [TopologicalSpace X]
-    [Norm F] {l : Filter ι} {f : ι → X → F} {C : Set X} (hC : IsCompact C)
-    (h : ∀ x ∈ C, ∃ s ∈ 𝓝[C] x, ∃ M, ∀ᶠ n in l, ∀ y ∈ s, ‖f n y‖ ≤ M) :
-    ∃ M, ∀ᶠ n in l, ∀ y ∈ C, ‖f n y‖ ≤ M := by
-  refine hC.induction_on (p := fun s ↦ ∃ M, ∀ᶠ n in l, ∀ y ∈ s, ‖f n y‖ ≤ M) ⟨0, by simp⟩
-    (fun s t hst ⟨M, hM⟩ ↦ ⟨M, hM.mono fun n hn y hy ↦ hn y (hst hy)⟩)
-    (fun s t ⟨M, hM⟩ ⟨M', hM'⟩ ↦ ⟨max M M', ?_⟩) h
-  filter_upwards [hM, hM'] with n hn hn' y hy
-  rcases hy with hy | hy
-  exacts [(hn y hy).trans (le_max_left _ _), (hn' y hy).trans (le_max_right _ _)]
 
 /-- The compactness theorem on countably many windows `O j ⊆ D j` of a domain `Ω`, for solutions on
 open sets `Uₖ` which eventually contain each compact set `D j`: there are energy thresholds
@@ -194,7 +182,7 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_discrete (ω : SymplecticFor
         fun y hy ↦ hf0 _ y hy.2)
       (inter_subset_inter_right _ (subset_closure.trans hDU)).eventuallySubset)
   · -- Bounds on closed balls about the points of `C`, from their windows, cover `C`.
-    refine exists_eventually_forall_norm_le_of_isCompact hC fun y hy ↦ ?_
+    refine hC.exists_eventually_forall_le_of_forall fun y hy ↦ ?_
     obtain ⟨r, hr, hrG⟩ := Metric.isOpen_iff.1 (hG (j₀ y)) y (hyG (hCZ hy))
     exact ⟨closedBall y (r / 2), mem_nhdsWithin_of_mem_nhds (closedBall_mem_nhds y (by positivity)),
       hbd _ _ (isCompact_closedBall y _) ((closedBall_subset_ball (by linarith)).trans hrG)⟩
