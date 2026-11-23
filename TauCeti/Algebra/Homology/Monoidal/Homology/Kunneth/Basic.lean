@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import Mathlib.RingTheory.Flat.CategoryTheory
@@ -348,6 +350,26 @@ lemma homologyKunneth_comp_eqToHom (e : L' = L) (n : I) :
   simp
 
 end EqToHom
+
+section EqToHomLeft
+
+universe u
+
+variable {R : Type u} [CommRing R] {I : Type*} [Small.{u} I] [AddMonoid I] {c : ComplexShape I}
+  [c.TensorSigns] [DecidableEq I] {K K' : HomologicalComplex (ModuleCat.{u} R) c}
+  (L : HomologicalComplex (ModuleCat.{u} R) c)
+
+/-- The Künneth map is compatible with replacing the first complex by an equal one. -/
+@[reassoc]
+lemma homologyKunneth_comp_eqToHom_left (e : K' = K) (n : I) :
+    homologyKunneth K' L n ≫ eqToHom (congrArg (fun M ↦ (tensorObj M L).homology n) e) =
+      GradedObject.Monoidal.tensorHom (fun p ↦ eqToHom (congrArg (fun M ↦ M.homology p) e))
+        (𝟙 (fun q ↦ L.homology q)) n ≫ homologyKunneth K L n := by
+  subst e
+  refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+  simp
+
+end EqToHomLeft
 
 section FlatZeroDifferential
 

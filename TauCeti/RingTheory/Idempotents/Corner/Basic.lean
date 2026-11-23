@@ -259,9 +259,25 @@ theorem compress_add (x y : A) : he.compress (x + y) = he.compress x + he.compre
 
 end NonUnitalSemiring
 
+@[simp]
+theorem compress_sub {A : Type u} [NonUnitalRing A] {e : A} (he : IsIdempotentElem e) (x y : A) :
+    he.compress (x - y) = he.compress x - he.compress y :=
+  Subtype.ext <| by simp [mul_sub, sub_mul]
+
 section Semiring
 
 variable {A : Type u} [Semiring A] {e : A} (he : IsIdempotentElem e)
+
+/-- The compression of `1` is the unit `e` of the corner `eAe`. -/
+@[simp]
+theorem compress_one : he.compress 1 = 1 :=
+  Subtype.ext <| by simp [he.eq]
+
+/-- The compression of a scalar `r` is the scalar `r` of the corner `eAe`. -/
+@[simp]
+theorem compress_algebraMap {R : Type v} [CommSemiring R] [Algebra R A] (r : R) :
+    he.compress (algebraMap R A r) = algebraMap R he.Corner r :=
+  Subtype.ext <| by simp [Algebra.algebraMap_eq_smul_one]
 
 /-- The product in the corner `eAe` of the compressions `e xᵢ e` of a list `x₁, …, xₙ` is
 `e (x₁ e) ⋯ (xₙ e)`. -/
