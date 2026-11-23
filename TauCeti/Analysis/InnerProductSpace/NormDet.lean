@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.Analysis.InnerProductSpace.Parseval
 import TauCeti.Analysis.InnerProductSpace.SingularValues
 
@@ -388,12 +389,7 @@ theorem ContinuousLinearMap.norm_apply_eq_of_normDet_eq_norm_pow {A : E →L[�
   let u : E := ((‖x‖⁻¹ : ℝ) : 𝕜) • x
   have hu : ‖u‖ = 1 := by
     simp [u, norm_smul, inv_mul_cancel₀ hx0]
-  have horth : Orthonormal 𝕜 (({0} : Set (Fin (m + 1))).domRestrict (fun _ ↦ u)) :=
-    orthonormal_iff_ite.mpr fun ⟨i, hi⟩ ⟨j, hj⟩ ↦ by
-      simp only [Set.mem_singleton_iff] at hi hj
-      subst hi hj
-      simp [Set.domRestrict, hu]
-  obtain ⟨b, hb0⟩ := horth.exists_orthonormalBasis_extension_of_card_eq (by simp [hm])
+  obtain ⟨b, hb0⟩ := TauCeti.exists_orthonormalBasis_fin_apply_zero_eq hm hu
   have hprod : ‖A‖ ^ (m + 1) ≤ ∏ j : Fin (m + 1), ‖A (b j)‖ := by
     have hle := A.toLinearMap.normDet_le_prod_norm b
     simp only [ContinuousLinearMap.coe_coe] at hle
@@ -409,7 +405,7 @@ theorem ContinuousLinearMap.norm_apply_eq_of_normDet_eq_norm_pow {A : E →L[�
           simpa [b.orthonormal.1 j] using A.le_opNorm (b j)
         _ = ‖A‖ ^ m := by simp
     have hstrict : ∏ j : Fin (m + 1), ‖A (b j)‖ < ‖A‖ ^ (m + 1) := by
-      rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ 0), hb0 0 rfl, pow_succ']
+      rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ 0), hb0, pow_succ']
       exact lt_of_le_of_lt (mul_le_mul_of_nonneg_left hrest (norm_nonneg _))
         (mul_lt_mul_of_pos_right hlt (pow_pos hApos m))
     exact hstrict.not_ge hprod

@@ -276,7 +276,7 @@ private theorem ricci_apply_self_nonneg_of_mem_twoNonneg (hn : Module.finrank �
     Module.finrank_pos_iff_exists_ne_zero.mpr ⟨e, norm_ne_zero_iff.mp (he.trans_ne one_ne_zero)⟩
   obtain ⟨n, hn'⟩ := Nat.exists_eq_succ_of_ne_zero hpos.ne'
   obtain ⟨b, hb₀⟩ := exists_orthonormalBasis_fin_apply_zero_eq hn' he
-  -- The `i₀` term `r(e, e, e, e)` vanishes by antisymmetry.
+  -- The term at `b 0 = e`, `r(e, e, e, e)`, vanishes by antisymmetry.
   have hself : r.val ![e, e, e, e] = 0 := by linarith [hR.antisymm_first e e e e]
   -- Each remaining term is the value of the operator on `e ∧ bⱼ`.
   have hterm (j : Fin (n + 1)) :
