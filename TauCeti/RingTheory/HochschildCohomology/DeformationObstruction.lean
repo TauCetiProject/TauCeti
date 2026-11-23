@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finset.NatAntidiagonal
 public import TauCeti.RingTheory.HochschildCohomology.Bimodule
+import TauCeti.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
@@ -39,8 +40,8 @@ Since `μ ∘ ψ + ψ ∘ μ = -δψ` for the Hochschild coboundary `δ`, the co
 `∑_{i + j = n + 1} φᵢ ∘ φⱼ = Oₙ - δφₙ₊₁`                     (`deformationAssociator_succ`)
 
 where the **obstruction** `Oₙ = ∑_{i + j = n + 1, 1 ≤ i, j ≤ n} φᵢ ∘ φⱼ`
-(`algebraDeformationObstruction`) only involves `φ₁, …, φₙ`. So a deformation of order `n`
-extends to order `n + 1` exactly when `δφₙ₊₁ = Oₙ`
+(`algebraDeformationObstruction`) only involves `φ₁, …, φₙ`. So the prescribed coefficient
+`φₙ₊₁` extends a deformation of order `n` to order `n + 1` exactly when `δφₙ₊₁ = Oₙ`
 (`IsAlgebraDeformationOfOrder.isAlgebraDeformationOfOrder_succ_iff`). For `n = 0` the obstruction
 vanishes, and the deformations of order one are the Hochschild `2`-cocycles
 (`isAlgebraDeformationOfOrder_one_iff`).
@@ -67,7 +68,7 @@ structure enters through `φ₀ = μ` and the Hochschild differential.
 
 ## Main definitions
 
-* `TauCeti.gerstenhaberComp`: Gerstenhaber's composition of two `2`-cochains.
+* `MultilinearMap.gerstenhaberComp`: Gerstenhaber's composition of two `2`-cochains.
 * `TauCeti.deformationAssociator`: the coefficient `∑_{i + j = k} φᵢ ∘ φⱼ` of `tᵏ` in the
   associator of `μₜ`.
 * `TauCeti.IsAlgebraDeformationOfOrder`: a deformation of order `n` of `A`.
@@ -103,43 +104,39 @@ namespace TauCeti
 
 section Bilinear
 
-variable {R A : Type*} [CommSemiring R] [AddCommGroup A] [Module R A]
+variable {R A : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
 
-/-- A `2`-cochain as a bilinear map, `a ↦ b ↦ f(a, b)`. -/
+/-- A `2`-cochain as a bilinear map, `a ↦ b ↦ f(a, b)`: Mathlib's `MultilinearMap.curryLeft`
+followed by the identification of unary multilinear maps with linear maps. -/
 private def bil (f : (Fin 2 → A) →ₘₗ[R] A) : A →ₗ[R] A →ₗ[R] A :=
-  LinearMap.mk₂ R (fun a b ↦ f ![a, b])
-    (fun a a' b ↦ by
-      have h (x : A) : Function.update ![0, b] 0 x = ![x, b] := by
-        ext i; fin_cases i <;> rfl
-      simpa only [h] using f.map_update_add ![0, b] 0 a a')
-    (fun r a b ↦ by
-      have h (x : A) : Function.update ![0, b] 0 x = ![x, b] := by
-        ext i; fin_cases i <;> rfl
-      simpa only [h, RingHom.id_apply] using f.map_update_smul ![0, b] 0 r a)
-    (fun a b b' ↦ by
-      have h (x : A) : Function.update ![a, 0] 1 x = ![a, x] := by
-        ext i; fin_cases i <;> rfl
-      simpa only [h] using f.map_update_add ![a, 0] 1 b b')
-    (fun r a b ↦ by
-      have h (x : A) : Function.update ![a, 0] 1 x = ![a, x] := by
-        ext i; fin_cases i <;> rfl
-      simpa only [h, RingHom.id_apply] using f.map_update_smul ![a, 0] 1 r b)
+  ((MultilinearMap.ofSubsingletonₗ (S := R) (σ₁₂ := RingHom.id R) (N₁ := A) (N₂ := A)
+    (0 : Fin 1)).symm : _ →ₗ[R] A →ₗ[R] A) ∘ₗ f.curryLeft
 
-private theorem bil_apply (f : (Fin 2 → A) →ₘₗ[R] A) (a b : A) : bil f a b = f ![a, b] := rfl
+private theorem bil_apply (f : (Fin 2 → A) →ₘₗ[R] A) (a b : A) : bil f a b = f ![a, b] := by
+  simp only [bil, MultilinearMap.ofSubsingletonₗ, Equiv.toFun_as_coe, Equiv.invFun_as_coe,
+    LinearEquiv.symm_mk, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.coe_comp, Function.comp_apply,
+    MultilinearMap.ofSubsingleton_symm_apply_apply, MultilinearMap.curryLeft_apply]
+  congr 1
+  ext i
+  fin_cases i <;> rfl
 
 /-- A `2`-cochain as a biadditive map, `a ↦ b ↦ f(a, b)`. -/
 private def bilAdd (f : (Fin 2 → A) →ₘₗ[R] A) : A →+ A →+ A :=
-  AddMonoidHom.mk' (fun a ↦ (bil f a).toAddMonoidHom) fun a b ↦ by
-    ext c
-    simp [map_add]
+  LinearMap.toAddMonoidHom'.comp (bil f).toAddMonoidHom
 
 private theorem bilAdd_apply (f : (Fin 2 → A) →ₘₗ[R] A) (a b : A) :
     bilAdd f a b = f ![a, b] :=
-  rfl
+  bil_apply f a b
+
+end Bilinear
+
+section Composition
+
+variable {R A : Type*} [CommSemiring R] [AddCommGroup A] [Module R A]
 
 /-- **Gerstenhaber's composition** of two Hochschild `2`-cochains of `A` with coefficients in
 `A`: the `3`-cochain `(f ∘ g)(a, b, c) = f(g(a, b), c) - f(a, g(b, c))`. -/
-def gerstenhaberComp (f g : (Fin 2 → A) →ₘₗ[R] A) : (Fin 3 → A) →ₘₗ[R] A :=
+def _root_.MultilinearMap.gerstenhaberComp (f g : (Fin 2 → A) →ₘₗ[R] A) : (Fin 3 → A) →ₘₗ[R] A :=
   MultilinearMap.mk' (fun v ↦ bil f (bil g (v 0) (v 1)) (v 2) - bil f (v 0) (bil g (v 1) (v 2)))
     (fun v i x y ↦ by
       fin_cases i <;> simp <;> abel)
@@ -147,37 +144,70 @@ def gerstenhaberComp (f g : (Fin 2 → A) →ₘₗ[R] A) : (Fin 3 → A) →ₘ
       fin_cases i <;> simp [smul_sub])
 
 /-- Evaluating Gerstenhaber's composition. -/
-theorem gerstenhaberComp_apply (f g : (Fin 2 → A) →ₘₗ[R] A) (v : Fin 3 → A) :
-    gerstenhaberComp f g v = f ![g ![v 0, v 1], v 2] - f ![v 0, g ![v 1, v 2]] := by
-  simp [gerstenhaberComp, bil_apply]
+theorem _root_.MultilinearMap.gerstenhaberComp_apply (f g : (Fin 2 → A) →ₘₗ[R] A)
+    (v : Fin 3 → A) :
+    f.gerstenhaberComp g v = f ![g ![v 0, v 1], v 2] - f ![v 0, g ![v 1, v 2]] := by
+  simp [MultilinearMap.gerstenhaberComp, bil_apply]
 
 
 /-! ### The associator coefficients and the obstruction of a family of cochains -/
 
 /-- Gerstenhaber's composition vanishes when its first argument does. -/
 @[simp]
-theorem gerstenhaberComp_zero_left (g : (Fin 2 → A) →ₘₗ[R] A) : gerstenhaberComp 0 g = 0 := by
+theorem _root_.MultilinearMap.gerstenhaberComp_zero_left (g : (Fin 2 → A) →ₘₗ[R] A) :
+    (0 : (Fin 2 → A) →ₘₗ[R] A).gerstenhaberComp g = 0 := by
   ext v
-  simp [gerstenhaberComp_apply]
+  simp [MultilinearMap.gerstenhaberComp_apply]
 
 /-- Gerstenhaber's composition vanishes when its second argument does. -/
 @[simp]
-theorem gerstenhaberComp_zero_right (f : (Fin 2 → A) →ₘₗ[R] A) : gerstenhaberComp f 0 = 0 := by
+theorem _root_.MultilinearMap.gerstenhaberComp_zero_right (f : (Fin 2 → A) →ₘₗ[R] A) :
+    f.gerstenhaberComp 0 = 0 := by
   ext v
-  have h : ∀ x : A, f ![0, x] = 0 := fun x ↦ by rw [← bil_apply, map_zero, LinearMap.zero_apply]
-  have h' : ∀ x : A, f ![x, 0] = 0 := fun x ↦ by rw [← bil_apply, map_zero]
-  simp [gerstenhaberComp_apply, h, h']
+  have h : ∀ x : A, f ![0, x] = 0 := fun x ↦ f.map_coord_zero 0 rfl
+  have h' : ∀ x : A, f ![x, 0] = 0 := fun x ↦ f.map_coord_zero 1 rfl
+  simp [MultilinearMap.gerstenhaberComp_apply, h, h']
+
+/-- Gerstenhaber's composition is additive in its first argument. -/
+theorem _root_.MultilinearMap.gerstenhaberComp_add_left (f f' g : (Fin 2 → A) →ₘₗ[R] A) :
+    (f + f').gerstenhaberComp g = f.gerstenhaberComp g + f'.gerstenhaberComp g := by
+  ext v
+  simp only [MultilinearMap.gerstenhaberComp_apply, add_apply]
+  abel
+
+/-- Gerstenhaber's composition is additive in its second argument. -/
+theorem _root_.MultilinearMap.gerstenhaberComp_add_right (f g g' : (Fin 2 → A) →ₘₗ[R] A) :
+    f.gerstenhaberComp (g + g') = f.gerstenhaberComp g + f.gerstenhaberComp g' := by
+  ext v
+  simp only [MultilinearMap.gerstenhaberComp_apply, add_apply, ← bil_apply, map_add,
+    LinearMap.add_apply]
+  abel
+
+/-- Gerstenhaber's composition is `R`-linear in its first argument. -/
+theorem _root_.MultilinearMap.gerstenhaberComp_smul_left (c : R)
+    (f g : (Fin 2 → A) →ₘₗ[R] A) :
+    (c • f).gerstenhaberComp g = c • f.gerstenhaberComp g := by
+  ext v
+  simp only [MultilinearMap.gerstenhaberComp_apply, smul_apply, smul_sub]
+
+/-- Gerstenhaber's composition is `R`-linear in its second argument. -/
+theorem _root_.MultilinearMap.gerstenhaberComp_smul_right (c : R)
+    (f g : (Fin 2 → A) →ₘₗ[R] A) :
+    f.gerstenhaberComp (c • g) = c • f.gerstenhaberComp g := by
+  ext v
+  simp only [MultilinearMap.gerstenhaberComp_apply, smul_apply, ← bil_apply, map_smul,
+    LinearMap.smul_apply, smul_sub]
 
 /-- The coefficient `∑_{i + j = k} φᵢ ∘ φⱼ` of `tᵏ` in the associator of the multiplication
-`μₜ = ∑ tⁱ φᵢ`, Gerstenhaber's composition `∘` being `TauCeti.gerstenhaberComp`. -/
+`μₜ = ∑ tⁱ φᵢ`, Gerstenhaber's composition `∘` being `MultilinearMap.gerstenhaberComp`. -/
 def deformationAssociator (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (k : ℕ) : (Fin 3 → A) →ₘₗ[R] A :=
-  ∑ x ∈ Finset.antidiagonal k, gerstenhaberComp (φ x.1) (φ x.2)
+  ∑ x ∈ Finset.antidiagonal k, MultilinearMap.gerstenhaberComp (φ x.1) (φ x.2)
 
 /-- Evaluating the coefficients of the associator. -/
 theorem deformationAssociator_apply (φ : ℕ → (Fin 2 → A) →ₘₗ[R] A) (k : ℕ) (v : Fin 3 → A) :
     deformationAssociator φ k v = ∑ x ∈ Finset.antidiagonal k,
       (φ x.1 ![φ x.2 ![v 0, v 1], v 2] - φ x.1 ![v 0, φ x.2 ![v 1, v 2]]) := by
-  simp [deformationAssociator, gerstenhaberComp_apply]
+  simp [deformationAssociator, MultilinearMap.gerstenhaberComp_apply]
 
 /-- The coefficient of `tᵏ` only depends on the coefficients `φ 0, …, φ k`. -/
 theorem deformationAssociator_congr {φ ψ : ℕ → (Fin 2 → A) →ₘₗ[R] A} {k : ℕ}
@@ -199,14 +229,23 @@ theorem algebraDeformationObstruction_def (φ : ℕ → (Fin 2 → A) →ₘₗ[
       deformationAssociator (fun i ↦ if i ≤ n then φ i else 0) (n + 1) :=
   (rfl)
 
-/-- The obstruction only depends on the coefficients `φ 0, …, φ n`. -/
+/-- The obstruction only depends on the coefficients `φ 1, …, φ n`. -/
 theorem algebraDeformationObstruction_congr {φ ψ : ℕ → (Fin 2 → A) →ₘₗ[R] A} {n : ℕ}
-    (h : ∀ i ≤ n, φ i = ψ i) :
+    (h : ∀ i, 1 ≤ i → i ≤ n → φ i = ψ i) :
     algebraDeformationObstruction φ n = algebraDeformationObstruction ψ n := by
   rw [algebraDeformationObstruction_def, algebraDeformationObstruction_def]
-  refine deformationAssociator_congr fun i _ ↦ ?_
-  split_ifs with hi
-  exacts [h i hi, rfl]
+  refine Finset.sum_congr rfl fun x hx ↦ ?_
+  rw [Finset.mem_antidiagonal] at hx
+  by_cases h₁ : x.1 = 0
+  · have h₂ : ¬ x.2 ≤ n := by omega
+    simp [h₂]
+  by_cases h₂ : x.2 = 0
+  · have h₁' : ¬ x.1 ≤ n := by omega
+    simp [h₁']
+  have h₁' : x.1 ≤ n := by omega
+  have h₂' : x.2 ≤ n := by omega
+  simp only [h₁', h₂', ite_true]
+  rw [h x.1 (by omega) h₁', h x.2 (by omega) h₂']
 
 /-- There is no obstruction to deformations of order one. -/
 @[simp]
@@ -215,39 +254,11 @@ theorem algebraDeformationObstruction_zero (φ : ℕ → (Fin 2 → A) →ₘₗ
   simp [algebraDeformationObstruction_def, deformationAssociator,
     Finset.Nat.sum_antidiagonal_succ]
 
-end Bilinear
+end Composition
 
-section Teichmuller
+open MultilinearMap (gerstenhaberComp gerstenhaberComp_apply gerstenhaberComp_zero_left
+  gerstenhaberComp_zero_right)
 
-variable {M : Type*} [AddCommMonoid M]
-
-/-- Reassociating a sum over `p + i + j = N`, from `(p + i) + j` to `p + (i + j)`. -/
-private theorem sum_antidiagonal_antidiagonal_fst (N : ℕ) (F : ℕ → ℕ → ℕ → M) :
-    ∑ x ∈ Finset.antidiagonal N, ∑ y ∈ Finset.antidiagonal x.1, F y.1 y.2 x.2 =
-      ∑ x ∈ Finset.antidiagonal N, ∑ y ∈ Finset.antidiagonal x.2, F x.1 y.1 y.2 := by
-  rw [Finset.sum_sigma', Finset.sum_sigma']
-  refine Finset.sum_nbij' (fun z ↦ ⟨(z.2.1, z.2.2 + z.1.2), (z.2.2, z.1.2)⟩)
-    (fun z ↦ ⟨(z.1.1 + z.2.1, z.2.2), (z.1.1, z.2.1)⟩) ?_ ?_ ?_ ?_ ?_
-  all_goals
-    rintro ⟨⟨a, b⟩, ⟨c, d⟩⟩
-    simp only [Finset.mem_sigma, Finset.mem_antidiagonal, Sigma.mk.injEq, Prod.mk.injEq,
-      heq_eq_eq, and_true, true_and, implies_true]
-  all_goals omega
-
-/-- Cyclically permuting the indices of a sum over `p + i + j = N`. -/
-private theorem sum_antidiagonal_antidiagonal_cycle (N : ℕ) (F : ℕ → ℕ → ℕ → M) :
-    ∑ x ∈ Finset.antidiagonal N, ∑ y ∈ Finset.antidiagonal x.2, F y.1 y.2 x.1 =
-      ∑ x ∈ Finset.antidiagonal N, ∑ y ∈ Finset.antidiagonal x.2, F x.1 y.1 y.2 := by
-  rw [← sum_antidiagonal_antidiagonal_fst, ← Finset.Nat.sum_antidiagonal_swap]
-  rfl
-
-/-- Swapping the last two indices of a sum over `p + i + j = N`. -/
-private theorem sum_antidiagonal_antidiagonal_swap (N : ℕ) (F : ℕ → ℕ → ℕ → M) :
-    ∑ x ∈ Finset.antidiagonal N, ∑ y ∈ Finset.antidiagonal x.2, F x.1 y.2 y.1 =
-      ∑ x ∈ Finset.antidiagonal N, ∑ y ∈ Finset.antidiagonal x.2, F x.1 y.1 y.2 :=
-  Finset.sum_congr rfl fun x _ ↦ Finset.Nat.sum_antidiagonal_swap (f := fun y ↦ F x.1 y.1 y.2)
-
-end Teichmuller
 
 /-- **The Teichmüller identity, coefficientwise.** Let `μₜ = ∑ tⁱ ψᵢ` be a power series of
 biadditive operations on `M`, and let `Φ q` be the coefficient of `t^q` in its associator
@@ -263,28 +274,40 @@ private theorem sum_antidiagonal_teichmuller {M : Type*} [AddCommGroup M] (ψ : 
   simp only [hΦ, map_sum, map_sub, AddMonoidHom.finsetSum_apply, AddMonoidHom.sub_apply,
     Finset.sum_sub_distrib, Finset.sum_add_distrib]
   -- The ten triple sums cancel in pairs after permuting their indices.
-  have e₁ := sum_antidiagonal_antidiagonal_cycle N fun p i j ↦ ψ p a (ψ i (ψ j b c) d)
-  have e₂ := sum_antidiagonal_antidiagonal_cycle N fun p i j ↦ ψ p a (ψ i b (ψ j c d))
-  have e₃ := sum_antidiagonal_antidiagonal_cycle N fun p i j ↦ ψ p (ψ i (ψ j a b) c) d
-  have e₄ := sum_antidiagonal_antidiagonal_cycle N fun p i j ↦ ψ p (ψ i a (ψ j b c)) d
-  have e₅ := sum_antidiagonal_antidiagonal_cycle N fun p i j ↦ ψ i (ψ p a b) (ψ j c d)
-  have e₆ := sum_antidiagonal_antidiagonal_swap N fun p i j ↦ ψ i (ψ j a b) (ψ p c d)
+  have e₁ := Finset.Nat.sum_antidiagonal_sum_antidiagonal_cycle N
+    fun p i j ↦ ψ p a (ψ i (ψ j b c) d)
+  have e₂ := Finset.Nat.sum_antidiagonal_sum_antidiagonal_cycle N
+    fun p i j ↦ ψ p a (ψ i b (ψ j c d))
+  have e₃ := Finset.Nat.sum_antidiagonal_sum_antidiagonal_cycle N
+    fun p i j ↦ ψ p (ψ i (ψ j a b) c) d
+  have e₄ := Finset.Nat.sum_antidiagonal_sum_antidiagonal_cycle N
+    fun p i j ↦ ψ p (ψ i a (ψ j b c)) d
+  have e₅ := Finset.Nat.sum_antidiagonal_sum_antidiagonal_cycle N
+    fun p i j ↦ ψ i (ψ p a b) (ψ j c d)
+  have e₆ := Finset.Nat.sum_antidiagonal_sum_antidiagonal_swap N
+    fun p i j ↦ ψ i (ψ j a b) (ψ p c d)
   rw [e₁, e₂, e₃, e₄, ← e₅, e₆]
   abel
+
+/-- A triple is the tuple of its entries. -/
+private theorem eq_vecCons_three {α : Type*} (v : Fin 3 → α) : v = ![v 0, v 1, v 2] := by
+  ext i
+  fin_cases i <;> rfl
+
+/-- A quadruple is the tuple of its entries. -/
+private theorem eq_vecCons_four {α : Type*} (v : Fin 4 → α) : v = ![v 0, v 1, v 2, v 3] := by
+  ext i
+  fin_cases i <;> rfl
 
 section Coboundary
 
 variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
 
-/-- A `3`-cochain is determined by its values on the tuples `![a, b, c]`. -/
-private theorem apply_eq_apply_vecCons_three (f : (Fin 3 → A) →ₘₗ[R] A) (v : Fin 3 → A) :
-    f v = f ![v 0, v 1, v 2] := by
-  congr 1
-  ext i
-  fin_cases i <;> rfl
 
 /-- The coboundary of a `2`-cochain with coefficients in `A`:
-`(δψ)(a, b, c) = a ψ(b, c) - ψ(ab, c) + ψ(a, bc) - ψ(a, b) c`. -/
+`(δψ)(a, b, c) = a ψ(b, c) - ψ(ab, c) + ψ(a, bc) - ψ(a, b) c`. This is the case of coefficients
+in `A` of `hochschildBimoduleCoboundary_two_apply` in
+https://github.com/TauCetiProject/TauCeti/pull/45282, kept private here until that lands. -/
 private theorem coboundary_two_apply (ψ : (Fin 2 → A) →ₘₗ[R] A) (a b c : A) :
     hochschildBimoduleCoboundary R A A 2 ψ ![a, b, c] =
       a * ψ ![b, c] - ψ ![a * b, c] + ψ ![a, b * c] - ψ ![a, b] * c := by
@@ -306,20 +329,7 @@ private theorem coboundary_three_apply (χ : (Fin 3 → A) →ₘₗ[R] A) (a b 
     hochschildBimoduleCoboundary R A A 3 χ ![a, b, c, d] =
       a * χ ![b, c, d] - χ ![a * b, c, d] + χ ![a, b * c, d] - χ ![a, b, c * d] +
         χ ![a, b, c] * d := by
-  have h₀ : Fin.contractNth 0 (· * ·) ![a, b, c, d] = ![a * b, c, d] := by
-    ext i
-    fin_cases i <;> rfl
-  have h₁ : Fin.contractNth 1 (· * ·) ![a, b, c, d] = ![a, b * c, d] := by
-    ext i
-    fin_cases i <;> rfl
-  have h₂ : Fin.contractNth 2 (· * ·) ![a, b, c, d] = ![a, b, c * d] := by
-    ext i
-    fin_cases i <;> rfl
-  have h₃ : Fin.init ![a, b, c, d] = ![a, b, c] := by
-    ext i
-    fin_cases i <;> rfl
-  rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_three]
-  simp [h₀, h₁, h₂, h₃, sub_eq_add_neg, add_assoc]
+  simpa [op_smul_eq_mul] using hochschildBimoduleCoboundary_three_apply χ a b c d
 
 end Coboundary
 
@@ -329,12 +339,12 @@ variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
 
 /-- Composing with the multiplication on either side gives minus the Hochschild coboundary:
 `μ ∘ ψ + ψ ∘ μ = -δψ`. -/
-theorem gerstenhaberComp_mkPiAlgebraFin_add (ψ : (Fin 2 → A) →ₘₗ[R] A) :
+theorem _root_.MultilinearMap.gerstenhaberComp_mkPiAlgebraFin_add (ψ : (Fin 2 → A) →ₘₗ[R] A) :
     gerstenhaberComp (MultilinearMap.mkPiAlgebraFin R 2 A) ψ +
         gerstenhaberComp ψ (MultilinearMap.mkPiAlgebraFin R 2 A) =
       -hochschildBimoduleCoboundary R A A 2 ψ := by
   ext v
-  rw [apply_eq_apply_vecCons_three (-_), neg_apply, coboundary_two_apply]
+  rw [eq_vecCons_three v, neg_apply, coboundary_two_apply]
   simp [gerstenhaberComp_apply]
   abel
 
@@ -404,10 +414,12 @@ theorem deformationAssociator_succ {φ : ℕ → (Fin 2 → A) →ₘₗ[R] A}
     by_cases hb : b = 0
     · obtain rfl : a = n + 1 := by omega
       simp [hb]
-    · simp [ha, hb, show a ≤ n by omega, show b ≤ n by omega]
+    · have ha' : a ≤ n := by omega
+      have hb' : b ≤ n := by omega
+      simp [ha, hb, ha', hb']
   rw [deformationAssociator, Finset.sum_congr rfl key, Finset.sum_add_distrib,
     Finset.sum_add_distrib, algebraDeformationObstruction_def, deformationAssociator,
-    sub_eq_add_neg, ← gerstenhaberComp_mkPiAlgebraFin_add, ← h₀]
+    sub_eq_add_neg, ← MultilinearMap.gerstenhaberComp_mkPiAlgebraFin_add, ← h₀]
   simp
 
 /-- **Extending a deformation by one order.** A deformation of order `n` is a deformation of
@@ -452,13 +464,11 @@ theorem IsAlgebraDeformationOfOrder.algebraDeformationObstruction_mem_hochschild
     (fun q x y z ↦ by simp [hΦ, deformationAssociator_apply, bilAdd_apply]) (n + 1)
   rw [mem_hochschildBimoduleCocycles_iff]
   ext v
-  have hv : v = ![v 0, v 1, v 2, v 3] := by
-    ext i
-    fin_cases i <;> rfl
+  have hv := eq_vecCons_four v
   have e := key (v 0) (v 1) (v 2) (v 3)
   rw [Finset.Nat.sum_antidiagonal_succ, Finset.sum_eq_zero fun x hx ↦ by
-    rw [Finset.mem_antidiagonal] at hx
-    simp [hzero (show x.2 ≤ n by omega)], add_zero] at e
+    have hx2 : x.2 ≤ n := by rw [Finset.mem_antidiagonal] at hx; omega
+    simp [hzero hx2], add_zero] at e
   rw [hv, coboundary_three_apply, zero_apply, ← e]
   simp [bilAdd_apply, hφ', hΦ, h.zero_eq, algebraDeformationObstruction_def]
 
@@ -493,7 +503,7 @@ theorem IsAlgebraDeformationOfOrder.obstructionClass_eq_zero_iff {n : ℕ}
       ∀ i ≤ n, φ i = Function.update φ (n + 1) ψ i := fun i hi ↦
     (Function.update_of_ne (a' := n + 1) (by omega) ψ φ).symm
   simp_rw [fun ψ ↦ (h.congr (hagree ψ)).isAlgebraDeformationOfOrder_succ_iff,
-    Function.update_self, ← algebraDeformationObstruction_congr (hagree _)]
+    Function.update_self, ← algebraDeformationObstruction_congr fun i _ hi ↦ hagree _ i hi]
   rw [obstructionClass_def, hochschildBimoduleCohomology.mk_eq_zero_iff]
   exact mem_hochschildBimoduleCoboundaries_succ_iff (n := 2)
 
