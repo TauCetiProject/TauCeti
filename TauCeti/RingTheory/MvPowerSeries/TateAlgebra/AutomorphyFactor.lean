@@ -52,10 +52,10 @@ and `j γ` is built from a character evaluated on `c z + d`; the Möbius case is
   `SlashAction` indexed by the automorphy factors.
 * `TauCeti.MvPowerSeries.RestrictedAutomorphyFactor.twist`: the twist of an automorphy factor by
   a character `χ : M →* R`, whose slash operators are scaled by `χ`
-  (`TauCeti.MvPowerSeries.RestrictedAutomorphyFactor.slash_twist_apply`).
+  (`TauCeti.MvPowerSeries.RestrictedAutomorphyFactor.twist_slash_apply`).
 * `TauCeti.MvPowerSeries.RestrictedAutomorphyFactor.comp`: the pullback of an automorphy factor
   along a monoid homomorphism, whose slash action is the original one through the homomorphism
-  (`TauCeti.MvPowerSeries.RestrictedAutomorphyFactor.slash_comp`).
+  (`TauCeti.MvPowerSeries.RestrictedAutomorphyFactor.comp_slash`).
 
 ## Main results
 
@@ -217,14 +217,14 @@ theorem slashAction_map (γ : M) (f : IsRestricted.subring (R := R) fun _ : Fin 
 
 /-- The slash operators of a twist are those of the original factor, scaled by the character:
 `f|_{A.twist χ} γ = χ γ • f|_A γ`. -/
-theorem slash_twist_apply (χ : M →* R) (γ : M)
+theorem twist_slash_apply (χ : M →* R) (γ : M)
     (f : IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ)) :
     (A.twist χ).slash (op γ) f = χ γ • A.slash (op γ) f := by
   simp
 
 /-- The slash action of a pullback is the slash action through the homomorphism:
 `f|_{A.comp φ} γ = f|_A (φ γ)`. -/
-theorem slash_comp (φ : M' →* M) (γ : M') : (A.comp φ).slash (op γ) = A.slash (op (φ γ)) :=
+theorem comp_slash (φ : M' →* M) (γ : M') : (A.comp φ).slash (op γ) = A.slash (op (φ γ)) :=
   (rfl)
 
 end RestrictedAutomorphyFactor

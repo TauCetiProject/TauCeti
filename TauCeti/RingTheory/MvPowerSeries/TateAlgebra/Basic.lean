@@ -722,6 +722,19 @@ instance : IsBoundedSMul R (IsRestricted.subring (R := R) c) :=
     simpa only [Algebra.smul_def, norm_algebraMap_isRestrictedSubring] using
       norm_mul_le (algebraMap R (IsRestricted.subring (R := R) c) a) f
 
+/-- A scalar multiple `a Xᵢ` of a variable has Gauss norm `‖a‖ cᵢ`. -/
+@[simp]
+theorem norm_smul_X (a : R) (i : σ) :
+    ‖a • (⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :
+      IsRestricted.subring (R := R) c)‖ = ‖a‖ * c i := by
+  classical
+  have h : a • (⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :
+      IsRestricted.subring (R := R) c) =
+        ⟨monomial (Finsupp.single i 1) a, isRestricted_monomial c _ a⟩ := by
+    rw [mk_monomial_eq_algebraMap_mul_prod, Finsupp.prod_single_index (by simp), pow_one,
+      Algebra.smul_def]
+  rw [h, norm_monomial, Finsupp.prod_single_index (by simp), pow_one]
+
 /-- The constant-series embedding is an isometry. -/
 theorem isometry_algebraMap_isRestrictedSubring :
     Isometry (algebraMap R (IsRestricted.subring (R := R) c)) :=

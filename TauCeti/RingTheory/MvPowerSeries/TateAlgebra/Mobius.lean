@@ -19,18 +19,21 @@ norm one (`TauCeti.IsNormMulUnit`) acts on the closed unit disc by the Möbius t
 `z ↦ (a z + b) / (c z + d)`: since `‖c‖ < 1 = ‖d‖`, the denominator `c z + d` is a unit of the
 Tate algebra `R⟨z⟩`, given by a Neumann series, and the quotient is a restricted series of Gauss
 norm at most one. Such matrices form a monoid (`TauCeti.MvPowerSeries.mobiusSubmonoid`). Over
-`ℚ_p`, or over a Banach algebra over a finite extension of `ℚ_p` along an embedding, it contains
-the monoids `Σ₀(pᵗ)` of integral matrices with `c ≡ 0 mod pᵗ` and unit `d` that act on the
-coefficient modules of overconvergent automorphic forms.
+`ℚ_p`, or over a Banach algebra over a finite extension of `ℚ_p` through a norm-preserving
+embedding (`TauCeti.MvPowerSeries.map_mem_mobiusSubmonoid`), it contains, for `t ≥ 1`, the monoids
+`Σ₀(pᵗ)` of integral matrices with `c ≡ 0 mod pᵗ` and unit `d` that act on the coefficient
+modules of overconvergent automorphic forms.
 
 For a `k`-tuple of such matrices, one for each variable, the series
 `TauCeti.MvPowerSeries.mobius i g = (a Xᵢ + b) (c Xᵢ + d)⁻¹` are formed in the unit Tate algebra
-`R⟨X₁, …, X_k⟩`, and the denominators `c Xᵢ + d` are `TauCeti.MvPowerSeries.mobiusDenom i g`. The
+`R⟨X₁, …, X_k⟩`, with numerators `a Xᵢ + b` (`TauCeti.MvPowerSeries.mobiusNum i g`) and
+denominators `c Xᵢ + d` (`TauCeti.MvPowerSeries.mobiusDenom i g`). The
 main identity is the composition law `w_g(w_δ) = w_{g δ}`
 (`TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobius`), proved by analytic substitution in the
 Tate algebra, together with the cocycle law of the denominators
 `(c w_δ + d) (c' X + d') = c'' X + d''` for `g δ = !![a'', b''; c'', d'']`
-(`TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusDenom_mul`). Neither uses evaluation at
+(`TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusDenom_mul`) and its numerator analogue
+(`TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusNum_mul`). Neither uses evaluation at
 points, so both hold over nonreduced and integral coefficient rings.
 
 Together they make `γ ↦ (w_γ, ∏ᵢ (cᵢ Xᵢ + dᵢ) ^ nᵢ)` a restricted automorphy factor
@@ -42,6 +45,7 @@ norm-nonincreasing operators on `R⟨X⟩`.
 
 * `TauCeti.MvPowerSeries.mobiusSubmonoid`: the monoid of matrices `!![a, b; c, d]` with
   `‖a‖, ‖b‖ ≤ 1`, `‖c‖ < 1` and `d` a multiplicative unit of norm one.
+* `TauCeti.MvPowerSeries.mobiusNum`: the numerator `a Xᵢ + b`.
 * `TauCeti.MvPowerSeries.mobiusDenom`: the denominator `c Xᵢ + d`.
 * `TauCeti.MvPowerSeries.mobius`: the Möbius series `(a Xᵢ + b) (c Xᵢ + d)⁻¹`.
 * `TauCeti.MvPowerSeries.mobiusAutomorphyFactor`: the automorphy factor of weight `n`.
@@ -52,10 +56,11 @@ norm-nonincreasing operators on `R⟨X⟩`.
   the denominator is a multiplicative unit of norm one.
 * `TauCeti.MvPowerSeries.mobius_mul_mobiusDenom`, `TauCeti.MvPowerSeries.norm_mobius_le`: the
   Möbius series is the quotient `(a Xᵢ + b) / (c Xᵢ + d)` and lies in the closed unit ball.
-* `TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusDenom_mul`: the cocycle law of the
-  denominators.
+* `TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusDenom_mul`,
+  `TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusNum_mul`: the cocycle laws of the
+  denominators and numerators.
 * `TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobius`: the composition law of Möbius series.
-* `TauCeti.MvPowerSeries.norm_factor_mobiusAutomorphyFactor`: the weight-`n` factor has norm one,
+* `TauCeti.MvPowerSeries.norm_mobiusAutomorphyFactor_factor`: the weight-`n` factor has norm one,
   so its slash operators do not increase norms.
 
 ## References
@@ -78,7 +83,7 @@ variable (R : Type*) [NormedRing R] [NormOneClass R] [IsUltrametricDist R]
   [HasSummableGeomSeries R]
 
 /-- The monoid of `2 × 2` matrices `!![a, b; c, d]` over `R` with `‖a‖ ≤ 1`, `‖b‖ ≤ 1`,
-`‖c‖ < 1` and `d` a multiplicative unit of norm one. These are the matrices whose Möbius
+`‖c‖ < 1` and `d` a multiplicative unit of norm one. For these matrices the Möbius
 transformation `z ↦ (a z + b) / (c z + d)` is an analytic self-map of the closed unit disc with
 unit denominator `c z + d`. -/
 def mobiusSubmonoid : Submonoid (Matrix (Fin 2) (Fin 2) R) where
@@ -113,6 +118,31 @@ theorem mem_mobiusSubmonoid_iff {g : Matrix (Fin 2) (Fin 2) R} :
       ‖g 0 0‖ ≤ 1 ∧ ‖g 0 1‖ ≤ 1 ∧ ‖g 1 0‖ < 1 ∧ IsNormMulUnit (g 1 1) ∧ ‖g 1 1‖ = 1 :=
   Iff.rfl
 
+/-- The upper left entry of a matrix in `mobiusSubmonoid R` has norm at most one. -/
+theorem norm_upperLeft_le_one_of_mem_mobiusSubmonoid {g : Matrix (Fin 2) (Fin 2) R}
+    (hg : g ∈ mobiusSubmonoid R) : ‖g 0 0‖ ≤ 1 :=
+  (mem_mobiusSubmonoid_iff.mp hg).1
+
+/-- The upper right entry of a matrix in `mobiusSubmonoid R` has norm at most one. -/
+theorem norm_upperRight_le_one_of_mem_mobiusSubmonoid {g : Matrix (Fin 2) (Fin 2) R}
+    (hg : g ∈ mobiusSubmonoid R) : ‖g 0 1‖ ≤ 1 :=
+  (mem_mobiusSubmonoid_iff.mp hg).2.1
+
+/-- The lower left entry of a matrix in `mobiusSubmonoid R` has norm less than one. -/
+theorem norm_lowerLeft_lt_one_of_mem_mobiusSubmonoid {g : Matrix (Fin 2) (Fin 2) R}
+    (hg : g ∈ mobiusSubmonoid R) : ‖g 1 0‖ < 1 :=
+  (mem_mobiusSubmonoid_iff.mp hg).2.2.1
+
+/-- The lower right entry of a matrix in `mobiusSubmonoid R` is a multiplicative unit. -/
+theorem isNormMulUnit_lowerRight_of_mem_mobiusSubmonoid {g : Matrix (Fin 2) (Fin 2) R}
+    (hg : g ∈ mobiusSubmonoid R) : IsNormMulUnit (g 1 1) :=
+  (mem_mobiusSubmonoid_iff.mp hg).2.2.2.1
+
+/-- The lower right entry of a matrix in `mobiusSubmonoid R` has norm one. -/
+theorem norm_lowerRight_eq_one_of_mem_mobiusSubmonoid {g : Matrix (Fin 2) (Fin 2) R}
+    (hg : g ∈ mobiusSubmonoid R) : ‖g 1 1‖ = 1 :=
+  (mem_mobiusSubmonoid_iff.mp hg).2.2.2.2
+
 /-- A matrix with lower right entry one lies in `mobiusSubmonoid R` exactly when its other
 entries satisfy `‖a‖ ≤ 1`, `‖b‖ ≤ 1` and `‖c‖ < 1`. This covers the diagonal matrices
 `diag(a, 1)` and the translations `!![1, b; 0, 1]`. -/
@@ -126,7 +156,7 @@ integral matrices with small lower left and unit lower right entry into `mobiusS
 theorem map_mem_mobiusSubmonoid {S : Type*} [NormedRing S] [NormOneClass S] [IsUltrametricDist S]
     [HasSummableGeomSeries S] {g : Matrix (Fin 2) (Fin 2) S} (hg : g ∈ mobiusSubmonoid S)
     (φ : S →+* R) (hφ : ∀ x, ‖φ x‖ = ‖x‖) : g.map φ ∈ mobiusSubmonoid R := by
-  obtain ⟨ha, hb, hc, hd, hd1⟩ := hg
+  obtain ⟨ha, hb, hc, hd, hd1⟩ := mem_mobiusSubmonoid_iff.mp hg
   simp only [mem_mobiusSubmonoid_iff, Matrix.map_apply, hφ]
   exact ⟨ha, hb, hc, hd.map φ.toMonoidHom hφ, hd1⟩
 
@@ -143,6 +173,12 @@ noncomputable def mobiusDenom (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
     IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ) :=
   g 1 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ + algebraMap R _ (g 1 1)
 
+/-- The **numerator** `a Xᵢ + b` of the Möbius transformation of `g = !![a, b; c, d]` in the
+variable `Xᵢ` of the unit Tate algebra. -/
+noncomputable def mobiusNum (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
+    IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ) :=
+  g 0 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ + algebraMap R _ (g 0 1)
+
 /-- The **Möbius series** `(a Xᵢ + b) (c Xᵢ + d)⁻¹` of `g = !![a, b; c, d]` in the variable `Xᵢ`
 of the unit Tate algebra. For `g ∈ mobiusSubmonoid R` it is the quotient
 `(a Xᵢ + b) / (c Xᵢ + d)` (`TauCeti.MvPowerSeries.mobius_mul_mobiusDenom`) and has Gauss norm at
@@ -150,8 +186,12 @@ most one (`TauCeti.MvPowerSeries.norm_mobius_le`). Outside that monoid the inver
 `Ring.inverse`, which is `0` on nonunits. -/
 noncomputable def mobius (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
     IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ) :=
-  (g 0 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ + algebraMap R _ (g 0 1)) *
-    Ring.inverse (mobiusDenom i g)
+  mobiusNum i g * Ring.inverse (mobiusDenom i g)
+
+theorem mobiusNum_def (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
+    mobiusNum i g =
+      g 0 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ + algebraMap R _ (g 0 1) :=
+  (rfl)
 
 theorem mobiusDenom_def (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
     mobiusDenom i g =
@@ -159,10 +199,14 @@ theorem mobiusDenom_def (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
   (rfl)
 
 theorem mobius_def (i : Fin k) (g : Matrix (Fin 2) (Fin 2) R) :
-    mobius i g =
-      (g 0 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ + algebraMap R _ (g 0 1)) *
-        Ring.inverse (mobiusDenom i g) :=
+    mobius i g = mobiusNum i g * Ring.inverse (mobiusDenom i g) :=
   (rfl)
+
+@[simp]
+theorem mobiusNum_one (i : Fin k) :
+    mobiusNum i (1 : Matrix (Fin 2) (Fin 2) R) =
+      ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ := by
+  simp [mobiusNum_def]
 
 @[simp]
 theorem mobiusDenom_one (i : Fin k) : mobiusDenom i (1 : Matrix (Fin 2) (Fin 2) R) = 1 := by
@@ -174,43 +218,29 @@ theorem mobius_one (i : Fin k) :
       ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ := by
   simp [mobius_def]
 
-/-- **The affine case.** When `c = 0` and `d = 1`, the Möbius series is `a Xᵢ + b`. -/
+/-- **The affine case.** When `c = 0` and `d = 1`, the Möbius series is its numerator
+`a Xᵢ + b`. -/
 theorem mobius_of_eq_zero_of_eq_one (i : Fin k) {g : Matrix (Fin 2) (Fin 2) R} (hc : g 1 0 = 0)
-    (hd : g 1 1 = 1) :
-    mobius i g =
-      g 0 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ + algebraMap R _ (g 0 1) := by
+    (hd : g 1 1 = 1) : mobius i g = mobiusNum i g := by
   rw [mobius_def, mobiusDenom_def, hc, hd, zero_smul, zero_add, map_one, Ring.inverse_one,
     mul_one]
 
 variable [CompleteSpace R] [NormOneClass R] {i : Fin k} {g : Matrix (Fin 2) (Fin 2) R}
 
-omit [CompleteSpace R] in
-/-- The scalar multiple `a Xᵢ` has Gauss norm at most `‖a‖`. -/
-private theorem norm_smul_X_le (a : R) :
-    ‖a • (⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ :
-      IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ))‖ ≤ ‖a‖ := by
-  have h := norm_smul_le a (⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ :
-    IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ))
-  rwa [norm_X, mul_one] at h
-
 /-- The denominator differs from its constant term `d` by `c Xᵢ`, of norm less than one. -/
-private theorem norm_mobiusDenom_sub_lt (hg : g ∈ mobiusSubmonoid R) :
-    ‖mobiusDenom i g -
-        algebraMap R (IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ)) (g 1 1)‖ <
-      ‖algebraMap R (IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ)) (g 1 1)‖ := by
-  rw [mobiusDenom_def, add_sub_cancel_right, norm_algebraMap_isRestrictedSubring, hg.2.2.2.2]
-  exact norm_smul_X_le _ |>.trans_lt hg.2.2.1
-
-private theorem isNormMulUnit_algebraMap_lowerRight (hg : g ∈ mobiusSubmonoid R) :
-    IsNormMulUnit
-      (algebraMap R (IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ)) (g 1 1)) :=
-  hg.2.2.2.1.map (algebraMap R _).toMonoidHom norm_algebraMap_isRestrictedSubring
+private theorem norm_mobiusDenom_sub_C_lt (hg : g ∈ mobiusSubmonoid R) :
+    ‖mobiusDenom i g - ⟨C (g 1 1), isRestricted_C _ (g 1 1)⟩‖ < ‖g 1 1‖ := by
+  change ‖mobiusDenom i g - algebraMap R _ (g 1 1)‖ < _
+  rw [mobiusDenom_def, add_sub_cancel_right, norm_smul_X, mul_one,
+    norm_lowerRight_eq_one_of_mem_mobiusSubmonoid hg]
+  exact norm_lowerLeft_lt_one_of_mem_mobiusSubmonoid hg
 
 /-- For `g ∈ mobiusSubmonoid R` the denominator `c Xᵢ + d` is a multiplicative unit of the
 Tate algebra: its inverse is the Neumann series of `d⁻¹ c Xᵢ`. -/
 theorem isNormMulUnit_mobiusDenom (hg : g ∈ mobiusSubmonoid R) :
     IsNormMulUnit (mobiusDenom i g) :=
-  (isNormMulUnit_algebraMap_lowerRight hg).of_norm_sub_lt (norm_mobiusDenom_sub_lt hg)
+  isNormMulUnit_of_norm_sub_C_lt (isNormMulUnit_lowerRight_of_mem_mobiusSubmonoid hg)
+    (norm_mobiusDenom_sub_C_lt hg)
 
 theorem isUnit_mobiusDenom (hg : g ∈ mobiusSubmonoid R) : IsUnit (mobiusDenom i g) :=
   (isNormMulUnit_mobiusDenom hg).isUnit
@@ -218,19 +248,18 @@ theorem isUnit_mobiusDenom (hg : g ∈ mobiusSubmonoid R) : IsUnit (mobiusDenom 
 /-- For `g ∈ mobiusSubmonoid R` the denominator `c Xᵢ + d` has Gauss norm one. -/
 theorem norm_mobiusDenom (hg : g ∈ mobiusSubmonoid R) : ‖mobiusDenom i g‖ = 1 := by
   rw [← IsUltrametricDist.norm_eq_of_norm_sub_lt_left
-    (by rw [norm_sub_rev]; exact norm_mobiusDenom_sub_lt hg),
-    norm_algebraMap_isRestrictedSubring, hg.2.2.2.2]
+    (by rw [norm_sub_rev, norm_C]; exact norm_mobiusDenom_sub_C_lt hg),
+    norm_C, norm_lowerRight_eq_one_of_mem_mobiusSubmonoid hg]
 
 /-- For `g ∈ mobiusSubmonoid R` the inverse of the denominator has Gauss norm one. -/
 theorem norm_ringInverse_mobiusDenom (hg : g ∈ mobiusSubmonoid R) :
     ‖Ring.inverse (mobiusDenom i g)‖ = 1 := by
-  rw [(isNormMulUnit_algebraMap_lowerRight hg).norm_inverse_of_norm_sub_lt
-    (norm_mobiusDenom_sub_lt hg), norm_algebraMap_isRestrictedSubring, hg.2.2.2.2, inv_one]
+  rw [norm_inverse_of_norm_sub_C_lt (isNormMulUnit_lowerRight_of_mem_mobiusSubmonoid hg)
+    (norm_mobiusDenom_sub_C_lt hg), norm_lowerRight_eq_one_of_mem_mobiusSubmonoid hg, inv_one]
 
 /-- For `g ∈ mobiusSubmonoid R` the Möbius series is the quotient `(a Xᵢ + b) / (c Xᵢ + d)`. -/
 theorem mobius_mul_mobiusDenom (hg : g ∈ mobiusSubmonoid R) :
-    mobius i g * mobiusDenom i g =
-      g 0 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ + algebraMap R _ (g 0 1) := by
+    mobius i g * mobiusDenom i g = mobiusNum i g := by
   rw [mobius_def, Ring.inverse_mul_cancel_right _ _ (isUnit_mobiusDenom hg)]
 
 /-- For `g ∈ mobiusSubmonoid R` the Möbius series lies in the closed unit ball, so it can be
@@ -238,13 +267,21 @@ substituted into series restricted at radius one. -/
 theorem norm_mobius_le (hg : g ∈ mobiusSubmonoid R) : ‖mobius i g‖ ≤ 1 := by
   rw [mobius_def]
   refine (norm_mul_le _ _).trans ?_
-  rw [norm_ringInverse_mobiusDenom hg, mul_one]
+  rw [norm_ringInverse_mobiusDenom hg, mul_one, mobiusNum_def]
   refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-  · exact norm_smul_X_le _ |>.trans hg.1
+  · rw [norm_smul_X, mul_one]
+    exact norm_upperLeft_le_one_of_mem_mobiusSubmonoid hg
   · rw [norm_algebraMap_isRestrictedSubring]
-    exact hg.2.1
+    exact norm_upperRight_le_one_of_mem_mobiusSubmonoid hg
 
 variable {h : Fin k → IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ)} {hh : ∀ j, ‖h j‖ ≤ 1}
+
+omit [NormOneClass R] in
+/-- Substituting `h` into the numerator `a Xᵢ + b` gives `a hᵢ + b`. -/
+@[simp]
+theorem restrictedAnalyticSubst_mobiusNum :
+    restrictedAnalyticSubst h hh (mobiusNum i g) = g 0 0 • h i + algebraMap R _ (g 0 1) := by
+  rw [mobiusNum_def, map_add, map_smul, AlgHom.commutes, restrictedAnalyticSubst_X]
 
 omit [NormOneClass R] in
 /-- Substituting `h` into the denominator `c Xᵢ + d` gives `c hᵢ + d`. -/
@@ -255,31 +292,38 @@ theorem restrictedAnalyticSubst_mobiusDenom :
 
 variable {δ : Fin k → Matrix (Fin 2) (Fin 2) R}
 
+/-- **The cocycle law of a row.** Writing `w_δ` for the Möbius series of the matrices
+`δⱼ ∈ mobiusSubmonoid R`, substituting `w_δ` into the affine series `x Xᵢ + y` built from row `r`
+of `g` and multiplying by the denominator of `δᵢ` gives the affine series built from row `r` of
+`g δᵢ`. Row `0` is the numerator law and row `1` the denominator law. -/
+theorem restrictedAnalyticSubst_row_mul_mobiusDenom (hδ : ∀ j, δ j ∈ mobiusSubmonoid R)
+    (r : Fin 2) :
+    restrictedAnalyticSubst (fun j ↦ mobius j (δ j)) (fun j ↦ norm_mobius_le (hδ j))
+        (g r 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ +
+          algebraMap R _ (g r 1)) * mobiusDenom i (δ i) =
+      (g * δ i) r 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ +
+        algebraMap R _ ((g * δ i) r 1) := by
+  rw [map_add, map_smul, AlgHom.commutes, restrictedAnalyticSubst_X, add_mul, smul_mul_assoc,
+    mobius_mul_mobiusDenom (hδ i)]
+  simp only [mobiusNum_def, mobiusDenom_def, Matrix.mul_apply, Fin.sum_univ_two, mul_add,
+    Algebra.smul_def, map_add, map_mul]
+  ring
+
+/-- **The cocycle law of the numerators.** Substituting the Möbius series `w_δ` of the matrices
+`δⱼ ∈ mobiusSubmonoid R` into the numerator of `g` and multiplying by the denominator of `δᵢ`
+gives the numerator of `g δᵢ`: `(a w_δ + b) (c' Xᵢ + d') = a'' Xᵢ + b''`. -/
+theorem restrictedAnalyticSubst_mobiusNum_mul (hδ : ∀ j, δ j ∈ mobiusSubmonoid R) :
+    restrictedAnalyticSubst (fun j ↦ mobius j (δ j)) (fun j ↦ norm_mobius_le (hδ j))
+        (mobiusNum i g) * mobiusDenom i (δ i) = mobiusNum i (g * δ i) :=
+  restrictedAnalyticSubst_row_mul_mobiusDenom hδ 0
+
 /-- **The cocycle law of the denominators.** Writing `w_δ` for the Möbius series of the matrices
 `δⱼ ∈ mobiusSubmonoid R`, substituting `w_δ` into the denominator of `g` and multiplying by the
 denominator of `δᵢ` gives the denominator of `g δᵢ`: `(c w_δ + d) (c' Xᵢ + d') = c'' Xᵢ + d''`. -/
 theorem restrictedAnalyticSubst_mobiusDenom_mul (hδ : ∀ j, δ j ∈ mobiusSubmonoid R) :
     restrictedAnalyticSubst (fun j ↦ mobius j (δ j)) (fun j ↦ norm_mobius_le (hδ j))
-        (mobiusDenom i g) * mobiusDenom i (δ i) = mobiusDenom i (g * δ i) := by
-  rw [restrictedAnalyticSubst_mobiusDenom, add_mul, smul_mul_assoc,
-    mobius_mul_mobiusDenom (hδ i)]
-  simp only [mobiusDenom_def, Matrix.mul_apply, Fin.sum_univ_two, mul_add,
-    Algebra.smul_def, map_add, map_mul]
-  ring
-
-/-- The numerator analogue of `TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusDenom_mul`:
-`(a w_δ + b) (c' Xᵢ + d') = a'' Xᵢ + b''`. -/
-private theorem restrictedAnalyticSubst_mobiusNum_mul (hδ : ∀ j, δ j ∈ mobiusSubmonoid R) :
-    restrictedAnalyticSubst (fun j ↦ mobius j (δ j)) (fun j ↦ norm_mobius_le (hδ j))
-        (g 0 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ +
-          algebraMap R _ (g 0 1)) * mobiusDenom i (δ i) =
-      (g * δ i) 0 0 • ⟨X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ +
-        algebraMap R _ ((g * δ i) 0 1) := by
-  rw [map_add, map_smul, AlgHom.commutes, restrictedAnalyticSubst_X, add_mul, smul_mul_assoc,
-    mobius_mul_mobiusDenom (hδ i)]
-  simp only [mobiusDenom_def, Matrix.mul_apply, Fin.sum_univ_two, mul_add,
-    Algebra.smul_def, map_add, map_mul]
-  ring
+        (mobiusDenom i g) * mobiusDenom i (δ i) = mobiusDenom i (g * δ i) :=
+  restrictedAnalyticSubst_row_mul_mobiusDenom hδ 1
 
 /-- **The composition law of Möbius series.** For `g` and `δⱼ` in `mobiusSubmonoid R`,
 substituting the Möbius series `w_δ` of the `δⱼ` into the Möbius series of `g` in `Xᵢ` gives the
@@ -331,7 +375,7 @@ theorem mobiusAutomorphyFactor_factor (γ : Fin k → mobiusSubmonoid R) :
 
 /-- The weight-`n` factor has Gauss norm one, so the weight-`n` slash operators do not increase
 the Gauss norm (`TauCeti.MvPowerSeries.RestrictedAutomorphyFactor.norm_slash_apply_le`). -/
-theorem norm_factor_mobiusAutomorphyFactor (γ : Fin k → mobiusSubmonoid R) :
+theorem norm_mobiusAutomorphyFactor_factor (γ : Fin k → mobiusSubmonoid R) :
     ‖(mobiusAutomorphyFactor R n).factor γ‖ = 1 := by
   rw [mobiusAutomorphyFactor_factor,
     IsNormMulUnit.norm_prod fun i _ ↦ (isNormMulUnit_mobiusDenom (γ i).property).pow _]
