@@ -22,6 +22,8 @@ This file develops what these properties give, independently of how such a tree 
 
 * `IsFlowEquivalentTree.reachable_deleteEdges_iff`: the threshold partition. Deleting the tree
   edges of weight below `k` leaves `s` and `t` connected exactly when `s = t` or `k ≤ λ(s, t)`.
+* `IsFlowEquivalentTree.pairMinimumValue_comm`: a flow-equivalent tree makes the minimum cut
+  value symmetric.
 * `IsCutTree.isMinimum_edgeSide_of_mem_edges`: the query theorem. A minimum-weight edge on the tree
   path from `s` to `t` yields a minimum `s`–`t` cut by deleting that edge.
 * `IsCutTree.apply_edgeSide_le`: deleting a tree edge of minimum weight gives a side that
@@ -98,6 +100,22 @@ theorem reachable_deleteEdges_iff (hT : IsFlowEquivalentTree f T w) (k : K) {s t
     · rfl
     obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
     exact ⟨p.toDeleteEdges _ fun e he ↦ not_lt.mpr (hk.trans (hT.le_weight hp he))⟩
+
+/-- A flow-equivalent tree makes the minimum cut value symmetric. -/
+theorem pairMinimumValue_comm (hT : IsFlowEquivalentTree f T w) :
+    ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s := by
+  intro s t
+  by_cases hst : s = t
+  · subst t
+    rfl
+  · have hle : ∀ s t, s ≠ t → pairMinimumValue f s t ≤ pairMinimumValue f t s := by
+      intro s t hst
+      have hreach :
+          (T.deleteEdges {e | w e < pairMinimumValue f s t}).Reachable s t :=
+        (hT.reachable_deleteEdges_iff (pairMinimumValue f s t)).mpr (Or.inr le_rfl)
+      exact ((hT.reachable_deleteEdges_iff
+        (pairMinimumValue f s t)).mp hreach.symm).resolve_left (Ne.symm hst)
+    exact le_antisymm (hle s t hst) (hle t s (Ne.symm hst))
 
 /-- Any set separating two vertices has value at least the weight of some tree edge. -/
 theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t : V}
