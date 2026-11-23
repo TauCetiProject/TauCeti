@@ -76,9 +76,11 @@ Hence `Ê` is Landweber regular on `R`
 
 ## Main results
 
-* `WeierstrassCurve.isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three`: for
-  `m ≥ 2` and `I₃(Ê) = ⊤` (in particular when `(p, c₄, Δ) = ⊤` or `W` is elliptic), weak
-  regularity of the length-`m` Landweber sequence reduces to `(p, A)`.
+* `WeierstrassCurve.isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three` and
+  `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_heightIdeal_three`: for `m ≥ 2` and
+  `I₃(Ê) = ⊤` (in particular when `(p, c₄, Δ) = ⊤` or `W` is elliptic), weak regularity of the
+  length-`m` Landweber sequence—and, when `I₃(Ê) = ⊤` holds at every prime `p`, Landweber
+  regularity of `Ê`—reduces to `(p, A)`.
 * `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_span_c₄_Δ_eq_top` and
   `WeierstrassCurve.isLandweberRegular_formalGroup_iff`: Landweber regularity for smooth-or-nodal
   Weierstrass families and elliptic curves reduces to weak regularity of `(p, A)`.
@@ -141,7 +143,11 @@ private theorem forall_isWeaklyRegular_landweberSequence_formalGroup_iff_of_heig
     hp M hI).trans
     (W.isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three hp M le_rfl hI)
 
-private theorem isLandweberRegular_formalGroup_iff_of_heightIdeal_three
+/-- **Landweber regularity criterion when `I₃(Ê) = ⊤` at every prime.** If
+`(formalGroup W).heightIdeal p 3 = ⊤` for every prime `p` (for instance when `(p, c₄, Δ) = ⊤` at
+every prime `p`), then `formalGroup W` is Landweber regular on an `R`-module `M` if and only if
+`(p, A)` is weakly regular on `M` for every prime `p`. -/
+theorem isLandweberRegular_formalGroup_iff_of_heightIdeal_three
     (M : Type*) [AddCommGroup M] [Module R M]
     (hI : ∀ ⦃p : ℕ⦄, p.Prime → (formalGroup W).heightIdeal p 3 = ⊤) :
     (formalGroup W).IsLandweberRegular M ↔
