@@ -39,6 +39,14 @@ open scoped Interval Nat
 
 namespace TauCeti
 
+private theorem cexp_neg_mul_ofReal_pow_smul_eq {E : Type*} [MulAction ℂ E]
+    (v : E) (s₀ s : ℂ) (t : ℝ) (k : ℕ) :
+    Complex.exp (-s * t) • ((t : ℂ) ^ k • v) =
+      (Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k) • (Complex.exp (-s₀ * t) • v) := by
+  have hexp : -(s - s₀) * (t : ℂ) + -s₀ * (t : ℂ) = -s * (t : ℂ) := by ring
+  rw [smul_smul, smul_smul, mul_right_comm _ ((t : ℂ) ^ k)]
+  rw [← Complex.exp_add, hexp]
+
 /-- If `t ↦ exp (-s₀ * t) • f t` is integrable with respect to a measure `μ` supported on
 `[0, ∞)` (i.e. `0 ≤ t` `μ`-a.e.), then `t ↦ exp (-s * t) • f t` is also `μ`-integrable for
 every `s` with `s₀.re ≤ s.re`. -/
@@ -50,21 +58,19 @@ theorem integrable_cexp_neg_mul_smul_of_re_le {E : Type*} [NormedAddCommGroup E]
   have heq : (fun t : ℝ ↦ Complex.exp (-s * t) • f t) =
       fun t : ℝ ↦ Complex.exp (-(s - s₀) * t) • (Complex.exp (-s₀ * t) • f t) := by
     ext t
-    rw [smul_smul, ← Complex.exp_add]
-    congr 2
-    ring
+    simpa only [pow_zero, one_smul, mul_one] using cexp_neg_mul_ofReal_pow_smul_eq (f t) s₀ s t 0
   rw [heq]
-  refine hf.bdd_smul 1 (Measurable.aestronglyMeasurable (by fun_prop)) ?_
+  refine hf.bdd_smul 1 (Continuous.aestronglyMeasurable (by fun_prop)) ?_
   filter_upwards [hμ] with t ht
   rw [Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re]
   exact Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (by linarith) ht)
 
-private theorem cexp_neg_mul_ofReal_pow_smul_eq {E : Type*} [MulAction ℂ E]
-    (v : E) (s₀ s : ℂ) (t : ℝ) (k : ℕ) :
-    Complex.exp (-s * t) • ((t : ℂ) ^ k • v) =
-      (Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k) • (Complex.exp (-s₀ * t) • v) := by
-  rw [smul_smul, smul_smul, mul_right_comm _ ((t : ℂ) ^ k), ← Complex.exp_add,
-    show -(s - s₀) * t + -s₀ * t = -s * t by ring]
+private theorem norm_cexp_neg_mul_ofReal_pow_le {s₀ s : ℂ} (hs : s₀.re < s.re) {t : ℝ}
+    (ht : 0 ≤ t) (k : ℕ) :
+    ‖Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k‖ ≤ (k ! : ℝ) / (s.re - s₀.re) ^ k := by
+  simpa [norm_mul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re,
+    norm_pow, Complex.norm_real, Real.norm_of_nonneg ht, mul_comm (t ^ k) _] using
+    pow_mul_exp_neg_mul_le (sub_pos.mpr hs) ht k
 
 /-- Pointwise domination of a polynomial-weighted complex exponential kernel: for `s₀.re < s.re`,
 `0 ≤ t`, and `k : ℕ`, `‖exp (-s * t) • ((t : ℂ) ^ k • v)‖` is bounded by
@@ -75,10 +81,7 @@ theorem norm_cexp_neg_mul_ofReal_pow_smul_le {E : Type*} [NormedAddCommGroup E]
     ‖Complex.exp (-s * t) • ((t : ℂ) ^ k • v)‖ ≤
       (k ! : ℝ) / (s.re - s₀.re) ^ k * ‖Complex.exp (-s₀ * t) • v‖ := by
   rw [cexp_neg_mul_ofReal_pow_smul_eq v s₀ s t k, norm_smul]
-  refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
-  rw [norm_mul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re,
-    norm_pow, Complex.norm_real, Real.norm_of_nonneg ht, mul_comm]
-  simpa only [neg_mul] using pow_mul_exp_neg_mul_le (sub_pos.mpr hs) ht k
+  exact mul_le_mul_of_nonneg_right (norm_cexp_neg_mul_ofReal_pow_le hs ht k) (norm_nonneg _)
 
 /-- Strictly to the right of a point of convergence `s₀`, multiplying `f` by any natural power
 `t ^ k` preserves integrability of `t ↦ exp (-s * t) • f t` for any measure `μ` supported on
@@ -88,13 +91,15 @@ theorem integrable_cexp_neg_mul_ofReal_pow_smul_of_re_lt {E : Type*}
     (hf : Integrable (fun t : ℝ ↦ Complex.exp (-s₀ * t) • f t) μ)
     (hμ : ∀ᵐ t ∂μ, 0 ≤ t) (hs : s₀.re < s.re) (k : ℕ) :
     Integrable (fun t : ℝ ↦ Complex.exp (-s * t) • ((t : ℂ) ^ k • f t)) μ := by
-  refine (hf.norm.const_mul ((k ! : ℝ) / (s.re - s₀.re) ^ k)).mono' ?_ ?_
-  · rw [funext fun t ↦ cexp_neg_mul_ofReal_pow_smul_eq (f t) s₀ s t k]
-    exact (by fun_prop : Continuous fun t : ℝ ↦
-      Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k).aestronglyMeasurable.smul
-      hf.aestronglyMeasurable
-  · filter_upwards [hμ] with t ht
-    exact norm_cexp_neg_mul_ofReal_pow_smul_le (f t) hs ht k
+  have heq : (fun t : ℝ ↦ Complex.exp (-s * t) • ((t : ℂ) ^ k • f t)) =
+      fun t : ℝ ↦ (Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k) •
+        (Complex.exp (-s₀ * t) • f t) :=
+    funext fun t ↦ cexp_neg_mul_ofReal_pow_smul_eq (f t) s₀ s t k
+  rw [heq]
+  refine hf.bdd_smul ((k ! : ℝ) / (s.re - s₀.re) ^ k)
+    (Continuous.aestronglyMeasurable (by fun_prop)) ?_
+  filter_upwards [hμ] with t ht
+  exact norm_cexp_neg_mul_ofReal_pow_le hs ht k
 
 /-- Multiplying by the scalar exponential `t ↦ exp (-s * t)` preserves `IntervalIntegrable` for
 vector-valued functions with respect to any measure `μ`. -/
