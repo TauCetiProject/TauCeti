@@ -127,9 +127,7 @@ lemma vertex_eq_toTopObjMk (X : C) (w : StdSimplex ℝ (Fin 1)) :
 
 @[simp] lemma _root_.TauCeti.CategoryTheory.classifyingSpaceMap_vertex (F : C ⥤ D) (X : C) :
     classifyingSpaceMap F (vertex X) = vertex (F.obj X) := by
-  rw [vertex_eq_toTopPoint, classifyingSpaceMap_def, SSet.toTop_map_toTopPoint,
-    nerve.nerveMap_app_objEquiv_symm, Functor.mapComposableArrows_obj_nerveEquiv_symm,
-    ← vertex_eq_toTopPoint]
+  rw [vertex_eq_toTopObjMk X default, classifyingSpaceMap_toTopObjMk]; simp
 
 /-- Distinct objects of `C` give distinct vertices of `classifyingSpace C`. -/
 theorem vertex_injective (C : Type u) [Category.{v} C] :
