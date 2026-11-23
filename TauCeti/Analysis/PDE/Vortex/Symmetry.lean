@@ -51,7 +51,7 @@ At a point, `rotateField u` and `rotateTarget u` act on values by the linear iso
 These are identities of smooth differential expressions. Their counterparts for the `H¹`
 realization of `L_x` are in `TauCeti.Analysis.PDE.Vortex.RigidMotion`; the induced action on
 smooth framed vortices, their divisors and their moduli is in
-`TauCeti.Analysis.PDE.Vortex.ModuliSymmetry`.
+`TauCeti.Analysis.PDE.Vortex.Moduli.Symmetry`.
 
 ## Main results
 
