@@ -103,10 +103,6 @@ namespace TauCeti
 
 variable {u : ℂ → ℂ} {ω₁ ω₂ χ₁ χ₂ : ℂ} {θ₁ θ₂ : ℝ}
 
-section Sections
-
-open scoped ContDiff
-
 /-! ### Smooth sections of a flat line and the Cauchy–Riemann operator -/
 
 /-- If `u (z + ω) = χ u z`, then also `∂u (z + ω) = χ ∂u z`: the Wirtinger derivative of a
@@ -124,6 +120,10 @@ theorem conjWirtingerDeriv_add_apply_one_eq_mul {ω χ : ℂ} (h : ∀ z, u (z +
   simp only [conjWirtingerDeriv_apply, fderiv_add_eq_smul (𝕜 := ℝ) (a := χ) h, smul_apply,
     smul_eq_mul]
   ring
+
+section Sections
+
+open scoped ContDiff
 
 /-- The smooth sections of the flat line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`,
 `exp (2πiθ₂)` along `ω₁`, `ω₂`: the smooth functions `u : ℂ → ℂ` with
@@ -157,10 +157,10 @@ theorem conjWirtingerDeriv_mem_flatLineSections (hu : u ∈ flatLineSections ω�
 line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`, `exp (2πiθ₂)`. -/
 noncomputable def flatLineConjWirtingerDerivₗ (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
     flatLineSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ] flatLineSections ω₁ ω₂ θ₁ θ₂ where
-  toFun u := ⟨fun z ↦ conjWirtingerDeriv u z 1, conjWirtingerDeriv_mem_flatLineSections u.2⟩
+  toFun u := ⟨fun z ↦ conjWirtingerDeriv u z 1, conjWirtingerDeriv_mem_flatLineSections u.property⟩
   map_add' u v := Subtype.ext <| funext fun z ↦ by
     have hd (w : flatLineSections ω₁ ω₂ θ₁ θ₂) : DifferentiableAt ℝ (w : ℂ → ℂ) z :=
-      (w.2.1.differentiable (by simp)) z
+      (w.property.1.differentiable (by simp)) z
     simp [conjWirtingerDeriv_add (hd u) (hd v)]
   map_smul' c u := Subtype.ext <| funext fun z ↦ by simp [conjWirtingerDeriv_const_smul]
 

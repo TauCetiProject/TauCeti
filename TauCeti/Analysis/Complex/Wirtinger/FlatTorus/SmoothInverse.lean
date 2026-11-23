@@ -317,7 +317,7 @@ private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
       ring
     have hexp : exp (phaseCLM θ₁ θ₂ fun i ↦ (m i : ℝ)) =
         exp (2 * π * θ₁ * I) ^ m 0 * exp (2 * π * θ₂ * I) ^ m 1 := by
-      rw [← exp_int_mul, ← exp_int_mul, ← Complex.exp_add, phaseCLM_apply]
+      rw [← exp_intCast_mul, ← exp_intCast_mul, ← Complex.exp_add, phaseCLM_apply]
       congr 1
       push_cast
       ring
@@ -357,7 +357,7 @@ theorem bijective_flatLineConjWirtingerDerivₗ (hω : (conj ω₁ * ω₂).im �
   constructor
   · rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
     intro u hu
-    obtain ⟨g, hg, hgu⟩ := exists_ofTorus_eq hω u.2
+    obtain ⟨g, hg, hgu⟩ := exists_ofTorus_eq hω u.property
     have h0 : ofTorus hω θ₁ θ₂ (torusOp ω₁ ω₂ θ₁ θ₂ g) = 0 := funext fun z ↦ by
       rw [← conjWirtingerDeriv_ofTorus hω hg, hgu]
       simpa using congrFun (congrArg Subtype.val hu) z
@@ -368,7 +368,7 @@ theorem bijective_flatLineConjWirtingerDerivₗ (hω : (conj ω₁ * ω₂).im �
     funext z
     simp [ofTorus]
   · intro f
-    obtain ⟨g, hg, hgf⟩ := exists_ofTorus_eq hω f.2
+    obtain ⟨g, hg, hgf⟩ := exists_ofTorus_eq hω f.property
     obtain ⟨h, hh, rfl⟩ := exists_torusOp_eq hω hθ hg
     refine ⟨⟨ofTorus hω θ₁ θ₂ h, ofTorus_mem hω hh⟩, Subtype.ext (funext fun z ↦ ?_)⟩
     simp [conjWirtingerDeriv_ofTorus hω hh, hgf]
@@ -413,7 +413,7 @@ theorem mul_setIntegral_norm_sq_flatLineConjWirtingerDerivEquiv_symm_apply_le
           ‖((flatLineConjWirtingerDerivEquiv hω hθ).symm f : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 ≤
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖(f : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 := by
   set u := (flatLineConjWirtingerDerivEquiv hω hθ).symm f
-  obtain ⟨hu, hu₁, hu₂⟩ := mem_flatLineSections.1 u.2
+  obtain ⟨hu, hu₁, hu₂⟩ := mem_flatLineSections.1 u.property
   have h := mul_setIntegral_norm_sq_le_setIntegral_norm_conjWirtingerDeriv_sq
     (hu.of_le (by simp)) hω hu₁ hu₂
   simpa only [u, conjWirtingerDeriv_flatLineConjWirtingerDerivEquiv_symm_apply] using h
