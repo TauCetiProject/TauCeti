@@ -232,6 +232,17 @@ theorem matrixAct_cone_apply (X : Type*) [Fintype X] [DecidableEq X] (n : ℕ)
   · rw [Prod.snd_sum, ← sum_add_distrib]
     exact sum_congr rfl fun x _ => by split_ifs <;> simp
 
+/-- On row vectors `x ↦ (φ x, 0)` with values in `M`, the second component of the operations of
+the matrix module of the mapping cone is the sum over the paths `x₀ → ⋯ → xₙ = z` of
+`f_{n+1}(φ x₀, F₁ x₀ x₁, …, Fₙ xₙ₋₁ xₙ)`. -/
+theorem snd_matrixAct_cone_apply_inl (X : Type*) [Fintype X] [DecidableEq X] (n : ℕ)
+    (F : Fin n → Matrix X X A) (φ : X → M) (z : X) :
+    (f.cone.matrixAct X n F (fun x => (φ x, 0)) z).2 =
+      ∑ x : Fin (n + 1) → X, if x (Fin.last n) = z then
+        f.map n (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0)) else 0 := by
+  have h0 : Mm'.matrixAct X n F (fun _ => 0) = 0 := map_zero _
+  simp [matrixAct_cone_apply, h0]
+
 /-! ### Strict morphisms -/
 
 /-- The components of a strict morphism: `f₁ = L` and `f_{n+1} = 0` for `n ≥ 1`. -/
@@ -312,6 +323,10 @@ variable (Mm) in
 `f_{n+1} = 0` for `n ≥ 1`. -/
 noncomputable def id [CharP R 2] : UngradedAInfinityRightModuleHom Mm Mm :=
   ofLinearMap Mm Mm LinearMap.id fun _ _ _ => rfl
+
+/-- The identity morphism is the strict morphism of the identity map. -/
+theorem id_eq_ofLinearMap [CharP R 2] : id Mm = ofLinearMap Mm Mm LinearMap.id fun _ _ _ => rfl :=
+  (rfl)
 
 @[simp]
 theorem id_map_zero [CharP R 2] (a : Fin 0 → A) (m : M) : (id Mm).map 0 a m = m :=

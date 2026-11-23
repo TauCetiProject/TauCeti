@@ -13,6 +13,9 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.SimpleRing.Matrix
 public import TauCeti.Algebra.CentralSimple.BaseChange
+-- The quaternion reduced trace occurs in the statement of
+-- `TauCeti.Algebra.reducedTrace_quaternionAlgebra`.
+public import TauCeti.Algebra.Quaternion.ReducedTrace
 -- Used only in proofs: the separable and algebraic closures and infinite Galois descent, the
 -- Skolem-Noether theorem, splitting over a separably closed field, the Galois twist of a splitting
 -- and tower base change, the trace of a reindexed matrix and of left multiplication on matrices.
@@ -24,11 +27,12 @@ import TauCeti.Algebra.CentralSimple.Splitting
 import TauCeti.Algebra.CrossedProduct.Splitting.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
+-- Used only in proofs: the trace of left multiplication by a quaternion.
+import TauCeti.Algebra.Quaternion.AlgEquiv
 -- Used only by the worked examples: the real numbers and the real quaternions, with their
--- centrality and the trace of left multiplication by a quaternion.
+-- centrality.
 import Mathlib.Basic.Real.Basic
 import TauCeti.Algebra.Central.Quaternion
-import TauCeti.Algebra.Quaternion.AlgEquiv
 
 /-!
 # The reduced trace of a central simple algebra
@@ -77,6 +81,8 @@ derived without unfolding the definition.
 * `TauCeti.Algebra.reducedTrace_tmul`: compatibility with base change to a field extension.
 * `TauCeti.Algebra.trace_mulLeft_eq_deg_mul_reducedTrace`: the regular trace of left
   multiplication is `deg K A` times the reduced trace.
+* `TauCeti.Algebra.reducedTrace_quaternionAlgebra`: on a central simple quaternion algebra the
+  reduced trace is the quaternion reduced trace `x + star x`.
 
 ## References
 
@@ -347,6 +353,27 @@ theorem reducedTrace_matrix [Nonempty n] (M : Matrix n n K) :
 
 end Matrix
 
+section Quaternion
+
+-- `_root_.` is needed because `TauCeti.Quaternion` is also a namespace, so a bare
+-- `open scoped Quaternion` would open that one and leave the `ℍ[·]` notation out of scope.
+open scoped _root_.Quaternion
+
+variable {K : Type*} [Field K] {c₁ c₂ c₃ : K}
+  [Algebra.IsCentral K ℍ[K,c₁,c₂,c₃]] [IsSimpleRing ℍ[K,c₁,c₂,c₃]]
+
+/-- On a central simple quaternion algebra over a field of characteristic other than two, the
+reduced trace is the quaternion reduced trace `x + star x = 2 x.re + c₂ x.imI`. -/
+theorem reducedTrace_quaternionAlgebra [NeZero (2 : K)] (x : ℍ[K,c₁,c₂,c₃]) :
+    reducedTrace K ℍ[K,c₁,c₂,c₃] x = QuaternionAlgebra.reducedTrace c₁ c₂ c₃ x := by
+  have hdeg : deg K ℍ[K,c₁,c₂,c₃] = 2 :=
+    deg_eq_of_finrank_eq_sq (by rw [QuaternionAlgebra.finrank_eq_four]; norm_num)
+  have h := trace_mulLeft_eq_deg_mul_reducedTrace (K := K) x
+  rw [QuaternionAlgebra.trace_mulLeft, hdeg, Nat.cast_two] at h
+  exact (mul_left_cancel₀ two_ne_zero h).symm
+
+end Quaternion
+
 /-! ### Worked examples -/
 
 section Examples
@@ -369,12 +396,8 @@ example (x : Matrix (Fin 2) (Fin 2) ℚ) :
 
 /-- The real quaternions do not split over `ℝ`, yet their reduced trace is the familiar `2 re`. -/
 example (x : ℍ[ℝ]) : reducedTrace ℝ ℍ[ℝ] x = 2 * x.re := by
-  have hdeg : deg ℝ ℍ[ℝ] = 2 :=
-    deg_eq_of_finrank_eq_sq (by rw [Quaternion.finrank_eq_four]; norm_num)
-  have h := trace_mulLeft_eq_deg_mul_reducedTrace (K := ℝ) x
-  rw [QuaternionAlgebra.trace_mulLeft, hdeg] at h
-  norm_num at h
-  linarith
+  rw [reducedTrace_quaternionAlgebra, QuaternionAlgebra.reducedTrace_apply]
+  simp
 
 end Examples
 

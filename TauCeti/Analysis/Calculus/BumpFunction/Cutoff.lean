@@ -50,21 +50,28 @@ functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`); in particular th
 `Σₙ f (x, t + n)` of a `C^k` map compactly supported in `E × (0, 1)` is a `C^k` map of period one
 in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported `C¹`
 function is bounded and Hölder continuous with every exponent at most one
-(`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`).
+(`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`); for a `C³` function one constant
+bounds it, its first two derivatives and their Hölder constants uniformly over all translates
+(`ContDiff.exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport`). In particular,
+for radii `ρ < R` the translates of one cutoff give cutoffs between `closedBall x₀ ρ` and
+`ball x₀ R` about every centre `x₀` with such a common constant
+(`TauCeti.exists_forall_contDiff_cutoff_holderWith_and_norm_le`).
 
-It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
-gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
-universal constant `c`, the quantitative form needed by iteration arguments over families of balls
-with shrinking gaps. With such a cutoff of small gradient, an angle `θ` rising from `0` to `π / 2`
-across an annulus gives the IMS-type partition `cos² θ + sin² θ = 1` with gradients at most a
-prescribed `ε` (`TauCeti.exists_contDiff_angle_cutoff`). On the line, a smooth cutoff of the
-identity equals `s` on `[-r, r]` and vanishes outside `(-R, R)`
-(`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a smooth, even, compactly
-supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on the ball of radius `r / 2`
-(`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported in `[c - r - 1, c + r + 1]`
-have `L²` mass at least `2 r` and derivative energy bounded independently of `c` and `r`
-(`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a function supported in a closed
-ball with bounded gradient there has integral at most the squared bound times the volume of the ball
+It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose gradient
+is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a universal
+constant `c`, the quantitative form needed by iteration arguments over families of balls with
+shrinking gaps; on a proper space the outer closed ball can be replaced by an open one, with compact
+support (`TauCeti.exists_forall_contDiff_cutoff_ball`). With such a cutoff of small gradient, an
+angle `θ` rising from `0` to `π / 2` across an annulus gives the IMS-type partition
+`cos² θ + sin² θ = 1` with gradients at most a prescribed `ε`
+(`TauCeti.exists_contDiff_angle_cutoff`). On the line, a smooth cutoff of the identity equals `s` on
+`[-r, r]` and vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`). On an inner product
+space, a smooth, even, compactly supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and
+vanishes on the ball of radius `r / 2` (`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus
+supported in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
+independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
+function supported in a closed ball with bounded gradient there has integral at most the squared
+bound times the volume of the ball
 (`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
@@ -334,6 +341,66 @@ theorem _root_.ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport [Norm
     linarith [dist_le_norm_add_norm (φ x) (φ y), hB x, hB y, Real.le_coe_toNNReal B]
   exact ⟨_, h₀.of_le_of_le (holderWith_one.2 hK) zero_le hα,
     fun x => (hB' x).trans (by exact_mod_cast le_max_left _ _)⟩
+
+/-- A compactly supported `C³` function has one constant `Z` which bounds it and its first and
+second derivatives, together with their `α`-Hölder constants for an exponent `α ≤ 1`, for all of
+its translates `x ↦ φ (x - x₀)` at once. -/
+theorem _root_.ContDiff.exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport
+    [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : E → F}
+    (hφ : ContDiff ℝ 3 φ) (hc : HasCompactSupport φ) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ Z : ℝ≥0, ∀ x₀ : E,
+      (HolderWith Z α (fun x => φ (x - x₀)) ∧
+        HolderWith Z α (fderiv ℝ fun x => φ (x - x₀)) ∧
+        HolderWith Z α (fderiv ℝ (fderiv ℝ fun x => φ (x - x₀)))) ∧
+      ∀ x, ‖φ (x - x₀)‖ ≤ Z ∧ ‖fderiv ℝ (fun x => φ (x - x₀)) x‖ ≤ Z ∧
+        ‖fderiv ℝ (fderiv ℝ fun x => φ (x - x₀)) x‖ ≤ Z := by
+  obtain ⟨C₀, h₀, b₀⟩ :=
+    (hφ.of_le (by norm_num)).exists_holderWith_and_norm_le_of_hasCompactSupport hc hα
+  obtain ⟨C₁, h₁, b₁⟩ := ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport
+    (hφ.fderiv_right (m := 1) (by norm_num)) (hc.fderiv (𝕜 := ℝ)) hα
+  obtain ⟨C₂, h₂, b₂⟩ := ((hφ.fderiv_right (m := 2) (by norm_num)).fderiv_right (m := 1)
+    le_rfl).exists_holderWith_and_norm_le_of_hasCompactSupport
+      ((hc.fderiv (𝕜 := ℝ)).fderiv (𝕜 := ℝ)) hα
+  refine ⟨C₀ + C₁ + C₂, fun x₀ => ?_⟩
+  have hD1 : fderiv ℝ (fun x => φ (x - x₀)) = fun x => fderiv ℝ φ (x - x₀) :=
+    funext fun _ => fderiv_comp_sub x₀
+  have hD2 : fderiv ℝ (fderiv ℝ fun x => φ (x - x₀)) =
+      fun x => fderiv ℝ (fderiv ℝ φ) (x - x₀) := by
+    rw [hD1]
+    exact funext fun _ => fderiv_comp_sub x₀
+  have hle₀ : C₀ ≤ C₀ + C₁ + C₂ := le_add_right (le_add_right le_rfl)
+  have hle₁ : C₁ ≤ C₀ + C₁ + C₂ := le_add_right le_add_self
+  have hle₂ : C₂ ≤ C₀ + C₁ + C₂ := le_add_self
+  rw [hD2, hD1]
+  -- Translation preserves extended distances.
+  exact ⟨⟨fun x y => by simpa only [edist_sub_right] using (h₀.mono hle₀) (x - x₀) (y - x₀),
+    fun x y => by simpa only [edist_sub_right] using (h₁.mono hle₁) (x - x₀) (y - x₀),
+    fun x y => by simpa only [edist_sub_right] using (h₂.mono hle₂) (x - x₀) (y - x₀)⟩, fun x =>
+    ⟨(b₀ _).trans (by exact_mod_cast hle₀), (b₁ _).trans (by exact_mod_cast hle₁),
+      (b₂ _).trans (by exact_mod_cast hle₂)⟩⟩
+
+/-- For radii `ρ < R` and an exponent `α ≤ 1` there are smooth cutoffs `ζ x₀`, one about every
+centre `x₀`, each equal to one on a neighbourhood of `closedBall x₀ ρ` and supported in
+`ball x₀ R`, with one constant `Z` which bounds all of them and their first two derivatives,
+together with their `α`-Hölder constants. They are the translates of one cutoff about the origin. -/
+theorem exists_forall_contDiff_cutoff_holderWith_and_norm_le [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {ρ R : ℝ} (hρR : ρ < R) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ (ζ : E → E → ℝ) (Z : ℝ≥0), ∀ x₀ : E, ContDiff ℝ ∞ (ζ x₀) ∧
+      Metric.closedBall x₀ ρ ⊆ interior (ζ x₀ ⁻¹' {1}) ∧ tsupport (ζ x₀) ⊆ Metric.ball x₀ R ∧
+      (HolderWith Z α (ζ x₀) ∧ HolderWith Z α (fderiv ℝ (ζ x₀)) ∧
+        HolderWith Z α (fderiv ℝ (fderiv ℝ (ζ x₀)))) ∧
+      ∀ x, ‖ζ x₀ x‖ ≤ Z ∧ ‖fderiv ℝ (ζ x₀) x‖ ≤ Z ∧ ‖fderiv ℝ (fderiv ℝ (ζ x₀)) x‖ ≤ Z := by
+  obtain ⟨ζ₀, hζ₀, -, hζ₀1, hζ₀c, hζ₀s⟩ := (isCompact_closedBall (0 : E) ρ).exists_contDiff_cutoff
+    Metric.isOpen_ball (Metric.closedBall_subset_ball hρR)
+  obtain ⟨Z, hZ⟩ :=
+    (hζ₀.of_le (by norm_cast)).exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport
+      hζ₀c hα
+  refine ⟨fun x₀ x => ζ₀ (x - x₀), Z, fun x₀ => ⟨hζ₀.comp (contDiff_id.sub contDiff_const),
+    fun x hx => ?_, fun x hx => ?_, hZ x₀⟩⟩
+  · exact preimage_interior_subset_interior_preimage (continuous_id.sub continuous_const)
+      (hζ₀1 (by simpa [dist_eq_norm] using hx))
+  · simpa [dist_eq_norm] using hζ₀s (tsupport_comp_subset_preimage ζ₀
+      (continuous_id.sub continuous_const) hx)
 
 /-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
 the next term. In infinite dimension compact sets have empty interior (Riesz), so every term of
@@ -658,6 +725,24 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
         = 2 * L₁ * (1 / D) + 4 * L₂ * (R ^ 2 / D ^ 2) := by ring
       _ ≤ 2 * L₁ * (1 / (R - r) ^ 2) + 4 * L₂ * (1 / (R - r) ^ 2) := by gcongr
       _ = (2 * L₁ + 4 * L₂) / (R - r) ^ 2 := by ring
+
+/-- **Smooth cutoffs between a closed ball and a larger open ball.** There is a universal `c ≥ 0`
+such that for `0 ≤ r < R` some smooth `ψ` with values in `[0, 1]` equals `1` on the closed ball
+of radius `r`, has compact topological support inside the open ball of radius `R`, and has
+gradient at most `c / (R - r)`. This is `TauCeti.exists_forall_contDiff_cutoff_closedBall` with
+the outer radius `(r + R) / 2`. -/
+theorem exists_forall_contDiff_cutoff_ball [InnerProductSpace ℝ E] [ProperSpace E] :
+    ∃ c : ℝ, 0 ≤ c ∧ ∀ (x₀ : E) {r R : ℝ}, 0 ≤ r → r < R →
+      ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ HasCompactSupport ψ ∧ range ψ ⊆ Icc 0 1 ∧
+        EqOn ψ 1 (Metric.closedBall x₀ r) ∧ tsupport ψ ⊆ Metric.ball x₀ R ∧
+        ∀ x, ‖∇ ψ x‖ ≤ c / (R - r) := by
+  obtain ⟨c, hc, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
+  refine ⟨2 * c, by positivity, fun x₀ r R hr hrR => ?_⟩
+  obtain ⟨ψ, hψ, hψr, hψ1, hts, hgrad, -⟩ := hcut x₀ hr (show r < (r + R) / 2 by linarith)
+  refine ⟨ψ, hψ, (isCompact_closedBall x₀ _).of_isClosed_subset (isClosed_tsupport _) hts, hψr,
+    hψ1, hts.trans (Metric.closedBall_subset_ball (by linarith)), fun x => (hgrad x).trans_eq ?_⟩
+  rw [show (r + R) / 2 - r = (R - r) / 2 by ring]
+  field_simp
 
 open Real in
 /-- **A slowly rising angle.** For `0 ≤ R` and `0 < ε`, some smooth `θ` vanishes on the closed

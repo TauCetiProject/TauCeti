@@ -63,6 +63,8 @@ becomes `ρ(M(x, y) ξ / t)`, whose position derivatives are bounded uniformly i
 
 ## Main results
 
+* `TauCeti.exists_forall_quantizeSchwartzValue_comp_eq_compAmplitude`: Kuranishi's trick, with the
+  frequency map `M` and the weight `g` chosen once for all the symbols vanishing outside `K`.
 * `TauCeti.Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq`: the transported operator is the
   quantization of the amplitude `g(x, y) • a(κ x, M(x, y) ξ)` (`TauCeti.Symbol.compAmplitude`),
   for data `M` and `g` with `g(x, x) = ψ(x)` wherever `κ x ∈ K`, and `M(x, x) = (Dκ(x)*)⁻¹`
@@ -568,26 +570,24 @@ private theorem smul_apply_eq_of_diagonal_eq {F : Type*} [AddCommGroup F] [Modul
     · rw [hg₁ x hx, hM₁ x hx (subset_tsupport _ hψx)]
   · simp [hf _ hx]
 
-/-- **Changes of coordinates for pseudodifferential operators.** Let `κ` be a smooth homeomorphism
-of `ℝⁿ`, `a` a symbol of order `m` vanishing at positions outside a compact set `K`, and `ψ` a
-smooth compactly supported cutoff such that `Dκ` is invertible on the support of `ψ`. Suppose the
+/-- **Kuranishi's trick.** Let `κ` be a smooth homeomorphism of `ℝⁿ`, `K` a compact set, and `ψ`
+a smooth compactly supported cutoff such that `Dκ` is invertible on the support of `ψ`. Suppose the
 averaged derivative `hadamardFactor κ y x` of `κ` on the segment from `y` to `x` is invertible
 whenever `κ x ∈ K` and `y` lies in the support of `ψ`. Then there are a smooth family `M(x, y)` of
 linear maps and a smooth compactly supported weight `g(x, y)`, with `M(x, y)` invertible on the
-support of `g`, such that, whenever `v ∘ κ = ψ • u`,
+support of `g`, such that for **every** symbol `a` vanishing at positions outside `K`, whenever
+`v ∘ κ = ψ • u`,
 
 `Op(a) v (κ x) = Op(b) u (x)` for the left symbol `b` of the amplitude
 `c(x, y, ξ) = g(x, y) • a(κ x, M(x, y) ξ)` (`TauCeti.Symbol.compAmplitude`),
 
 and on the diagonal `g(x, x) = ψ(x)` and `M(x, x) = (Dκ(x)*)⁻¹` (the latter on the support of
-`ψ`) wherever `κ x ∈ K`; so the restriction of `c` to the diagonal is `ψ(x) a(κ x, (Dκ(x)*)⁻¹ ξ)`.
-In particular the operator `u ↦ Op(a) ((ψ u) ∘ κ⁻¹) ∘ κ` is the quantization of a symbol of order
-`m`, whose full asymptotic expansion is `b ∼ ∑ₖ c.leftTerm k`
-(`TauCeti.Amplitude.isAsymptoticSum_leftSymbol`). -/
-theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W m)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (haK : ∀ z ∉ K, ∀ η, a.coefficient (z, η) = 0)
-    (κ : CoordinateSpace n ≃ₜ CoordinateSpace n) (hκ : ContDiff ℝ ∞ κ)
+`ψ`) wherever `κ x ∈ K`. The data `M` and `g` do not depend on `a` or its order, so the
+transported operators of all the symbols vanishing outside `K` are left quantizations of
+amplitudes of the same form; `TauCeti.Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq` is
+the statement for a single symbol. -/
+theorem exists_forall_quantizeSchwartzValue_comp_eq_compAmplitude {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) (κ : CoordinateSpace n ≃ₜ CoordinateSpace n) (hκ : ContDiff ℝ ∞ κ)
     {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
     (hκ' : ∀ y ∈ tsupport ψ, IsUnit (fderiv ℝ κ y))
     (hΦ : ∀ x, κ x ∈ K → ∀ y ∈ tsupport ψ, IsUnit (hadamardFactor κ y x)) :
@@ -597,10 +597,11 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
       (∀ x, κ x ∈ K → g (x, x) = ψ x) ∧
       (∀ x, κ x ∈ K → x ∈ tsupport ψ →
         M (x, x) = ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ κ x))) ∧
-      ∀ u v : 𝓢(CoordinateSpace n, V), (∀ y, v (κ y) = ψ y • u y) → ∀ x,
-        quantizeSchwartzValue a.coefficient v (κ x) =
-          quantizeSchwartzValue ((a.compAmplitude hκ hM hg hgc hgM).leftSymbol
-            (a.hasProperInputSupport_compAmplitude hκ hM hg hgc hgM)).coefficient u x := by
+      ∀ {m : ℝ} (a : Symbol n V W m), (∀ z ∉ K, ∀ η, a.coefficient (z, η) = 0) →
+        ∀ u v : 𝓢(CoordinateSpace n, V), (∀ y, v (κ y) = ψ y • u y) → ∀ x,
+          quantizeSchwartzValue a.coefficient v (κ x) =
+            quantizeSchwartzValue ((a.compAmplitude hκ hM hg hgc hgM).leftSymbol
+              (a.hasProperInputSupport_compAmplitude hκ hM hg hgc hgM)).coefficient u x := by
   -- The Kuranishi factor `Φ(x, y)`, with `κ x - κ y = Φ(x, y) (x - y)`.
   obtain ⟨Φ, hΦdef⟩ : ∃ Φ : CoordinateSpace n × CoordinateSpace n →
       CoordinateSpace n →L[ℝ] CoordinateSpace n, Φ = fun w ↦ hadamardFactor κ w.2 w.1 :=
@@ -641,12 +642,10 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
     exact tsupport_mul_subset_left.trans hφψ
   have hgc : HasCompactSupport g := hS.of_isClosed_subset (isClosed_tsupport _) hgS
   have hgM : ∀ w ∈ tsupport g, IsUnit (M w) := fun w hw ↦ hMu w (hgS hw)
-  set c := a.compAmplitude hκ hM hg hgc hgM with hc_def
-  have hc : c.HasProperInputSupport := a.hasProperInputSupport_compAmplitude hκ hM hg hgc hgM
   have hΦx : ∀ x, Φ (x, x) = fderiv ℝ κ x := fun x ↦ by rw [hΦdef]; exact hadamardFactor_self κ x
   have hφx : ∀ x, κ x ∈ K → x ∈ tsupport φ := fun x hx ↦
     subset_tsupport _ (Function.mem_support.2 (by rw [hφ1' x hx]; exact one_ne_zero))
-  refine ⟨M, g, hM, hg, hgc, hgM, fun x hx ↦ ?_, fun x hx hxψ ↦ ?_, fun u v huv x ↦ ?_⟩
+  refine ⟨M, g, hM, hg, hgc, hgM, fun x hx ↦ ?_, fun x hx hxψ ↦ ?_, fun {m} a haK u v huv x ↦ ?_⟩
   · -- On the diagonal `φ(x) = 1`, `M(x, x) = (Dκ(x)⁻¹)*` and `|det Dκ(x)| |det M(x, x)| = 1`.
     rw [hgdef]
     by_cases hψx : ψ x = 0
@@ -659,7 +658,9 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
     simp
   · have hxS : (x, x) ∈ tsupport φ ×ˢ tsupport ψ := ⟨hφx x hx, hxψ⟩
     rw [hMS _ hxS, hΦx]
-  · rw [Amplitude.quantizeSchwartzValue_leftSymbol hc]
+  · set c := a.compAmplitude hκ hM hg hgc hgM with hc_def
+    have hc : c.HasProperInputSupport := a.hasProperInputSupport_compAmplitude hκ hM hg hgc hgM
+    rw [Amplitude.quantizeSchwartzValue_leftSymbol hc]
     by_cases hx : κ x ∈ K
     swap
     · -- Both sides vanish, since `a(κ x, ·) = 0`.
@@ -721,10 +722,48 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
     dsimp only
     congr 1
     refine congrArg (fun f : CoordinateSpace n → W ↦ 𝓕 f ζ) (funext fun y ↦ ?_)
-    simp only [hc_def, coefficient_compAmplitude, hgdef, hφ1' x hx, one_mul, map_smul,
+    simp only [hc_def, Symbol.coefficient_compAmplitude, hgdef, hφ1' x hx, one_mul, map_smul,
       smul_apply, smul_smul]
     congr 1
     ring
+
+/-- **Changes of coordinates for pseudodifferential operators.** Let `κ` be a smooth homeomorphism
+of `ℝⁿ`, `a` a symbol of order `m` vanishing at positions outside a compact set `K`, and `ψ` a
+smooth compactly supported cutoff such that `Dκ` is invertible on the support of `ψ`. Suppose the
+averaged derivative `hadamardFactor κ y x` of `κ` on the segment from `y` to `x` is invertible
+whenever `κ x ∈ K` and `y` lies in the support of `ψ`. Then there are a smooth family `M(x, y)` of
+linear maps and a smooth compactly supported weight `g(x, y)`, with `M(x, y)` invertible on the
+support of `g`, such that, whenever `v ∘ κ = ψ • u`,
+
+`Op(a) v (κ x) = Op(b) u (x)` for the left symbol `b` of the amplitude
+`c(x, y, ξ) = g(x, y) • a(κ x, M(x, y) ξ)` (`TauCeti.Symbol.compAmplitude`),
+
+and on the diagonal `g(x, x) = ψ(x)` and `M(x, x) = (Dκ(x)*)⁻¹` (the latter on the support of
+`ψ`) wherever `κ x ∈ K`; so the restriction of `c` to the diagonal is `ψ(x) a(κ x, (Dκ(x)*)⁻¹ ξ)`.
+In particular the operator `u ↦ Op(a) ((ψ u) ∘ κ⁻¹) ∘ κ` is the quantization of a symbol of order
+`m`, whose full asymptotic expansion is `b ∼ ∑ₖ c.leftTerm k`
+(`TauCeti.Amplitude.isAsymptoticSum_leftSymbol`). -/
+theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (haK : ∀ z ∉ K, ∀ η, a.coefficient (z, η) = 0)
+    (κ : CoordinateSpace n ≃ₜ CoordinateSpace n) (hκ : ContDiff ℝ ∞ κ)
+    {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
+    (hκ' : ∀ y ∈ tsupport ψ, IsUnit (fderiv ℝ κ y))
+    (hΦ : ∀ x, κ x ∈ K → ∀ y ∈ tsupport ψ, IsUnit (hadamardFactor κ y x)) :
+    ∃ (M : CoordinateSpace n × CoordinateSpace n → CoordinateSpace n →L[ℝ] CoordinateSpace n)
+      (g : CoordinateSpace n × CoordinateSpace n → ℝ) (hM : ContDiff ℝ ∞ M) (hg : ContDiff ℝ ∞ g)
+      (hgc : HasCompactSupport g) (hgM : ∀ w ∈ tsupport g, IsUnit (M w)),
+      (∀ x, κ x ∈ K → g (x, x) = ψ x) ∧
+      (∀ x, κ x ∈ K → x ∈ tsupport ψ →
+        M (x, x) = ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ κ x))) ∧
+      ∀ u v : 𝓢(CoordinateSpace n, V), (∀ y, v (κ y) = ψ y • u y) → ∀ x,
+        quantizeSchwartzValue a.coefficient v (κ x) =
+          quantizeSchwartzValue ((a.compAmplitude hκ hM hg hgc hgM).leftSymbol
+            (a.hasProperInputSupport_compAmplitude hκ hM hg hgc hgM)).coefficient u x := by
+  obtain ⟨M, g, hM, hg, hgc, hgM, hg₁, hM₁, hop⟩ :=
+    exists_forall_quantizeSchwartzValue_comp_eq_compAmplitude (V := V) (W := W) hK κ hκ hψ hψc hκ'
+      hΦ
+  exact ⟨M, g, hM, hg, hgc, hgM, hg₁, hM₁, hop a haK⟩
 
 /-- **Changes of coordinates, the leading term.** Under the hypotheses of
 `TauCeti.Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq`, the transported operator
