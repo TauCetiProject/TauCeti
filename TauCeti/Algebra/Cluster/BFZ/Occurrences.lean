@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.BFZ.Word
-public import Mathlib.Data.Finset.Sort
-import Mathlib.Order.Interval.Finset.Fin
+public import TauCeti.Data.Finset.Sort
 
 /-!
 # Occurrence coordinates for signed BFZ words
@@ -70,25 +69,6 @@ theorem range_bfzOccurrence (w : List (Fin r × Bool)) (i : Fin r) :
   ext k
   exact mem_bfzOccurrencePositions w i k
 
-/-- The occurrence number counts exactly the equal-colour positions strictly to its left. -/
-theorem card_bfzOccurrencePositions_filter_lt (w : List (Fin r × Bool)) (i : Fin r)
-    (n : Fin (bfzOccurrencePositions w i).card) :
-    ((bfzOccurrencePositions w i).filter (fun k ↦ k < bfzOccurrence w i n)).card = n := by
-  have he : (Finset.Iio n).map (bfzOccurrence w i).toEmbedding =
-      (bfzOccurrencePositions w i).filter (fun k ↦ k < bfzOccurrence w i n) := by
-    ext k
-    simp only [Finset.mem_map, Finset.mem_Iio, Finset.mem_filter,
-      mem_bfzOccurrencePositions]
-    constructor
-    · rintro ⟨m, hm, rfl⟩
-      exact ⟨bfzLetter_bfzOccurrence_fst w i m, (bfzOccurrence w i).strictMono hm⟩
-    · rintro ⟨hk, hkn⟩
-      obtain ⟨m, rfl⟩ := show k ∈ Set.range (bfzOccurrence w i) by
-        rw [range_bfzOccurrence]
-        exact hk
-      exact ⟨m, (bfzOccurrence w i).lt_iff_lt.mp hkn, rfl⟩
-  rw [← he, Finset.card_map, Fin.card_Iio]
-
 /-- An occurrence is specified by its colour and the number of equal-colour positions before it. -/
 theorem bfzOccurrence_eq_iff (w : List (Fin r × Bool)) (i : Fin r)
     (n : Fin (bfzOccurrencePositions w i).card) (k : Fin (r + w.length)) :
@@ -96,12 +76,15 @@ theorem bfzOccurrence_eq_iff (w : List (Fin r × Bool)) (i : Fin r)
       ((bfzOccurrencePositions w i).filter (fun j ↦ j < k)).card = n := by
   constructor
   · rintro rfl
-    exact ⟨bfzLetter_bfzOccurrence_fst w i n, card_bfzOccurrencePositions_filter_lt w i n⟩
+    exact ⟨bfzLetter_bfzOccurrence_fst w i n,
+      Finset.card_filter_lt_orderEmbOfFin (bfzOccurrencePositions w i) rfl n⟩
   · rintro ⟨hk, hn⟩
     obtain ⟨m, rfl⟩ := show k ∈ Set.range (bfzOccurrence w i) by
       rw [range_bfzOccurrence]
       exact hk
-    have hm : (m : ℕ) = n := (card_bfzOccurrencePositions_filter_lt w i m).symm.trans hn
+    have hCount : ((bfzOccurrencePositions w i).filter (fun j ↦ j < bfzOccurrence w i m)).card =
+        (m : ℕ) := Finset.card_filter_lt_orderEmbOfFin (bfzOccurrencePositions w i) rfl m
+    have hm : (m : ℕ) = n := hCount.symm.trans hn
     exact congrArg (bfzOccurrence w i) (Fin.ext hm).symm
 
 /-- Successive occurrence numbers are successive BFZ positions of that simple index. -/
@@ -153,13 +136,7 @@ theorem isBfzExchangeable_bfzOccurrence_iff (w : List (Fin r × Bool)) (i : Fin 
     IsBfzExchangeable w (bfzOccurrence w i n) ↔
       r ≤ (bfzOccurrence w i n : ℕ) ∧
         (n : ℕ) + 1 < (bfzOccurrencePositions w i).card := by
-  rw [isBfzExchangeable_iff]
-  have hs : (∃ k, bfzOccurrence w i n < k ∧
-      (bfzLetter w k).1 = (bfzLetter w (bfzOccurrence w i n)).1) ↔
-      bfzSuccessor w (bfzOccurrence w i n) ≠ ⊤ := by
-    rw [ne_eq, bfzSuccessor_eq_top_iff]
-    simp only [not_forall, not_not, exists_prop]
-  rw [hs, ne_eq, bfzSuccessor_bfzOccurrence_eq_top_iff]
+  rw [isBfzExchangeable_def, ne_eq, bfzSuccessor_bfzOccurrence_eq_top_iff]
   have hn := n.isLt
   omega
 
