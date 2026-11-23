@@ -13,8 +13,9 @@ public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 The scalar matrices `t ↦ t • 1` form a homomorphism `𝔾ₘ → GLₙ` of affine groups. This file
 records it as a morphism of coordinate Hopf algebras `k[GLₙ] ⟶ k[T, T⁻¹]`, recovered from its
-natural action on points, and its kernel as the Hopf ideal cutting out the scalar subgroup
-`𝔾ₘ ⊆ GLₙ`.
+natural action on points, and its kernel as the Hopf ideal cutting out the scalar subgroup of
+`GLₙ`, the scheme-theoretic image of `𝔾ₘ`. For `0 < n` this image is a copy of `𝔾ₘ`; for `n = 0`
+it is trivial.
 
 Over a field the scalar subgroup is the center: its Hopf ideal is
 `TauCeti.CommHopfAlgCat.centerDefiningIdeal`. One inequality is centrality of scalar points, read
@@ -28,7 +29,8 @@ center is a scalar point
   coordinate rings.
 * `TauCeti.GeneralLinear.mapPointsFunctor_scalarTorusCoordinateMap_app`: on points it is
   `TauCeti.GeneralLinear.scalarTorusPoints`.
-* `TauCeti.GeneralLinear.scalarHopfIdeal`: the Hopf ideal of the scalar subgroup `𝔾ₘ ⊆ GLₙ`.
+* `TauCeti.GeneralLinear.scalarHopfIdeal`: the Hopf ideal of the scalar subgroup of `GLₙ`, a copy
+  of `𝔾ₘ` when `0 < n`.
 * `TauCeti.GeneralLinear.scalarHopfIdeal_eq_centerDefiningIdeal`: the scalar subgroup is the
   center.
 
@@ -91,8 +93,9 @@ section Field
 
 variable (k : Type u) [Field k]
 
-/-- **The scalar subgroup `𝔾ₘ ⊆ GLₙ`**, as the Hopf ideal of `k[GLₙ]` cutting it out: the kernel
-of the scalar homomorphism `scalarTorusCoordinateMap`. -/
+/-- **The scalar subgroup of `GLₙ`**, as the Hopf ideal of `k[GLₙ]` cutting it out: the kernel of
+the scalar homomorphism `scalarTorusCoordinateMap`, which cuts out its scheme-theoretic image. For
+`0 < n` this is a copy of `𝔾ₘ`; for `n = 0` it is trivial. -/
 noncomputable def scalarHopfIdeal : HopfIdeal k (coordinateHopfAlgebra k n) :=
   HopfIdeal.ker (scalarTorusCoordinateMap (R := k) n).hom
 

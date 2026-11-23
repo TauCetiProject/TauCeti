@@ -13,7 +13,10 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.ScalarTorus
 
 Let `V = ℚⁿ` and let `h : S → GL(V)_ℝ` be a homomorphism from the Deligne torus. If `V` is pure of
 weight `m ≠ 0`, its weight cocharacter `w_h = h ∘ w` is `t ↦ t ^ m • 1`, defined over `ℚ`. This
-file shows that the Mumford–Tate group then contains the scalar subgroup `𝔾ₘ ⊆ GL(V)`.
+file shows that if `t ↦ t ^ m • 1` factors through `h`, the Mumford–Tate group contains the scalar
+subgroup of `GL(V)`, a copy of `𝔾ₘ` when `0 < n`. The factorization is a hypothesis of the
+theorems here: deriving it from purity needs the weight morphism `w : 𝔾ₘ → S`, which is not yet in
+Tau Ceti.
 
 The proof is on coordinate rings. The cocharacter `t ↦ t ^ m • 1` lands in `MT(h)`
 (`TauCeti.DeligneTorus.mumfordTateHopfIdeal_toIdeal_le_ker`), so the Mumford–Tate ideal lies in
@@ -49,8 +52,9 @@ namespace TauCeti.DeligneTorus
 /-- **The Mumford–Tate group contains the scalars when the weight is nonzero.** Let
 `h : S → GL_{n,ℝ}` and `m ≠ 0`, and suppose that the cocharacter `t ↦ t ^ m • 1` of `GLₙ` over `ℚ`
 factors through `h` after extending scalars to `ℝ`, as `𝔾_{m,ℝ} → S → GL_{n,ℝ}`. For a rational
-Hodge structure pure of weight `m`, this is the weight cocharacter `w_h = h ∘ w`. Then the
-Mumford–Tate group contains the scalar subgroup `𝔾ₘ ⊆ GLₙ`. -/
+Hodge structure pure of weight `m`, this is the weight cocharacter `w_h = h ∘ w`; the
+factorization is a hypothesis here. Then the Mumford–Tate group contains the scalar subgroup of
+`GLₙ`, a copy of `𝔾ₘ` when `0 < n`. -/
 theorem mumfordTateHopfIdeal_le_scalarHopfIdeal {n : ℕ}
     {h : baseChange (K := ℝ) (GeneralLinear.coordinateHopfAlgebra ℚ n) ⟶
       _root_.CommHopfAlgCat.of ℝ S} {m : ℤ} (hm : m ≠ 0)
