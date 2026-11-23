@@ -82,7 +82,7 @@ theorem bigOStar_iff_sub_le_and_le_add {a b e : ℝ} :
 
 /-- An explicit error is nonnegative. -/
 theorem BigOStar.nonneg (h : BigOStar a b e) : 0 ≤ e :=
-  (norm_nonneg _).trans h
+  (norm_nonneg _).trans (bigOStar_iff.mp h)
 
 /-- `a = a + O*(e)` holds exactly for the nonnegative errors `e`. -/
 @[simp]
@@ -109,15 +109,16 @@ theorem BigOStar.symm (h : BigOStar a b e) : BigOStar b a e :=
 /-- Transitivity: from `a = b + O*(e₁)` and `b = c + O*(e₂)` follows `a = c + O*(e₁ + e₂)`. -/
 theorem BigOStar.trans (h₁ : BigOStar a b e₁) (h₂ : BigOStar b c e₂) :
     BigOStar a c (e₁ + e₂) :=
-  (norm_sub_le_norm_sub_add_norm_sub a b c).trans (add_le_add h₁ h₂)
+  bigOStar_iff.mpr <| (norm_sub_le_norm_sub_add_norm_sub a b c).trans
+    (add_le_add (bigOStar_iff.mp h₁) (bigOStar_iff.mp h₂))
 
 /-- Monotonicity: an explicit error may be enlarged. -/
 theorem BigOStar.weaken (h : BigOStar a b e) (he : e ≤ e') : BigOStar a b e' :=
-  le_trans h he
+  bigOStar_iff.mpr ((bigOStar_iff.mp h).trans he)
 
 /-- From `a = b + O*(e)` follows `‖a‖ ≤ ‖b‖ + e`. -/
 theorem BigOStar.norm_le (h : BigOStar a b e) : ‖a‖ ≤ ‖b‖ + e :=
-  (norm_le_norm_add_norm_sub' a b).trans (add_le_add_right h _)
+  (norm_le_norm_add_norm_sub' a b).trans (add_le_add_right (bigOStar_iff.mp h) _)
 
 /-- From `a = b + O*(e)` follows `‖b‖ - e ≤ ‖a‖`. -/
 theorem BigOStar.sub_le_norm (h : BigOStar a b e) : ‖b‖ - e ≤ ‖a‖ :=
@@ -156,7 +157,7 @@ theorem bigOStar_neg_neg_iff : BigOStar (-a) (-b) e ↔ BigOStar a b e := by
 theorem BigOStar.add (h₁ : BigOStar a₁ b₁ e₁) (h₂ : BigOStar a₂ b₂ e₂) :
     BigOStar (a₁ + a₂) (b₁ + b₂) (e₁ + e₂) := by
   rw [bigOStar_iff, add_sub_add_comm]
-  exact (norm_add_le _ _).trans (add_le_add h₁ h₂)
+  exact (norm_add_le _ _).trans (add_le_add (bigOStar_iff.mp h₁) (bigOStar_iff.mp h₂))
 
 /-- From `a₁ = b₁ + O*(e₁)` and `a₂ = b₂ + O*(e₂)` follows
 `a₁ - a₂ = b₁ - b₂ + O*(e₁ + e₂)`: errors add under subtraction too. -/
@@ -172,13 +173,14 @@ theorem BigOStar.sum {s : Finset ι} {a b : ι → E} {e : ι → ℝ}
   rw [bigOStar_iff, ← Finset.sum_sub_distrib]
   exact norm_sum_le_of_le s h
 
-/-- Scaling: from `a = b + O*(e)` follows `c • a = c • b + O*(‖c‖ * e)`. -/
-theorem BigOStar.smul [SeminormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (c : 𝕜)
-    (h : BigOStar a b e) : BigOStar (c • a) (c • b) (‖c‖ * e) := by
-  rw [bigOStar_iff, ← smul_sub]
-  exact (norm_smul_le c _).trans (mul_le_mul_of_nonneg_left h (norm_nonneg c))
-
 end SeminormedAddCommGroup
+
+/-- Scaling: from `a = b + O*(e)` follows `c • a = c • b + O*(‖c‖ * e)`. -/
+theorem BigOStar.smul [SeminormedAddGroup 𝕜] [SeminormedAddGroup E] [DistribSMul 𝕜 E]
+    [IsBoundedSMul 𝕜 E] {a b : E} {e : ℝ} (c : 𝕜) (h : BigOStar a b e) :
+    BigOStar (c • a) (c • b) (‖c‖ * e) := by
+  rw [bigOStar_iff, ← smul_sub]
+  exact (norm_smul_le c _).trans (mul_le_mul_of_nonneg_left (bigOStar_iff.mp h) (norm_nonneg c))
 
 section Pointwise
 
@@ -193,10 +195,24 @@ def BigOStarOn (f g : α → E) (h : α → ℝ) (S : Set α) : Prop :=
 theorem bigOStarOn_iff : BigOStarOn f g h S ↔ ∀ x ∈ S, BigOStar (f x) (g x) (h x) :=
   Iff.rfl
 
+/-- Every pointwise error bound holds on the empty set. -/
+@[simp]
+theorem BigOStarOn.empty : BigOStarOn f g h ∅ := by
+  simp [bigOStarOn_iff]
+
+/-- A function approximates itself exactly when the error is nonnegative on the set. -/
+@[simp]
+theorem BigOStarOn.self_iff : BigOStarOn f f h S ↔ ∀ x ∈ S, 0 ≤ h x := by
+  simp [bigOStarOn_iff]
+
 /-- On a point of `S`, `f = g + O*(h)` on `S` gives `f x = g x + O*(h x)`. -/
 theorem BigOStarOn.bigOStar (hfg : BigOStarOn f g h S) {x : α} (hx : x ∈ S) :
     BigOStar (f x) (g x) (h x) :=
   hfg x hx
+
+/-- A pointwise explicit error is nonnegative on the set. -/
+theorem BigOStarOn.nonneg (hfg : BigOStarOn f g h S) : ∀ x ∈ S, 0 ≤ h x :=
+  fun _ hx ↦ (hfg.bigOStar hx).nonneg
 
 /-- `f = g + O*(h)` holds on a subset of a set where it holds. -/
 theorem BigOStarOn.mono (hfg : BigOStarOn f g h S) (hTS : T ⊆ S) : BigOStarOn f g h T :=
@@ -205,6 +221,10 @@ theorem BigOStarOn.mono (hfg : BigOStarOn f g h S) (hTS : T ⊆ S) : BigOStarOn 
 /-- Symmetry: from `f = g + O*(h)` on `S` follows `g = f + O*(h)` on `S`. -/
 theorem BigOStarOn.symm (hfg : BigOStarOn f g h S) : BigOStarOn g f h S :=
   fun x hx ↦ (hfg x hx).symm
+
+/-- Interchanging the two functions does not change a pointwise error bound. -/
+theorem BigOStarOn.comm : BigOStarOn f g h S ↔ BigOStarOn g f h S :=
+  ⟨BigOStarOn.symm, BigOStarOn.symm⟩
 
 /-- Transitivity: from `f = g + O*(h₁)` and `g = k + O*(h₂)` on `S` follows
 `f = k + O*(h₁ + h₂)` on `S`. -/
@@ -217,6 +237,14 @@ theorem BigOStarOn.weaken (hfg : BigOStarOn f g h S) (hh : ∀ x ∈ S, h x ≤ 
     BigOStarOn f g h' S :=
   fun x hx ↦ (hfg x hx).weaken (hh x hx)
 
+/-- A pointwise explicit error gives an upper bound for the norm at each point of the set. -/
+theorem BigOStarOn.norm_le (hfg : BigOStarOn f g h S) : ∀ x ∈ S, ‖f x‖ ≤ ‖g x‖ + h x :=
+  fun _ hx ↦ (hfg.bigOStar hx).norm_le
+
+/-- A pointwise explicit error gives a lower bound for the norm at each point of the set. -/
+theorem BigOStarOn.sub_le_norm (hfg : BigOStarOn f g h S) : ∀ x ∈ S, ‖g x‖ - h x ≤ ‖f x‖ :=
+  fun _ hx ↦ (hfg.bigOStar hx).sub_le_norm
+
 end Pointwise
 
 /-- Additivity of pointwise explicit errors: from `f₁ = g₁ + O*(h₁)` and `f₂ = g₂ + O*(h₂)` on `S`
@@ -225,6 +253,23 @@ theorem BigOStarOn.add [SeminormedAddCommGroup E] {f₁ f₂ g₁ g₂ : α → 
     {S : Set α} (hfg₁ : BigOStarOn f₁ g₁ h₁ S) (hfg₂ : BigOStarOn f₂ g₂ h₂ S) :
     BigOStarOn (f₁ + f₂) (g₁ + g₂) (h₁ + h₂) S :=
   fun x hx ↦ (hfg₁ x hx).add (hfg₂ x hx)
+
+/-- Negating both functions preserves the pointwise error. -/
+theorem BigOStarOn.neg [SeminormedAddCommGroup E] {f g : α → E} {h : α → ℝ} {S : Set α}
+    (hfg : BigOStarOn f g h S) : BigOStarOn (-f) (-g) h S :=
+  bigOStarOn_iff.mpr fun _ hx ↦ bigOStar_neg_neg_iff.mpr (hfg.bigOStar hx)
+
+/-- Pointwise errors add under subtraction of functions. -/
+theorem BigOStarOn.sub [SeminormedAddCommGroup E] {f₁ f₂ g₁ g₂ : α → E} {h₁ h₂ : α → ℝ}
+    {S : Set α} (hfg₁ : BigOStarOn f₁ g₁ h₁ S) (hfg₂ : BigOStarOn f₂ g₂ h₂ S) :
+    BigOStarOn (f₁ - f₂) (g₁ - g₂) (h₁ + h₂) S :=
+  bigOStarOn_iff.mpr fun _ hx ↦ (hfg₁.bigOStar hx).sub (hfg₂.bigOStar hx)
+
+/-- Scaling both functions multiplies the pointwise error by the scalar norm. -/
+theorem BigOStarOn.smul [SeminormedAddGroup 𝕜] [SeminormedAddGroup E] [DistribSMul 𝕜 E]
+    [IsBoundedSMul 𝕜 E] (c : 𝕜) {f g : α → E} {h : α → ℝ} {S : Set α}
+    (hfg : BigOStarOn f g h S) : BigOStarOn (c • f) (c • g) (fun x ↦ ‖c‖ * h x) S :=
+  bigOStarOn_iff.mpr fun _ hx ↦ (hfg.bigOStar hx).smul c
 
 section Integral
 
@@ -249,3 +294,17 @@ theorem BigOStarOn.setIntegral (hfg : BigOStarOn f g h S) (hS : MeasurableSet S)
 end Integral
 
 end TauCeti
+
+namespace Finset
+
+open TauCeti
+
+/-- A finite sum of pointwise estimates has the sum of their errors. -/
+theorem bigOStarOn_sum {α ι E : Type*} [SeminormedAddCommGroup E] (t : Finset ι) {S : Set α}
+    {F G : ι → α → E} {e : ι → α → ℝ} (H : ∀ i ∈ t, BigOStarOn (F i) (G i) (e i) S) :
+    BigOStarOn (∑ i ∈ t, F i) (∑ i ∈ t, G i) (∑ i ∈ t, e i) S := by
+  rw [bigOStarOn_iff]
+  intro x hx
+  simpa only [Finset.sum_apply] using BigOStar.sum (fun i hi ↦ (H i hi).bigOStar hx)
+
+end Finset

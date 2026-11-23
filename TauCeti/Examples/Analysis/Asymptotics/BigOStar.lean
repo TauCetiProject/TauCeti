@@ -61,4 +61,14 @@ theorem I_bigOStar_zero_one : BigOStar Complex.I 0 1 := by
 theorem one_bigOStar_zero_one : BigOStar (1 : ℝ) 0 1 ∧ ¬‖(1 : ℝ) - 0‖ ≤ 1 * ‖(0 : ℝ)‖ := by
   simp
 
+example : BigOStarOn (fun _ : ℝ ↦ Complex.I) (fun _ ↦ 0) (fun _ ↦ 1) Set.univ :=
+  bigOStarOn_iff.mpr fun _ _ ↦ I_bigOStar_zero_one
+
+example {α : Type*} [MeasurableSpace α] {μ : MeasureTheory.Measure α}
+    {f g : α → ℂ} {h : α → ℝ} {s : Set α} (H : BigOStarOn f g h s)
+    (hs : MeasurableSet s) (hf : MeasureTheory.IntegrableOn f s μ)
+    (hg : MeasureTheory.IntegrableOn g s μ) (hh : MeasureTheory.IntegrableOn h s μ) :
+    ‖∫ x in s, f x ∂μ‖ ≤ ‖∫ x in s, g x ∂μ‖ + ∫ x in s, h x ∂μ :=
+  (H.setIntegral hs hf hg hh).norm_le
+
 end TauCeti.BigOStarExamples
