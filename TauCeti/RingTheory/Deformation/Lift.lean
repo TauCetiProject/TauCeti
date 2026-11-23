@@ -274,7 +274,7 @@ instance : MulAction (A.strictKernel n) (Lift ρbar A) where
 /-- Pushforward along a morphism `f` of `C_Λ` intertwines conjugation by `a` with conjugation by
 the image of `a`. -/
 theorem map_smul (f : A ⟶ B) (a : A.strictKernel n) (ρ : Lift ρbar A) :
-    map f (a • ρ) = (⟨_, map_mem_strictKernel f a.property⟩ : B.strictKernel n) • map f ρ :=
+    map f (a • ρ) = strictKernelMap n f a • map f ρ :=
   ext fun g ↦ by simp
 
 end Conjugation

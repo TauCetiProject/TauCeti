@@ -69,9 +69,8 @@ variables of a ring framed at a nonempty `T` over the ring framed at a single in
 
 * T. Gee, *Modularity lifting theorems*, Essent. Number Theory 1 (2022), §§3.20–3.21 and
   Exercise 3.9.
-* M. Kisin, *Moduli of finite flat group schemes and modularity*, Ann. of Math. 170 (2009),
-  §1.1 (lecture notes version: *Lectures on deformations of Galois representations*, Lecture 1,
-  Remark (1.2.2)).
+* M. Kisin, *Lectures on deformations of Galois representations*, Lecture 1, Remark (1.2.2),
+  https://people.math.harvard.edu/~kisin/notes/notes.pdf.
 * C. Khare and J.-P. Wintenberger, *Serre's modularity conjecture (II)*, Invent. Math. 178 (2009),
   §4.1.
 -/
@@ -154,11 +153,8 @@ theorem map_comp (f : A ⟶ B) (f' : B ⟶ C) (x : FramedLift ρbar T A) :
 
 /-- Pushforward is equivariant along the induced map of strict kernels. -/
 theorem map_smul (f : A ⟶ B) (b : A.strictKernel n) (x : FramedLift ρbar T A) :
-    map f (b • x) = strictKernelMap n f b • map f x := by
-  refine FramedLift.ext ?_ (funext fun _ ↦ map_mul _ _ _)
-  rw [toLift_map, toLift_smul, toLift_smul, toLift_map, Lift.map_smul]
-  congr 1
-  exact Subtype.ext (coe_strictKernelMap_apply f b).symm
+    map f (b • x) = strictKernelMap n f b • map f x :=
+  FramedLift.ext (Lift.map_smul f b x.toLift) (funext fun _ ↦ map_mul _ _ _)
 
 end Map
 
