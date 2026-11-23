@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+import TauCeti.Algebra.Module.Torsion.ArtinRees
 import TauCeti.RingTheory.AdicCompletion.Algebra
-import TauCeti.RingTheory.Ideal.ArtinRees
 
 /-!
 # Injective ideal-power-torsion modules over the completion

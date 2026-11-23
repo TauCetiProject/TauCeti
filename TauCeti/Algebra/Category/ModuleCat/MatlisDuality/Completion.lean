@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Artinian
 public import TauCeti.CategoryTheory.ObjectProperty.Kernels
-public import TauCeti.RingTheory.MatlisDuality.Completion
+public import TauCeti.RingTheory.MatlisDuality.Completion.Basic
 import Mathlib.CategoryTheory.Abelian.Subcategory
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.RingTheory.AdicCompletion.Small
@@ -109,7 +108,6 @@ theorem matlisDualAdicCompletionObjEquiv_map_apply {M M' : ModuleCat.{w} R} (g :
   (rfl)
 
 /-- The contravariant Matlis dual functor `Hom_R(-, E)` from `ModuleCat R` to `ModuleCat R̂`. -/
-@[expose, simps]
 def matlisDualAdicCompletion :
     (ModuleCat.{w} R)ᵒᵖ ⥤ ModuleCat.{max v w} (_root_.AdicCompletion (maximalIdeal R) R) where
   obj M := hι.matlisDualAdicCompletionObj M.unop
@@ -126,6 +124,19 @@ def matlisDualAdicCompletion :
     apply (hι.matlisDualAdicCompletionObjEquiv _).injective
     ext x
     simp
+
+@[simp]
+theorem matlisDualAdicCompletion_obj (M : (ModuleCat.{w} R)ᵒᵖ) :
+    hι.matlisDualAdicCompletion.obj M = hι.matlisDualAdicCompletionObj M.unop :=
+  (rfl)
+
+@[simp]
+theorem matlisDualAdicCompletion_map {M M' : (ModuleCat.{w} R)ᵒᵖ} (g : M ⟶ M') :
+    hι.matlisDualAdicCompletion.map g =
+      eqToHom (hι.matlisDualAdicCompletion_obj M) ≫
+        hι.matlisDualAdicCompletionMap g.unop ≫
+        eqToHom (hι.matlisDualAdicCompletion_obj M').symm :=
+  (rfl)
 
 theorem matlisDualAdicCompletionMap_add {M M' : ModuleCat.{w} R} (g h : M ⟶ M') :
     hι.matlisDualAdicCompletionMap (g + h) =
@@ -174,7 +185,6 @@ theorem matlisDualOfAdicCompletionObjEquiv_map_apply
   (rfl)
 
 /-- The contravariant Matlis dual functor `Hom_{R̂}(-, E)` from `ModuleCat R̂` to `ModuleCat R`. -/
-@[expose, simps]
 def matlisDualOfAdicCompletion :
     (ModuleCat.{w} (_root_.AdicCompletion (maximalIdeal R) R))ᵒᵖ ⥤ ModuleCat.{max v w} R where
   obj N := hι.matlisDualOfAdicCompletionObj N.unop
@@ -191,6 +201,21 @@ def matlisDualOfAdicCompletion :
     apply (hι.matlisDualOfAdicCompletionObjEquiv _).injective
     ext x
     simp
+
+@[simp]
+theorem matlisDualOfAdicCompletion_obj
+    (N : (ModuleCat.{w} (_root_.AdicCompletion (maximalIdeal R) R))ᵒᵖ) :
+    hι.matlisDualOfAdicCompletion.obj N = hι.matlisDualOfAdicCompletionObj N.unop :=
+  (rfl)
+
+@[simp]
+theorem matlisDualOfAdicCompletion_map
+    {N N' : (ModuleCat.{w} (_root_.AdicCompletion (maximalIdeal R) R))ᵒᵖ} (g : N ⟶ N') :
+    hι.matlisDualOfAdicCompletion.map g =
+      eqToHom (hι.matlisDualOfAdicCompletion_obj N) ≫
+        hι.matlisDualOfAdicCompletionMap g.unop ≫
+        eqToHom (hι.matlisDualOfAdicCompletion_obj N').symm :=
+  (rfl)
 
 theorem matlisDualOfAdicCompletionMap_add
     {N N' : ModuleCat.{w} (_root_.AdicCompletion (maximalIdeal R) R)} (g h : N ⟶ N') :
@@ -405,7 +430,6 @@ variable [Small.{v} R]
 /-- **General Matlis duality over the completion**: `Hom_R(-, E)` and `Hom_{R̂}(-, E)` form a
 contravariant equivalence between Artinian `R`-modules and finitely generated `R̂`-modules, whose
 unit and counit are evaluation. -/
-@[expose]
 def adicCompletionMatlisDuality :
     (ModuleCat.isArtinian.{max v w} R).FullSubcategoryᵒᵖ ≌
       FGModuleCat.{max v w} (_root_.AdicCompletion (maximalIdeal R) R) where
@@ -465,28 +489,32 @@ theorem adicCompletionMatlisDuality_functor_obj_obj
     (M : (ModuleCat.isArtinian.{max v w} R).FullSubcategoryᵒᵖ) :
     (hι.adicCompletionMatlisDuality.functor.obj M).obj =
       hι.matlisDualAdicCompletionObj M.unop.obj :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem adicCompletionMatlisDuality_functor_map_hom
     {M M' : (ModuleCat.isArtinian.{max v w} R).FullSubcategoryᵒᵖ} (g : M ⟶ M') :
     (hι.adicCompletionMatlisDuality.functor.map g).hom =
-      hι.matlisDualAdicCompletionMap g.unop.hom :=
-  rfl
+      eqToHom (hι.adicCompletionMatlisDuality_functor_obj_obj M) ≫
+        hι.matlisDualAdicCompletionMap g.unop.hom ≫
+        eqToHom (hι.adicCompletionMatlisDuality_functor_obj_obj M').symm := by
+  simp [adicCompletionMatlisDuality]
 
 @[simp]
 theorem adicCompletionMatlisDuality_inverse_obj_unop_obj
     (N : FGModuleCat.{max v w} (_root_.AdicCompletion (maximalIdeal R) R)) :
     (hι.adicCompletionMatlisDuality.inverse.obj N).unop.obj =
       hι.matlisDualOfAdicCompletionObj N.obj :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem adicCompletionMatlisDuality_inverse_map_unop_hom
     {N N' : FGModuleCat.{max v w} (_root_.AdicCompletion (maximalIdeal R) R)} (g : N ⟶ N') :
     (hι.adicCompletionMatlisDuality.inverse.map g).unop.hom =
-      hι.matlisDualOfAdicCompletionMap g.hom :=
-  rfl
+      eqToHom (hι.adicCompletionMatlisDuality_inverse_obj_unop_obj N') ≫
+        hι.matlisDualOfAdicCompletionMap g.hom ≫
+        eqToHom (hι.adicCompletionMatlisDuality_inverse_obj_unop_obj N).symm := by
+  simp [adicCompletionMatlisDuality]
 
 /-- The inverse of the unit of `adicCompletionMatlisDuality` is evaluation
 `M → Hom_{R̂}(Hom_R(M, E), E)`. -/
@@ -494,9 +522,11 @@ theorem adicCompletionMatlisDuality_inverse_map_unop_hom
 theorem adicCompletionMatlisDuality_unitIso_inv_app
     (M : (ModuleCat.isArtinian.{max v w} R).FullSubcategoryᵒᵖ) :
     (hι.adicCompletionMatlisDuality.unitIso.inv.app M).unop.hom =
-      (hι.evalIsoAdicCompletion M.unop.obj ((ModuleCat.isArtinian_iff _).mp M.unop.property)).hom
-    :=
-  rfl
+      (hι.evalIsoAdicCompletion M.unop.obj ((ModuleCat.isArtinian_iff _).mp M.unop.property)).hom ≫
+        eqToHom ((congrArg hι.matlisDualOfAdicCompletionObj
+          (hι.adicCompletionMatlisDuality_functor_obj_obj M)).symm.trans
+          (hι.adicCompletionMatlisDuality_inverse_obj_unop_obj _).symm) :=
+  (rfl)
 
 /-- The inverse of the counit of `adicCompletionMatlisDuality` is evaluation
 `N → Hom_R(Hom_{R̂}(N, E), E)`. -/
@@ -504,8 +534,11 @@ theorem adicCompletionMatlisDuality_unitIso_inv_app
 theorem adicCompletionMatlisDuality_counitIso_inv_app
     (N : FGModuleCat.{max v w} (_root_.AdicCompletion (maximalIdeal R) R)) :
     (hι.adicCompletionMatlisDuality.counitIso.inv.app N).hom =
-      (hι.evalIsoOfFiniteAdicCompletion N.obj ((ModuleCat.isFG_iff _).mp N.property)).hom :=
-  rfl
+      (hι.evalIsoOfFiniteAdicCompletion N.obj ((ModuleCat.isFG_iff _).mp N.property)).hom ≫
+        eqToHom ((congrArg hι.matlisDualAdicCompletionObj
+          (hι.adicCompletionMatlisDuality_inverse_obj_unop_obj N)).symm.trans
+          (hι.adicCompletionMatlisDuality_functor_obj_obj _).symm) :=
+  (rfl)
 
 /-- Applying `adicCompletionMatlisDuality.functor` reverses a short exact sequence of Artinian
 `R`-modules into a short exact sequence of finitely generated `R̂`-modules. -/

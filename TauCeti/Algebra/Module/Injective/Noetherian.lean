@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
-import TauCeti.RingTheory.Ideal.ArtinRees
+import TauCeti.Algebra.Module.Torsion.ArtinRees
 
 /-!
 # Injective modules over a Noetherian ring
