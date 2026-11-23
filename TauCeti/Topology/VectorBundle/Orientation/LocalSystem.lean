@@ -12,6 +12,7 @@ public import TauCeti.Topology.VectorBundle.Orientation.Cover.Fiberwise
 
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import TauCeti.Topology.Homotopy.Covering
+import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 
 /-!
 # The orientation local system of a real vector bundle
@@ -45,7 +46,11 @@ orientation read as `ω` at the end of the path
 (`TauCeti.VectorBundleOrientationCover.signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm`),
 since these orientations form a continuous section of the orientation double cover over the base
 set, which lifts the path. Transport is read through any path lifting by evaluation at its ends
-(`TauCeti.VectorBundleOrientationCover.signLocalSystemFiberEquiv_map`).
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemFiberEquiv_map`). More generally, the system
+pulled back along a map `g : Y → B` is trivialized by any continuous lift `s` of `g` to the
+orientation double cover, by evaluation at the orientations `s y`
+(`TauCeti.VectorBundleOrientationCover.pullbackSignLocalSystemIsoOfLift`); composing the lift with
+the deck involution negates the trivialization.
 
 Isomorphic bundles have isomorphic orientation local systems. A fibrewise isomorphism
 `φ b : E'_b ≃ E_b` with continuous total-space map induces a map of orientation double covers
@@ -76,6 +81,9 @@ two orientations of a fibre, and it projects to a loop whose monodromy exchanges
 * `TauCeti.VectorBundleOrientationCover.pullbackSignLocalSystemIso`: the trivialization of the
   orientation system pulled back along a map into the base set of a trivialization, by evaluation
   at the orientations which it reads as a fixed orientation of the model fibre.
+* `TauCeti.VectorBundleOrientationCover.pullbackSignLocalSystemIsoOfLift`: the trivialization of
+  the orientation system pulled back along a map with a continuous lift to the orientation double
+  cover, by evaluation at the lifted orientations.
 * `TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero`: the trivialization when
   `2 = 0` in the coefficients.
 
@@ -710,5 +718,101 @@ theorem pullbackSignLocalSystemIso_neg_inv (e : Trivialization F (π F E))
     (pullbackSignLocalSystemIso R hι e (-ω) g hg).inv =
       -(pullbackSignLocalSystemIso R hι e ω g hg).inv :=
   Iso.inv_ext (by rw [pullbackSignLocalSystemIso_neg_hom, Preadditive.neg_comp_neg, Iso.hom_inv_id])
+
+/-! ### The trivialization of the orientation local system along a lift into the cover -/
+
+/-- Evaluation at a point `e` of the orientation cover, on the fibre of `o(E)` over a point `x` of
+the base below `e`. -/
+private def liftFiberEquiv {x : B} (e : VectorBundleOrientationCover F E ι) (he : e.proj = x) :
+    (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x) ≃ₗ[R] R :=
+  signLocalSystemObjEquiv hι _ ≪≫ₗ signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
+    ⟨e, he⟩
+
+private theorem liftFiberEquiv_apply {x : B} (e : VectorBundleOrientationCover F E ι)
+    (he : e.proj = x) (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x)) :
+    liftFiberEquiv hι e he f =
+      (signLocalSystemObjEquiv hι (FundamentalGroupoid.mk x) f :
+        (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨e, he⟩ :=
+  signFiberEquiv_apply _ _ _ _
+
+variable (R) in
+/-- Over a map `g : Y → B` with a continuous lift `s` to the orientation double cover, the
+pulled-back orientation local system is trivialized by evaluating, over each point `y`, at the
+orientation `s y` of `E_{g y}`. -/
+def pullbackSignLocalSystemIsoOfLift {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
+    (s : C(Y, VectorBundleOrientationCover F E ι)) (hs : ∀ y, (s y).proj = g y) :
+    (LocalCoefficientSystem.pullback g).obj (signLocalSystem F E R hι) ≅
+      (LocalCoefficientSystem.constantFunctor Y).obj (ModuleCat.of R R) :=
+  NatIso.ofComponents (fun y ↦ (liftFiberEquiv hι (s y.as) (hs y.as)).toModuleIso)
+    fun {y y'} p ↦ ModuleCat.hom_ext (LinearMap.ext fun
+      (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y.as))) ↦ by
+      -- The lift `s` lifts the image of `p`, so monodromy in the cover carries `s y` to `s y'`.
+      have hm := (isCoveringMap_proj (F := F) (E := E) hι).monodromy_map_of_lift s.continuous hs p
+      -- The image of `p` in the base, as a morphism of the fundamental groupoid.
+      let γ : FundamentalGroupoid.mk (g y.as) ⟶ FundamentalGroupoid.mk (g y'.as) :=
+        (FundamentalGroupoid.map g).map p
+      -- `change`: the components are the linear equivalences themselves, and the constant system
+      -- transports by the identity.
+      change liftFiberEquiv hι (s y'.as) (hs y'.as) ((signLocalSystem F E R hι).map γ f) =
+        liftFiberEquiv hι (s y.as) (hs y.as) f
+      refine (liftFiberEquiv_apply hι _ _ _).trans
+        (.trans ?_ (liftFiberEquiv_apply hι _ _ f).symm)
+      rw [← hm]
+      exact signLocalSystemObjEquiv_map_apply_monodromy hι _ f _)
+
+/-- Over `y`, the trivialization along a lift `s` evaluates at the orientation `s y`. -/
+@[simp]
+theorem pullbackSignLocalSystemIsoOfLift_hom_app_apply {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
+    (s : C(Y, VectorBundleOrientationCover F E ι)) (hs : ∀ y, (s y).proj = g y) (y : Y)
+    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y))) :
+    (ModuleCat.Hom.hom (A := (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y)))
+        (B := ModuleCat.of R R)
+        ((pullbackSignLocalSystemIsoOfLift R hι g s hs).hom.app (FundamentalGroupoid.mk y))) f =
+      (signLocalSystemObjEquiv hι (FundamentalGroupoid.mk (g y)) f :
+        (proj ⁻¹' {g y} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨s y, hs y⟩ :=
+  liftFiberEquiv_apply hι (s y) (hs y) f
+
+/-- Over `y`, the inverse of the trivialization along a lift `s` sends `r` to the element of the
+fibre whose value at the orientation `s y` is `r`. -/
+-- Not `@[simp]`: simp rewrites the coercion of the constant fibre on the left-hand side, so the
+-- statement is not in simp normal form.
+theorem signLocalSystemObjEquiv_pullbackSignLocalSystemIsoOfLift_inv_app_apply
+    {Y : TopCat.{uB}} (g : C(Y, TopCat.of B)) (s : C(Y, VectorBundleOrientationCover F E ι))
+    (hs : ∀ y, (s y).proj = g y) (y : Y) (r : R) :
+    (signLocalSystemObjEquiv hι (FundamentalGroupoid.mk (g y))
+        (((pullbackSignLocalSystemIsoOfLift R hι g s hs).inv.app (FundamentalGroupoid.mk y)) r) :
+        (proj ⁻¹' {g y} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨s y, hs y⟩ = r :=
+  -- The component of the inverse at `y` is the inverse of evaluation at `s y`.
+  (liftFiberEquiv_apply hι (s y) (hs y) _).symm.trans (LinearEquiv.apply_symm_apply _ r)
+
+/-- Two lifts exchanged by the deck involution give opposite trivializations of the pulled-back
+orientation local system: they evaluate at opposite orientations. -/
+theorem pullbackSignLocalSystemIsoOfLift_hom_of_eq_deck {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
+    {s s' : C(Y, VectorBundleOrientationCover F E ι)} (hs : ∀ y, (s y).proj = g y)
+    (hs' : ∀ y, (s' y).proj = g y) (h : ∀ y, s' y = deck (s y)) :
+    (pullbackSignLocalSystemIsoOfLift R hι g s' hs').hom =
+      -(pullbackSignLocalSystemIsoOfLift R hι g s hs).hom := by
+  refine NatTrans.ext (funext fun ⟨y⟩ ↦ ModuleCat.hom_ext (LinearMap.ext fun
+    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y))) ↦ ?_))
+  rw [NatTrans.app_neg, ModuleCat.hom_neg]
+  -- The orientation `s' y` is the other point of the fibre over `g y`.
+  have he : (⟨s' y, hs' y⟩ : (proj ⁻¹' {g y} : Set (VectorBundleOrientationCover F E ι))) =
+      Function.fiberMap _ (funext proj_deck) (g y) ⟨s y, hs y⟩ :=
+    Subtype.ext ((h y).trans
+      (Function.fiberMap_apply_coe _ (funext proj_deck) (g y) ⟨s y, hs y⟩).symm)
+  refine (pullbackSignLocalSystemIsoOfLift_hom_app_apply hι g s' hs' y f).trans ?_
+  rw [he, ← signFiberEquiv_apply deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h),
+    signFiberEquiv_fiberMap, signFiberEquiv_apply]
+  exact congrArg Neg.neg (pullbackSignLocalSystemIsoOfLift_hom_app_apply hι g s hs y f).symm
+
+/-- Two lifts exchanged by the deck involution give opposite inverses of the trivializations of the
+pulled-back orientation local system. -/
+theorem pullbackSignLocalSystemIsoOfLift_inv_of_eq_deck {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
+    {s s' : C(Y, VectorBundleOrientationCover F E ι)} (hs : ∀ y, (s y).proj = g y)
+    (hs' : ∀ y, (s' y).proj = g y) (h : ∀ y, s' y = deck (s y)) :
+    (pullbackSignLocalSystemIsoOfLift R hι g s' hs').inv =
+      -(pullbackSignLocalSystemIsoOfLift R hι g s hs).inv :=
+  Iso.inv_ext (by rw [pullbackSignLocalSystemIsoOfLift_hom_of_eq_deck hι g hs hs' h,
+    Preadditive.neg_comp_neg, Iso.hom_inv_id])
 
 end TauCeti.VectorBundleOrientationCover

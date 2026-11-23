@@ -28,7 +28,8 @@ Let `π^*o(E)` be the orientation local system of `E` pulled back to the total s
 the orientation system (`TauCeti.twistedThomClass`). Pulled back further along `q` it becomes
 trivial, with no orientation of `E` chosen: over a vector `v` of `E'`, the point `v.proj` of the
 cover is an orientation of the fibre of `E` containing `v`, and evaluation at it identifies the
-fibre of `π^*o(E)` with the ring `R` (`pullbackThomPairSignLocalSystemIso`). Over `δ v` the
+fibre of `π^*o(E)` with the ring `R` (`pullbackThomPairSignLocalSystemIso`, the trivialization
+`pullbackSignLocalSystemIsoOfLift` along the lift `v ↦ v.proj` of `E' → B` to `B'`). Over `δ v` the
 evaluation is at the opposite orientation, so it changes sign.
 
 This gives a chain map from the relative singular chains of `(E', E'₀)` with coefficients in `R`
@@ -118,36 +119,19 @@ variable (F E) in
 /-- **The orientation system is trivial on the Thom pair of the orientation cover.** The pull-back
 of `π^*o(E)` (`TauCeti.thomPairSignLocalSystem`, written out as a pull-back) along
 `(E', E'₀) ⟶ (E, E₀)` is trivialized by evaluating, over a vector `v` of `E'`, at the
-orientation `v.proj` of the fibre of `E` containing `v`. -/
+orientation `v.proj` of the fibre of `E` containing `v`: it is
+`TauCeti.VectorBundleOrientationCover.pullbackSignLocalSystemIsoOfLift` for the lift `v ↦ v.proj`
+of the projection of `q` to the base. -/
 def pullbackThomPairSignLocalSystemIso :
     (LocalCoefficientSystem.pullback (TopPair.Hom.fst (coverThomPairMap F E ι)).hom).obj
         ((LocalCoefficientSystem.pullback (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
           ⟨π F E, FiberBundle.continuous_proj F E⟩).obj (signLocalSystem F E R hι)) ≅
       (LocalCoefficientSystem.constantFunctor _).obj (ModuleCat.of R R) :=
-  NatIso.ofComponents (fun v ↦ (coverFiberEquiv hι R v.as).toModuleIso)
-    fun {v v'} p ↦ ModuleCat.hom_ext (LinearMap.ext fun f ↦ by
-      -- The image of `p` in the base, as a morphism of the fundamental groupoid.
-      let γ : FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v.as).proj ⟶
-          FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v'.as).proj :=
-        (p.map (TopPair.Hom.fst (coverThomPairMap F E ι)).hom).map
-          ⟨π F E, FiberBundle.continuous_proj F E⟩
-      -- The projection `E' ⟶ B'` lifts `γ`, so monodromy in the cover carries `v.proj` to
-      -- `v'.proj`.
-      have hm := (isCoveringMap_proj (F := F) (E := E) hι).monodromy_map_of_lift
-        (g := (⟨π F E, FiberBundle.continuous_proj F E⟩ : C(TotalSpace F E, B)).comp
-          (TopPair.Hom.fst (coverThomPairMap F E ι)).hom)
-        (Pullback.continuous_proj F E _) proj_proj_eq_proj_coverThomPairMap_fst p
-      -- `erw`: the lemma writes the image path as `p.map (π ∘ q)`, which is `γ` by
-      -- `Path.Homotopic.Quotient.map_comp`.
-      erw [Path.Homotopic.Quotient.map_comp] at hm
-      -- `change`: the components are the linear equivalences themselves, and the constant system
-      -- transports by the identity.
-      change coverFiberEquiv hι R v'.as ((signLocalSystem F E R hι).map γ f) =
-        coverFiberEquiv hι R v.as f
-      refine (coverFiberEquiv_apply hι R v'.as _).trans
-        (.trans ?_ (coverFiberEquiv_apply hι R v.as f).symm)
-      rw [← hm]
-      exact signLocalSystemObjEquiv_map_apply_monodromy hι γ f _)
+  ((LocalCoefficientSystem.pullbackCompIso (TopPair.Hom.fst (coverThomPairMap F E ι)).hom
+      (Y := TopCat.of (TotalSpace F E)) (Z := TopCat.of B)
+      ⟨π F E, FiberBundle.continuous_proj F E⟩).app (signLocalSystem F E R hι)).symm ≪≫
+    pullbackSignLocalSystemIsoOfLift R hι _ ⟨TotalSpace.proj, Pullback.continuous_proj F E _⟩
+      proj_proj_eq_proj_coverThomPairMap_fst
 
 /-- Over a vector `v` of `E'`, the trivialization evaluates at the orientation `v.proj`. -/
 @[simp]
@@ -161,8 +145,18 @@ theorem pullbackThomPairSignLocalSystemIso_hom_app_apply
           (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj) f :
         (proj ⁻¹' {(TopPair.Hom.fst (coverThomPairMap F E ι) v).proj} :
           Set (VectorBundleOrientationCover F E ι)) → R)
-        ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩ :=
-  coverFiberEquiv_apply hι R v f
+        ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩ := by
+  -- The component of the comparison of iterated pull-backs is the identity.
+  have h := LocalCoefficientSystem.pullbackCompIso_inv_app_app (R := R)
+    (TopPair.Hom.fst (coverThomPairMap F E ι)).hom (Y := TopCat.of (TotalSpace F E))
+    (Z := TopCat.of B) ⟨π F E, FiberBundle.continuous_proj F E⟩ (signLocalSystem F E R hι)
+    (FundamentalGroupoid.mk v)
+  refine Eq.trans ?_ (pullbackSignLocalSystemIsoOfLift_hom_app_apply hι
+    (g := (⟨π F E, FiberBundle.continuous_proj F E⟩ : C(TotalSpace F E, B)).comp
+      (TopPair.Hom.fst (coverThomPairMap F E ι)).hom)
+    (s := ⟨TotalSpace.proj, Pullback.continuous_proj F E _⟩)
+    proj_proj_eq_proj_coverThomPairMap_fst v f)
+  exact congrArg (ModuleCat.Hom.hom _) (congrArg (fun φ ↦ ModuleCat.Hom.hom φ f) h)
 
 /-- Over a vector `v` of `E'`, the inverse of the trivialization sends `r` to the element of the
 fibre of `o(E)` whose value at the orientation `v.proj` is `r`. -/
@@ -176,8 +170,9 @@ theorem signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply
         (proj ⁻¹' {(TopPair.Hom.fst (coverThomPairMap F E ι) v).proj} :
           Set (VectorBundleOrientationCover F E ι)) → R)
       ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩ = r :=
-  -- The component of the inverse at `v` is the inverse of `coverFiberEquiv`.
-  (coverFiberEquiv_apply hι R v _).symm.trans (LinearEquiv.apply_symm_apply _ r)
+  (pullbackThomPairSignLocalSystemIso_hom_app_apply hι R v _).symm.trans
+    (congrArg (fun φ ↦ ModuleCat.Hom.hom φ r)
+      ((pullbackThomPairSignLocalSystemIso F E hι R).inv_hom_id_app (FundamentalGroupoid.mk v)))
 
 /-- Over the image of a vector `v` of `E'` under the lift of the deck involution, the inverse of the
 trivialization sends `r` to the element of the fibre of `o(E)` whose value at the orientation
