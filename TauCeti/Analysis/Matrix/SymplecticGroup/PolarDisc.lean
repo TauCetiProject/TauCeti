@@ -304,12 +304,14 @@ theorem contDiff_exp_spSymmMatrix_mul_realify {k : ℕ∞ω} :
       NormedSpace.exp (spSymmMatrix ι (p.1 0) (p.1 1)) * (diagonal fun _ : ι ↦ p.2).realify := by
   have hS (a b : ℝ) : spSymmMatrix ι a b =
       a • (fromBlocks 1 0 0 (-1) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) + b • fromBlocks 0 1 1 0 := by
-    ext (i | i) (j | j) <;> by_cases h : i = j <;> simp [one_apply, h]
+    ext (i | i) (j | j) <;> by_cases h : i = j <;> simp [h]
   simp only [hS, ← smul_one_eq_diagonal, realify_smul_one, RCLike.re_to_complex,
     RCLike.im_to_complex]
   have hv : ContDiff ℝ k fun v : EuclideanSpace ℝ (Fin 2) ↦
-      v 0 • (fromBlocks 1 0 0 (-1) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) + v 1 • fromBlocks 0 1 1 0 :=
-    ((contDiff_piLp_apply 2).smul contDiff_const).add ((contDiff_piLp_apply 2).smul contDiff_const)
+      v 0 • (fromBlocks 1 0 0 (-1) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) + v 1 • fromBlocks 0 1 1 0 := by
+    have h₀ : ContDiff ℝ k fun v : EuclideanSpace ℝ (Fin 2) ↦ v 0 := contDiff_piLp_apply 2
+    have h₁ : ContDiff ℝ k fun v : EuclideanSpace ℝ (Fin 2) ↦ v 1 := contDiff_piLp_apply 2
+    exact (h₀.smul contDiff_const).add (h₁.smul contDiff_const)
   have hz : ContDiff ℝ k fun z : ℂ ↦ z.re • (1 : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) + z.im • J ι ℝ :=
     (Complex.reCLM.contDiff.smul contDiff_const).add (Complex.imCLM.contDiff.smul contDiff_const)
   exact ((NormedSpace.contDiff_exp ℝ).comp (hv.comp contDiff_fst)).mul (hz.comp contDiff_snd)
