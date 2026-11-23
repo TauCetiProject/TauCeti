@@ -182,78 +182,6 @@ theorem norm_compCkHolder₂_apply_le (B : E →L[ℝ] F →L[ℝ] G) (hα : α 
     gcongr
     exact B.norm_compCkHolder₂_le hα)
 
-/-- At order `0`, pointwise application of a continuous bilinear map on `CkHolderSpace 0 α`,
-transported from `ContinuousLinearMap.compHolder₂` without requiring `α ≤ 1`. -/
-def compCkHolderZero₂ (B : E →L[ℝ] F →L[ℝ] G) :
-    CkHolderSpace 0 α X E →L[ℝ] CkHolderSpace 0 α X F →L[ℝ] CkHolderSpace 0 α X G :=
-  (compL ℝ (CkHolderSpace 0 α X F) (HolderSpace α X G) (CkHolderSpace 0 α X G)
-    CkHolderSpace.equivHolderSpace.symm.toLinearIsometry.toContinuousLinearMap).comp
-    (B.compHolder₂.bilinearComp
-      CkHolderSpace.equivHolderSpace.toLinearIsometry.toContinuousLinearMap
-      CkHolderSpace.equivHolderSpace.toLinearIsometry.toContinuousLinearMap)
-
-/-- At order `0`, the transported bilinear lift is pointwise the original bilinear map. -/
-@[simp]
-theorem compCkHolderZero₂_apply (B : E →L[ℝ] F →L[ℝ] G)
-    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) (x : X) :
-    B.compCkHolderZero₂ f g x = B (f x) (g x) := by
-  simp [compCkHolderZero₂]
-
-/-- At order `0`, `compCkHolderZero₂` transports through `equivHolderSpace` to `compHolder₂`. -/
-@[simp]
-theorem equivHolderSpace_compCkHolderZero₂ (B : E →L[ℝ] F →L[ℝ] G)
-    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) :
-    CkHolderSpace.equivHolderSpace (B.compCkHolderZero₂ f g) =
-      B.compHolder₂ (CkHolderSpace.equivHolderSpace f)
-        (CkHolderSpace.equivHolderSpace g) := by
-  ext x
-  simp
-
-/-- At order `0`, the bilinear lift `compCkHolderZero₂` has operator norm at most `‖B‖`. -/
-theorem norm_compCkHolderZero₂_le (B : E →L[ℝ] F →L[ℝ] G) :
-    ‖B.compCkHolderZero₂ (α := α) (X := X)‖ ≤ ‖B‖ := by
-  refine opNorm_le_bound₂ _ (norm_nonneg B) fun f g ↦ ?_
-  rw [← CkHolderSpace.equivHolderSpace.norm_map, equivHolderSpace_compCkHolderZero₂]
-  simpa only [LinearIsometryEquiv.norm_map] using
-    B.norm_compHolder₂_apply_le (CkHolderSpace.equivHolderSpace f)
-      (CkHolderSpace.equivHolderSpace g)
-
-/-- On a nonempty space, the order-zero bilinear lift preserves the bilinear operator norm. -/
-@[simp]
-theorem norm_compCkHolderZero₂ [Nonempty X] (B : E →L[ℝ] F →L[ℝ] G) :
-    ‖B.compCkHolderZero₂ (α := α) (X := X)‖ = ‖B‖ := by
-  refine le_antisymm B.norm_compCkHolderZero₂_le ?_
-  rw [← B.norm_compHolder₂ (α := α) (X := X)]
-  refine opNorm_le_bound₂ _ (norm_nonneg (B.compCkHolderZero₂ (α := α) (X := X))) fun f g ↦ ?_
-  calc
-    ‖B.compHolder₂ f g‖ =
-        ‖B.compCkHolderZero₂ (CkHolderSpace.equivHolderSpace.symm f)
-          (CkHolderSpace.equivHolderSpace.symm g)‖ := by
-      rw [← CkHolderSpace.equivHolderSpace.norm_map, equivHolderSpace_compCkHolderZero₂,
-        LinearIsometryEquiv.apply_symm_apply, LinearIsometryEquiv.apply_symm_apply]
-    _ ≤ ‖B.compCkHolderZero₂ (α := α) (X := X)‖ *
-          ‖CkHolderSpace.equivHolderSpace.symm f‖ *
-          ‖CkHolderSpace.equivHolderSpace.symm g‖ :=
-      B.compCkHolderZero₂.le_opNorm₂ _ _
-    _ = ‖B.compCkHolderZero₂ (α := α) (X := X)‖ * ‖f‖ * ‖g‖ := by
-      simp only [LinearIsometryEquiv.norm_map]
-
-/-- At order `0`, the pointwise bilinear product satisfies `‖B (f, g)‖ ≤ ‖B‖ ‖f‖ ‖g‖`. -/
-theorem norm_compCkHolderZero₂_apply_le (B : E →L[ℝ] F →L[ℝ] G)
-    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) :
-    ‖B.compCkHolderZero₂ f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ :=
-  (B.compCkHolderZero₂.le_opNorm₂ f g).trans (by
-    gcongr
-    exact B.norm_compCkHolderZero₂_le)
-
-/-- At order `0` and for `α ≤ 1`, the general-order lift `compCkHolder₂` agrees with
-`compCkHolderZero₂`. -/
-@[simp]
-theorem compCkHolder₂_zero (B : E →L[ℝ] F →L[ℝ] G) (hα : α ≤ 1) :
-    B.compCkHolder₂ (k := 0) (X := X) hα = B.compCkHolderZero₂ := by
-  ext f g x
-  simp
-
 section OpenSet
 
 variable {Ω : Opens X}
@@ -494,6 +422,95 @@ theorem compCkHolderOn₂_zero (B : E →L[ℝ] F →L[ℝ] G)
     B.compCkHolderOn₂ (k := 0) (α := α) hΩ hα = B.compCkHolderOnZero₂ := by
   ext f g x
   simp
+
+end OpenSet
+
+private theorem opNorm_compL_bilinearComp_linearIsometryEquiv
+    {E₁ E₂ F₁ F₂ G₁ G₂ : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+    [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+    [NormedAddCommGroup G₁] [NormedSpace ℝ G₁] [NormedAddCommGroup G₂] [NormedSpace ℝ G₂]
+    (B : E₂ →L[ℝ] F₂ →L[ℝ] G₂)
+    (e₁ : E₁ ≃ₗᵢ[ℝ] E₂) (e₂ : F₁ ≃ₗᵢ[ℝ] F₂) (e₃ : G₂ ≃ₗᵢ[ℝ] G₁) :
+    ‖(compL ℝ F₁ G₂ G₁ (e₃ : G₂ →L[ℝ] G₁)).comp
+        (B.bilinearComp (e₁ : E₁ →L[ℝ] E₂) (e₂ : F₁ →L[ℝ] F₂))‖ = ‖B‖ := by
+  have h1 : ‖(compL ℝ F₁ G₂ G₁ (e₃ : G₂ →L[ℝ] G₁)).comp
+      (B.bilinearComp (e₁ : E₁ →L[ℝ] E₂) (e₂ : F₁ →L[ℝ] F₂))‖ =
+      ‖B.bilinearComp (e₁ : E₁ →L[ℝ] E₂) (e₂ : F₁ →L[ℝ] F₂)‖ := by
+    refine le_antisymm
+      (opNorm_le_bound _ (opNorm_nonneg _) fun x ↦ ?_)
+      (opNorm_le_bound _ (opNorm_nonneg _) fun x ↦ ?_)
+    · rw [comp_apply, compL_apply, opNorm_linearIsometryEquiv_comp]
+      exact ContinuousLinearMap.le_opNorm _ x
+    · have h := ContinuousLinearMap.le_opNorm
+        ((compL ℝ F₁ G₂ G₁ (e₃ : G₂ →L[ℝ] G₁)).comp
+          (B.bilinearComp (e₁ : E₁ →L[ℝ] E₂) (e₂ : F₁ →L[ℝ] F₂))) x
+      simpa only [comp_apply, compL_apply, opNorm_linearIsometryEquiv_comp] using h
+  rw [h1, bilinearComp, opNorm_flip, opNorm_comp_linearIsometryEquiv, opNorm_flip,
+    opNorm_comp_linearIsometryEquiv]
+
+/-- At order `0`, pointwise application of a continuous bilinear map on `CkHolderSpace 0 α`,
+obtained by conjugating `ContinuousLinearMap.compCkHolderOnZero₂` on `⊤` with `equivTop` without
+requiring `α ≤ 1`. -/
+def compCkHolderZero₂ (B : E →L[ℝ] F →L[ℝ] G) :
+    CkHolderSpace 0 α X E →L[ℝ] CkHolderSpace 0 α X F →L[ℝ] CkHolderSpace 0 α X G :=
+  (compL ℝ (CkHolderSpace 0 α X F) (CkHolderSpaceOn 0 α (⊤ : Opens X) G)
+      (CkHolderSpace 0 α X G)
+      ((CkHolderSpaceOn.equivTop (k := 0) (α := α) (E := X) (F := G)) : _ →L[ℝ] _)).comp
+    ((B.compCkHolderOnZero₂ (α := α) (Ω := (⊤ : Opens X))).bilinearComp
+      ((CkHolderSpaceOn.equivTop (k := 0) (α := α) (E := X) (F := E)).symm : _ →L[ℝ] _)
+      ((CkHolderSpaceOn.equivTop (k := 0) (α := α) (E := X) (F := F)).symm : _ →L[ℝ] _))
+
+/-- At order `0`, the transported bilinear lift is pointwise the original bilinear map. -/
+@[simp]
+theorem compCkHolderZero₂_apply (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) (x : X) :
+    B.compCkHolderZero₂ f g x = B (f x) (g x) := by
+  simp [compCkHolderZero₂]
+
+/-- At order `0`, `compCkHolderZero₂` transports through `equivHolderSpace` to `compHolder₂`. -/
+@[simp]
+theorem equivHolderSpace_compCkHolderZero₂ (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) :
+    CkHolderSpace.equivHolderSpace (B.compCkHolderZero₂ f g) =
+      B.compHolder₂ (CkHolderSpace.equivHolderSpace f)
+        (CkHolderSpace.equivHolderSpace g) := by
+  ext x
+  simp
+
+/-- At order `0`, the bilinear lift `compCkHolderZero₂` has operator norm at most `‖B‖`. -/
+theorem norm_compCkHolderZero₂_le (B : E →L[ℝ] F →L[ℝ] G) :
+    ‖B.compCkHolderZero₂ (α := α) (X := X)‖ ≤ ‖B‖ := by
+  rw [compCkHolderZero₂, opNorm_compL_bilinearComp_linearIsometryEquiv]
+  exact B.norm_compCkHolderOnZero₂_le
+
+/-- On a nonempty space, the order-zero bilinear lift preserves the bilinear operator norm. -/
+@[simp]
+theorem norm_compCkHolderZero₂ [Nonempty X] (B : E →L[ℝ] F →L[ℝ] G) :
+    ‖B.compCkHolderZero₂ (α := α) (X := X)‖ = ‖B‖ := by
+  have : Nonempty (⊤ : Opens X) := Nonempty.map (fun x ↦ ⟨x, trivial⟩) ‹Nonempty X›
+  rw [compCkHolderZero₂, opNorm_compL_bilinearComp_linearIsometryEquiv,
+    B.norm_compCkHolderOnZero₂]
+
+/-- At order `0`, the pointwise bilinear product satisfies `‖B (f, g)‖ ≤ ‖B‖ ‖f‖ ‖g‖`. -/
+theorem norm_compCkHolderZero₂_apply_le (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpace 0 α X E) (g : CkHolderSpace 0 α X F) :
+    ‖B.compCkHolderZero₂ f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ :=
+  (B.compCkHolderZero₂.le_opNorm₂ f g).trans (by
+    gcongr
+    exact B.norm_compCkHolderZero₂_le)
+
+/-- At order `0` and for `α ≤ 1`, the general-order lift `compCkHolder₂` agrees with
+`compCkHolderZero₂`. -/
+@[simp]
+theorem compCkHolder₂_zero (B : E →L[ℝ] F →L[ℝ] G) (hα : α ≤ 1) :
+    B.compCkHolder₂ (k := 0) (X := X) hα = B.compCkHolderZero₂ := by
+  ext f g x
+  simp
+
+section OpenSet
+
+variable {Ω : Opens X}
 
 /-- Restricting a `C^{k,α}` bilinear product to a smaller convex open set agrees with multiplying
 the restricted factors. -/

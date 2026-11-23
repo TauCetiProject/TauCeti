@@ -24,15 +24,14 @@ On an open convex set, bounds for a derivative field and its next derivative giv
 bound for every exponent at most one. Thus local `C^{k,α}` data need a separate Hölder
 hypothesis only at their top derivative. On the whole space, a uniform bound on the next
 derivative makes a derivative field Lipschitz (`ContDiff.lipschitzWith_iteratedFDeriv`).
-Over any nontrivially normed field, currying preserves these bounds exactly. On an open set that
-need not be convex, a `C^1` map is locally Lipschitz, hence Hölder on every compact subset, so
-one more derivative makes the top derivative Hölder there.
+Currying preserves these bounds exactly. On an open set that need not be convex, a `C^1` map is
+locally Lipschitz, hence Hölder on every compact subset, so one more derivative makes the top
+derivative Hölder there.
 
 `ContDiffOn.exists_ball_bounds_and_holderOnWith_iteratedFDeriv` gives common bounds and Hölder
 constants for every derivative field of local `C^{n,α}` data on a positive ball, without an extra
 derivative or finite-dimensional parameter assumption. Constant maps have zero Hölder constant at
-every derivative order (`TauCeti.holderWith_iteratedFDeriv_const`,
-`TauCeti.holderOnWith_iteratedFDeriv_const`).
+every derivative order (`TauCeti.holderWith_iteratedFDeriv_const`).
 -/
 
 public section
@@ -42,29 +41,23 @@ open scoped NNReal Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
 
+variable [NormedSpace ℝ E] [NormedSpace ℝ F]
+
 namespace TauCeti
-
-section Field
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F]
 
 /-- Currying preserves the Hölder bound of the top derivative exactly. -/
 theorem holderOnWith_iteratedFDeriv_succ_iff {f : E → F} {s : Set E} {j : ℕ}
     {H α : ℝ≥0} :
-    HolderOnWith H α (iteratedFDeriv 𝕜 (j + 1) f) s ↔
-      HolderOnWith H α (iteratedFDeriv 𝕜 j (fderiv 𝕜 f)) s := by
+    HolderOnWith H α (iteratedFDeriv ℝ (j + 1) f) s ↔
+      HolderOnWith H α (iteratedFDeriv ℝ j (fderiv ℝ f)) s := by
   simp only [holderOnWith_iff_dist_le, iteratedFDeriv_succ_eq_comp_right,
     Function.comp_apply, LinearIsometryEquiv.dist_map]
 
 /-- The order-zero derivative field has the same Hölder constant as the original function. -/
 theorem holderOnWith_iteratedFDeriv_zero_iff {f : E → F} {s : Set E} {H α : ℝ≥0} :
-    HolderOnWith H α (iteratedFDeriv 𝕜 0 f) s ↔ HolderOnWith H α f s := by
+    HolderOnWith H α (iteratedFDeriv ℝ 0 f) s ↔ HolderOnWith H α f s := by
   simp only [holderOnWith_iff_dist_le, iteratedFDeriv_zero_eq_comp,
     Function.comp_apply, LinearIsometryEquiv.dist_map]
-
-end Field
-
-variable [NormedSpace ℝ E] [NormedSpace ℝ F]
 
 /-- Every derivative field below the top order is Hölder, controlled by the uniform bound on
 that field and its next derivative. No Hölder assumption on lower derivatives is needed. -/
@@ -137,15 +130,6 @@ theorem holderWith_iteratedFDeriv_const {𝕜 : Type u𝕜} {E' : Type uE} {F' :
   | succ n =>
     rw [iteratedFDeriv_succ_const]
     exact HolderWith.zero
-
-/-- Every derivative field of a constant map is Hölder with constant zero on any set `s`, at
-every order and exponent. -/
-theorem holderOnWith_iteratedFDeriv_const {𝕜 : Type u𝕜} {E' : Type uE} {F' : Type uF}
-    [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
-    (s : Set E') (n : ℕ) (α : ℝ≥0) (v : F') :
-    HolderOnWith 0 α (iteratedFDeriv 𝕜 n (fun _ : E' ↦ v)) s :=
-  (holderWith_iteratedFDeriv_const n α v).holderOnWith s
 
 /-- Local `C^{n,α}` data have common bounded and Hölder derivative fields through order `n`
 on a positive ball. No compactness of the parameter space or extra derivative is required. -/

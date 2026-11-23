@@ -30,9 +30,7 @@ of `f` at `a • x`, again without any differentiability of `f`
 its norm is `‖a‖ ^ i` times that of the `i`-th derivative of `f` at `x + a • z`
 (`TauCeti.norm_iteratedFDeriv_comp_add_const_smul`). A Hölder bound on a set `t` for the `i`-th
 derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
-(`HolderOnWith.iteratedFDeriv_comp_const_smul`). For linear isometry equivalences on both the
-domain and codomain, `LinearIsometryEquiv.holderOnWith_iteratedFDeriv_comp` transfers Hölder bounds
-on each iterated derivative field.
+(`HolderOnWith.iteratedFDeriv_comp_const_smul`).
 -/
 
 public section
@@ -233,12 +231,12 @@ theorem norm_iteratedFDeriv_sub_comp
 open scoped NNReal in
 /-- Composing with linear isometries preserves a local Hölder bound on an actual derivative
 field, including at points where the function need not be differentiable. -/
-theorem holderOnWith_iteratedFDeriv_comp {𝕜 E E' T Tu : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-    [NormedAddCommGroup T] [NormedSpace 𝕜 T] [NormedAddCommGroup Tu] [NormedSpace 𝕜 Tu]
-    (e : E' ≃ₗᵢ[𝕜] E) (t : T ≃ₗᵢ[𝕜] Tu) (v : E → T)
-    {C α : ℝ≥0} (j : ℕ) {S : Set E} (hv : HolderOnWith C α (iteratedFDeriv 𝕜 j v) S) :
-    HolderOnWith C α (iteratedFDeriv 𝕜 j (t ∘ v ∘ e)) (e ⁻¹' S) := by
+theorem holderOnWith_iteratedFDeriv_comp {E E' T Tu : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup T] [NormedSpace ℝ T] [NormedAddCommGroup Tu] [NormedSpace ℝ Tu]
+    (e : E' ≃ₗᵢ[ℝ] E) (t : T ≃ₗᵢ[ℝ] Tu) (v : E → T)
+    {C α : ℝ≥0} (j : ℕ) {S : Set E} (hv : HolderOnWith C α (iteratedFDeriv ℝ j v) S) :
+    HolderOnWith C α (iteratedFDeriv ℝ j (t ∘ v ∘ e)) (e ⁻¹' S) := by
   rw [holderOnWith_iff_dist_le] at hv ⊢
   intro x hx y hy
   rw [dist_eq_norm, LinearIsometryEquiv.norm_iteratedFDeriv_sub_comp]
