@@ -37,7 +37,7 @@ variable {𝕜 B F ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace 
 overlaps: it has base set `univ`, sends `q : Z.TotalSpace` to `(q.proj, q.2)`, and has inverse
 `q ↦ ⟨q.1, q.2⟩`. -/
 def globalTrivializationOfCoordChangeEqId : Trivialization F (π F Z.Fiber) where
-  toFun := fun q ↦ (q.proj, q.2)
+  toFun := fun q ↦ (q.proj, q.snd)
   invFun := fun q ↦ ⟨q.1, q.2⟩
   source := univ
   target := univ
@@ -52,12 +52,12 @@ def globalTrivializationOfCoordChangeEqId : Trivialization F (π F Z.Fiber) wher
     -- topology on the total space comes from the core, so continuity is checked in its charts.
     apply Continuous.continuousOn
     refine continuous_iff_continuousAt.2 fun q ↦ ?_
-    refine ((Z.localTrivAt q.proj).continuousAt (Z.mem_source_at q.proj q.2)).congr ?_
-    filter_upwards [(Z.localTrivAt q.proj).open_source.mem_nhds (Z.mem_source_at q.proj q.2)]
+    refine ((Z.localTrivAt q.proj).continuousAt (Z.mem_source_at q.proj q.snd)).congr ?_
+    filter_upwards [(Z.localTrivAt q.proj).open_source.mem_nhds (Z.mem_source_at q.proj q.snd)]
       with z hz
     simp only [localTrivAt, Trivialization.coe_coe, localTriv_apply]
     -- `hcoord` is stated on `F`; elaboration identifies `z.2 : Z.Fiber z.proj` with `F`.
-    exact congrArg (fun v : F ↦ (z.proj, v)) (hcoord _ _ _ ⟨Z.mem_baseSet_at _, hz⟩ z.2)
+    exact congrArg (fun v : F ↦ (z.proj, v)) (hcoord _ _ _ ⟨Z.mem_baseSet_at _, hz⟩ z.snd)
   continuousOn_invFun := by
     apply Continuous.continuousOn
     refine continuous_iff_continuousAt.2 fun q ↦ ?_
@@ -76,7 +76,7 @@ def globalTrivializationOfCoordChangeEqId : Trivialization F (π F Z.Fiber) wher
 
 @[simp]
 theorem globalTrivializationOfCoordChangeEqId_apply (q : Z.TotalSpace) :
-    Z.globalTrivializationOfCoordChangeEqId hcoord q = (q.proj, q.2) := by
+    Z.globalTrivializationOfCoordChangeEqId hcoord q = (q.proj, q.snd) := by
   rfl
 
 @[simp]

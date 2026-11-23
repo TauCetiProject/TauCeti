@@ -75,9 +75,9 @@ private theorem isPreirreducible_V_of_isDiscriminatedBy
       (hne : ∀ U ∈ F, (V ι S ∩ U).Nonempty) : (V ι S ∩ ⋂₀ F).Nonempty := by
     let := hF.fintype
     have hw (U : F) : ∃ w : GX G X, (w : CoordGroup ι S) ≠ 1 ∧
-        ∀ v : X → H, eval ι v w ≠ 1 → v ∈ U.1 := by
-      obtain ⟨T, hT⟩ := hFB U.2
-      obtain ⟨v, hv, hvU⟩ := hne U.1 U.2
+        ∀ v : X → H, eval ι v w ≠ 1 → v ∈ U.val := by
+      obtain ⟨T, hT⟩ := hFB U.property
+      obtain ⟨v, hv, hvU⟩ := hne U.val U.property
       have hvT : v ∉ V ι T := by simpa only [hT, Set.mem_compl_iff] using hvU
       obtain ⟨w, hwT, hvw⟩ : ∃ w ∈ T, eval ι v w ≠ 1 := by
         simp only [mem_V] at hvT
@@ -92,12 +92,12 @@ private theorem isPreirreducible_V_of_isDiscriminatedBy
       (Finset.univ.image fun U : F => (w U : CoordGroup ι S))
       (by simpa only [Finset.forall_mem_image, Finset.mem_univ, forall_const] using hw1)
     let p := CoordGroup.homEquiv ι S ψ
-    have hψp : CoordGroup.evalGHom p.1 p.2 = ψ := by
+    have hψp : CoordGroup.evalGHom p.val p.property = ψ := by
       rw [← CoordGroup.homEquiv_symm_apply]
       exact (CoordGroup.homEquiv ι S).symm_apply_apply ψ
-    refine ⟨p.1, p.2, Set.mem_sInter.mpr fun U hUF => ?_⟩
-    apply hwU ⟨U, hUF⟩ p.1
-    rw [← CoordGroup.evalGHom_mk p.2, hψp]
+    refine ⟨p.val, p.property, Set.mem_sInter.mpr fun U hUF => ?_⟩
+    apply hwU ⟨U, hUF⟩ p.val
+    rw [← CoordGroup.evalGHom_mk p.property, hψp]
     exact hψ _ (Finset.mem_image.mpr ⟨⟨U, hUF⟩, Finset.mem_univ _, rfl⟩)
   -- Refine arbitrary open neighborhoods to finite intersections of generating opens.
   have hb := TopologicalSpace.isTopologicalBasis_of_subbasis
@@ -125,8 +125,8 @@ theorem isIrreducible_V_iff_isDiscriminatedBy :
   refine ⟨isDiscriminatedBy_coordGroup_of_isIrreducible, fun h => ?_⟩
   have hd := (isDiscriminatedBy_def _ _).mp h
   obtain ⟨φ, _⟩ := hd ∅ (by simp)
-  have hne : (V ι S).Nonempty := ⟨(CoordGroup.homEquiv ι S φ).1,
-    (CoordGroup.homEquiv ι S φ).2⟩
+  have hne : (V ι S).Nonempty := ⟨(CoordGroup.homEquiv ι S φ).val,
+    (CoordGroup.homEquiv ι S φ).property⟩
   exact ⟨hne, isPreirreducible_V_of_isDiscriminatedBy h⟩
 
 end TauCeti.GroupAlgGeom

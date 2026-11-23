@@ -225,7 +225,7 @@ private lemma forall_sum_intersection_eq_zero (hself : ∀ i, -(2 * (T.weight i 
     · refine Fintype.exists_forall_ne_of_card_lt Subtype.val ?_
       rw [Fintype.card_coe]
       exact (card_lt_iff_ne_univ s).mpr hsu
-    · have h := hrow i i.2
+    · have h := hrow i i.property
       rw [← sum_attach] at h
       simpa using h
   -- The intersection form vanishes at the all-ones vector, so every row sum vanishes and the

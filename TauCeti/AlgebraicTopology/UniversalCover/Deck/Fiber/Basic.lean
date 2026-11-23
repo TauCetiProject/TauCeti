@@ -114,8 +114,8 @@ instance instFiberMulAction : MulAction (deck p) (p ⁻¹' {b}) :=
 transformation. -/
 @[simp]
 lemma _root_.deck.fiber_smul_coe (φ : deck p) (e : p ⁻¹' {b}) :
-    ((φ • e : p ⁻¹' {b}) : E) = φ.1 e.1 :=
-  (SubMulAction.val_smul (p := fiberSubMulAction p b) φ e).trans (deck.smul_eq_apply φ e.1)
+    ((φ • e : p ⁻¹' {b}) : E) = φ.val e.val :=
+  (SubMulAction.val_smul (p := fiberSubMulAction p b) φ e).trans (deck.smul_eq_apply φ e.val)
 
 /-- The fibre action is evaluation of the fibre homeomorphism. -/
 lemma _root_.deck.fiber_smul_eq_fiberHomeomorph (φ : deck p) (e : p ⁻¹' {b}) :
@@ -131,7 +131,7 @@ lemma _root_.deck.fiber_stabilizer_eq_stabilizer_coe (e : p ⁻¹' {b}) :
 /-- Membership in the stabilizer of a fibre point is equality on the underlying point. -/
 @[grind =]
 lemma _root_.deck.mem_fiber_stabilizer_iff_coe (φ : deck p) (e : p ⁻¹' {b}) :
-    φ ∈ MulAction.stabilizer (deck p) e ↔ φ.1 e.1 = e.1 := by
+    φ ∈ MulAction.stabilizer (deck p) e ↔ φ.val e.val = e.val := by
   rw [deck.fiber_stabilizer_eq_stabilizer_coe]
   simp
 
