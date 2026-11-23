@@ -75,6 +75,19 @@ theorem mem_fiberSubgroup {f : α → ι} {σ : Equiv.Perm α} :
     σ ∈ fiberSubgroup f ↔ ∀ a, f (σ a) = f a :=
   Iff.rfl
 
+/-- A permutation preserves every fiber of `f` if and only if precomposing `f` with it leaves `f`
+unchanged. -/
+theorem comp_eq_self_iff_mem_fiberSubgroup {f : α → ι} {σ : Equiv.Perm α} :
+    f ∘ ⇑σ = f ↔ σ ∈ fiberSubgroup f :=
+  ⟨fun h a => congrFun h a, fun h => funext h⟩
+
+/-- A permutation preserves every fiber of `f` if and only if precomposing `f` with its inverse
+leaves `f` unchanged. -/
+theorem comp_symm_eq_self_iff_mem_fiberSubgroup {f : α → ι} {σ : Equiv.Perm α} :
+    f ∘ ⇑σ.symm = f ↔ σ ∈ fiberSubgroup f := by
+  rw [← Subgroup.inv_mem_iff, ← comp_eq_self_iff_mem_fiberSubgroup]
+  rfl
+
 /-- Every subgroup `G ≤ Equiv.Perm α` preserves its own orbits, so it is contained in the fiber
 subgroup of the orbit quotient map. -/
 theorem _root_.Subgroup.le_fiberSubgroup_orbitRel (G : Subgroup (Equiv.Perm α)) :

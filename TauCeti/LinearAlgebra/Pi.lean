@@ -88,6 +88,13 @@ weights.
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum differ regularly at some coordinate.
+* `LinearEquiv.funCongrLeft_mul_symm`, `LinearEquiv.funCongrLeft_inv_cancel`, and
+  `LinearEquiv.funCongrLeft_eq_comp`: reindexing by permutations as composition and inverse
+  cancellation.
+* `LinearMap.proj_comp_funCongrLeft`: composing a coordinate projection with `funCongrLeft`
+  evaluates at the image coordinate.
+* `TauCeti.coordEq`, `TauCeti.coordEq_eq_ker`, `TauCeti.mem_coordEq_iff`, and
+  `TauCeti.eq_or_eq_of_coordEq_eq`: the coordinate-equality hyperplane `{v | v a = v b}`.
 * `TauCeti.piMatrixLinearEquiv`: the `R`-linear equivalence flattening a family of matrices
   `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α`.
 -/
@@ -169,26 +176,6 @@ public theorem infinite_pi_of_infinite {R ι : Type*} [Semiring R] [Nontrivial R
   have := congrFun ha i
   simp [hij] at this
 
-/-- The coordinate-equality hyperplane `{v : ι → R | v a = v b}`. -/
-public def coordEq (R : Type*) [Ring R] {ι : Type*} (a b : ι) : Submodule R (ι → R) :=
-  LinearMap.ker ((LinearMap.proj a : (ι → R) →ₗ[R] R) - LinearMap.proj b)
-
-@[simp]
-public theorem mem_coordEq_iff {R ι : Type*} [Ring R] (a b : ι) (v : ι → R) :
-    v ∈ coordEq R a b ↔ v a = v b := by
-  simp [coordEq, sub_eq_zero]
-
-/-- Distinct pairs of indices define distinct coordinate-equality hyperplanes over a nontrivial
-ring (up to swapping the pair). -/
-public theorem eq_or_eq_of_coordEq_eq {R ι : Type*} [Ring R] [Nontrivial R] {a b c d : ι}
-    (hcd : c ≠ d) (heq : coordEq R a b = coordEq R c d) : c = a ∨ c = b := by
-  classical
-  by_contra! hneither
-  have hmem : Pi.single c (1 : R) ∈ coordEq R a b := by
-    rw [mem_coordEq_iff, Pi.single_eq_of_ne hneither.1.symm, Pi.single_eq_of_ne hneither.2.symm]
-  rw [heq, mem_coordEq_iff, Pi.single_eq_same, Pi.single_eq_of_ne hcd.symm] at hmem
-  exact one_ne_zero hmem
-
 end Submodule
 
 namespace LinearEquiv
@@ -238,6 +225,26 @@ public theorem piCongrLeft_single {R ι ι' : Type*} [Semiring R] [DecidableEq �
   · subst h
     simp
   · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (e.injective.ne h)]
+
+/-- Reindexing along `e` is precomposition with `e`. -/
+public theorem funCongrLeft_eq_comp {R M ι ι' : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (e : ι' ≃ ι) (x : ι → M) :
+    funCongrLeft R M e x = x ∘ e :=
+  (rfl)
+
+/-- Reindexing along `(a * b).symm` factors as consecutive reindexings along `b.symm` and
+`a.symm`. -/
+public theorem funCongrLeft_mul_symm {R M σ : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (a b : Equiv.Perm σ) (v : σ → M) :
+    funCongrLeft R M (a * b).symm v =
+      funCongrLeft R M a.symm (funCongrLeft R M b.symm v) := by
+  rw [Equiv.Perm.mul_def, Equiv.symm_trans, funCongrLeft_comp, trans_apply]
+
+/-- Reindexing along `a.symm` cancels reindexing along `a⁻¹.symm`. -/
+public theorem funCongrLeft_inv_cancel {R M σ : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (a : Equiv.Perm σ) (v : σ → M) :
+    funCongrLeft R M a.symm (funCongrLeft R M a⁻¹.symm v) = v := by
+  rw [Equiv.Perm.inv_def, Equiv.symm_symm, ← funCongrLeft_symm, symm_apply_apply]
 
 /-- A coordinatewise linear equivalence sends a one-point family to the one-point family
 of its image in that coordinate. -/
@@ -401,6 +408,15 @@ end FinsetUnion
 end LinearEquiv
 
 namespace LinearMap
+
+/-- Composing the `i`-th coordinate projection with `LinearEquiv.funCongrLeft R M e` gives the
+`e i`-th coordinate projection. -/
+@[simp]
+public theorem proj_comp_funCongrLeft {R M ι ι' : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (i : ι') (e : ι' ≃ ι) :
+    (proj i : (ι' → M) →ₗ[R] M).comp (LinearEquiv.funCongrLeft R M e).toLinearMap =
+      proj (e i) := by
+  ext w; simp
 
 /-- Applying a linear map coordinatewise to the one-point family `Pi.single i x` gives the
 one-point family `Pi.single i (f x)`. -/
@@ -630,5 +646,34 @@ public theorem piMatrixLinearEquiv_symm_apply (a : (p : Σ i, κ i × μ i) → 
   simp [piMatrixLinearEquiv, Sigma.curry]
 
 end MatrixCoordinates
+
+section CoordEq
+
+/-- The coordinate-equality hyperplane `{v : ι → R | v a = v b}`. -/
+public def coordEq (R : Type*) [Ring R] {ι : Type*} (a b : ι) : Submodule R (ι → R) :=
+  LinearMap.ker ((LinearMap.proj a : (ι → R) →ₗ[R] R) - LinearMap.proj b)
+
+/-- `coordEq R a b` is the kernel of the coordinate-difference functional `proj a - proj b`. -/
+public theorem coordEq_eq_ker (R : Type*) [Ring R] {ι : Type*} (a b : ι) :
+    coordEq R a b = LinearMap.ker ((LinearMap.proj a : (ι → R) →ₗ[R] R) - LinearMap.proj b) :=
+  (rfl)
+
+@[simp]
+public theorem mem_coordEq_iff {R ι : Type*} [Ring R] (a b : ι) (v : ι → R) :
+    v ∈ coordEq R a b ↔ v a = v b := by
+  simp [coordEq, sub_eq_zero]
+
+/-- Distinct pairs of indices define distinct coordinate-equality hyperplanes over a nontrivial
+ring (up to swapping the pair). -/
+public theorem eq_or_eq_of_coordEq_eq {R ι : Type*} [Ring R] [Nontrivial R] {a b c d : ι}
+    (hcd : c ≠ d) (heq : coordEq R a b = coordEq R c d) : c = a ∨ c = b := by
+  classical
+  by_contra! hneither
+  have hmem : Pi.single c (1 : R) ∈ coordEq R a b := by
+    rw [mem_coordEq_iff, Pi.single_eq_of_ne hneither.1.symm, Pi.single_eq_of_ne hneither.2.symm]
+  rw [heq, mem_coordEq_iff, Pi.single_eq_same, Pi.single_eq_of_ne hcd.symm] at hmem
+  exact one_ne_zero hmem
+
+end CoordEq
 
 end TauCeti

@@ -37,9 +37,10 @@ denominators simultaneously across a finite family of nonnegative rationals
 * `Rat.den_dvd_iff_exists_mul_intCast_eq`: `r.den ∣ a` exactly when `r * a` is an integer.
 * `Rat.den_dvd_iff_exists_mul_natCast_eq`: for `0 ≤ r`, `r.den ∣ n` exactly when `r * n` is a
   natural number.
-* `TauCeti.ratEmbed`: additive homomorphism embedding `σ →₀ ℕ` into `σ → ℚ`.
-* `TauCeti.exists_nat_smul_eq_ratEmbed`: any nonnegative rational family `x : σ → ℚ` on a finite
-  type clears denominators to a positive natural multiple of `ratEmbed d`.
+* `TauCeti.ratEmbed`: additive homomorphism embedding `σ →₀ ℕ` into `σ → ℚ`, together with
+  `TauCeti.ratEmbed_mapDomain`.
+* `TauCeti.exists_nat_mul_eq_natCast` and `TauCeti.exists_nat_smul_eq_ratEmbed`: nonnegative
+  rational families on a `Finset` or a finite type clear denominators simultaneously.
 -/
 
 public section
@@ -122,20 +123,39 @@ theorem ratEmbed_apply {σ : Type*} (d : σ →₀ ℕ) (i : σ) : ratEmbed d i 
 theorem ratEmbed_injective {σ : Type*} : Function.Injective (ratEmbed (σ := σ)) :=
   fun _ _ h ↦ Finsupp.ext fun i ↦ Nat.cast_injective (congrFun h i)
 
+/-- Mapping the domain of `d : σ →₀ ℕ` along an equivalence `e : σ ≃ τ` precomposes `ratEmbed d`
+with `e.symm`. -/
+theorem ratEmbed_mapDomain {σ τ : Type*} (e : σ ≃ τ) (d : σ →₀ ℕ) :
+    ratEmbed (d.mapDomain e) = ratEmbed d ∘ e.symm :=
+  funext fun i ↦ by
+    simp [ratEmbed_apply, ← Finsupp.equivMapDomain_eq_mapDomain, Finsupp.equivMapDomain_apply]
+
+/-- Any finite subset of a nonnegative rational family `x : ι → ℚ` clears denominators
+simultaneously to natural numbers. -/
+theorem exists_nat_mul_eq_natCast {ι : Type*} (s : Finset ι) {x : ι → ℚ}
+    (hx : ∀ i ∈ s, 0 ≤ x i) :
+    ∃ (D : ℕ) (k : ι → ℕ), 0 < D ∧ ∀ i ∈ s, (D : ℚ) * x i = (k i : ℚ) := by
+  classical
+  let D : ℕ := ∏ i ∈ s, (x i).den
+  have hD : 0 < D := Finset.prod_pos fun i _ ↦ (x i).pos
+  have hex : ∀ i : s, ∃ m : ℕ, x i.val * D = m := fun i ↦
+    (Rat.den_dvd_iff_exists_mul_natCast_eq (hx i.val i.property) D).mp
+      (Finset.dvd_prod_of_mem _ i.property)
+  choose k hk using hex
+  refine ⟨D, fun i ↦ if hi : i ∈ s then k ⟨i, hi⟩ else 0, hD, fun i hi ↦ ?_⟩
+  simp only [hi, ↓reduceDIte]
+  rw [mul_comm, hk ⟨i, hi⟩]
+
 /-- Any nonnegative rational family `x : σ → ℚ` on a finite type clears denominators to
 `ratEmbed d` for some positive natural multiplier `D` and `d : σ →₀ ℕ`. -/
 theorem exists_nat_smul_eq_ratEmbed {σ : Type*} [Finite σ] {x : σ → ℚ} (hx : ∀ i, 0 ≤ x i) :
     ∃ (D : ℕ) (d : σ →₀ ℕ), 0 < D ∧ (D : ℚ) • x = ratEmbed d := by
   classical
   cases nonempty_fintype σ
-  let D : ℕ := ∏ i : σ, (x i).den
-  choose k hk using fun i ↦
-    (Rat.den_dvd_iff_exists_mul_natCast_eq (hx i) D).mp
-      (Finset.dvd_prod_of_mem (fun j ↦ (x j).den) (Finset.mem_univ i))
-  refine ⟨D, Finsupp.equivFunOnFinite.symm k, Finset.prod_pos fun i _ ↦ (x i).pos,
-    funext fun i ↦ ?_⟩
-  simp only [Pi.smul_apply, smul_eq_mul, ratEmbed_apply, Finsupp.equivFunOnFinite_symm_apply_apply]
-  rw [mul_comm, hk i]
+  obtain ⟨D, k, hD, hk⟩ := exists_nat_mul_eq_natCast Finset.univ fun i _ ↦ hx i
+  refine ⟨D, Finsupp.equivFunOnFinite.symm k, hD, funext fun i ↦ ?_⟩
+  simpa only [Pi.smul_apply, smul_eq_mul, ratEmbed_apply,
+    Finsupp.equivFunOnFinite_symm_apply_apply] using hk i (Finset.mem_univ i)
 
 end TauCeti
 
