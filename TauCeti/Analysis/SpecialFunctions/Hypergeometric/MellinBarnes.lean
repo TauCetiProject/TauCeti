@@ -416,7 +416,7 @@ Beta-weighted Mellin–Barnes kernel with exponents `u y`, `v y` of constant pos
 `u₀`, `v₀`, then `eulerIntegral a b c z` equals the normalized vertical integral with the Beta
 factor `Γ(u y) Γ(v y) / Γ(u y + v y)`. -/
 private theorem eulerIntegral_eq_of_pointwise_mellinBarnes {a b c z w : ℂ} {σ u₀ v₀ : ℝ}
-    {u v : ℝ → ℂ} (ha : 0 < a.re)
+    {u v : ℝ → ℂ}
     (hσ : σ < 0) (haσ : -a.re < σ) (hw : w ∈ slitPlane)
     (hu_cont : Continuous u) (hv_cont : Continuous v)
     (hu_re : ∀ y, (u y).re = u₀) (hv_re : ∀ y, (v y).re = v₀)
@@ -456,7 +456,7 @@ private theorem eulerIntegral_eq_of_pointwise_mellinBarnes {a b c z w : ℂ} {σ
     exact hpoint t (ht.2 ht_mem)
   rw [intervalIntegral.integral_const_mul, intervalIntegral_integral_swap hF_int] at h_eq
   simp_rw [hinner] at h_eq
-  have hΓa : Gamma a ≠ 0 := Gamma_ne_zero_of_re_pos ha
+  have hΓa : Gamma a ≠ 0 := Gamma_ne_zero_of_re_pos (by linarith)
   have hI : (∫ t : ℝ in 0..1, (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
         (1 - z * t) ^ (-a)) =
       (Gamma a)⁻¹ * ((2 * π : ℂ)⁻¹ * ∫ y : ℝ, (Gamma (u y) * Gamma (v y) / Gamma (u y + v y)) *
@@ -514,7 +514,7 @@ theorem eulerIntegral_eq_mellinBarnes (a : ℂ) {b c z : ℂ} (hbc : b.re < c.re
         (Gamma (c + (σ + y * I)))⁻¹ * (-z) ^ ((σ : ℂ) + y * I) := by
   have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
   have h := eulerIntegral_eq_of_pointwise_mellinBarnes (z := z) (w := -z)
-    (u₀ := b.re + σ) (v₀ := (c - b).re) (by linarith)
+    (u₀ := b.re + σ) (v₀ := (c - b).re)
     hσ haσ hz (u := fun y : ℝ ↦ b + ((σ : ℂ) + y * I)) (v := fun _ ↦ c - b)
     (by fun_prop) continuous_const (fun _ ↦ by simp [add_re]) (fun _ ↦ rfl)
     (by linarith) hcb (fun _ ht ↦ mul_eulerIntegrand_eq_integral_mellinBarnes hz hσ haσ ht.1)
@@ -703,7 +703,7 @@ theorem eulerIntegral_eq_mellinBarnes_one_sub {a b c z : ℂ} {σ : ℝ}
           Gamma (c - a - b - (σ + y * I)) * Gamma (-(σ + y * I)) *
           (1 - z) ^ (σ + y * I) := by
   have h := eulerIntegral_eq_of_pointwise_mellinBarnes (z := z) (w := 1 - z)
-    (u₀ := b.re + σ) (v₀ := c.re - a.re - b.re - σ) (by linarith)
+    (u₀ := b.re + σ) (v₀ := c.re - a.re - b.re - σ)
     hσ haσ hz (u := fun y : ℝ ↦ b + ((σ : ℂ) + y * I))
     (v := fun y : ℝ ↦ c - a - b - ((σ : ℂ) + y * I))
     (by fun_prop) (by fun_prop) (fun _ ↦ by simp [add_re]) (fun _ ↦ by simp [sub_re])

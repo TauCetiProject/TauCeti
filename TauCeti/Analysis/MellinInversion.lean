@@ -503,8 +503,6 @@ theorem hasDerivAt_integral_cpow_smul {E : Type*} [NormedAddCommGroup E]
   have hδ : 0 < δ := sub_pos.2 hα'
   set M₁ : ℝ := max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1))
   set S : ℝ := max |σ| 1
-  have : 0 < M₁ := lt_of_lt_of_le (by positivity) (le_max_left _ _)
-  have : 0 < S := lt_of_lt_of_le one_pos (le_max_right _ _)
   have hF_meas : ∀ᶠ w in 𝓝 w₀, AEStronglyMeasurable (fun y : ℝ ↦ w ^ ((σ : ℂ) + y * I) • g y) :=
     Filter.eventually_of_mem hU fun w hw ↦
       (Continuous.const_cpow (by fun_prop)

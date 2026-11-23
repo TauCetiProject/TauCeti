@@ -840,18 +840,18 @@ theorem exists_ball_slitPlane_cpow_le {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) 
   have hM : 0 < M := by
     have : 0 ≤ max M₀ M₁ := hM₀_nonneg.trans (le_max_left _ _)
     dsimp [M]; linarith
+  have hre (y : ℝ) : ((σ : ℂ) + y * I).re = σ := by simp
+  have him (y : ℝ) : ((σ : ℂ) + y * I).im = y := by simp
   refine ⟨ε, hε, θ, hθ_lt, M, hM, fun w hw ↦ ?_⟩
   obtain ⟨hws, hw_lo, hw_hi, hw_arg⟩ := hU_bounds w (hball hw)
   refine ⟨hws, fun y ↦ ?_, fun y ↦ ?_⟩
   · have h0 := Complex.norm_cpow_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg ((σ : ℂ) + y * I)
-    simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im,
-      zero_add] at h0
+    rw [hre, him] at h0
     exact h0.trans <| mul_le_mul_of_nonneg_right
       (by dsimp [M]; linarith [le_max_left M₀ M₁]) (Real.exp_pos _).le
   · have h1 := Complex.norm_mul_cpow_sub_one_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg
       ((σ : ℂ) + y * I)
-    simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im,
-      zero_add] at h1
+    rw [hre, him] at h1
     exact h1.trans <| by
       gcongr
       dsimp [M]; linarith [le_max_right M₀ M₁]
