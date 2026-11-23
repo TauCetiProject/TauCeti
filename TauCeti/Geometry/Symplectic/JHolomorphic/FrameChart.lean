@@ -195,7 +195,8 @@ theorem IsJHolomorphicAt.isComplexLinearMap_frameChartDeriv {J' : V → AlmostCo
     IsComplexLinearMap (frameStructure W) (J' (u a)) (frameChartDeriv u' (J (u a)) N) := by
   obtain ⟨f', hf', hlin⟩ := (isJHolomorphicAt_iff _ _ u a).1 hu
   obtain rfl := hu'.unique hf'
-  rw [isComplexLinearMap_iff_isComplexLinear, ← hJ]
+  rw [isComplexLinearMap_iff_isComplexLinear] at hlin ⊢
+  rw [← hJ]
   exact isComplexLinear_frameChartDeriv (hJ ▸ (J' (u a)).square_neg) (hJ ▸ hlin) N
 
 /-- **Frames exist.** If `J₀² = -1` and `u'` is complex linear from `i` to `J₀` and nonzero, there
