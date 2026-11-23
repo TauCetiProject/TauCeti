@@ -37,10 +37,15 @@ so `A_t (γ' - X_{H_t}(γ))` is the weak `L²` gradient of the action at `γ` fo
 `TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_referenceAction_of_tames`).
 
 When `J_t` is compatible with `σ`, `A_t = J_t`
-(`TauCeti.SymplecticForm.Compatible.gradientOperator_eq`) and `g_t = σ(·, J_t ·)`, so the
-gradient is the familiar `J_t (γ' - X_{H_t}(γ))`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_compatible`), for
-which the Floer equation `∂_s u + J_t (∂_t u - X_{H_t}(u)) = 0` is the negative gradient flow.
+(`TauCeti.SymplecticForm.Compatible.gradientOperator_eq`) and `g_t = σ(·, J_t ·)`, so the first
+variation formula becomes the pairing of `J_t (∂_t w - X_{H_t}(w))` with `∂_s w` for the metric
+`σ(·, J_t ·)`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_compatible`). This
+pairing formula is what is proved; its interpretation is not formalized here. For a smooth
+`1`-periodic family `J_t` of compatible almost complex structures on `M`, it identifies the
+familiar `J_t (γ' - X_{H_t}(γ))` as the `L²` gradient of the action at a smooth loop `γ` for the
+metric `∫₀¹ σ(·, J_t ·) dt`, and the Floer equation `∂_s u + J_t (∂_t u - X_{H_t}(u)) = 0` as its
+negative gradient flow.
 For a merely tame `J_t` the gradient operator differs from `J_t` exactly where compatibility fails
 (`TauCeti.SymplecticForm.Tames.gradientOperator_eq_iff`), and tame structures need not be
 compatible (`TauCeti.SymplecticForm.exists_tames_not_compatible`). The Floer equation for such a
@@ -121,7 +126,9 @@ the hypotheses of
 `TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_tames`, if every
 `J_t` is compatible with `σ`, the action of the loops `w (s, ·)` has derivative
 `∫₀¹ g_{J_t}(J_t (∂_t w - X_{H_t}(w)), ∂_s w) dt` at `s₀` for the metric `g_{J_t} = σ(·, J_t ·)`,
-with all terms taken at `(s₀, t)`. So `J_t (γ' - X_{H_t}(γ))` is the weak `L²` gradient. -/
+with all terms taken at `(s₀, t)`. This is a weak-gradient pairing formula along the single loop
+`w (s₀, ·)`: reading `J_t (γ' - X_{H_t}(γ))` as the `L²` gradient of the action needs in addition
+a smooth `1`-periodic family `J_t` defined on `M`, which is not assumed here. -/
 theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_compatible
     (h : σ.IsNondegenerate) (hw : IsWeaklyExact σ.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 w)
