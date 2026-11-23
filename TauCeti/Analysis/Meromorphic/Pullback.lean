@@ -133,8 +133,7 @@ def meromorphicGermsEquiv (e : OpenPartialHomeomorph 𝕜 𝕜) (ha : a ∈ e.so
   toFun := fun φ ↦ pullback e he rfl (e.tendsto_nhdsNE ha) φ
   map_mul' := map_mul (pullback e he rfl (e.tendsto_nhdsNE ha))
   map_add' := map_add (pullback e he rfl (e.tendsto_nhdsNE ha))
-  invFun := pullback e.symm he' (e.left_inv ha)
-    (by simpa only [e.left_inv ha] using e.symm.tendsto_nhdsNE (e.map_source ha))
+  invFun := pullback e.symm he' (e.left_inv ha) (e.tendsto_symm_nhdsNE ha)
   left_inv φ := by
     obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
     apply Subtype.ext
@@ -163,6 +162,6 @@ theorem meromorphicGermsEquiv_symm_apply (e : OpenPartialHomeomorph 𝕜 𝕜) (
     (he : AnalyticAt 𝕜 e a) (he' : AnalyticAt 𝕜 e.symm (e a))
     (φ : meromorphicGerms 𝕜 a) :
     (e.meromorphicGermsEquiv ha he he').symm φ = pullback e.symm he' (e.left_inv ha)
-      (by simpa only [e.left_inv ha] using e.symm.tendsto_nhdsNE (e.map_source ha)) φ := (rfl)
+      (e.tendsto_symm_nhdsNE ha) φ := (rfl)
 
 end OpenPartialHomeomorph

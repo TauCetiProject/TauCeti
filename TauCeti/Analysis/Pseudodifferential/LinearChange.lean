@@ -384,13 +384,7 @@ theorem quantizeSchwartzValue_compCLMOfContinuousLinearEquiv (a : E × E → V �
   set B : E ≃L[ℝ] E := A.symm.adjointEquiv
   set h : E → W := fun θ => a (x, A.adjointEquiv ((2 * π) • θ)) (𝓕 u θ)
   have hdetB : (B.toLinearEquiv : E →ₗ[ℝ] E).det = (A.toLinearEquiv : E →ₗ[ℝ] E).det⁻¹ := by
-    have hB : (B.toLinearEquiv : E →ₗ[ℝ] E) =
-        LinearMap.adjoint ((A.symm : E →L[ℝ] E) : E →ₗ[ℝ] E) := by
-      rw [ContinuousLinearMap.adjoint_toLinearMap]
-      ext ζ
-      simp [B]
-    rw [hB, LinearMap.det_adjoint, star_trivial,
-      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    rw [ContinuousLinearEquiv.det_adjointEquiv, star_trivial,
       ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm]
   have hfun : (fun ζ => a (x, (2 * π) • ζ)
       (𝓕 (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) ζ)) =

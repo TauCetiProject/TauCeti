@@ -57,9 +57,7 @@ private theorem exists_isFinite_morphismRestrict_baseChange_affine_base_piece
   have : MorphismProperty.RespectsIso (@IsFinite : MorphismProperty Scheme.{u}) :=
     MorphismProperty.IsStableUnderBaseChange.respectsIso
   classical
-  have : IsDirected {i : I // k ≤ i} (· ≤ ·) := ⟨fun i j ↦ by
-    obtain ⟨l, hil, hjl⟩ := exists_ge_ge i.val j.val
-    exact ⟨⟨l, i.property.trans hil⟩, hil, hjl⟩⟩
+  have : IsDirected {i : I // k ≤ i} (· ≤ ·) := inferInstanceAs (IsDirectedOrder (Set.Ici k))
   let d := D.map (homOfLE hk).op
   let fT := ((Over.pullback d).map f₀).left
   let VT := (pullback.fst Y₀.hom d) ⁻¹ᵁ V

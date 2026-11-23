@@ -403,10 +403,7 @@ theorem lagrangianChartFrame_apply (S : Matrix n n ℝ) (i j : n) :
 theorem lagrangianChartFrame_mul (S : Matrix n n ℝ) :
     S.lagrangianChartFrame * (S.map ((↑) : ℝ → ℂ) - Complex.I • 1) =
       (S * S + 1).map ((↑) : ℝ → ℂ) := by
-  have h : (S * S).map ((↑) : ℝ → ℂ) = S.map (↑) * S.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
-  rw [lagrangianChartFrame, Matrix.map_add _ Complex.ofReal_add, h,
-    Matrix.map_one _ (by simp) (by simp)]
+  rw [lagrangianChartFrame, Matrix.map_add _ Complex.ofReal_add, map_ofReal_mul, map_ofReal_one]
   simp [add_mul, mul_sub, smul_smul]
   abel
 
