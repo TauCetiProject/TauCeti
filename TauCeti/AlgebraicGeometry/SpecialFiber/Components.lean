@@ -179,13 +179,11 @@ noncomputable def specialFiberHomeomorph :
 /-- Under `specialFiberHomeomorph`, inclusion into `X` is `specialFiberι`. -/
 lemma coe_specialFiberHomeomorph_apply (x : (specialFiber R toBase).left) :
     ((specialFiberHomeomorph R toBase x : ↥(toBase ⁻¹' {closedPoint R})) : X) =
-      specialFiberι R toBase x :=
-  let φ := (specialFiberIsoFiberClosedPoint (.of R) toBase).hom
-  (congrArg Subtype.val (Homeomorph.trans_apply φ.homeomorph (toBase.fiberHomeo (closedPoint R))
-    x)).trans <| (toBase.fiberHomeo_apply (closedPoint R) _).trans <|
-    (congrArg (toBase.fiberι (closedPoint R)) (φ.homeomorph_apply x)).trans <|
-    (Scheme.Hom.comp_apply φ (toBase.fiberι (closedPoint R)) x).symm.trans <|
-    congr($(specialFiberIsoFiberClosedPoint_hom_fiberι (.of R) toBase) x)
+      specialFiberι R toBase x := by
+  rw [specialFiberHomeomorph, Homeomorph.trans_apply]
+  refine (toBase.fiberHomeo_apply (closedPoint R) _).trans ?_
+  rw [Scheme.Hom.homeomorph_apply, ← Scheme.Hom.comp_apply,
+    specialFiberIsoFiberClosedPoint_hom_fiberι]
 
 /-- The special fibre is nonempty if and only if some point of `X` lies over the closed point. -/
 theorem nonempty_specialFiber_iff :
