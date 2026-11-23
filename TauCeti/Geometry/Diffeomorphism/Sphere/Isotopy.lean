@@ -13,6 +13,7 @@ import TauCeti.AlgebraicTopology.Singular.Sphere
 import TauCeti.Geometry.Diffeomorphism.Evaluation
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.Topology.Algebra.OrthogonalGroup
+import TauCeti.Topology.PathComponent
 
 /-!
 # Isotopy classes of orthogonal transformations of a sphere
@@ -26,9 +27,10 @@ orthogonal transformation acts on the reduced homology `Hₙ(Sⁿ; ℤ) ≅ ℤ`
 determinant; conversely matrices of equal determinant are joined in the orthogonal group
 (`TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq`). In particular a reflection of `Sⁿ` is not
 isotopic to the identity, and `Diff(Sⁿ)` is never path-connected. It has exactly two path
-components precisely when every diffeomorphism of `Sⁿ` is isotopic to an orthogonal one, which
-is Cerf's theorem for `n = 3` (`TauCeti.cerfTheorem_iff_natCard_zerothHomotopy_eq_two`) and holds
-for the circle (`TauCeti.natCard_zerothHomotopy_diff_circle`).
+components precisely when every diffeomorphism of `Sⁿ` is isotopic to an orthogonal one. For
+`n = 3` and `m = ∞` this is Cerf's theorem
+(`TauCeti.cerfTheorem_iff_natCard_zerothHomotopy_eq_two`); for the circle `n = 1` it is proved for
+every `m ≠ 0` (`TauCeti.natCard_zerothHomotopy_diff_circle`).
 
 ## Main results
 
@@ -137,11 +139,9 @@ theorem forall_exists_joined_orthogonalToDiffSphere_iff_natCard_zerothHomotopy_e
       Nat.card (ZerothHomotopy
         (Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m)) = 2 := by
   set ρ := orthogonalToDiffSphere n m (orthogonalDiagonalReflection ℝ 0)
-  have hmk : ∀ f g : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m,
-      ZerothHomotopy.mk f = ZerothHomotopy.mk g ↔ Joined f g := fun _ _ ↦ Quotient.eq
   have hρ : ZerothHomotopy.mk ρ ≠ ZerothHomotopy.mk 1 := fun h ↦
     not_joined_one_orthogonalToDiffSphere_of_det_eq_neg_one
-      (det_orthogonalDiagonalReflection ℝ 0) ((hmk _ _).1 h).symm
+      (det_orthogonalDiagonalReflection ℝ 0) (ZerothHomotopy.mk_eq_mk_iff.1 h).symm
   rw [Nat.card_eq_two_iff' (ZerothHomotopy.mk 1)]
   constructor
   · -- Every class is that of the identity or of the reflection.
@@ -149,13 +149,13 @@ theorem forall_exists_joined_orthogonalToDiffSphere_iff_natCard_zerothHomotopy_e
     induction c with | mk f => ?_
     obtain ⟨A, hA⟩ := h f
     rcases joined_orthogonalToDiffSphere_one_or_reflection A with h1 | h1
-    · exact (hc ((hmk _ _).2 (h1.trans hA).symm)).elim
-    · exact ((hmk _ _).2 (h1.trans hA)).symm
+    · exact (hc (ZerothHomotopy.mk_eq_mk_iff.2 (h1.trans hA).symm)).elim
+    · exact (ZerothHomotopy.mk_eq_mk_iff.2 (h1.trans hA)).symm
   · -- Conversely, a class other than that of the identity is that of the reflection.
     rintro ⟨c, -, hc⟩ f
     by_cases hf : ZerothHomotopy.mk f = ZerothHomotopy.mk 1
-    · exact ⟨1, by rw [map_one]; exact ((hmk _ _).1 hf).symm⟩
-    · refine ⟨orthogonalDiagonalReflection ℝ 0, (hmk _ _).1 ?_⟩
+    · exact ⟨1, by rw [map_one]; exact (ZerothHomotopy.mk_eq_mk_iff.1 hf).symm⟩
+    · refine ⟨orthogonalDiagonalReflection ℝ 0, ZerothHomotopy.mk_eq_mk_iff.1 ?_⟩
       exact (hc _ hρ).trans (hc _ hf).symm
 
 end TauCeti

@@ -186,12 +186,8 @@ theorem coe_diffeomorphSphere_mk (n : ℕ∞ω) (t : ℝ) :
       !₂[Real.cos (2 * π / p * t), Real.sin (2 * π / p * t)] := by
   rw [coe_diffeomorphSphere_apply, toCircle_apply_mk, Circle.coe_exp]
   ext i
-  fin_cases i
-  · simpa only [Complex.orthonormalBasisOneI_repr_apply, Fin.zero_eta, Matrix.cons_val_zero]
-      using Complex.exp_ofReal_mul_I_re _
-  · simpa only [Complex.orthonormalBasisOneI_repr_apply, Fin.mk_one, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one]
-      using Complex.exp_ofReal_mul_I_im _
+  rw [Complex.orthonormalBasisOneI_repr_apply, Complex.exp_ofReal_mul_I_re,
+    Complex.exp_ofReal_mul_I_im]
 
 /-- The diffeomorphism `diffeomorphSphere p n` carries the reflection `θ ↦ -θ` of `AddCircle p`
 to the reflection `(x, y) ↦ (x, -y)` of the unit circle of `ℝ²`, the restriction of the diagonal

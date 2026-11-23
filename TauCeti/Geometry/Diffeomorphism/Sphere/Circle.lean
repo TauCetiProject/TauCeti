@@ -69,22 +69,20 @@ theorem exists_joined_orthogonalToDiffSphere_circle (hm : m ≠ 0)
   · -- The diffeotopy ends at the conjugate of `f`, so `f` is joined to the identity.
     refine ⟨1, ?_⟩
     rw [map_one]
-    convert hJ using 1
-    refine Diffeomorph.ext fun x ↦ ?_
-    rw [Diffeomorph.diffCongr_apply_apply, hΨ, Diffeomorph.diffCongr_apply_apply]
-    simp only [Diffeomorph.symm_apply_apply, Diffeomorph.apply_symm_apply]
-  · -- The diffeotopy ends at the conjugate of `f ∘ ρ`, for the reflection `ρ`, so `f ∘ ρ` is
-    -- joined to the identity and `f` to `ρ⁻¹`.
+    simpa only [DFunLike.coe_injective hΨ, ← Diffeomorph.diffCongr_symm,
+      MulEquiv.apply_symm_apply] using hJ
+  · -- The diffeotopy ends at the conjugate of `f * ρ`, for the reflection `ρ`, which `ψ` reads as
+    -- `θ ↦ -θ`. So `f * ρ` is joined to the identity and `f` to `ρ⁻¹`.
     set ρ := orthogonalToDiffSphere 1 m (orthogonalDiagonalReflection ℝ 1)
-    have hψ : ψ.symm.symm = ψ := Diffeomorph.toEquiv_injective <| by
-      rw [Diffeomorph.symm_toEquiv, Diffeomorph.symm_toEquiv, Equiv.symm_symm]
-    have hfρ : Diffeomorph.diffCongr ψ Ψ.final = f * ρ := by
-      refine Diffeomorph.ext fun x ↦ ?_
-      rw [Diffeomorph.diffCongr_apply_apply, hΨ, Function.comp_apply,
-        Diffeomorph.diffCongr_apply_apply, hψ, AddCircle.diffeomorphSphere_neg,
-        Diffeomorph.apply_symm_apply, Diffeomorph.apply_symm_apply, Diffeomorph.mul_apply]
+    have hfρ : Ψ.final = (Diffeomorph.diffCongr ψ).symm (f * ρ) := by
+      rw [map_mul, Diffeomorph.diffCongr_symm]
+      refine Diffeomorph.ext fun θ ↦ ?_
+      rw [hΨ, Function.comp_apply, Diffeomorph.mul_apply,
+        Diffeomorph.diffCongr_apply_apply ψ.symm ρ]
+      -- `ψ.symm.symm` is `ψ` by definition, so `diffeomorphSphere_neg` applies.
+      exact congrArg _ (ψ.toEquiv.eq_symm_apply.2 (AddCircle.diffeomorphSphere_neg 1 m θ))
     refine ⟨(orthogonalDiagonalReflection ℝ 1)⁻¹, ?_⟩
-    rw [hfρ] at hJ
+    rw [hfρ, MulEquiv.apply_symm_apply] at hJ
     rw [map_inv]
     simpa only [mul_inv_cancel_right, one_mul] using hJ.map (continuous_mul_const ρ⁻¹)
 
