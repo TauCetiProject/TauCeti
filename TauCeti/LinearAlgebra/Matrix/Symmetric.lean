@@ -303,6 +303,144 @@ theorem IsSymm.exists_det_sub_smul_eq_mul_det {n R : Type*} [Fintype n] [Decidab
   rw [hfac, det_mul, hc]
   linear_combination (-(2 * k)) * hs
 
+/-- Every Boolean ring (`x * x = x`) has characteristic two (`x + x = 0`). -/
+private theorem add_self_eq_zero_of_sq_eq_self {S : Type*} [CommRing S]
+    (hsq : ∀ x : S, x * x = x) (x : S) : x + x = 0 := by
+  linear_combination hsq (x + x) - 4 * hsq x
+
+/-- Lifting a one-coordinate Schur-complement solution along the diagonal pivot `last`. -/
+private theorem exists_mul_sum_eq_diag_of_pivot_last {S : Type*} [CommRing S]
+    (hsq : ∀ x : S, x * x = x) {m : ℕ} {a : Fin (m + 2) → Fin (m + 2) → S}
+    (ha : ∀ i j, a i j = a j i) {u' : Fin (m + 1) → S}
+    (hu' : ∀ j : Fin (m + 1),
+      ∑ i : Fin (m + 1), u' i *
+        (a i.castSucc j.castSucc +
+          a i.castSucc (Fin.last (m + 1)) * a (Fin.last (m + 1)) j.castSucc) =
+        a j.castSucc j.castSucc +
+          a j.castSucc (Fin.last (m + 1)) * a (Fin.last (m + 1)) j.castSucc) :
+    ∃ u : Fin (m + 2) → S, ∀ j, a (Fin.last (m + 1)) (Fin.last (m + 1)) * ∑ i, u i * a i j =
+      a (Fin.last (m + 1)) (Fin.last (m + 1)) * a j j := by
+  let last : Fin (m + 2) := Fin.last (m + 1)
+  let s : S := ∑ i : Fin (m + 1), u' i * a i.castSucc last
+  refine ⟨Fin.snoc u' (1 + s), Fin.lastCases ?_ fun j ↦ ?_⟩
+  · rw [Fin.sum_univ_castSucc]; simp only [Fin.snoc_castSucc, Fin.snoc_last]
+    dsimp only [s]
+    linear_combination s * hsq (a last last) +
+      s * add_self_eq_zero_of_sq_eq_self hsq (a last last)
+  · rw [Fin.sum_univ_castSucc]; simp only [Fin.snoc_castSucc, Fin.snoc_last]
+    have hsum : (∑ i : Fin (m + 1), u' i * a i.castSucc j.castSucc) +
+        (1 + s) * a last j.castSucc =
+        (∑ i : Fin (m + 1), u' i *
+          (a i.castSucc j.castSucc + a i.castSucc last * a last j.castSucc)) +
+          a last j.castSucc := by
+      simp only [s, mul_add, add_mul, Finset.sum_add_distrib, Finset.sum_mul, mul_assoc]
+      ring
+    rw [hsum, hu' j, ha j.castSucc last]
+    congr 1
+    linear_combination hsq (a last j.castSucc) +
+      add_self_eq_zero_of_sq_eq_self hsq (a last j.castSucc)
+
+/-- Lifting a two-coordinate Schur-complement solution along an off-diagonal pivot `(k, last)`. -/
+private theorem exists_mul_sum_eq_diag_of_pivot_pair {S : Type*} [CommRing S]
+    (hsq : ∀ x : S, x * x = x) {m : ℕ} {a : Fin (m + 2) → Fin (m + 2) → S}
+    (ha : ∀ i j, a i j = a j i) (k : Fin (m + 1)) {u'' : Fin m → S}
+    (hu'' : ∀ j : Fin m,
+      ∑ i : Fin m, u'' i *
+        (a (k.succAbove i).castSucc (k.succAbove j).castSucc +
+          a (k.succAbove i).castSucc (Fin.last (m + 1)) * a k.castSucc (k.succAbove j).castSucc +
+          a (k.succAbove i).castSucc k.castSucc * a (Fin.last (m + 1)) (k.succAbove j).castSucc +
+          a k.castSucc k.castSucc * a (k.succAbove i).castSucc (Fin.last (m + 1)) *
+            a (Fin.last (m + 1)) (k.succAbove j).castSucc) =
+        a (k.succAbove j).castSucc (k.succAbove j).castSucc +
+          a (k.succAbove j).castSucc (Fin.last (m + 1)) * a k.castSucc (k.succAbove j).castSucc +
+          a (k.succAbove j).castSucc k.castSucc * a (Fin.last (m + 1)) (k.succAbove j).castSucc +
+          a k.castSucc k.castSucc * a (k.succAbove j).castSucc (Fin.last (m + 1)) *
+            a (Fin.last (m + 1)) (k.succAbove j).castSucc) :
+    ∃ u : Fin (m + 2) → S,
+      ∀ j, (1 - a (Fin.last (m + 1)) (Fin.last (m + 1))) *
+          a k.castSucc (Fin.last (m + 1)) * ∑ i, u i * a i j =
+        (1 - a (Fin.last (m + 1)) (Fin.last (m + 1))) *
+          a k.castSucc (Fin.last (m + 1)) * a j j := by
+  let last : Fin (m + 2) := Fin.last (m + 1)
+  let d : S := a last last; let e : S := a k.castSucc last; let c : S := (1 - d) * e
+  have hcd : c * d = 0 := by linear_combination -e * hsq d
+  have hce : c * e = c := by linear_combination (1 - d) * hsq e
+  let f (i : Fin m) : Fin (m + 2) := (k.succAbove i).castSucc
+  let vk : S := ∑ i : Fin m, u'' i * a (f i) last
+  let v : Fin (m + 1) → S := k.insertNth vk u''
+  let sk : S := ∑ i : Fin (m + 1), v i * a i.castSucc k.castSucc
+  let u : Fin (m + 2) → S := Fin.snoc v (a k.castSucc k.castSucc + sk)
+  have hsum_u (j : Fin (m + 2)) : ∑ i, u i * a i j = vk * a k.castSucc j +
+      (∑ i : Fin m, u'' i * a (f i) j) + (a k.castSucc k.castSucc + sk) * a last j := by
+    rw [Fin.sum_univ_castSucc, Fin.sum_univ_succAbove _ k]
+    simp only [u, v, f, last, Fin.snoc_castSucc, Fin.snoc_last, Fin.insertNth_apply_same,
+      Fin.insertNth_apply_succAbove]
+  refine ⟨u, Fin.lastCases ?_ (Fin.succAboveCases k ?_ fun j' ↦ ?_)⟩
+  · rw [hsum_u last]; dsimp only [c, d, e, vk, sk] at hcd hce ⊢
+    linear_combination vk * hce + (a k.castSucc k.castSucc + sk) * hcd +
+      add_self_eq_zero_of_sq_eq_self hsq (c * vk) - hcd
+  · rw [Fin.sum_univ_castSucc]; simp only [u, Fin.snoc_castSucc, Fin.snoc_last]
+    rw [ha last k.castSucc]; dsimp only [c, e, sk] at hce ⊢
+    linear_combination (a k.castSucc k.castSucc + sk) * hce +
+      add_self_eq_zero_of_sq_eq_self hsq (c * sk)
+  · congr 1; rw [hsum_u]
+    have hsk : sk = vk * a k.castSucc k.castSucc + ∑ i, u'' i * a (f i) k.castSucc := by
+      dsimp only [sk]; rw [Fin.sum_univ_succAbove _ k]
+      simp only [v, f, Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]
+    have hterms (i : Fin m) :
+        u'' i * (a (f i) (f j') + a (f i) last * a k.castSucc (f j') +
+          a (f i) k.castSucc * a last (f j') +
+          a k.castSucc k.castSucc * a (f i) last * a last (f j')) =
+          u'' i * a (f i) (f j') + u'' i * a (f i) last * a k.castSucc (f j') +
+            u'' i * a (f i) last * a k.castSucc k.castSucc * a last (f j') +
+            u'' i * a (f i) k.castSucc * a last (f j') := by ring
+    have hsum : vk * a k.castSucc (f j') + (∑ i : Fin m, u'' i * a (f i) (f j')) +
+        (a k.castSucc k.castSucc + sk) * a last (f j') =
+        (∑ i, u'' i * (a (f i) (f j') + a (f i) last * a k.castSucc (f j') +
+          a (f i) k.castSucc * a last (f j') +
+          a k.castSucc k.castSucc * a (f i) last * a last (f j'))) +
+          a k.castSucc k.castSucc * a last (f j') := by
+      rw [hsk]; simp only [hterms, vk, add_mul, Finset.sum_add_distrib, Finset.sum_mul]; ring
+    dsimp only [f] at hsum; rw [hsum, hu'' j']
+    rw [ha (k.succAbove j').castSucc last, ha k.castSucc (k.succAbove j').castSucc]
+    linear_combination
+      add_self_eq_zero_of_sq_eq_self hsq
+        (a last (k.succAbove j').castSucc * a (k.succAbove j').castSucc k.castSucc) +
+      a k.castSucc k.castSucc *
+        (hsq (a last (k.succAbove j').castSucc) +
+          add_self_eq_zero_of_sq_eq_self hsq (a last (k.succAbove j').castSucc))
+
+/-- Lifting a reduced-system solution when the last row and column vanish idempotently. -/
+private theorem exists_mul_sum_eq_diag_of_zero_last {S : Type*} [CommRing S]
+    (hsq : ∀ x : S, x * x = x) {m : ℕ} {a : Fin (m + 2) → Fin (m + 2) → S}
+    {u₀ : Fin (m + 1) → S}
+    (hu₀ : ∀ j : Fin (m + 1), ∑ i : Fin (m + 1), u₀ i * a i.castSucc j.castSucc =
+      a j.castSucc j.castSucc) :
+    ∃ u : Fin (m + 2) → S,
+      ∀ j, ((1 - a (Fin.last (m + 1)) (Fin.last (m + 1))) *
+          ∏ k : Fin (m + 1), (1 - a k.castSucc (Fin.last (m + 1)))) * ∑ i, u i * a i j =
+        ((1 - a (Fin.last (m + 1)) (Fin.last (m + 1))) *
+          ∏ k : Fin (m + 1), (1 - a k.castSucc (Fin.last (m + 1)))) * a j j := by
+  let last : Fin (m + 2) := Fin.last (m + 1)
+  let r : S := (1 - a last last) * ∏ k : Fin (m + 1), (1 - a k.castSucc last)
+  have hrd : r * a last last = 0 := by
+    dsimp only [r]
+    linear_combination -(∏ k : Fin (m + 1), (1 - a k.castSucc last)) * hsq (a last last)
+  have hrk (k : Fin (m + 1)) : r * a k.castSucc last = 0 := by
+    dsimp only [r]; rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ k)]
+    linear_combination -((1 - a last last) * ∏ t ∈ Finset.univ.erase k, (1 - a t.castSucc last)) *
+      hsq (a k.castSucc last)
+  refine ⟨Fin.snoc u₀ 0, Fin.lastCases ?_ fun j ↦ ?_⟩
+  · rw [Fin.sum_univ_castSucc]
+    simp only [Fin.snoc_castSucc, Fin.snoc_last, zero_mul, add_zero, Finset.mul_sum]
+    dsimp only [r, last] at hrd hrk ⊢; rw [hrd]
+    exact Finset.sum_eq_zero fun i _ ↦ by
+      rw [← mul_assoc, mul_comm ((1 - a (Fin.last (m + 1)) (Fin.last (m + 1))) * _),
+        mul_assoc, hrk, mul_zero]
+  · rw [Fin.sum_univ_castSucc]
+    simp only [Fin.snoc_castSucc, Fin.snoc_last, zero_mul, add_zero]
+    exact congrArg (r * ·) (hu₀ j)
+
 /-- Over a Boolean ring (`x * x = x`), every finite symmetric system `∑ i, u i * a i j = a j j`
 has a solution. Proved by strong induction on the dimension, gluing solutions across the
 idempotent partition generated by the last row and column. -/
@@ -310,7 +448,6 @@ private theorem exists_sum_mul_eq_diag_of_sq_eq_self {S : Type*} [CommRing S]
     (hsq : ∀ x : S, x * x = x) :
     ∀ (n : ℕ) (a : Fin n → Fin n → S), (∀ i j, a i j = a j i) →
       ∃ u : Fin n → S, ∀ j, ∑ i, u i * a i j = a j j := by
-  have hadd (x : S) : x + x = 0 := by linear_combination hsq (x + x) - 4 * hsq x
   intro n
   induction n using Nat.strong_induction_on with
   | ind n ih =>
@@ -328,89 +465,26 @@ private theorem exists_sum_mul_eq_diag_of_sq_eq_self {S : Type*} [CommRing S]
               = c * e * ∑ i, u₁ i * a i j + c * (1 - e) * ∑ i, u₂ i * a i j := by
                 simp only [add_mul, mul_assoc, Finset.sum_add_distrib, ← Finset.mul_sum]; ring
             _ = c * a j j := by rw [hu₁, hu₂]; ring⟩
-      let last : Fin (m + 2) := Fin.last (m + 1); let d : S := a last last
-      -- Case `d = 1`: eliminate the last coordinate using the pivot `d`.
-      have hPd : P d := by
+      let last : Fin (m + 2) := Fin.last (m + 1)
+      have hPd : P (a last last) := by
         let a' (i j : Fin (m + 1)) : S :=
           a i.castSucc j.castSucc + a i.castSucc last * a last j.castSucc
         obtain ⟨u', hu'⟩ := ih (m + 1) (by omega) a' fun i j ↦ by
           simp only [a', ha i.castSucc j.castSucc, ha i.castSucc last, ha last j.castSucc]; ring
-        let s : S := ∑ i : Fin (m + 1), u' i * a i.castSucc last
-        refine ⟨Fin.snoc u' (1 + s), Fin.lastCases ?_ fun j ↦ ?_⟩
-        · rw [Fin.sum_univ_castSucc]; simp only [Fin.snoc_castSucc, Fin.snoc_last]
-          dsimp only [d, s]; linear_combination s * hsq (a last last) + s * hadd (a last last)
-        · rw [Fin.sum_univ_castSucc]; simp only [Fin.snoc_castSucc, Fin.snoc_last]
-          have hsum : (∑ i : Fin (m + 1), u' i * a i.castSucc j.castSucc) +
-              (1 + s) * a last j.castSucc = (∑ i, u' i * a' i j) + a last j.castSucc := by
-            simp only [a', s, mul_add, add_mul, Finset.sum_add_distrib, Finset.sum_mul, mul_assoc]
-            ring
-          rw [hsum, hu' j]; dsimp only [a']; rw [ha j.castSucc last]
-          congr 1; linear_combination hsq (a last j.castSucc) + hadd (a last j.castSucc)
-      -- Case `d = 0`, `a k last = 1`: eliminate the hyperbolic pair `{k, last}`.
-      have hPk (k : Fin (m + 1)) : P ((1 - d) * a k.castSucc last) := by
-        let e : S := a k.castSucc last; let c : S := (1 - d) * e
-        have hcd : c * d = 0 := by linear_combination -e * hsq d
-        have hce : c * e = c := by linear_combination (1 - d) * hsq e
+        exact exists_mul_sum_eq_diag_of_pivot_last hsq ha hu'
+      have hPk (k : Fin (m + 1)) : P ((1 - a last last) * a k.castSucc last) := by
         let f (i : Fin m) : Fin (m + 2) := (k.succAbove i).castSucc
         let a'' (i j : Fin m) : S := a (f i) (f j) + a (f i) last * a k.castSucc (f j) +
           a (f i) k.castSucc * a last (f j) + a k.castSucc k.castSucc * a (f i) last * a last (f j)
         obtain ⟨u'', hu''⟩ := ih m (by omega) a'' fun i j ↦ by
           simp only [a'', ha (f i) (f j), ha (f i) last, ha k.castSucc (f j),
             ha (f i) k.castSucc, ha last (f j)]; ring
-        let vk : S := ∑ i : Fin m, u'' i * a (f i) last
-        let v : Fin (m + 1) → S := k.insertNth vk u''
-        let sk : S := ∑ i : Fin (m + 1), v i * a i.castSucc k.castSucc
-        let u : Fin (m + 2) → S := Fin.snoc v (a k.castSucc k.castSucc + sk)
-        have hsum_u (j : Fin (m + 2)) : ∑ i, u i * a i j = vk * a k.castSucc j +
-            (∑ i : Fin m, u'' i * a (f i) j) + (a k.castSucc k.castSucc + sk) * a last j := by
-          rw [Fin.sum_univ_castSucc, Fin.sum_univ_succAbove _ k]
-          simp only [u, v, f, last, Fin.snoc_castSucc, Fin.snoc_last, Fin.insertNth_apply_same,
-            Fin.insertNth_apply_succAbove]
-        refine ⟨u, Fin.lastCases ?_ (Fin.succAboveCases k ?_ fun j' ↦ ?_)⟩
-        · rw [hsum_u last]; dsimp only [c, d, e, vk, sk] at hcd hce ⊢
-          linear_combination vk * hce + (a k.castSucc k.castSucc + sk) * hcd + hadd (c * vk) - hcd
-        · rw [Fin.sum_univ_castSucc]; simp only [u, Fin.snoc_castSucc, Fin.snoc_last]
-          rw [ha last k.castSucc]; dsimp only [c, e, sk] at hce ⊢
-          linear_combination (a k.castSucc k.castSucc + sk) * hce + hadd (c * sk)
-        · congr 1; rw [hsum_u]
-          have hsk : sk = vk * a k.castSucc k.castSucc + ∑ i, u'' i * a (f i) k.castSucc := by
-            dsimp only [sk]; rw [Fin.sum_univ_succAbove _ k]
-            simp only [v, f, Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]
-          have hterms (i : Fin m) : u'' i * a'' i j' = u'' i * a (f i) (f j') +
-              u'' i * a (f i) last * a k.castSucc (f j') +
-              u'' i * a (f i) last * a k.castSucc k.castSucc * a last (f j') +
-              u'' i * a (f i) k.castSucc * a last (f j') := by dsimp only [a'']; ring
-          have hsum : vk * a k.castSucc (f j') + (∑ i : Fin m, u'' i * a (f i) (f j')) +
-              (a k.castSucc k.castSucc + sk) * a last (f j') =
-              (∑ i, u'' i * a'' i j') + a k.castSucc k.castSucc * a last (f j') := by
-            rw [hsk]; simp only [hterms, vk, add_mul, Finset.sum_add_distrib, Finset.sum_mul]; ring
-          dsimp only [f] at hsum; rw [hsum, hu'' j']; dsimp only [a'', f]
-          rw [ha (k.succAbove j').castSucc last, ha k.castSucc (k.succAbove j').castSucc]
-          linear_combination
-            hadd (a last (k.succAbove j').castSucc * a (k.succAbove j').castSucc k.castSucc) +
-            a k.castSucc k.castSucc *
-              (hsq (a last (k.succAbove j').castSucc) + hadd (a last (k.succAbove j').castSucc))
-      -- Case `d = 0` and `a k last = 0` for all `k`: the last row/column vanishes, so pad with `0`.
-      have hPrest : P ((1 - d) * ∏ k : Fin (m + 1), (1 - a k.castSucc last)) := by
+        exact exists_mul_sum_eq_diag_of_pivot_pair hsq ha k hu''
+      have hPrest : P ((1 - a last last) * ∏ k : Fin (m + 1), (1 - a k.castSucc last)) := by
         obtain ⟨u₀, hu₀⟩ := ih (m + 1) (by omega) (fun i j ↦ a i.castSucc j.castSucc) fun i j ↦
           ha i.castSucc j.castSucc
-        let r : S := (1 - d) * ∏ k : Fin (m + 1), (1 - a k.castSucc last)
-        have hrd : r * d = 0 := by
-          dsimp only [r]; linear_combination -(∏ k : Fin (m + 1), (1 - a k.castSucc last)) * hsq d
-        have hrk (k : Fin (m + 1)) : r * a k.castSucc last = 0 := by
-          dsimp only [r]; rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ k)]
-          linear_combination -((1 - d) * ∏ t ∈ Finset.univ.erase k, (1 - a t.castSucc last)) *
-            hsq (a k.castSucc last)
-        refine ⟨Fin.snoc u₀ 0, Fin.lastCases ?_ fun j ↦ ?_⟩
-        · rw [Fin.sum_univ_castSucc]
-          simp only [Fin.snoc_castSucc, Fin.snoc_last, zero_mul, add_zero, Finset.mul_sum]
-          dsimp only [r, d] at hrd hrk ⊢; rw [hrd]
-          exact Finset.sum_eq_zero fun i _ ↦ by
-            rw [← mul_assoc, mul_comm ((1 - a last last) * _), mul_assoc, hrk, mul_zero]
-        · rw [Fin.sum_univ_castSucc]
-          simp only [Fin.snoc_castSucc, Fin.snoc_last, zero_mul, add_zero]
-          exact congrArg (r * ·) (hu₀ j)
-      obtain ⟨u, hu⟩ := hjoin (e := d) (by rwa [one_mul]) <| by
+        exact exists_mul_sum_eq_diag_of_zero_last hsq hu₀
+      obtain ⟨u, hu⟩ := hjoin (e := a last last) (by rwa [one_mul]) <| by
         rw [one_mul]
         exact TauCeti.of_mul_prod_of_forall_mul (fun _ ↦ hmul) (fun _ ↦ hjoin) hPrest
           fun k _ ↦ hPk k

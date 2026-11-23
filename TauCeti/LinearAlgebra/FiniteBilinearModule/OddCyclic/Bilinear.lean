@@ -51,7 +51,7 @@ universe u
 namespace FiniteBilinearModule
 
 open Finset
-open FiniteQuadraticModule (oddCyclic pi)
+open FiniteQuadraticModule (oddCyclic)
 
 variable {p : ℕ} [Fact p.Prime]
 
@@ -62,7 +62,8 @@ theorem exists_isometry_pi_oddCyclic_of_natCard_eq_pow (hp : Odd p) (A : FiniteB
     (hA : A.IsNondegenerate) {N : ℕ} (hN : Nat.card A = p ^ N) :
     ∃ (n : ℕ) (k : Fin n → ℕ) (θ : Fin n → ℤ), (∀ i, 0 < k i ∧ IsCoprime (p : ℤ) (θ i)) ∧
       Nonempty (Isometry
-        (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i)).toFiniteBilinearModule A) := by
+        (FiniteQuadraticModule.pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i)).toFiniteBilinearModule
+        A) := by
   -- The bilinear module of the refinement is `A` by definition
   -- (`quadraticRefinement_toFiniteBilinearModule`), so `hA` and `f.toFiniteBilinearModule` apply.
   obtain ⟨n, k, θ, hkθ, ⟨f⟩⟩ :=
@@ -77,11 +78,14 @@ the coefficients of these summands have the same product. -/
 theorem nonempty_isometry_pi_oddCyclic_iff (hp : Odd p) {ι κ : Type*} [Fintype ι] [Fintype κ]
     (k : ι → ℕ) (l : κ → ℕ) {θ : ι → ℤ} {η : κ → ℤ} (hθ : ∀ i, IsCoprime (p : ℤ) (θ i))
     (hη : ∀ j, IsCoprime (p : ℤ) (η j)) :
-    Nonempty (Isometry (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i)).toFiniteBilinearModule
-      (pi fun j ↦ oddCyclic (p ^ l j) hp.pow (η j)).toFiniteBilinearModule) ↔
+    Nonempty (Isometry
+      (FiniteQuadraticModule.pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i)).toFiniteBilinearModule
+      (FiniteQuadraticModule.pi fun j ↦
+        oddCyclic (p ^ l j) hp.pow (η j)).toFiniteBilinearModule) ↔
       ∀ m, 0 < m → #{i | k i = m} = #{j | l j = m} ∧
         ∏ i with k i = m, legendreSym p (θ i) = ∏ j with l j = m, legendreSym p (η j) := by
-  have hodd : Odd (Nat.card (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i))) := by
+  have hodd :
+      Odd (Nat.card (FiniteQuadraticModule.pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i))) := by
     rw [Nat.card_pi]
     simpa [Finset.prod_pow_eq_pow_sum] using hp.pow
   rw [← FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd]

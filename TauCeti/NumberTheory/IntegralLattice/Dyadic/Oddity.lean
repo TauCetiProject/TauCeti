@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
-import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.GaussSum
 import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.VanDerBlij
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 import TauCeti.NumberTheory.IntegralLattice.Localization.Sublattice
@@ -73,22 +72,11 @@ theorem integralNorm_modEq_eight_of_odd_discriminant
   have hdisc_eq := discriminant_eq_of_isometry_discriminantBilinearModule e
   let P : Finset ℕ := L.discriminant.primeFactors
   have h2P : 2 ∉ P := fun hmem ↦ hL.not_two_dvd_nat (Nat.dvd_of_mem_primeFactors hmem)
-  have hP_prime p (hp : p ∈ insert 2 P) : p.Prime :=
-    (Finset.mem_insert.mp hp).elim (· ▸ Nat.prime_two) Nat.prime_of_mem_primeFactors
   let AL := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
   let AM := M.evenSublattice.discriminantQuadraticModule M.isEven_evenSublattice
-  have hsumL := FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset
-    (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
-    hP_prime (by
-      rw [L.evenSublattice.natCard_discriminantQuadraticModule L.isEven_evenSublattice,
-        L.evenSublattice.natCard_discriminantGroup]
-      exact L.primeFactors_discriminant_evenSublattice_subset)
-  have hsumM := FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset
-    (M.evenSublattice.isNondegenerate_discriminantQuadraticModule M.isEven_evenSublattice)
-    hP_prime (by
-      rw [M.evenSublattice.natCard_discriminantQuadraticModule M.isEven_evenSublattice,
-        M.evenSublattice.natCard_discriminantGroup]
-      simpa only [P, hdisc_eq] using M.primeFactors_discriminant_evenSublattice_subset)
+  have hsumL := L.gaussSign_evenSublattice_eq_sum_insert_two_primeFactors
+  have hsumM := M.gaussSign_evenSublattice_eq_sum_insert_two_primeFactors
+  rw [← hdisc_eq] at hsumM
   rw [Finset.sum_insert h2P,
     L.gaussSign_restrict_primaryComponent_two_evenSublattice hL hw] at hsumL
   rw [Finset.sum_insert h2P,

@@ -240,6 +240,24 @@ theorem gaussSign_evenSublattice_eq_sigPos_sub_sigNeg [L.IsNondegenerate] :
   simp only [signature, Prod.mk.injEq] at hs
   rwa [hs.1, hs.2.2] at hm
 
+/-- The Gauss-sum invariant of the discriminant quadratic module of `L.evenSublattice` splits as
+a sum over `2` and the prime factors of `L.discriminant`. -/
+theorem gaussSign_evenSublattice_eq_sum_insert_two_primeFactors [L.IsNondegenerate] :
+    (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).gaussSign =
+      ∑ p ∈ insert 2 L.discriminant.primeFactors,
+        ((L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).restrict
+          (AddCommGroup.primaryComponent
+            (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice)
+            p)).gaussSign := by
+  classical
+  refine FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset
+    (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
+    (fun p hp ↦ (Finset.mem_insert.mp hp).elim (· ▸ Nat.prime_two) Nat.prime_of_mem_primeFactors)
+    ?_
+  rw [L.evenSublattice.natCard_discriminantQuadraticModule L.isEven_evenSublattice,
+    L.evenSublattice.natCard_discriminantGroup]
+  exact L.primeFactors_discriminant_evenSublattice_subset
+
 /-- **Van der Blij's congruence:** the signature difference of a unimodular
 integral lattice is congruent modulo eight to the norm of any characteristic vector. -/
 theorem vanDerBlij (hL : L.IsUnimodular) {w : L}
@@ -247,15 +265,8 @@ theorem vanDerBlij (hL : L.IsUnimodular) {w : L}
     ((L.sigPos : ℤ) - L.sigNeg) ≡ L.integralNorm w [ZMOD 8] := by
   have : L.IsNondegenerate := ⟨hL.nondegenerate⟩
   have hdisc : L.discriminant = 1 := L.isUnimodular_iff_discriminant_eq_one.mp hL
-  have hsub : (Nat.card (L.evenSublattice.discriminantQuadraticModule
-      L.isEven_evenSublattice)).primeFactors ⊆ ({2} : Finset ℕ) := by
-    rw [L.evenSublattice.natCard_discriminantQuadraticModule L.isEven_evenSublattice,
-      L.evenSublattice.natCard_discriminantGroup]
-    simpa [hdisc] using L.primeFactors_discriminant_evenSublattice_subset
-  have hg := FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset
-    (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
-    (fun p hp ↦ Finset.mem_singleton.mp hp ▸ Nat.prime_two) hsub
-  rw [Finset.sum_singleton,
+  have hg := L.gaussSign_evenSublattice_eq_sum_insert_two_primeFactors
+  rw [hdisc, Nat.primeFactors_one, insert_empty_eq, Finset.sum_singleton,
     L.gaussSign_restrict_primaryComponent_two_evenSublattice (hdisc ▸ odd_one) hw] at hg
   apply (ZMod.intCast_eq_intCast_iff _ _ 8).mp
   simpa only [Int.cast_sub, Int.cast_natCast] using

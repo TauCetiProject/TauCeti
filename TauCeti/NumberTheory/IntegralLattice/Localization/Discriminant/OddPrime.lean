@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Torsion
+public import TauCeti.Data.Fintype.Fiber
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
-import TauCeti.Data.Fintype.Fiber
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Bilinear
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
@@ -43,7 +43,13 @@ namespace TauCeti.IntegralLattice
 
 /-! ### Positive-scale Jordan invariants from the `p`-primary discriminant form -/
 
-private theorem sum_eq_and_pos_invariants_of_primaryDiscriminantBilinear
+/-- **Positive-scale Jordan invariants from the `p`-primary discriminant form.** At an odd prime
+`p`, if two nondegenerate integral lattices `L` and `M` have diagonal Jordan bases of `L_p` and
+`M_p` with unit entries `u i, v j` and valuations `k i, l j`, and the `p`-primary components of
+their discriminant bilinear modules are isometric, then the total valuations `∑ i, k i` and
+`∑ j, l j` agree and at every positive scale `m > 0` the fiber multiplicities and unit-product
+square classes coincide. -/
+theorem sum_eq_and_forall_pos_occCount_eq_and_isSquare_of_primaryDiscriminantBilinear
     {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
     {L : IntegralLattice V} {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate]
     {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) {ι κ : Type*} [Fintype ι] [Fintype κ]
@@ -116,7 +122,8 @@ theorem localIntegralForm_equivalent_iff_primaryDiscriminantBilinear
   have hcard : Nat.card (Fin (finrank ℤ_[p] (L.LocalCarrier p))) =
       Nat.card (Fin (finrank ℤ_[p] (M.LocalCarrier p))) := by simp [LocalCarrier, hrank]
   obtain ⟨hsum, hpos⟩ :=
-    sum_eq_and_pos_invariants_of_primaryDiscriminantBilinear hp hb hbu hc hcv hdisc
+    sum_eq_and_forall_pos_occCount_eq_and_isSquare_of_primaryDiscriminantBilinear
+      hp hb hbu hc hcv hdisc
   obtain ⟨dL, hdetL⟩ := exists_unit_determinant_eq_sq_mul_prod L hb hbu
   obtain ⟨dM, hdetM⟩ := exists_unit_determinant_eq_sq_mul_prod M hc hcv
   have hw : (dL : ℤ_[p]) * dM * (p : ℤ_[p]) ^ ∑ j, l j ≠ 0 :=

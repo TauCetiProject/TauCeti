@@ -171,9 +171,8 @@ maps. -/
 theorem map_quadratic_of_odd (hA : Odd (Nat.card A))
     (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule)
     (x : A) : B.quadratic (f x) = A.quadratic x := by
-  have hB : Nat.card B = Nat.card A := (Nat.card_congr f.toAddEquiv.toEquiv).symm
-  rw [quadratic_eq_nsmul_pairing_self_of_odd (hB ▸ hA), quadratic_eq_nsmul_pairing_self_of_odd hA,
-    hB, f.map_pairing]
+  rw [← FiniteBilinearModule.Isometry.toHom_apply, ← homOfBilinearHomOfOdd_apply hA f.toHom]
+  exact (homOfBilinearHomOfOdd hA f.toHom).map_app x
 
 /-- A bilinear isometry between finite quadratic modules of odd order, as a quadratic isometry. -/
 def isometryOfBilinearIsometryOfOdd (hA : Odd (Nat.card A))

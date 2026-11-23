@@ -56,41 +56,22 @@ namespace FiniteBilinearModule
 variable (A : FiniteBilinearModule)
 
 /-- The orthogonal product of the prime-primary restrictions of a finite bilinear module. -/
-@[expose] noncomputable def primaryComponents : FiniteBilinearModule where
-  carrier := ∀ p : (Nat.card A).primeFactors,
-    AddCommGroup.primaryComponent A p.val
-  pairing :=
-    { toFun := fun x ↦
-        { toFun := fun y ↦ ∑ p, A.pairing (x p) (y p)
-          map_zero' := by simp
-          map_add' := fun y z ↦ by
-            simp only [Pi.add_apply, AddSubgroup.coe_add, pairing_add_right,
-              Finset.sum_add_distrib] }
-      map_zero' := by
-        ext y
-        -- Expose the pointwise formula while constructing the bundled pairing itself.
-        change ∑ p, A.pairing 0 (y p) = 0
-        apply Finset.sum_eq_zero
-        intro p _
-        exact A.pairing_zero_left (y p)
-      map_add' := fun x y ↦ by
-        ext z
-        -- Expose the pointwise formula while constructing the bundled pairing itself.
-        change ∑ p, A.pairing (x p + y p) (z p) =
-          (∑ p, A.pairing (x p) (z p)) + ∑ p, A.pairing (y p) (z p)
-        simp only [pairing_add_left, Finset.sum_add_distrib] }
-  pairing_comm x y := by
-    -- Expose the pointwise formula while proving the final structure field.
-    change (∑ p, A.pairing (x p) (y p)) = ∑ p, A.pairing (y p) (x p)
-    apply Finset.sum_congr rfl
-    intro p _
-    exact A.pairing_comm (x p) (y p)
+@[expose] noncomputable def primaryComponents : FiniteBilinearModule :=
+  pi fun p : (Nat.card A).primeFactors ↦ A.restrict (AddCommGroup.primaryComponent A p.val)
+
+/-- The orthogonal product `primaryComponents` is the product `pi` of the prime-primary
+restrictions. -/
+theorem primaryComponents_eq_pi :
+    A.primaryComponents =
+      pi fun p : (Nat.card A).primeFactors ↦
+        A.restrict (AddCommGroup.primaryComponent A p.val) :=
+  (rfl)
 
 /-- The pairing on the orthogonal product is the sum of the component pairings. -/
 @[simp]
 theorem primaryComponents_pairing (x y : A.primaryComponents) :
-    A.primaryComponents.pairing x y = ∑ p, A.pairing (x p) (y p) := by
-  rfl
+    A.primaryComponents.pairing x y = ∑ p, A.pairing (x p) (y p) :=
+  (pi_pairing _ x y).trans (Finset.sum_congr rfl fun p _ ↦ A.restrict_pairing _ (x p) (y p))
 
 /-- The canonical primary decomposition is a bilinear isometry. -/
 noncomputable def primaryDecomposition : Isometry A.primaryComponents A where
@@ -201,21 +182,11 @@ theorem primaryComponents_eq_pi :
 @[simp]
 theorem primaryComponents_toFiniteBilinearModule :
     A.primaryComponents.toFiniteBilinearModule = A.toFiniteBilinearModule.primaryComponents := by
-  have hpairing :
-      A.primaryComponents.toFiniteBilinearModule.pairing =
-        A.toFiniteBilinearModule.primaryComponents.pairing :=
-    AddMonoidHom.ext fun x ↦ AddMonoidHom.ext fun y ↦
-      (pi_pairing (fun p : (Nat.card A).primeFactors ↦
-        A.restrict (AddCommGroup.primaryComponent A p.val)) x y).trans
-        (FiniteBilinearModule.primaryComponents_pairing A.toFiniteBilinearModule x y).symm
-  calc A.primaryComponents.toFiniteBilinearModule
-    _ = { carrier := A.toFiniteBilinearModule.primaryComponents.carrier
-          addCommGroup := A.toFiniteBilinearModule.primaryComponents.addCommGroup
-          finite := A.toFiniteBilinearModule.primaryComponents.finite
-          pairing := A.primaryComponents.toFiniteBilinearModule.pairing
-          pairing_comm := A.primaryComponents.toFiniteBilinearModule.pairing_comm } := rfl
-    _ = A.toFiniteBilinearModule.primaryComponents := by
-      congr 1
+  rw [primaryComponents_eq_pi, pi_toFiniteBilinearModule,
+    FiniteBilinearModule.primaryComponents_eq_pi]
+  -- `restrict_toFiniteBilinearModule` and the `AddCommGroup` structure of `A` agree
+  -- definitionally with `A.toFiniteBilinearModule`.
+  rfl
 
 /-- The quadratic map on the orthogonal product is the sum of the component quadratic maps. -/
 @[simp]
@@ -258,18 +229,20 @@ theorem primaryDecomposition_toFiniteBilinearModule :
     A.primaryDecomposition.toFiniteBilinearModule =
       (FiniteBilinearModule.Isometry.ofEq A.primaryComponents_toFiniteBilinearModule).trans
         A.toFiniteBilinearModule.primaryDecomposition := by
+  refine FiniteBilinearModule.Isometry.toAddEquiv_injective ?_
+  rw [Isometry.toFiniteBilinearModule_toAddEquiv,
+    FiniteBilinearModule.Isometry.trans_toAddEquiv]
   ext x
-  have hcast : cast (congrArg (fun C : FiniteBilinearModule ↦ (C : Type _))
-      A.primaryComponents_toFiniteBilinearModule) x = x :=
-    cast_eq _ x
-  rw [FiniteBilinearModule.Isometry.trans_apply, FiniteBilinearModule.Isometry.ofEq_apply,
-    FiniteBilinearModule.primaryDecomposition_apply]
-  refine (DFunLike.congr_fun
-    (Isometry.toFiniteBilinearModule_toAddEquiv A.primaryDecomposition) x).trans ?_
-  refine (A.primaryDecomposition_apply x).trans ?_
-  exact Finset.sum_congr rfl fun p _ ↦
-    congrArg (fun f : ∀ q : (Nat.card A).primeFactors, AddCommGroup.primaryComponent A q.val ↦
-      (f p : A)) hcast.symm
+  rw [AddEquiv.trans_apply]
+  have hx :
+      ((FiniteBilinearModule.Isometry.ofEq A.primaryComponents_toFiniteBilinearModule).toAddEquiv
+        x : ∀ p : (Nat.card A).primeFactors, AddCommGroup.primaryComponent A p.val) = x :=
+    (congrArg (fun f : FiniteBilinearModule.Isometry
+        A.primaryComponents.toFiniteBilinearModule A.primaryComponents.toFiniteBilinearModule ↦
+        (f.toAddEquiv x : ∀ p : (Nat.card A).primeFactors, AddCommGroup.primaryComponent A p.val))
+      FiniteBilinearModule.Isometry.ofEq_rfl).trans
+      (by rw [FiniteBilinearModule.Isometry.refl_toAddEquiv, AddEquiv.refl_apply])
+  exact congrArg (AddCommGroup.primaryDecomposition A) hx.symm
 
 /-- The orthogonal product of primary components is nondegenerate exactly when the original
 finite quadratic module is nondegenerate. -/
