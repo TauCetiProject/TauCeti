@@ -74,6 +74,8 @@ derivative is the sum of their `(1 - n / p)`-Hölder continuous coordinates.
   `u ∈ W^{2,p}(Ω)`, `n < 2 p`, is continuous on `Ω`.
 * `TauCeti.Wkp.abs_preciseRepresentative_le`: an almost-everywhere bound `|u| ≤ M` on an open
   subset of `Ω` holds at every point for the precise representative.
+* `TauCeti.Wkp.preciseRepresentative_nonneg`: an almost-everywhere nonnegativity `0 ≤ u` on an
+  open subset of `Ω` holds at every point for the precise representative.
 * `TauCeti.Wkp.exists_holderOnWith_preciseRepresentative_of_isCompact_of_lt_finrank`: it is
   `(2 - n / p)`-Hölder continuous on every compact subset of `Ω`, when `n < 2 p` and `p < n`.
 * `TauCeti.Wkp.exists_holderOnWith_preciseRepresentative_of_isCompact`: it is
@@ -213,6 +215,20 @@ theorem Wkp.abs_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0∞) < 2 
     (Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ
   refine hcU.abs.le_of_ae_le (μ := mu) hU continuousOn_const ?_ x hx
   filter_upwards [hM, ae_restrict_of_ae_restrict_of_subset hUΩ
+    (Wkp.ae_eq_preciseRepresentative 2 u)] with y hy hyū
+  rwa [← hyū]
+
+/-- **Pointwise nonnegativity of the continuous representative.** If `n < 2 p`, where `n` is the
+dimension, and `u ∈ W^{2,p}(Ω)` is nonnegative almost everywhere on an open set `U ⊆ Ω`, then its
+precise representative is nonnegative at every point of `U`. -/
+theorem Wkp.preciseRepresentative_nonneg (hp : (finrank ℝ E : ℝ≥0∞) < 2 * p)
+    (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega)
+    (hnn : ∀ᵐ x ∂mu.restrict U, 0 ≤ Wkp.value 2 u x) {x : E} (hx : x ∈ U) :
+    0 ≤ preciseRepresentative mu (Wkp.value 2 u) x := by
+  have hcU : ContinuousOn (preciseRepresentative mu (Wkp.value 2 u)) U :=
+    (Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ
+  refine continuousOn_const.le_of_ae_le (μ := mu) hU hcU ?_ x hx
+  filter_upwards [hnn, ae_restrict_of_ae_restrict_of_subset hUΩ
     (Wkp.ae_eq_preciseRepresentative 2 u)] with y hy hyū
   rwa [← hyū]
 

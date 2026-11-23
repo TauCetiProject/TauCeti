@@ -92,32 +92,6 @@ namespace TauCeti
 
 namespace PDE
 
-/-- Real-valued finite-cover `Lᵖ` bound: if `s` is covered by `u i`, `i ∈ t`, and on each piece
-`f` has finite `eLpNorm` and `(eLpNorm f (ENNReal.ofReal p) (μ.restrict (u i))).toReal ≤ B`, then
-`(eLpNorm f (ENNReal.ofReal p) (μ.restrict s)).toReal ≤ (t.card : ℝ) ^ p⁻¹ * B`. -/
-private theorem toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion {α ε κ : Type*}
-    [MeasurableSpace α] [TopologicalSpace ε] [ENorm ε]
-    [TopologicalSpace.PseudoMetrizableSpace ε] {μ : Measure α} (f : α → ε) {p B : ℝ}
-    (hp : 0 < p) (hB : 0 ≤ B) {s : Set α} {t : Finset κ} {u : κ → Set α}
-    (hs : s ⊆ ⋃ i ∈ t, u i)
-    (hfin : ∀ i ∈ t, eLpNorm f (ENNReal.ofReal p) (μ.restrict (u i)) ≠ ∞)
-    (hle : ∀ i ∈ t, (eLpNorm f (ENNReal.ofReal p) (μ.restrict (u i))).toReal ≤ B) :
-    (eLpNorm f (ENNReal.ofReal p) (μ.restrict s)).toReal ≤ (t.card : ℝ) ^ p⁻¹ * B := by
-  have hp0 : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
-  have hcov : eLpNorm f (ENNReal.ofReal p) (μ.restrict s) ≤
-      (t.card : ℝ≥0∞) ^ (ENNReal.ofReal p).toReal⁻¹ * ENNReal.ofReal B :=
-    eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion f hp0 ENNReal.ofReal_ne_top hs
-      fun i hi ↦ (ENNReal.ofReal_toReal (hfin i hi)).symm.trans_le
-        (ENNReal.ofReal_le_ofReal (hle i hi))
-  have hcov' : eLpNorm f (ENNReal.ofReal p) (μ.restrict s) ≤
-      ENNReal.ofReal ((t.card : ℝ) ^ p⁻¹ * B) := by
-    refine hcov.trans_eq ?_
-    rw [ENNReal.toReal_ofReal hp.le, ← ENNReal.ofReal_natCast,
-      ENNReal.ofReal_rpow_of_nonneg (Nat.cast_nonneg _) (inv_nonneg.2 hp.le),
-      ← ENNReal.ofReal_mul (Real.rpow_nonneg (Nat.cast_nonneg _) _)]
-  exact (ENNReal.toReal_mono ENNReal.ofReal_ne_top hcov').trans_eq
-    (ENNReal.toReal_ofReal (mul_nonneg (Real.rpow_nonneg (Nat.cast_nonneg _) _) hB))
-
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 omit [DecidableEq ι] in
@@ -350,8 +324,10 @@ private theorem exists_eLpNorm_le_mul_rpow_mul_add_eLpNorm_posPart {κ : ℝ} (h
   -- In dimension `0` the small ball has radius `R / 0 = 0`.
   rcases isEmpty_or_nonempty ι with hι | hι
   · refine ⟨1, 1, one_pos, one_pos, fun lam Lam R c a u f _ _ _ _ _ _ y _ ↦ ?_⟩
-    rw [show ball c (R / (16 * √(Fintype.card ι : ℝ))) = ∅ by simp, Measure.restrict_empty,
-      eLpNorm_measure_zero]
+    rw [show ball c (R / (16 * √(Fintype.card ι : ℝ))) = ∅ by
+        simp only [Fintype.card_eq_zero, Nat.cast_zero, Real.sqrt_zero, mul_zero, div_zero,
+          ball_zero],
+      Measure.restrict_empty, eLpNorm_measure_zero]
     exact zero_le
   obtain ⟨p, K, ε₀, hp, hK, hε₀, H⟩ := exists_eLpNorm_le_mul_rpow_mul_of_le (ι := ι) hκ
   refine ⟨p, K * max 1 ε₀⁻¹, hp, by positivity, ?_⟩
@@ -445,26 +421,19 @@ private theorem exists_rpow_neg_mul_eLpNorm_ball_le_of_exists_le_small [Nonempty
   have hwρ : w ∈ closedBall c ρ := ball_subset_closedBall (ball_subset_ball (by linarith) hw4)
   have hA0 : 0 ≤ A := (hnn w hwρ).trans huw
   have hwe := H ha hLam hcont hu hnn hsuper w hw4
-  have hle_enn : eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball c (ρ / s))) ≤
-      ENNReal.ofReal (C * ρ ^ (n / p) * (A + ρ * F / lam)) := by
-    refine hwe.trans ?_
-    calc ENNReal.ofReal (C * ρ ^ (n / p)) *
-          (ENNReal.ofReal (u w) + ENNReal.ofReal (ρ / lam) *
-            eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball c ρ)))
-        ≤ ENNReal.ofReal (C * ρ ^ (n / p)) *
-            (ENNReal.ofReal A + ENNReal.ofReal (ρ / lam) * ENNReal.ofReal F) := by gcongr
-      _ = ENNReal.ofReal (C * ρ ^ (n / p) * (A + ρ * F / lam)) := by
-          rw [← ENNReal.ofReal_mul (div_pos hρ hlam).le, ← ENNReal.ofReal_add hA0 (by positivity),
-            ← ENNReal.ofReal_mul (by positivity)]
-          congr 1
-          ring
   have htoReal : (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball c (ρ / s)))).toReal ≤
-      C * ρ ^ (n / p) * (A + ρ * F / lam) :=
-    (ENNReal.toReal_mono ENNReal.ofReal_ne_top hle_enn).trans_eq
-      (ENNReal.toReal_ofReal (by positivity))
+      C * ρ ^ (n / p) * (A + ρ * F / lam) := by
+    refine ENNReal.toReal_le_of_le_ofReal (by positivity) (hwe.trans ?_)
+    rw [← div_mul_eq_mul_div ρ lam F,
+      ← ofReal_mul_ofReal_add_ofReal_mul_ofReal _ hA0 (div_pos hρ hlam).le hF]
+    gcongr
   have hscale : (s⁻¹ * ρ) ^ (-n / p) * ρ ^ (n / p) = s ^ (n / p) := by
-    simpa [neg_div, div_inv_eq_mul] using
-      Real.mul_rpow_neg_mul_mul_rpow (inv_pos.2 (by positivity : 0 < s)) zero_le_one hρ
+    calc (s⁻¹ * ρ) ^ (-n / p) * ρ ^ (n / p)
+        = (s⁻¹ * ρ) ^ (-n / p) * (1 * ρ) ^ (n / p) := by rw [one_mul]
+      _ = (1 / s⁻¹) ^ (n / p) := by
+          rw [neg_div, Real.mul_rpow_neg_mul_mul_rpow (inv_pos.2 (by positivity : 0 < s))
+            zero_le_one hρ]
+      _ = s ^ (n / p) := by rw [one_div, inv_inv]
   calc (s⁻¹ * ρ) ^ (-n / p) *
         (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball c (s⁻¹ * ρ)))).toReal
       ≤ (s⁻¹ * ρ) ^ (-n / p) * (C * ρ ^ (n / p) * (A + ρ * F / lam)) := by
@@ -518,9 +487,8 @@ nonnegative `C²` supersolution `u` of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` in
 `C₂ (u(y) + R ‖f⁺‖_{Lⁿ(B(x₀, R))} / λ)`, where `η₀ = (16 √n)⁻¹ (1 - θ) / 2` and `C₂ > 0` depends
 only on `p, C₁, θ`, and the dimension. -/
 private theorem exists_rpow_neg_mul_eLpNorm_ball_le_of_chain [Nonempty ι] {p C₁ κ θ : ℝ}
-    (hp : 0 < p) (hC₁ : 0 < C₁) (hθ1 : θ < 1) (Hsmall : SmallBallWeakHarnack (ι := ι) κ p C₁) :
-    let n : ℝ := (Fintype.card ι : ℝ)
-    let η₀ : ℝ := (16 * √n)⁻¹ * ((1 - θ) / 2)
+    (hp : 0 < p) (hC₁ : 0 < C₁) (hθ1 : θ < 1) (Hsmall : SmallBallWeakHarnack (ι := ι) κ p C₁)
+    {η₀ : ℝ} (hη₀_def : η₀ = (16 * √(Fintype.card ι : ℝ))⁻¹ * ((1 - θ) / 2)) :
     ∃ C₂ : ℝ, 0 < C₂ ∧
       ∀ ⦃lam Lam R : ℝ⦄ ⦃x₀ y z : EuclideanSpace ℝ ι⦄
         ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃u f : EuclideanSpace ℝ ι → ℝ⦄,
@@ -530,21 +498,23 @@ private theorem exists_rpow_neg_mul_eLpNorm_ball_le_of_chain [Nonempty ι] {p C�
           (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ f x) →
         MemLp (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball x₀ R)) →
         y ∈ closedBall x₀ (θ * R) → z ∈ closedBall x₀ (θ * R) →
-        (η₀ * R) ^ (-n / p) *
+        (η₀ * R) ^ (-(Fintype.card ι : ℝ) / p) *
           (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball z (η₀ * R)))).toReal ≤
         C₂ * (u y + R * (eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
           (volume.restrict (ball x₀ R))).toReal / lam) := by
-  intro n η₀
+  set n : ℝ := (Fintype.card ι : ℝ)
   set K₀ : ℝ := 2 ^ (n / p) * (volume.real (ball (0 : EuclideanSpace ℝ ι) 1)) ^ (-p⁻¹)
   set M₁ : ℝ := max 1 (C₁ * K₀)
   set N : ℕ := ⌈8 * θ / η₀⌉₊
+  have hη₀ : 0 < η₀ := by
+    rw [hη₀_def]
+    positivity
   refine ⟨((N : ℝ) + 1) * M₁ ^ N * C₁, by positivity, ?_⟩
   intro lam Lam R x₀ y z a u f hR ha hLam hu hnn hsuper hf hy hz
   set δ₀ : ℝ := (16 * √n)⁻¹
   set σ : ℝ := (1 - θ) / 2
   have hσ : 0 < σ := by simp only [σ]; linarith
-  have hη₀ : 0 < η₀ := by positivity
-  have hη_eq : δ₀ * (σ * R) = η₀ * R := by simp only [η₀, δ₀, σ]; ring
+  have hη_eq : δ₀ * (σ * R) = η₀ * R := by rw [hη₀_def]; simp only [δ₀, σ, n]; ring
   have hM₁ : 1 ≤ M₁ := le_max_left _ _
   have hlam : 0 < lam := ha.pos
   set F : ℝ := (eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball x₀ R))).toReal
@@ -575,9 +545,13 @@ private theorem exists_rpow_neg_mul_eLpNorm_ball_le_of_chain [Nonempty ι] {p C�
   have hlink : ∀ q' ∈ closedBall x₀ (θ * R), ∀ q ∈ closedBall x₀ (θ * R),
       dist q' q ≤ η₀ * R / 4 → g q' ≤ M₁ * (g q + C₁ * (R * F / lam)) := by
     intro q' hq' q hq hdist
-    obtain ⟨w, hw', huw_le⟩ := exists_mem_ball_le_mul_rpow_neg_mul_eLpNorm_of_dist_le hp
-      (mul_pos hη₀ hR) hdist (hu.continuousOn.memLp_restrict_ball_of_closedBall_subset
-        (closedBall_eta_mul_subset_ball hR hθ1 hq) _)
+    have hmem : MemLp u (ENNReal.ofReal p) (volume.restrict (ball q (η₀ * R))) := by
+      rw [hη₀_def]
+      exact (hu.continuousOn.mono (closedBall_eta_mul_subset_ball hR hθ1
+        hq)).memLp_restrict_of_subset_isCompact (isCompact_closedBall _ _) measurableSet_ball
+        ball_subset_closedBall _
+    obtain ⟨w, hw', huw_le⟩ :=
+      exists_mem_ball_le_mul_rpow_neg_mul_eLpNorm_of_dist_le hp (mul_pos hη₀ hR) hdist hmem
     calc g q' ≤ C₁ * (K₀ * g q + R * F / lam) := hsmall_at hq' ⟨w, hw', huw_le⟩
       _ = C₁ * K₀ * g q + 1 * (C₁ * (R * F / lam)) := by ring
       _ ≤ M₁ * g q + M₁ * (C₁ * (R * F / lam)) := by
@@ -601,6 +575,81 @@ private theorem exists_rpow_neg_mul_eLpNorm_ball_le_of_chain [Nonempty ι] {p C�
     _ ≤ M₁ ^ N * (C₁ * (u y + R * F / lam) + (N : ℝ) * (C₁ * (u y + R * F / lam))) := by
         gcongr
     _ = ((N : ℝ) + 1) * M₁ ^ N * C₁ * (u y + R * F / lam) := by ring
+
+/-- **The zero-dimensional weak Harnack inequality**: when `ι` is empty, `volume` is a Dirac
+measure at `0`, so the `L¹` norm on `B(x₀, θ R)` equals `u(y)` and `(θ R)⁰ = 1`. -/
+private theorem exists_rpow_neg_mul_eLpNorm_le_mul_add_of_isEmpty [IsEmpty ι] {κ : ℝ} :
+    ∃ p : ℝ, 0 < p ∧ ∀ ⦃θ : ℝ⦄, 0 < θ → θ < 1 →
+      ∃ C : ℝ, 0 < C ∧
+        ∀ ⦃lam Lam R : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
+          ⦃u f : EuclideanSpace ℝ ι → ℝ⦄,
+          UniformlyEllipticOn (ball x₀ R) a lam Lam → Lam ≤ κ * lam →
+          ContDiffOn ℝ 2 u (ball x₀ R) → (∀ x ∈ ball x₀ R, 0 ≤ u x) →
+          (∀ x ∈ ball x₀ R, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
+            (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ f x) →
+          MemLp (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball x₀ R)) →
+          ∀ y ∈ ball x₀ (θ * R),
+            (θ * R) ^ (-(Fintype.card ι : ℝ) / p) *
+              (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball x₀ (θ * R)))).toReal ≤
+            C * (u y + R * (eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
+              (volume.restrict (ball x₀ R))).toReal / lam) := by
+  refine ⟨1, one_pos, fun θ hθ0 hθ1 ↦
+    ⟨1, one_pos, fun lam Lam R x₀ a u f ha _ _ hnn _ _ y hy ↦ ?_⟩⟩
+  have hlam : 0 < lam := ha.pos
+  have hθR : 0 < θ * R := pos_of_mem_ball hy
+  have hR : 0 < R := (mul_pos_iff_of_pos_left hθ0).1 hθR
+  have huy : 0 ≤ u y := hnn y (ball_subset_ball (mul_le_of_le_one_left hR.le hθ1.le) hy)
+  have hμ : (volume : Measure (EuclideanSpace ℝ ι)).restrict (ball x₀ (θ * R)) =
+      Measure.dirac y := by
+    rw [volume_euclideanSpace_eq_dirac, Subsingleton.elim (0 : EuclideanSpace ℝ ι) y,
+      Measure.restrict_eq_self_of_ae_mem (by simp only [ae_dirac_eq]; exact hy)]
+  have hu_eq : (eLpNorm u 1 (volume.restrict (ball x₀ (θ * R)))).toReal = u y := by
+    rw [hμ, eLpNorm_dirac _ _ one_ne_zero, Real.eNorm_eq_ofReal huy, ENNReal.toReal_ofReal huy]
+  rw [Fintype.card_eq_zero, Nat.cast_zero, neg_zero, zero_div, Real.rpow_zero, one_mul,
+    ENNReal.ofReal_one, hu_eq, one_mul]
+  exact le_add_of_le_of_nonneg le_rfl (by positivity)
+
+omit [DecidableEq ι] in
+/-- **Covering bound for the weak Harnack inequality**: covering `closedBall x₀ (θ R)` by at most
+`(1 + 4 θ / η₀)ⁿ` balls `B(c, η₀ R)` centred in `closedBall x₀ (θ R)` upgrades a uniform `Lᵖ`
+bound `≤ B` on each small ball to a bound on `B(x₀, θ R)`. -/
+private theorem toReal_eLpNorm_ball_le_of_chain_cover [Nonempty ι] {θ R p η₀ B : ℝ}
+    (hθ0 : 0 < θ) (hθ1 : θ < 1) (hR : 0 < R) (hp : 0 < p) (hB : 0 ≤ B)
+    (hη₀_def : η₀ = (16 * √(Fintype.card ι : ℝ))⁻¹ * ((1 - θ) / 2))
+    {x₀ : EuclideanSpace ℝ ι} {u : EuclideanSpace ℝ ι → ℝ} (hu : ContinuousOn u (ball x₀ R))
+    (hc_le : ∀ c ∈ closedBall x₀ (θ * R),
+      (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball c (η₀ * R)))).toReal ≤ B) :
+    (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball x₀ (θ * R)))).toReal ≤
+      ((1 + 4 * θ / η₀) ^ Fintype.card ι) ^ p⁻¹ * B := by
+  have hη₀ : 0 < η₀ := by
+    rw [hη₀_def]
+    positivity
+  have hθR : 0 < θ * R := mul_pos hθ0 hR
+  set ε : ℝ≥0 := NNReal.mk (η₀ * R / 2) (by positivity)
+  have hε0 : ε ≠ 0 := mt (congrArg NNReal.toReal) (half_pos (mul_pos hη₀ hR)).ne'
+  obtain ⟨S, hSsub, hScov, hScard⟩ := exists_finset_isCover_of_subset_closedBall
+    (r := NNReal.mk (θ * R) hθR.le) hε0 (Subset.rfl : closedBall x₀ (θ * R) ⊆ _)
+  have hS_le : (S.card : ℝ) ≤ (1 + 4 * θ / η₀) ^ Fintype.card ι := by
+    refine hScard.trans_eq ?_
+    rw [finrank_euclideanSpace]
+    simp only [ε, NNReal.coe_mk]
+    congr 1
+    field_simp
+    ring
+  have hcoverR : ball x₀ (θ * R) ⊆ ⋃ c ∈ S, ball c (η₀ * R) :=
+    ball_subset_closedBall.trans <| hScov.subset_iUnion_closedBall.trans <|
+      iUnion₂_mono fun _ _ ↦ closedBall_subset_ball (half_lt_self (mul_pos hη₀ hR))
+  have hfin : ∀ c ∈ S, eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball c (η₀ * R))) ≠ ∞ :=
+    fun c hc ↦ by
+      rw [hη₀_def]
+      exact ((hu.mono (closedBall_eta_mul_subset_ball hR hθ1
+        (hSsub hc))).memLp_restrict_of_subset_isCompact (isCompact_closedBall _ _)
+        measurableSet_ball ball_subset_closedBall _).eLpNorm_ne_top
+  have hcov_le := toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion u
+    (ENNReal.ofReal_pos.2 hp).ne' ENNReal.ofReal_ne_top hB hcoverR hfin
+    (fun c hc ↦ hc_le c (hSsub hc))
+  rw [ENNReal.toReal_ofReal hp.le] at hcov_le
+  exact hcov_le.trans (by gcongr)
 
 /-- **The weak Harnack inequality of Krylov and Safonov** (Gilbarg–Trudinger, Theorem 9.22;
 Caffarelli–Cabré, Theorem 4.8). Let `κ` be given. There is an exponent `p > 0`, depending only on
@@ -627,83 +676,47 @@ theorem exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le {κ :
               (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball x₀ (θ * R)))).toReal ≤
             C * (u y + R * (eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
               (volume.restrict (ball x₀ R))).toReal / lam) := by
+  -- Handle `n = 0` separately; for `n ≥ 1`, combine the small-ball estimate, segment chaining,
+  -- and a finite covering of `closedBall x₀ (θ R)`, then rescale radii from `η₀ R` to `θ R`.
   rcases isEmpty_or_nonempty ι with hι | hι
-  · refine ⟨1, one_pos, fun θ hθ0 hθ1 ↦
-      ⟨1, one_pos, fun lam Lam R x₀ a u f _ _ _ hnn _ _ y hy ↦ ?_⟩⟩
-    have hθR : 0 < θ * R := pos_of_mem_ball hy
-    have hR : 0 < R := (mul_pos_iff_of_pos_left hθ0).1 hθR
-    have huy : 0 ≤ u y := hnn y (ball_subset_ball (mul_le_of_le_one_left hR.le hθ1.le) hy)
-    have hμ : (volume : Measure (EuclideanSpace ℝ ι)).restrict (ball x₀ (θ * R)) =
-        Measure.dirac y := by
-      rw [volume_euclideanSpace_eq_dirac, Subsingleton.elim (0 : EuclideanSpace ℝ ι) y,
-        Measure.restrict_eq_self_of_ae_mem (by simpa [ae_dirac_eq] using hy)]
-    have hu_eq : (eLpNorm u 1 (volume.restrict (ball x₀ (θ * R)))).toReal = u y := by
-      rw [hμ, eLpNorm_dirac _ _ one_ne_zero, Real.eNorm_eq_ofReal huy, ENNReal.toReal_ofReal huy]
-    simp [Fintype.card_eq_zero, hu_eq]
+  · exact exists_rpow_neg_mul_eLpNorm_le_mul_add_of_isEmpty
   set κ' : ℝ := max κ 1
   have hκ' : 0 < κ' := zero_lt_one.trans_le (le_max_right _ _)
   obtain ⟨p, C₁, hp, hC₁, Hsmall⟩ :=
     exists_rpow_neg_mul_eLpNorm_ball_le_of_exists_le_small (ι := ι) hκ'
   set n : ℝ := (Fintype.card ι : ℝ)
-  have : 0 < n := Nat.cast_pos.2 Fintype.card_pos
   refine ⟨p, hp, fun θ hθ0 hθ1 ↦ ?_⟩
   set η₀ : ℝ := (16 * √n)⁻¹ * ((1 - θ) / 2)
   have hη₀ : 0 < η₀ := by positivity
   obtain ⟨C₂, hC₂, Hchain⟩ := exists_rpow_neg_mul_eLpNorm_ball_le_of_chain hp hC₁ hθ1 Hsmall
+    (rfl : η₀ = _)
   set M₀ : ℝ := (1 + 4 * θ / η₀) ^ Fintype.card ι
-  have hM₀ : 0 < M₀ := by positivity
   refine ⟨M₀ ^ p⁻¹ * (η₀ / θ) ^ (n / p) * C₂, by positivity, ?_⟩
   intro lam Lam R x₀ a u f ha hLam hu hnn hsuper hf y hy
   have hθR : 0 < θ * R := pos_of_mem_ball hy
-  have hR : 0 < R := pos_of_mem_ball ((ball_subset_ball (mul_le_of_le_one_left
-    ((mul_pos_iff_of_pos_left hθ0).1 hθR).le hθ1.le)) hy)
+  have hR : 0 < R := (mul_pos_iff_of_pos_left hθ0).1 hθR
   have hlam : 0 < lam := ha.pos
   have hLam' : Lam ≤ κ' * lam :=
     hLam.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hlam.le)
   set F : ℝ := (eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball x₀ R))).toReal
-  have hy_cb : y ∈ closedBall x₀ (θ * R) := ball_subset_closedBall hy
   have hy_nn : 0 ≤ u y := hnn y (ball_subset_ball (mul_le_of_le_one_left hR.le hθ1.le) hy)
-  -- Cover `closedBall x₀ (θ R)` by at most `M₀` balls of radius `η₀ R / 2` centred in
-  -- `closedBall x₀ (θ R)`, then pass to `B(c, η₀ R)` via the finite-cover `eLpNorm` bound.
-  set ε : ℝ≥0 := NNReal.mk (η₀ * R / 2) (by positivity)
-  have hε0 : ε ≠ 0 := mt (congrArg NNReal.toReal) (half_pos (mul_pos hη₀ hR)).ne'
-  obtain ⟨S, hSsub, hScov, hScard⟩ := exists_finset_isCover_of_subset_closedBall
-    (r := NNReal.mk (θ * R) hθR.le) hε0 (Subset.rfl : closedBall x₀ (θ * R) ⊆ _)
-  have hS_le : (S.card : ℝ) ≤ M₀ := by
-    refine hScard.trans_eq ?_
-    rw [finrank_euclideanSpace]
-    simp only [ε, NNReal.coe_mk]
-    congr 1
-    field_simp
-    ring
-  have hcoverR : ball x₀ (θ * R) ⊆ ⋃ c ∈ S, ball c (η₀ * R) :=
-    ball_subset_closedBall.trans <| hScov.subset_iUnion_closedBall.trans <|
-      iUnion₂_mono fun _ _ ↦ closedBall_subset_ball (half_lt_self (mul_pos hη₀ hR))
   set B_each : ℝ := (η₀ * R) ^ (n / p) * (C₂ * (u y + R * F / lam))
   have hnorm_le : (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball x₀ (θ * R)))).toReal ≤
-      M₀ ^ p⁻¹ * B_each := by
-    have hcov_le := toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion u hp (B := B_each)
-      (by positivity) hcoverR
-      (fun c hc ↦ (hu.continuousOn.memLp_restrict_ball_of_closedBall_subset
-        (closedBall_eta_mul_subset_ball hR hθ1 (hSsub hc)) _).eLpNorm_ne_top)
-      fun c hc ↦ by
-        have hc_est := Hchain hR ha hLam' hu hnn hsuper hf hy_cb (hSsub hc)
-        rw [neg_div, Real.rpow_neg (mul_pos hη₀ hR).le,
+      M₀ ^ p⁻¹ * B_each :=
+    toReal_eLpNorm_ball_le_of_chain_cover hθ0 hθ1 hR hp (by positivity) (rfl : η₀ = _)
+      hu.continuousOn fun c hc ↦ by
+        have hc_est := Hchain hR ha hLam' hu hnn hsuper hf (ball_subset_closedBall hy) hc
+        rwa [neg_div, Real.rpow_neg (mul_pos hη₀ hR).le,
           inv_mul_le_iff₀ (Real.rpow_pos_of_pos (mul_pos hη₀ hR) _)] at hc_est
-        exact hc_est
-    exact hcov_le.trans (by gcongr)
+  have hratio : (θ * R) ^ (-n / p) * (η₀ * R) ^ (n / p) = (η₀ / θ) ^ (n / p) := by
+    rw [neg_div, Real.mul_rpow_neg_mul_mul_rpow hθ0 hη₀.le hR]
   calc (θ * R) ^ (-n / p) *
         (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball x₀ (θ * R)))).toReal
       ≤ (θ * R) ^ (-n / p) * (M₀ ^ p⁻¹ * B_each) := by gcongr
-    _ = M₀ ^ p⁻¹ * (η₀ / θ) ^ (n / p) * C₂ * (u y + R * F / lam) := by
+    _ = M₀ ^ p⁻¹ * ((θ * R) ^ (-n / p) * (η₀ * R) ^ (n / p)) * C₂ * (u y + R * F / lam) := by
         simp only [B_each]
-        have hratio : (θ * R) ^ (-n / p) * (η₀ * R) ^ (n / p) = (η₀ / θ) ^ (n / p) := by
-          rw [neg_div, Real.mul_rpow_neg_mul_mul_rpow hθ0 hη₀.le hR]
-        calc (θ * R) ^ (-n / p) * (M₀ ^ p⁻¹ *
-              ((η₀ * R) ^ (n / p) * (C₂ * (u y + R * F / lam))))
-            = M₀ ^ p⁻¹ * ((θ * R) ^ (-n / p) * (η₀ * R) ^ (n / p)) *
-                C₂ * (u y + R * F / lam) := by ring
-          _ = _ := by rw [hratio]
+        ring
+    _ = M₀ ^ p⁻¹ * (η₀ / θ) ^ (n / p) * C₂ * (u y + R * F / lam) := by rw [hratio]
 
 end PDE
 

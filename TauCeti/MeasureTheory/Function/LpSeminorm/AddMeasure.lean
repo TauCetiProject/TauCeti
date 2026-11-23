@@ -55,10 +55,14 @@ the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
   `eLpNorm` over a finite union, for `0 < p < ∞` (including `p < 1`).
 * `MeasureTheory.eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion`: finite-cover `eLpNorm` bound
   `‖f‖_{Lᵖ(s)} ≤ card(t) ^ (1 / p) * B` from uniform bounds `≤ B` on the pieces.
+* `MeasureTheory.toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion`: real-valued
+  finite-cover `Lᵖ` bound from uniform `toReal` bounds on the pieces.
 * `MeasureTheory.MemLp.restrict_of_eLpNorm_le_add`: `MemLp` transfer to a subset `S ⊆ U` from a
   restricted seminorm bound `‖g‖_{Lᵖ(S)} ≤ ‖f‖_{Lᵖ(S)} + c`.
 * `MeasureTheory.toReal_eLpNorm_restrict_le_add`: real-valued restricted `Lᵖ` comparison on `S ⊆ U`
   from `‖g‖_{Lᵖ(S)} ≤ ‖f‖_{Lᵖ(S)} + c`.
+* `MeasureTheory.toReal_eLpNorm_restrict_mono_ae`: real-valued restricted `Lᵖ` monotonicity under
+  a.e. norm domination on nested sets.
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_le`: subadditivity over a finite union.
 * `MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`: subadditivity over a finite cover.
 * `MeasureTheory.eLpNorm_exponent_top_restrict_iUnion`: the `L^∞` seminorm over a countable union.
@@ -184,6 +188,27 @@ theorem eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion {α ε ι : Type*} [
         Finset.sum_le_sum fun i hi ↦ ENNReal.rpow_le_rpow (hf i hi) hr.le
     _ = (t.card : ℝ≥0∞) * B ^ p.toReal := by rw [Finset.sum_const, nsmul_eq_mul]
 
+/-- **Real-valued finite-cover bound for `eLpNorm`.** For `0 < p < ∞`, if `s` is covered by the
+sets `u i`, `i ∈ t`, and on each piece `f` has finite `Lᵖ` seminorm at most `B` (with `0 ≤ B`),
+then `(eLpNorm f p (μ.restrict s)).toReal ≤ t.card ^ (1 / p.toReal) * B`. -/
+theorem toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion {α ε κ : Type*}
+    [MeasurableSpace α] [TopologicalSpace ε] [ENorm ε]
+    [TopologicalSpace.PseudoMetrizableSpace ε] {μ : Measure α} (f : α → ε) {p : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {B : ℝ} (hB : 0 ≤ B) {s : Set α} {t : Finset κ} {u : κ → Set α}
+    (hs : s ⊆ ⋃ i ∈ t, u i) (hfin : ∀ i ∈ t, eLpNorm f p (μ.restrict (u i)) ≠ ∞)
+    (hle : ∀ i ∈ t, (eLpNorm f p (μ.restrict (u i))).toReal ≤ B) :
+    (eLpNorm f p (μ.restrict s)).toReal ≤ (t.card : ℝ) ^ p.toReal⁻¹ * B := by
+  have hcov : eLpNorm f p (μ.restrict s) ≤ (t.card : ℝ≥0∞) ^ p.toReal⁻¹ * ENNReal.ofReal B :=
+    eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion f hp0 hp hs fun i hi ↦
+      (ENNReal.le_ofReal_iff_toReal_le (hfin i hi) hB).2 (hle i hi)
+  calc (eLpNorm f p (μ.restrict s)).toReal
+      ≤ ((t.card : ℝ≥0∞) ^ p.toReal⁻¹ * ENNReal.ofReal B).toReal :=
+        ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg
+          (by positivity) (ENNReal.natCast_ne_top t.card)) ENNReal.ofReal_ne_top) hcov
+    _ = (t.card : ℝ) ^ p.toReal⁻¹ * B := by
+        rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_natCast,
+          ENNReal.toReal_ofReal hB]
+
 /-- If `f ∈ Lᵖ(U, μ)`, `S ⊆ U`, `c ≠ ∞`, and `‖g‖_{Lᵖ(S, μ)} ≤ ‖f‖_{Lᵖ(S, μ)} + c`, then
 `g ∈ Lᵖ(S, μ)`. -/
 theorem MemLp.restrict_of_eLpNorm_le_add {α F ε : Type*} [MeasurableSpace α]
@@ -209,6 +234,16 @@ theorem toReal_eLpNorm_restrict_le_add {α F ε : Type*} [MeasurableSpace α]
   have htop : eLpNorm f p (μ.restrict U) + c ≠ ∞ :=
     (ENNReal.add_lt_top.2 ⟨hf.eLpNorm_lt_top, hc.lt_top⟩).ne
   exact (ENNReal.toReal_mono htop hle).trans_eq (ENNReal.toReal_add hf.eLpNorm_ne_top hc)
+
+/-- Real-valued restricted `Lᵖ` seminorm monotonicity under a.e. norm domination on nested sets. -/
+theorem toReal_eLpNorm_restrict_mono_ae {α E F : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] [NormedAddCommGroup F] {μ : Measure α} {p : ℝ≥0∞}
+    {f : α → E} {g : α → F} {s t : Set α} (hst : s ⊆ t)
+    (hf : AEStronglyMeasurable f (μ.restrict s)) (hg : eLpNorm g p (μ.restrict t) ≠ ∞)
+    (hle : ∀ᵐ x ∂μ.restrict s, ‖f x‖ ≤ ‖g x‖) :
+    (eLpNorm f p (μ.restrict s)).toReal ≤ (eLpNorm g p (μ.restrict t)).toReal :=
+  ENNReal.toReal_mono hg <|
+    (eLpNorm_mono_ae hf hle).trans (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
 
 variable {α ε : Type*} {m : MeasurableSpace α} [TopologicalSpace ε] [ContinuousENorm ε]
   [TopologicalSpace.PseudoMetrizableSpace ε] {p : ℝ≥0∞} {μ ν : Measure α}
