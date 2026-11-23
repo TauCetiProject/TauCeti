@@ -37,8 +37,7 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
   `ZMod.val_div_natCast_mem_Icc`: `j.val / N` lies in `[0, 1]`.
 * `ZMod.ite_mod_eq_sum_fourier`: indicator of a residue class modulo `q > 0` as a finite Fourier sum
   of rational twists.
-* `ZMod.sum_fourier_div_eq`, `ZMod.sum_fourier_div_eq_zero`: evaluation of
-  `∑ j < M, fourier k (j / M)` for any `M ≠ 0` and vanishing when `(k : ZMod M) ≠ 0`.
+* `ZMod.sum_fourier_div_eq`: evaluation of `∑ j < M, fourier k (j / M)` for any `M ≠ 0`.
 * `ZMod.dft_comp_natCast_val`: the transform of a function of the reduction modulo `v ∣ N`.
 * `ZMod.dft_apply_mem`: the transform of an `R`-valued function is `R`-valued when `R` contains
   the `N`-th roots of unity.
@@ -111,11 +110,6 @@ theorem sum_fourier_div_eq (k : ℤ) (M : ℕ) [NeZero M] :
       (fun x : ZMod M ↦ stdAddChar (x * (k : ZMod M))) (fun _ ↦ rfl),
     AddChar.sum_mulShift (k : ZMod M) (isPrimitive_stdAddChar M), ZMod.card M]
   split_ifs <;> simp
-
-/-- Sum of a nontrivial `M`-th root of unity over `0, …, M - 1` vanishes when `M ∤ k`. -/
-theorem sum_fourier_div_eq_zero {k : ℤ} {M : ℕ} [NeZero M] (hk : (k : ZMod M) ≠ 0) :
-    ∑ j ∈ Finset.range M, fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) = 0 := by
-  rw [sum_fourier_div_eq, ite_eq_right fun h0 ↦ absurd h0 hk]
 
 /-- **The Fourier transform of a function of the reduction modulo a divisor.** For `v ∣ N` and
 `L = N / v`, the discrete Fourier transform modulo `N` of `j ↦ f (j mod v)` is `L • 𝓕 f m` at

@@ -33,8 +33,7 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
   `fourier 1 ^ m = fourier m` in `C(AddCircle T, ℂ)`.
 * `TauCeti.fourier_apply_add`, `TauCeti.fourier_apply_sub`: `fourier n` turns sums and differences
   of points into `fourier n x * fourier n y` and `fourier n x * fourier (-n) y`.
-* `AddCircle.coe_toCircle_eq_one_iff`, `TauCeti.fourier_one_eq_one_iff`: for `T ≠ 0`,
-  `(AddCircle.toCircle y : ℂ) = 1 ↔ y = 0` and `fourier 1 y = 1 ↔ y = 0`.
+* `AddCircle.coe_toCircle_eq_one_iff`: for `T ≠ 0`, `(AddCircle.toCircle y : ℂ) = 1 ↔ y = 0`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
 * `TauCeti.norm_fourier_coe_sub_le`: `‖e_n φ - e_n ψ‖ ≤ ‖2πin/T‖ |φ - ψ|` for real `φ, ψ`.
 * `TauCeti.norm_fourier_sub_one_le`: `‖e_n h - 1‖ ≤ ‖2πin/T‖ ‖h‖` on the circle, where `‖h‖` is
@@ -115,14 +114,6 @@ theorem _root_.AddCircle.coe_toCircle_eq_one_iff (hT : T ≠ 0) (y : AddCircle T
     (AddCircle.toCircle y : ℂ) = 1 ↔ y = 0 :=
   ⟨fun h ↦ AddCircle.injective_toCircle hT (Subtype.ext (by simpa using h)),
     by rintro rfl; simp⟩
-
-/-- For `T ≠ 0`, the fundamental character on `AddCircle T` evaluates to `1` only at `0`.
-
-Not `@[simp]`, because `simp` reduces `fourier 1 y` via `fourier_apply` and `one_smul` to
-`(AddCircle.toCircle y : ℂ)`, which is then handled by `AddCircle.coe_toCircle_eq_one_iff`. -/
-theorem fourier_one_eq_one_iff (hT : T ≠ 0) (y : AddCircle T) :
-    fourier 1 y = 1 ↔ y = 0 := by
-  simp [hT]
 
 /-- The frequency factor `2πin/T` by which differentiation multiplies the Fourier monomial
 `fourier n` (`hasDerivAt_fourier`) has norm `2π/T |n|`. -/

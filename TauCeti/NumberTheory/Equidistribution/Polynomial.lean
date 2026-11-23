@@ -136,8 +136,11 @@ private theorem forall_pairing_ne_zero_of_asympEquidistributed_poly {d : Type*} 
           hnone (j + 1) (mem_Icc.mpr ⟨by omega, by have := mem_range.mp hj; omega⟩), smul_zero],
       zero_add]
   have hlim := ((weyl_criterion.mp h1) k hk).congr fun n ↦ by
-    simp_rw [hconst_term]; simpa only [Nat.succ_eq_add_one, smul_eq_mul] using
-      inv_natCast_smul_sum_const (𝕜 := ℂ) (Nat.succ_ne_zero n) (UnitAddTorus.mFourier k (α 0))
+    simp_rw [hconst_term]
+    let : Invertible (((range (n + 1)).card : ℂ)) :=
+      invertibleOfNonzero (by rw [card_range]; exact Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n))
+    simpa [card_range, invOf_eq_inv, smul_eq_mul] using
+      Finset.invOf_card_smul_sum_const (R := ℂ) (range (n + 1)) (UnitAddTorus.mFourier k (α 0))
   simpa [tendsto_nhds_unique tendsto_const_nhds hlim] using UnitAddTorus.norm_mFourier_apply k (α 0)
 
 /-- **Full equidistribution criterion for polynomial sequences on `UnitAddTorus d`**: equivalence

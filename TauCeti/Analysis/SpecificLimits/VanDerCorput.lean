@@ -192,8 +192,9 @@ theorem tendsto_cesaro_zero_of_forall_correlation {b : ℕ → ℂ} (hb : ∃ C 
     rw [div_lt_iff₀ hHreal]; nlinarith [(div_lt_iff₀ (sq_pos_of_pos hε)).mp
       (hH₀.trans (Nat.cast_lt.mpr (Nat.lt_succ_self H₀))), sq_nonneg C]
   have hratio : Tendsto (fun n : ℕ ↦ (((n + 1 + H - 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)))
-      atTop (𝓝 1) := (tendsto_natCast_add_div_add_one (H : ℝ)).congr fun n ↦ by
-    rw [(by omega : n + 1 + H - 1 = n + H)]; push_cast; rfl
+      atTop (𝓝 1) := by
+    simpa using (tendsto_add_mul_div_add_mul_atTop_nhds (H : ℝ) 1 1
+      (one_ne_zero : (1 : ℝ) ≠ 0)).congr fun n ↦ by ring_nf
   have hsum0 : Tendsto (fun n : ℕ ↦ ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *
       (‖∑ i ∈ range (n + 1 - h), b (i + h) * starRingEnd ℂ (b i)‖ / ((n + 1 : ℕ) : ℝ)))
       atTop (𝓝 0) := by

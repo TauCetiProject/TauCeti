@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.Topology.MetricSpace.UniformConvergence
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
 # Dense-span criteria for weak convergence of probability measures
@@ -40,15 +41,9 @@ theorem tendsto_iff_forall_integral_tendsto_of_span_closure_eq_top (𝕜 : Type*
       Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure X)) L (𝓝 (∫ x, f x ∂(μ : Measure X))) := by
   refine ⟨fun h f _ ↦ (tendsto_iff_forall_integral_rclike_tendsto 𝕜).1 h (.mkOfCompact f),
     fun h ↦ ?_⟩
-  have hint (f : C(X, 𝕜)) (ρ : ProbabilityMeasure X) : Integrable (fun x ↦ f x) (ρ : Measure X) :=
-    Integrable.of_bound f.continuous.aestronglyMeasurable ‖f‖ (ae_of_all _ f.norm_coe_le_norm)
   have hLip (ρ : ProbabilityMeasure X) :
-      LipschitzWith 1 (fun f : C(X, 𝕜) ↦ ∫ x, f x ∂(ρ : Measure X)) :=
-    LipschitzWith.of_dist_le_mul fun f g ↦ by
-      rw [dist_eq_norm, ← integral_sub (hint f ρ) (hint g ρ)]
-      simpa only [NNReal.coe_one, one_mul, dist_eq_norm, probReal_univ, mul_one,
-        ContinuousMap.sub_apply] using norm_integral_le_of_norm_le_const (μ := (ρ : Measure X))
-          (ae_of_all _ fun x ↦ (f - g).norm_coe_le_norm x)
+      LipschitzWith 1 (fun f : C(X, 𝕜) ↦ ∫ x, f x ∂(ρ : Measure X)) := by
+    simpa using (ρ : Measure X).lipschitzWith_integral_continuousMap
   -- The test functions with convergent integrals form a closed linear subspace.
   let M : Submodule 𝕜 C(X, 𝕜) :=
     { carrier := {f | Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure X)) L
@@ -56,7 +51,7 @@ theorem tendsto_iff_forall_integral_tendsto_of_span_closure_eq_top (𝕜 : Type*
       zero_mem' := by simpa using (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (0 : 𝕜)) L (𝓝 0))
       add_mem' := fun {f g} hf hg ↦ by
         simpa only [mem_ofPred_eq, ContinuousMap.coe_add, Pi.add_apply,
-          integral_add (hint f _) (hint g _)] using hf.add hg
+          integral_add (f.integrable _) (g.integrable _)] using hf.add hg
       smul_mem' := fun c {f} hf ↦ by
         simpa only [mem_ofPred_eq, ContinuousMap.coe_smul, Pi.smul_apply, integral_smul] using
           hf.const_smul c }
