@@ -288,10 +288,6 @@ instance isOpenImmersion_comp (f : X ⟶ Y) (g : Y ⟶ Z)
   rw [ObjectProperty.FullSubcategory.comp_hom]
   infer_instance
 
-/-- An isomorphism in `AdicSpace` has an isomorphic underlying morphism of pre-adic spaces. -/
-instance isIso_hom (f : X ⟶ Y) [IsIso f] : IsIso f.hom :=
-  (ObjectProperty.ι PreAdicSpace.isAdic).map_isIso f
-
 /-- Every morphism in `AdicSpace` out of an empty adic space is an open immersion. -/
 instance (priority := 100) isOpenImmersion_of_isEmpty (f : Y ⟶ X) [IsEmpty Y.obj] :
     PreAdicSpace.IsOpenImmersion f.hom :=
