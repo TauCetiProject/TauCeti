@@ -49,9 +49,9 @@ In particular:
   `A` the identity is a bi-Lipschitz topological `K`-algebra isomorphism
   (`TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv`).
 * Combining the equivalence with `AlgHom.supSeminorm_apply_le_gelfandRadius`, every `K`-algebra
-  homomorphism `φ : B →ₐ[K] A` from an arbitrary Banach `K`-algebra `B` (not assumed commutative,
-  ultrametric, Noetherian, or unital-norm-normalized) into a completely normed reduced affinoid
-  `K`-algebra `A` is automatically continuous
+  homomorphism `φ : B →ₐ[K] A` from an arbitrary normed `K`-algebra `B` with summable geometric
+  series (not assumed complete, commutative, ultrametric, Noetherian, or unital-norm-normalized)
+  into a completely normed reduced affinoid `K`-algebra `A` is automatically continuous
   (`TauCeti.IsAffinoidAlgebra.continuous_algHom_of_isReduced`).
 
 ## Main definitions and results
@@ -62,15 +62,17 @@ In particular:
   `supSeminorm K`.
 * `TauCeti.IsAffinoidAlgebra.exists_norm_le_mul_supSeminorm`: [BGR, §6.2.4, Theorem 1].
 * `TauCeti.IsAffinoidAlgebra.isUniform`: reduced completely normed affinoid algebras are uniform.
-* `TauCeti.IsAffinoidAlgebra.SupNormModel` and
+* `TauCeti.IsAffinoidAlgebra.SupNormModel`, `TauCeti.IsAffinoidAlgebra.SupNormModel.map`, and
   `TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv`: the canonical complete supremum-normed
-  seminormed / Banach algebra model of an affinoid algebra, with explicit Lipschitz comparisons
-  (`TauCeti.IsAffinoidAlgebra.SupNormModel.lipschitzWith_toSupNorm` and
+  seminormed / Banach algebra model of an affinoid algebra, its induced `1`-Lipschitz continuous
+  algebra homomorphisms, and explicit Lipschitz comparisons
+  (`TauCeti.IsAffinoidAlgebra.SupNormModel.lipschitzWith_toSupNorm`,
+  `TauCeti.IsAffinoidAlgebra.SupNormModel.lipschitzWith_map`, and
   `TauCeti.IsAffinoidAlgebra.SupNormModel.exists_pos_lipschitzWith_ofSupNorm`).
 * `TauCeti.IsAffinoidAlgebra.exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced` and
   `TauCeti.IsAffinoidAlgebra.continuous_algHom_of_isReduced`: quantitative spectral-radius bound and
-  automatic continuity from arbitrary Banach `K`-algebras into completely normed reduced affinoid
-  algebras.
+  automatic continuity from normed `K`-algebras with summable geometric series into completely
+  normed reduced affinoid algebras.
 
 ## References
 
@@ -394,9 +396,6 @@ elements. -/
     dist x y = supSeminorm K (x.ofSupNorm - y.ofSupNorm) := by
   rw [dist_eq_norm, norm_def, ofSupNorm_sub]
 
-/-- `toSupNorm` sends `a : A` to an element of norm `supSeminorm K a`. -/
-theorem norm_toSupNorm (a : A) : ‖(toSupNorm a : hA.SupNormModel)‖ = supSeminorm K a := (rfl)
-
 noncomputable instance : NormedAlgebra K hA.SupNormModel where
   norm_smul_le c x := by
     rw [norm_def, norm_def, ofSupNorm_smul]
@@ -423,13 +422,48 @@ noncomputable instance [IsReduced A] : NormedCommRing hA.SupNormModel :=
 
 end
 
-/-- `toSupNorm : A → hA.SupNormModel` is `1`-Lipschitz for any complete algebra norm on `A`. -/
+/-- `toSupNorm : A → hA.SupNormModel` is `1`-Lipschitz for any algebra norm on `A` with summable
+geometric series. -/
 theorem lipschitzWith_toSupNorm {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
-    {hA : IsAffinoidAlgebra K A} [CompleteSpace A] :
+    {hA : IsAffinoidAlgebra K A} [HasSummableGeomSeries A] :
     LipschitzWith 1 (toSupNorm : A → hA.SupNormModel) :=
   LipschitzWith.of_dist_le_mul fun x y ↦ by
     rw [NNReal.coe_one, one_mul, dist_def, ofSupNorm_toSupNorm, dist_eq_norm]
     exact supSeminorm_le_norm (x - y)
+
+section Map
+
+variable {A B : Type*} [CommRing A] [Algebra K A] [CommRing B] [Algebra K B]
+  {hA : IsAffinoidAlgebra K A} {hB : IsAffinoidAlgebra K B}
+
+private theorem lipschitzWith_map_aux (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
+    (φ : A →ₐ[K] B) :
+    LipschitzWith 1 (fun x : hA.SupNormModel ↦ (toSupNorm (φ x.ofSupNorm) : hB.SupNormModel)) :=
+  LipschitzWith.of_dist_le_mul fun x y ↦ by
+    rw [NNReal.coe_one, one_mul, dist_def, dist_def, ofSupNorm_toSupNorm, ofSupNorm_toSupNorm,
+      ← map_sub]
+    exact hA.supSeminorm_map_le hB φ (x.ofSupNorm - y.ofSupNorm)
+
+/-- The `1`-Lipschitz continuous `K`-algebra homomorphism `hA.SupNormModel →A[K] hB.SupNormModel`
+induced by a `K`-algebra homomorphism `φ : A →ₐ[K] B` between affinoid algebras. -/
+noncomputable def map (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
+    (φ : A →ₐ[K] B) : hA.SupNormModel →A[K] hB.SupNormModel :=
+  { (algEquiv hB).toAlgHom.comp (φ.comp (algEquiv hA).symm.toAlgHom) with
+    cont := (lipschitzWith_map_aux hA hB φ).continuous }
+
+/-- Evaluation of `SupNormModel.map hA hB φ` applies `φ` to the underlying element. -/
+@[simp]
+theorem map_apply (φ : A →ₐ[K] B) (x : hA.SupNormModel) :
+    map hA hB φ x = toSupNorm (φ x.ofSupNorm) :=
+  (rfl)
+
+/-- Every induced map `SupNormModel.map hA hB φ` between supremum-normed models is
+`1`-Lipschitz. -/
+theorem lipschitzWith_map (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
+    (φ : A →ₐ[K] B) : LipschitzWith 1 (map hA hB φ) :=
+  lipschitzWith_map_aux hA hB φ
+
+end Map
 
 section
 
@@ -456,10 +490,10 @@ private theorem completeSpace_of_isReduced [IsReduced A] : CompleteSpace hA.SupN
 ([BGR, §6.2.4, Corollary 2]): for any affinoid algebra `A` over a complete nontrivially normed
 ultrametric field `K`, `hA.SupNormModel` is a complete seminormed `K`-algebra. -/
 instance : CompleteSpace hA.SupNormModel := by
-  let q : hA.SupNormModel → (hA.quotient (nilradical A)).SupNormModel :=
-    fun x ↦ toSupNorm (Ideal.Quotient.mk (nilradical A) x.ofSupNorm)
+  let q := map hA (hA.quotient (nilradical A)) (Ideal.Quotient.mkₐ K (nilradical A))
   have hq_iso : Isometry q := Isometry.of_dist_eq fun x y ↦ by
-    simp only [q, dist_def, ← map_sub, supSeminorm_mk_nilradical]
+    simp only [q, map_apply, dist_def, Ideal.Quotient.mkₐ_eq_mk, ← map_sub,
+      supSeminorm_mk_nilradical]
   have hq_surj : Function.Surjective q := fun y ↦
     let ⟨a, ha⟩ := Ideal.Quotient.mk_surjective y.ofSupNorm
     ⟨toSupNorm a, ext ha⟩
@@ -553,29 +587,17 @@ theorem supNormContinuousAlgEquiv_symm_apply {A : Type*} [NormedCommRing A] [Nor
     hA.supNormContinuousAlgEquiv.symm x = x.ofSupNorm :=
   (rfl)
 
-/-- `supNormContinuousAlgEquiv` is `1`-Lipschitz. -/
-theorem lipschitzWith_supNormContinuousAlgEquiv {A : Type*} [NormedCommRing A]
-    [NormedAlgebra K A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) :
-    LipschitzWith 1 hA.supNormContinuousAlgEquiv :=
-  SupNormModel.lipschitzWith_toSupNorm
-
-/-- The inverse of `supNormContinuousAlgEquiv` is Lipschitz. -/
-theorem exists_pos_lipschitzWith_supNormContinuousAlgEquiv_symm {A : Type*} [NormedCommRing A]
-    [NormedAlgebra K A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) :
-    ∃ C : NNReal, 0 < C ∧ LipschitzWith C hA.supNormContinuousAlgEquiv.symm :=
-  SupNormModel.exists_pos_lipschitzWith_ofSupNorm (hA := hA)
-
 end SupNormBanach
 
 section AutomaticContinuityFromBanach
 
-variable {B A : Type*} [NormedRing B] [NormedAlgebra K B] [CompleteSpace B]
+variable {B A : Type*} [NormedRing B] [NormedAlgebra K B] [HasSummableGeomSeries B]
   [NormedCommRing A] [NormedAlgebra K A] [CompleteSpace A] [IsReduced A]
 
-/-- Quantitative bound for `K`-algebra homomorphisms from an arbitrary Banach `K`-algebra `B` into a
-completely normed reduced affinoid `K`-algebra `A` over a complete nontrivially normed ultrametric
-field `K`: there exists `C > 0` (independent of `φ`) such that
-`‖φ b‖ ≤ C * gelfandRadius b ≤ C * ‖b‖` for every `φ : B →ₐ[K] A` and `b : B`. -/
+/-- Quantitative bound for `K`-algebra homomorphisms from an arbitrary normed `K`-algebra `B` with
+summable geometric series into a completely normed reduced affinoid `K`-algebra `A` over a
+complete nontrivially normed ultrametric field `K`: there exists `C > 0` (independent of `φ`)
+such that `‖φ b‖ ≤ C * gelfandRadius b ≤ C * ‖b‖` for every `φ : B →ₐ[K] A` and `b : B`. -/
 theorem exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced
     (hA : IsAffinoidAlgebra K A) :
     ∃ C : ℝ, 0 < C ∧ ∀ (φ : B →ₐ[K] A) (b : B),
@@ -587,11 +609,11 @@ theorem exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced
       hC.le)
   exact ⟨h1, h1.trans (mul_le_mul_of_nonneg_left (gelfandRadius_le_norm b) hC.le)⟩
 
-/-- **Automatic continuity from arbitrary Banach algebras into reduced affinoid algebras**
-([BGR, §3.8.3 / §6.2.4]). Over a complete nontrivially normed ultrametric field `K`, every
-`K`-algebra homomorphism from a Banach `K`-algebra `B` (not assumed commutative, ultrametric,
-Noetherian, or unital-norm-normalized) into a completely normed reduced affinoid `K`-algebra `A` is
-continuous. -/
+/-- **Automatic continuity from normed algebras with summable geometric series into reduced
+affinoid algebras** ([BGR, §3.8.3 / §6.2.4]). Over a complete nontrivially normed ultrametric field
+`K`, every `K`-algebra homomorphism from a normed `K`-algebra `B` with summable geometric series
+(not assumed complete, commutative, ultrametric, Noetherian, or unital-norm-normalized) into a
+completely normed reduced affinoid `K`-algebra `A` is continuous. -/
 theorem continuous_algHom_of_isReduced (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) :
     Continuous φ := by
   obtain ⟨C, _, hC⟩ := hA.exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced (B := B)

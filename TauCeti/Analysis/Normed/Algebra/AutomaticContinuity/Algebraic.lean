@@ -18,9 +18,9 @@ import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Irreducible
 # Spectral contraction and automatic continuity into algebraic field extensions
 
 Over a complete ultrametric normed field `K` (including trivially normed fields), every
-`K`-algebra homomorphism `φ : B →ₐ[K] L` from an arbitrary Banach `K`-algebra `B` (not assumed
-commutative, ultrametric, Noetherian, or unital-norm-normalized) into a field extension `L / K`
-satisfies
+`K`-algebra homomorphism `φ : B →ₐ[K] L` from an arbitrary normed `K`-algebra `B` with summable
+geometric series (not assumed complete, commutative, ultrametric, Noetherian, or
+unital-norm-normalized) into a field extension `L / K` satisfies
 
 `spectralNorm K L (φ b) ≤ gelfandRadius b ≤ ‖b‖`.
 
@@ -54,7 +54,7 @@ open scoped IntermediateField
 namespace AlgHom
 
 variable {K B L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  [NormedRing B] [NormedAlgebra K B] [CompleteSpace B]
+  [NormedRing B] [NormedAlgebra K B] [HasSummableGeomSeries B]
   [Field L] [Algebra K L]
 
 /-- Quantitative single-element step: for an integral image `φ x` of minimal-polynomial degree `d`,
@@ -78,7 +78,7 @@ private theorem spectralNorm_apply_le_natDegree_mul_norm (φ : B →ₐ[K] L) {x
     exact hrx.trans ((one_mul ‖x‖).symm.trans_le
       (mul_le_mul_of_nonneg_right hd1 (norm_nonneg x)))
   -- Step 2: write `(p.coeff 0)⁻¹ • aeval x p = 1 - z`; since `φ (1 - z) = 0`, `1 - z` is not a
-  -- unit in the Banach algebra `B`, hence `1 ≤ ‖z‖`.
+  -- unit in `B`, hence `1 ≤ ‖z‖`.
   have ha0_ne : p.coeff 0 ≠ 0 := minpoly.coeff_zero_ne_zero hx hφx
   let z : B := -∑ j ∈ Finset.range d, ((p.coeff 0)⁻¹ * p.coeff (j + 1)) • x ^ (j + 1)
   have hz_eq : (p.coeff 0)⁻¹ • aeval x p = 1 - z := by
@@ -112,12 +112,13 @@ private theorem spectralNorm_apply_le_natDegree_mul_norm (φ : B →ₐ[K] L) {x
   rwa [← mul_div_assoc, one_le_div hr] at h1
 
 /-- **Spectral-norm bound by Gelfand radius.** Over a complete ultrametric normed field `K`
-(including trivially normed fields), any `K`-algebra homomorphism `φ : B →ₐ[K] L` from a Banach
-`K`-algebra `B` into a field extension `L / K` satisfies `spectralNorm K L (φ b) ≤ gelfandRadius b`
-for every `b : B`. Neither commutativity, ultrametricity, Noetherianity, nor `‖1‖ = 1` is assumed
-on `B`, and transcendental images have spectral norm `0`. Completeness of `K` is essential (for
-example, `X ^ 2 + X + 5` is irreducible over `(ℚ, |·|_5)` of spectral value `1` yet has a root in
-`ℚ_5` of `5`-adic norm `1 / 5`). -/
+(including trivially normed fields), any `K`-algebra homomorphism `φ : B →ₐ[K] L` from a normed
+`K`-algebra `B` with summable geometric series into a field extension `L / K` satisfies
+`spectralNorm K L (φ b) ≤ gelfandRadius b` for every `b : B`. Neither completeness of `B`,
+commutativity, ultrametricity, Noetherianity, nor `‖1‖ = 1` is assumed on `B`, and transcendental
+images have spectral norm `0`. Completeness of `K` is essential (for example, `X ^ 2 + X + 5` is
+irreducible over `(ℚ, |·|_5)` of spectral value `1` yet has a root in `ℚ_5` of `5`-adic norm
+`1 / 5`). -/
 theorem spectralNorm_apply_le_gelfandRadius (φ : B →ₐ[K] L) (b : B) :
     spectralNorm K L (φ b) ≤ gelfandRadius b := by
   by_cases hb : IsAlgebraic K (φ b)
@@ -145,15 +146,16 @@ theorem spectralNorm_apply_le_gelfandRadius (φ : B →ₐ[K] L) (b : B) :
   · rw [TauCeti.spectralNorm_eq_zero_of_not_isAlgebraic hb]
     exact gelfandRadius_nonneg b
 
-/-- Every `K`-algebra homomorphism from a Banach `K`-algebra `B` into a field extension `L / K`
-over a complete ultrametric normed field `K` is bounded by the norm on `B`. -/
+/-- Every `K`-algebra homomorphism from a normed `K`-algebra `B` with summable geometric series
+into a field extension `L / K` over a complete ultrametric normed field `K` is bounded by the norm
+on `B`. -/
 theorem spectralNorm_apply_le_norm (φ : B →ₐ[K] L) (b : B) :
     spectralNorm K L (φ b) ≤ ‖b‖ :=
   (φ.spectralNorm_apply_le_gelfandRadius b).trans (gelfandRadius_le_norm b)
 
-/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a Banach
-`K`-algebra `B` into a normed field extension `M / K` satisfies `‖φ b‖ ≤ gelfandRadius b` at
-every element `b : B` whose image `φ b` is algebraic over `K`. -/
+/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a normed
+`K`-algebra `B` with summable geometric series into a normed field extension `M / K` satisfies
+`‖φ b‖ ≤ gelfandRadius b` at every element `b : B` whose image `φ b` is algebraic over `K`. -/
 theorem norm_apply_le_gelfandRadius_of_isAlgebraic {M : Type*} [NormedField M] [NormedAlgebra K M]
     (φ : B →ₐ[K] M) (b : B) (hb : IsAlgebraic K (φ b)) :
     ‖φ b‖ ≤ gelfandRadius b := by
@@ -166,17 +168,17 @@ theorem norm_apply_le_gelfandRadius_of_isAlgebraic {M : Type*} [NormedField M] [
     exact norm_le_spectralNorm (MulRingNorm.isPowMul _) IsUltrametricDist.isNonarchimedean_norm hb
   exact hle.trans (φ.spectralNorm_apply_le_gelfandRadius b)
 
-/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a Banach
-`K`-algebra `B` into a normed field extension `M / K` is contractive at every element `b : B`
-whose image `φ b` is algebraic over `K`. -/
+/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a normed
+`K`-algebra `B` with summable geometric series into a normed field extension `M / K` is contractive
+at every element `b : B` whose image `φ b` is algebraic over `K`. -/
 theorem norm_apply_le_norm_of_isAlgebraic {M : Type*} [NormedField M] [NormedAlgebra K M]
     (φ : B →ₐ[K] M) (b : B) (hb : IsAlgebraic K (φ b)) :
     ‖φ b‖ ≤ ‖b‖ :=
   (φ.norm_apply_le_gelfandRadius_of_isAlgebraic b hb).trans (gelfandRadius_le_norm b)
 
 /-- **Automatic continuity into algebraic normed field extensions.** Over a complete ultrametric
-normed field `K`, every `K`-algebra homomorphism from a Banach `K`-algebra `B` into an algebraic
-normed field extension `M / K` is automatically continuous. -/
+normed field `K`, every `K`-algebra homomorphism from a normed `K`-algebra `B` with summable
+geometric series into an algebraic normed field extension `M / K` is automatically continuous. -/
 theorem continuous_of_isAlgebraic {M : Type*} [NormedField M] [NormedAlgebra K M]
     [Algebra.IsAlgebraic K M] (φ : B →ₐ[K] M) :
     Continuous φ :=

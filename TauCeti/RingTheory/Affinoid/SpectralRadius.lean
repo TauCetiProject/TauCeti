@@ -53,10 +53,11 @@ namespace TauCeti
 
 open Filter Topology
 
-/-- **The supremum seminorm is bounded by the normalised norms of powers.** For every complete
-algebra norm over a complete ultrametric field `K`, `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`. -/
+/-- **The supremum seminorm is bounded by the normalised norms of powers.** For every algebra
+norm with summable geometric series over a complete ultrametric field `K`,
+`|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`. -/
 theorem supSeminorm_le_norm_pow_rpow {K A : Type*} [NormedField K] [IsUltrametricDist K]
-    [CompleteSpace K] [NormedCommRing A] [NormedAlgebra K A] [CompleteSpace A]
+    [CompleteSpace K] [NormedCommRing A] [NormedAlgebra K A] [HasSummableGeomSeries A]
     (f : A) {n : ℕ} (hn : n ≠ 0) :
     supSeminorm K f ≤ ‖f ^ n‖ ^ (1 / n : ℝ) :=
   ((AlgHom.id K A).supSeminorm_apply_le_gelfandRadius f).trans <| by

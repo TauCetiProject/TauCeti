@@ -35,11 +35,11 @@ the quotients by the finitely many minimal primes of `A`, and a monic equation
 `f ^ d + ∑_{i < d} aᵢ f ^ i = 0` bounds it by `max_{i < d} |aᵢ|sup ^ (1 / (d - i))`.
 
 More generally, over any complete ultrametric normed field `K`, any `K`-algebra homomorphism
-`φ : B →ₐ[K] A` from an arbitrary Banach `K`-algebra `B` into any commutative `K`-algebra `A`
-satisfies `|φ(b)(x)| ≤ gelfandRadius b`, hence `|φ(b)|sup ≤ gelfandRadius b ≤ ‖b‖`, by
-`AlgHom.spectralNorm_apply_le_gelfandRadius`. Specializing to the identity homomorphism yields the
-bound by any complete algebra norm on `A`. The kernel computation uses that affinoid algebras are
-Jacobson rings.
+`φ : B →ₐ[K] A` from an arbitrary normed `K`-algebra `B` with summable geometric series into
+any commutative `K`-algebra `A` satisfies `|φ(b)(x)| ≤ gelfandRadius b`, hence
+`|φ(b)|sup ≤ gelfandRadius b ≤ ‖b‖`, by `AlgHom.spectralNorm_apply_le_gelfandRadius`. Specializing
+to the identity homomorphism yields the bound by any algebra norm with summable geometric series
+on `A`. The kernel computation uses that affinoid algebras are Jacobson rings.
 
 ## Main definitions
 
@@ -50,7 +50,7 @@ Jacobson rings.
 ## Main results
 
 * `TauCeti.pointNorm_le_norm` and `TauCeti.supSeminorm_le_norm`: `|f(x)| ≤ ‖f‖` and
-  `|f|sup ≤ ‖f‖` for every complete algebra norm.
+  `|f|sup ≤ ‖f‖` for every algebra norm with summable geometric series.
 * `TauCeti.IsAffinoidAlgebra.isUnit_iff_forall_pointNorm_ne_zero`: `f` is a unit if and only if
   `|f(x)| ≠ 0` at every classical point `x`.
 * `TauCeti.IsAffinoidAlgebra.bddAbove_range_pointNorm`: the point norms of `f` are bounded.
@@ -216,11 +216,11 @@ theorem _root_.MaximalSpectrum.pointNorm_pow [IsUltrametricDist K] (x : MaximalS
   · rw [spectralNorm_eq_zero_of_not_isAlgebraic hy,
       spectralNorm_eq_zero_of_not_isAlgebraic fun h ↦ hy (h.of_pow hn), zero_pow hn.ne']
 
-/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a Banach
-`K`-algebra `B` into a commutative `K`-algebra `A` is bounded at every classical point
-`x : MaximalSpectrum A` by the Gelfand radius on `B`. -/
+/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a normed
+`K`-algebra `B` with summable geometric series into a commutative `K`-algebra `A` is bounded at
+every classical point `x : MaximalSpectrum A` by the Gelfand radius on `B`. -/
 theorem _root_.AlgHom.pointNorm_apply_le_gelfandRadius [IsUltrametricDist K] [CompleteSpace K]
-    [NormedRing B] [NormedAlgebra K B] [CompleteSpace B] (φ : B →ₐ[K] A)
+    [NormedRing B] [NormedAlgebra K B] [HasSummableGeomSeries B] (φ : B →ₐ[K] A)
     (x : MaximalSpectrum A) (b : B) :
     pointNorm K x (φ b) ≤ gelfandRadius b := by
   let := Ideal.Quotient.field x.asIdeal
@@ -228,11 +228,11 @@ theorem _root_.AlgHom.pointNorm_apply_le_gelfandRadius [IsUltrametricDist K] [Co
     (ψ := Ideal.Quotient.mkₐ K x.asIdeal) (Ideal.Quotient.mkₐ_ker K x.asIdeal).ge]
   exact ((Ideal.Quotient.mkₐ K x.asIdeal).comp φ).spectralNorm_apply_le_gelfandRadius b
 
-/-- **Point norms are bounded by complete algebra norms.** On a commutative algebra with a
-complete algebra norm over a complete ultrametric field `K`, `|f(x)| ≤ ‖f‖` at every classical
-point `x`. -/
+/-- **Point norms are bounded by algebra norms with summable geometric series.** On a commutative
+algebra with an algebra norm having summable geometric series over a complete ultrametric field
+`K`, `|f(x)| ≤ ‖f‖` at every classical point `x`. -/
 theorem pointNorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
-    {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [CompleteSpace A]
+    {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [HasSummableGeomSeries A]
     (x : MaximalSpectrum A) (f : A) : pointNorm K x f ≤ ‖f‖ :=
   ((AlgHom.id K A).pointNorm_apply_le_gelfandRadius x f).trans (gelfandRadius_le_norm f)
 
@@ -307,32 +307,33 @@ theorem supSeminorm_le {f : A} {r : ℝ} (hr : 0 ≤ r) (h : ∀ x, pointNorm K 
     supSeminorm K f ≤ r :=
   Real.iSup_le h hr
 
-/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a Banach
-`K`-algebra `B` into a commutative `K`-algebra `A` maps every `b : B` to an element of
-supremum seminorm at most `gelfandRadius b`. -/
+/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a normed
+`K`-algebra `B` with summable geometric series into a commutative `K`-algebra `A` maps every
+`b : B` to an element of supremum seminorm at most `gelfandRadius b`. -/
 theorem _root_.AlgHom.supSeminorm_apply_le_gelfandRadius [IsUltrametricDist K] [CompleteSpace K]
-    [NormedRing B] [NormedAlgebra K B] [CompleteSpace B] (φ : B →ₐ[K] A) (b : B) :
+    [NormedRing B] [NormedAlgebra K B] [HasSummableGeomSeries B] (φ : B →ₐ[K] A) (b : B) :
     supSeminorm K (φ b) ≤ gelfandRadius b :=
   supSeminorm_le (gelfandRadius_nonneg b) fun x ↦ φ.pointNorm_apply_le_gelfandRadius x b
 
-/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a Banach
-`K`-algebra `B` into a commutative `K`-algebra `A` is contractive from the norm on `B` to
-`TauCeti.supSeminorm K` on `A`. -/
+/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a normed
+`K`-algebra `B` with summable geometric series into a commutative `K`-algebra `A` is contractive
+from the norm on `B` to `TauCeti.supSeminorm K` on `A`. -/
 theorem _root_.AlgHom.supSeminorm_apply_le_norm [IsUltrametricDist K] [CompleteSpace K]
-    [NormedRing B] [NormedAlgebra K B] [CompleteSpace B] (φ : B →ₐ[K] A) (b : B) :
+    [NormedRing B] [NormedAlgebra K B] [HasSummableGeomSeries B] (φ : B →ₐ[K] A) (b : B) :
     supSeminorm K (φ b) ≤ ‖b‖ :=
   (φ.supSeminorm_apply_le_gelfandRadius b).trans (gelfandRadius_le_norm b)
 
 /-- Over a complete ultrametric normed field `K`, the point norms of the image of any element under
-a `K`-algebra homomorphism from a Banach `K`-algebra are bounded above by its Gelfand radius. -/
+a `K`-algebra homomorphism from a normed `K`-algebra with summable geometric series are bounded
+above by its Gelfand radius. -/
 theorem _root_.AlgHom.bddAbove_range_pointNorm [IsUltrametricDist K] [CompleteSpace K]
-    [NormedRing B] [NormedAlgebra K B] [CompleteSpace B] (φ : B →ₐ[K] A) (b : B) :
+    [NormedRing B] [NormedAlgebra K B] [HasSummableGeomSeries B] (φ : B →ₐ[K] A) (b : B) :
     BddAbove (Set.range fun x : MaximalSpectrum A ↦ pointNorm K x (φ b)) :=
   ⟨gelfandRadius b, Set.forall_mem_range.mpr fun x ↦ φ.pointNorm_apply_le_gelfandRadius x b⟩
 
-/-- The supremum seminorm is bounded by every complete algebra norm. -/
+/-- The supremum seminorm is bounded by every algebra norm with summable geometric series. -/
 theorem supSeminorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
-    {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [CompleteSpace A] (f : A) :
+    {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [HasSummableGeomSeries A] (f : A) :
     supSeminorm K f ≤ ‖f‖ :=
   (AlgHom.id K A).supSeminorm_apply_le_norm f
 

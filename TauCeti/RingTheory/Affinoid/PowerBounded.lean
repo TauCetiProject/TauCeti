@@ -284,11 +284,11 @@ theorem isUnit_and_isPowerBounded_inverse_iff (hA : IsAffinoidAlgebra K A) {c : 
     exact ⟨hc, by simpa using h⟩
 
 /-- Over a complete nontrivially normed ultrametric field `K`, every `K`-algebra homomorphism from
-an arbitrary Banach `K`-algebra `B` (not assumed commutative, ultrametric, Noetherian, or
-unital-norm-normalized) into a completely normed affinoid `K`-algebra `A` (not necessarily reduced)
-maps power-bounded elements to power-bounded elements. -/
-theorem isPowerBounded_map {B : Type*} [NormedRing B] [NormedAlgebra K B] [CompleteSpace B]
-    (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) {b : B}
+an arbitrary normed `K`-algebra `B` with summable geometric series (not assumed complete,
+commutative, ultrametric, Noetherian, or unital-norm-normalized) into a completely normed affinoid
+`K`-algebra `A` (not necessarily reduced) maps power-bounded elements to power-bounded elements. -/
+theorem isPowerBounded_map {B : Type*} [NormedRing B] [NormedAlgebra K B]
+    [HasSummableGeomSeries B] (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) {b : B}
     (hb : Huber.IsPowerBounded b) : Huber.IsPowerBounded (φ b) :=
   hA.isPowerBounded_iff_supSeminorm_le_one.mpr <|
     (φ.supSeminorm_apply_le_gelfandRadius b).trans
