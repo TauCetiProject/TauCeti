@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
+public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.Complex.Module.Hom
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
