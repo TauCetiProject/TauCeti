@@ -8,14 +8,18 @@ module
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.MeasureTheory.Integral.Pi
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Convolution.Young
-import TauCeti.Analysis.Fourier.AddCircle.Periodization
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.Fourier.PoissonSummation
 import TauCeti.Analysis.Fourier.Torus.Convolution
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Fourier.Torus.Uniqueness
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
+import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
 # Bernstein's inequalities on the torus
@@ -51,22 +55,21 @@ summation to control the periodic kernel. Let `χ` be a smooth cutoff equal to o
 supported in `(-2, 2)`. The kernel of de la Vallée Poussin type
 `V_R(x) = ∑ n, (∏ i, χ (n i / R)) e_n(x)` is a trigonometric polynomial whose coefficients equal one
 on the ball `‖n‖ ≤ R`, so `V_R ⋆ f = f` almost everywhere
-(`MeasureTheory.Integrable.ae_eq_convolution_of_mFourierCoeff_eq_smul`). It is the tensor
-product of the one-dimensional kernels `t ↦ ∑ n, χ (n / R) e_n(t)`. By Poisson summation
-(`SchwartzMap.tsum_eq_tsum_fourier`) each of these is the periodization of the kernel
-`𝓕⁻ (χ (· / R))` on `ℝ`, a dilate of `𝓕⁻ χ`, so its `L¹` norm on the circle is at most
-`∫ ‖𝓕⁻ χ‖`, whatever `R` (`ContDiff.integral_norm_tsum_mul_fourier_le`). Hence `V_R` is
-bounded in `L¹` uniformly in `R`, while `‖V_R‖_∞ ≤ (7 R) ^ d` by counting its frequencies, and the
-logarithmic convexity of `Lʳ` norms (`MeasureTheory.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow`)
-gives `‖V_R‖_r ≤ C R ^ (d (1 - 1/r))`. Young's inequality with `1/r + 1/p = 1 + 1/q`
+(`MeasureTheory.Integrable.ae_eq_convolution_of_mFourierCoeff_eq_smul`). Its coefficients are the
+values at the points `n / R` of the symbol `τ(ξ) = ∏ i, χ (ξ i)` on `ℝᵈ`. By Poisson summation
+`V_R` is the periodization of the kernel `𝓕⁻ (τ (· / R))` on `ℝᵈ`, a dilate of `𝓕⁻ τ`, so its `L¹`
+norm on the torus is at most `∫ ‖𝓕⁻ τ‖`, whatever `R`
+(`SchwartzMap.lintegral_eNorm_tsum_fourier_mul_mFourier_le`). Hence `V_R` is bounded in `L¹`
+uniformly in `R`, while `‖V_R‖_∞ ≤ (7 R) ^ d` by counting its frequencies, and the logarithmic
+convexity of `Lʳ` norms (`MeasureTheory.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow`) gives
+`‖V_R‖_r ≤ C R ^ (d (1 - 1/r))`. Young's inequality with `1/r + 1/p = 1 + 1/q`
 (`MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`) gives Nikol'skii's inequality.
 
 For a derivative along `v`, the symbol `2πi ⟪n, v⟫ ∏ j, χ (n j / R)` is the combination
-`∑ i, 2πi R v i ∏ j, ηᵢⱼ (n j / R)` of tensor-product symbols, with `ηᵢᵢ(ξ) = ξ χ(ξ)` and `ηᵢⱼ = χ`
-for `j ≠ i`. Its kernel therefore has `L¹` norm at most a constant times `R ‖v‖`, and Young's
-inequality for an integrable kernel bounds one derivative at a fixed exponent. Derivatives of
-higher order follow by iteration through intermediate trigonometric polynomials, and the gain of
-integrability is applied last.
+`∑ i, 2πi R v i τᵢ (n / R)` of the symbols `τᵢ(ξ) = ξ i ∏ j, χ (ξ j)`. Its kernel therefore has
+`L¹` norm at most a constant times `R ‖v‖`, and Young's inequality for an integrable kernel bounds
+one derivative at a fixed exponent. Derivatives of higher order follow by iteration through
+intermediate trigonometric polynomials, and the gain of integrability is applied last.
 
 ## Main declarations
 
@@ -96,43 +99,103 @@ namespace UnitAddTorus
 
 open TauCeti TauCeti.UnitAddTorus
 
-/-! ### Tensor-product kernels on the torus -/
+/-! ### Kernels with frequencies in a box -/
 
-section Tensor
+section Box
 
 variable {d : Type*} [Fintype d]
 
-/-- The tensor-product kernel `x ↦ ∏ i, ∑ n, η i (n / R) e_n (x i)` on the torus, whose Fourier
-coefficient at `n` is `∏ i, η i (n i / R)`. -/
-private noncomputable def tensorKernel (η : d → ℝ → ℂ) (R : ℝ) (x : UnitAddTorus d) : ℂ :=
-  ∏ i, ∑' n : ℤ, η i (n / R) * fourier n (x i)
+/-- The box `‖n‖ ≤ ⌈2 R⌉` of frequencies carrying the kernels at scale `R`. -/
+private noncomputable def box (d : Type*) [Fintype d] [DecidableEq d] (R : ℝ) :
+    Finset (d → ℤ) :=
+  Fintype.piFinset fun _ : d ↦ Finset.Icc (-⌈2 * R⌉) ⌈2 * R⌉
 
-/-- If every `η i` vanishes outside `[-M, M]`, the tensor-product kernel is the trigonometric
-polynomial with coefficients `∏ i, η i (n i / R)` on the box `‖n‖ ≤ ⌈M R⌉`. -/
-private theorem tensorKernel_eq_sum [DecidableEq d] {η : d → ℝ → ℂ} {M R : ℝ} (hR : 0 < R)
-    (hη : ∀ i ξ, M < |ξ| → η i ξ = 0) (x : UnitAddTorus d) :
-    tensorKernel η R x = ∑ n ∈ Fintype.piFinset fun _ : d ↦ Finset.Icc (-⌈M * R⌉) ⌈M * R⌉,
-      (∏ i, η i (n i / R)) * mFourier n x := by
-  simp only [tensorKernel, fun i ↦ tsum_mul_fourier_eq_sum hR (hη i) (x i)]
-  rw [Finset.prod_univ_sum]
-  simp only [mFourier, ContinuousMap.coe_mk, ← Finset.prod_mul_distrib]
+private theorem exists_lt_abs_of_notMem_box [DecidableEq d] {n : d → ℤ} {R : ℝ}
+    (hn : n ∉ box d R) : ∃ i, 2 * R < |(n i : ℝ)| := by
+  simp only [box, Fintype.mem_piFinset, not_forall] at hn
+  obtain ⟨i, hi⟩ := hn
+  rw [Finset.mem_Icc, ← abs_le, not_le] at hi
+  have h : (⌈2 * R⌉ : ℝ) < |(n i : ℝ)| := by exact_mod_cast hi
+  exact ⟨i, (Int.le_ceil _).trans_lt h⟩
 
-private theorem continuous_tensorKernel {η : d → ℝ → ℂ} (hc : ∀ i, HasCompactSupport (η i))
-    {R : ℝ} (hR : 0 < R) : Continuous (tensorKernel η R) :=
-  continuous_finsetProd _ fun i _ ↦ ((hc i).continuous_tsum_mul_fourier hR).comp
-    (continuous_apply i)
+private theorem lt_norm_of_notMem_box [DecidableEq d] {R : ℝ} (hR : 0 < R) {n : d → ℤ}
+    (hn : n ∉ box d R) :
+    R < ‖n‖ := by
+  obtain ⟨i, hi⟩ := exists_lt_abs_of_notMem_box hn
+  calc R < |(n i : ℝ)| := by linarith
+    _ = ‖n i‖ := (Int.norm_eq_abs _).symm
+    _ ≤ ‖n‖ := norm_le_pi_norm n i
 
-/-- The `L¹` norm of a tensor-product kernel is at most the product of the `L¹` norms of the
-inverse Fourier transforms of its factors. -/
-private theorem integral_norm_tensorKernel_le {η : d → ℝ → ℂ} (hη : ∀ i, ContDiff ℝ ∞ (η i))
-    (hc : ∀ i, HasCompactSupport (η i)) {R : ℝ} (hR : 0 < R) :
-    ∫ x, ‖tensorKernel η R x‖ ≤ ∏ i, ∫ y, ‖𝓕⁻ (η i) y‖ := by
-  simp only [tensorKernel, norm_prod]
-  rw [integral_fintype_prod_volume_eq_prod (fun i t ↦ ‖∑' n : ℤ, η i (n / R) * fourier n t‖)]
-  exact Finset.prod_le_prod₀ (fun i _ ↦ integral_nonneg fun _ ↦ norm_nonneg _)
-    fun i _ ↦ (hη i).integral_norm_tsum_mul_fourier_le (hc i) hR
+/-- The box `box d R`, `R ≥ 1`, has at most `(7 R) ^ d` points. -/
+private theorem card_box_le [DecidableEq d] {R : ℝ} (hR : 1 ≤ R) :
+    ((box d R).card : ℝ) ≤ (7 * R) ^ Fintype.card d := by
+  rw [box, Fintype.card_piFinset, Finset.prod_const, Finset.card_univ, Nat.cast_pow]
+  gcongr
+  rw [Int.card_Icc]
+  have hceil : (⌈2 * R⌉ : ℝ) < 2 * R + 1 := Int.ceil_lt_add_one _
+  have hnn : (0 : ℤ) ≤ ⌈2 * R⌉ + 1 - -⌈2 * R⌉ := by
+    have : (0 : ℤ) ≤ ⌈2 * R⌉ := Int.ceil_nonneg (by linarith)
+    omega
+  rw [← Int.cast_natCast, Int.toNat_of_nonneg hnn]
+  push_cast
+  linarith
 
-end Tensor
+omit [Fintype d] in
+/-- A symbol on `ℝᵈ` vanishing wherever one coordinate exceeds `2` in absolute value has compact
+support. -/
+private theorem hasCompactSupport_of_eq_zero {τ : EuclideanSpace ℝ d → ℂ}
+    (hτ : ∀ (ξ : EuclideanSpace ℝ d) i, 2 < |ξ i| → τ ξ = 0) : HasCompactSupport τ := by
+  refine HasCompactSupport.intro ((EuclideanSpace.equiv d ℝ).toHomeomorph.isCompact_preimage.2
+    (isCompact_univ_pi fun _ ↦ isCompact_Icc (a := (-2 : ℝ)) (b := 2))) fun ξ hξ ↦ ?_
+  simp only [mem_preimage, mem_univ_pi, not_forall] at hξ
+  obtain ⟨i, hi⟩ := hξ
+  exact hτ ξ i (not_le.1 fun h ↦ hi (abs_le.1 h))
+
+/-- **The `L¹` norm of a kernel with a dilated symbol.** Let `τ` be a smooth symbol on `ℝᵈ`
+vanishing wherever one coordinate exceeds `2` in absolute value. By Poisson summation the
+trigonometric polynomial `x ↦ ∑ n, τ (n / R) e_n(x)` is the periodization of the kernel
+`𝓕⁻ (τ (· / R))` on `ℝᵈ`, a dilate of `𝓕⁻ τ`, so its `L¹` norm on the torus is at most
+`∫ ‖𝓕⁻ τ‖`, whatever the scale `R` (`SchwartzMap.lintegral_eNorm_tsum_fourier_mul_mFourier_le`). -/
+private theorem integral_norm_sum_box_le [DecidableEq d] {τ : EuclideanSpace ℝ d → ℂ}
+    (hτ : ContDiff ℝ ∞ τ) (h0 : ∀ (ξ : EuclideanSpace ℝ d) i, 2 < |ξ i| → τ ξ = 0) {R : ℝ}
+    (hR : 0 < R) :
+    ∫ x, ‖∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x‖ ≤ ∫ y, ‖𝓕⁻ τ y‖ := by
+  -- The dilated symbol `τ (· / R)` as a Schwartz function.
+  have hcR : HasCompactSupport fun ξ : EuclideanSpace ℝ d ↦ τ (R⁻¹ • ξ) :=
+    (hasCompactSupport_of_eq_zero h0).comp_smul (inv_ne_zero hR.ne')
+  have hsR : ContDiff ℝ ∞ fun ξ : EuclideanSpace ℝ d ↦ τ (R⁻¹ • ξ) :=
+    hτ.comp (contDiff_const_smul _)
+  set S : SchwartzMap (EuclideanSpace ℝ d) ℂ := hcR.toSchwartzMap hsR
+  have hS (ξ : EuclideanSpace ℝ d) : S ξ = τ (R⁻¹ • ξ) :=
+    HasCompactSupport.toSchwartzMap_toFun _ _ _
+  have h := (𝓕⁻ S).lintegral_eNorm_tsum_fourier_mul_mFourier_le (EuclideanSpace.basisFun d ℝ)
+  simp only [← latticePoint_eq_sum, ← SchwartzMap.fourier_coe,
+    FourierTransform.fourier_fourierInv_eq] at h
+  -- The series in `h` is the trigonometric polynomial on the box.
+  have hsum (x : UnitAddTorus d) : ∑' n : d → ℤ, S (latticePoint n) * mFourier n x =
+      ∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x := by
+    simp only [hS]
+    refine tsum_eq_sum fun n hn ↦ ?_
+    obtain ⟨i, hi⟩ := exists_lt_abs_of_notMem_box hn
+    rw [h0 _ i ?_, zero_mul]
+    rw [PiLp.smul_apply, latticePoint_apply, smul_eq_mul, abs_mul, abs_inv, abs_of_pos hR,
+      lt_inv_mul_iff₀ hR]
+    linarith
+  have hcont : Continuous fun x ↦ ∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x := by
+    fun_prop
+  have hFS : ∫ y, ‖𝓕⁻ (S : EuclideanSpace ℝ d → ℂ) y‖ = ∫ y, ‖𝓕⁻ τ y‖ := by
+    rw [show (S : EuclideanSpace ℝ d → ℂ) = fun ξ ↦ τ (R⁻¹ • ξ) from funext hS]
+    exact integral_norm_fourierInv_comp_smul τ (inv_ne_zero hR.ne')
+  have hlint : ∫⁻ x, ‖∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x‖ₑ ≤
+      ENNReal.ofReal (∫ y, ‖𝓕⁻ τ y‖) := by
+    rw [← hFS, ← SchwartzMap.fourierInv_coe,
+      ofReal_integral_norm_eq_lintegral_eNorm (𝓕⁻ S).integrable, volume_eq_pi_haarAddCircle]
+    simp only [← hsum]
+    exact h
+  rw [integral_norm_eq_lintegral_eNorm hcont.aestronglyMeasurable]
+  exact ENNReal.toReal_le_of_le_ofReal (integral_nonneg fun _ ↦ norm_nonneg _) hlint
+
+end Box
 
 /-! ### The cutoff and its kernels -/
 
@@ -144,9 +207,6 @@ private noncomputable def cutoff (ξ : ℝ) : ℂ := (bump ξ : ℂ)
 
 private theorem contDiff_cutoff : ContDiff ℝ ∞ cutoff :=
   Complex.ofRealCLM.contDiff.comp bump.contDiff
-
-private theorem hasCompactSupport_cutoff : HasCompactSupport cutoff :=
-  bump.hasCompactSupport.comp_left Complex.ofReal_zero
 
 private theorem cutoff_eq_one {ξ : ℝ} (hξ : |ξ| ≤ 1) : cutoff ξ = 1 := by
   have h : ξ ∈ Metric.closedBall (0 : ℝ) bump.rIn := by
@@ -162,106 +222,83 @@ private theorem norm_cutoff_le (ξ : ℝ) : ‖cutoff ξ‖ ≤ 1 := by
   rw [cutoff, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg bump.nonneg]
   exact bump.le_one
 
-/-- The symbol `ξ χ(ξ)` of the derivative kernels. -/
-private noncomputable def derivCutoff (ξ : ℝ) : ℂ := ξ * cutoff ξ
-
-private theorem contDiff_derivCutoff : ContDiff ℝ ∞ derivCutoff :=
-  (Complex.ofRealCLM.contDiff).mul contDiff_cutoff
-
-private theorem hasCompactSupport_derivCutoff : HasCompactSupport derivCutoff :=
-  hasCompactSupport_cutoff.mul_left
-
-private theorem derivCutoff_eq_zero {ξ : ℝ} (hξ : 2 < |ξ|) : derivCutoff ξ = 0 := by
-  rw [derivCutoff, cutoff_eq_zero hξ, mul_zero]
-
 variable {d : Type*} [Fintype d]
 
-omit [Fintype d] in
-/-- A property shared by `cutoff` and `derivCutoff` holds for every factor
-`Function.update (fun _ ↦ cutoff) i derivCutoff j` of the derivative kernels. -/
-private theorem update_cutoff_derivCutoff [DecidableEq d] {P : (ℝ → ℂ) → Prop} (h₀ : P cutoff)
-    (h₁ : P derivCutoff) (i j : d) : P (Function.update (fun _ : d ↦ cutoff) i derivCutoff j) := by
-  rcases eq_or_ne j i with rfl | hj
-  · rwa [Function.update_self]
-  · rwa [Function.update_of_ne hj]
+/-- The symbol `∏ i, χ (ξ i)` of the reproducing kernels. -/
+private noncomputable def cutoffSymbol (ξ : EuclideanSpace ℝ d) : ℂ := ∏ i, cutoff (ξ i)
 
-/-- The box `‖n‖ ≤ ⌈2 R⌉` of frequencies carrying the kernels at scale `R`. -/
-private noncomputable def box (d : Type*) [Fintype d] [DecidableEq d] (R : ℝ) :
-    Finset (d → ℤ) :=
-  Fintype.piFinset fun _ : d ↦ Finset.Icc (-⌈2 * R⌉) ⌈2 * R⌉
+private theorem contDiff_cutoffSymbol : ContDiff ℝ ∞ (cutoffSymbol (d := d)) :=
+  contDiff_prod fun _ _ ↦ contDiff_cutoff.comp (contDiff_piLp_apply 2)
 
-private theorem lt_norm_of_notMem_box [DecidableEq d] {R : ℝ} (hR : 0 < R) {n : d → ℤ}
-    (hn : n ∉ box d R) :
-    R < ‖n‖ := by
-  simp only [box, Fintype.mem_piFinset, not_forall] at hn
-  obtain ⟨i, hi⟩ := hn
-  rw [Finset.mem_Icc, ← abs_le, not_le] at hi
-  have h : (⌈2 * R⌉ : ℝ) < |(n i : ℝ)| := by exact_mod_cast hi
-  have hceil : 2 * R ≤ ⌈2 * R⌉ := Int.le_ceil _
-  calc R < |(n i : ℝ)| := by linarith
-    _ = ‖n i‖ := (Int.norm_eq_abs _).symm
-    _ ≤ ‖n‖ := norm_le_pi_norm n i
+private theorem cutoffSymbol_eq_zero (ξ : EuclideanSpace ℝ d) (i : d) (hξ : 2 < |ξ i|) :
+    cutoffSymbol ξ = 0 :=
+  Finset.prod_eq_zero (Finset.mem_univ i) (cutoff_eq_zero hξ)
 
-private theorem prod_cutoff_eq_one {R : ℝ} (hR : 0 < R) {n : d → ℤ} (hn : ‖n‖ ≤ R) :
-    ∏ i, cutoff (n i / R) = 1 := by
+private theorem norm_cutoffSymbol_le (ξ : EuclideanSpace ℝ d) : ‖cutoffSymbol ξ‖ ≤ 1 := by
+  rw [cutoffSymbol, norm_prod]
+  exact Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ norm_cutoff_le _
+
+private theorem cutoffSymbol_eq_one {R : ℝ} (hR : 0 < R) {n : d → ℤ} (hn : ‖n‖ ≤ R) :
+    cutoffSymbol (R⁻¹ • latticePoint n) = 1 := by
   refine Finset.prod_eq_one fun i _ ↦ cutoff_eq_one ?_
-  rw [abs_div, abs_of_pos hR, div_le_one hR, ← Int.norm_eq_abs]
+  rw [PiLp.smul_apply, latticePoint_apply, smul_eq_mul, abs_mul, abs_inv, abs_of_pos hR,
+    inv_mul_le_one₀ hR, ← Int.norm_eq_abs]
   exact (norm_le_pi_norm n i).trans hn
+
+/-- The symbol `ξ i ∏ j, χ (ξ j)` of the derivative kernels. -/
+private noncomputable def derivCutoffSymbol (i : d) (ξ : EuclideanSpace ℝ d) : ℂ :=
+  ξ i * cutoffSymbol ξ
+
+private theorem contDiff_derivCutoffSymbol (i : d) : ContDiff ℝ ∞ (derivCutoffSymbol i) :=
+  (Complex.ofRealCLM.contDiff.comp (contDiff_piLp_apply 2)).mul contDiff_cutoffSymbol
+
+private theorem derivCutoffSymbol_eq_zero (i : d) (ξ : EuclideanSpace ℝ d) (j : d)
+    (hξ : 2 < |ξ j|) : derivCutoffSymbol i ξ = 0 := by
+  rw [derivCutoffSymbol, cutoffSymbol_eq_zero ξ j hξ, mul_zero]
 
 /-- The reproducing kernel at scale `R`, the trigonometric polynomial with coefficients
 `∏ i, χ (n i / R)`. -/
-private theorem tensorKernel_cutoff_eq_sum [DecidableEq d] {R : ℝ} (hR : 0 < R)
-    (x : UnitAddTorus d) :
-    tensorKernel (fun _ ↦ cutoff) R x =
-      ∑ n ∈ box d R, (∏ i, cutoff (n i / R)) * mFourier n x :=
-  tensorKernel_eq_sum hR (fun _ _ ↦ cutoff_eq_zero) x
+private noncomputable def cutoffKernel [DecidableEq d] (R : ℝ) (x : UnitAddTorus d) : ℂ :=
+  ∑ n ∈ box d R, cutoffSymbol (R⁻¹ • latticePoint n) * mFourier n x
+
+private theorem continuous_cutoffKernel [DecidableEq d] (R : ℝ) :
+    Continuous (cutoffKernel (d := d) R) := by
+  unfold cutoffKernel
+  fun_prop
 
 /-- The reproducing kernel at scale `R ≥ 1` is bounded by `(7 R) ^ d`. -/
-private theorem norm_tensorKernel_cutoff_le {R : ℝ} (hR : 1 ≤ R) (x : UnitAddTorus d) :
-    ‖tensorKernel (fun _ ↦ cutoff) R x‖ ≤ (7 * R) ^ Fintype.card d := by
-  have hR0 : 0 < R := one_pos.trans_le hR
-  rw [tensorKernel, norm_prod]
-  refine (Finset.prod_le_prod₀ (g := fun _ ↦ 7 * R) (fun _ _ ↦ norm_nonneg _) fun i _ ↦ ?_).trans
-    (by rw [Finset.prod_const, Finset.card_univ])
-  rw [tsum_mul_fourier_eq_sum hR0 fun _ ↦ cutoff_eq_zero]
-  refine (norm_sum_le _ _).trans ?_
-  have hterm (n : ℤ) : ‖cutoff (n / R) * fourier n (x i)‖ ≤ 1 := by
-    rw [norm_mul, TauCeti.norm_fourier_apply, mul_one]
-    exact norm_cutoff_le _
-  refine (Finset.sum_le_sum fun n _ ↦ hterm n).trans ?_
-  rw [Finset.sum_const, Int.card_Icc, nsmul_eq_mul, mul_one]
-  have hceil : (⌈2 * R⌉ : ℝ) < 2 * R + 1 := Int.ceil_lt_add_one _
-  have hnn : (0 : ℤ) ≤ ⌈2 * R⌉ + 1 - -⌈2 * R⌉ := by
-    have : (0 : ℤ) ≤ ⌈2 * R⌉ := Int.ceil_nonneg (by linarith)
-    omega
-  rw [← Int.cast_natCast, Int.toNat_of_nonneg hnn]
-  push_cast
-  linarith
+private theorem norm_cutoffKernel_le [DecidableEq d] {R : ℝ} (hR : 1 ≤ R) (x : UnitAddTorus d) :
+    ‖cutoffKernel R x‖ ≤ (7 * R) ^ Fintype.card d := by
+  refine (norm_sum_le _ _).trans ((Finset.sum_le_sum (g := fun _ ↦ (1 : ℝ)) fun n _ ↦ ?_).trans ?_)
+  · rw [norm_mul, norm_mFourier_apply, mul_one]
+    exact norm_cutoffSymbol_le _
+  · rw [Finset.sum_const, nsmul_eq_mul, mul_one]
+    exact card_box_le hR
 
 /-- The `Lʳ` norm of the reproducing kernel at scale `R ≥ 1` is `O(R ^ (d (1 - 1/r)))`, by
 interpolation between its `L¹` bound, uniform in `R`, and its supremum bound `(7 R) ^ d`. -/
-private theorem eLpNorm_tensorKernel_cutoff_le {R : ℝ} (hR : 1 ≤ R) {r : ℝ≥0∞} (hr : 1 ≤ r) :
-    eLpNorm (tensorKernel (fun _ : d ↦ cutoff) R) r volume ≤
-      ENNReal.ofReal (max 1 (∫ y, ‖𝓕⁻ cutoff y‖) ^ Fintype.card d * 7 ^ Fintype.card d *
+private theorem eLpNorm_cutoffKernel_le [DecidableEq d] {R : ℝ} (hR : 1 ≤ R) {r : ℝ≥0∞}
+    (hr : 1 ≤ r) :
+    eLpNorm (cutoffKernel (d := d) R) r volume ≤
+      ENNReal.ofReal (max 1 (∫ y, ‖𝓕⁻ (cutoffSymbol (d := d)) y‖) * 7 ^ Fintype.card d *
         R ^ ((Fintype.card d : ℝ) * (1 - r⁻¹.toReal))) := by
   have hR0 : 0 < R := one_pos.trans_le hR
-  set K := tensorKernel (fun _ : d ↦ cutoff) R
-  set A := ∫ y, ‖𝓕⁻ cutoff y‖
+  set K := cutoffKernel (d := d) R
+  set A := ∫ y, ‖𝓕⁻ (cutoffSymbol (d := d)) y‖
   set k := Fintype.card d
-  have hK : Continuous K := continuous_tensorKernel (fun _ ↦ hasCompactSupport_cutoff) hR0
+  have hK : Continuous K := continuous_cutoffKernel R
   -- The two endpoint bounds.
-  have h1 : eLpNorm K 1 volume ≤ ENNReal.ofReal (A ^ k) := by
+  have h1 : eLpNorm K 1 volume ≤ ENNReal.ofReal A := by
     rw [eLpNorm_one_eq_lintegral_eNorm hK.aestronglyMeasurable,
       ← ofReal_integral_norm_eq_lintegral_eNorm
         (hK.integrable_of_hasCompactSupport (.of_compactSpace _))]
-    refine ENNReal.ofReal_le_ofReal ((integral_norm_tensorKernel_le
-      (fun _ ↦ contDiff_cutoff) (fun _ ↦ hasCompactSupport_cutoff) hR0).trans_eq ?_)
-    rw [Finset.prod_const, Finset.card_univ]
+    exact ENNReal.ofReal_le_ofReal
+      (integral_norm_sum_box_le contDiff_cutoffSymbol cutoffSymbol_eq_zero hR0)
   have hinf : eLpNorm K ⊤ volume ≤ ENNReal.ofReal ((7 * R) ^ k) := by
     rw [eLpNorm_exponent_top hK.aestronglyMeasurable]
     refine eLpNormEssSup_le_of_ae_eNorm_bound (ae_of_all _ fun x ↦ ?_)
     rw [← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (norm_tensorKernel_cutoff_le hR x)
+    exact ENNReal.ofReal_le_ofReal (norm_cutoffKernel_le hR x)
   -- Interpolation between them, with `θ = 1 - 1/r`.
   set θ : ℝ := 1 - r⁻¹.toReal
   have hrinv : r⁻¹ ≠ ⊤ := ENNReal.inv_ne_top.2 (one_pos.trans_le hr).ne'
@@ -273,22 +310,23 @@ private theorem eLpNorm_tensorKernel_cutoff_le {R : ℝ} (hR : 1 ≤ R) {r : ℝ
       rw [inv_one, mul_one, ENNReal.inv_top, mul_zero, add_zero, sub_sub_cancel,
         ENNReal.ofReal_toReal hrinv])
   calc eLpNorm K r volume ≤ eLpNorm K 1 volume ^ (1 - θ) * eLpNorm K ⊤ volume ^ θ := hinterp
-    _ ≤ ENNReal.ofReal (A ^ k) ^ (1 - θ) * ENNReal.ofReal ((7 * R) ^ k) ^ θ := by
+    _ ≤ ENNReal.ofReal A ^ (1 - θ) * ENNReal.ofReal ((7 * R) ^ k) ^ θ := by
         gcongr
         linarith [hθ.2]
-    _ = ENNReal.ofReal ((A ^ k) ^ (1 - θ) * ((7 * R) ^ k) ^ θ) := by
-        rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by linarith [hθ.2]),
+    _ = ENNReal.ofReal (A ^ (1 - θ) * ((7 * R) ^ k) ^ θ) := by
+        rw [ENNReal.ofReal_rpow_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)
+            (by linarith [hθ.2]),
           ENNReal.ofReal_rpow_of_nonneg (by positivity) hθ.1, ENNReal.ofReal_mul (by positivity)]
-    _ ≤ ENNReal.ofReal (max 1 A ^ k * 7 ^ k * R ^ ((k : ℝ) * θ)) := by
+    _ ≤ ENNReal.ofReal (max 1 A * 7 ^ k * R ^ ((k : ℝ) * θ)) := by
         refine ENNReal.ofReal_le_ofReal ?_
-        have hAk : (A ^ k) ^ (1 - θ) ≤ max 1 A ^ k := by
-          calc (A ^ k) ^ (1 - θ) ≤ (max 1 A ^ k) ^ (1 - θ) := by
+        have hAk : A ^ (1 - θ) ≤ max 1 A := by
+          calc A ^ (1 - θ) ≤ (max 1 A) ^ (1 - θ) := by
                 gcongr
                 · linarith [hθ.2]
                 · exact le_max_right _ _
-            _ ≤ (max 1 A ^ k) ^ (1 : ℝ) := Real.rpow_le_rpow_of_exponent_le
-                (one_le_pow₀ (le_max_left _ _)) (by linarith [hθ.1])
-            _ = max 1 A ^ k := Real.rpow_one _
+            _ ≤ (max 1 A) ^ (1 : ℝ) := Real.rpow_le_rpow_of_exponent_le
+                (le_max_left _ _) (by linarith [hθ.1])
+            _ = max 1 A := Real.rpow_one _
         have h7R : ((7 * R) ^ k) ^ θ ≤ 7 ^ k * R ^ ((k : ℝ) * θ) := by
           rw [mul_pow, Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast R,
             ← Real.rpow_mul hR0.le]
@@ -296,7 +334,7 @@ private theorem eLpNorm_tensorKernel_cutoff_le {R : ℝ} (hR : 1 ≤ R) {r : ℝ
           calc ((7 : ℝ) ^ k) ^ θ ≤ ((7 : ℝ) ^ k) ^ (1 : ℝ) :=
                 Real.rpow_le_rpow_of_exponent_le (one_le_pow₀ (by norm_num)) hθ.2
             _ = 7 ^ k := Real.rpow_one _
-        calc (A ^ k) ^ (1 - θ) * ((7 * R) ^ k) ^ θ ≤ max 1 A ^ k * (7 ^ k * R ^ ((k : ℝ) * θ)) :=
+        calc A ^ (1 - θ) * ((7 * R) ^ k) ^ θ ≤ max 1 A * (7 ^ k * R ^ ((k : ℝ) * θ)) :=
               mul_le_mul hAk h7R (by positivity) (by positivity)
           _ = _ := by ring
 
@@ -308,59 +346,36 @@ private noncomputable def derivSymbol (v : d → ℝ) (n : d → ℤ) : ℂ :=
 coefficients `2πi ⟪n, v⟫ ∏ j, χ (n j / R)`. -/
 private noncomputable def derivKernel [DecidableEq d] (v : d → ℝ) (R : ℝ) (x : UnitAddTorus d) :
     ℂ :=
-  ∑ n ∈ box d R, (derivSymbol v n * ∏ j, cutoff (n j / R)) * mFourier n x
+  ∑ n ∈ box d R, (derivSymbol v n * cutoffSymbol (R⁻¹ • latticePoint n)) * mFourier n x
 
-/-- The derivative kernel is a combination of tensor-product kernels, with the factor `ξ χ(ξ)` in
-one coordinate and `χ` in the others. -/
-private theorem derivKernel_eq_sum_tensorKernel [DecidableEq d] (v : d → ℝ) {R : ℝ} (hR : 0 < R)
+/-- The derivative kernel is the combination `∑ i, 2πi R v i K_i` of the kernels `K_i` with the
+symbols `ξ i ∏ j, χ (ξ j)` dilated by `R`. -/
+private theorem derivKernel_eq_sum [DecidableEq d] (v : d → ℝ) {R : ℝ} (hR : 0 < R)
     (x : UnitAddTorus d) :
     derivKernel v R x = ∑ i, (2 * Real.pi * Complex.I * R * v i) *
-      tensorKernel (Function.update (fun _ ↦ cutoff) i derivCutoff) R x := by
-  have hη (i : d) : ∀ j ξ, 2 < |ξ| →
-      Function.update (fun _ : d ↦ cutoff) i derivCutoff j ξ = 0 := fun j ξ hξ ↦
-    update_cutoff_derivCutoff (P := fun η ↦ η ξ = 0) (cutoff_eq_zero hξ) (derivCutoff_eq_zero hξ)
-      i j
-  simp only [fun i ↦ tensorKernel_eq_sum hR (hη i) x, Finset.mul_sum, derivKernel]
+      ∑ n ∈ box d R, derivCutoffSymbol i (R⁻¹ • latticePoint n) * mFourier n x := by
+  simp only [Finset.mul_sum, derivKernel]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
-  simp_rw [← mul_assoc]
-  rw [← Finset.sum_mul]
-  congr 1
-  rw [derivSymbol, Finset.mul_sum, Finset.sum_mul]
+  simp only [derivSymbol, derivCutoffSymbol, PiLp.smul_apply, latticePoint_apply, smul_eq_mul,
+    Finset.mul_sum, Finset.sum_mul]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have herase : ∏ j ∈ Finset.univ.erase i,
-      Function.update (fun _ ↦ cutoff) i derivCutoff j (n j / R) =
-        ∏ j ∈ Finset.univ.erase i, cutoff (n j / R) :=
-    Finset.prod_congr rfl fun j hj ↦ by rw [Function.update_of_ne (Finset.ne_of_mem_erase hj)]
-  rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i),
-    ← Finset.mul_prod_erase _ (fun j ↦ Function.update (fun _ ↦ cutoff) i derivCutoff j
-      (n j / R)) (Finset.mem_univ i), Function.update_self, herase, derivCutoff]
   have hR' : (R : ℂ) ≠ 0 := by exact_mod_cast hR.ne'
   push_cast
   field_simp
 
 /-- The `L¹` norm of the derivative kernel along `v` at scale `R` is at most `C R ‖v‖`. -/
 private theorem eLpNorm_derivKernel_le [DecidableEq d] (v : d → ℝ) {R : ℝ} (hR : 0 < R) :
-    eLpNorm (derivKernel v R) 1 volume ≤ ENNReal.ofReal (2 * Real.pi * Fintype.card d *
-      max (∫ y, ‖𝓕⁻ cutoff y‖) (∫ y, ‖𝓕⁻ derivCutoff y‖) ^ Fintype.card d * R * ‖v‖) := by
-  set B := max (∫ y, ‖𝓕⁻ cutoff y‖) (∫ y, ‖𝓕⁻ derivCutoff y‖)
-  set T : d → UnitAddTorus d → ℂ := fun i ↦
-    tensorKernel (Function.update (fun _ ↦ cutoff) i derivCutoff) R
-  have hcont (i : d) : Continuous (T i) := continuous_tensorKernel
-    (update_cutoff_derivCutoff hasCompactSupport_cutoff hasCompactSupport_derivCutoff i) hR
+    eLpNorm (derivKernel v R) 1 volume ≤ ENNReal.ofReal (2 * Real.pi *
+      (∑ i : d, ∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖) * R * ‖v‖) := by
+  set T : d → UnitAddTorus d → ℂ := fun i x ↦
+    ∑ n ∈ box d R, derivCutoffSymbol i (R⁻¹ • latticePoint n) * mFourier n x
   have hint (i : d) : Integrable (T i) :=
-    (hcont i).integrable_of_hasCompactSupport (.of_compactSpace _)
-  have hT (i : d) : ∫ x, ‖T i x‖ ≤ B ^ Fintype.card d := by
-    refine (integral_norm_tensorKernel_le
-      (update_cutoff_derivCutoff contDiff_cutoff contDiff_derivCutoff i)
-      (update_cutoff_derivCutoff hasCompactSupport_cutoff hasCompactSupport_derivCutoff i)
-      hR).trans ?_
-    rw [← Finset.card_univ, ← Finset.prod_const]
-    exact Finset.prod_le_prod₀ (fun _ _ ↦ integral_nonneg fun _ ↦ norm_nonneg _) fun j _ ↦
-      update_cutoff_derivCutoff (P := fun η ↦ ∫ y, ‖𝓕⁻ η y‖ ≤ B) (le_max_left _ _)
-        (le_max_right _ _) i j
+    (by fun_prop : Continuous (T i)).integrable_of_hasCompactSupport (.of_compactSpace _)
+  have hT (i : d) : ∫ x, ‖T i x‖ ≤ ∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖ :=
+    integral_norm_sum_box_le (contDiff_derivCutoffSymbol i) (derivCutoffSymbol_eq_zero i) hR
   have hK : derivKernel v R = fun x ↦ ∑ i, (2 * Real.pi * Complex.I * R * v i) * T i x :=
-    funext (derivKernel_eq_sum_tensorKernel v hR)
+    funext (derivKernel_eq_sum v hR)
   have hKint : Integrable (derivKernel v R) := by
     rw [hK]
     exact integrable_finsetSum _ fun i _ ↦ (hint i).const_mul _
@@ -381,10 +396,10 @@ private theorem eLpNorm_derivKernel_le [DecidableEq d] (v : d → ℝ) {R : ℝ}
     _ = ∑ i, 2 * Real.pi * R * ‖v‖ * ∫ x, ‖T i x‖ := by
         rw [integral_finsetSum _ fun i _ ↦ (hint i).norm.const_mul _]
         simp only [integral_const_mul]
-    _ ≤ ∑ _i : d, 2 * Real.pi * R * ‖v‖ * B ^ Fintype.card d :=
+    _ ≤ ∑ i : d, 2 * Real.pi * R * ‖v‖ * ∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖ :=
         Finset.sum_le_sum fun i _ ↦ by gcongr; exact hT i
     _ = _ := by
-        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+        rw [← Finset.mul_sum]
         ring
 
 end UnitAddTorus
@@ -430,7 +445,7 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero :
       eLpNorm f q volume ≤ ENNReal.ofReal (C * R ^ ((Fintype.card d : ℝ) *
         (p.toReal⁻¹ - q.toReal⁻¹))) * eLpNorm f p volume := by
   classical
-  refine ⟨max 1 (∫ y, ‖𝓕⁻ cutoff y‖) ^ Fintype.card d * 7 ^ Fintype.card d, by positivity, ?_⟩
+  refine ⟨max 1 (∫ y, ‖𝓕⁻ (cutoffSymbol (d := d)) y‖) * 7 ^ Fintype.card d, by positivity, ?_⟩
   intro E _ _ _ p q hp hpq R hR f hf hspec
   -- The exponent `r` of Young's inequality, with `1/r + 1/p = 1 + 1/q`.
   set r : ℝ≥0∞ := (1 + q⁻¹ - p⁻¹)⁻¹
@@ -445,25 +460,23 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero :
       ENNReal.toReal_one]
     ring
   have hR0 : 0 < R := one_pos.trans_le hR
-  set K := tensorKernel (fun _ : d ↦ cutoff) R
-  have hK : Continuous K := continuous_tensorKernel (fun _ ↦ hasCompactSupport_cutoff) hR0
-  have hae : f =ᵐ[volume] K ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f := by
-    rw [show K = fun t ↦ ∑ n ∈ box d R, (∏ i, cutoff (n i / R)) * mFourier n t from
-      funext (tensorKernel_cutoff_eq_sum hR0)]
-    exact ae_eq_convolution_of_mFourierCoeff_eq_smul hR0 hf hf hspec (σ := 1)
-      (fun n hn ↦ prod_cutoff_eq_one hR0 hn) fun n ↦ by rw [Pi.one_apply, one_smul]
+  set K := cutoffKernel (d := d) R
+  have hK : Continuous K := continuous_cutoffKernel R
+  have hae : f =ᵐ[volume] K ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f :=
+    ae_eq_convolution_of_mFourierCoeff_eq_smul hR0 hf hf hspec (σ := 1)
+      (fun n hn ↦ cutoffSymbol_eq_one hR0 hn) fun n ↦ by rw [Pi.one_apply, one_smul]
   rw [eLpNorm_congr_ae hae]
   calc eLpNorm (K ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f) q volume
       ≤ ‖(ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] E →L[ℂ] E)‖ₑ * eLpNorm K r volume *
           eLpNorm f p volume :=
         eLpNorm_convolution_le_of_inv_add_inv_eq _ hr hp hrpq hK.aestronglyMeasurable
           hf.aestronglyMeasurable
-    _ ≤ 1 * ENNReal.ofReal (max 1 (∫ y, ‖𝓕⁻ cutoff y‖) ^ Fintype.card d *
+    _ ≤ 1 * ENNReal.ofReal (max 1 (∫ y, ‖𝓕⁻ (cutoffSymbol (d := d)) y‖) *
           7 ^ Fintype.card d * R ^ ((Fintype.card d : ℝ) * (1 - r⁻¹.toReal))) *
           eLpNorm f p volume := by
         gcongr
         · exact ContinuousLinearMap.opENorm_lsmul_le
-        · exact eLpNorm_tensorKernel_cutoff_le hR hr
+        · exact eLpNorm_cutoffKernel_le hR hr
     _ = _ := by rw [one_mul, hrexp]
 
 /-- **Bernstein's inequality for one derivative at a fixed exponent.** If the Fourier
@@ -479,8 +492,7 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul :
       (∀ n, mFourierCoeff g n = derivSymbol v n • mFourierCoeff f n) →
       eLpNorm g p volume ≤ ENNReal.ofReal (C * R * ‖v‖) * eLpNorm f p volume := by
   classical
-  refine ⟨2 * Real.pi * Fintype.card d *
-      max (∫ y, ‖𝓕⁻ cutoff y‖) (∫ y, ‖𝓕⁻ derivCutoff y‖) ^ Fintype.card d,
+  refine ⟨2 * Real.pi * ∑ i : d, ∫ y, ‖𝓕⁻ (derivCutoffSymbol (d := d) i) y‖,
     by positivity, ?_⟩
   intro E _ _ _ p hp v R hR f g hf hg hspec hfg
   have hK : Continuous (derivKernel v R) := by
@@ -488,14 +500,14 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul :
     fun_prop
   have hae : g =ᵐ[volume] derivKernel v R ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f :=
     ae_eq_convolution_of_mFourierCoeff_eq_smul hR hf hg hspec
-      (fun n hn ↦ by rw [prod_cutoff_eq_one hR hn, mul_one]) hfg
+      (fun n hn ↦ by rw [cutoffSymbol_eq_one hR hn, mul_one]) hfg
   rw [eLpNorm_congr_ae hae]
   calc eLpNorm (derivKernel v R ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f) p volume
       ≤ ‖(ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] E →L[ℂ] E)‖ₑ *
           eLpNorm (derivKernel v R) 1 volume * eLpNorm f p volume :=
         eLpNorm_convolution_le _ hK.aestronglyMeasurable hf.aestronglyMeasurable hp
-    _ ≤ 1 * ENNReal.ofReal (2 * Real.pi * Fintype.card d *
-          max (∫ y, ‖𝓕⁻ cutoff y‖) (∫ y, ‖𝓕⁻ derivCutoff y‖) ^ Fintype.card d * R * ‖v‖) *
+    _ ≤ 1 * ENNReal.ofReal (2 * Real.pi * (∑ i : d, ∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖) * R *
+          ‖v‖) *
           eLpNorm f p volume := by
         gcongr
         · exact ContinuousLinearMap.opENorm_lsmul_le
