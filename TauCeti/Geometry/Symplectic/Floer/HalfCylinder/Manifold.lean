@@ -12,6 +12,7 @@ import Mathlib.Analysis.Complex.Tietze
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
+import TauCeti.Order.Filter.Basic
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Instances.AddCircle.PeriodicExtension
 
@@ -99,7 +100,7 @@ embedding of `K`, isolation of the orbits in `K` is isolation of their images in
 When `e ∘ u` has bounded derivative on `s > a` and every subsequential uniform-limit `1`-periodic
 orbit of `X_{H_t}` in `K` is isolated at time `0` among such orbits, `t ↦ u(s, t)` converges as
 `s → ∞`
-(`exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_lim`,
+(`exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt`,
 via `TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`). For a `C²` Hamiltonian on a
 Hausdorff boundaryless manifold, nondegeneracy (`TauCeti.IsNondegenerateFixedPt`) supplies this
 isolation (`exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact`, and
@@ -351,7 +352,7 @@ include hω hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE
 `‖d(e ∘ u)‖ ≤ C` on `s > a` and every subsequential uniform-limit `1`-periodic orbit in `K` is
 isolated at time `0` among such orbits, then `t ↦ u(s, t)` converges as `s → ∞` to an orbit in `K`,
 pointwise in `M` and uniformly after `e`. -/
-theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_lim
+theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ (e ∘ u) z‖ ≤ C)
     (hiso : ∀ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
@@ -408,10 +409,10 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_of_floer_of_is
     hxK, φ, hφa, hφ, hconv, hpt, hL2⟩
 
 /-- **Convergence of a contractible Floer half-cylinder to an isolated contractible orbit.** Variant
-of `exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_lim`
+of `exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt`
 requiring isolation only among `contractiblePeriodicSolutions` when one loop is null-homotopic. -/
 theorem
-    exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_lim
+    exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hnull : ∃ s > a, ∃ g : C(AddCircle (1 : ℝ), M),
       g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (s, t))
@@ -432,7 +433,7 @@ theorem
   have hind : IsInducing fun p : K ↦ e p :=
     (hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj).isInducing
   obtain ⟨x, hx, hxK, hconv, hpt⟩ :=
-    hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_lim
+    hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt
       hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE hH hC
       (forall_mem_periodicSolutions_eventually_eq_of_forall_mem
         (fun x hx hxK ⟨φ, hφa, _, hφx⟩ ↦
@@ -460,7 +461,7 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer
     ∃ x ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
       (∀ t, x t ∈ K) ∧ TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
-  hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_lim
+  hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt
     hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE (hH.of_le one_le_two) hnull hC
     (forall_mem_eventually_eq_of_forall_eventually_eq
       (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hH
@@ -691,7 +692,7 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
     ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) ∧
       TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
-  hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_lim
+  hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt
     hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE hH hC
     (forall_mem_eventually_eq_of_forall_eventually_eq hiso)
 

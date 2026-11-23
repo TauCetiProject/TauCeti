@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -248,9 +249,10 @@ private theorem tendsto_lintegral_truncation_mul {f : ℝ × ℝ → ℝ}
 private theorem abs_integral_truncation_mul_le {f : ℝ × ℝ → ℝ} (hf : Integrable f) (T : ℝ) :
     |∫ z, truncation T z * f z| ≤ ∫ z, ‖f z‖ := by
   rw [← Real.norm_eq_abs]
-  refine norm_integral_le_of_norm_le hf.norm (ae_of_all _ fun z ↦ ?_)
-  rw [norm_mul, Real.norm_of_nonneg (truncation_mem_Icc T z).1]
-  exact mul_le_of_le_one_left (norm_nonneg _) (truncation_mem_Icc T z).2
+  refine (MeasureTheory.norm_integral_smul_le_of_support_subset (g := truncation T) (s := univ)
+    (K := 1) hf (subset_univ _) fun z _ ↦ ?_).trans_eq (one_mul _)
+  rw [Real.norm_of_nonneg (truncation_mem_Icc T z).1]
+  exact (truncation_mem_Icc T z).2
 
 end Cutoff
 
@@ -1349,17 +1351,22 @@ private theorem abs_endSign_mul_integral_deriv_smoothTransition_mul_le
     |q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
       ∫ t in (0 : ℝ)..1, H t (u (endChart q (s, t)))| ≤ max C 0 := by
   rw [abs_mul, abs_endSign, one_mul, ← Real.norm_eq_abs]
-  refine (norm_integral_le_of_norm_le
-    (((smoothTransition.integrable_deriv.comp_sub_right T).comp_mul_left'
-      q.endSign_ne_zero).mul_const (max C 0)) (ae_of_all _ fun s ↦ ?_)).trans_eq ?_
-  · rw [norm_mul, Real.norm_of_nonneg smoothTransition.monotone.deriv_nonneg, Real.norm_eq_abs]
-    by_cases hs : q.endSign * s - T < 0
-    · simp [smoothTransition.deriv_of_nonpos hs.le]
-    · have h := hS (q.endSign * s) (by linarith)
-      rw [← mul_assoc, endSign_mul_self, one_mul] at h
-      exact mul_le_mul_of_nonneg_left (h.trans (le_max_left _ _))
-        smoothTransition.monotone.deriv_nonneg
-  · rw [integral_mul_const, smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one, one_mul]
+  simp_rw [mul_comm (deriv smoothTransition _)]
+  have hint : Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) :=
+    (smoothTransition.integrable_deriv.comp_sub_right T).comp_mul_left' q.endSign_ne_zero
+  have hbound : ‖∫ s, (∫ t in (0 : ℝ)..1, H t (u (endChart q (s, t)))) •
+        deriv smoothTransition (q.endSign * s - T)‖ ≤
+      max C 0 * ∫ s, ‖deriv smoothTransition (q.endSign * s - T)‖ := by
+    refine MeasureTheory.norm_integral_smul_le_of_support_subset
+      (s := {s | T ≤ q.endSign * s}) hint (fun s hs ↦ ?_) fun s hs ↦ ?_
+    · by_contra hle
+      exact hs (smoothTransition.deriv_of_nonpos (sub_nonpos.2 (not_le.1 hle).le))
+    · have h := hS (q.endSign * s) (hST.trans hs)
+      rw [endSign_mul_endSign_mul] at h
+      exact (Real.norm_eq_abs _).trans_le (h.trans (le_max_left _ _))
+  refine hbound.trans_eq ?_
+  simp_rw [Real.norm_of_nonneg smoothTransition.monotone.deriv_nonneg]
+  rw [smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one, mul_one]
 
 /-- **A nonnegative energy density with bounded end-loop Hamiltonian integrals is integrable, for a
 manifold target.** Only an eventual bound on the end-loop integrals

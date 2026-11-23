@@ -282,16 +282,6 @@ theorem forall_mem_periodicSolutions_eventually_eq_of_forall_mem
   fun x hx hxK hRx ↦ (hiso x (hP x hx hxK hRx) hxK hRx).mono fun _ hp y hy hyK hRy ↦
     hp y (hP y hy hyK hRy) hyK hRy
 
-/-- Isolation within `P` in `K` at time `t₀` implies isolation within `P` in `K` under any side
-predicate `R`. -/
-theorem forall_mem_eventually_eq_of_forall_eventually_eq {ι : Type*} {P : Set (ι → M)}
-    {K : Set M} {R : (ι → M) → Prop} {t₀ : ι}
-    (hiso : ∀ x ∈ P, (∀ t, x t ∈ K) →
-      ∀ᶠ p in 𝓝 (x t₀), ∀ y ∈ P, (∀ t, y t ∈ K) → y t₀ = p → y = x) :
-    ∀ x ∈ P, (∀ t, x t ∈ K) → R x →
-      ∀ᶠ p in 𝓝 (x t₀), ∀ y ∈ P, (∀ t, y t ∈ K) → R y → y t₀ = p → y = x :=
-  fun x hx hxK _ ↦ (hiso x hx hxK).mono fun _ hp y hy hyK _ ↦ hp y hy hyK
-
 /-- The **contractible** `T`-periodic solutions of `X`: the `T`-periodic solutions `γ` whose loop
 `ℝ ⧸ Tℤ → M`, `t ↦ γ t`, is null-homotopic. -/
 def contractiblePeriodicSolutions (X : ℝ → (x : M) → TangentSpace I x) (T : ℝ) : Set (ℝ → M) :=

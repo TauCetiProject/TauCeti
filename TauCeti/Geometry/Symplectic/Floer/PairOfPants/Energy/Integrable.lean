@@ -73,8 +73,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularFor
     (C := C) fun q ↦ ?_
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with σ hσ
   have hmem (t : ℝ) : endChart q (q.endSign * σ, t) ∈ thricePuncturedSphereReal :=
-    endChart_mem_thricePuncturedSphereReal
-      (by simpa only [← mul_assoc, endSign_mul_self, one_mul] using hσ)
+    endChart_mem_thricePuncturedSphereReal (by simpa only [endSign_mul_endSign_mul] using hσ)
   simpa only [Real.norm_eq_abs, uncurry_apply_pair, sub_zero, abs_one, mul_one] using
     intervalIntegral.norm_integral_le_of_norm_le_const fun t ht ↦
       hC q (t, u (endChart q (q.endSign * σ, t)))

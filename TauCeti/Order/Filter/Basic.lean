@@ -20,6 +20,8 @@ inclusion.
 * `Filter.isCodirectedOrder_mem`: the members of a filter are codirected under inclusion.
 * `Filter.le_of_eventually_le_and_le`: bounds `a ≤ f x ≤ b` holding eventually along a nontrivial
   filter force `a ≤ b`.
+* `Filter.forall_mem_eventually_eq_of_forall_eventually_eq`: eventual isolation within a set
+  along an indexed filter persists under any side predicate `R`.
 * `Equiv.symm_comp_eventuallyEq_iff`: the eventual form of `Equiv.symm_comp_eq`, which moves an
   equivalence to the other side of an eventual equality.
 -/
@@ -40,6 +42,16 @@ theorem le_of_eventually_le_and_le {β : Type*} [Preorder β] {l : Filter α} [l
     {f : α → β} {a b : β} (h : ∀ᶠ x in l, a ≤ f x ∧ f x ≤ b) : a ≤ b :=
   let ⟨_, hx⟩ := h.exists
   hx.1.trans hx.2
+
+/-- Isolation within `P` in `K` at `t₀` along a filter `l x` implies isolation within `P` in `K`
+under any side predicate `R`. -/
+theorem forall_mem_eventually_eq_of_forall_eventually_eq {ι : Type*} {P : Set (ι → α)}
+    {K : Set α} {R : (ι → α) → Prop} {t₀ : ι} {l : (ι → α) → Filter α}
+    (hiso : ∀ x ∈ P, (∀ t, x t ∈ K) →
+      ∀ᶠ p in l x, ∀ y ∈ P, (∀ t, y t ∈ K) → y t₀ = p → y = x) :
+    ∀ x ∈ P, (∀ t, x t ∈ K) → R x →
+      ∀ᶠ p in l x, ∀ y ∈ P, (∀ t, y t ∈ K) → R y → y t₀ = p → y = x :=
+  fun x hx hxK _ ↦ (hiso x hx hxK).mono fun _ hp y hy hyK _ ↦ hp y hy hyK
 
 end Filter
 

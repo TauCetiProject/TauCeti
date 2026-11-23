@@ -528,8 +528,7 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_endChart_of_floer
   have hAq (y : ℝ → V) (hy : Periodic y 1) :
       ω.hamiltonianAction (H q) (fun t ↦ y (q.endSign * t)) =
         q.endSign * ω.hamiltonianAction (positiveEndHamiltonian H q) y := by
-    rw [ω.hamiltonianAction_positiveEndHamiltonian (hH q) hy, ← mul_assoc, endSign_mul_self,
-      one_mul]
+    rw [ω.hamiltonianAction_positiveEndHamiltonian (hH q) hy, endSign_mul_endSign_mul]
   have hAs : (fun s ↦ ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (q.endSign * s, t)))) =
       fun s ↦ q.endSign * ω.hamiltonianAction (positiveEndHamiltonian H q)
         (fun t ↦ (u ∘ positiveEndChart q) (s, t)) :=

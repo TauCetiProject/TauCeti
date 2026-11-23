@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
+import TauCeti.Order.Filter.Basic
 
 /-!
 # The energy identity and topological energy bound for a Floer pair of pants in a manifold
@@ -20,19 +21,20 @@ with image in a compact set `B ⊆ M` and integrable symplectic area density and
 
 In `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable` and
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic`, compactness of `[0, 1] × B`
-bounds `H_q` along end loops, giving automatic finite energy
-(`integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`) and the energy
-identity from pointwise end limits
+bounds `H_q` along end loops, giving automatic finite energy once the Floer energy density is
+nonnegative on `S` (`integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`)
+and the energy identity from pointwise end limits
 (`integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`). Combined with
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold`, this yields:
 
 * **Energy identity (`C¹` with isolated subsequential-limit orbits):** without `[T2Space M]`,
-  `[BoundarylessManifold I M]`, or finite energy a priori, assuming bounded derivative of
-  `e ∘ u ∘ φ'_q` and uniform tameness on the tail strips `(b, ∞) × [0, 1]`, `u` converges along
-  each end `q` to an orbit `y_q` in `B` (with convergence of `∫₀¹ H_q(t, u(φ_q(±s, t))) dt`),
-  has integrable energy density, and satisfies
+  `[BoundarylessManifold I M]`, or finite energy a priori, assuming pointwise tameness of `J` on
+  `S` (giving nonnegative energy density) as well as bounded derivative of `e ∘ u ∘ φ'_q` and
+  uniform tameness through `e` on the tail strips `(b_q, ∞) × [0, 1]`, `u` converges along each
+  end `q` to an orbit `y_q` in `B` (with convergence of `∫₀¹ H_q(t, u(φ_q(±s, t))) dt`), has
+  integrable energy density, and satisfies
   `∫_S E = ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, y_q(t)) dt - ∫_S R_K(u)`
-  (`exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact_of_isolated_lim`,
+  (`exists_integral_floerEnergyDensity_of_cylindricalEnds_of_isCompact_of_isolated_clusterPt`,
   specialized to `pairOfPantsPerturbation H`).
 * **Topological energy lower bound on `B`:** if `|H_q(t, x)| ≤ M_H q` on `B`, then
   `-(M_H 0 + M_H 1 + M_H ∞) ≤ ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, y_q(t)) dt`.
@@ -152,20 +154,19 @@ private theorem exists_energy_of_endConvergence {P : Puncture → Set (ℝ → M
       (ae_restrict_of_forall_mem isOpen_thricePuncturedSphereReal.measurableSet he₀)]
     exact ENNReal.ofReal_ne_top
   choose y hy using hex hE
-  exact ⟨y, fun q ↦ ⟨(hy q).1, (hy q).2.1, (hy q).2.2.1, (hy q).2.2.2,
-      tendsto_intervalIntegral_endChart_of_isCompact (hHc q) hB hu.continuousOn huB
-        (hy q).2.2.2⟩,
-    hEint,
-    hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
-      hK hKH hH hHc hB hu huB he₀ hA hR fun q ↦ (hy q).2.2.2⟩
+  have hlim (q : Puncture) := tendsto_intervalIntegral_endChart_of_isCompact (hHc q) hB
+    hu.continuousOn huB (hy q).2.2.2
+  refine ⟨y, fun q ↦ ⟨(hy q).1, (hy q).2.1, (hy q).2.2.1, (hy q).2.2.2, hlim q⟩, hEint, ?_⟩
+  rw [IntegrableOn, volume_restrict_thricePuncturedSphereReal] at hEint hA hR
+  simp only [volume_restrict_thricePuncturedSphereReal]
+  exact hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu hEint hA hR hlim
 
 /-- **The manifold pair-of-pants energy identity at isolated asymptotic periodic orbits.** Under
 compact image `B`, pointwise tameness of `J`, uniform tameness through `e` and bounded derivative of
 `e ∘ u ∘ φ'_q` on each end tail strip `(b_q, ∞) × [0, 1]`, and isolation at time `0` of
 subsequential uniform-limit orbits in `B`, `u` has integrable Floer energy density, converges along
 each end to an orbit `y_q` in `B`, and satisfies the energy identity. -/
-theorem
-    exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact_of_isolated_lim
+theorem exists_integral_floerEnergyDensity_of_cylindricalEnds_of_isCompact_of_isolated_clusterPt
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
     (hiso : ∀ q, ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       (∀ t, y t ∈ B) →
@@ -203,7 +204,7 @@ theorem
   choose b' c hc hb'c using hJc
   refine exists_energy_of_endConvergence hω hH hB hu huB J hJ hA hK hKH hfloer
     hR (fun q ↦ (hHs q).continuous) fun hE q ↦ ?_
-  exact hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
+  exact hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_isolated_clusterPt
     q (hKH q) (hH q) he hB he_inj hde hu huB J hfloer hE (b := max (b q) (b' q))
     (fun z hz ↦ hbC q z ⟨(le_max_left _ _).trans_lt hz.1, hz.2⟩) (hc q)
     (fun z hz v ↦ hb'c q z ⟨(le_max_right _ _).trans_lt hz.1, hz.2⟩ v) (hHs q) (hiso q)
@@ -212,7 +213,7 @@ theorem
 orbits.** Variant requiring isolation only among `contractiblePeriodicSolutions` when one end loop
 per end is null-homotopic in `M`. -/
 theorem
-    exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_nullhomotopic_of_isolated_lim
+    exists_integral_floerEnergyDensity_of_cylindricalEnds_of_nullhomotopic_of_isolated_clusterPt
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
     (hnull : ∀ q, ∃ s > (0 : ℝ), ∃ g : C(AddCircle (1 : ℝ), M),
       g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (endChart q (q.endSign * s, t)))
@@ -253,7 +254,7 @@ theorem
   choose b' c hc hb'c using hJc
   refine exists_energy_of_endConvergence hω hH hB hu huB J hJ hA hK hKH hfloer
     hR (fun q ↦ (hHs q).continuous) fun hE q ↦
-  exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
+  exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_isolated_clusterPt
     hω q (hKH q) (hH q) he hB he_inj hde hu huB J hfloer hE (b := max (b q) (b' q))
     (fun z hz ↦ hbC q z ⟨(le_max_left _ _).trans_lt hz.1, hz.2⟩) (hc q)
     (fun z hz v ↦ hb'c q z ⟨(le_max_right _ _).trans_lt hz.1, hz.2⟩ v)
@@ -294,7 +295,7 @@ theorem exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompac
           ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
             (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) :=
-  exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact_of_isolated_lim
+  exists_integral_floerEnergyDensity_of_cylindricalEnds_of_isCompact_of_isolated_clusterPt
     hω hH he hB he_inj hde hu huB J hJ hJc hA hC hK hKH hfloer hR
     (fun q ↦ (hHs q).of_le one_le_two)
     fun q ↦ forall_mem_eventually_eq_of_forall_eventually_eq
@@ -332,7 +333,7 @@ theorem
           ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
             (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) :=
-  exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_nullhomotopic_of_isolated_lim
+  exists_integral_floerEnergyDensity_of_cylindricalEnds_of_nullhomotopic_of_isolated_clusterPt
     hω hH he hB he_inj hde hu huB J hJ hJc hA hC hK hKH hfloer hR
     (fun q ↦ (hHs q).of_le one_le_two) hnull
     fun q ↦ forall_mem_eventually_eq_of_forall_eventually_eq
@@ -383,7 +384,7 @@ variable (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncur
 include hHs hiso
 
 /-- Specialization of the general `C¹` energy identity to `pairOfPantsPerturbation H`. -/
-theorem exists_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isCompact_of_isolated_lim :
+theorem exists_integral_floerEnergyDensity_pairOfPants_of_isCompact_of_isolated_clusterPt :
     ∃ y : Puncture → ℝ → M,
       (∀ q, y q ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1 ∧
         (∀ t, y q t ∈ B) ∧
@@ -407,7 +408,7 @@ theorem exists_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isCompact_
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             z (u z) :=
-  exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact_of_isolated_lim
+  exists_integral_floerEnergyDensity_of_cylindricalEnds_of_isCompact_of_isolated_clusterPt
     (K := pairOfPantsPerturbation H) (T₀ := 2) hω hH he hB he_inj hde hu huB J hJ hJc hA hC
     (fun w x ↦ contMDiffAt_pairOfPantsPerturbation hH hHs w x)
     (fun _ _ x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm hw x) hfloer
@@ -415,7 +416,7 @@ theorem exists_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isCompact_
 
 /-- Lower bound on topological energy at isolated asymptotic periodic orbits for `|H_q| ≤ M_H q`.
 -/
-theorem exists_neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_isCompact_of_isolated_lim
+theorem exists_neg_sum_le_integral_add_sum_of_pairOfPants_of_isCompact_of_isolated_clusterPt
     {M_H : Puncture → ℝ} (hMH : ∀ q t, ∀ x ∈ B, |H q t x| ≤ M_H q) :
     ∃ y : Puncture → ℝ → M,
       (∀ q, y q ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1 ∧
@@ -430,7 +431,7 @@ theorem exists_neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_isCompa
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
           ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (y q t) :=
   let ⟨y, hy, _, hid⟩ :=
-    exists_integral_floerEnergyDensity_pairOfPantsPerturbation_of_isCompact_of_isolated_lim
+    exists_integral_floerEnergyDensity_pairOfPants_of_isCompact_of_isolated_clusterPt
       hω hH he hB he_inj hde hu huB J hJ hJc hA hC hfloer hHs hiso
   ⟨y, hy, ω.neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_mapsTo hH hHs hMH huB
     (setIntegral_floerEnergyDensity_nonneg hω J hJ hfloer) hid⟩
@@ -525,7 +526,7 @@ include hHs hnull hiso
 
 /-- Specialization of the contractible `C¹` energy identity to `pairOfPantsPerturbation H`. -/
 theorem
-    exists_integral_floerEnergyDensity_pairOfPantsPerturbation_of_nullhomotopic_of_isolated_lim :
+    exists_integral_floerEnergyDensity_pairOfPants_of_nullhomotopic_of_isolated_clusterPt :
     ∃ y : Puncture → ℝ → M,
       (∀ q, y q ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1 ∧
         (∀ t, y q t ∈ B) ∧
@@ -549,7 +550,7 @@ theorem
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             z (u z) :=
-  exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_nullhomotopic_of_isolated_lim
+  exists_integral_floerEnergyDensity_of_cylindricalEnds_of_nullhomotopic_of_isolated_clusterPt
     (K := pairOfPantsPerturbation H) (T₀ := 2) hω hH he hB he_inj hde hu huB J hJ hJc hA hC
     (fun w x ↦ contMDiffAt_pairOfPantsPerturbation hH hHs w x)
     (fun _ _ x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm hw x) hfloer
@@ -558,7 +559,7 @@ theorem
 
 /-- Lower bound on topological energy at isolated contractible asymptotic orbits. -/
 theorem
-    exists_neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_nullhomotopic_of_isolated_lim
+    exists_neg_sum_le_integral_add_sum_of_pairOfPants_of_nullhomotopic_of_isolated_clusterPt
     {M_H : Puncture → ℝ} (hMH : ∀ q t, ∀ x ∈ B, |H q t x| ≤ M_H q) :
     ∃ y : Puncture → ℝ → M,
       (∀ q, y q ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1 ∧
@@ -573,7 +574,7 @@ theorem
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
           ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (y q t) :=
   let ⟨y, hy, _, hid⟩ :=
-    exists_integral_floerEnergyDensity_pairOfPantsPerturbation_of_nullhomotopic_of_isolated_lim
+    exists_integral_floerEnergyDensity_pairOfPants_of_nullhomotopic_of_isolated_clusterPt
       hω hH he hB he_inj hde hu huB J hJ hJc hA hC hfloer hHs hnull hiso
   ⟨y, hy, ω.neg_sum_le_integral_add_sum_of_pairOfPantsPerturbation_of_mapsTo hH hHs hMH huB
     (setIntegral_floerEnergyDensity_nonneg hω J hJ hfloer) hid⟩

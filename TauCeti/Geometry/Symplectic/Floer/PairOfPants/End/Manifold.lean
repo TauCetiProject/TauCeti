@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.PeriodicOrbit
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Homotopy
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
+import TauCeti.Order.Filter.Basic
 import TauCeti.Topology.Compactness.Compact
 
 /-!
@@ -66,13 +68,20 @@ Floer equation for `H'_q`
   fixes `t = 0`, isolation of `1`-periodic orbits at `t = 0` transfers directly between `H_q` and
   `H'_q`.
 
-With bounded derivative of `e ∘ u ∘ φ'_q` and uniform tameness on the tail strip `(b, ∞) × [0, 1]`
-and isolated (or nondegenerate for `C²` `H_q` on a Hausdorff boundaryless manifold)
-subsequential-limit orbits, `t ↦ u(φ_q(±s, t))` converges as `s → ∞` to a single `1`-periodic
-orbit `y` of `X_{H_q}` in `B`
-(`exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim`,
-`..._of_isCompact`). Null-homotopic ends admit parallel `contractiblePeriodicSolutions` theorems;
-see `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Manifold` for the energy identity.
+Under bounded derivative of `e ∘ u ∘ φ'_q` and uniform tameness on the tail strip
+`(b, ∞) × [0, 1]`, the isolation theorem
+(`exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_isolated_clusterPt`) tests
+isolation at `t = 0` only among subsequential uniform-limit orbits in `B`, whereas the
+nondegenerate corollaries for `C²` `H_q` on a Hausdorff boundaryless manifold
+(`exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isCompact` and
+`exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer`) assume nondegeneracy of
+every `1`-periodic orbit of `H_q` in `B` (or in `M`). When one end loop is null-homotopic, parallel
+theorems require isolation among subsequential uniform-limit orbits or nondegeneracy only on
+`contractiblePeriodicSolutions`
+(`exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_isolated_clusterPt`,
+`exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isCompact`,
+and `exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_floer`); see
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Manifold` for the energy identity.
 
 ## References
 
@@ -341,7 +350,7 @@ private theorem eventually_eq_positiveEndChart_of_endChart {q : Puncture}
   have h := congrFun (hp (fun s ↦ x' (q.endSign * s)) (hPQ x' hx') (fun s ↦ hx'B _)
     ⟨ψ, hψtop, tendstoUniformly_endChart_of_positiveEndChart (u := e ∘ u) hψx'⟩
     (by simpa only [mul_zero] using hx'p)) (q.endSign * t)
-  simpa only [← mul_assoc, endSign_mul_self, one_mul] using h
+  simpa only [endSign_mul_endSign_mul] using h
 
 section Compact
 
@@ -403,8 +412,7 @@ with `H_q` `C¹`, uniformly tame `J`, and bounded derivative of `e ∘ u ∘ φ'
 If every subsequential uniform-limit `1`-periodic orbit in `B` is isolated at time `0`, then
 `t ↦ u(φ_q(±s, t))` converges as `s → ∞` to a single orbit in `B`, pointwise in `M` and uniformly
 after `e`. -/
-theorem
-    exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
+theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_isolated_clusterPt
     (hHq : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
     (hiso : ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       (∀ t, y t ∈ B) →
@@ -433,7 +441,7 @@ theorem
       ((le_max_left T₀ 0).trans (le_max_left _ b)) (J' := J')
       (fun z hz ↦ hfloer _ (positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hz.1))) hE
   obtain ⟨x, hx, hxB, hux, hpt⟩ :=
-    hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_lim
+    hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_clusterPt
       (periodic_positiveEndHamiltonian hH) he hB he_inj hde hu'
       (fun s _ t ↦ by simp only [comp_apply, positiveEndChart_add_one])
       (fun s hs t ↦ huB _ (positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hs)))
@@ -448,11 +456,10 @@ theorem
     hux hpt⟩
 
 /-- **Convergence of a contractible end of a pair of pants to an isolated contractible orbit.**
-Variant of
-`exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim`
+Variant of `exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_isolated_clusterPt`
 requiring isolation only on `contractiblePeriodicSolutions` when an end loop is null-homotopic. -/
 theorem
-  exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
+  exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_isolated_clusterPt
     (hHq : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
     (hnull : ∃ s > (0 : ℝ), ∃ g : C(AddCircle (1 : ℝ), M),
       g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (endChart q (q.endSign * s, t)))
@@ -474,7 +481,7 @@ theorem
   have hind : IsInducing fun p : B ↦ e p :=
     (hB.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj).isInducing
   obtain ⟨y, hy, hyB, hconv, hpt⟩ :=
-    exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
+    exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_isolated_clusterPt
       hω q hKH hH he hB he_inj hde hu huB J hfloer hE hC hc hJc hHq
       (forall_mem_periodicSolutions_eventually_eq_of_forall_mem
         (fun y hy hyB ⟨σ, hσ, hσy⟩ ↦
@@ -503,7 +510,7 @@ theorem
       (∀ t, y t ∈ B) ∧
       TendstoUniformly (fun s t ↦ e (u (endChart q (q.endSign * s, t)))) (e ∘ y) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) :=
-  exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
+  exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_isolated_clusterPt
     hω q hKH hH he hB he_inj hde hu huB J hfloer hE hC hc hJc (hHq.of_le one_le_two) hnull
     (forall_mem_eventually_eq_of_forall_eventually_eq
       (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHq
@@ -632,7 +639,7 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of
     ∃ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1, (∀ t, y t ∈ B) ∧
       TendstoUniformly (fun s t ↦ e (u (endChart q (q.endSign * s, t)))) (e ∘ y) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) :=
-  hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
+  hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_isolated_clusterPt
     q hKH hH he hB he_inj hde hu huB J hfloer hE hC hc hJc hHs
     (forall_mem_eventually_eq_of_forall_eventually_eq hiso)
 

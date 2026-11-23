@@ -787,6 +787,27 @@ private theorem exists_tendstoUniformly_of_mapClusterPt (hu : ContDiffOn ℝ 1 u
     _ = (C + 1) * (1 / (n + 1)) := by ring
     _ < δ := hn
 
+private theorem periodic_and_hasDerivAt_and_exists_tendstoUniformly_of_mapClusterPt
+    (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (hK : IsCompact K)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hX : Continuous (uncurry X))
+    (hXper : ∀ v, Periodic (fun t ↦ X t v) 1)
+    (hfin : ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) ≠ ⊤)
+    (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C) {y : ℝ →ᵤ V}
+    (hy : MapClusterPt y atTop fun s ↦ UniformFun.ofFun fun t ↦ u (s, t)) :
+    Periodic (UniformFun.toFun y) 1 ∧
+      (∀ t, HasDerivAt (UniformFun.toFun y) (X t (UniformFun.toFun y t)) t) ∧
+      ∃ σ : ℕ → ℝ, (∀ n, a < σ n) ∧ Tendsto σ atTop atTop ∧
+        TendstoUniformly (fun n t ↦ u (σ n, t)) (UniformFun.toFun y) atTop := by
+  obtain ⟨σ, hσa, hσtop, hdef, hσy⟩ := exists_tendstoUniformly_of_mapClusterPt hu hX hfin hC hy
+  -- A subsequence converges uniformly to a periodic solution, which is then `y`.
+  obtain ⟨ψ, hψ, x, hxper, hx, hux⟩ :=
+    exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral (fun _ ↦ hu) hX hXper hσa
+      (fun n ↦ hper _ (hσa n)) hK (fun n ↦ huK _ (hσa n)) hdef
+  have hyx : UniformFun.toFun y = x := funext fun t ↦ tendsto_nhds_unique
+    ((hσy.tendsto_at t).comp hψ.tendsto_atTop) (hux.tendsto_at t)
+  exact ⟨hyx ▸ hxper, hyx ▸ hx, σ, hσa, hσtop, hσy⟩
+
 /-- **The ω-limit loops are periodic solutions.** Let `X` be a continuous, `1`-periodic
 time-dependent vector field and let `u` be `C¹` on the half-cylinder `s > a`, with derivative
 bounded by `C` and with `1`-periodic loops `t ↦ u(s, t)` in a compact set `K`. If the squared norm
@@ -801,15 +822,11 @@ theorem periodic_and_hasDerivAt_of_mapClusterPt (hu : ContDiffOn ℝ 1 u (Ioi a 
     (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C) {y : ℝ →ᵤ V}
     (hy : MapClusterPt y atTop fun s ↦ UniformFun.ofFun fun t ↦ u (s, t)) :
     Periodic (UniformFun.toFun y) 1 ∧
-      ∀ t, HasDerivAt (UniformFun.toFun y) (X t (UniformFun.toFun y t)) t := by
-  obtain ⟨σ, hσa, -, hdef, hσy⟩ := exists_tendstoUniformly_of_mapClusterPt hu hX hfin hC hy
-  -- A subsequence converges uniformly to a periodic solution, which is then `y`.
-  obtain ⟨ψ, hψ, x, hxper, hx, hux⟩ :=
-    exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral (fun _ ↦ hu) hX hXper hσa
-      (fun n ↦ hper _ (hσa n)) hK (fun n ↦ huK _ (hσa n)) hdef
-  have hyx : UniformFun.toFun y = x := funext fun t ↦ tendsto_nhds_unique
-    ((hσy.tendsto_at t).comp hψ.tendsto_atTop) (hux.tendsto_at t)
-  exact hyx ▸ ⟨hxper, hx⟩
+      ∀ t, HasDerivAt (UniformFun.toFun y) (X t (UniformFun.toFun y t)) t :=
+  let ⟨hper, hx, _⟩ :=
+    periodic_and_hasDerivAt_and_exists_tendstoUniformly_of_mapClusterPt
+      hu hper hK huK hX hXper hfin hC hy
+  ⟨hper, hx⟩
 
 /-- A derivative bound on the strip `(a, ∞) × [0, 1]` extends to the half-cylinder `(a, ∞) × ℝ`
 when the slices `t ↦ u(s, t)` are `1`-periodic. -/
@@ -889,9 +906,9 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1
       have h := (setOf_mapClusterPt_atTop_eq_iInter ℓ (a + 1)).subset hf
       exact closure_minimal hmaps.image_subset hScpt.isClosed
         (mem_iInter.1 h ⟨a + 1, mem_Ici.2 le_rfl⟩)
-    obtain ⟨hfper, hf'⟩ :=
-      periodic_and_hasDerivAt_of_mapClusterPt hu hper hK huK hX hXper hfin hC hf
-    obtain ⟨σ, hσa, hσtop, -, hσf⟩ := exists_tendstoUniformly_of_mapClusterPt hu hX hfin hC hf
+    obtain ⟨hfper, hf', σ, hσa, hσtop, hσf⟩ :=
+      periodic_and_hasDerivAt_and_exists_tendstoUniformly_of_mapClusterPt
+        hu hper hK huK hX hXper hfin hC hf
     exact ⟨hfper, hf', hfS.2.1, σ, hσa, hσtop, hσf⟩
   have hdisc : IsDiscrete O := by
     refine isDiscrete_iff_forall_mem_exists_isOpen.2 fun x hx ↦ ?_

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Flow.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Homotopy
 
 /-!
 # Periodic orbits in positive end charts
@@ -16,16 +17,12 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 On an end `q` of the pair of pants `S = ℂ ∖ {0, 1}`, the positive end chart
 `φ'_q(s, t) = φ_q(±s, ±t)` (`TauCeti.Floer.positiveEndChart`) rescales time by `q.endSign = ±1`
 and replaces the end Hamiltonian `H_q` by `H'_q(t, x) = ±H_q(±t, x)`
-(`TauCeti.Floer.positiveEndHamiltonian`). This file transports null-homotopy under time reversal
-`t ↦ ±t` (`TauCeti.Floer.exists_nullhomotopic_comp_endSign_mul_iff`) and translates Hamiltonian
-vector fields, solution curves, `1`-periodic orbits, and contractible `1`-periodic orbits between
-`H'_q` and `H_q` on manifolds and symplectic vector spaces without importing the Floer pullback or
-half-cylinder convergence layers.
+(`TauCeti.Floer.positiveEndHamiltonian`). This file translates Hamiltonian vector fields, solution
+curves, `1`-periodic orbits, and contractible `1`-periodic orbits between `H'_q` and `H_q` on
+manifolds and symplectic vector spaces without importing the Floer pullback or half-cylinder
+convergence layers.
 
 ## Main results
-
-* `TauCeti.Floer.exists_nullhomotopic_comp_endSign_mul_iff`: reparametrizing by `t ↦ ±t` with the
-  sign of an end preserves descending to a null-homotopic map `AddCircle 1 → X`.
 
 On manifolds (`TauCeti.SmoothTwoForm`):
 
@@ -57,27 +54,6 @@ open Function TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Punctu
 open scoped Manifold NNReal
 
 namespace TauCeti
-
-namespace Floer
-
-/-- Reparametrizing a curve by `t ↦ ±t`, with the sign of the end `q`, preserves descending to a
-null-homotopic map `AddCircle 1 → X`. -/
-theorem exists_nullhomotopic_comp_endSign_mul_iff {X : Type*} [TopologicalSpace X]
-    {q : Puncture} {γ : ℝ → X} :
-    (∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ (q.endSign * t)) ↔
-      ∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t := by
-  have fwd {δ : ℝ → X}
-      (h : ∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = δ t) :
-      ∃ g : C(AddCircle (1 : ℝ), X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = δ (q.endSign * t) := by
-    obtain ⟨g, hg, hgδ⟩ := h
-    have hex := hg.exists_addCircle_comp_mul one_ne_zero q.endSign_ne_zero
-    rw [abs_endSign, div_one] at hex
-    obtain ⟨g', hg', hg'g⟩ := hex
-    exact ⟨g', hg', fun t ↦ (hg'g t).trans (by rw [mul_comm, hgδ])⟩
-  refine ⟨fun h ↦ ?_, fwd⟩
-  simpa only [← mul_assoc, endSign_mul_self, one_mul] using fwd h
-
-end Floer
 
 namespace SmoothTwoForm
 
