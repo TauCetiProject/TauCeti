@@ -54,6 +54,8 @@ countable products of projective graded modules and is not treated here.
   totalizations of short exact sequences are right orthogonal to graded-projective modules.
 * `TauCeti.CurvedDGRightModuleCat.contraacyclic_le_rightOrthogonal_gradedProjective`:
   contraacyclic modules are right orthogonal to graded-projective modules.
+* `TauCeti.CurvedDGRightModuleCat.gradedProjective_le_leftOrthogonal_contraacyclic`: equivalently,
+  graded-projective modules are left orthogonal to contraacyclic modules.
 * `TauCeti.CurvedDGRightModuleCat.isZero_of_contraacyclic_of_gradedProjective`: every
   contraacyclic graded-projective curved right module is zero in the curved homotopy category.
 * `TauCeti.CurvedDGRightModuleCat.ContraderivedCategory.map_bijective_of_gradedProjective`:
@@ -353,6 +355,13 @@ theorem contraacyclic_le_rightOrthogonal_gradedProjective :
     contraacyclic R h ≤ (gradedProjective R h).rightOrthogonal :=
   contraacyclic_le_iff.2 (totalizations_le_rightOrthogonal_gradedProjective R h)
 
+variable (R h) in
+/-- Graded-projective curved modules are left orthogonal to the contraacyclic ones. -/
+theorem gradedProjective_le_leftOrthogonal_contraacyclic :
+    gradedProjective R h ≤ (contraacyclic R h).leftOrthogonal :=
+  (ObjectProperty.le_leftOrthogonal_iff_le_rightOrthogonal _ _).2
+    (contraacyclic_le_rightOrthogonal_gradedProjective R h)
+
 /-- Every contraacyclic graded-projective object of the curved homotopy category is zero. -/
 theorem isZero_of_contraacyclic_of_gradedProjective
     {X : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)}
@@ -368,7 +377,6 @@ theorem ContraderivedCategory.map_bijective_of_gradedProjective
     (Y : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :
     Function.Bijective ((ContraderivedCategory.Q R h).map : (X ⟶ Y) → _) :=
   ObjectProperty.leftOrthogonal.map_bijective_of_isTriangulated
-    ((ObjectProperty.le_leftOrthogonal_iff_le_rightOrthogonal _ _).2
-      (contraacyclic_le_rightOrthogonal_gradedProjective R h) X hX) _ Y
+    (gradedProjective_le_leftOrthogonal_contraacyclic R h X hX) _ Y
 
 end TauCeti.CurvedDGRightModuleCat
