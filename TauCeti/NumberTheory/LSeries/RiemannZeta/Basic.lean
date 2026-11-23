@@ -132,8 +132,8 @@ theorem one_lt_riemannZeta_re {σ : ℝ} (hσ : 1 < σ) : 1 < (riemannZeta σ).r
 theorem strictAntiOn_riemannZeta_re :
     StrictAntiOn (fun σ : ℝ ↦ (riemannZeta σ).re) (Set.Ioi 1) := by
   intro x (hx : 1 < x) y (hy : 1 < y) hxy
-  have h := LSeries.strictAntiOn_re_of_exists_pos (a := 1) (fun _ ↦ zero_le_one)
-    ⟨2, le_rfl, zero_lt_one⟩ (LSeriesSummable_one_iff.mpr (by simpa using hx))
+  have h := LSeries.strictAntiOn_re_of_exists_pos (a := 1) (fun _ _ ↦ by simp)
+    ⟨2, le_rfl, by simp⟩ (LSeriesSummable_one_iff.mpr (by simpa using hx))
     (LSeriesSummable_one_iff.mpr (by simpa using hy)) hxy
   simpa only [LSeries_one_eq_riemannZeta (by simpa using hx : 1 < (x : ℂ).re),
     LSeries_one_eq_riemannZeta (by simpa using hy : 1 < (y : ℂ).re)] using h

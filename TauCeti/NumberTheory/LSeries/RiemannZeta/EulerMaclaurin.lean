@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
-public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.PSeriesComplex
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
+import TauCeti.Analysis.MellinTransform.Sawtooth
 import TauCeti.Analysis.MellinTransform.UpperTail
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
@@ -29,18 +29,20 @@ explicit bounds for `ζ` in the critical strip: the finite sum is the main term,
 carries the pole, and the tail integral is controlled by the bound above. The point `a` is free,
 so the length of the sum can be chosen according to the height `Im s`.
 
+The absolute convergence of the tail integral and its bound are
+`TauCeti.integrableOn_sawtooth_mul_cpow` and `TauCeti.norm_integral_sawtooth_mul_cpow_le` in
+`TauCeti.Analysis.MellinTransform.Sawtooth`.
+
 ## Main results
 
-* `TauCeti.integrableOn_sawtooth_mul_cpow`: the tail integral converges absolutely.
-* `TauCeti.norm_integral_sawtooth_mul_cpow_le`: its bound `a^(-σ)/(2σ)`.
 * `TauCeti.riemannZeta_eq_sum_add_integral_sawtooth`: the formula above for every `a > 0`.
 * `TauCeti.riemannZeta_eq_sum_add_integral_sawtooth_natCast` and
   `TauCeti.riemannZeta_eq_sum_add_integral_sawtooth_natCast_add_half`: its cases at an integer
   `a = N ≥ 1`, where `B₁({N}) = -1/2`, and at a half-integer `a = N + 1/2`, where `B₁({a}) = 0`.
 * `TauCeti.riemannZeta_eq_one_add_inv_sub_integral_fract`: the case `a = 1`, written with the
   fractional part, `ζ(s) = 1 + (s - 1)⁻¹ - s ∫_1^∞ {x} x^(-s-1) dx`.
-* `TauCeti.integral_fract_mul_cpow_eq_integral_sawtooth_add`: the fractional-part tail integral
-  in terms of the sawtooth tail integral.
+* `TauCeti.riemannZeta₀_eq_one_sub_mul_integral`: the same at `a = 1` for `riemannZeta₀`, on all
+  of `0 < Re s`.
 * `TauCeti.riemannZeta₁_eq_add_mul_sum_sawtooth` and
   `TauCeti.riemannZeta₀_eq_one_half_sub_integral_sawtooth`: integral formulas for Mathlib's entire
   functions `riemannZeta₁` and `riemannZeta₀`, the extensions of `(s - 1) ζ(s)` and
@@ -68,27 +70,6 @@ open Complex Filter MeasureTheory
 open scoped Topology
 
 namespace TauCeti
-
-/-- The sawtooth `B₁({x})`, viewed in `ℂ`, has norm at most `1/2`. -/
-private theorem norm_sawtooth_le (x : ℝ) : ‖(bernoulliFun 1 (Int.fract x) : ℂ)‖ ≤ 1 / 2 := by
-  rw [norm_real, Real.norm_eq_abs]
-  exact abs_bernoulliFun_one_fract_le x
-
-/-- The tail integral of the sawtooth `B₁({x}) = {x} - 1/2` against `x^(-s-1)` converges
-absolutely on `(a, ∞)` for `a > 0` and `0 < Re s`. -/
-theorem integrableOn_sawtooth_mul_cpow {a : ℝ} (ha : 0 < a) {s : ℂ} (hs : 0 < s.re) :
-    IntegrableOn (fun x : ℝ ↦ (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1)))
-      (Set.Ioi a) :=
-  integrableOn_mul_cpow_of_bound ha
-    ((continuous_ofReal.comp (continuous_bernoulliFun 1)).measurable.comp
-      measurable_fract).aestronglyMeasurable (fun x _ ↦ norm_sawtooth_le x) hs
-
-/-- **The bound for the sawtooth tail.** For `a > 0` and `σ = Re s > 0`,
-`‖∫_a^∞ B₁({x}) x^(-s-1) dx‖ ≤ a^(-σ)/(2σ)`, where `B₁({x}) = {x} - 1/2`. -/
-theorem norm_integral_sawtooth_mul_cpow_le {a : ℝ} (ha : 0 < a) {s : ℂ} (hs : 0 < s.re) :
-    ‖∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))‖ ≤
-      a ^ (-s.re) / (2 * s.re) :=
-  (norm_integral_mul_cpow_le_of_bound ha (fun x _ ↦ norm_sawtooth_le x) hs).trans_eq (by ring)
 
 /-- `TauCeti.isBigO_bernoulliFun_one_fract` for the sawtooth viewed in `ℂ`, against `x ^ 0`, the
 form taken by `TauCeti.differentiableOn_integral_mul_cpow_of_isBigO`. -/
@@ -275,35 +256,10 @@ theorem riemannZeta_eq_sum_add_integral_sawtooth_natCast_add_half (N : ℕ) {s :
       ((N : ℂ) + 1 / 2) ^ (1 - s) / (s - 1) -
       s * ∫ x in Set.Ioi ((N : ℝ) + 1 / 2),
         (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1)) := by
-  have hfloor : ⌊(N : ℝ) + 1 / 2⌋₊ = N :=
-    Nat.floor_eq_iff (by positivity) |>.mpr ⟨by linarith, by linarith⟩
-  have hfract : Int.fract ((N : ℝ) + 1 / 2) = 1 / 2 := by
-    rw [add_comm, Int.fract_add_natCast, Int.fract_eq_self.mpr ⟨by norm_num, by norm_num⟩]
   rw [riemannZeta_eq_sum_add_integral_sawtooth (a := (N : ℝ) + 1 / 2) (by positivity) hs hs₁,
-    hfloor, hfract, bernoulliFun_one]
+    natFloor_natCast_add_one_half, bernoulliFun_one_fract_natCast_add_one_half]
   push_cast
   ring
-
-/-- On `(a, ∞)`, `a > 0`, writing the fractional part as `{x} = B₁({x}) + 1/2` splits its tail
-integral: `∫_a^∞ {x} x^(-s-1) dx = ∫_a^∞ B₁({x}) x^(-s-1) dx + a^(-s)/(2s)` for `0 < Re s`. -/
-theorem integral_fract_mul_cpow_eq_integral_sawtooth_add {a : ℝ} (ha : 0 < a) {s : ℂ}
-    (hs : 0 < s.re) :
-    ∫ x in Set.Ioi a, ((Int.fract x : ℝ) : ℂ) * (x : ℂ) ^ (-(s + 1)) =
-      (∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))) +
-        (a : ℂ) ^ (-s) / (2 * s) := by
-  have hs₀ : s ≠ 0 := fun h ↦ by simp [h] at hs
-  have hre : (-(s + 1)).re < -1 := by simpa using hs
-  have hsplit : ∫ x in Set.Ioi a, ((Int.fract x : ℝ) : ℂ) * (x : ℂ) ^ (-(s + 1)) =
-      (∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))) +
-        1 / 2 * ∫ x in Set.Ioi a, (x : ℂ) ^ (-(s + 1)) := by
-    rw [← integral_const_mul, ← integral_add (integrableOn_sawtooth_mul_cpow ha hs)
-      ((integrableOn_Ioi_cpow_of_lt hre ha).const_mul _)]
-    refine setIntegral_congr_fun measurableSet_Ioi fun x _ ↦ ?_
-    rw [bernoulliFun_one]
-    push_cast
-    ring
-  rw [hsplit, integral_Ioi_cpow_of_lt hre ha, show -(s + 1) + 1 = -s by ring]
-  field_simp
 
 /-- The Euler–Maclaurin formula for `ζ(s)` cut at `1`, written with the fractional part:
 `ζ(s) = 1 + (s - 1)⁻¹ - s ∫_1^∞ {x} x^(-s-1) dx` for `0 < Re s`, `s ≠ 1`, the integral
@@ -314,6 +270,21 @@ theorem riemannZeta_eq_one_add_inv_sub_integral_fract {s : ℂ} (hs : 0 < s.re) 
   have hs₀ : s ≠ 0 := fun h ↦ by simp [h] at hs
   rw [integral_fract_mul_cpow_eq_integral_sawtooth_add one_pos hs, ofReal_one, one_cpow,
     riemannZeta_eq_inv_sub_add hs₁, riemannZeta₀_eq_one_half_sub_integral_sawtooth hs]
+  field_simp
+  ring
+
+/-- **Fractional-part integral representation of `riemannZeta₀`.** For every `s` with `Re s > 0`,
+`riemannZeta₀ s = 1 - s * ∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt`. -/
+theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
+    riemannZeta₀ s =
+      1 - s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
+  have hs₀ : s ≠ 0 := fun h ↦ by simp [h] at hs
+  have hfract : ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) =
+      ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) :=
+    setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ by
+      rw [Int.fract, natCast_floor_eq_intCast_floor (by linarith : (0 : ℝ) ≤ t)]
+  rw [hfract, integral_fract_mul_cpow_eq_integral_sawtooth_add one_pos hs, ofReal_one, one_cpow,
+    riemannZeta₀_eq_one_half_sub_integral_sawtooth hs]
   field_simp
   ring
 

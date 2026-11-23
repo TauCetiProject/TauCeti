@@ -30,9 +30,9 @@ abscissa of absolute convergence.
   real point equal to its own norm.
 * `TauCeti.LSeries.LSeries_eq_ofReal_tsum_norm_of_nonneg`: for nonnegative coefficients, the value
   at a real point is the sum of the norms of the terms.
-* `TauCeti.LSeries.strictAntiOn_re_of_exists_pos`: for nonnegative coefficients, one of which at
-  an index `n ≥ 2` is positive, `x ↦ Re (LSeries a x)` is strictly antitone on the real points of
-  summability.
+* `TauCeti.LSeries.strictAntiOn_re_of_exists_pos`: if the coefficients at indices `n ≥ 2` have
+  nonnegative real parts, one of them positive, then `x ↦ Re (LSeries a x)` is strictly antitone
+  on the real points of summability.
 * `TauCeti.LSeries.positive_of_exists_pos_of_summable`: for nonnegative coefficients, one of which
   at a positive index is positive, the value at a real point of summability is positive.
 * `TauCeti.LSeries.positive_of_exists_pos`: the same conclusion at every real point strictly to the
@@ -59,23 +59,35 @@ theorem LSeries_eq_ofReal_tsum_norm_of_nonneg (ha : 0 ≤ a) (sigma : ℝ) :
   rw [Complex.ofReal_tsum]
   exact tsum_congr fun n ↦ term_eq_ofReal_norm_of_nonneg (ha n) sigma
 
-/-- For nonnegative coefficients with a positive value at some index `n ≥ 2`, the real function
-`x ↦ Re (LSeries a x)` is strictly antitone on the set of real points of summability: every term
-is nonincreasing in `x`, and the term at that index strictly decreases. -/
-theorem strictAntiOn_re_of_exists_pos (ha : 0 ≤ a) (hpos : ∃ n ≥ 2, 0 < a n) :
+/-- If the coefficients at indices `n ≥ 2` have nonnegative real parts, one of them positive, then
+`x ↦ Re (LSeries a x)` is strictly antitone on the set of real points of summability: the real
+part of the term at `n ≥ 2` is `Re (a n) / n ^ x`, nonincreasing in `x` and strictly decreasing at
+that index, while the terms at `0` and `1` do not depend on `x`. -/
+theorem strictAntiOn_re_of_exists_pos (ha : ∀ n ≥ 2, 0 ≤ (a n).re)
+    (hpos : ∃ n ≥ 2, 0 < (a n).re) :
     StrictAntiOn (fun x : ℝ ↦ (LSeries a x).re) {x : ℝ | LSeriesSummable a x} := by
   intro x hx y hy hxy
-  obtain ⟨n, hn2, han⟩ := hpos
-  have hle (m : ℕ) : ‖_root_.LSeries.term a (y : ℂ) m‖ ≤ ‖_root_.LSeries.term a (x : ℂ) m‖ :=
-    _root_.LSeries.norm_term_le_of_re_le_re a (by simpa using hxy.le) m
-  have hlt : ‖_root_.LSeries.term a (y : ℂ) n‖ < ‖_root_.LSeries.term a (x : ℂ) n‖ := by
-    have hn0 : n ≠ 0 := by omega
-    have hn1 : (1 : ℝ) < n := by exact_mod_cast hn2
-    simp only [_root_.LSeries.norm_term_eq, hn0, ↓reduceIte, Complex.ofReal_re]
-    exact div_lt_div_of_pos_left (norm_pos_iff.mpr han.ne') (by positivity)
-      (Real.rpow_lt_rpow_of_exponent_lt hn1 hxy)
-  simp only [LSeries_eq_ofReal_tsum_norm_of_nonneg ha, Complex.ofReal_re]
-  exact (summable_norm_iff.mpr hy).tsum_lt_tsum hle hlt (summable_norm_iff.mpr hx)
+  obtain ⟨n₀, hn₀, han₀⟩ := hpos
+  have hre (z : ℝ) {n : ℕ} (hn : n ≠ 0) :
+      (_root_.LSeries.term a (z : ℂ) n).re = (a n).re / (n : ℝ) ^ z := by
+    rw [_root_.LSeries.term_of_ne_zero hn, ← Complex.ofReal_natCast,
+      ← Complex.ofReal_cpow (Nat.cast_nonneg n), Complex.div_ofReal_re]
+  have hle (n : ℕ) :
+      (_root_.LSeries.term a (y : ℂ) n).re ≤ (_root_.LSeries.term a (x : ℂ) n).re := by
+    rcases Nat.lt_or_ge n 2 with hn | hn
+    · interval_cases n
+      · simp
+      · simp
+    · rw [hre y (by omega : n ≠ 0), hre x (by omega : n ≠ 0)]
+      have h1 : (1 : ℝ) ≤ n := by exact_mod_cast (by omega : 1 ≤ n)
+      exact div_le_div_of_nonneg_left (ha n hn) (Real.rpow_pos_of_pos (by linarith) _)
+        (Real.rpow_le_rpow_of_exponent_le h1 hxy.le)
+  have hlt : (_root_.LSeries.term a (y : ℂ) n₀).re < (_root_.LSeries.term a (x : ℂ) n₀).re := by
+    rw [hre y (by omega : n₀ ≠ 0), hre x (by omega : n₀ ≠ 0)]
+    have h1 : (1 : ℝ) < n₀ := by exact_mod_cast (by omega : 1 < n₀)
+    exact div_lt_div_of_pos_left han₀ (Real.rpow_pos_of_pos (by linarith) _)
+      (Real.rpow_lt_rpow_of_exponent_lt h1 hxy)
+  exact hasSum_lt hle hlt (Complex.hasSum_re hy.hasSum) (Complex.hasSum_re hx.hasSum)
 
 /-- A Dirichlet series with nonnegative coefficients, one of which at a positive index is positive,
 has a positive value at every real point where it is summable. -/
