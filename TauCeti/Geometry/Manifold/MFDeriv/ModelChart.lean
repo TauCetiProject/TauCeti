@@ -34,9 +34,7 @@ open set.
 * `TauCeti.mdifferentiable_of_mem_maximalAtlas`: a chart of the `C^1` maximal atlas and its inverse
   are differentiable.
 * `TauCeti.isInvertible_mfderiv_chart`: the derivative of a chart of the `C^1` maximal atlas is
-  invertible, and so is the derivative of its inverse (`TauCeti.isInvertible_mfderiv_chart_symm`);
-  the two derivatives are mutually inverse (`TauCeti.mfderiv_symm_apply_mfderiv`,
-  `TauCeti.mfderiv_apply_mfderiv_symm`).
+  invertible, and so is the derivative of its inverse (`TauCeti.isInvertible_mfderiv_chart_symm`).
 * `TauCeti.hasMFDerivAt_iff_hasFDerivAt_comp_chartAt_symm`: a map into a normed space has a given
   derivative if and only if its expression in the preferred chart does.
 * `TauCeti.contDiffAt_symm_trans_of_mem_maximalAtlas`: a transition map between two charts of the
@@ -136,23 +134,6 @@ theorem isInvertible_mfderiv_chart_symm (he : e ∈ IsManifold.maximalAtlas 𝓘
   have := isInvertible_mfderivWithin_extend_symm he (y := z) (by simpa using hz)
   have hext : ((e.extend 𝓘(𝕜, E)).symm : E → M) = e.symm := by ext w; simp
   rwa [hext, modelWithCornersSelf_coe, range_id, mfderivWithin_univ] at this
-
-/-- The derivative of the inverse of a chart of the `C^1` maximal atlas inverts that of the
-chart. -/
-theorem mfderiv_symm_apply_mfderiv (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
-    {y : M} (hy : y ∈ e.source) (w : E) :
-    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e.symm (e y) (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e y w) = w :=
-  ContinuousLinearMap.ext_iff.1 ((mdifferentiable_of_mem_maximalAtlas he).symm_comp_deriv hy) w
-
-/-- The derivative of a chart of the `C^1` maximal atlas inverts that of the inverse of the
-chart. -/
-theorem mfderiv_apply_mfderiv_symm (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
-    {y : M} (hy : y ∈ e.source) (w : E) :
-    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e y (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e.symm (e y) w) = w := by
-  have h := ContinuousLinearMap.ext_iff.1
-    ((mdifferentiable_of_mem_maximalAtlas he).comp_symm_deriv (e.map_source hy)) w
-  rw [e.left_inv hy] at h
-  exact h
 
 /-- Where `f = h ∘ e` on the source of a chart `e` of the `C^1` maximal atlas, the differential of
 `f` vanishes at `y` in the source if and only if the Fréchet derivative of `h` vanishes at `e y`. -/

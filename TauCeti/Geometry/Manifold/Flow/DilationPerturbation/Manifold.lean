@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Flow.DilationPerturbation
 import TauCeti.Geometry.Manifold.Flow.NormedSpace
 import TauCeti.Geometry.Manifold.Flow.RestPoint
 import TauCeti.Geometry.Manifold.Flow.Straightening
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.LinearAlgebra.Eigenspace.Smul
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.VectorField.ModelChart
@@ -256,12 +257,15 @@ private theorem returnDerivative_eq_smul_of_mfderiv_flowOf_eq_comp
         returnDerivative w g T₀ p = c • returnDerivative v g T₀ p := by
   set A : E →L[ℝ] E := mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e p
   set A' : E →L[ℝ] E := mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e.symm 0
+  have hd := mdifferentiableAt_of_mem_maximalAtlas he hpe
+  have hds := mdifferentiableAt_symm_of_mem_maximalAtlas he (e.map_source hpe)
   have hA'A (ξ : E) : A' (A ξ) = ξ := by
-    have h := mfderiv_symm_apply_mfderiv he hpe ξ
+    have h := e.mfderiv_symm_apply_mfderiv_apply hpe hd hds ξ
     rwa [hep] at h
   have hAA' (η : E) : A (A' η) = η := by
-    have h := mfderiv_apply_mfderiv_symm he hpe η
-    rwa [hep] at h
+    have h := e.mfderiv_apply_mfderiv_symm_apply (e.map_source hpe)
+      (by rwa [e.left_inv hpe]) hds η
+    rwa [e.left_inv hpe, hep] at h
   -- The monodromy of `w` is that of `v` composed with `D = A⁻¹ L A`, which acts as `c` modulo the
   -- flow line `ℝ ∙ v p = A⁻¹ (ℝ ∙ u)`.
   refine returnDerivative_eq_smul_of_eqOn_compl hv hP hp hσ hσT hw hwp hσw hσvw
@@ -414,7 +418,10 @@ theorem exists_contMDiff_returnDerivative_add_smul_eq_exp_smul
   obtain ⟨y, hy, rfl⟩ : ∃ y ∈ e.source, e y = z :=
     ⟨e.symm z, e.map_target (hrt hz), e.right_inv (hrt hz)⟩
   rw [e.left_inv hy, ← heu y hy]
-  exact mfderiv_symm_apply_mfderiv (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy (v y)
+  have he1 : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by simp) he
+  exact e.mfderiv_symm_apply_mfderiv_apply hy (mdifferentiableAt_of_mem_maximalAtlas he1 hy)
+    (mdifferentiableAt_symm_of_mem_maximalAtlas he1 (e.map_source hy)) (v y)
 
 /-- **Every cover of a closed orbit on a manifold becomes nondegenerate under a flow-box
 dilation.** Let `v` be a smooth vector field on `M` with a closed orbit through `p` of least period

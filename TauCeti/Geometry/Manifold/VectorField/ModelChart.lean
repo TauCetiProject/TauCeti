@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
@@ -76,7 +77,9 @@ theorem mfderiv_symm_apply_eq_mpullback (he : e ∈ IsManifold.maximalAtlas 𝓘
     (V : (z : E) → TangentSpace 𝓘(ℝ, E) z) {z : E} (hz : z ∈ e.target) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e.symm z (V z) =
       VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V (e.symm z) := by
-  have h := mfderiv_symm_apply_mfderiv he (e.map_target hz)
+  have hy := e.map_target hz
+  have h := e.mfderiv_symm_apply_mfderiv_apply hy (mdifferentiableAt_of_mem_maximalAtlas he hy)
+    (mdifferentiableAt_symm_of_mem_maximalAtlas he (e.map_source hy))
     (VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V (e.symm z))
   rw [mfderiv_mpullback_apply he V (e.map_target hz), e.right_inv hz] at h
   exact h

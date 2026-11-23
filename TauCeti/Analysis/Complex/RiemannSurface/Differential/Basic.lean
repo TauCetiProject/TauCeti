@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -115,9 +116,7 @@ chart. -/
 theorem mvfderiv_mfderiv_symm (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ e.target) :
     mvfderiv 𝓘(ℂ) e (e.symm z)
       (mfderiv 𝓘(ℂ) 𝓘(ℂ) e.symm z ((NormedSpace.fromTangentSpace z).symm 1)) = 1 := by
-  have hd : e.MDifferentiable 𝓘(ℂ) 𝓘(ℂ) :=
-    ⟨fun _ hx ↦ (mdifferentiableAt_of_mem_maximalAtlas he hx).mdifferentiableWithinAt,
-      fun _ hz ↦ (mdifferentiableAt_symm_of_mem_maximalAtlas he hz).mdifferentiableWithinAt⟩
+  have hd : e.MDifferentiable 𝓘(ℂ) 𝓘(ℂ) := mdifferentiable_of_mem_maximalAtlas he
   have := congrArg (fun L ↦ L ((NormedSpace.fromTangentSpace (𝕜 := ℂ) z).symm 1))
     (hd.comp_symm_deriv hz)
   simp only [ContinuousLinearMap.comp_apply] at this
