@@ -553,12 +553,14 @@ theorem IsAsymptoticSum.isAsymptoticSum_iff_isSmoothing_sub {m : ℕ → ℝ}
   rw [coefficient_inclusion, coefficient_sub, ← hr, ← hr', coefficient_sub]
   abel
 
+/-- The zero symbol is an asymptotic sum of zero symbols. -/
 @[simp]
 theorem isAsymptoticSum_zero {m : ℕ → ℝ} :
     (0 : ParameterSymbol n Λ V W (m 0)).IsAsymptoticSum
       fun j => (0 : ParameterSymbol n Λ V W (m j)) :=
   fun _ => ⟨0, by simp⟩
 
+/-- Asymptotic sums add: if `b ∼ ∑ⱼ aⱼ` and `b' ∼ ∑ⱼ a'ⱼ`, then `b + b' ∼ ∑ⱼ (aⱼ + a'ⱼ)`. -/
 theorem IsAsymptoticSum.add {m : ℕ → ℝ} {a a' : ∀ j, ParameterSymbol n Λ V W (m j)}
     {b b' : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a)
     (hb' : b'.IsAsymptoticSum a') : (b + b').IsAsymptoticSum (a + a') := fun N => by
@@ -569,6 +571,7 @@ theorem IsAsymptoticSum.add {m : ℕ → ℝ} {a a' : ∀ j, ParameterSymbol n �
   simp only [Pi.add_apply, coefficient_add, Finset.sum_add_distrib]
   abel
 
+/-- Asymptotic sums scale: if `b ∼ ∑ⱼ aⱼ`, then `c • b ∼ ∑ⱼ c • aⱼ`. -/
 theorem IsAsymptoticSum.smul {m : ℕ → ℝ} {a : ∀ j, ParameterSymbol n Λ V W (m j)}
     {b : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a) (c : ℂ) :
     (c • b).IsAsymptoticSum (c • a) := fun N => by
@@ -577,11 +580,14 @@ theorem IsAsymptoticSum.smul {m : ℕ → ℝ} {a : ∀ j, ParameterSymbol n Λ 
   rw [coefficient_smul, coefficient_smul, ← hr]
   simp only [Pi.smul_apply, coefficient_smul, ← Finset.smul_sum, smul_sub]
 
+/-- If `b ∼ ∑ⱼ aⱼ`, then `-b ∼ ∑ⱼ (-aⱼ)`. -/
 theorem IsAsymptoticSum.neg {m : ℕ → ℝ} {a : ∀ j, ParameterSymbol n Λ V W (m j)}
     {b : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a) :
     (-b).IsAsymptoticSum (-a) := by
   simpa using hb.smul (-1)
 
+/-- Asymptotic sums subtract: if `b ∼ ∑ⱼ aⱼ` and `b' ∼ ∑ⱼ a'ⱼ`, then
+`b - b' ∼ ∑ⱼ (aⱼ - a'ⱼ)`. -/
 theorem IsAsymptoticSum.sub {m : ℕ → ℝ} {a a' : ∀ j, ParameterSymbol n Λ V W (m j)}
     {b b' : ParameterSymbol n Λ V W (m 0)} (hb : b.IsAsymptoticSum a)
     (hb' : b'.IsAsymptoticSum a') : (b - b').IsAsymptoticSum (a - a') := by
