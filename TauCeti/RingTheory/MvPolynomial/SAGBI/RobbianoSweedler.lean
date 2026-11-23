@@ -398,7 +398,8 @@ theorem robbianoSweedlerBinomial_mem_toricIdeal {R : Type*} [CommRing R] [Nontri
   ext d
   fin_cases d
   · simp
-  · simp
+  · simp only [Fin.isValue, Fin.reduceFinMk, Finsupp.coe_add, Pi.add_apply, Finsupp.single_apply,
+      Fin.zero_ne_one, ↓reduceIte, Fin.val_zero]
     omega
 
 /-- Evaluating `robbianoSweedlerBinomial R n` at `robbianoSweedlerStage R n` yields the next
@@ -412,7 +413,15 @@ theorem aeval_robbianoSweedlerStage_binomial {R : Type*} [CommRing R] (n : ℕ) 
         robbianoSweedlerStage R n a * robbianoSweedlerStage R n b := by
     rw [monomial_add_single, ← X, pow_one, map_mul, aeval_X, aeval_X]
   rw [robbianoSweedlerBinomial_def, map_sub, hmul, hmul]
-  simpa using robbianoSweedler_step_identity (R := R) (n + 1)
+  have h1 : (⟨1, by omega⟩ : Fin (n + 3)) ≠ 0 := Fin.ne_of_val_ne (Nat.succ_ne_zero 0)
+  have hn1 : (⟨n + 1, by omega⟩ : Fin (n + 3)) ≠ 0 := Fin.ne_of_val_ne (Nat.succ_ne_zero n)
+  have hn2 : (⟨n + 2, by omega⟩ : Fin (n + 3)) ≠ 0 := Fin.ne_of_val_ne (Nat.succ_ne_zero (n + 1))
+  rw [robbianoSweedlerStage_apply_zero, robbianoSweedlerStage_apply_of_ne_zero R n hn2,
+    robbianoSweedlerStage_apply_of_ne_zero R n h1,
+    robbianoSweedlerStage_apply_of_ne_zero R n hn1]
+  dsimp only
+  rw [pow_one]
+  exact robbianoSweedler_step_identity (R := R) (n + 1)
 
 /-- At every stage `n` over a nontrivial commutative ring, evaluating the toric binomial
 `robbianoSweedlerBinomial R n` at `robbianoSweedlerStage R n` yields a polynomial that admits a

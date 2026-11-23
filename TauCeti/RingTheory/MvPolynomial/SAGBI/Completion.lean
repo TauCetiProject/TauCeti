@@ -180,8 +180,8 @@ private theorem aeval_rename_add_C_mul_X {σ ι μ k : Type*} [Field k] {m : Mon
     {Q : MvPolynomial ι k} {r : MvPolynomial σ k}
     (hs : m.IsSubduction b f Q r) (hir : c i_r = m.monicNormalize r) :
     aeval c (rename τ Q + C (m.leadingCoeff r) * X i_r) = f := by
-  rw [map_add, map_mul, aeval_rename, hτ, aeval_C, algebraMap_eq, aeval_X, hir,
-    C_leadingCoeff_mul_monicNormalize, ← hs.eq_aeval_add]
+  rw [hs.eq_aeval_add]
+  simp [hτ, hir, aeval_rename, C_leadingCoeff_mul_monicNormalize]
 
 private theorem linearCombination_rename_add_C_mul_X_le {σ ι μ k : Type*} [Field k]
     {m : MonomialOrder σ} {b : ι → MvPolynomial σ k} {c : μ → MvPolynomial σ k}
@@ -382,9 +382,17 @@ theorem ker_subductionRetract_eq_span_of_ne_zero (P Q : κ → MvPolynomial ι k
     have hinv : C (m.leadingCoeff (r l)) * C (m.leadingCoeff (r l))⁻¹ =
         (1 : MvPolynomial (ι ⊕ κ) k) := by
       rw [← C_mul, mul_inv_cancel₀ hc, C_1]
-    rw [subductionLiftExpr_def, map_mul, rename_C, map_sub, neg_mul, mul_sub, ← mul_assoc, hinv,
-      one_mul]
-    ring
+    calc
+      rename Sum.inl (P l) - m.subductionLiftExpr Q r l
+        = rename Sum.inl (P l - Q l) - C (m.leadingCoeff (r l)) * X (Sum.inr l) := by
+          simp only [subductionLiftExpr_def, map_sub]; ring
+      _ = -C (m.leadingCoeff (r l)) * X (Sum.inr l) +
+            (C (m.leadingCoeff (r l)) * C (m.leadingCoeff (r l))⁻¹) *
+              rename Sum.inl (P l - Q l) := by
+          rw [hinv, one_mul]; ring
+      _ = -C (m.leadingCoeff (r l)) *
+            (X (Sum.inr l) - rename Sum.inl (C (m.leadingCoeff (r l))⁻¹ * (P l - Q l))) := by
+          simp only [map_mul, rename_C]; ring
   rw [Ideal.span_range_eq_iSup, Ideal.span_range_eq_iSup]
   refine iSup_congr fun l ↦ ?_
   have hunit : IsUnit (-C (m.leadingCoeff (r l)) : MvPolynomial (ι ⊕ κ) k) :=
@@ -873,6 +881,13 @@ noncomputable def sagbiCompletionRetract (m : MonomialOrder σ) (c₀ : ι₀ �
     (n : ℕ) : MvPolynomial (m.sagbiCompletionIndex c₀ n) k →ₐ[k] MvPolynomial ι₀ k :=
   (m.batchStageSeq c₀ n).retract
 
+-- Definitional boundary for private `batchStageSeq` / `nextBatchStage`:
+-- `sagbiCompletionIndexZeroEquiv`, `sagbiCompletionIndexInclusion`, `sagbiCompletionFamily_zero`,
+-- `sagbiCompletionRetract_zero`, and `exists_sagbiCompletion_succ` are the only declarations
+-- allowed to unfold `batchStageSeq` / `nextBatchStage` (including via `Equiv.refl _` or `Sum.inl`).
+-- All downstream code must go through `sagbiCompletionFamily_zero`, `sagbiCompletionRetract_zero`,
+-- and `exists_sagbiCompletion_succ`.
+
 /-- The canonical equivalence identifying `m.sagbiCompletionIndex c₀ 0` with `ι₀`. -/
 noncomputable def sagbiCompletionIndexZeroEquiv (m : MonomialOrder σ)
     (c₀ : ι₀ → MvPolynomial σ k) : m.sagbiCompletionIndex c₀ 0 ≃ ι₀ :=
@@ -890,14 +905,19 @@ variable {m : MonomialOrder σ} {c₀ : ι₀ → MvPolynomial σ k}
 `m.sagbiCompletionIndexZeroEquiv c₀`. -/
 @[simp]
 theorem sagbiCompletionFamily_zero (i : m.sagbiCompletionIndex c₀ 0) :
-    m.sagbiCompletionFamily c₀ 0 i = c₀ (m.sagbiCompletionIndexZeroEquiv c₀ i) := by rfl
+    m.sagbiCompletionFamily c₀ 0 i = c₀ (m.sagbiCompletionIndexZeroEquiv c₀ i) := by
+  dsimp only [sagbiCompletionFamily, batchStageSeq, sagbiCompletionIndexZeroEquiv]
+  rfl
 
 /-- At stage `0`, `m.sagbiCompletionRetract c₀ 0` is variable renaming along
 `m.sagbiCompletionIndexZeroEquiv c₀`. -/
 @[simp]
 theorem sagbiCompletionRetract_zero (c₀ : ι₀ → MvPolynomial σ k) :
     m.sagbiCompletionRetract c₀ 0 = rename (m.sagbiCompletionIndexZeroEquiv c₀) :=
-  algHom_ext fun _ ↦ by rw [rename_X]; rfl
+  algHom_ext fun _ ↦ by
+    rw [rename_X]
+    dsimp only [sagbiCompletionRetract, batchStageSeq, sagbiCompletionIndexZeroEquiv]
+    rfl
 
 /-- **Successor-stage characterization of batch SAGBI completion.** Stage `n + 1` chooses a finite
 binomial generating set `B` of `TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)`,
@@ -936,11 +956,19 @@ theorem exists_sagbiCompletion_succ (c₀ : ι₀ → MvPolynomial σ k) (n : �
   let B := m.chosenToricBinomials (m.sagbiCompletionFamily c₀ n)
   let sub (p : B) := m.chosenSubductionPair (m.sagbiCompletionFamily c₀ n)
     (aeval (m.sagbiCompletionFamily c₀ n) (monomial p.val.1 (1 : k) - monomial p.val.2 1))
+  -- Unfolds `sagbiCompletionIndex c₀ (n + 1)` through `batchStageSeq` / `nextBatchStage`.
   let e : m.sagbiCompletionIndex c₀ n ⊕ {p : B // (sub p).2 ≠ 0} ≃
       m.sagbiCompletionIndex c₀ (n + 1) := Equiv.refl _
   refine ⟨B, fun p ↦ (sub p).1, fun p ↦ (sub p).2, e, m.chosenToricBinomials_span _,
-    fun hc p ↦ m.chosenSubductionPair_spec hc _, fun _ ↦ rfl, rfl,
-    algHom_ext fun _ ↦ by rw [AlgHom.comp_apply, rename_X]; rfl⟩
+    fun hc p ↦ m.chosenSubductionPair_spec hc _,
+    fun _ ↦ by dsimp only [e, sagbiCompletionIndexInclusion]; rfl,
+    funext fun _ ↦ by
+      dsimp only [Function.comp_def, e, sagbiCompletionFamily, batchStageSeq, nextBatchStage]
+      rfl,
+    algHom_ext fun _ ↦ by
+      rw [AlgHom.comp_apply, rename_X]
+      dsimp only [e, sagbiCompletionRetract, batchStageSeq, nextBatchStage]
+      rfl⟩
 
 /-- Stage `0` of `m.sagbiCompletionFamily c₀` has the same generator set `Set.range c₀`. -/
 @[simp]
@@ -1069,13 +1097,8 @@ theorem exists_finite_monic_isSAGBIBasis_of_fg {b : ι₀ → MvPolynomial σ k}
   let D : MvPolynomial ι₀ k ≃ₐ[k] MvPolynomial ι₀ k :=
     rescaleEquiv fun i ↦ Units.mk0 _ (m.leadingCoeff_ne_zero_iff.2 (hb i))
   have haeval_Dinv : (aeval b).comp (D.symm : MvPolynomial ι₀ k →ₐ[k] MvPolynomial ι₀ k) =
-      aeval c₀ := by
-    have hD : (D : MvPolynomial ι₀ k →ₐ[k] MvPolynomial ι₀ k) =
-        rescale fun i ↦ m.leadingCoeff (b i) := by
-      simp [D]
-    dsimp only [c₀]
-    rw [← m.aeval_monicNormalize_comp_rescale b, ← hD, AlgHom.comp_assoc,
-      AlgEquiv.comp_symm, AlgHom.comp_id, Function.comp_def]
+      aeval c₀ :=
+    algHom_ext fun i ↦ by simp [D, c₀, monicNormalize_def]
   let φ := (D.symm : MvPolynomial ι₀ k →ₐ[k] MvPolynomial ι₀ k).comp
     (m.sagbiCompletionRetract c₀ N)
   refine ⟨m.sagbiCompletionIndex c₀ N, inferInstance, m.sagbiCompletionFamily c₀ N, φ,
