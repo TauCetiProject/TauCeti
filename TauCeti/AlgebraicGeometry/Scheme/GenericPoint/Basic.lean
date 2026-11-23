@@ -15,7 +15,7 @@ import TauCeti.RingTheory.Spectrum.Prime.Topology
 import TauCeti.Topology.KrullDimension.Basic
 
 /-!
-# The generic point of an irreducible scheme and the specialization order
+# Generic points of schemes and the specialization order
 
 The points of a scheme are ordered by specialization: `x ≤ y` when `y` generizes `x`. On an
 irreducible scheme the generic point generizes every point, so it is maximal for this order, and

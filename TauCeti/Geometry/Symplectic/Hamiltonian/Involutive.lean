@@ -163,7 +163,7 @@ theorem poissonBracket_eq_zero_of_ker_le
     have hXk : σ.hamiltonianVectorField k x ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker :=
       hσ.hamiltonianVectorField_mem_of_forall_mvfderiv_eq_zero
         ((hσ.isCoisotropic_ker_mfderiv_iff hF).2 hcomm) fun _ hv ↦ hk hv
-    rw [hσ.poissonBracket_eq_mvfderiv]
+    rw [σ.poissonBracket_eq_mvfderiv]
     exact hg hXk
   · -- If `F` is not differentiable at `x` then `dF_x = 0`, so `dk_x = 0` and `X_k(x) = 0`.
     rw [mfderiv_zero_of_not_mdifferentiableAt hF] at hk
@@ -171,7 +171,7 @@ theorem poissonBracket_eq_zero_of_ker_le
       ext v
       exact hk (by simp : v ∈ ((0 : TangentSpace I x →L[ℝ] TangentSpace 𝓘(ℝ, ι → ℝ) (F x)) :
         TangentSpace I x →ₗ[ℝ] TangentSpace 𝓘(ℝ, ι → ℝ) (F x)).ker)
-    rw [hσ.poissonBracket_eq_mvfderiv, hσ.hamiltonianVectorField_eq_zero_iff.2 hdk, map_zero]
+    rw [σ.poissonBracket_eq_mvfderiv, hσ.hamiltonianVectorField_eq_zero_iff.2 hdk, map_zero]
 
 /-! ### Independent functions -/
 
