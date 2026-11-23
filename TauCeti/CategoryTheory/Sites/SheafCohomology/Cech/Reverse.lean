@@ -364,28 +364,6 @@ theorem cechFace_cechReverse {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m +
       (-1 : ℤ) ^ (m + 1).choose 2 • cechFace k (σ ∘ Fin.rev) c := by
   rw [cechFace_apply, cechComponent_cechReverse, map_zsmul, map_cechFace]
 
-/-- **The order-reversing operator reverses cup products.** For a presheaf of commutative
-algebras, `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b` for Čech cochains `a` of degree `p` and `b` of
-degree `q`. The cup product itself is not graded commutative on cochains; this identity, together
-with the homotopy `τ ≃ 1` of `cechReverseHomotopy` for a family in a thin category, is what makes
-it graded commutative on Čech cohomology. -/
-theorem cechReverse_cechCup_cechReverse (hF : ∀ X (x y : F.obj X), x * y = y * x) {p q n : ℕ}
-    (h : p + q = n) (a : (cechAlgebraComplex U F).X p) (b : (cechAlgebraComplex U F).X q) :
-    (((cechReverse (ModuleCat.{w} R) U).app
-      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f n).hom
-        (cechCup q p n (by omega)
-          ((((cechReverse (ModuleCat.{w} R) U).app
-            (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f q).hom b)
-          ((((cechReverse (ModuleCat.{w} R) U).app
-            (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f p).hom a)) =
-      (-1 : ℤ) ^ (p * q) • cechCup p q n h a b := by
-  subst h
-  refine cechCochain_ext fun k ↦ ?_
-  rw [cechComponent_cechReverse, cechFace_cechCup, cechFace_cechReverse, cechFace_cechReverse,
-    map_zsmul, cechComponent_cechCup, smul_mul_smul_comm, hF, smul_smul,
-    Nat.neg_one_pow_add_add_one_choose_two_mul]
-  congr 2 <;> exact cechFace_eq_of_val _ fun i ↦ by simp [Fin.val_rev]; omega
-
 private lemma cechComplexπ_cechReverse {R : Type u''} [CommRing R]
     (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
     (a : ((cechComplexFunctor U).obj P).X n) (c : Fin (n + 1) → ι) :
@@ -397,26 +375,6 @@ private lemma cechComplexπ_cechReverse {R : Type u''} [CommRing R]
   have h := ConcreteCategory.congr_hom (cechReverse_app_f_π U P n c) a
   simp only [cechComplexπ_eq] at h ⊢
   exact h
-
-private lemma map_piLift_comp3_cechComplexπ {R : Type u''} [CommRing R]
-    (P : Cᵒᵖ ⥤ ModuleCat.{w} R) {k m n l : ℕ} (c : Fin (l + 1) → ι)
-    (f₁ : Fin (n + 1) → Fin (l + 1)) (f₂ : Fin (m + 1) → Fin (n + 1))
-    (f₃ : Fin (k + 1) → Fin (m + 1)) (g : Fin (k + 1) → Fin (l + 1))
-    (hcomp : ∀ i, f₁ (f₂ (f₃ i)) = g i) (a : ((cechComplexFunctor U).obj P).X k) :
-    P.map (Pi.lift (f := fun j ↦ U ((c ∘ f₁) j)) fun i ↦ Pi.π (fun j ↦ U (c j)) (f₁ i)).op
-        (P.map (Pi.lift (f := fun j ↦ U ((c ∘ f₁) (f₂ j)))
-            fun i ↦ Pi.π (fun j ↦ U ((c ∘ f₁) j)) (f₂ i)).op
-          (P.map (Pi.lift (f := fun j ↦ U (((fun j ↦ (c ∘ f₁) (f₂ j)) ∘ f₃) j))
-              fun i ↦ Pi.π (fun j ↦ U ((c ∘ f₁) (f₂ j))) (f₃ i)).op
-            (cechComplexπ U P k ((fun j ↦ (c ∘ f₁) (f₂ j)) ∘ f₃) a))) =
-      P.map (Pi.lift (f := fun j ↦ U (c (g j))) fun i ↦ Pi.π (fun j ↦ U (c j)) (g i)).op
-        (cechComplexπ U P k (fun j ↦ c (g j)) a) := by
-  have hg : g = (f₁ ∘ f₂) ∘ f₃ := funext fun i ↦ (hcomp i).symm
-  subst hg
-  rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← P.map_comp, ← P.map_comp,
-    ← op_comp, ← op_comp]
-  congr 3
-  exact congrArg Quiver.Hom.op (Pi.hom_ext _ _ fun i ↦ by simp)
 
 /-- **Reversal identity for the Čech cup product on cochains.** Reversing a cup product of
 reversed cochains recovers the cup product in the opposite order with the Koszul sign
@@ -441,10 +399,33 @@ theorem cechReverse_cechCupCochain {R : Type u''} [CommRing R]
     LinearMap.smul_apply, map_zsmul, map_zsmul, map_zsmul, smul_smul, smul_smul, mul_assoc,
     Nat.neg_one_pow_add_add_one_choose_two_mul, hcomm]
   refine congrArg ((-1 : ℤ) ^ (p * q) • ·) (congrArg₂ (fun x y ↦ μ _ x y) ?_ ?_)
-  · exact map_piLift_comp3_cechComplexπ U P c _ _ _ _
+  · exact map_piLift_comp₃_cechComplexπ U P c _ _ _ _
       (fun i ↦ Fin.ext (by simp [Fin.val_rev]; omega)) a
-  · exact map_piLift_comp3_cechComplexπ U Q c _ _ _ _
+  · exact map_piLift_comp₃_cechComplexπ U Q c _ _ _ _
       (fun i ↦ Fin.ext (by simp [Fin.val_rev]; omega)) b
+
+/-- **The order-reversing operator reverses cup products.** For a presheaf of commutative
+algebras, `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b` for Čech cochains `a` of degree `p` and `b` of
+degree `q`. The cup product itself is not graded commutative on cochains; this identity, together
+with the homotopy `τ ≃ 1` of `cechReverseHomotopy` for a family in a thin category, is what makes
+it graded commutative on Čech cohomology. -/
+theorem cechReverse_cechCup_cechReverse (hF : ∀ X (x y : F.obj X), x * y = y * x) {p q n : ℕ}
+    (h : p + q = n) (a : (cechAlgebraComplex U F).X p) (b : (cechAlgebraComplex U F).X q) :
+    (((cechReverse (ModuleCat.{w} R) U).app
+      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f n).hom
+        (cechCup q p n (by omega)
+          ((((cechReverse (ModuleCat.{w} R) U).app
+            (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f q).hom b)
+          ((((cechReverse (ModuleCat.{w} R) U).app
+            (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f p).hom a)) =
+    (-1 : ℤ) ^ (p * q) • cechCup p q n h a b := by
+  simpa [cechCup] using cechReverse_cechCupCochain U
+    (P := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (Q := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (S := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (fun X ↦ LinearMap.mul R (F.obj X)) (fun X ↦ LinearMap.mul R (F.obj X))
+    (fun {X Y} f (x y : F.obj X) ↦ (map_mul (F.map f).hom x y).symm)
+    (fun X (x y : F.obj X) ↦ hF X y x) p q n h a b
 
 end Cup
 
