@@ -154,7 +154,7 @@ Precomposing a `k`-current `T` on `Ω` with it gives the cone over `T` with vert
 equal to one near the support of `T`. -/
 def coneCLM (p : E) (χ : 𝓓(Ω, ℝ)) :
     𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) :=
-  cutoffHomotopyPullbackCLM χ (coneMap p) (contDiff_coneMap p).contDiffOn
+  cutoffHomotopyPullbackCLM (H := coneMap p) χ fun _ _ ↦ (contDiff_coneMap p).contDiffAt
 
 /-- The cone operator is `χ` times the Poincaré homotopy operator with centre `p`:
 `x ↦ χ x • ∫₀¹ t ^ k ω(p + t • (x - p))(x - p, ·) dt`. -/
@@ -210,9 +210,7 @@ theorem coneCLM_extDerivCLM_add_extDerivCLM_coneCLM_apply
 theorem coneCLM_extDerivCLM_apply_finZero (ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F)) {x : E}
     (hx : ∀ᶠ y in 𝓝 x, χ y = 1) :
     coneCLM p χ (extDerivCLM ω) x = ω x - ω p := by
-  rw [coneCLM, cutoffHomotopyPullbackCLM_extDerivCLM_apply_finZero
-    (hH₀ := ((contDiff_coneMap p).comp (contDiff_id.prodMk contDiff_const)).contDiffOn)
-    (hH₁ := ((contDiff_coneMap p).comp (contDiff_id.prodMk contDiff_const)).contDiffOn) ω hx,
+  rw [coneCLM, cutoffHomotopyPullbackCLM_extDerivCLM_apply_finZero ω hx,
     cutoffPullbackCLM_apply, cutoffPullbackCLM_apply, hx.self_of_nhds, one_smul, one_smul]
   congr 1 <;> ext v <;> simp [coneMap, Subsingleton.elim v (![] : Fin 0 → E)]
 

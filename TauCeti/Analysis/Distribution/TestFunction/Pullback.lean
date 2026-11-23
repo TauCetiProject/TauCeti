@@ -47,8 +47,7 @@ used to push forward currents whose support is compact, see
 * `Distribution.HasLocallyFiniteMass.comp_pullbackCLM`: pushforward preserves locally finite
   mass.
 * `TestFunction.cutoffPullbackCLM`: the pullback with a cutoff `ω ↦ χ Φ^* ω`, as a continuous
-  linear map, with its values `TestFunction.cutoffPullbackCLM_apply` and
-  `TestFunction.cutoffPullbackCLM_congr_fun` (only the map matters, not its smoothness proof).
+  linear map, with its values `TestFunction.cutoffPullbackCLM_apply`.
 * `TestFunction.extDerivCLM_cutoffPullbackCLM_apply`: `d (χ Φ^* ω) = χ Φ^* (d ω)` at every point
   near which `χ = 1`.
 * `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
@@ -439,13 +438,6 @@ theorem cutoffPullbackCLM_apply (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) (x :
   · simp [pullbackFun, hx]
   · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hx (χ.tsupport_subset h)]
 
-/-- Equal maps give equal pullbacks with a cutoff, whatever the smoothness proofs. -/
-theorem cutoffPullbackCLM_congr_fun {Ψ : E → E'} (h : Φ = Ψ) {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω} :
-    (cutoffPullbackCLM χ Φ hΦ : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) =
-      cutoffPullbackCLM χ Ψ hΨ := by
-  subst h
-  rfl
-
 /-- The support of a pullback with a cutoff lies in the support of the cutoff, over the support of
 the form. -/
 theorem tsupport_cutoffPullbackCLM_subset (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) :
@@ -608,9 +600,7 @@ variable {E E' F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem mass_comp_pullbackCLM_le (T : 𝓕) {L : ℝ≥0} (hL : ∀ x ∈ Ω, ‖fderiv ℝ Φ x‖ ≤ L) :
     mass (T ∘ pullbackCLM Φ hΦ hΦp) ≤ (L : ℝ≥0∞) ^ k * mass T := by
   refine mass_le_iff.2 fun ω hω ↦ ?_
-  have hb : ‖(pullbackCLM Φ hΦ hΦp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ L ^ k := by
-    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
-    rw [coe_toBoundedContinuousFunction]
+  have hpt (x : E) : ‖pullbackCLM Φ hΦ hΦp ω x‖ ≤ L ^ k := by
     by_cases hx : x ∈ Ω
     · refine (norm_pullbackCLM_apply_le ω x).trans ?_
       calc ‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k ≤ 1 * (L : ℝ) ^ k := by
@@ -618,14 +608,7 @@ theorem mass_comp_pullbackCLM_le (T : 𝓕) {L : ℝ≥0} (hL : ∀ x ∈ Ω, �
             exacts [hω _, hL x hx]
         _ = L ^ k := one_mul _
     · simp [hx]
-  calc ‖T (pullbackCLM Φ hΦ hΦp ω)‖ₑ
-      ≤ mass T * ‖(pullbackCLM Φ hΦ hΦp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
-        enorm_apply_le_mass_mul T _
-    _ ≤ mass T * (L : ℝ≥0∞) ^ k := by
-        gcongr
-        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_pow L.coe_nonneg]
-        exact ENNReal.ofReal_le_ofReal hb
-    _ = (L : ℝ≥0∞) ^ k * mass T := mul_comm _ _
+  simpa using enorm_apply_le_mul_mass_of_forall_norm_le T (b := L ^ k) (by simpa using hpt)
 
 omit [NormedSpace ℝ V] in
 /-- **Pushforward preserves locally finite mass.** If a map `T` on test `k`-forms on `Ω` has

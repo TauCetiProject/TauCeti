@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.AlternatingForm
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The self-dual and anti-self-dual eigenbundles of differential forms

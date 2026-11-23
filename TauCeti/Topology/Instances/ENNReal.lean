@@ -21,8 +21,6 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
 
 * `TauCeti.tendsto_nhds_zero_of_le_enorm_mul`: a quantity dominated near `0` by `‖h‖ₑ` times a
   finite constant vanishes as `h → 0`.
-* `TauCeti.tendsto_nhds_zero_of_forall_eventually_le_mul`: a family eventually bounded by `δ C`
-  for every `δ > 0`, with `C` finite, tends to `0`.
 * `TauCeti.tendsto_of_le_add_of_le_add`: a family within `wᵢ` of `b` from both sides converges
   to `b` when `wᵢ → 0`.
 * `TauCeti.tendsto_ofReal_div_mul_add_mul_enorm_sub`: the bounds
@@ -34,6 +32,8 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   `a ≤ b + c`.
 * `TauCeti.truncated_cost_le_add_of_label_eq`: an `ℝ≥0∞`-valued cost truncated at `M` on a
   rectangle varies by at most `η` between points with the same labels.
+* `ENNReal.ofReal_truncateToReal_le`: the truncation `truncateToReal t x` of `x` at `t`, read back
+  in `ℝ≥0∞`, is at most `x`.
 * `Continuous.ennreal_toReal`: a continuous `ℝ≥0∞`-valued function that avoids `∞` has continuous
   real projection `fun z ↦ (c z).toReal`.
 * `Continuous.exists_forall_le_coe_of_ne_top`: on a compact space, a continuous `ℝ≥0∞`-valued
@@ -57,17 +57,6 @@ theorem tendsto_nhds_zero_of_le_enorm_mul {G : E → ℝ≥0∞} {C : ℝ≥0∞
     continuous_eNorm.tendsto' 0 0 (by simp)
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (by simpa using ENNReal.Tendsto.mul_const h0 (Or.inr hC)) (.of_forall fun _ => zero_le) hG
-
-/-- In `ℝ≥0∞`, a family that is eventually bounded by `δ C` for every `δ > 0`, with `C` finite,
-tends to `0`. This is the form in which an estimate linear in a small parameter `δ` yields the
-qualitative limit. -/
-theorem tendsto_nhds_zero_of_forall_eventually_le_mul {ι : Type*} {l : Filter ι}
-    {f : ι → ℝ≥0∞} {C : ℝ≥0∞} (hC : C ≠ ∞)
-    (h : ∀ δ : ℝ≥0, 0 < δ → ∀ᶠ i in l, f i ≤ δ * C) : Filter.Tendsto f l (𝓝 0) := by
-  refine ENNReal.tendsto_nhds_zero.2 fun ε hε ↦ ?_
-  obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_nnreal_pos_mul_lt hC hε.ne'
-  filter_upwards [h δ hδ] with i hi
-  exact hi.trans hδε.le
 
 /-- In `ℝ≥0∞`, a family that is within `wᵢ` of a fixed value `b` from both sides converges to `b`
 when `wᵢ → 0`. -/
@@ -178,6 +167,13 @@ theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGr
     simpa [Function.comp_def] using
       (ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto (0 : F)).comp h0) (Or.inr hM))
   simpa using h1.add h2
+
+/-- The truncation `truncateToReal t x = (min t x).toReal` of `x` at `t`, read back in `ℝ≥0∞`, is
+at most `x`. -/
+theorem _root_.ENNReal.ofReal_truncateToReal_le (t x : ℝ≥0∞) :
+    ENNReal.ofReal (ENNReal.truncateToReal t x) ≤ x := by
+  rw [ENNReal.truncateToReal]
+  exact ENNReal.ofReal_toReal_le.trans (min_le_right t x)
 
 /-- A continuous `ℝ≥0∞`-valued function that avoids `∞` has continuous real projection
 `fun z ↦ (c z).toReal`. -/

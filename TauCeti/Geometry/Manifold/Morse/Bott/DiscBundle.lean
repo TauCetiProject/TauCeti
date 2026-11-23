@@ -832,9 +832,8 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation_of_isCompact
     exact ⟨by linarith, by linarith⟩
   have (a : ι) : Nonempty (S a) := h.nonempty a
   have : Finite {a // ∀ s, f (i a s) = c} :=
-    ((h.locallyFinite_range.finite_nonempty_inter_compact hcompact).subset
-      (t := {a | ∀ s, f (i a s) = c})
-      fun a ha ↦ (range_nonempty (i a)).mono (subset_inter subset_rfl (hsub ⟨a, ha⟩))).to_subtype
+    ((h.finite_setOf_range_subset hcompact).subset (t := {a | ∀ s, f (i a s) = c})
+      fun a ha ↦ hsub ⟨a, ha⟩).to_subtype
   have (a : {a // ∀ s, f (i a s) = c}) : CompactSpace (S a) :=
     h.compactSpace_of_range_subset hcompact (hsub a)
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
