@@ -29,6 +29,8 @@ quotient.
 * `TwoSidedIdeal.Quotient.lift` and `TwoSidedIdeal.Quotient.factor`: universal descent of nonunital
   ring homomorphisms through `A ⧸ I` and canonical maps between quotients.
 * `TwoSidedIdeal.quotEquivOfEq`: ring equivalence between quotients by equal two-sided ideals.
+* `TwoSidedIdeal.Quotient.idealCorrespondence`: order isomorphism between two-sided ideals of `A`
+  containing `I` and two-sided ideals of `A ⧸ I`.
 -/
 
 public section
@@ -201,6 +203,74 @@ theorem factor_comp {I J K : TwoSidedIdeal A} (h₁ : I ≤ J) (h₂ : J ≤ K) 
 theorem factor_surjective {I J : TwoSidedIdeal A} (h : I ≤ J) :
     Function.Surjective (factor h) :=
   lift_surjective_of_surjective _ (mk_surjective J)
+
+private theorem comap_map_mk (I : TwoSidedIdeal A) (K : Set.Ici I) :
+    (K.val.map (mk I)).comap (mk I) = K.val := by
+  refine le_antisymm (fun a ha => ?_)
+    (fun a ha => (TwoSidedIdeal.mem_comap (mk I)).mpr (TwoSidedIdeal.subset_span ⟨a, ha, rfl⟩))
+  rw [TwoSidedIdeal.mem_comap] at ha
+  let M : TwoSidedIdeal (A ⧸ I) := TwoSidedIdeal.mk' (mk I '' K.val)
+    ⟨0, K.val.zero_mem, map_zero _⟩
+    (by
+      rintro _ _ ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
+      exact ⟨x + y, K.val.add_mem hx hy, map_add _ _ _⟩)
+    (by
+      rintro _ ⟨x, hx, rfl⟩
+      exact ⟨-x, K.val.neg_mem hx, map_neg _ _⟩)
+    (by
+      rintro x _ ⟨y, hy, rfl⟩
+      obtain ⟨r, rfl⟩ := mk_surjective I x
+      exact ⟨r * y, K.val.mul_mem_left r y hy, map_mul _ _ _⟩)
+    (by
+      rintro _ y ⟨x, hx, rfl⟩
+      obtain ⟨r, rfl⟩ := mk_surjective I y
+      exact ⟨x * r, K.val.mul_mem_right x r hx, map_mul _ _ _⟩)
+  have hle : K.val.map (mk I) ≤ M :=
+    TwoSidedIdeal.span_le.mpr fun _ hx => (TwoSidedIdeal.mem_mk' _ _ _ _ _ _ _).mpr hx
+  obtain ⟨b, hbK, hba⟩ := (TwoSidedIdeal.mem_mk' _ _ _ _ _ _ _).mp (hle ha)
+  have hsub : a - b ∈ I := Quotient.eq.mp hba.symm
+  simpa using K.val.add_mem (K.property hsub) hbK
+
+/-- Correspondence theorem for two-sided ideals: two-sided ideals of `A ⧸ I` correspond
+order-isomorphically to two-sided ideals of `A` containing `I`, via `map (mk I)` and
+`comap (mk I)`. -/
+def idealCorrespondence (I : TwoSidedIdeal A) :
+    Set.Ici I ≃o TwoSidedIdeal (A ⧸ I) where
+  toFun K := K.val.map (mk I)
+  invFun J := ⟨J.comap (mk I), fun _ ha =>
+    (TwoSidedIdeal.mem_comap (mk I)).mpr ((eq_zero_iff_mem.mpr ha).symm ▸ J.zero_mem)⟩
+  left_inv K := Subtype.ext (comap_map_mk I K)
+  right_inv J := le_antisymm
+    (TwoSidedIdeal.span_le.mpr <| by
+      rintro _ ⟨a, ha, rfl⟩
+      exact (TwoSidedIdeal.mem_comap (mk I)).mp ha)
+    (fun x hx => by
+      obtain ⟨a, rfl⟩ := mk_surjective I x
+      exact TwoSidedIdeal.subset_span ⟨a, (TwoSidedIdeal.mem_comap (mk I)).mpr hx, rfl⟩)
+  map_rel_iff' {K₁ K₂} :=
+    ⟨fun h => Subtype.coe_le_coe.mp <| by
+      rw [← comap_map_mk I K₁, ← comap_map_mk I K₂]
+      exact TwoSidedIdeal.comap_le_comap (mk I) h,
+     fun h => TwoSidedIdeal.map_mono (mk I) h⟩
+
+@[simp]
+theorem idealCorrespondence_apply (I : TwoSidedIdeal A) (K : Set.Ici I) :
+    idealCorrespondence I K = K.val.map (mk I) :=
+  (rfl)
+
+@[simp]
+theorem idealCorrespondence_symm_apply (I : TwoSidedIdeal A) (J : TwoSidedIdeal (A ⧸ I)) :
+    ((idealCorrespondence I).symm J : Set.Ici I).val = J.comap (mk I) :=
+  (rfl)
+
+/-- Under the quotient ideal correspondence, the preimage ideal of `J : TwoSidedIdeal (A ⧸ I)` has
+carrier `(mk I) ⁻¹' J`. -/
+theorem idealCorrespondence_symm_coe (I : TwoSidedIdeal A) (J : TwoSidedIdeal (A ⧸ I)) :
+    (((idealCorrespondence I).symm J : Set.Ici I).val : Set A) =
+      mk I ⁻¹' (J : Set (A ⧸ I)) := by
+  rw [idealCorrespondence_symm_apply]
+  ext a
+  exact TwoSidedIdeal.mem_comap (mk I)
 
 end Quotient
 

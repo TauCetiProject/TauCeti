@@ -10,7 +10,6 @@ public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import TauCeti.Algebra.Star.Subalgebra
-import TauCeti.Analysis.CStarAlgebra.Hereditary.Ideal
 
 /-!
 # Quotient C⋆-algebras and closed range of `⋆`-homomorphisms
@@ -40,8 +39,6 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
   universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients. `mkStarAlgHom` and
   `liftStarAlgHom` have unital counterparts `TwoSidedIdeal.Quotient.mkUnitalStarAlgHom` and
   `TwoSidedIdeal.Quotient.liftUnitalStarAlgHom`.
-* `TwoSidedIdeal.exists_isSelfAdjoint_mem_notMem`: produces a self-adjoint element of `J` outside a
-  closed ideal `I` whenever `¬ J ≤ I`.
 * `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
   `⋆`-algebra homomorphism between C⋆-algebras is closed.
 * `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
@@ -410,20 +407,6 @@ theorem toNonUnitalStarAlgHom_liftUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf 
 end Unital
 
 end TwoSidedIdeal.Quotient
-
-namespace TwoSidedIdeal
-
-variable {A : Type*} [NonUnitalCStarAlgebra A] (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-
-/-- If a two-sided ideal `J` of a C⋆-algebra is not contained in a closed two-sided ideal `I`, then
-`J` contains a self-adjoint element outside `I`. -/
-theorem exists_isSelfAdjoint_mem_notMem {J : TwoSidedIdeal A} (hJI : ¬ J ≤ I) :
-    ∃ b ∈ J, b ∉ I ∧ IsSelfAdjoint b := by
-  obtain ⟨a, haJ, haI⟩ := IsConcreteLE.not_le_iff_exists.mp hJI
-  exact ⟨star a * a, J.mul_mem_left (star a) a haJ,
-    mt I.star_mul_self_mem_iff_of_isClosed.mp haI, IsSelfAdjoint.star_mul_self a⟩
-
-end TwoSidedIdeal
 
 namespace NonUnitalStarAlgHom
 

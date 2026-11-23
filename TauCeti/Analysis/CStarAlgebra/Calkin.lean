@@ -10,7 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.Normed.Operator.Compact.Ideal
-import Mathlib.RingTheory.Congruence.Hom
+import TauCeti.Analysis.CStarAlgebra.Hereditary.Ideal
 import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Cutoff
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Idempotent
@@ -185,33 +185,13 @@ theorem norm_mk_eq (T : H →L[ℂ] H) :
   rw [TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply, TwoSidedIdeal.Quotient.norm_mk_eq,
     ContinuousLinearMap.coe_compactIdeal]
 
-private noncomputable def idealCorrespondence {A : Type*} [Ring A] (I : TwoSidedIdeal A) :
-    Set.Ici I ≃o TwoSidedIdeal (A ⧸ I) :=
-  let c := TwoSidedIdeal.Quotient.ringCon I
-  have hc : I.ringCon = c := by
-    ext a b
-    exact (TwoSidedIdeal.rel_iff I a b).trans TwoSidedIdeal.quotientRel_def.symm
-  (TwoSidedIdeal.orderIsoRingCon.Ici I).trans
-    ((Set.orderIsoOfEq _ _ (congrArg Set.Ici hc)).trans
-      (RingCon.correspondence.trans TwoSidedIdeal.orderIsoRingCon.symm))
-
-private theorem idealCorrespondence_symm_coe {A : Type*} [Ring A] (I : TwoSidedIdeal A)
-    (J : TwoSidedIdeal (A ⧸ I)) :
-    (((idealCorrespondence I).symm J : Set.Ici I).val : Set A) =
-      TwoSidedIdeal.Quotient.mk I ⁻¹' (J : Set (A ⧸ I)) := by
-  ext a
-  let J' : TwoSidedIdeal (TwoSidedIdeal.Quotient.ringCon I).Quotient := J
-  change a ∈ J'.comap (TwoSidedIdeal.Quotient.ringCon I).mk' ↔ _
-  rw [TwoSidedIdeal.mem_comap, Set.mem_preimage, SetLike.mem_coe]
-  exact Iff.of_eq (congrArg (· ∈ J) (TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk I a))
-
 /-- On a separable complex Hilbert space `H`, every closed two-sided ideal of `CalkinAlgebra H` is
 `⊥` or `⊤`. -/
 theorem eq_bot_or_eq_top_of_isClosed [SeparableSpace H] (J : TwoSidedIdeal (CalkinAlgebra H))
     (hJ : IsClosed (J : Set (CalkinAlgebra H))) : J = ⊥ ∨ J = ⊤ := by
-  let e := idealCorrespondence (ContinuousLinearMap.compactIdeal ℂ H)
+  let e := TwoSidedIdeal.Quotient.idealCorrespondence (ContinuousLinearMap.compactIdeal ℂ H)
   have hI_closed : IsClosed ((e.symm J).val : Set (H →L[ℂ] H)) := by
-    rw [idealCorrespondence_symm_coe]
+    rw [TwoSidedIdeal.Quotient.idealCorrespondence_symm_coe]
     exact hJ.preimage (TwoSidedIdeal.Quotient.continuous_mk (ContinuousLinearMap.compactIdeal ℂ H))
   rcases ContinuousLinearMap.eq_bot_or_eq_compactIdeal_or_eq_top_of_isClosed hI_closed with
     hbot | hcpt | htop
@@ -237,7 +217,7 @@ theorem isSimpleRing_iff :
   have : IsSimpleRing (CalkinAlgebra H) := h
   refine ⟨?_, nontrivial_iff_not_finiteDimensional.mp inferInstance⟩
   by_contra hsep
-  let e := idealCorrespondence (ContinuousLinearMap.compactIdeal ℂ H)
+  let e := TwoSidedIdeal.Quotient.idealCorrespondence (ContinuousLinearMap.compactIdeal ℂ H)
   let K : Set.Ici (ContinuousLinearMap.compactIdeal ℂ H) :=
     ⟨ContinuousLinearMap.separableRangeIdeal ℂ H,
       ContinuousLinearMap.compactIdeal_le_separableRangeIdeal⟩

@@ -403,9 +403,8 @@ theorem ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal (hH : ¬ Separab
   have : CompleteSpace U :=
     (Submodule.span 𝕜 (Set.range v)).isClosed_topologicalClosure.completeSpace_coe
   have hmem_sep : U.starProjection ∈ separableRangeIdeal 𝕜 H := by
-    rw [mem_separableRangeIdeal]
-    change IsSeparable (Set.range (U.starProjection : H →ₗ[𝕜] H))
-    rw [← LinearMap.coe_range, U.range_starProjection, Submodule.topologicalClosure_coe]
+    rw [mem_separableRangeIdeal, ← ContinuousLinearMap.coe_coe, ← LinearMap.coe_range,
+      U.range_starProjection, Submodule.topologicalClosure_coe]
     exact (Set.countable_range v).isSeparable.span.closure
   have hmem_cpt : IsCompactOperator U.starProjection :=
     mem_compactIdeal.mp (heq.symm ▸ hmem_sep)
