@@ -340,6 +340,15 @@ theorem deriv_deriv_putPrice_spot_of_mul_sqrt_eq_zero (h : σ * √τ = 0) :
 
 /-! ### The Black–Scholes equation -/
 
+/-- At zero volatility, or past the expiry `T`, the diffusion term `σ √(T - u)` of the closed
+forms vanishes for every calendar time `u` near `t`. -/
+private theorem eventually_mul_sqrt_sub_eq_zero {T t : ℝ} (hd : σ = 0 ∨ T < t) :
+    ∀ᶠ u in 𝓝 t, σ * √(T - u) = 0 := by
+  rcases hd with rfl | hd
+  · exact Eventually.of_forall fun _ => zero_mul _
+  · filter_upwards [lt_mem_nhds hd] with u hu
+    rw [sqrt_eq_zero_of_nonpos (by linarith), mul_zero]
+
 /-- **The Black–Scholes equation for the call.** In calendar time `t < T`, the call price
 `C(s, t) = callPrice s r σ K (T - t)` satisfies
 `∂C/∂t + σ² s² / 2 ∂²C/∂s² + r (s ∂C/∂s - C) = 0` at every spot `s > 0`. The closed form also
@@ -351,22 +360,17 @@ theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t ≠ T) :
   by_cases hd : σ = 0 ∨ T < t
   · -- Without a diffusion term the closed form is `(s - K e^{-rτ}) / 2` near `t`, which solves
     -- `∂C/∂t + r (s ∂C/∂s - C) = 0`.
-    have h0 : ∀ u, (σ = 0 ∨ T < u) → σ * √(T - u) = 0 := by
-      rintro u (rfl | hu)
-      · exact zero_mul _
-      · rw [sqrt_eq_zero_of_nonpos (by linarith), mul_zero]
+    have h0 := eventually_mul_sqrt_sub_eq_zero hd
+    have h0t : σ * √(T - t) = 0 := h0.self_of_nhds
     have hev : (fun u => callPrice s r σ K (T - u)) =ᶠ[𝓝 t]
-        fun u => (s - K * exp (-r * (T - u))) / 2 := by
-      rcases hd with hσ | hd
-      · exact Eventually.of_forall fun u => callPrice_of_mul_sqrt_eq_zero (h0 u (.inl hσ))
-      · filter_upwards [lt_mem_nhds hd] with u hu
-        exact callPrice_of_mul_sqrt_eq_zero (h0 u (.inr hu))
+        fun u => (s - K * exp (-r * (T - u))) / 2 :=
+      h0.mono fun _ => callPrice_of_mul_sqrt_eq_zero
     have hu : deriv (fun u => (s - K * exp (-r * (T - u))) / 2) t =
         (0 - K * (exp (-r * (T - t)) * (-r * -1))) / 2 :=
       (((hasDerivAt_const t s).sub
         ((((hasDerivAt_id t).const_sub T).const_mul (-r)).exp.const_mul K)).div_const 2).deriv
-    rw [hev.deriv_eq, hu, deriv_deriv_callPrice_spot_of_mul_sqrt_eq_zero (h0 t hd),
-      deriv_callPrice_spot_of_mul_sqrt_eq_zero (h0 t hd), callPrice_of_mul_sqrt_eq_zero (h0 t hd)]
+    rw [hev.deriv_eq, hu, deriv_deriv_callPrice_spot_of_mul_sqrt_eq_zero h0t,
+      deriv_callPrice_spot_of_mul_sqrt_eq_zero h0t, callPrice_of_mul_sqrt_eq_zero h0t]
     ring
   obtain ⟨hσ, hT⟩ := not_or.1 hd
   have hτ : 0 < T - t := sub_pos.2 ((not_lt.1 hT).lt_of_ne ht)
@@ -388,22 +392,17 @@ theorem putPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t ≠ T) :
   by_cases hd : σ = 0 ∨ T < t
   · -- Without a diffusion term the closed form is `(K e^{-rτ} - s) / 2` near `t`, which solves
     -- `∂P/∂t + r (s ∂P/∂s - P) = 0`.
-    have h0 : ∀ u, (σ = 0 ∨ T < u) → σ * √(T - u) = 0 := by
-      rintro u (rfl | hu)
-      · exact zero_mul _
-      · rw [sqrt_eq_zero_of_nonpos (by linarith), mul_zero]
+    have h0 := eventually_mul_sqrt_sub_eq_zero hd
+    have h0t : σ * √(T - t) = 0 := h0.self_of_nhds
     have hev : (fun u => putPrice s r σ K (T - u)) =ᶠ[𝓝 t]
-        fun u => (K * exp (-r * (T - u)) - s) / 2 := by
-      rcases hd with hσ | hd
-      · exact Eventually.of_forall fun u => putPrice_of_mul_sqrt_eq_zero (h0 u (.inl hσ))
-      · filter_upwards [lt_mem_nhds hd] with u hu
-        exact putPrice_of_mul_sqrt_eq_zero (h0 u (.inr hu))
+        fun u => (K * exp (-r * (T - u)) - s) / 2 :=
+      h0.mono fun _ => putPrice_of_mul_sqrt_eq_zero
     have hu : deriv (fun u => (K * exp (-r * (T - u)) - s) / 2) t =
         K * (exp (-r * (T - t)) * (-r * -1)) / 2 :=
       ((((((hasDerivAt_id t).const_sub T).const_mul (-r)).exp.const_mul K).sub_const s).div_const
         2).deriv
-    rw [hev.deriv_eq, hu, deriv_deriv_putPrice_spot_of_mul_sqrt_eq_zero (h0 t hd),
-      deriv_putPrice_spot_of_mul_sqrt_eq_zero (h0 t hd), putPrice_of_mul_sqrt_eq_zero (h0 t hd)]
+    rw [hev.deriv_eq, hu, deriv_deriv_putPrice_spot_of_mul_sqrt_eq_zero h0t,
+      deriv_putPrice_spot_of_mul_sqrt_eq_zero h0t, putPrice_of_mul_sqrt_eq_zero h0t]
     ring
   obtain ⟨hσ, hT⟩ := not_or.1 hd
   have hτ : 0 < T - t := sub_pos.2 ((not_lt.1 hT).lt_of_ne ht)
