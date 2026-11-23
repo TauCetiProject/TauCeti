@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Exponential.Classification
 public import TauCeti.Geometry.Lie.Exponential.Smoothness
 public import TauCeti.Geometry.Lie.Exponential.Trotter
+public import TauCeti.Geometry.Lie.Tangent.Differential
 import TauCeti.Geometry.Lie.Exponential.Homomorphism
 
 /-!
@@ -39,6 +40,8 @@ The linear map `L` is not exposed: once `f` is known to be smooth, it is the dif
 
 * `TauCeti.Lie.contMDiff_of_continuous_monoidHom`: **automatic smoothness.** A continuous
   homomorphism between finite-dimensional real Lie groups is smooth.
+* `TauCeti.Lie.contMDiff_of_surjective_groupLieAlgebraMap`: a homomorphism whose differential at
+  the identity is surjective onto a nonzero Lie algebra is smooth; no continuity is assumed.
 * `ContinuousMonoidHom.toContMDiffMonoidMorphism`: a continuous homomorphism of such Lie groups,
   bundled as a smooth monoid morphism.
 
@@ -144,6 +147,21 @@ theorem contMDiff_of_continuous_monoidHom {F : Type*} [FunLike F G G'] [MonoidHo
   have hφ : (φ : G → G') = f := MonoidHom.coe_ofClass f
   simpa only [homGeneratorLinearMap_apply, one_smul, hφ] using
     map_lieExp_smul (I' := I') φ X 1
+
+/-- **A homomorphism with surjective differential onto a nonzero Lie algebra is smooth.** Its
+differential at the identity is nonzero, so it is differentiable, hence continuous, at the
+identity. It is therefore continuous, hence smooth by automatic smoothness. -/
+theorem contMDiff_of_surjective_groupLieAlgebraMap [Nontrivial E'] {f : G →* G'}
+    (hf : Surjective (f.groupLieAlgebraMap I I')) : ContMDiff I I' ∞ f := by
+  have hd : MDifferentiableAt I I' f 1 := by
+    by_contra h
+    obtain ⟨ξ, hξ⟩ := exists_ne (0 : E')
+    obtain ⟨η, hη⟩ := hf ξ
+    rw [MonoidHom.groupLieAlgebraMap_apply, mfderiv_zero_of_not_mdifferentiableAt h] at hη
+    exact hξ hη.symm
+  have := topologicalGroup_of_lieGroup (G := G) I ∞
+  have := topologicalGroup_of_lieGroup (G := G') I' ∞
+  exact contMDiff_of_continuous_monoidHom f (continuous_of_continuousAt_one f hd.continuousAt)
 
 end TauCeti.Lie
 
