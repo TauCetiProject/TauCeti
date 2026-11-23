@@ -23,8 +23,11 @@ a differentiable map with surjective derivative, and is a `C^n` distribution of 
 (`TauCeti.IsEhresmannConnection`). At every point the derivative `df_x` then restricts to a
 linear isomorphism from the horizontal space `D x` onto `T_(f x) B`; its inverse is the
 **horizontal lift** of tangent vectors of the base
-(`TauCeti.IsEhresmannConnection.horizontalLift`). Integrating these pointwise lifts lifts paths
-of the base horizontally, which is how a connection transports fibres along paths.
+(`TauCeti.IsEhresmannConnection.horizontalLift`). The horizontal part of a tangent vector `v`,
+its projection onto `D x` along the vertical space, is the horizontal lift of `df_x v`
+(`TauCeti.IsEhresmannConnection.projection_apply_eq_horizontalLift`). Integrating these pointwise
+lifts lifts paths of the base horizontally, which is how a connection transports fibres along
+paths.
 
 Every submersion carries Ehresmann connections. For a Riemannian metric on `P`, the orthogonal
 complements `(ker df_x)ᗮ` of the vertical spaces of a `C^n` submersion form a `C^m` Ehresmann
@@ -45,6 +48,9 @@ from such a manifold has an Ehresmann connection
 
 ## Main results
 
+* `TauCeti.IsEhresmannConnection.projection_apply_eq_horizontalLift`,
+  `TauCeti.IsEhresmannConnection.projection_ker_apply`: the horizontal part of a tangent vector `v`
+  is the horizontal lift of `df_x v`, and its vertical part is `v` minus that lift.
 * `TauCeti.isDistributionFrameOn_mgradient_coord`: the gradients of the coordinates of a map to a
   vector space whose derivative is surjective form a local frame of the orthogonal complements of
   the kernels of its derivative.
@@ -169,6 +175,28 @@ theorem eq_horizontalLift_iff {x : P} {v : TangentSpace J (f x)} {w : D x} :
     w = hD.horizontalLift x v ↔ mfderiv I J f x w = v := by
   refine ⟨fun h ↦ h ▸ hD.mfderiv_horizontalLift x v, fun h ↦ ?_⟩
   rw [← h, hD.horizontalLift_mfderiv]
+
+/-- **The horizontal part** of a tangent vector `v`, its projection onto the horizontal space along
+the vertical space, is the horizontal lift of its image `df_x v`. -/
+theorem projection_apply_eq_horizontalLift (x : P) (v : TangentSpace I x) :
+    (D x).projection (mfderiv I J f x).ker (hD.isCompl_ker x) v =
+      (hD.horizontalLift x (mfderiv I J f x v) : TangentSpace I x) := by
+  have hker : mfderiv I J f x ((mfderiv I J f x).ker.projection (D x)
+      (hD.isCompl_ker x).symm v) = 0 :=
+    LinearMap.mem_ker.1 (Submodule.projection_apply_mem _ _)
+  have hv := congrArg (mfderiv I J f x)
+    (Submodule.projection_add_projection_eq_self (hD.isCompl_ker x) v)
+  rw [map_add, hker, add_zero] at hv
+  exact congrArg Subtype.val
+    ((hD.eq_horizontalLift_iff (w := ⟨_, Submodule.projection_apply_mem _ v⟩)).2 hv)
+
+/-- **The vertical part** of a tangent vector `v`, its projection onto the vertical space along the
+horizontal space, is `v` minus the horizontal lift of `df_x v`. -/
+theorem projection_ker_apply (x : P) (v : TangentSpace I x) :
+    (mfderiv I J f x).ker.projection (D x) (hD.isCompl_ker x).symm v =
+      v - (hD.horizontalLift x (mfderiv I J f x v) : TangentSpace I x) := by
+  rw [Submodule.projection_eq_self_sub_projection (hD.isCompl_ker x),
+    hD.projection_apply_eq_horizontalLift]
 
 end IsEhresmannConnection
 
