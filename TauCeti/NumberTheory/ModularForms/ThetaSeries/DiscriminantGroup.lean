@@ -271,18 +271,19 @@ theorem thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero [Fintype (Discrimin
   refine ⟨fun heq ↦ ?_, fun h ↦ h.thetaSeries_dual_eq_sum τ⟩
   by_cases hL : DiscreteTopology L
   · have := hL
-    by_contra hni
-    exact ((re_thetaSeries_dual_lt_sum_iff_not_isIntegral hτ).mpr hni).ne
-      (by simpa [Complex.re_sum] using congrArg Complex.re heq)
+    rw [← thetaSeries_sup_dual_eq_sum,
+      thetaSeries_eq_iff_eq_of_le_of_re_eq_zero le_sup_right hτ] at heq
+    exact isIntegral_iff_le_dual.mpr (le_sup_left.trans_eq heq.symm)
   · exfalso
     have hd_inf : DiscreteTopology ↥(L ⊓ dual L) :=
       (isIntegral_iff_le_dual.mpr (inf_le_right.trans (dual_anti inf_le_left))).discreteTopology
     have : (L ⊓ dual L).toAddSubgroup.IsFiniteRelIndex (dual L).toAddSubgroup := by
-      rw [AddSubgroup.isFiniteRelIndex_iff_finiteIndex,
-        show (L ⊓ dual L).toAddSubgroup = L.toAddSubgroup ⊓ (dual L).toAddSubgroup from rfl,
-        AddSubgroup.inf_addSubgroupOf_right]
-      exact @AddSubgroup.finiteIndex_of_finite_quotient _ _ _
-        (inferInstance : Finite (DiscriminantGroup L))
+      rw [AddSubgroup.isFiniteRelIndex_iff_relIndex_ne_zero]
+      -- `(L ⊓ dual L).toAddSubgroup` and `L.toAddSubgroup ⊓ (dual L).toAddSubgroup` have the same
+      -- carrier.
+      change (L.toAddSubgroup ⊓ (dual L).toAddSubgroup).relIndex (dual L).toAddSubgroup ≠ 0
+      rw [AddSubgroup.inf_relIndex_right, ← card_discriminantGroup]
+      exact Nat.card_pos.ne'
     have : DiscreteTopology (dual L) :=
       (AddSubgroup.discreteTopology_iff_of_isFiniteRelIndex
         (toAddSubgroup_mono (inf_le_right : L ⊓ dual L ≤ dual L))).mp hd_inf
