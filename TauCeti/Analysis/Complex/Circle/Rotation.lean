@@ -119,11 +119,12 @@ theorem lipschitzOnWith_sphere_of_hasDerivAt_exp_mul {φ v : ℂ → E} {M : ℝ
   have hw1 := mem_sphere_zero_iff_norm.1 hw
   have hw1' := mem_sphere_zero_iff_norm.1 hw'
   -- Write `w = e^{is} w'` with `|s| ≤ π`.
+  have hw0' : w' ≠ 0 := norm_ne_zero_iff.1 (by rw [hw1']; exact one_ne_zero)
   set s := arg (w / w')
   have hws : exp (I * s) * w' = w := by
     have h := norm_mul_exp_arg_mul_I (w / w')
     rw [norm_div, hw1, hw1', div_one, ofReal_one, one_mul] at h
-    rw [mul_comm I, h, div_mul_cancel₀ _ (norm_ne_zero_iff.1 (by rw [hw1']; exact one_ne_zero))]
+    rw [mul_comm I, h, div_mul_cancel₀ _ hw0']
   have hmv := convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le
     (f := fun t : ℝ ↦ φ (exp (I * t) * w'))
     (fun t _ ↦ (hasDerivAt_comp_exp_I_mul_mul hv hw' t).hasDerivWithinAt)
@@ -133,7 +134,7 @@ theorem lipschitzOnWith_sphere_of_hasDerivAt_exp_mul {φ v : ℂ → E} {M : ℝ
   have hchord : |s| ≤ 2 * dist w w' := by
     have h := abs_arg_le_pi_div_two_mul_norm_sub_one (z := w / w')
       (by rw [norm_div, hw1, hw1', div_one])
-    rw [div_sub_one (norm_ne_zero_iff.1 (by rw [hw1']; exact one_ne_zero)), norm_div, hw1',
+    rw [div_sub_one hw0', norm_div, hw1',
       div_one, ← dist_eq_norm] at h
     exact h.trans (by gcongr; linarith [Real.pi_le_four])
   rw [dist_eq_norm]

@@ -329,13 +329,14 @@ theorem holderOnWith_ball_two_pi_I_inv_smul_circleIntegral_sub_inv_smul [Complet
 
 /-! ### Boundary values -/
 
-/-- The Cauchy integral of a function integrable on the unit circle is holomorphic on the open unit
-disc. -/
-private theorem differentiableOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul {φ : ℂ → E}
-    (hφ : CircleIntegrable φ 0 1) :
-    DifferentiableOn ℂ (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w) (ball 0 1) :=
+/-- The Cauchy integral `z ↦ (2 π i)⁻¹ ∮_{|w - c| = R} φ(w) / (w - z) dw` of a function integrable
+on the circle `C(c, R)` is holomorphic on the open disc `ball c R`. -/
+theorem differentiableOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul {φ : ℂ → E} {c : ℂ}
+    {R : ℝ} (hφ : CircleIntegrable φ c R) :
+    DifferentiableOn ℂ (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(c, R), (w - z)⁻¹ • φ w) (ball c R) :=
   fun _ hz ↦ ((hasDerivAt_circleIntegral_sub_inv_smul hφ
-    (notMem_sphere_abs_one_of_mem_ball hz)).differentiableAt.const_smul _).differentiableWithinAt
+    ((mem_ball.1 hz).trans_le (le_abs_self R)).ne).differentiableAt.const_smul _
+    ).differentiableWithinAt
 
 /-- **The Cauchy integral of Hölder data extends to the closed disc.** If `φ` is `α`-Hölder on the
 unit circle with constant `K`, for `0 < α < 1`, then its Cauchy integral

@@ -348,19 +348,20 @@ private theorem hasSum_sub_sum_range_toNat {c : ℤ → ℂ} {G : ℂ → ℂ} {
 continuous on the closed disc and equal on the open disc to the Cauchy integral of `φ`, then
 `h = G - ∑_{0 ≤ n ≤ k} (c n / 2) zⁿ` satisfies `h w - w ^ k * conj (h w) = φ w` on the unit
 circle, by comparing Fourier coefficients. -/
-private theorem sub_sum_range_toNat_sub_zpow_mul_conj_eq {G h : ℂ → ℂ}
+private theorem sub_sum_range_toNat_sub_zpow_mul_conj_eq {G : ℂ → ℂ}
     (hφc : ContinuousOn φ (sphere 0 1)) (hb : ∀ w ∈ sphere (0 : ℂ) 1, φ w = -(w ^ k * conj (φ w)))
     (hvan : ∀ n : ℤ, k < n → n < 0 →
       fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n = 0)
     (hGd : DiffContOnCl ℂ G (ball 0 1))
     (hGF : EqOn G (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w) (ball 0 1))
-    (hh : h = fun z ↦ G z - ∑ n ∈ Finset.range (k + 1).toNat,
-      2⁻¹ * fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * z ^ n)
     {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) :
-    h w - w ^ k * conj (h w) = φ w := by
-  subst hh
+    G w - ∑ n ∈ Finset.range (k + 1).toNat,
+        2⁻¹ * fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * w ^ n -
+      w ^ k * conj (G w - ∑ n ∈ Finset.range (k + 1).toNat,
+        2⁻¹ * fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * w ^ n) = φ w := by
   set c : ℤ → ℂ := fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ))
   set h : ℂ → ℂ := fun z ↦ G z - ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n
+  change h w - w ^ k * conj (h w) = φ w
   have hp : Differentiable ℂ fun z ↦ ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n := by
     fun_prop
   have hhd : DiffContOnCl ℂ h (ball 0 1) := hGd.sub hp.diffContOnCl
@@ -406,19 +407,24 @@ private theorem sub_sum_range_toNat_sub_zpow_mul_conj_eq {G h : ℂ → ℂ}
 and equal there to the Cauchy integral of `φ`, then `h = G - ∑_{0 ≤ n ≤ k} (c n / 2) zⁿ` is
 holomorphic on the open disc, `α`-Hölder on the closed disc and satisfies
 `h w - w ^ k * conj (h w) = φ w` on the unit circle. -/
-private theorem diffContOnCl_holderOnWith_sub_sum_range_toNat {G h : ℂ → ℂ} {K α : ℝ≥0}
+private theorem diffContOnCl_holderOnWith_sub_sum_range_toNat {G : ℂ → ℂ} {K α : ℝ≥0}
     (hα1 : α < 1) (hφc : ContinuousOn φ (sphere 0 1))
     (hb : ∀ w ∈ sphere (0 : ℂ) 1, φ w = -(w ^ k * conj (φ w)))
     (hvan : ∀ n : ℤ, k < n → n < 0 →
       fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n = 0)
     (hG : HolderOnWith K α G (closedBall 0 1)) (hGd : DiffContOnCl ℂ G (ball 0 1))
-    (hGF : EqOn G (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w) (ball 0 1))
-    (hh : h = fun z ↦ G z - ∑ n ∈ Finset.range (k + 1).toNat,
-      2⁻¹ * fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * z ^ n) :
-    DiffContOnCl ℂ h (ball 0 1) ∧ (∃ C, HolderOnWith C α h (closedBall 0 1)) ∧
-      ∀ w ∈ sphere (0 : ℂ) 1, h w - w ^ k * conj (h w) = φ w := by
-  have hb' := fun w hw ↦ sub_sum_range_toNat_sub_zpow_mul_conj_eq hφc hb hvan hGd hGF hh (w := w) hw
-  subst hh
+    (hGF : EqOn G (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w) (ball 0 1)) :
+    DiffContOnCl ℂ (fun z ↦ G z - ∑ n ∈ Finset.range (k + 1).toNat,
+        2⁻¹ * fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * z ^ n) (ball 0 1) ∧
+      (∃ C, HolderOnWith C α (fun z ↦ G z - ∑ n ∈ Finset.range (k + 1).toNat,
+        2⁻¹ * fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * z ^ n)
+        (closedBall 0 1)) ∧
+      ∀ w ∈ sphere (0 : ℂ) 1, G w - ∑ n ∈ Finset.range (k + 1).toNat,
+          2⁻¹ * fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * w ^ n -
+        w ^ k * conj (G w - ∑ n ∈ Finset.range (k + 1).toNat,
+          2⁻¹ * fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * w ^ n) =
+          φ w := by
+  have hb' := fun w hw ↦ sub_sum_range_toNat_sub_zpow_mul_conj_eq hφc hb hvan hGd hGF (w := w) hw
   set c : ℤ → ℂ := fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ))
   have hp : ContDiff ℂ 1 fun z ↦ ∑ n ∈ Finset.range (k + 1).toNat, 2⁻¹ * c n * z ^ n := by
     fun_prop
@@ -444,7 +450,7 @@ theorem exists_holderOnWith_closedBall_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq
   obtain ⟨G, hGF, hG, hGd⟩ :=
     exists_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_holderOnWith_closedBall hα0 hα1 hφ
   exact ⟨_, diffContOnCl_holderOnWith_sub_sum_range_toNat hα1 (hφ.continuousOn hα0) hb hvan hG hGd
-    hGF rfl⟩
+    hGF⟩
 
 /-- **The Riemann–Hilbert problem with `C^{1,α}` data.** Let `φ` have at every point `w` of the
 unit circle a derivative `v w` along the rotations, that is of `t ↦ φ (e^{it} w)` at `t = 0`, where
@@ -485,8 +491,8 @@ theorem exists_holderOnWith_closedBall_deriv_sub_zpow_mul_conj_eq_of_fourierCoef
   obtain ⟨Cp', hpC'⟩ := ContDiffOn.exists_holderOnWith (hp'.restrict_scalars ℝ).contDiffOn
     (convex_closedBall 0 1) (isCompact_closedBall 0 1) hα1.le
   set h : ℂ → ℂ := fun z ↦ G z - p z
-  obtain ⟨hhd, hhH, hhb⟩ := diffContOnCl_holderOnWith_sub_sum_range_toNat (h := h) hα1
-    (hφ.continuousOn hα0) hb hvan hG hGd hGF rfl
+  obtain ⟨hhd, hhH, hhb⟩ := diffContOnCl_holderOnWith_sub_sum_range_toNat hα1
+    (hφ.continuousOn hα0) hb hvan hG hGd hGF
   -- The boundary values of `h` have the Hölder derivative `G' w - i w p'(w)` along the rotations.
   have hV (w : ℂ) (hw : w ∈ sphere (0 : ℂ) 1) :
       HasDerivAt (fun t : ℝ ↦ h (exp (I * t) * w)) (G' w - I * w * deriv p w) 0 := by

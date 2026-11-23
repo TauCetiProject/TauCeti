@@ -307,8 +307,6 @@ private theorem norm_sub_sub_smul_le
     (h : HolderOnWith C α v (sphere 0 1)) {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) (t : ℝ) :
     ‖f (exp (I * t) * w) - f w - t • v w‖ ≤ C * |t| ^ (α : ℝ) * |t| := by
   have hw1 : ‖w‖ = 1 := mem_sphere_zero_iff_norm.mp hw
-  have hrot (s : ℝ) : exp (I * s) * w ∈ sphere (0 : ℂ) 1 := by
-    rw [mem_sphere_zero_iff_norm, norm_mul, norm_exp_I_mul_ofReal, hw1, one_mul]
   -- `u ↦ f (e^{iu} w) - u v(w)` has derivative `v (e^{is} w) - v w` at `s`.
   have hψ (s : ℝ) : HasDerivAt (fun u : ℝ ↦ f (exp (I * u) * w) - u • v w)
       (v (exp (I * s) * w) - v w) s := by
@@ -319,7 +317,7 @@ private theorem norm_sub_sub_smul_le
     intro s hs
     have hst : |s| ≤ |t| := by simpa using abs_sub_left_of_mem_uIcc hs
     calc ‖v (exp (I * s) * w) - v w‖ ≤ C * ‖exp (I * s) * w - w‖ ^ (α : ℝ) := by
-          simpa [dist_eq_norm] using h.dist_le (hrot s) hw
+          simpa [dist_eq_norm] using h.dist_le (TauCeti.exp_I_mul_mul_mem_sphere_iff.2 hw) hw
       _ ≤ C * |t| ^ (α : ℝ) := by
           gcongr
           rw [← sub_one_mul, norm_mul, hw1, mul_one]
@@ -358,7 +356,7 @@ private theorem tendsto_slope (hf : DiffContOnCl ℂ f (ball 0 1)) {z : ℂ}
     Tendsto (fun s : ℝ ↦ (s : ℂ)⁻¹ • (f (exp (I * s) * z) - f z)) (𝓝[≠] 0)
       (𝓝 ((I * z) • deriv f z)) := by
   have hrot : HasDerivAt (fun s : ℝ ↦ exp (I * s) * z) (I * z) 0 := by
-    simpa using (((hasDerivAt_id (0 : ℝ)).ofReal_comp.const_mul I).cexp).mul_const z
+    simpa using TauCeti.hasDerivAt_exp_I_mul_mul z 0
   have hd := (hf.differentiableAt isOpen_ball hz).hasDerivAt.scomp_of_eq 0 hrot (by simp)
   refine hd.tendsto_slope.congr' (Filter.Eventually.of_forall fun s ↦ ?_)
   simp [slope_def_module, ← Complex.coe_smul]
