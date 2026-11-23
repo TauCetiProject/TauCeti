@@ -545,7 +545,8 @@ theorem classGroupPrimaryProj_prod_zpow {m : ℕ} [NeZero m] (p : ℕ) [Fact p.P
   exact congrArg Subtype.val (classGroupPrimaryProj_coe p K _).symm
 
 /-- Comparison between the `p`-primary projection of the covariant `ℤ[(ZMod m)ˣ]`-action and the
-scalar-extended action `cyclotomicClassAction` on `ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))` under
+scalar-extended group-ring action `cyclotomicClassActionAlgHom` on
+`ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))` under
 `AddCommGroup.primaryComponentEquivPadicIntTensor`. -/
 theorem primaryComponentEquivPadicIntTensor_galEquivZMod_prod_zpow {m : ℕ} [NeZero m]
     (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
@@ -559,8 +560,10 @@ theorem primaryComponentEquivPadicIntTensor_galEquivZMod_prod_zpow {m : ℕ} [Ne
                   (RingOfIntegers.mapRingEquiv (((galEquivZMod m K).symm a).toRingEquiv)) c) ^
                   x.coeff a) : ClassGroup (𝓞 K)),
           (classGroupPrimaryProj p K _).property⟩ =
-      (∑ a : (ZMod m)ˣ, (x.coeff a : ℤ_[p]) • cyclotomicClassAction ℤ_[p] m K a)
+      cyclotomicClassActionAlgHom ℤ_[p] m K
+        (MonoidAlgebra.mapRingHom (ZMod m)ˣ (Int.castRingHom ℤ_[p]) x)
         ((1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul c) := by
+  rw [cyclotomicClassActionAlgHom_mapRingHom_intCast]
   simp only [AddCommGroup.primaryComponentEquivPadicIntTensor_apply, one_tmul_classGroupPrimaryProj,
     LinearMap.sum_apply, LinearMap.smul_apply, cyclotomicClassAction_tmul,
     cyclotomicClassGroupAction_apply, RingEquiv.classGroupEquiv_def, ClassGroup.mulEquivHom_apply]
@@ -580,12 +583,14 @@ theorem primaryComponentEquivPadicIntTensor_galEquivZMod_prod_zpow {m : ℕ} [Ne
 
 /-- **Scalar-extended Stickelberger annihilation.** Over any commutative ring `R`, every element of
 `stickelbergerIdeal m` annihilates `R ⊗[ℤ] Additive (ClassGroup (𝓞 K))` through
-`cyclotomicClassAction`. -/
+`cyclotomicClassActionAlgHom`. -/
 theorem stickelbergerIdeal_annihilates_baseChange (R : Type*) [CommRing R]
     (m : ℕ) [NeZero m] (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
     (x : MonoidAlgebra ℤ (ZMod m)ˣ) (hx : x ∈ stickelbergerIdeal m)
     (z : R ⊗[ℤ] Additive (ClassGroup (𝓞 K))) :
-    (∑ a : (ZMod m)ˣ, (x.coeff a : R) • cyclotomicClassAction R m K a) z = 0 := by
+    cyclotomicClassActionAlgHom R m K
+      (MonoidAlgebra.mapRingHom (ZMod m)ˣ (Int.castRingHom R) x) z = 0 := by
+  rw [cyclotomicClassActionAlgHom_mapRingHom_intCast]
   let T : Module.End R (R ⊗[ℤ] Additive (ClassGroup (𝓞 K))) :=
     ∑ a : (ZMod m)ˣ, (x.coeff a : R) • cyclotomicClassAction R m K a
   refine TensorProduct.inductionOn (motive := fun w ↦ T w = 0) z (fun r c ↦ ?_)
@@ -670,7 +675,7 @@ theorem stickelbergerIdeal_annihilates_addPrimaryComponent (p : ℕ) [Fact p.Pri
   refine congrArg Subtype.val (e.injective (?_ : e ⟨_, hmem⟩ = e 0))
   rw [AddCommGroup.primaryComponentEquivPadicIntTensor_apply, map_zero]
   dsimp only
-  rw [TensorProduct.tmul_sum, ← hann]
+  rw [TensorProduct.tmul_sum, ← hann, cyclotomicClassActionAlgHom_mapRingHom_intCast]
   simp only [LinearMap.sum_apply, LinearMap.smul_apply, cyclotomicClassAction_tmul,
     cyclotomicClassGroupAction_apply, RingEquiv.classGroupEquiv_def,
     MulEquiv.toAdditive_apply_apply, ClassGroup.mulEquivHom_apply]
