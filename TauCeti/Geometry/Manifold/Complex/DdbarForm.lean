@@ -180,8 +180,9 @@ theorem ddbarForm_apply_of_mem_maximalAtlas (he : e ∈ IsManifold.maximalAtlas 
 
 /-- In the preferred chart at `x₀`, the coordinate expression of `i∂∂bar u` is, on the chart target,
 the alternation of the imaginary part of the Levi form of `u ∘ (chartAt E x₀).symm`. -/
-theorem inChartAt_ddbarForm [IsManifold 𝓘(ℂ, E) 2 M] (hu : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 2 u) (x₀ : M)
-    {z : E} (hz : z ∈ (chartAt E x₀).target) :
+theorem inChartAt_ddbarForm [IsManifold 𝓘(ℂ, E) 2 M] (x₀ : M) {z : E}
+    (hz : z ∈ (chartAt E x₀).target)
+    (hu : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 u ((chartAt E x₀).symm z)) :
     (ddbarForm E u).inChartAt x₀ z =
       ContinuousAlternatingMap.alternatizeBilinCLM ℝ E ℝ
         (imLeviFormCLM (u ∘ (chartAt E x₀).symm) z) := by
@@ -207,7 +208,7 @@ theorem inChartAt_ddbarForm [IsManifold 𝓘(ℂ, E) 2 M] (hu : ContMDiff 𝓘(�
       (mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, E) (extChartAt 𝓘(ℝ, E) x₀).symm (range 𝓘(ℝ, E)) z b) =
         leviForm (u ∘ c.symm) z a b :=
     (leviForm_comp_symm_apply_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x₀) hy
-      (hu y) _ _).symm.trans (by rw [hinv, hinv, hcy])
+      (hyc ▸ hu) _ _).symm.trans (by rw [hinv, hinv, hcy])
   refine _root_.ContinuousAlternatingMap.ext fun v ↦
     (RoughForm.inChartAt_apply _ _ _ _).trans <| (ddbarForm_apply u y _).trans ?_
   rw [ContinuousAlternatingMap.alternatizeBilinCLM_apply, imLeviFormCLM_apply, imLeviFormCLM_apply,
@@ -228,7 +229,7 @@ theorem isSmoothForm_ddbarForm [IsManifold 𝓘(ℂ, E) 2 M] (hu : ContMDiff �
       (continuousOn_imLeviFormCLM c.open_target hC2)
   simp only [extChartAt_coe, modelWithCornersSelf_coe, id_comp, range_id, contDiffWithinAt_univ]
   exact contDiffAt_zero.2 ⟨c.target, c.open_target.mem_nhds (mem_chart_target E x₀),
-    hcont.congr fun z hz ↦ inChartAt_ddbarForm hu x₀ hz⟩
+    hcont.congr fun z hz ↦ inChartAt_ddbarForm x₀ hz (hu _)⟩
 
 end Chart
 
