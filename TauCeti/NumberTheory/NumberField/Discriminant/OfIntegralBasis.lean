@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
+public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
@@ -38,6 +39,9 @@ e.g. `{1, i}` is a `ℤ`-basis of the Gaussian integers and `disc {1, i} = -4` g
   form that turns an evaluated integer basis discriminant into `d_K` exactly, with
   `NumberField.natAbs_discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int` its
   `natAbs` corollary.
+* `NumberField.sq_det_mapRingHom_basis_eq_discr`: for a field `F` of characteristic zero
+  receiving all `[K : ℚ]` embeddings of `K` and a `ℤ`-basis `c` of `𝒪_K`, the determinant of
+  `(σ(c_τ))_{σ, τ}` in `𝒪_F` squares to `d_K`.
 
 ## Provenance
 
@@ -114,6 +118,46 @@ theorem natAbs_discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int
     {d : ℤ} (hd : Algebra.discr ℚ (b : ι → K) = (d : ℚ)) :
     (NumberField.discr K).natAbs = d.natAbs := by
   rw [discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int b hb hspan hd]
+
+section Embeddings
+
+variable {F : Type*} [Field F] [CharZero F] {ι : Type*}
+
+/-- **The embedding determinant squares to the discriminant.** Let `F` be a field of
+characteristic zero receiving all `[K : ℚ]` embeddings of `K`, let `c` be a `ℤ`-basis of `𝒪_K`,
+and let `e` match the embeddings `K →+* F` with the index of `c`. Then the determinant of
+`(σ(c (e τ)))_{σ, τ}` in `𝒪_F` squares to `d_K`. -/
+theorem sq_det_mapRingHom_basis_eq_discr [DecidableEq (K →+* F)]
+    (hF : Fintype.card (K →+* F) = finrank ℚ K) (c : Basis ι ℤ (𝓞 K)) (e : (K →+* F) ≃ ι) :
+    (Matrix.of fun σ τ : K →+* F ↦ RingOfIntegers.mapRingHom σ (c (e τ))).det ^ 2 =
+      (discr K : 𝓞 F) := by
+  classical
+  let _ : Fintype ι := Fintype.ofEquiv _ e
+  let Ω := AlgebraicClosure F
+  let ψ : 𝓞 F →+* Ω := (algebraMap F Ω).comp (algebraMap (𝓞 F) F)
+  have hψ : Function.Injective ψ :=
+    (algebraMap F Ω).injective.comp RingOfIntegers.coe_injective
+  let g : (K →+* F) → (K →ₐ[ℚ] Ω) :=
+    fun σ ↦ RingHom.equivRatAlgHom K Ω ((algebraMap F Ω).comp σ)
+  have hg : Function.Injective g := fun σ τ h ↦ RingHom.ext fun x ↦
+    (algebraMap F Ω).injective (DFunLike.congr_fun h x)
+  let f : (K →+* F) ≃ (K →ₐ[ℚ] Ω) := Equiv.ofBijective g
+    ((Fintype.bijective_iff_injective_and_card g).mpr ⟨hg, by rw [hF, AlgHom.card]⟩)
+  let c' : Basis ι ℚ K := c.localizationLocalization ℚ (nonZeroDivisors ℤ) K
+  have hc' : (c' : ι → K) = fun i ↦ algebraMap (𝓞 K) K (c i) :=
+    funext (c.localizationLocalization_apply ℚ (nonZeroDivisors ℤ) K)
+  have h := Algebra.discr_eq_det_embeddingsMatrixReindex_pow_two ℚ Ω (c'.reindex e.symm) f
+  have hM : Algebra.embeddingsMatrixReindex ℚ Ω (c'.reindex e.symm) f =
+      (ψ.mapMatrix (Matrix.of fun σ τ : K →+* F ↦
+        RingOfIntegers.mapRingHom σ (c (e τ)))).transpose := by
+    ext i j
+    simp [Algebra.embeddingsMatrixReindex, Algebra.embeddingsMatrix, c', f, g, ψ]
+  rw [hM, Matrix.det_transpose, ← RingHom.map_det, Basis.coe_reindex, Algebra.discr_reindex, hc',
+    discr_eq_of_integralBasis] at h
+  apply hψ
+  simpa using h.symm
+
+end Embeddings
 
 end NumberField
 

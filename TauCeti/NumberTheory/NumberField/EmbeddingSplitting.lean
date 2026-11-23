@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.RingTheory.Idempotents.Module
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 
 /-!
 # The embedding splitting of `R ⊗ 𝓞 L` and embedding eigenspaces
@@ -127,10 +128,11 @@ end Eigenspace
 
 section Action
 
-variable (M : Type*) [AddCommGroup M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
+variable (M : Type*) [AddCommMonoid M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
 
 /-- The action of `R ⊗[ℤ] 𝓞 L` on `M` by `R`-linear endomorphisms. -/
 noncomputable def embeddingAction : R ⊗[ℤ] 𝓞 L →ₐ[R] Module.End R M :=
+  letI : Ring (Module.End R M) := Algebra.semiringToRing R
   Algebra.TensorProduct.lift (Algebra.ofId R _) (Module.toModuleEnd R (S := 𝓞 L) M).toIntAlgHom
     fun r _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left r _
 
@@ -139,8 +141,7 @@ variable {L K R M}
 @[simp]
 theorem embeddingAction_tmul (r : R) (ℓ : 𝓞 L) (m : M) :
     embeddingAction L R M (r ⊗ₜ ℓ) m = r • ℓ • m := by
-  rw [embeddingAction, Algebra.TensorProduct.lift_tmul]
-  rfl
+  simp [embeddingAction]
 
 /-- On `M(σ)`, the algebra `R ⊗[ℤ] 𝓞 L` acts through evaluation at `σ`. -/
 theorem embeddingAction_apply_of_mem {σ : L →+* K} {m : M}
@@ -159,37 +160,6 @@ variable [NumberField L] [CharZero K] {L K R}
 variable (hK : Fintype.card (L →+* K) = finrank ℚ L)
 include hK
 
-/-- The embedding determinant squares to the discriminant: for an equivalence `e` between the
-embeddings `L →+* K` and the index of the integral basis `b` of `𝓞 L`, the determinant of
-`(σ(b (e τ)))_{σ, τ}` in `𝓞 K` squares to `d_L`. -/
-private theorem det_sq_eq_discr [DecidableEq (L →+* K)]
-    (e : (L →+* K) ≃ Free.ChooseBasisIndex ℤ (𝓞 L)) :
-    (Matrix.of fun σ τ : L →+* K ↦
-      RingOfIntegers.mapRingHom σ (RingOfIntegers.basis L (e τ))).det ^ 2 =
-      (discr L : 𝓞 K) := by
-  let Ω := AlgebraicClosure K
-  let ψ : 𝓞 K →+* Ω := (algebraMap K Ω).comp (algebraMap (𝓞 K) K)
-  have hψ : Function.Injective ψ :=
-    (algebraMap K Ω).injective.comp RingOfIntegers.coe_injective
-  let g : (L →+* K) → (L →ₐ[ℚ] Ω) :=
-    fun σ ↦ RingHom.equivRatAlgHom L Ω ((algebraMap K Ω).comp σ)
-  have hg : Function.Injective g := fun σ τ h ↦ RingHom.ext fun x ↦
-    (algebraMap K Ω).injective (DFunLike.congr_fun h x)
-  let f : (L →+* K) ≃ (L →ₐ[ℚ] Ω) := Equiv.ofBijective g
-    ((Fintype.bijective_iff_injective_and_card g).mpr ⟨hg, by rw [hK, AlgHom.card]⟩)
-  let b : Basis (L →+* K) ℚ L := (integralBasis L).reindex e.symm
-  have h := Algebra.discr_eq_det_embeddingsMatrixReindex_pow_two ℚ Ω b f
-  have hM : Algebra.embeddingsMatrixReindex ℚ Ω b f =
-      (ψ.mapMatrix (Matrix.of fun σ τ : L →+* K ↦
-        RingOfIntegers.mapRingHom σ (RingOfIntegers.basis L (e τ)))).transpose := by
-    ext i j
-    simp [Algebra.embeddingsMatrixReindex, Algebra.embeddingsMatrix, b, f, g, ψ,
-      integralBasis_apply]
-  rw [hM, Matrix.det_transpose, ← RingHom.map_det, Basis.coe_reindex, Algebra.discr_reindex,
-    ← coe_discr] at h
-  apply hψ
-  simpa using h.symm
-
 variable (hd : IsUnit (discr L : R))
 include hd
 
@@ -206,7 +176,8 @@ theorem bijective_embeddingSplitting : Function.Bijective (embeddingSplitting L 
     Matrix.of fun σ τ ↦ embeddingRingHom L K R σ (RingOfIntegers.basis L (e τ))
   have hM : IsUnit M.det := by
     have hsq : M.det ^ 2 = (discr L : R) := by
-      have h := congrArg (algebraMap (𝓞 K) R) (det_sq_eq_discr hK e)
+      have h := congrArg (algebraMap (𝓞 K) R)
+        (sq_det_mapRingHom_basis_eq_discr hK (RingOfIntegers.basis L) e)
       rw [map_pow, RingHom.map_det, map_intCast] at h
       rw [← h]
       congr 2
@@ -247,10 +218,28 @@ theorem embeddingEval_embeddingIdempotent_self (σ : L →+* K) :
   classical
   rw [← embeddingSplitting_apply, embeddingSplitting_embeddingIdempotent, Pi.single_eq_same]
 
+@[simp]
 theorem embeddingEval_embeddingIdempotent_of_ne {σ τ : L →+* K} (h : τ ≠ σ) :
     embeddingEval L K R τ (embeddingIdempotent hK hd σ) = 0 := by
   classical
   rw [← embeddingSplitting_apply, embeddingSplitting_embeddingIdempotent, Pi.single_eq_of_ne h]
+
+@[simp]
+theorem embeddingSplittingEquiv_symm_single [DecidableEq (L →+* K)] (σ : L →+* K) :
+    (embeddingSplittingEquiv hK hd).symm (Pi.single σ 1) = embeddingIdempotent hK hd σ := by
+  rw [AlgEquiv.symm_apply_eq, embeddingSplittingEquiv_apply,
+    embeddingSplitting_embeddingIdempotent]
+
+/-- The inverse of the embedding splitting sends `f` to `∑_σ f(σ) eσ`. -/
+theorem embeddingSplittingEquiv_symm_apply (f : (L →+* K) → R) :
+    (embeddingSplittingEquiv hK hd).symm f = ∑ σ, f σ • embeddingIdempotent hK hd σ := by
+  rw [AlgEquiv.symm_apply_eq]
+  ext τ
+  rw [embeddingSplittingEquiv_apply, embeddingSplitting_apply, map_sum, Finset.sum_eq_single τ]
+  · simp
+  · intro σ _ h
+    simp [embeddingEval_embeddingIdempotent_of_ne hK hd (Ne.symm h)]
+  · simp
 
 /-- The idempotents at the embeddings form a complete orthogonal family. -/
 theorem completeOrthogonalIdempotents_embeddingIdempotent :
@@ -274,7 +263,7 @@ theorem one_tmul_mul_embeddingIdempotent (σ : L →+* K) (ℓ : 𝓞 L) :
   · rfl
   · simp [embeddingEval_embeddingIdempotent_of_ne hK hd h]
 
-variable {M : Type*} [AddCommGroup M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
+variable {M : Type*} [AddCommMonoid M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
 
 /-- The idempotent at `σ` acts on `M` with range `M(σ)`. -/
 theorem embeddingIdempotent_smul_top (σ : L →+* K) :
@@ -328,7 +317,7 @@ theorem embeddingEigenspace_tensorProduct [SMulCommClass R (𝓞 L) M]
     let g := (embeddingAction L R M (embeddingIdempotent hK hd σ)).codRestrict
       (embeddingEigenspace L K R M σ) fun m ↦ hrange ⟨m, rfl⟩
     refine ⟨g.rTensor N v, ?_⟩
-    rw [← LinearMap.comp_apply, ← LinearMap.rTensor_comp]
+    rw [← LinearMap.comp_apply, ← LinearMap.rTensor_comp, LinearMap.subtype_comp_codRestrict]
     exact hv'.symm
   · rintro _ ⟨w, rfl⟩
     induction w using TensorProduct.inductionOn with
