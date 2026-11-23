@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
 import TauCeti.Analysis.PDE.Strichartz.Localized
 import Mathlib.Data.Int.Log
-import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.MeasureTheory.Measure.Prod
 
@@ -31,28 +31,27 @@ argument starts.
 The **dyadic time shell** `timeShell ρ` is the set of pairs `(s, t)` with `ρ ≤ |s - t| < 2ρ`. For
 `ρ = 2ʲ`, `j ∈ ℤ`, the shells are disjoint and cover the pairs of distinct times
 (`TauCeti.pairwise_disjoint_timeShell_zpow`, `TauCeti.iUnion_timeShell_zpow`); since the diagonal
-is a null set, the integral of an integrable function on `ℝ × ℝ` is the sum of its integrals over
-the shells (`TauCeti.hasSum_setIntegral_timeShell`). The restriction of `T` to a shell is bounded
-in three ways, all in mixed norms `L²_t L^a_x`:
+is a null set, the integral of an integrable function over a measurable region `W ⊆ ℝ × ℝ` is the
+sum of its integrals over the parts of `W` in the shells
+(`TauCeti.hasSum_setIntegral_timeShell_inter`). The restriction of `T` to a measurable subset `W`
+of a shell is bounded in three ways, all in mixed norms `L²_t L^a_x`:
 
 * **At equal exponents** (`TauCeti.setLIntegral_timeShell_enorm_inner_adjoint_le`): if the time
   pairings decay like `‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-γ) ‖g‖_{r'}`, `γ ≥ 0`, then the integral of
-  `|⟪U(s)* F(s), U(t)* G(t)⟫|` over the shell is at most `4 A ρ ^ (1 - γ) ‖F‖_{L² L^{r'}}
-  ‖G‖_{L² L^{r'}}`. On the shell the pairing decay is at least `ρ ^ (-γ)`, and the sections of
-  the shell are windows of length `2ρ`, so the sliding-window decay bound
-  `TauCeti.lintegral_setLIntegral_sub_preimage_enorm_inner_adjoint_le` does the time integral.
+  `|⟪U(s)* F(s), U(t)* G(t)⟫|` over the shell, hence over `W`, is at most
+  `4 A ρ ^ (1 - γ) ‖F‖_{L² L^{r'}} ‖G‖_{L² L^{r'}}`. On the shell the pairing decay is at least
+  `ρ ^ (-γ)`, and the sections of the shell are windows of length `2ρ`, so the sliding-window decay
+  bound `TauCeti.lintegral_setLIntegral_sub_preimage_enorm_inner_adjoint_le` does the time integral.
   With the dispersive estimate, `r = ∞` and `γ = σ`, this is the bound at the pair `(∞, ∞)`.
-* **With an energy factor** (`TauCeti.enorm_setIntegral_timeShell_inner_adjoint_le` and
-  `TauCeti.enorm_setIntegral_timeShell_inner_adjoint_le'`): if `‖U(t)‖ ≤ M` and the dual estimate
-  `‖∫ U(t)* G(t) dt‖ ≤ K ‖G‖_{L^p L^r}` holds with a time exponent `p ≤ 2`, then the restriction
-  of `T` to the shell is at most `M K (2ρ) ^ (1/p) ‖F‖_{L² L²} ‖G‖_{L² L^r}`, and symmetrically
-  with the roles of `F` and `G` exchanged. For each `s` the integral over the section
-  `ρ ≤ |s - t| < 2ρ`, which has length `2ρ`, is `⟪U(s)* F(s), ∫ U(t)* G(t) dt⟫` over that
-  section; the energy bound controls the first factor, the dual estimate and Hölder's inequality
-  in time on the section the second. This is the sliding-window energy bound
-  `TauCeti.enorm_integral_inner_setIntegral_sub_preimage_adjoint_le` for these sections. With the
-  non-endpoint dual Strichartz estimate at a pair `(q, a)`, `p = q'`, these are the bounds at the
-  pairs `(2, a)` and `(a, 2)`.
+* **With an energy factor** (`TauCeti.enorm_setIntegral_inner_adjoint_le_of_subset_timeShell` and
+  `TauCeti.enorm_setIntegral_inner_adjoint_le_of_subset_timeShell'`): if `‖U(t)‖ ≤ M` and the dual
+  estimate `‖∫ U(t)* G(t) dt‖ ≤ K ‖G‖_{L^p L^r}` holds with a time exponent `p ≤ 2`, then the
+  restriction of `T` to `W` is at most `M K (2ρ) ^ (1/p) ‖F‖_{L² L²} ‖G‖_{L² L^r}`, and
+  symmetrically with the roles of `F` and `G` exchanged. For each `s` the integral over the section
+  `{t | (s, t) ∈ W}`, which has measure at most `2ρ`, is `⟪U(s)* F(s), ∫ U(t)* G(t) dt⟫` over that
+  section; the energy bound controls the first factor, the dual estimate and Hölder's inequality in
+  time on the section the second. With the non-endpoint dual Strichartz estimate at a pair `(q, a)`,
+  `p = q'`, these are the bounds at the pairs `(2, a)` and `(a, 2)`.
 
 For a decay rate `σ > 1`, the endpoint `(r, r)`, `1/r = 1/2 - 1/(2σ)`, lies inside the triangle
 spanned by `(∞, ∞)`, `(2, a)` and `(a, 2)` in the plane of inverse exponents when `a` is close to
@@ -60,20 +59,22 @@ the endpoint. The powers of `ρ` in the three bounds are the values at these thr
 affine function of the inverse exponents, which vanishes at the endpoint. Keel and Tao's argument
 combines the three bounds and sums them over the dyadic shells.
 
-The shells here are symmetric in `s` and `t`, so they decompose the whole form `T`; the retarded
-form, over `s < t`, is the restriction to the half plane.
+The shells are symmetric in `s` and `t`, so for `W` the whole plane they decompose the whole form
+`T`; for `W` the half plane `s < t` they decompose the retarded form.
 
 ## Main declarations
 
 * `TauCeti.timeShell`: the dyadic time shell `ρ ≤ |s - t| < 2ρ`.
-* `TauCeti.hasSum_setIntegral_timeShell`: the decomposition of a double integral over the
-  shells `ρ = 2ʲ`.
-* `TauCeti.setIntegral_timeShell_inner_eq_conj`: the shell pairings are conjugate symmetric.
-* `TauCeti.enorm_inner_integral_le_tsum`: the pairing of two time integrals is at most the sum of
-  the absolute values of its shell pieces.
+* `TauCeti.hasSum_setIntegral_timeShell`, `TauCeti.hasSum_setIntegral_timeShell_inter`: the
+  decomposition of a double integral, over the plane or over a region, along the shells `ρ = 2ʲ`.
+* `TauCeti.enorm_setIntegral_le_tsum_timeShell_inter`: the integral over a region is at most the
+  sum of the absolute values of its shell pieces.
+* `TauCeti.setIntegral_inner_eq_conj`: exchanging the arguments of a pairing over a region
+  conjugates it and reflects the region.
 * `TauCeti.setLIntegral_timeShell_enorm_inner_adjoint_le`: the bound at equal exponents.
-* `TauCeti.enorm_setIntegral_timeShell_inner_adjoint_le`,
-  `TauCeti.enorm_setIntegral_timeShell_inner_adjoint_le'`: the bounds with an energy factor.
+* `TauCeti.enorm_setIntegral_inner_adjoint_le_of_subset_timeShell`,
+  `TauCeti.enorm_setIntegral_inner_adjoint_le_of_subset_timeShell'`: the bounds with an energy
+  factor.
 
 ## References
 
@@ -188,35 +189,39 @@ theorem hasSum_setIntegral_timeShell {E : Type*} [NormedAddCommGroup E] [NormedS
       (Measure.prod_graph_eq_zero measurable_id))
   rwa [iUnion_timeShell_zpow, Measure.restrict_eq_self_of_ae_mem hdiag] at h
 
-/-- The pairing of two time-dependent vectors over a dyadic time shell is conjugate symmetric:
-exchanging the two arguments conjugates it, since the shell is symmetric in `s` and `t`. -/
-theorem setIntegral_timeShell_inner_eq_conj {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
-    [InnerProductSpace 𝕜 V] (ρ : ℝ) (f g : ℝ → V) :
-    ∫ z in timeShell ρ, ⟪f z.1, g z.2⟫_𝕜 ∂(volume.prod volume) =
-      starRingEnd 𝕜 (∫ z in timeShell ρ, ⟪g z.1, f z.2⟫_𝕜 ∂(volume.prod volume)) := by
-  have hswap : Prod.swap ⁻¹' timeShell ρ = timeShell ρ := ext fun _ ↦ swap_mem_timeShell
-  rw [← integral_conj]
-  conv_rhs => rw [← Measure.measurePreserving_swap.setIntegral_preimage_emb
-    MeasurableEquiv.prodComm.measurableEmbedding _ (timeShell ρ), hswap]
-  simp only [Prod.fst_swap, Prod.snd_swap, inner_conj_symm]
+/-- **The dyadic decomposition of a double time integral over a region.** For a measurable set
+`W` of pairs of times and a function `f` integrable on `W`, the integrals of `f` over the parts of
+`W` in the dyadic time shells `2ʲ ≤ |s - t| < 2ʲ⁺¹`, `j ∈ ℤ`, sum to the integral of `f` over
+`W`. -/
+theorem hasSum_setIntegral_timeShell_inter {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {W : Set (ℝ × ℝ)} (hW : MeasurableSet W) {f : ℝ × ℝ → E}
+    (hf : IntegrableOn f W (volume.prod volume)) :
+    HasSum (fun j : ℤ ↦ ∫ p in timeShell ((2 : ℝ) ^ j) ∩ W, f p ∂(volume.prod volume))
+      (∫ p in W, f p ∂(volume.prod volume)) := by
+  have h := hasSum_setIntegral_timeShell ((integrable_indicator_iff hW).2 hf)
+  simp_rw [setIntegral_indicator hW, integral_indicator hW] at h
+  exact h
 
-/-- The pairing of two time integrals is at most the sum over the dyadic time shells of the
-absolute values of its pieces. -/
-theorem enorm_inner_integral_le_tsum {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
-    [InnerProductSpace 𝕜 V] [CompleteSpace V] [NormedSpace ℝ V] {f g : ℝ → V} (hf : Integrable f)
-    (hg : Integrable g) :
-    ‖⟪∫ s, f s, ∫ t, g t⟫_𝕜‖ₑ ≤
-      ∑' j : ℤ, ‖∫ z in timeShell ((2 : ℝ) ^ j), ⟪f z.1, g z.2⟫_𝕜 ∂(volume.prod volume)‖ₑ := by
-  have hφ : Integrable (fun z : ℝ × ℝ ↦ ⟪f z.1, g z.2⟫_𝕜) (volume.prod volume) :=
-    hf.op_fst_snd (op := fun u v ↦ ⟪u, v⟫_𝕜) continuous_inner
-      ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩ hg
-  have heq : ⟪∫ s, f s, ∫ t, g t⟫_𝕜 = ∫ z, ⟪f z.1, g z.2⟫_𝕜 ∂(volume.prod volume) := by
-    rw [integral_prod _ hφ]
-    simp_rw [integral_inner hg]
-    rw [← inner_conj_symm, ← integral_inner hf, ← integral_conj]
-    simp_rw [inner_conj_symm]
-  rw [heq, ← (hasSum_setIntegral_timeShell hφ).tsum_eq]
+/-- The integral over a region `W` of pairs of times is at most the sum over the dyadic time
+shells of the absolute values of the integrals over the parts of `W` in the shells. -/
+theorem enorm_setIntegral_le_tsum_timeShell_inter {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {W : Set (ℝ × ℝ)} (hW : MeasurableSet W) {f : ℝ × ℝ → E}
+    (hf : IntegrableOn f W (volume.prod volume)) :
+    ‖∫ p in W, f p ∂(volume.prod volume)‖ₑ ≤
+      ∑' j : ℤ, ‖∫ p in timeShell ((2 : ℝ) ^ j) ∩ W, f p ∂(volume.prod volume)‖ₑ := by
+  rw [← (hasSum_setIntegral_timeShell_inter hW hf).tsum_eq]
   exact eNorm_tsum_le_tsum_eNorm
+
+/-- The pairing of two time-dependent vectors over a region `W` of pairs of times is the
+conjugate of the pairing with the arguments exchanged over the reflected region. -/
+theorem setIntegral_inner_eq_conj {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] (W : Set (ℝ × ℝ)) (f g : ℝ → V) :
+    ∫ z in W, ⟪f z.1, g z.2⟫_𝕜 ∂(volume.prod volume) =
+      starRingEnd 𝕜 (∫ z in Prod.swap ⁻¹' W, ⟪g z.1, f z.2⟫_𝕜 ∂(volume.prod volume)) := by
+  rw [← integral_conj]
+  conv_lhs => rw [← Measure.measurePreserving_swap.setIntegral_preimage_emb
+    MeasurableEquiv.prodComm.measurableEmbedding _ W]
+  simp only [Prod.fst_swap, Prod.snd_swap, inner_conj_symm]
 
 variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measure X}
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
@@ -286,73 +291,245 @@ theorem setLIntegral_timeShell_enorm_inner_adjoint_le {r r' : ℝ≥0∞} [r'.Ho
         norm_num
     _ = 4 * A * (ENNReal.ofReal ρ * ENNReal.ofReal ρ ^ (-γ)) * x * y := by ring
 
+/-- The `L²` norm of a function into `ℝ≥0∞` is the square root of the integral of its square. -/
+private theorem eLpNorm_two_eq {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) :
+    eLpNorm f 2 = (∫⁻ x, f x ^ (2 : ℝ)) ^ (2⁻¹ : ℝ) := by
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
+    hf.aestronglyMeasurable]
+  simp
+
+/-- The section at a first time `s` of a set `W` of pairs of times inside the dyadic time shell
+`ρ ≤ |s - t| < 2ρ` has measure at most `2ρ`. -/
+private theorem volume_mk_preimage_le {ρ : ℝ} {W : Set (ℝ × ℝ)} (hWρ : W ⊆ timeShell ρ)
+    (s : ℝ) : volume (Prod.mk s ⁻¹' W) ≤ ENNReal.ofReal (2 * ρ) :=
+  (measure_mono (preimage_mono hWρ)).trans_eq <| by
+    rw [mk_preimage_timeShell_right, volume_ball_two_mul_sdiff_ball]
+
+/-- The section at a second time `t` of a set `W` of pairs of times inside the dyadic time shell
+`ρ ≤ |s - t| < 2ρ` has measure at most `2ρ`. -/
+private theorem volume_preimage_mk_le {ρ : ℝ} {W : Set (ℝ × ℝ)} (hWρ : W ⊆ timeShell ρ)
+    (t : ℝ) : volume ((fun s ↦ (s, t)) ⁻¹' W) ≤ ENNReal.ofReal (2 * ρ) :=
+  (measure_mono (preimage_mono hWρ)).trans_eq <| by
+    rw [mk_preimage_timeShell_left, volume_ball_two_mul_sdiff_ball]
+
+/-- The square of the `L²` norm of `b` on the section of `W` at `s` is the integral of `b²` over
+that section. -/
+private theorem eLpNorm_indicator_mk_preimage_eq {W : Set (ℝ × ℝ)} (hW : MeasurableSet W)
+    {b : ℝ → ℝ≥0∞} (hb : AEMeasurable b) (s : ℝ) :
+    eLpNorm ((Prod.mk s ⁻¹' W).indicator b) 2 =
+      (∫⁻ t, W.indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t)) ^ (2⁻¹ : ℝ) := by
+  rw [eLpNorm_two_eq (hb.indicator (measurable_prodMk_left hW))]
+  congr 1
+  refine lintegral_congr fun t ↦ ?_
+  by_cases ht : (s, t) ∈ W <;> simp [ht]
+
+private theorem aemeasurable_uncurry_indicator {W : Set (ℝ × ℝ)} (hW : MeasurableSet W)
+    {b : ℝ → ℝ≥0∞} (hb : AEMeasurable b) :
+    AEMeasurable (Function.uncurry fun s t ↦ W.indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t))
+      (volume.prod volume) :=
+  (hb.comp_snd.pow_const _).indicator hW
+
+/-- The `L²` norms of `b` on the sections of `W` depend measurably on `s`. -/
+private theorem aemeasurable_eLpNorm_indicator_mk_preimage {W : Set (ℝ × ℝ)}
+    (hW : MeasurableSet W) {b : ℝ → ℝ≥0∞} (hb : AEMeasurable b) :
+    AEMeasurable fun s ↦ eLpNorm ((Prod.mk s ⁻¹' W).indicator b) 2 := by
+  simp_rw [eLpNorm_indicator_mk_preimage_eq hW hb]
+  exact (aemeasurable_uncurry_indicator hW hb).lintegral_prod_right'.pow_const _
+
+/-- For `W` inside the dyadic time shell `ρ ≤ |s - t| < 2ρ`, the `L²` norm in `s` of the `L²` norms
+of `b` on the sections of `W` is at most `(2ρ) ^ (1/2) ‖b‖₂`. -/
+private theorem eLpNorm_eLpNorm_indicator_mk_preimage_le {ρ : ℝ} {W : Set (ℝ × ℝ)}
+    (hW : MeasurableSet W) (hWρ : W ⊆ timeShell ρ) {b : ℝ → ℝ≥0∞} (hb : AEMeasurable b) :
+    eLpNorm (fun s ↦ eLpNorm ((Prod.mk s ⁻¹' W).indicator b) 2) 2 ≤
+      ENNReal.ofReal (2 * ρ) ^ (2⁻¹ : ℝ) * eLpNorm b 2 := by
+  -- Integrating the squared sections over `s` gives at most `2ρ ∫ b²`, by Tonelli's theorem.
+  have hcol (t : ℝ) : ∫⁻ s, W.indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t) ≤
+      b t ^ (2 : ℝ) * ENNReal.ofReal (2 * ρ) := by
+    have : (fun s ↦ W.indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t)) =
+        ((fun s ↦ (s, t)) ⁻¹' W).indicator fun _ ↦ b t ^ (2 : ℝ) := by
+      ext s
+      by_cases hs : (s, t) ∈ W <;> simp [hs]
+    rw [this, lintegral_indicator_const (measurable_prodMk_right hW)]
+    gcongr
+    exact volume_preimage_mk_le hWρ t
+  have hsq (x : ℝ≥0∞) : (x ^ (2⁻¹ : ℝ)) ^ (2 : ℝ) = x := by
+    rw [← ENNReal.rpow_mul]
+    norm_num
+  rw [eLpNorm_two_eq (aemeasurable_eLpNorm_indicator_mk_preimage hW hb), eLpNorm_two_eq hb]
+  simp_rw [eLpNorm_indicator_mk_preimage_eq hW hb, hsq]
+  rw [lintegral_lintegral_swap (aemeasurable_uncurry_indicator hW hb)]
+  calc (∫⁻ t, ∫⁻ s, W.indicator (fun z ↦ b z.2 ^ (2 : ℝ)) (s, t)) ^ (2⁻¹ : ℝ)
+      ≤ (∫⁻ t, b t ^ (2 : ℝ) * ENNReal.ofReal (2 * ρ)) ^ (2⁻¹ : ℝ) := by
+        gcongr with t
+        exact hcol t
+    _ = _ := by
+        rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top,
+          ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), mul_comm]
+
+/-- Cutting a family `G` off to a set of times commutes with applying `U(t)*`. -/
+private theorem adjoint_indicator_eq {U : ℝ → H →L[𝕜] Lp E 2 μ} (G : ℝ → Lp E 2 μ) (S : Set ℝ) :
+    (fun t ↦ ((U t)†) (S.indicator G t)) = S.indicator fun t ↦ ((U t)†) (G t) := by
+  ext t
+  by_cases ht : t ∈ S <;> simp [ht]
+
 variable [NormedSpace ℝ H]
 
-/-- Integrating first in the first time `s`, the pairing of `f` and `g` over the dyadic time shell
-is the integral over `t` of the pairing of `g(t)` with the integral of `f` over the section
-`ρ ≤ |s - t| < 2ρ`. -/
-private theorem setIntegral_timeShell_inner_eq {ρ : ℝ} {f g : ℝ → H} (hf : Integrable f)
-    (hg : Integrable g) :
-    ∫ z in timeShell ρ, ⟪f z.1, g z.2⟫_𝕜 ∂(volume.prod volume) =
-      ∫ t, ⟪∫ s in (fun s ↦ s - t) ⁻¹' (ball 0 (2 * ρ) \ ball 0 ρ), f s, g t⟫_𝕜 := by
-  have hφ : Integrable (fun z : ℝ × ℝ ↦ ⟪f z.1, g z.2⟫_𝕜) (volume.prod volume) :=
-    hf.op_fst_snd (op := fun u v ↦ ⟪u, v⟫_𝕜) continuous_inner
-      ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩ hg
-  rw [← integral_indicator (measurableSet_timeShell ρ),
-    integral_prod_symm _ (hφ.indicator (measurableSet_timeShell ρ))]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun t ↦ ?_)
-  dsimp only
-  rw [← integral_inner_left hf.integrableOn, ← ball_sdiff_ball_eq_preimage,
-    ← integral_indicator (measurableSet_ball.diff measurableSet_ball)]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun s ↦ ?_)
-  exact indicator_timeShell_mk_left ρ s t _
+/-- For each `s`, the integral over `t` of the time pairing restricted to a set `W` of pairs of
+times is the pairing of `U(s)* F(s)` with the integral of `U(t)* G(t)` over the section of `W` at
+`s`. -/
+private theorem integral_indicator_inner_eq {W : Set (ℝ × ℝ)} (hW : MeasurableSet W)
+    {U : ℝ → H →L[𝕜] Lp E 2 μ} (F G : ℝ → Lp E 2 μ)
+    (hUG : Integrable fun t ↦ ((U t)†) (G t)) (s : ℝ) :
+    ∫ t, W.indicator (fun z ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜) (s, t) =
+      ⟪((U s)†) (F s), ∫ t, ((U t)†) ((Prod.mk s ⁻¹' W).indicator G t)⟫_𝕜 := by
+  have h : (fun t ↦ W.indicator
+      (fun z ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜) (s, t)) =
+        fun t ↦ ⟪((U s)†) (F s), ((U t)†) ((Prod.mk s ⁻¹' W).indicator G t)⟫_𝕜 := by
+    ext t
+    by_cases ht : (s, t) ∈ W <;> simp [ht]
+  rw [h, integral_inner]
+  rw [adjoint_indicator_eq]
+  exact hUG.indicator (measurable_prodMk_left hW)
 
-/-- **The time pairings on a dyadic shell, with an energy factor.** Let `U(t) : H → L²(X, μ)` be
-bounded operators, `‖U(t)‖ ≤ M`, satisfying a dual estimate with a time exponent `p ≤ 2`,
-`‖∫ U(t)* G(t) dt‖ ≤ K ‖G‖_{L^p L^r}`. Then on the dyadic time shell `ρ ≤ |s - t| < 2ρ`,
+/-- The dual estimate `‖∫ U(t)* G(t) dt‖ ≤ K ‖G‖_{L^p L^r}`, `p ≤ 2`, applied on the section of a
+set `W` inside the dyadic time shell, which has measure at most `2ρ`, together with Hölder's
+inequality in time on the section. -/
+private theorem enorm_integral_adjoint_indicator_mk_preimage_le {p r : ℝ≥0∞} (hp : p ≤ 2)
+    {ρ : ℝ} {W : Set (ℝ × ℝ)} (hW : MeasurableSet W) (hWρ : W ⊆ timeShell ρ)
+    {U : ℝ → H →L[𝕜] Lp E 2 μ} {K : ℝ≥0∞}
+    (hK : ∀ G' : ℝ → Lp E 2 μ, AEStronglyMeasurable G' → Integrable (fun t ↦ ((U t)†) (G' t)) →
+      ‖∫ t, ((U t)†) (G' t)‖ₑ ≤ K * eLpNorm (fun t ↦ eLpNorm (G' t) r μ) p)
+    {G : ℝ → Lp E 2 μ} (hG : AEStronglyMeasurable G) (hUG : Integrable fun t ↦ ((U t)†) (G t))
+    (s : ℝ) :
+    ‖∫ t, ((U t)†) ((Prod.mk s ⁻¹' W).indicator G t)‖ₑ ≤
+      K * (eLpNorm ((Prod.mk s ⁻¹' W).indicator fun t ↦ eLpNorm (G t) r μ) 2 *
+        ENNReal.ofReal (2 * ρ) ^ (1 / p.toReal - 1 / (2 : ℝ≥0∞).toReal)) := by
+  set S := Prod.mk s ⁻¹' W
+  have hS : MeasurableSet S := measurable_prodMk_left hW
+  have hb : AEMeasurable fun t ↦ eLpNorm (G t) r μ := hG.aemeasurable_eLpNorm_Lp .rfl r
+  refine (hK _ (hG.indicator hS) (by rw [adjoint_indicator_eq]; exact hUG.indicator hS)).trans ?_
+  -- The exponent `p = 0` makes the dual estimate vanish.
+  rcases eq_or_ne p 0 with rfl | hp0
+  · rw [eLpNorm_exponent_zero
+      ((hG.indicator hS).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable, mul_zero]
+    exact zero_le
+  gcongr
+  have hb' : (fun t ↦ eLpNorm ((S.indicator G t : Lp E 2 μ) : X → E) r μ) =
+      S.indicator fun t ↦ eLpNorm (G t) r μ := by
+    ext t
+    by_cases ht : t ∈ S
+    · simp [ht]
+    · rw [indicator_of_notMem ht, indicator_of_notMem ht,
+        eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
+  rw [hb', eLpNorm_indicator_eq_eLpNorm_restrict (μ := volume) hS.nullMeasurableSet,
+    eLpNorm_indicator_eq_eLpNorm_restrict (μ := volume) hS.nullMeasurableSet]
+  refine (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp
+    (hb.restrict (s := S)).aestronglyMeasurable).trans ?_
+  rw [Measure.restrict_apply_univ]
+  have hexp : 0 ≤ 1 / p.toReal - 1 / (2 : ℝ≥0∞).toReal := by
+    have hp' : p.toReal ≤ 2 := by
+      simpa using ENNReal.toReal_mono ENNReal.ofNat_ne_top hp
+    have hp'0 : 0 < p.toReal := ENNReal.toReal_pos hp0 (ne_top_of_le_ne_top ENNReal.ofNat_ne_top hp)
+    rw [ENNReal.toReal_ofNat, sub_nonneg]
+    exact one_div_le_one_div_of_le hp'0 hp'
+  gcongr
+  exact volume_mk_preimage_le hWρ s
 
-`|∫∫_{ρ ≤ |s - t| < 2ρ} ⟪U(s)* F(s), U(t)* G(t)⟫ ds dt| ≤
-  M K (2ρ) ^ (1/p) ‖F‖_{L² L²} ‖G‖_{L² L^r}`.
+/-- **The time pairings on part of a dyadic shell, with an energy factor.** Let
+`U(t) : H → L²(X, μ)` be bounded operators, `‖U(t)‖ ≤ M`, satisfying a dual estimate with a time
+exponent `p ≤ 2`, `‖∫ U(t)* G(t) dt‖ ≤ K ‖G‖_{L^p L^r}`. Then for every measurable set `W` of
+pairs of times inside the dyadic time shell `ρ ≤ |s - t| < 2ρ`,
+
+`|∫∫_W ⟪U(s)* F(s), U(t)* G(t)⟫ ds dt| ≤ M K (2ρ) ^ (1/p) ‖F‖_{L² L²} ‖G‖_{L² L^r}`.
 
 With the non-endpoint dual Strichartz estimate at a pair `(q, a)`, `p = q'`, this is the bound
-of Keel and Tao at the exponent pair `(2, a)`. -/
-theorem enorm_setIntegral_timeShell_inner_adjoint_le {p r : ℝ≥0∞} (hp : p ≤ 2) (ρ : ℝ)
+of Keel and Tao at the exponent pair `(2, a)`, on the whole shell (`W = timeShell ρ`) or on its
+retarded half `s < t`. -/
+theorem enorm_setIntegral_inner_adjoint_le_of_subset_timeShell {p r : ℝ≥0∞} (hp : p ≤ 2)
+    {ρ : ℝ} {W : Set (ℝ × ℝ)} (hW : MeasurableSet W) (hWρ : W ⊆ timeShell ρ)
     {U : ℝ → H →L[𝕜] Lp E 2 μ} {M K : ℝ≥0∞} (hM : ∀ t, ‖U t‖ₑ ≤ M)
     (hK : ∀ G' : ℝ → Lp E 2 μ, AEStronglyMeasurable G' → Integrable (fun t ↦ ((U t)†) (G' t)) →
       ‖∫ t, ((U t)†) (G' t)‖ₑ ≤ K * eLpNorm (fun t ↦ eLpNorm (G' t) r μ) p)
     {F G : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) (hG : AEStronglyMeasurable G)
     (hUF : Integrable fun s ↦ ((U s)†) (F s)) (hUG : Integrable fun t ↦ ((U t)†) (G t)) :
-    ‖∫ z in timeShell ρ, ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜 ∂(volume.prod volume)‖ₑ ≤
+    ‖∫ z in W, ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜 ∂(volume.prod volume)‖ₑ ≤
       M * K * ENNReal.ofReal (2 * ρ) ^ p.toReal⁻¹ * eLpNorm (fun s ↦ eLpNorm (F s) 2 μ) 2 *
         eLpNorm (fun t ↦ eLpNorm (G t) r μ) 2 := by
-  rw [setIntegral_timeShell_inner_eq_conj ρ (fun s ↦ ((U s)†) (F s)) fun t ↦ ((U t)†) (G t),
-    RCLike.eNorm_conj, setIntegral_timeShell_inner_eq hUG hUF]
-  refine (enorm_integral_inner_setIntegral_sub_preimage_adjoint_le hp hM hK
-    (measurableSet_ball.diff measurableSet_ball) hG hF).trans_eq ?_
-  simp only [volume_ball_two_mul_sdiff_ball, Lp.eNorm_def]
-  ring
+  rcases le_or_gt ρ 0 with hρ | hρ
+  · have hW0 : W = ∅ := subset_empty_iff.1 (hWρ.trans_eq (timeShell_eq_empty_of_nonpos hρ))
+    simp [hW0]
+  set a := fun s ↦ eLpNorm (F s) 2 μ
+  set b := fun t ↦ eLpNorm (G t) r μ
+  have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl 2
+  have hb : AEMeasurable b := hG.aemeasurable_eLpNorm_Lp .rfl r
+  set g := fun s ↦ eLpNorm ((Prod.mk s ⁻¹' W).indicator b) 2
+  have hg : AEMeasurable g := aemeasurable_eLpNorm_indicator_mk_preimage hW hb
+  set c := ENNReal.ofReal (2 * ρ) ^ (1 / p.toReal - 1 / (2 : ℝ≥0∞).toReal)
+  have hφ : Integrable (fun z : ℝ × ℝ ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜)
+      (volume.prod volume) :=
+    hUF.inner_fst_snd hUG
+  -- The energy bound for `U(s)* F(s)`, and the dual estimate for the integral over the section.
+  have hpt (s : ℝ) : ‖∫ t, W.indicator
+      (fun z ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜) (s, t)‖ₑ ≤ M * K * c * (a s * g s) := by
+    rw [integral_indicator_inner_eq hW F G hUG]
+    refine (eNorm_inner_le_eNorm _ _).trans ?_
+    have hx : ‖((U s)†) (F s)‖ₑ ≤ M * a s := by
+      refine (((U s)†).le_opENorm _).trans ?_
+      rw [ContinuousLinearMap.adjoint.eNorm_map, Lp.eNorm_def]
+      gcongr
+      exact hM s
+    calc _ ≤ M * a s * (K * (g s * c)) := by
+          gcongr
+          exact enorm_integral_adjoint_indicator_mk_preimage_le hp hW hWρ hK hG hUG s
+      _ = _ := by ring
+  have hpow : c * ENNReal.ofReal (2 * ρ) ^ (2⁻¹ : ℝ) = ENNReal.ofReal (2 * ρ) ^ p.toReal⁻¹ := by
+    rw [← ENNReal.rpow_add _ _ (ENNReal.ofReal_pos.2 (by positivity)).ne' ENNReal.ofReal_ne_top]
+    norm_num
+  -- Fubini, then Hölder's inequality in `s`.
+  calc ‖∫ z in W, ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜 ∂(volume.prod volume)‖ₑ
+      = ‖∫ s, ∫ t, W.indicator
+          (fun z ↦ ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜) (s, t)‖ₑ := by
+        rw [← integral_indicator hW, integral_prod _ (hφ.indicator hW)]
+    _ ≤ ∫⁻ s, M * K * c * (a s * g s) :=
+        (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono hpt)
+    _ = M * K * c * ∫⁻ s, a s * g s := lintegral_const_mul'' _ (ha.mul hg)
+    _ ≤ M * K * c * (eLpNorm a 2 * eLpNorm g 2) := by
+        gcongr
+        have h := eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal (p := 2) (q := 2) (r := 1)
+          ha.aestronglyMeasurable hg.aestronglyMeasurable
+        rwa [eLpNorm_one_eq_lintegral_eNorm (ha.mul hg).aestronglyMeasurable] at h
+    _ ≤ M * K * c * (eLpNorm a 2 * (ENNReal.ofReal (2 * ρ) ^ (2⁻¹ : ℝ) * eLpNorm b 2)) := by
+        gcongr
+        exact eLpNorm_eLpNorm_indicator_mk_preimage_le hW hWρ hb
+    _ = _ := by
+        rw [← hpow]
+        ring
 
-/-- **The time pairings on a dyadic shell, with an energy factor on the second argument.** This
-is `TauCeti.enorm_setIntegral_timeShell_inner_adjoint_le` with the roles of `F` and `G` exchanged:
-if `‖U(t)‖ ≤ M` and `‖∫ U(s)* F(s) ds‖ ≤ K ‖F‖_{L^p L^r}` with `p ≤ 2`, then
+/-- **The time pairings on part of a dyadic shell, with an energy factor on the second
+argument.** This is `TauCeti.enorm_setIntegral_inner_adjoint_le_of_subset_timeShell` with the
+roles of `F` and `G` exchanged: if `‖U(t)‖ ≤ M` and `‖∫ U(s)* F(s) ds‖ ≤ K ‖F‖_{L^p L^r}` with
+`p ≤ 2`, then for every measurable set `W` of pairs of times inside the dyadic time shell
+`ρ ≤ |s - t| < 2ρ`,
 
-`|∫∫_{ρ ≤ |s - t| < 2ρ} ⟪U(s)* F(s), U(t)* G(t)⟫ ds dt| ≤
-  M K (2ρ) ^ (1/p) ‖F‖_{L² L^r} ‖G‖_{L² L²}`.
+`|∫∫_W ⟪U(s)* F(s), U(t)* G(t)⟫ ds dt| ≤ M K (2ρ) ^ (1/p) ‖F‖_{L² L^r} ‖G‖_{L² L²}`.
 
 For the non-endpoint dual Strichartz estimate at a pair `(q, a)`, `p = q'`, this is the bound of
 Keel and Tao at the exponent pair `(a, 2)`. -/
-theorem enorm_setIntegral_timeShell_inner_adjoint_le' {p r : ℝ≥0∞} (hp : p ≤ 2) (ρ : ℝ)
+theorem enorm_setIntegral_inner_adjoint_le_of_subset_timeShell' {p r : ℝ≥0∞} (hp : p ≤ 2)
+    {ρ : ℝ} {W : Set (ℝ × ℝ)} (hW : MeasurableSet W) (hWρ : W ⊆ timeShell ρ)
     {U : ℝ → H →L[𝕜] Lp E 2 μ} {M K : ℝ≥0∞} (hM : ∀ t, ‖U t‖ₑ ≤ M)
     (hK : ∀ F' : ℝ → Lp E 2 μ, AEStronglyMeasurable F' → Integrable (fun s ↦ ((U s)†) (F' s)) →
       ‖∫ s, ((U s)†) (F' s)‖ₑ ≤ K * eLpNorm (fun s ↦ eLpNorm (F' s) r μ) p)
     {F G : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) (hG : AEStronglyMeasurable G)
     (hUF : Integrable fun s ↦ ((U s)†) (F s)) (hUG : Integrable fun t ↦ ((U t)†) (G t)) :
-    ‖∫ z in timeShell ρ, ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜 ∂(volume.prod volume)‖ₑ ≤
+    ‖∫ z in W, ⟪((U z.1)†) (F z.1), ((U z.2)†) (G z.2)⟫_𝕜 ∂(volume.prod volume)‖ₑ ≤
       M * K * ENNReal.ofReal (2 * ρ) ^ p.toReal⁻¹ * eLpNorm (fun s ↦ eLpNorm (F s) r μ) 2 *
         eLpNorm (fun t ↦ eLpNorm (G t) 2 μ) 2 := by
-  rw [setIntegral_timeShell_inner_eq hUF hUG]
-  refine (enorm_integral_inner_setIntegral_sub_preimage_adjoint_le hp hM hK
-    (measurableSet_ball.diff measurableSet_ball) hF hG).trans_eq ?_
-  simp only [volume_ball_two_mul_sdiff_ball, Lp.eNorm_def]
+  rw [setIntegral_inner_eq_conj W (fun s ↦ ((U s)†) (F s)) fun t ↦ ((U t)†) (G t),
+    RCLike.eNorm_conj]
+  refine (enorm_setIntegral_inner_adjoint_le_of_subset_timeShell hp
+    (hW.preimage measurable_swap) (fun z hz ↦ swap_mem_timeShell.1 (hWρ hz)) hM hK hG hF hUG
+    hUF).trans_eq ?_
+  ring
 
 end TauCeti
