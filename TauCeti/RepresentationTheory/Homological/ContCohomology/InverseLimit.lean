@@ -43,15 +43,23 @@ def resolutionFunctorCompInvariantsIso (n : ℕ) :
     resolutionFunctor R G (n + 1) ⋙ invariantsFunctor R G ≅
       continuousCochainsFunctor R G ⋙ HomologicalComplex.eval _ _ n :=
   NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
-    rw [Functor.comp_map, Functor.comp_map, resolutionFunctor_map,
-      HomologicalComplex.eval_map, continuousCochainsFunctor_map,
+    -- Expose the common degree component so simplification can compute the cochain map.
+    change (invariantsFunctor R G).map ((resolutionFunctor R G (n + 1)).map f) ≫ 𝟙 _ =
+      𝟙 _ ≫ ((continuousCochainsFunctor R G).map f).f n
+    simp only [resolutionFunctor_map, continuousCochainsFunctor_map,
       ← mapHomologicalComplex_map_shiftedResolutionMap,
       Functor.mapHomologicalComplex_map_f, shiftedResolutionMap_f]
     exact (Category.comp_id _).trans (Category.id_comp _).symm)
 
+-- The component equations are named rewrites because simplifying their identities across the
+-- definitionally equal carriers prevents generic iso cancellation in importing modules.
 /-- The degree comparison acts as the identity on the common invariant-vector module. -/
 theorem resolutionFunctorCompInvariantsIso_hom_app (n : ℕ) (X : TopRep R G) :
     (resolutionFunctorCompInvariantsIso R G n).hom.app X = 𝟙 _ := (rfl)
+
+/-- The inverse degree comparison acts as the identity on the common invariant-vector module. -/
+theorem resolutionFunctorCompInvariantsIso_inv_app (n : ℕ) (X : TopRep R G) :
+    (resolutionFunctorCompInvariantsIso R G n).inv.app X = 𝟙 _ := (rfl)
 
 /-- Canonical homogeneous continuous cochains preserve limits over a locally compact group. -/
 instance continuousCochainsFunctor_preservesLimitsOfSize [LocallyCompactSpace G]

@@ -140,10 +140,18 @@ def coind₁FunctorCompForgetIso :
         (TopCat.mappingSpace_map_hom_apply (TopCat.of (ULift.{w} G)) liftedMap liftedF).symm)
 
 /-- The forward component lifts a continuous map by evaluating it at the lowered argument. -/
+@[simp↓]
 theorem coind₁FunctorCompForgetIso_hom_app_hom_apply (X : TopRep.{w} R G)
     (F : C(G, X.V)) (g : ULift.{w} G) :
     DFunLike.coe (F := C(ULift.{w} G, ULift.{v} X.V))
       (((coind₁FunctorCompForgetIso R G).hom.app X).hom F) g = ULift.up (F g.down) := (rfl)
+
+/-- The inverse component lowers a lifted continuous map after evaluating at a lifted argument. -/
+@[simp↓]
+theorem coind₁FunctorCompForgetIso_inv_app_hom_apply (X : TopRep.{w} R G)
+    (F : C(ULift.{w} G, ULift.{v} X.V)) (g : G) :
+    DFunLike.coe (F := C(G, X.V))
+      (((coind₁FunctorCompForgetIso R G).inv.app X).hom F) g = (F (ULift.up g)).down := (rfl)
 
 variable [LocallyCompactSpace G]
 
@@ -188,20 +196,21 @@ instance resolutionFunctor_preservesLimitsOfSize [UnivLE.{t₂, max v w}] (n : �
   | zero =>
     have e : 𝟭 (TopRep.{max v w} R G) ≅ resolutionFunctor R G 0 :=
       NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
-        simp only [Iso.refl_hom]
-        exact (_root_.ContinuousCohomology.resolutionMap_zero
-          (ContinuousMonoidHom.id G) f).symm.trans (resolutionFunctor_map R G 0 f).symm)
+        -- In degree zero the resolution and its map are the original representation and map.
+        change f ≫ 𝟙 _ = 𝟙 _ ≫ f
+        simp only [Category.comp_id, Category.id_comp])
     exact preservesLimits_of_natIso e
   | succ n ih =>
     have := ih
     have e : resolutionFunctor R G n ⋙ coind₁Functor R G ≅
         resolutionFunctor R G (n + 1) :=
       NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
-        simp only [Iso.refl_hom]
-        rw [Functor.comp_map, resolutionFunctor_map, resolutionFunctor_map]
-        exact (congrArg ofHom (ContRepresentation.coind₁ResMap_id _)).symm.trans
-          (_root_.ContinuousCohomology.resolutionMap_succ
-            (ContinuousMonoidHom.id G) f n).symm)
+        let g := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n
+        -- Expose the map of the coinduction abbrev and the successor resolution map.
+        change ofHom (ContRepresentation.coind₁Map g.hom) ≫ 𝟙 _ =
+          𝟙 _ ≫ ofHom (ContRepresentation.coind₁ResMap (ContinuousMonoidHom.id G) g.hom)
+        simp only [Category.comp_id, Category.id_comp]
+        exact (congrArg ofHom (ContRepresentation.coind₁ResMap_id _)).symm)
     exact preservesLimits_of_natIso e
 
 end TopRep
