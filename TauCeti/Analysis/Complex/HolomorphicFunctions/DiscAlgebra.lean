@@ -9,13 +9,13 @@ public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.Topology.Algebra.Algebra
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.ContinuousMap.Compact
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Normed.Operator.Banach
-import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Analysis.Analytic.ContinuousMap
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
@@ -40,6 +40,8 @@ With the supremum norm inherited from `C(closedBall c R, ℂ)`, `discAlgebra c R
 * `TauCeti.discAlgebra`: the disc algebra as a `Subalgebra ℂ C(closedBall c R, ℂ)`.
 * `TauCeti.isClosed_discAlgebra` and `CompleteSpace (discAlgebra c R)`: closedness and
   completeness in the supremum norm.
+* `TauCeti.DiscAlgebra.toHolomorphicFunctions`: continuous `ℂ`-algebra homomorphism restricting a
+  disc-algebra element to `holomorphicFunctions ⟨ball c R, isOpen_ball⟩`.
 * `TauCeti.DiscAlgebra.of`, `TauCeti.DiscAlgebra.extend`: construction from an ambient function
   and canonical extension by zero outside `closedBall c R`.
 * `TauCeti.DiscAlgebra.coord`: the coordinate element `z ↦ z`.
@@ -153,6 +155,38 @@ theorem ext {f g : discAlgebra c R} (h : ∀ z ∈ closedBall c R, extend f z = 
   ext z
   rw [← extend_apply f z, ← extend_apply g z]
   exact h z.val z.property
+
+/-- Restriction of a disc-algebra element to the open disc `ball c R`, as a continuous
+`ℂ`-algebra homomorphism into `holomorphicFunctions ⟨ball c R, isOpen_ball⟩`. -/
+noncomputable def toHolomorphicFunctions (c : ℂ) (R : ℝ) :
+    discAlgebra c R →A[ℂ] holomorphicFunctions ⟨ball c R, isOpen_ball⟩ where
+  toFun f :=
+    ⟨(f : C(closedBall c R, ℂ)).comp (ContinuousMap.inclusion ball_subset_closedBall),
+      mem_discAlgebra_iff_comp_inclusion.mp f.property⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
+  cont :=
+    ((ContinuousMap.compRightAlgHom_continuous ℂ ℂ
+      (ContinuousMap.inclusion ball_subset_closedBall)).comp
+        continuous_subtypeVal).subtype_mk _
+
+/-- Evaluating the restriction of `f : discAlgebra c R` to `ball c R` at `z` returns `f z`. -/
+@[simp]
+theorem toHolomorphicFunctions_apply (f : discAlgebra c R) (z : ball c R) :
+    (toHolomorphicFunctions c R f).val z =
+      (f : C(closedBall c R, ℂ)) ⟨z.val, ball_subset_closedBall z.property⟩ :=
+  (rfl)
+
+/-- Extending the restriction of `f : discAlgebra c R` to `ball c R` agrees with `extend f` on
+`ball c R`. -/
+@[simp]
+theorem extend_toHolomorphicFunctions (f : discAlgebra c R) {z : ℂ} (hz : z ∈ ball c R) :
+    HolomorphicFunctions.extend (toHolomorphicFunctions c R f) z = extend f z := by
+  rw [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩, toHolomorphicFunctions_apply,
+    extend_apply f ⟨z, ball_subset_closedBall hz⟩]
 
 /-- On `closedBall c R`, the zero extension of `of c R g hc hd` agrees with `g`. -/
 @[simp]

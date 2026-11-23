@@ -38,6 +38,8 @@ map of a holomorphic equation, see `TauCeti.Analysis.Complex.ImplicitFunction`.
   `f (z, ψ (z, w)) = w`.
 * `HasStrictFDerivAt.eventually_jointImplicitFunctionOfProdDomain_apply`: near `u`,
   `ψ (z, f (z, v)) = v`.
+* `HasStrictFDerivAt.toOpenPartialHomeomorph_symm_implicitFunctionDataOfProdDomain`: pointwise
+  formula `(z, ψ (z, w))` for the inverse chart on its target.
 * `HasStrictFDerivAt.eventually_apply_eq_iff_jointImplicitFunctionOfProdDomain`: near
   `(u, f u)`, `f (z, v) = w ↔ ψ (z, w) = v`.
 * `HasStrictFDerivAt.eventuallyEq_jointImplicitFunctionOfProdDomain` and
@@ -98,6 +100,21 @@ theorem implicitFunctionOfProdDomain_eq_jointImplicitFunctionOfProdDomain
     dfu.implicitFunctionOfProdDomain if₂u =
       fun z ↦ dfu.jointImplicitFunctionOfProdDomain if₂u (z, f u) := by
   rw [implicitFunctionOfProdDomain_def, jointImplicitFunctionOfProdDomain_def]
+
+/-- On the target of the underlying implicit-function chart, the local inverse computes
+`(z, ψ (z, w))` from `(w, z)`. -/
+theorem toOpenPartialHomeomorph_symm_implicitFunctionDataOfProdDomain
+    (dfu : HasStrictFDerivAt f f'u u) (if₂u : (f'u ∘L .inr 𝕜 E₁ E₂).IsInvertible)
+    {y : F × E₁}
+    (hy : y ∈ (dfu.implicitFunctionDataOfProdDomain if₂u).toOpenPartialHomeomorph.target) :
+    (dfu.implicitFunctionDataOfProdDomain if₂u).toOpenPartialHomeomorph.symm y =
+      (y.2, dfu.jointImplicitFunctionOfProdDomain if₂u y.swap) := by
+  have hD := (dfu.implicitFunctionDataOfProdDomain if₂u).toOpenPartialHomeomorph.right_inv hy
+  have h1 :
+      ((dfu.implicitFunctionDataOfProdDomain if₂u).toOpenPartialHomeomorph.symm y).1 = y.2 := by
+    simpa using congrArg Prod.snd hD
+  refine Prod.ext h1 ?_
+  simp [jointImplicitFunctionOfProdDomain_def, ImplicitFunctionData.implicitFunction_apply]
 
 /-- The joint implicit function, written through the uncurried implicit function of
 `implicitFunctionDataOfProdDomain`, whose variables are `(w, z)`. -/

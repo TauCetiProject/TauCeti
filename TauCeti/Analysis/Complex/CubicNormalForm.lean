@@ -18,6 +18,7 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.Normed.Operator.Mul
@@ -25,7 +26,6 @@ import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Analysis.Analytic.ConstantOrder.Basic
 import TauCeti.Analysis.Analytic.Inverse
 import TauCeti.Analysis.Analytic.IteratedDeriv
-import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -389,12 +389,22 @@ private theorem exists_slice_cubic_coord {E : Type*} [NormedAddCommGroup E] [Nor
   have hp₀_sub : AnalyticAt ℂ (fun t => p (α₀, t) - p (α₀, t₀)) t₀ :=
     hp₀.sub analyticAt_const
   have ho₀ : analyticOrderAt (fun t => p (α₀, t) - p (α₀, t₀)) t₀ = 3 := by
-    refine (hp₀.analyticOrderAt_sub_eq_nat_iff_iteratedDeriv_eq_zero (by norm_num)).2 ⟨?_, ?_⟩
-    · intro k hk0 hk3
+    have hiter : ∀ k, 0 < k →
+        iteratedDeriv k (fun t => p (α₀, t) - p (α₀, t₀)) t₀ =
+          iteratedDeriv k (fun t => p (α₀, t)) t₀ :=
+      fun k hk => by
+        simpa only [sub_eq_add_neg, add_comm] using
+          iteratedDeriv_const_add hk (-p (α₀, t₀)) (f := fun t => p (α₀, t))
+    refine (analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero hp₀_sub).2 ⟨?_, ?_⟩
+    · intro k hk
       interval_cases k
-      · simpa [iteratedDeriv_one] using h₁
-      · simpa [iteratedDeriv_succ', iteratedDeriv_one] using h₂
-    · simpa [iteratedDeriv_succ', iteratedDeriv_one] using h₃
+      · simp
+      · rw [hiter 1 (by decide), iteratedDeriv_one]
+        exact h₁
+      · rw [hiter 2 (by decide), iteratedDeriv_succ', iteratedDeriv_one]
+        exact h₂
+    · rw [hiter 3 (by decide), iteratedDeriv_succ', iteratedDeriv_succ', iteratedDeriv_one]
+      exact h₃
   have hord : analyticOrderAt (fun z => (3 * (p (α₀, z) - p (α₀, t₀))) -
       (3 * (p (α₀, t₀) - p (α₀, t₀)))) t₀ = 3 := by
     classical
@@ -615,11 +625,9 @@ theorem eventually_deriv_eq_zero_iff_sq_eq {X 𝕜 : Type*} [TopologicalSpace X]
     (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
     (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
     ∀ᶠ q in 𝓝 (α₀, t₀), deriv (fun t => p (q.1, t)) q.2 = 0 ↔ w q ^ 2 = ζ q.1 := by
-  have hne : ∀ᶠ q in 𝓝 (α₀, t₀), deriv (fun t => w (q.1, t)) q.2 ≠ 0 := hw.eventually_ne hdw
-  have hfact := eventuallyEq_deriv_sq_sub_mul_deriv
-    (hne.mono fun _ h => differentiableAt_of_deriv_ne_zero h) hpw
-  filter_upwards [hfact, hne] with q hq hq_ne
-  rw [hq, mul_eq_zero, or_iff_left hq_ne, sub_eq_zero]
+  filter_upwards [hw.eventually_ne hdw, hpw.eventually_nhds] with q hq_ne hqp
+  exact deriv_eq_zero_iff_sq_eq hq_ne
+    (by simpa using (Continuous.prodMk_right q.1).continuousAt.eventually hqp)
 
 /-- **Local bijection between critical points and square roots.** Near `(α₀, t₀)` where `w` is
 analytic with `∂w/∂t (α₀, t₀) ≠ 0` and `p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)`,
@@ -652,14 +660,7 @@ theorem exists_bijOn_deriv_eq_zero_sq_eq {𝕜 E : Type*} [NontriviallyNormedFie
   have he_coe : ⇑e = fun q : E × 𝕜 => (q.1, w q) := by
     ext q <;> simp [e, D]
   have he_symm {u : E × 𝕜} (hu : u ∈ e.target) : e.symm u = (u.1, T u) := by
-    have hD : D.toOpenPartialHomeomorph (D.toOpenPartialHomeomorph.symm u.swap) = u.swap :=
-      D.toOpenPartialHomeomorph.right_inv hu.1
-    have h1 : (D.toOpenPartialHomeomorph.symm u.swap).1 = u.1 := by
-      simpa [D] using congrArg Prod.snd hD
-    refine Prod.ext h1 ?_
-    simp [e, T, D, HasStrictFDerivAt.jointImplicitFunctionOfProdDomain_def,
-      ImplicitFunctionData.implicitFunction_apply]
-    rfl
+    simpa [e, T, D] using df.toOpenPartialHomeomorph_symm_implicitFunctionDataOfProdDomain hinv hu.1
   have hpt_src : (α₀, t₀) ∈ e.source :=
     ⟨by simpa [D] using D.pt_mem_toOpenPartialHomeomorph_source, hS_mem⟩
   have hU_mem : e.source ∈ 𝓝 (α₀, t₀) := e.open_source.mem_nhds hpt_src
