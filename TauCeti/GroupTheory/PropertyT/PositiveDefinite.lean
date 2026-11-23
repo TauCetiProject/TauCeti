@@ -8,8 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.GroupTheory.PropertyT.KazhdanPair
+import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
+import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
 import TauCeti.Analysis.PositiveDefinite.Kernel.Schoenberg
-import TauCeti.GroupTheory.PositiveDefinite.Basic
 import TauCeti.GroupTheory.PositiveDefinite.Metric
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvex
 import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
@@ -249,41 +250,33 @@ private theorem posSemidef_approx_of_tendstoUniformlyOn_nat [Countable Γ] {Λ :
           TendstoUniformlyOn φ 1 atTop Λ) :
     PosSemidefApprox Λ := by
   classical
-  obtain ⟨e, he⟩ := exists_surjective_nat Γ
-  refine posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion (l := atTop)
-    (fun n : ℕ ↦ (Finset.range (n + 1)).image e) (fun n ↦ 1 / (n + 1 : ℝ))
-    (fun _ ↦ Nat.one_div_pos_of_nat) (fun g ↦ ?_)
+  obtain ⟨A, -, hA⟩ := exists_seq_monotone_tendsto_atTop_atTop (Finset Γ)
+  exact posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion (l := atTop)
+    A (fun n ↦ 1 / (n + 1 : ℝ)) (fun _ ↦ Nat.one_div_pos_of_nat)
+    (fun g ↦ hA.eventually (eventually_finset_mem_atTop g))
     tendsto_one_div_add_atTop_nhds_zero_nat hunif
-  obtain ⟨k₀, rfl⟩ := he g
-  exact Filter.eventually_atTop.mpr ⟨k₀, fun n hn ↦
-    Finset.mem_image_of_mem e (Finset.mem_range.mpr (Nat.lt_succ_of_le hn))⟩
 
 omit [Group Γ] in
 /-- Summability of the weighted series `∑' k, (k + 1) * (1 - φ k g)` along an exhaustion of `Γ`. -/
-private theorem summable_mul_one_sub_of_exhaustion [DecidableEq Γ] {e : ℕ → Γ}
-    (he : Function.Surjective e) {A : ℕ → Finset Γ}
-    (hA : ∀ k, (Finset.range (k + 1)).image e ⊆ A k) {φ : ℕ → Γ → ℂ}
+private theorem summable_mul_one_sub_of_exhaustion {A : ℕ → Finset Γ}
+    (hA : ∀ g : Γ, ∀ᶠ k in atTop, g ∈ A k) {φ : ℕ → Γ → ℂ}
     (hF : ∀ k, ∀ g ∈ A k, ‖φ k g - 1‖ ≤ 1 / ((k + 1 : ℝ) * (2 : ℝ) ^ (k + 1))) (g : Γ) :
     Summable fun k : ℕ ↦ ((k + 1 : ℝ) : ℂ) * (1 - φ k g) := by
-  obtain ⟨k₀, rfl⟩ := he g
   have hgeom : Summable fun k : ℕ ↦ ((1 / 2 : ℝ) ^ (k + 1)) :=
     (summable_geometric_two.mul_left (1 / 2)).congr fun k ↦ by ring
   refine Summable.of_norm_bounded_eventually_nat hgeom ?_
-  refine Filter.eventually_atTop.mpr ⟨k₀, fun k hk ↦ ?_⟩
-  have hmem : e k₀ ∈ A k :=
-    hA k (Finset.mem_image_of_mem e (Finset.mem_range.mpr (Nat.lt_succ_of_le hk)))
-  have hlt := hF k (e k₀) hmem
+  filter_upwards [hA g] with k hmem
+  have hlt := hF k g hmem
   rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity), norm_sub_rev]
-  calc (k + 1 : ℝ) * ‖φ k (e k₀) - 1‖
+  calc (k + 1 : ℝ) * ‖φ k g - 1‖
       ≤ (k + 1 : ℝ) * (1 / ((k + 1 : ℝ) * (2 : ℝ) ^ (k + 1))) := by gcongr
     _ = (1 / 2 : ℝ) ^ (k + 1) := by
         rw [one_div, mul_inv, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul, ← inv_pow,
           ← one_div]
 
 /-- Exponential decay of double translates `Φ (a⁻¹ * s n * b)` along the bad sequence `s`. -/
-private theorem tendsto_cexp_neg_tsum_mul_zero [DecidableEq Γ] {e : ℕ → Γ}
-    (he : Function.Surjective e) {A : ℕ → Finset Γ}
-    (hA : ∀ k, (Finset.range (k + 1)).image e ⊆ A k)
+private theorem tendsto_cexp_neg_tsum_mul_zero {A : ℕ → Finset Γ}
+    (hA : ∀ g : Γ, ∀ᶠ k in atTop, g ∈ A k)
     {φ : ℕ → Γ → ℂ} (hpd : ∀ k, (Matrix.of fun a b : Γ ↦ φ k (a⁻¹ * b)).PosSemidef)
     (h1 : ∀ k, φ k 1 = 1)
     (hsumm : ∀ g, Summable fun k : ℕ ↦ ((k + 1 : ℝ) : ℂ) * (1 - φ k g))
@@ -291,56 +284,27 @@ private theorem tendsto_cexp_neg_tsum_mul_zero [DecidableEq Γ] {e : ℕ → Γ}
     {s : ℕ → Γ} (hsε : ∀ k, ε₀ ≤ ‖φ k (s k) - 1‖) {t : ℝ} (ht : 0 < t) (a b : Γ) :
     Tendsto (fun n ↦ Complex.exp (-(t : ℂ) *
       ∑' k : ℕ, ((k + 1 : ℝ) : ℂ) * (1 - φ k (a⁻¹ * s n * b)))) atTop (𝓝 0) := by
-  obtain ⟨ka, rfl⟩ := he a
-  obtain ⟨kb, rfl⟩ := he b
   let ψ (g : Γ) : ℂ := ∑' k : ℕ, ((k + 1 : ℝ) : ℂ) * (1 - φ k g)
   rw [tendsto_zero_iff_norm_tendsto_zero]
   have hbound : ∀ᶠ n : ℕ in atTop,
-      ‖Complex.exp (-(t : ℂ) * ψ ((e ka)⁻¹ * s n * e kb))‖ ≤
+      ‖Complex.exp (-(t : ℂ) * ψ (a⁻¹ * s n * b))‖ ≤
         Real.exp (-(t * (ε₀ ^ 2 / 8)) * (n + 1 : ℝ)) := by
-    refine Filter.eventually_atTop.mpr ⟨max ka kb, fun n hn ↦ ?_⟩
-    have ha_mem : e ka ∈ A n := hA n <|
-      Finset.mem_image_of_mem e (Finset.mem_range.mpr (Nat.lt_succ_of_le (le_of_max_le_left hn)))
-    have hb_mem : e kb ∈ A n := hA n <|
-      Finset.mem_image_of_mem e (Finset.mem_range.mpr (Nat.lt_succ_of_le (le_of_max_le_right hn)))
-    have hre_ge : ε₀ ^ 2 / 8 ≤ 1 - (φ n ((e ka)⁻¹ * s n * e kb)).re := by
-      let u : ℝ := Real.sqrt (ε₀ ^ 2 / 32)
-      have hu2 : u ^ 2 = ε₀ ^ 2 / 32 := Real.sq_sqrt (by positivity)
-      have htri := (hpd n).le_sqrt_re_one_sub_re_inv_mul_mul (e ka) (s n) (e kb)
-      simp only [RCLike.re_to_complex, h1 n, Complex.one_re] at htri
-      have hre_a : 1 - (φ n (e ka)).re ≤ ε₀ ^ 2 / 32 :=
-        le_trans (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ n (e ka)))
-          (hF n _ ha_mem).le
-      have hre_b : 1 - (φ n (e kb)).re ≤ ε₀ ^ 2 / 32 :=
-        le_trans (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ n (e kb)))
-          (hF n _ hb_mem).le
-      have hsq_s : (4 * u) ^ 2 ≤ 1 - (φ n (s n)).re := by
-        have hnorm : ‖φ n (s n) - 1‖ ^ 2 ≤ 2 * (1 - (φ n (s n)).re) :=
-          (hpd n).norm_sub_one_sq_le (h1 n) (s n)
-        have hε_sq : ε₀ ^ 2 ≤ ‖φ n (s n) - 1‖ ^ 2 := pow_le_pow_left₀ hε₀.le (hsε n) 2
-        nlinarith
-      have hsqrt_s : 4 * u ≤ Real.sqrt (1 - (φ n (s n)).re) :=
-        Real.le_sqrt_of_sq_le hsq_s
-      have hsqrt_a : Real.sqrt (1 - (φ n (e ka)).re) ≤ u := Real.sqrt_le_sqrt hre_a
-      have hsqrt_b : Real.sqrt (1 - (φ n (e kb)).re) ≤ u := Real.sqrt_le_sqrt hre_b
-      have hsqrt_mid : 2 * u ≤ Real.sqrt (1 - (φ n ((e ka)⁻¹ * s n * e kb)).re) := by
-        linarith
-      have hsq_mid : (2 * u) ^ 2 ≤ (Real.sqrt (1 - (φ n ((e ka)⁻¹ * s n * e kb)).re)) ^ 2 :=
-        pow_le_pow_left₀ (by positivity) hsqrt_mid 2
-      rw [Real.sq_sqrt (by simpa using (hpd n).one_sub_re_nonneg (h1 n) _)] at hsq_mid
-      nlinarith
-    have hsumm_re : Summable fun k : ℕ ↦ (k + 1 : ℝ) * (1 - (φ k ((e ka)⁻¹ * s n * e kb)).re) := by
-      simpa using Complex.reCLM.summable (hsumm ((e ka)⁻¹ * s n * e kb))
-    have hψ_re : (ψ ((e ka)⁻¹ * s n * e kb)).re =
-        ∑' k : ℕ, (k + 1 : ℝ) * (1 - (φ k ((e ka)⁻¹ * s n * e kb)).re) := by
-      simpa [ψ] using Complex.reCLM.map_tsum (hsumm ((e ka)⁻¹ * s n * e kb))
-    have htsum_ge : (n + 1 : ℝ) * (ε₀ ^ 2 / 8) ≤ (ψ ((e ka)⁻¹ * s n * e kb)).re := by
+    filter_upwards [hA a, hA b] with n ha_mem hb_mem
+    have hre_ge : ε₀ ^ 2 / 8 ≤ 1 - (φ n (a⁻¹ * s n * b)).re :=
+      (hpd n).sq_div_eight_le_one_sub_re_inv_mul_mul (h1 n) hε₀.le
+        (hF n a ha_mem).le (hF n b hb_mem).le (hsε n)
+    have hsumm_re : Summable fun k : ℕ ↦ (k + 1 : ℝ) * (1 - (φ k (a⁻¹ * s n * b)).re) := by
+      simpa using Complex.reCLM.summable (hsumm (a⁻¹ * s n * b))
+    have hψ_re : (ψ (a⁻¹ * s n * b)).re =
+        ∑' k : ℕ, (k + 1 : ℝ) * (1 - (φ k (a⁻¹ * s n * b)).re) := by
+      simpa [ψ] using Complex.reCLM.map_tsum (hsumm (a⁻¹ * s n * b))
+    have htsum_ge : (n + 1 : ℝ) * (ε₀ ^ 2 / 8) ≤ (ψ (a⁻¹ * s n * b)).re := by
       rw [hψ_re]
       exact (mul_le_mul_of_nonneg_left hre_ge (by positivity)).trans <|
         hsumm_re.le_tsum n fun k _ ↦ mul_nonneg (by positivity)
           ((hpd k).one_sub_re_nonneg (h1 k) _)
-    rw [Complex.norm_exp, show (-(t : ℂ) * ψ ((e ka)⁻¹ * s n * e kb)).re =
-        -t * (ψ ((e ka)⁻¹ * s n * e kb)).re by simp]
+    rw [Complex.norm_exp, show (-(t : ℂ) * ψ (a⁻¹ * s n * b)).re =
+        -t * (ψ (a⁻¹ * s n * b)).re by simp]
     exact Real.exp_le_exp.mpr (by nlinarith)
   have hexp0 : Tendsto (fun n : ℕ ↦ Real.exp (-(t * (ε₀ ^ 2 / 8)) * (n + 1 : ℝ))) atTop (𝓝 0) :=
     Real.tendsto_exp_atBot.comp <|
@@ -358,14 +322,15 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
   unfold PosSemidefApprox at hnot
   push Not at hnot
   obtain ⟨ε₀, hε₀, hbad⟩ := hnot
-  obtain ⟨e, he⟩ := exists_surjective_nat Γ
-  let A (k : ℕ) : Finset Γ := F₀ ∪ (Finset.range (k + 1)).image e
+  obtain ⟨B, -, hB⟩ := exists_seq_monotone_tendsto_atTop_atTop (Finset Γ)
+  let A (k : ℕ) : Finset Γ := F₀ ∪ B k
   let η (k : ℕ) : ℝ := min (1 / ((k + 1 : ℝ) * (2 : ℝ) ^ (k + 1))) (ε₀ ^ 2 / 32)
   have hex (k : ℕ) := hbad (A k) (η k) (by positivity)
   choose φ hpd h1 hF s hsΛ hsε using hex
-  have hA_sub (k : ℕ) : (Finset.range (k + 1)).image e ⊆ A k := Finset.subset_union_right
+  have hA_mem (g : Γ) : ∀ᶠ k in atTop, g ∈ A k :=
+    (hB.eventually (eventually_finset_mem_atTop g)).mono fun _ hg ↦ Finset.mem_union_right _ hg
   have hsumm (g : Γ) : Summable fun k : ℕ ↦ ((k + 1 : ℝ) : ℂ) * (1 - φ k g) :=
-    summable_mul_one_sub_of_exhaustion he hA_sub
+    summable_mul_one_sub_of_exhaustion hA_mem
       (fun k x hx ↦ (hF k x hx).le.trans (min_le_left _ _)) g
   let ψ (g : Γ) : ℂ := ∑' k : ℕ, ((k + 1 : ℝ) : ℂ) * (1 - φ k g)
   -- Pick `t > 0` small enough that `exp (-t * ψ g)` is within `δ₀ ^ 2 / 2` of `1` on `F₀`.
@@ -402,7 +367,7 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
       fun g hg ↦ hΦ.norm_gnsRepresentation_gnsVector_one_sub_lt hΦ1 hδ₀ (htF₀ g hg)⟩
   have hbot : (hΦ.gnsRepresentation.restrict Λ.subtype).invariants = ⊥ :=
     hΦ.invariants_restrict_gnsRepresentation_eq_bot Λ.subtype (s := fun n ↦ ⟨s n, hsΛ n⟩)
-      (tendsto_cexp_neg_tsum_mul_zero he hA_sub hpd h1 hsumm hε₀
+      (tendsto_cexp_neg_tsum_mul_zero hA_mem hpd h1 hsumm hε₀
         (fun k x hx ↦ (hF k x hx).trans_le (min_le_right _ _)) hsε ht)
   exact hv0 ((Submodule.mem_bot ℂ).mp (hbot ▸ hvΛ))
 

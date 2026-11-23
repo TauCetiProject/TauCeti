@@ -139,19 +139,6 @@ theorem RelativePropertyT.subgroupOf {Λ : Subgroup Γ} [Λ.Normal]
     exact hf0 (PiLp.ext h)
   exact ⟨f x, hx, apply_mem_invariants_of_mem_invariants_induced ρ hf x⟩
 
-/-- **Property (T) and subgroups of finite index.** A group has property (T) if and only if a
-subgroup of finite index has property (T). -/
-theorem relativePropertyT_top_iff_of_finiteIndex (K : Subgroup Γ) [K.FiniteIndex] :
-    (⊤ : Subgroup Γ).RelativePropertyT.{max u v} ↔
-      (⊤ : Subgroup K).RelativePropertyT.{max u v} := by
-  refine ⟨fun h ↦ by simpa using h.subgroupOf K, fun h ↦ ?_⟩
-  -- Property (T) of `K` gives relative property (T) of `K`, hence of its normal core, in `Γ`.
-  have hK : K.RelativePropertyT.{max u v} := by
-    simpa [map_top, range_subtype] using h.map K.subtype
-  refine ((relativePropertyT_max_iff.{u, v} _).mp (hK.mono K.normalCore_le)).of_relIndex_ne_zero ?_
-  rw [relIndex_top_right]
-  exact FiniteIndex.index_ne_zero
-
 /-- Without countability, if `K` is normal in `Γ` and has finite relative index in `Λ` (`K ≤ Λ`),
 then `K` has relative property (T) if and only if `Λ` does, for Hilbert spaces in the universe `v`
 of `Γ`. -/
@@ -188,6 +175,14 @@ theorem relativePropertyT_subgroupOf_iff_of_normal (Λ H : Subgroup Γ) [Λ.Norm
   have : (Λ ⊓ N).IsFiniteRelIndex Λ :=
     IsFiniteRelIndex.inf inferInstance isFiniteRelIndex_of_finiteIndex
   exact hinfT.of_relIndex_ne_zero IsFiniteRelIndex.relIndex_ne_zero
+
+/-- **Property (T) and subgroups of finite index.** A group has property (T) if and only if a
+subgroup of finite index has property (T). -/
+theorem relativePropertyT_top_iff_of_finiteIndex (K : Subgroup Γ) [K.FiniteIndex] :
+    (⊤ : Subgroup Γ).RelativePropertyT.{max u v} ↔
+      (⊤ : Subgroup K).RelativePropertyT.{max u v} := by
+  rw [relativePropertyT_max_iff (⊤ : Subgroup Γ), relativePropertyT_max_iff (⊤ : Subgroup K),
+    ← relativePropertyT_subgroupOf_iff_of_normal (⊤ : Subgroup Γ) K, top_subgroupOf]
 
 /-! ### Arbitrary subgroups in countable discrete groups -/
 

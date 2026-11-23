@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Order.Filter.Cofinite.Basic
-import TauCeti.Analysis.Matrix.PosSemidef.Basic
+import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
 
 /-!
 # Restriction, limits, zero extension and induction of positive-definite functions
@@ -17,8 +17,7 @@ import TauCeti.Analysis.Matrix.PosSemidef.Basic
 A function `φ : G → 𝕜` on a group, valued in an `RCLike` field `𝕜`, is positive definite when
 `∑ᵢ ∑ⱼ conj (cᵢ) cⱼ φ (gᵢ⁻¹ gⱼ) ≥ 0` for all finite families, that is, when the kernel
 `(g, h) ↦ φ (g⁻¹ * h)` is positive semidefinite in the sense of Mathlib's `Matrix.PosSemidef`.
-This file records basic norm and real-part bounds for normalized (`φ 1 = 1`) positive-definite
-functions and proves that positive-definite functions on discrete groups are stable under the
+This file proves that positive-definite functions on discrete groups are stable under the
 operations used to pass between a group and its subgroups:
 
 * restriction along a group homomorphism, in particular to a subgroup;
@@ -41,11 +40,6 @@ permanence of the Haagerup property under increasing unions and finite-index ove
 
 ## Main declarations
 
-* `Matrix.IsHermitian.apply_inv_eq_star`: conjugate symmetry `φ g⁻¹ = star (φ g)` for functions
-  with Hermitian kernel `(g, h) ↦ φ (g⁻¹ * h)`.
-* `Matrix.PosSemidef.norm_apply_le_one`, `Matrix.PosSemidef.one_sub_re_nonneg`,
-  `Matrix.PosSemidef.norm_sub_one_sq_le`: norm and real-part bounds for normalized positive-definite
-  functions.
 * `Matrix.PosSemidef.comp_monoidHom`: restriction along a group homomorphism.
 * `TauCeti.posSemidef_inv_mul_of_tendsto`: pointwise limits.
 * `Matrix.PosSemidef.extend_subtype`: extension by zero from a subgroup.
@@ -71,41 +65,9 @@ noncomputable section
 open Filter Matrix Topology
 open scoped ComplexOrder
 
-namespace Matrix.IsHermitian
-
-/-- For a function `φ : G → R` whose kernel `(g, h) ↦ φ (g⁻¹ * h)` is Hermitian,
-`φ g⁻¹ = star (φ g)`. -/
-theorem apply_inv_eq_star {R G : Type*} [Star R] [DivInvOneMonoid G] {φ : G → R}
-    (h : (of fun g h : G ↦ φ (g⁻¹ * h)).IsHermitian) (g : G) :
-    φ g⁻¹ = star (φ g) := by
-  simpa using (h.apply g 1).symm
-
-end Matrix.IsHermitian
-
 namespace Matrix.PosSemidef
 
 variable {𝕜 G K : Type*} [RCLike 𝕜] [Group G] [Group K]
-
-/-- A normalized positive-definite function on a group is bounded by `1` in norm. -/
-theorem norm_apply_le_one {φ : G → 𝕜} (hφ : (of fun g h : G ↦ φ (g⁻¹ * h)).PosSemidef)
-    (h1 : φ 1 = 1) (g : G) : ‖φ g‖ ≤ 1 := by
-  simpa using hφ.norm_le_one_of_apply_self_eq_one (a := 1) (b := g) (by simp [h1]) (by simp [h1])
-
-/-- For a normalized positive-definite function `φ` on a group, `0 ≤ 1 - re (φ g)`. -/
-theorem one_sub_re_nonneg {φ : G → 𝕜} (hφ : (of fun g h : G ↦ φ (g⁻¹ * h)).PosSemidef)
-    (h1 : φ 1 = 1) (g : G) : 0 ≤ 1 - RCLike.re (φ g) := by
-  linarith [RCLike.re_le_norm (φ g), hφ.norm_apply_le_one h1 g]
-
-/-- For a normalized positive-definite function `φ` on a group,
-`‖φ g - 1‖ ^ 2 ≤ 2 * (1 - re (φ g))`. -/
-theorem norm_sub_one_sq_le {φ : G → 𝕜} (hφ : (of fun g h : G ↦ φ (g⁻¹ * h)).PosSemidef)
-    (h1 : φ 1 = 1) (g : G) : ‖φ g - 1‖ ^ 2 ≤ 2 * (1 - RCLike.re (φ g)) := by
-  have hsq : RCLike.normSq (φ g) ≤ 1 := by
-    simpa [RCLike.normSq_eq_def'] using
-      pow_le_pow_left₀ (norm_nonneg _) (hφ.norm_apply_le_one h1 g) 2
-  rw [← RCLike.normSq_eq_def', RCLike.normSq_sub (φ g) 1, RCLike.normSq_one]
-  simp only [map_one, mul_one]
-  linarith
 
 /-- The restriction of a positive-definite function on `G` along a group homomorphism `f : K →* G`
 is positive definite. In particular, the restriction to a subgroup is positive definite. -/
