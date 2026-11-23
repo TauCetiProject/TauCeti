@@ -197,8 +197,8 @@ theorem formalAdjoint_smul {f : M → ℝ} {x : M} (hf : MDiffAt f x)
   -- `α (grad f)`.
   rw [formalAdjoint_def, formalAdjoint_def,
     (covT.hom cov).isCovariantDerivativeOnUniv.leibniz hα hf, map_add, map_smul,
-    ContinuousLinearMap.toLinearMap₁₂_smulRight, TauCeti.Manifold.coe_mvfderiv_eq_innerₗ_mgradient,
-    map_add, map_smul,
+    ContinuousLinearMap.toLinearMap₁₂_smulRight,
+    TauCeti.Manifold.toLinearMap_mvfderiv_eq_innerₗ_mgradient, map_add, map_smul,
     LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe, neg_add,
     smul_neg, sub_eq_add_neg]
 

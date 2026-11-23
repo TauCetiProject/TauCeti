@@ -53,8 +53,8 @@ are bounded by `‖ζ‖` times those of `f`, plus `‖ξ‖`.
 
 ## Main results
 
-* `TauCeti.fderiv_fderiv_norm_sq`: the second derivative of the squared norm is
-  `2 • innerSL ℝ`.
+* `TauCeti.fderiv_fderiv_norm_sq`, `TauCeti.fderiv_fderiv_norm_sq_apply`: the second derivative
+  of the squared norm is `2 • innerSL ℝ`, so it sends `(u, v)` to `2 ⟪u, v⟫`.
 * `TauCeti.fderiv_inner_sub_inner_apply`: the derivative of `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫` in the
   direction `v` is `⟪v, (Df(x))† ζ - ξ⟫`.
 * `TauCeti.norm_iteratedFDeriv_succ_inner_sub_inner_le`: the bound on the derivatives of order at
@@ -96,6 +96,15 @@ theorem TauCeti.fderiv_fderiv_norm_sq (y : E) :
     fderiv ℝ (fderiv ℝ fun z : E ↦ ‖z‖ ^ 2) y = 2 • innerSL ℝ := by
   rw [fderiv_norm_sq]
   exact (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
+
+/-- The second derivative of the squared norm is twice the inner product, evaluated:
+`D²(‖·‖²)(y)(u, v) = 2 ⟪u, v⟫`. -/
+theorem TauCeti.fderiv_fderiv_norm_sq_apply (y u v : E) :
+    fderiv ℝ (fderiv ℝ (fun z : E ↦ ‖z‖ ^ 2)) y u v = 2 * inner ℝ u v := by
+  rw [TauCeti.fderiv_fderiv_norm_sq]
+  simp only [two_smul, add_apply]
+  rw [innerSL_apply_apply]
+  ring
 
 section UnitBall
 

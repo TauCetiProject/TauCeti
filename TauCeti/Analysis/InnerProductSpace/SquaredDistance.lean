@@ -113,14 +113,6 @@ theorem fderiv_norm_sq_sub_comp_eq_zero_iff (hi : DifferentiableAt ℝ i x) :
     rw [inner_sub_left] at hv'
     simpa using hv'
 
-/-- The second derivative of squared norm is twice the inner product. -/
-theorem fderiv_fderiv_norm_sq_apply (y u v : E) :
-    fderiv ℝ (fderiv ℝ (fun z : E ↦ ‖z‖ ^ 2)) y u v = 2 * inner ℝ u v := by
-  rw [fderiv_fderiv_norm_sq]
-  simp only [two_smul, add_apply]
-  rw [innerSL_apply_apply]
-  ring
-
 /-- **The Hessian of squared distance along a map.** It is twice the sum of the pullback inner
 product and the pairing of the displacement with the second derivative of the map. -/
 theorem fderiv_fderiv_norm_sq_sub_comp_apply (hi : ContDiffAt ℝ 2 i x) (v w : V) :

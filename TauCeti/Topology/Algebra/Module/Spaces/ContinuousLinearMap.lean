@@ -24,6 +24,9 @@ reproving the conversion pointwise:
   `(L.bilinearComp f g).toLinearMap₁₂ = (L.toLinearMap₁₂.comp f).compl₂ g`;
 * `ContinuousLinearMap.toLinearMap₁₂_smulRight`: rank-one maps, `(f.smulRight A).toLinearMap₁₂ =
   (f : E →ₗ 𝕜).smulRight (A : F →ₛₗ G)`, also for a semilinear `A`.
+
+For linear maps, `ContinuousLinearMap.toLinearMap_smulRight` records the same rule for forgetting
+the continuity of a rank-one map `f.smulRight v`.
 -/
 
 public section
@@ -69,6 +72,21 @@ theorem toLinearMap₁₂_flip (L : E →SL[σ₁₃] F →SL[σ₂₃] G) :
     simp only [toLinearMap₁₂_apply_apply_apply, LinearMap.flip_apply, flip_apply]
 
 end Flip
+
+section SMulRightLinear
+
+variable {R S M₁ M₂ : Type*} [Semiring R] [Semiring S] [TopologicalSpace M₁] [AddCommMonoid M₁]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₁] [Module R M₂] [Module R S] [Module S M₂]
+  [IsScalarTower R S M₂] [TopologicalSpace S] [ContinuousSMul S M₂]
+
+/-- Forgetting continuity sends the rank-one map `w ↦ f w • v` to the rank-one linear map of the
+underlying linear functional. -/
+@[simp]
+theorem toLinearMap_smulRight (f : M₁ →L[R] S) (v : M₂) :
+    (f.smulRight v : M₁ →ₗ[R] M₂) = (f : M₁ →ₗ[R] S).smulRight v :=
+  rfl
+
+end SMulRightLinear
 
 section SMulRight
 

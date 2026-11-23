@@ -24,6 +24,9 @@ covariant tensor, making it independent of any choice of basis.
 ## Main definitions
 
 * `LinearMap.BilinMap.metricTrace`: the metric trace of a real bilinear map.
+* `LinearMap.metricTraceCompl₂`: for a bilinear map `C : W → P → N`, the contraction
+  `L ↦ tr ((u, w) ↦ C u (L w))` of `C` against a linear map `L : W → P` in its second slot, as a
+  linear map in `L`.
 
 ## Main statements
 
@@ -50,6 +53,9 @@ covariant tensor, making it independent of any choice of basis.
   that of `(v, w) ↦ C v (⟪u, w⟫ • p)` is `C u p`.
 * `LinearMap.BilinMap.metricTrace_inner`: the metric trace of the inner product is the real
   dimension.
+* `LinearMap.metricTraceCompl₂_comp`: if `L` and `K` intertwine `C` and `C'`,
+  `C' u (L p) = K (C u p)`, then contracting `C'` against `L ∘ A` is `K` applied to the
+  contraction of `C` against `A`.
 -/
 
 public section
@@ -179,3 +185,38 @@ theorem metricTrace_inner : metricTrace (innerₗ W) = Module.finrank ℝ W := b
   simp
 
 end LinearMap.BilinMap
+
+namespace LinearMap
+
+variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+  {P N : Type*} [AddCommMonoid P] [Module ℝ P] [AddCommMonoid N] [Module ℝ N]
+
+/-- The metric contraction `L ↦ tr ((u, w) ↦ C u (L w))` of a bilinear map `C : W → P → N` against
+a linear map `L : W → P` inserted into its second slot, as a linear map in `L`: the metric trace
+`LinearMap.BilinMap.metricTrace` of `C.compl₂ L` (`LinearMap.metricTraceCompl₂_apply`). For a
+Clifford multiplication `C` and the covariant derivative `L = ∇σ` of a section, this is the Dirac
+operator. -/
+noncomputable def metricTraceCompl₂ (C : W →ₗ[ℝ] P →ₗ[ℝ] N) : (W →ₗ[ℝ] P) →ₗ[ℝ] N :=
+  BilinMap.metricTrace ∘ₗ (llcomp ℝ W P N ∘ₗ C).flip
+
+/-- The contraction of `C` against `L` is the metric trace of `C.compl₂ L`. -/
+@[simp]
+theorem metricTraceCompl₂_apply (C : W →ₗ[ℝ] P →ₗ[ℝ] N) (L : W →ₗ[ℝ] P) :
+    C.metricTraceCompl₂ L = BilinMap.metricTrace (C.compl₂ L) := by
+  have h : (llcomp ℝ W P N ∘ₗ C).flip L = C.compl₂ L :=
+    ext₂ fun u w ↦ by simp only [flip_apply, comp_apply, llcomp_apply, compl₂_apply]
+  rw [metricTraceCompl₂, comp_apply, h]
+
+/-- **Contraction of intertwined bilinear maps.** If linear maps `L : P → P'` and `K : N → N'`
+intertwine the bilinear maps `C` and `C'`, `C' u (L p) = K (C u p)`, then contracting `C'` against
+`L ∘ A` is `K` applied to the contraction of `C` against `A`. For `K = L` this is naturality of the
+contraction; for `K = -L` it is anti-naturality. -/
+theorem metricTraceCompl₂_comp {P' N' : Type*} [AddCommMonoid P'] [Module ℝ P'] [AddCommMonoid N']
+    [Module ℝ N'] (C : W →ₗ[ℝ] P →ₗ[ℝ] N) (C' : W →ₗ[ℝ] P' →ₗ[ℝ] N') (L : P →ₗ[ℝ] P')
+    (K : N →ₗ[ℝ] N') (h : ∀ u p, C' u (L p) = K (C u p)) (A : W →ₗ[ℝ] P) :
+    C'.metricTraceCompl₂ (L ∘ₗ A) = K (C.metricTraceCompl₂ A) := by
+  rw [metricTraceCompl₂_apply, metricTraceCompl₂_apply, ← BilinMap.metricTrace_compr₂]
+  congr 1
+  exact ext₂ fun u w ↦ by simp only [compl₂_apply, compr₂_apply, comp_apply, h]
+
+end LinearMap

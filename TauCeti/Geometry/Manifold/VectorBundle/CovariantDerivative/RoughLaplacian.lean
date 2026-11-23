@@ -244,7 +244,7 @@ theorem roughLaplacian_smul (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hσ : CMDiff ∞
       cov σ x (TauCeti.Manifold.mgradient I f x) := by
     rw [← ContinuousLinearMap.coe_coe (cov σ x),
       ← LinearMap.BilinMap.metricTrace_innerₗ_smulRight,
-      ← TauCeti.Manifold.coe_mvfderiv_eq_innerₗ_mgradient,
+      ← TauCeti.Manifold.toLinearMap_mvfderiv_eq_innerₗ_mgradient,
       LinearMap.BilinMap.metricTrace_eq_sum _ b]
     simp only [LinearMap.smulRight_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe]
   rw [roughLaplacian_eq_sum cov _ _ x b, roughLaplacian_eq_sum cov _ _ x b,

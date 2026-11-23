@@ -11,17 +11,14 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
-public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
+public import TauCeti.Analysis.InnerProductSpace.Trace.Continuous
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.InnerProductSpace.Dual
-import TauCeti.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.Normed.Operator.Basic
-import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
 # Calculus and geometric invariance of the Laplacian
@@ -88,14 +85,9 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
 * `TauCeti.laplacian_smul_comp_smul_right`: the rescaling `c⁻² f(c ·)` has Laplacian
   `(Δ f)(c ·)`.
-* `TauCeti.traceL`: the trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map, as a continuous
-  linear functional.
-* `ContinuousLinearMap.traceL_apply_eq_metricTrace`: it is the metric trace
-  `LinearMap.BilinMap.metricTrace` of the underlying bilinear map.
-* `ContinuousLinearMap.norm_traceL_apply_le`: `‖traceL H‖ ≤ dim E * ‖H‖`.
-* `ContinuousLinearMap.traceL_smulRight`: the trace of the rank-one map `f.smulRight A` is `A`
-  evaluated at the Riesz representative of `f`.
-* `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
+* `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace `TauCeti.traceL` of the second
+  Fréchet derivative (`TauCeti.traceL` and its API live in
+  `TauCeti/Analysis/InnerProductSpace/Trace/Continuous.lean`).
 * `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
   of the second iterated Fréchet derivative.
 * `TauCeti.laplacian_fun_sum`: the Laplacian of a finite sum of `C²` functions is the sum of
@@ -145,78 +137,14 @@ variable
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
 
-section traceL
-
-variable {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The metric trace of a continuous bilinear map is bounded by the dimension times its norm. This
-is the bound making `TauCeti.traceL` continuous; use `ContinuousLinearMap.norm_traceL_apply_le`. -/
-private theorem norm_metricTrace_toLinearMap₁₂_le (H : E →L[ℝ] E →L[ℝ] F) :
-    ‖LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ H)‖ ≤
-      Module.finrank ℝ E * ‖H‖ := by
-  simpa [LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)] using
-    H.norm_sum_apply_apply_le Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
-
-/-- The metric trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map, as a continuous linear
-functional: `LinearMap.BilinMap.metricTrace` of the underlying bilinear map, which is bounded by
-the dimension of `E` times the norm of `H`. The Laplacian is the trace of the second Fréchet
-derivative (`TauCeti.laplacian_eq_traceL`). -/
-noncomputable def traceL : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
-  (LinearMap.BilinMap.metricTrace ∘ₗ ContinuousLinearMap.toLinearMap₁₂).mkContinuous
-    (Module.finrank ℝ E) fun H : E →L[ℝ] E →L[ℝ] F ↦ norm_metricTrace_toLinearMap₁₂_le H
-
-/-- The continuous trace of a bilinear map is the metric trace of the underlying bilinear map. -/
-theorem _root_.ContinuousLinearMap.traceL_apply_eq_metricTrace (H : E →L[ℝ] E →L[ℝ] F) :
-    traceL H = LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ H) := by
-  rw [traceL, LinearMap.mkContinuous_apply, LinearMap.comp_apply]
-
-/-- The trace of a bilinear map is the sum of its diagonal values on the standard orthonormal
-basis. -/
-theorem traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
-    traceL H = ∑ i, H (stdOrthonormalBasis ℝ E i) (stdOrthonormalBasis ℝ E i) := by
-  rw [H.traceL_apply_eq_metricTrace,
-    LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)]
-  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
-
-/-- The trace of a continuous bilinear map is bounded by the dimension of `E` times its norm:
-`‖traceL H‖ ≤ dim E * ‖H‖`. -/
-theorem _root_.ContinuousLinearMap.norm_traceL_apply_le (H : E →L[ℝ] E →L[ℝ] F) :
-    ‖traceL H‖ ≤ Module.finrank ℝ E * ‖H‖ := by
-  rw [H.traceL_apply_eq_metricTrace]
-  exact norm_metricTrace_toLinearMap₁₂_le H
-
-/-- Transposing the arguments of a bilinear map preserves its trace. -/
-@[simp] theorem traceL_flip (B : E →L[ℝ] E →L[ℝ] F) : traceL B.flip = traceL B := by
-  rw [B.flip.traceL_apply_eq_metricTrace, B.traceL_apply_eq_metricTrace,
-    ContinuousLinearMap.toLinearMap₁₂_flip, LinearMap.BilinMap.metricTrace_flip]
-
-/-- The trace of the real inner product is the dimension of the space. -/
-@[simp] theorem traceL_innerSL :
-    traceL (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = (Module.finrank ℝ E : ℝ) := by
-  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace,
-    ContinuousLinearMap.toLinearMap₁₂_innerSL_real, LinearMap.BilinMap.metricTrace_inner]
-
-/-- The trace of the rank-one bilinear map `(v, w) ↦ f v • A w` is `A` evaluated at the Riesz
-representative of `f`. -/
-@[simp] theorem _root_.ContinuousLinearMap.traceL_smulRight (f : E →L[ℝ] ℝ) (A : E →L[ℝ] F) :
-    traceL (f.smulRight A) = A ((InnerProductSpace.toDual ℝ E).symm f) := by
-  -- The functional `f` is the inner product with its Riesz representative.
-  have hf : innerₗ E ((InnerProductSpace.toDual ℝ E).symm f) = (f : E →ₗ[ℝ] ℝ) :=
-    (LinearMap.congr_fun ContinuousLinearMap.toLinearMap₁₂_innerSL_real _).symm.trans
-      (congrArg ContinuousLinearMap.toLinearMap (InnerProductSpace.innerSL_toDual_symm f))
-  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, ContinuousLinearMap.toLinearMap₁₂_smulRight,
-    ← hf, LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe]
-
-end traceL
-
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as the
 continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
 theorem laplacian_eq_traceL (f : E → F) (x : E) :
     Δ f x = traceL (fderiv ℝ (fderiv ℝ f) x) := by
-  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, LinearMap.BilinMap.metricTrace_apply]
-  simp only [laplacian, tensorIteratedFDerivTwo, bilinearIteratedFDerivTwo]
+  rw [traceL_apply, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+  simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- The Laplacian of a function is the trace of its second iterated Fréchet derivative, expressed
 as a continuous linear functional of `iteratedFDeriv ℝ 2 f x` in the standard orthonormal basis. -/
