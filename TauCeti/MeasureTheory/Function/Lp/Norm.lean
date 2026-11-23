@@ -61,7 +61,8 @@ bounds.
 * `MeasureTheory.integral_norm_sq_le_sq_mul_of_norm_le`: `‖f‖ ≤ c ‖g‖` almost everywhere gives
   `∫ ‖f‖² ≤ c² ∫ ‖g‖²`, and `MeasureTheory.memLp_clm_apply_and_integral_norm_sq_le` is its instance
   for operators bounded by `c` applied to `f`.
-* `LipschitzWith.tendsto_integral_norm_sub_sq`: a Lipschitz map preserves convergence in `L²`.
+* `LipschitzWith.tendsto_integral_norm_sub_sq`: if `∫ ‖f i - g‖² → 0` with integrable integrands,
+  then the Bochner integrals `∫ ‖T (f i) - T g‖²` tend to `0` for Lipschitz `T`.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
   everywhere class.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
@@ -483,8 +484,14 @@ theorem memLp_clm_apply_and_integral_norm_sq_le {α 𝕜 E F : Type*} [Measurabl
       |>.comp_aestronglyMeasurable (hB.prodMk hf.aestronglyMeasurable)) hle
   exact ⟨hm, integral_norm_sq_le_sq_mul_of_norm_le hm hf hle⟩
 
-/-- **A Lipschitz map preserves convergence in `L²`.** If `T` is Lipschitz, `‖f i - g‖²` is
-eventually integrable and `∫ ‖f i - g‖² → 0` along `l`, then `∫ ‖T (f i) - T g‖² → 0`. -/
+/-- **Lipschitz maps and mean-square integrals.** If `T` is Lipschitz, `‖f i - g‖²` is
+eventually integrable and `∫ ‖f i - g‖² → 0` along `l`, then the Bochner integrals
+`∫ ‖T (f i) - T g‖²` tend to `0`.
+
+The transformed integrands are not asserted to be integrable: they are dominated by
+`K² ‖f i - g‖²`, so they are integrable whenever they are a.e. strongly measurable (for instance
+when every `f i` and `g` is), and only then does the conclusion express convergence of
+`T ∘ f i` to `T ∘ g` in `L²`; a non-integrable integrand gives the junk value `0` instead. -/
 theorem _root_.LipschitzWith.tendsto_integral_norm_sub_sq {α ι E F : Type*} [MeasurableSpace α]
     {μ : Measure α} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] {K : ℝ≥0} {T : E → F}
     (hT : LipschitzWith K T) {l : Filter ι} {f : ι → α → E} {g : α → E}
