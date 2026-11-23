@@ -613,20 +613,12 @@ theorem coe_add (f g : CkHolderSpaceOn k α Ω F) : ⇑(f + g) = f + g := by
   simp
 
 /-- The underlying function of a negation is the negation of the underlying function. -/
-@[simp]
-theorem coe_neg (f : CkHolderSpaceOn k α Ω F) : ⇑(-f) = -⇑f := by
-  ext x
-  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_neg, FunLike.coe_neg,
-    Pi.neg_apply]
-  simp
+@[simp] theorem coe_neg (f : CkHolderSpaceOn k α Ω F) : ⇑(-f) = -⇑f := by
+  ext x; simp only [← toFun_eq_coe, toFun, iteratedFDeriv_neg, FunLike.coe_neg, Pi.neg_apply]; simp
 
 /-- The underlying function of a difference is the difference of the underlying functions. -/
-@[simp]
-theorem coe_sub (f g : CkHolderSpaceOn k α Ω F) : ⇑(f - g) = f - g := by
-  ext x
-  simp only [← toFun_eq_coe, toFun, iteratedFDeriv_sub, FunLike.coe_sub,
-    Pi.sub_apply]
-  simp
+@[simp] theorem coe_sub (f g : CkHolderSpaceOn k α Ω F) : ⇑(f - g) = f - g := by
+  ext x; simp only [← toFun_eq_coe, toFun, iteratedFDeriv_sub, FunLike.coe_sub, Pi.sub_apply]; simp
 
 /-- The underlying function of a scalar multiple is the scalar multiple of the underlying
 function. -/
@@ -750,11 +742,8 @@ theorem norm_toBoundedContinuousFunction (f : CkHolderSpaceOn k α Ω F) :
   exact (norm_iteratedFDeriv_zero f x).symm
 
 /-- The underlying bounded continuous function of the zero element. -/
-@[simp]
-theorem toBoundedContinuousFunction_zero :
-    (0 : CkHolderSpaceOn k α Ω F).toBoundedContinuousFunction = 0 := by
-  ext x
-  simp
+@[simp] theorem toBoundedContinuousFunction_zero :
+    (0 : CkHolderSpaceOn k α Ω F).toBoundedContinuousFunction = 0 := by ext x; simp
 
 /-- The underlying bounded continuous function of a sum. -/
 @[simp]
@@ -765,19 +754,13 @@ theorem toBoundedContinuousFunction_add (f g : CkHolderSpaceOn k α Ω F) :
   simp
 
 /-- The underlying bounded continuous function of a negation. -/
-@[simp]
-theorem toBoundedContinuousFunction_neg (f : CkHolderSpaceOn k α Ω F) :
-    (-f).toBoundedContinuousFunction = -f.toBoundedContinuousFunction := by
-  ext x
-  simp
+@[simp] theorem toBoundedContinuousFunction_neg (f : CkHolderSpaceOn k α Ω F) :
+    (-f).toBoundedContinuousFunction = -f.toBoundedContinuousFunction := by ext x; simp
 
 /-- The underlying bounded continuous function of a difference. -/
-@[simp]
-theorem toBoundedContinuousFunction_sub (f g : CkHolderSpaceOn k α Ω F) :
+@[simp] theorem toBoundedContinuousFunction_sub (f g : CkHolderSpaceOn k α Ω F) :
     (f - g).toBoundedContinuousFunction =
-      f.toBoundedContinuousFunction - g.toBoundedContinuousFunction := by
-  ext x
-  simp
+      f.toBoundedContinuousFunction - g.toBoundedContinuousFunction := by ext x; simp
 
 /-- The underlying bounded continuous function of a scalar multiple. -/
 @[simp]
@@ -819,8 +802,7 @@ def evalCLM (x : Ω) : CkHolderSpaceOn k α Ω F →L[ℝ] F :=
   (BoundedContinuousFunction.evalCLM ℝ x).comp toBoundedContinuousFunctionCLM
 
 /-- Point evaluation `evalCLM x` sends `f` to `f x`. -/
-@[simp]
-theorem evalCLM_apply (x : Ω) (f : CkHolderSpaceOn k α Ω F) : evalCLM x f = f x := by
+@[simp] theorem evalCLM_apply (x : Ω) (f : CkHolderSpaceOn k α Ω F) : evalCLM x f = f x := by
   simp [evalCLM]
 
 /-- Point evaluation at `x : Ω` has operator norm at most `1`. -/
@@ -1013,18 +995,18 @@ theorem norm_restrictL_le_one (h : Ω' ≤ Ω) :
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 /-- Restriction along the reflexive inclusion `Ω ≤ Ω` is the identity map. -/
-@[simp]
-theorem restrictL_rfl :
-    restrictL (le_refl Ω) = ContinuousLinearMap.id ℝ (CkHolderSpaceOn k α Ω F) := by
-  ext f x
-  simp
+@[simp] theorem restrictL_rfl :
+    restrictL (le_refl Ω) = ContinuousLinearMap.id ℝ (CkHolderSpaceOn k α Ω F) := by ext f x; simp
 
 /-- Restriction along `Ω'' ≤ Ω' ≤ Ω` composes functorially. -/
-@[simp]
-theorem restrictL_comp {Ω'' : Opens E} (h₁ : Ω'' ≤ Ω') (h₂ : Ω' ≤ Ω) :
+@[simp] theorem restrictL_comp {Ω'' : Opens E} (h₁ : Ω'' ≤ Ω') (h₂ : Ω' ≤ Ω) :
     (restrictL (k := k) (α := α) (F := F) h₁).comp (restrictL h₂) = restrictL (h₁.trans h₂) := by
-  ext f x
-  simp
+  ext f x; simp
+
+/-- Restricting twice along `Ω'' ≤ Ω' ≤ Ω` agrees with restricting directly to `Ω''`. -/
+@[simp] theorem restrictL_restrictL {Ω'' : Opens E} (h₁ : Ω'' ≤ Ω') (h₂ : Ω' ≤ Ω)
+    (f : CkHolderSpaceOn k α Ω F) :
+    restrictL h₁ (restrictL h₂ f) = restrictL (h₁.trans h₂) f := by ext x; simp
 
 end restrict
 
@@ -1133,6 +1115,14 @@ theorem restrictL_comp_inclusionSuccL {Ω' : Opens E} (h : Ω' ≤ Ω)
     (hΩ : Convex ℝ (Ω : Set E)) (hΩ' : Convex ℝ (Ω' : Set E)) (hα : α ≤ 1) :
     (restrictL (k := k) (α := α) (F := F) h).comp (inclusionSuccL hΩ hα) =
       (inclusionSuccL hΩ' hα).comp (restrictL h) := by ext f x; simp
+
+/-- Lowering the order commutes with restricting an element between convex open sets. -/
+theorem restrictL_inclusionSuccL {Ω' : Opens E} (h : Ω' ≤ Ω)
+    (hΩ : Convex ℝ (Ω : Set E)) (hΩ' : Convex ℝ (Ω' : Set E)) (hα : α ≤ 1)
+    (f : CkHolderSpaceOn (k + 1) α Ω F) :
+    restrictL h (inclusionSuccL hΩ hα f) = inclusionSuccL hΩ' hα (restrictL h f) := by
+  ext x
+  simp
 
 end inclusionSucc
 
@@ -1427,6 +1417,14 @@ theorem restrictL_comp_restrictOnL {Ω' : Opens E} (h : Ω' ≤ Ω) :
   ext g x
   simp
 
+/-- Restricting a whole-space function to `Ω` and then to `Ω' ≤ Ω` agrees with restricting
+directly to `Ω'`. -/
+@[simp]
+theorem restrictL_restrictOnL {Ω' : Opens E} (h : Ω' ≤ Ω) (g : CkHolderSpace k α E F) :
+    CkHolderSpaceOn.restrictL h (restrictOnL Ω g) = restrictOnL Ω' g := by
+  ext x
+  simp
+
 /-- Continuous linear inclusion `CkHolderSpace (k + 1) α E F →L[ℝ] CkHolderSpace k α E F` on the
 whole space for `α ≤ 1`, of operator norm at most `3`. -/
 def inclusionSuccL (hα : α ≤ 1) :
@@ -1463,6 +1461,13 @@ theorem inclusionSuccL_injective (hα : α ≤ 1) :
 @[simp] theorem inclusionSuccL_comp_restrictOnL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
     (CkHolderSpaceOn.inclusionSuccL (k := k) (α := α) (F := F) hΩ hα).comp (restrictOnL Ω) =
       (restrictOnL Ω).comp (inclusionSuccL hα) := by ext g x; simp
+
+/-- Lowering the order on a whole-space function restricted to a convex open set agrees with
+restricting the lowered function. -/
+@[simp] theorem inclusionSuccL_restrictOnL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
+    (g : CkHolderSpace (k + 1) α E F) :
+    CkHolderSpaceOn.inclusionSuccL hΩ hα (restrictOnL Ω g) =
+      restrictOnL Ω (inclusionSuccL hα g) := by ext x; simp
 
 end CkHolderSpace
 
