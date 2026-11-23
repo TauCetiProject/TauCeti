@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Amplitude.Basic
 public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
+public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
@@ -15,52 +16,69 @@ import TauCeti.Analysis.Distribution.TemperateGrowth
 /-!
 # Properly supported truncation of a pseudodifferential operator
 
-The Schwartz kernel `K_a(x, y)` of the Kohn–Nirenberg quantization `Op(a)` of a symbol `a` is in
-general supported on all of `ℝⁿ × ℝⁿ`, so `Op(a)` does not map compactly supported functions to
-compactly supported functions. Cutting the kernel off near the diagonal repairs this. For a cutoff
-`χ : ℝⁿ → ℝ`, the *truncation*
+The distributional Schwartz kernel `K_a(x, y)` of the Kohn–Nirenberg quantization `Op(a)` of a
+symbol `a` is in general supported on all of `ℝⁿ × ℝⁿ`, so `Op(a)` does not map compactly supported
+functions to compactly supported functions. Cutting the kernel off near the diagonal repairs this.
+For a cutoff `χ : ℝⁿ → ℝ`, the *truncation*
 
 `Op_χ(a) u (x) = Op(a) (χ(x - ·) u) (x)`
 
 (`TauCeti.Symbol.quantizeCutoffValue`) is, when `χ` has temperate growth, the quantization of the
-amplitude `χ(x - y) a(x, ξ)`, the operator with kernel `χ(x - y) K_a(x, y)`. This kernel vanishes
-unless `x - y ∈ support χ`, so for compactly supported `χ` the truncation is *properly supported*:
-the output on an input `u` is supported in `tsupport u + tsupport χ`, and the value at `x` only
-depends on `u` on `x - support χ`.
+amplitude `χ(x - y) a(x, ξ)`, the operator whose distributional kernel is the product
+`χ(x - y) K_a(x, y)`. This distribution is supported in the set of `(x, y)` with
+`x - y ∈ tsupport χ`, so for compactly supported `χ` the truncation is *properly supported*: the
+output on an input `u` is supported in `support u + support χ`, and the value at `x` only depends
+on `u` on `x - support χ`. For a real Schwartz cutoff the truncation is the quantization of the
+symbol `TauCeti.Symbol.kernelCutoff` of `TauCeti/Analysis/Pseudodifferential/ProperSupport/Basic`
+(`TauCeti.Symbol.quantizeSchwartzValue_kernelCutoff_eq_quantizeCutoffValue`).
 
-If `χ` is smooth and `χ = 1` near `0`, nothing is lost modulo smoothing operators: the removed
+Off the diagonal, `K_a` is the smooth function `TauCeti.Symbol.offDiagonalKernel a`, which has the
+junk value `0` on the diagonal. This pointwise representative only computes `Op_χ(a) u (x)` as the
+integral `∫ χ(x - y) K_a(x, y) u(y) dy` when the integrand avoids the diagonal, that is when `u`
+vanishes near `x` or `χ` vanishes near `0`.
+
+If `χ` is smooth and `χ = 1` near `0`, nothing is lost modulo smoothing operators: the pointwise
 kernel `(1 - χ(x - y)) K_a(x, y)` (`TauCeti.Symbol.cutoffRemainderKernel`) vanishes near the
 diagonal, and off the diagonal `K_a` is smooth (`TauCeti.Symbol.contDiffOn_offDiagonalKernel`), so
-the removed kernel is smooth on all of `ℝⁿ × ℝⁿ`. If moreover `χ` has temperate growth, then on
-compactly supported inputs
+it is smooth on all of `ℝⁿ × ℝⁿ`. If moreover `χ` has temperate growth, then on compactly
+supported Schwartz inputs
 
 `Op(a) u (x) = Op_χ(a) u (x) + ∫ (1 - χ(x - y)) K_a(x, y) u(y) dy`.
 
-Consequently a smooth compactly supported cutoff `χ` equal to `1` near `0` maps compactly supported
-Schwartz functions to compactly supported smooth functions.
+The truncation of a Schwartz input is smooth when the input or the cutoff is compactly supported, so
+a smooth compactly supported cutoff `χ` maps compactly supported Schwartz functions to compactly
+supported smooth functions.
 
 ## Main declarations
 
 * `TauCeti.Symbol.quantizeCutoffValue`: the truncation `Op_χ(a) u (x) = Op(a) (χ(x - ·) u) (x)`,
   with `TauCeti.Symbol.quantizeAmplitudeValue_eq_quantizeCutoffValue` identifying it, for `χ` of
-  temperate growth, with the quantization of the amplitude `χ(x - y) a(x, ξ)`.
+  temperate growth, with the quantization of the amplitude `χ(x - y) a(x, ξ)`, and
+  `TauCeti.Symbol.quantizeSchwartzValue_kernelCutoff_eq_quantizeCutoffValue` identifying it, for a
+  real Schwartz cutoff `χ`, with the quantization of the symbol `TauCeti.Symbol.kernelCutoff χ a`.
+* `TauCeti.Symbol.quantizeCutoffValue_add_cutoff` and
+  `TauCeti.Symbol.quantizeCutoffValue_smul_cutoff`: the truncation is real-linear in cutoffs of
+  temperate growth.
 * `TauCeti.Symbol.quantizeCutoffValue_congr_right`: the input-side half of proper support, the
-  value at `x` only depends on the input on `x - support χ`.
+  value at `x` only depends on the input on `x - support χ`. Dually, by
+  `TauCeti.Symbol.quantizeCutoffValue_congr_cutoff`, it only depends on a cutoff of temperate
+  growth on `x - support u`.
 * `TauCeti.Symbol.support_quantizeCutoffValue_subset`,
   `TauCeti.Symbol.tsupport_quantizeCutoffValue_subset` and
   `TauCeti.Symbol.hasCompactSupport_quantizeCutoffValue`: the output-side half of proper support,
   the output is supported in `support u + support χ`, which has compact closure when `u` and `χ`
   are compactly supported.
-* `TauCeti.Symbol.quantizeCutoffValue_eq_integral_offDiagonalKernel`: off the support of the input,
-  or for `χ` vanishing near `0`, `Op_χ(a) u (x) = ∫ χ(x - y) K_a(x, y) u(y) dy`.
+* `TauCeti.Symbol.quantizeCutoffValue_eq_integral_offDiagonalKernel`: for `χ` of temperate growth,
+  with `u` or `χ` compactly supported, if `u` vanishes near `x` or `χ` vanishes near `0` then
+  `Op_χ(a) u (x) = ∫ χ(x - y) K_a(x, y) u(y) dy` with the off-diagonal kernel `K_a`.
 * `TauCeti.Symbol.cutoffRemainderKernel` and `TauCeti.Symbol.contDiff_cutoffRemainderKernel`: the
-  removed kernel `(1 - χ(x - y)) K_a(x, y)`, smooth on `ℝⁿ × ℝⁿ` when `χ` is smooth and `χ = 1`
-  near `0`.
+  weighted off-diagonal kernel `(1 - χ(x - y)) K_a(x, y)`, smooth on `ℝⁿ × ℝⁿ` when `χ` is smooth
+  and `χ = 1` near `0`.
 * `TauCeti.Symbol.quantizeSchwartzValue_eq_quantizeCutoffValue_add_integral`: **the truncation is
   `Op(a)` modulo a smoothing operator**, `Op(a) u = Op_χ(a) u + ∫ R(·, y) u(y) dy` on compactly
-  supported inputs, for `χ` of temperate growth with `χ = 1` near `0`.
-* `TauCeti.Symbol.contDiff_quantizeCutoffValue`: for `χ` of temperate growth with `χ = 1` near
-  `0`, the truncation of an input is smooth when the input or `χ` is compactly supported.
+  supported Schwartz inputs, for `χ` of temperate growth with `χ = 1` near `0`.
+* `TauCeti.Symbol.contDiff_quantizeCutoffValue`: for `χ` of temperate growth, the truncation of an
+  input is smooth when the input or `χ` is compactly supported.
 
 ## References
 
@@ -88,10 +106,14 @@ variable {n : ℕ} {m : ℝ}
 
 /-- The **truncation near the diagonal** of the quantization of a symbol `a` by a cutoff `χ`:
 `Op_χ(a) u (x) = Op(a) (χ(x - ·) u) (x)`. For `χ` of temperate growth it is the quantization of the
-amplitude `χ(x - y) a(x, ξ)` (`TauCeti.Symbol.quantizeAmplitudeValue_eq_quantizeCutoffValue`), with
-kernel `χ(x - y) K_a(x, y)`. For a compactly supported `χ` this operator is properly supported
-(`TauCeti.Symbol.hasCompactSupport_quantizeCutoffValue`), and if `χ` has temperate growth and
-`χ = 1` near `0` it differs from `Op(a)` by an operator with smooth kernel
+amplitude `χ(x - y) a(x, ξ)` (`TauCeti.Symbol.quantizeAmplitudeValue_eq_quantizeCutoffValue`),
+whose distributional kernel is the product of `χ(x - y)` with the distributional kernel `K_a` of
+`Op(a)`, supported where `x - y ∈ tsupport χ`. It agrees with the integral against the pointwise
+off-diagonal kernel `TauCeti.Symbol.offDiagonalKernel` only away from the diagonal
+(`TauCeti.Symbol.quantizeCutoffValue_eq_integral_offDiagonalKernel`). For a compactly supported
+`χ` this operator is properly supported (`TauCeti.Symbol.hasCompactSupport_quantizeCutoffValue`),
+and if `χ` has temperate growth and `χ = 1` near `0`, then on compactly supported Schwartz inputs
+it differs from `Op(a)` by an integral operator with smooth kernel
 (`TauCeti.Symbol.quantizeSchwartzValue_eq_quantizeCutoffValue_add_integral`). If `χ` does not have
 temperate growth the multiplication `SchwartzMap.smulLeftCLM` has the junk value `0`
 (`TauCeti.Symbol.quantizeCutoffValue_of_not_hasTemperateGrowth`). -/
@@ -189,6 +211,58 @@ theorem quantizeCutoffValue_smul_right (a : Symbol n V W m) (χ : CoordinateSpac
     simp only [SchwartzMap.smulLeftCLM_apply_apply hg, smul_apply, smul_comm (χ _) c]
   rw [quantizeCutoffValue_def, h, quantizeSchwartzValue_smul_right, quantizeCutoffValue_def]
 
+/-- The truncation is additive in cutoffs of temperate growth. -/
+theorem quantizeCutoffValue_add_cutoff (a : Symbol n V W m) {χ ψ : CoordinateSpace n → ℝ}
+    (hχ : χ.HasTemperateGrowth) (hψ : ψ.HasTemperateGrowth) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeCutoffValue a (χ + ψ) u x = quantizeCutoffValue a χ u x + quantizeCutoffValue a ψ u x
+    := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  have h : (fun y ↦ (χ + ψ) (x - y)) = (fun y ↦ χ (x - y)) + fun y ↦ ψ (x - y) := rfl
+  rw [quantizeCutoffValue_def, h, SchwartzMap.smulLeftCLM_add (hχ.comp_sub_left x)
+    (hψ.comp_sub_left x), add_apply,
+    quantizeSchwartzValue_add_right (a.continuous_coefficient_slice x).aestronglyMeasurable hC,
+    ← quantizeCutoffValue_def, ← quantizeCutoffValue_def]
+
+/-- The truncation is homogeneous in cutoffs of temperate growth. -/
+theorem quantizeCutoffValue_smul_cutoff (a : Symbol n V W m) (c : ℝ) (hχ : χ.HasTemperateGrowth)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeCutoffValue a (c • χ) u x = c • quantizeCutoffValue a χ u x := by
+  have h : (fun y ↦ (c • χ) (x - y)) = c • fun y ↦ χ (x - y) := rfl
+  rw [quantizeCutoffValue_def, h, SchwartzMap.smulLeftCLM_real_smul (hχ.comp_sub_left x),
+    smul_apply, ← Complex.coe_smul, quantizeSchwartzValue_smul_right,
+    ← quantizeCutoffValue_def, Complex.coe_smul]
+
+/-- **The truncation as a kernel cutoff.** For a Schwartz cutoff `ψ` with real values `χ`, the
+truncation `Op_χ(a)` is the quantization of the symbol `TauCeti.Symbol.kernelCutoff ψ a`. -/
+theorem quantizeSchwartzValue_kernelCutoff_eq_quantizeCutoffValue [CompleteSpace V]
+    [CompleteSpace W] (a : Symbol n V W m) {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ : ∀ z, ψ z = χ z)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (kernelCutoff ψ a).coefficient u x = quantizeCutoffValue a χ u x := by
+  have hχ : χ.HasTemperateGrowth := by
+    convert ψ.hasTemperateGrowth.continuousLinearMap_comp Complex.reCLM using 1
+    funext z
+    simp [hψ]
+  have h : (fun y ↦ ψ (x - y)) = fun y ↦ RCLike.ofReal (K := ℂ) (χ (x - y)) :=
+    funext fun y ↦ hψ (x - y)
+  rw [quantizeSchwartzValue_kernelCutoff, h,
+    SchwartzMap.smulLeftCLM_ofReal ℂ (hχ.comp_sub_left x), quantizeCutoffValue_def]
+
+/-- The value of the truncation at `x` only depends on a cutoff of temperate growth on the set
+`x - support u` of points `x - y` with `y ∈ support u`. -/
+theorem quantizeCutoffValue_congr_cutoff (a : Symbol n V W m) {χ ψ : CoordinateSpace n → ℝ}
+    (hχ : χ.HasTemperateGrowth) (hψ : ψ.HasTemperateGrowth) {u : 𝓢(CoordinateSpace n, V)}
+    {x : CoordinateSpace n} (h : ∀ y ∈ support u, χ (x - y) = ψ (x - y)) :
+    quantizeCutoffValue a χ u x = quantizeCutoffValue a ψ u x := by
+  rw [quantizeCutoffValue_def, quantizeCutoffValue_def]
+  congr 1
+  ext y
+  rw [SchwartzMap.smulLeftCLM_apply_apply (hχ.comp_sub_left x),
+    SchwartzMap.smulLeftCLM_apply_apply (hψ.comp_sub_left x)]
+  by_cases hy : y ∈ support u
+  · rw [h y hy]
+  · rw [notMem_support.1 hy, smul_zero, smul_zero]
+
 /-- **The truncation as an amplitude quantization.** For `χ` of temperate growth, the truncation
 `Op_χ(a)` is the quantization of the amplitude `χ(x - y) a(x, ξ)`. -/
 theorem quantizeAmplitudeValue_eq_quantizeCutoffValue [CompleteSpace V] [CompleteSpace W]
@@ -272,11 +346,13 @@ theorem quantizeCutoffValue_eq_integral_offDiagonalKernel [CompleteSpace V] [Com
 
 /-! ### The removed kernel -/
 
-/-- The kernel `(1 - χ(x - y)) K_a(x, y)` removed from `Op(a)` by the truncation `Op_χ(a)`, where
-`K_a` is the off-diagonal kernel `TauCeti.Symbol.offDiagonalKernel` of `Op(a)`. When `χ` is smooth
-and `χ = 1` near `0` it is smooth on `ℝⁿ × ℝⁿ` (`TauCeti.Symbol.contDiff_cutoffRemainderKernel`),
-and if moreover `χ` has temperate growth then `Op(a)` and `Op_χ(a)` differ on compactly supported
-inputs by the integral operator with this kernel
+/-- The off-diagonal kernel `K_a = TauCeti.Symbol.offDiagonalKernel a` of `Op(a)`, weighted by the
+complementary cutoff: `(1 - χ(x - y)) K_a(x, y)`. Like `K_a` it has the junk value `0` on the
+diagonal. When `χ` is smooth and `χ = 1` near `0` it is the kernel removed from `Op(a)` by the
+truncation `Op_χ(a)`, and it is smooth on `ℝⁿ × ℝⁿ`
+(`TauCeti.Symbol.contDiff_cutoffRemainderKernel`); if moreover `χ` has temperate growth then
+`Op(a)` and `Op_χ(a)` differ on compactly supported Schwartz inputs by the integral operator with
+this kernel
 (`TauCeti.Symbol.quantizeSchwartzValue_eq_quantizeCutoffValue_add_integral`). -/
 def cutoffRemainderKernel (a : Symbol n V W m) (χ : CoordinateSpace n → ℝ)
     (x y : CoordinateSpace n) : V →L[ℂ] W :=
@@ -294,25 +370,25 @@ theorem cutoffRemainderKernel_self (a : Symbol n V W m) (χ : CoordinateSpace n 
     (x : CoordinateSpace n) : cutoffRemainderKernel a χ x x = 0 := by
   simp [cutoffRemainderKernel_def]
 
-/-- Nothing is truncated by the cutoff `0`: the removed kernel is the whole off-diagonal kernel. -/
-@[simp]
+/-- The cutoff `0` retains nothing: the weighted kernel is the whole off-diagonal kernel. -/
 theorem cutoffRemainderKernel_zero_cutoff (a : Symbol n V W m) (x y : CoordinateSpace n) :
     cutoffRemainderKernel a 0 x y = offDiagonalKernel a x y := by
   simp [cutoffRemainderKernel_def]
 
-/-- Nothing is removed by the cutoff `1`. -/
-@[simp]
+/-- The cutoff `1` retains everything: the weighted kernel vanishes. -/
 theorem cutoffRemainderKernel_one_cutoff (a : Symbol n V W m) (x y : CoordinateSpace n) :
     cutoffRemainderKernel a 1 x y = 0 := by
   simp [cutoffRemainderKernel_def]
 
-/-- The removed kernel vanishes where `χ(x - y) = 1`; in particular near the diagonal when `χ = 1`
+/-- The weighted kernel vanishes where `χ(x - y) = 1`; in particular near the diagonal when `χ = 1`
 near `0`. -/
+@[simp]
 theorem cutoffRemainderKernel_eq_zero (a : Symbol n V W m) {x y : CoordinateSpace n}
     (h : χ (x - y) = 1) : cutoffRemainderKernel a χ x y = 0 := by
   simp [cutoffRemainderKernel_def, h]
 
-/-- The removed kernel is the whole off-diagonal kernel where `χ(x - y) = 0`. -/
+/-- The weighted kernel is the whole off-diagonal kernel where `χ(x - y) = 0`. -/
+@[simp]
 theorem cutoffRemainderKernel_eq_offDiagonalKernel (a : Symbol n V W m) {x y : CoordinateSpace n}
     (h : χ (x - y) = 0) : cutoffRemainderKernel a χ x y = offDiagonalKernel a x y := by
   simp [cutoffRemainderKernel_def, h]
@@ -339,7 +415,7 @@ theorem contDiff_cutoffRemainderKernel (a : Symbol n V W m) (hχ : ContDiff ℝ 
   simp [hq]
 
 /-- **The truncation is `Op(a)` modulo a smoothing operator.** If `χ` has temperate growth and
-`χ = 1` near `0`, then on a compactly supported input
+`χ = 1` near `0`, then on a compactly supported Schwartz input
 `Op(a) u (x) = Op_χ(a) u (x) + ∫ (1 - χ(x - y)) K_a(x, y) u(y) dy`, where the kernel of the last
 term is smooth (`TauCeti.Symbol.contDiff_cutoffRemainderKernel`). -/
 theorem quantizeSchwartzValue_eq_quantizeCutoffValue_add_integral [CompleteSpace V]
@@ -352,16 +428,8 @@ theorem quantizeSchwartzValue_eq_quantizeCutoffValue_add_integral [CompleteSpace
   have h0 : 0 ∉ tsupport (1 - χ) := notMem_tsupport_iff_eventuallyEq.2 <| by
     filter_upwards [hχ1] with z hz
     simp [hz]
-  have hsplit : u = SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u +
-      SchwartzMap.smulLeftCLM V (fun y ↦ (1 - χ) (x - y)) u := by
-    ext y
-    rw [add_apply, SchwartzMap.smulLeftCLM_apply_apply (hχ.comp_sub_left x),
-      SchwartzMap.smulLeftCLM_apply_apply (hχ'.comp_sub_left x), Pi.sub_apply, Pi.one_apply,
-      sub_smul, one_smul, add_sub_cancel]
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
-  conv_lhs => rw [hsplit]
-  rw [quantizeSchwartzValue_add_right (a.continuous_coefficient_slice x).aestronglyMeasurable hC,
-    ← quantizeCutoffValue_def a χ, ← quantizeCutoffValue_def a (1 - χ),
+  rw [← quantizeCutoffValue_one_cutoff, ← add_sub_cancel χ 1,
+    quantizeCutoffValue_add_cutoff a hχ hχ',
     quantizeCutoffValue_eq_integral_offDiagonalKernel a hχ' (.inl hu) (.inr h0)]
   simp only [cutoffRemainderKernel_def, Pi.sub_apply, Pi.one_apply]
 
@@ -387,46 +455,44 @@ theorem contDiff_integral_cutoffRemainderKernel (a : Symbol n V W m) (hχ : Cont
   rw [h]
   exact ContDiff.parametric_integral hu subset_rfl hu.isCompact.measure_lt_top.ne hF
 
-/-- **Smoothness.** If `χ` has temperate growth and `χ = 1` near `0`, the truncation of an input
-`u` is smooth whenever `u` or `χ` is compactly supported. Together with
-`TauCeti.Symbol.hasCompactSupport_quantizeCutoffValue`, a smooth compactly supported cutoff equal
-to `1` near `0` maps compactly supported inputs to compactly supported smooth functions. -/
+/-- **Smoothness.** If `χ` has temperate growth, the truncation of an input `u` is smooth whenever
+`u` or `χ` is compactly supported. Together with
+`TauCeti.Symbol.hasCompactSupport_quantizeCutoffValue`, a smooth compactly supported cutoff maps
+compactly supported inputs to compactly supported smooth functions. -/
 theorem contDiff_quantizeCutoffValue [CompleteSpace V] [CompleteSpace W] (a : Symbol n V W m)
-    (hχ : χ.HasTemperateGrowth) (hχ1 : χ =ᶠ[𝓝 0] 1) {u : 𝓢(CoordinateSpace n, V)}
+    (hχ : χ.HasTemperateGrowth) {u : 𝓢(CoordinateSpace n, V)}
     (hc : HasCompactSupport u ∨ HasCompactSupport χ) :
     ContDiff ℝ ∞ (quantizeCutoffValue a χ u) := by
-  have key : ∀ {u : 𝓢(CoordinateSpace n, V)}, HasCompactSupport u →
-      ContDiff ℝ ∞ (quantizeCutoffValue a χ u) := fun {u} hu ↦ by
-    have h : quantizeCutoffValue a χ u = fun x ↦
-        quantizeSchwartzValue a.coefficient u x - ∫ y, cutoffRemainderKernel a χ x y (u y) := by
-      funext x
-      rw [quantizeSchwartzValue_eq_quantizeCutoffValue_add_integral a hχ hχ1 hu x,
-        add_sub_cancel_right]
+  -- A compactly supported cutoff is a Schwartz function, so the truncation is a quantization.
+  have key : ∀ {χ : CoordinateSpace n → ℝ}, χ.HasTemperateGrowth → HasCompactSupport χ →
+      ContDiff ℝ ∞ (quantizeCutoffValue a χ u) := fun {χ} hχ hχc ↦ by
+    let ψ : 𝓢(CoordinateSpace n, ℂ) :=
+      (hχc.comp_left Complex.ofReal_zero).toSchwartzMap (Complex.ofRealCLM.contDiff.comp hχ.1)
+    have h : quantizeCutoffValue a χ u = quantizeSchwartzValue (kernelCutoff ψ a).coefficient u :=
+      funext fun x ↦ (quantizeSchwartzValue_kernelCutoff_eq_quantizeCutoffValue a
+        (fun _ ↦ rfl) u x).symm
     rw [h]
-    exact (a.contDiff_quantizeSchwartzValue u).sub
-      (contDiff_integral_cutoffRemainderKernel a hχ.1 hχ1 hu)
+    exact (kernelCutoff ψ a).contDiff_quantizeSchwartzValue u
   rcases hc with hu | hχc
-  · exact key hu
-  -- Near `x₀` the truncation only sees `u` on a bounded set, where a bump `ψ` equals `1`.
+  swap
+  · exact key hχ hχc
+  -- Near `x₀` the truncation only sees `χ` on a bounded set, where a bump `ψ` equals `1`.
   refine contDiff_iff_contDiffAt.2 fun x₀ ↦ ?_
-  obtain ⟨r, hr, hχr⟩ := hχc.isCompact.isBounded.subset_closedBall_lt 0 0
-  let ψ : ContDiffBump x₀ := ⟨r + 1, r + 2, by linarith, by linarith⟩
+  obtain ⟨r, hr, hur⟩ := hu.isCompact.isBounded.subset_closedBall_lt 0 x₀
+  let ψ : ContDiffBump (0 : CoordinateSpace n) := ⟨r + 1, r + 2, by linarith, by linarith⟩
   have hψ : (ψ : CoordinateSpace n → ℝ).HasTemperateGrowth :=
     ψ.hasCompactSupport.hasTemperateGrowth ψ.contDiff
-  have hψu : HasCompactSupport (SchwartzMap.smulLeftCLM V (ψ : CoordinateSpace n → ℝ) u) :=
-    ψ.hasCompactSupport.of_isClosed_subset (isClosed_tsupport _)
-      ((SchwartzMap.tsupport_smulLeftCLM_subset _ u).trans inter_subset_right)
-  refine (key hψu).contDiffAt.congr_of_eventuallyEq ?_
+  refine (key (hψ.mul hχ) ψ.hasCompactSupport.mul_right).contDiffAt.congr_of_eventuallyEq ?_
   filter_upwards [Metric.ball_mem_nhds x₀ one_pos] with x hx
-  refine quantizeCutoffValue_congr_right a fun y hy ↦ ?_
-  have hxy : ‖x - y‖ ≤ r := by simpa using hχr (subset_tsupport χ hy)
+  refine quantizeCutoffValue_congr_cutoff a hχ (hψ.mul hχ) fun y hy ↦ ?_
+  have hyr : ‖y - x₀‖ ≤ r := by simpa [dist_eq_norm] using hur (subset_tsupport u hy)
   have hx' : ‖x - x₀‖ < 1 := by simpa [dist_eq_norm] using hx
-  have hyb : y ∈ Metric.closedBall x₀ (r + 1) := by
-    rw [Metric.mem_closedBall, dist_eq_norm]
-    calc ‖y - x₀‖ = ‖(x - x₀) - (x - y)‖ := by congr 1; abel
-      _ ≤ ‖x - x₀‖ + ‖x - y‖ := norm_sub_le _ _
+  have hxy : x - y ∈ Metric.closedBall 0 (r + 1) := by
+    rw [mem_closedBall_zero_iff]
+    calc ‖x - y‖ = ‖(x - x₀) - (y - x₀)‖ := by congr 1; abel
+      _ ≤ ‖x - x₀‖ + ‖y - x₀‖ := norm_sub_le _ _
       _ ≤ r + 1 := by linarith
-  rw [SchwartzMap.smulLeftCLM_apply_apply hψ, ψ.one_of_mem_closedBall hyb, one_smul]
+  rw [Pi.mul_apply, ψ.one_of_mem_closedBall hxy, one_mul]
 
 end Symbol
 
