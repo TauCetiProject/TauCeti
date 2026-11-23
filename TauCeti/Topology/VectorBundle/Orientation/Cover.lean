@@ -126,7 +126,7 @@ variable (F E ι) in
 /-- The fibre of the orientation double cover over `b` is the set of orientations of `E b`. -/
 def fiberEquiv (b : B) :
     (proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b} ≃ Orientation ℝ (E b) ι where
-  toFun p := Set.mem_singleton_iff.mp p.2 ▸ p.1.orientation
+  toFun p := Set.mem_singleton_iff.mp p.property ▸ p.val.orientation
   invFun o := ⟨⟨b, o⟩, rfl⟩
   left_inv := by
     rintro ⟨⟨b', o⟩, h⟩
