@@ -135,7 +135,6 @@ theorem floerOperator_perturbationPullback (ω : SymplecticForm V)
 /-- Under a change of domain coordinates `φ` with complex linear derivative `dφ_w ≠ 0`, `u ∘ φ`
 solves the Floer equation for the pulled back data at `w` exactly when `u` solves it at `φ w`. -/
 theorem floerOperator_perturbationPullback_eq_zero_iff (ω : SymplecticForm V)
-    (hφ : DifferentiableAt ℝ φ w)
     (hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
     (hφ₀ : fderiv ℝ φ w ≠ 0) (hu : DifferentiableAt ℝ u (φ w))
@@ -145,6 +144,9 @@ theorem floerOperator_perturbationPullback_eq_zero_iff (ω : SymplecticForm V)
         (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w = 0 ↔
       ω.floerOperator (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w) = 0 := by
+  have hφ : DifferentiableAt ℝ φ w := by
+    by_contra h
+    exact hφ₀ (fderiv_zero_of_not_differentiableAt h)
   rw [ω.floerOperator_perturbationPullback hφ hφJ hu hKs hKt]
   set a := (fderiv ℝ φ w stdComplexLineReal).1
   set b := (fderiv ℝ φ w stdComplexLineReal).2
