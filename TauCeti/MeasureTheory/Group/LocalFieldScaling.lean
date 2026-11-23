@@ -70,10 +70,8 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
   inside an integer box of finite measure is null.
 * `MeasureTheory.Measure.addHaar_image_mulVec`: for a Haar measure `μ` and integral `A`,
   `μ (A '' s) = q ^ (-k) * μ s` for every set `s`.
-* `MeasureTheory.Measure.addHaar_image_mulVec_of_isNonarchimedeanLocalField`,
-  `MeasureTheory.Measure.addHaar_preimage_mulVec_of_isNonarchimedeanLocalField`,
-  `MeasureTheory.Measure.map_mulVec_addHaar`: image, preimage, and pushforward scaling on `ι → K`
-  by `|det A|_K` for any matrix `A : Matrix ι ι K`.
+* `MeasureTheory.Measure.addHaar_image_mulVec_of_isUnit_det`: image scaling on `ι → K` by
+  `|det A|_K` for any invertible matrix `A : Matrix ι ι K`.
 
 ## References
 
@@ -367,7 +365,7 @@ private theorem normalizedAbsoluteValue_det_mul_inv_pow {ϖ : 𝒪[K]} (hϖ : Ir
 
 /-- For an invertible matrix `A : Matrix ι ι K`, `A.mulVec` scales any additive Haar measure on
 `ι → K` by `|det A|_K`. -/
-private theorem addHaar_image_mulVec_of_isUnit_det (μ : Measure (ι → K)) [μ.IsAddHaarMeasure]
+theorem addHaar_image_mulVec_of_isUnit_det (μ : Measure (ι → K)) [μ.IsAddHaarMeasure]
     {A : Matrix ι ι K} (hA : IsUnit A.det) (s : Set (ι → K)) :
     μ (A.mulVec '' s) = ((normalizedAbsoluteValue K A.det : ℝ≥0) : ℝ≥0∞) * μ s := by
   -- Clear denominators via `B = ϖ ^ m • A ∈ Matrix ι ι 𝒪[K]` and cancel `ϖ ^ m • 1`.
@@ -413,153 +411,5 @@ private theorem addHaar_image_mulVec_of_isUnit_det (μ : Measure (ι → K)) [μ
       pow_ne_zero _ (Nat.cast_ne_zero.2 Nat.card_pos.ne')
     simp [one_div, h1]
   exact ((ENNReal.mul_right_inj hq_ne0 hq_lt).1 hC_haar).symm
-
-/-- A singular matrix `A : Matrix ι ι K` sends every set to a Haar-null set. -/
-private theorem measure_image_mulVec_eq_zero_of_det_eq_zero (μ : Measure (ι → K))
-    [μ.IsAddHaarMeasure] {A : Matrix ι ι K} (hA : A.det = 0) (s : Set (ι → K)) :
-    μ (A.mulVec '' s) = 0 := by
-  have hlt : LinearMap.range A.mulVecLin < ⊤ := by
-    have hdet : LinearMap.det (Matrix.toLin' A) = 0 := by rwa [LinearMap.det_toLin']
-    exact LinearMap.range_lt_top_of_det_eq_zero hdet
-  obtain ⟨f, hf0, hker⟩ := (LinearMap.range A.mulVecLin).exists_le_ker_of_lt_top hlt
-  have hrepr (x : ι → K) : f x = ∑ i, x i * f (Pi.single i 1) := by
-    have hx : x = ∑ i, x i • Pi.single i (1 : K) := by
-      ext k
-      simp [Finset.sum_apply, Pi.single_apply]
-    conv_lhs => rw [hx]
-    rw [_root_.map_sum]
-    simp [map_smul, smul_eq_mul]
-  obtain ⟨j, hj⟩ : ∃ j, f (Pi.single j 1) ≠ 0 := by
-    by_contra! h
-    exact hf0 (LinearMap.ext fun x ↦ by simp [hrepr x, h])
-  let c := f (Pi.single j 1)
-  let r (x : ι → K) : K := ∑ i ∈ Finset.univ.erase j, x i * f (Pi.single i 1)
-  have hf_split (x : ι → K) : f x = x j * c + r x := by
-    rw [hrepr x, ← Finset.add_sum_erase _ _ (Finset.mem_univ j)]
-  let T : (ι → K) →ₗ[K] (ι → K) :=
-    { toFun x i := if i = j then f x else x i
-      map_add' x y := funext fun i ↦ by by_cases hij : i = j <;> simp [hij]
-      map_smul' a x := funext fun i ↦ by by_cases hij : i = j <;> simp [hij] }
-  let S (y : ι → K) (i : ι) : K := if i = j then c⁻¹ * (y j - r y) else y i
-  have hf_cont : Continuous f := by
-    have : ⇑f = fun x ↦ ∑ i, x i * f (Pi.single i 1) := funext hrepr
-    rw [this]
-    fun_prop
-  have hr_cont : Continuous r := by
-    dsimp only [r]
-    fun_prop
-  have hT_cont : Continuous T := continuous_pi fun i ↦ by
-    by_cases hij : i = j <;> simp only [T, LinearMap.coe_mk, AddHom.coe_mk, hij, ↓reduceIte]
-    · exact hf_cont
-    · exact continuous_apply i
-  have hS_cont : Continuous S := continuous_pi fun i ↦ by
-    by_cases hij : i = j <;> simp only [S, hij, ↓reduceIte]
-    · exact continuous_const.mul ((continuous_apply j).sub hr_cont)
-    · exact continuous_apply i
-  have hr_T (x : ι → K) : r (T x) = r x := by
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hkj : k ≠ j := (Finset.mem_erase.1 hk).1
-    simp [T, hkj]
-  have hr_S (y : ι → K) : r (S y) = r y := by
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hkj : k ≠ j := (Finset.mem_erase.1 hk).1
-    simp [S, hkj]
-  let e : (ι → K) ≃ₜ (ι → K) :=
-    { toFun := T
-      invFun := S
-      left_inv x := funext fun i ↦ by
-        by_cases hij : i = j
-        · subst hij
-          have hT : T x i = f x := by simp [T]
-          have hS : S (T x) i = c⁻¹ * (T x i - r (T x)) := by simp [S]
-          rw [hS, hT, hr_T, hf_split, add_sub_cancel_right, mul_comm, mul_assoc,
-            mul_inv_cancel₀ hj, mul_one]
-        · simp [S, T, hij]
-      right_inv y := funext fun i ↦ by
-        by_cases hij : i = j
-        · subst hij
-          have hT : T (S y) i = f (S y) := by simp [T]
-          have hS : S y i = c⁻¹ * (y i - r y) := by simp [S]
-          rw [hT, hf_split, hS, hr_S, mul_right_comm, inv_mul_cancel₀ hj, one_mul, sub_add_cancel]
-        · simp [S, T, hij]
-      continuous_toFun := hT_cont
-      continuous_invFun := hS_cont }
-  let ν : Measure (ι → K) := μ.map e
-  have _ : ν.IsAddLeftInvariant :=
-    isAddLeftInvariant_map T.toAddMonoidHom.toAddHom e.continuous.measurable e.surjective
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  have hϖ0 : (ϖ : K) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
-  have hnull_k (k : ℕ) : ν ((scaledIntegerBox ι (ϖ : K) k : Set (ι → K)) ∩ {a | a j = 0}) = 0 := by
-    let φ : (ι → K) ≃ₜ (ι → K) :=
-      Homeomorph.smulOfNeZero ((ϖ : K) ^ k) (pow_ne_zero k hϖ0)
-    let φAdd : (ι → K) →+ (ι → K) := DistribSMul.toAddMonoidHom (ι → K) ((ϖ : K) ^ k)
-    have _ : (ν.map φ).IsAddLeftInvariant :=
-      isAddLeftInvariant_map φAdd.toAddHom φ.continuous.measurable φ.surjective
-    have hpre : φ ⁻¹' integerBox K ι = (scaledIntegerBox ι (ϖ : K) k : Set (ι → K)) :=
-      coe_scaledIntegerBox.symm
-    have hfin : (ν.map φ) (integerBox K ι) ≠ ∞ := by
-      rw [← φ.toMeasurableEquiv_coe, MeasurableEquiv.map_apply, φ.toMeasurableEquiv_coe, hpre]
-      dsimp only [ν]
-      rw [← e.toMeasurableEquiv_coe, MeasurableEquiv.map_apply, e.toMeasurableEquiv_coe]
-      exact (e.isCompact_preimage.2 (isCompact_scaledIntegerBox hϖ0 k)).measure_lt_top.ne
-    have hzero := measure_integerBox_inter_coord_eq_zero (ν.map φ) hfin j
-    rw [← φ.toMeasurableEquiv_coe, MeasurableEquiv.map_apply, φ.toMeasurableEquiv_coe,
-      preimage_inter, hpre] at hzero
-    have hcoord : φ ⁻¹' {a : ι → K | a j = 0} = {a : ι → K | a j = 0} := by
-      ext a
-      simp [φ, pow_ne_zero k hϖ0]
-    rwa [hcoord] at hzero
-  have hnull : ν {a : ι → K | a j = 0} = 0 := by
-    rw [← univ_inter {a : ι → K | a j = 0},
-      ← iUnion_eq_univ_iff.2 (exists_mem_scaledIntegerBox hϖ), iUnion_inter]
-    exact measure_iUnion_null hnull_k
-  have hsub : A.mulVec '' s ⊆ e ⁻¹' {a : ι → K | a j = 0} := by
-    rintro _ ⟨x, -, rfl⟩
-    have hfx : f (A.mulVec x) = 0 := hker ⟨x, rfl⟩
-    change T (A.mulVec x) j = 0
-    simpa [T] using hfx
-  dsimp only [ν] at hnull
-  rw [← e.toMeasurableEquiv_coe, MeasurableEquiv.map_apply, e.toMeasurableEquiv_coe] at hnull
-  exact measure_mono_null hsub hnull
-
-/-- **Matrix Haar change of variables** for arbitrary (possibly singular) matrices
-`A : Matrix ι ι K` on `ι → K`: `μ (A.mulVec '' s) = |det A|_K * μ s`. -/
-@[simp, grind =]
-theorem addHaar_image_mulVec_of_isNonarchimedeanLocalField (μ : Measure (ι → K))
-    [μ.IsAddHaarMeasure] (A : Matrix ι ι K) (s : Set (ι → K)) :
-    μ (A.mulVec '' s) = ((normalizedAbsoluteValue K A.det : ℝ≥0) : ℝ≥0∞) * μ s := by
-  by_cases hA : A.det = 0
-  · simp [hA, measure_image_mulVec_eq_zero_of_det_eq_zero μ hA s]
-  · exact addHaar_image_mulVec_of_isUnit_det μ (isUnit_iff_ne_zero.2 hA) s
-
-/-- Preimage of a set under `A.mulVec` (`A.det ≠ 0`) on `ι → K` scales any additive Haar measure
-by `|det A|_K⁻¹`. -/
-@[simp, grind =]
-theorem addHaar_preimage_mulVec_of_isNonarchimedeanLocalField (μ : Measure (ι → K))
-    [μ.IsAddHaarMeasure] {A : Matrix ι ι K} (hA : A.det ≠ 0) (s : Set (ι → K)) :
-    μ (A.mulVec ⁻¹' s) = ((normalizedAbsoluteValue K A.det : ℝ≥0) : ℝ≥0∞)⁻¹ * μ s := by
-  have hunit : IsUnit A.det := isUnit_iff_ne_zero.2 hA
-  have hpre : A.mulVec ⁻¹' s = A⁻¹.mulVec '' s := by
-    ext x
-    simp only [mem_preimage, mem_image]
-    refine ⟨fun hx ↦ ⟨A.mulVec x, hx, ?_⟩, ?_⟩
-    · simp [Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hunit]
-    · rintro ⟨y, hy, rfl⟩
-      simpa [Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv _ hunit] using hy
-  have hdet0 : (normalizedAbsoluteValue K A.det : ℝ≥0) ≠ 0 := by
-    exact_mod_cast (normalizedAbsoluteValue K).ne_zero_iff.2 hA
-  rw [hpre, addHaar_image_mulVec_of_isNonarchimedeanLocalField μ, Matrix.det_nonsing_inv,
-    Ring.inverse_eq_inv, map_inv₀, NNRat.cast_inv, ENNReal.coe_inv hdet0]
-
-/-- Pushforward of additive Haar measure on `ι → K` under `A.mulVec` (`A.det ≠ 0`). -/
-theorem map_mulVec_addHaar (μ : Measure (ι → K)) [μ.IsAddHaarMeasure] {A : Matrix ι ι K}
-    (hA : A.det ≠ 0) :
-    map A.mulVec μ = ((normalizedAbsoluteValue K A.det : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
-  have hmeas : Measurable A.mulVec := (continuous_const.matrix_mulVec continuous_id).measurable
-  have h0 : (normalizedAbsoluteValue K A.det : ℝ≥0) ≠ 0 := by
-    exact_mod_cast (normalizedAbsoluteValue K).ne_zero_iff.2 hA
-  ext s hs
-  rw [map_apply hmeas hs, addHaar_preimage_mulVec_of_isNonarchimedeanLocalField μ hA s,
-    smul_apply, nnreal_smul_coe_apply, ENNReal.coe_inv h0]
 
 end MeasureTheory.Measure

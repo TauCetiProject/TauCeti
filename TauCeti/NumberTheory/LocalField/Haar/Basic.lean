@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Group.LocalFieldScaling
-public import TauCeti.NumberTheory.LocalField.HaarCharacter
+public import TauCeti.NumberTheory.LocalField.Haar.Character
 public import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 public import TauCeti.NumberTheory.LocalField.Topology
 public import TauCeti.NumberTheory.LocalField.Uniformizer
@@ -18,7 +18,7 @@ import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 /-!
 # Normalized additive Haar measure and multiplication scaling on local fields
 
-Building on `TauCeti.NumberTheory.LocalField.HaarCharacter` (which defines
+Building on `TauCeti.NumberTheory.LocalField.Haar.Character` (which defines
 `TauCeti.integerPositiveCompacts` and identifies `MeasureTheory.distribHaarChar E` with the
 normalized absolute value `|·|_E`), this module introduces the canonical regular additive Haar
 measure `TauCeti.localAddHaar E` on a nonarchimedean local field `E` normalized by

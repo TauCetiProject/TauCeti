@@ -64,10 +64,11 @@ theorem algebraMap_mem_iff_dvd_of_liesOver {R S : Type*} [CommSemiring R] [Semir
     algebraMap R S m ∈ Q ↔ a ∣ m :=
   (mem_of_liesOver Q (span {a}) m).symm.trans mem_span_singleton
 
-/-- If a prime `P` of `B` lies over `p` and `B ⧸ P` is finite, then `R ⧸ p` is finite: the induced
+/-- If an ideal `P` of `B` lies over `p` and `B ⧸ P` is finite, then `R ⧸ p` is finite: the induced
 map `R ⧸ p → B ⧸ P` is injective. -/
-theorem finite_quotient_of_liesOver {R B : Type*} [CommRing R] [CommRing B] [Algebra R B]
-    (p : Ideal R) (P : Ideal B) [P.LiesOver p] [Finite (B ⧸ P)] : Finite (R ⧸ p) :=
+theorem finite_quotient_of_liesOver {R B : Type*} [CommRing R] [Ring B] [Algebra R B]
+    (p : Ideal R) (P : Ideal B) [P.IsTwoSided] [P.LiesOver p] [Finite (B ⧸ P)] :
+    Finite (R ⧸ p) :=
   .of_injective (quotientMap P (algebraMap R B) (LiesOver.over (p := p) (P := P)).le)
     (quotientMap_injective' (LiesOver.over (p := p) (P := P)).ge)
 
@@ -77,9 +78,7 @@ theorem ne_bot_of_finite_quotient_of_liesOver {R B : Type*} [CommRing R] [Ring B
     [Infinite R] (p : Ideal R) (P : Ideal B) [P.IsTwoSided] [P.LiesOver p] [Finite (B ⧸ P)] :
     p ≠ ⊥ := by
   rintro rfl
-  have : Finite (R ⧸ (⊥ : Ideal R)) :=
-    .of_injective (quotientMap P (algebraMap R B) (LiesOver.over (p := ⊥) (P := P)).le)
-      (quotientMap_injective' (LiesOver.over (p := ⊥) (P := P)).ge)
+  have := finite_quotient_of_liesOver (⊥ : Ideal R) P
   have : Finite R := .of_equiv _ (RingEquiv.quotientBot R).toEquiv
   exact not_finite R
 

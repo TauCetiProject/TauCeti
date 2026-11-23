@@ -62,11 +62,14 @@ for any `T ∈ GL(L)`).
   are Haar-null.
 * `MeasureTheory.Measure.addHaar_image_linearMap_of_isNonarchimedeanLocalField`,
   `MeasureTheory.Measure.addHaar_image_continuousLinearMap_of_isNonarchimedeanLocalField`,
+  `MeasureTheory.Measure.addHaar_image_mulVec_of_isNonarchimedeanLocalField`,
+  `MeasureTheory.Measure.addHaar_preimage_mulVec_of_isNonarchimedeanLocalField`,
+  `MeasureTheory.Measure.map_mulVec_addHaar`,
   `MeasureTheory.Measure.map_linearEquiv_addHaar`,
   `MeasureTheory.Measure.map_linearMap_addHaar`,
   `MeasureTheory.Measure.map_continuousLinearMap_addHaar`,
-  `MeasureTheory.Measure.map_smul_module_addHaar`: linear and scalar-dilation change of variables
-  on `V`.
+  `MeasureTheory.Measure.map_smul_module_addHaar`: linear, matrix, and scalar-dilation change of
+  variables on `V` and `ι → E`.
 * `LinearEquiv.distribHaarChar_eq_normalizedAbsoluteValue_det`,
   `LinearMap.GeneralLinearGroup.distribHaarChar_eq_normalizedAbsoluteValue_det`,
   `Units.distribHaarChar_eq_normalizedAbsoluteValue_det`: `distribHaarChar V T = |det T|_E`.
@@ -147,6 +150,7 @@ theorem addHaar_image_linearMap_of_isNonarchimedeanLocalField (μ : Measure V) [
     have _ : ν.IsAddHaarMeasure := e.isAddHaarMeasure_map μ
     let A : Matrix ι ι E := LinearMap.toMatrix b b f
     have hAdet : A.det = f.det := LinearMap.det_toMatrix b f
+    have hA : IsUnit A.det := isUnit_iff_ne_zero.2 (hAdet.symm ▸ hf)
     have hcomm : e '' (f '' s) = A.mulVec '' (e '' s) := by
       rw [← image_comp, ← image_comp]
       congr 1
@@ -158,8 +162,7 @@ theorem addHaar_image_linearMap_of_isNonarchimedeanLocalField (μ : Measure V) [
       dsimp only [ν]
       rw [← ContinuousLinearEquiv.coe_toHomeomorph, e.toHomeomorph.measurableEmbedding.map_apply,
         preimage_image_eq _ e.toHomeomorph.injective]
-    rw [← hmap (f '' s), hcomm, addHaar_image_mulVec_of_isNonarchimedeanLocalField ν A,
-      hAdet, hmap s]
+    rw [← hmap (f '' s), hcomm, addHaar_image_mulVec_of_isUnit_det ν hA, hAdet, hmap s]
 
 /-- Image of a set under a continuous linear map `f : V →L[E] V` (invertible or singular) scales
 any additive Haar measure on `V` by `|det f|_E`. -/
@@ -342,6 +345,44 @@ example [Subsingleton V] (μ : Measure V) [μ.IsAddHaarMeasure] (T : V ≃ₗ[E]
   simp
 
 end ModuleSpace
+
+section MatrixSpace
+
+variable {E ι : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
+  [IsNonarchimedeanLocalField E] [Fintype ι] [DecidableEq ι]
+  [MeasurableSpace (ι → E)] [BorelSpace (ι → E)]
+
+/-- **Matrix Haar change of variables** for arbitrary (possibly singular) matrices
+`A : Matrix ι ι E` on `ι → E`: `μ (A.mulVec '' s) = |det A|_E * μ s`. -/
+@[simp, grind =]
+theorem addHaar_image_mulVec_of_isNonarchimedeanLocalField (μ : Measure (ι → E))
+    [μ.IsAddHaarMeasure] (A : Matrix ι ι E) (s : Set (ι → E)) :
+    μ (A.mulVec '' s) = ((normalizedAbsoluteValue E A.det : ℝ≥0) : ℝ≥0∞) * μ s := by
+  have hcoe : ⇑(Matrix.toLin' A) = A.mulVec := funext (Matrix.toLin'_apply A)
+  have h := addHaar_image_linearMap_of_isNonarchimedeanLocalField μ (Matrix.toLin' A) s
+  rwa [LinearMap.det_toLin', hcoe] at h
+
+/-- Preimage of a set under `A.mulVec` (`A.det ≠ 0`) on `ι → E` scales any additive Haar measure
+by `|det A|_E⁻¹`. -/
+@[simp, grind =]
+theorem addHaar_preimage_mulVec_of_isNonarchimedeanLocalField (μ : Measure (ι → E))
+    [μ.IsAddHaarMeasure] {A : Matrix ι ι E} (hA : A.det ≠ 0) (s : Set (ι → E)) :
+    μ (A.mulVec ⁻¹' s) = ((normalizedAbsoluteValue E A.det : ℝ≥0) : ℝ≥0∞)⁻¹ * μ s := by
+  have hcoe : ⇑(Matrix.toLin' A) = A.mulVec := funext (Matrix.toLin'_apply A)
+  have h := addHaar_preimage_linearMap_of_isNonarchimedeanLocalField μ (f := Matrix.toLin' A)
+    (by rw [LinearMap.det_toLin']; exact hA) s
+  rwa [LinearMap.det_toLin', hcoe] at h
+
+/-- Pushforward of additive Haar measure on `ι → E` under `A.mulVec` (`A.det ≠ 0`). -/
+theorem map_mulVec_addHaar (μ : Measure (ι → E)) [μ.IsAddHaarMeasure] {A : Matrix ι ι E}
+    (hA : A.det ≠ 0) :
+    map A.mulVec μ = ((normalizedAbsoluteValue E A.det : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
+  have hcoe : ⇑(Matrix.toLin' A) = A.mulVec := funext (Matrix.toLin'_apply A)
+  have h := map_linearMap_addHaar μ (f := Matrix.toLin' A)
+    (by rw [LinearMap.det_toLin']; exact hA)
+  rwa [LinearMap.det_toLin', hcoe] at h
+
+end MatrixSpace
 
 section ProdChecks
 
