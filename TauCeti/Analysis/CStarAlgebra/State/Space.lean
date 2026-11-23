@@ -28,9 +28,10 @@ This file defines the state space `TauCeti.stateSpace A` as a subset of the weak
   a positive functional is its limit along an approximate unit.
 * `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a continuous
   complex-linear map of weak-* duals. By
-  `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective` and
-  `TauCeti.mapsTo_pullbackFunctional_stateSpace` it restricts to an affine map of state spaces
-  along surjective star homomorphisms and along unital star homomorphisms.
+  `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective`,
+  `TauCeti.pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`, and
+  `TauCeti.mapsTo_pullbackFunctional_stateSpace` it restricts to states along surjective star
+  homomorphisms, norm-attaining star homomorphisms, and unital star homomorphisms.
 
 For unital `A`:
 
@@ -220,6 +221,24 @@ theorem mapsTo_pullbackFunctional_stateSpace_of_surjective (f : F) (hf : Functio
   refine mem_stateSpace_iff.2 ⟨fun a ha => map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha), ?_⟩
   rw [← hcomp, PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω f hf]
   exact norm_toStrongDual_of_mem_stateSpace hφ
+
+/-- **Pullback of states along a norm-attaining star homomorphism.** Pulling a state `ψ` of `B`
+back along a star homomorphism `f : A → B` produces a contractive positive functional on `A`; if
+`ψ` attains `‖a‖` at `f a` for some nonzero `a : A`, then the pullback has norm one and is a state
+of `A`. -/
+theorem pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero (f : F)
+    {ψ : WeakDual ℂ B} (hψ : ψ ∈ stateSpace B) {a : A} (ha : a ≠ 0)
+    (hnorm : ‖ψ (f a)‖ = ‖a‖) : pullbackFunctional A f ψ ∈ stateSpace A := by
+  have hle : ‖toStrongDual (pullbackFunctional A f ψ)‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun b => by
+      simpa using (norm_apply_le_of_mem_stateSpace hψ (f b)).trans
+        (NonUnitalStarAlgHom.norm_apply_le f b)
+  refine mem_stateSpace_iff.2 ⟨fun b hb => ?_, le_antisymm hle ?_⟩
+  · simpa using map_nonneg_of_mem_stateSpace hψ (map_nonneg f hb)
+  · have ha_pos : 0 < ‖a‖ := norm_pos_iff.2 ha
+    have hnorm_le : ‖a‖ ≤ ‖toStrongDual (pullbackFunctional A f ψ)‖ * ‖a‖ := by
+      simpa [hnorm] using (toStrongDual (pullbackFunctional A f ψ)).le_opNorm a
+    exact (le_mul_iff_one_le_left ha_pos).1 hnorm_le
 
 end NonUnital
 

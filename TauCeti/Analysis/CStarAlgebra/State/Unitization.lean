@@ -5,25 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.State.Space
+public import Mathlib.Analysis.CStarAlgebra.Unitization
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.StarAlgebra.GNS.Basic
 
 /-!
 # Extending positive functionals to the unitization
 
-A positive functional `τ` on a possibly nonunital C⋆-algebra `A` extends to the minimal unitization
+A positive functional `τ` on a possibly nonunital C⋆-algebra `A` extends to the unitization
 `A⁺¹ = Unitization ℂ A` by `τ⁺¹ (λ + a) = λ ‖τ‖ + τ a`. This is the unique positive extension with
-the same norm, so it is additive on positive functionals and preserves faithfulness when `A` has no
-unit. That the extension of a tracial state is again a tracial state is
+the same norm, so statements about states of unital C⋆-algebras pass to nonunital ones along
+it. The extension of a faithful positive functional is faithful when `A` has no unit. That the
+extension of a tracial state is again a tracial state is
 `PositiveContinuousLinearMap.isTracialState_unitization_iff`, in
 `TauCeti.Analysis.CStarAlgebra.State.Tracial`.
-
-Conversely, restricting a state of `A⁺¹` along `Unitization.inrNonUnitalStarAlgHom ℂ A` yields a
-positive contractive functional on `A`, which is a state of `A` whenever its norm on `A` is one
-— for instance whenever it attains the norm of some nonzero element of `A`
-(`pullbackFunctional_inr_mem_stateSpace_of_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`).
 
 ## Main declarations
 
@@ -44,8 +40,6 @@ positive contractive functional on `A`, which is a state of `A` whenever its nor
 * `PositiveContinuousLinearMap.eq_zero_of_unitization_map_star_mul_self_eq_zero`: if `τ` is
   faithful, `τ (star a * a) = 0 → a = 0`, and `A` has no two-sided unit, then `τ⁺¹` is faithful
   too.
-* `pullbackFunctional_inr_mem_stateSpace_of_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`:
-  restricts a state of `A⁺¹` attaining `‖a‖` on a nonzero `a : A` to a state of `A`.
 
 ## Implementation notes
 
@@ -65,7 +59,6 @@ Without the hypothesis on units this fails: for `A = ℂ` and `τ = id`, `τ⁺�
   Math. Soc. 184 (2006), no. 865; arXiv:math/0304009v2, Proposition 3.5.10.
 * A. Tikuisis, S. White, W. Winter, *Quasidiagonality of nuclear C⋆-algebras*, Ann. of Math.
   185 (2017), Remark 1.5.
-* G. J. Murphy, *C⋆-Algebras and Operator Theory*, Academic Press, 1990, Theorem 3.3.9.
 -/
 
 public section
@@ -231,53 +224,3 @@ theorem eq_zero_of_unitization_map_star_mul_self_eq_zero
     simp [mul_smul_comm, hc, h0]
 
 end PositiveContinuousLinearMap
-
-section Order
-
-open WeakDual
-open scoped CStarAlgebra
-
-namespace TauCeti
-
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- Restricting a state of `A⁺¹` along `inr` produces a functional that is nonnegative on
-nonnegative elements of `A`. -/
-theorem map_nonneg_pullbackFunctional_inr_of_mem_stateSpace {ψ : WeakDual ℂ A⁺¹}
-    (hψ : ψ ∈ stateSpace A⁺¹) {a : A} (ha : 0 ≤ a) :
-    0 ≤ pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ a := by
-  simpa using map_nonneg_of_mem_stateSpace hψ ((Unitization.inr_nonneg_iff ℂ).2 ha)
-
-/-- Restricting a state of `A⁺¹` along `inr` produces a contractive functional on `A`. -/
-theorem norm_toStrongDual_pullbackFunctional_inr_le_one_of_mem_stateSpace {ψ : WeakDual ℂ A⁺¹}
-    (hψ : ψ ∈ stateSpace A⁺¹) :
-    ‖toStrongDual (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ)‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a => by
-    simpa [Unitization.norm_inr] using norm_apply_le_of_mem_stateSpace hψ (a : A⁺¹)
-
-/-- The restriction of a state of `A⁺¹` to `A` is a state of `A` if and only if its norm on `A` is
-one. -/
-theorem pullbackFunctional_inr_mem_stateSpace_iff_of_mem_stateSpace {ψ : WeakDual ℂ A⁺¹}
-    (hψ : ψ ∈ stateSpace A⁺¹) :
-    pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ ∈ stateSpace A ↔
-      ‖toStrongDual (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ)‖ = 1 :=
-  ⟨norm_toStrongDual_of_mem_stateSpace, fun hnorm =>
-    mem_stateSpace_iff.2 ⟨fun _ => map_nonneg_pullbackFunctional_inr_of_mem_stateSpace hψ, hnorm⟩⟩
-
-/-- **Restriction of norm-attaining unitized states.** If a state `ψ` of `A⁺¹` attains the norm of
-some nonzero element `a : A` (`‖ψ a‖ = ‖a‖`), then its restriction to `A` is a state of `A`. -/
-theorem pullbackFunctional_inr_mem_stateSpace_of_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero
-    {ψ : WeakDual ℂ A⁺¹} (hψ : ψ ∈ stateSpace A⁺¹) {a : A} (ha : a ≠ 0)
-    (hnorm : ‖ψ (a : A⁺¹)‖ = ‖a‖) :
-    pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ ∈ stateSpace A := by
-  rw [pullbackFunctional_inr_mem_stateSpace_iff_of_mem_stateSpace hψ]
-  set φ := pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ
-  refine le_antisymm (norm_toStrongDual_pullbackFunctional_inr_le_one_of_mem_stateSpace hψ) ?_
-  have ha_pos : 0 < ‖a‖ := norm_pos_iff.2 ha
-  have hle : ‖a‖ ≤ ‖toStrongDual φ‖ * ‖a‖ := by
-    simpa [φ, hnorm] using (toStrongDual φ).le_opNorm a
-  exact (le_mul_iff_one_le_left ha_pos).1 hle
-
-end TauCeti
-
-end Order

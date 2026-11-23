@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import TauCeti.Analysis.CStarAlgebra.State.Space
+import Mathlib.Analysis.CStarAlgebra.Unitization
 import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 import TauCeti.Analysis.CStarAlgebra.State.Extension
-import TauCeti.Analysis.CStarAlgebra.State.Unitization
 
 /-!
 # Spectral and norm-attaining states and positive functionals
@@ -21,9 +21,10 @@ spectral value `z ∈ spectrum ℂ a` of a normal `a` a state sending `star a ^ 
 `star z ^ m * z ^ n`
 (`exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum`), hence a state on
 any `0 ≤ a` attaining `‖a‖ ^ n` (`exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`,
-`exists_positiveContinuousLinearMap_apply_eq_norm`). Pulling back along `A → 𝓜(ℂ, A)` yields a
-norm-one positive functional on any nontrivial C⋆-algebra `A` with `ω a = ‖a‖` and
-`ω (a * a) = ‖a‖ ^ 2` (`exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
+`exists_positiveContinuousLinearMap_apply_eq_norm`). Pulling back along `A → 𝓜(ℂ, A)` via
+`TauCeti.pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero` yields a norm-one
+positive functional on any nontrivial C⋆-algebra `A` with `ω a = ‖a‖` and `ω (a * a) = ‖a‖ ^ 2`
+(`exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
 
 Applying spectral attainment on normal elements to `star x * x` or `x * star x` for
 `x = algebraMap ℂ B z - b` together with Cauchy–Schwarz removes the normality hypothesis on a
@@ -31,12 +32,12 @@ unital C⋆-algebra `B`: every spectral value `z ∈ spectrum ℂ b` of any `b :
 state in `stateSpace B` (`TauCeti.exists_mem_stateSpace_apply_eq_of_mem_spectrum`).
 
 Passing to the minimal unitization `A⁺¹` and restricting norm-attaining states back to `A` via
-`TauCeti.pullbackFunctional_inr_mem_stateSpace_of_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`
-yields the `stateSpace A` norm-attainment theorem for normal elements of possibly nonunital
-C⋆-algebras (`TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero` and
+`TauCeti.pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero` yields the
+`stateSpace A` norm-attainment theorem for normal elements of possibly nonunital C⋆-algebras
+(`TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero` and
 `TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal`), while
-`CStarAlgebra.exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq` gives the nonnegative,
-`star a * a`, and nonemptiness results directly:
+`CStarAlgebra.exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq` gives the nonnegative
+and `star a * a` results directly:
 
 * `TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero` and
   `TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal`: for normal `a` (assuming
@@ -47,7 +48,6 @@ C⋆-algebras (`TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal
 * `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq` and
   `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero`: assuming
   `[Nontrivial A]` (or `a ≠ 0`), a state takes the value `‖a‖ ^ 2` at `star a * a`.
-* `TauCeti.stateSpace_nonempty_iff`: `A` admits a state if and only if `A` is nontrivial.
 * `TauCeti.norm_eq_iSup_norm_apply_stateSpace_of_isStarNormal`: for normal `a` (without
   `[Nontrivial A]`), `‖a‖ = ⨆ φ : stateSpace A, ‖φ.1 a‖`.
 
@@ -141,13 +141,16 @@ private theorem exists_positiveContinuousLinearMap_of_ne_zero {x : A} (hx : 0 �
   have h1 : ω x = ‖x‖ := by simpa [ω, DoubleCentralizer.norm_coe] using hω₀ 1
   have h2 : ω (x * x) = (‖x‖ : ℂ) ^ 2 := by
     simpa [ω, sq, ← DoubleCentralizer.coe_mul, DoubleCentralizer.norm_coe] using hω₀ 2
-  refine ⟨ω, le_antisymm (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun b => ?_) ?_, h1, h2⟩
-  · simpa [ω, hω₀_norm, DoubleCentralizer.norm_coe] using
-      (ω₀ : 𝓜(ℂ, A) →L[ℂ] ℂ).le_opNorm (b : 𝓜(ℂ, A))
-  · have hle := (ω : A →L[ℂ] ℂ).le_opNorm x
-    rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap, h1, Complex.norm_real,
-      Real.norm_of_nonneg (norm_nonneg x)] at hle
-    exact le_of_mul_le_mul_right (by simpa only [one_mul] using hle) hx_pos
+  have hω_mem := pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero
+    (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A))
+    (ω₀.toWeakDual_mem_stateSpace_iff.2 hω₀_norm) hx0 (by
+      have h1' : ω₀ (x : 𝓜(ℂ, A)) = ‖x‖ := h1
+      simpa using congrArg norm h1')
+  have hω_eq : StrongDual.toWeakDual (ω : A →L[ℂ] ℂ) =
+      pullbackFunctional A (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A))
+        (StrongDual.toWeakDual (ω₀ : 𝓜(ℂ, A) →L[ℂ] ℂ)) :=
+    DFunLike.ext _ _ fun a => by simp [ω]
+  exact ⟨ω, ω.toWeakDual_mem_stateSpace_iff.1 (hω_eq ▸ hω_mem), h1, h2⟩
 
 /-- On a nontrivial C⋆-algebra, every nonnegative element `a` admits a positive continuous linear
 functional `ω` of norm `1` satisfying `ω a = ‖a‖` and `ω (a * a) = ‖a‖ ^ 2`. -/
@@ -253,20 +256,6 @@ theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero {a : A} 
   have : Nontrivial A := ⟨a, 0, ha⟩
   exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq a
 
-/-- **Existence of states on possibly nonunital C⋆-algebras.** A C⋆-algebra has a state if and only
-if it is nontrivial. -/
-theorem stateSpace_nonempty_iff : (stateSpace A).Nonempty ↔ Nontrivial A := by
-  refine ⟨fun ⟨φ, hφ⟩ => ?_, fun h => ?_⟩
-  · by_contra htriv
-    rw [not_nontrivial_iff_subsingleton] at htriv
-    simp [stateSpace_eq_empty] at hφ
-  · obtain ⟨φ, hφ, -⟩ := exists_mem_stateSpace_apply_eq_norm_of_nonneg (le_refl (0 : A))
-    exact ⟨φ, hφ⟩
-
-/-- Every nontrivial C⋆-algebra has a nonempty state space. -/
-instance [Nontrivial A] : Nonempty (stateSpace A) :=
-  (stateSpace_nonempty_iff.2 ‹Nontrivial A›).to_subtype
-
 /-- **Norm attainment on normal elements.** For any nonzero normal element `a` of a possibly
 nonunital C⋆-algebra `A`, there is a state `φ ∈ stateSpace A` with `‖φ a‖ = ‖a‖`. -/
 theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero {a : A}
@@ -279,8 +268,8 @@ theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero {a :
   obtain ⟨ψ, hψ, hψa⟩ := exists_mem_stateSpace_apply_eq_of_mem_spectrum (a : A⁺¹) hz
   have hψ_norm : ‖ψ (a : A⁺¹)‖ = ‖a‖ := by rw [hψa, hz_eq]
   exact ⟨pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ,
-    pullbackFunctional_inr_mem_stateSpace_of_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero
-      hψ ha hψ_norm,
+    pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero
+      (Unitization.inrNonUnitalStarAlgHom ℂ A) hψ ha hψ_norm,
     by simpa using hψ_norm⟩
 
 /-- On a nontrivial C⋆-algebra, every normal element `a` (including `0`) has a state attaining

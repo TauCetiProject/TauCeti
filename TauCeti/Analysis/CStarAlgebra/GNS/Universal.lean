@@ -46,6 +46,7 @@ For the order-free existential Gelfand–Naimark theorems, see
 
 * I. M. Gelfand and M. A. Naimark, *On the imbedding of normed rings into the ring of operators in
   Hilbert space*, Mat. Sbornik 12 (1943), 197–213.
+* B. Blackadar, *Operator Algebras*, Springer, 2006, II.6.2.5.
 * G. J. Murphy, *C⋆-Algebras and Operator Theory*, Academic Press, 1990, Section 3.4
   (Theorem 3.4.1).
 * G. K. Pedersen, *C⋆-Algebras and their Automorphism Groups*, Section 3.7.
