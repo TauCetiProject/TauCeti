@@ -41,12 +41,12 @@ interval (`TauCeti.fourierCoeff_eq_fourierCoeffOn`). On such an interval, each d
 integration by parts. The same holds for a function on the circle with values in any complete
 normed complex space and a continuous derivative (`TauCeti.fourierCoeff_of_hasDerivAt`).
 
-On the unit circle of `ℂ`, a function `φ : ℂ → ℂ` restricted to the circle and read on
-`AddCircle (2 * π)` has the Fourier coefficients of `θ ↦ φ(e^{iθ})` on `[0, 2π]`
-(`TauCeti.fourierCoeff_comp_toCircle`), and is continuous when `θ ↦ φ(e^{iθ})` is
-(`TauCeti.continuous_comp_toCircle`). If these coefficients `c n` are summable, the Fourier series
-`∑ c n w ^ n` sums to `φ w` at every point `w` of the unit circle
-(`TauCeti.hasSum_fourierCoeffOn_circleMap_mul_zpow`).
+On the unit circle of `ℂ`, a function `φ : ℂ → E` with values in a complex normed space,
+restricted to the circle and read on `AddCircle (2 * π)`, has the Fourier coefficients of
+`θ ↦ φ(e^{iθ})` on `[0, 2π]` (`TauCeti.fourierCoeff_comp_toCircle`), and is continuous when
+`θ ↦ φ(e^{iθ})` is (`TauCeti.continuous_comp_toCircle`). For a complex function `φ : ℂ → ℂ` whose
+coefficients `c n` are summable, the Fourier series `∑ c n w ^ n` sums to `φ w` at every point `w`
+of the unit circle (`TauCeti.hasSum_fourierCoeffOn_circleMap_mul_zpow`).
 -/
 
 public section

@@ -53,8 +53,11 @@ the tangential derivative `(i z) F'(z)` is the Cauchy integral of `v`
 from the circles of radius `r < 1`, the boundary values of the extension `G` of `F` have the
 derivative along the rotations given by the extension of the Cauchy integral of `v`
 (`TauCeti.hasDerivAt_comp_exp_I_mul_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`).
-With `TauCeti.Analysis.Complex.BoundaryHolder`, `C^{1,α}` boundary data thus give a Cauchy integral
-of class `C^{1,α}` on the closed disc.
+These are the inputs that Privalov's theorem for the derivative
+(`DiffContOnCl.exists_holderOnWith_closedBall_deriv` in `TauCeti.Analysis.Complex.BoundaryHolder`)
+needs; the Riemann–Hilbert problem with `C^{1,α}` data
+(`TauCeti.exists_holderOnWith_closedBall_deriv_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq_zero` in
+`TauCeti.Analysis.Complex.UnitDisc.RiemannHilbert`) combines them.
 
 This is the existence half of the Hölder theory of the Riemann–Hilbert problem on the disc: a
 holomorphic function with prescribed Hölder boundary data modulo the boundary condition is built
