@@ -49,9 +49,9 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero`: it is supported
   in the parts `±s > 1` of the three ends, so it vanishes off the ends;
   `TauCeti.Floer.pairOfPantsPerturbation_eq_zero_of_forall_le` states this in end coordinates.
-* `TauCeti.Floer.periodic_update_zero`, `TauCeti.Floer.contDiff_uncurry_update_zero`: switching
-  off the Hamiltonian of one end, by replacing it with `0`, keeps the end Hamiltonians periodic
-  and `Cⁿ`.
+* `TauCeti.Floer.forall_update_zero`: switching off the Hamiltonian of one end, by replacing it
+  with `0`, keeps every property shared by the end Hamiltonians and `0`, such as periodicity and
+  smoothness.
 
 The angular coordinate `t` of an end is defined only modulo `1`, which is why the Hamiltonians are
 required to have period one: smoothness across the ray where the angular coordinate jumps is
@@ -160,11 +160,11 @@ theorem pairOfPantsPerturbation_single (q : Puncture) (G : ℝ → M → ℝ) (w
   rw [pairOfPantsPerturbation_def, Fintype.sum_eq_single q fun r hr => by
     simp [Pi.single_eq_of_ne hr], Pi.single_eq_same]
 
-/-- Replacing the Hamiltonian `H_p` of one end by `0` keeps the end Hamiltonians periodic. -/
-theorem periodic_update_zero (hH : ∀ q, Function.Periodic (H q) 1) (p q : Puncture) :
-    Function.Periodic (Function.update H p 0 q) 1 :=
-  (Function.forall_update_iff H fun _ f => Function.Periodic f 1).2
-    ⟨fun _ => rfl, fun q _ => hH q⟩ q
+/-- Replacing the Hamiltonian `H_p` of one end by `0` keeps every property `P` shared by the end
+Hamiltonians `H q` and by `0`, such as periodicity and smoothness. -/
+theorem forall_update_zero {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) (hH : ∀ q, P (H q))
+    (p q : Puncture) : P (Function.update H p 0 q) :=
+  (Function.forall_update_iff H fun _ => P).2 ⟨h₀, fun q _ => hH q⟩ q
 
 /-- The perturbation vanishes at the center of every end. The centers are the punctures `0` and
 `1`, where every signed longitudinal coordinate is at most `0`. -/
@@ -380,12 +380,5 @@ theorem contDiffAt_pairOfPantsPerturbation_prod {V : Type*} [NormedAddCommGroup 
     ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
   exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 (contMDiffAt_pairOfPantsPerturbation hH
     (fun q => contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) ⟨w, hw⟩ x)).contDiffAt
-
-/-- Replacing the Hamiltonian `H_p` of one end by `0` keeps the end Hamiltonians `Cⁿ`. -/
-theorem contDiff_uncurry_update_zero {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {H : Puncture → ℝ → V → ℝ} {n : WithTop ℕ∞} (hHs : ∀ q, ContDiff ℝ n (Function.uncurry (H q)))
-    (p q : Puncture) : ContDiff ℝ n (Function.uncurry (Function.update H p 0 q)) :=
-  (Function.forall_update_iff H fun _ f => ContDiff ℝ n (Function.uncurry f)).2
-    ⟨contDiff_const, fun q _ => hHs q⟩ q
 
 end TauCeti.Floer

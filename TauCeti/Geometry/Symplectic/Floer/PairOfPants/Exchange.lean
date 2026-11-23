@@ -363,14 +363,6 @@ theorem exchangePerturbation_add_cylindricalEndLift_inf (hH : Periodic (H inf) 1
 
 /-! ### Smoothness of the family -/
 
-/-- The input Hamiltonians, with the output Hamiltonian replaced by zero, inherit any property
-shared by the Hamiltonians `H q` and `0`. -/
-private theorem forall_update_inf {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) (hH : ∀ q, P (H q))
-    (q : Puncture) : P (update H inf 0 q) := by
-  rcases eq_or_ne q inf with rfl | hq
-  · simpa using h₀
-  · simpa [update_of_ne hq] using hH q
-
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
@@ -412,9 +404,9 @@ theorem contMDiffAt_exchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q
   have hin : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℝ × (ℂ × M) => pairOfPantsPerturbation (update H inf 0) p.2.1 p.2.2)
       (c, ((w : ℂ), x)) :=
-    (contMDiffAt_pairOfPantsPerturbation (forall_update_inf (P := fun f => Periodic f 1)
-      (fun _ => rfl) hH) (forall_update_inf
-        (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) contMDiff_const hHs)
+    (contMDiffAt_pairOfPantsPerturbation (forall_update_zero (P := fun f => Periodic f 1)
+      (fun _ => rfl) hH inf) (forall_update_zero
+        (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)) contMDiff_const hHs inf)
       w x).comp (c, ((w : ℂ), x)) contMDiffAt_snd
   exact hin.add (contMDiffAt_negativePlanePerturbation_sub (hH inf) (hHs inf) _)
 
@@ -588,9 +580,9 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Smoot
         z (u z)‖ₑ ≤ ∑ q, ENNReal.ofReal (B q) := by
   -- The input part, with bounds `B₀`, `B₁`, `0`, vanishes away from `c`; the plane part has `B_∞`.
   have hBin := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (forall_update_inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_update_inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
-      contMDiff_const hHs)
+    (forall_update_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH inf)
+    (forall_update_zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs inf)
     (B := update B inf 0) (fun q t x => by
       rcases eq_or_ne q inf with rfl | hq
       · simp

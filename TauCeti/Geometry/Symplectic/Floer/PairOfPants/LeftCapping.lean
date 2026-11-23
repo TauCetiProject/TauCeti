@@ -352,9 +352,9 @@ theorem contMDiffAt_cappedExchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodi
     · exact Or.inl endCenter_zero.symm
     · exact Or.inr ⟨h₀, hw⟩
   have hcap := contMDiffAt_plumbedPerturbation_single_inf (Hb := update H inf 0) (by decide)
-    (periodic_update_zero hH inf)
-    ((forall_update_iff H fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
-      ⟨contMDiff_const, fun q _ => hHs q⟩) hL hw' x
+    (forall_update_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH inf)
+    (forall_update_zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
+      contMDiff_const hHs inf) hL hw' x
   rw [update_inf_zero] at hcap
   -- The plane part is the smooth plane datum composed with the translation by the parameter.
   exact (hcap.comp (c, (w, x)) contMDiffAt_snd).add
@@ -380,8 +380,9 @@ theorem contDiffAt_uncurry_cappedExchangePerturbation {n : ℕ∞} (hH : ∀ q, 
     · exact Or.inr ⟨h, hz⟩
   -- The capped part, which does not depend on `c`.
   have hin := contDiffAt_uncurry_plumbedPerturbation_single_inf (q := zero)
-    (Hb := update H inf 0) (by decide) (periodic_update_zero hH inf)
-    (contDiff_uncurry_update_zero hHs inf) hL hz' x v
+    (Hb := update H inf 0) (by decide)
+    (forall_update_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH inf)
+    (forall_update_zero (P := fun f => ContDiff ℝ n (uncurry f)) contDiff_const hHs inf) hL hz' x v
   rw [update_inf_zero] at hin
   -- The output part, the negative plane datum translated by `c`.
   have hpl :=
@@ -421,9 +422,9 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω :
   -- The capped part, with bounds `B₀`, `B₁`, `0`, vanishes away from `c`; the plane part has `B_∞`.
   have hBin := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
     (q := zero) (Hb := update H inf 0) (by decide)
-    (periodic_update_zero hH inf)
-    ((forall_update_iff H fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
-      ⟨contMDiff_const, fun q _ => hHs q⟩) hL
+    (forall_update_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH inf)
+    (forall_update_zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs inf) hL
     (Bb := update B inf 0) (fun q t x => by
       rcases eq_or_ne q inf with rfl | hq
       · simp
@@ -479,9 +480,10 @@ theorem hamiltonianCurvature_cappedExchangePerturbation_eq_zero (ω : SmoothTwoF
       beta_reduce
       rw [cappedExchangePerturbation_of_notMem_exchangeTruncation hL hc₀ hc₁ hR hy x]
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK 1) (hK Complex.I)]
-  exact ω.hamiltonianCurvature_exchangePerturbation_eq_zero (periodic_update_zero hH zero)
-    ((forall_update_iff H fun _ f ↦ ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
-      ⟨contMDiff_const, fun q _ ↦ hHs q⟩) hc₀ hc₁ hR₂ ⟨h₀, hz⟩ hzT x
+  exact ω.hamiltonianCurvature_exchangePerturbation_eq_zero
+    (forall_update_zero (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) hH zero)
+    (forall_update_zero (P := fun f ↦ ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs zero) hc₀ hc₁ hR₂ ⟨h₀, hz⟩ hzT x
 
 end TauCeti.SmoothTwoForm
 

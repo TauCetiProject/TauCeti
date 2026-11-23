@@ -258,7 +258,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_cappedExchangePertur
   rw [IntegrableOn, hS] at hE hA
   -- The datum is cylindrical on all three ends, with the Hamiltonian `0` on the capped end.
   have hH' : ∀ q, Periodic (update H zero 0 q) 1 :=
-    (forall_update_iff H fun _ f ↦ Periodic f 1).2 ⟨fun _ ↦ rfl, fun q _ ↦ hH q⟩
+    forall_update_zero (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) hH zero
   have hK (w : ThricePuncturedSphere) (x : M) :
       ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
         (fun p : ℂ × M ↦ cappedExchangePerturbation H L 0 p.1 p.2) ((w : ℂ), x) := by
@@ -540,6 +540,11 @@ theorem integral_floerEnergyDensity_cappedExchangePerturbation_cappedExchangeTru
   have hTc : IsCompact T := e.symm.toHomeomorph.isCompact_preimage.2
     (isCompact_exchangeTruncation c R)
   have hBm : MeasurableSet B := (Metric.isOpen_ball.preimage e.symm.continuous).measurableSet
+  -- With `H_0` switched off, the Hamiltonians are still periodic and `C¹`.
+  have hH' : ∀ q, Periodic (update H zero 0 q) 1 :=
+    forall_update_zero (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) hH zero
+  have hHs' : ∀ q, ContDiff ℝ 1 (uncurry (update H zero 0 q)) :=
+    forall_update_zero (P := fun f ↦ ContDiff ℝ 1 (uncurry f)) contDiff_const hHs zero
   -- The capped datum and the input-exchange datum with `H_0` switched off are `C¹`.
   have hK (v : ℂ) : ContDiffOn ℝ 1
       (uncurry fun z x ↦ cappedExchangePerturbation H L c (e.symm z) x v) (U ×ˢ univ) :=
@@ -547,9 +552,8 @@ theorem integral_floerEnergyDensity_cappedExchangePerturbation_cappedExchangeTru
       v).contDiffWithinAt
   have hK' (v : ℂ) : ContDiffOn ℝ 1
       (uncurry fun z x ↦ exchangePerturbation (update H zero 0) c (e.symm z) x v) (S ×ˢ univ) :=
-    fun p hp ↦ (contDiffAt_uncurry_exchangePerturbation (periodic_update_zero hH zero)
-      (contDiff_uncurry_update_zero hHs zero) c (mem_thricePuncturedSphereReal_iff.2 hp.1) p.2
-        v).contDiffWithinAt
+    fun p hp ↦ (contDiffAt_uncurry_exchangePerturbation hH' hHs' c
+      (mem_thricePuncturedSphereReal_iff.2 hp.1) p.2 v).contDiffWithinAt
   -- The two data agree on `S` outside the truncation `T`.
   have hagree (v : ℂ) : EqOn (fun z x ↦ cappedExchangePerturbation H L c (e.symm z) x v)
       (fun z x ↦ exchangePerturbation (update H zero 0) c (e.symm z) x v) (S \ T) :=
@@ -563,13 +567,11 @@ theorem integral_floerEnergyDensity_cappedExchangePerturbation_cappedExchangeTru
     (hagree Complex.I)
   -- The energy identity of the input-exchange family with `H_0` switched off.
   have h₂ := ω.integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation
-    (periodic_update_zero hH zero) (contDiff_uncurry_update_zero hHs zero) hc₀ hc₁ (hu.mono hSU)
-    hR₂
+    hH' hHs' hc₀ hc₁ (hu.mono hSU) hR₂
   -- The curvatures vanish on `S`, respectively `U`, outside `T`, so their integrals over these
   -- sets are those over `T`.
   have hR' (z : ℝ × ℝ) (hz : z ∈ S \ T) :=
-    hamiltonianCurvature_exchangePerturbation_eq_zero ω (periodic_update_zero hH zero)
-      (contDiff_uncurry_update_zero hHs zero) hc₀ hc₁ hR₂ hz.1 hz.2 (u z)
+    hamiltonianCurvature_exchangePerturbation_eq_zero ω hH' hHs' hc₀ hc₁ hR₂ hz.1 hz.2 (u z)
   have hRcap (z : ℝ × ℝ) (hz : z ∈ U \ T) :=
     hamiltonianCurvature_cappedExchangePerturbation_eq_zero ω hH hHs (by linarith) hc₀ hc₁ hR hR₂
       hz.1 hz.2 (u z)
