@@ -27,6 +27,8 @@ invertible modules along finite projective algebras.
 ## Main results
 
 * `exteriorPower.rankAtStalk_eq_choose`: the rank of `⋀[R]^n M` at a prime.
+* `exteriorPower.subsingleton_of_rankAtStalk_lt`: the exterior powers of a finite projective
+  module above its rank vanish.
 * `exteriorPower.invertible_of_rankAtStalk_eq`: the top exterior power of a finite projective
   module of constant rank is invertible.
 * `exteriorPower.invertible_of_invertible_of_rankAtStalk_eq`: the same holds for an invertible
@@ -56,6 +58,13 @@ theorem rankAtStalk_eq_choose [Module.Finite R M] [Module.Flat R M] (n : ℕ)
   have : Module.Free A (A ⊗[R] M) := Module.free_of_flat_of_isLocalRing
   rw [rankAtStalk_eq_finrank_tensorProduct, rankAtStalk_eq_finrank_tensorProduct,
     ← (TauCeti.exteriorPower.equivBaseChange A n).finrank_eq, finrank_eq]
+
+/-- An exterior power `⋀[R]^k M` of a finite projective module `M` whose rank at every prime is
+less than `k` is zero. -/
+theorem subsingleton_of_rankAtStalk_lt [Module.Finite R M] [Module.Projective R M] {k : ℕ}
+    (hk : ∀ p, rankAtStalk (R := R) M p < k) : Subsingleton (⋀[R]^k M) :=
+  rankAtStalk_eq_zero_iff_subsingleton.mp <| funext fun p ↦ by
+    rw [rankAtStalk_eq_choose, Pi.zero_apply, Nat.choose_eq_zero_of_lt (hk p)]
 
 /-- The top exterior power `⋀[R]^d M` of a finite projective module `M` of constant rank `d` is an
 invertible module. -/
