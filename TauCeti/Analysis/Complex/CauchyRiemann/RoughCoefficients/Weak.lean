@@ -56,7 +56,8 @@ for the statements here.
   solutions of the homogeneous weak equation with a locally `L^q` weak derivative.
 * `TauCeti.isWeakCRSolution_iff_of_contDiffOn`: for `C¹` coefficients `J`, continuous `S`, `C¹`
   `ξ` and continuous `η`, the weak equation with `DJ = fderiv ℝ J` is the classical equation
-  `∂_s ξ + J ∂_t ξ + S ξ = η` at every point of `Ω`.
+  `∂_s ξ + J ∂_t ξ + S ξ = η` at every point of `Ω`. Its coefficients are Sobolev coefficients
+  for every exponent (`TauCeti.IsSobolevCRCoefficients.of_contDiffOn`).
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_deriv_apply`: the directional weak derivatives
   `DJ · e` of the coefficient are locally `Lᵖ`; `TauCeti.IsSobolevCRCoefficients.add_zeroth`
   changes the zeroth-order coefficient by a locally `Lᵖ` field.
@@ -426,6 +427,14 @@ end IsWeakCRSolution
 
 /-! ### Comparison with the classical equation -/
 
+/-- **`C¹` coefficients are Sobolev coefficients.** A field `J` of class `C¹` on `Ω` and a
+continuous zeroth-order term `S` form Sobolev coefficients for every exponent `p`, with weak
+derivative the classical derivative `fderiv ℝ J`. -/
+theorem IsSobolevCRCoefficients.of_contDiffOn (hJ : ContDiffOn ℝ 1 J Ω)
+    (hS : ContinuousOn S Ω) (p : ℝ≥0∞) : IsSobolevCRCoefficients p Ω J (fderiv ℝ J) S := by
+  have hJ' : ContinuousOn (fderiv ℝ J) Ω := hJ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
+  exact ⟨hJ.hasWeakFDerivOn_fderiv, hJ.continuousOn.memLpLoc, hJ'.memLpLoc, hS.memLpLoc⟩
+
 /-- **Classical solutions.** For `C¹` coefficients `J` on `Ω`, with `DJ = fderiv ℝ J`, continuous
 `S`, a `C¹` field `ξ` and a continuous right-hand side `η`, the weak equation is the classical
 equation `∂_s ξ + J ∂_t ξ + S ξ = η` at every point of `Ω`, for every exponent `q`. -/
@@ -433,17 +442,9 @@ theorem isWeakCRSolution_iff_of_contDiffOn [FiniteDimensional ℝ V] (hJ : ContD
     (hS : ContinuousOn S Ω) (hξ : ContDiffOn ℝ 1 ξ Ω) (hη : ContinuousOn η Ω) :
     IsWeakCRSolution q Ω J (fderiv ℝ J) S ξ η ↔
       ∀ z ∈ (Ω : Set ℂ), fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z) = η z := by
-  have hJ' : ContinuousOn (fderiv ℝ J) Ω := hJ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
   have hξ' : ContinuousOn (fderiv ℝ ξ) Ω := hξ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
-  have hdiff {f : ℂ → V →L[ℝ] V} (hf : ContDiffOn ℝ 1 f Ω) (z : ℂ) (hz : z ∈ (Ω : Set ℂ)) :
-      DifferentiableAt ℝ f z :=
-    (hf.differentiableOn one_ne_zero z hz).differentiableAt (Ω.isOpen.mem_nhds hz)
-  have hc : IsSobolevCRCoefficients 2 Ω J (fderiv ℝ J) S :=
-    ⟨hasWeakFDerivOn_of_differentiableOn (hJ'.locallyIntegrableOn Ω.isOpen.measurableSet)
-      (hdiff hJ), hJ.continuousOn.memLpLoc, hJ'.memLpLoc, hS.memLpLoc⟩
-  have hξw : HasWeakFDerivOn volume Ω ξ (fderiv ℝ ξ) :=
-    hasWeakFDerivOn_of_differentiableOn (hξ'.locallyIntegrableOn Ω.isOpen.measurableSet)
-      fun z hz => (hξ.differentiableOn one_ne_zero z hz).differentiableAt (Ω.isOpen.mem_nhds hz)
+  have hc := IsSobolevCRCoefficients.of_contDiffOn hJ hS 2
+  have hξw : HasWeakFDerivOn volume Ω ξ (fderiv ℝ ξ) := hξ.hasWeakFDerivOn_fderiv
   have hη' : LocallyIntegrableOn η Ω := hη.locallyIntegrableOn Ω.isOpen.measurableSet
   have hL : ContinuousOn (fun z => fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)) Ω :=
     ((hξ'.clm_apply continuousOn_const).add
