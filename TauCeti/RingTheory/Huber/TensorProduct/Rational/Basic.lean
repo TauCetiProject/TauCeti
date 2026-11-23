@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.AdicHom.Localization
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Restriction
-public import TauCeti.RingTheory.Huber.TensorProduct.Map
+public import TauCeti.RingTheory.Huber.TensorProduct.Map.Basic
 
 /-!
 # Completed tensor products of completed localisations

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.TensorProduct.Map
+public import TauCeti.RingTheory.Huber.TensorProduct.Map.Basic
 
 /-!
 # Using the functoriality of completed tensor products
