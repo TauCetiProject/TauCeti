@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Pi
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.Analysis.Calculus.FDeriv.Pow
 
 /-!
 # Differentiability of the coordinate slices of a function on a product
@@ -34,9 +33,6 @@ the `i`-th variable the separated product with the `i`-th factor replaced by its
 * `TauCeti.fderiv_sum_comp_eval_eventuallyEq`: the same formula for the derivative near a point at
   which the summands are continuously differentiable.
 * `TauCeti.fderiv_sum_comp_eval_eq_zero_iff`: the critical points of a separated sum.
-* `TauCeti.hasFDerivAt_sum_coord`: the sum of coordinates on `ι → E` is its own derivative.
-* `TauCeti.squareDeriv`, `TauCeti.hasFDerivAt_coordwise_sq`: the derivative of the coordinatewise
-  square `z ↦ (z_i ^ 2)_i`.
 * `TauCeti.hasFDerivAt_prod_comp_eval`, `TauCeti.fderiv_prod_comp_eval_apply_single`: the derivative
   of a separated product `z ↦ ∏ i, φ i (z i)`, whose partial derivative in the `i`-th variable
   replaces the `i`-th factor by its derivative.
@@ -117,40 +113,6 @@ theorem fderiv_sum_comp_eval_eventuallyEq (hφ : ∀ i, ContDiffAt 𝕜 1 (φ i)
   exact fderiv_sum_comp_eval hz
 
 end SumCompEval
-
-section SumCoord
-
-variable {𝕜 ι E : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E]
-
-/-- The sum of coordinates `z ↦ ∑ i, z i` on `ι → E` is its own derivative: at every point its
-derivative is the continuous linear map `∑ i, proj i`. -/
-theorem hasFDerivAt_sum_coord (y : ι → E) :
-    HasFDerivAt (fun z : ι → E ↦ ∑ i, z i) (∑ i, proj i : (ι → E) →L[𝕜] E) y :=
-  HasFDerivAt.fun_sum fun i _ ↦ hasFDerivAt_apply i y
-
-end SumCoord
-
-section CoordwiseSq
-
-variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜]
-
-/-- The derivative `v ↦ (2 a_i v_i)_i` of the coordinatewise square `z ↦ (z_i ^ 2)_i` at `a`. -/
-def squareDeriv (a : ι → 𝕜) : (ι → 𝕜) →L[𝕜] ι → 𝕜 :=
-  ContinuousLinearMap.pi fun i ↦ (2 * a i) • proj i
-
-@[simp]
-theorem squareDeriv_apply (a v : ι → 𝕜) (i : ι) : squareDeriv a v i = 2 * a i * v i := by
-  simp [squareDeriv]
-
-/-- `squareDeriv a` is the derivative of the coordinatewise square at `a`. -/
-theorem hasFDerivAt_coordwise_sq [Finite ι] (a : ι → 𝕜) :
-    HasFDerivAt (fun z : ι → 𝕜 ↦ fun i ↦ z i ^ 2) (squareDeriv a) a := by
-  have := Fintype.ofFinite ι
-  unfold squareDeriv
-  exact hasFDerivAt_pi.2 fun i ↦ by simpa using (hasFDerivAt_apply (𝕜 := 𝕜) i a).pow 2
-
-end CoordwiseSq
 
 section ProdCompEval
 

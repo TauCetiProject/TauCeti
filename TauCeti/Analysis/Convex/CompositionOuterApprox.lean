@@ -73,6 +73,9 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
   with inequality heights only, under monotone outer derivatives.
 * `TauCeti.CompositionLift.fst_image_sharedOuterApprox_subset_directOuterApprox_of_monotone`:
   the same comparison when `h` is monotone on the whole height space.
+* `TauCeti.CompositionLift.directOuterApprox_subset_fst_image_sharedOuterApproxOn` and
+  `TauCeti.CompositionLift.directOuterApprox_subset_fst_image_sharedOuterApprox`: the reverse
+  inclusion when all anchors share a common component row.
 * `TauCeti.CompositionLift.sharedOuterApprox_empty_heights`,
   `TauCeti.CompositionLift.sharedOuterApproxOn_empty_heights`,
   `TauCeti.CompositionLift.directOuterApprox_of_isEmpty`,
@@ -125,6 +128,16 @@ theorem outerRow_sum_coord [Fintype ι] :
   · ext
     simp
   · simp
+
+/-- The outer sum `y ↦ ∑ j, y j` is monotone. -/
+theorem monotone_sum_coord [Fintype ι] : Monotone fun y : ι → ℝ ↦ ∑ j, y j :=
+  fun _ _ hyz ↦ Finset.sum_le_sum fun j _ ↦ hyz j
+
+/-- The derivative `∑ j, proj j` of the outer sum is monotone. -/
+theorem monotone_sum_proj [Fintype ι] :
+    Monotone (∑ j, ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ) := fun y z hyz ↦ by
+  simp only [sum_apply, ContinuousLinearMap.proj_apply]
+  exact monotone_sum_coord hyz
 
 @[simp]
 theorem outerRow_self : outerRow g h a Dh (g a) = h (g a) := by
@@ -193,6 +206,13 @@ theorem directRow_self : directRow g h a Dg Dh a = h (g a) := by
 theorem outerRow_componentRow :
     outerRow g h a Dh (componentRow g a Dg x) = directRow g h a Dg Dh x := by
   simp [outerRow_def, componentRow_def, directRow_def]
+
+/-- For the outer sum, the direct row is the sum of the coordinates of the component row. -/
+@[simp]
+theorem directRow_sum_coord [Fintype ι] :
+    directRow g (fun y ↦ ∑ j, y j) a Dg (∑ j, ContinuousLinearMap.proj j) x =
+      ∑ j, componentRow g a Dg x j := by
+  rw [← outerRow_componentRow, outerRow_sum_coord]
 
 variable [Finite ι] {D : Set X}
 
@@ -317,7 +337,7 @@ theorem sharedOuterApproxOn_anti (hJ : J' ⊆ J) :
 
 /-- The shared approximation lies in the product of the domain and the admissible heights. -/
 theorem sharedOuterApprox_subset_prod : sharedOuterApprox D E g h a Dg Dh b ⊆ D ×ˢ E :=
-  fun _ hz ↦ ⟨hz.1, hz.2.1⟩
+  fun _ hz ↦ have hz := mem_sharedOuterApprox.1 hz; mem_prod.2 ⟨hz.1, hz.2.1⟩
 
 /-- With no admissible heights the shared approximation is empty, whatever the anchors, rows and
 budget. -/
@@ -408,6 +428,28 @@ theorem fst_image_sharedOuterApproxOn_subset_directOuterApprox
     (componentRow g (a i) (Dg i) z.1)
   rw [outerRow_componentRow] at hsub
   linarith [(hz i).2]
+
+/-- **A common component row lifts the direct approximation.** If at every point `x ∈ D` all
+anchors share the component row `r x`, and `r` maps `D` into `E`, then every point of the direct
+approximation lifts to the shared approximation with exact rows on `J`, with height `r x`. -/
+theorem directOuterApprox_subset_fst_image_sharedOuterApproxOn {r : X → ι → ℝ}
+    (hr : MapsTo r D E) (hrow : ∀ x ∈ D, ∀ i, componentRow g (a i) (Dg i) x = r x) :
+    directOuterApprox D g h a Dg Dh b ⊆ Prod.fst '' sharedOuterApproxOn J D E g h a Dg Dh b := by
+  intro x hx
+  obtain ⟨hxD, hxb⟩ := mem_directOuterApprox.1 hx
+  refine ⟨(x, r x), mem_sharedOuterApproxOn.2 ⟨mem_sharedOuterApprox.2 ⟨hxD, hr hxD,
+    fun i ↦ ⟨(hrow x hxD i).le, ?_⟩⟩, fun i j _ ↦ congr_fun (hrow x hxD i).symm j⟩, rfl⟩
+  rw [← hrow x hxD i, outerRow_componentRow]
+  exact hxb i
+
+/-- **A common component row lifts the direct approximation.** If at every point `x ∈ D` all
+anchors share the component row `r x`, and `r` maps `D` into `E`, then every point of the direct
+approximation lifts to the shared approximation, with height `r x`. -/
+theorem directOuterApprox_subset_fst_image_sharedOuterApprox {r : X → ι → ℝ}
+    (hr : MapsTo r D E) (hrow : ∀ x ∈ D, ∀ i, componentRow g (a i) (Dg i) x = r x) :
+    directOuterApprox D g h a Dg Dh b ⊆ Prod.fst '' sharedOuterApprox D E g h a Dg Dh b := by
+  simpa using directOuterApprox_subset_fst_image_sharedOuterApproxOn (J := ∅) (h := h) (Dh := Dh)
+    (b := b) hr hrow
 
 /-- **Shared rows contain the original set.** If `g` maps `D` into `E`, every coordinate of `g` is
 convex on `D`, `h` is convex on `E`, and `g` and `h` have derivatives `Dg i` within `D` at
