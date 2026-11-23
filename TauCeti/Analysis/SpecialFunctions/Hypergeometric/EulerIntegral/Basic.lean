@@ -62,8 +62,8 @@ value can vanish when a Gamma factor has a pole.
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, §15.2.4, §15.4 (equation 15.4.20), and §15.6
-  (equation 15.6.1).
+* NIST Digital Library of Mathematical Functions, §15.2 (equation 15.2.4), §15.4 (equation 15.4.20),
+  and §15.6 (equation 15.6.1).
 -/
 
 public section

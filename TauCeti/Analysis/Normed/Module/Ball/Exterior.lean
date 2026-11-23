@@ -12,7 +12,7 @@ import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
-# The exterior of a closed ball is path-connected
+# Path-connected exteriors of closed balls and of unions of bounded closed convex sets
 
 In a real normed space of dimension at least two the complement of a closed ball is path-connected:
 it is the image of the product of the unit sphere with the ray `(r, ∞)` of radii exceeding the
@@ -132,12 +132,14 @@ theorem isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded
       norm_neg, hnorm] at htri
     linarith
   have hjoin_ray : JoinedIn U z (z + T • v) := by
-    refine ⟨{ toFun := fun τ => z + ((τ : ℝ) * T) • v
-              continuous_toFun := by fun_prop
-              source' := by simp
-              target' := by simp }, fun τ => ?_⟩
-    have hτ0 : 0 ≤ (τ : ℝ) * T := mul_nonneg τ.property.1 hT_pos.le
-    rw [mem_compl_iff, mem_union, not_or]
+    refine JoinedIn.of_segment_subset ?_
+    rw [segment_eq_image_lineMap]
+    rintro _ ⟨τ, hτ, rfl⟩
+    have hτ0 : 0 ≤ τ * T := mul_nonneg hτ.1 hT_pos.le
+    have hline : AffineMap.lineMap z (z + T • v) τ = z + (τ * T) • v := by
+      simp only [AffineMap.lineMap_apply_module]
+      module
+    rw [hline, mem_compl_iff, mem_union, not_or]
     exact ⟨add_smul_notMem_of_continuousLinearMap_lt hfz₁ hfc₁ hv_f₁ hτ0,
       add_smul_notMem_of_continuousLinearMap_lt hfz₂ hfc₂ hv_f₂ hτ0⟩
   exact ((hjoin_ray.trans ((isPathConnected_compl_closedBall h 0 R).joinedIn

@@ -31,9 +31,6 @@ In a nontrivial real seminormed space a punctured ball `ball c r \ {c}`, `r > 0`
 (`TauCeti.not_convex_ball_sdiff_singleton`), so it is neither an open nor a closed ball
 (`TauCeti.ball_sdiff_singleton_ne_ball`, `TauCeti.ball_sdiff_singleton_ne_closedBall`), although it
 agrees with `ball c r` up to a null set for every measure without atoms.
-
-Every point on `segment ℝ x y` has norm at most `max ‖x‖ ‖y‖`
-(`TauCeti.norm_le_max_norm_of_mem_segment`).
 -/
 
 public section
@@ -53,13 +50,6 @@ theorem isBounded_closedConvexHull : IsBounded (closedConvexHull ℝ K) ↔ IsBo
 @[simp]
 theorem diam_closedConvexHull : diam (closedConvexHull ℝ K) = diam K := by
   rw [closedConvexHull_eq_closure_convexHull, diam_closure, convexHull_diam]
-
-/-- Any point on the segment between `x` and `y` has norm at most `max ‖x‖ ‖y‖`. -/
-theorem norm_le_max_norm_of_mem_segment {x y p : E} (hp : p ∈ segment ℝ x y) :
-    ‖p‖ ≤ max ‖x‖ ‖y‖ :=
-  mem_closedBall_zero_iff.mp <| (convex_closedBall (0 : E) (max ‖x‖ ‖y‖)).segment_subset
-    (mem_closedBall_zero_iff.mpr (le_max_left _ _))
-    (mem_closedBall_zero_iff.mpr (le_max_right _ _)) hp
 
 /-- If `s` is star-convex with respect to every point of `ball x r`, then for every
 `y ∈ closure s` and `0 ≤ t ≤ 1` the ball of radius `(1 - t) * r` about `x + t • (y - x)` lies in

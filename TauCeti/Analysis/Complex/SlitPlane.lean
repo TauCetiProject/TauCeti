@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.Normed.Module.Convex
 import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
@@ -64,7 +64,8 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
   `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.re_pos_of_norm_sub_one_lt_one`, `TauCeti.one_sub_div_re_pos`,
-  `TauCeti.one_sub_inv_mem_slitPlane_iff`, `TauCeti.one_sub_inv_mem_slitPlane`
+  `TauCeti.norm_sub_ofReal_le_max_of_mem_Icc`, `TauCeti.one_sub_inv_mem_slitPlane_iff`,
+  `TauCeti.one_sub_inv_mem_slitPlane`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
@@ -208,19 +209,23 @@ theorem one_sub_inv_mem_slitPlane_iff {z : ℂ} :
     · simpa using (one_le_inv₀ ht.1).mpr ht.2
     · simp
 
+/-- For `t ∈ [0, 1]`, `‖z₀ - (t : ℂ)‖ ≤ max ‖z₀‖ ‖z₀ - 1‖`. -/
+theorem norm_sub_ofReal_le_max_of_mem_Icc (z₀ : ℂ) {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    ‖z₀ - (t : ℂ)‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ := by
+  have hline : z₀ - (t : ℂ) = AffineMap.lineMap z₀ (z₀ - 1) t := by
+    simp [AffineMap.lineMap_apply_module]; ring
+  exact convexOn_univ_norm.le_max_of_mem_segment trivial trivial
+    (hline ▸ lineMap_mem_segment ℝ z₀ (z₀ - 1) ht)
+
 /-- Under the exterior condition `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖`, the inverse argument `z⁻¹`
 stays off the branch cut `[1, ∞)`, i.e., `1 - z⁻¹ ∈ Complex.slitPlane`. -/
 theorem one_sub_inv_mem_slitPlane {z z₀ : ℂ} (h : max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖) :
     1 - z⁻¹ ∈ slitPlane := by
   refine one_sub_inv_mem_slitPlane_iff.mpr ?_
   rintro ⟨t, ht, rfl⟩
-  have hline : z₀ - (t : ℂ) = AffineMap.lineMap z₀ (z₀ - 1) t := by
-    simp [AffineMap.lineMap_apply_module]; ring
-  have hle : ‖(t : ℂ) - z₀‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ := by
+  exact h.not_ge <| by
     rw [norm_sub_rev]
-    exact norm_le_max_norm_of_mem_segment
-      (hline ▸ lineMap_mem_segment ℝ z₀ (z₀ - 1) (Set.Ioc_subset_Icc_self ht))
-  exact h.not_ge hle
+    exact norm_sub_ofReal_le_max_of_mem_Icc z₀ (Set.Ioc_subset_Icc_self ht)
 
 /-- Two points in the left half-plane have their ratio in the slit plane. -/
 theorem div_mem_slitPlane_of_re_neg {z₁ z₂ : ℂ} (h₁ : z₁.re < 0) (h₂ : z₂.re < 0) :

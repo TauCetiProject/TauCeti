@@ -10,7 +10,6 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Field.LinearFractional
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
-import TauCeti.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
@@ -69,7 +68,8 @@ establishes the inverse-argument expansion for:
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, §15.2.4 and §15.15.1.
+* NIST Digital Library of Mathematical Functions, §15.2 (equation 15.2.4) and §15.15
+  (equation 15.15.1).
 * A. Erdélyi, W. Magnus, F. Oberhettinger, and F. G. Tricomi, *Higher Transcendental Functions*,
   Vol. I, McGraw–Hill, 1953, §2.5.2.
 -/
@@ -85,13 +85,6 @@ namespace Complex
 
 /-! ### DLMF 15.15.1 on the Euler integral range -/
 
-/-- For `t ∈ [0, 1]`, `‖z₀ - (t : ℂ)‖ ≤ max ‖z₀‖ ‖z₀ - 1‖`. -/
-private theorem norm_sub_ofReal_le_max (z₀ : ℂ) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    ‖z₀ - (t : ℂ)‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ := by
-  have hline : z₀ - (t : ℂ) = AffineMap.lineMap z₀ (z₀ - 1) t := by
-    simp [AffineMap.lineMap_apply_module]; ring
-  exact TauCeti.norm_le_max_norm_of_mem_segment (hline ▸ lineMap_mem_segment ℝ z₀ (z₀ - 1) ht)
-
 /-- Bound `‖(ascPochhammer ℂ n).eval x / n !‖` by `Ring.multichoose r n` when `‖x‖ ≤ r`. -/
 private theorem norm_eval_ascPochhammer_div_factorial_le {x : ℂ} {r : ℝ} (hx : ‖x‖ ≤ r) (n : ℕ) :
     ‖(ascPochhammer ℂ n).eval x / (n ! : ℂ)‖ ≤ Ring.multichoose r n := by
@@ -103,7 +96,8 @@ private theorem norm_eulerKernel_ratio_le {z z₀ : ℂ} (hz₀ : z₀ ≠ 0) {t
     (ht : t ∈ Icc (0 : ℝ) 1) :
     ‖(1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖ := by
   rw [TauCeti.one_sub_inv_mul_mul_inv_one_sub_div hz₀ (t : ℂ), norm_div, norm_sub_rev z₀ z]
-  exact div_le_div_of_nonneg_right (norm_sub_ofReal_le_max z₀ ht) (norm_nonneg _)
+  exact div_le_div_of_nonneg_right (TauCeti.norm_sub_ofReal_le_max_of_mem_Icc z₀ ht)
+    (norm_nonneg _)
 
 /-- Pointwise binomial series expansion of the factored Euler kernel on `[0, 1]`. -/
 private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ ≠ 0)
@@ -227,8 +221,8 @@ private theorem summable_norm_regularizedGaussHGFun_neg_natCast_of_euler {b c z�
       rw [norm_pow]
       gcongr
       rw [inv_mul_eq_div, one_sub_div hz₀, norm_div]
-      exact div_le_div_of_nonneg_right (norm_sub_ofReal_le_max z₀ (Ioc_subset_Icc_self ht))
-        hz0_pos.le
+      exact div_le_div_of_nonneg_right
+        (TauCeti.norm_sub_ofReal_le_max_of_mem_Icc z₀ (Ioc_subset_Icc_self ht)) hz0_pos.le
     calc ‖∫ t : ℝ in 0..1, W t * (1 - z₀⁻¹ * (t : ℂ)) ^ (-(-(s : ℂ)))‖
         ≤ ∫ t : ℝ in 0..1, ‖W t‖ * (M / ‖z₀‖) ^ s := by
           refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one

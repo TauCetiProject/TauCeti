@@ -20,13 +20,13 @@ test; conversely, norm divergence of partial sums over `Ico N n` does not depend
 index `N`, and if consecutive norms eventually expand by a factor `c > 2` (with infinitely many
 terms of positive norm), each term dominates the sum of its predecessors and the partial sums
 diverge in norm. In any normed ring with summable geometric series, shifted polynomial-geometric
-series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`. Likewise, in a complete normed
-division ring, a power series converging at `w` remains summable at every `z` with `‖z‖ < ‖w‖`
-after multiplying its coefficients by `n ^ k`, without requiring completeness for absolute
-summability (`TauCeti.summable_norm_pow_mul_powerSeries_of_norm_lt`) and with ordinary summability
-when complete (`TauCeti.summable_pow_mul_powerSeries_of_norm_lt`); in particular, for a real
-sequence whose weighted series `∑ f s * r ^ s` converges for all `0 ≤ r < R`, multiplying by `s` or
-`(s + 1)` with a shifted exponent preserves summability inside `R`.
+series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`. In a normed division ring, if
+the partial sums of a power series at `w` are Cauchy, then multiplying its coefficients by `n ^ k`
+keeps the series absolutely summable at every `z` with `‖z‖ < ‖w‖`
+(`TauCeti.summable_norm_pow_mul_powerSeries_of_norm_lt`), and summable when the ring is complete
+(`TauCeti.summable_pow_mul_powerSeries_of_norm_lt`); in particular, for a real sequence whose
+weighted series `∑ f s * r ^ s` converges for all `0 ≤ r < R`, multiplying by `s` or `(s + 1)` with
+a shifted exponent preserves summability inside `R`.
 **Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
 products with a sequence of bounded partial sums have Cauchy partial sums.
 
@@ -205,8 +205,9 @@ theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
   rw [← mul_assoc, ← Nat.cast_pow, (Nat.cast_commute (n ^ i) _).symm.eq, Nat.cast_pow,
     ← mul_assoc]
 
-/-- If a power series converges at `w`, then multiplying its coefficients by `n ^ k` preserves
-absolute summability at all `z` of smaller norm, without requiring completeness. -/
+/-- If the partial sums of a power series at `w` are Cauchy, then multiplying its coefficients by
+`n ^ k` preserves absolute summability at all `z` of smaller norm, without requiring
+completeness. -/
 theorem summable_norm_pow_mul_powerSeries_of_norm_lt {α : Type*} [NormedDivisionRing α]
     (k : ℕ) {f : ℕ → α} {w z : α}
     (h : CauchySeq fun n ↦ ∑ i ∈ Finset.range n, f i * w ^ i) (hz : ‖z‖ < ‖w‖) :

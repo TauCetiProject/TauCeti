@@ -427,12 +427,9 @@ theorem hasSum_regularizedHGFun_zero_singleton_ofReal_re_mul (a b y : ℝ) :
 `regularizedHGFun a b z` at every complex `z`. -/
 theorem hasSum_regularizedHGFun_of_neg_natCast_mem {a b : Multiset ℂ} {n : ℕ}
     (ha : -(n : ℂ) ∈ a) (z : ℂ) :
-    HasSum (fun k => regularizedHGFunCoeff a b k * z ^ k) (regularizedHGFun a b z) := by
-  simpa only [regularizedHGFun, regularizedHGFunSeries,
-    FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul, mul_comm (z ^ _)] using
-    (regularizedHGFunSeries a b).hasSum_of_finite (n := n + 1)
-      (fun m hm => regularizedHGFunSeries_eq_zero.2
-        (regularizedHGFunCoeff_eq_zero_left a b m n ha hm)) z
+    HasSum (fun k => regularizedHGFunCoeff a b k * z ^ k) (regularizedHGFun a b z) :=
+  hasSum_regularizedHGFun_of_mem_eball
+    (by simp [radius_regularizedHGFunSeries_eq_top_of_finite ha rfl])
 
 /-- If `-n` is an upper parameter, the regularized hypergeometric series terminates at
 degree `n`: `regularizedHGFun a b z` is the sum of its first `n + 1` terms. -/
@@ -539,7 +536,8 @@ every complex argument `z`. -/
 @[simp]
 theorem regularizedGaussHGFun_zero_left (b c z : ℂ) :
     regularizedGaussHGFun 0 b c z = (Gamma c)⁻¹ := by
-  simpa [div_eq_mul_inv] using regularizedGaussHGFun_neg_natCast b c z 0
+  rw [regularizedGaussHGFun_eq_regularizedHGFun, regularizedHGFun_of_zero_mem (by simp)]
+  simp
 
 /-- With second upper parameter `0`, `regularizedGaussHGFun a 0 c z` reduces to `(Gamma c)⁻¹` at
 every complex argument `z`. -/
@@ -553,10 +551,9 @@ hypergeometric series converges to `regularizedGaussHGFun (-n) b c z` at every c
 theorem hasSum_regularizedGaussHGFun_neg_natCast (b c z : ℂ) (n : ℕ) :
     HasSum (fun k : ℕ => (regularizedGaussHGFunSeries (-n) b c).coeff k * z ^ k)
       (regularizedGaussHGFun (-n) b c z) := by
-  rw [regularizedGaussHGFun_eq_regularizedHGFun]
-  simpa only [regularizedHGFunCoeff_pair_singleton] using
-    hasSum_regularizedHGFun_of_neg_natCast_mem (a := {-(n : ℂ), b}) (b := {c}) (n := n)
-      (by simp) z
+  simpa [regularizedGaussHGFun, regularizedGaussHGFunSeries,
+    FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using
+    (regularizedGaussHGFunSeries (-n) b c).hasSum (by simp)
 
 /-- The zeroth coefficient of `regularizedGaussHGFunSeries a b c` is `(Gamma c)⁻¹`. -/
 @[simp]
