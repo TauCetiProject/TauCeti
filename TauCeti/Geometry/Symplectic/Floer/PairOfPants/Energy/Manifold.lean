@@ -197,7 +197,7 @@ theorem exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompac
     hR (fun q ↦ (hHs q).continuous) fun hE q ↦ ?_
   exact
     exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isCompact_of_eventually
-      hω hKH hH he hB he_inj hde hu huB J hfloer hE q (b := max (b q) 0)
+      hω q (hKH q) (hH q) he hB he_inj hde hu huB J hfloer hE (b := max (b q) 0)
       (fun z hz ↦ hbC q z ((le_max_left (b q) 0).trans_lt hz)) hc
       (fun z hz v ↦ hJc _ (positiveEndChart_mem_thricePuncturedSphereReal
         ((le_max_right (b q) 0).trans_lt hz)) v) (hHs q) (hiso q)
@@ -213,7 +213,7 @@ theorem exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_nullhomo
   exact exists_energy_of_endConvergence hω hH hB hde hu huB J hc hJc hA hK hKH hfloer
     hR (fun q ↦ (hHs q).continuous) fun hE q ↦
       exists_mem_contractiblePeriodicSolutions_endChart_atTop_of_floer_of_isCompact_of_eventually
-        hω hKH hH he hB he_inj hde hu huB J hfloer hE q (b := max (b q) 0)
+        hω q (hKH q) (hH q) he hB he_inj hde hu huB J hfloer hE (b := max (b q) 0)
         (fun z hz ↦ hbC q z ((le_max_left (b q) 0).trans_lt hz)) hc
         (fun z hz v ↦ hJc _ (positiveEndChart_mem_thricePuncturedSphereReal
           ((le_max_right (b q) 0).trans_lt hz)) v) (hHs q) (hnull q) (hiso q)
@@ -527,8 +527,8 @@ theorem
     have hmem (z : ℝ × ℝ) (hz : max b 0 < z.1) :
         positiveEndChart q z ∈ thricePuncturedSphereReal :=
       positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hz)
-    exact hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated
-      hKH hH hHs he hB he_inj hde hu huB J hfloer hE q
+    exact hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated q
+      (hKH q) (hH q) (hHs q) he hB he_inj hde hu huB J hfloer hE
       (b := max b 0) (fun z hz ↦ hbC z ⟨(le_max_left _ _).trans_lt hz.1, hz.2⟩) hc
       (fun z hz v ↦ hJc _ (hmem z hz.1) v) (hiso q)
   choose y hy hyB hyu hyp using hy_ex
