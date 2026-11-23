@@ -78,8 +78,8 @@ variable (f : H.Copy G) (β : W → W → M)
 theorem extendByZero_apply_apply [DecidableRel H.Adj] (x y : W) :
     f.extendByZero β (f x) (f y) = if H.Adj x y then β x y else 0 := by
   have hf : Function.Injective (Prod.map f f) := f.injective.prodMap f.injective
-  rw [extendByZero, ← Prod.map_apply, hf.extend_apply, Set.indicator_apply]
-  rfl
+  rw [extendByZero, ← Prod.map_apply, hf.extend_apply]
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq]
 
 /-- Along an edge of `H`, the extension is the original family. -/
 @[simp]
