@@ -180,6 +180,17 @@ private theorem evalSection_eq_cochainSectionsEquiv {k : ℕ} (φ : A.Cochain k)
   rw [cochainSectionsEquiv_apply]
   exact congrArg φ.evalSection (funext fun i ↦ by simp)
 
+omit [FiniteDimensional ℝ F] in
+@[simp] private theorem lie_sectionsEquiv_symm (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) :
+    ⁅A.sectionsEquiv.symm a, f⁆ = A.anchorDeriv a f := by
+  rw [Sections.lie_def, LinearEquiv.apply_symm_apply]
+
+private theorem cochainSectionsEquiv_removeNth {k : ℕ} (φ : A.Cochain k)
+    (s : Fin (k + 1) → Cₛ^∞⟮I; F, V⟯) (i : Fin (k + 1)) :
+    A.cochainSectionsEquiv k φ (i.removeNth (A.sectionsEquiv.symm ∘ s)) =
+      φ.evalSection (i.removeNth s) := by
+  rw [← comp_removeNth, ← A.evalSection_eq_cochainSectionsEquiv]
+
 private theorem cochain_ext_evalSection {k : ℕ} {φ₁ φ₂ : A.Cochain k}
     (h : ∀ s : Fin k → Cₛ^∞⟮I; F, V⟯, φ₁.evalSection s = φ₂.evalSection s) : φ₁ = φ₂ :=
   (A.cochainSectionsEquiv k).injective <| AlternatingMap.ext fun s ↦ by
@@ -199,30 +210,28 @@ private theorem cochain_ext_evalSection {k : ℕ} {φ₁ φ₂ : A.Cochain k}
 /-- The Lie derivative `L_a : A.Cochain k →ₗ[ℝ] A.Cochain k` along a smooth section `a`,
 transported from `TauCeti.LieRinehartAlgebra.lieDeriv` across `cochainSectionsEquiv`. -/
 def lieDeriv {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) : A.Cochain k →ₗ[ℝ] A.Cochain k :=
-  ((A.cochainSectionsEquiv k).restrictScalars ℝ).symm.toLinearMap ∘ₗ
-    LieRinehartAlgebra.lieDeriv ℝ C^∞⟮I, M; ℝ⟯ A.Sections (A.sectionsEquiv.symm a) ∘ₗ
-    ((A.cochainSectionsEquiv k).restrictScalars ℝ).toLinearMap
+  (((A.cochainSectionsEquiv k).restrictScalars ℝ).arrowCongr
+      ((A.cochainSectionsEquiv k).restrictScalars ℝ)).symm
+    (LieRinehartAlgebra.lieDeriv ℝ C^∞⟮I, M; ℝ⟯ A.Sections (A.sectionsEquiv.symm a))
 
 @[simp] theorem cochainSectionsEquiv_lieDeriv {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k) :
     A.cochainSectionsEquiv k (A.lieDeriv a φ) = LieRinehartAlgebra.lieDeriv ℝ C^∞⟮I, M; ℝ⟯
       A.Sections (A.sectionsEquiv.symm a) (A.cochainSectionsEquiv k φ) := by
-  rw [lieDeriv, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.coe_coe, LinearEquiv.restrictScalars_symm_apply,
+  simp only [lieDeriv, LinearEquiv.arrowCongr_symm_apply, LinearEquiv.restrictScalars_symm_apply,
     LinearEquiv.restrictScalars_apply, LinearEquiv.apply_symm_apply]
 
 /-- The Chevalley–Eilenberg differential `d_A : A.Cochain k →ₗ[ℝ] A.Cochain (k + 1)` of a Lie
 algebroid `A`, transported from `TauCeti.LieRinehartAlgebra.extDeriv` across
 `cochainSectionsEquiv`. -/
 def extDeriv (k : ℕ) : A.Cochain k →ₗ[ℝ] A.Cochain (k + 1) :=
-  ((A.cochainSectionsEquiv (k + 1)).restrictScalars ℝ).symm.toLinearMap ∘ₗ
-    LieRinehartAlgebra.extDeriv ℝ C^∞⟮I, M; ℝ⟯ A.Sections k ∘ₗ
-    ((A.cochainSectionsEquiv k).restrictScalars ℝ).toLinearMap
+  (((A.cochainSectionsEquiv k).restrictScalars ℝ).arrowCongr
+      ((A.cochainSectionsEquiv (k + 1)).restrictScalars ℝ)).symm
+    (LieRinehartAlgebra.extDeriv ℝ C^∞⟮I, M; ℝ⟯ A.Sections k)
 
 @[simp] theorem cochainSectionsEquiv_extDeriv (k : ℕ) (φ : A.Cochain k) :
     A.cochainSectionsEquiv (k + 1) (A.extDeriv k φ) =
       LieRinehartAlgebra.extDeriv ℝ C^∞⟮I, M; ℝ⟯ A.Sections k (A.cochainSectionsEquiv k φ) := by
-  rw [extDeriv, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.coe_coe, LinearEquiv.restrictScalars_symm_apply,
+  simp only [extDeriv, LinearEquiv.arrowCongr_symm_apply, LinearEquiv.restrictScalars_symm_apply,
     LinearEquiv.restrictScalars_apply, LinearEquiv.apply_symm_apply]
 
 /-! ### Explicit evaluation formulas on smooth sections -/
@@ -234,7 +243,7 @@ theorem evalSection_lieDeriv {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cocha
     (A.lieDeriv a φ).evalSection s = A.anchorDeriv a (φ.evalSection s) -
       ∑ i : Fin k, φ.evalSection (Function.update s i (A.bracket a (s i))) := by
   rw [A.evalSection_eq_cochainSectionsEquiv, cochainSectionsEquiv_lieDeriv,
-    LieRinehartAlgebra.lieDeriv_apply, Sections.lie_def, LinearEquiv.apply_symm_apply,
+    LieRinehartAlgebra.lieDeriv_apply, lie_sectionsEquiv_symm,
     ← A.evalSection_eq_cochainSectionsEquiv]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -245,8 +254,8 @@ theorem evalSection_lieDeriv {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cocha
 @[simp] theorem evalSection_extDeriv_zero (φ : A.Cochain 0) (s : Fin 1 → Cₛ^∞⟮I; F, V⟯) :
     (A.extDeriv 0 φ).evalSection s = A.anchorDeriv (s 0) (A.cochainZeroEquiv φ) := by
   rw [A.evalSection_eq_cochainSectionsEquiv, cochainSectionsEquiv_extDeriv,
-    LieRinehartAlgebra.extDeriv_zero_apply, Function.comp_apply, Sections.lie_def,
-    LinearEquiv.apply_symm_apply, cochainSectionsEquiv_apply, A.evalSection_eq_cochainZeroEquiv]
+    LieRinehartAlgebra.extDeriv_zero_apply, Function.comp_apply, lie_sectionsEquiv_symm,
+    cochainSectionsEquiv_apply, A.evalSection_eq_cochainZeroEquiv]
 
 /-- **The Chevalley–Eilenberg formula** for a Lie algebroid cochain of positive degree evaluated on
 smooth sections:
@@ -265,12 +274,11 @@ theorem evalSection_extDeriv_succ {k : ℕ} (φ : A.Cochain (k + 1))
     LieRinehartAlgebra.extDeriv_succ_apply]
   congr 1
   · refine Finset.sum_congr rfl fun i _ ↦ congrArg ((-1 : ℤ) ^ (i : ℕ) • ·) ?_
-    rw [Function.comp_apply, Sections.lie_def, LinearEquiv.apply_symm_apply,
-      A.evalSection_eq_cochainSectionsEquiv, ← comp_removeNth]
+    rw [Function.comp_apply, lie_sectionsEquiv_symm, cochainSectionsEquiv_removeNth]
   · refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦
       congrArg ((-1 : ℤ) ^ (i + j + 1 : ℕ) • ·) ?_
-    rw [A.evalSection_eq_cochainSectionsEquiv, comp_vecCons, comp_removeNth, comp_removeNth]
-    simp
+    rw [A.evalSection_eq_cochainSectionsEquiv, comp_vecCons, comp_removeNth, comp_removeNth,
+      Function.comp_apply, Function.comp_apply, sectionsEquiv_symm_bracket]
 
 /-- On a `1`-cochain and two smooth sections `a`, `b`,
 `(d_A φ)(a, b) = ρ(a)(φ(b)) - ρ(b)(φ(a)) - φ([a, b])`. -/
@@ -298,8 +306,7 @@ theorem evalSection_extDeriv_smul {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (φ : A.C
     ← cochainSectionsEquiv_extDeriv, ← A.evalSection_eq_cochainSectionsEquiv]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ congrArg ((-1 : ℤ) ^ (i : ℕ) • ·) ?_
-  rw [Function.comp_apply, Sections.lie_def, LinearEquiv.apply_symm_apply,
-    A.evalSection_eq_cochainSectionsEquiv, ← comp_removeNth]
+  rw [Function.comp_apply, lie_sectionsEquiv_symm, cochainSectionsEquiv_removeNth]
 
 /-! ### Cochain complex, cohomology, and Cartan calculus -/
 
@@ -359,9 +366,7 @@ abbrev cohomology (k : ℕ) : ModuleCat ℝ := A.cochainComplex.homology k
 theorem lieDeriv_smul_right {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) (φ : A.Cochain k) :
     A.lieDeriv a (f • φ) = f • A.lieDeriv a φ + A.anchorDeriv a f • φ :=
   (A.cochainSectionsEquiv k).injective <| by
-    rw [cochainSectionsEquiv_lieDeriv, map_smul, LieRinehartAlgebra.lieDeriv_smul_right,
-      Sections.lie_def, LinearEquiv.apply_symm_apply, map_add, map_smul, map_smul,
-      cochainSectionsEquiv_lieDeriv]
+    simp [LieRinehartAlgebra.lieDeriv_smul_right]
 
 /-- Cartan's homotopy formula in degree zero: `ι_a (d_A φ) = L_a φ`. -/
 @[simp] theorem curryLeft_extDeriv_zero (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain 0) :
