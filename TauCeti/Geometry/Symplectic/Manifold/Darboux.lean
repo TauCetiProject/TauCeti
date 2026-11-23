@@ -197,12 +197,16 @@ theorem exists_darbouxChart_of_nondegenerate_of_isInteriorPoint
       (fun z hz ↦ hcl.extDeriv_inChartAt_eq_zero x₀ hz) hnd
   obtain ⟨chart, hchart_src, hchart_coe, hmvf⟩ :=
     exists_partialDiffeomorph_comp_extChartAt I ∞ x₀ hV₀_open hV₀_sub
-      (by exact_mod_cast le_top) Φ_flat
+      (by exact_mod_cast le_top) Φ_flat.toPartialDiffeomorph
+  have hΦsrc : Φ_flat.toPartialDiffeomorph.source = univ := by
+    simp [Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
+  rw [hΦsrc, inter_univ] at hchart_src
   have hx₀_src : x₀ ∈ chart.source := by
     rw [hchart_src]
     exact ⟨mem_extChartAt_source x₀, hy₀V₀⟩
   have hchart_x₀ : chart x₀ = 0 := by
     rw [hchart_coe]
+    simp only [Diffeomorph.toPartialDiffeomorph_toPartialEquiv, Equiv.toPartialEquiv_apply]
     exact hΦy₀
   refine ⟨chart, form₀, hx₀_src, hchart_x₀, fun x hx v w ↦ ?_⟩
   have hxS : x ∈ (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀ :=
@@ -217,7 +221,7 @@ theorem exists_darbouxChart_of_nondegenerate_of_isInteriorPoint
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
   congr 1
   ext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp [Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
 
 /-- **Darboux's theorem at an interior point.** Around any interior point `x₀` of a smooth manifold
 carrying a symplectic two-form `form`, there are a smooth partial diffeomorphism `chart` into the
@@ -300,11 +304,15 @@ theorem exists_standardDarbouxChart_of_nondegenerate_of_finrank_eq_of_isInterior
       ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
         form.eval₂ x v w =
           stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w) := by
-  obtain ⟨chart₁, ω₁, hx₀₁, h0₁, hchart₁⟩ :=
-    exists_darbouxChart_of_nondegenerate_of_isInteriorPoint hcl hnd₀ hx₀
-  obtain ⟨L, hL⟩ := ω₁.exists_continuousLinearEquiv_stdSymplecticForm_of_finrank_eq hn
-  obtain ⟨hx₀', h0', -, hpull⟩ := trans_toDiffeomorph_darboux hx₀₁ h0₁ hchart₁ L hL
-  exact ⟨_, hx₀', h0', hpull⟩
+  obtain ⟨m, chart, hx₀', h0, hchart⟩ :=
+    exists_standardDarbouxChart_of_nondegenerate_of_isInteriorPoint hcl hnd₀ hx₀
+  have hm : Module.finrank ℝ E =
+      Module.finrank ℝ (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin m)) :=
+    ((chart.isLocalDiffeomorphAt _ _ _ hx₀').mfderivToContinuousLinearEquiv
+      (by simp)).toLinearEquiv.finrank_eq
+  rw [Module.finrank_prod, finrank_euclideanSpace_fin] at hm
+  obtain rfl : m = n := by omega
+  exact ⟨chart, hx₀', h0, hchart⟩
 
 /-- **Standard Euclidean Darboux coordinates at fixed dimension `2 * n` (interior point).** -/
 theorem IsSymplectic.exists_standardDarbouxChart_of_finrank_eq_of_isInteriorPoint

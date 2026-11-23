@@ -362,6 +362,22 @@ theorem isContactFormAt_fun_smul_iff (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f 
 
 end Rescaling
 
+private theorem roughForm_isContactFormAt_iff_isContact {α : RoughForm I M ℝ 1} {y : M}
+    (l : TangentSpace I y →ₗ[ℝ] ℝ) (B : TangentSpace I y →ₗ[ℝ] TangentSpace I y →ₗ[ℝ] ℝ)
+    (hl : ∀ v, l v = α y ![v]) (hB : ∀ v w, B v w = mextDeriv α y ![v, w]) :
+    IsContactFormAt α y ↔ Module.Dual.IsContact l B := by
+  have hB_alt : LinearMap.IsAlt B := fun v ↦ by
+    rw [hB]
+    exact (mextDeriv α y).map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl (by decide)
+  rw [Module.Dual.isContact_iff_of_isRefl hB_alt.isRefl]
+  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero <| RoughForm.ker_eq_top_iff.1 <| eq_top_iff.2 fun v _ ↦
+    RoughForm.mem_ker.2 <| hl v ▸ LinearMap.congr_fun h0 v,
+    fun v hv hvw ↦ h.nondegenerate v (RoughForm.mem_ker.2 (hl v ▸ hv)) fun w hw ↦
+      hB v w ▸ hvw w (hl w ▸ RoughForm.mem_ker.1 hw)⟩,
+    fun ⟨h0, h⟩ ↦ ⟨fun hz ↦ h0 <| LinearMap.ext fun v ↦ by simp [hl, hz],
+    fun v hv hvw ↦ h v (hl v ▸ RoughForm.mem_ker.1 hv) fun w hw ↦
+      (hB v w).symm ▸ hvw w (RoughForm.mem_ker.2 (hl w ▸ hw))⟩⟩
+
 private theorem isContactFormAt_iff_isContact_of_equiv {α : RoughForm I M ℝ 1} {y : M}
     (L : TangentSpace I y ≃L[ℝ] E) {a : E [⋀^Fin 1]→L[ℝ] ℝ} {b : E [⋀^Fin 2]→L[ℝ] ℝ}
     (ha : ∀ u, a ![u] = α y ![L.symm u])
@@ -369,23 +385,10 @@ private theorem isContactFormAt_iff_isContact_of_equiv {α : RoughForm I M ℝ 1
     IsContactFormAt α y ↔
       Module.Dual.IsContact (ContinuousAlternatingMap.toDual a : E →ₗ[ℝ] ℝ)
         (ContinuousAlternatingMap.flatL ℝ E ℝ b).toLinearMap₁₂ := by
-  rw [Module.Dual.isContact_iff_of_isRefl
-    (ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL b).isRefl]
-  simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply,
-    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
-    ContinuousAlternatingMap.flatL_apply_apply, ha, hb]
-  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero <| RoughForm.ker_eq_top_iff.1 <| eq_top_iff.2 fun v _ ↦
-    RoughForm.mem_ker.2 <| by simpa [ha] using LinearMap.congr_fun h0 (L v),
-    fun u hu huw ↦ L.symm.injective <| by
-      rw [map_zero]
-      exact h.nondegenerate (L.symm u) (RoughForm.mem_ker.2 hu) fun w hw ↦ by
-        simpa using huw (L w) (by simpa using RoughForm.mem_ker.1 hw)⟩,
-    fun ⟨h0, h⟩ ↦ ⟨fun hz ↦ h0 <| LinearMap.ext fun u ↦ by
-      simp [ContinuousAlternatingMap.toDual_apply, ha, hz],
-    fun v hv hvw ↦ L.injective <| by
-      rw [map_zero]
-      exact h (L v) (by simpa using RoughForm.mem_ker.1 hv) fun w hw ↦ by
-        simpa using hvw (L.symm w) (RoughForm.mem_ker.2 hw)⟩⟩
+  rw [← Module.Dual.isContact_comp_linearEquiv_compl₁₂_iff L.toLinearEquiv]
+  exact roughForm_isContactFormAt_iff_isContact _ _
+    (fun v ↦ by simp [ha])
+    (fun v w ↦ by simp [hb])
 
 open scoped Topology in
 /-- **Openness of the pointwise contact condition.** On a finite-dimensional `C²` manifold, a `C¹`
@@ -464,26 +467,10 @@ theorem SmoothForm.isContactFormAt_iff_isContact [IsManifold I 2 M] {α : Smooth
     {x : M} :
     IsContactFormAt α.val x ↔ Module.Dual.IsContact
       (SmoothForm.degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
-      ((mextDerivₗ I 1 α).bilinFormAt x) := by
-  rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
-  simp only [SmoothForm.degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt, ne_eq,
-    LinearMap.ext_iff, LinearMap.zero_apply, not_forall]
-  constructor
-  · intro h
-    refine ⟨?_, ?_⟩
-    · by_contra hn
-      push Not at hn
-      apply h.ne_zero
-      ext v
-      have hv : ![v 0] = v := by
-        ext i
-        fin_cases i
-        rfl
-      simpa only [hv, ContinuousAlternatingMap.coe_zero, Pi.zero_apply] using hn (v 0)
-    · simpa only [RoughForm.mem_ker] using h.nondegenerate
-  · rintro ⟨⟨v, hv⟩, h⟩
-    refine ⟨fun hz ↦ hv (by rw [hz]; rfl), ?_⟩
-    simpa only [RoughForm.mem_ker] using h
+      ((mextDerivₗ I 1 α).bilinFormAt x) :=
+  roughForm_isContactFormAt_iff_isContact _ _
+    (SmoothForm.degreeOneEquiv_coe_apply α x)
+    (fun v w ↦ (SmoothForm.mextDeriv_eq_bilinFormAt α x v w).symm)
 
 /-- A smooth one-form is contact exactly when it satisfies the pointwise contact condition
 at every point. -/
