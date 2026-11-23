@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Sym.Sym2
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Vertex and edge counts of trace words
@@ -72,26 +73,6 @@ theorem card_image_range_le_card_nonloop_edges_add_one (w : ℕ → α) (n : ℕ
       rw [card_insert_of_notMem hv]
       simpa [range_add_one, filter_insert, hne, he] using Nat.add_le_add_right ih 1
 
-/-- Reading a cyclic word of length `k` along the times `i : ℕ` modulo `k`, the step after time
-`i` is the cyclic successor `finRotate k` of the position at time `i`. -/
-theorem finRotate_ofNat {k : ℕ} [NeZero k] (i : ℕ) :
-    finRotate k (Fin.ofNat k i) = Fin.ofNat k (i + 1) := by
-  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by have := NeZero.ne k; omega⟩
-  simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
-
-/-- Reading a cyclic word of length `k` along at least `k` consecutive times modulo `k` visits
-exactly the vertices of the word. -/
-theorem image_range_ofNat_eq_image_univ {k m : ℕ} [NeZero k] (w : Fin k → α) (hkm : k ≤ m) :
-    (range m).image (fun i => w (Fin.ofNat k i)) = univ.image w := by
-  ext x
-  constructor
-  · rintro hx
-    obtain ⟨i, -, rfl⟩ := mem_image.mp hx
-    exact mem_image.mpr ⟨_, mem_univ _, rfl⟩
-  · rintro hx
-    obtain ⟨i, -, rfl⟩ := mem_image.mp hx
-    exact mem_image.mpr ⟨i.val, mem_range.mpr (by omega), by simp⟩
-
 /-- A cyclic word visits at most one more vertex than its number of distinct nonloop edges. -/
 theorem card_image_le_card_nonloop_cyclic_edges_add_one {k : ℕ} (w : Fin k → α) :
     #(univ.image w) ≤
@@ -102,7 +83,7 @@ theorem card_image_le_card_nonloop_cyclic_edges_add_one {k : ℕ} (w : Fin k →
   | succ k =>
     let v : ℕ → α := fun i => w (Fin.ofNat (k + 1) i)
     have hvertices : (range (k + 2)).image v = univ.image w :=
-      image_range_ofNat_eq_image_univ w (by omega)
+      Fin.image_range_ofNat_eq_image_univ w (by omega)
     have hedges :
         (((range (k + 1)).filter fun i => v i ≠ v (i + 1)).image fun i => s(v i, v (i + 1))) ⊆
           (({i | w i ≠ w (finRotate (k + 1) i)} : Finset (Fin (k + 1))).image
@@ -111,11 +92,18 @@ theorem card_image_le_card_nonloop_cyclic_edges_add_one {k : ℕ} (w : Fin k →
       obtain ⟨i, hi, rfl⟩ := mem_image.mp he
       refine mem_image.mpr ⟨Fin.ofNat (k + 1) i, ?_, ?_⟩
       · exact mem_filter.mpr ⟨mem_univ _, by
-          simpa only [v, ← finRotate_ofNat] using (mem_filter.mp hi).2⟩
-      · simp only [v, ← finRotate_ofNat]
+          simpa only [v, ← Fin.finRotate_ofNat] using (mem_filter.mp hi).2⟩
+      · simp only [v, ← Fin.finRotate_ofNat]
     have h := card_image_range_le_card_nonloop_edges_add_one v (k + 1)
     rw [hvertices] at h
     exact h.trans (Nat.add_le_add_right (card_le_card hedges) 1)
+
+/-- A cyclic word visits at most one more vertex than its number of distinct unordered edges.
+Loops count as edges. -/
+theorem card_image_le_card_cyclic_edges_add_one {k : ℕ} (w : Fin k → α) :
+    #(univ.image w) ≤ #(univ.image fun i => s(w i, w (finRotate k i))) + 1 :=
+  (card_image_le_card_nonloop_cyclic_edges_add_one w).trans
+    (Nat.add_le_add_right (card_le_card (image_subset_image (filter_subset _ _))) 1)
 
 /-- When an `n`-step path attains the tree bound (visiting one more vertex than its number of
 distinct nonloop edges), any nonloop unordered pair `e₀` induces a vertex labeling `c : α → ℕ`
@@ -202,11 +190,7 @@ theorem card_image_le_div_two_add_one_of_no_singleton_edge {k : ℕ} (w : Fin k 
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i))) :
     #(univ.image w) ≤ k / 2 + 1 := by
   have hcount := two_mul_card_cyclic_edges_le_of_no_singleton_edge w h
-  have hvertices := card_image_le_card_nonloop_cyclic_edges_add_one w
-  have hsub :
-      (({i | w i ≠ w (finRotate k i)} : Finset (Fin k)).image fun i => s(w i, w (finRotate k i))) ⊆
-        (univ.image fun i => s(w i, w (finRotate k i))) := image_subset_image (filter_subset _ _)
-  have := card_le_card hsub
+  have hvertices := card_image_le_card_cyclic_edges_add_one w
   omega
 
 /-- In a word of length `2 * m` with no singleton edge and `m + 1` visited vertices,

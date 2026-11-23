@@ -137,8 +137,7 @@ theorem norm_integral_trace_pow_wignerMatrix_le {L n : ℕ} {K σ γ : ℝ}
         exact hword.trans (pow_mul_pow_sub_le_mul_pow_div_pow hb₀ (le_min (by positivity)
           (sq_nonneg _)) (min_le_right _ _) (min_le_left _ _) ((div_le_iff₀ hsqrt).mpr hK)
           (Nat.cast_pos.mpr hn) (card_pos.mpr (univ_nonempty.image _))
-          ((card_image_le_card_nonloop_cyclic_edges_add_one w).trans
-            (Nat.add_le_add_right (card_le_card (image_subset_image (filter_subset _ _))) 1))
+          (card_image_le_card_cyclic_edges_add_one w)
           (two_mul_card_cyclic_edges_le_of_no_singleton_edge w hw))
     _ = n * σ ^ L * ∑ w : Fin L → Fin n with
           ∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t)),

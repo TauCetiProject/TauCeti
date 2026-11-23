@@ -11,6 +11,7 @@ public import Mathlib.Data.Fintype.Pi
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Füredi–Komlós coding of trace words
@@ -505,7 +506,7 @@ private theorem cyclicPath_val (w : Fin L → α) (t : Fin L) : cyclicPath w t.v
 private theorem edge_cyclicPath (w : Fin L → α) (i : ℕ) :
     edge (cyclicPath w) i =
       s(w (Fin.ofNat L i), w (finRotate L (Fin.ofNat L i))) := by
-  rw [edge, cyclicPath, cyclicPath, finRotate_ofNat]
+  rw [edge, cyclicPath, cyclicPath, Fin.finRotate_ofNat]
 
 variable [DecidableEq α]
 
@@ -581,7 +582,7 @@ private theorem prod_symbolWeight (n γ : ℝ) (p : ℕ → α) :
 
 private theorem image_range_cyclicPath (w : Fin L → α) :
     (range (L + 1)).image (cyclicPath w) = univ.image w :=
-  image_range_ofNat_eq_image_univ w (Nat.le_succ L)
+  Fin.image_range_ofNat_eq_image_univ w (Nat.le_succ L)
 
 open Classical in
 /-- A cyclic word traversing each edge at least twice is bounded by `n⁻¹` times the weight of its
