@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.OneForm.Index
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
+import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive.Poincare
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!

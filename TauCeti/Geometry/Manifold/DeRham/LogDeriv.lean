@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 -- multiples of `2πi` and the base points of path components are used only inside proofs.
 import TauCeti.Analysis.Complex.WindingNormalization
 import TauCeti.Analysis.Contour.Winding.EndpointRatio
+import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive.Poincare
 import TauCeti.Topology.Connected.PathConnected
 
 /-!

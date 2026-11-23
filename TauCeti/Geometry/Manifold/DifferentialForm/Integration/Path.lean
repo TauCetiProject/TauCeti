@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Curve
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Interval.Basic
@@ -27,9 +26,7 @@ where the velocity `TauCeti.Manifold.curveVelocity I γ t` is the manifold deriv
 the unit vector. Equivalently, it is the interval integral of the pullback `γ^* φ`, a `1`-form on
 `ℝ`, evaluated on the unit vector (`TauCeti.pathIntegral_eq_integral_mpullback`). For a
 real-valued form and `a < b`, it is the canonical oriented integral over `[a, b]` of the pullback
-of `φ` along `γ` (`TauCeti.integralTopForm_mpullback_Icc_eq_pathIntegral`), and on a real normed
-space it agrees with Mathlib's `curveIntegral`
-(`TauCeti.pathIntegral_ofSubsingleton_eq_curveIntegral`).
+of `φ` along `γ` (`TauCeti.integralTopForm_mpullback_Icc_eq_pathIntegral`).
 
 Line integrals are the basic tool for detecting de Rham cohomology classes in degree one. The
 integral of the differential of a `C¹` function is its endpoint difference
@@ -64,8 +61,6 @@ concatenation of curves (`TauCeti.pathIntegral_curveConcat`), is natural under p
 * `TauCeti.exists_contMDiff_loop_pathIntegral_eq_sub`: two smooth curves with common endpoints
   form a smooth loop whose line integral is the difference of theirs.
 * `TauCeti.pathIntegral_mpullback`: naturality under pullback.
-* `TauCeti.pathIntegral_ofSubsingleton_eq_curveIntegral`: agreement with Mathlib's `curveIntegral`
-  on a real normed space.
 
 ## References
 
@@ -580,30 +575,5 @@ theorem integralTopForm_mpullback_Icc_eq_pathIntegral [IsManifold I 1 M] {a b : 
     exact hφ.intervalIntegrable_apply_curveVelocity hγ a b
   rw [hc, (integralTopForm_mpullback_subtypeVal_Icc _ hi).2,
     pathIntegral_eq_integral_mpullback]
-
-/-! ### Comparison with curve integration -/
-
-/-- On a real normed space `E`, `TauCeti.pathIntegral` of the `1`-form associated to a covector
-field `α : E → E →L[ℝ] F` along a curve `c` matching a path `γ` on `[0, 1]` agrees with Mathlib's
-`curveIntegral α γ`. -/
-theorem pathIntegral_ofSubsingleton_eq_curveIntegral (α : E → E →L[ℝ] F) {c : ℝ → E}
-    {a b : E} {γ : Path a b} (hγ : ∀ t : unitInterval, γ t = c t) :
-    pathIntegral (I := 𝓘(ℝ, E))
-        ((fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)) :
-          RoughForm 𝓘(ℝ, E) E F 1) c 0 1 =
-      curveIntegral α γ := by
-  unfold pathIntegral
-  rw [curveIntegral_eq_intervalIntegral_deriv]
-  refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
-  rw [uIoo_of_le zero_le_one] at ht
-  have heq : γ.extend =ᶠ[𝓝 t] c := by
-    filter_upwards [isOpen_Ioo.mem_nhds ht] with s hs
-    have hs' : s ∈ Icc (0 : ℝ) 1 := Ioo_subset_Icc_self hs
-    rw [Path.extend_apply γ hs', hγ ⟨s, hs'⟩]
-  have hv : Manifold.curveVelocity 𝓘(ℝ, E) c t = deriv γ.extend t := by
-    rw [Manifold.curveVelocity_eq_deriv, heq.deriv_eq]
-  rw [hv, heq.eq_of_nhds]
-  exact ContinuousAlternatingMap.ofSubsingleton_apply_apply (f := α (c t)) (i := (0 : Fin 1))
-    (x := fun _ : Fin 1 ↦ deriv γ.extend t)
 
 end TauCeti

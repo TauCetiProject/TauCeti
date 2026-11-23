@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DeRham.Circle
 public import TauCeti.Geometry.Manifold.Degree.Continuous
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Topology.Circle.Degree
-public import TauCeti.Topology.Circle.Loop
 -- Private: free-loop classification, smooth integer powers on Lie groups, global degree
 -- integration, connectedness of spheres, and the homotopy/path bridge are used only inside proofs.
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.FreeLoop.Basic

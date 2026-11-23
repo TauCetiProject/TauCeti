@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ContinuousPath
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
@@ -14,10 +15,11 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Circle
 public import TauCeti.Geometry.Manifold.Orientation.AddCircle
 
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Comparison
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Parametrization
+import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive.Poincare
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.Topology.Circle.Arc
 

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Complex.Rectangle
 
 /-!
@@ -18,8 +17,6 @@ primitive there, built from `Complex.wedgeIntegral`. This file records:
 
 * `DifferentiableOn.exists_hasDerivAt_eqOn_ball_inter` -- a primitive of a holomorphic integrand
   on `ball c r ∩ U`, for convex `U`, is the restriction of a primitive on `ball c r`.
-* `TauCeti.isExactOn_inv_slitPlane` -- exactness of `z ↦ z⁻¹` on `Complex.slitPlane` via
-  `Complex.log`.
 * `Differentiable.hasDerivAt_smul_integral_comp_mul` -- for an entire `f`, the segment integral
   `w ↦ w ∫₀¹ f(tw) dt` is a primitive of `f`.
 * `Differentiable.hasDerivAt_integral_mul_comp_mul` -- the same for a scalar entire `f`, with `w`
@@ -69,11 +66,6 @@ theorem DifferentiableOn.exists_hasDerivAt_eqOn_ball_inter {f g : ℂ → E} {c 
     (fun _ _ ↦ norm_zero.le) hz₀ hz
   rw [zero_mul, norm_le_zero_iff, sub_eq_zero, Pi.sub_apply, Pi.sub_apply] at this
   simp [← this]
-
-/-- The holomorphic function `z ↦ z⁻¹` has a complex primitive on `Complex.slitPlane`, namely
-the principal branch `Complex.log`. -/
-theorem TauCeti.isExactOn_inv_slitPlane : Complex.IsExactOn (fun z : ℂ ↦ z⁻¹) Complex.slitPlane :=
-  ⟨Complex.log, fun _ hz ↦ Complex.hasDerivAt_log hz⟩
 
 /-- For an entire function `f`, the straight-segment integral `w ↦ w ∫₀¹ f(tw) dt` is a primitive
 of `f`. -/

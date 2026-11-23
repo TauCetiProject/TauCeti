@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Geometry.Manifold.Instances.Sphere
-public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
+public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 -- Private: the degree-one section API, the derivative of the squared norm, and the square-zero
 -- property of the exterior derivative are used only inside proofs.

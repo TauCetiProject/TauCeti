@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Lifting
 public import Mathlib.Topology.Homotopy.Path
 public import TauCeti.Topology.Circle.Loop

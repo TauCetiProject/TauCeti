@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Circle.Degree
-public import TauCeti.Topology.Circle.Loop
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Topology.Circle.Normalize
 

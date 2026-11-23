@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.HasPrimitives
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import TauCeti.Analysis.Complex.HasPrimitives.Local
-import TauCeti.Geometry.Manifold.DeRham.SimplyConnected
+import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive.SimplyConnected
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens.ModelSpace
 
 /-!

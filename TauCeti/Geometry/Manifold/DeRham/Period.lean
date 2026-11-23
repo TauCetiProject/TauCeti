@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DeRham.PathIntegral
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ContinuousPath
+public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive.Poincare
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!

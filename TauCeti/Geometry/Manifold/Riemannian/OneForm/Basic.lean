@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
-public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
+public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 
 /-!

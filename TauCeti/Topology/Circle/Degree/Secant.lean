@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Circle.AddCircle
 public import TauCeti.Topology.Circle.Degree
 
 /-!

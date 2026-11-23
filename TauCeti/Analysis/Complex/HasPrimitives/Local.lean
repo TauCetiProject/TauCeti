@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
+public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive.Basic
 import Mathlib.Analysis.Complex.HasPrimitives
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 

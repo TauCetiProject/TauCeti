@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.Period
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Naturality
+import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive.Poincare
 import TauCeti.Topology.Connected.PathConnected
 
 /-!
