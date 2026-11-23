@@ -249,6 +249,14 @@ theorem euclideanHalfSpaceBoundary_eq_frontier (n : ℕ) :
   ext x
   simp [eq_comm]
 
+/-- The half-space model `𝓡∂ (n + 1)` sends a point to the frontier of its range exactly when the
+zeroth coordinate of the point vanishes. -/
+theorem modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff {n : ℕ}
+    (z : EuclideanHalfSpace (n + 1)) :
+    (𝓡∂ (n + 1)) z ∈ frontier (range (𝓡∂ (n + 1))) ↔ z.val 0 = 0 := by
+  rw [frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
+  exact eq_comm
+
 namespace EuclideanHalfSpace
 
 variable {n : ℕ}
@@ -262,21 +270,21 @@ noncomputable def boundaryParam (n : ℕ) :
 /-- Delete the zeroth coordinate of a point of the `(n + 1)`-dimensional Euclidean half-space. -/
 noncomputable def boundaryProj (n : ℕ) :
     EuclideanHalfSpace (n + 1) → EuclideanSpace ℝ (Fin n) :=
-  fun y ↦ euclideanHalfSpaceBoundaryProj n y.1
+  fun y ↦ euclideanHalfSpaceBoundaryProj n y.val
 
 /-- The parametrized boundary point, read in the ambient Euclidean space. -/
 @[simp]
 theorem boundaryParam_coe (x : EuclideanSpace ℝ (Fin n)) :
-    (boundaryParam n x).1 = euclideanHalfSpaceBoundaryParam n x := (rfl)
+    (boundaryParam n x).val = euclideanHalfSpaceBoundaryParam n x := (rfl)
 
 /-- The boundary projection agrees with the ambient linear projection. -/
 @[simp]
 theorem boundaryProj_coe (y : EuclideanHalfSpace (n + 1)) :
-    boundaryProj n y = euclideanHalfSpaceBoundaryProj n y.1 := (rfl)
+    boundaryProj n y = euclideanHalfSpaceBoundaryProj n y.val := (rfl)
 
 /-- The coordinates of the boundary projection are the positive-index coordinates. -/
 theorem boundaryProj_apply (y : EuclideanHalfSpace (n + 1)) (i : Fin n) :
-    boundaryProj n y i = y.1 i.succ := by
+    boundaryProj n y i = y.val i.succ := by
   rw [boundaryProj_coe, euclideanHalfSpaceBoundaryProj_apply]
 
 /-- Deleting the zeroth coordinate undoes the boundary parametrization. -/
@@ -287,8 +295,8 @@ theorem boundaryProj_boundaryParam (x : EuclideanSpace ℝ (Fin n)) :
 /-- On the boundary of the half-space, deleting and reinserting the zeroth coordinate is the
 identity. -/
 @[simp]
-theorem boundaryParam_boundaryProj {y : EuclideanHalfSpace (n + 1)} (hy : y.1 0 = 0) :
-    boundaryParam n (euclideanHalfSpaceBoundaryProj n y.1) = y :=
+theorem boundaryParam_boundaryProj {y : EuclideanHalfSpace (n + 1)} (hy : y.val 0 = 0) :
+    boundaryParam n (euclideanHalfSpaceBoundaryProj n y.val) = y :=
   Subtype.ext (euclideanHalfSpaceBoundaryParam_proj (mem_euclideanHalfSpaceBoundary.2 hy))
 
 /-- The boundary parametrization is continuous. -/
@@ -297,7 +305,7 @@ theorem continuous_boundaryParam : Continuous (boundaryParam n) :=
 
 /-- The boundary projection is continuous. -/
 theorem continuous_boundaryProj : Continuous (boundaryProj n) :=
-  (euclideanHalfSpaceBoundaryProj n).continuous.comp continuous_subtype_val
+  (euclideanHalfSpaceBoundaryProj n).continuous.comp continuous_subtypeVal
 
 /-- The inverse of the model map `𝓡∂ (n + 1)` sends the parametrized coordinate hyperplane to the
 boundary parametrization. -/
@@ -322,7 +330,7 @@ end EuclideanHalfSpace
 hyperplane where the zeroth coordinate vanishes. -/
 @[simp]
 theorem boundary_euclideanHalfSpace (n : ℕ) :
-    (𝓡∂ (n + 1)).boundary (EuclideanHalfSpace (n + 1)) = {y | y.1 0 = 0} := by
+    (𝓡∂ (n + 1)).boundary (EuclideanHalfSpace (n + 1)) = {y | y.val 0 = 0} := by
   ext y
   rw [ModelWithCorners.boundary, mem_ofPred_eq, ModelWithCorners.isBoundaryPoint_iff,
     frontier_range_modelWithCornersEuclideanHalfSpace]

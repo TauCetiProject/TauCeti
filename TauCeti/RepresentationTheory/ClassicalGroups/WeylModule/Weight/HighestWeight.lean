@@ -82,8 +82,8 @@ moves the highest weight of the Weyl module of the polynomial part of `λ` back 
 theorem weightSpace_rationalWeylRep_self_ne_bot (k : Type u) [CommRing k] [Algebra ℚ k]
     [Nontrivial k] (l : DominantWeight n) :
     weightSpace (W := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule)
-      (rationalWeylRep k n l) l.1 ≠ ⊥ := by
-  have h : l.1 - (fun _ ↦ l.detShift) = (weightOfShape n l.detShiftShape).1 := by
+      (rationalWeylRep k n l) l.val ≠ ⊥ := by
+  have h : l.val - (fun _ ↦ l.detShift) = (weightOfShape n l.detShiftShape).val := by
     funext i
     rw [Pi.sub_apply, weightOfShape_apply, ← l.natCast_rowLen_detShiftShape_add_detShift i,
       add_sub_cancel_right]
@@ -98,11 +98,11 @@ theorem sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot {k : Type u} [Field k] 
     (ha : weightSpace (W := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule)
       (rationalWeylRep k n l) a ≠ ⊥) (m : ℕ) :
     ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j ≤
-      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l.1 j := by
+      ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, l.val j := by
   rw [weightSpace_rationalWeylRep] at ha
   have h := sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot ha m
   simp only [Pi.sub_apply, Finset.sum_sub_distrib, weightOfShape_apply] at h
-  have hl (j : Fin n) : (l.detShiftShape.rowLen j : ℤ) = l.1 j - l.detShift := by
+  have hl (j : Fin n) : (l.detShiftShape.rowLen j : ℤ) = l.val j - l.detShift := by
     rw [← l.natCast_rowLen_detShiftShape_add_detShift j, add_sub_cancel_right]
   simp only [hl, Finset.sum_sub_distrib] at h
   linarith
@@ -111,7 +111,7 @@ theorem sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot {k : Type u} [Field k] 
 every transvection `xᵢⱼ(c)` with `i < j` fixes each vector of weight `λ`. -/
 theorem rationalWeylRep_apply_transvectionUnit_eq_self (l : DominantWeight n)
     {i j : Fin n} (hij : i < j) {v : (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule}
-    (hv : v ∈ weightSpace (rationalWeylRep ℂ n l) l.1) (c : ℂ) :
+    (hv : v ∈ weightSpace (rationalWeylRep ℂ n l) l.val) (c : ℂ) :
     rationalWeylRep ℂ n l (transvectionUnit hij.ne c) v = v :=
   (isRationalRep_rationalWeylRep n l).apply_transvectionUnit_eq_self_of_forall_sum_le
     (fun _ ha ↦ sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot ha) hij hv c
@@ -120,7 +120,7 @@ theorem rationalWeylRep_apply_transvectionUnit_eq_self (l : DominantWeight n)
 transvection `xᵢⱼ(c)` with `i < j` fixes each vector of the weight of the shape `μ`. -/
 theorem weylRepOfShape_apply_transvectionUnit_eq_self (μ : YoungDiagram)
     {i j : Fin n} (hij : i < j) {v : (weylModuleOfShape ℂ n μ).toSubmodule}
-    (hv : v ∈ weightSpace (weylRepOfShape ℂ n μ) (weightOfShape n μ).1) (c : ℂ) :
+    (hv : v ∈ weightSpace (weylRepOfShape ℂ n μ) (weightOfShape n μ).val) (c : ℂ) :
     weylRepOfShape ℂ n μ (transvectionUnit hij.ne c) v = v :=
   (isPolynomialRep_weylRepOfShape n μ).isRationalRep.apply_transvectionUnit_eq_self_of_forall_sum_le
     (fun _ ha ↦ sum_le_sum_weightOfShape_of_weightSpace_weylRepOfShape_ne_bot ha) hij hv c

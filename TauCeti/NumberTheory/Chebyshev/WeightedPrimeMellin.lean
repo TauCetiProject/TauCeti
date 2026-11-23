@@ -44,6 +44,9 @@ smoothed integral and shifted prime series by `η⁻¹ + (log 4 + 4)` for `η > 
 * `TauCeti.norm_weightedPrimeSum_le_sum_primesLE`, `TauCeti.norm_weightedPrimeSum_le`,
   `TauCeti.norm_weightedPrimeSum_le_log_add`: comparison with `Σ_{p ≤ t} log p / p`, the
   elementary `(1 + log t)²` bound, and the linear Mertens bound `log t + (log 4 + 4)`;
+* `TauCeti.weightedPrimeSum_le_rpow_mul_sum`: Rankin's comparison
+  `weightedPrimeSum a x ≤ x^(σ-1) Σ_{p ≤ x} log p · a p / p^σ` for nonnegative real weights and
+  `1 ≤ σ`;
 * `TauCeti.smul_intervalIntegral_rpow_smul_weightedPrimeSum`: the finite-cutoff partial summation
   formula;
 * `TauCeti.integrableOn_rpow_smul_weightedPrimeSum`: Bochner integrability of `t^(-1-η) • A(t)`
@@ -186,6 +189,29 @@ theorem norm_weightedPrimeSum_le_log_add {a : ℕ → E} (ha : ∀ p, p.Prime �
     {t : ℝ} (ht : 1 ≤ t) :
     ‖weightedPrimeSum a t‖ ≤ log t + (log 4 + 4) :=
   (norm_weightedPrimeSum_le_sum_primesLE ha t).trans (Chebyshev.sum_primesLE_log_div_le ht)
+
+/-- **Rankin's comparison.** For real weights nonnegative on primes and `1 ≤ σ`, the
+weighted prime sum `Σ_{p ≤ x} (log p / p) a p` is at most `x^(σ-1) Σ_{p ≤ x} log p · a p / p^σ`,
+since `p^(σ-1) ≤ x^(σ-1)` for every `p ≤ x`. -/
+theorem weightedPrimeSum_le_rpow_mul_sum {a : ℕ → ℝ} (ha : ∀ p, p.Prime → 0 ≤ a p) {σ : ℝ}
+    (hσ : 1 ≤ σ) (x : ℝ) :
+    weightedPrimeSum a x ≤ x ^ (σ - 1) * ∑ p ∈ Nat.primesLE ⌊x⌋₊, log p * a p / (p : ℝ) ^ σ := by
+  rw [weightedPrimeSum_def, Finset.mul_sum]
+  refine Finset.sum_le_sum fun p hp ↦ ?_
+  obtain ⟨hpx, hp⟩ := Nat.mem_primesLE.mp hp
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.pos
+  have hpos : 0 < (p : ℝ) ^ (σ - 1) := rpow_pos_of_pos hp0 _
+  have hpow : (p : ℝ) ^ σ = p * (p : ℝ) ^ (σ - 1) := by
+    rw [← rpow_one_add' hp0.le (by linarith), add_sub_cancel]
+  have hle : 1 ≤ x ^ (σ - 1) / (p : ℝ) ^ (σ - 1) :=
+    (one_le_div hpos).mpr
+      (rpow_le_rpow hp0.le ((Nat.le_floor_iff' hp.ne_zero).mp hpx) (by linarith))
+  have h : x ^ (σ - 1) * (log p * a p / (p : ℝ) ^ σ) =
+      log p / p * a p * (x ^ (σ - 1) / (p : ℝ) ^ (σ - 1)) := by
+    rw [hpow]
+    field_simp
+  rw [smul_eq_mul, h]
+  exact le_mul_of_one_le_right (mul_nonneg (div_nonneg (log_natCast_nonneg p) hp0.le) (ha p hp)) hle
 
 /-! ### Partial summation at a finite cutoff -/
 

@@ -214,7 +214,7 @@ private theorem coeff_rename_toLex_det_submatrix_mvPolynomialX {r : ι → m} {c
     have h : ∑ i, Finsupp.single (toLex (r i, c (σ i))) 1 ≠
         ∑ i, Finsupp.single (toLex (r i, c i)) 1 :=
       fun h ↦ (toLex_sum_single_lt hr hc hσ).ne (congrArg toLex h)
-    rw [coeff_smul, coeff_monomial]
+    rw [AddMonoidAlgebra.coeff_smul_apply, coeff_monomial]
     simp [h]
   · simp
 
@@ -228,7 +228,7 @@ private theorem le_of_mem_support_rename_toLex_det_submatrix_mvPolynomialX {r : 
   classical
   rw [mem_support_iff, rename_toLex_det_submatrix_mvPolynomialX, coeff_sum] at ha
   obtain ⟨σ, -, hσ⟩ := Finset.exists_ne_zero_of_sum_ne_zero ha
-  rw [coeff_smul, coeff_monomial] at hσ
+  rw [AddMonoidAlgebra.coeff_smul_apply, coeff_monomial] at hσ
   obtain rfl : ∑ i, Finsupp.single (toLex (r i, c (σ i))) 1 = a := by
     by_contra h
     simp [h] at hσ

@@ -56,6 +56,9 @@ pulls `Θ^* ω₁` back to `Θ^* ω₀`, then `Θ ∘ Ψ ∘ Θ⁻¹` pulls `ω�
   along a (surjective) `C^n` local diffeomorphism is, for `m + 1 ≤ n`.
 * `IsLocalDiffeomorph.isClosed_mpullback_iff`: a smooth form is closed exactly when its pullback
   along a surjective smooth local diffeomorphism is.
+* `IsLocalDiffeomorphAt.exists_partialDiffeomorph_mpullback_eq`: if a local diffeomorphism `f`
+  at `x` pulls `ω` back to `η`, some partial diffeomorphism defined near `f x` and sending it to
+  `x` pulls `η` back to `ω`.
 * `IsLocalDiffeomorph.isBasic_of_mpullback_eq`: a form invariant under a family of maps over a
   local diffeomorphism that is transitive on its fibres is basic for it.
 * `IsLocalDiffeomorph.exists_mpullback_eq_iff`,
@@ -194,6 +197,39 @@ theorem IsLocalDiffeomorph.isSmoothForm_mpullback_iff [IsManifold I 1 M] [IsMani
   obtain ⟨x, rfl⟩ := hsurj y
   exact ((hf x).contMDiffAt_mpullback_form_iff hmn).mp (h x)
 
+/-- **Inverting a local pullback identity.** Let `f` be a `C^n` local diffeomorphism at `x`,
+`n ≠ 0`, which pulls `ω` back to `η` near `x`. Then a `C^n` partial diffeomorphism from `M'` to
+`M`, defined near `f x` and sending it to `x`, pulls `η` back to `ω` on its source. -/
+theorem IsLocalDiffeomorphAt.exists_partialDiffeomorph_mpullback_eq
+    (hf : IsLocalDiffeomorphAt I I' n f x) (hn : n ≠ 0) {ω : RoughForm I' M' F k}
+    {η : RoughForm I M F k} (hfω : ∀ᶠ y in 𝓝 x, mpullback I I' f ω y = η y) :
+    ∃ Λ : PartialDiffeomorph I' I M' M n, f x ∈ Λ.source ∧ Λ (f x) = x ∧
+      ∀ y ∈ Λ.source, mpullback I' I Λ η y = ω y := by
+  set Λ := hf.localInverse
+  -- An open neighbourhood `O` of `x` on which `f` is differentiable and pulls `ω` back to `η`.
+  obtain ⟨O, hOsub, hO, hxO⟩ := eventually_nhds_iff.1
+    (hfω.and (hf.eventually.mono fun y hy ↦ hy.mdifferentiableAt hn))
+  have hs : IsOpen (Λ.source ∩ Λ ⁻¹' O) :=
+    Λ.contMDiffOn_toFun.continuousOn.isOpen_inter_preimage Λ.open_source hO
+  have hΛx : Λ (f x) = x := hf.localInverse_left_inv hf.localInverse_mem_target
+  refine ⟨Λ.restrOpen _ hs, ?_, by rw [PartialDiffeomorph.coe_restrOpen, hΛx],
+    fun y hy ↦ ?_⟩
+  · rw [PartialDiffeomorph.restrOpen_source]
+    exact ⟨hf.localInverse_mem_source, hf.localInverse_mem_source,
+      by rw [mem_preimage, hΛx]; exact hxO⟩
+  rw [PartialDiffeomorph.restrOpen_source] at hy
+  obtain ⟨hyΛ, -, hyO⟩ := hy
+  have hΛd : MDifferentiableAt I' I Λ y := Λ.mdifferentiableAt hn hyΛ
+  -- On the source of `Λ`, `f ∘ Λ` is the identity.
+  have hid : f ∘ Λ =ᶠ[𝓝 y] id :=
+    eventually_of_mem (Λ.open_source.mem_nhds hyΛ) hf.localInverse_eqOn_right
+  rw [PartialDiffeomorph.coe_restrOpen]
+  calc mpullback I' I Λ η y = mpullback I' I Λ (mpullback I I' f ω) y :=
+        ContinuousAlternatingMap.ext fun v ↦ by
+          rw [mpullback_apply, mpullback_apply, (hOsub _ hyO).1]
+    _ = mpullback I' I' (f ∘ Λ) ω y := (mpullback_comp_at hΛd (hOsub _ hyO).2 ω).symm
+    _ = ω y := by rw [hid.mpullback_eq, mpullback_id]
+
 open scoped ContDiff in
 /-- **Descent of smooth forms along a surjective local diffeomorphism.** For a surjective smooth
 local diffeomorphism `f` and a family of smooth self-maps `σ i` of `M` over `f` that is transitive
@@ -208,7 +244,7 @@ theorem IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff [IsManifold I ∞ 
       ∀ i, SmoothForm.mpullback (σ i) (hσ i) α = α := by
   simp only [Subtype.ext_iff, SmoothForm.coe_mpullback]
   rw [← hf.exists_mpullback_eq_iff (by simp) (fun i ↦ (hσ i).mdifferentiable (by simp)) hfσ hσf]
-  refine ⟨fun ⟨β, hβ⟩ ↦ ⟨β.1, hβ⟩, fun ⟨β, hβ⟩ ↦ ⟨⟨β, ?_⟩, hβ⟩⟩
+  refine ⟨fun ⟨β, hβ⟩ ↦ ⟨β.val, hβ⟩, fun ⟨β, hβ⟩ ↦ ⟨⟨β, ?_⟩, hβ⟩⟩
   -- The descended rough form is smooth because its pullback `α` is.
   exact IsSmoothForm.mem_smoothBundleForms
     ((hf.isSmoothForm_mpullback_iff hsurj (by simp)).mp (hβ ▸ α.isSmoothForm))

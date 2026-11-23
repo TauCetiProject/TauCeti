@@ -11,23 +11,24 @@ public import TauCeti.Algebra.Module.Lattice
 /-!
 # Rationalizing integral Lie lattices
 
-Let `M` be a free full Lie lattice over a domain `R` in a Lie algebra `L` over its fraction field
-`K`. The underlying submodule inclusion exhibits `L` as the scalar extension `K ⊗[R] M`. This file
-proves that the canonical rationalization equivalence respects the Lie bracket, giving
+Let `M` be a free full Lie lattice over a commutative ring `R` in a Lie algebra `L` over a
+commutative `R`-algebra `K`. The underlying submodule inclusion exhibits `L` as the scalar
+extension `K ⊗[R] M`. This file proves that the canonical rationalization equivalence respects
+the Lie bracket, giving
 
 ```text
 K ⊗[R] M ≃ₗ⁅K⁆ L.
 ```
 
-The source carries Mathlib's scalar-extended Lie bracket. Thus the result identifies the generic
-fibre as a Lie algebra, rather than only as a vector space. Its pure-tensor and inverse equations
-make the equivalence usable without unfolding either the tensor-product bracket or the lattice
+The source carries Mathlib's scalar-extended Lie bracket. Thus the result identifies the scalar
+extension as a Lie algebra. Its pure-tensor and inverse equations make the equivalence usable
+without unfolding either the tensor-product bracket or the lattice
 rationalization construction.
 
 ## Main declaration
 
 * `LieSubalgebra.rationalizationEquiv`: the canonical Lie equivalence from the scalar
-  extension of a free full integral Lie subalgebra to its ambient rational Lie algebra.
+  extension of a free full Lie subalgebra to its ambient Lie algebra.
 
 ## References
 
@@ -49,14 +50,14 @@ section
 universe u v w
 
 variable {R : Type u} {K : Type v} {L : Type w}
-  [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+  [CommRing R] [CommRing K] [Algebra R K]
   [LieRing L] [LieAlgebra R L] [LieAlgebra K L] [IsScalarTower R K L]
 
 private theorem rationalizationEquiv_map_lie (M : LieSubalgebra R L)
-    [Module.Free R M] [M.toSubmodule.IsLattice K] (x y : K ⊗[R] M) :
-    Submodule.rationalizationEquiv M.toSubmodule ⁅x, y⁆ =
-      ⁅Submodule.rationalizationEquiv M.toSubmodule x,
-        Submodule.rationalizationEquiv M.toSubmodule y⁆ := by
+    [Module.Free R M] [M.toSubmodule.IsFullLattice K] (x y : K ⊗[R] M) :
+    Submodule.rationalizationEquiv (K := K) M.toSubmodule ⁅x, y⁆ =
+      ⁅Submodule.rationalizationEquiv (K := K) M.toSubmodule x,
+        Submodule.rationalizationEquiv (K := K) M.toSubmodule y⁆ := by
   -- `rw` cannot key Mathlib's Lie-module lemmas against the scalar-extension bracket, whose
   -- `Bracket` instance is not syntactically a `LieRingModule.toBracket` projection, so the
   -- rewrites on `K ⊗[R] M` name their arguments explicitly.
@@ -79,31 +80,31 @@ equivalence.
 The underlying linear equivalence is `Submodule.rationalizationEquiv`. The bracket on its
 source is Mathlib's scalar-extension bracket on `K ⊗[R] M`. -/
 noncomputable def rationalizationEquiv (M : LieSubalgebra R L)
-    [Module.Free R M] [M.toSubmodule.IsLattice K] :
+    [Module.Free R M] [M.toSubmodule.IsFullLattice K] :
     K ⊗[R] M ≃ₗ⁅K⁆ L where
-  __ := Submodule.rationalizationEquiv M.toSubmodule
+  __ := Submodule.rationalizationEquiv (K := K) M.toSubmodule
   map_lie' := by
     intro x y
     -- `LieEquiv` exposes the underlying `LinearEquiv` through a generated coercion wrapper.
-    change Submodule.rationalizationEquiv M.toSubmodule ⁅x, y⁆ =
-      ⁅Submodule.rationalizationEquiv M.toSubmodule x,
-        Submodule.rationalizationEquiv M.toSubmodule y⁆
-    exact LieSubalgebra.rationalizationEquiv_map_lie M x y
+    change Submodule.rationalizationEquiv (K := K) M.toSubmodule ⁅x, y⁆ =
+      ⁅Submodule.rationalizationEquiv (K := K) M.toSubmodule x,
+        Submodule.rationalizationEquiv (K := K) M.toSubmodule y⁆
+    exact LieSubalgebra.rationalizationEquiv_map_lie (K := K) M x y
 
 /-- Rationalization sends a pure tensor to scalar multiplication of the embedded integral
 element. -/
 @[simp]
 theorem rationalizationEquiv_tmul (M : LieSubalgebra R L)
-    [Module.Free R M] [M.toSubmodule.IsLattice K] (q : K) (x : M) :
-    LieSubalgebra.rationalizationEquiv M (q ⊗ₜ[R] x) = q • (x : L) :=
-  Submodule.rationalizationEquiv_tmul M.toSubmodule q x
+    [Module.Free R M] [M.toSubmodule.IsFullLattice K] (q : K) (x : M) :
+    LieSubalgebra.rationalizationEquiv (K := K) M (q ⊗ₜ[R] x) = q • (x : L) :=
+  Submodule.rationalizationEquiv_tmul (K := K) M.toSubmodule q x
 
 /-- The inverse rationalization sends an embedded integral element to its unit pure tensor. -/
 @[simp]
 theorem rationalizationEquiv_symm_coe (M : LieSubalgebra R L)
-    [Module.Free R M] [M.toSubmodule.IsLattice K] (x : M) :
-    (LieSubalgebra.rationalizationEquiv M).symm (x : L) = 1 ⊗ₜ[R] x :=
-  Submodule.rationalizationEquiv_symm_coe M.toSubmodule x
+    [Module.Free R M] [M.toSubmodule.IsFullLattice K] (x : M) :
+    (LieSubalgebra.rationalizationEquiv (K := K) M).symm (x : L) = 1 ⊗ₜ[R] x :=
+  Submodule.rationalizationEquiv_symm_coe (K := K) M.toSubmodule x
 
 end
 

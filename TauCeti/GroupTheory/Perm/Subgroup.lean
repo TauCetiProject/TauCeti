@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.GroupTheory.Perm.Subgroup
 public import Mathlib.Order.Sum.Order
+import Mathlib.GroupTheory.Perm.Finite
 import TauCeti.Data.Fintype.Sort
 
 /-!
@@ -22,7 +23,10 @@ transversal of the subgroup `Perm ι × Perm κ`, the range of `Equiv.Perm.sumCo
 orders, so do the shuffles, the permutations `σ` of `κ₁ ⊕ κ₂` that are increasing on each summand
 for the order induced by an injective map `f : κ₁ ⊕ κ₂ → L` to a linear order
 (`Equiv.Perm.isComplement_setOf_strictMono_sumCongrHom_range`), for instance for the lexicographic
-order (`Equiv.Perm.isComplement_setOf_strictMono_toLex_sumCongrHom_range`). The underlying fact is
+order (`Equiv.Perm.isComplement_setOf_strictMono_toLex_sumCongrHom_range`). Any non-identity shuffle
+must carry at least one element of the left summand into the right summand
+(`Equiv.Perm.exists_apply_inl_eq_inr_of_strictMono_of_ne_one`,
+`Equiv.Perm.exists_apply_inl_eq_inr_of_strictMono_toLex_of_ne_one`). The underlying fact is
 that exactly one permutation of a finite linear order sorts the values of an injective map
 (`Equiv.Perm.existsUnique_strictMono_comp`, from `TauCeti.Data.Fintype.Sort`).
 -/
@@ -121,5 +125,38 @@ theorem isComplement_setOf_strictMono_toLex_sumCongrHom_range (κ₁ κ₂ : Typ
       {σ : Perm (κ₁ ⊕ κ₂) | StrictMono (toLex ∘ σ ∘ Sum.inl) ∧ StrictMono (toLex ∘ σ ∘ Sum.inr)}
       (sumCongrHom κ₁ κ₂).range :=
   isComplement_setOf_strictMono_sumCongrHom_range toLex.injective
+
+/-- If `f : κ₁ ⊕ κ₂ → L` is strictly increasing on each summand of `κ₁ ⊕ κ₂`, then any non-identity
+permutation `σ` of `κ₁ ⊕ κ₂` such that `f ∘ σ` is also strictly increasing on each summand sends at
+least one element of `κ₁` into `κ₂`. -/
+theorem exists_apply_inl_eq_inr_of_strictMono_of_ne_one {κ₁ κ₂ L : Type*} [LinearOrder κ₁]
+    [Finite κ₁] [LinearOrder κ₂] [Finite κ₂] [LinearOrder L] {f : κ₁ ⊕ κ₂ → L}
+    (hfl : StrictMono (f ∘ Sum.inl)) (hfr : StrictMono (f ∘ Sum.inr))
+    {σ : Perm (κ₁ ⊕ κ₂)} (hσl : StrictMono (f ∘ σ ∘ Sum.inl))
+    (hσr : StrictMono (f ∘ σ ∘ Sum.inr)) (hne : σ ≠ 1) :
+    ∃ (a : κ₁) (b : κ₂), σ (Sum.inl a) = Sum.inr b := by
+  by_contra! h
+  have hmaps : Set.MapsTo σ (Set.range Sum.inl) (Set.range Sum.inl) := by
+    rintro _ ⟨a, rfl⟩
+    rcases h' : σ (Sum.inl a) with a' | b
+    · exact ⟨a', rfl⟩
+    · exact (h a b h').elim
+  obtain ⟨⟨p, q⟩, hpq⟩ := mem_sumCongrHom_range_of_perm_mapsTo_inl hmaps
+  have hp : p = 1 := (existsUnique_strictMono_comp hfl.injective).unique
+    (by simpa [← hpq, Function.comp_def] using hσl) hfl
+  have hq : q = 1 := (existsUnique_strictMono_comp hfr.injective).unique
+    (by simpa [← hpq, Function.comp_def] using hσr) hfr
+  exact hne (by simpa [hp, hq] using hpq.symm)
+
+/-- Any non-identity `(κ₁, κ₂)`-shuffle (strictly increasing on each summand in `Sum.Lex`) sends at
+least one element of `κ₁` into `κ₂`. -/
+theorem exists_apply_inl_eq_inr_of_strictMono_toLex_of_ne_one {κ₁ κ₂ : Type*} [LinearOrder κ₁]
+    [Finite κ₁] [LinearOrder κ₂] [Finite κ₂] {σ : Perm (κ₁ ⊕ κ₂)}
+    (hσl : StrictMono (toLex ∘ σ ∘ Sum.inl)) (hσr : StrictMono (toLex ∘ σ ∘ Sum.inr))
+    (hne : σ ≠ 1) :
+    ∃ (a : κ₁) (b : κ₂), σ (Sum.inl a) = Sum.inr b :=
+  exists_apply_inl_eq_inr_of_strictMono_of_ne_one
+    (fun _ _ h ↦ Sum.Lex.inl_lt_inl_iff.2 h) (fun _ _ h ↦ Sum.Lex.inr_lt_inr_iff.2 h)
+    hσl hσr hne
 
 end Equiv.Perm

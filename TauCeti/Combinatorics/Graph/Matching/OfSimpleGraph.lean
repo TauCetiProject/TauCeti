@@ -46,7 +46,7 @@ def matchingSubgraph (H : SimpleGraph V) (M : Set E(Graph.ofSimpleGraph H)) : H.
   adj_sub := by
     rintro x y ⟨e, -, he⟩
     rw [← H.mem_edgeSet, ← he]
-    exact e.2
+    exact e.property
   edge_vert := by
     rintro x y ⟨e, heM, he⟩
     exact ⟨e, heM, he.symm ▸ Sym2.mem_mk_left x y⟩
@@ -137,9 +137,9 @@ theorem matchingSubgraph_isMatching_iff (M : Set E(Graph.ofSimpleGraph H)) :
     intro z hz
     obtain ⟨f, hf, hfz⟩ := hz
     have hex : (Graph.ofSimpleGraph H).Inc e x :=
-      (Graph.inc_ofSimpleGraph H).mpr ⟨e.2, hxe⟩
+      (Graph.inc_ofSimpleGraph H).mpr ⟨e.property, hxe⟩
     have hfx : (Graph.ofSimpleGraph H).Inc f x :=
-      (Graph.inc_ofSimpleGraph H).mpr ⟨f.2, hfz.symm ▸ Sym2.mem_mk_left x z⟩
+      (Graph.inc_ofSimpleGraph H).mpr ⟨f.property, hfz.symm ▸ Sym2.mem_mk_left x z⟩
     have hef : e = f := hM.eq_of_inc he hf hex hfx
     apply Sym2.congr_right.mp
     exact hfz.symm.trans ((congrArg Subtype.val hef).symm.trans hey)
@@ -154,7 +154,7 @@ theorem Subgraph.matchingSubgraph_toGraphEdgeSet (S : H.Subgraph) (hS : S.IsMatc
     rw [mem_matchingSubgraph_verts]
     constructor
     · rintro ⟨e, heS, hxe⟩
-      exact Set.mem_iUnion₂.mpr ⟨e.1, heS, hxe⟩
+      exact Set.mem_iUnion₂.mpr ⟨e.val, heS, hxe⟩
     · intro hx
       obtain ⟨e, heS, hxe⟩ := Set.mem_iUnion₂.mp hx
       exact ⟨⟨e, S.edgeSet_subset heS⟩, heS, hxe⟩
@@ -166,17 +166,17 @@ def matchingEquiv (H : SimpleGraph V) :
     {M : Set E(Graph.ofSimpleGraph H) // (Graph.ofSimpleGraph H).IsMatching M} ≃
       {S : H.Subgraph // S.IsMatching} where
   toFun M := ⟨H.matchingSubgraph M,
-    (matchingSubgraph_isMatching_iff (H := H) M).2 M.2⟩
-  invFun S := ⟨S.1.toGraphEdgeSet,
+    (matchingSubgraph_isMatching_iff (H := H) M).2 M.property⟩
+  invFun S := ⟨S.val.toGraphEdgeSet,
     (matchingSubgraph_isMatching_iff (H := H) _).1 <| by
-      rw [Subgraph.matchingSubgraph_toGraphEdgeSet S.1 S.2]
-      exact S.2⟩
+      rw [Subgraph.matchingSubgraph_toGraphEdgeSet S.val S.property]
+      exact S.property⟩
   left_inv M := by
     apply Subtype.ext
-    exact toGraphEdgeSet_matchingSubgraph M.1
+    exact toGraphEdgeSet_matchingSubgraph M.val
   right_inv S := by
     apply Subtype.ext
-    exact Subgraph.matchingSubgraph_toGraphEdgeSet S.1 S.2
+    exact Subgraph.matchingSubgraph_toGraphEdgeSet S.val S.property
 
 /-- The matching equivalence sends a selected edge set to its traced subgraph. -/
 @[simp]
@@ -188,13 +188,13 @@ theorem matchingEquiv_apply (M :
 /-- The inverse matching equivalence selects precisely the edges of the Mathlib subgraph. -/
 @[simp]
 theorem matchingEquiv_symm_apply (S : {S : H.Subgraph // S.IsMatching}) :
-    ((matchingEquiv H).symm S : Set E(Graph.ofSimpleGraph H)) = S.1.toGraphEdgeSet :=
+    ((matchingEquiv H).symm S : Set E(Graph.ofSimpleGraph H)) = S.val.toGraphEdgeSet :=
   (rfl)
 
 /-- The matching equivalence preserves the number of selected edges. -/
 theorem ncard_edgeSet_matchingEquiv (M :
     {M : Set E(Graph.ofSimpleGraph H) // (Graph.ofSimpleGraph H).IsMatching M}) :
-    (matchingEquiv H M).1.edgeSet.ncard = M.1.ncard :=
+    (matchingEquiv H M).val.edgeSet.ncard = M.val.ncard :=
   by rw [matchingEquiv_apply, ncard_edgeSet_matchingSubgraph]
 
 /-- The traced subgraph is a perfect matching exactly when the selected multigraph edge set is a
@@ -207,7 +207,7 @@ theorem matchingSubgraph_isPerfectMatching_iff (M : Set E(Graph.ofSimpleGraph H)
     matchingSubgraph_isMatching_iff]
   refine and_congr_right fun _ ↦ ⟨fun h x ↦ ?_, fun h x ↦ ?_⟩
   · obtain ⟨e, heM, hxe⟩ := h x
-    exact ⟨e, heM, (Graph.inc_ofSimpleGraph H).mpr ⟨e.2, hxe⟩⟩
+    exact ⟨e, heM, (Graph.inc_ofSimpleGraph H).mpr ⟨e.property, hxe⟩⟩
   · obtain ⟨e, heM, hex⟩ := h ⟨x, Set.mem_univ x⟩
     exact ⟨e, heM, ((Graph.inc_ofSimpleGraph H).mp hex).2⟩
 
@@ -215,7 +215,7 @@ theorem matchingSubgraph_isPerfectMatching_iff (M : Set E(Graph.ofSimpleGraph H)
 edge-set matchings. -/
 theorem matchingEquiv_isPerfectMatching_iff (M :
     {M : Set E(Graph.ofSimpleGraph H) // (Graph.ofSimpleGraph H).IsMatching M}) :
-    (matchingEquiv H M).1.IsPerfectMatching ↔
+    (matchingEquiv H M).val.IsPerfectMatching ↔
       (Graph.ofSimpleGraph H).IsPerfectMatching M :=
   by rw [matchingEquiv_apply, matchingSubgraph_isPerfectMatching_iff]
 

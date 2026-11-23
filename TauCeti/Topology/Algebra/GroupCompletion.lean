@@ -133,10 +133,10 @@ theorem range_completion (f : G →+ H) (hf : IsInducing f) :
 /-- The completion of a continuous additive homomorphism is the completion of its corestriction
 to the range, followed by the completed inclusion of the range. -/
 theorem completion_eq_comp_rangeRestrict (f : G →+ H) (hf : Continuous f) :
-    f.completion hf = (f.range.subtype.completion continuous_subtype_val).comp
+    f.completion hf = (f.range.subtype.completion continuous_subtypeVal).comp
       (f.rangeRestrict.completion (hf.subtype_mk _)) := by
   refine ((completion_comp f.rangeRestrict f.range.subtype (hf.subtype_mk _)
-    continuous_subtype_val).trans ?_).symm
+    continuous_subtypeVal).trans ?_).symm
   simp only [subtype_comp_rangeRestrict]
 
 end AddMonoidHom

@@ -39,6 +39,9 @@ exchangeability-specific corollaries of that theorem live in
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
+* N. Halberstam and T. Hutchcroft, "Proof of the Diaconis–Freedman conjecture on
+  partially-exchangeable processes", arXiv:2405.20276 (2024), §1, which restates the
+  Diaconis–Freedman theorem with recurrence meaning return to the starting state infinitely often.
 
 Mathlib's `MeasureTheory.Conservative` is recurrence of a map — the Poincaré recurrence theorem
 — and is consumed here rather than reproved; recurrence of a process in the above sense is not in
@@ -63,7 +66,13 @@ section Defs
 variable {Ω α : Type*} [MeasurableSpace Ω]
 
 /-- A process is **recurrent** when, almost surely, every state it visits it visits infinitely
-often. This is Diaconis and Freedman's standing hypothesis on a Markov exchangeable process.
+often.
+
+The recurrence hypothesis of the Diaconis–Freedman theorem asks less: that the process return to
+its initial state infinitely often, the case `k = 0` of `recurrent_def`. In general this is strictly
+weaker, as the path `0, 1, 0, 2, 0, 3, …` shows. For a Markov exchangeable process under a finite
+measure, started at a fixed state, the two agree
+(`TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`).
 
 The body is not exposed; `recurrent_def` is the unfolding interface. -/
 def Recurrent (μ : Measure Ω) (X : ℕ → Ω → α) : Prop :=
