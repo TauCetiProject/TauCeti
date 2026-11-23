@@ -190,7 +190,7 @@ def fiber.basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app 
 
 @[simp]
 lemma fiber.coe_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
-    (fiber.basePoint q hx).1 = x :=
+    (fiber.basePoint q hx).val = x :=
   (rfl)
 
 lemma fiber.ι_app_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
