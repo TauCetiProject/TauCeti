@@ -121,6 +121,15 @@ theorem realCliffordSpinCContinuousMulEquivLastStabilizer_symm_apply_inclusion
       ⟨realCliffordSpinCInclusion n x, realCliffordSpinCInclusion_mem_lastStabilizer n x⟩ = x :=
   realCliffordSpinCEquivLastStabilizer_symm_apply_inclusion n x
 
+/-- The inverse topological stabilizer isomorphism, followed by the inclusion, is the subgroup
+inclusion. -/
+@[simp]
+theorem realCliffordSpinCInclusion_realCliffordSpinCContinuousMulEquivLastStabilizer_symm_apply
+    (y : realCliffordSpinCLastStabilizer n) :
+    realCliffordSpinCInclusion n ((realCliffordSpinCContinuousMulEquivLastStabilizer n).symm y) =
+      y :=
+  realCliffordSpinCInclusion_realCliffordSpinCEquivLastStabilizer_symm_apply n y
+
 /-- **Continuous local rotations onto the unit sphere.** Near every unit vector `u₀` of `ℝⁿ⁺¹`
 there is a map `g` to `Spinᶜ(n + 1)`, continuous near `u₀`, whose rotation carries the last
 coordinate vector to `u` for every unit vector `u` near `u₀`. -/

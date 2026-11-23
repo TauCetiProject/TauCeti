@@ -135,20 +135,10 @@ theorem toSpecialOrthogonal_realCliffordSpinCInclusion_snoc (x : realCliffordSpi
 /-- **The inclusion `Spinᶜ(n) → Spinᶜ(n + 1)` is injective.** -/
 theorem realCliffordSpinCInclusion_injective :
     Function.Injective (realCliffordSpinCInclusion n) := by
-  rw [injective_iff_map_eq_one]
-  intro x hx
-  obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective _ _ x
-  rw [realCliffordSpinCInclusion_mk, ← map_one (spinCGroup.mk _ _),
-    spinCGroup.mk_eq_mk_iff] at hx
-  rw [← map_one (spinCGroup.mk _ _), spinCGroup.mk_eq_mk_iff]
-  rcases hx with h | h
-  · left
-    simp only [Prod.ext_iff, Prod.fst_one, Prod.snd_one] at h ⊢
-    exact ⟨realCliffordSpinInclusion_injective n (by rw [map_one, h.1]), h.2⟩
-  · right
-    simp only [Prod.ext_iff, Prod.fst_mul, Prod.snd_mul, Prod.fst_one, Prod.snd_one] at h ⊢
-    refine ⟨realCliffordSpinInclusion_injective n ?_, h.2⟩
-    rw [map_one, h.1, map_mul, realCliffordSpinInclusion_negOne]
+  rw [realCliffordSpinCInclusion_eq_spinCGroupMap]
+  refine (realCliffordSpinInclusionIsometry n).spinCGroupMap_injective _ _ ?_
+  rw [← realCliffordSpinInclusion_eq_spinGroupMap]
+  exact realCliffordSpinInclusion_injective n
 
 /-- **The last-vector stabilizer in `Spinᶜ(n + 1)`**: the elements whose rotation fixes the last
 coordinate vector. -/
@@ -211,5 +201,12 @@ theorem realCliffordSpinCEquivLastStabilizer_symm_apply_inclusion
     (realCliffordSpinCEquivLastStabilizer n).symm
       ⟨realCliffordSpinCInclusion n x, realCliffordSpinCInclusion_mem_lastStabilizer n x⟩ = x :=
   (realCliffordSpinCEquivLastStabilizer n).symm_apply_eq.2 (Subtype.ext (rfl))
+
+/-- The inverse stabilizer isomorphism, followed by the inclusion, is the subgroup inclusion. -/
+@[simp]
+theorem realCliffordSpinCInclusion_realCliffordSpinCEquivLastStabilizer_symm_apply
+    (y : realCliffordSpinCLastStabilizer n) :
+    realCliffordSpinCInclusion n ((realCliffordSpinCEquivLastStabilizer n).symm y) = y := by
+  rw [← coe_realCliffordSpinCEquivLastStabilizer_apply, MulEquiv.apply_symm_apply]
 
 end CliffordAlgebra

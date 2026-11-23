@@ -82,6 +82,8 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
 * `CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`,
   `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`: charge conjugation is twisting by the
   inverse determinant, and the conjugate of `x` twisted by `z` is `x` twisted by `(det x)⁻¹ z⁻¹`.
+* `QuadraticMap.Isometry.spinCGroupMap_injective`: the induced map is injective when the induced
+  Spin map is.
 * `QuadraticMap.Isometry.det_spinCGroupMap` and
   `QuadraticMap.Isometry.toSpecialOrthogonal_spinCGroupMap_apply`: the induced map preserves the
   determinant character, and its rotations extend the rotations of the source along `f`;
@@ -551,6 +553,24 @@ theorem spinCGroupMap_comp (g : P →qᵢ R) (hR : R ≠ 0) :
   obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ x
   rw [MonoidHom.comp_apply, spinCGroupMap_mk, spinCGroupMap_mk, spinCGroupMap_mk,
     ← spinGroupMap_comp g f, MonoidHom.comp_apply]
+
+/-- **The induced map is injective when the induced Spin map is**: it sends `[s, z]` to
+`[f s, z]`, and `f` preserves the scalar `-1`. -/
+theorem spinCGroupMap_injective (hf : Function.Injective f.spinGroupMap) :
+    Function.Injective (f.spinCGroupMap hQ hP) := by
+  rw [injective_iff_map_eq_one]
+  intro x hx
+  obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective Q hQ x
+  rw [spinCGroupMap_mk, ← map_one (spinCGroup.mk P hP), spinCGroup.mk_eq_mk_iff] at hx
+  rw [← map_one (spinCGroup.mk Q hQ), spinCGroup.mk_eq_mk_iff]
+  rcases hx with h | h
+  · left
+    simp only [Prod.ext_iff, Prod.fst_one, Prod.snd_one] at h ⊢
+    exact ⟨hf (by rw [map_one, h.1]), h.2⟩
+  · right
+    simp only [Prod.ext_iff, Prod.fst_mul, Prod.snd_mul, Prod.fst_one, Prod.snd_one] at h ⊢
+    refine ⟨hf ?_, h.2⟩
+    rw [map_one, h.1, map_mul, spinGroupMap_negOne]
 
 /-- The induced map preserves the determinant character. -/
 @[simp]
