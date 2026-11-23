@@ -49,7 +49,7 @@ curves are the velocity curves of the motions
 For a hyperregular Lagrangian the Hamiltonian `H = E_L ∘ FL⁻¹` is invariant under the
 cotangent-lifted action (`TauCeti.IsHyperregularLagrangian.hamiltonian_smul`), so the moment map
 `μ` is conserved along the Hamiltonian motions in `T*M`
-(`TauCeti.IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn`); equivalently, every
+(`TauCeti.IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn`); moreover, every
 component of `μ` Poisson-commutes with `H`
 (`TauCeti.IsHyperregularLagrangian.isFirstIntegral_momentMap`). This is the same conservation
 law: the Legendre map carries the Lagrangian motions to the Hamiltonian ones
