@@ -123,15 +123,14 @@ theorem nonneg_S_eval_sub_one (ht : 2 ≤ t) : ∀ n : ℕ, 0 ≤ (S R ((n : ℤ
 values at indices `n` and `(n : ℤ) - 1` is strictly increasing in the natural index `n`. -/
 theorem S_eval_add_S_sub_one_eval_strictMono [Nontrivial R] (ht : 2 ≤ t) :
     StrictMono fun n : ℕ ↦ (S R (n : ℤ)).eval t + (S R ((n : ℤ) - 1)).eval t := by
-  apply strictMono_nat_of_lt_succ
-  intro n
-  have hlt := strictMono_S_eval ht (Nat.lt_succ_self n)
-  have hprev : (S R ((n : ℤ) - 1)).eval t ≤ (S R (((n + 1 : ℕ) : ℤ) - 1)).eval t := by
+  have hprev : Monotone fun n : ℕ ↦ (S R ((n : ℤ) - 1)).eval t := by
+    apply monotone_nat_of_le_succ
+    intro n
     cases n with
     | zero => simp [S_neg_one, S_zero]
     | succ n =>
       simpa only [Nat.cast_succ, add_sub_cancel_right] using
         monotone_S_eval ht (Nat.le_succ n)
-  exact add_lt_add_of_lt_of_le hlt hprev
+  exact (strictMono_S_eval ht).add_monotone hprev
 
 end Polynomial.Chebyshev

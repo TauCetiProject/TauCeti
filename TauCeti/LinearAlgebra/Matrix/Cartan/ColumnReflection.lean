@@ -95,6 +95,36 @@ theorem columnReflection_apply_eq_mulVec (i : κ) (c : κ → ℤ) :
   · simp
   · simp [hk]
 
+/-- Chebyshev coordinates for the power of two column reflections applied to the first
+simple column. -/
+theorem columnReflection_mul_columnReflection_pow_single (i j : κ) (n : ℕ) :
+    let t := A j i * A i j - 2
+    let s := (Polynomial.Chebyshev.S ℤ (n : ℤ)).eval t
+    let p := (Polynomial.Chebyshev.S ℤ ((n : ℤ) - 1)).eval t
+    ((A.columnReflection hA i * A.columnReflection hA j) ^ n) (Pi.single i 1) =
+      (s + p) • Pi.single i 1 + (p * -A i j) • Pi.single j 1 := by
+  dsimp only
+  unfold columnReflection
+  have hi : (LinearMap.proj i ∘ₗ Aᵀ.mulVecLin) (Pi.single i 1) = 2 := by simp [hA]
+  have hj : (LinearMap.proj j ∘ₗ Aᵀ.mulVecLin) (Pi.single j 1) = 2 := by simp [hA]
+  simpa using Module.reflection_mul_reflection_pow_apply_self hi hj n
+
+/-- Chebyshev coordinates after following a power of two column reflections with reflection
+at its second vertex. -/
+theorem columnReflection_mul_columnReflection_mul_columnReflection_pow_single (i j : κ)
+    (n : ℕ) :
+    let t := A j i * A i j - 2
+    let s := (Polynomial.Chebyshev.S ℤ (n : ℤ)).eval t
+    let p := (Polynomial.Chebyshev.S ℤ ((n : ℤ) - 1)).eval t
+    (A.columnReflection hA j * (A.columnReflection hA i * A.columnReflection hA j) ^ n)
+        (Pi.single i 1) =
+      (s + p) • Pi.single i 1 + (s * -A i j) • Pi.single j 1 := by
+  dsimp only
+  unfold columnReflection
+  have hi : (LinearMap.proj i ∘ₗ Aᵀ.mulVecLin) (Pi.single i 1) = 2 := by simp [hA]
+  have hj : (LinearMap.proj j ∘ₗ Aᵀ.mulVecLin) (Pi.single j 1) = 2 := by simp [hA]
+  simpa using Module.reflection_mul_reflection_mul_reflection_pow_apply_self hi hj n
+
 theorem columnReflection_involutive (i : κ) : Involutive (A.columnReflection hA i) :=
   Module.involutive_reflection _
 
