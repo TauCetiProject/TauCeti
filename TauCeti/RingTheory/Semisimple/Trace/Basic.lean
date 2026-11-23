@@ -56,7 +56,7 @@ variable {k : Type*} [Field k] {A : Type u} [Ring A] [Algebra k A]
 open scoped Classical in
 /-- An element acting as in `IsSemisimpleModule.exists_forall_smul_eq_ite` on the simple
 submodules of `X` acts in the same way on every simple module embedded in `X`. -/
-private theorem smul_eq_ite_of_injective {X : Type*} [AddCommGroup X] [Module A X]
+theorem smul_eq_ite_of_injective {X : Type*} [AddCommGroup X] [Module A X]
     {S : Type*} [AddCommGroup S] [Module A S] {a : A}
     (ha : ∀ T : Submodule A X, IsSimpleModule A T → ∀ x ∈ T,
       a • x = if Nonempty (T ≃ₗ[A] S) then x else 0)
