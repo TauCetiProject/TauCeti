@@ -50,14 +50,14 @@ noncomputable def cosetToOrbitRelMapFiber {H K : Subgroup G} (h : H ≤ K) (x : 
 @[simp]
 theorem cosetToOrbitRelMapFiber_apply {H K : Subgroup G} (h : H ≤ K) (x : X)
     (q : K ⧸ H.subgroupOf K) :
-    (cosetToOrbitRelMapFiber h x q).1 = orbitOfCosetTranslate x q :=
+    (cosetToOrbitRelMapFiber h x q).val = orbitOfCosetTranslate x q :=
   (rfl)
 
 /-- Every orbit in the fibre is represented by a coset. -/
 theorem cosetToOrbitRelMapFiber_surjective {H K : Subgroup G} (h : H ≤ K) (x : X) :
     Function.Surjective (cosetToOrbitRelMapFiber h x) := by
   intro q
-  let y : X := q.1.out
+  let y : X := q.val.out
   have hy : (Quotient.mk'' y : orbitRel.Quotient K X) = Quotient.mk'' x := by
     calc
       _ = Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := X) h)
@@ -66,7 +66,7 @@ theorem cosetToOrbitRelMapFiber_surjective {H K : Subgroup G} (h : H ≤ K) (x :
       _ = Quotient.mk'' x :=
         (congrArg (Setoid.map_of_le
           (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := X) h))
-          (Quotient.out_eq q.1)).trans q.2
+          (Quotient.out_eq q.val)).trans q.property
   rw [Quotient.eq'', orbitRel_apply, mem_orbit_iff] at hy
   obtain ⟨k, hk⟩ := hy
   refine ⟨((k⁻¹ : K) : K ⧸ H.subgroupOf K), Subtype.ext ?_⟩
@@ -75,7 +75,7 @@ theorem cosetToOrbitRelMapFiber_surjective {H K : Subgroup G} (h : H ≤ K) (x :
     (Quotient.mk'' z : orbitRel.Quotient H X)) hk
   have heq' : (Quotient.mk'' ((k : G) • x) : orbitRel.Quotient H X) =
       Quotient.mk'' y := by simpa [Subgroup.smul_def] using heq
-  simpa only [Subgroup.coe_inv, inv_inv] using heq'.trans (Quotient.out_eq q.1)
+  simpa only [Subgroup.coe_inv, inv_inv] using heq'.trans (Quotient.out_eq q.val)
 
 /-- Every fibre of the orbit map for a finite-index subgroup inclusion is finite. -/
 theorem finite_fiber_orbitRel_map_of_isFiniteRelIndex {H K : Subgroup G}
@@ -111,7 +111,7 @@ orbit of the corresponding inverse translate. -/
 @[simp]
 theorem stabilizerOrbitRelQuotientEquivOrbitRelMapFiber_mk {H K : Subgroup G}
     (h : H ≤ K) (x : X) (q : K ⧸ H.subgroupOf K) :
-    (stabilizerOrbitRelQuotientEquivOrbitRelMapFiber h x (Quotient.mk'' q)).1 =
+    (stabilizerOrbitRelQuotientEquivOrbitRelMapFiber h x (Quotient.mk'' q)).val =
       orbitOfCosetTranslate x q := by
   rw [stabilizerOrbitRelQuotientEquivOrbitRelMapFiber, Equiv.trans_apply,
     Setoid.quotientKerEquivOfSurjective, Setoid.quotientKerEquivOfRightInverse_apply]
@@ -150,7 +150,7 @@ noncomputable def cosetsEquivOrbitRelMapFiber {H K : Subgroup G} (h : H ≤ K)
     have hsfix : (s : K) • b = b := by
       have hker : (s : K) ∈ (MulAction.toPermHom K (K ⧸ H.subgroupOf K)).ker := by
         rw [← Subgroup.normalCore_eq_ker]
-        exact hx s.2
+        exact hx s.property
       rw [MonoidHom.mem_ker, MulAction.toPermHom_apply] at hker
       exact congrArg (fun e : Equiv.Perm (K ⧸ H.subgroupOf K) => e b) hker
     exact hs.symm.trans hsfix
@@ -160,7 +160,7 @@ noncomputable def cosetsEquivOrbitRelMapFiber {H K : Subgroup G} (h : H ≤ K)
 theorem cosetsEquivOrbitRelMapFiber_apply {H K : Subgroup G} (h : H ≤ K)
     (x : X) (hx : stabilizer K x ≤ (H.subgroupOf K).normalCore)
     (q : K ⧸ H.subgroupOf K) :
-    (cosetsEquivOrbitRelMapFiber h x hx q).1 = orbitOfCosetTranslate x q :=
+    (cosetsEquivOrbitRelMapFiber h x hx q).val = orbitOfCosetTranslate x q :=
   (rfl)
 
 /-- The fibre cardinality equals the subgroup index when the stabilizer acts trivially

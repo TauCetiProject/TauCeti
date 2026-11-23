@@ -178,12 +178,12 @@ private lemma exists_rowSums_eq {c : (Fin 2 → ZMod N) → ℂ} (hc : c ∈ eve
     rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
     intro W hW
     have hW0 : (W : (Fin 2 → ZMod N) → ℂ) = 0 := by
-      refine eq_zero_of_forall_tsum_zsmul_mul_zpow_neg_two_eq_zero W.2.1 fun a ha ↦ ?_
+      refine eq_zero_of_forall_tsum_zsmul_mul_zpow_neg_two_eq_zero W.property.1 fun a ha ↦ ?_
       have h := congrFun (congrArg Subtype.val (LinearMap.mem_ker.mp hW)) a
-      rwa [LinearMap.coe_restrict_apply, rowSums_apply_of_nonempty _ (W.2.2 a ha)] at h
+      rwa [LinearMap.coe_restrict_apply, rowSums_apply_of_nonempty _ (W.property.2 a ha)] at h
     exact Subtype.ext hW0
   obtain ⟨W, hW⟩ := (LinearMap.injective_iff_surjective.mp hinj) ⟨c, hc⟩
-  exact ⟨W, W.2, congrArg Subtype.val hW⟩
+  exact ⟨W, W.property, congrArg Subtype.val hW⟩
 
 /-! ### The decomposition -/
 

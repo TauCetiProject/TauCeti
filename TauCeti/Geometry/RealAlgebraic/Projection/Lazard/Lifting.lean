@@ -70,7 +70,7 @@ theorem nonempty_lazardDelineation_subfamily_of_lazardProjection
     (hproj : ∀ q ∈ F.lazardProjection B, ∀ x ∈ S, ∀ y ∈ S,
       q.lazardValuation x = q.lazardValuation y) :
     Nonempty (LazardDelineation
-      (fun b : A ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.1)) S) := by
+      (fun b : A ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.val)) S) := by
   classical
   let p : Polynomial (MvPolynomial (Fin n) ℝ) := ∏ b ∈ A, b
   have hp : p ≠ 0 := Finset.prod_ne_zero_iff.mpr fun b hb ↦ (hB.irreducible b (hAB hb)).ne_zero
@@ -92,7 +92,7 @@ theorem nonempty_lazardDelineation_subfamily_of_lazardProjection
   have hfamily :
       (fun _ : Unit ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm p)) =
         (fun _ : Unit ↦ ∏ b : A,
-          rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.1)) := by
+          rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.val)) := by
     funext _
     simp only [p, map_prod]
     exact (Finset.prod_coe_sort A _).symm
@@ -114,13 +114,13 @@ theorem nonempty_lazardDelineation_basis_of_lazardProjection (hB : F.IsIrreducib
     (hproj : ∀ q ∈ F.lazardProjection B, ∀ x ∈ S, ∀ y ∈ S,
       q.lazardValuation x = q.lazardValuation y) :
     Nonempty (LazardDelineation
-      (fun b : B ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.1)) S) := by
+      (fun b : B ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.val)) S) := by
   classical
   let A := B.filter fun b ↦ b.coeff 0 ≠ 0
   have hAB : A ⊆ B := Finset.filter_subset _ _
   obtain ⟨D⟩ := nonempty_lazardDelineation_subfamily_of_lazardProjection hB hAB
     (fun b hb ↦ (Finset.mem_filter.1 hb).2) hS hconn hproj
-  refine nonempty_lazardDelineation_of_comp (f := fun b : A ↦ ⟨b.1, hAB b.2⟩) D hconn ?_ ?_
+  refine nonempty_lazardDelineation_of_comp (f := fun b : A ↦ ⟨b.val, hAB b.property⟩) D hconn ?_ ?_
   · -- A basis member with zero constant coefficient is a nonzero multiple of the coordinate.
     rintro ⟨b, hb⟩ hbA
     have h0 : b.coeff 0 = 0 := not_not.1 fun h ↦ hbA ⟨⟨b, Finset.mem_filter.2 ⟨hb, h⟩⟩, rfl⟩
@@ -145,7 +145,7 @@ theorem nonempty_lazardDelineation_of_lazardProjection (hB : F.IsIrreducibleBasi
     (hproj : ∀ q ∈ F.lazardProjection B, ∀ x ∈ S, ∀ y ∈ S,
       q.lazardValuation x = q.lazardValuation y) :
     Nonempty (LazardDelineation
-      (fun f : F ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm f.1)) S) :=
+      (fun f : F ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm f.val)) S) :=
   (nonempty_lazardDelineation_basis_of_lazardProjection hB hS hconn hproj).map fun D ↦
     D.ofIrreducibleBasis hB fun _ hf ↦ hproj _ (Finset.content_mem_lazardProjection hf)
 

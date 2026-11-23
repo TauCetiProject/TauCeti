@@ -117,7 +117,7 @@ local notation "E" => zigzagAlgebraProjectiveCochainsEquivCorner k G
 @[simp]
 theorem coe_zigzagAlgebraProjectiveCochainsEquivCorner_apply
     (i j : V) (s : ℤ) (f : K i j s) :
-    (E i j s f : Z) = (f.1 (spanSingletonGenerator (e i)) : Z) := by
+    (E i j s f : Z) = (f.val (spanSingletonGenerator (e i)) : Z) := by
   let g := (I (P i) (P j) s).symm f
   calc
     _ = (g.hom (spanSingletonGenerator (e i)) : Z) :=
@@ -133,7 +133,7 @@ theorem coe_zigzagAlgebraProjectiveCochainsEquivCorner_apply
 private theorem projectiveCochainsEquivCorner_symm_apply_of_mem
     (i j : V) (s : ℤ) (x : C i j (-s)) {r : ℤ} {m : P i}
     (hm : m ∈ (P i).grading.piece r) :
-    ((E i j s).symm x).1 m = (-s * r).negOnePow •
+    ((E i j s).symm x).val m = (-s * r).negOnePow •
       ((H i j s).symm x).hom m := by
   simpa only [zigzagAlgebraProjectiveCochainsEquivCorner, LinearEquiv.symm_trans_apply,
     LinearEquiv.symm_symm] using
@@ -144,7 +144,7 @@ private theorem projectiveCochainsEquivCorner_symm_apply_of_mem
 theorem coe_zigzagAlgebraProjectiveCochainsEquivCorner_symm_mul_of_mem
     (i j : V) (s : ℤ) (x : C i j (-s)) {r : ℤ} {m : P i}
     (hm : m ∈ (P i).grading.piece r) :
-    (((E i j s).symm x).1 m : Z) = (-s * r).negOnePow • ((m : Z) * (x : Z)) := by
+    (((E i j s).symm x).val m : Z) = (-s * r).negOnePow • ((m : Z) * (x : Z)) := by
   have h := congrArg (fun y : P j ↦ (y : Z))
     (projectiveCochainsEquivCorner_symm_apply_of_mem k G i j s x hm)
   calc
@@ -157,7 +157,7 @@ theorem coe_zigzagAlgebraProjectiveCochainsEquivCorner_symm_mul_of_mem
 @[simp]
 theorem coe_zigzagAlgebraProjectiveCochainsEquivCorner_symm_apply_generator
     (i j : V) (s : ℤ) (x : C i j (-s)) :
-    (((E i j s).symm x).1 (spanSingletonGenerator (e i)) : Z) = (x : Z) := by
+    (((E i j s).symm x).val (spanSingletonGenerator (e i)) : Z) = (x : Z) := by
   have h := coe_zigzagAlgebraProjectiveCochainsEquivCorner_apply k G i j s
     ((E i j s).symm x)
   rw [LinearEquiv.apply_symm_apply] at h
@@ -252,7 +252,7 @@ local notation "L" => zigzagAlgebraProjectiveDGHomEquivCorner k G
 theorem coe_zigzagAlgebraProjectiveDGHomEquivCorner_apply
     (i j : V) (s : ℤ) (f : DGHom k (-s) (D i) (D j)) :
     (L i j s f : Z) =
-      ((DGRightModuleCat.dgHomLinearEquivCochains (D i) (D j) (-s) f).1
+      ((DGRightModuleCat.dgHomLinearEquivCochains (D i) (D j) (-s) f).val
         (spanSingletonGenerator (e i)) : Z) := by
   exact coe_zigzagAlgebraProjectiveCochainsEquivCorner_apply k G i j s _
 
@@ -262,7 +262,7 @@ theorem coe_zigzagAlgebraProjectiveDGHomEquivCorner_symm_mul_of_mem
     (i j : V) (s : ℤ) (x : C i j (-s)) {r : ℤ} {m : P i}
     (hm : m ∈ (P i).grading.piece r) :
     ((DGRightModuleCat.dgHomLinearEquivCochains (D i) (D j) (-s)
-        ((L i j s).symm x)).1 m : Z) =
+        ((L i j s).symm x)).val m : Z) =
       (-s * r).negOnePow • ((m : Z) * (x : Z)) := by
   have h : DGRightModuleCat.dgHomLinearEquivCochains (D i) (D j) (-s)
       ((L i j s).symm x) = (E i j s).symm x := by

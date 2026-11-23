@@ -30,13 +30,16 @@ positive dimension, the kernel of their product `Spinᶜ(Q) → SO(Q) × U(1)` i
 `{1, [1, -1]}` of order two, and the product is onto whenever the Spin action is. So `Spinᶜ(Q)` is
 a double cover of `SO(Q) × U(1)` whenever `Spin(Q)` is a double cover of `SO(Q)`.
 
-**Charge conjugation** `[s, z] ↦ [s, z⁻¹]` is an involutive automorphism of `Spinᶜ(Q)` which fixes
-the rotation and inverts the determinant character. It is right multiplication by the central
-element `[1, (det x)⁻¹]`, since `[s, z⁻¹] = [s, z] [1, z⁻²]`. Through the half-spin
-representations, on which complex conjugation of spinors intertwines `x` with its charge
-conjugate (`CliffordAlgebra.apply_spinCGroupHalfSpinRep_apply`), this identifies the conjugate of a
-`Spinᶜ` structure with determinant line `L` with its twist by `L⁻¹`, and the conjugate of its twist
-by a Hermitian line `E` with its twist by `L⁻¹ ⊗ E⁻¹`.
+**Charge conjugation** `[s, z] ↦ [s, z⁻¹]` is an involutive automorphism of `Spinᶜ(Q)` covering
+the identity of `SO(Q)` and inverting the determinant character. It is the structure-group form of
+passing from a `Spinᶜ` structure to its conjugate, the `Spinᶜ` structure with the same frame
+bundle, inverse determinant line and complex conjugate spinors. Since `z⁻¹ = z · (z²)⁻¹` on the
+circle, it is twisting by the inverse of the determinant character,
+`chargeConj x = x [1, (det x)⁻¹]`.
+Consequently the conjugate of a `Spinᶜ` structure `s` with determinant line `L`, twisted by a
+Hermitian line `E`, is `s` twisted by `L⁻¹ ⊗ E⁻¹`; for the canonical `Spinᶜ` structure `s_ω` of an
+almost Hermitian four-manifold, whose determinant line is the anticanonical line `K⁻¹`, this is
+Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the level of structure groups.
 
 ## Main definitions
 
@@ -71,21 +74,25 @@ by a Hermitian line `E` with its twist by `L⁻¹ ⊗ E⁻¹`.
 * `CliffordAlgebra.spinCGroup.circle_hom_ext`: a homomorphism from the circle to `Spinᶜ(Q)` is
   determined by its composite with `Spinᶜ(Q) → SO(Q) × U(1)`.
 * `CliffordAlgebra.spinCGroup.det_chargeConj`,
-  `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_chargeConj` and
-  `CliffordAlgebra.spinCGroup.chargeConj_chargeConj`: charge conjugation inverts the determinant
-  character, fixes the rotation and is an involution.
-* `CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det` and
-  `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`: charge conjugation is the twist by the
-  inverse determinant, `conj x = x [1, (det x)⁻¹]`, and `conj (x [1, u]) = x [1, (det x)⁻¹ u⁻¹]`.
+  `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_chargeConj`: charge conjugation inverts the
+  determinant character and covers the identity rotation.
+* `CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`,
+  `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`: charge conjugation is twisting by the
+  inverse determinant, and the conjugate of `x` twisted by `z` is `x` twisted by `(det x)⁻¹ z⁻¹`.
+* `CliffordAlgebra.spinCGroup.chargeConj_eq_self_iff`: the fixed points of charge conjugation are
+  the elements with trivial determinant character.
 * `QuadraticMap.Isometry.det_spinCGroupMap` and
   `QuadraticMap.Isometry.toSpecialOrthogonal_spinCGroupMap_apply`: the induced map preserves the
-  determinant character, and its rotations extend the rotations of the source along `f`.
+  determinant character, and its rotations extend the rotations of the source along `f`;
+  `QuadraticMap.Isometry.spinCGroupMap_chargeConj`: it commutes with charge conjugation.
 
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Appendix D.
 * J. W. Morgan, *The Seiberg–Witten equations and applications to the topology of smooth
   four-manifolds*, Mathematical Notes 44, Princeton University Press, 1996, §3.1.
+* C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
+  J. Amer. Math. Soc. 9 (1996), 845–918.
 -/
 
 public section
@@ -403,82 +410,86 @@ theorem circle_hom_ext [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
 
 /-! ### Charge conjugation -/
 
-/-- **Charge conjugation of `Spinᶜ(Q)`**: the automorphism `[s, z] ↦ [s, z⁻¹]`, well defined
-because `(-1)⁻¹ = -1`. It fixes the rotation and inverts the determinant character, and it is
-right multiplication by the central element `[1, (det x)⁻¹]`
-(`CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`). A conjugate-linear map of
-Clifford modules commuting with Clifford multiplication intertwines the half-spin action of `x`
-with that of its charge conjugate (`CliffordAlgebra.apply_spinCGroupHalfSpinRep_apply`), so the
-complex conjugate of a `Spinᶜ` structure `s` with determinant line `L` is `s ⊗ L⁻¹`. -/
-def chargeConj : spinCGroup Q hQ ≃* spinCGroup Q hQ :=
-  QuotientGroup.congr (spinCKernel Q hQ) (spinCKernel Q hQ)
-    ((MulEquiv.refl (spinGroup Q)).prodCongr (MulEquiv.inv Circle)) <| by
-    rw [spinCKernel, MonoidHom.map_zpowers]
-    -- Mathlib has no evaluation lemma for `MulEquiv.prodCongr`, which acts componentwise by
-    -- definition; the generator `(-1, -1)` goes to `(-1, (-1)⁻¹)`.
-    change Subgroup.zpowers (spinGroup.negOne Q hQ, (-1 : Circle)⁻¹) = _
+/-- **Charge conjugation** of `Spinᶜ(Q)`, the involutive automorphism `[s, z] ↦ [s, z⁻¹]`,
+well defined because `(-1)⁻¹ = -1`. It fixes `Spin(Q)`, so it covers the identity of `SO(Q)`, and
+it inverts the determinant character. A principal `Spinᶜ` bundle with transition functions
+`g_αβ` therefore has a conjugate with transition functions `chargeConj g_αβ`: its frame bundle is
+the same and its determinant line is the inverse. This is the conjugate `Spinᶜ` structure, whose
+spinors are the complex conjugates of the original ones
+(`CliffordAlgebra.map_coe_spinCGroupHalfSpinRep_apply`). -/
+def chargeConj : spinCGroup Q hQ ≃* spinCGroup Q hQ where
+  toFun := lift Q hQ ((mk Q hQ).comp ((MonoidHom.id _).prodMap invMonoidHom)) (by simp)
+  invFun := lift Q hQ ((mk Q hQ).comp ((MonoidHom.id _).prodMap invMonoidHom)) (by simp)
+  left_inv x := by
+    obtain ⟨⟨s, z⟩, rfl⟩ := mk_surjective Q hQ x
     simp
+  right_inv x := by
+    obtain ⟨⟨s, z⟩, rfl⟩ := mk_surjective Q hQ x
+    simp
+  map_mul' := map_mul _
 
 /-- Charge conjugation sends `[s, z]` to `[s, z⁻¹]`. -/
 @[simp]
 theorem chargeConj_mk (p : spinGroup Q × Circle) :
     chargeConj Q hQ (mk Q hQ p) = mk Q hQ (p.1, p.2⁻¹) :=
-  QuotientGroup.congr_mk ..
-
-/-- Charge conjugation is an involution. -/
-@[simp]
-theorem chargeConj_chargeConj (x : spinCGroup Q hQ) : chargeConj Q hQ (chargeConj Q hQ x) = x := by
-  obtain ⟨p, rfl⟩ := mk_surjective Q hQ x
-  simp
+  (rfl)
 
 /-- Charge conjugation is its own inverse. -/
 @[simp]
 theorem chargeConj_symm : (chargeConj Q hQ).symm = chargeConj Q hQ :=
-  MulEquiv.ext fun x ↦ (chargeConj Q hQ).symm_apply_eq.2 (chargeConj_chargeConj Q hQ x).symm
+  (rfl)
+
+/-- Charge conjugation is an involution. -/
+@[simp]
+theorem chargeConj_chargeConj (x : spinCGroup Q hQ) :
+    chargeConj Q hQ (chargeConj Q hQ x) = x :=
+  (chargeConj Q hQ).symm_apply_apply x
 
 /-- Charge conjugation fixes `Spin(Q) ⊆ Spinᶜ(Q)`. -/
 @[simp]
-theorem chargeConj_ofSpin (s : spinGroup Q) : chargeConj Q hQ (ofSpin Q hQ s) = ofSpin Q hQ s := by
+theorem chargeConj_ofSpin (s : spinGroup Q) :
+    chargeConj Q hQ (ofSpin Q hQ s) = ofSpin Q hQ s := by
   simp [ofSpin_apply]
 
-/-- Charge conjugation inverts the circle `U(1) ⊆ Spinᶜ(Q)`. -/
+/-- Charge conjugation inverts the central circle `U(1) ⊆ Spinᶜ(Q)`. -/
 @[simp]
 theorem chargeConj_ofCircle (z : Circle) :
     chargeConj Q hQ (ofCircle Q hQ z) = ofCircle Q hQ z⁻¹ := by
   simp [ofCircle_apply]
 
 /-- **Charge conjugation inverts the determinant character**: the determinant line of the
-conjugate `Spinᶜ` structure is the inverse of the determinant line. -/
+conjugate `Spinᶜ` structure is the inverse of the original one. -/
 @[simp]
-theorem det_chargeConj (x : spinCGroup Q hQ) : det Q hQ (chargeConj Q hQ x) = (det Q hQ x)⁻¹ := by
+theorem det_chargeConj (x : spinCGroup Q hQ) :
+    det Q hQ (chargeConj Q hQ x) = (det Q hQ x)⁻¹ := by
   obtain ⟨p, rfl⟩ := mk_surjective Q hQ x
   simp
 
-/-- Charge conjugation does not change the rotation: the conjugate `Spinᶜ` structure has the same
-frame bundle. -/
+/-- **Charge conjugation covers the identity rotation**: the conjugate `Spinᶜ` structure has the
+same frame bundle. -/
 @[simp]
 theorem toSpecialOrthogonal_chargeConj (x : spinCGroup Q hQ) :
     toSpecialOrthogonal Q hQ (chargeConj Q hQ x) = toSpecialOrthogonal Q hQ x := by
   obtain ⟨p, rfl⟩ := mk_surjective Q hQ x
   simp
 
-/-- **Charge conjugation is a twist by the inverse determinant**: `conj x = x [1, (det x)⁻¹]`. At
-`x = [s, z]` both sides are `[s, z⁻¹]`, since `z (z²)⁻¹ = z⁻¹`. For a `Spinᶜ` structure with
-determinant line `L`, this identifies the conjugate structure with the twist by `L⁻¹`, including
-its torsion, as an actual change of structure group rather than an equality of Chern classes. -/
+/-- **Charge conjugation is twisting by the inverse determinant**:
+`chargeConj x = x [1, (det x)⁻¹]`. Since `[s, z⁻¹] = [s, z] [1, (z²)⁻¹]`, the conjugate of a
+`Spinᶜ` structure `s` with determinant line `L` is `s` twisted by the line `L⁻¹`. -/
 theorem chargeConj_eq_mul_ofCircle_inv_det (x : spinCGroup Q hQ) :
     chargeConj Q hQ x = x * ofCircle Q hQ (det Q hQ x)⁻¹ := by
   obtain ⟨⟨s, z⟩, rfl⟩ := mk_surjective Q hQ x
-  rw [chargeConj_mk, det_mk, ofCircle_apply, ← map_mul, Prod.mk_mul_mk, mul_one, pow_two,
-    mul_inv, mul_inv_cancel_left]
+  simp [ofCircle_apply, ← map_mul, pow_two]
 
-/-- **Charge conjugation of a twisted structure**: `conj (x [1, u]) = x [1, (det x)⁻¹ u⁻¹]`. For a
-`Spinᶜ` structure `s` with determinant line `L` twisted by a Hermitian line `E`, this is the
-identification of the conjugate of `s ⊗ E` with `s ⊗ (L⁻¹ ⊗ E⁻¹)`; for the canonical structure of
-an almost Hermitian four-manifold, `L = K⁻¹` and the conjugate of `s ⊗ E` is `s ⊗ (K ⊗ E⁻¹)`. -/
-theorem chargeConj_mul_ofCircle (x : spinCGroup Q hQ) (u : Circle) :
-    chargeConj Q hQ (x * ofCircle Q hQ u) = x * ofCircle Q hQ ((det Q hQ x)⁻¹ * u⁻¹) := by
-  rw [map_mul, chargeConj_ofCircle, chargeConj_eq_mul_ofCircle_inv_det, mul_assoc, ← map_mul]
+/-- **The conjugate of a twisted `Spinᶜ` structure**:
+`chargeConj (x [1, z]) = x [1, (det x)⁻¹ z⁻¹]`.
+Twisting by `[1, z]` is tensoring the spinors with a Hermitian line `E`, so the conjugate of
+`s ⊗ E` is `s ⊗ (L⁻¹ ⊗ E⁻¹)`, where `L` is the determinant line of `s`. For the canonical `Spinᶜ`
+structure of an almost Hermitian four-manifold, `L = K⁻¹` and this is the isomorphism
+`conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the level of structure groups. -/
+theorem chargeConj_mul_ofCircle (x : spinCGroup Q hQ) (z : Circle) :
+    chargeConj Q hQ (x * ofCircle Q hQ z) = x * ofCircle Q hQ ((det Q hQ x)⁻¹ * z⁻¹) := by
+  rw [map_mul, chargeConj_ofCircle, chargeConj_eq_mul_ofCircle_inv_det, map_mul, mul_assoc]
 
 /-- An element is fixed by charge conjugation exactly when its determinant character is trivial. -/
 theorem chargeConj_eq_self_iff {x : spinCGroup Q hQ} :
@@ -542,14 +553,6 @@ theorem spinCGroupMap_comp (g : P →qᵢ R) (hR : R ≠ 0) :
   rw [MonoidHom.comp_apply, spinCGroupMap_mk, spinCGroupMap_mk, spinCGroupMap_mk,
     ← spinGroupMap_comp g f, MonoidHom.comp_apply]
 
-/-- The induced map commutes with charge conjugation. -/
-@[simp]
-theorem spinCGroupMap_chargeConj (x : spinCGroup Q hQ) :
-    f.spinCGroupMap hQ hP (spinCGroup.chargeConj Q hQ x) =
-      spinCGroup.chargeConj P hP (f.spinCGroupMap hQ hP x) := by
-  obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ x
-  simp
-
 /-- The induced map preserves the determinant character. -/
 @[simp]
 theorem det_spinCGroupMap (x : spinCGroup Q hQ) :
@@ -563,6 +566,14 @@ image of `f`, the rotation `π([f s, z])` acts as `f ∘ π([s, z])`. -/
 theorem toSpecialOrthogonal_spinCGroupMap_apply (x : spinCGroup Q hQ) (m : M) :
     (spinCGroup.toSpecialOrthogonal P hP (f.spinCGroupMap hQ hP x) : N ≃ₗ[ℝ] N) (f m) =
       f ((spinCGroup.toSpecialOrthogonal Q hQ x : M ≃ₗ[ℝ] M) m) := by
+  obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ x
+  simp
+
+/-- The induced map commutes with charge conjugation. -/
+@[simp]
+theorem spinCGroupMap_chargeConj (x : spinCGroup Q hQ) :
+    f.spinCGroupMap hQ hP (spinCGroup.chargeConj Q hQ x) =
+      spinCGroup.chargeConj P hP (f.spinCGroupMap hQ hP x) := by
   obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ x
   simp
 

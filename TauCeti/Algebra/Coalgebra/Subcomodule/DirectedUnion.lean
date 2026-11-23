@@ -50,7 +50,7 @@ private instance : Nonempty (finiteSubcomodules (R := R) (C := C) (M := M)) :=
 
 private theorem finiteSubcomodule_directed_toSubmodule :
     Directed (· ≤ ·) (fun N : finiteSubcomodules (R := R) (C := C) (M := M) =>
-      N.1.toSubmodule) := by
+      N.val.toSubmodule) := by
   intro N Q
   obtain ⟨K, hNK, hQK⟩ := directedOn_finiteSubcomodules.directed_val N Q
   exact ⟨K, toSubmodule_le_toSubmodule.2 hNK, toSubmodule_le_toSubmodule.2 hQK⟩
@@ -63,7 +63,7 @@ private theorem topEquiv_symm_apply (m : M) :
 
 private theorem iSup_finiteSubcomodule_toSubmodule_eq_top
     (hM : ∀ m : M, ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧ m ∈ N) :
-    (⨆ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1.toSubmodule) = ⊤ := by
+    (⨆ N : finiteSubcomodules (R := R) (C := C) (M := M), N.val.toSubmodule) = ⊤ := by
   rw [← sSup_toSubmodule, sSup_finiteSubcomodules_eq_top_of_exists_mem hM]
   rfl
 
@@ -74,12 +74,12 @@ subcomodules cover `M`; it is supplied by `exists_finite_subcomodule_mem` whenev
 projective as an `R`-module. -/
 noncomputable def finiteSubcomoduleLiftOfExistsMem
     (hM : ∀ m : M, ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧ m ∈ N)
-    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
+    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.val →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
-      (hNQ : N.1 ≤ Q.1),
+      (hNQ : N.val ≤ Q.val),
         f N = (f Q).comp (Submodule.inclusion hNQ)) : M →ₗ[R] P :=
   (Submodule.iSupLift
-      (fun N : finiteSubcomodules (R := R) (C := C) (M := M) => N.1.toSubmodule)
+      (fun N : finiteSubcomodules (R := R) (C := C) (M := M) => N.val.toSubmodule)
       finiteSubcomodule_directed_toSubmodule f
       (fun N Q h => hf N Q (toSubmodule_le_toSubmodule.1 h)) ⊤
       (iSup_finiteSubcomodule_toSubmodule_eq_top hM).symm.le).comp
@@ -90,11 +90,11 @@ subcomodule. -/
 @[simp]
 theorem finiteSubcomoduleLiftOfExistsMem_apply
     (hM : ∀ m : M, ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧ m ∈ N)
-    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
+    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.val →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
-      (hNQ : N.1 ≤ Q.1),
+      (hNQ : N.val ≤ Q.val),
         f N = (f Q).comp (Submodule.inclusion hNQ))
-    (N : finiteSubcomodules (R := R) (C := C) (M := M)) (m : N.1) :
+    (N : finiteSubcomodules (R := R) (C := C) (M := M)) (m : N.val) :
     finiteSubcomoduleLiftOfExistsMem hM f hf m = f N m := by
   unfold finiteSubcomoduleLiftOfExistsMem
   simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply]
@@ -106,12 +106,12 @@ prescribed map. -/
 @[simp]
 theorem finiteSubcomoduleLiftOfExistsMem_comp_subtype
     (hM : ∀ m : M, ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧ m ∈ N)
-    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
+    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.val →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
-      (hNQ : N.1 ≤ Q.1),
+      (hNQ : N.val ≤ Q.val),
         f N = (f Q).comp (Submodule.inclusion hNQ))
     (N : finiteSubcomodules (R := R) (C := C) (M := M)) :
-    (finiteSubcomoduleLiftOfExistsMem hM f hf).comp N.1.toSubmodule.subtype = f N := by
+    (finiteSubcomoduleLiftOfExistsMem hM f hf).comp N.val.toSubmodule.subtype = f N := by
   ext m
   exact finiteSubcomoduleLiftOfExistsMem_apply hM f hf N m
 
@@ -119,12 +119,12 @@ theorem finiteSubcomoduleLiftOfExistsMem_comp_subtype
 subcomodules. -/
 theorem finiteSubcomoduleLiftOfExistsMem_unique
     (hM : ∀ m : M, ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧ m ∈ N)
-    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
+    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.val →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
-      (hNQ : N.1 ≤ Q.1),
+      (hNQ : N.val ≤ Q.val),
         f N = (f Q).comp (Submodule.inclusion hNQ))
     (g : M →ₗ[R] P) (hg : ∀ (N : finiteSubcomodules (R := R) (C := C) (M := M))
-      (m : N.1), g m = f N m) :
+      (m : N.val), g m = f N m) :
     g = finiteSubcomoduleLiftOfExistsMem hM f hf := by
   ext m
   obtain ⟨N, hNfinite, hmN⟩ := hM m
@@ -135,9 +135,9 @@ theorem finiteSubcomoduleLiftOfExistsMem_unique
 /-- Glue a compatible family of linear maps on the finite subcomodules of a comodule whose
 coefficient coalgebra is projective as a module. -/
 noncomputable def finiteSubcomoduleLift [Module.Projective R C]
-    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
+    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.val →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
-      (hNQ : N.1 ≤ Q.1),
+      (hNQ : N.val ≤ Q.val),
         f N = (f Q).comp (Submodule.inclusion hNQ)) : M →ₗ[R] P :=
   finiteSubcomoduleLiftOfExistsMem exists_finite_subcomodule_mem f hf
 
@@ -145,11 +145,11 @@ noncomputable def finiteSubcomoduleLift [Module.Projective R C]
 the prescribed map on each finite subcomodule. -/
 @[simp]
 theorem finiteSubcomoduleLift_apply [Module.Projective R C]
-    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
+    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.val →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
-      (hNQ : N.1 ≤ Q.1),
+      (hNQ : N.val ≤ Q.val),
         f N = (f Q).comp (Submodule.inclusion hNQ))
-    (N : finiteSubcomodules (R := R) (C := C) (M := M)) (m : N.1) :
+    (N : finiteSubcomodules (R := R) (C := C) (M := M)) (m : N.val) :
     finiteSubcomoduleLift f hf m = f N m :=
   finiteSubcomoduleLiftOfExistsMem_apply exists_finite_subcomodule_mem f hf N m
 
@@ -157,23 +157,23 @@ theorem finiteSubcomoduleLift_apply [Module.Projective R C]
 one finite subcomodule recovers its prescribed map. -/
 @[simp]
 theorem finiteSubcomoduleLift_comp_subtype [Module.Projective R C]
-    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
+    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.val →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
-      (hNQ : N.1 ≤ Q.1),
+      (hNQ : N.val ≤ Q.val),
         f N = (f Q).comp (Submodule.inclusion hNQ))
     (N : finiteSubcomodules (R := R) (C := C) (M := M)) :
-    (finiteSubcomoduleLift f hf).comp N.1.toSubmodule.subtype = f N :=
+    (finiteSubcomoduleLift f hf).comp N.val.toSubmodule.subtype = f N :=
   finiteSubcomoduleLiftOfExistsMem_comp_subtype exists_finite_subcomodule_mem f hf N
 
 /-- A linear map out of a comodule over a projective coefficient coalgebra is determined by its
 restrictions to the finite subcomodules. -/
 theorem finiteSubcomoduleLift_unique [Module.Projective R C]
-    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
+    (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.val →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
-      (hNQ : N.1 ≤ Q.1),
+      (hNQ : N.val ≤ Q.val),
         f N = (f Q).comp (Submodule.inclusion hNQ))
     (g : M →ₗ[R] P) (hg : ∀ (N : finiteSubcomodules (R := R) (C := C) (M := M))
-      (m : N.1), g m = f N m) :
+      (m : N.val), g m = f N m) :
     g = finiteSubcomoduleLift f hf :=
   finiteSubcomoduleLiftOfExistsMem_unique exists_finite_subcomodule_mem f hf g hg
 

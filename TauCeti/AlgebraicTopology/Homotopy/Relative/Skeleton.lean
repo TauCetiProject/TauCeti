@@ -86,16 +86,16 @@ theorem subsingleton_relHomotopyGroup_skeletonLT {N : Type v} [Finite N] (hN : N
     rw [finrank_fintype_fun_eq_card, Fintype.card_option, ← Nat.card_eq_fintype_card]
     omega
   let f : C(closedBall (0 : Option N → ℝ) 1, C) :=
-    (p.1 : C(I × (I^N), C)).comp (e.symm : C(closedBall (0 : Option N → ℝ) 1, I × (I^N)))
+    (p.val : C(I × (I^N), C)).comp (e.symm : C(closedBall (0 : Option N → ℝ) 1, I × (I^N)))
   obtain ⟨g, ⟨H⟩, hg⟩ := exists_homotopicRel_skeletonLT_finrank (C := C)
     (isCompact_closedBall (0 : Option N → ℝ) 1) hdim f
-  have hfe (y : I × (I^N)) : f (e y) = p.1 y := congrArg p.1 (e.symm_apply_apply y)
+  have hfe (y : I × (I^N)) : f (e y) = p.val y := congrArg p.val (e.symm_apply_apply y)
   -- The boundary of the cube is sent into `A`, so the homotopy is relative to it.
   have hbd {y : I × (I^N)} (hy : y ∈ Cube.prodBoundary N) :
       ((f (e y) : C) : X) ∈ skeletonLT C (n + 1) := by
-    obtain ⟨b, hb⟩ := RelGenLoop.mapsTo_prodBoundary p.2 hy
+    obtain ⟨b, hb⟩ := RelGenLoop.mapsTo_prodBoundary p.property hy
     rw [hfe, ← SetLike.mem_coe, hA, ← hb]
-    exact b.2
+    exact b.property
   refine ⟨g.comp (e : C(I × (I^N), closedBall (0 : Option N → ℝ) 1)),
     ⟨{ toHomotopy := (H.toHomotopy.compContinuousMap
           (e : C(I × (I^N), closedBall (0 : Option N → ℝ) 1))).cast

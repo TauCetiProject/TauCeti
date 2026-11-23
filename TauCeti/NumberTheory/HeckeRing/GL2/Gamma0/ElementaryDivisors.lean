@@ -116,7 +116,7 @@ theorem mem_doubleCoset_natDiagGL_of_primitive [NeZero N] (m : ℕ) (x : GL (Fin
       (coprime_div_gcd_pow (NeZero.ne N) hm_pos.ne') fun p hp _ ↦ hprim p hp
   have hdc : ((γL : GL (Fin 2) ℚ) * x * (γR : GL (Fin 2) ℚ)) ∈
       DoubleCoset.doubleCoset x ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) :=
-    DoubleCoset.mem_doubleCoset.mpr ⟨γL, γL.2, γR, γR.2, rfl⟩
+    DoubleCoset.mem_doubleCoset.mpr ⟨γL, γL.property, γR, γR.property, rfl⟩
   have hy := mem_doubleCoset_natDiagGL_of_intWitness N m _ A' hA' hA'N
     ((det_eq_of_mem_doubleCoset_of_le_SLnZ 2 (Gamma0_map_le_SLnZ N) (Gamma0_map_le_SLnZ N)
       hdc).trans hdet)

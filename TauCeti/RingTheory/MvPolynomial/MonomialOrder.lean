@@ -92,7 +92,10 @@ the images of the generators of the Lazard ring in a polynomial ring.
 * `MonomialOrder.coeff_aeval_of_forall_le`, `MonomialOrder.degree_aeval_le_of_forall_le`: if all
   exponents `w` of `P` have `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of
   the coefficients of `P` at the `w` with `A w = e`, and `aeval c P` has leading exponent at
-  most `e` (the latter for any family `c`, monic or not).
+  most `e` (the latter for any family `c`, monic or not). When `A` is injective on `P.support`,
+  `MonomialOrder.exists_mem_support_degree_aeval_eq_and_leadingCoeff_eq` and
+  `MonomialOrder.aeval_ne_zero_of_injOn_linearCombination_degree` read off the leading exponent,
+  leading coefficient and nonvanishing of `aeval c P` for `P ≠ 0`.
 * `MonomialOrder.algebraicIndependent_of_degree_eq_single`: polynomials `yᵢ` whose leading
   monomial is `Xᵢ` are algebraically independent.
 -/
@@ -183,7 +186,7 @@ theorem withBotDegree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hf : f ≠ 
       (m.withBotDegree_add_le f (-q)).trans (max_le le_rfl (by rwa [withBotDegree_neg]))
   rw [EmbeddingLike.apply_eq_iff_eq, withBotDegree_eq_withBotDegree_iff] at heq
   have := m.degree_mem_support fun h0 ↦ hf (heq.2.1 h0)
-  rw [heq.1, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at this
+  rw [heq.1, mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, hqf, leadingCoeff, sub_self] at this
   exact this rfl
 
 /-- If `q` has degree at most that of `f` and the same coefficient of `X^(deg f)`, then
@@ -194,7 +197,8 @@ theorem degree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hfq : f - q ≠ 0)
   refine lt_of_le_of_ne (m.degree_sub_le.trans (max_le le_rfl hq)) ?_
   intro heq
   have hmem := m.degree_mem_support hfq
-  rw [m.toSyn.injective heq, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at hmem
+  rw [m.toSyn.injective heq, mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, hqf, leadingCoeff,
+    sub_self] at hmem
   exact hmem rfl
 
 /-- A monomial multiple `c X^a * b` has degree at most `a + deg b`. -/
@@ -693,6 +697,42 @@ theorem degree_aeval_le_of_forall_le {P : MvPolynomial ι R} {e : σ →₀ ℕ}
   refine m.degree_prod_le.trans ?_
   rw [map_sum]
   exact Finset.sum_le_sum fun i _ ↦ m.degree_pow_le _
+
+open scoped Classical in
+/-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If `A` is injective on
+the support of a nonzero polynomial `P`, then `aeval c P` has leading exponent `A w` and leading
+coefficient `P.coeff w` for the exponent `w ∈ P.support` maximizing `A w` in `m`. -/
+theorem exists_mem_support_degree_aeval_eq_and_leadingCoeff_eq (hc : ∀ i, m.Monic (c i))
+    {P : MvPolynomial ι R}
+    (hinj : Set.InjOn (Finsupp.linearCombination ℕ fun i ↦ m.degree (c i)) ↑P.support)
+    (hP : P ≠ 0) :
+    ∃ w ∈ P.support,
+      m.degree (aeval c P) = Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ∧
+      m.leadingCoeff (aeval c P) = P.coeff w := by
+  set A := Finsupp.linearCombination ℕ fun i ↦ m.degree (c i)
+  obtain ⟨w₀, hw₀, hmax⟩ :=
+    Finset.exists_max_image P.support (fun w ↦ m.toSyn (A w)) (support_nonempty.2 hP)
+  have hcoeff : (aeval c P).coeff (A w₀) = P.coeff w₀ := by
+    rw [coeff_aeval_of_forall_le hc hmax]
+    refine Finset.sum_eq_single w₀ (fun w hw hne ↦ ?_) (fun hnot ↦ ?_)
+    · obtain ⟨hw_supp, hw_eq⟩ := Finset.mem_filter.1 hw
+      exact absurd (hinj hw_supp hw₀ hw_eq) hne
+    · rw [Finset.mem_filter] at hnot
+      exact absurd ⟨hw₀, rfl⟩ hnot
+  have hmem : A w₀ ∈ (aeval c P).support :=
+    mem_support_iff.2 (hcoeff.trans_ne (mem_support_iff.1 hw₀))
+  have hdeg : m.degree (aeval c P) = A w₀ :=
+    m.toSyn.injective (le_antisymm (degree_aeval_le_of_forall_le hmax) (m.le_degree hmem))
+  exact ⟨w₀, hw₀, hdeg, by rw [leadingCoeff, hdeg, hcoeff]⟩
+
+/-- If `c` is a monic family whose leading-exponent map `w ↦ ∑ i, w i • m.degree (c i)` is
+injective on the support of `P ≠ 0`, then `aeval c P ≠ 0`. -/
+theorem aeval_ne_zero_of_injOn_linearCombination_degree (hc : ∀ i, m.Monic (c i))
+    {P : MvPolynomial ι R}
+    (hinj : Set.InjOn (Finsupp.linearCombination ℕ fun i ↦ m.degree (c i)) ↑P.support)
+    (hP : P ≠ 0) : aeval c P ≠ 0 := by
+  obtain ⟨w, hw, -, hlc⟩ := exists_mem_support_degree_aeval_eq_and_leadingCoeff_eq hc hinj hP
+  exact fun h ↦ mem_support_iff.1 hw (hlc.symm.trans (by simp [h]))
 
 end Substitution
 
