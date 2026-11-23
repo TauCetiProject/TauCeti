@@ -42,8 +42,8 @@ linear isometric equivalences `Φ x : E x ≃ₗᵢ[ℝ] E' x`, continuous as a 
 (`TauCeti.OrthonormalFrameLift.map`), keeps the principal bundle and composes the frame map with
 the induced map of orthonormal frame bundles (`TauCeti.OrthonormalFrameBundle.map`). Transport is
 functorial in `Φ`, for lifts and for their equivalences (`TauCeti.OrthonormalFrameLift.map_refl`,
-`TauCeti.OrthonormalFrameLift.map_map`, `TauCeti.OrthonormalFrameLift.Equiv.map_id`,
-`TauCeti.OrthonormalFrameLift.Equiv.map_map`), commutes with pullback
+`TauCeti.OrthonormalFrameLift.map_map`, `TauCeti.OrthonormalFrameLift.Equiv.map_refl_heq`,
+`TauCeti.OrthonormalFrameLift.Equiv.map_map_heq`), commutes with pullback
 (`TauCeti.OrthonormalFrameLift.pullback_map`), and is injective on lifts
 (`TauCeti.OrthonormalFrameLift.map_injective`); when the inverse isometries are continuous too it
 is a bijection from the lifts for `E` to the lifts for `E'`
@@ -68,8 +68,9 @@ main instance.
   precomposed with `ρ g`.
 * `TauCeti.OrthonormalFrameLift.finrank_fiber`, `TauCeti.OrthonormalFrameLift.finrank_model`:
   a bundle whose orthonormal frame bundle of rank `n` has a lift has fibres of dimension `n`.
-* `TauCeti.OrthonormalFrameLift.pullback_map`, `TauCeti.OrthonormalFrameLift.Equiv.pullback_map`:
-  transport of lifts and of equivalences commutes with pullback.
+* `TauCeti.OrthonormalFrameLift.pullback_map`,
+  `TauCeti.OrthonormalFrameLift.Equiv.pullback_map_heq`: transport of lifts and of equivalences
+  commutes with pullback.
 * `TauCeti.OrthonormalFrameLift.nonempty_equiv_map_iff`: transport preserves and reflects
   equivalence of lifts.
 
@@ -689,7 +690,7 @@ theorem Equiv.map_trans {s t u : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv 
 identified by `TauCeti.OrthonormalFrameLift.map_map`, transporting `φ` along `Φ` and then along `Ψ`
 is transporting it along the composite isometries. All act on the fibre over `x` by
 `φ.toEquiv x`. -/
-theorem Equiv.map_map {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+theorem Equiv.map_map_heq {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
     {Ψ : ∀ x, E' x ≃ₗᵢ[ℝ] E'' x}
     (hΨ : Continuous fun v : TotalSpace F' E' ↦ (⟨v.proj, Ψ v.proj v.snd⟩ : TotalSpace F'' E'')) :
     HEq ((φ.map Φ hΦ).map Ψ hΨ) (φ.map (fun x ↦ (Φ x).trans (Ψ x)) (hΨ.comp hΦ)) :=
@@ -697,7 +698,7 @@ theorem Equiv.map_map {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
 
 /-- **Transport of an equivalence along the identity isometries** is the equivalence itself, once
 the source and target lifts are identified by `TauCeti.OrthonormalFrameLift.map_refl`. -/
-theorem Equiv.map_id {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) :
+theorem Equiv.map_refl_heq {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) :
     HEq (φ.map (fun x ↦ LinearIsometryEquiv.refl ℝ (E x)) continuous_id) φ :=
   heq_of_toEquiv_heq (s.map_refl) (t.map_refl) fun _ ↦ HEq.rfl
 
@@ -810,7 +811,7 @@ theorem pullback_map (s : OrthonormalFrameLift F E n G ρ) (f : K) :
 identified by `TauCeti.OrthonormalFrameLift.pullback_map`, pulling back the transport of `φ` along
 `Φ` is transporting the pullback of `φ` along the pulled-back isometries `Φ (f y)`. Both act on the
 fibre over `y` by `φ.toEquiv (f y)`. -/
-theorem Equiv.pullback_map {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) (f : K) :
+theorem Equiv.pullback_map_heq {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) (f : K) :
     HEq ((φ.map Φ hΦ).pullback f)
       ((φ.pullback f).map (E' := (f : Y → X) *ᵖ E') (fun y ↦ Φ (f y))
         (Pullback.continuous_fiberwise (Φ := fun x ↦ Φ x) hΦ f)) :=
