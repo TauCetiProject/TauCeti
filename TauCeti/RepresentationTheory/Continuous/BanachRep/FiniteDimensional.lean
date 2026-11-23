@@ -17,11 +17,11 @@ The finite-dimensional representations form an extension-closed full subcategory
 `TauCeti.BanachRep`. The construction `TauCeti.ExactStructure.fullSubcategory` restricts the
 strict exact structure to this subcategory using `isExtensionClosed_isFiniteDimensional`.
 
-Over a complete nontrivially normed field, forgetting the norm gives an equivalence with
-`TauCeti.ContFDRep`, the category defined by continuity of matrix coefficients. Thus a continuous
-finite-dimensional representation can be used in Banach extensions independently of a choice
-of norm, with all its equivariant linear maps as morphisms. Under the inverse equivalence,
-algebraically short exact sequences give Banach conflations.
+Over a complete nontrivially normed field, forgetting the norm on carriers in the same universe
+as the field gives an equivalence with `TauCeti.ContFDRep`, the category defined by continuity
+of matrix coefficients. Thus a continuous finite-dimensional representation can be used in Banach
+extensions independently of a choice of norm, with all its equivariant linear maps as morphisms.
+Under the inverse equivalence, algebraically short exact sequences give Banach conflations.
 
 ## References
 
@@ -57,11 +57,12 @@ instance (X : (isFiniteDimensional.{w} 𝕜 G).FullSubcategory) :
   X.property
 
 /-- An extension in Banach representations of two finite-dimensional representations is
-finite-dimensional. As in `TauCeti.isExtensionClosed_finiteModules`, exactness and surjectivity
-of the underlying linear maps give finite generation of the middle term. -/
+finite-dimensional. -/
 theorem isExtensionClosed_isFiniteDimensional :
     exactStructure.IsExtensionClosed (isFiniteDimensional.{w} 𝕜 G) where
   prop_X₂ {S} hS h₁ h₃ := by
+    -- As in `TauCeti.isExtensionClosed_finiteModules`, exactness and surjectivity of the
+    -- underlying linear maps give finite generation of the middle term.
     have := (isFiniteDimensional_iff S.X₁).mp h₁
     have := (isFiniteDimensional_iff S.X₃).mp h₃
     obtain ⟨_, hsurj, hex⟩ := (exactStructure_conflation_iff S).mp hS
@@ -183,12 +184,18 @@ theorem _root_.CategoryTheory.ShortComplex.conflation_map_inv_toContFDRep
   let U := (FDRep.isContinuous 𝕜 G).ι ⋙ Action.forget (FGModuleCat 𝕜) G ⋙
     forget₂ (FGModuleCat 𝕜) (ModuleCat 𝕜)
   have hS : (S.map U).ShortExact := ModuleCat.shortComplex_shortExact _ hex hf hg
+  let T := S.map (toContFDRep 𝕜 G).inv
+  let M := (T.map (toContFDRep 𝕜 G)).map U
   -- The counit identifies the underlying complex of the Banach realization with the original.
-  have hBanach := ShortComplex.shortExact_of_iso
+  have hBanach : M.ShortExact := ShortComplex.shortExact_of_iso
     (U.mapShortComplex.mapIso (S.mapNatIso (toContFDRep 𝕜 G).asEquivalence.counitIso).symm) hS
-  exact (exactStructure_conflation_iff _).2 ⟨hBanach.moduleCat_injective_f,
-    hBanach.moduleCat_surjective_g,
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hBanach.exact⟩
+  let B := T.map (isFiniteDimensional 𝕜 G).ι
+  have hMf : ⇑M.f = ⇑B.f.hom := congrArg DFunLike.coe (toContFDRep_map_hom_hom_hom_hom T.f)
+  have hMg : ⇑M.g = ⇑B.g.hom := congrArg DFunLike.coe (toContFDRep_map_hom_hom_hom_hom T.g)
+  apply (exactStructure_conflation_iff B).2
+  rw [← hMf, ← hMg]
+  exact ⟨hBanach.moduleCat_injective_f, hBanach.moduleCat_surjective_g,
+    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact M).1 hBanach.exact⟩
 
 end BanachRep
 
