@@ -81,8 +81,6 @@ to torsion modules and do not require the coefficient algebra to be flat.
   along `algebraMap K L`.
 * `Representation.intertwiningMapBaseChangeEquiv`: flat scalar extension of commutative rings
   commutes with intertwiner spaces for finite monoids and finite free source modules.
-* `Representation.finrank_intertwiningMap_baseChange`: scalar extension to a nontrivial
-  commutative base-field algebra preserves the dimension of an intertwiner space.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
 * `LinearMap.isIntertwiningMap_liftBaseChange_iff`: the `A`-linear extension of an `R`-linear map
@@ -542,13 +540,33 @@ variable {W : Type*} [AddCommGroup W] [Module K W]
 
 namespace Representation
 
+/-- The **intertwining defect at `g`** of a linear map `f : V →ₗ[K] W`: `σ g ∘ₗ f - f ∘ₗ ρ g`,
+which vanishes exactly when `f` intertwines the actions of `g`. -/
+def intertwiningDefectAt (ρ : Representation K G V) (σ : Representation K G W) (g : G) :
+    (V →ₗ[K] W) →ₗ[K] V →ₗ[K] W :=
+  LinearMap.llcomp K V W W (σ g) - LinearMap.lcomp K W (ρ g)
+
+theorem intertwiningDefectAt_apply (ρ : Representation K G V) (σ : Representation K G W) (g : G)
+    (f : V →ₗ[K] W) : intertwiningDefectAt ρ σ g f = σ g ∘ₗ f - f ∘ₗ ρ g :=
+  (rfl)
+
+/-- **The intertwining defect of a base-changed map is the base change of its defect**: base
+change is compatible with composition and subtraction, and the base-changed representations act
+by the base-changed operators. -/
+theorem intertwiningDefectAt_baseChange (ρ : Representation K G V) (σ : Representation K G W)
+    (g : G) (f : V →ₗ[K] W) :
+    intertwiningDefectAt (baseChange L ρ) (baseChange L σ) g (f.baseChange L)
+      = (intertwiningDefectAt ρ σ g f).baseChange L := by
+  rw [intertwiningDefectAt_apply, intertwiningDefectAt_apply, LinearMap.baseChange_sub,
+    LinearMap.baseChange_comp, LinearMap.baseChange_comp, baseChange_apply, baseChange_apply]
+
 /-- The **intertwining defect** of a linear map `f : V →ₗ[K] W`: the family
 `g ↦ σ g ∘ₗ f - f ∘ₗ ρ g`, whose vanishing is exactly the intertwining condition. Writing the
 intertwiner space as the kernel of a single linear map is what makes it visibly compatible with
 base change, `L` being flat over `K`. -/
 private def intertwiningDefect (ρ : Representation K G V) (σ : Representation K G W) :
     (V →ₗ[K] W) →ₗ[K] (G → (V →ₗ[K] W)) :=
-  LinearMap.pi fun g => LinearMap.llcomp K V W W (σ g) - LinearMap.lcomp K W (ρ g)
+  LinearMap.pi (intertwiningDefectAt ρ σ)
 
 private theorem intertwiningDefect_apply (ρ : Representation K G V)
     (σ : Representation K G W) (f : V →ₗ[K] W) (g : G) :
@@ -573,15 +591,11 @@ private def intertwiningMapEquivKerDefect (ρ : Representation K G V)
   left_inv _ := rfl
   right_inv _ := rfl
 
-/-- **The intertwining defect of a base-changed map is the base change of its defect**,
-componentwise: base change is compatible with composition and subtraction, and the base-changed
-representations act by the base-changed operators. -/
 private theorem intertwiningDefect_baseChange (ρ : Representation K G V)
     (σ : Representation K G W) (f : V →ₗ[K] W) (g : G) :
     intertwiningDefect (baseChange L ρ) (baseChange L σ) (f.baseChange L) g
-      = (intertwiningDefect ρ σ f g).baseChange L := by
-  rw [intertwiningDefect_apply, intertwiningDefect_apply, LinearMap.baseChange_sub,
-    LinearMap.baseChange_comp, LinearMap.baseChange_comp, baseChange_apply, baseChange_apply]
+      = (intertwiningDefect ρ σ f g).baseChange L :=
+  intertwiningDefectAt_baseChange ρ σ g f
 
 variable [Module.Free K V] [Module.Finite K V]
 
@@ -661,27 +675,6 @@ theorem intertwiningMapBaseChangeEquiv_symm_baseChange
 end Representation
 
 end Intertwiner
-
-section IntertwinerDimension
-
-variable {K L G V W : Type*} [Field K] [CommRing L] [Nontrivial L] [Algebra K L]
-  [Monoid G] [Finite G] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [AddCommGroup W] [Module K W]
-
-namespace Representation
-
-/-- Scalar extension to a nontrivial commutative algebra preserves the dimension of an intertwiner
-space for a finite monoid and a finite-dimensional source representation. Over the coefficient
-algebra the extended intertwiner space is free, with the same rank as the original vector space. -/
-theorem finrank_intertwiningMap_baseChange
-    (ρ : Representation K G V) (σ : Representation K G W) :
-    Module.finrank L (IntertwiningMap (baseChange L ρ) (baseChange L σ))
-      = Module.finrank K (IntertwiningMap ρ σ) := by
-  rw [← (ρ.intertwiningMapBaseChangeEquiv σ).finrank_eq, Module.finrank_baseChange]
-
-end Representation
-
-end IntertwinerDimension
 
 namespace TauCeti
 

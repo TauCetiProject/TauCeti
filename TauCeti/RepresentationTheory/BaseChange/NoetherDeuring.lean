@@ -28,7 +28,7 @@ intertwines the base-changed actions exactly when every coefficient `fᵢ` inter
 because the coefficients of `g`-translates are the `g`-translates of the coefficients.
 
 Over a field `K`, the dimension of every intertwiner space is therefore unchanged by any nonzero
-commutative `K`-algebra `L` (`Representation.finrank_intertwiningMap_baseChange_of_free`). Since
+commutative `K`-algebra `L` (`Representation.finrank_intertwiningMap_baseChange`). Since
 semisimple representations are determined by such dimensions
 (`Representation.nonempty_equiv_of_finrank_intertwiningMap_eq`), two finite-dimensional
 semisimple representations over `K` that become equivalent over `L` are already equivalent over
@@ -41,7 +41,7 @@ if `AlgebraicClosure K ⊗ V ≅ AlgebraicClosure K ⊗ W`.
 
 * `Representation.intertwiningMapBaseChangeEquivOfFree`: free scalar extension commutes with
   intertwiner spaces, for any monoid.
-* `Representation.finrank_intertwiningMap_baseChange_of_free`: intertwiner dimensions over a field
+* `Representation.finrank_intertwiningMap_baseChange`: intertwiner dimensions over a field
   are unchanged by scalar extension.
 * `Representation.nonempty_equiv_of_nonempty_equiv_baseChange`: **Noether–Deuring for semisimple
   representations.** Semisimple representations that are equivalent after scalar extension are
@@ -68,36 +68,22 @@ section Intertwiner
 variable {K L G V W : Type*} [CommRing K] [CommRing L] [Algebra K L] [Monoid G]
   [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
 
-/-- The underlying linear map of an intertwining map, as a `K`-linear map. -/
-private def toLinearMapₗ (ρ : Representation K G V) (σ : Representation K G W) :
-    IntertwiningMap ρ σ →ₗ[K] V →ₗ[K] W where
-  toFun f := f.toLinearMap
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-/-- The intertwining defect `h ↦ σ g ∘ h - h ∘ ρ g` of a linear map at `g`. -/
-private def defect (ρ : Representation K G V) (σ : Representation K G W) (g : G) :
-    (V →ₗ[K] W) →ₗ[K] V →ₗ[K] W :=
-  LinearMap.llcomp K V W W (σ g) - LinearMap.lcomp K W (ρ g)
-
-private theorem defect_apply (ρ : Representation K G V) (σ : Representation K G W) (g : G)
-    (h : V →ₗ[K] W) : defect ρ σ g h = σ g ∘ₗ h - h ∘ₗ ρ g :=
-  rfl
-
 variable [Module.Projective K V] [Module.Finite K V]
 
 /-- The identification `L ⊗[K] Hom_K(V, W) ≃ Hom_L(L ⊗ V, L ⊗ W)` carries the scalar extension
 of the intertwining defect at `g` to the intertwining defect of the base-changed actions. -/
 private theorem baseChangeHom_equiv_lTensor_defect (ρ : Representation K G V)
     (σ : Representation K G W) (g : G) (x : L ⊗[K] (V →ₗ[K] W)) :
-    (LinearMap.isBaseChange_baseChangeHom K L V W).equiv ((defect ρ σ g).lTensor L x) =
+    (LinearMap.isBaseChange_baseChangeHom K L V W).equiv
+        ((intertwiningDefectAt ρ σ g).lTensor L x) =
       baseChange L σ g ∘ₗ (LinearMap.isBaseChange_baseChangeHom K L V W).equiv x -
         (LinearMap.isBaseChange_baseChangeHom K L V W).equiv x ∘ₗ baseChange L ρ g := by
   induction x with
   | tmul a h =>
-    simp only [LinearMap.lTensor_tmul, IsBaseChange.equiv_tmul, LinearMap.baseChangeHom_apply,
-      defect_apply, LinearMap.baseChange_sub, LinearMap.baseChange_comp, baseChange_apply,
-      LinearMap.comp_smul, LinearMap.smul_comp]
+    rw [LinearMap.lTensor_tmul, IsBaseChange.equiv_tmul, IsBaseChange.equiv_tmul,
+      LinearMap.baseChangeHom_apply, LinearMap.baseChangeHom_apply,
+      ← intertwiningDefectAt_baseChange, intertwiningDefectAt_apply, LinearMap.comp_smul,
+      LinearMap.smul_comp]
     exact smul_sub a (_ : L ⊗[K] V →ₗ[L] L ⊗[K] W) _
   | add x y hx hy =>
     simp only [map_add, hx, hy, LinearMap.comp_add, LinearMap.add_comp]
@@ -109,10 +95,11 @@ private noncomputable def intertwiningMapBaseChangeHom (ρ : Representation K G 
     L ⊗[K] IntertwiningMap ρ σ →ₗ[L] IntertwiningMap (baseChange L ρ) (baseChange L σ) where
   toFun x :=
     { toLinearMap := (LinearMap.isBaseChange_baseChangeHom K L V W).equiv
-        ((toLinearMapₗ ρ σ).baseChange L x)
+        ((IntertwiningMap.toLinearMapl (ρ := ρ) (σ := σ)).baseChange L x)
       isIntertwining' g := by
-        have h0 : defect ρ σ g ∘ₗ toLinearMapₗ ρ σ = 0 := LinearMap.ext fun f => by
-          simpa [defect_apply, toLinearMapₗ, sub_eq_zero] using (f.isIntertwining' g).symm
+        have h0 : intertwiningDefectAt ρ σ g ∘ₗ IntertwiningMap.toLinearMapl (ρ := ρ) (σ := σ) =
+            0 := LinearMap.ext fun f => by
+          simpa [intertwiningDefectAt_apply, sub_eq_zero] using (f.isIntertwining' g).symm
         refine (sub_eq_zero.mp ?_).symm
         rw [← baseChangeHom_equiv_lTensor_defect, LinearMap.baseChange_eq_lTensor,
           ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, h0, LinearMap.lTensor_zero,
@@ -124,7 +111,7 @@ private theorem toLinearMap_intertwiningMapBaseChangeHom (ρ : Representation K 
     (σ : Representation K G W) (x : L ⊗[K] IntertwiningMap ρ σ) :
     (intertwiningMapBaseChangeHom ρ σ x).toLinearMap =
       (LinearMap.isBaseChange_baseChangeHom K L V W).equiv
-        ((toLinearMapₗ ρ σ).baseChange L x) :=
+        ((IntertwiningMap.toLinearMapl (ρ := ρ) (σ := σ)).baseChange L x) :=
   rfl
 
 variable [Module.Free K L]
@@ -138,7 +125,7 @@ private theorem intertwiningMapBaseChangeHom_bijective (ρ : Representation K G 
     rw [toLinearMap_intertwiningMapBaseChangeHom, toLinearMap_intertwiningMapBaseChangeHom,
       e.injective.eq_iff, LinearMap.baseChange_eq_lTensor] at h
     exact Module.Flat.lTensor_preserves_injective_linearMap _
-      (fun f g hfg => IntertwiningMap.ext hfg) h
+      (IntertwiningMap.toLinearMap_injective ρ σ) h
   · -- Expand `F` in a `K`-basis of `L`; every coefficient intertwines `ρ` and `σ`.
     classical
     let b := Module.Free.chooseBasis K L
@@ -146,13 +133,13 @@ private theorem intertwiningMapBaseChangeHom_bijective (ρ : Representation K G 
     set x := e.symm F.toLinearMap
     have hcoeff (i : Module.Free.ChooseBasisIndex K L) (g : G) :
         c x i ∘ₗ ρ g = σ g ∘ₗ c x i := by
-      have h0 : (defect ρ σ g).lTensor L x = 0 := by
+      have h0 : (intertwiningDefectAt ρ σ g).lTensor L x = 0 := by
         apply e.injective
         rw [baseChangeHom_equiv_lTensor_defect, LinearEquiv.apply_symm_apply, map_zero,
           F.isIntertwining']
         exact sub_self (_ : L ⊗[K] V →ₗ[L] L ⊗[K] W)
-      have := b.equivFinsuppOfBasisLeft_lTensor_apply (defect ρ σ g) x i
-      rw [h0, map_zero, Finsupp.zero_apply, defect_apply] at this
+      have := b.equivFinsuppOfBasisLeft_lTensor_apply (intertwiningDefectAt ρ σ g) x i
+      rw [h0, map_zero, Finsupp.zero_apply, intertwiningDefectAt_apply] at this
       exact (sub_eq_zero.mp this.symm).symm
     let f (i : Module.Free.ChooseBasisIndex K L) : IntertwiningMap ρ σ := ⟨c x i, hcoeff i⟩
     refine ⟨∑ i ∈ (c x).support, b i ⊗ₜ[K] f i, IntertwiningMap.ext ?_⟩
@@ -181,7 +168,7 @@ theorem intertwiningMapBaseChangeEquivOfFree_tmul (ρ : Representation K G V)
     intertwiningMapBaseChangeEquivOfFree ρ σ (a ⊗ₜ[K] f) = a • f.baseChange L := by
   refine IntertwiningMap.ext ?_
   simp [intertwiningMapBaseChangeEquivOfFree, toLinearMap_intertwiningMapBaseChangeHom,
-    toLinearMapₗ, IsBaseChange.equiv_tmul]
+    IsBaseChange.equiv_tmul]
 
 end Intertwiner
 
@@ -194,7 +181,7 @@ variable {K L G V W : Type*} [Field K] [CommRing L] [Nontrivial L] [Algebra K L]
 monoid over a field `K`, with finite-dimensional source, and a nonzero commutative `K`-algebra
 `L`, the intertwiner space of the base changes has the same dimension over `L` as the original
 one over `K`. -/
-theorem finrank_intertwiningMap_baseChange_of_free (ρ : Representation K G V)
+theorem finrank_intertwiningMap_baseChange (ρ : Representation K G V)
     (σ : Representation K G W) :
     Module.finrank L (IntertwiningMap (baseChange L ρ) (baseChange L σ)) =
       Module.finrank K (IntertwiningMap ρ σ) := by
@@ -207,8 +194,8 @@ private theorem finrank_intertwiningMap_eq_of_equiv_baseChange {U : Type*} [AddC
     [Module K U] [FiniteDimensional K U] (τ : Representation K G U) {ρ : Representation K G V}
     {σ : Representation K G W} (e : (baseChange L ρ).Equiv (baseChange L σ)) :
     Module.finrank K (IntertwiningMap τ ρ) = Module.finrank K (IntertwiningMap τ σ) := by
-  rw [← finrank_intertwiningMap_baseChange_of_free (L := L),
-    ← finrank_intertwiningMap_baseChange_of_free (L := L)]
+  rw [← finrank_intertwiningMap_baseChange (L := L),
+    ← finrank_intertwiningMap_baseChange (L := L)]
   exact (Equiv.intertwiningMapCongr (Equiv.refl _) e).finrank_eq
 
 variable [FiniteDimensional K W]
