@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.PlusWeaklyFiniteType
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Open
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Open
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Discrete
 
 import Mathlib.RingTheory.RingHom.FiniteType
@@ -28,11 +28,12 @@ topologically of finite type (`TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType`
 identifying `X|_U` with `Spa(B, B⁺)` and `Y|_V` with `Spa(A, A⁺)` under which `f` corresponds to
 the morphism induced by `φ`.
 
-Using the `CompleteAffinoidOpen` chart machinery from `PreAdicSpace.Affinoid.Open`, this file
-develops the chart-refinement API for `LocallyOfFiniteType`, proves Wedhorn's Proposition 8.50
-(closure under composition, right-cancellation, and restriction along open immersions), gives the
-affinoid criterion for arbitrary (not necessarily complete) Huber pairs, and proves the discrete
-affinoid comparison `LocallyOfFiniteType (comapOfPair hS hT φ) ↔ φ.toRingHom.FiniteType`.
+Using the `CompleteAffinoidOpen` chart machinery from `PreAdicSpace.Affinoid.Complete.Open`,
+this file develops the chart-refinement API for `LocallyOfFiniteType`, proves Wedhorn's
+Proposition 8.50 (closure under composition, right-cancellation, and restriction along open
+immersions), gives the affinoid criterion for arbitrary (not necessarily complete) Huber pairs, and
+proves the discrete affinoid comparison
+`LocallyOfFiniteType (comapOfPair hS hT φ) ↔ φ.toRingHom.FiniteType`.
 
 ## Main definitions
 

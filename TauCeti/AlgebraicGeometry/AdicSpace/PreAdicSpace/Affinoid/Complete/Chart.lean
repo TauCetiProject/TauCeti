@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Open
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Open
 public import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
 
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
@@ -16,7 +16,7 @@ import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 
 This module packages the trivial `{1} / 1` rational-localisation completion of a sheafy
 presentation `(P, S)` into a `CompleteAffinoidOpen` interface built on
-`TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Open`:
+`TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Open`:
 
 * **Completed presentations**: `CompleteAffinoidOpen.ofCompletion` produces a complete Hausdorff
   sheafy `CompleteAffinoidOpen` over `Spa(A, A⁺)`, with canonical pair morphism

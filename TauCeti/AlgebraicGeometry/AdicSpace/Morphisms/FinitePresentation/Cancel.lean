@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FinitePresentation.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FinitePresentation.Chart
 
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
