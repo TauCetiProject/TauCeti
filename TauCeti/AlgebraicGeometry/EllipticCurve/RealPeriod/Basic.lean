@@ -462,7 +462,7 @@ theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard {W' : Weierstr
         rw [harea]
         refine lintegral_congr fun y ↦ ?_
         rw [← ENNReal.tsum_set_const]
-        exact tsum_congr fun x ↦ by rw [hr₀S x x.2.1, x.2.2]
+        exact tsum_congr fun x ↦ by rw [hr₀S x x.property.1, x.property.2]
     _ = ∫⁻ y, ((U ∩ r ⁻¹' {y}).encard : ℝ≥0∞) * g y :=
         lintegral_congr_ae (hfib.mono fun y hy ↦ by dsimp only; rw [hy])
     _ = _ := (setLIntegral_eq_of_support_subset hsupp).symm

@@ -49,7 +49,7 @@ theorem augmentationProjection_coe (x₀ : X)
     (v : (augmentationSubrepresentation R G X).toSubmodule) :
     augmentationProjection R G X x₀ v = v := by
   apply Subtype.ext
-  simp [mem_augmentationSubrepresentation_iff.mp v.2]
+  simp [mem_augmentationSubrepresentation_iff.mp v.property]
 
 /-- The kernel of the sum-zero projection consists of the multiples of the chosen basis vector. -/
 theorem exact_toSpanSingleton_augmentationProjection (x₀ : X) :
@@ -61,7 +61,7 @@ theorem exact_toSpanSingleton_augmentationProjection (x₀ : X) :
 /-- Every sum-zero vector is in the image of the projection. -/
 theorem augmentationProjection_surjective (x₀ : X) :
     Function.Surjective (augmentationProjection R G X x₀) :=
-  fun v => ⟨v.1, augmentationProjection_coe R G X x₀ v⟩
+  fun v => ⟨v.val, augmentationProjection_coe R G X x₀ v⟩
 
 variable {G X} in
 /-- Every linear form on the augmentation subrepresentation extends to `R[X]`, over any

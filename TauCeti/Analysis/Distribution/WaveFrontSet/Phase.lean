@@ -42,7 +42,7 @@ cutoff:
 `T g = ∑ m, (covolume L)⁻¹ 𝓕 g (m) T (χ e_(-m))`,
 
 summed over the dual of a lattice `L` none of whose nonzero translates of `K` meet `K`, with a
-cutoff `χ` equal to one on the support of `g` (`Distribution.hasSum_fourier_mul_localFourier`).
+cutoff `χ` equal to one on the support of `g` (`Distribution.hasSum_localFourier_ofSupportedIn`).
 The Fourier coefficient
 `𝓕 g (m) = ∫ ψ(x) 𝐞(-(t Φ(x) + ⟪x, m⟫)) dx` is an oscillatory integral whose phase has
 gradient `-(t ∇Φ(x) + m)`. When `‖t ∇Φ(x) + m‖ ≥ δ (t + ‖m‖)` on the support of `ψ`, it is
@@ -340,11 +340,28 @@ private theorem exists_forall_pow_mul_norm_complexPairing_le_of_forall {T : 𝓓
   have hfψ : (f : E → ℂ) = fun x ↦ ψ x * (𝐞 (-(t * Φ (p, x))) : ℂ) := funext hf
   have hsuppf : support f ⊆ tsupport ψ := fun x hx ↦
     subset_tsupport _ fun h ↦ hx (by simp [hf, h])
-  have hT := hasSum_fourier_mul_localFourier T (K := K) χ.tsupport_subset L
-    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.2 h)) subset_rfl
-    (closure_minimal (hsuppf.trans fun x hx ↦ subset_tsupport _ (by simp [hχψ x hx]))
-      (isClosed_tsupport _))
-    fun x hx ↦ hχψ x (hsuppf hx)
+  -- Expand `T f` in the Fourier series of `f` along `L`, with `χ` and `f` supported in `K`.
+  have hKΩ : (K : Set E) ⊆ Ω := χ.tsupport_subset
+  let χK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset χ.contDiff (subset_tsupport _)
+  let fK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset f.contDiff
+    (hsuppf.trans fun x hx ↦ subset_tsupport _ (by simp [hχψ x hx]))
+  have hχK : ofSupportedIn hKΩ χK = χ := by
+    ext x
+    simp [χK, ContDiffMapSupportedIn.coe_of_support_subset]
+  have hfK : ofSupportedIn hKΩ fK = f := by
+    ext x
+    simp [fK, ContDiffMapSupportedIn.coe_of_support_subset]
+  have hT := hasSum_localFourier_ofSupportedIn T hKΩ L
+    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.2 h)) (φ := fK) (χ := χK) (fun x hx ↦ by
+      have hx' : x ∈ support f := by simpa [fK, ContDiffMapSupportedIn.coe_of_support_subset]
+        using hx
+      simpa [χK, ContDiffMapSupportedIn.coe_of_support_subset] using hχψ x (hsuppf hx')) 0
+  rw [hχK, hfK, localFourier_eq T f fun x ↦ by simp] at hT
+  simp only [zero_sub, smul_eq_mul] at hT
+  have hfK' : (fK : E → ℂ) = f := by
+    ext x
+    simp [fK, ContDiffMapSupportedIn.coe_of_support_subset]
+  rw [hfK'] at hT
   -- Each term of the Fourier series is `O(t ^ (-N) (1 + ‖m‖) ^ (-r₀))`.
   have hterm (m : ZLattice.dual L) :
       ‖(t ^ N : ℂ) * (κ * 𝓕 (f : E → ℂ) m * T.localFourier χ (-m))‖ ≤
