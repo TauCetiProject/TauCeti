@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Basic
-public import TauCeti.AlgebraicTopology.Singular.Twisted.DirectedUnion
+public import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.DirectedUnion
 public import TauCeti.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
 
@@ -17,7 +17,7 @@ Let `C` be a relative CW complex in `X` and `L` a local coefficient system on `X
 subset of `C` lies in a skeleton (`TauCeti.exists_subset_skeletonLT_of_isCompact`), so twisted
 singular homology has compact supports along the skeleta: `Hₖ(C; L)` is the colimit of the twisted
 homology groups `Hₖ(skeletonLT C n; L)`, with `L` restricted to each skeleton
-(`TauCeti.isColimitSkeletonTwistedHomologyCocone`).
+(`TauCeti.isColimitMapCoconeTwistedHomologySkeleton`).
 
 Attaching the cells of dimension `n` leaves twisted homology unchanged in degrees `k` with
 `k ≠ n` and `k + 1 ≠ n`, since the relative groups of the pair of consecutive skeleta vanish
@@ -34,7 +34,7 @@ instance for the local system of fibre homology of a fibration over a CW complex
 
 ## Main results
 
-* `TauCeti.isColimitSkeletonTwistedHomologyCocone`: `Hₖ(C; L)` is the colimit of the twisted
+* `TauCeti.isColimitMapCoconeTwistedHomologySkeleton`: `Hₖ(C; L)` is the colimit of the twisted
   homology of the skeleta.
 * `TauCeti.isIso_homologyMap_subsetTwistedChainComplexMap_skeletonLT_succ`: attaching cells of
   dimension `n` leaves `Hₖ(-; L)` unchanged for `k ≠ n`, `k + 1 ≠ n`.
@@ -71,10 +71,10 @@ abbrev skeletonTwistedChainComplexCocone :=
 /-- **Twisted homology of a CW complex is the colimit over its skeleta.** For a relative CW
 complex `C` and a local coefficient system `L` on the ambient space, `Hₖ(C; L)` is the colimit of
 the twisted homology groups `Hₖ(skeletonLT C n; L)` under the maps induced by the inclusions. -/
-def isColimitSkeletonTwistedHomologyCocone (k : ℕ) :
+def isColimitMapCoconeTwistedHomologySkeleton (k : ℕ) :
     IsColimit ((HomologicalComplex.homologyFunctor _ _ k).mapCocone
       (skeletonTwistedChainComplexCocone C L)) :=
-  isColimitSubsetTwistedHomologyMapCocone L _ _
+  isColimitMapCoconeTwistedHomologySubset L _ _
     (fun _ hK hKC ↦ exists_subset_skeletonLT_of_isCompact hK hKC) k
 
 /-- **Attaching cells of one dimension in twisted homology.** The inclusion
@@ -124,6 +124,6 @@ theorem isIso_homologyMap_subsetTwistedChainComplexMap_skeletonLT {m k : ℕ} (h
     -- The diagram sends `j ≤ j + 1` to the map induced by the inclusion of consecutive skeleta.
     Functor.isEventuallyConstantFrom_of_isIso_map_succ fun j hj ↦
       isIso_homologyMap_subsetTwistedChainComplexMap_skeletonLT_succ C L (by lia) (by lia)
-  exact hconst.isIso_ι_of_isColimit (isColimitSkeletonTwistedHomologyCocone C L k)
+  exact hconst.isIso_ι_of_isColimit (isColimitMapCoconeTwistedHomologySkeleton C L k)
 
 end TauCeti
