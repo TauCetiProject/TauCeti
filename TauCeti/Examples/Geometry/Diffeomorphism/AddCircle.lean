@@ -41,7 +41,7 @@ open scoped Manifold ContDiff TauCeti.DiffeomorphWeakWhitney TauCeti.ManifoldWea
 
 namespace TauCeti
 
-local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+local instance sinPerturbationTwoPiPos : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
 /-- The lift `x ↦ x + sin ((k + 2) x) / (k + 2) ^ 2` of the `k`-th perturbation of the
 identity of the circle `ℝ / 2πℤ`. -/
