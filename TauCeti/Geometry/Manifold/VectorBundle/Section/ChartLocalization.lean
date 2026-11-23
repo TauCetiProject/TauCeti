@@ -16,9 +16,8 @@ import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 A compactly supported smooth section of a vector bundle can be cut into pieces supported in
 coordinate charts, and each piece read in a bundle frame is a native test function on the chart
-target. This module establishes frame-topology continuity of chart localization and chart reading
-(`Bundle.Trivialization.continuous_chartLocalization`,
-`Bundle.Trivialization.continuous_chartReadSupportedIn`,
+target. This module establishes frame-topology continuity of chart reading and cutoff localization
+(`Bundle.Trivialization.continuous_chartReadSupportedIn`,
 `Bundle.Trivialization.continuous_chartReadTestFunction`,
 `Bundle.Trivialization.continuous_chartCutoffTestFunction`) as well as the finite cutoff
 decomposition of sections supported in a compact set under any two-sided `C^n` chart/frame cover
@@ -65,73 +64,9 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
 
-/-- **Chart localizations are continuous** from the compact derivative topology of any frame system
-whose domains cover `c.symm '' L` to the topology of test functions supported in `L`. -/
-theorem continuous_chartLocalization
-    (ψ : C^n⟮I, M; ℝ⟯) (L : Compacts E) (hL : (L : Set E) ⊆ c.target)
-    (hψ : MapsTo c (_root_.tsupport ψ) L)
-    (hcover : ∀ x ∈ c.symm '' (L : Set E), ∃ i, x ∈ U i) :
-    letI := frameTopology (I := I) (n := n) e U hU
-    Continuous (t.chartLocalization c hc_symm hct ψ L hL hψ) := by
-  let := frameTopology (I := I) (n := n) e U hU
-  rw [ContDiffMapSupportedIn.continuous_iff_continuous_toContMDiffMap]
-  suffices h : Continuous fun s ↦ (t.chartLocalization c hc_symm hct ψ L hL hψ s).toContMDiffMap by
-    rwa [ContMDiffMap.manifoldWeakWhitneyTopology_self] at h
-  have hLc : IsOpen ((L : Set E)ᶜ) := L.isCompact.isClosed.isOpen_compl
-  have hVopen : IsOpen (⋃ i, (U i : Set M)) := isOpen_iUnion fun i ↦ (U i).isOpen
-  have hWtrue : IsOpen (c.target ∩ c.symm ⁻¹' (⋃ i, (U i : Set M))) :=
-    c.continuousOn_symm.isOpen_inter_preimage c.open_target hVopen
-  -- Cover `E` by the chart image of the covered part of the source, where the localization is a
-  -- coordinate expression, and by the complement of `L`, where it vanishes.
-  let W : Bool → Opens E := fun b ↦
-    bif b then ⟨c.target ∩ c.symm ⁻¹' (⋃ i, (U i : Set M)), hWtrue⟩
-    else ⟨(L : Set E)ᶜ, hLc⟩
-  have hW : ∀ y : E, ∃ b, y ∈ W b := by
-    intro y
-    by_cases hy : y ∈ L
-    · exact ⟨true, hL hy, mem_iUnion.2 (hcover (c.symm y) ⟨y, hy, rfl⟩)⟩
-    · exact ⟨false, hy⟩
-  refine ContMDiffMap.continuous_of_forall_continuous_restrict W hW fun b ↦ ?_
-  cases b with
-  | false =>
-    convert continuous_const (y := (0 : C^n⟮𝓘(ℝ, E), W false; 𝓘(ℝ, F), F⟯)) using 1
-    funext s
-    ext y
-    rw [ContMDiffMap.restrict_apply, ContDiffMapSupportedIn.coe_toContMDiffMap,
-      (t.chartLocalization c hc_symm hct ψ L hL hψ s).zero_on_compl y.property]
-    simp
-  | true =>
-    -- On the covered part of the chart target, compose the frame coefficients with the inverse
-    -- chart and multiply by `ψ ∘ c⁻¹`.
-    let Uc : Opens M := ⟨c.source ∩ ⋃ i, (U i : Set M), c.open_source.inter hVopen⟩
-    have hUct : (Uc : Set M) ⊆ t.baseSet := inter_subset_left.trans hct
-    have hsymm : ContMDiff 𝓘(ℝ, E) I n (fun y : W true ↦ c.symm y) :=
-      hc_symm.comp_contMDiff (contMDiff_subtypeVal (U := W true)) fun y ↦ y.property.1
-    let j : C^n⟮𝓘(ℝ, E), W true; I, Uc⟯ :=
-      ⟨fun y ↦ ⟨c.symm y, c.map_target y.property.1, y.property.2⟩,
-        (TauCeti.ContMDiff.subtypeVal_comp_iff Uc _).mp hsymm⟩
-    let A : C^n⟮𝓘(ℝ, E), W true; 𝓘(ℝ, F →L[ℝ] F), F →L[ℝ] F⟯ :=
-      ⟨fun y ↦ ψ (c.symm y) • ContinuousLinearMap.id ℝ F,
-        (ψ.contMDiff.comp hsymm).smul contMDiff_const⟩
-    have hcomp : Continuous fun s : Cₛ^n⟮I; F, V⟯ ↦
-        (t.frameCoordinates (U := Uc) hUct s).comp j :=
-      ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
-        ((continuous_frameCoordinates_of_subset_iUnion e U hU t Uc hUct
-          inter_subset_right).prodMk continuous_const)
-    refine ((ContMDiffMap.continuous_clmApplyLinearMap A).comp hcomp).congr fun s ↦ ?_
-    ext y
-    simp only [Function.comp_apply, ContMDiffMap.restrict_apply,
-      ContMDiffMap.clmApplyLinearMap_apply, ContMDiffMap.comp_apply,
-      ContDiffMapSupportedIn.coe_toContMDiffMap, frameCoordinates_apply]
-    simp [A, j, t.chartLocalization_apply_of_mem c hc_symm hct ψ L hL hψ s y.property.1,
-      t.continuousLinearMapAt_apply_of_mem (R := ℝ) (hct (c.map_target y.property.1))]
-
 /-- Reading sections supported in a compact subset `K ⊆ c.source` in a chart `c` with `C^n`
 inverse subordinate to `t` is continuous from any smooth frame topology whose domains cover `K`
-into `𝓓^{n}_{c '' K}(E, F)`.
-
-The continuity argument adapts `Bundle.Trivialization.continuous_chartLocalization` to the
-fixed-support reading map along `c⁻¹`. -/
+into `𝓓^{n}_{c '' K}(E, F)`. -/
 theorem continuous_chartReadSupportedIn {K : Compacts M} (hKc : (K : Set M) ⊆ c.source)
     (hcover : ∀ x ∈ (K : Set M), ∃ i, x ∈ U i) :
     letI := frameTopology (I := I) (n := n) e U hU
@@ -195,12 +130,8 @@ theorem continuous_chartReadTestFunction {K : Compacts M} (hKc : (K : Set M) ⊆
   refine ((TestFunction.ofSupportedInCLM ℝ hK't).continuous.comp
     (t.continuous_chartReadSupportedIn c hc_symm hct e U hU hKc hcover)).congr fun s ↦ ?_
   ext y
-  by_cases hy : y ∈ c.target
-  · simp [TestFunction.coe_ofSupportedInCLM,
-      t.chartReadSupportedIn_apply_of_mem c hc_symm hct hKc s hy,
-      t.chartReadTestFunction_apply_of_mem c hc_symm hct hKc s hy]
-  · simp [TestFunction.coe_ofSupportedInCLM,
-      t.chartReadSupportedIn_apply_of_notMem c hc_symm hct hKc s hy, hy]
+  simp [TestFunction.coe_ofSupportedInCLM, t.chartReadSupportedIn_apply,
+    t.chartReadTestFunction_apply]
 
 /-- Localizing sections by a compactly supported `C^n` cutoff `ρ` with `tsupport ρ ⊆ c.source`
 and reading the result in `t` and `c` is continuous from any smooth frame topology whose domains
@@ -217,10 +148,7 @@ theorem continuous_chartCutoffTestFunction
       mem_supportedIn.2 ((tsupport_smul_function_subset ρ s).trans inter_subset_left))).congr
     fun s ↦ ?_
   ext y
-  by_cases hy : y ∈ c.target
-  · simp [t.chartReadTestFunction_apply_of_mem c hc_symm hct (K := Kρ) hρs _ hy,
-      t.chartCutoffTestFunction_apply_of_mem c hc_symm hct ρ hρc hρs s hy]
-  · simp [hy]
+  simp [t.chartCutoffTestFunction_apply, t.chartReadTestFunction_apply]
 
 end Bundle.Trivialization
 
@@ -294,11 +222,7 @@ theorem exists_ofSupportedIn_eq_sum_chartCutoffTestFunction
     exact Finset.sum_congr rfl fun a _ ↦ congrArg Subtype.val
       ((t (r a)).chartTestSection_chartCutoffTestFunction (c (r a)) (hc_symm (r a))
         (hct (r a)) (hc (r a)) (χ a) (hχc a) (hχs a) s.val)
-  have heval : (∑ a : α, χ a • s.val : Cₛ^n⟮I; F, V⟯) x = ∑ a : α, (χ a • s.val) x := by
-    have h := congrFun (map_sum (coeAddHom I F n V) (fun a : α ↦ χ a • s.val) Finset.univ) x
-    simp only [coeAddHom_apply, Finset.sum_apply] at h
-    exact h
-  rw [ofSupportedIn_apply, hcoe, heval]
+  rw [ofSupportedIn_apply, hcoe, ContMDiffSection.coe_sum, Finset.sum_apply]
   simp only [ContMDiffSection.smul_apply, ← Finset.sum_smul]
   by_cases hx : x ∈ (K : Set M)
   · rw [hχsum x hx, one_smul]

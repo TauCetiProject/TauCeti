@@ -398,14 +398,11 @@ private def chartTestSectionInv (hc_univ : c.source = univ) :
       ((subset_univ _).trans hc_univ.symm.subset) ⟨s.val, mem_supportedIn.2 Subset.rfl⟩
   map_add' s₁ s₂ := by
     ext y
-    by_cases hy : y ∈ c.target
-    · simp [t.chartReadTestFunction_apply_of_mem _ _ _ _ _ hy]
-    · simp [t.chartReadTestFunction_apply_of_notMem _ _ _ _ _ hy]
+    simp [t.chartReadTestFunction_apply]
+    split_ifs <;> simp
   map_smul' a s := by
     ext y
-    by_cases hy : y ∈ c.target
-    · simp [t.chartReadTestFunction_apply_of_mem _ _ _ _ _ hy]
-    · simp [t.chartReadTestFunction_apply_of_notMem _ _ _ _ _ hy]
+    simp [t.chartReadTestFunction_apply]
 
 private theorem chartTestSectionInv_apply (hc_univ : c.source = univ)
     (s : compactlySupported I F n V) :
@@ -434,9 +431,7 @@ private theorem continuous_chartTestSectionInv (hc_univ : c.source = univ) :
   refine (t.continuous_chartReadTestFunction c hc_symm hct e U hU
     ((subset_univ _).trans hc_univ.symm.subset) fun x _ ↦ hcover x).congr fun s ↦ ?_
   ext y
-  by_cases hy : y ∈ c.target
-  · simp [chartTestSectionInv_apply, t.chartReadTestFunction_apply_of_mem _ _ _ _ _ hy]
-  · simp [chartTestSectionInv_apply, t.chartReadTestFunction_apply_of_notMem _ _ _ _ _ hy]
+  simp [chartTestSectionInv_apply, t.chartReadTestFunction_apply]
 
 /-- When a two-sided `C^n` chart `c` subordinate to a smooth bundle trivialization `t` has
 `c.source = univ`, extending native test functions by `t.chartTestSection` is a continuous linear

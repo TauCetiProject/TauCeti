@@ -171,119 +171,101 @@ variable {n : ℕ∞ω}
   {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
 
+/-- A frame-continuous linear map preserving `tsupport` is continuous between the corresponding
+compactly supported topologies. -/
+private theorem CompactlySupported.continuous_of_clm_tsupport_subset
+    {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    {V₁ : M → Type*} [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)]
+    [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, TopologicalSpace (V₁ x)]
+    [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁] [ContMDiffVectorBundle n F₁ V₁ I]
+    {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+    {V₂ : M → Type*} [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)]
+    [TopologicalSpace (TotalSpace F₂ V₂)] [∀ x, TopologicalSpace (V₂ x)]
+    [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂] [ContMDiffVectorBundle n F₂ V₂ I]
+    {ι₁ : Type*} (e₁ : ι₁ → Trivialization F₁ (π F₁ V₁)) [∀ i, MemTrivializationAtlas (e₁ i)]
+    (U₁ : ι₁ → Opens M) (hU₁ : ∀ i, (U₁ i : Set M) ⊆ (e₁ i).baseSet)
+    {ι₂ : Type*} (e₂ : ι₂ → Trivialization F₂ (π F₂ V₂)) [∀ i, MemTrivializationAtlas (e₂ i)]
+    (U₂ : ι₂ → Opens M) (hU₂ : ∀ i, (U₂ i : Set M) ⊆ (e₂ i).baseSet)
+    (T : compactlySupported I F₁ n V₁ →ₗ[ℝ] compactlySupported I F₂ n V₂)
+    (Tc : letI := frameTopology (I := I) (n := n) e₁ U₁ hU₁
+      letI := frameTopology (I := I) (n := n) e₂ U₂ hU₂
+      Cₛ^n⟮I; F₁, V₁⟯ →L[ℝ] Cₛ^n⟮I; F₂, V₂⟯)
+    (hcoe : ∀ s, (T s).val = Tc s.val)
+    (hsupp : ∀ s : Cₛ^n⟮I; F₁, V₁⟯, (Tc s).tsupport ⊆ s.tsupport) :
+    letI := compactlySupportedTopology (I := I) (n := n) e₁ U₁ hU₁
+    letI := compactlySupportedTopology (I := I) (n := n) e₂ U₂ hU₂
+    Continuous T := by
+  let _ := frameTopology (I := I) (n := n) e₁ U₁ hU₁
+  let _ := frameTopology (I := I) (n := n) e₂ U₂ hU₂
+  let _ := compactlySupportedTopology (I := I) (n := n) e₂ U₂ hU₂
+  let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e₂ U₂ hU₂
+  let _ := continuousSMul_compactlySupportedTopology (I := I) (n := n) e₂ U₂ hU₂
+  let _ := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) e₂ U₂ hU₂
+  refine (continuous_compactlySupportedTopology_iff e₁ U₁ hU₁ T).2 fun K ↦ ?_
+  have hstage : Continuous (fun s : supportedIn I F₁ n V₁ K ↦
+      (⟨Tc s.val, mem_supportedIn.2 ((hsupp s.val).trans (mem_supportedIn.1 s.property))⟩ :
+        supportedIn I F₂ n V₂ K)) :=
+    (Tc.continuous.comp continuous_subtypeVal).subtype_mk _
+  exact ((continuous_ofSupportedIn e₂ U₂ hU₂ K).comp hstage).congr fun s ↦
+    Subtype.ext (by simp [hcoe])
+
 /-- The real projection is continuous for matched fixed-compact inductive topologies. -/
 theorem CompactlySupported.continuous_realPart :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
-    Continuous (CompactlySupported.realPart (n := n) (I := I) (F := F) (V := V)) := by
-  let _ := frameTopology (I := I) (n := n) e U hU
-  let _ := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
-  let _ := compactlySupportedTopology (I := I) (n := n) e U hU
-  let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e U hU
-  let _ := continuousSMul_compactlySupportedTopology (I := I) (n := n) e U hU
-  let _ := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) e U hU
-  refine (continuous_compactlySupportedTopology_iff (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
-    (CompactlySupported.realPart (n := n) (I := I) (F := F) (V := V))).2 fun K ↦ ?_
-  have hstage : Continuous (fun s : supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K ↦
-      (⟨ContMDiffSection.realPartCLM e U hU s.val, mem_supportedIn.2 (by
-        rw [ContMDiffSection.realPartCLM_apply]
-        exact (tsupport_realPartLinearMap_subset s.val).trans
-          (mem_supportedIn.1 s.property))⟩ : supportedIn I F n V K)) :=
-    ((ContMDiffSection.realPartCLM e U hU).continuous.comp continuous_subtypeVal).subtype_mk _
-  exact ((continuous_ofSupportedIn e U hU K).comp hstage).congr fun s ↦
-    Subtype.ext (by simp [ContMDiffSection.realPartCLM_apply])
+    Continuous (CompactlySupported.realPart (n := n) (I := I) (F := F) (V := V)) :=
+  CompactlySupported.continuous_of_clm_tsupport_subset
+    (fun i ↦ (e i).complexification) U (by simpa only [Trivialization.baseSet_complexification]
+      using hU) e U hU
+    (CompactlySupported.realPart (n := n) (I := I) (F := F) (V := V))
+    (ContMDiffSection.realPartCLM e U hU)
+    (fun _ ↦ by simp [ContMDiffSection.realPartCLM_apply])
+    (fun s ↦ by
+      simpa [ContMDiffSection.realPartCLM_apply] using tsupport_realPartLinearMap_subset s)
 
 /-- The imaginary projection is continuous for matched fixed-compact inductive topologies. -/
 theorem CompactlySupported.continuous_imaginaryPart :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
-    Continuous (CompactlySupported.imaginaryPart (n := n) (I := I) (F := F) (V := V)) := by
-  let _ := frameTopology (I := I) (n := n) e U hU
-  let _ := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
-  let _ := compactlySupportedTopology (I := I) (n := n) e U hU
-  let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e U hU
-  let _ := continuousSMul_compactlySupportedTopology (I := I) (n := n) e U hU
-  let _ := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) e U hU
-  refine (continuous_compactlySupportedTopology_iff (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
-    (CompactlySupported.imaginaryPart (n := n) (I := I) (F := F) (V := V))).2 fun K ↦ ?_
-  have hstage : Continuous (fun s : supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K ↦
-      (⟨ContMDiffSection.imaginaryPartCLM e U hU s.val, mem_supportedIn.2 (by
-        rw [ContMDiffSection.imaginaryPartCLM_apply]
-        exact (tsupport_imaginaryPartLinearMap_subset s.val).trans
-          (mem_supportedIn.1 s.property))⟩ : supportedIn I F n V K)) :=
-    ((ContMDiffSection.imaginaryPartCLM e U hU).continuous.comp continuous_subtypeVal).subtype_mk _
-  exact ((continuous_ofSupportedIn e U hU K).comp hstage).congr fun s ↦
-    Subtype.ext (by simp [ContMDiffSection.imaginaryPartCLM_apply])
+    Continuous (CompactlySupported.imaginaryPart (n := n) (I := I) (F := F) (V := V)) :=
+  CompactlySupported.continuous_of_clm_tsupport_subset
+    (fun i ↦ (e i).complexification) U (by simpa only [Trivialization.baseSet_complexification]
+      using hU) e U hU
+    (CompactlySupported.imaginaryPart (n := n) (I := I) (F := F) (V := V))
+    (ContMDiffSection.imaginaryPartCLM e U hU)
+    (fun _ ↦ by simp [ContMDiffSection.imaginaryPartCLM_apply])
+    (fun s ↦ by simpa [ContMDiffSection.imaginaryPartCLM_apply] using
+      tsupport_imaginaryPartLinearMap_subset s)
 
 /-- The real inclusion is continuous for matched fixed-compact inductive topologies. -/
 theorem CompactlySupported.continuous_oneTmul :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
-    Continuous (CompactlySupported.oneTmul (n := n) (I := I) (F := F) (V := V)) := by
-  let _ := frameTopology (I := I) (n := n) e U hU
-  let _ := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
+    Continuous (CompactlySupported.oneTmul (n := n) (I := I) (F := F) (V := V)) :=
+  CompactlySupported.continuous_of_clm_tsupport_subset
+    e U hU (fun i ↦ (e i).complexification) U
     (by simpa only [Trivialization.baseSet_complexification] using hU)
-  let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
-  let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n)
-    (fun i ↦ (e i).complexification) U (by simpa only [Trivialization.baseSet_complexification]
-      using hU)
-  let _ := continuousSMul_compactlySupportedTopology (I := I) (n := n)
-    (fun i ↦ (e i).complexification) U (by simpa only [Trivialization.baseSet_complexification]
-      using hU)
-  let _ := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n)
-    (fun i ↦ (e i).complexification) U (by simpa only [Trivialization.baseSet_complexification]
-      using hU)
-  refine (continuous_compactlySupportedTopology_iff e U hU
-    (CompactlySupported.oneTmul (n := n) (I := I) (F := F) (V := V))).2 fun K ↦ ?_
-  have hstage : Continuous (fun s : supportedIn I F n V K ↦
-      (⟨ContMDiffSection.oneTmulCLM e U hU s.val, mem_supportedIn.2 (by
-        rw [ContMDiffSection.oneTmulCLM_apply, tsupport_oneTmulLinearMap]
-        exact mem_supportedIn.1 s.property)⟩ :
-        supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K)) :=
-    ((ContMDiffSection.oneTmulCLM e U hU).continuous.comp continuous_subtypeVal).subtype_mk _
-  exact ((continuous_ofSupportedIn (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU) K).comp hstage).congr
-    fun s ↦ Subtype.ext (by simp [ContMDiffSection.oneTmulCLM_apply])
+    (CompactlySupported.oneTmul (n := n) (I := I) (F := F) (V := V))
+    (ContMDiffSection.oneTmulCLM e U hU)
+    (fun _ ↦ by simp [ContMDiffSection.oneTmulCLM_apply])
+    (fun s ↦ by simp [ContMDiffSection.oneTmulCLM_apply, tsupport_oneTmulLinearMap])
 
 /-- The imaginary inclusion is continuous for matched fixed-compact inductive topologies. -/
 theorem CompactlySupported.continuous_ITmul :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
-    Continuous (CompactlySupported.ITmul (n := n) (I := I) (F := F) (V := V)) := by
-  let _ := frameTopology (I := I) (n := n) e U hU
-  let _ := frameTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
+    Continuous (CompactlySupported.ITmul (n := n) (I := I) (F := F) (V := V)) :=
+  CompactlySupported.continuous_of_clm_tsupport_subset
+    e U hU (fun i ↦ (e i).complexification) U
     (by simpa only [Trivialization.baseSet_complexification] using hU)
-  let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU)
-  let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n)
-    (fun i ↦ (e i).complexification) U (by simpa only [Trivialization.baseSet_complexification]
-      using hU)
-  let _ := continuousSMul_compactlySupportedTopology (I := I) (n := n)
-    (fun i ↦ (e i).complexification) U (by simpa only [Trivialization.baseSet_complexification]
-      using hU)
-  let _ := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n)
-    (fun i ↦ (e i).complexification) U (by simpa only [Trivialization.baseSet_complexification]
-      using hU)
-  refine (continuous_compactlySupportedTopology_iff e U hU
-    (CompactlySupported.ITmul (n := n) (I := I) (F := F) (V := V))).2 fun K ↦ ?_
-  have hstage : Continuous (fun s : supportedIn I F n V K ↦
-      (⟨ContMDiffSection.ITmulCLM e U hU s.val, mem_supportedIn.2 (by
-        rw [ContMDiffSection.ITmulCLM_apply, tsupport_ITmulLinearMap]
-        exact mem_supportedIn.1 s.property)⟩ :
-        supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K)) :=
-    ((ContMDiffSection.ITmulCLM e U hU).continuous.comp continuous_subtypeVal).subtype_mk _
-  exact ((continuous_ofSupportedIn (fun i ↦ (e i).complexification) U
-    (by simpa only [Trivialization.baseSet_complexification] using hU) K).comp hstage).congr
-    fun s ↦ Subtype.ext (by simp [ContMDiffSection.ITmulCLM_apply])
+    (CompactlySupported.ITmul (n := n) (I := I) (F := F) (V := V))
+    (ContMDiffSection.ITmulCLM e U hU)
+    (fun _ ↦ by simp [ContMDiffSection.ITmulCLM_apply])
+    (fun s ↦ by simp [ContMDiffSection.ITmulCLM_apply, tsupport_ITmulLinearMap])
 
 /-- The real pair equivalence for matched fixed-compact inductive locally convex topologies. -/
 def CompactlySupported.complexificationCLEProd :

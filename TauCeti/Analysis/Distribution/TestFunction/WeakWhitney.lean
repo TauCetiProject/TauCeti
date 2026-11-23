@@ -73,15 +73,15 @@ theorem seminorm_eq_norm_restrict (𝕜 : Type*) [NontriviallyNormedField 𝕜]
   set g : C((K : Set E), E [×i]→L[ℝ] F) :=
     (ContMDiffMap.iteratedFDerivContinuousMap (toContMDiffMap f) i
       (by exact_mod_cast hi)).restrict (K : Set E)
+  have hg : ∀ z : (K : Set E), g z = iteratedFDeriv ℝ i f z := fun z ↦ by
+    -- Exclude `SetLike.coe_sort_coe` so `↥(K : Set E)` is not rewritten to `↥K`, which would
+    -- prevent `ContinuousMap.restrict_apply` from matching `g z`.
+    simp [g, -SetLike.coe_sort_coe]
   apply le_antisymm
   · refine (f.seminorm_le_iff 𝕜 (norm_nonneg g) i).2 fun _ x hx ↦ ?_
-    have hgx : g ⟨x, hx⟩ = iteratedFDeriv ℝ i f x := by
-      simp [g, -SetLike.coe_sort_coe]
-    exact hgx ▸ g.norm_coe_le_norm ⟨x, hx⟩
+    exact (hg ⟨x, hx⟩) ▸ g.norm_coe_le_norm ⟨x, hx⟩
   · refine (g.norm_le (apply_nonneg (ContDiffMapSupportedIn.seminorm 𝕜 E F n K i) f)).2 fun z ↦ ?_
-    have hgz : g z = iteratedFDeriv ℝ i f z := by
-      simp [g, -SetLike.coe_sort_coe]
-    exact hgz.symm ▸ norm_iteratedFDeriv_apply_le_seminorm 𝕜 hi
+    exact (hg z).symm ▸ norm_iteratedFDeriv_apply_le_seminorm 𝕜 hi
 
 /-- On a fixed compact support the weak Whitney topology is the topology of test functions: a
 family of test functions supported in `K` is continuous exactly when it is continuous as a family

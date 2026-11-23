@@ -18,14 +18,9 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 The compact derivative topology on native sections is independent of the covering smooth
 frame system. Changes of frame act by the actual smooth transition matrix, including its
 higher derivatives. Open-cover locality is taken in the existing weak Whitney topology.
-<<<<<<< HEAD
-Multiplication by a fixed `C^n` scalar function is likewise continuous in any smooth frame
-topology (`ContMDiffSection.continuous_smulLinearMap`).
-=======
 Restriction to an open subset and multiplication by a smooth scalar function are continuous
 (`ContMDiffSection.continuous_restrict_frameTopology`,
 `ContMDiffSection.continuous_smul_function_frameTopology`).
->>>>>>> origin/main
 -/
 
 public noncomputable section
