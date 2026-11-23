@@ -122,12 +122,6 @@ theorem complexProdTensor_neg_orientation (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
 variable [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)]
   (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
 
-include hQ₁ in
-private theorem map_complexVolume_pow_of_even {k : ℕ} (hk : Even k) :
-    ρ₁ (complexVolume Q₁ o₁) ^ k = 1 := by
-  obtain ⟨j, rfl⟩ := hk
-  rw [← two_mul, pow_mul, sq, map_complexVolume_mul_self o₁ hQ₁ ρ₁, one_pow]
-
 omit [Fact (finrank ℝ W = m)] in
 /-- The ordered frame product of `V ⊕ W` acts by `c(e₁) ⋯ c(eₙ) Γ_V ^ m ⊗ c(f₁) ⋯ c(fₘ)`. -/
 private theorem complexProdTensor_complexVolume_eq_map (b₁ : OrthonormalBasis (Fin n) ℝ V)

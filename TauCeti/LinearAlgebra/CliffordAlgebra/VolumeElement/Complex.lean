@@ -58,8 +58,8 @@ the positive orientation and `-1` for the negative one.
   positive dimension.
 * `CliffordAlgebra.complexVolume_smul_complexVolume_smul`,
   `CliffordAlgebra.lsmul_complexVolume_involutive`: `Γ` acts as an involution on every module,
-  `CliffordAlgebra.map_complexVolume_mul_self` and `AlgHom.involutive_complexVolume`: in every
-  representation.
+  `CliffordAlgebra.map_complexVolume_mul_self`, `CliffordAlgebra.map_complexVolume_pow_of_even`,
+  and `AlgHom.involutive_complexVolume`: in every representation.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
   involution, while `CliffordAlgebra.star_complexVolume` computes the complex-linear Clifford
   conjugation `star Γ = (-1) ^ ⌊(n + 1) / 2⌋ Γ`; in dimension `2ℓ` this is `(-1) ^ ℓ Γ`.
@@ -325,6 +325,14 @@ theorem map_complexVolume_mul_self {F B : Type*} [MulOneClass B]
     [MonoidHomClass F (CliffordAlgebra (Q.baseChange ℂ)) B] (f : F) :
     f (complexVolume Q o) * f (complexVolume Q o) = 1 := by
   rw [← map_mul, complexVolume_mul_self o hQ, map_one]
+
+/-- **Even powers of `Γ` are `1` in every representation** `f`: `f(Γ) ^ k = 1` for even `k`. -/
+theorem map_complexVolume_pow_of_even {F B : Type*} [Monoid B]
+    [FunLike F (CliffordAlgebra (Q.baseChange ℂ)) B]
+    [MonoidHomClass F (CliffordAlgebra (Q.baseChange ℂ)) B] (f : F) {k : ℕ} (hk : Even k) :
+    f (complexVolume Q o) ^ k = 1 := by
+  obtain ⟨j, rfl⟩ := hk
+  rw [← two_mul, pow_mul, sq, map_complexVolume_mul_self o hQ f, one_pow]
 
 /-- **`Γ` acts as an involution** on every module: `Γ • Γ • ψ = ψ`. -/
 theorem complexVolume_smul_complexVolume_smul {M : Type*}

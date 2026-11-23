@@ -9,20 +9,30 @@ public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 
 /-!
-# Negative-norm-squared formula on `L²` products
+# Negative-norm-squared formulas on `L²` products and subsingleton spaces
 
 Records `QuadraticForm.withLpProd_eq_neg_norm_sq`, showing that an orthogonal-sum quadratic form
-`Q (v, w) = Q₁ v + Q₂ w` on `WithLp 2 (V × W)` equals `-‖x‖ ^ 2` when `Q₁` and `Q₂` do.
+`Q (v, w) = Q₁ v + Q₂ w` on `WithLp 2 (V × W)` equals `-‖x‖ ^ 2` when `Q₁` and `Q₂` do, and
+`QuadraticForm.eq_neg_norm_sq_of_subsingleton`, showing that any quadratic form on a subsingleton
+seminormed real module equals `-‖u‖ ^ 2`.
 
 ## Main results
 
 * `QuadraticForm.withLpProd_eq_neg_norm_sq`: `L²` negative-norm-squared formula on
   `WithLp 2 (V × W)`.
+* `QuadraticForm.eq_neg_norm_sq_of_subsingleton`: any quadratic form on a subsingleton seminormed
+  real module satisfies `Q u = -‖u‖ ^ 2`.
 -/
 
 public section
 
 namespace QuadraticForm
+
+/-- Any quadratic form on a subsingleton seminormed real module satisfies `Q u = -‖u‖ ^ 2`. -/
+theorem eq_neg_norm_sq_of_subsingleton
+    {U : Type*} [SeminormedAddCommGroup U] [Module ℝ U] [Subsingleton U]
+    (Q : QuadraticForm ℝ U) (u : U) : Q u = -‖u‖ ^ 2 := by
+  simp [Subsingleton.elim u 0]
 
 /-- If `Q` on `WithLp 2 (V × W)` decomposes as `Q (v, w) = Q₁ v + Q₂ w` with `Q₁ v = -‖v‖ ^ 2`
 and `Q₂ w = -‖w‖ ^ 2`, then `Q x = -‖x‖ ^ 2`. -/

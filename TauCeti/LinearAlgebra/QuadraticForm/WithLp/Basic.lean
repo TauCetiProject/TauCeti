@@ -82,65 +82,63 @@ theorem withLpProd_symm_apply (x : M₁ × M₂) : (withLpProd hQ).symm x = With
 
 /-- Projecting `WithLp p (M₁ × M₂)` onto `M₂` is a quadratic isometry when `M₁` is a subsingleton.
 -/
-def withLpSubsingletonProd (hM₁ : Subsingleton M₁ := by infer_instance) : Q.IsometryEquiv Q₂ :=
-  letI : Unique M₁ := @uniqueOfSubsingleton M₁ hM₁ 0
+def withLpSubsingletonProd [Subsingleton M₁] : Q.IsometryEquiv Q₂ :=
+  letI : Unique M₁ := uniqueOfSubsingleton 0
   (withLpProd hQ).trans (uniqueProd Q₁ Q₂)
 
 /-- `withLpSubsingletonProd` projects onto the second coordinate. -/
 @[simp]
-theorem withLpSubsingletonProd_apply (hM₁ : Subsingleton M₁) (x : WithLp p (M₁ × M₂)) :
-    withLpSubsingletonProd hQ hM₁ x = (WithLp.ofLp x).2 := by
-  let : Unique M₁ := @uniqueOfSubsingleton M₁ hM₁ 0
+theorem withLpSubsingletonProd_apply [Subsingleton M₁] (x : WithLp p (M₁ × M₂)) :
+    withLpSubsingletonProd hQ x = (WithLp.ofLp x).2 := by
+  let : Unique M₁ := uniqueOfSubsingleton 0
   exact IsometryEquiv.uniqueProd_apply Q₁ Q₂ (withLpProd hQ x)
 
 /-- The inverse of `withLpSubsingletonProd` embeds `m₂` as `(0, m₂)`. -/
 @[simp]
-theorem withLpSubsingletonProd_symm_apply (hM₁ : Subsingleton M₁) (m₂ : M₂) :
-    (withLpSubsingletonProd hQ hM₁).symm m₂ = WithLp.toLp p (0, m₂) := by
-  let : Unique M₁ := @uniqueOfSubsingleton M₁ hM₁ 0
-  exact (withLpSubsingletonProd hQ hM₁).symm_apply_eq.mpr
-    (withLpSubsingletonProd_apply hQ hM₁ (WithLp.toLp p (0, m₂))).symm
+theorem withLpSubsingletonProd_symm_apply [Subsingleton M₁] (m₂ : M₂) :
+    (withLpSubsingletonProd hQ).symm m₂ = WithLp.toLp p (0, m₂) :=
+  (withLpSubsingletonProd hQ).symm_apply_eq.mpr
+    (withLpSubsingletonProd_apply hQ (WithLp.toLp p (0, m₂))).symm
 
 /-- The underlying linear equivalence of `withLpSubsingletonProd` is `WithLp.linearEquiv`
 composed with `LinearEquiv.uniqueProd`. -/
 @[simp]
-theorem toLinearEquiv_withLpSubsingletonProd (hM₁ : Subsingleton M₁) :
-    (withLpSubsingletonProd hQ hM₁).toLinearEquiv =
-      letI : Unique M₁ := @uniqueOfSubsingleton M₁ hM₁ 0
+theorem toLinearEquiv_withLpSubsingletonProd [Subsingleton M₁] :
+    (withLpSubsingletonProd hQ).toLinearEquiv =
+      letI : Unique M₁ := uniqueOfSubsingleton 0
       (WithLp.linearEquiv p R (M₁ × M₂)).trans LinearEquiv.uniqueProd := by
-  let : Unique M₁ := @uniqueOfSubsingleton M₁ hM₁ 0
+  let : Unique M₁ := uniqueOfSubsingleton 0
   ext x
   simp
 
 /-- Projecting `WithLp p (M₁ × M₂)` onto `M₁` is a quadratic isometry when `M₂` is a subsingleton.
 -/
-def withLpProdSubsingleton (hM₂ : Subsingleton M₂ := by infer_instance) : Q.IsometryEquiv Q₁ :=
-  letI : Unique M₂ := @uniqueOfSubsingleton M₂ hM₂ 0
+def withLpProdSubsingleton [Subsingleton M₂] : Q.IsometryEquiv Q₁ :=
+  letI : Unique M₂ := uniqueOfSubsingleton 0
   (withLpProd hQ).trans (prodUnique Q₁ Q₂)
 
 /-- `withLpProdSubsingleton` projects onto the first coordinate. -/
 @[simp]
-theorem withLpProdSubsingleton_apply (hM₂ : Subsingleton M₂) (x : WithLp p (M₁ × M₂)) :
-    withLpProdSubsingleton hQ hM₂ x = (WithLp.ofLp x).1 := by
-  let : Unique M₂ := @uniqueOfSubsingleton M₂ hM₂ 0
+theorem withLpProdSubsingleton_apply [Subsingleton M₂] (x : WithLp p (M₁ × M₂)) :
+    withLpProdSubsingleton hQ x = (WithLp.ofLp x).1 := by
+  let : Unique M₂ := uniqueOfSubsingleton 0
   exact IsometryEquiv.prodUnique_apply Q₁ Q₂ (withLpProd hQ x)
 
 /-- The inverse of `withLpProdSubsingleton` embeds `m₁` as `(m₁, 0)`. -/
 @[simp]
-theorem withLpProdSubsingleton_symm_apply (hM₂ : Subsingleton M₂) (m₁ : M₁) :
-    (withLpProdSubsingleton hQ hM₂).symm m₁ = WithLp.toLp p (m₁, 0) := by
-  let : Unique M₂ := @uniqueOfSubsingleton M₂ hM₂ 0
-  exact (withLpProdSubsingleton hQ hM₂).symm_apply_eq.mpr
-    (withLpProdSubsingleton_apply hQ hM₂ (WithLp.toLp p (m₁, 0))).symm
+theorem withLpProdSubsingleton_symm_apply [Subsingleton M₂] (m₁ : M₁) :
+    (withLpProdSubsingleton hQ).symm m₁ = WithLp.toLp p (m₁, 0) :=
+  (withLpProdSubsingleton hQ).symm_apply_eq.mpr
+    (withLpProdSubsingleton_apply hQ (WithLp.toLp p (m₁, 0))).symm
 
 /-- The underlying linear equivalence of `withLpProdSubsingleton` is `WithLp.linearEquiv`
 composed with `LinearEquiv.prodUnique`. -/
 @[simp]
-theorem toLinearEquiv_withLpProdSubsingleton (hM₂ : Subsingleton M₂) :
-    (withLpProdSubsingleton hQ hM₂).toLinearEquiv =
-      letI : Unique M₂ := @uniqueOfSubsingleton M₂ hM₂ 0
+theorem toLinearEquiv_withLpProdSubsingleton [Subsingleton M₂] :
+    (withLpProdSubsingleton hQ).toLinearEquiv =
+      letI : Unique M₂ := uniqueOfSubsingleton 0
       (WithLp.linearEquiv p R (M₁ × M₂)).trans LinearEquiv.prodUnique := by
-  let : Unique M₂ := @uniqueOfSubsingleton M₂ hM₂ 0
+  let : Unique M₂ := uniqueOfSubsingleton 0
   ext x
   simp
 

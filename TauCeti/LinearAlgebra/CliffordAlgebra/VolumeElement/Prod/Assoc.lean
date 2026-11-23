@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Orientation.WithLp
 public import TauCeti.LinearAlgebra.QuadraticForm.WithLp.L2
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Assoc
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Map
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Associativity of graded tensor products of complex Clifford modules
@@ -77,11 +78,10 @@ private theorem tensorProduct_map_complexVolume_mul_self :
 
 private theorem complexProdTensor_assoc_left
     (ho₁₂ : (o₁.prod o₂ Fact.out Fact.out).map (Fin (k + n))
-      (WithLp.linearEquiv 2 ℝ (U × V)).symm = o₁₂)
-    (x : CliffordAlgebra (Q_L.baseChange ℂ)) :
+      (WithLp.linearEquiv 2 ℝ (U × V)).symm = o₁₂) :
     complexProdTensor hQ_L o₁₂ (QuadraticForm.withLpProd_eq_neg_norm_sq hQ₁₂ hQ₁ hQ₂)
-        (hk.add hn) (complexProdTensor hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂) ρ₃ x =
-      AlgHom.cliffordProdTensor
+        (hk.add hn) (complexProdTensor hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂) ρ₃ =
+      (AlgHom.cliffordProdTensor
         (AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
           (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hk ρ₁) ρ₂)
         (TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂)))
@@ -89,10 +89,10 @@ private theorem complexProdTensor_assoc_left
         (AlgHom.map_mul_cliffordProdTensor_ι ρ₁ (ρ₁ (complexVolume Q₁ o₁))
           (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hk ρ₁)
           ρ₂ (ρ₂ (complexVolume Q₂ o₂)) (map_complexVolume_mul_map_ι o₂ hn ρ₂))
-        ρ₃
+        ρ₃).comp
         (map ((((QuadraticMap.IsometryEquiv.withLpProd hQ₁₂).baseChangeProd ℂ).toIsometry.prodMap
             (QuadraticMap.Isometry.id (Q₃.baseChange ℂ))).comp
-          ((QuadraticMap.IsometryEquiv.withLpProd hQ_L).baseChangeProd ℂ).toIsometry) x) := by
+          ((QuadraticMap.IsometryEquiv.withLpProd hQ_L).baseChangeProd ℂ).toIsometry)) := by
   set γ₁ := ρ₁ (complexVolume Q₁ o₁)
   set γ₂ := ρ₂ (complexVolume Q₂ o₂)
   set ρ₁₂_std := AlgHom.cliffordProdTensor ρ₁ γ₁
@@ -107,21 +107,22 @@ private theorem complexProdTensor_assoc_left
     hγ₁₂_sq hγ₁₂_anti ρ₃ e₁₂ (QuadraticMap.Isometry.id (Q₃.baseChange ℂ))
   simp only [CliffordAlgebra.map_id, AlgHom.comp_id] at hcomp
   have hL := complexProdTensor_eq_comp hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂
-  rw [complexProdTensor_eq_comp, AlgHom.comp_apply,
+  rw [complexProdTensor_eq_comp,
     AlgHom.cliffordProdTensor_congr (hγ' := hγ₁₂_sq)
       (hγ'ρ := fun v ↦ by simpa [γ₁, γ₂, e₁₂] using hγ₁₂_anti (e₁₂ v)) hL hvol rfl,
-    ← AlgHom.congr_fun hcomp _, AlgHom.comp_apply, ← AlgHom.comp_apply (map _), map_comp_map]
+    ← hcomp, AlgHom.comp_assoc, map_comp_map]
 
 omit [Fact (finrank ℝ (WithLp 2 (U × V)) = k + n)] in
-private theorem complexProdTensor_assoc_right (x : CliffordAlgebra (Q_R.baseChange ℂ)) :
-    complexProdTensor hQ_R o₁ hQ₁ hk ρ₁ (complexProdTensor hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃) x =
-      AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+private theorem complexProdTensor_assoc_right :
+    complexProdTensor hQ_R o₁ hQ₁ hk ρ₁ (complexProdTensor hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃) =
+      (AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
         (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hk ρ₁)
         (AlgHom.cliffordProdTensor ρ₂ (ρ₂ (complexVolume Q₂ o₂))
-          (map_complexVolume_mul_self o₂ hQ₂ ρ₂) (map_complexVolume_mul_map_ι o₂ hn ρ₂) ρ₃)
+          (map_complexVolume_mul_self o₂ hQ₂ ρ₂)
+          (map_complexVolume_mul_map_ι o₂ hn ρ₂) ρ₃)).comp
         (map (((QuadraticMap.Isometry.id (Q₁.baseChange ℂ)).prodMap
             ((QuadraticMap.IsometryEquiv.withLpProd hQ₂₃).baseChangeProd ℂ).toIsometry).comp
-          ((QuadraticMap.IsometryEquiv.withLpProd hQ_R).baseChangeProd ℂ).toIsometry) x) := by
+          ((QuadraticMap.IsometryEquiv.withLpProd hQ_R).baseChangeProd ℂ).toIsometry)) := by
   set γ₁ := ρ₁ (complexVolume Q₁ o₁)
   set γ₂ := ρ₂ (complexVolume Q₂ o₂)
   set ρ₂₃_std := AlgHom.cliffordProdTensor ρ₂ γ₂
@@ -131,10 +132,10 @@ private theorem complexProdTensor_assoc_right (x : CliffordAlgebra (Q_R.baseChan
     (map_complexVolume_mul_map_ι o₁ hk ρ₁) ρ₂₃_std (QuadraticMap.Isometry.id (Q₁.baseChange ℂ)) e₂₃
   simp only [CliffordAlgebra.map_id, AlgHom.comp_id] at hcomp
   have hR := complexProdTensor_eq_comp hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃
-  rw [complexProdTensor_eq_comp, AlgHom.comp_apply,
+  rw [complexProdTensor_eq_comp,
     AlgHom.cliffordProdTensor_congr (hγ' := map_complexVolume_mul_self o₁ hQ₁ ρ₁)
       (hγ'ρ := map_complexVolume_mul_map_ι o₁ hk ρ₁) rfl rfl hR,
-    ← AlgHom.congr_fun hcomp _, AlgHom.comp_apply, ← AlgHom.comp_apply (map _), map_comp_map]
+    ← hcomp, AlgHom.comp_assoc, map_comp_map]
 
 /-- **Associativity of `complexProdTensor` (algebra-map form).** Conjugating the left-associated
 action on `(E ⊗ F) ⊗ G` by `TensorProduct.assoc ℂ E F G` gives the right-associated action on
@@ -149,21 +150,16 @@ theorem conjAlgEquiv_assoc_complexProdTensor
           (complexProdTensor hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃)).comp
         (map ((QuadraticMap.IsometryEquiv.withLpProdAssoc hQ₁₂ hQ₂₃ hQ_L
           hQ_R).toIsometry.baseChange ℂ)) := by
-  refine AlgHom.ext fun a ↦ ?_
-  have hassoc := AlgHom.congr_fun
-    (AlgHom.conjAlgEquiv_cliffordProdTensor_assoc ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hk ρ₁) ρ₂
-      (ρ₂ (complexVolume Q₂ o₂)) (map_complexVolume_mul_self o₂ hQ₂ ρ₂)
-      (map_complexVolume_mul_map_ι o₂ hn ρ₂) ρ₃)
-    (map ((((QuadraticMap.IsometryEquiv.withLpProd hQ₁₂).baseChangeProd ℂ).toIsometry.prodMap
-        (QuadraticMap.Isometry.id (Q₃.baseChange ℂ))).comp
-      ((QuadraticMap.IsometryEquiv.withLpProd hQ_L).baseChangeProd ℂ).toIsometry) a)
-  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom] at hassoc ⊢
   rw [complexProdTensor_assoc_left hQ₁₂ hQ_L o₁ o₂ o₁₂ hQ₁ hk hQ₂ hn ρ₁ ρ₂ ρ₃ ho₁₂,
     complexProdTensor_assoc_right hQ₂₃ hQ_R o₁ o₂ hQ₁ hk hQ₂ hn ρ₁ ρ₂ ρ₃,
-    hassoc, equivOfIsometry_apply, ← AlgHom.comp_apply (map _), map_comp_map,
-    QuadraticMap.IsometryEquiv.withLpProdAssoc_toIsometry_baseChange, ← map_comp_map,
-    AlgHom.comp_apply]
+    ← AlgHom.comp_assoc,
+    AlgHom.conjAlgEquiv_cliffordProdTensor_assoc ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hk ρ₁) ρ₂
+      (ρ₂ (complexVolume Q₂ o₂)) (map_complexVolume_mul_self o₂ hQ₂ ρ₂)
+      (map_complexVolume_mul_map_ι o₂ hn ρ₂) ρ₃,
+    equivOfIsometry_toAlgHom, AlgHom.comp_assoc, AlgHom.comp_assoc,
+    map_comp_map, map_comp_map,
+    QuadraticMap.IsometryEquiv.withLpProdAssoc_toIsometry_baseChange]
 
 /-- **Associativity of `complexProdTensor` (pointwise form).** `TensorProduct.assoc ℂ E F G`
 intertwines the two iterated `complexProdTensor` actions for every Clifford element `a` and tensor
@@ -179,12 +175,10 @@ theorem assoc_complexProdTensor
         (complexProdTensor hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃)
         (map ((QuadraticMap.IsometryEquiv.withLpProdAssoc hQ₁₂ hQ₂₃ hQ_L
           hQ_R).toIsometry.baseChange ℂ) a)
-        ((TensorProduct.assoc ℂ E F G) t) := by
-  simpa [LinearEquiv.conjAlgEquiv_apply] using congrArg
-    (fun φ : CliffordAlgebra (Q_L.baseChange ℂ) →ₐ[ℂ] Module.End ℂ (E ⊗[ℂ] (F ⊗[ℂ] G)) ↦
-      φ a ((TensorProduct.assoc ℂ E F G) t))
+        ((TensorProduct.assoc ℂ E F G) t) :=
+  (LinearEquiv.conjAlgEquiv_toAlgHom_comp_eq_iff _ _ _).1
     (conjAlgEquiv_assoc_complexProdTensor hQ₁₂ hQ₂₃ hQ_L hQ_R o₁ o₂ o₁₂ hQ₁ hk hQ₂ hn
-      ρ₁ ρ₂ ρ₃ ho₁₂)
+      ρ₁ ρ₂ ρ₃ ho₁₂) a t
 
 /-- **Associativity on the product chirality.** When `(W, o₃)` is also even-dimensional with
 `Q₃ w = -‖w‖²` and `o_R` is obtained from the left-associated product orientation `o_L` along

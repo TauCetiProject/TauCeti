@@ -43,6 +43,9 @@ bijectivity, `Orientation.lean` for product volume elements and orientation reve
 
 ## Main results
 
+* `CliffordAlgebra.complexProdTensor_eq_comp` and
+  `CliffordAlgebra.complexProdTensor_comp_map_baseChange`: factorization of `complexProdTensor`
+  through `AlgHom.cliffordProdTensor` and compatibility with `baseChange` isometries.
 * `CliffordAlgebra.complexProdTensor_ι_one_tmul_toLp`: `c(v, w) = c_V(v) ⊗ 1 + Γ_V ⊗ c_W(w)`.
 * `CliffordAlgebra.complexProdTensor_comp_baseChangeWithLpProdEquiv_symm`,
   `CliffordAlgebra.complexProdTensor_baseChangeWithLpProdEquiv_symm_tmul`, and
@@ -97,6 +100,30 @@ theorem complexProdTensor_eq_comp :
           (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂).comp
         (map ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ).toIsometry) := by
   rw [complexProdTensor, equivOfIsometry_toAlgHom]
+
+/-- Precomposing `complexProdTensor` with `CliffordAlgebra.map (f.baseChange ℂ)` factors through
+`AlgHom.cliffordProdTensor` composed with `map g` and
+`map ((QuadraticMap.IsometryEquiv.withLpProd hQ').baseChangeProd ℂ).toIsometry`
+whenever `f.baseChange ℂ` and `g` intertwine the two `baseChangeProd` maps. -/
+theorem complexProdTensor_comp_map_baseChange
+    {V' W' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V']
+    [NormedAddCommGroup W'] [InnerProductSpace ℝ W']
+    {Q₁' : QuadraticForm ℝ V'} {Q₂' : QuadraticForm ℝ W'}
+    {Q' : QuadraticForm ℝ (WithLp 2 (V' × W'))}
+    (hQ' : ∀ x, Q' x = Q₁' (WithLp.ofLp x).1 + Q₂' (WithLp.ofLp x).2)
+    (f : Q'.Isometry Q)
+    (g : (Q₁'.baseChange ℂ).prod (Q₂'.baseChange ℂ) →qᵢ
+      (Q₁.baseChange ℂ).prod (Q₂.baseChange ℂ))
+    (hf : ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ).toIsometry.comp
+        (f.baseChange ℂ) =
+      g.comp ((QuadraticMap.IsometryEquiv.withLpProd hQ').baseChangeProd ℂ).toIsometry) :
+    (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).comp (map (f.baseChange ℂ)) =
+      ((AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+          (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂).comp
+        (map g)).comp
+        (map ((QuadraticMap.IsometryEquiv.withLpProd hQ').baseChangeProd ℂ).toIsometry) := by
+  rw [complexProdTensor_eq_comp, AlgHom.comp_assoc, map_comp_map, hf, ← map_comp_map,
+    ← AlgHom.comp_assoc]
 
 /-- A real vector `(v, w)` of `V ⊕ W` acts on `E ⊗ F` by `c_V(v) ⊗ 1 + Γ_V ⊗ c_W(w)`. -/
 @[simp]

@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.EvenEquiv
 public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 public import TauCeti.LinearAlgebra.TensorProduct.Prod
-import TauCeti.LinearAlgebra.QuadraticForm.WithLp.L2
 
 /-!
 # The generator dictionary of the dimension-raising equivalence
@@ -187,15 +186,9 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 `Q₁ x = Q' Q (WithLp.ofLp x)` of the results below. -/
 theorem Q'_ofLp_eq_neg_norm_sq (hQ : ∀ v, Q v = -‖v‖ ^ 2) (x : WithLp 2 (V × ℝ)) :
     Q' Q (WithLp.ofLp x) = -‖x‖ ^ 2 := by
-  let Q₁ : QuadraticForm ℝ (WithLp 2 (V × ℝ)) :=
-    (Q' Q).comp (WithLp.linearEquiv 2 ℝ (V × ℝ)).toLinearMap
-  have hQ₁ : ∀ y, Q₁ y = Q (WithLp.ofLp y).1 + (-QuadraticMap.sq) (WithLp.ofLp y).2 := fun y ↦ by
-    dsimp only [Q₁]
-    rw [QuadraticMap.comp_apply, LinearEquiv.coe_coe, WithLp.coe_linearEquiv, Q',
-      QuadraticMap.prod_apply]
-  have h := QuadraticForm.withLpProd_eq_neg_norm_sq (Q₁ := Q) (Q₂ := -QuadraticMap.sq)
-    hQ₁ hQ (fun r ↦ by change -(r * r) = -‖r‖ ^ 2; simp [sq]) x
-  simpa [Q₁, QuadraticMap.comp_apply, LinearEquiv.coe_coe, WithLp.coe_linearEquiv] using h
+  simp only [Q'_apply, hQ, WithLp.prod_norm_sq_eq_of_L2, WithLp.ofLp_fst, WithLp.ofLp_snd,
+    Real.norm_eq_abs, sq_abs]
+  ring
 
 variable (hQ₁ : ∀ x, Q₁ x = Q' Q (WithLp.ofLp x))
 include hQ₁

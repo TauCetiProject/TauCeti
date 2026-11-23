@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientati
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Comm
 public import TauCeti.LinearAlgebra.Orientation.WithLp
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Comm
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Graded Koszul symmetry of `CliffordAlgebra.complexProdTensor`
@@ -70,10 +71,14 @@ theorem koszulComm_complexProdTensor
         (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW hQ_WV).toIsometry.baseChange ℂ) a)
         (K z) := by
   intro K
-  rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply,
-    AlgHom.comp_apply, ← AlgHom.comp_apply (map _), map_comp_map,
-    QuadraticMap.IsometryEquiv.withLpProdComm_toIsometry_baseChange, ← map_comp_map,
-    AlgHom.comp_apply]
+  have hrhs := AlgHom.congr_fun
+    (complexProdTensor_comp_map_baseChange hQ_WV o₂ hQ₂ hm ρ₂ ρ₁ hQ_VW
+      (QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW hQ_WV).toIsometry
+      (QuadraticMap.IsometryEquiv.prodComm (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry
+      (QuadraticMap.IsometryEquiv.withLpProdComm_toIsometry_baseChange ℂ hQ_VW hQ_WV)) a
+  rw [complexProdTensor_eq_comp, AlgHom.comp_apply,
+    ← AlgHom.comp_apply (complexProdTensor hQ_WV _ _ _ _ _), hrhs,
+    AlgHom.comp_apply, AlgHom.comp_apply]
   exact AlgHom.koszulComm_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
     (ρ₁.involutive_complexVolume o₁ hQ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁)
     ρ₂ (ρ₂ (complexVolume Q₂ o₂)) (ρ₂.involutive_complexVolume o₂ hQ₂)
@@ -88,12 +93,9 @@ theorem conjAlgEquiv_koszulComm_complexProdTensor :
     (K.conjAlgEquiv ℂ).toAlgHom.comp (complexProdTensor hQ_VW o₁ hQ₁ hn ρ₁ ρ₂) =
       (complexProdTensor hQ_WV o₂ hQ₂ hm ρ₂ ρ₁).comp
         (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW
-          hQ_WV).toIsometry.baseChange ℂ)) := by
-  intro K
-  refine AlgHom.ext fun a ↦ LinearMap.ext fun y ↦ ?_
-  obtain ⟨z, rfl⟩ := K.surjective y
-  simpa [LinearEquiv.conjAlgEquiv_apply] using
-    koszulComm_complexProdTensor hQ_VW hQ_WV o₁ o₂ hQ₁ hn hQ₂ hm ρ₁ ρ₂ a z
+          hQ_WV).toIsometry.baseChange ℂ)) :=
+  (LinearEquiv.conjAlgEquiv_toAlgHom_comp_eq_iff _ _ _).2
+    (koszulComm_complexProdTensor hQ_VW hQ_WV o₁ o₂ hQ₁ hn hQ₂ hm ρ₁ ρ₂)
 
 section Volume
 
