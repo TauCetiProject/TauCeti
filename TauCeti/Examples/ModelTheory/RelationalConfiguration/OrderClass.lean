@@ -26,17 +26,17 @@ example : @ofStructure Language.order ℕ (orderStructure ℕ) ∈ treeClass :=
   ofStructure_mem_treeClass strictMono_id
 
 -- The code of `(ℕ, <)` is not a coded linear order: it is irreflexive.
-example : @ofStructure Language.order ℕ (@orderStructure ℕ ⟨(· < ·)⟩) ∉ linearOrderClass := by
-  rw [mem_linearOrderClass, @codeRel_leSymb_ofStructure_orderStructure ℕ ⟨(· < ·)⟩]
+example : ofRel (fun x y : ℕ => x < y) ∉ linearOrderClass := by
+  rw [mem_linearOrderClass, codeRel_ofRel]
   intro h
   exact lt_irrefl 0 (h.refl 0)
 
 -- The code of `(ℕ, ≥)` is not a coded tree: it has no least element.
-example : @ofStructure Language.order ℕᵒᵈ (orderStructure ℕᵒᵈ) ∉ treeClass := by
-  rw [mem_treeClass, codeRel_leSymb_ofStructure_orderStructure]
+example : ofRel (fun x y : ℕ => y ≤ x) ∉ treeClass := by
+  rw [mem_treeClass, codeRel_ofRel]
   intro h
   obtain ⟨a, ha⟩ := h.exists_forall
-  exact Nat.not_succ_le_self (OrderDual.ofDual a) (ha (OrderDual.toDual (OrderDual.ofDual a + 1)))
+  exact Nat.not_succ_le_self a (ha (a + 1))
 
 -- The coded trees on `ℕ` do not form a closed class.
 example : ¬ IsClosed (treeClass (V := ℕ)) :=
