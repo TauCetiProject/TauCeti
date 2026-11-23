@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.CutCapacity
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
-public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import Mathlib.Data.Set.Card
 
 /-!
@@ -135,9 +134,7 @@ theorem edgeReachability_eq_pairMinimumValue_pairCapacity [Fintype V(G)] [Fintyp
     G.edgeReachability s t =
       ((TerminalCut.pairMinimumValue
         (pairCutCapacity (G.pairCapacity fun _ ↦ (1 : ℕ))) s t : ℕ) : ℕ∞) := by
-  have hcut : pairCutCapacity (G.pairCapacity fun _ ↦ (1 : ℕ)) =
-      G.edgeCutCapacity fun _ ↦ (1 : ℕ) :=
-    funext fun S ↦ G.pairCutCapacity_pairCapacity (fun _ ↦ (1 : ℕ)) S
-  rw [hcut, edgeReachability_eq_pairMinimumValue hst]
+  rw [G.pairCutCapacity_pairCapacity (fun _ ↦ (1 : ℕ)),
+    edgeReachability_eq_pairMinimumValue hst]
 
 end Graph
