@@ -414,11 +414,9 @@ theorem mpullback_liftOpens_apply_coe {E' H' M' : Type*} [NormedAddCommGroup E']
     (Ψ.liftOpens hU hV).mdifferentiableAt hn (by
       rw [PartialDiffeomorph.liftOpens_source]
       exact ⟨x, hx, rfl⟩)
-  -- On `U`, the lift composed with the inclusion is the inclusion composed with `Ψ`.
-  have hcomp : ⇑(Ψ.liftOpens hU hV) ∘ (Subtype.val : U → M) = Subtype.val ∘ ⇑Ψ :=
-    funext (Ψ.liftOpens_apply_coe hU hV)
   refine (mpullback_subtype_val_apply _ x).symm.trans ?_
-  rw [← mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hlift, hcomp,
+  rw [← mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hlift,
+    Ψ.liftOpens_comp_subtypeVal hU hV,
     mpullback_comp_at (Ψ.mdifferentiableAt hn hx) (hval _)]
 
 omit [IsManifold I 1 M] in

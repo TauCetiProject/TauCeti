@@ -60,8 +60,8 @@ The wave front set of the product lies in the sums of the frequencies of the fac
 
 (`Distribution.waveFrontSet_cutoffProduct_subset`). This is a cut-off analogue of Hörmander I,
 Theorem 8.2.10, and its proof follows Hörmander's; it is not pointwise, since the frequencies of
-`WF(S)` and `WF(T)` added here may come from different points of `supp φ`. The global pointwise
-bound, where both come from the same point, is not proved here.
+`WF(S)` and `WF(T)` added here may come from different points of `supp φ`. The pointwise bound
+for the glued product is deduced from it below.
 
 The proof starts from the convolution formula
 `(χ φ² S T)^(ζ) = ∫ S (φ e_η) T (χ φ e_(ζ - η)) dη` (`Distribution.localFourier_cutoffProduct`).
@@ -90,6 +90,18 @@ where `φ = 1` (`Distribution.cutoffProduct_apply_eq_integral`), and so does not
 products glue (`Distribution.existsUnique_gluing`) to `Distribution.product S T h`, characterized
 by agreeing with `φ² S T` where `φ = 1` (`Distribution.product_apply_of_eventuallyEq_one`,
 `Distribution.eq_product_iff`).
+
+The wave front set of the glued product obeys Hörmander's pointwise bound
+
+`WF(S T) ⊆ {(x, ξ + η) | ξ ∈ Σ_x(S) ∪ {0}, η ∈ Σ_x(T) ∪ {0}}`
+
+(`Distribution.waveFrontSet_product_subset`), where both frequencies now come from the same point
+`x`. Near `x` the product is a cut-off product `φ² S T`, and the cut-off bound applies with
+`supp φ` small: the frequencies of `WF(S)` over points near `x` stay close to the directions of
+`Σ_x(S)` (`Distribution.eventually_forall_mem_waveFrontSet_imp_mem`), and likewise for `T`, so a
+frequency `ζ` off the pointwise sum is also off the sum pooled over a small neighbourhood of `x`,
+by the cone geometry of `TauCeti.exists_cones_of_notMem_add`. In particular the product is smooth
+wherever both factors are (`Distribution.singularSupport_product_subset`).
 
 ## Main declarations
 
@@ -123,12 +135,17 @@ by agreeing with `φ² S T` where `φ = 1` (`Distribution.product_apply_of_event
 * `Distribution.product_apply_of_apply_eq_integral_right`,
   `Distribution.product_apply_of_apply_eq_integral_left`: the product with a smooth function is
   multiplication by that function.
+* `Distribution.waveFrontSet_product_subset`: Hörmander's pointwise bound for the wave front set
+  of the product.
+* `Distribution.singularSupport_product_subset`: the singular support of `S T` lies in the union
+  of the singular supports of `S` and `T`.
 
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, second edition,
-  Springer, 1990, Theorem 8.2.10 and its proof (the product of distributions); the bounds here are
-  cut-off, non-pointwise analogues.
+  Springer, 1990, Theorem 8.2.10 and its proof (the product of distributions and its wave front
+  set); the cut-off bounds are non-pointwise analogues, and the bound for the glued product is
+  Hörmander's.
 * C. Brouder, N. V. Dang, F. Hélein, *Continuity of the fundamental operations on distributions
   having a specified wave front set*, Studia Math. 232 (2016), arXiv:1409.7662v2, Theorem 6.1,
   whose cone form is followed here with one pair of cones over the support of the cutoff.
@@ -1143,5 +1160,116 @@ theorem product_apply_of_apply_eq_integral_left (h : ∀ x, NoOppositeCovectorsO
   by_cases hx : x ∈ tsupport ψ
   · simp [hχ, hφ1.self_of_nhdsSet x hx]
   · simp [hχ, image_eq_zero_of_notMem_tsupport hx]
+
+/-! ### The wave front set of the product -/
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- If `ζ` is not a sum `ξ + η` with `ξ` either `0` or a frequency of `WF(S)` at `x`, and `η`
+either `0` or a frequency of `WF(T)` at `x`, and `S` and `T` have no opposite covectors at `x`,
+then the same holds with the frequencies of `WF(S)` and `WF(T)` pooled over a neighbourhood of
+`x`. -/
+private theorem exists_mem_nhds_notMem_add {x ζ : E} (hx : x ∈ Ω)
+    (h : NoOppositeCovectorsOn S T {x})
+    (hζ : ζ ∉ insert 0 {ξ | (x, ξ) ∈ S.waveFrontSet} + insert 0 {η | (x, η) ∈ T.waveFrontSet}) :
+    ∃ V ∈ 𝓝 x, ζ ∉ insert 0 (Prod.snd '' (S.waveFrontSet ∩ V ×ˢ univ)) +
+      insert 0 (Prod.snd '' (T.waveFrontSet ∩ V ×ˢ univ)) := by
+  -- The frequencies at `x`, with `0`, form closed cones without opposite nonzero vectors.
+  have hfib (R : 𝓓'(Ω, ℂ)) :
+      Prod.snd '' (R.waveFrontSet ∩ {x} ×ˢ univ) = {ξ | (x, ξ) ∈ R.waveFrontSet} := by
+    ext ξ
+    simp
+  have hcl (R : 𝓓'(Ω, ℂ)) : IsClosed (insert 0 {ξ | (x, ξ) ∈ R.waveFrontSet}) := by
+    simpa [hfib R] using isClosed_insert_zero_image_snd_waveFrontSet_inter isCompact_singleton
+      (singleton_subset_iff.2 hx) R
+  have hcone (R : 𝓓'(Ω, ℂ)) : ∀ t : ℝ, 0 < t → ∀ ξ ∈ insert 0 {ξ | (x, ξ) ∈ R.waveFrontSet},
+      t • ξ ∈ insert 0 {ξ | (x, ξ) ∈ R.waveFrontSet} :=
+    TauCeti.forall_smul_mem_insert_zero fun t ht ξ hξ ↦ (smul_mem_waveFrontSet_iff ht).2 hξ
+  have hopp := TauCeti.forall_neg_mem_insert_zero_imp_eq_zero (Γ₁ := {ξ | (x, ξ) ∈ S.waveFrontSet})
+    (Γ₂ := {ξ | (x, ξ) ∈ T.waveFrontSet})
+    fun ξ hξ hξ' ↦ (noOppositeCovectorsOn_singleton_iff.1 h ξ hξ hξ').elim
+  obtain ⟨U₁, U₂, hU₁, hU₂, hΓU₁, hΓU₂, hcU₁, hcU₂, Γ, -, hζΓ, -, c, hc, hgeom⟩ :=
+    TauCeti.exists_cones_of_notMem_add (hcl S) (hcl T) (mem_insert _ _) (mem_insert _ _)
+      (hcone S) (hcone T) hopp hζ
+  have hζ0 : ζ ≠ 0 := by
+    rintro rfl
+    exact hζ ⟨0, mem_insert _ _, 0, mem_insert _ _, add_zero 0⟩
+  -- Near `x`, the frequencies of `WF(S)` lie in `U₁` and those of `WF(T)` in `U₂`.
+  have hS := eventually_forall_mem_waveFrontSet_imp_mem hx hU₁ hcU₁ fun ξ hξ ↦
+    hΓU₁ ⟨mem_insert_of_mem _ hξ, (mem_waveFrontSet_iff.1 hξ).2.1⟩
+  have hT := eventually_forall_mem_waveFrontSet_imp_mem hx hU₂ hcU₂ fun ξ hξ ↦
+    hΓU₂ ⟨mem_insert_of_mem _ hξ, (mem_waveFrontSet_iff.1 hξ).2.1⟩
+  refine ⟨_, hS.and hT, ?_⟩
+  rintro ⟨a, ha, b, hb, rfl⟩
+  have ha' : a = 0 ∨ a ∈ U₁ := ha.imp_right <| by
+    rintro ⟨⟨y, ξ⟩, ⟨hwf, ⟨hy, -⟩, -⟩, rfl⟩
+    exact hy ξ hwf
+  have hb' : b = 0 ∨ b ∈ U₂ := hb.imp_right <| by
+    rintro ⟨⟨y, ξ⟩, ⟨hwf, ⟨-, hy⟩, -⟩, rfl⟩
+    exact hy ξ hwf
+  -- A summand in `U₁` or `U₂` forces the other summand to be comparable to the sum.
+  have hsmall : ¬ c * ‖a + b‖ ≤ 0 := (mul_pos hc (norm_pos_iff.2 hζ0)).not_ge
+  rcases ha' with rfl | ha'
+  · rcases hb' with rfl | hb'
+    · exact hζ0 (add_zero 0)
+    · exact hsmall (by simpa using ((hgeom _ hζΓ 0).2 (by simpa using hb')))
+  · have hgeom' := (hgeom _ hζΓ a).1 ha'
+    rw [add_sub_cancel_left] at hgeom'
+    rcases hb' with rfl | hb'
+    · exact hsmall (by simpa using hgeom'.2)
+    · exact hgeom'.1 hb'
+
+/-- **The wave front set of a product** (Hörmander I, Theorem 8.2.10). If at every point no
+covector `(x, ξ)` of the wave front set of `S` is opposite to a covector `(x, -ξ)` of the wave
+front set of `T`, then every covector `(x, ζ)` of the wave front set of the product `S T` is a
+sum `ζ = ξ + η`, where `ξ` is `0` or a frequency of `WF(S)` at `x`, and `η` is `0` or a
+frequency of `WF(T)` at `x`. Unlike `Distribution.waveFrontSet_cutoffProduct_subset`, both
+frequencies come from the same point `x`. -/
+theorem waveFrontSet_product_subset (h : ∀ x, NoOppositeCovectorsOn S T {x}) :
+    (S.product T h).waveFrontSet ⊆ {p | p.2 ∈ insert 0 {ξ | (p.1, ξ) ∈ S.waveFrontSet} +
+      insert 0 {η | (p.1, η) ∈ T.waveFrontSet}} := by
+  rintro ⟨x, ζ⟩ hp
+  have hx := (mem_waveFrontSet_iff.1 hp).1
+  by_contra hζ
+  obtain ⟨V, hV, hζV⟩ := exists_mem_nhds_notMem_add hx (h x) hζ
+  -- Near `x`, the product is a cut-off product `φ² S T` with `φ` supported in `V`, whose wave
+  -- front set is controlled by the frequencies over `V`.
+  obtain ⟨W, hW, hWc⟩ := exists_mem_nhds_noOppositeCovectorsOn hx
+    (noOppositeCovectorsOn_singleton_iff.1 (h x))
+  obtain ⟨φ, U, hU, hxU, hφU, hφVW⟩ := exists_eqOn_one_tsupport_subset (𝕜 := ℂ)
+    (inter_mem hV hW) hx
+  have hφ : NoOppositeCovectorsOn S T (tsupport φ) := hWc.mono (hφVW.trans inter_subset_right)
+  set U' : Opens E := ⟨U ∩ Ω, hU.inter Ω.isOpen⟩
+  have hU' : U' ≤ Ω := fun y hy ↦ hy.2
+  have hres : (restrictCLM (S.product T h) : 𝓓'(U', ℂ)) =
+      restrictCLM (S.cutoffProduct T φ hφ) := by
+    ext ψ
+    rw [restrictCLM_apply, restrictCLM_apply]
+    refine product_apply_of_eventuallyEq_one h hφ (hφU.eventuallyEq_of_mem (hU.mem_nhdsSet.2 ?_))
+    simpa [hU'] using ψ.tsupport_subset.trans inter_subset_left
+  have hpφ : (x, ζ) ∈ (S.cutoffProduct T φ hφ).waveFrontSet := by
+    have hmem : (x, ζ) ∈ (S.product T h).waveFrontSet ∩ (U' : Set E) ×ˢ univ :=
+      ⟨hp, ⟨hxU, hx⟩, mem_univ _⟩
+    rw [waveFrontSet_inter_eq_of_restrictCLM_eq hU' hres] at hmem
+    exact hmem.1
+  have hsub : tsupport φ ×ˢ (univ : Set E) ⊆ V ×ˢ univ :=
+    prod_mono (hφVW.trans inter_subset_left) subset_rfl
+  exact hζV (add_subset_add
+    (insert_subset_insert (image_mono (inter_subset_inter_right _ hsub)))
+    (insert_subset_insert (image_mono (inter_subset_inter_right _ hsub)))
+    (waveFrontSet_cutoffProduct_subset hφ hpφ).2)
+
+/-- **The singular support of a product.** The product `S T` is smooth wherever both `S` and `T`
+are: its singular support lies in the union of theirs. -/
+theorem singularSupport_product_subset (h : ∀ x, NoOppositeCovectorsOn S T {x}) :
+    (S.product T h).singularSupport ⊆ S.singularSupport ∪ T.singularSupport := by
+  rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet, ← fst_image_waveFrontSet]
+  rintro _ ⟨⟨x, ζ⟩, hp, rfl⟩
+  obtain ⟨a, ha, b, hb, hab⟩ := waveFrontSet_product_subset h hp
+  -- The frequency `ζ = a + b` is nonzero, so `a` or `b` is a frequency of a wave front set.
+  rcases ha with rfl | ha
+  · rcases hb with rfl | hb
+    · exact ((mem_waveFrontSet_iff.1 hp).2.1 (by simpa using hab.symm)).elim
+    · exact Or.inr ⟨(x, b), hb, rfl⟩
+  · exact Or.inl ⟨(x, a), ha, rfl⟩
 
 end Distribution

@@ -44,7 +44,8 @@ locus of such maps inside `E →L[𝕜] F`, not of any one of them.
   stays surjective under a perturbation bounded by `θ < 1` times the map.
 * `ContinuousLinearMap.surjective_of_norm_sub_lt_inv_rightInverse`: a perturbation smaller than
   the reciprocal bound of a given bounded nonlinear right inverse stays surjective.
-* `ContinuousLinearMap.exists_rightInverse_of_norm_comp_sub_id_lt`: an approximate bounded
+* `ContinuousLinearMap.exists_rightInverse_of_norm_comp_sub_id_lt` and its special case
+  `ContinuousLinearMap.exists_rightInverse_of_norm_comp_sub_id_le_half`: an approximate bounded
   linear right inverse, with `‖T ∘ Q₀ - id‖ < 1`, corrects to an exact one.
 * `ContinuousLinearMap.surjective_coprod_toSpanSingleton_iff`: a continuous linear map extended
   by the line through a vector is surjective exactly when its range and the vector span the
@@ -190,6 +191,19 @@ theorem exists_rightInverse_of_norm_comp_sub_id_lt [CompleteSpace F] (T : E →L
       rw [one_def]
       exact norm_id_le
     linarith
+
+/-- **Approximate right inverses within `1 / 2`.** If `‖T ∘ Q₀ - id‖ ≤ 1 / 2`, then `T` has a
+bounded linear right inverse of norm at most `2 ‖Q₀‖`. -/
+theorem exists_rightInverse_of_norm_comp_sub_id_le_half [CompleteSpace F] (T : E →L[𝕜] F)
+    (Q₀ : F →L[𝕜] E) (h : ‖T.comp Q₀ - ContinuousLinearMap.id 𝕜 F‖ ≤ 1 / 2) :
+    ∃ Q : F →L[𝕜] E, T.comp Q = ContinuousLinearMap.id 𝕜 F ∧ ‖Q‖ ≤ 2 * ‖Q₀‖ := by
+  obtain ⟨Q, hQ, hQn⟩ := T.exists_rightInverse_of_norm_comp_sub_id_lt Q₀ (by linarith)
+  refine ⟨Q, hQ, hQn.trans ?_⟩
+  have hinv : (1 - ‖T.comp Q₀ - ContinuousLinearMap.id 𝕜 F‖)⁻¹ ≤ 2 := by
+    rw [inv_le_comm₀ (by linarith) (by norm_num)]
+    linarith
+  rw [mul_comm]
+  exact mul_le_mul_of_nonneg_right hinv (norm_nonneg Q₀)
 
 /-- A continuous linear map and a vector together span the target exactly when the map extended
 by the line through the vector is surjective. -/
