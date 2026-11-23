@@ -228,6 +228,16 @@ theorem smulLeft_apply {S : Type*} [SeminormedAddGroup S] [DistribSMul S E]
     (f : C₀(α, E)) (x : α) :
     smulLeft R c hc hC f x = c x • f x := (rfl)
 
+/-- A uniform bound `C` for `c` is also a bound for pointwise scalar multiplication by `c`. -/
+theorem norm_smulLeft_apply_le {S : Type*} [SeminormedAddGroup S] [DistribSMul S E]
+    [IsBoundedSMul S E] [SMulCommClass R S E]
+    (c : α → S) (hc : Continuous c) (hC : ∃ C, ∀ x, ‖c x‖ ≤ C)
+    {C : ℝ} (hCu : ∀ x, ‖c x‖ ≤ C) (f : C₀(α, E)) :
+    ‖smulLeft R c hc hC f‖ ≤ C * ‖f‖ :=
+  norm_compLeftFamily_apply_le _ _ _ (fun x e => by
+    rw [_root_.smul_apply, ContinuousLinearMap.id_apply]
+    exact (norm_smul_le (c x) e).trans (mul_le_mul_of_nonneg_right (hCu x) (norm_nonneg e))) f
+
 /-- **Pointwise action of a bounded coefficient map.** A continuous linear map
 `u : E →L[R] F` with a uniform bound `‖u x‖ ≤ C * ‖x‖` acts on `C₀(α, E)` by postcomposition,
 giving a continuous linear map `C₀(α, E) →L[R] C₀(α, F)`: the constant case of

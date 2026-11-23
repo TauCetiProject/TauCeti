@@ -343,6 +343,17 @@ private theorem tendsto_rightBoundaryAngle_atTop {θ : ℝ} (hθ : θ ∈ Ioo 0 
     π - 2 * Real.arctan ((x + Real.cos (π * θ)) / Real.sin (π * θ))).tendsto 0).comp hexp).congr
     fun _ ↦ rfl
 
+private theorem tendsto_leftBoundaryAngle_atBot {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
+    Tendsto (leftBoundaryAngle θ) atBot (𝓝 (2 * π)) :=
+  sub_zero (2 * π) ▸ (tendsto_const_nhds (x := 2 * π)).sub
+    (tendsto_rightBoundaryAngle_atBot (sub_mem_Ioo_zero_iff_right.2 hθ))
+
+private theorem tendsto_leftBoundaryAngle_atTop {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
+    Tendsto (leftBoundaryAngle θ) atTop (𝓝 (2 * π * θ)) := by
+  have hlim : 2 * π - 2 * π * (1 - θ) = 2 * π * θ := by ring
+  exact hlim ▸ (tendsto_const_nhds (x := 2 * π)).sub
+    (tendsto_rightBoundaryAngle_atTop (sub_mem_Ioo_zero_iff_right.2 hθ))
+
 private theorem range_rightBoundaryAngle {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     range (rightBoundaryAngle θ) = Ioo 0 (2 * π * θ) := by
   have hmono := strictMono_rightBoundaryAngle hθ
@@ -383,6 +394,42 @@ theorem range_stripToUnitDisc_mul_I {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
   have h : (fun t : ℝ ↦ stripToUnitDisc θ (t * I)) = circleMap 0 1 ∘ leftBoundaryAngle θ :=
     funext fun t ↦ (circleMap_leftBoundaryAngle hθ t).symm
   rw [h, Set.range_comp, range_leftBoundaryAngle hθ]
+
+/-- Along the right strip boundary `1 + t * I`, `stripToUnitDisc θ` tends to `1` as `t → -∞`. -/
+theorem tendsto_stripToUnitDisc_one_add_mul_I_atBot {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
+    Tendsto (fun t : ℝ ↦ stripToUnitDisc θ (1 + t * I)) atBot (𝓝 1) := by
+  have hfun : (fun t : ℝ ↦ stripToUnitDisc θ (1 + t * I)) = circleMap 0 1 ∘ rightBoundaryAngle θ :=
+    funext fun t ↦ (circleMap_rightBoundaryAngle hθ t).symm
+  have h0 : circleMap (0 : ℂ) 1 0 = 1 := by simp [circleMap]
+  rw [hfun, ← h0]
+  exact ((continuous_circleMap 0 1).tendsto 0).comp (tendsto_rightBoundaryAngle_atBot hθ)
+
+/-- Along the right strip boundary `1 + t * I`, `stripToUnitDisc θ` tends to
+`circleMap 0 1 (2 * π * θ)` as `t → +∞`. -/
+theorem tendsto_stripToUnitDisc_one_add_mul_I_atTop {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
+    Tendsto (fun t : ℝ ↦ stripToUnitDisc θ (1 + t * I)) atTop (𝓝 (circleMap 0 1 (2 * π * θ))) := by
+  have hfun : (fun t : ℝ ↦ stripToUnitDisc θ (1 + t * I)) = circleMap 0 1 ∘ rightBoundaryAngle θ :=
+    funext fun t ↦ (circleMap_rightBoundaryAngle hθ t).symm
+  rw [hfun]
+  exact ((continuous_circleMap 0 1).tendsto _).comp (tendsto_rightBoundaryAngle_atTop hθ)
+
+/-- Along the left strip boundary `t * I`, `stripToUnitDisc θ` tends to `1` as `t → -∞`. -/
+theorem tendsto_stripToUnitDisc_mul_I_atBot {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
+    Tendsto (fun t : ℝ ↦ stripToUnitDisc θ (t * I)) atBot (𝓝 1) := by
+  have hfun : (fun t : ℝ ↦ stripToUnitDisc θ (t * I)) = circleMap 0 1 ∘ leftBoundaryAngle θ :=
+    funext fun t ↦ (circleMap_leftBoundaryAngle hθ t).symm
+  have h1 : circleMap (0 : ℂ) 1 (2 * π) = 1 := by simp [circleMap]
+  rw [hfun, ← h1]
+  exact ((continuous_circleMap 0 1).tendsto _).comp (tendsto_leftBoundaryAngle_atBot hθ)
+
+/-- Along the left strip boundary `t * I`, `stripToUnitDisc θ` tends to
+`circleMap 0 1 (2 * π * θ)` as `t → +∞`. -/
+theorem tendsto_stripToUnitDisc_mul_I_atTop {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
+    Tendsto (fun t : ℝ ↦ stripToUnitDisc θ (t * I)) atTop (𝓝 (circleMap 0 1 (2 * π * θ))) := by
+  have hfun : (fun t : ℝ ↦ stripToUnitDisc θ (t * I)) = circleMap 0 1 ∘ leftBoundaryAngle θ :=
+    funext fun t ↦ (circleMap_leftBoundaryAngle hθ t).symm
+  rw [hfun]
+  exact ((continuous_circleMap 0 1).tendsto _).comp (tendsto_leftBoundaryAngle_atTop hθ)
 
 private theorem boundary_pullback {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {g d k : ℝ → ℝ} {b : ℝ → ℂ} {s : Set ℝ} (ψ : ℂ → E)
@@ -541,6 +588,11 @@ theorem integral_stripPoissonMeasure₀ {E : Type*} [NormedAddCommGroup E] [Norm
 
 /-! ### Circle averages pulled back to the strip boundary -/
 
+private theorem Ioc_union_Ioc_two_pi {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
+    Ioc 0 (2 * π * θ) ∪ Ioc (2 * π * θ) (2 * π) = Ioc 0 (2 * π) :=
+  Ioc_union_Ioc_eq_Ioc (mul_nonneg two_pi_pos.le hθ.1.le)
+    (mul_le_of_le_one_right two_pi_pos.le hθ.2.le)
+
 /-- Circle-integrability on the unit circle is equivalent to integrability against both strip
 Poisson kernels along the boundary lines of the strip. -/
 theorem circleIntegrable_iff_stripPoissonKernel {E : Type*} [NormedAddCommGroup E]
@@ -548,12 +600,13 @@ theorem circleIntegrable_iff_stripPoissonKernel {E : Type*} [NormedAddCommGroup 
     CircleIntegrable ψ 0 1 ↔
       Integrable (fun t ↦ stripPoissonKernel₀ θ t • ψ (stripToUnitDisc θ (t * I))) ∧
         Integrable (fun t ↦ stripPoissonKernel₁ θ t • ψ (stripToUnitDisc θ (1 + t * I))) := by
+  have hIoc : IntegrableOn (fun φ ↦ ψ (circleMap 0 1 φ)) (Ioc 0 (2 * π)) ↔
+      IntegrableOn (fun φ ↦ ψ (circleMap 0 1 φ)) (Ioo 0 (2 * π * θ)) ∧
+        IntegrableOn (fun φ ↦ ψ (circleMap 0 1 φ)) (Ioo (2 * π * θ) (2 * π)) := by
+    rw [← Ioc_union_Ioc_two_pi hθ, integrableOn_union,
+      integrableOn_Ioc_iff_integrableOn_Ioo, integrableOn_Ioc_iff_integrableOn_Ioo]
   rw [circleIntegrable_def, intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le,
-    ← Ioc_union_Ioc_eq_Ioc (mul_nonneg two_pi_pos.le hθ.1.le)
-      (mul_le_of_le_one_right two_pi_pos.le hθ.2.le),
-    integrableOn_union, integrableOn_Ioc_iff_integrableOn_Ioo,
-    integrableOn_Ioc_iff_integrableOn_Ioo, and_comm,
-    (rightBoundary_pullback hθ ψ).1, (leftBoundary_pullback hθ ψ).1]
+    hIoc, and_comm, (rightBoundary_pullback hθ ψ).1, (leftBoundary_pullback hθ ψ).1]
 
 /-- **Change of variables from the unit circle to the strip boundary.** For `0 < θ < 1` and
 circle-integrable data `ψ` on `sphere 0 1`, `circleAverage ψ 0 1` equals the sum of the two
@@ -563,17 +616,20 @@ theorem circleAverage_eq_stripPoissonKernel {E : Type*} [NormedAddCommGroup E] [
     circleAverage ψ 0 1 =
       (∫ t, stripPoissonKernel₀ θ t • ψ (stripToUnitDisc θ (t * I))) +
         ∫ t, stripPoissonKernel₁ θ t • ψ (stripToUnitDisc θ (1 + t * I)) := by
-  have h0 : 0 ≤ 2 * π * θ := mul_nonneg two_pi_pos.le hθ.1.le
-  have h1 : 2 * π * θ ≤ 2 * π := mul_le_of_le_one_right two_pi_pos.le hθ.2.le
-  have hψ' := (intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le).1
-    ((circleIntegrable_def _ _ _).1 hψ)
-  rw [circleAverage_def, ← intervalIntegral.integral_add_adjacent_intervals
-    ((intervalIntegrable_iff_integrableOn_Ioc_of_le h0).2 (hψ'.mono_set (Ioc_subset_Ioc_right h1)))
-    ((intervalIntegrable_iff_integrableOn_Ioc_of_le h1).2 (hψ'.mono_set (Ioc_subset_Ioc_left h0))),
-    intervalIntegral.integral_of_le h0, intervalIntegral.integral_of_le h1,
-    integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo,
-    (rightBoundary_pullback hθ ψ).2, (leftBoundary_pullback hθ ψ).2,
-    add_comm, ← smul_add, inv_smul_smul₀ two_pi_pos.ne']
+  have hψ' : IntegrableOn (fun φ ↦ ψ (circleMap 0 1 φ))
+      (Ioc 0 (2 * π * θ) ∪ Ioc (2 * π * θ) (2 * π)) := by
+    rw [Ioc_union_Ioc_two_pi hθ]
+    exact (intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le).1
+      ((circleIntegrable_def _ _ _).1 hψ)
+  obtain ⟨hψ₀₁, hψ₁₂⟩ := integrableOn_union.1 hψ'
+  have hsplit : (∫ φ in 0..(2 * π), ψ (circleMap 0 1 φ)) =
+      (∫ φ in Ioo (2 * π * θ) (2 * π), ψ (circleMap 0 1 φ)) +
+        ∫ φ in Ioo 0 (2 * π * θ), ψ (circleMap 0 1 φ) := by
+    rw [intervalIntegral.integral_of_le two_pi_pos.le, ← Ioc_union_Ioc_two_pi hθ,
+      setIntegral_union (Ioc_disjoint_Ioc_of_le le_rfl) measurableSet_Ioc hψ₀₁ hψ₁₂,
+      integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo, add_comm]
+  rw [circleAverage_def, hsplit, (leftBoundary_pullback hθ ψ).2,
+    (rightBoundary_pullback hθ ψ).2, ← smul_add, inv_smul_smul₀ two_pi_pos.ne']
 
 /-! ### Gluing strip boundary data onto the unit circle -/
 
@@ -645,6 +701,9 @@ def unitDiscToStrip (θ : ℝ) (w : ℂ) : ℂ :=
 theorem unitDiscToStrip_def (θ : ℝ) (w : ℂ) : unitDiscToStrip θ w =
     Complex.log ((exp (I * π * θ) - w * exp (-I * π * θ)) / (1 - w)) / (I * π) := (rfl)
 
+private theorem unitDiscToStrip_eq_log_div (θ : ℝ) (w : ℂ) :
+    unitDiscToStrip θ w = Complex.log (unitDiscToExpStrip θ w) / (I * π) := (rfl)
+
 private theorem im_unitDiscToExpStrip_pos {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {w : ℂ}
     (hw : w ∈ ball 0 1) : 0 < (unitDiscToExpStrip θ w).im := by
   have hu_lt : ‖w‖ < 1 := mem_ball_zero_iff.1 hw
@@ -694,8 +753,8 @@ theorem stripToUnitDisc_unitDiscToStrip {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {w : �
   have hw_ne : unitDiscToExpStrip θ w ≠ 0 := fun h ↦ by
     have := im_unitDiscToExpStrip_pos hθ hw; simp [h] at this
   have hexp : exp (I * π * unitDiscToStrip θ w) = unitDiscToExpStrip θ w := by
-    change exp (I * π * (Complex.log (unitDiscToExpStrip θ w) / (I * π))) = unitDiscToExpStrip θ w
-    rw [mul_div_cancel₀ _ (mul_ne_zero I_ne_zero (ofReal_ne_zero.2 pi_pos.ne')),
+    rw [unitDiscToStrip_eq_log_div,
+      mul_div_cancel₀ _ (mul_ne_zero I_ne_zero (ofReal_ne_zero.2 pi_pos.ne')),
       Complex.exp_log hw_ne]
   rw [stripToUnitDisc, hexp]
   exact (stripToUnitDisc_cayley_symm hθ hw1).2
@@ -711,22 +770,15 @@ private theorem im_I_pi_mul_mem_Ioo {z : ℂ} (hz : z ∈ verticalStrip 0 1) :
 theorem unitDiscToStrip_stripToUnitDisc {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {z : ℂ}
     (hz : z ∈ verticalStrip 0 1) : unitDiscToStrip θ (stripToUnitDisc θ z) = z := by
   have him := im_I_pi_mul_mem_Ioo hz
-  change Complex.log (unitDiscToExpStrip θ (stripToUnitDisc θ z)) / (I * π) = z
-  rw [unitDiscToExpStrip_stripToUnitDisc hθ (verticalStrip_subset_verticalClosedStrip 0 1 hz),
+  rw [unitDiscToStrip_eq_log_div,
+    unitDiscToExpStrip_stripToUnitDisc hθ (verticalStrip_subset_verticalClosedStrip 0 1 hz),
     Complex.log_exp him.1 him.2,
     mul_div_cancel_left₀ _ (mul_ne_zero I_ne_zero (ofReal_ne_zero.2 pi_pos.ne'))]
 
 /-- For `0 < θ < 1`, `stripToUnitDisc θ` is injective on `verticalStrip 0 1`. -/
 theorem injOn_stripToUnitDisc {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
-    InjOn (stripToUnitDisc θ) (verticalStrip 0 1) := by
-  intro z₁ hz₁ z₂ hz₂ h
-  have him₁ := im_I_pi_mul_mem_Ioo hz₁
-  have him₂ := im_I_pi_mul_mem_Ioo hz₂
-  have hexp : exp (I * π * z₁) = exp (I * π * z₂) := by
-    rw [← unitDiscToExpStrip_stripToUnitDisc hθ (verticalStrip_subset_verticalClosedStrip 0 1 hz₁),
-      ← unitDiscToExpStrip_stripToUnitDisc hθ (verticalStrip_subset_verticalClosedStrip 0 1 hz₂), h]
-  exact mul_left_cancel₀ (mul_ne_zero I_ne_zero (ofReal_ne_zero.2 pi_pos.ne'))
-    (Complex.exp_inj_of_neg_pi_lt_of_le_pi him₁.1 him₁.2 him₂.1 him₂.2 hexp)
+    InjOn (stripToUnitDisc θ) (verticalStrip 0 1) :=
+  Set.LeftInvOn.injOn fun _ hz ↦ unitDiscToStrip_stripToUnitDisc hθ hz
 
 /-- For `0 < θ < 1`, `stripToUnitDisc θ` maps `verticalStrip 0 1` onto `ball 0 1`. -/
 theorem surjOn_stripToUnitDisc {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
