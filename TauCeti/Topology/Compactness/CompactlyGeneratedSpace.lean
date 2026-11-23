@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
-import Mathlib.Topology.Instances.Shrink
 
 /-!
 # Continuity and universe-polymorphic transfer for compactly generated topologies
@@ -20,8 +19,6 @@ of the universe of `X`). This file provides basic continuity and transfer lemmas
   `TopologicalSpace.compactlyGenerated.{u} X` is continuous if and only if its composites with the
   continuous maps from compact Hausdorff spaces in `Type u` are, complementing Mathlib's
   `continuous_from_compactlyGenerated`.
-* `IsCompact.exists_compHaus_homeomorph`: every `u`-small Hausdorff compact subset is homeomorphic
-  to a compact Hausdorff space in `Type u`.
 * `Homeomorph.uCompactlyGeneratedSpace` and `Homeomorph.uCompactlyGeneratedSpace_iff`:
   `u`-compact generation transfers across homeomorphisms between arbitrary universes.
 -/
@@ -29,16 +26,6 @@ of the universe of `X`). This file provides basic continuity and transfer lemmas
 public section
 
 universe u v w
-
-/-- Every `u`-small Hausdorff compact subset is homeomorphic to a compact Hausdorff space in
-`Type u`. -/
-theorem IsCompact.exists_compHaus_homeomorph {Y : Type w} [TopologicalSpace Y] {K : Set Y}
-    (hK : IsCompact K) [T2Space K] [Small.{u} K] : ∃ S : CompHaus.{u}, Nonempty (S ≃ₜ K) := by
-  have : CompactSpace K := isCompact_iff_compactSpace.1 hK
-  let e := Shrink.homeomorph.{u} K
-  have : CompactSpace (Shrink.{u} K) := e.compactSpace
-  have : T2Space (Shrink.{u} K) := e.t2Space
-  exact ⟨CompHaus.of (Shrink.{u} K), ⟨e.symm⟩⟩
 
 namespace Homeomorph
 

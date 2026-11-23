@@ -27,14 +27,13 @@ This file supplies two complements:
   `G`-generated, with no universe restriction between `G`, `Y`, and `Z`.
 * **Comparison with the compact-open topology** (`ContinuousMap.toContinuousMapGeneratedBy`,
   `Topology.ContinuousMapGeneratedBy.equivContinuousMap`,
-  `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMap`,
-  `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq`):
+  `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMap`):
   every continuous map `Y → Z` is `G`-continuous and the inclusion
   `C(Y, Z) → ContinuousMapGeneratedBy G Y Z` is continuous for the compact-open topology on
   `C(Y, Z)`. When `Y` is `G`-generated, this map is a bijection; when, in addition, every compact
-  subset of `Y` is the continuous image of a compact subset of some generator `G i` (or more
-  generally a finite union of such images), it is a homeomorphism. This applies immediately to
-  every test space `G i` (`Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapIndex`).
+  subset of `Y` is the continuous image of a compact subset of some generator `G i`, it is a
+  homeomorphism. This applies immediately to every test space `G i`
+  (`Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapIndex`).
 
 ## References
 
@@ -59,19 +58,12 @@ namespace Topology.IsGeneratedBy
 variable {ι : Type t} {G : ι → Type u} [∀ i, TopologicalSpace (G i)]
   {Y : Type v} [TopologicalSpace Y] {Z : Type v'} [TopologicalSpace Z]
 
-/-- Auxiliary product-generation criterion: if `Y` and `Z` are `G`-generated, `Z` is locally
-compact, and every `G i × Z` is `G`-generated, then `Y × Z` is `G`-generated. -/
-theorem prod_of_locallyCompactSpace_right_of_forall [IsGeneratedBy G Y] [IsGeneratedBy G Z]
-    [LocallyCompactSpace Z] (hGZ : ∀ i, IsGeneratedBy G (G i × Z)) :
-    IsGeneratedBy G (Y × Z) :=
-  letI := hGZ; prod_right
-
 /-- If a generator `G i` is locally compact and `G j × G i` is `G`-generated for every `j`, then
 the product of any `G`-generated space with `G i` on the right is `G`-generated. -/
 theorem prod_index (Y : Type v) [TopologicalSpace Y] [IsGeneratedBy G Y] (i : ι)
     [LocallyCompactSpace (G i)] [∀ j, IsGeneratedBy G (G j × G i)] :
     IsGeneratedBy G (Y × G i) :=
-  prod_of_locallyCompactSpace_right_of_forall fun _ ↦ inferInstance
+  prod_right
 
 /-- If a generator `G i` is locally compact and `G j × G i` is `G`-generated for every `j`, then
 the product of `G i` on the left with any `G`-generated space is `G`-generated. -/
@@ -79,7 +71,7 @@ theorem index_prod (i : ι) (Z : Type v') [TopologicalSpace Z] [IsGeneratedBy G 
     [LocallyCompactSpace (G i)] [∀ j, IsGeneratedBy G (G j × G i)] :
     IsGeneratedBy G (G i × Z) :=
   have : IsGeneratedBy G (Z × G i) := prod_index Z i
-  (Homeomorph.prodComm Z (G i)).isGeneratedBy
+  (Homeomorph.prodComm Z (G i)).isQuotientMap.isGeneratedBy
 
 section LocallyCompactGenerators
 
@@ -91,14 +83,15 @@ variable [∀ i, LocallyCompactSpace (G i)] [∀ i j, IsGeneratedBy G (G i × G 
 `G i × G j`, if `Y` and `Z` are `G`-generated and `Z` is locally compact, then the ordinary product
 `Y × Z` is `G`-generated. -/
 theorem prod_of_locallyCompactSpace_right [LocallyCompactSpace Z] : IsGeneratedBy G (Y × Z) :=
-  prod_of_locallyCompactSpace_right_of_forall fun i ↦ index_prod i Z
+  haveI := fun i ↦ index_prod (G := G) i Z
+  prod_right
 
 /-- Assuming all generators `G i` are locally compact with `G`-generated pairwise products
 `G i × G j`, if `Y` and `Z` are `G`-generated and `Y` is locally compact, then the ordinary product
 `Y × Z` is `G`-generated. -/
 theorem prod_of_locallyCompactSpace_left [LocallyCompactSpace Y] : IsGeneratedBy G (Y × Z) :=
-  have : IsGeneratedBy G (Z × Y) := prod_of_locallyCompactSpace_right Z Y
-  (Homeomorph.prodComm Z Y).isGeneratedBy
+  haveI := fun i ↦ index_prod (G := G) i Y
+  prod_left
 
 end LocallyCompactGenerators
 
@@ -176,63 +169,22 @@ theorem equivContinuousMap_apply [IsGeneratedBy G Y] (f : ContinuousMapGenerated
 theorem equivContinuousMap_symm_apply [IsGeneratedBy G Y] (f : C(Y, Z)) :
     (equivContinuousMap (G := G)).symm f = f.toContinuousMapGeneratedBy G := (rfl)
 
-section CompactCover
-
-variable [IsGeneratedBy G Y]
-  (hK : ∀ ⦃K : Set Y⦄, IsCompact K →
-    ∃ (m : ℕ) (i : Fin m → ι) (L : ∀ j, Set (G (i j))) (p : ∀ j, C(G (i j), Y)),
-      (∀ j, IsCompact (L j)) ∧ ⋃ j, p j '' L j = K)
-
-include hK
-
-/-- If every compact subset of a `G`-generated space `Y` is a finite union of images of compact
-subsets of test spaces `G i` under continuous maps `G i → Y`, then `toContinuousMap` is continuous
-into the compact-open topology on `C(Y, Z)`. -/
-theorem continuous_toContinuousMap_of_exists_iUnion_isCompact_image_eq :
-    Continuous (toContinuousMap : ContinuousMapGeneratedBy G Y Z → C(Y, Z)) := by
-  rw [ContinuousMap.continuous_compactOpen]
-  intro K hKc U hUo
-  obtain ⟨m, i, L, p, hLc, rfl⟩ := hK hKc
-  have hset : {f : ContinuousMapGeneratedBy G Y Z |
-      Set.MapsTo f.toContinuousMap (⋃ j, p j '' L j) U} =
-      ⋂ j, precomp (p j) ⁻¹' {h : C(G (i j), Z) | Set.MapsTo h (L j) U} := by
-    ext f; simp [Set.mapsTo_iUnion, Set.mapsTo_image_iff, Function.comp_def]
-  rw [hset]
-  exact isOpen_iInter_of_finite fun j ↦
-    (ContinuousMap.isOpen_setOfPred_mapsTo (hLc j) hUo).preimage (continuous_precomp (p j))
-
-/-- If `Y` is `G`-generated and every compact subset of `Y` is a finite union of images of compact
-subsets of test spaces `G i` under continuous maps, then `ContinuousMapGeneratedBy G Y Z` is
-homeomorphic to the compact-open mapping space `C(Y, Z)`. -/
-@[expose]
-def homeomorphContinuousMapOfExistsIUnionIsCompactImageEq :
-    ContinuousMapGeneratedBy G Y Z ≃ₜ C(Y, Z) where
-  toEquiv := equivContinuousMap
-  continuous_toFun := continuous_toContinuousMap_of_exists_iUnion_isCompact_image_eq hK
-  continuous_invFun := ContinuousMap.continuous_toContinuousMapGeneratedBy
-
-@[simp]
-theorem homeomorphContinuousMapOfExistsIUnionIsCompactImageEq_apply
-    (f : ContinuousMapGeneratedBy G Y Z) :
-    homeomorphContinuousMapOfExistsIUnionIsCompactImageEq hK f = f.toContinuousMap := (rfl)
-
-@[simp]
-theorem homeomorphContinuousMapOfExistsIUnionIsCompactImageEq_symm_apply (f : C(Y, Z)) :
-    (homeomorphContinuousMapOfExistsIUnionIsCompactImageEq (Z := Z) hK).symm f =
-      f.toContinuousMapGeneratedBy G := (rfl)
-
-end CompactCover
-
 /-- If every compact subset of `Y` is the image of a compact subset of some generator `G i` along a
 continuous map `G i → Y`, then `toContinuousMap` is continuous into the compact-open topology on
 `C(Y, Z)`. -/
 theorem continuous_toContinuousMap [IsGeneratedBy G Y]
     (hG : ∀ ⦃K : Set Y⦄, IsCompact K →
       ∃ (i : ι) (L : Set (G i)) (p : C(G i, Y)), IsCompact L ∧ p '' L = K) :
-    Continuous (toContinuousMap : ContinuousMapGeneratedBy G Y Z → C(Y, Z)) :=
-  continuous_toContinuousMap_of_exists_iUnion_isCompact_image_eq fun _ hK ↦
-    let ⟨i, L, p, hL, hp⟩ := hG hK
-    ⟨1, fun _ ↦ i, fun _ ↦ L, fun _ ↦ p, fun _ ↦ hL, by simpa [Set.iUnion_const] using hp⟩
+    Continuous (toContinuousMap : ContinuousMapGeneratedBy G Y Z → C(Y, Z)) := by
+  refine ContinuousMap.continuous_compactOpen.2 fun K hK U hU ↦ ?_
+  obtain ⟨i, L, p, hL, rfl⟩ := hG hK
+  have hpre : {f : ContinuousMapGeneratedBy G Y Z | Set.MapsTo f.toContinuousMap (p '' L) U} =
+      precomp p ⁻¹' {g : C(G i, Z) | Set.MapsTo g L U} := by
+    ext f
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage, coe_toContinuousMap, precomp_apply,
+      Set.mapsTo_image_iff]
+  rw [hpre]
+  exact (ContinuousMap.isOpen_setOfPred_mapsTo hL hU).preimage (continuous_precomp p)
 
 /-- When `Y` is `G`-generated and every compact subset of `Y` is the continuous image of a compact
 subset of some generator `G i`, the `G`-probed mapping space `ContinuousMapGeneratedBy G Y Z` is

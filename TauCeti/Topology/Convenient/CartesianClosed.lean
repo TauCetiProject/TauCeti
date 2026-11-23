@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
-public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
-public import Mathlib.CategoryTheory.Monoidal.Closed.InternalCurrying
+public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
 public import TauCeti.Topology.Category.TopCat.Monoidal
 public import TauCeti.Topology.Convenient.Category
 public import TauCeti.Topology.Convenient.GeneratedBy
@@ -33,10 +32,6 @@ with the `MonoidalClosed` structure induced by `Topology.ContinuousMapGeneratedB
   `TopCat` is the generated-topology counit on `Y × Z`
   (`GeneratedByTopCat.prodComparison_toTopCat`), so `Y ⊗ Z ≃ₜ Y × Z` whenever `Y × Z` is
   `G`-generated (in particular whenever either factor is locally compact).
-* When every compact subset of `Y` is a finite union of continuous images of compact subsets of
-  generators `G i`, `(ihom Y).obj Z` is canonically isomorphic to the `G`-generated refinement of
-  the compact-open mapping space `C(Y, Z)`
-  (`GeneratedByTopCat.ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq`).
 
 ## References
 
@@ -610,23 +605,6 @@ theorem equiv_ihom_coev_app_apply (Y Z : GeneratedByTopCat.{v} G) (z : Z) (y : Y
       (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z)).symm (y, z) := by
   rw [← MonoidalClosed.curry_id_eq_coev, equiv_curry_apply]; rfl
 
-@[simp]
-theorem equiv_pre_app_apply {W Y : GeneratedByTopCat.{v} G} (f : W ⟶ Y)
-    (Z : GeneratedByTopCat.{v} G) (g : ↑((ihom Y).obj Z)) (w : W) :
-    (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G W Z)
-      (((MonoidalClosed.pre f).app Z) g)) w =
-      (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z) g) (f w) := by
-  let wg : ↑(W ⊗ (ihom Y).obj Z) :=
-    (WithGeneratedByTopology.equiv (X := G) (Y := W × _)).symm (w, g)
-  let fwg : ↑(Y ⊗ (ihom Y).obj Z) :=
-    (WithGeneratedByTopology.equiv (X := G) (Y := Y × _)).symm (f w, g)
-  have h := congrArg (fun φ : W ⊗ (ihom Y).obj Z ⟶ Z ↦ φ wg)
-    (MonoidalClosed.uncurry_pre f Z)
-  rw [uncurry_apply, CategoryTheory.comp_apply, whiskerRight_apply] at h
-  have hev := ihom_ev_app_apply Y Z fwg
-  simp only [wg, fwg, Equiv.apply_symm_apply] at h hev
-  exact h.trans hev
-
 /-- Canonical morphism from the `G`-generated refinement of the compact-open mapping space
 `C(Y, Z)` into the internal hom `(ihom Y).obj Z`. -/
 @[expose]
@@ -649,64 +627,6 @@ theorem equiv_compactOpenToIhom_apply (Y Z : GeneratedByTopCat.{v} G)
       (TopCat.ofHom ⟨ContinuousMap.toContinuousMapGeneratedBy G,
         ContinuousMap.continuous_toContinuousMapGeneratedBy⟩) f
   simp [h]
-
-section CompactOpen
-
-variable {Y : GeneratedByTopCat.{v} G}
-  (hK : ∀ ⦃K : Set Y⦄, IsCompact K →
-    ∃ (m : ℕ) (i : Fin m → ι) (L : ∀ j, Set (G (i j))) (p : ∀ j, C(G (i j), Y)),
-      (∀ j, IsCompact (L j)) ∧ ⋃ j, p j '' L j = K)
-
-include hK
-
-/-- When every compact subset of `Y` is a finite union of images of compact subsets of generators
-`G i` under continuous maps, the internal hom `(ihom Y).obj Z` is canonically isomorphic to the
-`G`-generated refinement of the compact-open mapping space `C(Y, Z)`. -/
-@[expose]
-def ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq (Z : GeneratedByTopCat.{v} G) :
-    (ihom Y).obj Z ≅ of (X := G) (WithGeneratedByTopology G C(Y, Z)) :=
-  (TopCat.toGeneratedByTopCat (X := G)).mapIso <|
-    TopCat.isoOfHomeo
-      (X := TopCat.of (ContinuousMapGeneratedBy G Y Z)) (Y := TopCat.of C(Y, Z)) <|
-      ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq
-        (G := G) (Z := Z) hK
-
-@[simp]
-theorem equiv_ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_hom_apply
-    (Z : GeneratedByTopCat.{v} G) (f : ↑((ihom Y).obj Z)) (y : Y) :
-    WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z))
-      ((ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).hom f) y =
-      (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z) f) y :=
-  congrArg (fun φ : C(Y, Z) ↦ φ y) <|
-    TopCat.equiv_toGeneratedByTopCat_map_apply (G := G)
-      (TopCat.isoOfHomeo (X := TopCat.of (ContinuousMapGeneratedBy G Y Z))
-        (Y := TopCat.of C(Y, Z))
-        (ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq
-          (G := G) (Z := Z) hK)).hom f
-
-theorem equiv_ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_inv_apply
-    (Z : GeneratedByTopCat.{v} G) (f : WithGeneratedByTopology G C(Y, Z)) (y : Y) :
-    (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
-      ((ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).inv f)) y =
-      WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z)) f y :=
-  congrArg (fun φ : ContinuousMapGeneratedBy G Y Z ↦ φ y) <|
-    TopCat.equiv_toGeneratedByTopCat_map_apply (G := G)
-      (TopCat.isoOfHomeo (X := TopCat.of (ContinuousMapGeneratedBy G Y Z))
-        (Y := TopCat.of C(Y, Z))
-        (ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq
-          (G := G) (Z := Z) hK)).inv f
-
-@[simp]
-theorem ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_inv (Z : GeneratedByTopCat.{v} G) :
-    (ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).inv = compactOpenToIhom Y Z :=
-  GeneratedByTopCat.hom_ext fun f ↦
-    (WithGeneratedByTopology.equiv (X := G)
-      (Y := ContinuousMapGeneratedBy G Y Z)).injective <|
-      DFunLike.ext _ _ fun y ↦ by
-        rw [equiv_ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_inv_apply,
-          equiv_compactOpenToIhom_apply]
-
-end CompactOpen
 
 end Closed
 

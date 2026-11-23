@@ -25,9 +25,8 @@ and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
 * Compact subsets as `CompHaus.{u}` images (`IsCompact.exists_compHaus_range_eq`), giving
   `TauCeti.instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2` and the compact-open comparison
   `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapCompHaus`.
-* Locally compact product preservation (`UCompactlyGeneratedSpace.prod_right`,
-  `UCompactlyGeneratedSpace.prod_left`,
-  `TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right`,
+* Locally compact product preservation
+  (`TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right`,
   `TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left`), specializing Whitehead's
   quotient-product argument via `Topology.IsGeneratedBy.prod_right` and
   `TauCeti.Topology.Convenient.HomSpace`.
@@ -176,27 +175,13 @@ end TauCeti
 
 namespace UCompactlyGeneratedSpace
 
-/-- Taking the product on the right with a `u`-small locally compact Hausdorff space preserves
-`u`-compact generation (specializing `Topology.IsGeneratedBy.prod_right`, Whitehead 1948). -/
-theorem prod_right {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
-    [UCompactlyGeneratedSpace.{u} X] [LocallyCompactSpace Y] [T2Space Y] [Small.{u} Y] :
-    UCompactlyGeneratedSpace.{u} (X × Y) :=
-  (Topology.isGeneratedBy_compHaus_iff.{u} (X × Y)).1
-    (Topology.IsGeneratedBy.prod_right (G := fun K : CompHaus.{u} ↦ K))
-
-/-- Taking the product on the left with a `u`-small locally compact Hausdorff space preserves
-`u`-compact generation (specializing `Topology.IsGeneratedBy.prod_left`, Whitehead 1948). -/
-theorem prod_left {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
-    [LocallyCompactSpace X] [T2Space X] [Small.{u} X] [UCompactlyGeneratedSpace.{u} Y] :
-    UCompactlyGeneratedSpace.{u} (X × Y) :=
-  (Topology.isGeneratedBy_compHaus_iff.{u} (X × Y)).1
-    (Topology.IsGeneratedBy.prod_left (G := fun K : CompHaus.{u} ↦ K))
-
 instance instProdUnitIntervalRight (X : Type v) [TopologicalSpace X]
-    [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (X × unitInterval) := prod_right
+    [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (X × unitInterval) :=
+  TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right.{u} X unitInterval
 
 instance instProdUnitIntervalLeft (X : Type v) [TopologicalSpace X]
-    [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (unitInterval × X) := prod_left
+    [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (unitInterval × X) :=
+  TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left.{u} unitInterval X
 
 end UCompactlyGeneratedSpace
 
