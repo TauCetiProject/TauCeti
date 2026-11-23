@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Topology.Join
+public import TauCeti.Topology.Constructions.Join
 
 import TauCeti.Analysis.Normed.Module.Normalize
 
