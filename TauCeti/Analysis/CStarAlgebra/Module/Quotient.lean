@@ -137,6 +137,15 @@ theorem idealSubmodule_mono {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) :
   (idealSubmodule_le_iff (isClosed_idealSubmodule J₂ E)).mpr fun _ ha x =>
     smul_mem_idealSubmodule (h ha) x
 
+/-- Inherited `A`-valued inner product on `idealSubmodule J E`. -/
+instance instInnerIdealSubmodule [Inner A E] (J : TwoSidedIdeal A) :
+    Inner A (idealSubmodule J E) where
+  inner x y := inner A (x : E) (y : E)
+
+@[simp]
+theorem coe_inner_idealSubmodule [Inner A E] {J : TwoSidedIdeal A} (x y : idealSubmodule J E) :
+    inner A x y = inner A (x : E) (y : E) := (rfl)
+
 end TopologicalModule
 
 end IdealSubmoduleDefs
@@ -187,6 +196,29 @@ theorem coeff_smul_mem_idealSubmodule {J : TwoSidedIdeal A} (b : A) {z : E}
       ← (semigroupAction A E).mul_smul]
     exact smul_mem_idealSubmodule (J.mul_mem_left b a ha) x
   simpa only [S, Submodule.mem_comap, ContinuousLinearMap.coe_coe, smulCLM_apply] using hle hz
+
+/-- Inherited coefficient action on `idealSubmodule J E`. -/
+instance (priority := 50) instSMulIdealSubmodule (J : TwoSidedIdeal A) :
+    SMul A (idealSubmodule J E) where
+  smul a x := ⟨a • (x : E), coeff_smul_mem_idealSubmodule a x.property⟩
+
+@[simp, norm_cast]
+theorem coe_smul_idealSubmodule {J : TwoSidedIdeal A} (a : A) (x : idealSubmodule J E) :
+    ((a • x : idealSubmodule J E) : E) = a • (x : E) := (rfl)
+
+/-- `idealSubmodule J E` is a Hilbert `A`-module with the inherited `A`-action and inner product. -/
+noncomputable instance instCStarModuleIdealSubmodule (J : TwoSidedIdeal A) :
+    CStarModule A (idealSubmodule J E) where
+  toInner := inferInstance
+  inner_add_right := inner_add_right (A := A)
+  inner_self_nonneg := inner_self_nonneg (A := A)
+  inner_self {x} := by
+    rw [Subtype.ext_iff, ZeroMemClass.coe_zero]
+    exact inner_self (A := A)
+  inner_op_smul_right := inner_op_smul_right (A := A)
+  inner_smul_right_complex := inner_smul_right_complex (A := A)
+  star_inner x y := star_inner (A := A) (x : E) (y : E)
+  norm_eq_sqrt_norm_inner_self x := norm_eq_sqrt_norm_inner_self (A := A) (x : E)
 
 @[simp]
 theorem idealSubmodule_top : idealSubmodule (⊤ : TwoSidedIdeal A) E = ⊤ :=
@@ -687,6 +719,26 @@ theorem quotientFactorCLM_surjective {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤
     Function.Surjective (quotientFactorCLM (E := E) h) := fun u =>
   let ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ u; ⟨Submodule.Quotient.mk x, hx⟩
 
+/-- An element `x : E` vanishes in the factored quotient `E ⧸ idealSubmodule J₂ E` if and only if
+`x ∈ idealSubmodule J₂ E`. (`simp` also derives this from `quotientFactorCLM_mk` and
+`Submodule.Quotient.mk_eq_zero`.) -/
+theorem quotientFactorCLM_mk_eq_zero_iff {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) (x : E) :
+    quotientFactorCLM h (Submodule.Quotient.mk x : E ⧸ idealSubmodule J₁ E) = 0 ↔
+      x ∈ idealSubmodule J₂ E := by
+  rw [quotientFactorCLM_mk, Submodule.Quotient.mk_eq_zero]
+
+/-- The kernel of `quotientFactorCLM h` is the image of `idealSubmodule J₂ E` under
+`(idealSubmodule J₁ E).mkQ`. -/
+theorem ker_quotientFactorCLM {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) :
+    (quotientFactorCLM (E := E) h).ker =
+      (idealSubmodule J₂ E).map (idealSubmodule J₁ E).mkQ := by
+  ext u
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, quotientFactorCLM_mk,
+    Submodule.Quotient.mk_eq_zero, Submodule.mem_map, Submodule.mkQ_apply, Submodule.Quotient.eq]
+  refine ⟨fun hx => ⟨x, hx, by simp⟩, fun ⟨y, hy, hyx⟩ => ?_⟩
+  simpa using (idealSubmodule J₂ E).sub_mem hy (idealSubmodule_mono h hyx)
+
 @[simp]
 theorem quotientFactorCLM_refl (J : TwoSidedIdeal A) :
     quotientFactorCLM (E := E) (le_refl J) =
@@ -993,6 +1045,14 @@ theorem inner_quotientMapCLM_op_of_inner_eq (J : TwoSidedIdeal A) [IsClosed (J :
   obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
   exact unop_injective (by
     rw [quotientMapCLM_mk, quotientMapCLM_mk, unop_inner_mk_mk, unop_inner_mk_mk, hinner])
+
+/-- Right-module form: a right `A`-linear map preserving `Aᵐᵒᵖ`-valued inner products descends to
+an isometry on quotients. -/
+theorem isometry_quotientMapCLM_op (J : TwoSidedIdeal A) [IsClosed (J : Set A)]
+    (T : E →L[ℂ] F) (hT : ∀ (u : Aᵐᵒᵖ) (x : E), T (u • x) = u • T x)
+    (hinner : ∀ x y : E, inner Aᵐᵒᵖ (T x) (T y) = inner Aᵐᵒᵖ x y) :
+    Isometry (quotientMapCLM J.op T hT) :=
+  isometry_quotientMapCLM J.op T hT hinner
 
 /-- Pointwise adjoint identity on right quotients, without requiring an order on `A ⧸ J`. -/
 theorem inner_quotientMapCLM_op_adjoint (J : TwoSidedIdeal A) [IsClosed (J : Set A)]
