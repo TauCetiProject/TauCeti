@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Examples.AffineRay
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Basic
+public import TauCeti.Geometry.Toric.Algebraic.Fan.DivisorWeights
 
 /-!
 # The fan of the projective line
@@ -14,6 +14,12 @@ public import TauCeti.Geometry.Toric.Algebraic.Fan.Basic
 The positive and negative rays in the standard rank-one lattice, together with their common
 zero face, form a complete regular fan. Its two maximal affine charts are the standard affine
 lines used to construct the projective line.
+
+The two rays of the fan, with primitive generators `1` and `-1`, index the boundary points `0`
+and `∞`. Identifying a character `u` with the integer `u 1`, the divisor of `u` has coefficients
+`(u 1, -u 1)`, and the character weights of the divisor with coefficients `a₊` at `0` and `a₋` at
+`∞` are the integers in `[-a₊, a₋]`. For `d • D₋` these are `0, 1, …, d`, the exponents of the
+monomial sections of `O(d)`; they are empty exactly when the degree `a₊ + a₋` is negative.
 
 ## References
 
@@ -170,5 +176,108 @@ theorem isComplete_projectiveLineFan : projectiveLineFan.IsComplete := by
     exact (mem_affineRayCone_iff x).mpr hx
   · refine ⟨negativeRayCone, negativeRayCone_mem_projectiveLineFan, ?_⟩
     exact (mem_negativeRayCone_iff x).mpr (le_of_lt (lt_of_not_ge hx))
+
+/-! ### Rays and character weights -/
+
+/-- The positive standard ray spans a line. -/
+theorem finrank_span_affineRayCone :
+    Module.finrank ℝ (Submodule.span ℝ (affineRayCone : Set (Fin 1 → ℝ))) = 1 := by
+  rw [affineRayCone_def]
+  exact PointedCone.finrank_span_coe_hull_singleton one_ne_zero
+
+/-- The negative standard ray spans a line. -/
+theorem finrank_span_negativeRayCone :
+    Module.finrank ℝ (Submodule.span ℝ (negativeRayCone : Set (Fin 1 → ℝ))) = 1 := by
+  rw [negativeRayCone_def]
+  exact PointedCone.finrank_span_coe_hull_singleton (neg_ne_zero.2 one_ne_zero)
+
+/-- The positive ray of the projective-line fan, the boundary point `0`. -/
+def projectiveLinePositiveRay : projectiveLineFan.Ray :=
+  ⟨⟨affineRayCone, affineRayCone_mem_projectiveLineFan⟩, finrank_span_affineRayCone⟩
+
+/-- The negative ray of the projective-line fan, the boundary point `∞`. -/
+def projectiveLineNegativeRay : projectiveLineFan.Ray :=
+  ⟨⟨negativeRayCone, negativeRayCone_mem_projectiveLineFan⟩, finrank_span_negativeRayCone⟩
+
+/-- The cone of the positive ray is the positive standard ray. -/
+@[simp]
+theorem toCone_projectiveLinePositiveRay :
+    (projectiveLinePositiveRay.toCone : PointedCone ℝ (Fin 1 → ℝ)) = affineRayCone :=
+  (rfl)
+
+/-- The cone of the negative ray is the negative standard ray. -/
+@[simp]
+theorem toCone_projectiveLineNegativeRay :
+    (projectiveLineNegativeRay.toCone : PointedCone ℝ (Fin 1 → ℝ)) = negativeRayCone :=
+  (rfl)
+
+/-- The projective-line fan has exactly two rays. -/
+theorem projectiveLineFan_ray_eq_or (rho : projectiveLineFan.Ray) :
+    rho = projectiveLinePositiveRay ∨ rho = projectiveLineNegativeRay := by
+  rcases (mem_projectiveLineFan_cones _).1 rho.toCone.property with h | h | h
+  · exact absurd h (Fan.Ray.toCone_ne_bot _ rho)
+  · exact Or.inl (Subtype.ext (Subtype.ext (h.trans toCone_projectiveLinePositiveRay.symm)))
+  · exact Or.inr (Subtype.ext (Subtype.ext (h.trans toCone_projectiveLineNegativeRay.symm)))
+
+/-- The two rays of the projective-line fan are distinct. -/
+theorem projectiveLinePositiveRay_ne_negativeRay :
+    projectiveLinePositiveRay ≠ projectiveLineNegativeRay := by
+  intro h
+  have h1 : (1 : Fin 1 → ℝ) ∈ (projectiveLineNegativeRay.toCone : PointedCone ℝ (Fin 1 → ℝ)) := by
+    rw [← h, toCone_projectiveLinePositiveRay, mem_affineRayCone_iff]
+    simp
+  rw [toCone_projectiveLineNegativeRay, mem_negativeRayCone_iff] at h1
+  norm_num at h1
+
+/-- The primitive generator of the positive ray is `1`. -/
+@[simp]
+theorem primitiveGenerator_projectiveLinePositiveRay :
+    projectiveLinePositiveRay.primitiveGenerator = 1 := by
+  have hv : IsPrimitive (1 : Fin 1 → ℤ) := by
+    simpa only [basisFun_finOne_eq_one] using (Pi.basisFun ℤ (Fin 1)).isPrimitive 0
+  refine (Fan.Ray.primitiveGenerator_eq_iff _).2 ⟨?_, hv⟩
+  rw [toCone_projectiveLinePositiveRay, intCast_finOne_one, affineRayCone_def]
+  exact PointedCone.subset_hull rfl
+
+/-- The primitive generator of the negative ray is `-1`. -/
+@[simp]
+theorem primitiveGenerator_projectiveLineNegativeRay :
+    projectiveLineNegativeRay.primitiveGenerator = -1 := by
+  have hv : IsPrimitive (-(1 : Fin 1 → ℤ)) := by
+    simpa only [basisFun_finOne_eq_one] using (Pi.basisFun ℤ (Fin 1)).isPrimitive 0 |>.neg
+  refine (Fan.Ray.primitiveGenerator_eq_iff _).2 ⟨?_, hv⟩
+  rw [toCone_projectiveLineNegativeRay, map_neg, intCast_finOne_one, negativeRayCone_def]
+  exact PointedCone.subset_hull rfl
+
+/-- On the projective line, identifying a character `u` with `u 1`, the character weights of the
+divisor with coefficients `a₊` at `0` and `a₋` at `∞` are the integers in `[-a₊, a₋]`. -/
+theorem mem_divisorWeights_projectiveLineFan (a : projectiveLineFan.Ray → ℤ)
+    (u : (Fin 1 → ℤ) →+ ℤ) :
+    u ∈ projectiveLineFan.divisorWeights a ↔
+      -a projectiveLinePositiveRay ≤ u 1 ∧ u 1 ≤ a projectiveLineNegativeRay := by
+  rw [Fan.mem_divisorWeights]
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h rho ↦ ?_⟩
+  · simpa using h projectiveLinePositiveRay
+  · have := h projectiveLineNegativeRay
+    simp only [primitiveGenerator_projectiveLineNegativeRay, map_neg] at this
+    omega
+  · rcases projectiveLineFan_ray_eq_or rho with rfl | rfl
+    · simpa using h.1
+    · simp only [primitiveGenerator_projectiveLineNegativeRay, map_neg]
+      omega
+
+/-- On the projective line, a divisor has character weights exactly when its degree is
+nonnegative. -/
+theorem divisorWeights_projectiveLineFan_nonempty_iff (a : projectiveLineFan.Ray → ℤ) :
+    (projectiveLineFan.divisorWeights a).Nonempty ↔
+      0 ≤ a projectiveLinePositiveRay + a projectiveLineNegativeRay := by
+  refine ⟨fun ⟨u, hu⟩ ↦ ?_, fun h ↦ ?_⟩
+  · have := (mem_divisorWeights_projectiveLineFan a u).1 hu
+    omega
+  · refine ⟨-a projectiveLinePositiveRay • Pi.evalAddMonoidHom (fun _ : Fin 1 ↦ ℤ) 0, ?_⟩
+    rw [mem_divisorWeights_projectiveLineFan]
+    simp only [AddMonoidHom.smul_apply, Pi.evalAddMonoidHom_apply, Pi.one_apply, smul_eq_mul,
+      mul_one]
+    omega
 
 end TauCeti.Toric

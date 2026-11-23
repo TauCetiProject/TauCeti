@@ -87,7 +87,7 @@ theorem exists_hasStrictFDerivAt_comp_eq_id (h : IsSliceChart e (L : Set F) S)
       hlin.continuousAt.preimage_mem_nhds (by simpa using e.open_target.mem_nhds hyt)
     filter_upwards [ht] with z hz
     rw [h.mem_iff (e.map_target hz), e.right_inv hz]
-    exact L.add_mem hey (s z).2
+    exact L.add_mem hey (s z).property
 
 end IsSliceChart
 

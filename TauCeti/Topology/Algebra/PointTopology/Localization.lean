@@ -71,14 +71,14 @@ theorem isEmbedding_localization [Semiring R] [Algebra k R] [TopologicalSpace R]
     ⟨x.comp (IsScalarTower.toAlgHom k A B), (IsLocalization.Away.algebraMap_isUnit f).map x⟩
   have hr : Continuous r := (continuous_comap _).subtype_mk _
   -- On `U`, the inverse of the value at `f` is continuous.
-  have hinv : Continuous fun y : U ↦ (↑y.2.unit⁻¹ : R) :=
+  have hinv : Continuous fun y : U ↦ (↑y.property.unit⁻¹ : R) :=
     Units.continuous_coe_inv.comp <| hR.continuous_iff.2 <|
-      (continuous_eval f).comp continuous_subtype_val
+      (continuous_eval f).comp continuous_subtypeVal
   -- Every `b : B` is a fraction `a b / f ^ n b`, so its value is a continuous function on `U`.
   choose n a ha using IsLocalization.Away.surj (S := B) f
-  let g (y : U) (b : B) : R := y.1 (a b) * (↑y.2.unit⁻¹ : R) ^ n b
+  let g (y : U) (b : B) : R := y.val (a b) * (↑y.property.unit⁻¹ : R) ^ n b
   have hg : Continuous g := continuous_pi fun b ↦
-    ((continuous_eval (a b)).comp continuous_subtype_val).mul (hinv.pow (n b))
+    ((continuous_eval (a b)).comp continuous_subtypeVal).mul (hinv.pow (n b))
   have hgr : g ∘ r = fun x : B →ₐ[k] R ↦ (x : B → R) := by
     funext x b
     dsimp only [Function.comp_apply, g]

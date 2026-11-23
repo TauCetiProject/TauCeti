@@ -77,8 +77,7 @@ section MayerVietoris
 
 variable {K : Type w} [CommRing K] {M : ModuleCat.{w} K}
 
-attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 variable {X Y : TopCat.{w}} (π : X ⟶ Y) {U' V' : Set X} {A B : Set X} (hAU : A ⊆ U')
   (hBV : B ⊆ V') {U V : Set Y} (hπU : MapsTo π U' U) (hπV : MapsTo π V' V)
@@ -189,7 +188,7 @@ include hUV' in
 private lemma δ_comm (q mq m : ℕ) (hq : q + n = mq) (hm : mq + 1 = m) (h : q + 1 + n = m) :
     ΦI π hAU hBV hπU hπV u q mq hq ≫
         singularCohomologyPairMayerVietorisδ (ModuleCat.of K K) K M hAU hBV
-          (hU'.preimage continuous_subtype_val) (hV'.preimage continuous_subtype_val) hA hB mq m
+          (hU'.preimage continuous_subtypeVal) (hV'.preimage continuous_subtypeVal) hA hB mq m
           hm =
       singularCohomologyMayerVietorisδ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl ≫
         Φ π hAU hBV u (q + 1) m h := by
@@ -222,8 +221,8 @@ private lemma bijective_pullbackCup_union_zero
       (biprod.map (ΦU (M := M) π hAU hBV hπU u 0 m h) (ΦV (M := M) π hAU hBV hπV u 0 m h)))
     (hΦI : Function.Injective (ΦI (M := M) π hAU hBV hπU hπV u 0 m h)) :
     Function.Bijective (Φ (M := M) π hAU hBV u 0 m h) := by
-  have hU'' := hU'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
-  have hV'' := hV'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
+  have hU'' := hU'.preimage (continuous_subtypeVal (p := (· ∈ U' ∪ V')))
+  have hV'' := hV'.preimage (continuous_subtypeVal (p := (· ∈ U' ∪ V')))
   -- Injectivity: if `Φ a = 0`, the maps over `U` and `V` send the restriction of `a` to
   -- `H⁰(U) ⊞ H⁰(V)` to the restriction of `Φ a = 0`. They are injective, so the restriction of
   -- `a` vanishes, and the restriction `H⁰(Y) ⟶ H⁰(U) ⊞ H⁰(V)` is injective.
@@ -306,8 +305,8 @@ theorem bijective_pullbackCup_union {p m : ℕ}
       (hbiprod 0 le_rfl) (hΦI 0 le_rfl).1
   | succ q =>
     -- In positive degrees the five lemma applies to the two Mayer–Vietoris sequences.
-    have hU'' := hU'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
-    have hV'' := hV'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
+    have hU'' := hU'.preimage (continuous_subtypeVal (p := (· ∈ U' ∪ V')))
+    have hV'' := hV'.preimage (continuous_subtypeVal (p := (· ∈ U' ∪ V')))
     have hq : q + n + 1 = q + 1 + n := by lia
     have hq' : q ≤ q + 1 := by lia
     exact LinearMap.bijective_of_surjective_of_bijective_of_bijective_of_injective _ _ _ _ _ _ _ _
@@ -366,7 +365,7 @@ private theorem comp_restrictPreimagePairUnionIso_hom_comp_restrictPreimagePairM
       (inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
       (inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V)))
     (ψ : P ⟶ TopPair.ofInclusion (inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S))
-    (hφψ : ∀ x, (TopPair.Hom.fst φ x).1 = (TopPair.Hom.fst ψ x).1) :
+    (hφψ : ∀ x, (TopPair.Hom.fst φ x).val = (TopPair.Hom.fst ψ x).val) :
     φ ≫ (restrictPreimagePairUnionIso π Z U V).hom ≫ restrictPreimagePairMap π Z (U ∪ V) =
       ψ ≫ restrictPreimagePairMap π Z S :=
   TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦
@@ -395,7 +394,7 @@ theorem bijective_pullbackCup_of_union_eq_univ (hU : IsOpen U) (hV : IsOpen V)
   have hZ' {W : Set Y} (hW : IsOpen W) :
       IsOpen (((↑) : ↥(π ⁻¹' U ∩ Z ∪ π ⁻¹' V ∩ Z) → X) ⁻¹' (π ⁻¹' W ∩ Z)) := by
     rw [preimage_inter, preimage_val_eq_univ_of_subset hZ, inter_univ]
-    exact (hW.preimage π.hom.continuous).preimage continuous_subtype_val
+    exact (hW.preimage π.hom.continuous).preimage continuous_subtypeVal
   refine (TopPair.bijective_pullbackCup_iff_of_isIso
     ((restrictPreimagePairUnionIso π Z U V).hom ≫ restrictPreimagePairMap π Z (U ∪ V)) (𝟙 Y)
     (g := ofHom (ContinuousMap.subtypeVal _) ≫ π) (by
@@ -505,8 +504,8 @@ theorem bijective_pullbackCupRestrict_union {U V : Set Y} (hU : IsOpen U) (hV : 
   have key := bijective_pullbackCup_of_union_eq_univ (X := of ↥(π ⁻¹' (U ∪ V)))
     (ofHom (π.hom.restrictPreimage (U ∪ V))) ((↑) ⁻¹' (π ⁻¹' (U ∪ V) ∩ Z)) M
     (U := ((↑) : ↥(U ∪ V) → Y) ⁻¹' U) (V := ((↑) : ↥(U ∪ V) → Y) ⁻¹' V)
-    (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val)
-    (eq_univ_of_forall fun x ↦ x.2) (n := n) (p := p) (m := m)
+    (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal)
+    (eq_univ_of_forall fun x ↦ x.property) (n := n) (p := p) (m := m)
   replace key := key (restrictClass π Z (U ∪ V) u)
     (fun q hq ↦ (bijective_pullbackCupRestrict_restrict_iff π Z M subset_union_left rfl u).2
       (hU' q hq))

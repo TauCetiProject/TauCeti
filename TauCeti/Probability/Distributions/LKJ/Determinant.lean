@@ -122,8 +122,8 @@ theorem integral_rpow_det_partialCorrelationGram_pi_betaMeasure_of_le_one (hp : 
     ∫ z, (partialCorrelationGram z).det ^ q
       ∂(Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) = 1 := by
   let _ : IsEmpty (strictLowerTriangle p) := ⟨fun ij ↦ by
-    have := ij.2
-    have := ij.1.1.isLt
+    have := ij.property
+    have := ij.val.1.isLt
     omega⟩
   simpa using integral_rpow_det_partialCorrelationGram_pi_betaMeasure
     (a := a) (q := q) (fun ij ↦ isEmptyElim ij) (fun ij ↦ isEmptyElim ij)
@@ -136,11 +136,11 @@ theorem integrable_rpow_det_partialCorrelationGram_pi_betaMeasure_lkj_iff
     {η : ℝ} (hη : 0 < η) :
     Integrable (fun z ↦ (partialCorrelationGram z).det ^ q)
       (Measure.pi fun ij : strictLowerTriangle p ↦
-        (betaMeasure (η + ((p : ℝ) - ij.1.2 - 2) / 2)
-          (η + ((p : ℝ) - ij.1.2 - 2) / 2)).map (fun x ↦ -1 + 2 * x)) ↔
+        (betaMeasure (η + ((p : ℝ) - ij.val.2 - 2) / 2)
+          (η + ((p : ℝ) - ij.val.2 - 2) / 2)).map (fun x ↦ -1 + 2 * x)) ↔
       p ≤ 1 ∨ -η < q := by
-  have hcol (ij : strictLowerTriangle p) : (ij.1.2 : ℝ) + 2 ≤ p := by
-    have hnat : ij.1.2.val + 2 ≤ p := by have := ij.2; have := ij.1.1.isLt; omega
+  have hcol (ij : strictLowerTriangle p) : (ij.val.2 : ℝ) + 2 ≤ p := by
+    have hnat : ij.val.2.val + 2 ≤ p := by have := ij.property; have := ij.val.1.isLt; omega
     exact_mod_cast hnat
   rw [integrable_rpow_det_partialCorrelationGram_pi_betaMeasure_iff
     (fun ij ↦ by linarith [hcol ij])]
@@ -152,14 +152,14 @@ theorem integrable_rpow_det_partialCorrelationGram_pi_betaMeasure_lkj_iff
     let ij : strictLowerTriangle p :=
       ⟨(⟨p - 1, by omega⟩, ⟨p - 2, by omega⟩), by simp only [Fin.lt_def]; omega⟩
     have hlast := h ij
-    have hval : (ij.1.2 : ℝ) = (p : ℝ) - 2 := by
+    have hval : (ij.val.2 : ℝ) = (p : ℝ) - 2 := by
       dsimp [ij]
       rw [Nat.cast_sub (by omega), Nat.cast_ofNat]
     rw [hval] at hlast
     linarith
   · rintro (hp | hq) ij
-    · have := ij.2
-      have := ij.1.1.isLt
+    · have := ij.property
+      have := ij.val.1.isLt
       omega
     · linarith [hcol ij]
 

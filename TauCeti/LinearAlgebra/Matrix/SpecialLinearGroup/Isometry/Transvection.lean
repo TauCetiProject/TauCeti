@@ -88,7 +88,7 @@ theorem exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection (hσ : Functi
     {ε : K} (hQ : (Q.map σ)ᵀ = ε • Q) {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K}
     (ha : a + ε * σ a = 0) :
     ∃ g ∈ Q.specialIsometryGroup σ, (g : Matrix n n K) = Q.unitaryTransvection σ v a := by
-  let t : SpecialLinearGroup n K := ⟨_, det_unitaryTransvection hv a⟩
+  let t : SpecialLinearGroup n K := .mk _ (det_unitaryTransvection hv a)
   refine ⟨t, ?_, rfl⟩
   rw [mem_specialIsometryGroup_iff, SpecialLinearGroup.coe_mk]
   exact transpose_map_unitaryTransvection_mul_mul_self hσ hQ hv ha
@@ -171,8 +171,8 @@ theorem mem_unitaryTransvectionSubgroup_mk_iff {v : n → K} (hv : v ≠ 0)
 /-- **The transvection group of an isotropic point is abelian.** -/
 instance (p : Q.isotropicPoints σ) : IsMulCommutative (Q.unitaryTransvectionSubgroup σ p) :=
   ⟨⟨fun x y ↦ by
-    obtain ⟨a, ha⟩ := x.2
-    obtain ⟨b, hb⟩ := y.2
+    obtain ⟨a, ha⟩ := x.property
+    obtain ⟨b, hb⟩ := y.property
     have hv := comp_rep_dotProduct_mulVec_rep p
     have h : ((((x * y : Q.unitaryTransvectionSubgroup σ p) : Q.specialIsometryGroup σ) :
         SpecialLinearGroup n K) : Matrix n n K) =
@@ -203,7 +203,7 @@ theorem unitaryTransvectionSubgroup_smul (g : Q.specialIsometryGroup σ)
         Q.unitaryTransvection σ (((h : SpecialLinearGroup n K) : Matrix n n K) *ᵥ u) a :=
     fun h u a ↦ by
       rw [Subgroup.coe_inv]
-      exact coe_mul_unitaryTransvection_mul_coe_inv h.2 u a
+      exact coe_mul_unitaryTransvection_mul_coe_inv h.property u a
   ext x
   rw [Subgroup.mem_smul_pointwise_iff_exists]
   have hmem : x ∈ Q.unitaryTransvectionSubgroup σ (g • p) ↔
@@ -254,7 +254,7 @@ theorem exists_coe_eq_unitaryTransvection_iff (hσ : Function.Involutive σ)
   refine ⟨fun ⟨g, hg⟩ ↦ ?_, exists_coe_eq_unitaryTransvection hσ hQ p⟩
   set v := (p : ℙ K (n → K)).rep
   have hv := comp_rep_dotProduct_mulVec_rep p
-  have h := (mem_specialIsometryGroup_iff).mp (g : Q.specialIsometryGroup σ).2
+  have h := (mem_specialIsometryGroup_iff).mp (g : Q.specialIsometryGroup σ).property
   rw [hg, transpose_map_unitaryTransvection_mul_mul hσ hQ hv, add_eq_left, smul_eq_zero,
     vecMulVec_eq_zero] at h
   -- The column `Q v` and the row `vᵀ ^ σ Q` are nonzero, as `Q` is invertible and `v ≠ 0`.

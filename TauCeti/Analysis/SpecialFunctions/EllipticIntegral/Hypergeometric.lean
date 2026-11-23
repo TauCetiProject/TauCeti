@@ -89,17 +89,13 @@ theorem integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric {a m : �
         linarith [(le_abs_self _).trans ((hx θ).trans hm.le)]
       rwa [one_div, ← Real.rpow_neg h0] at h)
   -- identify the termwise integrals with the hypergeometric terms
-  have hc (n : ℕ) : Ring.multichoose a n = (ascPochhammer ℝ n).eval a / n ! := by
-    have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer a n
-    rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
-    rw [← h]
-    field_simp
   rw [← key.tsum_eq, ordinaryHypergeometric_eq_tsum, ← tsum_mul_left]
   congr 1
   ext n
   simp_rw [mul_pow, ← pow_mul]
   rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-    integral_sin_pow_even_eq_ascPochhammer, hc, ascPochhammer_eval_one, smul_eq_mul]
+    integral_sin_pow_even_eq_ascPochhammer,
+    Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, ascPochhammer_eval_one, smul_eq_mul]
   field_simp
 
 /-- For every real `a`, the integral `∫₀^{π/2} (1 - m sin² θ)^(-a) dθ` is a real-analytic function

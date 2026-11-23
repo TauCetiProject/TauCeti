@@ -32,7 +32,7 @@ equivalence, whose inverse is the inverse rescaled by `d⁻¹`. -/
 theorem exists_coe_eq_smul (T : E ≃L[𝕜] F) {d : 𝕜} (hd : d ≠ 0) :
     ∃ U : E ≃L[𝕜] F, (U : E →L[𝕜] F) = d • (T : E →L[𝕜] F) ∧
       (U.symm : F →L[𝕜] E) = d⁻¹ • (T.symm : F →L[𝕜] E) :=
-  ⟨.equivOfInverse' (d • (T : E →L[𝕜] F)) (d⁻¹ • (T.symm : F →L[𝕜] E))
+  ⟨.ofContinuousLinearMap (d • (T : E →L[𝕜] F)) (d⁻¹ • (T.symm : F →L[𝕜] E))
     (by simp [smul_smul, hd]) (by simp [smul_smul, hd]), by simp, by simp⟩
 
 end ContinuousLinearEquiv
