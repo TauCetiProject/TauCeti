@@ -31,7 +31,7 @@ theorem comm_alternatingEmbeddingMap (X : V) :
   apply LinearMap.ext
   intro t
   simp only [squareTrace_comm, alternatingEmbeddingMap_pairing,
-    SLAdjoint.alternatingProductMap_comm, map_neg, LinearMap.neg_apply]
+    alternatingProductMap_comm, map_neg, LinearMap.neg_apply]
 
 /-- The tensor flip fixes the image of the transposed symmetric product. -/
 theorem comm_symmetricEmbeddingMap (X : V) :

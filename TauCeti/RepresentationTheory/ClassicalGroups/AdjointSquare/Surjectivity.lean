@@ -62,7 +62,7 @@ local macro "close_fin3" h:term : tactic =>
 /-- The Lie-bracket contraction onto the trace-zero three-by-three matrices is surjective
 over any commutative ring. -/
 theorem alternatingProductMap_surjective (K : Type*) [CommRing K] :
-    Function.Surjective (TauCeti.SLAdjoint.alternatingProductMap K 3) := by
+    Function.Surjective (alternatingProductMap K 3) := by
   intro X
   refine ⟨offDiagPreimage X + (X.val 0 0 • pair 0 2 2 0 (by decide) (by decide) +
     X.val 1 1 • pair 1 2 2 1 (by decide) (by decide)), ?_⟩
@@ -71,7 +71,7 @@ theorem alternatingProductMap_surjective (K : Type*) [CommRing K] :
   -- Express the subtype inclusion as a linear map so that it distributes over the preimage.
   change (𝔰 K).toSubmodule.subtype _ = X.val
   simp only [offDiagPreimage, pair, map_add, map_smul, Submodule.subtype_apply,
-    TauCeti.SLAdjoint.alternatingProductMap_tmul, LieAlgebra.SpecialLinear.sl_bracket, val_single]
+    alternatingProductMap_tmul, LieAlgebra.SpecialLinear.sl_bracket, val_single]
   close_fin3 htrace
 
 /-- The traceless symmetric contraction onto the trace-zero three-by-three matrices is

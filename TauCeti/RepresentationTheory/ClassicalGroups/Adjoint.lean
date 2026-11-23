@@ -6,6 +6,7 @@ Authors: Jeromie Beasley
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.TraceForm
+public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
@@ -25,7 +26,7 @@ Conjugation on matrices is the representation induced by the standard representa
 an invariant submodule, and that submodule is Mathlib's special linear Lie algebra.
 
 The trace form of `gl n`, restricted to this submodule, is symmetric and invariant under
-conjugation over a commutative ring. The Lie bracket is equivariant for every `n`.
+conjugation over a commutative ring.
 Over a field in which the matrix size is nonzero, the trace form identifies the adjoint
 representation with its dual.
 -/
@@ -73,9 +74,8 @@ def tracelessSubrep : Subrepresentation (matrixAdjointRep K n) where
   apply_mem_toSubmodule g X hX := by
     rw [LieSubalgebra.mem_toSubmodule,
     LieAlgebra.SpecialLinear.mem_sl_iff] at hX ⊢
-    rw [matrixAdjointRep_apply]
-    simpa only [ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct] using
-      (ConjAct.trace_specialLinearGroup_smul (ConjAct.toConjAct g) X).trans hX
+    rwa [matrixAdjointRep_apply, SpecialLinearGroup.conj_eq_units_smul,
+      ConjAct.toConjAct_toGL_smul, ConjAct.trace_specialLinearGroup_smul]
 
 /-- The underlying submodule consists of the trace-zero matrices. -/
 @[simp] theorem tracelessSubrep_toSubmodule :
@@ -100,9 +100,6 @@ theorem coe_adjointRep_apply (g : SpecialLinearGroup (Fin n) K)
     (X : LieAlgebra.SpecialLinear.sl (Fin n) K) :
     (adjointRep K n g X).val =
       (g : Matrix (Fin n) (Fin n) K) * X.val * (g⁻¹ : SpecialLinearGroup (Fin n) K) := by
-  -- `Subrepresentation.coe_toRepresentation_apply` is `rfl`, so the coercion to the
-  -- ambient representation has no syntactic occurrence for `rw`.
-  change matrixAdjointRep K n g (X : Matrix (Fin n) (Fin n) K) = _
   exact matrixAdjointRep_apply K n g X
 
 /-- Simultaneous conjugation preserves the restricted trace pairing. -/
@@ -110,49 +107,13 @@ theorem coe_adjointRep_apply (g : SpecialLinearGroup (Fin n) K)
 theorem traceForm_adjointRep (g : SpecialLinearGroup (Fin n) K)
     (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
     traceForm K n (adjointRep K n g X) (adjointRep K n g Y) = traceForm K n X Y := by
-  simp only [traceForm_apply, coe_adjointRep_apply]
-  simpa only [SpecialLinearGroup.coe_inv] using SpecialLinearGroup.trace_mul_conj g X.val Y.val
+  simp only [traceForm_apply, coe_adjointRep_apply, SpecialLinearGroup.trace_mul_conj]
 
-/-- The Lie bracket as an equivariant map out of the tensor square. -/
-noncomputable def alternatingProductMap :
-    ((adjointRep K n).tprod (adjointRep K n)).IntertwiningMap (adjointRep K n) where
-  toLinearMap :=
-    TensorProduct.lift (LieAlgebra.ad K (LieAlgebra.SpecialLinear.sl (Fin n) K)).toLinearMap
-  isIntertwining' g := by
-    apply TensorProduct.ext'
-    intro X Y
-    rw [Representation.tprod_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
-      TensorProduct.lift.tmul, LinearMap.comp_apply, TensorProduct.lift.tmul]
-    apply Subtype.ext
-    -- `LieAlgebra.ad` is the bracket, so `lift` on a pure tensor is definitionally `⁅·, ·⁆`.
-    change ⁅adjointRep K n g X, adjointRep K n g Y⁆.val =
-      (adjointRep K n g ⁅X, Y⁆).val
-    simp only [LieAlgebra.SpecialLinear.sl_bracket, coe_adjointRep_apply]
-    rw [SpecialLinearGroup.conj_eq_units_smul, SpecialLinearGroup.conj_eq_units_smul,
-      SpecialLinearGroup.conj_eq_units_smul, smul_sub, smul_mul', smul_mul']
-
-/-- On a simple tensor the alternating intertwiner is the commutator. -/
-@[simp]
-theorem alternatingProductMap_tmul (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    alternatingProductMap K n (X ⊗ₜ[K] Y) = ⁅X, Y⁆ :=
-  (rfl)
-
-/-- Swapping the tensor factors negates the alternating intertwiner. -/
-theorem alternatingProductMap_comm
-    (T : LieAlgebra.SpecialLinear.sl (Fin n) K ⊗[K]
-      LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    alternatingProductMap K n (TensorProduct.comm K _ _ T) =
-      -alternatingProductMap K n T := by
-  have h : (alternatingProductMap K n).toLinearMap.comp (TensorProduct.comm K _ _).toLinearMap =
-      -(alternatingProductMap K n).toLinearMap := by
-    apply TensorProduct.ext'
-    intro X Y
-    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.comm_tmul]
-    -- `toLinearMap` is `TensorProduct.lift` of the bracket, and `lift.tmul` is `rfl`,
-    -- so after `comm_tmul` there is no `lift` to rewrite.
-    change ⁅Y, X⁆ = -⁅X, Y⁆
-    exact (lie_skew Y X).symm
-  exact LinearMap.congr_fun h T
+/-- The restricted trace form is invariant under the adjoint action. -/
+theorem isInvariantForm_traceForm :
+    TauCeti.Representation.IsInvariantForm (adjointRep K n) (traceForm K n) :=
+  TauCeti.Representation.isInvariantForm_iff_isIsometry.mpr fun g =>
+    TauCeti.BilinForm.isIsometry_iff.mpr (traceForm_adjointRep K n g)
 
 end
 
@@ -163,17 +124,13 @@ variable (K : Type*) [Field K] (n : ℕ)
 /-- The trace pairing is an equivariant self-duality of the adjoint representation. -/
 noncomputable def traceDualEquiv [NeZero (n : K)] :
     (adjointRep K n).Equiv (adjointRep K n).dual :=
-  Representation.Equiv.mk (traceDual K n) fun g => by
-    ext X Y
-    change traceDual K n (adjointRep K n g X) Y = traceDual K n X (adjointRep K n g⁻¹ Y)
-    rw [traceDual_apply, traceDual_apply, ← traceForm_apply, ← traceForm_apply]
-    have h := traceForm_adjointRep K n g X (adjointRep K n g⁻¹ Y)
-    simpa only [Representation.self_inv_apply] using h
+  (isInvariantForm_traceForm K n).equivDual (traceForm_nondegenerate K n)
 
 /-- Evaluation of the equivariant self-duality is the trace of the matrix product. -/
 @[simp] theorem traceDualEquiv_apply [NeZero (n : K)]
     (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    traceDualEquiv K n X Y = trace (X.val * Y.val) := traceDual_apply K n X Y
+    traceDualEquiv K n X Y = trace (X.val * Y.val) := by
+  rw [traceDualEquiv, TauCeti.Representation.IsInvariantForm.equivDual_apply, traceForm_apply]
 
 end
 

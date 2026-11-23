@@ -11,11 +11,12 @@ public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
-# The symmetric product intertwiner for the adjoint square of SLₙ
+# The alternating and symmetric product intertwiners for the adjoint square of SLₙ
 
-When `n` is nonzero in the field, the traceless symmetric product lifts to an equivariant
-linear map on the tensor square of the trace-zero matrices. Swapping the tensor factors
-fixes this map.
+Over a commutative ring the Lie bracket gives an equivariant contraction that changes sign
+under the tensor flip. When `n` is nonzero in the field, the traceless symmetric product lifts to
+an equivariant linear map on the tensor square of the trace-zero matrices. Swapping the tensor
+factors fixes this map.
 -/
 
 public section
@@ -24,6 +25,55 @@ namespace TauCeti.AdjointSquare
 
 open Matrix TauCeti.SLAdjoint
 open scoped TensorProduct
+
+section
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable (K : Type*) [CommRing K] (n : ℕ)
+
+/-- The Lie bracket as an equivariant map out of the tensor square. -/
+noncomputable def alternatingProductMap :
+    ((adjointRep K n).tprod (adjointRep K n)).IntertwiningMap (adjointRep K n) where
+  toLinearMap :=
+    TensorProduct.lift (LieAlgebra.ad K (LieAlgebra.SpecialLinear.sl (Fin n) K)).toLinearMap
+  isIntertwining' g := by
+    apply TensorProduct.ext'
+    intro X Y
+    rw [Representation.tprod_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
+      TensorProduct.lift.tmul, LinearMap.comp_apply, TensorProduct.lift.tmul]
+    apply Subtype.ext
+    -- `LieAlgebra.ad` is the bracket, so `lift` on a pure tensor is definitionally `⁅·, ·⁆`.
+    change ⁅adjointRep K n g X, adjointRep K n g Y⁆.val =
+      (adjointRep K n g ⁅X, Y⁆).val
+    simp only [LieAlgebra.SpecialLinear.sl_bracket, coe_adjointRep_apply]
+    rw [SpecialLinearGroup.conj_eq_units_smul, SpecialLinearGroup.conj_eq_units_smul,
+      SpecialLinearGroup.conj_eq_units_smul, smul_sub, smul_mul', smul_mul']
+
+/-- On a simple tensor the alternating intertwiner is the commutator. -/
+@[simp]
+theorem alternatingProductMap_tmul (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
+    alternatingProductMap K n (X ⊗ₜ[K] Y) = ⁅X, Y⁆ :=
+  (rfl)
+
+/-- Swapping the tensor factors negates the alternating intertwiner. -/
+theorem alternatingProductMap_comm
+    (T : LieAlgebra.SpecialLinear.sl (Fin n) K ⊗[K]
+      LieAlgebra.SpecialLinear.sl (Fin n) K) :
+    alternatingProductMap K n (TensorProduct.comm K _ _ T) =
+      -alternatingProductMap K n T := by
+  have h : (alternatingProductMap K n).toLinearMap.comp (TensorProduct.comm K _ _).toLinearMap =
+      -(alternatingProductMap K n).toLinearMap := by
+    apply TensorProduct.ext'
+    intro X Y
+    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.comm_tmul]
+    -- `toLinearMap` is `TensorProduct.lift` of the bracket, and `lift.tmul` is `rfl`,
+    -- so after `comm_tmul` there is no `lift` to rewrite.
+    change ⁅Y, X⁆ = -⁅X, Y⁆
+    exact (lie_skew Y X).symm
+  exact LinearMap.congr_fun h T
+
+end
 
 variable (K : Type*) [Field K] (n : ℕ) [NeZero (n : K)]
 

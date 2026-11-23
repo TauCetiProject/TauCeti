@@ -31,8 +31,6 @@ local notation "T" => V ⊗[K] V
 local notation "ρ" => SLAdjoint.adjointRep K 3
 local notation "σ" => Representation.tprod ρ ρ
 
-private abbrev traceForm₃ : LinearMap.BilinForm K V := SLAdjoint.traceForm K 3
-
 private noncomputable abbrev traceDual₃ : V ≃ₗ[K] Module.Dual K V := SLAdjoint.traceDual K 3
 
 /-- The tensor product of the two perfect trace pairings identifies the square with its dual. -/
@@ -44,14 +42,18 @@ theorem squareTrace_apply (a b : T) :
     squareTrace a b = TensorProduct.dualDistrib K V V
       (TensorProduct.map (SLAdjoint.traceDual K 3).toLinearMap
         (SLAdjoint.traceDual K 3).toLinearMap a) b := by
+  -- The underlying map of the composite equivalence is dualDistrib after the two trace duals.
   rw [← TensorProduct.toLinearMap_dualDistribEquiv]
   rfl
 
-private theorem square_tmul (x y u v : V) :
-    squareTrace (x ⊗ₜ[K] y) (u ⊗ₜ[K] v) = traceForm₃ x u * traceForm₃ y v := by
+/-- On pure tensors the square trace is the product of the factor trace forms. -/
+@[simp] theorem squareTrace_tmul (x y u v : V) :
+    squareTrace (x ⊗ₜ[K] y) (u ⊗ₜ[K] v) =
+      SLAdjoint.traceForm K 3 x u * SLAdjoint.traceForm K 3 y v := by
   simp [squareTrace, mul_comm]
 
-private theorem square_invariant (g : Matrix.SpecialLinearGroup (Fin 3) K) (a b : T) :
+/-- The tensor-square action preserves the square trace pairing. -/
+@[simp] theorem squareTrace_tprod (g : Matrix.SpecialLinearGroup (Fin 3) K) (a b : T) :
     squareTrace (σ g a) (σ g b) = squareTrace a b := by
   induction a using TensorProduct.inductionOn with
   | add a₁ a₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
@@ -59,16 +61,19 @@ private theorem square_invariant (g : Matrix.SpecialLinearGroup (Fin 3) K) (a b 
     induction b using TensorProduct.inductionOn with
     | add b₁ b₂ h₁ h₂ => simp only [map_add, h₁, h₂]
     | tmul u v => simp only [Representation.tprod_apply, TensorProduct.map_tmul,
-        square_tmul, SLAdjoint.traceForm_adjointRep]
+        squareTrace_tmul, SLAdjoint.traceForm_adjointRep]
 
-private noncomputable def squareTraceEquiv : Representation.Equiv σ (Representation.dual σ) :=
-  Representation.Equiv.mk squareTrace fun g => by
-    apply LinearMap.ext
-    intro a
-    apply LinearMap.ext
-    intro b
-    simpa only [LinearMap.comp_apply, Representation.dual_apply, Module.Dual.transpose_apply,
-      LinearEquiv.coe_coe, Representation.self_inv_apply] using square_invariant g a (σ g⁻¹ b)
+/-- The square trace pairing identifies the tensor-square action with its dual action. -/
+noncomputable def squareTraceEquiv : Representation.Equiv σ (Representation.dual σ) :=
+  let h : TauCeti.Representation.IsInvariantForm σ squareTrace.toLinearMap :=
+    TauCeti.Representation.isInvariantForm_iff_isIsometry.mpr fun g =>
+      TauCeti.BilinForm.isIsometry_iff.mpr (squareTrace_tprod g)
+  Representation.Equiv.mk squareTrace fun g => LinearMap.ext fun a =>
+    ((TauCeti.Representation.isInvariantForm_iff_isIntertwiningMap σ _).mp h).isIntertwining g a
+
+/-- The equivariant square trace identification evaluates by the square trace pairing. -/
+@[simp] theorem squareTraceEquiv_apply (a b : T) : squareTraceEquiv a b = squareTrace a b :=
+  (rfl)
 
 private noncomputable def liftMap (f : Representation.IntertwiningMap σ ρ) :
     Representation.IntertwiningMap ρ σ :=
@@ -87,7 +92,8 @@ private theorem liftMap_pairing (f : Representation.IntertwiningMap σ ρ) (x : 
   -- The inverse equivalence in the composite is the inverse of the square trace pairing.
   change squareTrace (squareTrace.symm _) t = _
   rw [LinearEquiv.apply_symm_apply]
-  rfl
+  -- Evaluation of the bundled dual map is precomposition with the original contraction.
+  exact LinearMap.dualMap_apply f.toLinearMap _ t
 
 /-- Swapping the factors on one side of the tensor pairing swaps them on the other side. -/
 theorem squareTrace_comm (a b : T) :
@@ -97,7 +103,7 @@ theorem squareTrace_comm (a b : T) :
 
 /-- The trace transpose of the Lie bracket as an equivariant map into the tensor square. -/
 noncomputable def alternatingEmbeddingMap : Representation.IntertwiningMap ρ σ :=
-  liftMap (SLAdjoint.alternatingProductMap (K := K) (n := 3))
+  liftMap (alternatingProductMap (K := K) (n := 3))
 
 /-- The alternating product is surjective, so its trace transpose is injective. -/
 theorem alternatingEmbeddingMap_injective : Function.Injective (alternatingEmbeddingMap (K := K)) :=
@@ -106,7 +112,7 @@ theorem alternatingEmbeddingMap_injective : Function.Injective (alternatingEmbed
 /-- The trace pairing on the tensor square characterizes the alternating embedding. -/
 theorem alternatingEmbeddingMap_pairing (x : V) (t : T) :
     squareTrace (alternatingEmbeddingMap x) t =
-      (SLAdjoint.traceDualEquiv K 3 x) (SLAdjoint.alternatingProductMap K 3 t) :=
+      (SLAdjoint.traceDualEquiv K 3 x) (alternatingProductMap K 3 t) :=
   liftMap_pairing _ x t
 
 /-- The trace transpose of the traceless symmetric product into the tensor square. -/
