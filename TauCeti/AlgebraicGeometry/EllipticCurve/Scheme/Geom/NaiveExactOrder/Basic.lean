@@ -206,18 +206,34 @@ variable {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.car
   {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
   (h0 : E'.zero ≫ g = f ≫ E.zero)
 
+include hg h0 in
+/-- Naive exact order is preserved and reflected under a pullback square of elliptic curves: for a
+`Z`-point `x'` of `E'` lying over a `Z`-point `x` of `E`, `x'` has naive exact order `N` if and
+only if `x` does. -/
+theorem isOfNaiveExactOrder_iff_of_isPullback {Z : Over S'} {x' : Z ⟶ Over.mk E'.structureMap}
+    {f' : Z.left ⟶ S} (e : Z.hom ≫ f = f') {x : Over.mk f' ⟶ Over.mk E.structureMap}
+    (hx : x'.left ≫ g = x.left) :
+    E'.IsOfNaiveExactOrder x' N ↔ E.IsOfNaiveExactOrder x N := by
+  let eqv := pointsBaseChangeEquivOver hg h0 e
+  have hxx' : eqv x' = x := by
+    ext1
+    rw [pointsBaseChangeEquivOver_left]
+    exact hx
+  rw [← hxx']
+  simp only [isOfNaiveExactOrder_iff, ← map_pow, ← map_one eqv, eqv.injective.eq_iff]
+  refine (and_congr Iff.rfl (forall_congr' fun d ↦
+    imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_)).symm
+  exact (isEmpty_equalizer_iff_of_isPullback hg (x' ^ d) 1 _ _
+    (pointsBaseChangeEquivOver_left hg h0 e _).symm
+    (pointsBaseChangeEquivOver_left hg h0 e _).symm).symm
+
 /-- Under the group equivalence identifying points of a base change with points valued in
 the new base, naive exact order is preserved and reflected. -/
 theorem isOfNaiveExactOrder_pointsBaseChangeEquiv_iff
     {P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap} :
-    E.IsOfNaiveExactOrder (pointsBaseChangeEquiv hg h0 P) N ↔ E'.IsOfNaiveExactOrder P N := by
-  simp only [isOfNaiveExactOrder_iff, ← map_pow, ← map_one (pointsBaseChangeEquiv hg h0),
-    (pointsBaseChangeEquiv hg h0).injective.eq_iff]
-  refine and_congr Iff.rfl (forall_congr' fun d ↦ ?_)
-  refine imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
-  exact (isEmpty_equalizer_iff_of_isPullback hg (P ^ d) 1 _ _
-    (pointsBaseChangeEquiv_left hg h0 _).symm
-    (pointsBaseChangeEquiv_left hg h0 _).symm).symm
+    E.IsOfNaiveExactOrder (pointsBaseChangeEquiv hg h0 P) N ↔ E'.IsOfNaiveExactOrder P N :=
+  (isOfNaiveExactOrder_iff_of_isPullback hg h0 (Category.id_comp f)
+    (pointsBaseChangeEquiv_left hg h0 P).symm).symm
 
 /-- **Points of naive exact order `N` are stable under base change**: if an `S`-point `P` of `E`
 has naive exact order `N`, then so does its base change, the `S'`-point `P'` of `E'`. -/
@@ -230,33 +246,6 @@ theorem IsOfNaiveExactOrder.pointsPullback {P : 𝟙_ (Over S) ⟶ Over.mk E.str
     simp
   rw [hP]
   exact h.comp (toUnit (Over.mk f))
-
-include hg h0 in
-/-- Naive exact order is preserved and reflected under a pullback square of elliptic curves: for a
-`Z`-point `x'` of `E'` lying over a `Z`-point `x` of `E`, `x'` has naive exact order `N` if and
-only if `x` does. -/
-theorem isOfNaiveExactOrder_iff_of_isPullback {Z : Over S'} {x' : Z ⟶ Over.mk E'.structureMap}
-    {f' : Z.left ⟶ S} (e : Z.hom ≫ f = f') {x : Over.mk f' ⟶ Over.mk E.structureMap}
-    (hx : x'.left ≫ g = x.left) :
-    E'.IsOfNaiveExactOrder x' N ↔ E.IsOfNaiveExactOrder x N := by
-  subst f'
-  have h1 : (1 : Z ⟶ Over.mk E'.structureMap).left ≫ g =
-      (1 : Over.mk (Z.hom ≫ f) ⟶ Over.mk E.structureMap).left := by
-    simp [hom_one_left, h0]
-  have hpow (k : ℕ) : (x' ^ k).left ≫ g = (x ^ k).left := by
-    induction k with
-    | zero => simpa using h1
-    | succ k ih =>
-      rw [pow_succ, pow_succ]
-      exact mul_left_comp_eq_of_isPullback hg h0 rfl ih hx
-  have hN : x' ^ N = 1 ↔ x ^ N = 1 := by
-    refine ⟨fun h ↦ by ext1; rw [← hpow N, h, h1], fun h ↦ ?_⟩
-    ext1
-    exact hg.hom_ext (by rw [hpow N, h, h1])
-      (by simpa only [Over.mk_hom] using
-        (Over.w (x' ^ N)).trans (Over.w (1 : Z ⟶ Over.mk E'.structureMap)).symm)
-  refine and_congr hN (forall_congr' fun d ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_)
-  exact isEmpty_equalizer_iff_of_isPullback hg (x' ^ d) 1 (x ^ d) 1 (hpow d) h1
 
 end BaseChange
 

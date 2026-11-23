@@ -262,10 +262,10 @@ private theorem exists_etale_pushout_quotient {A₀ B : Type u} [CommRing A₀] 
 open scoped TensorProduct in
 private theorem fg_ker_of_etale_faithfullyFlat {R A' A'' Q B' B : Type u} [CommRing R] [CommRing A']
     [CommRing A''] [CommRing Q] [CommRing B'] [CommRing B] [Algebra R A'] [Algebra R A'']
-    [Algebra R Q] [Algebra R B] [Algebra A' A''] [Algebra A' Q] [Algebra A'' Q]
-    [Algebra A' B'] [Algebra Q B] [IsScalarTower R A' A'']
-    [IsScalarTower R A'' Q] [IsScalarTower A' A'' Q]
-    [IsScalarTower R Q B] (ePush : Q ⊗[A'] B' ≃ₐ[Q] B)
+    [Algebra R B] [Algebra A' A''] [Algebra A' Q] [Algebra A'' Q]
+    [Algebra A' B'] [Algebra Q B] [Algebra A' B] [IsScalarTower R A' A'']
+    [IsScalarTower A' A'' Q] [IsScalarTower A' Q B] [IsScalarTower R A' B]
+    (ePush : Q ⊗[A'] B' ≃ₐ[Q] B)
     (hsurj : Function.Surjective (algebraMap A'' Q)) [Algebra.Etale A' B']
     [Module.FaithfullyFlat A'' (A'' ⊗[A'] B')] [Algebra.FinitePresentation R A'']
     [Algebra.FinitePresentation R B] : (RingHom.ker (algebraMap A'' Q)).FG := by
@@ -275,44 +275,20 @@ private theorem fg_ker_of_etale_faithfullyFlat {R A' A'' Q B' B : Type u} [CommR
   let f : A'' →ₐ[A''] Q := Algebra.ofId A'' Q
   let K : Ideal A'' := RingHom.ker f.toRingHom
   let eK : (A'' ⧸ K) ≃ₐ[A''] Q := Ideal.quotientKerAlgEquivOfSurjective (f := f) hsurj
-  let eB''KAlg : (B'' ⧸ K.map (algebraMap A'' B'')) ≃ₐ[B''] B'' ⊗[A''] Q :=
-    (Algebra.TensorProduct.quotIdealMapEquivTensorQuot B'' K).trans
-      (Algebra.TensorProduct.congr .refl eK)
-  let eB''K : (B'' ⧸ K.map (algebraMap A'' B'')) ≃+* B'' ⊗[A''] Q := eB''KAlg.toRingEquiv
-  let eB''J : B'' ⊗[A''] Q ≃+* B :=
-    (Algebra.TensorProduct.comm A'' B'' Q).toRingEquiv.trans
-      ((Algebra.TensorProduct.cancelBaseChange A' A'' Q Q B').toRingEquiv.trans ePush.toRingEquiv)
-  let ψHom : B'' →+* B :=
-    (eB''J.toRingHom.comp eB''K.toRingHom).comp (Ideal.Quotient.mk (K.map (algebraMap A'' B'')))
+  let e : (B'' ⧸ K.map (algebraMap A'' B'')) ≃ₐ[A'] B :=
+    ((Algebra.TensorProduct.quotientTensorEquiv (R := A') A' B' A'' K).symm.trans
+      (Algebra.TensorProduct.congr (eK.restrictScalars A') .refl)).trans
+      (ePush.restrictScalars A')
   let ψ : B'' →ₐ[R] B :=
-    { __ := ψHom
-      commutes' r := by
-        change eB''J (eB''KAlg (algebraMap B'' _ (algebraMap R B'' r))) = algebraMap R B r
-        rw [eB''KAlg.commutes]
-        have hr : algebraMap B'' (B'' ⊗[A''] Q) (algebraMap R B'' r) =
-            ((algebraMap R A'' r) ⊗ₜ[A'] (1 : B')) ⊗ₜ[A''] (1 : Q) := rfl
-        rw [hr]
-        simp only [eB''J, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
-          Algebra.TensorProduct.comm_tmul]
-        have hcan :
-            Algebra.TensorProduct.cancelBaseChange A' A'' Q Q B'
-                ((1 : Q) ⊗ₜ[A''] ((algebraMap R A'' r) ⊗ₜ[A'] (1 : B'))) =
-              ((algebraMap R A'' r) • (1 : Q)) ⊗ₜ[A'] (1 : B') :=
-          Algebra.TensorProduct.cancelBaseChange_tmul A' A'' Q Q B' (1 : Q) (algebraMap R A'' r) 1
-        rw [hcan, Algebra.smul_def, mul_one]
-        change ePush ((algebraMap A'' Q (algebraMap R A'' r)) ⊗ₜ[A'] (1 : B')) = algebraMap R B r
-        rw [← IsScalarTower.algebraMap_apply R A'' Q]
-        change ePush (algebraMap Q (Q ⊗[A'] B') (algebraMap R Q r)) = algebraMap R B r
-        rw [ePush.commutes, ← IsScalarTower.algebraMap_apply R Q B] }
-  have hψ_surj : Function.Surjective ψ :=
-    eB''J.surjective.comp (eB''K.surjective.comp Ideal.Quotient.mk_surjective)
+    (e.restrictScalars R).toAlgHom.comp (Ideal.Quotient.mkₐ R (K.map (algebraMap A'' B'')))
+  have hψ_surj : Function.Surjective ψ := e.surjective.comp Ideal.Quotient.mk_surjective
   have hkerFG : (RingHom.ker ψ.toRingHom).FG :=
     Algebra.FinitePresentation.ker_fG_of_surjective ψ hψ_surj
   have hker_eq : RingHom.ker ψ.toRingHom = K.map (algebraMap A'' B'') := by
     ext b
-    change eB''J (eB''K (Ideal.Quotient.mk (K.map (algebraMap A'' B'')) b)) = 0 ↔
+    change e (Ideal.Quotient.mk (K.map (algebraMap A'' B'')) b) = 0 ↔
       b ∈ K.map (algebraMap A'' B'')
-    rw [eB''J.map_eq_zero_iff, eB''K.map_eq_zero_iff, Ideal.Quotient.eq_zero_iff_mem]
+    rw [map_eq_zero_iff e e.injective, Ideal.Quotient.eq_zero_iff_mem]
   exact Ideal.FG.of_FG_map_of_faithfullyFlat (hker_eq ▸ hkerFG)
 
 open scoped TensorProduct in
@@ -391,6 +367,10 @@ private theorem finitePresentation_of_comp_etale_faithfullyFlat {R A B : Type u}
     .of_algebraMap_eq (R := R) (S := A'') (A := A₀ ⧸ J) fun _ ↦ rfl
   have : IsScalarTower R A' (A₀ ⧸ J) :=
     .of_algebraMap_eq (R := R) (S := A') (A := A₀ ⧸ J) fun _ ↦ rfl
+  have : IsScalarTower R A' B := .of_algebraMap_eq fun r ↦ by
+    rw [IsScalarTower.algebraMap_apply R (A₀ ⧸ J) B,
+      IsScalarTower.algebraMap_apply R A' (A₀ ⧸ J),
+      IsScalarTower.algebraMap_apply A' (A₀ ⧸ J) B]
   have htop'' : I₀.map (algebraMap A' A'') = ⊤ := by
     rw [Ideal.eq_top_iff_one]
     have hmem : algebraMap A' A'' (Ideal.Quotient.mk J'.val x₀) = 1 := by

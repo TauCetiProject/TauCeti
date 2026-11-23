@@ -116,28 +116,17 @@ private theorem exists_toSpec_of_isAffine {X : Scheme.{u}} [IsAffine X]
     rw [hφ, Category.assoc, hf, Category.assoc]
   have ha₁ : φ.hom WeierstrassCurve.UniversalTate.curveULift.a₁ = 1 :=
     (specMap_comp_pointHom_pow_four_eq_zero_iff φ.hom).mp hN
-  have hmap : WeierstrassCurve.UniversalTate.curveULift.map φ.hom =
-      tateNormalForm 1 (φ.hom WeierstrassCurve.UniversalTate.curveULift.a₃) := by
-    rw [WeierstrassCurve.UniversalTate.map_curveULift, ha₁]
+  obtain ⟨hΔ', hφeq⟩ := eq_liftULift φ.hom
   have hΔ : IsUnit (tateNormalForm 1 (φ.hom WeierstrassCurve.UniversalTate.curveULift.a₃)).Δ :=
-    hmap ▸ (WeierstrassCurve.UniversalTate.curveULift.map φ.hom).isUnit_Δ
+    ha₁ ▸ hΔ'
   let ψ : CommRingCat.of (ULift.{u} UniversalGammaOneFour.Ring) ⟶ Γ(X, ⊤) :=
     CommRingCat.ofHom ((UniversalGammaOneFour.lift hΔ).comp ULift.ringEquiv.toRingHom)
-  have hφlift : φ.hom.comp (ULift.ringEquiv.symm : _ ≃+* ULift.{u} _).toRingHom =
-      WeierstrassCurve.UniversalTate.lift hΔ :=
-    WeierstrassCurve.UniversalTate.eq_lift hΔ
-      (by rw [← map_map, ← WeierstrassCurve.UniversalTate.curveULift_eq, hmap])
   have hcomp : CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift ≫ ψ = φ := by
     refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
-    have h₁ : (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift ≫ ψ).hom x =
-        (UniversalGammaOneFour.lift hΔ) (UniversalGammaOneFour.toUniversalTate x.down) := by
-      simp [ψ, RingHom.ulift_apply, ULift.ringEquiv]
-    rw [h₁]
-    calc (UniversalGammaOneFour.lift hΔ) (UniversalGammaOneFour.toUniversalTate x.down)
-        = (WeierstrassCurve.UniversalTate.lift hΔ) x.down :=
-          RingHom.congr_fun (UniversalGammaOneFour.lift_comp_toUniversalTate hΔ) x.down
-      _ = φ.hom x := by
-          simpa [ULift.ringEquiv] using (RingHom.congr_fun hφlift x.down).symm
+    rw [hφeq, liftULift_congr hΔ' hΔ ha₁ rfl]
+    simp only [CommRingCat.hom_comp, RingHom.comp_apply, RingHom.ulift_apply, ULift.ringEquiv,
+      RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, ψ, CommRingCat.hom_ofHom, liftULift_apply]
+    exact RingHom.congr_fun (UniversalGammaOneFour.lift_comp_toUniversalTate hΔ) x.down
   refine ⟨X.isoSpec.hom ≫ Spec.map ψ, ?_⟩
   rw [Category.assoc, ← Spec.map_comp, hcomp, hφ, Iso.hom_inv_id_assoc]
 

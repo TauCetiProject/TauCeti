@@ -814,10 +814,8 @@ instance isStandardSmoothOfRelativeDimension :
   have : Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ T :=
     Algebra.IsStandardSmoothOfRelativeDimension.trans 1 0 ℤ S T
   have : IsLocalization.Away polyCurve.Δ T := hδy ▸ IsLocalization.Away.mul' S T δ y
-  let e : T ≃+* Ring := (IsLocalization.algEquiv (.powers polyCurve.Δ) T Ring).toRingEquiv
   exact Algebra.IsStandardSmoothOfRelativeDimension.of_algEquiv 1
-    (AlgEquiv.ofRingEquiv (f := e) fun x ↦
-      RingHom.congr_fun (RingHom.ext_int (e.toRingHom.comp (algebraMap ℤ T)) (algebraMap ℤ Ring)) x)
+    ((IsLocalization.algEquiv (.powers polyCurve.Δ) T Ring).restrictScalars ℤ)
 
 /-- The parameter `μ` in `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`. -/
 noncomputable def parameter : Ring :=
