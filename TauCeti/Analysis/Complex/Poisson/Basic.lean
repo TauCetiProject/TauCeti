@@ -52,6 +52,27 @@ theorem continuousOn_poissonKernel {c w : ℂ} {s : Set ℂ} (hw : w ∉ s) :
   refine ContinuousOn.div (by fun_prop) (by fun_prop) fun z hz ↦ ?_
   simpa [sub_eq_zero] using ne_of_mem_of_not_mem hz hw
 
+/-- The Poisson average of a holomorphic function dilated by `r` about `c` is its value at the
+correspondingly dilated point. The original function need not be defined continuously on the
+boundary: `‖r‖ < 1` sends the closed disk inside the open disk. -/
+theorem _root_.DifferentiableOn.circleAverage_poissonKernel_smul_radial
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    {f : ℂ → E} {c w r : ℂ} {R : ℝ} (hf : DifferentiableOn ℂ f (ball c R))
+    (hr : ‖r‖ < 1) (hw : w ∈ ball c R) :
+    Real.circleAverage (poissonKernel c w • fun z ↦ f (c + r * (z - c))) c R =
+      f (c + r * (w - c)) := by
+  have hR := pos_of_mem_ball hw
+  have hmap : Set.MapsTo (fun z ↦ c + r * (z - c)) (closedBall c R) (ball c R) := by
+    intro z hz
+    rw [mem_ball_iff_norm, add_sub_cancel_left, norm_mul]
+    exact (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.mp hz) (norm_nonneg r)).trans_lt
+      (mul_lt_of_lt_one_left hR hr)
+  have hd : DiffContOnCl ℂ (fun z ↦ f (c + r * (z - c))) (ball c R) := by
+    apply DifferentiableOn.diffContOnCl
+    rw [closure_ball c hR.ne']
+    exact hf.comp (by fun_prop) hmap
+  exact hd.circleAverage_poissonKernel_smul hw
+
 /-- For a pole `w` in the closed disk and a boundary point `y` at distance at least `d > 0` from
 `w`, the Poisson kernel is at most `(R ^ 2 - ‖w - c‖ ^ 2) / d ^ 2`. For fixed `d` this bound
 tends to zero as `w` approaches the circle. -/
