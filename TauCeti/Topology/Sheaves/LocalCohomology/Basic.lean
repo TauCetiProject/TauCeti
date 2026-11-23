@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Sheaves.Stalks
 public import TauCeti.Topology.Sheaves.SupportedCohomology
+import Mathlib.Algebra.Category.Grp.Zero
 import Mathlib.Topology.Sheaves.LocallySurjective
 import TauCeti.CategoryTheory.Sites.EpiMono
 
