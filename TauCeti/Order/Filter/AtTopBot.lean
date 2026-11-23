@@ -189,6 +189,7 @@ theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [
     exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
 
 /-- Mapping `atTop` on the order dual `βᵒᵈ` through `OrderDual.ofDual` gives `atBot` on `β`. -/
+@[simp]
 theorem _root_.Filter.map_ofDual_atTop {β : Type*} [Preorder β] :
     map (OrderDual.ofDual : βᵒᵈ → β) atTop = atBot := by
   -- `OrderDual.ofDual` is definitionally `id`, and `atBot` on `β` is defined as `atTop` on `βᵒᵈ`.
@@ -196,6 +197,7 @@ theorem _root_.Filter.map_ofDual_atTop {β : Type*} [Preorder β] :
   exact Filter.map_id
 
 /-- Mapping `atBot` on the order dual `βᵒᵈ` through `OrderDual.ofDual` gives `atTop` on `β`. -/
+@[simp]
 theorem _root_.Filter.map_ofDual_atBot {β : Type*} [Preorder β] :
     map (OrderDual.ofDual : βᵒᵈ → β) atBot = atTop := by
   -- `OrderDual.ofDual` is definitionally `id`, and `atTop` on `β` is defined as `atBot` on `βᵒᵈ`.
@@ -208,10 +210,7 @@ theorem map_neg_map_coe_neg_atTop {α : Type*} [AddCommGroup α] [PartialOrder �
     [IsOrderedAddMonoid α] (I : Set α) :
     map Neg.neg (map ((↑) : (-I : Set α) → α) atTop) = map ((↑) : I → α) atBot := by
   let e : (-I : Set α) ≃o (I : Set α)ᵒᵈ :=
-    { toFun x := OrderDual.toDual ⟨-x.val, Set.mem_neg.1 x.property⟩
-      invFun x := ⟨-x.ofDual.val, by simp⟩
-      left_inv x := Subtype.ext (neg_neg x.val)
-      right_inv x := OrderDual.ofDual.injective (Subtype.ext (neg_neg x.ofDual.val))
+    { toEquiv := ((Equiv.neg α).subtypeEquiv fun _ ↦ Set.mem_neg).trans OrderDual.toDual
       map_rel_iff' := @fun _ _ ↦ neg_le_neg_iff }
   -- `e x` reduces definitionally through `OrderIso`/`Equiv` coercion to
   -- `OrderDual.toDual ⟨-x.val, _⟩`, and `OrderDual.ofDual` cancels `OrderDual.toDual`.

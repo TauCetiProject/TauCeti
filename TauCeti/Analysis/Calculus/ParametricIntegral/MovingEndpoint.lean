@@ -33,6 +33,8 @@ moving cutoff `x` when `K x x = 0`.
 * `TauCeti.norm_kernel_smul_le`: pointwise separable bound `‖K x v • y‖ ≤ P x * (Q v * ‖y‖)`.
 * `TauCeti.integrableOn_kernel_smul_inter_Ioi`: integrability of `v ↦ K x v • F v` on
   `I ∩ Ioi x`.
+* `TauCeti.integrableOn_kernel_smul_inter_Ioi_of_continuousOn`: the same integrability criterion
+  when `K` is continuous on `{(x, v) | x ∈ I ∧ v ∈ I ∧ x ≤ v}` and `F` is continuous on `I`.
 * `TauCeti.norm_integral_kernel_smul_inter_Ioi_le`: separable bound
   `‖∫ v in I ∩ Ioi x, K x v • F v‖ ≤ P x * ∫ v in I ∩ Ioi x, Q v * ‖F v‖`.
 * `TauCeti.continuousOn_integral_kernel_smul_inter_Ioi`: continuity of
@@ -88,6 +90,20 @@ theorem integrableOn_kernel_smul_inter_Ioi (hI : MeasurableSet I) {x : ℝ}
   refine Integrable.mono' (hFint.const_mul (P x)) (hKx.smul hF) ?_
   filter_upwards [ae_restrict_mem (hI.inter measurableSet_Ioi)] with v hv
   exact norm_kernel_smul_le hKle hv.1 hv.2.le _
+
+/-- Continuous-kernel specialization of `TauCeti.integrableOn_kernel_smul_inter_Ioi`: if `K` is
+continuous on `{(x, v) | x ∈ I ∧ v ∈ I ∧ x ≤ v}` with `‖K x v‖ ≤ P x * Q v`, `F` is continuous
+on `I`, and `Q * ‖F‖` is integrable on `I ∩ Ioi x` (`x ∈ I`), then `v ↦ K x v • F v` is integrable
+on `I ∩ Ioi x`. -/
+theorem integrableOn_kernel_smul_inter_Ioi_of_continuousOn (hI : MeasurableSet I)
+    (hK : ContinuousOn (uncurry K) {p | p.1 ∈ I ∧ p.2 ∈ I ∧ p.1 ≤ p.2})
+    (hKle : ∀ x ∈ I, ∀ v ∈ I, x ≤ v → ‖K x v‖ ≤ P x * Q v) {F : ℝ → E}
+    (hF : ContinuousOn F I) {x : ℝ} (hx : x ∈ I)
+    (hFint : IntegrableOn (fun v ↦ Q v * ‖F v‖) (I ∩ Ioi x)) :
+    IntegrableOn (fun v ↦ K x v • F v) (I ∩ Ioi x) :=
+  integrableOn_kernel_smul_inter_Ioi hI (hKle x hx)
+    (hK.aestronglyMeasurable_slice_inter_Ioi hI hx)
+    ((hF.mono inter_subset_left).aestronglyMeasurable (hI.inter measurableSet_Ioi)) hFint
 
 /-- Extending `v ↦ K x v • F v` by zero from `I ∩ Ioi x` to `I ∩ Ioi c` (`c ≤ x`) preserves
 integrability. -/

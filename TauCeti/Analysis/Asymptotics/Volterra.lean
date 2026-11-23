@@ -141,17 +141,6 @@ private lemma integral_coeff_weight_nonneg (hI : MeasurableSet I)
   setIntegral_nonneg (hI.inter measurableSet_Ioi)
     fun v hv ↦ coeff_weight_nonneg (ψ := ψ) hP0 hQ0 v hv.1
 
-omit [NormedSpace ℝ E] in
-private lemma integrableOn_kernel_smul_of_continuousOn (hI : MeasurableSet I)
-    (hK : ContinuousOn (uncurry K) {p | p.1 ∈ I ∧ p.2 ∈ I ∧ p.1 ≤ p.2})
-    (hKle : ∀ x ∈ I, ∀ v ∈ I, x ≤ v → ‖K x v‖ ≤ P x * Q v) {F : ℝ → E}
-    (hF : ContinuousOn F I) {x : ℝ} (hx : x ∈ I)
-    (hFint : IntegrableOn (fun v ↦ Q v * ‖F v‖) (I ∩ Ioi x)) :
-    IntegrableOn (fun v ↦ K x v • F v) (I ∩ Ioi x) :=
-  integrableOn_kernel_smul_inter_Ioi hI (hKle x hx)
-    (hK.aestronglyMeasurable_slice_inter_Ioi hI hx)
-    ((hF.mono inter_subset_left).aestronglyMeasurable (hI.inter measurableSet_Ioi)) hFint
-
 /-- The increments of the Picard iteration for the Volterra equation on `I`: the `0`-th is
 `x ↦ ∫ v in I ∩ Ioi x, K x v • J v`, and each further one applies
 `F ↦ (x ↦ ∫ v in I ∩ Ioi x, K x v • ψ v • F v)` to the previous one. -/
@@ -338,9 +327,10 @@ private lemma tsum_picardTermOn_eq {x : ℝ} (hx : x ∈ I) :
           (mul_tail_le_of_le_on hI hP0 hQ0 hΦ hΨ (Real.exp_monotone.monotoneOn _)
             (fun _ _ ↦ (Real.exp_pos _).le) hx hv.1 hv.2.le)
   have hKJ : IntegrableOn (fun v ↦ K x v • J v) (I ∩ Ioi x) :=
-    integrableOn_kernel_smul_of_continuousOn hI.measurableSet hK hKle hJ hx (hΦ x hx)
+    integrableOn_kernel_smul_inter_Ioi_of_continuousOn hI.measurableSet hK hKle hJ hx (hΦ x hx)
   have hKψh : IntegrableOn (fun v ↦ K x v • ψ v • h v) (I ∩ Ioi x) :=
-    integrableOn_kernel_smul_of_continuousOn hI.measurableSet hK hKle (hψ.smul hcont) hx hψh
+    integrableOn_kernel_smul_inter_Ioi_of_continuousOn hI.measurableSet hK hKle (hψ.smul hcont) hx
+      hψh
   simp only [smul_add]
   rw [integral_add hKJ hKψh]
   -- expand `h v` as the series of increments and interchange the sum and the integral
@@ -349,7 +339,8 @@ private lemma tsum_picardTermOn_eq {x : ℝ} (hx : x ∈ I) :
   have hTle : ∀ k, ∀ v ∈ I, x ≤ v → ‖T k v‖ ≤ Φx * (Ψx ^ k / k !) * P v := fun k _ hv hxv ↦
     norm_picardTermOn_le_of_le hI hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ k hx hv hxv
   have hFk : ∀ k, IntegrableOn (fun v ↦ K x v • ψ v • T k v) (I ∩ Ioi x) := fun k ↦
-    integrableOn_kernel_smul_of_continuousOn hI.measurableSet hK hKle (hψ.smul (hspec k).1) hx
+    integrableOn_kernel_smul_inter_Ioi_of_continuousOn hI.measurableSet hK hKle
+      (hψ.smul (hspec k).1) hx
       (integrableOn_weight_smul_on hI hψ hQ hQ0 hΨ (hspec k).1 hx
         fun v hv ↦ hTle k v hv.1 hv.2.le)
   have hsum : Summable fun k ↦ ∫ v in I ∩ Ioi x, ‖K x v • ψ v • T k v‖ := by
@@ -555,43 +546,6 @@ private lemma exists_norm_le_mul_of_isBigO (hI : I.OrdConnected)
         mul_le_mul_of_nonneg_left (add_le_add hΦle hψhle) (hP0 v hv)
     _ = _ := by ring
 
-omit [NormedSpace 𝕜 E] [NormedSpace ℝ E] in
-/-- Tail-supersolution comparison: if `‖h‖ ≤ B + R` on `I ∩ Ici x` and every tail bound
-`‖h‖ ≤ B + R * f` on `I ∩ Ioi v` feeds back into `‖h v‖ ≤ B v + R v * ∫ u in I ∩ Ioi v, g u * f u`,
-then iterating `k` times yields a factorial remainder that vanishes as `k → ∞`, giving
-`‖h x‖ ≤ B x`. -/
-private lemma norm_le_of_tail_supersolution (hI : MeasurableSet I) {g B R : ℝ → ℝ}
-    {h : ℝ → E} {x : ℝ} (hx : x ∈ I)
-    (hgint : ∀ v ∈ I, IntegrableOn g (I ∩ Ioi v))
-    (h0 : ∀ v ∈ I, x ≤ v → ‖h v‖ ≤ B v + R v)
-    (hstep : ∀ v ∈ I, x ≤ v → ∀ (f : ℝ → ℝ),
-      (∀ u ∈ I ∩ Ioi v, ‖h u‖ ≤ B u + R u * f u) →
-      IntegrableOn (fun u ↦ g u * f u) (I ∩ Ioi v) →
-      ‖h v‖ ≤ B v + R v * ∫ u in I ∩ Ioi v, g u * f u) :
-    ‖h x‖ ≤ B x := by
-  set G : ℝ → ℝ := fun v ↦ ∫ u in I ∩ Ioi v, g u
-  have hind : ∀ k : ℕ, ∀ v ∈ I, x ≤ v → ‖h v‖ ≤ B v + R v * (G v ^ k / k !) := by
-    intro k
-    induction k with
-    | zero =>
-      intro v hv hxv
-      simpa using h0 v hv hxv
-    | succ k ih =>
-      intro v hv hxv
-      have hpow : IntegrableOn (fun u ↦ g u * (G u ^ k / k !)) (I ∩ Ioi v) := by
-        dsimp only [G]
-        simp_rw [← mul_div_assoc]
-        exact ((hgint v hv).mul_pow_integral_inter_Ioi hI k).div_const _
-      refine (hstep v hv hxv _ (fun u hu ↦ ih u hu.1 (hxv.trans hu.2.le)) hpow).trans_eq ?_
-      simp_rw [← mul_div_assoc]
-      rw [integral_div, (hgint v hv).integral_inter_Ioi_mul_pow_integral_inter_Ioi hI k,
-        Nat.factorial_succ]
-      dsimp only [G]; push_cast; field_simp
-  have hlim : Tendsto (fun k ↦ B x + R x * (G x ^ k / k !)) atTop (𝓝 (B x)) := by
-    simpa using tendsto_const_nhds.add
-      ((Real.summable_pow_div_factorial (G x)).tendsto_atTop_zero.const_mul (R x))
-  exact ge_of_tendsto' hlim fun k ↦ hind k x hx le_rfl
-
 /-- **A priori Volterra bound.** Every continuous solution `h` of the Volterra integral equation
 on an order-connected set `I` with `h = O(P)` towards the right endpoint of `I` satisfies
 `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every `x ∈ I`. -/
@@ -662,10 +616,10 @@ theorem volterra_solution_eqOn (hI : I.OrdConnected)
   have hdiff : ∀ x ∈ I, (h₁ - h₂) x =
       ∫ v in I ∩ Ioi x, K x v • ((0 : E) + ψ v • (h₁ - h₂) v) := by
     intro x hx
-    have h1 := integrableOn_kernel_smul_of_continuousOn (F := fun v ↦ J v + ψ v • h₁ v)
+    have h1 := integrableOn_kernel_smul_inter_Ioi_of_continuousOn (F := fun v ↦ J v + ψ v • h₁ v)
       hI.measurableSet hK hKle (hJ.add (hψ.smul hh₁)) hx
       (integrableOn_forcing_add_smul_of_isBigO hI hJ hψ hQ hP0 hQ0 hΦ hΨ hh₁ hO₁ hx)
-    have h2 := integrableOn_kernel_smul_of_continuousOn (F := fun v ↦ J v + ψ v • h₂ v)
+    have h2 := integrableOn_kernel_smul_inter_Ioi_of_continuousOn (F := fun v ↦ J v + ψ v • h₂ v)
       hI.measurableSet hK hKle (hJ.add (hψ.smul hh₂)) hx
       (integrableOn_forcing_add_smul_of_isBigO hI hJ hψ hQ hP0 hQ0 hΦ hΨ hh₂ hO₂ hx)
     rw [Pi.sub_apply, heq₁ x hx, heq₂ x hx, ← integral_sub h1 h2]
@@ -899,13 +853,6 @@ section LeftTail
 variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedSpace ℝ E] {I : Set ℝ} {K : ℝ → ℝ → 𝕜} {J : ℝ → E} {ψ : ℝ → 𝕜} {P Q : ℝ → ℝ}
 
-omit [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] in
-private lemma continuousOn_uncurry_comp_neg {α : Type*} [TopologicalSpace α]
-    {K : ℝ → ℝ → α} (hK : ContinuousOn (uncurry K) {p | p.1 ∈ I ∧ p.2 ∈ I ∧ p.2 ≤ p.1}) :
-    ContinuousOn (uncurry fun x v ↦ K (-x) (-v)) {p | p.1 ∈ -I ∧ p.2 ∈ -I ∧ p.1 ≤ p.2} :=
-  hK.comp (continuous_neg.prodMap continuous_neg).continuousOn
-    fun _ hp ↦ ⟨hp.1, hp.2.1, neg_le_neg hp.2.2⟩
-
 private lemma volterra_eq_comp_neg {h : ℝ → E}
     (heq : ∀ x ∈ I, h x = ∫ v in I ∩ Iio x, K x v • (J v + ψ v • h v)) :
     ∀ x ∈ -I, h (-x) = ∫ v in -I ∩ Ioi x, K (-x) (-v) • (J (-v) + ψ (-v) • h (-v)) :=
@@ -927,7 +874,7 @@ theorem exists_volterra_solution_Iio_on [CompleteSpace E] (hI : I.OrdConnected)
       ∀ x ∈ I, ‖h x‖ ≤ P x * (∫ v in I ∩ Iio x, Q v * ‖J v‖) *
         Real.exp (∫ v in I ∩ Iio x, P v * Q v * ‖ψ v‖) := by
   obtain ⟨g, hgcont, hgeq, hgle⟩ := exists_volterra_solution_on (I := -I)
-    (K := fun x v ↦ K (-x) (-v)) hI.neg (continuousOn_uncurry_comp_neg hK)
+    (K := fun x v ↦ K (-x) (-v)) hI.neg hK.uncurry_comp_neg
     hJ.comp_neg hψ.comp_neg hP.comp_neg hQ.comp_neg
     (fun _ hx ↦ hP0 _ hx) (fun _ hx ↦ hQ0 _ hx)
     (fun _ hx _ hv hxv ↦ hKle _ hx _ hv (neg_le_neg hxv))
@@ -999,7 +946,7 @@ theorem volterra_solution_Iio_eqOn (hI : I.OrdConnected)
     (heq₂ : ∀ x ∈ I, h₂ x = ∫ v in I ∩ Iio x, K x v • (J v + ψ v • h₂ v)) :
     EqOn h₁ h₂ I := by
   have heq := volterra_solution_eqOn (I := -I) (K := fun x v ↦ K (-x) (-v))
-    hI.neg (continuousOn_uncurry_comp_neg hK) hJ.comp_neg hψ.comp_neg hQ.comp_neg
+    hI.neg hK.uncurry_comp_neg hJ.comp_neg hψ.comp_neg hQ.comp_neg
     (fun _ hx ↦ hP0 _ hx) (fun _ hx ↦ hQ0 _ hx)
     (fun _ hx _ hv hxv ↦ hKle _ hx _ hv (neg_le_neg hxv))
     (fun x hx ↦ (hΦ (-x) hx).comp_neg_inter_Ioi)
@@ -1036,14 +983,6 @@ section LeftDifferentiability
 
 variable [NormedAlgebra ℝ 𝕜] [IsScalarTower ℝ 𝕜 E] {K' : ℝ → ℝ → 𝕜} {P₁ : ℝ → ℝ}
 
-omit [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] in
-private lemma hasDerivAt_comp_neg_kernel
-    (hKderiv : ∀ x ∈ I, ∀ v ∈ I, v < x → HasDerivAt (fun t ↦ K t v) (K' x v) x) :
-    ∀ x ∈ -I, ∀ v ∈ -I, x < v → HasDerivAt (fun t ↦ K (-t) (-v)) (-K' (-x) (-v)) x :=
-  fun x hx v hv hxv ↦ by
-    simpa only [Function.comp_def, neg_one_smul] using
-      (hKderiv (-x) hx (-v) hv (neg_lt_neg hxv)).scomp x (hasDerivAt_neg x)
-
 /-- **Left-tail Volterra integral equations, derivative formula.** Mirrored analogue of
 `TauCeti.hasDerivAt_volterra_solution_on`. -/
 theorem hasDerivAt_volterra_solution_Iio_on (hIopen : IsOpen I) (hI : I.OrdConnected)
@@ -1063,9 +1002,12 @@ theorem hasDerivAt_volterra_solution_Iio_on (hIopen : IsOpen I) (hI : I.OrdConne
     ∀ x ∈ I, HasDerivAt h (∫ v in I ∩ Iio x, K' x v • (J v + ψ v • h v)) x := by
   have hd := hasDerivAt_volterra_solution_on (I := -I) (K := fun x v ↦ K (-x) (-v))
     (K' := fun x v ↦ -K' (-x) (-v)) (P₁ := fun x ↦ P₁ (-x))
-    hIopen.neg hI.neg (continuousOn_uncurry_comp_neg hK)
-    (fun _ hx ↦ hKdiag _ hx) (hasDerivAt_comp_neg_kernel hKderiv)
-    (continuousOn_uncurry_comp_neg hK').neg hJ.comp_neg hψ.comp_neg hQ.comp_neg hP₁.comp_neg
+    hIopen.neg hI.neg hK.uncurry_comp_neg
+    (fun _ hx ↦ hKdiag _ hx)
+    (fun x hx v hv hxv ↦ by
+      simpa only [Function.comp_def, neg_one_smul] using
+        (hKderiv (-x) hx (-v) hv (neg_lt_neg hxv)).scomp x (hasDerivAt_neg x))
+    hK'.uncurry_comp_neg.neg hJ.comp_neg hψ.comp_neg hQ.comp_neg hP₁.comp_neg
     (fun _ hx ↦ hP0 _ hx) (fun _ hx ↦ hQ0 _ hx)
     (fun _ hx _ hv hxv ↦ hKle _ hx _ hv (neg_le_neg hxv))
     (fun _ hx _ hv hxv ↦ by simpa using hK'le _ hx _ hv (neg_le_neg hxv))
@@ -1095,26 +1037,23 @@ theorem contDiffOn_volterra_solution_Iio_on (hIopen : IsOpen I) (hI : I.OrdConne
     {h : ℝ → E} (hh : ContinuousOn h I) (hO : h =O[map ((↑) : I → ℝ) atBot] P)
     (heq : ∀ x ∈ I, h x = ∫ v in I ∩ Iio x, K x v • (J v + ψ v • h v)) :
     ContDiffOn ℝ 1 h I := by
-  have hderiv := hasDerivAt_volterra_solution_Iio_on hIopen hI hK hKdiag hKderiv hK' hJ hψ hQ hP₁
-    hP0 hQ0 hKle hK'le hΦ hΨ hh hO heq
-  have hcont_deriv_neg : ContinuousOn
-      (fun t ↦ ∫ v in -I ∩ Ioi t, K' (-t) (-v) • (J (-v) + ψ (-v) • h (-v))) (-I) :=
-    continuousOn_integral_kernel_smul_inter_Ioi hI.neg (continuousOn_uncurry_comp_neg hK')
-      (fun _ hx _ hv hxv ↦ hK'le _ hx _ hv (neg_le_neg hxv)) hP₁.comp_neg (fun _ hv ↦ hQ0 _ hv)
-      ((hJ.comp_neg.add (hψ.comp_neg.smul hh.comp_neg)).aestronglyMeasurable
-        hIopen.neg.measurableSet)
-      fun t ht ↦ integrableOn_forcing_add_smul_of_isBigO hI.neg hJ.comp_neg hψ.comp_neg
-        hQ.comp_neg (fun _ hx ↦ hP0 _ hx) (fun _ hx ↦ hQ0 _ hx)
-        (fun u hu ↦ (hΦ (-u) hu).comp_neg_inter_Ioi)
-        (fun u hu ↦ (hΨ (-u) hu).comp_neg_inter_Ioi)
-        hh.comp_neg ((Asymptotics.isBigO_comp_neg_map_atTop I).2 hO) ht
-  have hcont_deriv : ContinuousOn (derivWithin h I) I :=
-    (neg_neg I ▸ hcont_deriv_neg.comp_neg).congr fun x hx ↦ by
-      rw [derivWithin_of_isOpen hIopen hx, (hderiv x hx).deriv]
-      simpa [neg_neg] using
-        (setIntegral_comp_neg_inter_Ioi (fun v ↦ K' x v • (J v + ψ v • h v)) I (-x)).symm
-  exact (contDiffOn_one_iff_derivWithin hIopen.uniqueDiffOn).2
-    ⟨fun x hx ↦ (hderiv x hx).differentiableAt.differentiableWithinAt, hcont_deriv⟩
+  have hg := contDiffOn_volterra_solution_on (I := -I) (K := fun x v ↦ K (-x) (-v))
+    (K' := fun x v ↦ -K' (-x) (-v)) (P₁ := fun x ↦ P₁ (-x))
+    hIopen.neg hI.neg hK.uncurry_comp_neg
+    (fun _ hx ↦ hKdiag _ hx)
+    (fun x hx v hv hxv ↦ by
+      simpa only [Function.comp_def, neg_one_smul] using
+        (hKderiv (-x) hx (-v) hv (neg_lt_neg hxv)).scomp x (hasDerivAt_neg x))
+    hK'.uncurry_comp_neg.neg hJ.comp_neg hψ.comp_neg hQ.comp_neg hP₁.comp_neg
+    (fun _ hx ↦ hP0 _ hx) (fun _ hx ↦ hQ0 _ hx)
+    (fun _ hx _ hv hxv ↦ hKle _ hx _ hv (neg_le_neg hxv))
+    (fun _ hx _ hv hxv ↦ by simpa using hK'le _ hx _ hv (neg_le_neg hxv))
+    (fun x hx ↦ (hΦ (-x) hx).comp_neg_inter_Ioi)
+    (fun x hx ↦ (hΨ (-x) hx).comp_neg_inter_Ioi)
+    hh.comp_neg ((Asymptotics.isBigO_comp_neg_map_atTop I).2 hO)
+    (volterra_eq_comp_neg heq)
+  simpa only [Function.comp_def, neg_neg] using
+    hg.comp contDiff_neg.contDiffOn fun _ hx ↦ Set.neg_mem_neg.2 hx
 
 end LeftDifferentiability
 
@@ -1127,11 +1066,6 @@ private lemma hasDerivAt_comp_neg_volterra {K' : ℝ → ℝ → 𝕜} {h : ℝ 
   simpa only [Function.comp_def, neg_smul, integral_neg, one_smul,
     setIntegral_comp_neg_inter_Ioi (fun v ↦ K' x v • (J v + ψ v • h v)) I (-x), neg_neg] using
     hd0.scomp (-x) (hasDerivAt_neg (-x))
-
-omit [NormedField 𝕜] [NormedSpace 𝕜 E] in
-private lemma norm_deriv_comp_neg {h : ℝ → E} (x : ℝ) :
-    ‖deriv (fun t ↦ h (-t)) (-x)‖ = ‖deriv h x‖ := by
-  rw [deriv_comp_neg, neg_neg, norm_neg]
 
 /-- **Derivative bound for a left-tail Volterra solution.** Mirrored analogue of
 `TauCeti.norm_deriv_volterra_solution_le_on`. -/
@@ -1157,9 +1091,9 @@ theorem norm_deriv_volterra_solution_Iio_le_on {K' : ℝ → ℝ → 𝕜} {P₁
       simpa only [setIntegral_comp_neg_inter_Ioi (fun u ↦ Q u * ‖J u‖) I v,
         setIntegral_comp_neg_inter_Ioi (fun u ↦ P u * Q u * ‖ψ u‖) I v] using hhle (-v) hv')
     (by simpa only [neg_neg] using hasDerivAt_comp_neg_volterra hderiv)
-  simpa only [norm_deriv_comp_neg,
+  simpa only [deriv_comp_neg, neg_neg, norm_neg,
     setIntegral_comp_neg_inter_Ioi (fun v ↦ Q v * ‖J v‖) I (-x),
-    setIntegral_comp_neg_inter_Ioi (fun v ↦ P v * Q v * ‖ψ v‖) I (-x), neg_neg] using hle
+    setIntegral_comp_neg_inter_Ioi (fun v ↦ P v * Q v * ‖ψ v‖) I (-x)] using hle
 
 /-- **Sharper derivative bound for a left-tail Volterra solution with constant `P₀` and
 `‖ψ‖ ≤ ‖J‖`.** Mirrored analogue of
@@ -1182,8 +1116,8 @@ theorem mul_norm_deriv_volterra_solution_Iio_le_exp_sub_one_on {K' : ℝ → ℝ
       have hv' : -v ∈ I ∩ Iio x := ⟨hv.1, neg_lt.1 hv.2⟩
       simpa only [setIntegral_comp_neg_inter_Ioi (fun u ↦ Q u * ‖J u‖) I v] using hhle (-v) hv')
     (by simpa only [neg_neg] using hasDerivAt_comp_neg_volterra hderiv)
-  simpa only [norm_deriv_comp_neg,
-    setIntegral_comp_neg_inter_Ioi (fun v ↦ Q v * ‖J v‖) I (-x), neg_neg] using hle
+  simpa only [deriv_comp_neg, neg_neg, norm_neg,
+    setIntegral_comp_neg_inter_Ioi (fun v ↦ Q v * ‖J v‖) I (-x)] using hle
 
 end LeftTail
 
