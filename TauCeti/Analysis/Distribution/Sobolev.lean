@@ -12,7 +12,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 
 /-!
 # Bessel-potential regularity from first derivatives
@@ -414,7 +414,8 @@ theorem MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add
         (hC k ξ).trans (by gcongr; exact Real.le_norm_self _)
     _ ≤ _ := by
         gcongr
-        exact Real.one_add_sq_rpow_neg_le (norm_pos_iff.mpr hξ) k
+        simpa [add_comm, one_div] using
+          TauCeti.norm_sq_add_rpow_div_two_le zero_le_one hξ (neg_nonpos.2 (Nat.cast_nonneg k))
 
 /-- For `1 < p < ∞`, `H^{s,p}` is contained in `H^{s',p}` whenever `s' ≤ s`. For `p = 2` this is
 `MemSobolev.mono`. -/
