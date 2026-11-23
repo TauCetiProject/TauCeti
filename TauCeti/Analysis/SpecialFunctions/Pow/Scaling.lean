@@ -17,11 +17,16 @@ This file collects the rearrangements of such powers that these arguments need.
 * A power of `r` is a power of `r / R` times a power of `R`. So a bound `c R^a ≤ M` on a
   dimensionless constant gives `r^{2a} c² ≤ (r / R)^{2a} M²`, and a bound `c² R^{d+2a} ≤ V` gives
   `r^{2a} c² r^d ≤ V (r / R)^{d+2a}`.
+* For `b ≤ a`, such a quantity also decays like `(r / R)^{d+2b}`, with the constant
+  `(R^{a-b} c)² R^{d+2b}`.
 * A power `(r / R)^γ` of the ratio splits as `R^{-γ} r^γ`, and shrinking the outer radius by a
   factor `θ` multiplies it by `θ^{-γ}`.
+* Shrinking a radius `R` to `R / N`, `N ≥ 1`, costs at most a factor `N` in `R^{-α}` for `α ≤ 1`.
+* A bound `βR ≤ σλ` on a dimensionless ratio gives `(1 + (βR/λ)²)ⁿ ≤ (1 + σ²)ⁿ`.
 * A constant of the form `(R^{d/2+a} Q)²`, which is the natural scale of an `L²` quantity on a
   ball of radius `R` in dimension `d`, equals `R^d (R^a Q)²` and bounds `c² R^{d+2a}` for
-  `0 ≤ c ≤ Q`.
+  `0 ≤ c ≤ Q`. So for `b ≤ a` and `R^{a-b} c ≤ Q`, a quantity `r^{2a} c² r^d` of order
+  `r^{d+2a}` is at most `(R^{d/2+b} Q)² (r / R)^{d+2b}`.
 -/
 
 public section
@@ -48,6 +53,21 @@ theorem rpow_mul_mul_rpow_le {r R c V a d : ℝ} (hr : 0 < r) (hR : 0 < R)
   rw [h1, mul_comm V]
   gcongr
 
+/-- `r^{2a} c² r^d ≤ (R^{a-b} c)² R^{d+2b} (r / R)^{d+2b}` for `0 < r ≤ R` and `b ≤ a`: a quantity
+of order `r^{d+2a}` decays at least with the smaller exponent `d + 2b`, at the cost of the
+dimensionless factor `R^{a-b}`. -/
+theorem rpow_mul_mul_rpow_le_mul_rpow_of_le {r R c a b d : ℝ} (hr : 0 < r) (hrR : r ≤ R)
+    (hba : b ≤ a) :
+    r ^ (2 * a) * (c ^ 2 * r ^ d) ≤
+      (R ^ (a - b) * c) ^ 2 * R ^ (d + 2 * b) * (r / R) ^ (d + 2 * b) := by
+  have hR : 0 < R := hr.trans_le hrR
+  have hc : (R ^ (a - b) * c) ^ 2 * R ^ (d + 2 * b) = c ^ 2 * R ^ (d + 2 * a) := by
+    rw [mul_pow, ← rpow_mul_natCast hR.le, mul_right_comm, ← rpow_add hR]
+    ring_nf
+  rw [hc]
+  refine (rpow_mul_mul_rpow_le hr hR le_rfl).trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  exact rpow_le_rpow_of_exponent_ge (div_pos hr hR) (div_le_one_of_le₀ hrR hR.le) (by linarith)
+
 /-- `(r / R)^γ = R^{-γ} r^γ`. -/
 theorem div_rpow_eq_rpow_neg_mul_rpow {r R γ : ℝ} (hr : 0 ≤ r) (hR : 0 < R) :
     (r / R) ^ γ = R ^ (-γ) * r ^ γ := by
@@ -58,6 +78,21 @@ theorem div_mul_rpow_eq {r θ R γ : ℝ} (hr : 0 ≤ r) (hθ : 0 < θ) (hR : 0 
     (r / (θ * R)) ^ γ = θ ^ (-γ) * (r / R) ^ γ := by
   rw [div_mul_eq_div_div_swap, div_eq_inv_mul (r / R), mul_rpow (inv_nonneg.2 hθ.le)
     (div_nonneg hr hR.le), inv_rpow hθ.le, rpow_neg hθ.le]
+
+/-- Shrinking the radius from `R` to `R / N`, `N ≥ 1`, costs at most a factor `N` in `R^{-α}` for
+`α ≤ 1`: `(R / N)^{-α} ≤ N R^{-α}`. -/
+theorem div_rpow_neg_le_mul_rpow_neg {N R α : ℝ} (hα1 : α ≤ 1) (hN : 1 ≤ N) (hR : 0 ≤ R) :
+    (R / N) ^ (-α) ≤ N * R ^ (-α) := by
+  have hN0 : 0 ≤ N := zero_le_one.trans hN
+  rw [div_rpow hR hN0, rpow_neg hN0, div_inv_eq_mul, mul_comm]
+  gcongr
+  exact rpow_le_self_of_one_le hN hα1
+
+/-- `(1 + (x/λ)²)ⁿ ≤ (1 + σ²)ⁿ` for `0 ≤ x`, `0 < λ` and `x ≤ σλ`. -/
+theorem one_add_div_sq_pow_le {x lam σ : ℝ} (n : ℕ) (hx : 0 ≤ x) (hlam : 0 < lam)
+    (hxσ : x ≤ σ * lam) : (1 + (x / lam) ^ 2) ^ n ≤ (1 + σ ^ 2) ^ n := by
+  gcongr
+  exact (div_le_iff₀ hlam).2 hxσ
 
 /-- `(R^{d/2+a} Q)² = R^d (R^a Q)²`. -/
 theorem rpow_div_two_add_mul_sq {R d a : ℝ} (Q : ℝ) (hR : 0 < R) :
@@ -73,5 +108,15 @@ theorem sq_mul_rpow_add_two_mul_le {R c Q d a : ℝ} (hR : 0 < R) (hc : 0 ≤ c)
     rw [← rpow_mul_natCast hR.le, Nat.cast_two, add_mul, div_mul_cancel₀ _ two_ne_zero, mul_comm]
   rw [h, mul_pow, mul_comm]
   gcongr
+
+/-- `r^{2a} c² r^d ≤ (R^{d/2+b} Q)² (r / R)^{d+2b}` for `0 < r ≤ R`, `b ≤ a` and
+`0 ≤ R^{a-b} c ≤ Q`: a quantity of order `r^{d+2a}` decays with the smaller exponent `d + 2b`,
+measured at the `L²` scale `(R^{d/2+b} Q)²` of a ball of radius `R` in dimension `d`. -/
+theorem rpow_mul_mul_rpow_le_rpow_div_two_add_mul_sq_mul_rpow {r R c Q a b d : ℝ} (hr : 0 < r)
+    (hrR : r ≤ R) (hba : b ≤ a) (hc : 0 ≤ c) (hcQ : R ^ (a - b) * c ≤ Q) :
+    r ^ (2 * a) * (c ^ 2 * r ^ d) ≤ (R ^ (d / 2 + b) * Q) ^ 2 * (r / R) ^ (d + 2 * b) := by
+  have hR : 0 < R := hr.trans_le hrR
+  exact (rpow_mul_mul_rpow_le_mul_rpow_of_le hr hrR hba).trans (mul_le_mul_of_nonneg_right
+    (sq_mul_rpow_add_two_mul_le hR (mul_nonneg (rpow_nonneg hR.le _) hc) hcQ) (by positivity))
 
 end Real

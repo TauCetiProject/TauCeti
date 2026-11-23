@@ -77,7 +77,7 @@ omit [IsTopologicalRing A] in
 /-- The order on rational-subset indices is reverse inclusion of their underlying opens. -/
 @[simp]
 theorem rationalSubsetIndex_le_iff (U W : RationalSubsetIndex Aplus V) :
-    U ≤ W ↔ ∀ x, x ∈ (OrderDual.ofDual W).1 → x ∈ (OrderDual.ofDual U).1 :=
+    U ≤ W ↔ ∀ x, x ∈ (OrderDual.ofDual W).val → x ∈ (OrderDual.ofDual U).val :=
   Iff.rfl
 
 omit [IsTopologicalRing A] in
@@ -100,7 +100,7 @@ omit [IsTopologicalRing A] in
 @[simp]
 theorem presentationToRationalSubsetIndex_obj_open (Aplus : Subring A)
     (V : Opens ↥(spa Aplus)) (i : PresentationIndex (P := P) Aplus V) :
-    (OrderDual.ofDual ((presentationToRationalSubsetIndex Aplus V).obj i)).1 =
+    (OrderDual.ofDual ((presentationToRationalSubsetIndex Aplus V).obj i)).val =
       spaBasicOpen Aplus i.pres.num i.pres.den :=
   (rfl)
 
@@ -111,11 +111,11 @@ theorem exists_presentationToRationalSubsetIndex_obj_eq
     (U : RationalSubsetIndex Aplus V) :
     ∃ i : PresentationIndex (P := P) Aplus V,
       (presentationToRationalSubsetIndex Aplus V).obj i = U := by
-  obtain ⟨T, s, hT, hU⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp U.2.1
+  obtain ⟨T, s, hT, hU⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp U.property.1
   let i : PresentationIndex (P := P) Aplus V :=
     { pres := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
       isOpen_span := hT
-      le_open := hU.ge.trans U.2.2 }
+      le_open := hU.ge.trans U.property.2 }
   exact ⟨i, OrderDual.ofDual.injective <|
     Subtype.ext <| (presentationToRationalSubsetIndex_obj_open Aplus V i).trans hU.symm⟩
 

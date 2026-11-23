@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
+public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
@@ -65,8 +66,8 @@ with `y` of its alternatization, is evaluation of the family at `y`. This is the
 constant-coefficient case of Cartan's formula `d ι_y + ι_y d = L_y`. -/
 theorem alternatizeUncurryFin_curryLeft_comp_add_curryLeft
     (f : E →L[𝕜] E [⋀^Fin (n + 1)]→L[𝕜] F) (y : E) :
-    alternatizeUncurryFin ((curryLeftLI (𝕜 := 𝕜) (E := E) (F := F)).toContinuousLinearMap.flip y ∘L
-      f) + (alternatizeUncurryFin f).curryLeft y = f y := by
+    alternatizeUncurryFin (curryLeftFlipL y ∘L f) + (alternatizeUncurryFin f).curryLeft y =
+      f y := by
   ext v
   have hremove (i : Fin (n + 1)) :
       Fin.removeNth i.succ (Matrix.vecCons y v) = Matrix.vecCons y (Fin.removeNth i v) := by

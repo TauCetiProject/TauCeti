@@ -74,19 +74,27 @@ variable [IsManifold I 1 M]
 variable (M) in
 /-- The submodule of smooth real-valued `k`-forms with compact topological support. -/
 def compactlySupportedForms (k : ℕ) : Submodule ℝ (SmoothForm I M ℝ k) where
-  carrier := {φ | IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1)}
+  carrier := {φ | IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.val)}
   add_mem' := RoughForm.isCompact_tsupport_add
   zero_mem' := RoughForm.isCompact_tsupport_zero
   smul_mem' c φ hφ :=
     hφ.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) _)
-      (RoughForm.tsupport_smul_subset c φ.1)
+      (RoughForm.tsupport_smul_subset c φ.val)
 
 /-- A smooth form is compactly supported when its topological support is compact. -/
 @[simp]
 theorem mem_compactlySupportedForms {k : ℕ} {φ : SmoothForm I M ℝ k} :
     φ ∈ compactlySupportedForms I M k ↔
-      IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1) :=
+      IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.val) :=
   Iff.rfl
+
+variable {I} in
+/-- A function vanishing wherever a compactly supported form vanishes has compact support. -/
+theorem hasCompactSupport_of_compactlySupportedForms {k : ℕ} {f : M → ℝ}
+    (α : compactlySupportedForms I M k) (hf : ∀ x, α.val.val x = 0 → f x = 0) :
+    HasCompactSupport f :=
+  HasCompactSupport.mono' ((mem_compactlySupportedForms I).1 α.property) fun x hx ↦
+    subset_tsupport _ fun h ↦ hx (hf x h)
 
 /-- Transporting the degree of a smooth form preserves compact support. -/
 theorem cast_mem_compactlySupportedForms_iff {a b : ℕ} (h : a = b) {φ : SmoothForm I M ℝ a} :
@@ -143,7 +151,7 @@ theorem mextDerivₗ_comp_mextDerivₗ (k : ℕ) :
   ext φ : 1
   apply Subtype.ext
   simp only [LinearMap.comp_apply, coe_mextDerivₗ, LinearMap.zero_apply, Submodule.coe_zero]
-  exact LinearMap.congr_fun (TauCeti.mextDerivₗ_comp_mextDerivₗ I (M := M) (F := ℝ) k) φ.1
+  exact LinearMap.congr_fun (TauCeti.mextDerivₗ_comp_mextDerivₗ I (M := M) (F := ℝ) k) φ.val
 
 end compactlySupportedForms
 
@@ -186,11 +194,11 @@ theorem compactlySupportedDeRhamComplex_d_apply (k : ℕ)
 /-- A closed compactly supported form, viewed in the compactly supported de Rham complex, is
 killed by the differential. -/
 theorem compactlySupportedDeRhamComplex_d_eq_zero_of_mem_closedForms (k : ℕ)
-    {φ : compactlySupportedForms I M k} (hφ : φ.1 ∈ closedForms I M k) :
+    {φ : compactlySupportedForms I M k} (hφ : φ.val ∈ closedForms I M k) :
     (compactlySupportedDeRhamComplex I M).d k (k + 1)
       ((compactlySupportedDeRhamComplexXIso I k).inv φ) = 0 := by
   have h : compactlySupportedForms.mextDerivₗ I M k φ = 0 :=
-    Subtype.ext ((mem_closedForms_iff_mextDerivₗ_eq_zero I φ.1).mp hφ)
+    Subtype.ext ((mem_closedForms_iff_mextDerivₗ_eq_zero I φ.val).mp hφ)
   rw [compactlySupportedDeRhamComplex_d_apply]
   simp [h]
 
@@ -270,7 +278,7 @@ def compactlySupportedForms.toClosedOfFinrankLe [FiniteDimensional ℝ E] {k : �
     compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedClosedForms I M k :=
   LinearMap.codRestrict _ (compactlySupportedForms I M k).subtype fun φ ↦
     (mem_compactlySupportedClosedForms I).mpr
-      ⟨φ.2, mem_closedForms_of_finrank_le I h φ.1⟩
+      ⟨φ.property, mem_closedForms_of_finrank_le I h φ.val⟩
 
 /-- Viewing a top-degree compactly supported form as closed does not change the smooth form. -/
 @[simp]
@@ -306,6 +314,17 @@ theorem exactCompactlySupportedForms_le_exactForms (k : ℕ) :
       rw [exactCompactlySupportedForms_succ, exactForms_succ]
       exact LinearMap.map_le_range
 
+/-- On a compact manifold every form is compactly supported, so the compactly supported exact
+forms are exactly the exact forms. -/
+@[simp]
+theorem exactCompactlySupportedForms_eq_exactForms [CompactSpace M] (k : ℕ) :
+    exactCompactlySupportedForms I M k = exactForms I M k := by
+  cases k with
+  | zero => rw [exactCompactlySupportedForms_zero, exactForms_zero]
+  | succ k =>
+      rw [exactCompactlySupportedForms_succ, exactForms_succ, compactlySupportedForms_eq_top,
+        Submodule.map_top]
+
 /-- A compactly supported exact form is compactly supported and closed. -/
 theorem exactCompactlySupportedForms_le_compactlySupportedClosedForms (k : ℕ) :
     exactCompactlySupportedForms I M k ≤ compactlySupportedClosedForms I M k := by
@@ -319,7 +338,7 @@ theorem exactCompactlySupportedForms_le_compactlySupportedClosedForms (k : ℕ) 
   | succ k =>
       rw [exactCompactlySupportedForms_succ, Submodule.mem_map] at hφ
       obtain ⟨ψ, hψ, rfl⟩ := hφ
-      have h := (compactlySupportedForms.mextDerivₗ I M k ⟨ψ, hψ⟩).2
+      have h := (compactlySupportedForms.mextDerivₗ I M k ⟨ψ, hψ⟩).property
       rwa [compactlySupportedForms.coe_mextDerivₗ] at h
 
 namespace compactlySupportedDeRhamCohomology
@@ -334,7 +353,7 @@ def mk (k : ℕ) :
     fun φ ↦ by
       rw [LinearMap.comp_apply]
       exact compactlySupportedDeRhamComplex_d_eq_zero_of_mem_closedForms I k
-        (compactlySupportedClosedForms_le_closedForms I k φ.2)
+        (compactlySupportedClosedForms_le_closedForms I k φ.property)
 
 /-- The class map is the homology class map of the inclusion of compactly supported closed forms
 into the compactly supported de Rham complex. -/
@@ -347,7 +366,7 @@ theorem mk_eq_moduleCatHomologyClass (k : ℕ) :
         fun φ ↦ by
           rw [LinearMap.comp_apply]
           exact compactlySupportedDeRhamComplex_d_eq_zero_of_mem_closedForms I k
-            (compactlySupportedClosedForms_le_closedForms I k φ.2) :=
+            (compactlySupportedClosedForms_le_closedForms I k φ.property) :=
   (rfl)
 
 /-- Every compactly supported cohomology class is represented by a compactly supported closed
@@ -359,8 +378,8 @@ theorem mk_surjective (k : ℕ) : Function.Surjective (mk I (M := M) k) := by
   rw [compactlySupportedDeRhamComplex_d_apply] at hx
   have hφ := (LinearEquiv.map_eq_zero_iff
     (compactlySupportedDeRhamComplexXIso I (M := M) (k + 1)).toLinearEquiv.symm).mp hx
-  refine ⟨⟨((compactlySupportedDeRhamComplexXIso I k).hom x).1,
-    ((compactlySupportedDeRhamComplexXIso I k).hom x).2,
+  refine ⟨⟨((compactlySupportedDeRhamComplexXIso I k).hom x).val,
+    ((compactlySupportedDeRhamComplexXIso I k).hom x).property,
     (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mpr (congrArg Subtype.val hφ)⟩, ?_⟩
   exact (compactlySupportedDeRhamComplexXIso I k).hom_inv_id_apply x
 
@@ -368,7 +387,7 @@ theorem mk_surjective (k : ℕ) : Function.Surjective (mk I (M := M) k) := by
 derivative of a compactly supported form. -/
 @[simp]
 theorem mk_eq_zero_iff (k : ℕ) (φ : compactlySupportedClosedForms I M k) :
-    mk I k φ = 0 ↔ φ.1 ∈ exactCompactlySupportedForms I M k := by
+    mk I k φ = 0 ↔ φ.val ∈ exactCompactlySupportedForms I M k := by
   cases k with
   | zero =>
     rw [mk, (compactlySupportedDeRhamComplex I M).moduleCatHomologyClass_eq_zero_iff _ _ _
@@ -378,7 +397,7 @@ theorem mk_eq_zero_iff (k : ℕ) (φ : compactlySupportedClosedForms I M k) :
   | succ k =>
     rw [mk, (compactlySupportedDeRhamComplex I M).moduleCatHomologyClass_eq_zero_iff _ _ _
         (CochainComplex.prev_nat_succ k), exactCompactlySupportedForms_succ, Submodule.mem_map]
-    refine ⟨fun ⟨y, hy⟩ ↦ ⟨_, ((compactlySupportedDeRhamComplexXIso I k).hom y).2, ?_⟩,
+    refine ⟨fun ⟨y, hy⟩ ↦ ⟨_, ((compactlySupportedDeRhamComplexXIso I k).hom y).property, ?_⟩,
       fun ⟨ψ, hψ, hψφ⟩ ↦ ⟨(compactlySupportedDeRhamComplexXIso I k).inv ⟨ψ, hψ⟩, ?_⟩⟩
     · rw [compactlySupportedDeRhamComplex_d_apply] at hy
       exact congrArg Subtype.val (LinearEquiv.injective
@@ -397,7 +416,7 @@ theorem ker_mk (k : ℕ) :
 /-- Two compactly supported closed forms have the same class precisely when they differ by a
 compactly supported exact form. -/
 theorem mk_eq_mk_iff (k : ℕ) (φ ψ : compactlySupportedClosedForms I M k) :
-    mk I k φ = mk I k ψ ↔ φ.1 - ψ.1 ∈ exactCompactlySupportedForms I M k := by
+    mk I k φ = mk I k ψ ↔ φ.val - ψ.val ∈ exactCompactlySupportedForms I M k := by
   rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff, Submodule.coe_sub]
 
 variable (M) in
@@ -412,7 +431,8 @@ of the underlying closed form. -/
 @[simp]
 theorem toDeRhamCohomology_mk (k : ℕ) (φ : compactlySupportedClosedForms I M k) :
     toDeRhamCohomology I M k (mk I k φ) =
-      deRhamCohomology.mk I k ⟨φ.1, compactlySupportedClosedForms_le_closedForms I k φ.2⟩ := by
+      deRhamCohomology.mk I k ⟨φ.val, compactlySupportedClosedForms_le_closedForms I k φ.property⟩
+          := by
   rw [toDeRhamCohomology, mk, deRhamCohomology.mk_eq_moduleCatHomologyClass]
   refine HomologicalComplex.homologyMap_moduleCatHomologyClass (Z' := closedForms I M k) _ _ _
     (compactlySupportedDeRhamComplex.ι I M) _ _
@@ -499,7 +519,7 @@ theorem mpullback_comp (f : M → M') (g : M' → M'') (hf : ContMDiff I I' ∞ 
       (mpullback f hf hfp k).comp (mpullback g hg hgp k) := by
   ext φ : 1
   apply Subtype.ext
-  simpa using LinearMap.congr_fun (SmoothForm.mpullback_comp (F := ℝ) (k := k) f g hf hg) φ.1
+  simpa using LinearMap.congr_fun (SmoothForm.mpullback_comp (F := ℝ) (k := k) f g hf hg) φ.val
 
 end compactlySupportedForms
 
@@ -509,7 +529,7 @@ theorem compactlySupportedForms.mextDerivₗ_mpullback [IsManifold I 2 M] [IsMan
     (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperMap f) (k : ℕ)
     (φ : compactlySupportedForms I' M' k) :
     mextDerivₗ I M k (mpullback f hf hp k φ) = mpullback f hf hp (k + 1) (mextDerivₗ I' M' k φ) :=
-  Subtype.ext (SmoothForm.mextDerivₗ_mpullback f hf k φ.1)
+  Subtype.ext (SmoothForm.mextDerivₗ_mpullback f hf k φ.val)
 
 variable [IsManifold I 2 M] [IsManifold I' 2 M'] [IsManifold I'' 2 M'']
 
@@ -524,7 +544,8 @@ theorem SmoothForm.mpullback_mem_exactCompactlySupportedForms (f : M → M')
       rw [hφ, map_zero]
   | succ k =>
       obtain ⟨ψ, hψ, rfl⟩ := hφ
-      exact ⟨SmoothForm.mpullback f hf ψ, (compactlySupportedForms.mpullback f hf hp k ⟨ψ, hψ⟩).2,
+      exact ⟨SmoothForm.mpullback f hf ψ, (compactlySupportedForms.mpullback f hf hp k ⟨ψ,
+          hψ⟩).property,
         SmoothForm.mextDerivₗ_mpullback f hf k ψ⟩
 
 namespace compactlySupportedClosedForms
@@ -533,8 +554,9 @@ namespace compactlySupportedClosedForms
 def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperMap f) (k : ℕ) :
     compactlySupportedClosedForms I' M' k →ₗ[ℝ] compactlySupportedClosedForms I M k :=
   (SmoothForm.mpullback (F := ℝ) (k := k) f hf).restrict fun φ hφ ↦
-    ⟨(compactlySupportedForms.mpullback f hf hp k ⟨φ, hφ.1⟩).2,
-      closedForms.coe_mpullback f hf k ⟨φ, hφ.2⟩ ▸ (closedForms.mpullback f hf k ⟨φ, hφ.2⟩).2⟩
+    ⟨(compactlySupportedForms.mpullback f hf hp k ⟨φ, hφ.1⟩).property,
+      closedForms.coe_mpullback f hf k ⟨φ, hφ.2⟩ ▸ (closedForms.mpullback f hf k ⟨φ,
+          hφ.2⟩).property⟩
 
 /-- The pullback of a compactly supported closed form is its pullback as a smooth form. -/
 @[simp]
@@ -547,7 +569,7 @@ theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperM
 pullback of its underlying rough form. -/
 theorem coe_coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperMap f) (k : ℕ)
     (φ : compactlySupportedClosedForms I' M' k) :
-    (mpullback f hf hp k φ).1.1 = TauCeti.mpullback I I' f φ.1.1 :=
+    (mpullback f hf hp k φ).val.val = TauCeti.mpullback I I' f φ.val.val :=
   (congrArg Subtype.val (coe_mpullback f hf hp k φ)).trans (SmoothForm.coe_mpullback f hf _)
 
 /-- Pullback of compactly supported closed forms by the identity is the identity linear map. -/
@@ -558,7 +580,7 @@ theorem mpullback_id (k : ℕ) :
   ext φ : 1
   apply Subtype.ext
   rw [coe_mpullback, ← compactlySupportedForms.coe_mpullback id contMDiff_id isProperMap_id k
-    ⟨φ.1, compactlySupportedClosedForms_le_compactlySupportedForms I k φ.2⟩,
+    ⟨φ.val, compactlySupportedClosedForms_le_compactlySupportedForms I k φ.property⟩,
     compactlySupportedForms.mpullback_id]
   simp only [LinearMap.id_apply]
 
@@ -570,7 +592,7 @@ theorem mpullback_comp (f : M → M') (g : M' → M'') (hf : ContMDiff I I' ∞ 
   ext φ : 1
   apply Subtype.ext
   rw [coe_mpullback, ← compactlySupportedForms.coe_mpullback (g ∘ f) (hg.comp hf) (hgp.comp hfp) k
-    ⟨φ.1, compactlySupportedClosedForms_le_compactlySupportedForms I'' k φ.2⟩,
+    ⟨φ.val, compactlySupportedClosedForms_le_compactlySupportedForms I'' k φ.property⟩,
     compactlySupportedForms.mpullback_comp f g hf hg hfp hgp]
   simp only [LinearMap.comp_apply, compactlySupportedForms.coe_mpullback, coe_mpullback]
 
@@ -632,6 +654,18 @@ theorem map_comp (f : M → M') (g : M' → M'') (hf : ContMDiff I I' ∞ f)
   rw [LinearMap.comp_apply, map_mk, map_mk, map_mk,
     compactlySupportedClosedForms.mpullback_comp f g hf hg hfp hgp]
   rfl
+
+/-- Pullback on compactly supported cohomology along a smooth proper map `f` is injective when `f`
+has a smooth proper section `s`: pullback along `s` is a left inverse. -/
+theorem map_injective_of_leftInverse (f : M → M') (s : M' → M) (hf : ContMDiff I I' ∞ f)
+    (hs : ContMDiff I' I ∞ s) (hfp : IsProperMap f) (hsp : IsProperMap s)
+    (hfs : Function.LeftInverse f s) (k : ℕ) :
+    Function.Injective (map f hf hfp k) := by
+  refine Function.LeftInverse.injective (g := map s hs hsp k) fun c ↦ ?_
+  rw [← LinearMap.comp_apply, ← map_comp s f hs hf hsp hfp]
+  -- The composite `f ∘ s` is the identity.
+  convert LinearMap.congr_fun (map_id (I := I') (M := M') k) c
+  exact funext hfs
 
 /-- The comparison with de Rham cohomology commutes with pullback along smooth proper maps. -/
 theorem toDeRhamCohomology_map (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperMap f)

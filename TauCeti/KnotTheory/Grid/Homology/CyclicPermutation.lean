@@ -88,7 +88,7 @@ theorem unblockedHomologyRelabelRowsFinRotateEquiv_unblockedHomologyClass
       (G.relabelRows (finRotate n)).unblockedHomologyClass R
         ⟨GridChain.relabelRowsEquiv (finRotate n) z,
           G.map_mem_ker_unblockedDifferential_of_intertwining R _ _
-            (G.unblockedDifferential_relabelRows_finRotate_apply R) z.2⟩ :=
+            (G.unblockedDifferential_relabelRows_finRotate_apply R) z.property⟩ :=
   G.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass R _ _ _ z
 
 /-- **Invariance of `GH⁻` under cyclic permutation of the columns.** Relabeling the grid states
@@ -111,7 +111,7 @@ theorem unblockedHomologyRelabelColumnsFinRotateEquiv_unblockedHomologyClass
       (G.relabelColumns (finRotate n)).unblockedHomologyClass R
         ⟨GridChain.relabelColumnsRenameEquiv R (finRotate n) z,
           G.map_mem_ker_unblockedDifferential_of_intertwining R _ _
-            (G.unblockedDifferential_relabelColumns_finRotate_apply R) z.2⟩ :=
+            (G.unblockedDifferential_relabelColumns_finRotate_apply R) z.property⟩ :=
   G.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass R _ _ _ z
 
 end GridDiagram
