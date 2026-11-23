@@ -28,6 +28,8 @@ are allowed.
 * `TauCeti.DetBundle.prodCommEquiv_prodEquiv` and `TauCeti.DetBundle.prodAssocEquiv_prodEquiv`
   give the rank-dependent swap sign and the sign-free associativity law.
 * `TauCeti.DetBundle.prodPullbackEquiv_prodEquiv` is the native pullback square.
+* `TauCeti.DetBundle.chartCoord_prodPullbackEquiv` and
+  `TauCeti.DetBundle.coe_prodPullbackEquiv` characterize its arbitrary-chart and intrinsic action.
 * `TauCeti.DetBundle.coe_prodEquiv_tmul_of_finrank_left_eq_zero` and
   `TauCeti.DetBundle.coe_prodEquiv_tmul_of_finrank_right_eq_zero` give the empty-product unit
   formulas, using `TauCeti.DetBundle.zeroEquiv` from the determinant module.
@@ -576,6 +578,7 @@ omit [CompleteSpace K] [TopologicalSpace B]
   [TopologicalSpace (TotalSpace F₂ E₂)] [FiberBundle F₂ E₂] [VectorBundle K F₂ E₂]
   [TopologicalSpace B'] [ContinuousMapClass T B' B] in
 /-- The tensor pullback comparison uses the existing determinant pullback map on each factor. -/
+@[simp]
 theorem prodPullbackTensorEquiv_tmul (y : B')
     (a : DetBundle K F₁ E₁ (f y)) (b : DetBundle K F₂ E₂ (f y)) :
     prodPullbackTensorEquiv K F₁ E₁ F₂ E₂ f y (a ⊗ₜ b) =
@@ -654,6 +657,48 @@ theorem prodPullbackEquiv_prodEquiv (y : B')
     dsimp only at hc
     rw [hc, LinearEquiv.apply_symm_apply]
     exact (chartCoord_pullback_prodEquiv_tmul f e₁ e₂ hx₁ hx₂ a b).symm
+
+/-- Every linear product chart reads the product-pullback comparison in the original
+coordinates, on an arbitrary determinant vector. No preferred chart is part of the statement. -/
+theorem chartCoord_prodPullbackEquiv
+    (e₁ : Trivialization F₁ (π F₁ E₁)) (e₂ : Trivialization F₂ (π F₂ E₂))
+    [e₁.IsLinear K] [e₂.IsLinear K] {y : B'}
+    (hx₁ : f y ∈ e₁.baseSet) (hx₂ : f y ∈ e₂.baseSet)
+    (v : DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y)) :
+    chartCoord ((e₁.pullback f).prod (e₂.pullback f))
+      (Trivialization.mem_prod_pullback_baseSet f hx₁ hx₂)
+      (prodPullbackEquiv K F₁ E₁ F₂ E₂ f y v) =
+      chartCoord (e₁.prod e₂) (Trivialization.mem_prod_baseSet hx₁ hx₂) v := by
+  obtain ⟨t, rfl⟩ := (prodEquiv K F₁ E₁ F₂ E₂ (f y)).surjective v
+  rw [prodPullbackEquiv_prodEquiv]
+  induction t using TensorProduct.inductionOn with
+  | add a b ha hb => simp only [map_add, ha, hb]
+  | tmul a b =>
+    rw [prodPullbackTensorEquiv_tmul]
+    exact chartCoord_pullback_prodEquiv_tmul f e₁ e₂ hx₁ hx₂ a b
+
+/-- The native product-pullback comparison preserves the intrinsic exterior-algebra image
+of every determinant vector. Pullback fibres are the original fibres at the image point. -/
+theorem coe_prodPullbackEquiv (y : B')
+    (v : DetBundle K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y)) :
+    (linearEquiv K (F₁ × F₂)
+      (((f : B' → B) *ᵖ E₁) ×ᵇ ((f : B' → B) *ᵖ E₂)) y
+      (prodPullbackEquiv K F₁ E₁ F₂ E₂ f y v) :
+      ExteriorAlgebra K (((f : B' → B) *ᵖ E₁) y × ((f : B' → B) *ᵖ E₂) y)) =
+      (linearEquiv K (F₁ × F₂) (E₁ ×ᵇ E₂) (f y) v :
+        ExteriorAlgebra K (E₁ (f y) × E₂ (f y))) := by
+  obtain ⟨t, rfl⟩ := (prodEquiv K F₁ E₁ F₂ E₂ (f y)).surjective v
+  rw [prodPullbackEquiv_prodEquiv]
+  induction t using TensorProduct.inductionOn with
+  | add a b ha hb =>
+    simp only [map_add, Submodule.coe_add]
+    exact congrArg₂ (· + ·) ha hb
+  | tmul a b =>
+    rw [prodPullbackTensorEquiv_tmul, coe_prodEquiv_tmul, coe_prodEquiv_tmul]
+    -- The input vectors use the original fibres; `erw` aligns the pullback aliases.
+    erw [coe_linearEquiv_pullbackEquiv (𝕜 := K) (F := F₁) (E := E₁) (f : B' → B) y a,
+      coe_linearEquiv_pullbackEquiv (𝕜 := K) (F := F₂) (E := E₂) (f : B' → B) y b]
+    rfl
 
 end Pullback
 

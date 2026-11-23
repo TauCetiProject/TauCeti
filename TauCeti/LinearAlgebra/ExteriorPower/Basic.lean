@@ -403,6 +403,7 @@ theorem exteriorPower_trans (e : M ≃ₗ[R] N) (e' : N ≃ₗ[R] P) (n : ℕ) :
     simp only [coe_trans, exteriorPower_toLinearMap, _root_.exteriorPower.map_comp]
 
 /-- The induced equivalence of exterior powers acts by the exterior-algebra map. -/
+@[simp]
 theorem coe_exteriorPower_apply {R : Type u} [CommRing R]
     {U : Type w₁} [AddCommGroup U] [Module R U]
     {V : Type w₂} [AddCommGroup V] [Module R V]

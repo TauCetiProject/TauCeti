@@ -48,6 +48,11 @@ recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c 
 * `EReal.coe_le_coe_ennreal_of_ofReal_le` — a real number whose positive part is at most
   `a : ℝ≥0∞` is at most `a` in `EReal`.
 * `EReal.coe_ennreal_iInf` — the coercion from `ℝ≥0∞` to `EReal` commutes with infima.
+* `TauCeti.EReal.neg_coe_ennreal_biInf_le_iff` — a bound `-(⨅ x ∈ s, f x) ≤ b` holds exactly
+  when `-(f x) ≤ b` for every `x ∈ s`, the form of a large deviation lower bound over an open set.
+* `TauCeti.EReal.le_neg_coe_ennreal_of_forall_ofReal_le` — a bound `a ≤ -d` by an extended
+  nonnegative real `d` follows from the bounds `a ≤ -s` at the real thresholds `s` with
+  `ofReal s ≤ d`.
 * `EReal.coe_mul_add_coe_mul_eq_top` — a combination `s a + t b` with positive real weights is `⊤`
   when neither `a` nor `b` is `⊥` and one of them is `⊤`.
 * `EReal.coe_mul_add_coe_mul_sub_coe_ne_top` — a combination `s a + t b - r` with nonnegative
@@ -356,5 +361,29 @@ theorem add_le_iff_le_ite {a b c : EReal} :
   · rw [ite_eq_right h, le_sub_iff_add_le (.inl (not_or.mp h).2) (.inr (not_or.mp h).1), add_comm]
 
 end EReal
+
+namespace TauCeti.EReal
+
+/-- The negated infimum over a set of an `ℝ≥0∞`-valued function is at most `b` in `EReal`
+exactly when the negated value at every point of the set is. -/
+theorem neg_coe_ennreal_biInf_le_iff {α : Type*} {s : Set α} {f : α → ℝ≥0∞} {b : EReal} :
+    -((⨅ x ∈ s, f x : ℝ≥0∞) : EReal) ≤ b ↔ ∀ x ∈ s, -(f x : EReal) ≤ b := by
+  simp_rw [EReal.neg_le (b := b), EReal.coe_ennreal_iInf, le_iInf_iff]
+
+/-- An extended real that is at most `-s` for every real `s` with `ENNReal.ofReal s ≤ d` is at
+most `-d`. For `d = ∞` the hypothesis covers every real `s`, and the conclusion is `a = ⊥`. -/
+theorem le_neg_coe_ennreal_of_forall_ofReal_le {a : EReal} {d : ℝ≥0∞}
+    (h : ∀ s : ℝ, ENNReal.ofReal s ≤ d → a ≤ -(s : EReal)) : a ≤ -(d : EReal) := by
+  refine EReal.le_of_forall_lt_iff_le.1 fun z hz => ?_
+  -- A real `z > -d` gives the threshold `-z < d`, and `ENNReal.ofReal (-z) = max (-z) 0 ≤ d`.
+  have hzd : ((-z : ℝ) : EReal) < d := by
+    rw [EReal.coe_neg]
+    exact EReal.neg_lt_comm.1 hz
+  have hle : ENNReal.ofReal (-z) ≤ d := by
+    rw [← EReal.coe_ennreal_le_coe_ennreal_iff, EReal.coe_ennreal_ofReal]
+    exact max_le hzd.le (EReal.coe_ennreal_nonneg d)
+  simpa using h (-z) hle
+
+end TauCeti.EReal
 
 end

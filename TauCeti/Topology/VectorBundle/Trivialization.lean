@@ -375,8 +375,6 @@ namespace Bundle.Trivialization
 
 variable {B : Type*} [TopologicalSpace B]
 
-
-
 /-- Over `e₁.baseSet ∩ e₂.baseSet`, the fibrewise inverse `(e₁.prod e₂).symm` acts componentwise. -/
 theorem prod_symm_apply' {F₁ F₂ : Type*} {E₁ E₂ : B → Type*} [TopologicalSpace F₁]
     [TopologicalSpace F₂] [TopologicalSpace (TotalSpace F₁ E₁)]
@@ -386,6 +384,57 @@ theorem prod_symm_apply' {F₁ F₂ : Type*} {E₁ E₂ : B → Type*} [Topologi
     (e₁.prod e₂).symm x w = (e₁.symm x w.1, e₂.symm x w.2) :=
   (TotalSpace.mk_inj (F := F₁ × F₂) (E := E₁ ×ᵇ E₂)).mp <|
     ((e₁.prod e₂).mk_symm hx w).trans (e₁.prod_symm_apply e₂ x w.1 w.2)
+
+section ProductBaseSet
+
+variable {F₁ : Type*} [TopologicalSpace F₁] {F₂ : Type*} [TopologicalSpace F₂]
+  {E₁ : B → Type*} {E₂ : B → Type*}
+  [∀ x, Zero (E₁ x)] [∀ x, Zero (E₂ x)]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  {e₁ : Trivialization F₁ (π F₁ E₁)} {e₂ : Trivialization F₂ (π F₂ E₂)}
+
+/-- A point in both chart base sets belongs to the base set of their product chart. -/
+theorem mem_prod_baseSet {x : B} (hx₁ : x ∈ e₁.baseSet) (hx₂ : x ∈ e₂.baseSet) :
+    x ∈ (e₁.prod e₂).baseSet := by
+  simpa only [Trivialization.prod_baseSet, Set.mem_inter_iff] using And.intro hx₁ hx₂
+
+variable {B' : Type*} [TopologicalSpace B']
+  {T : Type*} [FunLike T B' B] [ContinuousMapClass T B' B]
+
+/-- Membership in both original base sets gives membership in the product of pulled-back charts. -/
+theorem mem_prod_pullback_baseSet (f : T) {y : B'}
+    (hx₁ : f y ∈ e₁.baseSet) (hx₂ : f y ∈ e₂.baseSet) :
+    letI : ∀ x, Zero ((f *ᵖ E₁) x) := inferInstanceAs (∀ x, Zero (E₁ (f x)))
+    letI : ∀ x, Zero ((f *ᵖ E₂) x) := inferInstanceAs (∀ x, Zero (E₂ (f x)))
+    y ∈ ((e₁.pullback f).prod (e₂.pullback f)).baseSet := by
+  simpa only [Trivialization.prod_baseSet, Trivialization.pullback_baseSet,
+    Set.mem_inter_iff, Set.mem_preimage] using (mem_prod_baseSet hx₁ hx₂)
+
+end ProductBaseSet
+
+section LinearProduct
+
+variable {K : Type*} [NontriviallyNormedField K]
+  {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace K F₁]
+  [NormedAddCommGroup F₂] [NormedSpace K F₂]
+  {E₁ E₂ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module K (E₁ x)]
+  [∀ x, AddCommGroup (E₂ x)] [∀ x, Module K (E₂ x)]
+  [∀ x, TopologicalSpace (E₁ x)] [∀ x, TopologicalSpace (E₂ x)]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [FiberBundle F₁ E₁] [FiberBundle F₂ E₂]
+
+/-- The linear equivalence of the product chart is the product of the two fibre equivalences. -/
+theorem linearEquivAt_prod
+    (e₁ : Trivialization F₁ (π F₁ E₁)) (e₂ : Trivialization F₂ (π F₂ E₂))
+    [e₁.IsLinear K] [e₂.IsLinear K] {x : B} (hx₁ : x ∈ e₁.baseSet) (hx₂ : x ∈ e₂.baseSet) :
+    (e₁.prod e₂).linearEquivAt K x
+      (mem_prod_baseSet hx₁ hx₂) =
+      (e₁.linearEquivAt K x hx₁).prodCongr (e₂.linearEquivAt K x hx₂) := by
+  exact congrArg ContinuousLinearEquiv.toLinearEquiv
+    (Trivialization.continuousLinearEquivAt_prod (𝕜 := K)
+      (mem_prod_baseSet hx₁ hx₂))
+
+end LinearProduct
 
 /-- The preferred trivialization of `E₁ ×ᵇ E₂` at `b` is `(trivializationAt F₁ E₁ b).prod
 (trivializationAt F₂ E₂ b)`. -/
@@ -687,60 +736,3 @@ theorem exists_trivialization_baseSet_eq_univ_iff_exists_continuous_forall_ne_ze
   exact (e.symm_apply_ne_zero_iff 𝕜 (hb b)).2 one_ne_zero
 
 end TauCeti.VectorBundle
-
-namespace Bundle.Trivialization
-
-variable {B : Type*} [TopologicalSpace B]
-
-section ProductBaseSet
-
-variable {F₁ : Type*} [TopologicalSpace F₁] {F₂ : Type*} [TopologicalSpace F₂]
-  {E₁ : B → Type*} {E₂ : B → Type*}
-  [∀ x, Zero (E₁ x)] [∀ x, Zero (E₂ x)]
-  [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
-  {e₁ : Trivialization F₁ (π F₁ E₁)} {e₂ : Trivialization F₂ (π F₂ E₂)}
-
-/-- A point in both chart base sets belongs to the base set of their product chart. -/
-theorem mem_prod_baseSet {x : B} (hx₁ : x ∈ e₁.baseSet) (hx₂ : x ∈ e₂.baseSet) :
-    x ∈ (e₁.prod e₂).baseSet := by
-  simpa only [Trivialization.prod_baseSet, Set.mem_inter_iff] using And.intro hx₁ hx₂
-
-variable {B' : Type*} [TopologicalSpace B']
-  {T : Type*} [FunLike T B' B] [ContinuousMapClass T B' B]
-
-/-- Membership in both original base sets gives membership in the product of pulled-back charts. -/
-theorem mem_prod_pullback_baseSet (f : T) {y : B'}
-    (hx₁ : f y ∈ e₁.baseSet) (hx₂ : f y ∈ e₂.baseSet) :
-    letI : ∀ x, Zero ((f *ᵖ E₁) x) := inferInstanceAs (∀ x, Zero (E₁ (f x)))
-    letI : ∀ x, Zero ((f *ᵖ E₂) x) := inferInstanceAs (∀ x, Zero (E₂ (f x)))
-    y ∈ ((e₁.pullback f).prod (e₂.pullback f)).baseSet := by
-  simpa only [Trivialization.prod_baseSet, Trivialization.pullback_baseSet,
-    Set.mem_inter_iff, Set.mem_preimage] using (mem_prod_baseSet hx₁ hx₂)
-
-end ProductBaseSet
-
-section LinearProduct
-
-variable {K : Type*} [NontriviallyNormedField K]
-  {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace K F₁]
-  [NormedAddCommGroup F₂] [NormedSpace K F₂]
-  {E₁ E₂ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module K (E₁ x)]
-  [∀ x, AddCommGroup (E₂ x)] [∀ x, Module K (E₂ x)]
-  [∀ x, TopologicalSpace (E₁ x)] [∀ x, TopologicalSpace (E₂ x)]
-  [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
-  [FiberBundle F₁ E₁] [FiberBundle F₂ E₂]
-
-/-- The linear equivalence of the product chart is the product of the two fibre equivalences. -/
-theorem linearEquivAt_prod
-    (e₁ : Trivialization F₁ (π F₁ E₁)) (e₂ : Trivialization F₂ (π F₂ E₂))
-    [e₁.IsLinear K] [e₂.IsLinear K] {x : B} (hx₁ : x ∈ e₁.baseSet) (hx₂ : x ∈ e₂.baseSet) :
-    (e₁.prod e₂).linearEquivAt K x
-      (mem_prod_baseSet hx₁ hx₂) =
-      (e₁.linearEquivAt K x hx₁).prodCongr (e₂.linearEquivAt K x hx₂) := by
-  exact congrArg ContinuousLinearEquiv.toLinearEquiv
-    (Trivialization.continuousLinearEquivAt_prod (𝕜 := K)
-      (mem_prod_baseSet hx₁ hx₂))
-
-end LinearProduct
-
-end Bundle.Trivialization

@@ -192,4 +192,30 @@ example (x : B) (a b c : DetBundle ℝ ℝ (Trivial B ℝ) x) :
 
 end ThreeRealLines
 
+-- The model-degree-zero API is algebraic: these positive-dimensional fibres carry no
+-- zero-model vector-bundle assumption. Replacing it by an intrinsic rank-zero map loses this case.
+example (a : DetBundle ℂ (Fin 0 → ℂ) (fun _ : Unit ↦ Fin 2 → ℂ) ()) :
+    (linearEquiv ℂ (Fin 0 → ℂ) (fun _ : Unit ↦ Fin 2 → ℂ) () a :
+      ExteriorAlgebra ℂ (Fin 2 → ℂ)) =
+      algebraMap ℂ (ExteriorAlgebra ℂ (Fin 2 → ℂ))
+        (zeroEquiv ℂ (Fin 0 → ℂ) (fun _ : Unit ↦ Fin 2 → ℂ) (by simp) () a) := by
+  exact coe_linearEquiv_zeroEquiv (by simp) () a
+
+-- A nonlinear base map and arbitrary input charts do not force preferred-frame normalization.
+example
+    (e₁ : Trivialization ℂ (π ℂ (Trivial ℂ ℂ)))
+    (e₂ : Trivialization (Fin 2 → ℂ) (π (Fin 2 → ℂ) (Trivial ℂ (Fin 2 → ℂ))))
+    [e₁.IsLinear ℂ] [e₂.IsLinear ℂ] (z : ℂ)
+    (hz₁ : z ^ 2 ∈ e₁.baseSet) (hz₂ : z ^ 2 ∈ e₂.baseSet)
+    (v : DetBundle ℂ (ℂ × (Fin 2 → ℂ))
+      ((Trivial ℂ ℂ) ×ᵇ (Trivial ℂ (Fin 2 → ℂ))) (z ^ 2)) :
+    let f : C(ℂ, ℂ) := ⟨fun x ↦ x ^ 2, continuous_id.pow 2⟩
+    chartCoord ((e₁.pullback f).prod (e₂.pullback f))
+      (Trivialization.mem_prod_pullback_baseSet f hz₁ hz₂)
+      (prodPullbackEquiv ℂ ℂ (Trivial ℂ ℂ) (Fin 2 → ℂ)
+        (Trivial ℂ (Fin 2 → ℂ)) f z v) =
+      chartCoord (e₁.prod e₂) (Trivialization.mem_prod_baseSet hz₁ hz₂) v := by
+  exact chartCoord_prodPullbackEquiv
+    (⟨fun x : ℂ ↦ x ^ 2, continuous_id.pow 2⟩ : C(ℂ, ℂ)) e₁ e₂ hz₁ hz₂ v
+
 end TauCeti.DetBundle.WhitneyClients
