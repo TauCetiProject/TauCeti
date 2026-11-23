@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+public import TauCeti.Geometry.Euclidean.Volume.Measure
 public import TauCeti.MeasureTheory.Function.Coarea.Eilenberg
-import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Hausdorff
 
 /-!
 # Counting the points of a set on parallel lines
 
-Let `E` be a real inner product space of finite dimension `n` and `e` a unit vector. The lines
+Let `E` be a real inner product space of finite dimension `n` and `e` a nonzero vector. The lines
 parallel to `e` are parametrized by their intersection `y` with the orthogonal hyperplane
 `(ℝ ∙ e)ᗮ`, and the line through `y` meets a set `A ⊆ E` in the points `y + t • e` with `t` in the
 line section `{t | y + t • e ∈ A}`. Integrating the number of these points over the hyperplane
@@ -22,25 +22,28 @@ gives at most a constant times the `(n - 1)`-dimensional Hausdorff measure of `A
 `∫_{(ℝ ∙ e)ᗮ} #{t | y + t • e ∈ A} dy ≤ |B_{n-1}| · Hⁿ⁻¹(A)`
 
 (`TauCeti.lintegral_encard_lineSection_le`), where `|B_{n-1}|` is the volume of the unit ball of
-the hyperplane. So if `Hⁿ⁻¹(A)` is finite, almost every line parallel to `e` meets `A` in finitely
-many points (`TauCeti.ae_finite_lineSection`). No measurability of `A` is assumed; for
-non-measurable integrands `∫⁻` is the lower integral.
+the hyperplane; for the normalized Hausdorff measure `μHE[n - 1]` the constant is `2ⁿ⁻¹`
+(`TauCeti.lintegral_encard_lineSection_le_euclideanHausdorffMeasure`). So if `Hⁿ⁻¹(A)` is finite,
+almost every line parallel to `e` meets `A` in finitely many points
+(`TauCeti.ae_finite_lineSection`, `TauCeti.ae_finite_lineSection_of_euclideanHausdorffMeasure`).
+No measurability of `A` is assumed; for non-measurable integrands `∫⁻` is the lower integral.
 
 This is the projection bound in the proof of Federer's criterion for finite perimeter: applied
 to the essential boundary of a set, it bounds the integrated number of essential boundary points
 of the line sections. The proof applies Eilenberg's inequality
-`LipschitzOnWith.lintegral_hausdorffMeasure_inter_preimage_le` in dimension `0` to the orthogonal
-projection onto `(ℝ ∙ e)ᗮ`, which is `1`-Lipschitz, and whose fiber over `y` is the line through
+`LipschitzOnWith.lintegral_hausdorffMeasure_inter_preimage_le` in dimension `0` to Mathlib's
+orthogonal projection onto `(ℝ ∙ e)ᗮ`, which is `1`-Lipschitz
+(`Submodule.lipschitzWith_orthogonalProjectionOnto`), and whose fiber over `y` is the line through
 `y` parallel to `e`; zero-dimensional Hausdorff measure counts points.
 
 ## Main results
 
-* `TauCeti.lipschitzWith_orthogonalLineEquiv_symm_fst`: the transverse coordinate of orthogonal
-  line coordinates, the orthogonal projection onto `(ℝ ∙ e)ᗮ`, is `1`-Lipschitz.
 * `TauCeti.lintegral_encard_lineSection_le`: the integrated number of points of `A` on the lines
-  parallel to `e` is at most `|B_{n-1}| · Hⁿ⁻¹(A)`.
-* `TauCeti.ae_finite_lineSection`: if `Hⁿ⁻¹(A) < ∞`, almost every line parallel to `e` meets `A`
-  in finitely many points.
+  parallel to `e` is at most `|B_{n-1}| · Hⁿ⁻¹(A)`, and
+  `TauCeti.lintegral_encard_lineSection_le_euclideanHausdorffMeasure`: at most
+  `2ⁿ⁻¹ μHE[n - 1](A)`.
+* `TauCeti.ae_finite_lineSection` and `TauCeti.ae_finite_lineSection_of_euclideanHausdorffMeasure`:
+  if `Hⁿ⁻¹(A) < ∞`, almost every line parallel to `e` meets `A` in finitely many points.
 
 ## References
 
@@ -58,47 +61,39 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 namespace TauCeti
 
-private theorem orthogonalLineEquiv_symm_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ)
-    (t : ℝ) : (orthogonalLineEquiv e he).symm ((y : E) + t • e) = (y, t) := by
-  rw [← orthogonalLineEquiv_apply e he, ContinuousLinearEquiv.symm_apply_apply]
-
-/-- The transverse coordinate `x ↦ x - ⟪e, x⟫ • e` of orthogonal line coordinates, the orthogonal
-projection onto `(ℝ ∙ e)ᗮ`, is `1`-Lipschitz. -/
-theorem lipschitzWith_orthogonalLineEquiv_symm_fst (e : E) (he : ‖e‖ = 1) :
-    LipschitzWith 1 fun x : E => ((orthogonalLineEquiv e he).symm x).1 := by
-  refine LipschitzWith.of_dist_le_mul fun x x' => ?_
-  obtain ⟨⟨y, t⟩, rfl⟩ := (orthogonalLineEquiv e he).surjective x
-  obtain ⟨⟨y', t'⟩, rfl⟩ := (orthogonalLineEquiv e he).surjective x'
-  rw [ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.symm_apply_apply,
-    NNReal.coe_one, one_mul, dist_eq_norm, dist_eq_norm, ← map_sub, Prod.mk_sub_mk,
-    orthogonalLineEquiv_apply]
-  have hsq := norm_add_smul_sq e he (y - y') (t - t')
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).mp
-    (by rw [hsq]; nlinarith [sq_nonneg (t - t')])
+/-- The orthogonal projection onto `(ℝ ∙ e)ᗮ` sends `x` to `y` exactly when `x` lies on the line
+through `y` parallel to `e`. -/
+private theorem orthogonalProjectionOnto_eq_iff {e : E} (y : (ℝ ∙ e)ᗮ) (x : E) :
+    (ℝ ∙ e)ᗮ.orthogonalProjectionOnto x = y ↔ ∃ t : ℝ, (y : E) + t • e = x := by
+  constructor
+  · intro hx
+    have hmem := (ℝ ∙ e)ᗮ.sub_starProjection_mem_orthogonal x
+    rw [Submodule.orthogonal_orthogonal, Submodule.starProjection_apply, hx] at hmem
+    obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 hmem
+    exact ⟨t, by rw [ht]; abel⟩
+  · rintro ⟨t, rfl⟩
+    rw [map_add, map_smul,
+      Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero, smul_zero,
+      add_zero, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
 
 /-- The fiber of `A` over `y` under the orthogonal projection onto `(ℝ ∙ e)ᗮ` has as many points
 as the line section `{t | y + t • e ∈ A}`. -/
 private theorem hausdorffMeasure_zero_inter_preimage_eq_encard [MeasurableSpace E] [BorelSpace E]
-    (e : E) (he : ‖e‖ = 1) (A : Set E) (y : (ℝ ∙ e)ᗮ) :
-    μH[0] (A ∩ (fun x : E => ((orthogonalLineEquiv e he).symm x).1) ⁻¹' {y}) =
+    {e : E} (he : e ≠ 0) (A : Set E) (y : (ℝ ∙ e)ᗮ) :
+    μH[0] (A ∩ (ℝ ∙ e)ᗮ.orthogonalProjectionOnto ⁻¹' {y}) =
       ({t : ℝ | (y : E) + t • e ∈ A}.encard : ℝ≥0∞) := by
-  have he0 : e ≠ 0 := by rintro rfl; simp at he
-  have himage : A ∩ (fun x : E => ((orthogonalLineEquiv e he).symm x).1) ⁻¹' {y} =
+  have himage : A ∩ (ℝ ∙ e)ᗮ.orthogonalProjectionOnto ⁻¹' {y} =
       (fun t : ℝ => (y : E) + t • e) '' {t : ℝ | (y : E) + t • e ∈ A} := by
     ext x
-    obtain ⟨⟨z, s⟩, rfl⟩ := (orthogonalLineEquiv e he).surjective x
-    simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, orthogonalLineEquiv_apply,
-      orthogonalLineEquiv_symm_add_smul, mem_image, mem_ofPred_eq]
+    simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, orthogonalProjectionOnto_eq_iff,
+      mem_image, mem_ofPred_eq]
     constructor
-    · rintro ⟨hA, rfl⟩
-      exact ⟨s, hA, rfl⟩
-    · rintro ⟨r, hr, hrx⟩
-      have h := congrArg (fun x => ((orthogonalLineEquiv e he).symm x).1) hrx
-      simp only [orthogonalLineEquiv_symm_add_smul] at h
-      subst h
-      exact ⟨hrx ▸ hr, rfl⟩
+    · rintro ⟨hA, t, rfl⟩
+      exact ⟨t, hA, rfl⟩
+    · rintro ⟨t, ht, rfl⟩
+      exact ⟨ht, t, rfl⟩
   have hinj : Function.Injective fun t : ℝ => (y : E) + t • e :=
-    (add_right_injective _).comp (smul_left_injective ℝ he0)
+    (add_right_injective _).comp (smul_left_injective ℝ he)
   rw [himage, hausdorffMeasure_zero_eq_count, ← hinj.encard_image]
   rcases ((fun t : ℝ => (y : E) + t • e) '' {t : ℝ | (y : E) + t • e ∈ A}).finite_or_infinite
     with hfin | hinf
@@ -109,37 +104,58 @@ private theorem hausdorffMeasure_zero_inter_preimage_eq_encard [MeasurableSpace 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 omit [MeasurableSpace E] [BorelSpace E] in
-private theorem finrank_orthogonal_span_singleton_eq (e : E) (he : ‖e‖ = 1) :
+private theorem finrank_orthogonal_span_singleton_eq {e : E} (he : e ≠ 0) :
     finrank ℝ (ℝ ∙ e)ᗮ = finrank ℝ E - 1 := by
-  have he0 : e ≠ 0 := by rintro rfl; simp at he
   have h := (ℝ ∙ e).finrank_add_finrank_orthogonal
-  rw [finrank_span_singleton he0] at h
+  rw [finrank_span_singleton he] at h
   omega
 
-/-- **The projection bound.** For a unit vector `e` of an `n`-dimensional real inner product
+/-- **The projection bound.** For a nonzero vector `e` of an `n`-dimensional real inner product
 space and any set `A`, the number of points of `A` on the line through `y` parallel to `e`,
 integrated over the orthogonal hyperplane `(ℝ ∙ e)ᗮ`, is at most the volume of the unit ball of
 the hyperplane times the `(n - 1)`-dimensional Hausdorff measure of `A`. -/
-theorem lintegral_encard_lineSection_le (e : E) (he : ‖e‖ = 1) (A : Set E) :
+theorem lintegral_encard_lineSection_le {e : E} (he : e ≠ 0) (A : Set E) :
     ∫⁻ y : (ℝ ∙ e)ᗮ, ({t : ℝ | (y : E) + t • e ∈ A}.encard : ℝ≥0∞) ≤
       volume (ball (0 : (ℝ ∙ e)ᗮ) 1) * μH[(finrank ℝ E - 1 : ℕ)] A := by
-  have h := ((lipschitzWith_orthogonalLineEquiv_symm_fst e he).lipschitzOnWith (s := A))
+  have h := ((ℝ ∙ e)ᗮ.lipschitzWith_orthogonalProjectionOnto.lipschitzOnWith (s := A))
     |>.lintegral_hausdorffMeasure_inter_preimage_le volume (t := 0)
-  simp only [hausdorffMeasure_zero_inter_preimage_eq_encard, ENNReal.coe_one, one_pow, mul_one,
-    add_zero, finrank_orthogonal_span_singleton_eq e he] at h
+  simp only [hausdorffMeasure_zero_inter_preimage_eq_encard he, ENNReal.coe_one, one_pow, mul_one,
+    add_zero, finrank_orthogonal_span_singleton_eq he] at h
   exact h
 
+/-- **The projection bound for the normalized Hausdorff measure.** For a nonzero vector `e` of an
+`n`-dimensional real inner product space and any set `A`, the number of points of `A` on the line
+through `y` parallel to `e`, integrated over the orthogonal hyperplane `(ℝ ∙ e)ᗮ`, is at most
+`2ⁿ⁻¹ μHE[n - 1](A)`. -/
+theorem lintegral_encard_lineSection_le_euclideanHausdorffMeasure {e : E} (he : e ≠ 0)
+    (A : Set E) :
+    ∫⁻ y : (ℝ ∙ e)ᗮ, ({t : ℝ | (y : E) + t • e ∈ A}.encard : ℝ≥0∞) ≤
+      2 ^ (finrank ℝ E - 1) * μHE[finrank ℝ E - 1] A := by
+  refine (lintegral_encard_lineSection_le he A).trans_eq ?_
+  rw [euclideanHausdorffMeasure_eq_smul_hausdorffMeasure, smul_apply, smul_eq_mul,
+    volume_ball_eq_of_finrank_eq (F := EuclideanSpace ℝ (Fin (finrank ℝ E - 1)))
+      (by simp [finrank_orthogonal_span_singleton_eq he]) 0 0 1, ← mul_assoc,
+    ENNReal.mul_div_cancel (pow_ne_zero _ two_ne_zero) (ENNReal.pow_ne_top ENNReal.ofNat_ne_top)]
+
 /-- If `A` has finite `(n - 1)`-dimensional Hausdorff measure in an `n`-dimensional real inner
-product space, then almost every line parallel to a unit vector `e` meets `A` in finitely many
+product space, then almost every line parallel to a nonzero vector `e` meets `A` in finitely many
 points. -/
-theorem ae_finite_lineSection (e : E) (he : ‖e‖ = 1) {A : Set E}
+theorem ae_finite_lineSection {e : E} (he : e ≠ 0) {A : Set E}
     (hA : μH[(finrank ℝ E - 1 : ℕ)] A ≠ ∞) :
     ∀ᵐ y : (ℝ ∙ e)ᗮ, {t : ℝ | (y : E) + t • e ∈ A}.Finite := by
-  have h := ((lipschitzWith_orthogonalLineEquiv_symm_fst e he).lipschitzOnWith (s := A))
+  have h := ((ℝ ∙ e)ᗮ.lipschitzWith_orthogonalProjectionOnto.lipschitzOnWith (s := A))
     |>.ae_hausdorffMeasure_inter_preimage_lt_top volume (t := 0)
-      (by rwa [add_zero, finrank_orthogonal_span_singleton_eq e he])
+      (by rwa [add_zero, finrank_orthogonal_span_singleton_eq he])
   filter_upwards [h] with y hy
-  rw [hausdorffMeasure_zero_inter_preimage_eq_encard] at hy
+  rw [hausdorffMeasure_zero_inter_preimage_eq_encard he] at hy
   exact Set.encard_lt_top_iff.mp (by exact_mod_cast hy)
+
+/-- If `A` has finite normalized `(n - 1)`-dimensional Hausdorff measure in an `n`-dimensional
+real inner product space, then almost every line parallel to a nonzero vector `e` meets `A` in
+finitely many points. -/
+theorem ae_finite_lineSection_of_euclideanHausdorffMeasure {e : E} (he : e ≠ 0) {A : Set E}
+    (hA : μHE[finrank ℝ E - 1] A ≠ ∞) :
+    ∀ᵐ y : (ℝ ∙ e)ᗮ, {t : ℝ | (y : E) + t • e ∈ A}.Finite :=
+  ae_finite_lineSection he (euclideanHausdorffMeasure_lt_top_iff.1 (lt_top_iff_ne_top.2 hA)).ne
 
 end TauCeti
