@@ -30,15 +30,17 @@ column ranges over `R`, finiteness, `Matrix.submatrix`, `Matrix.reindex`, the id
 
 ## Main definitions
 
-* `Matrix.rangeVecMulLinearMap` and `Matrix.rangeMulVecBilinMap`: semilinear maps on row and
-  column ranges induced by applying a ring homomorphism coordinatewise.
+* `Matrix.rangeVecMulLinearMap`, `Matrix.rangeVecMulLinearEquiv`, and
+  `Matrix.rangeMulVecBilinMap`: semilinear maps and equivalences on row and column ranges induced
+  by applying a ring homomorphism or ring equivalence coordinatewise.
 * `Matrix.rangeVecMulLinearFromBlocksEquiv` and `Matrix.rangeMulVecBilinFromBlocksEquiv`: product
   decompositions for the row and column ranges of `Matrix.fromBlocks e 0 0 f`.
 * `Matrix.rangeVecMulLinearTransposeMapOpEquiv`: `Rᵐᵒᵖ`-linear isomorphism identifying the row
   range of `eᵀ.map MulOpposite.op` with the column range of `e`.
 * `Matrix.rangeMulVecBilinSubmatrixEquiv` and `Matrix.rangeMulVecBilinReindexEquiv`: `Rᵐᵒᵖ`-linear
   isomorphisms of column ranges under `Matrix.submatrix` and `Matrix.reindex`.
-* `Matrix.rangeMulVecBilinOneEquiv`: the column range of `1 : Matrix m m R` is `m → Rᵐᵒᵖ`.
+* `Matrix.rangeMulVecBilinOneEquiv` and `Matrix.rangeMulVecBilinSingleOneEquiv`: the column ranges
+  of `1 : Matrix m m R` and of a diagonal matrix unit `Eᵢᵢ` are `m → Rᵐᵒᵖ` and `Rᵐᵒᵖ`.
 
 ## Main result
 
@@ -163,6 +165,34 @@ theorem coe_rangeVecMulLinearMap_apply {B : Type*} [Semiring B] (e : Matrix ι �
     (v : range e.vecMulLinear) : (e.rangeVecMulLinearMap f v : ι' → B) = f ∘ v :=
   (rfl)
 
+/-- A ring equivalence `σ : A ≃+* B` induces a `σ`-semilinear isomorphism between the row ranges
+of a rectangular matrix `e` and of `e.map σ`, using `rangeVecMulLinearMap` in both directions. -/
+def rangeVecMulLinearEquiv {B : Type*} [Semiring B] (e : Matrix ι ι' A) (σ : A ≃+* B) :
+    haveI := RingHomInvPair.of_ringEquiv σ
+    haveI := RingHomInvPair.of_ringEquiv_symm σ
+    range e.vecMulLinear ≃ₛₗ[(σ : A →+* B)] range (e.map σ).vecMulLinear :=
+  haveI := RingHomInvPair.of_ringEquiv σ
+  haveI := RingHomInvPair.of_ringEquiv_symm σ
+  let f := e.rangeVecMulLinearMap (σ : A →+* B)
+  let g := (e.map σ).rangeVecMulLinearMap (σ.symm : B →+* A)
+  { toFun := fun v ↦ ⟨(f v : ι' → B), (f v).property⟩
+    invFun := fun w ↦ ⟨(g w : ι' → A), by
+      simpa [Matrix.map_map, Function.comp_def] using (g w).property⟩
+    map_add' := fun _ _ ↦ Subtype.ext <| funext fun _ ↦ map_add σ _ _
+    map_smul' := fun _ _ ↦ Subtype.ext <| funext fun _ ↦ map_mul σ _ _
+    left_inv := fun _ ↦ Subtype.ext <| funext fun _ ↦ σ.symm_apply_apply _
+    right_inv := fun _ ↦ Subtype.ext <| funext fun _ ↦ σ.apply_symm_apply _ }
+
+@[simp]
+theorem coe_rangeVecMulLinearEquiv_apply {B : Type*} [Semiring B] (e : Matrix ι ι' A)
+    (σ : A ≃+* B) (v : range e.vecMulLinear) :
+    (e.rangeVecMulLinearEquiv σ v : ι' → B) = σ ∘ v := (rfl)
+
+@[simp]
+theorem coe_rangeVecMulLinearEquiv_symm_apply {B : Type*} [Semiring B] (e : Matrix ι ι' A)
+    (σ : A ≃+* B) (w : range (e.map σ).vecMulLinear) :
+    ((e.rangeVecMulLinearEquiv σ).symm w : ι' → A) = σ.symm ∘ w := (rfl)
+
 section FromBlocks
 
 variable [Fintype κ]
@@ -176,12 +206,11 @@ theorem mem_range_vecMulLinear_fromBlocks_iff {e : Matrix ι ι' A} {f : Matrix 
   constructor
   · rintro ⟨u, rfl⟩
     refine ⟨⟨u ∘ Sum.inl, ?_⟩, ⟨u ∘ Sum.inr, ?_⟩⟩ <;>
-      rw [vecMulLinear_apply, vecMulLinear_apply, ← Sum.elim_comp_inl_inr u, vecMul_fromBlocks] <;>
-      simp
+      rw [vecMulLinear_apply, vecMulLinear_apply, ← Sum.elim_comp_inl_inr u,
+        vecMul_fromBlocks] <;> simp
   · rintro ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
     refine ⟨Sum.elim a b, ?_⟩
-    rw [← Sum.elim_comp_inl_inr v, ← ha, ← hb]
-    simp [vecMul_fromBlocks]
+    rw [← Sum.elim_comp_inl_inr v, ← ha, ← hb]; simp [vecMul_fromBlocks]
 
 /-- **Block sums of matrices.** The range of right multiplication by the block-diagonal matrix
 `Matrix.fromBlocks e 0 0 f` is the product of the ranges of `e` and of `f`. -/
@@ -200,21 +229,18 @@ def rangeVecMulLinearFromBlocksEquiv (e : Matrix ι ι' A) (f : Matrix κ κ' A)
 @[simp]
 theorem coe_rangeVecMulLinearFromBlocksEquiv_apply_fst (e : Matrix ι ι' A) (f : Matrix κ κ' A)
     (v : range (fromBlocks e 0 0 f).vecMulLinear) :
-    ((rangeVecMulLinearFromBlocksEquiv e f v).1 : ι' → A) = (v : ι' ⊕ κ' → A) ∘ Sum.inl :=
-  (rfl)
+    ((rangeVecMulLinearFromBlocksEquiv e f v).1 : ι' → A) = (v : ι' ⊕ κ' → A) ∘ Sum.inl := (rfl)
 
 @[simp]
 theorem coe_rangeVecMulLinearFromBlocksEquiv_apply_snd (e : Matrix ι ι' A) (f : Matrix κ κ' A)
     (v : range (fromBlocks e 0 0 f).vecMulLinear) :
-    ((rangeVecMulLinearFromBlocksEquiv e f v).2 : κ' → A) = (v : ι' ⊕ κ' → A) ∘ Sum.inr :=
-  (rfl)
+    ((rangeVecMulLinearFromBlocksEquiv e f v).2 : κ' → A) = (v : ι' ⊕ κ' → A) ∘ Sum.inr := (rfl)
 
 @[simp]
 theorem coe_rangeVecMulLinearFromBlocksEquiv_symm_apply (e : Matrix ι ι' A) (f : Matrix κ κ' A)
     (p : range e.vecMulLinear × range f.vecMulLinear) :
     ((rangeVecMulLinearFromBlocksEquiv e f).symm p : ι' ⊕ κ' → A) =
-      Sum.elim (p.1 : ι' → A) (p.2 : κ' → A) :=
-  (rfl)
+      Sum.elim (p.1 : ι' → A) (p.2 : κ' → A) := (rfl)
 
 end FromBlocks
 
@@ -255,18 +281,14 @@ def rangeVecMulLinearTransposeMapOpEquiv (e : Matrix ι' ι R) :
 @[simp]
 theorem coe_rangeVecMulLinearTransposeMapOpEquiv_apply (e : Matrix ι' ι R)
     (v : range (eᵀ.map MulOpposite.op).vecMulLinear) :
-    (rangeVecMulLinearTransposeMapOpEquiv e v : ι' → R) = MulOpposite.unop ∘ v :=
-  (rfl)
+    (rangeVecMulLinearTransposeMapOpEquiv e v : ι' → R) = MulOpposite.unop ∘ v := (rfl)
 
 @[simp]
 theorem coe_rangeVecMulLinearTransposeMapOpEquiv_symm_apply (M : Matrix ι' ι R)
     (v : range (M.mulVecBilin R Rᵐᵒᵖ)) :
     ((rangeVecMulLinearTransposeMapOpEquiv M).symm v : ι' → Rᵐᵒᵖ) = op ∘ v := by
-  ext i
-  have h := congrFun (congrArg (fun x : range (M.mulVecBilin R Rᵐᵒᵖ) ↦ (x : ι' → R))
-    ((rangeVecMulLinearTransposeMapOpEquiv M).apply_symm_apply v)) i
-  rw [coe_rangeVecMulLinearTransposeMapOpEquiv_apply] at h
-  exact (op_unop _).symm.trans (congrArg op h)
+  ext i; exact (op_unop _).symm.trans (congrArg op (congrFun (congrArg Subtype.val
+    ((rangeVecMulLinearTransposeMapOpEquiv M).apply_symm_apply v)) i))
 
 /-- A column vector `v` lies in the column range of `M` iff `op ∘ v` lies in the row range of
 `Mᵀ.map op`. -/
@@ -275,9 +297,8 @@ theorem mem_range_mulVecBilin_iff_op_comp {M : Matrix ι' ι R} {v : ι' → R} 
   refine ⟨fun hv ↦ ?_, fun hw ↦ ?_⟩
   · simpa only [coe_rangeVecMulLinearTransposeMapOpEquiv_symm_apply] using
       ((rangeVecMulLinearTransposeMapOpEquiv M).symm ⟨v, hv⟩).property
-  · have h : (rangeVecMulLinearTransposeMapOpEquiv M ⟨op ∘ v, hw⟩ : ι' → R) = v := by
-      ext i; simp [coe_rangeVecMulLinearTransposeMapOpEquiv_apply]
-    exact h ▸ (rangeVecMulLinearTransposeMapOpEquiv M ⟨op ∘ v, hw⟩).property
+  · convert (rangeVecMulLinearTransposeMapOpEquiv M ⟨op ∘ v, hw⟩).property using 1
+    ext i; simp
 
 /-- The column range of any matrix with finitely many columns is finitely generated over `Rᵐᵒᵖ`. -/
 instance finite_range_mulVecBilin (M : Matrix ι' ι R) :
@@ -297,8 +318,7 @@ def rangeMulVecBilinMap {S : Type*} [Semiring S] (M : Matrix ι' ι R) (f : R �
 @[simp]
 theorem coe_rangeMulVecBilinMap_apply {S : Type*} [Semiring S] (M : Matrix ι' ι R) (f : R →+* S)
     (v : range (M.mulVecBilin R Rᵐᵒᵖ)) :
-    (M.rangeMulVecBilinMap f v : ι' → S) = f ∘ v := by
-  ext i; simp [rangeMulVecBilinMap]
+    (M.rangeMulVecBilinMap f v : ι' → S) = f ∘ v := by ext i; simp [rangeMulVecBilinMap]
 
 /-- Reindexing rows and columns via `Matrix.submatrix` induces an `Rᵐᵒᵖ`-linear isomorphism
 between column ranges, acting by precomposition with `σ`. -/
@@ -323,15 +343,13 @@ def rangeMulVecBilinSubmatrixEquiv {ι₂ ι₂' : Type*} [Fintype ι₂] (M : M
 @[simp]
 theorem coe_rangeMulVecBilinSubmatrixEquiv_apply {ι₂ ι₂' : Type*} [Fintype ι₂]
     (M : Matrix ι' ι R) (σ : ι₂' ≃ ι') (τ : ι₂ ≃ ι) (v : range (M.mulVecBilin R Rᵐᵒᵖ)) :
-    (M.rangeMulVecBilinSubmatrixEquiv σ τ v : ι₂' → R) = (v : ι' → R) ∘ σ :=
-  (rfl)
+    (M.rangeMulVecBilinSubmatrixEquiv σ τ v : ι₂' → R) = (v : ι' → R) ∘ σ := (rfl)
 
 @[simp]
 theorem coe_rangeMulVecBilinSubmatrixEquiv_symm_apply {ι₂ ι₂' : Type*} [Fintype ι₂]
     (M : Matrix ι' ι R) (σ : ι₂' ≃ ι') (τ : ι₂ ≃ ι)
     (w : range ((M.submatrix σ τ).mulVecBilin R Rᵐᵒᵖ)) :
-    ((M.rangeMulVecBilinSubmatrixEquiv σ τ).symm w : ι' → R) = (w : ι₂' → R) ∘ σ.symm :=
-  (rfl)
+    ((M.rangeMulVecBilinSubmatrixEquiv σ τ).symm w : ι' → R) = (w : ι₂' → R) ∘ σ.symm := (rfl)
 
 /-- Reindexing rows and columns along `σ` and `τ` induces an `Rᵐᵒᵖ`-linear isomorphism between
 column ranges, acting by precomposition with `σ.symm`. -/
@@ -343,19 +361,16 @@ def rangeMulVecBilinReindexEquiv {ι₂ ι₂' : Type*} [Fintype ι₂] (M : Mat
 @[simp]
 theorem rangeMulVecBilinReindexEquiv_eq_submatrixEquiv {ι₂ ι₂' : Type*} [Fintype ι₂]
     (M : Matrix ι' ι R) (σ : ι' ≃ ι₂') (τ : ι ≃ ι₂) :
-    M.rangeMulVecBilinReindexEquiv σ τ = M.rangeMulVecBilinSubmatrixEquiv σ.symm τ.symm :=
-  (rfl)
+    M.rangeMulVecBilinReindexEquiv σ τ = M.rangeMulVecBilinSubmatrixEquiv σ.symm τ.symm := (rfl)
 
 theorem coe_rangeMulVecBilinReindexEquiv_apply {ι₂ ι₂' : Type*} [Fintype ι₂]
     (M : Matrix ι' ι R) (σ : ι' ≃ ι₂') (τ : ι ≃ ι₂) (v : range (M.mulVecBilin R Rᵐᵒᵖ)) :
-    (M.rangeMulVecBilinReindexEquiv σ τ v : ι₂' → R) = (v : ι' → R) ∘ σ.symm :=
-  (rfl)
+    (M.rangeMulVecBilinReindexEquiv σ τ v : ι₂' → R) = (v : ι' → R) ∘ σ.symm := (rfl)
 
 theorem coe_rangeMulVecBilinReindexEquiv_symm_apply {ι₂ ι₂' : Type*} [Fintype ι₂]
     (M : Matrix ι' ι R) (σ : ι' ≃ ι₂') (τ : ι ≃ ι₂)
     (w : range ((M.reindex σ τ).mulVecBilin R Rᵐᵒᵖ)) :
-    ((M.rangeMulVecBilinReindexEquiv σ τ).symm w : ι' → R) = (w : ι₂' → R) ∘ σ :=
-  (rfl)
+    ((M.rangeMulVecBilinReindexEquiv σ τ).symm w : ι' → R) = (w : ι₂' → R) ∘ σ := (rfl)
 
 end Fintype
 
@@ -424,14 +439,12 @@ def rangeMulVecBilinOneEquiv (m R : Type*) [Semiring R] [Fintype m] [DecidableEq
 @[simp]
 theorem rangeMulVecBilinOneEquiv_apply {m R : Type*} [Semiring R] [Fintype m] [DecidableEq m]
     (v : LinearMap.range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)) :
-    rangeMulVecBilinOneEquiv m R v = MulOpposite.op ∘ (v : m → R) :=
-  (rfl)
+    rangeMulVecBilinOneEquiv m R v = MulOpposite.op ∘ (v : m → R) := (rfl)
 
 @[simp]
 theorem coe_rangeMulVecBilinOneEquiv_symm_apply {m R : Type*} [Semiring R] [Fintype m]
     [DecidableEq m] (v : m → Rᵐᵒᵖ) :
-    ((rangeMulVecBilinOneEquiv m R).symm v : m → R) = MulOpposite.unop ∘ v :=
-  (rfl)
+    ((rangeMulVecBilinOneEquiv m R).symm v : m → R) = MulOpposite.unop ∘ v := (rfl)
 
 /-- When `Rᵐᵒᵖ` has the strong rank condition, `range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)`
 has right `R`-rank `Fintype.card m`. -/
@@ -441,24 +454,38 @@ theorem finrank_range_mulVecBilin_one (R : Type*) [Semiring R] [StrongRankCondit
       Fintype.card m :=
   (rangeMulVecBilinOneEquiv m R).finrank_eq.trans (Module.finrank_fintype_fun_eq_card Rᵐᵒᵖ)
 
+/-- The column range of a diagonal matrix unit `Eᵢᵢ` is `Rᵐᵒᵖ`-linearly isomorphic to `Rᵐᵒᵖ`,
+via coordinate evaluation at `i` and `Pi.single i`. -/
+def rangeMulVecBilinSingleOneEquiv (R : Type*) [Semiring R] {m : Type*} [Fintype m]
+    [DecidableEq m] (i : m) :
+    LinearMap.range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] Rᵐᵒᵖ where
+  toFun w := MulOpposite.op ((w : m → R) i)
+  invFun r := ⟨Pi.single i (MulOpposite.unop r), ⟨Pi.single i (MulOpposite.unop r), by
+    ext j; by_cases hj : j = i <;> simp [mulVec_apply, hj]⟩⟩
+  map_add' _ _ := MulOpposite.op_add _ _
+  map_smul' r w := by simp
+  left_inv w := Subtype.ext <| by
+    obtain ⟨v, hv⟩ := w.property
+    ext j; have hvj := congrFun hv j
+    by_cases hj : j = i <;> simp_all [mulVecBilin_apply, mulVec_apply]
+  right_inv _ := by simp
+
+@[simp]
+theorem rangeMulVecBilinSingleOneEquiv_apply (R : Type*) [Semiring R] {m : Type*} [Fintype m]
+    [DecidableEq m] (i : m) (w : LinearMap.range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ)) :
+    rangeMulVecBilinSingleOneEquiv R i w = MulOpposite.op ((w : m → R) i) := (rfl)
+
+@[simp]
+theorem coe_rangeMulVecBilinSingleOneEquiv_symm_apply (R : Type*) [Semiring R] {m : Type*}
+    [Fintype m] [DecidableEq m] (i : m) (r : Rᵐᵒᵖ) :
+    ((rangeMulVecBilinSingleOneEquiv R i).symm r : m → R) =
+      Pi.single i (MulOpposite.unop r) := (rfl)
+
 /-- When `Rᵐᵒᵖ` has the strong rank condition, the column range of `Eᵢᵢ` has right `R`-rank `1`.
 -/
 theorem finrank_range_mulVecBilin_single_one (R : Type*) [Semiring R] [StrongRankCondition Rᵐᵒᵖ]
     {m : Type*} [Fintype m] [DecidableEq m] (i : m) :
-    Module.finrank Rᵐᵒᵖ (LinearMap.range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ)) = 1 := by
-  let ψ : LinearMap.range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] Rᵐᵒᵖ :=
-    { toFun := fun w ↦ MulOpposite.op ((w : m → R) i)
-      invFun := fun r ↦ ⟨Pi.single i (MulOpposite.unop r), ⟨Pi.single i (MulOpposite.unop r), by
-        ext j; by_cases hj : j = i <;> simp [mulVec_apply, hj]⟩⟩
-      map_add' := fun _ _ ↦ MulOpposite.op_add _ _
-      map_smul' := fun r w ↦ by simp
-      left_inv := fun w ↦ Subtype.ext <| by
-        obtain ⟨v, hv⟩ := w.property
-        ext j; have hvj := congrFun hv j
-        by_cases hj : j = i
-        · subst hj; simp
-        · simp [mulVecBilin_apply, mulVec_apply, hj] at hvj; simp [hj, ← hvj]
-      right_inv := fun _ ↦ by simp }
-  exact ψ.finrank_eq.trans (Module.finrank_self Rᵐᵒᵖ)
+    Module.finrank Rᵐᵒᵖ (LinearMap.range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ)) = 1 :=
+  (rangeMulVecBilinSingleOneEquiv R i).finrank_eq.trans (Module.finrank_self Rᵐᵒᵖ)
 
 end Matrix

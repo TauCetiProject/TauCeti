@@ -57,8 +57,10 @@ modules exactly when the matrices are equivalent.
 * `IsIdempotentElem.projective_range_vecMulLinear`: this range is a projective module.
 * `IsIdempotentElem.linearMap_apply_eq_vecMul`: a linear map out of this range is right
   multiplication by the matrix of its values on the rows.
-* `Matrix.nonempty_linearEquiv_range_vecMulLinear_iff`: the ranges of two idempotent matrices are
-  isomorphic if and only if the matrices are equivalent idempotents.
+* `Matrix.linearEquivRangeVecMulLinearOfMulEq`,
+  `Matrix.nonempty_linearEquiv_range_vecMulLinear_iff`: the ranges of two idempotent matrices are
+  isomorphic if and only if the matrices are equivalent idempotents, via explicit maps from
+  witnesses `x * y = e` and `y * x = f`.
 * `Module.Finite.exists_linearEquiv_range_vecMulLinear`: a finitely generated projective module is
   isomorphic to the range of an idempotent matrix.
 * `Matrix.nonempty_linearEquiv_range_mulVecBilin_iff`: the images of two idempotent matrices acting
@@ -359,6 +361,39 @@ private theorem rowImage_mul_rowImage_symm {e : Matrix ι ι A} {f : Matrix κ �
     LinearEquiv.symm_apply_apply] at h
   exact congrFun h.symm j
 
+/-- **Mutually inverse module maps from equivalence witnesses.** When `x * y = e` and `y * x = f`
+for idempotent `e` and `f`, right multiplication by `x` and `y` induces `Aᵐ e ≃ₗ[A] Aⁿ f`. -/
+def linearEquivRangeVecMulLinearOfMulEq
+    {e : Matrix ι ι A} {f : Matrix κ κ A} {x : Matrix ι κ A} {y : Matrix κ ι A}
+    (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
+    range e.vecMulLinear ≃ₗ[A] range f.vecMulLinear where
+  toFun v := ⟨v ᵥ* x, by
+    rw [hf.mem_range_vecMulLinear_iff, vecMul_vecMul, ← hyx, ← Matrix.mul_assoc, hxy,
+      ← vecMul_vecMul, he.mem_range_vecMulLinear_iff.1 v.property]⟩
+  invFun w := ⟨w ᵥ* y, by
+    rw [he.mem_range_vecMulLinear_iff, vecMul_vecMul, ← hxy, ← Matrix.mul_assoc, hyx,
+      ← vecMul_vecMul, hf.mem_range_vecMulLinear_iff.1 w.property]⟩
+  map_add' _ _ := Subtype.ext (add_vecMul _ _ _)
+  map_smul' _ _ := Subtype.ext (smul_vecMul _ _ _)
+  left_inv v := Subtype.ext <| by
+    simp [vecMul_vecMul, hxy, he.mem_range_vecMulLinear_iff.1 v.property]
+  right_inv w := Subtype.ext <| by
+    simp [vecMul_vecMul, hyx, hf.mem_range_vecMulLinear_iff.1 w.property]
+
+@[simp]
+theorem coe_linearEquivRangeVecMulLinearOfMulEq_apply
+    {e : Matrix ι ι A} {f : Matrix κ κ A} {x : Matrix ι κ A} {y : Matrix κ ι A}
+    (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
+    (v : range e.vecMulLinear) :
+    (linearEquivRangeVecMulLinearOfMulEq hxy hyx he hf v : κ → A) = v ᵥ* x := (rfl)
+
+@[simp]
+theorem coe_linearEquivRangeVecMulLinearOfMulEq_symm_apply
+    {e : Matrix ι ι A} {f : Matrix κ κ A} {x : Matrix ι κ A} {y : Matrix κ ι A}
+    (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
+    (w : range f.vecMulLinear) :
+    ((linearEquivRangeVecMulLinearOfMulEq hxy hyx he hf).symm w : ι → A) = w ᵥ* y := (rfl)
+
 /-- **Algebraic equivalence of idempotent matrices.** The ranges of right multiplication by two
 idempotent matrices `e` and `f` are isomorphic left `A`-modules if and only if `e` and `f` are
 equivalent idempotents. -/
@@ -371,22 +406,7 @@ theorem nonempty_linearEquiv_range_vecMulLinear_iff {e : Matrix ι ι A} {f : Ma
     refine ⟨rowImage ψ, rowImage ψ.symm, rowImage_mul_rowImage_symm hf ψ, ?_⟩
     simpa using rowImage_mul_rowImage_symm he ψ.symm
   · rintro ⟨x, y, hxy, hyx⟩
-    -- Right multiplication by `x` and by `y` restrict to mutually inverse maps of the ranges.
-    have hx : ∀ v ∈ range e.vecMulLinear, v ᵥ* x ∈ range f.vecMulLinear := fun v hv ↦ by
-      rw [hf.mem_range_vecMulLinear_iff, vecMul_vecMul, ← hyx, ← Matrix.mul_assoc, hxy,
-        ← vecMul_vecMul, (he.mem_range_vecMulLinear_iff).1 hv]
-    have hy : ∀ w ∈ range f.vecMulLinear, w ᵥ* y ∈ range e.vecMulLinear := fun w hw ↦ by
-      rw [he.mem_range_vecMulLinear_iff, vecMul_vecMul, ← hxy, ← Matrix.mul_assoc, hyx,
-        ← vecMul_vecMul, (hf.mem_range_vecMulLinear_iff).1 hw]
-    exact ⟨{
-      toFun v := ⟨v ᵥ* x, hx v v.property⟩
-      invFun w := ⟨w ᵥ* y, hy w w.property⟩
-      map_add' v v' := Subtype.ext (add_vecMul _ _ _)
-      map_smul' a v := Subtype.ext (smul_vecMul _ _ _)
-      left_inv v := Subtype.ext <| by
-        simp [vecMul_vecMul, hxy, (he.mem_range_vecMulLinear_iff).1 v.property]
-      right_inv w := Subtype.ext <| by
-        simp [vecMul_vecMul, hyx, (hf.mem_range_vecMulLinear_iff).1 w.property] }⟩
+    exact ⟨linearEquivRangeVecMulLinearOfMulEq hxy hyx he hf⟩
 
 /-- **Equivalence of idempotents and right modules.** The images `eAⁿ` and `fAᵐ` of the actions of
 two idempotent matrices on column vectors are isomorphic right `A`-modules (left `Aᵐᵒᵖ`-modules)

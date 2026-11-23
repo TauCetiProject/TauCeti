@@ -258,41 +258,20 @@ theorem splitK0Equiv_of_mk {ι : Type*} [Fintype ι] {e : Matrix ι ι A} (he : 
   let E₀ := ModuleCat.restrictScalarsEquivalenceOfRingEquiv (RingEquiv.opOp A)
   let E := E₀.finiteProjectiveModulesEquivalence
   let Y : FiniteProjectiveRight Aᵐᵒᵖ := E.inverse.obj X
-  have : RingHomInvPair (RingEquiv.opOp A).toRingHom (RingEquiv.opOp A).symm.toRingHom :=
-    RingHomInvPair.of_ringEquiv (RingEquiv.opOp A)
-  have : RingHomInvPair (RingEquiv.opOp A).symm.toRingHom (RingEquiv.opOp A).toRingHom :=
-    RingHomInvPair.of_ringEquiv_symm (RingEquiv.opOp A)
-  let eY : Y.obj ≃ₛₗ[(RingEquiv.opOp A).symm.toRingHom] X.obj :=
+  have : RingHomInvPair (RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ) _ := .of_ringEquiv (RingEquiv.opOp A)
+  have : RingHomInvPair ((RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A) _ :=
+    .of_ringEquiv_symm (RingEquiv.opOp A)
+  let eY : Y.obj ≃ₛₗ[((RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)] X.obj :=
     (eqToIso (E₀.finiteProjectiveModulesEquivalence_inverse_obj_obj X)).toLinearEquiv.trans
       { toFun := fun x ↦ x, invFun := fun x ↦ x, left_inv := fun _ ↦ rfl,
         right_inv := fun _ ↦ rfl, map_add' := fun _ _ ↦ rfl, map_smul' := fun _ _ ↦ rfl }
   -- Transport `θ` across `RingEquiv.opOp A` and then across
   -- `Matrix.rangeVecMulLinearTransposeMapOpEquiv`, turning row vectors `Aⁿe` into column vectors
   -- `(eᵀ.map op) (Aᵐᵒᵖ)ⁿ`.
-  have heOp : (eᵀ.map op)ᵀ.map op = e.map (RingEquiv.opOp A).toRingHom := by
-    ext i j; rfl
-  let f := e.rangeVecMulLinearMap (RingEquiv.opOp A).toRingHom
-  let eOp₁ : range e.vecMulLinear ≃ₛₗ[(RingEquiv.opOp A).toRingHom]
-      range (e.map (RingEquiv.opOp A).toRingHom).vecMulLinear :=
-    { toFun := f
-      invFun := (e.map (RingEquiv.opOp A).toRingHom).rangeVecMulLinearMap
-        (RingEquiv.opOp A).symm.toRingHom
-      map_add' := f.map_add'
-      map_smul' := f.map_smul'
-      left_inv := fun v ↦ Subtype.ext <| funext fun i ↦ by
-        rw [coe_rangeVecMulLinearMap_apply, coe_rangeVecMulLinearMap_apply]
-        simp
-      right_inv := fun w ↦ Subtype.ext <| funext fun i ↦ by
-        have h1 := congrFun (coe_rangeVecMulLinearMap_apply e (RingEquiv.opOp A).toRingHom
-          (((e.map (RingEquiv.opOp A).toRingHom).rangeVecMulLinearMap
-            (RingEquiv.opOp A).symm.toRingHom) w)) i
-        have h2 := congrFun (coe_rangeVecMulLinearMap_apply (e.map (RingEquiv.opOp A).toRingHom)
-          (RingEquiv.opOp A).symm.toRingHom w) i
-        simp only [Function.comp_apply] at h1 h2
-        exact h1.trans (congrArg _ h2 |>.trans (by simp)) }
-  let eOp : range e.vecMulLinear ≃ₛₗ[(RingEquiv.opOp A).toRingHom]
+  have heOp : (eᵀ.map op)ᵀ.map op = e.map (RingEquiv.opOp A) := by ext i j; rfl
+  let eOp : range e.vecMulLinear ≃ₛₗ[(RingEquiv.opOp A : A →+* Aᵐᵒᵖᵐᵒᵖ)]
       range ((eᵀ.map op)ᵀ.map op).vecMulLinear :=
-    eOp₁.trans (LinearEquiv.ofEq _ _ (by rw [heOp]))
+    (e.rangeVecMulLinearEquiv (RingEquiv.opOp A)).trans (LinearEquiv.ofEq _ _ (by rw [← heOp]))
   let θ' : Y.obj ≃ₗ[Aᵐᵒᵖᵐᵒᵖ] range ((eᵀ.map op).mulVecBilin Aᵐᵒᵖ Aᵐᵒᵖᵐᵒᵖ) :=
     ((eY.trans θ).trans eOp).trans (rangeVecMulLinearTransposeMapOpEquiv (eᵀ.map op))
   rw [splitK0Equiv, AddEquiv.trans_apply, AddEquiv.trans_apply, hop, opEquiv_mk,

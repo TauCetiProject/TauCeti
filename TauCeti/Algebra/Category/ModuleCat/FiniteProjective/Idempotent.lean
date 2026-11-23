@@ -54,10 +54,6 @@ noncomputable def extendScalarsOfIdempotentIso (f : R →+* S) {ι : Type*} [Fin
         ((BalancedExtension.rangeMulVecBilinEquiv f he).trans
           (ofIdempotentLinearEquiv (e.map f) (he.matrix_map f)).symm)).toModuleIso)
 
-private theorem eqToHom_hom_eqToHom_hom {S : Type u} [Ring S] {M N : ModuleCat Sᵐᵒᵖ}
-    (h1 : M = N) (h2 : N = M) (y : M) : (eqToHom h2).hom ((eqToHom h1).hom y) = y := by
-  cases h1; rfl
-
 /-- Transport of `(extendScalarsOfIdempotentIso f he).hom` through `ofIdempotentLinearEquiv`. -/
 @[simp]
 theorem ofIdempotentLinearEquiv_extendScalarsOfIdempotentIso_hom_apply (f : R →+* S)
@@ -79,7 +75,8 @@ theorem coe_ofIdempotentLinearEquiv_extendScalarsOfIdempotentIso_hom_tmul (f : R
           ((eqToHom ((RingHom.op f).finiteProjectiveModulesExtendScalars_obj_obj _).symm).hom
             (BalancedExtension.tmul (RingHom.op f) s v))) : ι → S) =
       fun i ↦ f ((ofIdempotentLinearEquiv e he v : ι → R) i) * s.unop := by
-  rw [ofIdempotentLinearEquiv_extendScalarsOfIdempotentIso_hom_apply, eqToHom_hom_eqToHom_hom]; simp
+  rw [ofIdempotentLinearEquiv_extendScalarsOfIdempotentIso_hom_apply, ← ModuleCat.comp_apply,
+    eqToHom_trans, eqToHom_refl]; simp
 
 /-- Transport of `(extendScalarsOfIdempotentIso f he).inv` into `BalancedExtension.congr`. -/
 @[simp]
@@ -96,7 +93,7 @@ theorem balancedExtensionCongr_extendScalarsOfIdempotentIso_inv_apply (f : R →
     LinearEquiv.trans_symm, LinearEquiv.symm_symm, BalancedExtension.congr_symm, eqToIso.inv,
     ObjectProperty.homMk_hom, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, coe_comp,
     LinearEquiv.coe_coe, Function.comp_apply, LinearEquiv.trans_apply]
-  rw [eqToHom_hom_eqToHom_hom]; simp
+  rw [← ModuleCat.comp_apply, eqToHom_trans, eqToHom_refl]; simp
 
 /-- Explicit column-sum formula for `(extendScalarsOfIdempotentIso f he).inv`. -/
 theorem extendScalarsOfIdempotentIso_inv_apply (f : R →+* S)
@@ -111,7 +108,8 @@ theorem extendScalarsOfIdempotentIso_inv_apply (f : R →+* S)
     (eqToHom ((RingHom.op f).finiteProjectiveModulesExtendScalars_obj_obj
       (ofIdempotent e he)))).injective
   apply (BalancedExtension.congr (RingHom.op f) (ofIdempotentLinearEquiv e he)).injective
-  rw [balancedExtensionCongr_extendScalarsOfIdempotentIso_inv_apply, eqToHom_hom_eqToHom_hom]; simp
+  rw [balancedExtensionCongr_extendScalarsOfIdempotentIso_inv_apply, ← ModuleCat.comp_apply,
+    eqToHom_trans, eqToHom_refl]; simp
 
 end FiniteProjectiveModules
 
@@ -130,8 +128,7 @@ noncomputable def toKZero : IdempotentMonoid R →+ KZero R :=
 /-- The group-completion isomorphism `kZeroEquiv R` restricts along `GrothendieckAddGroup.of` to
 `toKZero R`. Not marked `@[simp]` because `GrothendieckAddGroup.of` is reducible. -/
 theorem kZeroEquiv_of (x : IdempotentMonoid R) :
-    kZeroEquiv R (_root_.Algebra.GrothendieckAddGroup.of x) = toKZero R x :=
-  (rfl)
+    kZeroEquiv R (_root_.Algebra.GrothendieckAddGroup.of x) = toKZero R x := (rfl)
 
 @[simp]
 theorem lift_toKZero :
@@ -152,8 +149,7 @@ variable {R} in
 @[simp]
 theorem toKZero_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempotentElem e) :
     toKZero R (mk e he) = SplitK0.of.{u} (FiniteProjectiveModules.ofIdempotent e he) :=
-  toKZero_mk_linearEquiv (P := FiniteProjectiveModules.ofIdempotent e he) he
-    (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)
+  toKZero_mk_linearEquiv he (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)
 
 /-- `TauCeti.IdempotentMonoid.toKZero R` factors via `objectCodeAddEquiv R` and `SplitK0.ofCode`. -/
 theorem ofCode_comp_objectCodeAddEquiv :
@@ -236,11 +232,9 @@ theorem mem_mrange_toKZero_iff {x : KZero R} :
     x ∈ AddMonoidHom.mrange (toKZero R) ↔ ∃ P : FiniteProjectiveRight R, x = SplitK0.of.{u} P := by
   rw [← ofCode_comp_objectCodeAddEquiv R]
   constructor
-  · rintro ⟨a, rfl⟩
-    obtain ⟨P, hP⟩ := objectCode_surjective.{u} (objectCodeAddEquiv R a)
+  · rintro ⟨a, rfl⟩; obtain ⟨P, hP⟩ := objectCode_surjective.{u} (objectCodeAddEquiv R a)
     exact ⟨P, by simp [← hP]⟩
-  · rintro ⟨P, rfl⟩
-    obtain ⟨a, ha⟩ := (objectCodeAddEquiv R).surjective (objectCode.{u} P)
+  · rintro ⟨P, rfl⟩; obtain ⟨a, ha⟩ := (objectCodeAddEquiv R).surjective (objectCode.{u} P)
     exact ⟨a, by simp [ha]⟩
 
 /-- Subtracting `[1ₘ]` from `[e]` in `K₀(R)` gives `classOf Rᵐᵒᵖ P m = [P] - m[R]`. -/

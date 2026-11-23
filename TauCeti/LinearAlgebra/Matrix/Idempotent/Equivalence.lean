@@ -73,8 +73,7 @@ theorem idempotentEquivalent_zero_zero (m n : Type*) [Fintype m] [Fintype n] :
 theorem idempotentEquivalent_zero_iff [Fintype m] [Fintype n] {e : Matrix m m R} :
     IdempotentEquivalent e (0 : Matrix n n R) ↔ e = 0 := by
   refine ⟨?_, fun h ↦ h ▸ idempotentEquivalent_zero_zero m n⟩
-  rw [idempotentEquivalent_iff]
-  rintro ⟨x, y, rfl, -, -, hxf, -, -⟩
+  rw [idempotentEquivalent_iff]; rintro ⟨x, y, rfl, -, -, hxf, -, -⟩
   rw [← hxf, Matrix.mul_zero, Matrix.zero_mul]
 
 /-- A zero matrix is equivalent only to the zero matrix. -/
@@ -176,33 +175,28 @@ for idempotent `e` and `f`, left multiplication by `x` and `y` induces `f Rⁿ �
 def linearEquivRangeMulVecBilinOfMulEq [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} {x : Matrix m n R} {y : Matrix n m R}
     (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
-    range (f.mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ) where
-  toFun v := ⟨x *ᵥ v, he.mem_range_mulVecBilin_iff.mpr <| by
-    rw [mulVec_mulVec, ← hxy, Matrix.mul_assoc, hyx, ← mulVec_mulVec,
-      hf.mem_range_mulVecBilin_iff.mp v.property]⟩
-  invFun w := ⟨y *ᵥ w, hf.mem_range_mulVecBilin_iff.mpr <| by
-    rw [mulVec_mulVec, ← hyx, Matrix.mul_assoc, hxy, ← mulVec_mulVec,
-      he.mem_range_mulVecBilin_iff.mp w.property]⟩
-  map_add' u v := Subtype.ext (mulVec_add x u v)
-  map_smul' r v := Subtype.ext (mulVec_smul x r v)
-  left_inv v := Subtype.ext <| by
-    simp [mulVec_mulVec, hyx, hf.mem_range_mulVecBilin_iff.mp v.property]
-  right_inv w := Subtype.ext <| by
-    simp [mulVec_mulVec, hxy, he.mem_range_mulVecBilin_iff.mp w.property]
+    range (f.mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ) :=
+  (rangeVecMulLinearTransposeMapOpEquiv f).symm.trans <|
+    (linearEquivRangeVecMulLinearOfMulEq
+      (by rw [← transpose_mul_map_op, hyx]) (by rw [← transpose_mul_map_op, hxy])
+      hf.matrix_transpose_map_op he.matrix_transpose_map_op).trans
+      (rangeVecMulLinearTransposeMapOpEquiv e)
 
 @[simp]
 theorem coe_linearEquivRangeMulVecBilinOfMulEq_apply [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} {x : Matrix m n R} {y : Matrix n m R}
     (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (v : range (f.mulVecBilin R Rᵐᵒᵖ)) :
-    (linearEquivRangeMulVecBilinOfMulEq hxy hyx he hf v : m → R) = x *ᵥ v := (rfl)
+    (linearEquivRangeMulVecBilinOfMulEq hxy hyx he hf v : m → R) = x *ᵥ v := by
+  ext i; simp [linearEquivRangeMulVecBilinOfMulEq, ← op_comp_mulVec]
 
 @[simp]
 theorem coe_linearEquivRangeMulVecBilinOfMulEq_symm_apply [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} {x : Matrix m n R} {y : Matrix n m R}
     (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (w : range (e.mulVecBilin R Rᵐᵒᵖ)) :
-    ((linearEquivRangeMulVecBilinOfMulEq hxy hyx he hf).symm w : n → R) = y *ᵥ w := (rfl)
+    ((linearEquivRangeMulVecBilinOfMulEq hxy hyx he hf).symm w : n → R) = y *ᵥ w := by
+  ext i; simp [linearEquivRangeMulVecBilinOfMulEq, ← op_comp_mulVec]
 
 /-- Equivalent idempotent matrices have equal right `R`-rank on their column ranges. -/
 theorem IdempotentEquivalent.finrank_range_mulVecBilin_eq [Fintype m] [Fintype n]
@@ -259,9 +253,8 @@ theorem idempotentEquivalent_iff_exists_units_conj_fromBlocks_zero
     rw [← hu]
     exact (idempotentEquivalent_conj (he.fromBlocks_zero₁₂_zero₂₁ IsIdempotentElem.zero) u).symm
   have hf : IsIdempotentElem f := by
-    have h0f := hconj.isIdempotentElem_left.eq
-    rw [fromBlocks_multiply] at h0f
-    rw [IsIdempotentElem]; simpa using congrArg toBlocks₂₂ h0f
+    rw [IsIdempotentElem]
+    simpa [fromBlocks_multiply] using congrArg toBlocks₂₂ hconj.isIdempotentElem_left.eq
   exact (he.idempotentEquivalent_fromBlocks_zero_right n).symm.trans
     (hconj.symm.trans (hf.idempotentEquivalent_fromBlocks_zero_left m))
 
