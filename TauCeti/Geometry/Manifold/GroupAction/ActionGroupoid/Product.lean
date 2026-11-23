@@ -69,6 +69,18 @@ theorem arrowDiffeomorph_apply (a : Quiver.Total (ActionCategory G X)) :
     arrowDiffeomorph J I n G X a = (a.hom.hom, a.left.back) := by
   simp [arrowDiffeomorph]
 
+/-- The first coordinate of the arrow diffeomorphism is the label. -/
+@[simp]
+theorem arrowDiffeomorph_apply_fst (a : Quiver.Total (ActionCategory G X)) :
+    (arrowDiffeomorph J I n G X a).1 = a.hom.hom := by
+  rw [arrowDiffeomorph_apply]
+
+/-- The second coordinate of the arrow diffeomorphism is the underlying source point. -/
+@[simp]
+theorem arrowDiffeomorph_apply_snd (a : Quiver.Total (ActionCategory G X)) :
+    (arrowDiffeomorph J I n G X a).2 = a.left.back := by
+  rw [arrowDiffeomorph_apply]
+
 /-- The inverse of the arrow diffeomorphism uses the native total-arrow equivalence. -/
 theorem arrowDiffeomorph_symm_apply (p : G × X) :
     (arrowDiffeomorph J I n G X).symm p = (totalEquiv G X).symm p := by
@@ -123,7 +135,7 @@ theorem arrowDiffeomorph_unit (x : ActionCategory G X) :
   simp only [arrowDiffeomorph_apply, ActionCategory.id_hom]
 
 /-- The target of an arrow is its label acting on its source point. -/
-theorem arrowDiffeomorph_target (a : Quiver.Total (ActionCategory G X)) :
+theorem right_back_eq_smul (a : Quiver.Total (ActionCategory G X)) :
     a.right.back = (arrowDiffeomorph J I n G X a).1 •
       (arrowDiffeomorph J I n G X a).2 := by
   rw [arrowDiffeomorph_apply]
@@ -145,7 +157,7 @@ theorem contMDiff_productTarget [ContMDiffSMul J I n G X] :
   apply (contMDiff_objects_iff I n).2
   exact ((contMDiff_fst.comp (arrowDiffeomorph J I n G X).contMDiff).smul
     (contMDiff_snd.comp (arrowDiffeomorph J I n G X).contMDiff)).congr
-      fun a ↦ arrowDiffeomorph_target J I n G X a
+      fun a ↦ right_back_eq_smul J I n G X a
 
 variable {G X}
 
@@ -213,6 +225,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 theorem isSubmersion_productSource :
     Manifold.IsSubmersion (J.prod I) I n
       (Quiver.Total.left : Quiver.Total (ActionCategory G X) → ActionCategory G X) := by
+  -- Adapt `Manifold.isSubmersionOfComplement_fst` by swapping the model factors.
   have hsnd : Manifold.IsSubmersion (J.prod I) I n (@Prod.snd G X) := by
     refine Manifold.IsSubmersionOfComplement.isSubmersion (F := F) ?_
     refine Manifold.isSubmersionOfComplement_iff.mpr fun p ↦ ?_
