@@ -40,7 +40,13 @@ and injectivity in `mod A` agree with those in all modules (`FGModuleCat.project
 ## Main definitions
 
 * `FGModuleCat.arTranslate` and `FGModuleCat.arInverseTranslate`: the translates `τ` and `τ⁻` as
-  objects of `mod A`.
+  objects of `mod A`. They respect isomorphisms (`FGModuleCat.nonempty_iso_arTranslate_of_iso`,
+  `FGModuleCat.nonempty_iso_arInverseTranslate_of_iso`); `τ M` is injective exactly when `M` is
+  projective, `τ⁻ N` is projective exactly when `N` is injective, and for indecomposable `M`, `N`
+  the translates are indecomposable exactly when `M` is not projective, respectively `N` is not
+  injective (`FGModuleCat.injective_arTranslate_iff`,
+  `FGModuleCat.projective_arInverseTranslate_iff`, `FGModuleCat.indecomposable_arTranslate_iff`,
+  `FGModuleCat.indecomposable_arInverseTranslate_iff`).
 
 ## Main results
 
@@ -98,9 +104,59 @@ theorem arInverseTranslate_obj (N : FGModuleCat.{max u v w} A) :
     (arInverseTranslate R E N).obj = ModuleCat.arInverseTranslate R E N.obj :=
   (rfl)
 
+/-- Isomorphic modules have isomorphic Auslander–Reiten translates in `FGModuleCat A`. -/
+theorem nonempty_iso_arTranslate_of_iso {M M' : FGModuleCat.{max u v w} A} (e : M ≅ M') :
+    Nonempty (arTranslate R E M ≅ arTranslate R E M') := by
+  obtain ⟨f⟩ := ModuleCat.nonempty_iso_arTranslate_of_iso R E (M := M.obj) (N := M'.obj)
+    ((ObjectProperty.ι _).mapIso e)
+  exact ⟨(ObjectProperty.fullyFaithfulι _).preimageIso (X := arTranslate R E M)
+    (Y := arTranslate R E M') f⟩
+
+/-- Isomorphic modules have isomorphic inverse Auslander–Reiten translates in `FGModuleCat A`. -/
+theorem nonempty_iso_arInverseTranslate_of_iso {N N' : FGModuleCat.{max u v w} A} (e : N ≅ N') :
+    Nonempty (arInverseTranslate R E N ≅ arInverseTranslate R E N') := by
+  obtain ⟨f⟩ := ModuleCat.nonempty_iso_arInverseTranslate_of_iso R E (N := N.obj) (N' := N'.obj)
+    ((ObjectProperty.ι _).mapIso e)
+  exact ⟨(ObjectProperty.fullyFaithfulι _).preimageIso (X := arInverseTranslate R E N)
+    (Y := arInverseTranslate R E N') f⟩
+
 variable [Module.Injective R E]
   (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
 include hE
+
+/-- The translate of an indecomposable module is indecomposable exactly when the module is not
+projective, in `FGModuleCat A`. -/
+@[simp]
+theorem indecomposable_arTranslate_iff (M : FGModuleCat.{max u v w} A) (hiM : Indecomposable M) :
+    Indecomposable (arTranslate R E M) ↔ ¬ Projective M :=
+  (indecomposable_obj_iff _).symm.trans ((ModuleCat.indecomposable_arTranslate_iff hE M.obj
+    ((indecomposable_obj_iff M).mpr hiM)).trans (projective_obj_iff M).not)
+
+/-- The translate is injective exactly when the module is projective, in `FGModuleCat A`. -/
+@[simp]
+theorem injective_arTranslate_iff (M : FGModuleCat.{max u v w} A) :
+    Injective (arTranslate R E M) ↔ Projective M := by
+  have : IsArtinianRing A := IsArtinianRing.of_finite R A
+  exact (injective_obj_iff _).symm.trans
+    ((ModuleCat.injective_arTranslate_iff hE M.obj).trans (projective_obj_iff M))
+
+/-- The inverse translate of an indecomposable module is indecomposable exactly when the module is
+not injective, in `FGModuleCat A`. -/
+@[simp]
+theorem indecomposable_arInverseTranslate_iff (N : FGModuleCat.{max u v w} A)
+    (hiN : Indecomposable N) : Indecomposable (arInverseTranslate R E N) ↔ ¬ Injective N := by
+  have : IsArtinianRing A := IsArtinianRing.of_finite R A
+  exact (indecomposable_obj_iff _).symm.trans ((ModuleCat.indecomposable_arInverseTranslate_iff
+    hE N.obj ((indecomposable_obj_iff N).mpr hiN)).trans (injective_obj_iff N).not)
+
+/-- The inverse translate is projective exactly when the module is injective, in
+`FGModuleCat A`. -/
+@[simp]
+theorem projective_arInverseTranslate_iff (N : FGModuleCat.{max u v w} A) :
+    Projective (arInverseTranslate R E N) ↔ Injective N := by
+  have : IsArtinianRing A := IsArtinianRing.of_finite R A
+  exact (projective_obj_iff _).symm.trans
+    ((ModuleCat.projective_arInverseTranslate_iff hE N.obj).trans (injective_obj_iff N))
 
 /-- **The Auslander–Reiten theorem in `FGModuleCat`, existence.** Over an Artin algebra, a
 finitely generated indecomposable module `M` that is not projective in `FGModuleCat A` ends an
