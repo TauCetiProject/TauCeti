@@ -237,6 +237,13 @@ theorem mFourier_apply_add (n : d → ℤ) (x y : UnitAddTorus d) :
   simp only [mFourier, ContinuousMap.coe_mk, Pi.add_apply, TauCeti.fourier_apply_add,
     Finset.prod_mul_distrib]
 
+/-- A multivariate Fourier monomial turns a difference of points into a product with the
+monomial of the opposite index: `mFourier n (x - y) = mFourier n x * mFourier (-n) y`. -/
+theorem mFourier_apply_sub (n : d → ℤ) (x y : UnitAddTorus d) :
+    mFourier n (x - y) = mFourier n x * mFourier (-n) y := by
+  rw [sub_eq_add_neg, mFourier_apply_add]
+  simp only [mFourier, ContinuousMap.coe_mk, Pi.neg_apply, fourier_apply, smul_neg, neg_smul]
+
 /-- Multivariate Fourier monomials take values in the unit circle. -/
 @[simp]
 theorem norm_mFourier_apply (n : d → ℤ) (z : UnitAddTorus d) : ‖mFourier n z‖ = 1 := by
@@ -258,12 +265,6 @@ theorem mFourier_eq_fourier_sum (k : d → ℤ) (x : UnitAddTorus d) :
 theorem mFourier_apply_neg (k : d → ℤ) (x : UnitAddTorus d) :
     mFourier k (-x) = starRingEnd ℂ (mFourier k x) := by
   rw [← mFourier_neg, mFourier_eq_fourier_sum, mFourier_eq_fourier_sum]; simp
-
-/-- A multivariate Fourier monomial sends a difference of points to the product with the
-conjugate. -/
-theorem mFourier_apply_sub (k : d → ℤ) (x y : UnitAddTorus d) :
-    mFourier k (x - y) = mFourier k x * starRingEnd ℂ (mFourier k y) := by
-  rw [sub_eq_add_neg, mFourier_apply_add, mFourier_apply_neg]
 
 /-- Evaluating a multivariate Fourier monomial at a natural-number multiple raises its value to that
 power. -/

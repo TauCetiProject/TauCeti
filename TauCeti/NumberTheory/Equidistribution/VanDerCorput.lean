@@ -37,6 +37,7 @@ theorem vanDerCorput_difference {d : Type*} [Fintype d] {x : ℕ → UnitAddToru
     AsympEquidistributed x (volume : Measure (UnitAddTorus d)).toProbabilityMeasure := by
   rw [weyl_criterion]; intro k hk
   refine tendsto_cesaro_zero_of_forall_correlation ⟨1, fun n ↦ by simp⟩ fun h hh ↦ ?_
-  simpa only [← UnitAddTorus.mFourier_apply_sub] using (weyl_criterion.mp (hx h hh)) k hk
+  simpa only [sub_eq_add_neg, UnitAddTorus.mFourier_apply_add, UnitAddTorus.mFourier_apply_neg]
+    using (weyl_criterion.mp (hx h hh)) k hk
 
 end TauCeti
