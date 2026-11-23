@@ -79,23 +79,6 @@ section GradedCartanEquivalence
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   (𝒜 : ℤ → Submodule k A) [DirectSum.Decomposition 𝒜]
 
-omit [DirectSum.Decomposition 𝒜] in
-/-- A graded module admitting a finite resolution by finite graded projectives is itself finite.
-Each resolution step presents its target as a quotient of a finite graded module. -/
-theorem gradedAdmitsFiniteProjectiveResolution_le_finiteModules :
-    (gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
-        (gradedFiniteProjectiveModules 𝒜) ≤ gradedFiniteModules 𝒜 := by
-  intro M hM
-  refine (gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution_induction
-    (gradedFiniteProjectiveModules 𝒜) gradedFiniteProjectiveModules_le_finiteModules
-    (fun {K Q X} hQ {i p zero} hconf _ => ?_) hM
-  rw [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_toExactStructure,
-    ExactStructure.abelian_conflation] at hconf
-  have : Module.Finite A Q := (gradedFiniteModules_iff.1
-    (gradedFiniteProjectiveModules_le_finiteModules Q hQ))
-  exact gradedFiniteModules_iff.2 <| Module.Finite.of_surjective p.hom
-    ((GradedModuleCat.epi_iff_surjective p).1 hconf.epi_g)
-
 instance : ObjectProperty.EssentiallySmall.{uA}
     ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
       (gradedFiniteProjectiveModules 𝒜)) :=
@@ -360,7 +343,9 @@ namespace GradedProjectiveResolution
 private theorem laurentK0_of_eq_gradedCartanMap_foldAlternating {M : GradedModuleCat.{uA} 𝒜}
     (rf : (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.FiniteResolution
       (gradedFiniteProjectiveModules 𝒜) M)
-    (hM : gradedFiniteModules 𝒜 M := gradedFiniteModules_of_finiteResolution rf) :
+    (hM : gradedFiniteModules 𝒜 M :=
+      gradedAdmitsFiniteProjectiveResolution_le_finiteModules 𝒜 _
+        ((ExactStructure.admitsFiniteResolution_iff _ _).2 ⟨rf⟩)) :
     LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨M, hM⟩ =
       gradedCartanMap 𝒜
         (rf.foldAlternating fun Z hZ =>
@@ -369,7 +354,9 @@ private theorem laurentK0_of_eq_gradedCartanMap_foldAlternating {M : GradedModul
   | base hX =>
     rw [ExactStructure.FiniteResolution.foldAlternating_base, gradedCartanMap_of]
   | @step K Q X hQ i p zero hp r' ih =>
-    have hK : gradedFiniteModules 𝒜 K := gradedFiniteModules_of_finiteResolution r'
+    have hK : gradedFiniteModules 𝒜 K :=
+      gradedAdmitsFiniteProjectiveResolution_le_finiteModules 𝒜 _
+        ((ExactStructure.admitsFiniteResolution_iff _ _).2 ⟨r'⟩)
     have hQ' : gradedFiniteModules 𝒜 Q := gradedFiniteProjectiveModules_le_finiteModules _ hQ
     let K' : (gradedFiniteModules 𝒜).FullSubcategory := ⟨K, hK⟩
     let Q' : (gradedFiniteModules 𝒜).FullSubcategory := ⟨Q, hQ'⟩

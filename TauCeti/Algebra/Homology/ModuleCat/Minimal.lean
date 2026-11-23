@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 public import Mathlib.RingTheory.Nakayama
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
+import TauCeti.CategoryTheory.EpiMono
 
 /-!
 # Minimal complexes of modules
@@ -123,11 +124,7 @@ theorem IsMinimal.isIso_hom_of_homotopyEquiv (hK : K.IsMinimal) (hL : L.IsMinima
     (e : HomotopyEquiv K L) : IsIso e.hom := by
   have := hK.isIso_of_homotopy_id e.homotopyHomInvId
   have := hL.isIso_of_homotopy_id e.homotopyInvHomId
-  have : Mono e.hom := mono_of_mono e.hom e.inv
-  have : IsSplitEpi e.hom := IsSplitEpi.mk'
-    { section_ := inv (e.inv ≫ e.hom) ≫ e.inv
-      id := by simp }
-  exact isIso_of_mono_of_isSplitEpi e.hom
+  exact isIso_of_isIso_comp_of_isIso_comp e.hom e.inv
 
 end HomologicalComplex
 

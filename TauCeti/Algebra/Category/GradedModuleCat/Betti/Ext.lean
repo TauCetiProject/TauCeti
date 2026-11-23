@@ -305,25 +305,8 @@ theorem IsMinimal.isLinear_iff_diagonal_bettiPoincareSeries
       ∀ i (n : ℕ) (d : ℤ), (n : ℤ) ≠ d →
         (PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff d = 0 := by
   let _ : ∀ m, Module.Finite k (r.X m) := fun m => Module.Finite.trans A (r.X m)
-  constructor
-  · intro hlin i n d hnd
-    exact (hr.coeff_coeff_bettiPoincareSeries_eq_zero_iff
-      S he he₀ hI hne bP hbP hself hconc i n d).mpr
-        (hlin.subsingleton_ext_shiftObj_of_ne (hconc i) n d hnd)
-  · intro hdiag
-    apply (hr.isLinear_iff_subsingleton_ext_shiftObj_simple hneg).mpr
-    intro N hNfin hNsimple hNzero n d hnd
-    let _ : Module.Finite k N := hNfin
-    let _ : Module.Finite A N := Module.Finite.of_restrictScalars_finite k A N
-    let N' : (gradedFiniteModules 𝒜).FullSubcategory :=
-      ⟨N, gradedFiniteModules_iff.mpr inferInstance⟩
-    obtain ⟨i, ⟨eN : N'.obj ≅ (S i).obj⟩⟩ :=
-      hS.exists_iso_of_concentrated S hconc N' hNsimple hNzero
-    have hSsub := (hr.coeff_coeff_bettiPoincareSeries_eq_zero_iff
-      S he he₀ hI hne bP hbP hself hconc i n d).mp (hdiag i n d hnd)
-    rw [← GradedModuleCat.shiftFunctor_obj] at hSsub ⊢
-    exact (extLinearEquivOfIso k (Iso.refl M)
-      ((GradedModuleCat.shiftFunctor (𝒜 := 𝒜) d).mapIso eN) n).injective.subsingleton
+  rw [hr.isLinear_iff_subsingleton_ext_shiftObj_of_isExhaustive hneg S hS hconc]
+  simp_rw [hr.coeff_coeff_bettiPoincareSeries_eq_zero_iff S he he₀ hI hne bP hbP hself hconc]
 
 end NeZero
 

@@ -34,7 +34,7 @@ alternating-sum Cartan class formulas live in
 
 * `TauCeti.GradedProjectiveResolution.foldAlternating_toFiniteResolution`: computes
   `foldAlternating` along `toFiniteResolution` as a finite alternating sum.
-* `TauCeti.GradedProjectiveResolution.gradedFiniteModules_of_finiteResolution`: any graded module
+* `TauCeti.gradedAdmitsFiniteProjectiveResolution_le_finiteModules`: any graded module
   admitting a finite `gradedFiniteProjectiveModules`-resolution is a finite graded module.
 
 ## References
@@ -156,24 +156,25 @@ theorem foldAlternating_toFiniteResolution {M : GradedModuleCat.{uA} 𝒜}
   exact ExactStructure.FiniteResolution.foldAlternating_ofChainComplex
     r.complex_exact_d_one_zero _ _ _ f hf
 
-/-- Any graded module admitting a finite resolution by finite graded projectives is a finite
-graded module. -/
-theorem gradedFiniteModules_of_finiteResolution {M : GradedModuleCat.{uA} 𝒜}
-    (rf : (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.FiniteResolution
-      (gradedFiniteProjectiveModules 𝒜) M) :
-    gradedFiniteModules 𝒜 M := by
-  induction rf with
-  | base hX => exact gradedFiniteProjectiveModules_le_finiteModules _ hX
-  | @step K Q X hQ i p zero hp _ _ =>
-    rw [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_toExactStructure,
-      ExactStructure.abelian_conflation] at hp
-    have : Module.Finite A Q :=
-      gradedFiniteModules_iff.1 (gradedFiniteProjectiveModules_le_finiteModules _ hQ)
-    exact gradedFiniteModules_iff.2 <|
-      Module.Finite.of_surjective p.hom ((GradedModuleCat.epi_iff_surjective p).1 hp.epi_g)
-
 end FiniteResolution
 
 end GradedProjectiveResolution
+
+/-- A graded module admitting a finite resolution by finite graded projectives is itself finite.
+Each resolution step presents its target as a quotient of a finite graded module. -/
+theorem gradedAdmitsFiniteProjectiveResolution_le_finiteModules
+    (𝒜 : ℤ → Submodule k A) :
+    (gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
+        (gradedFiniteProjectiveModules 𝒜) ≤ gradedFiniteModules 𝒜 := by
+  intro M hM
+  refine (gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution_induction
+    (gradedFiniteProjectiveModules 𝒜) gradedFiniteProjectiveModules_le_finiteModules
+    (fun {K Q X} hQ {i p zero} hconf _ => ?_) hM
+  rw [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_toExactStructure,
+    ExactStructure.abelian_conflation] at hconf
+  have : Module.Finite A Q := (gradedFiniteModules_iff.1
+    (gradedFiniteProjectiveModules_le_finiteModules Q hQ))
+  exact gradedFiniteModules_iff.2 <| Module.Finite.of_surjective p.hom
+    ((GradedModuleCat.epi_iff_surjective p).1 hconf.epi_g)
 
 end TauCeti

@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.DegreeQuotient
 public import TauCeti.Algebra.Module.GradedModule.Linearity
 public import TauCeti.Algebra.Category.GradedModuleCat.FiniteLength
 public import TauCeti.Algebra.Category.GradedModuleCat.Shift
+public import TauCeti.Algebra.Category.GradedModuleCat.SimpleFamily
 public import TauCeti.Algebra.Homology.Ext.Basic
 
 /-!
@@ -148,5 +149,45 @@ theorem IsMinimal.isLinear_iff_subsingleton_ext_shiftObj_simple
       simpa using (GradedModuleCat.shiftFunctorAddIso 𝒜 (-p) p).app N
     let e := e₁ ≪≫ (GradedModuleCat.shiftFunctorZeroIso 𝒜).app N
     exact (extAddEquivOfIso (Iso.refl M) e n).symm.toEquiv.subsingleton
+
+end TauCeti.GradedProjectiveResolution
+
+namespace TauCeti.GradedProjectiveResolution
+
+open CategoryTheory CategoryTheory.Abelian
+
+universe w uk uA
+
+/-- **Exhaustive simple-family criterion for linearity.** Over a nonnegatively graded algebra, a
+minimal resolution with finite-dimensional terms is linear exactly when `Extⁿ(M, Sᵢ{p})` vanishes
+off the diagonal `n = p` for every member `Sᵢ` of an exhaustive degree-zero simple family. -/
+theorem IsMinimal.isLinear_iff_subsingleton_ext_shiftObj_of_isExhaustive
+    {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
+    {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
+    [HasExt.{w} (GradedModuleCat.{uA} 𝒜)]
+    {M : GradedModuleCat.{uA} 𝒜}
+    {r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading}
+    [∀ n, Module.Finite k (r.X n)] (hr : r.IsMinimal) (hneg : ∀ i < 0, 𝒜 i = ⊥)
+    {I : Type*} (S : I → (gradedFiniteModules 𝒜).FullSubcategory)
+    (hS : IsExhaustiveGradedSimpleFamily S)
+    (hSzero : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) :
+    r.IsLinear ↔ ∀ i (n : ℕ) (p : ℤ), (n : ℤ) ≠ p →
+      Subsingleton (Ext.{w} M ((S i).obj.shiftObj p) n) := by
+  constructor
+  · intro hlin i n p hnp
+    exact hlin.subsingleton_ext_shiftObj_of_ne (hSzero i) n p hnp
+  · intro hdiag
+    apply (hr.isLinear_iff_subsingleton_ext_shiftObj_simple hneg).mpr
+    intro N hNfin hNsimple hNzero n p hnp
+    let _ : Module.Finite k N := hNfin
+    let _ : Module.Finite A N := Module.Finite.of_restrictScalars_finite k A N
+    let N' : (gradedFiniteModules 𝒜).FullSubcategory :=
+      ⟨N, gradedFiniteModules_iff.mpr inferInstance⟩
+    obtain ⟨i, ⟨eN : N'.obj ≅ (S i).obj⟩⟩ :=
+      hS.exists_iso_of_concentrated S hSzero N' hNsimple hNzero
+    have hSsub := hdiag i n p hnp
+    rw [← GradedModuleCat.shiftFunctor_obj] at hSsub ⊢
+    exact (extLinearEquivOfIso k (Iso.refl M)
+      ((GradedModuleCat.shiftFunctor (𝒜 := 𝒜) p).mapIso eN) n).injective.subsingleton
 
 end TauCeti.GradedProjectiveResolution

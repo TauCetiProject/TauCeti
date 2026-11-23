@@ -88,25 +88,6 @@ theorem gradedEulerMatrixA2_mul_gradedCartanMatrixA2_map_invert_transpose :
 def gradedBettiMatrixA2 : Matrix (Fin 2) (Fin 2) (PowerSeries (LaurentPolynomial ℤ)) :=
   !![1, 0; PowerSeries.C (T 1) * PowerSeries.X, 1]
 
-/-- The graded Cartan matrix and the `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2`
-satisfy `C(q) · B(q, -1) = I`. -/
-@[simp]
-theorem gradedCartanMatrixA2_mul_eval_neg_one_trunc_gradedBettiMatrixA2 :
-    gradedCartanMatrixA2 *
-      gradedBettiMatrixA2.map (fun P => (PowerSeries.trunc 2 P).eval (-1)) = 1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [gradedBettiMatrixA2, Matrix.mul_apply, Fin.sum_univ_two,
-      PowerSeries.trunc_one, PowerSeries.trunc_C_mul, PowerSeries.trunc_X, Polynomial.eval_X]
-
-/-- The `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2` is also a left inverse of the
-graded Cartan matrix. -/
-@[simp]
-theorem eval_neg_one_trunc_gradedBettiMatrixA2_mul_gradedCartanMatrixA2 :
-    gradedBettiMatrixA2.map (fun P => (PowerSeries.trunc 2 P).eval (-1)) *
-      gradedCartanMatrixA2 = 1 :=
-  mul_eq_one_comm.mp gradedCartanMatrixA2_mul_eval_neg_one_trunc_gradedBettiMatrixA2
-
 /-- Setting `q = 1` in the graded Cartan matrix gives the ordinary Cartan matrix. -/
 @[simp]
 theorem map_laurentEval_one_gradedCartanMatrixA2 :
@@ -120,6 +101,8 @@ theorem map_laurentEval_one_gradedEulerMatrixA2 :
     gradedEulerMatrixA2.map (laurentEval (1 : ℤˣ)) = eulerMatrixA2 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp
+
+section Categorical
 
 variable {A : Type v} [Unique A] (k : Type u) [Field k]
 
@@ -195,6 +178,58 @@ theorem submatrix_bettiPoincareMatrix_eq_gradedBettiMatrixA2 :
       (fun l => PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution k (Kronecker A) l)]
   fin_cases i <;> fin_cases j <;> simp [gradedBettiMatrixA2, Nat.card_eq_fintype_card]
 
+end Categorical
+
+/-- The `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2` is a left inverse of the
+graded Cartan matrix. -/
+@[simp]
+theorem eval_neg_one_trunc_gradedBettiMatrixA2_mul_gradedCartanMatrixA2 :
+    gradedBettiMatrixA2.map (fun P => (PowerSeries.trunc 2 P).eval (-1)) *
+      gradedCartanMatrixA2 = 1 := by
+  let e : Kronecker Unit ≃ Fin 2 :=
+    { toFun := fun
+        | src => 0
+        | tgt => 1
+      invFun := ![src, tgt]
+      left_inv := fun
+        | src => rfl
+        | tgt => rfl
+      right_inv := fun i => by fin_cases i <;> rfl }
+  let r := fun j => PathAlgebra.gradedVertexSimpleProjectiveResolution ℚ (Kronecker Unit) j
+  have heval := PathAlgebra.eval_neg_one_trunc_two_bettiPoincareMatrix ℚ (Kronecker Unit) r
+    (fun l => PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution ℚ (Kronecker Unit) l)
+  have hmul := PathAlgebra.one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one ℚ (Kronecker Unit)
+  rw [← heval] at hmul
+  have hre := congrArg (Matrix.reindexRingEquiv (LaurentPolynomial ℤ) e) hmul
+  rw [map_mul, map_one] at hre
+  have hB : Matrix.reindexRingEquiv (LaurentPolynomial ℤ) e
+      ((bettiPoincareMatrix (PathAlgebra.gradedVertexProjectiveClassBasis ℚ (Kronecker Unit))
+        r).map fun P => (PowerSeries.trunc 2 P).eval (-1)) =
+      gradedBettiMatrixA2.map fun P => (PowerSeries.trunc 2 P).eval (-1) := by
+    rw [Matrix.coe_reindexRingEquiv]
+    change ((bettiPoincareMatrix
+      (PathAlgebra.gradedVertexProjectiveClassBasis ℚ (Kronecker Unit))
+      r).submatrix ![src, tgt] ![src, tgt]).map
+      (fun P => (PowerSeries.trunc 2 P).eval (-1)) = _
+    rw [submatrix_bettiPoincareMatrix_eq_gradedBettiMatrixA2]
+  have hC : Matrix.reindexRingEquiv (LaurentPolynomial ℤ) e
+      (gradedCartanMatrix (PathAlgebra.integerGrade ℚ (Kronecker Unit))
+        (PathAlgebra.gradedVertexProjectiveClassBasis ℚ (Kronecker Unit))
+        (PathAlgebra.gradedVertexSimpleClassBasis ℚ (Kronecker Unit))) =
+      gradedCartanMatrixA2 := by
+    rw [Matrix.coe_reindexRingEquiv]
+    exact submatrix_gradedCartanMatrix_eq_gradedCartanMatrixA2 ℚ
+  rwa [hB, hC] at hre
+
+/-- The graded Cartan matrix and the `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2`
+satisfy `C(q) · B(q, -1) = I`. -/
+@[simp]
+theorem gradedCartanMatrixA2_mul_eval_neg_one_trunc_gradedBettiMatrixA2 :
+    gradedCartanMatrixA2 *
+      gradedBettiMatrixA2.map (fun P => (PowerSeries.trunc 2 P).eval (-1)) = 1 :=
+  mul_eq_one_comm.mp eval_neg_one_trunc_gradedBettiMatrixA2_mul_gradedCartanMatrixA2
+
+variable {A : Type v} [Unique A] (k : Type u) [Field k]
 variable [HasExt.{max u v}
   (GradedModuleCat.{max u v} (PathAlgebra.integerGrade k (Kronecker A)))]
 

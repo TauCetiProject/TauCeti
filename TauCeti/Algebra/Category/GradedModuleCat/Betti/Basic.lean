@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.FiniteResolution
 public import TauCeti.Algebra.Category.GradedModuleCat.MinimalResolution
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Matrix-valued Betti Poincaré series
@@ -139,12 +140,9 @@ polynomial of degree strictly less than `N`, equal to its `N`-truncation. -/
 theorem bettiPoincareSeries_eq_coe_trunc (i : I) {N : ℕ}
     (hN : ∀ n ≥ N, Subsingleton (r.X n)) :
     r.bettiPoincareSeries bP i =
-      (PowerSeries.trunc N (r.bettiPoincareSeries bP i) : PowerSeries (LaurentPolynomial ℤ)) := by
-  refine PowerSeries.ext fun n => ?_
-  rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-  split_ifs with hn
-  · rfl
-  · exact r.coeff_bettiPoincareSeries_eq_zero_of_subsingleton bP i (hN n (Nat.le_of_not_lt hn))
+      (PowerSeries.trunc N (r.bettiPoincareSeries bP i) : PowerSeries (LaurentPolynomial ℤ)) :=
+  (PowerSeries.coe_trunc_eq_self_of_coeff_eq_zero fun n hn =>
+    r.coeff_bettiPoincareSeries_eq_zero_of_subsingleton bP i (hN n hn)).symm
 
 /-- Evaluating the `N`-truncation of a Betti Poincaré series at `t = -1` gives the alternating sum
 of the first `N` projective coordinates. -/

@@ -101,32 +101,13 @@ theorem forall_isLinear_iff_diagonal_bigradedExtPoincarePowerSeriesMatrix
     (∀ i, (r i).IsLinear) ↔ ∀ i j (n : ℕ) (p : ℤ), (n : ℤ) ≠ p →
       (PowerSeries.coeff n
         (bigradedExtPoincarePowerSeriesMatrix (fun i ↦ (S i).obj) h i j)).coeff p = 0 := by
-  constructor
-  · intro hlin i j
-    simp only [bigradedExtPoincarePowerSeriesMatrix_apply]
-    apply (diagonal_bigradedExtPoincarePowerSeries_iff _).2
-    intro n p hnp
-    have hshift : Subsingleton (Ext.{uA} (S i).obj ((S j).obj.shiftObj p) n) :=
-      (hlin i).subsingleton_ext_shiftObj_of_ne (hSzero j) n p hnp
-    rw [← GradedModuleCat.shiftFunctor_obj] at hshift
-    exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
-      ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj) n).injective.subsingleton
-  · intro hdiag i
-    apply ((hr i).isLinear_iff_subsingleton_ext_shiftObj_simple hneg).2
-    intro N hNfinite hNsimple hNzero n p hnp
-    let _ : Module.Finite k N := hNfinite
-    let _ : Module.Finite A N := Module.Finite.of_restrictScalars_finite k A N
-    let N' : (gradedFiniteModules 𝒜).FullSubcategory :=
-      ⟨N, gradedFiniteModules_iff.2 inferInstance⟩
-    obtain ⟨j, ⟨eN : N'.obj ≅ (S j).obj⟩⟩ :=
-      hS.exists_iso_of_concentrated S hSzero N' hNsimple hNzero
-    have hij := hdiag i j
-    simp only [bigradedExtPoincarePowerSeriesMatrix_apply] at hij
-    have hExt := ((diagonal_bigradedExtPoincarePowerSeries_iff (h i j)).1 hij) n p hnp
-    rw [← GradedModuleCat.shiftFunctor_obj]
-    exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
-      ((GradedModuleCat.shiftFunctor (𝒜 := 𝒜) p).mapIso eN ≪≫
-        ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj).symm) n).injective.subsingleton
+  simp_rw [fun i => (hr i).isLinear_iff_subsingleton_ext_shiftObj_of_isExhaustive hneg S hS hSzero]
+  refine forall₂_congr fun i j => ?_
+  rw [bigradedExtPoincarePowerSeriesMatrix_apply, diagonal_bigradedExtPoincarePowerSeries_iff]
+  refine forall₃_congr fun n p _ => ?_
+  rw [← GradedModuleCat.shiftFunctor_obj]
+  exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
+    ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj).symm n).toEquiv.subsingleton_congr
 
 /-- Over a finite-dimensional nonnegatively graded algebra with semisimple degree-zero part,
 every member of an exhaustive degree-zero simple family admits a linear resolution exactly

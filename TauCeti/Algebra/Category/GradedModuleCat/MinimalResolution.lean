@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.Nakayama
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
+import TauCeti.CategoryTheory.EpiMono
 
 /-!
 # Ext from minimal graded resolutions and uniqueness
@@ -213,16 +214,13 @@ theorem IsMinimal.isIso_hom_of_homotopyEquiv
     IsIso (ProjectiveResolution.homotopyEquiv
       r₁.toProjectiveResolution r₂.toProjectiveResolution).hom := by
   let e := ProjectiveResolution.homotopyEquiv r₁.toProjectiveResolution r₂.toProjectiveResolution
-  have hcomp (n : ℕ) : IsIso (e.hom.f n) := by
-    have h₁ : IsIso ((e.hom ≫ e.inv).f n) :=
-      hr₁.isIso_f_of_homotopy_id hb₁ e.homotopyHomInvId n
-    have h₂ : IsIso ((e.inv ≫ e.hom).f n) :=
-      hr₂.isIso_f_of_homotopy_id hb₂ e.homotopyInvHomId n
-    rw [HomologicalComplex.comp_f, GradedModuleCat.isIso_iff_bijective,
-      GradedModuleCat.hom_comp] at h₁ h₂
-    rw [GradedModuleCat.isIso_iff_bijective]
-    exact ⟨Function.Injective.of_comp h₁.1, Function.Surjective.of_comp h₂.2⟩
-  exact HomologicalComplex.Hom.isIso_of_components e.hom
+  have (n : ℕ) : IsIso ((e.hom ≫ e.inv).f n) :=
+    hr₁.isIso_f_of_homotopy_id hb₁ e.homotopyHomInvId n
+  have (n : ℕ) : IsIso ((e.inv ≫ e.hom).f n) :=
+    hr₂.isIso_f_of_homotopy_id hb₂ e.homotopyInvHomId n
+  have := HomologicalComplex.Hom.isIso_of_components (e.hom ≫ e.inv)
+  have := HomologicalComplex.Hom.isIso_of_components (e.inv ≫ e.hom)
+  exact isIso_of_isIso_comp_of_isIso_comp e.hom e.inv
 
 /-- **Termwise uniqueness of minimal resolutions.** Any two bounded-below minimal graded projective
 resolutions of `M` have isomorphic terms in every homological degree. -/
