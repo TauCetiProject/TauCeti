@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.Distribution.TemperedDistribution.PlaneWave
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.One
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
