@@ -265,10 +265,9 @@ be `limUnder (𝓝[≠] a) u` at `a` is harmonic on `s`. -/
 theorem harmonicOnNhd_update_limUnder_of_bddAbove [DecidableEq E] (hE : 2 ≤ Module.finrank ℝ E)
     (hs : s ∈ 𝓝 a) (hu : HarmonicOnNhd u (s \ {a}))
     (hb : BddAbove ((fun x ↦ |u x|) '' (s \ {a}))) :
-    HarmonicOnNhd (update u a (limUnder (𝓝[≠] a) u)) s := by
-  obtain ⟨M, hM⟩ := hb
-  exact harmonicOnNhd_update_limUnder_of_isBoundedUnder hE hs hu ⟨M, eventually_map.2 <|
-    mem_nhdsWithin_iff_exists_mem_nhds_inter.2 ⟨s, hs, fun x hx ↦ hM ⟨x, hx, rfl⟩⟩⟩
+    HarmonicOnNhd (update u a (limUnder (𝓝[≠] a) u)) s :=
+  harmonicOnNhd_update_limUnder_of_isBoundedUnder hE hs hu
+    (hb.isBoundedUnder (sdiff_mem_nhdsWithin_compl hs {a}))
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- In dimension at least two, a function harmonic on a punctured neighbourhood `s \ {a}` of `a`
