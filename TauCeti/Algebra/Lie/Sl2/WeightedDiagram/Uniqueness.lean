@@ -60,10 +60,8 @@ proves the complementary uniqueness statements:
   `TauCeti.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: distinct dominant neutral elements have
   disjoint `Int(L)`-orbits, so the number of `Int(L)`-orbits of neutral elements equals
   `b.dominantNeutralElements.ncard`.
-* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq` and
-  `IsSl2Triple.weightedDynkinDiagram_eq_of_lieEquiv_apply_eq`: an invariant-preserving Lie
-  automorphism carrying `e₁` to `e₂` identifies the dominant neutral elements `h₁` and `h₂` and
-  their weighted Dynkin diagrams.
+* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`: an invariant-preserving Lie
+  automorphism carrying `e₁` to `e₂` identifies the dominant neutral elements `h₁` and `h₂`.
 * `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq`,
   `IsSl2Triple.weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq`, and
   `TauCeti.existsUnique_mem_dominantNeutralElements_exists_mem_intLieAlgebra_isSl2Triple`:
@@ -185,21 +183,6 @@ theorem eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq (b : (rootSystem 
     ((b.mem_dominantNeutralElements_iff h₁).mp hh₁).2
     ((b.mem_dominantNeutralElements_iff h₂).mp hh₂).2 fun p hp ↦ ?_
   rw [← hφinv p hp (h₁ : L), ← hgh, lift_eval_smul_of_mem_intLieAlgebra hg hp]
-
-/-- **Invariance of the weighted Dynkin diagram under nilpositive conjugacy.** Under the hypotheses
-of `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`, `h₁` and `h₂` have the same
-weighted Dynkin diagram. -/
-theorem weightedDynkinDiagram_eq_of_lieEquiv_apply_eq (b : (rootSystem H).Base)
-    {h₁ h₂ : H} {e₁ f₁ e₂ f₂ : L}
-    (t₁ : IsSl2Triple (h₁ : L) e₁ f₁) (t₂ : IsSl2Triple (h₂ : L) e₂ f₂)
-    (hh₁ : h₁ ∈ b.dominantNeutralElements) (hh₂ : h₂ ∈ b.dominantNeutralElements)
-    (φ : L ≃ₗ⁅K⁆ L) (hφe : φ e₁ = e₂)
-    (hφinv : ∀ p ∈ lieInvariants K L (Dual K L), ∀ z : L,
-      lift (Dual.eval K L (φ z)) p = lift (Dual.eval K L z) p) :
-    b.weightedDynkinDiagram ⟨h₁, hh₁⟩ = b.weightedDynkinDiagram ⟨h₂, hh₂⟩ := by
-  congr 1
-  exact Subtype.ext (t₁.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq b t₂ hh₁ hh₂ φ hφe
-    hφinv)
 
 end LieEquiv
 

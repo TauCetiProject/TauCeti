@@ -81,9 +81,13 @@ theorem basePointsRepresentation_expPointAt_of_isNilpotent
     (hnil : IsNilpotent (differential (R := R) (H := H) (M := M) d)) (t : R) :
     basePointsRepresentation (H := H) M (Bialgebra.expPointAt d hd t) =
       IsNilpotent.exp (t • differential (R := R) (H := H) (M := M) d) := by
-  ext m
-  rw [basePointsRepresentation_expPointAt]
-  exact LinearMap.congr_fun (Module.End.locallyNilpotentExp_eq_exp _ (hnil.smul t)) m
+  rw [Bialgebra.expPointAt_eq_toConv_expPoint,
+    basePointsRepresentation_expPoint (M := M)
+      (Bialgebra.exists_iterate_leftInvariantDerivation_smul_eq_zero hd t)
+      (by
+        rw [map_smul (differential (R := R) (H := H) (M := M)) t d]
+        exact hnil.smul t),
+    map_smul (differential (R := R) (H := H) (M := M)) t d]
 
 end HopfAlgebra
 

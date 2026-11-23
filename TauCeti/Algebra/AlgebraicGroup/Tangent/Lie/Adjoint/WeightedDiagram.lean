@@ -496,20 +496,6 @@ theorem exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq
         (H := FiniteTypeCommHopfAlgCat.of k H) (h₁ := ⟨h₁, hh₁⟩) (h₂ := ⟨h₂, hh₂⟩) t₂ hdiag
     exact ⟨g, hge⟩
 
-/-- **Two dominant `sl₂` triples of a connected group have the same nilpotent `G`-orbit if and only
-if their neutral elements coincide.** -/
-theorem vectorOrbit_mk_eq_iff_eq {b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base}
-    {h₁ h₂ : b.dominantNeutralElements}
-    {e₁ f₁ e₂ f₂ : Module.Dual k (Bialgebra.CotangentSpace k H)}
-    (t₁ : IsSl2Triple (h₁ : Module.Dual k (Bialgebra.CotangentSpace k H)) e₁ f₁)
-    (t₂ : IsSl2Triple (h₂ : Module.Dual k (Bialgebra.CotangentSpace k H)) e₂ f₂) :
-    Comodule.VectorOrbit.mk (k := k) (H := H) e₁ =
-      Comodule.VectorOrbit.mk (k := k) (H := H) e₂ ↔ h₁ = h₂ := by
-  rw [Comodule.VectorOrbit.mk_eq_mk_iff,
-    t₁.exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq b t₂
-      h₁.property h₂.property,
-    b.weightedDynkinDiagram_injective.eq_iff]
-
 /-- **Geometric adjoint orbit classification by weighted Dynkin diagrams.** For a connected Killing
 affine group `G`, two `sl₂` triples with dominant neutral elements have identical topological
 adjoint `G`-orbit images in `P(𝔤 × k)` (including nonclosed points) if and only if their weighted
@@ -543,7 +529,10 @@ theorem dominantVectorOrbit_injective (b : (LieAlgebra.IsKilling.rootSystem 𝔥
   obtain ⟨e₁, f₁, t₁, he₁⟩ := b.exists_isSl2Triple_and_dominantVectorOrbit_eq_mk h₁
   obtain ⟨e₂, f₂, t₂, he₂⟩ := b.exists_isSl2Triple_and_dominantVectorOrbit_eq_mk h₂
   rw [he₁, he₂] at horb
-  exact (t₁.vectorOrbit_mk_eq_iff_eq t₂).mp horb
+  obtain ⟨g, hge⟩ := Comodule.VectorOrbit.mk_eq_mk_iff.mp horb
+  exact Subtype.ext
+    (t₁.eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq b t₂
+      h₁.property h₂.property hge)
 
 /-- Distinct dominant neutral elements determine distinct rational nilpotent `G`-orbits when `G` is
 connected. -/

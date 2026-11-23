@@ -29,10 +29,12 @@ representation.
 * `TauCeti.mem_ker_inf_range_pow_iff`: membership in a step of the filtration does not depend on
   the base ring.
 * `TauCeti.lie_mem_ker_inf_range_pow_add`: the filtration is compatible with brackets.
-* `TauCeti.isNilpotent_ad_lie_of_lie_lie_eq_zero`: Jacobson's lemma for the adjoint
-  representation.
-* `TauCeti.isNilpotent_ad_of_mem_ker_inf_range`: every element of `ker (ad e) ⊓ [e, L]` is
-  `ad`-nilpotent.
+* `TauCeti.isNilpotent_apply_lie_of_lie_lie_eq_zero` and
+  `TauCeti.isNilpotent_ad_lie_of_lie_lie_eq_zero`: Jacobson's lemma for finite-dimensional
+  representations and the adjoint representation.
+* `TauCeti.isNilpotent_apply_of_mem_ker_inf_range` and
+  `TauCeti.isNilpotent_ad_of_mem_ker_inf_range`: every element of `ker (ad e) ⊓ [e, L]` acts
+  nilpotently in every finite-dimensional representation, and in particular is `ad`-nilpotent.
 
 ## References
 
@@ -100,24 +102,40 @@ theorem lie_mem_ker_inf_range_pow_add {e x y : L} {i j : ℕ}
   rw [map_smul, hleib, smul_smul, inv_mul_cancel₀ (by exact_mod_cast (Nat.choose_pos
     (Nat.le_add_right i j)).ne'), one_smul]
 
+/-- **Jacobson's lemma** for any finite-dimensional representation. In a finite-dimensional
+module `M` over a field of characteristic zero, if `⁅e, ⁅e, a⁆⁆ = 0` in `L` then `ρ ⁅e, a⁆` is
+nilpotent. -/
+theorem isNilpotent_apply_lie_of_lie_lie_eq_zero {M : Type*} [AddCommGroup M] [Module K M]
+    [FiniteDimensional K M] (ρ : L →ₗ⁅K⁆ Module.End K M) {e a : L} (h : ⁅e, ⁅e, a⁆⁆ = 0) :
+    IsNilpotent (ρ ⁅e, a⁆) := by
+  rw [LieHom.map_lie]
+  refine LinearMap.isNilpotent_lie_of_lie_lie_eq_zero ?_
+  rw [← LieHom.map_lie, ← LieHom.map_lie, h, map_zero]
+
+/-- Every element of `ker (ad e) ⊓ [e, L]` acts nilpotently under any finite-dimensional
+representation of `L`. -/
+theorem isNilpotent_apply_of_mem_ker_inf_range {M : Type*} [AddCommGroup M] [Module K M]
+    [FiniteDimensional K M] (ρ : L →ₗ⁅K⁆ Module.End K M) {e y : L}
+    (hy : y ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e)) :
+    IsNilpotent (ρ y) := by
+  obtain ⟨hye, a, rfl⟩ := Submodule.mem_inf.mp hy
+  rw [LinearMap.mem_ker, ad_apply, ad_apply] at hye
+  rw [ad_apply]
+  exact isNilpotent_apply_lie_of_lie_lie_eq_zero ρ hye
+
 variable [FiniteDimensional K L]
 
 /-- **Jacobson's lemma** for the adjoint representation. In a finite-dimensional Lie algebra over
 a field of characteristic zero, if `⁅e, ⁅e, a⁆⁆ = 0` then `ad ⁅e, a⁆` is nilpotent. In particular
 every element of `ker (ad e) ⊓ [e, L]` is `ad`-nilpotent. -/
 theorem isNilpotent_ad_lie_of_lie_lie_eq_zero {e a : L} (h : ⁅e, ⁅e, a⁆⁆ = 0) :
-    IsNilpotent (ad K L ⁅e, a⁆) := by
-  rw [LieHom.map_lie]
-  refine LinearMap.isNilpotent_lie_of_lie_lie_eq_zero ?_
-  rw [← LieHom.map_lie, ← LieHom.map_lie, h, map_zero]
+    IsNilpotent (ad K L ⁅e, a⁆) :=
+  isNilpotent_apply_lie_of_lie_lie_eq_zero (ad K L) h
 
 /-- Every element of `ker (ad e) ⊓ [e, L]` is `ad`-nilpotent. -/
 theorem isNilpotent_ad_of_mem_ker_inf_range {e y : L}
     (hy : y ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e)) :
-    IsNilpotent (ad K L y) := by
-  obtain ⟨hye, a, rfl⟩ := Submodule.mem_inf.mp hy
-  rw [LinearMap.mem_ker, ad_apply, ad_apply] at hye
-  rw [ad_apply]
-  exact isNilpotent_ad_lie_of_lie_lie_eq_zero hye
+    IsNilpotent (ad K L y) :=
+  isNilpotent_apply_of_mem_ker_inf_range (ad K L) hy
 
 end TauCeti

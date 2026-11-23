@@ -18,6 +18,7 @@ import Mathlib.Algebra.Module.Rat
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.OneParameter
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
+import TauCeti.Algebra.Lie.AdjointAction.CentralizerFiltration
 import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
 import TauCeti.RepresentationTheory.Lie.AdNilpotent
 import TauCeti.RingTheory.Nilpotent.Log
@@ -194,15 +195,12 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero_of_mem_ker_inf_range
     (a : H) :
     ∃ n, (Bialgebra.leftInvariantDerivation
       (Derivation.cotangentDualLieEquiv (R := k) (H := H) y))^[n] a = 0 := by
-  obtain ⟨hye, z, rfl⟩ := Submodule.mem_inf.mp hy
-  rw [LinearMap.mem_ker, LieAlgebra.ad_apply, LieAlgebra.ad_apply] at hye
   refine Bialgebra.exists_iterate_leftInvariantDerivation_eq_zero_of_forall_isNilpotent
     (fun N hN ↦ ?_) a
   have : Module.Finite k N := hN
-  rw [LieAlgebra.ad_apply, LieEquiv.map_lie, LieHom.map_lie]
-  refine LinearMap.isNilpotent_lie_of_lie_lie_eq_zero ?_
-  rw [← LieHom.map_lie, ← LieHom.map_lie, ← LieEquiv.map_lie, ← LieEquiv.map_lie, hye, map_zero,
-    map_zero]
+  exact isNilpotent_apply_of_mem_ker_inf_range
+    ((Comodule.differential (R := k) (H := H) (M := N)).comp
+      (Derivation.cotangentDualLieEquiv (R := k) (H := H)).toLieHom) hy
 
 end KerInfRange
 
