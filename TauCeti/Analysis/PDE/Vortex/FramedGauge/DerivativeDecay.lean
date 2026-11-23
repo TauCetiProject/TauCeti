@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
