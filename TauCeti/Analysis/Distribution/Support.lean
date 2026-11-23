@@ -41,6 +41,8 @@ near the support.
 
 * `Distribution.dsupport_zero`, `Distribution.dsupport_neg`, `Distribution.dsupport_smul_subset`,
   `Distribution.dsupport_smul_of_ne_zero`: support under zero, negation, and scalar multiplication.
+* `Distribution.isVanishingOn_of_forall_inter`: an additive map on test functions vanishes on an
+  open set if it vanishes on its intersections with an open cover of `Ω`.
 * `Distribution.isVanishingOn_compl_dsupport`: an additive map on test functions vanishes on the
   complement of its support; `Distribution.isVanishingOn_iff_disjoint_dsupport` is the resulting
   characterization of the open sets on which it vanishes.
@@ -176,6 +178,14 @@ theorem isVanishingOn_sUnion {S : Set (Set E)} (hS : ∀ s ∈ S, IsOpen s ∧ I
     IsVanishingOn T (⋃₀ S) := by
   rw [sUnion_eq_iUnion]
   exact isVanishingOn_iUnion T (fun s ↦ (hS s s.property).1) fun s ↦ (hS s s.property).2
+
+/-- **Localization principle, cover form.** An additive map on test functions vanishes on an open
+set `W` if it vanishes on `U x ∩ W` for open sets `U x` containing the points `x` of `Ω`. -/
+theorem isVanishingOn_of_forall_inter {U : Ω → Set E} (hU : ∀ x, IsOpen (U x))
+    (hxU : ∀ x, (x : E) ∈ U x) {W : Set E} (hW : IsOpen W) (hT : ∀ x, IsVanishingOn T (U x ∩ W)) :
+    IsVanishingOn T W := fun φ hφ ↦
+  isVanishingOn_iUnion T (fun x ↦ (hU x).inter hW) hT φ fun y hy ↦
+    mem_iUnion.2 ⟨⟨y, φ.tsupport_subset hy⟩, hxU _, hφ hy⟩
 
 /-- An additive map on test functions vanishes on the complement of its support. -/
 theorem isVanishingOn_compl_dsupport : IsVanishingOn T (dsupport T)ᶜ := by

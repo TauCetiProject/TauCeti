@@ -849,6 +849,27 @@ lemma prodPreimageFstIso_inv_comp_whiskerRight :
       (TopPair.ofSubset (fst X Y ⁻¹' A)).map :=
   (Iso.inv_comp_eq _).2 (prodPreimageFstIso_hom_comp_map X Y A).symm
 
+variable (X Y A) in
+/-- The homeomorphism `A × Y ≅ fst⁻¹(A)` followed by the first projection of the pair
+`(X × Y, fst⁻¹(A)) ⟶ (X, A)` is the first projection of `A × Y`. -/
+@[reassoc]
+lemma prodPreimageFstIso_hom_comp_ofSubsetMap_fst_snd :
+    (prodPreimageFstIso X Y A).hom ≫
+        TopPair.Hom.snd (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _) :
+          TopPair.ofSubset (fst X Y ⁻¹' A) ⟶ TopPair.ofSubset A) =
+      fst (TopPair.ofSubset A).snd Y :=
+  (rfl)
+
+variable (X Y A) in
+/-- The homeomorphism `A × Y ≅ fst⁻¹(A)` followed by the inclusion into `X × Y` and the second
+projection is the second projection of `A × Y`. -/
+@[reassoc]
+lemma prodPreimageFstIso_hom_comp_map_snd :
+    (prodPreimageFstIso X Y A).hom ≫ (TopPair.ofSubset (fst X Y ⁻¹' A)).map ≫
+        (snd X Y : (TopPair.ofSubset (fst X Y ⁻¹' A)).fst ⟶ Y) =
+      snd (TopPair.ofSubset A).snd Y :=
+  (rfl)
+
 end Preimage
 
 section RestrictPreimage

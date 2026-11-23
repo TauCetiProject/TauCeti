@@ -12,6 +12,8 @@ public import TauCeti.Geometry.Manifold.GroupAction.FixedTangentSubspace
 import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Topology.Algebra.ConstMulAction
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The fixed set of a rotation of the first factor of `ℂ × ℂ`
@@ -108,8 +110,6 @@ at which the fixed tangent subspace has real dimension `2`. -/
 theorem fixedPointsOfFinrank_zpowers_rotationFst {c : Circle} (hc : c ≠ 1) :
     fixedPointsOfFinrank 𝓘(ℝ, ℂ × ℂ) (Subgroup.zpowers (rotationFst c)) (ℂ × ℂ) 2 =
       {p | p.1 = 0} := by
-  have : ContinuousConstSMul (Subgroup.zpowers (rotationFst c)) (ℂ × ℂ) :=
-    ⟨fun k ↦ (k : (ℂ × ℂ) ≃ₗ[ℝ] (ℂ × ℂ)).toLinearMap.continuous_of_finiteDimensional⟩
   have h2 : Module.finrank ℝ (Representation.ofDistribMulAction ℝ
       (Subgroup.zpowers (rotationFst c)) (ℂ × ℂ)).invariants = 2 := by
     rw [invariants_zpowers_rotationFst hc, LinearMap.ker_fst,

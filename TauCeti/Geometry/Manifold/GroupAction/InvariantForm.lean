@@ -132,7 +132,7 @@ theorem mlieDerivForm_fundamentalVectorField_eq_zero {F : Type*} [NormedAddCommG
       funext (globalFlow_fundamentalVectorField ξ _ hc s)
     rw [hψ, ← SmoothForm.coe_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') _),
       hα]
-  have h := hasDerivAt_mpullback_globalFlow_zero hc hZ x (α.mdifferentiable x)
+  have h := hasDerivAt_mpullback_globalFlow_zero hc (hZ.of_le one_le_two) x (α.mdifferentiable x)
   rw [hconst] at h
   exact h.unique (hasDerivAt_const 0 _)
 
