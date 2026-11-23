@@ -36,6 +36,7 @@ terms is, since the inverses of its terms are again compatible.
   `φ` at the `p ^ n`-th roots of `x`.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
   element vanishes as soon as one of its coordinates does.
+* `ModP.mk_injective`: in characteristic `p`, reduction `O → O ⧸ p` is injective.
 * `PreTilt.ext`, `PreTilt.coeff_equivPerfection`, `PreTilt.coeff_equivPerfection_symm`: coordinate
   extensionality and coordinate formulas for `PreTilt.equivPerfection`.
 * `PreTilt.coeff_eq_zero_iff`: in `PreTilt O p`, each coordinate detects zero when `O ⧸ p` is
@@ -142,6 +143,19 @@ instance isLocalHom_coeff {R : Type*} [CommSemiring R] [Fact p.Prime] [CharP R p
 
 end Perfection
 
+namespace ModP
+
+variable {O : Type*} [CommRing O] {p : ℕ} [CharP O p]
+
+/-- **In characteristic `p`, reduction modulo `p` is injective**, since `p = 0` and so
+`O ⧸ p = O ⧸ ⊥`. -/
+theorem mk_injective : Function.Injective (Ideal.Quotient.mk (Ideal.span {(p : O)})) :=
+  (injective_iff_map_eq_zero _).mpr fun _ h ↦ by
+    rwa [Ideal.Quotient.eq_zero_iff_mem, (by simp : Ideal.span {(p : O)} = ⊥),
+      Ideal.mem_bot] at h
+
+end ModP
+
 namespace PreTilt
 
 variable {O : Type*} [CommRing O] {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : O)]
@@ -182,10 +196,9 @@ is a reduced ring of characteristic `p`, then `O ⧸ p = O` is reduced and every
 `PreTilt O p → O ⧸ p` is injective. -/
 theorem coeff_injective_of_isReduced [CharP O p] [IsReduced O] (n : ℕ) :
     Function.Injective (coeff (O := O) (p := p) n) := by
-  have hp : Ideal.span {(p : O)} = ⊥ := by simp
-  have : IsReduced (ModP O p) :=
-    isReduced_of_injective ((Ideal.quotEquivOfEq hp).trans (RingEquiv.quotientBot O))
-      (RingEquiv.injective _)
+  have : IsReduced (ModP O p) := isReduced_of_injective
+    (RingEquiv.ofBijective _ ⟨ModP.mk_injective, Ideal.Quotient.mk_surjective⟩).symm
+    (RingEquiv.injective _)
   exact (injective_iff_map_eq_zero _).mpr fun _ ↦ (coeff_eq_zero_iff n).mp
 
 /-- **The coordinates of an idempotent of the tilt are all equal.** Every coordinate of an

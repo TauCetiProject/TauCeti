@@ -193,14 +193,11 @@ theorem perfectRing [CharP A p] [IsIntegralPerfectoid p A] : PerfectRing A p := 
     (isPrincipal_ker_fontaineTheta (p := p) (A := A))
   have hsurj : Function.Surjective (PreTilt.coeff (O := A) (p := p) 0) :=
     Perfection.coeff_surjective (frobenius_surjective (p := p) (A := A)) 0
-  have hmk : Function.Injective (Ideal.Quotient.mk (span {(p : A)})) :=
-    (injective_iff_map_eq_zero _).mpr fun _ h ↦ by
-      rwa [Ideal.Quotient.eq_zero_iff_mem, (by simp : span {(p : A)} = ⊥), mem_bot] at h
   have := isReduced_of_perfectRing (PreTilt A p) p
-  have : IsReduced (ModP A p) := isReduced_of_injective
-    ((RingEquiv.ofBijective _ ⟨hinj, hsurj⟩).symm : ModP A p →+* PreTilt A p)
-    (RingEquiv.injective _)
-  have : IsReduced A := isReduced_of_injective (Ideal.Quotient.mk _) hmk
+  let e := RingEquiv.ofBijective _ ⟨hinj, hsurj⟩
+  have : IsReduced A := isReduced_of_injective
+    ((e.symm : ModP A p →+* PreTilt A p).comp (Ideal.Quotient.mk _))
+    (e.symm.injective.comp ModP.mk_injective)
   refine PerfectRing.ofSurjective A p fun x ↦ ?_
   obtain ⟨y, hy⟩ := exists_natCast_dvd_sub_pow (p := p) x
   rw [CharP.cast_eq_zero, zero_dvd_iff, sub_eq_zero] at hy
