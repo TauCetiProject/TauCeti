@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.L2
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
 import TauCeti.Probability.BrownianMotion.Martingale
@@ -179,9 +180,11 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral_approx
     funext fun ω ↦ ElementaryIntegrand.integral_ofSimpleHolding (hτ k) (ha k) _ W t ω
   refine ⟨I, fun k ↦ K (φ k),
     ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1, fun t ↦ ⟨K,
-      tendsto_measure_le_lintegral_enorm_sq_sub
-        (fun k ↦ (K k).isStronglyPredictable)
-        (fun _ ↦ hH.isStronglyPredictable) (by simpa only [hK_proc] using hKH t),
+      fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
+        (f := fun k p ↦ (K k).toProcess p.1 p.2 - H p.1 p.2)
+        (fun k ↦ (((K k).isStronglyPredictable.sub
+          hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
+        ((hKH t).congr fun k ↦ congrArg (eLpNorm · 2 _) (hK_proc k).symm) hε,
       by simpa only [hK_gain] using
         tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
     hIp, hI,
@@ -233,9 +236,12 @@ theorem IsItoIntegral.martingale (hI : IsItoIntegral ℱ P W H I)
     hH.exists_simpleGains_cauchySeq hW
   obtain ⟨Z, hZ, hZlim⟩ := exists_martingale_of_cauchySeq_Lp hmart hmem hcau
   exact hZ.congr hIa fun t ↦ (hI.ae_eq_of_tendstoInMeasure hW hτ ha
-    (tendsto_measure_le_lintegral_enorm_sq_sub
-      (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k))
-      (fun _ ↦ hH.isStronglyPredictable) (hKH t))
+    (fun _ hε ↦ by
+      simpa only [Pi.sub_apply, Function.uncurry_apply_pair] using
+        TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
+          (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
+            hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
+          (hKH t) hε)
     (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)).symm
 
 /-- An Itô integral of a Brownian-integrable integrand against a pre-Brownian motion relative to

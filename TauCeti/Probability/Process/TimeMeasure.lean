@@ -100,10 +100,6 @@ theorem timeMeasure_singleton (T t : ℝ≥0) : timeMeasure T {t} = 0 := by
   exact measure_mono_null ((Set.image_mono Set.inter_subset_left).trans_eq Set.image_singleton)
     Real.volume_singleton
 
-/-- The initial time carries no mass, independently of the horizon. -/
-theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 :=
-  timeMeasure_singleton T 0
-
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]
 theorem timeMeasure_restrict (T S : ℝ≥0) :

@@ -212,43 +212,19 @@ theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableS
     · simp [hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
     · simp [hσ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
 
-private theorem indicator_Ioc_projIcc_mul {s t l r : ι} (hst : s ≤ t) (hlr : l ≤ r)
+private theorem indicator_Ioc_projIcc_mul {s t l r : ι} (hst : s ≤ t)
     (ξ c : ℝ) (u : ι) :
     (Set.Ioc (Set.projIcc s t hst l : ι) (Set.projIcc s t hst r : ι)).indicator
         (fun _ ↦ if l ≤ t then ξ * c else 0) u =
       (Set.Ioc s t).indicator (fun _ ↦ ξ * (Set.Ioc l r).indicator (fun _ ↦ c) u) u := by
+  rw [Set.indicator_Ioc_projIcc]
   by_cases hlt : l ≤ t
-  · rw [Set.Ioc_projIcc_eq_Ioc_inter hst hlt]
-    by_cases hus : u ∈ Set.Ioc s t <;> by_cases hul : u ∈ Set.Ioc l r <;>
+  · by_cases hus : u ∈ Set.Ioc s t <;> by_cases hul : u ∈ Set.Ioc l r <;>
       simp [hlt, hus, hul]
-  · have htl : t < l := lt_of_not_ge hlt
-    have htr : t < r := htl.trans_le hlr
-    have hpl : Set.projIcc s t hst l = ⟨t, Set.right_mem_Icc.2 hst⟩ :=
-      Set.projIcc_of_right_le hst htl.le
-    have hpr : Set.projIcc s t hst r = ⟨t, Set.right_mem_Icc.2 hst⟩ :=
-      Set.projIcc_of_right_le hst htr.le
-    simp only [hlt, ite_false, hpl, hpr, Set.Ioc_self, Set.indicator_apply, Set.mem_Ioc]
-    by_cases hus : s < u ∧ u ≤ t
-    · have hul : ¬ l < u := not_lt_of_ge (hus.2.trans htl.le)
-      simp [hus, hul]
-    · simp [hus]
-
-private theorem sub_min_coe_projIcc_eq {s t T : ι} (hst : s ≤ t) (hsT : s ≤ T) (r : ι)
-    (f : ι → ℝ) :
-    f (min (Set.projIcc s t hst r : ι) T) - f s = f (min r (min T t)) - f (min r s) := by
-  rw [Set.min_coe_projIcc_eq hst hsT]
-  have hsu : s ≤ min T t := le_min hsT hst
-  rcases le_total r s with hrs | hsr
-  · simp [hrs, hrs.trans hsu]
-  · rw [max_eq_right (le_min hsr hsu), min_eq_right hsr]
-
-private theorem sub_min_coe_projIcc_sub {s t l r T : ι} (hst : s ≤ t) (hsT : s ≤ T)
-    (f : ι → ℝ) :
-    f (min (Set.projIcc s t hst r : ι) T) - f (min (Set.projIcc s t hst l : ι) T) =
-      (f (min r (min T t)) - f (min l (min T t))) - (f (min r s) - f (min l s)) := by
-  have hr := sub_min_coe_projIcc_eq hst hsT r f
-  have hl := sub_min_coe_projIcc_eq hst hsT l f
-  linarith
+  · by_cases hus : u ∈ Set.Ioc s t
+    · have hul : u ∉ Set.Ioc l r := fun h ↦ hlt (h.1.trans_le hus.2).le
+      simp [hlt, hus, hul]
+    · simp [hlt, hus]
 
 private theorem single_clip_Ioc_gain {s t l r T : ι} (hst : s ≤ t) (hlr : l ≤ r)
     (ξ c : ℝ) (f : ι → ℝ) :
@@ -256,23 +232,8 @@ private theorem single_clip_Ioc_gain {s t l r T : ι} (hst : s ≤ t) (hlr : l �
         (f (min (Set.projIcc s t hst r : ι) T) - f (min (Set.projIcc s t hst l : ι) T)) =
       ξ * (c * (f (min r (min T t)) - f (min l (min T t))) -
         c * (f (min r (min T s)) - f (min l (min T s)))) := by
-  rcases le_total T s with hTs | hsT
-  · have hpl : T ≤ (Set.projIcc s t hst l : ι) := hTs.trans (Set.projIcc s t hst l).property.1
-    have hpr : T ≤ (Set.projIcc s t hst r : ι) := hTs.trans (Set.projIcc s t hst r).property.1
-    rw [min_eq_right hpl, min_eq_right hpr, min_eq_left (hTs.trans hst), min_eq_left hTs,
-      sub_self, mul_zero, sub_self, mul_zero]
-  · by_cases hlt : l ≤ t
-    · simp only [hlt, ite_true, min_eq_right hsT]
-      rw [sub_min_coe_projIcc_sub hst hsT, mul_assoc, mul_sub]
-    · have htl : t < l := lt_of_not_ge hlt
-      have htr : t < r := htl.trans_le hlr
-      simp only [hlt, ite_false, zero_mul]
-      have h1 : min T t ≤ l := (min_le_right T t).trans htl.le
-      have h2 : min T t ≤ r := (min_le_right T t).trans htr.le
-      have h3 : min T s ≤ l := (min_le_right T s).trans (hst.trans htl.le)
-      have h4 : min T s ≤ r := (min_le_right T s).trans (hst.trans htr.le)
-      rw [min_eq_right h1, min_eq_right h2, min_eq_right h3, min_eq_right h4,
-        sub_self, mul_zero, sub_self, mul_zero, sub_self, mul_zero]
+  rw [← mul_sub, ← Set.ite_le_sub_min_coe_projIcc hst hlr f]
+  by_cases hlt : l ≤ t <;> simp [hlt, mul_assoc]
 
 /-- Clipping a simple holding `(τ, n, a)` to `(s, t]` via `Set.projIcc s t hst ∘ τ` and
 multiplying by an `ℱ s`-measurable function `ξ` yields another simple holding whose holdings
@@ -305,9 +266,8 @@ theorem simpleHolding_clip_Ioc_mul {mΩ : MeasurableSpace Ω} (ℱ : Filtration 
       exact (hξ.mono (ℱ.mono hsσ)).mul ((ha j hj).mono (ℱ.mono hτσ))
     · simp only [hjt, ite_false]
       exact stronglyMeasurable_zero
-  · rw [simpleHolding_def, simpleHolding_def, sum_congr rfl fun j hj ↦
-      indicator_Ioc_projIcc_mul hst (hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j))
-        (ξ ω) (a j ω) u]
+  · rw [simpleHolding_def, simpleHolding_def, sum_congr rfl fun j _ ↦
+      indicator_Ioc_projIcc_mul hst (ξ ω) (a j ω) u]
     by_cases hu : u ∈ Set.Ioc s t
     · simp only [Set.indicator_of_mem hu, mul_sum]
     · simp [Set.indicator_of_notMem hu]

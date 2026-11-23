@@ -13,7 +13,6 @@ public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 public import TauCeti.Probability.StochasticIntegral.Elementary
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
-import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
@@ -54,15 +53,13 @@ predicate is invariant under indistinguishability (`TauCeti.Probability.IsItoInt
 determines its integrals exactly up to indistinguishability
 (`TauCeti.Probability.isItoIntegral_iff_indist`).
 
-The helper `TauCeti.Probability.tendsto_measure_le_lintegral_enorm_sq_sub` converts `L²`
-convergence on `(0, t] × Ω` between two strongly predictable families into convergence in
-probability of their pathwise square energies. The elementary integral of an `ElementaryIntegrand`
-or bounded simple holding is its Itô integral against every process with almost surely continuous
-paths (`TauCeti.Probability.isItoIntegral_elementaryIntegrand`,
-`isItoIntegral_simpleGains_of_bound`), and `IsItoIntegral` is closed under scaling, negation,
-addition, subtraction, filtration enlargement (`IsItoIntegral.mono_filtration`), and a.e.
-congruence of the integrand or integrator. Existence of the integral for general L² and locally
-square-integrable integrands is proved in `Ito/Isometry.lean`, `Ito/L2.lean`, and `Ito/Local.lean`.
+The elementary integral of an `ElementaryIntegrand` or bounded simple holding is its Itô integral
+against every process with almost surely continuous paths
+(`TauCeti.Probability.isItoIntegral_elementaryIntegrand`, `isItoIntegral_simpleGains_of_bound`), and
+`IsItoIntegral` is closed under scaling, negation, addition, subtraction, filtration enlargement
+(`IsItoIntegral.mono_filtration`), and a.e. congruence of the integrand or integrator. Existence
+of the integral for general L² and locally square-integrable integrands is proved in
+`Ito/Isometry.lean`, `Ito/L2.lean`, and `Ito/Local.lean`.
 
 ## References
 
@@ -100,19 +97,6 @@ structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I :
     (∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
       ∫⁻ s, ‖(K k).toProcess s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0)) ∧
     TendstoInMeasure P (fun k ↦ (K k).integral W t) atTop (I t)
-
-/-- If the difference of two strongly predictable families converges to zero in
-`L²((timeMeasure t).prod P)`, then their pathwise square energies on `(0, t]` converge to zero
-in `P`-measure. -/
-theorem tendsto_measure_le_lintegral_enorm_sq_sub [SFinite P] {ι : Type*} {l : Filter ι}
-    {K L : ι → ℝ≥0 → Ω → ℝ}
-    (hK : ∀ k, IsStronglyPredictable ℱ (K k)) (hL : ∀ k, IsStronglyPredictable ℱ (L k))
-    {t : ℝ≥0} (hKL : Tendsto (fun k ↦ eLpNorm
-      (fun p : ℝ≥0 × Ω ↦ K k p.1 p.2 - L k p.1 p.2) 2 ((timeMeasure t).prod P)) l (𝓝 0))
-    (ε : ℝ≥0∞) (hε : 0 < ε) :
-    Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s, ‖K k s ω - L k s ω‖ₑ ^ 2 ∂timeMeasure t}) l (𝓝 0) :=
-  TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-    (fun k ↦ (((hK k).sub (hL k)).mono ℱ.predictable_le_prod).aestronglyMeasurable) hKL hε
 
 /-- Every Itô integral integrand has finite pathwise square energy on every finite horizon almost
 surely (`TauCeti.LocallyBrownianIntegrable`). Neither s-finiteness of `P` nor Brownian assumptions
@@ -255,6 +239,62 @@ theorem isItoIntegral_simpleGains_of_bound {τ : ℕ → ℝ≥0} {n : ℕ} {a :
   rw [← h1, ← h2]
   exact isItoIntegral_elementaryIntegrand (ElementaryIntegrand.ofSimpleHolding hτ ha hb) hW
 
+private theorem exists_elementaryIntegrand_of_simpleHolding [IsFiniteMeasure P]
+    {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    {δ : ℝ≥0∞} (hδ : 0 < δ) :
+    ∃ (K : ElementaryIntegrand ℱ) (B : Set Ω), P B ≤ δ ∧
+      ∀ ⦃ω⦄, ω ∉ B → (∀ s, K.toProcess s ω = Finance.simpleHolding τ n a s ω) ∧
+        ∀ X t, K.integral X t ω = Finance.simpleGains τ n a X t ω := by
+  let B (M : ℕ) : Set Ω := ⋃ j ∈ Finset.range n, {ω | (M : ℝ) < |a j ω|}
+  have hB_meas (M : ℕ) : NullMeasurableSet (B M) P :=
+    (Finset.measurableSet_biUnion (Finset.range n) fun j hj ↦
+      measurableSet_lt measurable_const (continuous_abs.measurable.comp
+        ((ha j (Finset.mem_range.mp hj)).mono (ℱ.le _)).measurable)).nullMeasurableSet
+  have hB_anti : Antitone B := fun M₁ M₂ hM ω hω ↦ by
+    simp only [B, Set.mem_iUnion, Set.mem_ofPred_eq, exists_prop] at hω ⊢
+    exact let ⟨j, hj, hlt⟩ := hω; ⟨j, hj, (Nat.cast_le.mpr hM).trans_lt hlt⟩
+  have hB_inter : ⋂ M, B M = ∅ := by
+    ext ω
+    simp only [Set.mem_iInter, Set.mem_empty_iff_false, iff_false, B,
+      Set.mem_iUnion, Set.mem_ofPred_eq, exists_prop]
+    intro hω'
+    obtain ⟨M, hM⟩ := exists_nat_gt (∑ j ∈ Finset.range n, |a j ω|)
+    obtain ⟨j, hj, hlt⟩ := hω' M
+    exact hM.not_ge (hlt.le.trans (Finset.single_le_sum (f := fun j ↦ |a j ω|)
+      (fun _ _ ↦ abs_nonneg _) hj))
+  have hlim : Tendsto (fun M ↦ P (B M)) atTop (𝓝 0) := by
+    simpa only [Function.comp_def, hB_inter, measure_empty] using
+      tendsto_measure_iInter_atTop hB_meas hB_anti ⟨0, measure_ne_top P _⟩
+  obtain ⟨M, hM⟩ := (hlim.eventually (ge_mem_nhds hδ)).exists
+  let trunc (j : ℕ) (ω : Ω) : ℝ := max (-(M : ℝ)) (min (M : ℝ) (a j ω))
+  have htrunc_meas (j : ℕ) (hj : j < n) : StronglyMeasurable[ℱ (τ j)] (trunc j) :=
+    (measurable_const.max (measurable_const.min (ha j hj).measurable)).stronglyMeasurable
+  have htrunc_bdd (j : ℕ) (_ : j < n) : ∃ C : ℝ, ∀ ω, |trunc j ω| ≤ C :=
+    ⟨M, fun ω ↦ abs_le.mpr
+      ⟨le_max_left _ _, max_le (neg_le_self (Nat.cast_nonneg _)) (min_le_left _ _)⟩⟩
+  refine ⟨ElementaryIntegrand.ofSimpleHolding hτ htrunc_meas htrunc_bdd, B M, hM, fun ω hω ↦ ?_⟩
+  have hhi {j : ℕ} (hj : j < n) : trunc j ω = a j ω := by
+    have hle : |a j ω| ≤ M := by
+      by_contra! hlt
+      exact hω (Set.mem_biUnion (Finset.mem_range.mpr hj) hlt)
+    obtain ⟨h1, h2⟩ := abs_le.mp hle
+    simp only [trunc, min_eq_right h2, max_eq_right h1]
+  refine ⟨fun s ↦ ?_, fun X t ↦ ?_⟩
+  · simp only [ElementaryIntegrand.toProcess_ofSimpleHolding, Finance.simpleHolding_def]
+    exact Finset.sum_congr rfl fun j hj ↦ by rw [hhi (Finset.mem_range.mp hj)]
+  · simp only [ElementaryIntegrand.integral_ofSimpleHolding, Finance.simpleGains_def]
+    exact Finset.sum_congr rfl fun j hj ↦ by rw [hhi (Finset.mem_range.mp hj)]
+
+private theorem tendsto_measure_of_subset_union {p q : ℕ → Ω → Prop} {B : ℕ → Set Ω}
+    (hB : Tendsto (fun k ↦ P (B k)) atTop (𝓝 0))
+    (hq : Tendsto (fun k ↦ P {ω | q k ω}) atTop (𝓝 0))
+    (hsub : ∀ k ω, p k ω → ω ∈ B k ∨ q k ω) :
+    Tendsto (fun k ↦ P {ω | p k ω}) atTop (𝓝 0) :=
+  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [add_zero] using hB.add hq) (fun _ ↦ zero_le) fun k ↦
+      (measure_mono (fun ω hω ↦ hsub k ω hω)).trans (measure_union_le (B k) {ω | q k ω})
+
 /-- On a finite measure space, `IsItoIntegral` can be witnessed by possibly unbounded simple
 holdings whose heights are strongly measurable at the left endpoints of their intervals. -/
 theorem isItoIntegral_of_approx_simpleHolding [IsFiniteMeasure P]
@@ -271,71 +311,20 @@ theorem isItoIntegral_of_approx_simpleHolding [IsFiniteMeasure P]
   ae_continuous := hIc
   exists_approx t := by
     obtain ⟨n, τ, a, hτ, ha, hE, hM⟩ := happrox t
-    have hcut (k : ℕ) : ∃ M : ℕ,
-        P (⋃ j ∈ Finset.range (n k), {ω | (M : ℝ) < |a k j ω|}) ≤ (((k + 1 : ℕ) : ℝ≥0∞))⁻¹ := by
-      let B (M : ℕ) : Set Ω := ⋃ j ∈ Finset.range (n k), {ω | (M : ℝ) < |a k j ω|}
-      have hB_meas (M : ℕ) : NullMeasurableSet (B M) P := by
-        refine MeasurableSet.nullMeasurableSet ?_
-        refine Finset.measurableSet_biUnion (Finset.range (n k)) fun j hj ↦ ?_
-        exact measurableSet_lt measurable_const (continuous_abs.measurable.comp
-          ((ha k j (Finset.mem_range.mp hj)).mono (ℱ.le _)).measurable)
-      have hB_anti : Antitone B := fun M₁ M₂ hM ω hω ↦ by
-        simp only [B, Set.mem_iUnion, Set.mem_ofPred_eq, exists_prop] at hω ⊢
-        exact let ⟨j, hj, hlt⟩ := hω; ⟨j, hj, (Nat.cast_le.mpr hM).trans_lt hlt⟩
-      have hB_inter : ⋂ M, B M = ∅ := by
-        ext ω
-        simp only [Set.mem_iInter, Set.mem_empty_iff_false, iff_false, B,
-          Set.mem_iUnion, Set.mem_ofPred_eq, exists_prop]
-        intro hω'
-        obtain ⟨M, hM⟩ := exists_nat_gt (∑ j ∈ Finset.range (n k), |a k j ω|)
-        obtain ⟨j, hj, hlt⟩ := hω' M
-        exact hM.not_ge (hlt.le.trans (Finset.single_le_sum (f := fun j ↦ |a k j ω|)
-          (fun _ _ ↦ abs_nonneg _) hj))
-      have hlim : Tendsto (fun M ↦ P (B M)) atTop (𝓝 0) := by
-        simpa only [Function.comp_def, hB_inter, measure_empty] using
-          tendsto_measure_iInter_atTop hB_meas hB_anti ⟨0, measure_ne_top P _⟩
-      exact (hlim.eventually (ge_mem_nhds (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top _)))).exists
-    choose M hMcut using hcut
-    let trunc (k j : ℕ) (ω : Ω) : ℝ := max (-(M k : ℝ)) (min (M k : ℝ) (a k j ω))
-    have htrunc_meas (k j : ℕ) (hj : j < n k) :
-        StronglyMeasurable[ℱ (τ k j)] (trunc k j) :=
-      (measurable_const.max (measurable_const.min (ha k j hj).measurable)).stronglyMeasurable
-    have htrunc_bdd (k j : ℕ) (_ : j < n k) : ∃ C : ℝ, ∀ ω, |trunc k j ω| ≤ C :=
-      ⟨M k, fun ω ↦ abs_le.mpr
-        ⟨le_max_left _ _, max_le (neg_le_self (Nat.cast_nonneg _)) (min_le_left _ _)⟩⟩
-    let K (k : ℕ) : ElementaryIntegrand ℱ :=
-      ElementaryIntegrand.ofSimpleHolding (hτ k) (htrunc_meas k) (htrunc_bdd k)
-    let B (k : ℕ) : Set Ω := ⋃ j ∈ Finset.range (n k), {ω | (M k : ℝ) < |a k j ω|}
+    choose K B hB hagree using fun k ↦
+      exists_elementaryIntegrand_of_simpleHolding (P := P) (hτ k) (ha k)
+        (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top (k + 1)))
     have hB_lim : Tendsto (fun k ↦ P (B k)) atTop (𝓝 0) :=
       tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
         (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
-        (fun _ ↦ zero_le) fun k ↦ by simpa only [Function.comp_def] using hMcut k
-    have hagree (k : ℕ) {ω : Ω} (hω : ω ∉ B k) :
-        (∀ s, (K k).toProcess s ω = Finance.simpleHolding (τ k) (n k) (a k) s ω) ∧
-        (K k).integral W t ω = Finance.simpleGains (τ k) (n k) (a k) W t ω := by
-      have hhi {j : ℕ} (hj : j < n k) : trunc k j ω = a k j ω := by
-        have hle : |a k j ω| ≤ M k := by
-          by_contra! hlt
-          exact hω (Set.mem_biUnion (Finset.mem_range.mpr hj) hlt)
-        obtain ⟨h1, h2⟩ := abs_le.mp hle
-        simp only [trunc, min_eq_right h2, max_eq_right h1]
-      refine ⟨fun s ↦ ?_, ?_⟩
-      · simp only [K, ElementaryIntegrand.toProcess_ofSimpleHolding, Finance.simpleHolding_def]
-        exact Finset.sum_congr rfl fun j hj ↦ by rw [hhi (Finset.mem_range.mp hj)]
-      · simp only [K, ElementaryIntegrand.integral_ofSimpleHolding, Finance.simpleGains_def]
-        exact Finset.sum_congr rfl fun j hj ↦ by rw [hhi (Finset.mem_range.mp hj)]
-    refine ⟨K, fun ε hε ↦ ?_, fun ε hε ↦ ?_⟩
-    · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-        (by simpa only [add_zero] using hB_lim.add (hE ε hε)) (fun _ ↦ zero_le) fun k ↦ ?_
-      refine (measure_mono fun ω hω ↦ ?_).trans (measure_union_le (B k) _)
-      by_cases hωB : ω ∈ B k
+        (fun _ ↦ zero_le) fun k ↦ by simpa only [Function.comp_def] using hB k
+    refine ⟨K, fun ε hε ↦ tendsto_measure_of_subset_union hB_lim (hE ε hε) fun k ω hω ↦ ?_,
+      fun ε hε ↦ tendsto_measure_of_subset_union hB_lim (hM ε hε) fun k ω hω ↦ ?_⟩
+    · by_cases hωB : ω ∈ B k
       · exact Or.inl hωB
       · refine Or.inr ?_
         simpa only [Set.mem_ofPred_eq, (hagree k hωB).1] using hω
-    · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-        (by simpa only [add_zero] using hB_lim.add (hM ε hε)) (fun _ ↦ zero_le) fun k ↦ ?_
-      refine (measure_mono fun ω hω ↦ ?_).trans (measure_union_le (B k) _)
-      by_cases hωB : ω ∈ B k
+    · by_cases hωB : ω ∈ B k
       · exact Or.inl hωB
       · refine Or.inr ?_
         simpa only [Set.mem_ofPred_eq, (hagree k hωB).2] using hω

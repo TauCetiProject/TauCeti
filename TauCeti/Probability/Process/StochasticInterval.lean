@@ -149,4 +149,30 @@ theorem setLIntegral_ite_le_eq_stoppedProcess (f : ι → Ω → ℝ≥0∞)
     rw [he, lintegral_indicator measurableSet_Iic, Measure.restrict_restrict measurableSet_Iic,
       Iic_inter_Ioc_of_le hut]
 
+/-- Splitting a `[0, τ]` cutoff at an earlier time `σ ≤ τ` decomposes the cutoff integrand into
+its `[0, σ]` and `(σ, τ]` parts. -/
+theorem ite_le_eq_add_ite_Ioc {ι Ω E : Type*} [LinearOrder ι] [AddCommMonoid E]
+    {σ τ : Ω → WithTop ι} (hστ : σ ≤ τ) (H : ι → Ω → E) :
+    (fun (u : ι) ω ↦ if (u : WithTop ι) ≤ τ ω then H u ω else 0) =
+      fun (u : ι) ω ↦ (if (u : WithTop ι) ≤ σ ω then H u ω else 0) +
+        (if σ ω < u ∧ (u : WithTop ι) ≤ τ ω then H u ω else 0) := by
+  ext u ω
+  have hdisj : Disjoint (Iic (σ ω)) (Ioc (σ ω) (τ ω)) := Iic_disjoint_Ioc le_rfl
+  have hmem := congr_fun (indicator_union_of_disjoint hdisj (fun _ ↦ H u ω)) (u : WithTop ι)
+  rw [Iic_union_Ioc_eq_Iic (hστ ω)] at hmem
+  simpa only [indicator_apply, mem_Iic, mem_Ioc] using hmem
+
+/-- Splitting a `(ρ, τ]` cutoff at an intermediate time `ρ ≤ σ ≤ τ` decomposes the cutoff
+integrand into its `(ρ, σ]` and `(σ, τ]` parts. -/
+theorem ite_Ioc_eq_add_ite_Ioc {ι Ω E : Type*} [LinearOrder ι] [AddCommMonoid E]
+    {ρ σ τ : Ω → WithTop ι} (hρσ : ρ ≤ σ) (hστ : σ ≤ τ) (H : ι → Ω → E) :
+    (fun (u : ι) ω ↦ if ρ ω < u ∧ (u : WithTop ι) ≤ τ ω then H u ω else 0) =
+      fun (u : ι) ω ↦ (if ρ ω < u ∧ (u : WithTop ι) ≤ σ ω then H u ω else 0) +
+        (if σ ω < u ∧ (u : WithTop ι) ≤ τ ω then H u ω else 0) := by
+  ext u ω
+  have hdisj : Disjoint (Ioc (ρ ω) (σ ω)) (Ioc (σ ω) (τ ω)) := Ioc_disjoint_Ioc_of_le le_rfl
+  have hmem := congr_fun (indicator_union_of_disjoint hdisj (fun _ ↦ H u ω)) (u : WithTop ι)
+  rw [Ioc_union_Ioc_eq_Ioc (hρσ ω) (hστ ω)] at hmem
+  simpa only [indicator_apply, mem_Ioc] using hmem
+
 end TauCeti

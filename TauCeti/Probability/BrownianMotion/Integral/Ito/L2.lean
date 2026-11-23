@@ -10,6 +10,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 public import TauCeti.Probability.BrownianMotion.Integral.L2
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.Probability.BrownianMotion.Integral.Restriction
 import TauCeti.Probability.BrownianMotion.Integral.Simple
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
@@ -18,13 +19,13 @@ import TauCeti.Probability.Finance.SimpleStrategy.Energy
 /-!
 # The L² Brownian Itô integral process
 
-For a Brownian-integrable predictable integrand `H` (`TauCeti.BrownianIntegrable`) and a filtered
-pre-Brownian motion `W`, any process satisfying `TauCeti.Probability.IsItoIntegral ℱ P W H I`
-agrees almost surely at every time `t` with the finite-horizon predictable L² Brownian integral
-`hW.l2Integral t` (`ae_eq_l2Integral_of_isItoIntegral`). For deterministic `L²(timeMeasure t)`
-integrands `f`, `l2Integral_toLp_fst` and `ae_eq_wienerIntegral_of_isItoIntegral` identify the
-predictable integral and any Itô integral at time `t` with the Wiener integral
-`hW.toIsPreBrownianReal.wienerIntegral t (hf.toLp f)`. This also yields mean zero
+For a predictable integrand `H` in `L²((timeMeasure t).prod P)` and a filtered pre-Brownian motion
+`W`, any process satisfying `TauCeti.Probability.IsItoIntegral ℱ P W H I` agrees almost surely at
+time `t` with the finite-horizon predictable L² Brownian integral `hW.l2Integral t`
+(`ae_eq_l2Integral_of_memLp`, and globally for `TauCeti.BrownianIntegrable` in
+`ae_eq_l2Integral_of_isItoIntegral`). For deterministic `L²(timeMeasure t)` integrands `f`,
+`ae_eq_wienerIntegral_of_isItoIntegral` identifies any Itô integral at time `t` with the Wiener
+integral `hW.toIsPreBrownianReal.wienerIntegral t (hf.toLp f)`. This also yields mean zero
 (`integral_eq_zero_of_isItoIntegral`), the bilinear cross-isometry
 (`integral_mul_of_isItoIntegral`), increment `L²` isometry (`eLpNorm_l2Integral_sub_of_le`), and
 `L²`-continuity of the finite-horizon integral curve `t ↦ hW.l2Integral t ...`
@@ -51,27 +52,32 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
 
 /-- The `L²(P)` distance between an elementary Brownian integral and `hW.l2Integral t` of a
-`BrownianIntegrable` integrand equals the time-product `L²` distance between their integrands. -/
+predictable integrand in `L²((timeMeasure t).prod P)` equals the time-product `L²` distance between
+their integrands. -/
 theorem eLpNorm_simpleGains_sub_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
     (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (ha₂ : ∀ j < n, MemLp (a j) 2 P) {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
-    (t : ℝ≥0) :
+    (ha₂ : ∀ j < n, MemLp (a j) 2 P) (t : ℝ≥0) {H : ℝ≥0 → Ω → ℝ}
+    (hHp : IsStronglyPredictable ℱ H) (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
+    letI := (hW.hasLaw_eval 0).isProbabilityMeasure
+    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
     eLpNorm (fun ω ↦ Finance.simpleGains τ n a W t ω -
-        hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H)) ω) 2 P =
+        hW.l2Integral t
+          (((ℱ.memLp_predictableMeasure_iff P hHp t 2).mpr hH).toLp (Function.uncurry H)) ω) 2 P =
       eLpNorm (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding τ n a p.1 p.2 - H p.1 p.2) 2
         ((timeMeasure t).prod P) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
   have hK : MemLp (Function.uncurry (Finance.simpleHolding τ n a)) 2 (ℱ.predictableMeasure P t) :=
     Finance.memLp_simpleHolding_predictableMeasure ha ha₂ t
   exact (eLpNorm_congr_ae ((hW.coeFn_l2Integral_simpleHolding hτ ha t hK).symm.mono
     fun ω hω ↦ by simp only [Pi.sub_apply, hω])).trans
     (hW.eLpNorm_l2Integral_sub t (Finance.isStronglyPredictable_simpleHolding ha)
-      hH.isStronglyPredictable hK (hH.memLp_predictableMeasure t))
+      hHp hK ((ℱ.memLp_predictableMeasure_iff P hHp t 2).mpr hH))
 
 /-- Fixed-horizon `L²` identification for any predictable integrand in `L²((timeMeasure t).prod P)`:
 every Itô integral at time `t` agrees almost surely with `hW.l2Integral t`. -/
-private theorem ae_eq_l2Integral_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem ae_eq_l2Integral_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     {H I : ℝ≥0 → Ω → ℝ} {t : ℝ≥0} (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P))
     (hI : IsItoIntegral ℱ P W H I) :
     letI := (hW.hasLaw_eval 0).isProbabilityMeasure
@@ -80,9 +86,6 @@ private theorem ae_eq_l2Integral_of_memLp (hW : IsFilteredPreBrownianReal ℱ W 
       (((ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).mpr hH).toLp
         (Function.uncurry H)) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have hHp : MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P t) :=
-    (ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).mpr hH
   have hex (k : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t
     hI.isStronglyPredictable hH (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top (k + 1)))
   choose n τ a C _ hτ ha hb hlt using hex
@@ -92,25 +95,15 @@ private theorem ae_eq_l2Integral_of_memLp (hW : IsFilteredPreBrownianReal ℱ W 
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
       (fun _ ↦ zero_le) fun k ↦ (hlt k).le
-  have hsub (k : ℕ) : eLpNorm (fun ω ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω -
-      hW.l2Integral t (hHp.toLp (Function.uncurry H)) ω) 2 P =
-      eLpNorm (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2) 2
-        ((timeMeasure t).prod P) := by
-    have hK : MemLp (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k))) 2
-        (ℱ.predictableMeasure P t) :=
-      Finance.memLp_simpleHolding_predictableMeasure (ha k)
-        (Finance.memLp_of_bound_stronglyMeasurable (ha k) (hb k)) t
-    exact (eLpNorm_congr_ae
-      ((hW.coeFn_l2Integral_simpleHolding (hτ k).monotoneOn (ha k) t hK).symm.mono
-        fun ω hω ↦ by simp only [Pi.sub_apply, hω])).trans
-      (hW.eLpNorm_l2Integral_sub t
-        (Finance.isStronglyPredictable_simpleHolding (ha k)) hI.isStronglyPredictable hK hHp)
   exact hI.ae_eq_of_tendstoInMeasure hW (fun k ↦ (hτ k).monotoneOn) ha
-    (tendsto_measure_le_lintegral_enorm_sq_sub
-      (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k))
-      (fun _ ↦ hI.isStronglyPredictable) hKlim)
+    (fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
+      (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
+        hI.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
+      hKlim hε)
     (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num)
-      (hKlim.congr fun k ↦ (hsub k).symm))
+      (hKlim.congr fun k ↦ (hW.eLpNorm_simpleGains_sub_l2Integral (hτ k).monotoneOn (ha k)
+        (Finance.memLp_of_bound_stronglyMeasurable (ha k) (hb k)) t
+        hI.isStronglyPredictable hH).symm))
 
 /-- For a `BrownianIntegrable` integrand, every Itô integral agrees almost surely at every time `t`
 with the finite-horizon predictable L² Brownian integral `hW.l2Integral t`. Neither Brownian path
@@ -120,23 +113,6 @@ theorem ae_eq_l2Integral_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W 
     (t : ℝ≥0) :
     I t =ᵐ[P] hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H)) :=
   hW.ae_eq_l2Integral_of_memLp (hH.memLp_timeMeasure t) hI
-
-/-- For a deterministic `L²(timeMeasure T)` representative `f`, the finite-horizon predictable
-L² Brownian integral of the pulled-back representative `(t, ω) ↦ f t` equals the Wiener integral
-`hW.toIsPreBrownianReal.wienerIntegral T (hf.toLp f)`. -/
-theorem l2Integral_toLp_fst (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥0)
-    {f : ℝ≥0 → ℝ} (hf : MemLp f 2 (timeMeasure T)) :
-    letI := (hW.hasLaw_eval 0).isProbabilityMeasure
-    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-    hW.l2Integral T ((hf.comp_measurePreserving
-      (ℱ.measurePreserving_fst_predictableMeasure P T)).toLp (fun p : ℝ≥0 × Ω ↦ f p.1)) =
-      hW.toIsPreBrownianReal.wienerIntegral T (hf.toLp f) := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have hcomp := (Lp.toLp_compMeasurePreserving hf
-    (ℱ.measurePreserving_fst_predictableMeasure P T)).symm
-  dsimp only [Function.comp_def] at hcomp
-  rw [hcomp, hW.l2Integral_compMeasurePreserving_fst T (hf.toLp f)]
 
 /-- At any time `t`, an Itô integral of a deterministic integrand `f ∈ L²(timeMeasure t)` agrees
 almost surely with its Wiener integral `hW.toIsPreBrownianReal.wienerIntegral t (hf.toLp f)`. -/
@@ -156,8 +132,11 @@ theorem ae_eq_wienerIntegral_of_isItoIntegral (hW : IsFilteredPreBrownianReal �
     Lp.ext (hfp.coeFn_toLp.trans
       ((hf.comp_measurePreserving
         (ℱ.measurePreserving_fst_predictableMeasure P t)).coeFn_toLp.mono fun _ h ↦ h.symm))
+  have hcomp := (Lp.toLp_compMeasurePreserving hf
+    (ℱ.measurePreserving_fst_predictableMeasure P t)).symm
+  dsimp only [Function.comp_def] at hcomp
   refine (hW.ae_eq_l2Integral_of_memLp hf_prod hI).trans ?_
-  rw [hl2, hW.l2Integral_toLp_fst t hf]
+  rw [hl2, hcomp, hW.l2Integral_compMeasurePreserving_fst t (hf.toLp f)]
 
 /-- Increment `L²` isometry for the finite-horizon L² Brownian integral: for `s ≤ t`, the `L²(P)`
 distance between `hW.l2Integral t` and `hW.l2Integral s` of a `BrownianIntegrable` integrand
