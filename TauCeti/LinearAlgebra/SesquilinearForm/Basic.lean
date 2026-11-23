@@ -16,7 +16,7 @@ skew-symmetric map is alternating as soon as doubling is injective on its values
 asked of the scalars or of the values, so this holds over commutative semirings and for values in
 any module that is an additive group. It is a module-valued, semiring form of the reverse
 direction of `LinearMap.isAlt_iff_eq_neg_flip`, which is stated for scalar-valued forms over a
-`CharZero` domain.
+`CharZero` integral domain.
 
 ## Main results
 

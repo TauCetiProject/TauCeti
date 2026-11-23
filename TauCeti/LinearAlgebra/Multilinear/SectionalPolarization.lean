@@ -30,8 +30,8 @@ writing `k(x, y) = T(x, y, y, x)`,
 This identity holds over every commutative semiring of scalars and for values in every module
 that is an additive group. When multiplication by `6` is injective on the values, it can be
 cancelled, so two such tensors with the same values `T(x, y, y, x)` are equal. When `6 ≠ 0` in
-the scalars and unequal scalars act differently on every nonzero value, as over a domain with
-torsion-free values, it is enough to compare these values on linearly independent pairs, since
+the scalars and unequal scalars act differently on every nonzero value, as over an integral domain
+with torsion-free values, it is enough to compare these values on linearly independent pairs, since
 both sides vanish on dependent pairs by `LinearMap.IsAlt.eq_zero_of_not_linearIndependent`. Over
 a field, the linearly independent pairs are the pairs spanning a plane, and this is how the
 sectional curvatures of a Riemannian manifold determine its curvature tensor.

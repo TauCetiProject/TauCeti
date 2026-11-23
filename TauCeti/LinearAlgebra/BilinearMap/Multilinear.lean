@@ -82,9 +82,9 @@ theorem toAlternatingMap_apply {ω : V →ₗ[R] V →ₗ[R] N} (hω : LinearMap
   (rfl)
 
 /-- An alternating bilinear map vanishes on a linearly dependent pair, provided unequal scalars
-act differently on every nonzero value. Over a domain acting on torsion-free values, the latter
-hypothesis is `fun _ ↦ smul_left_injective R`. This is the case of two arguments of
-`AlternatingMap.map_linearDependent_of_smul_left_injective`. -/
+act differently on every nonzero value. Over an integral domain acting on torsion-free values in an
+additive group, the latter hypothesis is `fun _ ↦ smul_left_injective R`. This is the case of two
+arguments of `AlternatingMap.map_linearDependent_of_smul_left_injective`. -/
 theorem eq_zero_of_not_linearIndependent {ω : V →ₗ[R] V →ₗ[R] N} (halt : ω.IsAlt)
     (hN : ∀ n : N, n ≠ 0 → Function.Injective fun r : R ↦ r • n) {v w : V}
     (hvw : ¬LinearIndependent R ![v, w]) : ω v w = 0 := by

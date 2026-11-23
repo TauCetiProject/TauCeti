@@ -14,7 +14,8 @@ import TauCeti.LinearAlgebra.Alternating.Basic
 
 An alternating map vanishes on a linearly dependent family whenever unequal scalars act
 differently on every nonzero value. Mathlib's `AlternatingMap.map_linearDependent` proves this
-for a domain acting on torsion-free values in an additive group.
+over a ring with `IsDomain` when the source and target are additive groups and the values are
+torsion-free.
 
 Over a semiring a dependence need not be a nontrivial linear combination equal to zero. Instead,
 two distinct coefficient families `c ≠ d` give the same sum
@@ -38,9 +39,9 @@ variable {R M N ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddComm
   [Module R N]
 
 /-- An alternating map vanishes on a linearly dependent family, provided unequal scalars act
-differently on every nonzero value. Over a domain acting on torsion-free values, the latter
-hypothesis is `fun _ ↦ smul_left_injective R`. This is `AlternatingMap.map_linearDependent` over
-any semiring. -/
+differently on every nonzero value. Over a ring with `IsDomain` acting on torsion-free values in an
+additive group, the latter hypothesis is `fun _ ↦ smul_left_injective R`. This is
+`AlternatingMap.map_linearDependent` over any semiring. -/
 theorem map_linearDependent_of_smul_left_injective (f : M [⋀^ι]→ₗ[R] N)
     (hN : ∀ n : N, n ≠ 0 → Function.Injective fun r : R ↦ r • n) {v : ι → M}
     (hv : ¬LinearIndependent R v) : f v = 0 := by

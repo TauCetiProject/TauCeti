@@ -30,6 +30,7 @@ variable {R M N ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddComm
 
 /-- Putting the linear combination `∑ j ∈ s, e j • v j` in place of `v i`, for `i ∈ s`, multiplies
 the value of an alternating map by `e i`: every other term repeats an argument. -/
+@[simp]
 theorem map_update_sum_smul [DecidableEq ι] (f : M [⋀^ι]→ₗ[R] N) (v : ι → M) {s : Finset ι}
     {i : ι} (hi : i ∈ s) (e : ι → R) :
     f (Function.update v i (∑ j ∈ s, e j • v j)) = e i • f v := by
