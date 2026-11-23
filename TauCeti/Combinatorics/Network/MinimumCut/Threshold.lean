@@ -92,7 +92,7 @@ theorem thresholdComponentMk_eq_iff (f : Finset V → K)
     (hsymm : ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s) (k : K) (s t : V) :
     thresholdComponentMk f hsymm k s = thresholdComponentMk f hsymm k t ↔
       s = t ∨ k ≤ pairMinimumValue f s t :=
-  Quotient.eq'
+  Quotient.eq'.trans (thresholdSetoid_rel f hsymm k s t)
 
 /-- Every threshold component has a vertex representative. -/
 theorem thresholdComponentMk_surjective (f : Finset V → K)
@@ -101,6 +101,48 @@ theorem thresholdComponentMk_surjective (f : Finset V → K)
   Quotient.exists_rep
 
 namespace ThresholdComponent
+
+instance instFinite : Finite (ThresholdComponent f hsymm k) :=
+  Finite.of_surjective (thresholdComponentMk f hsymm k)
+    (thresholdComponentMk_surjective f hsymm k)
+
+instance instInhabited [Inhabited V] : Inhabited (ThresholdComponent f hsymm k) :=
+  ⟨thresholdComponentMk f hsymm k default⟩
+
+instance instIsEmpty [IsEmpty V] : IsEmpty (ThresholdComponent f hsymm k) :=
+  ⟨fun c ↦ let ⟨v, _⟩ := thresholdComponentMk_surjective f hsymm k c; isEmptyElim v⟩
+
+instance instNonempty [Nonempty V] : Nonempty (ThresholdComponent f hsymm k) :=
+  Nonempty.map (thresholdComponentMk f hsymm k) ‹_›
+
+instance instSubsingleton [Subsingleton V] : Subsingleton (ThresholdComponent f hsymm k) :=
+  (thresholdComponentMk_surjective f hsymm k).subsingleton
+
+instance instUnique [Unique V] : Unique (ThresholdComponent f hsymm k) :=
+  Function.Surjective.unique (thresholdComponentMk f hsymm k)
+    (thresholdComponentMk_surjective f hsymm k)
+
+/-- Descend a function on vertices that is constant on threshold-related pairs to threshold
+components. -/
+protected def lift {B : Sort*} (g : V → B)
+    (h : ∀ s t, ThresholdRelated f k s t → g s = g t) : ThresholdComponent f hsymm k → B :=
+  Quotient.lift g fun s t hst ↦ h s t ((thresholdSetoid_rel f hsymm k s t).mp hst)
+
+@[simp]
+protected theorem lift_mk {B : Sort*} (g : V → B)
+    (h : ∀ s t, ThresholdRelated f k s t → g s = g t) (v : V) :
+    ThresholdComponent.lift g h (thresholdComponentMk f hsymm k v) = g v :=
+  Quotient.lift_mk (s := thresholdSetoid f hsymm k) g
+    (fun s t hst ↦ h s t ((thresholdSetoid_rel f hsymm k s t).mp hst)) v
+
+/-- The set of vertices in a threshold component. -/
+def supp (c : ThresholdComponent f hsymm k) : Set V :=
+  {v | thresholdComponentMk f hsymm k v = c}
+
+@[simp]
+theorem mem_supp_iff (c : ThresholdComponent f hsymm k) (v : V) :
+    v ∈ c.supp ↔ thresholdComponentMk f hsymm k v = c :=
+  Iff.rfl
 
 /-- To prove a property of every threshold component, it suffices to prove it on the component
 of each vertex. -/
@@ -121,7 +163,7 @@ theorem thresholdRelated_iff_reachable (hT : IsFlowEquivalentTree f T w) (k : K)
   (hT.reachable_deleteEdges_iff k).symm
 
 /-- A flow-equivalent tree makes the minimum cut value symmetric. -/
-theorem pairMinimumValue_symmetric (hT : IsFlowEquivalentTree f T w) :
+theorem pairMinimumValue_comm (hT : IsFlowEquivalentTree f T w) :
     ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s := by
   intro s t
   by_cases hst : s = t
@@ -129,25 +171,28 @@ theorem pairMinimumValue_symmetric (hT : IsFlowEquivalentTree f T w) :
     rfl
   · have hle : ∀ s t, s ≠ t → pairMinimumValue f s t ≤ pairMinimumValue f t s := by
       intro s t hst
-      have hreach :=
-        (hT.reachable_deleteEdges_iff (pairMinimumValue f s t)).2 (Or.inr le_rfl)
-      exact ((hT.reachable_deleteEdges_iff (pairMinimumValue f s t)).1 hreach.symm).resolve_left
-        (Ne.symm hst)
+      have hreach := (hT.thresholdRelated_iff_reachable (pairMinimumValue f s t) s t).mp
+        ((thresholdRelated_def f (pairMinimumValue f s t) s t).mpr (Or.inr le_rfl))
+      exact
+        ((thresholdRelated_def f (pairMinimumValue f s t) t s).mp
+          ((hT.thresholdRelated_iff_reachable
+            (pairMinimumValue f s t) t s).mpr hreach.symm)).resolve_left (Ne.symm hst)
     exact le_antisymm (hle s t hst) (hle t s (Ne.symm hst))
 
 /-- Threshold classes are canonically the connected components of the threshold graph. -/
 def thresholdComponentEquiv (hT : IsFlowEquivalentTree f T w) (k : K) :
-    ThresholdComponent f hT.pairMinimumValue_symmetric k ≃
+    ThresholdComponent f hT.pairMinimumValue_comm k ≃
       (T.deleteEdges {e | w e < k}).ConnectedComponent :=
   Quotient.congrRight
-    (r := thresholdSetoid f hT.pairMinimumValue_symmetric k)
+    (r := thresholdSetoid f hT.pairMinimumValue_comm k)
     (r' := (T.deleteEdges {e | w e < k}).reachableSetoid)
-    fun s t ↦ hT.thresholdRelated_iff_reachable k s t
+    fun s t ↦ (thresholdSetoid_rel f hT.pairMinimumValue_comm k s t).trans
+      (hT.reachable_deleteEdges_iff k).symm
 
 @[simp]
 theorem thresholdComponentEquiv_apply_mk (hT : IsFlowEquivalentTree f T w) (k : K) (v : V) :
     hT.thresholdComponentEquiv k
-        (thresholdComponentMk f hT.pairMinimumValue_symmetric k v) =
+        (thresholdComponentMk f hT.pairMinimumValue_comm k v) =
       (T.deleteEdges {e | w e < k}).connectedComponentMk v := by
   -- `Quotient.congrRight`, `thresholdComponentMk`, and `connectedComponentMk` all compute on
   -- quotient representatives.
@@ -158,13 +203,13 @@ theorem thresholdComponentEquiv_symm_apply_mk
     (hT : IsFlowEquivalentTree f T w) (k : K) (v : V) :
     (hT.thresholdComponentEquiv k).symm
         ((T.deleteEdges {e | w e < k}).connectedComponentMk v) =
-      thresholdComponentMk f hT.pairMinimumValue_symmetric k v := by
+      thresholdComponentMk f hT.pairMinimumValue_comm k v := by
   apply (hT.thresholdComponentEquiv k).injective
   simp
 
 /-- Two vertices determine the same connected component of the threshold graph exactly when they
 are equal or their minimum cut value is at least the threshold. -/
-theorem connectedComponentMk_threshold_eq_iff
+theorem connectedComponentMk_deleteEdges_eq_iff
     (hT : IsFlowEquivalentTree f T w) (k : K) (s t : V) :
     (T.deleteEdges {e | w e < k}).connectedComponentMk s =
         (T.deleteEdges {e | w e < k}).connectedComponentMk t ↔
@@ -173,16 +218,29 @@ theorem connectedComponentMk_threshold_eq_iff
 
 /-- Membership in the threshold component of `s` is governed by the threshold minimum-cut
 relation. -/
-theorem mem_thresholdComponent_iff (hT : IsFlowEquivalentTree f T w) (k : K) (s t : V) :
+theorem mem_supp_connectedComponentMk_deleteEdges_iff
+    (hT : IsFlowEquivalentTree f T w) (k : K) (s t : V) :
     t ∈ ((T.deleteEdges {e | w e < k}).connectedComponentMk s).supp ↔
       s = t ∨ k ≤ pairMinimumValue f s t := by
-  rw [ConnectedComponent.mem_supp_iff, ConnectedComponent.eq, reachable_comm,
-    hT.reachable_deleteEdges_iff]
+  rw [ConnectedComponent.mem_supp_iff, eq_comm, hT.connectedComponentMk_deleteEdges_eq_iff]
+
+/-- The canonical equivalence preserves the vertex support of each threshold component. -/
+theorem thresholdComponentEquiv_supp (hT : IsFlowEquivalentTree f T w) (k : K)
+    (c : ThresholdComponent f hT.pairMinimumValue_comm k) :
+    (hT.thresholdComponentEquiv k c).supp = c.supp := by
+  induction c using ThresholdComponent.ind with
+  | _ s =>
+    ext v
+    simp only [ConnectedComponent.mem_supp_iff, ThresholdComponent.mem_supp_iff,
+      thresholdComponentEquiv_apply_mk]
+    constructor
+    · exact fun h ↦ (hT.thresholdComponentEquiv k).injective (by simpa using h)
+    · exact fun h ↦ by simpa using congrArg (hT.thresholdComponentEquiv k) h
 
 /-- The abstract threshold quotient and the graph's connected-component type have the same
 cardinality. -/
 theorem natCard_thresholdComponent_eq (hT : IsFlowEquivalentTree f T w) (k : K) :
-    Nat.card (ThresholdComponent f hT.pairMinimumValue_symmetric k) =
+    Nat.card (ThresholdComponent f hT.pairMinimumValue_comm k) =
       Nat.card (T.deleteEdges {e | w e < k}).ConnectedComponent :=
   Nat.card_congr (hT.thresholdComponentEquiv k)
 
