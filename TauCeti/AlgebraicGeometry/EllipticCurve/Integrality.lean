@@ -65,7 +65,10 @@ Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Ap
 `dev/modular-curves @ 9fec8eba7652`:
 `LutzNagell/LutzNagellTheorem/PIDPrimeOrder.lean`, declarations
 `isInteger_of_root_squarefree_leading_coeff` and `y_isInteger_of_x_isInteger_on_curve`. The latter
-is generalised here from the fraction field to an arbitrary commutative `R`-algebra.
+is generalised here from the fraction field in two forms. Its integer-coordinate form
+`isInteger_y_of_equation_of_isInteger_x` holds over any commutative `R`-algebra `K` with
+`[IsIntegrallyClosedIn R K]`, and the integral-element form
+`isIntegral_y_of_equation_of_isIntegral_x` behind it holds over every commutative `R`-algebra.
 
 `isInteger_eight_mul_y_of_evalEval_polynomialY_eq_zero` is the `y` half of
 `bounded_den_of_order_two_general` (`LutzNagell/LutzNagellTheorem/GeneralPrimeOrder.lean:176` at
