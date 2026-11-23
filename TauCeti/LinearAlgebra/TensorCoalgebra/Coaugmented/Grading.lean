@@ -209,15 +209,15 @@ theorem isHomogeneous_deconcatenation (G : InternalGrading R M ℤ) :
   · intro n d x hx hd
     rw [deconcatenation_of, deconcatenationComponent_tprod]
     refine Submodule.sum_mem _ fun i _ ↦ ?_
-    let dl : Fin i.1 → ℤ := fun j ↦ d (Fin.castLE (by have := i.isLt; omega) j)
-    let dr : Fin (n - i.1) → ℤ := fun j ↦ d ⟨i.1 + j.1, by have := j.isLt; omega⟩
+    let dl : Fin i.val → ℤ := fun j ↦ d (Fin.castLE (by have := i.isLt; omega) j)
+    let dr : Fin (n - i.val) → ℤ := fun j ↦ d ⟨i.val + j.val, by have := j.isLt; omega⟩
     have hsum : (∑ j, dl j) + (∑ j, dr j) = p := by
       rw [← hd]
-      have hi : i.1 + (n - i.1) = n := by have := i.isLt; omega
+      have hi : i.val + (n - i.val) = n := by have := i.isLt; omega
       calc
-        _ = ∑ j : Fin (i.1 + (n - i.1)), d (Fin.cast hi j) := by
+        _ = ∑ j : Fin (i.val + (n - i.val)), d (Fin.cast hi j) := by
           simpa only [dl, dr, Fin.castLE, Fin.cast, Fin.castAdd, Fin.natAdd] using
-            (Fin.sum_univ_add (fun j : Fin (i.1 + (n - i.1)) ↦ d (Fin.cast hi j))).symm
+            (Fin.sum_univ_add (fun j : Fin (i.val + (n - i.val)) ↦ d (Fin.cast hi j))).symm
         _ = ∑ j, d j := Equiv.sum_comp (finCongr hi) d
     rw [← hsum]
     apply InternalGrading.tmul_mem_tensorProduct

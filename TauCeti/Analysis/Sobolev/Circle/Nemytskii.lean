@@ -97,7 +97,7 @@ theorem exists_toContinuousMap_eq_of_differentiableOn_strip (hs : 1 / 2 < s)
           push_cast
           ring
         rw [show weight (2 * s) n = weight s n ^ 2 by rw [sq, ← weight_add, two_mul], mul_pow,
-          mul_pow, ← Real.exp_nat_mul, hexp]
+          mul_pow, ← Real.exp_natCast_mul, hexp]
         ring
   have hsum := summable_weight_mul_exp_neg (2 * s) ha
   obtain ⟨w, hw⟩ := (exists_coeff_eq_iff (fourierCoeff f)).2 ((memℓp_weight_smul_iff _).2

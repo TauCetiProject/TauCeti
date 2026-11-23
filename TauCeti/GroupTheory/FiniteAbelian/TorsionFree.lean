@@ -51,7 +51,7 @@ theorem CommGroup.equiv_multiplicative_fin_int_of_isMulTorsionFree {A : Type*} [
   have hspan : Submodule.span ℤ (Set.range v) = ⊤ := by
     have hv : Set.range v = Additive.toMul ⁻¹' (s : Set A) := by
       ext x
-      exact ⟨fun ⟨y, hy⟩ => hy ▸ y.2, fun hx => ⟨⟨_, hx⟩, rfl⟩⟩
+      exact ⟨fun ⟨y, hy⟩ => hy ▸ y.property, fun hx => ⟨⟨_, hx⟩, rfl⟩⟩
     rw [← Submodule.toAddSubgroup_inj, Submodule.span_int_eq_addSubgroupClosure,
       Submodule.top_toAddSubgroup, hv, ← Subgroup.toAddSubgroup_closure, hs, map_top]
   obtain ⟨n, b⟩ := Module.basisOfFiniteTypeTorsionFree hspan

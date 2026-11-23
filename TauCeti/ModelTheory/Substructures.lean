@@ -34,7 +34,7 @@ substructures, finitely many elements of their union all lie in a single member.
 theorem exists_forall_mem_of_directed {ι κ : Type*} [Nonempty ι] [Finite κ]
     {S : ι → L.Substructure M} (hdir : Directed (· ≤ ·) S) (a : κ → ↥(⨆ i, S i)) :
     ∃ k, ∀ j, (a j : M) ∈ S k := by
-  choose ks hks using fun j => (mem_iSup_of_directed hdir).1 (a j).2
+  choose ks hks using fun j => (mem_iSup_of_directed hdir).1 (a j).property
   obtain ⟨k, hk⟩ := hdir.finite_le ks
   exact ⟨k, fun j => hk j (hks j)⟩
 

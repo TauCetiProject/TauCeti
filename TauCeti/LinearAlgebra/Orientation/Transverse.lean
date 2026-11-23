@@ -230,7 +230,7 @@ theorem transverse_shortExact (hf : Function.Injective f) (hfg : Function.Exact 
           (shortExact hf hfg hg oU e.orientation hU hc)).transverse hV hVJ hfu =
         map (Fin (a + c)) (LinearEquiv.ofInjective J hJ)
           (shortExact hf' hfg' hg' b'.orientation e.orientation hU' hc) by
-    have hfin' : Fintype.card (Fin a) = finrank K U' := by rw [Fintype.card_fin, hU']
+    have hfin' : Nat.card (Fin a) = finrank K U' := by rw [Nat.card_fin, hU']
     rcases oU'.eq_or_eq_neg b'.orientation hfin' with rfl | rfl <;>
       rcases e.orientation_eq_or_eq_neg p with rfl | rfl
     · exact key oU hoU

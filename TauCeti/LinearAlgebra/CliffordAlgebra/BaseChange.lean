@@ -24,9 +24,9 @@ extension of scalars, and it records the universal property of the scalar extens
 `R`-algebra map out of `Cℓ(M, Q)` into an `A`-algebra, such as a real Clifford action on a complex
 vector space, extends uniquely to an `A`-algebra map out of `Cℓ(A ⊗ M, Q_A)`. Finally, on the
 tensor carrier `A ⊗[R] Cℓ(M, Q)` of Mathlib's `CliffordAlgebra.equivBaseChange`, it records the
-inverse-map forms of Mathlib's involution and reversal laws for `CliffordAlgebra.toBaseChange`, and
-identifies the `ℤ/2`-grading of `Cℓ(A ⊗ M, Q_A)` with the scalar extension of the grading of
-`Cℓ(M, Q)`.
+inverse-map forms of Mathlib's involution and reversal laws for `CliffordAlgebra.toBaseChange`,
+its naturality in quadratic isometries, and identifies the `ℤ/2`-grading of `Cℓ(A ⊗ M, Q_A)` with
+the scalar extension of the grading of `Cℓ(M, Q)`.
 
 ## Main results
 
@@ -35,6 +35,8 @@ identifies the `ℤ/2`-grading of `Cℓ(A ⊗ M, Q_A)` with the scalar extension
 * `CliffordAlgebra.ofBaseChangeAux_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.ofBaseChangeAux_mem_even` proves preservation of the even subalgebra.
 * `CliffordAlgebra.ofBaseChangeAux_injective` proves injectivity for faithful flat extensions.
+* `CliffordAlgebra.ofBaseChange_tmul`: `CliffordAlgebra.ofBaseChange` sends `a ⊗ x` to
+  `a • ofBaseChangeAux A Q x`, and in particular `1 ⊗ x` to `ofBaseChangeAux A Q x`.
 * `CliffordAlgebra.ofBaseChangeAux_baseChange` identifies direct and successive scalar extension.
 * `CliffordAlgebra.baseChange_ringHom_ext`: a ring homomorphism out of `Cℓ(A ⊗ M)` is determined
   by its values on the scalars of `A` and on the vectors `ι (1 ⊗ₜ v)`.
@@ -45,6 +47,10 @@ identifies the `ℤ/2`-grading of `Cℓ(A ⊗ M, Q_A)` with the scalar extension
   correspond to `A`-algebra maps `Cℓ(A ⊗ M, Q_A) → B`; `CliffordAlgebra.eq_liftBaseChange_iff`
   characterizes the extension `CliffordAlgebra.liftBaseChange` by its restriction along
   `CliffordAlgebra.ofBaseChangeAux`.
+* `CliffordAlgebra.ofBaseChange_map_map` and `CliffordAlgebra.toBaseChange_map`: under
+  `CliffordAlgebra.ofBaseChange` and `CliffordAlgebra.toBaseChange`, the algebra map induced by
+  the extension `f.baseChange A` of a quadratic isometry `f` corresponds to the scalar extension
+  `A ⊗ map f` of the algebra map induced by `f`.
 * `CliffordAlgebra.ofBaseChange_map_involute` and `CliffordAlgebra.ofBaseChange_map_reverse`:
   under `CliffordAlgebra.ofBaseChange`, the grade involution and reversal of the right tensor
   factor become those of `Cℓ(A ⊗ M, Q_A)`.
@@ -55,6 +61,8 @@ identifies the `ℤ/2`-grading of `Cℓ(A ⊗ M, Q_A)` with the scalar extension
   `CliffordAlgebra.ofBaseChange_mem_evenOdd_iff`: `CliffordAlgebra.equivBaseChange` and its
   inverse match the parity-`i` part of `Cℓ(A ⊗ M, Q_A)` with the scalar extension of the
   parity-`i` part of `Cℓ(M, Q)`.
+* `TauCeti.span_ofBaseChangeAux_image_evenOdd`: the parity-`i` part of `Cℓ(A ⊗ M, Q_A)` is the
+  `A`-linear span of the image of the parity-`i` part of `Cℓ(M, Q)`.
 -/
 
 public section
@@ -128,14 +136,27 @@ theorem ofBaseChangeAux_mem_even (Q : QuadraticForm R M) {x : CliffordAlgebra Q}
         SetLike.mul_mem_graded
           (ι_mul_ι_mem_evenOdd_zero (Q.baseChange A) (1 ⊗ₜ[R] m) (1 ⊗ₜ[R] n)) hx
 
+/-- On the tensor carrier `A ⊗[R] Cℓ(M, Q)`, `CliffordAlgebra.ofBaseChange` sends a pure tensor
+`a ⊗ x` to the `a`-multiple of the canonical image `CliffordAlgebra.ofBaseChangeAux A Q x`. -/
+theorem ofBaseChange_tmul {Q : QuadraticForm R M} (a : A) (x : CliffordAlgebra Q) :
+    ofBaseChange A Q (a ⊗ₜ x) = a • ofBaseChangeAux A Q x := by
+  unfold ofBaseChange
+  exact (Algebra.TensorProduct.lift_tmul _ _ _ a x).trans <| by
+    rw [Algebra.ofId_apply, Algebra.smul_def]
+
+/-- On the pure tensors `1 ⊗ x`, `CliffordAlgebra.ofBaseChange` restricts to the canonical map
+`CliffordAlgebra.ofBaseChangeAux`. -/
+@[simp]
+theorem ofBaseChange_one_tmul {Q : QuadraticForm R M} (x : CliffordAlgebra Q) :
+    ofBaseChange A Q (1 ⊗ₜ x) = ofBaseChangeAux A Q x := by
+  rw [ofBaseChange_tmul, one_smul]
+
 /-- Under the identification `Cℓ(A ⊗ M) ≃ A ⊗ Cℓ(M)` of `CliffordAlgebra.toBaseChange`, the
 canonical map to the Clifford algebra after extension of scalars sends `x` to `1 ⊗ x`. -/
 @[simp]
 theorem toBaseChange_ofBaseChangeAux (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
     toBaseChange A Q (ofBaseChangeAux A Q x) = 1 ⊗ₜ x := by
-  have h : ofBaseChange A Q (1 ⊗ₜ x) = ofBaseChangeAux A Q x :=
-    (Algebra.TensorProduct.lift_tmul _ _ _ 1 x).trans (by rw [map_one, one_mul])
-  rw [← h, toBaseChange_ofBaseChange]
+  rw [← ofBaseChange_one_tmul, toBaseChange_ofBaseChange]
 
 /-- The canonical map to the Clifford algebra after extension of scalars is injective when the
 extension is faithful and the Clifford algebra is flat; in particular, for every extension of
@@ -161,6 +182,45 @@ theorem _root_.QuadraticMap.Isometry.ofBaseChangeAux_map {N : Type*} [AddCommGro
   | ι m => simp
   | add z w hz hw => simp only [map_add, hz, hw]
   | mul z w hz hw => simp only [map_mul, hz, hw]
+
+/-- Under `CliffordAlgebra.ofBaseChange`, the scalar extension `A ⊗ map f` of the algebra map
+induced by a quadratic isometry `f` is the algebra map induced by the extended isometry
+`f.baseChange A`. -/
+theorem ofBaseChange_comp_map_map {N : Type*} [AddCommGroup N] [Module R N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm R N} (f : Q →qᵢ Q') :
+    (ofBaseChange A Q').comp (Algebra.TensorProduct.lTensor A (map f)) =
+      (map (f.baseChange A)).comp (ofBaseChange A Q) := by
+  ext v
+  simp
+
+/-- Pointwise form of `CliffordAlgebra.ofBaseChange_comp_map_map`. -/
+@[simp]
+theorem ofBaseChange_map_map {N : Type*} [AddCommGroup N] [Module R N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm R N} (f : Q →qᵢ Q')
+    (z : A ⊗[R] CliffordAlgebra Q) :
+    ofBaseChange A Q' (Algebra.TensorProduct.lTensor (S := A) A (map f) z) =
+      map (f.baseChange A) (ofBaseChange A Q z) :=
+  DFunLike.congr_fun (ofBaseChange_comp_map_map f) z
+
+/-- Under `CliffordAlgebra.toBaseChange`, the algebra map induced by the extended isometry
+`f.baseChange A` is the scalar extension `A ⊗ map f` of the algebra map induced by `f`. Since the
+forward map of `CliffordAlgebra.equivBaseChange` is `toBaseChange`, this is the naturality square
+of `equivBaseChange`. -/
+@[simp]
+theorem toBaseChange_map {N : Type*} [AddCommGroup N] [Module R N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm R N} (f : Q →qᵢ Q')
+    (x : CliffordAlgebra (Q.baseChange A)) :
+    toBaseChange A Q' (map (f.baseChange A) x) =
+      Algebra.TensorProduct.lTensor (S := A) A (map f) (toBaseChange A Q x) := by
+  rw [← toBaseChange_ofBaseChange A Q' (Algebra.TensorProduct.lTensor (S := A) A (map f) _),
+    ofBaseChange_map_map, ofBaseChange_toBaseChange]
+
+/-- Algebra-map form of `CliffordAlgebra.toBaseChange_map`. -/
+theorem toBaseChange_comp_map {N : Type*} [AddCommGroup N] [Module R N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm R N} (f : Q →qᵢ Q') :
+    (toBaseChange A Q').comp (map (f.baseChange A)) =
+      (Algebra.TensorProduct.lTensor A (map f)).comp (toBaseChange A Q) :=
+  AlgHom.ext (toBaseChange_map f)
 
 section ScalarTower
 
@@ -456,7 +516,7 @@ theorem mem_baseChange_evenOdd_zero_iff {y : A ⊗[R] CliffordAlgebra Q} :
     obtain ⟨t, rfl⟩ := Submodule.toBaseChange_surjective' A _ hy
     clear hy
     induction t using TensorProduct.inductionOn with
-    | tmul a c => simp [involute_eq_of_mem_even c.2]
+    | tmul a c => simp [involute_eq_of_mem_even c.property]
     | add s t hs ht => simp only [map_add, Submodule.coe_add, hs, ht]
   · simpa [hy, ← two_smul R y, smul_smul] using (invOf_two_smul_add_sub_map_involute_mem y).1
 
@@ -471,7 +531,7 @@ theorem mem_baseChange_evenOdd_one_iff {y : A ⊗[R] CliffordAlgebra Q} :
     obtain ⟨t, rfl⟩ := Submodule.toBaseChange_surjective' A _ hy
     clear hy
     induction t using TensorProduct.inductionOn with
-    | tmul a c => simp [involute_eq_of_mem_odd c.2, TensorProduct.tmul_neg]
+    | tmul a c => simp [involute_eq_of_mem_odd c.property, TensorProduct.tmul_neg]
     | add s t hs ht => simp only [map_add, Submodule.coe_add, hs, ht, neg_add]
   · simpa [hy, ← two_smul R y, smul_smul] using (invOf_two_smul_add_sub_map_involute_mem y).2
 
@@ -493,11 +553,47 @@ theorem toBaseChange_mem_baseChange_evenOdd_iff {x : CliffordAlgebra (Q.baseChan
 
 /-- **The `ℤ/2`-grading is compatible with extension of scalars**, in the direction of
 `CliffordAlgebra.ofBaseChange`: it maps the scalar extension of the parity-`i` part of `Cℓ(M, Q)`
-exactly onto the parity-`i` part of `Cℓ(A ⊗ M, Q_A)`. -/
-@[simp]
+exactly onto the parity-`i` part of `Cℓ(A ⊗ M, Q_A)`. It is a pre-simp rule, so that it applies
+before `CliffordAlgebra.ofBaseChange_one_tmul` rewrites the image of a unit tensor `1 ⊗ x`. -/
+@[simp↓]
 theorem ofBaseChange_mem_evenOdd_iff {y : A ⊗[R] CliffordAlgebra Q} {i : ZMod 2} :
     ofBaseChange A Q y ∈ evenOdd (Q.baseChange A) i ↔ y ∈ (evenOdd Q i).baseChange A := by
   rw [← toBaseChange_mem_baseChange_evenOdd_iff, toBaseChange_ofBaseChange]
+
+/-- `simp` transfers parity membership of the image of a unit tensor `1 ⊗ x` to the tensor carrier
+before evaluating that image by `CliffordAlgebra.ofBaseChange_one_tmul`. -/
+example (x : CliffordAlgebra Q) (i : ZMod 2) :
+    ofBaseChange A Q (1 ⊗ₜ x) ∈ evenOdd (Q.baseChange A) i ↔
+      1 ⊗ₜ x ∈ (evenOdd Q i).baseChange A := by
+  simp
+
+variable (A Q) in
+/-- **The parity-`i` part of `Cℓ(A ⊗ M, Q_A)` is spanned by the parity-`i` part of `Cℓ(M, Q)`**:
+its `A`-linear span under `CliffordAlgebra.ofBaseChangeAux` is the whole parity-`i` part: scalar
+extension preserves each parity part. For `A = ℂ` over `R = ℝ` and `i = 0`, this says that the
+complexification of the real even Clifford algebra is the complex even Clifford algebra.
+
+Consequently, an `A`-linear map on the parity-`i` part of `Cℓ(A ⊗ M, Q_A)` is determined by its
+values on the scalar-extended elements `ofBaseChangeAux A Q x` with `x` in the parity-`i` part of
+`Cℓ(M, Q)`. -/
+theorem _root_.TauCeti.span_ofBaseChangeAux_image_evenOdd (i : ZMod 2) :
+    Submodule.span A (ofBaseChangeAux A Q '' evenOdd Q i) = evenOdd (Q.baseChange A) i := by
+  have hcomap : (evenOdd (Q.baseChange A) i).comap (ofBaseChange A Q).toLinearMap =
+      (evenOdd Q i).baseChange A :=
+    Submodule.ext fun _ ↦ ofBaseChange_mem_evenOdd_iff
+  have himage : ⇑(ofBaseChange A Q) ''
+      ((evenOdd Q i).map (TensorProduct.mk R A (CliffordAlgebra Q) 1) : Set _) =
+      ofBaseChangeAux A Q '' evenOdd Q i := by
+    rw [Submodule.map_coe, Set.image_image]
+    exact Set.image_congr fun x _ ↦ ofBaseChange_one_tmul x
+  calc
+    _ = ((evenOdd Q i).baseChange A).map (ofBaseChange A Q).toLinearMap := by
+      rw [Submodule.baseChange_eq_span, Submodule.map_span, AlgHom.coe_toLinearMap, himage]
+    _ = _ := by
+      rw [← hcomap]
+      exact Submodule.map_comap_eq_of_surjective
+        (Function.RightInverse.surjective (f := ofBaseChange A Q)
+          (ofBaseChange_toBaseChange A Q)) _
 
 end TensorCarrier
 
