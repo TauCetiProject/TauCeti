@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Real.Cardinality
 public import Mathlib.MeasureTheory.Measure.Portmanteau
+public import Mathlib.MeasureTheory.Measure.Support
 
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
@@ -40,6 +41,9 @@ portmanteau API and is useful when localizing locally finite measures.
 * `MeasureTheory.ProbabilityMeasure.exists_measure_nndist_ge_le_of_tendsto` — along a weakly
   convergent family of probability measures, the mass outside some ball about a basepoint is
   eventually at most any prescribed `ε > 0`.
+* `MeasureTheory.ProbabilityMeasure.eventually_measure_pos_of_tendsto_of_mem_support` — along a
+  weakly convergent family of probability measures, every neighbourhood of a point of the support
+  of the limit eventually has positive mass.
 -/
 
 public section
@@ -248,5 +252,24 @@ theorem tendsto_of_forall_tendsto_integral_contDiff_hasCompactSupport
     _ ≤ _ := liminf_le_liminf (Eventually.of_forall fun i ↦
       integral_le_measure (fun x _ ↦ (h01 (mem_range_self x)).2) fun x hx ↦
         (Function.notMem_support.mp (fun hs ↦ hx (hsub (subset_tsupport f hs)))).le)
+
+section Support
+
+variable {Ω ι : Type*} [MeasurableSpace Ω] [TopologicalSpace Ω] [OpensMeasurableSpace Ω]
+  [HasOuterApproxClosed Ω] {L : Filter ι} {μs : ι → ProbabilityMeasure Ω}
+  {μ : ProbabilityMeasure Ω}
+
+/-- Along a weakly convergent family of probability measures, every neighbourhood of a point of
+the support of the limit eventually has positive mass. -/
+theorem eventually_measure_pos_of_tendsto_of_mem_support (h : Tendsto μs L (𝓝 μ)) {x : Ω}
+    (hx : x ∈ (μ : Measure Ω).support) {U : Set Ω} (hU : U ∈ 𝓝 x) :
+    ∀ᶠ i in L, 0 < (μs i : Measure Ω) U := by
+  obtain ⟨V, hVU, hV, hxV⟩ := mem_nhds_iff.1 hU
+  have hpos := (Measure.mem_support_iff_forall x).1 hx V (hV.mem_nhds hxV)
+  filter_upwards [eventually_lt_of_lt_liminf
+    (hpos.trans_le (le_liminf_measure_open_of_tendsto h hV))] with i hi
+  exact hi.trans_le (measure_mono hVU)
+
+end Support
 
 end MeasureTheory.ProbabilityMeasure
