@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Endomorphism
 public import Mathlib.CategoryTheory.Yoneda
+import TauCeti.CategoryTheory.Yoneda
 
 /-!
 # Automorphisms of a represented presheaf
@@ -42,8 +43,6 @@ along `σ`, by uniqueness of representing objects
   attached to `σ` acts on `homEquiv f` as `σ`.
 * `CategoryTheory.Functor.RepresentableBy.homEquiv_autMulEquiv_hom`: the automorphism of `Y`
   attached to `σ` classifies `σ (homEquiv (𝟙 Y))`.
-* `CategoryTheory.Functor.RepresentableBy.homEquiv_uniqueUpToIso_hom`: the isomorphism between two
-  representing objects classifies the universal element of the first.
 * `CategoryTheory.Functor.RepresentableBy.autMulEquiv_symm_hom_app`: conversely, the automorphism of
   `F` attached to an automorphism `s` of `Y` is postcomposition with `s`.
 -/
@@ -58,14 +57,6 @@ universe w v u
 
 variable {C : Type u} [Category.{v} C] {F : Cᵒᵖ ⥤ Type w} {Y : C} (R : F.RepresentableBy Y)
 
-/-- Postcomposition with a morphism `s : Y ⟶ Y`, transported to `F` along `homEquiv`, commutes
-with the maps of `F`. -/
-private theorem homEquiv_homEquiv_symm_comp_naturality (s : Y ⟶ Y) {X X' : C} (f : X ⟶ X')
-    (x : F.obj (op X')) :
-    R.homEquiv (R.homEquiv.symm (F.map f.op x) ≫ s) =
-      F.map f.op (R.homEquiv (R.homEquiv.symm x ≫ s)) := by
-  rw [← comp_homEquiv_symm, Category.assoc, homEquiv_comp]
-
 /-- The automorphism of the presheaf `F` given by postcomposition with an automorphism `s` of the
 representing object: it sends `homEquiv f` to `homEquiv (f ≫ s)`. -/
 private def postcompIso (s : Aut Y) : F ≅ F :=
@@ -73,7 +64,7 @@ private def postcompIso (s : Aut Y) : F ≅ F :=
     (fun X ↦ Equiv.toIso ((R.homEquiv.symm.trans s.asIso.homToEquiv).trans R.homEquiv))
     (fun f ↦ by
       ext x
-      simpa using R.homEquiv_homEquiv_symm_comp_naturality s.asIso.hom f.unop x)
+      simpa using R.homEquiv_homEquiv_symm_comp_naturality R s.asIso.hom f.unop x)
 
 /-- `postcompIso s` sends `x = homEquiv f` to `homEquiv (f ≫ s)`. -/
 private theorem postcompIso_hom_app (s : Aut Y) {X : C} (x : F.obj (op X)) :
@@ -85,17 +76,9 @@ objects, it compares the representation `R` with its transport along `σ`. -/
 private def toAutObj (σ : Aut F) : Aut Y :=
   .of ((R.ofIso σ.asIso).uniqueUpToIso R)
 
-/-- The isomorphism between two representing objects of `F` classifies, under the second
-representation, the universal element of the first. -/
-theorem homEquiv_uniqueUpToIso_hom {Y' : C} (R' : F.RepresentableBy Y') :
-    R'.homEquiv (R.uniqueUpToIso R').hom = R.homEquiv (𝟙 Y) := by
-  rw [uniqueUpToIso_hom, Yoneda.fullyFaithful_preimage]
-  -- the preimage under Yoneda is the image of `𝟙 Y` under `R'.homEquiv.symm ∘ R.homEquiv`
-  exact R'.homEquiv.apply_symm_apply _
-
 private theorem homEquiv_toAutObj_hom (σ : Aut F) :
     R.homEquiv (R.toAutObj σ).asIso.hom = σ.asIso.hom.app (op Y) (R.homEquiv (𝟙 Y)) := by
-  simpa [toAutObj, RepresentableBy.ofIso] using (R.ofIso σ.asIso).homEquiv_uniqueUpToIso_hom R
+  simpa only [toAutObj, ofIso_homEquiv_apply] using (R.ofIso σ.asIso).homEquiv_uniqueUpToIso_hom R
 
 private theorem homEquiv_comp_toAutObj_hom (σ : Aut F) {X : C} (f : X ⟶ Y) :
     R.homEquiv (f ≫ (R.toAutObj σ).asIso.hom) = σ.asIso.hom.app (op X) (R.homEquiv f) := by
@@ -134,8 +117,9 @@ theorem homEquiv_comp_autMulEquiv_hom (σ : Aut F) {X : C} (f : X ⟶ Y) :
 @[simp]
 theorem homEquiv_comp_autMulEquiv_inv (σ : Aut F) {X : C} (f : X ⟶ Y) :
     R.homEquiv (f ≫ (R.autMulEquiv σ).asIso.inv) = σ.asIso.inv.app (op X) (R.homEquiv f) := by
-  rw [← Iso.symm_hom, ← Aut.inv_asIso, ← _root_.map_inv, homEquiv_comp_autMulEquiv_hom,
-    Aut.inv_asIso, Iso.symm_hom]
+  -- the automorphism of `Y` attached to `σ⁻¹` is the inverse of the one attached to `σ`
+  simpa only [_root_.map_inv, Aut.inv_asIso, Iso.symm_hom] using
+    R.homEquiv_comp_autMulEquiv_hom σ⁻¹ f
 
 /-- The automorphism of `Y` attached to an automorphism `σ` of `F` classifies the image under `σ`
 of the universal element `homEquiv (𝟙 Y)`. -/
@@ -158,18 +142,3 @@ theorem autMulEquiv_symm_hom_app (s : Aut Y) {X : C} (x : F.obj (op X)) :
   R.postcompIso_hom_app s x
 
 end CategoryTheory.Functor.RepresentableBy
-
-namespace TauCeti
-
-open CategoryTheory
-
-universe w v u
-
-/-- Transporting a representation along a presheaf isomorphism applies that isomorphism to
-its classifying element. -/
-theorem homEquiv_ofIso {C : Type u} [CategoryTheory.Category.{v} C]
-    {F G : Cᵒᵖ ⥤ Type w} {Y X : C} {R : F.RepresentableBy Y} {e : F ≅ G} {f : X ⟶ Y} :
-    (R.ofIso e).homEquiv f = e.hom.app (Opposite.op X) (R.homEquiv f) :=
-  (rfl)
-
-end TauCeti
