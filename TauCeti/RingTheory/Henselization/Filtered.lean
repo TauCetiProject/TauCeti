@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.Unramified.Diagonal
 public import TauCeti.RingTheory.Henselization.Neighbourhood
 public import Mathlib.CategoryTheory.Filtered.Basic
 
+import TauCeti.RingTheory.TensorProduct.Maps
+
 /-!
 # Filteredness of étale neighbourhoods
 

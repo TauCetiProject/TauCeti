@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Basic
+public import TauCeti.FieldTheory.Separable.Regular
 public import TauCeti.FieldTheory.Separable.TranscendenceDegreeOne
 
 /-!
-# Separably generated algebraic function fields
+# Separably generated and regular algebraic function fields
 
 An algebraic function field over a perfect field admits a separating element: a transcendental
 element `x` over which the function field is finite and separable.  This supplies the parameter
@@ -17,17 +18,19 @@ needed for the differential calculus of an algebraic function field in arbitrary
 while keeping the more general results over imperfect fields stated with an explicit separating
 element.
 
-Over an imperfect field a separating element still exists when `F` is geometrically reduced over
-`k`, for instance when `L ⊗[k] F` is reduced for an algebraically closed field `L` over `k`
-(`Algebra.IsGeometricallyReduced.of_isReduced_tensorProduct`). If `F ⊗[k] L` is even a domain,
-then `k` is moreover algebraically closed in `F`
-(`TauCeti.algebraicClosure_eq_bot_of_isDomain_tensorProduct`), so `F` is separably generated with
-exact constants, that is, a regular extension of `k`.
+Over an arbitrary field `k`, a one-variable function field `F / k` has a separating element if and
+only if it is geometrically reduced over `k`
+(`TauCeti.IsFunctionField.isGeometricallyReduced_iff_exists_transcendental_and_isSeparable_adjoin`).
+Combining this with the general regularity criteria of `TauCeti.FieldTheory.Separable.Regular` shows
+that `F ⊗[k] L` is a domain for one (equivalently every) algebraically closed field `L` over `k` —
+and equivalently `F ⊗[k] K` is a domain for every field extension `K / k` — if and only if `k` is
+integrally closed in `F` and `F / k` admits a separating element.
 
 In general a separating element need not exist. An element of `F` outside `k` with a
 `p`-power in `k`, such as `t^{1/p}` in `𝔽_p(t^{1/p})(X)` over `𝔽_p(t)`, would be both separable
 and purely inseparable over `k(x)` for a separating `x`, hence a constant of `k(x)`, which it is
-not.
+not. Even with exact constants, `y ^ p = a + b x ^ p` over `𝔽_p(a, b)` admits no separating
+element (`TauCeti.not_exists_transcendental_and_isSeparable_adjoin_of_pow_eq_add_mul_X_pow`).
 
 ## Main results
 
@@ -35,13 +38,19 @@ not.
   function field over a perfect field has a separating element.
 * `TauCeti.IsFunctionField.exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced`:
   a geometrically reduced function field has a separating element.
+* `TauCeti.IsFunctionField.isGeometricallyReduced_iff_exists_transcendental_and_isSeparable_adjoin`:
+  a function field is geometrically reduced if and only if it has a separating element.
+* `TauCeti.IsFunctionField.isDomain_tensorProduct_iff_of_isAlgClosed`,
+  `TauCeti.IsFunctionField.forall_isDomain_tensorProduct_field_iff`: a function field stays a
+  domain after tensoring with an algebraically closed field (or with all field extensions) if and
+  only if its constants are exact and it has a separating element.
 * `TauCeti.not_isSeparable_adjoin_of_pow_mem`: an element outside `k` with a power
   `α ^ q ^ n` in `k` rules out every separating element.
 
 ## References
 
-* H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Proposition 3.10.2 and
-  Section IV.1.
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Proposition 3.10.2,
+  Section III.6, and Section IV.1.
 * S. Lang, *Introduction to Algebraic Geometry*, Chapter III, Section 1.
 -/
 
@@ -49,7 +58,7 @@ public section
 
 noncomputable section
 
-open scoped IntermediateField
+open scoped IntermediateField TensorProduct
 
 namespace TauCeti
 
@@ -80,7 +89,37 @@ theorem exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced
   exact TauCeti.exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced
     hF.trdeg_eq_one
 
-end IsFunctionField
+/-- **Separating-element characterization of geometrically reduced function fields**: a one-variable
+function field `F / k` is geometrically reduced if and only if it admits a separating element `x`
+(transcendental over `k` with `F / k(x)` separable). -/
+theorem isGeometricallyReduced_iff_exists_transcendental_and_isSeparable_adjoin
+    (hF : IsFunctionField k F) :
+    Algebra.IsGeometricallyReduced k F ↔
+      ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F :=
+  ⟨fun _ ↦ hF.exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced,
+    fun ⟨_, hx, _⟩ ↦ isGeometricallyReduced_of_separating hx⟩
 
+/-- **Separating-element characterization of regular function fields (algebraically closed test)**:
+for a one-variable function field `F / k` and an algebraically closed field `L` over `k`,
+`F ⊗[k] L` is a domain if and only if `k` is integrally closed in `F` and `F / k` admits a
+separating element. -/
+theorem isDomain_tensorProduct_iff_of_isAlgClosed (hF : IsFunctionField k F) (L : Type*) [Field L]
+    [Algebra k L] [IsAlgClosed L] :
+    IsDomain (F ⊗[k] L) ↔
+      IsIntegrallyClosedIn k F ∧ ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  rw [TauCeti.isDomain_tensorProduct_iff_of_isAlgClosed,
+    hF.isGeometricallyReduced_iff_exists_transcendental_and_isSeparable_adjoin]
+
+/-- **Separating-element characterization of regular function fields (all field extensions)**:
+for a one-variable function field `F / k`, `F ⊗[k] K` is a domain for every field extension
+`K / k` (in `Type u`) if and only if `k` is integrally closed in `F` and `F / k` admits a
+separating element. -/
+theorem forall_isDomain_tensorProduct_field_iff (hF : IsFunctionField k F) :
+    (∀ (K : Type u) [Field K] [Algebra k K], IsDomain (F ⊗[k] K)) ↔
+      IsIntegrallyClosedIn k F ∧ ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  rw [TauCeti.forall_isDomain_tensorProduct_field_iff,
+    hF.isGeometricallyReduced_iff_exists_transcendental_and_isSeparable_adjoin]
+
+end IsFunctionField
 
 end TauCeti

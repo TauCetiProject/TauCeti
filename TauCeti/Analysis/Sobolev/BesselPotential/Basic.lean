@@ -39,6 +39,9 @@ descriptions.
   chosen real.
 * `MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`: `H^{k,p}(ℝⁿ) = W^{k,p}(ℝⁿ)` for
   every natural `k` and `1 < p < ∞`.
+* `TemperedDistribution.exists_wkp_value_ae_eq_of_mem_realSobolevFunctions` and
+  `TauCeti.Wkp.value_mem_realSobolevFunctions`: the same identification for real functions given
+  up to null sets.
 * `TemperedDistribution.exists_w1p_value_ae_eq_of_mem_realSobolevFunctions`: a real function in
   `H^{s,p}(ℝⁿ)`, `s ≥ 1`, is almost everywhere the value of an element of `W^{1,p}(ℝⁿ)`.
 * `TemperedDistribution.fderiv_apply_mem_realSobolevFunctions`: the classical directional
@@ -155,6 +158,26 @@ open scoped ENNReal LineDeriv
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
 
+/-- **Bessel-potential functions of order at least `k` are `W^{k,p}` values.** For `1 < p < ∞`
+and a natural `k ≤ s`, a real function in `H^{s,p}(ℝⁿ)` agrees almost everywhere with the value of
+an element of the weak-derivative Sobolev space `W^{k,p}(ℝⁿ)`. -/
+theorem exists_wkp_value_ae_eq_of_mem_realSobolevFunctions {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : 1 < p) (hp_top : p ≠ ⊤) {k : ℕ} {s : ℝ} (hks : (k : ℝ) ≤ s) {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) :
+    ∃ w : Wkp (volume : Measure E) ⊤ p k, (Wkp.value k w : E → ℝ) =ᵐ[volume] f := by
+  obtain ⟨u, hu, hk⟩ := mem_realSobolevFunctions.1 (realSobolevFunctions_mono hp hp_top hks hf)
+  obtain ⟨w, hw⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k u).1 hk
+  exact ⟨w, hw.trans hu⟩
+
+/-- **`W^{k,p}` values are Bessel-potential functions of order `k`.** For `1 < p < ∞`, the value
+of an element of the weak-derivative Sobolev space `W^{k,p}(ℝⁿ)` lies in `H^{k,p}(ℝⁿ)`. -/
+theorem _root_.TauCeti.Wkp.value_mem_realSobolevFunctions {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : 1 < p) (hp_top : p ≠ ⊤) {k : ℕ} (w : Wkp (volume : Measure E) ⊤ p k) :
+    (Wkp.value k w : E → ℝ) ∈ realSobolevFunctions E k p := by
+  have hm := Wkp.memLp_value k w
+  exact mem_realSobolevFunctions.2 ⟨hm.toLp _, hm.coeFn_toLp,
+    (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k _).2 ⟨w, hm.coeFn_toLp.symm⟩⟩
+
 /-- **Bessel-potential functions of order at least one are `W^{1,p}` values.** For `1 < p < ∞`
 and `s ≥ 1`, a real function in `H^{s,p}(ℝⁿ)` agrees almost everywhere with the value of an
 element of the weak-derivative Sobolev space `W^{1,p}(ℝⁿ)`. -/
@@ -162,10 +185,9 @@ theorem exists_w1p_value_ae_eq_of_mem_realSobolevFunctions {p : ℝ≥0∞} [Fac
     (hp : 1 < p) (hp_top : p ≠ ⊤) {s : ℝ} (hs : 1 ≤ s) {f : E → ℝ}
     (hf : f ∈ realSobolevFunctions E s p) :
     ∃ w : W1p (volume : Measure E) ⊤ p, (W1p.value w : E → ℝ) =ᵐ[volume] f := by
-  obtain ⟨u, hu, h1⟩ := mem_realSobolevFunctions.1 (realSobolevFunctions_mono hp hp_top hs hf)
-  obtain ⟨w, hw⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top 1 u).1
-    (by exact_mod_cast h1)
-  exact ⟨Wkp.firstOrder 0 w, by rw [Wkp.value_firstOrder]; exact hw.trans hu⟩
+  obtain ⟨w, hw⟩ := exists_wkp_value_ae_eq_of_mem_realSobolevFunctions hp hp_top (k := 1)
+    (by exact_mod_cast hs) hf
+  exact ⟨Wkp.firstOrder 0 w, by rw [Wkp.value_firstOrder]; exact hw⟩
 
 /-- **Classical derivatives of Sobolev functions.** For `1 < p < ∞` and `s ≥ 0`, each classical
 directional derivative of a real `C¹` function in `H^{s+1,p}` lies in `H^{s,p}`: the

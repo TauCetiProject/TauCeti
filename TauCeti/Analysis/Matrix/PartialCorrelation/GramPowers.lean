@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
+public import TauCeti.Analysis.Matrix.PartialCorrelation.Powers
 public import TauCeti.LinearAlgebra.Matrix.Triangular.GramMonomial
 
 /-!
@@ -16,7 +16,10 @@ monomials in entries of its lower-triangular Cholesky factor, for arbitrary part
 `z`. This reduces mixed moments of the Gram entries, such as the mixed entry moments of the LKJ
 law, to moments of Cholesky monomials. The expansion is the general lower-triangular one,
 `Matrix.IsLowerTriangular.prod_mul_transpose_apply_pow_eq_sum`, applied to
-`partialCorrelationCholesky z`.
+`partialCorrelationCholesky z`. On the closed partial-correlation cube, combining it with the
+coordinatewise factorization of Cholesky monomials expresses every such monomial as a finite sum
+of coordinatewise products of powers of `z ij` and nonnegative half-integer powers of
+`1 - z ij ^ 2` (`TauCeti.prod_pow_partialCorrelationGram_eq_sum_prod`).
 -/
 
 public section
@@ -36,5 +39,20 @@ theorem prod_pow_partialCorrelationGram_eq_sum
         ∏ q, partialCorrelationCholesky z q.1 q.2 ^ mulTransposeExpansionPower c q := by
   rw [partialCorrelationGram_def]
   exact (isLowerTriangular_partialCorrelationCholesky z).prod_mul_transpose_apply_pow_eq_sum n
+
+/-- On the closed partial-correlation cube, every mixed natural monomial in the entries of
+`partialCorrelationGram z` expands into a finite sum of coordinatewise products of natural powers
+of `z ij` and nonnegative half-integer powers of `1 - z ij ^ 2`. -/
+theorem prod_pow_partialCorrelationGram_eq_sum_prod
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| ≤ 1) (n : Fin p × Fin p → ℕ) :
+    (∏ ij, partialCorrelationGram z ij.1 ij.2 ^ n ij) =
+      ∑ c : mulTransposeExpansionChoice n,
+        ∏ ij, z ij ^ mulTransposeExpansionPower c ij.val *
+          (1 - z ij ^ 2) ^
+            partialCorrelationCholeskyMonomialResidualPower (mulTransposeExpansionPower c) ij := by
+  rw [prod_pow_partialCorrelationGram_eq_sum]
+  refine Finset.sum_congr rfl fun c _ ↦ ?_
+  exact prod_pow_partialCorrelationCholesky_eq_prod hz _ fun q hq ↦
+    not_lt.mp fun h ↦ hq (mulTransposeExpansionPower_of_lt c h)
 
 end TauCeti

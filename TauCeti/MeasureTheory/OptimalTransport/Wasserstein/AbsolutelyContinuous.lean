@@ -199,7 +199,7 @@ theorem hasFiniteMoment_map_IccExtend (hab : a ≤ b) {η : Measure C(Icc a b, X
     rfl
   have ht : (projIcc a b hab t : ℝ) ∈ uIcc a b := by
     rw [uIcc_of_le hab]
-    exact (projIcc a b hab t).2
+    exact (projIcc a b hab t).property
   rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist h₀, hproj]
   refine ne_top_of_le_ne_top ?_
     (wassersteinEDist_map_IccExtend_le_lintegral_eLpNorm hab hAC hp1 hp ht₀ ht)

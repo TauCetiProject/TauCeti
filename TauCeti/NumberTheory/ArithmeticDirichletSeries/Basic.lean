@@ -390,7 +390,7 @@ theorem map_zero (e : K ≃+* L) : map e (0 : IdealArithmeticFunction K) = 0 := 
 theorem map_one (e : K ≃+* L) : map e (1 : IdealArithmeticFunction K) = 1 := by
   ext J
   have hJ : Ideal.comap (RingOfIntegers.mapRingEquiv e) (J : Ideal (𝓞 L)) ≠ ⊥ := fun h ↦
-    mem_nonZeroDivisors_iff_ne_zero.mp J.2 ((Ideal.comap_mapRingEquiv_eq_bot_iff _ e).mp h)
+    mem_nonZeroDivisors_iff_ne_zero.mp J.property ((Ideal.comap_mapRingEquiv_eq_bot_iff _ e).mp h)
   simp [hJ]
 
 /-- Transport preserves pointwise addition. -/

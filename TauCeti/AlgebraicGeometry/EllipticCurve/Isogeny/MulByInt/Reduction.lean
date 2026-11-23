@@ -43,7 +43,7 @@ point of `[n]` reduces to `n • P`. -/
 -- the pullback of `[n]`.
 theorem reductionOfDegreeEqOne_tautologicalPoint_mulByIntIsogeny {n : ℤ}
     (hn : psiFunctionField W n ≠ 0) (P : W.Point) :
-    reductionOfDegreeEqOne W (W.pointEquivDegreeOnePlace P).2
+    reductionOfDegreeEqOne W (W.pointEquivDegreeOnePlace P).property
         (mulByIntIsogeny W hn).pullback.tautologicalPoint =
       Point.equivBaseChangeSelf W (n • P) := by
   rw [mulByIntIsogeny_pullback, tautologicalPoint_mulByIntPullback, map_zsmul,

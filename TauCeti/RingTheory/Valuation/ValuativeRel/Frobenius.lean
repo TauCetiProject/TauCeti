@@ -101,7 +101,7 @@ theorem integerAlgEquivOfMemInteger_sub_pow_mem_maximalIdeal (σ : L ≃ₐ[K] L
     σ.integerAlgEquivOfMemInteger hσ x - x ^ q ∈ 𝓂[L] := by
   refine (valuation L).mem_maximalIdeal_iff.2 ?_
   rw [AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow, σ.coe_integerAlgEquivOfMemInteger_apply]
-  exact hcongr x.1 x.2
+  exact hcongr x.val x.property
 
 /-- Reduction modulo `𝓂[L]` intertwines `σ.integerAlgEquivOfMemInteger hσ` with the `q`-th power
 map on `𝓀[L]`. -/
@@ -230,21 +230,21 @@ theorem integerAlgEquivOfMemInteger_eq_self_iff_mem_range_algebraMap
   -- Peel off one `𝒪[K]`-digit modulo `π` at each step while preserving `σ₀`-invariance.
   have hstep (y : {z : 𝒪[L] // σ₀ z = z}) :
       ∃ (b : 𝒪[K]) (y' : {z : 𝒪[L] // σ₀ z = z}),
-        y.1 - algebraMap 𝒪[K] 𝒪[L] b = π * y'.1 := by
-    have hres_pow : φ y.1 ^ Nat.card 𝓀[K] = φ y.1 :=
-      (σ.residue_integerAlgEquivOfMemInteger_of_valuation_sub_pow_lt_one hσ hcongr y.1).symm.trans
-        (congrArg φ y.2)
+        y.val - algebraMap 𝒪[K] 𝒪[L] b = π * y'.val := by
+    have hres_pow : φ y.val ^ Nat.card 𝓀[K] = φ y.val :=
+      (σ.residue_integerAlgEquivOfMemInteger_of_valuation_sub_pow_lt_one hσ hcongr y.val).symm.trans
+        (congrArg φ y.property)
     obtain ⟨rbar, hrbar⟩ := (FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap
-      (K := 𝓀[K]) (L := 𝓀[L]) (φ y.1)).1 hres_pow
+      (K := 𝓀[K]) (L := 𝓀[L]) (φ y.val)).1 hres_pow
     obtain ⟨b, rfl⟩ := IsLocalRing.residue_surjective rbar
     rw [ValuativeExtension.residueField_algebraMap_residue] at hrbar
-    have hdiff_mem : y.1 - algebraMap 𝒪[K] 𝒪[L] b ∈ 𝓂[L] :=
+    have hdiff_mem : y.val - algebraMap 𝒪[K] 𝒪[L] b ∈ 𝓂[L] :=
       (IsLocalRing.residue_eq_zero_iff _).1 (by rw [φ.map_sub, hrbar, sub_self])
     obtain ⟨y₁, hy₁⟩ := Ideal.mem_span_singleton.1 (hπ.maximalIdeal_eq ▸ hdiff_mem)
     refine ⟨b, ⟨y₁, mul_left_cancel₀ hπ.ne_zero ?_⟩, hy₁⟩
     calc π * σ₀ y₁
         = σ₀ (π * y₁) := by rw [map_mul, σ₀.commutes ϖ]
-      _ = π * y₁ := by rw [← hy₁, map_sub, y.2, σ₀.commutes b, hy₁]
+      _ = π * y₁ := by rw [← hy₁, map_sub, y.property, σ₀.commutes b, hy₁]
   choose bFn nextFn hFn using hstep
   let seq : ℕ → {z : 𝒪[L] // σ₀ z = z} := Nat.rec ⟨x, hx₀⟩ fun _ s ↦ nextFn s
   let a : ℕ → 𝒪[K] := fun k ↦ ∑ i ∈ Finset.range k, ϖ ^ i * bFn (seq i)
@@ -252,7 +252,7 @@ theorem integerAlgEquivOfMemInteger_eq_self_iff_mem_range_algebraMap
     (AdicCompletion.isAdicCauchy_iff 𝓂[K] 𝒪[K] a).2 fun k ↦ by
       rw [smul_eq_mul, Ideal.mul_top, hϖ.smodEq_maximalIdeal_pow_iff_dvd]
       exact ⟨-bFn (seq k), by simp [a, Finset.sum_range_succ]⟩
-  have hx_approx (k : ℕ) : x - algebraMap 𝒪[K] 𝒪[L] (a k) = π ^ k * (seq k).1 := by
+  have hx_approx (k : ℕ) : x - algebraMap 𝒪[K] 𝒪[L] (a k) = π ^ k * (seq k).val := by
     induction k with
     | zero => simp [a, seq]
     | succ k ih =>
@@ -268,7 +268,7 @@ theorem integerAlgEquivOfMemInteger_eq_self_iff_mem_range_algebraMap
   have hcw : algebraMap 𝒪[K] 𝒪[L] (a k) - algebraMap 𝒪[K] 𝒪[L] c =
       π ^ k * algebraMap 𝒪[K] 𝒪[L] w := by
     simpa [map_sub, map_mul, map_pow, π] using congrArg (algebraMap 𝒪[K] 𝒪[L]) hw
-  exact ⟨-(algebraMap 𝒪[K] 𝒪[L] w + (seq k).1), by linear_combination -hcw - hx_approx k⟩
+  exact ⟨-(algebraMap 𝒪[K] 𝒪[L] w + (seq k).val), by linear_combination -hcw - hx_approx k⟩
 
 end AlgEquiv
 
@@ -392,11 +392,12 @@ theorem exists_apply_eq_mul_of_sub_one_mem_maximalIdeal
     exact ⟨-r₀, by rw [map_one, mul_one, pow_one]; linear_combination -hr₀⟩
   -- Refine `1` modulo successive powers of `π` to build a `𝓂[L]`-adic Cauchy sequence.
   let stSeq : (k : ℕ) → {y : 𝒪[L] // π ^ (k + 1) ∣ σ₀ y - u' * y} :=
-    Nat.rec ⟨1, hinit⟩ fun k s ↦ ⟨s.1 + π ^ (k + 1) * zFn k s.1 s.2, hzFn k s.1 s.2⟩
-  let f : ℕ → 𝒪[L] := fun k ↦ (stSeq k).1
-  let zSeq : ℕ → 𝒪[L] := fun k ↦ zFn k (stSeq k).1 (stSeq k).2
+    Nat.rec ⟨1, hinit⟩ fun k s ↦ ⟨s.val + π ^ (k + 1) * zFn k s.val s.property,
+        hzFn k s.val s.property⟩
+  let f : ℕ → 𝒪[L] := fun k ↦ (stSeq k).val
+  let zSeq : ℕ → 𝒪[L] := fun k ↦ zFn k (stSeq k).val (stSeq k).property
   have hf_succ (k : ℕ) : f (k + 1) = f k + π ^ (k + 1) * zSeq k := rfl
-  have hf_dvd (k : ℕ) : π ^ (k + 1) ∣ σ₀ (f k) - u' * f k := (stSeq k).2
+  have hf_dvd (k : ℕ) : π ^ (k + 1) ∣ σ₀ (f k) - u' * f k := (stSeq k).property
   have hf_cauchy : AdicCompletion.IsAdicCauchy 𝓂[L] 𝒪[L] f :=
     (AdicCompletion.isAdicCauchy_iff 𝓂[L] 𝒪[L] f).2 fun k ↦ by
       rw [smul_eq_mul, Ideal.mul_top, hπ.smodEq_maximalIdeal_pow_iff_dvd]

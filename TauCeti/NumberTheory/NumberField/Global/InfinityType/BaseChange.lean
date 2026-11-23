@@ -72,14 +72,14 @@ complex place the angular frequency changes sign exactly when the conjugate of `
 rather than `w.embedding`, extends the embedding of the place below. -/
 def baseChange : ContinuousInfinityType K →+ ContinuousInfinityType L where
   toFun t :=
-    { realExponent := fun w ↦ t.realExponent ⟨w.1.comap (algebraMap K L), w.2.comap _⟩
-      realParity := fun w ↦ t.realParity ⟨w.1.comap (algebraMap K L), w.2.comap _⟩
+    { realExponent := fun w ↦ t.realExponent ⟨w.val.comap (algebraMap K L), w.property.comap _⟩
+      realParity := fun w ↦ t.realParity ⟨w.val.comap (algebraMap K L), w.property.comap _⟩
       complexExponent := fun w ↦
-        if h : (w.1.comap (algebraMap K L)).IsReal then 2 * t.realExponent ⟨_, h⟩
+        if h : (w.val.comap (algebraMap K L)).IsReal then 2 * t.realExponent ⟨_, h⟩
         else t.complexExponent ⟨_, not_isReal_iff_isComplex.mp h⟩
       complexAngularFrequency := fun w ↦
-        if h : (w.1.comap (algebraMap K L)).IsReal then 0
-        else if w.1.embedding.comp (algebraMap K L) = (w.1.comap (algebraMap K L)).embedding
+        if h : (w.val.comap (algebraMap K L)).IsReal then 0
+        else if w.val.embedding.comp (algebraMap K L) = (w.val.comap (algebraMap K L)).embedding
           then t.complexAngularFrequency ⟨_, not_isReal_iff_isComplex.mp h⟩
           else -t.complexAngularFrequency ⟨_, not_isReal_iff_isComplex.mp h⟩ }
   map_zero' := by
@@ -98,53 +98,55 @@ below. -/
 @[simp]
 theorem baseChange_realExponent (t : ContinuousInfinityType K)
     (w : {w : InfinitePlace L // w.IsReal}) :
-    (baseChange L t).realExponent w = t.realExponent ⟨w.1.comap (algebraMap K L), w.2.comap _⟩ :=
+    (baseChange L t).realExponent w = t.realExponent ⟨w.val.comap (algebraMap K L),
+        w.property.comap _⟩ :=
   (rfl)
 
 /-- At a real place, the base-changed parity is the parity at the real place below. -/
 @[simp]
 theorem baseChange_realParity (t : ContinuousInfinityType K)
     (w : {w : InfinitePlace L // w.IsReal}) :
-    (baseChange L t).realParity w = t.realParity ⟨w.1.comap (algebraMap K L), w.2.comap _⟩ :=
+    (baseChange L t).realParity w = t.realParity ⟨w.val.comap (algebraMap K L), w.property.comap _⟩
+        :=
   (rfl)
 
 /-- At a complex place over a real place, the base-changed modulus exponent is twice the modulus
 exponent below. -/
 theorem baseChange_complexExponent_of_isReal (t : ContinuousInfinityType K)
-    (w : {w : InfinitePlace L // w.IsComplex}) (h : (w.1.comap (algebraMap K L)).IsReal) :
+    (w : {w : InfinitePlace L // w.IsComplex}) (h : (w.val.comap (algebraMap K L)).IsReal) :
     (baseChange L t).complexExponent w = 2 * t.realExponent ⟨_, h⟩ := by
   simp [baseChange, h]
 
 /-- At a complex place over a complex place, the base-changed modulus exponent is the modulus
 exponent below. -/
 theorem baseChange_complexExponent_of_isComplex (t : ContinuousInfinityType K)
-    (w : {w : InfinitePlace L // w.IsComplex}) (h : (w.1.comap (algebraMap K L)).IsComplex) :
+    (w : {w : InfinitePlace L // w.IsComplex}) (h : (w.val.comap (algebraMap K L)).IsComplex) :
     (baseChange L t).complexExponent w = t.complexExponent ⟨_, h⟩ := by
   simp [baseChange, not_isReal_iff_isComplex.mpr h]
 
 /-- At a complex place over a real place, the base-changed angular frequency is zero. -/
 theorem baseChange_complexAngularFrequency_of_isReal (t : ContinuousInfinityType K)
-    (w : {w : InfinitePlace L // w.IsComplex}) (h : (w.1.comap (algebraMap K L)).IsReal) :
+    (w : {w : InfinitePlace L // w.IsComplex}) (h : (w.val.comap (algebraMap K L)).IsReal) :
     (baseChange L t).complexAngularFrequency w = 0 := by
   simp [baseChange, h]
 
 /-- At a complex place `w` over a complex place whose embedding is extended by `w.embedding`,
 the base-changed angular frequency is the angular frequency below. -/
 theorem baseChange_complexAngularFrequency_of_comp_eq (t : ContinuousInfinityType K)
-    (w : {w : InfinitePlace L // w.IsComplex}) (h : (w.1.comap (algebraMap K L)).IsComplex)
-    (he : w.1.embedding.comp (algebraMap K L) = (w.1.comap (algebraMap K L)).embedding) :
+    (w : {w : InfinitePlace L // w.IsComplex}) (h : (w.val.comap (algebraMap K L)).IsComplex)
+    (he : w.val.embedding.comp (algebraMap K L) = (w.val.comap (algebraMap K L)).embedding) :
     (baseChange L t).complexAngularFrequency w = t.complexAngularFrequency ⟨_, h⟩ := by
   simp [baseChange, not_isReal_iff_isComplex.mpr h, he]
 
 /-- At a complex place `w` over a complex place whose embedding is extended by the conjugate of
 `w.embedding`, the base-changed angular frequency is the negated angular frequency below. -/
 theorem baseChange_complexAngularFrequency_of_conjugate_comp_eq (t : ContinuousInfinityType K)
-    (w : {w : InfinitePlace L // w.IsComplex}) (h : (w.1.comap (algebraMap K L)).IsComplex)
-    (he : (conjugate w.1.embedding).comp (algebraMap K L) =
-      (w.1.comap (algebraMap K L)).embedding) :
+    (w : {w : InfinitePlace L // w.IsComplex}) (h : (w.val.comap (algebraMap K L)).IsComplex)
+    (he : (conjugate w.val.embedding).comp (algebraMap K L) =
+      (w.val.comap (algebraMap K L)).embedding) :
     (baseChange L t).complexAngularFrequency w = -t.complexAngularFrequency ⟨_, h⟩ := by
   -- Both `w.embedding` and its conjugate cannot extend the embedding of a complex place.
-  have hne : w.1.embedding.comp (algebraMap K L) ≠ (w.1.comap (algebraMap K L)).embedding := by
+  have hne : w.val.embedding.comp (algebraMap K L) ≠ (w.val.comap (algebraMap K L)).embedding := by
     intro he'
     refine (isComplex_iff.mp h) (ComplexEmbedding.isReal_iff.mpr ?_)
     rw [← he', ← conjugate_comp, he, he']
@@ -172,11 +174,12 @@ theorem toContinuous_baseChange (n : AlgebraicInfinityType K) :
     toContinuous (baseChange L n) = (toContinuous n).baseChange L := by
   ext w
   · rw [toContinuous_realExponent, ContinuousInfinityType.baseChange_realExponent,
-      toContinuous_realExponent, baseChange_apply, ← comap_embedding_of_isReal _ (w.2.comap _)]
+      toContinuous_realExponent, baseChange_apply, ← comap_embedding_of_isReal _
+          (w.property.comap _)]
   · rw [toContinuous_realParity, ContinuousInfinityType.baseChange_realParity,
-      toContinuous_realParity, baseChange_apply, ← comap_embedding_of_isReal _ (w.2.comap _)]
+      toContinuous_realParity, baseChange_apply, ← comap_embedding_of_isReal _ (w.property.comap _)]
   · rw [toContinuous_complexExponent, baseChange_apply, baseChange_apply]
-    by_cases hv : (w.1.comap (algebraMap K L)).IsReal
+    by_cases hv : (w.val.comap (algebraMap K L)).IsReal
     · have he := comap_embedding_of_isReal (algebraMap K L) hv
       rw [ContinuousInfinityType.baseChange_complexExponent_of_isReal _ _ hv,
         toContinuous_realExponent, conjugate_comp, ← he,
@@ -186,18 +189,18 @@ theorem toContinuous_baseChange (n : AlgebraicInfinityType K) :
     · have hv' := not_isReal_iff_isComplex.mp hv
       rw [ContinuousInfinityType.baseChange_complexExponent_of_isComplex _ _ hv',
         toContinuous_complexExponent]
-      rcases InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or w.1
-        (w.1.comap (algebraMap K L)) with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+      rcases InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or w.val
+        (w.val.comap (algebraMap K L)) with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
       · rw [h₁, h₂]
       · rw [h₁, h₂, add_comm]
   · rw [toContinuous_complexAngularFrequency, baseChange_apply, baseChange_apply]
-    by_cases hv : (w.1.comap (algebraMap K L)).IsReal
+    by_cases hv : (w.val.comap (algebraMap K L)).IsReal
     · have he := comap_embedding_of_isReal (algebraMap K L) hv
       rw [ContinuousInfinityType.baseChange_complexAngularFrequency_of_isReal _ _ hv,
         conjugate_comp, ← he, ComplexEmbedding.isReal_iff.mp (isReal_iff.mp hv), sub_self]
     · have hv' := not_isReal_iff_isComplex.mp hv
-      rcases InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or w.1
-        (w.1.comap (algebraMap K L)) with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+      rcases InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or w.val
+        (w.val.comap (algebraMap K L)) with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
       · rw [ContinuousInfinityType.baseChange_complexAngularFrequency_of_comp_eq _ _ hv' h₁,
           toContinuous_complexAngularFrequency, h₁, h₂]
       · rw [ContinuousInfinityType.baseChange_complexAngularFrequency_of_conjugate_comp_eq _ _ hv'
@@ -212,12 +215,13 @@ variable (L) in
 `L` is the sign at the real place below it. -/
 def baseChange : FiniteOrderInfinityType K →+ FiniteOrderInfinityType L :=
   (LinearMap.funLeft (ZMod 2) (ZMod 2) fun w : {w : InfinitePlace L // w.IsReal} ↦
-    (⟨w.1.comap (algebraMap K L), w.2.comap _⟩ : {v : InfinitePlace K // v.IsReal})).toAddMonoidHom
+    (⟨w.val.comap (algebraMap K L), w.property.comap _⟩ :
+        {v : InfinitePlace K // v.IsReal})).toAddMonoidHom
 
 /-- The base-changed sign at a real place is the sign at the real place below. -/
 @[simp]
 theorem baseChange_apply (ε : FiniteOrderInfinityType K) (w : {w : InfinitePlace L // w.IsReal}) :
-    baseChange L ε w = ε ⟨w.1.comap (algebraMap K L), w.2.comap _⟩ :=
+    baseChange L ε w = ε ⟨w.val.comap (algebraMap K L), w.property.comap _⟩ :=
   (rfl)
 
 /-- **Base change commutes with the passage to continuous parameters** for finite-order infinity
@@ -227,15 +231,15 @@ theorem toContinuous_baseChange (ε : FiniteOrderInfinityType K) :
   ext w
   · simp
   · simp
-  · by_cases hv : (w.1.comap (algebraMap K L)).IsReal
+  · by_cases hv : (w.val.comap (algebraMap K L)).IsReal
     · simp [ContinuousInfinityType.baseChange_complexExponent_of_isReal _ _ hv]
     · simp [ContinuousInfinityType.baseChange_complexExponent_of_isComplex _ _
         (not_isReal_iff_isComplex.mp hv)]
-  · by_cases hv : (w.1.comap (algebraMap K L)).IsReal
+  · by_cases hv : (w.val.comap (algebraMap K L)).IsReal
     · simp [ContinuousInfinityType.baseChange_complexAngularFrequency_of_isReal _ _ hv]
     · have hv' := not_isReal_iff_isComplex.mp hv
-      rcases LiesOver.embedding_comp_eq_or_conjugate_embedding_comp_eq w.1
-        (w.1.comap (algebraMap K L)) with h | h
+      rcases LiesOver.embedding_comp_eq_or_conjugate_embedding_comp_eq w.val
+        (w.val.comap (algebraMap K L)) with h | h
       · simp [ContinuousInfinityType.baseChange_complexAngularFrequency_of_comp_eq _ _ hv' h]
       · simp [ContinuousInfinityType.baseChange_complexAngularFrequency_of_conjugate_comp_eq _ _
           hv' h]

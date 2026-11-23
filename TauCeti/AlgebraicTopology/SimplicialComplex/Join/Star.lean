@@ -57,7 +57,7 @@ theorem map_closedStar_eq_join (hσ : σ ∈ K) :
       · exact Or.inr ⟨x, mem_sdiff.mpr ⟨hx, hxs⟩⟩
     · by_cases h : ρ ∩ σ = ∅
       · exact Or.inl h
-      · exact Or.inr (mem_simplex.mpr ⟨nonempty_iff_ne_empty.mpr h, inter_subset_right⟩)
+      · exact Or.inr (mem_simplex.mpr ⟨ne_empty_iff_nonempty.mp h, inter_subset_right⟩)
   · intro hτ
     obtain ⟨hne, hs, ht⟩ := mem_join_iff.mp hτ
     have hsσ : τ.toLeft ⊆ σ := by

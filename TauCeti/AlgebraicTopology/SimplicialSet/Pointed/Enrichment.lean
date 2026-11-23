@@ -41,10 +41,10 @@ instance enrichedCategory : EnrichedCategory SSet.{u} PointedSSet.{u} where
     { app n := ↾fun _ ↦ ⟨Functor.HomObj.ofNatTrans (𝟙 X.right),
         (mem_basedMaps_iff _).2 (by intros; rfl)⟩ }
   comp X Y Z :=
-    { app n := ↾fun φ ↦ ⟨φ.1.1.comp φ.2.1, (mem_basedMaps_iff _).2 (by
+    { app n := ↾fun φ ↦ ⟨φ.1.val.comp φ.2.val, (mem_basedMaps_iff _).2 (by
         intro m f
         -- The internal-hom wrapper hides concrete composition from rewriting.
-        change φ.2.1.app m f (φ.1.1.app m f (X.point m)) = Z.point m
+        change φ.2.val.app m f (φ.1.val.app m f (X.point m)) = Z.point m
         rw [basedMaps_app_point, basedMaps_app_point])⟩
       naturality n m f := by
         ext φ
@@ -124,8 +124,8 @@ lemma eHomWhiskerLeft_eq (X : PointedSSet.{u}) (g : Y ⟶ Z) :
 lemma eHomWhiskerRight_app_coe_app_apply (f : X ⟶ Y) (Z : PointedSSet.{u})
     {n m : SimplexCategoryᵒᵖ} (φ : (Y ⟶[SSet] Z).obj n) (g : n ⟶ m)
     (x : X.right.obj m) :
-    dsimp% ((eHomWhiskerRight SSet f Z).app n φ : (basedMaps X Z).obj n).1.app m g x =
-      (φ : (basedMaps Y Z).obj n).1.app m g (f.right.app m x) := (rfl)
+    dsimp% ((eHomWhiskerRight SSet f Z).app n φ : (basedMaps X Z).obj n).val.app m g x =
+      (φ : (basedMaps Y Z).obj n).val.app m g (f.right.app m x) := (rfl)
 
 /-- Enriched precomposition agrees with precomposition in the pointed internal hom. -/
 @[simp]

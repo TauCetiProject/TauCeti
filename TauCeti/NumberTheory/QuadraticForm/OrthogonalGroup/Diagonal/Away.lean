@@ -50,7 +50,8 @@ def awayAdelicOrthogonalDiagonal :
 @[simp]
 theorem awayAdelicOrthogonalDiagonal_apply (g : orthogonalGroup Q)
     (p : {p : Nat.Primes // p ∉ S}) :
-    U.awayAdelicOrthogonalDiagonal S g p = orthogonalGroupBaseChange (A := ℚ_[(p.1 : ℕ)]) Q g := by
+    U.awayAdelicOrthogonalDiagonal S g p = orthogonalGroupBaseChange (A := ℚ_[(p.val : ℕ)]) Q g
+        := by
   simp [awayAdelicOrthogonalDiagonal]
 
 /-- Restricting the finite orthogonal diagonal gives the diagonal away from `S`. -/
@@ -78,7 +79,7 @@ def awayAdelicSpinDiagonal :
 @[simp]
 theorem awayAdelicSpinDiagonal_apply (x : spinGroup Q) (p : {p : Nat.Primes // p ∉ S}) :
     U.awayAdelicSpinDiagonal S x p =
-      CliffordAlgebra.spinGroupBaseChange (A := ℚ_[(p.1 : ℕ)]) Q x := by
+      CliffordAlgebra.spinGroupBaseChange (A := ℚ_[(p.val : ℕ)]) Q x := by
   simp [awayAdelicSpinDiagonal]
 
 /-- Restricting the finite Spin diagonal gives the diagonal away from `S`. -/
@@ -107,7 +108,7 @@ def awayAdelicSpecialOrthogonalDiagonal :
 theorem awayAdelicSpecialOrthogonalDiagonal_apply (g : specialOrthogonalGroup Q)
     (p : {p : Nat.Primes // p ∉ S}) :
     U.awayAdelicSpecialOrthogonalDiagonal S g p =
-      specialOrthogonalGroupBaseChange (A := ℚ_[(p.1 : ℕ)]) Q g := by
+      specialOrthogonalGroupBaseChange (A := ℚ_[(p.val : ℕ)]) Q g := by
   simp [awayAdelicSpecialOrthogonalDiagonal]
 
 /-- Restricting the finite special orthogonal diagonal gives the diagonal away from `S`. -/
@@ -159,14 +160,14 @@ theorem awayAdelicSpinEmptyEquiv_diagonal (x : spinGroup Q) :
 /-- The componentwise Spin projection away from `S` commutes with the rational diagonals. -/
 theorem restrictedProductMapOfForall_comp_awayAdelicSpinDiagonal :
     (restrictedProductMapOfForall
-      (fun p : {p : Nat.Primes // p ∉ S} => U.spin p.1)
-      (fun p => U.specialOrthogonal p.1)
-      (fun p => CliffordAlgebra.spinToSpecialOrthogonal (Q.baseChange ℚ_[(p.1 : ℕ)]))
-      (fun p => U.mapsTo_specialOrthogonal p.1)).comp (U.awayAdelicSpinDiagonal S) =
+      (fun p : {p : Nat.Primes // p ∉ S} => U.spin p.val)
+      (fun p => U.specialOrthogonal p.val)
+      (fun p => CliffordAlgebra.spinToSpecialOrthogonal (Q.baseChange ℚ_[(p.val : ℕ)]))
+      (fun p => U.mapsTo_specialOrthogonal p.val)).comp (U.awayAdelicSpinDiagonal S) =
         (U.awayAdelicSpecialOrthogonalDiagonal S).comp
           (CliffordAlgebra.spinToSpecialOrthogonal Q) := by
   ext x p : 2
-  have h := congrArg (fun f => f x p.1)
+  have h := congrArg (fun f => f x p.val)
     U.finiteAdelicSpinToSpecialOrthogonal_comp_finiteAdelicSpinDiagonal
   simpa only [MonoidHom.comp_apply, restrictedProductMapOfForall_apply,
     awayAdelicSpinDiagonal_apply, awayAdelicSpecialOrthogonalDiagonal_apply,
@@ -177,17 +178,17 @@ theorem restrictedProductMapOfForall_comp_awayAdelicSpinDiagonal :
 diagonals. -/
 theorem restrictedProductMapOfForall_comp_awayAdelicSpecialOrthogonalDiagonal :
     (restrictedProductMapOfForall
-      (fun p : {p : Nat.Primes // p ∉ S} => U.specialOrthogonal p.1)
-      (fun p => U.orthogonal p.1)
-      (fun p => specialOrthogonalToOrthogonal (Q.baseChange ℚ_[(p.1 : ℕ)]))
-      (fun p _ hg => (U.mem_specialOrthogonal_iff p.1 _).mp hg)).comp
+      (fun p : {p : Nat.Primes // p ∉ S} => U.specialOrthogonal p.val)
+      (fun p => U.orthogonal p.val)
+      (fun p => specialOrthogonalToOrthogonal (Q.baseChange ℚ_[(p.val : ℕ)]))
+      (fun p _ hg => (U.mem_specialOrthogonal_iff p.val _).mp hg)).comp
         (U.awayAdelicSpecialOrthogonalDiagonal S) =
           (U.awayAdelicOrthogonalDiagonal S).comp (specialOrthogonalToOrthogonal Q) := by
   ext g p : 2
-  have h := congrArg (fun f => f g p.1)
+  have h := congrArg (fun f => f g p.val)
     U.finiteAdelicSpecialOrthogonalToOrthogonal_comp_finiteAdelicSpecialOrthogonalDiagonal
   calc
-    _ = specialOrthogonalToOrthogonal (Q.baseChange ℚ_[(p.1 : ℕ)])
+    _ = specialOrthogonalToOrthogonal (Q.baseChange ℚ_[(p.val : ℕ)])
         (U.awayAdelicSpecialOrthogonalDiagonal S g p) :=
       restrictedProductMapOfForall_apply _ _ _ _ _ p
     _ = _ := by
