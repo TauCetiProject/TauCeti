@@ -37,6 +37,8 @@ congruence.
 * `Matrix.map_ofReal_mulVec_of_rotation`: for a real rotation pair `(e₁, e₂)`,
   `(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (an `exp (α I)`-eigenvector when
   `(e₁, e₂) ≠ 0`).
+* `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_one`, `Matrix.trace_map_ofReal`: the entrywise
+  coercion is multiplicative, preserves the identity and commutes with the trace.
 * `Matrix.isUnit_map_ofReal_iff`: a real matrix is invertible exactly when it is invertible as a
   complex matrix.
 * `Matrix.det_map_ofReal`: the determinant of a real matrix is unchanged as a complex matrix.
@@ -102,6 +104,22 @@ theorem map_ofReal_mulVec_of_rotation [Fintype n] {A : Matrix n n ℝ} {e₁ e�
   ext i; simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul, Complex.ofReal_sub,
     Complex.ofReal_add, Complex.ofReal_mul, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
   linear_combination -↑(Real.sin α) * (e₂ i : ℂ) * Complex.I_sq
+
+/-- The entrywise coercion of real matrices to complex matrices is multiplicative. -/
+@[simp]
+theorem map_ofReal_mul [Fintype m] (X : Matrix l m ℝ) (Y : Matrix m n ℝ) :
+    (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
+  Matrix.map_mul (f := Complex.ofRealHom)
+
+/-- The entrywise coercion of the real identity matrix is the complex identity matrix. -/
+theorem map_ofReal_one [DecidableEq n] : (1 : Matrix n n ℝ).map ((↑) : ℝ → ℂ) = 1 :=
+  Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one
+
+/-- The trace of a real matrix, viewed as a complex matrix, is the coercion of its trace. -/
+@[simp]
+theorem trace_map_ofReal [Fintype n] (X : Matrix n n ℝ) :
+    trace (X.map ((↑) : ℝ → ℂ)) = ((trace X : ℝ) : ℂ) :=
+  (AddMonoidHom.map_trace Complex.ofRealHom X).symm
 
 /-- A real square matrix is invertible exactly when it is invertible as a complex matrix: the
 case `ℝ → ℂ` of `Matrix.isUnit_map_iff`. -/
