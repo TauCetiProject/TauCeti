@@ -39,9 +39,7 @@ theorem riesz_lemma_of_norm_lt_of_lt {𝕜 E : Type*} [NormedField 𝕜] [Semino
   -- The quotient map `mk` preserves norms and is closed.
   let F' := (F.comap G.subtype).map (mkCLM 𝕜 G).toLinearMap
   have hF' : (F' : Set (SeparationQuotient G)) = mk '' (((↑) : G → E) ⁻¹' F) := by
-    have hmk : ⇑(mkCLM 𝕜 G).toLinearMap = mk :=
-      funext fun a => by rw [ContinuousLinearMap.coe_coe, mkCLM_apply]
-    rw [Submodule.map_coe, Submodule.comap_coe, Submodule.coe_subtype, hmk]
+    simp [F']
   -- As `F` is closed in `G`, it is saturated for inseparability, so `mk a ∈ F'` iff `a ∈ F`
   -- (membership in a preimage is membership of the image point, by `Set.mem_preimage`).
   have hmem (a : G) : mk a ∈ F' ↔ (a : E) ∈ F := by

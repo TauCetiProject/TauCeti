@@ -9,17 +9,19 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Data.Set.Countable
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Analysis.Normed.Module.RieszLemma
+import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
 
 /-!
 # Eigenvalue thresholds for compact operators
 
 A compact operator has only finitely many eigenvalues outside any ball of positive radius
-about zero. The scalar field is complete, but the ambient normed space need not be complete.
-The proof uses the linear independence of eigenvectors for distinct eigenvalues and Riesz's
-lemma on their finite-dimensional spans. On a complete ambient space, the Fredholm
-alternative then shows that the spectrum is countable and can accumulate only at zero.
+about zero. Neither the scalar field nor the ambient normed space need be complete. For
+eigenvectors `v n` with distinct eigenvalues `μ n`, the kernels of the operators
+`∏ i < n, (K - μ i • 1)` form a strictly increasing chain of closed subspaces that
+`K - μ n • 1` steps down, which the ascending-chain criterion
+`IsCompactOperator.exists_succ_eq_of_ascending_chain` rules out when the `μ n` are bounded away
+from zero. On a complete ambient space, the Fredholm alternative then shows that the spectrum is
+countable and can accumulate only at zero.
 
 ## References
 
@@ -32,76 +34,64 @@ open Module Submodule
 
 namespace IsCompactOperator
 
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] {K : E →L[𝕜] E}
 
-/-- The successive finite eigenvector spans form a strictly increasing closed flag;
-subtracting the next eigenvalue lowers the flag by one step. -/
-private theorem exists_eigenvector_span_chain (μ : ℕ → 𝕜) (hinj : Function.Injective μ)
+open Polynomial in
+/-- For eigenvectors `v n` with distinct eigenvalues `μ n`, the kernels of the operators
+`∏ i < n, (K - μ i • 1)` form a strictly increasing chain of closed subspaces, and
+`K - μ n • 1` carries the `(n + 1)`-st one into the `n`-th. -/
+private theorem exists_eigenvector_ker_chain (μ : ℕ → 𝕜) (hinj : Function.Injective μ)
     (v : ℕ → E) (hv : ∀ n, Module.End.HasEigenvector (K : Module.End 𝕜 E) (μ n) (v n)) :
-    ∃ V : ℕ → Submodule 𝕜 E, Monotone V ∧ (∀ n, IsClosed (V n : Set E)) ∧
-      (∀ n, V n < V (n + 1)) ∧ (∀ n x, x ∈ V (n + 1) → K x - μ n • x ∈ V n) := by
-  classical
+    ∃ V : ℕ → Submodule 𝕜 E, (∀ n, IsClosed (V n : Set E)) ∧ (∀ n, V n < V (n + 1)) ∧
+      (∀ n x, x ∈ V (n + 1) → K x - μ n • x ∈ V n) := by
   have hvapply (n : ℕ) : K (v n) = μ n • v n := (hv n).apply_eq_smul
-  have hli := Module.End.eigenvectors_linearIndependent' (K : Module.End 𝕜 E) μ hinj v hv
-  let V (n : ℕ) := span 𝕜 (v '' Set.Iio n)
-  have hmono : Monotone V := fun _ _ h ↦ span_mono (Set.image_mono (Set.Iio_subset_Iio h))
-  have hclosed (n : ℕ) : IsClosed (V n : Set E) := by
-    have := FiniteDimensional.span_of_finite 𝕜 ((Set.finite_Iio n).image v)
-    exact (V n).isClosed_of_finiteDimensional
-  have hstrict (n : ℕ) : V n < V (n + 1) := by
-    refine (hmono (Nat.le_succ n)).lt_of_ne ?_
-    intro heq
-    have hn : v n ∈ V n := heq ▸ subset_span ⟨n, Nat.lt_succ_self n, rfl⟩
-    exact hli.notMem_span_image (by simp) hn
-  have hstep (n : ℕ) : ∀ x ∈ V (n + 1), K x - μ n • x ∈ V n := by
-    intro x hx
-    induction hx using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨i, hi, rfl⟩ := hx
-      rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | hi
-      · rw [hvapply, ← sub_smul]
-        exact (V n).smul_mem _ (subset_span ⟨i, hi, rfl⟩)
-      · simp [hi, hvapply]
-    | zero => simp
-    | add x y _ _ hx hy => simpa [map_add, smul_add, add_sub_add_comm] using (V n).add_mem hx hy
-    | smul a x _ hx =>
-      simpa only [map_smul, smul_sub, smul_comm a (μ n)] using (V n).smul_mem a hx
-  exact ⟨V, hmono, hclosed, hstrict, hstep⟩
+  let P (n : ℕ) : E →L[𝕜] E := aeval K (∏ i ∈ Finset.range n, (X - C (μ i)))
+  -- The factors of `P (n + 1)` commute, so `K - μ n • 1` can be split off on either side.
+  have hP (n : ℕ) : P (n + 1) = P n * (K - μ n • 1) := by
+    simp only [P, Finset.prod_range_succ, map_mul, map_sub, aeval_X, aeval_C,
+      Algebra.algebraMap_eq_smul_one]
+  have hP' (n : ℕ) : P (n + 1) = (K - μ n • 1) * P n := by
+    simp only [P, Finset.prod_range_succ, mul_comm _ (X - C (μ n)), map_mul, map_sub, aeval_X,
+      aeval_C, Algebra.algebraMap_eq_smul_one]
+  have hPv (n m : ℕ) : P n (v m) = (∏ i ∈ Finset.range n, (μ m - μ i)) • v m := by
+    induction n with
+    | zero => simp [P]
+    | succ n ih =>
+      rw [hP', _root_.mul_apply_eq_comp, ih, map_smul, _root_.sub_apply, _root_.smul_apply,
+        one_apply_eq_self, hvapply, ← sub_smul, smul_smul, Finset.prod_range_succ, mul_comm]
+  let V (n : ℕ) : Submodule 𝕜 E := LinearMap.ker (P n : E →ₗ[𝕜] E)
+  have hmem (n : ℕ) (x : E) : x ∈ V n ↔ P n x = 0 := by
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
+  refine ⟨V, fun n ↦ (P n).isClosed_ker,
+    fun n ↦ IsConcreteLE.lt_iff_le_and_exists.2 ⟨?_, v n, ?_, ?_⟩, fun n x hx ↦ ?_⟩
+  · intro x hx
+    rw [hmem] at hx ⊢
+    rw [hP', _root_.mul_apply_eq_comp, hx, map_zero]
+  · rw [hmem, hPv, Finset.prod_eq_zero (Finset.self_mem_range_succ n) (sub_self _), zero_smul]
+  · rw [hmem, hPv]
+    refine smul_ne_zero (Finset.prod_ne_zero_iff.2 fun i hi ↦ sub_ne_zero.2 ?_)
+      (Module.End.hasEigenvector_iff.1 (hv n)).2
+    exact hinj.ne (Finset.mem_range.1 hi).ne'
+  · rw [hmem] at hx ⊢
+    rwa [hP, _root_.mul_apply_eq_comp, _root_.sub_apply, _root_.smul_apply,
+      one_apply_eq_self] at hx
 
-/-- An injective sequence of eigenvalues bounded away from zero would yield a bounded
-sequence whose compact-operator images remain separated. -/
+/-- An injective sequence of eigenvalues bounded away from zero would yield a strictly
+increasing chain of closed subspaces that the compact operator steps down. -/
 private theorem not_injective_eigenvalues_of_norm_ge (hK : IsCompactOperator K)
     {ε : ℝ} (hε : 0 < ε) (μ : ℕ → 𝕜)
     (hμ : ∀ n, Module.End.HasEigenvalue (K : Module.End 𝕜 E) (μ n)) (hnorm : ∀ n, ε ≤ ‖μ n‖) :
     ¬ Function.Injective μ := by
-  classical
   intro hinj
   choose v hv using fun n ↦ (hμ n).exists_hasEigenvector
-  obtain ⟨V, hmono, hclosed, hstrict, hstep⟩ := exists_eigenvector_span_chain μ hinj v hv
-  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
-  choose f hfmem hfnorm hfsep using fun n ↦
-    TauCeti.riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖)
-      ((hclosed n).preimage continuous_subtypeVal) (hstrict n)
-  have hsep (m n : ℕ) (hmn : m < n) : ε ≤ ‖K (f n) - K (f m)‖ := by
-    have hne : μ n ≠ 0 := norm_pos_iff.mp (hε.trans_le (hnorm n))
-    let y := (μ n)⁻¹ • (K (f m) - (K (f n) - μ n • f n))
-    have hKm : K (f m) ∈ V n := by
-      have h := (V n).add_mem (hmono hmn.le (hstep m _ (hfmem m)))
-        ((V n).smul_mem (μ m) (hmono hmn (hfmem m)))
-      simpa only [sub_add_cancel] using h
-    have hy : y ∈ V n := (V n).smul_mem _ ((V n).sub_mem hKm (hstep n _ (hfmem n)))
-    have heq : K (f n) - K (f m) = μ n • (f n - y) := by
-      simp only [y, smul_sub, smul_smul, mul_inv_cancel₀ hne, inv_mul_cancel₀ hne, one_smul]
-      abel
-    rw [heq, norm_smul]
-    exact (hnorm n).trans (le_mul_of_one_le_right (norm_nonneg _) (hfsep n y hy))
-  obtain ⟨m, n, hmn, hlt⟩ := hK.exists_dist_lt_of_norm_le hfnorm hε
-  rw [dist_eq_norm'] at hlt
-  exact (hsep m n hmn).not_gt hlt
+  obtain ⟨V, hclosed, hstrict, hstep⟩ := exists_eigenvector_ker_chain μ hinj v hv
+  obtain ⟨p, hp⟩ := hK.exists_succ_eq_of_ascending_chain hε hnorm (fun n ↦ (hstrict n).le)
+    (fun n ↦ (hclosed n).preimage continuous_subtypeVal) hstep
+  exact (hstrict p).ne' hp
 
 /-- A compact operator has only finitely many eigenvalues whose norm is at least a fixed
-positive number. The ambient normed space need not be complete. -/
+positive number. Neither the scalar field nor the ambient normed space need be complete. -/
 theorem finite_eigenvalues_norm_ge (hK : IsCompactOperator K) {ε : ℝ} (hε : 0 < ε) :
     {μ : 𝕜 | Module.End.HasEigenvalue (K : Module.End 𝕜 E) μ ∧ ε ≤ ‖μ‖}.Finite := by
   classical

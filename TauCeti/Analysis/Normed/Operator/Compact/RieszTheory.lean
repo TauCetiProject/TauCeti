@@ -56,9 +56,13 @@ consequence `IsCompactOperator.exists_dist_lt_of_norm_le`.
 * `IsCompactOperator.isClosed_range_one_sub`: `range (1 - K)` is closed; neither `X` nor `𝕜` need
   be complete.
 * `IsCompactOperator.isClosed_range_pow_one_sub`: `range ((1 - K) ^ n)` is closed.
-* `IsCompactOperator.exists_succ_eq_of_chain`: a decreasing chain of subspaces of a seminormed
-  space, each closed in the previous one, on which `1 - K` steps down the chain, cannot be strictly
-  decreasing: `V (p + 1) = V p` for some `p`.
+* `IsCompactOperator.exists_succ_eq_of_descending_chain`: for compact `K`, a decreasing chain of
+  subspaces of a seminormed space, each closed in the previous one, on which `1 - K` steps down
+  the chain, cannot be strictly decreasing: `V (p + 1) = V p` for some `p`.
+* `IsCompactOperator.exists_succ_eq_of_ascending_chain`: for compact `K`, an increasing chain of
+  subspaces of a seminormed space, each closed in the next one, on which `K - μ n • 1` steps down
+  the chain for scalars `μ n` bounded away from zero, cannot be strictly increasing:
+  `V (p + 1) = V p` for some `p`.
 * `IsCompactOperator.finiteDimensional_quotient_range_one_sub`: `X ⧸ range (1 - K)` is
   finite dimensional.
 
@@ -116,12 +120,12 @@ variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜]
 variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
 variable {K : X →L[𝕜] X}
 
-/-- A decreasing chain of subspaces of a seminormed space, each closed in the previous one and
-stable under `1 - K` in the sense that `1 - K` carries the `n`-th one into the `(n + 1)`-st, cannot
-be strictly decreasing: `V (p + 1) = V p` for some `p`. For a chain of closed subspaces
-`hV : ∀ n, IsClosed (V n : Set X)`, the closedness hypothesis is
+/-- Let `K` be compact. A decreasing chain of subspaces of a seminormed space, each closed in the
+previous one and stable under `1 - K` in the sense that `1 - K` carries the `n`-th one into the
+`(n + 1)`-st, cannot be strictly decreasing: `V (p + 1) = V p` for some `p`. For a chain of closed
+subspaces `hV : ∀ n, IsClosed (V n : Set X)`, the closedness hypothesis is
 `fun n ↦ (hV (n + 1)).preimage continuous_subtypeVal`. -/
-theorem _root_.IsCompactOperator.exists_succ_eq_of_chain (hK : IsCompactOperator K)
+theorem _root_.IsCompactOperator.exists_succ_eq_of_descending_chain (hK : IsCompactOperator K)
     {V : ℕ → Submodule 𝕜 X} (hmono : ∀ n, V (n + 1) ≤ V n)
     (hclosed : ∀ n, IsClosed (((↑) : V n → X) ⁻¹' V (n + 1)))
     (hstep : ∀ n, ∀ x ∈ V n, x - K x ∈ V (n + 1)) :
@@ -142,6 +146,40 @@ theorem _root_.IsCompactOperator.exists_succ_eq_of_chain (hK : IsCompactOperator
     exact hfsep m _ hy
   obtain ⟨m, n, hmn, hlt⟩ := hK.exists_dist_lt_of_norm_le hfnorm one_pos
   rw [dist_eq_norm] at hlt
+  exact (key m n hmn).not_gt hlt
+
+/-- Let `K` be compact, and let `μ n` be scalars with `ε ≤ ‖μ n‖` for a fixed `ε > 0`. An
+increasing chain of subspaces of a seminormed space, each closed in the next one, such that
+`K - μ n • 1` carries the `(n + 1)`-st one into the `n`-th, cannot be strictly increasing:
+`V (p + 1) = V p` for some `p`. For a chain of closed subspaces
+`hV : ∀ n, IsClosed (V n : Set X)`, the closedness hypothesis is
+`fun n ↦ (hV n).preimage continuous_subtypeVal`. -/
+theorem _root_.IsCompactOperator.exists_succ_eq_of_ascending_chain (hK : IsCompactOperator K)
+    {V : ℕ → Submodule 𝕜 X} {μ : ℕ → 𝕜} {ε : ℝ} (hε : 0 < ε) (hμ : ∀ n, ε ≤ ‖μ n‖)
+    (hmono : ∀ n, V n ≤ V (n + 1)) (hclosed : ∀ n, IsClosed (((↑) : V (n + 1) → X) ⁻¹' V n))
+    (hstep : ∀ n, ∀ x ∈ V (n + 1), K x - μ n • x ∈ V n) :
+    ∃ p, V (p + 1) = V p := by
+  by_contra! hcon
+  have hmono' : Monotone V := monotone_nat_of_le_succ hmono
+  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
+  -- Riesz's lemma gives a bounded sequence whose images under `K` stay `ε` apart.
+  choose f hfmem hfnorm hfsep using fun n =>
+    riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖) (hclosed n) ((hmono n).lt_of_ne (hcon n).symm)
+  have key (m n : ℕ) (hmn : m < n) : ε ≤ ‖K (f n) - K (f m)‖ := by
+    have hne : μ n ≠ 0 := norm_pos_iff.mp (hε.trans_le (hμ n))
+    have hKm : K (f m) ∈ V n := by
+      have h := (V n).add_mem (hmono' hmn.le (hstep m _ (hfmem m)))
+        ((V n).smul_mem (μ m) (hmono' hmn (hfmem m)))
+      rwa [sub_add_cancel] at h
+    let y := (μ n)⁻¹ • (K (f m) - (K (f n) - μ n • f n))
+    have hy : y ∈ V n := (V n).smul_mem _ ((V n).sub_mem hKm (hstep n _ (hfmem n)))
+    have hrw : K (f n) - K (f m) = μ n • (f n - y) := by
+      simp only [y, smul_sub, smul_smul, mul_inv_cancel₀ hne, inv_mul_cancel₀ hne, one_smul]
+      abel
+    rw [hrw, norm_smul]
+    exact (hμ n).trans (le_mul_of_one_le_right (norm_nonneg _) (hfsep n y hy))
+  obtain ⟨m, n, hmn, hlt⟩ := hK.exists_dist_lt_of_norm_le hfnorm hε
+  rw [dist_eq_norm'] at hlt
   exact (key m n hmn).not_gt hlt
 
 end Chain
@@ -227,9 +265,11 @@ theorem _root_.IsCompactOperator.exists_range_pow_succ_eq_one_sub
     have hV : V (n + 1) = (V n).map A := LinearMap.iterateRange_succ
     have hAx : A x ∈ V (n + 1) := hV ▸ Submodule.mem_map_of_mem hx
     simpa only [A, ContinuousLinearMap.coe_coe, sub_apply, one_apply_eq_self] using hAx
-  obtain ⟨p, hp⟩ := hK.exists_succ_eq_of_chain (V := V)
+  have hclosed (n : ℕ) : IsClosed (V n : Set X) := by
+    simpa only [V, A, LinearMap.iterateRange_coe] using hK.isClosed_range_pow_one_sub n
+  obtain ⟨p, hp⟩ := hK.exists_succ_eq_of_descending_chain (V := V)
     (fun n ↦ A.iterateRange.monotone (Nat.le_succ n))
-    (fun n ↦ (hK.isClosed_range_pow_one_sub (n + 1)).preimage continuous_subtypeVal) hstep
+    (fun n ↦ (hclosed (n + 1)).preimage continuous_subtypeVal) hstep
   exact ⟨p, by simpa only [V, A, LinearMap.iterateRange_coe] using hp⟩
 
 /-- The cokernel of a compact perturbation of the identity is finite dimensional. -/

@@ -30,14 +30,13 @@ namespace TauCeti
 /-- **Riesz's lemma**, translated form: for a closed additive submonoid `F` of a seminormed group
 (for instance a closed submodule, via `Submodule.toAddSubmonoid`), a vector `x` and `r < 1`, some
 `y ∈ F` satisfies `r * ‖x - y‖ ≤ ‖x - y - z‖` for every `z ∈ F`, so `x - y` is almost as far from
-`F` as its norm. For `x ∈ F` one may take `y = x`.
-
-The proof adapts the proof of Mathlib's `riesz_lemma`, which takes `x - y` for a `y ∈ F` with
-`r * dist x y < Metric.infDist x F`, from a closed subspace of a normed space to the prescribed
-vector `x` and a closed additive submonoid of a seminormed group. -/
+`F` as its norm. For `x ∈ F` one may take `y = x`. -/
 theorem riesz_lemma_translate {E : Type*} [SeminormedAddCommGroup E] {F : AddSubmonoid E}
     (hFc : IsClosed (F : Set E)) (x : E) {r : ℝ} (hr : r < 1) :
     ∃ y ∈ F, ∀ z ∈ F, r * ‖x - y‖ ≤ ‖x - y - z‖ := by
+  -- This adapts the proof of Mathlib's `riesz_lemma`, which takes `x - y` for a `y ∈ F` with
+  -- `r * dist x y < Metric.infDist x F`, from a closed subspace of a normed space to the
+  -- prescribed vector `x` and a closed additive submonoid of a seminormed group.
   by_cases hx : x ∈ F
   · exact ⟨x, hx, fun z _ ↦ by simp⟩
   have hd : 0 < Metric.infDist x F := (hFc.notMem_iff_infDist_pos ⟨0, F.zero_mem⟩).1 hx

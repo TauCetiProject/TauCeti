@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
-import TauCeti.Analysis.Normed.Module.RieszLemma
 import TauCeti.LinearAlgebra.End.RangePow
 
 /-!
@@ -20,9 +19,9 @@ underlying the nilpotent and invertible parts of Riesz--Schauder theory; in part
 `Submodule.projectionL` and `Submodule.prodEquivOfIsTopCompl` supply bounded coordinate
 projections and a bounded direct-sum equivalence without choosing an arbitrary complement.
 
-The ascending-kernel argument uses Riesz's lemma: a strictly increasing chain would
-produce a bounded sequence whose images under `K` stay separated. The corresponding
-closed-range and descending-chain results come from `Compact.RieszTheory`.
+The ascending kernel chain stabilises by the ascending-chain criterion
+`IsCompactOperator.exists_succ_eq_of_ascending_chain`, and the descending range chain by
+`IsCompactOperator.exists_range_pow_succ_eq_one_sub`; both come from `Compact.RieszTheory`.
 
 ## References
 
@@ -45,29 +44,17 @@ theorem exists_ker_pow_succ_eq_one_sub (hK : IsCompactOperator K) :
       LinearMap.ker (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ p) := by
   let A : X →L[𝕜] X := 1 - K
   let V (n : ℕ) := LinearMap.ker ((A : X →ₗ[𝕜] X) ^ n)
-  have hmono : Monotone V := (A : X →ₗ[𝕜] X).iterateKer.monotone
   have hclosed (n : ℕ) : IsClosed (V n : Set X) := by
     simpa only [ContinuousLinearMap.toLinearMap_pow] using (A ^ n).isClosed_ker
-  have hstep (n : ℕ) (x : X) (hx : x ∈ V (n + 1)) : A x ∈ V n := by
-    simpa only [V, LinearMap.mem_ker, pow_succ, _root_.mul_apply_eq_comp,
-      ContinuousLinearMap.coe_coe] using hx
-  by_contra! hcon
-  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
-  choose f hfmem hfnorm hfsep using fun n ↦
-    TauCeti.riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖)
-      ((hclosed n).preimage continuous_subtypeVal) ((hmono (Nat.le_succ n)).lt_of_ne (hcon n).symm)
-  have hsep (m n : ℕ) (hmn : m < n) : 1 ≤ ‖K (f n) - K (f m)‖ := by
-    have hy : A (f n) + f m - A (f m) ∈ V n :=
-      (V n).sub_mem ((V n).add_mem (hstep n _ (hfmem n))
-        (hmono hmn (hfmem m))) (hmono hmn.le (hstep m _ (hfmem m)))
-    have heq : K (f n) - K (f m) = f n - (A (f n) + f m - A (f m)) := by
-      simp only [A, _root_.sub_apply, one_apply_eq_self]
-      abel
-    rw [heq]
-    exact hfsep n _ hy
-  obtain ⟨m, n, hmn, hlt⟩ := hK.exists_dist_lt_of_norm_le hfnorm one_pos
-  rw [dist_eq_norm'] at hlt
-  exact (hsep m n hmn).not_gt hlt
+  -- `K - 1 • 1 = -A` carries `V (n + 1)` into `V n`.
+  have hstep (n : ℕ) (x : X) (hx : x ∈ V (n + 1)) : K x - (1 : 𝕜) • x ∈ V n := by
+    have hAx : A x ∈ V n := by
+      simpa only [V, LinearMap.mem_ker, pow_succ, _root_.mul_apply_eq_comp,
+        ContinuousLinearMap.coe_coe] using hx
+    simpa only [A, _root_.sub_apply, one_apply_eq_self, one_smul, neg_sub] using (V n).neg_mem hAx
+  exact hK.exists_succ_eq_of_ascending_chain (μ := fun _ ↦ (1 : 𝕜)) one_pos (fun _ ↦ norm_one.ge)
+    (fun n ↦ (A : X →ₗ[𝕜] X).iterateKer.monotone (Nat.le_succ n))
+    (fun n ↦ (hclosed n).preimage continuous_subtypeVal) hstep
 
 variable [CompleteSpace 𝕜]
 
