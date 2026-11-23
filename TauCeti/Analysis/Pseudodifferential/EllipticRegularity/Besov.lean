@@ -118,9 +118,10 @@ spatial support that agrees with `a` on a neighbourhood of `tsupport ψ`. For al
 
 `‖ψ u‖_{B^{s + m}_{p,q}} ≤ C (‖Op(c) u‖_{B^s_{p,q}} + ‖u‖_{B^r_{p,q}})`
 
-for every `u ∈ B^{s + m}_{p,q}`, where `ψ u` is any element `v` of `B^{s + m}_{p,q}` with the
-tempered distribution `ψ u`. This is the Besov counterpart of the estimate on `H^{s,p}`,
-`TauCeti.Symbol.exists_norm_le_of_toDistr_eq_smulLeftCLM`. -/
+for every `u ∈ B^{s + m}_{p,q}`. Here the left side is `‖v‖`, where `v` is any element of
+`B^{s + m}_{p,q}` whose tempered distribution is `ψ u`; such a `v` exists by
+`IsEllipticAbove.memBesov_smulLeftCLM_of_memBesov_quantizeTempered`. This is the Besov counterpart
+of the estimate on `H^{s,p}`, `TauCeti.Symbol.exists_norm_le_of_toDistr_eq_smulLeftCLM`. -/
 theorem IsEllipticAbove.exists_norm_besov_le_of_toDistr_eq_smulLeftCLM (ha : a.IsEllipticAbove R)
     (hc : c.HasCompactSpatialSupport) (hψ : HasCompactSupport ψ)
     (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
