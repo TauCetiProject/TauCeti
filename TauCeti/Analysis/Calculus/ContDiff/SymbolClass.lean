@@ -8,13 +8,20 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.Topology.MetricSpace.Holder
+public import Mathlib.Topology.MetricSpace.ProperSpace
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.ContDiffZPow
 import TauCeti.Analysis.Calculus.ContDiff.Puncture
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Holder.MeanValue
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Flat
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 
 /-!
 # Symbol classes at a puncture
@@ -45,12 +52,23 @@ This file proves that they form a graded calculus:
   algebra and with `‖f z‖ ≥ c ‖z‖ ^ ℓ` has an inverse `z ↦ (f z)⁻¹` of order `-ℓ`
   (`IsPuncturedSymbol.inv`);
 * **composition with a reparametrization preserves the order**: if `g` has order `ℓ` and `φ` has
-  order `1` with `‖φ z‖ ≥ c ‖z‖`, then `g ∘ φ` has order `ℓ` (`IsPuncturedSymbol.comp`).
+  order `1` with `‖φ z‖ ≥ c ‖z‖`, then `g ∘ φ` has order `ℓ` (`IsPuncturedSymbol.comp`);
+* **composition with a smooth map**: if `φ` has order `ℓ ≥ 0` and `g` is smooth with bounded
+  derivatives along the image of `φ`, then `g ∘ φ` has order `0`
+  (`IsPuncturedSymbol.comp_left`), and order `ℓ` when moreover `g ∘ φ = O(‖z‖ ^ ℓ)`
+  (`IsPuncturedSymbol.comp_left_of_isBigO`).
 
-The last two are proved by induction on the order of the derivative: the derivative of
+The last three are proved by induction on the order of the derivative: the derivative of
 `(f z)⁻¹` is a bilinear expression in `(f z)⁻¹`, `(f z)⁻¹` and `Df z`, and the derivative of
 `(D^j g) ∘ φ` is a bilinear expression in `(D^{j+1} g) ∘ φ` and `Dφ`, so the product rule at
 lower derivative orders controls the next order.
+
+**Examples.** Besides constants, continuous linear maps and the integer powers on `ℂ`, a map
+smooth near `0` whose derivatives of order less than `n` vanish at `0` has order `n`
+(`TauCeti.isPuncturedSymbol_of_iteratedFDeriv_eq_zero`). On a proper space, a map smooth away
+from `0` and positively homogeneous of degree `ℓ` has order `ℓ`
+(`TauCeti.isPuncturedSymbol_of_homogeneous`); in particular, on a proper real inner product
+space, so does `z ↦ ‖z‖ ^ ℓ` (`TauCeti.isPuncturedSymbol_norm_rpow`).
 
 **Removability at the puncture.** Nothing is asked of a symbol at `0`, but a symbol vanishing at
 `0` is as regular across the puncture as its order allows:
@@ -97,6 +115,14 @@ private theorem eventually_norm_le_one : ∀ᶠ z in 𝓝[≠] (0 : E), ‖z‖ 
   nhdsWithin_le_nhds <| by
     filter_upwards [Metric.closedBall_mem_nhds (0 : E) one_pos] with z hz
     simpa using hz
+
+/-- Near `0`, a power of the norm is dominated by every power with a smaller exponent. -/
+private theorem isBigO_rpow_of_le {a b : ℝ} (h : b ≤ a) :
+    (fun z : E ↦ ‖z‖ ^ a) =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ b := by
+  refine IsBigO.of_bound 1 ?_
+  filter_upwards [eventually_norm_pos, eventually_norm_le_one] with z hz hz1
+  rw [one_mul, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
+  exact Real.rpow_le_rpow_of_exponent_ge hz hz1 h
 
 /-- On a punctured neighbourhood, powers of the norm multiply by adding exponents. -/
 private theorem rpow_mul_rpow_eventuallyEq (a b : ℝ) :
@@ -187,11 +213,8 @@ theorem congr (hf : IsPuncturedSymbol ℓ f) (h : f =ᶠ[𝓝[≠] (0 : E)] f₁
     exact (hz.iteratedFDeriv ℝ j).eq_of_nhds
 
 /-- A punctured symbol of order `ℓ` has every smaller order. -/
-theorem mono (hf : IsPuncturedSymbol ℓ f) (h : m ≤ ℓ) : IsPuncturedSymbol m f := by
-  refine ⟨hf.1, fun j ↦ (hf.2 j).trans (IsBigO.of_bound 1 ?_)⟩
-  filter_upwards [eventually_norm_pos, eventually_norm_le_one] with z hz hz1
-  rw [one_mul, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
-  exact Real.rpow_le_rpow_of_exponent_ge hz hz1 (by linarith)
+theorem mono (hf : IsPuncturedSymbol ℓ f) (h : m ≤ ℓ) : IsPuncturedSymbol m f :=
+  ⟨hf.1, fun j ↦ (hf.2 j).trans (isBigO_rpow_of_le (by linarith))⟩
 
 /-- The sum of two punctured symbols of order `ℓ` has order `ℓ`. -/
 theorem add (hf : IsPuncturedSymbol ℓ f) (hf₁ : IsPuncturedSymbol ℓ f₁) :
@@ -448,30 +471,24 @@ private theorem eventually_fderiv_comp_eventuallyEq
   rw [fderiv_fun_comp y hgd (hy.2.differentiableAt (by simp))]
   simp [iteratedFDeriv_succ_eq_comp_left]
 
-/-- The derivative bounds of `(D^j g) ∘ φ`, for all `j` at once, by induction on the derivative
-order: the derivative of `(D^j g) ∘ φ` is a bilinear expression in `(D^{j+1} g) ∘ φ` and `Dφ`. -/
-private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
-    (hφ : IsPuncturedSymbol 1 φ) {c : ℝ} (hc : 0 < c)
-    (hlow : ∀ᶠ z in 𝓝[≠] (0 : E), c * ‖z‖ ≤ ‖φ z‖) (n : ℕ) :
+/-- The derivative bounds of `(D^j g) ∘ φ`, for all `j` at once, from those of derivative order
+`0`, by induction on the derivative order: the derivative of `(D^j g) ∘ φ` is a bilinear
+expression in `(D^{j+1} g) ∘ φ` and `Dφ`. If `(D^j g) ∘ φ` is `O(‖z‖ ^ a j)` for every `j`, and
+`φ` has order `p` with `a j ≤ a (j + 1) + p`, then the `i`-th derivative of `(D^j g) ∘ φ` is
+`O(‖z‖ ^ (a j - i))`. -/
+private theorem isBigO_iteratedFDeriv_comp_of_isBigO {p : ℝ} {a : ℕ → ℝ}
+    (hs : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ g (φ z) ∧ ContDiffAt ℝ ∞ φ z)
+    (hφ : IsPuncturedSymbol p φ) (ha : ∀ j, a j ≤ a (j + 1) + p)
+    (h0 : ∀ j, (fun z ↦ iteratedFDeriv ℝ j g (φ z)) =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ a j)
+    (n : ℕ) :
     ∀ j : ℕ, ∀ i ≤ n, iteratedFDeriv ℝ i (fun z ↦ iteratedFDeriv ℝ j g (φ z))
-      =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (ℓ - j - i) := by
-  have hφ0 := tendsto_nhdsNE_of_le hφ hc hlow
-  have hs : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ g (φ z) ∧ ContDiffAt ℝ ∞ φ z :=
-    (hφ0.eventually hg.1).and hφ.1
+      =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (a j - i) := by
   have hDφ := hφ.fderiv
   induction n with
   | zero =>
     intro j i hi
     obtain rfl : i = 0 := Nat.le_zero.1 hi
-    have hθ : (fun z ↦ ‖φ z‖) =Θ[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ := by
-      refine ⟨hφ.isBigO.norm_left.congr' EventuallyEq.rfl
-        (Eventually.of_forall fun z ↦ Real.rpow_one _), IsBigO.of_bound c⁻¹ ?_⟩
-      filter_upwards [hlow] with z hz
-      simpa only [norm_norm, le_inv_mul_iff₀ hc] using hz
-    have h := ((hg.2 j).comp_tendsto hφ0).norm_left.trans
-      (hθ.rpow (r := ℓ - j) (Eventually.of_forall fun _ ↦ norm_nonneg _)
-        (Eventually.of_forall fun _ ↦ norm_nonneg _)).isBigO
-    refine IsBigO.of_norm_left (h.congr' (Eventually.of_forall fun z ↦ ?_)
+    refine IsBigO.of_norm_left ((h0 j).norm_left.congr' (Eventually.of_forall fun z ↦ ?_)
       (Eventually.of_forall fun z ↦ ?_))
     · simp [norm_iteratedFDeriv_zero]
     · simp
@@ -490,10 +507,25 @@ private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
         ((ContinuousLinearMap.compL ℝ E F (ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ F) G)).comp
           (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ F)
             G).toContinuousLinearEquiv.toContinuousLinearMap) hDj hDφ.1 (n := k)
-        (ℓ := ℓ - (j + 1 : ℕ)) (m := 1 - 1)
+        (ℓ := a (j + 1)) (m := p - 1)
         (fun i hi ↦ ih (j + 1) i (hi.trans hk)) (fun i _ ↦ hDφ.2 i)
-      exact isBigO_iteratedFDeriv_succ_of_eventuallyEq (eventually_fderiv_comp_eventuallyEq hs j)
-        hprod (by push_cast; ring)
+      exact (isBigO_iteratedFDeriv_succ_of_eventuallyEq (eventually_fderiv_comp_eventuallyEq hs j)
+        hprod (b := a (j + 1) + p) (by ring)).trans
+        (isBigO_rpow_of_le (by linarith [ha j]))
+
+/-- The derivatives of `(D^0 g) ∘ φ` and of `g ∘ φ` have the same norms, since `D^0 g ∘ φ` is
+`g ∘ φ` read through the isometry `G ≃ (Fin 0 → F) → G`. -/
+private theorem isBigO_iteratedFDeriv_comp_of_iteratedFDeriv_zero {ρ : E → ℝ} {i : ℕ}
+    (h : iteratedFDeriv ℝ i (fun z ↦ iteratedFDeriv ℝ 0 g (φ z)) =O[𝓝[≠] (0 : E)] ρ) :
+    iteratedFDeriv ℝ i (fun z ↦ g (φ z)) =O[𝓝[≠] (0 : E)] ρ := by
+  have heq : (fun z ↦ iteratedFDeriv ℝ 0 g (φ z)) =
+      (continuousMultilinearCurryFin0 ℝ F G).symm ∘ fun z ↦ g (φ z) := by
+    funext z
+    simp [iteratedFDeriv_zero_eq_comp]
+  have h' := h.norm_left
+  rw [heq] at h'
+  simp_rw [LinearIsometryEquiv.norm_iteratedFDeriv_comp_left] at h'
+  exact h'.of_norm_left
 
 /-- **Composition with a reparametrization.** If `g` is a punctured symbol of order `ℓ` and
 `φ` is a punctured symbol of order `1` with `‖φ z‖ ≥ c ‖z‖` near `0` for some `c > 0`, then
@@ -501,20 +533,141 @@ private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
 theorem IsPuncturedSymbol.comp (hg : IsPuncturedSymbol ℓ g) (hφ : IsPuncturedSymbol 1 φ) {c : ℝ}
     (hc : 0 < c) (hlow : ∀ᶠ z in 𝓝[≠] (0 : E), c * ‖z‖ ≤ ‖φ z‖) :
     IsPuncturedSymbol ℓ fun z ↦ g (φ z) := by
+  have hφ0 := tendsto_nhdsNE_of_le hφ hc hlow
+  have hs : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ g (φ z) ∧ ContDiffAt ℝ ∞ φ z :=
+    (hφ0.eventually hg.1).and hφ.1
+  -- `(D^j g) ∘ φ` is `O(‖φ z‖ ^ (ℓ - j))`, and `‖φ z‖` is comparable to `‖z‖`.
+  have hθ : (fun z ↦ ‖φ z‖) =Θ[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ := by
+    refine ⟨hφ.isBigO.norm_left.congr' EventuallyEq.rfl
+      (Eventually.of_forall fun z ↦ Real.rpow_one _), IsBigO.of_bound c⁻¹ ?_⟩
+    filter_upwards [hlow] with z hz
+    simpa only [norm_norm, le_inv_mul_iff₀ hc] using hz
+  have h := isBigO_iteratedFDeriv_comp_of_isBigO hs hφ (a := fun j ↦ ℓ - j)
+    (fun j ↦ by push_cast; linarith) (fun j ↦ IsBigO.of_norm_left
+      (((hg.2 j).comp_tendsto hφ0).norm_left.trans
+        (hθ.rpow (r := ℓ - j) (Eventually.of_forall fun _ ↦ norm_nonneg _)
+          (Eventually.of_forall fun _ ↦ norm_nonneg _)).isBigO))
   refine ⟨?_, fun j ↦ ?_⟩
-  · filter_upwards [(tendsto_nhdsNE_of_le hφ hc hlow).eventually hg.1, hφ.1] with z hgz hz
-    exact hgz.comp z hz
-  · -- `D^0 g ∘ φ` is `g ∘ φ` read through the isometry `G ≃ (Fin 0 → F) → G`.
-    have heq : (fun z ↦ iteratedFDeriv ℝ 0 g (φ z)) =
-        (continuousMultilinearCurryFin0 ℝ F G).symm ∘ fun z ↦ g (φ z) := by
-      funext z
-      simp [iteratedFDeriv_zero_eq_comp]
-    have h := (isBigO_iteratedFDeriv_comp hg hφ hc hlow j 0 j le_rfl).norm_left
-    rw [heq] at h
-    simp_rw [LinearIsometryEquiv.norm_iteratedFDeriv_comp_left] at h
-    exact h.of_norm_left.congr' EventuallyEq.rfl (Eventually.of_forall fun z ↦ by simp)
+  · filter_upwards [hs] with z hz
+    exact hz.1.comp z hz.2
+  · simpa using isBigO_iteratedFDeriv_comp_of_iteratedFDeriv_zero (h j 0 j le_rfl)
+
+/-! ### Composition with a smooth map -/
+
+/-- **Composition with a smooth map, keeping the order.** Let `φ` be a punctured symbol of
+order `ℓ ≥ 0`, and let `g` be smooth along the image of `φ` near `0`, with derivatives of
+positive order bounded along it. If `g ∘ φ` is `O(‖z‖ ^ ℓ)`, then `g ∘ φ` is a punctured symbol
+of order `ℓ`. -/
+theorem IsPuncturedSymbol.comp_left_of_isBigO (hφ : IsPuncturedSymbol ℓ φ) (hℓ : 0 ≤ ℓ)
+    (hg : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ g (φ z))
+    (hgb : ∀ j : ℕ,
+      (fun z ↦ iteratedFDeriv ℝ (j + 1) g (φ z)) =O[𝓝[≠] (0 : E)] fun _ ↦ (1 : ℝ))
+    (h0 : (fun z ↦ g (φ z)) =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ ℓ) :
+    IsPuncturedSymbol ℓ fun z ↦ g (φ z) := by
+  have hs : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ g (φ z) ∧ ContDiffAt ℝ ∞ φ z := hg.and hφ.1
+  -- `g ∘ φ` has order `ℓ` and `(D^{j+1} g) ∘ φ` has order `0`.
+  have h := isBigO_iteratedFDeriv_comp_of_isBigO hs hφ (a := fun j ↦ if j = 0 then ℓ else 0)
+    (fun j ↦ by split_ifs <;> simp_all) fun j ↦ ?_
+  · refine ⟨?_, fun j ↦ ?_⟩
+    · filter_upwards [hs] with z hz
+      exact hz.1.comp z hz.2
+    · simpa using isBigO_iteratedFDeriv_comp_of_iteratedFDeriv_zero (h j 0 j le_rfl)
+  · cases j with
+    | zero => exact IsBigO.of_norm_left (by simpa [norm_iteratedFDeriv_zero] using h0.norm_left)
+    | succ j => simpa using hgb j
+
+/-- **Composition with a smooth map.** If `φ` is a punctured symbol of order `ℓ ≥ 0` and `g` is
+smooth along the image of `φ` near `0`, with all its derivatives bounded along it, then `g ∘ φ`
+is a punctured symbol of order `0`. -/
+theorem IsPuncturedSymbol.comp_left (hφ : IsPuncturedSymbol ℓ φ) (hℓ : 0 ≤ ℓ)
+    (hg : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ g (φ z))
+    (hgb : ∀ j : ℕ, (fun z ↦ iteratedFDeriv ℝ j g (φ z)) =O[𝓝[≠] (0 : E)] fun _ ↦ (1 : ℝ)) :
+    IsPuncturedSymbol 0 fun z ↦ g (φ z) :=
+  (hφ.mono hℓ).comp_left_of_isBigO le_rfl hg (fun j ↦ hgb (j + 1))
+    (by simpa [norm_iteratedFDeriv_zero] using (hgb 0).norm_left)
 
 end Composition
+
+/-! ### Examples -/
+
+section Examples
+
+open Function
+
+variable {ℓ : ℝ} {f : E → F}
+
+/-- **Smooth maps vanishing to order `n`.** A map smooth on a neighbourhood of `0` whose
+derivatives of order less than `n` vanish at `0` is a punctured symbol of order `n`. -/
+theorem isPuncturedSymbol_of_iteratedFDeriv_eq_zero {n : ℕ}
+    (hf : ∀ᶠ z in 𝓝 (0 : E), ContDiffAt ℝ ∞ f z) (hzero : ∀ i < n, iteratedFDeriv ℝ i f 0 = 0) :
+    IsPuncturedSymbol n f := by
+  -- every derivative is continuous at `0`, hence bounded near `0`
+  have hbdd (k : ℕ) : iteratedFDeriv ℝ k f =O[𝓝 (0 : E)] fun _ ↦ (1 : ℝ) :=
+    (hf.self_of_nhds.iteratedFDeriv_right (m := 0) (i := k) (by simp)).continuousAt.tendsto
+      |>.isBigO_one ℝ
+  refine ⟨hf.filter_mono nhdsWithin_le_nhds, fun k ↦ ?_⟩
+  rcases lt_or_ge k n with hkn | hnk
+  · -- Below the order of vanishing, iterate the mean value inequality from `0`.
+    obtain ⟨p, rfl⟩ : ∃ p, n = p + 1 := ⟨n - 1, by omega⟩
+    obtain ⟨M, hM⟩ := (hbdd (p + 1)).bound
+    obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hf.and hM)
+    have h := norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero (k := p)
+      (fun y hy ↦ (hball y hy).1.of_le (by exact_mod_cast le_top)) (convex_ball 0 δ)
+      (Metric.mem_ball_self hδ) (fun y hy ↦ by simpa using (hball y hy).2)
+      (fun i _ hi ↦ hzero i (by omega)) (p - k) (by omega)
+    refine IsBigO.of_bound M ?_
+    filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : E) hδ)] with z hz
+    have hz' := h z hz
+    rw [show p - (p - k) = k by omega, hzero k hkn, sub_zero, sub_zero] at hz'
+    rw [Real.norm_of_nonneg (by positivity)]
+    refine hz'.trans_eq ?_
+    rw [← Real.rpow_natCast]
+    congr 2
+    push_cast [show p - k + 1 = p + 1 - k by omega, Nat.cast_sub hkn.le]
+    ring
+  · -- Above it, the derivatives are bounded, and `‖z‖ ^ (n - k)` is bounded below near `0`.
+    refine ((hbdd k).mono nhdsWithin_le_nhds).trans ?_
+    simpa using isBigO_rpow_of_le (E := E) (a := 0) (b := n - k) (by simpa using hnk)
+
+/-- **Homogeneous maps.** On a proper space, a map smooth away from `0` and positively homogeneous
+of degree `ℓ` away from `0` is a punctured symbol of order `ℓ`. -/
+theorem isPuncturedSymbol_of_homogeneous [ProperSpace E] (hf : ContDiffOn ℝ ∞ f {0}ᶜ)
+    (hhom : ∀ t : ℝ, 0 < t → ∀ x ≠ 0, f (t • x) = t ^ ℓ • f x) : IsPuncturedSymbol ℓ f := by
+  classical
+  -- `update f 0 0` agrees with `f` away from `0` and is positively homogeneous everywhere.
+  have hhom' (t : ℝ) (ht : 0 < t) (x : E) :
+      update f 0 0 (t • x) = t ^ ℓ • update f 0 0 x := by
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp
+    · rw [update_of_ne (smul_ne_zero ht.ne' hx), update_of_ne hx, hhom t ht x hx]
+  have hf' : ContDiffOn ℝ ∞ (update f 0 0) {0}ᶜ :=
+    hf.congr fun x hx ↦ update_of_ne hx _ _
+  refine IsPuncturedSymbol.congr ⟨eventually_nhdsWithin_of_forall fun x hx ↦
+    hf'.contDiffAt (isOpen_compl_singleton.mem_nhds hx), fun k ↦ ?_⟩
+    (eventually_nhdsWithin_of_forall fun x hx ↦ update_of_ne hx _ _)
+  -- The derivative is bounded on the unit sphere, and homogeneity scales it from there.
+  obtain ⟨M, -, hM⟩ := (hf'.of_le (m := k) (by exact_mod_cast le_top)
+    ).exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_compl_singleton
+    (isCompact_sphere (0 : E) 1) fun x hx ↦ Metric.ne_of_mem_sphere hx one_ne_zero
+  refine IsBigO.of_bound M (eventually_nhdsWithin_of_forall fun z hz ↦ ?_)
+  have hρ : 0 < ‖z‖ := norm_pos_iff.2 hz
+  have hu : ‖z‖⁻¹ • z ∈ Metric.sphere (0 : E) 1 := by
+    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hρ.ne']
+  have hscale := norm_iteratedFDeriv_smul_of_homogeneous hhom' hρ (x := ‖z‖⁻¹ • z) (j := k)
+  rw [smul_inv_smul₀ hρ.ne'] at hscale
+  rw [hscale, Real.norm_of_nonneg (by positivity), mul_comm M]
+  exact mul_le_mul_of_nonneg_left (hM k le_rfl _ hu) (by positivity)
+
+/-- On a proper real inner product space, the power `z ↦ ‖z‖ ^ ℓ` of the norm is a punctured
+symbol of order `ℓ`. -/
+theorem isPuncturedSymbol_norm_rpow {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [ProperSpace E] (ℓ : ℝ) : IsPuncturedSymbol ℓ fun z : E ↦ ‖z‖ ^ ℓ :=
+  isPuncturedSymbol_of_homogeneous (fun x hx ↦
+    ((contDiffAt_norm ℝ hx (n := ∞)).rpow_const_of_ne (norm_ne_zero_iff.2 hx)).contDiffWithinAt)
+    fun t ht x _ ↦ by
+      rw [norm_smul, Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le (norm_nonneg x), smul_eq_mul]
+
+end Examples
 
 /-! ### Removability at the puncture -/
 
