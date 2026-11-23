@@ -138,8 +138,8 @@ theorem integral_norm_sq_gaugeFixedAdjoint_fun_smul
     ((continuous_gaugeFixedAdjoint hx.continuous ((hw.pow 2).smul hη₁)).inner
       hA.continuous).integrable_of_hasCompactSupport
         (hAc.mono fun z hz he ↦ hz (by simp [he]))
-  have he := (hw.continuous_fderiv one_ne_zero).norm.integrable_sq_mul_norm_sq_of_hasCompactSupport (μ := μ)
-    hη.continuous hc
+  have he := (hw.continuous_fderiv one_ne_zero).norm.integrable_sq_mul_norm_sq_of_hasCompactSupport
+    (μ := μ) hη.continuous hc
   simp_rw [norm_sq_gaugeFixedAdjoint_fun_smul x (hw.differentiable (by norm_num) _)
     (hη.differentiable (by norm_num) _)]
   rw [integral_add hi he]
@@ -216,9 +216,10 @@ theorem mul_integral_mul_norm_sq_le_integral_mul_inner_gaugeFixedOperator
     (fun z hz ↦ hP z (fun he ↦ hz (by simp [he])))
   simp only [Pi.smul_def'] at hloc
   rw [integral_norm_sq_gaugeFixedAdjoint_fun_smul hx hη hc (hw.of_le (by norm_num))] at hloc
-  have hi := hw.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport (μ := μ) hη.continuous hc
-  have he := (hw.continuous_fderiv (by norm_num)).norm.integrable_sq_mul_norm_sq_of_hasCompactSupport (μ := μ)
+  have hi := hw.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport (μ := μ)
     hη.continuous hc
+  have he := Continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport (μ := μ)
+    (hw.continuous_fderiv (by norm_num)).norm hη.continuous hc
   have hb := integral_mono he (hi.const_mul (c ^ 2)) fun z ↦
     by
       by_cases hz : η z = 0
@@ -547,11 +548,12 @@ theorem exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFix
     have h2 := mul_le_mul_of_nonneg_left this (by positivity : (0 : ℝ) ≤ 2 * δ)
     convert h2 using 1 <;> field_simp
   -- The two weights are comparable, since `√·` is `1/2`-Hölder.
-  have h₁ := integral_mono (hw.integrable_sq_mul_norm_sq_of_hasCompactSupport hη.continuous hηc) (iWη.const_mul E)
-    fun z ↦ by
+  have h₁ := integral_mono (hw.integrable_sq_mul_norm_sq_of_hasCompactSupport hη.continuous hηc)
+    (iWη.const_mul E) fun z ↦ by
       simpa only [mul_assoc, abs_sub_comm 1 b] using mul_le_mul_of_nonneg_right
         (sq_exp_mul_sqrt_add_norm_sq_le c 1 b z) (sq_nonneg ‖η z‖)
-  have h₂ := integral_mono iWG ((hw.integrable_sq_mul_norm_sq_of_hasCompactSupport hGc hGs).const_mul E) fun z ↦ by
+  have h₂ := integral_mono iWG
+    ((hw.integrable_sq_mul_norm_sq_of_hasCompactSupport hGc hGs).const_mul E) fun z ↦ by
       simpa only [mul_assoc] using mul_le_mul_of_nonneg_right
         (sq_exp_mul_sqrt_add_norm_sq_le c b 1 z) (sq_nonneg ‖G z‖)
   rw [integral_const_mul] at h₁ h₂
@@ -642,7 +644,8 @@ theorem exists_integral_gaugeFixedGradientDensity_fun_smul_le
       (hy.differentiable (by norm_num) z)).trans ?_
     have := mul_le_mul_of_nonneg_right (hdw z) (sq_nonneg ‖y z‖)
     nlinarith
-  have hwy := hw.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport (μ := μ) hy.continuous hyc
+  have hwy := hw.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport (μ := μ)
+    hy.continuous hyc
   have hwL := hw.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport (μ := μ) hLy hLyc
   have hL : ∫ z, ‖gaugeFixedOperator x v z‖ ^ 2 ∂μ ≤
       2 * ∫ z, w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2 ∂μ +
