@@ -504,8 +504,7 @@ theorem finrank_squareIntegrableSolutionsOn_Ioi (hA : Continuous A) {Aplus : E �
   have h₁ := finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspace hA hsym
     (by positivity) hform htop
   -- The spectral subspaces of the invertible symmetric `A⁺` are complementary.
-  have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2
-    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v))
+  have hker := ContinuousLinearMap.ker_eq_bot_of_forall_mul_norm_le hα hplus
   have h₂ :=
     (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)).finrank_add_finrank_orthogonal
   rw [hsym.orthogonal_pointSpectralSubspace_Ioi_zero hker] at h₂
