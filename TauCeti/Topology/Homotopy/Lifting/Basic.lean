@@ -80,7 +80,7 @@ the fibre over `b₁`. -/
 theorem HasHomotopyLiftingProperty.exists_path_lift_fiber [Nonempty A]
     (h : HasHomotopyLiftingProperty p A) {b₀ b₁ : B} (γ : Path b₀ b₁) (x : p ⁻¹' {b₀}) :
     ∃ (y : p ⁻¹' {b₁}) (Γ : Path (x : E) y), ∀ t, p (Γ t) = γ t := by
-  obtain ⟨Γ, hΓ₀, hΓ⟩ := h.exists_path_lift (γ.cast x.2 rfl)
+  obtain ⟨Γ, hΓ₀, hΓ⟩ := h.exists_path_lift (γ.cast x.property rfl)
   have hΓ' (t : I) : p (Γ t) = γ t := congrFun hΓ t
   exact ⟨⟨Γ 1, (hΓ' 1).trans γ.target⟩, ⟨Γ, hΓ₀, rfl⟩, hΓ'⟩
 
@@ -104,7 +104,7 @@ theorem HasHomotopyLiftingProperty.surjective [Nonempty A] [Nonempty E] [PathCon
     (h : HasHomotopyLiftingProperty p A) : Function.Surjective p := by
   intro b
   obtain ⟨x, -⟩ := h.exists_joined b (Classical.arbitrary E)
-  exact ⟨x, x.2⟩
+  exact ⟨x, x.property⟩
 
 /-- The projection `B × F → B` has the homotopy lifting property with respect to every space: a
 homotopy lifts by keeping the `F`-coordinate of the initial lift fixed. -/
