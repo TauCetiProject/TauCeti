@@ -76,10 +76,12 @@ rotation of the end at `∞` under `σ`. The main results are:
   output end `TauCeti.ThricePuncturedSphere.exchangeTruncation c R`; the symplectic vector space
   case is `TauCeti.SymplecticForm.hamiltonianCurvature_exchangePerturbation_eq_zero`.
 * `TauCeti.Floer.exchangePerturbation_update_zero_eq_zero`: with the input Hamiltonian `H_0`
-  replaced by `0`, every member with `0 ≤ c ≤ 1` vanishes near `0`. Outside that truncation this
-  datum agrees with the family of
-  `TauCeti.Geometry.Symplectic.Floer.PairOfPants.LeftCapping`, which caps the input at `0`, and it
-  is used to transfer its energy identity in
+  replaced by `0`, every member with `0 ≤ c ≤ 1` vanishes near `0`. For `L > 2` and
+  `R ≥ L - 1`, outside `exchangeTruncation c R` this datum agrees with the capped family
+  `cappedExchangePerturbation H L c` of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.LeftCapping`,
+  which caps the input at `0`
+  (`TauCeti.Floer.cappedExchangePerturbation_of_notMem_exchangeTruncation`), and it is used to
+  transfer its energy identity in
   `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.LeftCapping`.
 
 The input part is supported in two small discs about `0` and `1`, and the translated plane datum
