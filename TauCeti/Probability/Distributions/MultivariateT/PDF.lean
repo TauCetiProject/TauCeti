@@ -178,7 +178,7 @@ private theorem multivariateGaussian_smul_eq_withDensity (m : EuclideanSpace ℝ
   funext x
   rw [multivariateGaussianPDF_def]
   beta_reduce
-  rw [multivariateGaussianPDFReal_smul hc.ne' hS.det_pos.ne'.isUnit, componentDensity]
+  rw [multivariateGaussianPDFReal_smul, componentDensity]
 
 /-- On the positive half-line, the chi-squared density times the Gaussian component density is a
 constant multiple of the Gamma integrand `v ^ ((ν + d) / 2 - 1) * exp (-((1 + q / ν) / 2 * v))`,
@@ -340,7 +340,7 @@ theorem gammaPDFReal_mul_multivariateGaussianPDFReal (a : EuclideanSpace ℝ ι)
       ← Real.rpow_add (by positivity : (0 : ℝ) < ν / 2), ← add_div]
     field_simp
   simp only [gammaPDFReal, hτ.le, ↓reduceIte]
-  rw [multivariateGaussianPDFReal_smul (inv_ne_zero hτ.ne') hD.ne'.isUnit,
+  rw [multivariateGaussianPDFReal_smul,
     multivariateTPDFReal_of_posDef a hν hR, e1, inv_inv, ← hq_def, ← hd_def]
   calc (ν / 2) ^ (ν / 2) / Real.Gamma (ν / 2) * τ ^ (ν / 2 - 1) * exp (-(ν / 2 * τ)) *
         ((2 * π) ^ (-d / 2) * (τ ^ (d / 2) * R.det ^ (-(1 : ℝ) / 2)) * exp (-(τ * q) / 2))

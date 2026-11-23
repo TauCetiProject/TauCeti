@@ -28,6 +28,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.covMatrix_multivariateGaussian` recovers the covariance parameter of a
   multivariate
   Gaussian law.
+* `TauCeti.Probability.integral_norm_sub_sq_multivariateGaussian`: `E‖X - m‖² = tr S` for a
+  positive-semidefinite covariance parameter `S`.
 * `TauCeti.Probability.eq_multivariateGaussian_covMatrix` writes every Gaussian measure on a
   Euclidean space as the multivariate Gaussian with its mean and covariance matrix.
 * `TauCeti.Probability.integral_of_hasLaw_multivariateGaussian` gives the Bochner mean of a
@@ -79,6 +81,16 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   classical
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
+
+/-- The mean squared distance of a multivariate Gaussian law from its mean is the trace of its
+positive-semidefinite covariance parameter: `E‖X - m‖² = tr S`. -/
+@[simp]
+theorem integral_norm_sub_sq_multivariateGaussian [Fintype ι] [DecidableEq ι] {S : Matrix ι ι ℝ}
+    (hS : S.PosSemidef) (m : EuclideanSpace ℝ ι) :
+    ∫ x, ‖x - m‖ ^ 2 ∂multivariateGaussian m S = S.trace := by
+  rw [TauCeti.integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix _
+    IsGaussian.memLp_two_id m, integral_id_multivariateGaussian,
+    covMatrix_multivariateGaussian m hS, sub_self, norm_zero, zero_pow two_ne_zero, zero_add]
 
 /-- A Gaussian measure on a finite-dimensional Euclidean space is the multivariate Gaussian with
 its own mean and covariance matrix. No nondegeneracy is required. -/

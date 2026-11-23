@@ -10,7 +10,10 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.MeasureTheory.Function.L2Space
-import TauCeti.Probability.Distributions.Gaussian.Stein
+import TauCeti.Probability.Distributions.Gaussian.Density
+import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts.Multivariate
+import TauCeti.Probability.Distributions.Gaussian.Isotropic
+import TauCeti.Probability.Distributions.Gaussian.Multivariate
 
 /-!
 # The James–Stein estimator
@@ -108,9 +111,11 @@ private theorem norm_inv_norm_sq_add_smul_sq (x : EuclideanSpace ℝ (Fin p)) (e
     ‖(‖x‖ ^ 2 + e)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / (‖x‖ ^ 2 + e) ^ 2 := by
   rw [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, inv_pow, div_eq_mul_inv, mul_comm]
 
-/-- The bound `‖x‖² / (‖x‖² + ε)² ≤ ‖x‖⁻²` for `x ≠ 0` and `ε ≥ 0`. -/
-private theorem norm_sq_div_norm_sq_add_sq_le {x : EuclideanSpace ℝ (Fin p)} (hx : x ≠ 0)
+/-- The bound `‖x‖² / (‖x‖² + ε)² ≤ (‖x‖²)⁻¹` for `ε ≥ 0`; at `x = 0` both sides are `0`. -/
+private theorem norm_sq_div_norm_sq_add_sq_le (x : EuclideanSpace ℝ (Fin p))
     {e : ℝ} (he : 0 ≤ e) : ‖x‖ ^ 2 / (‖x‖ ^ 2 + e) ^ 2 ≤ (‖x‖ ^ 2)⁻¹ := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
   have hx2 : 0 < ‖x‖ ^ 2 := by positivity
   rw [div_le_iff₀ (by positivity), inv_mul_eq_div, le_div_iff₀ hx2]
   nlinarith
@@ -136,10 +141,6 @@ private theorem integral_inner_sub_inv_norm_sq_add_smul (θ : EuclideanSpace ℝ
   have hstein (i : Fin p) := gaussian_integration_by_parts zero_le_one hgd (hP ▸ hgL2) i
     (by simp_rw [hP, hfd]; exact hdint i)
   simp only [one_mul, hfd, hP] at hstein
-  have hxi (i : Fin p) : MemLp (fun x : EuclideanSpace ℝ (Fin p) ↦ x i - θ i) 2 P :=
-    (IsGaussian.memLp_dual P (EuclideanSpace.proj i) 2 (by simp)).sub (memLp_const _)
-  have hgi (i : Fin p) : MemLp (fun x ↦ g x i) 2 P :=
-    (EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hgL2
   have hrhs (x : EuclideanSpace ℝ (Fin p)) :
       (p : ℝ) * (‖x‖ ^ 2 + ε)⁻¹ - 2 * ‖x‖ ^ 2 / (‖x‖ ^ 2 + ε) ^ 2 =
         ∑ i, ((‖x‖ ^ 2 + ε)⁻¹ - 2 * x i ^ 2 / (‖x‖ ^ 2 + ε) ^ 2) := by
@@ -151,7 +152,7 @@ private theorem integral_inner_sub_inv_norm_sq_add_smul (θ : EuclideanSpace ℝ
     simp [g, PiLp.inner_apply, mul_comm]
   simp_rw [hlhs, hrhs]
   rw [integral_finsetSum (f := fun i x ↦ (x i - θ i) * g x i) _
-      fun i _ ↦ (hxi i).integrable_mul (hgi i),
+      fun i _ ↦ integrable_sub_mul_apply_of_memLp hgL2 θ i,
     integral_finsetSum _ fun i _ ↦ hdint i]
   exact Finset.sum_congr rfl fun i _ ↦ hstein i
 
@@ -188,17 +189,9 @@ private theorem integral_norm_sub_sub_smul_inv_norm_sq_add_smul_sq
     integral_norm_sub_sq_multivariateGaussian Matrix.PosSemidef.one,
     integral_inner_sub_inv_norm_sq_add_smul θ hε, Matrix.trace_one, Fintype.card_fin]
 
-/-- Under `N(θ, I)` in positive dimension, almost every point is nonzero. -/
-private theorem ae_ne_zero_multivariateGaussian_one [NeZero p] (θ : EuclideanSpace ℝ (Fin p)) :
-    ∀ᵐ x ∂multivariateGaussian θ (1 : Matrix (Fin p) (Fin p) ℝ), x ≠ 0 := by
-  have hac : multivariateGaussian θ (1 : Matrix (Fin p) (Fin p) ℝ) ≪ volume := by
-    rw [multivariateGaussian_eq_withDensity Matrix.PosDef.one θ]
-    exact withDensity_absolutelyContinuous _ _
-  exact hac (by simp)
-
 variable {ε : ℕ → ℝ}
 
-/-- The regularized weights `(‖x‖² + εₙ)⁻¹` increase to `‖x‖⁻²` at every `x ≠ 0`. -/
+/-- The regularized weights `(‖x‖² + εₙ)⁻¹` converge to `‖x‖⁻²` at every `x ≠ 0`. -/
 private theorem tendsto_inv_norm_sq_add (hεlim : Tendsto ε atTop (𝓝 0))
     {x : EuclideanSpace ℝ (Fin p)} (hx : x ≠ 0) :
     Tendsto (fun n ↦ (‖x‖ ^ 2 + ε n)⁻¹) atTop (𝓝 (‖x‖ ^ 2)⁻¹) := by
@@ -210,30 +203,28 @@ private theorem tendsto_inv_norm_sq_add (hεlim : Tendsto ε atTop (𝓝 0))
 rule `(1 - c / ‖x‖²) x` as `εₙ → 0`, in dimension at least `3`. -/
 private theorem tendsto_integral_norm_sub_sub_smul_inv_norm_sq_add_smul_sq (hp : 3 ≤ p)
     (θ : EuclideanSpace ℝ (Fin p)) (c : ℝ) (hε0 : ∀ n, 0 < ε n)
-    (hεlim : Tendsto ε atTop (𝓝 0)) :
+    (hεlim : Tendsto ε atTop (𝓝 0))
+    (hJi : Integrable (fun x : EuclideanSpace ℝ (Fin p) ↦ (‖x‖ ^ 2)⁻¹) (multivariateGaussian θ 1)) :
     Tendsto (fun n ↦ ∫ x, ‖x - θ - c • ((‖x‖ ^ 2 + ε n)⁻¹ • x)‖ ^ 2
         ∂multivariateGaussian θ 1) atTop
       (𝓝 (∫ x, ‖(1 - c / ‖x‖ ^ 2) • x - θ‖ ^ 2 ∂multivariateGaussian θ 1)) := by
-  have : NeZero p := ⟨by omega⟩
+  have : Nonempty (Fin p) := ⟨⟨0, by omega⟩⟩
   set P := multivariateGaussian θ (1 : Matrix (Fin p) (Fin p) ℝ)
-  have hJi : Integrable (fun x : EuclideanSpace ℝ (Fin p) ↦ (‖x‖ ^ 2)⁻¹)
-      (multivariateGaussian θ 1) := by
-    simpa using integrable_inv_norm_sq_multivariateGaussian (by simpa using hp) 1 θ
   have hsq : Integrable (fun x : EuclideanSpace ℝ (Fin p) ↦ ‖x - θ‖ ^ 2) P :=
     ((IsGaussian.memLp_two_id (μ := P)).sub (memLp_const θ)).integrable_norm_pow (by norm_num)
   refine tendsto_integral_of_dominated_convergence
     (fun x ↦ 2 * ‖x - θ‖ ^ 2 + 2 * c ^ 2 * (‖x‖ ^ 2)⁻¹)
     (fun n ↦ Measurable.aestronglyMeasurable (by fun_prop))
     ((hsq.const_mul 2).add (hJi.const_mul _)) (fun n ↦ ?_) ?_
-  · filter_upwards [ae_ne_zero_multivariateGaussian_one θ] with x hx
+  · refine ae_of_all _ fun x ↦ ?_
     rw [Real.norm_of_nonneg (sq_nonneg _)]
     have hg : ‖c • ((‖x‖ ^ 2 + ε n)⁻¹ • x)‖ ^ 2 ≤ c ^ 2 * (‖x‖ ^ 2)⁻¹ := by
       rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, norm_inv_norm_sq_add_smul_sq]
-      exact mul_le_mul_of_nonneg_left (norm_sq_div_norm_sq_add_sq_le hx (hε0 n).le) (sq_nonneg _)
+      exact mul_le_mul_of_nonneg_left (norm_sq_div_norm_sq_add_sq_le x (hε0 n).le) (sq_nonneg _)
     have h1 := TauCeti.norm_sub_sq_le_two_mul (x - θ) (c • ((‖x‖ ^ 2 + ε n)⁻¹ • x)) 0
     simp only [sub_zero] at h1
     linarith
-  · filter_upwards [ae_ne_zero_multivariateGaussian_one θ] with x hx
+  · filter_upwards [ae_ne_zero_multivariateGaussian Matrix.PosDef.one θ] with x hx
     have hδ : (1 - c / ‖x‖ ^ 2) • x - θ = x - θ - c • ((‖x‖ ^ 2)⁻¹ • x) := by
       rw [sub_smul, one_smul, div_eq_mul_inv, mul_smul]
       abel
@@ -241,34 +232,34 @@ private theorem tendsto_integral_norm_sub_sub_smul_inv_norm_sq_add_smul_sq (hp :
     exact ((continuous_norm.tendsto _).comp ((tendsto_const_nhds (x := x - θ)).sub
       (((tendsto_inv_norm_sq_add hεlim hx).smul_const x).const_smul c))).pow 2
 
-/-- `‖x‖² / (‖x‖² + εₙ)² → ‖x‖⁻²` at every `x ≠ 0`. -/
+/-- `‖x‖² / (‖x‖² + εₙ)² → (‖x‖²)⁻¹` at every `x`; at `x = 0` both sides are `0`. -/
 private theorem tendsto_norm_sq_div_norm_sq_add_sq (hεlim : Tendsto ε atTop (𝓝 0))
-    {x : EuclideanSpace ℝ (Fin p)} (hx : x ≠ 0) :
+    (x : EuclideanSpace ℝ (Fin p)) :
     Tendsto (fun n ↦ ‖x‖ ^ 2 / (‖x‖ ^ 2 + ε n) ^ 2) atTop (𝓝 (‖x‖ ^ 2)⁻¹) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
   simp_rw [div_eq_mul_inv, ← inv_pow]
   convert ((tendsto_inv_norm_sq_add hεlim hx).pow 2).const_mul (‖x‖ ^ 2) using 2
   field_simp
 
 /-- The two regularized integrals in the risk converge, to `E‖X‖⁻²` and `(p - 2) E‖X‖⁻²`. -/
 private theorem tendsto_integrals_inv_norm_sq_add (hp : 3 ≤ p) (θ : EuclideanSpace ℝ (Fin p))
-    (hε0 : ∀ n, 0 < ε n) (hεlim : Tendsto ε atTop (𝓝 0)) :
+    (hε0 : ∀ n, 0 < ε n) (hεlim : Tendsto ε atTop (𝓝 0))
+    (hJi : Integrable (fun x : EuclideanSpace ℝ (Fin p) ↦ (‖x‖ ^ 2)⁻¹) (multivariateGaussian θ 1)) :
     Tendsto (fun n ↦ ∫ x, ‖x‖ ^ 2 / (‖x‖ ^ 2 + ε n) ^ 2 ∂multivariateGaussian θ 1) atTop
         (𝓝 (∫ x, (‖x‖ ^ 2)⁻¹ ∂multivariateGaussian θ 1)) ∧
       Tendsto (fun n ↦ ∫ x, ((p : ℝ) * (‖x‖ ^ 2 + ε n)⁻¹ - 2 * ‖x‖ ^ 2 / (‖x‖ ^ 2 + ε n) ^ 2)
         ∂multivariateGaussian θ 1) atTop
         (𝓝 (((p : ℝ) - 2) * ∫ x, (‖x‖ ^ 2)⁻¹ ∂multivariateGaussian θ 1)) := by
-  have : NeZero p := ⟨by omega⟩
-  have hJi : Integrable (fun x : EuclideanSpace ℝ (Fin p) ↦ (‖x‖ ^ 2)⁻¹)
-      (multivariateGaussian θ 1) := by
-    simpa using integrable_inv_norm_sq_multivariateGaussian (by simpa using hp) 1 θ
-  have hne := ae_ne_zero_multivariateGaussian_one θ
+  have : Nonempty (Fin p) := ⟨⟨0, by omega⟩⟩
+  have hne := ae_ne_zero_multivariateGaussian Matrix.PosDef.one θ
   -- The quadratic weight `‖x‖² / (‖x‖² + ε)²` and the inverse weight `(‖x‖² + ε)⁻¹` are both
-  -- dominated by `(‖x‖²)⁻¹`, and converge to it pointwise off the origin.
+  -- dominated by `(‖x‖²)⁻¹`; the first converges to it everywhere, the second off the origin.
   have hB_le (n : ℕ) : ∀ᵐ x ∂multivariateGaussian θ 1,
       ‖‖x‖ ^ 2 / (‖x‖ ^ 2 + ε n) ^ 2‖ ≤ (‖x‖ ^ 2)⁻¹ := by
-    filter_upwards [hne] with x hx
+    refine ae_of_all _ fun x ↦ ?_
     rw [Real.norm_of_nonneg (by positivity)]
-    exact norm_sq_div_norm_sq_add_sq_le hx (hε0 n).le
+    exact norm_sq_div_norm_sq_add_sq_le x (hε0 n).le
   have hA_le (n : ℕ) : ∀ᵐ x ∂multivariateGaussian θ 1, ‖(‖x‖ ^ 2 + ε n)⁻¹‖ ≤ (‖x‖ ^ 2)⁻¹ := by
     filter_upwards [hne] with x hx
     rw [Real.norm_of_nonneg (inv_nonneg.2 (by linarith [hε0 n, sq_nonneg ‖x‖]))]
@@ -280,7 +271,7 @@ private theorem tendsto_integrals_inv_norm_sq_add (hp : 3 ≤ p) (θ : Euclidean
       (‖x‖ ^ 2 + ε n)⁻¹) (multivariateGaussian θ 1) :=
     Measurable.aestronglyMeasurable (by fun_prop)
   have hB := tendsto_integral_of_dominated_convergence _ hBm hJi hB_le
-    (by filter_upwards [hne] with x hx using tendsto_norm_sq_div_norm_sq_add_sq hεlim hx)
+    (ae_of_all _ (tendsto_norm_sq_div_norm_sq_add_sq hεlim))
   have hA := tendsto_integral_of_dominated_convergence _ hAm hJi hA_le
     (by filter_upwards [hne] with x hx using tendsto_inv_norm_sq_add hεlim hx)
   refine ⟨hB, ?_⟩
@@ -301,28 +292,28 @@ theorem james_stein_risk_eq_and_lt (hp : 3 ≤ p) (θ : EuclideanSpace ℝ (Fin 
     ∫ x, ‖(1 - ((p : ℝ) - 2) / ‖x‖ ^ 2) • x - θ‖ ^ 2 ∂multivariateGaussian θ 1 =
         p - ((p : ℝ) - 2) ^ 2 * ∫ x, (‖x‖ ^ 2)⁻¹ ∂multivariateGaussian θ 1 ∧
       ∫ x, ‖(1 - ((p : ℝ) - 2) / ‖x‖ ^ 2) • x - θ‖ ^ 2 ∂multivariateGaussian θ 1 < p := by
-  have : NeZero p := ⟨by omega⟩
+  have : Nonempty (Fin p) := ⟨⟨0, by omega⟩⟩
   set c : ℝ := (p : ℝ) - 2
   set J := ∫ x, (‖x‖ ^ 2)⁻¹ ∂multivariateGaussian θ (1 : Matrix (Fin p) (Fin p) ℝ)
   set ε : ℕ → ℝ := fun n ↦ 1 / ((n : ℝ) + 1)
   have hε0 (n : ℕ) : 0 < ε n := by positivity
   have hεlim : Tendsto ε atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
-  obtain ⟨hB, hA⟩ := tendsto_integrals_inv_norm_sq_add hp θ hε0 hεlim
+  have hJi : Integrable (fun x : EuclideanSpace ℝ (Fin p) ↦ (‖x‖ ^ 2)⁻¹)
+      (multivariateGaussian θ 1) := by
+    simpa using integrable_inv_norm_sq_multivariateGaussian (by simpa using hp) 1 θ
+  obtain ⟨hB, hA⟩ := tendsto_integrals_inv_norm_sq_add hp θ hε0 hεlim hJi
   have hlim := (tendsto_const_nhds (x := (p : ℝ))).sub (hA.const_mul (2 * c)) |>.add
     (hB.const_mul (c ^ 2))
   simp_rw [← integral_norm_sub_sub_smul_inv_norm_sq_add_smul_sq θ (hε0 _)] at hlim
   have heq := tendsto_nhds_unique
-    (tendsto_integral_norm_sub_sub_smul_inv_norm_sq_add_smul_sq hp θ c hε0 hεlim) hlim
+    (tendsto_integral_norm_sub_sub_smul_inv_norm_sq_add_smul_sq hp θ c hε0 hεlim hJi) hlim
   have hJpos : 0 < J := by
-    have hJi : Integrable (fun x : EuclideanSpace ℝ (Fin p) ↦ (‖x‖ ^ 2)⁻¹)
-        (multivariateGaussian θ 1) := by
-      simpa using integrable_inv_norm_sq_multivariateGaussian (by simpa using hp) 1 θ
     have hsupp : Function.support (fun x : EuclideanSpace ℝ (Fin p) ↦ (‖x‖ ^ 2)⁻¹) =
         {x | x ≠ 0} := by
       ext x
       simp
     rw [integral_pos_iff_support_of_nonneg (fun _ ↦ by positivity) hJi, hsupp,
-      (ae_iff_prob_eq_one (by fun_prop)).1 (ae_ne_zero_multivariateGaussian_one θ)]
+      (ae_iff_prob_eq_one (by fun_prop)).1 (ae_ne_zero_multivariateGaussian Matrix.PosDef.one θ)]
     exact one_pos
   have hc1 : 1 ≤ c := by
     have : (3 : ℝ) ≤ p := by exact_mod_cast hp
