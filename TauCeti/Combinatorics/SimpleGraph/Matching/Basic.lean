@@ -712,17 +712,6 @@ section Certificates
 
 variable {M : G.Subgraph} {c : Set V}
 
-/-- The extended edge-set cardinality `M.edgeSet.encard` (in `ℕ∞`) of any matching `M` of a
-simple graph is at most `G.vertexCoverNum`. -/
-theorem Subgraph.IsMatching.encard_edgeSet_le_vertexCoverNum (hM : M.IsMatching) :
-    M.edgeSet.encard ≤ G.vertexCoverNum :=
-  hM.encard_edgeSet_le_matchingNum.trans G.matchingNum_le_vertexCoverNum
-
-/-- The matching number `G.matchingNum` of a simple graph is at most the extended cardinality
-`c.encard` (in `ℕ∞`) of any vertex cover `c`. -/
-theorem IsVertexCover.matchingNum_le_encard (hc : G.IsVertexCover c) : G.matchingNum ≤ c.encard :=
-  G.matchingNum_le_vertexCoverNum.trans hc.vertexCoverNum_le
-
 /-- A matching whose edge-set `Set.encard` equals the `Set.encard` of some vertex cover (in
 `ℕ∞`) is a maximum matching. -/
 theorem Subgraph.IsMatching.isMaximumMatching_of_encard_edgeSet_eq (hM : M.IsMatching)
@@ -736,13 +725,6 @@ theorem IsVertexCover.isMinimumVertexCover_of_encard_eq (hc : G.IsVertexCover c)
     (h : M.edgeSet.encard = c.encard) : G.IsMinimumVertexCover c :=
   isMinimumVertexCover_iff_encard_eq.mpr
     ⟨hc, hc.encard_eq_vertexCoverNum_of_isMatching hM h⟩
-
-/-- If some matching `M` and some vertex cover `c` have equal extended counts
-`M.edgeSet.encard = c.encard` (in `ℕ∞`), then `G.matchingNum = G.vertexCoverNum`. -/
-theorem matchingNum_eq_vertexCoverNum_of_encard_eq (hM : M.IsMatching) (hc : G.IsVertexCover c)
-    (h : M.edgeSet.encard = c.encard) : G.matchingNum = G.vertexCoverNum :=
-  (hM.encard_edgeSet_eq_matchingNum_of_isVertexCover hc h).symm.trans <|
-    h.trans (hc.encard_eq_vertexCoverNum_of_isMatching hM h)
 
 /-- For a finite vertex cover `c`, equality of `encard` with a matching `M` is equivalent to
 equality of `ncard`, since weak duality forces `M.edgeSet` to be finite. -/

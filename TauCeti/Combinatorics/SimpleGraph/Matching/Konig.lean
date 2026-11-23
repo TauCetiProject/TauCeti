@@ -229,7 +229,7 @@ theorem IsBipartiteWith.exists_isMatching_encard_add_encard_eq (hLR : G.IsBipart
 private theorem IsBipartiteWith.exists_isMatching_encard_add_encard_eq_of_finite
     (hLR : G.IsBipartiteWith L R) (hL : L.Finite) :
     ∃ (M : G.Subgraph) (S : Set V), M.IsMatching ∧ S ⊆ L ∧
-      (⋃ x ∈ S, G.neighborSet x).Finite ∧
+      M.edgeSet.Finite ∧ S.Finite ∧ (⋃ x ∈ S, G.neighborSet x).Finite ∧
       M.edgeSet.encard + S.encard = L.encard + (⋃ x ∈ S, G.neighborSet x).encard := by
   obtain ⟨M, S, hM, hS, heq⟩ := hLR.exists_isMatching_encard_add_encard_eq
   have hSfin : S.Finite := hL.subset hS
@@ -238,7 +238,7 @@ private theorem IsBipartiteWith.exists_isMatching_encard_add_encard_eq_of_finite
     rw [← encard_lt_top_iff]
     exact (le_add_self.trans_eq heq.symm).trans_lt
       (ENat.add_lt_top.2 ⟨hMfin.encard_lt_top, hSfin.encard_lt_top⟩)
-  exact ⟨M, S, hM, hS, hNfin, heq⟩
+  exact ⟨M, S, hM, hS, hMfin, hSfin, hNfin, heq⟩
 
 /-- **The Kőnig–Ore formula in `ℕ`.** In any bipartite graph with finite left side `L` and right
 side `R`, there exist a matching `M` and `S ⊆ L` with finite neighbourhood such that
@@ -248,9 +248,8 @@ theorem IsBipartiteWith.exists_isMatching_ncard_add_ncard_eq
     ∃ (M : G.Subgraph) (S : Set V), M.IsMatching ∧ S ⊆ L ∧
       (⋃ x ∈ S, G.neighborSet x).Finite ∧
       M.edgeSet.ncard + S.ncard = L.ncard + (⋃ x ∈ S, G.neighborSet x).ncard := by
-  obtain ⟨M, S, hM, hS, hNfin, heq⟩ := hLR.exists_isMatching_encard_add_encard_eq_of_finite hL
-  have hSfin : S.Finite := hL.subset hS
-  have hMfin : M.edgeSet.Finite := hM.finite_edgeSet_of_isVertexCover hLR.isVertexCover_left hL
+  obtain ⟨M, S, hM, hS, hMfin, hSfin, hNfin, heq⟩ :=
+    hLR.exists_isMatching_encard_add_encard_eq_of_finite hL
   refine ⟨M, S, hM, hS, hNfin, ?_⟩
   rw [← hMfin.cast_ncard_eq, ← hSfin.cast_ncard_eq, ← hL.cast_ncard_eq, ← hNfin.cast_ncard_eq]
     at heq
@@ -282,7 +281,8 @@ theorem IsBipartiteWith.matchingNum_eq_encard_sub_iSup (hLR : G.IsBipartiteWith 
       refine (ENat.add_le_add_iff_right hNne).1 ?_
       rw [add_assoc, tsub_add_cancel_of_le hNlt.le]
       exact hM.encard_edgeSet_add_encard_le hLR hS₀
-  · obtain ⟨M, S₁, hM, hS₁, hNfin, heq⟩ := hLR.exists_isMatching_encard_add_encard_eq_of_finite hL
+  · obtain ⟨M, S₁, hM, hS₁, -, -, hNfin, heq⟩ :=
+      hLR.exists_isMatching_encard_add_encard_eq_of_finite hL
     have hLle : L.encard ≤ M.edgeSet.encard + f S₁ := by
       refine (ENat.add_le_add_iff_right hNfin.encard_lt_top.ne).1 ?_
       calc
