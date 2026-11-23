@@ -23,12 +23,13 @@ receiving all `[L : ℚ]` embeddings of `L`, such as a Galois closure of `L`. Fo
 
 `R ⊗[ℤ] 𝓞 L ≃ ∏_{σ : L →+* K} R`.
 
-On a `ℤ`-basis of `𝓞 L` its determinant squares to `d_L`. The idempotents of the product split
-every `R`-module `M` with a commuting action of `𝓞 L` as an internal direct sum
-`M = ⨁_σ M(σ)`, where `M(σ)` is the largest submodule on which `𝓞 L` acts through `σ`; they act
-on `M` through `TauCeti.Algebra.TensorProduct.toModuleEnd R (𝓞 L) M`. The splitting is
-functorial in `R`-linear maps commuting with the `𝓞 L`-actions and commutes with base change:
-`(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
+For a `ℤ`-basis `(bⱼ)` of `𝓞 L`, the matrix of the splitting from the basis `(1 ⊗ bⱼ)` to the
+coordinate basis of `∏_σ R` is `(σ(bⱼ))_{σ, j}`, whose determinant squares to `d_L`. The
+idempotents of the product split every `R`-module `M` with a commuting action of `𝓞 L` as an
+internal direct sum `M = ⨁_σ M(σ)`, where `M(σ)` is the largest submodule on which `𝓞 L` acts
+through `σ`; they act on `M` through `TauCeti.Algebra.TensorProduct.toModuleEnd R (𝓞 L) M`. The
+splitting is functorial in `R`-linear maps commuting with the `𝓞 L`-actions and commutes with
+base change: `(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
 
 ## Main definitions
 
@@ -259,7 +260,7 @@ theorem one_tmul_mul_embeddingIdempotent (σ : L →+* K) (ℓ : 𝓞 L) :
 variable {M : Type*} [AddCommMonoid M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
 
 /-- The idempotent at `σ` acts on `M` with range `M(σ)`. -/
-theorem embeddingIdempotent_smul_top (σ : L →+* K) :
+theorem toModuleEnd_embeddingIdempotent_smul_top (σ : L →+* K) :
     Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ) •
         (⊤ : Submodule R M) = embeddingEigenspace L K R M σ := by
   rw [Module.End.smul_top_eq_range]
@@ -283,7 +284,7 @@ theorem isInternal_embeddingEigenspace [DecidableEq (L →+* K)] :
     ((completeOrthogonalIdempotents_embeddingIdempotent hK hd).map
       (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M).toRingHom)
   simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Function.comp_def,
-    embeddingIdempotent_smul_top hK hd] at h
+    toModuleEnd_embeddingIdempotent_smul_top hK hd] at h
   exact h
 
 /-- **Base change of the eigenspaces**: for an `R`-module `N`, the eigenspace `(M ⊗[R] N)(σ)`,
@@ -302,7 +303,7 @@ theorem embeddingEigenspace_tensorProduct [SMulCommClass R (𝓞 L) M]
     have hrange : LinearMap.range
         (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)) ≤
           embeddingEigenspace L K R M σ := by
-      rw [← Module.End.smul_top_eq_range, embeddingIdempotent_smul_top hK hd]
+      rw [← Module.End.smul_top_eq_range, toModuleEnd_embeddingIdempotent_smul_top hK hd]
     let g :=
       (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)).codRestrict
         (embeddingEigenspace L K R M σ) fun m ↦ hrange ⟨m, rfl⟩
