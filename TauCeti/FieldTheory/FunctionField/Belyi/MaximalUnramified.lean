@@ -10,10 +10,8 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.Galois.Quotient
 public import TauCeti.FieldTheory.RatFunc.Map
-public import TauCeti.FieldTheory.RatFunc.Mobius
--- Proof-only: branch-point permutation transport, semilinear conjugation, radical Belyi pairs,
--- and integral closedness of algebraically closed constant fields.
-import TauCeti.FieldTheory.FunctionField.Belyi.BranchPoints
+-- Proof-only: semilinear conjugation, radical Belyi pairs, and integral closedness of
+-- algebraically closed constant fields.
 import TauCeti.FieldTheory.FunctionField.Belyi.Conjugation
 import TauCeti.FieldTheory.FunctionField.Belyi.Radical
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
@@ -27,22 +25,24 @@ pairs over `k`. When `k` is algebraically closed, finite Belyi subextensions are
 composita and normal closures (`TauCeti.isIntegrallyClosedIn_of_isAlgClosed`), forming a directed
 system. Over any characteristic-zero `k`, `maximalBelyiExtension k M / k(t)` is Galois whenever
 `M / k(t)` is normal, has infinite degree when `M` is algebraically closed, and is invariant under
-semilinear coefficient isomorphisms and `S₃` branch-point permutations.
+semilinear coefficient isomorphisms (with `S₃` branch-point transport in
+`TauCeti.FieldTheory.FunctionField.Belyi.BranchPointAction`).
 
-For `M = AlgebraicClosure (RatFunc k)`, `TauCeti.BelyiGeometricFundamentalGroup k` is the profinite
-Krull Galois group `Gal(maximalBelyiExtension k M / k(t))` — over algebraically closed `k`, the
-étale geometric fundamental group `π₁^ét(ℙ¹_k \ {0, 1, ∞})`, whose open (normal) subgroups
-correspond to finite (Galois) algebraic Belyi extensions of `k(t)`.
+For `M = AlgebraicClosure (RatFunc k)`, `TauCeti.MaximalBelyiGaloisGroup k` is the profinite Krull
+Galois group `Gal(maximalBelyiExtension k M / k(t))`. When the constants are algebraically closed
+by construction (`AlgebraicClosure k`), `TauCeti.BelyiGeometricFundamentalGroup k` (`:=
+MaximalBelyiGaloisGroup (AlgebraicClosure k)`) is the étale geometric fundamental group
+`π₁^ét(ℙ¹_k̄ \ {0, 1, ∞})`, whose open (normal) subgroups correspond to finite (Galois) algebraic
+Belyi extensions of `k̄(t)`.
 
 ## Main definitions
 
 * `TauCeti.maximalBelyiExtension`, `TauCeti.liftMaximalBelyiExtension`: maximal Belyi extension in
   `M` and lifting embeddings of finite algebraic Belyi pairs into it.
-* `TauCeti.branchPointAutMaximalBelyiEquiv`, `TauCeti.branchPointAutCongr`: conjugation of
-  `Gal(maximalBelyiExtension k M / k(t))` induced by a lift of a branch-point permutation.
-* `TauCeti.BelyiGeometricFundamentalGroup`, `fixingOpenSubgroup`, `restrictNormalHom`,
-  `restrictNormalOpenNormalSubgroup`, `quotientKerRestrictNormalHomEquiv`, `openSubgroupOrderIso`,
-  `openNormalSubgroupOrderIso`: `π₁^ét(ℙ¹_k \ {0, 1, ∞})`, its open (normal) subgroups, finite
+* `TauCeti.MaximalBelyiGaloisGroup`, `TauCeti.BelyiGeometricFundamentalGroup`,
+  `fixingOpenSubgroup`, `restrictNormalHom`, `restrictNormalOpenNormalSubgroup`,
+  `quotientKerRestrictNormalHomEquiv`, `openSubgroupOrderIso`, `openNormalSubgroupOrderIso`:
+  the maximal Belyi Galois group and geometric fundamental group, open (normal) subgroups, finite
   Galois quotients, and order-reversing Galois correspondences.
 
 ## Main results
@@ -54,18 +54,14 @@ correspond to finite (Galois) algebraic Belyi extensions of `k(t)`.
 * `TauCeti.normal_maximalBelyiExtension`, `TauCeti.isGalois_maximalBelyiExtension`: normality and
   Galoisness over `RatFunc k` when `M / RatFunc k` is normal.
 * `TauCeti.mem_maximalBelyiExtension_of_pow_eq`, `not_finiteDimensional_maximalBelyiExtension`,
-  `BelyiGeometricFundamentalGroup.instInfinite`: radical elements, infinite degree, infinite order.
-* `TauCeti.map_maximalBelyiExtension_of_mapRingEquiv`,
-  `TauCeti.map_maximalBelyiExtension_of_branchPointAut`,
-  `BelyiGeometricFundamentalGroup.map_fixingOpenSubgroup_branchPointAutCongr`,
-  `BelyiGeometricFundamentalGroup.map_restrictNormalOpenNormalSubgroup_branchPointAutCongr`:
-  semilinear and `S₃` invariance on fields, open subgroups, and restriction kernels.
-* `BelyiGeometricFundamentalGroup.fixedField_fixingOpenSubgroup`,
-  `BelyiGeometricFundamentalGroup.fixedField_restrictNormalOpenNormalSubgroup`,
-  `BelyiGeometricFundamentalGroup.fixingOpenSubgroup_fixedField`,
-  `BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup_fixedField`,
-  `BelyiGeometricFundamentalGroup.restrictNormalHom_restrictNormalHom`: fixed-field recovery,
-  tower compatibility, and named open (normal) subgroup correspondence.
+  `MaximalBelyiGaloisGroup.instInfinite`: radical elements, infinite degree, infinite order.
+* `TauCeti.map_maximalBelyiExtension_of_mapRingEquiv`: semilinear invariance.
+* `MaximalBelyiGaloisGroup.fixedField_fixingOpenSubgroup`,
+  `MaximalBelyiGaloisGroup.fixedField_restrictNormalOpenNormalSubgroup`,
+  `MaximalBelyiGaloisGroup.fixingOpenSubgroup_fixedField`,
+  `MaximalBelyiGaloisGroup.restrictNormalOpenNormalSubgroup_fixedField`,
+  `MaximalBelyiGaloisGroup.restrictNormalHom_restrictNormalHom`: fixed-field recovery, tower
+  compatibility, and named open (normal) subgroup correspondence.
 
 ## References
 
@@ -289,11 +285,12 @@ theorem not_finiteDimensional_maximalBelyiExtension [IsAlgClosed M] :
 
 end MaximalBelyiExtension
 
-/-! ### Symmetries: coefficient conjugation and branch-point permutations -/
+/-! ### Coefficient-conjugation invariance and normality -/
 
-section Symmetries
-
-private theorem map_maximalBelyiExtension_le_of_ringEquiv
+/-- General ring-equivalence inclusion for `maximalBelyiExtension`: if `τ : M ≃+* M'` lifts
+`φ : RatFunc k ≃+* RatFunc k'` and carries finite Belyi subextensions to Belyi subextensions,
+then `τ` maps `maximalBelyiExtension k M` into `maximalBelyiExtension k' M'`. -/
+theorem map_maximalBelyiExtension_le_of_ringEquiv
     {k k' M M' : Type*} [Field k] [CharZero k] [Field k'] [CharZero k']
     [Field M] [Algebra k M] [Algebra (RatFunc k) M] [IsScalarTower k (RatFunc k) M]
     [Field M'] [Algebra k' M'] [Algebra (RatFunc k') M'] [IsScalarTower k' (RatFunc k') M']
@@ -378,199 +375,26 @@ instance isGalois_maximalBelyiExtension {k M : Type*} [Field k] [CharZero k]
   have : CharZero (RatFunc k) := charZero_of_injective_algebraMap (algebraMap k _).injective
   ⟨⟩
 
-section BranchPointAut
-
-variable {k M M' : Type*} [Field k] [CharZero k]
-  [Field M] [Algebra k M] [Algebra (RatFunc k) M] [IsScalarTower k (RatFunc k) M]
-  [Field M'] [Algebra k M'] [Algebra (RatFunc k) M'] [IsScalarTower k (RatFunc k) M']
-  (ρ : Equiv.Perm (Fin 3)) (e : M ≃ₐ[k] M')
-  (he : ∀ x, e (algebraMap (RatFunc k) M (RatFunc.branchPointAut k ρ x)) =
-    algebraMap (RatFunc k) M' x)
-include he
-
-private theorem map_maximalBelyiExtension_le_of_branchPointAut :
-    (maximalBelyiExtension k M).toSubfield.map e.toRingHom ≤
-      (maximalBelyiExtension k M').toSubfield := by
-  have he_inv (x : RatFunc k) :
-      e (algebraMap (RatFunc k) M x) =
-        algebraMap (RatFunc k) M' (RatFunc.branchPointAut k ρ⁻¹ x) := by
-    rw [← he, ← AlgEquiv.mul_apply, ← map_mul, _root_.mul_inv_cancel, map_one, AlgEquiv.one_apply]
-  refine map_maximalBelyiExtension_le_of_ringEquiv
-    (RatFunc.branchPointAut k ρ⁻¹).toRingEquiv e.toRingEquiv he_inv fun {E} {E'} _ _ e' he' hE ↦ ?_
-  let eE : E ≃ₐ[k] E' := AlgEquiv.ofRingEquiv (f := e') fun c ↦ Subtype.ext <| by
-    rw [he', AlgEquiv.coe_toRingEquiv, IsScalarTower.algebraMap_apply k (RatFunc k) E,
-      IntermediateField.coe_algebraMap_apply, ← IsScalarTower.algebraMap_apply k (RatFunc k) M,
-      e.commutes, IsScalarTower.algebraMap_apply k (RatFunc k) M',
-      IsScalarTower.algebraMap_apply k (RatFunc k) E', IntermediateField.coe_algebraMap_apply]
-  exact hE.of_branchPointAut ρ eE fun x ↦ Subtype.ext ((he' _).trans (he x))
-
-/-- **Branch-point permutation invariance of the maximal Belyi extension**: if `e : M ≃ₐ[k] M'`
-intertwines `RatFunc.branchPointAut k ρ` (`ρ ∈ S₃`) with the `k(t)`-algebra structures, then `e`
-carries `maximalBelyiExtension k M` onto `maximalBelyiExtension k M'`. -/
-theorem map_maximalBelyiExtension_of_branchPointAut :
-    (maximalBelyiExtension k M).toSubfield.map e.toRingHom =
-      (maximalBelyiExtension k M').toSubfield := by
-  refine le_antisymm (map_maximalBelyiExtension_le_of_branchPointAut ρ e he) fun z hz ↦ ?_
-  have hle := map_maximalBelyiExtension_le_of_branchPointAut ρ⁻¹ e.symm fun x ↦
-    e.symm_apply_eq.mpr <| by
-      rw [← he, ← AlgEquiv.mul_apply, ← map_mul, _root_.mul_inv_cancel, map_one, AlgEquiv.one_apply]
-  exact ⟨e.symm z, hle ⟨z, hz, rfl⟩, e.apply_symm_apply z⟩
-
-/-- Elementwise form of `TauCeti.map_maximalBelyiExtension_of_branchPointAut`. -/
-theorem apply_mem_maximalBelyiExtension_iff_of_branchPointAut {y : M} :
-    e y ∈ maximalBelyiExtension k M' ↔ y ∈ maximalBelyiExtension k M := by
-  rw [← IntermediateField.mem_toSubfield, ← map_maximalBelyiExtension_of_branchPointAut ρ e he,
-    RingEquiv.toRingHom_eq_coe, ← AlgEquiv.coe_toRingEquiv, ← RingHom.coe_coe,
-    Subfield.map_mem_map, IntermediateField.mem_toSubfield]
-
-omit [CharZero k] [IsScalarTower k (RatFunc k) M] [IsScalarTower k (RatFunc k) M'] in
-private theorem branchPointAut_he_inv (x : RatFunc k) :
-    e.symm (algebraMap (RatFunc k) M' (RatFunc.branchPointAut k ρ⁻¹ x)) =
-      algebraMap (RatFunc k) M x :=
-  e.symm_apply_eq.mpr <| by
-    rw [← he, ← AlgEquiv.mul_apply, ← map_mul, _root_.mul_inv_cancel, map_one, AlgEquiv.one_apply]
-
-/-- Restriction of a branch-point lift `e : M ≃ₐ[k] M'` to a `k`-algebra isomorphism between
-`maximalBelyiExtension k M` and `maximalBelyiExtension k M'`. -/
-noncomputable def branchPointAutMaximalBelyiEquiv :
-    ↥(maximalBelyiExtension k M) ≃ₐ[k] ↥(maximalBelyiExtension k M') :=
-  AlgEquiv.ofRingEquiv
-    (f := e.toRingEquiv.restrict (maximalBelyiExtension k M).toSubfield
-      (maximalBelyiExtension k M').toSubfield fun _ ↦
-        (apply_mem_maximalBelyiExtension_iff_of_branchPointAut ρ e he).symm)
-    fun c ↦ Subtype.ext (e.commutes c)
-
-@[simp]
-theorem coe_branchPointAutMaximalBelyiEquiv_apply (x : ↥(maximalBelyiExtension k M)) :
-    (branchPointAutMaximalBelyiEquiv ρ e he x : M') = e x := (rfl)
-
-@[simp]
-theorem coe_branchPointAutMaximalBelyiEquiv_symm_apply (y : ↥(maximalBelyiExtension k M')) :
-    ((branchPointAutMaximalBelyiEquiv ρ e he).symm y : M) = e.symm y := (rfl)
-
-private theorem branchPointAutMaximalBelyiEquiv_algebraMap (x : RatFunc k) :
-    branchPointAutMaximalBelyiEquiv ρ e he
-        (algebraMap (RatFunc k) _ (RatFunc.branchPointAut k ρ x)) =
-      algebraMap (RatFunc k) _ x :=
-  Subtype.ext (he x)
-
-private theorem branchPointAutMaximalBelyiEquiv_symm_algebraMap (x : RatFunc k) :
-    (branchPointAutMaximalBelyiEquiv ρ e he).symm (algebraMap (RatFunc k) _ x) =
-      algebraMap (RatFunc k) _ (RatFunc.branchPointAut k ρ x) :=
-  (branchPointAutMaximalBelyiEquiv ρ e he).symm_apply_eq.mpr
-    (branchPointAutMaximalBelyiEquiv_algebraMap ρ e he x).symm
-
-private noncomputable def branchPointAutCongrMulEquiv :
-    Gal(↥(maximalBelyiExtension k M)/RatFunc k) ≃*
-      Gal(↥(maximalBelyiExtension k M')/RatFunc k) where
-  toFun σ := AlgEquiv.ofRingEquiv
-    (f := (branchPointAutMaximalBelyiEquiv ρ e he).symm.toRingEquiv.trans
-      (σ.toRingEquiv.trans (branchPointAutMaximalBelyiEquiv ρ e he).toRingEquiv))
-    fun x ↦ by
-      simp only [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
-        branchPointAutMaximalBelyiEquiv_symm_algebraMap, AlgEquiv.commutes,
-        branchPointAutMaximalBelyiEquiv_algebraMap]
-  invFun τ := AlgEquiv.ofRingEquiv
-    (f := (branchPointAutMaximalBelyiEquiv ρ e he).toRingEquiv.trans
-      (τ.toRingEquiv.trans (branchPointAutMaximalBelyiEquiv ρ e he).symm.toRingEquiv))
-    fun x ↦ by
-      have hx : branchPointAutMaximalBelyiEquiv ρ e he (algebraMap (RatFunc k) _ x) =
-          algebraMap (RatFunc k) _ (RatFunc.branchPointAut k ρ⁻¹ x) := by
-        rw [← branchPointAutMaximalBelyiEquiv_algebraMap ρ e he (RatFunc.branchPointAut k ρ⁻¹ x),
-          ← AlgEquiv.mul_apply, ← map_mul, _root_.mul_inv_cancel, map_one, AlgEquiv.one_apply]
-      rw [RingEquiv.trans_apply, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
-        AlgEquiv.coe_toRingEquiv, AlgEquiv.coe_toRingEquiv, hx, AlgEquiv.commutes,
-        branchPointAutMaximalBelyiEquiv_symm_algebraMap, ← AlgEquiv.mul_apply, ← map_mul,
-        _root_.mul_inv_cancel, map_one, AlgEquiv.one_apply]
-  left_inv σ := AlgEquiv.ext fun x ↦ by
-    simp only [AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
-      AlgEquiv.symm_apply_apply]
-  right_inv τ := AlgEquiv.ext fun y ↦ by
-    simp only [AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
-      AlgEquiv.apply_symm_apply]
-  map_mul' σ₁ σ₂ := AlgEquiv.ext fun y ↦ by
-    simp only [AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
-      AlgEquiv.mul_apply, AlgEquiv.symm_apply_apply]
-
-private theorem continuous_branchPointAutCongrMulEquiv :
-    Continuous (branchPointAutCongrMulEquiv ρ e he) := by
-  refine continuous_of_continuousAt_one (branchPointAutCongrMulEquiv ρ e he) fun U hU ↦ ?_
-  rw [map_one, krullTopology_mem_nhds_one_iff] at hU
-  obtain ⟨E', _, hE'U⟩ := hU
-  let eΩ := branchPointAutMaximalBelyiEquiv ρ e he
-  let E : IntermediateField (RatFunc k) ↥(maximalBelyiExtension k M) :=
-    (E'.toSubfield.comap eΩ.toRingHom).toIntermediateField fun x ↦ by
-      rw [Subfield.mem_comap, IntermediateField.mem_toSubfield]
-      change eΩ (algebraMap (RatFunc k) _ x) ∈ E'
-      have hx : eΩ (algebraMap (RatFunc k) _ x) =
-          algebraMap (RatFunc k) _ (RatFunc.branchPointAut k ρ⁻¹ x) := by
-        rw [← branchPointAutMaximalBelyiEquiv_algebraMap ρ e he (RatFunc.branchPointAut k ρ⁻¹ x),
-          ← AlgEquiv.mul_apply, ← map_mul, _root_.mul_inv_cancel, map_one, AlgEquiv.one_apply]
-      rw [hx]
-      exact E'.algebraMap_mem _
-  let eE : E ≃+* E' := eΩ.toRingEquiv.restrict E.toSubfield E'.toSubfield fun _ ↦ Iff.rfl
-  have : FiniteDimensional (RatFunc k) E :=
-    .of_equiv_equiv (RatFunc.branchPointAut k ρ).toRingEquiv eE.symm (RingHom.ext fun x ↦
-      Subtype.ext (branchPointAutMaximalBelyiEquiv_symm_algebraMap ρ e he x).symm)
-  refine Filter.mem_map.2 <| (krullTopology_mem_nhds_one_iff (RatFunc k) _ _).2
-    ⟨E, inferInstance, fun σ hσ ↦ hE'U ?_⟩
-  rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hσ ⊢
-  intro y hy
-  have hσy := hσ (eΩ.symm y) (by
-    change eΩ (eΩ.symm y) ∈ E'
-    simpa [eΩ] using hy)
-  change eΩ (σ (eΩ.symm y)) = y
-  rw [hσy, AlgEquiv.apply_symm_apply]
-
-/-- **Branch-point permutation conjugation on the Galois group of the maximal Belyi extension**:
-a chosen lift `e : M ≃ₐ[k] M'` of `RatFunc.branchPointAut k ρ` induces a topological group
-isomorphism `Gal(maximalBelyiExtension k M / k(t)) ≃ₜ* Gal(maximalBelyiExtension k M' / k(t))`
-by conjugation `σ ↦ e ∘ σ ∘ e⁻¹`. -/
-noncomputable def branchPointAutCongr :
-    Gal(↥(maximalBelyiExtension k M)/RatFunc k) ≃ₜ*
-      Gal(↥(maximalBelyiExtension k M')/RatFunc k) where
-  toMulEquiv := branchPointAutCongrMulEquiv ρ e he
-  continuous_toFun := (continuous_branchPointAutCongrMulEquiv ρ e he).congr fun _ ↦ rfl
-  continuous_invFun :=
-    (continuous_branchPointAutCongrMulEquiv ρ⁻¹ e.symm (branchPointAut_he_inv ρ e he)).congr
-      fun _ ↦ rfl
-
-@[simp]
-theorem branchPointAutCongr_apply_apply (σ : Gal(↥(maximalBelyiExtension k M)/RatFunc k))
-    (y : ↥(maximalBelyiExtension k M')) :
-    branchPointAutCongr ρ e he σ y =
-      branchPointAutMaximalBelyiEquiv ρ e he
-        (σ ((branchPointAutMaximalBelyiEquiv ρ e he).symm y)) := (rfl)
-
-@[simp]
-theorem branchPointAutCongr_symm_apply_apply (τ : Gal(↥(maximalBelyiExtension k M')/RatFunc k))
-    (x : ↥(maximalBelyiExtension k M)) :
-    (branchPointAutCongr ρ e he).symm τ x =
-      (branchPointAutMaximalBelyiEquiv ρ e he).symm
-        (τ (branchPointAutMaximalBelyiEquiv ρ e he x)) := (rfl)
-
-end BranchPointAut
-
-end Symmetries
-
-/-! ### The algebraic geometric fundamental group of `ℙ¹_k \ {0, 1, ∞}` -/
+/-! ### The maximal Belyi Galois group and geometric fundamental group of `ℙ¹ \ {0, 1, ∞}` -/
 
 /-- The Galois group `Gal(maximalBelyiExtension k (AlgebraicClosure (RatFunc k)) / RatFunc k)` with
-its Krull topology. When `k` is algebraically closed of characteristic zero, this is the étale
-**geometric fundamental group** `π₁^ét(ℙ¹_k \ {0, 1, ∞})`; over a general characteristic-zero field
-`F`, the geometric fundamental group is `BelyiGeometricFundamentalGroup (AlgebraicClosure F)`
-(acted on by `Field.absoluteGaloisGroup F` via `TauCeti.belyiAbsoluteGaloisGroupOuterAction F`). -/
--- `[IsAlgClosed k]` is documented rather than assumed here: `maximalBelyiExtension` consumes no
--- such argument, so carrying it on the `abbrev` is rejected by `unusedArguments`.
-abbrev BelyiGeometricFundamentalGroup (k : Type*) [Field k] [CharZero k] :=
+its Krull topology, for any field `k` of characteristic zero. When the constants are algebraically
+closed by construction (`AlgebraicClosure k`), this is the étale geometric fundamental group
+`TauCeti.BelyiGeometricFundamentalGroup k`. -/
+abbrev MaximalBelyiGaloisGroup (k : Type*) [Field k] [CharZero k] :=
   Gal(↥(maximalBelyiExtension k (AlgebraicClosure (RatFunc k)))/RatFunc k)
 
-namespace BelyiGeometricFundamentalGroup
+/-- The **étale geometric fundamental group** `π₁^ét(ℙ¹_k̄ \ {0, 1, ∞})`, defined over an algebraic
+closure `AlgebraicClosure k` so that the constants are algebraically closed by construction. -/
+abbrev BelyiGeometricFundamentalGroup (k : Type*) [Field k] [CharZero k] :=
+  MaximalBelyiGaloisGroup (AlgebraicClosure k)
+
+namespace MaximalBelyiGaloisGroup
 
 variable {k : Type*} [Field k] [CharZero k]
 
 local notation "Ωk" => maximalBelyiExtension k (AlgebraicClosure (RatFunc k))
-local notation "BelyiG" => BelyiGeometricFundamentalGroup k
+local notation "BelyiG" => MaximalBelyiGaloisGroup k
 
 section FiniteBelyi
 
@@ -581,7 +405,7 @@ include hF f
 
 local notation "liftF" => liftMaximalBelyiExtension hF f
 
-/-- The open subgroup of `BelyiGeometricFundamentalGroup k` cut out by an embedding
+/-- The open subgroup of `MaximalBelyiGaloisGroup k` cut out by an embedding
 `f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)` of a finite algebraic Belyi pair `F`. -/
 noncomputable def fixingOpenSubgroup : OpenSubgroup BelyiG where
   toSubgroup := (liftF).fieldRange.fixingSubgroup
@@ -594,7 +418,7 @@ noncomputable def fixingOpenSubgroup : OpenSubgroup BelyiG where
 theorem fixingOpenSubgroup_toSubgroup :
     (fixingOpenSubgroup hF f).toSubgroup = (liftF).fieldRange.fixingSubgroup := (rfl)
 
-/-- An element of `BelyiGeometricFundamentalGroup k` lies in `fixingOpenSubgroup hF f` iff it fixes
+/-- An element of `MaximalBelyiGaloisGroup k` lies in `fixingOpenSubgroup hF f` iff it fixes
 the lifted image of every `x : F`. -/
 @[simp]
 theorem mem_fixingOpenSubgroup_iff {γ : BelyiG} :
@@ -613,7 +437,7 @@ section Normal
 
 variable [Normal (RatFunc k) F]
 
-/-- Continuous surjective restriction homomorphism `BelyiGeometricFundamentalGroup k →*
+/-- Continuous surjective restriction homomorphism `MaximalBelyiGaloisGroup k →*
 Gal(F/RatFunc k)` induced by an embedding `f` of a finite normal algebraic Belyi pair `F`. -/
 noncomputable def restrictNormalHom : BelyiG →* Gal(F/RatFunc k) := (liftF).restrictNormalHom
 
@@ -635,11 +459,11 @@ theorem ker_restrictNormalHom :
 theorem continuous_restrictNormalHom : Continuous (restrictNormalHom hF f) :=
   (liftF).continuous_restrictNormalHom
 
-/-- The kernel of `restrictNormalHom hF f` is open in `BelyiGeometricFundamentalGroup k`. -/
+/-- The kernel of `restrictNormalHom hF f` is open in `MaximalBelyiGaloisGroup k`. -/
 theorem isOpen_ker_restrictNormalHom : IsOpen ((restrictNormalHom hF f).ker : Set BelyiG) :=
   (liftF).isOpen_ker_restrictNormalHom
 
-/-- The open normal subgroup of `BelyiGeometricFundamentalGroup k` cut out by an embedded finite
+/-- The open normal subgroup of `MaximalBelyiGaloisGroup k` cut out by an embedded finite
 normal algebraic Belyi pair `F`, namely `(restrictNormalHom hF f).ker`. -/
 noncomputable def restrictNormalOpenNormalSubgroup : OpenNormalSubgroup BelyiG where
   toSubgroup := (restrictNormalHom hF f).ker
@@ -681,7 +505,7 @@ theorem restrictNormalHom_restrictNormalHom {E : Type*} [Field E] [Algebra k E]
   rw [restrictNormalHom, restrictNormalHom, hcomp, AlgHom.restrictNormalHom_restrictNormalHom]
 
 /-- Topological quotient isomorphism
-`BelyiGeometricFundamentalGroup k ⧸ (restrictNormalHom hF f).ker ≃ₜ* Gal(F/RatFunc k)`. -/
+`MaximalBelyiGaloisGroup k ⧸ (restrictNormalHom hF f).ker ≃ₜ* Gal(F/RatFunc k)`. -/
 noncomputable def quotientKerRestrictNormalHomEquiv :
     BelyiG ⧸ (restrictNormalHom hF f).ker ≃ₜ* Gal(F/RatFunc k) :=
   (liftF).quotientKerRestrictNormalHomEquiv
@@ -705,33 +529,34 @@ end FiniteBelyi
 
 section GaloisCorrespondence
 
-private theorem liftMaximalBelyiExtension_val_comp_val
+/-- Lifting the ambient inclusion of a finite intermediate field `E ≤ Ωk` gives back `E.val`. -/
+theorem liftMaximalBelyiExtension_val_comp_val
     {E : IntermediateField (RatFunc k) ↥Ωk} [FiniteDimensional (RatFunc k) E]
     (hE : IsAlgebraicBelyiPair k E) :
     liftMaximalBelyiExtension hE ((Ωk).val.comp E.val) = E.val :=
   AlgHom.ext fun _ ↦ (Ωk).val.injective rfl
 
 /-- The fixing subgroup of the fixed field of an open subgroup `U` of
-`BelyiGeometricFundamentalGroup k` is `U` itself. -/
+`MaximalBelyiGaloisGroup k` is `U` itself. -/
 @[simp]
 theorem fixingSubgroup_fixedField (U : OpenSubgroup BelyiG) :
     (IntermediateField.fixedField U.toSubgroup).fixingSubgroup = U.toSubgroup :=
   InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩
 
-/-- For any open subgroup `U` of `BelyiGeometricFundamentalGroup k`, its fixed field is finite
+/-- For any open subgroup `U` of `MaximalBelyiGaloisGroup k`, its fixed field is finite
 over `RatFunc k`. -/
 instance finiteDimensional_fixedField (U : OpenSubgroup BelyiG) :
     FiniteDimensional (RatFunc k) (IntermediateField.fixedField U.toSubgroup) :=
   (InfiniteGalois.isOpen_iff_finite _).mp ((fixingSubgroup_fixedField U).symm ▸ U.isOpen)
 
 /-- Over algebraically closed `k`, the fixed field of any open subgroup `U` of
-`BelyiGeometricFundamentalGroup k` is an algebraic Belyi pair. -/
+`MaximalBelyiGaloisGroup k` is an algebraic Belyi pair. -/
 theorem isAlgebraicBelyiPair_fixedField [IsAlgClosed k] (U : OpenSubgroup BelyiG) :
     IsAlgebraicBelyiPair k (IntermediateField.fixedField U.toSubgroup) :=
   isAlgebraicBelyiPair_intermediateField_maximalBelyiExtension _
 
 /-- **Round-trip on open subgroups**: over algebraically closed `k`, taking the fixing open
-subgroup of the fixed field of `U : OpenSubgroup (BelyiGeometricFundamentalGroup k)` recovers
+subgroup of the fixed field of `U : OpenSubgroup (MaximalBelyiGaloisGroup k)` recovers
 `U`. -/
 @[simp]
 theorem fixingOpenSubgroup_fixedField [IsAlgClosed k] (U : OpenSubgroup BelyiG) :
@@ -750,7 +575,7 @@ theorem fixedField_fixingOpenSubgroup_val (E : IntermediateField (RatFunc k) ↥
   rw [fixedField_fixingOpenSubgroup, liftMaximalBelyiExtension_val_comp_val,
     IntermediateField.fieldRange_val]
 
-/-- For any open normal subgroup `U` of `BelyiGeometricFundamentalGroup k`, its fixed field is
+/-- For any open normal subgroup `U` of `MaximalBelyiGaloisGroup k`, its fixed field is
 Galois over `RatFunc k`. -/
 instance isGalois_fixedField (U : OpenNormalSubgroup BelyiG) :
     IsGalois (RatFunc k) (IntermediateField.fixedField U.toSubgroup) :=
@@ -758,7 +583,7 @@ instance isGalois_fixedField (U : OpenNormalSubgroup BelyiG) :
     ((fixingSubgroup_fixedField U.toOpenSubgroup).symm ▸ U.isNormal')
 
 /-- **Round-trip on open normal subgroups**: over algebraically closed `k`, taking the normal
-restriction kernel of the fixed field of `U : OpenNormalSubgroup (BelyiGeometricFundamentalGroup k)`
+restriction kernel of the fixed field of `U : OpenNormalSubgroup (MaximalBelyiGaloisGroup k)`
 recovers `U`. -/
 @[simp]
 theorem restrictNormalOpenNormalSubgroup_fixedField [IsAlgClosed k]
@@ -783,10 +608,10 @@ theorem fixedField_restrictNormalOpenNormalSubgroup_val (E : IntermediateField (
   rw [fixedField_restrictNormalOpenNormalSubgroup, liftMaximalBelyiExtension_val_comp_val,
     IntermediateField.fieldRange_val]
 
-/-- **Order-reversing Galois correspondence for `BelyiGeometricFundamentalGroup k`**: over
+/-- **Order-reversing Galois correspondence for `MaximalBelyiGaloisGroup k`**: over
 algebraically closed `k`, finite intermediate fields of `maximalBelyiExtension` (all of which are
 algebraic Belyi pairs) correspond order-reversingly to open subgroups of
-`BelyiGeometricFundamentalGroup k`. -/
+`MaximalBelyiGaloisGroup k`. -/
 noncomputable def openSubgroupOrderIso [IsAlgClosed k] :
     {E : IntermediateField (RatFunc k) ↥Ωk // FiniteDimensional (RatFunc k) E} ≃o
       (OpenSubgroup BelyiG)ᵒᵈ where
@@ -828,9 +653,9 @@ theorem openSubgroupOrderIso_symm_apply [IsAlgClosed k] (U : OpenSubgroup BelyiG
       IntermediateField.fixedField U.toSubgroup := (rfl)
 
 /-- **Order-reversing Galois correspondence for open normal subgroups of
-`BelyiGeometricFundamentalGroup k`**: over algebraically closed `k`, finite Galois intermediate
+`MaximalBelyiGaloisGroup k`**: over algebraically closed `k`, finite Galois intermediate
 fields of `maximalBelyiExtension` correspond order-reversingly to open normal subgroups of
-`BelyiGeometricFundamentalGroup k`. -/
+`MaximalBelyiGaloisGroup k`. -/
 noncomputable def openNormalSubgroupOrderIso [IsAlgClosed k] :
     {E : IntermediateField (RatFunc k) ↥Ωk //
       FiniteDimensional (RatFunc k) E ∧ IsGalois (RatFunc k) E} ≃o
@@ -883,7 +708,7 @@ theorem openNormalSubgroupOrderIso_symm_apply [IsAlgClosed k] (U : OpenNormalSub
     (openNormalSubgroupOrderIso.symm (OrderDual.toDual U)).val =
       IntermediateField.fixedField U.toSubgroup := (rfl)
 
-/-- **Galois correspondence for open subgroups of `BelyiGeometricFundamentalGroup k`**: over
+/-- **Galois correspondence for open subgroups of `MaximalBelyiGaloisGroup k`**: over
 algebraically closed `k`, every open subgroup `U` is `fixingOpenSubgroup` of its fixed field, a
 finite algebraic Belyi subextension of `maximalBelyiExtension k (AlgebraicClosure (RatFunc k))`. -/
 theorem exists_fixingOpenSubgroup_eq [IsAlgClosed k] (U : OpenSubgroup BelyiG) :
@@ -892,7 +717,7 @@ theorem exists_fixingOpenSubgroup_eq [IsAlgClosed k] (U : OpenSubgroup BelyiG) :
   ⟨IntermediateField.fixedField U.toSubgroup, inferInstance, isAlgebraicBelyiPair_fixedField U,
     fixingOpenSubgroup_fixedField U⟩
 
-/-- **Galois correspondence for open normal subgroups of `BelyiGeometricFundamentalGroup k`**: over
+/-- **Galois correspondence for open normal subgroups of `MaximalBelyiGaloisGroup k`**: over
 algebraically closed `k`, every open normal subgroup `U` is `restrictNormalOpenNormalSubgroup` of
 its fixed field, a finite Galois Belyi subextension. -/
 theorem exists_restrictNormalOpenNormalSubgroup_eq [IsAlgClosed k] (U : OpenNormalSubgroup BelyiG) :
@@ -904,186 +729,12 @@ theorem exists_restrictNormalOpenNormalSubgroup_eq [IsAlgClosed k] (U : OpenNorm
 
 end GaloisCorrespondence
 
-section BranchPointTransport
-
-variable {F F' : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
-  [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
-  [Field F'] [Algebra k F'] [Algebra (RatFunc k) F']
-  [IsScalarTower k (RatFunc k) F'] [FiniteDimensional (RatFunc k) F']
-  (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k))
-  (hF' : IsAlgebraicBelyiPair k F') (f' : F' →ₐ[RatFunc k] AlgebraicClosure (RatFunc k))
-  (ρ : Equiv.Perm (Fin 3))
-  (e : AlgebraicClosure (RatFunc k) ≃ₐ[k] AlgebraicClosure (RatFunc k))
-  (he : ∀ x, e (algebraMap (RatFunc k) (AlgebraicClosure (RatFunc k))
-    (RatFunc.branchPointAut k ρ x)) = algebraMap (RatFunc k) (AlgebraicClosure (RatFunc k)) x)
-  (eF : F ≃ₐ[k] F') (hef : ∀ x : F, e (f x) = f' (eF x))
-include he hef
-
-private theorem branchPointAutCongr_lift_apply (x : F) :
-    branchPointAutMaximalBelyiEquiv ρ e he (liftMaximalBelyiExtension hF f x) =
-      liftMaximalBelyiExtension hF' f' (eF x) :=
-  Subtype.ext (hef x)
-
-/-- Conjugation by a branch-point lift preserves membership between the fixing open subgroups of
-a Belyi pair and its transported Belyi pair. -/
-theorem mem_fixingOpenSubgroup_branchPointAutCongr_iff (γ : BelyiG) :
-    branchPointAutCongr ρ e he γ ∈ fixingOpenSubgroup hF' f' ↔
-      γ ∈ fixingOpenSubgroup hF f := by
-  simp only [mem_fixingOpenSubgroup_iff, branchPointAutCongr_apply_apply]
-  constructor
-  · intro h x
-    have hx := h (eF x)
-    rw [← branchPointAutCongr_lift_apply hF f hF' f' ρ e he eF hef x,
-      AlgEquiv.symm_apply_apply] at hx
-    exact (branchPointAutMaximalBelyiEquiv ρ e he).injective hx
-  · intro h y
-    obtain ⟨x, rfl⟩ := eF.surjective y
-    rw [← branchPointAutCongr_lift_apply hF f hF' f' ρ e he eF hef x,
-      AlgEquiv.symm_apply_apply, h x]
-
-/-- Conjugation by a branch-point lift maps the fixing open subgroup of a Belyi pair onto that of
-the transported Belyi pair. -/
-theorem map_fixingOpenSubgroup_branchPointAutCongr :
-    (fixingOpenSubgroup hF f).toSubgroup.map (branchPointAutCongr ρ e he).toMonoidHom =
-      (fixingOpenSubgroup hF' f').toSubgroup := by
-  ext γ'
-  rw [Subgroup.mem_map]
-  refine ⟨?_, fun h ↦ ⟨(branchPointAutCongr ρ e he).symm γ',
-    (mem_fixingOpenSubgroup_branchPointAutCongr_iff hF f hF' f' ρ e he eF hef _).mp
-      (by simpa [ContinuousMulEquiv.apply_symm_apply] using h),
-    (branchPointAutCongr ρ e he).apply_symm_apply γ'⟩⟩
-  rintro ⟨γ, hγ, rfl⟩
-  exact (mem_fixingOpenSubgroup_branchPointAutCongr_iff hF f hF' f' ρ e he eF hef γ).mpr hγ
-
-/-- Conjugation by a branch-point lift transports the closed fixing subgroup of a Belyi pair to
-that of the transported Belyi pair. -/
-theorem closedSubgroupOrderIso_branchPointAutCongr_fixingOpenSubgroup :
-    (branchPointAutCongr ρ e he).closedSubgroupOrderIso
-        ⟨(fixingOpenSubgroup hF f).toSubgroup, (fixingOpenSubgroup hF f).isClosed⟩ =
-      ⟨(fixingOpenSubgroup hF' f').toSubgroup, (fixingOpenSubgroup hF' f').isClosed⟩ :=
-  ClosedSubgroup.toSubgroup_injective <|
-    ((branchPointAutCongr ρ e he).closedSubgroupOrderIso_apply_toSubgroup _).trans
-      (map_fixingOpenSubgroup_branchPointAutCongr hF f hF' f' ρ e he eF hef)
-
-section Normal
-
-variable [Normal (RatFunc k) F] [Normal (RatFunc k) F']
-
-omit [CharZero k] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
-  [IsScalarTower k (RatFunc k) F'] [FiniteDimensional (RatFunc k) F']
-  [Normal (RatFunc k) F] [Normal (RatFunc k) F'] in
-private theorem branchPointAut_eF_algebraMap (x : RatFunc k) :
-    eF (algebraMap (RatFunc k) F (RatFunc.branchPointAut k ρ x)) = algebraMap (RatFunc k) F' x :=
-  f'.injective <| show f' _ = f' _ from by
-    rw [← hef, AlgHom.commutes, he, AlgHom.commutes]
-
-/-- Conjugation `Gal(F/RatFunc k) ≃* Gal(F'/RatFunc k)` induced by `eF : F ≃ₐ[k] F'`
-intertwining `RatFunc.branchPointAut k ρ`. -/
-noncomputable def branchPointAutFinCongr : Gal(F/RatFunc k) ≃* Gal(F'/RatFunc k) where
-  toFun σ := AlgEquiv.ofRingEquiv
-    (f := eF.symm.toRingEquiv.trans (σ.toRingEquiv.trans eF.toRingEquiv))
-    fun x ↦ by
-      have hsymm : eF.symm (algebraMap (RatFunc k) F' x) =
-          algebraMap (RatFunc k) F (RatFunc.branchPointAut k ρ x) :=
-        eF.symm_apply_eq.mpr (branchPointAut_eF_algebraMap f f' ρ e he eF hef x).symm
-      simp only [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, hsymm, AlgEquiv.commutes,
-        branchPointAut_eF_algebraMap f f' ρ e he eF hef]
-  invFun τ := AlgEquiv.ofRingEquiv
-    (f := eF.toRingEquiv.trans (τ.toRingEquiv.trans eF.symm.toRingEquiv))
-    fun x ↦ by
-      have hinv : eF (algebraMap (RatFunc k) F x) =
-          algebraMap (RatFunc k) F' (RatFunc.branchPointAut k ρ⁻¹ x) := by
-        rw [← branchPointAut_eF_algebraMap f f' ρ e he eF hef (RatFunc.branchPointAut k ρ⁻¹ x),
-          ← AlgEquiv.mul_apply, ← map_mul, _root_.mul_inv_cancel, map_one, AlgEquiv.one_apply]
-      have hsymm : eF.symm (algebraMap (RatFunc k) F' (RatFunc.branchPointAut k ρ⁻¹ x)) =
-          algebraMap (RatFunc k) F x :=
-        eF.symm_apply_eq.mpr hinv.symm
-      simp only [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, hinv, AlgEquiv.commutes, hsymm]
-  left_inv σ := AlgEquiv.ext fun x ↦ by
-    simp only [AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
-      AlgEquiv.symm_apply_apply]
-  right_inv τ := AlgEquiv.ext fun y ↦ by
-    simp only [AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
-      AlgEquiv.apply_symm_apply]
-  map_mul' σ₁ σ₂ := AlgEquiv.ext fun y ↦ by
-    simp only [AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
-      AlgEquiv.mul_apply, AlgEquiv.symm_apply_apply]
-
-omit [CharZero k] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
-  [IsScalarTower k (RatFunc k) F'] [FiniteDimensional (RatFunc k) F']
-  [Normal (RatFunc k) F] [Normal (RatFunc k) F'] in
-@[simp]
-theorem branchPointAutFinCongr_apply_apply (σ : Gal(F/RatFunc k)) (y : F') :
-    branchPointAutFinCongr f f' ρ e he eF hef σ y = eF (σ (eF.symm y)) := (rfl)
-
-/-- Conjugation by a branch-point lift intertwines `restrictNormalHom` on a normal Belyi pair
-with `restrictNormalHom` on the transported pair. -/
-theorem restrictNormalHom_branchPointAutCongr (γ : BelyiG) :
-    restrictNormalHom hF' f' (branchPointAutCongr ρ e he γ) =
-      branchPointAutFinCongr f f' ρ e he eF hef (restrictNormalHom hF f γ) := by
-  ext y
-  obtain ⟨x, rfl⟩ := eF.surjective y
-  have hsymm :
-      (branchPointAutMaximalBelyiEquiv ρ e he).symm (liftMaximalBelyiExtension hF' f' (eF x)) =
-        liftMaximalBelyiExtension hF f x :=
-    (branchPointAutMaximalBelyiEquiv ρ e he).symm_apply_eq.mpr
-      (branchPointAutCongr_lift_apply hF f hF' f' ρ e he eF hef x).symm
-  exact f'.injective <| show f' _ = f' _ from by
-    rw [restrictNormalHom_commutes, branchPointAutCongr_apply_apply,
-      coe_branchPointAutMaximalBelyiEquiv_apply, hsymm, ← restrictNormalHom_commutes hF f γ x, hef,
-      branchPointAutFinCongr_apply_apply, AlgEquiv.symm_apply_apply]
-
-/-- Conjugation by a branch-point lift carries the normal restriction kernel of a normal Belyi
-pair onto that of the transported pair. -/
-theorem map_ker_restrictNormalHom_branchPointAutCongr :
-    (restrictNormalHom hF f).ker.map (branchPointAutCongr ρ e he).toMonoidHom =
-      (restrictNormalHom hF' f').ker := by
-  rw [ker_restrictNormalHom, ker_restrictNormalHom]
-  exact map_fixingOpenSubgroup_branchPointAutCongr hF f hF' f' ρ e he eF hef
-
-/-- Conjugation by a branch-point lift carries `restrictNormalOpenNormalSubgroup` of a normal
-Belyi pair onto that of the transported pair. -/
-theorem map_restrictNormalOpenNormalSubgroup_branchPointAutCongr :
-    (restrictNormalOpenNormalSubgroup hF f).toSubgroup.map
-        (branchPointAutCongr ρ e he).toMonoidHom =
-      (restrictNormalOpenNormalSubgroup hF' f').toSubgroup :=
-  map_ker_restrictNormalHom_branchPointAutCongr hF f hF' f' ρ e he eF hef
-
-/-- Conjugation by a branch-point lift transports the closed normal restriction kernel of a normal
-Belyi pair to that of the transported pair. -/
-theorem closedSubgroupOrderIso_branchPointAutCongr_restrictNormalOpenNormalSubgroup :
-    (branchPointAutCongr ρ e he).closedSubgroupOrderIso
-        ⟨(restrictNormalOpenNormalSubgroup hF f).toSubgroup,
-          (restrictNormalOpenNormalSubgroup hF f).toOpenSubgroup.isClosed⟩ =
-      ⟨(restrictNormalOpenNormalSubgroup hF' f').toSubgroup,
-        (restrictNormalOpenNormalSubgroup hF' f').toOpenSubgroup.isClosed⟩ :=
-  ClosedSubgroup.toSubgroup_injective <|
-    ((branchPointAutCongr ρ e he).closedSubgroupOrderIso_apply_toSubgroup _).trans
-      (map_restrictNormalOpenNormalSubgroup_branchPointAutCongr hF f hF' f' ρ e he eF hef)
-
-/-- On finite quotients, the quotient isomorphism induced by `branchPointAutCongr` matches
-conjugation by `eF` between `Gal(F/RatFunc k)` and `Gal(F'/RatFunc k)`. -/
-theorem quotientKerRestrictNormalHomEquiv_quotientCongr_branchPointAutCongr (γ : BelyiG) :
-    quotientKerRestrictNormalHomEquiv hF' f'
-        ((branchPointAutCongr ρ e he).quotientCongr _ _
-          (map_ker_restrictNormalHom_branchPointAutCongr hF f hF' f' ρ e he eF hef)
-          (γ : BelyiG ⧸ (restrictNormalHom hF f).ker)) =
-      branchPointAutFinCongr f f' ρ e he eF hef
-        (quotientKerRestrictNormalHomEquiv hF f (γ : BelyiG ⧸ (restrictNormalHom hF f).ker)) := by
-  rw [ContinuousMulEquiv.quotientCongr_mk, quotientKerRestrictNormalHomEquiv_mk,
-    quotientKerRestrictNormalHomEquiv_mk,
-    restrictNormalHom_branchPointAutCongr hF f hF' f' ρ e he eF hef]
-
-end Normal
-
-end BranchPointTransport
-
-/-- `BelyiGeometricFundamentalGroup k` is infinite for every field `k` of characteristic zero. -/
+/-- `MaximalBelyiGaloisGroup k` is infinite for every field `k` of characteristic zero. -/
 instance instInfinite : Infinite BelyiG :=
   not_finite_iff_infinite.mp fun _ ↦
     not_finiteDimensional_maximalBelyiExtension
       (IsGalois.finiteDimensional_of_finite (RatFunc k) ↥Ωk)
 
-end BelyiGeometricFundamentalGroup
+end MaximalBelyiGaloisGroup
 
 end TauCeti

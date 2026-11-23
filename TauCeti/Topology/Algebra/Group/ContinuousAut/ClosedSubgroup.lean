@@ -44,6 +44,8 @@ and closed subgroups, but no topology on `ContinuousAut G`.
 
 ## Main results
 
+* `TauCeti.ContinuousAut.conj_smul_closedSubgroup_of_normal`: inner automorphisms fix every normal
+  closed subgroup.
 * `TauCeti.ClosedSubgroupConjClasses.mk_eq_mk_iff`: two closed subgroups have the same class
   exactly when one is a conjugate of the other.
 * `TauCeti.ContinuousAut.smul_closedSubgroupConjClass`: a continuous automorphism sends the
@@ -129,6 +131,17 @@ applying the automorphism: `φ * conj g = conj (φ g) * φ`. -/
 theorem ContinuousAut.smul_conj_smul_closedSubgroup (φ : ContinuousAut G) (g : G)
     (H : ClosedSubgroup G) : φ • conj g • H = conj (φ g) • φ • H := by
   rw [smul_smul, smul_smul, ← mul_conj_mul_inv, inv_mul_cancel_right]
+
+/-- Inner automorphisms fix every normal closed subgroup. -/
+@[simp]
+theorem ContinuousAut.conj_smul_closedSubgroup_of_normal (g : G) (H : ClosedSubgroup G)
+    [H.toSubgroup.Normal] : conj g • H = H := by
+  refine SetLike.ext fun x ↦ ?_
+  rw [mem_smul_closedSubgroup_iff]
+  change (conj g).symm x ∈ H.toSubgroup ↔ x ∈ H.toSubgroup
+  rw [conj_symm_apply]
+  exact ⟨fun h ↦ by simpa [mul_assoc] using ‹H.toSubgroup.Normal›.conj_mem _ h g,
+    fun h ↦ by simpa [mul_assoc] using ‹H.toSubgroup.Normal›.conj_mem _ h g⁻¹⟩
 
 end Conjugation
 
