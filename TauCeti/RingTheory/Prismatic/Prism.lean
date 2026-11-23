@@ -56,7 +56,7 @@ open DeltaRing
 variable (p : ℕ) [Fact p.Prime] (B : Type*) [CommRing B] [DeltaRing p B]
 
 /-- A `δ`-ring is **perfect** if its Frobenius lift `φ` is bijective (Bhatt and Scholze,
-Definition 2.27). A prism on a perfect `δ`-ring is a perfect prism. -/
+§2). A prism on a perfect `δ`-ring is a perfect prism. -/
 def DeltaRing.IsPerfect : Prop :=
   Function.Bijective (frobenius p B)
 
