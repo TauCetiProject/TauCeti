@@ -93,15 +93,16 @@ theorem occurrenceGap_succ_pos_iff {μ : Measure ℝ≥0} {n : ℕ} (hn : μ.occ
     0 < μ.occurrenceGap (n + 1) ↔ μ.occurrenceTime n < μ.occurrenceTime (n + 1) := by
   rw [occurrenceGap_succ_of_ne_top hn, tsub_pos_iff_lt]
 
-/-- For consecutive finite occurrences, the nonnegative-real interarrival gap is the difference
-of the nonnegative-real occurrence times. -/
-theorem toNNReal_occurrenceGap_succ {μ : Measure ℝ≥0} {n : ℕ}
-    (h : μ.occurrenceTime (n + 1) ≠ ∞) :
+/-- The nonnegative-real interarrival gap is the difference of the nonnegative-real occurrence
+times, including when occurrence `n` or occurrence `n + 1` is infinite. -/
+theorem toNNReal_occurrenceGap_succ (μ : Measure ℝ≥0) (n : ℕ) :
     (μ.occurrenceGap (n + 1)).toNNReal =
       (μ.occurrenceTime (n + 1)).toNNReal - (μ.occurrenceTime n).toNNReal := by
-  have hn : μ.occurrenceTime n ≠ ∞ :=
-    ne_top_of_le_ne_top h (μ.monotone_occurrenceTime (Nat.le_succ n))
-  rw [occurrenceGap_succ_of_ne_top hn, ENNReal.toNNReal_sub hn]
+  by_cases hn : μ.occurrenceTime n = ∞
+  · have hnext : μ.occurrenceTime (n + 1) = ∞ :=
+      top_le_iff.mp (hn ▸ μ.monotone_occurrenceTime (Nat.le_succ n))
+    simp [occurrenceGap_succ_of_eq_top hn, hn, hnext]
+  · rw [occurrenceGap_succ_of_ne_top hn, ENNReal.toNNReal_sub hn]
 
 /-- For consecutive finite occurrences, the real-valued interarrival gap is the difference of the
 real-valued occurrence times. -/
@@ -238,19 +239,18 @@ theorem occurrenceGap_restrict_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasur
     (b : ℝ≥0) (n : ℕ) :
     (μ.restrict (Iic b)).occurrenceGap n =
       if μ.occurrenceTime n ≤ b then μ.occurrenceGap n else ∞ := by
-  cases n with
-  | zero => simp
-  | succ n =>
-    rw [occurrenceGap_succ, occurrenceTime_restrict_Iic, occurrenceTime_restrict_Iic]
-    by_cases hnext : μ.occurrenceTime (n + 1) ≤ b
-    · have hn : μ.occurrenceTime n ≤ b :=
-        (μ.monotone_occurrenceTime (Nat.le_succ n)).trans hnext
+  by_cases hle : μ.occurrenceTime n ≤ b
+  · cases n with
+    | zero => simp [hle]
+    | succ n =>
+      have hn : μ.occurrenceTime n ≤ b :=
+        (μ.monotone_occurrenceTime (Nat.le_succ n)).trans hle
       have hnfin : μ.occurrenceTime n ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top hn
-      simp [hnext, hn, hnfin, occurrenceGap_succ_of_ne_top hnfin]
-    · by_cases hn : μ.occurrenceTime n ≤ b
-      · have hnfin : μ.occurrenceTime n ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top hn
-        simp [hnext, hn, hnfin]
-      · simp [hnext, hn]
+      rw [ite_eq_left hle,
+        occurrenceGap_succ_of_ne_top (by simp [occurrenceTime_restrict_Iic, hn, hnfin]),
+        occurrenceTime_restrict_Iic, occurrenceTime_restrict_Iic,
+        ite_eq_left hle, ite_eq_left hn, occurrenceGap_succ_of_ne_top hnfin]
+  · simp [hle, occurrenceGap_eq_top_iff, occurrenceTime_restrict_Iic]
 
 /-- For a locally finite measure, the first interarrival gap is positive if and only if the
 origin carries mass strictly less than one. -/

@@ -78,22 +78,14 @@ theorem hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     HasLaw (renewalArrivalMeasure T) ((r : ℝ≥0∞) • nnvolume).poissonLaw P := by
   have := hindep.isProbabilityMeasure
-  have hr := pos_of_hasLaw_expMeasure (hlaw 0)
-  have := isProbabilityMeasure_nnrealExpMeasure (NNReal.coe_pos.mpr hr)
-  have hTnn (n : ℕ) : HasLaw (T n) (nnrealExpMeasure r) P :=
-    hasLaw_nnrealExpMeasure_iff.mpr (hlaw n)
-  have hpath : HasLaw (fun ω n ↦ T n ω)
-      (Measure.infinitePi fun _ : ℕ ↦ nnrealExpMeasure r) P :=
-    hindep.hasLaw_infinitePi hTnn (aemeasurable_pi_iff.2 fun n ↦ (hTnn n).aemeasurable)
-  have hP₀ : IsPoissonRandomMeasure (Measure.infinitePi fun _ : ℕ ↦ nnrealExpMeasure r)
-      (renewalArrivalMeasure fun n (w : ℕ → ℝ≥0) ↦ w n) ((r : ℝ≥0∞) • nnvolume) :=
-    isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure
-      (fun n ↦ measurable_pi_apply n)
-      (iIndepFun_infinitePi (X := fun _ : ℕ ↦ (id : ℝ≥0 → ℝ≥0)) fun _ ↦ measurable_id)
-      fun n ↦ hasLaw_nnrealExpMeasure_iff.mp
-        (measurePreserving_eval_infinitePi (fun _ : ℕ ↦ nnrealExpMeasure r) n).hasLaw
-  rw [renewalArrivalMeasure_eq_comp_eval]
-  exact hP₀.hasLaw_poissonLaw.comp hpath
+  have hTnn (n : ℕ) : AEMeasurable (T n) P :=
+    (hasLaw_nnrealExpMeasure_iff.mpr (hlaw n)).aemeasurable
+  let T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hTnn n).mk (T n)
+  have hTeq (n : ℕ) : T n =ᵐ[P] T' n := (hTnn n).ae_eq_mk
+  have hP' := isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure
+    (fun n ↦ (hTnn n).measurable_mk) (hindep.congr hTeq)
+    fun n ↦ (hlaw n).congr ((hTeq n).symm.fun_comp ((↑) : ℝ≥0 → ℝ))
+  exact hP'.hasLaw_poissonLaw.congr (renewalArrivalMeasure_congr_ae hTeq)
 
 /-- **Equality in distribution of arrival measures.** The exponential renewal arrival measure has
 the same distribution as any homogeneous Poisson random measure of the same rate, possibly on a
