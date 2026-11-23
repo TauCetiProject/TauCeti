@@ -9,6 +9,7 @@ public import TauCeti.Probability.Moments.Variance
 public import TauCeti.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Bounded centered approximations in mean square
@@ -19,11 +20,12 @@ finite measure space, when `X` is almost everywhere strongly measurable, it has 
 absolute moment.
 Its integral is zero when `P` is a probability measure, `X` is almost everywhere strongly
 measurable, and the target space is complete.
-For a centered variable on a probability space with values in a real inner product space, its
-mean-square approximation error is bounded by the second moment outside that ball. On a finite
-measure space with values in any real normed space, the mean-square approximation error of a
-centered variable tends to zero as the radius tends to infinity, and for a square-integrable one
-the second moments of the approximations converge to its second moment.
+Let `X` be almost everywhere strongly measurable. On a probability space with values in a real
+inner product space, the mean-square error of approximating `X - ∫ X` by the centered truncation
+of `X` is bounded by the second moment of `X` outside that ball. On a finite measure space with
+values in any real normed space, this mean-square error tends to zero as the radius tends to
+infinity. When `X` is moreover square-integrable, the second moments of the approximations
+converge to that of `X - ∫ X`.
 These approximations allow moment arguments for bounded variables to be transferred to
 variables having only a second moment.
 
@@ -91,20 +93,6 @@ theorem _root_.MeasureTheory.AEStronglyMeasurable.memLp_centeredTruncation [IsFi
   exact ((memLp_const (R : ℝ)).mono'
     (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const))
     (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))).sub (memLp_const _)
-
-/-- On a finite measure space, the mean-square error of centered truncation of an almost
-everywhere strongly measurable variable that is not square-integrable is `0` by convention: the
-error is not square-integrable either. -/
-theorem
-    _root_.MeasureTheory.AEStronglyMeasurable.integral_norm_sub_centeredTruncation_sq_of_not_memLp
-    [IsFiniteMeasure P] (hX : AEStronglyMeasurable X P) (hL : ¬MemLp X 2 P) (R : ℝ≥0) :
-    ∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P = 0 := by
-  refine integral_undef fun hi ↦ hL ?_
-  have h := (memLp_two_iff_integrable_sq_norm
-    (f := fun ω ↦ X ω - centeredTruncation X P R ω) (hX.sub (hX.centeredTruncation R))).2 hi
-  convert h.add (hX.memLp_centeredTruncation R) using 1
-  ext ω
-  simp
 
 variable [IsProbabilityMeasure P]
 
@@ -176,28 +164,6 @@ section Hilbert
 
 variable [InnerProductSpace ℝ E] {X : Ω → E} {P : Measure Ω} [IsProbabilityMeasure P]
 
-/-- The mean-square error of centered truncation is bounded by the discarded second moment.
-No distributional or independence assumption is needed. When the variable is not
-square-integrable, the left side is `0` by convention. -/
-theorem _root_.MeasureTheory.AEStronglyMeasurable.integral_norm_sub_centeredTruncation_sq_le
-    (hX' : AEStronglyMeasurable X P) (hmean : ∫ ω, X ω ∂P = 0) (R : ℝ≥0) :
-    ∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P ≤
-      ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P := by
-  by_cases hX : MemLp X 2 P
-  swap
-  · rw [hX'.integral_norm_sub_centeredTruncation_sq_of_not_memLp hX R]
-    exact integral_nonneg fun ω ↦ indicator_nonneg (fun _ _ ↦ sq_nonneg _) ω
-  let Y := {ω | (R : ℝ) < ‖X ω‖}.indicator X
-  have hY : MemLp Y 2 P := hX.indicator
-    (nullMeasurableSet_lt aemeasurable_const hX'.norm.aemeasurable)
-  have heq (ω : Ω) : X ω - centeredTruncation X P R ω = Y ω - ∫ y, Y y ∂P := by
-    simpa only [hmean, sub_zero] using
-      (hX.integrable one_le_two).sub_integral_sub_centeredTruncation_eq R ω
-  simp_rw [heq]
-  rw [hY.integral_norm_sub_integral_sq]
-  refine (sub_le_self _ (sq_nonneg _)).trans_eq (integral_congr_ae (.of_forall fun ω ↦ ?_))
-  by_cases h : (R : ℝ) < ‖X ω‖ <;> simp [Y, Set.indicator, h]
-
 /-- On a probability space, the second moment of a centered truncation is bounded by the cutoff
 times the original mean norm. -/
 theorem _root_.MeasureTheory.Integrable.integral_norm_centeredTruncation_sq_le_mul
@@ -221,79 +187,136 @@ theorem _root_.MeasureTheory.Integrable.integral_norm_centeredTruncation_sq_le_m
 
 end Hilbert
 
+end TauCeti.Probability
+
+namespace MeasureTheory
+
+open TauCeti.Probability
+
+variable {Ω E : Type*} [MeasurableSpace Ω] [NormedAddCommGroup E] {X : Ω → E} {P : Measure Ω}
+
 section FiniteMeasure
 
-variable [NormedSpace ℝ E] {X : Ω → E} {P : Measure Ω} [IsFiniteMeasure P]
+variable [NormedSpace ℝ E] [IsFiniteMeasure P]
 
-/-- On a finite measure space, centered truncations approximate a centered variable with values in
-a real normed space in mean square. When the variable is not square-integrable, every mean-square
-error is `0` by convention. -/
-theorem _root_.MeasureTheory.AEStronglyMeasurable.tendsto_integral_norm_sub_centeredTruncation_sq
-    (hX' : AEStronglyMeasurable X P) (hmean : ∫ ω, X ω ∂P = 0) :
-    Tendsto (fun R : ℝ≥0 ↦ ∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P)
+/-- On a finite measure space, let `X` be almost everywhere strongly measurable but not
+square-integrable. Then the mean-square error of its centered truncation, shifted by any constant,
+is `0` by convention: the shifted error is not square-integrable either. -/
+theorem AEStronglyMeasurable.integral_norm_sub_sub_centeredTruncation_sq_of_not_memLp
+    (hX : AEStronglyMeasurable X P) (hL : ¬MemLp X 2 P) (c : E) (R : ℝ≥0) :
+    ∫ ω, ‖X ω - c - TauCeti.Probability.centeredTruncation X P R ω‖ ^ 2 ∂P = 0 := by
+  refine integral_undef fun hi ↦ hL ?_
+  have h := (memLp_two_iff_integrable_sq_norm
+    (f := fun ω ↦ X ω - c - TauCeti.Probability.centeredTruncation X P R ω)
+    ((hX.sub aestronglyMeasurable_const).sub (hX.centeredTruncation R))).2 hi
+  convert (h.add (hX.memLp_centeredTruncation R)).add (memLp_const c) using 1
+  ext ω
+  simp
+
+/-- On a finite measure space, the centered truncations of an almost everywhere strongly
+measurable variable `X` with values in a real normed space approximate `X - ∫ X` in mean square.
+When `X` is not square-integrable, every mean-square error is `0` by convention. -/
+theorem AEStronglyMeasurable.tendsto_integral_norm_sub_integral_sub_centeredTruncation_sq
+    (hX' : AEStronglyMeasurable X P) :
+    Tendsto (fun R : ℝ≥0 ↦
+      ∫ ω, ‖X ω - (∫ y, X y ∂P) - TauCeti.Probability.centeredTruncation X P R ω‖ ^ 2 ∂P)
       atTop (𝓝 0) := by
   by_cases hX : MemLp X 2 P
   swap
   · exact tendsto_const_nhds.congr fun R ↦
-      (hX'.integral_norm_sub_centeredTruncation_sq_of_not_memLp hX R).symm
+      (hX'.integral_norm_sub_sub_centeredTruncation_sq_of_not_memLp hX _ R).symm
+  -- The part of `X` discarded at cutoff `R`, and its norm.
   let Y : ℝ≥0 → Ω → E := fun R ↦ {ω | (R : ℝ) < ‖X ω‖}.indicator X
-  have hY (R : ℝ≥0) : Integrable (fun ω ↦ ‖Y R ω‖ ^ 2) P := by
-    have h : MemLp (Y R) 2 P :=
-      hX.indicator (nullMeasurableSet_lt aemeasurable_const hX'.norm.aemeasurable)
-    exact (memLp_two_iff_integrable_sq_norm h.aestronglyMeasurable).1 h
-  have heq (R : ℝ≥0) (ω : Ω) :
-      X ω - centeredTruncation X P R ω = Y R ω - ∫ y, Y R y ∂P := by
-    simpa only [hmean, sub_zero] using
-      (hX.integrable one_le_two).sub_integral_sub_centeredTruncation_eq R ω
-  -- The discarded second moments and the discarded mean norms both tend to zero.
-  have hsq : Tendsto (fun R : ℝ≥0 ↦ ∫ ω, ‖Y R ω‖ ^ 2 ∂P) atTop (𝓝 0) :=
-    hX.tendsto_integral_indicator_norm_sq.congr fun R ↦ integral_congr_ae (.of_forall fun ω ↦ by
-      by_cases h : (R : ℝ) < ‖X ω‖ <;> simp [Y, Set.indicator, h])
-  have hone : Tendsto (fun R : ℝ≥0 ↦ ∫ ω, ‖Y R ω‖ ∂P) atTop (𝓝 0) := by
+  let T : ℝ≥0 → Ω → ℝ := fun R ↦ {ω | (R : ℝ) < ‖X ω‖}.indicator fun ω ↦ ‖X ω‖
+  have hint (R : ℝ≥0) : Integrable ({ω | (R : ℝ) < ‖X ω‖}.indicator fun ω ↦ ‖X ω‖ ^ 2) P :=
+    ((memLp_two_iff_integrable_sq_norm hX').1 hX).indicator₀
+      (nullMeasurableSet_lt aestronglyMeasurable_const hX'.norm)
+  -- The discarded mean norms tend to zero.
+  have hT : Tendsto (fun R ↦ ∫ ω, T R ω ∂P) atTop (𝓝 0) := by
     have h1 : MemLp X 1 P := memLp_one_iff_integrable.2 (hX.integrable one_le_two)
     refine ((h1.tendsto_integral_norm_ite_sub_rpow one_ne_zero ENNReal.one_ne_top).comp
       (NNReal.tendsto_coe_atTop.mpr tendsto_id)).congr
       fun R ↦ integral_congr_ae (.of_forall fun ω ↦ ?_)
-    by_cases h : ‖X ω‖ ≤ R <;> simp [Y, h, not_lt.mpr, not_le.mp]
-  -- Pointwise, `‖Y - ∫ Y‖² ≤ 2 ‖Y‖² + 2 (∫ ‖Y‖)²`.
-  have hle (R : ℝ≥0) : ∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P ≤
-      2 * ∫ ω, ‖Y R ω‖ ^ 2 ∂P + P.real univ * (2 * (∫ ω, ‖Y R ω‖ ∂P) ^ 2) := by
-    rw [← integral_const_mul, ← smul_eq_mul, ← integral_const, ← integral_add
-      ((hY R).const_mul 2) (integrable_const _)]
-    refine integral_mono_of_nonneg (.of_forall fun _ ↦ sq_nonneg _)
-      (((hY R).const_mul 2).add (integrable_const _)) (.of_forall fun ω ↦ ?_)
-    have hm : ‖∫ y, Y R y ∂P‖ ≤ ∫ y, ‖Y R y‖ ∂P := norm_integral_le_integral_norm _
-    have hs := norm_sub_le (Y R ω) (∫ y, Y R y ∂P)
-    simp only [heq]
-    nlinarith [norm_nonneg (Y R ω - ∫ y, Y R y ∂P), norm_nonneg (Y R ω),
-      norm_nonneg (∫ y, Y R y ∂P), sq_nonneg (‖Y R ω‖ - ‖∫ y, Y R y ∂P‖)]
-  refine squeeze_zero (fun _ ↦ integral_nonneg fun _ ↦ sq_nonneg _) hle ?_
-  simpa using (hsq.const_mul 2).add (((hone.pow 2).const_mul 2).const_mul (P.real univ))
+    by_cases h : ‖X ω‖ ≤ R <;> simp [T, h, not_lt.mpr, not_le.mp]
+  -- Pointwise, the error is `Y - ∫ Y`, so its square is at most `2 (‖Y‖² + (∫ T)²)`.
+  have hle (R : ℝ≥0) (ω : Ω) :
+      ‖X ω - (∫ y, X y ∂P) - TauCeti.Probability.centeredTruncation X P R ω‖ ^ 2 ≤
+      2 * ({ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω + (∫ y, T R y ∂P) ^ 2) := by
+    have hY : ‖Y R ω‖ ^ 2 = {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω :=
+      (congrFun (indicator_comp_of_zero (g := fun x : E ↦ ‖x‖ ^ 2) (by simp)) ω).symm
+    have hm : ‖∫ y, Y R y ∂P‖ ≤ ∫ y, T R y ∂P := (norm_integral_le_integral_norm _).trans_eq
+      (integral_congr_ae (.of_forall fun y ↦ norm_indicator_eq_indicator_norm X y))
+    calc _ = ‖Y R ω - ∫ y, Y R y ∂P‖ ^ 2 := by
+          rw [(hX.integrable one_le_two).sub_integral_sub_centeredTruncation_eq R ω]
+      _ ≤ 2 * (‖Y R ω‖ ^ 2 + ‖∫ y, Y R y ∂P‖ ^ 2) := by
+          simpa only [sub_zero] using TauCeti.norm_sub_sq_le_two_mul (Y R ω) (∫ y, Y R y ∂P) 0
+      _ ≤ _ := by
+          rw [hY]
+          gcongr
+  have hbound (R : ℝ≥0) :
+      ∫ ω, ‖X ω - (∫ y, X y ∂P) - TauCeti.Probability.centeredTruncation X P R ω‖ ^ 2 ∂P ≤
+      2 * (∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P +
+        P.real univ * (∫ y, T R y ∂P) ^ 2) := by
+    calc _ ≤ ∫ ω, 2 * ({ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω +
+          (∫ y, T R y ∂P) ^ 2) ∂P :=
+          integral_mono_of_nonneg (.of_forall fun _ ↦ sq_nonneg _)
+            (((hint R).add (integrable_const _)).const_mul 2) (.of_forall (hle R))
+      _ = _ := by
+          rw [integral_const_mul, integral_add (hint R) (integrable_const _), integral_const,
+            smul_eq_mul]
+  refine squeeze_zero (fun _ ↦ integral_nonneg fun _ ↦ sq_nonneg _) hbound ?_
+  simpa using
+    (hX.tendsto_integral_indicator_norm_sq.add ((hT.pow 2).const_mul (P.real univ))).const_mul 2
 
-/-- On a finite measure space, the second absolute moments of bounded centered approximations
-converge to that of the original centered square-integrable variable with values in a real normed
-space. In particular, unit variance is recovered in the limit. -/
-theorem _root_.MeasureTheory.MemLp.tendsto_integral_norm_centeredTruncation_sq (hX : MemLp X 2 P)
-    (hmean : ∫ ω, X ω ∂P = 0) :
+/-- On a finite measure space, the second absolute moments of the bounded centered approximations
+of a square-integrable variable `X` with values in a real normed space converge to the second
+absolute moment of `X - ∫ X`. -/
+theorem MemLp.tendsto_integral_norm_centeredTruncation_sq (hX : MemLp X 2 P) :
     Tendsto (fun R : ℝ≥0 ↦ ∫ ω, ‖centeredTruncation X P R ω‖ ^ 2 ∂P)
-      atTop (𝓝 (∫ ω, ‖X ω‖ ^ 2 ∂P)) := by
+      atTop (𝓝 (∫ ω, ‖X ω - ∫ y, X y ∂P‖ ^ 2 ∂P)) := by
+  have hc : MemLp (fun ω ↦ X ω - ∫ y, X y ∂P) 2 P := hX.sub (memLp_const _)
   let hR (R : ℝ≥0) : MemLp (centeredTruncation X P R) 2 P :=
     hX.aestronglyMeasurable.memLp_centeredTruncation R
   have hs : Tendsto (fun R : ℝ≥0 ↦
-      ‖hX.toLp X - (hR R).toLp (centeredTruncation X P R)‖ ^ 2) atTop (𝓝 0) := by
+      ‖hc.toLp _ - (hR R).toLp (centeredTruncation X P R)‖ ^ 2) atTop (𝓝 0) := by
     simpa only [← MemLp.toLp_sub, MemLp.norm_toLp_sq, Pi.sub_apply] using
-      hX.aestronglyMeasurable.tendsto_integral_norm_sub_centeredTruncation_sq hmean
+      hX.aestronglyMeasurable.tendsto_integral_norm_sub_integral_sub_centeredTruncation_sq
   have hn := (Real.continuous_sqrt.tendsto 0).comp hs
   simp only [Function.comp_def, Real.sqrt_sq_eq_abs, abs_norm, Real.sqrt_zero] at hn
   have ht : Tendsto (fun R ↦ (hR R).toLp (centeredTruncation X P R)) atTop
-      (𝓝 (hX.toLp X)) :=
+      (𝓝 (hc.toLp _)) :=
     tendsto_iff_dist_tendsto_zero.mpr (by simpa only [dist_eq_norm, norm_sub_rev] using hn)
   simpa only [MemLp.norm_toLp_sq] using ht.norm.pow 2
 
 end FiniteMeasure
 
+section Hilbert
 
-end TauCeti.Probability
+variable [InnerProductSpace ℝ E] [IsProbabilityMeasure P]
+
+/-- On a probability space, let `X` be almost everywhere strongly measurable with values in a real
+inner product space. The mean-square error of approximating `X - ∫ X` by the centered truncation
+of `X` is bounded by the discarded second moment. No distributional or independence assumption is
+needed. When `X` is not square-integrable, the left side is `0` by convention. -/
+theorem AEStronglyMeasurable.integral_norm_sub_integral_sub_centeredTruncation_sq_le
+    (hX' : AEStronglyMeasurable X P) (R : ℝ≥0) :
+    ∫ ω, ‖X ω - (∫ y, X y ∂P) - TauCeti.Probability.centeredTruncation X P R ω‖ ^ 2 ∂P ≤
+      ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P := by
+  by_cases hX : MemLp X 2 P
+  swap
+  · rw [hX'.integral_norm_sub_sub_centeredTruncation_sq_of_not_memLp hX _ R]
+    exact integral_nonneg fun ω ↦ indicator_nonneg (fun _ _ ↦ sq_nonneg _) ω
+  let Y := {ω | (R : ℝ) < ‖X ω‖}.indicator X
+  have hY : MemLp Y 2 P := hX.indicator
+    (nullMeasurableSet_lt aestronglyMeasurable_const hX'.norm)
+  simp_rw [(hX.integrable one_le_two).sub_integral_sub_centeredTruncation_eq R]
+  rw [hY.integral_norm_sub_integral_sq]
+  refine (sub_le_self _ (sq_nonneg _)).trans_eq (integral_congr_ae (.of_forall fun ω ↦ ?_))
+  exact (congrFun (indicator_comp_of_zero (g := fun x : E ↦ ‖x‖ ^ 2) (by simp)) ω).symm
+
+end Hilbert
+
+end MeasureTheory
 
 namespace ProbabilityTheory
 

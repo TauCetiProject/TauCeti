@@ -14,10 +14,10 @@ public import TauCeti.Probability.Moments.Variance
 # Second spectral moment of a Wigner matrix
 
 The second empirical spectral moment is the normalized squared Frobenius norm. Its
-upper-triangular expansion counts each off-diagonal coordinate twice. Pairwise independence
-and a uniform bound on the variances of the squared coordinate norms give an `O(n⁻²)` variance
-bound. On a finite measure space, pairwise uncorrelated square-integrable squared coordinate
-norms with uniformly bounded variances give an `O(n⁻²)` tail bound.
+upper-triangular expansion counts each off-diagonal coordinate twice. Pairwise independent
+square-integrable squared coordinate norms with uniformly bounded variances give an `O(n⁻²)`
+variance bound. On a finite measure space, pairwise uncorrelated square-integrable squared
+coordinate norms with uniformly bounded variances give an `O(n⁻²)` tail bound.
 -/
 
 public section
