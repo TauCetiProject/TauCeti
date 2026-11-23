@@ -144,7 +144,7 @@ theorem forwardSemiflow_mem {X : E → E} {S : Set E} {x : E} {t : ℝ}
 
 /-- For any `t ∈ forwardSemiflowInterval X S x`, there exists an integral curve `γ` on `[0, b)`
 passing through `forwardSemiflow X S t x` at time `t`. -/
-theorem exists_integralCurve_eq_forwardSemiflow {X : E → E} {S : Set E} {x : E} {t : ℝ}
+theorem exists_integralCurve_apply_eq_forwardSemiflow {X : E → E} {S : Set E} {x : E} {t : ℝ}
     (ht : t ∈ forwardSemiflowInterval X S x) :
     ∃ γ : ℝ → E, ∃ b > (0 : ℝ), t ∈ Ico 0 b ∧ γ t = forwardSemiflow X S t x ∧
       γ 0 = x ∧ MapsTo γ (Ico 0 b) S ∧
@@ -310,7 +310,7 @@ theorem forwardSemiflow_add (hX : LocallyLipschitzOn S X)
 
 /-- Spatial Grönwall Lipschitz bound and joint continuity of `forwardSemiflow` on `Icc 0 τ ×ˢ B`
 from a Lipschitz bound on `X` over a trapping region `B'`. -/
-theorem exists_lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc {B B' : Set E}
+theorem exists_lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc_prod {B B' : Set E}
     (hX : LocallyLipschitzOn S X) {τ : ℝ} {K : ℝ≥0}
     (hKLip : LipschitzOnWith K X B')
     (hsub : ∀ y ∈ B, τ ∈ forwardSemiflowInterval X S y)

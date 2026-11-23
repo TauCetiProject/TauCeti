@@ -10,7 +10,6 @@ public import TauCeti.Analysis.ODE.InwardSemiflow.Basic
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Topology.MetricSpace.Contracting
-import Mathlib.Tactic.Positivity
 
 /-!
 # Local existence, joint continuity, and completeness of inward forward semiflows
@@ -251,7 +250,7 @@ theorem Convex.exists_local_forwardSemiflow_continuousOn {C U : Set E} (hC : Con
     hr hε hδ h2rU hKLip hin_ball
   -- Step 3: Spatial Grönwall Lipschitz bound and joint continuity on `Icc 0 τ ×ˢ (ball x₀ r ∩ C)`.
   obtain ⟨KΦ, hLipΦ, hcontΦ⟩ :=
-    hX.exists_lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc hKLip
+    hX.exists_lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc_prod hKLip
       (fun y hy ↦ hsub y hy ⟨hτ.le, by linarith⟩)
       (fun y hy t ht ↦ hmem y hy t (Ico_subset_Icc_self ht))
   exact ⟨r, hr, τ, hτ, K, KΦ, h2rU, hKLip, hsub, hmem, hint, hLipΦ, hcontΦ⟩
@@ -268,7 +267,7 @@ theorem Convex.zero_mem_forwardSemiflowInterval {C U : Set E} (hC : Convex ℝ C
 
 /-- Propagation of local existence and joint continuity of `forwardSemiflow` up to any time
 `T ∈ forwardSemiflowInterval X (U ∩ C) x₀`. -/
-theorem Convex.exists_continuousOn_Icc_of_mem_forwardSemiflowInterval {C U : Set E}
+theorem Convex.exists_continuousOn_Icc_prod_of_mem_forwardSemiflowInterval {C U : Set E}
     (hC : Convex ℝ C) (hU : IsOpen U) {X : E → E} (hX : LocallyLipschitzOn (U ∩ C) X)
     (hX_in : ∀ x ∈ U ∩ C, X x ∈ strictInwardCone C x) {x₀ : E} {T : ℝ}
     (hx₀ : x₀ ∈ U ∩ C) (hT : T ∈ forwardSemiflowInterval X (U ∩ C) x₀) :
@@ -313,7 +312,7 @@ theorem Convex.exists_isOpen_inter_eq_forwardSemiflowDomain {C U : Set E} (hC : 
       W ∩ (Ici 0 ×ˢ (U ∩ C)) ⊆ forwardSemiflowDomain X (U ∩ C) := by
     obtain ⟨hpU, hpJ⟩ := mem_forwardSemiflowDomain_iff.mp p.property
     obtain ⟨r, hr, δ, hδ, _, hsub, _⟩ :=
-      hC.exists_continuousOn_Icc_of_mem_forwardSemiflowInterval hU hX hX_in hpU hpJ
+      hC.exists_continuousOn_Icc_prod_of_mem_forwardSemiflowInterval hU hX hX_in hpU hpJ
     exact ⟨Iio (p.val.1 + 2 * δ) ×ˢ ball p.val.2 r, isOpen_Iio.prod isOpen_ball,
       ⟨mem_Iio.mpr (by linarith), mem_ball_self hr⟩, fun q hq ↦
         mem_forwardSemiflowDomain_iff.mpr ⟨hq.2.2, hsub q.2 ⟨hq.1.2, hq.2.2.2⟩ ⟨hq.2.1, hq.1.1⟩⟩⟩
@@ -333,7 +332,7 @@ theorem Convex.continuousOn_forwardSemiflow {C U : Set E} (hC : Convex ℝ C) (h
   intro p hp
   obtain ⟨hpU, hpJ⟩ := mem_forwardSemiflowDomain_iff.mp hp
   obtain ⟨r, hr, δ, hδ, _, _, hcont⟩ :=
-    hC.exists_continuousOn_Icc_of_mem_forwardSemiflowInterval hU hX hX_in hpU hpJ
+    hC.exists_continuousOn_Icc_prod_of_mem_forwardSemiflowInterval hU hX hX_in hpU hpJ
   exact (hcont p ⟨⟨nonneg_of_mem_forwardSemiflowInterval hpJ, by linarith⟩,
     mem_ball_self hr, hpU.2⟩).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
       ⟨Iio (p.1 + δ) ×ˢ ball p.2 r, isOpen_Iio.prod isOpen_ball,
@@ -443,11 +442,19 @@ theorem Convex.forwardSemiflowInterval_eq_Ici_of_isCompact_sublevel {C U : Set E
     simp only [Pi.sub_apply, Pi.mul_apply, Function.comp_apply, id_eq, forwardSemiflow_zero,
       mul_zero, sub_zero] at hle0T
     linarith [mul_le_mul_of_nonneg_left hT.2.le (le_max_right c 0)]
-  have hesc : ∀ᶠ t in 𝓝[<] b, forwardSemiflow X (U ∩ C) t x ∉ {y ∈ U ∩ C | f y ≤ R} :=
-    hC.eventually_notMem_nhdsLT_forwardSemiflow hU hX h0 hlub
-      (hf_compact R) (fun _ hy ↦ hy.1) (fun y hy ↦ hX_in y hy.1)
-  obtain ⟨t, ht, htK⟩ := ((eventually_mem_set.mpr
-    (Ioo_mem_nhdsLT (pos_of_isLUB_forwardSemiflowInterval h0 hlub))).and hesc).exists
-  exact htK (htrap t ht)
+  have hmaps : MapsTo (fun t ↦ forwardSemiflow X (U ∩ C) t x)
+      (forwardSemiflowInterval X (U ∩ C) x) {y ∈ U ∩ C | f y ≤ R} := by
+    intro T hTJ
+    rw [hlub.forwardSemiflowInterval_eq_Ico] at hTJ
+    rcases hTJ.1.eq_or_lt with rfl | hT_pos
+    · exact ⟨by simpa using hx, by
+        dsimp only
+        rw [forwardSemiflow_zero]
+        exact le_add_of_nonneg_right (mul_nonneg (le_max_right c 0)
+          (pos_of_isLUB_forwardSemiflowInterval h0 hlub).le)⟩
+    · exact htrap T ⟨hT_pos, hTJ.2⟩
+  rw [hC.forwardSemiflowInterval_eq_Ici_of_isCompact_of_mapsTo hU hX h0
+    (hf_compact R) (fun _ hy ↦ hy.1) (fun y hy ↦ hX_in y hy.1) hmaps] at hbdd
+  exact not_bddAbove_Ici 0 hbdd
 
 end EscapeAndGlobal
