@@ -17,7 +17,8 @@ public import TauCeti.Topology.VectorBundle.Pullback
 
 The native `ContMDiffSection` carrier is a module over scalar-valued `ContMDiffMap`s,
 with pointwise multiplication. This extends its vector-space structure: constant functions
-act by the original scalar action, and the two actions form a scalar tower and commute.
+act by the original scalar action, and the two actions form a scalar tower and commute. The
+coercion to functions takes finite sums to pointwise sums (`ContMDiffSection.coe_sum`).
 These structures allow function-linear maps on sections, in particular tensorial bundle
 operators, to be expressed using the usual `LinearMap` API. The points of `M` separate sections
 modulo the kernels of evaluation (`ContMDiffSection.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`),
@@ -75,6 +76,12 @@ instance instIsScalarTowerContMDiffMap : IsScalarTower 𝕜 C^n⟮I, M; 𝕜⟯ 
 /-- Ground-field multiplication commutes with smooth-function multiplication on sections. -/
 instance instSMulCommClassContMDiffMap : SMulCommClass 𝕜 C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯ where
   smul_comm c f s := by ext x; simp [smul_comm c (f x)]
+
+/-- The coercion of a finite sum of sections is the pointwise sum. -/
+@[simp]
+theorem coe_sum {ι : Type*} (s : Finset ι) (f : ι → Cₛ^n⟮I; F, V⟯) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
+  map_sum (coeAddHom I F n V) f s
 
 variable (I F n V) in
 /-- Evaluation of sections at a point as a ground-field linear map. -/

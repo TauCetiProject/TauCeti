@@ -282,7 +282,7 @@ theorem diagramSchurPoly_mul_alternant (N : ℕ) (μ : _root_.YoungDiagram) (hμ
   induction N generalizing μ with
   | zero =>
     have hμ0 : μ = ⊥ := YoungDiagram.rowLen_injective (funext fun i => by
-      rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans (Nat.zero_le i)), hbot])
+      rw [YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans (Nat.zero_le i)), hbot])
     subst hμ0
     simp [diagramSchurPoly_bot, alternant_def, YoungDiagram.betaNumber_def]
   | succ n ih =>
