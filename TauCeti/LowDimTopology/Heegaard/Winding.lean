@@ -157,7 +157,7 @@ theorem exists_forall_weaklyAdmissibleAt_of_winding (c : L →+ ℚ) {a : ι →
   exact exists_pos_and_neg_of_winding (e := e.comp incl) (P := ⟨P, hP⟩)
     (fun i => (hp i).imp fun _ hr P => by simpa [incl] using hr P)
     (fun i => (hq i).imp fun _ hr P => by simpa [incl] using hr P)
-    (hN₀ N hN) (by rintro ⟨⟩; exact hD₀ (map_zero e))
+    (hN₀ N hN) fun h => hD₀ (by rw [(AddSubgroup.mk_eq_zero _).mp h, map_zero])
 
 /-- **Strong admissibility by winding.** Let `c : L →+ ℚ` give the Maslov indices of the
 transported periodic domains at a generator `x`, and let the coordinates `aᵢ` detect the
@@ -182,10 +182,8 @@ theorem exists_forall_stronglyAdmissible_of_winding (c : L →+ ℚ) {a : ι →
   have hP : P ≠ 0 := by rintro rfl; exact hD₀ (map_zero e)
   obtain ⟨r, hr⟩ := exists_lt_of_winding hp hq (hN₀ N hN P hP)
   refine ⟨r, ?_⟩
-  rw [hc, div_eq_inv_mul]
-  simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_mulLeft,
-    RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, Rat.coe_castHom] at hr
-  exact_mod_cast hr
+  rw [hc, div_eq_inv_mul, ← Rat.cast_lt (K := ℝ)]
+  simpa using hr
 
 end HeegaardRegionSystem
 
