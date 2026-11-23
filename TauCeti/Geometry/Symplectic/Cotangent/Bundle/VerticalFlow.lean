@@ -114,12 +114,12 @@ function `g` on `M`, the Hamiltonian flow of `g ∘ π` on `T*M` moves a covecto
 theorem flowOf_hamiltonianVectorField_comp_proj {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) 2 g)
     (t : ℝ) (z : CotangentBundle I M) :
     flowOf ((symplecticForm I M).hamiltonianVectorField (g ∘ TotalSpace.proj)) t z =
-      (⟨z.proj, z.2 - t • mvfderiv I g z.proj⟩ : CotangentBundle I M) := by
+      (⟨z.proj, z.snd - t • mvfderiv I g z.proj⟩ : CotangentBundle I M) := by
   have hσ := (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate
   have hgπ : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) 2 (g ∘ TotalSpace.proj) :=
     hg.comp (Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ))
   have hγ := isMIntegralCurve_hamiltonianVectorField_comp_proj
-    ((hg z.proj).mdifferentiableAt (by simp)) z.2
+    ((hg z.proj).mdifferentiableAt (by simp)) z.snd
   have h := flowOf_eq_of_isMIntegralCurve
     (hσ.contMDiff_hamiltonianVectorField (by simp) (by rw [one_add_one_eq_two]; exact hgπ)) hγ t
   simpa using h

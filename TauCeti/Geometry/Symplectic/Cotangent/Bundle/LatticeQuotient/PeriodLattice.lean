@@ -81,21 +81,21 @@ over `x` to the class of `p - t dg_x` at time `t`. -/
 theorem flowOf_hamiltonianVectorField_comp_proj_mk {g : B → ℝ} (hg : ContMDiff I 𝓘(ℝ) 2 g)
     (t : ℝ) (z : CotangentBundle I B) :
     flowOf ((symplecticForm hα hclosed).hamiltonianVectorField (g ∘ proj hα)) t (mk hα z) =
-      mk hα ⟨z.proj, z.2 - t • mvfderiv I g z.proj⟩ := by
+      mk hα ⟨z.proj, z.snd - t • mvfderiv I g z.proj⟩ := by
   have hσ := (isSymplectic_symplecticForm hα hclosed).isNondegenerate
   have hgπ : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) 2 (g ∘ proj hα) :=
     hg.comp ((contMDiff_proj hα).of_le (by simp))
   -- The vertical line through `z` is a trajectory upstairs, and the quotient map carries it to a
   -- trajectory of the descended Hamiltonian vector field.
   have hγ := isMIntegralCurve_hamiltonianVectorField_comp_proj (M := B)
-    ((hg z.proj).mdifferentiableAt (by simp)) z.2
+    ((hg z.proj).mdifferentiableAt (by simp)) z.snd
   rw [← congrArg (g ∘ ·) (proj_comp_mk hα)] at hγ
   have hγ' := (CotangentBundle.isSymplectic_symplecticForm (I := I) (M := B)).isNondegenerate
     |>.isMIntegralCurve_comp_hamiltonianVectorField hσ (contMDiff_mk hα)
       (mpullback_mk_symplecticForm hα hclosed)
     (fun s ↦ by
       obtain ⟨e, he⟩ := (isLocalDiffeomorph_mk hα).isInvertible_mfderiv (by simp)
-        (⟨z.proj, z.2 - s • mvfderiv I g z.proj⟩ : CotangentBundle I B)
+        (⟨z.proj, z.snd - s • mvfderiv I g z.proj⟩ : CotangentBundle I B)
       rw [← he]
       exact e.surjective)
     (fun s ↦ ((hgπ _).mdifferentiableAt (by simp))) hγ
