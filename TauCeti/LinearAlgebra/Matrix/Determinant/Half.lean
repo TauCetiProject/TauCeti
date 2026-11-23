@@ -31,7 +31,8 @@ basis, `q(x) = xᵀ A x` for an upper triangular `A`, and the Gram matrix of the
 `A + Aᵀ`. The identities below are proved in the polynomial ring over `ℤ`, where `2` cancels, and
 specialized: `halfDet` commutes with ring homomorphisms, `halfDet (Pᵀ A P) = det P ^ 2 * halfDet A`,
 `halfDet` is unchanged by adding `Z - Zᵀ` (which does not change the quadratic form `xᵀ A x`) and by
-reindexing, and it is multiplicative on block-diagonal matrices with an even block.
+reindexing, and for a block-diagonal matrix with an even block `A` and an odd block `D` it is
+`det (A + Aᵀ) * halfDet D`.
 
 ## Main definitions
 
@@ -48,7 +49,7 @@ reindexing, and it is multiplicative on block-diagonal matrices with an even blo
 * `Matrix.map_halfDet`: `halfDet` commutes with ring homomorphisms.
 * `Matrix.halfDet_transpose_mul_mul`: `halfDet (Pᵀ * A * P) = det P ^ 2 * halfDet A`.
 * `Matrix.halfDet_add_sub_transpose`: `halfDet (A + (Z - Zᵀ)) = halfDet A`.
-* `Matrix.halfDet_submatrix_equiv`: `halfDet` is invariant under reindexing.
+* `Matrix.halfDet_submatrix_equiv_self`: `halfDet` is invariant under reindexing.
 * `Matrix.halfDet_fromBlocks_zero`: `halfDet (fromBlocks A 0 0 D) = det (A + Aᵀ) * halfDet D`
   for `A` of even size.
 * `Matrix.halfDet_unique`, `Matrix.halfDet_fin_three`: the formulas in sizes one and three.
@@ -78,7 +79,7 @@ theorem det_eq_zero_of_isSymm_of_diag_eq_zero {R : Type*} [CommRing R] [CharP R 
   · have h : ∏ i, M (σ⁻¹ i) i = ∏ i, M (σ i) i := by
       rw [← Equiv.prod_comp σ]
       exact Finset.prod_congr rfl fun i _ => by simp [hM.apply]
-    rw [Equiv.Perm.sign_inv, h, ← two_smul ℕ, two_nsmul, CharTwo.add_self_eq_zero]
+    rw [Equiv.Perm.sign_inv, h, CharTwo.add_self_eq_zero]
   · obtain ⟨i, hi⟩ := Equiv.Perm.exists_fixed_point_of_prime (p := 2) (n := 1)
       (Nat.two_dvd_ne_zero.mpr (Nat.odd_iff.mp hι)) (by
         rw [pow_one, sq]
@@ -99,7 +100,7 @@ theorem two_dvd_det_mvPolynomialX_add_transpose (hι : Odd (Fintype.card ι)) :
 variable (ι) in
 /-- The polynomial `det (X + Xᵀ) / 2` in the entries of the generic matrix `X` over `ℤ`, for `ι` of
 odd cardinality; it is `0` for `ι` of even cardinality. -/
-@[expose] noncomputable def halfDetPoly : MvPolynomial (ι × ι) ℤ :=
+noncomputable def halfDetPoly : MvPolynomial (ι × ι) ℤ :=
   if h : Odd (Fintype.card ι) then (two_dvd_det_mvPolynomialX_add_transpose h).choose else 0
 
 /-- The defining property of `Matrix.halfDetPoly`: `det (X + Xᵀ) = 2 * halfDetPoly ι`. -/
@@ -111,7 +112,7 @@ theorem det_mvPolynomialX_add_transpose_eq (hι : Odd (Fintype.card ι)) :
 /-- The half-determinant of a square matrix `A` of odd size: the value at the entries of `A` of the
 integer polynomial `det (X + Xᵀ) / 2`, so that `2 * halfDet A = det (A + Aᵀ)`
 (`Matrix.two_mul_halfDet`). It is `0` in even size. -/
-@[expose] noncomputable def halfDet {R : Type*} [CommRing R] (A : Matrix ι ι R) : R :=
+noncomputable def halfDet {R : Type*} [CommRing R] (A : Matrix ι ι R) : R :=
   eval₂ (Int.castRingHom R) (fun p => A p.1 p.2) (halfDetPoly ι)
 
 variable {R S : Type*} [CommRing R] [CommRing S]
@@ -120,7 +121,7 @@ variable {R S : Type*} [CommRing R] [CommRing S]
 theorem map_halfDet (f : R →+* S) (A : Matrix ι ι R) : f A.halfDet = (A.map f).halfDet := by
   rw [halfDet, halfDet, eval₂_comp_left, RingHom.ext_int (f.comp (Int.castRingHom R))
     (Int.castRingHom S)]
-  rfl
+  simp only [Function.comp_def, map_apply]
 
 /-- In even size, `halfDet` is `0` by convention. -/
 theorem halfDet_of_not_odd (hι : ¬Odd (Fintype.card ι)) (A : Matrix ι ι R) : A.halfDet = 0 := by
@@ -143,29 +144,39 @@ private theorem eq_of_two_mul_eq {σ : Type*} {a b : MvPolynomial σ ℤ} (h : 2
   mul_left_cancel₀ two_ne_zero h
 
 /-- The generic matrix with entries the variables `X (inl (i, j))`. -/
-private noncomputable abbrev genericLeft (ι κ : Type*) :
+private noncomputable def genericLeft (ι κ : Type*) :
     Matrix ι ι (MvPolynomial ((ι × ι) ⊕ (κ × κ)) ℤ) :=
   of fun i j => X (Sum.inl (i, j))
 
 /-- The generic matrix with entries the variables `X (inr (i, j))`. -/
-private noncomputable abbrev genericRight (ι κ : Type*) :
+private noncomputable def genericRight (ι κ : Type*) :
     Matrix κ κ (MvPolynomial ((ι × ι) ⊕ (κ × κ)) ℤ) :=
   of fun i j => X (Sum.inr (i, j))
 
 /-- The evaluation at the entries of two matrices. -/
-private noncomputable abbrev evalPair (A : Matrix ι ι R) (B : Matrix κ κ R) :
+private noncomputable def evalPair (A : Matrix ι ι R) (B : Matrix κ κ R) :
     MvPolynomial ((ι × ι) ⊕ (κ × κ)) ℤ →+* R :=
   eval₂Hom (Int.castRingHom R) (Sum.elim (fun p => A p.1 p.2) (fun p => B p.1 p.2))
 
 omit [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] in
+private theorem genericLeft_apply (i j : ι) : genericLeft ι κ i j = X (Sum.inl (i, j)) := rfl
+
+omit [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] in
 private theorem genericLeft_map (A : Matrix ι ι R) (B : Matrix κ κ R) :
     (genericLeft ι κ).map (evalPair A B) = A := by
-  ext; simp
+  ext; simp [genericLeft, evalPair]
 
 omit [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] in
 private theorem genericRight_map (A : Matrix ι ι R) (B : Matrix κ κ R) :
     (genericRight ι κ).map (evalPair A B) = B := by
-  ext; simp
+  ext; simp [genericRight, evalPair]
+
+omit [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] in
+private theorem evalPair_X_inl (A : Matrix ι ι R) (B : Matrix κ κ R) (p : ι × ι) :
+    evalPair A B (X (Sum.inl p)) = A p.1 p.2 := by
+  simp [evalPair]
+
+attribute [local simp] genericLeft_map genericRight_map evalPair_X_inl
 
 /-- `halfDet (Pᵀ * A * P) = det P ^ 2 * halfDet A`, for `A` of odd size. -/
 theorem halfDet_transpose_mul_mul (hι : Odd (Fintype.card ι)) (A P : Matrix ι ι R) :
@@ -177,9 +188,7 @@ theorem halfDet_transpose_mul_mul (hι : Odd (Fintype.card ι)) (A P : Matrix ι
       transpose_transpose, ← Matrix.mul_assoc (genericRight ι ι)ᵀ, ← Matrix.add_mul,
       ← Matrix.mul_add, det_mul, det_mul, det_transpose]
     ring
-  have h := congrArg (evalPair A P) key
-  rwa [map_halfDet, map_mul, map_pow, RingHom.map_det, map_halfDet, RingHom.mapMatrix_apply,
-    Matrix.map_mul, Matrix.map_mul, transpose_map, genericLeft_map, genericRight_map] at h
+  simpa [map_halfDet, RingHom.map_det, transpose_map] using congrArg (evalPair A P) key
 
 /-- Adding `Z - Zᵀ`, which does not change the quadratic form `x ↦ xᵀ A x`, does not change
 `halfDet`. -/
@@ -192,12 +201,12 @@ theorem halfDet_add_sub_transpose (hι : Odd (Fintype.card ι)) (A Z : Matrix ι
     congr 1
     rw [transpose_add, transpose_sub, transpose_transpose]
     abel
-  have h := congrArg (evalPair A Z) key
-  rwa [map_halfDet, map_halfDet, Matrix.map_add _ (map_add _), Matrix.map_sub _ (map_sub _),
-    transpose_map, genericLeft_map, genericRight_map] at h
+  simpa [map_halfDet, Matrix.map_add, Matrix.map_sub, transpose_map] using
+    congrArg (evalPair A Z) key
 
 /-- `halfDet` is invariant under reindexing. -/
-theorem halfDet_submatrix_equiv (e : κ ≃ ι) (A : Matrix ι ι R) :
+@[simp]
+theorem halfDet_submatrix_equiv_self (e : κ ≃ ι) (A : Matrix ι ι R) :
     (A.submatrix e e).halfDet = A.halfDet := by
   by_cases hι : Odd (Fintype.card ι)
   · have hκ : Odd (Fintype.card κ) := Fintype.card_congr e ▸ hι
@@ -205,8 +214,7 @@ theorem halfDet_submatrix_equiv (e : κ ≃ ι) (A : Matrix ι ι R) :
       refine eq_of_two_mul_eq ?_
       rw [two_mul_halfDet hι, two_mul_halfDet hκ, transpose_submatrix]
       exact det_submatrix_equiv_self e (genericLeft ι ι + (genericLeft ι ι)ᵀ)
-    have h := congrArg (evalPair A A) key
-    rwa [map_halfDet, map_halfDet, ← submatrix_map, genericLeft_map] at h
+    simpa [map_halfDet, ← submatrix_map] using congrArg (evalPair A A) key
   · have hκ : ¬Odd (Fintype.card κ) := Fintype.card_congr e ▸ hι
     rw [halfDet_of_not_odd hι, halfDet_of_not_odd hκ]
 
@@ -225,21 +233,18 @@ theorem halfDet_fromBlocks_zero (hι : Even (Fintype.card ι)) (hκ : Odd (Finty
       fromBlocks_add]
     simp only [transpose_zero, add_zero]
     exact det_fromBlocks_zero₂₁ _ _ _
-  have h := congrArg (evalPair A D) key
-  rwa [map_halfDet, map_mul, RingHom.map_det, map_halfDet, RingHom.mapMatrix_apply,
-    fromBlocks_map, Matrix.map_add _ (map_add _), transpose_map, genericLeft_map, genericRight_map,
-    Matrix.map_zero _ (map_zero _)] at h
+  simpa [map_halfDet, RingHom.map_det, fromBlocks_map, Matrix.map_add, transpose_map] using
+    congrArg (evalPair A D) key
 
 /-- In size one, `halfDet A` is the single entry of `A`. -/
+@[simp]
 theorem halfDet_unique [Unique ι] (A : Matrix ι ι R) : A.halfDet = A default default := by
   have hι : Odd (Fintype.card ι) := by simp
   have key : (genericLeft ι ι).halfDet = X (Sum.inl (default, default)) := by
     refine eq_of_two_mul_eq ?_
     rw [two_mul_halfDet hι, det_unique]
-    simp [two_mul]
-  have h := congrArg (evalPair A A) key
-  rw [map_halfDet, genericLeft_map] at h
-  simpa using h
+    simp [genericLeft_apply, two_mul]
+  simpa [map_halfDet] using congrArg (evalPair A A) key
 
 /-- In size three, with `a, b, c` the diagonal entries of `A` and `d, e, f` the entries
 `(0, 1)`, `(0, 2)`, `(1, 2)` of `A + Aᵀ`, `halfDet A = 4abc + def - af² - be² - cd²`. -/
@@ -248,7 +253,7 @@ theorem halfDet_fin_three (A : Matrix (Fin 3) (Fin 3) R) :
       - A 0 0 * (A 1 2 + A 2 1) ^ 2 - A 1 1 * (A 0 2 + A 2 0) ^ 2
       - A 2 2 * (A 0 1 + A 1 0) ^ 2 := by
   have hι : Odd (Fintype.card (Fin 3)) := by decide
-  set G := mvPolynomialX (Fin 3) (Fin 3) ℤ
+  set G := genericLeft (Fin 3) (Fin 3)
   have key : G.halfDet = 4 * G 0 0 * G 1 1 * G 2 2 + (G 0 1 + G 1 0) * (G 0 2 + G 2 0) *
       (G 1 2 + G 2 1) - G 0 0 * (G 1 2 + G 2 1) ^ 2 - G 1 1 * (G 0 2 + G 2 0) ^ 2
       - G 2 2 * (G 0 1 + G 1 0) ^ 2 := by
@@ -256,9 +261,6 @@ theorem halfDet_fin_three (A : Matrix (Fin 3) (Fin 3) R) :
     rw [two_mul_halfDet hι]
     simp only [det_fin_three, Matrix.add_apply, Matrix.transpose_apply]
     ring
-  have h := congrArg (eval₂Hom (Int.castRingHom R) fun p : Fin 3 × Fin 3 => A p.1 p.2) key
-  simp only [map_halfDet, map_add, map_sub, map_mul, map_pow, map_ofNat, coe_eval₂Hom,
-    mvPolynomialX_map_eval₂, G, mvPolynomialX_apply, eval₂_X] at h
-  exact h
+  simpa [map_halfDet, G, genericLeft_apply, map_ofNat] using congrArg (evalPair A A) key
 
 end Matrix
