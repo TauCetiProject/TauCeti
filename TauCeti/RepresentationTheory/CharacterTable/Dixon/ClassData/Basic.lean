@@ -72,9 +72,8 @@ order `8` as a closed instance of everything here.
 
 * `TauCeti.ClassData.classOf_bijective`: `d.classOf` is a bijection onto `ConjClasses G` without
   assuming decidable conjugacy.
-* `TauCeti.ClassData.classOf_eq_inv_iff`, `TauCeti.ClassData.classOf_eq_pow_iff`,
-  `TauCeti.ClassData.classOf_eq_zpow_iff`, `TauCeti.ClassData.classOf_eq_map_iff`:
-  decidability-free conjugacy characterizations of `classOf` labels.
+* `TauCeti.ClassData.classOf_eq_mk_iff`: decidability-free conjugacy characterization of
+  `d.classOf i = ConjClasses.mk g`.
 * `TauCeti.ClassData.numClasses_eq_card_conjClasses`: the numbering has the expected length.
 * `TauCeti.ClassData.sum_index_centralizer_reps`: the class equation, read on the representatives.
 * `TauCeti.ClassData.index_map`, `TauCeti.ClassData.equivConjClasses_map`,
@@ -214,30 +213,11 @@ def classOf (i : Fin d.numClasses) : ConjClasses G := ConjClasses.mk (d.rep i)
 would rewrite past `TauCeti.ClassData.classOf_index`, which is the normal form wanted. -/
 theorem classOf_eq_mk (i : Fin d.numClasses) : d.classOf i = ConjClasses.mk (d.rep i) := (rfl)
 
-/-- Two numbered classes satisfy `d.classOf j = (d.classOf i)⁻¹` if and only if the `j`-th
-representative is conjugate to the inverse of the `i`-th. -/
-theorem classOf_eq_inv_iff {i j : Fin d.numClasses} :
-    d.classOf j = (d.classOf i)⁻¹ ↔ IsConj (d.rep j) (d.rep i)⁻¹ := by
-  rw [classOf_eq_mk, classOf_eq_mk, ConjClasses.inv_mk, ConjClasses.mk_eq_mk_iff_isConj]
-
-/-- Two numbered classes satisfy `d.classOf j = d.classOf i ^ n` if and only if the `j`-th
-representative is conjugate to the `n`-th power of the `i`-th. -/
-theorem classOf_eq_pow_iff {n : ℕ} {i j : Fin d.numClasses} :
-    d.classOf j = d.classOf i ^ n ↔ IsConj (d.rep j) (d.rep i ^ n) := by
-  rw [classOf_eq_mk, classOf_eq_mk, ConjClasses.mk_pow, ConjClasses.mk_eq_mk_iff_isConj]
-
-/-- Two numbered classes satisfy `d.classOf j = ConjClasses.mk (d.rep i ^ z)` if and only if the
-`j`-th representative is conjugate to the `z`-th integer power of the `i`-th. -/
-theorem classOf_eq_zpow_iff {z : ℤ} {i j : Fin d.numClasses} :
-    d.classOf j = ConjClasses.mk (d.rep i ^ z) ↔ IsConj (d.rep j) (d.rep i ^ z) := by
+/-- **Decidability-free conjugacy characterization of `TauCeti.ClassData.classOf`**: the `i`-th
+numbered class equals `ConjClasses.mk g` if and only if `d.rep i` is conjugate to `g`. -/
+theorem classOf_eq_mk_iff {i : Fin d.numClasses} {g : G} :
+    d.classOf i = ConjClasses.mk g ↔ IsConj (d.rep i) g := by
   rw [classOf_eq_mk, ConjClasses.mk_eq_mk_iff_isConj]
-
-/-- For a homomorphism `φ : H →* G`, the `j`-th class of `G` is the image of the `i`-th class of
-`H` under `ConjClasses.map φ` if and only if `d.rep j` is conjugate to `φ (dH.rep i)`. -/
-theorem classOf_eq_map_iff {H : Type*} [Group H] (dH : ClassData H) (φ : H →* G)
-    {i : Fin dH.numClasses} {j : Fin d.numClasses} :
-    d.classOf j = ConjClasses.map φ (dH.classOf i) ↔ IsConj (d.rep j) (φ (dH.rep i)) := by
-  rw [classOf_eq_mk, classOf_eq_mk, ConjClasses.map_mk, ConjClasses.mk_eq_mk_iff_isConj]
 
 /-- **Distinct numbers name distinct classes**: the `Fin`-indexed reading of the
 `pairwise_not_isConj` field. -/
@@ -252,7 +232,8 @@ theorem not_isConj_rep {i j : Fin d.numClasses} (hij : i ≠ j) : ¬ IsConj (d.r
 @[simp]
 theorem classOf_inj {i j : Fin d.numClasses} : d.classOf i = d.classOf j ↔ i = j := by
   refine ⟨fun h => by_contra fun hne => d.not_isConj_rep hne ?_, congrArg _⟩
-  rwa [classOf_eq_mk, classOf_eq_mk, ConjClasses.mk_eq_mk_iff_isConj] at h
+  rw [d.classOf_eq_mk j, classOf_eq_mk_iff] at h
+  exact h
 
 /-- `TauCeti.ClassData.classOf` is injective without assuming decidable conjugacy. -/
 theorem classOf_injective : Function.Injective d.classOf :=
@@ -263,9 +244,7 @@ theorem classOf_surjective : Function.Surjective d.classOf := by
   refine ConjClasses.forall_isConj.mpr fun g => ?_
   obtain ⟨x, hx, hxg⟩ := d.exists_isConj g
   obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hx
-  refine ⟨⟨i, hi⟩, ?_⟩
-  rw [d.classOf_eq_mk]
-  exact ConjClasses.mk_eq_mk_iff_isConj.mpr hxg
+  exact ⟨⟨i, hi⟩, d.classOf_eq_mk_iff.mpr hxg⟩
 
 /-- **The class numbering is a bijection** onto `ConjClasses G`, without assuming decidable
 conjugacy or finiteness. -/
@@ -351,10 +330,8 @@ theorem classOf_index (g : G) : d.classOf (d.index g) = ConjClasses.mk g :=
 /-- Every element has the same order as the chosen representative of its conjugacy class. -/
 @[simp]
 theorem orderOf_rep_index (g : G) :
-    orderOf (d.rep (d.index g)) = orderOf g := by
-  by_contra hne
-  exact ConjClasses.mk_ne_mk_of_orderOf_ne hne
-    (ConjClasses.mk_eq_mk_iff_isConj.mpr (d.isConj_rep_index g))
+    orderOf (d.rep (d.index g)) = orderOf g :=
+  (d.isConj_rep_index g).orderOf_eq
 
 /-- Every element has the same centralizer index as the chosen representative of its conjugacy
 class. -/

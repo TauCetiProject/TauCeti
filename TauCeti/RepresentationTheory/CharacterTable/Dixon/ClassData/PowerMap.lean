@@ -46,7 +46,10 @@ across `TauCeti.ClassData.map`.
   `TauCeti.ClassData.powIndex_bijective_of_coprime_card`,
   `TauCeti.ClassData.zpowIndex_bijective_of_coprime`,
   `TauCeti.ClassData.zpowIndex_bijective_of_coprime_card`: coprime power maps permute the
-  numbered classes bijectively and preserve class sizes.
+  numbered classes bijectively.
+* `TauCeti.ClassData.card_classFinset_powIndex_of_coprime`,
+  `TauCeti.ClassData.card_classFinset_zpowIndex_of_coprime`: raising a single class `i` to a
+  power coprime to `orderOf (d.rep i)` preserves its class size.
 
 ## References
 
@@ -265,9 +268,7 @@ of infinite order (`orderOf (d.rep i) = 0`), congruence modulo `0` is equality a
 still holds. -/
 theorem powIndex_eq_of_modEq {m n : ℕ} {i : Fin d.numClasses}
     (h : m ≡ n [MOD orderOf (d.rep i)]) : d.powIndex m i = d.powIndex n i := by
-  have hpow : d.rep i ^ m = d.rep i ^ n := by
-    simpa only [zpow_natCast] using zpow_eq_zpow_iff_modEq.mpr (Int.natCast_modEq_iff.mpr h)
-  rw [powIndex, powIndex, hpow]
+  rw [powIndex, powIndex, pow_eq_pow_iff_modEq.mpr h]
 
 /-- Raising class `i` to a power coprime to `orderOf (d.rep i)` preserves its centralizer index. -/
 theorem index_centralizer_rep_powIndex_of_coprime {n : ℕ} {i : Fin d.numClasses}
@@ -314,10 +315,8 @@ theorem zpowIndex_eq_of_conj {z : ℤ} {i j : Fin d.numClasses} (c : G)
 
 /-- **The `ℤ`-power map tracks integer powers** under `TauCeti.ClassData.index`. -/
 @[simp]
-theorem zpowIndex_index (z : ℤ) (g : G) : d.zpowIndex z (d.index g) = d.index (g ^ z) := by
-  obtain ⟨c, hc⟩ := isConj_iff.mp (d.isConj_rep_index g)
-  refine d.index_eq_index_iff.mpr (isConj_iff.mpr ⟨c, ?_⟩)
-  simpa only [MulAut.conj_apply, hc] using map_zpow (MulAut.conj c) (d.rep (d.index g)) z
+theorem zpowIndex_index (z : ℤ) (g : G) : d.zpowIndex z (d.index g) = d.index (g ^ z) :=
+  d.index_eq_index_iff.mpr ((d.isConj_rep_index g).zpow z)
 
 /-- **The numbered `ℤ`-power map tracks integer powers** under `TauCeti.ClassData.classOf`. -/
 @[simp]
@@ -399,20 +398,31 @@ theorem orderOf_rep_zpowIndex_of_coprime {z : ℤ} {i : Fin d.numClasses}
     orderOf (d.rep (d.zpowIndex z i)) = orderOf (d.rep i) := by
   rw [zpowIndex, orderOf_rep_index, ← orderOf_pow_natAbs, hz.orderOf_pow]
 
+/-- Every `ℤ`-power map agrees either with the `ℕ`-power map for `z.natAbs` or with its
+composition with `d.invIndex`. -/
+theorem zpowIndex_eq_powIndex_natAbs_or (z : ℤ) :
+    d.zpowIndex z = d.powIndex z.natAbs ∨
+      d.zpowIndex z = d.invIndex ∘ d.powIndex z.natAbs := by
+  rcases Int.natAbs_eq z with h | h
+  · left
+    funext i
+    conv_lhs => rw [h, zpowIndex_natCast]
+  · right
+    funext i
+    conv_lhs => rw [h, zpowIndex_neg, zpowIndex_natCast]
+    rfl
+
 /-- Raising class `i` to an integer power with `z.natAbs` coprime to `orderOf (d.rep i)`
 preserves its centralizer index. -/
 theorem index_centralizer_rep_zpowIndex_of_coprime {z : ℤ} {i : Fin d.numClasses}
     (hz : (orderOf (d.rep i)).Coprime z.natAbs) :
     (Subgroup.centralizer {d.rep (d.zpowIndex z i)}).index =
       (Subgroup.centralizer {d.rep i}).index := by
-  cases z with
-  | ofNat n =>
-      rw [Int.ofNat_eq_natCast, zpowIndex_natCast]
-      exact d.index_centralizer_rep_powIndex_of_coprime hz
-  | negSucc n =>
-      rw [Int.negSucc_eq, zpowIndex_neg, index_centralizer_rep_invIndex, ← Nat.cast_succ,
-        zpowIndex_natCast]
-      exact d.index_centralizer_rep_powIndex_of_coprime hz
+  rcases d.zpowIndex_eq_powIndex_natAbs_or z with h | h
+  · rw [h]
+    exact d.index_centralizer_rep_powIndex_of_coprime hz
+  · rw [h, Function.comp_apply, index_centralizer_rep_invIndex]
+    exact d.index_centralizer_rep_powIndex_of_coprime hz
 
 /-- Raising class `i` to an integer power with `z.natAbs` coprime to `orderOf (d.rep i)`
 preserves the cardinality of its numbered class `Finset`. -/
@@ -448,44 +458,23 @@ theorem powIndex_bijective_of_coprime {n : ℕ}
 /-- **Any power coprime to `Nat.card G` induces a bijection** on `Fin d.numClasses`. For infinite
 `G`, `Nat.card G = 0`, so `(Nat.card G).Coprime n` forces `n = 1` and the result still holds. -/
 theorem powIndex_bijective_of_coprime_card {n : ℕ}
-    (hn : (Nat.card G).Coprime n) : Function.Bijective (d.powIndex n) := by
-  cases finite_or_infinite G with
-  | inl _ =>
-      exact d.powIndex_bijective_of_coprime fun i => hn.of_dvd_left (orderOf_dvd_natCard _)
-  | inr _ =>
-      have hn1 : n = 1 :=
-        (Nat.coprime_zero_left n).mp (by rwa [Nat.card_eq_zero_of_infinite] at hn)
-      rw [hn1]
-      exact ⟨fun _ _ h => by simpa using h, fun i => ⟨i, d.powIndex_one i⟩⟩
+    (hn : (Nat.card G).Coprime n) : Function.Bijective (d.powIndex n) :=
+  d.powIndex_bijective_of_coprime fun _ => hn.of_dvd_left (orderOf_dvd_natCard _)
 
 /-- **An integer power map with `z.natAbs` coprime to every representative order is a bijection**
 on `Fin d.numClasses`, without assuming `G` is finite. -/
 theorem zpowIndex_bijective_of_coprime {z : ℤ}
     (hz : ∀ i, (orderOf (d.rep i)).Coprime z.natAbs) : Function.Bijective (d.zpowIndex z) := by
-  rcases Int.natAbs_eq z with h | h
-  · have hfun : d.zpowIndex z = d.powIndex z.natAbs :=
-      funext fun i => by conv_lhs => rw [h, zpowIndex_natCast]
-    rw [hfun]
-    exact d.powIndex_bijective_of_coprime hz
-  · have hfun : d.zpowIndex z = fun i => d.invIndex (d.powIndex z.natAbs i) :=
-      funext fun i => by conv_lhs => rw [h, zpowIndex_neg, zpowIndex_natCast]
-    rw [hfun]
-    exact d.invIndex_involutive.bijective.comp (d.powIndex_bijective_of_coprime hz)
+  rcases d.zpowIndex_eq_powIndex_natAbs_or z with h | h <;> rw [h]
+  · exact d.powIndex_bijective_of_coprime hz
+  · exact d.invIndex_involutive.bijective.comp (d.powIndex_bijective_of_coprime hz)
 
 /-- **Any integer power with `z.natAbs` coprime to `Nat.card G` induces a bijection** on
 `Fin d.numClasses`. For infinite `G`, `Nat.card G = 0`, so `(Nat.card G).Coprime z.natAbs` forces
 `z.natAbs = 1` (`z = ±1`) and the result still holds. -/
 theorem zpowIndex_bijective_of_coprime_card {z : ℤ}
-    (hz : (Nat.card G).Coprime z.natAbs) : Function.Bijective (d.zpowIndex z) := by
-  rcases Int.natAbs_eq z with h | h
-  · have hfun : d.zpowIndex z = d.powIndex z.natAbs :=
-      funext fun i => by conv_lhs => rw [h, zpowIndex_natCast]
-    rw [hfun]
-    exact d.powIndex_bijective_of_coprime_card hz
-  · have hfun : d.zpowIndex z = fun i => d.invIndex (d.powIndex z.natAbs i) :=
-      funext fun i => by conv_lhs => rw [h, zpowIndex_neg, zpowIndex_natCast]
-    rw [hfun]
-    exact d.invIndex_involutive.bijective.comp (d.powIndex_bijective_of_coprime_card hz)
+    (hz : (Nat.card G).Coprime z.natAbs) : Function.Bijective (d.zpowIndex z) :=
+  d.zpowIndex_bijective_of_coprime fun _ => hz.of_dvd_left (orderOf_dvd_natCard _)
 
 /-- **Transport of the `ℕ`-power map** across a multiplicative equivalence. -/
 @[simp]
