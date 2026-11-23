@@ -22,10 +22,11 @@ is a Lie algebra isomorphism, preserves and reflects ad-nilpotence, and preserve
 dimensions of the actual scheme-theoretic adjoint orbits. An isogeny with étale kernel, over any
 commutative base ring, also preserves and reflects ad-nilpotence.
 
-In characteristic zero the differential therefore identifies the sets of rational adjoint orbits
-(`TauCeti.CommHopfAlgCat.IsIsogeny.adjointOrbitOrderIso`). This identification is an order
-isomorphism for the closure order, so it matches orbit closures, and it matches nilpotent orbits
-with nilpotent orbits (`TauCeti.CommHopfAlgCat.IsIsogeny.isNilpotentAd_adjointOrbitOrderIso_iff`).
+Over an algebraically closed field of characteristic zero the differential therefore identifies
+the sets of rational adjoint orbits (`TauCeti.CommHopfAlgCat.IsIsogeny.adjointOrbitOrderIso`).
+This identification is an order isomorphism for the closure order, so it matches orbit closures,
+and it matches nilpotent orbits with nilpotent orbits
+(`TauCeti.CommHopfAlgCat.IsIsogeny.isNilpotentAd_adjointOrbitOrderIso_iff`).
 
 The coordinate arrow `f : H ⟶ K` represents `Spec K → Spec H`, so the differential and
 orbit comparisons go from the cotangent dual of `K` to that of `H`. These results apply in
@@ -111,11 +112,11 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_eq_of_charZero (hf : IsIsog
 
 section OrbitOrder
 
-/-- **Adjoint orbits under an isogeny.** In characteristic zero, the differential of an affine
-isogeny `Spec K → Spec H` identifies the rational adjoint orbits of `Spec K` with those of
-`Spec H`, as ordered sets for the closure order: the orbit of `x` corresponds to the orbit of
-`dφ x`, and one orbit lies in the closure of another exactly when the same holds for the
-corresponding orbits. The finite type of `K` follows from that of `H`
+/-- **Adjoint orbits under an isogeny.** Over an algebraically closed field of characteristic
+zero, the differential of an affine isogeny `Spec K → Spec H` identifies the rational adjoint
+orbits of `Spec K` with those of `Spec H`, as ordered sets for the closure order: the orbit of
+`x` corresponds to the orbit of `dφ x`, and one orbit lies in the closure of another exactly when
+the same holds for the corresponding orbits. The finite type of `K` follows from that of `H`
 (`TauCeti.CommHopfAlgCat.IsIsogeny.finiteType_target`). -/
 noncomputable def adjointOrbitOrderIso (hf : IsIsogeny f) :
     haveI := hf.finiteType_target
