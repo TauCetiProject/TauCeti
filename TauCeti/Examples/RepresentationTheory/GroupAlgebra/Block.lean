@@ -7,8 +7,10 @@ module
 
 public import Mathlib.FieldTheory.Finite.GaloisField
 public import Mathlib.NumberTheory.Padics.RingHoms
+public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Criterion
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Lift
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.ScalarExtension
+public import TauCeti.RepresentationTheory.GroupAlgebra.RelativeTrace
 
 /-!
 # Examples of block idempotents of group algebras
@@ -30,10 +32,10 @@ Block idempotents (`TauCeti.IsBlockIdempotent`) of small group algebras, compute
   `(1 + r + r²)/3` and `(2 - r - r²)/3` of `ℤ₂[C₃]`; the ordinary idempotents `(1 ± t)/2` are not
   in `ℤ₂[C₂]`, whose only block is `1`.
 
-The finite computations go through a criterion on coefficient functions
-(`TauCeti.GroupAlgebraBlockExamples.isBlockIdempotent_of_coeff`), which `decide` checks, and the
-blocks whose block algebra is the coefficient field go through
-`TauCeti.GroupAlgebraBlockExamples.isBlockIdempotent_of_mul_of_eq_smul`.
+The finite computations go through the criteria on coefficient functions
+`TauCeti.isBlockIdempotent_of_coeff` and `TauCeti.eq_of_isBlockIdempotent_of_coeff`, which `decide`
+checks, and the blocks whose block algebra is the coefficient field go through
+`TauCeti.isBlockIdempotent_of_mul_of_eq_smul`.
 -/
 
 public section
@@ -42,164 +44,29 @@ namespace TauCeti.GroupAlgebraBlockExamples
 
 open MonoidAlgebra
 
-/-! ### Criteria in terms of coefficients -/
-
-section Criterion
-
-variable {k G : Type*} [CommRing k] [Group G]
-
-/-- The coefficients of a product in the group algebra of a finite group, as a convolution. -/
-theorem coeff_mul_eq_sum [Fintype G] (x y : MonoidAlgebra k G) (g : G) :
-    (x * y).coeff g = ∑ h, x.coeff h * y.coeff (h⁻¹ * g) := by
-  rw [coeff_mul_apply_left, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
-
-/-- The coefficients of a central element of a group algebra are constant on conjugacy classes. -/
-theorem coeff_conj_of_mem_center {x : MonoidAlgebra k G}
-    (hx : x ∈ Subalgebra.center k (MonoidAlgebra k G)) (g h : G) :
-    x.coeff (g * h * g⁻¹) = x.coeff h := by
-  have := congr_arg (fun y ↦ y.coeff (g * h)) (Subalgebra.mem_center_iff.mp hx (single g 1))
-  simpa [coeff_single_mul_apply, coeff_mul_single_apply] using this.symm
-
-/-- An element of a group algebra whose coefficients are constant on conjugacy classes is
-central. -/
-theorem mem_center_of_coeff_conj {x : MonoidAlgebra k G}
-    (hx : ∀ g h, x.coeff (g * h * g⁻¹) = x.coeff h) :
-    x ∈ Subalgebra.center k (MonoidAlgebra k G) := by
-  rw [Subalgebra.mem_center_iff]
-  intro y
-  induction y using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add y z hy hz => rw [add_mul, mul_add, hy, hz]
-  | single g r =>
-    refine ext (Finsupp.ext fun h ↦ ?_)
-    rw [coeff_single_mul_apply, coeff_mul_single_apply, mul_comm, ← hx g (g⁻¹ * h)]
-    simp
-
-/-- If `cls : G → ι` only identifies conjugate elements, the coefficients of a central element of
-`k[G]` factor through `cls`. -/
-theorem exists_coeff_eq_comp {ι : Type*} (cls : G → ι) (hcls : ∀ g h, cls g = cls h → IsConj g h)
-    {x : MonoidAlgebra k G} (hx : x ∈ Subalgebra.center k (MonoidAlgebra k G)) :
-    ∃ ψ : ι → k, ⇑x.coeff = ψ ∘ cls := by
-  classical
-  refine ⟨fun i ↦ x.coeff (Function.invFun cls i), funext fun g ↦ ?_⟩
-  obtain ⟨c, hc⟩ := isConj_iff.mp (hcls _ _ (Function.invFun_eq ⟨g, rfl⟩))
-  simp only [Function.comp_apply]
-  rw [← coeff_conj_of_mem_center hx c (Function.invFun cls (cls g)), hc]
-
-variable [Fintype G]
-
-/-- **A block criterion on coefficients.** Let `cls : G → ι` identify only conjugate elements, so
-that central elements are functions of `cls`. A central element `b` with coefficient function `χ`
-is a block idempotent if `χ` is idempotent and nonzero for the convolution product and every
-idempotent function `ψ ∘ cls` absorbed by `χ` is `0` or `χ`. For finite `G`, `ι` and `k` these
-conditions are decidable. -/
-theorem isBlockIdempotent_of_coeff {ι : Type*} (cls : G → ι)
-    (hcls : ∀ g h, cls g = cls h → IsConj g h)
-    {b : Subalgebra.center k (MonoidAlgebra k G)} {χ : G → k}
-    (hb : ⇑(b : MonoidAlgebra k G).coeff = χ)
-    (hidem : ∀ g, ∑ h, χ h * χ (h⁻¹ * g) = χ g) (hne : χ ≠ 0)
-    (hprim : ∀ ψ : ι → k, (∀ g, ∑ h, ψ (cls h) * ψ (cls (h⁻¹ * g)) = ψ (cls g)) →
-      (∀ g, ∑ h, χ h * ψ (cls (h⁻¹ * g)) = ψ (cls g)) → ψ ∘ cls = 0 ∨ ψ ∘ cls = χ) :
-    IsBlockIdempotent b := by
-  have hcoeff {x y z : Subalgebra.center k (MonoidAlgebra k G)} (h : x * y = z) (g : G) :
-      ∑ h, (x : MonoidAlgebra k G).coeff h * (y : MonoidAlgebra k G).coeff (h⁻¹ * g) =
-        (z : MonoidAlgebra k G).coeff g := by
-    rw [← coeff_mul_eq_sum, ← Subalgebra.coe_mul, h]
-  refine isPrimitiveIdempotent_of_eq_zero_or_eq ?_ ?_ fun f hf hbf _ ↦ ?_
-  · refine Subtype.ext (ext (Finsupp.ext fun g ↦ ?_))
-    rw [Subalgebra.coe_mul, coeff_mul_eq_sum, hb]
-    exact hidem g
-  · rintro rfl
-    exact hne (hb ▸ rfl)
-  · obtain ⟨ψ, hψ⟩ := exists_coeff_eq_comp cls hcls f.property
-    have hf' (g : G) := hcoeff hf.eq g
-    have hbf' (g : G) := hcoeff hbf g
-    simp only [hψ, hb, Function.comp_apply] at hf' hbf'
-    refine (hprim ψ hf' hbf').imp (fun h0 ↦ ?_) fun h1 ↦ ?_
-    · exact Subtype.ext (ext (DFunLike.coe_injective (hψ.trans h0)))
-    · exact Subtype.ext (ext (DFunLike.coe_injective (hψ.trans (h1.trans hb.symm))))
-
-/-- **A uniqueness criterion on coefficients.** Let `cls : G → ι` identify only conjugate
-elements. If every nonzero idempotent function `ψ ∘ cls` for the convolution product is the
-coefficient function `χ` of a central element `c`, then every block idempotent of `k[G]` is
-`c`. -/
-theorem eq_of_isBlockIdempotent {ι : Type*} (cls : G → ι)
-    (hcls : ∀ g h, cls g = cls h → IsConj g h)
-    {c : Subalgebra.center k (MonoidAlgebra k G)} {χ : G → k}
-    (hc : ⇑(c : MonoidAlgebra k G).coeff = χ)
-    (h : ∀ ψ : ι → k, (∀ g, ∑ h, ψ (cls h) * ψ (cls (h⁻¹ * g)) = ψ (cls g)) →
-      ψ ∘ cls ≠ 0 → ψ ∘ cls = χ)
-    {b : Subalgebra.center k (MonoidAlgebra k G)} (hb : IsBlockIdempotent b) : b = c := by
-  obtain ⟨ψ, hψ⟩ := exists_coeff_eq_comp cls hcls b.property
-  have hidem (g : G) : ∑ h, ψ (cls h) * ψ (cls (h⁻¹ * g)) = ψ (cls g) := by
-    have := hb.isIdempotentElem_val
-    rw [IsIdempotentElem, ← coeff_inj] at this
-    have := DFunLike.congr_fun this g
-    simpa only [coeff_mul_eq_sum, hψ, Function.comp_apply] using this
-  have hne : ψ ∘ cls ≠ 0 := fun h0 ↦ hb.ne_zero <| Subtype.ext <| ext <|
-    DFunLike.coe_injective (hψ.trans h0)
-  exact Subtype.ext (ext (DFunLike.coe_injective (hψ.trans ((h ψ hidem hne).trans hc.symm))))
-
-/-- If `b * g = c(g) b` for every `g ∈ G`, then `b * x = (∑ g, x(g) c(g)) • b` for every `x`. -/
-theorem mul_eq_smul_of_mul_of_eq_smul {b : MonoidAlgebra k G} {c : G → k}
-    (hc : ∀ g, b * of k G g = c g • b) (x : MonoidAlgebra k G) :
-    b * x = (∑ g, x.coeff g * c g) • b := by
-  classical
-  induction x using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [mul_add, hx, hy, add_mul, add_smul, Finset.sum_add_distrib]
-  | single g r =>
-    have : single g r = r • of k G g := by simp [smul_single]
-    rw [this, mul_smul_comm, hc, smul_smul]
-    simp [Finsupp.single_apply]
-
-/-- **Blocks with one-dimensional block algebra.** Over a domain `k`, a central element `b` with
-`b g = c(g) b` for every `g`, coefficient `1` at the identity and `∑ g, b(g) c(g) = 1` is a block
-idempotent: the block algebra `b k[G]` is the line `k b`. -/
-theorem isBlockIdempotent_of_mul_of_eq_smul [IsDomain k]
-    {b : Subalgebra.center k (MonoidAlgebra k G)} (c : G → k)
-    (hc : ∀ g, (b : MonoidAlgebra k G) * of k G g = c g • (b : MonoidAlgebra k G))
-    (h1 : (b : MonoidAlgebra k G).coeff 1 = 1)
-    (hsum : ∑ g, (b : MonoidAlgebra k G).coeff g * c g = 1) : IsBlockIdempotent b := by
-  have key := mul_eq_smul_of_mul_of_eq_smul hc
-  have hbb : (b : MonoidAlgebra k G) * b = b := by rw [key, hsum, one_smul]
-  refine isPrimitiveIdempotent_of_eq_zero_or_eq (Subtype.ext hbb) ?_ fun f hf hbf _ ↦ ?_
-  · rintro rfl
-    simp at h1
-  · set s := ∑ g, (f : MonoidAlgebra k G).coeff g * c g
-    have hfs : (f : MonoidAlgebra k G) = s • (b : MonoidAlgebra k G) := by
-      rw [← key, ← Subalgebra.coe_mul, hbf]
-    have hss : IsIdempotentElem s := by
-      have h := congr_arg (fun y : Subalgebra.center k (MonoidAlgebra k G) ↦
-        (y : MonoidAlgebra k G).coeff 1) hf.eq
-      simp only [Subalgebra.coe_mul, hfs, smul_mul_smul_comm, hbb, coeff_smul_apply, h1,
-        smul_eq_mul, mul_one] at h
-      exact h
-    rcases IsIdempotentElem.iff_eq_zero_or_one.mp hss with h0 | h1
-    · exact .inl (Subtype.ext (by rw [hfs, h0, zero_smul]; rfl))
-    · exact .inr (Subtype.ext (by rw [hfs, h1, one_smul]))
-
-end Criterion
-
 /-- `id` only identifies conjugate elements. -/
-theorem isConj_of_id_eq {G : Type*} [Group G] (g h : G) (hgh : id g = id h) : IsConj g h :=
-  (show g = h from hgh) ▸ IsConj.refl g
+private theorem isConj_of_id_eq {G : Type*} [Group G] (g h : G) (hgh : id g = id h) :
+    IsConj g h := by
+  rw [id_eq, id_eq] at hgh
+  exact hgh ▸ IsConj.refl g
 
-/-- An element of the group algebra of a commutative group, as an element of its centre. -/
-def toCenter {k G : Type*} [CommRing k] [CommGroup G] (x : MonoidAlgebra k G) :
-    Subalgebra.center k (MonoidAlgebra k G) :=
-  ⟨x, Subalgebra.mem_center_iff.mpr fun y ↦ mul_comm y x⟩
+/-- The coefficient of `of k G g` at `h`. -/
+private theorem coeff_of_apply {k G : Type*} [Semiring k] [Monoid G] [DecidableEq G] (g h : G) :
+    (of k G g).coeff h = if g = h then 1 else 0 := by
+  rw [of_apply, coeff_single, Finsupp.single_apply]
 
-/-- `toCenter x` is `x`, read in the group algebra. -/
-@[simp]
-theorem coe_toCenter {k G : Type*} [CommRing k] [CommGroup G] (x : MonoidAlgebra k G) :
-    (toCenter x : MonoidAlgebra k G) = x := by
-  simp [toCenter]
+/-- The coefficient of `1` at `h`. -/
+private theorem coeff_one_apply {k G : Type*} [Semiring k] [Monoid G] [DecidableEq G] (h : G) :
+    (1 : MonoidAlgebra k G).coeff h = if 1 = h then 1 else 0 := by
+  rw [one_def, coeff_single, Finsupp.single_apply]
 
-/-- An idempotent of the group algebra of a commutative group is an idempotent of its centre. -/
-theorem isIdempotentElem_toCenter {k G : Type*} [CommRing k] [CommGroup G]
-    {x : MonoidAlgebra k G} (hx : IsIdempotentElem x) : IsIdempotentElem (toCenter x) :=
-  Subtype.ext (by rw [Subalgebra.coe_mul, coe_toCenter]; exact hx.eq)
+/-- The coefficient function of `1` in the group algebra, read in the centre. -/
+private theorem coeff_one_center {k G : Type*} [CommSemiring k] [Group G] [DecidableEq G] :
+    ⇑((1 : Subalgebra.center k (MonoidAlgebra k G)) : MonoidAlgebra k G).coeff =
+      fun g ↦ if g = 1 then 1 else 0 := by
+  funext g
+  rw [OneMemClass.coe_one, coeff_one_apply]
+  simp only [eq_comm]
 
 /-! ### The cyclic group of order `2` -/
 
@@ -213,8 +80,8 @@ abbrev t : C₂ := Multiplicative.ofAdd 1
 theorem one_add_of_t_mul_self :
     (1 + of (ZMod 2) C₂ t) * (1 + of (ZMod 2) C₂ t) = 0 := by
   refine ext (Finsupp.ext fun g ↦ ?_)
-  simp only [coeff_mul_eq_sum, coeff_add, of_apply, one_def, coeff_single, Finsupp.coe_add,
-    Pi.add_apply, Finsupp.single_apply, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+  simp only [coeff_mul_eq_sum, coeff_add, Finsupp.add_apply, coeff_zero, Finsupp.zero_apply,
+    coeff_of_apply, coeff_one_apply]
   revert g
   decide
 
@@ -223,8 +90,8 @@ theorem one_add_of_t_ne_zero : 1 + of (ZMod 2) C₂ t ≠ 0 := by
   intro h
   have := congr_arg (fun x : MonoidAlgebra (ZMod 2) C₂ ↦ x.coeff 1) h
   revert this
-  simp only [coeff_add, of_apply, one_def, coeff_single, Finsupp.coe_add, Pi.add_apply,
-    Finsupp.single_apply, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+  simp only [coeff_add, Finsupp.add_apply, coeff_zero, Finsupp.zero_apply, coeff_of_apply,
+    coeff_one_apply]
   decide
 
 /-- In `𝔽₂[C₂]` the element `ε = 1 + t` is not idempotent. -/
@@ -235,14 +102,10 @@ theorem not_isIdempotentElem_one_add_of_t : ¬ IsIdempotentElem (1 + of (ZMod 2)
 theorem isBlockIdempotent_iff_eq_one_zmod_two_c₂
     (b : Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) C₂)) :
     IsBlockIdempotent b ↔ b = 1 := by
-  have hχ : ⇑((1 : Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) C₂)) :
-      MonoidAlgebra (ZMod 2) C₂).coeff = fun g ↦ if g = 1 then 1 else 0 := by
-    funext g
-    simp [one_def, Finsupp.single_apply, eq_comm]
-  refine ⟨eq_of_isBlockIdempotent id isConj_of_id_eq hχ
+  refine ⟨eq_of_isBlockIdempotent_of_coeff id isConj_of_id_eq coeff_one_center
     (by decide), ?_⟩
   rintro rfl
-  exact isBlockIdempotent_of_coeff id isConj_of_id_eq hχ
+  exact isBlockIdempotent_of_coeff id isConj_of_id_eq coeff_one_center
     (by decide) (by decide) (by decide)
 
 /-- The block idempotent `e₊ = -(1 + t)`, that is `(1 + t)/2`, of `𝔽₃[C₂]`. -/
@@ -257,8 +120,8 @@ theorem isBlockIdempotent_ePlus : IsBlockIdempotent (toCenter ePlus) := by
     (by decide) (by decide)
   funext g
   revert g
-  simp only [coe_toCenter, coeff_neg, coeff_add, of_apply, one_def, coeff_single,
-    Finsupp.coe_neg, Finsupp.coe_add, Pi.neg_apply, Pi.add_apply, Finsupp.single_apply]
+  simp only [coe_toCenter, coeff_neg, coeff_add, Finsupp.neg_apply, Finsupp.add_apply,
+    coeff_of_apply, coeff_one_apply]
   decide
 
 /-- `e₋ = (1 - t)/2` is a block idempotent of `𝔽₃[C₂]`. -/
@@ -267,8 +130,8 @@ theorem isBlockIdempotent_eMinus : IsBlockIdempotent (toCenter eMinus) := by
     (χ := fun g ↦ if g = 1 then 2 else 1) ?_ (by decide) (by decide) (by decide)
   funext g
   revert g
-  simp only [coe_toCenter, coeff_neg, coeff_sub, of_apply, one_def, coeff_single,
-    Finsupp.coe_neg, Finsupp.coe_sub, Pi.neg_apply, Pi.sub_apply, Finsupp.single_apply]
+  simp only [coe_toCenter, coeff_neg, coeff_sub, Finsupp.neg_apply, Finsupp.sub_apply,
+    coeff_of_apply, coeff_one_apply]
   decide
 
 /-- In `𝔽₃[C₂]` the blocks `e₊` and `e₋` form a complete orthogonal family of idempotents. -/
@@ -277,15 +140,14 @@ theorem completeOrthogonalIdempotents_ePlus_eMinus :
   refine CompleteOrthogonalIdempotents.pair_iffₛ.mpr ⟨Subtype.ext (ext (Finsupp.ext fun g ↦ ?_)),
     Subtype.ext (ext (Finsupp.ext fun g ↦ ?_))⟩
   · revert g
-    simp only [MulMemClass.coe_mul, coe_toCenter, coeff_mul_eq_sum, coeff_neg, coeff_sub, coeff_add,
-      of_apply, one_def, coeff_single, Finsupp.coe_neg, Finsupp.coe_sub, Finsupp.coe_add,
-      Pi.neg_apply, Pi.sub_apply, Pi.add_apply, Finsupp.single_apply, ZeroMemClass.coe_zero,
-      coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+    simp only [MulMemClass.coe_mul, coe_toCenter, coeff_mul_eq_sum, coeff_neg, coeff_sub,
+      coeff_add, Finsupp.neg_apply, Finsupp.sub_apply, Finsupp.add_apply, ZeroMemClass.coe_zero,
+      coeff_zero, Finsupp.zero_apply, coeff_of_apply, coeff_one_apply]
     decide
   · revert g
-    simp only [AddMemClass.coe_add, coe_toCenter, coeff_neg, coeff_sub, coeff_add, of_apply,
-      one_def, coeff_single, Finsupp.coe_neg, Finsupp.coe_sub, Finsupp.coe_add, Pi.neg_apply,
-      Pi.sub_apply, Pi.add_apply, Finsupp.single_apply, OneMemClass.coe_one]
+    simp only [AddMemClass.coe_add, coe_toCenter, coeff_neg, coeff_sub, coeff_add,
+      Finsupp.neg_apply, Finsupp.sub_apply, Finsupp.add_apply, OneMemClass.coe_one, coeff_of_apply,
+      coeff_one_apply]
     decide
 
 /-- **`1` is not a block of `𝔽₃[C₂]`**: it is a central idempotent, the sum of the two
@@ -315,8 +177,7 @@ theorem isBlockIdempotent_one_add_r_add_r_sq :
     (by decide) (by decide)
   funext g
   revert g
-  simp only [coe_toCenter, coeff_add, of_apply, one_def, coeff_single, Finsupp.coe_add,
-    Pi.add_apply, Finsupp.single_apply]
+  simp only [coe_toCenter, coeff_add, Finsupp.add_apply, coeff_of_apply, coeff_one_apply]
   decide
 
 /-- The block idempotent `r + r²` of `𝔽₂[C₃]`. -/
@@ -326,30 +187,31 @@ theorem isBlockIdempotent_r_add_r_sq :
     (by decide) (by decide) (by decide)
   funext g
   revert g
-  simp only [coe_toCenter, coeff_add, of_apply, coeff_single, Finsupp.coe_add, Pi.add_apply,
-    Finsupp.single_apply]
+  simp only [coe_toCenter, coeff_add, Finsupp.add_apply, coeff_of_apply]
   decide
 
 section ScalarExtension
 
 variable {K : Type*} [Field K] {α : K}
 
-/-- The block idempotent `1 + α² r + α r²` of `K[C₃]`, for a root `α` of `X² + X + 1`. -/
+/-- The element `1 + α² r + α r²` of `K[C₃]`. For a root `α` of `X² + X + 1` in characteristic `2`
+it is a block idempotent (`isBlockIdempotent_eOne`). -/
 noncomputable abbrev eOne (α : K) : MonoidAlgebra K C₃ :=
   1 + α ^ 2 • of K C₃ r + α • of K C₃ (r ^ 2)
 
-/-- The block idempotent `1 + α r + α² r²` of `K[C₃]`, for a root `α` of `X² + X + 1`. -/
+/-- The element `1 + α r + α² r²` of `K[C₃]`. For a root `α` of `X² + X + 1` in characteristic `2`
+it is a block idempotent (`isBlockIdempotent_eTwo`). -/
 noncomputable abbrev eTwo (α : K) : MonoidAlgebra K C₃ :=
   1 + α • of K C₃ r + α ^ 2 • of K C₃ (r ^ 2)
 
 /-- Sums over `C₃`. -/
-theorem sum_c₃ {M : Type*} [AddCommMonoid M] (f : C₃ → M) :
+private theorem sum_c₃ {M : Type*} [AddCommMonoid M] (f : C₃ → M) :
     ∑ g, f g = f 1 + f r + f (r ^ 2) := by
   rw [show (Finset.univ : Finset C₃) = {1, r, r ^ 2} by decide, Finset.sum_insert (by decide),
     Finset.sum_pair (by decide), add_assoc]
 
 /-- A root of `X² + X + 1` is a cube root of unity. -/
-theorem cube_eq_one (hα : α ^ 2 + α + 1 = 0) : α ^ 3 = 1 := by
+private theorem cube_eq_one (hα : α ^ 2 + α + 1 = 0) : α ^ 3 = 1 := by
   linear_combination (α - 1) * hα
 
 /-- `r` acts on `1 + α² r + α r²` by `α`. -/
@@ -360,21 +222,32 @@ theorem eOne_mul_of (hα : α ^ 2 + α + 1 = 0) (g : C₃) :
     simp +decide [coeff_mul_single_apply, Finsupp.single_apply, one_def] <;>
     grind [cube_eq_one hα]
 
+/-- If `α` is a root of `X² + X + 1`, then so is `α²`. -/
+private theorem sq_sq_add_sq_add_one_eq_zero (hα : α ^ 2 + α + 1 = 0) :
+    (α ^ 2) ^ 2 + α ^ 2 + 1 = 0 := by
+  linear_combination hα + α * cube_eq_one hα
+
+/-- If `α` is a root of `X² + X + 1`, then `(α²)² = α`. -/
+private theorem sq_sq_eq_self (hα : α ^ 2 + α + 1 = 0) : (α ^ 2) ^ 2 = α := by
+  linear_combination α * cube_eq_one hα
+
+/-- `1 + α r + α² r²` is `1 + β² r + β r²` for the other root `β = α²` of `X² + X + 1`. -/
+theorem eTwo_eq_eOne_sq (hα : α ^ 2 + α + 1 = 0) : eTwo α = eOne (α ^ 2) := by
+  rw [eTwo, eOne, sq_sq_eq_self hα]
+
 /-- `r` acts on `1 + α r + α² r²` by `α²`. -/
 theorem eTwo_mul_of (hα : α ^ 2 + α + 1 = 0) (g : C₃) :
     eTwo α * of K C₃ g = (if g = 1 then 1 else if g = r then α ^ 2 else α) • eTwo α := by
-  refine ext (Finsupp.ext fun h ↦ ?_)
-  fin_cases g <;> fin_cases h <;>
-    simp +decide [coeff_mul_single_apply, Finsupp.single_apply, one_def] <;>
-    grind [cube_eq_one hα]
+  rw [eTwo_eq_eOne_sq hα, eOne_mul_of (sq_sq_add_sq_add_one_eq_zero hα), sq_sq_eq_self hα]
 
-/-- The blocks `1 + α² r + α r²` and `1 + α r + α² r²` of `K[C₃]` are orthogonal. -/
+/-- For a root `α` of `X² + X + 1`, the elements `1 + α² r + α r²` and `1 + α r + α² r²` of `K[C₃]`
+are orthogonal. -/
 theorem eOne_mul_eTwo (hα : α ^ 2 + α + 1 = 0) : eOne α * eTwo α = 0 := by
   rw [mul_eq_smul_of_mul_of_eq_smul (eOne_mul_of hα)]
   convert zero_smul K (eOne α)
   rw [sum_c₃]
   simp +decide [one_def]
-  linear_combination (α ^ 2 - α + 1) * hα
+  grind
 
 variable [CharP K 2]
 
@@ -384,15 +257,14 @@ theorem isBlockIdempotent_eOne (hα : α ^ 2 + α + 1 = 0) : IsBlockIdempotent (
   isBlockIdempotent_of_mul_of_eq_smul _ (eOne_mul_of hα) (by simp +decide [one_def]) <| by
     rw [sum_c₃]
     simp +decide [one_def]
-    linear_combination α ^ 3 * CharTwo.two_eq_zero (R := K)
+    grind [cube_eq_one hα]
 
 /-- Over a field of characteristic `2` containing a root `α` of `X² + X + 1`, for instance `𝔽₄`,
 `1 + α r + α² r²` is a block idempotent of `K[C₃]`. -/
-theorem isBlockIdempotent_eTwo (hα : α ^ 2 + α + 1 = 0) : IsBlockIdempotent (toCenter (eTwo α)) :=
-  isBlockIdempotent_of_mul_of_eq_smul _ (eTwo_mul_of hα) (by simp +decide [one_def]) <| by
-    rw [sum_c₃]
-    simp +decide [one_def]
-    linear_combination α ^ 3 * CharTwo.two_eq_zero (R := K)
+theorem isBlockIdempotent_eTwo (hα : α ^ 2 + α + 1 = 0) :
+    IsBlockIdempotent (toCenter (eTwo α)) := by
+  rw [eTwo_eq_eOne_sq hα]
+  exact isBlockIdempotent_eOne (sq_sq_add_sq_add_one_eq_zero hα)
 
 /-- **Scalar extension splits a block.** Along `𝔽₂ → K`, for a field `K` of characteristic `2`
 containing a root `α` of `X² + X + 1`, the block `r + r²` of `𝔽₂[C₃]` maps to the sum of the two
@@ -420,7 +292,8 @@ theorem not_isBlockIdempotent_centerMapRingHom_r_add_r_sq (hα : α ^ 2 + α + 1
 end ScalarExtension
 
 /-- `𝔽₄ = GaloisField 2 2` contains a root of `X² + X + 1`. -/
-theorem exists_sq_add_self_add_one_eq_zero : ∃ α : GaloisField 2 2, α ^ 2 + α + 1 = 0 := by
+theorem exists_sq_add_self_add_one_eq_zero_galoisField_two_two :
+    ∃ α : GaloisField 2 2, α ^ 2 + α + 1 = 0 := by
   classical
   have hcard : Nat.card (GaloisField 2 2) = 4 := GaloisField.card 2 2 (by decide)
   have : Fintype (GaloisField 2 2) := Fintype.ofFinite _
@@ -460,18 +333,17 @@ theorem isConj_of_classOfS₃_eq (g h : S₃) (hgh : classOfS₃ g = classOfS₃
 theorem one_add_of_ρ_add_of_ρ_sq_mem_center :
     1 + of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) ∈
       Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) S₃) := by
-  refine mem_center_of_coeff_conj ?_
-  simp only [coeff_add, of_apply, one_def, coeff_single, Finsupp.coe_add, Pi.add_apply,
-    Finsupp.single_apply]
+  rw [← conjInvariants_top, mem_conjInvariants_iff_coeff]
+  simp only [Subgroup.mem_top, forall_const, coeff_add, Finsupp.add_apply, coeff_of_apply,
+    coeff_one_apply]
   decide +kernel
 
 /-- `ρ + ρ²` is central in `𝔽₂[S₃]`. -/
 theorem of_ρ_add_of_ρ_sq_mem_center :
     of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) ∈
       Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) S₃) := by
-  refine mem_center_of_coeff_conj ?_
-  simp only [coeff_add, of_apply, coeff_single, Finsupp.coe_add, Pi.add_apply,
-    Finsupp.single_apply]
+  rw [← conjInvariants_top, mem_conjInvariants_iff_coeff]
+  simp only [Subgroup.mem_top, forall_const, coeff_add, Finsupp.add_apply, coeff_of_apply]
   decide +kernel
 
 /-- The block idempotent `1 + ρ + ρ²` of `𝔽₂[S₃]`. -/
@@ -487,8 +359,7 @@ theorem coeff_blockOneS₃ : ⇑(blockOneS₃ : MonoidAlgebra (ZMod 2) S₃).coe
     fun g ↦ if g * g * g = 1 then 1 else 0 := by
   funext g
   revert g
-  simp only [blockOneS₃, coeff_add, of_apply, one_def, coeff_single, Finsupp.coe_add,
-    Pi.add_apply, Finsupp.single_apply]
+  simp only [blockOneS₃, coeff_add, Finsupp.add_apply, coeff_of_apply, coeff_one_apply]
   decide +kernel
 
 /-- The coefficient function of `ρ + ρ²` is the indicator of the `3`-cycles. -/
@@ -496,8 +367,7 @@ theorem coeff_blockTwoS₃ : ⇑(blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃).coe
     fun g ↦ if g ≠ 1 ∧ g * g * g = 1 then 1 else 0 := by
   funext g
   revert g
-  simp only [blockTwoS₃, coeff_add, of_apply, coeff_single, Finsupp.coe_add, Pi.add_apply,
-    Finsupp.single_apply]
+  simp only [blockTwoS₃, coeff_add, Finsupp.add_apply, coeff_of_apply]
   decide +kernel
 
 /-- `1 + ρ + ρ²` is a block idempotent of `𝔽₂[S₃]`. -/
@@ -512,12 +382,10 @@ theorem isBlockIdempotent_blockTwoS₃ : IsBlockIdempotent blockTwoS₃ :=
 
 /-- The blocks of `𝔽₂[S₃]` sum to `1`. -/
 theorem blockOneS₃_add_blockTwoS₃ : blockOneS₃ + blockTwoS₃ = 1 := by
-  refine Subtype.ext (ext (DFunLike.coe_injective ?_))
-  simp only [Subalgebra.coe_add, coeff_add, Finsupp.coe_add, coeff_blockOneS₃,
-    coeff_blockTwoS₃, OneMemClass.coe_one, one_def, coeff_single]
-  funext g
+  refine Subtype.ext (ext (Finsupp.ext fun g ↦ ?_))
+  rw [Subalgebra.coe_add, coeff_add, Finsupp.add_apply, coeff_blockOneS₃, coeff_blockTwoS₃,
+    OneMemClass.coe_one, coeff_one_apply]
   revert g
-  simp only [Pi.add_apply, Finsupp.single_apply]
   decide +kernel
 
 /-- The blocks of `𝔽₂[S₃]` are orthogonal. -/
@@ -525,22 +393,18 @@ theorem blockOneS₃_mul_blockTwoS₃ : blockOneS₃ * blockTwoS₃ = 0 := by
   refine Subtype.ext (ext (Finsupp.ext fun g ↦ ?_))
   rw [Subalgebra.coe_mul, coeff_mul_eq_sum, coeff_blockOneS₃, coeff_blockTwoS₃]
   revert g
-  simp only [ZeroMemClass.coe_zero, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+  simp only [ZeroMemClass.coe_zero, coeff_zero, Finsupp.zero_apply]
   decide +kernel
 
 /-- **`𝔽₃[S₃]` has a single block**: its only block idempotent is `1`. -/
 theorem isBlockIdempotent_iff_eq_one_zmod_three_s₃
     (b : Subalgebra.center (ZMod 3) (MonoidAlgebra (ZMod 3) S₃)) :
     IsBlockIdempotent b ↔ b = 1 := by
-  have hχ : ⇑((1 : Subalgebra.center (ZMod 3) (MonoidAlgebra (ZMod 3) S₃)) :
-      MonoidAlgebra (ZMod 3) S₃).coeff = fun g ↦ if g = 1 then 1 else 0 := by
-    funext g
-    simp [one_def, Finsupp.single_apply, eq_comm]
-  refine ⟨eq_of_isBlockIdempotent classOfS₃ isConj_of_classOfS₃_eq hχ
+  refine ⟨eq_of_isBlockIdempotent_of_coeff classOfS₃ isConj_of_classOfS₃_eq coeff_one_center
     (by simp only [classOfS₃]; decide +kernel), ?_⟩
   rintro rfl
-  exact isBlockIdempotent_of_coeff classOfS₃ isConj_of_classOfS₃_eq hχ (by decide +kernel)
-    (by decide +kernel) (by simp only [classOfS₃]; decide +kernel)
+  exact isBlockIdempotent_of_coeff classOfS₃ isConj_of_classOfS₃_eq coeff_one_center
+    (by decide +kernel) (by decide +kernel) (by simp only [classOfS₃]; decide +kernel)
 
 /-! ### Lifting blocks to `ℤ₂` -/
 
@@ -566,7 +430,7 @@ theorem eq_of_centerMapRingHom_toZMod_eq {G : Type*} [Group G] [Finite G]
     PadicInt.ker_toZMod).injOn hb hc h
 
 /-- The maximal ideal `(2)` of `ℤ₂` is not nilpotent. -/
-theorem not_isNilpotent_maximalIdeal : ¬ IsNilpotent (maximalIdeal ℤ_[2]) := by
+theorem not_isNilpotent_maximalIdeal_padicInt_two : ¬ IsNilpotent (maximalIdeal ℤ_[2]) := by
   rintro ⟨n, hn⟩
   have h2 : (2 : ℤ_[2]) ∈ maximalIdeal ℤ_[2] := by
     rw [← PadicInt.ker_toZMod, RingHom.mem_ker, map_ofNat]
@@ -577,23 +441,20 @@ theorem not_isNilpotent_maximalIdeal : ¬ IsNilpotent (maximalIdeal ℤ_[2]) := 
 
 /-- **Blocks of `ℤ₂[1]`.** The only block idempotent of `ℤ₂[1]` is `1`, the lift of the block `1`
 of `𝔽₂[1]`, although the maximal ideal of `ℤ₂` is not nilpotent
-(`not_isNilpotent_maximalIdeal`). -/
+(`not_isNilpotent_maximalIdeal_padicInt_two`). -/
 theorem isBlockIdempotent_iff_eq_one_padicInt_unit
     (b : Subalgebra.center ℤ_[2] (MonoidAlgebra ℤ_[2] Unit)) : IsBlockIdempotent b ↔ b = 1 := by
-  have hχ : ⇑((1 : Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) Unit)) :
-      MonoidAlgebra (ZMod 2) Unit).coeff = fun _ ↦ 1 := by
-    funext g
-    simp [one_def]
   have h1 : IsBlockIdempotent (1 : Subalgebra.center ℤ_[2] (MonoidAlgebra ℤ_[2] Unit)) := by
     rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff .one, map_one]
-    exact isBlockIdempotent_of_coeff id isConj_of_id_eq hχ (by decide) (by decide) (by decide)
+    exact isBlockIdempotent_of_coeff id isConj_of_id_eq coeff_one_center (by decide) (by decide)
+      (by decide)
   refine ⟨fun hb ↦ eq_of_centerMapRingHom_toZMod_eq hb h1 ?_, fun h ↦ h ▸ h1⟩
   rw [map_one]
-  exact eq_of_isBlockIdempotent id isConj_of_id_eq hχ (by decide)
+  exact eq_of_isBlockIdempotent_of_coeff id isConj_of_id_eq coeff_one_center (by decide)
     ((isBlockIdempotent_centerMapRingHom_toZMod_iff hb.isIdempotentElem).mpr hb)
 
 /-- `3` is a unit of `ℤ₂`. -/
-theorem exists_three_mul_eq_one : ∃ u : ℤ_[2], 3 * u = 1 := by
+theorem exists_three_mul_eq_one_padicInt_two : ∃ u : ℤ_[2], 3 * u = 1 := by
   have : IsUnit (3 : ℤ_[2]) := by
     rw [← IsLocalRing.notMem_maximalIdeal, ← PadicInt.ker_toZMod, RingHom.mem_ker, map_ofNat]
     decide
@@ -603,7 +464,7 @@ theorem exists_three_mul_eq_one : ∃ u : ℤ_[2], 3 * u = 1 := by
 variable {u : ℤ_[2]}
 
 /-- The inverse of `3` in `ℤ₂` reduces to `1` modulo `2`. -/
-theorem toZMod_eq_one (hu : 3 * u = 1) : PadicInt.toZMod u = 1 := by
+private theorem toZMod_eq_one (hu : 3 * u = 1) : PadicInt.toZMod u = 1 := by
   have := congr_arg PadicInt.toZMod hu
   rw [map_mul, map_one, map_ofNat] at this
   revert this
@@ -629,50 +490,50 @@ theorem smul_two_sub_r_sub_r_sq (hu : 3 * u = 1) :
     u • (2 - of ℤ_[2] C₃ r - of ℤ_[2] C₃ (r ^ 2)) =
       1 - u • (1 + of ℤ_[2] C₃ r + of ℤ_[2] C₃ (r ^ 2)) := by
   refine ext (Finsupp.ext fun g ↦ ?_)
-  fin_cases g
-  · simp +decide [one_def, Finsupp.single_apply]
-    linear_combination hu
-  all_goals simp +decide [one_def, Finsupp.single_apply]
+  fin_cases g <;> simp +decide [one_def, Finsupp.single_apply]
+  grind
 
-/-- **Lifting the blocks of `𝔽₂[C₃]`.** The block `1 + r + r²` of `𝔽₂[C₃]` is the reduction of
-`(1 + r + r²)/3`, a block idempotent of `ℤ₂[C₃]` (here `u = 1/3`). -/
+/-- The reduction of `(1 + r + r²)/3 ∈ ℤ₂[C₃]` in `𝔽₂[C₃]` is `1 + r + r²` (here `u = 1/3`). -/
+theorem centerMapRingHom_toZMod_smul_one_add_r_add_r_sq (hu : 3 * u = 1) :
+    centerMapRingHom C₃ PadicInt.toZMod
+        (toCenter (u • (1 + of ℤ_[2] C₃ r + of ℤ_[2] C₃ (r ^ 2)))) =
+      toCenter (1 + of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) := by
+  refine Subtype.ext (ext (Finsupp.ext fun g ↦ ?_))
+  rw [coe_centerMapRingHom, coe_toCenter, coeff_mapRingHom, coeff_smul_one_add_r_add_r_sq,
+    toZMod_eq_one hu]
+  fin_cases g <;> simp +decide [one_def, Finsupp.single_apply]
+
+/-- **Lifting the blocks of `𝔽₂[C₃]`.** `(1 + r + r²)/3`, the lift of the block `1 + r + r²` of
+`𝔽₂[C₃]` (`centerMapRingHom_toZMod_smul_one_add_r_add_r_sq`), is a block idempotent of `ℤ₂[C₃]`
+(here `u = 1/3`). -/
 theorem isBlockIdempotent_smul_one_add_r_add_r_sq (hu : 3 * u = 1) :
-    IsBlockIdempotent (toCenter (u • (1 + of ℤ_[2] C₃ r + of ℤ_[2] C₃ (r ^ 2)))) ∧
-      centerMapRingHom C₃ PadicInt.toZMod
-          (toCenter (u • (1 + of ℤ_[2] C₃ r + of ℤ_[2] C₃ (r ^ 2)))) =
-        toCenter (1 + of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) := by
-  have hred : centerMapRingHom C₃ PadicInt.toZMod
-      (toCenter (u • (1 + of ℤ_[2] C₃ r + of ℤ_[2] C₃ (r ^ 2)))) =
-        toCenter (1 + of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) := by
-    refine Subtype.ext (ext (Finsupp.ext fun g ↦ ?_))
-    rw [coe_centerMapRingHom, coe_toCenter, coeff_mapRingHom, coeff_smul_one_add_r_add_r_sq,
-      toZMod_eq_one hu]
-    fin_cases g <;> simp +decide [one_def, Finsupp.single_apply]
-  refine ⟨?_, hred⟩
+    IsBlockIdempotent (toCenter (u • (1 + of ℤ_[2] C₃ r + of ℤ_[2] C₃ (r ^ 2)))) := by
   rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff
-    (isIdempotentElem_toCenter (isIdempotentElem_smul_one_add_r_add_r_sq hu)), hred]
+    (isIdempotentElem_toCenter (isIdempotentElem_smul_one_add_r_add_r_sq hu)),
+    centerMapRingHom_toZMod_smul_one_add_r_add_r_sq hu]
   exact isBlockIdempotent_one_add_r_add_r_sq
 
-/-- **Lifting the blocks of `𝔽₂[C₃]`.** The block `r + r²` of `𝔽₂[C₃]` is the reduction of
-`(2 - r - r²)/3`, a block idempotent of `ℤ₂[C₃]` (here `u = 1/3`). -/
+/-- The reduction of `(2 - r - r²)/3 ∈ ℤ₂[C₃]` in `𝔽₂[C₃]` is `r + r²` (here `u = 1/3`). -/
+theorem centerMapRingHom_toZMod_smul_two_sub_r_sub_r_sq (hu : 3 * u = 1) :
+    centerMapRingHom C₃ PadicInt.toZMod
+        (toCenter (u • (2 - of ℤ_[2] C₃ r - of ℤ_[2] C₃ (r ^ 2)))) =
+      toCenter (of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) := by
+  refine Subtype.ext (ext (Finsupp.ext fun g ↦ ?_))
+  rw [coe_centerMapRingHom, coe_toCenter, smul_two_sub_r_sub_r_sq hu, map_sub, map_one,
+    coeff_sub, Finsupp.sub_apply, coeff_mapRingHom, coeff_smul_one_add_r_add_r_sq,
+    toZMod_eq_one hu]
+  fin_cases g <;> simp +decide [one_def, Finsupp.single_apply]
+
+/-- **Lifting the blocks of `𝔽₂[C₃]`.** `(2 - r - r²)/3`, the lift of the block `r + r²` of
+`𝔽₂[C₃]` (`centerMapRingHom_toZMod_smul_two_sub_r_sub_r_sq`), is a block idempotent of `ℤ₂[C₃]`
+(here `u = 1/3`). -/
 theorem isBlockIdempotent_smul_two_sub_r_sub_r_sq (hu : 3 * u = 1) :
-    IsBlockIdempotent (toCenter (u • (2 - of ℤ_[2] C₃ r - of ℤ_[2] C₃ (r ^ 2)))) ∧
-      centerMapRingHom C₃ PadicInt.toZMod
-          (toCenter (u • (2 - of ℤ_[2] C₃ r - of ℤ_[2] C₃ (r ^ 2)))) =
-        toCenter (of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) := by
-  have hred : centerMapRingHom C₃ PadicInt.toZMod
-      (toCenter (u • (2 - of ℤ_[2] C₃ r - of ℤ_[2] C₃ (r ^ 2)))) =
-        toCenter (of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) := by
-    refine Subtype.ext (ext (Finsupp.ext fun g ↦ ?_))
-    rw [coe_centerMapRingHom, coe_toCenter, smul_two_sub_r_sub_r_sq hu, map_sub, map_one,
-      coeff_sub, Finsupp.sub_apply, coeff_mapRingHom, coeff_smul_one_add_r_add_r_sq,
-      toZMod_eq_one hu]
-    fin_cases g <;> simp +decide [one_def, Finsupp.single_apply]
-  refine ⟨?_, hred⟩
+    IsBlockIdempotent (toCenter (u • (2 - of ℤ_[2] C₃ r - of ℤ_[2] C₃ (r ^ 2)))) := by
   rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff
     (isIdempotentElem_toCenter (by
       rw [smul_two_sub_r_sub_r_sq hu]
-      exact (isIdempotentElem_smul_one_add_r_add_r_sq hu).one_sub)), hred]
+      exact (isIdempotentElem_smul_one_add_r_add_r_sq hu).one_sub)),
+    centerMapRingHom_toZMod_smul_two_sub_r_sub_r_sq hu]
   exact isBlockIdempotent_r_add_r_sq
 
 /-- The ordinary idempotents `(1 ± t)/2` of `ℚ₂[C₂]` are not in `ℤ₂[C₂]`: no `x ∈ ℤ₂[C₂]`
