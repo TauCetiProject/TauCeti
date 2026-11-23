@@ -9,13 +9,12 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.Analysis.Calculus.BumpFunction.Normed
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.IntegrationByParts
-public import TauCeti.Analysis.MvPolynomial.Integrability
 public import TauCeti.Analysis.MvPolynomial.TaylorPolynomial
+public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.LinearAlgebra.Multilinear.Basis
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
@@ -749,7 +748,8 @@ theorem averagedTaylorPolynomialLp_restrict_eq_integral_taylorPolynomial
 additive Haar measure `μ`, then `averagedTaylorPolynomialLp (μ.restrict Ω)` reproduces every
 `q ∈ polynomialsDegLE ι m` belonging to `Lᵖ(μ.restrict Ω)`. In particular, when `Ω` is nonempty and
 star-shaped with respect to `Metric.ball x₀ ρ` (`0 < ρ`), `Metric.ball x₀ ρ ⊆ Ω` holds by
-`StarConvex.mem` and `φ = (ballBump x₀ hρ).normed μ` satisfies all cutoff hypotheses. -/
+`Set.Nonempty.subset_of_forall_starConvex` and `φ = (ballBump x₀ hρ).normed μ` satisfies all
+cutoff hypotheses. -/
 theorem averagedTaylorPolynomialLp_toLp_eq_self
     {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure]
     (p : ℝ≥0∞) [Fact (1 ≤ p)] {Ω : Set (EuclideanSpace ℝ ι)}
@@ -815,11 +815,7 @@ reproduces it at order `2`). -/
 theorem averagedTaylorPolynomial_normed_ballBump_sq_one_ne_self
     {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {ρ : ℝ} (hρ : 0 < ρ) (i : ι) :
     let hqL1 : MemLp (fun z : EuclideanSpace ℝ ι ↦ (z i) ^ 2) 1 (μ.restrict (ball 0 ρ)) :=
-      memLp_restrict_of_mem_polynomialsDegLE_of_isBounded (m := 2)
-        (by
-          simpa only [sq, Pi.mul_def] using mul_mem_polynomialsDegLE
-            ((coordinate_mem_polynomialsDegLE_iff ι 1 i).2 le_rfl)
-            ((coordinate_mem_polynomialsDegLE_iff ι 1 i).2 le_rfl))
+      ((PiLp.continuous_apply 2 (fun _ : ι ↦ ℝ) i).pow 2).memLp_restrict_of_isBounded
         isBounded_ball 1
     (averagedTaylorPolynomial (μ.restrict (ball 0 ρ)) 1 ((ballBump 0 hρ).normed μ)
         ((ballBump 0 hρ).contDiff_normed (n := (1 : ℕ)))
