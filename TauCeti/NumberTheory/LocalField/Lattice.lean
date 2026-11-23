@@ -193,37 +193,25 @@ noncomputable def _root_.Module.Basis.stabilizerContinuousMulEquivGL (b : Basis 
       (f := (algebraMap R E).mapMatrix.toMonoidHom)).continuous_iff.mpr ?_
     refine ((Continuous.units_map (LinearMap.toMatrixAlgEquiv b').toMonoidHom
       (IsModuleTopology.continuous_of_linearMap (LinearMap.toMatrix b' b').toLinearMap)).comp
-      (e.symm.continuous.comp continuous_subtypeVal)).congr fun g =>
+      ((map_continuous e.symm).comp continuous_subtypeVal)).congr fun g =>
         Units.ext (Matrix.ext fun i j => ?_)
-    -- Unfold the unit maps and the structure coercions, then compare the entries of the matrices
-    -- of `g` given by `toMatrixAlgEquiv` and `toMatrix`.
-    simp only [Function.comp_apply, ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass,
-      Units.coe_map, MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, MulEquiv.coe_mk,
-      AlgEquiv.toEquiv_eq_coe, EquivLike.coe_coe, RingHom.toMonoidHom_eq_coe,
-      MulEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, RingHom.mapMatrix_apply,
-      b.map_stabilizerMulEquivGL_apply, b', e,
-      TauCeti.coe_generalLinearContinuousMulEquiv_symm_apply, LinearMap.toMatrixAlgEquiv_apply,
-      LinearMap.toMatrix_apply]
+    -- Entrywise, this is the formula `b.map_stabilizerMulEquivGL_apply` for the matrix of `g`.
+    simpa [b', e, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply] using
+      congr_fun₂ (b.map_stabilizerMulEquivGL_apply g).symm i j
   continuous_invFun := by
     have : ContinuousAdd (Module.End E V) := IsModuleTopology.toContinuousAdd E _
     let b' := b.extendOfIsFullLattice E
     let e := TauCeti.generalLinearContinuousMulEquiv (K := E) (V := V)
     -- The automorphism attached to `u` is the linear map with matrix `u` in the basis `b'`.
-    refine Continuous.subtype_mk ((e.continuous.comp
+    refine Continuous.subtype_mk (((map_continuous e).comp
       ((Continuous.units_map (Matrix.toLinAlgEquiv b').toMonoidHom
         (IsModuleTopology.continuous_of_linearMap (Matrix.toLin b' b').toLinearMap)).comp
       (Continuous.units_map (algebraMap R E).mapMatrix.toMonoidHom
         (continuous_id.matrix_map continuous_subtypeVal)))).congr fun u =>
       LinearEquiv.toLinearMap_injective (LinearMap.ext fun v => ?_)) _
-    -- Unfold the unit maps and the structure coercions, then compare the linear maps with matrix
-    -- `u` given by `toLinAlgEquiv` and `toLin`.
-    simp only [Function.comp_apply, ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass,
-      Units.coe_map, MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, MulEquiv.coe_mk,
-      AlgEquiv.toEquiv_eq_coe, EquivLike.coe_coe, RingHom.toMonoidHom_eq_coe,
-      MulEquiv.toEquiv_eq_coe, Equiv.invFun_as_coe, MulEquiv.coe_toEquiv_symm,
-      RingHom.mapMatrix_apply, b.stabilizerMulEquivGL_symm_apply, b', e,
-      TauCeti.coe_generalLinearContinuousMulEquiv_apply, Matrix.toLinAlgEquiv_apply,
-      Matrix.toLin_apply]
+    -- On each vector, this is the formula `b.stabilizerMulEquivGL_symm_apply` for the automorphism.
+    simpa [b', e, Matrix.toLinAlgEquiv_apply, Matrix.toLin_apply] using
+      congr($(b.stabilizerMulEquivGL_symm_apply (K := E) u) v).symm
 
 /-- The topological isomorphism `b.stabilizerContinuousMulEquivGL` has the matrix isomorphism
 `b.stabilizerMulEquivGL E` as its underlying multiplicative equivalence. -/
