@@ -55,11 +55,9 @@ private instance residueIdeal_isMaximal [Nontrivial A] : (residueIdeal A).IsMaxi
 
 attribute [local instance] Ideal.Quotient.field
 
-private def residueQuotMk [Nontrivial A] : A →+* A ⧸ residueIdeal A :=
-  Ideal.Quotient.mk (residueIdeal A)
-
 private def residueHom [Nontrivial A] : N →* (t.simplyConnectedRootDatum ht).weylGroup :=
-  (D.weylProjection (A ⧸ residueIdeal A)).comp (D.weylSubgroupMap A (residueQuotMk A))
+  (D.weylProjection (A ⧸ residueIdeal A)).comp
+    (D.weylSubgroupMap A (Ideal.Quotient.mk (residueIdeal A)))
 
 private theorem residueHom_torusPoints [Nontrivial A] (s : Fin t.rank → Aˣ)
     (hx : D.torusPoints A s ∈ N) :
@@ -190,6 +188,11 @@ private theorem residueHom_eq_weylProjection : D.residueHom K = D.weylProjection
 @[simp]
 theorem ker_weylProjection : (D.weylProjection K).ker = Hₖ := by
   rw [← D.residueHom_eq_weylProjection K, D.ker_residueHom K]
+
+/-- A point of `N` has trivial Weyl projection exactly when it is a torus point. -/
+theorem weylProjection_eq_one_iff_mem_range_torusPoints (g : Nₖ) :
+    D.weylProjection K g = 1 ↔ (g : D.points K) ∈ (D.torusPoints K).range := by
+  rw [← MonoidHom.mem_ker, ker_weylProjection, Subgroup.mem_subgroupOf]
 
 /-- `weylSubgroupQuotientMulEquiv` evaluates on the class of `n` as `D.weylProjection K n`. -/
 @[simp]

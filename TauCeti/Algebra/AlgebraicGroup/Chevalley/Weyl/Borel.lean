@@ -23,7 +23,7 @@ Over every nontrivial commutative ring `A`, combining this word decomposition wi
 separation criterion `geckWeylWordProd_eq_one_of_mem_borelSubgroup` shows that any Weyl word in
 `D.weylSubgroup A` lying in `D.borelSubgroup A` spells `1` in the Weyl group, hence lies in
 `T_D(A)` by `weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`. Together
-with `positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot`, this yields the exact
+with `positivePoints_inf_range_torusPoints_eq_bot`, this yields the exact
 intersections `D.positivePoints A ⊓ D.weylSubgroup A = ⊥` and
 `D.borelSubgroup A ⊓ D.weylSubgroup A = (D.torusPoints A).range` over every commutative ring `A`.
 
@@ -135,10 +135,8 @@ theorem positivePoints_inf_weylSubgroup_eq_bot :
       rw [← hls]
       exact mul_mem
         (D.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one A l hl) ⟨s, rfl⟩
-    have hmem : u ∈ D.positivePoints A ⊓ (D.negativePoints A ⊔ (D.torusPoints A).range) :=
-      ⟨huP, Subgroup.mem_sup_right huT⟩
-    rwa [D.positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot A,
-      Subgroup.mem_bot] at hmem
+    have hmem : u ∈ D.positivePoints A ⊓ (D.torusPoints A).range := ⟨huP, huT⟩
+    rwa [D.positivePoints_inf_range_torusPoints_eq_bot A, Subgroup.mem_bot] at hmem
 
 /-- Over every commutative ring, the intersection of the Borel-type subgroup and the Weyl subgroup
 of a Chevalley datum is precisely the image of its actual torus. -/
@@ -162,6 +160,14 @@ theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
   · refine le_inf (D.range_torusPoints_le_borelSubgroup A) ?_
     rintro _ ⟨s, rfl⟩
     exact D.torusPoints_mem_weylSubgroup A s
+
+/-- `B ∩ N` is normal in `N`: it is the actual torus, which `N` normalizes. This is the normality
+axiom of a Tits system with these subgroups. -/
+instance normal_borelSubgroup_subgroupOf_weylSubgroup :
+    ((D.borelSubgroup A).subgroupOf (D.weylSubgroup A)).Normal := by
+  rw [← Subgroup.inf_subgroupOf_left, inf_comm,
+    D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints A]
+  infer_instance
 
 /-- Over every commutative ring, an element of `D.weylSubgroup A` belongs to `D.borelSubgroup A`
 if and only if it lies in the image of the actual torus. -/

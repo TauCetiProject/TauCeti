@@ -106,9 +106,9 @@ theorem map_list_prod_simpleWeylLift (A : Type v) [CommRing A]
         RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i))
     (l : List (Fin t.rank)) :
     f (l.map (D.simpleWeylLift A)).prod = t.geckWeylWordProd ht l := by
-  induction l with
-  | nil => simp
-  | cons i l ih => simp [hf, ih]
+  rw [map_list_prod, List.map_map, ← t.wordProd_map_simpleSupportEquiv ht l,
+    RootPairing.Base.wordProd_def, List.map_map]
+  simp only [Function.comp_def, coe_simpleSupportEquivSimplyConnectedBase_apply, hf]
 
 private theorem map_weylElement_one {A : Type*} {B : Type*} [CommRing A] [CommRing B]
     (f : A →+* B) (i : Fin t.rank) :
