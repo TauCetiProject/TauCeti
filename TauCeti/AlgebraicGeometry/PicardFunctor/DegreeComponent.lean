@@ -157,6 +157,22 @@ theorem relativePicardFppfSheafFiberDegree_eq_of_map_eq {T : (Over S)ᵒᵖ}
   exact (relativePicardFiberDegree_map f χ.op (𝟙 _) (QuotientGroup.mk a)).trans
     (congrArg (relativePicardFiberDegree f · (QuotientGroup.mk a)) hζ')
 
+/-- **Computing the fibre degree at the geometric point itself.** If the restriction of a section
+`σ` over `T` to the geometric point `ξ : Spec K ⟶ T` is the class of a line bundle `a` on the
+fibre, then the fibre degree of `σ` at `ξ` is the fibre degree of `a`. -/
+theorem relativePicardFppfSheafFiberDegree_eq_of_restrict_eq {T : (Over S)ᵒᵖ}
+    (ξ : Spec (.of K) ⟶ T.unop.left) (σ : (relativePicardFppfSheaf f).obj.obj T)
+    (a : LineBundleClass (pullback (ξ ≫ T.unop.hom) f))
+    (ha : (relativePicardToFppfSheaf f).app (op (Over.mk (ξ ≫ T.unop.hom)))
+        (relativePicardAddPresheafMk f (op (Over.mk (ξ ≫ T.unop.hom))) a) =
+      (relativePicardFppfSheaf f).obj.map
+        (Over.homMk ξ : Over.mk (ξ ≫ T.unop.hom) ⟶ T.unop).op σ) :
+    relativePicardFppfSheafFiberDegree f ξ σ =
+      relativePicardFiberDegree f (T := op (Over.mk (ξ ≫ T.unop.hom))) (𝟙 _)
+        (QuotientGroup.mk a) :=
+  relativePicardFppfSheafFiberDegree_eq_of_map_eq f ξ σ
+    (Over.homMk ξ : Over.mk (ξ ≫ T.unop.hom) ⟶ T.unop) (𝟙 _) (by simp) a ha
+
 /-- The fibre degree of the class of a line bundle on `X_T` is its fibre degree
 `relativePicardFiberDegree`. -/
 @[simp]
@@ -177,7 +193,7 @@ theorem relativePicardFppfSheafFiberDegree_map {T T' : (Over S)ᵒᵖ} (φ : T �
   let ι : Over.mk (ξ ≫ T'.unop.hom) ⟶ T'.unop := Over.homMk ξ
   obtain ⟨a, ha⟩ := exists_relativePicardToFppfSheaf_app_eq_of_isAlgClosed f (ξ ≫ T'.unop.hom)
     ((relativePicardFppfSheaf f).obj.map ι.op ((relativePicardFppfSheaf f).obj.map φ σ))
-  rw [relativePicardFppfSheafFiberDegree_eq_of_map_eq f ξ _ ι (𝟙 _) (by simp [ι]) a ha,
+  rw [relativePicardFppfSheafFiberDegree_eq_of_restrict_eq f ξ _ a ha,
     relativePicardFppfSheafFiberDegree_eq_of_map_eq f (ξ ≫ φ.unop.left) σ (ι ≫ φ.unop) (𝟙 _)
       (by simp [ι]) a (by rw [ha, op_comp, Quiver.Hom.op_unop, Functor.map_comp,
         ConcreteCategory.comp_apply])]
@@ -205,9 +221,9 @@ theorem relativePicardFppfSheafFiberDegree_add {T : (Over S)ᵒᵖ} (ξ : Spec (
     ((relativePicardFppfSheaf f).obj.map ι.op σ)
   obtain ⟨b, hb⟩ := exists_relativePicardToFppfSheaf_app_eq_of_isAlgClosed f (ξ ≫ T.unop.hom)
     ((relativePicardFppfSheaf f).obj.map ι.op τ)
-  rw [relativePicardFppfSheafFiberDegree_eq_of_map_eq f ξ σ ι (𝟙 _) (by simp [ι]) a ha,
-    relativePicardFppfSheafFiberDegree_eq_of_map_eq f ξ τ ι (𝟙 _) (by simp [ι]) b hb,
-    relativePicardFppfSheafFiberDegree_eq_of_map_eq f ξ (σ + τ) ι (𝟙 _) (by simp [ι]) (a * b)
+  rw [relativePicardFppfSheafFiberDegree_eq_of_restrict_eq f ξ σ a ha,
+    relativePicardFppfSheafFiberDegree_eq_of_restrict_eq f ξ τ b hb,
+    relativePicardFppfSheafFiberDegree_eq_of_restrict_eq f ξ (σ + τ) (a * b)
       (by rw [relativePicardAddPresheafMk_mul, map_add, map_add, ha, hb])]
   -- The product in `Pic(X_T) / Pic(T)` is the product of the quotient group; `exact` sees this
   -- through the carrier at default transparency.
@@ -235,12 +251,12 @@ end GeometricPoint
 
 section Component
 
-/-- The relative Picard fppf sheaf is a sheaf of sets. -/
-private lemma isSheaf_relativePicardFppfSheaf_comp_forget :
-    Presieve.IsSheaf (Scheme.fppfTopology.over S)
-      ((relativePicardFppfSheaf f).obj ⋙ forget AddCommGrpCat) :=
+/-- An fppf sheaf of abelian groups, such as the relative Picard fppf sheaf, is a sheaf of sets. -/
+private lemma isSheaf_obj_comp_forget
+    (F : Sheaf (Scheme.fppfTopology.over S) AddCommGrpCat.{u + 1}) :
+    Presieve.IsSheaf (Scheme.fppfTopology.over S) (F.obj ⋙ forget AddCommGrpCat) :=
   (isSheaf_iff_isSheaf_of_type _ _).1 ((Presheaf.isSheaf_iff_isSheaf_forget _ _
-    (forget AddCommGrpCat)).1 (relativePicardFppfSheaf f).property)
+    (forget AddCommGrpCat)).1 F.property)
 
 /-- **The degree-`d` component `Picᵈ_{X/S}`** of the relative Picard fppf sheaf of `f : X ⟶ S`:
 at a test scheme `T`, the sections whose fibre degree is `d` at every geometric point
@@ -287,7 +303,7 @@ splits over it. -/
 theorem isSheaf_relativePicardDegreeFppfSubfunctor (d : ℤ) :
     Presieve.IsSheaf (Scheme.fppfTopology.over S)
       (relativePicardDegreeFppfSubfunctor f d).toFunctor := by
-  rw [Subfunctor.isSheaf_iff _ (isSheaf_relativePicardFppfSheaf_comp_forget f)]
+  rw [Subfunctor.isSheaf_iff _ (isSheaf_obj_comp_forget (relativePicardFppfSheaf f))]
   intro T σ hσ K _ _ ξ
   let ι : Over.mk (ξ ≫ T.unop.hom) ⟶ T.unop := Over.homMk ξ
   -- The covering sieve pulled back to the geometric point is maximal, so it contains `ι`.
@@ -406,8 +422,7 @@ private lemma isSheaf_range_relativePicardDegreeZeroFppfSheafι :
     have := (NatTrans.mono_iff_mono_app _).1 this
     exact NatTrans.mono_of_mono_app _
   exact Presieve.isSheaf_iso _ (asIso (Subfunctor.toRange _))
-    ((isSheaf_iff_isSheaf_of_type _ _).1 ((Presheaf.isSheaf_iff_isSheaf_forget _ _
-      (forget AddCommGrpCat)).1 (relativePicardDegreeZeroFppfSheaf f).property))
+    (isSheaf_obj_comp_forget (relativePicardDegreeZeroFppfSheaf f))
 
 /-- A section of `Pic⁰_{X/S}` that is the class of a line bundle lies in the image of the
 degree-zero Picard sheaf. -/
@@ -436,7 +451,7 @@ image the degree-zero component `relativePicardDegreeFppfSubfunctor f 0`. -/
 theorem range_relativePicardDegreeZeroFppfSheafι :
     Subfunctor.range (Functor.whiskerRight (relativePicardDegreeZeroFppfSheafι f).hom
       (forget AddCommGrpCat)) = relativePicardDegreeFppfSubfunctor f 0 := by
-  have hF := isSheaf_relativePicardFppfSheaf_comp_forget f
+  have hF := isSheaf_obj_comp_forget (relativePicardFppfSheaf f)
   apply le_antisymm
   · -- A section of the image is fppf-locally the image of a degree-zero presheaf section.
     rintro T _ ⟨ρ, rfl⟩
@@ -480,8 +495,7 @@ theorem relativePicardFppfSheafFiberDegree_baseChangeIso_hom_app {K : Type u} [F
   let ι : Over.mk (ξ ≫ T.unop.hom) ⟶ T.unop := Over.homMk ξ
   obtain ⟨a, ha⟩ := exists_relativePicardToFppfSheaf_app_eq_of_isAlgClosed (pullback.fst g f)
     (ξ ≫ T.unop.hom) ((relativePicardFppfSheaf (pullback.fst g f)).obj.map ι.op σ)
-  rw [relativePicardFppfSheafFiberDegree_eq_of_map_eq (pullback.fst g f) ξ σ ι (𝟙 _) (by simp [ι])
-    a ha]
+  rw [relativePicardFppfSheafFiberDegree_eq_of_restrict_eq (pullback.fst g f) ξ σ a ha]
   -- The comparison commutes with restriction to the geometric point, where it pulls back `a`.
   refine (relativePicardFppfSheafFiberDegree_eq_of_map_eq f (T := (Over.map g).op.obj T) ξ
     ((relativePicardFppfSheafBaseChangeIso f g).hom.hom.app T σ) ((Over.map g).map ι) (𝟙 _)
