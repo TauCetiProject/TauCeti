@@ -33,6 +33,8 @@ The algebraic closure `PadicAlgCl p` of `ℚ_p` carries the spectral norm, which
 ## Main results
 
 * `AlgEquiv.norm_apply`: elements of `G_{ℚ_p}` preserve the norm of `PadicAlgCl p`.
+* `PadicAlgCl.instIsIsometricSMul`: for every field `K` between `ℚ_p` and `PadicAlgCl p`, the
+  `K`-automorphisms of `PadicAlgCl p` act by isometries.
 * `TauCeti.exists_mem_norm_sub_lt_of_mem_adjoin`
 * `TauCeti.exists_algEquiv_apply_eq_of_norm_apply_eq`
 * `TauCeti.algebraMap_norm_eq_prod_embeddings_of_le_adjoin`: the norm down to `ℚ_p` of an element
@@ -59,6 +61,22 @@ theorem norm_apply {p : ℕ} [Fact p.Prime]
 
 end AlgEquiv
 
+namespace PadicAlgCl
+
+variable {p : ℕ} [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K]
+  [Algebra K (PadicAlgCl p)] [IsScalarTower ℚ_[p] K (PadicAlgCl p)]
+
+/-- `PadicAlgCl p` is algebraic over every field between `ℚ_p` and `PadicAlgCl p`. -/
+instance instIsIntegral : Algebra.IsIntegral K (PadicAlgCl p) :=
+  Algebra.IsIntegral.tower_top ℚ_[p]
+
+/-- The `K`-automorphisms of `PadicAlgCl p` are isometries for its spectral norm. -/
+instance instIsIsometricSMul : IsIsometricSMul (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (PadicAlgCl p) :=
+  ⟨fun σ ↦ AddMonoidHomClass.isometry_of_norm σ fun x ↦ by
+    rw [← AlgEquiv.restrictScalars_apply (R := ℚ_[p]), AlgEquiv.norm_apply]⟩
+
+end PadicAlgCl
+
 namespace TauCeti
 
 open scoped Classical in
@@ -70,7 +88,7 @@ theorem algebraMap_norm_eq_prod_embeddings_of_le_adjoin (p : ℕ) [Fact p.Prime]
     (M : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ_[p] M]
     (hKM : ∀ x ∈ K, x ∈ M)
     (hMK : M ≤ IntermediateField.adjoin ℚ_[p] (K : Set (AlgebraicClosure ℚ_[p]))) (Y : K) :
-    algebraMap ℚ_[p] (AlgebraicClosure ℚ_[p]) (Algebra.norm ℚ_[p] (⟨Y, hKM Y Y.2⟩ : M)) =
+    algebraMap ℚ_[p] (AlgebraicClosure ℚ_[p]) (Algebra.norm ℚ_[p] (⟨Y, hKM Y Y.property⟩ : M)) =
       ∏ φ ∈ Finset.univ.filter fun φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p] ↦
         ∃ h : AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p], ∀ x : K, φ x = h x,
         φ Y := by
@@ -95,15 +113,15 @@ theorem algebraMap_norm_eq_prod_embeddings_of_le_adjoin (p : ℕ) [Fact p.Prime]
   -- extending to `G_{ℚ_p}`.
   let res : (M →ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p]) → (K →ₐ[ℚ] AlgebraicClosure ℚ_[p]) :=
     fun ψ ↦ ((hext ψ).choose.toAlgHom.restrictScalars ℚ).comp K.val
-  have hres : ∀ ψ (x : K), res ψ x = ψ ⟨x, hKM x x.2⟩ := fun ψ x ↦
-    ((hext ψ).choose_spec ⟨x, hKM x x.2⟩).symm
+  have hres : ∀ ψ (x : K), res ψ x = ψ ⟨x, hKM x x.property⟩ := fun ψ x ↦
+    ((hext ψ).choose_spec ⟨x, hKM x x.property⟩).symm
   rw [Algebra.norm_eq_prod_embeddings ℚ_[p] (AlgebraicClosure ℚ_[p])]
   refine Finset.prod_bij (fun ψ _ ↦ res ψ) (fun ψ _ ↦ ?_) (fun ψ₁ _ ψ₂ _ h ↦ ?_)
     (fun φ hφ ↦ ?_) (fun ψ _ ↦ (hres ψ Y).symm)
   · exact Finset.mem_filter.2 ⟨Finset.mem_univ _, (hext ψ).choose, fun x ↦ rfl⟩
   · ext x
     rw [(hext ψ₁).choose_spec, (hext ψ₂).choose_spec]
-    refine hagree _ _ (fun z hz ↦ ?_) x x.2
+    refine hagree _ _ (fun z hz ↦ ?_) x x.property
     exact DFunLike.congr_fun h ⟨z, hz⟩
   · obtain ⟨h, hh⟩ := (Finset.mem_filter.1 hφ).2
     refine ⟨h.toAlgHom.comp M.val, Finset.mem_univ _, ?_⟩

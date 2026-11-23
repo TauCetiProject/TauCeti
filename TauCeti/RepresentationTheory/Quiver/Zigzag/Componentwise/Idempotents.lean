@@ -25,7 +25,7 @@ public section
 namespace TauCeti
 
 universe u w
-variable (k : Type w) [CommRing k] {V : Type u} [Finite V] (G : SimpleGraph V)
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
 local notation "e" => fun i : V ↦ zigzagAlgebraBasis k G (Sum.inl i)
 
@@ -57,7 +57,7 @@ theorem completeOrthogonalIdempotents_zigzagAlgebraBasis_inl [Fintype V] :
     congrArg (fun f : zigzagAlgebra k G →ₗ[k] zigzagAlgebra k G ↦ f 1) h
 
 /-- The signed degree-zero piece of the public algebra is spanned by the vertex idempotents. -/
-theorem zigzagAlgebraIntegerGrade_zero_eq_span_range :
+theorem zigzagAlgebraIntegerGrade_zero_eq_span_range [Finite V] :
     zigzagAlgebraIntegerGrade k G 0 = Submodule.span k (Set.range (e)) := by
   classical
   have hg : zigzagAlgebraIntegerGrade k G 0 = zigzagAlgebraGrade k G 0 := by

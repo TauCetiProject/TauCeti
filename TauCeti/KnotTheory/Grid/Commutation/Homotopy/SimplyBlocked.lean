@@ -47,13 +47,14 @@ variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommSemiring R]
 It counts both turn sides, with coefficients in the variables of the remaining columns. -/
 noncomputable def simplyBlockedCommutationHomotopy (i : Fin n) :
     GridChainHat R n i →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] GridChainHat R n i :=
-  simplyBlockedMap R i (G.commutationHomotopy R C)
+  simplyBlockedMap R i i (RingHom.id _) (G.commutationHomotopy R C)
 
 /-- On a generator, the simply blocked hexagon map specializes the unblocked hexagon map. -/
 theorem simplyBlockedCommutationHomotopy_single (i : Fin n) (x : GridState n) :
     G.simplyBlockedCommutationHomotopy R C i (Finsupp.single x 1) =
-      simplyBlockedSpecialization R i (G.commutationHomotopy R C (Finsupp.single x 1)) :=
-  simplyBlockedMap_single R i _ x
+      simplyBlockedSpecialization R i (G.commutationHomotopy R C (Finsupp.single x 1)) := by
+  simpa only [simplyBlockedCommutationHomotopy, map_one, one_smul] using
+    simplyBlockedMap_single R i i (RingHom.id _) (G.commutationHomotopy R C) x 1
 
 /-- The matrix entries of the simply blocked homotopy are the specialized hexagon counts. -/
 @[simp]
@@ -70,14 +71,15 @@ theorem simplyBlockedCommutationHomotopy_apply_apply (i : Fin n)
     G.simplyBlockedCommutationHomotopy R C i c y =
       c.sum fun x p => p * simplyBlockedRingHom R i (G.commutationHexagonCoefficient R C x y) := by
   rw [simplyBlockedCommutationHomotopy, simplyBlockedMap_apply_apply]
-  simp only [commutationHomotopy_single_apply, simplyBlockedRingHom_apply]
+  simp only [RingHom.id_apply, commutationHomotopy_single_apply, simplyBlockedRingHom_apply]
 
 /-- Specialization at the blocked variable intertwines the two hexagon-counting maps. -/
 @[simp]
 theorem simplyBlockedSpecialization_commutationHomotopy (i : Fin n) (c : GridChainMinus R n) :
     simplyBlockedSpecialization R i (G.commutationHomotopy R C c) =
       G.simplyBlockedCommutationHomotopy R C i (simplyBlockedSpecialization R i c) :=
-  simplyBlockedSpecialization_apply_linearMap R i _ c
+  (simplyBlockedMap_simplyBlockedSpecialization R i i (RingHom.id _)
+    (G.commutationHomotopy R C) (fun _ => rfl) c).symm
 
 /-- Blocking a hexagon weight discards the term if the hexagon covers the chosen `O`-marking;
 otherwise it is the product of the surviving marking variables. -/
@@ -115,13 +117,13 @@ end GridDiagram
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
-  (C : GridDiagram.ColumnCommutationData G.1)
+  (C : GridDiagram.ColumnCommutationData G.val)
 
 /-- The simply blocked commutation homotopy has bidegree `(1, 0)` over any commutative
 coefficient semiring: Maslov degree increases by one and Alexander degree is preserved. -/
 theorem simplyBlockedCommutationHomotopy_mem_bigradedChainHatPiece (i : Fin n)
     {g : ℤ × ℤ} {c : GridChainHat R n i} (hc : c ∈ G.bigradedChainHatPiece R i g) :
-    G.1.simplyBlockedCommutationHomotopy R C i c ∈
+    G.val.simplyBlockedCommutationHomotopy R C i c ∈
       G.bigradedChainHatPiece R i (g + (1, 0)) := by
   obtain ⟨b, hb, rfl⟩ := G.mem_bigradedChainHatPiece_iff_exists.mp hc
   rw [← GridDiagram.simplyBlockedSpecialization_commutationHomotopy]
@@ -132,7 +134,7 @@ theorem simplyBlockedCommutationHomotopy_mem_bigradedChainHatPiece (i : Fin n)
 Alexander degree, raising Maslov degree by one. -/
 noncomputable def gradedSimplyBlockedCommutationHomotopy (i : Fin n) (a m : ℤ) :
     G.bigradedChainHatPiece R i (m, a) →ₗ[R] G.bigradedChainHatPiece R i (m + 1, a) :=
-  ((G.1.simplyBlockedCommutationHomotopy R C i).restrictScalars R).restrict fun c hc => by
+  ((G.val.simplyBlockedCommutationHomotopy R C i).restrictScalars R).restrict fun c hc => by
     simpa using G.simplyBlockedCommutationHomotopy_mem_bigradedChainHatPiece R C i hc
 
 /-- Inclusion into the total chain module intertwines the graded and total hexagon maps. -/
@@ -140,7 +142,7 @@ noncomputable def gradedSimplyBlockedCommutationHomotopy (i : Fin n) (a m : ℤ)
 theorem coe_gradedSimplyBlockedCommutationHomotopy (i : Fin n) (a m : ℤ)
     (c : G.bigradedChainHatPiece R i (m, a)) :
     (G.gradedSimplyBlockedCommutationHomotopy R C i a m c : GridChainHat R n i) =
-      G.1.simplyBlockedCommutationHomotopy R C i c := (rfl)
+      G.val.simplyBlockedCommutationHomotopy R C i c := (rfl)
 
 end OddComponentGridDiagram
 

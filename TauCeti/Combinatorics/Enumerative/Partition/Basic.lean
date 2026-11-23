@@ -24,7 +24,9 @@ number being partitioned: such a transport leaves the parts alone, and
 squares of its parts sum to at least `n` (`Nat.Partition.le_sum_sq_parts`).
 Positive-part counts determine the parts even for partitions of different numbers
 (`Nat.Partition.parts_eq_of_count_succ`); zero never occurs as a part, so filtering the
-parts by positivity keeps them all (`Nat.Partition.filter_pos_parts`). Finally,
+parts by positivity keeps them all (`Nat.Partition.filter_pos_parts`), a partition has no parts
+only when partitioning zero (`Nat.Partition.parts_eq_zero_iff`), and it has at most one part
+only when it is the coarsest partition (`Nat.Partition.card_parts_le_one_iff`). Finally,
 `Nat.Partition.sum_sort_parts` and `Nat.Partition.sort_parts_injective` say that the
 decreasingly sorted parts of a partition of `n` sum to `n` and determine the partition.
 -/
@@ -91,6 +93,15 @@ end TauCeti
 
 namespace Nat.Partition
 
+/-- A partition has no parts if and only if it is a partition of zero. -/
+@[simp]
+theorem parts_eq_zero_iff {n : ℕ} (p : n.Partition) : p.parts = 0 ↔ n = 0 :=
+  ⟨fun h => by simpa [h] using p.parts_sum.symm, fun hn => by subst hn; simp⟩
+
+/-- Every partition of a nonzero integer has at least one part. -/
+theorem parts_ne_zero {n : ℕ} (p : n.Partition) (hn : n ≠ 0) : p.parts ≠ 0 :=
+  mt p.parts_eq_zero_iff.mp hn
+
 /-- Zero has multiplicity zero in every partition. -/
 @[simp]
 theorem count_parts_zero {n : ℕ} (p : n.Partition) : p.parts.count 0 = 0 := by
@@ -114,6 +125,22 @@ theorem parts_eq_of_count_succ {m n : ℕ} {p : m.Partition} {q : n.Partition}
 /-- **A partition of `n` has at most `n` parts**, since every part is at least `1`. -/
 theorem card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
   simpa [μ.parts_sum] using μ.parts.card_nsmul_le_sum (a := 1) fun _ hx => μ.parts_pos hx
+
+/-- A partition of `n` has at most one part if and only if it is the coarsest partition
+`Nat.Partition.indiscrete n`. -/
+theorem card_parts_le_one_iff {n : ℕ} (p : n.Partition) :
+    p.parts.card ≤ 1 ↔ p = indiscrete n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact iff_of_true (by simp) (Subsingleton.elim _ _)
+  · constructor
+    · intro hle
+      obtain ⟨a, ha⟩ := Multiset.card_eq_one.mp
+        (le_antisymm hle (Multiset.card_pos.mpr (p.parts_ne_zero hn)))
+      have hsum := p.parts_sum
+      rw [ha, Multiset.sum_singleton] at hsum
+      exact Nat.Partition.ext (by rw [ha, indiscrete_parts hn, hsum])
+    · rintro rfl
+      simp [indiscrete_parts hn]
 
 /-- The sum of the squares of the parts of a partition of `n` is at least `n`. -/
 theorem le_sum_sq_parts {n : ℕ} (μ : n.Partition) : n ≤ (μ.parts.map (· ^ 2)).sum :=

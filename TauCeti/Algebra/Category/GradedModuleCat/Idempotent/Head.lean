@@ -231,7 +231,7 @@ def gradedPositiveMulQuotientLift (he₀ : e ∈ 𝒜 0) {M : Type*} [AddCommGro
     gradedPositiveMulQuotient 𝒜 he₀ →ₗ[A] M :=
   Submodule.liftQ _ ((LinearMap.toSpanSingleton A M m).comp (Submodule.subtype _)) <| by
     rintro _ ⟨y, rfl⟩
-    exact hm y y.2
+    exact hm y y.property
 
 /-- The map `Ae / A₊e ⟶ M` induced by `m` sends the class of `x` to `x m`. -/
 @[simp]
@@ -274,7 +274,7 @@ theorem gradedPositiveMulQuotient_piece_eq_bot (hneg : ∀ p < 0, 𝒜 p = ⊥)
   · rw [hneg p hp, Submodule.mem_bot] at hx
     rw [hx]
     exact Submodule.zero_mem _
-  · rw [← (mem_span_singleton_iff_mul_eq_self he).1 x.2]
+  · rw [← (mem_span_singleton_iff_mul_eq_self he).1 x.property]
     exact mul_mem_gradedPositiveMulIdeal 𝒜 hp hx
 
 /-- **`Ae / A₊e` is its own degree-zero piece** for an idempotent `e` of degree zero of a
@@ -398,7 +398,7 @@ theorem bijective_smulPieceMap_gradedPositiveMulQuotientπ_zero {f : A}
       (by simpa using gradedPositiveMulQuotientMk_surjective hf₀) 0⟩
   refine (Submodule.eq_bot_iff _).2 fun x hx => ?_
   have hx₀ : ((x : (Ideal.span {f} : Ideal A)) : A) ∈ 𝒜 0 := by
-    obtain ⟨y, hy, hxy⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.1 x.2
+    obtain ⟨y, hy, hxy⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.1 x.property
     have hy₀ := (GradedModuleCat.mem_ofIdeal_piece_iff _).1 hy
     rw [← hxy]
     simpa using SetLike.GradedMul.mul_mem he₀ hy₀
@@ -560,10 +560,10 @@ private theorem mem_gradedPositiveMulIdeal_of_decompose_eq_zero {f : A} (hf : Is
   rw [← hx, ← sum_support_decompose 𝒜 x, Finset.sum_mul]
   refine Ideal.sum_mem _ fun p _ => ?_
   rcases lt_trichotomy p 0 with hp | rfl | hp
-  · have h : (decompose 𝒜 x p : A) ∈ (⊥ : Submodule k A) := hneg p hp ▸ (decompose 𝒜 x p).2
+  · have h : (decompose 𝒜 x p : A) ∈ (⊥ : Submodule k A) := hneg p hp ▸ (decompose 𝒜 x p).property
     simp [(Submodule.mem_bot k).1 h]
   · simp [hx₀]
-  · exact mul_mem_gradedPositiveMulIdeal 𝒜 hp (decompose 𝒜 x p).2
+  · exact mul_mem_gradedPositiveMulIdeal 𝒜 hp (decompose 𝒜 x p).property
 
 /-- **The class of `f` in `A f / A₊f` is nonzero** for a nonzero element `f` of degree zero of a
 nonnegatively graded algebra: `A₊f` has no degree-zero component. -/
@@ -599,8 +599,8 @@ private theorem exists_eq_smul_headGenerator (i : I) (y : gradedPositiveMulQuoti
     ∃ c : k, y = c • headGenerator e he₀ i := by
   obtain ⟨x, rfl⟩ := gradedPositiveMulQuotientMk_surjective (he₀ i) y
   have hx₀ : (decompose 𝒜 (x : A) 0 : A) ∈ (Ideal.span {e i} : Ideal A) :=
-    Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩ 0 x.2
-  obtain ⟨c, hc⟩ := exists_eq_smul_of_mem_zero he hspan (decompose 𝒜 (x : A) 0).2 hx₀
+    Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩ 0 x.property
+  obtain ⟨c, hc⟩ := exists_eq_smul_of_mem_zero he hspan (decompose 𝒜 (x : A) 0).property hx₀
   refine ⟨c, ?_⟩
   rw [headGenerator, ← LinearMap.map_smul_of_tower, ← sub_eq_zero, ← map_sub,
     gradedPositiveMulQuotientMk_eq_zero_iff]

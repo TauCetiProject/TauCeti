@@ -69,7 +69,7 @@ private theorem weylGroupMulEquivOfEq_symm_weightMap_apply
     (D E : RootDatum (DiagonalRootIndex n) (ULift.{u} (Fin n) →₀ ℤ)
       (ULift.{u} (Fin n) → ℤ)) (h : D = E) (w : E.weylGroup)
     (x : ULift.{u} (Fin n) →₀ ℤ) :
-    ((weylGroupMulEquivOfEq D E h).symm w).1.weightMap x = w.1.weightMap x := by
+    ((weylGroupMulEquivOfEq D E h).symm w).val.weightMap x = w.val.weightMap x := by
   subst E
   rfl
 
@@ -77,7 +77,7 @@ private theorem weylGroupMulEquivOfEq_symm_coweightMap_apply
     (D E : RootDatum (DiagonalRootIndex n) (ULift.{u} (Fin n) →₀ ℤ)
       (ULift.{u} (Fin n) → ℤ)) (h : D = E) (w : E.weylGroup)
     (x : ULift.{u} (Fin n) → ℤ) (a : ULift.{u} (Fin n)) :
-    ((weylGroupMulEquivOfEq D E h).symm w).1.coweightMap x a = w.1.coweightMap x a := by
+    ((weylGroupMulEquivOfEq D E h).symm w).val.coweightMap x a = w.val.coweightMap x a := by
   subst E
   rfl
 
@@ -85,7 +85,7 @@ private theorem weylGroupMulEquivOfEq_symm_indexEquiv_apply
     (D E : RootDatum (DiagonalRootIndex n) (ULift.{u} (Fin n) →₀ ℤ)
       (ULift.{u} (Fin n) → ℤ)) (h : D = E) (w : E.weylGroup)
     (p : DiagonalRootIndex n) :
-    ((weylGroupMulEquivOfEq D E h).symm w).1.indexEquiv p = w.1.indexEquiv p := by
+    ((weylGroupMulEquivOfEq D E h).symm w).val.indexEquiv p = w.val.indexEquiv p := by
   subst E
   rfl
 
@@ -113,22 +113,22 @@ private theorem diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_smul_apply
 private theorem diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_weightMap_apply
     (w : (SplitTorus.coordinateRootDatum (ULift.{u} (Fin n))).weylGroup)
     (x : ULift.{u} (Fin n) →₀ ℤ) :
-    ((diagonalWeylGroupMulEquivCoordinateWeylGroup.{u} n).symm w).1.weightMap x =
-      w.1.weightMap x :=
+    ((diagonalWeylGroupMulEquivCoordinateWeylGroup.{u} n).symm w).val.weightMap x =
+      w.val.weightMap x :=
   weylGroupMulEquivOfEq_symm_weightMap_apply _ _ _ w x
 
 private theorem diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_coweightMap_apply
     (w : (SplitTorus.coordinateRootDatum (ULift.{u} (Fin n))).weylGroup)
     (x : ULift.{u} (Fin n) → ℤ) (a : ULift.{u} (Fin n)) :
-    ((diagonalWeylGroupMulEquivCoordinateWeylGroup.{u} n).symm w).1.coweightMap x a =
-      w.1.coweightMap x a :=
+    ((diagonalWeylGroupMulEquivCoordinateWeylGroup.{u} n).symm w).val.coweightMap x a =
+      w.val.coweightMap x a :=
   weylGroupMulEquivOfEq_symm_coweightMap_apply _ _ _ w x a
 
 private theorem diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_indexEquiv_apply
     (w : (SplitTorus.coordinateRootDatum (ULift.{u} (Fin n))).weylGroup)
     (p : DiagonalRootIndex n) :
-    ((diagonalWeylGroupMulEquivCoordinateWeylGroup.{u} n).symm w).1.indexEquiv p =
-      w.1.indexEquiv p :=
+    ((diagonalWeylGroupMulEquivCoordinateWeylGroup.{u} n).symm w).val.indexEquiv p =
+      w.val.indexEquiv p :=
   weylGroupMulEquivOfEq_symm_indexEquiv_apply _ _ _ w p
 
 private theorem diagonalWeylGroupMulEquivCoordinateWeylGroup_symm_ofIdx
@@ -240,7 +240,7 @@ permutation. -/
 theorem diagonalNormalizerQuotientMulEquivWeylGroup_weightMap_apply
     (q : Subgroup.normalizerQuotient (TauCeti.diagonalTorus k n))
     (x : ULift.{u} (Fin n) →₀ ℤ) :
-    (diagonalNormalizerQuotientMulEquivWeylGroup k n q).1.weightMap x =
+    (diagonalNormalizerQuotientMulEquivWeylGroup k n q).val.weightMap x =
       Finsupp.domLCongr (R := ℤ)
         (Equiv.ulift.symm.permCongrHom
           (diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n) q)) x := by
@@ -255,7 +255,7 @@ associated coordinate permutation. -/
 theorem diagonalNormalizerQuotientMulEquivWeylGroup_coweightMap_apply
     (q : Subgroup.normalizerQuotient (TauCeti.diagonalTorus k n))
     (x : ULift.{u} (Fin n) → ℤ) (a : ULift.{u} (Fin n)) :
-    (diagonalNormalizerQuotientMulEquivWeylGroup k n q).1.coweightMap x a =
+    (diagonalNormalizerQuotientMulEquivWeylGroup k n q).val.coweightMap x a =
       x (ULift.up
         (diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n) q a.down)) := by
   rw [diagonalNormalizerQuotientMulEquivWeylGroup_eq]
@@ -270,7 +270,7 @@ permutation simultaneously to both entries of a root index. -/
 theorem diagonalNormalizerQuotientMulEquivWeylGroup_indexEquiv_apply
     (q : Subgroup.normalizerQuotient (TauCeti.diagonalTorus k n))
     (p : DiagonalRootIndex n) :
-    (diagonalNormalizerQuotientMulEquivWeylGroup k n q).1.indexEquiv p =
+    (diagonalNormalizerQuotientMulEquivWeylGroup k n q).val.indexEquiv p =
       SplitTorus.coordinatePermRootIndex
         (Equiv.ulift.symm.permCongrHom
           (diagonalNormalizerQuotientMulEquivPerm (k := k) (n := n) q)) p := by
@@ -324,8 +324,8 @@ theorem diagonalNormalizerQuotientMulEquivWeylGroup_symm_ofIdx
     (p : DiagonalRootIndex n) :
     (diagonalNormalizerQuotientMulEquivWeylGroup k n).symm
         (RootPairing.weylGroup.ofIdx (diagonalRootDatum.{u} n) p) =
-      (⟨permutationGL (k := k) (Equiv.swap p.1.1.down p.1.2.down),
-        permutationGL_mem_normalizer (Equiv.swap p.1.1.down p.1.2.down)⟩ :
+      (⟨permutationGL (k := k) (Equiv.swap p.val.1.down p.val.2.down),
+        permutationGL_mem_normalizer (Equiv.swap p.val.1.down p.val.2.down)⟩ :
         Subgroup.normalizer (TauCeti.diagonalTorus k n : Set (GL (Fin n) k))) := by
   rcases p with ⟨⟨⟨i⟩, ⟨j⟩⟩, hij⟩
   have hij' : i ≠ j := fun h ↦ hij (congrArg ULift.up h)

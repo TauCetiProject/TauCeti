@@ -80,14 +80,14 @@ private def fiberSnd : fiberProd δ η M →ₗ[A] M :=
 
 /-- The map `((u, v), (u', v)) ↦ (u + u', v)` from the fibre product to `E_(δ + η)(M)`. -/
 private def fiberAdd : fiberProd δ η M →ₗ[A] DerivationExtension (δ + η) M where
-  toFun x := ⟨x.1.1.fst + x.1.2.fst, x.1.1.snd⟩
+  toFun x := ⟨x.val.1.fst + x.val.2.fst, x.val.1.snd⟩
   map_add' x y := by
     ext
     · simp only [Submodule.coe_add, Prod.fst_add, Prod.snd_add, fst_add]
       abel
     · simp
   map_smul' a x := by
-    have hx : x.1.2.snd = x.1.1.snd := ((mem_fiberProd δ η M).1 x.2).symm
+    have hx : x.val.2.snd = x.val.1.snd := ((mem_fiberProd δ η M).1 x.property).symm
     ext
     · simp only [SetLike.val_smul, Prod.smul_fst, Prod.smul_snd, fst_smul, hx,
         AddMemClass.coe_add, LinearMap.add_apply, smul_add, add_smul, RingHom.id_apply]
@@ -119,8 +119,8 @@ private theorem exact_fiberInl_fiberSnd : Function.Exact (fiberInl δ η M) (fib
     exact LinearMap.congr_fun (fiberSnd_comp_fiberInl δ η M) u
 
 private theorem fiberInl_injective : Function.Injective (fiberInl δ η M) :=
-  fun _ _ h => Prod.ext (by simpa [coe_fiberInl] using congrArg (fun x => x.1.1.fst) h)
-    (by simpa [coe_fiberInl] using congrArg (fun x => x.1.2.fst) h)
+  fun _ _ h => Prod.ext (by simpa [coe_fiberInl] using congrArg (fun x => x.val.1.fst) h)
+    (by simpa [coe_fiberInl] using congrArg (fun x => x.val.2.fst) h)
 
 private theorem fiberSnd_surjective : Function.Surjective (fiberSnd δ η M) :=
   fun v => ⟨⟨(⟨0, v⟩, ⟨0, v⟩), (mem_fiberProd δ η M).2 rfl⟩, by simp [fiberSnd]⟩
@@ -194,7 +194,7 @@ theorem extClass_add (hδ : Continuous (δ : Module.End R A))
       τ₃ := 𝟙 M
       comm₁₂ := InducedCategory.hom_ext (ModuleCat.hom_ext (LinearMap.ext fun _ => (rfl)))
       comm₂₃ := InducedCategory.hom_ext (ModuleCat.hom_ext
-        (LinearMap.ext fun x => (LinearMap.mem_eqLocus.1 x.2).symm)) }
+        (LinearMap.ext fun x => (LinearMap.mem_eqLocus.1 x.property).symm)) }
   let φ : S ⟶ discreteShortComplex hδη M :=
     { τ₁ := p₁ + p₂
       τ₂ := ObjectProperty.homMk (ModuleCat.ofHom (fiberAdd δ η M.obj))

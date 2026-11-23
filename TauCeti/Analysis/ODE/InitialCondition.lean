@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.GlobalSolution
 public import TauCeti.Analysis.ODE.SmoothParameter
+import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # Smooth dependence of an ODE solution on its initial condition
@@ -34,8 +35,9 @@ therefore smooth directions.
 
 ## Main results
 
-* `ODE.contDiffAt_globalSolution`: the global solution of a globally Lipschitz field that is
-  locally `C^(n+1)` is jointly `C^(n+1)` near time `0`, for `n` finite or infinite.
+* `ODE.exists_contDiffOn_globalSolution`: the global solution of a globally Lipschitz field that is
+  locally `C^(n+1)` is jointly `C^(n+1)` on an open neighbourhood of time `0`, for `n` finite or
+  infinite.
 * `ODE.contDiff_globalSolution`: the global solution is `C^(n+1)` jointly in its initial condition
   and time, for `n` finite or infinite.
 * `ODE.contDiff_globalSolution_apply`: every time-`t` map is `C^(n+1)`.
@@ -91,9 +93,11 @@ variable [CompleteSpace E]
 /-- **The global solution of a globally Lipschitz field depends smoothly on time and on its
 initial condition** near time `0`, provided the field is smooth near the initial point.
 No smoothness of the field away from that neighbourhood is required. -/
-theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
+theorem exists_contDiffOn_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K v)
     {a : E} {s : Set E} (hvs : ContDiffOn ℝ (n + 1) v s) (hs : s ∈ nhds a) :
-    ContDiffAt ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) (a, 0) := by
+    ∃ U : Set (E × ℝ), IsOpen U ∧ (a, 0) ∈ U ∧
+      ContDiffOn ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) U := by
   -- Keep every Picard path in the local smoothness domain of the field.
   let S : Set ((E × ℝ) × E) := (fun q ↦ q.1.1 + q.2) ⁻¹' interior s
   have hS : IsOpen S := isOpen_interior.preimage (by fun_prop)
@@ -111,14 +115,13 @@ theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv :
     exists_contDiffOn_picard_solution
       (fun q : (E × ℝ) × E ↦ q.1.2 • v (q.1.1 + q.2)) (a, (0 : ℝ)) (0 : E)
       hS hbase hf hzero
-  have hγ : ContDiffAt ℝ (n + 1) γ (a, 0) := hγU.contDiffAt (hU.mem_nhds hp₀U)
-  have hsmooth : ContDiffAt ℝ (n + 1)
-      (fun p : E × ℝ ↦ p.1 + γ p ⟨1, by norm_num⟩) (a, 0) := by
+  have hsmooth : ContDiffOn ℝ (n + 1)
+      (fun p : E × ℝ ↦ p.1 + γ p ⟨1, by norm_num⟩) U := by
     have := ((ContinuousMap.evalCLM (R := ℝ) (⟨1, by norm_num⟩ : Icc (0 : ℝ) 1)).contDiff
-      (n := n + 1)).comp_contDiffAt (a, (0 : ℝ)) hγ
-    exact contDiffAt_fst.add (by simpa [Function.comp_def] using this)
-  refine hsmooth.congr_of_eventuallyEq ?_
-  filter_upwards [hU.mem_nhds hp₀U] with p hpU
+      (n := n + 1)).comp_contDiffOn hγU
+    exact contDiffOn_fst.add (by simpa [Function.comp_def] using this)
+  refine ⟨U, hU, hp₀U, hsmooth.congr ?_⟩
+  intro p hpU
   have hp := (hprop p hpU).2
   obtain ⟨hpicard, -, hright⟩ := hp
   -- The rescaled solution starts at `p.1` and moves with speed `p.2 • v`.
@@ -164,8 +167,9 @@ private theorem contDiff_globalSolution_of_nat {n : ℕ} (v : E → E) {K : ℝ�
   -- For a fixed initial condition, the times at which `G` is `C^(n+1)` form a nonempty clopen
   -- subset of `ℝ`; the flow law propagates smoothness locally, including at limit points.
   have hlocal (a : E) : ContDiffAt ℝ (n + 1) G (a, 0) := by
-    exact_mod_cast contDiffAt_globalSolution (n := (n : ℕ∞)) v hv
+    obtain ⟨U, hU, ha, hflow⟩ := exists_contDiffOn_globalSolution (n := (n : ℕ∞)) v hv
       (by exact_mod_cast hvs.contDiffOn) (univ_mem : Set.univ ∈ nhds a)
+    exact_mod_cast hflow.contDiffAt (hU.mem_nhds ha)
   have hfinite : (n + 1 : ℕ∞) ≠ ∞ := by simp
   apply contDiff_iff_contDiffAt.2
   rintro ⟨a, t⟩

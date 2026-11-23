@@ -81,7 +81,7 @@ def restrictedProductSum (U : ∀ k, S k) (h₁ : 𝓕.comap Sum.inl = 𝓕₁)
   invFun y := ⟨(Equiv.sumPiEquivProdPi G).symm (⇑y.1, ⇑y.2), by
     rw [← map_comap_inl_sup_map_comap_inr 𝓕, eventually_sup, eventually_map, eventually_map, h₁,
       h₂]
-    exact ⟨y.1.2, y.2.2⟩⟩
+    exact ⟨y.1.property, y.2.property⟩⟩
   left_inv x := by
     ext (i | j) <;> rfl
   right_inv y := by
