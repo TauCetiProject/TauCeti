@@ -715,11 +715,13 @@ private theorem exists_tuple_quasicentral (I : TwoSidedIdeal A) [IsClosed (I : S
 a positive contraction in `I` and preserves strict `ε`-approximation on `G`. -/
 private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     {G : Finset I} {ε : ℝ} {n : ℕ} (hn_pos : 0 < n) {u : ℕ → A}
-    (hu : ∀ k < n, u k ∈ I.quasicentralSet G ∅ ε)
-    (e : A) (he : e = (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) :
-    e ∈ I ∧ 0 ≤ e ∧ ‖e‖ ≤ 1 ∧
-      ∀ x ∈ G, ‖e * (x : A) - x‖ < ε ∧ ‖(x : A) * e - x‖ < ε := by
-  subst he
+    (hu : ∀ k < n, u k ∈ I.quasicentralSet G ∅ ε) :
+    ((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) ∈ I ∧
+      0 ≤ (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k ∧
+      ‖(n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k‖ ≤ 1 ∧
+      ∀ x ∈ G,
+        ‖((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) * (x : A) - x‖ < ε ∧
+        ‖(x : A) * ((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) - x‖ < ε := by
   have hw_pos : 0 < ∑ _k ∈ Finset.range n, (1 : ℝ) := by
     simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one, Nat.cast_pos]
     exact hn_pos
@@ -773,10 +775,9 @@ private theorem norm_average_sq_le {ι : Type*} {s : Finset ι}
 omit [PartialOrder A] [StarOrderedRing A] in
 private theorem norm_commutator_average_sq_le {n : ℕ} {u : ℕ → A} {a : A}
     {η : ℝ} (hη : 0 ≤ η) (hu : ∀ k < n, ‖u k‖ ≤ 1)
-    (hoff : ∀ i j, i < j → j < n → ‖star (u i * a - a * u i) * (u j * a - a * u j)‖ ≤ η)
-    (e : A) (he : e = (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) :
-    ‖e * a - a * e‖ ^ 2 ≤ 4 * ‖a‖ ^ 2 / n + η := by
-  subst he
+    (hoff : ∀ i j, i < j → j < n → ‖star (u i * a - a * u i) * (u j * a - a * u j)‖ ≤ η) :
+    ‖((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) * a -
+      a * ((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k)‖ ^ 2 ≤ 4 * ‖a‖ ^ 2 / n + η := by
   have hcomm :
       ((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) * a - a * ((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) =
         (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k) := by
@@ -817,7 +818,7 @@ theorem quasicentralSet_nonempty (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
   let δ : ℝ := ε ^ 2 / (4 * (M + 1))
   obtain ⟨u, hu, hoff⟩ := exists_tuple_quasicentral I G F hε (δ := δ) (by positivity) n
   let e : A := (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k
-  obtain ⟨heI, he₀, he₁, heG⟩ := cesaro_mem_and_mul_lt I hn_pos hu e rfl
+  obtain ⟨heI, he₀, he₁, heG⟩ := cesaro_mem_and_mul_lt I hn_pos hu
   refine ⟨e, mem_quasicentralSet_iff.mpr ⟨heI, he₀, he₁, heG, fun a ha => ?_⟩⟩
   have haM : ‖a‖ ≤ M :=
     (Finset.single_le_sum (fun b _ => norm_nonneg b) ha).trans (le_add_of_nonneg_right zero_le_one)
@@ -827,7 +828,6 @@ theorem quasicentralSet_nonempty (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
       (fun i j hij hjn => (hoff i j hij hjn a ha).trans <| by
         calc δ * (‖a‖ + 1) ≤ δ * (M + 1) := by gcongr
           _ = ε ^ 2 / 4 := by dsimp [δ]; field_simp)
-      e rfl
   have hterm1 : 4 * ‖a‖ ^ 2 / (n : ℝ) < ε ^ 2 / 2 := by
     have hmn : 8 * M ^ 2 / ε ^ 2 < (n : ℝ) := hm.trans (by exact_mod_cast Nat.lt_succ_self m)
     rw [div_lt_iff₀ (by positivity)] at hmn
