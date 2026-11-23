@@ -159,17 +159,7 @@ private theorem prod_finiteComponent_eq_finiteConductor_support (χ : Grossencha
   exact ψ.prod_finiteComponent_eq_of_subset (Modulus.support_mono χ.mk_finiteConductor_dvd)
     (fun v _ hv𝔣 ↦ not_not.mp ((ψ.dvd_finiteConductor_iff v).not.mp
       fun hdvd ↦ hv𝔣 ((𝔣.mem_support_iff v).mpr hdvd)))
-    (fun v hv𝔪 ↦ mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv𝔪))
-
-private theorem idealsAwayInclusion_principalIdealAway {S T : Finset (HeightOneSpectrum (𝓞 K))}
-    (hST : T ⊆ S) (x : (S : Set (HeightOneSpectrum (𝓞 K)))ᶜ.unit K)
-    (hx : toPrincipalIdeal (𝓞 K) K (x : Kˣ) ∈ NumberFieldArithmetic.idealsAway K T) :
-    NumberFieldArithmetic.idealsAwayInclusion K hST
-        (NumberFieldArithmetic.principalIdealAway K S x) =
-      ⟨toPrincipalIdeal (𝓞 K) K (x : Kˣ), hx⟩ :=
-  Subtype.ext (by
-    rw [NumberFieldArithmetic.coe_idealsAwayInclusion,
-      NumberFieldArithmetic.coe_principalIdealAway])
+    (fun v hv𝔪 _ ↦ mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv𝔪))
 
 /-- **Idelic formula for `finiteCharacterK`.** For `x ∈ primeToSubgroup 𝔪`, `χ.finiteCharacterK x`
 equals the inverse product of the local finite components of `χ.toHeckeCharacter` at the primes
@@ -186,7 +176,8 @@ theorem finiteCharacterK_eq_prod_finiteComponent_inv (χ : Grossencharacter K �
   have h𝔣 : 𝔣 ∣ 𝔪 := χ.mk_finiteConductor_dvd
   have hx𝔣 : (x : Kˣ) ∈ primeToSubgroup 𝔣 :=
     primeToSubgroup_le_of_dvd (Modulus.dvd_iff.mp h𝔣).1 x.property
-  rw [finiteCharacterK_apply, idealsAwayInclusion_principalIdealAway (Modulus.support_mono h𝔣) x
+  rw [finiteCharacterK_apply,
+    NumberFieldArithmetic.idealsAwayInclusion_principalIdealAway (Modulus.support_mono h𝔣) x
       (NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mpr hx𝔣),
     ψ.idealCharacter_apply_toPrincipalIdeal_of_mem_primeToSubgroup (x : Kˣ) hx𝔣,
     archimedeanValue_apply, ← χ.prod_finiteComponent_eq_finiteConductor_support x,
@@ -206,8 +197,8 @@ theorem finiteCharacterK_eq_one_of_residueHom_eq_one (χ : Grossencharacter K �
       ⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ (x : Kˣ) :=
     hx₀.mono χ.mk_finiteConductor_dvd_mk_finitePart
   rw [finiteCharacterK_apply,
-    idealsAwayInclusion_principalIdealAway (Modulus.support_mono χ.mk_finiteConductor_dvd) x
-      hx𝔣.toPrincipalIdeal_mem_idealsPrimeTo,
+    NumberFieldArithmetic.idealsAwayInclusion_principalIdealAway
+      (Modulus.support_mono χ.mk_finiteConductor_dvd) x hx𝔣.toPrincipalIdeal_mem_idealsPrimeTo,
     χ.toHeckeCharacter.idealCharacter_apply_toPrincipalIdeal (x : Kˣ) hx𝔣,
     archimedeanValue_apply, inv_mul_cancel]
 
@@ -346,39 +337,50 @@ theorem residueCharacter_comp_finiteUnitsMap {𝔫 : Modulus K} {χ : Grossencha
   have hsub : 𝔪.support ⊆ 𝔫.support := fun v hv ↦
     (𝔫.mem_support_iff v).mpr (((𝔪.mem_support_iff v).mp hv).trans hdvd)
   refine χ.toHeckeCharacter.prod_finiteComponent_eq_of_subset hsub (fun v _ hv𝔪 ↦ ?_)
-    (fun v hv𝔫 ↦ mem_primeToSubgroup.mp x.property v ((𝔫.mem_support_iff v).mp hv𝔫))
+    (fun v hv𝔫 _ ↦ mem_primeToSubgroup.mp x.property v ((𝔫.mem_support_iff v).mp hv𝔫))
   exact χ.conductorExponent_eq_zero_of_not_mem_support hv𝔪
 
 /-! ### Finite-conductor characterization and primitivity -/
+
+/-- A prime-to-`𝔪` unit reduces to `1` modulo `𝔫.finitePart` under `finiteUnitsMap` iff its
+local images at every prime of `𝔪.support` lie in `U(K_v, 𝔫.exponent v)`. -/
+private theorem finiteUnitsMap_residueHom_eq_one_iff_forall_mem_unitFiltration
+    {𝔫 : Modulus K} (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart) (x : primeToSubgroup 𝔪) :
+    finiteUnitsMap hdvd (residueHom 𝔪 x) = 1 ↔
+      ∀ v ∈ 𝔪.support,
+        Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ) ∈
+          TauCeti.unitFiltration (v.adicCompletion K) (𝔫.exponent v) := by
+  rw [finiteUnitsMap_residueHom_eq_one_iff]
+  constructor
+  · intro hval v hv
+    have hx_unit : v.valuation K ((x : Kˣ) : K) = 1 :=
+      mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv)
+    by_cases hvI : v.asIdeal ∣ 𝔫.finitePart
+    · exact (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent v) (x : Kˣ)).mpr
+        ⟨hx_unit, hval v hvI⟩
+    · rw [Modulus.exponent_eq_zero_of_not_mem_support ((𝔫.mem_support_iff v).not.mpr hvI)]
+      exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff (x : Kˣ)).mpr hx_unit
+  · intro hmem v hvI
+    have hv𝔪 : v ∈ 𝔪.support := (𝔪.mem_support_iff v).mpr (hvI.trans hdvd)
+    exact ((v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent v) (x : Kˣ)).mp
+      (hmem v hv𝔪)).2
 
 /-- Forward direction of `finiteConductor_dvd_iff_residueCharacter_eq_one`. -/
 private theorem residueCharacter_eq_one_of_finiteConductor_dvd (χ : Grossencharacter K 𝔪)
     {𝔫 : Modulus K} (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart)
     (hcond : χ.toHeckeCharacter.finiteConductor ∣ 𝔫.finitePart)
-    (u : (𝓞 K ⧸ 𝔪.finitePart)ˣ)
-    (hu : Ideal.Quotient.factor (Ideal.le_of_dvd hdvd) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1) :
+    (u : (𝓞 K ⧸ 𝔪.finitePart)ˣ) (hu : finiteUnitsMap hdvd u = 1) :
     χ.residueCharacter u = 1 := by
   obtain ⟨x, rfl⟩ := residueHom_surjective 𝔪 u
-  have hval := (finiteUnitsMap_residueHom_eq_one_iff hdvd x).mp
-    (Units.ext (by simpa only [coe_finiteUnitsMap, coe_residueHom, Units.val_one] using hu))
+  have hmem := (finiteUnitsMap_residueHom_eq_one_iff_forall_mem_unitFiltration hdvd x).mp hu
   rw [coe_residueHom, χ.residueCharacter_residue x,
     χ.finiteCharacterK_eq_prod_finiteComponent_inv x]
   have hprod : (∏ v ∈ 𝔪.support,
       χ.toHeckeCharacter.finiteComponent v
-        (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ))) = 1 := by
-    refine Finset.prod_eq_one fun v hv ↦ ?_
-    have hx_unit : v.valuation K ((x : Kˣ) : K) = 1 :=
-      mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv)
-    have hmem : Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ) ∈
-        TauCeti.unitFiltration (v.adicCompletion K) (𝔫.exponent v) := by
-      by_cases hvI : v.asIdeal ∣ 𝔫.finitePart
-      · exact (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent v) (x : Kˣ)).mpr
-          ⟨hx_unit, hval v hvI⟩
-      · rw [Modulus.exponent_eq_zero_of_not_mem_support ((𝔫.mem_support_iff v).not.mpr hvI)]
-        exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff (x : Kˣ)).mpr hx_unit
-    exact χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration
+        (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ))) = 1 :=
+    Finset.prod_eq_one fun v hv ↦ χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration
       (TauCeti.unitFiltration_antitone
-        ((χ.toHeckeCharacter.finiteConductor_dvd_finitePart_iff 𝔫).mp hcond v) hmem)
+        ((χ.toHeckeCharacter.finiteConductor_dvd_finitePart_iff 𝔫).mp hcond v) (hmem v hv))
   rw [hprod, inv_one, Units.val_one]
 
 /-- Local conductor-exponent bound from residue-kernel triviality modulo `𝔫.finitePart`:
@@ -386,8 +388,7 @@ for each finite place `v`, `χ.toHeckeCharacter.conductorExponent v ≤ 𝔫.exp
 private theorem conductorExponent_le_exponent_of_residueCharacter_eq_one
     (χ : Grossencharacter K 𝔪) {𝔫 : Modulus K} (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart)
     (htriv : ∀ u : (𝓞 K ⧸ 𝔪.finitePart)ˣ,
-      Ideal.Quotient.factor (Ideal.le_of_dvd hdvd) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1 →
-        χ.residueCharacter u = 1)
+      finiteUnitsMap hdvd u = 1 → χ.residueCharacter u = 1)
     (v : HeightOneSpectrum (𝓞 K)) :
     χ.toHeckeCharacter.conductorExponent v ≤ 𝔫.exponent v := by
   classical
@@ -401,16 +402,13 @@ private theorem conductorExponent_le_exponent_of_residueCharacter_eq_one
     obtain ⟨x, hxz, hother, hx_filt⟩ := exists_primeToSubgroup_approx_localUnit hv (hle_exp v) z hz
     -- Show `x` reduces to `1` modulo `𝔫.finitePart`, so `χ.residueCharacter (residueHom 𝔪 x) = 1`.
     have hfac : finiteUnitsMap hdvd (residueHom 𝔪 x) = 1 := by
-      refine (finiteUnitsMap_residueHom_eq_one_iff hdvd x).mpr fun w hw ↦ ?_
+      refine (finiteUnitsMap_residueHom_eq_one_iff_forall_mem_unitFiltration hdvd x).mpr
+        fun w hw ↦ ?_
       by_cases hwv : w = v
       · subst hwv
-        exact ((w.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent w) (x : Kˣ)).mp
-          hx_filt).2
-      · have hw𝔪 : w ∈ 𝔪.support := (𝔪.mem_support_iff w).mpr (hw.trans hdvd)
-        exact ((w.unitsMap_algebraMap_mem_unitFiltration_iff (𝔫.exponent w) (x : Kˣ)).mp
-          (TauCeti.unitFiltration_antitone (hle_exp w) (hother w hw𝔪 hwv))).2
-    have h1 := htriv (residueHom 𝔪 x) (by
-      simpa only [coe_finiteUnitsMap, coe_residueHom, Units.val_one] using congrArg Units.val hfac)
+        exact hx_filt
+      · exact TauCeti.unitFiltration_antitone (hle_exp w) (hother w hw hwv)
+    have h1 := htriv (residueHom 𝔪 x) hfac
     rw [coe_residueHom, χ.residueCharacter_residue x,
       χ.finiteCharacterK_eq_prod_finiteComponent_inv x] at h1
     have h1' : (∏ w ∈ 𝔪.support,
@@ -441,8 +439,7 @@ private theorem conductorExponent_le_exponent_of_residueCharacter_eq_one
 private theorem finiteConductor_dvd_of_residueCharacter_eq_one (χ : Grossencharacter K 𝔪)
     {𝔫 : Modulus K} (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart)
     (htriv : ∀ u : (𝓞 K ⧸ 𝔪.finitePart)ˣ,
-      Ideal.Quotient.factor (Ideal.le_of_dvd hdvd) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1 →
-        χ.residueCharacter u = 1) :
+      finiteUnitsMap hdvd u = 1 → χ.residueCharacter u = 1) :
     χ.toHeckeCharacter.finiteConductor ∣ 𝔫.finitePart :=
   (χ.toHeckeCharacter.finiteConductor_dvd_finitePart_iff 𝔫).mpr
     (χ.conductorExponent_le_exponent_of_residueCharacter_eq_one hdvd htriv)
@@ -459,10 +456,16 @@ theorem finiteConductor_dvd_iff_residueCharacter_eq_one (χ : Grossencharacter K
   have hI0 : I ≠ ⊥ := fun hbot ↦ 𝔪.finitePart_ne_bot (by
     obtain ⟨J, hJ⟩ := hI
     rw [hJ, hbot, Ideal.bot_mul])
+  have hfac (u : (𝓞 K ⧸ 𝔪.finitePart)ˣ) :
+      finiteUnitsMap (𝔪 := (⟨I, hI0, ∅⟩ : Modulus K)) (𝔫 := 𝔪) hI u = 1 ↔
+        Ideal.Quotient.factor (Ideal.le_of_dvd hI) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1 := by
+    rw [Units.ext_iff, coe_finiteUnitsMap, Units.val_one]
   exact ⟨fun hcond u hu ↦
-      χ.residueCharacter_eq_one_of_finiteConductor_dvd (𝔫 := ⟨I, hI0, ∅⟩) hI hcond u hu,
+      χ.residueCharacter_eq_one_of_finiteConductor_dvd (𝔫 := ⟨I, hI0, ∅⟩) hI hcond u
+        ((hfac u).mpr hu),
     fun htriv ↦
-      χ.finiteConductor_dvd_of_residueCharacter_eq_one (𝔫 := ⟨I, hI0, ∅⟩) hI htriv⟩
+      χ.finiteConductor_dvd_of_residueCharacter_eq_one (𝔫 := ⟨I, hI0, ∅⟩) hI
+        fun u hu ↦ htriv u ((hfac u).mp hu)⟩
 
 /-- **Primitivity of `residueCharacter` at the finite conductor.** When `𝔪.finitePart` equals
 the finite conductor of `χ.toHeckeCharacter`, `χ.residueCharacter` does not factor through any
@@ -677,7 +680,11 @@ open scoped Classical in
 by `0` at `0` and outside `primeToSubgroup 𝔪`. It is not multiplicative on `K` in general, though at
 unit finite modulus (`𝔪.finitePart = ⊤`) `primeToSubgroup 𝔪 = ⊤` and `finiteCharacterK = 1`, so
 `finiteCharacterK'` is `1` off `0` and hence multiplicative. It restricts to `finiteCharacter` on
-`𝓞 K` (`finiteCharacterK'_algebraMap`) and evaluates the coefficients of fractional ideals. -/
+`𝓞 K` (`finiteCharacterK'_algebraMap`) and evaluates coefficients on field elements, including
+lattice points in fractional ideals; it depends on the chosen element rather than just the ideal
+it generates, transforming under a change of generator by a unit `u : (𝓞 K)ˣ` via
+`χ.finiteCharacterK' (algebraMap (𝓞 K) K u * x) = χ.finiteCharacter u * χ.finiteCharacterK' x`
+(`finiteCharacterK'_mul_unit`, and more generally `finiteCharacterK'_mul_of_mem_left`). -/
 def finiteCharacterK' (χ : Grossencharacter K 𝔪) (x : K) : ℂ :=
   if h : x = 0 then 0 else
     if hx : Units.mk0 x h ∈ primeToSubgroup 𝔪 then

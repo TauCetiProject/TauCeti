@@ -304,6 +304,25 @@ theorem InfinitePlace.filter_mk_eq_of_isReal {w : InfinitePlace K} (hw : w.IsRea
   rw [InfinitePlace.filter_mk_eq, InfinitePlace.conjugate_embedding_eq_of_isReal hw,
     Finset.pair_eq_singleton]
 
+omit [NumberField K] in
+open scoped Classical in
+/-- Reindex a product over a finset of real places containing the support of `f` to a product over
+all infinite places extended by `1` at complex places. -/
+theorem InfinitePlace.prod_real_dite_eq_of_subset [Fintype (InfinitePlace K)]
+    {M : Type*} [CommMonoid M]
+    (S : Finset {w : InfinitePlace K // w.IsReal}) (f : {w : InfinitePlace K // w.IsReal} → M)
+    (hS : ∀ w : {w : InfinitePlace K // w.IsReal}, f w ≠ 1 → w ∈ S) :
+    (∏ w ∈ S, f w) = ∏ w : InfinitePlace K, if hw : w.IsReal then f ⟨w, hw⟩ else 1 := by
+  symm
+  rw [Finset.prod_dite, Finset.prod_const_one, mul_one]
+  refine (Finset.prod_bij_ne_one
+    (fun w _ _ ↦ ⟨w.val, Finset.mem_filter.mpr ⟨Finset.mem_univ _, w.property⟩⟩)
+    (fun _ _ _ ↦ Finset.mem_univ _)
+    (fun _ _ _ _ _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
+    (fun w _ hne ↦ ⟨⟨w.val, (Finset.mem_filter.mp w.property).2⟩,
+      hS _ hne, fun h ↦ hne h, rfl⟩)
+    (fun _ _ _ ↦ rfl)).symm
+
 end NumberField
 
 /-- The real embedding of the restriction of a real place `w` along `f` is the real embedding of

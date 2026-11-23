@@ -242,11 +242,11 @@ theorem conductorExponent_eq_zero_iff (χ : HeckeCharacter K) (v : HeightOneSpec
   rw [← Nat.le_zero, conductorExponent_le_iff]
 
 /-- Shrinking a product of local finite components along `S ⊆ T` when `χ` is unramified at all
-primes in `T \ S` and `x` is a local unit at all primes of `T`. -/
+primes in `T \ S` and `x` is a local unit at all primes in `T \ S`. -/
 theorem prod_finiteComponent_eq_of_subset (χ : HeckeCharacter K)
     {S T : Finset (HeightOneSpectrum (𝓞 K))} (hST : S ⊆ T)
     (hzero : ∀ v ∈ T, v ∉ S → χ.conductorExponent v = 0)
-    {x : Kˣ} (hx : ∀ v ∈ T, v.valuation K (x : K) = 1) :
+    {x : Kˣ} (hx : ∀ v ∈ T, v ∉ S → v.valuation K (x : K) = 1) :
     (∏ v ∈ T,
         χ.finiteComponent v
           (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x)) =
@@ -257,7 +257,7 @@ theorem prod_finiteComponent_eq_of_subset (χ : HeckeCharacter K)
   have hmem : Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x ∈
       TauCeti.unitFiltration (v.adicCompletion K) (χ.conductorExponent v) := by
     rw [hzero v hvT hvS]
-    exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff x).mpr (hx v hvT)
+    exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff x).mpr (hx v hvT hvS)
   exact χ.finiteComponent_eq_one_of_mem_unitFiltration hmem
 
 /-- **One modulus bounds every conductor exponent.** -/
@@ -439,7 +439,7 @@ theorem finiteConductor_dvd_finitePart_iff (χ : HeckeCharacter K) (𝔪 : Modul
   exact (Ideal.dvd_iff_le.mp (𝔪.pow_exponent_dvd_finitePart v)).trans
     (Ideal.pow_le_pow_right (h v))
 
-/-- **A Hecke character vanishes on purely finite congruence ideles modulo any multiple of its
+/-- **A Hecke character is trivial on purely finite congruence ideles modulo any multiple of its
 finite conductor**: if `y ∈ ideleCongruenceSubgroup 𝔫` has trivial archimedean coordinates and
 `χ.finiteConductor ∣ 𝔫.finitePart`, then `χ y = 1`. -/
 theorem eq_one_of_finiteConductor_dvd_finitePart (χ : HeckeCharacter K) {𝔫 : Modulus K}
@@ -454,6 +454,25 @@ theorem eq_one_of_finiteConductor_dvd_finitePart (χ : HeckeCharacter K) {𝔫 :
   have hsplit := IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele y
   simp only [hw, map_one, Finset.prod_const_one, one_mul] at hsplit
   rwa [hsplit] at hfinite
+
+/-- Congruence to `1` modulo the finite conductor trivializes the local finite components at the
+conductor primes: the local component of `χ` at such a prime takes value `1` on `x`. -/
+theorem finiteComponent_unitsMap_eq_one_of_isCongrOne
+    (χ : HeckeCharacter K) (x : Kˣ)
+    (hx : IsCongrOne ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ x)
+    (v : HeightOneSpectrum (𝓞 K))
+    (hv : v ∈ (⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ : Modulus K).support) :
+    χ.finiteComponent v (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x) = 1 := by
+  classical
+  let 𝔣 : Modulus K := ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩
+  refine χ.finiteComponent_eq_one_of_mem_unitFiltration ?_
+  have hdvd : v.asIdeal ∣ 𝔣.finitePart := (𝔣.mem_support_iff v).mp hv
+  have he : χ.conductorExponent v = 𝔣.exponent v := by
+    rw [Modulus.exponent_def]
+    exact (χ.count_finiteConductor v).symm
+  rw [he]
+  exact (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔣.exponent v) x).mpr
+    ⟨hx.valuation_eq_one hdvd, hx.valuation_sub_one_le hdvd⟩
 
 /-! ### Agreement with the conductor of a finite-order character -/
 

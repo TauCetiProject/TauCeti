@@ -202,23 +202,6 @@ theorem coe_infiniteComponent_complex (χ : HeckeCharacter K)
     coe_complexUnitsCharacter_intCast (n w.val.embedding)
       (n (ComplexEmbedding.conjugate w.val.embedding)) (Units.map w.val.embedding.toMonoidHom x)
 
-open scoped Classical in
-/-- Reindex a product over a finset of real places containing the support of `f` to a product over
-all infinite places extended by `1` at complex places. -/
-private theorem prod_real_dite_eq_of_subset {M : Type*} [CommMonoid M]
-    (S : Finset {w : InfinitePlace K // w.IsReal}) (f : {w : InfinitePlace K // w.IsReal} → M)
-    (hS : ∀ w : {w : InfinitePlace K // w.IsReal}, f w ≠ 1 → w ∈ S) :
-    (∏ w ∈ S, f w) = ∏ w : InfinitePlace K, if hw : w.IsReal then f ⟨w, hw⟩ else 1 := by
-  symm
-  rw [Finset.prod_dite, Finset.prod_const_one, mul_one]
-  refine (Finset.prod_bij_ne_one
-    (fun w _ _ ↦ ⟨w.val, Finset.mem_filter.mpr ⟨Finset.mem_univ _, w.property⟩⟩)
-    (fun _ _ _ ↦ Finset.mem_univ _)
-    (fun _ _ _ _ _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
-    (fun w _ hne ↦ ⟨⟨w.val, (Finset.mem_filter.mp w.property).2⟩,
-      hS _ hne, fun h ↦ hne h, rfl⟩)
-    (fun _ _ _ ↦ rfl)).symm
-
 /-- For every `x : Kˣ`, the product of the infinite components of `χ` equals the embedding
 monomial of a matching algebraic infinity type `n` multiplied by the real sign twists
 `sgn(τ_w x) ^ (χ.realParity w - n_w)` over any finset `S` of real places containing all real
@@ -255,7 +238,7 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign (χ : HeckeCha
             (e ⟨w, hw⟩).val
         else 1 := by
     simp_rw [he_eq]
-    refine prod_real_dite_eq_of_subset (M := ℂ) S _ fun w hne ↦ hS w fun hpar ↦ hne ?_
+    refine InfinitePlace.prod_real_dite_eq_of_subset (M := ℂ) S _ fun w hne ↦ hS w fun hpar ↦ hne ?_
     have he0 : e w = 0 := by rw [← he_eq, hpar, sub_self]
     simp [he0]
   rw [AlgebraicInfinityType.coe_embeddingCharacter_apply, hsign,

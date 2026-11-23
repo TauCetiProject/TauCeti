@@ -40,10 +40,6 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-private theorem valued_sub_le_max {L : Type*} [Field L] [Valued L ℤᵐ⁰] (a b c : L) :
-    Valued.v (a - c) ≤ max (Valued.v (a - b)) (Valued.v (b - c)) :=
-  sub_add_sub_cancel a b c ▸ Valuation.map_add Valued.v (a - b) (b - c)
-
 private theorem exists_fieldUnit_approx_localUnit {𝔪 : Modulus K}
     {v₀ : HeightOneSpectrum (𝓞 K)} (hv₀ : v₀ ∈ 𝔪.support) (z : (v₀.adicCompletion K)ˣ) :
     ∃ x : Kˣ,
@@ -62,8 +58,10 @@ private theorem exists_fieldUnit_approx_localUnit {𝔪 : Modulus K}
       algebraMap K (v₀.adicCompletion K) a₀) < WithZero.exp (-(𝔪.exponent v₀ : ℤ)) := by
     rw [← map_sub, valued_algebraMap_adicCompletion]
     simpa using hxf v₀ hv₀
-  refine ⟨x, (valued_sub_le_max _ (algebraMap K (v₀.adicCompletion K) a₀) _).trans_lt
-      (max_lt hxa ha₀), fun v hv hne ↦ by simpa [hne] using hxf v hv⟩
+  refine ⟨x, ?_, fun v hv hne ↦ by simpa [hne] using hxf v hv⟩
+  rw [← sub_add_sub_cancel (algebraMap K (v₀.adicCompletion K) (x : K))
+    (algebraMap K (v₀.adicCompletion K) a₀) (z : v₀.adicCompletion K)]
+  exact Valuation.map_add_lt Valued.v hxa ha₀
 
 /-- Given a prime `v₀ ∈ 𝔪.support` and a local unit `z ∈ U(K_{v₀}, k)` with `k ≤ 𝔪.exponent v₀`,
 there is a nonzero global element `x ∈ primeToSubgroup 𝔪`, a local unit at every prime dividing
@@ -105,8 +103,21 @@ theorem exists_primeToSubgroup_approx_localUnit {𝔪 : Modulus K} {v₀ : Heigh
       rw [Valuation.map_eq_of_sub_lt _ hlt, map_one]
   have hxz_filt :
       Units.map (algebraMap K (v₀.adicCompletion K)).toMonoidHom x * z⁻¹ ∈
-        TauCeti.unitFiltration (v₀.adicCompletion K) (𝔪.exponent v₀) :=
-    v₀.mul_inv_mem_unitFiltration_of_sub_lt hz_mem.1 (by simpa using hxz)
+        TauCeti.unitFiltration (v₀.adicCompletion K) (𝔪.exponent v₀) := by
+    obtain ⟨πu, hπu⟩ := TauCeti.exists_isUniformizer (v₀.adicCompletion K)
+    obtain ⟨π, hπ, hπ_coe⟩ := (TauCeti.isUniformizer_iff_exists_irreducible _ _).mp hπu
+    have hπ_val : Valued.v (π : v₀.adicCompletion K) ^ 𝔪.exponent v₀ =
+        WithZero.exp (-(𝔪.exponent v₀ : ℤ)) := by
+      have h1 : Valued.v (π : v₀.adicCompletion K) = WithZero.exp (-1) := by
+        rw [hπ_coe]
+        exact v₀.isUniformizer_iff_valued_eq_exp_neg_one.mp hπu
+      rw [h1, ← WithZero.exp_nsmul, smul_neg, nsmul_one]
+    have hequiv := ValuativeRel.isEquiv (ValuativeRel.valuation (v₀.adicCompletion K))
+      (Valued.v : Valuation (v₀.adicCompletion K) ℤᵐ⁰)
+    refine TauCeti.mul_inv_mem_unitFiltration_of_valuation_sub_lt hπ
+      (hequiv.eq_one_iff_eq_one.mpr hz_mem.1) ?_
+    rw [← map_pow, hequiv.lt_iff_lt, map_pow, hπ_val]
+    simpa using hxz
   have hx_filt :
       Units.map (algebraMap K (v₀.adicCompletion K)).toMonoidHom x ∈
         TauCeti.unitFiltration (v₀.adicCompletion K) k := by

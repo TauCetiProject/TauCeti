@@ -278,6 +278,6 @@ theorem finiteUnitsMap_residueHom_eq_one_iff {𝔪 𝔫 : Modulus K}
       ∀ v : HeightOneSpectrum (𝓞 K), v.asIdeal ∣ 𝔪.finitePart →
         v.valuation K (((x : Kˣ) : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ)) := by
   rw [finiteUnitsMap_residueHom, Units.ext_iff, coe_residueHom, Units.val_one, residue_eq_one_iff]
-  rfl
+  simp only [Subgroup.coe_inclusion]
 
 end TauCeti.GlobalNumberFields
