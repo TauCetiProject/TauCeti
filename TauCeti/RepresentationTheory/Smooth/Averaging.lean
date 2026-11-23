@@ -9,7 +9,9 @@ public import Mathlib.RepresentationTheory.Coinvariants
 public import TauCeti.RepresentationTheory.Smooth.Basic
 public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.UnitProOrder
+import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.RepresentationTheory.Invariants
+import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
 # The averaging projector onto the invariants of a compact group
@@ -67,51 +69,29 @@ section Formula
 
 variable (σ : Representation A K V)
 
-/-- For `v` fixed by `H`, `σ k v` depends only on the coset `k H`. -/
-private theorem apply_out_eq {H : Subgroup K} {v : V} (hv : H ≤ σ.stabilizer v) {k : K}
-    {q : K ⧸ H} (hq : (k : K ⧸ H) = q) : σ q.out v = σ k v := by
-  subst hq
-  obtain ⟨h, hh⟩ := QuotientGroup.mk_out_eq_mul H k
-  rw [hh, map_mul, mul_apply_eq_comp, mem_stabilizer.1 (hv h.property)]
-
-/-- Summing over the cosets of a smaller subgroup multiplies the sum by the relative index. -/
-private theorem finsum_out_of_le {H H' : Subgroup K} (hle : H' ≤ H) [Finite (K ⧸ H')] {v : V}
-    (hv : H ≤ σ.stabilizer v) :
-    ∑ᶠ q : K ⧸ H', σ q.out v = H'.relIndex H • ∑ᶠ q : K ⧸ H, σ q.out v := by
-  classical
-  let e := Subgroup.quotientEquivProdOfLE hle
-  have : Finite (K ⧸ H) := Finite.of_surjective (Prod.fst ∘ e) <|
-    Prod.fst_surjective.comp e.surjective
-  have : Finite (H ⧸ H'.subgroupOf H) := Finite.of_surjective (Prod.snd ∘ e) <|
-    Prod.snd_surjective.comp e.surjective
-  let _ := Fintype.ofFinite (K ⧸ H')
-  let _ := Fintype.ofFinite (K ⧸ H)
-  let _ := Fintype.ofFinite (H ⧸ H'.subgroupOf H)
-  have key (x : (K ⧸ H) × (H ⧸ H'.subgroupOf H)) : σ (e.symm x).out v = σ x.1.out v := by
-    refine (apply_out_eq σ hv ?_).symm
-    have h2 : ((e.symm x).out : K ⧸ H) = (e (e.symm x)).1 := by
-      conv_rhs => rw [← QuotientGroup.out_eq' (e.symm x)]
-      rfl
-    rw [h2, e.apply_symm_apply]
-  rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype, ← e.symm.sum_comp,
-    Fintype.sum_prod_type]
-  simp only [key, Finset.sum_const, Finset.card_univ, Finset.smul_sum]
-  rw [Subgroup.relIndex, Subgroup.index, Nat.card_eq_fintype_card]
-
 /-- The averaging formula over the cosets of `H` does not change when `H` is replaced by a smaller
-subgroup of finite index invertible in `A`. -/
+subgroup of finite index invertible in `A`: by `Subgroup.sum_out_smul_eq_relIndex_nsmul`, the sum
+over the cosets of `H'` is `[H : H']` times the sum over the cosets of `H`. -/
 private theorem smul_finsum_out_of_le {H H' : Subgroup K} (hle : H' ≤ H) [Finite (K ⧸ H')]
     (hu : IsUnit (H'.index : A)) {v : V} (hv : H ≤ σ.stabilizer v) :
     Ring.inverse (H'.index : A) • ∑ᶠ q : K ⧸ H', σ q.out v =
       Ring.inverse (H.index : A) • ∑ᶠ q : K ⧸ H, σ q.out v := by
-  rw [finsum_out_of_le σ hle hv, ← Subgroup.relIndex_mul_index hle, Nat.cast_mul] at *
-  obtain ⟨hr, hi⟩ := IsUnit.mul_iff.1 hu
+  have : H'.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  have : H.FiniteIndex := Subgroup.finiteIndex_of_le hle
+  let _ : SemigroupAction K V :=
+    { smul := fun k x ↦ σ k x
+      mul_smul := fun a b x ↦ show σ (a * b) x = σ a (σ b x) by rw [map_mul]; rfl }
+  let _ := Subgroup.fintypeQuotientOfFiniteIndex (H := H')
+  let _ := Subgroup.fintypeQuotientOfFiniteIndex (H := H)
+  have htower : ∑ᶠ q : K ⧸ H', σ q.out v = H'.relIndex H • ∑ᶠ q : K ⧸ H, σ q.out v := by
+    rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype]
+    exact Subgroup.sum_out_smul_eq_relIndex_nsmul hle fun h hh ↦ mem_stabilizer.1 (hv hh)
+  rw [htower]
+  rw [← Subgroup.relIndex_mul_index hle, Nat.cast_mul] at hu ⊢
+  have hr := (IsUnit.mul_iff.1 hu).1
   rw [← Nat.cast_smul_eq_nsmul A, smul_smul]
   congr 1
-  obtain ⟨r, hr⟩ := hr
-  obtain ⟨i, hi⟩ := hi
-  rw [← hr, ← hi, ← Units.val_mul, Ring.inverse_unit, Ring.inverse_unit, mul_comm r i,
-    mul_inv_rev, Units.val_mul, mul_assoc, mul_left_comm, Units.inv_mul, mul_one]
+  rw [Ring.inverse_mul (Or.inl hr), Ring.inverse_mul_cancel_right _ _ hr]
 
 /-- The sum over the orbit of `v` is the sum over the cosets of its stabilizer. -/
 private theorem finsum_mem_range_eq (v : V) :
@@ -192,29 +172,18 @@ theorem smoothAverage_apply_mem_invariants (v : V) : σ.smoothAverage hK v ∈ i
   have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
   have := (σ.stabilizer v).quotient_finite_of_isOpen hH
   let _ := Fintype.ofFinite (K ⧸ σ.stabilizer v)
-  rw [smoothAverage_apply_of_le σ hK hH le_rfl, map_smul, finsum_eq_sum_of_fintype, map_sum]
-  congr 1
-  refine Fintype.sum_equiv (MulAction.toPerm k) _ _ fun q ↦ ?_
-  rw [← mul_apply_eq_comp, ← map_mul]
-  refine (apply_out_eq σ le_rfl ?_).symm
-  rw [← smul_eq_mul, MulAction.Quotient.mk_smul_out, MulAction.toPerm_apply]
-
-omit [TopologicalSpace K] [SeparatelyContinuousMul K] [CompactSpace K] [IsSmooth σ] in
-/-- For an invariant vector, the sum over the cosets of `H` is `[K : H]` copies of the vector. -/
-private theorem finsum_out_of_mem_invariants {H : Subgroup K} [Finite (K ⧸ H)] {v : V}
-    (hv : v ∈ invariants σ) : ∑ᶠ q : K ⧸ H, σ q.out v = H.index • v := by
-  let _ := Fintype.ofFinite (K ⧸ H)
-  simp only [finsum_eq_sum_of_fintype, hv _, Finset.sum_const, Finset.card_univ,
-    Subgroup.index, Nat.card_eq_fintype_card]
+  rw [smoothAverage_apply_of_le σ hK hH le_rfl, map_smul, finsum_eq_sum_of_fintype,
+    ← relNorm_apply, relNorm_apply_eq_self σ (fun h ↦ mem_stabilizer.1 h.property) k]
 
 /-- The averaging projector fixes the invariant vectors. -/
 theorem smoothAverage_apply_of_mem_invariants {v : V} (hv : v ∈ invariants σ) :
     σ.smoothAverage hK v = v := by
   have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
   have := (σ.stabilizer v).quotient_finite_of_isOpen hH
-  rw [smoothAverage_apply_of_le σ hK hH le_rfl, finsum_out_of_mem_invariants σ hv,
-    ← Nat.cast_smul_eq_nsmul A, smul_smul, Ring.inverse_mul_cancel _ (hK.isUnit_index hH),
-    one_smul]
+  let _ := Fintype.ofFinite (K ⧸ σ.stabilizer v)
+  rw [smoothAverage_apply_of_le σ hK hH le_rfl, finsum_eq_sum_of_fintype, ← relNorm_apply,
+    relNorm_apply_of_forall_apply_eq σ hv, ← Nat.cast_smul_eq_nsmul A, smul_smul,
+    Ring.inverse_mul_cancel _ (hK.isUnit_index hH), one_smul]
 
 /-- The averaging projector is a projection onto the invariants. -/
 theorem isProj_smoothAverage : LinearMap.IsProj (invariants σ) (σ.smoothAverage hK) :=
