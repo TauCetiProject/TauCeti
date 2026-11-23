@@ -26,10 +26,10 @@ holds in every dimension `n ≥ 2`.
 
 This is the higher-dimensional analogue of Riemann's removable singularity theorem
 `Complex.differentiableOn_update_limUnder_of_isLittleO`. Combined with the Kelvin transform
-(`TauCeti.harmonicOnNhd_update_kelvinTransform`), removable singularities show that a harmonic function `f` on an
-exterior region `‖x‖ > R` for which `‖x‖ ^ (n - 2) f(x)` has a limit at infinity is the Kelvin
-transform of a function harmonic on a full ball about the origin; this is how a harmonically flat
-end is closed off by adding a point at infinity.
+(`TauCeti.harmonicOnNhd_update_kelvinTransform`), removable singularities show that a harmonic
+function `f` on an exterior region `‖x‖ > R` for which `‖x‖ ^ (n - 2) f(x)` has a limit at
+infinity is the Kelvin transform of a function harmonic on a full ball about the origin; this is
+how a harmonically flat end is closed off by adding a point at infinity.
 
 ## The argument
 
