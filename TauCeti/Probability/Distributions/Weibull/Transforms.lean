@@ -8,8 +8,8 @@ module
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Distributions.Weibull.Basic
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.MeasureTheory.Integral.Exp.PowerLaplace
 import TauCeti.Probability.Distributions.Exponential.Basic
 import TauCeti.Probability.Moments.IntegrableExpMul
 
@@ -305,89 +305,50 @@ theorem hasSum_mgf_id_weibullMeasure_of_one_lt (hk : 1 < k) (hlam : 0 < lam) (t 
     HasSum (fun n : ℕ =>
       (t * lam) ^ n * Real.Gamma (1 + (n : ℝ) / k) / n.factorial)
       (mgf id (weibullMeasure k lam) t) := by
-  have hk0 : 0 < k := zero_lt_one.trans hk
-  have hb_pos : 0 < (lam ^ k)⁻¹ := inv_pos.mpr (Real.rpow_pos_of_pos hlam k)
-  have hmgf :
-      mgf id (weibullMeasure k lam) t =
-        (k / lam ^ k) *
-          ∫ x in Ioi (0 : ℝ), x ^ (k - 1) * Real.exp (t * x - (lam ^ k)⁻¹ * x ^ k) := by
-    rw [mgf, integral_weibullMeasure_eq]
-    calc
-      ∫ x, weibullPDFReal k lam x • Real.exp (t * id x)
-          = ∫ x in Ioi (0 : ℝ), weibullPDFReal k lam x * Real.exp (t * x) := by
-            rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioi 0)]
-            · simp only [smul_eq_mul, id_eq]
-            · intro x hx
-              simp [weibullPDFReal_of_nonpos (not_lt.mp hx)]
-      _ = ∫ x in Ioi (0 : ℝ),
-            (k / lam ^ k) * (x ^ (k - 1) * Real.exp (t * x - (lam ^ k)⁻¹ * x ^ k)) := by
-          refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) => ?_
-          rw [weibullPDFReal_of_pos hk0 hlam hx, Real.div_rpow hx.le hlam.le,
-            Real.div_rpow hx.le hlam.le, Real.rpow_sub_one hlam.ne',
-            show t * x - (lam ^ k)⁻¹ * x ^ k = -(x ^ k / lam ^ k) + t * x by ring,
-            Real.exp_add]
-          field_simp [hlam.ne']
-      _ = (k / lam ^ k) *
-            ∫ x in Ioi (0 : ℝ), x ^ (k - 1) * Real.exp (t * x - (lam ^ k)⁻¹ * x ^ k) :=
-          integral_const_mul _ _
-  have hre_b : 0 < ((((lam ^ k)⁻¹ : ℝ) : ℂ)).re := by simpa using hb_pos
-  have hre_s : -1 < (((k - 1 : ℝ) : ℂ)).re := by
-    rw [Complex.ofReal_re]
-    linarith
-  have hsum :=
-    (hasSum_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := k)
-      (b := (((lam ^ k)⁻¹ : ℝ) : ℂ)) (s := ((k - 1 : ℝ) : ℂ)) hk hre_b hre_s (t : ℂ)).mul_left
-      ((k / lam ^ k : ℝ) : ℂ)
-  have hint_eq :
-      ((k / lam ^ k : ℝ) : ℂ) *
-          ∫ x in Ioi (0 : ℝ),
-            (x : ℂ) ^ ((k - 1 : ℝ) : ℂ) *
-              Complex.exp ((t : ℂ) * x - (((lam ^ k)⁻¹ : ℝ) : ℂ) * (x : ℂ) ^ (k : ℂ)) =
-        (mgf id (weibullMeasure k lam) t : ℂ) := by
-    have hcongr :
-        ∫ x in Ioi (0 : ℝ),
-            (x : ℂ) ^ ((k - 1 : ℝ) : ℂ) *
-              Complex.exp ((t : ℂ) * x - (((lam ^ k)⁻¹ : ℝ) : ℂ) * (x : ℂ) ^ (k : ℂ)) =
-          ∫ x in Ioi (0 : ℝ),
-            ((x ^ (k - 1) * Real.exp (t * x - (lam ^ k)⁻¹ * x ^ k) : ℝ) : ℂ) := by
-      refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) => ?_
-      rw [← Complex.ofReal_cpow hx.le, ← Complex.ofReal_cpow hx.le]
-      push_cast
-      rfl
-    rw [hcongr, integral_complex_ofReal, hmgf]
-    push_cast
-    rfl
+  let F : ℕ → ℝ → ℝ := fun n x => (t * x) ^ n / n.factorial
+  let bound : ℕ → ℝ → ℝ := fun n x => ‖F n x‖
+  have hF_meas (n : ℕ) : AEStronglyMeasurable (F n) (weibullMeasure k lam) := by
+    fun_prop
+  have h_bound (n : ℕ) : ∀ᵐ x ∂weibullMeasure k lam, ‖F n x‖ ≤ bound n x :=
+    ae_of_all _ fun _ => le_rfl
+  have h_bound_summable : ∀ᵐ x ∂weibullMeasure k lam, Summable fun n => bound n x :=
+    ae_of_all _ fun x => NormedSpace.norm_expSeries_div_summable (t * x)
+  have hnorm_tsum (x : ℝ) :
+      ∑' n : ℕ, ‖((t * x) ^ n / n.factorial : ℝ)‖ = Real.exp |t * x| := by
+    have h := NormedSpace.expSeries_div_hasSum_exp (|t * x|)
+    rw [Real.exp_eq_exp_ℝ, ← h.tsum_eq]
+    apply tsum_congr
+    intro n
+    simp only [Real.norm_eq_abs, abs_div, abs_pow, abs_mul]
+    have hfac : |(n.factorial : ℝ)| = (n.factorial : ℝ) :=
+      abs_of_nonneg (Nat.cast_nonneg _)
+    rw [hfac]
+  have h_bound_integrable :
+      Integrable (fun x => ∑' n, bound n x) (weibullMeasure k lam) := by
+    refine (integrable_exp_mul_id_weibullMeasure_of_one_lt (lam := lam) hk |t|).congr ?_
+    filter_upwards [ae_pos_weibullMeasure k lam] with x hx
+    simp only [bound, F]
+    rw [hnorm_tsum x]
+    simp only [abs_mul, abs_of_pos hx]
+  have h_lim : ∀ᵐ x ∂weibullMeasure k lam,
+      HasSum (fun n => F n x) (Real.exp (t * x)) :=
+    ae_of_all _ fun x => by
+      simpa only [F, ← Real.exp_eq_exp_ℝ] using
+        NormedSpace.expSeries_div_hasSum_exp (t * x)
+  have h_integral := hasSum_integral_of_dominated_convergence bound hF_meas h_bound
+    h_bound_summable h_bound_integrable h_lim
   have hterm (n : ℕ) :
-      ((k / lam ^ k : ℝ) : ℂ) *
-          ((t : ℂ) ^ n / (n.factorial : ℂ) *
-            ((((lam ^ k)⁻¹ : ℝ) : ℂ) ^ (-(((k - 1 : ℝ) : ℂ) + n + 1) / (k : ℂ)) *
-              (1 / (k : ℂ)) * Complex.Gamma ((((k - 1 : ℝ) : ℂ) + n + 1) / (k : ℂ)))) =
-        (((t * lam) ^ n * Real.Gamma (1 + (n : ℝ) / k) / n.factorial : ℝ) : ℂ) := by
-    have hk_c : (k : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hk0.ne'
-    have hexp : (((k - 1 : ℝ) : ℂ) + n + 1) / (k : ℂ) = ((1 + (n : ℝ) / k : ℝ) : ℂ) := by
-      push_cast
-      field_simp [hk_c]
+      ∫ x, F n x ∂weibullMeasure k lam =
+        (t * lam) ^ n * Real.Gamma (1 + (n : ℝ) / k) / n.factorial := by
+    have hF_term : F n = fun x => t ^ n / n.factorial * x ^ n := by
+      funext x
+      simp only [F, mul_pow]
       ring
-    have hneg_exp :
-        -(((k - 1 : ℝ) : ℂ) + n + 1) / (k : ℂ) = ((-(1 + (n : ℝ) / k) : ℝ) : ℂ) := by
-      rw [neg_div, hexp]
-      push_cast
-      rfl
-    have hpow :
-        ((lam ^ k)⁻¹) ^ (-(1 + (n : ℝ) / k)) = lam ^ k * lam ^ n := by
-      rw [Real.inv_rpow (Real.rpow_nonneg hlam.le k), Real.rpow_neg (Real.rpow_nonneg hlam.le k),
-        inv_inv, ← Real.rpow_mul hlam.le,
-        show k * (1 + (n : ℝ) / k) = k + (n : ℝ) by field_simp [hk0.ne'],
-        Real.rpow_add hlam, Real.rpow_natCast]
-    rw [hneg_exp, hexp, ← Complex.ofReal_cpow hb_pos.le, hpow, Complex.Gamma_ofReal]
-    push_cast
-    rw [mul_pow]
-    have hlamk : ((lam ^ k : ℝ) : ℂ) ≠ 0 :=
-      Complex.ofReal_ne_zero.mpr (Real.rpow_pos_of_pos hlam k).ne'
-    field_simp [hk_c, hlamk]
-  rw [hint_eq] at hsum
-  simpa only [Complex.reCLM_apply, Complex.ofReal_re] using
-    Complex.reCLM.hasSum (hsum.congr_fun fun n => (hterm n).symm)
+    rw [hF_term, integral_const_mul,
+      integral_pow_weibullMeasure (lt_trans zero_lt_one hk) hlam, mul_pow]
+    ring
+  have hout := HasSum.congr_fun h_integral fun n => (hterm n).symm
+  simpa only [mgf, id_eq] using hout
 
 /-- For shape greater than one, the Weibull moment-generating function is the convergent
 Gamma-coefficient series obtained from its raw moments. -/
