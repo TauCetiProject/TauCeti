@@ -76,7 +76,7 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
         have hc_left : ‖c (t * I)‖ = Real.exp (-(A * t ^ 2)) := by
           rw [hc_norm]
           congr 1
-          simp
+          simp only [mul_I_re, mul_I_im, ofReal_re, ofReal_im]
           ring
         rw [hc_left]
         exact (exp_neg_mul_norm_le (by positivity) (by nlinarith) hε hA1' t).trans
@@ -85,15 +85,14 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
       have hc_right : ‖c (1 + t * I)‖ = Real.exp (-(A * (1 + t ^ 2))) := by
         rw [hc_norm]
         congr 1
-        simp
+        simp only [add_re, one_re, mul_I_re, add_im, one_im, mul_I_im, zero_add, ofReal_re,
+          ofReal_im]
         ring
       rw [norm_smul, hc_right]
       exact (exp_neg_mul_norm_le hA (by nlinarith [sq_nonneg t]) hε
         (((le_max_right _ _).trans (le_max_right _ _)).trans_lt hAgt) t).trans
         (le_add_of_nonneg_left (norm_nonneg _)))
-  have hc0 : ‖c ((0 : ℝ) : ℂ)‖ = 1 := by
-    rw [hc_norm]
-    simp
+  have hc0 : ‖c ((0 : ℝ) : ℂ)‖ = 1 := by rw [hc_norm]; simp
   rw [norm_smul, hc0, one_mul] at hbound
   linarith [half_lt_self hε]
 

@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.ExpDecay
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Poisson kernels of the unit vertical strip
@@ -26,8 +27,8 @@ boundary values on `re ζ = 0` and `re ζ = 1` by the two strip Poisson kernels
 
 Evaluating the kernel formulas directly at the boundary points `θ = 0` or `θ = 1` yields zero
 (`TauCeti.stripPoisson₀_zero`, `TauCeti.stripPoisson₀_one`, `TauCeti.stripPoisson₁_zero`,
-`TauCeti.stripPoisson₁_one`). Boundary values are instead recovered as limits `θ → 0⁺` or `θ → 1⁻`,
-through the approximate-identity mass concentration
+`TauCeti.stripPoisson₁_one`). For `stripPoisson₀`, boundary values are instead recovered in the
+limit `ε → 0⁺` through the approximate-identity mass concentration
 (`TauCeti.tendsto_intervalIntegral_stripPoisson₀_nhdsGT`,
 `TauCeti.exists_eps_integral_stripPoisson₀_ge`).
 
@@ -61,13 +62,11 @@ def stripPoisson₁ (θ t : ℝ) : ℝ :=
 
 /-- Defining formula for the left strip Poisson kernel `stripPoisson₀`. -/
 theorem stripPoisson₀_def (θ t : ℝ) :
-    stripPoisson₀ θ t = Real.sin (π * θ) / (2 * (Real.cosh (π * t) - Real.cos (π * θ))) := by
-  rw [stripPoisson₀]
+    stripPoisson₀ θ t = Real.sin (π * θ) / (2 * (Real.cosh (π * t) - Real.cos (π * θ))) := (rfl)
 
 /-- Defining formula for the right strip Poisson kernel `stripPoisson₁`. -/
 theorem stripPoisson₁_def (θ t : ℝ) :
-    stripPoisson₁ θ t = Real.sin (π * θ) / (2 * (Real.cosh (π * t) + Real.cos (π * θ))) := by
-  rw [stripPoisson₁]
+    stripPoisson₁ θ t = Real.sin (π * θ) / (2 * (Real.cosh (π * t) + Real.cos (π * θ))) := (rfl)
 
 @[simp]
 theorem stripPoisson₀_neg (θ t : ℝ) : stripPoisson₀ θ (-t) = stripPoisson₀ θ t := by
@@ -87,13 +86,10 @@ theorem stripPoisson₁_one_sub (θ t : ℝ) : stripPoisson₁ (1 - θ) t = stri
   simpa using (stripPoisson₀_one_sub (1 - θ) t).symm
 
 private theorem stripPoisson₁_eq_stripPoisson₀_one_sub (θ : ℝ) :
-    stripPoisson₁ θ = stripPoisson₀ (1 - θ) :=
-  funext fun t => (stripPoisson₀_one_sub θ t).symm
+    stripPoisson₁ θ = stripPoisson₀ (1 - θ) := funext fun t => (stripPoisson₀_one_sub θ t).symm
 
 private theorem stripPoisson₀_eq_zero_of_sin_eq_zero {θ : ℝ} (h : Real.sin (π * θ) = 0) :
-    stripPoisson₀ θ = 0 := by
-  ext t
-  simp [stripPoisson₀_def, h]
+    stripPoisson₀ θ = 0 := by ext t; simp [stripPoisson₀_def, h]
 
 @[simp]
 theorem stripPoisson₀_zero (t : ℝ) : stripPoisson₀ 0 t = 0 := by simp [stripPoisson₀_def]
@@ -107,9 +103,6 @@ theorem stripPoisson₁_zero (t : ℝ) : stripPoisson₁ 0 t = 0 := by simp [str
 @[simp]
 theorem stripPoisson₁_one (t : ℝ) : stripPoisson₁ 1 t = 0 := by simp [stripPoisson₁_def]
 
-private theorem abs_cos_lt_one_of_sin_ne_zero {x : ℝ} (h : Real.sin x ≠ 0) : |Real.cos x| < 1 :=
-  (sq_lt_one_iff_abs_lt_one _).1 (by nlinarith [Real.sin_sq_add_cos_sq x, sq_pos_of_ne_zero h])
-
 private theorem one_sub_abs_cos_mul_cosh_le {θ : ℝ} (t : ℝ) :
     (1 - |Real.cos (π * θ)|) * Real.cosh (π * t) ≤ Real.cosh (π * t) - Real.cos (π * θ) := by
   have h := mul_nonneg (abs_nonneg (Real.cos (π * θ))) (sub_nonneg.2 (Real.one_le_cosh (π * t)))
@@ -117,13 +110,12 @@ private theorem one_sub_abs_cos_mul_cosh_le {θ : ℝ} (t : ℝ) :
 
 private theorem cosh_sub_cos_pos_of_sin_ne_zero {θ : ℝ} (h : Real.sin (π * θ) ≠ 0) (t : ℝ) :
     0 < Real.cosh (π * t) - Real.cos (π * θ) :=
-  (mul_pos (sub_pos.2 (abs_cos_lt_one_of_sin_ne_zero h)) (Real.cosh_pos _)).trans_le
+  (mul_pos (sub_pos.2 (Real.abs_cos_lt_one_of_sin_ne_zero h)) (Real.cosh_pos _)).trans_le
     (one_sub_abs_cos_mul_cosh_le t)
 
 /-- On the open interval `0 < θ < 1`, the left strip Poisson kernel is strictly positive. -/
 theorem stripPoisson₀_pos {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (t : ℝ) : 0 < stripPoisson₀ θ t := by
-  have hsin : 0 < Real.sin (π * θ) :=
-    Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos hθ.1) (mul_lt_of_lt_one_right pi_pos hθ.2)
+  have hsin : 0 < Real.sin (π * θ) := sin_pi_mul_pos_of_pos_of_lt_one hθ.1 hθ.2
   exact div_pos hsin (mul_pos zero_lt_two (cosh_sub_cos_pos_of_sin_ne_zero hsin.ne' t))
 
 /-- On the open interval `0 < θ < 1`, the right strip Poisson kernel is strictly positive. -/
@@ -144,16 +136,14 @@ theorem stripPoisson₁_nonneg {θ : ℝ} (hθ : θ ∈ Icc 0 1) (t : ℝ) : 0 �
 @[fun_prop]
 theorem continuous_stripPoisson₀ (θ : ℝ) : Continuous (stripPoisson₀ θ) := by
   by_cases h : Real.sin (π * θ) = 0
-  · rw [stripPoisson₀_eq_zero_of_sin_eq_zero h]
-    exact continuous_const
+  · rw [stripPoisson₀_eq_zero_of_sin_eq_zero h]; exact continuous_const
   exact Continuous.div continuous_const (by fun_prop) fun t =>
     (mul_pos zero_lt_two (cosh_sub_cos_pos_of_sin_ne_zero h t)).ne'
 
 /-- For every real `θ`, `t ↦ stripPoisson₁ θ t` is continuous on `ℝ`. -/
 @[fun_prop]
 theorem continuous_stripPoisson₁ (θ : ℝ) : Continuous (stripPoisson₁ θ) := by
-  rw [stripPoisson₁_eq_stripPoisson₀_one_sub]
-  exact continuous_stripPoisson₀ (1 - θ)
+  rw [stripPoisson₁_eq_stripPoisson₀_one_sub]; exact continuous_stripPoisson₀ (1 - θ)
 
 private theorem hasDerivAt_stripPoisson₀_primitive {θ : ℝ} (hsin : Real.sin (π * θ) ≠ 0) (t : ℝ) :
     HasDerivAt
@@ -161,8 +151,8 @@ private theorem hasDerivAt_stripPoisson₀_primitive {θ : ℝ} (hsin : Real.sin
       (stripPoisson₀ θ t) t := by
   have hlin : HasDerivAt (fun s => (Real.exp (π * s) - Real.cos (π * θ)) / Real.sin (π * θ))
       (π * Real.exp (π * t) / Real.sin (π * θ)) t := by
-    have h1 := ((hasDerivAt_id t).const_mul π).exp.sub_const (Real.cos (π * θ))
-    simpa [mul_comm] using h1.div_const (Real.sin (π * θ))
+    simpa [mul_comm] using
+      (((hasDerivAt_id t).const_mul π).exp.sub_const (Real.cos (π * θ))).div_const _
   refine (((Real.hasDerivAt_arctan _).comp t hlin).const_mul π⁻¹).congr_deriv ?_
   have hden : 2 * (Real.cosh (π * t) - Real.cos (π * θ)) = Real.exp (-(π * t)) *
       ((Real.exp (π * t) - Real.cos (π * θ)) ^ 2 + Real.sin (π * θ) ^ 2) := by
@@ -171,52 +161,45 @@ private theorem hasDerivAt_stripPoisson₀_primitive {θ : ℝ} (hsin : Real.sin
     linear_combination -(Real.cos_sq_add_sin_sq (π * θ))
   rw [stripPoisson₀_def, hden, Real.exp_neg]
   have hsq : (Real.exp (π * t) - Real.cos (π * θ)) ^ 2 + Real.sin (π * θ) ^ 2 ≠ 0 := by positivity
-  field_simp [pi_ne_zero, (Real.exp_pos (π * t)).ne', hsin, hsq]
-  ring
+  field_simp [pi_ne_zero, (Real.exp_pos (π * t)).ne', hsin, hsq]; ring
 
 /-- For every real `θ`, the left strip Poisson kernel is integrable on `ℝ`. -/
 theorem integrable_stripPoisson₀ (θ : ℝ) : Integrable (stripPoisson₀ θ) := by
   by_cases hsin : Real.sin (π * θ) = 0
   · simp [stripPoisson₀_eq_zero_of_sin_eq_zero hsin]
-  have hc : 0 < 1 - |Real.cos (π * θ)| := sub_pos.2 (abs_cos_lt_one_of_sin_ne_zero hsin)
+  have hc : 0 < 1 - |Real.cos (π * θ)| := sub_pos.2 (Real.abs_cos_lt_one_of_sin_ne_zero hsin)
   have hIoi : IntegrableOn (stripPoisson₀ θ) (Ioi 0) := by
     refine ((exp_neg_integrableOn_Ioi 0 pi_pos).const_mul
       (|Real.sin (π * θ)| / (1 - |Real.cos (π * θ)|))).mono'
       (continuous_stripPoisson₀ θ).aestronglyMeasurable (ae_of_all _ fun t => ?_)
     have hcosh : Real.exp (π * t) / 2 ≤ Real.cosh (π * t) := by
-      rw [Real.cosh_eq]
-      linarith [Real.exp_pos (-(π * t))]
+      rw [Real.cosh_eq]; linarith [Real.exp_pos (-(π * t))]
     have hden : (1 - |Real.cos (π * θ)|) * Real.exp (π * t) ≤
         2 * (Real.cosh (π * t) - Real.cos (π * θ)) := by
       nlinarith [one_sub_abs_cos_mul_cosh_le (θ := θ) t, hcosh]
     rw [Real.norm_eq_abs, stripPoisson₀_def, abs_div,
       abs_of_pos (mul_pos zero_lt_two (cosh_sub_cos_pos_of_sin_ne_zero hsin t))]
     refine (div_le_div_of_nonneg_left (abs_nonneg _) (mul_pos hc (Real.exp_pos _)) hden).trans_eq ?_
-    rw [neg_mul, Real.exp_neg]
-    field_simp [hc.ne']
+    rw [neg_mul, Real.exp_neg]; field_simp [hc.ne']
   have hIic : IntegrableOn (stripPoisson₀ θ) (Iic 0) := by
     have hpre : (Homeomorph.neg ℝ ⁻¹' Ici (0 : ℝ)) = Iic 0 := by ext t; simp
-    have hIci : IntegrableOn (stripPoisson₀ θ) (Ici 0) :=
-      (integrableOn_Ici_iff_integrableOn_Ioi).2 hIoi
     simpa [hpre, Function.comp_def, stripPoisson₀_neg] using
       ((Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
-        (Homeomorph.neg ℝ).measurableEmbedding (f := stripPoisson₀ θ) (s := Ici 0)).2 hIci
+        (Homeomorph.neg ℝ).measurableEmbedding (f := stripPoisson₀ θ) (s := Ici 0)).2
+        ((integrableOn_Ici_iff_integrableOn_Ioi).2 hIoi)
   exact integrableOn_univ.1 (Iic_union_Ioi (a := (0 : ℝ)) ▸ hIic.union hIoi)
 
 /-- For every real `θ`, the right strip Poisson kernel is integrable on `ℝ`. -/
 theorem integrable_stripPoisson₁ (θ : ℝ) : Integrable (stripPoisson₁ θ) := by
-  rw [stripPoisson₁_eq_stripPoisson₀_one_sub]
-  exact integrable_stripPoisson₀ (1 - θ)
+  rw [stripPoisson₁_eq_stripPoisson₀_one_sub]; exact integrable_stripPoisson₀ (1 - θ)
 
-private theorem inv_pi_mul_pi_div_two : π⁻¹ * (π / 2) = (2⁻¹ : ℝ) := by
-  field_simp [pi_ne_zero]
+private theorem inv_pi_mul_pi_div_two : π⁻¹ * (π / 2) = (2⁻¹ : ℝ) := by field_simp [pi_ne_zero]
 
 /-- For `0 < θ ≤ 1`, the left strip Poisson kernel has total integral `1 - θ` on `ℝ`. -/
 theorem integral_stripPoisson₀ {θ : ℝ} (hθ : θ ∈ Ioc 0 1) :
     ∫ t, stripPoisson₀ θ t = 1 - θ := by
   rcases eq_or_lt_of_le hθ.2 with rfl | h1; · simp
-  have hsin : 0 < Real.sin (π * θ) :=
-    Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos hθ.1) (mul_lt_of_lt_one_right pi_pos h1)
+  have hsin : 0 < Real.sin (π * θ) := sin_pi_mul_pos_of_pos_of_lt_one hθ.1 h1
   have htop : Tendsto
       (fun s => π⁻¹ * Real.arctan ((Real.exp (π * s) - Real.cos (π * θ)) / Real.sin (π * θ)))
       atTop (𝓝 (2⁻¹ : ℝ)) := by
@@ -230,9 +213,9 @@ theorem integral_stripPoisson₀ {θ : ℝ} (hθ : θ ∈ Ioc 0 1) :
       (fun s => π⁻¹ * Real.arctan ((Real.exp (π * s) - Real.cos (π * θ)) / Real.sin (π * θ)))
       atBot (𝓝 (θ - 2⁻¹)) := by
     have hexp0 := Real.tendsto_exp_atBot.comp (tendsto_id.const_mul_atBot pi_pos)
-    have htan : -Real.cos (π * θ) / Real.sin (π * θ) = Real.tan (π * θ - π / 2) := by
-      rw [Real.tan_eq_sin_div_cos, Real.sin_sub_pi_div_two, Real.cos_sub_pi_div_two]
     have hval : π⁻¹ * Real.arctan ((0 - Real.cos (π * θ)) / Real.sin (π * θ)) = θ - 2⁻¹ := by
+      have htan : -Real.cos (π * θ) / Real.sin (π * θ) = Real.tan (π * θ - π / 2) := by
+        rw [Real.tan_eq_sin_div_cos, Real.sin_sub_pi_div_two, Real.cos_sub_pi_div_two]
       rw [zero_sub, htan, Real.arctan_tan (by nlinarith [pi_pos, hθ.1]) (by nlinarith [pi_pos, h1])]
       field_simp [pi_ne_zero]
     rw [← hval]
@@ -242,8 +225,7 @@ theorem integral_stripPoisson₀ {θ : ℝ} (hθ : θ ∈ Ioc 0 1) :
   ring
 
 /-- For `0 ≤ θ < 1`, the right strip Poisson kernel has total integral `θ` on `ℝ`. -/
-theorem integral_stripPoisson₁ {θ : ℝ} (hθ : θ ∈ Ico 0 1) :
-    ∫ t, stripPoisson₁ θ t = θ := by
+theorem integral_stripPoisson₁ {θ : ℝ} (hθ : θ ∈ Ico 0 1) : ∫ t, stripPoisson₁ θ t = θ := by
   have hint : ∫ t, stripPoisson₁ θ t = ∫ t, stripPoisson₀ (1 - θ) t := by
     rw [stripPoisson₁_eq_stripPoisson₀_one_sub]
   rw [hint, integral_stripPoisson₀ ⟨sub_pos.2 hθ.2, sub_le_self 1 hθ.1⟩, sub_sub_cancel]
@@ -264,13 +246,11 @@ section StripKernel
 
 /-- The holomorphic right-boundary strip kernel `I / (1 + exp (I π ζ))`, whose real part on
 `0 < re ζ < 1` is `stripPoisson₁ ζ.re ζ.im` (`TauCeti.re_holoPoisson₁`). -/
-def holoPoisson₁ (ζ : ℂ) : ℂ :=
-  I / (1 + Complex.exp (I * π * ζ))
+def holoPoisson₁ (ζ : ℂ) : ℂ := I / (1 + Complex.exp (I * π * ζ))
 
 /-- The holomorphic left-boundary strip kernel `holoPoisson₁ (1 - ζ)`, whose real part on
 `0 < re ζ < 1` is `stripPoisson₀ ζ.re ζ.im` (`TauCeti.re_holoPoisson₀`). -/
-def holoPoisson₀ (ζ : ℂ) : ℂ :=
-  holoPoisson₁ (1 - ζ)
+def holoPoisson₀ (ζ : ℂ) : ℂ := holoPoisson₁ (1 - ζ)
 
 /-- Defining formula for the holomorphic right-boundary strip kernel `holoPoisson₁`. -/
 theorem holoPoisson₁_def (ζ : ℂ) : holoPoisson₁ ζ = I / (1 + Complex.exp (I * π * ζ)) := (rfl)
@@ -279,14 +259,12 @@ theorem holoPoisson₁_def (ζ : ℂ) : holoPoisson₁ ζ = I / (1 + Complex.exp
 theorem holoPoisson₀_def (ζ : ℂ) : holoPoisson₀ ζ = holoPoisson₁ (1 - ζ) := (rfl)
 
 private theorem one_add_exp_I_pi_mul_eq (ζ : ℂ) :
-    1 + Complex.exp (I * π * ζ) =
-      ((1 + Real.exp (-(π * ζ.im)) * Real.cos (π * ζ.re) : ℝ) : ℂ) +
-        ((Real.exp (-(π * ζ.im)) * Real.sin (π * ζ.re) : ℝ) : ℂ) * I := by
+    1 + Complex.exp (I * π * ζ) = ((1 + Real.exp (-(π * ζ.im)) * Real.cos (π * ζ.re) : ℝ) : ℂ) +
+      ((Real.exp (-(π * ζ.im)) * Real.sin (π * ζ.re) : ℝ) : ℂ) * I := by
   have harg : I * π * ζ = ((-(π * ζ.im) : ℝ) : ℂ) + ((π * ζ.re : ℝ) : ℂ) * I := by
     apply Complex.ext <;> simp
   rw [harg, Complex.exp_add_mul_I, ← Complex.ofReal_exp, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
-  push_cast
-  ring
+  push_cast; ring
 
 private theorem normSq_one_add_exp_I_pi_mul (ζ : ℂ) :
     Complex.normSq (1 + Complex.exp (I * π * ζ)) =
@@ -304,14 +282,12 @@ private theorem normSq_one_add_exp_eq_two_mul_cosh_add_cos (ζ : ℂ) :
 
 private theorem one_add_exp_ne_zero {ζ : ℂ} (hζ : ζ ∈ verticalStrip 0 1) :
     1 + Complex.exp (I * π * ζ) ≠ 0 := by
-  have hsin : 0 < Real.sin (π * ζ.re) :=
-    Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos hζ.1) (mul_lt_of_lt_one_right pi_pos hζ.2)
+  have hsin : 0 < Real.sin (π * ζ.re) := sin_pi_mul_pos_of_pos_of_lt_one hζ.1 hζ.2
   exact Complex.normSq_pos.1 (by rw [normSq_one_add_exp_I_pi_mul]; positivity)
 
 /-- The real part of `holoPoisson₁ ζ` is `stripPoisson₁ ζ.re ζ.im`. -/
 @[simp]
-theorem re_holoPoisson₁ (ζ : ℂ) :
-    (holoPoisson₁ ζ).re = stripPoisson₁ ζ.re ζ.im := by
+theorem re_holoPoisson₁ (ζ : ℂ) : (holoPoisson₁ ζ).re = stripPoisson₁ ζ.re ζ.im := by
   rw [holoPoisson₁, Complex.div_re, normSq_one_add_exp_eq_two_mul_cosh_add_cos,
     one_add_exp_I_pi_mul_eq, stripPoisson₁_def]
   simp only [I_re, zero_mul, zero_div, I_im, one_mul, mul_one, zero_add, add_zero, add_im,
@@ -320,10 +296,8 @@ theorem re_holoPoisson₁ (ζ : ℂ) :
 
 /-- The real part of `holoPoisson₀ ζ` is `stripPoisson₀ ζ.re ζ.im`. -/
 @[simp]
-theorem re_holoPoisson₀ (ζ : ℂ) :
-    (holoPoisson₀ ζ).re = stripPoisson₀ ζ.re ζ.im := by
-  rw [holoPoisson₀_def, re_holoPoisson₁]
-  simp [stripPoisson₁_one_sub]
+theorem re_holoPoisson₀ (ζ : ℂ) : (holoPoisson₀ ζ).re = stripPoisson₀ ζ.re ζ.im := by
+  rw [holoPoisson₀_def, re_holoPoisson₁]; simp [stripPoisson₁_one_sub]
 
 private theorem hasDerivAt_holoPoisson₁ {ζ : ℂ} (hζ : ζ ∈ verticalStrip 0 1) :
     HasDerivAt holoPoisson₁
@@ -344,20 +318,19 @@ theorem differentiableOn_holoPoisson₁ : DifferentiableOn ℂ holoPoisson₁ (v
 
 /-- The left-boundary holomorphic strip kernel `holoPoisson₀` is complex-differentiable on the
 open vertical strip `0 < re ζ < 1`. -/
-theorem differentiableOn_holoPoisson₀ : DifferentiableOn ℂ holoPoisson₀ (verticalStrip 0 1) :=
-  show DifferentiableOn ℂ (fun ζ => holoPoisson₁ (1 - ζ)) (verticalStrip 0 1) from
-    differentiableOn_holoPoisson₁.comp
-      ((differentiable_const (1 : ℂ)).sub differentiable_id).differentiableOn
-      fun _ hζ => one_sub_mem_verticalStrip_iff.2 hζ
+theorem differentiableOn_holoPoisson₀ : DifferentiableOn ℂ holoPoisson₀ (verticalStrip 0 1) := by
+  rw [funext holoPoisson₀_def]
+  exact differentiableOn_holoPoisson₁.comp
+    ((differentiable_const (1 : ℂ)).sub differentiable_id).differentiableOn
+    fun _ hζ => one_sub_mem_verticalStrip_iff.2 hζ
 
 private theorem norm_deriv_holoPoisson₁_le {a b : ℝ} (ha : 0 < a) (hb : b < 1) {ζ : ℂ}
     (hζ : ζ.re ∈ Icc a b) :
     ‖(π : ℂ) * Complex.exp (I * π * ζ) / (1 + Complex.exp (I * π * ζ)) ^ 2‖ ≤
       π / (2 * (1 + Real.cos (π * b))) := by
   have hcosb : 0 < 1 + Real.cos (π * b) := by
-    have hlt := abs_cos_lt_one_of_sin_ne_zero
-      (Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos (ha.trans_le (hζ.1.trans hζ.2)))
-        (mul_lt_of_lt_one_right pi_pos hb)).ne'
+    have hlt := Real.abs_cos_lt_one_of_sin_ne_zero
+      (sin_pi_mul_pos_of_pos_of_lt_one (ha.trans_le (hζ.1.trans hζ.2)) hb).ne'
     linarith [neg_abs_le (Real.cos (π * b))]
   have hcos : Real.cos (π * b) ≤ Real.cos (π * ζ.re) :=
     Real.cos_le_cos_of_nonneg_of_le_pi (mul_nonneg pi_pos.le (ha.le.trans hζ.1))
@@ -375,8 +348,7 @@ private theorem norm_deriv_holoPoisson₁_le {a b : ℝ} (ha : 0 < a) (hb : b < 
 private theorem integrable_mul_holoPoisson₁ {u : ℝ → ℝ} (hu : Integrable u) {ζ : ℂ}
     (hζ : ζ ∈ verticalStrip 0 1) :
     Integrable (fun s : ℝ => (u s : ℂ) * holoPoisson₁ (ζ - s * I)) := by
-  have hsin : 0 < Real.sin (π * ζ.re) :=
-    Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos hζ.1) (mul_lt_of_lt_one_right pi_pos hζ.2)
+  have hsin : 0 < Real.sin (π * ζ.re) := sin_pi_mul_pos_of_pos_of_lt_one hζ.1 hζ.2
   have hcont : Continuous fun s : ℝ => holoPoisson₁ (ζ - s * I) :=
     Continuous.div continuous_const (by fun_prop) fun _ =>
       one_add_exp_ne_zero ⟨by simpa using hζ.1, by simpa using hζ.2⟩
@@ -384,10 +356,9 @@ private theorem integrable_mul_holoPoisson₁ {u : ℝ → ℝ} (hu : Integrable
     ((Complex.continuous_ofReal.comp_aestronglyMeasurable hu.aestronglyMeasurable).mul
       hcont.aestronglyMeasurable) (ae_of_all _ fun s => ?_)
   have hden : Real.sin (π * ζ.re) ≤ ‖1 + Complex.exp (I * π * (ζ - s * I))‖ := by
-    have hsq : Real.sin (π * ζ.re) ^ 2 ≤ ‖1 + Complex.exp (I * π * (ζ - s * I))‖ ^ 2 := by
-      rw [← Complex.normSq_eq_norm_sq, normSq_one_add_exp_I_pi_mul]
-      simpa using sq_nonneg (Real.exp (-(π * (ζ - s * I).im)) + Real.cos (π * (ζ - s * I).re))
-    exact le_of_sq_le_sq hsq (norm_nonneg _)
+    refine le_of_sq_le_sq ?_ (norm_nonneg _)
+    rw [← Complex.normSq_eq_norm_sq, normSq_one_add_exp_I_pi_mul]
+    simpa using sq_nonneg (Real.exp (-(π * (ζ - s * I).im)) + Real.cos (π * (ζ - s * I).re))
   rw [norm_mul, Complex.norm_real, holoPoisson₁_def, norm_div, Complex.norm_I, mul_comm]
   exact mul_le_mul_of_nonneg_right (one_div_le_one_div_of_le hsin hden |>.trans_eq (one_div _))
     (norm_nonneg _)
@@ -398,8 +369,7 @@ private theorem integral_holoPoisson₀_eq (u : ℝ → ℝ) (ζ : ℂ) :
   rw [← MeasureTheory.integral_neg_eq_self (fun s : ℝ => (u s : ℂ) * holoPoisson₀ (ζ - s * I))]
   refine integral_congr_ae (ae_of_all _ fun s => ?_)
   dsimp only [holoPoisson₀]
-  have harg : 1 - (ζ - ((-s : ℝ) : ℂ) * I) = (1 - ζ) - (s : ℂ) * I := by push_cast; ring
-  rw [harg]
+  rw [show 1 - (ζ - ((-s : ℝ) : ℂ) * I) = (1 - ζ) - (s : ℂ) * I by push_cast; ring]
 
 /-- Convolving an integrable function `u` with `holoPoisson₁` produces a holomorphic function on
 the open vertical strip `0 < re ζ < 1`. -/
@@ -409,8 +379,7 @@ theorem differentiableOn_integral_holoPoisson₁ {u : ℝ → ℝ} (hu : Integra
   intro ζ₀ hζ₀
   let r := min (ζ₀.re / 2) ((1 - ζ₀.re) / 2)
   have hr : 0 < r := lt_min (half_pos hζ₀.1) (half_pos (sub_pos.2 hζ₀.2))
-  let a := ζ₀.re - r
-  let b := ζ₀.re + r
+  let a := ζ₀.re - r; let b := ζ₀.re + r
   have ha : 0 < a := by grind
   have hb : b < 1 := by grind
   have hmem {ζ : ℂ} (hζ : ζ ∈ ball ζ₀ r) (s : ℝ) : (ζ - s * I).re ∈ Icc a b := by
@@ -426,8 +395,8 @@ theorem differentiableOn_integral_holoPoisson₁ {u : ℝ → ℝ} (hu : Integra
     (F' := fun ζ (s : ℝ) => (u s : ℂ) *
       ((π : ℂ) * Complex.exp (I * π * (ζ - s * I)) / (1 + Complex.exp (I * π * (ζ - s * I))) ^ 2))
     (bound := fun s => |C| * ‖u s‖) (ball_mem_nhds ζ₀ hr) ?_
-    (integrable_mul_holoPoisson₁ hu hζ₀) ?_ ?_
-    (hu.norm.const_mul |C|) ?_).2.differentiableAt.differentiableWithinAt
+    (integrable_mul_holoPoisson₁ hu hζ₀) ?_ ?_ (hu.norm.const_mul |C|) ?_).2
+      |>.differentiableAt.differentiableWithinAt
   · filter_upwards [ball_mem_nhds ζ₀ hr] with ζ hζ
     exact huC.mul (Continuous.div continuous_const (by fun_prop) fun s =>
       one_add_exp_ne_zero
@@ -458,8 +427,7 @@ theorem differentiableOn_integral_holoPoisson₀ {u : ℝ → ℝ} (hu : Integra
 `ζ ∈ verticalStrip 0 1` is the `stripPoisson₁` integral of `u`. -/
 theorem re_integral_holoPoisson₁ {u : ℝ → ℝ} (hu : Integrable u) {ζ : ℂ}
     (hζ : ζ ∈ verticalStrip 0 1) :
-    (∫ s, (u s : ℂ) * holoPoisson₁ (ζ - s * I)).re =
-      ∫ s, u s * stripPoisson₁ ζ.re (ζ.im - s) := by
+    (∫ s, (u s : ℂ) * holoPoisson₁ (ζ - s * I)).re = ∫ s, u s * stripPoisson₁ ζ.re (ζ.im - s) := by
   refine (Complex.reCLM.integral_comp_comm (integrable_mul_holoPoisson₁ hu hζ)).symm.trans
     (integral_congr_ae (ae_of_all _ fun s => ?_))
   simp [re_holoPoisson₁]
@@ -468,12 +436,10 @@ theorem re_integral_holoPoisson₁ {u : ℝ → ℝ} (hu : Integrable u) {ζ : �
 `ζ ∈ verticalStrip 0 1` is the `stripPoisson₀` integral of `u`. -/
 theorem re_integral_holoPoisson₀ {u : ℝ → ℝ} (hu : Integrable u) {ζ : ℂ}
     (hζ : ζ ∈ verticalStrip 0 1) :
-    (∫ s, (u s : ℂ) * holoPoisson₀ (ζ - s * I)).re =
-      ∫ s, u s * stripPoisson₀ ζ.re (ζ.im - s) := by
+    (∫ s, (u s : ℂ) * holoPoisson₀ (ζ - s * I)).re = ∫ s, u s * stripPoisson₀ ζ.re (ζ.im - s) := by
   rw [integral_holoPoisson₀_eq]
-  have hrefl :
-      (∫ s, (u (-s) : ℂ) * holoPoisson₁ ((1 - ζ) - s * I)).re =
-        ∫ s, u (-s) * stripPoisson₁ (1 - ζ).re ((1 - ζ).im - s) := by
+  have hrefl : (∫ s, (u (-s) : ℂ) * holoPoisson₁ ((1 - ζ) - s * I)).re =
+      ∫ s, u (-s) * stripPoisson₁ (1 - ζ).re ((1 - ζ).im - s) := by
     simpa only [Function.comp_apply] using
       re_integral_holoPoisson₁ hu.comp_neg (one_sub_mem_verticalStrip_iff.2 hζ)
   rw [hrefl,
@@ -488,7 +454,7 @@ theorem tendsto_intervalIntegral_stripPoisson₀_nhdsGT {r : ℝ} (hr : 0 < r) :
     Tendsto (fun ε => ∫ y in (-r)..r, stripPoisson₀ ε y) (𝓝[>] 0) (𝓝 1) := by
   have hsin_pos : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < Real.sin (π * ε) := by
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with ε hε
-    exact Real.sin_pos_of_pos_of_lt_pi (mul_pos pi_pos hε.1) (mul_lt_of_lt_one_right pi_pos hε.2)
+    exact sin_pi_mul_pos_of_pos_of_lt_one hε.1 hε.2
   have hinv : Tendsto (fun ε : ℝ => (Real.sin (π * ε))⁻¹) (𝓝[>] 0) atTop :=
     tendsto_inv_nhdsGT_zero.comp (tendsto_nhdsWithin_iff.2
       ⟨by simpa using ((by fun_prop : Continuous fun ε : ℝ => Real.sin (π * ε)).tendsto 0)
@@ -506,15 +472,13 @@ theorem tendsto_intervalIntegral_stripPoisson₀_nhdsGT {r : ℝ} (hr : 0 < r) :
   have hF_bot : Tendsto
       (fun ε => π⁻¹ * Real.arctan ((Real.exp (-(π * r)) - Real.cos (π * ε)) / Real.sin (π * ε)))
       (𝓝[>] 0) (𝓝 (-(2⁻¹ : ℝ))) := by
-    have hneg : -(2⁻¹ : ℝ) = π⁻¹ * -(π / 2) := by rw [← inv_pi_mul_pi_div_two]; ring
-    rw [hneg]
+    rw [show -(2⁻¹ : ℝ) = π⁻¹ * -(π / 2) by rw [← inv_pi_mul_pi_div_two]; ring]
     refine ((Real.tendsto_arctan_atBot.mono_right nhdsWithin_le_nhds).comp
       (tendsto_neg_atTop_iff.1 ?_)).const_mul π⁻¹
     simpa only [div_eq_mul_inv, ← neg_mul, neg_sub] using
       (hcos.sub tendsto_const_nhds).pos_mul_atTop
         (sub_pos.2 (Real.exp_lt_one_iff.2 (neg_neg_of_pos (mul_pos pi_pos hr)))) hinv
-  have hsub : (2⁻¹ : ℝ) - -(2⁻¹ : ℝ) = 1 := by norm_num
-  refine (hsub ▸ hF_top.sub hF_bot).congr' ?_
+  refine ((by norm_num : (2⁻¹ : ℝ) - -(2⁻¹ : ℝ) = 1) ▸ hF_top.sub hF_bot).congr' ?_
   filter_upwards [hsin_pos] with ε hsin
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt
     (fun y _ => hasDerivAt_stripPoisson₀_primitive hsin.ne' y)
@@ -524,8 +488,7 @@ theorem tendsto_intervalIntegral_stripPoisson₀_nhdsGT {r : ℝ} (hr : 0 < r) :
 private theorem mul_le_integral_mul_stripPoisson₀ {u : ℝ → ℝ} (hu : Continuous u)
     (hsupp : HasCompactSupport u) (hunonneg : ∀ s, 0 ≤ u s) {ε c r a b : ℝ} (hε : ε ∈ Ioo 0 1)
     (ha : 0 ≤ a) (hb : b ≤ ∫ s in Icc (c - r) (c + r), stripPoisson₀ ε (c - s))
-    (hpt : ∀ s ∈ Icc (c - r) (c + r), a ≤ u s) :
-    a * b ≤ ∫ s, u s * stripPoisson₀ ε (c - s) := by
+    (hpt : ∀ s ∈ Icc (c - r) (c + r), a ≤ u s) : a * b ≤ ∫ s, u s * stripPoisson₀ ε (c - s) := by
   have hint : Integrable (fun s => u s * stripPoisson₀ ε (c - s)) :=
     (hu.mul ((continuous_stripPoisson₀ ε).comp (continuous_const.sub continuous_id)))
       |>.integrable_of_hasCompactSupport hsupp.mul_right
@@ -536,16 +499,14 @@ private theorem mul_le_integral_mul_stripPoisson₀ {u : ℝ → ℝ} (hu : Cont
           (((integrable_stripPoisson₀ ε).comp_sub_left c).const_mul a).integrableOn
           hint.integrableOn measurableSet_Icc fun s hs =>
             mul_le_mul_of_nonneg_right (hpt s hs) (stripPoisson₀_pos hε (c - s)).le
-    _ ≤ ∫ s, u s * stripPoisson₀ ε (c - s) :=
-        setIntegral_le_integral hint
-          (ae_of_all _ fun s => mul_nonneg (hunonneg s) (stripPoisson₀_pos hε (c - s)).le)
+    _ ≤ ∫ s, u s * stripPoisson₀ ε (c - s) := setIntegral_le_integral hint
+        (ae_of_all _ fun s => mul_nonneg (hunonneg s) (stripPoisson₀_pos hε (c - s)).le)
 
 /-- Approximate identity lower bound of `stripPoisson₀ ε` as `ε → 0⁺`, uniformly at every center
 `t : ℝ`, for a nonnegative compactly supported continuous function. -/
 theorem exists_eps_integral_stripPoisson₀_ge {u : ℝ → ℝ} (hu : Continuous u)
     (hsupp : HasCompactSupport u) (hunonneg : ∀ s, 0 ≤ u s) {κ : ℝ} (hκ : 0 < κ) :
-    ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀, ∀ t : ℝ,
-      u t - κ ≤ ∫ s, u s * stripPoisson₀ ε (t - s) := by
+    ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀, ∀ t : ℝ, u t - κ ≤ ∫ s, u s * stripPoisson₀ ε (t - s) := by
   obtain ⟨M, hM⟩ := hsupp.exists_bound_of_continuous hu
   let U := max M 1
   have hUpos : 0 < U := zero_lt_one.trans_le (le_max_right _ _)
@@ -556,8 +517,7 @@ theorem exists_eps_integral_stripPoisson₀_ge {u : ℝ → ℝ} (hu : Continuou
     ((tendsto_intervalIntegral_stripPoisson₀_nhdsGT (half_pos hηpos)).eventually
       (Ioo_mem_nhds (sub_lt_self 1 hκU) (by norm_num : (1 : ℝ) < 2)))
   refine ⟨min δ₁ (2⁻¹ : ℝ), lt_min hδ₁ (by norm_num), fun ε hε t => ?_⟩
-  have hεI : ε ∈ Ioo (0 : ℝ) 1 :=
-    ⟨hε.1, (hε.2.trans_le (min_le_right _ _)).trans (by norm_num)⟩
+  have hεI : ε ∈ Ioo (0 : ℝ) 1 := ⟨hε.1, (hε.2.trans_le (min_le_right _ _)).trans (by norm_num)⟩
   by_cases hsign : u t - κ / 3 ≤ 0
   · exact (by linarith : u t - κ ≤ 0).trans
       (integral_nonneg fun s => mul_nonneg (hunonneg s) (stripPoisson₀_pos hεI _).le)

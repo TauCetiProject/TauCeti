@@ -18,8 +18,7 @@ evaluations of a vector family with the vector family's `Lᵖ` norm. For constan
 deduce the bound for the image of a family under a map of bounded growth, the norm of a family
 of multiples of one vector (for `p ≠ 0`), and the invariance of the norm under reindexing. For
 `p ≥ 1`, a linear combination `∑ i, s i • v i` with the coordinates of `s` as coefficients has
-norm at most `‖s‖ * ∑ i, ‖v i‖`. We also prove the exact norm identity for pointwise positive
-powers (`PiLp.norm_toLp_rpow_div_of_nonneg`) and measure-free scaling and positive-perturbation
+norm at most `‖s‖ * ∑ i, ‖v i‖`. We also prove measure-free scaling and positive-perturbation
 estimates for finite `Lᵖ` norms.
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
@@ -275,41 +274,6 @@ end PseudoMetricSpace
 
 section Scaling
 
-/-- Exact finite `L^{s / t}` norm of a pointwise positive power `(a i) ^ t` of nonnegative reals
-for `s ≠ 0` and `0 < t`. -/
-theorem norm_toLp_rpow_div_of_nonneg {s : ℝ≥0∞} (hs : s ≠ 0) {t : ℝ} (ht : 0 < t) {a : ι → ℝ}
-    (ha : ∀ i, 0 ≤ a i) :
-    ‖WithLp.toLp (s / ENNReal.ofReal t) (fun i ↦ a i ^ t)‖ = ‖WithLp.toLp s a‖ ^ t := by
-  rcases eq_or_ne s ∞ with rfl | hs_top
-  · rw [ENNReal.top_div_of_ne_top ENNReal.ofReal_ne_top, norm_eq_ciSup, norm_eq_ciSup]
-    simp only [Real.norm_of_nonneg (ha _), Real.norm_of_nonneg (Real.rpow_nonneg (ha _) _)]
-    rcases isEmpty_or_nonempty ι with hι | hι
-    · simp [Real.zero_rpow ht.ne']
-    · obtain ⟨i₀, _, hi₀⟩ := Finset.univ.exists_max_image a Finset.univ_nonempty
-      have hmax₁ : ⨆ i, a i ^ t = a i₀ ^ t :=
-        le_antisymm (ciSup_le fun i ↦ Real.rpow_le_rpow (ha i) (hi₀ i (Finset.mem_univ i)) ht.le)
-          (le_ciSup (f := fun i ↦ a i ^ t) (Set.finite_range _).bddAbove i₀)
-      have hmax₂ : ⨆ i, a i = a i₀ :=
-        le_antisymm (ciSup_le fun i ↦ hi₀ i (Finset.mem_univ i))
-          (le_ciSup (f := a) (Set.finite_range _).bddAbove i₀)
-      rw [hmax₁, hmax₂]
-  · have hs_pos : 0 < s.toReal := ENNReal.toReal_pos hs hs_top
-    have hq_ne_zero : s / ENNReal.ofReal t ≠ 0 := by
-      simp [ENNReal.div_eq_zero_iff, hs]
-    have hq_ne_top : s / ENNReal.ofReal t ≠ ∞ :=
-      ENNReal.div_ne_top hs_top (ENNReal.ofReal_pos.2 ht).ne'
-    have hq_pos : 0 < (s / ENNReal.ofReal t).toReal := ENNReal.toReal_pos hq_ne_zero hq_ne_top
-    have hq_toReal : (s / ENNReal.ofReal t).toReal = s.toReal / t := by
-      rw [ENNReal.toReal_div, ENNReal.toReal_ofReal ht.le]
-    rw [norm_eq_sum hq_pos, norm_eq_sum hs_pos, hq_toReal,
-      ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ by positivity)]
-    have hsum : (∑ i, ‖WithLp.toLp (s / ENNReal.ofReal t) (fun i ↦ a i ^ t) i‖ ^ (s.toReal / t)) =
-        ∑ i, ‖WithLp.toLp s a i‖ ^ s.toReal := by
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      simp only [Real.norm_of_nonneg (ha i), Real.norm_of_nonneg (Real.rpow_nonneg (ha i) _)]
-      rw [← Real.rpow_mul (ha i), mul_div_cancel₀ _ ht.ne']
-    rw [hsum, one_div, one_div, inv_div, div_eq_mul_inv, mul_comm]
-
 /-- Scaling estimate in `PiLp`: if `∑ i, b i ^ qr = B ^ qr` with `B > 0` and `b i > 0`, then
 `‖toLp p (i ↦ B * (b i / B) ^ (qr / p))‖ ≤ B`. -/
 theorem norm_toLp_mul_div_rpow_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {B qr : ℝ} (hB : 0 < B)
@@ -334,8 +298,9 @@ theorem norm_toLp_mul_div_rpow_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {B qr : ℝ}
 /-- Perturbing a vector `v : PiLp q β` over a nonempty finite index type by `ε > 0`, for
 `1 ≤ q < ∞`, gives strictly positive weights `b i > ‖v i‖` whose `ℓ^q` norm `B` satisfies
 `B ≤ ‖v‖ + ε` and `∑ i, b i ^ q.toReal = B ^ q.toReal`. -/
-theorem exists_pos_perturbation [Nonempty ι] {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq_top : q ≠ ∞)
-    {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)] (v : PiLp q β) {ε : ℝ} (hε : 0 < ε) :
+theorem exists_pos_le_norm_add_and_norm_apply_lt_and_sum_rpow_eq [Nonempty ι] {q : ℝ≥0∞}
+    [Fact (1 ≤ q)] (hq_top : q ≠ ∞) {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)]
+    (v : PiLp q β) {ε : ℝ} (hε : 0 < ε) :
     ∃ (b : ι → ℝ) (B : ℝ), 0 < B ∧ B ≤ ‖v‖ + ε ∧ (∀ i, 0 < b i ∧ ‖v i‖ < b i) ∧
       ∑ i, b i ^ q.toReal = B ^ q.toReal := by
   have hq0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top

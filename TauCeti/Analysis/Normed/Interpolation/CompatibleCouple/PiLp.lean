@@ -54,15 +54,17 @@ def piLp (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ :
 theorem piLp_embed₀_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
     (x : PiLp q₀ X₀) (i : ι) :
     (piLp C q₀ q₁).embed₀ x i = (C i).embed₀ (x i) := by
-  dsimp [piLp]
-  rfl
+  simp only [piLp, ContinuousLinearMap.pi_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.proj_apply, ContinuousLinearEquiv.coe_coe,
+    PiLp.continuousLinearEquiv_apply]
 
 @[simp]
 theorem piLp_embed₁_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
     (x : PiLp q₁ X₁) (i : ι) :
     (piLp C q₀ q₁).embed₁ x i = (C i).embed₁ (x i) := by
-  dsimp [piLp]
-  rfl
+  simp only [piLp, ContinuousLinearMap.pi_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.proj_apply, ContinuousLinearEquiv.coe_coe,
+    PiLp.continuousLinearEquiv_apply]
 
 end CoupleDef
 
@@ -77,7 +79,8 @@ variable {X₀ X₁ V : ι → Type*}
 
 /-- Projecting an element of the intersection of `piLp C q₀ q₁` to coordinate `i` commutes with
 the inclusions into the `i`th coordinate sum space. -/
-theorem piLpProj_inter (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
+theorem fstToSum_proj_interFst_eq_sndToSum_proj_interSnd
+    (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
     [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (i : ι) (x : (piLp C q₀ q₁).inter) :
     (C i).fstToSum (PiLp.proj (𝕜 := 𝕜) q₀ X₀ i ((piLp C q₀ q₁).interFst x)) =
       (C i).sndToSum (PiLp.proj (𝕜 := 𝕜) q₁ X₁ i ((piLp C q₀ q₁).interSnd x)) := by
@@ -88,8 +91,9 @@ theorem piLpProj_inter (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)
 
 /-- Embedding an element of the `i`th coordinate intersection into the `i`th slot via
 `PiLp.singleCLM` commutes with the inclusions into the product sum space. -/
-theorem piLpSingle_inter [DecidableEq ι] (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i))
-    (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (i : ι) (x : (C i).inter) :
+theorem fstToSum_singleCLM_interFst_eq_sndToSum_singleCLM_interSnd [DecidableEq ι]
+    (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
+    [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (i : ι) (x : (C i).inter) :
     (piLp C q₀ q₁).fstToSum (PiLp.singleCLM q₀ 𝕜 X₀ i ((C i).interFst x)) =
       (piLp C q₀ q₁).sndToSum (PiLp.singleCLM q₁ 𝕜 X₁ i ((C i).interSnd x)) := by
   apply (piLp C q₀ q₁).sumSpace_ext
@@ -108,17 +112,26 @@ private def piLpSumFwd (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)
   ContinuousLinearMap.pi fun i =>
     (piLp C q₀ q₁).sumLift ((C i).fstToSum.comp (PiLp.proj q₀ X₀ i))
       ((C i).sndToSum.comp (PiLp.proj q₁ X₁ i)) fun x => by
-        simpa only [ContinuousLinearMap.comp_apply] using piLpProj_inter C q₀ q₁ i x
+        simpa only [ContinuousLinearMap.comp_apply] using
+          fstToSum_proj_interFst_eq_sndToSum_proj_interSnd C q₀ q₁ i x
+
+open Classical in
+private def piLpSumInvSingle (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
+    [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (i : ι) :
+    (C i).SumSpace →L[𝕜] (piLp C q₀ q₁).SumSpace :=
+  (C i).sumLift ((piLp C q₀ q₁).fstToSum.comp (PiLp.singleCLM q₀ 𝕜 X₀ i))
+    ((piLp C q₀ q₁).sndToSum.comp (PiLp.singleCLM q₁ 𝕜 X₁ i)) fun x => by
+      simpa only [ContinuousLinearMap.comp_apply] using
+        fstToSum_singleCLM_interFst_eq_sndToSum_singleCLM_interSnd C q₀ q₁ i x
 
 private def piLpSumInv (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
     [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] :
-    (∀ i, (C i).SumSpace) →L[𝕜] (piLp C q₀ q₁).SumSpace := by
-  classical
-  exact ∑ i : ι,
-    ((C i).sumLift ((piLp C q₀ q₁).fstToSum.comp (PiLp.singleCLM q₀ 𝕜 X₀ i))
-      ((piLp C q₀ q₁).sndToSum.comp (PiLp.singleCLM q₁ 𝕜 X₁ i)) fun x => by
-        simpa only [ContinuousLinearMap.comp_apply] using piLpSingle_inter C q₀ q₁ i x).comp
-      (ContinuousLinearMap.proj i)
+    (∀ i, (C i).SumSpace) →L[𝕜] (piLp C q₀ q₁).SumSpace :=
+  ∑ i : ι, (piLpSumInvSingle C q₀ q₁ i).comp (ContinuousLinearMap.proj i)
+
+private theorem piLpSumInv_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
+    [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (v : ∀ i, (C i).SumSpace) :
+    piLpSumInv C q₀ q₁ v = ∑ i : ι, piLpSumInvSingle C q₀ q₁ i (v i) := by simp [piLpSumInv]
 
 private theorem piLpSumFwd_fstToSum (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i))
     (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (x : PiLp q₀ X₀) (i : ι) :
@@ -133,8 +146,7 @@ private theorem piLpSumFwd_sndToSum (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (
 /-- The sum space of `CompatibleCouple.piLp C q₀ q₁` identifies canonically with the product of the
 coordinate sum spaces `∀ i, (C i).SumSpace`. -/
 def piLpSumEquiv (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
-    [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] :
-    (piLp C q₀ q₁).SumSpace ≃L[𝕜] ∀ i, (C i).SumSpace :=
+    [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] : (piLp C q₀ q₁).SumSpace ≃L[𝕜] ∀ i, (C i).SumSpace :=
   ContinuousLinearEquiv.ofContinuousLinearMap (piLpSumFwd C q₀ q₁) (piLpSumInv C q₀ q₁)
     (ContinuousLinearMap.ext fun v => by
       classical
@@ -142,40 +154,32 @@ def piLpSumEquiv (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q�
       apply (C j).sumSpace_ext
       have hsum : (C j).sumSpaceEmbed (piLpSumFwd C q₀ q₁ (piLpSumInv C q₀ q₁ v) j) =
           ∑ i : ι, (C j).sumSpaceEmbed (piLpSumFwd C q₀ q₁
-            ((C i).sumLift ((piLp C q₀ q₁).fstToSum.comp (PiLp.singleCLM q₀ 𝕜 X₀ i))
-              ((piLp C q₀ q₁).sndToSum.comp (PiLp.singleCLM q₁ 𝕜 X₁ i)) (fun x => by
-                simpa only [ContinuousLinearMap.comp_apply] using piLpSingle_inter C q₀ q₁ i x)
-              (v i)) j) := by
-        simp [piLpSumInv, map_sum]
+            (piLpSumInvSingle C q₀ q₁ i (v i)) j) := by simp [piLpSumInv_apply, map_sum]
       rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, hsum,
         Fintype.sum_eq_single j]
       · obtain ⟨y₀, y₁, hy⟩ := (C j).exists_fstToSum_add_sndToSum_eq (v j)
-        rw [← hy]
-        simp [sumLift_fstToSum, sumLift_sndToSum, piLpSumFwd_fstToSum, piLpSumFwd_sndToSum,
-          PiLp.singleCLM_apply]
+        rw [← hy]; simp [piLpSumInvSingle, sumLift_fstToSum, sumLift_sndToSum,
+          piLpSumFwd_fstToSum, piLpSumFwd_sndToSum, PiLp.singleCLM_apply]
       · intro i hij
         obtain ⟨z₀, z₁, hz⟩ := (C i).exists_fstToSum_add_sndToSum_eq (v i)
-        rw [← hz]
-        simp [sumLift_fstToSum, sumLift_sndToSum, piLpSumFwd_fstToSum, piLpSumFwd_sndToSum,
-          PiLp.singleCLM_apply, PiLp.single_eq_of_ne _ hij.symm])
+        rw [← hz]; simp [piLpSumInvSingle, sumLift_fstToSum, sumLift_sndToSum, piLpSumFwd_fstToSum,
+          piLpSumFwd_sndToSum, PiLp.singleCLM_apply, PiLp.single_eq_of_ne _ hij.symm])
     (ContinuousLinearMap.ext fun u => by
       classical
       obtain ⟨x₀, x₁, rfl⟩ := (piLp C q₀ q₁).exists_fstToSum_add_sndToSum_eq u
       apply (piLp C q₀ q₁).sumSpace_ext
       ext j
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, piLpSumInv,
-        FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.proj_apply, map_add, map_sum,
-        piLpSumFwd_fstToSum, piLpSumFwd_sndToSum, sumLift_fstToSum, sumLift_sndToSum,
-        sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, Pi.add_apply, piLp_embed₀_apply,
-        piLp_embed₁_apply, PiLp.singleCLM_apply]
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, piLpSumInv_apply,
+        piLpSumInvSingle, map_add, map_sum, piLpSumFwd_fstToSum, piLpSumFwd_sndToSum,
+        sumLift_fstToSum, sumLift_sndToSum, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum,
+        Pi.add_apply, piLp_embed₀_apply, piLp_embed₁_apply, PiLp.singleCLM_apply, Finset.sum_apply]
       rw [Fintype.sum_eq_single j (fun i hij => by simp [PiLp.single_eq_of_ne _ hij.symm]),
         Fintype.sum_eq_single j (fun i hij => by simp [PiLp.single_eq_of_ne _ hij.symm])]
       simp)
 
 private theorem piLpSumEquiv_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i))
     (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (u : (piLp C q₀ q₁).SumSpace) :
-    piLpSumEquiv C q₀ q₁ u = piLpSumFwd C q₀ q₁ u := by
-  dsimp [piLpSumEquiv]
+    piLpSumEquiv C q₀ q₁ u = piLpSumFwd C q₀ q₁ u := (rfl)
 
 /-- Coordinatewise application formula for `piLpSumEquiv` in terms of `sumLift`. -/
 theorem piLpSumEquiv_apply_eq_sumLift (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i))
@@ -183,34 +187,33 @@ theorem piLpSumEquiv_apply_eq_sumLift (C : ∀ i, CompatibleCouple 𝕜 (X₀ i)
     piLpSumEquiv C q₀ q₁ u i =
       (piLp C q₀ q₁).sumLift ((C i).fstToSum.comp (PiLp.proj q₀ X₀ i))
         ((C i).sndToSum.comp (PiLp.proj q₁ X₁ i))
-        (fun x => by simpa only [ContinuousLinearMap.comp_apply] using piLpProj_inter C q₀ q₁ i x)
-        u := by
-  rw [piLpSumEquiv_apply, piLpSumFwd, ContinuousLinearMap.pi_apply]
+        (fun x => by
+          simpa only [ContinuousLinearMap.comp_apply] using
+            fstToSum_proj_interFst_eq_sndToSum_proj_interSnd C q₀ q₁ i x) u :=
+  ContinuousLinearMap.pi_apply _ _ i
 
 @[simp]
 theorem piLpSumEquiv_fstToSum (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
     [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (x : PiLp q₀ X₀) (i : ι) :
-    piLpSumEquiv C q₀ q₁ ((piLp C q₀ q₁).fstToSum x) i = (C i).fstToSum (x i) := by
-  rw [piLpSumEquiv_apply, piLpSumFwd_fstToSum]
+    piLpSumEquiv C q₀ q₁ ((piLp C q₀ q₁).fstToSum x) i = (C i).fstToSum (x i) :=
+  piLpSumFwd_fstToSum C q₀ q₁ x i
 
 @[simp]
 theorem piLpSumEquiv_sndToSum (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
     [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (x : PiLp q₁ X₁) (i : ι) :
-    piLpSumEquiv C q₀ q₁ ((piLp C q₀ q₁).sndToSum x) i = (C i).sndToSum (x i) := by
-  rw [piLpSumEquiv_apply, piLpSumFwd_sndToSum]
+    piLpSumEquiv C q₀ q₁ ((piLp C q₀ q₁).sndToSum x) i = (C i).sndToSum (x i) :=
+  piLpSumFwd_sndToSum C q₀ q₁ x i
 
 @[simp]
 theorem sumSpaceEmbed_piLpSumEquiv_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i))
     (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (u : (piLp C q₀ q₁).SumSpace) (i : ι) :
     (C i).sumSpaceEmbed (piLpSumEquiv C q₀ q₁ u i) = (piLp C q₀ q₁).sumSpaceEmbed u i := by
-  obtain ⟨x₀, x₁, rfl⟩ := (piLp C q₀ q₁).exists_fstToSum_add_sndToSum_eq u
-  simp
+  obtain ⟨x₀, x₁, rfl⟩ := (piLp C q₀ q₁).exists_fstToSum_add_sndToSum_eq u; simp
 
 @[simp]
 theorem sumSpaceEmbed_piLpSumEquiv_symm (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i))
     (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (v : ∀ i, (C i).SumSpace) (i : ι) :
-    (piLp C q₀ q₁).sumSpaceEmbed ((piLpSumEquiv C q₀ q₁).symm v) i =
-      (C i).sumSpaceEmbed (v i) := by
+    (piLp C q₀ q₁).sumSpaceEmbed ((piLpSumEquiv C q₀ q₁).symm v) i = (C i).sumSpaceEmbed (v i) := by
   rw [← sumSpaceEmbed_piLpSumEquiv_apply, ContinuousLinearEquiv.apply_symm_apply]
 
 end Couple

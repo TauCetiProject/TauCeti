@@ -269,6 +269,20 @@ theorem mem_stripTraces_iff {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} :
     g ∈ C.stripTraces ↔ ∃ F, C.IsStripFunction F g :=
   Iff.rfl
 
+variable {C} in
+/-- The pointwise norm of the first boundary trace is bounded by the `stripTraces` norm. -/
+theorem norm_stripTraces_fst_apply_le (g : C.stripTraces) (t : ℝ) :
+    ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t‖ ≤ ‖g‖ :=
+  ((g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1.norm_coe_le_norm t).trans
+    ((norm_fst_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁))).trans_eq (Submodule.norm_coe g).symm)
+
+variable {C} in
+/-- The pointwise norm of the second boundary trace is bounded by the `stripTraces` norm. -/
+theorem norm_stripTraces_snd_apply_le (g : C.stripTraces) (t : ℝ) :
+    ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t‖ ≤ ‖g‖ :=
+  ((g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2.norm_coe_le_norm t).trans
+    ((norm_snd_le (g : C₀(ℝ, X₀) × C₀(ℝ, X₁))).trans_eq (Submodule.norm_coe g).symm)
+
 /-- The admissible function with boundary traces `g`, extended by zero off the closed strip. On
 the closed strip it agrees with every admissible function with these traces
 (`CompatibleCouple.stripFunction_eq`). -/

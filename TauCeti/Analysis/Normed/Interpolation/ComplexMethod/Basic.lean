@@ -27,34 +27,21 @@ function is determined on the closed strip by its two boundary traces, and it is
 bounded there in the sum norm by their sup norms. We therefore realise the Banach space of
 admissible functions through their boundary traces:
 
-* `CompatibleCouple.IsBoundedStripFunction F g` and `CompatibleCouple.IsStripFunction F g`:
-  holomorphic bounded strip functions with bounded continuous boundary traces `g` (respectively,
-  boundary traces in `C₀(ℝ, X₀) × C₀(ℝ, X₁)`). Both satisfy the three-lines bound
-  `‖F z‖ ≤ ‖g₀‖ ^ (1 - re z) * ‖g₁‖ ^ re z` (`IsBoundedStripFunction.norm_le_rpow_mul_rpow`,
-  `IsStripFunction.norm_le_rpow_mul_rpow`);
-* `CompatibleCouple.stripTraces`: the submodule of `C₀(ℝ, X₀) × C₀(ℝ, X₁)` of the boundary
-  traces of admissible functions, normed by `max ‖g₀‖ ‖g₁‖`. It is closed when `X₀` and `X₁` are
-  complete (`CompatibleCouple.isClosed_stripTraces`), hence then a Banach space;
-* `CompatibleCouple.stripFunction g`: the admissible function with traces `g`, extended by zero
-  off the closed strip, and `CompatibleCouple.stripEval z`, the continuous linear evaluation
-  `g ↦ F z`, of norm at most one;
+* Admissible strip functions (`IsBoundedStripFunction`, `IsStripFunction`), the Banach space of
+  boundary traces `CompatibleCouple.stripTraces`, the evaluation `CompatibleCouple.stripEval`,
+  and Gaussian damping (`isStripFunction_stripGaussian_smul`) are developed in
+  `TauCeti.Analysis.Normed.Interpolation.ComplexMethod.StripTraces`;
 * `CompatibleCouple.ComplexMethodSpace θ`: the quotient of `stripTraces` by the kernel of
   `stripEval θ`, with its quotient (infimum) norm, a Banach space when `X₀` and `X₁` are. The
   map `ComplexMethodSpace.toSum` embeds it injectively into the sum space without increasing
   norms, with image the values `F θ` of admissible functions
   (`ComplexMethodSpace.exists_toSum_eq_iff`), and each such `F` bounds the norm of `F θ` by the
   norm of its traces (`ComplexMethodSpace.norm_le_of_toSum_eq`);
-* `CompatibleCouple.isStripFunction_stripGaussian_smul`: multiplying a bounded holomorphic
-  function with boundary values `f₀ t ∈ X₀`, `f₁ t ∈ X₁` by the Gaussian factor
-  `exp (δ (z - θ)²)` (`Complex.HadamardThreeLines.stripGaussian`), `δ > 0`, gives an admissible
-  function with traces `Complex.HadamardThreeLines.stripGaussianSMul`; the factor is removed in
-  the limit `δ → 0` (`Real.le_of_forall_pos_le_exp_mul`). The Gaussian-damped traces lie in
-  `stripTraces` (`CompatibleCouple.stripGaussianSMul_mem_stripTraces`) and evaluate at `θ` to the
-  undamped value (`CompatibleCouple.stripEval_stripGaussianSMul`). The same damping turns a
-  bounded-boundary strip function into an admissible one
-  (`CompatibleCouple.IsBoundedStripFunction.exists_isStripFunction_stripGaussian_smul_and_norm_le`),
-  so bounded-boundary strip functions also bound the interpolation norm
-  (`ComplexMethodSpace.norm_le_of_isBoundedStripFunction`);
+* `CompatibleCouple.stripGaussianSMul_mem_stripTraces` and
+  `CompatibleCouple.stripEval_stripGaussianSMul`: Gaussian-damped traces lie in `stripTraces` and
+  evaluate at `θ` to the undamped value; removing the damping factor `δ → 0`
+  (`Real.le_of_forall_pos_le_exp_mul`) lets bounded-boundary strip functions bound the
+  interpolation norm (`ComplexMethodSpace.norm_le_of_isBoundedStripFunction`);
 * `ComplexMethodSpace.ofInter`, `ComplexMethodSpace.toFst`, `ComplexMethodSpace.toSnd`: the
   intersection embeds with `‖x‖_θ ≤ ‖x‖_{X₀}^{1 - θ} ‖x‖_{X₁}^θ ≤ ‖x‖_{X₀ ∩ X₁}`
   (`ComplexMethodSpace.norm_ofInter_le_rpow_mul_rpow`, `ComplexMethodSpace.norm_ofInter_le`), using
@@ -102,8 +89,8 @@ admissible functions through their boundary traces:
   complex method gives back the norm of `X` (`‖u‖ = ‖toSum u‖`) and is canonically linearly
   isometric to `X` for `0 ≤ θ ≤ 1`.
 * `ComplexMethodSpace.norm_mk_le_rpow_mul_rpow`: the three-lines bound
-  `‖mk θ g‖ ≤ ‖g₀‖ ^ (1 - θ) * ‖g₁‖ ^ θ` in `[X₀, X₁]_θ` for every real `θ`, proved via scalar
-  multiplication (`ComplexMethodSpace.exists_stripTraces_smul_of_diffContOnCl`,
+  `‖mk θ g‖ ≤ ‖g₀‖ ^ (1 - θ) * ‖g₁‖ ^ θ` in `[X₀, X₁]_θ` for every real `θ`
+  (`ComplexMethodSpace.exists_stripTraces_smul_of_diffContOnCl`,
   `ComplexMethodSpace.norm_smul_mk_le_of_diffContOnCl`).
 
 ## References
