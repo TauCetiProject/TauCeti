@@ -32,7 +32,7 @@ containing `1` and spanning `B` over `A`. The submodules `Iⁿ • M₀` are a n
 the underlying subring of the left order `O_l(M₀)`, an `A₀`-subalgebra (`Submodule.leftOrder`).
 Since `M₀ * M₀` is finitely generated, a power `Iʲ` carries it into `M₀`
 (`TauCeti.Huber.PairOfDefinition.exists_pow_smul_le`), so `Iʲ • M₀ ⊆ B₀`
-(`Submodule.smul_subset_multiplierRing`) and `B₀` is open. With the extension `J` of `I` along
+(`Submodule.smul_subset_leftOrder`) and `B₀` is open. With the extension `J` of `I` along
 the structure map `A₀ → O_l(M₀)`, one gets `I^(n + j) • M₀ ⊆ Jⁿ ⊆ Iⁿ • M₀`
 (`Submodule.smul_subset_coe_map_pow`, `Submodule.coe_map_pow_subset`), the second inclusion
 because `1 ∈ M₀` and `B₀ M₀ ⊆ M₀`. So the topology of `B₀` is the `J`-adic one and `(B₀, J)` is
@@ -108,10 +108,7 @@ theorem exists_pairOfDefinition_isIntegral (P : PairOfDefinition A) :
   obtain ⟨j, hj⟩ := P.exists_pow_smul_le M₀ hfg (by simp [hspan])
   -- `B₀` is the underlying subring of the left order `O_l(M₀)`
   set B₀ := M₀.leftOrder.toSubring
-  have hjB₀ : ((P.idealOfDefinition ^ j • M₀ : Submodule P.ringOfDefinition B) : Set B) ⊆
-      M₀.leftOrder := by
-    rw [← Subalgebra.coe_toSubring, Submodule.toSubring_leftOrder]
-    exact Submodule.smul_subset_multiplierRing hj
+  have hjB₀ := Submodule.smul_subset_leftOrder hj
   set J : Ideal M₀.leftOrder := P.idealOfDefinition.map (algebraMap _ M₀.leftOrder)
   refine ⟨{ ringOfDefinition := B₀
             isOpen_ringOfDefinition := B₀.toAddSubgroup.isOpen_of_mem_nhds
