@@ -239,7 +239,6 @@ theorem metropolisHastingsKernel_apply_singleton (π : ι → ℝ) (q : Matrix �
 
 /-- The transition matrix of the Metropolis–Hastings kernel is the positive part of the
 Metropolis–Hastings matrix. -/
-@[simp]
 theorem toMatrix_metropolisHastingsKernel_apply (π : ι → ℝ) (q : Matrix ι ι ℝ) (x y : ι) :
     (metropolisHastingsKernel π q).toMatrix x y = (metropolisHastingsMatrix π q x y).toNNReal := by
   rw [Kernel.toMatrix_apply, metropolisHastingsKernel_apply_singleton, toNNReal_ofReal]
