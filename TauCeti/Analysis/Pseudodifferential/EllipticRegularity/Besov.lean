@@ -29,7 +29,9 @@ for every real `s` and all `1 ≤ p, q ≤ ∞`, on arbitrary tempered distribut
   some `r`.
 * `TauCeti.Symbol.IsEllipticAbove.exists_norm_besov_le_of_toDistr_eq_smulLeftCLM`: **the interior
   estimate** `‖ψ u‖_{B^{s + m}_{p,q}} ≤ C (‖Op(c) u‖_{B^s_{p,q}} + ‖u‖_{B^r_{p,q}})` for
-  `u ∈ B^{s + m}_{p,q}` and every `r ≤ s + m`, with `C` independent of `u`.
+  `u ∈ B^{s + m}_{p,q}` and every `r ≤ s + m`, with `C` independent of `u`: the elliptic case of
+  `TauCeti.Symbol.exists_norm_besov_le_of_toDistr_eq_smulLeftCLM`, which holds for every symbol
+  with a formal left parametrix.
 * `TauCeti.Symbol.IsEllipticAbove.exists_smulLeftCLM_eq_toLpTop`: **the Schauder regularity of
   elliptic operators.** For `0 < α < 1` and natural numbers `k` and `l` with `k + m = l`, if
   `Op(c) T` is a bounded `C^k` function with bounded derivatives through order `k` and `α`-Hölder
@@ -55,10 +57,9 @@ operator `Op(b)` maps `B^s_{p,q}` into `B^{s + m}_{p,q}`
 (`TemperedDistribution.MemBesov.quantizeTempered`). The smoothing term `Op(r) T` lies in every
 Besov space (`TauCeti.Symbol.IsSmoothing.memBesov_quantizeTempered`), since it is a Schwartz
 function (`TauCeti.Symbol.IsSmoothing.exists_hasCompactSupport_quantizeTempered_eq`) and Schwartz
-functions lie in every Besov space (`SchwartzMap.memBesov`). For the estimate, the local parametrix
-identity `ψ u = Op(ψ b) (Op(c) u) - Op(R) u` with a remainder `R` of order `r - (s + m)`
-(`TauCeti.Symbol.exists_smulLeftCLM_eq_quantizeTempered_sub_quantizeTempered`) bounds `ψ u` by the
-quantizations on Besov spaces (`TauCeti.Symbol.quantizeBesov`).
+functions lie in every Besov space (`SchwartzMap.memBesov`). The estimate applies
+`TauCeti.Symbol.exists_norm_besov_le_of_toDistr_eq_smulLeftCLM` to the formal left parametrix of
+`a` (`TauCeti.Symbol.IsEllipticAbove.exists_isAsymptoticSum_sharpTerm`).
 
 ## References
 
@@ -119,36 +120,20 @@ spatial support that agrees with `a` on a neighbourhood of `tsupport ψ`. For al
 `‖ψ u‖_{B^{s + m}_{p,q}} ≤ C (‖Op(c) u‖_{B^s_{p,q}} + ‖u‖_{B^r_{p,q}})`
 
 for every `u ∈ B^{s + m}_{p,q}`. Here the left side is `‖v‖`, where `v` is any element of
-`B^{s + m}_{p,q}` whose tempered distribution is `ψ u`; such a `v` exists by
-`IsEllipticAbove.memBesov_smulLeftCLM_of_memBesov_quantizeTempered`. This is the Besov counterpart
-of the estimate on `H^{s,p}`, `TauCeti.Symbol.exists_norm_le_of_toDistr_eq_smulLeftCLM`. -/
-theorem IsEllipticAbove.exists_norm_besov_le_of_toDistr_eq_smulLeftCLM (ha : a.IsEllipticAbove R)
+`B^{s + m}_{p,q}` whose tempered distribution is `ψ u`; for scalar `u` such a `v` exists by
+`IsEllipticAbove.memBesov_smulLeftCLM_of_memBesov_quantizeTempered`. This is the elliptic case of
+`TauCeti.Symbol.exists_norm_besov_le_of_toDistr_eq_smulLeftCLM`, which holds for every symbol with
+a formal left parametrix. -/
+theorem IsEllipticAbove.exists_norm_besov_le_of_toDistr_eq_smulLeftCLM {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] (ha : a.IsEllipticAbove R)
     (hc : c.HasCompactSpatialSupport) (hψ : HasCompactSupport ψ)
     (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
     (s : ℝ) {r : ℝ} (hr : r ≤ s + m) :
-    ∃ C, ∀ u v : BesovSpace ℂ φ (s + m) p q, v.toDistr = smulLeftCLM ℂ ψ u.toDistr →
-      ‖v‖ ≤ C * (‖quantizeBesov ℂ φ p q c hc.isUniform (s' := s) (by ring) u‖ +
-        ‖BesovSpace.inclusion ℂ φ p hr le_rfl u‖) := by
-  obtain ⟨b, hab, -⟩ := ha.exists_isAsymptoticSum_sharpTerm
-  obtain ⟨e, he, h⟩ :=
-    exists_smulLeftCLM_eq_quantizeTempered_sub_quantizeTempered (F := ℂ) hab hψ hc hca (r - (s + m))
-  set Q := quantizeBesov ℂ φ p q (smulLeft (ψ.smooth ⊤) b)
-    (hasCompactSpatialSupport_smulLeft _ hψ b).isUniform (s := s) (s' := s + m) (by ring)
-  set E := quantizeBesov ℂ φ p q e he.isUniform (s := r) (s' := s + m) (by ring)
-  refine ⟨max ‖Q‖ ‖E‖, fun u v hv ↦ ?_⟩
-  -- `v = ψ u = Q (Op(c) u) - E u`.
-  set c' := quantizeBesov ℂ φ p q c hc.isUniform (s' := s) (by ring) u
-  set u' := BesovSpace.inclusion ℂ φ p hr le_rfl u
-  have hvQE : v = Q c' - E u' := by
-    refine BesovSpace.ext ?_
-    rw [hv, BesovSpace.toDistr_sub, toDistr_quantizeBesov, toDistr_quantizeBesov,
-      toDistr_quantizeBesov, BesovSpace.toDistr_inclusion, h u.toDistr]
-  calc ‖v‖ ≤ ‖Q c'‖ + ‖E u'‖ := hvQE ▸ norm_sub_le _ _
-    _ ≤ ‖Q‖ * ‖c'‖ + ‖E‖ * ‖u'‖ := add_le_add (Q.le_opNorm c') (E.le_opNorm u')
-    _ ≤ _ := by
-      rw [mul_add]
-      gcongr
-      exacts [le_max_left _ _, le_max_right _ _]
+    ∃ C, ∀ u v : BesovSpace F φ (s + m) p q, v.toDistr = smulLeftCLM F ψ u.toDistr →
+      ‖v‖ ≤ C * (‖quantizeBesov F φ p q c hc.isUniform (s' := s) (by ring) u‖ +
+        ‖BesovSpace.inclusion F φ p hr le_rfl u‖) :=
+  have ⟨_, hab, _⟩ := ha.exists_isAsymptoticSum_sharpTerm
+  Symbol.exists_norm_besov_le_of_toDistr_eq_smulLeftCLM hab hψ hc hca s hr
 
 /-- **Schauder regularity of elliptic operators.** Let `a` be a scalar symbol elliptic of order
 `m`, let `ψ` be a compactly supported Schwartz function, and let `c` be a symbol with compact

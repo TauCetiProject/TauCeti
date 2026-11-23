@@ -64,6 +64,9 @@ For a scalar symbol `a`, the same argument runs once on all tempered distributio
   (`TemperedDistribution.MemBesov.quantizeTempered`). For an elliptic scalar symbol and a scalar
   tempered distribution `u`, the hypothesis `u ∈ B^r_{p,q}` can be dropped
   (`TauCeti.Symbol.IsEllipticAbove.memBesov_smulLeftCLM_of_memBesov_quantizeTempered`).
+* `TauCeti.Symbol.exists_norm_besov_le_of_toDistr_eq_smulLeftCLM`: the interior estimate
+  `‖ψ u‖_{B^{s + m}_{p,q}} ≤ C (‖Op(c) u‖_{B^s_{p,q}} + ‖u‖_{B^r_{p,q}})` for `u ∈ B^{s + m}_{p,q}`,
+  by the quantization on Besov spaces (`TauCeti.Symbol.quantizeBesov`).
 
 ## The local parametrix
 
@@ -462,6 +465,45 @@ theorem memBesov_smulLeftCLM_of_memBesov_quantizeTempered [CompleteSpace F]
   rw [sub_neg_eq_add] at h₁
   rw [sub_sub_cancel] at h₂
   exact hψu u ▸ h₁.sub h₂
+
+/-- **Interior elliptic estimate on Besov spaces.** Let `b` be a formal left parametrix of the
+scalar symbol `a` of order `m`, `1 ∼ ∑ₖ sharpTerm b a k`, let `ψ` be a compactly supported Schwartz
+function, and `c` a symbol with compact spatial support which agrees with `a` at all positions near
+the support of `ψ`. For all real `s` and `r ≤ s + m` there is a constant `C` with
+
+`‖ψ u‖_{B^{s + m}_{p,q}} ≤ C (‖Op(c) u‖_{B^s_{p,q}} + ‖u‖_{B^r_{p,q}})`
+
+for every `u ∈ B^{s + m}_{p,q}`. Here the left side is `‖v‖`, where `v` is any element of
+`B^{s + m}_{p,q}` whose tempered distribution is `ψ u`. This is the Besov counterpart of the
+estimate on `H^{s,p}`, `TauCeti.Symbol.exists_norm_le_of_toDistr_eq_smulLeftCLM`. -/
+theorem exists_norm_besov_le_of_toDistr_eq_smulLeftCLM [CompleteSpace F]
+    (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
+      (inclusion (by simp) (const (.id ℂ ℂ))) (b.sharpTerm a))
+    (hψ : HasCompactSupport ψ) (hc : c.HasCompactSpatialSupport)
+    (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
+    (s : ℝ) {r : ℝ} (hr : r ≤ s + m) :
+    ∃ C, ∀ u v : BesovSpace F φ (s + m) p q, v.toDistr = smulLeftCLM F ψ u.toDistr →
+      ‖v‖ ≤ C * (‖quantizeBesov F φ p q c hc.isUniform (s' := s) (by ring) u‖ +
+        ‖BesovSpace.inclusion F φ p hr le_rfl u‖) := by
+  obtain ⟨e, he, h⟩ :=
+    exists_smulLeftCLM_eq_quantizeTempered_sub_quantizeTempered (F := F) hab hψ hc hca (r - (s + m))
+  set Q := quantizeBesov F φ p q (smulLeft (ψ.smooth ⊤) b)
+    (hasCompactSpatialSupport_smulLeft _ hψ b).isUniform (s := s) (s' := s + m) (by ring)
+  set E := quantizeBesov F φ p q e he.isUniform (s := r) (s' := s + m) (by ring)
+  refine ⟨max ‖Q‖ ‖E‖, fun u v hv ↦ ?_⟩
+  -- `v = ψ u = Q (Op(c) u) - E u`.
+  set c' := quantizeBesov F φ p q c hc.isUniform (s' := s) (by ring) u
+  set u' := BesovSpace.inclusion F φ p hr le_rfl u
+  have hvQE : v = Q c' - E u' := by
+    refine BesovSpace.ext ?_
+    rw [hv, BesovSpace.toDistr_sub, toDistr_quantizeBesov, toDistr_quantizeBesov,
+      toDistr_quantizeBesov, BesovSpace.toDistr_inclusion, h u.toDistr]
+  calc ‖v‖ ≤ ‖Q c'‖ + ‖E u'‖ := hvQE ▸ norm_sub_le _ _
+    _ ≤ ‖Q‖ * ‖c'‖ + ‖E‖ * ‖u'‖ := add_le_add (Q.le_opNorm c') (E.le_opNorm u')
+    _ ≤ _ := by
+      rw [mul_add]
+      gcongr
+      exacts [le_max_left _ _, le_max_right _ _]
 
 end Tempered
 
