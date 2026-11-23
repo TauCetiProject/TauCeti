@@ -62,9 +62,10 @@ any finite-dimensional module.
   with value `e` at `0`.
 * `IsSl2Triple.contractingAction_apply_mem_slodowySlice`: the contracting action preserves the
   slice.
-* `LieHom.apply_mem_slodowySlice` and `IsSl2Triple.map_contractingAction_apply`: Lie
-  endomorphisms fixing `e` and `f` preserve the slice, and those fixing `h` commute with the
-  contracting action.
+* `LieHom.apply_mem_slodowySlice` and `LieHom.map_contractingAction`: a Lie algebra homomorphism
+  `φ` carries the slice of `(e, f)` into that of `(φ e, φ f)`, and intertwines the contracting
+  actions of two triples whose neutral elements correspond. In particular Lie endomorphisms fixing
+  `e` and `f` preserve the slice, and those fixing `h` commute with the contracting action.
 * `IsSl2Triple.codisjoint_range_toEnd_ker_toEnd_f`, `IsSl2Triple.codisjoint_range_ad_ker_ad_f`:
   the slice is transverse to every orbit it meets.
 * `IsSl2Triple.finrank_range_toEnd_inf_ker_toEnd_f_add_finrank_ker_toEnd`,
@@ -118,13 +119,15 @@ theorem direction_slodowySlice : (slodowySlice R e f).direction = LinearMap.ker 
 theorem slodowySlice_zero_right : slodowySlice R e (0 : L) = ⊤ :=
   eq_top_iff.2 fun x _ ↦ by simp
 
-/-- **Lie endomorphisms fixing `e` and `f` preserve the Slodowy slice** `e + ker (ad f)`. For an
-algebraic group this applies to the adjoint action of every point centralizing `e` and `f`, such
-as a point of the centralizer of an `sl₂` triple `(h, e, f)`. -/
-theorem _root_.LieHom.apply_mem_slodowySlice (φ : L →ₗ⁅R⁆ L) (he : φ e = e) (hf : φ f = f)
-    (hx : x ∈ slodowySlice R e f) : φ x ∈ slodowySlice R e f := by
+/-- **A Lie algebra homomorphism maps Slodowy slices into Slodowy slices**: if
+`x ∈ e + ker (ad f)` then `φ x ∈ φ e + ker (ad (φ f))`. In particular Lie endomorphisms fixing `e`
+and `f` preserve the slice `e + ker (ad f)`. For an algebraic group this applies to the adjoint
+action of every point centralizing `e` and `f`, such as a point of the centralizer of an `sl₂`
+triple `(h, e, f)`. -/
+theorem _root_.LieHom.apply_mem_slodowySlice {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (φ : L →ₗ⁅R⁆ L') (hx : x ∈ slodowySlice R e f) : φ x ∈ slodowySlice R (φ e) (φ f) := by
   rw [mem_slodowySlice] at hx ⊢
-  rw [← he, ← hf, ← map_sub, ← LieHom.map_lie, hx, map_zero]
+  rw [← map_sub, ← LieHom.map_lie, hx, map_zero]
 
 end Slice
 
@@ -177,14 +180,21 @@ theorem contractingAction_apply_of_mem (t : IsSl2Triple h e f) (c : Kˣ) {j : �
   rw [gradingAut_apply_of_mem _ _ hx, smul_smul]
   simp [zpow_sub₀ (Units.ne_zero c), div_eq_mul_inv]
 
-/-- **Lie endomorphisms fixing `h` commute with the contracting action.** They commute with the
-grading automorphisms of `ad h` (`TauCeti.map_gradingAut_apply`). For an algebraic group this
-applies to the adjoint action of every point of the centralizer of `h`. -/
-theorem map_contractingAction_apply (t : IsSl2Triple h e f) (φ : L →ₗ⁅K⁆ L) (hφ : φ h = h)
-    (c : Kˣ) (x : L) : φ (t.contractingAction c x) = t.contractingAction c (φ x) := by
+/-- **Lie algebra homomorphisms intertwine contracting actions.** If `φ` carries the neutral
+element of the triple `(h, e, f)` to that of `(h', e', f')`, then `φ (c • x) = c • φ x` for the two
+contracting actions, because `φ` intertwines the grading automorphisms (`LieHom.map_gradingAut`).
+Only the neutral elements are matched: the contracting action depends on the triple only through
+its neutral element. In particular Lie endomorphisms fixing `h` commute with the contracting
+action; for an algebraic group this applies to the adjoint action of every point of the
+centralizer of `h`. -/
+theorem _root_.LieHom.map_contractingAction {L' : Type*} [LieRing L'] [LieAlgebra K L']
+    [FiniteDimensional K L'] {h' e' f' : L'} (φ : L →ₗ⁅K⁆ L') (t : IsSl2Triple h e f)
+    (t' : IsSl2Triple h' e' f') (hφ : φ h = h') (c : Kˣ) (x : L) :
+    φ (t.contractingAction c x) = t'.contractingAction c (φ x) := by
   have hh := ad_eq_toEnd K L ▸ isInternal_eigenspace_toEnd_intCast (M := L) t
-  rw [t.contractingAction_apply hh, t.contractingAction_apply hh, map_smul,
-    map_gradingAut_apply hh φ hφ]
+  have hh' := ad_eq_toEnd K L' ▸ isInternal_eigenspace_toEnd_intCast (M := L') t'
+  rw [t.contractingAction_apply hh, t'.contractingAction_apply hh', map_smul,
+    φ.map_gradingAut hh hh' hφ]
 
 /-- The contracting action fixes `e`, which has weight `2` for `ad h`. -/
 @[simp]
