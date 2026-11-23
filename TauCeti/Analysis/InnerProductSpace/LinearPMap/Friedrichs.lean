@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 
 /-!
 # The Friedrichs extension by form completion
@@ -22,7 +23,7 @@ The domain of `S` carries the positive definite form
 `⟪x, y⟫_S = ⟪S x, y⟫_𝕜 + (1 - γ) * ⟪x, y⟫_𝕜`, whose norm dominates the norm of `E`. Its completion
 `LinearPMap.FriedrichsSpace S γ hS` is a Hilbert space, the inclusion of the domain extends to a
 contraction `LinearPMap.friedrichsInclusion` into `E`, and this contraction is injective
-(`LinearPMap.injective_friedrichsInclusion`): this is the closability of the form `⟪S x, y⟫_𝕜`.
+(`LinearPMap.friedrichsInclusion_injective`): this is the closability of the form `⟪S x, y⟫_𝕜`.
 The completed form, shifted back by `γ - 1`, is the closed form `LinearPMap.friedrichsForm`, and
 `LinearPMap.friedrichsExtension` is the operator it represents
 (`ContinuousLinearMap.closedFormOperator`). It is self-adjoint, extends `S`, and keeps the lower
@@ -35,14 +36,15 @@ The construction works uniformly over `[RCLike 𝕜]`, so the real case needs no
 * `LinearPMap.IsSymmetricBoundedBelow`: a symmetric partial operator with lower bound `γ`.
 * `LinearPMap.FriedrichsSpace`: the form completion of the domain.
 * `LinearPMap.friedrichsInclusion`: its contractive inclusion into `E`, with
-  `LinearPMap.injective_friedrichsInclusion` (closability) and
+  `LinearPMap.friedrichsInclusion_injective` (closability) and
   `LinearPMap.denseRange_friedrichsInclusion`.
 * `LinearPMap.friedrichsForm`: the closed form, with
-  `LinearPMap.friedrichsForm_toFriedrichsSpace_left` (it extends `⟪S x, y⟫_𝕜`).
+  `LinearPMap.friedrichsForm_toFriedrichsSpace_left` and `_right` (it extends `⟪S x, y⟫_𝕜`).
 * `LinearPMap.friedrichsExtension`: the Friedrichs extension, with
   `LinearPMap.mem_graph_friedrichsExtension_iff`, `LinearPMap.isSelfAdjoint_friedrichsExtension`,
-  `LinearPMap.le_friedrichsExtension` and
-  `LinearPMap.mul_norm_sq_le_re_inner_friedrichsExtension`.
+  `LinearPMap.le_friedrichsExtension`,
+  `LinearPMap.mul_norm_sq_le_re_inner_friedrichsExtension` and the uniqueness statement
+  `LinearPMap.eq_friedrichsExtension_of_isSelfAdjoint`.
 * `LinearPMap.exists_isSelfAdjoint_extension_of_isSymmetricBoundedBelow`: every densely defined
   symmetric operator with lower bound `γ` has a self-adjoint extension with lower bound `γ`.
 
@@ -54,7 +56,7 @@ The construction works uniformly over `[RCLike 𝕜]`, so the real case needs no
   Theorem 2.11.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -78,6 +80,7 @@ variable {S : E →ₗ.[𝕜] E} {γ : ℝ}
 
 /-- The domain of `S`, to be equipped with the form inner product
 `⟪x, y⟫_S = ⟪S x, y⟫_𝕜 + (1 - γ) * ⟪x, y⟫_𝕜`. -/
+@[ext]
 structure FriedrichsPre (S : E →ₗ.[𝕜] E) (γ : ℝ) (hS : S.IsSymmetricBoundedBelow γ) where
   /-- Construct an element of `FriedrichsPre` from a vector of the domain. -/
   ofDomain ::
@@ -90,7 +93,16 @@ variable (hS : S.IsSymmetricBoundedBelow γ)
 
 /-- `FriedrichsPre.toDomain` is injective. -/
 theorem toDomain_injective : Function.Injective (toDomain : FriedrichsPre S γ hS → S.domain) :=
-  fun ⟨_⟩ ⟨_⟩ h => by cases h; rfl
+  fun _ _ => FriedrichsPre.ext
+
+/-- `ofDomain` is a left inverse of `toDomain`. -/
+@[simp]
+theorem ofDomain_toDomain (x : FriedrichsPre S γ hS) : ofDomain x.toDomain = x :=
+  (rfl)
+
+/-- `toDomain` is a left inverse of `ofDomain`. -/
+theorem toDomain_ofDomain (x : S.domain) : (ofDomain x : FriedrichsPre S γ hS).toDomain = x :=
+  (rfl)
 
 instance instZero : Zero (FriedrichsPre S γ hS) := ⟨⟨0⟩⟩
 instance instAdd : Add (FriedrichsPre S γ hS) := ⟨fun x y => ⟨x.toDomain + y.toDomain⟩⟩
@@ -100,28 +112,65 @@ instance instSMulNat : SMul ℕ (FriedrichsPre S γ hS) := ⟨fun n x => ⟨n �
 instance instSMulInt : SMul ℤ (FriedrichsPre S γ hS) := ⟨fun n x => ⟨n • x.toDomain⟩⟩
 instance instSMul : SMul 𝕜 (FriedrichsPre S γ hS) := ⟨fun c x => ⟨c • x.toDomain⟩⟩
 
+/-- `toDomain` sends `0` to `0`. -/
+@[simp]
+theorem toDomain_zero : (0 : FriedrichsPre S γ hS).toDomain = 0 :=
+  (rfl)
+
 /-- `toDomain` is additive. -/
 @[simp]
 theorem toDomain_add (x y : FriedrichsPre S γ hS) : (x + y).toDomain = x.toDomain + y.toDomain :=
-  rfl
+  (rfl)
+
+/-- `toDomain` commutes with negation. -/
+@[simp]
+theorem toDomain_neg (x : FriedrichsPre S γ hS) : (-x).toDomain = -x.toDomain :=
+  (rfl)
+
+/-- `toDomain` commutes with subtraction. -/
+@[simp]
+theorem toDomain_sub (x y : FriedrichsPre S γ hS) : (x - y).toDomain = x.toDomain - y.toDomain :=
+  (rfl)
 
 /-- `toDomain` commutes with scalar multiplication. -/
 @[simp]
 theorem toDomain_smul (c : 𝕜) (x : FriedrichsPre S γ hS) : (c • x).toDomain = c • x.toDomain :=
-  rfl
+  (rfl)
+
+/-- `ofDomain` sends `0` to `0`. -/
+@[simp]
+theorem ofDomain_zero : (ofDomain 0 : FriedrichsPre S γ hS) = 0 :=
+  (rfl)
+
+/-- `ofDomain` is additive. -/
+@[simp]
+theorem ofDomain_add (x y : S.domain) :
+    (ofDomain (x + y) : FriedrichsPre S γ hS) = ofDomain x + ofDomain y :=
+  (rfl)
+
+/-- `ofDomain` commutes with negation. -/
+@[simp]
+theorem ofDomain_neg (x : S.domain) : (ofDomain (-x) : FriedrichsPre S γ hS) = -ofDomain x :=
+  (rfl)
+
+/-- `ofDomain` commutes with subtraction. -/
+@[simp]
+theorem ofDomain_sub (x y : S.domain) :
+    (ofDomain (x - y) : FriedrichsPre S γ hS) = ofDomain x - ofDomain y :=
+  (rfl)
+
+/-- `ofDomain` commutes with scalar multiplication. -/
+@[simp]
+theorem ofDomain_smul (c : 𝕜) (x : S.domain) :
+    (ofDomain (c • x) : FriedrichsPre S γ hS) = c • ofDomain x :=
+  (rfl)
 
 instance instAddCommGroup : AddCommGroup (FriedrichsPre S γ hS) :=
   (toDomain_injective hS).addCommGroup _ rfl (fun _ _ => rfl) (fun _ => rfl) (fun _ _ => rfl)
     (fun _ _ => rfl) (fun _ _ => rfl)
 
-/-- `FriedrichsPre.toDomain` as an additive monoid homomorphism. -/
-def toDomainAddMonoidHom : FriedrichsPre S γ hS →+ S.domain where
-  toFun := toDomain
-  map_zero' := rfl
-  map_add' _ _ := rfl
-
 instance instModule : Module 𝕜 (FriedrichsPre S γ hS) :=
-  (toDomain_injective hS).module 𝕜 (toDomainAddMonoidHom hS) fun _ _ => rfl
+  (toDomain_injective hS).module 𝕜 ⟨⟨toDomain, rfl⟩, fun _ _ => rfl⟩ fun _ _ => rfl
 
 /-- `FriedrichsPre` is linearly equivalent to the domain of `S`. -/
 def linearEquivDomain : FriedrichsPre S γ hS ≃ₗ[𝕜] S.domain where
@@ -136,42 +185,29 @@ def linearEquivDomain : FriedrichsPre S γ hS ≃ₗ[𝕜] S.domain where
 @[simp]
 theorem linearEquivDomain_apply (x : FriedrichsPre S γ hS) :
     linearEquivDomain hS x = x.toDomain :=
-  rfl
+  (rfl)
 
 /-- The inverse of `linearEquivDomain` is `ofDomain`. -/
 @[simp]
 theorem linearEquivDomain_symm_apply (x : S.domain) :
     (linearEquivDomain hS).symm x = ofDomain x :=
-  rfl
+  (rfl)
 
-/-- The form inner product `⟪x, y⟫_S = ⟪S x, y⟫_𝕜 + (1 - γ) * ⟪x, y⟫_𝕜` on `FriedrichsPre`. -/
-def preInner (x y : FriedrichsPre S γ hS) : 𝕜 :=
-  ⟪S x.toDomain, (y.toDomain : E)⟫_𝕜 + ((1 - γ : ℝ) : 𝕜) * ⟪(x.toDomain : E), (y.toDomain : E)⟫_𝕜
-
-/-- The diagonal real part of the form inner product. -/
-theorem re_preInner_self (x : FriedrichsPre S γ hS) :
-    RCLike.re (preInner hS x x) =
-      RCLike.re ⟪S x.toDomain, (x.toDomain : E)⟫_𝕜 + (1 - γ) * ‖(x.toDomain : E)‖ ^ 2 := by
-  rw [preInner, _root_.map_add, RCLike.re_ofReal_mul, inner_self_eq_norm_sq]
-
-/-- The form inner product dominates the square of the norm of `E` on the diagonal. -/
-theorem norm_sq_le_re_preInner_self (x : FriedrichsPre S γ hS) :
-    ‖(x.toDomain : E)‖ ^ 2 ≤ RCLike.re (preInner hS x x) := by
-  rw [re_preInner_self]
-  linarith [hS.mul_norm_sq_le_re_inner x.toDomain]
-
-/-- The form inner product on `FriedrichsPre` as a pre-inner-product core. -/
+/-- The form inner product `⟪x, y⟫_S = ⟪S x, y⟫_𝕜 + (1 - γ) * ⟪x, y⟫_𝕜` on `FriedrichsPre` as a
+pre-inner-product core. -/
 abbrev preInnerCore : PreInnerProductSpace.Core 𝕜 (FriedrichsPre S γ hS) where
-  inner := preInner hS
+  inner x y :=
+    ⟪S x.toDomain, (y.toDomain : E)⟫_𝕜 + ((1 - γ : ℝ) : 𝕜) * ⟪(x.toDomain : E), (y.toDomain : E)⟫_𝕜
   conj_inner_symm x y := by
-    rw [preInner, preInner, _root_.map_add, _root_.map_mul, RCLike.conj_ofReal, inner_conj_symm,
-      inner_conj_symm, hS.isFormalAdjoint x.toDomain y.toDomain]
-  re_inner_nonneg x := (sq_nonneg _).trans (norm_sq_le_re_preInner_self hS x)
+    simp [hS.isFormalAdjoint x.toDomain y.toDomain]
+  re_inner_nonneg x := by
+    simp only [_root_.map_add, RCLike.re_ofReal_mul, inner_self_eq_norm_sq]
+    linarith [hS.mul_norm_sq_le_re_inner x.toDomain, sq_nonneg ‖(x.toDomain : E)‖]
   add_left x y z := by
-    simp only [preInner, toDomain_add, LinearPMap.map_add, Submodule.coe_add, inner_add_left]
+    simp only [toDomain_add, LinearPMap.map_add, Submodule.coe_add, inner_add_left]
     ring
   smul_left x y r := by
-    simp only [preInner, toDomain_smul, LinearPMap.map_smul, Submodule.coe_smul, inner_smul_left]
+    simp only [toDomain_smul, LinearPMap.map_smul, Submodule.coe_smul, inner_smul_left]
     ring
 
 instance instSeminormedAddCommGroup : SeminormedAddCommGroup (FriedrichsPre S γ hS) :=
@@ -184,13 +220,25 @@ instance instInnerProductSpace : InnerProductSpace 𝕜 (FriedrichsPre S γ hS) 
 theorem inner_def (x y : FriedrichsPre S γ hS) :
     ⟪x, y⟫_𝕜 = ⟪S x.toDomain, (y.toDomain : E)⟫_𝕜 +
       ((1 - γ : ℝ) : 𝕜) * ⟪(x.toDomain : E), (y.toDomain : E)⟫_𝕜 :=
-  rfl
+  (rfl)
+
+/-- The diagonal real part of the form inner product. -/
+theorem re_inner_self (x : FriedrichsPre S γ hS) :
+    RCLike.re ⟪x, x⟫_𝕜 =
+      RCLike.re ⟪S x.toDomain, (x.toDomain : E)⟫_𝕜 + (1 - γ) * ‖(x.toDomain : E)‖ ^ 2 := by
+  rw [inner_def, _root_.map_add, RCLike.re_ofReal_mul, inner_self_eq_norm_sq]
+
+/-- The form inner product dominates the square of the norm of `E` on the diagonal. -/
+theorem norm_sq_le_re_inner_self (x : FriedrichsPre S γ hS) :
+    ‖(x.toDomain : E)‖ ^ 2 ≤ RCLike.re ⟪x, x⟫_𝕜 := by
+  rw [re_inner_self]
+  linarith [hS.mul_norm_sq_le_re_inner x.toDomain]
 
 /-- The norm of `E` is dominated by the form norm. -/
 theorem norm_toDomain_le (x : FriedrichsPre S γ hS) : ‖(x.toDomain : E)‖ ≤ ‖x‖ := by
   refine le_of_sq_le_sq ?_ (norm_nonneg _)
-  have h : ‖x‖ ^ 2 = RCLike.re (preInner hS x x) := @norm_sq_eq_re_inner 𝕜 _ _ _ _ x
-  exact h ▸ norm_sq_le_re_preInner_self hS x
+  rw [norm_sq_eq_re_inner (𝕜 := 𝕜) x]
+  exact norm_sq_le_re_inner_self hS x
 
 /-- The inclusion of `FriedrichsPre` into `E`, a contraction. -/
 def inclusion : FriedrichsPre S γ hS →L[𝕜] E :=
@@ -200,7 +248,7 @@ def inclusion : FriedrichsPre S γ hS →L[𝕜] E :=
 /-- `FriedrichsPre.inclusion` sends `x` to its underlying vector. -/
 @[simp]
 theorem inclusion_apply (x : FriedrichsPre S γ hS) : inclusion hS x = x.toDomain :=
-  rfl
+  (rfl)
 
 end FriedrichsPre
 
@@ -214,16 +262,34 @@ abbrev FriedrichsSpace (hS : S.IsSymmetricBoundedBelow γ) : Type _ :=
 
 variable (hS : S.IsSymmetricBoundedBelow γ)
 
-/-- The image of a vector of the domain of `S` in the form completion. -/
-def toFriedrichsSpace (x : S.domain) : FriedrichsSpace S γ hS :=
-  (FriedrichsPre.ofDomain x : FriedrichsPre S γ hS)
+/-- The linear map sending a vector of the domain of `S` to its image in the form completion. -/
+def toFriedrichsSpace : S.domain →ₗ[𝕜] FriedrichsSpace S γ hS :=
+  (UniformSpace.Completion.toComplL : FriedrichsPre S γ hS →L[𝕜] _).toLinearMap ∘ₗ
+    (FriedrichsPre.linearEquivDomain hS).symm.toLinearMap
+
+/-- `toFriedrichsSpace` is the coercion into the completion of `FriedrichsPre.ofDomain`. -/
+theorem toFriedrichsSpace_apply (x : S.domain) :
+    toFriedrichsSpace hS x = ((FriedrichsPre.ofDomain x : FriedrichsPre S γ hS) :
+      FriedrichsSpace S γ hS) :=
+  (rfl)
+
+/-- Every element of `FriedrichsPre` maps into the form completion through `toFriedrichsSpace`. -/
+theorem coe_eq_toFriedrichsSpace_toDomain (y : FriedrichsPre S γ hS) :
+    (y : FriedrichsSpace S γ hS) = toFriedrichsSpace hS y.toDomain :=
+  (rfl)
 
 /-- The inner product of the form completion on vectors of the domain of `S`. -/
+@[simp]
 theorem inner_toFriedrichsSpace (x y : S.domain) :
     ⟪toFriedrichsSpace hS x, toFriedrichsSpace hS y⟫_𝕜 =
       ⟪S x, (y : E)⟫_𝕜 + ((1 - γ : ℝ) : 𝕜) * ⟪(x : E), (y : E)⟫_𝕜 := by
-  rw [toFriedrichsSpace, toFriedrichsSpace, UniformSpace.Completion.inner_coe,
-    FriedrichsPre.inner_def]
+  simp only [toFriedrichsSpace_apply, UniformSpace.Completion.inner_coe, FriedrichsPre.inner_def]
+
+/-- The squared form norm of a vector of the domain of `S`. -/
+theorem norm_toFriedrichsSpace_sq (x : S.domain) :
+    ‖toFriedrichsSpace hS x‖ ^ 2 = RCLike.re ⟪S x, (x : E)⟫_𝕜 + (1 - γ) * ‖(x : E)‖ ^ 2 := by
+  rw [norm_sq_eq_re_inner (𝕜 := 𝕜), inner_toFriedrichsSpace, _root_.map_add,
+    RCLike.re_ofReal_mul, inner_self_eq_norm_sq]
 
 /-- The domain of `S` is dense in its form completion. -/
 theorem denseRange_toFriedrichsSpace : DenseRange (toFriedrichsSpace hS) :=
@@ -238,12 +304,23 @@ the domain of `S`. -/
 def friedrichsInclusion : FriedrichsSpace S γ hS →L[𝕜] E :=
   (FriedrichsPre.inclusion hS).fromCompletion
 
+/-- `friedrichsInclusion` sends an element of `FriedrichsPre` to its underlying vector. -/
+@[simp]
+theorem friedrichsInclusion_coe (y : FriedrichsPre S γ hS) :
+    friedrichsInclusion hS y = y.toDomain := by
+  rw [friedrichsInclusion, ContinuousLinearMap.fromCompletion_apply_coe,
+    FriedrichsPre.inclusion_apply]
+
 /-- `friedrichsInclusion` restricts to the inclusion of the domain of `S`. -/
 @[simp]
 theorem friedrichsInclusion_toFriedrichsSpace (x : S.domain) :
     friedrichsInclusion hS (toFriedrichsSpace hS x) = x := by
-  rw [friedrichsInclusion, toFriedrichsSpace, ContinuousLinearMap.fromCompletion_apply_coe,
-    FriedrichsPre.inclusion_apply]
+  rw [toFriedrichsSpace_apply, friedrichsInclusion_coe, FriedrichsPre.toDomain_ofDomain]
+
+/-- `toFriedrichsSpace` is injective. -/
+theorem toFriedrichsSpace_injective : Function.Injective (toFriedrichsSpace hS) := fun x y h =>
+  Subtype.ext <| by
+    rw [← friedrichsInclusion_toFriedrichsSpace hS x, h, friedrichsInclusion_toFriedrichsSpace]
 
 /-- The inclusion of the form completion is a contraction. -/
 theorem norm_friedrichsInclusion_apply_le (u : FriedrichsSpace S γ hS) :
@@ -251,8 +328,7 @@ theorem norm_friedrichsInclusion_apply_le (u : FriedrichsSpace S γ hS) :
   induction u using UniformSpace.Completion.induction_on with
   | hp => exact isClosed_le (by fun_prop) continuous_norm
   | ih x =>
-    rw [friedrichsInclusion, ContinuousLinearMap.fromCompletion_apply_coe,
-      UniformSpace.Completion.norm_coe]
+    rw [friedrichsInclusion_coe, UniformSpace.Completion.norm_coe]
     exact FriedrichsPre.norm_toDomain_le hS x
 
 /-- The form inner product against a vector of the domain of `S` is computed in `E`:
@@ -263,15 +339,12 @@ theorem inner_toFriedrichsSpace_right (u : FriedrichsSpace S γ hS) (x : S.domai
   induction u using UniformSpace.Completion.induction_on with
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih y =>
-    have h := inner_toFriedrichsSpace hS y.toDomain x
-    rw [toFriedrichsSpace] at h
-    rw [h, friedrichsInclusion, ContinuousLinearMap.fromCompletion_apply_coe,
-      FriedrichsPre.inclusion_apply, inner_add_right, inner_smul_right,
-      hS.isFormalAdjoint y.toDomain x]
+    rw [coe_eq_toFriedrichsSpace_toDomain]
+    simp [inner_add_right, inner_smul_right, hS.isFormalAdjoint y.toDomain x]
 
 /-- **Closability of the form of `S`** (Teschl, Lemma 2.10): the inclusion of the form completion
 into `E` is injective. -/
-theorem injective_friedrichsInclusion : Function.Injective (friedrichsInclusion hS) := by
+theorem friedrichsInclusion_injective : Function.Injective (friedrichsInclusion hS) := by
   refine (injective_iff_map_eq_zero _).mpr fun u hu => ?_
   refine (denseRange_toFriedrichsSpace hS).eq_zero_of_inner_left (𝕜 := 𝕜) fun x => ?_
   rw [inner_toFriedrichsSpace_right, hu, inner_zero_left]
@@ -292,15 +365,6 @@ theorem friedrichsForm_apply (u v : FriedrichsSpace S γ hS) :
       ⟪u, v⟫_𝕜 + ((γ - 1 : ℝ) : 𝕜) * ⟪friedrichsInclusion hS u, friedrichsInclusion hS v⟫_𝕜 := by
   rw [friedrichsForm, ContinuousLinearMap.shiftedForm_apply, innerSL_apply_apply]
 
-/-- The closed form extends the form of `S`: `q(x, v) = ⟪S x, j v⟫_𝕜` for `x` in the domain of `S`
-and every `v` in the form completion. -/
-theorem friedrichsForm_toFriedrichsSpace_left (x : S.domain) (v : FriedrichsSpace S γ hS) :
-    friedrichsForm hS (toFriedrichsSpace hS x) v = ⟪S x, friedrichsInclusion hS v⟫_𝕜 := by
-  rw [friedrichsForm_apply, ← inner_conj_symm, inner_toFriedrichsSpace_right,
-    friedrichsInclusion_toFriedrichsSpace, inner_conj_symm, inner_add_left, inner_smul_left,
-    RCLike.conj_ofReal, RCLike.ofReal_sub, RCLike.ofReal_sub, RCLike.ofReal_one]
-  ring
-
 /-- The closed form of the Friedrichs extension is Hermitian. -/
 theorem friedrichsForm_eq_star (u v : FriedrichsSpace S γ hS) :
     friedrichsForm hS u v = star (friedrichsForm hS v u) :=
@@ -308,8 +372,27 @@ theorem friedrichsForm_eq_star (u v : FriedrichsSpace S γ hS) :
     (fun u v => by rw [innerSL_apply_apply, innerSL_apply_apply, RCLike.star_def,
       inner_conj_symm]) _ u v
 
+/-- The closed form extends the form of `S`: `q(x, v) = ⟪S x, j v⟫_𝕜` for `x` in the domain of `S`
+and every `v` in the form completion. -/
+@[simp]
+theorem friedrichsForm_toFriedrichsSpace_left (x : S.domain) (v : FriedrichsSpace S γ hS) :
+    friedrichsForm hS (toFriedrichsSpace hS x) v = ⟪S x, friedrichsInclusion hS v⟫_𝕜 := by
+  rw [friedrichsForm_apply, ← inner_conj_symm, inner_toFriedrichsSpace_right]
+  simp only [inner_add_left, inner_smul_left, friedrichsInclusion_toFriedrichsSpace,
+    inner_conj_symm, RCLike.conj_ofReal]
+  push_cast
+  ring
+
+/-- The closed form extends the form of `S` in its second argument: `q(v, x) = ⟪j v, S x⟫_𝕜` for
+`x` in the domain of `S` and every `v` in the form completion. -/
+@[simp]
+theorem friedrichsForm_toFriedrichsSpace_right (v : FriedrichsSpace S γ hS) (x : S.domain) :
+    friedrichsForm hS v (toFriedrichsSpace hS x) = ⟪friedrichsInclusion hS v, S x⟫_𝕜 := by
+  rw [friedrichsForm_eq_star, friedrichsForm_toFriedrichsSpace_left, RCLike.star_def,
+    inner_conj_symm]
+
 /-- The closed form of the Friedrichs extension is coercive after shifting by `1 - γ`. -/
-theorem norm_sq_le_re_friedrichsForm (u : FriedrichsSpace S γ hS) :
+theorem one_mul_norm_sq_le_re_friedrichsForm_add (u : FriedrichsSpace S γ hS) :
     1 * ‖u‖ ^ 2 ≤
       RCLike.re (friedrichsForm hS u u) + (1 - γ) * ‖friedrichsInclusion hS u‖ ^ 2 := by
   rw [friedrichsForm, ContinuousLinearMap.re_shiftedForm_self, innerSL_apply_apply,
@@ -330,8 +413,48 @@ theorem mul_norm_sq_le_re_friedrichsForm (u : FriedrichsSpace S γ hS) :
 /-- The **Friedrichs extension** of a densely defined symmetric operator `S` with lower bound `γ`:
 the self-adjoint operator represented by the closure of the form `⟪S x, y⟫_𝕜`. -/
 def friedrichsExtension (hdense : Dense (S.domain : Set E)) : E →ₗ.[𝕜] E :=
-  (friedrichsInclusion hS).closedFormOperator (injective_friedrichsInclusion hS)
+  (friedrichsInclusion hS).closedFormOperator (friedrichsInclusion_injective hS)
     (denseRange_friedrichsInclusion hS hdense) (friedrichsForm hS)
+
+/-- The Friedrichs extension is the operator represented by `friedrichsForm`. -/
+theorem friedrichsExtension_eq_closedFormOperator (hdense : Dense (S.domain : Set E)) :
+    friedrichsExtension hS hdense =
+      (friedrichsInclusion hS).closedFormOperator (friedrichsInclusion_injective hS)
+        (denseRange_friedrichsInclusion hS hdense) (friedrichsForm hS) :=
+  (rfl)
+
+/-- **Domain of the Friedrichs extension.** A vector `x` lies in it exactly when `x = j u` for a
+vector `u` of the form completion such that `q(u, ·)` is represented by some `h : E`. -/
+theorem mem_domain_friedrichsExtension_iff (hdense : Dense (S.domain : Set E)) {x : E} :
+    x ∈ (friedrichsExtension hS hdense).domain ↔
+      ∃ u : FriedrichsSpace S γ hS, friedrichsInclusion hS u = x ∧
+        ∃ h : E, ∀ v, friedrichsForm hS u v = ⟪h, friedrichsInclusion hS v⟫_𝕜 :=
+  ContinuousLinearMap.mem_domain_closedFormOperator_iff _ _ _ _
+
+/-- If `q(u, v) = ⟪h, j v⟫_𝕜` for all `v`, then `j u` lies in the domain of the Friedrichs
+extension. -/
+theorem apply_mem_domain_friedrichsExtension (hdense : Dense (S.domain : Set E))
+    {u : FriedrichsSpace S γ hS} {h : E}
+    (hu : ∀ v, friedrichsForm hS u v = ⟪h, friedrichsInclusion hS v⟫_𝕜) :
+    friedrichsInclusion hS u ∈ (friedrichsExtension hS hdense).domain :=
+  ContinuousLinearMap.apply_mem_domain_closedFormOperator _ _ _ _ hu
+
+/-- **Action of the Friedrichs extension.** If `x = j u` and `q(u, v) = ⟪h, j v⟫_𝕜` for all `v`,
+then the Friedrichs extension sends `x` to `h`. -/
+theorem friedrichsExtension_apply_eq (hdense : Dense (S.domain : Set E))
+    {x : (friedrichsExtension hS hdense).domain} {u : FriedrichsSpace S γ hS} {h : E}
+    (hx : friedrichsInclusion hS u = x)
+    (hu : ∀ v, friedrichsForm hS u v = ⟪h, friedrichsInclusion hS v⟫_𝕜) :
+    friedrichsExtension hS hdense x = h :=
+  ContinuousLinearMap.closedFormOperator_apply_eq _ _ _ _ hx hu
+
+/-- **Form identity of the Friedrichs extension.** If `x = j u`, then
+`⟪T x, j v⟫_𝕜 = q(u, v)` for every `v` of the form completion. -/
+theorem inner_friedrichsExtension (hdense : Dense (S.domain : Set E))
+    {x : (friedrichsExtension hS hdense).domain} {u : FriedrichsSpace S γ hS}
+    (hx : friedrichsInclusion hS u = x) (v : FriedrichsSpace S γ hS) :
+    ⟪friedrichsExtension hS hdense x, friedrichsInclusion hS v⟫_𝕜 = friedrichsForm hS u v :=
+  ContinuousLinearMap.inner_closedFormOperator _ _ _ _ hx v
 
 /-- **Graph characterization of the Friedrichs extension.** The pair `(x, h)` lies in its graph
 exactly when `x = j u` for a vector `u` of the form completion with `q(u, v) = ⟪h, j v⟫_𝕜` for all
@@ -347,7 +470,7 @@ theorem isSelfAdjoint_friedrichsExtension (hdense : Dense (S.domain : Set E)) :
     IsSelfAdjoint (friedrichsExtension hS hdense) :=
   ContinuousLinearMap.isSelfAdjoint_closedFormOperator _ _ _ _ (friedrichsForm_eq_star hS)
     (ContinuousLinearMap.isUnit_continuousLinearMapOfBilin_shiftedForm _ one_pos le_rfl
-      (norm_sq_le_re_friedrichsForm hS))
+      (one_mul_norm_sq_le_re_friedrichsForm_add hS))
 
 /-- The Friedrichs extension extends `S`. -/
 theorem le_friedrichsExtension (hdense : Dense (S.domain : Set E)) :
@@ -358,6 +481,24 @@ theorem le_friedrichsExtension (hdense : Dense (S.domain : Set E)) :
   exact (mem_graph_friedrichsExtension_iff hS hdense).mpr
     ⟨toFriedrichsSpace hS x, friedrichsInclusion_toFriedrichsSpace hS x,
       friedrichsForm_toFriedrichsSpace_left hS x⟩
+
+/-- **Uniqueness of the Friedrichs extension** (Kato, Chapter VI, Theorem 2.11). A self-adjoint
+extension of `S` whose domain lies in the image of the form completion is the Friedrichs
+extension. -/
+theorem eq_friedrichsExtension_of_isSelfAdjoint (hdense : Dense (S.domain : Set E))
+    {T : E →ₗ.[𝕜] E} (hT : IsSelfAdjoint T) (hST : S ≤ T)
+    (hrange : ∀ x : T.domain, (x : E) ∈ Set.range (friedrichsInclusion hS)) :
+    T = friedrichsExtension hS hdense := by
+  refine ContinuousLinearMap.eq_closedFormOperator_of_isSelfAdjoint _ _ _ _
+    (friedrichsForm_eq_star hS) hT fun x => ?_
+  obtain ⟨u, hu⟩ := hrange x
+  refine ⟨u, hu, fun v => ?_⟩
+  refine (denseRange_toFriedrichsSpace hS).induction_on v
+    (isClosed_eq (by fun_prop) (by fun_prop)) fun y => ?_
+  have hy : (y : E) ∈ T.domain := hST.1 y.property
+  rw [friedrichsForm_toFriedrichsSpace_right, friedrichsInclusion_toFriedrichsSpace, hu,
+    hST.2 (x := y) (y := ⟨y, hy⟩) rfl]
+  exact (hT.isFormalAdjoint x ⟨y, hy⟩).symm
 
 /-- The Friedrichs extension keeps the lower bound `γ` of `S`. -/
 theorem mul_norm_sq_le_re_inner_friedrichsExtension (hdense : Dense (S.domain : Set E))
