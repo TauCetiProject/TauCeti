@@ -249,7 +249,7 @@ noncomputable def smoothPiTensorProductContraction :
 /-- The augmentation of the dependent tensor contraction applies each factor augmentation. -/
 theorem smoothPiTensorProductContraction_ι_apply (z : ⨂[R] i, (X i).V) :
     ((smoothPiTensorProductContraction M d hM hdd X ℳ hρ hd a ha π h hh hπa hπ hneg
-      hdh).ι.hom z).1 = PiTensorProduct.map (fun i ↦ (a i).toLinearMap) z := by
+      hdh).ι.hom z).val = PiTensorProduct.map (fun i ↦ (a i).toLinearMap) z := by
   -- Naming the graded term keeps its module instance fixed when evaluating the morphism
   -- equality across the sealed tensor-product carrier.
   let J := (((toSmoothDiscrete R G).obj (DiscreteRep.piTensorProduct M)).obj).gradedCochainComplex
@@ -258,7 +258,7 @@ theorem smoothPiTensorProductContraction_ι_apply (z : ⨂[R] i, (X i).V) :
     (isHomogeneous_smoothPiTensorProductDifferential M d ℳ hd)
     (smoothPiTensorProductDifferential_sq M d hM hdd)
   exact (congrArg (fun f : ((toSmoothDiscrete R G).obj (DiscreteRep.piTensorProduct X)).obj ⟶
-      J.X 0 ↦ (f.hom z).1)
+      J.X 0 ↦ (f.hom z).val)
     (TopRep.ResolutionContraction.ofGraded_ι.{u, v, max u w x}
       _ _ _ _ _ _ _ _ _ _ _ _)).trans
     ((TopRep.gradedCochainComplexLift_apply
@@ -276,7 +276,7 @@ theorem smoothPiTensorProductContraction_ι_apply (z : ⨂[R] i, (X i).V) :
 /-- The retraction of the dependent tensor contraction applies each factor retraction. -/
 theorem smoothPiTensorProductContraction_proj_apply (z) :
     (smoothPiTensorProductContraction M d hM hdd X ℳ hρ hd a ha π h hh hπa hπ hneg
-      hdh).proj z = PiTensorProduct.map π z.1 := by
+      hdh).proj z = PiTensorProduct.map π z.val := by
   unfold smoothPiTensorProductContraction
   exact TopRep.ResolutionContraction.ofGraded_proj_apply.{u, v, max u w x}
     _ _ _ _ _ _ _ _ _ _ _ _ z
@@ -284,8 +284,8 @@ theorem smoothPiTensorProductContraction_proj_apply (z) :
 /-- The homotopy of the dependent tensor contraction is the ordered slot homotopy. -/
 theorem smoothPiTensorProductContraction_hom_apply (n : ℕ) (z) :
     ((smoothPiTensorProductContraction M d hM hdd X ℳ hρ hd a ha π h hh hπa hπ hneg
-      hdh).hom n z).1 =
-      PiTensorProduct.slotHomotopy I (fun i ↦ (a i).toLinearMap ∘ₗ π i) h z.1 := by
+      hdh).hom n z).val =
+      PiTensorProduct.slotHomotopy I (fun i ↦ (a i).toLinearMap ∘ₗ π i) h z.val := by
   unfold smoothPiTensorProductContraction
   exact TopRep.ResolutionContraction.ofGraded_hom_apply.{u, v, max u w x}
     _ _ _ _ _ _ _ _ _ _ _ _ n z

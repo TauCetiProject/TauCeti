@@ -166,7 +166,7 @@ theorem kummerField_inf_comap_eq [(powMonoidHom n : Kˣ →* Kˣ).range.IsFinite
       have := congrArg (fun u : Lˣ ↦ ((u : L) : E)) hb
       simp only [powMonoidHom_apply, Units.val_pow_eq_pow_val, IntermediateField.coe_pow] at this
       simpa [this] using hx
-    exact (L.exists_mem_pow_eq_iff_of_pow_eq hpow).mp ⟨_, (b : L).2, rfl⟩
+    exact (L.exists_mem_pow_eq_iff_of_pow_eq hpow).mp ⟨_, (b : L).property, rfl⟩
   have : FiniteDimensional K L := .of_injective (IntermediateField.inclusion hL).toLinearMap
     (IntermediateField.inclusion hL).injective
   have := Subgroup.isFiniteRelIndex_of_le_right (powMonoidHom n : Kˣ →* Kˣ).range

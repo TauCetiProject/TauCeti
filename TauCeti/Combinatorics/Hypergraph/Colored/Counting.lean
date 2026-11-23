@@ -22,7 +22,9 @@ induced copy exactly when it matches the pattern color of every increasing tripl
 
 Patterns with fewer than three vertices impose no color conditions. Constant patterns in
 constant hosts of the same color attain the falling-factorial bound, whereas a conflicting
-pattern color forces the count to vanish.
+pattern color forces the count to vanish. The single triple of color `c` has one induced copy
+for every injective triple of vertices whose underlying triple has color `c`
+(`Colored3Graph.inducedCopyCount_const_three`).
 -/
 
 public section
@@ -50,6 +52,9 @@ theorem k_const (k : ℕ) (c : κ) : (const k c).k = k := (rfl)
 @[simp]
 theorem graph_const (k : ℕ) (c : κ) :
     (const k c).graph = Colored3Graph.const c := (rfl)
+
+/-- The constant pattern is built from the constant coloring of the triples of `Fin k`. -/
+theorem const_def (k : ℕ) (c : κ) : const k c = ⟨k, Colored3Graph.const c⟩ := (rfl)
 
 /-- The color of the triple `{i, j, l}` of pattern vertices, given in increasing order. -/
 def tripleColor (F : FiniteColored3Pattern κ) (i j l : Fin F.k) (hij : i < j) (hjl : j < l) : κ :=
@@ -191,6 +196,33 @@ theorem inducedCopyCount_const_eq_zero (c : κ) (F : FiniteColored3Pattern κ)
   intro f hf
   apply hs
   simpa using ((isInducedCopy_iff _ _ _).mp ((mem_inducedCopies _ _ _).mp hf) s).symm
+
+open Finset in
+/-- **Induced copies of a single colored triple.** The labeled induced copies in `H` of the single
+triple of color `c` are the injective triples of vertices whose underlying triple has color `c`. -/
+theorem inducedCopyCount_const_three [DecidableEq κ] [DecidableEq V] (H : Colored3Graph κ V)
+    (c : κ) :
+    H.inducedCopyCount (FiniteColored3Pattern.const 3 c) =
+      #{x : {x : Fin 3 → V // Function.Injective x} |
+        H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} := by
+  classical
+  -- An injection is an induced copy exactly when its image triple has color `c`, since the only
+  -- three-element subset of `Fin 3` is the whole of `Fin 3`.
+  have key (f : Fin 3 ↪ V) : H.IsInducedCopy ⟨3, const c⟩ f ↔
+      H.color (Set.powersetCard.ofFinEmb 3 V f) = c := by
+    have hmap : Set.powersetCard.map 3 f ⟨univ, by simp⟩ = Set.powersetCard.ofFinEmb 3 V f :=
+      Subtype.ext (by simp)
+    rw [isInducedCopy_iff]
+    refine ⟨fun h ↦ by simpa [hmap] using h ⟨univ, by simp⟩, fun h s ↦ ?_⟩
+    obtain rfl : s = ⟨univ, by simp⟩ := Subtype.ext (eq_univ_of_card _ (by simp))
+    simpa [hmap] using h
+  rw [inducedCopyCount_def, FiniteColored3Pattern.const_def]
+  refine card_bij' (fun f _ ↦ ⟨f, f.injective⟩) (fun x _ ↦ ⟨x.val, x.property⟩)
+    (fun f hf ↦ ?_) (fun x hx ↦ ?_) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+  · rw [mem_inducedCopies, key] at hf
+    simpa using hf
+  · rw [mem_inducedCopies, key]
+    simpa using hx
 
 end Colored3Graph
 
