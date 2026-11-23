@@ -150,8 +150,7 @@ theorem le_iff_gridLinearInterpolant_le :
     have hn' : h n ≠ ⊤ :=
       natCast_mem_interpolationDomain.1 (hsub (natCast_mem_interpolationDomain.2 hn))
     have h1 := hle n (natCast_mem_interpolationDomain.2 hn)
-    rw [← mul_one (n : ℝ), gridLinearInterpolant_natCast_mul one_ne_zero,
-      gridLinearInterpolant_natCast_mul one_ne_zero] at h1
+    simp only [gridLinearInterpolant_one_natCast] at h1
     exact WithTop.le_of_untop₀_le_untop₀ hn' h1
 
 /-- Height sequences are equal exactly when they have the same interpolation domain and
@@ -183,14 +182,13 @@ theorem IsConvexSeq.exists_affine_minorant_eq_gridLinearInterpolant (hh : IsConv
       ⟨⌊x⌋₊, le_antisymm (hc ▸ Nat.le_ceil x) (Nat.floor_le hx0)⟩
     rw [Nat.floor_natCast] at hfl
     obtain ⟨c, m, hline, heq⟩ := hh.exists_affine_minorant_eq hfl
-    refine ⟨c, m, hline, ?_⟩
-    simpa only [mul_one] using
-      heq.trans (gridLinearInterpolant_natCast_mul one_ne_zero (fun k ↦ (h k).untop₀) n).symm
+    exact ⟨c, m, hline,
+      heq.trans (gridLinearInterpolant_one_natCast (fun n => (h n).untop₀) n).symm⟩
   · refine ⟨(h ⌊x⌋₊).untop₀ - unitSlope h ⌊x⌋₊ * ⌊x⌋₊, unitSlope h ⌊x⌋₊, fun n => ?_, ?_⟩
     · convert hh.supportingLine_le hfl hedge n using 2
       ring
-    · rw [gridLinearInterpolant_def, stepWeight_def, unitSlope_def]
-      simp only [div_one, mul_one, smul_eq_mul]
+    · rw [gridLinearInterpolant_one_def, unitSlope_def]
+      simp only [smul_eq_mul]
       ring
 
 /-- The interpolation of a convex height sequence is convex on its real domain. -/
@@ -239,8 +237,8 @@ theorem isConvexSeq_iff_convexOn_gridLinearInterpolant :
     IsConvexSeq h ↔
       ConvexOn ℝ (interpolationDomain h) (gridLinearInterpolant 1 fun n => (h n).untop₀) :=
   ⟨IsConvexSeq.convexOn_gridLinearInterpolant, fun hF => isConvexSeq_of_convexOn hF
-    (fun _ => natCast_mem_interpolationDomain.symm) fun n _ => by
-      simpa only [mul_one] using gridLinearInterpolant_natCast_mul one_ne_zero _ n⟩
+    (fun _ => natCast_mem_interpolationDomain.symm) fun n _ =>
+      gridLinearInterpolant_one_natCast _ n⟩
 
 /-- A height sequence is convex exactly when some function on `interpolationDomain h` is
 convex there and takes its heights at the integer points. For a convex height sequence,
@@ -249,8 +247,8 @@ unique; the interpolation is one choice. -/
 theorem isConvexSeq_iff_exists_convexOn :
     IsConvexSeq h ↔ ∃ F : ℝ → ℝ, ConvexOn ℝ (interpolationDomain h) F ∧
       ∀ n, h n ≠ ⊤ → F n = (h n).untop₀ :=
-  ⟨fun hh => ⟨_, hh.convexOn_gridLinearInterpolant, fun n _ => by
-      simpa only [mul_one] using gridLinearInterpolant_natCast_mul one_ne_zero _ n⟩,
+  ⟨fun hh => ⟨_, hh.convexOn_gridLinearInterpolant, fun n _ =>
+      gridLinearInterpolant_one_natCast _ n⟩,
     fun ⟨_, hF, hFh⟩ => isConvexSeq_of_convexOn hF
       (fun _ => natCast_mem_interpolationDomain.symm) hFh⟩
 

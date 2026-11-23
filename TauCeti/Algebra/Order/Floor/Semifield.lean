@@ -48,6 +48,8 @@ of terms at most `M ≥ 0` over them by `(y + 1 − a)⁺ M`.
 * `TauCeti.mem_Ico_floor_div_mul`: `t ∈ [⌊t / τ⌋₊ τ, (⌊t / τ⌋₊ + 1) τ)` for `τ > 0` and `t ≥ 0`.
 * `TauCeti.iUnion_Icc_natCast_mul`: `(⋃ n : ℕ, [n τ, (n + 1) τ]) = [0, ∞)` for `τ > 0`.
 * `TauCeti.ceil_eq_floor_or_add_one`: `⌈x⌉₊ = ⌊x⌋₊ ∨ ⌈x⌉₊ = ⌊x⌋₊ + 1`.
+* `TauCeti.floor_div_add_one_le_ceil_div`: `⌊s / τ⌋₊ + 1 ≤ ⌈t / τ⌉₊` for `0 < τ`, `s < t`,
+  and `0 < t`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`:
   `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
 * `TauCeti.mem_Icc_min_sub_one_natFloor_div`: for `0 ≤ W` and `0 < n`, every `x ∈ [0, W]` lies in
@@ -127,6 +129,12 @@ theorem ceil_eq_floor_or_add_one {R : Type*} [Semiring R] [LinearOrder R] [Floor
   have := Nat.floor_le_ceil x
   have := Nat.ceil_le_floor_add_one x
   omega
+
+/-- For `0 < τ`, `s < t`, and `0 < t`, `⌊s / τ⌋₊ + 1 ≤ ⌈t / τ⌉₊`. -/
+theorem floor_div_add_one_le_ceil_div (hτ : 0 < τ) (hst : s < t) (ht : 0 < t) :
+    ⌊s / τ⌋₊ + 1 ≤ ⌈t / τ⌉₊ :=
+  Nat.add_one_le_iff.2
+    (Nat.floor_lt_ceil_of_lt_of_pos (div_lt_div_of_pos_right hst hτ) (div_pos ht hτ))
 
 /-- For a step `τ > 0`, the index sets `[⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)` of the multiples of `τ` in
 `[sᵢ, tᵢ)` are pairwise disjoint whenever the intervals `(sᵢ, tᵢ]` are. -/

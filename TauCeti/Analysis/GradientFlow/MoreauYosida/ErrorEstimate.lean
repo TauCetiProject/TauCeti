@@ -255,14 +255,6 @@ private theorem two_mul_bilinInterp_le_of_penalizedConvex {X : Type*} [PseudoMet
           ((η : ℝ) / 2) * (eV 0 - eV (⌊t / η⌋₊ + 1))) (by positivity : 0 ≤ 2 * exp (K * t))
   rw [← mul_assoc, mul_assoc 2, hcan, mul_one] at hmul; exact hmul.trans_eq (by ring)
 
-/-- Endpoint distance from `W ⌈t / δ⌉₊` to `W ⌊t / δ⌋₊` or `W (⌊t / δ⌋₊ + 1)` is bounded by
-`dist (W ⌊t / δ⌋₊) (W (⌊t / δ⌋₊ + 1))`. -/
-private theorem dist_ceil_div_le_dist_step {X : Type*} [PseudoMetricSpace X] (δ : ℝ≥0)
-    (W : ℕ → X) (t : ℝ) {i : ℕ} (hi : i = ⌊t / δ⌋₊ ∨ i = ⌊t / δ⌋₊ + 1) :
-    dist (W ⌈t / δ⌉₊) (W i) ≤ dist (W ⌊t / δ⌋₊) (W (⌊t / δ⌋₊ + 1)) := by
-  rcases ceil_eq_floor_or_add_one (t / (δ : ℝ)) with hc | hc <;>
-    rcases hi with rfl | rfl <;> simp [hc, dist_comm]
-
 /-- **Quantitative two-step error bound for minimizing movements.** Under
 `TauCeti.PenalizedConvex m τ φ` and `TauCeti.PenalizedConvex m η φ` with `(-m) * τ ≤ 1 / 2` and
 `(-m) * η ≤ 1 / 2`, the piecewise constant interpolants of two minimizing movement sequences with
@@ -300,8 +292,8 @@ theorem dist_ceil_sq_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace X]
         halfDistSq U V i j := by
     have htri : dist (U ⌈t / τ⌉₊) (V ⌈t / η⌉₊) ≤ dist (U i) (V j) + ΔU + ΔV :=
       (dist_triangle4 (U ⌈t / τ⌉₊) (U i) (V j) (V ⌈t / η⌉₊)).trans
-        (by linarith [dist_ceil_div_le_dist_step τ U t hi,
-          dist_comm (V j) (V ⌈t / η⌉₊) ▸ dist_ceil_div_le_dist_step η V t hj])
+        (by linarith [dist_ceil_le_dist_floor_add_one U (t / (τ : ℝ)) hi,
+          dist_comm (V j) (V ⌈t / η⌉₊) ▸ dist_ceil_le_dist_floor_add_one V (t / (η : ℝ)) hj])
     have hsq : dist (U ⌈t / τ⌉₊) (V ⌈t / η⌉₊) ^ 2 ≤
         2 * dist (U i) (V j) ^ 2 + 4 * ΔU ^ 2 + 4 * ΔV ^ 2 := by
       nlinarith [sq_nonneg (dist (U i) (V j) - ΔU - ΔV), sq_nonneg (ΔU - ΔV),

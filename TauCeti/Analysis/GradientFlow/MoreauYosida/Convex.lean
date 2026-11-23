@@ -719,10 +719,9 @@ variable {X : Type*} [PseudoMetricSpace X] {m : ℝ} {τ : ℝ≥0} {φ : X → 
 theorem ConvexWithDistSq.exists_moreauYosida_ne_bot (h : ConvexWithDistSq m φ)
     (hx₀ : LowerSemicontinuousAt φ x₀) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥) (x : X) :
     ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ x ≠ ⊥ :=
-  let ⟨τ₀, hτ₀, _, hm⟩ :=
-    exists_pos_abs_mul_le m (by norm_num : (0 : ℝ) < 1 / 2) (one_pos : (0 : ℝ) < 1)
+  let ⟨τ₀, hτ₀, hm⟩ := exists_pos_forall_one_add_mul_pos m
   ⟨⟨τ₀, hτ₀.le⟩, hτ₀, h.moreauYosida_ne_bot (τ := ⟨τ₀, hτ₀.le⟩) hx₀ hx₀top hx₀bot
-    (one_add_mul_pos_of_abs_mul_le_half (δ := τ₀) hτ₀.le (hm hτ₀.le le_rfl)) x⟩
+    (hm hτ₀.le le_rfl) x⟩
 
 /-- **Existence of a coercive time step for geodesically convex energies.** If `φ` is
 `m`-geodesically convex on a pseudometric space, and is lower semicontinuous and finite at some
@@ -730,10 +729,9 @@ point `x₀`, then for every `x : X` there exists `τ₀ > 0` with `φ_{τ₀}(x
 theorem GeodesicallyConvex.exists_moreauYosida_ne_bot (h : GeodesicallyConvex m φ)
     (hx₀ : LowerSemicontinuousAt φ x₀) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥) (x : X) :
     ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ x ≠ ⊥ :=
-  let ⟨τ₀, hτ₀, _, hm⟩ :=
-    exists_pos_abs_mul_le m (by norm_num : (0 : ℝ) < 1 / 2) (one_pos : (0 : ℝ) < 1)
+  let ⟨τ₀, hτ₀, hm⟩ := exists_pos_forall_one_add_mul_pos m
   ⟨⟨τ₀, hτ₀.le⟩, hτ₀, h.moreauYosida_ne_bot (τ := ⟨τ₀, hτ₀.le⟩) hx₀ hx₀top hx₀bot
-    (one_add_mul_pos_of_abs_mul_le_half (δ := τ₀) hτ₀.le (hm hτ₀.le le_rfl)) x⟩
+    (hm hτ₀.le le_rfl) x⟩
 
 /-- **Existence of resolvent steps under Assumption 3.24** (Ambrosio–Gigli, Assumption 3.24). In a
 complete pseudometric space, if `φ` is lower semicontinuous and satisfies the pointwise

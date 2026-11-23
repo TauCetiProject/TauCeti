@@ -452,7 +452,7 @@ theorem locallyFinite_Icc_of_tendsto {K : Type*} [LinearOrder K] [TopologicalSpa
   obtain ⟨u, hu⟩ := exists_gt t
   obtain ⟨N, hN⟩ := eventually_atTop.1 (hf.eventually_gt_atTop u)
   refine ⟨Iio u, Iio_mem_nhds hu, (finite_lt_nat N).subset fun n ⟨x, hx, hxu⟩ ↦ ?_⟩
-  change n < N
+  rw [Set.mem_ofPred_eq]
   by_contra! hNn
   exact not_le_of_gt (hxu.trans_le (hN n hNn).le) hx.1
 

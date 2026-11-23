@@ -14,6 +14,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Order.Floor.Semifield
+import TauCeti.Topology.LocallyFinite.Basic
 import TauCeti.Topology.Order.Interval
 
 /-!
@@ -258,10 +259,24 @@ theorem gridLinearInterpolant_def (τ : ℝ) (c : ℕ → E) (t : ℝ) :
     gridLinearInterpolant τ c t = stepWeight τ ⌊t / τ⌋₊ t • c ⌊t / τ⌋₊ +
       (1 - stepWeight τ ⌊t / τ⌋₊ t) • c (⌊t / τ⌋₊ + 1) := (rfl)
 
+/-- Unconditional defining equation of the unit-step linear interpolant
+`gridLinearInterpolant 1`. -/
+theorem gridLinearInterpolant_one_def (c : ℕ → E) (t : ℝ) :
+    gridLinearInterpolant 1 c t =
+      (⌊t⌋₊ + 1 - t) • c ⌊t⌋₊ + (t - ⌊t⌋₊) • c (⌊t⌋₊ + 1) := by
+  simp only [gridLinearInterpolant_def, stepWeight_def, div_one, mul_one]
+  congr 2; ring
+
 /-- At the grid point `n * τ` (with `τ ≠ 0`), `gridLinearInterpolant τ c` takes the value `c n`. -/
 @[simp] theorem gridLinearInterpolant_natCast_mul {τ : ℝ} (hτ : τ ≠ 0) (c : ℕ → E) (n : ℕ) :
     gridLinearInterpolant τ c ((n : ℝ) * τ) = c n := by
   simp [gridLinearInterpolant, gridPiecewise_natCast_mul hτ, stepWeight_natCast_mul hτ]
+
+/-- At a natural number `n`, the unit-step linear interpolant `gridLinearInterpolant 1 c` takes
+the value `c n`. -/
+@[simp] theorem gridLinearInterpolant_one_natCast (c : ℕ → E) (n : ℕ) :
+    gridLinearInterpolant 1 c n = c n := by
+  simpa only [mul_one] using gridLinearInterpolant_natCast_mul one_ne_zero c n
 
 /-- At `0` (with `τ ≠ 0`), `gridLinearInterpolant τ c` takes the value `c 0`. -/
 @[simp] theorem gridLinearInterpolant_apply_zero {τ : ℝ} (hτ : τ ≠ 0) (c : ℕ → E) :
@@ -512,11 +527,10 @@ theorem continuousOn_gridBilinearInterpolant [TopologicalSpace E] [ContinuousAdd
     [ContinuousSMul ℝ E] {τ η : ℝ} (hτ : 0 < τ) (hη : 0 < η) (a : ℕ → ℕ → E) :
     ContinuousOn (fun p : ℝ × ℝ ↦ gridBilinearInterpolant τ η a p.1 p.2) (Ici 0 ×ˢ Ici 0) := by
   have hlf : LocallyFinite fun p : ℕ × ℕ ↦
-      Icc ((p.1 : ℝ) * τ) (((p.1 : ℝ) + 1) * τ) ×ˢ Icc ((p.2 : ℝ) * η) (((p.2 : ℝ) + 1) * η) :=
-    fun ⟨s, t⟩ ↦ let ⟨U, hU, hUf⟩ := locallyFinite_Icc_natCast_mul hτ s
-      let ⟨V, hV, hVf⟩ := locallyFinite_Icc_natCast_mul hη t
-      ⟨U ×ˢ V, prod_mem_nhds hU hV, (hUf.prod hVf).subset
-        fun _ ⟨⟨_, _⟩, ⟨hx, hy⟩, hxs, hyt⟩ ↦ ⟨⟨_, hx, hxs⟩, ⟨_, hy, hyt⟩⟩⟩
+      Icc ((p.1 : ℝ) * τ) (((p.1 : ℝ) + 1) * τ) ×ˢ Icc ((p.2 : ℝ) * η) (((p.2 : ℝ) + 1) * η) := by
+    simpa only [Set.prod_eq] using
+      ((locallyFinite_Icc_natCast_mul hτ).preimage_continuous continuous_fst).inter
+        ((locallyFinite_Icc_natCast_mul hη).preimage_continuous continuous_snd)
   nth_rw 1 [← iUnion_Icc_natCast_mul hτ]; rw [← iUnion_Icc_natCast_mul hη, ← iUnion_prod]
   refine hlf.continuousOn_iUnion (fun _ ↦ isClosed_Icc.prod isClosed_Icc) fun ⟨n, k⟩ ↦
     (by fun_prop : ContinuousOn (fun p : ℝ × ℝ ↦

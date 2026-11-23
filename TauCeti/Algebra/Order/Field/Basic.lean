@@ -120,8 +120,10 @@ zero only at `0`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
 * `TauCeti.exists_pos_abs_mul_le`: given `m` and positive `c, b`, there exists `0 < τ < b` such
   that `|m| * δ ≤ c` for all `0 ≤ δ ≤ τ`.
-* `TauCeti.one_add_mul_pos_of_abs_mul_le_half`: `0 < 1 + m * δ` whenever `0 ≤ δ` and
-  `|m| * δ ≤ 1 / 2`.
+* `TauCeti.one_add_mul_pos_of_abs_mul_lt_one`: `0 < 1 + m * δ` whenever `0 ≤ δ` and
+  `|m| * δ < 1`.
+* `TauCeti.exists_pos_forall_one_add_mul_pos`: given `m`, there exists `τ₀ > 0` such that
+  `0 < 1 + m * δ` for all `0 ≤ δ ≤ τ₀`.
 -/
 
 public section
@@ -506,11 +508,20 @@ theorem exists_pos_abs_mul_le {K : Type*} [Field K] [LinearOrder K] [IsStrictOrd
     fun _ _ hδ ↦
       (mul_le_mul_of_nonneg_left (hδ.trans (min_le_left _ _)) (abs_nonneg m)).trans hr.le⟩
 
-/-- If `0 ≤ δ` and `|m| * δ ≤ 1 / 2`, then `0 < 1 + m * δ`. -/
-theorem one_add_mul_pos_of_abs_mul_le_half {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] {m δ : K} (hδ : 0 ≤ δ) (h : |m| * δ ≤ 1 / 2) :
+/-- If `0 ≤ δ` and `|m| * δ < 1`, then `0 < 1 + m * δ`. -/
+theorem one_add_mul_pos_of_abs_mul_lt_one {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {m δ : K} (hδ : 0 ≤ δ) (h : |m| * δ < 1) :
     0 < 1 + m * δ := by
   nlinarith [neg_abs_le m, hδ]
+
+/-- For any `m : K` in a linearly ordered field, there exists `τ₀ > 0` such that `0 < 1 + m * δ`
+for every `0 ≤ δ ≤ τ₀`. -/
+theorem exists_pos_forall_one_add_mul_pos {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] (m : K) :
+    ∃ τ₀ : K, 0 < τ₀ ∧ ∀ ⦃δ : K⦄, 0 ≤ δ → δ ≤ τ₀ → 0 < 1 + m * δ :=
+  let ⟨τ₀, hτ₀, _, hm⟩ := exists_pos_abs_mul_le m (by norm_num : (0 : K) < 1 / 2) one_pos
+  ⟨τ₀, hτ₀, fun _ hδ0 hδ ↦
+    one_add_mul_pos_of_abs_mul_lt_one hδ0 ((hm hδ0 hδ).trans_lt (by norm_num))⟩
 
 end TauCeti
 
