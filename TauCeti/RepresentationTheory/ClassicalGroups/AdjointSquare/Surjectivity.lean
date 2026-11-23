@@ -56,10 +56,7 @@ private def diagPreimage (alt : Bool) (X : 𝔰 K) : 𝔰 K ⊗[K] 𝔰 K :=
     X.val 0 0 • (pair 0 1 1 0 (by decide) (by decide) - pair 2 1 1 2 (by decide) (by decide)) +
       X.val 1 1 • (pair 1 0 0 1 (by decide) (by decide) - pair 2 0 0 2 (by decide) (by decide))
 
-local syntax "close_fin3" term : tactic
-
-macro_rules
-| `(tactic| close_fin3 $h) =>
+local macro "close_fin3" h:term : tactic =>
   `(tactic| (
       apply Matrix.ext
       intro i j
