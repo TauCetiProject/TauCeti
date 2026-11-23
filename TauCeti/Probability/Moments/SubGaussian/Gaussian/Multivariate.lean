@@ -44,9 +44,9 @@ semidefinite `S`, the covariance matrix, each linear form `⟪u, x⟫` has varia
 theorem HasLaw.isSubgaussianVector {Ω ι : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     [Fintype ι] [DecidableEq ι] {x : Ω → EuclideanSpace ℝ ι} {S : Matrix ι ι ℝ}
     (hx : HasLaw x (multivariateGaussian 0 S) μ) : IsSubgaussianVector x ‖S‖₊ μ := by
-  refine isSubgaussianVector_def.2 fun u ↦ ?_
   by_cases hS : S.PosSemidef
-  · set q := ⟪u, S.toEuclideanLin u⟫
+  · refine isSubgaussianVector_def.2 fun u ↦ ?_
+    set q := ⟪u, S.toEuclideanLin u⟫
     have hlaw : HasLaw (fun y : EuclideanSpace ℝ ι ↦ ⟪u, y⟫) (gaussianReal 0 q.toNNReal)
         (multivariateGaussian 0 S) :=
       ⟨by fun_prop, by simpa using TauCeti.Probability.map_inner_multivariateGaussian 0 u hS⟩
@@ -59,8 +59,6 @@ theorem HasLaw.isSubgaussianVector {Ω ι : Type*} [MeasurableSpace Ω] {μ : Me
       _ = ‖S‖ * ‖u‖ ^ 2 := by ring
   · rw [multivariateGaussian_of_not_posSemidef 0 hS] at hx
     have := hx.isProbabilityMeasure
-    refine (HasSubgaussianMGF.zero.congr ?_).mono (by positivity)
-    filter_upwards [hx.ae_eq_of_dirac] with ω hω
-    simp [hω]
+    exact (isSubgaussianVector_zero_iff.2 prob_le_one).congr hx.ae_eq_of_dirac.symm
 
 end ProbabilityTheory

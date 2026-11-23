@@ -16,7 +16,8 @@ import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 
 A sub-Gaussian moment-generating function bound forces the total mass to be at most `1`, so the
 measure is finite; the zero random variable satisfies the bound exactly when the total mass is at
-most `1`.
+most `1`, and a random variable has variance proxy `0` exactly when, in addition, it vanishes
+almost everywhere.
 
 Under a zero or probability measure, the quadratic MGF bound forces a sub-Gaussian random
 variable to have mean zero and bounds its second moment by the variance proxy. The bound is
@@ -190,5 +191,13 @@ theorem hasSubgaussianMGF_fun_zero_iff {Ω : Type*} [MeasurableSpace Ω] {μ : M
   calc mgf (fun _ ↦ (0 : ℝ)) μ t = μ.real Set.univ := mgf_zero_fun
     _ ≤ 1 := hreal
     _ ≤ exp ((c : ℝ) * t ^ 2 / 2) := Real.one_le_exp (by positivity)
+
+/-- A random variable has a sub-Gaussian moment-generating function bound with variance proxy `0`
+exactly when it vanishes almost everywhere and the total mass is at most `1`. -/
+@[simp]
+theorem hasSubgaussianMGF_zero_proxy_iff {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {X : Ω → ℝ} : HasSubgaussianMGF X 0 μ ↔ (∀ᵐ ω ∂μ, X ω = 0) ∧ μ Set.univ ≤ 1 :=
+  ⟨fun h ↦ ⟨h.ae_eq_zero_of_hasSubgaussianMGF_zero, h.measure_univ_le_one⟩,
+    fun ⟨hX, hμ⟩ ↦ (hasSubgaussianMGF_fun_zero_iff.2 hμ).congr (hX.mono fun _ h ↦ h.symm)⟩
 
 end ProbabilityTheory
