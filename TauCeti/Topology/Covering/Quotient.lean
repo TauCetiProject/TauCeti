@@ -7,6 +7,7 @@ module
 
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Topology.Covering.Quotient
+import Mathlib.Algebra.Ring.Int.Units
 import TauCeti.Topology.Covering.Proper
 
 /-!
@@ -72,6 +73,12 @@ Neither normality nor a separation axiom is needed.
   set passes to its translates.
 * `IsQuotientCoveringMap.mapsTo_smul_preimage`: the preimage of a set under the quotient covering
   map is invariant under the action.
+* `TauCeti.involutive_of_forall_eq_neg_one_smul`,
+  `IsQuotientCoveringMap.comp_eq_of_forall_eq_neg_one_smul`,
+  `IsQuotientCoveringMap.apply_ne_self_of_forall_eq_neg_one_smul`,
+  `IsQuotientCoveringMap.eq_or_eq_of_apply_eq`: the quotient covering map of an action of `ℤˣ` is a
+  double cover, the action `σ` of `-1` being a fixed-point-free involution over the base whose
+  fibre through `e` is `{e, σ e}`.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
 * `IsQuotientCoveringMap.restrict`: the restriction of a quotient covering map to the full
@@ -314,6 +321,39 @@ compact. -/]
 theorem _root_.IsQuotientCoveringMap.compactSpace [CompactSpace X] [Finite G]
     (hq : IsQuotientCoveringMap q G) : CompactSpace E :=
   hq.isCoveringMap.compactSpace hq.finite_fiber
+
+/-- The action of `-1` is an involution. -/
+theorem involutive_of_forall_eq_neg_one_smul {α : Type*} [MulAction ℤˣ α] {σ : α → α}
+    (hσ : ∀ a, σ a = (-1 : ℤˣ) • a) : Function.Involutive σ := fun a ↦ by
+  rw [hσ, hσ, smul_smul, neg_one_mul, neg_neg, one_smul]
+
+section NegOne
+
+variable [MulAction ℤˣ E] {σ : E → E}
+
+/-- For the quotient covering map of an action of `ℤˣ`, the action of `-1` is a map over the
+base. -/
+theorem _root_.IsQuotientCoveringMap.comp_eq_of_forall_eq_neg_one_smul
+    (hq : IsQuotientCoveringMap q ℤˣ) (hσ : ∀ e, σ e = (-1 : ℤˣ) • e) : q ∘ σ = q :=
+  funext fun e ↦ (congrArg q (hσ e)).trans (hq.map_smul (-1))
+
+/-- For the quotient covering map of an action of `ℤˣ`, the action of `-1` has no fixed point. -/
+theorem _root_.IsQuotientCoveringMap.apply_ne_self_of_forall_eq_neg_one_smul
+    (hq : IsQuotientCoveringMap q ℤˣ) (hσ : ∀ e, σ e = (-1 : ℤˣ) • e) (e : E) : σ e ≠ e :=
+  fun h ↦ by
+    have := hq.isCancelSMul
+    exact absurd (IsCancelSMul.eq_one_of_smul ((hσ e).symm.trans h)) (by decide)
+
+/-- For the quotient covering map of an action of `ℤˣ`, with `σ` the action of `-1`, the fibre
+through `e` is `{e, σ e}`. -/
+theorem _root_.IsQuotientCoveringMap.eq_or_eq_of_apply_eq (hq : IsQuotientCoveringMap q ℤˣ)
+    (hσ : ∀ e, σ e = (-1 : ℤˣ) • e) {e e' : E} (h : q e' = q e) : e' = e ∨ e' = σ e := by
+  obtain ⟨g, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 h
+  rcases Int.units_eq_one_or g with rfl | rfl
+  · exact .inl (one_smul _ _)
+  · exact .inr (hσ e).symm
+
+end NegOne
 
 /-- **A quotient covering map stays one when the acting group is replaced by an isomorphic one
 acting compatibly.** If `e : G ≃* G'` and each `e g` acts on `E` as `g` does, then the orbits and
