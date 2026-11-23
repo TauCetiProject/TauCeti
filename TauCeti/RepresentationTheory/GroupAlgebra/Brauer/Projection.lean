@@ -27,10 +27,12 @@ transpositions, `Br_P(x²) = 1 + r + r²` but `Br_P(x)² = 0`.
 For `Q ≤ P`, `C_G(P) ≤ C_G(Q)` and `Br_P` factors through `Br_Q`
 (`TauCeti.brauerProjection_eq_comapDomain`).
 
-For a `p`-group `P` in characteristic `p`, the kernel of `brauerHom` contains the relative
-trace ideals `R[G]^P_Q` (`TauCeti.relTraceIdeal`) for `Q < P`, and the defect groups of the
-blocks of `R[G]` are the maximal `p`-subgroups `P` on which the Brauer homomorphism of the block
-idempotent is nonzero. Neither statement is formalized here.
+For a `p`-group `P` in characteristic `p`, the kernel of `brauerHom` is the sum of the relative
+trace ideals `R[G]^P_Q` (`TauCeti.relTraceIdeal`) over `Q < P`: see
+`TauCeti.brauerProjection_relTrace_eq_zero` and `TauCeti.ker_brauerHom` in
+`TauCeti.RepresentationTheory.GroupAlgebra.Brauer.Kernel`. The defect groups of the blocks of
+`R[G]` are the maximal `p`-subgroups `P` on which the Brauer homomorphism of the block idempotent
+is nonzero; this is not formalized here.
 
 ## Main definitions
 
