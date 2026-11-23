@@ -432,6 +432,32 @@ theorem apply_star_mul_self_of_mem_unitary {u : A} (hu : u ∈ unitary A) (b : A
     φ (star b * star u * u * b) = φ (star b * b) := by
   rw [mul_assoc (star b) (star u) u, Unitary.star_mul_self_of_mem hu, mul_one]
 
+section
+
+variable [StarModule ℂ A] [IsScalarTower ℂ A A]
+
+/-- Left multiplication by a unitary element preserves norms on the algebraic GNS space. -/
+@[simp]
+theorem norm_leftMul_of_mem_unitary {u : A} (hu : u ∈ unitary A) (x : φ.GNS) :
+    ‖φ.leftMul u x‖ = ‖x‖ := by
+  obtain ⟨b, rfl⟩ := φ.classMap_surjective x
+  refine sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _) |>.mp ?_
+  rw [φ.leftMul_classMap, φ.norm_classMap_sq, φ.norm_classMap_sq]
+  simpa only [star_mul, ← mul_assoc] using
+    congrArg Complex.re (φ.apply_star_mul_self_of_mem_unitary hu b)
+
+/-- Left multiplication by a unitary element is an isometry on the algebraic GNS space. -/
+theorem isometry_leftMul_of_mem_unitary {u : A} (hu : u ∈ unitary A) :
+    Isometry (φ.leftMul u) :=
+  AddMonoidHomClass.isometry_of_norm (φ.leftMul u) (φ.norm_leftMul_of_mem_unitary hu)
+
+/-- Left multiplication by a unitary element is continuous on the algebraic GNS space. -/
+theorem continuous_leftMul_of_mem_unitary {u : A} (hu : u ∈ unitary A) :
+    Continuous (φ.leftMul u) :=
+  (φ.isometry_leftMul_of_mem_unitary hu).continuous
+
+end
+
 end Ring
 
 variable {A : Type*} [Ring A] [Algebra ℂ A] [StarRing A] [StarModule ℂ A]

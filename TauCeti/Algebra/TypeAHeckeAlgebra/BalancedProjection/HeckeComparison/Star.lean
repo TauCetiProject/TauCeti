@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.HeckeComparison.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Star
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Complement
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Star
 public import TauCeti.Algebra.TypeAHeckeAlgebra.UnitaryStar
 

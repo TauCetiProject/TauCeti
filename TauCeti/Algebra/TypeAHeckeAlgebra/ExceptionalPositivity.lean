@@ -8,7 +8,8 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.GNS
 import TauCeti.Algebra.Ring.Units
 import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.ExceptionalPositivity
-import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.HeckeComparison
+import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.HeckeComparison.MarkovTrace
+import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.HeckeComparison.Star
 import TauCeti.Algebra.TypeAHeckeAlgebra.RepeatedRoot
 
 /-!
@@ -97,6 +98,21 @@ theorem apply_one_eq_one_and_forall_star_mul_self_nonneg_iff_of_sq_eq_neg_one
   apply_one_eq_one_and_forall_star_mul_self_nonneg_iff_of_add_inv_eq_zero <|
     mul_left_cancel₀ q.ne_zero (by linear_combination hsq + q.mul_inv)
 
+/-- If a nonzero self-adjoint complex scalar `s` satisfies `s ^ 2 ≤ 1`, then `(s ^ 2)⁻¹` lies
+outside the image of `[0, 1)` in `ℂ`. -/
+private theorem notMem_Ico_inv_sq_of_sq_le_one {s : ℂ} (hsa : IsSelfAdjoint s) (hs0 : s ≠ 0)
+    (hsq : s ^ 2 ≤ 1) : (s ^ 2)⁻¹ ∉ ((↑) : ℝ → ℂ) '' Set.Ico 0 1 := by
+  obtain ⟨r, hr⟩ := Complex.conj_eq_iff_real.mp hsa
+  have hr0 : r ≠ 0 := fun h ↦ hs0 (by simpa [h] using hr)
+  have hr_sq_le : r ^ 2 ≤ 1 := by
+    have hsq' : ((r ^ 2 : ℝ) : ℂ) ≤ ((1 : ℝ) : ℂ) := by
+      simpa only [Complex.ofReal_pow, Complex.ofReal_one, ← hr] using hsq
+    simpa only [Complex.ofReal_re] using (Complex.le_def.mp hsq').1
+  rintro ⟨t, ht, hteq⟩
+  have ht' : t = (r ^ 2)⁻¹ := Complex.ofReal_injective (by rw [hteq, hr]; norm_cast)
+  have h1 : (1 : ℝ) ≤ (r ^ 2)⁻¹ := (one_le_inv₀ (sq_pos_of_ne_zero hr0)).mpr hr_sq_le
+  linarith [ht.2]
+
 /-- **Classification of positive Markov traces on the unit circle for `(q + q⁻¹) ^ 2 ≤ 1`.**
 This covers both `q = ±i` (`(q + q⁻¹) ^ 2 = 0`) and `0 < (q + q⁻¹) ^ 2 ≤ 1` (including `l = 3`):
 the only positive Markov traces are `indexCharacter ℂ q` and `signCharacter ℂ q`. -/
@@ -120,18 +136,8 @@ theorem isMarkovTrace_and_forall_star_mul_self_nonneg_iff_of_add_inv_sq_le_one
       let τ : ℂ := (((q : ℂ) + ↑q⁻¹) ^ 2)⁻¹
       have hτ : τ * ((q : ℂ) + ↑q⁻¹) ^ 2 = 1 := inv_mul_cancel₀ (pow_ne_zero 2 hs0)
       have : Fact (IsSelfAdjoint τ) := ⟨(hs_sa.pow 2).inv₀⟩
-      have hτ_notMem : τ ∉ ((↑) : ℝ → ℂ) '' Set.Ico 0 1 := by
-        obtain ⟨r, hr⟩ := Complex.conj_eq_iff_real.mp hs_sa
-        have hr0 : r ≠ 0 := fun h ↦ hs0 (by simpa [h] using hr)
-        have hr_sq_le : r ^ 2 ≤ 1 := by
-          have hsq' : ((r ^ 2 : ℝ) : ℂ) ≤ ((1 : ℝ) : ℂ) := by
-            simpa only [Complex.ofReal_pow, Complex.ofReal_one, ← hr] using hsq
-          simpa only [Complex.ofReal_re] using (Complex.le_def.mp hsq').1
-        rintro ⟨t, ht, hteq⟩
-        have ht' : t = (r ^ 2)⁻¹ := Complex.ofReal_injective (by
-          rw [hteq]; dsimp [τ]; rw [hr]; norm_cast)
-        have h1 : (1 : ℝ) ≤ (r ^ 2)⁻¹ := (one_le_inv₀ (sq_pos_of_ne_zero hr0)).mpr hr_sq_le
-        linarith [ht.2]
+      have hτ_notMem : τ ∉ ((↑) : ℝ → ℂ) '' Set.Ico 0 1 :=
+        notMem_Ico_inv_sq_of_sq_le_one hs_sa hs0 hsq
       let η : ℂ := τ * ((q : ℂ) + ↑q⁻¹) * (z + ↑q⁻¹)
       have hz : z = (q : ℂ) * η - ↑q⁻¹ * (1 - η) :=
         BalancedProjectionAlgebra.heckeParam_eq hτ z

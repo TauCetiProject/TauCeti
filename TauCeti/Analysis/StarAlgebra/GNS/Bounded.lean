@@ -630,7 +630,10 @@ theorem exists_cstar_representation_iff_forall_nonneg_of_forall_continuous_leftM
     simpa using ((StarPositiveFunctional.ofPositiveLinearMap ω).comp π).square_nonneg a
   · intro hpos
     let φ : StarPositiveFunctional A := ⟨f, hpos⟩
-    exact φ.forall_continuous_leftMul_iff_exists_cstar.mp (hcont φ)
+    rcases φ.forall_continuous_leftMul_iff_exists_cstar.mp (hcont φ) with
+      ⟨C, hC₁, hC₂, hC₃, ω, π, hφ⟩
+    exact ⟨C, hC₁, hC₂, hC₃, ω, π, fun a =>
+      (hφ a).trans (StarPositiveFunctional.mk_apply f hpos a)⟩
 
 /-- Normalized state version of
 `exists_cstar_representation_iff_forall_nonneg_of_forall_continuous_leftMul`. -/
@@ -649,7 +652,10 @@ theorem exists_cstar_state_representation_iff_of_forall_continuous_leftMul
     let φ : StarPositiveFunctional A := ⟨f, hpos⟩
     exact ⟨φ.HilbertGNS →L[ℂ] φ.HilbertGNS, inferInstance, inferInstance, inferInstance,
       φ.hilbertPositiveLinearMap, φ.boundedRepresentation (hcont φ),
-      by simpa [φ] using hf₁, φ.hilbertPositiveLinearMap_boundedRepresentation (hcont φ)⟩
+      (φ.hilbertPositiveLinearMap_one).trans
+        ((StarPositiveFunctional.mk_apply f hpos 1).trans hf₁),
+      fun a => (φ.hilbertPositiveLinearMap_boundedRepresentation (hcont φ) a).trans
+        (StarPositiveFunctional.mk_apply f hpos a)⟩
 
 end CStarRealization
 

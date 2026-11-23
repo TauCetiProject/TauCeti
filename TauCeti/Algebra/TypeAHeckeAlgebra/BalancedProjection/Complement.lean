@@ -17,8 +17,7 @@ import Mathlib.Tactic.Module
 For idempotents `p` and `q`, replacing `p` and `q` by `1 - p` and `1 - q` negates the balanced
 defect `(p * q * p - t • p) - (q * p * q - t • q)`. Sending `e i` to `1 - e i` therefore defines an
 involutive `R`-algebra automorphism `TauCeti.BalancedProjectionAlgebra.complementEquiv` at the same
-parameter `τ`. It preserves every finite stage, exchanges scalar characters `c ↔ 1 - c`, and under
-`heckeEquiv` maps `1 - e i` to Wenzl's eigenprojection `(q + q⁻¹)⁻¹ • (q - T i)`.
+parameter `τ`. It preserves every finite stage and exchanges scalar characters `c ↔ 1 - c`.
 
 ## Main definitions and results
 
@@ -26,8 +25,6 @@ parameter `τ`. It preserves every finite stage, exchanges scalar characters `c 
   complement automorphism `e i ↦ 1 - e i` and its restriction to finite stages.
 * `TauCeti.BalancedProjectionAlgebra.character_complementEquiv`: precomposing a scalar character
   with `complementEquiv` sends `c` to `1 - c`.
-* `TauCeti.BalancedProjectionAlgebra.heckeEquiv_one_sub_e`,
-  `one_add_sq_smul_heckeEquiv_one_sub_e`: `heckeEquiv` on `1 - e i` and Wenzl's eigenprojection.
 
 ## References
 
@@ -116,34 +113,5 @@ theorem character_complementEquiv (c : R) (hc : IsIdempotentElem c)
       (G := character (1 - c) hc.one_sub) fun i ↦ by simp) x
 
 end Complement
-
-section HeckeEigenprojection
-
-open InfiniteTypeAHeckeAlgebra (T)
-
-variable {τ : R} {q : Rˣ}
-
-/-- The complementary projection `1 - e i` maps under `heckeEquiv` to the `-q⁻¹`-eigenprojection
-`(q + q⁻¹)⁻¹ • (q - T i)`. -/
-theorem heckeEquiv_one_sub_e (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) (i : ℕ) :
-    heckeEquiv q hτ (1 - e τ i) =
-      (τ * ((q : R) + ↑q⁻¹)) • (algebraMap R _ (q : R) - T q i) := by
-  rw [map_sub, map_one, heckeEquiv_e]
-  simp only [Algebra.algebraMap_eq_smul_one]
-  match_scalars
-  · linear_combination -hτ
-  · ring
-
-/-- In Wenzl's generators `g i = q • T i` with `Q = q ^ 2`, the complementary projection `1 - e i`
-satisfies `(1 + Q) • e_i^W = Q - g i`. -/
-theorem one_add_sq_smul_heckeEquiv_one_sub_e (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) (i : ℕ) :
-    ((1 : R) + (q : R) ^ 2) • heckeEquiv q hτ (1 - e τ i) =
-      algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i := by
-  have hcoeff : ((1 : R) + (q : R) ^ 2) * (τ * ((q : R) + ↑q⁻¹)) = q := by
-    linear_combination -(τ * ((q : R) + ↑q⁻¹)) * q.mul_inv + (q : R) * hτ
-  rw [heckeEquiv_one_sub_e hτ, smul_smul, hcoeff, smul_sub, Algebra.algebraMap_eq_smul_one,
-    Algebra.algebraMap_eq_smul_one, smul_smul, ← sq]
-
-end HeckeEigenprojection
 
 end TauCeti.BalancedProjectionAlgebra
