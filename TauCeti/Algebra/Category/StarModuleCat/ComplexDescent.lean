@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.StarModuleCat.Basic
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import Mathlib.CategoryTheory.Equivalence
+public import Mathlib.Dynamics.FixedPoints.Basic
 
 /-!
 # Real descent as an equivalence of categories
@@ -72,8 +73,11 @@ reducible to the native fixed-point submodule. -/
 noncomputable abbrev realPointsFunctor : StarModuleCat.{u} ℂ ⥤ ModuleCat.{u} ℝ where
   obj V := ModuleCat.of ℝ (realPoints (starLinearEquiv ℂ (A := V)).toLinearMap)
   map f := ModuleCat.ofHom ((f.hom.restrictScalars ℝ).restrict fun v hv =>
-    mem_realPoints.mpr ((f.map_star' v).symm.trans
-      (congrArg f.hom (mem_realPoints.mp hv))))
+    -- `f.map_star'` says `f` semiconjugates `star`, whose fixed points are the real points of
+    -- `starLinearEquiv`; restricting scalars to `ℝ` leaves the underlying function unchanged.
+    mem_realPoints.mpr <| Function.mem_fixedPoints_iff.mp <|
+      Function.Semiconj.mapsTo_fixedPoints f.map_star' <|
+        Function.mem_fixedPoints_iff.mpr (mem_realPoints.mp hv))
 
 /-- Taking real points restricts a morphism to its fixed vectors. -/
 @[simp] theorem realPointsFunctor_map_apply

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TensorProduct
 public import TauCeti.Analysis.Distribution.Gluing
 public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.MeasureTheory.Measure.Haar.Disintegration
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
@@ -34,13 +35,20 @@ test densities `TestFunction.pushforwardCLM` of a change of variables. In genera
 submanifolds, and the absence of critical points is what makes `f_♯ φ` smooth: at a critical value
 the image measure of `φ μ` need not have a smooth density.
 
+Since the defining identity determines `f_♯ φ`, fibre integration only depends on `f` on `Ω`
+(`TestFunction.fiberIntegralCLM_congr`), it is compatible with shrinking `Ω`
+(`TestFunction.fiberIntegralCLM_monoCLM`), and it is functorial: `(g ∘ f)_♯ = g_♯ ∘ f_♯`
+(`TestFunction.fiberIntegralCLM_comp`).
+
 ## Construction
 
 For a surjective linear map `A`, choose a linear equivalence `L : E ≃ E' × ker A` whose first
-component is `A`. Then `A_♯ ψ` is, up to the constant comparing `μ` with the image of the product
-measure, the partial integral `y ↦ ∫ k, ψ (L⁻¹ (y, k)) dk` over the second factor; it is a test
-function by `Distribution.partialPairing`, and the defining identity is Fubini's theorem. Near a
-point `a` of `Ω`, the local normal form of a submersion
+component is `A` (`ContinuousLinearMap.linearCoord`, with linear section
+`ContinuousLinearMap.linearSection` of `A`). Then `A_♯ ψ` is, up to the constant
+`ContinuousLinearMap.linearScale` comparing `μ` with the image of the product measure
+(`ContinuousLinearMap.map_linearCoord`), the partial integral `y ↦ ∫ k, ψ (L⁻¹ (y, k)) dk` over
+the second factor; it is a test function by `Distribution.partialPairing`, and the defining
+identity is Fubini's theorem. Near a point `a` of `Ω`, the local normal form of a submersion
 (`ContDiffOn.exists_openPartialHomeomorph_eqOn_fderiv_comp`) writes `f = Df(a) ∘ Θ` for a
 diffeomorphism `Θ`, so `f_♯ = Df(a)_♯ ∘ Θ_*` on tests supported near `a`. These local maps satisfy
 the same defining identity, which determines a continuous function by the fundamental lemma of the
@@ -71,20 +79,13 @@ section Linear
 
 variable {A : E →L[ℝ] E'} (hA : Function.Surjective A)
 
-/-- The linear equivalence `E ≃ E' × ker A` whose first component is `A`. -/
-private def linearCoord : E ≃L[ℝ] E' × (A : E →ₗ[ℝ] E').ker :=
-  A.implicitCoordEquiv (LinearMap.range_eq_top.2 hA) (.of_finiteDimensional _)
-
-private theorem linearCoord_apply_fst (x : E) : (linearCoord hA x).1 = A x := by
-  simp [linearCoord]
-
 variable (W : Opens E)
 
 /-- The open set `L(W)` of `E' × ker A`. -/
 private def linearCoordImage : Opens (E' × (A : E →ₗ[ℝ] E').ker) :=
-  ⟨(linearCoord hA).symm ⁻¹' W, W.isOpen.preimage (linearCoord hA).symm.continuous⟩
+  ⟨(A.linearCoord hA).symm ⁻¹' W, W.isOpen.preimage (A.linearCoord hA).symm.continuous⟩
 
-private theorem mapsTo_linearCoord : MapsTo (linearCoord hA) W (linearCoordImage hA W) :=
+private theorem mapsTo_linearCoord : MapsTo (A.linearCoord hA) W (linearCoordImage hA W) :=
   fun x hx ↦ by simpa [linearCoordImage] using hx
 
 variable {W} (hW : MapsTo A W Ω')
@@ -95,31 +96,22 @@ private theorem linearCoordImage_subset :
   intro p hp
   refine ⟨?_, trivial⟩
   have h := hW (by simpa [linearCoordImage] using hp)
-  rwa [← linearCoord_apply_fst hA, ContinuousLinearEquiv.apply_symm_apply] at h
+  rwa [← A.linearCoord_apply_fst hA, ContinuousLinearEquiv.apply_symm_apply] at h
 
 variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
   (μ : Measure E) [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure]
 
-/-- The constant comparing `μ` with the product of `ν` and a Haar measure on `ker A`, through
-`linearCoord`. -/
-private def linearScale : NNReal :=
-  Measure.addHaarScalarFactor (μ.map (linearCoord hA)) (ν.prod Measure.addHaar)
-
-private theorem map_linearCoord :
-    μ.map (linearCoord hA) = linearScale hA μ ν • ν.prod Measure.addHaar :=
-  Measure.isAddLeftInvariant_eq_smul _ _
-
 /-- Fibre integration along a surjective linear map `A`: `y ↦ c ∫ k, ψ (L⁻¹ (y, k)) dk`. -/
 private def linearFiberIntegral : 𝓓(W, ℝ) →L[ℝ] 𝓓(Ω', ℝ) :=
-  (linearScale hA μ ν : ℝ) •
+  (A.linearScale hA μ ν : ℝ) •
     (Distribution.ofFun ⊤ (fun _ ↦ (1 : ℝ)) Measure.addHaar ⊤).partialPairing
       (linearCoordImage_subset hA hW) ∘L
-    (linearCoord hA).transportTestFunction (mapsTo_linearCoord hA W)
+    (A.linearCoord hA).transportTestFunction (mapsTo_linearCoord hA W)
 
 private theorem linearFiberIntegral_apply (ψ : 𝓓(W, ℝ)) (y : E') :
     linearFiberIntegral hA hW μ ν ψ y =
-      (linearScale hA μ ν : ℝ) * ∫ k, ψ ((linearCoord hA).symm (y, k)) ∂Measure.addHaar := by
+      (A.linearScale hA μ ν : ℝ) * ∫ k, ψ ((A.linearCoord hA).symm (y, k)) ∂Measure.addHaar := by
   simp only [linearFiberIntegral, ContinuousLinearMap.comp_apply, smul_apply,
     Distribution.partialPairing_apply, smul_eq_mul]
   rw [Distribution.ofFun_apply (locallyIntegrableOn_const _)]
@@ -129,7 +121,7 @@ private theorem linearFiberIntegral_apply (ψ : 𝓓(W, ℝ)) (y : E') :
 private theorem integral_linearFiberIntegral_smul (ψ : 𝓓(W, ℝ)) {g : E' → G}
     (hg : ContinuousOn g Ω') :
     ∫ y, linearFiberIntegral hA hW μ ν ψ y • g y ∂ν = ∫ x, ψ x • g (A x) ∂μ := by
-  set L := linearCoord hA
+  set L := A.linearCoord hA
   set ψ' := L.transportTestFunction (mapsTo_linearCoord hA W) ψ
   have hψ' (p : E' × (A : E →ₗ[ℝ] E').ker) : ψ' p = ψ (L.symm p) :=
     ContinuousLinearEquiv.transportTestFunction_apply ..
@@ -145,16 +137,16 @@ private theorem integral_linearFiberIntegral_smul (ψ : 𝓓(W, ℝ)) {g : E' �
       ((Function.support_smul_subset_left _ _).trans (subset_tsupport _))).1
       (hc.integrableOn_compact hK)
   calc ∫ y, linearFiberIntegral hA hW μ ν ψ y • g y ∂ν
-      = (linearScale hA μ ν : ℝ) • ∫ y, (∫ k, ψ' (y, k) ∂Measure.addHaar) • g y ∂ν := by
+      = (A.linearScale hA μ ν : ℝ) • ∫ y, (∫ k, ψ' (y, k) ∂Measure.addHaar) • g y ∂ν := by
         simp_rw [linearFiberIntegral_apply, mul_smul, integral_smul, hψ', L]
-    _ = (linearScale hA μ ν : ℝ) • ∫ p, ψ' p • g p.1 ∂(ν.prod Measure.addHaar) := by
+    _ = (A.linearScale hA μ ν : ℝ) • ∫ p, ψ' p • g p.1 ∂(ν.prod Measure.addHaar) := by
         rw [integral_prod _ hint]
         simp_rw [integral_smul_const]
     _ = ∫ p, ψ' p • g p.1 ∂(μ.map L) := by
-        rw [map_linearCoord hA μ ν, integral_smul_nnreal_measure, NNReal.smul_def]
+        rw [A.map_linearCoord hA μ ν, integral_smul_nnreal_measure, NNReal.smul_def]
     _ = ∫ x, ψ x • g (A x) ∂μ := by
         rw [← L.coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe, integral_map_equiv]
-        simp [hψ', L, linearCoord_apply_fst]
+        simp [hψ', L]
 
 end Linear
 
@@ -368,6 +360,46 @@ theorem fiberIntegralCLM_eq_pushforwardCLM {e : OpenPartialHomeomorph E E}
   ext φ : 1
   refine ((eq_fiberIntegralCLM_iff μ μ _ _ _).2 fun g _ _ _ ↦ ?_).symm
   exact integral_pushforwardCLM_smul μ φ g
+
+/-- Fibre integration only depends on the values of the submersion on `Ω`. -/
+theorem fiberIntegralCLM_congr {f₂ : E → E'} (h : EqOn f f₂ Ω)
+    {hf₂ : ContDiffOn ℝ ∞ f₂ Ω} {hf₂Ω : MapsTo f₂ Ω Ω'}
+    {hsurj₂ : ∀ x ∈ Ω, Function.Surjective (fderiv ℝ f₂ x)} :
+    fiberIntegralCLM μ ν f₂ hf₂ hf₂Ω hsurj₂ = fiberIntegralCLM μ ν f hf hfΩ hsurj := by
+  ext φ : 1
+  refine (eq_fiberIntegralCLM_iff μ ν _ _ _).2 fun g hg _ _ ↦ ?_
+  rw [integral_fiberIntegralCLM_smul μ ν hf₂ hf₂Ω hsurj₂ φ hg.continuous.continuousOn]
+  refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
+  by_cases hx : x ∈ Ω
+  · simp only [h hx]
+  · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hx (φ.tsupport_subset h)]
+
+/-- **Restriction of fibre integration**: on tests supported in an open set `U ≤ Ω`, fibre
+integration along `f` on `U` is fibre integration along `f` on `Ω`. -/
+@[simp]
+theorem fiberIntegralCLM_monoCLM {U : Opens E} (hU : U ≤ Ω) (φ : 𝓓(U, ℝ)) :
+    fiberIntegralCLM μ ν f hf hfΩ hsurj (monoCLM ℝ φ) =
+      fiberIntegralCLM μ ν f (hf.mono hU) (hfΩ.mono_left hU) (fun x hx ↦ hsurj x (hU hx)) φ := by
+  refine ((eq_fiberIntegralCLM_iff μ ν _ _ _).2 fun g hg _ _ ↦ ?_).symm
+  rw [integral_fiberIntegralCLM_smul μ ν _ _ _ φ hg.continuous.continuousOn]
+  simp [monoCLM_apply, hU]
+
+/-- **Fibre integration is functorial**: integrating over the fibres of `f` and then over those of
+`g` is integrating over the fibres of `g ∘ f`. -/
+theorem fiberIntegralCLM_comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [FiniteDimensional ℝ E''] [MeasurableSpace E''] [BorelSpace E''] (ρ : Measure E'')
+    [ρ.IsAddHaarMeasure] {Ω'' : Opens E''} {g : E' → E''} (hg : ContDiffOn ℝ ∞ g Ω')
+    (hgΩ : MapsTo g Ω' Ω'') (hgsurj : ∀ y ∈ Ω', Function.Surjective (fderiv ℝ g y))
+    {hgf : ContDiffOn ℝ ∞ (g ∘ f) Ω} {hgfΩ : MapsTo (g ∘ f) Ω Ω''}
+    {hgfsurj : ∀ x ∈ Ω, Function.Surjective (fderiv ℝ (g ∘ f) x)} :
+    fiberIntegralCLM μ ρ (g ∘ f) hgf hgfΩ hgfsurj =
+      (fiberIntegralCLM ν ρ g hg hgΩ hgsurj).comp (fiberIntegralCLM μ ν f hf hfΩ hsurj) := by
+  ext φ : 1
+  refine ((eq_fiberIntegralCLM_iff μ ρ _ _ _).2 fun u hu _ _ ↦ ?_).symm
+  rw [ContinuousLinearMap.comp_apply,
+    integral_fiberIntegralCLM_smul ν ρ hg hgΩ hgsurj _ hu.continuous.continuousOn]
+  exact integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ
+    (hu.continuous.comp_continuousOn hg.continuousOn)
 
 end Submersion
 
