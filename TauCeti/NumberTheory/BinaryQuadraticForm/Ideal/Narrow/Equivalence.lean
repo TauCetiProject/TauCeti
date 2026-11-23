@@ -6,8 +6,8 @@ Authors: Wentao Li
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Narrow.Class
-public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Normalization
-public import TauCeti.NumberTheory.BinaryQuadraticForm.PositiveRepresentative
+import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Normalization
+import TauCeti.NumberTheory.BinaryQuadraticForm.PositiveRepresentative
 
 /-!
 # Proper classes and the narrow Picard group
@@ -26,6 +26,15 @@ the signed basis comparison recovers a proper equivalence. Together these show t
 proper classes of primitive forms of discriminant `D` to the narrow Picard group of `O` is a
 bijection.
 
+## Main results
+
+* `TauCeti.BinaryQuadraticForm.properClassToNarrowPic_surjective`: the map from proper classes of
+  primitive forms of a nonsquare discriminant to the narrow Picard group is surjective.
+* `TauCeti.BinaryQuadraticForm.properClassToNarrowPic_injective`: it is injective for positive
+  discriminant.
+* `TauCeti.BinaryQuadraticForm.properClassEquivNarrowPic`: the resulting bijection for positive
+  nonsquare discriminant.
+
 ## References
 
 * D. A. Cox, *Primes of the Form x² + ny²*, §7, Theorem 7.7 and the narrow analogue.
@@ -35,7 +44,7 @@ public section
 noncomputable section
 
 open FractionalIdeal
-open scoped MatrixGroups nonZeroDivisors
+open scoped MatrixGroups
 
 namespace TauCeti.BinaryQuadraticForm
 
@@ -49,10 +58,8 @@ theorem properClassToNarrowPic_surjective (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 
   obtain ⟨f, hf, hp, ha, r, u, hr, hu, hI⟩ :=
     exists_pos_primitive_form_invertibleFractionalIdeal_eq D hD I
   let g : primitiveForms D := ⟨f, (mem_primitiveForms D f).mpr ⟨hf, hp⟩⟩
-  have hnorm : Algebra.norm ℚ (u : QuadraticAlgebra ℚ (D : ℚ) 0) = r ^ 2 := by
-    simp [hu, Algebra.norm_quadraticAlgebra_apply, QuadraticAlgebra.norm_def, pow_two]
-  have hfactor := GlobalNumberFields.NarrowPic.mkPrincipal_eq_one_of_norm_pos O
-    (QuadraticAlgebra.finrank_eq_two (D : ℚ) 0) (hnorm ▸ sq_pos_of_pos hr)
+  have hfactor := GlobalNumberFields.NarrowPic.mkPrincipal_eq_one_of_isTotallyPositive O
+    (x := u) (hu ▸ NumberField.isTotallyPositive_ratCast hr)
   rw [GlobalNumberFields.NarrowPic.mkPrincipal_apply] at hfactor
   have hmap := congrArg (GlobalNumberFields.NarrowPic.mk O) hI
   dsimp only [O] at hfactor hmap

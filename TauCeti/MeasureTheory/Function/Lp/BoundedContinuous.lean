@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
@@ -33,12 +34,18 @@ almost-everywhere bound. If `μ` also charges every point, the only null set is 
 real values, as ordered spaces. For instance, `L∞` of a counting measure, or of a Haar measure
 on a discrete group, consists of all bounded functions.
 
+Composing `toLpTop` with Hölder's product `L∞ × Lᵖ → Lᵖ` makes multiplication of `Lᵖ` by bounded
+continuous scalar functions a bounded bilinear map, again for every measure
+(`BoundedContinuousFunction.mulLpL`).
+
 ## Main definitions
 
 * `BoundedContinuousFunction.toLpTop μ 𝕜`: the class of a bounded continuous function in
   `Lp E ∞ μ`, as a continuous linear map.
 * `BoundedContinuousFunction.toLpTopLinearIsometryEquiv μ 𝕜`: on a discrete space, for a
   measure charging every point, `toLpTop` as a linear isometry equivalence.
+* `BoundedContinuousFunction.mulLpL μ p`: multiplication `(F, f) ↦ F • f` of `Lᵖ(μ, E)` by bounded
+  continuous scalar functions, as a continuous bilinear map.
 
 ## Main results
 
@@ -52,6 +59,9 @@ on a discrete group, consists of all bounded functions.
 * `BoundedContinuousFunction.toLpTop_surjective`: on a discrete space, every class in `L∞` is the
   class of a bounded function.
 * `BoundedContinuousFunction.toLpTop_one`: the constant function one goes to the constant one.
+* `BoundedContinuousFunction.coeFn_mulLpL`: `mulLpL μ p F f` is almost everywhere `F • f`.
+* `ContinuousMap.norm_toLp_top`: on a compact finite-measure space whose measure is positive on
+  open sets, `‖ContinuousMap.toLp ∞ μ 𝕜 f‖ = ‖f‖`.
 -/
 
 public section
@@ -111,14 +121,9 @@ variable [μ.IsOpenPosMeasure]
 function is its supremum norm. -/
 @[simp]
 theorem norm_toLpTop (f : α →ᵇ E) : ‖toLpTop μ 𝕜 f‖ = ‖f‖ := by
-  refine (norm_toLpTop_le μ f).antisymm ((norm_le (norm_nonneg _)).2 fun x => ?_)
-  have h := Lp.ae_norm_le_norm_top (toLpTop μ 𝕜 f)
-  have hae : ∀ᵐ x ∂μ, ‖f x‖ ≤ ‖toLpTop μ 𝕜 f‖ := by
-    filter_upwards [coeFn_toLpTop μ (𝕜 := 𝕜) f, h] with x hx h
-    exact hx ▸ h
-  -- A closed conull set is everything, since `μ` charges every nonempty open set.
-  have hclosed : IsClosed {x | ‖f x‖ ≤ ‖toLpTop μ 𝕜 f‖} := isClosed_le (by fun_prop) (by fun_prop)
-  exact Set.eq_univ_iff_forall.1 (hclosed.ae_eq_univ_iff_eq.1 (ae_eq_univ.2 hae)) x
+  exact (norm_toLpTop_le μ f).antisymm ((norm_le (norm_nonneg _)).2
+    fun _ ↦ Lp.norm_le_norm_top_of_ae_eq_of_continuousAt (coeFn_toLpTop μ f)
+      f.continuous.continuousAt)
 
 /-- If `μ` is positive on nonempty open sets, a bounded continuous function is determined by its
 class in `L∞`. -/
@@ -183,6 +188,30 @@ end BoundedContinuousFunction
 
 namespace BoundedContinuousFunction
 
+/-! ### Multiplication of `Lᵖ` by bounded continuous functions -/
+
+variable {α 𝕜 E : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α]
+  [NontriviallyNormedField 𝕜] [SecondCountableTopologyEither α 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] (μ : Measure α) (p : ℝ≥0∞) [Fact (1 ≤ p)]
+
+/-- Multiplication of `Lᵖ(μ, E)` by bounded continuous scalar functions, as a continuous bilinear
+map: Hölder's product `L∞ × Lᵖ → Lᵖ` (`ContinuousLinearMap.holderL`) applied to the class of the
+multiplier in `L∞`. No finiteness of the measure is needed. -/
+def mulLpL : (α →ᵇ 𝕜) →L[𝕜] Lp E p μ →L[𝕜] Lp E p μ :=
+  ((ContinuousLinearMap.lsmul 𝕜 𝕜).holderL μ ∞ p p).comp (toLpTop μ 𝕜)
+
+/-- `mulLpL μ p F f` is almost everywhere the pointwise product `F • f`. -/
+theorem coeFn_mulLpL (F : α →ᵇ 𝕜) (f : Lp E p μ) :
+    mulLpL μ p F f =ᵐ[μ] fun x ↦ F x • f x := by
+  filter_upwards [(ContinuousLinearMap.lsmul 𝕜 𝕜).coeFn_holder (r := p) (toLpTop μ 𝕜 F) f,
+    coeFn_toLpTop μ (𝕜 := 𝕜) F] with x h₁ h₂
+  rw [mulLpL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂,
+    ContinuousLinearMap.lsmul_apply]
+
+end BoundedContinuousFunction
+
+namespace BoundedContinuousFunction
+
 /-! ### Real-valued functions -/
 
 variable {α : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α]
@@ -229,3 +258,24 @@ theorem toLpTopLinearIsometryEquiv_symm_one [DiscreteTopology α] [μ.IsOpenPosM
   rw [LinearIsometryEquiv.symm_apply_eq, coe_toLpTopLinearIsometryEquiv, toLpTop_one]
 
 end BoundedContinuousFunction
+
+namespace ContinuousMap
+
+variable {α E 𝕜 : Type*} [TopologicalSpace α] [CompactSpace α] [MeasurableSpace α] [BorelSpace α]
+  [NormedAddCommGroup E] [SecondCountableTopologyEither α E] (μ : Measure α) [IsFiniteMeasure μ]
+  [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+/-- On a compact finite-measure space, the `L∞` norm of a continuous function is at most its
+supremum norm. -/
+theorem norm_toLp_top_le (f : C(α, E)) : ‖toLp ∞ μ 𝕜 f‖ ≤ ‖f‖ := by
+  rw [toLp_def, BoundedContinuousFunction.toLp_top_eq_toLpTop,
+    ← (linearIsometryBoundedOfCompact α E 𝕜).norm_map f]
+  exact BoundedContinuousFunction.norm_toLpTop_le μ _
+
+/-- On a compact finite-measure space whose measure is positive on nonempty open sets, the `L∞`
+norm of a continuous function equals its supremum norm. -/
+@[simp] theorem norm_toLp_top [μ.IsOpenPosMeasure] (f : C(α, E)) : ‖toLp ∞ μ 𝕜 f‖ = ‖f‖ := by
+  rw [toLp_def, BoundedContinuousFunction.toLp_top_eq_toLpTop,
+    BoundedContinuousFunction.norm_toLpTop, LinearIsometryEquiv.norm_map]
+
+end ContinuousMap

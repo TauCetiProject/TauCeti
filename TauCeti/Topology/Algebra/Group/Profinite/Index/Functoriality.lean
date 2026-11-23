@@ -58,33 +58,33 @@ theorem profiniteIndex_map_of_surjective (K : Subgroup G) (f : G →* H)
   -- Pulling an open overgroup of `f(K)` back along `f` preserves its ordinary index.
   · rw [Subgroup.profiniteIndex_eq_iSup_openSubgroup (K.map f)]
     refine iSup_le fun V ↦ ?_
-    let U : OpenSubgroup G := V.1.comap f hf
+    let U : OpenSubgroup G := V.val.comap f hf
     have hKU : K ⊔ f.ker ≤ U.toSubgroup := by
       rw [sup_le_iff]
-      exact ⟨Subgroup.map_le_iff_le_comap.mp V.2, f.ker_le_comap V.1.toSubgroup⟩
+      exact ⟨Subgroup.map_le_iff_le_comap.mp V.property, f.ker_le_comap V.val.toSubgroup⟩
     calc _ = U.toSubgroup.profiniteIndex := by
           rw [OpenSubgroup.profiniteIndex_eq_ofNat_index]
           congr 2
-          exact (V.1.toSubgroup.index_comap_of_surjective hsurj).symm
+          exact (V.val.toSubgroup.index_comap_of_surjective hsurj).symm
       _ ≤ _ := Subgroup.profiniteIndex_anti hKU
   -- Conversely, an open overgroup of `K ⊔ ker f` is the preimage of its open image.
   · rw [Subgroup.profiniteIndex_eq_iSup_openSubgroup (K ⊔ f.ker)]
     refine iSup_le fun U ↦ ?_
-    have hker : f.ker ≤ U.1.toSubgroup := le_sup_right.trans U.2
-    have hopen : IsOpen ((U.1.toSubgroup.map f : Subgroup H) : Set H) := by
+    have hker : f.ker ≤ U.val.toSubgroup := le_sup_right.trans U.property
+    have hopen : IsOpen ((U.val.toSubgroup.map f : Subgroup H) : Set H) := by
       have hquot : Topology.IsQuotientMap f := hf.isClosedMap.isQuotientMap hf hsurj
       rw [← hquot.isCoinducing.isOpen_preimage]
       -- The preimage is expressed by subgroup comap, while the goal is displayed as a set
       -- preimage; changing its presentation exposes `comap_map_eq`.
-      change IsOpen ((U.1.toSubgroup.map f).comap f : Set G)
+      change IsOpen ((U.val.toSubgroup.map f).comap f : Set G)
       rw [Subgroup.comap_map_eq, sup_eq_left.mpr hker]
-      exact U.1.isOpen'
-    let V : OpenSubgroup H := ⟨U.1.toSubgroup.map f, hopen⟩
-    have hKV : K.map f ≤ V.toSubgroup := Subgroup.map_mono (le_sup_left.trans U.2)
+      exact U.val.isOpen'
+    let V : OpenSubgroup H := ⟨U.val.toSubgroup.map f, hopen⟩
+    have hKV : K.map f ≤ V.toSubgroup := Subgroup.map_mono (le_sup_left.trans U.property)
     calc _ = V.toSubgroup.profiniteIndex := by
           rw [OpenSubgroup.profiniteIndex_eq_ofNat_index]
           congr 2
-          exact (U.1.toSubgroup.index_map_eq hsurj hker).symm
+          exact (U.val.toSubgroup.index_map_eq hsurj hker).symm
       _ ≤ _ := Subgroup.profiniteIndex_anti hKV
 
 /-- A continuous surjection cannot increase the supernatural index of the image of a

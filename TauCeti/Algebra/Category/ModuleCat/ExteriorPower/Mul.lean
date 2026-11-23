@@ -55,7 +55,7 @@ noncomputable def mul (M : ModuleCat.{u} R) (i j : ℕ) :
 @[simp]
 lemma coe_mul_tmul (M : ModuleCat.{u} R) {i j : ℕ} (x : M.exteriorPower i)
     (y : M.exteriorPower j) :
-    Subtype.val (mul M i j (x ⊗ₜ y)) = x.1 * y.1 :=
+    Subtype.val (mul M i j (x ⊗ₜ y)) = x.val * y.val :=
   (rfl)
 
 /-- A pure wedge has the same value in the exterior algebra. -/
@@ -73,7 +73,7 @@ lemma mul_mk (M : ModuleCat.{u} R) {i j : ℕ} (x : Fin i → M) (y : Fin j → 
 /-- Transport of degree does not change an element of the exterior algebra. -/
 @[simp]
 lemma coe_eqToHom_apply (M : ModuleCat.{u} R) {i j : ℕ} (h : i = j) (x : M.exteriorPower i) :
-    Subtype.val (eqToHom (congrArg M.exteriorPower h) x) = x.1 := by
+    Subtype.val (eqToHom (congrArg M.exteriorPower h) x) = x.val := by
   subst h
   rfl
 
@@ -81,7 +81,7 @@ lemma coe_eqToHom_apply (M : ModuleCat.{u} R) {i j : ℕ} (h : i = j) (x : M.ext
 @[simp]
 lemma coe_map_apply {M N : ModuleCat.{u} R} (f : M ⟶ N) {n : ℕ}
     (x : M.exteriorPower n) :
-    Subtype.val (map f n x) = ExteriorAlgebra.map f.hom x.1 :=
+    Subtype.val (map f n x) = ExteriorAlgebra.map f.hom x.val :=
   _root_.exteriorPower.coe_map f.hom x
 
 /-- The inverse zeroth-power isomorphism is the scalar inclusion in the exterior algebra. -/
@@ -145,7 +145,7 @@ lemma one_mul (M : ModuleCat.{u} R) (n : ℕ) :
   rw [MonoidalCategory.whiskerRight_apply, coe_mul_tmul,
     MonoidalCategory.leftUnitor_hom_apply, coe_eqToHom_apply M (zero_add n).symm]
   rw [coe_iso₀_inv_apply]
-  exact (Algebra.smul_def r x.1).symm
+  exact (Algebra.smul_def r x.val).symm
 
 /-- The zeroth exterior power is a right unit for exterior multiplication. -/
 @[reassoc]
@@ -158,6 +158,6 @@ lemma mul_one (M : ModuleCat.{u} R) (n : ℕ) :
   rw [MonoidalCategory.whiskerLeft_apply, coe_mul_tmul,
     MonoidalCategory.rightUnitor_hom_apply, coe_eqToHom_apply M (add_zero n).symm]
   rw [coe_iso₀_inv_apply]
-  exact (Algebra.commutes r x.1).symm.trans (Algebra.smul_def r x.1).symm
+  exact (Algebra.commutes r x.val).symm.trans (Algebra.smul_def r x.val).symm
 
 end ModuleCat.exteriorPower

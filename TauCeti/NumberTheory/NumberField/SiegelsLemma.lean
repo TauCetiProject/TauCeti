@@ -11,7 +11,7 @@ import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
-# Siegel's lemma over a number field with rational integer unknowns
+# Siegel's lemma over a number field
 
 Let `K` be a number field of degree `d` and let `a` be an `M × N` matrix over `𝓞 K` whose entries
 have house at most `A ≥ 1`. If `d * M < N`, the system `a x = 0` has a nonzero solution
@@ -23,6 +23,14 @@ coefficients, for instance in the proof of Roth's theorem.
 Mathlib's `NumberField.house.exists_ne_zero_int_vec_house_le` solves the same system with
 unknowns in `𝓞 K` and a constant depending on an integral basis; Mathlib's
 `Int.Matrix.exists_ne_zero_int_vec_norm_le` is the case of integer coefficients.
+
+For unknowns in `𝓞 K` the exponent is `M / (N - M)` rather than `d M / (N - d M)`. Mathlib's
+theorem requires `M ≥ 1` and `a ≠ 0` and does not name its constant;
+`NumberField.exists_siegelConstant` packages it as a constant `C ≥ 1` depending only on `K`, valid
+for every system with `M < N`, with bound `C (C N A) ^ (M / (N - M))`. When `2 M ≤ N` the exponent
+is at most `1`, and after enlarging `C` the bound is linear, `C N A`
+(`NumberField.exists_siegelConstant_linear`). This is the form used to construct auxiliary
+functions with algebraic coefficients, as in Baker's method.
 
 The proof is a pigeonhole argument in the coordinates of Mathlib's `mixedEmbedding.stdBasis`: an
 algebraic integer has `d` such real coordinates, and it vanishes as soon as all of them are at
@@ -44,6 +52,9 @@ most `2 / 3` in absolute value, because then every conjugate has modulus at most
   in `ℤ`.
 * `NumberField.sum_mul_intCast_eq_zero_of_mulVec_eq_zero`: such a solution satisfies each row
   equation `∑ⱼ aᵢⱼ xⱼ = 0` in `K`.
+* `NumberField.exists_siegelConstant`: Siegel's lemma over `K` with unknowns in `𝓞 K`, with a
+  constant depending only on `K`.
+* `NumberField.exists_siegelConstant_linear`: its linear form when `2 M ≤ N`.
 
 ## References
 
@@ -51,6 +62,7 @@ most `2 / 3` in absolute value, because then every conjugate has modulus at most
   Chapter 3, Lemma 3.19 and Theorem 3.20.
 * The counting estimate follows the proof of `Int.Matrix.exists_ne_zero_int_vec_norm_le` in
   Mathlib (F. Barroero, L. Capuano, A. Turchet).
+* M. Hindry and J. H. Silverman, *Diophantine Geometry: An Introduction*, GTM 201, §D.4.
 -/
 
 public section
@@ -61,7 +73,11 @@ open scoped Matrix
 
 namespace NumberField
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
+
+section
+
+variable [NumberField K]
 
 namespace mixedEmbedding
 
@@ -82,13 +98,10 @@ theorem abs_stdBasis_repr_le_house (x : K) (r : index K) :
     · exact (Complex.abs_re_le_norm _).trans h
     · exact (Complex.abs_im_le_norm _).trans h
 
-variable {α β : Type*} [Fintype α] [Fintype β]
-
-omit [Fintype α] in
 /-- The `stdBasis` coordinates of the mixed embedding of `a *ᵥ x` are the corresponding `ℤ`-linear
 combinations of the coordinates of the entries of `a`. -/
-theorem stdBasis_repr_mulVec_intCast (a : Matrix α β (𝓞 K)) (x : β → ℤ) (i : α)
-    (r : index K) :
+theorem stdBasis_repr_mulVec_intCast {α β : Type*} [Fintype β] (a : Matrix α β (𝓞 K))
+    (x : β → ℤ) (i : α) (r : index K) :
     (stdBasis K).repr (mixedEmbedding K ((a *ᵥ fun j ↦ (x j : 𝓞 K)) i : K)) r =
       ∑ j, (x j : ℝ) * (stdBasis K).repr (mixedEmbedding K (a i j : K)) r := by
   have : ((a *ᵥ fun j ↦ (x j : 𝓞 K)) i : K) = ∑ j, x j • (a i j : K) := by
@@ -144,13 +157,12 @@ theorem eq_zero_of_abs_re_le_of_abs_im_le {x : 𝓞 K}
 
 end RingOfIntegers
 
-variable {α β : Type*} [Fintype α] [Fintype β]
-
 /-- **Siegel's lemma over a number field, with rational integer unknowns** (Evertse,
 Theorem 3.20). Let `K` be a number field of degree `d` and `a` a matrix over `𝓞 K` with `M` rows
 and `N` columns, whose entries have house at most `A ≥ 1`. If `d * M < N`, there is a nonzero
 `x ∈ ℤ^N` with `a x = 0` and `|xⱼ| ≤ (3 N A) ^ (d M / (N - d M))` for every `j`. -/
-theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A : ℝ} (hA : 1 ≤ A)
+theorem exists_ne_zero_int_vec_abs_le_of_house_le {α β : Type*} [Fintype α] [Fintype β]
+    (a : Matrix α β (𝓞 K)) {A : ℝ} (hA : 1 ≤ A)
     (hcard : finrank ℚ K * Fintype.card α < Fintype.card β)
     (ha : ∀ i j, house (a i j : K) ≤ A) :
     ∃ x : β → ℤ, x ≠ 0 ∧ a *ᵥ (fun j ↦ (x j : 𝓞 K)) = 0 ∧
@@ -218,11 +230,105 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
           exact_mod_cast (abs_le.mpr ⟨by linarith, by linarith⟩ : |x j - y j| ≤ (B : ℤ))
       _ ≤ _ := Nat.floor_le (by positivity)
 
-omit [NumberField K] [Fintype α] in
+end
+
 /-- An integer solution `x` of `a x = 0` over `𝓞 K` solves every row equation in `K`:
 `∑ⱼ aᵢⱼ xⱼ = 0`. -/
-theorem sum_mul_intCast_eq_zero_of_mulVec_eq_zero {a : Matrix α β (𝓞 K)} {x : β → ℤ}
-    (hax : a *ᵥ (fun j ↦ (x j : 𝓞 K)) = 0) (i : α) : ∑ j, (a i j : K) * x j = 0 := by
+theorem sum_mul_intCast_eq_zero_of_mulVec_eq_zero {α β : Type*} [Fintype β] {a : Matrix α β (𝓞 K)}
+    {x : β → ℤ} (hax : a *ᵥ (fun j ↦ (x j : 𝓞 K)) = 0) (i : α) : ∑ j, (a i j : K) * x j = 0 := by
   simpa [Matrix.mulVec, dotProduct] using congrArg (algebraMap (𝓞 K) K) (congrFun hax i)
+
+section Constant
+
+universe u v
+
+variable (K) [NumberField K]
+
+/-- **Siegel's lemma over a number field, with a constant depending only on the field.** There is
+`C ≥ 1`, depending only on `K`, such that every system `a ξ = 0` of `M` equations in `N > M`
+unknowns, with coefficients in `𝓞 K` of house at most `A ≥ 1`, has a nonzero solution in `𝓞 K`
+whose entries have house at most `C (C N A) ^ (M / (N - M))`. -/
+theorem exists_siegelConstant :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ {α : Type u} {β : Type v} [Fintype α] [Fintype β]
+      (a : Matrix α β (𝓞 K)) {A : ℝ}, 1 ≤ A → Fintype.card α < Fintype.card β →
+      (∀ i j, house (a i j : K) ≤ A) →
+      ∃ ξ : β → 𝓞 K, ξ ≠ 0 ∧ a *ᵥ ξ = 0 ∧ ∀ j, house (ξ j : K) ≤
+        C * (C * Fintype.card β * A) ^
+          ((Fintype.card α : ℝ) / (Fintype.card β - Fintype.card α)) := by
+  classical
+  -- Mathlib's bound for `M ≥ 1` and `a ≠ 0`, whose constant is not exported, holds with some
+  -- constant `c`; it is found by unification.
+  obtain ⟨c, hc⟩ : ∃ c : ℝ, ∀ {α : Type u} {β : Type v} [Fintype α] [Fintype β]
+      (a : Matrix α β (𝓞 K)) {A : ℝ}, a ≠ 0 → 0 < Fintype.card α →
+      Fintype.card α < Fintype.card β → (∀ i j, house (a i j : K) ≤ A) →
+      ∃ ξ : β → 𝓞 K, ξ ≠ 0 ∧ a *ᵥ ξ = 0 ∧ ∀ j, house (ξ j : K) ≤
+        c * (c * Fintype.card β * A) ^
+          ((Fintype.card α : ℝ) / (Fintype.card β - Fintype.card α)) :=
+    ⟨_, fun a _ ha h0 hlt habs ↦ house.exists_ne_zero_int_vec_house_le K a ha h0 hlt rfl habs rfl⟩
+  refine ⟨max 1 |c|, le_max_left _ _, fun {α β} _ _ a A hA hlt habs ↦ ?_⟩
+  set C := max 1 |c|
+  set e : ℝ := (Fintype.card α : ℝ) / (Fintype.card β - Fintype.card α)
+  have he : 0 ≤ e := div_nonneg (Nat.cast_nonneg _) (sub_nonneg.mpr (by exact_mod_cast hlt.le))
+  have hβ : (1 : ℝ) ≤ Fintype.card β := by exact_mod_cast (Nat.zero_le _).trans_lt hlt
+  have hC : 1 ≤ C := le_max_left _ _
+  have hbound : 1 ≤ (C * Fintype.card β * A) ^ e :=
+    Real.one_le_rpow (one_le_mul_of_one_le_of_one_le (one_le_mul_of_one_le_of_one_le hC hβ) hA) he
+  by_cases hdeg : a ≠ 0 ∧ 0 < Fintype.card α
+  · obtain ⟨ξ, hξ0, hξ, hξb⟩ := hc a hdeg.1 hdeg.2 hlt habs
+    refine ⟨ξ, hξ0, hξ, fun j ↦ (hξb j).trans ?_⟩
+    have hβA : 0 ≤ (Fintype.card β : ℝ) * A := by positivity
+    calc c * (c * Fintype.card β * A) ^ e
+        ≤ |c| * (|c| * Fintype.card β * A) ^ e := by
+          refine (le_abs_self _).trans ?_
+          rw [abs_mul, mul_assoc, mul_assoc]
+          gcongr
+          exact (Real.abs_rpow_le_abs_rpow _ _).trans_eq (by rw [abs_mul, abs_of_nonneg hβA])
+      _ ≤ C * (C * Fintype.card β * A) ^ e := by
+          have : |c| ≤ C := le_max_right _ _
+          gcongr
+  · -- Without equations, or when every coefficient vanishes, a unit vector is a solution.
+    obtain ⟨j₀⟩ : Nonempty β := Fintype.card_pos_iff.mp ((Nat.zero_le _).trans_lt hlt)
+    refine ⟨(Pi.single j₀ 1 : β → 𝓞 K), fun h ↦ by simpa using congrFun h j₀, ?_, fun j ↦ ?_⟩
+    · rcases eq_or_ne a 0 with rfl | ha
+      · exact Matrix.zero_mulVec _
+      · have : IsEmpty α :=
+          Fintype.card_eq_zero_iff.mp (Nat.eq_zero_of_not_pos fun h ↦ hdeg ⟨ha, h⟩)
+        exact funext isEmptyElim
+    · refine le_trans ?_ (one_le_mul_of_one_le_of_one_le hC hbound)
+      rcases eq_or_ne j j₀ with rfl | hj
+      · simpa using (house_intCast (K := K) 1).le
+      · simp [Pi.single_eq_of_ne hj, house]
+
+/-- **Siegel's lemma over a number field, linear form.** There is `C ≥ 1`, depending only on `K`,
+such that every system `a ξ = 0` of `M` equations in `N ≥ 1` unknowns with `2 M ≤ N`, with
+coefficients in `𝓞 K` of house at most `A ≥ 1`, has a nonzero solution in `𝓞 K` whose entries
+have house at most `C N A`. -/
+theorem exists_siegelConstant_linear :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ {α : Type u} {β : Type v} [Fintype α] [Fintype β]
+      (a : Matrix α β (𝓞 K)) {A : ℝ}, 1 ≤ A → 1 ≤ Fintype.card β →
+      2 * Fintype.card α ≤ Fintype.card β → (∀ i j, house (a i j : K) ≤ A) →
+      ∃ ξ : β → 𝓞 K, ξ ≠ 0 ∧ a *ᵥ ξ = 0 ∧ ∀ j, house (ξ j : K) ≤ C * Fintype.card β * A := by
+  obtain ⟨C, hC, hsiegel⟩ := exists_siegelConstant.{u, v} K
+  refine ⟨C * C, one_le_mul_of_one_le_of_one_le hC hC, fun {α β} _ _ a A hA hβ h2 habs ↦ ?_⟩
+  obtain ⟨ξ, hξ0, hξ, hξb⟩ := hsiegel a hA (by omega) habs
+  refine ⟨ξ, hξ0, hξ, fun j ↦ (hξb j).trans ?_⟩
+  have hβ' : (1 : ℝ) ≤ Fintype.card β := by exact_mod_cast hβ
+  have hCNA : 1 ≤ C * Fintype.card β * A :=
+    one_le_mul_of_one_le_of_one_le (one_le_mul_of_one_le_of_one_le hC hβ') hA
+  -- The exponent `M / (N - M)` is at most `1` because `2 M ≤ N`.
+  have he : (Fintype.card α : ℝ) / (Fintype.card β - Fintype.card α) ≤ 1 := by
+    have h2' : (2 * Fintype.card α : ℝ) ≤ Fintype.card β := by exact_mod_cast h2
+    rcases (Nat.zero_le (Fintype.card α)).eq_or_lt with h0 | h0
+    · simp [← h0]
+    · have : (0 : ℝ) < Fintype.card α := by exact_mod_cast h0
+      rw [div_le_one (by linarith)]
+      linarith
+  calc C * (C * Fintype.card β * A) ^ ((Fintype.card α : ℝ) / (Fintype.card β - Fintype.card α))
+      ≤ C * (C * Fintype.card β * A) ^ (1 : ℝ) := by
+        have := zero_le_one.trans hC
+        gcongr
+    _ = C * C * Fintype.card β * A := by rw [Real.rpow_one]; ring
+
+end Constant
 
 end NumberField
