@@ -707,22 +707,25 @@ private lemma smallTwistedChainsRetraction_apply {n : ℕ} {c : L.twistedChainCo
     (by simp) fun _ _ h₁ h₂ ↦ by rw [map_add, Submodule.coe_add, h₁, h₂]
   rintro ⟨σ, hσ⟩ _ ⟨x, rfl⟩
   rw [← ModuleCat.comp_apply, smallTwistedChainsRetraction,
-    ιTwistedChainComplex_twistedChainComplexDesc, dite_eq_left_of_eq_true (eq_true hσ)]
-  -- A codomain restriction has the same underlying chain.
-  rfl
+    ιTwistedChainComplex_twistedChainComplexDesc, dite_eq_left hσ, ModuleCat.ofHom_apply,
+    LinearMap.codRestrict_apply]
 
-private lemma smallTwistedChainComplexι_f_comp_smallTwistedChainsRetraction (n : ℕ) :
-    (smallTwistedChainComplexι L U).f n ≫ smallTwistedChainsRetraction L U n = 𝟙 _ := by
+/-- The retraction splits the inclusion of the chains subordinate to `U`. -/
+private lemma ofHom_subtype_comp_smallTwistedChainsRetraction (n : ℕ) :
+    ModuleCat.ofHom (smallTwistedChains L U n).subtype ≫ smallTwistedChainsRetraction L U n =
+      𝟙 _ := by
   ext c
-  -- The inclusion sends `c` to its underlying chain, by `smallTwistedChainComplexι_f_apply`.
+  rw [ModuleCat.comp_apply, ModuleCat.id_apply]
   exact smallTwistedChainsRetraction_apply L U c.property
 
 /-- If every fibre of `L` is projective, then so is every degree of the complex of twisted chains
 subordinate to `U`: it is a retract of the corresponding degree of the twisted chain complex. -/
 instance projective_smallTwistedChainComplex_X [∀ x, Projective (L.obj x)] (n : ℕ) :
-    Projective ((smallTwistedChainComplex L U).X n) :=
-  Retract.projective ⟨(smallTwistedChainComplexι L U).f n, smallTwistedChainsRetraction L U n,
-    smallTwistedChainComplexι_f_comp_smallTwistedChainsRetraction L U n⟩
+    Projective ((smallTwistedChainComplex L U).X n) := by
+  rw [smallTwistedChainComplex_X]
+  exact Retract.projective (Y := L.twistedChainComplex.X n)
+    ⟨ModuleCat.ofHom (smallTwistedChains L U n).subtype,
+    smallTwistedChainsRetraction L U n, ofHom_subtype_comp_smallTwistedChainsRetraction L U n⟩
 
 end Projective
 
