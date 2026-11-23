@@ -148,17 +148,18 @@ theorem isMarkovTrace_and_forall_star_mul_self_nonneg_iff_of_add_inv_sq_le_one
           0 ≤ (μ.comp E.toLinearMap) (star x * x) := fun x ↦ by
         simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul, E,
           BalancedProjectionAlgebra.UnitCircle.heckeEquiv_star] using hpos (E x)
-      have cancel_comp {ν : InfiniteTypeAHeckeAlgebra ℂ q →ₗ[ℂ] ℂ}
-          (h : μ.comp E.toLinearMap = ν.comp E.toLinearMap) : μ = ν :=
-        LinearMap.ext (E.surjective.forall.mpr (LinearMap.congr_fun h))
       rcases (BalancedProjectionAlgebra.isMarkovTrace_and_forall_star_mul_self_nonneg_iff
           hτ_notMem).mp ⟨hmarkov_bp, hpos_bp⟩ with ⟨hη, hchar⟩ | ⟨hη, hchar⟩
-      · exact Or.inr ⟨by rw [hη] at hz; linear_combination hz,
-          cancel_comp (hchar.trans <| LinearMap.ext fun x ↦
-            (BalancedProjectionAlgebra.signCharacter_heckeEquiv hτ x).symm)⟩
-      · exact Or.inl ⟨by rw [hη] at hz; linear_combination hz,
-          cancel_comp (hchar.trans <| LinearMap.ext fun x ↦
-            (BalancedProjectionAlgebra.indexCharacter_heckeEquiv hτ x).symm)⟩
+      · refine Or.inr ⟨by rw [hη] at hz; linear_combination hz,
+          (LinearMap.cancel_right (show Function.Surjective E.toLinearMap from E.surjective)).mp ?_⟩
+        refine hchar.trans (LinearMap.ext fun x ↦ ?_)
+        simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgEquiv.toLinearMap_apply, E,
+          BalancedProjectionAlgebra.signCharacter_heckeEquiv]
+      · refine Or.inl ⟨by rw [hη] at hz; linear_combination hz,
+          (LinearMap.cancel_right (show Function.Surjective E.toLinearMap from E.surjective)).mp ?_⟩
+        refine hchar.trans (LinearMap.ext fun x ↦ ?_)
+        simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgEquiv.toLinearMap_apply, E,
+          BalancedProjectionAlgebra.indexCharacter_heckeEquiv]
   · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
     · exact ⟨isMarkovTrace_indexCharacter, indexCharacter_star_mul_self_nonneg⟩
     · exact ⟨isMarkovTrace_signCharacter, signCharacter_star_mul_self_nonneg⟩

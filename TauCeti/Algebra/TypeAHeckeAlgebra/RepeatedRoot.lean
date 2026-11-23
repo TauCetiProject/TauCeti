@@ -47,7 +47,7 @@ variable {A F : Type*} [Ring A] [StarRing A] [IsProperStar A] [Algebra R A]
 `φ` sending `T i` to a normal element sends `T i` to `q`: `φ (T i) - algebraMap R A q` is both
 normal and square-zero. -/
 theorem map_T_eq_algebraMap_of_isStarNormal (hq : (q : R) + ↑q⁻¹ = 0) (φ : F)
-    (hφ : ∀ i, IsStarNormal (φ (T q i))) (i : ℕ) :
+    {i : ℕ} (hφ : IsStarNormal (φ (T q i))) :
     φ (T q i) = algebraMap R A (q : R) := by
   have hd_sq : (φ (T q i) - algebraMap R A (q : R)) ^ 2 = 0 := by
     rw [← AlgHomClass.commutes φ, ← map_sub, ← map_pow, T_sub_algebraMap_sq_eq_zero hq i, map_zero]
@@ -57,7 +57,7 @@ theorem map_T_eq_algebraMap_of_isStarNormal (hq : (q : R) + ↑q⁻¹ = 0) (φ :
   have hd_norm : IsStarNormal (φ (T q i) - algebraMap R A (q : R)) :=
     ⟨by
       rw [star_sub]
-      exact ((hφ i).star_comm_self.sub_right (Algebra.commute_algebraMap_right _ _)).sub_left
+      exact (hφ.star_comm_self.sub_right (Algebra.commute_algebraMap_right _ _)).sub_left
         ((hcomm_star _).sub_right (hcomm_star _))⟩
   exact sub_eq_zero.mp (hd_norm.eq_zero_of_isNilpotent ⟨2, hd_sq⟩)
 
@@ -67,7 +67,7 @@ theorem map_eq_algebraMap_indexCharacter_of_isStarNormal (hq : (q : R) + ↑q⁻
     φ x = algebraMap R A (indexCharacter R q x) :=
   DFunLike.congr_fun
     (hom_ext (F := AlgHom.ofClass φ) (G := (Algebra.ofId R A).comp (indexCharacter R q))
-      fun i ↦ by simpa using map_T_eq_algebraMap_of_isStarNormal hq φ hφ i) x
+      fun i ↦ by simpa using map_T_eq_algebraMap_of_isStarNormal hq φ (hφ i)) x
 
 /-- Scalar-action form of `map_eq_algebraMap_indexCharacter_of_isStarNormal`. -/
 theorem map_eq_smul_one_indexCharacter_of_isStarNormal (hq : (q : R) + ↑q⁻¹ = 0) (φ : F)

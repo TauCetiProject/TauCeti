@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Complement
+public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Infinite
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -121,8 +121,8 @@ theorem val_inv_addInvUnit (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
 private theorem T_eq_smul_sub (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) (i : ℕ) :
     T q i = ((q : R) + ↑q⁻¹) • ((τ * ((q : R) + ↑q⁻¹)) • (T q i + algebraMap R _ ↑q⁻¹)) -
       algebraMap R (InfiniteTypeAHeckeAlgebra R q) ↑q⁻¹ := by
-  have h : ((q : R) + ↑q⁻¹) * (τ * ((q : R) + ↑q⁻¹)) = 1 := by linear_combination hτ
-  rw [smul_smul, h, one_smul, add_sub_cancel_right]
+  rw [smul_smul, ← val_inv_addInvUnit hτ, ← val_addInvUnit hτ, Units.mul_inv, one_smul,
+    add_sub_cancel_right]
 
 /-- The projections `(q + q⁻¹)⁻¹ • (T i + q⁻¹)` of the Hecke algebra are idempotent. -/
 private theorem isIdempotentElem_smul_T_add (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) (i : ℕ) :
@@ -183,9 +183,9 @@ def heckeEquiv (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
         AlgHom.id_apply]
       exact (T_eq_smul_sub hτ i).symm)
     (hom_ext fun i ↦ by
-      have h : τ * ((q : R) + ↑q⁻¹) * ((q : R) + ↑q⁻¹) = 1 := by linear_combination hτ
       simp only [AlgHom.comp_apply, toHecke_e, ofHecke_T, map_smul, map_add, AlgHom.commutes,
-        sub_add_cancel, smul_smul, h, one_smul, AlgHom.id_apply])
+        sub_add_cancel, smul_smul, AlgHom.id_apply]
+      rw [← val_inv_addInvUnit hτ, ← val_addInvUnit hτ, Units.inv_mul, one_smul])
 
 variable (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1)
 

@@ -51,18 +51,23 @@ theorem isMarkovTrace_comp_heckeEquiv_iff {q : Rˣ} (hτ : τ * ((q : R) + ↑q�
       InfiniteTypeAHeckeAlgebra.IsMarkovTrace z μ := by
   constructor
   · intro hμ
-    refine ⟨by simpa using hμ.map_one, fun x y ↦ by
-        simpa using hμ.map_mul_comm ((heckeEquiv q hτ).symm x) ((heckeEquiv q hτ).symm y),
+    refine ⟨by simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one] using
+          hμ.map_one,
+      fun x y ↦ by
+        simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul,
+          AlgEquiv.apply_symm_apply] using
+          hμ.map_mul_comm ((heckeEquiv q hτ).symm x) ((heckeEquiv q hτ).symm y),
       fun {n x} hx ↦ ?_⟩
     have hmem : (heckeEquiv q hτ).symm x ∈ stage R τ (n + 1) := by
-      simpa [← heckeEquiv_mem_stage_iff hτ] using hx
+      simpa only [← heckeEquiv_mem_stage_iff hτ, AlgEquiv.apply_symm_apply] using hx
     have hmul : μ (x * heckeEquiv q hτ (e τ n)) = η * μ x := by
-      simpa using hμ.map_mul_e hmem
+      simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul,
+        AlgEquiv.apply_symm_apply] using hμ.map_mul_e hmem
     let L : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R := μ.comp (LinearMap.mul R _ x)
     calc μ (x * T q n)
         = L (((q : R) + ↑q⁻¹) • heckeEquiv q hτ (e τ n) - algebraMap R _ ↑q⁻¹) := by
           rw [← T_eq_smul_heckeEquiv_e_sub hτ n]
-          rfl
+          simp only [L, LinearMap.comp_apply, LinearMap.mul_apply']
       _ = ((q : R) + ↑q⁻¹) * (η * μ x) - ↑q⁻¹ * μ x := by
           simp only [L, Algebra.algebraMap_eq_smul_one, map_sub, map_smul, LinearMap.comp_apply,
             LinearMap.mul_apply', mul_one, hmul, smul_eq_mul]
@@ -70,8 +75,11 @@ theorem isMarkovTrace_comp_heckeEquiv_iff {q : Rˣ} (hτ : τ * ((q : R) + ↑q�
           rw [hz]
           ring
   · intro hμ
-    refine ⟨by simpa using hμ.map_one, fun x y ↦ by
-        simpa using hμ.map_mul_comm (heckeEquiv q hτ x) (heckeEquiv q hτ y),
+    refine ⟨by simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one] using
+          hμ.map_one,
+      fun x y ↦ by
+        simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul] using
+          hμ.map_mul_comm (heckeEquiv q hτ x) (heckeEquiv q hτ y),
       fun {n w} hw ↦ ?_⟩
     have hw' : heckeEquiv q hτ w ∈ InfiniteTypeAHeckeAlgebra.stage R q (n + 1) :=
       (heckeEquiv_mem_stage_iff hτ).2 hw
@@ -86,10 +94,16 @@ theorem IsMarkovTrace.unique_of_hecke {q : Rˣ} (hτ : τ * ((q : R) + ↑q⁻¹
     (hμ : IsMarkovTrace η μ) (hμ' : IsMarkovTrace η μ') : μ = μ' := by
   have toH {ν : BalancedProjectionAlgebra R τ →ₗ[R] R} (hν : IsMarkovTrace η ν) :
       InfiniteTypeAHeckeAlgebra.IsMarkovTrace ((q : R) * η - ↑q⁻¹ * (1 - η))
-        (ν.comp (heckeEquiv q hτ).symm.toLinearMap) :=
-    (isMarkovTrace_comp_heckeEquiv_iff hτ rfl).mp <| by convert hν; ext x; simp
+        (ν.comp (heckeEquiv q hτ).symm.toLinearMap) := by
+    refine (isMarkovTrace_comp_heckeEquiv_iff hτ rfl).mp ?_
+    have hcomp : (ν.comp (heckeEquiv q hτ).symm.toLinearMap).comp (heckeEquiv q hτ).toLinearMap =
+        ν := LinearMap.ext fun x ↦ by
+      simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.symm_apply_apply]
+    rwa [hcomp]
   have heq := InfiniteTypeAHeckeAlgebra.IsMarkovTrace.unique (toH hμ) (toH hμ')
-  exact LinearMap.ext fun x ↦ by simpa using LinearMap.congr_fun heq (heckeEquiv q hτ x)
+  exact LinearMap.ext fun x ↦ by
+    simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.symm_apply_apply] using
+      LinearMap.congr_fun heq (heckeEquiv q hτ x)
 
 /-- Recovering the Hecke Markov parameter `z` from the transported balanced-projection parameter
 `η = τ * (q + q⁻¹) * (z + q⁻¹)` when `τ * (q + q⁻¹) ^ 2 = 1`. -/

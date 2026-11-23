@@ -9,7 +9,6 @@ public import Mathlib.Algebra.FreeAlgebra
 public import Mathlib.Algebra.Ring.Idempotent
 public import Mathlib.Algebra.RingQuot
 import Mathlib.Tactic.Abel
-import Mathlib.Tactic.Module
 
 /-!
 # The balanced projection presentation of the type-A Hecke algebra

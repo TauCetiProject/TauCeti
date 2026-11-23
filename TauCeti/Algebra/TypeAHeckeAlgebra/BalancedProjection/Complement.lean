@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
 import TauCeti.Algebra.Ring.Idempotent.Basic
 import Mathlib.Tactic.Abel
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
 
 /-!
 # The complement automorphism of the balanced projection algebra

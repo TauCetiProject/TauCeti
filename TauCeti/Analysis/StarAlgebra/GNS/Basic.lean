@@ -405,6 +405,21 @@ theorem inner_leftMul (a : A) (x y : φ.GNS) :
   obtain ⟨c, rfl⟩ := φ.classMap_surjective y
   simp [mul_assoc]
 
+/-- Left multiplication by a star projection is a contraction on the algebraic GNS space. -/
+theorem norm_leftMul_le_of_isStarProjection {p : A} (hp : IsStarProjection p) (x : φ.GNS) :
+    ‖φ.leftMul p x‖ ≤ ‖x‖ := by
+  obtain ⟨b, rfl⟩ := φ.classMap_surjective x
+  refine (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
+  rw [φ.leftMul_classMap, φ.norm_classMap_sq, φ.norm_classMap_sq]
+  simpa only [star_mul, ← mul_assoc] using
+    (Complex.le_def.mp (φ.apply_star_mul_self_le_of_isStarProjection hp b)).1
+
+/-- Left multiplication by a star projection is continuous on the algebraic GNS space. -/
+theorem continuous_leftMul_of_isStarProjection {p : A} (hp : IsStarProjection p) :
+    Continuous (φ.leftMul p) :=
+  AddMonoidHomClass.continuous_of_bound (φ.leftMul p) 1 fun x => by
+    simpa only [one_mul] using φ.norm_leftMul_le_of_isStarProjection hp x
+
 end StarPositiveFunctional
 
 /-- For an order-positive functional `ω` on a `StarOrderedRing`, `ω (star b * b) = 0` implies

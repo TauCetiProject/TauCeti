@@ -11,10 +11,9 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Star
 public import TauCeti.Algebra.TypeAHeckeAlgebra.UnitaryStar
 
 /-!
-# Complement and star-algebra comparisons with the type-A Hecke algebra
+# Star-algebra comparisons with the type-A Hecke algebra
 
-Whenever `τ * (q + q⁻¹) ^ 2 = 1`, `BalancedProjectionAlgebra.heckeEquiv` intertwines the
-complement automorphisms (`BalancedProjectionAlgebra.heckeEquiv_complementEquiv`) and upgrades to a
+Whenever `τ * (q + q⁻¹) ^ 2 = 1`, `BalancedProjectionAlgebra.heckeEquiv` upgrades to a
 `⋆`-algebra isomorphism `BalancedProjectionAlgebra R τ ≃⋆ₐ[R] InfiniteTypeAHeckeAlgebra R q` in
 both involutive parameter fibers:
 * **real-parameter fiber** (`Fact (IsSelfAdjoint (q : R))`, `star (T i) = T i`);
@@ -22,8 +21,6 @@ both involutive parameter fibers:
 
 ## Main definitions and results
 
-* `TauCeti.BalancedProjectionAlgebra.heckeEquiv_complementEquiv`: `heckeEquiv` intertwines the
-  complement automorphisms.
 * `TauCeti.BalancedProjectionAlgebra.heckeEquiv_star`,
   `TauCeti.BalancedProjectionAlgebra.heckeStarAlgEquiv`: real-fiber `⋆`-isomorphism with
   `InfiniteTypeAHeckeAlgebra R q`.
@@ -42,26 +39,7 @@ public section
 
 namespace TauCeti
 
-section ComplementComparison
-
 namespace BalancedProjectionAlgebra
-
-variable {R : Type*} [CommRing R] {τ : R} {q : Rˣ}
-
-/-- Under `heckeEquiv`, the projection complement `e i ↦ 1 - e i` corresponds to the Hecke
-complement automorphism `T i ↦ -T i⁻¹ = (q - q⁻¹) - T i`. -/
-theorem heckeEquiv_complementEquiv (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1)
-    (x : BalancedProjectionAlgebra R τ) :
-    heckeEquiv q hτ (complementEquiv τ x) =
-      InfiniteTypeAHeckeAlgebra.complementEquiv q (heckeEquiv q hτ x) :=
-  DFunLike.congr_fun
-    (hom_ext (F := (heckeEquiv q hτ).toAlgHom.comp (complementEquiv τ).toAlgHom)
-      (G := (InfiniteTypeAHeckeAlgebra.complementEquiv q).toAlgHom.comp (heckeEquiv q hτ).toAlgHom)
-      fun i ↦ by
-        simpa only [AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, complementEquiv_e, map_sub,
-          map_one, heckeEquiv_e, ← val_inv_addInvUnit hτ] using
-          (InfiniteTypeAHeckeAlgebra.complementEquiv_eigenprojection q (addInvUnit hτ)
-            (val_addInvUnit hτ) i).symm) x
 
 private theorem heckeEquiv_star_of_eigenprojection {R : Type*} [CommRing R] [StarRing R]
     {τ : R} [Fact (IsSelfAdjoint τ)] {q : Rˣ}
@@ -76,8 +54,6 @@ private theorem heckeEquiv_star_of_eigenprojection {R : Type*} [CommRing R] [Sta
       hP (addInvUnit hτ) (val_addInvUnit hτ) i) x
 
 end BalancedProjectionAlgebra
-
-end ComplementComparison
 
 /-! ### Real-parameter Hecke star compatibility -/
 
