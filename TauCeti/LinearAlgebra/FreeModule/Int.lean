@@ -39,10 +39,11 @@ abelian group of rank two has exactly four homomorphisms to `ℤ/2`: given a non
 * `LinearMap.index_range_eq_natAbs_det_toMatrix`: for any `ℤ`-linear map between free abelian
   groups with bases indexed by the same finite type, the index of the image is the absolute value
   of the determinant of its matrix.
-* `Module.Basis.mem_span_range_nsmul_iff`, `Module.Basis.quotientSpanNSMulEquiv`: rescaling the
-  vectors of an integral basis `b` by natural numbers `m k`, a vector lies in the span of the
-  `m k • b k` exactly when its `k`-th coordinate is divisible by `m k`; for a finite basis the
-  quotient by that span is `Π k, ZMod (m k)`.
+* `Module.Basis.mem_span_range_smul_iff`: rescaling the vectors of a basis `b` over a commutative
+  ring by scalars `a k`, a vector lies in the span of the `a k • b k` exactly when its `k`-th
+  coordinate is divisible by `a k`.
+* `Module.Basis.quotientSpanNSMulEquiv`: rescaling the vectors of a finite integral basis `b` by
+  natural numbers `m k`, the quotient by the span of the `m k • b k` is `Π k, ZMod (m k)`.
 * `LinearIndependent.card_quotient_span_range_nsmul`: rescaling a finite linearly independent
   family `v` by natural numbers `m k` multiplies the order of the quotient by the span by
   `∏ k, m k`.
@@ -127,32 +128,33 @@ end LinearMap
 
 namespace Module.Basis
 
-variable {κ M : Type*} [AddCommGroup M] (b : Basis κ ℤ M) (m : κ → ℕ)
-
-/-- A vector lies in the span of the rescaled basis vectors `m k • b k` exactly when, for every
-`k`, its `k`-th coordinate in `b` is divisible by `m k`. -/
-theorem mem_span_range_nsmul_iff {x : M} :
-    x ∈ Submodule.span ℤ (Set.range fun k ↦ m k • b k) ↔ ∀ k, (m k : ℤ) ∣ b.repr x k := by
+/-- A vector lies in the span of the rescaled basis vectors `a k • b k` exactly when, for every
+`k`, its `k`-th coordinate in `b` is divisible by `a k`. -/
+theorem mem_span_range_smul_iff {κ R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    (b : Basis κ R M) (a : κ → R) {x : M} :
+    x ∈ Submodule.span R (Set.range fun k ↦ a k • b k) ↔ ∀ k, a k ∣ b.repr x k := by
   constructor
   · intro hx
     induction hx using Submodule.span_induction with
     | mem y hy =>
       obtain ⟨k, rfl⟩ := hy
       intro k'
-      rw [map_nsmul, b.repr_self, Finsupp.smul_apply]
+      rw [map_smul, b.repr_self, Finsupp.smul_apply]
       rcases eq_or_ne k k' with rfl | h
       · simp
       · simp [Finsupp.single_eq_of_ne' h]
     | zero => simp
     | add y z _ _ hy hz => exact fun k ↦ by simpa using dvd_add (hy k) (hz k)
-    | smul a y _ hy => exact fun k ↦ by simpa using (hy k).mul_left a
+    | smul c y _ hy => exact fun k ↦ by simpa using (hy k).mul_left c
   · intro h
     choose q hq using h
     rw [← b.linearCombination_repr x, Finsupp.linearCombination_apply]
     refine Submodule.sum_mem _ fun k _ ↦ ?_
     dsimp only
-    rw [hq k, mul_comm, mul_smul, natCast_zsmul]
+    rw [hq k, mul_comm, mul_smul]
     exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
+
+variable {κ M : Type*} [AddCommGroup M] (b : Basis κ ℤ M) (m : κ → ℕ)
 
 /-- The coordinates in `b`, the `k`-th one reduced modulo `m k`. -/
 private noncomputable def coordModNSMul : M →ₗ[ℤ] (k : κ) → ZMod (m k) :=
@@ -165,8 +167,8 @@ private theorem coordModNSMul_apply (x : M) (k : κ) :
 private theorem ker_coordModNSMul :
     LinearMap.ker (coordModNSMul b m) = Submodule.span ℤ (Set.range fun k ↦ m k • b k) := by
   ext x
-  simp [mem_span_range_nsmul_iff, funext_iff, coordModNSMul_apply,
-    ZMod.intCast_zmod_eq_zero_iff_dvd]
+  simp_rw [← natCast_zsmul, mem_span_range_smul_iff]
+  simp [funext_iff, coordModNSMul_apply, ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 private theorem coordModNSMul_surjective [Finite κ] : Function.Surjective (coordModNSMul b m) := by
   classical

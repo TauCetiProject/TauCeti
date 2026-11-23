@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Geometry.Toric.Delzant.Interval
 
-import Mathlib.Data.ZMod.QuotientRing
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.LinearAlgebra.FreeModule.Int
 
@@ -47,10 +46,10 @@ Labels `m j` enter through the *labeled normals* `m j • u j`.
 
   `|N ⧸ span {m j • u j}| = (∏ m j) · |N ⧸ span {u j}|`,
 
-  so it is finite at every vertex of a rational simple polytope with positive labels
-  (`TauCeti.Toric.IsRationalSimple.finite_quotient_labeledActiveLattice`). At a smooth vertex,
-  where the active normals form a basis `b` of `N`, the labeled lattice is spanned by the rescaled
-  basis vectors (`TauCeti.Toric.labeledActiveLattice_eq_span_range_nsmul`), and
+  so it is finite at every vertex of a rational simple polytope in an integral lattice with
+  positive labels (`TauCeti.Toric.IsRationalSimple.finite_quotient_labeledActiveLattice`). At a
+  smooth vertex, where the active normals form a basis `b` of `N`, the labeled lattice is spanned
+  by the rescaled basis vectors (`TauCeti.Toric.labeledActiveLattice_eq_span_range_nsmul`), and
   `Module.Basis.quotientSpanNSMulEquiv` identifies the quotient with `Π j, ZMod (m j)`.
 * **Delzant labeled presentations.** By `TauCeti.Toric.isDelzant_nsmul_iff` in
   `TauCeti.Geometry.Toric.Delzant.Basic`, the labeled presentation is Delzant exactly when all
@@ -61,8 +60,10 @@ Labels `m j` enter through the *labeled normals* `m j • u j`.
   Lerman–Tolman's smoothness criterion; the statement concerns the presentation only, not the
   structure groups or the orbifold.
 
-The interval `[0, a]` with labels `m 0` and `m 1` on its two endpoints is the labeled polytope of a
-weighted projective line in Lerman–Tolman's correspondence. For positive labels its structure
+The interval `[0, a]` with labels `m 0` and `m 1` on its two endpoints is, in Lerman–Tolman's
+correspondence, the labeled polytope of a spindle orbifold: a sphere with cone points of orders
+`m 0` and `m 1`, which is the weighted projective line `ℙ(m 0, m 1)` when the labels are coprime.
+For positive labels its structure
 groups at the endpoints have orders `m 0` and `m 1`; a zero label gives the infinite quotient `ℤ`,
 of cardinality `0` in `Nat.card`
 (`TauCeti.Toric.card_quotient_labeledActiveLattice_interval_of_eq_zero`,
@@ -81,7 +82,7 @@ of cardinality `0` in `Nat.card`
 * `TauCeti.Toric.IsRationalSimple.linearIndepOn_activeSet`: at a vertex of a rational simple
   polytope in an integral lattice, the active normals are linearly independent.
 * `TauCeti.Toric.IsRationalSimple.finite_quotient_labeledActiveLattice`: the structure groups at
-  the vertices of a labeled polytope are finite.
+  the vertices of a labeled polytope in an integral lattice are finite.
 * `TauCeti.Toric.isDelzant_iff_isRationalSimple`: Delzant means rational simple with unimodular
   vertex cones.
 * `TauCeti.Toric.IsRationalSimple.isDelzant_nsmul_iff`: the labeled presentation of a rational
@@ -233,7 +234,7 @@ theorem isDelzant_nsmul_iff [Finite ι] [FiniteDimensional ℝ V] {m : ι → �
         Submodule.span ℤ (u '' activeSet (facetPairing i u) c x) = ⊤ := by
   rw [TauCeti.Toric.isDelzant_nsmul_iff hm, isDelzant_iff_isRationalSimple, and_iff_right hΔ]
 
-variable [Finite ι] [FiniteDimensional ℝ V]
+variable [Finite ι]
 
 /-- **Simple vertices.** At a vertex of a rational simple polytope in an integral lattice, the
 normals of the active facets are linearly independent: there are `dim V` of them and they span `V`.
@@ -241,6 +242,7 @@ normals of the active facets are linearly independent: there are `dim V` of them
 theorem linearIndepOn_activeSet (hi : IsIntegralLattice i) {x : StrongDual ℝ V}
     (hx : x ∈ (facetPolyhedron i u c).extremePoints ℝ) :
     LinearIndepOn ℤ u (activeSet (facetPairing i u) c x) := by
+  have := hi.finiteDimensional
   set s := activeSet (facetPairing i u) c x
   have := Fintype.ofFinite s
   have hspan := (mem_extremePoints_facetPolyhedron_iff_span_eq_top.1 hx).2
@@ -274,19 +276,11 @@ end IsRationalSimple
 
 end RationalSimple
 
-/-! ### The weighted projective line -/
+/-! ### The labeled interval -/
 
 section Interval
 
 variable {a : ℝ} {m : Fin 2 → ℕ}
-
-/-- The quotient of `ℤ` by the multiples of `n • 1` has `n` elements (`0` in `Nat.card`, for the
-infinite quotient `ℤ`, when `n = 0`). Mathlib's `Int.card_ideal_quot` states this for `Ideal.span`
-but sits behind the ideal-norm imports of `Mathlib.RingTheory.Ideal.Int`. -/
-private theorem natCard_quotient_span_nsmul_one (n : ℕ) :
-    Nat.card (ℤ ⧸ Submodule.span ℤ {n • (1 : ℤ)}) = n := by
-  rw [nsmul_one, Ideal.submodule_span_eq]
-  exact (Nat.card_congr (Int.quotientSpanNatEquivZMod n).toEquiv).trans (Nat.card_zmod n)
 
 /-- The structure group at the endpoint `0` of the labeled interval `[0, a]` has order `m 0`. A
 zero label `m 0 = 0` gives the infinite quotient `ℤ`, of cardinality `0` in `Nat.card`. -/
@@ -294,7 +288,7 @@ theorem card_quotient_labeledActiveLattice_interval_of_eq_zero (ha : a ≠ 0) {x
     (hx : x 1 = 0) :
     Nat.card (ℤ ⧸ labeledActiveLattice (Int.castAddHom ℝ) ![1, -1] ![0, -a] m x) = m 0 := by
   rw [labeledActiveLattice_def, activeSet_interval_of_eq_zero ha hx, image_singleton]
-  exact natCard_quotient_span_nsmul_one (m 0)
+  simpa using (Module.Basis.singleton Unit ℤ).card_quotient_span_range_nsmul fun _ ↦ m 0
 
 /-- The structure group at the endpoint `a` of the labeled interval `[0, a]` has order `m 1`. A
 zero label `m 1 = 0` gives the infinite quotient `ℤ`, of cardinality `0` in `Nat.card`. -/
@@ -304,7 +298,7 @@ theorem card_quotient_labeledActiveLattice_interval_of_eq (ha : a ≠ 0) {x : St
   rw [labeledActiveLattice_def, activeSet_interval_of_eq ha hx, image_singleton]
   -- The labeled normal at `a` is `-(m 1 • 1)`, which spans the same sublattice as `m 1 • 1`.
   rw [show m 1 • ![(1 : ℤ), -1] 1 = -(m 1 • 1) by simp, ← Set.neg_singleton, Submodule.span_neg]
-  exact natCard_quotient_span_nsmul_one (m 1)
+  simpa using (Module.Basis.singleton Unit ℤ).card_quotient_span_range_nsmul fun _ ↦ m 1
 
 end Interval
 
