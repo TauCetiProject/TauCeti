@@ -126,7 +126,7 @@ theorem StrongDual.exists_abs_deriv_smoothTransition_mul_le_indicator
   refine ⟨M * max C 0, fun n x => ?_⟩
   by_cases hx : x ∈ tsupport χ
   · rw [indicator_of_mem hx]
-    exact Real.smoothTransition.abs_deriv_mul_mul_le hM (le_max_right _ _) (by positivity)
+    exact Real.smoothTransition.abs_deriv_mul_mul_le hM (le_max_right _ _)
       ((hC x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (abs_nonneg _)))
   · simp [image_eq_zero_of_notMem_tsupport hx, hx]
 

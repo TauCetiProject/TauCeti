@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
 public import TauCeti.Algebra.AlgebraicGroup.UpperUnitriangular.Scheme
+public import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
+import TauCeti.Algebra.Bialgebra.Hom.Basic
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Triangular
 
 /-!
 # Representations with upper-unitriangular coefficient matrices
@@ -23,6 +26,11 @@ This morphism factors the usual coordinate morphism `O(GL_n) ⟶ H` through the 
 `O(GL_n) ⟶ O(U_n)`. Consequently, if `M` is faithful, the represented affine group embeds as
 a closed subgroup of `U_n`.
 
+Over a domain, such a group admits only trivial homomorphisms from diagonalizable groups: when the
+coordinate morphism `O(GL_n) ⟶ H` is surjective, every bialgebra morphism from `H` to a
+torsion-free bialgebra spanned by its group-like elements is the counit followed by the unit,
+since it sends the coefficient matrix to the identity.
+
 This is the coordinate-algebra bridge used by the upper-unitriangular embedding characterization in
 `TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding`.
 
@@ -38,6 +46,13 @@ This is the coordinate-algebra bridge used by the upper-unitriangular embedding 
   morphism into `U_n`.
 * `TauCeti.Comodule.isClosedImmersion_upperUnitriangularCoordinateGroupSchemeHom_iff_isFaithful`:
   the morphism into `U_n` is a closed immersion exactly when the comodule is faithful.
+
+In the `Module.Basis` namespace:
+
+* `bialgHom_eq_unit_comp_counit_of_isUpperUnitriangular_of_surjective_of_groupLikeSetSpan_eq_top`:
+  over a domain, if an upper-unitriangular representation of `H` has surjective coordinate
+  morphism, then every bialgebra morphism from `H` to a torsion-free bialgebra spanned by its
+  group-like elements is the counit followed by the unit.
 
 ## References
 
@@ -82,9 +97,9 @@ private theorem upperUnitriangularCoordinateAlgHom_counit
   apply UpperUnitriangular.coordinateHopfAlgebra_algHom_ext R m
   intro ij
   rw [AlgHom.comp_apply, Bialgebra.counitAlgHom_apply,
-    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply,
+    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply_X,
     h.coe_toGL, counit_coefficientMatrix]
-  simp [Bialgebra.counitAlgHom_apply, ij.2.ne]
+  simp [Bialgebra.counitAlgHom_apply, ij.property.ne]
 
 private theorem upperUnitriangularCoordinateAlgHom_comul
     (b : Basis m R M) (h : (coefficientMatrix (C := H) b).IsUpperUnitriangular) :
@@ -107,16 +122,16 @@ private theorem upperUnitriangularCoordinateAlgHom_comul
   have hX (ij : UpperUnitriangular.Index m) :
       upperUnitriangularCoordinateAlgHom (H := H) b h
           (UpperUnitriangular.coordinateHopfAlgebraAlgEquiv R m (MvPolynomial.X ij)) =
-        coefficientMatrix (C := H) b ij.1.1 ij.1.2 := by
+        coefficientMatrix (C := H) b ij.val.1 ij.val.2 := by
     rw [upperUnitriangularCoordinateAlgHom,
-      UpperUnitriangular.upperUnitriangularToPoint_apply, h.coe_toGL]
+      UpperUnitriangular.upperUnitriangularToPoint_apply_X, h.coe_toGL]
   apply UpperUnitriangular.coordinateHopfAlgebra_algHom_ext R m
   intro ij
   simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
     UpperUnitriangular.coordinateHopfAlgebra_comul_X, map_sum,
     Algebra.TensorProduct.map_tmul,
     hgeneric, hX]
-  exact (comul_coefficientMatrix_eq_sum (C := H) b ij.1.1 ij.1.2).symm
+  exact (comul_coefficientMatrix_eq_sum (C := H) b ij.val.1 ij.val.2).symm
 
 /-- The coordinate Hopf-algebra morphism of a comodule whose coefficient matrix is upper
 unitriangular in the chosen basis. It sends each strict-upper coordinate of `U_n` to the
@@ -136,9 +151,9 @@ theorem upperUnitriangularCoordinateBialgHom_X
     (ij : UpperUnitriangular.Index m) :
     upperUnitriangularCoordinateBialgHom (H := H) b h
         (UpperUnitriangular.coordinateHopfAlgebraAlgEquiv R m (MvPolynomial.X ij)) =
-      coefficientMatrix (C := H) b ij.1.1 ij.1.2 := by
+      coefficientMatrix (C := H) b ij.val.1 ij.val.2 := by
   simp only [upperUnitriangularCoordinateBialgHom, BialgHom.ofAlgHom_apply,
-    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply,
+    upperUnitriangularCoordinateAlgHom, UpperUnitriangular.upperUnitriangularToPoint_apply_X,
     h.coe_toGL]
 
 /-- The upper-unitriangular coordinate morphism sends every entry of the generic matrix to the
@@ -292,3 +307,44 @@ end GroupScheme
 end
 
 end TauCeti.Comodule
+
+universe u v w x
+
+namespace Module.Basis
+
+open TauCeti TauCeti.Comodule
+
+variable {R : Type u} {H : Type v} {K : Type w} {M : Type x} [CommRing R] [IsDomain R]
+  [CommRing H] [HopfAlgebra R H] [Ring K] [Bialgebra R K] [Module.IsTorsionFree R K]
+  [AddCommMonoid M] [Module R M] [Comodule R H M] {n : ℕ}
+
+/-- **A group with a faithful upper-unitriangular representation admits only trivial
+homomorphisms from diagonalizable groups.** Over a domain, suppose that an `H`-comodule has an
+upper-unitriangular coefficient matrix whose coordinate morphism `O(GLₙ) → H` is surjective. Then
+every bialgebra morphism from `H` to a torsion-free bialgebra spanned by its group-like elements
+is the counit followed by the unit. -/
+theorem
+    bialgHom_eq_unit_comp_counit_of_isUpperUnitriangular_of_surjective_of_groupLikeSetSpan_eq_top
+    (b : Module.Basis (Fin n) R M) (hb : (coefficientMatrix (C := H) b).IsUpperUnitriangular)
+    (hsurj : Function.Surjective (coordinateBialgHom (H := H) b))
+    (hK : Subcoalgebra.groupLikeSetSpan (R := R) (C := K) Set.univ = ⊤) (φ : H →ₐc[R] K) :
+    φ = (Bialgebra.unitBialgHom R K).comp (Bialgebra.counitBialgHom R H) := by
+  have hone := b.map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top
+    φ.toCoalgHom (hb.isUpperTriangular.map φ.toCoalgHom) hK fun i ↦ by
+      rw [hb.apply_diag i]
+      exact map_one φ
+  have hcomp : φ.toAlgHom.comp (coordinateBialgHom (H := H) b).toAlgHom =
+      ((Algebra.ofId R K).comp (Bialgebra.counitAlgHom R H)).comp
+        (coordinateBialgHom (H := H) b).toAlgHom := by
+    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext R n
+    intro i j
+    have h : φ (coefficientMatrix (C := H) b i j) = (1 : Matrix (Fin n) (Fin n) K) i j := by
+      simpa only [Matrix.map_apply, BialgHom.toCoalgHom_apply] using congrFun (congrFun hone i) j
+    simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, coordinateBialgHom_X, h,
+      Bialgebra.counitAlgHom_apply, counit_coefficientMatrix, Matrix.one_apply]
+    split_ifs <;> simp
+  ext x
+  obtain ⟨y, rfl⟩ := hsurj x
+  simpa using AlgHom.congr_fun hcomp y
+
+end Module.Basis

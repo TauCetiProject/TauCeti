@@ -194,9 +194,10 @@ the matching `M` to `M'`, relabelling the points of each strand diagram along `e
 def matchedMapAlgEquiv (e : α ≃o γ) (hM : ∀ i, M' (e i) = M i) :
     matchedSubalgebra R M ≃ₐ[R] matchedSubalgebra R M' where
   toFun x := ⟨mapAlgEquiv e (x : StrandsAlgebra R α),
-    (mapAlgEquiv_mem_matchedSubalgebra_iff e hM).2 x.2⟩
+    (mapAlgEquiv_mem_matchedSubalgebra_iff e hM).2 x.property⟩
   invFun y := ⟨(mapAlgEquiv e).symm (y : StrandsAlgebra R γ),
-    (mapAlgEquiv_mem_matchedSubalgebra_iff e hM).1 (by rw [AlgEquiv.apply_symm_apply]; exact y.2)⟩
+    (mapAlgEquiv_mem_matchedSubalgebra_iff e hM).1 (by rw [AlgEquiv.apply_symm_apply]; exact
+        y.property)⟩
   left_inv x := Subtype.ext ((mapAlgEquiv e).symm_apply_apply (x : StrandsAlgebra R α))
   right_inv y := Subtype.ext ((mapAlgEquiv e).apply_symm_apply (y : StrandsAlgebra R γ))
   map_mul' x y := Subtype.ext (map_mul (mapAlgEquiv e) (x : StrandsAlgebra R α) y)
@@ -271,11 +272,11 @@ diagrams by half a turn is an isomorphism of the matched subalgebra of `M` with 
 matched subalgebra of the same matching on the reversed order `αᵒᵈ`. -/
 def matchedReverseAlgEquiv : matchedSubalgebra R M ≃ₐ[R] (matchedSubalgebra R (M ∘ ofDual))ᵐᵒᵖ where
   toFun x := op ⟨unop (reverseAlgEquiv (x : StrandsAlgebra R α)),
-    unop_reverseAlgEquiv_mem_matchedSubalgebra_iff.2 x.2⟩
+    unop_reverseAlgEquiv_mem_matchedSubalgebra_iff.2 x.property⟩
   invFun y := ⟨reverseAlgEquiv.symm
       (op ((unop y : matchedSubalgebra R (M ∘ ofDual)) : StrandsAlgebra R αᵒᵈ)),
     unop_reverseAlgEquiv_mem_matchedSubalgebra_iff.1 (by
-      rw [AlgEquiv.apply_symm_apply, unop_op]; exact (unop y).2)⟩
+      rw [AlgEquiv.apply_symm_apply, unop_op]; exact (unop y).property)⟩
   left_inv x := Subtype.ext (by simp)
   right_inv y := unop_injective (Subtype.ext (by simp))
   map_mul' x y := unop_injective (Subtype.ext (by simp))

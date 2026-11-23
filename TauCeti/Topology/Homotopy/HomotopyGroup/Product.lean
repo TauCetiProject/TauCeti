@@ -44,7 +44,7 @@ variable {N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : 
 
 /-- The coordinatewise product of two generalized loops. -/
 def prod (p : Ω^ N X x) (q : Ω^ N Y y) : Ω^ N (X × Y) (x, y) :=
-  ⟨ContinuousMap.prodMk p.1 q.1, fun t ht ↦
+  ⟨ContinuousMap.prodMk p.val q.val, fun t ht ↦
     Prod.ext (_root_.GenLoop.boundary p t ht) (_root_.GenLoop.boundary q t ht)⟩
 
 @[simp]
@@ -92,7 +92,7 @@ variable {ι : Type*} {Z : ι → Type*} [∀ i, TopologicalSpace (Z i)] {z : �
 
 /-- The coordinatewise indexed product of generalized loops. -/
 def pi (p : ∀ i, Ω^ N (Z i) (z i)) : Ω^ N (∀ i, Z i) z :=
-  ⟨ContinuousMap.pi fun i ↦ (p i).1, fun t ht ↦
+  ⟨ContinuousMap.pi fun i ↦ (p i).val, fun t ht ↦
     funext fun i ↦ _root_.GenLoop.boundary (p i) t ht⟩
 
 @[simp]

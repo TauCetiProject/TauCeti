@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ZeroMultiplicity
-public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Topology.Algebra.ConstMulAction
+import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Dilation of the plane vortex equation
@@ -21,26 +24,29 @@ section `α = 2(p + i q)`. Pullback by `z ↦ t z` multiplies connection compone
 with coupling `c` is `*iF_a = c(1 - |α|²)/8`. Dilation changes `c` to `t² c`,
 multiplies the curvature defect by `t²`, and multiplies the complex defect by `t`.
 In particular, the physical coefficient `r/4` becomes `1/8` in the coordinate
-`w = √(2r) z`.
+`w = √(2r) z`. The curvature coefficient `∂₁ b₂ - ∂₂ b₁` is multiplied by `t²` and the covariant
+derivative `d_a α` by `t`, so for `t = √(2r)` the plane integral of the integrand of Taubes's
+scaled energy does not depend on `r`.
 
 The same laws hold for the linearization and the infinitesimal and finite gauge
 actions. For positive coupling the gauge row uses the coefficient metric `|b|² + c |δα|²/4`; its
-transformation accounts for the change of that metric. Pulling back a gauge transform is the
-gauge transform by the pulled-back gauge (`dilateField_gaugeTransform`). For `t ≠ 0` the smooth
-framed gauge group is preserved, and so framed gauge orbits go to framed gauge orbits
+transformation accounts for the change of that metric. The energy density acquires the factors
+`t⁴`, `t²` and `1` on its curvature, kinetic and potential terms (`energyDensity_dilateField`).
+Every-order derivative and squared `L²` scaling formulas include the change of volume and give the
+integer Sobolev factors on smooth fields. These are identities of flat differential expressions;
+the action on the Sobolev field spaces and the Sobolev gauge groups is in
+`TauCeti.Analysis.PDE.Vortex.Dilation.Sobolev`, and insertion into a curved normal tube is not
+treated.
+
+Pullback commutes with the charge-one action of circle-valued gauges, the gauge being pulled
+back as well (`dilateField_gaugeTransform`), and the coupled equation is gauge covariant at every
+coupling (`coupledEquation_gaugeTransform`). The section of the pulled-back field is the section
+composed with the dilation (`sectionValue_dilateField`), so a positive dilation preserves the end
+framing `α(z) (z / |z|)⁻ᵐ → a` of degree `m` (`tendsto_sectionValue_dilateField`). Pulling a smooth
+framed gauge back by a nonzero dilation is an automorphism `dilateGauge` of the smooth framed gauge
+group, through which dilation intertwines the framed gauge actions
+(`dilateField_framedGaugeGroup_smul`), so framed gauge orbits go to framed gauge orbits
 (`exists_framedGaugeGroup_smul_dilateField_eq_iff`).
-
-The densities scale as well: the curvature by `t²`, the covariant derivative of the section by
-`t`, while `|α|` is only transported, so the energy density acquires the factors `t⁴`, `t²` and
-`1` on its curvature, kinetic and potential terms (`energyDensity_dilateField`). Every-order
-derivative and squared `L²` scaling formulas include the change of volume and give the integer
-Sobolev factors on smooth fields. A positive dilation preserves the end framing
-`α(z) (z / |z|)^(-m) → c` (`tendsto_sectionValue_dilateField`), and pullback by `z ↦ t z`,
-`t ≠ 0`, moves the zero divisor `D` to `t⁻¹ D` (`isZeroMultiplicity_sectionValue_dilateField`).
-
-These are identities of flat differential expressions; the action on the Sobolev field spaces
-and the Sobolev gauge groups is in `TauCeti.Analysis.PDE.Vortex.Dilation.Sobolev`, and insertion
-into a curved normal tube is not treated.
 
 ## References
 
@@ -55,8 +61,7 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex Filter
-open scoped Topology
+open Complex Filter Topology
 
 /-- Pullback of a connection and section by the real dilation `z ↦ t • z`.
 Only the connection components acquire the extra factor `t`. -/
@@ -94,6 +99,12 @@ theorem dilateField_neg (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
   ext z i
   fin_cases i <;> simp [dilateField]
 
+/-- The section of a pulled-back field is the section composed with the dilation. -/
+@[simp]
+theorem sectionValue_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (dilateField t x) z = sectionValue x (t • z) := by
+  simp [sectionValue_apply]
+
 @[simp]
 theorem dilateField_add (t : ℝ) (x y : ℂ → EuclideanSpace ℝ (Fin 4)) :
     dilateField t (x + y) = dilateField t x + dilateField t y := by
@@ -112,30 +123,23 @@ theorem dilateField_smul (t c : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
   ext z i
   fin_cases i <;> simp [dilateField] <;> ring
 
-/-- The section of a pulled-back field is the pulled-back section: dilation adds no factor to
-`α`. -/
-@[simp]
-theorem sectionValue_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    sectionValue (dilateField t x) z = sectionValue x (t • z) := by
-  simp [sectionValue_apply, dilateField]
-
 /-- The vacuum is invariant under dilation. -/
 @[simp]
 theorem dilateField_vacuumField (t : ℝ) : dilateField t vacuumField = vacuumField := by
   ext z i
   fin_cases i <;> simp [dilateField, vacuumField_apply]
 
-/-- Pullback by a dilation preserves smoothness of each order. -/
+/-- Pullback by a dilation preserves the regularity of a field. -/
 theorem contDiff_dilateField {n : WithTop ℕ∞} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : ContDiff ℝ n x) (t : ℝ) : ContDiff ℝ n (dilateField t x) := by
-  have hj (j : Fin 4) : ContDiff ℝ n (fun z ↦ x (t • z) j) :=
-    contDiff_euclidean.1 (hx.comp (contDiff_id.const_smul t)) j
-  refine contDiff_euclidean.2 fun i ↦ ?_
+  have h (i : Fin 4) : ContDiff ℝ n fun z ↦ x (t • z) i :=
+    ((contDiff_piLp 2).1 hx i).comp (contDiff_id.const_smul t)
+  refine (contDiff_piLp 2).2 fun i ↦ ?_
   fin_cases i
-  · simpa [dilateField] using contDiff_const.mul (hj 0)
-  · simpa [dilateField] using contDiff_const.mul (hj 1)
-  · simpa [dilateField] using hj 2
-  · simpa [dilateField] using hj 3
+  · simpa [dilateField] using contDiff_const.mul (h 0)
+  · simpa [dilateField] using contDiff_const.mul (h 1)
+  · simpa [dilateField] using h 2
+  · simpa [dilateField] using h 3
 
 /-- A spatial derivative of a pulled-back connection scales by `t²`, while a
 spatial derivative of its section scales by `t`. This also holds for the total
@@ -189,6 +193,79 @@ theorem integral_norm_iteratedFDeriv_dilateField_apply (μ : Measure ℂ) [μ.Is
   rw [← mul_assoc]
   congr 1
   split_ifs <;> simp only [mul_one, mul_pow, ← pow_mul] <;> field_simp [ht] <;> ring
+
+/-- A field differentiable at the dilated point has a differentiable dilation. -/
+theorem differentiableAt_dilateField {t : ℝ} {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hx : DifferentiableAt ℝ x (t • z)) : DifferentiableAt ℝ (dilateField t x) z := by
+  have hc (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ x (t • w) i) z :=
+    ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp _ hx).comp z
+      (differentiableAt_id.const_smul t)
+  rw [differentiableAt_euclidean]
+  intro i
+  fin_cases i
+  · simpa [dilateField] using (hc 0).const_mul t
+  · simpa [dilateField] using (hc 1).const_mul t
+  · simpa [dilateField] using hc 2
+  · simpa [dilateField] using hc 3
+
+/-- Dilation multiplies the curvature coefficient `∂₁ b₂ - ∂₂ b₁` by `t²`. -/
+@[simp]
+theorem curvature_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    curvature (dilateField t x) z = t ^ 2 * curvature x (t • z) := by
+  simp only [curvature_apply, fderiv_dilateField_apply, Fin.isValue, Fin.reduceLT, ↓reduceIte,
+    real_smul, smul_apply, smul_eq_mul]
+  ring
+
+/-- Dilation multiplies the covariant derivative `d_a α` of the section by `t`. -/
+@[simp]
+theorem covariantDerivative_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) :
+    covariantDerivative (dilateField t x) z v = t * covariantDerivative x (t • z) v := by
+  have hs : sectionValue (dilateField t x) = fun w ↦ sectionValue x (t • w) :=
+    funext fun w ↦ by simp [sectionValue_apply, dilateField]
+  rw [covariantDerivative_apply, covariantDerivative_apply, hs, fderiv_comp_smul]
+  simp only [dilateField_apply, real_smul, smul_apply, Fin.isValue,
+    Matrix.cons_val_zero, Matrix.cons_val_one, ofReal_add, ofReal_mul]
+  ring
+
+open MeasureTheory in
+/-- **The scaled vortex energy does not depend on `r`.** For `r > 0` and `t = √(2r)`, the plane
+integral of `r⁻¹ |*iF_a|² + |∇₁ α|² + |∇_i α|² + r (1 - |α|²)²` for the dilated field
+`dilateField t X` equals `∫ (2 |*iF_a|² + |∇₁ α|² + |∇_i α|² + (1 - |α|²)² / 2)` for `X`, which
+does not involve `r`. Pointwise the first integrand is `2r` times the second at `t z`, and the
+area factor `t⁻²` of the coordinate `w = t z` cancels `2r`.
+
+The first integrand is the integrand `r⁻¹ |F_a|² + |∇_a α|² + r (1 - |α|²)²` of Taubes's scaled
+energy written in plane quantities: for a field pulled back to `ℂ_base × ℂ_normal` along a normal
+coordinate, `|F_a|` is `|*iF_a|` and `|∇_a α|²` is `|∇₁ α|² + |∇_i α|²` at that coordinate. -/
+theorem integral_inv_mul_curvature_dilateField_sq_add (μ : Measure ℂ) [μ.IsAddHaarMeasure]
+    {r : ℝ} (hr : 0 < r) (X : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    ∫ z, (r⁻¹ * curvature (dilateField (√(2 * r)) X) z ^ 2 +
+        ‖covariantDerivative (dilateField (√(2 * r)) X) z 1‖ ^ 2 +
+        ‖covariantDerivative (dilateField (√(2 * r)) X) z I‖ ^ 2 +
+        r * (1 - ‖sectionValue (dilateField (√(2 * r)) X) z‖ ^ 2) ^ 2) ∂μ =
+      ∫ z, (2 * curvature X z ^ 2 + ‖covariantDerivative X z 1‖ ^ 2 +
+        ‖covariantDerivative X z I‖ ^ 2 + (1 - ‖sectionValue X z‖ ^ 2) ^ 2 / 2) ∂μ := by
+  set t := √(2 * r)
+  have ht : t ^ 2 = 2 * r := Real.sq_sqrt (by positivity)
+  have ht₀ : 0 ≤ t := Real.sqrt_nonneg _
+  set g : ℂ → ℝ := fun w ↦ 2 * curvature X w ^ 2 + ‖covariantDerivative X w 1‖ ^ 2 +
+    ‖covariantDerivative X w I‖ ^ 2 + (1 - ‖sectionValue X w‖ ^ 2) ^ 2 / 2
+  -- Pointwise, the integrand is `2 r g (t z)`.
+  have key (z : ℂ) : r⁻¹ * curvature (dilateField t X) z ^ 2 +
+      ‖covariantDerivative (dilateField t X) z 1‖ ^ 2 +
+      ‖covariantDerivative (dilateField t X) z I‖ ^ 2 +
+      r * (1 - ‖sectionValue (dilateField t X) z‖ ^ 2) ^ 2 = (2 * r) * g (t • z) := by
+    have hs : sectionValue (dilateField t X) z = sectionValue X (t • z) := by
+      simp [sectionValue_apply, dilateField_apply]
+    simp only [g, curvature_dilateField, covariantDerivative_dilateField, hs,
+      norm_mul, Complex.norm_real, Real.norm_of_nonneg ht₀]
+    field_simp
+    rw [ht]
+    ring
+  simp_rw [key]
+  rw [integral_const_mul, Measure.integral_comp_smul μ g t, Complex.finrank_real_complex, ht,
+    abs_of_nonneg (by positivity), smul_eq_mul]
+  field_simp
 
 /-- The plane vortex defects with curvature coefficient `c/8`. The last two rows
 are the real and imaginary parts of `∂bar_a α`, with the existing normalization. -/
@@ -272,29 +349,6 @@ theorem equation_dilateField_inv_sqrt (r : ℝ) (hr : 0 < r)
     inv_mul_cancel₀ (ne_of_gt (by positivity : 0 < 2 * r))] using
     coupledEquation_dilateField (2 * r) (√(2 * r))⁻¹ x w
 
-/-- The curvature coefficient `curvature`, with `F_a = i curvature ds ∧ dt`, of a pulled-back
-field scales by `t²`. -/
-@[simp]
-theorem curvature_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    curvature (dilateField t x) z = t ^ 2 * curvature x (t • z) := by
-  simp only [curvature_apply, fderiv_dilateField_apply]
-  simp
-  ring
-
-/-- The covariant derivative `∇_a α` of a pulled-back field, in a fixed direction `v`, scales
-by `t`. -/
-@[simp]
-theorem covariantDerivative_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) :
-    covariantDerivative (dilateField t x) z v = t * covariantDerivative x (t • z) v := by
-  have hs : sectionValue (dilateField t x) = fun w ↦ sectionValue x (t • w) :=
-    funext (sectionValue_dilateField t x)
-  rw [covariantDerivative_apply, covariantDerivative_apply, hs,
-    fderiv_comp_smul (f := sectionValue x)]
-  simp only [smul_apply, dilateField_apply, PiLp.toLp_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Complex.real_smul]
-  push_cast
-  ring
-
 /-- **Dilation of the energy density.** Pullback by `z ↦ t z` multiplies the curvature term of
 the energy density by `t⁴` and its kinetic term by `t²`, and leaves the potential term
 `(1 - |α|²)²` unchanged. -/
@@ -329,37 +383,6 @@ theorem equation_dilateField_inv_sqrt_eq_zero_iff {r : ℝ} (hr : 0 < r)
   simpa only [hc, coupledEquation_one] using
     coupledEquation_dilateField_eq_zero_iff' (2 * r) (t := (√(2 * r))⁻¹)
       (inv_ne_zero (by positivity)) x
-
-/-- **Dilation preserves the end framing.** A positive dilation fixes the phase `z / |z|`, so
-it preserves the limit `c` of `α(z) (z / |z|)^(-m)` at infinity. -/
-theorem tendsto_sectionValue_dilateField {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ} {c : ℂ}
-    (hx : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 c))
-    {t : ℝ} (ht : 0 < t) :
-    Tendsto (fun z ↦ sectionValue (dilateField t x) z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
-      (cocompact ℂ) (𝓝 c) := by
-  have hdil : Tendsto (fun z : ℂ ↦ t • z) (cocompact ℂ) (cocompact ℂ) := by
-    simpa only [Complex.real_smul] using
-      Filter.tendsto_cocompact_mul_left₀ (ofReal_ne_zero.2 ht.ne')
-  refine (hx.comp hdil).congr fun z ↦ ?_
-  have hphase : t • z / (‖t • z‖ : ℂ) = z / (‖z‖ : ℂ) := by
-    rw [norm_smul, Real.norm_of_nonneg ht.le, Complex.real_smul, ofReal_mul,
-      mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
-  simp only [Function.comp_apply, sectionValue_dilateField, hphase]
-
-/-- **Dilation law for the divisor.** If the section of `x` has zero divisor `D`, the section of
-its pullback by `z ↦ t z`, `t ≠ 0`, has zero divisor `t⁻¹ D`. -/
-theorem isZeroMultiplicity_sectionValue_dilateField {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-    {D : Multiset ℂ} (h : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {t : ℝ}
-    (ht : t ≠ 0) :
-    IsZeroMultiplicity (sectionValue (dilateField t x))
-      fun z ↦ (D.map ((t : ℂ)⁻¹ * ·)).count z := by
-  have ht' : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht
-  convert h.comp_mul_add ht' 0 using 1
-  · funext w
-    rw [sectionValue_dilateField, Complex.real_smul, add_zero]
-  · funext z
-    rw [add_zero, ← Multiset.count_map_eq_count' ((t : ℂ)⁻¹ * ·) D
-      (mul_right_injective₀ (inv_ne_zero ht')) ((t : ℂ) * z), inv_mul_cancel_left₀ ht']
 
 /-- The linearization of `coupledEquation c` with gauge row
 `div b + c(p δq - q δp)`. For positive `c`, that row is the gauge adjoint for
@@ -447,25 +470,24 @@ theorem dilateField_phaseGauge (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)
   ext z i
   fin_cases i <;> simp [dilateField, -Complex.real_smul, fderiv_comp_smul] <;> ring
 
-/-! ### Gauge transformations -/
-
-/-- The logarithmic derivative of a pulled-back gauge is the pulled-back form, scaled by `t`. -/
+/-- The logarithmic derivative `Im (u⁻¹ du)` of a pulled-back gauge is the pulled-back
+one-form. -/
 theorem gaugeForm_comp_smul (u : ℂ → Circle) (t : ℝ) (z : ℂ) :
     gaugeForm (fun w ↦ u (t • w)) z = t • gaugeForm u (t • z) := by
   ext v
-  rw [gaugeForm_apply, fderiv_comp_smul (f := fun w ↦ (u w : ℂ)), smul_apply, smul_apply,
-    gaugeForm_apply, mul_smul_comm, Complex.smul_im]
+  have h : fderiv ℝ (fun w ↦ (u (t • w) : ℂ)) z v =
+      t • fderiv ℝ (fun w ↦ (u w : ℂ)) (t • z) v := by
+    rw [fderiv_comp_smul (f := fun w ↦ (u w : ℂ)) t, FunLike.coe_smul, Pi.smul_apply]
+  simp only [gaugeForm_apply, h, FunLike.coe_smul, Pi.smul_apply, mul_smul_comm, Complex.smul_im,
+    smul_eq_mul]
 
-/-- **Dilation intertwines the gauge actions.** Pulling back a gauge transform of `x` by
-`z ↦ t z` is the gauge transform of the pulled-back field by the pulled-back gauge. -/
+/-- Pullback commutes with finite charge-one gauge transformations by circle-valued maps. -/
 theorem dilateField_gaugeTransform (t : ℝ) (u : ℂ → Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     dilateField t (gaugeTransform u x) =
-      gaugeTransform (fun z ↦ u (t • z)) (dilateField t x) := by
+      gaugeTransform (fun w ↦ u (t • w)) (dilateField t x) := by
   ext z i
-  have hg (v : ℂ) : gaugeForm (fun w ↦ u (t • w)) z v = t * gaugeForm u (t • z) v := by
-    rw [gaugeForm_comp_smul, smul_apply, smul_eq_mul]
-  fin_cases i <;>
-    simp only [dilateField_apply, gaugeTransform_apply, hg, PiLp.toLp_apply] <;> simp <;> ring
+  fin_cases i <;> simp [dilateField, gaugeTransform_apply, gaugeForm_comp_smul, -gaugeForm_apply,
+    -Complex.real_smul] <;> ring
 
 /-- Pullback commutes with the linear gauge action on field variations. -/
 theorem dilateField_gaugeLinearAction (t : ℝ) (u : ℂ → Circle)
@@ -475,22 +497,102 @@ theorem dilateField_gaugeLinearAction (t : ℝ) (u : ℂ → Circle)
   ext z i
   fin_cases i <;> simp [dilateField, gaugeLinearAction_apply]
 
-/-- Pullback by a nonzero dilation preserves the smooth framed gauge group. -/
-theorem comp_smul_mem_framedGaugeGroup {t : ℝ} (ht : t ≠ 0) {u : ℂ → Circle}
-    (hu : u ∈ framedGaugeGroup) : (fun z ↦ u (t • z)) ∈ framedGaugeGroup := by
-  rw [mem_framedGaugeGroup] at hu ⊢
-  have hdil : Tendsto (fun z : ℂ ↦ t • z) (cocompact ℂ) (cocompact ℂ) := by
-    simpa only [Complex.real_smul] using
-      Filter.tendsto_cocompact_mul_left₀ (ofReal_ne_zero.2 ht)
-  exact ⟨hu.1.comp (contDiff_id.const_smul t), hu.2.comp hdil⟩
+/-- Off-shell gauge covariance of the coupled equation: the curvature row is unchanged and the
+complex row is multiplied by the same circle element as the section. -/
+theorem coupledEquation_gaugeTransform (c : ℝ) {u : ℂ → Circle}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z)
+    (hx : ∀ i, DifferentiableAt ℝ (fun w ↦ x w i) z) :
+    coupledEquation c (gaugeTransform u x) z =
+      !₂[coupledEquation c x z 0,
+        (u z : ℂ).re * coupledEquation c x z 1 - (u z : ℂ).im * coupledEquation c x z 2,
+        (u z : ℂ).im * coupledEquation c x z 1 + (u z : ℂ).re * coupledEquation c x z 2] := by
+  have he := equation_gaugeTransform hu hx
+  have hn := Circle.re_sq_add_im_sq (u z)
+  have h₀ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 0) he
+  have h₁ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 1) he
+  have h₂ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 2) he
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.head_cons, Matrix.tail_cons] at h₀ h₁ h₂
+  ext i
+  have hi : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+  rcases hi with rfl | rfl | rfl
+  · simp only [coupledEquation, Matrix.cons_val_zero, h₀]
+    simp only [gaugeTransform_apply, Matrix.cons_val_two, Matrix.cons_val_three,
+      Matrix.head_cons, Matrix.tail_cons]
+    linear_combination (c - 1) * (x z 2 ^ 2 + x z 3 ^ 2) / 2 * hn
+  · simpa [coupledEquation] using h₁
+  · simpa [coupledEquation] using h₂
+
+/-- A gauge transformation preserves the coupled vortex equation in both directions. -/
+@[simp]
+theorem coupledEquation_gaugeTransform_eq_zero_iff (c : ℝ) {u : ℂ → Circle}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z)
+    (hx : ∀ i, DifferentiableAt ℝ (fun w ↦ x w i) z) :
+    coupledEquation c (gaugeTransform u x) z = 0 ↔ coupledEquation c x z = 0 := by
+  rw [coupledEquation_gaugeTransform c hu hx, circle_rotate_tail_eq_zero_iff]
+
+/-- A positive dilation preserves the limit `a` of the end framing `α(z) (z / |z|)^(-m)` of
+degree `m`. -/
+theorem tendsto_sectionValue_dilateField {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ} {a : ℂ}
+    (hx : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 a))
+    {t : ℝ} (ht : 0 < t) :
+    Tendsto (fun z ↦ sectionValue (dilateField t x) z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
+      (cocompact ℂ) (𝓝 a) := by
+  have hdil : Tendsto (fun z : ℂ ↦ t • z) (cocompact ℂ) (cocompact ℂ) :=
+    (Homeomorph.smulOfNeZero t ht.ne').map_cocompact.le
+  refine (hx.comp hdil).congr fun z ↦ ?_
+  simp only [Function.comp_apply, sectionValue_dilateField, smul_div_norm_smul ht]
+
+/-! ### Dilation of framed gauges -/
+
+/-- Pulling a smooth framed gauge back by a nonzero dilation gives a smooth framed gauge. -/
+theorem comp_smul_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) {t : ℝ}
+    (ht : t ≠ 0) : (fun w ↦ u (t • w)) ∈ framedGaugeGroup := by
+  obtain ⟨hs, hlim⟩ := (mem_framedGaugeGroup u).1 hu
+  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_id.const_smul t),
+    hlim.comp (Homeomorph.smulOfNeZero t ht).map_cocompact.le⟩
+
+/-- **Dilation of framed gauges**: the automorphism `u ↦ u (t • ·)` of the smooth framed gauge
+group, for `t ≠ 0`. -/
+def dilateGauge {t : ℝ} (ht : t ≠ 0) : framedGaugeGroup ≃* framedGaugeGroup where
+  toFun u := ⟨fun w ↦ u.val (t • w), comp_smul_mem_framedGaugeGroup u.property ht⟩
+  invFun u := ⟨fun w ↦ u.val (t⁻¹ • w), comp_smul_mem_framedGaugeGroup u.property (inv_ne_zero ht)⟩
+  left_inv u := by
+    ext w
+    simp [mul_inv_cancel_left₀ (Complex.ofReal_ne_zero.2 ht)]
+  right_inv u := by
+    ext w
+    simp [inv_mul_cancel_left₀ (Complex.ofReal_ne_zero.2 ht)]
+  map_mul' _ _ := rfl
+
+@[simp]
+theorem coe_dilateGauge_apply {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGroup) (w : ℂ) :
+    (dilateGauge ht u : ℂ → Circle) w = (u : ℂ → Circle) (t • w) :=
+  (rfl)
+
+@[simp]
+theorem coe_dilateGauge_symm_apply {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGroup) (w : ℂ) :
+    ((dilateGauge ht).symm u : ℂ → Circle) w = (u : ℂ → Circle) (t⁻¹ • w) :=
+  (rfl)
+
+/-- Dilation intertwines the actions of the smooth framed gauge group. -/
+theorem dilateField_framedGaugeGroup_smul {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGroup)
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    dilateField t (u • x) = dilateGauge ht u • dilateField t x := by
+  have hu : ((dilateGauge ht u : framedGaugeGroup) : ℂ → Circle) = fun w ↦ u.val (t • w) :=
+    funext (coe_dilateGauge_apply ht u)
+  rw [framedGaugeGroup_smul, framedGaugeGroup_smul, hu]
+  exact dilateField_gaugeTransform t u x
 
 /-- A gauge lies in the smooth framed gauge group exactly when its pullback by a nonzero
 dilation does. -/
 theorem comp_smul_mem_framedGaugeGroup_iff {t : ℝ} (ht : t ≠ 0) {u : ℂ → Circle} :
-    (fun z ↦ u (t • z)) ∈ framedGaugeGroup ↔ u ∈ framedGaugeGroup := by
-  refine ⟨fun h ↦ ?_, comp_smul_mem_framedGaugeGroup ht⟩
+    (fun w ↦ u (t • w)) ∈ framedGaugeGroup ↔ u ∈ framedGaugeGroup := by
+  refine ⟨fun h ↦ ?_, fun h ↦ comp_smul_mem_framedGaugeGroup h ht⟩
   simpa only [smul_smul, mul_inv_cancel₀ ht, one_smul] using
-    comp_smul_mem_framedGaugeGroup (inv_ne_zero ht) h
+    comp_smul_mem_framedGaugeGroup h (inv_ne_zero ht)
 
 /-- **Dilation preserves framed gauge orbits.** For `t ≠ 0`, the fields `x` and `y` are related
 by a smooth framed gauge transformation exactly when their pullbacks by `z ↦ t z` are. -/
@@ -504,8 +606,7 @@ theorem exists_framedGaugeGroup_smul_dilateField_eq_iff {t : ℝ} (ht : t ≠ 0)
       (h : ∃ u : framedGaugeGroup, u • y = x) :
       ∃ u : framedGaugeGroup, u • dilateField s y = dilateField s x := by
     obtain ⟨u, rfl⟩ := h
-    exact ⟨⟨_, comp_smul_mem_framedGaugeGroup hs u.2⟩, by
-      simp only [framedGaugeGroup_smul, dilateField_gaugeTransform]⟩
+    exact ⟨dilateGauge hs u, (dilateField_framedGaugeGroup_smul hs u y).symm⟩
   refine ⟨fun h ↦ ?_, key ht⟩
   simpa [inv_mul_cancel₀ ht] using key (inv_ne_zero ht) h
 

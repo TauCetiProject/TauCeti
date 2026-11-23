@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.PowerSeries.Exp
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.NumberTheory.Padics.Measure.MahlerDuality
 public import TauCeti.RingTheory.PowerSeries.OpenDisc.Basic
+import Mathlib.Analysis.Normed.Ring.Ultra
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.NumberTheory.Padics.Factorial
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
@@ -57,6 +59,11 @@ families; every statement assumes the relevant boundedness. The disc norm `S_h` 
 
 ## Main results
 
+* `TauCeti.inv_lt_amiceRadius_zero_iff`: `p⁻¹ < r_0` exactly when `p ≠ 2`, and
+  `TauCeti.zpow_neg_lt_amiceRadius_zero`: `p ^ (-i) < r_0` whenever `1 < (p - 1) i`.
+* `TauCeti.amiceRadius_zero_pow_sub_one_le_norm_factorial`: the sharp bound `r_0 ^ (n - 1) ≤ ‖n!‖`
+  for `n ≠ 0`, in every normed algebra over `ℚ_[p]`, and its consequence
+  `TauCeti.amiceRadius_zero_pow_sub_one_le_norm_natCast`: `r_0 ^ (n - 1) ≤ ‖n‖`.
 * `TauCeti.amiceRadius_pow_le_norm_factorial`,
   `TauCeti.norm_factorial_le_mul_amiceRadius_succ_pow`: `r_hⁿ ≤ ‖⌊n / pʰ⌋!‖ ≤ p r_{h+1}ⁿ`.
 * `TauCeti.norm_factorial_pow_eq_mul_amiceRadius_pow`: along `n = p^(h + k)` the lower bound is
@@ -139,6 +146,30 @@ theorem amiceRadius_zero_pow_sub_one : amiceRadius p 0 ^ (p - 1) = (p : ℝ)⁻�
   rw [amiceRadius_pow, Nat.cast_sub hp.out.one_le, Nat.cast_one, pow_zero, mul_one,
     div_self (sub_one_pos (p := p)).ne', Real.rpow_neg_one]
 
+/-- The prime `p` lies strictly inside the disc of convergence of the `p`-adic exponential,
+`‖p‖ = p⁻¹ < r_0 = p ^ (-1 / (p - 1))`, exactly when `p` is odd. At `p = 2` the two are equal. -/
+theorem inv_lt_amiceRadius_zero_iff : (p : ℝ)⁻¹ < amiceRadius p 0 ↔ p ≠ 2 := by
+  have h2 := hp.out.two_le
+  have h := pow_lt_pow_iff_right_of_lt_one₀ (amiceRadius_pos (p := p) 0) (amiceRadius_lt_one 0)
+    (m := p - 1) (n := 1)
+  rw [pow_one, amiceRadius_zero_pow_sub_one] at h
+  rw [h]
+  omega
+
+/-- For a depth `i` with `1 < (p - 1) i`, the closed disc of radius `p ^ (-i)` lies inside the
+open disc of radius `r_0 = p ^ (-1 / (p - 1))`: `p ^ (-i) < r_0`. -/
+theorem zpow_neg_lt_amiceRadius_zero {i : ℕ} (hi : 1 < (p - 1) * i) :
+    (p : ℝ) ^ (-(i : ℤ)) < amiceRadius p 0 := by
+  have hi' : (1 : ℝ) < ((p : ℝ) - 1) * i := by
+    have h := (Nat.cast_lt (α := ℝ)).mpr hi
+    push_cast [Nat.cast_sub hp.out.one_le] at h
+    exact h
+  rw [← Real.rpow_intCast, amiceRadius_def]
+  refine Real.rpow_lt_rpow_of_exponent_lt one_lt_natCast ?_
+  push_cast
+  rw [neg_lt_neg_iff, pow_zero, mul_one, div_lt_iff₀ sub_one_pos]
+  linarith
+
 /-- `r_{h+1} ^ p = r_h`: each radius is the `p`-th root of the previous one. -/
 theorem amiceRadius_succ_pow (h : ℕ) : amiceRadius p (h + 1) ^ p = amiceRadius p h := by
   have := natCast_pos (p := p)
@@ -161,12 +192,9 @@ omit hp in
 theorem tendsto_amiceRadius : Tendsto (amiceRadius p) atTop (𝓝 1) := by
   rcases lt_or_ge 1 p with hp1 | hp1
   · have h1 : (1 : ℝ) < p := by exact_mod_cast hp1
-    have hexp : Tendsto (fun h : ℕ ↦ -(1 / (((p : ℝ) - 1) * (p : ℝ) ^ h))) atTop (𝓝 0) := by
-      simpa using ((tendsto_pow_atTop_atTop_of_one_lt h1).const_mul_atTop
-        (sub_pos.mpr h1)).inv_tendsto_atTop.neg
-    have hlim := (Real.continuousAt_const_rpow (zero_lt_one.trans h1).ne').tendsto.comp hexp
-    rw [Real.rpow_zero] at hlim
-    exact hlim
+    refine (tendsto_const_rpow_div_pow_atTop (zero_lt_one.trans h1).ne' h1
+      (-(1 / ((p : ℝ) - 1)))).congr fun h ↦ ?_
+    simp only [amiceRadius_def, neg_div, div_mul_eq_div_div]
   · -- The degenerate values `p = 0` and `p = 1`: the radii are eventually constant `1`.
     interval_cases p
     · refine tendsto_const_nhds.congr' ?_
@@ -194,6 +222,36 @@ theorem amiceRadius_pow_le_norm_factorial (h n : ℕ) :
     exact_mod_cast Nat.div_mul_le_self n (p ^ h)
   simpa only [div_div, mul_comm] using
     div_le_div_of_nonneg_right hdiv (sub_one_pos (p := p)).le
+
+/-- **The sharp factorial bound.** In every normed algebra over `ℚ_[p]`,
+`r_0 ^ (n - 1) ≤ ‖n!‖` for `n ≠ 0`, where `r_0 = p ^ (-1 / (p - 1))`. Equality holds when `n` is a
+power of `p`. This sharpens the case `h = 0` of `TauCeti.amiceRadius_pow_le_norm_factorial`. -/
+theorem amiceRadius_zero_pow_sub_one_le_norm_factorial {L : Type*} [SeminormedRing L]
+    [NormOneClass L] [NormedAlgebra ℚ_[p] L] {n : ℕ} (hn : n ≠ 0) :
+    amiceRadius p 0 ^ (n - 1) ≤ ‖(n ! : L)‖ := by
+  rw [norm_natCast_eq_norm_padic (p := p), amiceRadius_pow,
+    norm_natCast_eq_rpow (factorial_ne_zero n)]
+  refine Real.rpow_le_rpow_of_exponent_le one_lt_natCast.le ?_
+  -- Legendre's formula: `(p - 1) v_p(n!) = n - s_p(n) < n`.
+  have hleg : (((p - 1) * padicValNat p n ! : ℕ) : ℝ) ≤ ((n - 1 : ℕ) : ℝ) := by
+    have h := sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hn
+    rw [← Nat.padicValNat_def] at h
+    exact_mod_cast Nat.le_sub_one_of_lt h
+  push_cast [Nat.cast_sub hp.out.one_le] at hleg
+  rw [pow_zero, mul_one, neg_le_neg_iff, le_div_iff₀ sub_one_pos]
+  linarith
+
+/-- In every normed algebra over `ℚ_[p]`, `r_0 ^ (n - 1) ≤ ‖n‖` for `n ≠ 0`, where
+`r_0 = p ^ (-1 / (p - 1))`: the factor `n` of `n!` has norm at least `‖n!‖`. This bounds the
+coefficients `(-1) ^ (n + 1) / n` of the logarithm series. -/
+theorem amiceRadius_zero_pow_sub_one_le_norm_natCast {L : Type*} [SeminormedRing L]
+    [NormOneClass L] [NormedAlgebra ℚ_[p] L] {n : ℕ} (hn : n ≠ 0) :
+    amiceRadius p 0 ^ (n - 1) ≤ ‖(n : L)‖ := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  refine (amiceRadius_zero_pow_sub_one_le_norm_factorial (L := ℚ_[p]) hn).trans ?_
+  rw [norm_natCast_eq_norm_padic (p := p) (K := L), factorial_succ, Nat.cast_mul, norm_mul]
+  exact mul_le_of_le_one_right (norm_nonneg _)
+    (IsUltrametricDist.norm_natCast_le_one ℚ_[p] _)
 
 /-- **Upper weight bound.** `‖⌊n / pʰ⌋!‖ ≤ p r_{h+1}ⁿ`: the weight of the dual stage norm at
 level `h` is at most `p` times the weight `r_{h+1}ⁿ` of the Gauss norm at the radius `r_{h+1}`. -/
