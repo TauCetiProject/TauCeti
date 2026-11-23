@@ -14,7 +14,6 @@ import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.RingTheory.PowerSeries.AdicComplete
 import TauCeti.RingTheory.PowerSeries.Ideal
-import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 /-!
@@ -79,8 +78,7 @@ theorem one_add_X_pow_sub_one_ne_zero [Nontrivial O] {N : ℕ} (hN : N ≠ 0) :
 theorem torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot [IsDomain O]
     {ϖ : O} (hϖ : Prime ϖ) {N : ℕ} (hN : N ≠ 0) (m : ℕ) :
     Submodule.torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) ((1 + X) ^ N - 1) = ⊥ := by
-  rw [← isSMulRegular_iff_torsionBy_eq_bot, map_pow]
-  refine (prime_C_iff.2 hϖ).isSMulRegular_quotient_span_pow (fun ⟨k, hk⟩ ↦ hϖ.not_isUnit ?_) m
+  refine torsionBy_quotient_span_C_pow_eq_bot_of_not_dvd hϖ (fun ⟨k, hk⟩ ↦ hϖ.not_isUnit ?_) m
   have hcoeff := congrArg (coeff N) hk
   have hcoe : (((1 + Polynomial.X) ^ N - 1 : O[X]) : O⟦X⟧) = (1 + X) ^ N - 1 := by simp
   have hlead := (TauCeti.Polynomial.monic_one_add_X_pow_sub_one (R := O) hN).leadingCoeff

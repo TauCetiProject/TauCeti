@@ -32,8 +32,8 @@ one-variable form of `MvPowerSeries.ker_map_of_fg`.
 Applied to the quotient map `R → R ⧸ (r)`, whose kernel is principal, this identifies
 `R⟦X⟧ ⧸ (r)` with `(R ⧸ (r))⟦X⟧`. Hence a constant series `C r` is a prime element of `R⟦X⟧`
 exactly when `r` is a prime element of `R`, as for polynomials (`Polynomial.prime_C_iff`). Over a
-local domain with a prime `ϖ`, a series with nonzero reduction modulo the maximal ideal is not
-divisible by `C ϖ`, so it acts injectively on `R⟦X⟧ ⧸ (ϖ ^ m)`.
+domain with a prime `ϖ`, a series not divisible by `C ϖ` (for instance, over a local domain, a
+series with nonzero reduction modulo the maximal ideal) acts injectively on `R⟦X⟧ ⧸ (ϖ ^ m)`.
 
 A series whose coefficients lie in an ideal `J` has square zero modulo any ideal containing
 `J * J`. For a finitely generated ideal `I`, the same kernel computation describes `I.map C` by
@@ -50,8 +50,10 @@ its coefficients and shows that it is prime when `I` is.
   ideal `I`, the series in `I.map C` are those with all coefficients in `I`, and `I.map C` is prime
   when `I` is.
 * `PowerSeries.prime_C_iff`: `C r` is prime in `R⟦X⟧` if and only if `r` is prime in `R`.
-* `PowerSeries.torsionBy_quotient_span_C_pow_eq_bot`: a series with nonzero reduction modulo the
-  maximal ideal has no nonzero torsion on `R⟦X⟧ ⧸ (ϖ ^ m)` for a prime `ϖ` of a local domain.
+* `PowerSeries.torsionBy_quotient_span_C_pow_eq_bot_of_not_dvd`: a series not divisible by `C ϖ`
+  has no nonzero torsion on `R⟦X⟧ ⧸ (ϖ ^ m)` for a prime `ϖ` of a domain.
+* `PowerSeries.torsionBy_quotient_span_C_pow_eq_bot`: specialization to a local domain for a
+  series with nonzero reduction modulo the maximal ideal.
 * `PowerSeries.sq_map_mk_eq_zero_of_coeff_mem`: a series with coefficients in `J` squares to zero
   in `(R ⧸ K)⟦X⟧` when `J * J ≤ K`.
 -/
@@ -138,14 +140,22 @@ theorem prime_C_iff {r : R} : Prime (C r) ↔ Prime r := by
   refine (Ideal.span_singleton_prime ((map_ne_zero_iff C C_injective).2 hr.ne_zero)).1 ?_
   exact hker ▸ RingHom.ker_isPrime _
 
+/-- Over a domain `R` with a prime `ϖ`, a power series `g` not divisible by `C ϖ` acts
+injectively on `R⟦X⟧ ⧸ (ϖ ^ m)`. In Iwasawa theory these are the vertical blocks of an
+elementary module. -/
+theorem torsionBy_quotient_span_C_pow_eq_bot_of_not_dvd [IsDomain R] {ϖ : R} (hϖ : Prime ϖ)
+    {g : R⟦X⟧} (hg : ¬C ϖ ∣ g) (m : ℕ) :
+    Submodule.torsionBy R⟦X⟧ (R⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) g = ⊥ := by
+  rw [← isSMulRegular_iff_torsionBy_eq_bot, map_pow]
+  exact (prime_C_iff.2 hϖ).isSMulRegular_quotient_span_pow hg m
+
 /-- Over a local domain `R` with a prime `ϖ`, a power series `g` with nonzero reduction modulo the
 maximal ideal acts injectively on `R⟦X⟧ ⧸ (ϖ ^ m)`. In Iwasawa theory these are the vertical
 blocks of an elementary module. -/
 theorem torsionBy_quotient_span_C_pow_eq_bot [IsDomain R] [IsLocalRing R] {ϖ : R} (hϖ : Prime ϖ)
     {g : R⟦X⟧} (hg : g.map (IsLocalRing.residue R) ≠ 0) (m : ℕ) :
     Submodule.torsionBy R⟦X⟧ (R⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) g = ⊥ := by
-  rw [← isSMulRegular_iff_torsionBy_eq_bot, map_pow]
-  refine (prime_C_iff.2 hϖ).isSMulRegular_quotient_span_pow (fun ⟨k, hk⟩ ↦ hg ?_) m
+  refine torsionBy_quotient_span_C_pow_eq_bot_of_not_dvd hϖ (fun ⟨k, hk⟩ ↦ hg ?_) m
   -- `ϖ` lies in the maximal ideal, so `C ϖ * k` reduces to zero.
   rw [hk, map_mul, map_C, (IsLocalRing.residue_eq_zero_iff ϖ).2 hϖ.not_isUnit, map_zero, zero_mul]
 
