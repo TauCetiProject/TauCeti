@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Vortex.Existence
 public import TauCeti.Analysis.PDE.Vortex.Reduced.Regularity
 public import TauCeti.Analysis.Sobolev.BesselPotential.Exp
 public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
@@ -13,7 +14,6 @@ public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Polynomial.AtInfinity
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Polynomial.NormSq
-import TauCeti.Analysis.PDE.Vortex.Existence
 import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 import TauCeti.Analysis.PDE.Vortex.Reduced.Sobolev
 import TauCeti.Analysis.Polynomial.Sobolev
@@ -59,9 +59,11 @@ square-integrable solution is a zero of `N`
 (`TauCeti.Vortex.reducedEquationMap_eq_zero_of_laplacian_eq`), and Taubes's solution gives one
 (`TauCeti.Vortex.exists_reducedEquationMap_eq_zero`).
 
-This is the nonlinear operator for an implicit-function-theorem argument making the solution of
-the reduced equation depend smoothly on the divisor; that argument still needs the invertibility
-of the derivative `DN(w)`, which this file does not prove.
+This file does not invert `DN(w)`. The implicit-function-theorem argument making the solution of
+the reduced equation depend smoothly on the divisor
+(`TauCeti.Vortex.contDiff_sobolevReducedSolution`, in
+`TauCeti.Analysis.PDE.Vortex.Reduced.SmoothDependence`) inverts instead the linearization of the
+map `Φ : ℂ^m × H²(ℂ) → L²(ℂ)` of the second part of the file.
 
 ## Smooth dependence on the divisor
 
@@ -81,9 +83,10 @@ proves that it is smooth jointly in the coefficients and the correction
 (`TauCeti.Vortex.hasFDerivAt_reducedEquationMapOfCoeff`,
 `TauCeti.Vortex.coeFn_reducedLinearizationOfCoeff`). At a real `C²` correction `u = w`,
 `Φ(c, w) = 0` exactly when `w` solves the reduced equation classically
-(`TauCeti.Vortex.reducedEquationMapOfCoeff_eq_zero_iff`), and for every `c` the map `Φ(c, ·)` has
-a zero whose `L²` function is a smooth real function
-(`TauCeti.Vortex.exists_reducedEquationMapOfCoeff_eq_zero`).
+(`TauCeti.Vortex.reducedEquationMapOfCoeff_eq_zero_iff`). The reduced solution `w_c` of `P_c`
+(`TauCeti.Vortex.reducedSolution`) lies in `H²(ℂ)`, as
+`u_c = TauCeti.Vortex.sobolevReducedSolution c`, and is such a zero
+(`TauCeti.Vortex.reducedEquationMapOfCoeff_sobolevReducedSolution`).
 
 The coefficients enter only through the defect `φ_c = 1 - h_c = (1 + ‖P_c‖²)⁻¹`
 (`TauCeti.Vortex.backgroundDefect`), as a bounded continuous multiplier and as an element of `L²`,
@@ -115,6 +118,8 @@ and `c ↦ φ_c, k_c` are smooth into `L²` (`TauCeti.Vortex.contDiff_background
   `k_c` as elements of `L²(ℂ)`.
 * `TauCeti.Vortex.reducedEquationMapOfCoeff hm c u`: the map `Φ(c, u)`.
 * `TauCeti.Vortex.reducedLinearizationOfCoeff c u`: its partial derivative in `u`.
+* `TauCeti.Vortex.sobolevReducedSolution c`: the reduced solution `w_c` of `P_c` as an element
+  of `H²(ℂ)`.
 
 ## Main results
 
@@ -125,13 +130,15 @@ and `c ↦ φ_c, k_c` are smooth into `L²` (`TauCeti.Vortex.contDiff_background
 * `TauCeti.Vortex.reducedEquationMap_eq_zero_of_laplacian_eq`,
   `TauCeti.Vortex.exists_reducedEquationMap_eq_zero`: solutions of the reduced equation are zeros
   of `N`.
+* `TauCeti.Vortex.contDiff_of_coeFn_eq_backgroundDefect_pow_mul`: a family of `L²` functions
+  `φ_c ^ n a`, with `a` fixed, is smooth in `c`.
 * `TauCeti.Vortex.contDiff_reducedEquationMapOfCoeff`: `Φ` is smooth on `ℂ^m × H²(ℂ)`.
 * `TauCeti.Vortex.hasFDerivAt_reducedEquationMapOfCoeff`,
   `TauCeti.Vortex.coeFn_reducedLinearizationOfCoeff`: its partial derivative in `u` is
   `v ↦ Δv - h_c exp (2u) v / 4`.
-* `TauCeti.Vortex.reducedEquationMapOfCoeff_eq_zero_iff`,
-  `TauCeti.Vortex.exists_reducedEquationMapOfCoeff_eq_zero`: at a real `C²` correction,
-  `Φ(c, u) = 0` is the classical reduced equation, and `Φ(c, ·)` has a smooth real zero.
+* `TauCeti.Vortex.reducedEquationMapOfCoeff_eq_zero_iff`: at a real `C²` correction,
+  `Φ(c, u) = 0` is the classical reduced equation.
+* `TauCeti.Vortex.reducedEquationMapOfCoeff_sobolevReducedSolution`: `Φ(c, u_c) = 0`.
 
 ## References
 
@@ -430,7 +437,7 @@ private theorem one_add_norm_sq_ne_zero (P : _root_.Polynomial ℂ) (z : ℂ) :
 
 /-- The source `k = (h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²` in terms of the defect `φ = 1 - h`:
 `k = -φ / 8 + 2 ‖P'‖² φ²`. -/
-private theorem backgroundSource_eq_backgroundDefect (P : _root_.Polynomial ℂ) (z : ℂ) :
+theorem backgroundSource_eq_backgroundDefect (P : _root_.Polynomial ℂ) (z : ℂ) :
     (backgroundSource (P.eval ·) z : ℂ) = -8⁻¹ * backgroundDefect P z +
       2 * ((‖P.derivative.eval z‖ ^ 2 : ℝ) : ℂ) * backgroundDefect P z ^ 2 := by
   rw [backgroundSource_def, backgroundWeight_eq_one_sub_inv, _root_.Polynomial.deriv,
@@ -636,22 +643,32 @@ theorem contDiff_backgroundDefect_monicOfCoeff :
   obtain ⟨ρ, -, -, hinv, hdef, -⟩ := exists_local_repr c₀
   exact (contDiffAt_const.mul hinv).congr_of_eventuallyEq hdef
 
-/-- **The defect depends smoothly on the coefficients**, as an element of `L²(ℂ)`. -/
-theorem contDiff_backgroundDefectLp (hm : 0 < m) :
-    ContDiff ℝ ∞ (backgroundDefectLp (m := m) hm) := by
+/-- **Powers of the defect times a fixed function depend smoothly on the coefficients in
+`L²(ℂ)`.** If the `L²` function of `f c` is `φ_c ^ n a` for a fixed function `a`, then `c ↦ f c`
+is smooth. Near `c₀`, `φ_c ^ n a = ψ_c ^ n φ_{c₀} ^ n a` with `ψ_c = ρ_c⁻¹` bounded continuous and
+smooth at `c₀`. -/
+theorem contDiff_of_coeFn_eq_backgroundDefect_pow_mul
+    {f : (Fin m → ℂ) → Lp ℂ 2 (volume : Measure ℂ)} (n : ℕ) (a : ℂ → ℂ)
+    (hf : ∀ c, f c =ᵐ[volume] fun z ↦ backgroundDefect (monicOfCoeff c) z ^ n * a z) :
+    ContDiff ℝ ∞ f := by
   refine contDiff_iff_contDiffAt.2 fun c₀ ↦ ?_
   obtain ⟨ρ, -, -, hinv, hdef, -⟩ := exists_local_repr c₀
-  have hmul : ContDiffAt ℝ ∞
-      (fun c ↦ mulLpL volume 2 (Ring.inverse (ρ c)) (backgroundDefectLp hm c₀)) c₀ :=
-    ((((mulLpL (𝕜 := ℂ) (E := ℂ) volume 2).flip
-      (backgroundDefectLp hm c₀)).restrictScalars ℝ).contDiff.contDiffAt).comp c₀ hinv
-  refine hmul.congr_of_eventuallyEq ?_
+  refine (((((mulLpL (𝕜 := ℂ) (E := ℂ) volume 2).flip (f c₀)).restrictScalars ℝ).contDiff
+    |>.contDiffAt).comp c₀ (hinv.pow n)).congr_of_eventuallyEq ?_
   filter_upwards [hdef] with c hc
   refine Lp.ext ?_
-  filter_upwards [coeFn_backgroundDefectLp hm c,
-    coeFn_mulLpL volume 2 (Ring.inverse (ρ c)) (backgroundDefectLp hm c₀),
-    coeFn_backgroundDefectLp hm c₀] with z h₁ h₂ h₃
-  rw [h₁, h₂, h₃, hc, mul_apply, smul_eq_mul, mul_comm]
+  filter_upwards [hf c, coeFn_mulLpL volume 2 (Ring.inverse (ρ c) ^ n) (f c₀), hf c₀]
+    with z h₁ h₂ h₃
+  simp only [Function.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearMap.flip_apply]
+  rw [h₁, h₂, h₃, hc, mul_apply, pow_apply, smul_eq_mul, mul_pow]
+  ring
+
+/-- **The defect depends smoothly on the coefficients**, as an element of `L²(ℂ)`. -/
+theorem contDiff_backgroundDefectLp (hm : 0 < m) :
+    ContDiff ℝ ∞ (backgroundDefectLp (m := m) hm) :=
+  contDiff_of_coeFn_eq_backgroundDefect_pow_mul 1 1 fun c ↦
+    (coeFn_backgroundDefectLp hm c).trans (.of_forall fun z ↦ by simp)
 
 /-- **The source depends smoothly on the coefficients**, as an element of `L²(ℂ)`. -/
 theorem contDiff_backgroundSourceLp (hm : 0 < m) :
@@ -887,28 +904,55 @@ theorem reducedEquationMapOfCoeff_eq_zero_iff (hm : 0 < m) (c : Fin m → ℂ) {
     refine Lp.ext (hae.trans (Filter.EventuallyEq.trans (.of_forall fun z ↦ ?_) hzero.symm))
     simp [g, h z]
 
-/-- **The reduced equation map has a smooth real zero.** For every `c ∈ ℂ^m`, `m ≥ 1`, there are
-`u ∈ H²(ℂ)` and a smooth real function `w` such that the `L²` function of `u` is almost everywhere
-`w` and `Φ(c, u) = 0`.
-The proof takes for `w` a smooth square-integrable solution of the reduced equation for `P_c`,
-which exists by Taubes's variational construction
-(`TauCeti.Vortex.exists_contDiff_memLp_laplacian_eq_reduced`), and shows that it lies in
-`H²(ℂ)`. -/
-theorem exists_reducedEquationMapOfCoeff_eq_zero (hm : 0 < m) (c : Fin m → ℂ) :
-    ∃ (u : H^{2}(ℂ)) (w : ℂ → ℝ), ContDiff ℝ ∞ w ∧
-      (⇑(inclusionLp zero_le_two u) =ᵐ[volume] fun z ↦ (w z : ℂ)) ∧
-      reducedEquationMapOfCoeff hm c u = 0 := by
+end EquationMap
+
+/-! ### The reduced solution in `H²(ℂ)` -/
+
+section ReducedSolution
+
+/-- The reduced solution of a polynomial lies in every Sobolev space `H^s(ℂ)`. -/
+theorem reducedSolution_mem_realSobolevFunctions (P : _root_.Polynomial ℂ) (s : ℝ) :
+    reducedSolution P ∈ realSobolevFunctions ℂ s 2 := by
+  rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
+  · rw [reducedSolution_eq_zero_of_natDegree_eq_zero hm]
+    exact zero_mem _
+  · exact mem_realSobolevFunctions_of_laplacian_eq_reduced hm
+      ((contDiff_reducedSolution P).of_le (by simp)) (memLp_reducedSolution P)
+      (laplacian_reducedSolution hm) s
+
+variable {m : ℕ}
+
+/-- **The reduced solution in `H²(ℂ)`.** For coefficients `c ∈ ℂ^m`, the element of the complex
+Sobolev space `H²(ℂ)` whose `L²` function is the reduced solution `w_c` of the monic polynomial
+`P_c = TauCeti.Polynomial.monicOfCoeff c`
+(`TauCeti.Vortex.coeFn_inclusionLp_sobolevReducedSolution`). -/
+def sobolevReducedSolution (c : Fin m → ℂ) : H^{2}(ℂ) :=
+  ofRealSobolevFunction zero_le_two (reducedSolution_mem_realSobolevFunctions (monicOfCoeff c) 2)
+
+/-- The `L²` function of `sobolevReducedSolution c` is the reduced solution of `P_c`. -/
+theorem coeFn_inclusionLp_sobolevReducedSolution (c : Fin m → ℂ) :
+    ⇑(inclusionLp zero_le_two (sobolevReducedSolution c)) =ᵐ[volume]
+      fun z ↦ (reducedSolution (monicOfCoeff c) z : ℂ) :=
+  coeFn_inclusionLp_ofRealSobolevFunction _ _
+
+/-- An element of `H²(ℂ)` whose `L²` function is the reduced solution of `P_c` is
+`sobolevReducedSolution c`. -/
+theorem eq_sobolevReducedSolution_of_ae {c : Fin m → ℂ} {u : H^{2}(ℂ)}
+    (hu : ⇑(inclusionLp zero_le_two u) =ᵐ[volume]
+      fun z ↦ (reducedSolution (monicOfCoeff c) z : ℂ)) :
+    u = sobolevReducedSolution c :=
+  eq_ofRealSobolevFunction_of_ae _ _ hu
+
+/-- **The reduced solution is a zero of the reduced equation map**: `Φ(c, u_c) = 0`. -/
+theorem reducedEquationMapOfCoeff_sobolevReducedSolution (hm : 0 < m) (c : Fin m → ℂ) :
+    reducedEquationMapOfCoeff hm c (sobolevReducedSolution c) = 0 := by
   have hP : 0 < (monicOfCoeff c).natDegree := by rwa [natDegree_monicOfCoeff]
-  obtain ⟨w, hw, hw2, -, hΔ⟩ := exists_contDiff_memLp_laplacian_eq_reduced hP
-  obtain ⟨u, hu⟩ := (TemperedDistribution.mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq
-    zero_le_two).1 (mem_realSobolevFunctions_of_laplacian_eq_reduced hP (hw.of_le (by simp))
-      hw2 hΔ 2)
-  refine ⟨u, w, hw, hu, (reducedEquationMapOfCoeff_eq_zero_iff hm c (hw.of_le (by simp)) hu).2
-    fun z ↦ ?_⟩
-  rw [hΔ z, reducedSource_def, backgroundSource_def]
+  refine (reducedEquationMapOfCoeff_eq_zero_iff hm c ((contDiff_reducedSolution _).of_le (by simp))
+    (coeFn_inclusionLp_sobolevReducedSolution c)).2 fun z ↦ ?_
+  rw [laplacian_reducedSolution hP z, reducedSource_def, backgroundSource_def]
   ring
 
-end EquationMap
+end ReducedSolution
 
 end OfCoeff
 
