@@ -127,7 +127,7 @@ theorem left_cauchy_affine
     (hfl : LeftFueterOn f (Quaternion.dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)))) :
     ContinuousLinearMap.rawAffineBoundary L.toContinuousLinearMap p
       (fun x ↦ (ContinuousLinearMap.mul ℝ ℍ).flip (f (Quaternion.dq x))) = 0 := by
-  simp_rw [← ContinuousLinearMap.mulLeftRight_one_left]
+  simp_rw [← ContinuousLinearMap.mulLeftRight_one]
   exact cauchy_affine L p (g := fun _ ↦ 1) continuousOn_const hf
     (rightFueterOn_iff.mpr fun _ _ ↦ rightFueterAt_const _ _) hfl
 

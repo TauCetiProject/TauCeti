@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Edge
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
-import TauCeti.Analysis.Complex.NormSq
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -156,10 +156,10 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
     have hpos : (0 : ℝ) < (‖z‖ + s) / 2 := by linarith [hs.1]
     have h1 : ‖schwarzChristoffelIntegrand a e (z + (s : ℂ) * Complex.I)‖
         ≤ C * ‖z + (s : ℂ) * Complex.I‖ ^ S :=
-      hbd _ (hzR.trans (Complex.norm_le_norm_add_ofReal_mul_I hzim.le hs.1))
+      hbd _ (hzR.trans (Complex.norm_le_norm_add_ofReal_mul_I z hzim.le hs.1))
     have h2 : ‖z + (s : ℂ) * Complex.I‖ ^ S ≤ ((‖z‖ + s) / 2) ^ S :=
       Real.rpow_le_rpow_of_nonpos hpos
-        (Complex.norm_add_div_two_le_norm_add_ofReal_mul_I hzim.le hs.1) (by linarith)
+        (Complex.norm_add_div_two_le_norm_add_ofReal_mul_I z hzim.le s) (by linarith)
     have h3 : ((‖z‖ + s) / 2) ^ S = 2 ^ (-S) * (‖z‖ + s) ^ S := by
       rw [Real.div_rpow (by linarith [hs.1]) (by norm_num), Real.rpow_neg (by norm_num)]
       field_simp
