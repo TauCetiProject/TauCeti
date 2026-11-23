@@ -295,13 +295,28 @@ private theorem tracelessRicciPart_eq_zero_of_finrank_eq_two (hdim : Module.finr
     (r : FourTensor V) : tracelessRicciPart r = 0 := by
   rw [tracelessRicciPart_apply, hdim]; norm_num
 
+omit [FiniteDimensional ℝ V] in
+private theorem finrank_cast_ne_zero (hn : Module.finrank ℝ V ≠ 0) :
+    (Module.finrank ℝ V : ℝ) ≠ 0 :=
+  Nat.cast_ne_zero.mpr hn
+
+omit [FiniteDimensional ℝ V] in
+private theorem finrank_sub_one_ne_zero (hn : Module.finrank ℝ V ≠ 1) :
+    (Module.finrank ℝ V : ℝ) - 1 ≠ 0 :=
+  sub_ne_zero.mpr (by exact_mod_cast hn)
+
+omit [FiniteDimensional ℝ V] in
+private theorem finrank_sub_two_ne_zero (hn : Module.finrank ℝ V ≠ 2) :
+    (Module.finrank ℝ V : ℝ) - 2 ≠ 0 :=
+  sub_ne_zero.mpr (by exact_mod_cast hn)
+
 /-- For `finrank ℝ V ≠ 1`, `ricci (scalarPart r) = (scalar r / n) • g`. -/
 theorem ricci_scalarPart (hdim : Module.finrank ℝ V ≠ 1) (r : FourTensor V) :
     ricci (scalarPart r) = (scalar r / Module.finrank ℝ V) • innerₗ V := by
   by_cases h0 : Module.finrank ℝ V = 0
   · have : Subsingleton V := Module.finrank_zero_iff.mp h0; ext u _; simp [Subsingleton.elim u 0]
-  · have hn1 : ((Module.finrank ℝ V : ℝ) - 1) ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hdim)
-    rw [scalarPart_apply, map_smul, ricci_constantCurvature, smul_smul]; congr 1; field_simp [hn1]
+  · rw [scalarPart_apply, map_smul, ricci_constantCurvature, smul_smul]
+    congr 1; field_simp [finrank_sub_one_ne_zero hdim]
 
 /-- For `finrank ℝ V ≠ 1`, `scalarPart` preserves the scalar contraction. -/
 theorem scalar_scalarPart (hdim : Module.finrank ℝ V ≠ 1) (r : FourTensor V) :
@@ -309,9 +324,8 @@ theorem scalar_scalarPart (hdim : Module.finrank ℝ V ≠ 1) (r : FourTensor V)
   by_cases h0 : Module.finrank ℝ V = 0
   · have : Subsingleton V := Module.finrank_zero_iff.mp h0
     rw [scalar_apply, scalar_apply, Subsingleton.elim (ricci r) 0, Subsingleton.elim (ricci _) 0]
-  · have hn1 : ((Module.finrank ℝ V : ℝ) - 1) ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hdim)
-    rw [scalarPart_apply, map_smul, scalar_constantCurvature, smul_eq_mul,
-      div_mul_cancel₀ _ (mul_ne_zero (Nat.cast_ne_zero.mpr h0) hn1)]
+  · rw [scalarPart_apply, map_smul, scalar_constantCurvature, smul_eq_mul,
+      div_mul_cancel₀ _ (mul_ne_zero (finrank_cast_ne_zero h0) (finrank_sub_one_ne_zero hdim))]
 
 /-- `scalarPart r` has vanishing trace-free Ricci contraction in every dimension. -/
 @[simp] theorem tracelessRicci_scalarPart (r : FourTensor V) : tracelessRicci (scalarPart r) = 0 :=
@@ -327,9 +341,9 @@ theorem scalar_scalarPart (hdim : Module.finrank ℝ V ≠ 1) (r : FourTensor V)
 /-- For `finrank ℝ V ≠ 2`, `ricci (tracelessRicciPart r) = tracelessRicci r`. -/
 theorem ricci_tracelessRicciPart (hdim : Module.finrank ℝ V ≠ 2) (r : FourTensor V) :
     ricci (tracelessRicciPart r) = tracelessRicci r := by
-  have hn2 : ((Module.finrank ℝ V : ℝ) - 2) ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hdim)
   rw [tracelessRicciPart_apply, map_smul, ricci_kulkarniNomizu_innerₗ,
-    bilinFormTrace_tracelessRicci, zero_smul, add_zero, inv_smul_smul₀ hn2]
+    bilinFormTrace_tracelessRicci, zero_smul, add_zero,
+    inv_smul_smul₀ (finrank_sub_two_ne_zero hdim)]
 
 /-- For `finrank ℝ V ≠ 2`, `tracelessRicci (tracelessRicciPart r) = tracelessRicci r`. -/
 theorem tracelessRicci_tracelessRicciPart (hdim : Module.finrank ℝ V ≠ 2) (r : FourTensor V) :
@@ -505,13 +519,11 @@ theorem IsAlgebraicCurvature.isSymm_schouten {r : FourTensor V} (hr : IsAlgebrai
 theorem schouten_eq_add_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V) (r : FourTensor V) :
     schouten r = ((Module.finrank ℝ V : ℝ) - 2)⁻¹ • tracelessRicci r +
       (scalar r / (2 * (Module.finrank ℝ V : ℝ) * ((Module.finrank ℝ V : ℝ) - 1))) • innerₗ V := by
-  have : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-  have : (Module.finrank ℝ V : ℝ) - 1 ≠ 0 :=
-    sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 1))
-  have : (Module.finrank ℝ V : ℝ) - 2 ≠ 0 :=
-    sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 2))
   ext u v; simp only [schouten_apply_apply, tracelessRicci_apply, LinearMap.add_apply,
-    LinearMap.sub_apply, LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul]; field_simp; ring
+    LinearMap.sub_apply, LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul]
+  field_simp [finrank_cast_ne_zero (V := V) (by omega), finrank_sub_one_ne_zero (V := V) (by omega),
+    finrank_sub_two_ne_zero (V := V) (by omega)]
+  ring
 
 /-- Away from dimension `2`, `kulkarniNomizu (schouten r) (innerₗ V)` equals
 `scalarPart r + tracelessRicciPart r` for every four-tensor `r`. -/
@@ -523,13 +535,12 @@ theorem kulkarniNomizu_schouten_innerₗ (hn : Module.finrank ℝ V ≠ 2) (r : 
     have hcc : constantCurvature V = 0 :=
       isAlgebraicCurvature_constantCurvature.eq_zero_of_finrank_le_one (by omega)
     simp [hkn, scalarPart_apply, hcc, tracelessRicciPart_apply]
-  · have : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-    have : (Module.finrank ℝ V : ℝ) - 1 ≠ 0 :=
-      sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 1))
-    rw [add_comm (scalarPart r), schouten_eq_add_of_three_le_finrank hngt r,
+  · rw [add_comm (scalarPart r), schouten_eq_add_of_three_le_finrank hngt r,
       tracelessRicciPart_apply, scalarPart_apply, constantCurvature_eq_half_smul_kulkarniNomizu]
     simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_smul]
-    congr 2; field_simp
+    congr 2
+    field_simp [finrank_cast_ne_zero (V := V) (by omega),
+      finrank_sub_one_ne_zero (V := V) (by omega)]
 
 /-- Away from dimension `2`, `weyl r = r - kulkarniNomizu (schouten r) (innerₗ V)`. -/
 theorem weyl_eq_sub_kulkarniNomizu_schouten (hn : Module.finrank ℝ V ≠ 2) (r : FourTensor V) :
@@ -544,9 +555,8 @@ theorem bilinFormTrace_schouten_of_finrank_ne_one_of_finrank_ne_two
   · have : Subsingleton V := Module.finrank_zero_iff.mp hn0
     rw [Subsingleton.elim (schouten r) 0, scalar_apply, Subsingleton.elim (ricci r) 0]
     simp
-  · have : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn0
-    have : (Module.finrank ℝ V : ℝ) - 1 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn₁)
-    simp [schouten_eq_add_of_three_le_finrank (by omega) r]; field_simp
+  · simp [schouten_eq_add_of_three_le_finrank (by omega) r]
+    field_simp [finrank_cast_ne_zero hn0, finrank_sub_one_ne_zero hn₁]
 
 /-- Away from dimension `2`, if `r` is antisymmetric in its first pair,
 `bilinFormTrace (schouten r) = scalar r / (2 (n - 1))`. -/
@@ -567,13 +577,12 @@ theorem IsAlgebraicCurvature.bilinFormTrace_schouten {r : FourTensor V}
 /-- In dimension at least `3`, `schouten` is a left inverse to `h ↦ kulkarniNomizu h (innerₗ V)`. -/
 @[simp] theorem schouten_kulkarniNomizu_innerₗ_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V)
     (h : BilinForm ℝ V) : schouten (kulkarniNomizu h (innerₗ V)) = h := by
-  have : (Module.finrank ℝ V : ℝ) - 1 ≠ 0 :=
-    sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 1))
-  have : (Module.finrank ℝ V : ℝ) - 2 ≠ 0 :=
-    sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 2))
   ext u v; simp only [schouten_apply_apply, ricci_kulkarniNomizu_innerₗ,
     scalar_kulkarniNomizu_innerₗ, LinearMap.add_apply, LinearMap.smul_apply, innerₗ_apply_apply,
-    smul_eq_mul]; field_simp; ring
+    smul_eq_mul]
+  field_simp [finrank_sub_one_ne_zero (V := V) (by omega),
+    finrank_sub_two_ne_zero (V := V) (by omega)]
+  ring
 
 /-- In dimension at least `3`, `schouten (constantCurvature V) = (1 / 2) • innerₗ V`. -/
 @[simp] theorem schouten_constantCurvature_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V) :
@@ -858,12 +867,10 @@ theorem sum_scalarPart_sq (r : FourTensor V) (b : OrthonormalBasis ι ℝ V) :
       2 * scalar r ^ 2 / ((Module.finrank ℝ V : ℝ) * ((Module.finrank ℝ V : ℝ) - 1)) := by
   rcases le_or_gt (Module.finrank ℝ V) 1 with hn | hn
   · interval_cases h : Module.finrank ℝ V <;> simp [scalarPart_apply, h]
-  · have : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-    have : (Module.finrank ℝ V : ℝ) - 1 ≠ 0 :=
-      sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 1))
-    rw [scalarPart_apply]
+  · rw [scalarPart_apply]
     simp_rw [_root_.smul_apply, smul_eq_mul, mul_pow, ← Finset.mul_sum, sum_constantCurvature_sq b]
-    field_simp
+    field_simp [finrank_cast_ne_zero (V := V) (by omega),
+      finrank_sub_one_ne_zero (V := V) (by omega)]
 
 /-- The squared component norm of `tracelessRicciPart r` is `(4 / (n - 2)) * ∑ |Ric₀(r)|²`. -/
 theorem sum_tracelessRicciPart_sq (r : FourTensor V) (b : OrthonormalBasis ι ℝ V) :
