@@ -294,7 +294,7 @@ coordinates are differentiable and whose section coordinates are within `ε` of 
 let `F` be a square-integrable `C²` phase with `|F| ≤ ε`. If the gauge transformation `e^{iF} y`
 has the same Coulomb defect at `x` as `y`, `d₀* (e^{iF} y) = d₀* y`, then `F = 0`. For the
 Coulomb slice `d₀* (· - x) = 0` of a `C¹` field `x`, see
-`TauCeti.Vortex.SobolevFieldSpace.exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_sub_eq_zero`. -/
+`TauCeti.Vortex.SobolevFieldSpace.exists_mem_nhds_forall_eq_one_of_smul_mem_coulombSlice`. -/
 theorem exists_pos_forall_eq_zero_of_gaugeAdjoint_phaseGauge_eq {s : ℝ} (hs : 1 < s)
     (hx : x ∈ framedFieldSpace f m s) (hxc : Continuous x) :
     ∃ ε > 0, ∀ {y : ℂ → EuclideanSpace ℝ (Fin 4)} {F : ℂ → ℝ}, Continuous y →

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Inseparable
 public import Mathlib.Topology.NhdsWithin
 
 /-!
@@ -48,6 +49,12 @@ into it.
 * `TauCeti.closure_eq_of_isInducing_domRestrict`: transferring a closure computation along an
   injective continuous map `f` that is inducing on a subset `s` containing the set, assuming
   `f '' s` is closed.
+* `TauCeti.subset_closure_range_subtypeVal_inter`: the points of `L` lying in an open set
+  contained in the closure of `L` are dense in that set.
+* `TauCeti.subset_closure_range_subtypeVal_inter_of_subset`: if the points of `L` lying in `s`
+  are dense in `s`, those lying in an open subset of `s` are dense in it.
+* `Dense.mem_of_nonempty_interior_closure_singleton`: a dense set stable under generization
+  contains every point whose closure has nonempty interior.
 -/
 
 public section
@@ -140,4 +147,28 @@ theorem closure_eq_of_isInducing_domRestrict {Y : Type*} [TopologicalSpace Y] {f
       (hf_inj.preimage_image s).subset hind ht,
     hfu, hf_inj.mem_set_image]
 
+/-- When an open set `s` lies in the closure of `L`, the points of `L` lying in `s` are dense in
+`s`. -/
+theorem subset_closure_range_subtypeVal_inter {L s : Set X} (hs : IsOpen s)
+    (h : s ⊆ closure L) : s ⊆ closure (range (Subtype.val : ↥(L ∩ s) → X)) := by
+  rw [Subtype.range_coe, inter_comm]
+  exact fun x hx ↦ hs.inter_closure ⟨hx, h hx⟩
+
+/-- When the points of `L` lying in `s` are dense in `s`, the points of `L` lying in an open subset
+`t` of `s` are dense in `t`. -/
+theorem subset_closure_range_subtypeVal_inter_of_subset {L s t : Set X} (ht : IsOpen t)
+    (hts : t ⊆ s) (h : s ⊆ closure (range (Subtype.val : ↥(L ∩ s) → X))) :
+    t ⊆ closure (range (Subtype.val : ↥(L ∩ t) → X)) :=
+  subset_closure_range_subtypeVal_inter ht fun _ hx ↦
+    closure_mono (range_subset_iff.2 fun d ↦ d.property.1) (h (hts hx))
+
 end TauCeti
+
+/-- A dense set stable under generization contains every point whose closure has nonempty
+interior. -/
+theorem Dense.mem_of_nonempty_interior_closure_singleton
+    {X : Type*} [TopologicalSpace X] {s : Set X} (hd : Dense s)
+    (hs : StableUnderGeneralization s) {x : X} (hx : (interior (closure {x})).Nonempty) :
+    x ∈ s := by
+  obtain ⟨y, hys, hy⟩ := hd.exists_mem_open isOpen_interior hx
+  exact hs (specializes_iff_mem_closure.mpr (interior_subset hy)) hys
