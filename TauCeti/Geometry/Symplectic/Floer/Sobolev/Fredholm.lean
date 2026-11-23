@@ -264,13 +264,15 @@ private theorem tendsto_eLpNorm_floerJetCoeff_add_smul_sub (ω : SymplecticForm 
           (u + μ • (u' - u)) -
         ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
           (u + lam • (u' - u))) ∞ stripMeasure) (𝓝 lam) (𝓝 0) :=
+  have hM (μ : ℝ) := ω.continuous_floerJetCoeff
+    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (u := u + μ • (u' - u))
+    (fun _ ↦ hJ.contDiffAt) (fun _ ↦ hKs.contDiffAt) (fun _ ↦ hKt.contDiffAt)
+    (hu.add ((hu'.sub hu).const_smul μ))
   tendsto_eLpNorm_sub_of_forall_dist_lt
-    (fun μ ↦ ω.continuous_floerJetCoeff
-      (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (u := u + μ • (u' - u))
-      (fun _ ↦ hJ.contDiffAt) (fun _ ↦ hKs.contDiffAt) (fun _ ↦ hKt.contDiffAt)
-      (hu.add ((hu'.sub hu).const_smul μ)))
-    fun _ ↦ exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt ω hcyl hJ hKs hKt
-      (hu.differentiable one_ne_zero) (hu'.differentiable one_ne_zero) hB lam
+    (.of_forall fun μ ↦ ((hM μ).sub (hM lam)).aestronglyMeasurable) fun _ hr ↦ by
+      obtain ⟨η, hη, h⟩ := exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt ω hcyl hJ hKs hKt
+        (hu.differentiable one_ne_zero) (hu'.differentiable one_ne_zero) hB lam hr
+      exact Metric.eventually_nhds_iff.2 ⟨η, hη, fun μ hμ ↦ h μ hμ⟩
 
 /-- The coefficient field at `z` of the data at parameter `μ` of a family of data is `jetCoeffAt`
 of the family at `((μ, z), y, d)`. -/
@@ -351,12 +353,15 @@ private theorem tendsto_eLpNorm_floerJetCoeff_family (ω : SymplecticForm V)
           (fun w ↦ Ks (μ, w)) (fun w ↦ Kt (μ, w)) u -
         ω.floerJetCoeff (fun w y ↦ (J (lam, w) y).toLinearMap.toContinuousLinearMap)
           (fun w ↦ Ks (lam, w)) (fun w ↦ Kt (lam, w)) u) ∞ stripMeasure) (𝓝 lam) (𝓝 0) :=
+  have hM (μ : ℝ) := ω.continuous_floerJetCoeff
+    (J := fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap) (u := u)
+    (hcyl μ).contDiffAt_almostComplex (hcyl μ).contDiffAt_hamiltonianS
+    (hcyl μ).contDiffAt_hamiltonianT hu
   tendsto_eLpNorm_sub_of_forall_dist_lt
-    (fun μ ↦ ω.continuous_floerJetCoeff
-      (J := fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap) (u := u)
-      (hcyl μ).contDiffAt_almostComplex (hcyl μ).contDiffAt_hamiltonianS
-      (hcyl μ).contDiffAt_hamiltonianT hu)
-    fun _ ↦ exists_pos_forall_dist_floerJetCoeff_family_lt ω hcyl hJ hKs hKt hB lam
+    (.of_forall fun μ ↦ ((hM μ).sub (hM lam)).aestronglyMeasurable) fun _ hr ↦ by
+      obtain ⟨η, hη, h⟩ :=
+        exists_pos_forall_dist_floerJetCoeff_family_lt ω hcyl hJ hKs hKt hB lam hr
+      exact Metric.eventually_nhds_iff.2 ⟨η, hη, fun μ hμ ↦ h μ hμ⟩
 
 /-- The path of almost complex structures from `J` to `J'`: at `(μ, z)` and `y` it is the
 continuation homotopy, relative to `J₀`, from `J z y` to `J' z y` at time `μ`. It is `J` for
