@@ -53,20 +53,21 @@ instance isLocallySurjective_pointsSheafFunctor_map
     refine Precoverage.generate_mem_toGrothendieck ?_
     rw [Presieve.ofArrows_pUnit]
     exact f.left.singleton_mem_fppfPrecoverage
-  let c : Limits.Cofan (fun _ : PUnit.{1} ↦ uliftYoneda.{u + 1}.obj X) :=
-    Limits.Cofan.mk (uliftYoneda.{u + 1}.obj X) (fun _ ↦ 𝟙 _)
-  have hc : Limits.IsColimit c :=
-    Limits.Cofan.IsColimit.mk c (fun s ↦ s.inj PUnit.unit) (fun _ _ ↦ Category.id_comp _)
-      (fun _ m hm ↦ by simpa [c] using hm PUnit.unit)
+  let idY : (uliftYoneda.{u + 1}.obj Y).obj (op Y) := ULift.up (𝟙 Y)
+  have himg : Presheaf.imageSieve (uliftYoneda.{u + 1}.map f) idY =
+      Sieve.ofArrows (fun _ : PUnit.{1} ↦ X) (fun _ : PUnit.{1} ↦ f) := by
+    ext W g
+    rw [Sieve.mem_ofArrows_iff]
+    refine ⟨fun ⟨⟨t⟩, ht⟩ ↦ ⟨PUnit.unit, t, ?_⟩, fun ⟨_, t, ht⟩ ↦ ⟨ULift.up t, ?_⟩⟩
+    · simpa [idY, uliftYoneda] using congrArg ULift.down ht.symm
+    · simp [idY, uliftYoneda, ht]
   have hloc : Presheaf.IsLocallySurjective (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))
       (uliftYoneda.{u + 1}.map f) := by
-    have h :=
-      (GrothendieckTopology.ofArrows_mem_iff_isLocallySurjective_cofanIsColimitDesc_uliftYoneda_map
-        (Scheme.fppfTopology.over (Spec (CommRingCat.of R))) (fun _ : PUnit.{1} ↦ f) hc).mp hcov
-    have hdesc : Limits.Cofan.IsColimit.desc hc (fun _ ↦ uliftYoneda.{u + 1}.map f) =
-        uliftYoneda.{u + 1}.map f := by
-      simpa [c] using Limits.Cofan.IsColimit.fac hc (fun _ ↦ uliftYoneda.{u + 1}.map f) PUnit.unit
-    rwa [hdesc] at h
+    refine ⟨fun {W} ⟨g⟩ ↦ ?_⟩
+    have hg : (uliftYoneda.{u + 1}.obj Y).map g.op idY = ULift.up g := by
+      simp [idY, uliftYoneda]
+    rw [← hg, ← Presheaf.pullback_imageSieve, himg]
+    exact (Scheme.fppfTopology.over (Spec (CommRingCat.of R))).pullback_stable g hcov
   have : Sheaf.IsLocallySurjective ((GrothendieckTopology.uliftYoneda.{u + 1}
       (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) := hloc
   have hepi : Epi ((GrothendieckTopology.uliftYoneda.{u + 1}

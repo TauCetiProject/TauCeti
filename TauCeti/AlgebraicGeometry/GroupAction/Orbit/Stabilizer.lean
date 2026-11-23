@@ -47,6 +47,18 @@ section GeneralBase
 variable {S : Scheme.{u}} (G : Over S) {X : Over S} [GrpObj G] [ModObj G X]
   (x : 𝟙_ (Over S) ⟶ X)
 
+private theorem smooth_iff_smooth_stabilizer {Y : Scheme.{u}} (f : G.left ⟶ Y)
+    [Flat f] [Surjective f] [QuasiCompact f] {y : (𝟙_ (Over S)).left ⟶ Y}
+    (hfib : IsPullback (stabilizer.incl G x).left (stabilizer G x).hom f y)
+    (hkp : IsPullback (fst G (stabilizer G x)).left (stabilizer.rightMul G x).left f f) :
+    Smooth f ↔ Smooth (stabilizer G x).hom := by
+  refine ⟨fun h ↦ MorphismProperty.of_isPullback hfib h, fun hs ↦ ?_⟩
+  let := hs
+  have hp : Smooth (fst G (stabilizer G x)).left := by
+    rw [Over.fst_left]
+    infer_instance
+  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact hkp hp
+
 /-- Smoothness of the orbit morphism implies smoothness of its scheme-theoretic stabilizer, over an
 arbitrary base scheme and in every characteristic. -/
 theorem smooth_stabilizer_of_smooth_orbitMap (h : Smooth (orbitMap G x).left) :
@@ -61,17 +73,14 @@ theorem smooth_stabilizer_of_smooth_orbitMap (h : Smooth (orbitMap G x).left) :
 and only if its scheme-theoretic stabilizer is smooth over the base scheme. -/
 theorem smooth_orbitMap_iff [Flat (orbitMap G x).left] [Surjective (orbitMap G x).left]
     [QuasiCompact (orbitMap G x).left] :
-    Smooth (orbitMap G x).left ↔ Smooth (stabilizer G x).hom := by
-  refine ⟨smooth_stabilizer_of_smooth_orbitMap G x, fun hs ↦ ?_⟩
-  let := hs
-  have hp : Smooth (fst G (stabilizer G x)).left := by
-    rw [Over.fst_left]
-    infer_instance
-  have hpb : IsPullback (fst G (stabilizer G x)).left (stabilizer.rightMul G x).left
-      (orbitMap G x).left (orbitMap G x).left := by
-    simpa only [Over.forget_map] using
-      (stabilizer.isPullback_rightMul G x).map (Over.forget S)
-  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact hpb hp
+    Smooth (orbitMap G x).left ↔ Smooth (stabilizer G x).hom :=
+  smooth_iff_smooth_stabilizer G x (orbitMap G x).left
+    (by
+      simpa only [Over.forget_map, Over.toUnit_left] using
+        (orbitFiber.isPullback G x x).map (Over.forget S))
+    (by
+      simpa only [Over.forget_map] using
+        (stabilizer.isPullback_rightMul G x).map (Over.forget S))
 
 end GeneralBase
 
@@ -125,14 +134,9 @@ theorem smooth_stabilizer_of_smooth_toOrbit (h : Smooth (toOrbit G x)) :
 /-- For a geometrically reduced group over any field, the orbit projection is smooth exactly when
 its scheme-theoretic stabilizer is. The stabilizer need not be reduced a priori. -/
 theorem smooth_toOrbit_iff [GeometricallyReduced G.hom] :
-    Smooth (toOrbit G x) ↔ Smooth (stabilizer G x).hom := by
-  refine ⟨smooth_stabilizer_of_smooth_toOrbit G x, fun hs ↦ ?_⟩
-  let := hs
-  have hp : Smooth (fst G (stabilizer G x)).left := by
-    rw [Over.fst_left]
-    infer_instance
-  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact
-    (isPullback_toOrbit_rightMul G x) hp
+    Smooth (toOrbit G x) ↔ Smooth (stabilizer G x).hom :=
+  smooth_iff_smooth_stabilizer G x (toOrbit G x)
+    (isPullback_toOrbit_stabilizer G x) (isPullback_toOrbit_rightMul G x)
 
 /-- Over any field of characteristic zero, orbit projections for affine finite-type groups are
 smooth. No algebraic closedness, connectedness or reducedness hypothesis on the acting group is

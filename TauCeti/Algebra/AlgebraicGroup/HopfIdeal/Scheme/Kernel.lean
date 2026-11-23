@@ -182,25 +182,9 @@ private lemma isPullback_kernelSpec_scheme (f : H ⟶ K) :
   rw [← kernelSpecPullbackIso_hom_fst f, ← kernelSpecPullbackIso_hom_snd f,
     Category.assoc, Category.assoc, pullback.condition]
 
--- The following four lemmas isolate the underlying scheme maps of the group-object square.
--- In particular, the two zero morphisms become the structural map and the identity section,
--- rather than being left to unfold inside the pullback proof.
-private lemma hopfSpec_map_underlying {A B : _root_.CommHopfAlgCat.{u} R} (g : A ⟶ B) :
-    (Over.forget (Spec (CommRingCat.of R))).map
-        ((Grp.forget (Over (Spec (CommRingCat.of R)))).map
-          ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map g.op)) =
-      Spec.map (CommRingCat.ofHom g.hom.toAlgHom.toRingHom) := by
-  rw [Over.forget_map, Grp.forget_map]
-  exact hopfSpec_map_left (S := CommRingCat.of R) g
-
-private lemma kernelSpecι_underlying (f : H ⟶ K) :
-    (Over.forget (Spec (CommRingCat.of R))).map
-        ((Grp.forget (Over (Spec (CommRingCat.of R)))).map (kernelSpecι f)) =
-      Spec.map (CommRingCat.ofHom
-        (mkQuotient K (kernelHopfIdeal f)).hom.toAlgHom.toRingHom) := by
-  rw [kernelSpecι_def, quotientSpecι_def]
-  exact hopfSpec_map_underlying (mkQuotient K (kernelHopfIdeal f))
-
+-- The following two lemmas isolate the underlying scheme maps of the zero morphisms
+-- so they become the structural map and the identity section rather than unfolding inside
+-- the pullback proof.
 private lemma kernelSpec_to_trivial_underlying (f : H ⟶ K) :
     (Over.forget (Spec (CommRingCat.of R))).map
         ((Grp.forget (Over (Spec (CommRingCat.of R)))).map
@@ -229,8 +213,10 @@ theorem isPullback_kernelSpec (f : H ⟶ K) :
         (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H)) := by
   apply IsPullback.of_map_of_faithful (Grp.forget _)
   apply IsPullback.of_map_of_faithful (Over.forget _)
-  rw [kernelSpecι_underlying, kernelSpec_to_trivial_underlying,
-    hopfSpec_map_underlying, trivial_to_hopfSpec_underlying]
+  rw [kernelSpec_to_trivial_underlying, trivial_to_hopfSpec_underlying,
+    kernelSpecι_def, quotientSpecι_def, Over.forget_map, Grp.forget_map,
+    hopfSpec_map_left (S := CommRingCat.of R), Over.forget_map, Grp.forget_map,
+    hopfSpec_map_left (S := CommRingCat.of R)]
   exact isPullback_kernelSpec_scheme f
 
 end CommHopfAlgCat
