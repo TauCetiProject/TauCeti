@@ -24,7 +24,6 @@ for a nonzero finite module `M` over a Noetherian local ring `(R, 𝔪)` of supp
 
 ## Main definitions
 
-* `localCohomology.degreeZeroEquivPrimaryComponent`: `H⁰_J(M) ≃ₗ[R] J.primaryComponent M`.
 * `localCohomology.annihilatorProduct`: `∏ j ∈ Finset.range d, Ann_R H^j_J(M)`.
 
 ## Main results
@@ -50,20 +49,6 @@ open CategoryTheory Limits
 namespace localCohomology
 
 variable {R : Type u} [CommRing R]
-
-/-- The degree-zero local cohomology module `H⁰_J(M)` is canonically linearly equivalent to the
-`J`-primary component `Ideal.primaryComponent M J`. -/
-noncomputable def degreeZeroEquivPrimaryComponent (J : Ideal R) (M : Type u) [AddCommGroup M]
-    [Module R M] : (localCohomology J 0).obj (ModuleCat.of R M) ≃ₗ[R] J.primaryComponent M :=
-  (LinearEquiv.ofInjective (degreeZeroToModule J (ModuleCat.of R M)).hom
-    (degreeZeroToModule_injective J (ModuleCat.of R M))).trans
-    (LinearEquiv.ofEq _ _ (range_hom_degreeZeroToModule J (ModuleCat.of R M)))
-
-@[simp]
-theorem coe_degreeZeroEquivPrimaryComponent_apply (J : Ideal R) (M : Type u) [AddCommGroup M]
-    [Module R M] (x : (localCohomology J 0).obj (ModuleCat.of R M)) :
-    (degreeZeroEquivPrimaryComponent J M x : M) =
-      degreeZeroToModule J (ModuleCat.of R M) x := (rfl)
 
 /-- Every local cohomology module of a subsingleton module vanishes. -/
 theorem isZero_obj_of_subsingleton (J : Ideal R) (M : Type u) [AddCommGroup M] [Module R M]

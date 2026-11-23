@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Fisher's F distribution
@@ -394,8 +395,8 @@ private theorem abs_deriv_mul_fisherSnedecorPDFReal (hm : 0 < m) (hn : 0 < n)
   rw [hscale]
   have hsum : m / 2 + n / 2 = (m + n) / 2 := by ring
   rw [← hsum]
-  have hchart := abs_deriv_smul_one_add_rpow (m / 2) (n / 2) hu.2
-  simp only [smul_eq_mul, abs_of_pos (inv_pos.mpr (sq_pos_of_pos h1u))] at hchart
+  have hchart := inv_sq_smul_rpow_mul_one_add_rpow (m / 2) (n / 2) hu.2
+  simp only [smul_eq_mul] at hchart
   calc
     (n / m) * ((1 - u) ^ 2)⁻¹ *
           ((m / n) * (1 / beta (m / 2) (n / 2)) *
@@ -452,7 +453,8 @@ theorem integrable_fisherSnedecorMeasure_iff (m n : ℝ) {g : ℝ → E} :
     Integrable g (fisherSnedecorMeasure m n) ↔
       Integrable fun x ↦ fisherSnedecorPDFReal m n x • g x := by
   rw [fisherSnedecorMeasure_eq_withDensity, funext (fisherSnedecorPDF_eq_ofReal m n)]
-  exact integrable_withDensity_ofReal_iff (measurable_fisherSnedecorPDFReal m n).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
+    (measurable_fisherSnedecorPDFReal m n).aemeasurable
     (ae_of_all _ (fisherSnedecorPDFReal_nonneg m n))
 
 /-- **Integral transfer.** An integral against a Fisher--Snedecor law is the density-weighted
@@ -460,7 +462,8 @@ Lebesgue integral. This holds at every parameter, the zero measure included. -/
 theorem integral_fisherSnedecorMeasure_eq (m n : ℝ) (g : ℝ → E) :
     ∫ x, g x ∂fisherSnedecorMeasure m n = ∫ x, fisherSnedecorPDFReal m n x • g x := by
   rw [fisherSnedecorMeasure_eq_withDensity, funext (fisherSnedecorPDF_eq_ofReal m n)]
-  exact integral_withDensity_ofReal (measurable_fisherSnedecorPDFReal m n).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal
+    (measurable_fisherSnedecorPDFReal m n).aemeasurable
     (ae_of_all _ (fisherSnedecorPDFReal_nonneg m n)) g
 
 end Transfer

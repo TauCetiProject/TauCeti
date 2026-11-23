@@ -64,7 +64,7 @@ theorem coe_eigenProjOfInvolutive_apply (hg : Function.Involutive g) {μ : k} (h
 theorem eigenProjOfInvolutive_apply_of_mem (hg : Function.Involutive g) {μ : k}
     (hμ : μ * μ = 1) (y : g.eigenspace μ) : eigenProjOfInvolutive hg hμ y = y := by
   apply Subtype.ext
-  rw [coe_eigenProjOfInvolutive_apply, mem_eigenspace_iff.1 y.2, smul_smul, hμ, one_smul,
+  rw [coe_eigenProjOfInvolutive_apply, mem_eigenspace_iff.1 y.property, smul_smul, hμ, one_smul,
     ← two_smul k, invOf_smul_smul]
 
 /-- The projection onto the `μ`-eigenspace kills the `ν`-eigenspace when `μ ν = -1`, that is, when
@@ -74,7 +74,7 @@ theorem eigenProjOfInvolutive_apply_of_mem_neg (hg : Function.Involutive g) {μ 
     (hμ : μ * μ = 1) (hν : μ * ν = -1) (y : g.eigenspace ν) :
     eigenProjOfInvolutive hg hμ y = 0 := by
   apply Subtype.ext
-  rw [coe_eigenProjOfInvolutive_apply, mem_eigenspace_iff.1 y.2, smul_smul, hν, neg_one_smul,
+  rw [coe_eigenProjOfInvolutive_apply, mem_eigenspace_iff.1 y.property, smul_smul, hν, neg_one_smul,
     add_neg_cancel, smul_zero, ZeroMemClass.coe_zero]
 
 /-- The projections onto the `μ`- and `-μ`-eigenspaces of an involution add up to the identity. -/

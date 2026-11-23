@@ -83,14 +83,14 @@ def shrinkHomotopy :
       (Set.range (incl f)) where
   toFun q := ⟨(q.2.val.1, ⟨fun t ↦ q.2.val.2 (q.1 * t),
     q.2.val.2.continuous.comp
-      ((continuous_const.mul continuous_subtype_val).subtype_mk _)⟩), by
+      ((continuous_const.mul continuous_subtypeVal).subtype_mk _)⟩), by
     simpa using q.2.property⟩
   continuous_toFun := by
-    refine (continuous_snd.subtype_val.fst.prodMk ?_).subtype_mk _
+    refine (continuous_snd.subtypeVal.fst.prodMk ?_).subtype_mk _
     apply ContinuousMap.continuous_of_continuous_uncurry
-    exact ((continuous_snd.comp continuous_fst).subtype_val.snd).eval
-      (((continuous_fst.comp continuous_fst).subtype_val.mul
-        continuous_snd.subtype_val).subtype_mk _)
+    exact ((continuous_snd.comp continuous_fst).subtypeVal.snd).eval
+      (((continuous_fst.comp continuous_fst).subtypeVal.mul
+        continuous_snd.subtypeVal).subtype_mk _)
   map_zero_left p := by
     apply Subtype.ext
     apply Prod.ext
@@ -147,7 +147,7 @@ def map (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.comp a) :
   · exact (congrArg b p.property).trans (ContinuousMap.congr_fun h p.val.1)
   · exact ((a.continuous.comp (proj f).continuous).prodMk
       ((ContinuousMap.continuous_postcomp b).comp
-        continuous_subtype_val.snd)).subtype_mk _
+        continuous_subtypeVal.snd)).subtype_mk _
 
 @[simp]
 theorem map_val (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.comp a)

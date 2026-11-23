@@ -9,25 +9,113 @@ public import Mathlib.Order.KrullDimension
 public import Mathlib.Order.UpperLower.Basic
 
 /-!
-# Krull dimension of unions of upper and lower sets
+# Krull dimension of products, adjacent intervals, and unions of upper and lower sets
 
-In a preorder `α`, every strictly ascending chain in a union `⋃ i, f i` of upper sets (resp. lower
-sets) lies wholly in a single member `f i` containing its head (resp. last element). Hence
-`krullDim ↥(⋃ i, f i) = ⨆ i, krullDim (f i)` with no finiteness hypothesis on the index family.
-In commutative algebra this applies directly to module supports in `PrimeSpectrum R`, which are
-upper sets by `Module.mem_support_mono`.
+Inequalities and identities for Krull dimension that hold in every preorder:
+
+* The height of a pair is at most the sum of the heights of its components, so the Krull dimension
+  of a product is at most the sum of the Krull dimensions of the factors.
+* For `a ≤ b ≤ c` a strict chain in `[a, b]` and one in `[b, c]` concatenate to a strict chain in
+  `[a, c]`, so the Krull dimension of `[a, c]` is at least the sum of those of `[a, b]` and
+  `[b, c]`. In a modular lattice the two combine into additivity of Krull dimension on intervals
+  (`Order.krullDim_Icc_eq_krullDim_Icc_add_krullDim_Icc`).
+* Every strictly ascending chain in a union `⋃ i, f i` of upper sets (resp. lower sets) lies wholly
+  in a single member `f i` containing its head (resp. last element). Hence
+  `krullDim ↥(⋃ i, f i) = ⨆ i, krullDim (f i)` with no finiteness hypothesis on the index family.
+  In commutative algebra this applies directly to module supports in `PrimeSpectrum R`, which are
+  upper sets by `Module.mem_support_mono`.
 
 ## Main results
 
-* `Order.krullDim_iUnion_of_isUpperSet`, `Order.krullDim_union_of_isUpperSet`
-* `Order.krullDim_iUnion_of_isLowerSet`, `Order.krullDim_union_of_isLowerSet`
+* `Order.height_prod_le`: the height of a pair is at most the sum of the heights of its
+  components.
+* `Order.krullDim_prod_le`: `dim (α × β) ≤ dim α + dim β`.
+* `Order.krullDim_Icc_add_krullDim_Icc_le`: `dim [a, b] + dim [b, c] ≤ dim [a, c]` for
+  `a ≤ b ≤ c`.
+* `Order.krullDim_iUnion_of_isUpperSet`, `Order.krullDim_union_of_isUpperSet`: Krull dimension of
+  arbitrary and binary unions of upper sets.
+* `Order.krullDim_iUnion_of_isLowerSet`, `Order.krullDim_union_of_isLowerSet`: Krull dimension of
+  arbitrary and binary unions of lower sets.
+
+## Implementation notes
+
+`Order.height_prod_le` is proved by induction on a natural number bounding the sum of the heights
+of the components, through `Order.height_le_coe_iff`: an element below a pair is a pair with one
+component strictly smaller and the other no larger, and heights are strictly monotone where they
+are finite. The lower bound for intervals bounds the Krull dimensions of `[a, b]` and `[b, c]` by
+the height and the coheight of `b` in `[a, c]`, whose sum is at most the Krull dimension of
+`[a, c]` (`Order.krullDim_eq_iSup_height_add_coheight_of_nonempty`).
+
+## References
+
+* R. P. Stanley, *Enumerative Combinatorics, Vol. 1*, 2nd ed., Cambridge University Press (2012),
+  Chapter 3, for chains and products of partially ordered sets.
 -/
 
 public section
 
 namespace Order
 
-variable {α : Type*} [Preorder α]
+variable {α β : Type*} [Preorder α] [Preorder β]
+
+/-- **The height of a pair is at most the sum of the heights of its components.** -/
+theorem height_prod_le (x : α × β) : height x ≤ height x.1 + height x.2 := by
+  -- Below a pair whose components have finite height, the sum of the heights drops.
+  have hlt {x y : α × β} (hy : y < x) (hfin : height x.1 + height x.2 < ⊤) :
+      height y.1 + height y.2 + 1 ≤ height x.1 + height x.2 := by
+    have hfin₁ : height x.1 < ⊤ := le_self_add.trans_lt hfin
+    have hfin₂ : height x.2 < ⊤ := le_add_self.trans_lt hfin
+    rcases Prod.lt_iff.1 hy with ⟨hy₁, hy₂⟩ | ⟨hy₁, hy₂⟩
+    · rw [add_right_comm]
+      exact add_le_add (Order.add_one_le_of_lt (height_strictMono hy₁
+        ((height_mono hy₁.le).trans_lt hfin₁))) (height_mono hy₂)
+    · rw [add_assoc]
+      exact add_le_add (height_mono hy₁) (Order.add_one_le_of_lt (height_strictMono hy₂
+        ((height_mono hy₂.le).trans_lt hfin₂)))
+  -- Bound `height x` by every natural number bounding the right-hand side.
+  suffices h : ∀ n : ℕ, ∀ x : α × β, height x.1 + height x.2 ≤ n → height x ≤ n by
+    cases hx : height x.1 + height x.2 with
+    | top => exact le_top
+    | coe n => exact h n x hx.le
+  intro n
+  induction n with
+  | zero =>
+    intro x hx
+    refine height_le_coe_iff.2 fun y hy ↦ absurd ((hlt hy (hx.trans_lt (by simp))).trans hx) ?_
+    simp
+  | succ n ih =>
+    intro x hx
+    refine height_le_coe_iff.2 fun y hy ↦ (ih y ?_).trans_lt (by exact_mod_cast n.lt_succ_self)
+    have := (hlt hy (hx.trans_lt (by simp))).trans hx
+    exact (ENat.add_le_add_iff_right ENat.one_ne_top).1 (by exact_mod_cast this)
+
+/-- **The Krull dimension of a product is at most the sum of the Krull dimensions of the
+factors.** -/
+theorem krullDim_prod_le : krullDim (α × β) ≤ krullDim α + krullDim β := by
+  rw [krullDim_eq_iSup_height (α := α × β)]
+  refine iSup_le fun x ↦ ?_
+  calc (height x : WithBot ℕ∞) ≤ (height x.1 : WithBot ℕ∞) + height x.2 := by
+        exact_mod_cast height_prod_le x
+    _ ≤ krullDim α + krullDim β := add_le_add (height_le_krullDim _) (height_le_krullDim _)
+
+/-- **Krull dimension is superadditive on adjacent intervals**: for `a ≤ b ≤ c`, a strict chain in
+`[a, b]` followed by one in `[b, c]` is a strict chain in `[a, c]`. -/
+theorem krullDim_Icc_add_krullDim_Icc_le {a b c : α} (hab : a ≤ b) (hbc : b ≤ c) :
+    krullDim (Set.Icc a b) + krullDim (Set.Icc b c) ≤ krullDim (Set.Icc a c) := by
+  let b' : Set.Icc a c := ⟨b, hab, hbc⟩
+  -- `[a, b]` embeds below `b` and `[b, c]` above `b`, inside `[a, c]`.
+  have h₁ : krullDim (Set.Icc a b) ≤ height b' := by
+    rw [height_eq_krullDim_Iic]
+    exact krullDim_le_of_strictMono
+      (fun x ↦ ⟨⟨x, x.property.1, x.property.2.trans hbc⟩, x.property.2⟩) fun _ _ h ↦ h
+  have h₂ : krullDim (Set.Icc b c) ≤ coheight b' := by
+    rw [coheight_eq_krullDim_Ici]
+    exact krullDim_le_of_strictMono
+      (fun x ↦ ⟨⟨x, hab.trans x.property.1, x.property.2⟩, x.property.1⟩) fun _ _ h ↦ h
+  have : Nonempty (Set.Icc a c) := ⟨b'⟩
+  refine (add_le_add h₁ h₂).trans ?_
+  rw [krullDim_eq_iSup_height_add_coheight_of_nonempty, ← WithBot.coe_add, WithBot.coe_le_coe]
+  exact le_iSup (fun x ↦ height x + coheight x) b'
 
 /-- The Krull dimension of an arbitrary union of upper sets in a preorder is the supremum of their
 Krull dimensions: every strictly increasing chain lies in a member containing its first element. -/
@@ -36,11 +124,11 @@ theorem krullDim_iUnion_of_isUpperSet {ι : Sort*} {f : ι → Set α}
     krullDim (⋃ i, f i : Set α) = ⨆ i, krullDim (f i) :=
   le_antisymm
     (iSup_le fun p ↦ by
-      obtain ⟨i, hi⟩ := Set.mem_iUnion.mp p.head.2
+      obtain ⟨i, hi⟩ := Set.mem_iUnion.mp p.head.property
       exact le_iSup_of_le i (LTSeries.length_le_krullDim
         ⟨p.length, fun k ↦ ⟨p k, hf i (p.monotone (Fin.zero_le k)) hi⟩, fun k ↦ p.step k⟩))
     (iSup_le fun i ↦ krullDim_le_of_strictMono
-      (fun x : f i ↦ (⟨x.1, Set.subset_iUnion f i x.2⟩ : ↥(⋃ i, f i))) fun _ _ h ↦ h)
+      (fun x : f i ↦ (⟨x.val, Set.subset_iUnion f i x.property⟩ : ↥(⋃ i, f i))) fun _ _ h ↦ h)
 
 /-- The Krull dimension of the union of two upper sets in a preorder is the supremum of their Krull
 dimensions. -/
@@ -58,11 +146,11 @@ theorem krullDim_iUnion_of_isLowerSet {ι : Sort*} {f : ι → Set α}
     krullDim (⋃ i, f i : Set α) = ⨆ i, krullDim (f i) :=
   le_antisymm
     (iSup_le fun p ↦ by
-      obtain ⟨i, hi⟩ := Set.mem_iUnion.mp p.last.2
+      obtain ⟨i, hi⟩ := Set.mem_iUnion.mp p.last.property
       exact le_iSup_of_le i (LTSeries.length_le_krullDim
         ⟨p.length, fun k ↦ ⟨p k, hf i (p.monotone (Fin.le_last k)) hi⟩, fun k ↦ p.step k⟩))
     (iSup_le fun i ↦ krullDim_le_of_strictMono
-      (fun x : f i ↦ (⟨x.1, Set.subset_iUnion f i x.2⟩ : ↥(⋃ i, f i))) fun _ _ h ↦ h)
+      (fun x : f i ↦ (⟨x.val, Set.subset_iUnion f i x.property⟩ : ↥(⋃ i, f i))) fun _ _ h ↦ h)
 
 /-- The Krull dimension of the union of two lower sets in a preorder is the supremum of their Krull
 dimensions. -/

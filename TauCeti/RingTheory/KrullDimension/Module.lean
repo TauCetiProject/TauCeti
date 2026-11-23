@@ -10,7 +10,9 @@ public import Mathlib.RingTheory.Ideal.MinimalPrime.Basic
 public import Mathlib.RingTheory.KrullDimension.Module
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
+import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import Mathlib.RingTheory.KrullDimension.Field
+import Mathlib.RingTheory.KrullDimension.Regular
 import TauCeti.Order.KrullDimension
 import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.KrullDimension.Quotient
@@ -45,6 +47,11 @@ gives `supportDim R (M ⧸ (I * J) • ⊤) = supportDim R (M ⧸ I • ⊤) ⊔
 * `Module.supportDim_quotient_mul` and `Module.supportDim_quotSMulTop_mul`: the support dimension
   of `M ⧸ (I * J) • M` (resp. `M ⧸ (x * y) M`) is the supremum of the support dimensions modulo `I`
   and `J` (resp. `x` and `y`).
+* `Module.supportDim_quotSMulTop_add_one_eq_of_lt`: over a Noetherian local ring, an element of `𝔪`
+  that strictly lowers the support dimension of a nonzero finite module lowers it by exactly one.
+* `Module.exists_mem_maximalIdeal_notMem_minimalPrimes`: over a Noetherian local ring, if a module
+  has positive support dimension then `𝔪` contains an element outside every minimal prime of
+  `Ann M`.
 * `Module.supportDim_localizedModule_nonpos_iff`: `M_p` has zero-dimensional support exactly when
   `p` is a minimal prime of the support of `M`.
 -/
@@ -151,7 +158,7 @@ theorem supportDim_localizedModule_nonpos_iff [IsNoetherianRing R] [Module.Finit
     refine Order.krullDim_nonpos_iff_forall_isMax.2 fun Q Q' _ ↦ ?_
     suffices key : ∀ Q ∈ support (Localization.AtPrime p) (LocalizedModule p.primeCompl M),
         Q.asIdeal = maximalIdeal (Localization.AtPrime p) by
-      exact (Subtype.ext (PrimeSpectrum.ext ((key _ Q'.2).trans (key _ Q.2).symm))).le
+      exact (Subtype.ext (PrimeSpectrum.ext ((key _ Q'.property).trans (key _ Q.property).symm))).le
     intro Q hQ
     have hQp : Q.asIdeal.under R ≤ p :=
       (Ideal.comap_mono (le_maximalIdeal Q.isPrime.ne_top)).trans_eq
@@ -208,6 +215,43 @@ theorem supportDim_quotSMulTop_mul [Module.Finite R M] (x y : R) :
       : (Ideal.span {x} * Ideal.span {y}) • (⊤ : Submodule R M) = (x * y) • ⊤))
   rw [← hxy, ← hx, ← hy]
   exact supportDim_quotient_mul (Ideal.span {x}) (Ideal.span {y})
+
+/-- Over a Noetherian local ring, if `r ∈ 𝔪` strictly lowers the support dimension of a nonzero
+finite module `M`, then it lowers it by exactly one. -/
+theorem supportDim_quotSMulTop_add_one_eq_of_lt [IsLocalRing R] [IsNoetherianRing R]
+    [Module.Finite R M] [Nontrivial M] {r : R} (hr : r ∈ maximalIdeal R)
+    (hlt : supportDim R (QuotSMulTop r M) < supportDim R M) :
+    supportDim R (QuotSMulTop r M) + 1 = supportDim R M := by
+  have : Nontrivial (QuotSMulTop r M) := Submodule.Quotient.nontrivial_iff.mpr <|
+    Submodule.ideal_span_singleton_smul r (⊤ : Submodule R M) ▸
+      (Submodule.top_ne_ideal_smul_of_le_jacobson_annihilator
+        (((Ideal.span_singleton_le_iff_mem _).mpr hr).trans (maximalIdeal_le_jacobson _))).symm
+  obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
+  obtain ⟨m, hm⟩ := exists_supportDim_eq_natCast (R := R) (M := QuotSMulTop r M)
+  have hle : supportDim R M ≤ supportDim R (QuotSMulTop r M) + 1 :=
+    supportDim_le_supportDim_quotSMulTop_succ hr
+  rw [hk, hm] at hlt hle ⊢
+  norm_cast at hlt hle ⊢
+  omega
+
+/-- Over a Noetherian local ring, if `M` has positive support dimension, then the maximal ideal
+contains an element outside every minimal prime of the annihilator of `M`. -/
+theorem exists_mem_maximalIdeal_notMem_minimalPrimes [IsLocalRing R] [IsNoetherianRing R]
+    (hpos : 0 < supportDim R M) :
+    ∃ x ∈ maximalIdeal R, ∀ p ∈ (annihilator R M).minimalPrimes, x ∉ p := by
+  by_contra h; push Not at h
+  have hsub : (maximalIdeal R : Set R) ⊆ ⋃ p ∈ (annihilator R M).minimalPrimes, (p : Set R) :=
+    fun x hx ↦ let ⟨p, hp, hxp⟩ := h x hx; Set.mem_biUnion hp hxp
+  have hfin := Ideal.finite_minimalPrimes_of_isNoetherianRing R (annihilator R M)
+  obtain ⟨p, hp, hle⟩ := (Ideal.subset_union_prime_finite hfin (f := id) ⊥ ⊥
+    (fun _ hq _ _ ↦ hq.1.1)).mp hsub
+  have hp_eq : p = maximalIdeal R := le_antisymm (le_maximalIdeal hp.1.1.ne_top) hle
+  have key : ∀ q ∈ support R M, q.asIdeal = maximalIdeal R := fun q hq ↦
+    le_antisymm (le_maximalIdeal q.isPrime.ne_top) (hp_eq ▸
+      hp.2 ⟨q.isPrime, annihilator_le_of_mem_support hq⟩ (hp_eq ▸ le_maximalIdeal q.isPrime.ne_top))
+  have : Subsingleton (support R M) := ⟨fun q₁ q₂ ↦ Subtype.ext (PrimeSpectrum.ext
+    ((key q₁.val q₁.property).trans (key q₂.val q₂.property).symm))⟩
+  exact hpos.not_ge Order.krullDim_nonpos_of_subsingleton
 
 end Quotient
 

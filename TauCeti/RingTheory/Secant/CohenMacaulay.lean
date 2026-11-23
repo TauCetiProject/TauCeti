@@ -148,6 +148,15 @@ theorem isCMSecant_iff_eq_nil_of_subsingleton [Subsingleton M] {rs : List R} :
   rw [h, isCMSecant_nil_iff]
   exact Module.isCohenMacaulay_of_subsingleton
 
+private theorem exists_supportDim_mem_of_list_eq {as bs : List R} (hab : as = bs) {r : R} :
+    (∃ d : ℕ, Module.supportDim R (M ⧸ Ideal.ofList as • (⊤ : Submodule R M)) = (d : WithBot ℕ∞) ∧
+        r ∈ localCohomology.annihilatorProduct (maximalIdeal R)
+          (M ⧸ Ideal.ofList as • (⊤ : Submodule R M)) d) ↔
+      (∃ d : ℕ, Module.supportDim R (M ⧸ Ideal.ofList bs • (⊤ : Submodule R M)) = (d : WithBot ℕ∞) ∧
+          r ∈ localCohomology.annihilatorProduct (maximalIdeal R)
+            (M ⧸ Ideal.ofList bs • (⊤ : Submodule R M)) d) := by
+  subst hab; rfl
+
 /-- Characterization of CM-secancy for a singleton `[r]`. -/
 theorem isCMSecant_singleton_iff {r : R} :
     IsCMSecant M [r] ↔
@@ -158,23 +167,19 @@ theorem isCMSecant_singleton_iff {r : R} :
   refine and_congr_right fun _ ↦ ?_
   rw [(Submodule.quotOfListSingletonSMulTopEquiv M r).isCohenMacaulay_iff]
   refine and_congr_right fun _ ↦ ?_
+  let i₀ : Fin [r].length := ⟨0, by simp⟩
+  have h0 : ([r] : List R).take i₀.val = [] := by simp [i₀]
   have e := Submodule.quotOfListNilSMulTopEquiv R M
-  refine ⟨fun h ↦ let ⟨d, hd, hmem⟩ := h ⟨0, by simp⟩; ⟨d,
-      by rwa [show ([r] : List R).take 0 = [] from rfl, Module.supportDim_eq_of_equiv e] at hd,
-      by rwa [show ([r] : List R).take 0 = [] from rfl, e.annihilatorProduct_eq] at hmem⟩,
-    fun ⟨d, hd, hmem⟩ i ↦ by
-      obtain rfl : i = ⟨0, by simp⟩ := Fin.ext (Nat.lt_one_iff.mp i.isLt)
-      exact ⟨d, by rwa [show ([r] : List R).take 0 = [] from rfl, Module.supportDim_eq_of_equiv e],
-        by rwa [show ([r] : List R).take 0 = [] from rfl, e.annihilatorProduct_eq]⟩⟩
-
-private theorem exists_supportDim_mem_of_list_eq {as bs : List R} (hab : as = bs) {r : R} :
-    (∃ d : ℕ, Module.supportDim R (M ⧸ Ideal.ofList as • (⊤ : Submodule R M)) = (d : WithBot ℕ∞) ∧
-        r ∈ localCohomology.annihilatorProduct (maximalIdeal R)
-          (M ⧸ Ideal.ofList as • (⊤ : Submodule R M)) d) ↔
-      (∃ d : ℕ, Module.supportDim R (M ⧸ Ideal.ofList bs • (⊤ : Submodule R M)) = (d : WithBot ℕ∞) ∧
-          r ∈ localCohomology.annihilatorProduct (maximalIdeal R)
-            (M ⧸ Ideal.ofList bs • (⊤ : Submodule R M)) d) := by
-  subst hab; rfl
+  have hnil :
+      (∃ d : ℕ, Module.supportDim R (M ⧸ Ideal.ofList ([] : List R) • (⊤ : Submodule R M)) =
+          (d : WithBot ℕ∞) ∧ r ∈ localCohomology.annihilatorProduct (maximalIdeal R)
+            (M ⧸ Ideal.ofList ([] : List R) • (⊤ : Submodule R M)) d) ↔
+        ∃ d : ℕ, Module.supportDim R M = (d : WithBot ℕ∞) ∧
+          r ∈ localCohomology.annihilatorProduct (maximalIdeal R) M d :=
+    exists_congr fun d ↦ by rw [Module.supportDim_eq_of_equiv e, e.annihilatorProduct_eq]
+  refine ⟨fun h ↦ hnil.mp ((exists_supportDim_mem_of_list_eq h0).mp (h i₀)), fun h i ↦ ?_⟩
+  obtain rfl : i = i₀ := Fin.ext (Nat.lt_one_iff.mp i.isLt)
+  exact (exists_supportDim_mem_of_list_eq h0).mpr (hnil.mpr h)
 
 /-- Concatenating a CM-secant sequence `rs` on `M` with a CM-secant sequence `qs` on
 `M ⧸ (rs) M` produces a CM-secant sequence `rs ++ qs` on `M`. -/
@@ -186,14 +191,14 @@ theorem IsCMSecant.append {rs qs : List R} (hrs : IsCMSecant M rs)
       hqs.isCohenMacaulay_quotient, fun i ↦ ?_⟩
   by_cases hi : i.val < rs.length
   · let i' : Fin rs.length := ⟨i.val, hi⟩
-    rw [show (rs ++ qs)[i] = rs[i'] from List.getElem_append_left hi]
+    rw [Fin.getElem_fin, List.getElem_append_left hi, ← Fin.getElem_fin (i := i')]
     exact (exists_supportDim_mem_of_list_eq (List.take_append_of_le_length hi.le)).mpr
       (hrs.exists_supportDim_eq_and_mem_annihilatorProduct i')
   · have hj_lt : i.val < rs.length + qs.length := by simpa [List.length_append] using i.isLt
     have ht : (rs ++ qs).take i.val = rs ++ qs.take (i.val - rs.length) := by
       rw [List.take_append, List.take_of_length_le (by omega)]
     let j' : Fin qs.length := ⟨i.val - rs.length, by omega⟩
-    rw [show (rs ++ qs)[i] = qs[j'] from List.getElem_append_right (by omega)]
+    rw [Fin.getElem_fin, List.getElem_append_right (by omega), ← Fin.getElem_fin (i := j')]
     refine (exists_supportDim_mem_of_list_eq ht).mpr ?_
     obtain ⟨d, hd, hmem⟩ := hqs.exists_supportDim_eq_and_mem_annihilatorProduct j'
     have e := Submodule.quotOfListAppendSMulTopEquiv M rs (qs.take (i.val - rs.length))
@@ -208,7 +213,7 @@ theorem IsCMSecant.drop {rs : List R} (h : IsCMSecant M rs) (k : ℕ) :
       h.isCohenMacaulay_quotient, fun j ↦ ?_⟩
   have hlen : j.val < rs.length - k := by simpa [List.length_drop] using j.isLt
   let i' : Fin rs.length := ⟨k + j.val, by omega⟩
-  rw [show (rs.drop k)[j] = rs[i'] from List.getElem_drop]
+  rw [Fin.getElem_fin, List.getElem_drop, ← Fin.getElem_fin (i := i')]
   obtain ⟨d, hd, hmem⟩ := h.exists_supportDim_eq_and_mem_annihilatorProduct i'
   have e :=
     (Submodule.quotOfListAppendSMulTopEquiv M (rs.take k) ((rs.drop k).take j.val)).symm.trans
@@ -434,13 +439,15 @@ namespace RingTheory.Sequence
 
 section Reversal
 
+private theorem drop_reverse_eq_reverse_take {α : Type*} (rs : List α) {i j : ℕ}
+    (hij : i + j + 1 = rs.length) : rs.reverse.drop (j + 1) = (rs.take i).reverse := by
+  rw [List.drop_reverse]; congr 2; omega
+
 private def quotDropReverseEquivTake {R : Type u} [CommRing R] (M : Type u) [AddCommGroup M]
     [Module R M] (rs : List R) (i j : ℕ) (hij : i + j + 1 = rs.length) :
     (M ⧸ Ideal.ofList (rs.reverse.drop (j + 1)) • (⊤ : Submodule R M)) ≃ₗ[R]
       (M ⧸ Ideal.ofList (rs.take i) • (⊤ : Submodule R M)) :=
-  (Submodule.quotEquivOfEq _ _ (by
-    rw [show rs.reverse.drop (j + 1) = (rs.take i).reverse by
-      rw [List.drop_reverse]; congr 2; omega])).trans
+  (Submodule.quotEquivOfEq _ _ (by rw [drop_reverse_eq_reverse_take rs hij])).trans
     (Submodule.quotOfListSMulTopEquivOfPerm M (rs.take i).reverse_perm)
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
@@ -461,7 +468,7 @@ theorem isCMSecant_iff_isPStandard_reverse {rs : List R}
     let i : Fin rs.length := ⟨rs.length - 1 - j.val, by omega⟩
     obtain ⟨d, hd, hmem⟩ := h.exists_supportDim_eq_and_mem_annihilatorProduct i
     have e := quotDropReverseEquivTake M rs i.val j.val (by dsimp [i]; omega)
-    rw [show rs.reverse[j] = rs[i] from List.getElem_reverse j.isLt]
+    rw [Fin.getElem_fin, List.getElem_reverse j.isLt, ← Fin.getElem_fin (i := i)]
     exact ⟨d, (Module.supportDim_eq_of_equiv e).trans hd, (e.annihilatorProduct_eq _ _).symm ▸ hmem⟩
   · intro h
     refine ⟨by simpa using h.isSecant.reverse, Module.isCohenMacaulay_of_supportDim_nonpos hdim,
@@ -470,7 +477,7 @@ theorem isCMSecant_iff_isPStandard_reverse {rs : List R}
     obtain ⟨d, hd, hmem⟩ := h.exists_supportDim_eq_and_mem_annihilatorProduct j
     have e := (quotDropReverseEquivTake M rs i.val j.val (by dsimp [j]; omega)).symm
     have hget : rs.reverse[j] = rs[i] := by
-      change rs.reverse[j.val] = rs[i.val]; rw [List.getElem_reverse]; congr 1; dsimp [j]; omega
+      rw [Fin.getElem_fin, Fin.getElem_fin, List.getElem_reverse]; congr 1; dsimp [j]; omega
     rw [hget] at hmem
     exact ⟨d, (Module.supportDim_eq_of_equiv e).trans hd, (e.annihilatorProduct_eq _ _).symm ▸ hmem⟩
 

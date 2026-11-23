@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.KrullDimension.Regular
-import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import TauCeti.Data.ENat.Monoid
 import TauCeti.RingTheory.Depth.Basic
 import TauCeti.RingTheory.Ideal.OfList
@@ -114,25 +113,33 @@ theorem isSecant_iff_eq_nil_of_subsingleton [Subsingleton M] {rs : List R} :
   by_contra hne
   exact (not_subsingleton_iff_nontrivial.mpr (h.nontrivial_of_ne_nil hne)) ‹Subsingleton M›
 
+omit [IsLocalRing R] in
+private theorem supportDim_quot_ofList_congr {as bs : List R} (h : as = bs) :
+    Module.supportDim R (M ⧸ Ideal.ofList as • (⊤ : Submodule R M)) =
+      Module.supportDim R (M ⧸ Ideal.ofList bs • (⊤ : Submodule R M)) := by
+  subst h; rfl
+
 /-- A singleton `[r]` is secant for `M` iff `r ∈ 𝔪` and
 `supportDim R (QuotSMulTop r M) < supportDim R M`. -/
 theorem isSecant_singleton_iff {r : R} :
     IsSecant M [r] ↔
       r ∈ maximalIdeal R ∧ Module.supportDim R (QuotSMulTop r M) < Module.supportDim R M := by
   rw [isSecant_iff]
+  let i₀ : Fin [r].length := ⟨0, by simp⟩
+  have h1 : ([r] : List R).take (i₀.val + 1) = [r] := by simp [i₀]
+  have h0 : ([r] : List R).take i₀.val = [] := by simp [i₀]
   constructor
   · rintro ⟨hm, hd⟩
     refine ⟨hm r List.mem_cons_self, ?_⟩
-    have h0 := hd ⟨0, by simp⟩
-    rwa [show ([r] : List R).take 1 = [r] from rfl, show ([r] : List R).take 0 = [] from rfl,
+    have hstep := hd i₀
+    rwa [supportDim_quot_ofList_congr h1, supportDim_quot_ofList_congr h0,
       Module.supportDim_eq_of_equiv (Submodule.quotOfListSingletonSMulTopEquiv M r),
-      Module.supportDim_eq_of_equiv (Submodule.quotOfListNilSMulTopEquiv R M)] at h0
+      Module.supportDim_eq_of_equiv (Submodule.quotOfListNilSMulTopEquiv R M)] at hstep
   · rintro ⟨hr, hd⟩
     refine ⟨fun x hx ↦ (List.mem_singleton.mp hx) ▸ hr, fun i ↦ ?_⟩
-    obtain rfl : i = ⟨0, by simp⟩ := Fin.ext (Nat.lt_one_iff.mp i.isLt)
-    change Module.supportDim R (M ⧸ Ideal.ofList [r] • (⊤ : Submodule R M)) <
-      Module.supportDim R (M ⧸ Ideal.ofList ([] : List R) • (⊤ : Submodule R M))
-    rwa [Module.supportDim_eq_of_equiv (Submodule.quotOfListSingletonSMulTopEquiv M r),
+    obtain rfl : i = i₀ := Fin.ext (Nat.lt_one_iff.mp i.isLt)
+    rwa [supportDim_quot_ofList_congr h1, supportDim_quot_ofList_congr h0,
+      Module.supportDim_eq_of_equiv (Submodule.quotOfListSingletonSMulTopEquiv M r),
       Module.supportDim_eq_of_equiv (Submodule.quotOfListNilSMulTopEquiv R M)]
 
 end Basic
@@ -161,12 +168,6 @@ section Append
 
 variable {R : Type u} [CommRing R] [IsLocalRing R]
   {M : Type v} [AddCommGroup M] [Module R M]
-
-omit [IsLocalRing R] in
-private theorem supportDim_quot_ofList_congr {as bs : List R} (h : as = bs) :
-    Module.supportDim R (M ⧸ Ideal.ofList as • (⊤ : Submodule R M)) =
-      Module.supportDim R (M ⧸ Ideal.ofList bs • (⊤ : Submodule R M)) := by
-  subst h; rfl
 
 /-- Every prefix of a secant sequence is secant. -/
 theorem IsSecant.take {rs : List R} (h : IsSecant M rs) (k : ℕ) : IsSecant M (rs.take k) := by
@@ -226,8 +227,7 @@ theorem isSecant_cons_iff (r : R) (rs : List R) :
     IsSecant M (r :: rs) ↔
       r ∈ maximalIdeal R ∧ Module.supportDim R (QuotSMulTop r M) < Module.supportDim R M ∧
         IsSecant (QuotSMulTop r M) rs := by
-  change IsSecant M ([r] ++ rs) ↔ _
-  rw [isSecant_append_iff, isSecant_singleton_iff,
+  rw [← List.singleton_append, isSecant_append_iff, isSecant_singleton_iff,
     (Submodule.quotOfListSingletonSMulTopEquiv M r).isSecant_iff, and_assoc]
 
 /-- The suffix `rs.drop k` of a secant sequence is secant for the quotient `M ⧸ (rs.take k) M`. -/
@@ -266,19 +266,6 @@ section Noetherian
 variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
   {M : Type v} [AddCommGroup M] [Module R M] [Module.Finite R M]
 
-private theorem supportDim_quotSMulTop_add_one_eq_of_lt [Nontrivial M] {r : R}
-    (hr : r ∈ maximalIdeal R)
-    (hlt : Module.supportDim R (QuotSMulTop r M) < Module.supportDim R M) :
-    Module.supportDim R (QuotSMulTop r M) + 1 = Module.supportDim R M := by
-  have : Nontrivial (QuotSMulTop r M) := nontrivial_quotSMulTop_of_mem_maximalIdeal M hr
-  obtain ⟨k, hk⟩ := Module.exists_supportDim_eq_natCast (R := R) (M := M)
-  obtain ⟨m, hm⟩ := Module.exists_supportDim_eq_natCast (R := R) (M := QuotSMulTop r M)
-  have hle : Module.supportDim R M ≤ Module.supportDim R (QuotSMulTop r M) + 1 :=
-    Module.supportDim_le_supportDim_quotSMulTop_succ hr
-  rw [hk, hm] at hlt hle ⊢
-  norm_cast at hlt hle ⊢
-  omega
-
 /-- **Secant dimension formula.** Over a Noetherian local ring, a sequence `rs` is secant for a
 nonzero finite module `M` iff its entries lie in `𝔪` and
 `supportDim R (M ⧸ (rs) M) + rs.length = supportDim R M`.
@@ -298,7 +285,7 @@ theorem isSecant_iff_supportDim_add_length_eq [Nontrivial M] (rs : List R) :
     · intro h
       obtain ⟨hr, hlt, hrs⟩ := (isSecant_cons_iff r rs).mp h
       have : Nontrivial (QuotSMulTop r M) := nontrivial_quotSMulTop_of_mem_maximalIdeal M hr
-      have hstep := supportDim_quotSMulTop_add_one_eq_of_lt hr hlt
+      have hstep := Module.supportDim_quotSMulTop_add_one_eq_of_lt hr hlt
       obtain ⟨hrs_mem, hdim⟩ := (ih (M := QuotSMulTop r M)).mp hrs
       refine ⟨fun x hx ↦ ?_, ?_⟩
       · rcases List.mem_cons.mp hx with rfl | hx'
@@ -319,7 +306,7 @@ theorem isSecant_iff_supportDim_add_length_eq [Nontrivial M] (rs : List R) :
       have hlt : Module.supportDim R (QuotSMulTop r M) < Module.supportDim R M :=
         (Module.supportDim_le_supportDim_quotient_add_length rs hrs_mem).trans_lt
           (hk ▸ ENat.WithBot.lt_natCast_of_add_one_eq (hdim.trans hk))
-      have hstep := supportDim_quotSMulTop_add_one_eq_of_lt hr hlt
+      have hstep := Module.supportDim_quotSMulTop_add_one_eq_of_lt hr hlt
       rw [← hstep, ENat.WithBot.add_one_cancel] at hdim
       exact (isSecant_cons_iff r rs).mpr ⟨hr, hlt, (ih (M := QuotSMulTop r M)).mpr ⟨hrs_mem, hdim⟩⟩
 
@@ -421,26 +408,6 @@ theorem IsRegular.isSecant {rs : List R} (reg : IsRegular M rs) : IsSecant M rs 
     ⟨fun _ hr ↦ reg.mem_maximalIdeal hr,
       Module.supportDim_add_length_eq_supportDim_of_isRegular rs reg⟩
 
-omit [Module.Finite R M] in
-private theorem exists_mem_maximalIdeal_notMem_minimalPrimes
-    (hpos : 0 < Module.supportDim R M) :
-    ∃ x ∈ maximalIdeal R, ∀ p ∈ (Module.annihilator R M).minimalPrimes, x ∉ p := by
-  by_contra h; push Not at h
-  have hsub : (maximalIdeal R : Set R) ⊆
-      ⋃ p ∈ (Module.annihilator R M).minimalPrimes, (p : Set R) := fun x hx ↦
-    let ⟨p, hp, hxp⟩ := h x hx; Set.mem_biUnion hp hxp
-  have hfin := Ideal.finite_minimalPrimes_of_isNoetherianRing R (Module.annihilator R M)
-  obtain ⟨p, hp, hle⟩ := (Ideal.subset_union_prime_finite hfin (f := id) ⊥ ⊥
-    (fun _ hq _ _ ↦ hq.1.1)).mp hsub
-  have hp_eq : p = maximalIdeal R := le_antisymm (le_maximalIdeal hp.1.1.ne_top) hle
-  have key : ∀ q ∈ Module.support R M, q.asIdeal = maximalIdeal R := fun q hq ↦
-    le_antisymm (le_maximalIdeal q.isPrime.ne_top) (hp_eq ▸
-      hp.2 ⟨q.isPrime, Module.annihilator_le_of_mem_support hq⟩
-        (hp_eq ▸ le_maximalIdeal q.isPrime.ne_top))
-  have : Subsingleton (Module.support R M) :=
-    ⟨fun q₁ q₂ ↦ Subtype.ext (PrimeSpectrum.ext ((key q₁.1 q₁.2).trans (key q₂.1 q₂.2).symm))⟩
-  exact hpos.not_ge Order.krullDim_nonpos_of_subsingleton
-
 private theorem exists_isSecant_supportDim_eq_zero_of_eq :
     ∀ (d : ℕ) (M : Type v) [AddCommGroup M] [Module R M] [Module.Finite R M] [Nontrivial M],
       Module.supportDim R M = d →
@@ -449,7 +416,7 @@ private theorem exists_isSecant_supportDim_eq_zero_of_eq :
   | 0, M, _, _, _, _, hd => ⟨[], isSecant_nil, by
       rw [Module.supportDim_eq_of_equiv (Submodule.quotOfListNilSMulTopEquiv R M), hd]; rfl⟩
   | d + 1, M, _, _, _, _, hd => by
-    obtain ⟨x, hx, hmin⟩ := exists_mem_maximalIdeal_notMem_minimalPrimes (M := M)
+    obtain ⟨x, hx, hmin⟩ := Module.exists_mem_maximalIdeal_notMem_minimalPrimes (M := M)
       (by rw [hd]; exact_mod_cast Nat.succ_pos d)
     have hdrop :=
       Module.supportDim_quotSMulTop_succ_eq_of_notMem_minimalPrimes_of_mem_maximalIdeal hmin hx

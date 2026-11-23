@@ -27,8 +27,10 @@ tangent-image predicates of `TauCeti.Geometry.Symplectic.Lagrangian.Manifold`:
 
 * `s_α` is an isotropic map exactly when `α` is closed
   (`TauCeti.CotangentBundle.isIsotropicMap_section_iff`);
-* when `M` is finite-dimensional, `T*M` has twice the dimension of `M`, so `s_α` is a Lagrangian
-  map exactly when `α` is closed (`TauCeti.CotangentBundle.isLagrangianMap_section_iff`).
+* when `M` is finite-dimensional, `T*M` has twice the dimension of `M`, so for any nondegenerate
+  two-form on `T*M` the section `s_α` is a Lagrangian map exactly when it is an isotropic map
+  (`TauCeti.CotangentBundle.isLagrangianMap_section_iff_isIsotropicMap`); for `ω` this happens
+  exactly when `α` is closed (`TauCeti.CotangentBundle.isLagrangianMap_section_iff`).
 
 In particular the zero section of `T*M` is a Lagrangian map
 (`TauCeti.CotangentBundle.isLagrangianMap_zeroSection`), and so is the graph of the differential
@@ -45,6 +47,8 @@ Lagrangian with primitive `0` (`TauCeti.CotangentBundle.isExactLagrangianMap_zer
 * `TauCeti.CotangentBundle.mpullback_symplecticForm`: `s_α^*ω = -dα`.
 * `TauCeti.CotangentBundle.isIsotropicMap_section_iff`: the graph of `α` is isotropic iff
   `dα = 0`.
+* `TauCeti.CotangentBundle.isLagrangianMap_section_iff_isIsotropicMap`: for any nondegenerate
+  two-form on `T*M`, the graph of `α` is Lagrangian iff it is isotropic.
 * `TauCeti.CotangentBundle.isLagrangianMap_section_iff`: the graph of `α` is Lagrangian iff
   `dα = 0`.
 * `TauCeti.CotangentBundle.isLagrangianMap_zeroSection`: the zero section is Lagrangian.
@@ -101,6 +105,22 @@ theorem isIsotropicMap_section_iff (α : SmoothForm I M ℝ 1) :
 
 variable [FiniteDimensional ℝ E]
 
+/-- **A graph in `T*M` is Lagrangian exactly when it is isotropic.** On a finite-dimensional
+manifold, for any nondegenerate two-form on the cotangent bundle, the section defined by a smooth
+one-form `α` is a Lagrangian map if and only if it is an isotropic map: it is an immersion, and
+`T*M` has twice the dimension of `M`. -/
+theorem isLagrangianMap_section_iff_isIsotropicMap
+    {σ : SmoothTwoForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I M)} (hσ : σ.IsNondegenerate)
+    (α : SmoothForm I M ℝ 1) :
+    hσ.IsLagrangianMap I (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x)) ↔
+      hσ.IsIsotropicMap I
+        (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x)) := by
+  refine ⟨fun h ↦ h.isIsotropicMap, fun h ↦ h.isLagrangianMap_of_finrank (fun x ↦ ?_) ?_⟩
+  · -- The projection is a left inverse of the section.
+    exact Bundle.mfderiv_injective_of_proj_comp_eq_id
+      (((SmoothForm.degreeOneEquiv α).contMDiff x).mdifferentiableAt (by simp)) rfl
+  · rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
+
 /-- **The graph of a one-form is Lagrangian exactly when the form is closed.** On a
 finite-dimensional manifold, the section of the cotangent bundle defined by a smooth one-form `α`
 is a Lagrangian map for the canonical symplectic form if and only if `dα = 0`. -/
@@ -108,12 +128,7 @@ theorem isLagrangianMap_section_iff (α : SmoothForm I M ℝ 1) :
     (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsLagrangianMap I
         (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x)) ↔
       α.IsClosed := by
-  rw [← isIsotropicMap_section_iff]
-  refine ⟨fun h ↦ h.isIsotropicMap, fun h ↦ h.isLagrangianMap_of_finrank (fun x ↦ ?_) ?_⟩
-  · -- The projection is a left inverse of the section.
-    exact Bundle.mfderiv_injective_of_proj_comp_eq_id
-      (((SmoothForm.degreeOneEquiv α).contMDiff x).mdifferentiableAt (by simp)) rfl
-  · rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
+  rw [isLagrangianMap_section_iff_isIsotropicMap, isIsotropicMap_section_iff]
 
 /-- **The zero section is Lagrangian.** On a finite-dimensional manifold, the zero section of the
 cotangent bundle is a Lagrangian map for the canonical symplectic form. -/
@@ -144,7 +159,7 @@ theorem isExactLagrangianMap_section_iff (α : SmoothForm I M ℝ 1) {h : M → 
     (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap I
         (liouvilleForm I M)
         (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x)) h ↔
-      ContMDiff I 𝓘(ℝ) ∞ h ∧ α.1 = mextDeriv (RoughForm.ofFunction I h) := by
+      ContMDiff I 𝓘(ℝ) ∞ h ∧ α.val = mextDeriv (RoughForm.ofFunction I h) := by
   -- The Liouville form is tautological: `s_α^*λ = α`.
   have hpull := congrArg Subtype.val (mpullback_liouvilleForm α)
   rw [SmoothForm.coe_mpullback] at hpull
@@ -166,7 +181,7 @@ theorem exists_isExactLagrangianMap_section_iff (α : SmoothForm I M ℝ 1) :
   simp only [isExactLagrangianMap_section_iff, exactForms_succ, LinearMap.mem_range]
   refine ⟨fun ⟨h, hh, hα⟩ ↦ ⟨⟨RoughForm.ofFunction I h,
     (isSmoothForm_ofFunction_iff.mpr hh).mem_smoothBundleForms⟩, Subtype.ext ?_⟩,
-    fun ⟨g, hg⟩ ↦ ⟨fun x ↦ g.1 x 0, ?_, ?_⟩⟩
+    fun ⟨g, hg⟩ ↦ ⟨fun x ↦ g.val x 0, ?_, ?_⟩⟩
   · rw [mextDerivₗ_apply, hα]
   · rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction, isSmoothForm_def]
     exact g.contMDiff
