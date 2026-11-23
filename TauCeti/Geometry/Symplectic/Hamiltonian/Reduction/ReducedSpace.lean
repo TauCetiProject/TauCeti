@@ -65,6 +65,7 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
 * `levelSubMulActionChartedSpace`, `isManifold_levelSubMulAction`,
   `isSmoothEmbedding_coe_levelSubMulAction`, `range_mfderiv_coe_levelSubMulAction`: the regular
   level `μ⁻¹(c)`, as a `G_c`-space, is an embedded submanifold with tangent spaces `ker dμ`.
+* `contMDiff_levelSubMulActionSubtype`: its `G_c`-equivariant inclusion into `M` is smooth.
 * `orbitRelQuotientChartedSpace`, `isManifold_orbitRelQuotient`,
   `isSubmersion_quotientMk_levelSubMulAction`: the reduced space `μ⁻¹(c) / G_c` is a smooth
   manifold and the orbit projection is a submersion.
@@ -184,6 +185,15 @@ theorem isSmoothEmbedding_coe_levelSubMulAction :
   rw [← h.coe_comp_levelSubMulActionDiffeomorph hreg hn]
   exact isSmoothEmbedding_comp_diffeomorph _
     (h.toIsMomentMap.isSmoothEmbedding_coe_level hreg hn)
+
+/-- **The inclusion of a regular level is smooth**, as the `G_c`-equivariant map
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulActionSubtype`. -/
+theorem contMDiff_levelSubMulActionSubtype :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    ContMDiff 𝓘(ℝ, Fin n → ℝ) I' ∞ (h.levelSubMulActionSubtype c) := by
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  rw [coe_levelSubMulActionSubtype]
+  exact (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
 
 /-- **The tangent space of a regular level is the kernel of `dμ`**, for the level as a
 `G_c`-space: at `z`, the differential of the inclusion has range `ker dμ_z`. -/

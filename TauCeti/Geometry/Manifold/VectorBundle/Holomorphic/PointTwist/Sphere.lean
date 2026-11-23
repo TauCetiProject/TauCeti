@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.EulerClass
 
 /-!
 # The affine coordinate as a section of a point twist on the Riemann sphere
@@ -17,6 +17,10 @@ of the point twist at `∞` of the trivial line bundle `Bundle.Trivial (OnePoint
 (`TauCeti.pointTwistOfPole_affineChart_eq_zero_iff`). For comparison,
 `OnePoint.not_mdifferentiable_section_twistCore_zero_of_coe` shows that `z` is not a holomorphic
 section of the degree-zero bundle `OnePoint.twistCore 0`.
+
+The Euler number of this twist is one: `⟨e(𝒪(∞)_ℝ), [ℙ¹]⟩ = 1`
+(`TauCeti.evalFundamentalClass_complexEulerClass_pointTwist_infty`), which reads
+`c₁(𝒪(1))[ℙ¹] = 1` by `TauCeti.lineFirstChernClass_def`.
 -/
 
 public section
@@ -60,5 +64,15 @@ theorem pointTwistOfPole_affineChart_eq_zero_iff {z : OnePoint ℂ} :
     rw [pointTwistOfPole_of_ne ℂ (coe_ne_infty w), pointTwistMul_apply_of_ne (coe_ne_infty w),
       affineChart_coe]
     exact coe_eq_coe.symm
+
+/-- **The Euler number of `𝒪(1)` on the Riemann sphere is one**: the twist at `∞` of the trivial
+line bundle over `OnePoint ℂ` satisfies `⟨e(𝒪(∞)_ℝ), [ℙ¹]⟩ = 1`. Its holomorphic section `z`
+(`TauCeti.contMDiff_pointTwistOfPole_affineChart`) has the single simple zero `0`. -/
+theorem evalFundamentalClass_complexEulerClass_pointTwist_infty :
+    ((complexHomologicalOrientation (OnePoint ℂ)).evalFundamentalClass
+        Complex.finrank_real_complex (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id _)
+        (complexEulerClass ℂ (pointTwistCore ℂ (Bundle.Trivial (OnePoint ℂ) ℂ) ∞).Fiber
+          (r := 0) (Module.finrank_self ℂ))).down = 1 :=
+  evalFundamentalClass_complexEulerClass_pointTwist_trivial _
 
 end TauCeti

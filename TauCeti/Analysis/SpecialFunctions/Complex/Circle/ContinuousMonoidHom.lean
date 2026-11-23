@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 

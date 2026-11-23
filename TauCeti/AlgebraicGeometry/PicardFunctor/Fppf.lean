@@ -76,6 +76,14 @@ def relativePicardAddPresheafMk (T : (Over S)ᵒᵖ)
     unfold relativePicardAddPresheaf
     exact Additive.ofMul (QuotientGroup.mk a)
 
+/-- Transport along `relativePicardAddPresheaf_eq` sends a represented additive section to the
+corresponding multiplicative class, written additively. -/
+lemma relativePicardAddPresheaf_eqToHom_app_mk (T : (Over S)ᵒᵖ)
+    (a : LineBundleClass (pullback T.unop.hom f)) :
+    (eqToHom (relativePicardAddPresheaf_eq f)).app T (relativePicardAddPresheafMk f T a) =
+      Additive.ofMul (QuotientGroup.mk a : (relativePicardPresheaf f).obj T) :=
+  (rfl)
+
 /-- A represented additive section is the transport of the corresponding multiplicative class. -/
 lemma relativePicardAddPresheafMk_eq (T : (Over S)ᵒᵖ)
     (a : LineBundleClass (pullback T.unop.hom f)) :
@@ -165,6 +173,15 @@ lemma relativePicardAddPresheafMk_eq_zero_iff (T : (Over S)ᵒᵖ)
       a ∈ (LineBundleClass.pullbackHom (pullback.fst T.unop.hom f)).range := by
   unfold relativePicardAddPresheafMk relativePicardAddPresheaf
   exact (ofMul_eq_zero (A := _ ⧸ _)).trans (QuotientGroup.eq_one_iff a)
+
+/-- Two line-bundle classes on `X_T` represent the same section of the additive relative Picard
+presheaf exactly when they have the same image in `Pic(X_T) / Pic(T)`. -/
+lemma relativePicardAddPresheafMk_eq_iff (T : (Over S)ᵒᵖ)
+    (a b : LineBundleClass (pullback T.unop.hom f)) :
+    relativePicardAddPresheafMk f T a = relativePicardAddPresheafMk f T b ↔
+      (QuotientGroup.mk a : (relativePicardPresheaf f).obj T) = QuotientGroup.mk b := by
+  unfold relativePicardAddPresheafMk relativePicardAddPresheaf
+  exact Additive.ofMul.injective.eq_iff
 
 /-- A line-bundle class pulled back from the base represents zero in the relative Picard
 presheaf. -/
