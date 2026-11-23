@@ -76,12 +76,6 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
 
 /-! ### Limits of acyclic presheaves -/
 
-/-- The augmentation of the Čech complex for `U`, as a natural transformation in the presheaf. -/
-private def cechAugmentationNatTrans :
-    (evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A ⟶ cechComplexFunctor (A := A) U where
-  app Q := cechAugmentation U hT Q
-  naturality _ _ α := (cechAugmentation_naturality U hT _ α).symm
-
 /-- **Limits of acyclic presheaves are acyclic.** If limits of shape `J` are exact in `A`, a limit
 of a `J`-shaped diagram of presheaves whose augmented Čech complexes for `U` are exact has an exact
 augmented Čech complex for `U`. -/

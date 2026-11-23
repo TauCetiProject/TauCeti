@@ -98,9 +98,7 @@ transformation in the presheaf `P`, passed to chain complexes in `Aᵒᵖ`. -/
 @[expose] def cechOpAugmentation : cechOpComplexFunctor U ⟶
     ((evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A).op ⋙
       opFunctor A (ComplexShape.up ℕ) :=
-  Functor.whiskerRight (NatTrans.op
-    { app := fun P ↦ cechAugmentation U hT P
-      naturality := fun _ _ α ↦ (cechAugmentation_naturality U hT _ α).symm })
+  Functor.whiskerRight (NatTrans.op (cechAugmentationNatTrans U hT))
     (opFunctor A (ComplexShape.up ℕ))
 
 /-- **The Čech double complex** of a cochain complex of presheaves `I` for the family `U`: the
