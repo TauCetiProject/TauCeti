@@ -43,13 +43,13 @@ isometries, whose tangent spaces are exactly the fixed tangent subspaces
 So on each normal fibre of a fixed component `M^K_d`, `K` acts by linear symplectic maps of the
 normal symplectic form (`TauCeti.SmoothEmbedding.symplecticNormalForm_fixedNormalRepresentation`)
 without nonzero fixed vectors
-(`IsNondegenerate.invariants_fixedNormalRepresentation_fixedPointsOfFinrank_eq_bot`); the
-smoothness of the normal symplectic form in the base point is not proved here. For a torus
-action this is the input to the decomposition of the normal spaces of the fixed components
-into nonzero weights. The hypothesis that the submanifold is symplectic cannot be dropped: the
-symplectic shear `(q, p) ↦ (q + p, p)` of `ℝ²` fixes the Lagrangian line `p = 0`, whose tangent
-vectors are exactly the fixed tangent vectors, and the normal class `[e₂]` is fixed although `e₂`
-is not.
+(`IsNondegenerate.invariants_fixedNormalRepresentation_fixedPointsOfFinrank_eq_bot`).
+For a torus action this is the input to the decomposition of the normal spaces of the fixed
+components into nonzero weights. The normal symplectic form depends smoothly on the base point
+(`TauCeti.SmoothEmbedding.contMDiff_symplecticNormalFlat`). The hypothesis that the submanifold
+is symplectic cannot be dropped: the symplectic shear `(q, p) ↦ (q + p, p)` of `ℝ²` fixes the
+Lagrangian line `p = 0`, whose tangent vectors are exactly the fixed tangent vectors, and the
+normal class `[e₂]` is fixed although `e₂` is not.
 
 ## Main results
 

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.PDE.Vortex.Dilation.Basic
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.PDE.SeibergWitten.LogModulusRatio
@@ -69,6 +70,11 @@ connection along the normal factor are exactly the pullbacks of plane vortices o
 (curvature coefficient `r / 4`), equivalently of normalized plane vortices in the coordinate
 `√(2r) z`.
 
+The base coordinate `w = ⟪e₀, ·⟫ + i ⟪e₁, ·⟫` (`baseCoord`) is the normal coordinate of the frame
+with its base and normal planes swapped. The derivative along `v` of a function of `(w, z)` is
+the sum of the derivatives of its base and normal slices along `w(v)` and `z(v)`
+(`fderiv_comp_baseCoord_normalCoord_apply`).
+
 For a solution `(b, α u₀)` that is not assumed base independent:
 
 * **`J`-invariance.** A two-form whose self-dual part is a multiple of `ω` is `J`-invariant
@@ -89,8 +95,10 @@ For a solution `(b, α u₀)` that is not assumed base independent:
   `TauCeti.eq_zero_of_tendsto_comap_norm_starProjection_of_mul_laplacian_nonneg`, since `|z(y)|`
   is the length of the projection of `y` to the normal plane (`norm_normalCoord`).
 
-The boundedness of the log-modulus ratio, the gauge fixing row and the insertion into a curved
-normal tube are not treated here. That rescaled solutions of the large-parameter equations
+The boundedness of the log-modulus ratio, and with it the classification of the solutions whose
+section tends to the vacuum transversally, are in
+`TauCeti.Analysis.PDE.SeibergWitten.ConfinedLimit`. The gauge fixing row and the insertion into a
+curved normal tube are not treated here. That rescaled solutions of the large-parameter equations
 converge, in the sense of `1`-jets, only to solutions of the flat limiting equations is
 `TauCeti.Analysis.PDE.SeibergWitten.Rescaling`.
 
@@ -242,6 +250,78 @@ theorem fderiv_comp_normalCoord_apply {F : Type*} [NormedAddCommGroup F] [Normed
       ((fderiv ℝ c (normalCoord e y)).comp (normalCoord e)) y :=
     hc.hasFDerivAt.comp y (normalCoord e).hasFDerivAt
   rw [h.fderiv, ContinuousLinearMap.comp_apply]
+
+/-! Reindexing the frame by `i ↦ i + 2` swaps its base and normal planes. -/
+
+private theorem reindex_addRight_two_apply_zero : e.reindex (Equiv.addRight 2) 0 = e 2 := by
+  simp [show (-2 : Fin 4) = 2 by decide]
+
+private theorem reindex_addRight_two_apply_one : e.reindex (Equiv.addRight 2) 1 = e 3 := by
+  simp [show (-2 : Fin 4) = 2 by decide]
+
+private theorem reindex_addRight_two_apply_two : e.reindex (Equiv.addRight 2) 2 = e 0 := by
+  simp [show (-2 : Fin 4) = 2 by decide]
+
+private theorem reindex_addRight_two_apply_three : e.reindex (Equiv.addRight 2) 3 = e 1 := by
+  simp [show (-2 : Fin 4) = 2 by decide]
+
+variable (e) in
+/-- The **base coordinate** `w = ⟪e₀, v⟫ + i ⟪e₁, v⟫` of `V = ℂ_base × ℂ_normal` in the frame `e`,
+whose first two vectors span the base factor. It is the normal coordinate (`normalCoord`) of the
+frame reindexed by `i ↦ i + 2`, which swaps the base and normal planes. -/
+def baseCoord : V →L[ℝ] ℂ :=
+  normalCoord (e.reindex (Equiv.addRight 2))
+
+@[simp]
+theorem baseCoord_re (v : V) : (baseCoord e v).re = ⟪e 0, v⟫ := by
+  rw [baseCoord, normalCoord_re, reindex_addRight_two_apply_two]
+
+@[simp]
+theorem baseCoord_im (v : V) : (baseCoord e v).im = ⟪e 1, v⟫ := by
+  rw [baseCoord, normalCoord_im, reindex_addRight_two_apply_three]
+
+theorem baseCoord_apply (v : V) : baseCoord e v = ⟪e 0, v⟫ + ⟪e 1, v⟫ * I := by
+  apply Complex.ext <;> simp
+
+/-- The base coordinate of `e₀` is `1`. -/
+@[simp]
+theorem baseCoord_apply_zero : baseCoord e (e 0) = 1 := by
+  rw [baseCoord, ← reindex_addRight_two_apply_two]
+  exact normalCoord_apply_two
+
+/-- The base coordinate of `e₁` is `i`. -/
+@[simp]
+theorem baseCoord_apply_one : baseCoord e (e 1) = I := by
+  rw [baseCoord, ← reindex_addRight_two_apply_three]
+  exact normalCoord_apply_three
+
+/-- The base coordinate of `e₂` is `0`. -/
+@[simp]
+theorem baseCoord_apply_two : baseCoord e (e 2) = 0 := by
+  rw [baseCoord, ← reindex_addRight_two_apply_zero]
+  exact normalCoord_apply_zero
+
+/-- The base coordinate of `e₃` is `0`. -/
+@[simp]
+theorem baseCoord_apply_three : baseCoord e (e 3) = 0 := by
+  rw [baseCoord, ← reindex_addRight_two_apply_one]
+  exact normalCoord_apply_one
+
+/-- **Chain rule through the base and normal coordinates**: the derivative along `v` of a function
+of `(w, z)` is the derivative of its base slice along `w(v)` plus that of its normal slice along
+`z(v)`, at `(w(y), z(y))`. -/
+theorem fderiv_comp_baseCoord_normalCoord_apply {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {c : ℂ × ℂ → F} {y : V}
+    (hc : DifferentiableAt ℝ c (baseCoord e y, normalCoord e y)) (v : V) :
+    fderiv ℝ (fun y' ↦ c (baseCoord e y', normalCoord e y')) y v =
+      fderiv ℝ (fun w ↦ c (w, normalCoord e y)) (baseCoord e y) (baseCoord e v) +
+        fderiv ℝ (fun z ↦ c (baseCoord e y, z)) (normalCoord e y) (normalCoord e v) := by
+  have h : HasFDerivAt (fun y' ↦ c (baseCoord e y', normalCoord e y'))
+      ((fderiv ℝ c (baseCoord e y, normalCoord e y)).comp ((baseCoord e).prod (normalCoord e)))
+      y :=
+    hc.hasFDerivAt.comp y ((baseCoord e).prod (normalCoord e)).hasFDerivAt
+  rw [h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
+    fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hc]
 
 variable (e) in
 /-- The **base-independent connection** `b₁(z) ds + b₂(z) dt` on `V = ℂ_base × ℂ_normal` pulled
@@ -399,6 +479,18 @@ theorem alternatingFormEquiv_symm_neg_extDeriv_normalConnection
     ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I _ (π w), π, normalCoord_re,
     normalCoord_im, smul_eq_mul]
   ring
+
+/-- **The normal curvature component of the pulled-back connection** is the curvature coefficient
+`TauCeti.Vortex.curvature` of the plane field at the normal coordinate:
+`db(e₂, e₃) = ∂₁ b₂ - ∂₂ b₁` at `z(y)`. -/
+theorem extDeriv_normalConnection_apply_two_three (hx : DifferentiableAt ℝ x (normalCoord e y)) :
+    extDeriv (normalConnection e x) y ![e 2, e 3] = Vortex.curvature x (normalCoord e y) := by
+  have h := congrArg (⟪·, ιMulti ℝ 2 ![e 2, e 3]⟫)
+    (alternatingFormEquiv_symm_neg_extDeriv_normalConnection hx)
+  rw [inner_alternatingFormEquiv_symm_ιMulti, real_inner_smul_left, inner_ιMulti_two,
+    ContinuousAlternatingMap.neg_apply] at h
+  simp [e.orthonormal.inner_eq_zero (by decide : (2 : Fin 4) ≠ 3)] at h
+  linarith
 
 end Pullback
 
