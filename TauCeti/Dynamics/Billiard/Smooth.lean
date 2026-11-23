@@ -15,6 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Topology.Algebra.Group.Quotient
+import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
 # Smoothness of the billiard map
@@ -325,27 +326,14 @@ theorem continuous_nextCollisionEquiv_symm (hχ : ContDiff ℝ 2 χ) :
   (continuous_restrict_strip (χ.contDiffOn_nextCollision_inv one_ne_zero hχ).continuousOn
     fun x ↦ χ.neg_nextTangential_neg_mem_Ioo x.1 x.2).congr fun x ↦ by simp
 
-/-- A map of `AddCircle L × Y` is continuous when it lifts along the projection from `ℝ × Y` to a
-continuous map. Here `Y` is the space of tangential components, `(-1, 1)` for the billiard map and
-`[-1, 1]` for its extension to the closed cylinder. -/
-theorem continuous_of_lift {Y : Type*} [TopologicalSpace Y]
-    {g : AddCircle χ.period × Y → AddCircle χ.period × Y} {F : ℝ × Y → ℝ × Y} (hF : Continuous F)
-    (h : ∀ (s : ℝ) v, g (s, v) = (((F (s, v)).1 : AddCircle χ.period), (F (s, v)).2)) :
-    Continuous g := by
-  have hq : IsOpenQuotientMap (Prod.map ((↑) : ℝ → AddCircle χ.period) (id : Y → Y)) :=
-    QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
-  rw [← hq.continuous_comp_iff]
-  convert hq.continuous.comp hF using 1
-  funext ⟨s, v⟩
-  exact h s v
-
 /-- **The billiard map is a homeomorphism.** If `χ` is `C²`, the billiard map `β` of the table is
 a homeomorphism of the space of collision states `AddCircle L × (-1, 1)`. -/
 def billiardHomeomorph (hχ : ContDiff ℝ 2 χ) :
     AddCircle χ.period × Ioo (-1 : ℝ) 1 ≃ₜ AddCircle χ.period × Ioo (-1 : ℝ) 1 where
   toEquiv := χ.billiardMap
-  continuous_toFun := χ.continuous_of_lift (χ.continuous_nextCollisionEquiv hχ) fun s v ↦ by simp
-  continuous_invFun := χ.continuous_of_lift (χ.continuous_nextCollisionEquiv_symm hχ)
+  continuous_toFun :=
+    AddCircle.continuous_prod_of_lift (χ.continuous_nextCollisionEquiv hχ) fun s v ↦ by simp
+  continuous_invFun := AddCircle.continuous_prod_of_lift (χ.continuous_nextCollisionEquiv_symm hχ)
     fun s v ↦ by simp [AddCircle.coe_period]
 
 /-- The underlying bijection of the billiard homeomorphism is the billiard map. -/

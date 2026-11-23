@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Dynamics.Billiard.Smooth
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
 # The billiard map on the closed cylinder
@@ -206,7 +207,7 @@ theorem closedNextTangential_eq_inner (s v : ℝ) :
 
 /-- Time reversal of the extended collision parameter: `B'(t, -w)` has parameter `s + L`, where
 `(t, w) = B'(s, v)`. -/
-theorem closedNextParam_closedNextParam_neg (s v : ℝ) :
+theorem closedNextParam_closedNextParam_neg_closedNextTangential (s v : ℝ) :
     χ.closedNextParam (χ.closedNextParam s v) (-χ.closedNextTangential s v) = s + χ.period := by
   by_cases hv : v ∈ Ioo (-1) 1
   · have hw := χ.nextTangential_mem_Ioo (s := s) hv
@@ -221,7 +222,7 @@ theorem closedNextParam_closedNextParam_neg (s v : ℝ) :
 
 /-- Time reversal of the extended tangential component: `B'(t, -w)` has tangential component `-v`,
 where `(t, w) = B'(s, v)`. -/
-theorem closedNextTangential_closedNextParam_neg (s v : ℝ) :
+theorem closedNextTangential_closedNextParam_neg_closedNextTangential (s v : ℝ) :
     χ.closedNextTangential (χ.closedNextParam s v) (-χ.closedNextTangential s v) = -v := by
   by_cases hv : v ∈ Ioo (-1) 1
   · have hw := χ.nextTangential_mem_Ioo (s := s) hv
@@ -252,8 +253,8 @@ def closedNextCollisionEquiv : ℝ × Icc (-1 : ℝ) 1 ≃ ℝ × Icc (-1 : ℝ)
     ⟨-χ.closedNextTangential x.1 (-x.2), χ.neg_closedNextTangential_neg_mem_Icc x.1 x.2⟩)
   left_inv x := by
     ext
-    · simp [χ.closedNextParam_closedNextParam_neg]
-    · simp [χ.closedNextTangential_closedNextParam_neg]
+    · simp [χ.closedNextParam_closedNextParam_neg_closedNextTangential]
+    · simp [χ.closedNextTangential_closedNextParam_neg_closedNextTangential]
   right_inv x := by
     -- The inverse moves the parameter back by one period; undo this by the deck translation.
     have hp := χ.closedNextParam_add_period (χ.closedNextParam x.1 (-x.2) - χ.period)
@@ -263,8 +264,8 @@ def closedNextCollisionEquiv : ℝ × Icc (-1 : ℝ) 1 ≃ ℝ × Icc (-1 : ℝ)
     rw [sub_add_cancel] at hp ht
     ext
     · simp only
-      linarith [χ.closedNextParam_closedNextParam_neg x.1 (-x.2)]
-    · simp [← ht, χ.closedNextTangential_closedNextParam_neg]
+      linarith [χ.closedNextParam_closedNextParam_neg_closedNextTangential x.1 (-x.2)]
+    · simp [← ht, χ.closedNextTangential_closedNextParam_neg_closedNextTangential]
 
 @[simp]
 theorem closedNextCollisionEquiv_apply (x : ℝ × Icc (-1 : ℝ) 1) :
@@ -426,6 +427,11 @@ theorem coe_closedNextCollisionHomeomorph (hχ : ContDiff ℝ 2 χ) :
     ⇑(χ.closedNextCollisionHomeomorph hχ) = χ.closedNextCollisionEquiv :=
   (rfl)
 
+@[simp]
+theorem coe_closedNextCollisionHomeomorph_symm (hχ : ContDiff ℝ 2 χ) :
+    ⇑(χ.closedNextCollisionHomeomorph hχ).symm = χ.closedNextCollisionEquiv.symm :=
+  (rfl)
+
 /-! ### The closed cylinder -/
 
 /-- The class in `AddCircle L × [-1, 1]` of the extended next collision of `(s, v)` depends only on
@@ -475,6 +481,17 @@ theorem closedBilliardMap_coe (s : ℝ) (v : Icc (-1 : ℝ) 1) :
         ⟨χ.closedNextTangential s v, χ.closedNextTangential_mem_Icc s v.property⟩) := by
   simp [closedBilliardMap]
 
+/-- The inverse of the extended billiard map sends the class of a state `(s, v)` of the closed
+strip to the class of `(t, -w)`, where `(t, w)` is the extended next collision of `(s, -v)`. -/
+@[simp]
+theorem closedBilliardMap_symm_coe (s : ℝ) (v : Icc (-1 : ℝ) 1) :
+    χ.closedBilliardMap.symm ((s : AddCircle χ.period), v) =
+      ((χ.closedNextParam s (-v) : AddCircle χ.period),
+        ⟨-χ.closedNextTangential s (-v), χ.neg_closedNextTangential_neg_mem_Icc s v⟩) := by
+  simp only [closedBilliardMap, Equiv.coe_fn_symm_mk, Periodic.lift_coe,
+    closedNextCollisionEquiv_symm_apply, Prod.map_apply, id]
+  rw [← AddCircle.coe_add_period, sub_add_cancel]
+
 /-- The extended billiard map fixes the boundary circle `v = 1` pointwise. -/
 theorem closedBilliardMap_one (θ : AddCircle χ.period) :
     χ.closedBilliardMap (θ, ⟨1, by norm_num, le_rfl⟩) = (θ, ⟨1, by norm_num, le_rfl⟩) := by
@@ -505,10 +522,11 @@ the open cylinder (`TauCeti.StrictConvexBilliardTable.closedBilliardMap_inclusio
 def closedBilliardHomeomorph (hχ : ContDiff ℝ 2 χ) :
     AddCircle χ.period × Icc (-1 : ℝ) 1 ≃ₜ AddCircle χ.period × Icc (-1 : ℝ) 1 where
   toEquiv := χ.closedBilliardMap
-  continuous_toFun := χ.continuous_of_lift (χ.continuous_closedNextCollisionEquiv hχ)
+  continuous_toFun := AddCircle.continuous_prod_of_lift (χ.continuous_closedNextCollisionEquiv hχ)
     fun s v ↦ by simp
-  continuous_invFun := χ.continuous_of_lift (χ.continuous_closedNextCollisionEquiv_symm hχ)
-    fun s v ↦ by simp [closedBilliardMap]
+  continuous_invFun :=
+    AddCircle.continuous_prod_of_lift (χ.continuous_closedNextCollisionEquiv_symm hχ)
+      fun s v ↦ by simp [closedBilliardMap]
 
 @[simp]
 theorem coe_closedBilliardHomeomorph (hχ : ContDiff ℝ 2 χ) :
