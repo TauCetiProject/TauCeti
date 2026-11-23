@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer.Orthogonality
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.BaseChange
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.BaseChange
@@ -36,6 +37,8 @@ torsion bases or roots of unity in the ground field.
   field extensions.
 * `TauCeti.Isogeny.brBaseChange_kerWeilBrauerPairing`: localization of the Brauer class of the
   isogeny Weil cup product to the base change `φ_L` on the restricted classes.
+* `TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`: vanishing after restriction
+  of classes in the Selmer local-condition kernels.
 
 ## References
 
@@ -196,8 +199,16 @@ theorem kerH1WeilPairing_kerRes
       (KummerCoeff L (φ.baseChange L).degree) ((φ.baseChange L).kerCoeffWeilPairing hnL)
       continuous_of_discreteTopology ((φ.baseChange L).kerCoeffWeilPairing_smul hnL) x y)
       (DFunLike.congr_fun (φ.kerRes_eq_explicitMap1 τ) a)
-      (φ.dual.kerH1Congr_kerRes_eq_explicitMap1 τ (φ.ofIsogeny_dual_baseChange L) b)))
-  have h2 := (explicitCoeff2_kummerCoeffInclusion_explicitMap2 τ hd _).trans
+      ((Hom.kerH1Congr_apply (φ.ofIsogeny_dual_baseChange L) (φ.dual.kerRes τ b)).trans
+        ((congrArg (explicitCoeff1 (AbsoluteGaloisGroup L)
+            (ofIsogeny (φ.dual.baseChange L)).KerCoeff
+            (kerCoeffCongrHom (φ.ofIsogeny_dual_baseChange L)) continuous_of_discreteTopology)
+            (DFunLike.congr_fun (φ.dual.kerRes_eq_explicitMap1 τ) b)).trans
+          (explicitCoeff1_explicitMap1 _ _ _ _ _ _ _ _ b)))))
+  have h2 := (explicitCoeff2_explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K φ.degree)
+      (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange φ.degree τ) continuous_of_discreteTopology
+      (kummerCoeffBaseChange_smul φ.degree τ) (kummerCoeffInclusion L hd)
+      continuous_of_discreteTopology (φ.kerH1WeilPairing hn a b)).trans
     (congrArg _ (φ.kerH1WeilPairing_eq_explicitCup11 hn a b))
   exact h1.trans ((explicitMap2_explicitCup11
     (G := AbsoluteGaloisGroup K) (M := (ofIsogeny φ).KerCoeff) (N := (ofIsogeny φ.dual).KerCoeff)
@@ -221,6 +232,8 @@ theorem kerH1WeilPairing_kerRes
     a b).symm.trans h2.symm)
 
 end
+
+section
 
 variable {L : Type*} [Field L] [Algebra K L] (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
   (hn : IsUnit (φ.degree : K))
@@ -303,5 +316,26 @@ theorem brBaseChange_kerWeilBrauerPairing (hnL : IsUnit ((φ.baseChange L).degre
     continuous_of_discreteTopology continuous_of_discreteTopology continuous_of_discreteTopology
     (φ.kerCoeffBaseChange_smul τ) (φ.dualKerCoeffBaseChange_smul τ)
     (unitsCoeffBaseChange_smul τ) (φ.unitsCoeffBaseChange_kerCoeffUnitsPairing τ hn hnL) a b
+
+end
+
+/-- **The Selmer local conditions are orthogonal after restriction.** Let `L/K` be any extension
+in which the degree of `φ` is invertible. If the images of `a ∈ H¹(K, E₁[φ])` and
+`b ∈ H¹(K, E₂[φ̂])` in `H¹(L, E₁)` and `H¹(L, E₂)` are trivial, then the Brauer-valued isogeny
+Weil cup of their restrictions, for the base change of `φ` and its dual, vanishes. -/
+theorem kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero
+    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
+    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
+    {L : Type*} [Field L] [Algebra K L] (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
+    (hnL : IsUnit ((φ.baseChange L).degree : L))
+    (ha : W₁.pointRes τ
+      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
+    (hb : W₂.pointRes τ
+      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
+    (φ.baseChange L).kerWeilBrauerPairing hnL (φ.kerRes τ a) (φ.dualKerRes τ b) = 0 := by
+  refine ((φ.baseChange L).kerWeilBrauerPairing_eq_zero_iff hnL _ _).2
+    ((φ.baseChange L).kerH1WeilPairing_eq_zero_of_mem_ker hnL ?_ ?_)
+  · rw [AddMonoidHom.mem_ker, ← pointRes_kerCoeffIncl, ha]
+  · rw [AddMonoidHom.mem_ker, ← pointRes_dualKerCoeffIncl, hb]
 
 end TauCeti.Isogeny
