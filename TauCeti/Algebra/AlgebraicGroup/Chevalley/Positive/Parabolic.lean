@@ -164,36 +164,17 @@ theorem closure_simpleRootPair_le_normalizer_puncturedPositivePoints (i : Fin t.
         Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
           (t.simpleIndex ht i) (t.simpleIndex ht i)) A)) ≤
       Subgroup.normalizer (D.puncturedPositivePoints A i : Set (D.points A)) := by
-  let α := t.simpleIndex ht i
-  let β := (t.simplyConnectedRootDatum ht).reflectionPerm α α
-  let e := Units.mapEquiv (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
-  have he : e.toMonoidHom =
-      Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv := by
-    ext x
-    simp [e]
   have h := DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton
     D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator i (CommAlgCat.of ℤ A)
   rw [← MonoidHom.coe_range, ← MonoidHom.coe_range, ← Subgroup.sup_eq_closure,
     ← D.subsystemSubgroup_singleton, ← D.subsystemSubgroup_singleton,
     ← D.subsystemSubgroup_union, ← Set.insert_eq, ← D.subsystemSubgroup_eq_iSup] at h
-  -- Transport the lattice normalization forward via `e` and restrict into `D.points A`.
-  have hmap :
-      (D.subsystemSubgroup {α, β} (CommAlgCat.of ℤ A)).map e.toMonoidHom ≤
-        Subgroup.normalizer
-          ((D.subsystemSubgroup (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {α})
-            (CommAlgCat.of ℤ A)).map e.toMonoidHom : Set _) :=
-    (Subgroup.map_mono h).trans_eq (Subgroup.map_equiv_normalizer_eq _ e)
-  have hsub := Subgroup.comap_mono (f := (D.points A).subtype) hmap
-  simp only [Subgroup.comap_subtype] at hsub
-  rw [Subgroup.subgroupOf_normalizer_eq (he ▸ D.map_subsystemSubgroup_le_points _ A),
-    he, ← D.subsystemPoints_def, ← D.subsystemPoints_def,
-    ← D.puncturedPositivePoints_def] at hsub
-  refine le_trans ((Subgroup.closure_le _).mpr ?_) hsub
-  rintro _ (⟨u, rfl⟩ | ⟨u, rfl⟩)
-  · exact D.rootSubgroupPoints_mem_subsystemPoints A (Set.mem_insert α {β}) u
-  · exact D.rootSubgroupPoints_mem_subsystemPoints A
-      (Set.mem_insert_of_mem α (Set.mem_singleton β)) u
+  have hpts := D.subsystemPoints_le_normalizer_of_subsystemSubgroup h
+  rw [Set.insert_eq, D.subsystemPoints_union, D.subsystemPoints_singleton,
+    D.subsystemPoints_singleton, ← D.puncturedPositivePoints_def, Subgroup.sup_eq_closure,
+    MonoidHom.coe_range, MonoidHom.coe_range] at hpts
+  exact hpts
 
 /-- The simple root subgroup `X_{αᵢ}` normalizes the punctured positive subgroup `U⁽ⁱ⁾`. -/
 theorem range_rootSubgroupPoints_le_normalizer_puncturedPositivePoints (i : Fin t.rank) :
