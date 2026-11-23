@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Cylinder.SliceAverage
+public import TauCeti.Analysis.Sobolev.Cylinder.Slice.Average
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.NonzeroModes
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -48,9 +48,12 @@ modes carry no kernel.
   (`TauCeti.SymplecticForm.sliceAverageL_eq_self_of_floerSobolevOperator_eq_zero`), whatever the
   regularity of the element.
 
-This gives, at the Sobolev level and without the hypotheses on the second derivative of `X_H` and
-on `γ'`, the `t`-independence half of
-`TauCeti.SymplecticForm.forall_floerLinearization_comp_fst_eq_zero_iff`. The ordinary differential
+This is the `W^{1,2}` analogue of the `t`-independence half of
+`TauCeti.SymplecticForm.forall_floerLinearization_comp_fst_eq_zero_iff`: kernel elements that lie in
+`W^{1,2}` do not depend on `t`, without that theorem's hypotheses on the second derivative of `X_H`
+and on `γ'`. It does not imply that half, which covers every bounded periodic `C²` kernel element;
+bounded kernel elements that are not square integrable on the cylinder, such as nonzero ones that
+do not decay in `s`, are not treated here. The ordinary differential
 equation on the zero mode, the converse, the cokernel, and the identification of the zero mode with
 the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ` on `W^{1,2}(ℝ, V)` are not treated here.
 
