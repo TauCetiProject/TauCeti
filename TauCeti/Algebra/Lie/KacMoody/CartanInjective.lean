@@ -48,6 +48,9 @@ nonzero vector of weight `μ`.
 
 * `TauCeti.KacMoody.cartanElement_injective`: Cartan injectivity of the Kac–Moody algebra of a
   realization of a generalized Cartan matrix.
+* `TauCeti.KacMoody.cartanElement_coroot_ne_zero`, `TauCeti.KacMoody.positiveGenerator_ne_zero`
+  and `TauCeti.KacMoody.negativeGenerator_ne_zero`: the simple coroots `hᵢ` and the generators
+  `eᵢ`, `fᵢ` are nonzero in the Kac–Moody algebra.
 * `TauCeti.KacMoody.lie_ad_pow_lie_eq_zero`: for a generalized Cartan matrix, the lowering
   generators kill the raising Serre elements in any Lie algebra where the Chevalley relations
   hold (Kac, §3.3).
@@ -614,6 +617,32 @@ theorem cartanElement_injective (hdiag : ∀ i, A i i = 2) (hneg : ∀ i j, i �
   rw [lift_cartanElement, map_zero, LinearMap.zero_apply, quotientCartan_mk_one] at h
   refine (smul_eq_zero.mp h).resolve_right fun h1 => one_notMem_serreIdeal (K := K) (A := A) ?_
   exact (LieSubmodule.Quotient.mk_eq_zero _).mp h1
+
+section GeneratorsNeZero
+
+variable (hdiag : ∀ i, A i i = 2) (hneg : ∀ i j, i ≠ j → A i j ≤ 0)
+  (hzero : ∀ i j, A i j = 0 → A j i = 0)
+include hdiag hneg hzero
+
+/-- For a generalized Cartan matrix, the simple coroot `hᵢ` is nonzero in the Kac–Moody
+algebra. -/
+theorem cartanElement_coroot_ne_zero (i : I) : cartanElement R (R.coroot i) ≠ 0 :=
+  (map_ne_zero_iff _ (cartanElement_injective hdiag hneg hzero)).2
+    (R.coroot_linearIndependent.ne_zero i)
+
+/-- For a generalized Cartan matrix, the raising generator `eᵢ` is nonzero in the Kac–Moody
+algebra. -/
+theorem positiveGenerator_ne_zero (i : I) : positiveGenerator R i ≠ 0 := fun h =>
+  cartanElement_coroot_ne_zero (R := R) hdiag hneg hzero i <| by
+    rw [← lie_positiveGenerator_negativeGenerator_self, h, zero_lie]
+
+/-- For a generalized Cartan matrix, the lowering generator `fᵢ` is nonzero in the Kac–Moody
+algebra. -/
+theorem negativeGenerator_ne_zero (i : I) : negativeGenerator R i ≠ 0 := fun h =>
+  cartanElement_coroot_ne_zero (R := R) hdiag hneg hzero i <| by
+    rw [← lie_positiveGenerator_negativeGenerator_self, h, lie_zero]
+
+end GeneratorsNeZero
 
 end KacMoody
 
