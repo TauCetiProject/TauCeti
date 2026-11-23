@@ -6,23 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Finite
-public import Mathlib.AlgebraicTopology.SimplicialSet.Skeleton
 public import TauCeti.AlgebraicTopology.RelativeCellComplex.Map
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Boundary
+public import TauCeti.AlgebraicTopology.SimplicialSet.Skeleton
 public import TauCeti.Topology.CWComplex.Abstract.Classical
-public import TauCeti.Topology.CWComplex.Abstract.ClosedEmbedding
-public import TauCeti.Topology.CWComplex.Abstract.Hausdorff
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
 public import TauCeti.Topology.CWComplex.Classical.Map
-import TauCeti.AlgebraicTopology.SimplicialSet.Skeleton
+import Mathlib.Data.Set.PowersetCard
 import TauCeti.CategoryTheory.ConcreteCategory.Basic
 
 /-!
 # The CW structure on geometric realizations of simplicial sets
 
-This file equips the geometric realization `|X|` of any simplicial set `X` with its canonical
-CW complex structure, with one `n`-cell for each nondegenerate `n`-simplex of `X` and
-characteristic map `SSet.toTopObjMk σ.1 ∘ TauCeti.standardCellBallToOrderedSimplex n`.
+This file equips the geometric realization `|X|` of any simplicial set `X` with a CW complex
+structure (using the chosen disk parametrization `TauCeti.standardCellBallToOrderedSimplex`),
+with canonical `n`-cell indexing by the nondegenerate `n`-simplices of `X`, canonical skeletal
+filtration by `|X.skeleton n|`, and characteristic maps
+`SSet.toTopObjMk σ.1 ∘ TauCeti.standardCellBallToOrderedSimplex n`.
 
 For any monomorphism `i : X ⟶ Y` in `SSet`, transporting Mathlib's simplicial relative cell complex
 `SSet.relativeCellComplexOfMono i` along the left adjoint `SSet.toTop` and reindexing its basic
@@ -43,7 +43,7 @@ Under this CW structure:
 * every simplicial map `f : X ⟶ Y` realizes to a cellular map (`SSet.mapsTo_toTop_map_skeletonLT`,
   `SSet.isCellular_toTop_map`);
 * every subcomplex `A : X.Subcomplex` realizes to a CW subcomplex
-  (`SSet.Subcomplex.toTopCWSubcomplex`), so the image of any monomorphism is a CW subcomplex
+  (`SSet.Subcomplex.toTopCWSubcomplex`), so the image of any simplicial map is a CW subcomplex
   (`SSet.range_toTop_map_eq_toTopCWSubcomplex`);
 * every compact subset of `|X|` is contained in the realization of a finite simplicial subcomplex
   (`SSet.exists_finite_subcomplex_of_isCompact`).
@@ -64,10 +64,11 @@ universe u
 
 namespace SSet
 
-/-- The geometric realization of a monomorphism `i : X ⟶ Y` of simplicial sets carries a canonical
+/-- The geometric realization of a monomorphism `i : X ⟶ Y` of simplicial sets carries a
 categorical relative CW complex structure, obtained by transporting `relativeCellComplexOfMono i`
 along the left adjoint `SSet.toTop` and replacing each realized simplex boundary inclusion
-`|∂Δ[n].ι|` by `TopCat.diskBoundaryInclusion n` via `SSet.toTopBoundaryInclusionArrowIso n`. -/
+`|∂Δ[n].ι|` by `TopCat.diskBoundaryInclusion n` via the chosen isomorphism
+`SSet.toTopBoundaryInclusionArrowIso n`. -/
 def toTopRelativeCWComplex {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] :
     TopCat.RelativeCWComplex (toTop.map i) :=
   ((relativeCellComplexOfMono i).map toTop).reindexCellTypes
@@ -89,8 +90,8 @@ private lemma toTopBotArrowIso_hom_right (X : SSet.{u}) :
     (toTopBotArrowIso X).hom.right = 𝟙 |X| :=
   rfl
 
-/-- The canonical categorical CW complex structure on the geometric realization `|X|` of a
-simplicial set `X`. -/
+/-- The categorical CW complex structure on the geometric realization `|X|` of a simplicial set `X`
+induced by `SSet.toTopRelativeCWComplex` and `SSet.toTopBoundaryInclusionArrowIso`. -/
 def toTopCWComplex (X : SSet.{u}) : TopCat.CWComplex |X| :=
   (toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex))).ofArrowIso (toTopBotArrowIso X)
 
@@ -102,12 +103,78 @@ instance t2Space_toTop (X : SSet.{u}) : T2Space |X| :=
 theorem cwType_toTop (X : SSet.{u}) : TauCeti.CWType |X| :=
   (toTopCWComplex X).cwType
 
+/-- The `n`-th categorical stage of `SSet.toTopRelativeCWComplex i` identifies with the geometric
+realization of `SSet.skeletonOfMono i n`. -/
+def toTopRelativeCWComplexStageIso {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n : ℕ) :
+    (toTopRelativeCWComplex i).F.obj n ≅ |(skeletonOfMono i n : SSet.{u})| :=
+  eqToIso (by simp [toTopRelativeCWComplex])
+
+/-- The stage isomorphism `SSet.toTopRelativeCWComplexStageIso` intertwines the stage inclusion of
+`SSet.toTopRelativeCWComplex i` with the realization of `(SSet.skeletonOfMono i n).ι`. -/
+@[simp, reassoc]
+lemma toTopRelativeCWComplexStageIso_hom_comp {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n : ℕ) :
+    (toTopRelativeCWComplexStageIso i n).hom ≫ toTop.map (skeletonOfMono i n).ι =
+      (toTopRelativeCWComplex i).incl.app n := by
+  rw [toTopRelativeCWComplexStageIso, eqToIso.hom]
+  simp only [toTopRelativeCWComplex, RelativeCellComplex.reindexCellTypes_incl_app,
+    RelativeCellComplex.map_incl_app]
+  rfl
+
+/-- The stage isomorphism `SSet.toTopRelativeCWComplexStageIso` intertwines the realization of
+`(SSet.skeletonOfMono i n).ι` with the stage inclusion of `SSet.toTopRelativeCWComplex i`. -/
+@[simp, reassoc]
+lemma toTopRelativeCWComplexStageIso_inv_comp {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n : ℕ) :
+    (toTopRelativeCWComplexStageIso i n).inv ≫ (toTopRelativeCWComplex i).incl.app n =
+      toTop.map (skeletonOfMono i n).ι := by
+  rw [← toTopRelativeCWComplexStageIso_hom_comp, Iso.inv_hom_id_assoc]
+
+private lemma skeletonOfMono_bot_eq_skeleton (X : SSet.{u}) (n : ℕ) :
+    skeletonOfMono (Subcomplex.ι (⊥ : X.Subcomplex)) n = X.skeleton n := by
+  simp [skeletonOfMono]
+
+/-- The `n`-th categorical stage of `SSet.toTopCWComplex X` identifies with the geometric
+realization of `X.skeleton n`. -/
+def toTopCWComplexStageIso (X : SSet.{u}) (n : ℕ) :
+    (toTopCWComplex X).F.obj n ≅ |(X.skeleton n : SSet.{u})| :=
+  eqToIso (congrArg (fun F ↦ F.obj n)
+      (RelativeCellComplex.ofArrowIso_F
+        (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex))) (toTopBotArrowIso X))) ≪≫
+    toTopRelativeCWComplexStageIso (Subcomplex.ι (⊥ : X.Subcomplex)) n ≪≫
+    toTop.mapIso (Subcomplex.eqToIso (skeletonOfMono_bot_eq_skeleton X n))
+
+/-- The stage isomorphism `SSet.toTopCWComplexStageIso` intertwines the stage inclusion of
+`SSet.toTopCWComplex X` with the realization of `(X.skeleton n).ι`. -/
+@[simp, reassoc]
+lemma toTopCWComplexStageIso_hom_comp (X : SSet.{u}) (n : ℕ) :
+    (toTopCWComplexStageIso X n).hom ≫ toTop.map (X.skeleton n).ι =
+      (toTopCWComplex X).incl.app n := by
+  have hι : (skeletonOfMono (Subcomplex.ι (⊥ : X.Subcomplex)) n).ι =
+      (Subcomplex.eqToIso (skeletonOfMono_bot_eq_skeleton X n)).hom ≫ (X.skeleton n).ι := by
+    simp
+  rw [toTopCWComplexStageIso, Iso.trans_hom, Iso.trans_hom, Category.assoc, Category.assoc,
+    Functor.mapIso_hom, ← toTop.map_comp, ← hι, toTopRelativeCWComplexStageIso_hom_comp]
+  dsimp only [toTopCWComplex]
+  rw [eqToIso.hom, RelativeCellComplex.ofArrowIso_incl_app, toTopBotArrowIso_hom_right]
+  exact (eqToHom_refl _ _ =≫ _).trans ((Category.id_comp _).trans (Category.comp_id _).symm)
+
+/-- The stage isomorphism `SSet.toTopCWComplexStageIso` intertwines the realization of
+`(X.skeleton n).ι` with the stage inclusion of `SSet.toTopCWComplex X`. -/
+@[simp, reassoc]
+lemma toTopCWComplexStageIso_inv_comp (X : SSet.{u}) (n : ℕ) :
+    (toTopCWComplexStageIso X n).inv ≫ (toTopCWComplex X).incl.app n =
+      toTop.map (X.skeleton n).ι := by
+  rw [← toTopCWComplexStageIso_hom_comp, Iso.inv_hom_id_assoc]
+
 /-- The `n`-cells attached in `toTopRelativeCWComplex i` identify canonically with the simplicial
 `n`-cells of `relativeCellComplexOfMono i`. -/
 def toTopRelativeCWComplexCellEquiv {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n : ℕ) :
     ((toTopRelativeCWComplex i).attachCells n (not_isMax n)).ι ≃
       relativeCellComplexOfMono.Cell i n :=
-  Equiv.refl _
+  (RelativeCellComplex.reindexCellTypesAttachCellsEquiv
+      ((relativeCellComplexOfMono i).map toTop) TopCat.RelativeCWComplex.basicCell
+      (fun _ _ ↦ .unit) (fun k _ ↦ toTopBoundaryInclusionArrowIso k) n (not_isMax n)).trans
+    (RelativeCellComplex.mapAttachCellsEquiv
+      (relativeCellComplexOfMono i) toTop n (not_isMax n))
 
 /-- The inclusion of an `n`-cell of `toTopRelativeCWComplex i` is the classifying map of its
 nondegenerate simplex, precomposed with `(toTopStdSimplexIsoDisk n).inv`. -/
@@ -116,26 +183,31 @@ lemma toTopRelativeCWComplex_cells_ι {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n
     (⟨n, not_isMax n, c⟩ : (toTopRelativeCWComplex i).Cells).ι =
       (toTopStdSimplexIsoDisk.{u} n).inv ≫
         toTop.map (yonedaEquiv.symm (toTopRelativeCWComplexCellEquiv i n c).simplex) := by
-  let c' : relativeCellComplexOfMono.Cell i n := toTopRelativeCWComplexCellEquiv i n c
-  have h1 : (⟨n, not_isMax n, c⟩ : (toTopRelativeCWComplex i).Cells).ι =
-      Arrow.rightFunc.map (toTopBoundaryInclusionArrowIso.{u} n).inv ≫
-        (⟨n, not_isMax n, c'⟩ : ((relativeCellComplexOfMono i).map toTop).Cells).ι :=
-    RelativeCellComplex.reindexCellTypes_cells_ι
+  have h1 := RelativeCellComplex.reindexCellTypes_cells_ι_attachCellsEquiv
+    ((relativeCellComplexOfMono i).map toTop) TopCat.RelativeCWComplex.basicCell
+    (fun _ _ ↦ .unit) (fun k _ ↦ toTopBoundaryInclusionArrowIso k) n (not_isMax n) c
+  have h2 := RelativeCellComplex.map_cells_ι_attachCellsEquiv
+    (relativeCellComplexOfMono i) toTop n (not_isMax n)
+    (RelativeCellComplex.reindexCellTypesAttachCellsEquiv
       ((relativeCellComplexOfMono i).map toTop) TopCat.RelativeCWComplex.basicCell
-      (fun _ _ ↦ .unit) (fun k _ ↦ toTopBoundaryInclusionArrowIso k) n (not_isMax n) c'
-  have h2 : (⟨n, not_isMax n, c'⟩ : ((relativeCellComplexOfMono i).map toTop).Cells).ι =
-      toTop.map (yonedaEquiv.symm c'.simplex) :=
-    (RelativeCellComplex.map_cells_ι (relativeCellComplexOfMono i) toTop n (not_isMax n) c').trans
-      (congrArg toTop.map (relativeCellComplexOfMono.Cell.ι_b_ι c'))
-  rw [h1, h2]
-  exact congrArg (· ≫ _) (toTopBoundaryInclusionArrowIso_inv_right n)
+      (fun _ _ ↦ .unit) (fun k _ ↦ toTopBoundaryInclusionArrowIso k) n (not_isMax n) c)
+  have h3 := congrArg toTop.map (relativeCellComplexOfMono.Cell.ι_b_ι
+    (toTopRelativeCWComplexCellEquiv i n c))
+  refine h1.trans ?_
+  rw [h2]
+  dsimp only [Arrow.rightFunc_map]
+  rw [toTopBoundaryInclusionArrowIso_inv_right]
+  exact congrArg ((toTopStdSimplexIsoDisk.{u} n).inv ≫ ·) h3
 
 /-- The `n`-cells attached in `toTopCWComplex X` identify canonically with the simplicial
 `n`-cells of `relativeCellComplexOfMono (Subcomplex.ι (⊥ : X.Subcomplex))`. -/
 def toTopCWComplexCellEquiv (X : SSet.{u}) (n : ℕ) :
     ((toTopCWComplex X).attachCells n (not_isMax n)).ι ≃
       relativeCellComplexOfMono.Cell (Subcomplex.ι (⊥ : X.Subcomplex)) n :=
-  toTopRelativeCWComplexCellEquiv (Subcomplex.ι (⊥ : X.Subcomplex)) n
+  (RelativeCellComplex.ofArrowIsoAttachCellsEquiv
+      (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex)))
+      (toTopBotArrowIso X) n (not_isMax n)).trans
+    (toTopRelativeCWComplexCellEquiv (Subcomplex.ι (⊥ : X.Subcomplex)) n)
 
 /-- The inclusion of an `n`-cell of `toTopCWComplex X` is the classifying map of its
 nondegenerate simplex, precomposed with `(toTopStdSimplexIsoDisk n).inv`. -/
@@ -144,21 +216,18 @@ lemma toTopCWComplex_cells_ι (X : SSet.{u}) (n : ℕ)
     (⟨n, not_isMax n, c⟩ : (toTopCWComplex X).Cells).ι =
       (toTopStdSimplexIsoDisk.{u} n).inv ≫
         toTop.map (yonedaEquiv.symm (toTopCWComplexCellEquiv X n c).simplex) := by
-  let c' : ((toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex))).attachCells n
-      (not_isMax n)).ι := c
-  have h1 : (⟨n, not_isMax n, c⟩ : (toTopCWComplex X).Cells).ι =
-      (⟨n, not_isMax n, c'⟩ :
-        (toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex))).Cells).ι ≫
-          (toTopBotArrowIso X).hom.right :=
-    RelativeCellComplex.ofArrowIso_cells_ι
-      (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex)))
-      (toTopBotArrowIso X) n (not_isMax n) c'
-  rw [h1, toTopBotArrowIso_hom_right, Category.comp_id]
-  exact toTopRelativeCWComplex_cells_ι (Subcomplex.ι (⊥ : X.Subcomplex)) n c'
+  have h1 := RelativeCellComplex.ofArrowIso_cells_ι_attachCellsEquiv
+    (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex)))
+    (toTopBotArrowIso X) n (not_isMax n) c
+  refine h1.trans ?_
+  rw [toTopBotArrowIso_hom_right, Category.comp_id, toTopRelativeCWComplex_cells_ι]
+  rfl
 
-/-- The canonical classical CW complex structure on the geometric realization `|X|` of a simplicial
-set `X`. Its `n`-cells correspond to the nondegenerate `n`-simplices of `X`, and each characteristic
-map is `SSet.toTopObjMk σ.1 ∘ TauCeti.standardCellBallToOrderedSimplex n`. -/
+/-- The classical CW complex structure on the geometric realization `|X|` of a simplicial set `X`
+induced by `SSet.toTopCWComplex X`. Its `n`-cells correspond canonically to the nondegenerate
+`n`-simplices of `X`, its skeletal filtration is the canonical realization filtration
+`|X.skeleton n|`, and each characteristic map is
+`SSet.toTopObjMk σ.1 ∘ TauCeti.standardCellBallToOrderedSimplex n`. -/
 @[instance_reducible]
 def simplicialRealizationCW (X : SSet.{u}) : CWComplex (Set.univ : Set |X|) :=
   (toTopCWComplex X).toCWComplex
@@ -178,8 +247,8 @@ def simplicialRealizationCWCellEquiv (X : SSet.{u}) (n : ℕ) :
 private lemma simplicialRealizationCWCellEquiv_coe (X : SSet.{u}) (n : ℕ)
     (i : (simplicialRealizationCW X).cell n) :
     (simplicialRealizationCWCellEquiv X n i).val =
-      (toTopCWComplexCellEquiv X n ((toTopCWComplex X).toCWComplexCellEquiv n i)).simplex :=
-  rfl
+      (toTopCWComplexCellEquiv X n ((toTopCWComplex X).toCWComplexCellEquiv n i)).simplex := by
+  simp [simplicialRealizationCWCellEquiv]
 
 /-- The characteristic map of a cell `i` of `simplicialRealizationCW X` on the closed unit ball is
 the simplex map `SSet.toTopObjMk` of the corresponding nondegenerate `n`-simplex, precomposed with
@@ -211,27 +280,8 @@ theorem range_toTop_map_skeleton_ι (X : SSet.{u}) (n : ℕ) :
     Set.range (toTop.map (X.skeleton n).ι) =
       (RelCWComplex.skeletonLT (Set.univ : Set |X|) n : Set |X|) := by
   let _ := simplicialRealizationCW X
-  have heq : (X.skeleton n : X.Subcomplex) =
-      skeletonOfMono (Subcomplex.ι (⊥ : X.Subcomplex)) n := by
-    simp [skeletonOfMono]
-  have hrange : Set.range ((toTopCWComplex X).incl.app n) =
-      Set.range (toTop.map (X.skeleton n).ι) := by
-    have hincl : (toTopCWComplex X).incl.app n =
-        toTop.map (skeletonOfMono (Subcomplex.ι (⊥ : X.Subcomplex)) n).ι := by
-      simp only [toTopCWComplex, toTopRelativeCWComplex,
-        RelativeCellComplex.ofArrowIso_incl_app,
-        RelativeCellComplex.reindexCellTypes_incl_app,
-        RelativeCellComplex.map_incl_app, toTopBotArrowIso_hom_right]
-      -- `(relativeCellComplexOfMono _).incl.app n` is definitionally `(skeletonOfMono _ n).ι`.
-      exact Category.comp_id _
-    rw [hincl]
-    have hι : (skeletonOfMono (Subcomplex.ι (⊥ : X.Subcomplex)) n).ι =
-        (Subcomplex.eqToIso heq.symm).hom ≫ (X.skeleton n).ι := by
-      simp
-    rw [hι, toTop.map_comp]
-    exact ConcreteCategory.range_comp_of_isIso (toTop.map (Subcomplex.eqToIso heq.symm).hom)
-      (toTop.map (X.skeleton n).ι)
-  rw [← hrange]
+  rw [← toTopCWComplexStageIso_inv_comp X n,
+    ConcreteCategory.range_comp_of_isIso (toTopCWComplexStageIso X n).inv]
   exact (toTopCWComplex X).range_incl_app_eq_toCWComplex_skeletonLT n
 
 /-- The realization of `X.skeleton (n + 1)` is the classical `n`-skeleton
@@ -260,9 +310,9 @@ theorem mapsTo_toTop_map_skeletonLT {X Y : SSet.{u}} (f : X ⟶ Y) (n : ℕ) :
       exact skeleton_le_preimage_skeleton f n m hy)
   have hg : g ≫ (Y.skeleton n).ι = (X.skeleton n).ι ≫ f := Subcomplex.lift_ι _ _
   rintro _ ⟨x, rfl⟩
-  refine ⟨toTop.map g x, ?_⟩
-  rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-    ← Functor.map_comp, ← Functor.map_comp, hg]
+  have hpt := ConcreteCategory.congr_hom (congrArg toTop.map hg) x
+  simp only [Functor.map_comp, ConcreteCategory.comp_apply] at hpt
+  exact ⟨toTop.map g x, hpt⟩
 
 /-- The geometric realization of any simplicial map preserves every classical `n`-skeleton of
 `SSet.simplicialRealizationCW`. -/
@@ -276,7 +326,7 @@ theorem mapsTo_toTop_map_skeleton {X Y : SSet.{u}} (f : X ⟶ Y) (n : ℕ) :
   let _ := simplicialRealizationCW Y
   simpa [CWComplex.skeleton] using mapsTo_toTop_map_skeletonLT f (n + 1)
 
-/-- **Every simplicial map realizes to a cellular map** between the canonical CW structures
+/-- **Every simplicial map realizes to a cellular map** between the induced CW structures
 `SSet.simplicialRealizationCW`. -/
 theorem isCellular_toTop_map {X Y : SSet.{u}} (f : X ⟶ Y) :
     letI := simplicialRealizationCW X
@@ -360,17 +410,14 @@ lemma mem_toTopCWSubcomplex_I_iff {X : SSet.{u}} (A : X.Subcomplex) (n : ℕ)
 
 end Subcomplex
 
-/-- The image of the realization of any monomorphism `i : X ⟶ Y` is the CW subcomplex
+/-- The image of the realization of any simplicial map `i : X ⟶ Y` is the CW subcomplex
 `(Subcomplex.range i).toTopCWSubcomplex`. -/
-lemma range_toTop_map_eq_toTopCWSubcomplex {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] :
+lemma range_toTop_map_eq_toTopCWSubcomplex {X Y : SSet.{u}} (i : X ⟶ Y) :
     letI := simplicialRealizationCW Y
     Set.range (toTop.map i) = ((Subcomplex.range i).toTopCWSubcomplex : Set |Y|) := by
   let _ := simplicialRealizationCW Y
-  rw [Subcomplex.coe_toTopCWSubcomplex]
-  have hcomp : Subcomplex.toRange i ≫ (Subcomplex.range i).ι = i := Subcomplex.toRange_ι i
-  conv_lhs => rw [← hcomp, toTop.map_comp]
-  exact ConcreteCategory.range_comp_of_isIso (toTop.map (Subcomplex.toRange i))
-    (toTop.map (Subcomplex.range i).ι)
+  rw [Subcomplex.coe_toTopCWSubcomplex, ← Subcomplex.toRange_ι i, toTop.map_comp]
+  exact ((TopCat.epi_iff_surjective _).1 inferInstance).range_comp _
 
 /-- **Compact subsets of geometric realizations lie in finite simplicial subcomplexes.**
 For any compact subset `K ⊆ |X|`, there is a finite subcomplex `A : X.Subcomplex` (`SSet.Finite A`)
@@ -404,41 +451,34 @@ namespace TauCeti
 
 open SSet
 
-/-- The CW structure on `|Δ[0]|` has a unique `0`-cell. -/
-@[instance_reducible]
-noncomputable def uniqueSimplicialRealizationCWStdSimplexZeroCellZero :
-    Unique ((simplicialRealizationCW (Δ[0] : SSet.{u})).cell 0) := by
-  haveI : Unique (Set.ofPred fun S : Finset (Fin 1) ↦ S.card = 1) :=
-    { default := ⟨Finset.univ, by decide⟩
-      uniq := fun ⟨S, hS⟩ ↦ Subtype.ext (Finset.eq_univ_of_card S (by simpa using hS)) }
-  exact ((simplicialRealizationCWCellEquiv (Δ[0] : SSet.{u}) 0).trans
-    (stdSimplex.nonDegenerateEquiv' (n := 0) (d := 0))).unique
-
-/-- The CW structure on `|Δ[0]|` has no cells of positive dimension. -/
-lemma isEmpty_simplicialRealizationCW_stdSimplex_zero_cell_succ (n : ℕ) :
-    IsEmpty ((simplicialRealizationCW (Δ[0] : SSet.{u})).cell (n + 1)) := by
-  refine (simplicialRealizationCWCellEquiv (Δ[0] : SSet.{u}) (n + 1)).isEmpty_congr.2 ?_
-  refine (stdSimplex.nonDegenerateEquiv' (n := 0) (d := n + 1)).isEmpty_congr.2 ?_
-  refine ⟨fun ⟨S, hS⟩ ↦ ?_⟩
-  have hle : S.card ≤ Fintype.card (Fin 1) := Finset.card_le_univ S
-  have hcard : S.card = n + 2 := hS
-  simp only [Fintype.card_fin] at hle
-  omega
-
 /-- The number of `k`-cells of `simplicialRealizationCW Δ[n]` is `Nat.choose (n + 1) (k + 1)`. -/
 lemma natCard_simplicialRealizationCW_stdSimplex_cell (n k : ℕ) :
     Nat.card ((simplicialRealizationCW (Δ[n] : SSet.{u})).cell k) =
       Nat.choose (n + 1) (k + 1) := by
-  let e := (simplicialRealizationCWCellEquiv (Δ[n] : SSet.{u}) k).trans
-    (stdSimplex.nonDegenerateEquiv' (n := n) (d := k))
-  rw [Nat.card_congr e]
-  let e' : (Set.ofPred fun S : Finset (Fin (n + 1)) ↦ S.card = k + 1) ≃
-      (Finset.univ : Finset (Fin (n + 1))).powersetCard (k + 1) :=
-    { toFun S := ⟨S.val, Finset.mem_powersetCard.2 ⟨Finset.subset_univ _, S.property⟩⟩
-      invFun S := ⟨S.val, (Finset.mem_powersetCard.1 S.property).2⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
-  rw [Nat.card_congr e', Nat.card_eq_fintype_card, Fintype.card_coe, Finset.card_powersetCard,
-    Finset.card_univ, Fintype.card_fin]
+  have he : (simplicialRealizationCW (Δ[n] : SSet.{u})).cell k ≃
+      Set.powersetCard (Fin (n + 1)) (k + 1) :=
+    (simplicialRealizationCWCellEquiv (Δ[n] : SSet.{u}) k).trans
+      (stdSimplex.nonDegenerateEquiv' (n := n) (d := k))
+  rw [Nat.card_congr he, Set.powersetCard.card, Nat.card_eq_fintype_card, Fintype.card_fin]
+
+/-- The CW structure on `|Δ[0]|` has a unique `0`-cell. -/
+@[instance_reducible]
+noncomputable def uniqueSimplicialRealizationCWStdSimplexZeroCellZero :
+    Unique ((simplicialRealizationCW (Δ[0] : SSet.{u})).cell 0) :=
+  have hcard := Nat.card_eq_one_iff_unique.1
+    (natCard_simplicialRealizationCW_stdSimplex_cell 0 0)
+  ⟨⟨Classical.choice hcard.2⟩, fun y ↦ @Subsingleton.elim _ hcard.1 y _⟩
+
+/-- The CW structure on `|Δ[0]|` has no cells of positive dimension. -/
+lemma isEmpty_simplicialRealizationCW_stdSimplex_zero_cell_succ (n : ℕ) :
+    IsEmpty ((simplicialRealizationCW (Δ[0] : SSet.{u})).cell (n + 1)) := by
+  have he : (simplicialRealizationCW (Δ[0] : SSet.{u})).cell (n + 1) ≃
+      Set.powersetCard (Fin 1) (n + 2) :=
+    (simplicialRealizationCWCellEquiv (Δ[0] : SSet.{u}) (n + 1)).trans
+      (stdSimplex.nonDegenerateEquiv' (n := 0) (d := n + 1))
+  have : _root_.Finite ((simplicialRealizationCW (Δ[0] : SSet.{u})).cell (n + 1)) :=
+    (Equiv.finite_iff he).2 inferInstance
+  rw [← Finite.card_eq_zero_iff, natCard_simplicialRealizationCW_stdSimplex_cell]
+  exact Nat.choose_eq_zero_of_lt (by omega)
 
 end TauCeti

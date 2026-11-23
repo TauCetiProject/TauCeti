@@ -343,17 +343,17 @@ radial identification with the Euclidean disk. -/
   c.toRelCWComplex_map_apply n i x
 
 /-- The image of the `n`-th categorical stage is the classical skeleton below dimension `n`. -/
-lemma range_incl_app_eq_toCWComplex_skeletonLT (c : CWComplex X) [T2Space X] (n : ℕ) :
+lemma range_incl_app_eq_toCWComplex_skeletonLT (c : CWComplex X) (n : ℕ) :
+    letI := c.t2Space
     letI := c.toCWComplex
     range (c.incl.app n) =
       (Topology.RelCWComplex.skeletonLT (univ : Set X) n : Set X) := by
+  let _ := c.t2Space
   let _ := c.toCWComplex
-  rw [Topology.RelCWComplex.coe_skeletonLT, empty_union]
-  refine (c.range_incl_app_eq_union_toRelCWComplex_closedCell n).trans ?_
-  rw [union_eq_right.2 ((range_eq_empty (initial.to X)).subset.trans (empty_subset _))]
-  simp only [ENat.natCast_lt_natCast]
-  -- `c.toCWComplex` inherits `cell` and `map` (hence `closedCell`) definitionally
-  -- from `c.toRelCWComplex`.
+  refine (c.range_incl_app_eq_toRelCWComplex_skeletonLT n).trans ?_
+  -- `c.toCWComplex` shares `cell` and `map` (hence `closedCell`) definitionally with
+  -- `c.toRelCWComplex`, and its base is `∅` (`range (initial.to X) = ∅`).
+  simp [Topology.RelCWComplex.coe_skeletonLT, range_eq_empty (initial.to X)]
   rfl
 
 /-- **A space with a categorical CW structure has CW type.** -/

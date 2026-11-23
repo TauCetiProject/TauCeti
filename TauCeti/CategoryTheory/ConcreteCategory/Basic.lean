@@ -21,8 +21,6 @@ Elementwise and pointwise properties of morphisms and functors in a concrete cat
 * `CategoryTheory.Functor.map_comp_eq_of_apply_eq`: functorial composition out of a concrete
   category can be checked pointwise on the underlying functions, even when the morphisms have
   different presentations.
-* `CategoryTheory.Functor.range_map_comp_of_isIso`: precomposing with an isomorphism does not
-  change the range of a morphism under a functor into a concrete category.
 * `TauCeti.eqToHom_apply_heq`: applying the transport morphism `eqToHom h` along an equality
   `h : X = Y` of objects in a concrete category preserves elements up to heterogeneous equality.
 -/
@@ -31,7 +29,7 @@ public section
 
 open CategoryTheory
 
-universe w v' v u' u
+universe w v u
 
 namespace CategoryTheory.ConcreteCategory
 
@@ -58,15 +56,6 @@ lemma map_comp_eq_of_apply_eq {D : Type u} [Category.{v} D]
     F.map f ≫ F.map g = F.map h := by
   rw [← F.map_comp]
   exact congrArg F.map (ConcreteCategory.ext_apply fun x ↦ (comp_apply f g x).trans (hfg x))
-
-/-- Precomposing with an isomorphism does not change the range of the image under a functor into
-a concrete category. -/
-lemma range_map_comp_of_isIso {E : Type u'} [Category.{v'} E] {D : Type u} [Category.{v} D]
-    {FD : D → D → Type*} {CD : D → Type w} [∀ X Y, FunLike (FD X Y) (CD X) (CD Y)]
-    [ConcreteCategory D FD] (F : E ⥤ D) {X Y Z : E} (e : X ⟶ Y) [IsIso e] (g : Y ⟶ Z) :
-    Set.range (F.map (e ≫ g)) = Set.range (F.map g) := by
-  rw [F.map_comp]
-  exact ConcreteCategory.range_comp_of_isIso (F.map e) (F.map g)
 
 end CategoryTheory.Functor
 

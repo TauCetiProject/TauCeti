@@ -1,0 +1,619 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Normed.Group.BallSphere
+public import Mathlib.Analysis.Normed.Group.Constructions
+public import Mathlib.Analysis.Normed.Group.Real
+public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
+public import TauCeti.Geometry.Convex.ConvexSpace.Topology
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
+import Mathlib.Topology.Order.Lattice
+
+/-!
+# Explicit radial homeomorphism from the cell ball to the ordered standard simplex
+
+This file constructs the explicit radial homeomorphism
+`TauCeti.standardCellBallToOrderedSimplex n` from the sup-norm closed unit ball
+`Metric.closedBall (0 : Fin n → ℝ) 1` (the domain of classical CW characteristic maps) onto the
+ordered standard `n`-simplex `Convexity.StdSimplex ℝ (Fin (n + 1))`.
+
+The center `0` is sent to the barycenter `(1 / (n + 1), …, 1 / (n + 1))`. A nonzero point `z`
+defines the zero-sum tangent vector `w = (-∑ j, z j, z 0, …, z (n - 1))` in the ordered tangent
+basis `e_{j + 1} - e_0`, with maximal negative component `m = max_i (-w_i) > 0`; its image has
+barycentric weights `1 / (n + 1) + ‖z‖ * w_i / ((n + 1) * m)`. In dimension `0`, every point of the
+ball is `0` and maps to the unique point of the `0`-simplex.
+
+Because the smallest weight is `(1 - ‖z‖) / (n + 1)`, attained where `-w_i = m`, the boundary
+sphere `‖z‖ = 1` maps onto the simplicial boundary `{y | ∃ i, y.weights i = 0}`
+(`TauCeti.exists_weights_standardCellBallToOrderedSimplex_eq_zero_iff`), and the open ball
+`‖z‖ < 1` maps onto the open interior `{y | ∀ i, 0 < y.weights i}`
+(`TauCeti.forall_weights_standardCellBallToOrderedSimplex_pos_iff`).
+
+## Main definitions
+
+* `TauCeti.standardCellBallToOrderedSimplex`: the explicit radial homeomorphism from the sup-norm
+  closed unit ball of `Fin n → ℝ` onto `Convexity.StdSimplex ℝ (Fin (n + 1))`.
+
+## Main results
+
+* `TauCeti.weights_standardCellBallToOrderedSimplex`,
+  `TauCeti.weights_standardCellBallToOrderedSimplex_zero`, and
+  `TauCeti.weights_standardCellBallToOrderedSimplex_of_ne_zero`: barycentric weight formulas at zero
+  and away from zero.
+* `TauCeti.standardCellBallToOrderedSimplex_zero`,
+  `TauCeti.standardCellBallToOrderedSimplex_symm_subBarycenter`, and
+  `TauCeti.coe_standardCellBallToOrderedSimplex_symm_apply`: center-to-barycenter and inverse
+  formulas.
+* `TauCeti.exists_weights_standardCellBallToOrderedSimplex_eq_zero_iff`,
+  `TauCeti.norm_standardCellBallToOrderedSimplex_symm_eq_one_iff`, and
+  `TauCeti.forall_weights_standardCellBallToOrderedSimplex_pos_iff`: boundary and interior
+  characterizations.
+* `TauCeti.standardCellBallToOrderedSimplex_one_one`,
+  `TauCeti.standardCellBallToOrderedSimplex_one_neg_one`, and
+  `TauCeti.weights_standardCellBallToOrderedSimplex_two_single`: explicit boundary evaluations in
+  dimensions `1` and `2`.
+-/
+
+public section
+
+noncomputable section
+
+open Convexity Metric Set
+
+namespace TauCeti
+
+namespace StandardCellBallToOrderedSimplex
+
+/-- The zero-sum tangent vector `(-∑ j, z j, z 0, …, z (n - 1))` associated to `z : Fin n → ℝ` in
+the ordered tangent basis `e_{j + 1} - e_0` of the standard `n`-simplex. -/
+def tangentVec {n : ℕ} (z : Fin n → ℝ) : Fin (n + 1) → ℝ :=
+  Fin.cons (α := fun _ ↦ ℝ) (-∑ j, z j) z
+
+@[simp]
+lemma tangentVec_zero_coord {n : ℕ} (z : Fin n → ℝ) :
+    tangentVec z 0 = -∑ j, z j :=
+  (rfl)
+
+@[simp]
+lemma tangentVec_succ_coord {n : ℕ} (z : Fin n → ℝ) (j : Fin n) :
+    tangentVec z j.succ = z j :=
+  (rfl)
+
+private lemma sum_tangentVec {n : ℕ} (z : Fin n → ℝ) :
+    ∑ i, tangentVec z i = 0 := by
+  simp [tangentVec, Fin.sum_univ_succ]
+
+private lemma tangentVec_eq_zero_iff {n : ℕ} (z : Fin n → ℝ) :
+    tangentVec z = 0 ↔ z = 0 := by
+  constructor
+  · intro h
+    ext j
+    simpa [tangentVec] using congrFun h j.succ
+  · rintro rfl
+    ext i
+    refine Fin.cases ?_ ?_ i <;> simp [tangentVec]
+
+private lemma tangentVec_smul {n : ℕ} (t : ℝ) (z : Fin n → ℝ) :
+    tangentVec (t • z) = t • tangentVec z := by
+  ext i
+  refine Fin.cases ?_ ?_ i
+  · simp [tangentVec, Finset.mul_sum]
+  · intro j
+    simp [tangentVec]
+
+private lemma continuous_tangentVec {n : ℕ} (i : Fin (n + 1)) :
+    Continuous fun z : Fin n → ℝ ↦ tangentVec z i := by
+  refine Fin.cases ?_ ?_ i
+  · simp only [tangentVec, Fin.cons_zero]
+    fun_prop
+  · intro j
+    simp only [tangentVec, Fin.cons_succ]
+    fun_prop
+
+/-- The maximum of `-v i` over `i : Fin (n + 1)`. For a zero-sum vector `v`, this is nonnegative
+and strictly positive precisely when `v ≠ 0`. -/
+def negMax {n : ℕ} (v : Fin (n + 1) → ℝ) : ℝ :=
+  Finset.univ.sup' Finset.univ_nonempty fun i ↦ -v i
+
+private lemma neg_le_negMax {n : ℕ} (v : Fin (n + 1) → ℝ) (i : Fin (n + 1)) :
+    -v i ≤ negMax v :=
+  Finset.le_sup' (f := fun i ↦ -v i) (Finset.mem_univ i)
+
+private lemma exists_negMax_eq {n : ℕ} (v : Fin (n + 1) → ℝ) :
+    ∃ i : Fin (n + 1), negMax v = -v i := by
+  obtain ⟨i, -, hi⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty fun i ↦ -v i
+  exact ⟨i, hi⟩
+
+private lemma negMax_le_iff {n : ℕ} (v : Fin (n + 1) → ℝ) (c : ℝ) :
+    negMax v ≤ c ↔ ∀ i, -v i ≤ c := by
+  simp [negMax, Finset.sup'_le_iff]
+
+/-- If every `-v j` is at most `c` and `-v i = c` at some vertex `i`, then `negMax v = c`. -/
+lemma negMax_eq_of_attained {n : ℕ} {v : Fin (n + 1) → ℝ} {c : ℝ}
+    (hle : ∀ j, -v j ≤ c) {i : Fin (n + 1)} (heq : -v i = c) :
+    negMax v = c :=
+  le_antisymm ((negMax_le_iff v c).2 hle) (heq ▸ neg_le_negMax v i)
+
+private lemma negMax_nonneg_of_sum_eq_zero {n : ℕ} {v : Fin (n + 1) → ℝ} (hv : ∑ i, v i = 0) :
+    0 ≤ negMax v := by
+  by_contra h
+  push Not at h
+  have hpos : ∀ i ∈ Finset.univ, 0 < v i := fun i _ ↦ by
+    linarith [neg_le_negMax v i]
+  have hsum : 0 < ∑ i : Fin (n + 1), v i := Finset.sum_pos hpos Finset.univ_nonempty
+  linarith
+
+private lemma negMax_pos_of_sum_eq_zero {n : ℕ} {v : Fin (n + 1) → ℝ}
+    (hv : ∑ i, v i = 0) (hne : v ≠ 0) : 0 < negMax v := by
+  refine lt_of_le_of_ne (negMax_nonneg_of_sum_eq_zero hv) (fun h0 ↦ hne ?_)
+  have hnonneg : ∀ i ∈ Finset.univ, 0 ≤ v i := fun i _ ↦ by
+    have := neg_le_negMax v i
+    linarith
+  have hall := (Finset.sum_eq_zero_iff_of_nonneg hnonneg).1 hv
+  ext i
+  exact hall i (Finset.mem_univ i)
+
+private lemma negMax_smul_of_nonneg {n : ℕ} {t : ℝ} (ht : 0 ≤ t) (v : Fin (n + 1) → ℝ) :
+    negMax (t • v) = t * negMax v := by
+  apply le_antisymm
+  · rw [negMax_le_iff]
+    intro i
+    simp only [Pi.smul_apply, smul_eq_mul, ← mul_neg]
+    exact mul_le_mul_of_nonneg_left (neg_le_negMax v i) ht
+  · obtain ⟨i, hi⟩ := exists_negMax_eq v
+    rw [hi]
+    have h := neg_le_negMax (t • v) i
+    simpa [Pi.smul_apply, smul_eq_mul, mul_neg] using h
+
+private lemma abs_le_mul_negMax_of_sum_eq_zero {n : ℕ} {v : Fin (n + 1) → ℝ}
+    (hv : ∑ i, v i = 0) (i : Fin (n + 1)) :
+    |v i| ≤ (n + 1 : ℝ) * negMax v := by
+  have hm : 0 ≤ negMax v := negMax_nonneg_of_sum_eq_zero hv
+  have hlow : -((n + 1 : ℝ) * negMax v) ≤ v i := by
+    have h1 : -v i ≤ negMax v := neg_le_negMax v i
+    have h2 : negMax v ≤ (n + 1 : ℝ) * negMax v := by nlinarith
+    linarith
+  have hhigh : v i ≤ (n + 1 : ℝ) * negMax v := by
+    have hsplit := Finset.add_sum_erase Finset.univ v (Finset.mem_univ i)
+    have hvi : v i = ∑ j ∈ Finset.univ.erase i, (-v j) := by
+      rw [Finset.sum_neg_distrib]
+      linarith
+    rw [hvi]
+    calc ∑ j ∈ Finset.univ.erase i, (-v j)
+        ≤ ∑ _j ∈ Finset.univ.erase i, negMax v :=
+          Finset.sum_le_sum fun j _ ↦ neg_le_negMax v j
+      _ = (n : ℝ) * negMax v := by simp
+      _ ≤ (n + 1 : ℝ) * negMax v := by nlinarith
+  exact abs_le.2 ⟨hlow, hhigh⟩
+
+private lemma continuous_negMax {n : ℕ} :
+    Continuous (negMax (n := n)) := by
+  have h : (negMax (n := n)) =
+      Finset.univ.sup' Finset.univ_nonempty (fun i (v : Fin (n + 1) → ℝ) ↦ -v i) := by
+    funext v
+    simp [negMax]
+  rw [h]
+  exact Finset.sup'_induction (p := Continuous) Finset.univ_nonempty
+    (fun i (v : Fin (n + 1) → ℝ) ↦ -v i) (fun _ hf _ hg ↦ hf.sup hg)
+    fun i _ ↦ (continuous_apply i).neg
+
+/-- The `i`-th barycentric weight of the radial map from `Fin n → ℝ` to the affine hyperplane of
+the standard `n`-simplex. -/
+private def weightsFun (n : ℕ) (z : Fin n → ℝ) (i : Fin (n + 1)) : ℝ :=
+  1 / (n + 1 : ℝ) +
+    if z = 0 then 0 else ‖z‖ * tangentVec z i / ((n + 1 : ℝ) * negMax (tangentVec z))
+
+private lemma weightsFun_zero (n : ℕ) (i : Fin (n + 1)) :
+    weightsFun n 0 i = 1 / (n + 1 : ℝ) := by
+  simp [weightsFun]
+
+private lemma weightsFun_nonneg {n : ℕ} {z : Fin n → ℝ} (hz : ‖z‖ ≤ 1) (i : Fin (n + 1)) :
+    0 ≤ weightsFun n z i := by
+  unfold weightsFun
+  split_ifs with h0
+  · positivity
+  · have hm : 0 < negMax (tangentVec z) :=
+      negMax_pos_of_sum_eq_zero (sum_tangentVec z) (mt (tangentVec_eq_zero_iff z).1 h0)
+    have hden : 0 < (n + 1 : ℝ) * negMax (tangentVec z) := by positivity
+    have hle : ‖z‖ * (-tangentVec z i) ≤ negMax (tangentVec z) := by
+      calc ‖z‖ * (-tangentVec z i)
+          ≤ ‖z‖ * negMax (tangentVec z) :=
+            mul_le_mul_of_nonneg_left (neg_le_negMax (tangentVec z) i) (norm_nonneg z)
+        _ ≤ 1 * negMax (tangentVec z) := mul_le_mul_of_nonneg_right hz hm.le
+        _ = negMax (tangentVec z) := one_mul _
+    rw [div_add_div _ _ (by positivity) hden.ne']
+    refine div_nonneg ?_ (by positivity)
+    nlinarith
+
+private lemma sum_weightsFun {n : ℕ} (z : Fin n → ℝ) :
+    ∑ i, weightsFun n z i = 1 := by
+  unfold weightsFun
+  rw [Finset.sum_add_distrib]
+  have h1 : ∑ _i : Fin (n + 1), (1 / (n + 1 : ℝ)) = 1 := by
+    simp [mul_inv_cancel₀ (by positivity : (n + 1 : ℝ) ≠ 0)]
+  rw [h1]
+  split_ifs with h0
+  · simp
+  · have h2 : ∑ i : Fin (n + 1), ‖z‖ * tangentVec z i / ((n + 1 : ℝ) * negMax (tangentVec z)) =
+        (‖z‖ / ((n + 1 : ℝ) * negMax (tangentVec z))) * ∑ i, tangentVec z i := by
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      ring
+    rw [h2, sum_tangentVec, mul_zero, add_zero]
+
+private lemma continuous_weightsFun (n : ℕ) (i : Fin (n + 1)) :
+    Continuous fun z : Fin n → ℝ ↦ weightsFun n z i := by
+  rw [continuous_iff_continuousAt]
+  intro z₀
+  by_cases h0 : z₀ = 0
+  · subst h0
+    rw [Metric.continuousAt_iff]
+    intro ε hε
+    refine ⟨ε, hε, fun z hz ↦ ?_⟩
+    rw [Real.dist_eq, weightsFun_zero]
+    unfold weightsFun
+    rw [add_sub_cancel_left]
+    split_ifs with hz0
+    · simpa [abs_zero] using hε
+    · have hm : 0 < negMax (tangentVec z) :=
+        negMax_pos_of_sum_eq_zero (sum_tangentVec z) (mt (tangentVec_eq_zero_iff z).1 hz0)
+      have hden : 0 < (n + 1 : ℝ) * negMax (tangentVec z) := by positivity
+      have habs : |‖z‖ * tangentVec z i / ((n + 1 : ℝ) * negMax (tangentVec z))| ≤ ‖z‖ := by
+        rw [abs_div, abs_mul, abs_norm, abs_of_pos hden, div_le_iff₀ hden]
+        exact mul_le_mul_of_nonneg_left
+          (abs_le_mul_negMax_of_sum_eq_zero (sum_tangentVec z) i) (norm_nonneg z)
+      exact lt_of_le_of_lt habs (by simpa [dist_zero_right] using hz)
+  · have hopen : {z : Fin n → ℝ | z ≠ 0} ∈ nhds z₀ := isOpen_ne.mem_nhds h0
+    have hm : 0 < negMax (tangentVec z₀) :=
+      negMax_pos_of_sum_eq_zero (sum_tangentVec z₀) (mt (tangentVec_eq_zero_iff z₀).1 h0)
+    have hcont : ContinuousAt
+        (fun z : Fin n → ℝ ↦
+          1 / (n + 1 : ℝ) + ‖z‖ * tangentVec z i / ((n + 1 : ℝ) * negMax (tangentVec z))) z₀ := by
+      refine continuousAt_const.add ?_
+      refine (continuous_norm.continuousAt.mul (continuous_tangentVec i).continuousAt).div ?_
+        (by positivity)
+      exact continuousAt_const.mul (continuous_negMax.comp
+        (continuous_pi continuous_tangentVec)).continuousAt
+    refine hcont.congr ?_
+    filter_upwards [hopen] with z hz
+    simp [weightsFun, hz]
+
+private def toSimplex (n : ℕ) (z : closedBall (0 : Fin n → ℝ) 1) :
+    StdSimplex ℝ (Fin (n + 1)) where
+  weights := Finsupp.equivFunOnFinite.symm (weightsFun n z.val)
+  nonneg i := weightsFun_nonneg (mem_closedBall_zero_iff.1 z.property) i
+  total := by
+    rw [Finsupp.sum_fintype _ _ (by simp)]
+    simpa using sum_weightsFun z.val
+
+private lemma toSimplex_weights (n : ℕ) (z : closedBall (0 : Fin n → ℝ) 1) (i : Fin (n + 1)) :
+    (toSimplex n z).weights i = weightsFun n z.val i := (rfl)
+
+private lemma continuous_toSimplex (n : ℕ) : Continuous (toSimplex n) := by
+  rw [(StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (n + 1))).continuous_iff,
+    continuous_pi_iff]
+  intro i
+  exact (continuous_weightsFun n i).comp continuous_subtypeVal
+
+/-- The offset of a simplex point from the barycenter of the standard `n`-simplex. -/
+def offset {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) (i : Fin (n + 1)) : ℝ :=
+  y.weights i - 1 / (n + 1 : ℝ)
+
+private lemma sum_offset {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) :
+    ∑ i, offset y i = 0 := by
+  unfold offset
+  rw [Finset.sum_sub_distrib, StdSimplex.total_of_fintype]
+  simp [mul_inv_cancel₀ (by positivity : (n + 1 : ℝ) ≠ 0)]
+
+/-- The last `n` components of the offset of a simplex point from the barycenter. -/
+def offsetTail {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) (j : Fin n) : ℝ :=
+  offset y j.succ
+
+private lemma tangentVec_offsetTail {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) :
+    tangentVec (offsetTail y) = offset y := by
+  ext i
+  refine Fin.cases ?_ ?_ i
+  · simp only [tangentVec, Fin.cons_zero, offsetTail]
+    have h := sum_offset y
+    rw [Fin.sum_univ_succ] at h
+    linarith
+  · intro j
+    simp [tangentVec, offsetTail]
+
+private lemma offsetTail_eq_zero_iff {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) :
+    offsetTail y = 0 ↔ y = StdSimplex.subBarycenter Finset.univ Finset.univ_nonempty := by
+  constructor
+  · intro h
+    have hoff : offset y = 0 := by
+      rw [← tangentVec_offsetTail y, h, (tangentVec_eq_zero_iff _).2 rfl]
+    ext i
+    have hi := congrFun hoff i
+    simp only [offset, Pi.zero_apply, sub_eq_zero] at hi
+    simpa [StdSimplex.weights_subBarycenter] using hi
+  · rintro rfl
+    ext j
+    simp [offsetTail, offset, StdSimplex.weights_subBarycenter]
+
+private lemma negMax_offset_le {n : ℕ} (y : StdSimplex ℝ (Fin (n + 1))) :
+    negMax (offset y) ≤ 1 / (n + 1 : ℝ) := by
+  rw [negMax_le_iff]
+  intro i
+  have h := y.weights_nonneg i
+  unfold offset
+  linarith
+
+private def invVec (n : ℕ) (y : StdSimplex ℝ (Fin (n + 1))) : Fin n → ℝ :=
+  if offsetTail y = 0 then 0
+  else ((n + 1 : ℝ) * negMax (offset y) / ‖offsetTail y‖) • offsetTail y
+
+private lemma invVec_mem_closedBall (n : ℕ) (y : StdSimplex ℝ (Fin (n + 1))) :
+    invVec n y ∈ closedBall (0 : Fin n → ℝ) 1 := by
+  rw [mem_closedBall_zero_iff]
+  unfold invVec
+  split_ifs with h0
+  · simp
+  · have hm : 0 ≤ negMax (offset y) := negMax_nonneg_of_sum_eq_zero (sum_offset y)
+    have hnorm : 0 < ‖offsetTail y‖ := norm_pos_iff.2 h0
+    rw [norm_smul, Real.norm_of_nonneg (by positivity), div_mul_cancel₀ _ hnorm.ne']
+    have hle := negMax_offset_le y
+    calc (n + 1 : ℝ) * negMax (offset y)
+        ≤ (n + 1 : ℝ) * (1 / (n + 1 : ℝ)) := mul_le_mul_of_nonneg_left hle (by positivity)
+      _ = 1 := mul_one_div_cancel (by positivity)
+
+private def fromSimplex (n : ℕ) (y : StdSimplex ℝ (Fin (n + 1))) :
+    closedBall (0 : Fin n → ℝ) 1 :=
+  ⟨invVec n y, invVec_mem_closedBall n y⟩
+
+private lemma fromSimplex_toSimplex (n : ℕ) (z : closedBall (0 : Fin n → ℝ) 1) :
+    fromSimplex n (toSimplex n z) = z := by
+  apply Subtype.ext
+  dsimp only [fromSimplex]
+  by_cases hz : z.val = 0
+  · have htail : offsetTail (toSimplex n z) = 0 := by
+      ext j
+      simp [offsetTail, offset, toSimplex_weights, weightsFun, hz]
+    simp [invVec, htail, hz]
+  · have hm : 0 < negMax (tangentVec z.val) :=
+      negMax_pos_of_sum_eq_zero (sum_tangentVec z.val) (mt (tangentVec_eq_zero_iff z.val).1 hz)
+    set c : ℝ := ‖z.val‖ / ((n + 1 : ℝ) * negMax (tangentVec z.val)) with hc_def
+    have hc : 0 < c := by positivity
+    have hoff : offset (toSimplex n z) = c • tangentVec z.val := by
+      ext i
+      simp only [offset, toSimplex_weights, weightsFun, hz, ↓reduceIte, add_sub_cancel_left,
+        Pi.smul_apply, smul_eq_mul, hc_def]
+      ring
+    have htail : offsetTail (toSimplex n z) = c • z.val := by
+      ext j
+      have := congrFun hoff j.succ
+      simpa [offsetTail, tangentVec] using this
+    have htail_ne : offsetTail (toSimplex n z) ≠ 0 := by
+      rw [htail]
+      exact smul_ne_zero hc.ne' hz
+    have hnegMax : negMax (offset (toSimplex n z)) = c * negMax (tangentVec z.val) := by
+      rw [hoff, negMax_smul_of_nonneg hc.le]
+    have hmul : (n + 1 : ℝ) * negMax (offset (toSimplex n z)) = ‖z.val‖ := by
+      rw [hnegMax, hc_def]
+      field_simp
+    unfold invVec
+    simp only [htail_ne, ↓reduceIte]
+    rw [hmul, htail, norm_smul, Real.norm_of_nonneg hc.le, smul_smul]
+    have hcoef : ‖z.val‖ / (c * ‖z.val‖) * c = 1 := by field_simp
+    rw [hcoef, one_smul]
+
+private lemma toSimplex_fromSimplex (n : ℕ) (y : StdSimplex ℝ (Fin (n + 1))) :
+    toSimplex n (fromSimplex n y) = y := by
+  ext i
+  rw [toSimplex_weights]
+  dsimp only [fromSimplex]
+  by_cases htail : offsetTail y = 0
+  · have hoff : offset y = 0 := by
+      rw [← tangentVec_offsetTail y, htail, (tangentVec_eq_zero_iff _).2 rfl]
+    have hi := congrFun hoff i
+    simp only [offset, Pi.zero_apply, sub_eq_zero] at hi
+    simp [invVec, htail, weightsFun, hi]
+  · have hnorm : 0 < ‖offsetTail y‖ := norm_pos_iff.2 htail
+    have hm : 0 < negMax (offset y) :=
+      negMax_pos_of_sum_eq_zero (sum_offset y) (by
+        rw [← tangentVec_offsetTail y]
+        exact mt (tangentVec_eq_zero_iff _).1 htail)
+    set t : ℝ := (n + 1 : ℝ) * negMax (offset y) / ‖offsetTail y‖ with ht_def
+    have ht : 0 < t := by positivity
+    have hinv : invVec n y = t • offsetTail y := by simp [invVec, htail, ht_def]
+    have hinv_ne : invVec n y ≠ 0 := by
+      rw [hinv]
+      exact smul_ne_zero ht.ne' htail
+    have hinv_norm : ‖invVec n y‖ = (n + 1 : ℝ) * negMax (offset y) := by
+      rw [hinv, norm_smul, Real.norm_of_nonneg ht.le, ht_def, div_mul_cancel₀ _ hnorm.ne']
+    have htan : tangentVec (invVec n y) = t • offset y := by
+      rw [hinv, tangentVec_smul, tangentVec_offsetTail]
+    have hneg : negMax (tangentVec (invVec n y)) = t * negMax (offset y) := by
+      rw [htan, negMax_smul_of_nonneg ht.le]
+    unfold weightsFun
+    simp only [hinv_ne, ↓reduceIte]
+    rw [hinv_norm, hneg, htan, Pi.smul_apply, smul_eq_mul]
+    have hfrac : (n + 1 : ℝ) * negMax (offset y) * (t * offset y i) /
+        ((n + 1 : ℝ) * (t * negMax (offset y))) = offset y i := by
+      field_simp
+    rw [hfrac, offset]
+    ring
+
+end StandardCellBallToOrderedSimplex
+
+open StandardCellBallToOrderedSimplex
+
+/-- The explicit radial homeomorphism from the sup-norm closed unit `n`-ball onto the ordered
+standard `n`-simplex. It sends `0` to the barycenter `(1 / (n + 1), …, 1 / (n + 1))` and any
+nonzero `z` to the barycentric weights `1 / (n + 1) + ‖z‖ * w_i / ((n + 1) * max_j (-w_j))`, where
+`w = (-∑ j, z j, z 0, …, z (n - 1))`. -/
+def standardCellBallToOrderedSimplex (n : ℕ) :
+    closedBall (0 : Fin n → ℝ) 1 ≃ₜ StdSimplex ℝ (Fin (n + 1)) :=
+  (continuous_toSimplex n).homeoOfEquivCompactToT2
+    (f := {
+      toFun := toSimplex n
+      invFun := fromSimplex n
+      left_inv := fromSimplex_toSimplex n
+      right_inv := toSimplex_fromSimplex n })
+
+/-- The barycentric weight of `standardCellBallToOrderedSimplex n z` at vertex `i`. -/
+lemma weights_standardCellBallToOrderedSimplex (n : ℕ)
+    (z : closedBall (0 : Fin n → ℝ) 1) (i : Fin (n + 1)) :
+    (standardCellBallToOrderedSimplex n z).weights i =
+      1 / (n + 1 : ℝ) +
+        if z.val = 0 then 0
+        else ‖z.val‖ * tangentVec z.val i / ((n + 1 : ℝ) * negMax (tangentVec z.val)) :=
+  (rfl)
+
+/-- At `z = 0`, all barycentric weights of `standardCellBallToOrderedSimplex n` equal `1 / (n + 1)`.
+-/
+lemma weights_standardCellBallToOrderedSimplex_zero (n : ℕ) (i : Fin (n + 1)) :
+    (standardCellBallToOrderedSimplex n ⟨0, mem_closedBall_self zero_le_one⟩).weights i =
+      1 / (n + 1 : ℝ) := by
+  simp [weights_standardCellBallToOrderedSimplex]
+
+/-- Away from `0`, the `i`-th barycentric weight of `standardCellBallToOrderedSimplex n z` is
+`1 / (n + 1) + ‖z‖ * w_i / ((n + 1) * negMax w)`, where `w = tangentVec z.val`. -/
+lemma weights_standardCellBallToOrderedSimplex_of_ne_zero {n : ℕ}
+    {z : closedBall (0 : Fin n → ℝ) 1} (hz : z.val ≠ 0) (i : Fin (n + 1)) :
+    (standardCellBallToOrderedSimplex n z).weights i =
+      1 / (n + 1 : ℝ) +
+        ‖z.val‖ * tangentVec z.val i / ((n + 1 : ℝ) * negMax (tangentVec z.val)) := by
+  simp [weights_standardCellBallToOrderedSimplex, hz]
+
+/-- The center `0` of the ball maps to the barycenter of the standard simplex. -/
+@[simp]
+lemma standardCellBallToOrderedSimplex_zero (n : ℕ) :
+    standardCellBallToOrderedSimplex n ⟨0, mem_closedBall_self zero_le_one⟩ =
+      StdSimplex.subBarycenter Finset.univ Finset.univ_nonempty := by
+  ext i
+  simp [weights_standardCellBallToOrderedSimplex, StdSimplex.weights_subBarycenter]
+
+/-- The inverse of `standardCellBallToOrderedSimplex n` sends the barycenter of the standard
+simplex to `0`. -/
+@[simp]
+lemma standardCellBallToOrderedSimplex_symm_subBarycenter (n : ℕ) :
+    (standardCellBallToOrderedSimplex n).symm
+        (StdSimplex.subBarycenter Finset.univ Finset.univ_nonempty) =
+      ⟨0, mem_closedBall_self zero_le_one⟩ :=
+  (standardCellBallToOrderedSimplex n).symm_apply_eq.2
+    (standardCellBallToOrderedSimplex_zero n).symm
+
+open scoped Classical in
+/-- Explicit formula for the inverse of `standardCellBallToOrderedSimplex n` in `Fin n → ℝ`. -/
+lemma coe_standardCellBallToOrderedSimplex_symm_apply (n : ℕ)
+    (y : StdSimplex ℝ (Fin (n + 1))) :
+    (((standardCellBallToOrderedSimplex n).symm y : closedBall (0 : Fin n → ℝ) 1) : Fin n → ℝ) =
+      if y = StdSimplex.subBarycenter Finset.univ Finset.univ_nonempty then 0
+      else ((n + 1 : ℝ) * negMax (offset y) / ‖offsetTail y‖) • offsetTail y := by
+  change invVec n y = _
+  simp [invVec, offsetTail_eq_zero_iff]
+
+/-- A point of the closed unit ball lies on the unit sphere precisely when its image under
+`standardCellBallToOrderedSimplex n` has a vanishing barycentric weight. -/
+@[simp]
+lemma exists_weights_standardCellBallToOrderedSimplex_eq_zero_iff (n : ℕ)
+    (z : closedBall (0 : Fin n → ℝ) 1) :
+    (∃ i : Fin (n + 1), (standardCellBallToOrderedSimplex n z).weights i = 0) ↔ ‖z.val‖ = 1 := by
+  constructor
+  · rintro ⟨i, hi⟩
+    by_cases hz : z.val = 0
+    · simp only [weights_standardCellBallToOrderedSimplex, hz, ↓reduceIte, add_zero, one_div,
+        inv_eq_zero] at hi
+      exact absurd hi (by positivity)
+    · rw [weights_standardCellBallToOrderedSimplex_of_ne_zero hz] at hi
+      have hm : 0 < negMax (tangentVec z.val) :=
+        negMax_pos_of_sum_eq_zero (sum_tangentVec z.val) (mt (tangentVec_eq_zero_iff z.val).1 hz)
+      have heq : ‖z.val‖ * (-tangentVec z.val i) = negMax (tangentVec z.val) := by
+        have h := congrArg (· * ((n + 1 : ℝ) * negMax (tangentVec z.val))) hi
+        field_simp at h
+        linarith
+      have hle : ‖z.val‖ ≤ 1 := mem_closedBall_zero_iff.1 z.property
+      have hge : 1 ≤ ‖z.val‖ := by
+        by_contra hlt
+        push Not at hlt
+        have := mul_le_mul_of_nonneg_left (neg_le_negMax (tangentVec z.val) i) (norm_nonneg z.val)
+        nlinarith
+      exact le_antisymm hle hge
+  · intro h1
+    have hz : z.val ≠ 0 := fun h ↦ by simp [h] at h1
+    have hm : 0 < negMax (tangentVec z.val) :=
+      negMax_pos_of_sum_eq_zero (sum_tangentVec z.val) (mt (tangentVec_eq_zero_iff z.val).1 hz)
+    obtain ⟨i, hi⟩ := exists_negMax_eq (tangentVec z.val)
+    refine ⟨i, ?_⟩
+    rw [weights_standardCellBallToOrderedSimplex_of_ne_zero hz, h1, one_mul,
+      show tangentVec z.val i = -negMax (tangentVec z.val) by linarith]
+    field_simp
+    ring
+
+/-- A point of the ordered standard `n`-simplex maps to the unit sphere under
+`(standardCellBallToOrderedSimplex n).symm` exactly when it has a vanishing barycentric weight. -/
+lemma norm_standardCellBallToOrderedSimplex_symm_eq_one_iff (n : ℕ)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    ‖((standardCellBallToOrderedSimplex n).symm w).val‖ = 1 ↔
+      ∃ i : Fin (n + 1), w.weights i = 0 := by
+  rw [← exists_weights_standardCellBallToOrderedSimplex_eq_zero_iff, Homeomorph.apply_symm_apply]
+
+/-- A point of the closed unit ball lies in the open unit ball precisely when all barycentric
+weights of its image under `standardCellBallToOrderedSimplex n` are strictly positive. -/
+@[simp]
+lemma forall_weights_standardCellBallToOrderedSimplex_pos_iff (n : ℕ)
+    (z : closedBall (0 : Fin n → ℝ) 1) :
+    (∀ i : Fin (n + 1), 0 < (standardCellBallToOrderedSimplex n z).weights i) ↔ ‖z.val‖ < 1 := by
+  have hle : ‖z.val‖ ≤ 1 := mem_closedBall_zero_iff.1 z.property
+  rw [lt_iff_le_and_ne, and_iff_right hle, ne_eq,
+    ← exists_weights_standardCellBallToOrderedSimplex_eq_zero_iff]
+  push Not
+  exact ⟨fun h i ↦ (h i).ne',
+    fun h i ↦ lt_of_le_of_ne ((standardCellBallToOrderedSimplex n z).weights_nonneg i) (h i).symm⟩
+
+/-- In dimension `1`, `standardCellBallToOrderedSimplex 1` sends `1` to vertex `1`. -/
+lemma standardCellBallToOrderedSimplex_one_one :
+    standardCellBallToOrderedSimplex 1 ⟨fun _ ↦ 1, by simp [Pi.norm_def]⟩ =
+      StdSimplex.single 1 := by
+  ext i
+  have hne : (fun _ : Fin 1 ↦ (1 : ℝ)) ≠ 0 := fun h ↦ by simpa using congrFun h 0
+  have hnorm : ‖(fun _ : Fin 1 ↦ (1 : ℝ))‖ = 1 := by simp [Pi.norm_def]
+  have hmax : negMax (tangentVec (fun _ : Fin 1 ↦ (1 : ℝ))) = 1 :=
+    negMax_eq_of_attained (fun k ↦ by fin_cases k <;> norm_num [tangentVec])
+      (i := 0) (by norm_num [tangentVec])
+  rw [weights_standardCellBallToOrderedSimplex_of_ne_zero hne, hnorm, hmax]
+  fin_cases i <;> norm_num [tangentVec, StdSimplex.weights_single]
+
+/-- In dimension `1`, `standardCellBallToOrderedSimplex 1` sends `-1` to vertex `0`. -/
+lemma standardCellBallToOrderedSimplex_one_neg_one :
+    standardCellBallToOrderedSimplex 1 ⟨fun _ ↦ -1, by simp [Pi.norm_def]⟩ =
+      StdSimplex.single 0 := by
+  ext i
+  have hne : (fun _ : Fin 1 ↦ (-1 : ℝ)) ≠ 0 := fun h ↦ by simpa using congrFun h 0
+  have hnorm : ‖(fun _ : Fin 1 ↦ (-1 : ℝ))‖ = 1 := by simp [Pi.norm_def]
+  have hmax : negMax (tangentVec (fun _ : Fin 1 ↦ (-1 : ℝ))) = 1 :=
+    negMax_eq_of_attained (fun k ↦ by fin_cases k <;> norm_num [tangentVec])
+      (i := 1) (by norm_num [tangentVec])
+  rw [weights_standardCellBallToOrderedSimplex_of_ne_zero hne, hnorm, hmax]
+  fin_cases i <;> norm_num [tangentVec, StdSimplex.weights_single]
+
+/-- In dimension `2`, `standardCellBallToOrderedSimplex 2` sends `(1, 0)` to `(0, 2 / 3, 1 / 3)` on
+the face opposite vertex `0`. -/
+lemma weights_standardCellBallToOrderedSimplex_two_single :
+    let z : closedBall (0 : Fin 2 → ℝ) 1 := ⟨![1, 0], by
+      rw [mem_closedBall_zero_iff, pi_norm_le_iff_of_nonneg zero_le_one]
+      intro j; fin_cases j <;> norm_num⟩
+    (standardCellBallToOrderedSimplex 2 z).weights 0 = 0 ∧
+      (standardCellBallToOrderedSimplex 2 z).weights 1 = 2 / 3 ∧
+      (standardCellBallToOrderedSimplex 2 z).weights 2 = 1 / 3 := by
+  intro z
+  have hne : z.val ≠ 0 := fun h ↦ by simpa [z] using congrFun h 0
+  have hnorm : ‖z.val‖ = 1 := by
+    apply le_antisymm (mem_closedBall_zero_iff.1 z.property)
+    simpa [z] using norm_le_pi_norm z.val 0
+  have hmax : negMax (tangentVec z.val) = 1 :=
+    negMax_eq_of_attained (fun k ↦ by fin_cases k <;> norm_num [z, tangentVec, Fin.sum_univ_two])
+      (i := 0) (by norm_num [z, tangentVec, Fin.sum_univ_two])
+  simp only [weights_standardCellBallToOrderedSimplex_of_ne_zero hne, hnorm, hmax]
+  norm_num [z, tangentVec, Fin.sum_univ_two]
+
+end TauCeti

@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.RelativeCellComplex.AttachCells
 
 /-!
-# Attaching no cells
+# Cell attachments: empty, functorial, and reindexed attachments
 
 In a category with an initial object, an isomorphism `f : X₁ ⟶ X₂` is obtained by attaching an
 empty family of cells (`HomotopicalAlgebra.AttachCells.ofIsIso`): both empty coproducts are the
@@ -16,8 +16,16 @@ initial object, and the square formed by its identity and `f` is a pushout becau
 maps are isomorphisms. This fills the stages of a relative cell complex at which nothing is
 attached, for instance when all cells are attached at a single stage.
 
+A colimit-preserving functor carries cell attachments to cell attachments
+(`HomotopicalAlgebra.AttachCells.map`), preserving the cell index type and mapping each cell
+inclusion (`HomotopicalAlgebra.AttachCells.map_cell`), and reindexing cell types along arrow
+isomorphisms precomposes each cell inclusion with the inverse target isomorphism
+(`HomotopicalAlgebra.AttachCells.reindexCellTypes_cell`).
+
 ## References
 
+* M. Hovey, *Model Categories*, Mathematical Surveys and Monographs 63, American Mathematical
+  Society, 1999, Section 2.1.
 * R. Fritsch and R. Piccinini, *Cellular Structures in Topology*, Cambridge University Press,
   1990.
 -/
@@ -26,9 +34,11 @@ public section
 
 open CategoryTheory Limits
 
-universe w v u
+universe w t t' v v' u u'
 
 namespace HomotopicalAlgebra.AttachCells
+
+section OfIsIso
 
 variable {C : Type u} [Category.{v} C] [HasInitial C]
   {α : Type*} {A B : α → C} (g : ∀ a, A a ⟶ B a) {X₁ X₂ : C} (f : X₁ ⟶ X₂) [IsIso f]
@@ -51,5 +61,54 @@ noncomputable def ofIsIso : AttachCells.{w} g f where
 /-- No cells are attached in `AttachCells.ofIsIso`. -/
 instance : IsEmpty (ofIsIso.{w} g f).ι :=
   ⟨fun i ↦ i.elim⟩
+
+end OfIsIso
+
+section MapAndReindex
+
+variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D]
+  {α : Type t} {A B : α → C} {g : ∀ a, A a ⟶ B a} {X₁ X₂ : C} {f : X₁ ⟶ X₂}
+  (c : AttachCells.{w} g f)
+
+/-- A functor preserving the relevant coproducts and pushout sends a cell attachment to a cell
+attachment with the same cell index type and mapped basic cells. Exposed so that the cell index
+type `ι` and indexing map `π` remain definitionally equal to those of `c`, which statements about
+attached cells in `RelativeCellComplex.map` require in order to typecheck. -/
+@[expose] noncomputable def map (F : C ⥤ D)
+    [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
+    [PreservesColimit (Discrete.functor fun i ↦ B (c.π i)) F]
+    [PreservesColimit (span c.g₁ c.m) F] :
+    AttachCells.{w} (fun a ↦ F.map (g a)) (F.map f) where
+  ι := c.ι
+  π := c.π
+  cofan₁ := Cofan.mk (F.obj c.cofan₁.pt) fun i ↦ F.map (c.cofan₁.inj i)
+  cofan₂ := Cofan.mk (F.obj c.cofan₂.pt) fun i ↦ F.map (c.cofan₂.inj i)
+  isColimit₁ := (Cofan.isColimitMapCoconeEquiv F _ c.cofan₁) (isColimitOfPreserves F c.isColimit₁)
+  isColimit₂ := (Cofan.isColimitMapCoconeEquiv F _ c.cofan₂) (isColimitOfPreserves F c.isColimit₂)
+  m := F.map c.m
+  hm i := (F.map_comp _ _).symm.trans ((congrArg F.map (c.hm i)).trans (F.map_comp _ _))
+  g₁ := F.map c.g₁
+  g₂ := F.map c.g₂
+  isPushout := c.isPushout.map F
+
+/-- The inclusion of a cell in `c.map F` is `F.map` of the original cell inclusion. -/
+@[simp, reassoc]
+lemma map_cell (F : C ⥤ D)
+    [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
+    [PreservesColimit (Discrete.functor fun i ↦ B (c.π i)) F]
+    [PreservesColimit (span c.g₁ c.m) F] (i : c.ι) :
+    (c.map F).cell i = F.map (c.cell i) :=
+  (F.map_comp _ _).symm
+
+/-- The inclusion of a cell after reindexing cell types is the original cell inclusion precomposed
+with the inverse target isomorphism. -/
+@[simp, reassoc]
+lemma reindexCellTypes_cell {α' : Type t'} {A' B' : α' → C} (g' : ∀ i', A' i' ⟶ B' i')
+    (a : α → α') (ha : ∀ i, Arrow.mk (g i) ≅ Arrow.mk (g' (a i))) (i : c.ι) :
+    (c.reindexCellTypes g' a ha).cell i =
+      Arrow.rightFunc.map (ha (c.π i)).inv ≫ c.cell i :=
+  Category.assoc _ _ _
+
+end MapAndReindex
 
 end HomotopicalAlgebra.AttachCells
