@@ -72,8 +72,8 @@ theorem epi_cotangentMap_of_isClosedImmersion : Epi (cotangentMap R i) := by
     i ⁻¹ᵁ V.val) ?_ (surjective_cotangentMap_app_preimage R i)
   convert X.isBasis_affineOpens.of_isInducing i.isEmbedding.isInducing using 1
   ext W
-  simp only [Set.mem_range, Set.mem_ofPred_eq, Subtype.exists, exists_prop]
-  rfl
+  simp only [Set.mem_range, Set.mem_ofPred_eq, Subtype.exists, exists_prop, ← SetLike.coe_set_eq,
+    Scheme.Hom.coe_preimage, Opens.coe_mk]
 
 end AlgebraicGeometry
 
