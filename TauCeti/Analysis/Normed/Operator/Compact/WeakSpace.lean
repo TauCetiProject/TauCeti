@@ -25,7 +25,7 @@ is Hausdorff (`TauCeti.tendsto_of_tendsto_toWeakSpace_of_isCompact`). Consequent
 continuous from the weak topology on any von Neumann bounded or norm-bounded subset of `V` to the
 topology of `F` (`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isVonNBounded`,
 `IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`, combining with
-`ContinuousOn.comp'` and `TauCeti.mapsTo_comp_toWeakSpace_symm_image`, or
+`ContinuousOn.comp'` and `Set.mapsTo_image_iff` / `Set.mapsTo_image`, or
 `Continuous.comp_continuousOn'`, for postcompositions `g ∘ J`), even for net/filter convergence
 without metrizability or reflexivity assumptions on `V`.
 
@@ -58,7 +58,7 @@ are weakly sequentially closed yet not weakly closed, see
 
 * `IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`: weak-to-norm continuity of
   a compact operator `J` on any norm-bounded set (combining with `ContinuousOn.comp'` and
-  `TauCeti.mapsTo_comp_toWeakSpace_symm_image`, or `Continuous.comp_continuousOn'`, for `g ∘ J`),
+  `Set.mapsTo_image_iff` / `Set.mapsTo_image`, or `Continuous.comp_continuousOn'`, for `g ∘ J`),
   with a von Neumann bounded version in topological vector spaces.
 * `IsCompactOperator.isClosed_toWeakSpace_inter_preimage_of_isBounded`,
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage_of_isCompact`, and
@@ -279,7 +279,7 @@ theorem seqLowerSemicontinuousOn_add_comp_toWeakSpace_symm {β : Type*}
         E₀ ((toWeakSpace 𝕜 V).symm w) + g (J ((toWeakSpace 𝕜 V).symm w)))
       (toWeakSpace 𝕜 V '' S) :=
   hE₀.add (hg.comp_seqContinuous hJ.seqContinuous_toWeakSpace_symm
-    (TauCeti.mapsTo_comp_toWeakSpace_symm_image J S))
+    (Set.mapsTo_image_iff.2 (Set.mapsTo_image J S)))
 
 end RCLike
 

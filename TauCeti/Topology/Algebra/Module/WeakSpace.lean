@@ -49,14 +49,6 @@ namespace TauCeti
 variable {𝕜 E : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
   [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
 
-/-- For any map `f : E → F` and `s : Set E`, the pullback `z ↦ f ((toWeakSpace 𝕜 E).symm z)` maps
-`toWeakSpace 𝕜 E '' s` into `f '' s`. -/
-theorem mapsTo_comp_toWeakSpace_symm_image {F : Type*} (f : E → F) (s : Set E) :
-    MapsTo (fun z : WeakSpace 𝕜 E ↦ f ((toWeakSpace 𝕜 E).symm z))
-      (toWeakSpace 𝕜 E '' s) (f '' s) := by
-  rw [mapsTo_iff_image_subset]
-  simp [Set.image_image]
-
 /-- A family converges weakly exactly when its values under every continuous linear functional
 converge. -/
 theorem tendsto_toWeakSpace_iff_forall_eval_tendsto {α : Type*} {l : Filter α} {u : α → E}

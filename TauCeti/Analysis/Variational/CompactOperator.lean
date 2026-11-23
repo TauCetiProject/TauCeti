@@ -74,7 +74,7 @@ theorem lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_isBounded
         E₀ ((toWeakSpace 𝕜 V).symm w) + g (J ((toWeakSpace 𝕜 V).symm w)))
       (toWeakSpace 𝕜 V '' S) :=
   hE₀.add (hg.comp (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hS)
-    (TauCeti.mapsTo_comp_toWeakSpace_symm_image J S))
+    (Set.mapsTo_image_iff.2 (Set.mapsTo_image J S)))
 
 end BoundedPerturbation
 
