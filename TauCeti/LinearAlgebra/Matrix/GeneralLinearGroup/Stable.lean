@@ -482,6 +482,12 @@ variable (A) in
 def mk (n : ℕ) : GL (Fin n) A →* AlgebraicK1 A :=
   Group.Abelianization.of.comp (StableGeneralLinearGroup.of A n)
 
+/-- The class in algebraic `K₁` of an invertible matrix is the image in the abelianization of its
+image in `GL_∞(A)`. -/
+theorem mk_apply (n : ℕ) (u : GL (Fin n) A) :
+    mk A n u = Group.Abelianization.of (StableGeneralLinearGroup.of A n u) :=
+  (rfl)
+
 /-- The class of an invertible matrix is unchanged by stabilization. -/
 @[simp]
 theorem mk_stabilizeGL {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) :

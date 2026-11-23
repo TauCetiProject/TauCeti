@@ -222,6 +222,14 @@ theorem coe_fromBlocksGL (u : GL m A × GL k A) :
     (fromBlocksGL u : Matrix (m ⊕ k) (m ⊕ k) A) = fromBlocks u.1 0 0 u.2 :=
   (rfl)
 
+/-- Placing an elementary matrix in the upper left block, with the identity in the lower right
+block, gives the elementary matrix with the same parameter at the corresponding indices. -/
+theorem fromBlocksGL_transvectionUnit_one {i j : m} (hij : i ≠ j) (a : A) :
+    fromBlocksGL (transvectionUnit hij a, (1 : GL k A)) =
+      transvectionUnit (Sum.inl_injective.ne hij) a := by
+  ext (p | p) (q | q) <;>
+    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+
 /-- The block diagonal homomorphism is injective. -/
 theorem fromBlocksGL_injective :
     Function.Injective (fromBlocksGL : GL m A × GL k A →* GL (m ⊕ k) A) := by
@@ -365,6 +373,20 @@ theorem upperBlockGL_inv (X : Matrix m k A) : (upperBlockGL X)⁻¹ = upperBlock
 theorem lowerBlockGL_inv (Y : Matrix k m A) : (lowerBlockGL Y)⁻¹ = lowerBlockGL (-Y) :=
   Units.ext (rfl)
 
+/-- The upper block unipotent matrix with a single nonzero entry `c` at `(a, b)` is the
+elementary matrix `1 + c E_(inl a, inr b)`. -/
+theorem upperBlockGL_single (a : m) (b : k) (c : A) :
+    upperBlockGL (single a b c) = transvectionUnit (Sum.inl_ne_inr (a := a) (b := b)) c := by
+  ext (p | p) (q | q) <;>
+    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+
+/-- The lower block unipotent matrix with a single nonzero entry `c` at `(b, a)` is the
+elementary matrix `1 + c E_(inr b, inl a)`. -/
+theorem lowerBlockGL_single (b : k) (a : m) (c : A) :
+    lowerBlockGL (single b a c) = transvectionUnit (Sum.inr_ne_inl (a := a) (b := b)) c := by
+  ext (p | p) (q | q) <;>
+    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+
 /-- Upper block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + X a b E_(inl a, inr b)`. -/
 theorem upperBlockGL_mem_elementarySubgroup (X : Matrix m k A) :
@@ -373,9 +395,8 @@ theorem upperBlockGL_mem_elementarySubgroup (X : Matrix m k A) :
   | h_zero => simp
   | h_add X Y hX hY => simpa only [upperBlockGL_add] using mul_mem hX hY
   | h_std_basis a b c =>
-    convert transvectionUnit_mem_elementarySubgroup (Sum.inl_ne_inr (a := a) (b := b)) c
-    ext (p | p) (q | q) <;>
-      simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+    rw [upperBlockGL_single]
+    exact transvectionUnit_mem_elementarySubgroup _ c
 
 /-- Lower block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + Y b a E_(inr b, inl a)`. -/
@@ -385,9 +406,8 @@ theorem lowerBlockGL_mem_elementarySubgroup (Y : Matrix k m A) :
   | h_zero => simp
   | h_add X Y hX hY => simpa only [lowerBlockGL_add] using mul_mem hX hY
   | h_std_basis b a c =>
-    convert transvectionUnit_mem_elementarySubgroup (Sum.inr_ne_inl (a := a) (b := b)) c
-    ext (p | p) (q | q) <;>
-      simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+    rw [lowerBlockGL_single]
+    exact transvectionUnit_mem_elementarySubgroup _ c
 
 end Matrix
 
@@ -494,10 +514,9 @@ theorem map_elementarySubgroup_le_elementarySubgroup :
     (elementarySubgroup m A).map (fromBlocksGL.comp (MonoidHom.inl (GL m A) (GL k A))) ≤
       elementarySubgroup (m ⊕ k) A := by
   refine Subgroup.map_le_iff_le_comap.2 (elementarySubgroup_le_iff.2 fun i j hij a ↦ ?_)
-  rw [Subgroup.mem_comap]
-  convert transvectionUnit_mem_elementarySubgroup (Sum.inl_injective.ne hij) a
-  ext (p | p) (q | q) <;>
-    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+  rw [Subgroup.mem_comap, MonoidHom.comp_apply, MonoidHom.inl_apply,
+    fromBlocksGL_transvectionUnit_one]
+  exact transvectionUnit_mem_elementarySubgroup _ a
 
 /-- **Whitehead's lemma.** For an invertible matrix `u`, the block diagonal matrix `u ⊕ u⁻¹` is
 elementary: it is the product of six block unipotent matrices,
