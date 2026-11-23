@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Path
-public import Mathlib.Topology.Subpath
+public import TauCeti.Topology.Homotopy.Path
 
 /-!
 # Homotopies inside a union of path components
@@ -44,11 +44,8 @@ variable {f₀ f₁ : C(X, Y)}
 /-- **A homotopy starting in a union of path components stays in it.** If `f₀ x` lies in a union
 `t` of path components, then so does `F (τ, x)` at every time `τ` of a homotopy `F` from `f₀`. -/
 theorem Homotopy.apply_mem (F : f₀.Homotopy f₁) (ht : ∀ y ∈ t, pathComponent y ⊆ t) {x : X}
-    (hx : f₀ x ∈ t) (τ : I) : F (τ, x) ∈ t := by
-  -- The path traced by `x` under `F`, up to time `τ`, joins `f₀ x = F (0, x)` to `F (τ, x)`.
-  have hj : Nonempty (Path (f₀ x) (F (τ, x))) := by
-    simpa using (⟨(F.evalAt x).subpath 0 τ⟩ : Nonempty (Path _ _))
-  exact ht _ hx (mem_pathComponent_iff.2 hj)
+    (hx : f₀ x ∈ t) (τ : I) : F (τ, x) ∈ t :=
+  ht _ hx ((F.evalAt x).mem_pathComponent τ)
 
 /-- **Homotopic maps take values in the same unions of path components.** If `f₀` is homotopic to
 `f₁` and `f₀ x` lies in a union `t` of path components, then so does `f₁ x`. -/
