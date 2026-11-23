@@ -36,6 +36,8 @@ which the reflection of the billiard flow in the side is defined.
 * `TauCeti.PolygonalTable.Side`, `TauCeti.PolygonalTable.side`: the sides of the table.
 * `TauCeti.PolygonalTable.sideInterior`: the relative interior of a side.
 * `TauCeti.PolygonalTable.ofSimplePolygon`: the table without holes bounded by a simple polygon.
+* `TauCeti.PolygonalTable.ofSimplePolygonSideEquiv`: the sides of `ofSimplePolygon p` are indexed
+  by the edges of `p`.
 
 ## Main results
 
@@ -44,8 +46,10 @@ which the reflection of the billiard flow in the side is defined.
 * `TauCeti.PolygonalTable.finite_vertexSet`: a table has finitely many vertices.
 * `TauCeti.PolygonalTable.disjoint_sideInterior`: the relative interiors of distinct sides are
   disjoint.
-* `TauCeti.PolygonalTable.existsUnique_mem_sideInterior`: every point of the frontier off the
-  vertices lies in the relative interior of exactly one side.
+* `TauCeti.PolygonalTable.sideInterior_eq_side_sdiff_vertexSet`: the relative interior of a side
+  is the side minus the vertices.
+* `TauCeti.PolygonalTable.existsUnique_mem_sideInterior_iff`: a point lies in the relative interior
+  of exactly one side if and only if it lies in the frontier off the vertices.
 
 ## References
 
@@ -130,6 +134,10 @@ noncomputable def side (s : T.Side) : Set ℂ :=
 noncomputable def sideInterior (s : T.Side) : Set ℂ :=
   openSegment ℝ s.start s.finish
 
+/-- A side is the corresponding edge of its boundary polygon. -/
+theorem side_def (s : T.Side) : T.side s = (T.component s.1).toPolygon.edgeSet ℝ s.2 :=
+  (rfl)
+
 /-- The relative interior of a side is the open segment between its endpoints. -/
 theorem sideInterior_eq_openSegment (s : T.Side) :
     T.sideInterior s = openSegment ℝ s.start s.finish :=
@@ -145,8 +153,37 @@ theorem sideInterior_subset_side (s : T.Side) : T.sideInterior s ⊆ T.side s :=
   exact openSegment_subset_segment ℝ _ _
 
 /-- The endpoints of a side are distinct. -/
+@[simp]
 theorem Side.start_ne_finish (s : T.Side) : s.start ≠ s.finish :=
   (T.component s.1).isSimple.hasNondegenerateEdges s.2
+
+variable {T}
+
+/-- The start of a side lies in the side. -/
+@[simp]
+theorem Side.start_mem_side (s : T.Side) : s.start ∈ T.side s := by
+  rw [side_eq_segment]
+  exact left_mem_segment ℝ _ _
+
+/-- The end of a side lies in the side. -/
+@[simp]
+theorem Side.finish_mem_side (s : T.Side) : s.finish ∈ T.side s := by
+  rw [side_eq_segment]
+  exact right_mem_segment ℝ _ _
+
+/-- The start of a side does not lie in its relative interior. -/
+@[simp]
+theorem Side.start_notMem_sideInterior (s : T.Side) : s.start ∉ T.sideInterior s := by
+  rw [sideInterior_eq_openSegment, left_mem_openSegment_iff]
+  exact s.start_ne_finish
+
+/-- The end of a side does not lie in its relative interior. -/
+@[simp]
+theorem Side.finish_notMem_sideInterior (s : T.Side) : s.finish ∉ T.sideInterior s := by
+  rw [sideInterior_eq_openSegment, right_mem_openSegment_iff]
+  exact s.start_ne_finish
+
+variable (T)
 
 /-- A table is closed. -/
 theorem isClosed_carrier : IsClosed T.carrier :=
@@ -174,11 +211,21 @@ theorem side_subset_frontier (s : T.Side) : T.side s ⊆ frontier T.carrier :=
 theorem side_subset_carrier (s : T.Side) : T.side s ⊆ T.carrier :=
   (T.side_subset_frontier s).trans T.isClosed_carrier.frontier_subset
 
+/-- The relative interior of a side lies in the frontier of the table. -/
+theorem sideInterior_subset_frontier (s : T.Side) : T.sideInterior s ⊆ frontier T.carrier :=
+  (T.sideInterior_subset_side s).trans (T.side_subset_frontier s)
+
+/-- The relative interior of a side lies in the table. -/
+theorem sideInterior_subset_carrier (s : T.Side) : T.sideInterior s ⊆ T.carrier :=
+  (T.sideInterior_subset_side s).trans (T.side_subset_carrier s)
+
 /-- The start of a side is a vertex. -/
+@[simp]
 theorem Side.start_mem_vertexSet (s : T.Side) : s.start ∈ T.vertexSet :=
   mem_iUnion.2 ⟨s.1, mem_range_self _⟩
 
 /-- The end of a side is a vertex. -/
+@[simp]
 theorem Side.finish_mem_vertexSet (s : T.Side) : s.finish ∈ T.vertexSet :=
   mem_iUnion.2 ⟨s.1, mem_range_self _⟩
 
@@ -220,19 +267,57 @@ theorem disjoint_sideInterior {s t : T.Side} (hst : s ≠ t) :
   · exact Set.disjoint_left.1 (T.pairwise_disjoint_boundary hii)
       (mem_iUnion.2 ⟨j, hs⟩) (mem_iUnion.2 ⟨j', ht⟩)
 
+/-- The relative interior of a side contains no vertex of the table. -/
+theorem disjoint_sideInterior_vertexSet (s : T.Side) : Disjoint (T.sideInterior s) T.vertexSet := by
+  obtain ⟨i, j⟩ := s
+  rw [Set.disjoint_right]
+  intro x hx hxs
+  obtain ⟨i', k, rfl⟩ := mem_iUnion.1 hx
+  have hks := T.sideInterior_subset_side _ hxs
+  by_cases hii : i' = i
+  · subst hii
+    -- A vertex on the side `⟨i', j⟩` of its own boundary polygon is one of its endpoints.
+    by_cases hkj : k = j
+    · subst hkj
+      exact Side.start_notMem_sideInterior _ hxs
+    by_cases hkj' : k = finRotate _ j
+    · subst hkj'
+      exact Side.finish_notMem_sideInterior (T := T) ⟨i', j⟩ hxs
+    exact (T.component i').isSimple.apply_notMem_edgeSet hkj hkj' hks
+  · exact Set.disjoint_left.1 (T.pairwise_disjoint_boundary hii)
+      (mem_iUnion.2 ⟨k, (T.component i').toPolygon.apply_mem_edgeSet_self ℝ k⟩)
+      (mem_iUnion.2 ⟨j, hks⟩)
+
+/-- The relative interior of a side is the side minus the vertices of the table. -/
+theorem sideInterior_eq_side_sdiff_vertexSet (s : T.Side) :
+    T.sideInterior s = T.side s \ T.vertexSet := by
+  refine Subset.antisymm (fun x hx => ⟨T.sideInterior_subset_side s hx,
+    Set.disjoint_left.1 (T.disjoint_sideInterior_vertexSet s) hx⟩) ?_
+  rintro x ⟨hx, hxv⟩
+  rw [side_eq_segment] at hx
+  exact mem_openSegment_of_ne_left_right (fun h => hxv (h ▸ s.start_mem_vertexSet))
+    (fun h => hxv (h ▸ s.finish_mem_vertexSet)) hx
+
+/-- The relative interiors of the sides cover the frontier of the table off its vertices. -/
+theorem iUnion_sideInterior : ⋃ s, T.sideInterior s = frontier T.carrier \ T.vertexSet := by
+  simp_rw [sideInterior_eq_side_sdiff_vertexSet, ← iUnion_sdiff, ← frontier_eq_iUnion_side]
+
 /-- **Every point of the frontier of a table off its vertices lies in the relative interior of
 exactly one side.** -/
 theorem existsUnique_mem_sideInterior {x : ℂ} (hx : x ∈ frontier T.carrier)
     (hxv : x ∉ T.vertexSet) : ∃! s : T.Side, x ∈ T.sideInterior s := by
-  rw [frontier_eq_iUnion_side, mem_iUnion] at hx
-  obtain ⟨s, hs⟩ := hx
-  rw [side_eq_segment] at hs
-  refine ⟨s, mem_openSegment_of_ne_left_right (fun h => hxv (h ▸ s.start_mem_vertexSet))
-    (fun h => hxv (h ▸ s.finish_mem_vertexSet)) hs, fun t ht => ?_⟩
-  by_contra hts
-  exact Set.disjoint_left.1 (T.disjoint_sideInterior hts) ht
-    (mem_openSegment_of_ne_left_right (fun h => hxv (h ▸ s.start_mem_vertexSet))
-      (fun h => hxv (h ▸ s.finish_mem_vertexSet)) hs)
+  have hx' : x ∈ ⋃ s, T.sideInterior s := T.iUnion_sideInterior ▸ ⟨hx, hxv⟩
+  obtain ⟨s, hs⟩ := mem_iUnion.1 hx'
+  exact ⟨s, hs, fun t ht => by_contra fun hts =>
+    Set.disjoint_left.1 (T.disjoint_sideInterior hts) ht hs⟩
+
+/-- **A point lies in the relative interior of exactly one side of a table if and only if it lies
+in the frontier of the table off its vertices.** -/
+theorem existsUnique_mem_sideInterior_iff {x : ℂ} :
+    (∃! s : T.Side, x ∈ T.sideInterior s) ↔ x ∈ frontier T.carrier \ T.vertexSet := by
+  refine ⟨fun ⟨s, hs, _⟩ => ?_, fun hx => T.existsUnique_mem_sideInterior hx.1 hx.2⟩
+  rw [← iUnion_sideInterior]
+  exact mem_iUnion_of_mem s hs
 
 /-- **A simple polygon bounds a table without holes**: the filled region of its boundary, which is a
 Jordan curve. -/
@@ -271,6 +356,54 @@ theorem ofSimplePolygon_component (p : SimplePolygon ℝ ℂ)
 @[simp]
 theorem ofSimplePolygon_carrier (p : SimplePolygon ℝ ℂ) :
     (ofSimplePolygon p).carrier = filledHull (p.toPolygon.boundary ℝ) :=
+  (rfl)
+
+/-- The frontier of the table bounded by a simple polygon is the boundary of the polygon. -/
+theorem frontier_ofSimplePolygon_carrier (p : SimplePolygon ℝ ℂ) :
+    frontier (ofSimplePolygon p).carrier = p.toPolygon.boundary ℝ :=
+  p.isSimple.isJordanCurve_boundary.frontier_filledHull
+
+/-- The interior of the table bounded by a simple polygon is the filled hull of the boundary of the
+polygon minus that boundary. -/
+theorem interior_ofSimplePolygon_carrier (p : SimplePolygon ℝ ℂ) :
+    interior (ofSimplePolygon p).carrier =
+      filledHull (p.toPolygon.boundary ℝ) \ p.toPolygon.boundary ℝ :=
+  p.isSimple.isJordanCurve_boundary.interior_filledHull
+
+/-- The sides of the table bounded by a simple polygon `p` are indexed by the edges of `p`. -/
+noncomputable def ofSimplePolygonSideEquiv (p : SimplePolygon ℝ ℂ) :
+    Fin p.numVertices ≃ (ofSimplePolygon p).Side where
+  toFun j := ⟨0, j⟩
+  invFun s := s.2
+  left_inv _ := rfl
+  right_inv := fun ⟨i, _⟩ => by
+    obtain rfl := Subsingleton.elim (α := Fin 1) i 0
+    rfl
+
+/-- The side of `ofSimplePolygon p` indexed by the edge `j` of `p` starts at vertex `j` of `p`. -/
+@[simp]
+theorem Side.start_ofSimplePolygonSideEquiv (p : SimplePolygon ℝ ℂ) (j : Fin p.numVertices) :
+    (ofSimplePolygonSideEquiv p j).start = p.toPolygon j :=
+  (rfl)
+
+/-- The side of `ofSimplePolygon p` indexed by the edge `j` of `p` ends at the vertex after `j`. -/
+@[simp]
+theorem Side.finish_ofSimplePolygonSideEquiv (p : SimplePolygon ℝ ℂ) (j : Fin p.numVertices) :
+    (ofSimplePolygonSideEquiv p j).finish = p.toPolygon (finRotate _ j) :=
+  (rfl)
+
+/-- The side of `ofSimplePolygon p` indexed by the edge `j` of `p` is that edge. -/
+@[simp]
+theorem side_ofSimplePolygonSideEquiv (p : SimplePolygon ℝ ℂ) (j : Fin p.numVertices) :
+    (ofSimplePolygon p).side (ofSimplePolygonSideEquiv p j) = p.toPolygon.edgeSet ℝ j :=
+  (rfl)
+
+/-- The relative interior of the side of `ofSimplePolygon p` indexed by the edge `j` of `p` is the
+open segment between the endpoints of that edge. -/
+@[simp]
+theorem sideInterior_ofSimplePolygonSideEquiv (p : SimplePolygon ℝ ℂ) (j : Fin p.numVertices) :
+    (ofSimplePolygon p).sideInterior (ofSimplePolygonSideEquiv p j) =
+      openSegment ℝ (p.toPolygon j) (p.toPolygon (finRotate _ j)) :=
   (rfl)
 
 /-- The vertices of `ofSimplePolygon p` are the vertices of `p`. -/
