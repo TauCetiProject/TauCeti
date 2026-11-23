@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
 
 import TauCeti.Algebra.Homology.DerivedCategory.KProjective
+import TauCeti.Algebra.Homology.HomotopyEquiv
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Contraction
 import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
@@ -358,19 +359,8 @@ def smoothSingularChainHomotopyEquivInvNaturality {f : M → N}
         SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R)
       (SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R ≫
         (smoothSingularChainHomotopyEquiv J N R).inv) :=
-  let eM := smoothSingularChainHomotopyEquiv I M R
-  let eN := smoothSingularChainHomotopyEquiv J N R
-  let fS := SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R
-  let fT := SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R
-  (Homotopy.ofEq (Category.comp_id (eM.inv ≫ fS)).symm).trans <|
-    (eN.homotopyHomInvId.symm.compLeft (eM.inv ≫ fS)).trans <|
-      (Homotopy.ofEq (by
-        dsimp only [eM, eN, fS, fT]
-        rw [Category.assoc, ← Category.assoc _ (smoothSingularChainHomotopyEquiv J N R).hom,
-          ← smoothSingularChainHomotopyEquiv_hom_naturality R hf,
-          Category.assoc, ← Category.assoc (smoothSingularChainHomotopyEquiv I M R).inv])).trans <|
-        (eM.homotopyInvHomId.compRight (fT ≫ eN.inv)).trans <|
-          Homotopy.ofEq (Category.id_comp (fT ≫ eN.inv))
+  (smoothSingularChainHomotopyEquiv I M R).invNaturality (smoothSingularChainHomotopyEquiv J N R)
+    (smoothSingularChainHomotopyEquiv_hom_naturality R hf)
 
 /-! ### Cochain homotopy equivalence and singular cohomology comparison -/
 

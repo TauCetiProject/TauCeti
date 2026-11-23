@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.Geometry.Manifold.SmoothSingular.Smoothing
 
 import TauCeti.Algebra.Homology.DerivedCategory.KProjective
+import TauCeti.Algebra.Homology.HomotopyEquiv
 
 /-!
 # The smoothing theorem for open pairs
@@ -38,10 +39,12 @@ chain of `M`.
 
 When the coefficient object is projective, all relative chain groups are projective, so the
 quasi-isomorphism is a chain homotopy equivalence
-(`TauCeti.smoothSingularPairChainHomotopyEquiv`), and applying `Hom(-, Y)` gives the dual
-statement for relative cochains (`TauCeti.quasiIso_cochainComplexMap_smoothSingularPairι`) and an
-isomorphism from relative singular cohomology to smooth relative cohomology
-(`TauCeti.smoothSingularRelativeCohomologyIso`). It is again natural in smooth maps of pairs and
+(`TauCeti.smoothSingularPairChainHomotopyEquiv`) whose homotopy inverse is natural up to chain
+homotopy, and applying `Hom(-, Y)` gives the dual cochain homotopy equivalence
+(`TauCeti.smoothSingularPairCochainHomotopyEquiv`), the dual statement for relative cochains
+(`TauCeti.quasiIso_cochainComplexMap_smoothSingularPairι`) and an isomorphism from relative
+singular cohomology to smooth relative cohomology (`TauCeti.smoothSingularRelativeCohomologyIso`).
+It is again natural in smooth maps of pairs and
 compatible with the maps from relative to absolute cohomology and with the connecting maps.
 
 This is the comparison through which integrals of differential forms over smooth relative cycles,
@@ -58,6 +61,8 @@ relative singular homology classes, such as fundamental classes along compact su
   singular homology.
 * `TauCeti.smoothSingularPairChainHomotopyEquiv I R U`: the relative smoothing chain homotopy
   equivalence for projective coefficients.
+* `TauCeti.smoothSingularPairCochainHomotopyEquiv I R k Y U`: the dual relative smoothing cochain
+  homotopy equivalence.
 * `TauCeti.smoothSingularRelativeCohomologyIso I R k Y U n`: relative singular cohomology is smooth
   relative cohomology.
 
@@ -69,6 +74,9 @@ relative singular homology classes, such as fundamental classes along compact su
   absolute to relative homology.
 * `TauCeti.smoothSingularRelativeHomologyIso_hom_comp_singularHomologyδ`: compatibility with the
   connecting maps.
+* `TauCeti.smoothSingularPairChainHomotopyEquivInvNaturality`,
+  `TauCeti.smoothSingularPairCochainHomotopyEquivInvNaturality`: the relative smoothing homotopy
+  inverses are natural up to chain homotopy.
 * `TauCeti.quasiIso_cochainComplexMap_smoothSingularPairι`: the relative smoothing theorem for
   cochains.
 * `TauCeti.smoothSingularRelativeCohomologyIso_hom_naturality`,
@@ -368,6 +376,31 @@ instance quasiIso_cochainComplexMap_smoothSingularPairι (U : Opens M) :
     QuasiIso (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y) (smoothSingularPairι I U)) :=
   ChainComplex.quasiIso_linearYonedaFunctor_map_of_projective _ k Y
 
+/-- **The dual relative smoothing cochain homotopy equivalence.** Applying `Hom(-, Y)` to
+`smoothSingularPairChainHomotopyEquiv` yields a cochain homotopy equivalence from the relative
+singular cochain complex of `(M, U)` to its smooth relative cochain complex. -/
+def smoothSingularPairCochainHomotopyEquiv (U : Opens M) :
+    HomotopyEquiv ((TopPair.ofSubset (U : Set (TopCat.of M))).singularCochainComplex R k Y)
+      (((smoothSingularPair I U).chainComplex R).linearYonedaObj k Y) :=
+  (smoothSingularPairChainHomotopyEquiv I R U).linearYonedaFunctorMap k Y
+
+/-- The forward map of `smoothSingularPairCochainHomotopyEquiv` is restriction of relative
+singular cochains to smooth relative chains. -/
+@[simp]
+theorem smoothSingularPairCochainHomotopyEquiv_hom (U : Opens M) :
+    (smoothSingularPairCochainHomotopyEquiv I R k Y U).hom =
+      SSetPair.cochainComplexMap (smoothSingularPairι I U) := by
+  rw [smoothSingularPairCochainHomotopyEquiv, HomotopyEquiv.linearYonedaFunctorMap_hom,
+    smoothSingularPairChainHomotopyEquiv_hom]
+
+/-- The inverse map of `smoothSingularPairCochainHomotopyEquiv` is precomposition with the inverse
+of `smoothSingularPairChainHomotopyEquiv`. -/
+theorem smoothSingularPairCochainHomotopyEquiv_inv (U : Opens M) :
+    (smoothSingularPairCochainHomotopyEquiv I R k Y U).inv =
+      (ChainComplex.linearYonedaFunctor k Y).map
+        (smoothSingularPairChainHomotopyEquiv I R U).inv.op := by
+  rw [smoothSingularPairCochainHomotopyEquiv, HomotopyEquiv.linearYonedaFunctorMap_inv]
+
 /-- **Relative singular cohomology is smooth relative cohomology.** When `R` is projective,
 restriction to smooth simplices induces an isomorphism from the relative singular cohomology of
 `(M, U)` with values in `Y` to its smooth relative cohomology, in every degree. -/
@@ -383,6 +416,28 @@ theorem smoothSingularRelativeCohomologyIso_hom (U : Opens M) (n : ℕ) :
       HomologicalComplex.homologyMap
         (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y) (smoothSingularPairι I U)) n :=
   (rfl)
+
+/-- Restricting the image of a smooth relative cohomology class under the inverse of
+`smoothSingularRelativeCohomologyIso` back to smooth relative chains recovers the class. -/
+@[simp]
+theorem homologyMap_cochainComplexMap_smoothSingularRelativeCohomologyIso_inv_apply (U : Opens M)
+    (n : ℕ) (x : (((smoothSingularPair I U).chainComplex R).linearYonedaObj k Y).homology n) :
+    HomologicalComplex.homologyMap
+        (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y) (smoothSingularPairι I U)) n
+        ((smoothSingularRelativeCohomologyIso I R k Y U n).inv x) = x := by
+  rw [← smoothSingularRelativeCohomologyIso_hom, Iso.inv_hom_id_apply]
+
+/-- The map induced on cohomology by the inverse of `smoothSingularPairCochainHomotopyEquiv` is the
+inverse of `smoothSingularRelativeCohomologyIso`. -/
+@[simp]
+theorem homologyMap_smoothSingularPairCochainHomotopyEquiv_inv (U : Opens M) (n : ℕ) :
+    HomologicalComplex.homologyMap (smoothSingularPairCochainHomotopyEquiv I R k Y U).inv n =
+      (smoothSingularRelativeCohomologyIso I R k Y U n).inv := by
+  rw [← cancel_mono (smoothSingularRelativeCohomologyIso I R k Y U n).hom, Iso.inv_hom_id,
+    smoothSingularRelativeCohomologyIso_hom, ← smoothSingularPairCochainHomotopyEquiv_hom,
+    ← HomologicalComplex.homologyMap_comp,
+    (smoothSingularPairCochainHomotopyEquiv I R k Y U).homotopyInvHomId.homologyMap_eq,
+    HomologicalComplex.homologyMap_id]
 
 /-- The map from relative to absolute cohomology commutes with the smoothing isomorphisms: a
 relative singular cocycle of `(M, U)` restricts to the same smooth cochain of `M`, whether it is
@@ -438,6 +493,65 @@ variable {I} {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Finit
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
   {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
   [T2Space N] [SigmaCompactSpace N] [IsManifold J ∞ N]
+
+/-- The forward map of `smoothSingularPairChainHomotopyEquiv` commutes strictly with the chain maps
+induced by a smooth map of pairs. -/
+@[reassoc]
+theorem smoothSingularPairChainHomotopyEquiv_hom_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) :
+    (smoothSingularPairChainHomotopyEquiv I R U).hom ≫
+        TopPair.singularChainComplexMap
+          (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) R =
+      SSetPair.chainComplexMap (smoothSingularPairMap hf hUV) R ≫
+        (smoothSingularPairChainHomotopyEquiv J R V).hom := by
+  rw [smoothSingularPairChainHomotopyEquiv_hom, smoothSingularPairChainHomotopyEquiv_hom,
+    TopPair.singularChainComplexMap, ← Functor.map_comp, ← Functor.map_comp,
+    smoothSingularPairMap_comp_smoothSingularPairι]
+
+/-- **Naturality up to chain homotopy of the relative smoothing inverse.** For a smooth map of
+pairs `f : (M, U) → (N, V)`, composing the relative smoothing homotopy inverse on `(M, U)` with the
+smooth pushforward along `f` is chain homotopic to pushing forward relative singular chains along
+`f` and then applying the relative smoothing homotopy inverse on `(N, V)`. -/
+def smoothSingularPairChainHomotopyEquivInvNaturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) :
+    Homotopy
+      ((smoothSingularPairChainHomotopyEquiv I R U).inv ≫
+        SSetPair.chainComplexMap (smoothSingularPairMap hf hUV) R)
+      (TopPair.singularChainComplexMap
+          (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) R ≫
+        (smoothSingularPairChainHomotopyEquiv J R V).inv) :=
+  (smoothSingularPairChainHomotopyEquiv I R U).invNaturality
+    (smoothSingularPairChainHomotopyEquiv J R V)
+    (smoothSingularPairChainHomotopyEquiv_hom_naturality R hf hUV)
+
+/-- The forward map of `smoothSingularPairCochainHomotopyEquiv` commutes strictly with the cochain
+maps induced by a smooth map of pairs. -/
+@[reassoc]
+theorem smoothSingularPairCochainHomotopyEquiv_hom_naturality {f : M → N}
+    (hf : ContMDiff I J ∞ f) {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) :
+    TopPair.singularCochainComplexMap (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) ≫
+        (smoothSingularPairCochainHomotopyEquiv I R k Y U).hom =
+      (smoothSingularPairCochainHomotopyEquiv J R k Y V).hom ≫
+        SSetPair.cochainComplexMap (smoothSingularPairMap hf hUV) := by
+  rw [smoothSingularPairCochainHomotopyEquiv_hom, smoothSingularPairCochainHomotopyEquiv_hom,
+    TopPair.singularCochainComplexMap_eq, ← SSetPair.cochainComplexMap_comp,
+    ← SSetPair.cochainComplexMap_comp, smoothSingularPairMap_comp_smoothSingularPairι]
+
+/-- **Naturality up to cochain homotopy of the dual relative smoothing inverse.** For a smooth map
+of pairs `f : (M, U) → (N, V)`, pulling back smooth relative cochains along `f` and extending to
+relative singular cochains on `(M, U)` is cochain homotopic to extending on `(N, V)` first and then
+pulling back relative singular cochains along `f`. -/
+def smoothSingularPairCochainHomotopyEquivInvNaturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) :
+    Homotopy
+      (SSetPair.cochainComplexMap (smoothSingularPairMap hf hUV) ≫
+        (smoothSingularPairCochainHomotopyEquiv I R k Y U).inv)
+      ((smoothSingularPairCochainHomotopyEquiv J R k Y V).inv ≫
+        TopPair.singularCochainComplexMap
+          (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV)) :=
+  ((smoothSingularPairCochainHomotopyEquiv J R k Y V).invNaturality
+    (smoothSingularPairCochainHomotopyEquiv I R k Y U)
+    (smoothSingularPairCochainHomotopyEquiv_hom_naturality R k Y hf hUV).symm).symm
 
 /-- `smoothSingularRelativeCohomologyIso` is natural in smooth maps of pairs. -/
 @[reassoc]
