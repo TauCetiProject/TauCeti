@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Kummer
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Connected
 
 /-!
 # Kummer monodromy over an affine base
@@ -41,7 +42,7 @@ homomorphism to the prime-to-`p` Tate module of `Ω`
 
 `π₁(Spec R, x) →ₜ* lim_{(m, p) = 1} μ_m(Ω) = ℤ̂^{(p')}(1)`.
 
-When the Kummer covers are connected over a preconnected base, `π₁` acts transitively on their
+When the Kummer covers are connected, so is the base `Spec R`, and `π₁` acts transitively on their
 fibres, so the Kummer characters and the Tate character are surjective. For `R = K[T, T⁻¹]`,
 `t = T` and `K` algebraically closed of characteristic exponent `p`, the Kummer covers are the
 power maps `z ↦ z ^ m` of `𝔾_m` over `K`, and `kummerMonodromy` is the monodromy of the tower of
@@ -72,7 +73,7 @@ these covers.
   recovers `kummerMonodromyLevel`.
 * `TauCeti.FiniteEtaleScheme.kummerMonodromyLevel_surjective`,
   `TauCeti.FiniteEtaleScheme.kummerMonodromy_surjective`: surjectivity for connected Kummer
-  covers over a preconnected base.
+  covers.
 
 ## References
 
@@ -114,9 +115,8 @@ private theorem exists_kummerCoverFiberEquiv_smul (n : ℕ) (hn : IsUnit (n : R)
   refine ⟨restrictRootsOfUnity (algebraMap R Ω) n ξ, fun y ↦ ?_⟩
   obtain ⟨η, rfl⟩ := exists_fiber_map_kummerCoverDeck_eq t hn hdeck y₀ y
   -- `σ` commutes with the deck transformation of `η`.
-  rw [mulAction_naturality, ← hξ, kummerCoverFiberEquiv_map_kummerCoverDeck,
-    kummerCoverFiberEquiv_map_kummerCoverDeck, kummerCoverFiberEquiv_map_kummerCoverDeck,
-    restrictRootsOfUnity_coe_apply]
+  rw [mulAction_naturality, ← hξ]
+  simp only [kummerCoverFiberEquiv_map_kummerCoverDeck, restrictRootsOfUnity_coe_apply]
   ring
 
 /-- **Level-`n` Kummer monodromy**, the Kummer character of the unit `t` at the geometric point
@@ -129,11 +129,11 @@ noncomputable def kummerMonodromyLevel (n : ℕ) (hn : IsUnit (n : R))
     Aut (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))) →* rootsOfUnity n Ω :=
   MonoidHom.mk' (fun σ ↦ (exists_kummerCoverFiberEquiv_smul t Ω n hn hdeck σ).choose) fun σ τ ↦ by
     obtain ⟨y₀⟩ := nonempty_fiber_kummerCover t (Ω := Ω) hn
+    -- The action of `ρ` on the fibre is multiplication by the chosen root of unity.
+    have hρ := fun ρ ↦ (exists_kummerCoverFiberEquiv_smul t Ω n hn hdeck ρ).choose_spec
     refine eq_of_mul_kummerCoverFiberEquiv_eq t Ω (y := y₀) ?_
-    rw [← (exists_kummerCoverFiberEquiv_smul t Ω n hn hdeck _).choose_spec, mul_smul,
-      (exists_kummerCoverFiberEquiv_smul t Ω n hn hdeck σ).choose_spec,
-      (exists_kummerCoverFiberEquiv_smul t Ω n hn hdeck τ).choose_spec, Subgroup.coe_mul,
-      Units.val_mul, mul_assoc]
+    rw [← hρ (σ * τ) y₀, mul_smul, hρ σ (τ • y₀), hρ τ y₀]
+    simp only [Subgroup.coe_mul, Units.val_mul, mul_assoc]
 
 /-- **The defining property of the Kummer character**: `σ` acts on the `n`-th roots of `t` in the
 geometric fibre of the Kummer cover by multiplication by `kummerMonodromyLevel t Ω n hn hdeck σ`. -/
@@ -219,27 +219,28 @@ theorem kummerMonodromyLevel_pow_div {n m : ℕ} (hn : IsUnit (n : R)) (hm : IsU
   refine (Subtype.ext_iff.mp ((kummerMonodromyLevel_eq_iff t Ω (ζ := ⟨_, ?_⟩)
     ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).map
       (kummerCoverMap t hn hm h) y)).mpr ?_)).symm
-  · rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel h,
-      (kummerMonodromyLevel t Ω m hm hdeck_m σ).property]
-  · rw [mulAction_naturality, kummerCoverFiberEquiv_map_kummerCoverMap,
-      kummerCoverFiberEquiv_map_kummerCoverMap, kummerCoverFiberEquiv_smul, mul_pow,
-      Units.val_pow_eq_pow_val]
+  · rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel h]
+    exact (mem_rootsOfUnity m _).mp (kummerMonodromyLevel t Ω m hm hdeck_m σ).property
+  · rw [mulAction_naturality]
+    simp only [kummerCoverFiberEquiv_map_kummerCoverMap,
+      kummerCoverFiberEquiv_smul t Ω m hm hdeck_m, mul_pow, Units.val_pow_eq_pow_val]
 
-/-- **Surjectivity of the Kummer character.** If the base is preconnected and the Kummer cover is
-connected, the fundamental group acts transitively on its geometric fibre, so every `n`-th root of
-unity of `Ω` is a value of the Kummer character. -/
-theorem kummerMonodromyLevel_surjective [PreconnectedSpace (Spec R)] (n : ℕ) (hn : IsUnit (n : R))
+/-- **Surjectivity of the Kummer character.** If the Kummer cover is connected, the fundamental
+group acts transitively on its geometric fibre, so every `n`-th root of unity of `Ω` is a value of
+the Kummer character. -/
+theorem kummerMonodromyLevel_surjective (n : ℕ) (hn : IsUnit (n : R))
     (hdeck : Function.Surjective (restrictRootsOfUnity (algebraMap R Ω) n))
-    [IsConnected (kummerCover t n hn)] :
+    [hconn : IsConnected (kummerCover t n hn)] :
     Function.Surjective (kummerMonodromyLevel t Ω n hn hdeck) := by
-  -- `Spec R` is nonempty, since `R` maps to the field `Ω`.
-  have := (algebraMap R Ω).domain_nontrivial
-  have : ConnectedSpace (Spec R) := { toNonempty := inferInstanceAs (Nonempty (PrimeSpectrum R)) }
+  -- `Spec R` is connected, as the image of the connected Kummer cover under a surjective map.
+  have := (isConnected_iff_connectedSpace _).mp hconn
+  have : ConnectedSpace (Spec R) := (kummerCover t n hn).obj.hom.surjective.connectedSpace
+    (kummerCover t n hn).obj.hom.continuous
   intro ζ
   obtain ⟨y⟩ := nonempty_fiber_kummerCover t (Ω := Ω) hn
   set e := kummerCoverFiberEquiv t Ω n hn
   have hζ : (((ζ : Ωˣ) : Ω) * e y) ^ n = algebraMap R Ω t := by
-    rw [mul_pow, ← Units.val_pow_eq_pow_val, ζ.property, Units.val_one, one_mul, (e y).property]
+    rw [mul_pow, (mem_rootsOfUnity' n _).mp ζ.property, one_mul, (e y).property]
   obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq (Aut (fiber (Spec.map
     (CommRingCat.ofHom (algebraMap R Ω))))) y (e.symm ⟨_, hζ⟩)
   exact ⟨σ, (kummerMonodromyLevel_eq_iff t Ω y).mpr (by rw [hσ, e.apply_symm_apply])⟩
@@ -271,10 +272,10 @@ theorem proj_kummerMonodromy (p : ℕ)
       kummerMonodromyLevel t Ω m (hunit m) (hdeck m) σ :=
   PrimeToPTateModule.proj_lift _ _ m σ
 
-/-- **Surjectivity of Kummer monodromy.** If the base is preconnected and the Kummer covers of all
-nonzero orders prime to `p` are connected, `kummerMonodromy` maps the profinite group
-`π₁(Spec R, x)` onto the prime-to-`p` Tate module of `Ω`. -/
-theorem kummerMonodromy_surjective [PreconnectedSpace (Spec R)] (p : ℕ)
+/-- **Surjectivity of Kummer monodromy.** If the Kummer covers of all nonzero orders prime to `p`
+are connected, `kummerMonodromy` maps the profinite group `π₁(Spec R, x)` onto the prime-to-`p`
+Tate module of `Ω`. -/
+theorem kummerMonodromy_surjective (p : ℕ)
     (hunit : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, IsUnit ((m : ℕ) : R))
     (hdeck : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p},
       Function.Surjective (restrictRootsOfUnity (algebraMap R Ω) m))
