@@ -134,7 +134,7 @@ theorem heckeSlashUpperTri_slash_mapGL_of_mem_Gamma1 (k : ℤ) (hpN : p ∣ N)
     heckeSlashUpperTri k p f ∣[k] (mapGL ℚ γ : GL (Fin 2) ℚ) = heckeSlashUpperTri k p f := by
   have h11 : ((γ 1 1 : ℤ) : ZMod N) = 1 := (mem_Gamma1_iff.mp hγ).2
   have h := heckeSlashUpperTri_slash_mapGL_of_mem_Gamma0 (u := 1) k hpN
-    (Gamma1_in_Gamma0 N hγ) (f := f) fun δ hδ hd ↦ by
+    (Gamma1_le_Gamma0 N hγ) (f := f) fun δ hδ hd ↦ by
       rw [hf δ (mem_Gamma1_iff.mpr ⟨hδ, hd.trans h11⟩), one_smul]
   rwa [one_smul] at h
 
@@ -147,7 +147,7 @@ theorem heckeSlashUpperTri_slash_mapGL_of_nebentypus (k : ℤ) (hpN : p ∣ N)
       = (↑(χ ((Gamma0Map N).toHomUnits δ)) : ℂ) • f) :
     heckeSlashUpperTri k p f ∣[k] (mapGL ℚ (γ : SL(2, ℤ)) : GL (Fin 2) ℚ)
       = (↑(χ ((Gamma0Map N).toHomUnits γ)) : ℂ) • heckeSlashUpperTri k p f := by
-  apply heckeSlashUpperTri_slash_mapGL_of_mem_Gamma0 k hpN γ.2
+  apply heckeSlashUpperTri_slash_mapGL_of_mem_Gamma0 k hpN γ.property
   intro δ hδ hd
   have hmap : (Gamma0Map N).toHomUnits ⟨δ, hδ⟩ = (Gamma0Map N).toHomUnits γ := Units.ext hd
   rw [hf ⟨δ, hδ⟩, hmap]

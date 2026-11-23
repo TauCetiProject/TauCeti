@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
+public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
+public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
+import TauCeti.AlgebraicTopology.Cohomology.Point
 
 /-!
 # The cup product with a relative class after pulling back
@@ -17,14 +20,37 @@ with coefficients in a commutative ring `K`. This file defines the map
 
 (`TopPair.pullbackCup`), the pull-back along `g` followed by the cup product of absolute and
 relative cohomology (`TopPair.singularCup`), for any `K`-module of coefficients `M`, and proves that
-it is natural in maps of pairs (`TopPair.pullbackCup_naturality`). For the Thom pair `(E, E₀)` of a
-vector bundle and its projection, it is the Thom map `TauCeti.thomMap`, which the Thom isomorphism
-asserts to be bijective when `u` is a Thom class.
+it is natural in maps of pairs (`TopPair.pullbackCup_naturality`). It sends the unit `1 ∈ H⁰(Z; K)`
+to `u` (`TopPair.pullbackCup_one`), the map of a class `g^*c ⌣ v` is that of `v` composed with the
+cup product with `c` (`TopPair.pullbackCup_pullbackCup`), and its bijectivity is invariant under
+isomorphisms (`TopPair.bijective_pullbackCup_iff_of_isIso`). When the subspace `A` is empty and `g`
+is an isomorphism, it is bijective for every class `u ∈ H⁰(X, ∅; K)` whose image in `H⁰(X; K)` has
+a unit value at every point (`TopPair.bijective_pullbackCup_of_isEmpty`): this is the Thom
+isomorphism in rank zero, where a vector bundle has no nonzero vectors. For the Thom pair `(E, E₀)`
+of a vector bundle and its projection, it is the Thom map `TauCeti.thomMap`, which the Thom
+isomorphism asserts to be bijective when `u` is a Thom class.
+
+For a map `π : X ⟶ Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, restricting `u ∈ Hⁿ(X, Z)` to the pair
+`(π⁻¹ S, π⁻¹ S ∩ Z)` and `π` to `π⁻¹ S ⟶ S` gives the map over `S` (`TopCat.pullbackCupRestrict`).
+It is natural in `S` (`TopCat.pullbackCupRestrict_naturality`), over the empty subset it is
+trivially bijective (`TopCat.bijective_pullbackCupRestrict_empty`), and over the whole base it is
+bijective exactly when `a ↦ π^*a ⌣ u` is (`TopCat.bijective_pullbackCupRestrict_univ_iff`).
+For a vector bundle and `Z` its nonzero vectors, this pair is the Thom pair `(E|_S, E₀|_S)` of the
+restriction of the bundle to `S`.
 
 ## Main definitions and results
 
 * `TopPair.pullbackCup`: the map `a ↦ g^*a ⌣ u`, bilinear in `u` and `a`.
 * `TopPair.pullbackCup_naturality`: its naturality in maps of pairs.
+* `TopPair.pullbackCup_one`: `1 ↦ u`.
+* `TopPair.pullbackCup_pullbackCup`: the map of `g^*c ⌣ v` is that of `v` after `a ↦ a ⌣ c`.
+* `TopPair.bijective_pullbackCup_iff_of_isIso`: invariance of bijectivity under isomorphisms.
+* `TopPair.bijective_pullbackCup_of_isEmpty`: bijectivity for an empty subspace, an isomorphism
+  `g` and a degree-zero class with unit values.
+* `TopCat.pullbackCupRestrict`: the map over a subset of the base.
+* `TopCat.pullbackCupRestrict_naturality`: its naturality in the subset.
+* `TopCat.bijective_pullbackCupRestrict_empty`: over the empty subset it is bijective.
+* `TopCat.bijective_pullbackCupRestrict_univ_iff`: over the whole base it is `a ↦ π^*a ⌣ u`.
 -/
 
 public section
@@ -76,4 +102,186 @@ theorem pullbackCup_naturality {P P' : TopPair.{w}} (φ : P ⟶ P') {Z Z' : TopC
   -- The two sides agree up to how the module morphisms are coerced to functions.
   rfl
 
+/-- **`a ↦ g^*a ⌣ u` sends `1` to `u`**: the image of the class of the constant `0`-cocycle with
+value `1 ∈ K` is `u`. -/
+@[simp]
+theorem pullbackCup_one (P : TopPair.{w}) {Z : TopCat.{w}} (g : P.fst ⟶ Z) {n : ℕ}
+    (h : 0 + n = n) (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    P.pullbackCup (ModuleCat.of K K) g n 0 n h u
+        ((Z.singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).homologyπ 0
+          (Z.constSingularCocycle K (𝟙 (ModuleCat.of K K)))) = u := by
+  rw [pullbackCup_apply]
+  refine (congrArg (fun x ↦ P.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv
+    (ρ_ (ModuleCat.of K K)).hom 0 n n h x u)
+    (TopCat.singularCohomologyMap_homologyπ_constSingularCocycle g K
+      (𝟙 (ModuleCat.of K K)))).trans ?_
+  exact P.singularCup_constSingularCocycle_left K (η := 𝟙 _) (by monoidal) (by monoidal) h u
+
+/-- **`a ↦ g^*a ⌣ u` for a product of classes**: the map of the class `g^*c ⌣ v` sends `a` to the
+map of `v` at `a ⌣ c`, that is `g^*a ⌣ (g^*c ⌣ v) = g^*(a ⌣ c) ⌣ v`. -/
+theorem pullbackCup_pullbackCup (P : TopPair.{w}) {Z : TopCat.{w}} (g : P.fst ⟶ Z) {p q n r s m : ℕ}
+    (hpq : p + q = n) (hqr : q + r = s) (h : p + s = m) (h' : n + r = m)
+    (v : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) r)
+    (c : Z.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) q)
+    (a : Z.singularCohomology (ModuleCat.of K K) K M p) :
+    P.pullbackCup M g s p m h (P.pullbackCup (ModuleCat.of K K) g r q s hqr v c) a =
+      P.pullbackCup M g r n m h' v
+        (Z.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p q n hpq a c) := by
+  rw [pullbackCup_apply, pullbackCup_apply, pullbackCup_apply, ← TopCat.singularCup_naturality,
+    TopPair.singularCup_assoc K _ (u₁₂ := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
+      (u := (λ_ (𝟙_ (ModuleCat.{w} K))).inv) (u₂₃ := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
+      (u' := (λ_ (𝟙_ (ModuleCat.{w} K))).inv) (μ₁₂ := (ρ_ M).hom) (μ := (ρ_ M).hom)
+      (μ₂₃ := (ρ_ (ModuleCat.of K K)).hom) (μ' := (ρ_ M).hom) (by monoidal) (by monoidal)
+      hpq h' hqr h]
+  -- The middle class `g^*c ⌣ v` is typed with coefficients `𝟙_ (ModuleCat K)` by
+  -- `singularCup_assoc` and with `ModuleCat.of K K` by `pullbackCup`; the two coefficient objects,
+  -- and the instance paths reaching them, agree only after unfolding `𝟙_`.
+  rfl
+
+/-- Bijectivity of `a ↦ g^*a ⌣ u` is invariant under isomorphisms `φ : P ⟶ P'` of pairs and
+`f : Z ⟶ Z'` of targets with `φ ≫ g' = g ≫ f` on the ambient spaces. -/
+theorem bijective_pullbackCup_iff_of_isIso {P P' : TopPair.{w}} (φ : P ⟶ P') {Z Z' : TopCat.{w}}
+    {g : P.fst ⟶ Z} {g' : P'.fst ⟶ Z'} (f : Z ⟶ Z') [IsIso φ] [IsIso f]
+    (hg : Hom.fst φ ≫ g' = g ≫ f) {n p m : ℕ} (h : p + n = m)
+    (u : P'.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    Function.Bijective (P.pullbackCup M g n p m h (TopPair.singularCohomologyMap φ n u)) ↔
+      Function.Bijective (P'.pullbackCup M g' n p m h u) := by
+  have hf : Function.Bijective (TopCat.singularCohomologyMap (R := ModuleCat.of K K) (k := K)
+      (M := M) f p) :=
+    ((TauCeti.singularCohomologyFunctor _ K _ p).mapIso (asIso f).op).toLinearEquiv.bijective
+  have hφ : Function.Bijective (TopPair.singularCohomologyMap (R := ModuleCat.of K K) (k := K)
+      (M := M) φ m) :=
+    ((TopPair.singularCohomologyFunctor _ K _ m).mapIso (asIso φ).op).toLinearEquiv.bijective
+  have hc : ⇑(P.pullbackCup M g n p m h (TopPair.singularCohomologyMap φ n u)) ∘
+      TopCat.singularCohomologyMap f p =
+        TopPair.singularCohomologyMap φ m ∘ P'.pullbackCup M g' n p m h u :=
+    funext fun a ↦ pullbackCup_naturality φ g g' f hg h u a
+  constructor
+  · intro h'
+    have := h'.comp hf
+    rw [hc] at this
+    exact (Function.Bijective.of_comp_iff' hφ _).1 this
+  · intro h'
+    have := hφ.comp h'
+    rw [← hc] at this
+    exact (Function.Bijective.of_comp_iff _ hf).1 this
+
+/-- **`a ↦ g^*a ⌣ u` for a pair with empty subspace.** Let `P = (X, ∅)`, let `g : X ⟶ Z` be an
+isomorphism, and let the image of `u ∈ H⁰(X, ∅; K)` in `H⁰(X; K)` have a unit value at every point.
+Then `a ↦ g^*a ⌣ u` is a bijection `Hᵖ(Z; M) ≅ Hᵖ(X, ∅; M)` for every `K`-module `M` and every
+degree `p`. -/
+theorem bijective_pullbackCup_of_isEmpty (P : TopPair.{w}) [IsEmpty P.snd] {Z : TopCat.{w}}
+    (g : P.fst ⟶ Z) [IsIso g] (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) 0)
+    (hu : ∀ x, IsUnit (TauCeti.singularCohomologyZeroEval x
+      (P.singularCohomologyπ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0 u)))
+    (M : ModuleCat.{w} K) {p m : ℕ} (h : p + 0 = m) :
+    Function.Bijective (P.pullbackCup M g 0 p m h u) := by
+  obtain rfl : p = m := h
+  -- After `Hᵖ(X, ∅) ≅ Hᵖ(X)`, the map is the pull-back along the isomorphism `g` followed by the
+  -- cup product with the image of `u`, whose values are units.
+  have hcup := TauCeti.bijective_singularCup_left_of_forall_isUnit M
+    (P.singularCohomologyπ _ K _ 0 u) hu p
+  have hπ := ConcreteCategory.bijective_of_isIso (P.singularCohomologyπ (ModuleCat.of K K) K M p)
+  have hpull := ConcreteCategory.bijective_of_isIso
+    ((TauCeti.singularCohomologyFunctor (ModuleCat.of K K) K M p).map g.op)
+  have e : ⇑(P.singularCohomologyπ (ModuleCat.of K K) K M p) ∘
+      ⇑(P.pullbackCup M g 0 p p (add_zero p) u) =
+      (fun a ↦ P.fst.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p rfl a
+        (P.singularCohomologyπ _ K _ 0 u)) ∘ ⇑(TopCat.singularCohomologyMap g p) := by
+    funext a
+    rw [Function.comp_apply, pullbackCup_apply, singularCohomologyπ_singularCup]
+    -- The two sides differ only in the proof of `p + 0 = p`.
+    rfl
+  rw [← Function.Bijective.of_comp_iff' hπ, e]
+  exact hcup.comp hpull
+
 end TopPair
+
+namespace TopCat
+
+variable {K : Type w} [CommRing K] {X Y : TopCat.{w}} (π : X ⟶ Y) (Z : Set X)
+  (M : ModuleCat.{w} K)
+
+/-- The map `a ↦ π^*a ⌣ u` over a subset `S` of the base: the map `TopPair.pullbackCup` of the
+restriction of `u ∈ Hⁿ(X, Z)` to the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` and of the restriction
+`π⁻¹ S ⟶ S` of `π`, from `Hᵖ(S; M)` to `Hᵐ(π⁻¹ S, π⁻¹ S ∩ Z; M)`. -/
+def pullbackCupRestrict (S : Set Y) (n p m : ℕ) (h : p + n = m) :
+    (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n →ₗ[K]
+      (of S).singularCohomology (ModuleCat.of K K) K M p →ₗ[K]
+        (TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)).singularCohomology
+          (ModuleCat.of K K) K M m :=
+  (TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)).pullbackCup M
+      (ofHom (π.hom.restrictPreimage S)) n p m h ∘ₗ
+    (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n).hom
+
+/-- The map over `S` is `TopPair.pullbackCup` composed with the restriction to the pair over `S`. -/
+theorem pullbackCupRestrict_def (S : Set Y) (n p m : ℕ) (h : p + n = m) :
+    pullbackCupRestrict π Z M S n p m h =
+      (TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)).pullbackCup M
+          (ofHom (π.hom.restrictPreimage S)) n p m h ∘ₗ
+        (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n).hom :=
+  (rfl)
+
+/-- The map over `S` of `u` is `TopPair.pullbackCup` of the restriction of `u` to the pair over
+`S`. -/
+theorem pullbackCupRestrict_apply (S : Set Y) {n p m : ℕ} (h : p + n = m)
+    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    pullbackCupRestrict π Z M S n p m h u =
+      (TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)).pullbackCup M
+        (ofHom (π.hom.restrictPreimage S)) n p m h
+        (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n u) :=
+  (rfl)
+
+/-- **Naturality of the map over a subset of the base in the subset.** For `S ⊆ T`, the map over
+`S` of `u` at the restriction of `a ∈ Hᵖ(T; M)` to `S` is the restriction to the pair over `S` of
+the map over `T` of `u` at `a`. -/
+theorem pullbackCupRestrict_naturality {S T : Set Y} (hST : S ⊆ T) {n p m : ℕ} (h : p + n = m)
+    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (a : (of T).singularCohomology (ModuleCat.of K K) K M p) :
+    pullbackCupRestrict π Z M S n p m h u
+        (TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion hST)) p a) =
+      TopPair.singularCohomologyMap (TopPair.ofInclusionMap
+        (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) Set.inter_subset_left
+        (ContinuousMap.inclusion (Set.preimage_mono hST)) fun _ hx ↦ ⟨hST hx.1, hx.2⟩) m
+        (pullbackCupRestrict π Z M T n p m h u a) := by
+  have hg : TopPair.Hom.fst (TopPair.ofInclusionMap
+      (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) Set.inter_subset_left
+      (ContinuousMap.inclusion (Set.preimage_mono hST)) fun _ hx ↦ ⟨hST hx.1, hx.2⟩) ≫
+        ofHom (π.hom.restrictPreimage T) =
+      ofHom (π.hom.restrictPreimage S) ≫ ofHom (ContinuousMap.inclusion hST) :=
+    TopCat.ext fun x ↦ Subtype.ext (congrArg (fun y : ↥(π ⁻¹' T) ↦ π y.val)
+      (TopPair.ofInclusionMap_fst_apply _ _ x))
+  rw [pullbackCupRestrict_apply, pullbackCupRestrict_apply,
+    ← ofInclusionMap_inclusion_comp_restrictPreimagePairMap π Z hST,
+    TopPair.singularCohomologyMap_comp_apply, TopPair.pullbackCup_naturality _ _ _ _ hg]
+
+/-- **The empty base case for `TopCat.pullbackCupRestrict`**: over the empty subset `∅ ⊆ Y`, both
+`Hᵖ(∅; M)` and `Hᵐ(π⁻¹ ∅, π⁻¹ ∅ ∩ Z; M)` vanish, so `TopCat.pullbackCupRestrict` is bijective in
+every degree. -/
+theorem bijective_pullbackCupRestrict_empty {n p m : ℕ} (h : p + n = m)
+    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    Function.Bijective (pullbackCupRestrict π Z M (∅ : Set Y) n p m h u) := by
+  let P := TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' (∅ : Set Y) ∩ Z ⊆ π ⁻¹' (∅ : Set Y))
+  have : IsEmpty P.fst := ⟨fun x ↦ x.property⟩
+  have : IsEmpty P.snd := ⟨fun x ↦ x.property.1⟩
+  have : Subsingleton ((of (∅ : Set Y)).singularCohomology (ModuleCat.of K K) K M p) :=
+    ModuleCat.subsingleton_of_isZero
+      (TauCeti.isZero_singularCohomology_of_isEmpty (ModuleCat.of K K) K M (of (∅ : Set Y)) p)
+  have : Subsingleton (P.singularCohomology (ModuleCat.of K K) K M m) :=
+    ModuleCat.subsingleton_of_isZero
+      ((TauCeti.isZero_singularCohomology_of_isEmpty (ModuleCat.of K K) K M P.fst m).of_iso
+        (asIso (P.singularCohomologyπ (ModuleCat.of K K) K M m)))
+  exact Function.bijective_of_subsingleton' _
+
+/-- Over the whole base, the map over `S` of `u` is bijective exactly when `a ↦ π^*a ⌣ u` is. -/
+theorem bijective_pullbackCupRestrict_univ_iff {n p m : ℕ} (h : p + n = m)
+    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    Function.Bijective (pullbackCupRestrict π Z M Set.univ n p m h u) ↔
+      Function.Bijective ((TopPair.ofSubset Z).pullbackCup M π n p m h u) := by
+  have := isIso_restrictPreimagePairMap π Z (S := Set.univ) fun _ ↦ Set.mem_univ _
+  rw [pullbackCupRestrict_apply]
+  exact TopPair.bijective_pullbackCup_iff_of_isIso (restrictPreimagePairMap π Z Set.univ)
+    (isoOfHomeo (Homeomorph.Set.univ Y)).hom
+    (TopCat.ext fun x ↦ congrArg π (restrictPreimagePairMap_fst_apply π Z Set.univ x)) h u
+
+end TopCat

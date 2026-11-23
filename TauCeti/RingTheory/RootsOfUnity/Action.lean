@@ -38,7 +38,7 @@ theorem smul_mem_rootsOfUnity (g : G) {ζ : Mˣ} (hζ : ζ ∈ rootsOfUnity n M)
 
 /-- The action of `G` on `rootsOfUnity n M` inherited from its action on `Mˣ`. -/
 instance rootsOfUnity.mulDistribMulAction : MulDistribMulAction G (rootsOfUnity n M) where
-  smul g ζ := ⟨g • (ζ : Mˣ), smul_mem_rootsOfUnity g ζ.2⟩
+  smul g ζ := ⟨g • (ζ : Mˣ), smul_mem_rootsOfUnity g ζ.property⟩
   one_smul _ := Subtype.ext (one_smul G _)
   mul_smul _ _ _ := Subtype.ext (mul_smul _ _ _)
   smul_mul _ _ _ := Subtype.ext (smul_mul' _ _ _)

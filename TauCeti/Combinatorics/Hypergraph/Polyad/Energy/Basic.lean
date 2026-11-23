@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.BigOperators.Finset.WeightedCauchySchwarz
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Density
-import TauCeti.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.Card.Embedding
 import Mathlib.Data.Rat.BigOperators
 
 /-!
@@ -45,13 +45,16 @@ energy-increment argument that regularizes a coloring over a refined lower skele
 
 * `TauCeti.Colored3Graph.sum_relativeDensity_ofTriple_mul`: relative densities at polyads act as
   conditional expectations of the color indicators.
+* `TauCeti.Colored3Graph.sum_sq_relativeDensity_le_one`: over every polyad, the squared relative
+  densities of all colors sum to at most one.
 * `TauCeti.Colored3Graph.polyadEnergy_nonneg` and `TauCeti.Colored3Graph.polyadEnergy_le_one`.
 * `TauCeti.Colored3Graph.polyadEnergy_eq_sum_polyad`: the support-weighted sum over polyads.
 * `TauCeti.Colored3Graph.polyadDensityDeviation_sq`: the refinement defect identity.
 * `TauCeti.Colored3Graph.polyadEnergy_mono_of_refines`: refining the skeleton does not decrease
   the energy.
-* `TauCeti.Colored3Graph.polyadDensityDeviation_abs_le`: the absolute-deviation bound from an
-  energy gap.
+* `TauCeti.Colored3Graph.polyadDensityDeviation_abs_le` and
+  `TauCeti.Colored3Graph.polyadDensityDeviation_sum_abs_le`: single-color and palette-summed
+  absolute-deviation bounds from an energy gap.
 * `TauCeti.Colored3Graph.polyadEnergy_const`: a constant coloring has energy one.
 
 ## References
@@ -81,7 +84,7 @@ theorem sum_relativeDensity_ofTriple_mul {S : PairSkeleton3 κ₂ V} (c : κ)
     (φ : {x : Fin 3 → V // Function.Injective x} → ℝ)
     (hφ : ∀ x y, Polyad3.ofTriple S x = Polyad3.ofTriple S y → φ x = φ y) :
     ∑ x, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) * φ x =
-      ∑ x with H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c, φ x := by
+      ∑ x with H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c, φ x := by
   -- The triples sharing the polyad of `y` contribute `φ y` in total.
   have key : ∀ y, ∑ x ∈ (Polyad3.ofTriple S y).support,
       φ x / #(Polyad3.ofTriple S x).support = φ y := by
@@ -95,7 +98,7 @@ theorem sum_relativeDensity_ofTriple_mul {S : PairSkeleton3 κ₂ V} (c : κ)
     rw [sum_congr rfl heq, sum_const, nsmul_eq_mul, mul_div_cancel₀ _ hpos]
   -- Expand each density as a count over the support, then exchange the two sums.
   calc ∑ x, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) * φ x
-      = ∑ x, ∑ y with H.color (Set.powersetCard.ofFinEmb 3 V ⟨y.1, y.2⟩) = c,
+      = ∑ x, ∑ y with H.color (Set.powersetCard.ofFinEmb 3 V ⟨y.val, y.property⟩) = c,
           if y ∈ (Polyad3.ofTriple S x).support then
             φ x / #(Polyad3.ofTriple S x).support else 0 := by
         refine sum_congr rfl fun x _ ↦ ?_
@@ -103,7 +106,7 @@ theorem sum_relativeDensity_ofTriple_mul {S : PairSkeleton3 κ₂ V} (c : κ)
           relDensityOn_def]
         push_cast
         ring
-    _ = ∑ y with H.color (Set.powersetCard.ofFinEmb 3 V ⟨y.1, y.2⟩) = c,
+    _ = ∑ y with H.color (Set.powersetCard.ofFinEmb 3 V ⟨y.val, y.property⟩) = c,
           ∑ x ∈ (Polyad3.ofTriple S y).support, φ x / #(Polyad3.ofTriple S x).support := by
         rw [sum_comm]
         refine sum_congr rfl fun y _ ↦ ?_
@@ -114,16 +117,12 @@ theorem sum_relativeDensity_ofTriple_mul {S : PairSkeleton3 κ₂ V} (c : κ)
 
 variable [Fintype κ]
 
-/-- At each injective triple, the squared relative densities of all colors sum to at most one. -/
-private theorem sum_sq_relativeDensity_ofTriple_le_one {S : PairSkeleton3 κ₂ V}
-    (x : {x : Fin 3 → V // Function.Injective x}) :
-    ∑ c, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) ^ 2 ≤ 1 := by
-  calc ∑ c, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) ^ 2
-      ≤ ∑ c, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) :=
-        sum_le_sum fun c _ ↦ pow_le_of_le_one (mod_cast H.relativeDensity_nonneg c _)
-          (mod_cast H.relativeDensity_le_one c _) two_ne_zero
-    _ = 1 := mod_cast H.sum_relativeDensity (P := Polyad3.ofTriple S x)
-        ⟨x, Polyad3.mem_support_ofTriple x⟩
+/-- Over every polyad, the squared relative densities of all colors sum to at most one. -/
+theorem sum_sq_relativeDensity_le_one {S : PairSkeleton3 κ₂ V} (P : Polyad3 S) :
+    ∑ c, (H.relativeDensity c P : ℝ) ^ 2 ≤ 1 := by
+  simpa only [relativeDensity_def] using
+    (mod_cast H.sum_sq_relDensityOn_le_one P.support :
+      ∑ c, (H.relDensityOn c P.support : ℝ) ^ 2 ≤ 1)
 
 variable (S : PairSkeleton3 κ₂ V)
 
@@ -151,7 +150,7 @@ lie in `[0, 1]` and sum to one. -/
 theorem polyadEnergy_le_one : H.polyadEnergy S ≤ 1 := by
   refine div_le_one_of_le₀ ?_ (Nat.cast_nonneg _)
   calc _ ≤ ∑ _x : {x : Fin 3 → V // Function.Injective x}, (1 : ℝ) :=
-        sum_le_sum fun x _ ↦ H.sum_sq_relativeDensity_ofTriple_le_one x
+        sum_le_sum fun x _ ↦ H.sum_sq_relativeDensity_le_one _
     _ = (Fintype.card V).descFactorial 3 := by
         rw [sum_const, card_univ, Fintype.card_subtype_injective, Fintype.card_fin, nsmul_one]
 
@@ -228,28 +227,34 @@ theorem polyadDensityDeviation_abs_le {ε : ℝ} (hgap : H.polyadEnergy T - H.po
         |(H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
           H.relativeDensity c (Polyad3.ofTriple S x)| ≤
       √ε * (Fintype.card V).descFactorial 3 := by
-  obtain hD | hD := eq_or_ne ((Fintype.card V).descFactorial 3) 0
-  · -- Without injective triples both sides vanish.
-    have : IsEmpty {x : Fin 3 → V // Function.Injective x} := by
-      rw [← Fintype.card_eq_zero_iff, Fintype.card_subtype_injective, Fintype.card_fin, hD]
-    rw [univ_eq_empty, sum_empty, hD, Nat.cast_zero, mul_zero]
-  set D : ℝ := ((Fintype.card V).descFactorial 3 : ℝ)
-  have hD₀ : 0 < D := Nat.cast_pos.2 (Nat.pos_of_ne_zero hD)
+  have hcard : #(univ : Finset {x : Fin 3 → V // Function.Injective x}) =
+      (Fintype.card V).descFactorial 3 := by
+    rw [card_univ, Fintype.card_subtype_injective, Fintype.card_fin]
   rw [← H.polyadDensityDeviation_sq h] at hgap
-  have hw : ∑ _x : {x : Fin 3 → V // Function.Injective x}, D⁻¹ ≤ 1 := by
-    rw [sum_const, card_univ, Fintype.card_subtype_injective, Fintype.card_fin, nsmul_eq_mul,
-      mul_inv_cancel₀ hD₀.ne']
-  have hε : ∑ x : {x : Fin 3 → V // Function.Injective x}, D⁻¹ *
-      ((H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
-        H.relativeDensity c (Polyad3.ofTriple S x)) ^ 2 ≤ ε := by
-    refine le_trans ?_ hgap
-    rw [← mul_sum, inv_mul_eq_div]
-    gcongr with x
-    exact single_le_sum (f := fun c ↦ ((H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
-      H.relativeDensity c (Polyad3.ofTriple S x)) ^ 2) (fun _ _ ↦ sq_nonneg _) (mem_univ c)
-  have := weighted_sum_abs_le_sqrt univ (fun _ ↦ D⁻¹) _ (fun _ _ ↦ inv_nonneg.2 hD₀.le) hw hε
-  rw [← mul_sum, inv_mul_le_iff₀ hD₀] at this
-  linarith
+  rw [← hcard] at hgap ⊢
+  refine univ.sum_abs_le_sqrt _ (le_trans ?_ hgap)
+  gcongr with x
+  exact single_le_sum (f := fun c ↦ ((H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
+    H.relativeDensity c (Polyad3.ofTriple S x)) ^ 2) (fun _ _ ↦ sq_nonneg _) (mem_univ c)
+
+/-- **Energy gap controls total-variation deviation.** If every polyad over `T` lies in a polyad
+over `S` and the energy gap is at most `ε`, then the sum over all colors of the absolute deviations
+between the fine and the coarse relative densities is at most `√(|κ| ε)` on average over the
+injective triples. -/
+theorem polyadDensityDeviation_sum_abs_le {ε : ℝ}
+    (hgap : H.polyadEnergy T - H.polyadEnergy S ≤ ε) :
+    ∑ x : {x : Fin 3 → V // Function.Injective x}, ∑ c,
+        |(H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
+          H.relativeDensity c (Polyad3.ofTriple S x)| ≤
+      √(Fintype.card κ * ε) * (Fintype.card V).descFactorial 3 := by
+  have hcard : #(univ : Finset {x : Fin 3 → V // Function.Injective x}) =
+      (Fintype.card V).descFactorial 3 := by
+    rw [card_univ, Fintype.card_subtype_injective, Fintype.card_fin]
+  rw [← H.polyadDensityDeviation_sq h] at hgap
+  rw [← hcard] at hgap ⊢
+  simpa [card_univ] using univ.sum_sum_abs_le_sqrt univ
+    (fun x c ↦ (H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
+      H.relativeDensity c (Polyad3.ofTriple S x)) hgap
 
 end Refinement
 

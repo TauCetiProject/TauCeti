@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.Algebraic.Integral
 
 /-!
 # Finite-dimensionality of a fraction field over an intermediate field
@@ -35,6 +36,27 @@ finite `R`-generating set of `S`, so it is a finite `K`-module and its elements 
 public section
 
 namespace TauCeti
+
+/-- For `B` integral over `A`, the fraction field `L` of `B` is spanned by `B` over any field `K`
+between `A` and `L`. -/
+theorem span_range_algebraMap_eq_top {A B L : Type*} (K : Type*) [CommRing A] [Field K]
+    [Algebra A K] [CommRing B] [Algebra A B] [Field L] [Algebra B L] [IsFractionRing B L]
+    [Algebra K L] [Algebra A L] [IsScalarTower A K L] [IsScalarTower A B L]
+    [Algebra.IsIntegral A B] :
+    Submodule.span K (Set.range (algebraMap B L)) = ⊤ := by
+  let S : Subalgebra K L := Algebra.adjoin K (Set.range (algebraMap B L))
+  have hS : Subalgebra.toSubmodule S = Submodule.span K (Set.range (algebraMap B L)) := by
+    rw [Algebra.adjoin_eq_span, ← MonoidHom.coe_mrange, Submonoid.closure_eq]
+  rw [← hS, eq_top_iff]
+  intro x _
+  obtain ⟨β, γ, -, rfl⟩ := IsFractionRing.div_surjective (A := B) x
+  have hγS : algebraMap B L γ ∈ S := Algebra.subset_adjoin ⟨γ, rfl⟩
+  have hγK : IsAlgebraic K (algebraMap B L γ) :=
+    (((Algebra.IsIntegral.isIntegral (R := A) γ).map (IsScalarTower.toAlgHom A B L)).tower_top
+      (A := K)).isAlgebraic
+  rw [div_eq_mul_inv]
+  exact S.mul_mem (Algebra.subset_adjoin ⟨β, rfl⟩)
+    (Subalgebra.inv_mem_of_algebraic S (x := ⟨_, hγS⟩) hγK)
 
 /-- A fraction field `L` of a ring `S` that is finite as an `R`-module is finite-dimensional
 over any intermediate field `K`, that is, any field with `R → K → L`.

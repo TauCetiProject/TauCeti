@@ -26,12 +26,15 @@ section values and fibre vectors.
   `CovariantDerivative.covariantDerivative_smul_section_vectorField`: the Leibniz rule for the
   covariant derivative of a function multiple of a section at a tangent vector and along a
   vector field.
+* `CovariantDerivative.apply_eq_zero_of_notMem_closure`: a covariant derivative of a section
+  vanishes off the closure of its nonzero locus.
 * `CovariantDerivative.addOneForm_apply`: evaluate a connection perturbed by an
   endomorphism-valued one-form on a section.
 * `CovariantDerivative.difference_apply`: evaluate the difference of two connections on the value
   of a section differentiable at the base point.
 * `CovariantDerivative.difference_apply_eq_extend`: evaluate the difference of two connections on
   a fibre vector using a local extension.
+* `CovariantDerivative.difference_self`: the difference of a connection with itself vanishes.
 -/
 
 public section
@@ -155,6 +158,19 @@ theorem covariantDerivative_smul_section_vectorField (cov : CovariantDerivative 
   rw [h]
   simp [add_apply, ContinuousLinearMap.smulRight_apply]
 
+/-- **Locality.** A covariant derivative of a section vanishes off the closure of the nonzero
+locus of the section. -/
+theorem apply_eq_zero_of_notMem_closure (cov : CovariantDerivative I F V) {σ : Π x : M, V x}
+    {x : M} (hx : x ∉ closure {y | σ y ≠ 0}) : cov σ x = 0 := by
+  have hev : ∀ᶠ y in 𝓝 x, σ y = (0 : Π y : M, V y) y := by
+    filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hx] with y hy
+    by_contra h
+    exact hy (subset_closure h)
+  have h0 : MDiffAt (T% (0 : Π y : M, V y)) x := mdifferentiableAt_zeroSection ..
+  have hσ : MDiffAt (T% σ) x := h0.congr_of_eventuallyEq (hev.mono fun y hy ↦ by simp [hy])
+  rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hσ h0 Filter.univ_mem hev]
+  exact congrFun cov.zero x
+
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [ContMDiffVectorBundle 1 F V I]
 
 /-- The difference of two connections evaluated on a section differentiable at the base point. -/
@@ -170,5 +186,11 @@ theorem difference_apply_eq_extend (cov cov' : CovariantDerivative I F V)
     cov.difference cov' x w = cov (FiberBundle.extend F w) x - cov' (FiberBundle.extend F w) x := by
   simpa only [FiberBundle.extend_apply_self] using
     cov.difference_apply cov' (FiberBundle.mdifferentiableAt_extend I F w)
+
+/-- The difference of a connection with itself vanishes. -/
+@[simp]
+theorem difference_self (cov : CovariantDerivative I F V) : cov.difference cov = 0 := by
+  ext x w
+  simp [difference_apply_eq_extend]
 
 end CovariantDerivative

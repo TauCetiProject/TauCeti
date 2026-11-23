@@ -83,7 +83,7 @@ end LieTypeIndex
 This is a subtype of `TauCeti.ValidLieTypeIndex`, as required of every index passed to a
 carrier-valued construction. Its constructor selector excludes the uniform Ree family of type
 `F₄`, whose members use the same diagram and exceptional isogeny. -/
-abbrev TitsLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTits}
+abbrev TitsLieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsTits}
 
 namespace TitsLieIndex
 
@@ -99,43 +99,51 @@ theorem eq_of (d : TitsLieIndex) : d = of := by
   all_goals exact fun _ hd => by simp at hd
 
 /-- The Tits construction uses the rank-four diagram `F₄`. -/
-@[simp] theorem dynkinType_eq (d : TitsLieIndex) : d.1.dynkinType = .F4 := by
+@[simp] theorem dynkinType_eq (d : TitsLieIndex) : d.val.dynkinType = .F4 := by
   rw [d.eq_of]
   exact LieTypeIndex.dynkinType_tits
 
 /-- The Tits construction has rank four, that being the rank of `F₄`. -/
-@[simp] theorem rank_eq_four (d : TitsLieIndex) : d.1.rank = 4 :=
+@[simp] theorem rank_eq_four (d : TitsLieIndex) : d.val.rank = 4 :=
   congrArg DynkinType.rank d.dynkinType_eq
 
 /-- The Tits construction lives in characteristic two. -/
-@[simp] theorem characteristic_eq_two (d : TitsLieIndex) : d.1.characteristic = 2 := by
+@[simp] theorem characteristic_eq_two (d : TitsLieIndex) : d.val.characteristic = 2 := by
   rw [d.eq_of]
   exact LieTypeIndex.characteristic_tits
 
 /-- The field order attached to the Tits index is two. -/
-@[simp] theorem fieldOrder_eq_two (d : TitsLieIndex) : d.1.fieldOrder = 2 := by
+@[simp] theorem fieldOrder_eq_two (d : TitsLieIndex) : d.val.fieldOrder = 2 := by
   rw [d.eq_of]
   exact LieTypeIndex.fieldOrder_tits
 
 /-- The field exponent attached to the Tits index is one, so its Steinberg map is the
 half-Frobenius itself. -/
-@[simp] theorem fieldExponent_eq_one (d : TitsLieIndex) : d.1.fieldExponent = 1 := by
+@[simp] theorem fieldExponent_eq_one (d : TitsLieIndex) : d.val.fieldExponent = 1 := by
   rw [d.eq_of]
   exact LieTypeIndex.fieldExponent_tits
 
 /-- A Tits index is a Suzuki--Ree index: its Steinberg map is an odd power of a
 half-Frobenius. -/
 abbrev toSuzukiReeIndex (d : TitsLieIndex) : SuzukiReeIndex :=
-  ⟨d.1, LieTypeIndex.usesHalfFrobenius_of_isTits d.2⟩
+  ⟨d.val, LieTypeIndex.usesHalfFrobenius_of_isTits d.property⟩
+
+/-- The indexed length permutation reverses the short-root carrier's four nodes. -/
+theorem finCongr_lengthPerm (d : TitsLieIndex) (i : Fin d.val.rank) :
+    finCongr d.rank_eq_four (d.toSuzukiReeIndex.lengthPerm i) =
+      Fin.revPerm (finCongr d.rank_eq_four i) := by
+  obtain rfl := d.eq_of
+  simp [toSuzukiReeIndex, SuzukiReeIndex.lengthPerm_tits, Equiv.permCongr_def,
+    lengthPermF4_apply]
 
 /-- **The exponents of the exceptional isogeny on the four numbered simple root subgroups**: the
 first power at the two long simple roots, Bourbaki nodes `1` and `2`, and the second power at the
 two short ones. This is the `F₄` specialization of
 `TauCeti.SuzukiReeIndex.exponent_of_isLongSimpleRoot`. -/
-@[simp] theorem exponent_eq (d : TitsLieIndex) (i : Fin d.1.rank) :
+@[simp] theorem exponent_eq (d : TitsLieIndex) (i : Fin d.val.rank) :
     d.toSuzukiReeIndex.exponent i = if (i : ℕ) < 2 then 1 else 2 := by
   obtain rfl := d.eq_of
-  have hlong : of.1.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) < 2 :=
+  have hlong : of.val.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) < 2 :=
     Iff.of_eq (congrFun DynkinType.isLongSimpleRoot_F4 i)
   by_cases h : (i : ℕ) < 2
   · have hi : of.toSuzukiReeIndex.exponent i = 1 :=

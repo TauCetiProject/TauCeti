@@ -123,7 +123,7 @@ theorem explicitMap1_explicitCup01 (m : H0 G M) (b : H1 G N) :
   | _ c =>
     simp only [explicitCup01_mk, explicitMap1_mk]
     exact congrArg (fun z : Z1 H P' => (z : H1 H P'))
-      (Subtype.ext (funext fun h => by simp [cocyclesMap1_coe, hcoe, hpair]))
+      (Subtype.ext (funext fun h => by simp [coe_cocyclesMap1, hcoe, hpair]))
 
 end NaturalityZeroOne
 
@@ -167,7 +167,7 @@ theorem explicitMap1_explicitCup10 (a : H1 G M) (n : H0 G N) :
   | _ c =>
     simp only [explicitCup10_mk, explicitMap1_mk]
     exact congrArg (fun z : Z1 H P' => (z : H1 H P'))
-      (Subtype.ext (funext fun h => by simp [cocyclesMap1_coe, hcoe, hpair, hfN]))
+      (Subtype.ext (funext fun h => by simp [coe_cocyclesMap1, hcoe, hpair, hfN]))
 
 end NaturalityOneZero
 
@@ -214,7 +214,7 @@ theorem explicitMap2_explicitCup02 (m : H0 G M) (b : H2 G N) :
     exact congrArg (fun z : Z2 H P' => (z : H2 H P'))
       (Subtype.ext (funext fun q => by
         obtain ⟨h, k⟩ := q
-        simp [cocyclesMap2_coe, hcoe, hpair]))
+        simp [coe_cocyclesMap2, hcoe, hpair]))
 
 end NaturalityZeroTwo
 
@@ -263,7 +263,7 @@ theorem explicitMap2_explicitCup20 (a : H2 G M) (n : H0 G N) :
     exact congrArg (fun z : Z2 H P' => (z : H2 H P'))
       (Subtype.ext (funext fun q => by
         obtain ⟨h, k⟩ := q
-        simp [cocyclesMap2_coe, hcoe, hpair, hmul]))
+        simp [coe_cocyclesMap2, hcoe, hpair, hmul]))
 
 end NaturalityTwoZero
 
@@ -302,16 +302,16 @@ one-cocycles, for compatible pairs intertwining the coefficient pairings. -/
 theorem cocyclesMap2_cup11 (a : Z1 G M) (b : Z1 G N) :
     cocyclesMap2 G P H P' φ fP hcP hfP
         ⟨fun q : G × G => μ ((a : G → M) q.1) (q.1 • (b : G → N) q.2),
-          cup11_mem_Z2 G M N P μ hμ hequiv a.2 b.2⟩ =
+          cup11_mem_Z2 G M N P μ hμ hequiv a.property b.property⟩ =
       ⟨fun q : H × H =>
           μ' ((cocyclesMap1 G M H M' φ fM hcM hfM a : H → M') q.1)
             (q.1 • (cocyclesMap1 G N H N' φ fN hcN hfN b : H → N') q.2),
         cup11_mem_Z2 H M' N' P' μ' hμ' hequiv'
-          (cocyclesMap1 G M H M' φ fM hcM hfM a).2
-          (cocyclesMap1 G N H N' φ fN hcN hfN b).2⟩ := by
+          (cocyclesMap1 G M H M' φ fM hcM hfM a).property
+          (cocyclesMap1 G N H N' φ fN hcN hfN b).property⟩ := by
   apply Subtype.ext
   ext ⟨h, k⟩
-  simp [cocyclesMap1_coe, cocyclesMap2_coe, hpair, hfN]
+  simp [coe_cocyclesMap1, coe_cocyclesMap2, hpair, hfN]
 
 include hpair in
 /-- **Naturality of the `(1,1)` cup product in compatible pairs.** This is the only shape in

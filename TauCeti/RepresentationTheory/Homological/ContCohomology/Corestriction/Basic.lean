@@ -145,7 +145,7 @@ theorem sum_transversal_smul_mem_H0 {m : M} (hm : m ∈ H0 U M) :
 /-- **Corestriction in degree zero for a variable transversal**, the norm
 `m ↦ ∑ u, t u • m : H⁰(U, M) → H⁰(G, M)`. -/
 noncomputable def explicitCor0Transversal : H0 U M →+ H0 G M where
-  toFun m := ⟨∑ u : G ⧸ U, t u • (m : M), sum_transversal_smul_mem_H0 G M U t ht m.2⟩
+  toFun m := ⟨∑ u : G ⧸ U, t u • (m : M), sum_transversal_smul_mem_H0 G M U t ht m.property⟩
   map_zero' := by ext; simp
   map_add' a b := by ext; simp [smul_add, Finset.sum_add_distrib]
 
@@ -179,7 +179,7 @@ theorem map_explicitCor0Transversal {N : Type w} [AddCommGroup N]
 theorem explicitCor0Transversal_comp_res0 (m : H0 G M) :
     explicitCor0Transversal G M U t ht (explicitRes0 G M U m) = U.index • m := by
   have hm : ∀ u : G ⧸ U, t u • (m : M) = m := fun u =>
-    (FixedPoints.mem_addSubgroup G M m).1 m.2 (t u)
+    (FixedPoints.mem_addSubgroup G M m).1 m.property (t u)
   ext
   simp [hm, U.index_eq_card, Nat.card_eq_fintype_card]
 
@@ -198,7 +198,7 @@ theorem explicitCor0_changeTransversal (t t' : G ⧸ U → G)
   ext m
   refine Finset.sum_congr rfl fun u _ => ?_
   rw [← transversal_mul_transversalDiff U t t' u, ← smul_smul,
-    smul_eq_self_of_mem G M U m.2 (transversalDiff_mem U t t' ht ht' u)]
+    smul_eq_self_of_mem G M U m.property (transversalDiff_mem U t t' ht ht' u)]
 
 /-- **Corestriction in degree zero**, the canonical norm
 `m ↦ ∑ u, Quotient.out u • m : H⁰(U, M) → H⁰(G, M)`. -/
@@ -296,9 +296,8 @@ theorem smul_apply_lWord_mul_of_isCocycle₁ {f : U → M} (hf : groupCohomology
     t u • f ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ =
       t u • f ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ +
         (γ * t (γ⁻¹ • u)) • f ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ := by
-  have hmul : (⟨_, lWord_mem U t ht u γ⟩ : U) * ⟨_, lWord_mem U t ht (γ⁻¹ • u) η⟩ =
-      ⟨_, lWord_mem U t ht u (γ * η)⟩ := Subtype.ext (lWord_mul_lWord U t u γ η)
-  rw [← hmul, hf, Subgroup.smul_def, smul_add, smul_smul, transversal_mul_lWord, add_comm]
+  rw [← mk_lWord_mul_mk_lWord U t ht u γ η, hf, Subgroup.smul_def, smul_add, smul_smul,
+    transversal_mul_lWord, add_comm]
 
 /-- **The corestriction of a `1`-cocycle is a `1`-cocycle.** The factor `t u •` is what makes this
 true: the transversal identity `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` of
@@ -479,7 +478,7 @@ theorem explicitCor1_changeTransversal (t' : G ⧸ U → G)
   | _ f =>
     rw [explicitCor1Transversal_mk, explicitCor1Transversal_mk, H1pi_eq_iff,
       coe_cocyclesCor1, coe_cocyclesCor1,
-      cochainsCor1_changeTransversal G M U t ht t' ht' (mem_Z1_iff.1 f.2).2,
+      cochainsCor1_changeTransversal G M U t ht t' ht' (mem_Z1_iff.1 f.property).2,
       sub_add_eq_sub_sub, sub_self, zero_sub]
     exact neg_mem (d0_mem_B1 _)
 
@@ -516,7 +515,7 @@ theorem explicitCor1Transversal_comp_res1 (x : H1 G M) :
       funext fun x => cocyclesMap1_apply G M U M (ContinuousMonoidHom.subgroupSubtype U)
         (AddMonoidHom.id M) continuous_id (fun _ _ => rfl) c x
     rw [explicitRes1_mk, explicitCor1Transversal_mk, ← hns, H1pi_eq_iff,
-      coe_cocyclesCor1, hres, cochainsCor1_res G M U t ht (mem_Z1_iff.1 c.2).2]
+      coe_cocyclesCor1, hres, cochainsCor1_res G M U t ht (mem_Z1_iff.1 c.property).2]
     have hcoe : ((U.index • c : Z1 G M) : G → M) = U.index • (c : G → M) := by
       simp
     rw [hcoe, add_sub_cancel_left]
@@ -543,7 +542,7 @@ theorem explicitCor1_explicitMap1_id {N : Type w} [AddCommGroup N] [DistribMulAc
   | _ c =>
     rw [explicitMap1_mk, explicitCor1_mk, explicitCor1_mk, explicitMap1_mk]
     refine congrArg (fun z : Z1 G N => (z : H1 G N)) (Subtype.ext (funext fun γ => ?_))
-    rw [coe_cocyclesCor1, cocyclesMap1_coe, cocyclesMap1_apply, coe_cocyclesCor1,
+    rw [coe_cocyclesCor1, coe_cocyclesMap1, cocyclesMap1_apply, coe_cocyclesCor1,
       map_cochainsCor1 G M U _ _ f hequiv]
     simp
 
@@ -615,14 +614,8 @@ theorem cochainsCor2_isCocycle₂ {f : U × U → M} (hf : groupCohomology.IsCoc
         t u • f (⟨lWord U t u γ, lWord_mem U t ht u γ⟩,
           ⟨lWord U t (γ⁻¹ • u) (η * ζ), lWord_mem U t ht (γ⁻¹ • u) (η * ζ)⟩) := by
     intro u
-    have hab : (⟨lWord U t u γ, lWord_mem U t ht u γ⟩ : U) *
-        ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ =
-          ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ :=
-      Subtype.ext (lWord_mul_lWord U t u γ η)
-    have hbc : (⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ : U) *
-        ⟨lWord U t (η⁻¹ • γ⁻¹ • u) ζ, lWord_mem U t ht (η⁻¹ • γ⁻¹ • u) ζ⟩ =
-          ⟨lWord U t (γ⁻¹ • u) (η * ζ), lWord_mem U t ht (γ⁻¹ • u) (η * ζ)⟩ :=
-      Subtype.ext (lWord_mul_lWord U t (γ⁻¹ • u) η ζ)
+    have hab := mk_lWord_mul_mk_lWord U t ht u γ η
+    have hbc := mk_lWord_mul_mk_lWord U t ht (γ⁻¹ • u) η ζ
     have hcc : (⟨lWord U t ((γ * η)⁻¹ • u) ζ, lWord_mem U t ht ((γ * η)⁻¹ • u) ζ⟩ : U) =
         ⟨lWord U t (η⁻¹ • γ⁻¹ • u) ζ, lWord_mem U t ht (η⁻¹ • γ⁻¹ • u) ζ⟩ :=
       Subtype.ext (by rw [mul_inv_rev, mul_smul])
@@ -647,10 +640,7 @@ theorem cochainsCor2_d1 (c : U → M) :
             t u • c ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ +
           t u • c ⟨lWord U t u γ, lWord_mem U t ht u γ⟩ := by
     intro u
-    have hab : (⟨lWord U t u γ, lWord_mem U t ht u γ⟩ : U) *
-        ⟨lWord U t (γ⁻¹ • u) η, lWord_mem U t ht (γ⁻¹ • u) η⟩ =
-          ⟨lWord U t u (γ * η), lWord_mem U t ht u (γ * η)⟩ :=
-      Subtype.ext (lWord_mul_lWord U t u γ η)
+    have hab := mk_lWord_mul_mk_lWord U t ht u γ η
     rw [d1_apply, hab, smul_add, smul_sub, Subgroup.mk_smul, smul_smul,
       transversal_mul_lWord, mul_smul]
   rw [d1_apply]
@@ -689,14 +679,10 @@ private theorem cochainsCor2_changeTransversal_summand (t' : G ⧸ U → G)
       ⟨lWord U t v g, lWord_mem U t ht v g⟩ * D (g⁻¹ • v) := fun v g => Subtype.ext <| by
     rw [Subgroup.coe_mul, Subgroup.coe_mul, hD, hD]
     exact transversalDiff_mul_lWord U t t' v g
-  have hmul : ∀ (s : G ⧸ U → G) (hs : ∀ u : G ⧸ U, (QuotientGroup.mk (s u) : G ⧸ U) = u),
-      (⟨lWord U s u γ, lWord_mem U s hs u γ⟩ : U) *
-          ⟨lWord U s (γ⁻¹ • u) η, lWord_mem U s hs (γ⁻¹ • u) η⟩ =
-        ⟨lWord U s u (γ * η), lWord_mem U s hs u (γ * η)⟩ :=
-    fun s _ => Subtype.ext (lWord_mul_lWord U s u γ η)
   rw [← transversal_mul_transversalDiff U t t' u, ← hD, mul_smul, ← Subgroup.smul_def,
     groupCohomology.smul_map_eq_of_isCocycle₂_of_mul_eq_mul hf (hD' u γ) (hD' (γ⁻¹ • u) η),
-    hmul t' ht', hmul t ht, mul_inv_rev]
+    mk_lWord_mul_mk_lWord U t' ht' u γ η,
+    mk_lWord_mul_mk_lWord U t ht u γ η, mul_inv_rev]
   simp only [smul_add, smul_sub, Subgroup.mk_smul, smul_smul, transversal_mul_lWord]
   abel
 
@@ -874,16 +860,16 @@ theorem explicitCor2_changeTransversal (t' : G ⧸ U → G)
   | _ f =>
     rw [explicitCor2Transversal_mk, explicitCor2Transversal_mk, H2pi_eq_iff,
       coe_cocyclesCor2, coe_cocyclesCor2,
-      cochainsCor2_changeTransversal G M U t ht t' ht' (mem_Z2_iff.1 f.2).2,
+      cochainsCor2_changeTransversal G M U t ht t' ht' (mem_Z2_iff.1 f.property).2,
       sub_add_eq_sub_sub, sub_self, zero_sub]
     have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
     refine neg_mem (mem_B2_iff.2 ⟨_, ?_, rfl⟩)
     refine continuous_finsetSum _ fun u _ => Continuous.const_smul ?_ (t u)
     have hdiff : Continuous fun γ : G => transversalDiff U t t' (γ⁻¹ • u) :=
       continuous_of_discreteTopology.comp (U.continuous_inv_smul_const u)
-    exact ((mem_Z2_iff.1 f.2).1.comp
+    exact ((mem_Z2_iff.1 f.property).1.comp
         (continuous_const.prodMk ((continuous_lWord U t' hU u).subtype_mk _))).sub
-      ((mem_Z2_iff.1 f.2).1.comp
+      ((mem_Z2_iff.1 f.property).1.comp
         (((continuous_lWord U t hU u).subtype_mk _).prodMk (hdiff.subtype_mk _)))
 
 /-- **Corestriction in degree two**, at the canonical transversal `Quotient.out`. -/
@@ -919,15 +905,15 @@ theorem explicitCor2Transversal_comp_res2 (x : H2 G M) :
       funext fun q => cocyclesMap2_apply G M U M (ContinuousMonoidHom.subgroupSubtype U)
         (AddMonoidHom.id M) continuous_id (fun _ _ => rfl) c q.1 q.2
     rw [explicitRes2_mk, explicitCor2Transversal_mk, ← hns, H2pi_eq_iff,
-      coe_cocyclesCor2, hres, cochainsCor2_res G M U t ht (mem_Z2_iff.1 c.2).2]
+      coe_cocyclesCor2, hres, cochainsCor2_res G M U t ht (mem_Z2_iff.1 c.property).2]
     have hcoe : ((U.index • c : Z2 G M) : G × G → M) = U.index • (c : G × G → M) := by
       simp
     rw [hcoe, add_sub_cancel_left]
     refine mem_B2_iff.2 ⟨_, ?_, rfl⟩
     refine continuous_finsetSum _ fun u _ => ?_
-    exact ((mem_Z2_iff.1 c.2).1.comp
+    exact ((mem_Z2_iff.1 c.property).1.comp
         (continuous_const.prodMk (continuous_lWord U t hU u))).sub
-      ((mem_Z2_iff.1 c.2).1.comp (continuous_id.prodMk continuous_const))
+      ((mem_Z2_iff.1 c.property).1.comp (continuous_id.prodMk continuous_const))
 
 /-- **`cor² ∘ res² = (G : U) • id`** on `H²(G, M)`. -/
 theorem explicitCor2_comp_res2 (x : H2 G M) :
