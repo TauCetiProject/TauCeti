@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.YonedaExt.BaerSum
 public import TauCeti.CategoryTheory.Exact.YonedaExt.LongExact
 public import TauCeti.CategoryTheory.Exact.YonedaExt.TrivialIdeal
-public import TauCeti.CategoryTheory.Exact.Stable.Basic
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Linear
 
 /-!
@@ -40,8 +38,9 @@ These are the categorical sides of the covariant and contravariant defects of `e
 
 * `TauCeti.ExactStructure.Extension.exists_mk_pushout_eq_of_isProjective`: every class in
   `Ext¹_E(Z, W)` is a cobase change of `[e]`.
-* `TauCeti.ExactStructure.Extension.mem_projectiveStableIdeal_iff_of_isProjective`: a morphism
-  into `Z` factors through a relative projective exactly when it lifts along the deflation of `e`.
+* `TauCeti.ExactStructure.mem_projectiveStableIdeal_iff_of_isDeflation`: a morphism into `Z`
+  factors through a relative projective exactly when it lifts along a projective deflation onto
+  `Z`.
 
 ## References
 
@@ -84,6 +83,17 @@ theorem ProjectivePresentation.isProjective_extension_obj (P : E.ProjectivePrese
     E.isProjective P.extension.obj :=
   P.isProjective
 
+/-- **Projectively stable morphisms through a projective deflation.** For a deflation
+`p : P ⟶ Z` with `P` relatively projective, a morphism `f : Y ⟶ Z` factors through a relative
+projective exactly when it lifts along `p`. -/
+theorem mem_projectiveStableIdeal_iff_of_isDeflation {P : C} {p : P ⟶ Z} (hp : E.IsDeflation p)
+    (hP : E.isProjective P) (f : Y ⟶ Z) :
+    f ∈ E.projectiveStableIdeal.hom Y Z ↔ ∃ t : Y ⟶ P, t ≫ p = f := by
+  rw [mem_projectiveStableIdeal_iff]
+  refine ⟨fun hf ↦ ?_, fun ⟨t, ht⟩ ↦ ht ▸ ObjectProperty.factorsThrough_comp _ hP t p⟩
+  obtain ⟨Q, hQ, a, b, rfl⟩ := (ObjectProperty.factorsThrough_iff _ _).mp hf
+  exact ⟨a ≫ hQ.factorThru hp b, by simp⟩
+
 namespace Extension
 
 variable (e : E.Extension Z X) (he : E.isProjective e.obj)
@@ -95,16 +105,6 @@ for some `v : X ⟶ W`. -/
 theorem exists_mk_pushout_eq_of_isProjective (ξ : E.Ext1 Z W) :
     ∃ v : X ⟶ W, (Ext1.mk e).pushout v = ξ :=
   (Ext1.pullback_g_eq_zero_iff e ξ).mp ((isProjective_iff_forall_ext1_eq_zero _).mp he W _)
-
-/-- **Projectively stable morphisms through a projective conflation.** If the middle term of
-`e : X ⟶ P ⟶ Z` is relatively projective, a morphism `f : Y ⟶ Z` factors through a relative
-projective exactly when it lifts along the deflation `P ⟶ Z`. -/
-theorem mem_projectiveStableIdeal_iff_of_isProjective (f : Y ⟶ Z) :
-    f ∈ E.projectiveStableIdeal.hom Y Z ↔ ∃ t : Y ⟶ e.obj, t ≫ e.g = f := by
-  rw [mem_projectiveStableIdeal_iff]
-  refine ⟨fun hf ↦ ?_, fun ⟨t, ht⟩ ↦ ht ▸ ObjectProperty.factorsThrough_comp _ he t e.g⟩
-  obtain ⟨Q, hQ, a, b, rfl⟩ := (ObjectProperty.factorsThrough_iff _ _).mp hf
-  exact ⟨a ≫ hQ.factorThru (E.isDeflation_g e.conflation) b, by simp⟩
 
 omit he
 
@@ -147,7 +147,7 @@ noncomputable def homQuotientEquivStableHom (Y : C) :
   Submodule.quotEquivOfEq _ _ (by
       ext f
       rw [LinearMap.mem_range, MorphismIdeal.mem_homSubmodule,
-        e.mem_projectiveStableIdeal_iff_of_isProjective he]
+        mem_projectiveStableIdeal_iff_of_isDeflation (E.isDeflation_g e.conflation) he]
       rfl) ≪≫ₗ
     E.projectiveStableIdeal.homLinearEquiv R Y Z
 

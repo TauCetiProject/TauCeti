@@ -332,8 +332,29 @@ theorem pushoutLinearEquivOfIso_pullback
 theorem pushoutLinearEquivOfIso_symm_pullback
     (α : I.quotientFunctor.obj X ≅ I.quotientFunctor.obj X') (ξ : E.Ext1 Z X') (u : Z' ⟶ Z) :
     (pushoutLinearEquivOfIso hI R α).symm (ξ.pullback u) =
-      ((pushoutLinearEquivOfIso hI R α).symm ξ).pullback u :=
-  (pushout_pullback ξ _ u).symm
+      ((pushoutLinearEquivOfIso hI R α).symm ξ).pullback u := by
+  have hb := I.quotientFunctor.map_preimage α.inv
+  rw [pushoutLinearEquivOfIso_symm_apply hI R α _ hb,
+    pushoutLinearEquivOfIso_symm_apply hI R α _ hb, pushout_pullback]
+
+/-- **A commuting square modulo `I` gives a commuting square on `Ext¹`.** If `a : X ⟶ Y` and
+`a' : X' ⟶ Y'` are compatible with isomorphisms `α : X ≅ X'` and `β : Y ≅ Y'` modulo `I`, then
+cobase change along `a` and along `a'` correspond under the induced isomorphisms of `Ext¹`. -/
+theorem pushoutLinearEquivOfIso_symm_pushout {Y Y' : C}
+    (α : I.quotientFunctor.obj X ≅ I.quotientFunctor.obj X')
+    (β : I.quotientFunctor.obj Y ≅ I.quotientFunctor.obj Y') {a : X ⟶ Y} {a' : X' ⟶ Y'}
+    (h : I.quotientFunctor.map a ≫ β.hom = α.hom ≫ I.quotientFunctor.map a')
+    (ξ : E.Ext1 Z X') :
+    (pushoutLinearEquivOfIso hI R β).symm (ξ.pushout a') =
+      ((pushoutLinearEquivOfIso hI R α).symm ξ).pushout a := by
+  have hb := I.quotientFunctor.map_preimage α.inv
+  have hb' := I.quotientFunctor.map_preimage β.inv
+  rw [pushoutLinearEquivOfIso_symm_apply hI R β _ hb',
+    pushoutLinearEquivOfIso_symm_apply hI R α _ hb, pushout_pushout, pushout_pushout]
+  refine pushout_eq_of_quotientFunctor_map_eq hI ξ ?_
+  rw [Functor.map_comp, Functor.map_comp, hb, hb', Iso.eq_inv_comp, ← Category.assoc,
+    Iso.comp_inv_eq]
+  exact h.symm
 
 end Ext1
 
