@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.LinearIndependent.Extend
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Linear functionals and hyperplanes
@@ -378,9 +379,7 @@ theorem forall_dual_apply_mem_iff {R M : Type*} [Semiring R] [AddCommMonoid M] [
     rw [← hs m, Finsupp.linearCombination_apply]
     exact Submodule.sum_mem _ fun x _ ↦
       Submodule.smul_mem_smul (h (Finsupp.lapply x ∘ₗ s)) Submodule.mem_top
-  · -- `φ (r • x) = r * φ x` lies in `I` for `r ∈ I`, since `I` is also a right ideal.
-    exact (Submodule.smul_le (P := Submodule.comap φ I)).mpr
-      (fun r hr x _ ↦ by simpa using I.mul_mem_right (φ x) hr) hm
+  · exact φ.apply_mem_of_mem_smul_top hm
 
 end Module
 

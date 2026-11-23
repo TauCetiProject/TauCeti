@@ -236,9 +236,14 @@ private theorem free_of_span_finset_eq_top (n : ℕ) :
       refine ih ((s.erase p).image π) (Finset.card_image_le.trans ?_) ?_
       · rw [Finset.card_erase_of_mem hps]
         omega
-      · rw [Finset.coe_image, ← Submodule.span_insert_zero, ← hπp, ← Set.image_insert_eq,
-          Finset.coe_erase, Set.insert_sdiff_singleton, Set.insert_eq_of_mem hps,
-          Submodule.span_image, hspan, Submodule.map_top, LinearMap.range_eq_top.mpr hπ]
+      · -- `π` maps `span s = M` onto `ker φ`, and dropping `p` loses nothing since `π p = 0`.
+        rw [eq_top_iff, ← LinearMap.range_eq_top.mpr hπ, LinearMap.range_eq_map, ← hspan,
+          Submodule.map_span_le]
+        intro x hx
+        by_cases hxp : x = p
+        · simp [hxp, hπp]
+        · exact Submodule.subset_span <| Finset.mem_coe.mpr <|
+            Finset.mem_image_of_mem π (Finset.mem_erase.mpr ⟨hxp, Finset.mem_coe.mp hx⟩)
     exact .of_equiv e
 
 /-- **Finitely generated projective modules over a local ring are free**, for a possibly

@@ -30,7 +30,8 @@ local ring with `ℤ`.
 
 ## References
 
-* T. Y. Lam, *Lectures on Modules and Rings*, GTM 189, Springer (1999), §1D.
+* T. Y. Lam, *Lectures on Modules and Rings*, GTM 189, Springer (1999), Chapter 1,
+  §1 (Free modules: invariant basis number and the rank condition).
 -/
 
 public section
