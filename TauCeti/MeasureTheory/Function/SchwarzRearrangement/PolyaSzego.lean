@@ -5,217 +5,234 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-public import TauCeti.MeasureTheory.Function.SchwarzRearrangement.Lipschitz
+public import TauCeti.MeasureTheory.Function.SchwarzRearrangement.CriticalValues
 import Mathlib.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.BoundedVariation.LevelSurface
 import TauCeti.Analysis.BoundedVariation.SchwarzRearrangement
-import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Convex.Continuous
-import TauCeti.MeasureTheory.Function.SchwarzRearrangement.CriticalValues
+import TauCeti.MeasureTheory.Function.Coarea.Critical
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.ReciprocalWeight
 
 /-!
 # The Pólya–Szegő inequality for Lipschitz functions
 
-Let `E` be a nontrivial finite-dimensional real inner product space, and let `Φ : ℝ → ℝ` be convex
-and monotone on `[0, ∞)` with `Φ 0 = 0`. For a Lipschitz function `h : E → ℝ` whose positive
-superlevel sets `{x | t < h x}` (`t > 0`) have finite Lebesgue volume, the real-valued Schwarz
-rearrangement `h* x := (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) x).toReal`
-satisfies
+Let `h` be a real Lipschitz function on a finite-dimensional real inner product space whose
+superlevel sets `{h > t}` have finite volume for `t > 0`, for instance a nonnegative integrable
+Lipschitz function, and let `h*` be the real Schwarz rearrangement of its positive part. For every
+convex `Φ` on `[0, ∞)` with `Φ 0 ≤ 0`,
 
-`∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h* x‖) ≤ ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖)`
+`∫ Φ(‖∇h*‖) ≤ ∫ Φ(‖∇h‖)`
 
-(`LipschitzWith.lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le`), together with the signed
-variant for `‖u ·‖`, Bochner-integral and integrability forms, and `Lᵖ` specializations for
-`1 ≤ p`.
+(`LipschitzWith.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le`), as extended
+nonnegative integrals of the positive part of `Φ`, so that both sides may be infinite. Gradients
+are the totalized Fréchet derivatives, which agree almost everywhere with the Rademacher gradients
+of these Lipschitz functions. The case `Φ(s) = s` is the `L¹` comparison of gradients
+(`LipschitzWith.lintegral_enorm_fderiv_toReal_schwarzRearrangement_le`). Usually `Φ` is also
+nondecreasing with `Φ 0 = 0`; then the positive part of `Φ` is `Φ` itself on `[0, ∞)`, yielding
+the signed variant for `‖u ·‖`, Bochner-integral and integrability forms, and `Lᵖ`
+specializations for `1 ≤ p`.
+
+## Strategy
+
+By the coarea formula, `∫ Φ(‖∇g‖)` is the integral over the levels `t` of the level contributions
+`F_g(t) = ∫_{{g = t} ∩ {∇g ≠ 0}} Φ(‖∇g‖) ‖∇g‖⁻¹ dHⁿ⁻¹`
+(`MeasureTheory.lintegral_comp_norm_fderiv_eq_lintegral_setLIntegral`). We compare `F_{h*}(t)`
+with `F_h(t)` at almost every level `t > 0`, using the following inputs.
+
+* **Volume.** The level integrals `m_g(t) = ∫_{{g = t} ∩ {∇g ≠ 0}} ‖∇g‖⁻¹ dHⁿ⁻¹` satisfy
+  `m_h(t) ≤ -μ'(t) = m_{h*}(t)`, where `μ(t) = |{h > t}|` is the common distribution function.
+* **Area.** The regular part of the level surface of `h*` has at most the area of that of `h`:
+  the level surfaces carry the perimeters of the superlevel sets, the rearranged superlevel set is
+  the ball of the same volume, and the critical part of almost every level surface of `h` is
+  Hausdorff-null. The sharp isoperimetric inequality then compares the two perimeters.
+* **Radial structure.** The gradient norm of the radially nonincreasing function `h*` is constant
+  on the regular part of each level set (`TauCeti.norm_fderiv_eq_of_antitone_norm`).
+
+Write `P_g(t)` for the area of the regular part of the level surface of `g`. A tangent line to
+the positive part of `Φ` at the constant gradient norm `c` of `h*` on its level `t` has slope
+`k ≥ 0` and intercept `-d ≤ 0`. It lies below that positive part, so
+`F_h(t) + d m_h(t) ≥ k P_h(t)`, with equality `F_{h*}(t) + d m_{h*}(t) = k P_{h*}(t)` for `h*`.
+This is Jensen's inequality for the probability measure proportional to `‖∇h‖⁻¹ dHⁿ⁻¹` on the
+level surface, and the volume and area comparisons then give `F_{h*}(t) ≤ F_h(t)`.
 
 ## References
 
-* J. E. Brothers, W. P. Ziemer, *Minimal rearrangements of Sobolev functions*, J. Reine Angew. Math.
-  384 (1988), 153–179.
-* G. Bianchi, R. J. Gardner, P. Gronchi, M. Kiderlen, *Rearrangement and polarization inequalities
-  for Sobolev functions*, J. Funct. Anal. 287 (2024), Theorem 5.8.
+* G. Bianchi, R. J. Gardner, P. Gronchi, M. Kiderlen, *The Pólya–Szegő inequality for smoothing
+  rearrangements*, arXiv:2206.09833, Theorem 5.8.
+* J. E. Brothers, W. P. Ziemer, *Minimal rearrangements of Sobolev functions*, J. Reine Angew.
+  Math. **384** (1988), 153–179.
 -/
 
 public section
 
-open Filter Function MeasureTheory Metric Module Set TauCeti
-open scoped ENNReal NNReal Topology
+open MeasureTheory Set Filter Module
+open scoped ENNReal NNReal
 
-section PrivateHelpers
+namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
 
-private theorem ae_fiber_bounds_toReal_schwarzRearrangement
-    {K : ℝ≥0} {h : E → ℝ} (hh : LipschitzWith K h)
-    (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞) :
-    let v : E → ℝ := fun x ↦
-      (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) x).toReal
-    ∀ᵐ t : ℝ, 0 < t →
-      t ∉ v '' {z | fderiv ℝ v z = 0} ∧
-      μHE[finrank ℝ E - 1] ({x | fderiv ℝ v x ≠ 0} ∩ v ⁻¹' {t}) ≤
-        μHE[finrank ℝ E - 1] ({x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}) ∧
-      (∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]) ≤
-        (∫⁻ x in {x | fderiv ℝ v x ≠ 0} ∩ v ⁻¹' {t}, ‖fderiv ℝ v x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]) ∧
-      (∫⁻ x in {x | fderiv ℝ v x ≠ 0} ∩ v ⁻¹' {t}, ‖fderiv ℝ v x‖ₑ⁻¹
-        ∂μHE[finrank ℝ E - 1]) < ∞ := by
+/-- **The area comparison.** For a Lipschitz `h` whose positive superlevel sets have finite volume
+and its real Schwarz rearrangement `h*`, at almost every level `t > 0` the regular part
+`{h* = t} ∩ {∇h* ≠ 0}` of the level surface of `h*` has at most the area `Hⁿ⁻¹` of the regular part
+of the level surface of `h`. -/
+private theorem ae_euclideanHausdorffMeasure_regularLevel_le [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [Nontrivial E] {K : ℝ≥0} {h : E → ℝ}
+    (hh : LipschitzWith K h) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞) :
+    ∀ᵐ t, 0 < t →
+      μHE[finrank ℝ E - 1] ({x | fderiv ℝ (fun z ↦ (schwarzRearrangement volume
+          (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x ≠ 0} ∩
+          (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) ⁻¹' {t})
+        ≤ μHE[finrank ℝ E - 1] ({x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}) := by
   set f : E → ℝ≥0∞ := fun y ↦ ENNReal.ofReal (h y)
-  set v : E → ℝ := fun x ↦ (schwarzRearrangement volume f x).toReal
-  have hv_lip : LipschitzWith K v := lipschitzWith_toReal_schwarzRearrangement volume hh
-  have hv_ne_top := schwarzRearrangement_ofReal_ne_top volume hh zero_le_one (hfin 1 zero_lt_one)
-  have hv_level {t : ℝ} (ht : 0 < t) :
-      {x | t < v x} = {x | ENNReal.ofReal t < schwarzRearrangement volume f x} :=
-    Set.ext fun x ↦ (ENNReal.ofReal_lt_iff_lt_toReal ht.le (hv_ne_top x)).symm
-  have hh_level {t : ℝ} (ht : 0 < t) : {x | ENNReal.ofReal t < f x} = {x | t < h x} :=
-    Set.ext fun _ ↦ ENNReal.ofReal_lt_ofReal_iff_of_nonneg ht.le
-  have hcrit := hh.volume_image_setOf_fderiv_toReal_schwarzRearrangement_eq_zero volume
-  filter_upwards [compl_mem_ae_iff.2 hcrit, hh.ae_restrict_inter_setOf_regular_preimage_eq univ,
-    hv_lip.ae_restrict_inter_setOf_regular_preimage_eq univ,
-    hh.locallyLipschitz.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure ⊤,
-    hv_lip.locallyLipschitz.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure ⊤,
-    ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv hfin,
-    hh.ae_setLIntegral_inv_enorm_fderiv_toReal_schwarzRearrangement_eq_ofReal_neg_deriv hfin]
-    with t hcritt hregh hregv hperh hperv hdisth hdistv ht
-  rw [finrank_self, univ_inter, univ_inter,
-    setOf_differentiableAt_and_surjective_fderiv_eq_setOf_fderiv_ne_zero_of_finrank_eq_one
-      (finrank_self ℝ) h] at hregh
-  rw [finrank_self, univ_inter, univ_inter,
-    setOf_differentiableAt_and_surjective_fderiv_eq_setOf_fderiv_ne_zero_of_finrank_eq_one
-      (finrank_self ℝ) v] at hregv
-  refine ⟨hcritt, ?_, hdistv ht ▸ hdisth ht, (hdistv ht) ▸ ENNReal.ofReal_lt_top⟩
-  have hmeas_v : μHE[finrank ℝ E - 1] ({x | fderiv ℝ v x ≠ 0} ∩ v ⁻¹' {t}) =
-      μHE[finrank ℝ E - 1] (v ⁻¹' {t}) := by
-    simpa only [Measure.restrict_apply_univ] using congrArg (fun ν : Measure E ↦ ν univ) hregv.symm
-  have hmeas_h : μHE[finrank ℝ E - 1] ({x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}) =
-      μHE[finrank ℝ E - 1] (h ⁻¹' {t}) := by
-    simpa only [Measure.restrict_apply_univ] using congrArg (fun ν : Measure E ↦ ν univ) hregh.symm
-  simp only [TopologicalSpace.Opens.coe_top, univ_inter] at hperh hperv
-  rw [hmeas_v, hmeas_h, ← hperv, ← hperh, hv_level ht, ← hh_level ht]
-  have hm : MeasurableSet {x | ENNReal.ofReal t < f x} :=
-    measurableSet_lt measurable_const hh.continuous.measurable.ennreal_ofReal
-  exact hm.nullMeasurableSet.perimeter_setOf_lt_schwarzRearrangement_le
+  set w : E → ℝ := fun z ↦ (schwarzRearrangement volume f z).toReal
+  have hfS := hh.schwarzRearrangement_ofReal_ne_top volume (hfin 1 one_pos)
+  have hcrit := hh.ae_euclideanHausdorffMeasure_setOf_fderiv_eq_zero_inter_preimage_eq_zero
+    volume (by simpa using Nat.one_le_iff_ne_zero.2 (finrank_pos (R := ℝ) (M := E)).ne')
+  -- Almost every level surface carries the perimeter of its superlevel set.
+  filter_upwards [(lipschitzWith_toReal_schwarzRearrangement volume
+      hh).locallyLipschitz.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure ⊤,
+    hh.locallyLipschitz.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure ⊤, hcrit]
+    with t hPw hPh hcrit ht
+  rw [finrank_self] at hcrit
+  simp only [TopologicalSpace.Opens.coe_top, univ_inter] at hPw hPh
+  -- The superlevel sets of `w` are the rearranged superlevel sets of `h`.
+  have hset : {x | t < w x} = {x | ENNReal.ofReal t < schwarzRearrangement volume f x} := by
+    ext x
+    exact (ENNReal.ofReal_lt_iff_lt_toReal ht.le (hfS x)).symm
+  have hsource : {x | ENNReal.ofReal t < f x} = {x | t < h x} := by
+    ext x
+    exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg ht.le
+  have hper : perimeter volume ⊤ {x | t < w x} ≤ perimeter volume ⊤ {x | t < h x} := by
+    have hs : NullMeasurableSet {x | ENNReal.ofReal t < f x} := nullMeasurableSet_lt
+      aemeasurable_const hh.continuous.measurable.ennreal_ofReal.aemeasurable
+    rw [hset, ← hsource]
+    exact hs.perimeter_setOf_lt_schwarzRearrangement_le
+  -- The critical part of the level surface of `h` is null.
+  calc _ ≤ μHE[finrank ℝ E - 1] (w ⁻¹' {t}) := measure_mono inter_subset_right
+    _ ≤ μHE[finrank ℝ E - 1] (h ⁻¹' {t}) := by rw [← hPw, ← hPh]; exact hper
+    _ ≤ μHE[finrank ℝ E - 1] ({x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}) +
+        μHE[finrank ℝ E - 1] ({x | fderiv ℝ h x = 0} ∩ h ⁻¹' {t}) := by
+      refine (measure_mono fun x hx ↦ ?_).trans (measure_union_le _ _)
+      by_cases hx0 : fderiv ℝ h x = 0
+      · exact Or.inr ⟨hx0, hx⟩
+      · exact Or.inl ⟨hx0, hx⟩
+    _ = _ := by rw [hcrit, add_zero]
 
-private theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le_of_nonneg
-    {K : ℝ≥0} {h : E → ℝ} (hh : LipschitzWith K h) (hh0 : ∀ x, 0 ≤ h x)
-    (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞)
-    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0) :
-    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ
-        (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖) ≤
-      ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖) := by
-  set f : E → ℝ≥0∞ := fun y ↦ ENNReal.ofReal (h y)
-  set v : E → ℝ := fun x ↦ (schwarzRearrangement volume f x).toReal
-  have hv_ne_top := schwarzRearrangement_ofReal_ne_top volume hh zero_le_one (hfin 1 zero_lt_one)
-  have hΦ_cont : ContinuousOn Φ (Ici 0) := hΦ.continuousOn_Ici_of_monotoneOn hΦm
-  have hco_h := lintegral_map_norm_fderiv_eq_setLIntegral_Ioi hh0
-    (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) hΦ_cont h) hΦ0
-  rw [lintegral_map_norm_fderiv_eq_setLIntegral_Ioi (fun _ ↦ ENNReal.toReal_nonneg)
-    (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) hΦ_cont v) hΦ0, hco_h]
-  set R_v := {x : E | fderiv ℝ v x ≠ 0}; set R_h := {x : E | fderiv ℝ h x ≠ 0}
-  have hrad (x y : E) (hxy : ‖x‖ = ‖y‖) : v x = v y :=
-    congrArg ENNReal.toReal (schwarzRearrangement_eq_of_norm_eq volume f hxy)
-  have hanti (x y : E) (hxy : ‖x‖ ≤ ‖y‖) : v y ≤ v x :=
-    ENNReal.toReal_mono (hv_ne_top x) (schwarzRearrangement_le_of_norm_le volume f hxy)
-  set μH : Measure E := μHE[finrank ℝ E - 1]
-  refine setLIntegral_mono_ae' measurableSet_Ioi ?_
-  filter_upwards [ae_fiber_bounds_toReal_schwarzRearrangement hh hfin] with t hfib ht
-  obtain ⟨hcritt, hperim_le, hinv_le, hinv_fin⟩ := hfib ht
-  set S_v := R_v ∩ v ⁻¹' {t}; set S_h := R_h ∩ h ⁻¹' {t}
-  have hSv_m : MeasurableSet S_v := by
-    dsimp only [S_v, R_v]; rw [inter_comm]
-    exact TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero (measurableSet_singleton t)
-  have hSh_m : MeasurableSet S_h := by
-    dsimp only [S_h, R_h]; rw [inter_comm]
-    exact TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero (measurableSet_singleton t)
-  have hSh_fin : μH S_h < ∞ :=
-    calc μH S_h = ∫⁻ _ in S_h, 1 ∂μH := (setLIntegral_one _).symm
-      _ ≤ ∫⁻ x in S_h, (K : ℝ≥0∞) * ‖fderiv ℝ h x‖ₑ⁻¹ ∂μH :=
-          setLIntegral_mono ((measurable_fderiv ℝ h).eNorm.inv.const_mul _) fun x hx ↦ by
-            have hne0 : ‖fderiv ℝ h x‖ₑ ≠ 0 := by
-              rw [← ofReal_norm]; exact (ENNReal.ofReal_pos.2 (norm_pos_iff.2 hx.1)).ne'
-            rw [← ENNReal.mul_inv_cancel hne0 (by simp [← ofReal_norm])]
-            gcongr; rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
-            exact ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ hh)
-      _ = (K : ℝ≥0∞) * ∫⁻ x in S_h, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μH :=
-          lintegral_const_mul _ (measurable_fderiv ℝ h).eNorm.inv
-      _ < ∞ := ENNReal.mul_lt_top ENNReal.coe_lt_top (hinv_le.trans_lt hinv_fin)
-  have : IsFiniteMeasure (μH.restrict S_h) := ⟨by simpa using hSh_fin⟩
-  have hg₁_const : ∃ γ : ℝ, ∀ᵐ x ∂μH.restrict S_v, ‖fderiv ℝ v x‖ = γ := by
-    rcases S_v.eq_empty_or_nonempty with hSv_empty | ⟨x₀, hx₀⟩
-    · exact ⟨0, by simp [hSv_empty]⟩
-    · exact ⟨‖fderiv ℝ v x₀‖, (ae_restrict_mem hSv_m).mono fun x hx ↦
-        norm_fderiv_eq_of_norm_eq hrad
-          (TauCeti.norm_eq_of_notMem_image_fderiv_eq_zero hanti hcritt hx.2 hx₀.2)⟩
-  have hinv_congr (w : E → ℝ) {S : Set E} (hS : MeasurableSet S)
-      (hpos : ∀ x ∈ S, 0 < ‖fderiv ℝ w x‖) :
-      (∫⁻ x in S, ENNReal.ofReal ‖fderiv ℝ w x‖⁻¹ ∂μH) =
-        ∫⁻ x in S, ‖fderiv ℝ w x‖ₑ⁻¹ ∂μH :=
-    setLIntegral_congr_fun hS fun x hx ↦ by
-      rw [← ofReal_norm, ENNReal.ofReal_inv_of_pos (hpos x hx)]
-  have hSv_eq := hinv_congr v hSv_m fun _ hx ↦ norm_pos_iff.2 hx.1
-  have hSh_eq := hinv_congr h hSh_m fun _ hx ↦ norm_pos_iff.2 hx.1
-  exact hΦ.lintegral_ofReal_div_le_of_ae_eq_const hΦm hΦ0
-    ((ae_restrict_mem hSv_m).mono fun _ hx ↦ norm_pos_iff.2 hx.1) hg₁_const
-    (measurable_fderiv ℝ h).norm.aemeasurable
-    ((ae_restrict_mem hSh_m).mono fun _ hx ↦ norm_pos_iff.2 hx.1)
-    (by simpa using hperim_le) (hSh_eq ▸ hSv_eq ▸ hinv_le) (hSv_eq ▸ hinv_fin)
+/-- **The level comparison.** For a Lipschitz `h` whose positive superlevel sets have finite volume
+and its real Schwarz rearrangement `h*`, at almost every level `t > 0` the contribution
+`∫_{{h* = t} ∩ {∇h* ≠ 0}} Φ(‖∇h*‖) ‖∇h*‖⁻¹ dHⁿ⁻¹` of that level to `∫ Φ(‖∇h*‖)` is at most the
+corresponding contribution for `h`. -/
+private theorem ae_setLIntegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Nontrivial E] {K : ℝ≥0}
+    {h : E → ℝ} (hh : LipschitzWith K h) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞)
+    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦ0 : Φ 0 ≤ 0) :
+    ∀ᵐ t, 0 < t →
+      ∫⁻ x in {x | fderiv ℝ (fun z ↦ (schwarzRearrangement volume
+          (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x ≠ 0} ∩
+          (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) ⁻¹' {t},
+        ENNReal.ofReal (Φ ‖fderiv ℝ (fun z ↦ (schwarzRearrangement volume
+          (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖) *
+        ‖fderiv ℝ (fun z ↦ (schwarzRearrangement volume
+          (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] ≤
+      ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t},
+        ENNReal.ofReal (Φ ‖fderiv ℝ h x‖) * ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] := by
+  have hfS := hh.schwarzRearrangement_ofReal_ne_top volume (hfin 1 one_pos)
+  -- The rearrangement is radially nonincreasing, so its gradient norm is constant on each level.
+  have hanti (x y : E) (hxy : ‖x‖ ≤ ‖y‖) :
+      (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) y).toReal ≤
+        (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) x).toReal :=
+    ENNReal.toReal_mono (hfS x) (schwarzRearrangement_le_of_norm_le volume _ hxy)
+  -- The level integrals of `‖∇h‖⁻¹` compare through the distribution function.
+  filter_upwards [MeasureTheory.ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv hfin,
+    hh.ae_setLIntegral_inv_enorm_fderiv_toReal_schwarzRearrangement_eq_ofReal_neg_deriv hfin,
+    ae_euclideanHausdorffMeasure_regularLevel_le hh hfin] with t hm hm' hP ht
+  have hmeas {g : E → ℝ} : MeasurableSet ({x | fderiv ℝ g x ≠ 0} ∩ g ⁻¹' {t}) := by
+    rw [inter_comm]
+    exact measurableSet_preimage_inter_setOf_fderiv_ne_zero (measurableSet_singleton t)
+  refine hΦ.setLIntegral_ofReal_mul_inv_le hΦ0 hmeas hmeas (measurable_fderiv ℝ h)
+    (fun x hx ↦ hx.1) (fun x hx ↦ hx.1) (fun x hx y hy ↦ ?_) (hP ht)
+    ((hm ht).trans (hm' ht).ge) ((hm' ht).trans_ne ENNReal.ofReal_ne_top)
+  exact norm_fderiv_eq_of_antitone_norm hanti hx.1 hy.1 (hx.2.trans hy.2.symm)
 
-end PrivateHelpers
+end TauCeti
 
 namespace LipschitzWith
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+open TauCeti
 
-/-- **The convex-integrand Pólya–Szegő inequality for Lipschitz functions.** -/
-theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le {K : ℝ≥0} {h : E → ℝ}
-    (hh : LipschitzWith K h) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞)
-    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0) :
-    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ
-        (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖) ≤
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {K : ℝ≥0} {h : E → ℝ}
+
+/-- **The Pólya–Szegő inequality for Lipschitz functions.** Let `h` be Lipschitz with superlevel
+sets `{h > t}` of finite volume for `t > 0`, and let `h*` be the real Schwarz rearrangement of its
+positive part. For every convex `Φ` on `[0, ∞)` with `Φ 0 ≤ 0`,
+
+`∫ Φ(‖∇h*‖) ≤ ∫ Φ(‖∇h‖)`,
+
+where both sides are extended integrals of the positive part of `Φ`, finite or infinite. The
+gradients are the totalized Fréchet derivatives. -/
+theorem lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le (hh : LipschitzWith K h)
+    (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞) {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ)
+    (hΦ0 : Φ 0 ≤ 0) :
+    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ (fun z ↦ (schwarzRearrangement volume
+        (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖) ≤
       ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖) := by
-  let hpos : E → ℝ := fun x ↦ max (h x) 0
-  have hhpos_lip : LipschitzWith K hpos := hh.max_const 0
-  have hhpos_fin (t : ℝ) (ht : 0 < t) : volume {x | t < hpos x} ≠ ∞ := by
-    convert hfin t ht using 2; ext x; simp [hpos, lt_max_iff, ht.not_gt]
-  have hofReal : (fun y ↦ ENNReal.ofReal (h y)) = fun y ↦ ENNReal.ofReal (hpos y) := funext fun y ↦
-    (le_total 0 (h y)).elim (fun hy ↦ by simp [hpos, max_eq_left hy])
-      (fun hy ↦ by simp [hpos, max_eq_right hy, ENNReal.ofReal_of_nonpos hy])
-  rw [hofReal]
-  refine (lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le_of_nonneg hhpos_lip
-    (fun x ↦ le_max_right (h x) 0) hhpos_fin hΦ hΦm hΦ0).trans (lintegral_mono_ae ?_)
-  filter_upwards [hh.ae_differentiableAt (μ := volume)] with x hx
-  refine ENNReal.ofReal_le_ofReal (hΦm (norm_nonneg _) (norm_nonneg _) ?_)
-  simpa only [NNReal.coe_one, one_mul, id_eq, Function.comp_def] using
-    (LipschitzWith.id.max_const (0 : ℝ)).norm_fderiv_comp_le hx
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In the zero space every derivative vanishes, and `Φ 0 ≤ 0`.
+    have hzero (g : E → ℝ) (x : E) : fderiv ℝ g x = 0 :=
+      ContinuousLinearMap.ext fun v ↦ by rw [Subsingleton.elim v 0, map_zero, map_zero]
+    simp [hzero, ENNReal.ofReal_eq_zero.2 hΦ0]
+  rw [hΦ.lintegral_ofReal_comp_norm_fderiv_eq_lintegral_setLIntegral hΦ0,
+    hΦ.lintegral_ofReal_comp_norm_fderiv_eq_lintegral_setLIntegral hΦ0]
+  refine lintegral_mono_ae ?_
+  filter_upwards [ae_setLIntegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hh hfin
+    hΦ hΦ0, volume.ae_ne (0 : ℝ)] with t ht ht0
+  rcases lt_or_gt_of_ne ht0 with htneg | htpos
+  · -- The rearrangement is nonnegative, so its negative levels are empty.
+    have hempty : (fun z ↦ (schwarzRearrangement volume
+        (fun y ↦ ENNReal.ofReal (h y)) z).toReal) ⁻¹' {t} = ∅ :=
+      eq_empty_of_forall_notMem fun x hx ↦ (htneg.trans_le ENNReal.toReal_nonneg).ne' hx
+    simp [hempty]
+  · exact ht htpos
+
+/-- **`L¹` comparison of gradients under rearrangement.** Let `h` be Lipschitz with superlevel
+sets `{h > t}` of finite volume for `t > 0`, and let `h*` be the real Schwarz rearrangement of its
+positive part. Then `∫ ‖∇h*‖ ≤ ∫ ‖∇h‖`, as extended integrals. -/
+theorem lintegral_enorm_fderiv_toReal_schwarzRearrangement_le (hh : LipschitzWith K h)
+    (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞) :
+    ∫⁻ x, ‖fderiv ℝ (fun z ↦ (schwarzRearrangement volume
+        (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ₑ ≤ ∫⁻ x, ‖fderiv ℝ h x‖ₑ := by
+  simpa only [id, ofReal_norm] using
+    hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hfin
+      (convexOn_id (convex_Ici 0)) le_rfl
 
 /-- **Signed convex-integrand Pólya–Szegő inequality for Lipschitz functions.** -/
-theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_norm_le {K : ℝ≥0} {u : E → ℝ}
+theorem lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le {u : E → ℝ}
     (hu : LipschitzWith K u) (hfin : ∀ t, 0 < t → volume {x | t < ‖u x‖} ≠ ∞)
-    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0) :
+    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 ≤ 0) :
     ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ
         (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖) ≤
       ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖) := by
   have hu_norm : LipschitzWith K (fun x ↦ ‖u x‖) := by
     simpa only [one_mul, Function.comp_def] using
       (lipschitzWith_one_norm : LipschitzWith 1 (norm : ℝ → ℝ)).comp hu
-  refine (hu_norm.lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ hΦm hΦ0).trans
-    (lintegral_mono_ae ?_)
+  refine (hu_norm.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ
+    hΦ0).trans (lintegral_mono_ae ?_)
   filter_upwards [hu.ae_differentiableAt (μ := volume)] with x hx
   refine ENNReal.ofReal_le_ofReal (hΦm (norm_nonneg _) (norm_nonneg _) ?_)
   simpa only [NNReal.coe_one, one_mul, Function.comp_def] using
     lipschitzWith_one_norm.norm_fderiv_comp_le hx
 
 /-- Integrability of `Φ ‖Dh*‖` when `Φ ‖Dh‖` is integrable. -/
-theorem integrable_map_norm_fderiv_toReal_schwarzRearrangement {K : ℝ≥0} {h : E → ℝ}
+theorem integrable_comp_norm_fderiv_toReal_schwarzRearrangement
     (hh : LipschitzWith K h) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞)
     {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0)
     (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ h x‖) volume) :
@@ -223,18 +240,19 @@ theorem integrable_map_norm_fderiv_toReal_schwarzRearrangement {K : ℝ≥0} {h 
       (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖)
       volume := by
   have hΦ_nn (s : ℝ) (hs : 0 ≤ s) : 0 ≤ Φ s := hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) hs hs
-  let E : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ h x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
-  have hE : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖)) = E :=
+  let I : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ h x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
+  have hI : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖)) = I :=
     (ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := E))
+      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := I))
   exact (MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
     (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm)
       _).aestronglyMeasurable
-    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := E)
-    ((hh.lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ hΦm hΦ0).trans_eq hE)).1
+    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := I)
+    ((hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ
+      hΦ0.le).trans_eq hI)).1
 
 /-- **Bochner-integral Pólya–Szegő inequality** for the positive-part Schwarz rearrangement. -/
-theorem integral_map_norm_fderiv_toReal_schwarzRearrangement_le {K : ℝ≥0} {h : E → ℝ}
+theorem integral_comp_norm_fderiv_toReal_schwarzRearrangement_le
     (hh : LipschitzWith K h) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞)
     {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0)
     (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ h x‖) volume) :
@@ -242,18 +260,19 @@ theorem integral_map_norm_fderiv_toReal_schwarzRearrangement_le {K : ℝ≥0} {h
         (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ ≤
       ∫ x, Φ ‖fderiv ℝ h x‖ := by
   have hΦ_nn (s : ℝ) (hs : 0 ≤ s) : 0 ≤ Φ s := hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) hs hs
-  let E : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ h x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
-  have hE : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖)) = E :=
+  let I : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ h x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
+  have hI : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖)) = I :=
     (ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := E))
+      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := I))
   exact (MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
     (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm)
       _).aestronglyMeasurable
-    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := E)
-    ((hh.lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ hΦm hΦ0).trans_eq hE)).2
+    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := I)
+    ((hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ
+      hΦ0.le).trans_eq hI)).2
 
 /-- Integrability of `Φ ‖D(|u|*)‖` when `Φ ‖Du‖` is integrable. -/
-theorem integrable_map_norm_fderiv_toReal_schwarzRearrangement_norm {K : ℝ≥0} {u : E → ℝ}
+theorem integrable_comp_norm_fderiv_toReal_schwarzRearrangement_norm {u : E → ℝ}
     (hu : LipschitzWith K u) (hfin : ∀ t, 0 < t → volume {x | t < ‖u x‖} ≠ ∞)
     {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0)
     (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ u x‖) volume) :
@@ -261,19 +280,19 @@ theorem integrable_map_norm_fderiv_toReal_schwarzRearrangement_norm {K : ℝ≥0
       (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖)
       volume := by
   have hΦ_nn (s : ℝ) (hs : 0 ≤ s) : 0 ≤ Φ s := hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) hs hs
-  let E : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ u x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
-  have hE : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖)) = E :=
+  let I : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ u x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
+  have hI : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖)) = I :=
     (ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := E))
+      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := I))
   exact (MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
     (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm)
       _).aestronglyMeasurable
-    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := E)
-    ((hu.lintegral_map_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin hΦ hΦm hΦ0).trans_eq
-      hE)).1
+    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := I)
+    ((hu.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin hΦ hΦm
+      hΦ0.le).trans_eq hI)).1
 
 /-- **Signed Bochner-integral Pólya–Szegő inequality** for `‖u ·‖`. -/
-theorem integral_map_norm_fderiv_toReal_schwarzRearrangement_norm_le {K : ℝ≥0} {u : E → ℝ}
+theorem integral_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le {u : E → ℝ}
     (hu : LipschitzWith K u) (hfin : ∀ t, 0 < t → volume {x | t < ‖u x‖} ≠ ∞)
     {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0)
     (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ u x‖) volume) :
@@ -281,79 +300,78 @@ theorem integral_map_norm_fderiv_toReal_schwarzRearrangement_norm_le {K : ℝ≥
         (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖ ≤
       ∫ x, Φ ‖fderiv ℝ u x‖ := by
   have hΦ_nn (s : ℝ) (hs : 0 ≤ s) : 0 ≤ Φ s := hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) hs hs
-  let E : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ u x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
-  have hE : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖)) = E :=
+  let I : ℝ≥0 := ⟨∫ x, Φ ‖fderiv ℝ u x‖, integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)⟩
+  have hI : (∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖)) = I :=
     (ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := E))
+      (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _))).symm.trans (ENNReal.ofReal_coe_nnreal (p := I))
   exact (MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
     (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm)
       _).aestronglyMeasurable
-    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := E)
-    ((hu.lintegral_map_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin hΦ hΦm hΦ0).trans_eq
-      hE)).2
+    (.of_forall fun _ ↦ hΦ_nn _ (norm_nonneg _)) (E := I)
+    ((hu.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin hΦ hΦm
+      hΦ0.le).trans_eq hI)).2
 
 /-- **`Lᵖ` gradient Pólya–Szegő inequality (`1 ≤ p`, `lintegral` form)** for the positive part. -/
-theorem lintegral_norm_fderiv_toReal_schwarzRearrangement_rpow_le {K : ℝ≥0} {h : E → ℝ}
+theorem lintegral_norm_fderiv_toReal_schwarzRearrangement_rpow_le
     (hh : LipschitzWith K h) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞) {p : ℝ} (hp : 1 ≤ p) :
     ∫⁻ x, ENNReal.ofReal (‖fderiv ℝ
         (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ ^ p) ≤
       ∫⁻ x, ENNReal.ofReal (‖fderiv ℝ h x‖ ^ p) :=
-  hh.lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le hfin (convexOn_rpow hp)
-    (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
-    (Real.zero_rpow (zero_lt_one.trans_le hp).ne')
+  hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le hfin (convexOn_rpow hp)
+    (Real.zero_rpow (zero_lt_one.trans_le hp).ne').le
 
 /-- Integrability of `‖Dh*‖ ^ p` (`1 ≤ p`) when `‖Dh‖ ^ p` is integrable. -/
-theorem integrable_norm_fderiv_toReal_schwarzRearrangement_rpow {K : ℝ≥0} {h : E → ℝ}
+theorem integrable_norm_fderiv_toReal_schwarzRearrangement_rpow
     (hh : LipschitzWith K h) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞) {p : ℝ} (hp : 1 ≤ p)
     (hint : Integrable (fun x ↦ ‖fderiv ℝ h x‖ ^ p) volume) :
     Integrable (fun x ↦ ‖fderiv ℝ
       (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ ^ p)
       volume :=
-  hh.integrable_map_norm_fderiv_toReal_schwarzRearrangement hfin (convexOn_rpow hp)
+  hh.integrable_comp_norm_fderiv_toReal_schwarzRearrangement hfin (convexOn_rpow hp)
     (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
     (Real.zero_rpow (zero_lt_one.trans_le hp).ne') hint
 
 /-- **`Lᵖ` gradient Pólya–Szegő inequality (`1 ≤ p`, Bochner-integral form)** for the positive
 part. -/
-theorem integral_norm_fderiv_toReal_schwarzRearrangement_rpow_le {K : ℝ≥0} {h : E → ℝ}
+theorem integral_norm_fderiv_toReal_schwarzRearrangement_rpow_le
     (hh : LipschitzWith K h) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞) {p : ℝ} (hp : 1 ≤ p)
     (hint : Integrable (fun x ↦ ‖fderiv ℝ h x‖ ^ p) volume) :
     ∫ x, ‖fderiv ℝ
         (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ ^ p ≤
       ∫ x, ‖fderiv ℝ h x‖ ^ p :=
-  hh.integral_map_norm_fderiv_toReal_schwarzRearrangement_le hfin (convexOn_rpow hp)
+  hh.integral_comp_norm_fderiv_toReal_schwarzRearrangement_le hfin (convexOn_rpow hp)
     (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
     (Real.zero_rpow (zero_lt_one.trans_le hp).ne') hint
 
 /-- **Signed `Lᵖ` gradient Pólya–Szegő inequality (`1 ≤ p`, `lintegral` form)**. -/
-theorem lintegral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le {K : ℝ≥0} {u : E → ℝ}
+theorem lintegral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le {u : E → ℝ}
     (hu : LipschitzWith K u) (hfin : ∀ t, 0 < t → volume {x | t < ‖u x‖} ≠ ∞) {p : ℝ} (hp : 1 ≤ p) :
     ∫⁻ x, ENNReal.ofReal (‖fderiv ℝ
         (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖ ^ p) ≤
       ∫⁻ x, ENNReal.ofReal (‖fderiv ℝ u x‖ ^ p) :=
-  hu.lintegral_map_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin (convexOn_rpow hp)
+  hu.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin (convexOn_rpow hp)
     (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
-    (Real.zero_rpow (zero_lt_one.trans_le hp).ne')
+    (Real.zero_rpow (zero_lt_one.trans_le hp).ne').le
 
 /-- Integrability of `‖D(|u|*)‖ ^ p` (`1 ≤ p`) when `‖Du‖ ^ p` is integrable. -/
-theorem integrable_norm_fderiv_toReal_schwarzRearrangement_norm_rpow {K : ℝ≥0} {u : E → ℝ}
+theorem integrable_norm_fderiv_toReal_schwarzRearrangement_norm_rpow {u : E → ℝ}
     (hu : LipschitzWith K u) (hfin : ∀ t, 0 < t → volume {x | t < ‖u x‖} ≠ ∞) {p : ℝ} (hp : 1 ≤ p)
     (hint : Integrable (fun x ↦ ‖fderiv ℝ u x‖ ^ p) volume) :
     Integrable (fun x ↦ ‖fderiv ℝ
       (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖ ^ p)
       volume :=
-  hu.integrable_map_norm_fderiv_toReal_schwarzRearrangement_norm hfin (convexOn_rpow hp)
+  hu.integrable_comp_norm_fderiv_toReal_schwarzRearrangement_norm hfin (convexOn_rpow hp)
     (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
     (Real.zero_rpow (zero_lt_one.trans_le hp).ne') hint
 
 /-- **Signed `Lᵖ` gradient Pólya–Szegő inequality (`1 ≤ p`, Bochner-integral form)**. -/
-theorem integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le {K : ℝ≥0} {u : E → ℝ}
+theorem integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le {u : E → ℝ}
     (hu : LipschitzWith K u) (hfin : ∀ t, 0 < t → volume {x | t < ‖u x‖} ≠ ∞) {p : ℝ} (hp : 1 ≤ p)
     (hint : Integrable (fun x ↦ ‖fderiv ℝ u x‖ ^ p) volume) :
     ∫ x, ‖fderiv ℝ
         (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖ ^ p ≤
       ∫ x, ‖fderiv ℝ u x‖ ^ p :=
-  hu.integral_map_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin (convexOn_rpow hp)
+  hu.integral_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le hfin (convexOn_rpow hp)
     (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
     (Real.zero_rpow (zero_lt_one.trans_le hp).ne') hint
 

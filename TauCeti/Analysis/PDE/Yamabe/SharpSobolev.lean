@@ -186,7 +186,7 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
     ((measure_mono fun _ hy ↦ hsub_supp (ENNReal.ofReal_pos.mpr (ht.trans hy))).trans_lt
       hsupp.measure_lt_top).ne
   have hv_ne_top : ∀ x, v_enn x ≠ ⊤ :=
-    schwarzRearrangement_ofReal_ne_top volume hu_norm le_rfl hfin0_norm
+    hu_norm.schwarzRearrangement_ofReal_ne_top volume hfin0_norm
   have hv_anti : ∀ x y, ‖x‖ ≤ ‖y‖ → v y ≤ v x := fun x y hxy ↦
     ENNReal.toReal_mono (hv_ne_top x) (schwarzRearrangement_le_of_norm_le volume u_enn hxy)
   obtain ⟨R, hR, hvR_enn⟩ := exists_radius_schwarzRearrangement_eq_zero volume hfin0

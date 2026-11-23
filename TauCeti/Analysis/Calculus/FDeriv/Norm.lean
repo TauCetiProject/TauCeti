@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 /-!
@@ -23,10 +24,10 @@ a vanishing derivative of a norm-composition forces the one-dimensional profile 
 vanish, and a radial function on a real inner product space has Fréchet derivatives of equal
 operator norm at points of equal norm (`TauCeti.norm_fderiv_eq_of_norm_eq`). Moreover, along any
 unit ray a radial function's one-dimensional derivative is bounded in norm by the operator norm of
-its Fréchet derivative (`TauCeti.norm_deriv_comp_smul_le`, `TauCeti.deriv_radial_sq_le`), and two
-points on a radially nonincreasing function's noncritical level set have equal norm
-(`TauCeti.norm_eq_of_notMem_image_fderiv_eq_zero`). Likewise, the `0`-homogeneous radial extension
-`TauCeti.sphereExtend f` has vanishing radial derivative everywhere
+its Fréchet derivative (`TauCeti.norm_deriv_comp_smul_le`, `TauCeti.deriv_radial_sq_le`), and a
+function that is nonincreasing in the norm has derivatives of equal norm at any two points of one
+level where they do not vanish (`TauCeti.norm_fderiv_eq_of_antitone_norm`). Likewise, the
+`0`-homogeneous radial extension `TauCeti.sphereExtend f` has vanishing radial derivative everywhere
 (`TauCeti.fderiv_sphereExtend_self`). The norm itself, being `1`-Lipschitz, has derivative of norm
 at most `1` everywhere (`TauCeti.norm_fderiv_norm_le`). In any real normed space, a curve whose
 derivative is a multiple `c • f a` of its value has norm with derivative
@@ -108,29 +109,33 @@ theorem deriv_radial_sq_le {v : F → ℝ} (hv_rad : ∀ x y, ‖x‖ = ‖y‖ 
     _ ≤ ‖fderiv ℝ v (r • e₀)‖ ^ 2 :=
       pow_le_pow_left₀ (norm_nonneg _) (norm_deriv_comp_smul_le hv_rad he₀ hr) 2
 
-/-- On a radially nonincreasing function `v : E → ℝ`, any two points sharing a noncritical level `t`
-have equal norm: if `‖a‖ < ‖b‖`, then `v` is constant equal to `t` on the open annulus
-`{z | ‖a‖ < ‖z‖ < ‖b‖}`, which is nonempty and hence contributes a critical point. -/
-theorem norm_eq_of_notMem_image_fderiv_eq_zero {v : E → ℝ}
-    (hanti : ∀ x y, ‖x‖ ≤ ‖y‖ → v y ≤ v x) {t : ℝ}
-    (ht : t ∉ v '' {z | fderiv ℝ v z = 0}) {x y : E} (hx : v x = t) (hy : v y = t) :
-    ‖x‖ = ‖y‖ := by
-  have hnot_lt {a b : E} (ha : v a = t) (hb : v b = t) (hab : ‖a‖ < ‖b‖) : False := by
-    have hb0 : 0 < ‖b‖ := (norm_nonneg a).trans_lt hab
-    let z₀ : E := ((‖a‖ + ‖b‖) / (2 * ‖b‖)) • b
-    have hz₀_norm : ‖z₀‖ = (‖a‖ + ‖b‖) / 2 := by
-      rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-      field_simp [hb0.ne']
-    have hz₀_mem : z₀ ∈ {z : E | ‖a‖ < ‖z‖ ∧ ‖z‖ < ‖b‖} :=
-      ⟨hz₀_norm ▸ by linarith, hz₀_norm ▸ by linarith⟩
-    have hU : {z : E | ‖a‖ < ‖z‖ ∧ ‖z‖ < ‖b‖} ∈ 𝓝 z₀ := ((isOpen_lt continuous_const
-      continuous_norm).inter (isOpen_lt continuous_norm continuous_const)).mem_nhds hz₀_mem
-    have hconst : ∀ z ∈ {z : E | ‖a‖ < ‖z‖ ∧ ‖z‖ < ‖b‖}, v z = t := fun z hz ↦
-      le_antisymm ((hanti a z hz.1.le).trans_eq ha) (hb.symm.trans_le (hanti z b hz.2.le))
-    exact ht ⟨z₀, (Filter.EventuallyEq.fderiv_eq (Filter.eventually_of_mem hU hconst)).trans
-      (fderiv_const_apply t), hconst z₀ hz₀_mem⟩
-  exact (lt_trichotomy ‖x‖ ‖y‖).elim (fun h ↦ (hnot_lt hx hy h).elim)
-    (Or.elim · id fun h ↦ (hnot_lt hy hx h).elim)
+/-- **Gradients of radially nonincreasing functions.** If `v` is nonincreasing in the norm, then
+its totalized derivatives have the same norm at any two points of the same level of `v` at which
+they do not vanish. -/
+theorem norm_fderiv_eq_of_antitone_norm {v : F → ℝ} (hv : ∀ x y, ‖x‖ ≤ ‖y‖ → v y ≤ v x)
+    {x y : F} (hx : fderiv ℝ v x ≠ 0) (hy : fderiv ℝ v y ≠ 0) (hxy : v x = v y) :
+    ‖fderiv ℝ v x‖ = ‖fderiv ℝ v y‖ := by
+  -- A point strictly inside the sphere through a point of the same level is a local minimum.
+  have hmin {a b : F} (hab : ‖a‖ < ‖b‖) (heq : v a = v b) : fderiv ℝ v a = 0 := by
+    refine IsLocalMin.fderiv_eq_zero ?_
+    filter_upwards [Metric.isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hab)] with z hz
+    rw [heq]
+    exact hv z b (mem_ball_zero_iff.1 hz).le
+  have hnorm : ‖x‖ = ‖y‖ := by
+    rcases lt_trichotomy ‖x‖ ‖y‖ with h | h | h
+    · exact absurd (hmin h hxy) hx
+    · exact h
+    · exact absurd (hmin h hxy.symm) hy
+  -- The reflection exchanging `x` and `y` is a linear isometry preserving `v`.
+  let T := (Submodule.reflection (ℝ ∙ (x - y))ᗮ).toContinuousLinearEquiv
+  have hT : v ∘ T = v := funext fun z ↦ by
+    have hz : ‖T z‖ = ‖z‖ := (Submodule.reflection (ℝ ∙ (x - y))ᗮ).norm_map z
+    exact le_antisymm (hv _ _ hz.ge) (hv _ _ hz.le)
+  have hTx : T x = y := Submodule.reflection_sub hnorm
+  have hcomp := T.comp_right_fderiv (f := v) (x := x)
+  rw [hT, hTx] at hcomp
+  rw [hcomp]
+  exact (fderiv ℝ v y).opNorm_comp_linearIsometryEquiv (Submodule.reflection (ℝ ∙ (x - y))ᗮ)
 
 /-- The derivative of the norm has norm at most `1` at every point, including the points where the
 norm is not differentiable and its derivative is `0` by definition. -/

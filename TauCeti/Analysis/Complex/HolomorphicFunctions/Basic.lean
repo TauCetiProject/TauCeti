@@ -129,6 +129,14 @@ theorem extend_of {g : ℂ → ℂ} (hg : DifferentiableOn ℂ g U) {z : ℂ} (h
     extend (of U g hg) z = g z := by
   rw [extend_apply _ ⟨z, hz⟩, of_apply]
 
+/-- The zero extension of zero is zero. -/
+@[simp]
+theorem extend_zero : extend (0 : holomorphicFunctions U) = 0 := by
+  ext z
+  by_cases hz : z ∈ U
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [hz]
+
 /-- Restriction along an inclusion of open domains. -/
 noncomputable def restrict (h : V ≤ U) : holomorphicFunctions U →ₐ[ℂ] holomorphicFunctions V :=
   ((ContinuousMap.compRightAlgHom ℂ ℂ

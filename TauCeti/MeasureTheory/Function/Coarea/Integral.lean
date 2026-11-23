@@ -7,11 +7,12 @@ module
 
 public import TauCeti.MeasureTheory.Function.Coarea.Basic
 public import TauCeti.MeasureTheory.Function.Coarea.Measurability
+public import Mathlib.Analysis.Convex.Function
+import Mathlib.Analysis.Convex.Continuous
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
-import Mathlib.Analysis.Calculus.LocalExtr.Basic
 
 /-!
 # Weighted coarea on the regular part
@@ -36,8 +37,11 @@ preimage from the level integrals `∫_{{h = t} ∩ {Dh ≠ 0}} ‖Dh‖⁻¹ dH
   coarea on the regular part.
 * `MeasureTheory.volume_preimage_inter_setOf_fderiv_ne_zero`: the volume of the regular part of
   `h⁻¹(I)` is the integral of the level integrals over `I`.
-* `MeasureTheory.lintegral_map_norm_fderiv_eq_setLIntegral_Ioi`: weighted scalar coarea over
-  positive level sets for nonnegative functions.
+* `MeasureTheory.lintegral_comp_norm_fderiv_eq_lintegral_setLIntegral`: a gradient integral
+  `∫ G(‖Dh‖)` with `G 0 = 0` is the integral over levels of `∫_{{h = t} ∩ {Dh ≠ 0}} G(‖Dh‖) ‖Dh‖⁻¹`.
+* `ConvexOn.lintegral_ofReal_comp_norm_fderiv_eq_lintegral_setLIntegral`: the same identity for
+  `G = ENNReal.ofReal ∘ Φ` with `Φ` convex on `[0, ∞)` and `Φ 0 ≤ 0`, where measurability of `G`
+  comes from convexity.
 
 ## References
 
@@ -126,7 +130,8 @@ theorem volume_preimage_inter_setOf_fderiv_ne_zero {h : E → ℝ} {I : Set ℝ}
   set R := {x | fderiv ℝ h x ≠ 0}
   have hR : MeasurableSet R := (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
   have hsurj (x : E) (hx : x ∈ R) : Surjective (fderiv ℝ h x) :=
-    (TauCeti.surjective_fderiv_iff_ne_zero_of_finrank_eq_one (finrank_self ℝ)).2 hx
+    surjective_of_ne_zero_of_finrank_eq_one (finrank_self ℝ) (f := (fderiv ℝ h x).toLinearMap)
+      ((ContinuousLinearMap.coe_injective.ne_iff' ContinuousLinearMap.toLinearMap_zero).2 hx)
   have hm : MeasurableSet (h ⁻¹' I ∩ R) :=
     TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero hI
   -- The weight `1_I(h) ‖Dh‖⁻¹` on the regular set.
@@ -167,40 +172,61 @@ theorem volume_preimage_inter_setOf_fderiv_ne_zero {h : E → ℝ} {I : Set ℝ}
   rw [hcoarea, lintegral_congr hrhs]
   exact lintegral_indicator hI _
 
-/-- **Weighted scalar coarea formula over positive level sets.** For every nonnegative function
-`u : E → ℝ` and every `Φ : ℝ → ℝ` with `Φ 0 = 0` such that `x ↦ Φ ‖fderiv ℝ u x‖` is
-measurable, the integral of `ENNReal.ofReal (Φ ‖fderiv ℝ u x‖)` equals the integral over `t > 0`
-of the level-set integrals of `ENNReal.ofReal (Φ ‖fderiv ℝ u x‖ / ‖fderiv ℝ u x‖)` along the
-regular part `{fderiv ℝ u ≠ 0} ∩ u ⁻¹' {t}`. -/
-theorem lintegral_map_norm_fderiv_eq_setLIntegral_Ioi {u : E → ℝ} (hu0 : ∀ x, 0 ≤ u x)
-    {Φ : ℝ → ℝ} (hΦ : Measurable fun x ↦ Φ ‖fderiv ℝ u x‖) (hΦ0 : Φ 0 = 0) :
-    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖) =
-      ∫⁻ t in Ioi (0 : ℝ), ∫⁻ x in {x | fderiv ℝ u x ≠ 0} ∩ u ⁻¹' {t},
-        ENNReal.ofReal (Φ ‖fderiv ℝ u x‖ / ‖fderiv ℝ u x‖) ∂μHE[finrank ℝ E - 1] := by
-  set R := {x : E | fderiv ℝ u x ≠ 0}
-  have hR : MeasurableSet R := (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ u)
-  have hsurj (x : E) (hx : x ∈ R) : Surjective (fderiv ℝ u x) :=
-    (TauCeti.surjective_fderiv_iff_ne_zero_of_finrank_eq_one (finrank_self ℝ)).2 hx
-  let g : E → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (Φ ‖fderiv ℝ u x‖ / ‖fderiv ℝ u x‖)
-  have hg : Measurable g := ENNReal.measurable_ofReal.comp (hΦ.div (measurable_fderiv ℝ u).norm)
-  have hlhs : ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖) =
-      ∫⁻ x in R, ENNReal.ofReal (fderiv ℝ u x).adjoint.normDet * g x := by
-    rw [← lintegral_indicator hR]
-    refine lintegral_congr fun x ↦ ?_
-    by_cases hx : x ∈ R
-    · rw [indicator_of_mem hx, ContinuousLinearMap.normDet_adjoint_eq_norm,
-        ← ENNReal.ofReal_mul (norm_nonneg _), mul_div_cancel₀ _ (norm_ne_zero_iff.2 hx)]
-    · simp only [R, mem_ofPred_eq, not_not] at hx
-      rw [indicator_of_notMem (by simp [R, hx]), hx, norm_zero, hΦ0, ENNReal.ofReal_zero]
-  rw [hlhs, lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
-    hR.nullMeasurableSet (fun _ hx ↦ TauCeti.differentiableAt_of_fderiv_ne_zero hx) hsurj hg,
-    finrank_self, ← lintegral_indicator measurableSet_Ioi]
-  refine lintegral_congr fun t ↦ ?_
-  by_cases ht : 0 < t
-  · rw [indicator_of_mem ht]
-  · have hemp : R ∩ u ⁻¹' {t} = ∅ := eq_empty_of_forall_notMem fun x ⟨hxR, hxu⟩ ↦ hxR <| by
-      have hux0 : u x = 0 := le_antisymm ((mem_preimage.1 hxu).trans_le (not_lt.1 ht)) (hu0 x)
-      exact IsLocalMin.fderiv_eq_zero (.of_forall fun y ↦ hux0.symm ▸ hu0 y)
-    rw [indicator_of_notMem (s := Ioi (0 : ℝ)) ht]; simp [hemp]
+/-- **Gradient integrals as integrals over levels.** For every function `h : E → ℝ` and every
+measurable `G : ℝ → ℝ≥0∞` with `G 0 = 0`, the integral of `G (‖Dh‖)` is the integral over the
+levels `t` of `∫_{{h = t} ∩ {Dh ≠ 0}} G (‖Dh‖) ‖Dh‖⁻¹ dHⁿ⁻¹`. No regularity of `h` is needed:
+the critical set `{Dh = 0}`, which includes the nondifferentiability points, does not contribute.
+Both sides may be infinite. -/
+theorem lintegral_comp_norm_fderiv_eq_lintegral_setLIntegral {h : E → ℝ} {G : ℝ → ℝ≥0∞}
+    (hG : Measurable G) (hG0 : G 0 = 0) :
+    ∫⁻ x, G ‖fderiv ℝ h x‖ =
+      ∫⁻ t, ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t},
+        G ‖fderiv ℝ h x‖ * ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] := by
+  set R := {x | fderiv ℝ h x ≠ 0}
+  have hR : MeasurableSet R := (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
+  have hsurj (x : E) (hx : x ∈ R) : Surjective (fderiv ℝ h x) :=
+    surjective_of_ne_zero_of_finrank_eq_one (finrank_self ℝ) (f := (fderiv ℝ h x).toLinearMap)
+      ((ContinuousLinearMap.coe_injective.ne_iff' ContinuousLinearMap.toLinearMap_zero).2 hx)
+  have hw : Measurable fun x ↦ G ‖fderiv ℝ h x‖ * ‖fderiv ℝ h x‖ₑ⁻¹ :=
+    (hG.comp (measurable_fderiv ℝ h).norm).mul (measurable_fderiv ℝ h).eNorm.inv
+  have hcoarea := lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
+    hR.nullMeasurableSet (fun _ hx ↦ TauCeti.differentiableAt_of_fderiv_ne_zero hx) hsurj hw
+  rw [finrank_self] at hcoarea
+  rw [← hcoarea, ← setLIntegral_eq_of_support_subset (s := R) fun x hx ↦ ?_]
+  · -- On `R` the coarea Jacobian `‖Dh‖` cancels the weight `‖Dh‖⁻¹`.
+    refine setLIntegral_congr_fun hR fun x (hx : fderiv ℝ h x ≠ 0) ↦ ?_
+    have hx0 : ‖fderiv ℝ h x‖ₑ ≠ 0 := ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 hx)
+    rw [ContinuousLinearMap.normDet_adjoint_eq_norm, ofReal_norm, mul_left_comm,
+      ENNReal.mul_inv_cancel hx0 (by simp), mul_one]
+  · -- Off `R` the integrand is `G 0 = 0`.
+    by_contra hxR
+    exact hx (by simp_all [R])
+
+/-- **Convex gradient integrals as integrals over levels.** For every function `h : E → ℝ` and
+every `Φ` convex on `[0, ∞)` with `Φ 0 ≤ 0`, the integral of the positive part of `Φ (‖Dh‖)` is
+the integral over the levels `t` of `∫_{{h = t} ∩ {Dh ≠ 0}} Φ (‖Dh‖)⁺ ‖Dh‖⁻¹ dHⁿ⁻¹`. This is
+`lintegral_comp_norm_fderiv_eq_lintegral_setLIntegral` with measurability supplied by the
+continuity of `Φ` on `(0, ∞)`. Both sides may be infinite. -/
+theorem _root_.ConvexOn.lintegral_ofReal_comp_norm_fderiv_eq_lintegral_setLIntegral {h : E → ℝ}
+    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦ0 : Φ 0 ≤ 0) :
+    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖) =
+      ∫⁻ t, ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t},
+        ENNReal.ofReal (Φ ‖fderiv ℝ h x‖) * ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] := by
+  classical
+  -- A measurable function agreeing with `ENNReal.ofReal ∘ Φ` on `[0, ∞)`.
+  set G : ℝ → ℝ≥0∞ := (Ioi 0).piecewise (fun s ↦ ENNReal.ofReal (Φ s)) 0
+  have hG (s : ℝ) (hs : 0 ≤ s) : G s = ENNReal.ofReal (Φ s) := by
+    rcases hs.eq_or_lt with rfl | hs
+    · simp [G, ENNReal.ofReal_eq_zero.2 hΦ0]
+    · exact piecewise_eq_of_mem _ _ _ hs
+  have hGm : Measurable G := by
+    refine ContinuousOn.measurable_piecewise ?_ continuousOn_const measurableSet_Ioi
+    have hcont := hΦ.continuousOn_interior
+    rw [interior_Ici] at hcont
+    exact ENNReal.continuous_ofReal.comp_continuousOn hcont
+  have key := lintegral_comp_norm_fderiv_eq_lintegral_setLIntegral (h := h) hGm
+    ((hG 0 le_rfl).trans (ENNReal.ofReal_eq_zero.2 hΦ0))
+  simp_rw [hG _ (norm_nonneg _)] at key
+  exact key
 
 end MeasureTheory
