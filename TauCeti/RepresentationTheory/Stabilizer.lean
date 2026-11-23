@@ -15,6 +15,7 @@ import Mathlib.Algebra.Module.Submodule.Union
 import Mathlib.Algebra.Pointwise.Stabilizer
 import Mathlib.Data.Set.Pointwise.Support
 import Mathlib.LinearAlgebra.FixedSubmodule
+import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Quotient
 
 /-!
@@ -27,8 +28,8 @@ and subset stabilizers across standard constructions on representations:
 
 * subrepresentations (`Subrepresentation.stabilizer_toRepresentation`), injective intertwining maps
   (`Representation.IntertwiningMap.stabilizer_apply_of_injective`), equivalences
-  (`Representation.Equiv.stabilizer_apply`), and quotients (`Representation.mkQ`,
-  `Subrepresentation.le_stabilizer_quotient_mk`);
+  (`Representation.Equiv.stabilizer_apply`), and quotients
+  (`Subrepresentation.le_stabilizer_quotient_mk`);
 * restriction along a group homomorphism (`Representation.stabilizer_comp` and
   `Representation.map_stabilizer_comp_of_surjective`), trivial and subsingleton representations,
   binary and arbitrary products (`Representation.stabilizer_prod`, `Representation.stabilizer_pi`,
@@ -59,8 +60,6 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 
 ## Main definitions
 
-* `Representation.mkQ`: quotient projection `V →ₗ[A] V ⧸ W` by an invariant submodule, as an
-  intertwining map.
 * `Representation.orbitMap`: the orbit map `G ⧸ ρ.stabilizer v → V`.
 
 ## Main results
@@ -95,37 +94,6 @@ public section
 
 open scoped MonoidAlgebra Pointwise
 
-namespace Representation
-
-section Quotient
-
-variable {A G V : Type*} [Ring A] [Monoid G] [AddCommGroup V] [Module A V]
-
-/-- The quotient projection `V →ₗ[A] V ⧸ W` by an invariant submodule, bundled as an intertwining
-map `ρ → ρ.quotient W le_comap`. -/
-def mkQ (ρ : Representation A G V) (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
-    ρ.IntertwiningMap (ρ.quotient W le_comap) where
-  toLinearMap := W.mkQ
-  isIntertwining' _ := rfl
-
-/-- The quotient intertwining map acts as `Submodule.mkQ`. -/
-@[simp]
-theorem coe_mkQ (ρ : Representation A G V) (W : Submodule A V)
-    (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
-    ⇑(ρ.mkQ W le_comap) = W.mkQ :=
-  (rfl)
-
-/-- The linear map underlying `Representation.mkQ` is `Submodule.mkQ`. -/
-@[simp]
-theorem toLinearMap_mkQ (ρ : Representation A G V) (W : Submodule A V)
-    (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
-    (ρ.mkQ W le_comap).toLinearMap = W.mkQ :=
-  (rfl)
-
-end Quotient
-
-end Representation
-
 namespace Subrepresentation
 
 /-- The stabilizer of a vector of a subrepresentation is its stabilizer in the ambient
@@ -141,9 +109,11 @@ theorem stabilizer_toRepresentation {A G V : Type*} [Semiring A] [Group G]
 /-- Taking the quotient by a subrepresentation can only enlarge the stabilizer of a vector. -/
 theorem le_stabilizer_quotient_mk {A G V : Type*} [Ring A] [Group G]
     [AddCommGroup V] [Module A V] {ρ : Representation A G V} (S : Subrepresentation ρ) (v : V) :
-    ρ.stabilizer v ≤ S.quotient.stabilizer (Submodule.Quotient.mk v) :=
-  Representation.IntertwiningMap.stabilizer_le
+    ρ.stabilizer v ≤ S.quotient.stabilizer (Submodule.Quotient.mk v) := by
+  have h := Representation.IntertwiningMap.stabilizer_le
     (ρ.mkQ S.toSubmodule fun g _ hw ↦ S.apply_mem_toSubmodule g hw) v
+  rw [Representation.coe_mkQ, Submodule.mkQ_apply] at h
+  exact h
 
 end Subrepresentation
 

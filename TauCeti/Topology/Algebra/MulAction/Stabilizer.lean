@@ -14,7 +14,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 
 For a continuous action of a topological group `G` on a topological space `α`, the setwise
 stabilizer `{g : G | g • C = C}` (`MulAction.stabilizer G C`) of any compact open subset `C ⊆ α`
-is an open subgroup of `G` (`IsCompact.isOpen_mulAction_stabilizer`, bundled as
+is an open subgroup of `G` (`IsCompact.isOpen_stabilizer`, bundled as
 `IsCompact.stabilizerOpenSubgroup`), with no separation assumptions on `G` or `α`.
 
 For the left translation action of `G` on itself, when `1 ∈ C` the stabilizer is contained in `C`
@@ -30,7 +30,7 @@ continuous additive actions and `OpenAddSubgroup`.
 
 ## Main results
 
-* `IsCompact.isOpen_mulAction_stabilizer`: the setwise stabilizer of a compact open subset under a
+* `IsCompact.isOpen_stabilizer`: the setwise stabilizer of a compact open subset under a
   continuous group action is open.
 * `IsCompact.stabilizerOpenSubgroup_subset` and `IsCompact.isCompact_stabilizerOpenSubgroup`: when
   `1 ∈ C`, the left translation stabilizer lies in `C` and is compact.
@@ -55,11 +55,11 @@ variable {G α : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 topological group `G` on a topological space `α`, the setwise stabilizer `{g : G | g • C = C}` of
 any compact open subset `C ⊆ α` is open in `G`. Neither Hausdorffness of `G` nor Hausdorffness of
 `α` is required. -/
-@[to_additive
+@[to_additive IsCompact.isOpen_addStabilizer
 /-- For a continuous additive action of a topological additive group `G` on a topological space `α`,
 the setwise stabilizer `{g : G | g +ᵥ C = C}` of any compact open subset `C ⊆ α` is open in `G`.
 Neither Hausdorffness of `G` nor Hausdorffness of `α` is required. -/]
-theorem IsCompact.isOpen_mulAction_stabilizer {C : Set α} (hC : IsCompact C) (hC_open : IsOpen C) :
+theorem IsCompact.isOpen_stabilizer {C : Set α} (hC : IsCompact C) (hC_open : IsOpen C) :
     IsOpen (MulAction.stabilizer G C : Set G) := by
   obtain ⟨V, W, hV_open, _, h1V, hCW, hVW⟩ := generalized_tube_lemma
     (isCompact_singleton (x := (1 : G))) hC (hC_open.preimage continuous_smul)
@@ -83,7 +83,7 @@ action of a topological group `G`, bundled as an `OpenSubgroup G`. -/
 additive action of a topological additive group `G`, bundled as an `OpenAddSubgroup G`. -/]
 def IsCompact.stabilizerOpenSubgroup {C : Set α} (hC : IsCompact C) (hC_open : IsOpen C) :
     OpenSubgroup G :=
-  ⟨MulAction.stabilizer G C, hC.isOpen_mulAction_stabilizer hC_open⟩
+  ⟨MulAction.stabilizer G C, hC.isOpen_stabilizer hC_open⟩
 
 /-- The underlying set of `hC.stabilizerOpenSubgroup G hC_open` is the setwise stabilizer of
 `C`. -/

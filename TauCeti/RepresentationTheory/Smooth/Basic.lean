@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
+import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Quotient
 import TauCeti.Topology.Algebra.Group.Subgroup
 
@@ -146,10 +147,8 @@ theorem isSmooth_ofQuotient_iff (S : Subgroup G) [S.Normal] [IsTrivial (ρ.comp 
   refine ⟨fun _ ↦ ?_, fun _ ↦ ⟨fun v ↦ ?_⟩⟩
   · rw [← ρ.ofQuotient_comp_mk' S]
     exact IsSmooth.comp QuotientGroup.continuous_mk
-  · rw [← (QuotientGroup.isQuotientMap_mk S).isOpen_preimage]
-    change IsOpen
-      ((((ρ.ofQuotient S).stabilizer v).comap (QuotientGroup.mk' S) : Subgroup G) : Set G)
-    rw [comap_mk'_stabilizer_ofQuotient]
+  · rw [← (QuotientGroup.isQuotientMap_mk S).isOpen_preimage, ← QuotientGroup.coe_mk',
+      ← Subgroup.coe_comap, comap_mk'_stabilizer_ofQuotient]
     exact IsSmooth.isOpen_stabilizer v
 
 /-- Descending a smooth representation to `G ⧸ S` along a normal subgroup `S` acting trivially
