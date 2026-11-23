@@ -62,6 +62,13 @@ section Discreteness
 variable {K L ΓK ΓL : Type*}
   [LinearOrderedCommGroupWithZero ΓK] [LinearOrderedCommGroupWithZero ΓL]
 
+/-- Restricting a valuation `w` extending a rank-one discrete valuation `v` along `algebraMap K L`
+produces a rank-one discrete valuation. -/
+theorem isRankOneDiscrete_comap_of_hasExtension [CommRing K] [Ring L] [Algebra K L]
+    (v : Valuation K ΓK) [v.IsRankOneDiscrete] (w : Valuation L ΓL) [v.HasExtension w] :
+    (w.comap (algebraMap K L)).IsRankOneDiscrete :=
+  .of_isEquiv (HasExtension.val_isEquiv_comap (vR := v) (vA := w))
+
 /-- **Discreteness passes along finite-index valuation extensions.** If `w` extends a rank-one
 discrete valuation `v` and `(w.comap (algebraMap K L)).valueGroup` has finite relative index in
 `w.valueGroup`, then `w` is rank-one discrete. -/
@@ -69,8 +76,7 @@ theorem IsRankOneDiscrete.of_isFiniteRelIndex [CommRing K] [Ring L] [Algebra K L
     (v : Valuation K ΓK) [v.IsRankOneDiscrete] (w : Valuation L ΓL) [v.HasExtension w]
     [((w.comap (algebraMap K L)).valueGroup).IsFiniteRelIndex w.valueGroup] :
     w.IsRankOneDiscrete := by
-  have : (w.comap (algebraMap K L)).IsRankOneDiscrete :=
-    .of_isEquiv (HasExtension.val_isEquiv_comap (vR := v) (vA := w))
+  have := isRankOneDiscrete_comap_of_hasExtension v w
   obtain ⟨x, hx0, hx1⟩ :=
     (inferInstance : (w.comap (algebraMap K L)).IsNontrivial).exists_val_nontrivial
   have : w.IsNontrivial := ⟨algebraMap K L x, hx0, hx1⟩
@@ -135,19 +141,18 @@ theorem generator_comap_eq_pow_ramificationIdx (w : Valuation L ΓL) [hw : w.IsR
       ← zpow_mul, ← he, ← zpow_mul]
   have hord0 : orderOf hw.generator' = 0 :=
     orderOf_eq_zero_iff.mpr (not_isOfFinOrder_of_isMulTorsionFree hw.generator'_lt_one.ne)
-  have hram : w.ramificationIdx K = e.toNat := by
+  have hram : (w.ramificationIdx K : ℤ) = e := by
     rw [ramificationIdx_def, Subgroup.relIndex, hsub,
-      Subgroup.index_zpowers_zpow hw.generator'_zpowers_eq_top, hord0]
-    simp; omega
-  rw [hram, ← zpow_natCast, Int.toNat_of_nonneg he_pos.le, he]
+      Subgroup.index_zpowers_zpow hw.generator'_zpowers_eq_top, hord0, Nat.cast_zero,
+      Int.gcd_zero_right, Int.natAbs_of_nonneg he_pos.le]
+  rw [← zpow_natCast, hram, he]
 
 /-- **Positivity of the ramification index** for any extension of rank-one discrete valuations on a
 `K`-algebra `L`, with no finiteness hypothesis on `L / K`. -/
 theorem HasExtension.ramificationIdx_pos (v : Valuation K ΓK) [v.IsRankOneDiscrete]
     (w : Valuation L ΓL) [w.IsRankOneDiscrete] [v.HasExtension w] :
     0 < w.ramificationIdx K := by
-  have : (w.comap (algebraMap K L)).IsRankOneDiscrete :=
-    .of_isEquiv (HasExtension.val_isEquiv_comap (vR := v) (vA := w))
+  have := isRankOneDiscrete_comap_of_hasExtension v w
   refine Nat.pos_of_ne_zero fun h0 ↦
     IsRankOneDiscrete.generator_ne_one (w.comap (algebraMap K L)) ?_
   rw [generator_comap_eq_pow_ramificationIdx w, h0, pow_zero]
@@ -160,7 +165,7 @@ variable (v : Valuation K ΓK) [hv : v.IsRankOneDiscrete]
 theorem intValuation_algebraMap (x : K) :
     w.intValuation (algebraMap K L x) = v.intValuation x ^ w.ramificationIdx K := by
   have hequiv := HasExtension.val_isEquiv_comap (vR := v) (vA := w)
-  have hu : (w.comap (algebraMap K L)).IsRankOneDiscrete := .of_isEquiv hequiv
+  have hu := isRankOneDiscrete_comap_of_hasExtension v w
   rcases eq_or_ne (v x) 0 with hx | hx
   · have hwx : w (algebraMap K L x) = 0 := by
       simpa only [comap_apply] using hequiv.eq_zero.mp hx
