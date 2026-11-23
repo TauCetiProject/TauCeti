@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Euclidean.PolarGraph.Basic
-public import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Adjacent separation on annular polar sectors
@@ -63,7 +62,10 @@ theorem deckShift_mem_annularSector_of_le {r R : ℝ} {I : Set ℝ} (hI : I.OrdC
     {p : PolarPoint} {n j : ℕ} (hp : p ∈ overlap (annularSector r R I) n) (hj : j ≤ n) :
     deckShift j p ∈ annularSector r R I := by
   obtain ⟨h₀, hn⟩ := mem_overlap_iff.mp hp
-  refine ⟨by simpa only [radius_deckShift] using h₀.1, hI.out h₀.2 hn.2 ?_⟩
+  obtain ⟨hρ, hθ⟩ := mem_annularSector_iff.mp h₀
+  have hnθ := (mem_annularSector_iff.mp hn).2
+  apply mem_annularSector_iff.mpr
+  refine ⟨by simpa only [radius_deckShift] using hρ, hI.out hθ hnθ ?_⟩
   simp only [mem_Icc, angle_deckShift, Int.cast_natCast, le_add_iff_nonneg_right,
     add_le_add_iff_left]
   exact ⟨by positivity, mul_le_mul_of_nonneg_right (by exact_mod_cast hj) (by positivity)⟩
@@ -93,9 +95,9 @@ theorem injOn_graph_annularSector_of_separation_sign {r R : ℝ} {I : Set ℝ}
   · exact hpos n (by omega) p hp
   · have hrev := hpos n (by omega) (deckShift (-(n : ℤ)) p)
         (mem_overlap_iff.mpr ⟨(mem_overlap_iff.mp hp).2, by simpa using (mem_overlap_iff.mp hp).1⟩)
-    rw [separation_def, deckShift_deckShift_neg, ne_eq, sub_eq_zero] at hrev
-    rw [separation_def]
-    exact sub_ne_zero.mpr (Ne.symm hrev)
+    have hneg := separation_neg_deckShift u (-(n : ℤ)) p
+    rw [neg_neg] at hneg
+    exact neg_ne_zero.mp (hneg ▸ hrev)
 
 /-- A continuous polar graph on an annular angular interval is injectively parametrized
 exactly when the adjacent separation is strictly positive everywhere or strictly negative
@@ -113,7 +115,7 @@ theorem injOn_graph_annularSector_iff_separation_sign {r R : ℝ} {I : Set ℝ}
     obtain ⟨p, hp, hpw⟩ := h
     refine Or.inr fun q hq ↦ lt_of_not_ge fun hqw ↦ ?_
     obtain ⟨z, hz, hwz⟩ := (isPreconnected_overlap_annularSector r R hI 1).intermediate_value
-      hp hq (continuousOn_separation hu 1) (show 0 ∈ Icc _ _ from ⟨hpw, hqw⟩)
+      hp hq (continuousOn_separation hu 1) (mem_Icc.mpr ⟨hpw, hqw⟩)
     exact hne z hz hwz
 
 end TauCeti.PolarGraph
