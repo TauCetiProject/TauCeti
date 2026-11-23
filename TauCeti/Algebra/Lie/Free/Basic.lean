@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Free
+import TauCeti.Algebra.Lie.Hom
 
 /-!
 # Basic API for free Lie algebras
@@ -51,27 +52,29 @@ noncomputable def freeNeg :
   let f : _root_.FreeLieAlgebra R X →ₗ⁅R⁆ _root_.FreeLieAlgebra R X :=
     _root_.FreeLieAlgebra.lift R fun i => -_root_.FreeLieAlgebra.of R i
   have hf : f.comp f = LieHom.id := _root_.FreeLieAlgebra.hom_ext fun i => by simp [f]
-  { toLieHom := f
-    invFun := f
-    left_inv := fun x => DFunLike.congr_fun hf x
-    right_inv := fun x => DFunLike.congr_fun hf x }
+  LieEquiv.ofLieHoms f f hf hf
 
 /-- `TauCeti.FreeLieAlgebra.freeNeg` is involutive. -/
-theorem freeNeg_involutive : Function.Involutive (freeNeg R X) :=
-  (freeNeg R X).left_inv
+theorem freeNeg_involutive : Function.Involutive (freeNeg R X) := fun x => by
+  dsimp only [freeNeg]
+  rw [LieEquiv.ofLieHoms_apply, LieEquiv.ofLieHoms_apply, ← LieHom.comp_apply]
+  have hf : (_root_.FreeLieAlgebra.lift R fun i : X => -_root_.FreeLieAlgebra.of R i).comp
+      (_root_.FreeLieAlgebra.lift R fun i : X => -_root_.FreeLieAlgebra.of R i) = LieHom.id :=
+    _root_.FreeLieAlgebra.hom_ext fun i => by simp
+  rw [hf, LieHom.id_apply]
 
 /-- `TauCeti.FreeLieAlgebra.freeNeg` is its own inverse. -/
 @[simp]
 theorem freeNeg_symm : (freeNeg R X).symm = freeNeg R X :=
-  LieEquiv.ext fun _ => rfl
+  LieEquiv.symm_ofLieHoms _ _ _ _
 
 end
 
 /-- `TauCeti.FreeLieAlgebra.freeNeg` negates each free generator. -/
 @[simp]
 theorem freeNeg_of {R : Type*} [CommRing R] {X : Type*} (i : X) :
-    freeNeg R X (_root_.FreeLieAlgebra.of R i) = -_root_.FreeLieAlgebra.of R i :=
-  _root_.FreeLieAlgebra.lift_of_apply _ i
+    freeNeg R X (_root_.FreeLieAlgebra.of R i) = -_root_.FreeLieAlgebra.of R i := by
+  simp [freeNeg]
 
 /-- Applying `TauCeti.FreeLieAlgebra.freeNeg` twice is the identity. -/
 @[simp]

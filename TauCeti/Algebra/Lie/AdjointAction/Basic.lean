@@ -57,6 +57,8 @@ For an ideal, adjoint nilpotence also passes back to the ambient Lie algebra
   (`TauCeti.LieAlgebra.isNilpotent_ad_add_iff_of_mem_center_left`).
 * `TauCeti.LieAlgebra.commute_ad_of_lie_eq_zero`: elements with vanishing bracket have commuting
   adjoint actions.
+* `TauCeti.LieAlgebra.lie_ad_pow_of_lie_eq_zero`: commuting elements commute with powers of each
+  other's adjoint actions.
 
 ## References
 
@@ -201,6 +203,13 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 theorem commute_ad_of_lie_eq_zero {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
     {x y : L} (h : ⁅x, y⁆ = 0) : Commute (ad R L x) (ad R L y) := by
   rw [commute_iff_lie_eq, ← LieHom.map_lie, h, map_zero]
+
+/-- If `⁅x, y⁆ = 0`, then `ad x` commutes with every power of `ad y`. -/
+theorem lie_ad_pow_of_lie_eq_zero {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {x y : L} (hxy : ⁅x, y⁆ = 0) (n : ℕ) (z : L) :
+    ⁅x, (ad R L y ^ n) z⁆ = (ad R L y ^ n) ⁅x, z⁆ := by
+  simpa only [mul_apply_eq_comp, ad_apply] using
+    LinearMap.congr_fun ((commute_ad_of_lie_eq_zero hxy).pow_right n).eq z
 
 /-- In a center-free Lie algebra, an element whose adjoint is polynomial in `ad x` commutes
 with every element commuting with `x`. -/

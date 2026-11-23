@@ -72,11 +72,11 @@ This file supplies general constructions for Lie modules that are missing from M
 * `TauCeti.ad_pow_succ_apply` and `TauCeti.ad_pow_succ_apply'`: an additional adjoint action can be
   applied before or outside the preceding powers.
 * `TauCeti.lie_ad_pow_of_lie_eq_smul`: eigenvalue shift for an iterated adjoint bracket.
-* `TauCeti.lie_ad_pow_of_lie_eq_zero`: commuting elements commute with powers of each other's
-  adjoint actions.
 * `TauCeti.ad_neg_pow_apply` and `TauCeti.ad_neg_pow_apply_eq_zero`: negating the acting element
   scales the `n`-fold adjoint action by `(-1) ^ n` and preserves adjoint vanishing.
 * `LieSubalgebra.engel_neg`: negating the acting element preserves the Engel subalgebra.
+* `LieSubalgebra.mem_engel_of_lie_eq_smul`: an element whose bracket with `x` is a scalar
+  multiple of `x` belongs to the Engel subalgebra of `x`.
 * `TauCeti.ad_pow_apply_eq_ad_pow_apply`: iterating the adjoint action gives the same element
   whichever base ring the Lie algebra is read over.
 * `TauCeti.left_ne_zero_of_lie_eq_smul`: an element acting on a nonzero vector by a nonzero
@@ -455,15 +455,6 @@ theorem lie_ad_pow_of_lie_eq_smul {h x y : L} {a b : R} (hx : ⁅h, x⁆ = a •
     rw [ad_pow_succ_apply', leibniz_lie, hx, ih, smul_lie, lie_smul, succ_nsmul]
     module
 
-/-- If `⁅x, y⁆ = 0`, then `ad x` commutes with every power of `ad y`. -/
-theorem lie_ad_pow_of_lie_eq_zero {x y : L} (hxy : ⁅x, y⁆ = 0) (n : ℕ) (z : L) :
-    ⁅x, (LieAlgebra.ad R L y ^ n) z⁆ = (LieAlgebra.ad R L y ^ n) ⁅x, z⁆ := by
-  let := LieRing.ofAssociativeRing (A := Module.End R L)
-  have hcomm : Commute (LieAlgebra.ad R L x) (LieAlgebra.ad R L y) := by
-    rw [commute_iff_lie_eq, ← LieHom.map_lie, hxy, map_zero]
-  simpa only [_root_.mul_apply_eq_comp, LieAlgebra.ad_apply] using
-    LinearMap.congr_fun (hcomm.pow_right n).eq z
-
 /-- Iterating the adjoint action of `-x` `n` times scales the `n`-fold adjoint action of `x` by
 `(-1) ^ n`. -/
 theorem ad_neg_pow_apply (x y : L) (n : ℕ) :
@@ -486,6 +477,14 @@ theorem _root_.LieSubalgebra.engel_neg (x : L) :
   simp only [LieSubalgebra.mem_engel_iff]
   refine ⟨fun ⟨n, hn⟩ => ⟨n, ?_⟩, fun ⟨n, hn⟩ => ⟨n, ad_neg_pow_apply_eq_zero hn⟩⟩
   simpa using ad_neg_pow_apply_eq_zero hn
+
+/-- If `⁅y, x⁆ = c • x`, then `ad x` kills `y` in two steps, so `y` lies in the Engel subalgebra
+of `x`. -/
+theorem _root_.LieSubalgebra.mem_engel_of_lie_eq_smul {x y : L} {c : R} (h : ⁅y, x⁆ = c • x) :
+    y ∈ LieSubalgebra.engel R x := by
+  refine (LieSubalgebra.mem_engel_iff R _ _).mpr ⟨2, ?_⟩
+  rw [ad_pow_succ_apply, pow_one, LieAlgebra.ad_apply, ← lie_skew x y, h]
+  simp
 
 /-- **A Lie homomorphism carries the iterated adjoint action.** `f ((ad x) ^ n y)` is
 `(ad (f x)) ^ n (f y)`; relations of the form `(ad x) ^ n y = 0`, such as

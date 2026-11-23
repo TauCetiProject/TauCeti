@@ -80,8 +80,9 @@ one, which is not proved here (see the Applications section below).
 * `TauCeti.lieSpan_serreGenerators_eq_top`: the generators generate the presented algebra.
 * `TauCeti.lieSpan_serreE_union_serreF_eq_top`: the raising and lowering generators alone generate
   the presented algebra.
-* `TauCeti.serreIdeal` and `TauCeti.serreIdealLift`: the same-sign Serre ideal of
-  `FreeLieAlgebra R B` and the universal property of its quotient.
+* `TauCeti.serreIdeal`, `TauCeti.serreIdealLift`, and `TauCeti.freeNeg_mem_serreIdeal`: the
+  same-sign Serre ideal of `FreeLieAlgebra R B`, the universal property of its quotient, and
+  stability under negating the free generators.
 
 ## Applications
 
@@ -846,6 +847,21 @@ theorem serreIdeal_induction {R : Type*} [CommRing R] {B : Type*} {CM : Matrix B
   | add _ _ hx hy hu hv => exact add _ _ hx hy hu hv
   | smul c _ hx hu => exact smul c _ hx hu
   | lie u _ hv ih => exact lie u _ hv ih
+
+/-- Negating every free generator preserves the same-sign Serre ideal. -/
+theorem freeNeg_mem_serreIdeal {R : Type*} [CommRing R] {B : Type*} {CM : Matrix B B ℤ}
+    {b : FreeLieAlgebra R B} (hb : b ∈ serreIdeal R CM) :
+    TauCeti.FreeLieAlgebra.freeNeg R B b ∈ serreIdeal R CM := by
+  induction hb using serreIdeal_induction with
+  | relator i j =>
+    rw [← LieEquiv.coe_toLieHom, LieHom.map_ad_pow, LieHom.map_lie, LieEquiv.coe_toLieHom,
+      TauCeti.FreeLieAlgebra.freeNeg_of, TauCeti.FreeLieAlgebra.freeNeg_of, neg_lie, lie_neg,
+      neg_neg, ad_neg_pow_apply]
+    exact Submodule.smul_mem (serreIdeal R CM).toSubmodule _ (relator_mem_serreIdeal R CM i j)
+  | zero => simp
+  | add _ _ _ _ hu hv => simpa [map_add] using add_mem hu hv
+  | smul c _ _ hu => simpa [map_smul] using Submodule.smul_mem _ c hu
+  | lie _ _ _ ih => simpa [LieEquiv.map_lie] using LieSubmodule.lie_mem (serreIdeal R CM) ih
 
 end SerreIdeal
 

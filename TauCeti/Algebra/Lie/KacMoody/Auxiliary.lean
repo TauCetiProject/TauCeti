@@ -5,15 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.Algebra.Lie.KacMoody.Basic
 
-import Mathlib.Algebra.FreeMonoid.Basic
-import Mathlib.Algebra.MonoidAlgebra.Module
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import Mathlib.Tactic.Module
-import TauCeti.Algebra.Lie.Free.Basic
-import TauCeti.Algebra.Lie.KacMoody.CartanInjective
+import TauCeti.Algebra.Lie.Hom
+import TauCeti.Algebra.Lie.KacMoody.SerreRelations
+import TauCeti.Algebra.Lie.KacMoody.WordRep
 import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
 
@@ -22,12 +19,12 @@ import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
 
 Let `R` be a realization of an integral matrix `A` over a field `K`. To establish the triangular
 directness of `TauCeti.KacMoody.PresentedLieAlgebra R` when `A` is a generalized Cartan matrix
-(`Matrix.IsGeneralizedCartan A`), we construct Kac's auxiliary presentation without Serre relations
-(`TauCeti.KacMoody.IsAuxRelator`), build Kac's Verma-type representation on the tensor algebra
-`K[FreeMonoid I]` to prove triangular directness of the auxiliary algebra using
-`FreeAlgebra.equivMonoidAlgebraFreeMonoid` and the PBW embedding of `FreeLieAlgebra K I`, and
-verify `ad fₖ`-invariance of the Serre ideal in the auxiliary algebra via
-`TauCeti.KacMoody.lie_ad_pow_lie_eq_zero`.
+(`Matrix.IsGeneralizedCartan A`), we work with Kac's auxiliary presentation without Serre relations
+(`TauCeti.KacMoody.auxIdeal`), lift Kac's word representation on `K[FreeMonoid I]` from
+`TauCeti/Algebra/Lie/KacMoody/WordRep.lean` to prove triangular directness of the auxiliary
+algebra using `FreeAlgebra.equivMonoidAlgebraFreeMonoid` and the PBW embedding of
+`FreeLieAlgebra K I`, and verify `ad fₖ`-invariance of the Serre ideal in the auxiliary algebra
+via `TauCeti.KacMoody.lie_ad_pow_lie_eq_zero`.
 
 Passing to the quotient yields `TauCeti.KacMoody.quotientTriangular_eq_zero`, from which
 `TauCeti/Algebra/Lie/KacMoody/Triangular.lean` deduces the triangular equivalence, generator
@@ -63,35 +60,15 @@ variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I
 
 section Auxiliary
 
-private noncomputable def auxIdeal : LieIdeal K (FreeLieAlgebra K (Generator I H)) :=
-  LieSubmodule.lieSpan K _ {x | IsAuxRelator R x}
-
-private def AuxLieAlgebra : Type _ :=
+private abbrev AuxLieAlgebra : Type _ :=
   FreeLieAlgebra K (Generator I H) ⧸ auxIdeal R
-
-private noncomputable instance : LieRing (AuxLieAlgebra R) :=
-  inferInstanceAs (LieRing (FreeLieAlgebra K (Generator I H) ⧸ auxIdeal R))
-
-private noncomputable instance : LieAlgebra K (AuxLieAlgebra R) :=
-  inferInstanceAs (LieAlgebra K (FreeLieAlgebra K (Generator I H) ⧸ auxIdeal R))
 
 private noncomputable def auxMk :
     FreeLieAlgebra K (Generator I H) →ₗ⁅K⁆ AuxLieAlgebra R :=
   LieIdeal.mkQ (auxIdeal R)
 
-private theorem auxMk_eq_zero_of_isAuxRelator {x : FreeLieAlgebra K (Generator I H)}
-    (hx : IsAuxRelator R x) : auxMk R x = 0 :=
-  (LieIdeal.mkQ_apply _ x).trans
-    (LieSubmodule.Quotient.mk_eq_zero'.mpr (LieSubmodule.subset_lieSpan hx))
-
-private noncomputable def auxCartan : H →ₗ[K] AuxLieAlgebra R where
-  toFun x := auxMk R (FreeLieAlgebra.of K (Generator.cartan x))
-  map_add' x y := by
-    have h := auxMk_eq_zero_of_isAuxRelator R (.cartan_add x y)
-    rwa [map_sub, map_sub, sub_sub, sub_eq_zero] at h
-  map_smul' c x := by
-    have h := auxMk_eq_zero_of_isAuxRelator R (.cartan_smul c x)
-    rwa [map_sub, map_smul, sub_eq_zero] at h
+private noncomputable def auxCartan : H →ₗ[K] AuxLieAlgebra R :=
+  quotientCartan R le_rfl
 
 private noncomputable def auxPos (i : I) : AuxLieAlgebra R :=
   auxMk R (FreeLieAlgebra.of K (Generator.positive i))
@@ -101,7 +78,8 @@ private noncomputable def auxNeg (i : I) : AuxLieAlgebra R :=
 
 @[simp]
 private theorem auxMk_of_cartan (x : H) :
-    auxMk R (FreeLieAlgebra.of K (Generator.cartan x)) = auxCartan R x := rfl
+    auxMk R (FreeLieAlgebra.of K (Generator.cartan x)) = auxCartan R x :=
+  (quotientCartan_apply R le_rfl x).symm
 
 @[simp]
 private theorem auxMk_of_pos (i : I) :
@@ -111,15 +89,19 @@ private theorem auxMk_of_pos (i : I) :
 private theorem auxMk_of_neg (i : I) :
     auxMk R (FreeLieAlgebra.of K (Generator.negative i)) = auxNeg R i := rfl
 
+private theorem satisfiesAuxRelations_aux :
+    SatisfiesAuxRelations R (auxCartan R) (auxPos R) (auxNeg R) :=
+  satisfiesAuxRelations_quotient R le_rfl
+
 @[simp]
 private theorem lie_auxCartan_auxCartan (x y : H) :
-    ⁅auxCartan R x, auxCartan R y⁆ = 0 := by
-  simpa using auxMk_eq_zero_of_isAuxRelator R (.lie_cartan_cartan x y)
+    ⁅auxCartan R x, auxCartan R y⁆ = 0 :=
+  (satisfiesAuxRelations_aux R).lie_cartan_cartan x y
 
 @[simp]
 private theorem lie_auxCartan_auxPos (x : H) (j : I) :
-    ⁅auxCartan R x, auxPos R j⁆ = R.root j x • auxPos R j := by
-  simpa [sub_eq_zero] using auxMk_eq_zero_of_isAuxRelator R (.lie_cartan_positive x j)
+    ⁅auxCartan R x, auxPos R j⁆ = R.root j x • auxPos R j :=
+  (satisfiesAuxRelations_aux R).lie_cartan_positive x j
 
 @[simp]
 private theorem lie_auxPos_auxCartan (j : I) (x : H) :
@@ -128,13 +110,13 @@ private theorem lie_auxPos_auxCartan (j : I) (x : H) :
 
 @[simp]
 private theorem lie_auxCartan_auxNeg (x : H) (j : I) :
-    ⁅auxCartan R x, auxNeg R j⁆ = -(R.root j x • auxNeg R j) := by
-  simpa [add_eq_zero_iff_eq_neg] using auxMk_eq_zero_of_isAuxRelator R (.lie_cartan_negative x j)
+    ⁅auxCartan R x, auxNeg R j⁆ = -(R.root j x • auxNeg R j) :=
+  (satisfiesAuxRelations_aux R).lie_cartan_negative x j
 
 @[simp]
 private theorem lie_auxPos_auxNeg_self (i : I) :
-    ⁅auxPos R i, auxNeg R i⁆ = auxCartan R (R.coroot i) := by
-  simpa [sub_eq_zero] using auxMk_eq_zero_of_isAuxRelator R (.lie_positive_negative_self i)
+    ⁅auxPos R i, auxNeg R i⁆ = auxCartan R (R.coroot i) :=
+  (satisfiesAuxRelations_aux R).lie_positive_negative_self i
 
 @[simp]
 private theorem lie_auxNeg_auxPos_self (i : I) :
@@ -143,21 +125,13 @@ private theorem lie_auxNeg_auxPos_self (i : I) :
 
 @[simp]
 private theorem lie_auxPos_auxNeg_of_ne {i j : I} (hij : i ≠ j) :
-    ⁅auxPos R i, auxNeg R j⁆ = 0 := by
-  simpa using auxMk_eq_zero_of_isAuxRelator R (.lie_positive_negative_of_ne i j hij)
+    ⁅auxPos R i, auxNeg R j⁆ = 0 :=
+  (satisfiesAuxRelations_aux R).lie_positive_negative_of_ne i j hij
 
 @[simp]
 private theorem lie_auxNeg_auxPos_of_ne {i j : I} (hij : i ≠ j) :
     ⁅auxNeg R i, auxPos R j⁆ = 0 := by
   rw [← lie_skew, lie_auxPos_auxNeg_of_ne R hij.symm, neg_zero]
-
-private theorem satisfiesAuxRelations_aux :
-    SatisfiesAuxRelations R (auxCartan R) (auxPos R) (auxNeg R) where
-  lie_cartan_cartan := lie_auxCartan_auxCartan R
-  lie_cartan_positive := lie_auxCartan_auxPos R
-  lie_cartan_negative := lie_auxCartan_auxNeg R
-  lie_positive_negative_self := lie_auxPos_auxNeg_self R
-  lie_positive_negative_of_ne _ _ := lie_auxPos_auxNeg_of_ne R
 
 section AuxUniversal
 
@@ -165,12 +139,14 @@ variable {R} {L : Type*} [LieRing L] [LieAlgebra K L]
 
 private noncomputable def auxLift {φ : H →ₗ[K] L} {E F : I → L}
     (h : SatisfiesAuxRelations R φ E F) : AuxLieAlgebra R →ₗ⁅K⁆ L :=
-  (auxIdeal R).liftQ (FreeLieAlgebra.lift K (generatorMap φ E F)) (lieSpan_isAuxRelator_le_ker h)
+  (auxIdeal R).liftQ (FreeLieAlgebra.lift K (generatorMap φ E F))
+    (auxIdeal_def R ▸ lieSpan_isAuxRelator_le_ker h)
 
 @[simp]
 private theorem auxLift_auxCartan {φ : H →ₗ[K] L} {E F : I → L}
-    (h : SatisfiesAuxRelations R φ E F) (x : H) : auxLift h (auxCartan R x) = φ x :=
-  ((LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)).trans
+    (h : SatisfiesAuxRelations R φ E F) (x : H) : auxLift h (auxCartan R x) = φ x := by
+  rw [auxCartan, quotientCartan_apply]
+  exact ((LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)).trans
     (generatorMap_cartan x)
 
 @[simp]
@@ -188,44 +164,40 @@ private theorem auxLift_auxNeg {φ : H →ₗ[K] L} {E F : I → L}
 private theorem aux_hom_ext {g₁ g₂ : AuxLieAlgebra R →ₗ⁅K⁆ L}
     (hH : ∀ x, g₁ (auxCartan R x) = g₂ (auxCartan R x))
     (hE : ∀ i, g₁ (auxPos R i) = g₂ (auxPos R i))
-    (hF : ∀ i, g₁ (auxNeg R i) = g₂ (auxNeg R i)) : g₁ = g₂ := by
-  refine (auxIdeal R).lieHom_qext fun x => ?_
-  have hc : g₁.comp (auxMk R) = g₂.comp (auxMk R) := FreeLieAlgebra.hom_ext fun
-    | .cartan x => hH x
-    | .positive i => hE i
-    | .negative i => hF i
-  exact DFunLike.congr_fun hc x
+    (hF : ∀ i, g₁ (auxNeg R i) = g₂ (auxNeg R i)) : g₁ = g₂ :=
+  quotient_hom_ext (auxIdeal R) (fun x => by simpa [auxCartan] using hH x) hE hF
 
 end AuxUniversal
 
 private theorem lieSpan_auxGenerators_eq_top :
     LieSubalgebra.lieSpan K (AuxLieAlgebra R)
       (Set.range (auxCartan R) ∪ Set.range (auxPos R) ∪ Set.range (auxNeg R)) = ⊤ := by
-  set S := LieSubalgebra.lieSpan K (AuxLieAlgebra R)
-    (Set.range (auxCartan R) ∪ Set.range (auxPos R) ∪ Set.range (auxNeg R))
-  have hle : LieSubalgebra.lieSpan K (FreeLieAlgebra K (Generator I H))
-      (Set.range (FreeLieAlgebra.of K)) ≤ S.comap (auxMk R) := by
-    refine LieSubalgebra.lieSpan_le.mpr ?_
-    rintro _ ⟨g, rfl⟩
-    refine LieSubalgebra.subset_lieSpan ?_
-    cases g with
-    | cartan x => exact Or.inl (Or.inl ⟨x, rfl⟩)
-    | positive i => exact Or.inl (Or.inr ⟨i, rfl⟩)
-    | negative i => exact Or.inr ⟨i, rfl⟩
-  refine eq_top_iff.mpr fun y _ => ?_
-  obtain ⟨x, rfl⟩ := (auxIdeal R).surjective_mkQ y
-  exact hle (by rw [FreeLieAlgebra.lieSpan_range_of_eq_top]; trivial)
+  have hc : (auxCartan R : H → AuxLieAlgebra R) =
+      fun x => (auxIdeal R).mkQ (FreeLieAlgebra.of K (.cartan x)) :=
+    funext (quotientCartan_apply R le_rfl)
+  have hp : auxPos R = fun i => (auxIdeal R).mkQ (FreeLieAlgebra.of K (.positive i)) :=
+    funext fun i => by simp [auxPos, auxMk]
+  have hn : auxNeg R = fun i => (auxIdeal R).mkQ (FreeLieAlgebra.of K (.negative i)) :=
+    funext fun i => by simp [auxNeg, auxMk]
+  rw [hc, hp, hn]
+  exact lieSpan_quotient_generators_eq_top (auxIdeal R)
 
 private noncomputable def auxChevalleyHom : AuxLieAlgebra R →ₗ⁅K⁆ AuxLieAlgebra R :=
   auxLift (satisfiesAuxRelations_aux R).neg_swap
 
+private theorem auxChevalley_comp :
+    (auxChevalleyHom R).comp (auxChevalleyHom R) = LieHom.id :=
+  aux_hom_ext (by simp [auxChevalleyHom]) (by simp [auxChevalleyHom]) (by simp [auxChevalleyHom])
+
 private noncomputable def auxChevalley : AuxLieAlgebra R ≃ₗ⁅K⁆ AuxLieAlgebra R :=
-  have hcomp : (auxChevalleyHom R).comp (auxChevalleyHom R) = LieHom.id :=
-    aux_hom_ext (by simp [auxChevalleyHom]) (by simp [auxChevalleyHom]) (by simp [auxChevalleyHom])
-  { toLieHom := auxChevalleyHom R
-    invFun := auxChevalleyHom R
-    left_inv := fun x => DFunLike.congr_fun hcomp x
-    right_inv := fun x => DFunLike.congr_fun hcomp x }
+  LieEquiv.ofLieHoms (auxChevalleyHom R) (auxChevalleyHom R)
+    (auxChevalley_comp R) (auxChevalley_comp R)
+
+@[simp]
+private theorem auxChevalley_involutive (y : AuxLieAlgebra R) :
+    auxChevalley R (auxChevalley R y) = y := by
+  rw [auxChevalley, LieEquiv.ofLieHoms_apply, LieEquiv.ofLieHoms_apply, ← LieHom.comp_apply,
+    auxChevalley_comp, LieHom.id_apply]
 
 private noncomputable def auxPosHom : FreeLieAlgebra K I →ₗ⁅K⁆ AuxLieAlgebra R :=
   FreeLieAlgebra.lift K (auxPos R)
@@ -258,129 +230,10 @@ open MonoidAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-private def wordWeight (lam : Module.Dual K H) (w : FreeMonoid I) : Module.Dual K H :=
-  lam - (w.toList.map R.root).sum
-
-@[simp]
-private theorem wordWeight_one (lam : Module.Dual K H) :
-    wordWeight R lam (1 : FreeMonoid I) = lam := by
-  simp [wordWeight]
-
-@[simp]
-private theorem wordWeight_of_mul (lam : Module.Dual K H) (j : I) (w : FreeMonoid I) :
-    wordWeight R lam (.of j * w) = wordWeight R lam w - R.root j := by
-  simp only [wordWeight, FreeMonoid.toList_mul, FreeMonoid.toList_of, List.singleton_append,
-    List.map_cons, List.sum_cons]
-  abel
-
-private noncomputable def fOp (i : I) : Module.End K K[FreeMonoid I] :=
-  LinearMap.mulLeft K (MonoidAlgebra.of K (FreeMonoid I) (FreeMonoid.of i))
-
-@[simp]
-private theorem fOp_single (i : I) (w : FreeMonoid I) (c : K) :
-    fOp (K := K) i (single w c) = single (.of i * w) c := by
-  simp [fOp, LinearMap.mulLeft_apply, MonoidAlgebra.of_apply]
-
-private noncomputable def hOp (lam : Module.Dual K H) : H →ₗ[K] Module.End K K[FreeMonoid I] :=
-  ((MonoidAlgebra.basis (FreeMonoid I) K).constr K).toLinearMap ∘ₗ
-    LinearMap.pi fun w => (wordWeight R lam w).smulRight (single w (1 : K))
-
-@[simp]
-private theorem hOp_single (lam : Module.Dual K H) (x : H) (w : FreeMonoid I) (c : K) :
-    hOp R lam x (single w c) = c • wordWeight R lam w x • single w 1 := by
-  have hc : single w c = c • MonoidAlgebra.basis (FreeMonoid I) K w := by
-    rw [basis_apply, smul_single', mul_one]
-  rw [hc, map_smul, hOp, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    Module.Basis.constr_basis, LinearMap.pi_apply, LinearMap.smulRight_apply]
-
-open scoped Classical in
-private noncomputable def eWord (lam : Module.Dual K H) (i : I) (w : FreeMonoid I) :
-    K[FreeMonoid I] :=
-  w.mulRecOn 0 fun j w r => fOp (K := K) j r +
-    if i = j then wordWeight R lam w (R.coroot i) • single w 1 else 0
-
-@[simp]
-private theorem eWord_one (lam : Module.Dual K H) (i : I) :
-    eWord R lam i 1 = 0 := by
-  simp [eWord]
-
-open scoped Classical in
-@[simp]
-private theorem eWord_of_mul (lam : Module.Dual K H) (i j : I) (w : FreeMonoid I) :
-    eWord R lam i (.of j * w) = fOp (K := K) j (eWord R lam i w) +
-      if i = j then wordWeight R lam w (R.coroot i) • single w 1 else 0 := by
-  simp [eWord]
-
-open scoped Classical in
-private noncomputable def eOp (lam : Module.Dual K H) (i : I) : Module.End K K[FreeMonoid I] :=
-  (MonoidAlgebra.basis (FreeMonoid I) K).constr K (eWord R lam i)
-
-open scoped Classical in
-@[simp]
-private theorem eOp_single (lam : Module.Dual K H) (i : I) (w : FreeMonoid I) (c : K) :
-    eOp R lam i (single w c) = c • eWord R lam i w := by
-  have hc : single w c = c • MonoidAlgebra.basis (FreeMonoid I) K w := by
-    rw [basis_apply, smul_single', mul_one]
-  rw [hc, map_smul, eOp, Module.Basis.constr_basis]
-
-private theorem hOp_fOp (lam : Module.Dual K H) (x : H) (j : I) (v : K[FreeMonoid I]) :
-    hOp R lam x (fOp j v) = fOp j (hOp R lam x v) - R.root j x • fOp j v := by
-  have heq : (hOp R lam x).comp (fOp j) = (fOp j).comp (hOp R lam x) - R.root j x • fOp j := by
-    refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
-    simp only [basis_apply, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.smul_apply,
-      fOp_single, hOp_single, one_smul, map_smul, wordWeight_of_mul]
-    rw [sub_smul]
-  simpa using LinearMap.congr_fun heq v
-
-open scoped Classical in
-private theorem hOp_eWord (lam : Module.Dual K H) (x : H) (i : I) (w : FreeMonoid I) :
-    hOp R lam x (eWord R lam i w) = (wordWeight R lam w x + R.root i x) • eWord R lam i w := by
-  induction w using FreeMonoid.inductionOn' with
-  | one => simp [eWord_one]
-  | of_mul j w ih =>
-    have hf : hOp R lam x (fOp j (eWord R lam i w)) =
-        (wordWeight R lam (.of j * w) x + R.root i x) • fOp j (eWord R lam i w) := by
-      rw [hOp_fOp, ih, map_smul, wordWeight_of_mul, LinearMap.sub_apply]
-      module
-    simp only [eWord_of_mul, map_add, hf]
-    split_ifs with hij
-    · subst hij
-      simp only [map_smul, hOp_single, one_smul, wordWeight_of_mul, LinearMap.sub_apply]
-      module
-    · simp
-
-open scoped Classical in
-private theorem satisfiesAuxRelations_auxRep (lam : Module.Dual K H) :
-    SatisfiesAuxRelations R (hOp R lam) (eOp R lam) (fOp (K := K)) where
-  lie_cartan_cartan x y := by
-    refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
-    rw [LieRing.of_associative_ring_bracket]
-    simp [mul_apply_eq_comp, mul_comm]
-  lie_cartan_positive x j := by
-    refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
-    rw [LieRing.of_associative_ring_bracket]
-    simp only [basis_apply, LinearMap.sub_apply, mul_apply_eq_comp, eOp_single, hOp_single,
-      one_smul, map_smul, hOp_eWord, LinearMap.smul_apply]
-    module
-  lie_cartan_negative x j := by
-    refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
-    rw [LieRing.of_associative_ring_bracket]
-    simp only [basis_apply, LinearMap.sub_apply, mul_apply_eq_comp, fOp_single, hOp_single,
-      one_smul, map_smul, wordWeight_of_mul, LinearMap.neg_apply, LinearMap.smul_apply]
-    module
-  lie_positive_negative_self i := by
-    refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
-    rw [LieRing.of_associative_ring_bracket]
-    simp [mul_apply_eq_comp]
-  lie_positive_negative_of_ne i j hij := by
-    refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
-    rw [LieRing.of_associative_ring_bracket]
-    simp [mul_apply_eq_comp, hij]
-
 open scoped Classical in
 private noncomputable def auxRep (lam : Module.Dual K H) :
     AuxLieAlgebra R →ₗ⁅K⁆ Module.End K K[FreeMonoid I] :=
-  auxLift (satisfiesAuxRelations_auxRep R lam)
+  auxLift (satisfiesAuxRelations_wordRep R lam)
 
 open scoped Classical in
 private theorem auxRep_auxPosHom_one (lam : Module.Dual K H) (b : FreeLieAlgebra K I) :
@@ -388,7 +241,9 @@ private theorem auxRep_auxPosHom_one (lam : Module.Dual K H) (b : FreeLieAlgebra
   have hb : b ∈ LieSubalgebra.lieSpan K _ (Set.range (FreeLieAlgebra.of K)) := by
     rw [FreeLieAlgebra.lieSpan_range_of_eq_top]; trivial
   induction hb using LieSubalgebra.lieSpan_induction with
-  | mem _ hx => rcases hx with ⟨i, rfl⟩; simp [auxRep, auxPosHom, MonoidAlgebra.one_def]
+  | mem _ hx =>
+    rcases hx with ⟨i, rfl⟩
+    simp [auxRep, auxPosHom, raising_single_one, raisingWord_one, MonoidAlgebra.one_def]
   | zero => simp
   | add _ _ _ _ hx hy => simp [map_add, hx, hy]
   | smul c _ _ hx => simp [map_smul, hx]
@@ -409,7 +264,7 @@ private theorem auxRep_auxNegHom_apply_one (lam : Module.Dual K H) (a : FreeLieA
     simp only [auxNegHom, FreeLieAlgebra.lift_of_apply, auxRep, auxLift_auxNeg]
     induction v using MonoidAlgebra.induction_on with
     | of w =>
-      rw [MonoidAlgebra.of_apply, fOp_single]
+      rw [MonoidAlgebra.of_apply, lowering_single]
       have hne : FreeMonoid.of i * w ≠ 1 := fun h => by
         simpa using congrArg FreeMonoid.toList h
       simp [hne]
@@ -435,21 +290,25 @@ private theorem auxRep_auxNegHom_injective (lam : Module.Dual K H) :
     TauCeti.UniversalEnvelopingAlgebra.ι_injective K (FreeLieAlgebra K I) <|
       (FreeLieAlgebra.universalEnvelopingEquivFreeAlgebra K I).injective <| by
         rwa [← hιFA_eq, ← hιFA_eq]
-  have hAlg : FreeAlgebra.lift K (fOp (K := K)) =
-      (Algebra.lmul K K[FreeMonoid I]).comp FreeAlgebra.equivMonoidAlgebraFreeMonoid.toAlgHom := by
-    refine FreeAlgebra.hom_ext (funext fun i => ?_)
-    simp [fOp, FreeAlgebra.equivMonoidAlgebraFreeMonoid]
-    rfl
+  have hequiv_ι (i : I) :
+      FreeAlgebra.equivMonoidAlgebraFreeMonoid (FreeAlgebra.ι K i) =
+        MonoidAlgebra.of K (FreeMonoid I) (.of i) := by
+    rw [FreeAlgebra.equivMonoidAlgebraFreeMonoid, AlgEquiv.ofAlgHom_apply, FreeAlgebra.lift_ι_apply]
   have hcomp : (auxRep R lam).comp (auxNegHom R) =
-      (FreeAlgebra.lift K (fOp (K := K))).toLieHom.comp ιFA :=
-    FreeLieAlgebra.hom_ext fun i => by simp [auxRep, auxNegHom, ιFA]
-  intro a b hab
-  have ha := LinearMap.congr_fun (DFunLike.congr_fun hcomp a) (1 : K[FreeMonoid I])
-  have hb := LinearMap.congr_fun (DFunLike.congr_fun hcomp b) (1 : K[FreeMonoid I])
-  have h2 := ha.symm.trans (hab.trans hb)
-  simp only [LieHom.comp_apply, AlgHom.toLieHom_apply, hAlg, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', mul_one] at h2
-  exact hιFA_inj (FreeAlgebra.equivMonoidAlgebraFreeMonoid.injective h2)
+      (Algebra.lmul K K[FreeMonoid I]).toLieHom.comp
+        (FreeAlgebra.equivMonoidAlgebraFreeMonoid.toAlgHom.toLieHom.comp ιFA) :=
+    FreeLieAlgebra.hom_ext fun i => by
+      simp [auxRep, auxNegHom, lowering_eq_lmul, ιFA, hequiv_ι]
+  have hpt (a : FreeLieAlgebra K I) :
+      auxRep R lam (auxNegHom R a) (1 : K[FreeMonoid I]) =
+        FreeAlgebra.equivMonoidAlgebraFreeMonoid (ιFA a) := by
+    have ha := LinearMap.congr_fun (DFunLike.congr_fun hcomp a) (1 : K[FreeMonoid I])
+    simpa [Algebra.coe_lmul_eq_mul] using ha
+  have hfn :
+      (fun a : FreeLieAlgebra K I => auxRep R lam (auxNegHom R a) (1 : K[FreeMonoid I])) =
+        FreeAlgebra.equivMonoidAlgebraFreeMonoid ∘ ιFA :=
+    funext hpt
+  exact hfn ▸ FreeAlgebra.equivMonoidAlgebraFreeMonoid.injective.comp hιFA_inj
 
 private theorem auxTriangular_eq_zero {a b : FreeLieAlgebra K I} {x : H}
     (h : auxNegHom R a + auxCartan R x + auxPosHom R b = 0) :
@@ -463,7 +322,7 @@ private theorem auxTriangular_eq_zero {a b : FreeLieAlgebra K I} {x : H}
       auxRep_auxNegHom_apply_one, auxRep_auxPosHom_one, add_zero, zero_add] at h0
     have hcart : auxRep R lam (auxCartan R x) (1 : K[FreeMonoid I]) =
         lam x • (1 : K[FreeMonoid I]) := by
-      simp [auxRep, MonoidAlgebra.one_def]
+      simp [auxRep, MonoidAlgebra.one_def, cartanAction_single, rootSum_one]
     rw [hcart] at h0
     simpa [MonoidAlgebra.one_def] using h0
   subst hx
@@ -599,34 +458,23 @@ private noncomputable def auxSerrePosIdeal (hA : A.IsGeneralizedCartan) :
       | lie _ _ _ _ h₁ h₂ =>
         intro v hv; rw [lie_lie]; exact sub_mem (h₁ _ (h₂ v hv)) (h₂ _ (h₁ v hv)) }
 
-private theorem freeNeg_mem_serreIdeal {b : FreeLieAlgebra K I} (hb : b ∈ serreIdeal K A) :
-    TauCeti.FreeLieAlgebra.freeNeg K I b ∈ serreIdeal K A := by
-  induction hb using serreIdeal_induction with
-  | relator i j =>
-    rw [← LieEquiv.coe_toLieHom, LieHom.map_ad_pow, LieHom.map_lie, LieEquiv.coe_toLieHom,
-      TauCeti.FreeLieAlgebra.freeNeg_of, TauCeti.FreeLieAlgebra.freeNeg_of, neg_lie, lie_neg,
-      neg_neg, ad_neg_pow_apply]
-    exact Submodule.smul_mem (serreIdeal K A).toSubmodule _ (relator_mem_serreIdeal K A i j)
-  | zero => simp
-  | add _ _ _ _ hu hv => simpa [map_add] using add_mem hu hv
-  | smul c _ _ hu => simpa [map_smul] using Submodule.smul_mem _ c hu
-  | lie _ _ _ ih => simpa [LieEquiv.map_lie] using LieSubmodule.lie_mem (serreIdeal K A) ih
-
 private noncomputable def auxSerreNegIdeal (hA : A.IsGeneralizedCartan) :
     LieIdeal K (AuxLieAlgebra R) :=
-  { (serreIdeal K A).toSubmodule.map (auxNegHom R).toLinearMap with
-    lie_mem := fun {z y} hy => by
-      rcases hy with ⟨b, hb, rfl⟩
-      have hb' : auxChevalley R (auxNegHom R b) ∈ auxSerrePosIdeal R hA :=
-        ⟨TauCeti.FreeLieAlgebra.freeNeg K I b, freeNeg_mem_serreIdeal hb,
-          (auxChevalley_auxNegHom R b).symm⟩
-      have hlie : ⁅auxChevalley R z, auxChevalley R (auxNegHom R b)⁆ ∈ auxSerrePosIdeal R hA :=
-        LieSubmodule.lie_mem (auxSerrePosIdeal R hA) hb'
-      rcases hlie with ⟨a, ha, haEq⟩
-      refine ⟨TauCeti.FreeLieAlgebra.freeNeg K I a, freeNeg_mem_serreIdeal ha, ?_⟩
-      simp only [LieHom.coe_toLinearMap] at haEq ⊢
-      rw [← auxChevalley_auxPosHom, haEq, ← LieEquiv.map_lie]
-      exact (auxChevalley R).left_inv _ }
+  LieIdeal.comap (auxChevalley R).toLieHom (auxSerrePosIdeal R hA)
+
+private theorem mem_auxSerreNegIdeal_iff (hA : A.IsGeneralizedCartan) {y : AuxLieAlgebra R} :
+    y ∈ auxSerreNegIdeal R hA ↔ ∃ a ∈ serreIdeal K A, auxNegHom R a = y := by
+  constructor
+  · intro hy
+    rcases hy with ⟨b, hb, hEq⟩
+    simp only [LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom] at hEq
+    refine ⟨TauCeti.FreeLieAlgebra.freeNeg K I b, TauCeti.freeNeg_mem_serreIdeal hb, ?_⟩
+    rw [← auxChevalley_auxPosHom, hEq]
+    exact auxChevalley_involutive R y
+  · rintro ⟨a, ha, rfl⟩
+    change auxChevalley R (auxNegHom R a) ∈ auxSerrePosIdeal R hA
+    rw [auxChevalley_auxNegHom]
+    exact ⟨_, TauCeti.freeNeg_mem_serreIdeal ha, rfl⟩
 
 private theorem satisfiesRelations_auxQuotient (hA : A.IsGeneralizedCartan) :
     let J := auxSerreNegIdeal R hA ⊔ auxSerrePosIdeal R hA
@@ -642,8 +490,8 @@ private theorem satisfiesRelations_auxQuotient (hA : A.IsGeneralizedCartan) :
       ⟨_, relator_mem_serreIdeal K A i j, auxPosHom_serreRelator R i j⟩
   · simp only [Function.comp_apply, ← LieHom.map_lie, ← LieHom.map_ad_pow, ← LieHom.mem_ker,
       LieIdeal.mkQ_ker]
-    refine LieSubmodule.mem_sup_left ⟨_, relator_mem_serreIdeal K A i j, ?_⟩
-    simp [auxNegHom]
+    refine LieSubmodule.mem_sup_left ((mem_auxSerreNegIdeal_iff R hA).mpr ?_)
+    exact ⟨_, relator_mem_serreIdeal K A i j, by simp [auxNegHom]⟩
 
 private theorem auxToPresented_comp_auxPosHom :
     (auxToPresented R).comp (auxPosHom R) = FreeLieAlgebra.lift K (positiveGenerator R) :=
@@ -665,7 +513,8 @@ private theorem ker_auxToPresented_eq (hA : A.IsGeneralizedCartan) :
     have hz' : J.mkQ z = 0 := by rw [← hcomp, LieHom.comp_apply, hz, map_zero]
     rwa [← LieHom.mem_ker, LieIdeal.mkQ_ker] at hz'
   · refine sup_le ?_ ?_
-    · rintro _ ⟨a, ha, rfl⟩
+    · intro _ h
+      obtain ⟨a, ha, rfl⟩ := (mem_auxSerreNegIdeal_iff R hA).mp h
       have hker := serreIdeal_le_ker_lift (ad_pow_lie_negativeGenerator_negativeGenerator R) ha
       rwa [LieHom.mem_ker, ← auxToPresented_comp_auxNegHom] at hker
     · rintro _ ⟨b, hb, rfl⟩
@@ -691,7 +540,8 @@ theorem quotientTriangular_eq_zero (hA : A.IsGeneralizedCartan)
       LieHom.comp_apply]
   have hcart : cartanElement R x = auxToPresented R (auxCartan R x) := (auxLift_auxCartan _ x).symm
   rw [hneg, hcart, hpos, ← map_add, ← map_add, ← LieHom.mem_ker, ker_auxToPresented_eq R hA] at h
-  obtain ⟨_, ⟨a', ha', rfl⟩, _, ⟨b', hb', rfl⟩, heq⟩ := (LieSubmodule.mem_sup _ _ _).mp h
+  obtain ⟨u, hu, _, ⟨b', hb', rfl⟩, heq⟩ := (LieSubmodule.mem_sup _ _ _).mp h
+  obtain ⟨a', ha', rfl⟩ := (mem_auxSerreNegIdeal_iff R hA).mp hu
   simp only [LieHom.coe_toLinearMap] at heq
   have hsub : auxNegHom R (a₀ - a') + auxCartan R x + auxPosHom R (b₀ - b') = 0 := by
     calc auxNegHom R (a₀ - a') + auxCartan R x + auxPosHom R (b₀ - b')
