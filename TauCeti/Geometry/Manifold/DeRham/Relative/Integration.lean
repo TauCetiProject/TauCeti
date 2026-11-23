@@ -203,7 +203,7 @@ private theorem d_eq_zero_of_d_eq (j : ℕ)
   HomologicalComplex.d_apply_eq_zero_of_d_f_apply_eq_zero
     (SSet.chainComplexMap (smoothSingularSubcomplexMap (Subtype.val : W → M)
       contMDiff_subtypeVal) (ModuleCat.of ℝ ℝ))
-    (by rw [← hc, ← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]; rfl)
+    (by rw [← hc, ← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]; simp)
 
 omit [IsManifold I 2 M] in
 /-- On the `W`-part `c'` of a relative smooth cycle, the coboundary `db` of a cochain of `W` of

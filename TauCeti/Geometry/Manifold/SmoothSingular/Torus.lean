@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.AddCircle
 public import TauCeti.Geometry.Manifold.SmoothSingular.Period
+import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.MeasureTheory.Integral.FullSimplex
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -206,16 +207,12 @@ private theorem integral_torusSimplex
       ![A (EuclideanSpace.single 0 1), A (EuclideanSpace.single 1 1)] := by
     ext i : 1
     fin_cases i <;> exact hD _
-  have hb : ⇑(Module.Basis.finTwoProd ℝ) = ![((1 : ℝ), (0 : ℝ)), (0, 1)] := by
-    ext i : 1
-    fin_cases i <;> simp
-  have hdet (v w : ℝ × ℝ) : (Module.Basis.finTwoProd ℝ).det ![v, w] = v.1 * w.2 - v.2 * w.1 := by
-    simp [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, mul_comm]
   -- The tangent spaces of the torus are `ℝ × ℝ`, where a two-form is its value on the standard
   -- frame times the determinant.
   rw [hv]
   exact ((φ _).apply_eq_det_mul (Module.Basis.finTwoProd ℝ) _).trans
-    (congrArg₂ (· * ·) (hdet _ _) (congrArg (φ _) hb))
+    (congrArg₂ (· * ·) (Module.Basis.det_finTwoProd_apply _ _)
+      (congrArg (φ _) (Module.Basis.coe_finTwoProd ℝ)))
 
 end Integral
 
