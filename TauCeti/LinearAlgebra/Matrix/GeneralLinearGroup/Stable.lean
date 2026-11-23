@@ -645,10 +645,10 @@ theorem map_id : map (RingHom.id A) = MonoidHom.id (StableGeneralLinearGroup A) 
 /-- The stable general linear group is functorial in ring homomorphisms. -/
 theorem map_comp (f : A →+* B) (g : B →+* C) :
     map (g.comp f) = (map g).comp (map f) := by
-  refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
-  simp only [MonoidHom.comp_apply, map_of]
-  refine congrArg _ (Units.ext ?_)
-  simp [Matrix.map_map]
+  refine hom_ext fun n ↦ ?_
+  rw [map_comp_of, MonoidHom.comp_assoc, map_comp_of, ← MonoidHom.comp_assoc, map_comp_of,
+    MonoidHom.comp_assoc, ← Units.map_comp, ← RingHom.mapMatrix_comp]
+  rfl
 
 /-- Applying the homomorphisms of `GL_∞` induced by `f` and then `g` is applying the one induced
 by `g.comp f`. -/
@@ -712,9 +712,9 @@ theorem elementarySubgroupMap_surjective (f : A →+* B) (hf : Function.Surjecti
     Function.Surjective (elementarySubgroupMap f) := by
   rintro ⟨y, hy⟩
   obtain ⟨n, u, hu, rfl⟩ := mem_elementarySubgroup_iff.1 hy
-  obtain ⟨v, hv, huv⟩ := f.exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq hf hu
-  refine ⟨⟨of A n v, of_mem_elementarySubgroup hv⟩, Subtype.ext ?_⟩
-  rw [coe_elementarySubgroupMap, map_of, huv]
+  obtain ⟨v, hv⟩ := f.elementarySubgroupMap_surjective hf ⟨u, hu⟩
+  refine ⟨⟨of A n v, of_mem_elementarySubgroup v.property⟩, Subtype.ext ?_⟩
+  rw [coe_elementarySubgroupMap, map_of, ← f.coe_elementarySubgroupMap, congrArg Subtype.val hv]
 
 /-- Ring homomorphisms send stable transvections to stable transvections. -/
 @[simp]
