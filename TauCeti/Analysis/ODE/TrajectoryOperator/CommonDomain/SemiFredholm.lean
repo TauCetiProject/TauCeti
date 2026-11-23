@@ -212,6 +212,7 @@ theorem exists_isCompactOperator_and_norm_le_of_forall_norm_le (hι : IsCompactO
 
 variable {B Bbot Btop : D →L[ℝ] H} {A : ℝ → D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀} {c : ℝ}
 
+omit [CompleteSpace D] in
 /-- **The estimate on a window.** Let `A(s)` differ from an invertible `ι`-symmetric `B` by at most
 `c ‖ι x‖` on the window `(-b, b)`, with `c ≥ 0`. A path `w = φ u`, for a weight `|φ| ≤ 1` vanishing
 off the window, satisfies `‖w‖ ≤ M (‖D_A w‖ + c ‖ι ∘ u‖_{L²((-b, b), H)})` with
@@ -238,11 +239,14 @@ private theorem norm_le_of_ae_prev_eq_smul (hSymm : ∀ x y : D, ⟪B x, ι y⟫
         exact mul_nonneg hc₀ (norm_nonneg _)
     · filter_upwards [hm, hw] with s h₁ h₂ hsW
       rw [h₁, h₂, hφ₀ s hsW, zero_smul, map_zero]
-  refine (norm_le_sqrt_one_add_sq_mul_norm_domainTrajectoryOperator hSymm hB w).trans ?_
+  refine (norm_le_max_norm_inverse_one_mul_norm_domainTrajectoryOperator hSymm hB w).trans ?_
   gcongr
-  have := norm_sub_norm_le (domainTrajectoryOperator ι B w) (familyDomainTrajectoryOperator ι AL w)
-  rw [norm_sub_rev] at this
-  linarith
+  · exact max_le (Real.le_sqrt_of_sq_le (by linarith [sq_nonneg ‖B.inverse‖]))
+      (Real.le_sqrt_of_sq_le (by linarith [sq_nonneg ‖B.inverse‖]))
+  · have := norm_sub_norm_le (domainTrajectoryOperator ι B w)
+      (familyDomainTrajectoryOperator ι AL w)
+    rw [norm_sub_rev] at this
+    linarith
 
 omit [CompleteSpace D] in
 /-- **An end piece.** If `‖w‖ ≤ C ‖D_A w‖` for every path `w` vanishing on `S`, then a path
@@ -272,6 +276,7 @@ private theorem ae_prev_sub_sub_eq_smul {φ ψ : ℝ → ℝ}
 
 /-! ### The estimate -/
 
+omit [CompleteSpace D] in
 /-- **Splicing the three pieces.** Let `D_A` satisfy `‖w‖ ≤ C₊ ‖D_A w‖` for the paths vanishing on
 `(-∞, T₊)` and `‖w‖ ≤ C₋ ‖D_A w‖` for those vanishing on `(T₋, ∞)`, and let `A(s)` differ from an
 invertible `ι`-symmetric `B` by at most `c ‖ι x‖` on `(-(a + 2), a + 2)`. For `a ≥ max T₊ (-T₋)`,
@@ -342,6 +347,7 @@ private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_�
   have hM := mul_le_mul_of_nonneg_left hD₀ (Real.sqrt_nonneg (1 + ‖B.inverse‖ ^ 2))
   linarith [hwtop, hwbot, hw₀, hM, htri]
 
+omit [CompleteSpace D] in
 /-- **The semi-Fredholm estimate for the trajectory operator over a common domain.** Let `A(s)`
 converge to invertible `ι`-symmetric operators `Bbot` and `Btop` at `-∞` and `∞`, and differ from
 `Btop` on every bounded interval by an operator bounded through `ι`: for every `T` there is `c` with

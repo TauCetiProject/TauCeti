@@ -208,6 +208,7 @@ private theorem exists_forall_norm_smulLeftCLM_le (AL : Lp (D →L[ℝ] H) ∞ �
 
 variable {A : ℝ → D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀} {Abot Atop : D →L[ℝ] H}
 
+omit [CompleteSpace D] in
 /-- **The semi-Fredholm estimate for `∂ₛ + A(s)` over a common domain.** Let `A : ℝ → (D →L[ℝ] H)`
 be continuous, with `L∞` class `AL`, each `A(s)` `ι`-symmetric and invertible after subtracting a
 multiple of `ι`, and with invertible limits `Abot` at `-∞` and `Atop` at `+∞`. Then there are `C`

@@ -251,7 +251,9 @@ theorem isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le
     (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : √(1 + ‖A₀.inverse‖ ^ 2) * δ < 1) :
     (nonautonomousDomainTrajectoryOperator (p := 2) ι A).IsInvertible :=
   (isInvertible_domainTrajectoryOperator hSymm hA₀).of_mul_norm_sub_lt
-    (norm_inverse_domainTrajectoryOperator_le hSymm hA₀)
+    ((norm_inverse_domainTrajectoryOperator_le_max hSymm hA₀).trans
+      (max_le (Real.le_sqrt_of_sq_le (by linarith [sq_nonneg ‖A₀.inverse‖]))
+        (Real.le_sqrt_of_sq_le (by linarith [sq_nonneg ‖A₀.inverse‖]))))
     (lt_of_le_of_lt (mul_le_mul_of_nonneg_left
       (norm_nonautonomousDomainTrajectoryOperator_sub_domainTrajectoryOperator_le ι A₀
         (nonneg_of_ae_norm_sub_le hA) hA)
@@ -271,8 +273,13 @@ theorem norm_inverse_nonautonomousDomainTrajectoryOperator_le_of_ae_norm_sub_le
   have hCδ : C * ‖nonautonomousDomainTrajectoryOperator (p := 2) ι A -
       domainTrajectoryOperator ι A₀‖ ≤ C * δ :=
     mul_le_mul_of_nonneg_left hdiff (Real.sqrt_nonneg _)
+  have hinvle : ‖(domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι A₀).inverse‖ ≤
+      C :=
+    (norm_inverse_domainTrajectoryOperator_le_max hSymm hA₀).trans
+      (max_le (Real.le_sqrt_of_sq_le (by linarith [sq_nonneg ‖A₀.inverse‖]))
+        (Real.le_sqrt_of_sq_le (by linarith [sq_nonneg ‖A₀.inverse‖])))
   refine ((isInvertible_domainTrajectoryOperator hSymm hA₀).norm_inverse_le_of_mul_norm_sub_lt
-    (norm_inverse_domainTrajectoryOperator_le hSymm hA₀) (hCδ.trans_lt hsmall)).trans ?_
+    hinvle (hCδ.trans_lt hsmall)).trans ?_
   gcongr
 
 /-- Under the hypotheses of
