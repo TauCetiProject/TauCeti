@@ -98,14 +98,15 @@ private theorem IsJordanSplitting.sum_addChar_toMatrix_map_prod (h : B.IsJordanS
         ((B.restrict (⨆ i ∈ Set.Ici (j + 1), N i)).toMatrix c) := by
     ext (i | i) (k | k)
     · simp
-    · simpa using B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj (b i).2 (c k).2
-    · simpa using B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj.symm (c i).2 (b k).2
+    · simpa using B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj (b i).property (c k).property
+    · simpa using B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj.symm (c i).property
+        (b k).property
     · simp
   -- The quadratic form of the constituents above `j` vanishes after reduction along `f`.
   obtain ⟨D, hD⟩ := ((isSymm_toMatrix_iff_isSymm c).mpr
     (hB.restrict _)).exists_eq_smul_add_transpose (π ^ (j + 1))
-    (fun k k' ↦ by simpa using h.pow_dvd_apply_of_mem_biSup (c k).2 (c k'))
-    (fun k ↦ by simpa using h.two_mul_pow_succ_dvd_apply_self_of_mem_biSup h2 hnext (c k).2)
+    (fun k k' ↦ by simpa using h.pow_dvd_apply_of_mem_biSup (c k).property (c k'))
+    (fun k ↦ by simpa using h.two_mul_pow_succ_dvd_apply_self_of_mem_biSup h2 hnext (c k).property)
   have hU (y : κ → S) :
       y ⬝ᵥ ((B.restrict (⨆ i ∈ Set.Ici (j + 1), N i)).toMatrix c).map f *ᵥ y = 0 := by
     have hmap : ((B.restrict (⨆ i ∈ Set.Ici (j + 1), N i)).toMatrix c).map f =

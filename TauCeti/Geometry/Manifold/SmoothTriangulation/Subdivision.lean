@@ -64,8 +64,8 @@ theorem barycentricSubdivisionRealizationHomeomorph_trans {K : AbstractSimplicia
     {f : Realization K ≃ₜ M} (h : IsSmoothTriangulation I n f) :
     IsSmoothTriangulation I n ((barycentricSubdivisionRealizationHomeomorph K).trans f) := by
   refine isSmoothTriangulation_iff.mpr fun ρ => ?_
-  have hρ := PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.2
-  obtain ⟨σ, -, hσmax⟩ := hρ.2.exists_isGreatest ρ.1.finite_toSet hρ.1
+  have hρ := PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.property
+  obtain ⟨σ, -, hσmax⟩ := hρ.2.exists_isGreatest ρ.val.finite_toSet hρ.1
   -- The canonical homeomorphism maps the simplex `ρ` into the greatest face `σ` of the chain.
   have hfactor : (barycentricSubdivisionRealizationHomeomorph K).trans f ∘ faceInclusion _ ρ =
       (f ∘ faceInclusion K σ) ∘ barycentricSubdivisionFaceMap K σ hσmax := by
@@ -78,19 +78,19 @@ theorem barycentricSubdivisionRealizationHomeomorph_trans {K : AbstractSimplicia
   -- In barycentric coordinates, the face map is the linear map sending the vertex `τ` of `ρ` to the
   -- barycenter of `τ`.
   refine (isSmoothTriangulation_iff.mp h σ).comp_linear (Fintype.linearCombination ℝ
-    fun (τ : ρ.1) (b : σ.1) => faceBarycenter K τ b) (fun x => funext fun b => ?_)
+    fun (τ : ρ.val) (b : σ.val) => faceBarycenter K τ b) (fun x => funext fun b => ?_)
     (fun v _ hv => ?_)
   · simp only [Fintype.linearCombination_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
     -- The vertices of the subdivision are the faces of `K` read as a precomplex, which is the
     -- same subtype as `Face K`; `exact` identifies the two index sets of the sums.
     exact (barycentricSubdivisionFaceMap_apply K σ hσmax x b).trans
-      (Finset.sum_coe_sort _ fun τ => x.1 τ * faceBarycenter K τ b).symm
+      (Finset.sum_coe_sort _ fun τ => x.val τ * faceBarycenter K τ b).symm
   · -- A linear relation among the barycenters of the chain `ρ` is trivial.
     funext τ
     refine Fintype.linearIndependent_iff.mp (linearIndepOn_faceBarycenter K hρ.2) v ?_ τ
     ext b
     rw [Finset.sum_apply']
-    by_cases hb : b ∈ σ.1
+    by_cases hb : b ∈ σ.val
     · have hvb := congrFun hv ⟨b, hb⟩
       simp only [Fintype.linearCombination_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul,
         Pi.zero_apply] at hvb
@@ -98,7 +98,7 @@ theorem barycentricSubdivisionRealizationHomeomorph_trans {K : AbstractSimplicia
       -- As above, the two sums differ only in how the type of faces of `K` is written.
       exact hvb
     · refine Finset.sum_eq_zero fun τ _ => ?_
-      have hbτ : b ∉ τ.1.1 := fun hbτ => hb (hσmax τ.2 hbτ)
+      have hbτ : b ∉ τ.val.val := fun hbτ => hb (hσmax τ.property hbτ)
       simp [hbτ]
 
 end IsSmoothTriangulation

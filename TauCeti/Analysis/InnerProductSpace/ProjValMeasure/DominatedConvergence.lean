@@ -33,6 +33,8 @@ measure that charges every such interval.
 * `ProjValMeasure.integral_congr_ae`: symbols equal `P`-almost everywhere have equal integrals.
 * `ProjValMeasure.tendsto_integral_apply_filter_of_dominated_convergence`: bounded `P`-almost
   everywhere convergence of symbols gives strong convergence of their integrals.
+* `ProjValMeasure.tendsto_proj_apply` and `ProjValMeasure.tendsto_proj_norm_le_apply`: strong
+  convergence of spectral projections along covering measurable families and norm sublevel sets.
 
 ## References
 
@@ -98,6 +100,31 @@ theorem tendsto_integral_apply_filter_of_dominated_convergence (P : ProjValMeasu
       ((P.ae_diag_of_ae ξ h_lim).mono fun x hx => by
         simpa using (tendsto_iff_norm_sub_tendsto_zero.1 hx).pow 2)
   simpa [Real.sqrt_sq (norm_nonneg _)] using hsq.sqrt
+
+/-- If a family of measurable sets `B i` eventually covers `P`-almost every point along a
+countably generated filter `l`, then the spectral projections `P.proj (B i) (hB i)` converge
+strongly to the identity along `l`. -/
+theorem tendsto_proj_apply (P : ProjValMeasure X H) {ι : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] {B : ι → Set X} (hB : ∀ i, MeasurableSet (B i))
+    (hcov : ∀ᶠ t in P.ae, ∀ᶠ i in l, t ∈ B i) (ξ : H) :
+    Tendsto (fun i => P.proj (B i) (hB i) ξ) l (𝓝 ξ) := by
+  let F : ι → BoundedBorelFunction X := fun i => BoundedBorelFunction.indicator (B i) (hB i) 1
+  have hlim : Tendsto (fun i => P.integral (F i) ξ) l (𝓝 (P.integral 1 ξ)) :=
+    P.tendsto_integral_apply_filter_of_dominated_convergence (M := 1)
+      (Eventually.of_forall fun i => Eventually.of_forall fun t => by
+        by_cases ht : t ∈ B i <;> simp [F, ht])
+      (hcov.mono fun t ht => tendsto_const_nhds.congr' (ht.mono fun i hi => by simp [F, hi]))
+      ξ
+  simpa only [F, P.integral_indicator, map_one, one_apply_eq_self] using hlim
+
+/-- For a measurable function `f`, the spectral projections `P.proj {t | ‖f t‖ ≤ M}` converge
+strongly to the identity on `H` as `M → ∞`. -/
+theorem tendsto_proj_norm_le_apply {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
+    [OpensMeasurableSpace E] (P : ProjValMeasure X H) {f : X → E} (hf : Measurable f) (ξ : H) :
+    Tendsto (fun M : ℝ => P.proj {t | ‖f t‖ ≤ M}
+      (measurableSet_le hf.norm measurable_const) ξ) atTop (𝓝 ξ) :=
+  P.tendsto_proj_apply (fun _ => measurableSet_le hf.norm measurable_const)
+    (Eventually.of_forall fun t => eventually_ge_atTop ‖f t‖) ξ
 
 end ProjValMeasure
 end TauCeti

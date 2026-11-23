@@ -207,7 +207,8 @@ theorem card_inertia_le_two : Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) ≤ 2 := by
     · have hτ1 : (τ : K ≃ₐ[ℚ] K) = 1 := by simpa [hσ1] using h
       exact Subtype.ext (hσ1.trans hτ1.symm)
     · have hτ1 : (τ : K ≃ₐ[ℚ] K) ≠ 1 := by simpa [hσ1] using h
-      exact Subtype.ext (eq_of_mem_inertia_of_ne_one hr htop hodd hd Q σ.2 τ.2 hσ1 hτ1)
+      exact Subtype.ext (eq_of_mem_inertia_of_ne_one hr htop hodd hd Q σ.property τ.property hσ1
+          hτ1)
   simpa using Nat.card_le_card_of_injective _ hinj
 
 /-- The ramification index of a prime above an odd prime `p` is at most `2`, when no radicand is

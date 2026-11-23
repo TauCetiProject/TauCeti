@@ -135,10 +135,10 @@ theorem IsFreelyIndependentElements.tendsto_apply_average_pow
   · simp only [pow_zero, hφ]
     exact tendsto_const_nhds
   have hlim := tendsto_finsetSum (univ : Finset (NoncrossingPartition (univ : Finset (Fin n))))
-    fun π _ => tendsto_finsetProd π.1.parts fun B _ => h.tendsto_freeCumulant_average hφ hm B
+    fun π _ => tendsto_finsetProd π.val.parts fun B _ => h.tendsto_freeCumulant_average hφ hm B
   have hmc (x : A) : φ (x ^ n) =
       ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        ∏ B ∈ π.1.parts, freeCumulant φ (fun _ : Fin n => x) B := by
+        ∏ B ∈ π.val.parts, freeCumulant φ (fun _ : Fin n => x) B := by
     simpa using apply_prod_ofFn_eq_sum_prod_freeCumulant φ hn (fun _ : Fin n => x)
   have hscalar : φ ((algebraMap 𝕜 A (φ (a 0))) ^ n) = φ (a 0) ^ n := by
     rw [← map_pow]

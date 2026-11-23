@@ -14,10 +14,10 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Isomorphism
 A multigraph isomorphism `f : G.Iso H` transports ears, initial stages, and ear decompositions of
 subgraphs of `G` to those of the corresponding subgraphs of `H`. Edge identities are retained, so
 loops, parallel edges, and the kind of every ear are preserved. The transport sends each stage
-graph to its image under `Graph.Iso.mapGraph`, each ear walk to its image under
-`Graph.Iso.mapWalk`, and commutes with prefix decompositions; transporting back along the inverse
-isomorphism recovers the original data. Consequently the existence of ear decompositions, of open
-ear decompositions, and of vertex-started ear decompositions is invariant under isomorphism.
+graph to its image under `Graph.Iso.mapSubgraph` and each ear walk to its image under
+`Graph.Iso.mapWalk`; transporting back along the inverse isomorphism recovers the original data.
+Consequently the existence of ear decompositions, of open ear decompositions, and of
+vertex-started ear decompositions is invariant under isomorphism.
 
 ## Main definitions
 
@@ -45,13 +45,25 @@ namespace Graph.Iso
 variable {α : Type u} {β : Type v} {α' : Type u'} {β' : Type v'}
 variable {G : Graph α β} {H : Graph α' β'} {L : Graph α β}
 
+/-- Transport along an isomorphism and its inverse recovers a subgraph. -/
+private theorem symm_mapSubgraph_mapSubgraph (f : Iso G H) (S : Set.Iic G) :
+    f.symm.mapSubgraph ⟨f.mapSubgraph S, f.mapSubgraph_le S⟩ = S.val := by
+  rw [mk_mapSubgraph, symm_mapSubgraph_subgraphOrderIso]
+
+/-- An isomorphism transports an edgeless single-vertex subgraph to the edgeless graph on the
+corresponding vertex. -/
+private theorem mapSubgraph_noEdge_singleton (f : Iso G H) (x : G.vertexSet)
+    (h : noEdge {(x : α)} β ≤ G) :
+    f.mapSubgraph ⟨noEdge {(x : α)} β, h⟩ = noEdge {(f.vertexEquiv x : α')} β' := by
+  simp
+
 /-- Transport an ear along a graph isomorphism. The transported ear is an ear over the transported
 base graph, of the same kind, along the transported walk. -/
-def mapEar (f : Iso G H) : G.Ear L → H.Ear (f.mapGraph L)
+def mapEar (f : Iso G H) : (e : G.Ear L) → H.Ear (f.mapSubgraph ⟨L, e.base_le⟩)
   | @Ear.open _ _ _ _ hLG s t p hp hs ht hst hinter hedges =>
       have hs' := hLG.vertexSet_mono hs
       have ht' := hLG.vertexSet_mono ht
-      .open (f.mapGraph_le L) (f.mapWalk (x := ⟨s, hs'⟩) (y := ⟨t, ht'⟩) p)
+      .open (f.mapSubgraph_le _) (f.mapWalk (x := ⟨s, hs'⟩) (y := ⟨t, ht'⟩) p)
         ((f.isPath_mapWalk (x := ⟨s, hs'⟩) (y := ⟨t, ht'⟩) p).mpr hp)
         (by simpa using hs) (by simpa using ht)
         (fun h ↦ hst (congrArg Subtype.val (f.vertexEquiv.injective (Subtype.ext h))))
@@ -64,10 +76,10 @@ def mapEar (f : Iso G H) : G.Ear L → H.Ear (f.mapGraph L)
         (fun e he heL ↦ by
           obtain ⟨a, ha, rfl⟩ :=
             (f.mem_edges_mapWalk_iff (x := ⟨s, hs'⟩) (y := ⟨t, ht'⟩) p e).mp he
-          exact hedges a ha (by simpa [edgeSet_mapGraph f hLG] using heL))
+          exact hedges a ha (by simpa using heL))
   | @Ear.closed _ _ _ _ hLG s p hp hs hinter hedges =>
       have hs' := hLG.vertexSet_mono hs
-      .closed (f.mapGraph_le L) (f.mapWalk (x := ⟨s, hs'⟩) (y := ⟨s, hs'⟩) p)
+      .closed (f.mapSubgraph_le _) (f.mapWalk (x := ⟨s, hs'⟩) (y := ⟨s, hs'⟩) p)
         ((f.isCycle_mapWalk (x := ⟨s, hs'⟩) p).mpr hp) (by simpa using hs)
         (fun z hz hzs hzL ↦ by
           obtain ⟨w, hw, rfl⟩ :=
@@ -77,7 +89,7 @@ def mapEar (f : Iso G H) : G.Ear L → H.Ear (f.mapGraph L)
         (fun e he heL ↦ by
           obtain ⟨a, ha, rfl⟩ :=
             (f.mem_edges_mapWalk_iff (x := ⟨s, hs'⟩) (y := ⟨s, hs'⟩) p e).mp he
-          exact hedges a ha (by simpa [edgeSet_mapGraph f hLG] using heL))
+          exact hedges a ha (by simpa using heL))
 
 /-- Transport preserves the kind of an ear. -/
 @[simp]
@@ -105,29 +117,31 @@ theorem toWalk_mapEar_closed (f : Iso G H) {s : α} (hLG : L ≤ G) (p : G.Walk 
 /-- The graph traced by a transported ear is the transported traced graph. -/
 @[simp]
 theorem toGraph_mapEar (f : Iso G H) (e : G.Ear L) :
-    (f.mapEar e).toGraph = f.mapGraph e.toGraph := by
+    (f.mapEar e).toGraph = f.mapSubgraph ⟨e.toGraph, e.toGraph_le⟩ := by
   cases e with
   | @«open» hLG s t p =>
       simp only [mapEar, Ear.toGraph_open]
-      exact (f.mapGraph_walkGraph (x := ⟨s, _⟩) (y := ⟨t, _⟩) p).symm
+      exact (f.mapSubgraph_walkGraph (x := ⟨s, _⟩) (y := ⟨t, _⟩) p).symm
   | @«closed» hLG s p =>
       simp only [mapEar, Ear.toGraph_closed]
-      exact (f.mapGraph_walkGraph (x := ⟨s, _⟩) (y := ⟨s, _⟩) p).symm
+      exact (f.mapSubgraph_walkGraph (x := ⟨s, _⟩) (y := ⟨s, _⟩) p).symm
 
 /-- Adjoining a transported ear to the transported base gives the transport of adjoining the
 ear. -/
 @[simp]
-theorem add_mapEar (f : Iso G H) (e : G.Ear L) : (f.mapEar e).add = f.mapGraph e.add := by
-  rw [Ear.add_eq_union, Ear.add_eq_union, f.mapGraph_union e.base_le e.toGraph_le]
-  congr 1
-  exact toGraph_mapEar f e
+theorem add_mapEar (f : Iso G H) (e : G.Ear L) :
+    (f.mapEar e).add = f.mapSubgraph ⟨e.add, e.add_le⟩ :=
+  (Compatible.of_le_le (f.mapEar e).add_le (f.mapSubgraph_le _)).ext
+    (by simp only [Ear.vertexSet_add, toGraph_mapEar, vertexSet_mapSubgraph, mapVertexSet_union])
+    (by simp only [Ear.edgeSet_add, toGraph_mapEar, edgeSet_mapSubgraph, mapEdgeSet_union])
 
 /-- Transport the initial vertex or cycle of an ear decomposition along a graph isomorphism. -/
-def mapEarStart (f : Iso G H) : G.EarStart L → H.EarStart (f.mapGraph L)
-  | .vertex v => cast (congrArg H.EarStart (f.mapGraph_noEdge v).symm)
+def mapEarStart (f : Iso G H) :
+    (start : G.EarStart L) → H.EarStart (f.mapSubgraph ⟨L, start.le⟩)
+  | .vertex v => cast (congrArg H.EarStart (f.mapSubgraph_noEdge_singleton v _).symm)
       (.vertex (f.vertexEquiv v))
   | @EarStart.cycle _ _ _ s p hp =>
-      cast (congrArg H.EarStart (f.mapGraph_walkGraph (x := ⟨s, hp.start_mem⟩)
+      cast (congrArg H.EarStart (f.mapSubgraph_walkGraph (x := ⟨s, hp.start_mem⟩)
         (y := ⟨s, hp.start_mem⟩) p).symm)
         (.cycle (f.mapWalk (x := ⟨s, hp.start_mem⟩) (y := ⟨s, hp.start_mem⟩) p)
           ((f.isCycle_mapWalk (x := ⟨s, hp.start_mem⟩) p).mpr hp))
@@ -150,24 +164,27 @@ theorem isCycle_mapEarStart (f : Iso G H) (start : G.EarStart L) :
     (f.mapEarStart start).IsCycle ↔ start.IsCycle := by
   cases start with
   | vertex v =>
-      rw [EarStart.isCycle_iff_of_heq (f.mapGraph_noEdge v) (f.heq_mapEarStart_vertex v)]
+      rw [EarStart.isCycle_iff_of_heq (f.mapSubgraph_noEdge_singleton v _)
+        (f.heq_mapEarStart_vertex v)]
       simp
   | @cycle s p hp =>
-      rw [EarStart.isCycle_iff_of_heq (f.mapGraph_walkGraph (x := ⟨s, hp.start_mem⟩)
+      rw [EarStart.isCycle_iff_of_heq (f.mapSubgraph_walkGraph (x := ⟨s, hp.start_mem⟩)
         (y := ⟨s, hp.start_mem⟩) p) (f.heq_mapEarStart_cycle p hp)]
       simp
 
 /-- Transport an ear decomposition along a graph isomorphism. Every stage graph, the initial
 vertex or cycle, and every ear are transported. -/
 def mapEarDecomposition (f : Iso G H) (d : G.EarDecomposition L) :
-    H.EarDecomposition (f.mapGraph L) where
+    H.EarDecomposition (f.mapSubgraph ⟨L, d.final_le⟩) where
   length := d.length
-  graphAfter i := f.mapGraph (d.graphAfter i)
+  graphAfter i := f.mapSubgraph ⟨d.graphAfter i, d.graphAfter_le i⟩
   start := f.mapEarStart d.start
-  earAt i := ⟨f.mapGraph (d.earAt i).1, f.mapEar (d.earAt i).2⟩
-  earAt_fst i := congrArg f.mapGraph (d.earAt_fst i)
-  graphAfter_succ i := by rw [d.graphAfter_succ, add_mapEar]
-  graphAfter_last := congrArg f.mapGraph d.graphAfter_last
+  earAt i := ⟨f.mapSubgraph ⟨(d.earAt i).1, (d.earAt i).2.base_le⟩, f.mapEar (d.earAt i).2⟩
+  earAt_fst i := congrArg f.mapSubgraph (Subtype.ext (d.earAt_fst i))
+  graphAfter_succ i := by
+    rw [add_mapEar]
+    exact congrArg f.mapSubgraph (Subtype.ext (d.graphAfter_succ i))
+  graphAfter_last := congrArg f.mapSubgraph (Subtype.ext d.graphAfter_last)
 
 /-- Transport preserves the number of ears. -/
 @[simp]
@@ -181,14 +198,14 @@ theorem graphAfter_mapEarDecomposition (f : Iso G H) (d : G.EarDecomposition L)
     (i : Fin (d.length + 1)) :
     (f.mapEarDecomposition d).graphAfter
       (Fin.cast (congrArg (· + 1) (f.length_mapEarDecomposition d).symm) i) =
-        f.mapGraph (d.graphAfter i) :=
+        f.mapSubgraph ⟨d.graphAfter i, d.graphAfter_le i⟩ :=
   (rfl)
 
 /-- The initial graph of a transported decomposition is the transported initial graph. -/
 theorem initial_mapEarDecomposition (f : Iso G H) (d : G.EarDecomposition L) :
-    (f.mapEarDecomposition d).initial = f.mapGraph d.initial := by
-  rw [EarDecomposition.initial_eq_graphAfter, EarDecomposition.initial_eq_graphAfter]
-  rfl
+    (f.mapEarDecomposition d).initial = f.mapSubgraph ⟨d.initial, d.initial_le.trans d.final_le⟩ :=
+  (EarDecomposition.initial_eq_graphAfter _).trans
+    (congrArg f.mapSubgraph (Subtype.ext d.initial_eq_graphAfter.symm))
 
 /-- The initial stage of a transported decomposition is the transported initial stage. -/
 theorem heq_start_mapEarDecomposition (f : Iso G H) (d : G.EarDecomposition L) :
@@ -199,7 +216,7 @@ theorem heq_start_mapEarDecomposition (f : Iso G H) (d : G.EarDecomposition L) :
 @[simp]
 theorem earAt_mapEarDecomposition (f : Iso G H) (d : G.EarDecomposition L) (i : Fin d.length) :
     (f.mapEarDecomposition d).earAt (Fin.cast (f.length_mapEarDecomposition d).symm i) =
-      ⟨f.mapGraph (d.earAt i).1, f.mapEar (d.earAt i).2⟩ :=
+      ⟨f.mapSubgraph ⟨(d.earAt i).1, (d.earAt i).2.base_le⟩, f.mapEar (d.earAt i).2⟩ :=
   (rfl)
 
 /-- Transport preserves the kind of every ear of a decomposition. -/
@@ -237,21 +254,21 @@ theorem isVertexStart_mapEarDecomposition (f : Iso G H) (d : G.EarDecomposition 
 /-- A graph has an ear decomposition exactly when an isomorphic graph has one. -/
 theorem nonempty_earDecomposition_iff (f : Iso G H) :
     Nonempty (H.EarDecomposition H) ↔ Nonempty (G.EarDecomposition G) :=
-  ⟨fun ⟨d⟩ ↦ ⟨(f.symm.mapEarDecomposition d).copy f.symm.mapGraph_self⟩,
-    fun ⟨d⟩ ↦ ⟨(f.mapEarDecomposition d).copy f.mapGraph_self⟩⟩
+  ⟨fun ⟨d⟩ ↦ ⟨(f.symm.mapEarDecomposition d).copy f.symm.mapSubgraph_top⟩,
+    fun ⟨d⟩ ↦ ⟨(f.mapEarDecomposition d).copy f.mapSubgraph_top⟩⟩
 
 /-- A graph has an open ear decomposition exactly when an isomorphic graph has one. -/
 theorem exists_isOpen_earDecomposition_iff (f : Iso G H) :
     (∃ d : H.EarDecomposition H, d.IsOpen) ↔ ∃ d : G.EarDecomposition G, d.IsOpen :=
-  ⟨fun ⟨d, hd⟩ ↦ ⟨(f.symm.mapEarDecomposition d).copy f.symm.mapGraph_self, by simpa using hd⟩,
-    fun ⟨d, hd⟩ ↦ ⟨(f.mapEarDecomposition d).copy f.mapGraph_self, by simpa using hd⟩⟩
+  ⟨fun ⟨d, hd⟩ ↦ ⟨(f.symm.mapEarDecomposition d).copy f.symm.mapSubgraph_top, by simpa using hd⟩,
+    fun ⟨d, hd⟩ ↦ ⟨(f.mapEarDecomposition d).copy f.mapSubgraph_top, by simpa using hd⟩⟩
 
 /-- A graph has a vertex-started ear decomposition exactly when an isomorphic graph has one. -/
 theorem exists_isVertexStart_earDecomposition_iff (f : Iso G H) :
     (∃ d : H.EarDecomposition H, d.IsVertexStart) ↔
       ∃ d : G.EarDecomposition G, d.IsVertexStart :=
-  ⟨fun ⟨d, hd⟩ ↦ ⟨(f.symm.mapEarDecomposition d).copy f.symm.mapGraph_self, by simpa using hd⟩,
-    fun ⟨d, hd⟩ ↦ ⟨(f.mapEarDecomposition d).copy f.mapGraph_self, by simpa using hd⟩⟩
+  ⟨fun ⟨d, hd⟩ ↦ ⟨(f.symm.mapEarDecomposition d).copy f.symm.mapSubgraph_top, by simpa using hd⟩,
+    fun ⟨d, hd⟩ ↦ ⟨(f.mapEarDecomposition d).copy f.mapSubgraph_top, by simpa using hd⟩⟩
 
 private theorem sigma_walk_eq_copy {a b c d : α} (p : G.Walk a b) (hac : a = c) (hbd : b = d) :
     (⟨a, b, p⟩ : Σ x y : α, G.Walk x y) = ⟨c, d, p.copy hac hbd⟩ := by
@@ -294,11 +311,11 @@ theorem heq_symm_mapEarStart_mapEarStart (f : Iso G H) (start : G.EarStart L) :
     HEq (f.symm.mapEarStart (f.mapEarStart start)) start := by
   cases start with
   | vertex v =>
-      refine (f.symm.heq_mapEarStart_of_heq (f.mapGraph_noEdge v)
+      refine (f.symm.heq_mapEarStart_of_heq (f.mapSubgraph_noEdge_singleton v _)
         (f.heq_mapEarStart_vertex v)).trans ((f.symm.heq_mapEarStart_vertex _).trans ?_)
       rw [symm_vertexEquiv_apply_vertexEquiv]
   | @cycle s p hp =>
-      refine (f.symm.heq_mapEarStart_of_heq (f.mapGraph_walkGraph (x := ⟨s, hp.start_mem⟩)
+      refine (f.symm.heq_mapEarStart_of_heq (f.mapSubgraph_walkGraph (x := ⟨s, hp.start_mem⟩)
         (y := ⟨s, hp.start_mem⟩) p) (f.heq_mapEarStart_cycle p hp)).trans
         ((f.symm.heq_mapEarStart_cycle _ _).trans ?_)
       exact heq_earStart_cycle_of_copy_eq _ _ _ hp
@@ -322,7 +339,8 @@ private theorem copy_eq_of_earAt_eq {M M' : Graph α β} (X : G.EarDecomposition
 /-- Transport commutes with reindexing the final graph. -/
 theorem mapEarDecomposition_copy (f : Iso G H) {L' : Graph α β} (d : G.EarDecomposition L)
     (h : L = L') :
-    f.mapEarDecomposition (d.copy h) = (f.mapEarDecomposition d).copy (congrArg f.mapGraph h) :=
+    f.mapEarDecomposition (d.copy h) =
+      (f.mapEarDecomposition d).copy (congrArg f.mapSubgraph (Subtype.ext h)) :=
   (copy_eq_of_earAt_eq _ _ _ (by simp)
     ((f.heq_start_mapEarDecomposition d).trans ((f.heq_mapEarStart_of_heq (by simp)
       (d.heq_start_copy h).symm).trans (f.heq_start_mapEarDecomposition _).symm))
@@ -332,51 +350,54 @@ theorem mapEarDecomposition_copy (f : Iso G H) {L' : Graph α β} (d : G.EarDeco
         exact congrArg d.earAt (Fin.ext rfl)
       -- Both sides unfold to the transported ears of `d` and of `d.copy h`.
       exact congrArg
-        (fun x : Σ K, G.Ear K ↦ (⟨f.mapGraph x.1, f.mapEar x.2⟩ : Σ K, H.Ear K)) hi).symm
+        (fun x : Σ K, G.Ear K ↦
+          (⟨f.mapSubgraph ⟨x.1, x.2.base_le⟩, f.mapEar x.2⟩ : Σ K, H.Ear K)) hi).symm
 
 /-- Transporting an ear decomposition along an isomorphism and back recovers it. -/
 theorem symm_mapEarDecomposition_mapEarDecomposition (f : Iso G H)
     (d : G.EarDecomposition L) :
     (f.symm.mapEarDecomposition (f.mapEarDecomposition d)).copy
-      (f.symm_mapGraph_mapGraph d.final_le) = d :=
+      (by simp) = d :=
   copy_eq_of_earAt_eq _ _ d rfl
     ((f.symm.heq_start_mapEarDecomposition _).trans ((f.symm.heq_mapEarStart_of_heq rfl
       (f.heq_start_mapEarDecomposition d)).trans (f.heq_symm_mapEarStart_mapEarStart d.start)))
     -- The `i`-th ear of the round trip unfolds to the twice-transported `i`-th ear of `d`.
-    fun i ↦ Sigma.ext (f.symm_mapGraph_mapGraph (d.earAt i).2.base_le)
-      (heq_ear_of_toWalk_eq (f.symm_mapGraph_mapGraph (d.earAt i).2.base_le)
+    fun i ↦ Sigma.ext (f.symm_mapSubgraph_mapSubgraph ⟨_, (d.earAt i).2.base_le⟩)
+      (heq_ear_of_toWalk_eq (f.symm_mapSubgraph_mapSubgraph ⟨_, (d.earAt i).2.base_le⟩)
         (f.toWalk_symm_mapEar_mapEar (d.earAt i).2))
 
 /-- Transporting an ear decomposition along the inverse of an isomorphism and back recovers
 it. -/
 theorem mapEarDecomposition_symm_mapEarDecomposition (f : Iso G H) {M : Graph α' β'}
-    (d : H.EarDecomposition M) (h : f.mapGraph (f.symm.mapGraph M) = M) :
+    (d : H.EarDecomposition M)
+    (h : f.mapSubgraph ⟨f.symm.mapSubgraph ⟨M, d.final_le⟩, f.symm.mapSubgraph_le _⟩ = M) :
     (f.mapEarDecomposition (f.symm.mapEarDecomposition d)).copy h = d := by
   have key : ∀ (k : Iso G H), k = f.symm.symm →
-      ∀ hk : k.mapGraph (f.symm.mapGraph M) = M,
+      ∀ hk : k.mapSubgraph ⟨f.symm.mapSubgraph ⟨M, d.final_le⟩, f.symm.mapSubgraph_le _⟩ = M,
         (k.mapEarDecomposition (f.symm.mapEarDecomposition d)).copy hk = d := by
     rintro k rfl -
     exact f.symm.symm_mapEarDecomposition_mapEarDecomposition d
   exact key f f.symm_symm.symm h
 
 /-- An isomorphism identifies the ear decompositions of a subgraph with those of its image. -/
-def earDecompositionEquiv (f : Iso G H) (hL : L ≤ G) :
-    G.EarDecomposition L ≃ H.EarDecomposition (f.mapGraph L) where
+def earDecompositionEquiv (f : Iso G H) (S : Set.Iic G) :
+    G.EarDecomposition S.val ≃ H.EarDecomposition (f.mapSubgraph S) where
   toFun := f.mapEarDecomposition
-  invFun d := (f.symm.mapEarDecomposition d).copy (f.symm_mapGraph_mapGraph hL)
+  invFun d := (f.symm.mapEarDecomposition d).copy (by simp)
   left_inv := f.symm_mapEarDecomposition_mapEarDecomposition
   right_inv d := by
     rw [f.mapEarDecomposition_copy, f.mapEarDecomposition_symm_mapEarDecomposition]
 
 @[simp]
-theorem earDecompositionEquiv_apply (f : Iso G H) (hL : L ≤ G) (d : G.EarDecomposition L) :
-    f.earDecompositionEquiv hL d = f.mapEarDecomposition d :=
+theorem earDecompositionEquiv_apply (f : Iso G H) (S : Set.Iic G)
+    (d : G.EarDecomposition S.val) :
+    f.earDecompositionEquiv S d = f.mapEarDecomposition d :=
   (rfl)
 
-theorem earDecompositionEquiv_symm_apply (f : Iso G H) (hL : L ≤ G)
-    (d : H.EarDecomposition (f.mapGraph L)) :
-    (f.earDecompositionEquiv hL).symm d =
-      (f.symm.mapEarDecomposition d).copy (f.symm_mapGraph_mapGraph hL) :=
+theorem earDecompositionEquiv_symm_apply (f : Iso G H) (S : Set.Iic G)
+    (d : H.EarDecomposition (f.mapSubgraph S)) :
+    (f.earDecompositionEquiv S).symm d =
+      (f.symm.mapEarDecomposition d).copy (by simp) :=
   (rfl)
 
 end Graph.Iso

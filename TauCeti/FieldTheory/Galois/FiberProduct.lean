@@ -160,7 +160,7 @@ theorem mem_range_restrictNormalHom_prod_iff_restrictNormalHomOfLE_eq
   constructor
   · intro h
     ext z
-    obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩⟩ := z.2
+    obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩⟩ := z.property
     rw [AlgHom.coe_restrictNormalHomOfLE_apply _ _ _ hx₁,
       AlgHom.coe_restrictNormalHomOfLE_apply _ _ _ hx₂]
     exact h x₁ x₂ (hx₁.trans hx₂.symm)
@@ -215,7 +215,7 @@ theorem mem_range_restrictNormalHomSupProd_iff (σ : Gal(K/F))
   · intro h x₁ x₂ hx
     have hx' : (x₁ : E) = x₂ := congrArg Subtype.val hx
     -- `x₁` and `x₂` are the same element of `K ⊓ L`, seen in `K` and in `L`.
-    let m : ↥(K ⊓ L) := ⟨x₁, x₁.2, hx' ▸ x₂.2⟩
+    let m : ↥(K ⊓ L) := ⟨x₁, x₁.property, hx' ▸ x₂.property⟩
     have hm₂ : inclusion (inf_le_right : K ⊓ L ≤ L) m = x₂ := Subtype.ext hx'
     have hm := key₁ m
     rw [h, key₂, hm₂] at hm

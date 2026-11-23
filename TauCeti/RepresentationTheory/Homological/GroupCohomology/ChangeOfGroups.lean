@@ -28,7 +28,10 @@ cohomology of `Hom_H(Q, A)` and `Hom_G(P, B)` carry Mathlib's change-of-group ma
 along `f` need not preserve projective representations, so `α` is in general not a map of
 projective resolutions in `Rep k G`; only the exactness of the restricted target is used. This
 computes change-of-group maps with geometric resolutions, such as the singular chains of a
-contractible free `G`-space, without passing through the bar resolution.
+contractible free `G`-space, without passing through the bar resolution. Specializing to the
+identity homomorphism shows that any augmentation-preserving chain map between two projective
+resolutions of the trivial representation of a fixed group intertwines their `groupCohomologyIso`
+identifications (`Rep.groupCohomologyIso_hom_comp_homologyMap`).
 
 The proof computes `groupCohomologyIso` through comparison maps from the bar resolutions
 (`TauCeti.Rep.groupCohomologyIso_inv_eq_homologyMap`), uses that the two composites from the bar
@@ -45,6 +48,9 @@ that on the bar resolutions the cochain map is Mathlib's inhomogeneous `groupCoh
 
 * `MonoidHom.groupCohomologyIso_hom_naturality`, `MonoidHom.groupCohomologyIso_inv_naturality`:
   group cohomology computed by projective resolutions is natural in the group.
+* `Rep.groupCohomologyIso_hom_comp_homologyMap`, `Rep.homologyMap_comp_groupCohomologyIso_inv`: two
+  projective resolutions of the trivial representation compute group cohomology compatibly along any
+  augmentation-preserving chain map.
 * `MonoidHom.inhomogeneousCochainsIso_hom_linearYonedaObjMap_resChainMap`: on bar resolutions the
   cochain map is Mathlib's inhomogeneous change of groups.
 * `MonoidHom.homologyMap_linearYonedaObjMap_eq_of_homotopy`: homotopic chain maps induce the same
@@ -142,6 +148,16 @@ theorem homologyMap_linearYonedaObjMap_eq_of_homotopy
     (congrArg (_ ≫ ·) ((h.linearYonedaFunctorMap k B).homologyMap_eq n)).trans <|
     (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
       (congrArg (HomologicalComplex.homologyMap · n) hβ)
+
+/-- For the identity homomorphism and identity coefficient map, `linearYonedaObjMap` is
+precomposition via `TauCeti.ChainComplex.linearYonedaFunctor`. -/
+@[simp]
+theorem linearYonedaObjMap_id {M : Rep.{u} k G} {P Q : ChainComplex (Rep.{u} k G) ℕ}
+    (α : P ⟶ Q) :
+    (MonoidHom.id G).linearYonedaObjMap (𝟙 M) α =
+      (TauCeti.ChainComplex.linearYonedaFunctor k M).map α.op :=
+  HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext <| LinearMap.ext fun (g : Q.X n ⟶ M) ↦
+    congrArg (α.f n ≫ ·) (Category.comp_id g)
 
 end CochainMap
 
@@ -272,3 +288,37 @@ theorem groupCohomologyIso_hom_naturality (n : ℕ) :
 end Naturality
 
 end MonoidHom
+
+namespace Rep
+
+variable {k G : Type u} [CommRing k] [Group G] (A : Rep.{u} k G)
+  (P Q : ProjectiveResolution (Rep.trivial k G k))
+  (α : P.complex ⟶ Q.complex) (hα : α.f 0 ≫ Q.π.f 0 = P.π.f 0)
+
+include hα in
+/-- **Two projective resolutions compute group cohomology compatibly**, inverse form: an
+augmentation-preserving chain map `α : P ⟶ Q` between projective resolutions of the trivial
+representation intertwines the inverses of Mathlib's identifications `groupCohomologyIso`. -/
+@[reassoc]
+theorem homologyMap_comp_groupCohomologyIso_inv (n : ℕ) :
+    HomologicalComplex.homologyMap
+        ((TauCeti.ChainComplex.linearYonedaFunctor k A).map α.op) n ≫
+      (groupCohomologyIso A n P).inv =
+      (groupCohomologyIso A n Q).inv := by
+  simpa [MonoidHom.linearYonedaObjMap_id] using
+    (MonoidHom.id G).groupCohomologyIso_inv_naturality (𝟙 A) P Q α hα n
+
+include hα in
+/-- **Two projective resolutions compute group cohomology compatibly**: an augmentation-preserving
+chain map `α : P ⟶ Q` between projective resolutions of the trivial representation intertwines
+Mathlib's identifications `groupCohomologyIso`. -/
+@[reassoc]
+theorem groupCohomologyIso_hom_comp_homologyMap (n : ℕ) :
+    (groupCohomologyIso A n Q).hom ≫
+        HomologicalComplex.homologyMap
+          ((TauCeti.ChainComplex.linearYonedaFunctor k A).map α.op) n =
+      (groupCohomologyIso A n P).hom := by
+  simpa [MonoidHom.linearYonedaObjMap_id] using
+    ((MonoidHom.id G).groupCohomologyIso_hom_naturality (𝟙 A) P Q α hα n).symm
+
+end Rep

@@ -41,6 +41,8 @@ namespace TauCeti
 
 open CompletedProjectiveTensor
 
+section Unital
+
 variable (𝕜 B : Type*) [NontriviallyNormedField 𝕜] [NormedRing B]
   [NormedAlgebra 𝕜 B] [CompleteSpace B]
 
@@ -80,19 +82,19 @@ theorem coe_rightAction (a : B) (t : CompletedUniversalOneForms 𝕜 B) :
 theorem leftAction_mul (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
     leftAction 𝕜 B (a * b) t = leftAction 𝕜 B a (leftAction 𝕜 B b t) := by
   apply Subtype.ext
-  simpa only [coe_leftAction] using mulLeft_mul_apply (𝕜 := 𝕜) a b t.1
+  simpa only [coe_leftAction] using mulLeft_mul_apply (𝕜 := 𝕜) a b t.val
 
 /-- Associativity of the right action, with the order reversed. -/
 theorem rightAction_mul (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
     rightAction 𝕜 B (a * b) t = rightAction 𝕜 B b (rightAction 𝕜 B a t) := by
   apply Subtype.ext
-  simpa only [coe_rightAction] using mulRight_mul_apply (𝕜 := 𝕜) a b t.1
+  simpa only [coe_rightAction] using mulRight_mul_apply (𝕜 := 𝕜) a b t.val
 
 /-- The left and right outer actions commute. -/
 theorem leftAction_rightAction_comm (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
     leftAction 𝕜 B a (rightAction 𝕜 B b t) = rightAction 𝕜 B b (leftAction 𝕜 B a t) := by
   apply Subtype.ext
-  simpa only [coe_leftAction, coe_rightAction] using mulLeft_mulRight_apply_comm (𝕜 := 𝕜) a b t.1
+  simpa only [coe_leftAction, coe_rightAction] using mulLeft_mulRight_apply_comm (𝕜 := 𝕜) a b t.val
 
 /-- The identity acts as the identity on the left. -/
 @[simp]
@@ -163,7 +165,7 @@ theorem projection_tmul (x y : B) :
 
 /-- The projection is the identity on universal one-forms. -/
 @[simp]
-theorem projection_coe (t : CompletedUniversalOneForms 𝕜 B) : projection t.1 = t :=
+theorem projection_coe (t : CompletedUniversalOneForms 𝕜 B) : projection t.val = t :=
   ContinuousLinearMap.projKerOfRightInverse_apply_idem ..
 
 section Lift
@@ -178,14 +180,14 @@ def lift : CompletedUniversalOneForms 𝕜 B →L[𝕜] E :=
 
 /-- The factor map is the restriction of the bounded tensor lift. -/
 theorem lift_apply (t : CompletedUniversalOneForms 𝕜 B) :
-    lift L D t = liftIsometry 𝕜 B B E (L.flip.comp D).flip t.1 := (rfl)
+    lift L D t = liftIsometry 𝕜 B B E (L.flip.comp D).flip t.val := (rfl)
 
 /-- The induced factor map has norm at most the product of the left action and derivation
 norms. In particular, the left action need not be contractive. -/
 theorem norm_lift_le : ‖lift L D‖ ≤ ‖L‖ * ‖D‖ := by
   apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
   intro t
-  exact ((liftIsometry 𝕜 B B E (L.flip.comp D).flip).le_opNorm t.1).trans <| by
+  exact ((liftIsometry 𝕜 B B E (L.flip.comp D).flip).le_opNorm t.val).trans <| by
     rw [LinearIsometryEquiv.norm_map]
     apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
     rw [ContinuousLinearMap.opNorm_flip]
@@ -211,7 +213,7 @@ theorem lift_leftAction (a : B) (t : CompletedUniversalOneForms 𝕜 B) :
     ext x y
     simp [hL]
   simpa only [lift_apply, coe_leftAction, ContinuousLinearMap.comp_apply] using
-    congrArg (fun f ↦ f t.1) h
+    congrArg (fun f ↦ f t.val) h
 
 include hL hLR hD in
 /-- On the multiplication kernel, the correction term in the right Leibniz identity
@@ -222,8 +224,8 @@ theorem lift_rightAction (b : B) (t : CompletedUniversalOneForms 𝕜 B) :
   have h : T ∘L mulRight 𝕜 B b = R b ∘L T + (L.flip (D b)) ∘L mul' 𝕜 B := by
     ext x y
     simp [T, hD, hLR, hL, add_comm]
-  have ht := congrArg (fun f ↦ f t.1) h
-  have ht0 : mul' 𝕜 B t.1 = 0 := LinearMap.mem_ker.mp t.2
+  have ht := congrArg (fun f ↦ f t.val) h
+  have ht0 : mul' 𝕜 B t.val = 0 := LinearMap.mem_ker.mp t.property
   simpa [T, lift, ht0] using ht
 
 /-- A bounded left-module map on completed universal one-forms is determined by its values
@@ -235,7 +237,7 @@ theorem lift_unique (f : CompletedUniversalOneForms 𝕜 B →L[𝕜] E)
     ext x y
     simp [hfL, hf]
   ext t
-  simpa [lift] using congrArg (fun g ↦ g t.1) h
+  simpa [lift] using congrArg (fun g ↦ g t.val) h
 
 include hL hLR h1 hD hD1 in
 /-- Every bounded derivation into a unital Banach bimodule factors uniquely through a
@@ -249,6 +251,12 @@ theorem existsUnique_lift :
     lift_rightAction L R D hL hLR hD⟩, fun f hf ↦ lift_unique L D f hf.2.1 hf.1⟩
 
 end Lift
+
+end CompletedUniversalOneForms
+
+end Unital
+
+namespace CompletedUniversalOneForms
 
 section NonUnital
 

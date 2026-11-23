@@ -39,17 +39,17 @@ variable {n m : ℕ} {inner outer : YoungDiagram}
 
 /-- The weight of a bounded skew tableau, as a monomial exponent on its finite alphabet. -/
 noncomputable def weight (T : BoundedSkewSSYT n inner outer) : Fin n →₀ ℕ :=
-  Finsupp.comapDomain Fin.val T.1.content Fin.val_injective.injOn
+  Finsupp.comapDomain Fin.val T.val.content Fin.val_injective.injOn
 
 /-- Weight coordinates are the multiplicities of the corresponding letters. -/
 @[simp]
 theorem weight_apply (T : BoundedSkewSSYT n inner outer) (i : Fin n) :
-    T.weight i = T.1.content i :=
+    T.weight i = T.val.content i :=
   Finsupp.comapDomain_apply _ _ _ _
 
 /-- Extending the finite weight by zero recovers the natural-number content. -/
 theorem mapDomain_weight (T : BoundedSkewSSYT n inner outer) :
-    Finsupp.mapDomain Fin.val T.weight = T.1.content := by
+    Finsupp.mapDomain Fin.val T.weight = T.val.content := by
   apply Finsupp.mapDomain_comapDomain _ Fin.val_injective
   intro k hk
   refine ⟨⟨k, ?_⟩, rfl⟩
@@ -59,14 +59,14 @@ theorem mapDomain_weight (T : BoundedSkewSSYT n inner outer) :
 /-- Every skew cell contributes exactly one to the sum of the weight. -/
 theorem sum_weight (T : BoundedSkewSSYT n inner outer) :
     ∑ i, T.weight i = outer.card - inner.card := by
-  have h := T.1.sum_content
+  have h := T.val.sum_content
   rw [← T.mapDomain_weight, Finsupp.sum_mapDomain_index (fun _ => rfl)
     (fun _ _ _ => rfl)] at h
   exact (Finsupp.sum_fintype _ _ (fun _ => rfl)).symm.trans h
 
 /-- A weight coordinate is positive exactly when some skew cell carries that letter. -/
 theorem weight_pos_iff (T : BoundedSkewSSYT n inner outer) (k : Fin n) :
-    0 < T.weight k ↔ ∃ c ∈ outer.cells \ inner.cells, T.1 c.1 c.2 = k := by
+    0 < T.weight k ↔ ∃ c ∈ outer.cells \ inner.cells, T.val c.1 c.2 = k := by
   rw [weight_apply, SkewSemistandardYoungTableau.content_apply, Finset.card_pos]
   exact Finset.filter_nonempty_iff
 
@@ -179,7 +179,7 @@ theorem aeval_snoc_zero_skewSchurPoly :
       apply hT
       apply (BoundedSkewSSYT.exists_castLE_iff _ T).mpr
       intro i j hc
-      have hne : T.1 i j ≠ n := fun he =>
+      have hne : T.val i j ≠ n := fun he =>
         (Nat.ne_of_gt ((T.weight_pos_iff (Fin.last n)).mpr ⟨(i, j), hc, he⟩)) hw
       have := T.entry_lt hc
       omega
