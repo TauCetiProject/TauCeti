@@ -29,7 +29,8 @@ For a field `k`:
   immersion, while `𝔸¹_k ⟶ Spec k` is not: the `k`-algebra maps `k[x] → k[ε]` with `x ↦ 0` and
   `x ↦ ε` are distinct lifts of the same map `k[x] → k`.
 
-The thickenings of finite order are in `TauCeti/Examples/AlgebraicGeometry/Morphisms/Thickening.lean`.
+The thickenings of finite order are in
+`TauCeti/Examples/AlgebraicGeometry/Morphisms/Thickening.lean`.
 -/
 
 public section
