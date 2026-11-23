@@ -145,7 +145,7 @@ theorem isUniformFixedPoint_foldl_reverse_map_digits [NeZero k] (hk : 2 ≤ k) {
     simpa using hγ.symm
   · -- Otherwise the digits of `r + k * n` are `r` followed by the digits of `n`.
     dsimp only
-    rw [add_comm, Nat.digits_add k (by omega) r n r.2 (not_and_or.mp h)]
+    rw [add_comm, Nat.digits_add k (by omega) r n r.isLt (not_and_or.mp h)]
     simp
 
 /-- Every letter `γ` with `φ γ 0 = γ` is the first letter of a fixed point of the `k`-uniform
@@ -182,7 +182,7 @@ theorem IsAutomatic.exists_isUniformFixedPoint [NeZero k] {a : ℕ → Δ} (ha :
     -- identity morphism on its range.
     have := ha.finite_range.to_subtype
     obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin (Set.range a)
-    refine ⟨Fin m, inferInstance, fun γ _ ↦ γ, fun n ↦ e ⟨a n, n, rfl⟩, fun γ ↦ (e.symm γ).1,
+    refine ⟨Fin m, inferInstance, fun γ _ ↦ γ, fun n ↦ e ⟨a n, n, rfl⟩, fun γ ↦ (e.symm γ).val,
       fun n r ↦ ?_, fun n ↦ by simp⟩
     simp [Subsingleton.elim r 0]
   -- The reversed kernel automaton reads most significant digit first, and its initial state is
@@ -223,7 +223,7 @@ private theorem isUniformFixedPoint_thueMorse :
       fun n ↦ ((Nat.digits 2 n).sum : ZMod 2) := by
   intro n r
   dsimp only
-  rw [add_comm, Nat.sum_digits_add_mul r.2]
+  rw [add_comm, Nat.sum_digits_add_mul r.isLt]
   push_cast
   ring
 
