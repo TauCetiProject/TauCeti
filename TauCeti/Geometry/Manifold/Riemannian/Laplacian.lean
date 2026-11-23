@@ -174,6 +174,25 @@ theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
   rw [hessian]
 
+section HessianGradient
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [RiemannianBundle (TangentSpace I : M → Type _)]
+  [IsContMDiffRiemannianBundle I 1 E (TangentSpace I : M → Type _)] {f : M → ℝ}
+
+/-- Vanishing of the Hessian in one tangent direction makes the covariant derivative of the
+gradient vanish in that direction. -/
+theorem leviCivitaConnection_mgradient_eq_zero_of_hessian_eq_zero
+    (x : M) (v : TangentSpace I x) (hzero : ∀ w, hessian I f x v w = 0) :
+    CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v = 0 := by
+  apply ext_inner_right ℝ
+  intro w
+  simpa only [hessian_def, inner_zero_left] using hzero w
+
+end HessianGradient
+
 section HessianSymmetry
 
 variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]

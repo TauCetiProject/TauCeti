@@ -7,6 +7,8 @@ module
 
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+-- `Nat.card` occurs in the statement of `TauCeti.card_residueField_of_surjective`.
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # The quotient by a maximal ideal of a local ring
@@ -25,6 +27,8 @@ is the residue field `κ`. Likewise, any surjective `R₀`-algebra map `ψ : R �
   `R₀`-algebra map `ψ : R →ₐ[R₀] L` onto a field `L`.
 * `TauCeti.isSeparable_quotient_of_residueField`: transports `Algebra.IsSeparable` from
   `ResidueField A → ResidueField B` to `(A ⧸ maximalIdeal A) → (B ⧸ maximalIdeal B)`.
+* `TauCeti.card_residueField_of_surjective`: along a surjective ring homomorphism of
+  local rings, the residue fields have the same number of elements.
 -/
 
 public section
@@ -101,5 +105,14 @@ theorem isSeparable_quotient_of_residueField
   -- `Ideal.Quotient.algebraOfLiesOver`.
   dsimp only [ResidueField] at hsep
   exact hsep
+
+/-- Along a surjective ring homomorphism of local rings, the residue fields have the same number
+of elements, so the residue field of a quotient `A ⧸ I` by a proper ideal has as many elements as
+that of `A`. -/
+theorem card_residueField_of_surjective {A B : Type*} [CommRing A] [IsLocalRing A]
+    [CommRing B] [IsLocalRing B] {f : A →+* B} (hf : Function.Surjective f) :
+    Nat.card (ResidueField B) = Nat.card (ResidueField A) :=
+  (Nat.card_congr (residueFieldAlgEquivOfSurjective (ψ := ((residue B).comp f).toIntAlgHom)
+    (residue_surjective.comp hf)).toEquiv).symm
 
 end TauCeti
