@@ -130,7 +130,7 @@ theorem IsRemainder.not_degree_le (h : m.IsRemainder f B r) {c : σ →₀ ℕ} 
     {b : MvPolynomial σ R} (hb : b ∈ B) (hb0 : b ≠ 0) : ¬ m.degree b ≤ c :=
   h.2 c hc b hb hb0
 
-/-- Removing `0` from the set of divisors does not change the remainders: a zero divisor
+/-- Removing `0` from the set of divisors does not change the remainders: the divisor `0`
 contributes nothing to the division representation and is excluded from the support condition. -/
 @[simp]
 theorem isRemainder_sdiff_singleton_zero :
@@ -383,7 +383,8 @@ theorem exists_isRemainder (hB : ∀ b ∈ B, b ≠ 0 → IsUnit (m.leadingCoeff
   classical
   rcases eq_or_ne f 0 with rfl | hf
   · exact ⟨0, isRemainder_zero_left_iff.2 rfl⟩
-  -- Divide by the nonzero elements of `B`; a zero divisor does not change remainders.
+  -- Divide by the nonzero elements of `B`; the divisor `0` does not change remainders
+  -- (`isRemainder_sdiff_singleton_zero`).
   obtain ⟨g, r, hfgr, hdeg, hr⟩ := m.div_set (B := B \ {0}) (fun b hb ↦ hB b hb.1 hb.2) f
   refine ⟨r, isRemainder_sdiff_singleton_zero.1 ⟨⟨g, hfgr, fun b ↦ ?_⟩,
     fun c hc b hb _ ↦ hr c hc b hb⟩⟩
