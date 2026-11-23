@@ -173,17 +173,14 @@ with no linearity or field hypotheses required. -/
 theorem simpleOppositeExactPairing_evaluation_of_iso_unit {X : C} [Simple X] (u : X ≅ 𝟙_ C) :
     @ExactPairing.evaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) =
       (u.hom ⊗ₘ (u.inv)ᘁ) ≫ (λ_ (𝟙_ C)).hom := by
-  let v : Xᘁ ≅ 𝟙_ C := u.rightAdjointMate.symm
-  let p₂ : ExactPairing Xᘁ X := exactPairingCongr v u
-  have hcoev : @ExactPairing.coevaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) =
-      @ExactPairing.coevaluation C _ _ Xᘁ X p₂ := by
-    rw [simpleOppositeExactPairing_coevaluation_of_iso_unit u, exactPairingCongr_coevaluation,
-      ExactPairing.unit_coevaluation, ← tensorHom_def', unitors_inv_equal]
-    simp [v]
-  rw [ExactPairing.evaluation_eq_of_coevaluation_eq (simpleOppositeExactPairing X) p₂ hcoev,
-    exactPairingCongr_evaluation, ExactPairing.unit_evaluation, ← tensorHom_def'_assoc,
-    ← unitors_equal]
-  simp [v]
+  refine (ExactPairing.evaluation_eq_of_coevaluation_congr
+    (simpleOppositeExactPairing X) exactPairingUnit u.rightAdjointMate.symm u ?_).trans ?_
+  · rw [simpleOppositeExactPairing_coevaluation_of_iso_unit u, Category.assoc, Iso.symm_hom,
+      Iso.rightAdjointMate_inv, tensorHom_comp_tensorHom, ← comp_rightAdjointMate, u.inv_hom_id,
+      rightAdjointMate_id]
+    dsimp only [HasRightDual.rightDual, hasRightDualUnit]
+    rw [id_tensorHom_id, Category.comp_id, ExactPairing.unit_coevaluation, unitors_inv_equal]
+  · rw [Iso.symm_hom, Iso.rightAdjointMate_inv, ExactPairing.unit_evaluation, unitors_equal]
 
 end Construction
 
@@ -220,8 +217,7 @@ theorem eq_simpleDoubleDualIso_inv_iff
       η_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) ≫ Xᘁ ◁ g ≫ ε_ X Xᘁ = 𝟙 (𝟙_ C) := by
   rw [← Category.assoc, ← eq_simpleOppositeExactPairing_coevaluation_iff k,
     simpleOppositeExactPairing_coevaluation]
-  refine ⟨by rintro rfl; rfl, fun h ↦ ?_⟩
-  simpa using congrArg (tensorLeftHomEquiv (𝟙_ C) Xᘁ ((Xᘁ : C)ᘁ : C) X).symm h
+  refine ⟨by rintro rfl; rfl, fun h ↦ ExactPairing.rightDualHom_ext h⟩
 
 include k in
 /-- An isomorphism `u : X ≅ Y` between split simple objects transports the coevaluation of
@@ -273,16 +269,12 @@ theorem simpleOppositeExactPairing_evaluation_congr {X Y : C} [Simple X] [Simple
     (u.hom ⊗ₘ (u.inv)ᘁ) ≫
         @ExactPairing.evaluation C _ _ Yᘁ Y (simpleOppositeExactPairing Y) =
       @ExactPairing.evaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) := by
-  let _ : ExactPairing Yᘁ Y := simpleOppositeExactPairing Y
-  let p₂ : ExactPairing Xᘁ X := exactPairingCongr u.rightAdjointMate.symm u
-  have hcoev : @ExactPairing.coevaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) =
-      @ExactPairing.coevaluation C _ _ Xᘁ X p₂ := by
-    rw [exactPairingCongr_coevaluation, ← simpleOppositeExactPairing_coevaluation_congr k u,
-      Category.assoc, Iso.symm_inv, Iso.rightAdjointMate_hom, ← tensorHom_def',
-      tensorHom_comp_tensorHom, ← comp_rightAdjointMate, u.hom_inv_id, rightAdjointMate_id,
-      id_tensorHom_id, Category.comp_id]
-  rw [ExactPairing.evaluation_eq_of_coevaluation_eq (simpleOppositeExactPairing X) p₂ hcoev,
-    exactPairingCongr_evaluation, Iso.symm_hom, Iso.rightAdjointMate_inv, ← tensorHom_def'_assoc]
+  have hcoev := simpleOppositeExactPairing_coevaluation_congr k u
+  rw [← Iso.rightAdjointMate_inv, ← Iso.symm_hom] at hcoev
+  have h := (ExactPairing.evaluation_eq_of_coevaluation_congr
+    (simpleOppositeExactPairing X) (simpleOppositeExactPairing Y) u.rightAdjointMate.symm u
+    hcoev).symm
+  rwa [Iso.symm_hom, Iso.rightAdjointMate_inv] at h
 
 end Uniqueness
 

@@ -41,8 +41,9 @@ morphism.
 ## Main declarations
 
 * `CategoryTheory.ExactPairing.rightHom_ext`: morphisms into a right dual agree once they agree
-  after evaluation, and `CategoryTheory.ExactPairing.leftHom_ext`: morphisms out of a left member
-  agree once they agree after coevaluation;
+  after evaluation, `CategoryTheory.ExactPairing.leftHom_ext`: morphisms out of a left member
+  agree once they agree after coevaluation, and `CategoryTheory.ExactPairing.rightDualHom_ext`:
+  morphisms out of a right dual agree once they agree after coevaluation;
 * `CategoryTheory.leftAdjointMate_rightAdjointMate` and
   `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
   original morphism, so `CategoryTheory.rightAdjointMate_injective`;
@@ -66,7 +67,8 @@ morphism.
 * `TauCeti.rightAdjointMate_eq_rightMate`, `CategoryTheory.ExactPairing.rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightDualIso_inv`: Mathlib's `rightAdjointMate` and `rightDualIso`
   as mates, with the evaluation identities `rightDualIso_hom_whiskerRight_evaluation`,
-  `rightDualIso_inv_whiskerRight_evaluation`, and `evaluation_eq_of_coevaluation_eq`;
+  `rightDualIso_inv_whiskerRight_evaluation`, `evaluation_eq_of_coevaluation_eq`, and
+  `evaluation_eq_of_coevaluation_congr`;
 * `CategoryTheory.ExactPairing.leftDualHom_ext`: morphisms into a left dual agree once they agree
   after evaluation;
 * `CategoryTheory.ExactPairing.leftMate`: the left adjoint mate with respect to explicit exact
@@ -120,6 +122,15 @@ after the coevaluation of the pairing. -/
 theorem leftHom_ext {X Y A : C} [ExactPairing X Y] {f g : X ⟶ A}
     (h : η_ X Y ≫ f ▷ Y = η_ X Y ≫ g ▷ Y) : f = g := by
   simpa using congrArg (tensorRightHomEquiv (𝟙_ C) X Y A).symm h
+
+/-- Two morphisms out of the right member `Y` of an exact pairing `(X, Y)`, that is out of a
+right dual of `X`, agree as soon as they agree after the coevaluation of the pairing. -/
+theorem rightDualHom_ext {X Y A : C} [ExactPairing X Y] {f g : Y ⟶ A}
+    (h : η_ X Y ≫ X ◁ f = η_ X Y ≫ X ◁ g) : f = g := by
+  have h1 := congrArg (tensorLeftHomEquiv (𝟙_ C) X Y A).symm h
+  rw [tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft,
+    tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft] at h1
+  exact (cancel_epi (ρ_ Y).hom).1 h1
 
 /-- The right adjoint mate `Y' ⟶ X'` of `f : X ⟶ Y`, with respect to explicitly given exact
 pairings `(X, X')` and `(Y, Y')`: Mathlib's `CategoryTheory.rightAdjointMate` with the given
@@ -288,15 +299,28 @@ theorem evaluation_eq_of_coevaluation_eq {X Y : C} (p₁ p₂ : ExactPairing X Y
     (h : @coevaluation C _ _ X Y p₁ = @coevaluation C _ _ X Y p₂) :
     @evaluation C _ _ X Y p₁ = @evaluation C _ _ X Y p₂ := by
   have hiso : (rightDualIso p₁ p₂).hom = 𝟙 Y := by
+    let _ : ExactPairing X Y := p₁
+    refine rightDualHom_ext (X := X) (Y := Y) ?_
     have hm := coevaluation_comp_rightMate p₂ p₁ (𝟙 X)
     rw [← rightDualIso_hom, id_whiskerRight, Category.comp_id, ← h] at hm
-    let _ : ExactPairing X Y := p₁
-    have h1 := congrArg (tensorLeftHomEquiv (𝟙_ C) X Y Y).symm (by simpa using hm :
-      η_ X Y ≫ X ◁ (rightDualIso p₁ p₂).hom = η_ X Y ≫ X ◁ 𝟙 Y)
-    rw [tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft,
-      tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft] at h1
-    exact (cancel_epi (ρ_ Y).hom).1 h1
-  simpa [hiso] using (rightDualIso_hom_whiskerRight_evaluation p₁ p₂).symm
+    rw [hm, MonoidalCategory.whiskerLeft_id, Category.comp_id]
+  have hev := rightDualIso_hom_whiskerRight_evaluation p₁ p₂
+  rw [hiso, id_whiskerRight, Category.id_comp] at hev
+  exact hev.symm
+
+/-- If two isomorphisms `i : X ≅ X'` and `j : Y ≅ Y'` relate the coevaluations of exact pairings
+`p : ExactPairing X Y` and `p' : ExactPairing X' Y'`, then they also relate their evaluations. -/
+theorem evaluation_eq_of_coevaluation_congr {X X' Y Y' : C}
+    (p : ExactPairing X Y) (p' : ExactPairing X' Y') (i : X ≅ X') (j : Y ≅ Y')
+    (h : @coevaluation C _ _ X Y p ≫ (i.hom ⊗ₘ j.hom) = @coevaluation C _ _ X' Y' p') :
+    @evaluation C _ _ X Y p = (j.hom ⊗ₘ i.hom) ≫ @evaluation C _ _ X' Y' p' := by
+  let _ : ExactPairing X' Y' := p'
+  let q : ExactPairing X Y := exactPairingCongr i j
+  have hcoev : @coevaluation C _ _ X Y p = @coevaluation C _ _ X Y q := by
+    rw [TauCeti.exactPairingCongr_coevaluation, ← h, Category.assoc, ← tensorHom_def',
+      tensorHom_comp_tensorHom, i.hom_inv_id, j.hom_inv_id, id_tensorHom_id, Category.comp_id]
+  rw [evaluation_eq_of_coevaluation_eq p q hcoev, TauCeti.exactPairingCongr_evaluation,
+    ← tensorHom_def'_assoc]
 
 /-- The mate of the evaluation `ε_ X X' : X' ⊗ X ⟶ 𝟙_ C`, taken with respect to the tensor product
 pairing of `(X', X'')` with `(X, X')` and the self-pairing of the unit, is the coevaluation

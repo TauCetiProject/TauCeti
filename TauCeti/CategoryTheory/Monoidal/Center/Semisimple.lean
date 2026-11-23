@@ -134,23 +134,25 @@ theorem forgetInductionAdjunction_unit_app_f_comp_inductionForgetAdjunction_coun
     rw [← normGlobalDim_def]
     exact normGlobalDim_congr C k (fun S ↦ simpleDoubleDualIso S.repr) a
   rw [← hsum]
-  let u : Z.1 ⟶ inductionObj Z.1 := ((forgetInductionAdjunction k C).unit.app Z).f
-  let c : inductionObj Z.1 ⟶ Z.1 := ((inductionForgetAdjunction k C).counit.app Z).f
-  have hu : u = biproduct.lift fun S : SimpleClasses C ↦
+  have hu : biproduct.lift (fun S : SimpleClasses C ↦
       (ρ_ Z.1).inv ≫ Z.1 ◁ η_ S.repr S.reprᘁ ≫ (α_ Z.1 S.repr S.reprᘁ).inv ≫
-        (Z.2.β S.repr).hom ▷ S.reprᘁ ≫ (α_ S.repr Z.1 S.reprᘁ).hom := by
+        (Z.2.β S.repr).hom ▷ S.reprᘁ ≫ (α_ S.repr Z.1 S.reprᘁ).hom) =
+      ((forgetInductionAdjunction k C).unit.app Z).f := by
     refine biproduct.hom_ext _ _ fun S ↦ ?_
     rw [biproduct.lift_π]
-    exact forgetInductionAdjunction_unit_app_f_comp_π k C Z S
-  have hc : c = biproduct.desc fun S : SimpleClasses C ↦
+    exact (forgetInductionAdjunction_unit_app_f_comp_π k C Z S).symm
+  have hc : biproduct.desc (fun S : SimpleClasses C ↦
       (α_ S.repr Z.1 S.reprᘁ).inv ≫ (Z.2.β S.repr).inv ▷ S.reprᘁ ≫ (α_ Z.1 S.repr S.reprᘁ).hom ≫
         Z.1 ◁ @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleOppositeExactPairing S.repr) ≫
-        (ρ_ Z.1).hom := by
+        (ρ_ Z.1).hom) =
+      ((inductionForgetAdjunction k C).counit.app Z).f := by
     refine biproduct.hom_ext' _ _ fun S ↦ ?_
     rw [biproduct.ι_desc]
-    exact ι_comp_inductionForgetAdjunction_counit_app_f k C Z S
-  change u ≫ c = _
-  rw [hu, hc, biproduct.lift_desc]
+    exact (ι_comp_inductionForgetAdjunction_counit_app_f k C Z S).symm
+  have hcomp := congrArg₂
+    (· ≫ · : (Z.1 ⟶ inductionObj Z.1) → (inductionObj Z.1 ⟶ Z.1) → (Z.1 ⟶ Z.1)) hu.symm hc.symm
+  refine hcomp.trans ?_
+  rw [biproduct.lift_desc]
   simp only [whiskerLeft_sum, Preadditive.comp_sum, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun S _ ↦ ?_
   simp only [Category.assoc, Iso.hom_inv_id_assoc]
