@@ -148,6 +148,15 @@ theorem specialOrthogonalContinuousMulEquivRange_apply
       ⟨Q.specialOrthogonalToGeneralLinear g, ⟨g, rfl⟩⟩ :=
   ContinuousMonoidHom.equivRangeOfIsEmbedding_apply _ _ g
 
+/-- Coercing the range-equivalence image of `g ∈ SO(Q)` into `GL(n, R)` recovers
+`Q.specialOrthogonalToGeneralLinear g`. -/
+theorem coe_specialOrthogonalContinuousMulEquivRange_apply
+    (Q : QuadraticMap R (n → R) N) (g : specialOrthogonalGroup Q) :
+    ((Q.specialOrthogonalContinuousMulEquivRange g :
+        MonoidHom.range Q.specialOrthogonalToGeneralLinear) : Matrix.GeneralLinearGroup n R) =
+      Q.specialOrthogonalToGeneralLinear g := by
+  rw [specialOrthogonalContinuousMulEquivRange_apply]
+
 /-- The inverse topological equivalence recovers an element of `SO(Q)` from its coordinate matrix
 unit. -/
 @[simp]

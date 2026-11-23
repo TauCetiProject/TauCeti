@@ -91,9 +91,16 @@ theorem mem_range_orthogonalToGeneralLinear_iff
       mem_orthogonalGroup_iff.mpr fun x ↦ by
         rw [matrixGeneralLinearEquiv_apply, hU x]⟩, ?_⟩
     apply Units.ext
-    ext i j
-    rw [orthogonalToGeneralLinear_apply, Subtype.coe_mk, matrixGeneralLinearEquiv_apply,
-      Matrix.mulVec_single_one, Matrix.col_apply]
+    rw [coe_orthogonalToGeneralLinear]
+    have hlin : ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
+        (matrixGeneralLinearEquiv U) : (n → R) ≃ₗ[R] (n → R)) :
+          (n → R) →ₗ[R] (n → R)) = Matrix.toLin' (U : Matrix n n R) :=
+      LinearMap.ext fun v ↦ matrixGeneralLinearEquiv_apply U v
+    change LinearMap.toMatrix'
+      ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
+        (matrixGeneralLinearEquiv U) : (n → R) ≃ₗ[R] (n → R)) :
+          (n → R) →ₗ[R] (n → R)) = (U : Matrix n n R)
+    rw [hlin, LinearMap.toMatrix'_toLin']
 
 /-- A general-linear matrix lies in the coordinate range of `SO(Q)` if and only if its
 matrix-vector action preserves `Q` and its determinant is one. -/
@@ -118,9 +125,7 @@ theorem mem_range_specialOrthogonalToGeneralLinear_iff
     refine ⟨⟨(g : (n → R) ≃ₗ[R] (n → R)),
       mem_specialOrthogonalGroup_iff.mpr ⟨g.prop, hgdet⟩⟩, ?_⟩
     apply Units.ext
-    ext i j
-    rw [specialOrthogonalToGeneralLinear_apply, Subtype.coe_mk,
-      ← orthogonalToGeneralLinear_apply, hg]
+    simp only [coe_specialOrthogonalToGeneralLinear, ← coe_orthogonalToGeneralLinear, hg]
 
 /-- When multiplication by `2` is injective on `R`, a general-linear matrix lies in the coordinate
 range of `SO(Q)` if and only if it preserves the polar Gram matrix in standard coordinates and has

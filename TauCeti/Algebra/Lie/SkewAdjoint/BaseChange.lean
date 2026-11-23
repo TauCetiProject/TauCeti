@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.BaseChange
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Matrix.BaseChange
+import TauCeti.Algebra.Lie.SkewAdjoint
 
 /-!
 # Extension of scalars for skew-adjoint matrix Lie algebras
@@ -44,19 +45,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- The linear map `A ↦ Aᵀ * J + J * A`, whose kernel consists of the matrices skew-adjoint for
-`J`. -/
-private def skewAdjointDefect {T : Type*} [CommRing T] (J : Matrix n n T) :
-    Matrix n n T →ₗ[T] Matrix n n T where
-  toFun A := Aᵀ * J + J * A
-  map_add' A B := by simp only [transpose_add, add_mul, mul_add]; abel
-  map_smul' c A := by simp [transpose_smul, smul_add]
-
-private theorem mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect {T : Type*} [CommRing T]
-    (J A : Matrix n n T) :
-    A ∈ skewAdjointMatricesSubmodule J ↔ skewAdjointDefect J A = 0 := by
-  simp [skewAdjointDefect, Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, add_eq_zero_iff_eq_neg]
-
 variable {R : Type*} [CommRing R] (S : Type*) [CommRing S] [Algebra R S] (J : Matrix n n R)
 
 private theorem matrixBaseChangeAlgEquiv_skewAdjointDefect (x : S ⊗[R] Matrix n n R) :
@@ -65,7 +53,7 @@ private theorem matrixBaseChangeAlgEquiv_skewAdjointDefect (x : S ⊗[R] Matrix 
       skewAdjointDefect (J.map (algebraMap R S)) (Algebra.matrixBaseChangeAlgEquiv R S n x) := by
   induction x using TensorProduct.inductionOn with
   | tmul s A =>
-    simp [skewAdjointDefect, Matrix.map_add, Matrix.map_mul, Matrix.transpose_map, smul_add]
+    simp [skewAdjointDefect_apply, Matrix.map_add, Matrix.map_mul, Matrix.transpose_map, smul_add]
   | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- Extension of scalars of a skew-adjoint matrix, as a Lie algebra map into matrices over `S`. -/

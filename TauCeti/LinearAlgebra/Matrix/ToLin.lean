@@ -48,8 +48,6 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
 * `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
   matrix of `φ` applied to `x`.
-* `LinearMap.toMatrixAlgEquiv_eq_toMatrix`: `LinearMap.toMatrixAlgEquiv b f` agrees with
-  `LinearMap.toMatrix b b f`.
 * `LinearMap.toLin'_toMatrix_comp_equivFun` and `LinearMap.equivFun_symm_comp_toLin'_toMatrix`:
   the coordinate equivalences of two bases intertwine a linear map with its matrix.
 * `LinearMap.isUnit_toMatrix_iff_bijective`, `LinearMap.isUnit_det_toMatrix_iff_bijective`,
@@ -218,13 +216,6 @@ theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommM
     toMatrix v b φ *ᵥ x = b.repr (φ (∑ j, x j • v j)) := by
   rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
     LinearEquiv.apply_symm_apply]
-
-/-- `LinearMap.toMatrixAlgEquiv b f` agrees with `LinearMap.toMatrix b b f`. -/
-theorem toMatrixAlgEquiv_eq_toMatrix {R V ι : Type*} [CommSemiring R] [AddCommMonoid V]
-    [Module R V] [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R V) (f : Module.End R V) :
-    toMatrixAlgEquiv b f = toMatrix b b f := by
-  ext i j
-  rw [toMatrixAlgEquiv_apply, toMatrix_apply]
 
 /-- In the coordinates of bases `v` and `b`, a linear map `φ` acts by its matrix
 `LinearMap.toMatrix v b φ`. -/

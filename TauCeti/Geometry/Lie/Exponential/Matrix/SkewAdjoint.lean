@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Lie.Exponential.OneParameter
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.LinearAlgebra.QuadraticForm.Matrix
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Coordinate
@@ -63,19 +64,15 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] Matrix.linftyOpTopologicalSpace TauCeti.normedAlgebraRatOfReal
 attribute [local instance] NormedAlgebra.toNormedSpace
 
-omit [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜] in
-private theorem mem_skewAdjointMatricesLieSubalgebra_iff_add (J A : Matrix n n 𝕜) :
-    A ∈ skewAdjointMatricesLieSubalgebra J ↔ Aᵀ * J + J * A = 0 := by
-  simp only [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
-    Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, mul_neg, eq_neg_iff_add_eq_zero]
-
 /-- The matrix exponential of an element of `skewAdjointMatricesLieSubalgebra J` preserves `J`,
 without any invertibility or symmetry assumption on `J`. -/
 theorem exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra
     (J A : Matrix n n 𝕜) (hA : A ∈ skewAdjointMatricesLieSubalgebra J) :
     (exp A)ᵀ * J * exp A = J := by
   have hsemi : SemiconjBy J A (-Aᵀ) := by
-    rw [mem_skewAdjointMatricesLieSubalgebra_iff_add] at hA
+    rw [mem_skewAdjointMatricesLieSubalgebra,
+      TauCeti.mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect,
+      TauCeti.skewAdjointDefect_apply] at hA
     rw [SemiconjBy, neg_mul]
     exact eq_neg_of_add_eq_zero_right hA
   have h := hsemi.exp_neg_mul_mul_exp_eq_self
@@ -102,7 +99,9 @@ theorem forall_exp_smul_transpose_mul_mul_eq_iff_mem_skewAdjointMatricesLieSubal
       hasDerivAt_exp_smul_transpose_mul_mul_exp_smul J A (0 : ℝ)
     have h0 := hderiv.unique hconst
     simp only [zero_smul, exp_zero, one_mul, mul_one] at h0
-    rw [mem_skewAdjointMatricesLieSubalgebra_iff_add]
+    rw [mem_skewAdjointMatricesLieSubalgebra,
+      TauCeti.mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect,
+      TauCeti.skewAdjointDefect_apply]
     exact h0
   · intro hA t
     exact exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra J (t • A)

@@ -22,8 +22,8 @@ Both the compact real Spin projection and the nondegenerate complex Spin project
 differential `d(spinToSpecialOrthogonal)` by comparing a one-parameter exponential curve
 `exp (t • A)` in `SO(Q)` with the corresponding curve `exp (t • x)` in `Spin(Q)`.
 
-This module extracts the field-independent core of that calculation over any finite-dimensional
-normed field extension `𝕜` of `ℝ` with `2` invertible:
+This module extracts the core of that calculation over any finite-dimensional commutative normed
+`ℝ`-algebra `𝕜` (with `2` invertible for the Spin commutator):
 
 * `TauCeti.CliffordAlgebra.hasDerivAt_linearMap_exp_mulVec`: differentiates
   `t ↦ f (exp (t • A) *ᵥ v)` at `t = 0` for any `ℝ`-linear map `f` into a normed space.
@@ -57,7 +57,7 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 section ChainRule
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+variable {𝕜 : Type*} [NormedCommRing 𝕜] [NormedAlgebra ℝ 𝕜]
   [FiniteDimensional ℝ 𝕜]
   {m : Type*} [Fintype m] [DecidableEq m]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -84,7 +84,7 @@ section Commutator
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+variable {𝕜 : Type*} [NormedCommRing 𝕜] [NormedAlgebra ℝ 𝕜]
   [FiniteDimensional ℝ 𝕜] [Invertible (2 : 𝕜)]
   {m : Type*} [Fintype m] [DecidableEq m]
   {Q : QuadraticForm 𝕜 (m → 𝕜)}
@@ -112,9 +112,8 @@ theorem ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve
     let s := (spinGroupContinuousMulEquivUnitsRange Q).symm (u t)
     have hmatrix : NormedSpace.exp (t • A) *ᵥ v = spinVectorAction Q s v := by
       rw [← hA t, spinToSpecialOrthogonalUnitsRange_apply,
-        Q.specialOrthogonalContinuousMulEquivRange_apply]
-      dsimp only
-      rw [Q.specialOrthogonalToGeneralLinear_mulVec, coe_spinToSpecialOrthogonal_apply]
+        Q.coe_specialOrthogonalContinuousMulEquivRange_apply,
+        Q.specialOrthogonalToGeneralLinear_mulVec, coe_spinToSpecialOrthogonal_apply]
     have hs : e (s : CliffordAlgebra Q) = NormedSpace.exp (t • e x) := by
       rw [coe_spinGroupContinuousMulEquivUnitsRange_symm_apply, hu t]
     have hmul : (s : CliffordAlgebra Q) * star (s : CliffordAlgebra Q) = 1 :=
@@ -183,9 +182,9 @@ theorem ι_mulVec_eq_lie_of_embeddedLieSubgroupData
       ← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply (d := d₁),
       d₁.coe_lieExp_smul X t, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply, hx]
   · intro t
-    rw [← hφ, eK.apply_symm_apply,
+    rw [← hφ, eK.apply_symm_apply, _root_.map_lieExp, map_smul,
       ← TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply (d := d₂),
-      d₁.coe_map_lieExp_smul d₂ φ X t, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply, hA]
+      d₂.coe_lieExp_smul (lieMap φ X) t, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply, hA]
 
 end Commutator
 

@@ -135,7 +135,7 @@ def complexSpinSmoothMatrixHom :
 theorem coe_complexSpinSmoothMatrixHom_apply (g : SpinUnitsRange) :
     (P.complexSpinSmoothMatrixHom b g : Matrix ι ι ℂ) =
       LinearMap.toMatrix b b (spinAction Q P (g : (CliffordAlgebra Q)ˣ)) := by
-  simp [complexSpinSmoothMatrixHom, LinearMap.toMatrixAlgEquiv_eq_toMatrix]
+  simp [complexSpinSmoothMatrixHom, LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply]
 
 /-- On the canonical unit of a native Spin element, the smooth matrix action is precisely
 `spinRep` expressed in the chosen spinor basis. -/
@@ -156,7 +156,7 @@ theorem unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom
   simp only [complexSpinSmoothMatrixHom,
     AlgHom.unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothHom,
     AlgHom.restrictScalars_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    LinearMap.toMatrixAlgEquiv_eq_toMatrix]
+    LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply]
 
 /-- The differentiated Fock representation in quadratic coordinates is the matrix Clifford
 action restricted to quadratic elements, as an equality of real Lie algebra homomorphisms. -/
@@ -186,7 +186,7 @@ theorem complexSpinSmoothMatrixComplexLieHom_apply (x : quadraticLieSubalgebra Q
     P.complexSpinSmoothMatrixComplexLieHom b x = LinearMap.toMatrix b b (spinAction Q P x) := by
   simp only [complexSpinSmoothMatrixComplexLieHom, LieHom.comp_apply, LieSubalgebra.coe_incl,
     AlgHom.toLieHom_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    LinearMap.toMatrixAlgEquiv_eq_toMatrix]
+    LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply]
 
 /-- Under the quadratic coordinate equivalence, `P.complexSpinSmoothMatrixComplexLieHom b`
 agrees with the real manifold differential `lieMap (P.complexSpinSmoothMatrixHom b)`. -/

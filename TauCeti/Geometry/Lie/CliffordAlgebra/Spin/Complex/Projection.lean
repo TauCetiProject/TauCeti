@@ -130,16 +130,6 @@ private def complexSpecialOrthogonalAmbientCoordinateLieEquiv (hQ : Q.Nondegener
 TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_range_specialOrthogonal_iff
           Q hQ A
 
-private theorem coe_complexSpecialOrthogonalAmbientCoordinateLieEquiv_apply
-    (hQ : Q.Nondegenerate)
-    (x : TauCeti.Lie.lieSubalgebraOfSubgroup
-      (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ)) SpecialOrthogonalUnitsRange) :
-    (RestrictScalars.addEquiv ℝ ℂ
-      (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
-      (complexSpecialOrthogonalAmbientCoordinateLieEquiv hQ x) : Matrix (Fin n) (Fin n) ℂ) =
-      TauCeti.Lie.unitsLieAlgebraLieEquiv x :=
-  LieEquiv.coe_ofSubalgebrasRestrictScalars_apply _ _ _ _ x
-
 /-- The real Lie algebra of the complex `SO(Q)` range carrier in polar skew-adjoint matrix
 coordinates. -/
 def complexSpecialOrthogonalLieEquivSkewAdjointMatrices [Fact Q.Nondegenerate] :
@@ -168,7 +158,8 @@ theorem
       TauCeti.Lie.unitsLieAlgebraLieEquiv Y)
     ((complexSpecialOrthogonalEmbeddedLieSubgroupData Q).lieEquivLieSubalgebraOfSubgroup_apply X)
   simpa only [complexSpecialOrthogonalLieEquivSkewAdjointMatrices, LieEquiv.trans_apply,
-    coe_complexSpecialOrthogonalAmbientCoordinateLieEquiv_apply] using h.symm
+    complexSpecialOrthogonalAmbientCoordinateLieEquiv,
+    LieEquiv.coe_ofSubalgebrasRestrictScalars_apply] using h.symm
 
 /-- The real Lie algebra of the complex `SO(Q)` range carrier in basis-free polar skew-adjoint
 endomorphism coordinates. -/

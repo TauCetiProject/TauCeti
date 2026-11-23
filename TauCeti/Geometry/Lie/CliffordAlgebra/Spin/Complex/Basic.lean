@@ -86,13 +86,6 @@ private def complexSpinAmbientCoordinateLieEquiv (hQ : Q.Nondegenerate) :
 unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_quadraticLieSubalgebra_complex
           Q hQ x
 
-private theorem coe_complexSpinAmbientCoordinateLieEquiv_apply (hQ : Q.Nondegenerate)
-    (x : TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, CliffordAlgebra Q)) SpinUnitsRange) :
-    (RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)
-      (complexSpinAmbientCoordinateLieEquiv hQ x) : CliffordAlgebra Q) =
-      TauCeti.Lie.unitsLieAlgebraLieEquiv x :=
-  LieEquiv.coe_ofSubalgebrasRestrictScalars_apply _ _ _ _ x
-
 /-- The real Lie algebra of complex Spin in the complex quadratic Clifford coordinates.
 `RestrictScalars` keeps the complex quadratic carrier and regards it as a real Lie algebra. -/
 def complexSpinLieEquivQuadratic [Fact Q.Nondegenerate] :
@@ -117,6 +110,7 @@ theorem unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpinLieEquivQuadr
     ((complexSpinEmbeddedLieSubgroupData (Fact.out : Q.Nondegenerate))
       |>.lieEquivLieSubalgebraOfSubgroup_apply X)
   simpa only [complexSpinLieEquivQuadratic, LieEquiv.trans_apply,
-    coe_complexSpinAmbientCoordinateLieEquiv_apply] using h.symm
+    complexSpinAmbientCoordinateLieEquiv, LieEquiv.coe_ofSubalgebrasRestrictScalars_apply] using
+    h.symm
 
 end TauCeti.CliffordAlgebra

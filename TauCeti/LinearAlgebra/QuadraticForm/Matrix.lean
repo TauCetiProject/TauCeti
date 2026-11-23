@@ -63,11 +63,9 @@ theorem det_toMatrix'_polarBilin_mem_nonZeroDivisors
   have hpolar : Q.polarBilin.Nondegenerate := QuadraticMap.nondegenerate_polar_iff.mpr hQ
   have hM : (LinearMap.BilinForm.toMatrix' Q.polarBilin).Nondegenerate :=
     LinearMap.BilinForm.Nondegenerate.toMatrix' hpolar
-  have hinj : Function.Injective (LinearMap.BilinForm.toMatrix' Q.polarBilin).mulVec :=
-    fun x y hxy ↦
-      sub_eq_zero.mp (hM.separatingRight.eq_zero_of_mulVec_eq_zero
-        (by rw [Matrix.mulVec_sub, hxy, sub_self]))
-  exact Matrix.nonsingular_iff_det_mem_nonZeroDivisors.mp
-    (.of_linearIndependent_col (Matrix.mulVec_injective_iff.mp hinj))
+  rw [← Matrix.nonsingular_iff_det_mem_nonZeroDivisors, ← Matrix.isLeftRegular_iff_nonsingular,
+    Matrix.isLeftRegular_iff_mulVec_injective, ← Matrix.coe_mulVecLin, ← LinearMap.ker_eq_bot,
+    Matrix.ker_mulVecLin_eq_bot_iff]
+  exact fun x hx ↦ hM.separatingRight.eq_zero_of_mulVec_eq_zero hx
 
 end QuadraticMap

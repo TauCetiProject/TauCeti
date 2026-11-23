@@ -152,26 +152,23 @@ theorem complexSpinToSpecialOrthogonalCoordinateLieHom_eq_skewAdjointMatricesEqu
 packaged as a `ℂ`-linear Lie algebra equivalence. Its forward map is the manifold differential
 `complexSpinToSpecialOrthogonalPolarCoordinateLieHom`. -/
 def complexSpinToSpecialOrthogonalPolarComplexLieEquiv :
-    quadraticLieSubalgebra Q ≃ₗ⁅ℂ⁆ skewAdjointLieSubalgebra Q.polarBilin where
-  toFun x := RestrictScalars.addEquiv ℝ ℂ (skewAdjointLieSubalgebra Q.polarBilin)
-    (complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)
-      ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x))
-  invFun := soEquivQuadratic Q (Fact.out : Q.Nondegenerate)
-  left_inv x := by
-    dsimp only
+    quadraticLieSubalgebra Q ≃ₗ⁅ℂ⁆ skewAdjointLieSubalgebra Q.polarBilin :=
+  have hto (z : quadraticLieSubalgebra Q) :
+      RestrictScalars.addEquiv ℝ ℂ (skewAdjointLieSubalgebra Q.polarBilin)
+          (complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)
+            ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm z)) =
+        (soEquivQuadratic Q (Fact.out : Q.Nondegenerate)).symm z := by
     rw [complexSpinToSpecialOrthogonalPolarCoordinateLieHom_eq_soEquivQuadratic_symm,
-      AddEquiv.apply_symm_apply, LieEquiv.apply_symm_apply]
-  right_inv y := by
-    dsimp only
-    rw [complexSpinToSpecialOrthogonalPolarCoordinateLieHom_eq_soEquivQuadratic_symm,
-      AddEquiv.apply_symm_apply, LieEquiv.symm_apply_apply]
-  map_add' x y := by simp
-  map_smul' c x := by
-    rw [complexSpinToSpecialOrthogonalPolarCoordinateLieHom_eq_soEquivQuadratic_symm,
-      complexSpinToSpecialOrthogonalPolarCoordinateLieHom_eq_soEquivQuadratic_symm,
-      AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply, RingHom.id_apply, map_smul]
-  map_lie' {x y} := by
-    rw [RestrictScalars.addEquiv_symm_lie, LieHom.map_lie, RestrictScalars.addEquiv_lie]
+      AddEquiv.apply_symm_apply]
+  { toFun x := RestrictScalars.addEquiv ℝ ℂ (skewAdjointLieSubalgebra Q.polarBilin)
+      (complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)
+        ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x))
+    invFun := soEquivQuadratic Q (Fact.out : Q.Nondegenerate)
+    left_inv x := by dsimp only; rw [hto, LieEquiv.apply_symm_apply]
+    right_inv y := by dsimp only; rw [hto, LieEquiv.symm_apply_apply]
+    map_add' x y := by simp
+    map_smul' c x := by simp only [hto, RingHom.id_apply, map_smul]
+    map_lie' := by simp }
 
 /-- Evaluating `complexSpinToSpecialOrthogonalPolarComplexLieEquiv` applies the real polar
 coordinate differential `complexSpinToSpecialOrthogonalPolarCoordinateLieHom`. -/
@@ -262,26 +259,20 @@ theorem lieMap_complexSpinToSpecialOrthogonalSmoothRange_bijective :
   have hbij :
       Function.Bijective (complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)) := by
     have heq : ⇑(complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)) =
-        ⇑(RestrictScalars.addEquiv ℝ ℂ (skewAdjointLieSubalgebra Q.polarBilin)).symm ∘
-          ⇑(soEquivQuadratic Q (Fact.out : Q.Nondegenerate)).symm ∘
-            ⇑(RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)) := by
-      funext x
-      apply (RestrictScalars.addEquiv ℝ ℂ (skewAdjointLieSubalgebra Q.polarBilin)).injective
-      simpa using complexSpinToSpecialOrthogonalPolarCoordinateLieHom_eq_soEquivQuadratic_symm
-        (Q := Q) x
+        ⇑((complexSpinToSpecialOrthogonalPolarComplexLieEquiv (Q := Q)).restrictScalars ℝ) :=
+      funext fun x ↦ by simp
     rw [heq]
-    exact (RestrictScalars.addEquiv ℝ ℂ _).symm.bijective.comp
-      ((soEquivQuadratic Q (Fact.out : Q.Nondegenerate)).symm.bijective.comp
-        (RestrictScalars.addEquiv ℝ ℂ _).bijective)
-  have hcomp : ⇑(lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))) =
-      ⇑(complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)).symm ∘
-        ⇑(complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)) ∘
-          ⇑(complexSpinLieEquivQuadratic (Q := Q)) := by
-    funext X
-    simp [complexSpinToSpecialOrthogonalPolarCoordinateLieHom_apply]
-  rw [hcomp]
-  exact (complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)).symm.bijective.comp
-    (hbij.comp (complexSpinLieEquivQuadratic (Q := Q)).bijective)
+    exact ((complexSpinToSpecialOrthogonalPolarComplexLieEquiv (Q := Q)).restrictScalars
+      ℝ).bijective
+  have hcomp : ⇑(complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)) =
+      ⇑(complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)) ∘
+        ⇑(lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))) ∘
+          ⇑(complexSpinLieEquivQuadratic (Q := Q)).symm :=
+    funext fun x ↦ complexSpinToSpecialOrthogonalPolarCoordinateLieHom_apply (Q := Q) x
+  rw [hcomp] at hbij
+  exact ((complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)).bijective.of_comp_iff' _).mp
+    ((Function.Bijective.of_comp_iff _ (complexSpinLieEquivQuadratic (Q := Q)).symm.bijective).mp
+      hbij)
 
 end TauCeti.CliffordAlgebra
 
@@ -311,7 +302,7 @@ theorem lie_complexSpinSmoothMatrixComplexLieHom_ι_eq
     (LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)
   have hφ (z : CliffordAlgebra Q) : LinearMap.toMatrix b b (spinAction Q P z) = φ z := by
     simp only [φ, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-      LinearMap.toMatrixAlgEquiv_eq_toMatrix]
+      LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply]
   have hlie : ⁅φ x, φ (ι Q v)⁆ = φ ⁅(x : CliffordAlgebra Q), ι Q v⁆ :=
     (φ.toLieHom.map_lie (x : CliffordAlgebra Q) (ι Q v)).symm
   rw [complexSpinSmoothMatrixComplexLieHom_apply, hφ, hφ, hφ, hlie,

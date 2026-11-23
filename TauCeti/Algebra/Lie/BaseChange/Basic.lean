@@ -62,9 +62,7 @@ def restrictScalars (e : L₁ ≃ₗ⁅A⁆ L₂) :
     rw [RestrictScalars.addEquiv_map_smul, map_smul,
       RestrictScalars.addEquiv_symm_map_algebraMap_smul, RingHom.id_apply]
   map_lie' {x y} := by
-    apply (RestrictScalars.addEquiv R A L₂).injective
-    rw [RestrictScalars.addEquiv_lie, AddEquiv.apply_symm_apply, RestrictScalars.addEquiv_lie,
-      AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply, map_lie]
+    simp only [RestrictScalars.addEquiv_lie, map_lie, RestrictScalars.addEquiv_symm_lie]
 
 /-- Evaluating a scalar-restricted Lie equivalence transports through `RestrictScalars.addEquiv`. -/
 @[simp]
