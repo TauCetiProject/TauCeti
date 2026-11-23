@@ -982,14 +982,15 @@ def projectiveMomentFunctionCriticalPointsEquiv {w : Fin (n + 1) → ℝ} (hw : 
     (fun k ↦ ⟨mk 𝕜 (Pi.single k.val 1) (by simp),
       mk_single_mem_criticalPoints_projectiveMomentFunction w k.val,
       (manifoldMorseIndex_projectiveMomentFunction w k.val).trans k.property⟩)
-    ⟨fun _ _ h ↦ Subtype.ext (mk_single_injective (congrArg Subtype.val h)), fun x ↦ by
-      obtain ⟨k, hk⟩ : x.val ∈ range fun k ↦ mk 𝕜 (Pi.single k 1 : Fin (n + 1) → 𝕜) (by simp) := by
-        rw [← criticalPoints_projectiveMomentFunction hw]
-        exact x.property.1
-      replace hk : mk 𝕜 (Pi.single k 1 : Fin (n + 1) → 𝕜) (by simp) = x.val := hk
-      refine ⟨⟨k, ?_⟩, Subtype.ext hk⟩
-      rw [← manifoldMorseIndex_projectiveMomentFunction w k, hk]
-      exact x.property.2⟩
+    (show Bijective _ from
+      ⟨fun _ _ h ↦ Subtype.ext (mk_single_injective (congrArg Subtype.val h)), fun x ↦ by
+        have hx : x.val ∈ range fun k ↦ mk 𝕜 (Pi.single k 1 : Fin (n + 1) → 𝕜) (by simp) := by
+          rw [← criticalPoints_projectiveMomentFunction hw]
+          exact x.property.1
+        obtain ⟨k, hk⟩ := mem_range.mp hx
+        refine ⟨⟨k, ?_⟩, Subtype.ext hk⟩
+        rw [← manifoldMorseIndex_projectiveMomentFunction w k, hk]
+        exact x.property.2⟩)
 
 /-- The equivalence `TauCeti.projectiveMomentFunctionCriticalPointsEquiv` sends `k` to the
 coordinate point `[eₖ]`. -/
@@ -999,8 +1000,7 @@ theorem coe_projectiveMomentFunctionCriticalPointsEquiv_apply {w : Fin (n + 1) �
     (k : {k : Fin (n + 1) // Module.finrank ℝ 𝕜 * {i | w i < w k}.ncard = j}) :
     (projectiveMomentFunctionCriticalPointsEquiv hw j k : ℙ 𝕜 (Fin (n + 1) → 𝕜)) =
       mk 𝕜 (Pi.single k.val 1) (by simp) := by
-  rw [projectiveMomentFunctionCriticalPointsEquiv]
-  rfl
+  simp [projectiveMomentFunctionCriticalPointsEquiv]
 
 /-- For pairwise distinct weights, the number of critical points of index `j` of the moment
 function is the number of coordinates `k` with `j` equal to the real dimension of `𝕜` times the
@@ -1107,9 +1107,7 @@ theorem coe_projectiveMomentFunctionNatCastCriticalPointsEquiv_apply (j : ℕ)
     (k : {k : Fin (n + 1) // Module.finrank ℝ 𝕜 * k = j}) :
     (projectiveMomentFunctionNatCastCriticalPointsEquiv 𝕜 n j k : ℙ 𝕜 (Fin (n + 1) → 𝕜)) =
       mk 𝕜 (Pi.single k.val 1) (by simp) := by
-  rw [projectiveMomentFunctionNatCastCriticalPointsEquiv, Equiv.trans_apply,
-    coe_projectiveMomentFunctionCriticalPointsEquiv_apply]
-  rfl
+  simp [projectiveMomentFunctionNatCastCriticalPointsEquiv]
 
 /-- **The Morse index on complex projective space.** For the moment function
 `[z] ↦ (∑ j, j * ‖z j‖ ^ 2) / ∑ j, ‖z j‖ ^ 2` on `ℂℙⁿ`, the coordinate point `[eₖ]` has Morse

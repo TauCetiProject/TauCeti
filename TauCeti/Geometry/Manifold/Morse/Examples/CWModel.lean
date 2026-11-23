@@ -134,15 +134,12 @@ theorem exists_cwComplex_homotopyEquiv_projectivization_complex (n : ℕ) :
   have := (ComplexProjectiveSpace.finite_cwComplex (n := n)).finite_cell m
   -- Both cell types are finite, with one element in each even dimension up to `2n`.
   refine Finite.card_eq.1 ?_
-  rw [ComplexProjectiveSpace.nat_card_cell_cwComplex, Nat.card_congr c,
-    Complex.finrank_real_complex]
-  split_ifs with h
-  · obtain ⟨⟨j, rfl⟩, hj⟩ := h
-    refine Nat.card_eq_one_iff_exists.2 ⟨⟨⟨j, by lia⟩, by simp; lia⟩, fun k ↦ ?_⟩
-    exact Subtype.ext (Fin.ext (by have := k.property; simp only at this ⊢; lia))
-  · have : IsEmpty {k : Fin (n + 1) // 2 * k = m} :=
-      ⟨fun k ↦ h ⟨⟨k.val, by have := k.property; lia⟩, by have := k.property; lia⟩⟩
-    exact Nat.card_of_isEmpty
+  rw [ComplexProjectiveSpace.nat_card_cell_cwComplex,
+    Nat.card_congr (c.trans (projectiveMomentFunctionNatCastCriticalPointsEquiv ℂ n m)),
+    natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount,
+    criticalCount_projectiveMomentFunction_complex (w := fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ))
+      (Nat.cast_injective.comp Fin.val_injective)]
+  split_ifs <;> simp
 
 /-! ### The real line -/
 
