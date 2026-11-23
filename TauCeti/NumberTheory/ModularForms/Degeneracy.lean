@@ -43,7 +43,9 @@ results go up only.
 * `TauCeti.conjScale`: its conjugation action on an integral matrix whose lower-left entry is
   divisible by `d`, `(a, b; d c, e) ↦ (a, d b; c, e)`.
 * `TauCeti.conjScaleGamma0 hδ`: for `δ ∣ N`, the homomorphism `Γ₀(N) →* SL(2, ℤ)` sending
-  `(a, b; c, e)` to `(a, δ b; c / δ, e)`, the conjugation by `diag(δ, 1)` when `δ ≠ 0`.
+  `(a, b; c, e)` to `(a, δ b; c / δ, e)`, the conjugation by `diag(δ, 1)` when `δ ≠ 0`; it fixes
+  `-1` and sends `Tⁿ` to `T^{δ n}` (`TauCeti.conjScaleGamma0_negOne`,
+  `TauCeti.conjScaleGamma0_T_zpow`).
 * `TauCeti.gamma1Conj q N`: the intersection of `SL(2, ℤ)` with the conjugate
   `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, a subgroup of `SL(2, ℤ)` of finite index for `N ≠ 0`; it is the
   whole conjugate when `q ∣ N`.
@@ -624,6 +626,21 @@ lemma coe_conjScaleGamma0 {N δ : ℕ} (hδ : δ ∣ N) (γ : Gamma0 N) :
       !![(γ : SL(2, ℤ)) 0 0, (δ : ℤ) * (γ : SL(2, ℤ)) 0 1; (γ : SL(2, ℤ)) 1 0 / δ,
         (γ : SL(2, ℤ)) 1 1] := by
   rw [conjScaleGamma0_apply, coe_conjScale]
+
+/-- Every conjugate of `-1 ∈ Γ₀(N)` is `-1`. -/
+@[simp]
+lemma conjScaleGamma0_negOne {N δ : ℕ} (hδ : δ ∣ N) :
+    conjScaleGamma0 hδ (Gamma0.negOne N) = -1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Gamma0.coe_negOne]
+
+/-- The conjugate of a translation `Tⁿ ∈ Γ₀(N)` by `diag(δ, 1)` is the translation `T^{δ n}`. -/
+@[simp]
+lemma conjScaleGamma0_T_zpow {N δ : ℕ} (hδ : δ ∣ N) (n : ℤ)
+    (h : ModularGroup.T ^ n ∈ Gamma0 N) :
+    conjScaleGamma0 hδ ⟨ModularGroup.T ^ n, h⟩ = ModularGroup.T ^ ((δ : ℤ) * n) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [ModularGroup.coe_T_zpow]
 
 /-- The `diag(d, 1)`-conjugate of a matrix `γ ∈ Γ₀(N)` lies in `Γ₀(M)` whenever `d * M ∣ N`, and
 the conjugation leaves the lower-right entry alone: the diamond label of `γ` is read along the

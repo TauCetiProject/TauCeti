@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.Transformation
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
+import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 
 /-!
 # The transformation of `η(δ τ)`
@@ -46,7 +47,7 @@ theorem eta_natCast_mul_smul {δ : ℕ} (hδ : 0 < δ) (γ : SL(2, ℤ)) {c : �
   have : NeZero δ := ⟨hδ.ne'⟩
   have hden : ((conjScale δ γ c hc 1 0 : ℤ) : ℂ) * (scaleGL δ • τ : ℍ) + conjScale δ γ c hc 1 1 =
       (γ 1 0 : ℂ) * τ + γ 1 1 := by
-    simpa [denom] using denom_conjScale_scaleGL_smul γ c hc τ
+    rw [← ModularGroup.denom_mapGL, ← ModularGroup.denom_mapGL, denom_conjScale_scaleGL_smul]
   have h := eta_smul (conjScale δ γ c hc) (scaleGL δ • τ)
   rwa [conjScale_smul_scaleGL_smul, hden, coe_scaleGL_smul, coe_scaleGL_smul] at h
 
