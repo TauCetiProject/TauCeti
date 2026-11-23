@@ -76,8 +76,8 @@ homology with coefficients in one to that with coefficients in the other
   fibrations.
 * `TauCeti.TopCat.fiberHomologyTransport_naturality_coeff`: transport is natural in the
   coefficients.
-* `TauCeti.TopCat.fiberHomologyTransport_map`: transport along the image of a path in a
-  contractible space is transport over that space.
+* `TauCeti.TopCat.fiberHomologyTransport_map_eq_pullbackFiberTransport`: transport along the
+  image of a path in a contractible space is transport over that space.
 * `TauCeti.TopCat.fiberHomologyTransport_eq_singularHomologyMap_fiberTransport`: for a fibration
   with a lifting function, transport on homology is induced by the transport map.
 
@@ -327,8 +327,8 @@ instance isIso_fiberHomologyTransport (γ : Path b₀ b₁) :
 /-- **Transport along the image of a path in a contractible space.** For `g : K ⟶ B` with `K`
 contractible and a path `ε` from `k₀` to `k₁` in `K`, transport along the image of `ε` under `g` is
 transport over `K` from `k₀` to `k₁`. -/
-theorem fiberHomologyTransport_map {K : TopCat.{u}} [ContractibleSpace K] (g : K ⟶ B)
-    {k₀ k₁ : K} (ε : Path k₀ k₁) :
+theorem fiberHomologyTransport_map_eq_pullbackFiberTransport {K : TopCat.{u}}
+    [ContractibleSpace K] (g : K ⟶ B) {k₀ k₁ : K} (ε : Path k₀ k₁) :
     fiberHomologyTransport hp M n (ε.map g.hom.continuous) =
       pullbackFiberTransport hp M n g (rfl : g k₀ = g k₀) (rfl : g k₁ = g k₁) := by
   rw [fiberHomologyTransport_eq_pullbackFiberTransport]
