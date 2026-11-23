@@ -105,7 +105,6 @@ public section
 
 open scoped BigOperators
 open _root_.MultilinearMap
-open TauCeti.MultilinearMap
 
 universe uR uA
 
