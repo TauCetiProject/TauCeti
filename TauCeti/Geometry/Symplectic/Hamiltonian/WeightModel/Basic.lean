@@ -104,6 +104,7 @@ torus.
 * `TauCeti.continuous_weightMomentMap`, `TauCeti.contDiff_weightMomentMap`,
   `TauCeti.weightMomentMap_weightRotation`, `TauCeti.weightMomentMap_torusRotation`: `μ` is
   continuous, smooth and invariant under every rotation.
+* `TauCeti.contDiff_weightMomentMap_apply`: the components `μ^ξ` of `μ` are smooth.
 * `TauCeti.hamiltonianVectorField_weightMomentMap`: the Hamiltonian vector field of `μ^ξ` is the
   generator for the angles `α_i(ξ)`.
 * `TauCeti.fderiv_weightMomentMap_apply_eq_zero_iff`: the critical points of `μ^ξ` are the zeros
@@ -402,6 +403,12 @@ theorem hasFDerivAt_weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱) (ξ 
   refine ((ContinuousLinearMap.apply ℝ ℝ ξ).hasFDerivAt.comp x
     (hasFDerivAt_weightMomentMap α x)).congr_fderiv ?_
   ext v <;> simp [PiLp.inner_apply, mul_comm, mul_assoc]
+
+/-- The component `μ^ξ = ⟨μ, ξ⟩` of the moment map of the weight model is smooth. -/
+@[fun_prop]
+theorem contDiff_weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱) (ξ : 𝔱) {n : WithTop ℕ∞} :
+    ContDiff ℝ n fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ weightMomentMap α x ξ :=
+  (ContinuousLinearMap.apply ℝ ℝ ξ).contDiff.comp (contDiff_weightMomentMap α)
 
 /-- **The weight model is Hamiltonian.** The Hamiltonian vector field of the component
 `μ^ξ = ⟨μ, ξ⟩` of the moment map is the generator of the rotation by the angles `α_i(ξ)`. -/
