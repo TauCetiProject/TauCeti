@@ -296,16 +296,11 @@ theorem exists_isDarbouxBasis_eq_sum_smul_ellipticHyperbolic {P : QuadraticForm 
     simp only [hμ, Finset.mem_image, Finset.mem_univ, true_and]
     exact ⟨by rintro ⟨k, rfl⟩; exact (e k).property, fun hν ↦ ⟨e.symm ⟨ν, hν⟩, by simp⟩⟩
   -- `A_P` and the Hamiltonian endomorphism of `∑ₖ cₖ Bₖ` agree on the basis.
-  refine ω.hamiltonianEnd_injective (b.ext fun ⟨k, j⟩ ↦ ?_)
-  obtain rfl | rfl : j = 0 ∨ j = 1 := by omega
-  · rw [hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_fst, hbq, hbp]
-    by_cases hk : k ∈ t
-    · simpa [hk] using (hell (e k) ((hmemt k).1 hk)).2.1
-    · simpa [hk] using (hhyp (e k) (hnotmemt hk)).2.1
-  · rw [hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd, hbq, hbp]
-    by_cases hk : k ∈ t
-    · simpa [hk] using (hell (e k) ((hmemt k).1 hk)).2.2
-    · simpa [hk] using (hhyp (e k) (hnotmemt hk)).2.2
+  refine hb.eq_sum_smul_ellipticHyperbolic_of_hamiltonianEnd_apply t fun k ↦ ?_
+  rw [hbq, hbp]
+  by_cases hk : k ∈ t
+  · simpa [hk] using (hell (e k) ((hmemt k).1 hk)).2
+  · simpa [hk] using (hhyp (e k) (hnotmemt hk)).2
 
 namespace IsNondegenerateQuadraticFamily
 

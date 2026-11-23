@@ -54,7 +54,8 @@ Conversely the form `∑ₖ (k + 1) xₖ yₖ` has the `2n` distinct eigenvalues
 Equivalently, the split Cartan subalgebras are those all of whose elements have real spectra:
 a nondegenerate family whose members `A_{Q i}` have real spectra (their generalized eigenspaces
 span `V`) spans the hyperbolic blocks of a Darboux basis
-(`IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_hyperbolic_of_iSup_maxGenEigenspace_eq_top`).
+(`exists_isDarbouxBasis_span_eq_span_hyperbolic_of_iSup_maxGenEigenspace_eq_top` in the namespace
+`IsNondegenerateQuadraticFamily`).
 Here the members are semisimple and commute, so the simultaneous hyperbolic normal form
 `TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_smul_of_skewAdjoint` writes every
 `Q i` as `∑ₖ c i k Hₖ` in a common Darboux basis, without choosing a regular element. This
@@ -72,9 +73,9 @@ All declarations are in the namespace `TauCeti.SymplecticForm`.
   family whose span contains such a form spans the hyperbolic blocks of a Darboux basis.
 * `IsNondegenerateQuadraticFamily.exists_mem_span_card_eq_finrank_iff`: this characterizes the
   nondegenerate families of purely hyperbolic type.
-* `IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_hyperbolic_of_iSup_maxGenEigenspace_eq_top`:
-  a nondegenerate family whose members have real spectra spans the hyperbolic blocks of a Darboux
-  basis.
+* `exists_isDarbouxBasis_span_eq_span_hyperbolic_of_iSup_maxGenEigenspace_eq_top`, in the namespace
+  `IsNondegenerateQuadraticFamily`: a nondegenerate family whose members have real spectra spans
+  the hyperbolic blocks of a Darboux basis.
 * `exists_isDarbouxBasis_span_eq_span_hyperbolic_iff`: a family spans the hyperbolic blocks of some
   Darboux basis exactly when it is nondegenerate and its members have real spectra.
 
@@ -242,11 +243,9 @@ theorem exists_isDarbouxBasis_eq_sum_smul_hyperbolic {P : QuadraticForm ℝ V} {
     ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (a : Fin n → ℝ), ω.IsDarbouxBasis b ∧
       StrictMono a ∧ (∀ k, 0 < a k) ∧ P = ∑ k, a k • hyperbolic b k := by
   obtain ⟨n, b, a, hb, ha, ha0, hA⟩ := ω.exists_isDarbouxBasis_hamiltonianEnd_apply_eq hs hP
-  refine ⟨n, b, a, hb, ha, ha0, ω.hamiltonianEnd_injective (b.ext ?_)⟩
-  rintro ⟨k, i⟩
-  obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
-  · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_fst, (hA k).1]
-  · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_snd, (hA k).2]
+  refine ⟨n, b, a, hb, ha, ha0, ?_⟩
+  rw [hb.eq_sum_smul_ellipticHyperbolic_of_hamiltonianEnd_apply ∅ (R := P) (c := a)
+    (by simpa using hA), ellipticHyperbolic_empty]
 
 namespace IsNondegenerateQuadraticFamily
 

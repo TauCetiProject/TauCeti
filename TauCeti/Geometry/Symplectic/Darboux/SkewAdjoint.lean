@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Darboux.Basis
 
 import Mathlib.LinearAlgebra.Eigenspace.Pi
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.SesquilinearForm.AdjointPair
 
 /-!
 # Simultaneous hyperbolic normal form in `sp(V, ω)`
@@ -67,8 +68,6 @@ theorem exists_isDarbouxBasis_forall_apply_eq_smul_of_skewAdjoint [FiniteDimensi
     (hsplit : ∀ i, ⨆ μ, (f i).maxGenEigenspace μ = ⊤) :
     ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (c : ι → Fin n → ℝ), ω.IsDarbouxBasis b ∧
       ∀ i k, f i (b (k, 0)) = c i k • b (k, 0) ∧ f i (b (k, 1)) = -c i k • b (k, 1) := by
-  have hf' (i : ι) (v w : V) : ω (f i v) w = -ω v (f i w) := by
-    simpa using (LinearMap.mem_skewAdjointSubmodule _).1 (hf i) v w
   have hmem {χ : ι → ℝ} {v : V} (hv : v ∈ ⨅ i, (f i).eigenspace (χ i)) (i : ι) :
       f i v = χ i • v :=
     Module.End.mem_eigenspace_iff.1 ((Submodule.mem_iInf _).1 hv i)
@@ -81,15 +80,10 @@ theorem exists_isDarbouxBasis_forall_apply_eq_smul_of_skewAdjoint [FiniteDimensi
         hcomm hsplit
   -- `ω` pairs the joint eigenspaces for `χ` and `ψ` trivially unless `ψ = -χ`.
   have horth {χ ψ : ι → ℝ} {v w : V} (hv : v ∈ ⨅ i, (f i).eigenspace (χ i))
-      (hw : w ∈ ⨅ i, (f i).eigenspace (ψ i)) (hvw : ω v w ≠ 0) : ψ = -χ := by
-    funext i
-    have h := hf' i v w
-    beta_reduce at h hvw
-    rw [hmem hv i, hmem hw i, map_smul, LinearMap.smul_apply, map_smul, smul_eq_mul,
-      smul_eq_mul] at h
-    have h' : (χ i + ψ i) * ω.toBilinForm v w = 0 := by linear_combination h
-    rw [Pi.neg_apply]
-    linear_combination (mul_eq_zero.1 h').resolve_right hvw
+      (hw : w ∈ ⨅ i, (f i).eigenspace (ψ i)) (hvw : ω v w ≠ 0) : ψ = -χ :=
+    funext fun i ↦ eq_neg_of_add_eq_zero_right <| by_contra fun h ↦ hvw <|
+      ((LinearMap.mem_skewAdjointSubmodule _).1 (hf i)).apply_eq_zero_of_mem_genEigenspace
+        (isUnit_iff_ne_zero.2 h) ((Submodule.mem_iInf _).1 hv i) ((Submodule.mem_iInf _).1 hw i)
   -- A Darboux basis of joint eigenvectors, with opposite eigenvalues on each pair.
   obtain ⟨m, d, hd, hdW⟩ := ω.isAlt.exists_basis_toMatrix_eq_J_of_iSup_eq_top ω.nondegenerate
     (σ := Neg.neg) neg_involutive hspan
