@@ -16,12 +16,13 @@ Let `M` be a manifold modelled on the half-space `𝓡∂ (n + 1)`. A **boundary
 on an open set `U ⊆ M` (`TauCeti.IsBoundaryDefiningFunctionOn`) is a function `ρ : M → ℝ`,
 smooth on `U`, positive at the interior points of `U`, zero at the boundary points of `U`, with
 nonzero differential at the boundary points of `U`. The normal coordinate `x⁰` of a chart of the
-maximal atlas is one on the chart source (`TauCeti.isBoundaryDefiningFunctionOn_normal`), so
-boundary defining functions exist locally. A smooth partition of unity `φ` subordinate to the
-domains of boundary defining functions `ρ i` glues them into the global boundary defining function
-`∑ᶠ i, φ i • ρ i` (`TauCeti.isBoundaryDefiningFunctionOn_finsum_smul`): at a boundary point `q`
-the glued differential is `∑ φ_i(q) dρ_i`, a convex combination of forms that are positive on the
-inward vectors. A Hausdorff σ-compact smooth manifold has such partitions of unity, hence a global
+smooth maximal atlas is a boundary defining function on the chart source
+(`TauCeti.isBoundaryDefiningFunctionOn_normal`), so boundary defining functions exist locally.
+A smooth partition of unity `φ` subordinate to the domains of boundary defining functions `ρ i`
+glues them into the global boundary defining function `∑ᶠ i, φ i • ρ i`
+(`TauCeti.isBoundaryDefiningFunctionOn_finsum_smul`): at a boundary point `q` the glued
+differential is `∑ φ_i(q) dρ_i`, a convex combination of forms that are positive on the inward
+vectors. A Hausdorff σ-compact smooth manifold has such partitions of unity, hence a global
 boundary defining function (`TauCeti.exists_isBoundaryDefiningFunctionOn_univ`).
 
 A boundary defining function has a local minimum at each boundary point of its domain, so by
