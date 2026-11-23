@@ -210,7 +210,7 @@ theorem cauchyJump_C_mul_left (c : R) (p q : R[X]) (a : R) :
   · simp [hp]
   rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_mul (mul_ne_zero (C_ne_zero.2 hc) hp),
     rootMultiplicity_C, zero_add, mul_assoc]
-  split_ifs <;> simp [derivSignRight_eq_signRight]
+  split_ifs <;> simp [signRight_C_mul]
 
 /-- Scaling the denominator by a constant `c` multiplies the Cauchy index on any set by
 the sign of `c`. -/
@@ -228,7 +228,7 @@ theorem cauchyJump_C_mul_right (c : R) (p q : R[X]) (a : R) :
   · simp [hq]
   rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_mul (mul_ne_zero (C_ne_zero.2 hc) hq),
     rootMultiplicity_C, zero_add, mul_left_comm]
-  split_ifs <;> simp [derivSignRight_eq_signRight]
+  split_ifs <;> simp [signRight_C_mul]
 
 /-- Scaling the numerator by a constant `c` multiplies the Cauchy index on any set by
 the sign of `c`. -/
@@ -320,9 +320,8 @@ theorem cauchyJump_mul_right (p q : R[X]) {r : R[X]} (hr : r ≠ 0) (a : R) :
   · simp [hq]
   have hs : signRight a (p * r * (q * r)) = signRight a (p * q) := by
     rw [mul_mul_mul_comm, signRight_mul, signRight_mul_self hr, mul_one]
-  simp only [cauchyJump_def, rootMultiplicity_mul (mul_ne_zero hp hr),
-    rootMultiplicity_mul (mul_ne_zero hq hr), Nat.add_sub_add_right, Nat.add_lt_add_iff_right,
-    derivSignRight_eq_signRight, hs]
+  simp [cauchyJump_def, rootMultiplicity_mul (mul_ne_zero hp hr),
+    rootMultiplicity_mul (mul_ne_zero hq hr), Nat.add_sub_add_right, hs]
 
 /-- Cancelling a common nonzero factor of `p` and `q` does not change the index of `q / p`. -/
 theorem cauchyIndex_mul_right (p q : R[X]) {r : R[X]} (hr : r ≠ 0) (s : Set R) :
@@ -420,8 +419,8 @@ theorem cauchyJump_derivative_mul {p : R[X]} (hp : p ≠ 0) (q : R[X]) {a : R}
   rw [cauchyJump_def, rootMultiplicity_mul (mul_ne_zero hd hq0),
     derivative_rootMultiplicity_of_root ha, rootMultiplicity_eq_zero hq, add_zero]
   simp only [hpole, and_self, ite_true]
-  rw [derivSignRight_eq_signRight, ← mul_assoc, signRight_mul, mul_comm p (derivative p),
-    signRight_derivative_mul hp ha, one_mul, signRight_of_eval_ne_zero hq]
+  simp [← mul_assoc, signRight_mul, mul_comm p (derivative p),
+    signRight_derivative_mul hp ha, signRight_of_eval_ne_zero hq]
 
 /-- The index of `p' * q / p` on `s` is the sum of the signs of `q` at the distinct roots of
 `p` in `s`. -/
