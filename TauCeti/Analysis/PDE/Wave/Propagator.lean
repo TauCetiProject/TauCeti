@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.Wave.HalfWave
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
+import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
@@ -58,7 +60,13 @@ identity and Duhamel's formula.
   their Fourier-side description, their values at `t = 0` and their norm bounds. Both commute with
   every `L²` Fourier multiplier (`TauCeti.fourierMultiplierCLM_waveCosPropagator_apply`,
   `TauCeti.fourierMultiplierCLM_waveSinPropagator_apply`).
-* `TauCeti.waveCosPropagator_eq_halfWavePropagator`: `cos(tD) = (W₊(t) + W₋(t)) / 2`.
+* `TauCeti.isSelfAdjoint_waveCosPropagator`, `TauCeti.isSelfAdjoint_waveSinPropagator`: both
+  operators are self-adjoint, since their symbols are real.
+* `TauCeti.waveSinPropagator_sub`, `TauCeti.waveCosPropagator_sub_apply`: the subtraction
+  formulas `D⁻¹ sin((t - s)D) = D⁻¹ sin(tD) cos(sD) - cos(tD) D⁻¹ sin(sD)` and, on the domain of
+  the Laplacian, `cos((t - s)D) φ = cos(sD) cos(tD) φ - D⁻¹ sin(sD) D⁻¹ sin(tD) Δφ`.
+* `TauCeti.waveCosPropagator_eq_halfWavePropagator`: `cos(tD) = (W₊(t) + W₋(t)) / 2`, so
+  `(t, f) ↦ cos(tD) f` is jointly continuous (`TauCeti.continuous_waveCosPropagator_uncurry`).
 * `TauCeti.norm_waveSinPropagator_sub_le`: `t ↦ D⁻¹ sin(tD)` is `1`-Lipschitz in operator norm,
   and `TauCeti.continuous_waveSinPropagator_uncurry`: `(t, g) ↦ D⁻¹ sin(tD) g` is jointly
   continuous. Hence retarded Duhamel integrals are measurable in time
@@ -78,7 +86,7 @@ public section
 
 noncomputable section
 
-open scoped FourierTransform Laplacian SchwartzMap Topology ENNReal
+open scoped FourierTransform Laplacian SchwartzMap Topology ENNReal ComplexInnerProductSpace
 open MeasureTheory Filter Real
 
 namespace TauCeti
@@ -227,6 +235,27 @@ theorem waveCosSymbol_eq_phaseSymbol (t : ℝ) (ξ : E) :
   push_cast
   ring_nf
 
+/-- The subtraction formula `(t - s) sinc ((t - s) a) = t sinc (t a) cos (s a) -
+cos (t a) s sinc (s a)` for the symbol of `D⁻¹ sin(tD)`, `a = 2π ‖ξ‖`. For `a ≠ 0` it reads
+`sin((t - s) a) / a = sin(t a) cos(s a) / a - cos(t a) sin(s a) / a`. -/
+theorem waveSinSymbol_sub (s t : ℝ) (ξ : E) :
+    waveSinSymbol (t - s) ξ =
+      waveSinSymbol t ξ * waveCosSymbol s ξ - waveCosSymbol t ξ * waveSinSymbol s ξ := by
+  simp only [waveSinSymbol_apply, waveCosSymbol_apply]
+  exact_mod_cast congrArg Complex.ofReal (Real.sub_mul_sinc_sub_mul (sqrtNegLaplacianSymbol ξ) s t)
+
+/-- The subtraction formula `cos((t - s) a) = cos(s a) cos(t a) + a² s sinc (s a) t sinc (t a)`
+for the symbol of `cos(tD)`, `a = 2π ‖ξ‖`, with `-a²` the symbol of the Laplacian. -/
+theorem waveCosSymbol_sub (s t : ℝ) (ξ : E) :
+    waveCosSymbol (t - s) ξ = waveCosSymbol s ξ * waveCosSymbol t ξ -
+      waveSinSymbol s ξ * waveSinSymbol t ξ * (laplacianSymbol ξ : ℂ) := by
+  have hl : laplacianSymbol ξ = -sqrtNegLaplacianSymbol ξ ^ 2 := by
+    rw [sq_sqrtNegLaplacianSymbol, neg_neg]
+  simp only [waveSinSymbol_apply, waveCosSymbol_apply, hl,
+    Real.cos_sub_mul (sqrtNegLaplacianSymbol ξ) s t]
+  push_cast
+  ring
+
 end Symbol
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -290,6 +319,73 @@ theorem fourierMultiplierCLM_waveSinPropagator_apply (t : ℝ) (m : Lp ℂ ∞ (
       waveSinPropagator F t (Lp.fourierMultiplierCLM F m f) :=
   Lp.fourierMultiplierCLM_fourierMultiplierCLM_comm _ _ f
 
+/-- `cos(tD)` is self-adjoint. -/
+theorem isSelfAdjoint_waveCosPropagator (t : ℝ) :
+    IsSelfAdjoint (waveCosPropagator (E := E) F t) :=
+  Lp.isSelfAdjoint_fourierMultiplierCLM
+    (Lp.star_eq_self_of_ae_eq_ofReal (memLp_waveCosSymbol t).coeFn_toLp)
+
+/-- `D⁻¹ sin(tD)` is self-adjoint. -/
+theorem isSelfAdjoint_waveSinPropagator (t : ℝ) :
+    IsSelfAdjoint (waveSinPropagator (E := E) F t) :=
+  Lp.isSelfAdjoint_fourierMultiplierCLM (Lp.star_eq_self_of_ae_eq_ofReal
+    ((memLp_waveSinSymbol t).coeFn_toLp.trans
+      (.of_forall fun _ ↦ (Complex.ofReal_mul _ _).symm)))
+
+/-- `cos(tD)` moves across the `L²` inner product. -/
+theorem inner_waveCosPropagator_apply (t : ℝ) (f g : Lp F 2 (volume : Measure E)) :
+    ⟪waveCosPropagator F t f, g⟫ = ⟪f, waveCosPropagator F t g⟫ := by
+  rw [← ContinuousLinearMap.adjoint_inner_right, (isSelfAdjoint_waveCosPropagator t).adjoint_eq]
+
+/-- `D⁻¹ sin(tD)` moves across the `L²` inner product. -/
+theorem inner_waveSinPropagator_apply (t : ℝ) (f g : Lp F 2 (volume : Measure E)) :
+    ⟪waveSinPropagator F t f, g⟫ = ⟪f, waveSinPropagator F t g⟫ := by
+  rw [← ContinuousLinearMap.adjoint_inner_right, (isSelfAdjoint_waveSinPropagator t).adjoint_eq]
+
+/-- **The subtraction formula**
+`D⁻¹ sin((t - s)D) = D⁻¹ sin(tD) cos(sD) - cos(tD) D⁻¹ sin(sD)`. -/
+theorem waveSinPropagator_sub (s t : ℝ) :
+    waveSinPropagator (E := E) F (t - s) =
+      waveSinPropagator F t ∘L waveCosPropagator F s -
+        waveCosPropagator F t ∘L waveSinPropagator F s := by
+  rw [waveSinPropagator_def, waveSinPropagator_def, waveSinPropagator_def, waveCosPropagator_def,
+    waveCosPropagator_def, Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM,
+    Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM, ← Lp.fourierMultiplierCLM_sub]
+  congr 1
+  have hS (τ : ℝ) := (memLp_waveSinSymbol (E := E) τ).coeFn_toLp
+  have hC (τ : ℝ) := (memLp_waveCosSymbol (E := E) τ).coeFn_toLp
+  refine Lp.ext ((hS (t - s)).trans (EventuallyEq.trans ?_ (Lp.coeFn_sub _ _).symm))
+  filter_upwards [hS t, hC s, hC t, hS s,
+    Lp.coeFn_lpSMul (r := ∞) ((memLp_waveSinSymbol (E := E) t).toLp _)
+      ((memLp_waveCosSymbol (E := E) s).toLp _),
+    Lp.coeFn_lpSMul (r := ∞) ((memLp_waveCosSymbol (E := E) t).toLp _)
+      ((memLp_waveSinSymbol (E := E) s).toLp _)] with ξ h₁ h₂ h₃ h₄ h₅ h₆
+  rw [Pi.sub_apply, h₅, h₆, Pi.smul_apply', Pi.smul_apply', h₁, h₂, h₃, h₄, waveSinSymbol_sub,
+    smul_eq_mul, smul_eq_mul]
+
+/-- **The subtraction formula for `cos(tD)`**, on the domain of the Laplacian: if the
+distributional Laplacian of `φ ∈ L²` is the `L²` function `ψ`, then
+`cos((t - s)D) φ = cos(sD) cos(tD) φ - D⁻¹ sin(sD) D⁻¹ sin(tD) ψ`. -/
+theorem waveCosPropagator_sub_apply {φ ψ : Lp F 2 (volume : Measure E)}
+    (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F))) (s t : ℝ) :
+    waveCosPropagator F (t - s) φ =
+      waveCosPropagator F s (waveCosPropagator F t φ) -
+        waveSinPropagator F s (waveSinPropagator F t ψ) := by
+  refine (Lp.fourierTransformₗᵢ E F).injective (Lp.ext ?_)
+  change ((𝓕 (waveCosPropagator F (t - s) φ) : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
+    (𝓕 (waveCosPropagator F s (waveCosPropagator F t φ) -
+      waveSinPropagator F s (waveSinPropagator F t ψ)) : Lp F 2 (volume : Measure E))
+  rw [FourierTransform.fourier_sub]
+  filter_upwards [coeFn_fourier_waveCosPropagator (t - s) φ,
+    coeFn_fourier_waveCosPropagator s (waveCosPropagator F t φ),
+    coeFn_fourier_waveCosPropagator t φ,
+    coeFn_fourier_waveSinPropagator s (waveSinPropagator F t ψ),
+    coeFn_fourier_waveSinPropagator t ψ, (Lp.laplacian_toTemperedDistribution_eq_iff φ ψ).1 hφψ,
+    Lp.coeFn_sub (𝓕 (waveCosPropagator F s (waveCosPropagator F t φ)))
+      (𝓕 (waveSinPropagator F s (waveSinPropagator F t ψ)))] with ξ h₁ h₂ h₃ h₄ h₅ h₆ h₇
+  rw [h₁, h₇, Pi.sub_apply, h₂, h₃, h₄, h₅, h₆, waveCosSymbol_sub]
+  module
+
 /-- `cos(0D)` is the identity. -/
 @[simp]
 theorem waveCosPropagator_zero :
@@ -350,6 +446,26 @@ theorem waveCosPropagator_eq_halfWavePropagator (t : ℝ) :
     ← MemLp.toLp_const_smul, waveCosPropagator_def]
   congr 1
   exact MemLp.toLp_congr _ _ (.of_forall fun ξ ↦ waveCosSymbol_eq_phaseSymbol t ξ)
+
+/-- `(t, f) ↦ cos(tD) f` is jointly continuous. -/
+theorem continuous_waveCosPropagator_uncurry :
+    Continuous fun p : ℝ × Lp F 2 (volume : Measure E) ↦ waveCosPropagator F p.1 p.2 := by
+  simp only [waveCosPropagator_eq_halfWavePropagator, _root_.smul_apply, _root_.add_apply,
+    halfWavePropagator_def]
+  exact ((continuous_phasePropagator_uncurry _).add ((continuous_phasePropagator_uncurry _).comp
+    ((continuous_neg.comp continuous_fst).prodMk continuous_snd))).const_smul (2⁻¹ : ℂ)
+
+/-- For a continuous `G : ℝ → L²`, the map `t ↦ cos(tD) G(t)` is continuous. -/
+theorem _root_.Continuous.waveCosPropagator_apply {G : ℝ → Lp F 2 (volume : Measure E)}
+    (hG : Continuous G) :
+    Continuous fun t ↦ waveCosPropagator F t (G t) :=
+  continuous_waveCosPropagator_uncurry.comp (continuous_id.prodMk hG)
+
+/-- For a continuous `G : ℝ → L²`, the map `t ↦ D⁻¹ sin(tD) G(t)` is continuous. -/
+theorem _root_.Continuous.waveSinPropagator_apply {G : ℝ → Lp F 2 (volume : Measure E)}
+    (hG : Continuous G) :
+    Continuous fun t ↦ waveSinPropagator F t (G t) :=
+  continuous_waveSinPropagator_uncurry.comp (continuous_id.prodMk hG)
 
 /-- `t ↦ cos(tD) f` is continuous for every `f ∈ L²`. -/
 theorem continuous_waveCosPropagator_apply (f : Lp F 2 (volume : Measure E)) :

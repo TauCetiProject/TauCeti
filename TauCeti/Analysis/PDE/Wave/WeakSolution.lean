@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.PDE.Wave.Propagator
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 
 /-!
 # Weak solutions of the forced wave equation on `L²`
@@ -25,13 +24,15 @@ is solved by Duhamel's formula
 `u(t) = cos (tD) f + D⁻¹ sin (tD) g + ∫₀ᵗ D⁻¹ sin ((t - s)D) G(s) ds`
 
 in terms of the propagators `cos (tD)` (`TauCeti.waveCosPropagator`) and `D⁻¹ sin (tD)`
-(`TauCeti.waveSinPropagator`). Every strong solution is given by this formula
+(`TauCeti.waveSinPropagator`). A strong solution on an order-connected set of times containing
+`0` and `t`, whose forcing is integrable between `0` and `t`, is given at time `t` by this formula
 (`TauCeti.IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral`). Conversely,
-this file shows that the
-formula `TauCeti.waveDuhamelSolution f g G` solves the forced problem for all data `f, g ∈ L²` and
-every continuous forcing `G : ℝ → L²`, in the weak sense.
+this file shows that the formula `TauCeti.waveDuhamelSolution f g G` solves the forced problem
+for all data `f, g ∈ L²` and every continuous forcing `G : ℝ → L²`, in the weak sense.
 
-The solution starts from `f` (`TauCeti.waveDuhamelSolution_zero`), it is bounded by
+The solution starts from `f` (`TauCeti.waveDuhamelSolution_zero`), it is continuous in time
+(`TauCeti.continuous_waveDuhamelSolution`), linear in the data and the forcing
+(`TauCeti.waveDuhamelSolution_add`, `TauCeti.waveDuhamelSolution_smul`), it is bounded by
 `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t - s| ‖G(s)‖ ds|` (`TauCeti.norm_waveDuhamelSolution_le`), and
 for every `φ ∈ L²` whose distributional Laplacian `ψ = Δφ` lies in `L²`, the scalar function
 `t ↦ ⟪φ, u(t)⟫` is twice differentiable, with
@@ -49,15 +50,16 @@ with `ψ = Δφ`, so `u` solves the wave equation in the sense of distributions 
 The Duhamel term is differentiated through the subtraction formula
 `D⁻¹ sin ((t - s)D) = D⁻¹ sin (tD) cos (sD) - cos (tD) D⁻¹ sin (sD)`
 (`TauCeti.waveSinPropagator_sub`), which splits it into bounded operators of `t` applied to
-integrals from `0` to `t`. The propagators are self-adjoint, so they can be moved onto the test
-function `φ`, where the time derivatives of `TauCeti.Analysis.PDE.Wave.Propagator` apply.
+integrals from `0` to `t`. The propagators are self-adjoint
+(`TauCeti.isSelfAdjoint_waveCosPropagator`, `TauCeti.isSelfAdjoint_waveSinPropagator`), so they
+can be moved onto the test function `φ`, where the time derivatives of
+`TauCeti.Analysis.PDE.Wave.Propagator` apply.
 
 ## Main declarations
 
-* `TauCeti.isSelfAdjoint_waveCosPropagator`, `TauCeti.isSelfAdjoint_waveSinPropagator`:
-  self-adjointness of the propagators.
-* `TauCeti.waveSinPropagator_sub`, `TauCeti.waveCosPropagator_sub_apply`: the subtraction formulas.
-* `TauCeti.waveDuhamelSolution`: the solution formula, and
+* `TauCeti.waveDuhamelSolution`: the solution formula, with
+  `TauCeti.continuous_waveDuhamelSolution`, `TauCeti.waveDuhamelSolution_add` and
+  `TauCeti.waveDuhamelSolution_smul`; and
   `TauCeti.hasDerivAt_inner_waveDuhamelSolution`,
   `TauCeti.hasDerivAt_deriv_inner_waveDuhamelSolution`: the weak wave equation.
 
@@ -79,174 +81,19 @@ open MeasureTheory Filter Real FourierTransform
 
 namespace TauCeti
 
-/-- The subtraction formula for `t ↦ t sinc (t a)`, which is `sin (t a) / a` for `a ≠ 0`. -/
-private theorem sub_mul_sinc_sub_mul (a s t : ℝ) :
-    (t - s) * sinc ((t - s) * a) =
-      t * sinc (t * a) * cos (s * a) - cos (t * a) * (s * sinc (s * a)) := by
-  rcases eq_or_ne a 0 with rfl | h
-  · simp
-  · rw [mul_comm (t - s) a, mul_comm t a, mul_comm s a, mul_sinc_mul_of_ne_zero h,
-      mul_sinc_mul_of_ne_zero h, mul_sinc_mul_of_ne_zero h, mul_sub, sin_sub]
-    ring
-
-/-- The subtraction formula for `cos (t a)`, in terms of `t ↦ t sinc (t a)`. -/
-private theorem cos_sub_mul (a s t : ℝ) :
-    cos ((t - s) * a) =
-      cos (s * a) * cos (t * a) + s * sinc (s * a) * (t * sinc (t * a)) * a ^ 2 := by
-  rcases eq_or_ne a 0 with rfl | h
-  · simp
-  · rw [mul_comm (t - s) a, mul_comm t a, mul_comm s a, mul_sinc_mul_of_ne_zero h,
-      mul_sinc_mul_of_ne_zero h, mul_sub, cos_sub]
-    field_simp
-
-section Symbol
-
-variable {E : Type*} [NormedAddCommGroup E]
-
-theorem star_waveCosSymbol (t : ℝ) (ξ : E) : star (waveCosSymbol t ξ) = waveCosSymbol t ξ := by
-  rw [waveCosSymbol_apply]
-  exact Complex.conj_ofReal _
-
-theorem star_waveSinSymbol (t : ℝ) (ξ : E) : star (waveSinSymbol t ξ) = waveSinSymbol t ξ := by
-  rw [waveSinSymbol_apply, ← Complex.ofReal_mul]
-  exact Complex.conj_ofReal _
-
-/-- The subtraction formula
-`sin ((t - s) a) / a = sin (t a) cos (s a) / a - cos (t a) sin (s a) / a` for the symbol of
-`D⁻¹ sin (tD)`, `a = 2π ‖ξ‖`. -/
-theorem waveSinSymbol_sub (s t : ℝ) (ξ : E) :
-    waveSinSymbol (t - s) ξ =
-      waveSinSymbol t ξ * waveCosSymbol s ξ - waveCosSymbol t ξ * waveSinSymbol s ξ := by
-  simp only [waveSinSymbol_apply, waveCosSymbol_apply]
-  exact_mod_cast congrArg Complex.ofReal (sub_mul_sinc_sub_mul (sqrtNegLaplacianSymbol ξ) s t)
-
-/-- The subtraction formula `cos ((t - s) a) = cos (s a) cos (t a) + a² (sin (s a) / a)
-(sin (t a) / a)` for the symbol of `cos (tD)`, with `-a²` the symbol of the Laplacian. -/
-theorem waveCosSymbol_sub (s t : ℝ) (ξ : E) :
-    waveCosSymbol (t - s) ξ = waveCosSymbol s ξ * waveCosSymbol t ξ -
-      waveSinSymbol s ξ * waveSinSymbol t ξ * (laplacianSymbol ξ : ℂ) := by
-  have hl : laplacianSymbol ξ = -sqrtNegLaplacianSymbol ξ ^ 2 := by
-    rw [sq_sqrtNegLaplacianSymbol, neg_neg]
-  simp only [waveSinSymbol_apply, waveCosSymbol_apply, hl,
-    cos_sub_mul (sqrtNegLaplacianSymbol ξ) s t]
-  push_cast
-  ring
-
-end Symbol
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
-/-- Two elements of `L²` with almost everywhere equal Fourier transforms are equal. -/
-private theorem eq_of_fourier_ae_eq {x y : Lp F 2 (volume : Measure E)}
-    (h : ((𝓕 x : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
-      (𝓕 y : Lp F 2 (volume : Measure E))) : x = y := by
-  simpa using congrArg 𝓕⁻ (Lp.ext h)
-
-/-- `cos (tD)` is self-adjoint. -/
-theorem isSelfAdjoint_waveCosPropagator (t : ℝ) :
-    IsSelfAdjoint (waveCosPropagator (E := E) F t) := by
-  rw [waveCosPropagator_def]
-  refine Lp.isSelfAdjoint_fourierMultiplierCLM (Lp.ext ?_)
-  filter_upwards [Lp.coeFn_star ((memLp_waveCosSymbol (E := E) t).toLp _),
-    (memLp_waveCosSymbol t).coeFn_toLp] with ξ h₁ h₂
-  rw [h₁, Pi.star_apply, h₂, star_waveCosSymbol]
-
-/-- `D⁻¹ sin (tD)` is self-adjoint. -/
-theorem isSelfAdjoint_waveSinPropagator (t : ℝ) :
-    IsSelfAdjoint (waveSinPropagator (E := E) F t) := by
-  rw [waveSinPropagator_def]
-  refine Lp.isSelfAdjoint_fourierMultiplierCLM (Lp.ext ?_)
-  filter_upwards [Lp.coeFn_star ((memLp_waveSinSymbol (E := E) t).toLp _),
-    (memLp_waveSinSymbol t).coeFn_toLp] with ξ h₁ h₂
-  rw [h₁, Pi.star_apply, h₂, star_waveSinSymbol]
-
-/-- `cos (tD)` moves across the `L²` inner product. -/
-theorem inner_waveCosPropagator_apply (t : ℝ) (f g : Lp F 2 (volume : Measure E)) :
-    ⟪waveCosPropagator F t f, g⟫ = ⟪f, waveCosPropagator F t g⟫ := by
-  rw [← ContinuousLinearMap.adjoint_inner_right, (isSelfAdjoint_waveCosPropagator t).adjoint_eq]
-
-/-- `D⁻¹ sin (tD)` moves across the `L²` inner product. -/
-theorem inner_waveSinPropagator_apply (t : ℝ) (f g : Lp F 2 (volume : Measure E)) :
-    ⟪waveSinPropagator F t f, g⟫ = ⟪f, waveSinPropagator F t g⟫ := by
-  rw [← ContinuousLinearMap.adjoint_inner_right, (isSelfAdjoint_waveSinPropagator t).adjoint_eq]
-
-/-- `D⁻¹ sin (sD) cos (tD) = cos (tD) D⁻¹ sin (sD)`. -/
-theorem waveSinPropagator_apply_waveCosPropagator_apply (s t : ℝ)
-    (x : Lp F 2 (volume : Measure E)) :
-    waveSinPropagator F s (waveCosPropagator F t x) =
-      waveCosPropagator F t (waveSinPropagator F s x) := by
-  rw [waveSinPropagator_def]
-  exact fourierMultiplierCLM_waveCosPropagator_apply t _ x
-
-/-- **The subtraction formula**
-`D⁻¹ sin ((t - s)D) = D⁻¹ sin (tD) cos (sD) - cos (tD) D⁻¹ sin (sD)`. -/
-theorem waveSinPropagator_sub (s t : ℝ) :
-    waveSinPropagator (E := E) F (t - s) =
-      waveSinPropagator F t ∘L waveCosPropagator F s -
-        waveCosPropagator F t ∘L waveSinPropagator F s := by
-  ext1 f
-  refine eq_of_fourier_ae_eq ?_
-  simp only [sub_apply, ContinuousLinearMap.comp_apply,
-    FourierTransform.fourier_sub]
-  filter_upwards [coeFn_fourier_waveSinPropagator (t - s) f,
-    coeFn_fourier_waveSinPropagator t (waveCosPropagator F s f),
-    coeFn_fourier_waveCosPropagator s f,
-    coeFn_fourier_waveCosPropagator t (waveSinPropagator F s f),
-    coeFn_fourier_waveSinPropagator s f,
-    Lp.coeFn_sub (𝓕 (waveSinPropagator F t (waveCosPropagator F s f)))
-      (𝓕 (waveCosPropagator F t (waveSinPropagator F s f)))] with ξ h₁ h₂ h₃ h₄ h₅ h₆
-  rw [h₁, h₆, Pi.sub_apply, h₂, h₃, h₄, h₅, waveSinSymbol_sub]
-  module
-
-/-- **The subtraction formula for `cos (tD)`**, on the domain of the Laplacian: if the
-distributional Laplacian of `φ ∈ L²` is the `L²` function `ψ`, then
-`cos ((t - s)D) φ = cos (sD) cos (tD) φ - D⁻¹ sin (sD) D⁻¹ sin (tD) ψ`. -/
-theorem waveCosPropagator_sub_apply {φ ψ : Lp F 2 (volume : Measure E)}
-    (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F))) (s t : ℝ) :
-    waveCosPropagator F (t - s) φ =
-      waveCosPropagator F s (waveCosPropagator F t φ) -
-        waveSinPropagator F s (waveSinPropagator F t ψ) := by
-  refine eq_of_fourier_ae_eq ?_
-  rw [FourierTransform.fourier_sub]
-  filter_upwards [coeFn_fourier_waveCosPropagator (t - s) φ,
-    coeFn_fourier_waveCosPropagator s (waveCosPropagator F t φ),
-    coeFn_fourier_waveCosPropagator t φ,
-    coeFn_fourier_waveSinPropagator s (waveSinPropagator F t ψ),
-    coeFn_fourier_waveSinPropagator t ψ, (Lp.laplacian_toTemperedDistribution_eq_iff φ ψ).1 hφψ,
-    Lp.coeFn_sub (𝓕 (waveCosPropagator F s (waveCosPropagator F t φ)))
-      (𝓕 (waveSinPropagator F s (waveSinPropagator F t ψ)))] with ξ h₁ h₂ h₃ h₄ h₅ h₆ h₇
-  rw [h₁, h₇, Pi.sub_apply, h₂, h₃, h₄, h₅, h₆, waveCosSymbol_sub]
-  module
-
-/-- For a continuous `G : ℝ → L²`, the map `t ↦ cos (tD) G(t)` is continuous: the operators are
-strongly continuous and uniformly bounded. -/
-theorem _root_.Continuous.waveCosPropagator_apply {G : ℝ → Lp F 2 (volume : Measure E)}
-    (hG : Continuous G) :
-    Continuous fun t ↦ waveCosPropagator F t (G t) := by
-  refine continuous_iff_continuousAt.2 fun t ↦ ?_
-  have h₁ : Tendsto (fun s ↦ waveCosPropagator F s (G s) - waveCosPropagator F s (G t)) (𝓝 t)
-      (𝓝 0) := by
-    refine squeeze_zero_norm (fun s ↦ ?_) (by simpa using ((hG.tendsto t).sub_const (G t)).norm)
-    rw [← map_sub]
-    exact ((waveCosPropagator F s).le_opNorm _).trans
-      (mul_le_of_le_one_left (norm_nonneg _) (norm_waveCosPropagator_le s))
-  rw [ContinuousAt]
-  simpa using h₁.add ((continuous_waveCosPropagator_apply (G t)).tendsto t)
-
-/-- For a continuous `G : ℝ → L²`, the map `t ↦ D⁻¹ sin (tD) G(t)` is continuous. -/
-theorem _root_.Continuous.waveSinPropagator_apply {G : ℝ → Lp F 2 (volume : Measure E)}
-    (hG : Continuous G) :
-    Continuous fun t ↦ waveSinPropagator F t (G t) :=
-  continuous_waveSinPropagator_uncurry.comp (continuous_id.prodMk hG)
-
 /-! ### The solution formula -/
 
 variable (F) in
-/-- **Duhamel's formula** for the Cauchy problem of the wave equation `∂ₜ²u - Δu = G`,
-`u(0) = f`, `∂ₜu(0) = g` on `L²`:
-`u(t) = cos (tD) f + D⁻¹ sin (tD) g + ∫₀ᵗ D⁻¹ sin ((t - s)D) G(s) ds`. -/
+/-- **Duhamel's formula** `u(t) = cos (tD) f + D⁻¹ sin (tD) g + ∫₀ᵗ D⁻¹ sin ((t - s)D) G(s) ds`
+on `L²`, for data `f, g` and forcing `G`. The formula is defined for every `G`, the Bochner
+integral being `0` where it does not exist. For continuous `G` it is a weak solution of the
+Cauchy problem `∂ₜ²u - Δu = G`, `u(0) = f`, `∂ₜu(0) = g`
+(`TauCeti.hasDerivAt_deriv_inner_waveDuhamelSolution`,
+`TauCeti.hasDerivAt_inner_waveDuhamelSolution_zero`). -/
 def waveDuhamelSolution (f g : Lp F 2 (volume : Measure E))
     (G : ℝ → Lp F 2 (volume : Measure E)) (t : ℝ) : Lp F 2 (volume : Measure E) :=
   waveCosPropagator F t f + waveSinPropagator F t g +
@@ -263,6 +110,34 @@ theorem waveDuhamelSolution_def (f g : Lp F 2 (volume : Measure E))
 theorem waveDuhamelSolution_zero (f g : Lp F 2 (volume : Measure E))
     (G : ℝ → Lp F 2 (volume : Measure E)) : waveDuhamelSolution F f g G 0 = f := by
   simp [waveDuhamelSolution_def]
+
+/-- Without forcing, the solution is the free solution `cos (tD) f + D⁻¹ sin (tD) g`. -/
+@[simp]
+theorem waveDuhamelSolution_zero_forcing (f g : Lp F 2 (volume : Measure E)) (t : ℝ) :
+    waveDuhamelSolution F f g 0 t = waveCosPropagator F t f + waveSinPropagator F t g := by
+  simp [waveDuhamelSolution_def]
+
+/-- The solution is homogeneous in the data and the forcing. -/
+theorem waveDuhamelSolution_smul (c : ℂ) (f g : Lp F 2 (volume : Measure E))
+    (G : ℝ → Lp F 2 (volume : Measure E)) (t : ℝ) :
+    waveDuhamelSolution F (c • f) (c • g) (c • G) t = c • waveDuhamelSolution F f g G t := by
+  simp only [waveDuhamelSolution_def, map_smul, Pi.smul_apply, intervalIntegral.integral_smul,
+    smul_add]
+
+/-- **Superposition**: for continuous forcings, the solution is additive in the data and the
+forcing. -/
+theorem waveDuhamelSolution_add (f₁ f₂ g₁ g₂ : Lp F 2 (volume : Measure E))
+    {G₁ G₂ : ℝ → Lp F 2 (volume : Measure E)} (hG₁ : Continuous G₁) (hG₂ : Continuous G₂)
+    (t : ℝ) :
+    waveDuhamelSolution F (f₁ + f₂) (g₁ + g₂) (G₁ + G₂) t =
+      waveDuhamelSolution F f₁ g₁ G₁ t + waveDuhamelSolution F f₂ g₂ G₂ t := by
+  have hint {G : ℝ → Lp F 2 (volume : Measure E)} (hG : Continuous G) :
+      IntervalIntegrable (fun s ↦ waveSinPropagator F (t - s) (G s)) volume 0 t :=
+    (continuous_waveSinPropagator_uncurry.comp
+      ((continuous_const.sub continuous_id).prodMk hG)).intervalIntegrable 0 t
+  simp only [waveDuhamelSolution_def, map_add, Pi.add_apply,
+    intervalIntegral.integral_add (hint hG₁) (hint hG₂)]
+  abel
 
 /-- The **a priori bound** `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t - s| ‖G(s)‖ ds|`. -/
 theorem norm_waveDuhamelSolution_le (f g : Lp F 2 (volume : Measure E))
@@ -317,6 +192,18 @@ private theorem integral_waveSinPropagator_sub_apply (hG : Continuous G) (t : �
     (waveSinPropagator F t).intervalIntegral_comp_comm (hc₁.intervalIntegrable 0 t),
     (waveCosPropagator F t).intervalIntegral_comp_comm (hc₂.intervalIntegrable 0 t)]
 
+/-- For continuous forcing, the solution is continuous in time with values in `L²`. -/
+theorem continuous_waveDuhamelSolution (f g : Lp F 2 (volume : Measure E)) (hG : Continuous G) :
+    Continuous (waveDuhamelSolution F f g G) := by
+  have hcos : Continuous (duhamelCos G) :=
+    continuous_iff_continuousAt.2 fun t ↦ (hasDerivAt_duhamelCos hG t).continuousAt
+  have hsin : Continuous (duhamelSin G) :=
+    continuous_iff_continuousAt.2 fun t ↦ (hasDerivAt_duhamelSin hG t).continuousAt
+  rw [funext fun t ↦ (waveDuhamelSolution_def f g G t).trans
+    (by rw [integral_waveSinPropagator_sub_apply hG])]
+  exact ((continuous_waveCosPropagator_apply f).add (continuous_waveSinPropagator_apply g)).add
+    (hcos.waveSinPropagator_apply.sub hsin.waveCosPropagator_apply)
+
 variable {φ ψ : Lp F 2 (volume : Measure E)}
 
 /-- Against a test function `φ` with `Δφ = ψ`, the integral `∫₀ᵗ cos ((t - s)D) G(s) ds` splits as
@@ -344,8 +231,10 @@ private theorem inner_integral_waveCosPropagator_sub_apply
 /-- **The weak velocity of the solution of the wave equation.** For a test function `φ ∈ L²` with
 `Δφ = ψ ∈ L²`, the pairing `t ↦ ⟪φ, u(t)⟫` of the solution
 `u(t) = cos (tD) f + D⁻¹ sin (tD) g + ∫₀ᵗ D⁻¹ sin ((t - s)D) G(s) ds` is differentiable, with
-derivative `⟪ψ, D⁻¹ sin (tD) f⟫ + ⟪φ, cos (tD) g + ∫₀ᵗ cos ((t - s)D) G(s) ds⟫`, the pairing of
-`φ` with the velocity `∂ₜu = D⁻¹ sin (tD) Δf + cos (tD) g + ∫₀ᵗ cos ((t - s)D) G(s) ds`. -/
+derivative `⟪ψ, D⁻¹ sin (tD) f⟫ + ⟪φ, cos (tD) g + ∫₀ᵗ cos ((t - s)D) G(s) ds⟫`. Formally this
+pairs `φ` with the velocity `D⁻¹ sin (tD) Δf + cos (tD) g + ∫₀ᵗ cos ((t - s)D) G(s) ds`; as `Δf`
+need not lie in `L²`, its first term is not an application of the `L²` operator
+`TauCeti.waveSinPropagator`, and is interpreted by moving the Laplacian onto the test function. -/
 theorem hasDerivAt_inner_waveDuhamelSolution (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F)))
     (f g : Lp F 2 (volume : Measure E)) (hG : Continuous G) (t : ℝ) :
     HasDerivAt (fun t ↦ ⟪φ, waveDuhamelSolution F f g G t⟫)
@@ -366,9 +255,14 @@ theorem hasDerivAt_inner_waveDuhamelSolution (hφψ : Δ (φ : 𝓢'(E, F)) = (�
   have h₂ := (hasDerivAt_const t φ).inner ℂ (hasDerivAt_waveSinPropagator_apply g t)
   have h₃ := (hasDerivAt_waveSinPropagator_apply φ t).inner ℂ (hasDerivAt_duhamelCos hG t)
   have h₄ := (hasDerivAt_waveCosPropagator_apply hφψ t).inner ℂ (hasDerivAt_duhamelSin hG t)
+  have hcomm (x : Lp F 2 (volume : Measure E)) :
+      waveSinPropagator F t (waveCosPropagator F t x) =
+        waveCosPropagator F t (waveSinPropagator F t x) := by
+    rw [waveSinPropagator_def]
+    exact fourierMultiplierCLM_waveCosPropagator_apply t _ x
   convert (h₁.add h₂).add (h₃.sub h₄) using 1
   simp only [inner_zero_left, inner_zero_right, inner_waveSinPropagator_apply,
-    inner_waveCosPropagator_apply, waveSinPropagator_apply_waveCosPropagator_apply]
+    inner_waveCosPropagator_apply, hcomm]
   ring
 
 /-- The weak velocity of `hasDerivAt_inner_waveDuhamelSolution` has derivative
