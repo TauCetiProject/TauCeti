@@ -6,24 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion.Differential
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Hom
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InvariantDifferential
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
-import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
-import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Pullback of the invariant differential along the formal series of an isogeny
 
-Let `φ : W₁ → W₂` be an isogeny of elliptic curves over a field `K`. Expanding `φ^*η` at infinity
-in the local parameter `z₁ = -x₁ / y₁` obeys the Laurent chain rule
-(`TauCeti.Isogeny.differentialLaurentSeries_pullbackDifferential`). By
-`TauCeti.Isogeny.existsUnique_pullbackDifferential_invariantDifferential_eq_smul`, `φ` pulls back
-the invariant differential `ω₂` of `W₂` to `c • ω₁` for a unique constant `c ∈ K`. Applying
-`WeierstrassCurve.differentialLaurentSeries` to both sides and comparing with the formal-group
-invariant differential identifies `c` with the linear coefficient of `φ.formalSeries`
-(Silverman III.5, IV.4): `φ^* ω₂ = (PowerSeries.coeff 1 φ.formalSeries) • ω₁`, and on
+Let `φ : W₁ → W₂` be an isogeny of Weierstrass curves over a field `K`. Expanding `φ^*η` at
+infinity in the local parameter `z₁ = -x₁ / y₁` obeys the Laurent chain rule
+(`TauCeti.Isogeny.differentialLaurentExpansion_pullbackDifferential`), specializing
+`TauCeti.differentialLaurentExpansion_mapSemilinear`. When the invariant-differential denominators
+`2y + a₁x + a₃` of `W₁` and `W₂` are nonzero, applying `W₁.differentialLaurentExpansion` to an
+equation `φ^* ω₂ = c • ω₁` and comparing with the formal-group invariant differential identifies
+`c` with the linear coefficient of `φ.formalSeries` (Silverman III.5, IV.4).
+
+When `W₂` (hence `W₁`) is an elliptic curve,
+`TauCeti.Isogeny.existsUnique_pullbackDifferential_invariantDifferential_eq_smul` supplies such a
+constant `c ∈ K`, giving `φ^* ω₂ = (PowerSeries.coeff 1 φ.formalSeries) • ω₁`, and on
 formal-group invariant differentials
 `(P₂ ∘ φ.formalSeries) · (φ.formalSeries)' = (PowerSeries.coeff 1 φ.formalSeries) • P₁`.
 
@@ -33,7 +33,7 @@ separable.
 
 ## Main results
 
-* `TauCeti.Isogeny.differentialLaurentSeries_pullbackDifferential`: Laurent chain rule for
+* `TauCeti.Isogeny.differentialLaurentExpansion_pullbackDifferential`: Laurent chain rule for
   pulled-back Kähler differentials.
 * `TauCeti.Isogeny.coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul` and
   `TauCeti.Isogeny.pullbackDifferential_invariantDifferential_eq_smul`: `φ^* ω₂ = c • ω₁` with
@@ -66,60 +66,53 @@ variable {W₁ W₂ : WeierstrassCurve K}
 
 /-- **Laurent chain rule for pulled-back Kähler differentials**: expanding `φ^*η` at infinity
 substitutes `φ.formalSeries` into the expansion of `η` and multiplies by `(φ.formalSeries)'`. -/
-theorem differentialLaurentSeries_pullbackDifferential
+theorem differentialLaurentExpansion_pullbackDifferential
     (φ : Isogeny W₁.toAffine W₂.toAffine)
     (η : KaehlerDifferential K W₂.toAffine.FunctionField) :
-    W₁.differentialLaurentSeries (φ.pullbackDifferential η) =
+    W₁.differentialLaurentExpansion (φ.pullbackDifferential η) =
       LaurentSeries.substAlgHom φ.constantCoeff_formalSeries φ.formalSeries_ne_zero
-        (W₂.differentialLaurentSeries η) *
+        (W₂.differentialLaurentExpansion η) *
         _root_.LaurentSeries.derivative K (φ.formalSeries : K⸨X⸩) := by
-  have hmem : η ∈ Submodule.span W₂.toAffine.FunctionField
-      (Set.range (KaehlerDifferential.D K W₂.toAffine.FunctionField)) := by
-    rw [KaehlerDifferential.span_range_derivation]
-    exact Submodule.mem_top
-  induction hmem using Submodule.span_induction with
-  | mem _ h =>
-    rcases h with ⟨f, rfl⟩
-    rw [pullbackDifferential_D, differentialLaurentSeries_D, differentialLaurentSeries_D,
-      φ.functionFieldLaurentExpansion_fieldPullback, LaurentSeries.derivative_substAlgHom]
-  | zero => simp
-  | add _ _ _ _ h₁ h₂ => simp [h₁, h₂, add_mul]
-  | smul f _ _ h =>
-    rw [pullbackDifferential_smul, differentialLaurentSeries_smul,
-      differentialLaurentSeries_smul, map_mul, mul_assoc, h,
-      φ.functionFieldLaurentExpansion_fieldPullback]
+  rw [φ.pullbackDifferential_apply, W₁.differentialLaurentExpansion_apply,
+    W₂.differentialLaurentExpansion_apply, ← TauCeti.differentialLaurentExpansion_apply,
+    ← TauCeti.differentialLaurentExpansion_apply]
+  exact TauCeti.differentialLaurentExpansion_mapSemilinear
+    φ.constantCoeff_formalSeries φ.formalSeries_ne_zero
+    φ.functionFieldLaurentExpansion_fieldPullback η
 
-/-- If `φ^* ω₂ = c • ω₁`, then pulling back the formal-group invariant differential along
-`φ.formalSeries` multiplies the invariant differential of `formalGroup W₁` by `c`. -/
+/-- If `φ^* ω₂ = c • ω₁` and both invariant-differential denominators are nonzero, then pulling
+back the formal-group invariant differential along `φ.formalSeries` multiplies the invariant
+differential of `formalGroup W₁` by `c`. -/
 theorem subst_formalSeries_invariantDifferential_mul_derivative_of_pullbackDifferential_eq_smul
-    [W₂.IsElliptic] (φ : Isogeny W₁.toAffine W₂.toAffine) {c : K}
+    (φ : Isogeny W₁.toAffine W₂.toAffine) {c : K}
+    (hd₁ : Affine.invariantDifferentialDenom W₁.toAffine ≠ 0)
+    (hd₂ : Affine.invariantDifferentialDenom W₂.toAffine ≠ 0)
     (hc : φ.pullbackDifferential (Affine.invariantDifferential W₂.toAffine) =
       c • Affine.invariantDifferential W₁.toAffine) :
     PowerSeries.subst φ.formalSeries (formalGroup W₂).invariantDifferential *
       PowerSeries.derivative φ.formalSeries =
       c • (formalGroup W₁).invariantDifferential := by
-  have := φ.isElliptic
-  have h := congrArg W₁.differentialLaurentSeries hc
-  rw [φ.differentialLaurentSeries_pullbackDifferential,
-    W₂.differentialLaurentSeries_invariantDifferential
-      (Affine.invariantDifferentialDenom_ne_zero W₂.toAffine),
-    map_smul,
-    W₁.differentialLaurentSeries_invariantDifferential
-      (Affine.invariantDifferentialDenom_ne_zero W₁.toAffine),
-    LaurentSeries.substAlgHom_coe,
-    ← PowerSeries.coe_derivative, ← PowerSeries.coe_mul, ← PowerSeries.coe_smul] at h
-  exact ofPowerSeries_injective h
+  apply ofPowerSeries_injective (R := K) (Γ := ℤ)
+  have h := congrArg W₁.differentialLaurentExpansion hc
+  rw [φ.differentialLaurentExpansion_pullbackDifferential,
+    W₂.differentialLaurentExpansion_invariantDifferential hd₂, map_smul,
+    W₁.differentialLaurentExpansion_invariantDifferential hd₁,
+    LaurentSeries.substAlgHom_coe] at h
+  simpa only [PowerSeries.coe_mul, PowerSeries.coe_derivative, PowerSeries.coe_smul] using h
 
 /-- **The pullback scalar of the invariant differential is the linear coefficient of
-`φ.formalSeries`** (Silverman III.5, IV.4): if `φ^* ω₂ = c • ω₁`, then
-`PowerSeries.coeff 1 φ.formalSeries = c`. -/
-theorem coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul [W₂.IsElliptic]
+`φ.formalSeries`** (Silverman III.5, IV.4): if `φ^* ω₂ = c • ω₁` and both invariant-differential
+denominators are nonzero, then `PowerSeries.coeff 1 φ.formalSeries = c`. -/
+theorem coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul
     (φ : Isogeny W₁.toAffine W₂.toAffine) {c : K}
+    (hd₁ : Affine.invariantDifferentialDenom W₁.toAffine ≠ 0)
+    (hd₂ : Affine.invariantDifferentialDenom W₂.toAffine ≠ 0)
     (hc : φ.pullbackDifferential (Affine.invariantDifferential W₂.toAffine) =
       c • Affine.invariantDifferential W₁.toAffine) :
     PowerSeries.coeff 1 φ.formalSeries = c := by
   have h := congrArg PowerSeries.constantCoeff
-    (φ.subst_formalSeries_invariantDifferential_mul_derivative_of_pullbackDifferential_eq_smul hc)
+    (φ.subst_formalSeries_invariantDifferential_mul_derivative_of_pullbackDifferential_eq_smul
+      hd₁ hd₂ hc)
   -- `PowerSeries.constantCoeff` is `MvPowerSeries.constantCoeff` on the `Unit` index type, so
   -- `constantCoeff_subst_of_constantCoeff_zero` evaluates the constant term of the composite.
   have hsub : PowerSeries.constantCoeff
@@ -138,8 +131,11 @@ theorem pullbackDifferential_invariantDifferential_eq_smul [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
     φ.pullbackDifferential (Affine.invariantDifferential W₂.toAffine) =
       PowerSeries.coeff 1 φ.formalSeries • Affine.invariantDifferential W₁.toAffine := by
+  have := φ.isElliptic
   obtain ⟨c, hc, -⟩ := existsUnique_pullbackDifferential_invariantDifferential_eq_smul φ
-  rwa [φ.coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul hc]
+  rwa [φ.coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul
+    (Affine.invariantDifferentialDenom_ne_zero W₁.toAffine)
+    (Affine.invariantDifferentialDenom_ne_zero W₂.toAffine) hc]
 
 /-- **Pullback of the formal-group invariant differential along an isogeny**
 (Silverman IV.4.2(b)):
