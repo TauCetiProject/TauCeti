@@ -30,7 +30,8 @@ spectral sequences induced by `φ`.
 
 ## Main results
 
-* `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality.
+* `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality; in particular
+  `EMap φ`, `cyclesMapOfHom φ` and `opcyclesMapOfHom φ` are isomorphisms when `φ` is.
 * `CategoryTheory.Abelian.SpectralObject.map_EMap`: compatibility with `X.map`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
 * `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom`: on the objects `E^n(𝟙, f, 𝟙)`,
@@ -86,19 +87,14 @@ lemma shortComplexMapOfHom_τ₃ :
 @[simp]
 lemma shortComplexMapOfHom_id :
     shortComplexMapOfHom (𝟙 X) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ = 𝟙 _ := by
-  -- the remaining goals are `𝟙 ((X.H n₀).obj (mk₁ f₃)) = 𝟙 (X.shortComplex …).X₁` (and similarly
-  -- for `X₂`, `X₃`): `(X.shortComplex …).X₁` is `(X.H n₀).obj (mk₁ f₃)` by definition, and
-  -- `shortComplex_X₁` cannot rewrite the object under `𝟙`
-  ext <;> simp <;> rfl
+  ext <;> simp
 
 @[reassoc, simp]
 lemma shortComplexMapOfHom_comp :
     shortComplexMapOfHom (φ ≫ ψ) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ =
       shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫
         shortComplexMapOfHom ψ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ := by
-  -- after `simp`, both sides are `(φ.hom n).app _ ≫ (ψ.hom n).app _`, composed in `C` between
-  -- the objects `(Y.H n).obj _` and `(Y.shortComplex …).X₁` (equal by definition), hence `rfl`
-  ext <;> simp <;> rfl
+  ext <;> simp
 
 /-- The morphism `X.E f₁ f₂ f₃ n₀ n₁ n₂ ⟶ Y.E f₁ f₂ f₃ n₀ n₁ n₂` induced by a morphism of
 spectral objects. -/
@@ -146,8 +142,6 @@ lemma map_EMap (α : mk₃ f₁ f₂ f₃ ⟶ mk₃ f₁' f₂' f₃') :
   dsimp only [map, EMap]
   erw [← ShortComplex.homologyMap_comp, shortComplexMap_shortComplexMapOfHom,
     ShortComplex.homologyMap_comp]
-  -- `X.E f₁ f₂ f₃ …` is by definition `(X.shortComplex f₁ f₂ f₃ …).homology`
-  rfl
 
 end E
 
@@ -319,5 +313,28 @@ lemma EMap_comp_EIsoH_hom :
     Category.comp_id]
 
 end FirstPage
+
+section IsIso
+
+variable [IsIso φ]
+
+instance isIso_EMap {i j k l : ι} (f₁ : i ⟶ j) (f₂ : j ⟶ k) (f₃ : k ⟶ l) (n₀ n₁ n₂ : ℤ)
+    (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂) : IsIso (EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂) :=
+  ⟨EMap (inv φ) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂, by rw [← EMap_comp, IsIso.hom_inv_id, EMap_id],
+    by rw [← EMap_comp, IsIso.inv_hom_id, EMap_id]⟩
+
+instance isIso_cyclesMapOfHom {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n : ℤ) :
+    IsIso (cyclesMapOfHom φ f g n) :=
+  ⟨cyclesMapOfHom (inv φ) f g n,
+    by rw [← cyclesMapOfHom_comp, IsIso.hom_inv_id, cyclesMapOfHom_id],
+    by rw [← cyclesMapOfHom_comp, IsIso.inv_hom_id, cyclesMapOfHom_id]⟩
+
+instance isIso_opcyclesMapOfHom {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n : ℤ) :
+    IsIso (opcyclesMapOfHom φ f g n) :=
+  ⟨opcyclesMapOfHom (inv φ) f g n,
+    by rw [← opcyclesMapOfHom_comp, IsIso.hom_inv_id, opcyclesMapOfHom_id],
+    by rw [← opcyclesMapOfHom_comp, IsIso.inv_hom_id, opcyclesMapOfHom_id]⟩
+
+end IsIso
 
 end CategoryTheory.Abelian.SpectralObject

@@ -32,7 +32,7 @@ compose at `x` to an arrow in an open set `O`, then they compose into `O` at eve
 `x`. Here `σ y` is followed by `τ` at its target. -/
 theorem eventually_comp_mem
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      p.1.1.comp p.1.2 p.2)
+      p.val.1.comp p.val.2 p.property)
     (ht : Continuous (Quiver.Total.right : Quiver.Total C → C))
     {σ τ : C → Quiver.Total C} {S T : Set C} (hσ : ContinuousOn σ S) (hτ : ContinuousOn τ T)
     (hS : IsOpen S) (hT : IsOpen T) (hτl : ∀ z ∈ T, (τ z).left = z) {x : C} (hxS : x ∈ S)
@@ -43,12 +43,12 @@ theorem eventually_comp_mem
   set D := S ∩ (fun y ↦ (σ y).right) ⁻¹' T
   have hD : IsOpen D := hσr.isOpen_inter_preimage hS hT
   -- On `D` both sections are defined, and their composite is continuous.
-  let Φ : D → Quiver.Total C := fun y ↦ (σ y).comp (τ (σ y).right) (hτl _ y.2.2).symm
+  let Φ : D → Quiver.Total C := fun y ↦ (σ y).comp (τ (σ y).right) (hτl _ y.property.2).symm
   have hΦ : Continuous Φ := hc.comp <| Continuous.subtype_mk
-    ((hσ.comp_continuous continuous_subtype_val fun y ↦ y.2.1).prodMk
-      (hτ.comp_continuous (hσr.comp_continuous continuous_subtype_val fun y ↦ y.2.1)
-        fun y ↦ y.2.2)) fun y ↦ (hτl _ y.2.2).symm
-  rw [← hD.isOpenMap_subtype_val.map_nhds_eq continuous_subtype_val.continuousAt
+    ((hσ.comp_continuous continuous_subtypeVal fun y ↦ y.property.1).prodMk
+      (hτ.comp_continuous (hσr.comp_continuous continuous_subtypeVal fun y ↦ y.property.1)
+        fun y ↦ y.property.2)) fun y ↦ (hτl _ y.property.2).symm
+  rw [← hD.isOpenMap_subtypeVal.map_nhds_eq continuous_subtypeVal.continuousAt
     (x := ⟨x, hxS, hxT⟩)]
   exact Filter.eventually_map.2
     ((hΦ.continuousAt.eventually_mem (hO.mem_nhds (hOx _))).mono fun y hy _ ↦ hy)

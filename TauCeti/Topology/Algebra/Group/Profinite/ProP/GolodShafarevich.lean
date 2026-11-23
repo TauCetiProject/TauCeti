@@ -103,7 +103,7 @@ theorem sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohomFp_two
     rw [Finset.coe_image, ht, ← presentedProP.mk_eq_one_iff]
     exact map_eq_one_iff e e.injective
   have hsΦ (ρ : s) : (ρ : freeProP p X) ∈ proPFrattini p (freeProP p X) := by
-    obtain ⟨⟨ρ, hρR⟩, -, hρ⟩ := Finset.mem_image.1 ρ.2
+    obtain ⟨⟨ρ, hρR⟩, -, hρ⟩ := Finset.mem_image.1 ρ.property
     rw [← hρ]
     exact (topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).2 hrels hρR
   obtain ⟨D, hD, hcoc, hDof⟩ := freeProP.exists_locallyConstant_cocycle_forall_apply_of_eq π

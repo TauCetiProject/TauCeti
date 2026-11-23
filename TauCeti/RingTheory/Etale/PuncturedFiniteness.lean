@@ -71,7 +71,7 @@ private lemma exists_algebraMap_trace_tmul_eq (hdepth : 2 ≤ depth (ModuleCat.o
     Module.free_of_flat_of_isLocalRing
   obtain ⟨⟨a, s⟩, hs⟩ := IsLocalization.surj p.primeCompl
     (Algebra.trace (Localization.AtPrime p) (Localization.AtPrime p ⊗[A] C) (1 ⊗ₜ x))
-  refine ⟨s, s.2, a, ?_⟩
+  refine ⟨s, s.property, a, ?_⟩
   rw [Algebra.trace_baseChange_tmul_of_isScalarTower (S := Localization.AtPrime p),
     IsScalarTower.algebraMap_apply A (Localization.AtPrime p) (FractionRing A),
     IsScalarTower.algebraMap_apply A (Localization.AtPrime p) (FractionRing A), ← map_mul,
@@ -103,7 +103,7 @@ theorem finite_of_finiteEtale_localization (hdepth : 2 ≤ depth (ModuleCat.of A
       (isLocalizedModule_iff_isBaseChange (nonZeroDivisors A) K ι).2
         (TensorProduct.isBaseChange A C K)
     exact (IsLocalizedModule.injective_iff_isRegular (nonZeroDivisors A) ι).2 fun s ↦
-      IsSMulRegular.of_ne_zero (nonZeroDivisors.ne_zero s.2)
+      IsSMulRegular.of_ne_zero (nonZeroDivisors.ne_zero s.property)
   have hspan : Submodule.span K (Set.range ι) = ⊤ := by
     rw [← LinearMap.coe_range, ← Submodule.map_top, ← Submodule.baseChange_eq_span,
       Submodule.baseChange_top]
@@ -116,7 +116,7 @@ theorem finite_of_finiteEtale_localization (hdepth : 2 ≤ depth (ModuleCat.of A
     ((Algebra.traceForm K L).flip t).restrictScalars A ∘ₗ ι
   let N : Submodule A (b → K) := LinearMap.range (LinearMap.compLeft (Algebra.linearMap A K) b)
   have hval (c : C) (t : b) : ∃ a : A, algebraMap A K a = ψ c t := by
-    obtain ⟨d, hd⟩ := hbC t.2
+    obtain ⟨d, hd⟩ := hbC t.property
     -- `ψ c t` is by definition the trace of `ι c * t`.
     have hψ : ψ c t = Algebra.trace K L (ι c * t) := rfl
     rw [hψ, ← hd, TensorProduct.mk_apply, TensorProduct.mk_apply,

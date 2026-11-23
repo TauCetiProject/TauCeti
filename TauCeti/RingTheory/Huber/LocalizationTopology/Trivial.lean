@@ -104,7 +104,7 @@ theorem locIdealImage_denom_one (n : ℕ) : locIdealImage P T 1 A n = P.idealIma
     | add y z _ _ hy hz => simpa using (P.idealImage n).add_mem hy hz
     | smul r y _ hy =>
       rw [smul_eq_mul, MulMemClass.coe_mul]
-      exact P.mul_mem_idealImage (hle r.2) hy
+      exact P.mul_mem_idealImage (hle r.property) hy
   · obtain ⟨y, hy, rfl⟩ := (P.mem_idealImage n).mp hx
     simpa using algebraMap_mem_locIdealImage P T 1 A hy
 

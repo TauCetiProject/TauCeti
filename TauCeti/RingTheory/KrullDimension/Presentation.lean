@@ -151,7 +151,7 @@ theorem ringKrullDim_quotient_of_mem_minimalPrimes (hA : ringKrullDim A ≤ P.di
     fun _ _ h ↦ hmono.strictMono_of_injective
       (PrimeSpectrum.localization_comap_injective B (.powers g)) h
   -- The image of `g` is a unit of `A[1/g]`, so it lies in no prime.
-  exact q.2.ne_top (Ideal.eq_top_of_isUnit_mem _ h (IsLocalization.Away.algebraMap_isUnit g))
+  exact q.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h (IsLocalization.Away.algebraMap_isUnit g))
 
 /-- Let `A` be an algebra over a field with a finite presentation by `m` generators and `c`
 relations, such that `dim A ≤ m - c`. Then `Spec A` is pure-dimensional of dimension `m - c`. -/

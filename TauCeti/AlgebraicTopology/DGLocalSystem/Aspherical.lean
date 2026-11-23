@@ -118,7 +118,7 @@ theorem groupAlgebraToLoopChainCohomology_surjective
   | homogeneous x =>
     obtain ⟨x, hx⟩ := x
     obtain ⟨z, hz, rfl⟩ := h.mem_cohomologyGrading.1 hx
-    exact quotientMk_mem_range_groupAlgebraToLoopChainCohomology R hB hz z.2
+    exact quotientMk_mem_range_groupAlgebraToLoopChainCohomology R hB hz z.property
 
 /-- **The cohomology of the loop chain algebra of an aspherical space.** If `π_(n + 2)(B, b)`
 vanishes for every `n`, the inclusion of zeroth homology is an isomorphism

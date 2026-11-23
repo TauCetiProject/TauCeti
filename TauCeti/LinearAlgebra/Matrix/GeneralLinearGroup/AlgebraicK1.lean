@@ -123,13 +123,13 @@ theorem mkOfFintype_fromBlocksGL_one (u : GL ι A) :
   set f := Fintype.equivFin κ
   rw [mkOfFintype_eq_mk_reindexGL ((e.sumCongr f).trans finSumFinEquiv),
     ← Equiv.reindexGL_trans_reindexGL, MulEquiv.trans_apply,
-    Equiv.sumCongr_reindexGL_fromBlocksGL, map_one, ← stabilizeGL_eq_reindexGL_fromBlocksGL,
+    Equiv.reindexGL_sumCongr_fromBlocksGL, map_one, ← stabilizeGL_eq_reindexGL_fromBlocksGL,
     mk_stabilizeGL, mkOfFintype_eq_mk_reindexGL e]
 
 /-- The class of the block diagonal matrix `1 ⊕ v` is the class of `v`. -/
 theorem mkOfFintype_one_fromBlocksGL (v : GL κ A) :
     mkOfFintype A (ι ⊕ κ) (fromBlocksGL (1, v)) = mkOfFintype A κ v := by
-  rw [← mkOfFintype_reindexGL (Equiv.sumComm ι κ), Equiv.sumComm_reindexGL_fromBlocksGL,
+  rw [← mkOfFintype_reindexGL (Equiv.sumComm ι κ), Equiv.reindexGL_sumComm_fromBlocksGL,
     mkOfFintype_fromBlocksGL_one]
 
 /-- **The block sum formula**: the class of a block diagonal matrix `u ⊕ v` is the product of the
