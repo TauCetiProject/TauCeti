@@ -63,6 +63,8 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `CuspForm.qExpansionCoeffₗ` (at root, so dot notation on `CuspForm` elaborates): the `n`-th
   coefficient as a `ℂ`-linear functional on cusp forms.
 * `CuspForm.qExpansion_injective`: a cusp form is determined by its `q`-expansion.
+* `ModularFormClass.coe_eq_of_qExpansion_eq`: modular forms for possibly different groups with the
+  same `q`-expansion are the same function.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
 * `TauCeti.UpperHalfPlane.cuspFunction_map₂_eventuallyEq`,
@@ -401,6 +403,21 @@ lemma _root_.CuspForm.qExpansion_injective {Γ : Subgroup (GL (Fin 2) ℝ)}
     (_root_.ModularForm.qExpansion_injective hh hΓ
       (a₁ := ModularFormClass.modularForm f) (a₂ := ModularFormClass.modularForm g) hfg)
   simpa using this
+
+/-- **Modular forms with the same `q`-expansion are the same function**, even for different groups
+and weights: each is the sum of its `q`-expansion at every point of `ℍ`. This compares forms of
+different levels, where `ModularForm.qExpansion_injective` does not apply. -/
+theorem _root_.ModularFormClass.coe_eq_of_qExpansion_eq {F G : Type*} [FunLike F ℍ ℂ]
+    [FunLike G ℍ ℂ] {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} {k k' : ℤ} [ModularFormClass F Γ k]
+    [ModularFormClass G Γ' k'] (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods)
+    (hΓ' : h ∈ Γ'.strictPeriods) {f : F} {g : G} (hfg : qExpansion h f = qExpansion h g) :
+    ⇑f = ⇑g := by
+  have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods hh hΓ⟩
+  have : Fact (IsCusp OnePoint.infty Γ') := ⟨Γ'.isCusp_of_mem_strictPeriods hh hΓ'⟩
+  funext τ
+  refine (_root_.ModularForm.hasSum_qExpansion f hh hΓ τ).unique ?_
+  rw [hfg]
+  exact _root_.ModularForm.hasSum_qExpansion g hh hΓ' τ
 
 /-- The translate `1 / d +ᵥ σ`, read in `ℂ`, is the subtraction `TauCeti.Periodic.qParam_sub`
 expects: that lemma is stated at `z - j`, and the shift here enters as a `+ᵥ` on `ℍ`. Naming the

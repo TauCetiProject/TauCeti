@@ -126,6 +126,17 @@ applied to `w`. -/
     (h.mfderiv_riemannianExp_comp_mfderiv_riemannianLog hv)) _
 
 omit [I.Boundaryless] [T2Space M] in
+/-- The differential of the logarithm sends the normal coordinate field of `w` to `w`
+throughout the normal neighbourhood. -/
+theorem mfderiv_riemannianLog_normalCoordinateField (h : IsNormalDomain I M p U)
+    (w : TangentSpace I p) {q : M} (hq : q ∈ riemannianExp I M p '' U) :
+    mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) q
+      (normalCoordinateField I M p U w q) = w := by
+  obtain ⟨v, hv, rfl⟩ := hq
+  rw [h.normalCoordinateField_riemannianExp hv]
+  exact DFunLike.congr_fun (h.mfderiv_riemannianLog_comp_mfderiv_riemannianExp hv) w
+
+omit [I.Boundaryless] [T2Space M] in
 /-- Normal coordinate fields associated to independent tangent vectors remain linearly independent
 on the normal neighbourhood. -/
 theorem linearIndependent_normalCoordinateField (h : IsNormalDomain I M p U)

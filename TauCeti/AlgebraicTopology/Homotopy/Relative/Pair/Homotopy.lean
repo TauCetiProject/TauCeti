@@ -89,7 +89,7 @@ section Deformation
 /-- A relative cube sends the open box `{1} × I^N ∪ I × ∂I^N` to the basepoint. -/
 private theorem apply_eq_of_openBox (p : RelGenLoop N X) {w : I × I^N}
     (hw : w.1 = 1 ∨ w.2 ∈ Cube.boundary N) : p w = X.pair.map X.basepoint :=
-  (RelGenLoop.mem_iff.1 p.2).2 w.1 w.2 hw
+  (RelGenLoop.mem_iff.1 p.property).2 w.1 w.2 hw
 
 variable {p q : RelGenLoop N X}
 
@@ -178,16 +178,16 @@ private theorem exists_bottomHomotopy
   have hkB (x : I × (I × I^N)) (hx : x.2 ∈ Cube.prodBoundary N) : k x ∈ range X.pair.map := by
     obtain ⟨u, t, z⟩ := x
     rcases Cube.mem_prodBoundary_iff.1 hx with (rfl | rfl) | hz
-    · exact hk₀ u z ▸ RelGenLoop.mapsTo_prodBoundary p.2 (Cube.mk_zero_mem_prodBoundary z)
-    · exact hk₁ u z ▸ RelGenLoop.mapsTo_prodBoundary q.2 (Cube.mk_zero_mem_prodBoundary z)
+    · exact hk₀ u z ▸ RelGenLoop.mapsTo_prodBoundary p.property (Cube.mk_zero_mem_prodBoundary z)
+    · exact hk₁ u z ▸ RelGenLoop.mapsTo_prodBoundary q.property (Cube.mk_zero_mem_prodBoundary z)
     · exact hk hz ▸ hH t (openBoxContraction_mem_prodBoundary (z := ((0 : I), z)) (.inr hz) u)
   -- Extend the deformation over the face, keeping its values in the subspace.
   have hbd := hasHomotopyExtensionProperty_prodBoundary (N := N)
   obtain ⟨L, hL₀, hL⟩ := hbd.exists_extension_of_isClosed hbd.isClosed
     (⟨fun y ↦ ⟨H (y.1, (0, y.2)), hH y.1 (Cube.mk_zero_mem_prodBoundary y.2)⟩, by fun_prop⟩ :
       C(I × I^N, range X.pair.map))
-    ⟨fun x ↦ ⟨k (x.1, x.2), hkB (x.1, x.2) x.2.2⟩,
-      (hcont.comp_continuous (by fun_prop) fun x ↦ x.2.2).subtype_mk _⟩
+    ⟨fun x ↦ ⟨k (x.1, x.2), hkB (x.1, x.2) x.2.property⟩,
+      (hcont.comp_continuous (by fun_prop) fun x ↦ x.2.property).subtype_mk _⟩
     fun y ↦ by
       obtain ⟨⟨t, z⟩, hy⟩ := y
       ext1
@@ -200,7 +200,7 @@ private theorem exists_bottomHomotopy
       (L (u, (t, z)) : X.pair.fst) = k (u, (t, z)) :=
     congrArg Subtype.val (hL u ⟨(t, z), h⟩)
   refine ⟨⟨fun x ↦ (L x : X.pair.fst), by fun_prop⟩, fun t z ↦ congrArg Subtype.val (hL₀ (t, z)),
-    fun u t z ↦ (L (u, (t, z))).2, fun u z ↦ ?_, fun u z ↦ ?_, fun u t z hz ↦ ?_⟩
+    fun u t z ↦ (L (u, (t, z))).property, fun u z ↦ ?_, fun u z ↦ ?_, fun u t z hz ↦ ?_⟩
   · exact (hL' u 0 z (Cube.mk_zero_mem_prodBoundary z)).trans (hk₀ u z)
   · exact (hL' u 1 z (Cube.mk_mem_prodBoundary (.inl rfl))).trans (hk₁ u z)
   · exact (hL' u t z (Cube.mem_prodBoundary_iff.2 (Or.inr hz))).trans (hk hz)
@@ -280,7 +280,7 @@ private theorem exists_homotopy_of_deformation
   -- Extend the deformation over the cube, and take its end.
   have hT := hasHomotopyExtensionProperty_boundary_prod (N := N)
   obtain ⟨G, -, hG⟩ := hT.exists_extension_of_isClosed hT.isClosed H.toContinuousMap
-    ⟨fun x ↦ K (x.1, x.2), hcont.comp_continuous (by fun_prop) fun x ↦ x.2.2⟩
+    ⟨fun x ↦ K (x.1, x.2), hcont.comp_continuous (by fun_prop) fun x ↦ x.2.property⟩
     fun x ↦ by
       obtain ⟨⟨t, s, z⟩, hx⟩ := x
       simp only [ContinuousMap.coe_mk, ContinuousMap.Homotopy.coe_toContinuousMap]
@@ -420,7 +420,7 @@ theorem existsUnique_homotopicWith [Finite N] {Y : TopCat.{u}} {B : Set Y}
     [SimplyConnectedSpace B] (b : B) (g : C(I × (I^N), Y)) (hg : MapsTo g (Cube.prodBoundary N) B) :
     ∃! x : RelHomotopyGroup N ⟨TopPair.ofSubset B, b⟩,
       ∃ p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩,
-        mk p = x ∧ g.HomotopicWith p.1 fun f ↦ MapsTo f (Cube.prodBoundary N) B := by
+        mk p = x ∧ g.HomotopicWith p.val fun f ↦ MapsTo f (Cube.prodBoundary N) B := by
   have := Fintype.ofFinite N
   have : SimplyConnectedSpace (TopPair.ofSubset B).snd := ‹SimplyConnectedSpace B›
   -- Deform `g` to a relative cube at some point `b'`, and transport it along a path to `b`.

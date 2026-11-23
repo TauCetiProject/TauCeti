@@ -82,7 +82,7 @@ theorem eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacia
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) p volume := by
   set L : EuclideanSpace ℝ ι → G := fun x => ∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ ⇑u) x
     (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  obtain ⟨e, he, -, hΔ⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := G) hlam hA
+  obtain ⟨e, -, he, -, hΔ⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := G) hlam hA
     (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq A)
   -- The Schwartz function `v = u ∘ e`.
   set v := SchwartzMap.compCLMOfContinuousLinearEquiv ℝ e u

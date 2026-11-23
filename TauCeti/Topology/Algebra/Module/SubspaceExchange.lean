@@ -41,6 +41,6 @@ theorem exists_continuousLinearEquiv_mem_iff
   · simp [← hg ⟨z, hz⟩]
   · set w := (LinearEquiv.ofFinrankEq V L h).symm ⟨g z, hz⟩
     have hw : g w = g z := by rw [← hg w, LinearEquiv.apply_symm_apply]
-    exact g.injective hw ▸ w.2
+    exact g.injective hw ▸ w.property
 
 end Submodule

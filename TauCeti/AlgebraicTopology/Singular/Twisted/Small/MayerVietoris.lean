@@ -49,35 +49,58 @@ variable {R : Type u} [Ring R] {X : TopCat.{v}}
 
 variable (U V : Set X)
 
-private def interLeft : smallTwistedChainComplex L (fun _ : Unit ↦ U ∩ V) ⟶
-    smallTwistedChainComplex L (fun _ : Unit ↦ U) :=
-  smallTwistedChainComplexInclusion fun n ↦ by rw [smallTwistedChains_inter]; exact inf_le_left
-
-private def interRight : smallTwistedChainComplex L (fun _ : Unit ↦ U ∩ V) ⟶
-    smallTwistedChainComplex L (fun _ : Unit ↦ V) :=
-  smallTwistedChainComplexInclusion fun n ↦ by rw [smallTwistedChains_inter]; exact inf_le_right
-
-private def leftBool : smallTwistedChainComplex L (fun _ : Unit ↦ U) ⟶
-    smallTwistedChainComplex L (Bool.rec U V) :=
-  smallTwistedChainComplexInclusion fun n ↦ by rw [smallTwistedChains_bool]; exact le_sup_left
-
-private def rightBool : smallTwistedChainComplex L (fun _ : Unit ↦ V) ⟶
-    smallTwistedChainComplex L (Bool.rec U V) :=
-  smallTwistedChainComplexInclusion fun n ↦ by rw [smallTwistedChains_bool]; exact le_sup_right
-
 /-- The intersection map of the small twisted chain sequence, with sign `(i_U,-i_V)`. -/
 def smallTwistedMayerVietorisToBiprod :
     smallTwistedChainComplex L (fun _ : Unit ↦ U ∩ V) ⟶
       smallTwistedChainComplex L (fun _ : Unit ↦ U) ⊞
         smallTwistedChainComplex L (fun _ : Unit ↦ V) :=
-  biprod.lift (interLeft L U V) (-interRight L U V)
+  biprod.lift (smallTwistedChainComplexSubsetInclusion L Set.inter_subset_left)
+    (-smallTwistedChainComplexSubsetInclusion L Set.inter_subset_right)
 
 /-- The sum map from the two support complexes onto the binary small-chain complex. -/
 def smallTwistedMayerVietorisFromBiprod :
     smallTwistedChainComplex L (fun _ : Unit ↦ U) ⊞
       smallTwistedChainComplex L (fun _ : Unit ↦ V) ⟶
         smallTwistedChainComplex L (Bool.rec U V) :=
-  biprod.desc (leftBool L U V) (rightBool L U V)
+  biprod.desc
+    (smallTwistedChainComplexInclusion fun n ↦
+      smallTwistedChains_mono L _ (Bool.rec U V) (fun _ ↦ false) (fun _ ↦ subset_rfl) n)
+    (smallTwistedChainComplexInclusion fun n ↦
+      smallTwistedChains_mono L _ (Bool.rec U V) (fun _ ↦ true) (fun _ ↦ subset_rfl) n)
+
+/-- The first component of the intersection map is the inclusion of the chains supported in
+`U ∩ V` into those supported in `U`. -/
+@[reassoc]
+lemma smallTwistedMayerVietorisToBiprod_comp_fst :
+    smallTwistedMayerVietorisToBiprod L U V ≫ biprod.fst =
+      smallTwistedChainComplexSubsetInclusion L Set.inter_subset_left :=
+  biprod.lift_fst _ _
+
+/-- The second component of the intersection map is minus the inclusion of the chains supported
+in `U ∩ V` into those supported in `V`. -/
+@[reassoc]
+lemma smallTwistedMayerVietorisToBiprod_comp_snd :
+    smallTwistedMayerVietorisToBiprod L U V ≫ biprod.snd =
+      -smallTwistedChainComplexSubsetInclusion L Set.inter_subset_right :=
+  biprod.lift_snd _ _
+
+/-- On the first summand, the sum map is the inclusion of the chains supported in `U` into those
+subordinate to `{U, V}`. -/
+@[reassoc]
+lemma inl_smallTwistedMayerVietorisFromBiprod :
+    biprod.inl ≫ smallTwistedMayerVietorisFromBiprod L U V =
+      smallTwistedChainComplexInclusion fun n ↦
+        smallTwistedChains_mono L _ (Bool.rec U V) (fun _ ↦ false) (fun _ ↦ subset_rfl) n :=
+  biprod.inl_desc _ _
+
+/-- On the second summand, the sum map is the inclusion of the chains supported in `V` into those
+subordinate to `{U, V}`. -/
+@[reassoc]
+lemma inr_smallTwistedMayerVietorisFromBiprod :
+    biprod.inr ≫ smallTwistedMayerVietorisFromBiprod L U V =
+      smallTwistedChainComplexInclusion fun n ↦
+        smallTwistedChains_mono L _ (Bool.rec U V) (fun _ ↦ true) (fun _ ↦ subset_rfl) n :=
+  biprod.inr_desc _ _
 
 /-- The first projection of the intersection map is the inclusion with positive sign. -/
 @[reassoc (attr := simp)]
@@ -85,7 +108,7 @@ lemma smallTwistedMayerVietorisToBiprod_fst :
     smallTwistedMayerVietorisToBiprod L U V ≫ biprod.fst ≫
       smallTwistedChainComplexι L (fun _ : Unit ↦ U) =
         smallTwistedChainComplexι L (fun _ : Unit ↦ U ∩ V) := by
-  simp [smallTwistedMayerVietorisToBiprod, interLeft]
+  simp [smallTwistedMayerVietorisToBiprod]
 
 /-- The second projection of the intersection map is minus the inclusion. -/
 @[reassoc (attr := simp)]
@@ -93,7 +116,7 @@ lemma smallTwistedMayerVietorisToBiprod_snd :
     smallTwistedMayerVietorisToBiprod L U V ≫ biprod.snd ≫
       smallTwistedChainComplexι L (fun _ : Unit ↦ V) =
         -smallTwistedChainComplexι L (fun _ : Unit ↦ U ∩ V) := by
-  simp [smallTwistedMayerVietorisToBiprod, interRight]
+  simp [smallTwistedMayerVietorisToBiprod]
 
 /-- The sum map followed by ambient inclusion adds the two ambient chains. -/
 @[reassoc (attr := simp)]
@@ -101,7 +124,7 @@ lemma smallTwistedMayerVietorisFromBiprod_comp_ι :
     smallTwistedMayerVietorisFromBiprod L U V ≫ smallTwistedChainComplexι L (Bool.rec U V) =
       biprod.fst ≫ smallTwistedChainComplexι L (fun _ : Unit ↦ U) +
         biprod.snd ≫ smallTwistedChainComplexι L (fun _ : Unit ↦ V) := by
-  apply biprod.hom_ext' <;> simp [smallTwistedMayerVietorisFromBiprod, leftBool, rightBool]
+  apply biprod.hom_ext' <;> simp [smallTwistedMayerVietorisFromBiprod]
 
 /-- In each degree, the first component of the signed map preserves the ambient chain. -/
 lemma smallTwistedMayerVietorisToBiprod_fst_apply (n : ℕ)
@@ -147,8 +170,7 @@ lemma smallTwistedMayerVietorisFromBiprod_comp_ι_apply (n : ℕ)
 lemma smallTwistedMayerVietorisToBiprod_fromBiprod :
     smallTwistedMayerVietorisToBiprod L U V ≫ smallTwistedMayerVietorisFromBiprod L U V = 0 := by
   apply (cancel_mono (smallTwistedChainComplexι L (Bool.rec U V))).1
-  simp [smallTwistedMayerVietorisToBiprod, smallTwistedMayerVietorisFromBiprod,
-    interLeft, interRight, leftBool, rightBool]
+  simp [smallTwistedMayerVietorisToBiprod, smallTwistedMayerVietorisFromBiprod]
 
 /-- The signed support sequence of small twisted singular chain complexes. -/
 def smallTwistedMayerVietorisShortComplex :
@@ -257,5 +279,11 @@ theorem shortExact_smallTwistedMayerVietorisShortComplex :
   exact { exact := exact_smallTwistedMayerVietoris L U V n
           mono_f := mono_smallTwistedMayerVietorisToBiprod L U V n
           epi_g := epi_smallTwistedMayerVietorisFromBiprod L U V n }
+
+/-- The signed small twisted chain sequence, written with its two arrows, is short exact. -/
+lemma shortExact_mk_smallTwistedMayerVietoris :
+    (ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod L U V)).ShortExact := by
+  rw [← smallTwistedMayerVietorisShortComplex_def]
+  exact shortExact_smallTwistedMayerVietorisShortComplex L U V
 
 end TauCeti.LocalCoefficientSystem

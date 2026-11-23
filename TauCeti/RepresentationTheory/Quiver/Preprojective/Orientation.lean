@@ -297,20 +297,20 @@ arrows `σ` turns around contributing to the transposed hom set, recovers the su
 `Q`: transposition is undone by exchanging the two vertex summations. -/
 private theorem sum_split_reorient {M : Type*} [AddCommMonoid M] (F : ∀ ⦃i j : Q⦄, (i ⟶ j) → M) :
     (∑ i : Q, ∑ j : Q,
-        ((∑ x : {a : i ⟶ j // ¬ σ a}, F x.1) + ∑ y : {a : j ⟶ i // σ a}, F y.1))
+        ((∑ x : {a : i ⟶ j // ¬ σ a}, F x.val) + ∑ y : {a : j ⟶ i // σ a}, F y.val))
       = ∑ i : Q, ∑ j : Q, ∑ a : (i ⟶ j), F a := by
-  have hswap : (∑ i : Q, ∑ j : Q, ∑ y : {a : j ⟶ i // σ a}, F y.1)
-      = ∑ i : Q, ∑ j : Q, ∑ y : {a : i ⟶ j // σ a}, F y.1 :=
+  have hswap : (∑ i : Q, ∑ j : Q, ∑ y : {a : j ⟶ i // σ a}, F y.val)
+      = ∑ i : Q, ∑ j : Q, ∑ y : {a : i ⟶ j // σ a}, F y.val :=
     Finset.sum_comm
   calc (∑ i : Q, ∑ j : Q,
-          ((∑ x : {a : i ⟶ j // ¬ σ a}, F x.1) + ∑ y : {a : j ⟶ i // σ a}, F y.1))
-      = (∑ i : Q, ∑ j : Q, ∑ x : {a : i ⟶ j // ¬ σ a}, F x.1)
-          + ∑ i : Q, ∑ j : Q, ∑ y : {a : j ⟶ i // σ a}, F y.1 := by
+          ((∑ x : {a : i ⟶ j // ¬ σ a}, F x.val) + ∑ y : {a : j ⟶ i // σ a}, F y.val))
+      = (∑ i : Q, ∑ j : Q, ∑ x : {a : i ⟶ j // ¬ σ a}, F x.val)
+          + ∑ i : Q, ∑ j : Q, ∑ y : {a : j ⟶ i // σ a}, F y.val := by
         simp only [Finset.sum_add_distrib]
-    _ = (∑ i : Q, ∑ j : Q, ∑ x : {a : i ⟶ j // ¬ σ a}, F x.1)
-          + ∑ i : Q, ∑ j : Q, ∑ y : {a : i ⟶ j // σ a}, F y.1 := by rw [hswap]
+    _ = (∑ i : Q, ∑ j : Q, ∑ x : {a : i ⟶ j // ¬ σ a}, F x.val)
+          + ∑ i : Q, ∑ j : Q, ∑ y : {a : i ⟶ j // σ a}, F y.val := by rw [hswap]
     _ = ∑ i : Q, ∑ j : Q,
-          ((∑ x : {a : i ⟶ j // ¬ σ a}, F x.1) + ∑ y : {a : i ⟶ j // σ a}, F y.1) := by
+          ((∑ x : {a : i ⟶ j // ¬ σ a}, F x.val) + ∑ y : {a : i ⟶ j // σ a}, F y.val) := by
         simp only [Finset.sum_add_distrib]
     _ = ∑ i : Q, ∑ j : Q, ∑ a : (i ⟶ j), F a :=
         Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by
@@ -333,13 +333,14 @@ theorem reorientDoubledEquiv_preprojectiveRelator :
   have h2 : ∀ i j : Q, ∑ α : (reorientVertex σ i ⟶ reorientVertex σ j),
       reorientDoubledEquiv k σ (headBacktrackElem k α - tailBacktrackElem k α)
       = (∑ x : {a : i ⟶ j // ¬ σ a},
-            reorientSign k σ x.1 • (headBacktrackElem k x.1 - tailBacktrackElem k x.1))
+            reorientSign k σ x.val • (headBacktrackElem k x.val - tailBacktrackElem k x.val))
         + ∑ y : {a : j ⟶ i // σ a},
-            reorientSign k σ y.1 • (headBacktrackElem k y.1 - tailBacktrackElem k y.1) := by
+            reorientSign k σ y.val • (headBacktrackElem k y.val - tailBacktrackElem k y.val) := by
     intro i j
     rw [sum_reorientHom]
-    exact congrArg₂ _ (Finset.sum_congr rfl fun x _ => reorientDoubledEquiv_sub_keep k σ x.1 x.2)
-      (Finset.sum_congr rfl fun y _ => reorientDoubledEquiv_sub_flip k σ y.1 y.2)
+    exact congrArg₂ _ (Finset.sum_congr rfl fun x _ => reorientDoubledEquiv_sub_keep k σ x.val
+        x.property)
+      (Finset.sum_congr rfl fun y _ => reorientDoubledEquiv_sub_flip k σ y.val y.property)
   rw [h1, gaugedPreprojectiveRelator_def]
   simp only [h2]
   exact sum_split_reorient σ
