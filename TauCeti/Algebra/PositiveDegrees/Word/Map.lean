@@ -28,7 +28,7 @@ variable {N M : Type*} [AddCommMonoid N] [AddCommMonoid M]
 
 /-- Words of nonzero allowed source increments whose mapped sum has target degree at most
 `k` belong to the source word cutoff at `T.modulus k`. -/
-theorem degree_words_target_cutoff_subset (k : ℕ) :
+theorem setOf_degree_map_sum_le_subset_wordCutoff (k : ℕ) :
     {l : List N | (∀ n ∈ l, n ∈ d.monoid ∧ n ≠ 0) ∧
       e.degree (T l.sum) ≤ k} ⊆ d.wordCutoff (T.modulus k) := by
   intro l hl
@@ -37,9 +37,9 @@ theorem degree_words_target_cutoff_subset (k : ℕ) :
 
 /-- There are finitely many words of nonzero allowed source increments whose mapped sum has
 target degree at most `k`. -/
-theorem finite_degree_words_target_cutoff (k : ℕ) :
+theorem finite_setOf_degree_map_sum_le (k : ℕ) :
     Set.Finite {l : List N | (∀ n ∈ l, n ∈ d.monoid ∧ n ≠ 0) ∧
       e.degree (T l.sum) ≤ k} :=
-  (d.finite_wordCutoff (T.modulus k)).subset (T.degree_words_target_cutoff_subset k)
+  (d.finite_wordCutoff (T.modulus k)).subset (T.setOf_degree_map_sum_le_subset_wordCutoff k)
 
 end TauCeti.PositiveDegreeMap

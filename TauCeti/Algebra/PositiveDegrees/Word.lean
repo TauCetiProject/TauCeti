@@ -15,8 +15,10 @@ A word of allowed nonzero increments has length at most the degree of its sum.
 `PositiveDegrees.wordCutoff` gives a finite index type of all such words at a fixed
 cutoff, using the weighted-list theorem built on Mathlib's `List.finite_length_le`.
 Filtering zero increments from an allowed word preserves the sum and puts the
-result in the same word cutoff. The increments retain their actual degrees,
-including nonzero degrees in the kernel of a geometric projection.
+result in the same word cutoff. For affine broken lines the increments are the
+nonzero degree shifts. The blocks record successive wall crossings along each
+straight segment, where each active wall occurs at most once. A finite wall
+alphabet and a fixed cutoff give finitely many such records.
 
 Adapted from `Mei/Algebra/PositiveDegrees/Word.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -39,15 +41,17 @@ theorem mem_wordCutoff {k : ℕ} {l : List N} :
     l ∈ d.wordCutoff k ↔ (∀ n ∈ l, n ∈ d.monoid ∧ n ≠ 0) ∧ d.degree l.sum ≤ k :=
   Iff.rfl
 
+/-- Every increment in an allowed word has degree at most the total degree. -/
+theorem degree_le_degree_sum (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
+    {n : N} (hn : n ∈ l) : d.degree n ≤ d.degree l.sum := by
+  simpa only [← map_list_sum] using
+    List.le_sum_map_of_nonneg d.degree (fun a ha => d.degree_nonneg (hP a ha)) hn
+
 /-- The number of nonzero allowed increments is bounded by their total degree. -/
 theorem length_le_degree_sum (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
     (hne : ∀ n ∈ l, n ≠ 0) : (l.length : ℤ) ≤ d.degree l.sum := by
-  have h := List.length_nsmul_le_sum (l.map d.degree) (1 : ℤ) (by
-    intro a ha
-    obtain ⟨n, hn, rfl⟩ := List.mem_map.mp ha
-    have := d.degree_pos (hP n hn) (hne n hn)
-    omega)
-  simpa only [List.length_map, nsmul_eq_mul, mul_one, ← map_list_sum] using h
+  simpa only [← map_list_sum] using
+    List.length_le_sum_map_of_pos d.degree (fun a ha => d.degree_pos (hP a ha) (hne a ha))
 
 /-- Every cutoff of words of nonzero allowed increments is finite. -/
 theorem finite_wordCutoff (k : ℕ) : (d.wordCutoff k).Finite := by
@@ -59,6 +63,13 @@ theorem finite_wordCutoff (k : ℕ) : (d.wordCutoff k).Finite := by
 
 /-- Word cutoffs can index finite families of degree changes. -/
 instance (k : ℕ) : Finite (d.wordCutoff k) := (d.finite_wordCutoff k).to_subtype
+
+/-- With finitely many labels, there are finitely many records comprising a word in
+cutoff `k` and one duplicate-free label block before, between, and after its entries. -/
+theorem finite_wordCutoff_prod_nodup_blocks {ι : Type*} [Finite ι] (k : ℕ) :
+    Set.Finite {p : List N × List (List ι) |
+      p.1 ∈ d.wordCutoff k ∧ p.2.length = p.1.length + 1 ∧ ∀ b ∈ p.2, b.Nodup} :=
+  List.finite_setOf_nodup_blocks (d.finite_wordCutoff k)
 
 variable [DecidableEq N]
 
@@ -83,7 +94,7 @@ theorem length_filter_bne_zero_le (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid
   exact_mod_cast h.trans (d.mem_wordCutoff.mp hred).2
 
 /-- Zero-filtered words of allowed increments with total degree at most `k` form a finite set. -/
-theorem finite_reduced_degree_words_cutoff (k : ℕ) :
+theorem finite_filter_bne_zero_image (k : ℕ) :
     Set.Finite ((fun l : List N => l.filter (· != 0)) ''
       {l | (∀ n ∈ l, n ∈ d.monoid) ∧ d.degree l.sum ≤ k}) :=
   (d.finite_wordCutoff k).subset (d.filter_bne_zero_image_subset_wordCutoff k)
