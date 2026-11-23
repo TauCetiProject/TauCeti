@@ -769,6 +769,70 @@ theorem rowInsertIndex_appendToRow {x k : α} {s : ℕ} {rows : List (List α)} 
 
 /-! ### Insertion preserves tableaux -/
 
+/-- Lowering the entry in column `j` of `upper` keeps `upper` on top of `lower`. -/
+private theorem isRowAbove_set_of_le {x : α} {upper lower : List α} {j : ℕ}
+    (h : upper.IsRowAbove lower) (hj : j < upper.length) (hx : x ≤ upper[j]) :
+    (upper.set j x).IsRowAbove lower := by
+  refine ⟨by simpa using h.length_le, fun c hu hl => ?_⟩
+  rw [getElem_set]
+  split_ifs with hjc
+  · subst hjc
+    exact hx.trans_lt (h.getElem_lt _ hj hl)
+  · exact h.getElem_lt c (by simpa using hu) hl
+
+/-- If `upper` sits on top of `lower`, `y = upper[j]`, and the first `k ≤ lower.length` entries of
+`lower` are at most `y`, then `k ≤ j`. -/
+private theorem le_of_forall_getElem_le {y : α} {upper lower : List α} {j k : ℕ}
+    (h : upper.IsRowAbove lower) (hj : j < upper.length) (hUj : upper[j] = y)
+    (hk : k ≤ lower.length) (hle : ∀ (i : ℕ) (hi : i < k), lower[i]'(by omega) ≤ y) : k ≤ j := by
+  by_contra hcon
+  have := h.getElem_lt j hj (by omega)
+  exact absurd (hle j (by omega)) (not_le.mpr (hUj ▸ this))
+
+/-- If `j` is a column of `upper`, `x < y`, and the entries of `upper` before column `j` are at
+most `x`, then the entry of `upper.set j x` in any column `k ≤ j` is less than `y`. -/
+private theorem getElem_set_lt_of_le {x y : α} {upper : List α} {j k : ℕ}
+    (hj : j < upper.length) (hpre : ∀ (i : ℕ) (hi : i < j), upper[i] ≤ x) (hxy : x < y)
+    (hk : k ≤ j) (hk' : k < (upper.set j x).length) : (upper.set j x)[k] < y := by
+  rw [getElem_set]
+  split_ifs with hjk
+  · exact hxy
+  · exact (hpre k (by omega)).trans_lt hxy
+
+/-- The column step of row insertion when the bumped letter `y` is appended to the lower row: if
+`upper` sits on top of `lower`, every entry of `lower` is at most `y`, and `x < y` replaces
+`upper[j] = y` in column `j` of `upper`, the entries of `upper` before column `j` being at most `x`,
+then the new upper row sits on top of `lower` with `y` appended. -/
+private theorem isRowAbove_set_append_of_forall_le {x y : α} {upper lower : List α} {j : ℕ}
+    (h : upper.IsRowAbove lower) (hj : j < upper.length) (hUj : upper[j] = y)
+    (hpre : ∀ (i : ℕ) (hi : i < j), upper[i] ≤ x) (hxy : x < y) (hle : ∀ z ∈ lower, z ≤ y) :
+    (upper.set j x).IsRowAbove (lower ++ [y]) := by
+  have hlen : lower.length ≤ j :=
+    le_of_forall_getElem_le h hj hUj le_rfl fun i hi => hle _ (getElem_mem _)
+  exact (isRowAbove_set_of_le h hj (hUj ▸ hxy.le)).append_singleton
+    (by simpa using hlen.trans_lt hj) (getElem_set_lt_of_le hj hpre hxy hlen _)
+
+/-- The column step of row insertion when the bumped letter `y` bumps in turn: if `upper` sits on
+top of `lower`, `x < y` replaces `upper[j] = y` in column `j` of `upper` (the entries of `upper`
+before column `j` being at most `x`), and `y` replaces the entry in column `j'` of `lower` (the
+entries of `lower` before column `j'` being at most `y`), then the new upper row sits on top of the
+new lower row. -/
+private theorem isRowAbove_set_set {x y : α} {upper lower : List α} {j j' : ℕ}
+    (h : upper.IsRowAbove lower) (hj : j < upper.length) (hUj : upper[j] = y)
+    (hpre : ∀ (i : ℕ) (hi : i < j), upper[i] ≤ x) (hxy : x < y)
+    (hj' : j' < lower.length) (hpre' : ∀ (i : ℕ) (hi : i < j'), lower[i] ≤ y) :
+    (upper.set j x).IsRowAbove (lower.set j' y) := by
+  have hjj : j' ≤ j := le_of_forall_getElem_le h hj hUj hj'.le hpre'
+  have hset := isRowAbove_set_of_le h hj (hUj ▸ hxy.le)
+  refine ⟨by simpa using hset.length_le, fun c hu hl => ?_⟩
+  simp only [List.length_set] at hl
+  by_cases hc : j' = c
+  · subst hc
+    rw [getElem_set_self]
+    exact getElem_set_lt_of_le hj hpre hxy hjj hu
+  · rw [getElem_set_ne hc]
+    exact hset.getElem_lt c hu (by simpa using hl)
+
 /-- The column step of row insertion: if `upper` sits on top of `lower` and inserting `x` into
 `upper` bumps `y`, then the new upper row sits on top of the result of inserting `y` into
 `lower`. The bumped letter lands weakly to the left of the column it left. -/
@@ -782,42 +846,11 @@ private theorem isRowAbove_rowBump {x y : α} {upper lower : List α}
   | none =>
     have hle := (rowBump_snd_eq_none_iff y lower).mp hlow
     rw [rowBump_of_forall_le y lower hle]
-    -- every entry of `lower` is at most `y`, so `lower` ends strictly before column `j`
-    have hlen : lower.length ≤ j := by
-      by_contra hcon
-      have := h.getElem_lt j hj (by omega)
-      exact absurd (hle _ (getElem_mem (by omega))) (not_le.mpr (hUj ▸ this))
-    refine ⟨by simp; omega, fun c hu hl => ?_⟩
-    simp only [length_append, length_cons, length_nil] at hl
-    rw [getElem_set]
-    by_cases hc : c < lower.length
-    · rw [getElem_append_left hc, ite_eq_right (by omega)]
-      exact h.getElem_lt c (by simpa using hu) hc
-    · have hc' : c = lower.length := by omega
-      subst hc'
-      rw [getElem_append_right (by omega)]
-      simp only [Nat.sub_self, getElem_cons_zero]
-      split_ifs with hjc
-      · exact hxy
-      · exact (hpre _ (by omega)).trans_lt hxy
+    exact isRowAbove_set_append_of_forall_le h hj hUj hpre hxy hle
   | some w =>
-    obtain ⟨j', hj', hL', _, hpre', hyw⟩ :=
-      exists_set_of_rowBump_snd_eq_some hlow
+    obtain ⟨j', hj', hL', -, hpre', -⟩ := exists_set_of_rowBump_snd_eq_some hlow
     rw [hL']
-    -- the first entry of `lower` exceeding `y` is weakly left of column `j`
-    have hjj : j' ≤ j := by
-      by_contra hcon
-      have := h.getElem_lt j hj (by omega)
-      exact absurd (hpre' j (by omega)) (not_le.mpr (hUj ▸ this))
-    refine ⟨by simpa using h.length_le, fun c hu hl => ?_⟩
-    simp only [List.length_set] at hu hl
-    rw [getElem_set, getElem_set]
-    split_ifs with h1 h2 h2
-    · exact hxy
-    · subst h1
-      exact hxy.trans (hUj ▸ h.getElem_lt _ hj hl)
-    · exact (hpre c (by omega)).trans_lt hxy
-    · exact h.getElem_lt c hu hl
+    exact isRowAbove_set_set h hj hUj hpre hxy hj' hpre'
 
 /-- **Row insertion preserves tableaux.** -/
 theorem _root_.List.IsTableauRows.rowInsert {rows : List (List α)} (h : rows.IsTableauRows)
@@ -1106,18 +1139,19 @@ def rowInsertEquiv :
     {rows : List (List α) // rows.IsTableauRows} × α ≃
       {p : List (List α) × ℕ //
         p.1.IsTableauRows ∧ (p.1.getD (p.2 + 1) []).length < (p.1.getD p.2 []).length} where
-  toFun p := ⟨(rowInsert p.2 p.1.1, rowInsertIndex p.2 p.1.1), p.1.2.rowInsert p.2,
-    length_getD_succ_rowInsertIndex_lt p.1.2.sortedGE_map_length p.2⟩
-  invFun p := (⟨(reverseRowInsert p.1.2 p.1.1).1, p.2.1.reverseRowInsert p.2.2⟩,
-    (reverseRowInsert p.1.2 p.1.1).2.get
-      (Option.isSome_iff_exists.mpr ((rowInsert_reverseRowInsert p.2.1 p.2.2).imp fun _ h => h.1)))
+  toFun p := ⟨(rowInsert p.2 p.1.val, rowInsertIndex p.2 p.1.val), p.1.property.rowInsert p.2,
+    length_getD_succ_rowInsertIndex_lt p.1.property.sortedGE_map_length p.2⟩
+  invFun p := (⟨(reverseRowInsert p.val.2 p.val.1).1, p.property.1.reverseRowInsert p.property.2⟩,
+    (reverseRowInsert p.val.2 p.val.1).2.get
+      (Option.isSome_iff_exists.mpr ((rowInsert_reverseRowInsert p.property.1 p.property.2).imp fun
+          _ h => h.1)))
   left_inv p := by
-    have h := reverseRowInsert_rowInsert p.2 p.1.2.nil_notMem p.1.2.sortedLE
+    have h := reverseRowInsert_rowInsert p.2 p.1.property.nil_notMem p.1.property.sortedLE
     refine Prod.ext (Subtype.ext ?_) ?_
     · simp [h]
     · simp [h]
   right_inv p := by
-    obtain ⟨x, hx, hins, hidx⟩ := rowInsert_reverseRowInsert p.2.1 p.2.2
+    obtain ⟨x, hx, hins, hidx⟩ := rowInsert_reverseRowInsert p.property.1 p.property.2
     refine Subtype.ext (Prod.ext ?_ ?_)
     · simpa [hx] using hins
     · simpa [hx] using hidx
@@ -1126,20 +1160,20 @@ def rowInsertEquiv :
 @[simp]
 theorem rowInsertEquiv_apply_coe (rows : {rows : List (List α) // rows.IsTableauRows}) (x : α) :
     (rowInsertEquiv (rows, x) : List (List α) × ℕ) =
-      (rowInsert x rows.1, rowInsertIndex x rows.1) := (rfl)
+      (rowInsert x rows.val, rowInsertIndex x rows.val) := (rfl)
 
 /-- The tableau of `rowInsertEquiv.symm p` is the result of reverse row insertion. -/
 @[simp]
 theorem rowInsertEquiv_symm_apply_fst_coe
     (p : {p : List (List α) × ℕ //
       p.1.IsTableauRows ∧ (p.1.getD (p.2 + 1) []).length < (p.1.getD p.2 []).length}) :
-    ((rowInsertEquiv.symm p).1 : List (List α)) = (reverseRowInsert p.1.2 p.1.1).1 := (rfl)
+    ((rowInsertEquiv.symm p).1 : List (List α)) = (reverseRowInsert p.val.2 p.val.1).1 := (rfl)
 
 /-- The letter of `rowInsertEquiv.symm p` is the letter returned by reverse row insertion. -/
 theorem some_rowInsertEquiv_symm_apply_snd
     (p : {p : List (List α) × ℕ //
       p.1.IsTableauRows ∧ (p.1.getD (p.2 + 1) []).length < (p.1.getD p.2 []).length}) :
-    some (rowInsertEquiv.symm p).2 = (reverseRowInsert p.1.2 p.1.1).2 := by
+    some (rowInsertEquiv.symm p).2 = (reverseRowInsert p.val.2 p.val.1).2 := by
   simp [rowInsertEquiv]
 
 end TauCeti

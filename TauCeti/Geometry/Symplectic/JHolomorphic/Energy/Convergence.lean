@@ -60,7 +60,6 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
           ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
-  classical
   obtain ⟨δ, hδ, hδprop⟩ :=
     exists_pos_forall_exists_strictMono_finset_norm_fderiv_le hW hJ hK hKW hJsq
   refine ⟨δ, hδ, fun Ω u E hΩ hu hCR huK hint hE ↦ ?_⟩
@@ -70,14 +69,16 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
   have hequi : EquicontinuousOn (fun n ↦ u (ψ n)) D :=
     equicontinuousOn_of_forall_isCompact_norm_fderiv_le hD
       (fun n ↦ ((hu (ψ n)).differentiableOn (by norm_num)).mono sdiff_subset) hb
-  obtain ⟨χ, hχ, v, hv, hconv⟩ := exists_subseq_tendstoLocallyUniformlyOn_of_equicontinuousOn hD
-    hequi fun x hx ↦ ⟨K, hK, fun n ↦ huK (ψ n) hx.1⟩
-  refine ⟨ψ ∘ χ, Z, v, hψ.comp hχ, hZΩ, hZE, ?_, ?_, hv, ?_, hconv⟩
+  obtain ⟨χ, hχ, v, hvc, hconv⟩ :=
+    exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hD hequi
+      fun z hz ↦ ⟨K, hK, fun n ↦ huK (ψ n) hz.1⟩
+  refine ⟨ψ ∘ χ, Z, v, hψ.comp hχ, hZΩ, hZE, ?_, ?_, ?_, ?_, hconv⟩
   · intro z hz ε hε
     exact hχ.tendsto_atTop.eventually (hconc z hz ε hε)
   · intro C hC hCD
     obtain ⟨M, hM⟩ := hb C hC hCD
     exact ⟨M, fun n ↦ hM (χ n)⟩
+  · exact hvc
   · intro z hz
     exact hK.isClosed.mem_of_tendsto (hconv.tendsto_at hz)
       (Eventually.of_forall fun n ↦ huK (ψ (χ n)) hz.1)

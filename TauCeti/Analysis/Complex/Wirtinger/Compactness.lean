@@ -19,9 +19,9 @@ Let `2 < p < ∞` and let `U ⊆ ℂ` be open. For a map `u` smooth on `U` with 
 Hilbert space, the interior Calderón–Zygmund estimate
 (`TauCeti.exists_eLpNorm_fderiv_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm`) bounds the `Lᵖ` norm
 of the derivative of `u` on a compact subset of `U` by the `Lᵖ(U)` norms of `\bar∂u` and `u`, and
-Morrey's inequality (`TauCeti.edist_le_of_contDiffOn_ball_midpoint_of_finrank_lt`) turns an `Lᵖ`
-bound on the derivative, `p > 2`, into a Hölder bound of exponent `1 - 2 / p`. Together they give a
-local Hölder estimate controlled by `\bar∂u` and `u` alone
+Morrey's inequality (`TauCeti.enorm_sub_le_of_contDiffOn_ball_midpoint_of_finrank_lt`) turns an
+`Lᵖ` bound on the derivative, `p > 2`, into a Hölder bound of exponent `1 - 2 / p`. Together they
+give a local Hölder estimate controlled by `\bar∂u` and `u` alone
 (`TauCeti.exists_edist_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm`): for `K ⊆ U` compact there are
 `C` and `δ > 0` with
 
@@ -38,6 +38,10 @@ By the Arzelà–Ascoli theorem for locally Hölder families
 values in a proper space, has a subsequence converging locally uniformly on `U`; the limit is
 continuous on `U` and Hölder of the same exponent on each compact subset
 (`TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le`).
+
+The bounds here are only required on compact subsets of `U`. The file
+`TauCeti.Analysis.Complex.Wirtinger.Precompact` proves the same conclusions for families bounded
+on all of `U`, with `\bar∂u` bounded in `Lᵖ(U)` up to a bounded error.
 
 This is the compactness step for functions solving a scalar Cauchy–Riemann equation with an `Lᵖ`
 forcing, such as `\bar∂b = -ν b + f` with `ν` bounded and `f` bounded in `Lᵖ`. For `p = 2 + 2 / m`
@@ -93,8 +97,12 @@ theorem exists_edist_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm {p : ℝ≥0} (hp
   set M : ℝ := 2 ^ (Module.finrank ℝ ℂ + 1) /
       (Module.finrank ℝ ℂ * volume.real (ball (0 : ℂ) 1)) *
       (Module.finrank ℝ ℂ * volume.real (ball (0 : ℂ) 1) * (p - 1) /
-        (p - Module.finrank ℝ ℂ)) ^ (1 - 1 / (p : ℝ)) *
-      2 ^ (1 - Module.finrank ℝ ℂ / (p : ℝ))
+        (p - Module.finrank ℝ ℂ)) ^ (1 - 1 / (p : ℝ)) * 2 ^ ((1 - 2 / p : ℝ≥0) : ℝ)
+  have hα : ((1 - 2 / p : ℝ≥0) : ℝ) = 1 - (Module.finrank ℝ ℂ : ℝ) / (p : ℝ) := by
+    rw [Complex.finrank_real_complex, NNReal.coe_sub ((div_le_one₀ (zero_lt_two.trans hp)).2
+      hp.le), NNReal.coe_div]
+    norm_num
+  have hα0 : 0 ≤ 1 - (Module.finrank ℝ ℂ : ℝ) / (p : ℝ) := hα ▸ NNReal.coe_nonneg _
   refine ⟨M.toNNReal * C₁, (δ₀ / 2).toNNReal, by simpa using hδ₀, fun u hu x hx y hxy ↦ ?_⟩
   have hxy' : dist x y < δ₀ / 2 := by
     simpa [Real.coe_toNNReal _ (half_pos hδ₀).le] using hxy
@@ -104,19 +112,26 @@ theorem exists_edist_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm {p : ℝ≥0} (hp
   have hzx : dist z x = dist x y / 2 := by
     rw [dist_comm, dist_left_midpoint, Real.norm_eq_abs, abs_of_pos (by norm_num)]
     ring
-  have hball : ball z (dist x y) ⊆ cthickening δ₀ K := fun w hw ↦
+  have hball : ball z ‖x - y‖ ⊆ cthickening δ₀ K := fun w hw ↦
     mem_cthickening_of_dist_le w x δ₀ K hx (by
-      linarith [dist_triangle w z x, mem_ball.1 hw, dist_nonneg (x := x) (y := y)])
-  have hmorrey := edist_le_of_contDiffOn_ball_midpoint_of_finrank_lt (μ := volume)
+      rw [mem_ball, ← dist_eq_norm] at hw
+      linarith [dist_triangle w z x, dist_nonneg (x := x) (y := y)])
+  have hmorrey := enorm_sub_le_of_contDiffOn_ball_midpoint_of_finrank_lt (μ := volume)
     ((hu.mono (hball.trans hδ₀U)).of_le (by exact_mod_cast le_top)) hfin
-  rw [show ((Module.finrank ℝ ℂ : ℕ) : ℝ≥0) = 2 by simp] at hmorrey
-  calc edist (u x) (u y)
-      ≤ ENNReal.ofReal M * eLpNorm (fderiv ℝ u) p (volume.restrict (ball z (dist x y))) *
-          edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) := hmorrey
-    _ ≤ ENNReal.ofReal M * (C₁ * (eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p
-          (volume.restrict U) + eLpNorm u p (volume.restrict U))) *
-          edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) := by
+  -- The factor `(2 |x - y|) ^ (1 - 2 / p)` of Morrey's inequality splits off
+  -- `|x - y| ^ (1 - 2 / p)`.
+  rw [Real.mul_rpow zero_le_two (norm_nonneg _), ← mul_assoc,
+    ENNReal.ofReal_mul' (Real.rpow_nonneg (norm_nonneg _) _), ← dist_eq_norm,
+    ← ENNReal.ofReal_rpow_of_nonneg dist_nonneg hα0, ← edist_dist, ← hα] at hmorrey
+  rw [eDist_eq_eNorm_sub]
+  calc ‖u x - u y‖ₑ
+      ≤ ENNReal.ofReal M * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
+          eLpNorm (fderiv ℝ u) p (volume.restrict (ball z (dist x y))) := hmorrey
+    _ ≤ ENNReal.ofReal M * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
+          (C₁ * (eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict U) +
+            eLpNorm u p (volume.restrict U))) := by
       gcongr
+      rw [dist_eq_norm]
       exact (eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)).trans (hC₁ u hu)
     _ = _ := by
       rw [ENNReal.coe_mul, ENNReal.ofNNReal_toNNReal]
