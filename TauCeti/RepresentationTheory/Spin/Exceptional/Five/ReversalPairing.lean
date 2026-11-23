@@ -15,18 +15,20 @@ import TauCeti.RepresentationTheory.Spin.Exceptional.Five.Group
 
 For a polarization `V = W ⊕ W' ⊕ L` of a five-dimensional quadratic space, the four-dimensional
 spinor module `S = ⋀ W` carries the reversal pairing `⟨s, t⟩ = [reverse s ∧ t]_top` of a basis
-`w₁, w₂` of `W`, which is Spin-invariant (`TauCeti.reversalPairing_coord_univ_spinRep`). The
-group `Spin(Q)` is isomorphic to `Sp₄(K)` by an isomorphism `f` under which the spin
-representation is the standard representation of `Sp₄`, along a linear equivalence `E : S ≃ K⁴`
+`w₁, w₂` of `W`, which is Spin-invariant (`TauCeti.reversalPairing_coord_univ_spinRep`). When
+`2 ≠ 0` in `K`, the group `Spin(Q)` is isomorphic to `Sp₄(K)` by an isomorphism `f` under which
+the spin representation is the standard representation of `Sp₄`, along a linear equivalence
+`E : S ≃ K⁴`
 (`exists_spinGroup_mulEquiv_symplecticGroup_and_spinRep_equiv_stdSymplecticRep_of_finrank_eq_five`).
 
 This file compares the two symplectic structures on `S`. Every bilinear form on `K⁴` invariant
 under `Sp₄(K)` is a multiple of the standard form `ω(x, y) = xᵀ J y`
 (`TauCeti.exists_eq_smul_stdSymplecticBilinForm`), so every Spin-invariant bilinear form on `S`
 is a multiple of `ω(E s, E t)`. For the reversal pairing the multiple is nonzero, since
-`⟨1, w₁ ∧ w₂⟩ = 1`. Consequently the Spin-invariant bilinear forms on `S` form a line, spanned by
-the reversal pairing. The scalar `-1` of `Spin(Q)` acts on `S` by `-1`, so `f` sends it to the
-central element `-I` of `Sp₄(K)`; it does not act trivially, as it does on `V`.
+`⟨1, w₁ ∧ w₂⟩ = 1`. Consequently, when `2 ≠ 0`, the Spin-invariant bilinear forms on `S` form a
+line, spanned by the reversal pairing. The scalar `-1` of `Spin(Q)` acts on `S` by `-1`, so `f`
+sends it to the central element `-I` of `Sp₄(K)`; when `2 ≠ 0` it does not act trivially, as it
+does on `V`.
 
 ## Main results
 
@@ -36,8 +38,8 @@ central element `-I` of `Sp₄(K)`; it does not act trivially, as it does on `V`
   pairing is a nonzero multiple of the standard symplectic form.
 * `TauCeti.coe_apply_spinGroup_negOne`: `f` sends the scalar `-1` of `Spin(Q)` to `-I`.
 * `TauCeti.exists_eq_smul_reversalPairing_of_finrank_eq_five` and
-  `TauCeti.invariantForms_spinRep_of_finrank_eq_five`: in dimension five every Spin-invariant
-  bilinear form on `S` is a multiple of the reversal pairing.
+  `TauCeti.invariantForms_spinRep_of_finrank_eq_five`: in dimension five with `2 ≠ 0`, every
+  Spin-invariant bilinear form on `S` is a multiple of the reversal pairing.
 
 ## References
 
@@ -60,7 +62,8 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 /-- **Spin-invariant forms are symplectic.** Along an isomorphism `f : Spin(Q) ≃ Sp₂ₙ(K)` and an
 equivalence `E` of the spin representation with the standard representation of `Sp₂ₙ(K)`
 through `f`, every Spin-invariant bilinear form on the spinor module is a multiple of the
-standard symplectic form `ω(E s, E t)`. In dimension five such `f` and `E` exist with `n = 2`, by
+standard symplectic form `ω(E s, E t)`. In dimension five over a field with `2 ≠ 0`, such `f`
+and `E` exist with `n = 2`, by
 `exists_spinGroup_mulEquiv_symplecticGroup_and_spinRep_equiv_stdSymplecticRep_of_finrank_eq_five`.
 -/
 theorem exists_eq_mul_stdSymplecticBilinForm_of_isInvariantForm
@@ -96,7 +99,8 @@ theorem exists_eq_mul_stdSymplecticBilinForm_of_isInvariantForm
 `f : Spin(Q) ≃ Sp₂ₙ(K)` and an equivalence `E` of the spin representation with the standard
 representation of `Sp₂ₙ(K)` through `f`, the reversal pairing `[reverse s ∧ t]_top` of a basis of
 the rank-two isotropic summand `W` is a nonzero multiple of the standard symplectic form
-`ω(E s, E t)`. In dimension five such `f` and `E` exist with `n = 2`, by
+`ω(E s, E t)`. In dimension five over a field with `2 ≠ 0`, such `f` and `E` exist with
+`n = 2`, by
 `exists_spinGroup_mulEquiv_symplecticGroup_and_spinRep_equiv_stdSymplecticRep_of_finrank_eq_five`.
 -/
 theorem exists_reversalPairing_eq_mul_stdSymplecticBilinForm

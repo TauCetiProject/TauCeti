@@ -362,9 +362,9 @@ theorem exists_eq_smul_stdSymplecticBilinForm {B : LinearMap.BilinForm k ((Fin n
   have h := hB.isIsometry ⟨_, hτ⟩
   rwa [stdSymplecticRep_apply, ← Matrix.toLin'_apply', Matrix.toLin'_toMatrix'] at h
 
-/-- **The invariant bilinear forms of the symplectic group form a line**: over a field, the
-bilinear forms on `k^(2n)` invariant under `Sp₂ₙ(k)` are the multiples of the standard
-symplectic form. -/
+/-- **The invariant bilinear forms of the symplectic group**: over a field, the bilinear forms on
+`k^(2n)` invariant under `Sp₂ₙ(k)` are the multiples of the standard symplectic form, so they form
+the span of that form, which is a line when `n > 0`. -/
 theorem invariantForms_stdSymplecticRep :
     Representation.invariantForms (stdSymplecticRep k n) =
       Submodule.span k {stdSymplecticBilinForm k n} := by

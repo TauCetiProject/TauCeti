@@ -19,7 +19,7 @@ For an alternating bilinear form `ω` and a vector `v`, the transvection `x ↦ 
 these transvections already pin down `ω` up to a scalar: every bilinear form they preserve is a
 multiple of `ω` (`LinearMap.BilinForm.exists_eq_smul_of_forall_isIsometry_transvection`).
 In particular, the invariant bilinear forms of a symplectic group on its standard representation
-form a line spanned by the symplectic form.
+are spanned by the symplectic form; this span is a line when the representation is nonzero.
 
 ## Main results
 
