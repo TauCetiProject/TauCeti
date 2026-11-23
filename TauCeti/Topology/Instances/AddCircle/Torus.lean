@@ -11,7 +11,9 @@ public import TauCeti.Topology.Algebra.Module.Matrix
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import TauCeti.Algebra.AddCircle
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.LinearAlgebra.FreeModule.Int
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Integer matrices acting on tori, and straight loops
@@ -81,11 +83,6 @@ theorem smulVecHom_coe_pi (t : ι → ℝ) :
   simp only [smulVecHom_apply, mulVec, dotProduct, map_apply, ← zsmul_eq_mul,
     QuotientAddGroup.mk_sum, AddCircle.coe_zsmul]
 
-/-- Casting to `ℝ` commutes with multiplying an integer vector by an integer matrix. -/
-private theorem map_intCast_mulVec (v : ι → ℤ) :
-    A.map ((↑) : ℤ → ℝ) *ᵥ (v · : ι → ℝ) = fun k ↦ ((A *ᵥ v) k : ℝ) :=
-  funext fun k ↦ (RingHom.map_mulVec (Int.castRingHom ℝ) A v k).symm
-
 /-- An integer matrix sends the straight loop of `n` to the straight loop of `A *ᵥ n`. -/
 theorem smulVecHom_comp_torusLoop (n : ι → ℤ) :
     (A.smulVecHom (AddCircle p) : C(ι → AddCircle p, κ → AddCircle p)).comp
@@ -98,20 +95,10 @@ theorem smulVecHom_comp_torusLoop (n : ι → ℤ) :
     funext fun i ↦ by
       rw [TauCeti.torusLoop_apply, Pi.smul_apply, smul_eq_mul, zsmul_eq_mul, mul_comm (n i : ℝ),
         mul_assoc]
-  rw [ContinuousMap.comp_apply, Path.coe_toContinuousMap, ContinuousMap.coe_ofClass, hn,
-    smulVecHom_coe_pi, Path.coe_toContinuousMap, TauCeti.torusLoop_apply, mulVec_smul]
-  dsimp only
-  rw [Pi.smul_apply, map_intCast_mulVec, smul_eq_mul, zsmul_eq_mul, mul_comm ((A *ᵥ n) k : ℝ),
-    mul_assoc]
-
-/-- A real vector vanishes coordinatewise in `AddCircle p` exactly when it is `p` times an integer
-vector. -/
-private theorem coe_pi_eq_zero_iff {s : κ → ℝ} :
-    (fun k ↦ (s k : AddCircle p)) = 0 ↔ ∃ v : κ → ℤ, s = p • (v · : κ → ℝ) := by
-  simp only [funext_iff, Pi.zero_apply, AddCircle.coe_eq_zero_iff, Pi.smul_apply, smul_eq_mul,
-    zsmul_eq_mul, mul_comm p]
-  exact ⟨fun h ↦ by choose v hv using h; exact ⟨v, fun k ↦ (hv k).symm⟩,
-    fun ⟨v, hv⟩ k ↦ ⟨v k, (hv k).symm⟩⟩
+  simp only [ContinuousMap.comp_apply, Path.coe_toContinuousMap, ContinuousMap.coe_ofClass, hn,
+    smulVecHom_coe_pi, mulVec_smul, map_intCast_mulVec]
+  simp only [TauCeti.torusLoop_apply, Pi.smul_apply, smul_eq_mul, zsmul_eq_mul]
+  ring_nf
 
 omit [Fintype ι] in
 private theorem smul_intCast_eq (v : ι → ℤ) : p • (v · : ι → ℝ) = fun i ↦ (v i : ℝ) * p :=
@@ -124,8 +111,8 @@ theorem coe_mem_ker_smulVecHom_iff (t : ι → ℝ) :
     (fun i ↦ (t i : AddCircle p)) ∈ (A.smulVecHom (AddCircle p)).toAddMonoidHom.ker ↔
       ∃ v : κ → ℤ, A.map ((↑) : ℤ → ℝ) *ᵥ t = fun k ↦ (v k : ℝ) * p := by
   rw [AddMonoidHom.mem_ker, ContinuousAddMonoidHom.coe_toAddMonoidHom, AddMonoidHom.coe_ofClass,
-    smulVecHom_coe_pi, coe_pi_eq_zero_iff]
-  simp only [smul_intCast_eq]
+    smulVecHom_coe_pi, AddCircle.pi_coe_eq_zero_iff]
+  simp only [zsmul_eq_mul, eq_comm]
 
 end Matrix
 
@@ -151,7 +138,8 @@ private theorem coe_inv_mulVec_eq_zero_iff {A : Matrix ι ι ℤ}
       ∃ m, A *ᵥ m = n := by
   set B := A.map ((↑) : ℤ → ℝ)
   have hcast (m : ι → ℤ) : B *ᵥ (m · : ι → ℝ) = fun x ↦ ((A *ᵥ m) x : ℝ) := map_intCast_mulVec A m
-  rw [coe_pi_eq_zero_iff]
+  rw [AddCircle.pi_coe_eq_zero_iff]
+  simp only [zsmul_eq_mul, ← smul_intCast_eq, eq_comm (b := B⁻¹ *ᵥ _)]
   constructor
   · rintro ⟨m, hm⟩
     have hv := congrArg (B *ᵥ ·) hm
@@ -212,8 +200,11 @@ theorem coe_quotientRangeEquivKerSmulVecHom_mk (A : Matrix ι ι ℤ) (hA : A.de
     (n : ι → ℤ) :
     (quotientRangeEquivKerSmulVecHom p A hA hp n : ι → AddCircle p) =
       fun i ↦ (((A.map ((↑) : ℤ → ℝ))⁻¹ *ᵥ (p • (n · : ι → ℝ))) i : AddCircle p) := by
-  unfold quotientRangeEquivKerSmulVecHom
-  rfl
+  rw [quotientRangeEquivKerSmulVecHom, AddEquiv.trans_apply,
+    QuotientAddGroup.quotientAddEquivOfEq_mk, ← invMulVecHom_apply]
+  -- The first isomorphism theorem sends the class of `n` to the corestriction of
+  -- `invMulVecHom p A` at `n`, whose underlying point is `invMulVecHom p A n`.
+  exact congrArg Subtype.val (TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk _ _ n)
 
 /-- A square integer matrix `A` with `det A = 0` kills infinitely many points of the torus
 `ι → AddCircle p`: for a nonzero integer null vector `m` of `A`, the kernel contains the image of

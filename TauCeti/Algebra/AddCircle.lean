@@ -49,7 +49,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.coe_eq_coe_iff_exists_zsmul`: two elements have the same class in `AddCircle p`
   exactly when they differ by an integer multiple of `p`, and
   `AddCircle.eq_of_coe_eq_of_abs_sub_lt`: two such elements closer than `p` are equal.
-* `AddCircle.exists_pi_coe_eq`: every point of a torus `(𝕜 / pℤ)^ι` lifts to `𝕜^ι`.
+* `AddCircle.exists_pi_coe_eq`: every point of a torus `(𝕜 / pℤ)^ι` lifts to `𝕜^ι`, and
+  `AddCircle.pi_coe_eq_zero_iff`: a lift of `0` is a family of integer multiples of `p`.
 * `AddCircle.intCast_floor_equivIco_add`: the floor of the sum of two representatives in
   `[0, 1)` is their defect of additivity.
 * `AddCircle.natCard_torsionBy_le` and `AddCircle.natCard_torsionBy_pi_le`: when
@@ -174,6 +175,13 @@ coercion so that `obtain ⟨t, rfl⟩` leaves terms that lemmas about coerced an
 theorem exists_pi_coe_eq {𝕜 ι : Type*} [AddCommGroup 𝕜] {p : 𝕜} (θ : ι → AddCircle p) :
     ∃ t : ι → 𝕜, (fun j ↦ (t j : AddCircle p)) = θ :=
   QuotientAddGroup.mk_surjective.comp_left θ
+
+/-- A family of representatives vanishes in the torus `(𝕜 / pℤ)^ι` exactly when it is a family of
+integer multiples of the period. -/
+theorem pi_coe_eq_zero_iff {𝕜 ι : Type*} [AddCommGroup 𝕜] {p : 𝕜} {t : ι → 𝕜} :
+    (fun j ↦ (t j : AddCircle p)) = 0 ↔ ∃ v : ι → ℤ, (fun j ↦ v j • p) = t := by
+  simp only [funext_iff, Pi.zero_apply, coe_eq_zero_iff]
+  exact Classical.skolem
 
 /-- An integer reduces to zero in `AddCircle (1 : 𝕜)`. -/
 @[simp]
