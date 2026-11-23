@@ -61,6 +61,16 @@ namespace OnePoint
 
 attribute [local instance] Complex.finrank_real_complex_fact
 
+/-- On the oriented basis `(1, i)` of `ℂ`, the Fubini–Study form at a finite point `z` takes the
+value `ρ(z)` of the Fubini–Study density. -/
+private theorem fubiniStudyForm_coe_basisOneI (z : ℂ) :
+    fubiniStudyForm.val (z : OnePoint ℂ) Complex.basisOneI = fubiniStudyDensity z := by
+  have hz := (SmoothBundleForm.eval₂_apply fubiniStudyForm (z : OnePoint ℂ) (1 : ℂ)
+    Complex.I).symm.trans (eval₂_fubiniStudyForm_coe z 1 Complex.I)
+  simp only [map_one, one_mul, Complex.I_im, mul_one] at hz
+  refine (congrArg _ (funext fun i ↦ ?_)).trans hz
+  fin_cases i <;> simp
+
 /-- **The Fubini–Study form has total integral one.** Over the Riemann sphere with the canonical
 orientation of its complex structure, reindexed from `Fin (2 * finrank ℂ ℂ)` to `Fin 2`, the
 Fubini–Study form `ω_FS` integrates to `1`. -/
@@ -89,15 +99,10 @@ theorem integralTopForm_fubiniStudyForm :
   have hvol : Complex.basisOneI.addHaar = volume := by
     rw [← Complex.toBasis_orthonormalBasisOneI, OrthonormalBasis.addHaar_eq_volume]
   rw [← hl, h.2, Measure.restrict_univ, hvol]
-  -- On the basis `(1, i)` the form is the Fubini–Study density.
-  refine (integral_congr_ae (ae_of_all _ fun z ↦ ?_)).trans integral_fubiniStudyDensity
-  have hz := (SmoothBundleForm.eval₂_apply fubiniStudyForm (z : OnePoint ℂ) (1 : ℂ)
-    Complex.I).symm.trans (eval₂_fubiniStudyForm_coe z 1 Complex.I)
-  simp only [map_one, one_mul, Complex.I_im, mul_one] at hz
-  convert hz using 2
-  funext i
-  refine (ContinuousLinearEquiv.refl_apply ℝ ℂ _).trans ?_
-  fin_cases i <;> simp
+  -- On the basis `(1, i)` the form is the Fubini–Study density; the derivative applied to the
+  -- basis is `ContinuousLinearEquiv.refl`, which acts definitionally as the identity.
+  exact (integral_congr_ae (ae_of_all _ fun z ↦ fubiniStudyForm_coe_basisOneI z)).trans
+    integral_fubiniStudyDensity
 
 /-- **The Fubini–Study form has total area one.** The measure `|ω_FS|` of the Fubini–Study form
 gives the Riemann sphere measure `1`: in the affine chart it is Lebesgue measure with density
@@ -110,15 +115,10 @@ theorem measure_fubiniStudyForm_univ {m : MeasurableSpace (OnePoint ℂ)}
   -- On the basis `(1, i)`, the pullback of `ω_FS` along `ℂ → OnePoint ℂ` is the density `ρ`.
   have hρ (z : ℂ) : mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ((↑) : ℂ → OnePoint ℂ) fubiniStudyForm.val z
       Complex.basisOneI = fubiniStudyDensity z := by
-    have hz := (SmoothBundleForm.eval₂_apply fubiniStudyForm (z : OnePoint ℂ) (1 : ℂ)
-      Complex.I).symm.trans (eval₂_fubiniStudyForm_coe z 1 Complex.I)
-    simp only [map_one, one_mul, Complex.I_im, mul_one] at hz
     refine (mpullback_apply _ _ z _).trans ?_
     rw [(hasMFDerivAt_coe z).mfderiv]
-    convert hz using 2
-    funext i
-    refine (ContinuousLinearMap.id_apply (R₁ := ℝ) (M₁ := ℂ) _).trans ?_
-    fin_cases i <;> simp
+    -- `ContinuousLinearMap.id` acts definitionally as the identity on the basis vectors.
+    exact fubiniStudyForm_coe_basisOneI z
   have hint : Integrable fubiniStudyDensity :=
     Integrable.of_integral_ne_zero (by rw [integral_fubiniStudyDensity]; exact one_ne_zero)
   have hf : MeasurableEmbedding ((↑) : ℂ → OnePoint ℂ) := isOpenEmbedding_coe.measurableEmbedding
