@@ -126,17 +126,14 @@ private theorem sum_embPos_baseFam_eq_zero_of_sum_smul_eq_zero {d : ℤ} (hd0 : 
     refine mul_left_cancel₀ hsd ?_
     rw [Finset.mul_sum, mul_zero, ← h1]
     exact Finset.sum_congr rfl fun i _ ↦ by ring
-  have hreC : ∑ i : Fin R × Fin S, (c i : ℂ) * ((baseFam d N R S i k).re : ℂ) = 0 := by
-    exact_mod_cast hre
-  have himC : ∑ i : Fin R × Fin S, (c i : ℂ) * ((baseFam d N R S i k).im : ℂ) = 0 := by
-    exact_mod_cast him
   calc ∑ i : Fin R × Fin S, (c i : ℂ) * Zsqrtd.embPos d (baseFam d N R S i k)
       = (∑ i, (c i : ℂ) * ((baseFam d N R S i k).re : ℂ)) +
           Complex.sqrt d * ∑ i, (c i : ℂ) * ((baseFam d N R S i k).im : ℂ) := by
-        simp only [Zsqrtd.embPos_apply, Finset.mul_sum]
-        rw [← Finset.sum_add_distrib]
+        simp only [Zsqrtd.embPos_apply, Finset.mul_sum, ← Finset.sum_add_distrib]
         exact Finset.sum_congr rfl fun i _ ↦ by ring
-    _ = 0 := by simp [hreC, himC]
+    _ = 0 := by
+        simp [show ∑ i, (c i : ℂ) * ((baseFam d N R S i k).re : ℂ) = 0 from mod_cast hre,
+          show ∑ i, (c i : ℂ) * ((baseFam d N R S i k).im : ℂ) = 0 from mod_cast him]
 
 private noncomputable def relationPoly {R S : ℕ} (c : Fin R × Fin S → ℝ) : ℂ[X][X] :=
   ∑ r : Fin R, Polynomial.monomial r.val (∑ s : Fin S, Polynomial.monomial s.val (c (r, s) : ℂ))
@@ -281,9 +278,8 @@ private theorem one_le_det_intGram {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
 private theorem one_le_two_mul_mul_sqrt_natAbs {d : ℤ} (hd0 : d ≠ 0) {N : ℕ} (hN : 0 < N) :
     (1 : ℝ) ≤ 2 * N * Real.sqrt d.natAbs := by
   have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hN
-  have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs := by
-    rw [← Real.sqrt_one]
-    exact Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd0)
+  have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs :=
+    Real.sqrt_one.symm.trans_le (Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd0))
   nlinarith
 
 private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
@@ -293,20 +289,15 @@ private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
       ‖Zsqrtd.embNeg d (baseFam d N R S i k)‖ ≤
         (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val) := by
   have h2Nd_ge : (1 : ℝ) ≤ 2 * N * Real.sqrt d.natAbs := one_le_two_mul_mul_sqrt_natAbs hd0 hN
-  have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs := by
-    rw [← Real.sqrt_one]
-    exact Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd0)
+  have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs :=
+    Real.sqrt_one.symm.trans_le (Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd0))
   have hpt (a b : ℤ) (ha : |a| ≤ N) (hb : |b| ≤ N) :
       |(a : ℝ)| + |(b : ℝ)| * Real.sqrt d.natAbs ≤ 2 * N * Real.sqrt d.natAbs := by
     have haR : |(a : ℝ)| ≤ N := by exact_mod_cast ha
     have hbR : |(b : ℝ)| ≤ N := by exact_mod_cast hb
     nlinarith
-  have hk1 : |(k.1.val : ℤ)| ≤ N := by
-    rw [abs_of_nonneg (Int.natCast_nonneg _)]
-    exact_mod_cast k.1.isLt.le
-  have hk2 : |(k.2.1.val : ℤ)| ≤ N := by
-    rw [abs_of_nonneg (Int.natCast_nonneg _)]
-    exact_mod_cast k.2.1.isLt.le
+  have hk1 : |(k.1.val : ℤ)| ≤ N := abs_le.mpr ⟨by omega, mod_cast k.1.isLt.le⟩
+  have hk2 : |(k.2.1.val : ℤ)| ≤ N := abs_le.mpr ⟨by omega, mod_cast k.2.1.isLt.le⟩
   have hdesc : (i.1.val.descFactorial k.2.2.val : ℝ) ≤ (R : ℝ) ^ N := by
     exact_mod_cast (Nat.descFactorial_le_pow _ _).trans
       ((Nat.pow_le_pow_left i.1.isLt.le _).trans (Nat.pow_le_pow_right hR k.2.2.isLt.le))
@@ -323,8 +314,7 @@ private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
     calc ‖φ ⟨k.1.val, -k.2.1.val⟩‖ ^ i.2.val * i.1.val.descFactorial k.2.2.val *
             ‖φ ⟨k.1.val, k.2.1.val⟩‖ ^ (i.1.val - k.2.2.val)
         ≤ (2 * N * Real.sqrt d.natAbs) ^ i.2.val * (R : ℝ) ^ N *
-            (2 * N * Real.sqrt d.natAbs) ^ (i.1.val - k.2.2.val) := by
-          gcongr
+            (2 * N * Real.sqrt d.natAbs) ^ (i.1.val - k.2.2.val) := by gcongr
       _ = (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val - k.2.2.val + i.2.val) := by
           rw [pow_add]; ring
       _ ≤ (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val) :=
@@ -349,9 +339,8 @@ private theorem two_mul_log_norm_baseVec_le {d : ℤ} (hd0 : d ≠ 0) {N R S : �
             2 * ((R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val)) ^ 2 := by
           refine Finset.sum_le_sum fun k _ ↦ ?_
           obtain ⟨h1, h2⟩ := norm_emb_baseFam_le hd0 hN hR i k
-          have hp1 := sq_le_sq₀ (norm_nonneg _) (by positivity) |>.mpr h1
-          have hp2 := sq_le_sq₀ (norm_nonneg _) (by positivity) |>.mpr h2
-          linarith
+          nlinarith [sq_le_sq₀ (norm_nonneg _) (by positivity) |>.mpr h1,
+            sq_le_sq₀ (norm_nonneg _) (by positivity) |>.mpr h2]
       _ = 2 * (N : ℝ) ^ 3 * ((R : ℝ) ^ N) ^ 2 *
             ((2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val)) ^ 2 := by
           simp only [Finset.sum_const, Finset.card_univ, Fintype.card_prod, Fintype.card_fin,
@@ -420,9 +409,7 @@ private theorem mul_shiftExp_le (p S : ℕ) (i : Fin R × Fin S) :
 private theorem shift_fst_lt {p R S : ℕ} (hp : 0 < p) {i : Fin R × Fin S} {m : ℕ}
     (hm : m < shiftExp p S i) :
     i.1.val - p * shiftExp p S i + p * m < i.1.val := by
-  have h_le := mul_shiftExp_le p S i
-  have hpm := Nat.mul_lt_mul_of_pos_left hm hp
-  omega
+  have := mul_shiftExp_le p S i; have := Nat.mul_lt_mul_of_pos_left hm hp; omega
 
 private noncomputable def shiftPoly (d : ℤ) (p : ℕ) {R S : ℕ} (i : Fin R × Fin S) :
     (ℤ√d)[X][X] :=
@@ -439,19 +426,7 @@ private def shiftIdx {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S)
   (⟨i.1.val - p * shiftExp p S i + p * m.val, (shift_fst_lt hp m.isLt).trans i.1.isLt⟩,
    ⟨i.2.val + (shiftExp p S i - m.val), by
      have : shiftExp p S i ≤ S - 1 - i.2.val := min_le_right _ _
-     have := i.2.isLt
-     omega⟩)
-
-private theorem shiftIdx_fst_lt {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S)
-    (m : Fin (shiftExp p S i)) : (shiftIdx hp i m).1.val < i.1.val :=
-  shift_fst_lt hp m.isLt
-
-private theorem basePoly_shiftIdx (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S)
-    (m : Fin (shiftExp p S i)) :
-    basePoly d (shiftIdx hp i m) =
-      C (X ^ (i.2.val + (shiftExp p S i - m.val))) *
-        X ^ (i.1.val - p * shiftExp p S i + p * m.val) :=
-  rfl
+     have := i.2.isLt; omega⟩)
 
 private theorem shiftPoly_eq_add_sum (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S) :
     shiftPoly d p i =
@@ -477,10 +452,9 @@ private theorem shiftPoly_eq_add_sum (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : F
     Finset.mul_sum, ← Fin.sum_univ_eq_sum_range]
   congr 1
   refine Finset.sum_congr rfl fun m _ ↦ ?_
-  rw [basePoly_shiftIdx, pow_add, C_mul, pow_add, pow_mul, neg_pow (C (X : (ℤ√d)[X])), ← C_pow,
-    zsmul_eq_mul]
-  push_cast
-  ring
+  dsimp only [basePoly, shiftIdx]
+  rw [pow_add, C_mul, pow_add, pow_mul, neg_pow (C (X : (ℤ√d)[X])), ← C_pow, zsmul_eq_mul]
+  push_cast; ring
 
 private def shiftMatrix {p R S : ℕ} (hp : 0 < p) : Matrix (Fin R × Fin S) (Fin R × Fin S) ℤ :=
   Matrix.of fun i j ↦
@@ -501,26 +475,23 @@ private theorem shiftPoly_eq_sum_basePoly (d : ℤ) {p R S : ℕ} (hp : 0 < p) (
 private theorem det_shiftMatrix_eq_one {p R S : ℕ} (hp : 0 < p) :
     (shiftMatrix (R := R) (S := S) hp).det = 1 := by
   have hno_match {i j : Fin R × Fin S} (hij : i.1.val ≤ j.1.val) (m : Fin (shiftExp p S i)) :
-      j ≠ shiftIdx hp i m :=
-    fun h ↦ absurd (h ▸ shiftIdx_fst_lt hp i m) (Nat.not_lt.mpr hij)
+      j ≠ shiftIdx hp i m := by
+    intro h; subst h; exact Nat.not_lt.mpr hij (shift_fst_lt hp m.isLt)
   let rank : Fin R × Fin S → OrderDual (Fin R ×ₗ Fin S) := OrderDual.toDual ∘ toLex
   have htri : (shiftMatrix (R := R) (S := S) hp).BlockTriangular rank := by
     intro i j hij
-    dsimp only [rank, Function.comp_apply] at hij
-    rw [OrderDual.toDual_lt_toDual] at hij
-    have hij_ne : i ≠ j := fun h ↦ lt_irrefl _ (h ▸ hij)
+    have hij' := OrderDual.toDual_lt_toDual.mp hij
     have hi_le_j : i.1.val ≤ j.1.val := by
-      rcases Prod.Lex.lt_iff.mp hij with h1 | ⟨h1, _⟩
+      rcases Prod.Lex.lt_iff.mp hij' with h1 | ⟨h1, _⟩
       · exact Nat.le_of_lt h1
       · exact le_of_eq (congrArg Fin.val h1)
-    simp only [shiftMatrix, Matrix.of_apply, hij_ne, ↓reduceIte, zero_add]
+    simp only [shiftMatrix, Matrix.of_apply, show i ≠ j from fun h ↦ lt_irrefl _ (h ▸ hij'),
+      ↓reduceIte, zero_add]
     exact Finset.sum_eq_zero fun m _ ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match hi_le_j m)
-  have hdiag (i : Fin R × Fin S) : shiftMatrix (R := R) (S := S) hp i i = 1 := by
-    simp only [shiftMatrix, Matrix.of_apply, ↓reduceIte]
-    rw [Finset.sum_eq_zero fun m _ ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match le_rfl m),
-      add_zero]
   rw [htri.det_eq_prod_diag (OrderDual.toDual.injective.comp toLex.injective)]
-  exact Finset.prod_eq_one fun i _ ↦ hdiag i
+  exact Finset.prod_eq_one fun i _ ↦ by
+    simp [shiftMatrix, Finset.sum_eq_zero fun m _ ↦
+      ite_eq_right_iff.mpr fun h ↦ absurd h (hno_match le_rfl m)]
 
 /-- Unitriangularity of the change of basis `basePoly ↦ shiftPoly` in reverse lexicographic
 order preserves the integer Gram determinant. -/
@@ -530,8 +501,7 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
   have hvec (i : Fin R × Fin S) :
       Zsqrtd.famToLp d _ (shiftFam d p N R S i) =
         ∑ j : Fin R × Fin S, (U i j : ℝ) • baseVec d N R S j := by
-    have hfam : shiftFam d p N R S i = ∑ j, U i j • baseFam d N R S j := by
-      funext k
+    have hfam : shiftFam d p N R S i = ∑ j, U i j • baseFam d N R S j := funext fun k ↦ by
       simp only [shiftFam, shiftPoly_eq_sum_basePoly d hp i, U, baseFam, jetEval_sum,
         Finset.sum_apply, Pi.smul_apply]
     rw [hfam]
@@ -539,11 +509,11 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
     rfl
   have hdetU : (U.map (Int.castRingHom ℝ)).det = 1 := by
     rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_shiftMatrix_eq_one hp, map_one]
-  have hR_eq : ((Zsqrtd.intGram d (shiftFam d p N R S)).det : ℝ) =
-      ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ) := by
+  exact_mod_cast (by
     rw [Zsqrtd.intCast_det_intGram, Zsqrtd.intCast_det_intGram, funext hvec]
-    exact Matrix.det_gram_sum_smul_of_det_eq_one hdetU (baseVec d N R S)
-  exact_mod_cast hR_eq
+    exact Matrix.det_gram_sum_smul_of_det_eq_one hdetU (baseVec d N R S) :
+    ((Zsqrtd.intGram d (shiftFam d p N R S)).det : ℝ) =
+      ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ))
 
 /-- Every jet evaluation of `shiftPoly d p i` at an inert prime `p` is divisible by `p ^ h`. -/
 private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime)
@@ -554,7 +524,6 @@ private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime)
   set h := shiftExp p S i
   set α : ℤ√d := ⟨k.1.val, (k.2.1.val : ℤ)⟩
   set α_bar : ℤ√d := ⟨k.1.val, -(k.2.1.val : ℤ)⟩
-  set j := k.2.2.val
   set f : (ℤ√d)[X] := (shiftPoly d p i).map (evalRingHom α_bar)
   rw [eval_iterate_derivative_eq_factorial_mul, ← taylor_coeff]
   have hf : f = C (α_bar ^ i.2.val) * X ^ (i.1.val - p * h) * (X ^ p - C α_bar) ^ h := by
@@ -567,7 +536,7 @@ private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime)
     rw [hf, taylor_mul, taylor_mul, taylor_C, taylor_X_pow, taylor_pow, hA,
       add_comm (C (p : ℤ√d) * A) (X ^ p)]
   rw [htf]
-  exact pow_dvd_factorial_mul_coeff_mul_X_pow_add_C_mul hp.pos h j
+  exact pow_dvd_factorial_mul_coeff_mul_X_pow_add_C_mul hp.pos h k.2.2.val
     (C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h)) A
 
 /-- **Fact 3: `p`-adic divisibility of `G.det`** at inert primes. -/
@@ -605,19 +574,13 @@ theorem exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one {d : ℤ} (hd 
   · exact ⟨1, Nat.one_pos, by simp, fun _ _ _ ↦ by simp⟩
   rcases Nat.eq_zero_or_pos S with rfl | _hS
   · exact ⟨1, Nat.one_pos, by simp, fun _ _ _ ↦ by simp⟩
-  have hN : 0 < N := by
-    rcases Nat.eq_zero_or_pos N with rfl | hN
-    · simp at hdeg
-    · exact hN
-  have h1 : 1 ≤ (Zsqrtd.intGram d (baseFam d N R S)).det :=
-    one_le_det_intGram hd hd1 hdeg
+  have hN : 0 < N := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hdeg
+  have h1 : 1 ≤ (Zsqrtd.intGram d (baseFam d N R S)).det := one_le_det_intGram hd hd1 hdeg
   set D := (Zsqrtd.intGram d (baseFam d N R S)).det.toNat
   have hD_cast : (D : ℤ) = (Zsqrtd.intGram d (baseFam d N R S)).det :=
     Int.toNat_of_nonneg (by omega)
   refine ⟨D, by omega, ?_, fun p hp hjac ↦ ?_⟩
-  · have hD_real : (D : ℝ) = ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ) := by
-      exact_mod_cast hD_cast
-    rw [hD_real]
+  · rw [show (D : ℝ) = ((Zsqrtd.intGram d (baseFam d N R S)).det : ℝ) from mod_cast hD_cast]
     exact log_det_intGram_le hd hd1 hN hR hdeg
   · rw [← Int.ofNat_dvd, Nat.cast_pow, hD_cast]
     exact pow_dvd_det_intGram hp hjac N R S

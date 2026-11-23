@@ -64,12 +64,10 @@ namespace InertPrimeSum
 private theorem grid_pow_identities (q : ℕ) {C : ℕ} (hC3 : 3 ∣ C) :
     q ^ C = (q ^ (C / 3)) ^ 3 ∧
       q ^ (2 * (C / 3)) = (q ^ (C / 3)) ^ 2 ∧
-      (q ^ (2 * (C / 3))) ^ 3 = (q ^ C) ^ 2 := by
-  have hC_div : C / 3 * 3 = C := Nat.div_mul_cancel hC3
-  have hX : q ^ C = (q ^ (C / 3)) ^ 3 := by rw [← pow_mul, hC_div]
-  have hN : q ^ (2 * (C / 3)) = (q ^ (C / 3)) ^ 2 := by rw [mul_comm 2 (C / 3), pow_mul]
-  have hN3 : (q ^ (2 * (C / 3))) ^ 3 = (q ^ C) ^ 2 := by rw [hN, hX]; ring
-  exact ⟨hX, hN, hN3⟩
+      (q ^ (2 * (C / 3))) ^ 3 = (q ^ C) ^ 2 :=
+  ⟨by rw [← pow_mul, Nat.div_mul_cancel hC3], by rw [mul_comm 2 (C / 3), pow_mul],
+    by rw [← pow_mul, ← pow_mul, show 2 * (C / 3) * 3 = C * 2 by
+      have := Nat.div_mul_cancel hC3; omega]⟩
 
 /-- Parameter arithmetic for `X = q ^ C`, `S = X / C`, `N = q ^ (2 * (C / 3))` when `6 ≤ C` and
 `3 ∣ C`. -/
@@ -91,18 +89,10 @@ private theorem grid_deg_lt_cube {q C : ℕ} (hq3 : 3 ≤ q) (hC6 : 6 ≤ C) (hC
   have hX_gt_C : C < X :=
     (Nat.lt_two_pow_self (n := C)).trans_le (Nat.pow_le_pow_left (by omega) C)
   have hS_pos : 0 < S := Nat.div_pos hX_gt_C.le (by omega)
-  have h6S : 6 * S ≤ X := by
-    have hS_le : S ≤ X / 6 := Nat.div_le_div_left hC6 (by omega)
-    omega
+  have h6S : 6 * S ≤ X := by have := Nat.div_le_div_left (a := X) hC6 (by omega); omega
   refine ⟨by positivity, hS_pos, by positivity, ?_⟩
-  have hX_pos : 1 ≤ X := by omega
-  have hN_pos : 1 ≤ N := by rw [hN_eq]; nlinarith
   rw [hN3_eq]
-  have hXS : (X - 1) + (S - 1) < 2 * X := by omega
-  have hlt1 : N * ((X - 1) + (S - 1)) < 2 * N * X := by nlinarith
-  have hle2 : 2 * (X - 1) * (S - 1) ≤ 2 * X * S :=
-    Nat.mul_le_mul (Nat.mul_le_mul_left 2 (Nat.sub_le X 1)) (Nat.sub_le S 1)
-  nlinarith
+  nlinarith [Nat.sub_le X 1, Nat.sub_le S 1]
 
 private theorem log_grid_error_le {q C : ℕ} (hq3 : 3 ≤ q) (hC3 : 3 ∣ C) :
     let X := q ^ C
@@ -122,11 +112,7 @@ private theorem log_grid_error_le {q C : ℕ} (hq3 : 3 ≤ q) (hC3 : 3 ∣ C) :
     Real.log_pow, Real.log_pow, Real.log_pow]
   push_cast
   have hu2_log : (u : ℝ) ^ 2 * Real.log u ≤ (u : ℝ) ^ 3 := by
-    calc (u : ℝ) ^ 2 * Real.log u
-        ≤ (u : ℝ) ^ 2 * u := mul_le_mul_of_nonneg_left hlogu (by positivity)
-      _ = (u : ℝ) ^ 3 := by ring
-  have hu_le : (u : ℝ) ≤ (u : ℝ) ^ 3 := by nlinarith
-  have _ : (1 : ℝ) ≤ (u : ℝ) ^ 3 := by nlinarith
+    nlinarith [sq_nonneg (u : ℝ)]
   nlinarith
 
 private theorem log_two_mul_grid_mul_sqrt_eq {q C : ℕ} (hq : 0 < q) (hC : 0 < C)
@@ -140,14 +126,11 @@ private theorem log_two_mul_grid_mul_sqrt_eq {q C : ℕ} (hq : 0 < q) (hC : 0 < 
   have hC_ne : (C : ℝ) ≠ 0 := by positivity
   have hN3_X2 : (N : ℝ) ^ 3 = ((q ^ C : ℕ) : ℝ) ^ 2 := by exact_mod_cast hN3_eq
   have hlogN : Real.log (N : ℝ) = 2 / 3 * Real.log ((q : ℝ) ^ C) := by
-    have hpow : Real.log ((N : ℝ) ^ 3) = Real.log (((q ^ C : ℕ) : ℝ) ^ 2) :=
-      congrArg Real.log hN3_X2
+    have hpow := congrArg Real.log hN3_X2
     rw [Real.log_pow, Real.log_pow] at hpow
-    push_cast at hpow
-    linarith
+    push_cast at hpow; linarith
   have hlogsq : Real.log (Real.sqrt q) = 1 / (2 * (C : ℝ)) * Real.log ((q : ℝ) ^ C) := by
-    rw [Real.log_sqrt hq_pos.le, Real.log_pow]
-    field_simp
+    rw [Real.log_sqrt hq_pos.le, Real.log_pow]; field_simp
   rw [Real.log_mul (by positivity) (by positivity),
     Real.log_mul (by positivity) (by positivity), hlogN, hlogsq]
   ring
