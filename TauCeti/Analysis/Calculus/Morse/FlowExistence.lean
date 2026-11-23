@@ -62,8 +62,8 @@ Lyapunov descent along every orbit.
   `TauCeti.negativeGradientFlow_apply_eq_of_forall_nonneg_gradient_eq` and
   `TauCeti.negativeGradientFlow_apply_eq_of_forall_nonpos_gradient_eq` for forward and backward
   half-orbits, and `TauCeti.mem_stableSet_negativeGradientFlow_iff_of_gradient_eq`,
-  `TauCeti.mem_unstableSet_negativeGradientFlow_iff_of_gradient_eq`: the two flows then have the
-  same stable (resp. unstable) sets at `y`.
+  `TauCeti.mem_unstableSet_negativeGradientFlow_iff_of_gradient_eq`: then `y` lies in the stable
+  (resp. unstable) set of any given point for one flow exactly when it does for the other.
 * `TauCeti.forall_negativeGradientFlow_eq_self_iff`: its rest points are the zeros of `∇ f`.
 * `TauCeti.gradient_negativeGradientFlow_eq_zero_iff`: an orbit meets a zero of `∇ f` only if it
   starts at one.
@@ -235,10 +235,10 @@ theorem mem_stableSet_negativeGradientFlow_iff_of_gradient_eq {g : E → ℝ} {K
       ∇ g (negativeGradientFlow f hf τ y) = ∇ f (negativeGradientFlow f hf τ y)) :
     y ∈ Flow.stableSet (negativeGradientFlow g hg) q ↔
       y ∈ Flow.stableSet (negativeGradientFlow f hf) q := by
-  simp only [Flow.mem_stableSet]
-  refine Filter.tendsto_congr' ?_
-  filter_upwards [Filter.eventually_ge_atTop 0] with t ht using
-    negativeGradientFlow_apply_eq_of_forall_nonneg_gradient_eq hg hf hfg ht
+  rw [Flow.mem_stableSet]
+  exact Flow.tendsto_atTop_iff_mem_stableSet_of_eqOn (b := 0) fun t ht ↦ by
+    simpa only [sub_zero] using
+      negativeGradientFlow_apply_eq_of_forall_nonneg_gradient_eq hg hf hfg ht
 
 /-- If the gradients of `g` and `f` coincide along the backward orbit of `y` under the
 negative-gradient flow of `f`, then `y` lies in the unstable set of `p` for the flow of `g` if and
@@ -249,10 +249,10 @@ theorem mem_unstableSet_negativeGradientFlow_iff_of_gradient_eq {g : E → ℝ} 
       ∇ g (negativeGradientFlow f hf τ y) = ∇ f (negativeGradientFlow f hf τ y)) :
     y ∈ Flow.unstableSet (negativeGradientFlow g hg) p ↔
       y ∈ Flow.unstableSet (negativeGradientFlow f hf) p := by
-  simp only [Flow.mem_unstableSet]
-  refine Filter.tendsto_congr' ?_
-  filter_upwards [Filter.eventually_le_atBot 0] with t ht using
-    negativeGradientFlow_apply_eq_of_forall_nonpos_gradient_eq hg hf hfg ht
+  rw [Flow.mem_unstableSet]
+  exact Flow.tendsto_atBot_iff_mem_unstableSet_of_eqOn (a := 0) fun t ht ↦ by
+    simpa only [sub_zero] using
+      negativeGradientFlow_apply_eq_of_forall_nonpos_gradient_eq hg hf hfg ht
 
 /-- Translating the negative-gradient field to displacement coordinates preserves its Lipschitz
 constant. -/

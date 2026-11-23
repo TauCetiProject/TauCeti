@@ -11,6 +11,7 @@ public import TauCeti.Dynamics.Flow.Stable
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Topology.Order.Sublevel
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Dynamics.Flow.Variational
 
@@ -70,9 +71,10 @@ for parameters in the closed unit ball.
   family with closed supports where `f > c` and a rest point with `f p ≤ c`, every perturbation
   keeps the whole unstable set of `p`; dually `TauCeti.stableSet_perturb_eq` for closed supports
   where `f < c` and `c ≤ f q`.
-  `TauCeti.exists_pos_forall_value_negativeGradientFlow_perturb_lt`: if the time-`T` images of a
-  compact set under the flow of `f` lie in `{y | f y < c}`, then for small perturbations the
-  time-`T` images under the perturbed flow still lie in `{y | f y < c}`.
+  `TauCeti.exists_pos_forall_mapsTo_negativeGradientFlow_perturb`: if the flow of `f` maps a
+  compact set into an open set at time `T`, so do small perturbations; in particular
+  (`TauCeti.exists_pos_forall_value_negativeGradientFlow_perturb_lt`) if the time-`T` images lie
+  in `{y | f y < c}`, the time-`T` images under the perturbed flow still lie in `{y | f y < c}`.
 * `TauCeti.range_fst_fderiv_perturbedFlow_inr_le`: at the parameter `0`, a family whose members
   all belong to a second family moves the perturbed flow in no more directions than the second.
 * `TauCeti.negativeGradientFlow_perturb_apply_eq`, `TauCeti.mem_stableSet_perturb_iff`,
@@ -151,6 +153,41 @@ theorem perturb_perturb_sumElim {κ : Type*} [Fintype κ] (f : E → ℝ) (h : �
   simp [perturb_apply, Fintype.sum_sum_type, add_assoc]
 
 end Perturb
+
+section Topological
+
+variable [TopologicalSpace E] [Fintype ι] {f : E → ℝ} {h : ι → E → ℝ}
+
+/-- **A uniform bound on a perturbation.** For a family of continuous compactly supported
+functions, `perturb f h s` differs from `f` by at most a constant multiple of `‖s‖`. -/
+theorem exists_forall_abs_perturb_sub_le (hcont : ∀ i, Continuous (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) :
+    ∃ M, 0 ≤ M ∧ ∀ (s : EuclideanSpace ℝ ι) x, |perturb f h s x - f x| ≤ M * ‖s‖ := by
+  choose B hB using fun i ↦ (hc i).exists_bound_of_continuous (hcont i)
+  refine ⟨∑ i, max (B i) 0, Finset.sum_nonneg fun i _ ↦ le_max_right _ _, fun s x ↦ ?_⟩
+  rw [perturb_apply, add_sub_cancel_left, Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  rw [abs_mul, mul_comm]
+  exact mul_le_mul (((Real.norm_eq_abs _).symm.trans_le (hB i x)).trans (le_max_left _ _))
+    ((Real.norm_eq_abs _).symm.trans_le (PiLp.norm_apply_le s i)) (abs_nonneg _)
+    (le_max_right _ _)
+
+/-- **Compact sublevels persist under perturbation.** If `f` is lower semicontinuous and its
+sublevel at `c` is compact, then so is the sublevel at `c` of its perturbation by continuous
+compactly supported functions: it lies in the union of the sublevel of `f` at `c` and the closed
+supports. -/
+theorem isCompact_sublevel_perturb (hfc : LowerSemicontinuous f) (hcont : ∀ i, Continuous (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) (s : EuclideanSpace ℝ ι) {c : ℝ}
+    (hcompact : IsCompact {x | f x ≤ c}) : IsCompact {x | perturb f h s x ≤ c} := by
+  have hpc : LowerSemicontinuous (perturb f h s) := by
+    rw [funext (perturb_apply f h s)]
+    exact hfc.add (by fun_prop : Continuous fun x ↦ ∑ i, s i * h i x).lowerSemicontinuous
+  refine hcompact.setOf_le_of_eqOn_compl (isCompact_iUnion fun i ↦ hc i) (fun x hx ↦ ?_)
+    (hpc.isClosed_preimage c)
+  rw [mem_compl_iff, mem_iUnion, not_exists] at hx
+  simp [perturb_apply, fun i ↦ image_eq_zero_of_notMem_tsupport (hx i)]
+
+end Topological
 
 section Differential
 
@@ -274,42 +311,6 @@ theorem exists_pos_forall_isNondegenerateCriticalPoint_perturb_iff (hfs : ContDi
   · exact iff_of_false (fun hp ↦ hx ((hcrit s hs x).1 hp.fderiv_eq_zero))
       fun hp ↦ hx hp.fderiv_eq_zero
 
-omit [NormedSpace ℝ E] in
-/-- **A uniform bound on a perturbation.** For a family of continuous compactly supported
-functions, `perturb f h s` differs from `f` by at most a constant multiple of `‖s‖`. -/
-theorem exists_forall_abs_perturb_sub_le (hcont : ∀ i, Continuous (h i))
-    (hc : ∀ i, HasCompactSupport (h i)) :
-    ∃ M, 0 ≤ M ∧ ∀ (s : EuclideanSpace ℝ ι) x, |perturb f h s x - f x| ≤ M * ‖s‖ := by
-  choose B hB using fun i ↦ (hc i).exists_bound_of_continuous (hcont i)
-  refine ⟨∑ i, max (B i) 0, Finset.sum_nonneg fun i _ ↦ le_max_right _ _, fun s x ↦ ?_⟩
-  rw [perturb_apply, add_sub_cancel_left, Finset.sum_mul]
-  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
-  rw [abs_mul, mul_comm]
-  exact mul_le_mul (((Real.norm_eq_abs _).symm.trans_le (hB i x)).trans (le_max_left _ _))
-    ((Real.norm_eq_abs _).symm.trans_le (PiLp.norm_apply_le s i)) (abs_nonneg _)
-    (le_max_right _ _)
-
-omit [NormedSpace ℝ E] in
-/-- **Compact sublevels persist under perturbation.** If `f` is lower semicontinuous and its
-sublevel at `c` is compact, then so is the sublevel at `c` of its perturbation by continuous
-compactly supported functions: it lies in the union of the sublevel of `f` at `c` and the closed
-supports. -/
-theorem isCompact_sublevel_perturb (hfc : LowerSemicontinuous f) (hcont : ∀ i, Continuous (h i))
-    (hc : ∀ i, HasCompactSupport (h i)) (s : EuclideanSpace ℝ ι) {c : ℝ}
-    (hcompact : IsCompact {x | f x ≤ c}) : IsCompact {x | perturb f h s x ≤ c} := by
-  have hcs : Continuous fun x ↦ ∑ i, s i * h i x := by fun_prop
-  have hpc : LowerSemicontinuous (perturb f h s) := by
-    rw [funext (perturb_apply f h s)]
-    exact hfc.add hcs.lowerSemicontinuous
-  refine (hcompact.union (isCompact_iUnion fun i ↦ hc i)).of_isClosed_subset
-    (hpc.isClosed_preimage c) fun x hx ↦ ?_
-  by_cases hx' : ∃ i, x ∈ tsupport (h i)
-  · exact Or.inr (mem_iUnion.2 hx')
-  · refine Or.inl ?_
-    have hfx : perturb f h s x = f x := by
-      simp [perturb_apply, fun i ↦ image_eq_zero_of_notMem_tsupport (not_exists.1 hx' i)]
-    simpa only [Set.mem_ofPred_eq, hfx] using hx
-
 end Differential
 
 section Witness
@@ -423,8 +424,8 @@ theorem unstableSet_perturb_eq (hf : LipschitzWith K (∇ f)) {s : EuclideanSpac
     Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p =
       Flow.unstableSet (negativeGradientFlow f hf) p := by
   refine Flow.unstableSet_eq_of_forall_notMem (A := ⋃ i, tsupport (h i))
-    (isClosed_iUnion_of_finite fun i ↦ isClosed_tsupport (h i))
-    (mem_iUnion.not.2 fun ⟨i, hi⟩ ↦ (hp.trans_lt (hsupp i hi)).false) (fun y hy t ht ↦ ?_)
+    ((isClosed_iUnion_of_finite fun i ↦ isClosed_tsupport (h i)).isOpen_compl.mem_nhds
+      (mem_iUnion.not.2 fun ⟨i, hi⟩ ↦ (hp.trans_lt (hsupp i hi)).false)) (fun y hy t ht ↦ ?_)
     (fun y hy t ↦ ?_) fun y hy t ht ↦ ?_
   · -- Along the orbit of a point of the unstable set of `p` for `f`, `f` is at most `f p ≤ c`.
     obtain ⟨i, hi⟩ := mem_iUnion.1 ht
@@ -444,8 +445,8 @@ theorem stableSet_perturb_eq (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace 
     Flow.stableSet (negativeGradientFlow (perturb f h s) hf') q =
       Flow.stableSet (negativeGradientFlow f hf) q := by
   refine Flow.stableSet_eq_of_forall_notMem (A := ⋃ i, tsupport (h i))
-    (isClosed_iUnion_of_finite fun i ↦ isClosed_tsupport (h i))
-    (mem_iUnion.not.2 fun ⟨i, hi⟩ ↦ ((hsupp i hi).trans_le hq).false) (fun y hy t ht ↦ ?_)
+    ((isClosed_iUnion_of_finite fun i ↦ isClosed_tsupport (h i)).isOpen_compl.mem_nhds
+      (mem_iUnion.not.2 fun ⟨i, hi⟩ ↦ ((hsupp i hi).trans_le hq).false)) (fun y hy t ht ↦ ?_)
     (fun y hy t ↦ ?_) fun y hy t ht ↦ ?_
   · -- Along the orbit of a point of the stable set of `q` for `f`, `f` is at least `f q ≥ c`.
     obtain ⟨i, hi⟩ := mem_iUnion.1 ht
@@ -933,6 +934,32 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral_of_norm_lt (hfs : ContDif
     fderiv.fst hΨ] at hshift
   exact (congrArg (· (0, e)) hshift).symm
 
+/-- **Time-`T` images stay in an open set under small perturbations.** If the negative-gradient
+flow of `f` maps a compact set `C` at time `T` into an open set `U`, then for all sufficiently small
+`s` so does the negative-gradient flow of `perturb f h s`. -/
+theorem exists_pos_forall_mapsTo_negativeGradientFlow_perturb (hd : Differentiable ℝ f)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
+    (hc : ∀ i, HasCompactSupport (h i)) {C U : Set E} (hC : IsCompact C) (hU : IsOpen U) {T : ℝ}
+    (hT : MapsTo (negativeGradientFlow f hf T) C U) :
+    ∃ δ > 0, ∀ s : EuclideanSpace ℝ ι, ‖s‖ < δ → ∀ ⦃K' : ℝ≥0⦄
+      (hf' : LipschitzWith K' (∇ (perturb f h s))),
+      MapsTo (negativeGradientFlow (perturb f h s) hf' T) C U := by
+  set Φ := perturbedFlow f h hf hh hc
+  have hcont : Continuous fun z : EuclideanSpace ℝ ι × E ↦ (Φ T (z.2, z.1)).1 :=
+    continuous_fst.comp ((Φ.continuous_toFun T).comp continuous_swap)
+  have hev : ∀ᶠ s in 𝓝 (0 : EuclideanSpace ℝ ι), ∀ x ∈ C, (Φ T (x, s)).1 ∈ U :=
+    hC.eventually_forall_of_forall_eventually fun x hx ↦
+      hcont.continuousAt.eventually (hU.mem_nhds (by
+        simp only [Φ, perturbedFlow_apply_zero]
+        exact hT hx))
+  obtain ⟨ε, hε, hεC⟩ := Metric.eventually_nhds_iff.1 hev
+  refine ⟨min ε 1, lt_min hε one_pos, fun s hs K' hf' x hx ↦ ?_⟩
+  have hsε : dist s 0 < ε := by
+    simpa only [dist_zero_right] using hs.trans_le (min_le_left _ _)
+  have h1 := hεC hsε x hx
+  rwa [perturbedFlow_apply_of_norm_le hd hf hh hc
+    (hs.le.trans (min_le_right _ _)) hf'] at h1
+
 /-- **Descent persists under small perturbations.** If the time-`T` images of a compact set `C`
 under the negative-gradient flow of `f` lie in `{y | f y < c}`, then for all sufficiently small `s`
 its time-`T` images under the negative-gradient flow of `perturb f h s` also lie in
@@ -943,22 +970,9 @@ theorem exists_pos_forall_value_negativeGradientFlow_perturb_lt (hd : Differenti
     (hT : ∀ x ∈ C, f (negativeGradientFlow f hf T x) < c) :
     ∃ δ > 0, ∀ s : EuclideanSpace ℝ ι, ‖s‖ < δ → ∀ ⦃K' : ℝ≥0⦄
       (hf' : LipschitzWith K' (∇ (perturb f h s))),
-      ∀ x ∈ C, f (negativeGradientFlow (perturb f h s) hf' T x) < c := by
-  set Φ := perturbedFlow f h hf hh hc
-  have hcont : Continuous fun z : EuclideanSpace ℝ ι × E ↦ f (Φ T (z.2, z.1)).1 :=
-    hd.continuous.comp (continuous_fst.comp ((Φ.continuous_toFun T).comp continuous_swap))
-  have hev : ∀ᶠ s in 𝓝 (0 : EuclideanSpace ℝ ι), ∀ x ∈ C, f (Φ T (x, s)).1 < c :=
-    hC.eventually_forall_of_forall_eventually fun x hx ↦
-      hcont.continuousAt.eventually (gt_mem_nhds (by
-        simp only [Φ, perturbedFlow_apply_zero]
-        exact hT x hx))
-  obtain ⟨ε, hε, hεC⟩ := Metric.eventually_nhds_iff.1 hev
-  refine ⟨min ε 1, lt_min hε one_pos, fun s hs K' hf' x hx ↦ ?_⟩
-  have hsε : dist s 0 < ε := by
-    simpa only [dist_zero_right] using hs.trans_le (min_le_left _ _)
-  have h1 := hεC hsε x hx
-  rwa [perturbedFlow_apply_of_norm_le hd hf hh hc
-    (hs.le.trans (min_le_right _ _)) hf'] at h1
+      ∀ x ∈ C, f (negativeGradientFlow (perturb f h s) hf' T x) < c :=
+  exists_pos_forall_mapsTo_negativeGradientFlow_perturb hd hf hh hc hC
+    (isOpen_lt hd.continuous continuous_const) hT
 
 
 end ParameterDerivative

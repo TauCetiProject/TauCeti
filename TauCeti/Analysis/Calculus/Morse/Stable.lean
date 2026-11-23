@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Dynamics.Flow.Lyapunov
 
 /-!
 # Stable and unstable sets of a negative gradient flow
@@ -97,15 +98,15 @@ theorem IsNegativeGradient.value_ge_of_mem_unstableSet (hφ : IsNegativeGradient
 `f`. -/
 theorem IsNegativeGradient.value_ge_of_mem_closure_unstableSet (hφ : IsNegativeGradient φ f)
     (hf : Differentiable ℝ f) (hx : x ∈ closure (unstableSet φ p)) : f x ≤ f p :=
-  ((isClosed_le hf.continuous continuous_const).closure_subset_iff.2 fun _ hw ↦
-    hφ.value_ge_of_mem_unstableSet hw (fun _ ↦ hf _) hf.continuous.continuousAt) hx
+  le_of_mem_closure_unstableSet_of_antitone hf.continuous
+    (fun z _ ↦ hφ.orbit_antitone z fun _ ↦ hf _) hx
 
 /-- A point in the closure of the stable set of `p` has value at least `f p`, for a differentiable
 `f`. -/
 theorem IsNegativeGradient.value_le_of_mem_closure_stableSet (hφ : IsNegativeGradient φ f)
     (hf : Differentiable ℝ f) (hx : x ∈ closure (stableSet φ p)) : f p ≤ f x :=
-  ((isClosed_le continuous_const hf.continuous).closure_subset_iff.2 fun _ hw ↦
-    hφ.value_le_of_mem_stableSet hw (fun _ ↦ hf _) hf.continuous.continuousAt) hx
+  le_of_mem_closure_stableSet_of_antitone hf.continuous
+    (fun z _ ↦ hφ.orbit_antitone z fun _ ↦ hf _) hx
 
 /-- If an orbit converges to `p` in backward time and to `q` in forward time, then `f q ≤ f p`. -/
 theorem IsNegativeGradient.value_le_of_mem_unstableSet_inter_stableSet

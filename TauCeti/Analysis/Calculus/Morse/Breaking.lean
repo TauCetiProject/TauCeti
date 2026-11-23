@@ -48,9 +48,10 @@ unstable sets.
 * `TauCeti.exists_isNondegenerateCriticalPoint_of_mem_closure_stableSet_inter_stableSet` and
   its time reversal
   `TauCeti.exists_isNondegenerateCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet`:
-  when every forward orbit in the stable-set closure (resp. every backward orbit in the unstable-set
-  closure) converges to a nondegenerate critical point, the break produces a connecting orbit to
-  (resp. from) another nondegenerate critical point.
+  if the closure of `Wˢ(q)` (resp. `Wᵘ(p)`) meets the stable (resp. unstable) set of a
+  nondegenerate critical point `x ≠ q` (resp. `x ≠ p`), and every forward (resp. backward) orbit in
+  that closure converges to a nondegenerate critical point, then there is a nonconstant connecting
+  orbit from `x` to (resp. to `x` from) another nondegenerate critical point.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_isChain_of_mem_closure_stableSet_inter_stableSet`
   and its time reversal: finite chains of nonconstant connecting orbits, with length bounded by
   the index drop.
