@@ -86,7 +86,7 @@ theorem IsPLOn.isLocallyFlat_graph_of_isOpen
     {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
     [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
     {f : E → F} {s : Set E} (hs : IsOpen s) (hf : IsPLOn f s) :
-    IsLocallyFlat s F (fun x : s => ((x.1, f x.1) : E × F)) :=
+    IsLocallyFlat s F (fun x : s => ((x.val, f x.val) : E × F)) :=
   _root_.ContinuousOn.isLocallyFlat_graph_of_isOpen hf.continuousOn hs
 
 section Curve

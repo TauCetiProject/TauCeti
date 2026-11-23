@@ -23,15 +23,20 @@ The proof combines three facts.
 
 * **The weak right inverse.** A field of `A_m^s`, `s > 1`, has `|α| → 1` at infinity, so at a
   vortex the bounded weak right inverse `Q` of `L_x` on `L²`
-  (`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`) exists.
+  (`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`) exists.
 * **Elliptic regularity.** At a smooth field of `A_m^s`, `s > 2`, a weak `L²` solution of
   `L_x y = g` with `g ∈ H^k`, `k ≤ s`, lies in `H^(k+1)`
   (`mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace`). So `Q` gains one derivative,
   mapping `H^k` into `H^(k+1)`
-  (`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mem_framedFieldSpace`).
+  (`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mem_framedFieldSpace`).
 * **Weak solutions are classical.** A `C¹` weak solution of `L_x y = g` solves it almost
   everywhere (`gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq`). For `k ≥ 2` the
   field `Q g ∈ H^(k+1)` has a `C^(k-1)` representative, which is such a solution.
+
+For a vortex lying in every `A_m^j` the cokernel vanishes for every `k`
+(`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields_add_one`,
+`TauCeti.Vortex.realSobolevGaugeFixedOperator_surjective`). Here `x` is smooth but only assumed to
+lie in `A_m^s` for a single `s > 2`, and the Sobolev gain is controlled up to order `s`.
 
 The kernel of `L_x` on `H^(k+1)` and its dimension are not treated here.
 
@@ -57,28 +62,27 @@ variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ} {x : ℂ → Euclidean
 /-- **The right inverse on the Sobolev scale.** Let `x` be a smooth vortex in `A_m^s`, `s > 2`.
 There is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` such that
 
-* `Q g` is a weak solution of `L_x y = g` for every `g ∈ L²`;
-* `Q g` is orthogonal to the weak kernel of `L_x`;
-* `Q` gains one derivative: it maps `H^k` into `H^(k+1)` for every `k ≤ s`. -/
-theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mem_framedFieldSpace
+* `Q g` is a weak solution of `L_x y = g` for every `g ∈ L²`, orthogonal to the weak kernel of
+  `L_x` (`IsMinimalGaugeFixedWeakSolution`);
+* `Q` gains one derivative: it maps `H^k` into `H^(k+1)` for every `k ≤ s`.
+
+For a vortex lying in every `A_m^j` this is
+`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields_add_one`. -/
+theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mem_framedFieldSpace
     (hs : 2 < s) (hx : x ∈ framedFieldSpace f m s) (hxs : ContDiff ℝ ∞ x)
     (hsol : ∀ z, equation x z = 0) :
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) →L[ℝ]
         Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
-      (∀ g η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪Q g z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪g z, η z⟫) ∧
-      (∀ g u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
-        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ = 0) →
-        ∫ z, ⟪Q g z, u z⟫ = 0) ∧
-      ∀ (k : ℕ) (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)), k ≤ s →
-        (g : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields k →
-        (Q g : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields (k + 1) := by
-  obtain ⟨Q, hQ, hQK⟩ := exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq
+      ∀ g, IsMinimalGaugeFixedWeakSolution volume x g (Q g) ∧
+        ∀ k : ℕ, k ≤ s → (g : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields k →
+          (Q g : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields (k + 1) := by
+  obtain ⟨Q, hQ⟩ := exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution
     (μ := volume) (hxs.of_le (by simp)) hsol
     (tendsto_normSq_of_mem_framedFieldSpace (by linarith) hx hxs.continuous)
-  exact ⟨Q, hQ, hQK, fun k g hks hg ↦ mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace
-    hs hks hx hxs (Lp.memLp _) hg fun η hη hηc ↦ hQ g η (hη.of_le (by simp)) hηc⟩
+  exact ⟨Q, fun g ↦ ⟨hQ g, fun k hks hg ↦
+    mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace hs hks hx hxs (Lp.memLp _) hg
+      fun η hη hηc ↦
+        (hQ g).isGaugeFixedWeakSolution.integral_inner_eq (hη.of_le (by simp)) hηc⟩⟩
 
 /-- **Vanishing of the cokernel on the Sobolev scale.** Let `x` be a smooth vortex in `A_m^s`,
 `s > 2`, and let `2 ≤ k ≤ s`. Every `g ∈ sobolevFields k` agrees almost everywhere with
@@ -89,13 +93,13 @@ theorem exists_mem_sobolevFields_contDiff_gaugeFixedOperator_ae_eq {k : ℕ} (hk
     (hg : g ∈ sobolevFields k) :
     ∃ y ∈ sobolevFields (k + 1), ContDiff ℝ (k - 1 : ℕ) y ∧
       gaugeFixedOperator x y =ᵐ[volume] g := by
-  obtain ⟨Q, hQ, -, hreg⟩ :=
-    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mem_framedFieldSpace hs hx
-      hxs hsol
+  obtain ⟨Q, hQ⟩ :=
+    exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mem_framedFieldSpace hs hx hxs
+      hsol
   have hgL := memLp_of_mem_sobolevFields hg
   set u := Q (hgL.toLp g)
   have hu : (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields (k + 1) :=
-    hreg k _ hks (mem_sobolevFields_of_ae_eq hg hgL.coeFn_toLp.symm)
+    (hQ _).2 k hks (mem_sobolevFields_of_ae_eq hg hgL.coeFn_toLp.symm)
   -- A `C^(k-1)` representative of `u ∈ H^(k+1)`.
   obtain ⟨y, hyd, huy⟩ := exists_contDiff_ae_eq_of_mem_sobolevFields (n := k - 1)
     (by rw [Nat.cast_sub (by omega)]; push_cast; linarith) hu
@@ -103,7 +107,8 @@ theorem exists_mem_sobolevFields_contDiff_gaugeFixedOperator_ae_eq {k : ℕ} (hk
   refine gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq hxs.continuous
     (hyd.of_le (by exact_mod_cast (by omega : 1 ≤ k - 1))) (hgL.locallyIntegrable (by norm_num))
     fun η hη hηc ↦ ?_
-  have h := hQ (hgL.toLp g) η (hη.of_le (by simp)) hηc
+  have h := (hQ (hgL.toLp g)).1.isGaugeFixedWeakSolution.integral_inner_eq (hη.of_le (by simp))
+    hηc
   have h₁ : ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ :=
     integral_congr_ae (by filter_upwards [huy] with z hz; rw [hz])
   have h₂ : ∫ z, ⟪hgL.toLp g z, η z⟫ = ∫ z, ⟪g z, η z⟫ :=

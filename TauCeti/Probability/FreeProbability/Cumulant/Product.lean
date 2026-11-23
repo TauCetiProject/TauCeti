@@ -165,7 +165,7 @@ into the fibres of `f`. -/
 theorem freeCumulant_fiberProd_eq_sum_prod (hf : MonotoneOn f s) :
     freeCumulant φ (fiberProd a s f) (s.image f) =
       ∑ π : NoncrossingPartition s with π ⊔ NoncrossingPartition.comap hf ⊥ = ⊤,
-        ∏ B ∈ π.1.parts, freeCumulant φ a B := by
+        ∏ B ∈ π.val.parts, freeCumulant φ a B := by
   simp_rw [freeCumulant_fiberProd φ a hf, partitionCumulant_eq_prod_freeCumulant]
 
 /-- *Increasing relabelling*: for a map `e` that is strictly monotone on `s`, the free cumulant of

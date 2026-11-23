@@ -434,8 +434,8 @@ private theorem weightProj_coeAddMonoidHom (g : G)
     rw [DirectSum.coeAddMonoidHom_of, DirectSum.coe_of_apply]
     by_cases hh : h = g
     · subst hh
-      simp [weightProj_of_mem w.2]
-    · simp [hh, weightProj_of_mem_of_ne (Ne.symm hh) w.2]
+      simp [weightProj_of_mem w.property]
+    · simp [hh, weightProj_of_mem_of_ne (Ne.symm hh) w.property]
   | add x y hx hy => simp [hx, hy]
 
 variable (R G V)
@@ -573,7 +573,7 @@ theorem weightProj_mem_subcomodule (N : Subcomodule R (MonoidAlgebra R G) V)
       (weightProj R G N g (⟨v, hv⟩ : N) : V) = weightProj R G V g v := by
     simpa only [Subcomodule.subtype_apply] using hmap
   rw [← hmap']
-  exact (weightProj R G N g (⟨v, hv⟩ : N)).2
+  exact (weightProj R G N g (⟨v, hv⟩ : N)).property
 
 /-- The `g`-weight submodule of a subcomodule, with its inherited coaction, is the trace on it of
 the `g`-weight submodule of the ambient comodule. -/

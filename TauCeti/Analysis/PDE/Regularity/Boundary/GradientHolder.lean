@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.EnergyForm.HyperplaneReflection
-public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder
+public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
 
 /-!
 # Hölder continuity of the gradient up to a flat boundary
@@ -35,8 +35,8 @@ constant
 `C (R^(1 - (n + 1)/q - β) ‖f‖_{L^q(U ∩ H)} + R^(-(n + 1)/2 - β) ‖∇w‖_{L²(U)})`,
 
 and `∇w` agrees with `∇u` almost everywhere on `U ∩ H`
-(`TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae`). The set `S` may meet the hyperplane,
-so this is a boundary estimate, not an interior one.
+(`TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae_of_value_ae_eq_zero`). The set `S` may
+meet the hyperplane, so this is a boundary estimate, not an interior one.
 
 ## The argument
 
@@ -94,8 +94,9 @@ Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to `U ∩ H` be a
 `C (R^(1 - (n + 1)/q - β) ‖f‖_{L^q(U ∩ H)} + R^(-(n + 1)/2 - β) ‖∇w‖_{L²(U)})`.
 
 The gradient `∇w` agrees with `∇u` almost everywhere on `U ∩ H`
-(`TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae`), and `S` may meet the hyperplane: this
-is the `C^{1,β}` estimate up to the flat part of the boundary of `U ∩ H`, on which `u` vanishes.
+(`TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae_of_value_ae_eq_zero`), and `S` may meet
+the hyperplane: this is the `C^{1,β}` estimate up to the flat part of the boundary of `U ∩ H`, on
+which `u` vanishes.
 -/
 theorem
     exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL_of_holderOnWith
@@ -143,15 +144,15 @@ theorem
     ⟨_, rfl⟩
   have hg : MemLp g q (volume.restrict U) := hgdef ▸
     memLp_indicator_sub_indicator_comp_hyperplaneReflection H.isOpen.measurableSet
-      U.isOpen.measurableSet hU hfq
+      U.isOpen.measurableSet hU hfq hfq
   have hgf : (eLpNorm g q (volume.restrict (thickening R S))).toReal ≤
       2 * (eLpNorm f q (volume.restrict (U ⊓ H))).toReal := by
     rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
     refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hfq.eLpNorm_ne_top)
       ((eLpNorm_mono_measure _ (Measure.restrict_mono hRS le_rfl)).trans ?_)
     rw [hgdef]
-    exact eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (one_le_two.trans hq)
-      H.isOpen.measurableSet U.isOpen.measurableSet hU
+    exact (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (one_le_two.trans hq)
+      H.isOpen.measurableSet U.isOpen.measurableSet hU).trans_eq (two_mul _).symm
   -- The odd reflection `w = u - u ∘ ρ` solves `-∂ᵢ(aⁱʲ ∂ⱼw) = g` on `U`.
   have hw : ∀ φ : 𝓓(U, ℝ), energyFormH1 a 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u)
