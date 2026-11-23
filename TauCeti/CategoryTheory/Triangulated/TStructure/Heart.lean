@@ -40,8 +40,8 @@ morphism is then unique; and for a distinguished triangle `ιA ⟶ ιB ⟶ S ⟶
 
 * `CategoryTheory.Triangulated.TStructure.heartAbelian`: the abelian structure on a heart, with an
   instance on the full subcategory `t.heart.FullSubcategory`.
-* `CategoryTheory.Triangulated.TStructure.admissibleMorphism_ιHeart`: every morphism of the heart
-  is admissible.
+* `CategoryTheory.Triangulated.TStructure.admissibleMorphism_ιHeart_eq_top`: every morphism of the
+  heart is admissible.
 * `CategoryTheory.Triangulated.TStructure.shortExact_iff_exists_distTriang`: short exact sequences
   of the heart are the distinguished triangles with vertices in the heart.
 * `CategoryTheory.Triangulated.TStructure.mor₃_eq_of_distTriang`: the connecting morphism of such
@@ -96,13 +96,18 @@ end Extensions
 
 variable (H : Type u') [Category.{v'} H] [Preadditive H] [t.Heart H]
 
+/-- An object of `C` which lies in the heart of `t` is isomorphic to the image of an object of a
+heart `H` of `t`. -/
+theorem exists_iso_ιHeart_obj {X : C} (hX : t.heart X) :
+    ∃ Y : H, Nonempty (t.ιHeart.obj Y ≅ X) := by
+  rwa [← t.essImage_ιHeart H] at hX
+
 include t in
 /-- A heart of a `t`-structure has finite products. -/
 theorem hasFiniteProducts_heart : HasFiniteProducts H :=
   ⟨fun _ ↦ ⟨fun K ↦ by
-    obtain ⟨X, ⟨e⟩⟩ : (t.ιHeart (H := H)).essImage (limit (K ⋙ t.ιHeart)) := by
-      rw [essImage_ιHeart]
-      exact t.heart.prop_limit _ fun _ ↦ t.ιHeart_obj_mem _
+    obtain ⟨X, ⟨e⟩⟩ := t.exists_iso_ιHeart_obj H
+      (t.heart.prop_limit (K ⋙ t.ιHeart) fun _ ↦ t.ιHeart_obj_mem _)
     have := createsLimitOfFullyFaithfulOfIso X e
     exact hasLimit_of_created K t.ιHeart⟩⟩
 
@@ -155,12 +160,10 @@ theorem exists_distTriang_truncLT_truncGE (S : C) [t.IsLE S 0] [t.IsGE S (-1)] :
   have := t.isLE_truncLT_obj S 0 (-1)
   have := t.isLE_shift ((t.truncLT 0).obj S) (-1) (-1) 0
   have := t.isGE_shift ((t.truncLT 0).obj S) (-1) (-1) 0
-  obtain ⟨K, ⟨eK⟩⟩ : (t.ιHeart (H := H)).essImage (((t.truncLT 0).obj S)⟦(-1 : ℤ)⟧) := by
-    rw [essImage_ιHeart]
-    exact ⟨t.le_of_isLE _ _, t.ge_of_isGE _ _⟩
-  obtain ⟨Q, ⟨eQ⟩⟩ : (t.ιHeart (H := H)).essImage ((t.truncGE 0).obj S) := by
-    rw [essImage_ιHeart]
-    exact ⟨t.le_of_isLE _ _, t.ge_of_isGE _ _⟩
+  obtain ⟨K, ⟨eK⟩⟩ := t.exists_iso_ιHeart_obj H
+    ((t.mem_heart_iff (((t.truncLT 0).obj S)⟦(-1 : ℤ)⟧)).2 ⟨inferInstance, inferInstance⟩)
+  obtain ⟨Q, ⟨eQ⟩⟩ := t.exists_iso_ιHeart_obj H
+    ((t.mem_heart_iff ((t.truncGE 0).obj S)).2 ⟨inferInstance, inferInstance⟩)
   let e₁ : (t.truncLT 0).obj S ≅ (t.ιHeart.obj K)⟦(1 : ℤ)⟧ :=
     ((shiftFunctorCompIsoId C (-1 : ℤ) 1 (by lia)).app _).symm ≪≫
       (shiftFunctor C (1 : ℤ)).mapIso eK.symm
@@ -171,7 +174,7 @@ variable (H)
 
 /-- Every morphism of the heart of a `t`-structure is admissible in the sense of
 `Triangulated.AbelianSubcategory.admissibleMorphism`. -/
-theorem admissibleMorphism_ιHeart :
+theorem admissibleMorphism_ιHeart_eq_top :
     AbelianSubcategory.admissibleMorphism (t.ιHeart (H := H)) = ⊤ := by
   ext X₁ X₂ f₁
   simp only [MorphismProperty.top_apply, iff_true]
@@ -186,7 +189,7 @@ structure is the one given by `Triangulated.AbelianSubcategory.abelian`. -/
 noncomputable def heartAbelian : Abelian H :=
   have := t.hasFiniteProducts_heart H
   AbelianSubcategory.abelian t.ιHeart t.eq_zero_of_hom_ιHeart_obj_shift_neg
-    (t.admissibleMorphism_ιHeart H)
+    (t.admissibleMorphism_ιHeart_eq_top H)
 
 noncomputable instance instAbelianHeartFullSubcategory : Abelian t.heart.FullSubcategory :=
   letI := t.hasHeartFullSubcategory
@@ -206,7 +209,7 @@ theorem shortExact_iff_exists_distTriang (S : ShortComplex H) :
   · have := hS.mono_f
     have := hS.epi_g
     obtain ⟨X₁, i, δ, hT⟩ := AbelianSubcategory.exists_distinguished_triangle_of_epi
-      t.eq_zero_of_hom_ιHeart_obj_shift_neg (t.admissibleMorphism_ιHeart H) S.g
+      t.eq_zero_of_hom_ιHeart_obj_shift_neg (t.admissibleMorphism_ιHeart_eq_top H) S.g
     let e := IsLimit.conePointUniqueUpToIso hS.exact.fIsKernel
       (AbelianSubcategory.isLimitKernelForkOfDistTriang t.eq_zero_of_hom_ιHeart_obj_shift_neg i S.g
         δ hT)
