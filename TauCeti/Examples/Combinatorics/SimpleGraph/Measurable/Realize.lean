@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Combinatorics.SimpleGraph.MeasurableRealize
+import TauCeti.Combinatorics.SimpleGraph.Measurable.Realize
 import TauCeti.ModelTheory.BackAndForth.Graph
 
 /-!

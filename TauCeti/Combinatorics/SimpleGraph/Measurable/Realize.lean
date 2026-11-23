@@ -61,6 +61,7 @@ theorem measurableSet_realize_jointly {α : Type*} {n : ℕ}
     choose a ha using fun i => (ts i).exists_eq_var_of_isRelational
     obtain rfl : ts = fun i => var (a i) := funext ha
     cases R
+    -- `Realize` of the adjacency atom under `G.structure` is `G.Adj` on the two evaluated vertices.
     have hadj : MeasurableSet {q : SimpleGraph V × V × V | q.1.Adj q.2.1 q.2.2} :=
       measurableSet_setOfPred.2 <| measurable_from_prod_countable_left fun y =>
         (measurable_adj.eval.eval : Measurable fun G : SimpleGraph V => G.Adj y.1 y.2)
