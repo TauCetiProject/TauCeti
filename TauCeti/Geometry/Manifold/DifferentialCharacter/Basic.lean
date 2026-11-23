@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothSingular.Cycles
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.IntegerIntegrals
 public import TauCeti.Geometry.Manifold.SmoothSingular.Stokes
 public import TauCeti.Geometry.Manifold.DeRham.Basic
@@ -44,9 +44,11 @@ precomposition with the induced map on cycles, functorially, and curvatures by p
 `TauCeti.differentialCharacters.curvature_pullback`); the character of a form pulls back to the
 character of the pulled-back form (`TauCeti.differentialCharacters.pullback_ofForm`).
 
-Cycles and chains are the integral chains of the smooth singular simplicial set
-`TauCeti.smoothSingularSubcomplex` (`TauCeti.smoothIntCycles`, `TauCeti.smoothIntBoundary`), with
-integration `TauCeti.integrationCochain` with integer coefficients.
+Chains are the integral chains of the smooth singular simplicial set
+`TauCeti.smoothSingularSubcomplex`, cycles are the `HomologicalComplex.cycles` of its chain complex
+with coefficients in `ℤ`, the boundary of a chain as a cycle is `HomologicalComplex.toCycles`, and
+pushforward of cycles is `HomologicalComplex.cyclesMap`. Integration is
+`TauCeti.integrationCochain` with integer coefficients.
 
 ## References
 
@@ -58,7 +60,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory
+open CategoryTheory HomologicalComplex
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -74,9 +76,13 @@ variable [IsManifold I 1 M]
 smooth singular integral `k`-cycles of `M` to `ℝ/ℤ` for which some smooth real `(k + 1)`-form `φ`
 satisfies `χ (∂c) = ∫_c φ mod ℤ` for every smooth singular integral `(k + 1)`-chain `c`. This is
 the integral differential cohomology group of degree `k + 1`. -/
-def differentialCharacters (k : ℕ) : AddSubgroup (smoothIntCycles I M k →+ UnitAddCircle) where
-  carrier := {χ | ∃ φ : SmoothForm I M ℝ (k + 1), ∀ c, χ (smoothIntBoundary I M k c) =
-    ((integrationCochain φ.val).hom c : UnitAddCircle)}
+def differentialCharacters (k : ℕ) :
+    AddSubgroup
+      (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k →+
+        UnitAddCircle) where
+  carrier := {χ | ∃ φ : SmoothForm I M ℝ (k + 1), ∀ c,
+    χ (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles (k + 1) k
+      c) = ((integrationCochain φ.val).hom c : UnitAddCircle)}
   zero_mem' := ⟨0, fun c ↦ by simp⟩
   add_mem' := by
     rintro χ ψ ⟨φ, hφ⟩ ⟨θ, hθ⟩
@@ -88,9 +94,12 @@ def differentialCharacters (k : ℕ) : AddSubgroup (smoothIntCycles I M k →+ U
     exact ⟨-φ, fun c ↦ by simp [hφ]⟩
 
 variable {I M} in
-theorem mem_differentialCharacters_iff {k : ℕ} {χ : smoothIntCycles I M k →+ UnitAddCircle} :
-    χ ∈ differentialCharacters I M k ↔ ∃ φ : SmoothForm I M ℝ (k + 1),
-      ∀ c, χ (smoothIntBoundary I M k c) = ((integrationCochain φ.val).hom c : UnitAddCircle) :=
+theorem mem_differentialCharacters_iff {k : ℕ}
+    {χ : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k →+
+      UnitAddCircle} :
+    χ ∈ differentialCharacters I M k ↔ ∃ φ : SmoothForm I M ℝ (k + 1), ∀ c,
+      χ (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles (k + 1) k
+        c) = ((integrationCochain φ.val).hom c : UnitAddCircle) :=
   Iff.rfl
 
 end Characters
@@ -123,9 +132,12 @@ def curvature : differentialCharacters I M k →+ SmoothForm I M ℝ (k + 1) whe
 /-- The defining property of the curvature: on the boundary of a smooth singular integral
 `(k + 1)`-chain `c`, a differential character is the integral of its curvature over `c` modulo
 `ℤ`. -/
-theorem apply_smoothIntBoundary (χ : differentialCharacters I M k)
+theorem apply_toCycles (χ : differentialCharacters I M k)
     (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X (k + 1)) :
-    (χ : smoothIntCycles I M k →+ UnitAddCircle) (smoothIntBoundary I M k c) =
+    (χ : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k →+
+      UnitAddCircle)
+        (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles (k + 1) k
+          c) =
       ((integrationCochain (curvature χ).val).hom c : UnitAddCircle) :=
   (mem_differentialCharacters_iff.mp χ.property).choose_spec c
 
@@ -134,21 +146,28 @@ singular integral `(k + 1)`-chains are, modulo `ℤ`, the values of the characte
 boundaries. -/
 theorem curvature_eq_of_forall {χ : differentialCharacters I M k}
     {φ : SmoothForm I M ℝ (k + 1)}
-    (h : ∀ c, (χ : smoothIntCycles I M k →+ UnitAddCircle) (smoothIntBoundary I M k c) =
-      ((integrationCochain φ.val).hom c : UnitAddCircle)) :
+    (h : ∀ c, (χ : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k
+      →+ UnitAddCircle)
+        (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles (k + 1) k
+          c) = ((integrationCochain φ.val).hom c : UnitAddCircle)) :
     curvature χ = φ :=
   SmoothForm.eq_of_forall_coe_integrationCochain_eq k.succ_ne_zero fun c ↦ by
-    rw [← apply_smoothIntBoundary, h]
+    rw [← apply_toCycles, h]
 
 /-- **Integral periods.** The integral of the curvature of a differential character over every
 smooth singular integral `(k + 1)`-cycle is an integer. -/
 theorem exists_integrationCochain_curvature_eq_intCast (χ : differentialCharacters I M k)
-    {z : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X (k + 1)}
-    (hz : z ∈ smoothIntCycles I M (k + 1)) :
-    ∃ n : ℤ, (integrationCochain (curvature χ).val).hom z = n := by
-  have h := apply_smoothIntBoundary χ z
-  have hzero : smoothIntBoundary I M k z = 0 :=
-    Subtype.ext (by simpa using mem_smoothIntCycles_iff.mp hz)
+    (z : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles (k + 1)) :
+    ∃ n : ℤ, (integrationCochain (curvature χ).val).hom
+      (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles (k + 1) z) =
+        n := by
+  have h := apply_toCycles χ
+    (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles (k + 1) z)
+  -- The boundary of a cycle vanishes.
+  have hzero : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles
+      (k + 1) k (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles
+        (k + 1) z) = 0 :=
+    moduleCat_iCycles_injective _ k (by simp)
   rwa [hzero, map_zero, eq_comm, UnitAddCircle.coe_eq_zero_iff] at h
 
 /-- The curvature of a differential character is closed. -/
@@ -162,9 +181,9 @@ theorem curvature_mem_closedForms (χ : differentialCharacters I M k) :
   -- By Stokes' theorem, `∫_σ dφ` is the integral of the curvature `φ` over the cycle `∂σ`, an
   -- integer by integral periods.
   let c := ((smoothSingularSubcomplex I M : SSet).ιChainComplex (R := ModuleCat.of ℤ ℤ) σ).hom 1
-  have h :=
-    exists_integrationCochain_curvature_eq_intCast χ (smoothIntBoundary I M (k + 1) c).property
-  rwa [coe_smoothIntBoundary,
+  have h := exists_integrationCochain_curvature_eq_intCast χ
+    (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles _ (k + 1) c)
+  rwa [moduleCat_iCycles_toCycles_apply,
     integrationCochain_d_apply ((curvature χ).isSmoothForm.of_le (by simp)),
     integrationCochain_ιChainComplex, one_smul] at h
 
@@ -172,9 +191,12 @@ theorem curvature_mem_closedForms (χ : differentialCharacters I M k) :
 boundaries. -/
 theorem curvature_eq_zero_iff {χ : differentialCharacters I M k} :
     curvature χ = 0 ↔
-      ∀ c, (χ : smoothIntCycles I M k →+ UnitAddCircle) (smoothIntBoundary I M k c) = 0 := by
+      ∀ c, (χ : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k
+        →+ UnitAddCircle)
+          (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles (k + 1)
+            k c) = 0 := by
   refine ⟨fun h c ↦ ?_, fun h ↦ curvature_eq_of_forall fun c ↦ by simp [h c]⟩
-  rw [apply_smoothIntBoundary, h]
+  rw [apply_toCycles, h]
   simp
 
 end Curvature
@@ -187,12 +209,13 @@ variable [IsManifold I 2 M]
 from forms to differential characters. Its curvature is `dη`, by Stokes' theorem. -/
 def ofForm : SmoothForm I M ℝ k →+ differentialCharacters I M k where
   toFun η := ⟨(QuotientAddGroup.mk' _).comp ((integrationCochain η.val).hom.toAddMonoidHom.comp
-      (smoothIntCycles I M k).subtype),
+      (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles
+        k).hom.toAddMonoidHom),
     mextDerivₗ I k η, fun c ↦ by
       simp only [AddMonoidHom.coe_comp, Function.comp_apply, LinearMap.toAddMonoidHom_coe,
-        AddSubgroup.coe_subtype, coe_smoothIntBoundary, mextDerivₗ_apply,
-        QuotientAddGroup.mk'_apply]
-      rw [integrationCochain_d_apply (η.isSmoothForm.of_le (by simp))]⟩
+        mextDerivₗ_apply, QuotientAddGroup.mk'_apply]
+      rw [← integrationCochain_d_apply (η.isSmoothForm.of_le (by simp)),
+        ← moduleCat_iCycles_toCycles_apply]⟩
   map_zero' := by
     ext z
     simp
@@ -203,9 +226,13 @@ def ofForm : SmoothForm I M ℝ k →+ differentialCharacters I M k where
 
 /-- The character of a form evaluates a cycle by integrating the form over it modulo `ℤ`. -/
 @[simp]
-theorem ofForm_apply (η : SmoothForm I M ℝ k) (z : smoothIntCycles I M k) :
-    (ofForm η : smoothIntCycles I M k →+ UnitAddCircle) z =
-      ((integrationCochain (R := ℤ) η.val).hom z : UnitAddCircle) := by
+theorem ofForm_apply (η : SmoothForm I M ℝ k)
+    (z : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k) :
+    (ofForm η : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k
+      →+ UnitAddCircle) z =
+      ((integrationCochain (R := ℤ) η.val).hom
+        (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles k z) :
+          UnitAddCircle) := by
   simp [ofForm]
 
 /-- The curvature of the character of a form `η` is `dη`. -/
@@ -213,7 +240,7 @@ theorem ofForm_apply (η : SmoothForm I M ℝ k) (z : smoothIntCycles I M k) :
 theorem curvature_ofForm [IsManifold I ∞ M] [BoundarylessManifold I M]
     (η : SmoothForm I M ℝ k) : curvature (ofForm η) = mextDerivₗ I k η :=
   curvature_eq_of_forall fun c ↦ by
-    rw [ofForm_apply, coe_smoothIntBoundary,
+    rw [ofForm_apply, moduleCat_iCycles_toCycles_apply,
       integrationCochain_d_apply (η.isSmoothForm.of_le (by simp)), mextDerivₗ_apply]
 
 end OfForm
@@ -224,24 +251,44 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topologic
   {J : ModelWithCorners ℝ E' H'} {N : Type} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold I 1 M] [IsManifold J 1 N] {f : M → N}
 
+omit [IsManifold I 1 M] [IsManifold J 1 N] in
+/-- Pushing forward the boundary of a smooth singular integral chain along a smooth map gives the
+boundary of its pushforward: the element form of `HomologicalComplex.toCycles_cyclesMap`. -/
+private theorem cyclesMap_toCycles_apply (hf : ContMDiff I J ∞ f)
+    (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X (k + 1)) :
+    cyclesMap (SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ)) k
+      (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles (k + 1) k
+        c) =
+      ((smoothSingularSubcomplex J N : SSet).chainComplex (ModuleCat.of ℤ ℤ)).toCycles (k + 1) k
+        ((SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ)).f (k + 1)
+          c) :=
+  ConcreteCategory.congr_hom (toCycles_cyclesMap _ (k + 1) k) c
+
 /-- **Pullback of differential characters** along a smooth map `f : M → N`: precomposition with
 the pushforward of cycles. A curvature `φ` of `χ` pulls back to the curvature `f^*φ`. -/
 def pullback (hf : ContMDiff I J ∞ f) : differentialCharacters J N k →+ differentialCharacters I M k
     where
-  toFun χ := ⟨(χ : smoothIntCycles J N k →+ UnitAddCircle).comp (smoothIntCyclesMap hf k), by
+  toFun χ := ⟨(χ : ((smoothSingularSubcomplex J N : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k
+      →+ UnitAddCircle).comp (cyclesMap (SSet.chainComplexMap (smoothSingularSubcomplexMap f hf)
+        (ModuleCat.of ℤ ℤ)) k).hom.toAddMonoidHom, by
     obtain ⟨φ, hφ⟩ := mem_differentialCharacters_iff.mp χ.property
     refine ⟨SmoothForm.mpullback f hf φ, fun c ↦ ?_⟩
-    rw [AddMonoidHom.comp_apply, smoothIntCyclesMap_smoothIntBoundary, hφ,
-      SmoothForm.coe_mpullback, integrationCochain_chainComplexMap_apply hf]⟩
+    rw [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
+      cyclesMap_toCycles_apply, hφ, SmoothForm.coe_mpullback,
+      integrationCochain_chainComplexMap_apply hf]⟩
   map_zero' := rfl
   map_add' _ _ := rfl
 
 /-- The pullback of a character evaluates it on the pushforward of a cycle. -/
 @[simp]
 theorem pullback_apply (hf : ContMDiff I J ∞ f) (χ : differentialCharacters J N k)
-    (z : smoothIntCycles I M k) :
-    (pullback hf χ : smoothIntCycles I M k →+ UnitAddCircle) z =
-      (χ : smoothIntCycles J N k →+ UnitAddCircle) (smoothIntCyclesMap hf k z) :=
+    (z : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k) :
+    (pullback hf χ : ((smoothSingularSubcomplex I M : SSet).chainComplex
+      (ModuleCat.of ℤ ℤ)).cycles k →+ UnitAddCircle) z =
+      (χ : ((smoothSingularSubcomplex J N : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k
+        →+ UnitAddCircle)
+        (cyclesMap (SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ)) k
+          z) :=
   (rfl)
 
 variable (I M k) in
@@ -251,7 +298,8 @@ theorem pullback_id :
     pullback (I := I) (J := I) (M := M) (N := M) (f := id) (k := k) contMDiff_id =
       AddMonoidHom.id _ := by
   refine AddMonoidHom.ext fun χ ↦ Subtype.ext (AddMonoidHom.ext fun z ↦ ?_)
-  rw [pullback_apply, smoothIntCyclesMap_id, AddMonoidHom.id_apply, AddMonoidHom.id_apply]
+  rw [pullback_apply, AddMonoidHom.id_apply]
+  exact congrArg _ (moduleCat_iCycles_injective _ k (by simp [smoothSingularSubcomplexMap_id]))
 
 /-- Pulling characters back along a composite is the composite of the pullbacks, in the opposite
 order. -/
@@ -261,16 +309,17 @@ theorem pullback_comp {E'' H'' : Type*} [NormedAddCommGroup E''] [NormedSpace �
     (hf : ContMDiff I J ∞ f) :
     pullback (k := k) (hg.comp hf) = (pullback hf).comp (pullback hg) := by
   refine AddMonoidHom.ext fun χ ↦ Subtype.ext (AddMonoidHom.ext fun z ↦ ?_)
-  rw [pullback_apply, smoothIntCyclesMap_comp hg hf, AddMonoidHom.comp_apply,
-    AddMonoidHom.comp_apply, pullback_apply, pullback_apply]
+  rw [AddMonoidHom.comp_apply, pullback_apply, pullback_apply, pullback_apply]
+  refine congrArg _ (moduleCat_iCycles_injective _ k ?_)
+  simp [smoothSingularSubcomplexMap_comp hg hf]
 
 /-- The pullback of the character of a form is the character of the pulled-back form. -/
 @[simp]
 theorem pullback_ofForm [IsManifold I 2 M] [IsManifold J 2 N] (hf : ContMDiff I J ∞ f)
     (η : SmoothForm J N ℝ k) : pullback hf (ofForm η) = ofForm (SmoothForm.mpullback f hf η) := by
   refine Subtype.ext (AddMonoidHom.ext fun z ↦ ?_)
-  rw [pullback_apply, ofForm_apply, ofForm_apply, coe_smoothIntCyclesMap, SmoothForm.coe_mpullback,
-    integrationCochain_chainComplexMap_apply hf]
+  rw [pullback_apply, ofForm_apply, ofForm_apply, moduleCat_iCycles_cyclesMap_apply,
+    SmoothForm.coe_mpullback, integrationCochain_chainComplexMap_apply hf]
 
 /-- The curvature of the pullback of a character is the pullback of its curvature. -/
 @[simp]
@@ -278,8 +327,8 @@ theorem curvature_pullback [IsManifold I ∞ M] [BoundarylessManifold I M] [IsMa
     [BoundarylessManifold J N] (hf : ContMDiff I J ∞ f) (χ : differentialCharacters J N k) :
     curvature (pullback hf χ) = SmoothForm.mpullback f hf (curvature χ) :=
   curvature_eq_of_forall fun c ↦ by
-    rw [pullback_apply, smoothIntCyclesMap_smoothIntBoundary, apply_smoothIntBoundary,
-      SmoothForm.coe_mpullback, integrationCochain_chainComplexMap_apply hf]
+    rw [pullback_apply, cyclesMap_toCycles_apply, apply_toCycles, SmoothForm.coe_mpullback,
+      integrationCochain_chainComplexMap_apply hf]
 
 end Pullback
 

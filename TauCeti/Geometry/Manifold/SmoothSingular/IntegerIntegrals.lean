@@ -100,7 +100,8 @@ private theorem integral_affineChartSimplex (φ : RoughForm I M ℝ p)
     ((contMDiffOn_extChartAt_symm (n := ∞) x).contMDiffAt
       (mem_interior_iff_mem_nhds.mp (hΔ y hy))).mdifferentiableAt (by simp)
   rw [mpullback_comp_apply_of_hasFDerivAt hA hu,
-    mpullback_extChartAt_symm_eq_inChartAt φ x (hΔ y hy)]
+    mpullback_extChartAt_symm_eq_inChartAt φ x
+      (interior_mono (extChartAt_target_subset_range x) (hΔ y hy))]
   refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
   refine ((φ.inChartAt x (extChartAt I x x + t • L y)).map_smul_univ (fun _ ↦ t)
     fun i ↦ L (EuclideanSpace.single i 1)).trans ?_

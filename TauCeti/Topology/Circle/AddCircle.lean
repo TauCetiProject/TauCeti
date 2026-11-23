@@ -19,7 +19,6 @@ carries `1` back to `0`; more generally it carries `exp (2πix / T)` back to the
 In the other direction, `AddCircle.toCircle` sends the class of `t` to
 `cos (2πt / T) + i sin (2πt / T)`, and the only points it sends to the real points `±1` of `Circle`
 are `0` and the half period `T / 2`.
-A real number vanishes in `UnitAddCircle = ℝ/ℤ` exactly when it is an integer.
 Applied to both factors, it identifies the torus `S¹ × S¹` with the standard torus
 `UnitAddTorus (Fin 2) = ℝ² / ℤ²`. Applied coordinatewise, it identifies the standard torus
 `UnitAddTorus ι` with the product of circles `ι → Circle` as topological groups.
@@ -27,6 +26,7 @@ Finally, a continuous family `ψ (θ, ·)` of maps of `AddCircle T` starting at 
 `ψ (-θ, ·)` a right inverse of `ψ (θ, ·)` and without fixed points at small positive times, moves,
 at some small time, every point forward by a small continuous amount, and the short secants
 `(q τ, q (τ + w))` of a loop `q` stay near the diagonal.
+A real number vanishes in `UnitAddCircle = ℝ/ℤ` exactly when it is an integer.
 
 ## Main definitions
 
