@@ -13,8 +13,9 @@ public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
 import TauCeti.MeasureTheory.Function.Lp.Iterated
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
-import TauCeti.MeasureTheory.Integral.Bochner.Holder
+import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 import TauCeti.Probability.Moments.Covariance
 
@@ -59,19 +60,25 @@ variances and Borel--Cantelli almost-sure convergence to the mean from summable 
   L² convergence on a finite measure space.
 * `TauCeti.variance_eq_integral_sq_add`: the variance of a square-integrable function under a
   finite measure of mass `m` is `∫ X² + (m - 2) (∫ X)²`.
+* `TauCeti.integral_eq_zero_of_evariance_ne_top` and `TauCeti.lintegral_enorm_sq_le_evariance`:
+  under a measure of infinite mass, a function of finite extended variance has integral `0`, and
+  the lower integral of `‖X‖ₑ ^ 2` is at most the extended variance of `X`.
+* `TauCeti.memLp_two_of_evariance_ne_top`: under any measure, an almost everywhere strongly
+  measurable function of finite extended variance is square-integrable.
 * `TauCeti.Probability.evariance_prod_eq`: the law of total variance on the product of a finite
   measure and a probability measure, for any almost everywhere strongly measurable function.
 * `TauCeti.Probability.memLp_prod_of_evariance_ne_top` and
   `TauCeti.Probability.memLp_prod_of_lintegral_evariance_ne_top`: an almost everywhere strongly
-  measurable function on a product of finite measures is square-integrable if the lower integral
+  measurable function on a product of s-finite measures is square-integrable if the lower integral
   of the extended variances of its sections in the second coordinate is finite and either the
   extended variance of their integrals or the lower integral of the extended variances of its
   sections in the first coordinate is finite.
-* `TauCeti.Probability.evariance_integral_prod_le`: the extended variance of the integral over the
-  second factor of an s-finite product is at most the mass of that factor times the integral of the
-  section extended variances in the first coordinate.
-* `TauCeti.Probability.evariance_prod_le`: the two-factor Efron–Stein bound on the product of a
-  finite measure and a probability measure.
+* `TauCeti.Probability.evariance_integral_prod_le`: for a function integrable on the product of
+  two s-finite measures, the extended variance of its integral over the second factor is at most
+  the mass of that factor times the lower integral of the extended variances of its sections in the
+  first coordinate.
+* `TauCeti.Probability.evariance_prod_le`: the two-factor Efron–Stein bound on the product of an
+  s-finite measure and a probability measure.
 * `TauCeti.Probability.variance_weighted_coordinate_sum` and
   `TauCeti.Probability.measure_weighted_coordinate_sum_sub_mean_ge`: variance and Chebyshev
   bounds for weighted sums of pairwise independent variables.
@@ -246,6 +253,56 @@ theorem variance_eq_integral_sq_add {Ω : Type*} [MeasurableSpace Ω] {ν : Meas
   rw [← covariance_self hX.aestronglyMeasurable.aemeasurable,
     covariance_eq_integral_mul_add hi hi (hX.integrable_mul hX), sq, sq]
 
+section EVarianceNeTop
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
+
+/-- Under a measure of infinite total mass, an observable of finite extended variance has integral
+`0`. Otherwise the observable would be integrable with a nonzero integral `m`, and by Markov's and
+Chebyshev's inequalities the sets where `|X| ≥ |m| / 2` and where `|X - m| ≥ |m| / 2` would have
+finite measure, although they cover the space. -/
+theorem integral_eq_zero_of_evariance_ne_top (hμ : μ Set.univ = ∞) (hX : evariance X μ ≠ ∞) :
+    μ[X] = 0 := by
+  by_contra hm
+  have hint : Integrable X μ := by
+    by_contra h
+    exact hm (integral_undef h)
+  obtain ⟨c, hcval⟩ : ∃ c : ℝ≥0, (c : ℝ) = |μ[X]| / 2 := ⟨⟨_, by positivity⟩, rfl⟩
+  have hc : (0 : ℝ) < c := hcval ▸ half_pos (abs_pos.mpr hm)
+  have hcover : Set.univ ⊆ {ω | (c : ℝ) ≤ ‖X ω‖} ∪ {ω | (c : ℝ) ≤ |X ω - μ[X]|} := by
+    intro ω _
+    by_contra h
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, Real.norm_eq_abs, hcval] at h
+    have := abs_sub (X ω) (X ω - μ[X])
+    rw [sub_sub_cancel] at this
+    linarith [h.1, h.2]
+  refine hμ.not_lt ((measure_mono hcover).trans_lt ((measure_union_le _ _).trans_lt
+    (ENNReal.add_lt_top.mpr ⟨hint.measure_norm_ge_lt_top hc, ?_⟩)))
+  exact (meas_ge_le_evariance_div_sq hint.aestronglyMeasurable (NNReal.coe_pos.mp hc).ne').trans_lt
+    (ENNReal.div_lt_top hX (pow_ne_zero 2 (ENNReal.coe_ne_zero.mpr (NNReal.coe_pos.mp hc).ne')))
+
+/-- Under a measure of infinite total mass, the second moment `∫⁻ ‖X‖ₑ ^ 2` of any observable is
+at most its extended variance: when the latter is finite, the integral of `X` vanishes. -/
+theorem lintegral_enorm_sq_le_evariance (hμ : μ Set.univ = ∞) :
+    ∫⁻ ω, ‖X ω‖ₑ ^ 2 ∂μ ≤ evariance X μ := by
+  by_cases hX : evariance X μ = ∞
+  · exact hX ▸ le_top
+  · simp only [evariance, integral_eq_zero_of_evariance_ne_top hμ hX, sub_zero, le_rfl]
+
+/-- An almost everywhere strongly measurable observable of finite extended variance is
+square-integrable, under any measure. For a finite measure this is Mathlib's
+`evariance_lt_top_iff_memLp`; under a measure of infinite mass the integral of the observable
+vanishes, so its extended variance is its second moment. -/
+theorem memLp_two_of_evariance_ne_top (hXm : AEStronglyMeasurable X μ)
+    (hX : evariance X μ ≠ ∞) : MemLp X 2 μ := by
+  by_cases hμ : μ Set.univ = ∞
+  · exact hXm.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr
+      ((lintegral_enorm_sq_le_evariance hμ).trans_lt hX.lt_top)
+  · have : IsFiniteMeasure μ := ⟨lt_top_iff_ne_top.mpr hμ⟩
+    exact (evariance_lt_top_iff_memLp hXm).mp hX.lt_top
+
+end EVarianceNeTop
+
 section VarianceNeZero
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
@@ -396,24 +453,31 @@ theorem aemeasurable_evariance_prod_right [SFinite π] (hF : AEStronglyMeasurabl
   filter_upwards [Measure.ae_ae_of_ae_prod hF.ae_eq_mk] with a ha
   exact (evariance_congr ha).symm
 
-/-- If a function is almost everywhere strongly measurable on the product with a finite measure,
-and the lower integral of the extended variances of its sections in the second coordinate is
-finite, then almost every such section is square-integrable. -/
-theorem ae_memLp_two_prod_right_of_lintegral_evariance_ne_top [IsFiniteMeasure π]
+/-- If a function is almost everywhere strongly measurable on the product with an s-finite
+measure, and the lower integral of the extended variances of its sections in the second coordinate
+is finite, then almost every such section is square-integrable. -/
+theorem ae_memLp_two_prod_right_of_lintegral_evariance_ne_top [SFinite π]
     (hF : AEStronglyMeasurable F (ν.prod π))
     (h : ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν ≠ ∞) :
     ∀ᵐ a ∂ν, MemLp (fun w => F (a, w)) 2 π := by
   filter_upwards [ae_lt_top' (aemeasurable_evariance_prod_right hF) h, hF.prodMk_left]
     with a ha hma
-  exact (evariance_lt_top_iff_memLp hma).mp ha
+  exact memLp_two_of_evariance_ne_top hma ha.ne
 
-/-- If `F` is almost everywhere strongly measurable on the product of two finite measures, and the
-lower integrals of the extended variances of its sections in either coordinate are both finite,
+/-- If `F` is almost everywhere strongly measurable on the product of two s-finite measures, and
+the lower integrals of the extended variances of its sections in either coordinate are both finite,
 then `F` is square-integrable. -/
-theorem memLp_prod_of_lintegral_evariance_ne_top [IsFiniteMeasure ν] [IsFiniteMeasure π]
+theorem memLp_prod_of_lintegral_evariance_ne_top [SFinite ν] [SFinite π]
     (hF : AEStronglyMeasurable F (ν.prod π))
     (h₁ : ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν ≠ ∞)
     (h₂ : ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π ≠ ∞) : MemLp F 2 (ν.prod π) := by
+  rcases eq_or_ne (ν Set.univ) ∞ with hν | hν
+  · -- Under a first factor of infinite mass, each section extended variance in the first
+    -- coordinate bounds the second moment of that section.
+    refine hF.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr ?_
+    rw [lintegral_prod_symm _ (hF.eNorm.pow_const 2)]
+    exact (lintegral_mono fun w => lintegral_enorm_sq_le_evariance hν).trans_lt h₂.lt_top
+  have : IsFiniteMeasure ν := ⟨lt_top_iff_ne_top.mpr hν⟩
   rcases eq_zero_or_neZero ν with rfl | hν
   · simp
   -- Centering each section in the first coordinate gives a square-integrable function.
@@ -437,16 +501,23 @@ theorem memLp_prod_of_lintegral_evariance_ne_top [IsFiniteMeasure ν] [IsFiniteM
   ext p
   simp
 
-/-- If an observable is almost everywhere strongly measurable on the product of two finite
+/-- If an observable is almost everywhere strongly measurable on the product of two s-finite
 measures, the lower integral of the extended variances of its sections in the second coordinate is
 finite, and the extended variance of the integrals of those sections is finite, then the observable
 is square-integrable. -/
-theorem memLp_prod_of_evariance_ne_top [IsFiniteMeasure ν] [IsFiniteMeasure π]
+theorem memLp_prod_of_evariance_ne_top [SFinite ν] [SFinite π]
     (hF : AEStronglyMeasurable F (ν.prod π))
     (hslice : ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν ≠ ∞)
     (hmean : evariance (fun a => ∫ w, F (a, w) ∂π) ν ≠ ∞) : MemLp F 2 (ν.prod π) := by
+  rcases eq_or_ne (π Set.univ) ∞ with hπ | hπ
+  · -- Under a second factor of infinite mass, each section extended variance in the second
+    -- coordinate bounds the second moment of that section.
+    refine hF.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr ?_
+    rw [lintegral_prod _ (hF.eNorm.pow_const 2)]
+    exact (lintegral_mono fun a => lintegral_enorm_sq_le_evariance hπ).trans_lt hslice.lt_top
+  have : IsFiniteMeasure π := ⟨lt_top_iff_ne_top.mpr hπ⟩
   have hsl := ae_memLp_two_prod_right_of_lintegral_evariance_ne_top hF hslice
-  have hmL := (evariance_lt_top_iff_memLp hF.integral_prod_right').mp hmean.lt_top
+  have hmL := memLp_two_of_evariance_ne_top hF.integral_prod_right' hmean
   have hvar : Integrable (fun a => variance (fun w => F (a, w)) π) ν := by
     simpa only [variance] using
       integrable_toReal_of_lintegral_ne_top (aemeasurable_evariance_prod_right hF) hslice
@@ -513,61 +584,70 @@ end ProdSections
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {ν : Measure α} {π : Measure β}
   [SFinite ν] [SFinite π] {F : α × β → ℝ}
 
-private theorem evariance_integral_prod_le_of_measurable (hF : Measurable F)
-    (hint : Integrable F (ν.prod π)) :
-    evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
-      π Set.univ * ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
-  have hmm : StronglyMeasurable (fun w => ∫ a, F (a, w) ∂ν) :=
-    (hF.comp measurable_swap).stronglyMeasurable.integral_prod_right'
-  have hmint : Integrable (fun w => ∫ a, F (a, w) ∂ν) π := hint.integral_prod_right
-  have hm_eq : ∫ w, ∫ a, F (a, w) ∂ν ∂π = ∫ a, ∫ w, F (a, w) ∂π ∂ν := by
-    rw [← integral_prod_symm _ hint, integral_prod _ hint]
-  have hae : ∀ᵐ a ∂ν, ‖(∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν‖ₑ ^ 2 ≤
-      π Set.univ * ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π := by
-    filter_upwards [hint.prod_right_ae] with a ha
-    have hsub : (∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν =
-        ∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π := by
-      rw [integral_sub ha hmint, hm_eq]
-    rw [hsub]
-    have hJ := enorm_integral_rpow_le_measure_univ_rpow_mul (μ := π)
-      (fun w => F (a, w) - ∫ a', F (a', w) ∂ν) one_le_two
-    rw [show (2 : ℝ) - 1 = 1 by norm_num, ENNReal.rpow_one] at hJ
-    simpa only [ENNReal.rpow_two] using hJ
-  have hGm : Measurable fun p : α × β => ‖F p - ∫ a', F (a', p.2) ∂ν‖ₑ ^ 2 :=
-    (hF.sub (hmm.measurable.comp measurable_snd)).eNorm.pow_const 2
-  calc evariance (fun a => ∫ w, F (a, w) ∂π) ν
-      ≤ ∫⁻ a, π Set.univ * ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν :=
-        lintegral_mono_ae hae
-    _ = π Set.univ * ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π := by
-        rw [lintegral_const_mul _ hGm.lintegral_prod_right', lintegral_lintegral_swap
-          hGm.aemeasurable]
-    _ = π Set.univ * ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
-
-/-- Jensen's inequality for the variance of an integral: the variance of the integral over the
-second coordinate is at most the mass of the second factor times the integral over the second
-coordinate of the variances in the first coordinate. For a probability measure on the second
-factor this bounds the variance of the average by the average of the variances. -/
+/-- Jensen's inequality for the variance of an integral: for `F` integrable on the product of two
+s-finite measures, the extended variance of its integral over the second coordinate is at most the
+mass of the second factor times the lower integral over the second coordinate of the extended
+variances of its sections in the first coordinate. For a probability measure on the second factor
+this bounds the variance of the average by the average of the variances. The proof applies
+Minkowski's integral inequality in `L²` to the sections centered in the first coordinate. -/
 theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
     evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
       π Set.univ * ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
-  have hG := hint.1.stronglyMeasurable_mk
-  have hFG : F =ᵐ[ν.prod π] hint.1.mk F := hint.1.ae_eq_mk
-  have h1 : ∀ᵐ a ∂ν, ∀ᵐ w ∂π, F (a, w) = hint.1.mk F (a, w) := Measure.ae_ae_of_ae_prod hFG
-  have h2 : ∀ᵐ w ∂π, ∀ᵐ a ∂ν, F (a, w) = hint.1.mk F (a, w) :=
-    Measure.ae_ae_of_ae_prod
-      ((Measure.measurePreserving_swap (μ := π) (ν := ν)).quasiMeasurePreserving.ae_eq_comp hFG)
-  rw [evariance_congr (h1.mono fun a ha => integral_congr_ae ha),
-    lintegral_congr_ae (h2.mono fun w hw => evariance_congr hw)]
-  exact evariance_integral_prod_le_of_measurable hG.measurable (hint.congr hFG)
+  -- Center each section in the first coordinate.
+  set G : α → β → ℝ := fun a w => F (a, w) - ∫ a', F (a', w) ∂ν with hG_def
+  have hmint : Integrable (fun w => ∫ a, F (a, w) ∂ν) π := hint.integral_prod_right
+  have hG : AEStronglyMeasurable (Function.uncurry G) (ν.prod π) := hint.1.sub hmint.1.comp_snd
+  -- The integrals of the centered sections over the second coordinate are the centered integrals.
+  have hc : ∀ᵐ a ∂ν, (∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν = ∫ w, G a w ∂π := by
+    filter_upwards [hint.prod_right_ae] with a ha
+    rw [hG_def, integral_sub ha hmint, ← integral_prod_symm _ hint, integral_prod _ hint]
+  -- The squared `L²(ν)` seminorms of the centered sections are their extended variances.
+  have hsec : ∀ᵐ w ∂π, eLpNorm (fun a => G a w) 2 ν ^ 2 = evariance (fun a => F (a, w)) ν := by
+    filter_upwards [hG.prod_swap.prodMk_left] with w hw
+    rw [eLpNorm_two_sq_eq_lintegral (f := fun a => G a w) hw, evariance]
+  have hJ := rpow_lintegral_le_measure_univ_rpow_mul (μ := π)
+    (u := fun w => eLpNorm (fun a => G a w) 2 ν) one_le_two
+  rw [show (2 : ℝ) - 1 = 1 by norm_num, ENNReal.rpow_one] at hJ
+  simp only [ENNReal.rpow_two] at hJ
+  calc evariance (fun a => ∫ w, F (a, w) ∂π) ν
+      = eLpNorm (fun a => ∫ w, G a w ∂π) 2 ν ^ 2 := by
+        rw [evariance,
+          eLpNorm_two_sq_eq_lintegral (f := fun a => ∫ w, G a w ∂π) hG.integral_prod_right']
+        exact lintegral_congr_ae (hc.mono fun a ha => by simp only [ha])
+    _ ≤ (∫⁻ w, eLpNorm (fun a => G a w) 2 ν ∂π) ^ 2 := by
+        gcongr
+        exact eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top hG one_le_two ENNReal.ofNat_ne_top
+    _ ≤ π Set.univ * ∫⁻ w, eLpNorm (fun a => G a w) 2 ν ^ 2 ∂π := hJ
+    _ = π Set.univ * ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
+        rw [lintegral_congr_ae hsec]
 
-omit [SFinite ν] [SFinite π] in
-/-- The two-factor Efron--Stein inequality on the product of a finite measure and a probability
+omit [SFinite π] in
+/-- The two-factor Efron--Stein inequality on the product of an s-finite measure and a probability
 measure. The function `F` need only be almost everywhere strongly measurable with respect to the
 product measure; when it is not square-integrable, both sides are infinite. -/
-theorem evariance_prod_le [IsFiniteMeasure ν] [IsProbabilityMeasure π]
-    (hF : AEStronglyMeasurable F (ν.prod π)) :
+theorem evariance_prod_le [IsProbabilityMeasure π] (hF : AEStronglyMeasurable F (ν.prod π)) :
     evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
+  rcases eq_or_ne (ν Set.univ) ∞ with hν | hν
+  · -- Under a first factor of infinite mass, almost every section in the first coordinate has
+    -- integral zero, hence so does `F`, and each section extended variance bounds the second
+    -- moment of its section.
+    rcases eq_or_ne (∫⁻ w, evariance (fun a => F (a, w)) ν ∂π) ∞ with h₂ | h₂
+    · simp only [h₂, add_top, le_top]
+    have hae : ∀ᵐ w ∂π, ∫ a, F (a, w) ∂ν = 0 := by
+      filter_upwards [ae_lt_top' (aemeasurable_evariance_prod_right hF.prod_swap) h₂] with w hw
+      exact integral_eq_zero_of_evariance_ne_top hν hw.ne
+    have hmean : ∫ p, F p ∂(ν.prod π) = 0 := by
+      by_cases hint : Integrable F (ν.prod π)
+      · rw [integral_prod_symm _ hint, integral_congr_ae hae, integral_zero]
+      · exact integral_undef hint
+    calc evariance F (ν.prod π) = ∫⁻ p, ‖F p‖ₑ ^ 2 ∂(ν.prod π) := by
+          simp only [evariance, hmean, sub_zero]
+      _ = ∫⁻ w, ∫⁻ a, ‖F (a, w)‖ₑ ^ 2 ∂ν ∂π := lintegral_prod_symm _ (hF.eNorm.pow_const 2)
+      _ ≤ ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π :=
+          lintegral_mono fun w => lintegral_enorm_sq_le_evariance hν
+      _ ≤ _ := le_add_self
+  have : IsFiniteMeasure ν := ⟨lt_top_iff_ne_top.mpr hν⟩
   by_cases hL : MemLp F 2 (ν.prod π)
   · rw [evariance_prod_eq hF]
     gcongr

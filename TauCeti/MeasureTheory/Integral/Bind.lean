@@ -31,8 +31,9 @@ everywhere.
 These results use Mathlib's integration theory for kernel composition, with the mixing measure
 viewed as a constant kernel. The component family need only be almost everywhere measurable: it
 agrees almost everywhere with a measurable modification, which is a kernel and has the same
-mixture. Apart from the component mass bound in the `Lᵖ` estimate, no finiteness assumptions on
-the measures are needed.
+mixture. No global finiteness assumption is made on the mixing measure or on the components: the
+`Lᵖ` estimate for `p > 1` assumes the component masses bounded almost everywhere, and the real-mass
+identity assumes almost every component finite on the given set.
 -/
 
 public section
