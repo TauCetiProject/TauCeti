@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 
 /-!
 # Extension by zero of compactly supported bundle sections
@@ -258,24 +259,51 @@ theorem extendByZero_smul_function (f : C^n⟮I, M; 𝕜⟯)
     exact smul_apply _ s.val ⟨x, hx⟩
   · simp [extendByZero_apply_of_notMem _ hx]
 
+section Coefficients
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {W : M → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)]
+  [FiberBundle G W] [VectorBundle 𝕜 G W]
+
+/-- Extension by zero commutes with a smooth fibrewise linear coefficient map. -/
+theorem extendByZero_mapCompactlySupported (φ : ∀ x, V x →ₗ[𝕜] W x)
+    (hφ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
+      (fun p : TotalSpace F V ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace G W))) :
+    let c : C^n⟮I, U; I, M⟯ := ⟨Subtype.val, contMDiff_subtypeVal⟩
+    let hφU := Pullback.contMDiff_fiberwise (fun x v ↦ φ x v) hφ c c.contMDiff
+    ∀ s : compactlySupported I F n (c *ᵖ V),
+      extendByZero (mapCompactlySupported (I := I) (F := F) (G := G)
+        (V := c *ᵖ V) (W := c *ᵖ W) (fun x ↦ φ x.val) hφU s) =
+      mapLinearMap φ hφ (extendByZero s) := by
+  intro c hφU s
+  ext x
+  rw [mapLinearMap_apply]
+  by_cases hx : x ∈ U
+  · erw [extendByZero_apply_of_mem _ (⟨x, hx⟩ : U), extendByZero_apply_of_mem s (⟨x, hx⟩ : U)]
+    erw [coe_mapCompactlySupported, mapLinearMap_apply]
+    rfl
+  · erw [extendByZero_apply_of_notMem _ hx, extendByZero_apply_of_notMem s hx, map_zero]
+
+end Coefficients
+
 end ContMDiffSection
 
 namespace ContMDiffSection
 section IntermediateOpen
 
-variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [LocallyCompactSpace E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+variable {𝕜 E H M F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [LocallyCompactSpace E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ∞ω}
+  [FiberBundle F V] [VectorBundle 𝕜 F V] {n : ℕ∞ω}
   [ContMDiffVectorBundle n F V I] [IsManifold I n M]
   [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] {U D : Opens M}
 
 /-- Extend a compactly supported section from one open subset to a larger open subset. -/
 def extendByZeroToOpenLinearMap (h : U ≤ D) :
-    compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) →ₗ[ℝ]
+    compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) →ₗ[𝕜]
       compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V) := by
   let L := (restrictLinearMap I F n V D).comp
     ((compactlySupported I F n V).subtype.comp
@@ -283,6 +311,7 @@ def extendByZeroToOpenLinearMap (h : U ≤ D) :
   refine L.codRestrict (compactlySupported I F n
     ((⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V)) ?_
   intro s
+  -- Codomain restriction retains the composite section; only its support membership is owed.
   change (restrictLinearMap I F n V D) (extendByZeroLinearMap s).val ∈ _
   erw [restrictLinearMap_apply]
   apply restrict_mem_compactlySupported (extendByZeroLinearMap s)
@@ -296,6 +325,7 @@ omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
 theorem extendByZeroToOpenLinearMap_val (h : U ≤ D)
     (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
     (extendByZeroToOpenLinearMap h s).val = (extendByZero s).restrict D := by
+  -- Forget the codomain membership proof, then evaluate the composed linear maps.
   change (restrictLinearMap I F n V D) (extendByZeroLinearMap s).val = _
   erw [restrictLinearMap_apply, extendByZeroLinearMap_apply]
 
@@ -351,11 +381,12 @@ theorem extendByZeroToOpenLinearMap_comp {D' : Opens M} (h : U ≤ D) (h' : D �
   rw [extendByZero_extendByZeroToOpenLinearMap]
 
 /-- Restriction to the universal open subset on compactly supported sections. -/
-def restrictUnivLinearMap : compactlySupported I F n V →ₗ[ℝ]
+def restrictUnivLinearMap : compactlySupported I F n V →ₗ[𝕜]
     compactlySupported I F n
       ((⟨Subtype.val, continuous_subtypeVal⟩ : C((⊤ : Opens M), M)) *ᵖ V) := by
   let L := (restrictLinearMap I F n V (⊤ : Opens M)).comp (compactlySupported I F n V).subtype
   refine L.codRestrict _ (fun s ↦ ?_)
+  -- The codomain restriction asks for compact support of the ordinary restricted section.
   change (restrictLinearMap I F n V ⊤) s.val ∈ _
   erw [restrictLinearMap_apply]
   exact restrict_mem_compactlySupported s (U := (⊤ : Opens M)) (Set.subset_univ _)
@@ -365,6 +396,7 @@ omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
 /-- The underlying universal-open restriction is ordinary section restriction. -/
 theorem restrictUnivLinearMap_val (s : compactlySupported I F n V) :
     (restrictUnivLinearMap (I := I) (F := F) (n := n) s).val = s.val.restrict ⊤ := by
+  -- The subtype value forgets only the compact-support proof of this restriction.
   change (restrictLinearMap I F n V ⊤) s.val = _
   erw [restrictLinearMap_apply]
 

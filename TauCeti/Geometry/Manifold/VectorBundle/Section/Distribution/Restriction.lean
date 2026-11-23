@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Density.OpenSubset
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+public import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
 
 /-!
 # Restriction of native bundle distributions
@@ -87,6 +87,7 @@ private theorem continuous_coefficientMap_frame :
   simp only [ContinuousLinearMap.id_apply]
   erw [Trivialization.frameCoordinates_apply, Trivialization.frameCoordinates_apply,
     mapLinearMap_apply, Trivialization.pullback_apply]
+  -- Public coordinate evaluation has reduced the pulled frame to the ambient Hom frame.
   change (trivializationAt (F →L[ℝ] ℝ) (ambientCoefficients (I := I) (V := V)) (i : M)
       ⟨(y.val : M), TauCeti.DensityBundle.openHomEquiv y.val (s y.val)⟩).2 =
     (intrinsicFrame (I := I) (F := F) (V := V) i ⟨y.val, s y.val⟩).2
@@ -115,6 +116,7 @@ private theorem continuous_coefficientInverse_frame :
   simp only [ContinuousLinearMap.id_apply]
   erw [Trivialization.frameCoordinates_apply, Trivialization.frameCoordinates_apply,
     mapLinearMap_apply, Trivialization.pullback_apply]
+  -- Use the same intrinsic frame after evaluating the inverse coefficient map.
   change (intrinsicFrame (I := I) (F := F) (V := V) i
       ⟨y.val, (TauCeti.DensityBundle.openHomEquiv y.val).symm (s y.val)⟩).2 =
     (trivializationAt (F →L[ℝ] ℝ) (ambientCoefficients (I := I) (V := V)) (i : M)
@@ -262,6 +264,7 @@ private theorem densityTestLinearEquiv_apply
     (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) ((localCoefficients (I := I) (V := V) (U := U))))
     (x : U) : densityTestLinearEquiv (I := I) (F := F) (V := V) s x =
       TauCeti.DensityBundle.openHomEquiv x (s x) := by
+  -- The native test equivalence wraps this same algebraic compact-support transport.
   change (mapCompactlySupportedEquiv (I := I) (F := F →L[ℝ] ℝ) (G := F →L[ℝ] ℝ)
     (V := localCoefficients (I := I) (V := V) (U := U))
     (W := pulledAmbientCoefficients (I := I) (V := V) (U := U))
@@ -279,6 +282,7 @@ private theorem densityTestLinearEquiv_symm_apply
       (ambientCoefficients (I := I) (V := V)))))
     (x : U) : (densityTestLinearEquiv (I := I) (F := F) (V := V)).symm s x =
       (TauCeti.DensityBundle.openHomEquiv x).symm (s x) := by
+  -- Read the inverse native test equivalence through its algebraic section transport.
   change ((mapCompactlySupportedEquiv (I := I) (F := F →L[ℝ] ℝ) (G := F →L[ℝ] ℝ)
     (V := localCoefficients (I := I) (V := V) (U := U))
     (W := pulledAmbientCoefficients (I := I) (V := V) (U := U))
@@ -332,19 +336,25 @@ def openDensityHomCLE :
 
 omit [T2Space M] in
 /-- The intrinsic test comparison evaluates by the native pointwise open-density map. -/
+@[simp]
 theorem openDensityHomCLE_apply
     (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) ((localCoefficients (I := I) (V := V) (U := U))))
-    (x : U) : openDensityHomCLE (I := I) (F := F) (V := V) s x =
-      TauCeti.DensityBundle.openHomEquiv x (s x) := by
+    (x : U) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    openDensityHomCLE (I := I) (F := F) (V := V) s x =
+      TauCeti.DensityBundle.openHomEquiv x (s x)) := by
   exact densityTestLinearEquiv_apply s x
 
 omit [T2Space M] in
 /-- The inverse intrinsic test comparison evaluates by the inverse native density map. -/
+@[simp]
 theorem openDensityHomCLE_symm_apply
     (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) (((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ
       (ambientCoefficients (I := I) (V := V)))))
-    (x : U) : (openDensityHomCLE (I := I) (F := F) (V := V)).symm s x =
-      (TauCeti.DensityBundle.openHomEquiv x).symm (s x) := by
+    (x : U) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    (openDensityHomCLE (I := I) (F := F) (V := V)).symm s x =
+      (TauCeti.DensityBundle.openHomEquiv x).symm (s x)) := by
   exact densityTestLinearEquiv_symm_apply s x
 
 omit [T2Space M] in
@@ -391,10 +401,14 @@ def testExtensionCLM :
     (openDensityHomCLE (I := I) (F := F) (V := V) (U := U)).toContinuousLinearMap
 
 /-- On the open subset, intrinsic extension evaluates by the native density comparison. -/
+@[simp]
 theorem testExtensionCLM_apply_of_mem
     (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) ((localCoefficients (I := I) (V := V) (U := U))))
-    (x : U) : testExtensionCLM (I := I) (F := F) (V := V) s (x : M) =
-      TauCeti.DensityBundle.openHomEquiv x (s x) := by
+    (x : U) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    testExtensionCLM (I := I) (F := F) (V := V) s (x : M) =
+      TauCeti.DensityBundle.openHomEquiv x (s x)) := by
+  -- The intrinsic operator is the composite of density transport and native extension.
   change TauCeti.BundleTest.extendByZeroCLM
     (I := I) (F := F →L[ℝ] ℝ) (V := ambientCoefficients (I := I) (V := V)) (U := U)
     (openDensityHomCLE (I := I) (F := F) (V := V) s) (x : M) = _
@@ -402,9 +416,12 @@ theorem testExtensionCLM_apply_of_mem
   exact openDensityHomCLE_apply s x
 
 /-- Intrinsic test extension vanishes outside the open subset. -/
+@[simp]
 theorem testExtensionCLM_apply_of_notMem
     (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) ((localCoefficients (I := I) (V := V) (U := U))))
-    {x : M} (hx : x ∉ U) : testExtensionCLM (I := I) (F := F) (V := V) s x = 0 := by
+    {x : M} (hx : x ∉ U) :
+    testExtensionCLM (I := I) (F := F) (V := V) s x = 0 := by
+  -- The intrinsic operator is the composite of density transport and native extension.
   change TauCeti.BundleTest.extendByZeroCLM (I := I) (F := F →L[ℝ] ℝ)
     (V := ambientCoefficients (I := I) (V := V)) (U := U)
     (openDensityHomCLE (I := I) (F := F) (V := V) s) x = 0
@@ -424,14 +441,19 @@ def restrictCLM :
         (V := ambientCoefficients (I := I) (V := V)) (W := ℝ) (U := U))
 
 /-- Restriction pairs with an intrinsic test by pairing with its ambient extension. -/
+@[simp]
 theorem restrictCLM_apply :
+    dsimp% only [ContinuousMap.coe_mk] (
     ∀ (T : TauCeti.BundleDistribution I M F V)
       (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) ((localCoefficients (I := I) (V := V) (U := U)))),
       restrictCLM (I := I) (F := F) (V := V) T s =
-        T (testExtensionCLM (I := I) (F := F) (V := V) s) := by
+        T (testExtensionCLM (I := I) (F := F) (V := V) s)) := by
   intro T s
-  simp only [restrictCLM, id_eq, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply, restrictDualCLM_apply]
+  -- The composed transpose is evaluated at the same canonical open-test carrier.
+  change restrictDualCLM (I := I) (F := F →L[ℝ] ℝ)
+    (V := ambientCoefficients (I := I) (V := V)) (W := ℝ) (U := U) T
+      (openDensityHomCLE (I := I) (F := F) (V := V) s) = _
+  erw [restrictDualCLM_apply]
   rfl
 
 /-- A point mass inside the open subset restricts by transposing the native density map. -/
@@ -477,6 +499,7 @@ theorem tsupport_testExtensionCLM
       (openDensityHomCLE (I := I) (F := F) (V := V) s)
   · congr 2
     ext x
+    -- Native and raw test wrappers have the same coefficient at this point.
     change (openDensityHomCLE (I := I) (F := F) (V := V) s x ≠ 0) ↔ (s x ≠ 0)
     erw [openDensityHomCLE_apply]
     exact not_congr (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) x).map_eq_zero_iff
@@ -486,6 +509,7 @@ theorem testExtensionCLM_smulLeftCLM (f : C^∞⟮I, M; ℝ⟯)
     (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) ((localCoefficients (I := I) (V := V) (U := U)))) :
     testExtensionCLM (I := I) (F := F) (V := V) (TauCeti.BundleTest.smulLeftCLM (f.restrict U) s) =
       TauCeti.BundleTest.smulLeftCLM f (testExtensionCLM (I := I) (F := F) (V := V) s) := by
+  -- The intrinsic operator is the composite of density transport and native extension.
   change TauCeti.BundleTest.extendByZeroCLM (I := I) (F := F →L[ℝ] ℝ)
       (V := ambientCoefficients (I := I) (V := V)) (U := U)
       (openDensityHomCLE (I := I) (F := F) (V := V) (TauCeti.BundleTest.smulLeftCLM (f.restrict U)
@@ -520,35 +544,6 @@ private def intrinsicInclusionCLM {D : Opens M} (h : U ≤ D) :
 private abbrev nestedOpen (U D : Opens M) : Opens D :=
   Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U
 
-/-- The actual iterated open subset identifies smoothly with the direct smaller open subset. -/
-def nestedBaseDiffeomorph {D : Opens M} (h : U ≤ D) :
-    (Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U) ≃ₘ^∞⟮I, I⟯ U where
-  toFun x := ⟨x.val.val, x.property⟩
-  invFun u := ⟨⟨u.val, h u.property⟩, u.property⟩
-  left_inv x := by cases x; rfl
-  right_inv u := by cases u; rfl
-  contMDiff_toFun := by
-    apply (ContMDiff.subtypeVal_comp_iff U _).mp
-    exact (contMDiff_subtypeVal (I := I) (U := D)).comp
-      (contMDiff_subtypeVal (I := I) (U := nestedOpen U D))
-  contMDiff_invFun := by
-    apply (ContMDiff.subtypeVal_comp_iff (nestedOpen U D) _).mp
-    apply (ContMDiff.subtypeVal_comp_iff D _).mp
-    exact contMDiff_subtypeVal
-
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-/-- The nested-open identification keeps the underlying ambient point. -/
-@[simp]
-theorem nestedBaseDiffeomorph_apply {D : Opens M} (h : U ≤ D)
-    (x : Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U) :
-    nestedBaseDiffeomorph (I := I) h x = ⟨x.val.val, x.property⟩ := by rfl
-
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-/-- The inverse nested-open identification inserts the intermediate-open membership. -/
-@[simp]
-theorem nestedBaseDiffeomorph_symm_apply {D : Opens M} (h : U ≤ D) (x : U) :
-    (nestedBaseDiffeomorph (I := I) h).symm x = ⟨⟨x.val, h x.property⟩, x.property⟩ := by rfl
-
 private abbrev doubleCoefficients (D : Opens M) :=
   localCoefficients (I := I) (V := (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V)
     (U := nestedOpen U D)
@@ -563,7 +558,8 @@ private def iteratedIntrinsicTestExtensionCLM (D : Opens M) :
 private theorem tsupport_iteratedIntrinsicTestExtensionCLM {D : Opens M} (h : U ≤ D)
     (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) (doubleCoefficients (I := I) (V := V) (U := U) D)) :
     closure {x : M | iteratedIntrinsicTestExtensionCLM (I := I) (F := F) (V := V) D s x ≠ 0} =
-      Subtype.val '' (nestedBaseDiffeomorph (I := I) h) '' closure {x : nestedOpen U D | s x ≠ 0}
+      Subtype.val '' (Diffeomorph.nestedOpen (I := I) (n := ∞) h) ''
+        closure {x : nestedOpen U D | s x ≠ 0}
         := by
   change closure {x : M | testExtensionCLM (I := I) (F := F) (V := V) (U := D)
     (testExtensionCLM (I := I) (F := F) (M := D)
@@ -573,13 +569,13 @@ private theorem tsupport_iteratedIntrinsicTestExtensionCLM {D : Opens M} (h : U 
   erw [tsupport_testExtensionCLM (I := I) (F := F) (M := D)
     (V := (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V) (U := nestedOpen U D)]
   rw [Set.image_image, Set.image_image]
-  rfl
+  simp only [Diffeomorph.nestedOpen_apply_coe]
 
 private def intrinsicNestedTestComparisonCLM {D : Opens M} (h : U ≤ D) :
     TauCeti.BundleTest I (F →L[ℝ] ℝ) (doubleCoefficients (I := I) (V := V) (U := U) D) →L[ℝ]
       TauCeti.BundleTest I (F →L[ℝ] ℝ) (localCoefficients (I := I) (V := V) (U := U)) := by
-  let q : C(nestedOpen U D, U) := ⟨nestedBaseDiffeomorph (I := I) h,
-    (nestedBaseDiffeomorph (I := I) h).continuous⟩
+  let q : C(nestedOpen U D, U) := ⟨Diffeomorph.nestedOpen (I := I) (n := ∞) h,
+    (Diffeomorph.nestedOpen (I := I) (n := ∞) h).continuous⟩
   exact (openDensityHomCLE (I := I) (F := F) (V := V) (U := U)).symm.toContinuousLinearMap.comp
     (TauCeti.BundleTest.localizeCLM (I := I) (F := F →L[ℝ] ℝ)
       (V := ambientCoefficients (I := I) (V := V))
@@ -590,10 +586,11 @@ private theorem testExtensionCLM_nested_aux {D : Opens M} (h : U ≤ D) :
     (testExtensionCLM (I := I) (F := F) (V := V) (U := U)).comp
       (intrinsicNestedTestComparisonCLM (I := I) (F := F) (V := V) h) =
       iteratedIntrinsicTestExtensionCLM (I := I) (F := F) (V := V) D := by
-  let q : C(nestedOpen U D, U) := ⟨nestedBaseDiffeomorph (I := I) h,
-    (nestedBaseDiffeomorph (I := I) h).continuous⟩
+  let q : C(nestedOpen U D, U) := ⟨Diffeomorph.nestedOpen (I := I) (n := ∞) h,
+    (Diffeomorph.nestedOpen (I := I) (n := ∞) h).continuous⟩
   apply ContinuousLinearMap.ext
   intro s
+  -- The intrinsic operator is the composite of density transport and native extension.
   change TauCeti.BundleTest.extendByZeroCLM (I := I) (F := F →L[ℝ] ℝ)
       (V := ambientCoefficients (I := I) (V := V)) (U := U)
       (openDensityHomCLE (I := I) (F := F) (V := V)
@@ -610,8 +607,8 @@ private theorem intrinsicNestedTestComparisonCLM_apply {D : Opens M} (h : U ≤ 
     (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) (doubleCoefficients (I := I) (V := V) (U := U) D))
     (x : nestedOpen U D) :
     intrinsicNestedTestComparisonCLM (I := I) (F := F) (V := V) h s
-      (nestedBaseDiffeomorph (I := I) h x) =
-    (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) (nestedBaseDiffeomorph (I := I) h x)).symm
+      (⟨x.val.val, x.property⟩ : U) =
+    (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) (⟨x.val.val, x.property⟩ : U)).symm
       (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) x.val
         (TauCeti.DensityBundle.openHomEquiv (I := I) (M := D)
           (V := (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V) x (s x))) := by
@@ -668,8 +665,8 @@ private def intrinsicNestedTestInverseCLM {D : Opens M} (h : U ≤ D) :
       TauCeti.BundleTest I (F →L[ℝ] ℝ) (doubleCoefficients (I := I) (V := V) (U := U) D) := by
   let VD := (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V
   let ND := nestedOpen U D
-  let q : C(U, ND) := ⟨(nestedBaseDiffeomorph (I := I) h).symm,
-    (nestedBaseDiffeomorph (I := I) h).symm.continuous⟩
+  let q : C(U, ND) := ⟨(Diffeomorph.nestedOpen (I := I) (n := ∞) h).symm,
+    (Diffeomorph.nestedOpen (I := I) (n := ∞) h).symm.continuous⟩
   have hs : ∀ s : TauCeti.BundleTest I (F →L[ℝ] ℝ)
       (localCoefficients (I := I) (V := V) (U := U)),
       closure {x : D | intrinsicInclusionCLM (I := I) (F := F) (V := V) h s x ≠ 0} ⊆
@@ -677,7 +674,8 @@ private def intrinsicNestedTestInverseCLM {D : Opens M} (h : U ≤ D) :
     intro s
     rw [tsupport_intrinsicInclusionCLM]
     rintro _ ⟨u, hu, rfl⟩
-    exact ⟨q u, ⟨u, hu, rfl⟩, rfl⟩
+    refine ⟨q u, ⟨u, hu, rfl⟩, ?_⟩
+    exact Diffeomorph.nestedOpen_symm_apply_coe h u
   exact (openDensityHomCLE (I := I) (F := F) (M := D) (V := VD) (U :=
     ND)).symm.toContinuousLinearMap.comp
     (TauCeti.BundleTest.localizeCLM (I := I) (F := F →L[ℝ] ℝ) (M := D)
@@ -689,6 +687,7 @@ private theorem intrinsicInclusionCLM_apply {D : Opens M} (h : U ≤ D)
     (u : U) : intrinsicInclusionCLM (I := I) (F := F) (V := V) h s (Opens.inclusion h u) =
       (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) (Opens.inclusion h u)).symm
         (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) u (s u)) := by
+  -- This composition is evaluated before applying the public inverse-density law.
   change (openDensityHomCLE (I := I) (F := F) (V := V) (U := D)).symm
     (inclusionCLM (I := I) (F := F →L[ℝ] ℝ)
       (V := ambientCoefficients (I := I) (V := V)) h
@@ -704,13 +703,13 @@ private theorem intrinsicNestedTestInverseCLM_apply {D : Opens M} (h : U ≤ D)
       (TauCeti.DensityBundle.openHomEquiv (I := I) (M := D)
         (V := (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V) x).symm
         ((TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) x.val).symm
-          (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) (nestedBaseDiffeomorph (I := I) h x)
-            (s (nestedBaseDiffeomorph (I := I) h x)))) := by
+          (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) (⟨x.val.val, x.property⟩ : U)
+            (s (⟨x.val.val, x.property⟩ : U)))) := by
   unfold intrinsicNestedTestInverseCLM
   erw [ContinuousLinearMap.comp_apply, openDensityHomCLE_symm_apply,
     TauCeti.BundleTest.localizeCLM_apply]
   have hi := intrinsicInclusionCLM_apply (I := I) (F := F) (V := V) h s
-    (nestedBaseDiffeomorph (I := I) h x)
+    (⟨x.val.val, x.property⟩ : U)
   exact congrArg (TauCeti.DensityBundle.openHomEquiv (I := I) (M := D)
     (V := (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V) x).symm hi
 
@@ -731,16 +730,16 @@ private theorem intrinsicNestedTestComparison_right_inv {D : Opens M} (h : U ≤
       (intrinsicNestedTestInverseCLM (I := I) (F := F) (V := V) h s) = s := by
   apply TauCeti.BundleTest.ext
   intro u
-  let x := (nestedBaseDiffeomorph (I := I) h).symm u
+  -- The public inverse formula fixes the concrete point where the dependent fibre is read.
+  let x : nestedOpen U D := ⟨⟨u.val, h u.property⟩, u.property⟩
+  -- The CLE packages this already constructed comparison map on the identical test carrier.
   change intrinsicNestedTestComparisonCLM (I := I) (F := F) (V := V) h
     (intrinsicNestedTestInverseCLM (I := I) (F := F) (V := V) h s)
-    (nestedBaseDiffeomorph (I := I) h x) = s u
+    (⟨x.val.val, x.property⟩ : U) = s u
   erw [intrinsicNestedTestComparisonCLM_apply (I := I) (F := F) (V := V) h _ x,
     intrinsicNestedTestInverseCLM_apply (I := I) (F := F) (V := V) h s x]
   erw [ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply,
     ContinuousLinearEquiv.symm_apply_apply]
-  dsimp only [x]
-  rfl
 
 /-- Identify the intrinsic tests on the actual double pullback with direct intrinsic tests
 through native extension, localization, and the tangent-density comparisons. -/
@@ -759,35 +758,43 @@ def nestedTestCLE {D : Opens M} (h : U ≤ D) :
     (by apply ContinuousLinearMap.ext; intro s; exact intrinsicNestedTestComparison_left_inv h s)
 
 /-- The nested comparison preserves each underlying fibrewise functional. -/
+@[simp]
 theorem nestedTestCLE_apply {D : Opens M} (h : U ≤ D) :
+    dsimp% only [ContinuousMap.coe_mk] (
     let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
     let N := Opens.comap cD U
     ∀ (s : TauCeti.BundleTest I (F →L[ℝ] ℝ)
       (localCoefficients (I := I) (V := cD *ᵖ V) (U := N))) (x : N),
       nestedTestCLE (I := I) (F := F) (V := V) h s
-        (⟨x.val.val, x.property⟩ : U) = s x := by
-  intro cD N s x
+        (⟨x.val.val, x.property⟩ : U) = s x) := by
+  let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  intro s x
+  -- The CLE packages this already constructed comparison map on the identical test carrier.
   change intrinsicNestedTestComparisonCLM (I := I) (F := F) (V := V) h s _ = _
   erw [intrinsicNestedTestComparisonCLM_apply (I := I) (F := F) (V := V) h s x]
   erw [TauCeti.DensityBundle.openHomEquiv_apply (I := I) (M := D) (V := cD *ᵖ V),
     TauCeti.DensityBundle.openHomEquiv_apply (I := I) (V := V),
     TauCeti.DensityBundle.openHomEquiv_symm_apply (I := I) (V := V)]
+  rfl
 
 /-- The inverse nested comparison evaluates at the canonical nested-base identification. -/
+@[simp]
 theorem nestedTestCLE_symm_apply {D : Opens M} (h : U ≤ D) :
+    dsimp% only [ContinuousMap.coe_mk] (
     let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
     let N := Opens.comap cD U
     ∀ (s : TauCeti.BundleTest I (F →L[ℝ] ℝ)
       (localCoefficients (I := I) (V := V) (U := U))) (x : N),
       (nestedTestCLE (I := I) (F := F) (V := V) h).symm s x =
-        s (⟨x.val.val, x.property⟩ : U) := by
-  intro cD N s x
+        s (⟨x.val.val, x.property⟩ : U)) := by
+  let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  intro s x
+  -- The inverse CLE packages this map without changing its fibre values.
   change intrinsicNestedTestInverseCLM (I := I) (F := F) (V := V) h s x = _
   erw [intrinsicNestedTestInverseCLM_apply (I := I) (F := F) (V := V) h s x]
   erw [TauCeti.DensityBundle.openHomEquiv_apply (I := I) (V := V),
     TauCeti.DensityBundle.openHomEquiv_symm_apply (I := I) (V := V),
     TauCeti.DensityBundle.openHomEquiv_symm_apply (I := I) (M := D) (V := cD *ᵖ V)]
-  rfl
 
 /-- Actual direct and successive intrinsic test extensions agree through the comparison. -/
 theorem testExtensionCLM_nested {D : Opens M} (h : U ≤ D) :
@@ -812,6 +819,19 @@ def nestedComparisonCLM {D : Opens M} (h : U ≤ D) :
   exact (nestedTestCLE (I := I) (F := F) (V := V) h).toContinuousLinearMap
     |>.precompCompactConvergenceCLM ℝ
 
+/-- The nested distribution comparison pairs against the actual double-pullback test map. -/
+@[simp]
+theorem nestedComparisonCLM_apply {D : Opens M} (h : U ≤ D)
+    (T : TauCeti.BundleDistribution I U F
+      ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V))
+    (s : TauCeti.BundleTest I (F →L[ℝ] ℝ)
+      (localCoefficients (I := I)
+        (V := (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V)
+        (U := Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U))) :
+    nestedComparisonCLM (I := I) (F := F) (V := V) h T s =
+      T (nestedTestCLE (I := I) (F := F) (V := V) h s) := by
+  exact ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply _ _ _
+
 /-- Direct intrinsic restriction agrees with successive independently instantiated intrinsic
 restrictions through the actual double-pullback comparison. -/
 theorem restrictCLM_nested {D : Opens M} (h : U ≤ D)
@@ -827,7 +847,7 @@ theorem restrictCLM_nested {D : Opens M} (h : U ≤ D)
   calc
     _ = restrictCLM (I := I) (F := F) (V := V) (U := U) T
         (nestedTestCLE (I := I) (F := F) (V := V) h s) :=
-      ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply _ _ _
+      nestedComparisonCLM_apply h _ s
     _ = T (testExtensionCLM (I := I) (F := F) (V := V) (U := U)
         (nestedTestCLE (I := I) (F := F) (V := V) h s)) := restrictCLM_apply _ _
     _ = T (testExtensionCLM (I := I) (F := F) (V := V) (U := D)
@@ -856,6 +876,7 @@ theorem univTestCLE_apply
     univTestCLE (I := I) (F := F) (V := V) s x =
       TauCeti.DensityBundle.openHomEquiv ⟨x, Set.mem_univ x⟩
         (s ⟨x, Set.mem_univ x⟩) := by
+  -- Universal intrinsic transport is the composite of density transport and generic tests.
   change TauCeti.BundleTest.univCLE (I := I) (F := F →L[ℝ] ℝ)
     (V := ambientCoefficients (I := I) (V := V)) (openDensityHomCLE s) x = _
   rw [TauCeti.BundleTest.univCLE_apply]
@@ -869,6 +890,7 @@ theorem univTestCLE_symm_apply
     dsimp% only [ContinuousMap.coe_mk] (
     (univTestCLE (I := I) (F := F) (V := V)).symm s x =
       (TauCeti.DensityBundle.openHomEquiv x).symm (s (x : M))) := by
+  -- This composition is evaluated before applying the public inverse-density law.
   change (openDensityHomCLE (I := I) (F := F) (V := V) (U := ⊤)).symm
     ((TauCeti.BundleTest.univCLE (I := I) (F := F →L[ℝ] ℝ)
       (V := ambientCoefficients (I := I) (V := V))).symm s) x = _
@@ -891,6 +913,7 @@ def univCLE :
     intro T
     apply ContinuousLinearMap.ext
     intro s
+    -- Evaluate the transpose pair before the public inverse law for the test equivalence.
     change T (e.symm (e s)) = T s
     exact congrArg T (e.symm_apply_apply s)
   · apply ContinuousLinearMap.ext
@@ -899,6 +922,25 @@ def univCLE :
     intro s
     change T (e (e.symm s)) = T s
     exact congrArg T (e.apply_symm_apply s)
+
+/-- Universal-open distribution restriction pairs against the intrinsic test comparison. -/
+@[simp]
+theorem univCLE_apply (T : TauCeti.BundleDistribution I M F V)
+    (s : TauCeti.BundleTest I (F →L[ℝ] ℝ)
+      (localCoefficients (I := I) (V := V) (U := ⊤))) :
+    univCLE (I := I) (F := F) (V := V) T s =
+      T (univTestCLE (I := I) (F := F) (V := V) s) := by
+  exact ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply _ _ _
+
+/-- The inverse universal-open comparison pairs against the inverse test comparison. -/
+@[simp]
+theorem univCLE_symm_apply
+    (T : TauCeti.BundleDistribution I (⊤ : Opens M) F
+      ((⟨Subtype.val, continuous_subtypeVal⟩ : C((⊤ : Opens M), M)) *ᵖ V))
+    (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) (ambientCoefficients (I := I) (V := V))) :
+    (univCLE (I := I) (F := F) (V := V)).symm T s =
+      T ((univTestCLE (I := I) (F := F) (V := V)).symm s) := by
+  exact ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply _ _ _
 
 /-- The universal-open equivalence has the actual intrinsic restriction as its forward map. -/
 theorem univCLE_toContinuousLinearMap :

@@ -160,6 +160,7 @@ theorem continuous_extendByZero_compactlySupported :
   funext s
   apply Subtype.ext
   simp only [Function.comp_apply, ofSupportedIn_apply]
+  -- Read the fixed-support inclusion through its underlying compactly supported section.
   change (extendByZeroLinearMap (ofSupportedIn K s)).val = _
   erw [extendByZeroLinearMap_apply]
 
@@ -252,34 +253,6 @@ theorem continuous_restrictUniv_compactlySupported :
   simp only [Function.comp_apply, ofSupportedIn_apply]
   erw [restrictUnivLinearMap_val, ofSupportedIn_apply]
 
-section Coefficients
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-  {W : M → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
-  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)]
-  [FiberBundle G W] [VectorBundle ℝ G W]
-
-omit [LocallyCompactSpace E] [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
-omit [ContMDiffVectorBundle n F V I] [IsManifold I n M] in
-/-- Extension by zero commutes with a smooth fibrewise linear coefficient map. -/
-theorem extendByZero_mapCompactlySupported (φ : ∀ x, V x →ₗ[ℝ] W x)
-    (hφ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F V ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace G W))) :
-    let c : C^n⟮I, U; I, M⟯ := ⟨Subtype.val, contMDiff_subtypeVal⟩
-    let hφU := Pullback.contMDiff_fiberwise (fun x v ↦ φ x v) hφ c c.contMDiff
-    ∀ s : compactlySupported I F n (c *ᵖ V),
-      extendByZero (mapCompactlySupported (I := I) (F := F) (G := G)
-        (V := c *ᵖ V) (W := c *ᵖ W) (fun x ↦ φ x.val) hφU s) =
-      mapLinearMap φ hφ (extendByZero s) := by
-  intro c hφU s
-  ext x
-  rw [mapLinearMap_apply]
-  by_cases hx : x ∈ U
-  · erw [extendByZero_apply_of_mem _ (⟨x, hx⟩ : U), extendByZero_apply_of_mem s (⟨x, hx⟩ : U)]
-    erw [coe_mapCompactlySupported, mapLinearMap_apply]
-    rfl
-  · erw [extendByZero_apply_of_notMem _ hx, extendByZero_apply_of_notMem s hx, map_zero]
-
-end Coefficients
 end ContMDiffSection
 
 namespace TauCeti.BundleTest
@@ -330,25 +303,30 @@ theorem extendByZeroCLM_apply :
       extendByZeroCLM (I := I) (F := F) (V := V) s x =
         extendByZero ((TauCeti.BundleTest.ofCompactlySupported I F (c *ᵖ V)).symm s) x := by
   intro c s x
+  -- The native/raw equivalence changes only the test wrapper, not its section value.
   change (extendByZeroLinearMap ((ofCompactlySupported I F (c *ᵖ V)).symm s)).val x = _
   erw [extendByZeroLinearMap_apply]
 
 /-- Extension vanishes outside the open subset. -/
+@[simp]
 theorem extendByZeroCLM_apply_of_notMem :
+    dsimp% only [ContinuousMap.coe_mk] (
     let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
     ∀ (s : TauCeti.BundleTest I F (c *ᵖ V)) {x : M}, x ∉ U →
-      extendByZeroCLM (I := I) (F := F) (V := V) s x = 0 := by
-  intro c s x hx
+      extendByZeroCLM (I := I) (F := F) (V := V) s x = 0) := by
+  intro s x hx
   rw [extendByZeroCLM_apply]
   exact extendByZero_apply_of_notMem _ hx
 
 /-- Extension on the open subset is the original test, viewed in the ambient fibre. -/
+@[simp]
 theorem extendByZeroCLM_apply_of_mem :
+    dsimp% only [ContinuousMap.coe_mk] (
     let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
     ∀ (s : TauCeti.BundleTest I F (c *ᵖ V)) (x : U),
       extendByZeroCLM (I := I) (F := F) (V := V) s (x : M) =
-        (Pullback.lift c (TotalSpace.mk' F x (s x))).snd := by
-  intro c s x
+        (Pullback.lift c (TotalSpace.mk' F x (s x))).snd) := by
+  intro s x
   rw [extendByZeroCLM_apply]
   erw [extendByZero_apply_of_mem _ x]
   rfl
@@ -377,8 +355,9 @@ theorem extendByZeroCLM_smulLeftCLM :
   rw [TauCeti.BundleTest.smulLeftCLM_apply]
   by_cases hx : x ∈ U
   · erw [extendByZeroCLM_apply_of_mem _ (⟨x, hx⟩ : U),
-      extendByZeroCLM_apply_of_mem s (⟨x, hx⟩ : U), TauCeti.BundleTest.smulLeftCLM_apply]
-    erw [Pullback.lift_snd, Pullback.lift_snd, ContMDiffMap.restrict_apply]
+      extendByZeroCLM_apply_of_mem s (⟨x, hx⟩ : U),
+      TauCeti.BundleTest.smulLeftCLM_apply (I := I) (F := F) (V := c *ᵖ V)]
+    erw [ContMDiffMap.restrict_apply]
     rfl
   · rw [extendByZeroCLM_apply_of_notMem _ hx, extendByZeroCLM_apply_of_notMem _ hx,
       smul_zero]
@@ -396,10 +375,12 @@ def restrictDualCLM :
   exact (extendByZeroCLM (I := I) (F := F) (V := V) (U := U)).precompCompactConvergenceCLM W
 
 /-- Dual restriction pairs with a test by pairing against its extension. -/
+@[simp]
 theorem restrictDualCLM_apply :
+    dsimp% only [ContinuousMap.coe_mk] (
     let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
     ∀ (T : TauCeti.BundleTest I F V →L_c[ℝ] W) (s : TauCeti.BundleTest I F (c *ᵖ V)),
-      restrictDualCLM T s = T (extendByZeroCLM (I := I) (F := F) (V := V) s) := by
+      restrictDualCLM T s = T (extendByZeroCLM (I := I) (F := F) (V := V) s)) := by
   intros
   rfl
 
@@ -515,6 +496,7 @@ theorem inclusionCLM_comp {D' : Opens M} (h : U ≤ D) (h' : D ≤ D') :
   intro s
   obtain ⟨t, rfl⟩ := (TauCeti.BundleTest.ofCompactlySupported I F
     ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)).surjective s
+  -- These native inclusions were defined by conjugating the raw section maps.
   change TauCeti.BundleTest.ofCompactlySupported I F
     ((⟨Subtype.val, continuous_subtypeVal⟩ : C(D', M)) *ᵖ V)
     (extendByZeroToOpenLinearMap h' (extendByZeroToOpenLinearMap h t)) =
@@ -535,6 +517,7 @@ theorem extendByZeroCLM_inclusionCLM (h : U ≤ D) :
   obtain ⟨t, rfl⟩ := (TauCeti.BundleTest.ofCompactlySupported I F
     ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)).surjective s
   erw [ContinuousLinearMap.comp_apply, inclusionCLM_ofCompactlySupported]
+  -- The ambient native wrapper is the common codomain of both raw section maps.
   change TauCeti.BundleTest.ofCompactlySupported I F V
     (extendByZeroLinearMap (extendByZeroToOpenLinearMap h t)) =
       TauCeti.BundleTest.ofCompactlySupported I F V (extendByZeroLinearMap t)
@@ -579,8 +562,9 @@ theorem restrictDualToOpenCLM_refl :
   intro μ
   apply ContinuousLinearMap.ext
   intro s
-  change μ (inclusionCLM (I := I) (F := F) (V := V) le_rfl s) = μ s
-  rw [inclusionCLM_refl, ContinuousLinearMap.id_apply]
+  erw [restrictDualToOpenCLM_apply]
+  exact congrArg μ (congrArg (fun L ↦ L s)
+    (inclusionCLM_refl (I := I) (F := F) (V := V) (U := U)))
 
 /-- Dual restriction through nested opens composes. -/
 theorem restrictDualToOpenCLM_comp {D' : Opens M} (h : U ≤ D) (h' : D ≤ D') :
@@ -595,8 +579,8 @@ theorem restrictDualToOpenCLM_comp {D' : Opens M} (h : U ≤ D) (h' : D ≤ D') 
   intro μ
   apply ContinuousLinearMap.ext
   intro s
-  change μ (inclusionCLM h' (inclusionCLM h s)) =
-    μ (inclusionCLM (h.trans h') s)
+  erw [restrictDualToOpenCLM_apply, restrictDualToOpenCLM_apply,
+    restrictDualToOpenCLM_apply]
   exact congrArg μ (congrArg (fun L ↦ L s) (inclusionCLM_comp (I := I) (F := F) (V := V) h h'))
 
 end NestedDual
@@ -640,6 +624,7 @@ theorem restrictUnivCLM_apply (s : TauCeti.BundleTest I F V) (x : (⊤ : Opens M
     restrictUnivCLM (I := I) (F := F) (V := V) s x = s (x : M)) := by
   obtain ⟨t, rfl⟩ := (ofCompactlySupported I F V).surjective s
   erw [restrictUnivCLM_ofCompactlySupported]
+  -- Evaluate the compact-support wrapper before using the raw universal restriction law.
   change (restrictUnivLinearMap t).val x = t.val (x : M)
   rw [restrictUnivLinearMap_val, ContMDiffSection.restrict_apply]
 
@@ -705,19 +690,22 @@ theorem univCLE_toContinuousLinearMap :
   rfl
 
 /-- Intermediate extension evaluates to the original test at points of the smaller open. -/
+@[simp]
 theorem inclusionCLM_apply_of_mem (h : U ≤ D) :
+    dsimp% only [ContinuousMap.coe_mk] (
     let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
     let _cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
     ∀ (s : TauCeti.BundleTest I F (cU *ᵖ V)) (u : U),
       inclusionCLM (I := I) (F := F) (V := V) h s (Opens.inclusion h u) =
-        (Pullback.lift cU (TotalSpace.mk' F u (s u))).snd := by
-  intro cU _cD s u
+        (Pullback.lift cU (TotalSpace.mk' F u (s u))).snd) := by
+  let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  intro s u
   obtain ⟨t, rfl⟩ := (ofCompactlySupported I F (cU *ᵖ V)).surjective s
   erw [inclusionCLM_ofCompactlySupported (I := I) (F := F) (V := V) h]
+  -- Native inclusion was transported from this exact raw compact-support map.
   change (extendByZeroToOpenLinearMap h t).val (Opens.inclusion h u) = _
   erw [extendByZeroToOpenLinearMap_val, ContMDiffSection.restrict_apply,
     extendByZero_apply_of_mem, Pullback.lift_snd]
-  simp only [LinearEquiv.symm_apply_apply]
   rfl
 
 section Localization
@@ -851,9 +839,12 @@ def localizeCLM :
 
 omit [T2Space M] [T2Space N] in
 /-- Localization agrees with the original operator at every point of the open subset. -/
+@[simp]
 theorem localizeCLM_apply :
-    ∀ (s : TauCeti.BundleTest I G Z) (u : U), localizeCLM T q hT s u = T s (u : M) := by
+    dsimp% only [ContinuousMap.coe_mk] (
+    ∀ (s : TauCeti.BundleTest I G Z) (u : U), localizeCLM T q hT s u = T s (u : M)) := by
   intro s u
+  -- The final topology adds continuity to this same algebraic localization carrier.
   change (relocalizeLinearMap T q hT s).val u = _
   erw [relocalizeLinearMap_val, ContMDiffSection.restrict_apply]
 

@@ -87,6 +87,7 @@ theorem exists_nonzero_actual_density_extension :
   refine ⟨s, ?_⟩
   erw [TauCeti.BundleDistribution.testExtensionCLM_apply_of_mem s x]
   rw [hs, TauCeti.DensityBundle.openHomEquiv_apply]
+  -- The scalar-to-density smulRight map is now evaluated at one in the chosen density frame.
   change (1 : ℝ) * ((b.density 1) b) = 1
   rw [b.density_apply_self]
   norm_num
@@ -177,9 +178,11 @@ theorem exists_proper_nested_density_pairing_one :
     rw [actualPointMass, TauCeti.BundleTest.delta_apply]
     erw [TauCeti.BundleDistribution.testExtensionCLM_apply_of_mem _ xD,
       TauCeti.BundleDistribution.testExtensionCLM_apply_of_mem s xN, hs]
+    -- The two public density-evaluation laws give the actual composed fibre equivalence ψ.
     change coordinateFunctional (ψ (ψ.symm vM)) = 1
     rw [ψ.apply_symm_apply]
     unfold coordinateFunctional
+    -- coordinateFunctional is evaluation at one after this continuous local frame map.
     change (e.continuousLinearMapAt ℝ 0
       (e.symmL ℝ 0 (ContinuousLinearMap.id ℝ ℝ))) 1 = 1
     rw [e.continuousLinearMapAt_symmL (mem_baseSet_trivializationAt _ _ _)]

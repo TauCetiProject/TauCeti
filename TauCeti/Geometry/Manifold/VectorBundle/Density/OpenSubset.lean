@@ -122,6 +122,7 @@ theorem contMDiff_openFromPullback :
     (eventually_open_frame_eq (I := I) p.proj)
   filter_upwards [h] with q hq
   simp only [TauCeti.Density.trivializationAt_eq, Trivialization.density_apply]
+  -- The density trivialization evaluates on this tangent frame; pullback lift keeps its value.
   change (((openEquiv q.proj).symm q.snd)
       (fun i ↦ (trivializationAt E (TangentSpace I : U → Type _) p.proj).symm
         q.proj (Module.finBasis ℝ E i))) =
@@ -226,6 +227,7 @@ theorem eventually_openHom_frame_eq (x : U) :
     Trivialization.continuousLinearMapAt_apply, Trivialization.linearMapAt_apply,
     ite_eq_left hyDU]
   erw [ite_eq_left hyDM]
+  -- Express the tensor-Hom coordinate in the density trivialization after fibre evaluation.
   change ((trivializationAt ℝ (TauCeti.DensityBundle I M) (x : M))
     ⟨(y : M), openEquiv y (ℓ ((trivializationAt F V (x : M)).symmL ℝ (y : M) v))⟩).2 =
     ((trivializationAt ℝ (TauCeti.DensityBundle I U) x)
@@ -290,6 +292,7 @@ theorem contMDiff_openHomFromPullback :
     (pulledAmbientCoefficients (I := I) (V := V) (U := U))).continuousAt).eventually
       (eventually_openHom_frame_eq (I := I) (F := F) (V := V) (U := U) p.proj)
   filter_upwards [h] with q hq
+  -- The common-frame identity compares the intrinsic coefficient with this ambient lift.
   change (trivializationAt (F →L[ℝ] ℝ) (localCoefficients (I := I) (V := V) (U := U)) p.proj
       ⟨q.proj, (openHomEquiv q.proj).symm q.snd⟩).2 =
     (trivializationAt (F →L[ℝ] ℝ) (ambientCoefficients (I := I) (V := V)) (p.proj : M)
@@ -310,6 +313,47 @@ def openHomDiffeomorph :
       right_inv p := by cases p; rfl
       contMDiff_toFun := contMDiff_openHomToPullback
       contMDiff_invFun := contMDiff_openHomFromPullback }
+
+
+omit [ContMDiffVectorBundle ∞ F V I] in
+/-- The dual-density diffeomorphism preserves the open base point. -/
+@[simp]
+theorem openHomDiffeomorph_proj
+    (p : TotalSpace (F →L[ℝ] ℝ) (localCoefficients (I := I) (V := V) (U := U))) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    (openHomDiffeomorph (I := I) (F := F) (V := V) p).proj = p.proj) := by rfl
+
+omit [ContMDiffVectorBundle ∞ F V I] in
+/-- The dual-density diffeomorphism acts by the native fibre comparison after transport along
+its public base-point identity. The cast keeps the dependent bundle fibre explicit. -/
+@[simp]
+theorem openHomDiffeomorph_snd
+    (p : TotalSpace (F →L[ℝ] ℝ) (localCoefficients (I := I) (V := V) (U := U))) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    cast (congrArg (pulledAmbientCoefficients (I := I) (V := V) (U := U))
+      (openHomDiffeomorph_proj p))
+      (openHomDiffeomorph (I := I) (F := F) (V := V) p).snd =
+        openHomEquiv p.proj p.snd) := by rfl
+
+omit [ContMDiffVectorBundle ∞ F V I] in
+/-- The inverse dual-density diffeomorphism preserves the open base point. -/
+@[simp]
+theorem openHomDiffeomorph_symm_proj
+    (p : TotalSpace (F →L[ℝ] ℝ) (pulledAmbientCoefficients (I := I) (V := V) (U := U))) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    ((openHomDiffeomorph (I := I) (F := F) (V := V)).symm p).proj = p.proj) := by rfl
+
+omit [ContMDiffVectorBundle ∞ F V I] in
+/-- The inverse dual-density diffeomorphism acts by the inverse native fibre comparison after
+transport along its public base-point identity. -/
+@[simp]
+theorem openHomDiffeomorph_symm_snd
+    (p : TotalSpace (F →L[ℝ] ℝ) (pulledAmbientCoefficients (I := I) (V := V) (U := U))) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    cast (congrArg (localCoefficients (I := I) (V := V) (U := U))
+      (openHomDiffeomorph_symm_proj p))
+      ((openHomDiffeomorph (I := I) (F := F) (V := V)).symm p).snd =
+        (openHomEquiv p.proj).symm p.snd) := by rfl
 
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I]
