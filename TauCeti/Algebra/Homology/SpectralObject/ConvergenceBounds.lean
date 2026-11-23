@@ -83,16 +83,8 @@ theorem of_isZero
     X.HasConvergenceBounds n a b where
   isZero_H := ha
   isZero_H_add_one := ha'
-  isIso_H_map j hj := by
-    have : Mono ((X.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ j))
-        (homOfLE (le_top : (j : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _))) :=
-      (X.exact₁ (homOfLE (bot_le : (⊥ : EInt) ≤ j)) (homOfLE (le_top : (j : EInt) ≤ ⊤))
-        (homOfLE bot_le) (Subsingleton.elim _ _) (n - 1) n).mono_g ((hb j hj).eq_of_src _ _)
-    have : Epi ((X.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ j))
-        (homOfLE (le_top : (j : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _))) :=
-      (X.exact₂ (homOfLE (bot_le : (⊥ : EInt) ≤ j)) (homOfLE (le_top : (j : EInt) ≤ ⊤))
-        (homOfLE bot_le) (Subsingleton.elim _ _) n).epi_f ((hb' j hj).eq_of_tgt _ _)
-    exact isIso_of_mono_of_epi _
+  isIso_H_map j hj :=
+    X.isIso_H_map_twoδ₂Toδ₁ (n - 1) n (sub_add_cancel n 1) _ _ _ _ (hb j hj) (hb' j hj)
 
 /-- **Convergence bounds are monotone**: lowering `a` or raising `b` keeps them. -/
 theorem mono (h : X.HasConvergenceBounds n a b) {a' b' : ℤ} (ha : a' ≤ a) (hb : b ≤ b') :
@@ -108,19 +100,12 @@ theorem exists_common {Y : SpectralObject C EInt} {a' b' : ℤ}
   ⟨min a a', max b b', hX.mono (min_le_left _ _) (le_max_left _ _),
     hY.mono (min_le_right _ _) (le_max_right _ _)⟩
 
-/-- The isomorphism `X.H n ≅ Y.H n` of a component of an isomorphism of spectral objects. -/
-private def isoH {Y : SpectralObject C EInt} (e : X ≅ Y) (m : ℤ) : X.H m ≅ Y.H m where
-  hom := e.hom.hom m
-  inv := e.inv.hom m
-  hom_inv_id := by rw [← comp_hom, e.hom_inv_id, id_hom]
-  inv_hom_id := by rw [← comp_hom, e.inv_hom_id, id_hom]
-
 /-- **Convergence bounds transport along isomorphisms** of spectral objects. -/
 theorem of_iso {Y : SpectralObject C EInt} (e : X ≅ Y) (h : X.HasConvergenceBounds n a b) :
     Y.HasConvergenceBounds n a b where
-  isZero_H i hi := (h.isZero_H i hi).of_iso ((isoH e n).app _).symm
-  isZero_H_add_one i hi := (h.isZero_H_add_one i hi).of_iso ((isoH e (n + 1)).app _).symm
-  isIso_H_map j hj := (NatIso.isIso_map_iff (isoH e n) _).mp (h.isIso_H_map j hj)
+  isZero_H i hi := (h.isZero_H i hi).of_iso ((asIso (e.hom.hom n)).app _).symm
+  isZero_H_add_one i hi := (h.isZero_H_add_one i hi).of_iso ((asIso (e.hom.hom (n + 1))).app _).symm
+  isIso_H_map j hj := (NatIso.isIso_map_iff (asIso (e.hom.hom n)) _).mp (h.isIso_H_map j hj)
 
 /-- Under convergence bounds `a, b` in degree `n`, the filtration of the abutment vanishes at
 every `i ≤ a`. -/
@@ -131,16 +116,9 @@ theorem isZero_abutmentFiltration (h : X.HasConvergenceBounds n a b) {i : ℤ} (
 /-- Under convergence bounds `a, b` in degree `n`, the filtration of the abutment is the whole
 abutment at every `j ≥ b`. -/
 theorem isIso_abutmentFiltrationι (h : X.HasConvergenceBounds n a b) {j : ℤ} (hj : b ≤ j) :
-    IsIso (X.abutmentFiltrationι j n) := by
+    IsIso (X.abutmentFiltrationι j n) :=
   have := h.isIso_H_map j hj
-  have : Epi (X.pOpcycles (homOfLE (bot_le : (⊥ : EInt) ≤ j))
-      (homOfLE (le_top : (j : EInt) ≤ ⊤)) n ≫ X.abutmentFiltrationι j n) := by
-    rw [pOpcycles_abutmentFiltrationι]
-    infer_instance
-  have : Epi (X.abutmentFiltrationι j n) :=
-    epi_of_epi (X.pOpcycles (homOfLE (bot_le : (⊥ : EInt) ≤ j))
-      (homOfLE (le_top : (j : EInt) ≤ ⊤)) n) (X.abutmentFiltrationι j n)
-  exact isIso_of_mono_of_epi _
+  X.isIso_abutmentFiltrationι_of_epi
 
 end HasConvergenceBounds
 
