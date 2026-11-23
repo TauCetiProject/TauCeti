@@ -86,6 +86,10 @@ in `x`. -/
 def Homotopic (F G : Homotopy f₀ f₁) : Prop :=
   F.toContinuousMap.HomotopicRel G.toContinuousMap ({0, 1} ×ˢ univ)
 
+theorem homotopic_def {F G : Homotopy f₀ f₁} :
+    F.Homotopic G ↔ F.toContinuousMap.HomotopicRel G.toContinuousMap ({0, 1} ×ˢ univ) :=
+  Iff.rfl
+
 /-- A continuous map `H : I × I × X → Y` with `H (0, s, x) = f₀ x` and `H (1, s, x) = f₁ x` is a
 homotopy, relative to the ends, from the homotopy `H (·, 0, ·)` to the homotopy `H (·, 1, ·)`. -/
 theorem Homotopic.of_continuous {F G : Homotopy f₀ f₁} (H : I × I × X → Y) (hH : Continuous H)
@@ -159,10 +163,8 @@ theorem symm₂ {F F' : Homotopy f₀ f₁} (h : F.Homotopic F') : F.symm.Homoto
 /-- A homotopy is homotopic to its reparametrization by an endpoint-preserving map `φ : I → I`. -/
 theorem of_reparam {F G : Homotopy f₀ f₁} (φ : I → I) (hφ : Continuous φ) (h₀ : φ 0 = 0)
     (h₁ : φ 1 = 1) (h : ∀ t x, G (t, x) = F (φ t, x)) : F.Homotopic G := by
-  refine of_continuous (fun p ↦ F (⟨σ p.2.1 * p.1 + p.2.1 * φ p.1,
-      show (σ p.2.1 : ℝ) • (p.1 : ℝ) + (p.2.1 : ℝ) • (φ p.1 : ℝ) ∈ I from
-        convex_Icc _ _ p.1.2 (φ p.1).2 (by unit_interval) (by unit_interval) (by simp)⟩, p.2.2))
-    (by fun_prop) (fun s x ↦ ?_) (fun s x ↦ ?_) (fun t x ↦ ?_) (fun t x ↦ ?_)
+  refine of_continuous (fun p ↦ F (Icc.convexComb p.1 (φ p.1) p.2.1, p.2.2)) (by fun_prop)
+    (fun s x ↦ ?_) (fun s x ↦ ?_) (fun t x ↦ ?_) (fun t x ↦ ?_)
   · simp [h₀]
   · simp [h₁]
   · simp
@@ -195,21 +197,14 @@ theorem refl_trans (F : Homotopy f₀ f₁) : ((Homotopy.refl f₀).trans F).Hom
 /-- A homotopy followed by its reversal is homotopic, relative to the ends, to the constant
 homotopy. -/
 theorem trans_symm (F : Homotopy f₀ f₁) : (F.trans F.symm).Homotopic (Homotopy.refl f₀) := by
-  refine (of_continuous (fun p ↦ F (⟨Path.Homotopy.reflTransSymmAux (p.2.1, p.1),
-      Path.Homotopy.reflTransSymmAux_mem_I _⟩, p.2.2)) (by fun_prop) (fun s x ↦ ?_)
-    (fun s x ↦ ?_) (fun t x ↦ ?_) (fun t x ↦ ?_)).symm
-  · simp [Path.Homotopy.reflTransSymmAux]
-  · norm_num [Path.Homotopy.reflTransSymmAux]
-  · simp [Path.Homotopy.reflTransSymmAux]
-  · simp only [trans_apply, symm_apply, Path.Homotopy.reflTransSymmAux]
-    split_ifs with h
-    · congr 2
-      ext
-      simp
-    · congr 2
-      ext
-      simp
-      ring
+  refine (of_continuous (F := Homotopy.refl f₀)
+    (fun p ↦ F (⟨Path.Homotopy.reflTransSymmAux (p.2.1, p.1),
+      Path.Homotopy.reflTransSymmAux_mem_I _⟩, p.2.2)) (by fun_prop)
+    (fun s x ↦ (Path.Homotopy.reflTransSymm (F.evalAt x)).source s)
+    (fun s x ↦ (Path.Homotopy.reflTransSymm (F.evalAt x)).target s)
+    (fun t x ↦ (Path.Homotopy.reflTransSymm (F.evalAt x)).apply_zero t)
+    (fun t x ↦ ((Path.Homotopy.reflTransSymm (F.evalAt x)).apply_one t).trans
+      (by rw [← evalAt_symm, ← evalAt_trans]; rfl))).symm
 
 /-- The reversal of a homotopy followed by the homotopy is homotopic, relative to the ends, to the
 constant homotopy. -/
@@ -230,7 +225,8 @@ theorem symm_trans_trans (F₀ : Homotopy f₀ f₁) (G : Homotopy f₁ f₂) :
 
 /-- The cocycle law for differences: the difference from `F` to `G` followed by the difference
 from `G` to `H` is homotopic, relative to the ends, to the difference from `F` to `H`. -/
-theorem symm_trans_trans_symm_trans (F G H : Homotopy f₀ f₁) :
+theorem symm_trans_trans_symm_trans (F : Homotopy f₀ f₁) (G : Homotopy f₀ f₂)
+    (H : Homotopy f₀ f₃) :
     ((F.symm.trans G).trans (G.symm.trans H)).Homotopic (F.symm.trans H) :=
   (trans_assoc _ _ _).trans <| hcomp (refl _) (trans_symm_trans G H)
 
@@ -241,12 +237,7 @@ end Homotopic
 /-- A homotopy between the constant maps at `y₀` and `y₁` is a continuous family, indexed by
 `X`, of paths from `y₀` to `y₁`: the path traced by each point. -/
 def evalAtEquiv {y₀ y₁ : Y} : Homotopy (const X y₀) (const X y₁) ≃ C(X, Path y₀ y₁) where
-  toFun F :=
-    { toFun x :=
-        { toFun t := F (t, x)
-          source' := by simp
-          target' := by simp }
-      continuous_toFun := Path.continuous_uncurry_iff.1 (F.continuous.comp continuous_swap) }
+  toFun F := ⟨F.evalAt, Path.continuous_uncurry_iff.1 (F.continuous.comp continuous_swap)⟩
   invFun α :=
     { toFun p := α p.2 p.1
       continuous_toFun := (Path.continuous_uncurry_iff.2 α.continuous).comp continuous_swap
@@ -256,8 +247,13 @@ def evalAtEquiv {y₀ y₁ : Y} : Homotopy (const X y₀) (const X y₁) ≃ C(X
   right_inv _ := (rfl)
 
 @[simp]
-theorem evalAtEquiv_apply_apply {y₀ y₁ : Y} (F : Homotopy (const X y₀) (const X y₁)) (x : X)
-    (t : I) : evalAtEquiv F x t = F (t, x) :=
+theorem evalAtEquiv_apply {y₀ y₁ : Y} (F : Homotopy (const X y₀) (const X y₁)) (x : X) :
+    evalAtEquiv F x = F.evalAt x :=
+  (rfl)
+
+@[simp]
+theorem evalAt_evalAtEquiv_symm {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) (x : X) :
+    (evalAtEquiv.symm α).evalAt x = α x :=
   (rfl)
 
 @[simp]
@@ -265,29 +261,25 @@ theorem evalAtEquiv_symm_apply {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) (t : 
     evalAtEquiv.symm α (t, x) = α x t :=
   (rfl)
 
+/-- The constant homotopy at a constant map is the constant family of constant paths. -/
+@[simp]
+theorem evalAtEquiv_refl (y : Y) :
+    evalAtEquiv (Homotopy.refl (const X y)) = const X (Path.refl y) := by
+  ext
+  simp
+
 /-- Homotopies between constant maps are homotopic relative to their ends exactly when their
 families of paths are homotopic as maps into the space of paths. -/
 theorem homotopic_iff_evalAtEquiv {y₀ y₁ : Y} {F G : Homotopy (const X y₀) (const X y₁)} :
     F.Homotopic G ↔ (evalAtEquiv F).Homotopic (evalAtEquiv G) := by
+  rw [homotopic_iff_exists]
   constructor
-  · rintro ⟨A⟩
-    refine ⟨{ toFun p :=
-                { toFun t := A (p.1, t, p.2)
-                  source' := by simpa using A.eq_fst p.1 (x := (0, p.2)) (by simp)
-                  target' := by simpa using A.eq_fst p.1 (x := (1, p.2)) (by simp) }
-              continuous_toFun := Path.continuous_uncurry_iff.1 <| A.continuous.comp
-                (by fun_prop : Continuous fun q : (I × X) × I ↦ (q.1.1, q.2, q.1.2))
-              map_zero_left x := by ext; simp
-              map_one_left x := by ext; simp }⟩
+  · rintro ⟨H, h₀, h₁⟩
+    exact ⟨{ toContinuousMap := evalAtEquiv (X := I × X) H
+             map_zero_left x := Path.ext <| funext fun t ↦ h₀ t x
+             map_one_left x := Path.ext <| funext fun t ↦ h₁ t x }⟩
   · rintro ⟨K⟩
-    refine ⟨{ toFun p := K (p.1, p.2.2) p.2.1
-              continuous_toFun :=
-                (Path.continuous_uncurry_iff.2 K.continuous).comp
-                  (by fun_prop : Continuous fun p : I × I × X ↦ ((p.1, p.2.2), p.2.1))
-              map_zero_left p := by simp
-              map_one_left p := by simp
-              prop' s := ?_ }⟩
-    rintro ⟨t, x⟩ ⟨ht, -⟩
-    rcases ht with rfl | rfl <;> simp
+    exact ⟨evalAtEquiv.symm K.toContinuousMap, fun t x ↦ DFunLike.congr_fun (K.apply_zero x) t,
+      fun t x ↦ DFunLike.congr_fun (K.apply_one x) t⟩
 
 end ContinuousMap.Homotopy
