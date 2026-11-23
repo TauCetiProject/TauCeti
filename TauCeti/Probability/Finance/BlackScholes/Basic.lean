@@ -46,6 +46,7 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
   standard Gaussian coordinate.
 * `TauCeti.BlackScholes.riskNeutralPrice` — the discounted risk-neutral expectation of a payoff.
 * `TauCeti.BlackScholes.dPlus`, `TauCeti.BlackScholes.dMinus` — the Black–Scholes `d₊`, `d₋`.
+* `TauCeti.BlackScholes.dPlus_neg_volatility` — `d₊` is odd in the volatility.
 * `TauCeti.BlackScholes.mul_gaussianPDFReal_dPlus` — the density identity
   `s φ(d₊) = K e^{-rτ} φ(d₋)`, where `φ` is the standard Gaussian density.
 * `TauCeti.BlackScholes.callPrice`, `TauCeti.BlackScholes.putPrice` — the closed-form prices.
@@ -190,6 +191,11 @@ def dPlus (s r σ K τ : ℝ) : ℝ :=
 theorem dPlus_def (s r σ K τ : ℝ) :
     dPlus s r σ K τ = (log (s / K) + (r + σ ^ 2 / 2) * τ) / (σ * √τ) :=
   (rfl)
+
+/-- Changing the sign of the volatility changes the sign of `d₊`: `σ` enters `d₊` through `σ²` and
+through the factor `σ` of the denominator. -/
+theorem dPlus_neg_volatility (s r σ K τ : ℝ) : dPlus s r (-σ) K τ = -dPlus s r σ K τ := by
+  rw [dPlus_def, dPlus_def, neg_sq, neg_mul, div_neg]
 
 /-- The Black–Scholes quantity `d₋ = d₊ - σ √τ`. -/
 def dMinus (s r σ K τ : ℝ) : ℝ :=
