@@ -312,9 +312,9 @@ a global `C^n` section. -/
 theorem mapLinearMap_inj [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
     {ϕ ψ : ∀ x, V x →ₗ[ℝ] W x}
     {hϕ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.2⟩ : TotalSpace G W))}
+      (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace G W))}
     {hψ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F V ↦ (⟨p.proj, ψ p.proj p.2⟩ : TotalSpace G W))} :
+      (fun p : TotalSpace F V ↦ (⟨p.proj, ψ p.proj p.snd⟩ : TotalSpace G W))} :
     mapLinearMap ϕ hϕ = mapLinearMap ψ hψ ↔ ϕ = ψ := by
   refine ⟨fun h ↦ funext fun x ↦ LinearMap.ext fun v ↦ ?_, fun h ↦ by subst h; rfl⟩
   obtain ⟨s, rfl⟩ := evalLinearMap_surjective (I := I) (F := F) (V := V) n x v

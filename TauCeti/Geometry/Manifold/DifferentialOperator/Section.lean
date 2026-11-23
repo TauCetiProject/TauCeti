@@ -139,7 +139,7 @@ omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
 `s ↦ (x ↦ ϕ x (s x))`, is linear over the smooth functions. -/
 theorem mapLinearMap_mem_differentialOperators_zero (ϕ : ∀ x, V x →ₗ[ℝ] W x)
     (hϕ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, F')) ∞
-      (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.2⟩ : TotalSpace F' W))) :
+      (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace F' W))) :
     ContMDiffSection.mapLinearMap ϕ hϕ ∈
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 0 :=
   mem_differentialOperators_zero_iff.2 fun f s ↦ ContMDiffSection.mapLinearMap_smul_function _ _ f s
@@ -154,7 +154,7 @@ theorem mem_differentialOperators_zero_iff_exists_eq_mapLinearMap
     [ContMDiffVectorBundle ∞ F' W I] {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯} :
     P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 0 ↔
       ∃ (ϕ : ∀ x, V x →ₗ[ℝ] W x) (hϕ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, F')) ∞
-        (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.2⟩ : TotalSpace F' W))),
+        (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace F' W))),
         P = ContMDiffSection.mapLinearMap ϕ hϕ := by
   refine ⟨fun hP ↦ ?_, fun ⟨ϕ, hϕ, h⟩ ↦ h ▸ mapLinearMap_mem_differentialOperators_zero ϕ hϕ⟩
   -- `P` is linear over the smooth functions, hence pointwise: it maps `I_x Γ(V)`, the sections
