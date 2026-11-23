@@ -189,8 +189,8 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_su
         (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
         (∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
         ∀ {g : E → ℂ} {G : ℝ},
-        (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}, 0 < R →
-        ∀ f : Lp F p (volume : Measure E),
+        (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}
+        (f : Lp F p (volume : Measure E)),
         IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : Fin M → E,
         ∃ w : Lp F p (volume : Measure E),
           ∂^{m} (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = w ∧
@@ -199,8 +199,8 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_su
       (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
       (∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
       ∀ {g : E → ℂ} {G : ℝ},
-      (∀ n ≤ M + 1, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}, 0 < R →
-      ∀ f : Lp F p (volume : Measure E),
+      (∀ n ≤ M + 1, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}
+      (f : Lp F p (volume : Measure E)),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : Fin (M + 1) → E,
       ∃ w : Lp F p (volume : Measure E),
         ∂^{m} (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = w ∧
@@ -211,7 +211,14 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_su
   obtain ⟨K, hK, hKb⟩ := ih
   set d := Module.finrank ℝ E
   refine ⟨K * (1 + d * 2 ^ M * max L 0 * CB), by positivity,
-    fun {p} _ {Φ} hΦ hΨ hdet hΦL {g G} hgG R hR f hf m ↦ ?_⟩
+    fun {p} _ {Φ} hΦ hΨ hdet hΦL {g G} hgG R f hf m ↦ ?_⟩
+  wlog hR : 0 < R generalizing R
+  · -- For `R ≤ 0` the spectrum also lies in the unit ball, and `max 1 R = max 1 1`.
+    have h1 : max 1 R = max 1 (1 : ℝ) := by rw [max_eq_left (by linarith), max_self]
+    rw [h1]
+    exact this (R := 1)
+      (hf.mono (Set.compl_subset_compl.2 (closedBall_subset_closedBall (by linarith))))
+      one_pos
   set w := m (Fin.last M)
   have hG : 0 ≤ G := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).1
   obtain hg | hg := em' g.HasTemperateGrowth
@@ -230,9 +237,9 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_su
     fun n h₁ h₂ ↦ hΦL n h₁ (by omega)
   obtain ⟨v₁, hv₁, hv₁n⟩ := hKb hΦ hΨ hdet hΦL'
     (hg.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by
-      rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) hgG w) hR f hf
+      rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) hgG w) f hf
     (Fin.init m)
-  choose v₂ hv₂ hv₂n using fun i ↦ hKb hΦ hΨ hdet hΦL' (hcg i).2 hR (f' i)
+  choose v₂ hv₂ hv₂n using fun i ↦ hKb hΦ hΨ hdet hΦL' (hcg i).2 (f' i)
     (hf'v i) (Fin.init m)
   refine ⟨v₁ + ∑ i, v₂ i, ?_, ?_⟩
   · rw [LineDeriv.iteratedLineDerivOp_succ_right, lineDerivOp_smulLeftCLM_compCLM b hΦ hΨ hg,
@@ -267,7 +274,7 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_su
 `K`, depending only on `J`, `L` and `M`, with the following property. Let `J⁻¹ ≤ |det DΦ|`, let
 the derivatives of `Φ` of orders `1` to `M` be bounded by `L`, let `g` be a function whose
 derivatives of order at most `M` are bounded by `G`, and let `f ∈ Lᵖ` have Fourier transform
-vanishing outside the closed ball of radius `R > 0`. Then `∂_{m₁} ⋯ ∂_{m_M} (g Φ^* f)`
+vanishing outside the closed ball of radius `R`. Then `∂_{m₁} ⋯ ∂_{m_M} (g Φ^* f)`
 is an `Lᵖ` function of norm at most `K G (max 1 R) ^ M ‖m₁‖ ⋯ ‖m_M‖ ‖f‖_p`. -/
 private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le {J : ℝ} (hJ : 0 < J)
     (L : ℝ) (M : ℕ) :
@@ -275,8 +282,8 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le {J
       (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
       (∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
       ∀ {g : E → ℂ} {G : ℝ},
-      (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}, 0 < R →
-      ∀ f : Lp F p (volume : Measure E),
+      (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}
+      (f : Lp F p (volume : Measure E)),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : Fin M → E,
       ∃ w : Lp F p (volume : Measure E),
         ∂^{m} (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = w ∧
@@ -284,7 +291,7 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le {J
   induction M with
   | zero =>
     refine ⟨max 1 J, zero_le_one.trans (le_max_left 1 J),
-      fun {p} _ {Φ} hΦ hΨ hdet _ {g G} hgG R _ f _ m ↦ ?_⟩
+      fun {p} _ {Φ} hΦ hΨ hdet _ {g G} hgG R f _ m ↦ ?_⟩
     obtain ⟨v, hv, hvn⟩ := exists_compCLM_eq_and_norm_le (F := F) hΦ hΨ hJ hdet f
     obtain ⟨w, hw, hwn⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le
       (.of_forall (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).2) v
@@ -354,10 +361,9 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
     refine max_le ?_ ?_
     · nlinarith [le_max_left 1 φ.rOut]
     · exact mul_le_mul_of_nonneg_left (le_max_right _ _) (by positivity)
-  have hR' : (0 : ℝ) < 2 ^ k * φ.rOut := by have := φ.rOut_pos; positivity
   refine (hblock j _ w hw (A := CL * G * (2 ^ k * max 1 φ.rOut) ^ M * ‖f‖)
     fun i ↦ ?_).trans_eq ?_
-  · obtain ⟨y, hy, hyn⟩ := hder hΦ hΨ hdet hΦL hgG hR' f hf (stdOrthonormalBasis ℝ E ∘ i)
+  · obtain ⟨y, hy, hyn⟩ := hder hΦ hΨ hdet hΦL hgG f hf (stdOrthonormalBasis ℝ E ∘ i)
     refine ⟨y, hy, hyn.trans ?_⟩
     simp only [Function.comp_apply, OrthonormalBasis.norm_eq_one, Finset.prod_const_one, mul_one]
     gcongr
