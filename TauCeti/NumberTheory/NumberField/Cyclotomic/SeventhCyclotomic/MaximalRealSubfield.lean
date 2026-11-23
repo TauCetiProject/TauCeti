@@ -22,7 +22,7 @@ written `ℚ(ζ₇ + ζ₇⁻¹)`, is a cubic field of discriminant `49`, and it
 number one.
 
 The degree of `L⁺` is `φ(7) / 2 = 3`
-(`TauCeti.IsCyclotomicExtension.Rat.finrank_maximalRealSubfield`).
+(`TauCeti.IsCyclotomicExtension.Rat.finrank_rat_maximalRealSubfield`).
 The discriminant is computed without an integral basis of `L⁺`. The tower formula
 `|d_L| = N(𝔇_{L/L⁺}) · |d_{L⁺}|²` with `|d_L| = 7⁵` shows that `|d_{L⁺}|` is a power of `7`
 whose square divides `7⁵`, so it is `1`, `7` or `49`. Minkowski's lower bound
@@ -56,7 +56,7 @@ private theorem isCMField_seven : IsCMField L :=
 
 /-- The maximal real subfield of `ℚ(ζ₇)` is cubic. -/
 private theorem finrank_maximalRealSubfield_seven : finrank ℚ (maximalRealSubfield L) = 3 := by
-  rw [IsCyclotomicExtension.Rat.finrank_maximalRealSubfield 7 L (by norm_num)]
+  rw [IsCyclotomicExtension.Rat.finrank_rat_maximalRealSubfield 7 L (by norm_num)]
   decide
 
 /-- **The maximal real subfield of `ℚ(ζ₇)` has discriminant `49`.** -/
