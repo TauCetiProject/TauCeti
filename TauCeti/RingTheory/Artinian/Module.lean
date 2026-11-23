@@ -7,15 +7,13 @@ module
 
 public import Mathlib.RingTheory.Artinian.Module
 
-import TauCeti.Order.WellFounded.Infimum
-
 /-!
 # Artinian modules embed into finite powers of a separating module
 
-In an Artinian module every indexed intersection of submodules is already the intersection of a
-finite subfamily (`WellFoundedLT.exists_finset_iInf_eq`). Consequently, if the linear maps from an
-Artinian module `M` to a module `E` separate the points of `M`, then finitely many of them already
-do: `M` embeds into a finite power `Eⁿ` (`IsArtinian.exists_injective_linearMap_pi`).
+If the linear maps from an Artinian module `M` to a module `E` separate the points of `M`, then
+finitely many of them already do: `M` embeds into a finite power `Eⁿ`. The descending chain
+condition provides a family of maps whose common kernel is minimal among the common kernels of
+finite families, and a nonzero element of that kernel would be detected by one more map.
 
 For an injective cogenerator `E`, for instance the injective hull of the residue field of a local
 ring, this embedding of an Artinian module into a finite sum of copies of `E` is the first step of
@@ -38,18 +36,18 @@ injective linear map `M → Eⁿ` for some `n`. -/
 theorem IsArtinian.exists_injective_linearMap_pi [IsArtinian R M]
     (h : ∀ m : M, m ≠ 0 → ∃ f : M →ₗ[R] E, f m ≠ 0) :
     ∃ (n : ℕ) (g : M →ₗ[R] Fin n → E), Function.Injective g := by
-  -- Finitely many maps `M → E` already cut out the common kernel of all of them, which is zero.
-  obtain ⟨s, hs⟩ :=
-    WellFoundedLT.exists_finset_iInf_eq fun f : M →ₗ[R] E ↦ LinearMap.ker f
-  refine ⟨s.card, LinearMap.pi fun i ↦ (s.equivFin.symm i).val,
-    (injective_iff_map_eq_zero _).2 fun m hm ↦ ?_⟩
-  -- Each map in `s` is a coordinate of the product map, as `s.equivFin.symm` is surjective.
-  have hmem : m ∈ ⨅ g ∈ s, LinearMap.ker g := by
-    simp only [Submodule.mem_iInf, LinearMap.mem_ker]
-    intro g hg
-    obtain ⟨i, hi⟩ := s.equivFin.symm.surjective ⟨g, hg⟩
-    simpa [hi] using congr_fun hm i
-  rw [hs] at hmem
-  by_contra hm0
-  obtain ⟨f, hf⟩ := h m hm0
-  exact hf ((Submodule.mem_iInf _).1 hmem f)
+  -- A finite family of maps whose common kernel is minimal.
+  obtain ⟨_, ⟨⟨n, f⟩, rfl⟩, hmin⟩ := IsArtinian.set_has_minimal
+    (Set.range fun f : Σ n, Fin n → M →ₗ[R] E ↦ LinearMap.ker (LinearMap.pi f.2))
+    ⟨_, ⟨⟨0, Fin.elim0⟩, rfl⟩⟩
+  refine ⟨n, LinearMap.pi f, LinearMap.ker_eq_bot.mp ?_⟩
+  by_contra hne
+  obtain ⟨m, hm, hm0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
+  obtain ⟨φ, hφ⟩ := h m hm0
+  -- Adjoining a map detecting `m` would shrink the common kernel.
+  refine hmin _ ⟨⟨n + 1, Fin.cons φ f⟩, rfl⟩ (lt_of_le_of_ne (fun x hx ↦ ?_) fun heq ↦ hφ ?_)
+  · ext i
+    simpa using congr_fun (LinearMap.mem_ker.mp hx) i.succ
+  · beta_reduce at heq
+    rw [← heq] at hm
+    simpa using congr_fun (LinearMap.mem_ker.mp hm) 0
