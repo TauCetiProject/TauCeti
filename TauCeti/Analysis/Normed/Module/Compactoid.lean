@@ -62,8 +62,8 @@ agree (`TauCeti.isCompactoidSet_iff_totallyBounded_of_forall`,
   finite unions (when `0 • x = 0`), compactoidness of singletons (when `‖1‖ ≤ 1` and `1 • x = x`),
   and stability under inserting a point whose singleton is compactoid (when `0 • x = 0`).
 * `TauCeti.IsCompactoidSet.image_of_forall_exists`: stability under continuous additive maps `u`
-  that transport coefficients: for each `a` with `‖a‖ ≤ 1` and each `v`, `u (a • v) = b • u v`
-  for some `b` with `‖b‖ ≤ 1`.
+  that transport coefficients to a target scalar ring `L`: for each `a` with `‖a‖ ≤ 1` and each
+  `v`, `u (a • v) = b • u v` for some `b : L` with `‖b‖ ≤ 1`.
 * `TauCeti.IsCompactoidSet.smul`, `TauCeti.IsCompactoidSet.smul₀`: stability under scalar
   multiples, for a distributive action by continuous maps that commutes with itself, or of a
   normed division ring.
@@ -308,16 +308,18 @@ theorem IsCompactoidSet.isBounded [IsBoundedSMul K E] {S : Set E} (hS : IsCompac
   rintro _ ⟨a, ha, rfl⟩
   exact (dist_pair_smul a 0 v).trans (mul_le_of_le_one_left dist_nonneg ha)
 
-/-- The image of a compactoid set under a continuous additive map `u` is compactoid as soon as `u`
-transports coefficients: for every `a` with `‖a‖ ≤ 1` and every `v` there is some `b` with
-`‖b‖ ≤ 1` and `u (a • v) = b • u v`; `b` may depend on `v`. This covers continuous linear maps
-(`TauCeti.IsCompactoidSet.image`, with `b = a`) and multiplication by a scalar `c` that acts
-continuously and additively, with `b = a` for commuting actions (`TauCeti.IsCompactoidSet.smul`)
-and `b = c * a * c⁻¹` over a normed division ring (`TauCeti.IsCompactoidSet.smul₀`). -/
-theorem IsCompactoidSet.image_of_forall_exists [SMul K F] {S : Set E} (hS : IsCompactoidSet K S)
-    (u : E →+ F) (hu : Continuous u)
-    (h : ∀ a : K, ‖a‖ ≤ 1 → ∀ v : E, ∃ b : K, ‖b‖ ≤ 1 ∧ u (a • v) = b • u v) :
-    IsCompactoidSet K (u '' S) := by
+/-- The image of a compactoid set under a continuous additive map `u` is compactoid over a target
+scalar ring `L` as soon as `u` transports coefficients: for every `a : K` with `‖a‖ ≤ 1` and
+every `v` there is some `b : L` with `‖b‖ ≤ 1` and `u (a • v) = b • u v`; `b` may depend on `v`.
+This covers scalar extension (such as `ℚ → ℝ`), continuous linear maps
+(`TauCeti.IsCompactoidSet.image`, with `L = K` and `b = a`), and multiplication by a scalar `c`
+that acts continuously and additively, with `b = a` for commuting actions
+(`TauCeti.IsCompactoidSet.smul`) and `b = c * a * c⁻¹` over a normed division ring
+(`TauCeti.IsCompactoidSet.smul₀`). -/
+theorem IsCompactoidSet.image_of_forall_exists {L : Type*} [SeminormedRing L] [SMul L F]
+    {S : Set E} (hS : IsCompactoidSet K S) (u : E →+ F) (hu : Continuous u)
+    (h : ∀ a : K, ‖a‖ ≤ 1 → ∀ v : E, ∃ b : L, ‖b‖ ≤ 1 ∧ u (a • v) = b • u v) :
+    IsCompactoidSet L (u '' S) := by
   rw [isCompactoidSet_iff_forall_mem_nhds] at hS ⊢
   intro U hU
   obtain ⟨n, v, hv⟩ := hS _ (hu.tendsto' 0 0 (map_zero u) hU)
@@ -346,7 +348,7 @@ theorem isCompactoidSet_iff_forall_mem_nhds_subset_add_span [IsUltrametricDist K
     refine ⟨_, hx, _, ?_, sub_add_cancel x _⟩
     rw [Finset.coe_image, Finset.coe_univ, Set.image_univ]
     exact Submodule.mem_span_range_iff_exists_fun _ |>.2
-      ⟨fun i ↦ ⟨a i, Subring.mem_unitClosedBall.2 (ha i)⟩, rfl⟩
+      ⟨fun i ↦ ⟨a i, Subring.mem_unitClosedBall.2 (ha i)⟩, by simp only [Subring.smul_def]⟩
   · obtain ⟨s, hs⟩ := h _ (ball_mem_nhds 0 hε)
     refine ⟨s, fun x hx ↦ ?_⟩
     obtain ⟨u, hu, t, ht, rfl⟩ := hs hx
