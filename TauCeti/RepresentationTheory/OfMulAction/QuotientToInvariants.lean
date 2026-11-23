@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.Perm.Partition
 public import TauCeti.RepresentationTheory.OfMulAction
 public import TauCeti.RepresentationTheory.CharacterTable.FixedPointCount
-import TauCeti.LinearAlgebra.Charpoly.Permutation
+import TauCeti.RepresentationTheory.OfMulAction.Charpoly
 import TauCeti.RepresentationTheory.Invariants
 
 /-!

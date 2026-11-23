@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Group.Subgroup.Conjugates
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.IntermediateField.ConjugateFields
 import Mathlib.FieldTheory.Galois.Infinite
-import TauCeti.FieldTheory.IntermediateField.Isomorphic
 
 /-!
 # Conjugate intermediate fields
