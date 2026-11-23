@@ -22,10 +22,10 @@ Let a Lie group `G` act smoothly on a manifold `M` with a coadjoint-equivariant 
 
 `W_O = {(x, o) ∈ M × O | μ(x) = ι_O(o)}`
 
-(`TauCeti.OrbitFiberProduct`, with `μ` and `ι_O` read in a
-basis `b` of `𝔤`) parametrizes the preimage `μ⁻¹(O)`, a point `x` with `μ(x) = Ad*_g c` being
-recorded together with the unique point `g G_c` of `O` over `μ(x)`. By equivariance `μ` is a
-submersion at every point over `O`
+(`TauCeti.OrbitFiberProduct`, with `μ` and `ι_O` read in a basis `b` of `𝔤`, which does not
+change its points: `TauCeti.components_eq_orbitMap_iff_apply_eq`) parametrizes the preimage
+`μ⁻¹(O)`, a point `x` with `μ(x) = Ad*_g c` being recorded together with the unique point
+`g G_c` of `O` over `μ(x)`. By equivariance `μ` is a submersion at every point over `O`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_of_apply_eq`), so `μ` and
 `ι_O` are transverse and `W_O` is an embedded submanifold of `M × O`, with the atlas of the
 transverse fibre-product theorem
@@ -38,8 +38,8 @@ This file identifies `W_O` with the balanced product `Y_O = G ×_{G_c} μ⁻¹(c
 
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorph`). It is a
 diffeomorphism with inverse `(x, g G_c) ↦ [g, g⁻¹ • x]`
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorph_symm_eq`): `g⁻¹ • x`
-lies in the level because `μ(g⁻¹ • x) = Ad*_(g⁻¹) μ(x) = c`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorph_symm_apply`):
+`g⁻¹ • x` lies in the level because `μ(g⁻¹ • x) = Ad*_(g⁻¹) μ(x) = c`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.apply_eq_orbitMap_iff`). The map `Φ` is
 equivariant for the action `k • [g, z] = [k g, z]` on `Y_O` and the diagonal action on `M × O`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.coe_orbitFiberProductDiffeomorph_smul`). Its
@@ -104,6 +104,15 @@ abbrev OrbitFiberProduct (b : Basis κ ℝ (GroupLieAlgebra I G)) : Type _ :=
   {p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c //
     (fun i ↦ μ p.1 (b i)) = fun i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)}
 
+omit [FiniteDimensional ℝ E] [TopologicalSpace M] [MulAction G M] in
+/-- A pair `(x, o)` lies in the orbit fibre product exactly when `μ(x) = ι_O(o)`, whatever the
+basis `b` used to read `μ` and `ι_O`. -/
+theorem components_eq_orbitMap_iff_apply_eq (b : Basis κ ℝ (GroupLieAlgebra I G))
+    {p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c} :
+    ((fun i ↦ μ p.1 (b i)) = fun i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) ↔
+      μ p.1 = (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 :=
+  ⟨fun hp ↦ b.ext fun i ↦ congrFun hp i, fun hp ↦ by rw [hp]⟩
+
 namespace SmoothTwoForm
 
 namespace IsEquivariantMomentMap
@@ -126,9 +135,8 @@ theorem components_eq_orbitMap_iff (h : σ.IsEquivariantMomentMap μ)
     (b : Basis κ ℝ (GroupLieAlgebra I G)) {x : M} {g : G} :
     ((fun i ↦ μ x (b i)) = fun i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c
       (g : G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) (b i)) ↔
-      μ (g⁻¹ • x) = c := by
-  rw [← h.apply_eq_orbitMap_iff]
-  exact ⟨fun hx ↦ b.ext fun i ↦ congrFun hx i, fun hx ↦ funext fun i ↦ by rw [hx]⟩
+      μ (g⁻¹ • x) = c :=
+  (components_eq_orbitMap_iff_apply_eq (p := (x, _)) b).trans h.apply_eq_orbitMap_iff
 
 /-- The image of `[g, z] ↦ (g • z, g G_c)` is the orbit fibre product. -/
 private theorem range_coe_orbitFiberProduct (h : σ.IsEquivariantMomentMap μ)
@@ -163,7 +171,7 @@ private theorem range_mfderiv_components_sup_eq_top (h : σ.IsEquivariantMomentM
   obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective p.2
   have hx : μ p.1 = Lie.coadjointRepresentation ℝ I G g c := by
     rw [← Representation.orbitMap_mk, hg]
-    exact b.ext fun i ↦ congrFun hp i
+    exact (components_eq_orbitMap_iff_apply_eq b).1 hp
   have hs := isRegularPoint_iff.1 ((h.toIsMomentMap.isRegularPoint_components_iff b).2
     (h.differential_surjective_of_apply_eq hreg hx))
   rw [LinearMap.range_eq_top.2 hs, top_sup_eq]
@@ -236,7 +244,7 @@ structure `d`. Then
 
 is a diffeomorphism with inverse
 `(x, g G_c) ↦ [g, g⁻¹ • x]`
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorph_symm_eq`), for the
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorph_symm_apply`), for the
 atlas of the balanced product and the transverse fibre-product atlas of `W_O`. -/
 def orbitFiberProductDiffeomorph :
     letI := d.chartedSpace
@@ -302,6 +310,7 @@ theorem coe_orbitFiberProductDiffeomorph_mk (g : G) (z : h.levelSubMulAction c) 
 
 /-- **`Φ` is `G`-equivariant**, for the action `k • [g, z] = [k g, z]` on the balanced product and
 the diagonal action `k • (x, o) = (k • x, k • o)` on `M × G ⧸ G_c`. -/
+@[simp]
 theorem coe_orbitFiberProductDiffeomorph_smul (k : G)
     (y : BalancedProduct ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
       ((Lie.coadjointRepresentation ℝ I G).stabilizer c).RightTranslation
@@ -335,7 +344,7 @@ theorem coe_orbitFiberProductDiffeomorph_smul (k : G)
     BalancedProduct.liftProjRightTranslation_smul]
 
 /-- **The inverse of `Φ`** sends `(x, g G_c)` to `[g, g⁻¹ • x]`. -/
-theorem orbitFiberProductDiffeomorph_symm_eq (p : OrbitFiberProduct μ c b) {g : G}
+theorem orbitFiberProductDiffeomorph_symm_apply (p : OrbitFiberProduct μ c b) {g : G}
     (hg : (g : G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = p.val.2) :
     letI := d.chartedSpace
     haveI := d.lieGroup
