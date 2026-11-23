@@ -97,13 +97,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-! ### The end in real coordinates -/
 
-/-- The end lift in real coordinates sends `(s, t)` to a point of norm `exp (2π ε s)`. -/
-private theorem norm_symm_realChart_cylindricalEndLift (p : PSSPlane) (z : ℝ × ℝ) :
-    ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift z)‖ =
-      Real.exp (2 * π * (p.endSign * z.1)) := by
-  rw [TauCeti.Complex.equivRealProdCLM_symm_realChart, norm_cylindricalEndLift,
-    Complex.equivRealProdCLM_symm_apply_re]
-
 /-- The half-cylinder `ε s > a` lies in the part `‖w‖ > exp (2πa)` of the plane. -/
 private theorem exp_lt_norm_realChart_cylindricalEndLift {a : ℝ} {z : ℝ × ℝ}
     (hz : a < p.endSign * z.1) :
