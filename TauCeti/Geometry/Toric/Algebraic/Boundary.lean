@@ -288,8 +288,8 @@ instance : Module.Free R
     (AddMonoidAlgebra R ((ι →₀ ℕ) × Q) ⧸ Ideal.span {boundaryMonomial R ι Q}) :=
   .of_basis boundaryQuotientBasis
 
-/-- The formation of the boundary commutes with changing the coefficients: the map of boundary
-quotients induced by `R →+* S` acts on the monomial coordinates coefficientwise. -/
+/-- The map of boundary quotients induced by `φ : R →+* S` acts on the monomial coordinates
+coefficientwise: the monomial basis is natural in the coefficient ring. -/
 @[simp]
 theorem boundaryQuotientBasis_repr_quotientMap {S : Type*} [CommRing S] (φ : R →+* S)
     (x : AddMonoidAlgebra R ((ι →₀ ℕ) × Q) ⧸ Ideal.span {boundaryMonomial R ι Q}) :
@@ -308,11 +308,10 @@ noncomputable def boundaryQuotientTensorEquiv (S : Type*) [CommRing S] [Algebra 
       AddMonoidAlgebra S ((ι →₀ ℕ) × Q) ⧸ Ideal.span {boundaryMonomial S ι Q} :=
   (Algebra.TensorProduct.tensorQuotientEquiv S _ S _).trans <|
     Ideal.quotientEquivAlg _ _ (AddMonoidAlgebra.scalarTensorEquiv R S) <| by
-      rw [Ideal.map_span, Ideal.map_span, Set.image_singleton, Set.image_singleton,
-        ← mapRingHom_boundaryMonomial (algebraMap R S)]
-      congr 2
-      ext
-      simp [coeff_mapAlgHom, -mapRingHom_boundaryMonomial]
+      simp only [Ideal.map_span, Set.image_singleton, Algebra.TensorProduct.includeRight_apply,
+        RingHom.coe_coe, scalarTensorEquiv_tmul, one_smul]
+      rw [← AlgHom.coe_toRingHom, toRingHom_mapAlgHom, AlgHom.toRingHom_eq_coe,
+        Algebra.toRingHom_ofId, mapRingHom_boundaryMonomial]
 
 open TensorProduct in
 /-- The base-change equivalence of boundaries sends `s ⊗ [f]` to the class of `s` times the image
@@ -325,7 +324,7 @@ theorem boundaryQuotientTensorEquiv_tmul (S : Type*) [CommRing S] [Algebra R S] 
   simp only [boundaryQuotientTensorEquiv, AlgEquiv.trans_apply,
     Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul, Ideal.quotientEquivAlg_mk,
     AddMonoidAlgebra.scalarTensorEquiv_tmul]
-  congr 2
+  rw [← AlgHom.coe_toRingHom, toRingHom_mapAlgHom, AlgHom.toRingHom_eq_coe, Algebra.toRingHom_ofId]
 
 end Quotient
 

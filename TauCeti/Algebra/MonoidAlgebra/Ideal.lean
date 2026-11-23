@@ -53,9 +53,9 @@ monomials, such as the union of the boundary divisors of a regular toric chart.
 
 * D. Cox, J. Little and D. O'Shea, *Ideals, Varieties, and Algorithms*, Chapter 2, §4, for monomial
   ideals of polynomial rings.
-* Tau Ceti PR [#2223](https://git.taucetiproject.org/TauCetiProject/TauCeti/pulls/2223), whose
-  construction of `TauCeti.Toric.boundaryQuotientBasis` by restricting coefficients is the boundary
-  case that `AddMonoidAlgebra.quotientSpanOf'ImageBasis` generalizes.
+* The construction by restricting coefficients to the exponents off `D` follows the monomial basis
+  `TauCeti.Toric.boundaryQuotientBasis` of the boundary of a regular toric chart, which is the case
+  where `D` is the set of exponents with every ray coordinate nonzero.
 -/
 
 public section
@@ -129,8 +129,7 @@ private noncomputable def coeffCompl : AddMonoidAlgebra R M →ₗ[R] ↥Dᶜ �
 
 private theorem coeffCompl_apply (p : AddMonoidAlgebra R M) (m : ↥Dᶜ) :
     coeffCompl D p m = p.coeff m := by
-  rw [coeffCompl, LinearMap.comp_apply, Finsupp.lcomapDomain_apply, Finsupp.comapDomain_apply,
-    LinearEquiv.coe_coe, coeffLinearEquiv_apply]
+  simp [coeffCompl]
 
 private theorem coeffCompl_surjective : Function.Surjective (coeffCompl (R := R) D) :=
   (Finsupp.comapDomain_surjective Subtype.val_injective).comp (coeffLinearEquiv R).surjective
