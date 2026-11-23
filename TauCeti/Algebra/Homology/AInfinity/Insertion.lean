@@ -30,7 +30,7 @@ cochain has degree zero and insertion carries no signs.
 On a bare module the sum is infinite. It converges when `M` is complete for an energy filtration
 `F` (`TauCeti.IsEnergyFiltration`), every operation satisfies the nonnegative energy bound
 `ν(μₙ(a₁, …, aₙ)) ≥ ν(a₁) + ⋯ + ν(aₙ)` in every arity, including arity zero (this is
-`TauCeti.MultilinearMap.IsHomogeneous` for the real grading by `F`, with shift `0`), and `b` has
+`MultilinearMap.IsHomogeneous` for the real grading by `F`, with shift `0`), and `b` has
 strictly positive energy. A term with `n - k` copies of `b` then has energy at least
 `ν(x₁) + ⋯ + ν(xₖ) + (n - k) ν(b)`, which tends to infinity. The deformed operation
 `TauCeti.deformedOperation` is again multilinear and satisfies the same energy bound, so it can
