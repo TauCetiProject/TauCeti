@@ -255,10 +255,6 @@ instance isValuedIn_restrict (T : Type*) [CommRing T] [Algebra T R] [Algebra T S
   rw [algebraMap_pairingIn, IsScalarTower.algebraMap_apply T R S, algebraMap_pairingIn,
     hXY.algebraMap_restrict_pairing]
 
-/-- Restriction of a crystallographic root pairing along a faithful algebra is crystallographic. -/
-theorem isCrystallographic_restrict [P.IsCrystallographic] : hXY.restrict.IsCrystallographic :=
-  hXY.isValuedIn_restrict ℤ
-
 /-- Restriction of a reduced root pairing along a faithful algebra is reduced. -/
 instance isReduced_restrict [P.IsReduced] : hXY.restrict.IsReduced where
   eq_or_eq_neg i j h := (IsReduced.eq_or_eq_neg (P := P) i j fun hli ↦ h <| by

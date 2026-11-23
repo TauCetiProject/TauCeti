@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import Mathlib.LinearAlgebra.RootSystem.Chain
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.Matrix.Dual
+import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
 # Base change of a root pairing carried by the standard lattices
@@ -82,15 +83,6 @@ theorem piAlgebraMap_apply (x : κ → R) (j : κ) :
 /-- Entrywise base change along an injective algebra map is injective. -/
 theorem piAlgebraMap_injective [FaithfulSMul R S] : Injective (Pi.algebraMap κ R S) :=
   fun _ _ h => funext fun j => algebraMap_injective R S (congrFun h j)
-
-/-- Entrywise base change carries the additive closure of a family into the additive closure of the
-base-changed family. -/
-theorem mem_closure_image_piAlgebraMap {ι : Type*} {g : ι → (κ → R)} {s : Set ι} {x : κ → R}
-    (hx : x ∈ AddSubmonoid.closure (g '' s)) :
-    Pi.algebraMap κ R S x ∈
-      AddSubmonoid.closure ((fun i => Pi.algebraMap κ R S (g i)) '' s) := by
-  have h := AddSubmonoid.mem_map_of_mem (Pi.algebraMap κ R S).toAddMonoidHom hx
-  rwa [AddMonoidHom.map_mclosure, ← image_comp] at h
 
 /-- A family of vectors spanning the standard lattice still spans after entrywise base change. -/
 theorem span_range_piAlgebraMap_eq_top [Finite κ] {ι : Type*} {v : ι → (κ → R)}
@@ -241,10 +233,14 @@ def rootPairingBaseChangeBase : (rootPairingBaseChange S P hP).Base where
     linearIndependent_algebraMap_comp_iff (S := S) |>.mpr b.linearIndepOn_root
   linearIndepOn_coroot :=
     linearIndependent_algebraMap_comp_iff (S := S) |>.mpr b.linearIndepOn_coroot
-  root_mem_or_neg_mem i := (b.root_mem_or_neg_mem i).imp (mem_closure_image_piAlgebraMap S)
-    fun h => by simpa using mem_closure_image_piAlgebraMap S h
-  coroot_mem_or_neg_mem i := (b.coroot_mem_or_neg_mem i).imp (mem_closure_image_piAlgebraMap S)
-    fun h => by simpa using mem_closure_image_piAlgebraMap S h
+  root_mem_or_neg_mem i := by
+    simpa [← image_comp, Function.comp_def] using
+      (Pi.algebraMap κ R S).toAddMonoidHom.map_mem_closure_image_or_neg_mem
+        (b.root_mem_or_neg_mem i)
+  coroot_mem_or_neg_mem i := by
+    simpa [← image_comp, Function.comp_def] using
+      (Pi.algebraMap κ R S).toAddMonoidHom.map_mem_closure_image_or_neg_mem
+        (b.coroot_mem_or_neg_mem i)
 
 @[simp] theorem support_rootPairingBaseChangeBase :
     (rootPairingBaseChangeBase S P hP b).support = b.support :=
