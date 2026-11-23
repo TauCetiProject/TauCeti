@@ -60,7 +60,7 @@ Every definition and theorem has an additive counterpart (`TauCeti.restrictedAdd
 * `TauCeti.locallyCompactSpace_restrictedProduct_of_measure_ne_top_of_isMulLeftInvariant`.
 * `TauCeti.exists_unique_restrictedHaar`, `TauCeti.restrictedHaar`, `TauCeti.restrictedHaar_unique`,
   `TauCeti.eq_restrictedHaar_of_box`, `TauCeti.comap_levelMonoidHom_restrictedHaar`,
-  `TauCeti.comap_levelOpenSubgroup_restrictedHaar`,
+  `TauCeti.measurePreserving_restrictedHaar_levelOpenSubgroupEquiv`,
   `TauCeti.measurePreserving_restrictedHaar_levelMonoidHom`, `TauCeti.restrictedHaar_box`,
   `TauCeti.restrictedHaar_box_eq_finprod`, `TauCeti.restrictedHaar_box_self`,
   `TauCeti.regular_restrictedHaar`, `TauCeti.isLocallyFiniteMeasure_restrictedHaar`,
@@ -407,17 +407,19 @@ theorem comap_levelMonoidHom_restrictedHaar {T : Finset ι} (hT : ∀ i ∉ T, �
   exact finprod_eq_prod_of_mulSupport_subset _ (s := T) fun i hi ↦
     Classical.byContradiction fun hiT ↦ hi (by dsimp only; rw [hCB i hiT, hT i hiT])
 
-/-- Pulling `restrictedHaar` back to `levelOpenSubgroup B T _` (for any finite set `T` with
-`μ i (B i) = 1` for every `i ∉ T`) identifies it via `levelOpenSubgroupEquiv` with
-`restrictedPrincipalPieceMeasure B T μ`. -/
-@[to_additive /-- Pulling `restrictedAddHaar` back to `levelOpenAddSubgroup B T _` (for any finite
-set `T` with `μ i (B i) = 1` for every `i ∉ T`) identifies it via `levelOpenAddSubgroupEquiv` with
-`restrictedPrincipalPieceMeasure B T μ`. -/]
-theorem comap_levelOpenSubgroup_restrictedHaar {T : Finset ι} (hT : ∀ i ∉ T, μ i (B i) = 1) :
-    (restrictedHaar B μ hμB).comap
-        ((↑) : levelOpenSubgroup B T (fun i _ ↦ hBopen.out i) → Πʳ i, [G i, B i]) =
-      (restrictedPrincipalPieceMeasure B T μ).map
-        (levelOpenSubgroupEquiv B T fun i _ ↦ hBopen.out i) := by
+/-- For any finite set `T` outside which `μ i (B i) = 1`, `levelOpenSubgroupEquiv B T _` is
+measure-preserving from `restrictedPrincipalPieceMeasure B T μ` onto the pullback of
+`restrictedHaar` along the subtype inclusion of `levelOpenSubgroup B T _`. -/
+@[to_additive /-- For any finite set `T` outside which `μ i (B i) = 1`,
+`levelOpenAddSubgroupEquiv B T _` is measure-preserving from `restrictedPrincipalPieceMeasure B T μ`
+onto the pullback of `restrictedAddHaar` along the subtype inclusion of
+`levelOpenAddSubgroup B T _`. -/]
+theorem measurePreserving_restrictedHaar_levelOpenSubgroupEquiv {T : Finset ι}
+    (hT : ∀ i ∉ T, μ i (B i) = 1) :
+    MeasurePreserving (levelOpenSubgroupEquiv B T fun i _ ↦ hBopen.out i)
+      (restrictedPrincipalPieceMeasure B T μ)
+      ((restrictedHaar B μ hμB).comap
+        (Subtype.val : levelOpenSubgroup B T (fun i _ ↦ hBopen.out i) → Πʳ i, [G i, B i])) := by
   let U := levelOpenSubgroup B T fun i _ ↦ hBopen.out i
   let e := levelOpenSubgroupEquiv B T fun i _ ↦ hBopen.out i
   have hmu : MeasurableEmbedding (Subtype.val : U → Πʳ i, [G i, B i]) :=
@@ -429,7 +431,8 @@ theorem comap_levelOpenSubgroup_restrictedHaar {T : Finset ι} (hT : ∀ i ∉ T
       comap_levelMonoidHom_restrictedHaar B μ hμB hT]
   have he : (e : _ → _) = e.toHomeomorph.toMeasurableEquiv :=
     e.toHomeomorph.toMeasurableEquiv_coe.symm
-  rw [eq_comm, he, e.toHomeomorph.toMeasurableEquiv.map_apply_eq_iff_map_symm_apply_eq,
+  refine ⟨e.continuous.measurable, ?_⟩
+  rw [he, e.toHomeomorph.toMeasurableEquiv.map_apply_eq_iff_map_symm_apply_eq,
     MeasurableEquiv.map_symm, ← he, hcomap]
 
 /-- Value of `restrictedHaar` on a coordinate box `box C` agreeing with `B i` outside a finite set

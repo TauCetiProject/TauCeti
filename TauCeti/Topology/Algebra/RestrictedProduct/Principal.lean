@@ -35,9 +35,10 @@ declaration has an additive counterpart via `@[to_additive]`.
   `levelMonoidHom`; openness of `B i` is only needed outside `T`.
 * `TauCeti.image_levelMonoidHom_pi_prod_univ`, `TauCeti.preimage_levelMonoidHom_box`: image and
   box-preimage formulas for `levelMonoidHom`.
-* `TauCeti.levelOpenSubgroup`, `TauCeti.levelOpenSubgroupEquiv`,
-  `TauCeti.val_comp_levelOpenSubgroupEquiv`: level open subgroup of elements integral outside `S`,
-  its topological group chart, and inclusion formulas.
+* `TauCeti.levelOpenSubgroup`, `TauCeti.coe_levelOpenSubgroup_eq_box`,
+  `TauCeti.levelOpenSubgroupEquiv`, `TauCeti.val_comp_levelOpenSubgroupEquiv`: level open
+  subgroup of elements integral outside `S`, its coordinate-box form, its topological group chart,
+  and inclusion formulas.
 
 ## References
 
@@ -265,22 +266,31 @@ def levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
   toSubgroup := (levelMonoidHom B S).range
   isOpen' := (isOpenEmbedding_levelMonoidHom_of_isOpen B S hB).isOpen_range
 
-/-- The underlying set of `levelOpenSubgroup B S hB` is `{x | ∀ i ∉ S, x i ∈ B i}`. -/
-@[to_additive (attr := simp) /-- The underlying set of `levelOpenAddSubgroup B S hB` is
-`{x | ∀ i ∉ S, x i ∈ B i}`. -/]
-theorem coe_levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
-    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
-    (levelOpenSubgroup B S hB : Set (Πʳ i, [G i, B i])) = {x | ∀ i ∉ S, x i ∈ B i} :=
-  (MonoidHom.coe_range (levelMonoidHom B S)).trans (range_levelMonoidHom B S)
-
 /-- Membership in `levelOpenSubgroup B S hB` means integrality at every index outside `S`. -/
 @[to_additive (attr := simp) /-- Membership in `levelOpenAddSubgroup B S hB` means integrality at
 every index outside `S`. -/]
 theorem mem_levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (x : Πʳ i, [G i, B i]) :
     x ∈ levelOpenSubgroup B S hB ↔ ∀ i ∉ S, x i ∈ B i := by
-  rw [← SetLike.mem_coe, coe_levelOpenSubgroup]
+  change x ∈ (levelMonoidHom B S).range ↔ _
+  rw [← SetLike.mem_coe, MonoidHom.coe_range, range_levelMonoidHom]
   rfl
+
+/-- As a subset of `Πʳ i, [G i, B i]`, `levelOpenSubgroup B S hB` is the coordinate box equal to
+`Set.univ` on `S` and `B i` outside `S`. -/
+@[to_additive /-- As a subset of `Πʳ i, [G i, B i]`, `levelOpenAddSubgroup B S hB` is the
+coordinate box equal to `Set.univ` on `S` and `B i` outside `S`. -/]
+theorem coe_levelOpenSubgroup_eq_box (B : ∀ i, K i) (S : Finset ι) [DecidablePred (· ∈ S)]
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
+    (levelOpenSubgroup B S hB : Set (Πʳ i, [G i, B i])) =
+      box (fun i ↦ if i ∈ S then univ else (B i : Set (G i))) := by
+  ext x
+  simp only [SetLike.mem_coe, mem_levelOpenSubgroup, mem_box]
+  refine ⟨fun h i ↦ ?_, fun h i hi ↦ ?_⟩
+  · split_ifs with hi
+    · exact mem_univ _
+    · exact h i hi
+  · simpa [hi] using h i
 
 /-- Enlarging the finite set `S` enlarges the level open subgroup. -/
 @[to_additive /-- Enlarging the finite set `S` enlarges the level open additive subgroup. -/]
@@ -312,6 +322,9 @@ theorem val_comp_levelOpenSubgroupEquiv (B : ∀ i, K i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
     Subtype.val ∘ levelOpenSubgroupEquiv B S hB = levelMonoidHom B S := by
   funext p
+  -- `ContinuousMulEquiv.mk'` preserves the forward function and `levelOpenSubgroup` has the same
+  -- carrier as `(levelMonoidHom B S).range`, while Mathlib's `ContinuousMulEquiv.coe_mk'` lacks
+  -- `@[to_additive]`, so we reduce locally through `levelOpenSubgroupEquiv` here.
   dsimp [levelOpenSubgroupEquiv]
   exact Topology.IsEmbedding.toHomeomorph_apply_coe (isEmbedding_levelMonoidHom B S) p
 
