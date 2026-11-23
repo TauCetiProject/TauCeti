@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
@@ -35,26 +36,26 @@ as `x → 0+`.
 
 ## Main results
 
-* `Complex.hasDerivAt_upperIncompleteGamma`, `Complex.analyticOnNhd_upperIncompleteGamma`:
-  `∂Γ(a, z)/∂z = −z^{a−1} e^{−z}` on the slit plane (DLMF 8.8.13), so `Γ(a, ·)` is holomorphic
-  there;
+* `Complex.hasDerivAt_upperIncompleteGamma`, `Complex.deriv_upperIncompleteGamma`,
+  `Complex.analyticOnNhd_upperIncompleteGamma`: `∂Γ(a, z)/∂z = −z^{a−1} e^{−z}` on the slit
+  plane (DLMF 8.8.13), so `Γ(a, ·)` is holomorphic there;
 * `Complex.differentiable_upperIncompleteGamma_left`: `Γ(·, z)` is entire for `z` in the slit
   plane;
 * `Complex.continuousOn_upperIncompleteGamma_ofReal`,
   `Complex.tendsto_upperIncompleteGamma_ofReal_nhdsGT_zero`: for `0 < Re a`, `x ↦ Γ(a, x)` is
   continuous on `[0, ∞)` and `Γ(a, x) → Γ(a)` as `x → 0+`;
 * `Complex.upperIncompleteGamma_ode`: DLMF 8.2.12 for `Γ(a, ·)`;
-* `Complex.exp_mul_cpow_one_sub_mul_upperIncompleteGamma_ode`: DLMF 8.2.13 for
-  `e^z z^{1−a} Γ(a, z)`.
+* `Complex.deriv_exp_mul_cpow_one_sub_mul_upperIncompleteGamma`,
+  `Complex.exp_mul_cpow_one_sub_mul_upperIncompleteGamma_ode`: the derivative of
+  `e^z z^{1−a} Γ(a, z)` and DLMF 8.2.13 for it.
 
 ## Implementation notes
 
 The derivative in `z` differentiates under the ray integral with
 `TauCeti.hasDerivAt_integral_mul_ofReal_add_cpow` and integrates the derivative of
-`t ↦ e^{−t} (t + z)^{a−1}` along the ray. The derivative in `a` is dominated by Mathlib's
-`hasDerivAt_integral_of_dominated_loc_of_deriv_le`, with the bound
-`TauCeti.norm_cpow_mul_log_le_of_mem_ball` from the Cauchy estimate
-`Complex.norm_deriv_le_of_forall_mem_sphere_norm_le` on circles of radius one. Continuity on the
+`t ↦ e^{−t} (t + z)^{a−1}` along the ray. Holomorphy in `a` is
+`TauCeti.hasDerivAt_integral_of_dominated_of_differentiableOn`, with the integrand dominated on
+the unit ball of parameters by `Complex.norm_cpow_le_of_mem_closedBall`. Continuity on the
 positive axis is Mathlib's `MeasureTheory.IntegrableOn.continuousOn_Ici_primitive_Ioi`.
 
 ## References
@@ -186,12 +187,16 @@ theorem hasDerivAt_upperIncompleteGamma {z : ℂ} (hz : z ∈ slitPlane) (a : �
       HasDerivAt (fun s : ℝ => cexp (-(s : ℂ)) * ((s : ℂ) + z) ^ (a - 1))
         ((a - 1) * (cexp (-(t : ℂ)) * ((t : ℂ) + z) ^ (a - 1 - 1)) -
           cexp (-(t : ℂ)) * ((t : ℂ) + z) ^ (a - 1)) t := by
-    have h : HasDerivAt (fun w : ℂ => cexp (-w) * (w + z) ^ (a - 1))
-        (cexp (-(t : ℂ)) * -1 * ((t : ℂ) + z) ^ (a - 1) +
-          cexp (-(t : ℂ)) * ((a - 1) * ((t : ℂ) + z) ^ (a - 1 - 1) * 1)) t :=
-      (hasDerivAt_neg (t : ℂ)).cexp.mul (((hasDerivAt_id' (t : ℂ)).add_const z).cpow_const
-        (TauCeti.ofReal_add_mem_slitPlane hz ht))
-    exact h.comp_ofReal.congr_deriv (by ring)
+    have hmem := TauCeti.ofReal_add_mem_slitPlane hz ht
+    have hf : (fun s : ℝ => cexp (-(s : ℂ)) * ((s : ℂ) + z) ^ (a - 1)) =
+        fun s : ℝ => ((s : ℂ) + z) ^ (a - 1) * cexp (-1 * s) := by
+      funext s
+      rw [neg_one_mul, mul_comm]
+    rw [hf]
+    refine (hasDerivAt_add_cpow_mul_exp_mul (a - 1) z (-1) hmem).comp_ofReal.congr_deriv ?_
+    rw [cpow_sub (a - 1) 1 (slitPlane_ne_zero hmem), cpow_one, neg_one_mul]
+    field_simp
+    ring
   have h₂ := (hint (a - 1 - 1)).const_mul (a - 1)
   have h₁ := hint (a - 1)
   have hFTC := integral_Ioi_of_hasDerivAt_of_tendsto' hG (h₂.sub h₁)
@@ -203,6 +208,12 @@ theorem hasDerivAt_upperIncompleteGamma {z : ℂ} (hz : z ∈ slitPlane) (a : �
   refine ((hasDerivAt_neg z).cexp.mul hI).congr_deriv ?_
   linear_combination cexp (-z) * hFTC
 
+/-- **DLMF 8.8.13** for `deriv`: on the slit plane, `∂Γ(a, z)/∂z = −z^{a−1} e^{−z}`. -/
+@[simp]
+theorem deriv_upperIncompleteGamma {z : ℂ} (hz : z ∈ slitPlane) (a : ℂ) :
+    deriv (upperIncompleteGamma a) z = -(z ^ (a - 1) * cexp (-z)) :=
+  (hasDerivAt_upperIncompleteGamma hz a).deriv
+
 /-- `Γ(a, ·)` is analytic on the slit plane. -/
 theorem analyticOnNhd_upperIncompleteGamma (a : ℂ) :
     AnalyticOnNhd ℂ (upperIncompleteGamma a) slitPlane :=
@@ -212,64 +223,57 @@ theorem analyticOnNhd_upperIncompleteGamma (a : ℂ) :
 
 /-! ### Holomorphy in the parameter -/
 
-/-- The weight `‖z + t‖^p e^{−t}` is integrable on `(0, ∞)` for `z` in the slit plane. -/
-private theorem integrableOn_norm_add_rpow_mul_exp_neg {z : ℂ} (hz : z ∈ slitPlane) (p : ℝ) :
-    IntegrableOn (fun t : ℝ => ‖z + t‖ ^ p * Real.exp (-t)) (Ioi 0) := by
-  refine IntegrableOn.congr_fun (integrableOn_upperIncompleteGamma_integrand ((p : ℂ) + 1) hz).norm
-    (fun t _ => ?_) measurableSet_Ioi
-  rw [add_sub_cancel_right, norm_mul, norm_cpow_real, norm_exp, neg_re, ofReal_re]
-
 /-- `Γ(·, z)` is entire for `z` in the slit plane. -/
 theorem differentiable_upperIncompleteGamma_left {z : ℂ} (hz : z ∈ slitPlane) :
     Differentiable ℂ fun a => upperIncompleteGamma a z := by
   intro a₀
-  -- the Cauchy bound on the parameter derivative, for exponents `b - 1` near `a₀ - 1`
-  set K := Real.exp (Real.pi * (|(a₀ - 1).im| + 2 * 1))
-  set p₁ := (a₀ - 1).re - 2 * 1
-  set p₂ := (a₀ - 1).re + 2 * 1
-  have hB := ((integrableOn_norm_add_rpow_mul_exp_neg hz p₁).add
-    (integrableOn_norm_add_rpow_mul_exp_neg hz p₂)).const_mul K
   have hmem (t : ℝ) (ht : t ∈ Ioi (0 : ℝ)) : z + t ∈ slitPlane := by
     rw [add_comm]
     exact TauCeti.ofReal_add_mem_slitPlane hz (le_of_lt ht)
-  have hpow (b : ℂ) : ContinuousOn (fun t : ℝ => (z + t) ^ b) (Ioi 0) :=
-    ContinuousOn.cpow_const (by fun_prop) hmem
-  have hlog : ContinuousOn (fun t : ℝ => log (z + t)) (Ioi 0) :=
-    ContinuousOn.clog (by fun_prop) hmem
-  have hexp : ContinuousOn (fun t : ℝ => cexp (-(t : ℂ))) (Ioi 0) := by fun_prop
-  have key := hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := volume.restrict (Ioi 0))
-    (F := fun (b : ℂ) (t : ℝ) => (z + t) ^ (b - 1) * cexp (-(t : ℂ)))
-    (F' := fun (b : ℂ) (t : ℝ) => (z + t) ^ (b - 1) * log (z + t) * cexp (-(t : ℂ)))
-    (Metric.ball_mem_nhds a₀ one_pos)
-    (.of_forall fun b => ((hpow _).mul hexp).aestronglyMeasurable measurableSet_Ioi)
-    (integrableOn_upperIncompleteGamma_integrand a₀ hz)
-    ((((hpow _).mul hlog).mul hexp).aestronglyMeasurable measurableSet_Ioi)
-    (.of_forall fun t b hb => ?_) hB
-    (by filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht b _
-        simpa only [mul_one] using (((hasDerivAt_id' b).sub_const 1).const_cpow
-          (c := z + t) (Or.inl (slitPlane_ne_zero (hmem t ht)))).mul_const (cexp (-(t : ℂ))))
-  · exact (key.2.differentiableAt.const_mul (cexp (-z))).congr_of_eventuallyEq
+  -- on the unit ball about `a₀` the integrand is dominated by `K (‖t + z‖^p₁ + ‖t + z‖^p₂) e^{−t}`
+  set K := Real.exp (Real.pi * (|(a₀ - 1).im| + 1))
+  set p₁ := (a₀ - 1).re - 1
+  set p₂ := (a₀ - 1).re + 1
+  have hB := ((TauCeti.integrableOn_norm_ofReal_add_rpow_mul_exp_neg hz p₁).add
+    (TauCeti.integrableOn_norm_ofReal_add_rpow_mul_exp_neg hz p₂)).const_mul K
+  have key := TauCeti.hasDerivAt_integral_of_dominated_of_differentiableOn
+    (μ := volume.restrict (Ioi 0))
+    (F := fun (b : ℂ) (t : ℝ) => (z + t) ^ (b - 1) * cexp (-(t : ℂ))) (U := Metric.ball a₀ 1)
+    (w₀ := a₀) (bound := fun t : ℝ =>
+      K * (‖(t : ℂ) + z‖ ^ p₁ * Real.exp (-t) + ‖(t : ℂ) + z‖ ^ p₂ * Real.exp (-t)))
+    Metric.isOpen_ball (Metric.mem_ball_self one_pos)
+    (fun b _ => (integrableOn_upperIncompleteGamma_integrand b hz).aestronglyMeasurable)
+    ?_ hB ?_
+  · exact (key.differentiableAt.const_mul (cexp (-z))).congr_of_eventuallyEq
       (.of_forall fun b => upperIncompleteGamma_def b z)
-  · have h := TauCeti.norm_cpow_mul_log_le_of_mem_ball (w := z + t) (a₀ := a₀ - 1) (b := b - 1)
-      (by rwa [Metric.mem_ball, dist_sub_right])
-    rw [norm_mul _ (cexp _), norm_exp, neg_re, ofReal_re]
-    calc ‖(z + t) ^ (b - 1) * log (z + t)‖ * Real.exp (-t)
-        ≤ K * (‖z + t‖ ^ p₁ + ‖z + t‖ ^ p₂) / 1 * Real.exp (-t) := by gcongr
-      _ = K * (‖z + t‖ ^ p₁ * Real.exp (-t) + ‖z + t‖ ^ p₂ * Real.exp (-t)) := by ring
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht b hb
+    have hb' : b - 1 ∈ Metric.closedBall (a₀ - 1) 1 := by
+      rw [Metric.mem_closedBall, dist_sub_right]
+      exact (Metric.mem_ball.mp hb).le
+    have h := norm_cpow_le_of_mem_closedBall (slitPlane_ne_zero (hmem t ht)) hb'
+    rw [norm_mul _ (cexp _), ← ofReal_neg, norm_exp_ofReal, add_comm z]
+    rw [add_comm z] at h
+    calc ‖((t : ℂ) + z) ^ (b - 1)‖ * Real.exp (-t)
+        ≤ K * (‖(t : ℂ) + z‖ ^ p₁ + ‖(t : ℂ) + z‖ ^ p₂) * Real.exp (-t) := by gcongr
+      _ = K * (‖(t : ℂ) + z‖ ^ p₁ * Real.exp (-t) + ‖(t : ℂ) + z‖ ^ p₂ * Real.exp (-t)) := by
+        ring
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    exact fun b _ => ((((differentiableAt_id.sub_const 1).const_cpow
+      (Or.inl (slitPlane_ne_zero (hmem t ht)))).mul_const _)).differentiableWithinAt
 
 /-! ### The limit at the origin along the positive axis -/
 
 /-- For `0 < Re a`, `x ↦ Γ(a, x)` is continuous on the closed positive real axis. -/
-theorem continuousOn_upperIncompleteGamma_ofReal {a : ℂ} (ha : 0 < a.re) :
+theorem continuousOn_upperIncompleteGamma_ofReal (a : ℂ) (ha : 0 < a.re) :
     ContinuousOn (fun x : ℝ => upperIncompleteGamma a x) (Ici 0) := by
   have hf : IntegrableOn (fun t : ℝ => (t : ℂ) ^ (a - 1) * cexp (-(t : ℂ))) (Ioi 0) := by
     simpa only [ofReal_exp, ofReal_neg, mul_comm] using GammaIntegral_convergent ha
   simpa only [upperIncompleteGamma_ofReal] using hf.continuousOn_Ici_primitive_Ioi
 
 /-- `Γ(a, x) → Γ(a)` as `x → 0+` along the positive real axis, for `0 < Re a`. -/
-theorem tendsto_upperIncompleteGamma_ofReal_nhdsGT_zero {a : ℂ} (ha : 0 < a.re) :
+theorem tendsto_upperIncompleteGamma_ofReal_nhdsGT_zero (a : ℂ) (ha : 0 < a.re) :
     Tendsto (fun x : ℝ => upperIncompleteGamma a x) (𝓝[>] 0) (𝓝 (Gamma a)) := by
-  have h := continuousOn_upperIncompleteGamma_ofReal ha 0 (mem_Ici.mpr le_rfl)
+  have h := continuousOn_upperIncompleteGamma_ofReal a ha 0 (mem_Ici.mpr le_rfl)
   rw [ContinuousWithinAt, ofReal_zero, upperIncompleteGamma_zero_right ha] at h
   exact h.mono_left (nhdsWithin_mono _ Ioi_subset_Ici_self)
 
@@ -281,12 +285,12 @@ theorem upperIncompleteGamma_ode (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     deriv (deriv (upperIncompleteGamma a)) z +
       (1 + (1 - a) / z) * deriv (upperIncompleteGamma a) z = 0 := by
   have hd : deriv (upperIncompleteGamma a) =ᶠ[𝓝 z] fun w => -(w ^ (a - 1) * cexp (-w)) :=
-    eventually_of_mem (isOpen_slitPlane.mem_nhds hz) fun w hw =>
-      (hasDerivAt_upperIncompleteGamma hw a).deriv
+    eventually_of_mem (isOpen_slitPlane.mem_nhds hz) fun w hw => deriv_upperIncompleteGamma hw a
+  have h0 := hasDerivAt_add_cpow_mul_exp_mul (a - 1) 0 (-1) (by rwa [add_zero])
+  simp only [add_zero, neg_one_mul] at h0
   have h : HasDerivAt (fun w => -(w ^ (a - 1) * cexp (-w)))
-      (-(((a - 1) / z - 1) * (z ^ (a - 1) * cexp (-z)))) z :=
-    (hasDerivAt_cpow_mul_exp_neg (a - 1) hz).neg
-  rw [hd.deriv_eq, (hasDerivAt_upperIncompleteGamma hz a).deriv, h.deriv]
+      (-(((a - 1) / z + -1) * (z ^ (a - 1) * cexp (-z)))) z := h0.neg
+  rw [hd.deriv_eq, deriv_upperIncompleteGamma hz a, h.deriv]
   ring
 
 /-- On the slit plane, `w(z) = e^z z^{1−a} Γ(a, z)` has derivative `(1 + (1 − a)/z) w(z) − 1`. -/
@@ -306,9 +310,18 @@ theorem hasDerivAt_exp_mul_cpow_one_sub_mul_upperIncompleteGamma (a : ℂ) {z : 
       (cexp z * z ^ (1 - a) + cexp z * ((1 - a) * z ^ (1 - a - 1) * 1)) z :=
     (hasDerivAt_exp z).mul ((hasDerivAt_id z).cpow_const hz)
   refine (hprod.mul (hasDerivAt_upperIncompleteGamma hz a)).congr_deriv ?_
-  rw [h4, cpow_sub_one hz0]
+  rw [h4, cpow_sub (1 - a) 1 hz0, cpow_one]
   field_simp
   ring
+
+/-- On the slit plane, the derivative of `w(z) = e^z z^{1−a} Γ(a, z)` is
+`(1 + (1 − a)/z) w(z) − 1`. -/
+@[simp]
+theorem deriv_exp_mul_cpow_one_sub_mul_upperIncompleteGamma (a : ℂ) {z : ℂ}
+    (hz : z ∈ slitPlane) :
+    deriv (fun w => cexp w * w ^ (1 - a) * upperIncompleteGamma a w) z =
+      (1 + (1 - a) / z) * (cexp z * z ^ (1 - a) * upperIncompleteGamma a z) - 1 :=
+  (hasDerivAt_exp_mul_cpow_one_sub_mul_upperIncompleteGamma a hz).deriv
 
 /-- **DLMF 8.2.13**: on the slit plane, `w(z) = e^z z^{1−a} Γ(a, z)` satisfies
 `w'' − (1 + (1 − a)/z) w' + ((1 − a)/z²) w = 0`. -/
@@ -322,14 +335,14 @@ theorem exp_mul_cpow_one_sub_mul_upperIncompleteGamma_ode (a : ℂ) {z : ℂ}
   have hd : deriv (fun w => cexp w * w ^ (1 - a) * upperIncompleteGamma a w) =ᶠ[𝓝 z]
       fun w => (1 + (1 - a) * w⁻¹) * (cexp w * w ^ (1 - a) * upperIncompleteGamma a w) - 1 :=
     eventually_of_mem (isOpen_slitPlane.mem_nhds hz) fun w hw => by
-      rw [(hasDerivAt_exp_mul_cpow_one_sub_mul_upperIncompleteGamma a hw).deriv, div_eq_mul_inv]
+      rw [deriv_exp_mul_cpow_one_sub_mul_upperIncompleteGamma a hw, div_eq_mul_inv]
   have h : HasDerivAt
       (fun w => (1 + (1 - a) * w⁻¹) * (cexp w * w ^ (1 - a) * upperIncompleteGamma a w) - 1)
       ((1 - a) * -(z ^ 2)⁻¹ * (cexp z * z ^ (1 - a) * upperIncompleteGamma a z) +
         (1 + (1 - a) * z⁻¹) *
           ((1 + (1 - a) / z) * (cexp z * z ^ (1 - a) * upperIncompleteGamma a z) - 1)) z :=
     ((((hasDerivAt_inv hz0).const_mul (1 - a)).const_add 1).mul hW).sub_const 1
-  rw [hd.deriv_eq, hW.deriv, h.deriv]
+  rw [hd.deriv_eq, deriv_exp_mul_cpow_one_sub_mul_upperIncompleteGamma a hz, h.deriv]
   field_simp
   ring
 

@@ -32,6 +32,7 @@ both defined through Tricomi's entire function `γ*` of
   `Complex.analyticOnNhd_lowerIncompleteGamma`: `γ(a, ·)` is holomorphic on the slit plane;
 * `Complex.lowerIncompleteGamma_ofReal_eq_partialGamma`: on the real axis `γ(a, x)` is Mathlib's
   `Complex.partialGamma a x`, for `0 < Re a`;
+* `Complex.lowerIncompleteGamma_neg_natCast`: `γ(−n, ·)` is identically `0`, Mathlib's junk value;
 * `Complex.regularizedGamma_one_left`, `Complex.regularizedGamma_neg_natCast`,
   `Complex.regularizedGammaQ_neg_natCast`: `P(1, z) = 1 − e^{−z}`, and `P(−n, z) = 1`,
   `Q(−n, z) = 0` for `z ≠ 0` (DLMF 8.2.5, 8.4.12).
@@ -137,13 +138,15 @@ theorem analyticOnNhd_lowerIncompleteGamma (a : ℂ) :
     isOpen_slitPlane
 
 /-- On the real axis, `γ(a, x)` is Mathlib's `Complex.partialGamma a x` when `0 < Re a`. -/
-theorem lowerIncompleteGamma_ofReal_eq_partialGamma {a : ℂ} (ha : 0 < a.re) (x : ℝ) :
+theorem lowerIncompleteGamma_ofReal_eq_partialGamma (a : ℂ) (ha : 0 < a.re) (x : ℝ) :
     lowerIncompleteGamma a x = partialGamma a x := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp [partialGamma]
   have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx
-  have hsub := intervalIntegral.integral_comp_mul_left
-    (fun t : ℝ => (Real.exp (-t) : ℂ) * (t : ℂ) ^ (a - 1)) (a := 0) (b := 1) hx
+  -- the substitution `t = x s` in `Complex.partialGamma`
+  have hsub := intervalIntegral.smul_integral_comp_mul_left
+    (fun t : ℝ => (Real.exp (-t) : ℂ) * (t : ℂ) ^ (a - 1)) (a := 0) (b := 1) x
+  simp only [mul_zero, mul_one] at hsub
   have hscale : ∫ s in (0 : ℝ)..1, (Real.exp (-(x * s)) : ℂ) * ((x * s : ℝ) : ℂ) ^ (a - 1) =
       (x : ℂ) ^ (a - 1) * ∫ s in (0 : ℝ)..1, (s : ℂ) ^ (a - 1) * cexp (-(x * s)) := by
     rw [← intervalIntegral.integral_const_mul]
@@ -153,11 +156,16 @@ theorem lowerIncompleteGamma_ofReal_eq_partialGamma {a : ℂ} (ha : 0 < a.re) (x
       exact hs.1
     simp only [ofReal_mul, mul_comm (x : ℂ), TauCeti.ofReal_mul_cpow hs0, ofReal_exp, ofReal_neg]
     ring
-  simp only [mul_zero, mul_one] at hsub
-  rw [hscale] at hsub
-  rw [lowerIncompleteGamma_eq_integral ha, partialGamma, ← mul_div_cancel₀ ((x : ℂ) ^ a) hx0,
-    ← cpow_sub_one hx0, mul_assoc, hsub, real_smul, ofReal_inv, ← mul_assoc, mul_inv_cancel₀ hx0,
-    one_mul]
+  -- the remaining scalar identity `x ^ a = x • x ^ (a - 1)`
+  rw [lowerIncompleteGamma_eq_integral ha, partialGamma, ← hsub, hscale, real_smul,
+    cpow_sub _ _ hx0, cpow_one]
+  field_simp
+
+/-- At `a = −n` the lower incomplete Gamma function is identically Mathlib's junk value `0`,
+since `Γ(−n) = 0`. -/
+@[simp]
+theorem lowerIncompleteGamma_neg_natCast (n : ℕ) : lowerIncompleteGamma (-n) = fun _ => 0 :=
+  funext fun _ => by simp [lowerIncompleteGamma_def, Gamma_neg_nat_eq_zero]
 
 /-- `P(−n, z) = 1` for `z ≠ 0` (DLMF 8.4.12). -/
 @[simp]

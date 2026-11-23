@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Analytic.IsolatedZeros
-import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
@@ -104,16 +103,14 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
-* `TauCeti.norm_cpow_le_of_mem_closedBall` -- for `w ≠ 0`, a bound on `‖w ^ b‖` uniform for `b`
-  in a closed ball.
-* `TauCeti.norm_cpow_mul_log_le_of_mem_ball` -- a bound on the exponent derivative `w ^ b log w`
-  uniform for `b` in a ball, by the Cauchy estimate.
-* `Complex.cpow_sub_one` -- `x ^ (y − 1) = x ^ y / x` for `x ≠ 0`.
-* `Complex.hasDerivAt_cpow_mul_exp_neg` -- the derivative of `w ↦ w ^ b e^{−w}` on the slit plane.
+* `Complex.hasDerivAt_add_cpow_mul_exp_mul` -- the derivative of `w ↦ (w + c) ^ b e^{k w}` where
+  `z + c` is in the slit plane.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
 * `Complex.norm_cpow_le_mul_exp` -- `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π |d.im|)`.
+* `Complex.norm_cpow_le_of_mem_closedBall` -- for `w ≠ 0`, a bound on `‖w ^ b‖` uniform for `b`
+  in a closed ball.
 * `Complex.norm_one_add_cpow_le`, `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` --
   `‖(1 + z) ^ d‖ ≤ exp (π |d.im|) (1 + ‖z‖) ^ max 0 d.re` for `0 ≤ z.re`, and
   `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (cos (θ / 2)) ^ min 0 d.re (1 + r) ^ max 0 d.re`
@@ -572,49 +569,6 @@ theorem one_div_cpow_mul_ofReal_rpow {w : ℂ} (hw : w.arg ≠ Real.pi) {p : ℝ
   rw [div_eq_mul_inv (p : ℂ) w, ofReal_mul_cpow hp, Complex.inv_cpow w (r : ℂ) hw,
     ← Complex.ofReal_cpow hp, one_div, mul_comm]
 
-/-- For a nonzero base `w`, the norm of `w ^ b` is bounded uniformly for the exponent `b` in the
-closed ball of radius `R` about `a₀`:
-`‖w ^ b‖ ≤ e^{π (|Im a₀| + R)} (‖w‖^{Re a₀ − R} + ‖w‖^{Re a₀ + R})`. -/
-theorem norm_cpow_le_of_mem_closedBall {w : ℂ} (hw : w ≠ 0) {a₀ b : ℂ} {R : ℝ}
-    (hb : b ∈ Metric.closedBall a₀ R) :
-    ‖w ^ b‖ ≤ Real.exp (Real.pi * (|a₀.im| + R)) * (‖w‖ ^ (a₀.re - R) + ‖w‖ ^ (a₀.re + R)) := by
-  have hb' : ‖b - a₀‖ ≤ R := by rwa [← dist_eq_norm]
-  have hre : |b.re - a₀.re| ≤ R := by simpa using (abs_re_le_norm (b - a₀)).trans hb'
-  have him : |b.im| ≤ |a₀.im| + R := by
-    have := (abs_im_le_norm (b - a₀)).trans hb'
-    rw [sub_im] at this
-    linarith [abs_sub_abs_le_abs_sub b.im a₀.im]
-  have hpow : ‖w‖ ^ b.re ≤ ‖w‖ ^ (a₀.re - R) + ‖w‖ ^ (a₀.re + R) :=
-    Real.rpow_le_rpow_add_rpow_of_mem_Icc (norm_pos_iff.mpr hw)
-      ⟨by linarith [abs_le.mp hre], by linarith [abs_le.mp hre]⟩
-  have harg : (Real.exp (w.arg * b.im))⁻¹ ≤ Real.exp (Real.pi * (|a₀.im| + R)) :=
-    (inv_exp_arg_mul_le_exp_pi_mul_abs _ _).trans
-      (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left him Real.pi_pos.le))
-  calc ‖w ^ b‖ ≤ (Real.exp (w.arg * b.im))⁻¹ * ‖w‖ ^ b.re := by
-        rw [mul_comm, ← div_eq_mul_inv]
-        exact norm_cpow_le _ _
-    _ ≤ _ := by gcongr
-
-/-- The Cauchy estimate on circles of radius `r` bounds the exponent derivative `w ^ b log w` of
-`b ↦ w ^ b` uniformly for `b` in the ball of radius `r` about `a₀`:
-`‖w ^ b log w‖ ≤ e^{π (|Im a₀| + 2r)} (‖w‖^{Re a₀ − 2r} + ‖w‖^{Re a₀ + 2r}) / r`. At `w = 0` the
-left side is `0`. Such bounds dominate the parameter derivatives of power integrals. -/
-theorem norm_cpow_mul_log_le_of_mem_ball {w a₀ b : ℂ} {r : ℝ} (hb : b ∈ Metric.ball a₀ r) :
-    ‖w ^ b * log w‖ ≤
-      Real.exp (Real.pi * (|a₀.im| + 2 * r)) * (‖w‖ ^ (a₀.re - 2 * r) + ‖w‖ ^ (a₀.re + 2 * r)) /
-        r := by
-  have hr : 0 < r := Metric.pos_of_mem_ball hb
-  rcases eq_or_ne w 0 with rfl | hw
-  · rw [log_zero, mul_zero, norm_zero]
-    positivity
-  have hd (c : ℂ) : HasDerivAt (fun c => w ^ c) (w ^ c * log w) c :=
-    (hasStrictDerivAt_const_cpow (Or.inl hw)).hasDerivAt
-  rw [← (hd b).deriv]
-  refine norm_deriv_le_of_forall_mem_sphere_norm_le hr
-    (Differentiable.diffContOnCl fun c => (hd c).differentiableAt) fun c hc => ?_
-  refine norm_cpow_le_of_mem_closedBall hw (Metric.mem_closedBall.mpr ?_)
-  linarith [dist_triangle c b a₀, Metric.mem_sphere.mp hc, Metric.mem_ball.mp hb]
-
 /-- For `a > 0` and `w` off the negative real axis, the principal powers combine:
 `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`. -/
 theorem ofReal_cpow_mul_inv_mul_inv_cpow {a : ℝ} (ha : 0 < a) {w : ℂ} (hw : w.arg ≠ Real.pi)
@@ -779,17 +733,15 @@ theorem im_cpow_ofReal_eq_zero {u : ℂ} {r : ℝ} (h : arg u * r = 0 ∨ arg u 
   rw [cpow_ofReal_im]
   rcases h with h | h <;> rw [h] <;> simp
 
-/-- Lowering the exponent of a principal power of a nonzero base by one divides by the base:
-`x ^ (y − 1) = x ^ y / x`. -/
-theorem cpow_sub_one {x : ℂ} (hx : x ≠ 0) (y : ℂ) : x ^ (y - 1) = x ^ y / x := by
-  rw [cpow_sub _ _ hx, cpow_one]
-
-/-- On the slit plane, `w ↦ w ^ b e^{−w}` has derivative `(b / z − 1) z ^ b e^{−z}`. -/
-theorem hasDerivAt_cpow_mul_exp_neg (b : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
-    HasDerivAt (fun w => w ^ b * cexp (-w)) ((b / z - 1) * (z ^ b * cexp (-z))) z := by
-  refine (((hasDerivAt_id z).cpow_const (c := b) hz).mul (hasDerivAt_neg z).cexp).congr_deriv ?_
-  rw [id, cpow_sub_one (slitPlane_ne_zero hz)]
-  ring
+/-- The derivative of a shifted power times an exponential: where `z + c` lies in the slit plane,
+`w ↦ (w + c) ^ b e^{k w}` has derivative `(b / (z + c) + k) (z + c) ^ b e^{k z}`. -/
+theorem hasDerivAt_add_cpow_mul_exp_mul (b c k : ℂ) {z : ℂ} (hz : z + c ∈ slitPlane) :
+    HasDerivAt (fun w => (w + c) ^ b * cexp (k * w))
+      ((b / (z + c) + k) * ((z + c) ^ b * cexp (k * z))) z := by
+  refine ((((hasDerivAt_id z).add_const c).cpow_const (c := b) hz).mul
+    ((hasDerivAt_id z).const_mul k).cexp).congr_deriv ?_
+  rw [id, cpow_sub _ _ (slitPlane_ne_zero hz), cpow_one]
+  field_simp
 
 /-- A real power of a positive real number grows at most exponentially in the exponent. -/
 theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
@@ -846,6 +798,30 @@ theorem norm_cpow_le_mul_exp (w d : ℂ) :
     _ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) :=
         mul_le_mul_of_nonneg_left (inv_exp_arg_mul_le_exp_pi_mul_abs w d.im)
           (Real.rpow_nonneg (norm_nonneg w) _)
+
+/-- For a nonzero base `w`, the norm of `w ^ b` is bounded uniformly for the exponent `b` in the
+closed ball of radius `R` about `a₀`:
+`‖w ^ b‖ ≤ e^{π (|Im a₀| + R)} (‖w‖^{Re a₀ − R} + ‖w‖^{Re a₀ + R})`. -/
+theorem norm_cpow_le_of_mem_closedBall {w : ℂ} (hw : w ≠ 0) {a₀ b : ℂ} {R : ℝ}
+    (hb : b ∈ Metric.closedBall a₀ R) :
+    ‖w ^ b‖ ≤ Real.exp (Real.pi * (|a₀.im| + R)) * (‖w‖ ^ (a₀.re - R) + ‖w‖ ^ (a₀.re + R)) := by
+  have hb' : ‖b - a₀‖ ≤ R := by
+    have h := Metric.mem_closedBall.mp hb
+    rwa [dist_eq_norm] at h
+  have hre : |b.re - a₀.re| ≤ R := by simpa using (abs_re_le_norm (b - a₀)).trans hb'
+  have him : |b.im| ≤ |a₀.im| + R := by
+    have := (abs_im_le_norm (b - a₀)).trans hb'
+    rw [sub_im] at this
+    linarith [abs_sub_abs_le_abs_sub b.im a₀.im]
+  have hpow : ‖w‖ ^ b.re ≤ ‖w‖ ^ (a₀.re - R) + ‖w‖ ^ (a₀.re + R) :=
+    Real.rpow_le_rpow_add_rpow_of_mem_Icc (norm_pos_iff.mpr hw)
+      ⟨by linarith [abs_le.mp hre], by linarith [abs_le.mp hre]⟩
+  have hexp : Real.exp (Real.pi * |b.im|) ≤ Real.exp (Real.pi * (|a₀.im| + R)) :=
+    Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left him Real.pi_pos.le)
+  calc ‖w ^ b‖ ≤ ‖w‖ ^ b.re * Real.exp (Real.pi * |b.im|) := norm_cpow_le_mul_exp w b
+    _ ≤ (‖w‖ ^ (a₀.re - R) + ‖w‖ ^ (a₀.re + R)) * Real.exp (Real.pi * (|a₀.im| + R)) := by
+        gcongr
+    _ = _ := mul_comm _ _
 
 /-- For `z` in the closed right half-plane (`0 ≤ z.re`) and any `d : ℂ`,
 `‖(1 + z) ^ d‖ ≤ exp (π * |d.im|) * (1 + ‖z‖) ^ max 0 d.re`. -/

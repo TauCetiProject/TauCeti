@@ -24,8 +24,8 @@ of `γ(a, ·)` on the slit plane follow from those of `Γ(a, ·)`.
   `a`, with Mathlib's entire reciprocal of `Γ` (DLMF 8.2.4–8.2.5);
 * `Complex.upperIncompleteGamma_add_lowerIncompleteGamma`: `Γ(a, z) + γ(a, z) = Γ(a)` for
   `a ∉ −ℕ` (DLMF 8.2.3);
-* `Complex.hasDerivAt_lowerIncompleteGamma`: `∂γ(a, z)/∂z = z^{a−1} e^{−z}` on the slit plane for
-  `a ∉ −ℕ` (DLMF 8.8.13);
+* `Complex.hasDerivAt_lowerIncompleteGamma`, `Complex.deriv_lowerIncompleteGamma`:
+  `∂γ(a, z)/∂z = z^{a−1} e^{−z}` on the slit plane for `a ∉ −ℕ` (DLMF 8.8.13);
 * `Complex.lowerIncompleteGamma_ode`: DLMF 8.2.12 for `γ(a, ·)`.
 
 ## Implementation notes
@@ -37,6 +37,7 @@ holomorphic on the slit plane (`Complex.analyticOnNhd_upperIncompleteGamma`,
 `Complex.analyticOnNhd_lowerIncompleteGamma`), the relation extends from the positive axis to the
 slit plane by `AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq`. It then extends to every `a` in
 the form `Q(a, z) = Γ(a)⁻¹ Γ(a, z)` by the identity theorem in `a`, both sides being entire.
+The derivative and the differential equation of `γ(a, ·)` are those of `Γ(a) − Γ(a, ·)`.
 
 ## References
 
@@ -65,7 +66,7 @@ theorem regularizedGammaQ_eq_upperIncompleteGamma_div (a : ℂ) {z : ℂ} (hz : 
     refine ((analyticOnNhd_upperIncompleteGamma b).add
       (analyticOnNhd_lowerIncompleteGamma b)).eqOn_slitPlane_of_ofReal_pos_eq analyticOnNhd_const
         (fun x hx => ?_) hz
-    rw [Pi.add_apply, lowerIncompleteGamma_ofReal_eq_partialGamma hb, add_comm,
+    rw [Pi.add_apply, lowerIncompleteGamma_ofReal_eq_partialGamma b hb, add_comm,
       partialGamma_add_upperIncompleteGamma hb hx.le]
   -- both sides are entire in `a` and agree on `0 < Re a`
   have hz0 : z ≠ 0 := slitPlane_ne_zero hz
@@ -93,17 +94,29 @@ theorem upperIncompleteGamma_add_lowerIncompleteGamma {a z : ℂ} (ha : ∀ n : 
   rw [← h, lowerIncompleteGamma_def]
   ring
 
+/-- Near a point of the slit plane, `γ(a, ·) = Γ(a) − Γ(a, ·)` for `a ∉ −ℕ`. -/
+private theorem lowerIncompleteGamma_eventuallyEq {a : ℂ} (ha : ∀ n : ℕ, a ≠ -n) {z : ℂ}
+    (hz : z ∈ slitPlane) :
+    lowerIncompleteGamma a =ᶠ[𝓝 z] fun w => Gamma a - upperIncompleteGamma a w :=
+  eventually_of_mem (isOpen_slitPlane.mem_nhds hz) fun w hw => by
+    rw [← upperIncompleteGamma_add_lowerIncompleteGamma ha hw]
+    ring
+
 /-- **DLMF 8.8.13** for `γ`: on the slit plane, `γ(a, ·)` has derivative `z^{a−1} e^{−z}` for
 `a ∉ −ℕ`. -/
-theorem hasDerivAt_lowerIncompleteGamma {a : ℂ} (ha : ∀ n : ℕ, a ≠ -n) {z : ℂ}
+theorem hasDerivAt_lowerIncompleteGamma (a : ℂ) (ha : ∀ n : ℕ, a ≠ -n) {z : ℂ}
     (hz : z ∈ slitPlane) :
     HasDerivAt (lowerIncompleteGamma a) (z ^ (a - 1) * cexp (-z)) z := by
-  have h : (fun w => Gamma a - upperIncompleteGamma a w) =ᶠ[𝓝 z] lowerIncompleteGamma a :=
-    eventually_of_mem (isOpen_slitPlane.mem_nhds hz) fun w hw => by
-      rw [← upperIncompleteGamma_add_lowerIncompleteGamma ha hw]
-      ring
   simpa using ((hasDerivAt_upperIncompleteGamma hz a).const_sub (Gamma a)).congr_of_eventuallyEq
-    h.symm
+    (lowerIncompleteGamma_eventuallyEq ha hz)
+
+/-- **DLMF 8.8.13** for `γ` and `deriv`: on the slit plane, `∂γ(a, z)/∂z = z^{a−1} e^{−z}` for
+`a ∉ −ℕ`. -/
+@[simp]
+theorem deriv_lowerIncompleteGamma (a : ℂ) (ha : ∀ n : ℕ, a ≠ -n) {z : ℂ}
+    (hz : z ∈ slitPlane) :
+    deriv (lowerIncompleteGamma a) z = z ^ (a - 1) * cexp (-z) :=
+  (hasDerivAt_lowerIncompleteGamma a ha hz).deriv
 
 /-- **DLMF 8.2.12** for `γ`: on the slit plane, `w = γ(a, ·)` satisfies
 `w'' + (1 + (1 − a)/z) w' = 0`. At `a ∈ −ℕ`, `γ(a, ·)` is Mathlib's junk value `0`. -/
@@ -111,16 +124,14 @@ theorem lowerIncompleteGamma_ode (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     deriv (deriv (lowerIncompleteGamma a)) z +
       (1 + (1 - a) / z) * deriv (lowerIncompleteGamma a) z = 0 := by
   by_cases ha : ∀ n : ℕ, a ≠ -n
-  · have hd : deriv (lowerIncompleteGamma a) =ᶠ[𝓝 z] fun w => w ^ (a - 1) * cexp (-w) :=
-      eventually_of_mem (isOpen_slitPlane.mem_nhds hz) fun w hw =>
-        (hasDerivAt_lowerIncompleteGamma ha hw).deriv
-    rw [hd.deriv_eq, (hasDerivAt_lowerIncompleteGamma ha hz).deriv,
-      (hasDerivAt_cpow_mul_exp_neg (a - 1) hz).deriv]
-    ring
+  · -- `γ(a, ·) = Γ(a) − Γ(a, ·)` near `z`, so this is the negative of 8.2.12 for `Γ(a, ·)`
+    have hd : deriv (lowerIncompleteGamma a) =ᶠ[𝓝 z] fun w => -deriv (upperIncompleteGamma a) w :=
+      (lowerIncompleteGamma_eventuallyEq ha hz).deriv.trans
+        (.of_forall fun _ => deriv_const_sub _)
+    rw [hd.deriv_eq, hd.eq_of_nhds, deriv.fun_neg]
+    linear_combination -upperIncompleteGamma_ode a hz
   · push Not at ha
     obtain ⟨n, rfl⟩ := ha
-    have h0 : lowerIncompleteGamma (-n) = fun _ => 0 :=
-      funext fun w => by simp [lowerIncompleteGamma_def, Gamma_neg_nat_eq_zero]
-    simp [h0]
+    simp
 
 end Complex
