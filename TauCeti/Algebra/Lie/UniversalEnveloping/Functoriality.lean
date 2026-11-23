@@ -212,7 +212,7 @@ theorem mapEquiv_toAlgHom (e : LieEquiv R L M) :
 
 /-- Mapping an element along a Lie homomorphism and then along a Lie equivalence is mapping it
 along their composite. -/
-theorem mapEquiv_map_apply (e : LieEquiv R M N) (g : LieHom R L M)
+theorem _root_.UniversalEnvelopingAlgebra.mapEquiv_map_apply (e : LieEquiv R M N) (g : LieHom R L M)
     (a : _root_.UniversalEnvelopingAlgebra R L) :
     mapEquiv R e (map R g a) = map R (e.toLieHom.comp g) a := by
   have h : (mapEquiv R e).toAlgHom.comp (map R g) = map R (e.toLieHom.comp g) := by
