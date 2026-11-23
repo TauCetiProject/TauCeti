@@ -158,6 +158,16 @@ private theorem isOpenEmbedding_inclusion_sdiff (hCo : IsOpen (C \ range f)) :
     IsOpenEmbedding (inclusion (sdiff_subset : C \ range f ⊆ C)) :=
   IsOpenEmbedding.inclusion sdiff_subset (hCo.preimage continuous_subtypeVal)
 
+omit [ChartedSpace (EuclideanSpace ℝ (Fin (n + 1))) M] [TopologicalSpace N]
+  [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] in
+/-- The inverse of the inclusion `C \ range f → C` sends a point of `C` off `range f` to itself. -/
+private theorem inclusion_sdiff_symm_apply (hCo : IsOpen (C \ range f)) [Nonempty ↥(C \ range f)]
+    {c : C} (hc : (c : M) ∉ range f) :
+    ((isOpenEmbedding_inclusion_sdiff hCo).toOpenPartialHomeomorph _).symm c =
+      ⟨c, c.property, hc⟩ :=
+  (isOpenEmbedding_inclusion_sdiff hCo).toOpenPartialHomeomorph_left_inv
+    (x := (⟨c, c.property, hc⟩ : ↥(C \ range f)))
+
 /-- The chart of a side of a bicollar at a point `x` off the image of `f`: a chart of `M` at `x`,
 followed by a homeomorphism of `ℝⁿ⁺¹` onto the open half-space. -/
 private def interiorChart (hCo : IsOpen (C \ range f)) (x : C) (hx : (x : M) ∉ range f) :
@@ -174,10 +184,7 @@ private theorem interiorChart_spec (hCo : IsOpen (C \ range f)) (x : C)
     x ∈ (interiorChart (n := n) hCo x hx).source ∧ 0 < (interiorChart (n := n) hCo x hx x).val 0
         := by
   have : Nonempty ↥(C \ range f) := ⟨⟨x, x.property, hx⟩⟩
-  have hinc := isOpenEmbedding_inclusion_sdiff hCo
-  have hsymm : (hinc.toOpenPartialHomeomorph _).symm x = ⟨x, x.property, hx⟩ := by
-    have h := hinc.toOpenPartialHomeomorph_left_inv (x := (⟨x, x.property, hx⟩ : ↥(C \ range f)))
-    exact h
+  have hsymm := inclusion_sdiff_symm_apply hCo hx
   refine ⟨?_, ?_⟩
   · simp only [interiorChart, OpenPartialHomeomorph.trans_source,
       OpenPartialHomeomorph.symm_source, IsOpenEmbedding.toOpenPartialHomeomorph_target,
@@ -290,10 +297,7 @@ private theorem interiorChart_apply (hCo : IsOpen (C \ range f)) (x : C) (hx : (
     interiorChart (n := n) hCo x hx c = EuclideanHalfSpace.interiorEmbedding n
       (chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M) c) := by
   have : Nonempty ↥(C \ range f) := ⟨⟨x, x.property, hx⟩⟩
-  have hsymm : ((isOpenEmbedding_inclusion_sdiff hCo).toOpenPartialHomeomorph _).symm c =
-      ⟨c, c.property, hc⟩ :=
-    (isOpenEmbedding_inclusion_sdiff hCo).toOpenPartialHomeomorph_left_inv
-      (x := (⟨c, c.property, hc⟩ : ↥(C \ range f)))
+  have hsymm := inclusion_sdiff_symm_apply hCo hc
   simp only [interiorChart, OpenPartialHomeomorph.coe_trans, Function.comp_apply, hsymm,
     IsOpenEmbedding.toOpenPartialHomeomorph_apply]
 
@@ -310,10 +314,7 @@ private theorem mem_interiorChart_source (hCo : IsOpen (C \ range f)) (x : C)
     rw [← hc'] at hy
     exact c'.property.2 ⟨y, hy⟩
   have : Nonempty ↥(C \ range f) := ⟨⟨x, x.property, hx⟩⟩
-  have hsymm : ((isOpenEmbedding_inclusion_sdiff hCo).toOpenPartialHomeomorph _).symm c =
-      ⟨c, c.property, hcf⟩ :=
-    (isOpenEmbedding_inclusion_sdiff hCo).toOpenPartialHomeomorph_left_inv
-      (x := (⟨c, c.property, hcf⟩ : ↥(C \ range f)))
+  have hsymm := inclusion_sdiff_symm_apply hCo hcf
   have hc' : (∀ y, f y ≠ c) ∧ (c : M) ∈ (chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M)).source :=
     by simpa [interiorChart, hsymm] using hc
   exact ⟨hcf, hc'.2⟩
