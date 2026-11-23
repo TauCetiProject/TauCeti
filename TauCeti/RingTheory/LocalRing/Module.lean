@@ -15,7 +15,7 @@ public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.Unimodular
-public import TauCeti.RingTheory.LocalRing.Basic
+public import TauCeti.RingTheory.LocalRing.Residue
 import Mathlib.Algebra.Module.Shrink
 
 /-!
@@ -193,9 +193,10 @@ theorem isUnimodular_iff_notMem_jacobson_smul_top {M : Type*} [AddCommMonoid M] 
     [Module.Projective R M] {m : M} :
     IsUnimodular R m ↔ m ∉ Ring.jacobson R • (⊤ : Submodule R M) := by
   rw [isUnimodular_iff, ← forall_dual_apply_mem_iff, not_forall]
-  refine ⟨fun ⟨φ, hφ⟩ ↦ ⟨φ, by simp [hφ, IsLocalRing.mem_ringJacobson_iff]⟩, fun ⟨φ, hφ⟩ ↦ ?_⟩
+  refine ⟨fun ⟨φ, hφ⟩ ↦ ⟨φ, by simp [hφ, TauCeti.IsLocalRing.mem_jacobson_iff_not_isUnit]⟩,
+    fun ⟨φ, hφ⟩ ↦ ?_⟩
   -- `φ m` is a unit `u`; rescaling `φ` on the right by `u⁻¹` gives the value `1`.
-  obtain ⟨u, hu⟩ := not_not.mp (IsLocalRing.mem_ringJacobson_iff.not.mp hφ)
+  obtain ⟨u, hu⟩ := not_not.mp (TauCeti.IsLocalRing.mem_jacobson_iff_not_isUnit.not.mp hφ)
   exact ⟨LinearMap.toSpanSingleton R R (↑u⁻¹ : R) ∘ₗ φ, by simp [← hu]⟩
 
 /-- A projective module over a local ring spanned by at most `n` elements is free. -/

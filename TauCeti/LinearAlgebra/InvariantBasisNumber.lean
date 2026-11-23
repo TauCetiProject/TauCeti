@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.Matrix.InvariantBasisNumber
-public import TauCeti.RingTheory.LocalRing.Basic
+public import TauCeti.RingTheory.LocalRing.Residue
 
 /-!
 # The rank condition along ring homomorphisms and for local rings
@@ -46,6 +46,4 @@ theorem RankCondition.of_ringHom {R S : Type*} [Semiring R] [Semiring S] [RankCo
 number: it maps onto the division ring `R ⧸ Ring.jacobson R`. -/
 instance (priority := 100) IsLocalRing.rankCondition {R : Type*} [Ring R] [IsLocalRing R] :
     RankCondition R :=
-  have := IsLocalRing.isMaximal_ringJacobson R
-  letI := Ideal.Quotient.divisionRing (Ring.jacobson R)
   .of_ringHom (Ideal.Quotient.mk (Ring.jacobson R))
