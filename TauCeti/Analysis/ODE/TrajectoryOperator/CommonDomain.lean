@@ -36,16 +36,17 @@ the autonomous operator is derived from that of the family. Taking `D = H¹(AddC
 `H = H⁰(AddCircle T, E)` feeds `CircleSobolev.cylinderOperator`
 (`TauCeti/Analysis/Sobolev/Circle/LinearODE/Cylinder.lean`).
 
-After proving `1`-Lipschitz dependence on `A`, openness of invertibility in `A`, weak-ODE
+After proving `1`-Lipschitz dependence on `A`, openness of invertibility in `A` (in particular
+for the small weighted shifts `∂s ∘ ι + (A - δ C)` of an invertible `∂s ∘ ι + A`), weak-ODE
 characterizations, and mode intertwining over Banach spaces, the second half develops the
 whole-line `L²(ℝ)` theory (`Ω = ⊤`, `p = 2`) for Hilbert `H` and `ι`-symmetric `A`
 (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`): orthogonality, the integration by parts
 `⟪(ι ∘ u)', ι ∘ w⟫ = -⟪ι ∘ u, (ι ∘ w)'⟫`, the Pythagorean identity
 `‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`, injectivity when `ι` and `A` have no common kernel,
 the coercive estimate `‖u‖ ≤ max C 1 ‖(∂s ∘ ι + A) u‖` and closed range under `‖x‖ ≤ C ‖A x‖`,
-invertibility with inverse norm `≤ max ‖A⁻¹‖ 1` for invertible `A` and of the small weighted
-shifts `∂s ∘ ι + (A - δ C)`, failure of closed range when `A.ker ≠ ⊥`, and equivalence of closed
-range / Fredholmness / invertibility with `A.IsInvertible` for index-`0` Fredholm `A`. Adapts
+invertibility with inverse norm `≤ max ‖A⁻¹‖ 1` for invertible `A`, failure of closed range
+when `A.ker ≠ ⊥`, and equivalence of closed range / Fredholmness / invertibility with
+`A.IsInvertible` for index-`0` Fredholm `A`. Adapts
 `TauCeti/Analysis/ODE/TrajectoryOperator.lean`,
 `TauCeti/Analysis/Sobolev/GraphStep/Coordinates.lean`,
 `TauCeti/Analysis/ODE/EnergyEstimate/Cokernel.lean`, and
@@ -289,6 +290,18 @@ theorem eventually_isInvertible_domainTrajectoryOperator {ι A : D →L[ℝ] H}
       (domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι B).IsInvertible := by
   have := ContinuousLinearMap.completeSpace_of_isInvertible hA
   exact ((continuous_domainTrajectoryOperator ι).tendsto A).eventually hA.eventually_nhds
+
+/-- **Small weights.** If `∂s ∘ ι + A` is invertible, then for any `C : D →L[ℝ] H` so is
+`∂s ∘ ι + (A - δ C)` for every `δ` close to `0`. For `C = ι` this is the operator `d/ds + A - δ`
+into which the exponential weight `e^{δ s}` turns `d/ds + A`. -/
+theorem eventually_isInvertible_domainTrajectoryOperator_sub_smul {ι A : D →L[ℝ] H}
+    (hA : (domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι A).IsInvertible)
+    (C : D →L[ℝ] H) :
+    ∀ᶠ δ in 𝓝 (0 : ℝ), (domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι
+      (A - δ • C)).IsInvertible := by
+  have hcont : Continuous fun δ : ℝ ↦ A - δ • C := by fun_prop
+  exact (hcont.tendsto' 0 A (by simp)).eventually
+    (eventually_isInvertible_domainTrajectoryOperator hA)
 
 /-- `domainTrajectoryOperator ι A u = f` iff `(ι ∘ u)' = f - A ∘ u` weakly. -/
 theorem domainTrajectoryOperator_eq_iff_hasWeakLineDerivOn (ι A : D →L[ℝ] H)
@@ -625,18 +638,6 @@ theorem norm_inverse_domainTrajectoryOperator_le (hSymm : ∀ x y : D, ⟪A x, �
     (ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le
       (bijective_domainTrajectoryOperator hSymm hA).2
       (norm_le_max_mul_norm_domainTrajectoryOperator hSymm hA.norm_le_norm_inverse_mul_norm))
-
-/-- **Small weights.** For `ι`-symmetric invertible `A` and any `C : D →L[ℝ] H`, the operator
-`∂s ∘ ι + (A - δ C)` is invertible on `L²(ℝ)` for every `δ` close to `0`. For `C = ι` this is the
-operator `d/ds + A - δ` into which the exponential weight `e^{δ s}` turns `d/ds + A`. -/
-theorem eventually_isInvertible_domainTrajectoryOperator_sub_smul
-    (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ) (hA : A.IsInvertible) (C : D →L[ℝ] H) :
-    ∀ᶠ δ in 𝓝 (0 : ℝ), (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι
-      (A - δ • C)).IsInvertible := by
-  have hcont : Continuous fun δ : ℝ ↦ A - δ • C := by fun_prop
-  exact (hcont.tendsto' 0 A (by simp)).eventually
-    (eventually_isInvertible_domainTrajectoryOperator
-      (isInvertible_domainTrajectoryOperator hSymm hA))
 
 /-- On `L²(ℝ)`, when `A` is `ι`-symmetric and invertible, `∂s ∘ ι + A` is Fredholm. -/
 theorem isFredholm_domainTrajectoryOperator (hSymm : ∀ x y : D, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ)
