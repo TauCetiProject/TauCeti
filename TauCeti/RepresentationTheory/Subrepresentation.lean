@@ -100,7 +100,9 @@ along a monoid homomorphism whose image spans the algebra keeps the invariant su
 * `Subrepresentation.subtype_surjective_iff`
 * `Subrepresentation.isIntertwiningMap_dualRestrict`
 * `Subrepresentation.dualAnnihilator`
+* `Subrepresentation.mem_dualAnnihilator`
 * `Subrepresentation.dualCoannihilator`
+* `Subrepresentation.mem_dualCoannihilator`
 * `Subrepresentation.coe_toRepresentation_asAlgebraHom_apply`
 * `Subrepresentation.asModuleEquivAsSubmodule`
 * `Subrepresentation.intertwiningMapEquivLinearMapAsSubmodule`
@@ -285,6 +287,12 @@ theorem toSubmodule_dualAnnihilator (S : Subrepresentation τ) :
     S.dualAnnihilator.toSubmodule = S.toSubmodule.dualAnnihilator :=
   (rfl)
 
+/-- A linear form lies in the annihilator of a subrepresentation exactly when it vanishes on it. -/
+@[simp]
+theorem mem_dualAnnihilator {S : Subrepresentation τ} {φ : Module.Dual k V} :
+    φ ∈ S.dualAnnihilator ↔ ∀ v ∈ S, φ v = 0 :=
+  Submodule.mem_dualAnnihilator φ
+
 /-- The coannihilator of a subrepresentation of the dual `τ.dual`, the vectors on which all its
 linear forms vanish, as a subrepresentation of `τ`. -/
 def dualCoannihilator (S : Subrepresentation τ.dual) : Subrepresentation τ where
@@ -299,6 +307,13 @@ def dualCoannihilator (S : Subrepresentation τ.dual) : Subrepresentation τ whe
 theorem toSubmodule_dualCoannihilator (S : Subrepresentation τ.dual) :
     S.dualCoannihilator.toSubmodule = S.toSubmodule.dualCoannihilator :=
   (rfl)
+
+/-- A vector lies in the coannihilator of a subrepresentation of the dual exactly when all its
+linear forms vanish on it. -/
+@[simp]
+theorem mem_dualCoannihilator {S : Subrepresentation τ.dual} {v : V} :
+    v ∈ S.dualCoannihilator ↔ ∀ φ ∈ S, φ v = 0 :=
+  Submodule.mem_dualCoannihilator v
 
 end Annihilator
 
