@@ -299,28 +299,28 @@ theorem localCyclotomicCharacter_artinMap_padic (u : ℤ_[p]ˣ)
 
 private theorem localCyclotomicCharacter_artinMap_mul_normUnits (F : Type) [Field F]
     [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] [Algebra ℚ_[p] F]
-    [FiniteDimensional ℚ_[p] F] [ValuativeExtension ℚ_[p] F] (x : Fˣ) {n : ℕ}
-    (hval : (Algebra.normUnits ℚ_[p] x : ℚ_[p]).valuation = n)
+    [FiniteDimensional ℚ_[p] F] [ValuativeExtension ℚ_[p] F] (x : Fˣ)
     (σ : Field.absoluteGaloisGroup F)
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization F) = artinMap F x) :
     Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom (localCyclotomicCharacter p F σ) *
         Algebra.normUnits ℚ_[p] x =
-      padicPrimeUnit p ^ n := by
+      padicPrimeUnit p ^ (Algebra.normUnits ℚ_[p] x : ℚ_[p]).valuation := by
   have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
   obtain ⟨u, hu⟩ := _root_.Padic.exists_eq_zpow_valuation_mul
     (Units.ne_zero (Algebra.normUnits ℚ_[p] x))
-  have hu' : (Algebra.normUnits ℚ_[p] x : ℚ_[p]) = (p : ℚ_[p]) ^ (n : ℤ) * u := by
-    rwa [hval] at hu
   have hχ : localCyclotomicCharacter p F σ = u⁻¹ := by
     rw [← abelianizedLocalCyclotomicCharacter_mk, hσ,
       abelianizedLocalCyclotomicCharacter_artinMap_norm ℚ_[p] p]
-    exact abelianizedLocalCyclotomicCharacter_artinMap_padic p hu'
+    exact abelianizedLocalCyclotomicCharacter_artinMap_padic p hu
   have hnorm : Algebra.normUnits ℚ_[p] x =
-      padicPrimeUnit p ^ n * Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom u := by
-    apply Units.ext
-    simpa [zpow_natCast] using hu'
-  rw [hχ, hnorm, map_inv]
-  simp
+      padicPrimeUnit p ^ (Algebra.normUnits ℚ_[p] x : ℚ_[p]).valuation *
+        Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom u := by
+    refine Units.ext ?_
+    simp only [Units.val_mul, Units.val_zpow_eq_zpow_val, coe_padicPrimeUnit, Units.coe_map,
+      RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, PadicInt.algebraMap_apply]
+    exact hu
+  conv_lhs => rw [hχ, hnorm, map_inv]
+  rw [mul_left_comm, inv_mul_cancel, mul_one]
 
 /-- **The cyclotomic normalization of the local Artin map of a finite extension of `ℚ_p`.** Let
 `F` be a nonarchimedean local field with any finite `ℚ_p`-algebra structure. If `σ ∈ G_F`
@@ -346,15 +346,16 @@ theorem localCyclotomicCharacter_artinMap_unit (F : Type) [Field F] [ValuativeRe
   -- The valuation of `F` restricts to the `p`-adic valuation, whatever the `ℚ_p`-algebra structure.
   have : ValuativeExtension ℚ_[p] F := ValuativeExtension.of_isIntegral ℚ_[p] F
   -- The norm of `u` is a unit of `ℤ_p`.
-  have hv : (Algebra.normUnits ℚ_[p] u : ℚ_[p]).valuation = (0 : ℕ) := by
+  have hv : (Algebra.normUnits ℚ_[p] u : ℚ_[p]).valuation = 0 := by
     rw [← _root_.Padic.toAdd_normalizedValuation_eq_valuation,
       normalizedValuation_norm_eq_one_of_eq_one u ((normalizedValuation_eq_one_iff u).2 hu),
-      toAdd_one, Nat.cast_zero]
-  have hmul := localCyclotomicCharacter_artinMap_mul_normUnits p F u hv σ hσ
-  rw [pow_zero] at hmul
-  exact eq_inv_of_mul_eq_one_left (by
-    ext
-    simpa [Algebra.coe_normUnits] using Units.ext_iff.mp hmul)
+      toAdd_one]
+  have hmul := localCyclotomicCharacter_artinMap_mul_normUnits p F u σ hσ
+  rw [hv, zpow_zero] at hmul
+  refine eq_inv_of_mul_eq_one_left (Units.ext ?_)
+  have hmul' := congrArg Units.val hmul
+  simp only [Units.val_mul, Units.coe_map, Algebra.coe_normUnits, Units.val_one] at hmul' ⊢
+  exact hmul'
 
 /-! ### Finite-level Artin symbols on roots of unity of `p`-power order -/
 
@@ -505,7 +506,8 @@ theorem localCyclotomicCharacter_artinMap_uniformizer (ϖ : Kˣ)
     rw [← _root_.Padic.toAdd_normalizedValuation_eq_valuation,
       toAdd_normalizedValuation_norm, (isUniformizer_def ϖ).mp hϖ]
     simp
-  exact localCyclotomicCharacter_artinMap_mul_normUnits p K ϖ hval σ hσ
+  rw [← zpow_natCast, ← hval]
+  exact localCyclotomicCharacter_artinMap_mul_normUnits p K ϖ σ hσ
 
 /-- **The image of the cyclotomic character, from unit norms and a uniformizer.** Let `K/ℚ_p` be
 finite with inertia degree `f`, let `ϖ` be a uniformizer of `K`, and let `w ∈ ℤ_pˣ` be the unit

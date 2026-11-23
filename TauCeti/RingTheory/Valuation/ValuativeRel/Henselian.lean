@@ -19,8 +19,9 @@ import TauCeti.RingTheory.Valuation.ValuativeRel.Discrete
 Let `K` be a nontrivial Henselian valued field (`[HenselianRing 𝒪ᵥ[K] 𝓂ᵥ[K]] [IsNontrivial K]`,
 where `𝒪ᵥ[K] := Valuation.integer (valuation K)` and `𝓂ᵥ[K] := IsLocalRing.maximalIdeal 𝒪ᵥ[K]`)
 and let `R` be a ring carrying a discrete archimedean valuative relation
-(`[ValuativeRel.IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, in particular whenever
-`ValuativeRel.IsRankLeOne R` holds). Every ring homomorphism `f : K →+* R` sends `𝒪ᵥ[K]` into the
+(`[ValuativeRel.IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, where
+`MulArchimedean (ValueGroupWithZero R)` holds in particular whenever `ValuativeRel.IsRankLeOne R`
+holds). Every ring homomorphism `f : K →+* R` sends `𝒪ᵥ[K]` into the
 subring of elements of valuation at most 1, `(valuation R).integer`: for any `m ∈ 𝓂ᵥ[K]`, Hensel's
 lemma (`TauCeti.HenselianRing.exists_le_pow_eq_one_add`) extracts `k`-th roots of `1 + m` in
 `𝒪ᵥ[K]` for arbitrarily large `k : ℕ`, so divisibility rigidity in `R`
@@ -48,9 +49,9 @@ nonarchimedean local fields `K` and `R`, `IsNonarchimedeanLocalField` and
 * `RingHom.isEquiv_comap_valuation_iff_isNontrivial`: when `ValueGroupWithZero K` is also
   archimedean, `(valuation R).comap f` is equivalent to `valuation K` if and only if it is
   nontrivial.
-* `ValuativeExtension.of_isIntegral`: every integral algebra over a nontrivial archimedean
-  Henselian valued field `K` carrying a nontrivial discrete archimedean valuative relation is a
-  `ValuativeExtension` of `K`.
+* `ValuativeExtension.of_isIntegral`: if `K` is a nontrivial archimedean Henselian valued field and
+  `R` is an integral `K`-algebra carrying a nontrivial discrete archimedean valuative relation, then
+  `R` is a `ValuativeExtension` of `K`.
 
 ## Implementation notes
 
@@ -88,8 +89,8 @@ theorem valuation_map_le_one_of_valuation_lt_one (f : K →+* R) {m : K}
     valuation R (f m) ≤ 1 := by
   have h1m : valuation K (1 + m) = 1 := (valuation K).map_one_add_of_lt hm
   have h1m0 : 1 + m ≠ 0 := by rintro h; simp [h] at h1m
-  have hf1m0 : valuation R (f (1 + m)) ≠ 0 :=
-    (((IsUnit.mk0 (1 + m) h1m0).map f).map (valuation R)).ne_zero
+  have hf1m0 : valuation R (f (1 + m)) ≠ 0 := by
+    simpa only [Valuation.comap_apply] using ((valuation R).comap f).ne_zero_iff.2 h1m0
   have hm' : (⟨m, hm.le⟩ : 𝒪ᵥ[K]) ∈ 𝓂ᵥ[K] :=
     (IsLocalRing.mem_maximalIdeal _).2 (Valuation.Integer.not_isUnit_iff_valuation_lt_one.2 hm)
   have hf1m : valuation R (f (1 + m)) = 1 :=
@@ -113,7 +114,8 @@ theorem valuation_map_le_one_of_valuation_le_one [IsNontrivial K] (f : K →+* R
   obtain ⟨γ, hγ0, hγ1⟩ := IsNontrivial.exists_lt_one (R := K)
   obtain ⟨m, rfl⟩ := valuation_surjective γ
   have hm0 : m ≠ 0 := by rintro rfl; simp at hγ0
-  have hfm0 : valuation R (f m) ≠ 0 := (((IsUnit.mk0 m hm0).map f).map (valuation R)).ne_zero
+  have hfm0 : valuation R (f m) ≠ 0 := by
+    simpa only [Valuation.comap_apply] using ((valuation R).comap f).ne_zero_iff.2 hm0
   obtain ⟨n, hn⟩ := MulArchimedean.arch (valuation R (f m))⁻¹ hgt
   have hlt : valuation K (x ^ (n + 1) * m) < 1 := by
     rw [map_mul, map_pow]
@@ -142,7 +144,9 @@ theorem valuation_map_eq_one_of_valuation_eq_one [IsNontrivial K] (f : K →+* R
   have h1 := f.valuation_map_le_one_of_valuation_le_one hx.le
   have h2 := f.valuation_map_le_one_of_valuation_le_one hx_inv
   have hmul : valuation R (f x) * valuation R (f x⁻¹) = 1 := by
-    rw [← map_mul, ← map_mul, mul_inv_cancel₀ hx0, map_one, map_one]
+    have h := mul_inv_cancel₀ (((valuation R).comap f).ne_zero_iff.2 hx0)
+    rw [← map_inv₀ ((valuation R).comap f) x] at h
+    simpa only [Valuation.comap_apply] using h
   exact le_antisymm h1 (hmul ▸ mul_le_of_le_one_right zero_le h2)
 
 /-- **Dichotomy for discrete archimedean valuations pulled back to a nontrivial archimedean
@@ -174,11 +178,12 @@ end RingHom
 end RingHom
 
 /-- **Automatic valuation compatibility along integral extensions of a Henselian rank-one field.**
-Every integral algebra `R` over a nontrivial archimedean Henselian valued field `K` carrying a
-nontrivial discrete archimedean valuative relation is a `ValuativeExtension` of `K`. Over a field
-`K`, `Algebra.IsAlgebraic K R` and `Module.Finite K R` synthesize `Algebra.IsIntegral K R`; when
-both `K` and `R` are nonarchimedean local fields, `IsNonarchimedeanLocalField` together with
-`TauCeti.henselianLocalRing_integer` discharges the remaining valuation hypotheses. -/
+If `K` is a nontrivial archimedean Henselian valued field and `R` is an integral `K`-algebra
+carrying a nontrivial discrete archimedean valuative relation, then `R` is a `ValuativeExtension`
+of `K`. Over a field `K`, `Algebra.IsAlgebraic K R` and `Module.Finite K R` synthesize
+`Algebra.IsIntegral K R`; when both `K` and `R` are nonarchimedean local fields,
+`IsNonarchimedeanLocalField` together with `TauCeti.henselianLocalRing_integer` discharges the
+remaining valuation hypotheses. -/
 theorem ValuativeExtension.of_isIntegral (K R : Type*) [Field K] [ValuativeRel K]
     [HenselianRing 𝒪ᵥ[K] 𝓂ᵥ[K]] [IsNontrivial K] [MulArchimedean (ValueGroupWithZero K)]
     [Ring R] [ValuativeRel R] [IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]

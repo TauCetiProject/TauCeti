@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
-import Mathlib.GroupTheory.ArchimedeanDensely
+import TauCeti.Algebra.Order.GroupWithZero.Pow
 
 /-!
 # Divisibility rigidity in discrete archimedean value groups
@@ -14,8 +14,9 @@ import Mathlib.GroupTheory.ArchimedeanDensely
 In a discrete valuative relation (`ValuativeRel.IsDiscrete`), every value strictly below `1` lies
 at or below `ValuativeRel.uniformizer R < 1`. When the value group is also archimedean
 (`MulArchimedean (ValueGroupWithZero R)`, in particular when `ValuativeRel.IsRankLeOne R` holds),
-high powers of `uniformizer R` eventually drop below any given nonzero value. Consequently no
-nonzero value other than `1` can be a `k`-th power for arbitrarily large `k : ℕ`.
+high powers of `uniformizer R` eventually drop below any given nonzero value. Consequently, by
+`TauCeti.eq_one_of_forall_exists_le_pow_eq`, no nonzero value other than `1` can be a `k`-th power
+for arbitrarily large `k : ℕ`.
 
 In valuation theory this rules out nontrivial discrete archimedean valuations on elements admitting
 roots of arbitrarily large degree: over a Henselian valued field `K`, every element `1 + m` with
@@ -24,9 +25,6 @@ large primes `k`.
 
 ## Main results
 
-* `TauCeti.eq_one_of_forall_exists_le_pow_eq`: in a `MulArchimedean`
-  `LinearOrderedCommGroupWithZero Γ` admitting a largest element strictly below `1`, a nonzero
-  element that is a `k`-th power for arbitrarily large `k : ℕ` equals `1`.
 * `ValuativeRel.ValueGroupWithZero.eq_one_of_forall_exists_le_pow_eq`: in `ValueGroupWithZero R`
   with `[IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, a nonzero element that is a
   `k`-th power for arbitrarily large `k : ℕ` equals `1`.
@@ -35,45 +33,6 @@ large primes `k`.
 -/
 
 public section
-
-namespace TauCeti
-
-/-- A nonzero element of a discrete archimedean ordered group with zero that admits `k`-th roots
-for arbitrarily large `k : ℕ` is at least `1`. -/
-private theorem one_le_of_forall_exists_le_pow_eq {Γ : Type*}
-    [LinearOrderedCommGroupWithZero Γ] [MulArchimedean Γ]
-    (hu : ∃ u : Γ, u < 1 ∧ ∀ δ < 1, δ ≤ u) {γ : Γ} (hγ : γ ≠ 0)
-    (h : ∀ n : ℕ, ∃ k ≥ n, ∃ δ : Γ, δ ^ k = γ) :
-    1 ≤ γ := by
-  obtain ⟨u, hu1, hle⟩ := hu
-  by_contra! hlt
-  obtain ⟨n, hn⟩ := exists_pow_lt₀ hu1 (Units.mk0 γ hγ)
-  simp only [Units.val_mk0] at hn
-  obtain ⟨k, hkn, δ, hδ⟩ := h n
-  have hδ1 : δ < 1 := by
-    by_contra! h1
-    exact hlt.not_ge ((one_le_pow₀ h1).trans_eq hδ)
-  have hpow : δ ^ k ≤ u ^ n :=
-    (pow_le_pow_left' (hle δ hδ1) k).trans (pow_le_pow_of_le_one zero_le hu1.le hkn)
-  exact hn.not_ge (hδ ▸ hpow)
-
-/-- **No nontrivial arbitrarily divisible values in a discrete archimedean ordered group with
-zero.** In a `MulArchimedean` `LinearOrderedCommGroupWithZero Γ` admitting a largest element
-strictly below `1`, if a nonzero `γ : Γ` is a `k`-th power for arbitrarily large `k : ℕ`, then
-`γ = 1`. -/
-theorem eq_one_of_forall_exists_le_pow_eq {Γ : Type*}
-    [LinearOrderedCommGroupWithZero Γ] [MulArchimedean Γ]
-    (hu : ∃ u : Γ, u < 1 ∧ ∀ δ < 1, δ ≤ u) {γ : Γ} (hγ : γ ≠ 0)
-    (h : ∀ n : ℕ, ∃ k ≥ n, ∃ δ : Γ, δ ^ k = γ) :
-    γ = 1 := by
-  have hge := one_le_of_forall_exists_le_pow_eq hu hγ h
-  have hge_inv : 1 ≤ γ⁻¹ :=
-    one_le_of_forall_exists_le_pow_eq hu (inv_ne_zero hγ) fun n ↦ by
-      obtain ⟨k, hkn, δ, hδ⟩ := h n
-      exact ⟨k, hkn, δ⁻¹, by rw [inv_pow, hδ]⟩
-  exact le_antisymm ((one_le_inv₀ (pos_iff_ne_zero.mpr hγ)).mp hge_inv) hge
-
-end TauCeti
 
 namespace ValuativeRel
 
