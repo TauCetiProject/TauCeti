@@ -15,21 +15,20 @@ import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.Topology.ContinuousMap.StarOrdered
 import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
-import TauCeti.Analysis.Normed.Algebra.Character.Unitization
+import TauCeti.Analysis.CStarAlgebra.GelfandDuality
 
 /-!
-# Positive maps with commutative domain or range are completely positive
+# Positive maps with commutative unital domain or commutative range are completely positive
 
-A positive linear map `φ : A → B` between C⋆-algebras is completely positive as soon as `A` or
-`B` is commutative.
+A positive linear map `φ : A → B` between C⋆-algebras is completely positive as soon as `A` is
+commutative and unital, or `B` is commutative.
 
-*Commutative range* (`B` commutative, possibly nonunital). Positivity in the commutative unital
-C⋆-algebra `B⁺¹` is tested by characters, as for every commutative C⋆-algebra
-(`TauCeti.nonneg_iff_forall_characterSpace_nonneg`).
-For a character `χ` of `B⁺¹`, the quadratic form `∑ᵢⱼ zᵢ⋆ φ(aᵢⱼ) zⱼ` of `[φ(aᵢⱼ)]` maps to the
-value `ω(∑ᵢⱼ ξᵢ⋆ ξⱼ aᵢⱼ)` of the positive functional `ω = χ ∘ φ` at a scalar compression of
-`[aᵢⱼ]`, with `ξᵢ = χ(zᵢ)`, and scalar compressions of positive matrices are positive
-(`CStarMatrix.sum_star_mul_smul_nonneg`).
+*Commutative range* (`B` commutative, possibly nonunital). Positivity in `B` is tested by
+characters (`TauCeti.nonneg_iff_forall_characterSpace_nonneg`, in
+`TauCeti.Analysis.CStarAlgebra.GelfandDuality`). For a character `χ` of `B`, the quadratic form
+`∑ᵢⱼ zᵢ⋆ φ(aᵢⱼ) zⱼ` of `[φ(aᵢⱼ)]` maps to the value `ω(∑ᵢⱼ ξᵢ⋆ ξⱼ aᵢⱼ)` of the positive
+functional `ω = χ ∘ φ` at a scalar compression of `[aᵢⱼ]`, with `ξᵢ = χ(zᵢ)`, and scalar
+compressions of positive matrices are positive (`CStarMatrix.sum_star_mul_smul_nonneg`).
 
 *Commutative domain* (`A` commutative and unital; Stinespring 1955, Theorem 4). Through the
 Gelfand transform, `A = C(X)` for the compact character space `X`. Given a positive matrix
@@ -41,12 +40,6 @@ sum of Kronecker products of positive scalar matrices with positive elements, wh
 
 ## Main declarations
 
-* `CStarMatrix.ofMatrix_smul_nonneg`: `[pᵢⱼ b]` is positive for a positive scalar matrix `[pᵢⱼ]`
-  and a positive `b`.
-* `CStarMatrix.sum_star_mul_smul_nonneg`: `∑ᵢⱼ ξᵢ⋆ ξⱼ aᵢⱼ` is positive for a positive matrix
-  `[aᵢⱼ]` and scalars `ξᵢ`.
-* `TauCeti.nonneg_iff_forall_characterSpace_nonneg`: an element of a commutative C⋆-algebra is
-  positive exactly when every character is nonnegative on it.
 * `TauCeti.isNPositive_of_commCodomain` and
   `PositiveLinearMap.toCompletelyPositiveMapOfCommCodomain`: a positive map into a commutative
   C⋆-algebra is completely positive.
@@ -66,61 +59,8 @@ public section
 open Filter Topology WeakDual
 open scoped CStarAlgebra ComplexOrder
 
-namespace CStarMatrix
-
-variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- The Kronecker product `[pᵢⱼ b]` of a positive scalar matrix `[pᵢⱼ]` and a positive element `b`
-is a positive matrix. -/
-theorem ofMatrix_smul_nonneg {P : CStarMatrix n n ℂ} (hP : 0 ≤ P) {b : A} (hb : 0 ≤ b) :
-    0 ≤ ofMatrix (Matrix.of fun i j => P i j • b) := by
-  obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hP
-  refine nonneg_iff_forall_sum_nonneg.mpr fun w => ?_
-  have h : ∑ i, ∑ j, star (w i) * ofMatrix (Matrix.of fun i j => (star R * R) i j • b) i j * w j =
-      ∑ k, star (∑ i, R k i • w i) * b * ∑ j, R k j • w j := by
-    simp only [ofMatrix_apply, Matrix.of_apply, mul_apply, star_apply, Finset.sum_smul,
-      Finset.mul_sum, Finset.sum_mul, Finset.smul_sum, star_sum, star_smul, smul_mul_assoc,
-      mul_smul_comm, smul_smul, mul_assoc]
-    refine (Finset.sum_congr rfl fun _ _ => Finset.sum_comm).trans <| Finset.sum_comm.trans <|
-      Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans <| Finset.sum_congr rfl fun _ _ =>
-        Finset.sum_congr rfl fun _ _ => by rw [mul_comm]
-  rw [h]
-  exact Finset.sum_nonneg fun k _ => star_left_conjugate_nonneg hb _
-
-/-- The scalar compression `∑ᵢⱼ ξᵢ⋆ ξⱼ aᵢⱼ` of a positive matrix `[aᵢⱼ]` is positive. -/
-theorem sum_star_mul_smul_nonneg {M : CStarMatrix n n A} (hM : 0 ≤ M) (ξ : n → ℂ) :
-    0 ≤ ∑ i, ∑ j, (star (ξ i) * ξ j) • M i j := by
-  obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
-  have h : ∑ i, ∑ j, (star (ξ i) * ξ j) • (star R * R) i j =
-      ∑ k, star (∑ i, ξ i • R k i) * ∑ j, ξ j • R k j := by
-    simp only [mul_apply, star_apply, Finset.smul_sum, Finset.mul_sum, Finset.sum_mul, star_sum,
-      star_smul, smul_mul_assoc, mul_smul_comm, smul_smul]
-    refine (Finset.sum_congr rfl fun _ _ => Finset.sum_comm).trans <| Finset.sum_comm.trans <|
-      Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans <| Finset.sum_congr rfl fun _ _ =>
-        Finset.sum_congr rfl fun _ _ => by rw [mul_comm (ξ _)]
-  rw [h]
-  exact Finset.sum_nonneg fun k _ => star_mul_self_nonneg _
-
-end CStarMatrix
 
 namespace TauCeti
-
-/-- An element of a commutative unital C⋆-algebra is positive exactly when every character is
-nonnegative on it: this is positivity of its Gelfand transform. -/
-private theorem nonneg_iff_forall_characterSpace_nonneg_of_unital {C : Type*} [CommCStarAlgebra C]
-    [PartialOrder C] [StarOrderedRing C] {x : C} : 0 ≤ x ↔ ∀ χ : characterSpace ℂ C, 0 ≤ χ x := by
-  rw [← map_le_map_iff (gelfandStarTransform C), map_zero, ContinuousMap.le_def]
-  simp
-
-/-- An element of a commutative C⋆-algebra is positive exactly when every character is
-nonnegative on it. -/
-theorem nonneg_iff_forall_characterSpace_nonneg {C : Type*} [NonUnitalCommCStarAlgebra C]
-    [PartialOrder C] [StarOrderedRing C] {x : C} : 0 ≤ x ↔ ∀ χ : characterSpace ℂ C, 0 ≤ χ x := by
-  rw [← Unitization.inr_nonneg_iff ℂ, nonneg_iff_forall_characterSpace_nonneg_of_unital]
-  refine ⟨fun h χ => by simpa using h (CharacterSpace.unitizationExtend χ), fun h χ => ?_⟩
-  by_cases hχ : χ = Unitization.augmentation ℂ C
-  · simp [hχ]
-  · simpa using h (CharacterSpace.unitizationRestrict ⟨χ, hχ⟩)
 
 section CommCodomain
 
@@ -131,18 +71,16 @@ theorem isNPositive_of_commCodomain [NonUnitalCommCStarAlgebra B] [PartialOrder 
     [StarOrderedRing B] {φ : A →ₗ[ℂ] B} (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) (n : ℕ) :
     IsNPositive n φ := by
   refine isNPositive_iff.mpr fun M hM => CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun z => ?_
-  rw [← Unitization.inr_nonneg_iff ℂ, nonneg_iff_forall_characterSpace_nonneg_of_unital]
+  rw [nonneg_iff_forall_characterSpace_nonneg]
   intro χ
-  set ξ : Fin n → ℂ := fun i => χ (z i : B⁺¹)
-  have h := hφ _ (CStarMatrix.sum_star_mul_smul_nonneg hM ξ)
-  obtain ⟨y, hy⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp
-    ((Unitization.inr_nonneg_iff ℂ).mpr h)
-  have hχ : 0 ≤ χ (φ (∑ i, ∑ j, (star (ξ i) * ξ j) • M i j) : B⁺¹) := by
-    rw [hy, map_mul, map_star]
-    exact star_mul_self_nonneg _
+  set ξ : Fin n → ℂ := fun i => χ (z i)
+  have hχ := nonneg_iff_forall_characterSpace_nonneg.mp
+    (hφ _ (CStarMatrix.sum_star_mul_smul_nonneg hM ξ)) χ
+  -- Characters of `B` commute with `star`, through their extensions to `B⁺¹`.
+  have hstar (b : B) : χ (star b) = star (χ b) := by
+    simpa using map_star (CharacterSpace.unitizationExtend χ).val (b : B⁺¹)
   convert hχ using 1
-  simp only [← Unitization.inrNonUnitalStarAlgHom_apply ℂ, map_sum, map_mul, map_star, map_smul,
-    smul_eq_mul, CStarMatrix.map_apply, ξ]
+  simp only [map_sum, map_mul, hstar, map_smul, smul_eq_mul, CStarMatrix.map_apply, ξ]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   ring
 
@@ -151,13 +89,6 @@ end CommCodomain
 section CommDomain
 
 variable {A B : Type*} [CommCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- Evaluating the inverse Gelfand transform of `f` at a character `y` gives `f y`. -/
-private theorem characterSpace_apply_gelfandStarTransform_symm
-    (f : C(characterSpace ℂ A, ℂ)) (y : characterSpace ℂ A) :
-    y ((gelfandStarTransform A).symm f) = f y := by
-  simpa using congr($((gelfandStarTransform A).apply_symm_apply f) y)
 
 /-- A matrix over a commutative unital C⋆-algebra is approximated entrywise, to within `ε`, by a
 matrix `[∑ₖ aᵢⱼ(xₖ) gₖ]` for finitely many characters `xₖ` and positive `gₖ`. -/
@@ -182,8 +113,8 @@ private theorem exists_sum_smul_approx {n : ℕ} (M : CStarMatrix (Fin n) (Fin n
   let g : t → A := fun k => (gelfandStarTransform A).symm ((ρ k).realToRCLike ℂ)
   have hg (k : t) (y : characterSpace ℂ A) : y (g k) = ρ k y := by
     simp only [g]
-    rw [characterSpace_apply_gelfandStarTransform_symm, ContinuousMap.realToRCLike_apply]
-    rfl
+    rw [characterSpace_apply_gelfandStarTransform_symm, ContinuousMap.realToRCLike_apply,
+      RCLike.ofReal_eq_complex_ofReal]
   refine ⟨t, g, fun k => ?_, fun i j => ?_⟩
   · rw [← map_le_map_iff (gelfandStarTransform A), map_zero, ContinuousMap.le_def]
     intro y
