@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.StableMaps.ContractedVertex
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Contracted.Vertex
 
 /-!
 # Stable maps

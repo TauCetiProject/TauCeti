@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.DualGraph
-public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Contracted
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Contracted.Basic
 
 /-!
 # Vertices of the dual graph contracted by a prestable map
