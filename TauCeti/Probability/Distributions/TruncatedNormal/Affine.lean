@@ -144,4 +144,84 @@ theorem affine_truncatedNormalMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Mea
   rw [← gaussianReal_map_const_add_const_mul]
   exact hX.affine_cond a hb
 
+/-- A positive affine function of a Gaussian variable truncated to a closed interval preserves
+both closed endpoints. -/
+theorem affine_truncatedNormalMeasure_Icc_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Icc l r)) P)
+    (a : ℝ) {b : ℝ} (hb : 0 < b) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Icc (a + b * l) (a + b * r))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Icc_pos m v a hb l r)).fun_comp hX
+
+/-- A positive affine function of a Gaussian variable truncated to an open interval preserves
+both open endpoints. -/
+theorem affine_truncatedNormalMeasure_Ioo_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioo l r)) P)
+    (a : ℝ) {b : ℝ} (hb : 0 < b) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ioo (a + b * l) (a + b * r))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioo_pos m v a hb l r)).fun_comp hX
+
+/-- A positive affine function of a Gaussian variable truncated to a lower-closed,
+upper-open interval preserves both endpoint conventions. -/
+theorem affine_truncatedNormalMeasure_Ico_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ico l r)) P)
+    (a : ℝ) {b : ℝ} (hb : 0 < b) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ico (a + b * l) (a + b * r))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ico_pos m v a hb l r)).fun_comp hX
+
+/-- A positive affine function of a Gaussian variable truncated to a lower-open,
+upper-closed interval preserves both endpoint conventions. -/
+theorem affine_truncatedNormalMeasure_Ioc_pos {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioc l r)) P)
+    (a : ℝ) {b : ℝ} (hb : 0 < b) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ioc (a + b * l) (a + b * r))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioc_pos m v a hb l r)).fun_comp hX
+
+/-- A negative affine function of a Gaussian variable truncated to a closed interval reverses
+the endpoints. -/
+theorem affine_truncatedNormalMeasure_Icc_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Icc l r)) P)
+    (a : ℝ) {b : ℝ} (hb : b < 0) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Icc (a + b * r) (a + b * l))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Icc_neg m v a hb l r)).fun_comp hX
+
+/-- A negative affine function of a Gaussian variable truncated to an open interval reverses
+the endpoints. -/
+theorem affine_truncatedNormalMeasure_Ioo_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioo l r)) P)
+    (a : ℝ) {b : ℝ} (hb : b < 0) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ioo (a + b * r) (a + b * l))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioo_neg m v a hb l r)).fun_comp hX
+
+/-- A negative affine function of a Gaussian variable truncated to a lower-closed,
+upper-open interval reverses the endpoints and exchanges their conventions. -/
+theorem affine_truncatedNormalMeasure_Ico_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ico l r)) P)
+    (a : ℝ) {b : ℝ} (hb : b < 0) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ioc (a + b * r) (a + b * l))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ico_neg m v a hb l r)).fun_comp hX
+
+/-- A negative affine function of a Gaussian variable truncated to a lower-open,
+upper-closed interval reverses the endpoints and exchanges their conventions. -/
+theorem affine_truncatedNormalMeasure_Ioc_neg {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} (hX : HasLaw X (truncatedNormalMeasure m v (Ioc l r)) P)
+    (a : ℝ) {b : ℝ} (hb : b < 0) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
+        (Ico (a + b * r) (a + b * l))) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_truncatedNormalMeasure_Ioc_neg m v a hb l r)).fun_comp hX
+
 end ProbabilityTheory.HasLaw
