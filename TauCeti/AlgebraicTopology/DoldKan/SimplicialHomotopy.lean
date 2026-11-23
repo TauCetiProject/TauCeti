@@ -36,8 +36,11 @@ along the full faithfulness of `N` to a simplicial morphism `(cylinder C).obj X 
   `nonempty_homotopy_iff_normalizedMooreComplex`: Dold–Puppe, Satz 3.31.
 * `SimplicialObject.HomotopyEquiv.toNHomotopyEquiv`,
   `SimplicialObject.HomotopyEquiv.ofAlternatingFaceMapComplexHomotopyEquiv`,
-  `SimplicialObject.homotopyEquivalences_alternatingFaceMapComplex_map_iff`: normalized-chain
-  counterpart and lifting chain homotopy equivalences to simplicial homotopy equivalences.
+  `SimplicialObject.homotopyEquivalences_alternatingFaceMapComplex_map_iff`,
+  `SimplicialObject.quasiIso_N_map_iff`,
+  `SimplicialObject.quasiIso_normalizedMooreComplex_map_iff`: normalized-chain
+  counterparts, quasi-isomorphism bridges, and lifting chain homotopy equivalences to simplicial
+  homotopy equivalences.
 * `Idempotents.DoldKan.Γ.mapHomotopy`, `Idempotents.DoldKan.Γ.mapHomotopyEquiv`: the inverse
   Dold–Kan functor `Γ` preserves homotopies and homotopy equivalences.
 
@@ -191,6 +194,14 @@ def toNHomotopy {X Y : SimplicialObject C} {f g : X ⟶ Y} (h : Homotopy f g) :
   h.toChainHomotopy.compLeftRightOfEq (inclusionN.app X) (PInftyToN.app Y)
     (N_map_eq_inclusionN_comp_PInftyToN f) (N_map_eq_inclusionN_comp_PInftyToN g)
 
+/-- The components of `Homotopy.toNHomotopy` are obtained by precomposing with `inclusionN` and
+postcomposing with `PInftyToN`. -/
+@[simp]
+lemma toNHomotopy_hom {X Y : SimplicialObject C} {f g : X ⟶ Y} (h : Homotopy f g) (p q : ℕ) :
+    h.toNHomotopy.hom p q =
+      (inclusionN.app X).f p ≫ h.toChainHomotopy.hom p q ≫ (PInftyToN.app Y).f q := by
+  simp [toNHomotopy]
+
 /-- Any chain homotopy between `N.map f` and `N.map g` lifts to a simplicial homotopy
 `Homotopy f g`. -/
 def ofNHomotopy {X Y : SimplicialObject C} {f g : X ⟶ Y}
@@ -293,6 +304,17 @@ theorem homotopyEquivalences_alternatingFaceMapComplex_map_iff
   ⟨fun ⟨e, he⟩ ↦ ⟨HomotopyEquiv.ofAlternatingFaceMapComplexHomotopyEquiv f e he, rfl⟩,
     fun ⟨e, h⟩ ↦ h ▸ e.homotopyEquivalences_alternatingFaceMapComplex_map⟩
 
+/-- A morphism `f : X ⟶ Y` of simplicial objects in an idempotent-complete preadditive category
+with finite coproducts and homology induces a quasi-isomorphism on normalized chains
+`Idempotents.DoldKan.N` if and only if it induces a quasi-isomorphism on alternating face map
+complexes. -/
+theorem quasiIso_N_map_iff [CategoryWithHomology C] {X Y : SimplicialObject C} (f : X ⟶ Y) :
+    QuasiIso (N.map f) ↔ QuasiIso ((alternatingFaceMapComplex C).map f) := by
+  have : QuasiIso (inclusionN.app X) := (homotopyEquivNAlternatingFaceMapComplex X).quasiIso_hom
+  have : QuasiIso (inclusionN.app Y) := (homotopyEquivNAlternatingFaceMapComplex Y).quasiIso_hom
+  rw [← quasiIso_iff_comp_right (N.map f) (inclusionN.app Y), inclusionN.naturality f,
+    quasiIso_iff_comp_left (inclusionN.app X) ((alternatingFaceMapComplex C).map f)]
+
 end Pseudoabelian
 
 section Abelian
@@ -309,6 +331,17 @@ def toNormalizedMooreComplexHomotopy {X Y : SimplicialObject A} {f g : X ⟶ Y} 
     (Abelian.DoldKan.comparisonN.hom.app X) (Abelian.DoldKan.comparisonN.inv.app Y)
     (NatIso.naturality_2 Abelian.DoldKan.comparisonN f).symm
     (NatIso.naturality_2 Abelian.DoldKan.comparisonN g).symm
+
+/-- The components of `Homotopy.toNormalizedMooreComplexHomotopy` are obtained by precomposing
+with `comparisonN.hom` and postcomposing with `comparisonN.inv` around `toNHomotopy`. -/
+@[simp]
+lemma toNormalizedMooreComplexHomotopy_hom {X Y : SimplicialObject A} {f g : X ⟶ Y}
+    (h : Homotopy f g) (p q : ℕ) :
+    h.toNormalizedMooreComplexHomotopy.hom p q =
+      (Abelian.DoldKan.comparisonN.hom.app X).f p ≫
+        h.toNHomotopy.hom p q ≫
+        (Abelian.DoldKan.comparisonN.inv.app Y).f q :=
+  _root_.Homotopy.compLeftRightOfEq_hom _ _ _ _ _ p q
 
 /-- A chain homotopy on normalized Moore complexes lifts to a simplicial homotopy `Homotopy f g`. -/
 def ofNormalizedMooreComplexHomotopy {X Y : SimplicialObject A} {f g : X ⟶ Y}
@@ -331,6 +364,25 @@ theorem nonempty_homotopy_iff_normalizedMooreComplex {X Y : SimplicialObject A} 
         ((normalizedMooreComplex A).map g)) :=
   ⟨fun ⟨h⟩ ↦ ⟨h.toNormalizedMooreComplexHomotopy⟩,
     fun ⟨H⟩ ↦ ⟨Homotopy.ofNormalizedMooreComplexHomotopy H⟩⟩
+
+/-- In an abelian category, a morphism `f : X ⟶ Y` of simplicial objects induces a quasi-isomorphism
+on normalized Moore complexes if and only if it induces a quasi-isomorphism on pseudoabelian
+normalized chains `Idempotents.DoldKan.N`. -/
+theorem quasiIso_normalizedMooreComplex_map_iff_N {X Y : SimplicialObject A} (f : X ⟶ Y) :
+    QuasiIso ((normalizedMooreComplex A).map f) ↔ QuasiIso (Idempotents.DoldKan.N.map f) := by
+  change QuasiIso (Abelian.DoldKan.N.map f) ↔ _
+  rw [← NatIso.naturality_2 Abelian.DoldKan.comparisonN f,
+    quasiIso_iff_comp_left (Abelian.DoldKan.comparisonN.hom.app X) _,
+    quasiIso_iff_comp_right (Idempotents.DoldKan.N.map f)
+      (Abelian.DoldKan.comparisonN.inv.app Y)]
+
+/-- In an abelian category, a morphism `f : X ⟶ Y` of simplicial objects induces a quasi-isomorphism
+on normalized Moore complexes if and only if it induces a quasi-isomorphism on alternating face map
+complexes. -/
+theorem quasiIso_normalizedMooreComplex_map_iff {X Y : SimplicialObject A} (f : X ⟶ Y) :
+    QuasiIso ((normalizedMooreComplex A).map f) ↔
+      QuasiIso ((alternatingFaceMapComplex A).map f) :=
+  (quasiIso_normalizedMooreComplex_map_iff_N f).trans (quasiIso_N_map_iff f)
 
 end Abelian
 

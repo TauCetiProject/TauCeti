@@ -298,7 +298,7 @@ private lemma toCylinderHomTerm_δ {X Y : SimplicialObject C} {f g : X ⟶ Y} (H
       have hk_pred :
           (j.succ).castPred (Fin.ne_last_of_lt (lt_of_le_of_lt hki i.castSucc_lt_succ)) =
             j'.succ :=
-        Fin.ext (by simp [j'])
+        (Fin.succ_castPred_eq_castPred_succ hj_ne_last _).symm
       rw [hk_pred]
       simp only [toCylinderHomTerm, Fin.cases_succ]
       rw [← Category.assoc, ← H.h_castSucc_comp_δ_succ_of_lt i j' hj'_lt_i, ← hj']
@@ -422,8 +422,9 @@ def toCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g) 
           exact toCylinderHomTerm_σ H i k)
     exact MorphismProperty.of_eq_top hW θ.unop
 
-/-- Evaluating `H.toCylinderHom` on the mixed summand indexed by `SimplexCategory.toMk₁ j.succ`
-recovers `H.h j ≫ Y.δ j.succ`. -/
+/-- Evaluating `H.toCylinderHom` on the summand with nonzero enumeration index `j.succ`, namely
+`SimplexCategory.toMk₁ j.succ` (where `j = Fin.last n` gives the `0`-end), recovers
+`H.h j ≫ Y.δ j.succ`. -/
 @[reassoc (attr := simp)]
 lemma cylinderι_toMk₁_succ_comp_toCylinderHom_app {X Y : SimplicialObject C} {f g : X ⟶ Y}
     (H : Homotopy f g) {n : ℕ} (j : Fin (n + 1)) :
@@ -490,7 +491,7 @@ lemma toCylinderHom_ofCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y}
       SimplexCategory.δ_comp_toMk₁_of_le _ _ (by simp)]
     have hpred : (j.succ.castSucc).castPred
         (Fin.ne_last_of_lt (lt_of_le_of_lt le_rfl j.succ.castSucc_lt_succ)) = j.succ :=
-      Fin.ext (by simp)
+      Fin.castPred_castSucc _
     rw [hpred]
 
 /-- Combinatorial simplicial homotopies `Homotopy f g` are in bijection with morphisms out of the
