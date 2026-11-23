@@ -23,7 +23,8 @@ the intersection of those zero loci over all `n`.
 ## Main results
 
 Common hypotheses: `k` is a characteristic-zero field and `R` is a regular `k`-algebra
-(`[IsRegularRing R]`, supplied automatically when `R` is smooth over `k`).
+(`[IsRegularRing R]`, derived via `TauCeti.IsRegularRing.of_smooth` in
+`Ideal.isClosed_setOf_le_orderAt_of_smooth`).
 
 * `Ideal.setOf_natCast_add_one_le_orderAt_eq_zeroLocus`: assuming `Ω[R⁄k]` is finitely generated
   and projective over `R`, `{p | ((n + 1 : ℕ) : ℕ∞) ≤ I.orderAt p}` equals

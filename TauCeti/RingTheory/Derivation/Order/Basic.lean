@@ -138,23 +138,15 @@ in `ℕ∞`, so finite positive order drops by one while `0` and `⊤` remain fi
 theorem orderAt_derivationIdeal [Module.Projective R Ω[R⁄k]] [Module.Finite R Ω[R⁄k]]
     (I : Ideal R) (p : PrimeSpectrum R) [IsRegularLocalRing (Localization.AtPrime p.asIdeal)] :
     (I.derivationIdeal k).orderAt p = I.orderAt p - 1 := by
-  refine le_antisymm ?_
-    (tsub_le_iff_right.mpr (orderAt_le_orderAt_derivationIdeal_add_one k I p))
-  refine ENat.forall_natCast_le_iff_le.mp fun m hm ↦ ?_
-  cases m with
-  | zero => simp
-  | succ n =>
-    refine ENat.le_sub_of_add_le_right ENat.one_ne_top ?_
-    have hle : ((n + 2 : ℕ) : ℕ∞) ≤ I.orderAt p := by
-      rw [natCast_le_orderAt_iff] at hm ⊢
-      rw [Ideal.map_le_iff_le_comap]
-      intro f hf
-      rw [mem_comap]
-      refine mem_maximalIdeal_pow_add_two_of_forall_derivation (k := k) p.asIdeal.primeCompl
-        (hm (mem_map_of_mem _ (le_derivationIdeal k I hf))) fun δ ↦ ?_
-      rw [Derivation.extendOfIsLocalization_algebraMap]
-      exact hm (mem_map_of_mem _ (apply_mem_derivationIdeal k δ hf))
-    exact_mod_cast hle
+  refine orderAt_derivationIdeal_eq_sub_one k I p fun n hn ↦ ?_
+  rw [natCast_le_orderAt_iff] at hn ⊢
+  rw [Ideal.map_le_iff_le_comap]
+  intro f hf
+  rw [mem_comap]
+  refine mem_maximalIdeal_pow_add_two_of_forall_derivation (k := k) p.asIdeal.primeCompl
+    (hn (mem_map_of_mem _ (le_derivationIdeal k I hf))) fun δ ↦ ?_
+  rw [Derivation.extendOfIsLocalization_algebraMap]
+  exact hn (mem_map_of_mem _ (apply_mem_derivationIdeal k δ hf))
 
 /-- Over a characteristic-zero field, at a regular prime of an algebra with finitely generated
 projective differentials, `((derivationIdeal k)^[n] I).orderAt p = I.orderAt p - n`
@@ -163,11 +155,8 @@ projective differentials, `((derivationIdeal k)^[n] I).orderAt p = I.orderAt p -
 theorem orderAt_derivationIdeal_iterate [Module.Projective R Ω[R⁄k]] [Module.Finite R Ω[R⁄k]]
     (I : Ideal R) (p : PrimeSpectrum R) [IsRegularLocalRing (Localization.AtPrime p.asIdeal)]
     (n : ℕ) :
-    ((derivationIdeal k)^[n] I).orderAt p = I.orderAt p - n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Function.iterate_succ_apply', orderAt_derivationIdeal, ih, tsub_tsub, Nat.cast_succ]
+    ((derivationIdeal k)^[n] I).orderAt p = I.orderAt p - n :=
+  orderAt_derivationIdeal_iterate_eq_sub k I p n fun J ↦ orderAt_derivationIdeal k J p
 
 /-- Over a characteristic-zero field, at a regular prime of an algebra with finitely generated
 projective differentials, an ideal has order at least `n + 1` precisely when its `n`-th iterated

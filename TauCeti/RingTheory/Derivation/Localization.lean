@@ -140,21 +140,8 @@ theorem exists_extendOfIsLocalization_eq_smul {k R A : Type*} [CommRing k] [Comm
     fun r ↦ ?_) a⟩
   simp only [extendOfIsLocalization_algebraMap, coe_comp, LinearMap.comp_apply,
     FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
-  calc
-    algebraMap R A (δ r)
-        = Algebra.linearMap R A (δ r) := (Algebra.linearMap_apply R A (δ r)).symm
-    _ = Algebra.linearMap R A (g (KaehlerDifferential.D k R r)) := by
-      dsimp only [δ]
-      rw [coe_comp, LinearMap.comp_apply, coeFn_coe, LinearMap.coe_restrictScalars]
-    _ = ((Algebra.linearMap R A).comp g) (KaehlerDifferential.D k R r) :=
-      (LinearMap.comp_apply _ _ _).symm
-    _ = algebraMap R A s * f (KaehlerDifferential.D k R r) := by
-      simpa [Submonoid.smul_def, Algebra.smul_def] using
-        LinearMap.congr_fun hg (KaehlerDifferential.D k R r)
-    _ = algebraMap R A s * D (algebraMap R A r) := by
-      dsimp only [f]
-      rw [LinearMap.comp_apply, KaehlerDifferential.map_D]
-      simp
+  simpa [δ, f, Submonoid.smul_def, Algebra.smul_def] using
+    LinearMap.congr_fun hg (KaehlerDifferential.D k R r)
 
 end Derivation
 

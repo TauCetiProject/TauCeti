@@ -20,6 +20,10 @@ regularity, or characteristic hypothesis.
 
 * `Ideal.orderAt_le_orderAt_derivationIdeal_add_one`: over commutative rings `k` and `R`,
   `I.orderAt p ≤ (I.derivationIdeal k).orderAt p + 1` at every prime `p`.
+* `Ideal.orderAt_derivationIdeal_eq_sub_one`: deduces
+  `(I.derivationIdeal k).orderAt p = I.orderAt p - 1` from the order-increase step
+  `n + 1 ≤ (I.derivationIdeal k).orderAt p → n + 2 ≤ I.orderAt p`.
+* `Ideal.orderAt_derivationIdeal_iterate_eq_sub`: lifts the one-step order drop to iterates.
 -/
 
 public section
@@ -44,5 +48,29 @@ theorem orderAt_le_orderAt_derivationIdeal_add_one (k : Type*) [CommRing k] {R :
       (natCast_le_orderAt_iff _ p n).mpr hle
     push_cast
     gcongr
+
+/-- If every positive lower bound `n + 1` on `(I.derivationIdeal k).orderAt p` improves to `n + 2`
+on `I.orderAt p`, then `(I.derivationIdeal k).orderAt p = I.orderAt p - 1`. -/
+theorem orderAt_derivationIdeal_eq_sub_one (k : Type*) [CommRing k] {R : Type*}
+    [CommRing R] [Algebra k R] (I : Ideal R) (p : PrimeSpectrum R)
+    (h : ∀ n : ℕ, ((n + 1 : ℕ) : ℕ∞) ≤ (I.derivationIdeal k).orderAt p →
+      ((n + 2 : ℕ) : ℕ∞) ≤ I.orderAt p) :
+    (I.derivationIdeal k).orderAt p = I.orderAt p - 1 := by
+  refine le_antisymm ?_
+    (tsub_le_iff_right.mpr (orderAt_le_orderAt_derivationIdeal_add_one k I p))
+  refine ENat.forall_natCast_le_iff_le.mp fun m hm ↦ ?_
+  cases m with
+  | zero => simp
+  | succ n => exact ENat.le_sub_of_add_le_right ENat.one_ne_top (h n (by exact_mod_cast hm))
+
+/-- If `derivationIdeal k` lowers the order at `p` of every ideal by `1`, then its `n`-th iterate
+lowers the order of `I` at `p` by `n`. -/
+theorem orderAt_derivationIdeal_iterate_eq_sub (k : Type*) [CommRing k] {R : Type*}
+    [CommRing R] [Algebra k R] (I : Ideal R) (p : PrimeSpectrum R) (n : ℕ)
+    (h : ∀ J : Ideal R, (J.derivationIdeal k).orderAt p = J.orderAt p - 1) :
+    ((derivationIdeal k)^[n] I).orderAt p = I.orderAt p - n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [Function.iterate_succ_apply', h, ih, tsub_tsub, Nat.cast_succ]
 
 end Ideal

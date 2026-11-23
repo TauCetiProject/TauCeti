@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DualNumber.Basic
+public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.RingTheory.Ideal.Order.Basic
-import TauCeti.Algebra.DualNumber.Basic
 
 /-!
 # Ideal order on the dual numbers

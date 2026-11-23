@@ -163,27 +163,18 @@ by one, as truncated subtraction in `ℕ∞` (leaving `0` and `⊤` unchanged). 
 @[simp]
 theorem orderAt_derivationIdeal_pointToPoint [CharZero k] (I : Ideal (MvPolynomial σ k))
     (a : σ → k) :
-    (I.derivationIdeal k).orderAt (pointToPoint a) = I.orderAt (pointToPoint a) - 1 := by
-  refine le_antisymm ?_
-    (tsub_le_iff_right.mpr (orderAt_le_orderAt_derivationIdeal_add_one k I (pointToPoint a)))
-  refine ENat.forall_natCast_le_iff_le.mp fun m hm ↦ ?_
-  cases m with
-  | zero => simp
-  | succ n =>
-    refine ENat.le_sub_of_add_le_right ENat.one_ne_top ?_
-    exact_mod_cast natCast_add_two_le_orderAt_of_le_orderAt_derivationIdeal hm
+    (I.derivationIdeal k).orderAt (pointToPoint a) = I.orderAt (pointToPoint a) - 1 :=
+  orderAt_derivationIdeal_eq_sub_one k I (pointToPoint a) fun _ h ↦
+    natCast_add_two_le_orderAt_of_le_orderAt_derivationIdeal h
 
 /-- In characteristic zero, the `n`-th iterated derivation ideal lowers the order of an ideal at
 a rational point by `n`, truncated at zero in `ℕ∞`. -/
 @[simp]
 theorem orderAt_derivationIdeal_iterate_pointToPoint [CharZero k] (I : Ideal (MvPolynomial σ k))
     (a : σ → k) (n : ℕ) :
-    ((derivationIdeal k)^[n] I).orderAt (pointToPoint a) = I.orderAt (pointToPoint a) - n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Function.iterate_succ_apply', orderAt_derivationIdeal_pointToPoint, ih, tsub_tsub,
-      Nat.cast_succ]
+    ((derivationIdeal k)^[n] I).orderAt (pointToPoint a) = I.orderAt (pointToPoint a) - n :=
+  orderAt_derivationIdeal_iterate_eq_sub k I (pointToPoint a) n fun J ↦
+    orderAt_derivationIdeal_pointToPoint J a
 
 /-- In characteristic zero, at a rational point where an ideal `I` has finite positive order `d`,
 the `(d - 1)`-st iterated derivation ideal of `I` contains a polynomial of order one there: it

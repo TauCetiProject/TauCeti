@@ -108,8 +108,12 @@ theorem linearIndependent_tmul_D {k A : Type*} [CommRing k] [CommRing A] [Algebr
     (kerCotangentToTensor k A κ ∘ₗ e.toLinearMap).extendScalarsOfSurjective hsurj
   have hli := (TauCeti.IsLocalRing.linearIndependent_toCotangent ht hr).map' φ
     (LinearMap.ker_eq_bot.mpr (hinj.comp e.injective))
+  have hφ (j : Fin r) :
+      φ ((maximalIdeal A).toCotangent ⟨t j, ht ▸ Ideal.subset_span ⟨j, rfl⟩⟩) =
+        (1 : κ) ⊗ₜ[A] KaehlerDifferential.D k A (t j) := by
+    simp [φ, e]
   convert hli using 1
   ext j
-  simp [φ, e, LinearMap.extendScalarsOfSurjective_apply, Ideal.Cotangent.equivOfEq]
+  exact (hφ j).symm
 
 end KaehlerDifferential

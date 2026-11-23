@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DualNumber.Order
+public import TauCeti.Algebra.DualNumber.Order
 public import TauCeti.RingTheory.Ideal.Order.Topology
 public import TauCeti.RingTheory.MarkedIdeal.Basic
 
