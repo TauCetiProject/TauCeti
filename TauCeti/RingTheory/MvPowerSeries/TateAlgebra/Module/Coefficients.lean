@@ -54,7 +54,7 @@ namespace Gauss
 noncomputable def coeffAddEquiv :
     Gauss (fun _ : σ ↦ 1) E ≃+ C₀(WithDiscreteTopology (σ →₀ ℕ), E) where
   toFun a := ZeroAtInftyContinuousMap.mkOfDiscrete (fun t ↦ a t.ofTopology)
-    ((isRestrictedFamily_one_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.2)).comp
+    ((isRestrictedFamily_one_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.property)).comp
       (WithTopology.ofTopology_injective ⊥).tendsto_cofinite)
   invFun f := ofAddSubgroup ⟨fun t ↦ f (.toTopology ⊥ t),
     mem_addSubgroup.mpr (isRestrictedFamily_one_iff.mpr (f.tendsto_cofinite.comp

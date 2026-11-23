@@ -86,7 +86,7 @@ theorem mem_range_genusCharFunElementaryTwoQuotientFamilyLinearMap_iff {s : Fins
       ∑ P : ↥s, v P = 0 := by
   rcases s.eq_empty_or_nonempty with rfl | hne
   · -- With no prime discriminants there is only the zero vector.
-    have hv : v = 0 := funext fun P => (Finset.notMem_empty _ P.2).elim
+    have hv : v = 0 := funext fun P => (Finset.notMem_empty _ P.property).elim
     subst hv
     simp
   · set Φ := genusCharFunElementaryTwoQuotientFamilyLinearMap hs heven hprod hmin hgen hsf
@@ -168,7 +168,7 @@ theorem isSquare_iff_forall_genusCharFunNarrowClassGroupHom_eq_one {s : Finset �
     rw [map_zero]
     funext P
     rw [genusCharFunElementaryTwoQuotientFamilyLinearMap_apply,
-      genusCharFunElementaryTwoQuotientLinearMap_mk, h P P.2]
+      genusCharFunElementaryTwoQuotientLinearMap_mk, h P P.property]
     simp
 
 end TauCeti.Multiquadratic

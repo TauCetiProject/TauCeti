@@ -11,37 +11,40 @@ public import TauCeti.AlgebraicTopology.Cellular.Coproduct
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 
 /-!
-# Homology of a CW complex where the cellular differentials vanish
+# Homology of a CW complex in a degree without neighbouring cells
 
-Let `(C, D)` be a relative CW complex. A cellular differential `Cₙ₊₁(C, D; R) ⟶ Cₙ(C, D; R)`
-vanishes as soon as one of its two chain groups does, that is when there are no `n`-cells or no
-`(n + 1)`-cells (`TauCeti.cellularChainComplex_d_eq_zero_of_isEmpty_cell`). So if each of the two
-differentials `Cₙ₊₁ ⟶ Cₙ` and `Cₙ ⟶ Cₙ₋₁` joins a degree without cells, for instance when `C` has
-no cells in the degrees `n - 1` and `n + 1`, the cellular homology in degree `n` is the cellular
-chain group (`HomologicalComplex.XIsoHomologyOfDEqZero`), a coproduct of one copy of `R` for each
-`n`-cell (`TauCeti.cellularChainGroupIso`).
+Let `(C, D)` be a relative CW complex and `n` a degree such that, of the dimensions `n` and
+`n + 1`, one carries no cells, and likewise of `n - 1` and `n` when `n ≥ 1`. Then both cellular
+differentials at `Cₙ(C, D; R)` vanish, since one end of each is zero
+(`TauCeti.cellularChainComplex_d_eq_zero_of_isEmpty_or`), so cellular homology in degree `n` is
+the cellular chain group, a coproduct of one copy of the coefficients `R` for each `n`-cell
+(`TauCeti.cellularHomologyIsoSigma`). This is the *lacunary principle* for CW complexes: in a degree
+whose neighbouring dimensions carry no cells (or which carries none itself), homology is free on the
+`n`-cells, with coefficients in any abelian category whose coproducts indexed by the `n`-cells are
+exact (automatic for finitely many `n`-cells), integral coefficients included.
 
-For an absolute CW complex the cellular–singular comparison turns this into a computation of
-singular homology: `Hₙ(C; R) ≅ ∐_{n-cells} R` (`TauCeti.singularHomologyIsoSigmaOfIsEmptyCell`),
-and the same holds for every space homotopy equivalent to `C`
-(`ContinuousMap.HomotopyEquiv.singularHomologyIsoSigmaOfIsEmptyCell`). This is the cellular form
-of the lacunary principle: a complex with no cells in any two consecutive dimensions, such as
-complex projective space with its cells in even dimensions, has in every degree the free homology
-on its cells of that dimension.
+Through the cellular–singular comparison the same holds for the singular homology of a space `Y`
+homotopy equivalent to an absolute CW complex `C`
+(`ContinuousMap.HomotopyEquiv.singularHomologyIsoSigma`), for instance of a manifold through the
+CW model of a Morse function on it: `Hₙ(Y; R) ≅ ∐_{n-cells} R`. This needs coproducts indexed by
+the cells of every dimension to be exact, and the `(n + 1)`-skeleton comparison of `C` to induce an
+isomorphism on `Hₙ`, as it does when `C` is finite-dimensional or sequential colimits in `A` are
+exact. The complex projective spaces, with one cell in each even dimension, are the basic example.
 
 ## Main declarations
 
-* `TauCeti.cellularChainComplex_d_eq_zero_of_isEmpty_cell`: the cellular differential out of
-  degree `n + 1` vanishes when there are no `n`-cells or no `(n + 1)`-cells.
-* `TauCeti.singularHomologyIsoSigmaOfIsEmptyCell`: when both cellular differentials at degree `n`
-  join a degree without cells, `Hₙ(C; R)` is the coproduct of one copy of `R` for each `n`-cell.
-* `ContinuousMap.HomotopyEquiv.singularHomologyIsoSigmaOfIsEmptyCell`: the same for a space
-  homotopy equivalent to a CW complex.
+* `TauCeti.cellularChainComplex_d_eq_zero_of_isEmpty_or`: a cellular differential vanishes when
+  its source or its target dimension carries no cells.
+* `TauCeti.cellularHomologyIsoSigma`: cellular homology in a degree without neighbouring cells is
+  the coproduct of one copy of `R` for each cell of that degree.
+* `ContinuousMap.HomotopyEquiv.singularHomologyIsoSigma`: the same for the singular homology of a
+  space homotopy equivalent to a CW complex.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 2.2, Theorem 2.35 and the examples following it.
+  Section 2.2, Theorem 2.35 and Example 2.36 (the lacunary principle in the cellular computation of
+  the homology of complex projective space).
 -/
 
 public section
@@ -59,60 +62,50 @@ section Relative
 variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]
   {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
-/-- **A cellular differential next to a degree without cells vanishes.** The differential
-`Cₙ₊₁(C, D; R) ⟶ Cₙ(C, D; R)` of the cellular chain complex is zero when there are no `n`-cells or
-no `(n + 1)`-cells, since one of the two chain groups is then zero. -/
-theorem cellularChainComplex_d_eq_zero_of_isEmpty_cell (n : ℕ)
-    (h : IsEmpty (cell C n) ∨ IsEmpty (cell C (n + 1))) :
-    (cellularChainComplex C R).d (n + 1) n = 0 := by
+/-- **A cellular differential between a dimension without cells and any other vanishes.** If there
+are no `i`-cells or no `j`-cells, the differential `Cᵢ(C, D; R) ⟶ Cⱼ(C, D; R)` of the cellular chain
+complex is zero, since its source or its target is the zero object. -/
+theorem cellularChainComplex_d_eq_zero_of_isEmpty_or {i j : ℕ}
+    (h : IsEmpty (cell C i) ∨ IsEmpty (cell C j)) : (cellularChainComplex C R).d i j = 0 := by
+  have hX (k : ℕ) [IsEmpty (cell C k)] : IsZero ((cellularChainComplex C R).X k) := by
+    rw [cellularChainComplex_X]
+    exact isZero_cellularChainGroup C k R
   rcases h with h | h
-  · have hX : IsZero ((cellularChainComplex C R).X n) := by
-      rw [cellularChainComplex_X]
-      exact isZero_cellularChainGroup C n R
-    exact hX.eq_of_tgt _ _
-  · have hX : IsZero ((cellularChainComplex C R).X (n + 1)) := by
-      rw [cellularChainComplex_X]
-      exact isZero_cellularChainGroup C (n + 1) R
-    exact hX.eq_of_src _ _
+  · exact (hX i).eq_of_src _ _
+  · exact (hX j).eq_of_tgt _ _
 
-/-- If each of the two cellular differentials at degree `n` joins a degree without cells, every
-cellular differential into or out of degree `n` vanishes. -/
-private theorem cellularChainComplex_d_eq_zero_of_lacunary (n : ℕ)
-    (h : ∀ m, m + 1 = n ∨ m = n → IsEmpty (cell C m) ∨ IsEmpty (cell C (m + 1))) {i j : ℕ}
-    (hij : i = n ∨ j = n) : (cellularChainComplex C R).d i j = 0 := by
-  by_cases hrel : (ComplexShape.down ℕ).Rel i j
-  · -- In `ComplexShape.down ℕ` the relation `Rel i j` says `j + 1 = i`.
-    obtain rfl : i = j + 1 := hrel.symm
-    exact cellularChainComplex_d_eq_zero_of_isEmpty_cell C R j (h j hij)
-  · exact (cellularChainComplex C R).shape i j hrel
-
-end Relative
-
-section Absolute
-
-variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
-  {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-  [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
-
-/-- **Singular homology where the cellular differentials vanish.** If each of the two cellular
-differentials at degree `n` of the CW complex `C` joins a degree without cells, for instance when
-`C` has no cells in the degrees `n - 1` and `n + 1`, then `Hₙ(C; R)` is the coproduct of one copy
-of `R` for each `n`-cell. As for the cellular–singular comparison
-`TauCeti.cellularSingularHomologyIsoOfCWComplex`, the inclusion of the `(n + 1)`-skeleton must
-induce an isomorphism on `Hₙ`, which holds for every finite-dimensional complex. -/
-def singularHomologyIsoSigmaOfIsEmptyCell (n : ℕ)
-    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
-      (skeletonBasePairToComplex C (n + 1)) R n)]
-    (h : ∀ m, m + 1 = n ∨ m = n → IsEmpty (cell C m) ∨ IsEmpty (cell C (m + 1))) :
-    ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of C) ≅
-      ∐ fun _ : cell C n ↦ R :=
-  (cellularSingularHomologyIsoOfCWComplex C R n).symm ≪≫
-    ((cellularChainComplex C R).XIsoHomologyOfDEqZero n
-      (cellularChainComplex_d_eq_zero_of_lacunary C R n h (.inr rfl))
-      (cellularChainComplex_d_eq_zero_of_lacunary C R n h (.inl rfl))).symm ≪≫
+/-- **The lacunary principle for cellular homology.** If of the dimensions `n` and `n + 1` one
+carries no cells, and likewise of `m` and `n` whenever `n = m + 1`, then the cellular homology
+`Hₙ` of a relative CW complex is the coproduct of one copy of the coefficients `R` for each
+`n`-cell: both cellular differentials at `Cₙ` vanish. -/
+def cellularHomologyIsoSigma (n : ℕ) [HasExactColimitsOfShape (Discrete (cell C n)) A]
+    (hsucc : IsEmpty (cell C n) ∨ IsEmpty (cell C (n + 1)))
+    (hpred : ∀ m, m + 1 = n → IsEmpty (cell C m) ∨ IsEmpty (cell C n)) :
+    (cellularChainComplex C R).homology n ≅ ∐ fun _ : cell C n ↦ R :=
+  ((cellularChainComplex C R).XIsoHomologyOfDEqZero n
+      (cellularChainComplex_d_eq_zero_of_isEmpty_or C R <| by
+        rw [ChainComplex.prev]
+        exact hsucc.symm)
+      (by
+        -- The only differential out of degree `n` goes to degree `n - 1`, when `n ≥ 1`.
+        by_cases hrel : (ComplexShape.down ℕ).Rel n ((ComplexShape.down ℕ).next n)
+        · exact cellularChainComplex_d_eq_zero_of_isEmpty_or C R (hpred _ hrel).symm
+        · exact (cellularChainComplex C R).shape _ _ hrel)).symm ≪≫
     eqToIso (cellularChainComplex_X C R n) ≪≫ cellularChainGroupIso C R n
 
-end Absolute
+/-- The isomorphism `TauCeti.cellularHomologyIsoSigma` sends the class of a cellular cycle to the
+cycle itself, read in the coproduct through `TauCeti.cellularChainGroupIso`. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_comp_cellularHomologyIsoSigma_hom (n : ℕ)
+    [HasExactColimitsOfShape (Discrete (cell C n)) A]
+    (hsucc : IsEmpty (cell C n) ∨ IsEmpty (cell C (n + 1)))
+    (hpred : ∀ m, m + 1 = n → IsEmpty (cell C m) ∨ IsEmpty (cell C n)) :
+    (cellularChainComplex C R).homologyπ n ≫ (cellularHomologyIsoSigma C R n hsucc hpred).hom =
+      (cellularChainComplex C R).iCycles n ≫ eqToHom (cellularChainComplex_X C R n) ≫
+        (cellularChainGroupIso C R n).hom := by
+  simp [cellularHomologyIsoSigma]
+
+end Relative
 
 end TauCeti
 
@@ -123,19 +116,34 @@ open TauCeti
 variable {Y X : Type w} [TopologicalSpace Y] [TopologicalSpace X] [T2Space X]
   {C : Set X} [CWComplex C] (e : ContinuousMap.HomotopyEquiv Y C)
   {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-  [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
 
-/-- **Singular homology of a CW model where the cellular differentials vanish.** If `Y` is
-homotopy equivalent to a CW complex `C` each of whose two cellular differentials at degree `n` joins
-a degree without cells, then `Hₙ(Y; R)` is the coproduct of one copy of `R` for each `n`-cell of
-`C`, provided the inclusion of the `(n + 1)`-skeleton of `C` induces an isomorphism on `Hₙ`, as it
-does for every finite-dimensional complex. -/
-def singularHomologyIsoSigmaOfIsEmptyCell (n : ℕ)
-    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
-      (skeletonBasePairToComplex C (n + 1)) R n)]
-    (h : ∀ m, m + 1 = n ∨ m = n → IsEmpty (cell C m) ∨ IsEmpty (cell C (m + 1))) :
+/-- **The lacunary principle for a CW model.** Let `Y` be homotopy equivalent to a CW complex `C`.
+If of the dimensions `n` and `n + 1` one carries no cells of `C`, and likewise of `m` and `n`
+whenever `n = m + 1`, then `Hₙ(Y; R)` is the coproduct of one copy of the coefficients `R` for each
+`n`-cell of `C`. The `(n + 1)`-skeleton comparison must induce an isomorphism on `Hₙ`, as it does
+for every finite-dimensional `C` and, when sequential colimits are exact in `A`, for every `C`. -/
+def singularHomologyIsoSigma (n : ℕ) [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
+    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap (skeletonBasePairToComplex C (n + 1))
+      R n)]
+    (hsucc : IsEmpty (cell C n) ∨ IsEmpty (cell C (n + 1)))
+    (hpred : ∀ m, m + 1 = n → IsEmpty (cell C m) ∨ IsEmpty (cell C n)) :
     ((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of Y) ≅
       ∐ fun _ : cell C n ↦ R :=
-  e.singularHomologyIso R n ≪≫ TauCeti.singularHomologyIsoSigmaOfIsEmptyCell C R n h
+  e.singularHomologyIso R n ≪≫ (cellularSingularHomologyIsoOfCWComplex C R n).symm ≪≫
+    cellularHomologyIsoSigma C R n hsucc hpred
+
+/-- The isomorphism `ContinuousMap.HomotopyEquiv.singularHomologyIsoSigma` is the homotopy
+invariance isomorphism, followed by the cellular–singular comparison and the cellular lacunary
+isomorphism `TauCeti.cellularHomologyIsoSigma`. -/
+@[reassoc]
+lemma singularHomologyIsoSigma_hom (n : ℕ) [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
+    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap (skeletonBasePairToComplex C (n + 1))
+      R n)]
+    (hsucc : IsEmpty (cell C n) ∨ IsEmpty (cell C (n + 1)))
+    (hpred : ∀ m, m + 1 = n → IsEmpty (cell C m) ∨ IsEmpty (cell C n)) :
+    (e.singularHomologyIsoSigma R n hsucc hpred).hom =
+      (e.singularHomologyIso R n).hom ≫ (cellularSingularHomologyIsoOfCWComplex C R n).inv ≫
+        (cellularHomologyIsoSigma C R n hsucc hpred).hom := by
+  simp only [singularHomologyIsoSigma, Iso.trans_hom, Iso.symm_hom]
 
 end ContinuousMap.HomotopyEquiv

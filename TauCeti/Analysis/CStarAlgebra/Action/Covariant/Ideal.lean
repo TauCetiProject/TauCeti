@@ -119,17 +119,17 @@ def idealExtension (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) : CovariantRepre
     have hop : P.group g * P.coefficient.idealExtension hmul a =
         P.coefficient.idealExtension hmul (α g a) * P.group g := by
       refine P.coefficient.ext_of_orthogonal_essentialSubspace (fun x => ?_) (fun ξ hξ => ?_)
-      · have hact : hI.restrict g ⟨a * x, hmul a x x.2⟩ =
-            ⟨α g a * hI.restrict g x, hmul (α g a) _ (hI.restrict g x).2⟩ :=
+      · have hact : hI.restrict g ⟨a * x, hmul a x x.property⟩ =
+            ⟨α g a * hI.restrict g x, hmul (α g a) _ (hI.restrict g x).property⟩ :=
           Subtype.ext (by simp [map_mul])
         calc (P.group g * P.coefficient.idealExtension hmul a) * P.coefficient x
             = P.group g * (P.coefficient.idealExtension hmul a * P.coefficient x) :=
               mul_assoc _ _ _
-          _ = P.group g * P.coefficient ⟨a * x, hmul a x x.2⟩ := by
+          _ = P.group g * P.coefficient ⟨a * x, hmul a x x.property⟩ := by
               rw [P.coefficient.idealExtension_mul_eq]
-          _ = P.coefficient (hI.restrict g ⟨a * x, hmul a x x.2⟩) * P.group g :=
+          _ = P.coefficient (hI.restrict g ⟨a * x, hmul a x x.property⟩) * P.group g :=
               P.group_mul_coefficient g _
-          _ = P.coefficient ⟨α g a * hI.restrict g x, hmul (α g a) _ (hI.restrict g x).2⟩ *
+          _ = P.coefficient ⟨α g a * hI.restrict g x, hmul (α g a) _ (hI.restrict g x).property⟩ *
                 P.group g := by
               rw [hact]
           _ = (P.coefficient.idealExtension hmul (α g a) * P.coefficient (hI.restrict g x)) *
@@ -176,7 +176,7 @@ theorem eq_idealExtension_iff (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I)
     simpa using DFunLike.congr_fun (congrArg coefficient hQ) x
   refine CovariantRepresentation.ext (NonUnitalStarAlgHom.ext fun a => ?_) hgroup
   refine (P.coefficient.eq_idealExtension_iff hmul).2 ⟨fun x => ?_, horth a⟩
-  rw [← hcoef_coe x, ← map_mul, ← hcoef_coe ⟨a * x, hmul a x x.2⟩]
+  rw [← hcoef_coe x, ← map_mul, ← hcoef_coe ⟨a * x, hmul a x x.property⟩]
 
 /-- When `P.coefficient` is nondegenerate on `I`, `P.idealExtension hmul` is the unique covariant
 representation of `α` pulling back to `P`. -/

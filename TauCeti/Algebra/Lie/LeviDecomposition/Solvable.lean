@@ -83,8 +83,8 @@ private theorem exists_lieSubalgebra_isCompl_of_isCompl_map_mkQ [CharZero K] {L 
   -- The ideal `I ∩ P = A` of `P` is abelian with quotient `L ⧸ I`: apply the abelian case.
   have : IsLieAbelian (I.comap P.incl) := ⟨fun x y ↦ by
     ext
-    exact LieIdeal.lie_eq_zero_of_mem (hPI x.1.2 (LieIdeal.mem_comap.1 x.2))
-      (hPI y.1.2 (LieIdeal.mem_comap.1 y.2))⟩
+    exact LieIdeal.lie_eq_zero_of_mem (hPI x.val.property (LieIdeal.mem_comap.1 x.property))
+      (hPI y.val.property (LieIdeal.mem_comap.1 y.property))⟩
   have := I.isKilling_quotient_comap_incl hIP
   obtain ⟨T, hT⟩ := (I.comap P.incl).exists_lieSubalgebra_isCompl_of_isLieAbelian
   exact ⟨T.map P.incl, I.isCompl_map_incl hIP hT⟩
@@ -114,7 +114,8 @@ private theorem exists_lieSubalgebra_isCompl_of_isSolvable_of_finrank_eq [CharZe
     have hAI' : A ≤ I.mkQ.ker := by rwa [LieIdeal.mkQ_ker]
     rw [← I.ker_liftQ_mkQ hAI']
     exact isKilling_of_equiv
-      ((A.liftQ I.mkQ hAI').quotKerEquivOfSurjective (A.liftQ_surjective _ _ I.surjective_mkQ)).symm
+      ((A.liftQ I.mkQ hAI').quotKerEquivOfSurjective
+        ((A.liftQ_surjective_iff _ _).2 I.surjective_mkQ)).symm
   have hlt : finrank K (L ⧸ A) < n := by
     have h := Submodule.finrank_quotient_add_finrank A.toSubmodule
     have hpos : 0 < finrank K A.toSubmodule := Nat.pos_of_ne_zero fun h0 ↦
