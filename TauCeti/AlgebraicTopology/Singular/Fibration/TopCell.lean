@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Fibration.CellFiber
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Puncture
 
 /-!
 # The skeletal quotient over a top cell and the local homology along a fibre
@@ -33,7 +34,8 @@ So when `j` is the only `n`-cell, the map is an isomorphism in every degree
 (`TauCeti.TopCat.isIso_singularHomologyMap_preimageSkeletonPairToComplFiber`). If moreover `B` is
 the `n`-skeleton, as for a closed `n`-manifold with a CW structure having a single top cell, this
 says that `Hₖ(E, p⁻¹(Xⁿ⁻¹)) ⟶ Hₖ(E, E ∖ F)` is an isomorphism
-(`TauCeti.TopCat.isIso_singularHomologyMap_preimageSkeletonLTToComplFiber`). Barraud, Damian,
+(`TauCeti.TopCat.isIso_singularHomologyMap_preimageSkeletonLTToComplFiber`); this last statement
+is proved by a deformation argument, with coefficients in any module, see below. Barraud, Damian,
 Humilière and Oancea read the shriek map of the inclusion of `b` as the composite
 `Hₖ(E) ⟶ Hₖ(E, p⁻¹(Xⁿ⁻¹)) ≅ Hₖ₋ₙ(F)` for such a CW structure (their Lemma 2.9), while
 `TauCeti.LivesOverFundamentalClass` uses the localization `Hₖ(E) ⟶ Hₖ(E, E ∖ F)` at the fibre. The
@@ -57,6 +59,21 @@ the open cell, relative to the part off the fibre over the centre, and the chara
 homeomorphism of the open ball onto the open cell (`TauCeti.openCellHomeomorph`), which is open in
 `Xⁿ` (`TauCeti.isOpen_preimage_val_openCell`).
 
+## A single top cell, with any coefficients
+
+When `j` is the only `n`-cell and `B = Xⁿ`, the isomorphism `Hₖ(E, p⁻¹(Xⁿ⁻¹); M) ≅ Hₖ(E, E ∖ F; M)`
+holds for every module `M` of coefficients. By the long exact sequence of the triple
+`(E, E ∖ F, p⁻¹(Xⁿ⁻¹))` it suffices that the pair `(E ∖ F, p⁻¹(Xⁿ⁻¹))` be acyclic
+(`TauCeti.TopCat.isZero_singularHomology_preimage_skeletonDiffCenter`). It is filtered by the part
+of `E` over the neighbourhood `N = TauCeti.skeletonNeighborhood C n` of `Xⁿ⁻¹`, and both steps are
+acyclic because a Serre fibration pulls back a pair that deforms into its subspace relative to that
+subspace to an acyclic pair (`TauCeti.TopCat.isZero_singularHomology_preimage_of_homotopyRel`):
+
+* `Xⁿ ∖ {b}` deforms into `N` relative to `N`, by pushing the punctured inner half of the cell
+  radially outwards (`TauCeti.skeletonDiffCenterHomotopyRel`; with a single `n`-cell the
+  complement of the inner half of `j` is `N`, `TauCeti.skeletonDiffCore_eq_skeletonNeighborhood`);
+* `N` deforms onto `Xⁿ⁻¹` relative to `Xⁿ⁻¹` (`TauCeti.skeletonNeighborhoodHomotopyRel`).
+
 ## Main definitions and results
 
 * `TauCeti.TopCat.preimageSkeletonComplFiberPair`: the pair `(p⁻¹(Xⁿ), p⁻¹(Xⁿ ∖ {b}))`.
@@ -64,6 +81,10 @@ homeomorphism of the open ball onto the open cell (`TauCeti.openCellHomeomorph`)
   `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹)) ⟶ (p⁻¹(Xⁿ), p⁻¹(Xⁿ ∖ {b}))` for `b ∉ Xⁿ⁻¹`.
 * `TauCeti.TopCat.isIso_singularHomologyMap_preimageSkeletonPairToComplFiber`: over a single
   `n`-cell it is an isomorphism on relative homology.
+* `TauCeti.TopCat.isZero_singularHomology_preimage_skeletonDiffCenter`: with a single `n`-cell,
+  the pair `(p⁻¹(Xⁿ ∖ {b}), p⁻¹(Xⁿ⁻¹))` is acyclic with any coefficients.
+* `TauCeti.TopCat.isIso_singularHomologyMap_preimageSkeletonLTToComplFiber`: over an
+  `n`-dimensional complex with a single `n`-cell, `Hₖ(E, p⁻¹(Xⁿ⁻¹); M) ≅ Hₖ(E, E ∖ F; M)`.
 * `TauCeti.TopCat.livesOverFundamentalClass_iff_singularHomologyπ_ne_zero`,
   `TauCeti.TopCat.livesOverFundamentalClass_iff_notMem_range`: over an `n`-dimensional complex
   with a single `n`-cell, a class lives over the fundamental class at the centre of the top cell
@@ -72,7 +93,8 @@ homeomorphism of the open ball onto the open cell (`TauCeti.openCellHomeomorph`)
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §2.4, Proposition 2.6 and Lemma 2.9.
+  Applications to cotangent bundles*, arXiv:2404.07953, §2.4, Definition 2.3, Proposition 2.6 and
+  Lemma 2.9.
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   Chapter II.
 -/
@@ -453,100 +475,123 @@ theorem isIso_singularHomologyMap_preimageSkeletonPairToComplFiber (n : ℕ) [Un
   exact IsIso.of_isIso_comp_left ((cellDiskPullbackPair p C n default).singularHomologyMap
     (cellDiskPullbackPairMap p C n default) (ModuleCat.of R R) k) _
 
-variable {n : ℕ} [Unique (cell C n)]
-  (hC : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) = univ)
-include hC
+end Single
+
+/-! ### An `n`-dimensional complex with a single top cell, with any coefficients -/
+
+section Deformation
+
+variable {n : ℕ} [Subsingleton (cell C n)] (j : cell C n) (hp : serreFibrations p)
+  {R : Type*} [Ring R] (M : ModuleCat.{u} R)
+
+include hp in
+/-- **The part of a Serre fibration over the skeleton punctured at the centre of its only top cell
+is acyclic modulo the part over the lower skeleton.** Let `p : E ⟶ B` be a Serre fibration and
+`C ⊆ B` a relative CW complex with a single `n`-cell `j`. Then
+`Hₘ(p⁻¹(Xⁿ ∖ {χⱼ(0)}), p⁻¹(Xⁿ⁻¹); M) = 0` for every `m` and every module `M`. -/
+theorem isZero_singularHomology_preimage_skeletonDiffCenter (m : ℕ) :
+    IsZero ((TopPair.ofInclusion (X := E)
+      (preimage_mono (f := p) (skeletonLT_subset_skeletonDiffCenter j))).singularHomology M m) := by
+  have hNS : skeletonNeighborhood C n ⊆ skeletonDiffCenter j :=
+    skeletonDiffCore_eq_skeletonNeighborhood j ▸ skeletonDiffCore_subset_skeletonDiffCenter j
+  -- The part over `N` is acyclic modulo the part over `Xⁿ⁻¹`.
+  have hinner := isZero_singularHomology_preimage_of_homotopyRel hp
+    (skeletonLT_subset_skeletonNeighborhood (C := C) n) (skeletonNeighborhoodHomotopyRel C n)
+    (fun x ↦ skeletonNeighborhoodEndpoint_mem _ x.property) M m
+  -- The part over `Xⁿ ∖ {b}` is acyclic modulo the part over `N`.
+  have houter := (TopPair.isZero_singularHomology_ofInclusion_congr M
+    (preimage_mono (f := p) (skeletonDiffCore_subset_skeletonDiffCenter j))
+    (preimage_mono (f := p) hNS) rfl
+    (by rw [skeletonDiffCore_eq_skeletonNeighborhood j]) m).1
+    (isZero_singularHomology_preimage_of_homotopyRel hp
+      (skeletonDiffCore_subset_skeletonDiffCenter j) (skeletonDiffCenterHomotopyRel j)
+      (skeletonDiffCenterEndpoint_mem j) M m)
+  exact TopTriple.isZero_singularHomology_totalPair
+    (TopTriple.ofInclusions (X := E)
+      (preimage_mono (f := p) (skeletonLT_subset_skeletonNeighborhood (C := C) n))
+      (preimage_mono (f := p) hNS)) M m hinner houter
+
+variable {j}
+
+omit [Subsingleton (cell C n)] in
+/-- Over the `n`-skeleton, the complement of the fibre over the centre of the `n`-cell `j` is the
+part over the punctured skeleton. -/
+private lemma preimage_skeletonDiffCenter_eq
+    (hB : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) = univ) :
+    p ⁻¹' skeletonDiffCenter j = (p ⁻¹' {map n j 0})ᶜ := by
+  ext x
+  rw [mem_preimage, mem_skeletonDiffCenter, hB, mem_compl_iff, mem_preimage, mem_singleton_iff]
+  exact and_iff_right (mem_univ _)
+
+omit [Subsingleton (cell C n)] in
+/-- The part of `E` over the `(n-1)`-skeleton misses the fibre over the centre of the
+`n`-cell `j`. -/
+private lemma preimage_skeletonLT_subset_compl :
+    p ⁻¹' (skeletonLT C n : Set B) ⊆ (p ⁻¹' {map n j 0})ᶜ :=
+  fun _ hx hb ↦ (mem_skeletonDiffCenter j).1 (skeletonLT_subset_skeletonDiffCenter j hx) |>.2 hb
+
+variable (hB : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) = univ)
+include hp hB
 
 /-- **The skeletal quotient of an `n`-dimensional complex with a single `n`-cell is the local
 homology along the fibre over its centre.** For a Serre fibration `p : E ⟶ B` and a relative CW
-complex `C ⊆ B` whose `n`-skeleton is all of `B` and which has a single `n`-cell, with centre
-`b`, the identity of `E` induces isomorphisms `Hₖ(E, p⁻¹(Xⁿ⁻¹); R) ≅ Hₖ(E, E ∖ p⁻¹(b); R)` in every
-degree. -/
+complex `C ⊆ B` whose `n`-skeleton `Xⁿ = skeletonLT C (n + 1)` is all of `B` and which has a single
+`n`-cell `j`, with centre `b = χⱼ(0)`, the identity of `E` induces isomorphisms
+`Hₖ(E, p⁻¹(Xⁿ⁻¹); M) ≅ Hₖ(E, E ∖ p⁻¹(b); M)` in every degree, with coefficients in every
+module `M`. -/
 theorem isIso_singularHomologyMap_preimageSkeletonLTToComplFiber (k : ℕ) :
-    IsIso (TopPair.singularHomologyMap
-      (preimageSkeletonLTToComplFiber p C n (default : cell C n))
-      (ModuleCat.of R R) k) := by
-  have ht (x : E) : x ∈ p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) := by
-    rw [mem_preimage, hC]
-    exact mem_univ _
-  let i₁ := TopPair.ofInclusionIsoOfSubset
-    (preimage_mono (f := p) (skeletonLT_subset_skeletonLT_succ C n)) ht
-    (s₀ := p ⁻¹' (skeletonLT C n : Set B)) fun _ ↦ Iff.rfl
-  let i₂ := TopPair.ofInclusionIsoOfSubset
-    (preimage_mono (f := p) (sdiff_subset : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) \
-      {map n (default : cell C n) 0} ⊆ _)) ht
-    (s₀ := (p ⁻¹' {map n (default : cell C n) 0})ᶜ) fun x ↦ ⟨fun h ↦ h.2, fun h ↦ ⟨ht x, h⟩⟩
-  -- Over `Xⁿ = B`, both pairs are the corresponding pairs of `E`.
-  have hsq : preimageSkeletonPairToComplFiber p C n
-        (map_zero_notMem_skeletonLT (default : cell C n)) ≫ i₂.hom =
-      i₁.hom ≫ preimageSkeletonLTToComplFiber p C n (default : cell C n) :=
-    TopPair.hom_ext_of_fst _ <| by
-      rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.ofSubsetMap_fst]
-      ext x
-      exact (TopPair.ofInclusionIsoOfSubset_hom_fst_apply ht _ _).trans
-        (TopPair.ofInclusionIsoOfSubset_hom_fst_apply ht _ x).symm
-  have := isIso_singularHomologyMap_preimageSkeletonPairToComplFiber C hp R n k
-  have h := congrArg (fun f ↦ TopPair.singularHomologyMap f (ModuleCat.of R R) k) hsq
-  simp only [TopPair.singularHomologyMap_comp] at h
-  have : IsIso (TopPair.singularHomologyMap i₁.hom (ModuleCat.of R R) k ≫
-      TopPair.singularHomologyMap (preimageSkeletonLTToComplFiber p C n (default : cell C n))
-        (ModuleCat.of R R) k) := by
-    rw [← h]
-    infer_instance
-  exact IsIso.of_isIso_comp_left (TopPair.singularHomologyMap i₁.hom (ModuleCat.of R R) k) _
+    IsIso (TopPair.singularHomologyMap (preimageSkeletonLTToComplFiber p C n j) M k) := by
+  have hz (m : ℕ) := (TopPair.isZero_singularHomology_ofInclusion_congr M
+    (preimage_mono (f := p) (skeletonLT_subset_skeletonDiffCenter j))
+    (preimage_skeletonLT_subset_compl (p := p) (j := j))
+    (preimage_skeletonDiffCenter_eq hB) rfl m).1
+    (isZero_singularHomology_preimage_skeletonDiffCenter j hp M m)
+  -- The pair `(E ∖ p⁻¹(b), p⁻¹(Xⁿ⁻¹))` is acyclic, so the triple's outer map is an isomorphism.
+  have := TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero
+    (TopTriple.ofSubset (X := E) (preimage_skeletonLT_subset_compl (p := p) (j := j))) M k
+    (hz k) fun m _ ↦ hz m
+  rw [TopTriple.totalToOuter_app_ofSubset] at this
+  exact this
 
-/-- **Living over the fundamental class through the skeletal quotient**: the untwisted nonvanishing
-criterion corresponding to Lemma 2.9 of Barraud–Damian–Humilière–Oancea. For a Serre fibration
-`p : E ⟶ B` and a relative CW complex `C ⊆ B` whose `n`-skeleton is all of `B` and which has a
-single `n`-cell, with centre `b`, a class `α ∈ Hₖ(E; R)` lives over the fundamental class at `b`
-exactly when its image in `Hₖ(E, p⁻¹(Xⁿ⁻¹); R)` is nonzero. -/
+/-- **Living over the fundamental class through the skeletal quotient**: the nonvanishing
+criterion corresponding to Lemma 2.9 of Barraud–Damian–Humilière–Oancea, and the equivalence of
+conditions (i) and (iii) in their Proposition 2.6. For a Serre fibration `p : E ⟶ B` and a
+relative CW complex `C ⊆ B` whose `n`-skeleton is all of `B` and which has a single `n`-cell `j`,
+with centre `b = χⱼ(0)`, a class `α ∈ Hₖ(E; M)` lives over the fundamental class at `b` exactly
+when its image in `Hₖ(E, p⁻¹(Xⁿ⁻¹); M)` is nonzero. -/
 theorem livesOverFundamentalClass_iff_singularHomologyπ_ne_zero {k : ℕ}
-    (α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) k : ModuleCat.{u} R)) :
-    LivesOverFundamentalClass (ModuleCat.of R R) p (map n (default : cell C n) 0) α ↔
-      ((TopPair.ofSubset (X := E) (p ⁻¹' (skeletonLT C n : Set B))).singularHomologyπ
-        (ModuleCat.of R R) k).hom α ≠ 0 := by
-  have := isIso_singularHomologyMap_preimageSkeletonLTToComplFiber hp R hC k
+    (α : ((_root_.TopCat.toSSet.obj E).homology M k : ModuleCat.{u} R)) :
+    LivesOverFundamentalClass M p (map n j 0) α ↔
+      ((TopPair.ofSubset (X := E) (p ⁻¹' (skeletonLT C n : Set B))).singularHomologyπ M k).hom α ≠
+        0 := by
+  have := isIso_singularHomologyMap_preimageSkeletonLTToComplFiber (j := j) hp M hB k
   -- The localization at the fibre factors through the skeletal quotient.
-  have key := congrArg (fun f ↦ f.hom α)
-    (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (ModuleCat.of R R)
-      (mapsTo_preimage_skeletonLT_compl_fiber (p := p) n (default : cell C n)) k)
-  simp only [ModuleCat.hom_comp] at key
-  have hinj := LinearMap.ker_eq_bot.1 (ModuleCat.ker_eq_bot_of_mono (TopPair.singularHomologyMap
-    (preimageSkeletonLTToComplFiber p C n (default : cell C n)) (ModuleCat.of R R) k))
-  exact (livesOverFundamentalClass_iff _ _ _ _).trans ((congrArg (· ≠ 0) key).symm.to_iff.trans
-    (map_eq_zero_iff _ hinj).not)
+  have h' : (TopPair.singularHomologyMap (preimageSkeletonLTToComplFiber p C n j) M k).hom
+        (((TopPair.ofSubset (p ⁻¹' (skeletonLT C n : Set B))).singularHomologyπ M k).hom α) =
+      (fiberLocalization M p (map n j 0) k).hom α :=
+    congrArg (fun g ↦ g.hom α) (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id M
+      (mapsTo_preimage_skeletonLT_compl_fiber (p := p) n j) k)
+  rw [livesOverFundamentalClass_iff, ← h', not_iff_not]
+  exact ((ModuleCat.mono_iff_injective _).1 inferInstance).eq_iff' (map_zero _)
 
 /-- **Living over the fundamental class and the skeletal filtration**: the skeletal-filtration form
 of Proposition 2.6 of Barraud–Damian–Humilière–Oancea. For a Serre fibration `p : E ⟶ B` and a
-relative CW complex `C ⊆ B` whose `n`-skeleton is all of `B` and which has a single `n`-cell, with
-centre `b`, a class `α ∈ Hₖ(E; R)` lives over the fundamental class at `b` exactly when it does not
-come from the homology of the part of `E` over the `(n - 1)`-skeleton. -/
+relative CW complex `C ⊆ B` whose `n`-skeleton is all of `B` and which has a single `n`-cell `j`,
+with centre `b = χⱼ(0)`, a class `α ∈ Hₖ(E; M)` lives over the fundamental class at `b` exactly
+when it does not come from the homology of the part of `E` over the `(n - 1)`-skeleton. -/
 theorem livesOverFundamentalClass_iff_notMem_range {k : ℕ}
-    (α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) k : ModuleCat.{u} R)) :
-    LivesOverFundamentalClass (ModuleCat.of R R) p (map n (default : cell C n) 0) α ↔
+    (α : ((_root_.TopCat.toSSet.obj E).homology M k : ModuleCat.{u} R)) :
+    LivesOverFundamentalClass M p (map n j 0) α ↔
       α ∉ LinearMap.range (SSet.homologyMap (_root_.TopCat.toSSet.map
-        (TopPair.ofSubset (X := E) (p ⁻¹' (skeletonLT C n : Set B))).map)
-          (ModuleCat.of R R) k).hom := by
+        (TopPair.ofSubset (X := E) (p ⁻¹' (skeletonLT C n : Set B))).map) M k).hom := by
   -- By exactness of the sequence of the pair, the image is the kernel of the map to the
   -- skeletal quotient.
-  have hex : LinearMap.range (SSet.homologyMap (_root_.TopCat.toSSet.map
-        (TopPair.ofSubset (X := E) (p ⁻¹' (skeletonLT C n : Set B))).map)
-          (ModuleCat.of R R) k).hom =
-      LinearMap.ker ((TopPair.ofSubset (X := E) (p ⁻¹' (skeletonLT C n : Set B))).singularHomologyπ
-        (ModuleCat.of R R) k).hom :=
-    ((TopPair.ofSubset (X := E) (p ⁻¹' (skeletonLT C n : Set B))).singularHomology_exact_space
-      (ModuleCat.of R R) k).moduleCat_range_eq_ker
-  have hmem : α ∈ LinearMap.range (SSet.homologyMap (_root_.TopCat.toSSet.map
-        (TopPair.ofSubset (X := E) (p ⁻¹' (skeletonLT C n : Set B))).map)
-          (ModuleCat.of R R) k).hom ↔
-      ((TopPair.ofSubset (X := E) (p ⁻¹' (skeletonLT C n : Set B))).singularHomologyπ
-        (ModuleCat.of R R) k).hom α = 0 := by
-    rw [hex]
-    exact LinearMap.mem_ker (f := ((TopPair.ofSubset (X := E)
-      (p ⁻¹' (skeletonLT C n : Set B))).singularHomologyπ (ModuleCat.of R R) k).hom)
-  exact (livesOverFundamentalClass_iff_singularHomologyπ_ne_zero hp R hC α).trans hmem.not.symm
+  rw [livesOverFundamentalClass_iff_singularHomologyπ_ne_zero (j := j) hp M hB, not_iff_not,
+    ((TopPair.ofSubset (p ⁻¹' (skeletonLT C n : Set B))).singularHomology_exact_space
+      M k).moduleCat_range_eq_ker]
+  exact LinearMap.mem_ker.symm
 
-end Single
+end Deformation
 
 end TopCat
 

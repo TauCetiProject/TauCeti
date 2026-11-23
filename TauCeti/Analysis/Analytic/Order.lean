@@ -19,9 +19,11 @@ monotone under domination (`=O`), hence invariant under equivalence up to consta
 and characterized by comparison with the powers `(z - z₀) ^ n`, and at a zero the divided
 difference `dslope f a` has order one less than `f`. The order is finite at a point with a
 punctured neighbourhood free of zeros, in particular wherever the zeros nearby are confined to a
-finite set. The exponent `m` of a local factorization `(w - z) ^ m v w`, with `v` continuous and
-nonzero at `z`, is unique, and multiplying an analytic function by a factor continuous and nonzero
-at `z` keeps its order as that exponent. The finiteness of the zero set itself on a compact is
+finite set, and, over a connected, locally connected field, at every point of an open set on
+which the function is analytic with compact zero set. The exponent `m` of a local factorization
+`(w - z) ^ m v w`, with `v` continuous and nonzero at `z`, is unique, and multiplying an analytic
+function by a factor continuous and nonzero at `z` keeps its order as that exponent. The
+finiteness of the zero set itself on a compact is
 `AnalyticOnNhd.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
 
@@ -58,6 +60,10 @@ at `z` keeps its order as that exponent. The finiteness of the zero set itself o
   ball has finite order at its centre.
 * `TauCeti.analyticOrderAt_ne_top_of_zeros_subset`: if the zeros in an open set `U` lie in a
   finite set, the order is finite at every point of `U`.
+* `AnalyticOnNhd.analyticOrderAt_ne_top_of_isCompact`,
+  `AnalyticOnNhd.one_le_analyticOrderNatAt_of_isCompact`: over a connected, locally connected
+  field, an analytic function on an open set with compact zero set has finite order at every
+  point, and positive finite order at each of its zeros.
 * `TauCeti.eq_of_eventually_sub_pow_mul_eq`: the exponent of a local factorization
   `(w - z) ^ m v w`, with `v` continuous and nonzero at `z`, is unique.
 * `TauCeti.exists_eventually_mul_eq_sub_pow_mul`, `TauCeti.eq_of_eventually_mul_eq_sub_pow_mul`:
@@ -278,6 +284,47 @@ theorem analyticOrderAt_ne_top_of_zeros_subset {E : Type*} [NormedAddCommGroup E
     (hU.inter (S.finite_toSet.sdiff (t := {z₀})).isClosed.isOpen_compl) z₀ ⟨hz, by simp⟩
   exact analyticOrderAt_ne_top_of_forall_ne_zero hρ fun w hw hwz hw0 ↦
     (hball hw).2 ⟨hzeros w (hball hw).1 hw0, hwz⟩
+
+/-- **A function with a compact zero set has finite order.** If `f` is analytic on an open set
+`U` of a connected, locally connected field and its zero set `{z ∈ U | f z = 0}` is compact, then
+`f` has finite order at every point of `U`: otherwise `f` would vanish on the component of `U`
+through that point, which would then be a compact open subset of the field. -/
+theorem _root_.AnalyticOnNhd.analyticOrderAt_ne_top_of_isCompact [PreconnectedSpace 𝕜]
+    [LocallyConnectedSpace 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜}
+    (hf : AnalyticOnNhd 𝕜 f U) (hU : IsOpen U) (hz₀ : z₀ ∈ U)
+    (hK : IsCompact {z ∈ U | f z = 0}) : analyticOrderAt f z₀ ≠ ⊤ := by
+  intro htop
+  set C := connectedComponentIn U z₀
+  have hCU : C ⊆ U := connectedComponentIn_subset U z₀
+  have hCK : C ⊆ {z ∈ U | f z = 0} := fun z hz ↦ by
+    have : analyticOrderAt f z = ⊤ := by
+      by_contra h
+      exact (hf.mono hCU).analyticOrderAt_ne_top_of_isPreconnected
+        isPreconnected_connectedComponentIn hz (mem_connectedComponentIn hz₀) h htop
+    exact ⟨hCU hz, (analyticOrderAt_eq_top.1 this).self_of_nhds⟩
+  have hclosed : IsClosed C := by
+    refine closure_subset_iff_isClosed.1 ?_
+    refine isPreconnected_connectedComponentIn.closure.subset_connectedComponentIn
+      (subset_closure (mem_connectedComponentIn hz₀)) ?_
+    exact (closure_minimal hCK hK.isClosed).trans fun z hz ↦ hz.1
+  have hCuniv : C = Set.univ :=
+    IsClopen.eq_univ ⟨hclosed, hU.connectedComponentIn⟩ ⟨z₀, mem_connectedComponentIn hz₀⟩
+  exact noncompact_univ 𝕜 (hK.of_isClosed_subset isClosed_univ (hCuniv ▸ hCK))
+
+/-- **A zero with a compact zero set has positive finite order.** If `f` is analytic on an open
+set `U` of a connected, locally connected field, vanishes at `z₀ ∈ U`, and its zero set
+`{z ∈ U | f z = 0}` is compact, then `f` vanishes to a positive natural order at `z₀`. -/
+theorem _root_.AnalyticOnNhd.one_le_analyticOrderNatAt_of_isCompact [PreconnectedSpace 𝕜]
+    [LocallyConnectedSpace 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜}
+    (hf : AnalyticOnNhd 𝕜 f U) (hU : IsOpen U) (hz₀ : z₀ ∈ U) (hf₀ : f z₀ = 0)
+    (hK : IsCompact {z ∈ U | f z = 0}) : 1 ≤ analyticOrderNatAt f z₀ := by
+  have hnetop := hf.analyticOrderAt_ne_top_of_isCompact hU hz₀ hK
+  have : (analyticOrderNatAt f z₀ : ℕ∞) ≠ 0 := by
+    rw [Nat.cast_analyticOrderNatAt hnetop]
+    exact analyticOrderAt_ne_zero.2 ⟨hf z₀ hz₀, hf₀⟩
+  exact Nat.one_le_iff_ne_zero.2 (by exact_mod_cast this)
 
 /-- The exponent of a local factorization `(w - z) ^ m * v w`, with `v` continuous and nonzero at
 `z`, is unique. -/

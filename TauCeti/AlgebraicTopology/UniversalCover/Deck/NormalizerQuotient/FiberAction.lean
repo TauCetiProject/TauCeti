@@ -66,7 +66,7 @@ lemma normalizerSubgroupFiberOrbitMap_apply (H : Subgroup (deck p))
 /-- The normalizer representative `1` acts trivially on the subgroup fibre quotient. -/
 @[simp]
 lemma normalizerSubgroupFiberOrbitMap_one (H : Subgroup (deck p)) :
-    normalizerSubgroupFiberOrbitMap (b := b) H ⟨1, by simp⟩ = id := by
+    normalizerSubgroupFiberOrbitMap (b := b) H 1 = id := by
   exact TauCeti.MulAction.normalizerOrbitRelQuotientMap_one (X := p ⁻¹' {b}) H
 
 /-- Normalizer representatives act by composition on the subgroup fibre quotient. -/
@@ -140,9 +140,7 @@ lemma normalizerQuotientSubgroupFiberOrbitPermHom_mk_apply (H : Subgroup (deck p
         (φ : Subgroup.normalizerQuotient H) (subgroupFiberOrbitClass H e) =
       subgroupFiberOrbitClass H ((φ : deck p) • e) :=
   by
-    simpa [normalizerQuotientSubgroupFiberOrbitPermHom, subgroupFiberOrbitClass] using
-      TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom_mk_apply
-        (X := p ⁻¹' {b}) H φ e
+    simp [normalizerQuotientSubgroupFiberOrbitPermHom, subgroupFiberOrbitClass]
 
 /-- The normalizer quotient `N(H) / H` acts on the quotient of a fibre by `H`-orbits. -/
 instance instNormalizerQuotientSubgroupFiberOrbitMulAction (H : Subgroup (deck p)) :
@@ -156,10 +154,7 @@ lemma normalizerQuotient_smul_subgroupFiberOrbitClass (H : Subgroup (deck p))
     (φ : Subgroup.normalizerQuotient H) • subgroupFiberOrbitClass H e =
       subgroupFiberOrbitClass H ((φ : deck p) • e) :=
   by
-    simpa [instNormalizerQuotientSubgroupFiberOrbitMulAction,
-      subgroupFiberOrbitClass] using
-        TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_mk
-          (X := p ⁻¹' {b}) H φ e
+    simp [subgroupFiberOrbitClass]
 
 /-- A representative from `H` acts trivially through the normalizer quotient. -/
 lemma normalizerQuotient_mk_of_mem_smul_subgroupFiberOrbitClass

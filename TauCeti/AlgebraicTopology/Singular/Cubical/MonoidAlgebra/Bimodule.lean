@@ -37,7 +37,9 @@ system.
 
 * `TauCeti.NormalizedCubicalChain.leftAct_assoc`, `TauCeti.NormalizedCubicalChain.one_leftAct`:
   the left action is strictly associative and unital.
-* `TauCeti.NormalizedCubicalChain.boundary_leftAct`: the Leibniz rule.
+* `TauCeti.NormalizedCubicalChain.boundary_leftAct`: the Leibniz rule, and
+  `TauCeti.NormalizedCubicalChain.boundary_leftAct_of_boundary_eq_zero` its form for the action of
+  a cycle.
 * `TauCeti.NormalizedCubicalChain.leftAct_act`: the left and right actions commute.
 * `TauCeti.NormalizedCubicalChain.augment_leftAct`: the augmentation is multiplicative on the left
   action of `0`-chains.
@@ -145,6 +147,28 @@ theorem boundary_leftAct_zero_left {q : ℕ} (a : NormalizedCubicalChain G R 0)
   simp only [leftAct_def]
   rw [← map_cast, ← LinearMap.comp_apply (boundary Y R q), ← map_boundary, LinearMap.comp_apply,
     boundary_crossProduct_zero_left, map_cast]
+
+/-- **The Leibniz rule for the left action of a cycle**: acting by a `q`-cycle `a` commutes with the
+boundary up to the sign `(-1) ^ q`, `∂ (a · c) = (-1) ^ q • (a · ∂ c)`. In degree `0` every chain is
+a cycle; in positive degree `a` is a cycle when its boundary vanishes, which `ha` states up to the
+reindexing of `q` as `p + 1`. -/
+theorem boundary_leftAct_of_boundary_eq_zero {q n : ℕ} (a : NormalizedCubicalChain G R q)
+    (ha : ∀ p (hp : q = p + 1), boundary G R p (cast R hp a) = 0)
+    (c : NormalizedCubicalChain Y R (n + 1)) :
+    boundary Y R (q + n) (leftAct G Y R q (n + 1) a c) =
+      (-1 : R) ^ q • leftAct G Y R q n a (boundary Y R n c) := by
+  cases q with
+  | zero =>
+    have := (boundary_cast (X := Y) (R := R) (h := Nat.zero_add n)
+      (leftAct G Y R 0 (n + 1) a c)).symm.trans (boundary_leftAct_zero_left a c)
+    simpa using cast_injective R (Nat.zero_add n) this
+  | succ p =>
+    have h0 := ha p rfl
+    rw [cast_rfl] at h0
+    have := (boundary_cast (X := Y) (R := R) (h := show p + 1 + n = p + n + 1 by omega)
+      (leftAct G Y R (p + 1) (n + 1) a c)).symm.trans (boundary_leftAct a c)
+    rw [h0, map_zero, LinearMap.zero_apply, zero_add, ← map_smul] at this
+    exact cast_injective R _ this
 
 variable {Y' : Type*} [TopologicalSpace Y'] [SMul G Y'] [ContinuousSMul G Y']
 
