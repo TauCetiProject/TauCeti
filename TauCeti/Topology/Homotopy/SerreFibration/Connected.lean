@@ -29,7 +29,9 @@ of the fibre `p⁻¹(b) → E` is an `n`-connected map
 (`TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`). In the opposite range, where the
 base has no homotopy, the fibre inclusion is bijective: if `π_{k+1}(B, b)` and `π_{k+2}(B, b)` are
 trivial, it induces a bijection `π_{k+1}(p⁻¹(b)) → π_{k+1}(E)`
-(`TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`).
+(`TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`). In particular, over a
+simply connected base, a nonempty fibre of a Serre fibration with path-connected total space is
+path-connected (`TauCeti.TopCat.pathConnectedSpace_fiber_of_mem_serreFibrations`).
 
 ## Implementation notes
 
@@ -55,6 +57,8 @@ of `p` to a point `b` lifts to a point of the fibre over `b`
   inclusion of a fibre is `n`-connected.
 * `TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`: where the homotopy
   groups of the base vanish, the inclusion of a fibre is bijective on homotopy groups.
+* `TauCeti.TopCat.pathConnectedSpace_fiber_of_mem_serreFibrations`: over a simply connected base,
+  the nonempty fibres of a Serre fibration with path-connected total space are path-connected.
 
 ## References
 
@@ -196,6 +200,14 @@ private theorem joined_of_joined_fiberι (hp : serreFibrations p) (hB : Subsingl
   have h1 := HomotopyGroup.mk_eq_mk_iff_joined.1 hc
   rw [GenLoop.const_apply, genLoopHomeoOfIsEmpty_symm_apply] at h1
   exact h1
+
+/-- **The fibre over a simply connected base is path-connected.** If `p : E → B` is a Serre
+fibration with path-connected total space and `π_1(B, b)` is trivial, then the fibre `p⁻¹(b)` is
+path-connected as soon as it is nonempty. -/
+theorem pathConnectedSpace_fiber_of_mem_serreFibrations (hp : serreFibrations p)
+    [PathConnectedSpace E] (hB : Subsingleton (π_ 1 B b)) [Nonempty (p.fiber b)] :
+    PathConnectedSpace (p.fiber b) :=
+  ⟨inferInstance, fun e y ↦ joined_of_joined_fiberι hp hB (PathConnectedSpace.joined e.val y.val)⟩
 
 /-- Every point of `E` is joined to a point of the fibre over `b` when `B` is path-connected: lift
 a path from its projection to `b`. -/

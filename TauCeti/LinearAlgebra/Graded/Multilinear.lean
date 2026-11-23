@@ -47,11 +47,11 @@ their unsigned degree calculations, which underlie signed substitution for DG an
 
 public section
 
+universe uR uι uκ uβ uM uN uP
+
 namespace TauCeti
 
 open scoped BigOperators
-
-universe uR uι uκ uβ uM uN uP
 
 namespace MultilinearMap
 
@@ -244,7 +244,11 @@ end Scalars
 
 end MultilinearMap
 
+end TauCeti
+
 namespace LinearMap
+
+open TauCeti
 
 variable {R : Type uR} {ι : Type uι} {κ : Type uκ}
   {M : κ → Type uM} {N : Type uN} {P : Type uP} {σM : κ → Type*} {σN σP : Type*}
@@ -264,5 +268,3 @@ theorem IsHomogeneous.compMultilinearMap {f : MultilinearMap (RingHom.id R) M N}
     hg.map_mem (hf d x hx)
 
 end LinearMap
-
-end TauCeti

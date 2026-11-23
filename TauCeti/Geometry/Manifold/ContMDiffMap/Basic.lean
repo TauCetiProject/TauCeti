@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 
 /-!
 # Basic lemmas on bundled `C^n` maps
 
 This file evaluates Mathlib's basic bundled `C^n` maps (`ContMDiffMap.id`, `ContMDiffMap.const`,
-`ContMDiffMap.fst`, `ContMDiffMap.snd`, and `ContMDiffMap.prodMk`) pointwise.
+`ContMDiffMap.fst`, `ContMDiffMap.snd`, and `ContMDiffMap.prodMk`) pointwise, and defines the
+`C^n` function `e^{t f}` of a real `C^n` function `f` (`ContMDiffMap.expMul`), with inverse
+`e^{-t f}` (`ContMDiffMap.expMul_mul_expMul_neg`).
 -/
 
 public section
@@ -54,5 +57,29 @@ theorem snd_apply (p : M × M') : (snd : C^n⟮I.prod I', M × M'; I', M'⟯) p 
 theorem prodMk_apply (f : C^n⟮J, N; I, M⟯) (g : C^n⟮J, N; I', M'⟯) (x : N) :
     f.prodMk g x = (f x, g x) :=
   rfl
+
+section Exp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {n : WithTop ℕ∞}
+
+/-- The `C^n` function `e^{t f}` of a real `C^n` function `f`. -/
+noncomputable def expMul (f : C^n⟮I, M; ℝ⟯) (t : ℝ) : C^n⟮I, M; ℝ⟯ :=
+  ⟨fun x ↦ Real.exp (t * f x),
+    ((Real.contDiff_exp.comp (contDiff_const.mul contDiff_id)).comp_contMDiff f.contMDiff :)⟩
+
+/-- The value of `e^{t f}` at `x` is `Real.exp (t * f x)`. -/
+@[simp]
+theorem expMul_apply (f : C^n⟮I, M; ℝ⟯) (t : ℝ) (x : M) :
+    expMul f t x = Real.exp (t * f x) :=
+  (rfl)
+
+/-- `e^{t f} e^{-t f} = 1`. -/
+theorem expMul_mul_expMul_neg (f : C^n⟮I, M; ℝ⟯) (t : ℝ) (x : M) :
+    expMul f t x * expMul f (-t) x = 1 := by
+  rw [expMul_apply, expMul_apply, ← Real.exp_add, neg_mul, add_neg_cancel, Real.exp_zero]
+
+end Exp
 
 end ContMDiffMap

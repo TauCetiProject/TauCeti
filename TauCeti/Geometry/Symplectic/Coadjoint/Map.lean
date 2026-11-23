@@ -7,61 +7,74 @@ module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Map
 public import TauCeti.Geometry.Symplectic.Coadjoint.Orbit
+
 import TauCeti.Geometry.Lie.AutomaticSmoothness
+import TauCeti.Geometry.Lie.Functor
 
 /-!
-# Coadjoint orbits along homomorphisms and through central covers
+# Coadjoint orbits along homomorphisms and through covering homomorphisms
 
 Let `φ : K →* G` be a homomorphism of real Lie groups with finite-dimensional boundaryless
-models, with differential `dφ : 𝔨 → 𝔤` at the identity (`MonoidHom.groupLieAlgebraMap`), and fix
-`ν ∈ 𝔤*`. When `dφ` is surjective, the coadjoint stabilizer of the pulled-back functional
-`ν ∘ dφ ∈ 𝔨*` is the preimage of that of `ν`, `K_{ν ∘ dφ} = φ⁻¹(G_ν)`
-(`MonoidHom.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap`). So `φ` induces a map of
-homogeneous coadjoint orbits
+models, with differential `dφ : 𝔨 → 𝔤` at the identity (`MonoidHom.groupLieAlgebraMap`), and let
+`ν ∈ 𝔤*`. Pulling functionals back along `dφ` intertwines the coadjoint representations, so when
+`dφ` is surjective the coadjoint stabilizer of `ν ∘ dφ` is `K_{ν ∘ dφ} = φ⁻¹(G_ν)`
+(`MonoidHom.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap`). This file upgrades that
+statement about orbits and stabilizers to the homogeneous symplectic manifolds `K ⧸ K_{ν ∘ dφ}` and
+`G ⧸ G_ν` of `TauCeti.Geometry.Symplectic.Coadjoint.Orbit`.
+
+**Along a homomorphism.** When `dφ` is surjective, `φ` induces the map of coadjoint orbits
 
 `Φ : K ⧸ K_{ν ∘ dφ} → G ⧸ G_ν`, `[k] ↦ [φ k]`
 
-(`MonoidHom.coadjointOrbitQuotientMap`). This file shows that `Φ` is compatible with all the
-structure of the two orbits:
+(`MonoidHom.coadjointOrbitQuotientMap`). It is well defined and injective because
+`K_{ν ∘ dφ} = φ⁻¹(G_ν)`, and surjective when `φ` is. It is smooth, and it
 
-* it is smooth, and equivariant along `φ`: `Φ (k • x) = φ k • Φ x`. No smoothness of `φ` is
-  assumed: when `𝔤 ≠ 0`, the surjectivity of `dφ` makes `φ` differentiable at the identity, hence
-  continuous, hence smooth (`TauCeti.Lie.contMDiff_of_continuous_monoidHom`); when `𝔤 = 0`, the
-  orbit `G ⧸ G_ν` is a point;
-* it intertwines the orbit maps into the duals: `Ad*_{φ k} ν ∘ dφ = Ad*_k (ν ∘ dφ)`, that is,
-  the orbit map of `ν ∘ dφ` is the orbit map of `ν` followed by the pullback `μ ↦ μ ∘ dφ`;
-* it pulls the Kirillov–Kostant–Souriau form `ω_ν` back to `ω_{ν ∘ dφ}`
+* pulls the Kirillov–Kostant–Souriau form `ω_ν` back to `ω_{ν ∘ dφ}`
   (`MonoidHom.mpullback_coadjointOrbitQuotientMap_coadjointOrbitForm`);
-* it is injective, and it is surjective when `φ` is.
+* is equivariant along `φ`, `Φ (k • x) = φ k • Φ x` (`MonoidHom.coadjointOrbitQuotientMap_smul`);
+* intertwines the orbit maps: the point `Ad*_k (ν ∘ dφ)` of `𝔨*` is the pullback along `dφ` of the
+  point `Ad*_{φ k} ν` of `𝔤*` (`MonoidHom.orbitMap_coadjointOrbitQuotientMap`).
 
-The form identity is checked on `K`. The KKS form is characterized by its pullback to the group,
-the left-invariant Kirillov form (`Module.Dual.eq_coadjointOrbitForm_iff`), and `Φ` composed with
-the projection of `K` is the projection of `G` composed with `φ`, which pulls the left-invariant
-Kirillov form `σ_ν` back to `σ_{ν ∘ dφ}` (`MonoidHom.mpullback_leftInvariantKirillovForm`).
+No smoothness of `φ` is assumed: when `𝔤 ≠ 0`, the surjectivity of `dφ` makes `φ` differentiable
+at the identity, hence continuous, hence smooth (`TauCeti.Lie.contMDiff_of_continuous_monoidHom`);
+when `𝔤 = 0`, the orbit `G ⧸ G_ν` is a point. The form identity is checked on `K`: the KKS form is
+characterized by its pullback to the group (`Module.Dual.eq_coadjointOrbitForm_iff`), and `φ` pulls
+the left-invariant Kirillov form of `ν` back to that of `ν ∘ dφ`
+(`Module.Dual.mpullback_leftInvariantKirillovForm`).
 
-The main application is to coverings. A surjective smooth homomorphism `φ : K → G = K / Γ` with
-bijective differential, whose kernel `Γ` is then discrete and, for connected `K`, central
-(`MonoidHom.ker_le_center_of_injective_groupLieAlgebraMap`), identifies `𝔤*` with `𝔨*` by
-`ν ↦ ν ∘ dφ`. Under this identification every coadjoint orbit of `K` is a coadjoint orbit of `G`,
-and `Φ` is a bijective smooth symplectic map between the two homogeneous models
-(`MonoidHom.bijective_coadjointOrbitQuotientMap`), although their isotropy groups differ by `Γ`.
-For instance `SU(2)` and `SO(3)` have the same coadjoint orbits: the nonzero orbits are the same
-symplectic two-spheres, and the zero orbit is a point.
+**Through a covering homomorphism.** If the smooth homomorphism `φ` is also surjective, then `Φ`
+is a diffeomorphism
+
+`K ⧸ K_{ν ∘ dφ} ≃ G ⧸ G_ν`
+
+(`ContMDiffMonoidMorphism.coadjointOrbitDiffeomorph`). The two orbits have the same dimension,
+since `[ξ] ↦ [dφ ξ]` identifies their tangent models `𝔨 ⧸ 𝔨_{ν ∘ dφ}` and `𝔤 ⧸ 𝔤_ν`, and the
+differentials of `Φ` are onto, so it is a local diffeomorphism. The diffeomorphism is therefore a
+symplectomorphism of the Kirillov–Kostant–Souriau forms
+(`ContMDiffMonoidMorphism.mpullback_coadjointOrbitDiffeomorph_coadjointOrbitForm`).
+
+The main example is a covering homomorphism `K → G = K ⧸ Γ` by a discrete central subgroup `Γ`,
+such as `SU(2) → SO(3)`. Then `dφ` is bijective, the isotropy groups `K_{ν ∘ dφ} ⊇ Γ` and `G_ν`
+differ, but the coadjoint orbits are the same symplectic manifolds. Injectivity of `dφ` is not
+needed: the projection `G × L → G` of a product identifies the orbit of `(ν, 0)` with that of `ν`.
 
 ## Main definitions
 
-* `MonoidHom.coadjointOrbitQuotientMap`: the map `[k] ↦ [φ k]` of homogeneous coadjoint orbits.
+* `MonoidHom.coadjointOrbitQuotientMap`: the map `K ⧸ K_{ν ∘ dφ} → G ⧸ G_ν`, `[k] ↦ [φ k]`.
+* `ContMDiffMonoidMorphism.coadjointOrbitDiffeomorph`: the same map as a diffeomorphism, for
+  `φ` smooth and surjective.
 
 ## Main results
 
-* `MonoidHom.contMDiff_coadjointOrbitQuotientMap`: it is smooth.
-* `MonoidHom.coadjointOrbitQuotientMap_smul`: it is equivariant along `φ`.
-* `MonoidHom.coadjointOrbitMap_coadjointOrbitQuotientMap`: it intertwines the orbit maps.
+* `MonoidHom.contMDiff_coadjointOrbitQuotientMap`: the induced map of coadjoint orbits is smooth.
 * `MonoidHom.mpullback_coadjointOrbitQuotientMap_coadjointOrbitForm`: it pulls the KKS form of `ν`
   back to the KKS form of `ν ∘ dφ`.
-* `MonoidHom.injective_coadjointOrbitQuotientMap`,
-  `MonoidHom.surjective_coadjointOrbitQuotientMap`, `MonoidHom.bijective_coadjointOrbitQuotientMap`:
+* `MonoidHom.injective_coadjointOrbitQuotientMap`, `MonoidHom.bijective_coadjointOrbitQuotientMap`:
   it is injective, and bijective for a surjective homomorphism.
+* `ContMDiffMonoidMorphism.mpullback_coadjointOrbitDiffeomorph_coadjointOrbitForm`: the
+  diffeomorphism is a symplectomorphism of the Kirillov–Kostant–Souriau forms.
+* `ContMDiffMonoidMorphism.orbitMap_coadjointRepresentation_comp_groupLieAlgebraMap`: it
+  intertwines the orbit maps into `𝔨*` and `𝔤*`.
 
 ## References
 
@@ -89,7 +102,20 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace HK] {J : ModelWithCorners ℝ F HK}
   {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K] [LieGroup J ∞ K]
   (φ : K →* G) (hdφ : Surjective (φ.groupLieAlgebraMap J I))
-  (ν : Module.Dual ℝ (GroupLieAlgebra I G))
+  (ν : Dual ℝ (GroupLieAlgebra I G))
+
+/-! ### The induced map of coadjoint orbits -/
+
+include hdφ in
+/-- Two cosets of `K_{ν ∘ dφ}` agree exactly when their images under `φ` are equal cosets of
+`G_ν`, since `K_{ν ∘ dφ} = φ⁻¹(G_ν)` when `dφ` is surjective. -/
+private theorem quotientMk_eq_iff_map_quotientMk_eq (a b : K) :
+    (a : K ⧸ (coadjointRepresentation ℝ J K).stabilizer
+        (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)) = b ↔
+      (φ a : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) = φ b := by
+  rw [QuotientGroup.eq, QuotientGroup.eq,
+    φ.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap hdφ ν,
+    Subgroup.mem_comap, map_mul, map_inv]
 
 /-- **The map of coadjoint orbits induced by a homomorphism.** For `φ : K →* G` with surjective
 differential `dφ` at the identity, the map `[k] ↦ [φ k]` from the coadjoint orbit
@@ -98,10 +124,8 @@ differential `dφ` at the identity, the map `[k] ↦ [φ k]` from the coadjoint 
 def coadjointOrbitQuotientMap :
     K ⧸ (coadjointRepresentation ℝ J K).stabilizer (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) →
       G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν :=
-  Quotient.map' φ fun a b hab ↦ by
-    rw [QuotientGroup.leftRel_apply] at hab ⊢
-    have h := (φ.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap hdφ ν).le hab
-    rwa [Subgroup.mem_comap, map_mul, map_inv] at h
+  Quotient.lift (fun k : K ↦ (φ k : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν))
+    fun a b hab ↦ (quotientMk_eq_iff_map_quotientMk_eq φ hdφ ν a b).1 (Quotient.sound hab)
 
 /-- The induced map of coadjoint orbits sends the coset of `k` to the coset of `φ k`. -/
 @[simp]
@@ -120,7 +144,8 @@ theorem coadjointOrbitQuotientMap_comp_mk :
       (QuotientGroup.mk : G → G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) ∘ φ :=
   funext fun k ↦ φ.coadjointOrbitQuotientMap_mk hdφ ν k
 
-/-- **The induced map of coadjoint orbits is equivariant along `φ`.** -/
+/-- **The induced map of coadjoint orbits is equivariant along `φ`:** `[φ (k k')] = φ k • [φ k']`.
+-/
 theorem coadjointOrbitQuotientMap_smul (k : K)
     (x : K ⧸ (coadjointRepresentation ℝ J K).stabilizer
       (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)) :
@@ -129,17 +154,20 @@ theorem coadjointOrbitQuotientMap_smul (k : K)
   | H a => rw [MulAction.Quotient.smul_coe, coadjointOrbitQuotientMap_mk,
       coadjointOrbitQuotientMap_mk, MulAction.Quotient.smul_coe, smul_eq_mul, smul_eq_mul, map_mul]
 
-/-- **The induced map intertwines the orbit maps.** The orbit map of `ν ∘ dφ` is the orbit map of
-`ν` read through the induced map of coadjoint orbits and pulled back along `dφ`. -/
-theorem coadjointOrbitMap_coadjointOrbitQuotientMap
+/-- **The induced map intertwines the orbit maps.** The image in `𝔨*` of a point `x` of the
+coadjoint orbit of `ν ∘ dφ` is the pullback along `dφ` of the image in `𝔤*` of its image in the
+coadjoint orbit of `ν`: `Ad*_k (ν ∘ dφ) = (Ad*_{φ k} ν) ∘ dφ`. -/
+theorem orbitMap_coadjointOrbitQuotientMap
     (x : K ⧸ (coadjointRepresentation ℝ J K).stabilizer
       (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)) :
-    (ν.coadjointOrbitMap (φ.coadjointOrbitQuotientMap hdφ ν x)).comp
+    ((coadjointRepresentation ℝ I G).orbitMap ν (φ.coadjointOrbitQuotientMap hdφ ν x)).comp
         (φ.groupLieAlgebraMap J I).toLinearMap =
-      Module.Dual.coadjointOrbitMap (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) x := by
+      (coadjointRepresentation ℝ J K).orbitMap
+        (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) x := by
   induction x using QuotientGroup.induction_on with
-  | H k => rw [coadjointOrbitQuotientMap_mk, Module.Dual.coadjointOrbitMap_mk,
-      Module.Dual.coadjointOrbitMap_mk, coadjointRepresentation_comp_groupLieAlgebraMap]
+  | H k =>
+    rw [coadjointOrbitQuotientMap_mk, Representation.orbitMap_mk, Representation.orbitMap_mk]
+    exact (φ.coadjointRepresentation_comp_groupLieAlgebraMap k ν).symm
 
 /-- **The induced map of coadjoint orbits is injective**, since `K_{ν ∘ dφ}` is the full preimage
 `φ⁻¹(G_ν)`. -/
@@ -148,10 +176,8 @@ theorem injective_coadjointOrbitQuotientMap :
   intro x y hxy
   induction x using QuotientGroup.induction_on with | H a =>
   induction y using QuotientGroup.induction_on with | H b =>
-  rw [coadjointOrbitQuotientMap_mk, coadjointOrbitQuotientMap_mk, QuotientGroup.eq] at hxy
-  rw [QuotientGroup.eq, φ.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap hdφ ν,
-    Subgroup.mem_comap, map_mul, map_inv]
-  exact hxy
+  rw [coadjointOrbitQuotientMap_mk, coadjointOrbitQuotientMap_mk] at hxy
+  exact (quotientMk_eq_iff_map_quotientMk_eq φ hdφ ν a b).2 hxy
 
 /-- The induced map of coadjoint orbits of a surjective homomorphism is surjective. -/
 theorem surjective_coadjointOrbitQuotientMap (hφ : Surjective φ) :
@@ -189,17 +215,17 @@ private theorem contMDiff_of_surjective_groupLieAlgebraMap [Nontrivial E] :
   exact Lie.contMDiff_of_continuous_monoidHom φ (continuous_of_continuousAt_one φ hd.continuousAt)
 
 /-- The Kirillov–Kostant–Souriau form of the zero functional vanishes. -/
-private theorem coadjointOrbitForm_eq_zero {μ : Module.Dual ℝ (GroupLieAlgebra I G)}
+private theorem coadjointOrbitForm_eq_zero {μ : Dual ℝ (GroupLieAlgebra I G)}
     (hμ : μ = 0) : μ.coadjointOrbitForm = 0 := by
   subst hμ
-  have hα : (0 : Module.Dual ℝ (GroupLieAlgebra I G)).leftInvariantForm = 0 :=
+  have hα : (0 : Dual ℝ (GroupLieAlgebra I G)).leftInvariantForm = 0 :=
     Subtype.ext <| funext fun g ↦ by
       ext v
-      exact Module.Dual.leftInvariantForm_apply _ g v
-  rw [eq_comm, Module.Dual.eq_coadjointOrbitForm_iff _
-    (Module.Dual.isSubmersion_quotientMk_stabilizer_coadjointRepresentation
-      (0 : Module.Dual ℝ (GroupLieAlgebra I G))).contMDiff,
-    map_zero, Module.Dual.leftInvariantKirillovForm_def, hα, map_zero, neg_zero]
+      exact Dual.leftInvariantForm_apply _ g v
+  rw [eq_comm, Dual.eq_coadjointOrbitForm_iff _
+    (Dual.isSubmersion_quotientMk_stabilizer_coadjointRepresentation
+      (0 : Dual ℝ (GroupLieAlgebra I G))).contMDiff,
+    map_zero, Dual.leftInvariantKirillovForm_def, hα, map_zero, neg_zero]
 
 /-- **The induced map of coadjoint orbits is smooth**, by descent along the submersion
 `K → K ⧸ K_{ν ∘ dφ}`. -/
@@ -209,7 +235,7 @@ theorem contMDiff_coadjointOrbitQuotientMap :
         (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)))
       𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) ∞
       (φ.coadjointOrbitQuotientMap hdφ ν) :=
-  ((Module.Dual.isSubmersion_quotientMk_stabilizer_coadjointRepresentation
+  ((Dual.isSubmersion_quotientMk_stabilizer_coadjointRepresentation
     (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)).contMDiff_comp_iff
       QuotientGroup.mk_surjective le_rfl).1 (by
       rw [coadjointOrbitQuotientMap_comp_mk]
@@ -228,7 +254,7 @@ form of `ν` back to the Kirillov–Kostant–Souriau form of `ν ∘ dφ`. -/
 theorem mpullback_coadjointOrbitQuotientMap_coadjointOrbitForm :
     SmoothForm.mpullback (φ.coadjointOrbitQuotientMap hdφ ν)
         (contMDiff_coadjointOrbitQuotientMap hdφ ν) ν.coadjointOrbitForm =
-      Module.Dual.coadjointOrbitForm (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) := by
+      Dual.coadjointOrbitForm (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- If `𝔤 = 0`, then `ν = 0` and `ν ∘ dφ = 0`, whose KKS forms vanish.
     have : Subsingleton (GroupLieAlgebra I G) := hE
@@ -236,14 +262,160 @@ theorem mpullback_coadjointOrbitQuotientMap_coadjointOrbitForm :
     rw [coadjointOrbitForm_eq_zero hν, map_zero,
       coadjointOrbitForm_eq_zero (by rw [hν, LinearMap.zero_comp])]
   have hφ := contMDiff_of_surjective_groupLieAlgebraMap hdφ
-  have hπK := (Module.Dual.isSubmersion_quotientMk_stabilizer_coadjointRepresentation
+  have hπK := (Dual.isSubmersion_quotientMk_stabilizer_coadjointRepresentation
     (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)).contMDiff
   have hπG := ν.isSubmersion_quotientMk_stabilizer_coadjointRepresentation.contMDiff
-  -- Both sides are determined by their pullbacks to `K`, and the square
-  -- `Φ ∘ π_K = π_G ∘ φ` reduces the left side to the pullback of `σ_ν` along `φ`.
-  rw [Module.Dual.eq_coadjointOrbitForm_iff _ hπK, SmoothForm.mpullback_mpullback_of_comp_eq hπK
+  -- Pulled back to `K`, both sides are `φ^* σ_ν = σ_{ν ∘ dφ}`.
+  rw [Dual.eq_coadjointOrbitForm_iff _ hπK, SmoothForm.mpullback_mpullback_of_comp_eq hπK
     (contMDiff_coadjointOrbitQuotientMap hdφ ν) hφ hπG
     (φ.coadjointOrbitQuotientMap_comp_mk hdφ ν),
-    Module.Dual.mpullback_quotientMk_coadjointOrbitForm, mpullback_leftInvariantKirillovForm]
+    Dual.mpullback_quotientMk_coadjointOrbitForm]
+  exact ν.mpullback_leftInvariantKirillovForm ⟨φ, hφ⟩
 
 end MonoidHom
+
+namespace ContMDiffMonoidMorphism
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  {F HK : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace HK] {J : ModelWithCorners ℝ F HK} [J.Boundaryless]
+  {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K] [LieGroup J ∞ K]
+  (φ : ContMDiffMonoidMorphism J I ∞ K G) (hφ : Surjective φ)
+  (hdφ : Surjective (φ.toMonoidHom.groupLieAlgebraMap J I)) (ν : Dual ℝ (GroupLieAlgebra I G))
+
+/-! ### The orbits as symplectic manifolds -/
+
+include hdφ in
+/-- The coadjoint orbits `K ⧸ K_{ν ∘ dφ}` and `G ⧸ G_ν` have the same dimension: `[ξ] ↦ [dφ ξ]`
+identifies their tangent models `𝔨 ⧸ 𝔨_{ν ∘ dφ}` and `𝔤 ⧸ 𝔤_ν`. -/
+private theorem finrank_quotientModelSpace_eq :
+    finrank ℝ (Subgroup.QuotientModelSpace J ((coadjointRepresentation ℝ J K).stabilizer
+        (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap))) =
+      finrank ℝ (Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) := by
+  rw [Dual.finrank_quotientModelSpace_eq_finrank_quotient_lieAnnihilator,
+    Dual.finrank_quotientModelSpace_eq_finrank_quotient_lieAnnihilator]
+  exact (Dual.quotientLieAnnihilatorEquiv (f := φ.groupLieAlgebraLieHom)
+    (ν := ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap) ν
+    (by rwa [coe_groupLieAlgebraLieHom]) (by rw [toLinearMap_groupLieAlgebraLieHom])).finrank_eq
+
+/-- The differentials of the map `[k] ↦ [φ k]` of coadjoint orbits are surjective. -/
+private theorem surjective_mfderiv_coadjointOrbitQuotientMap
+    (x : K ⧸ (coadjointRepresentation ℝ J K).stabilizer
+      (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)) :
+    Surjective (mfderiv
+      𝓘(ℝ, Subgroup.QuotientModelSpace J ((coadjointRepresentation ℝ J K).stabilizer
+        (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)))
+      𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+      (φ.toMonoidHom.coadjointOrbitQuotientMap hdφ ν) x) := by
+  obtain ⟨k, rfl⟩ := QuotientGroup.mk_surjective x
+  have hπK := Dual.isSubmersion_quotientMk_stabilizer_coadjointRepresentation (I := J) (G := K)
+    (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)
+  have hπG := ν.isSubmersion_quotientMk_stabilizer_coadjointRepresentation
+  -- Differentiate `Φ ∘ π_K = π_G ∘ φ` at `k`.
+  have hcomp := mfderiv_comp k
+    ((φ.toMonoidHom.contMDiff_coadjointOrbitQuotientMap hdφ ν).mdifferentiableAt (by simp))
+    (hπK.contMDiff.mdifferentiableAt (by simp))
+  have hcomp' := mfderiv_comp k (hπG.contMDiff.mdifferentiableAt (by simp))
+    (φ.contMDiff_toFun.mdifferentiableAt (by simp))
+  have hfun : φ.toMonoidHom.coadjointOrbitQuotientMap hdφ ν ∘ QuotientGroup.mk =
+      QuotientGroup.mk ∘ φ :=
+    funext (φ.toMonoidHom.coadjointOrbitQuotientMap_mk hdφ ν)
+  rw [hfun] at hcomp
+  intro w
+  obtain ⟨u, rfl⟩ := hπG.surjective_mfderiv (by simp) (φ k) w
+  obtain ⟨v, rfl⟩ := φ.surjective_mfderiv_of_surjective_groupLieAlgebraMap hdφ k u
+  refine ⟨mfderiv J _ QuotientGroup.mk k v, ?_⟩
+  exact congrArg (· v) (hcomp.symm.trans hcomp')
+
+/-- The map `[k] ↦ [φ k]` of coadjoint orbits is a local diffeomorphism. -/
+private theorem isLocalDiffeomorph_coadjointOrbitQuotientMap :
+    IsLocalDiffeomorph
+      𝓘(ℝ, Subgroup.QuotientModelSpace J ((coadjointRepresentation ℝ J K).stabilizer
+        (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)))
+      𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) ∞
+      (φ.toMonoidHom.coadjointOrbitQuotientMap hdφ ν) := fun x ↦
+  TauCeti.isLocalDiffeomorphAt_of_injective_mfderiv (s := Set.univ)
+    (φ.toMonoidHom.contMDiff_coadjointOrbitQuotientMap hdφ ν).contMDiffOn isOpen_univ
+    (Set.mem_univ x) BoundarylessManifold.isInteriorPoint (by simp)
+    ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (finrank_quotientModelSpace_eq φ hdφ ν)).2
+        (surjective_mfderiv_coadjointOrbitQuotientMap φ hdφ ν x))
+    (finrank_quotientModelSpace_eq φ hdφ ν)
+
+/-- **Coadjoint orbits through a covering homomorphism.** If the smooth homomorphism `φ : K → G`
+and its differential `dφ : 𝔨 → 𝔤` at the identity are surjective, then `[k] ↦ [φ k]` is a
+diffeomorphism from the coadjoint orbit `K ⧸ K_{ν ∘ dφ}` of `ν ∘ dφ ∈ 𝔨*` onto the coadjoint orbit
+`G ⧸ G_ν` of `ν ∈ 𝔤*`. It pulls the Kirillov–Kostant–Souriau form back to the
+Kirillov–Kostant–Souriau form
+(`ContMDiffMonoidMorphism.mpullback_coadjointOrbitDiffeomorph_coadjointOrbitForm`). -/
+def coadjointOrbitDiffeomorph :
+    Diffeomorph
+      𝓘(ℝ, Subgroup.QuotientModelSpace J ((coadjointRepresentation ℝ J K).stabilizer
+        (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)))
+      𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+      (K ⧸ (coadjointRepresentation ℝ J K).stabilizer
+        (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap))
+      (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) ∞ :=
+  (isLocalDiffeomorph_coadjointOrbitQuotientMap φ hdφ ν).diffeomorphOfBijective
+    (φ.toMonoidHom.bijective_coadjointOrbitQuotientMap hdφ ν hφ)
+
+/-- The diffeomorphism of coadjoint orbits is the map `[k] ↦ [φ k]` induced by `φ`. -/
+theorem coe_coadjointOrbitDiffeomorph :
+    ⇑(φ.coadjointOrbitDiffeomorph hφ hdφ ν) = φ.toMonoidHom.coadjointOrbitQuotientMap hdφ ν :=
+  IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _
+
+/-- The diffeomorphism of coadjoint orbits sends the coset `[k]` to the coset `[φ k]`. -/
+@[simp]
+theorem coadjointOrbitDiffeomorph_mk (k : K) :
+    φ.coadjointOrbitDiffeomorph hφ hdφ ν k =
+      (φ k : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) := by
+  rw [coe_coadjointOrbitDiffeomorph, MonoidHom.coadjointOrbitQuotientMap_mk]
+  rfl
+
+/-- The inverse of the diffeomorphism of coadjoint orbits sends the coset `[φ k]` to the coset
+`[k]`. -/
+@[simp]
+theorem coadjointOrbitDiffeomorph_symm_mk (k : K) :
+    (φ.coadjointOrbitDiffeomorph hφ hdφ ν).symm
+        (φ k : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) = k := by
+  rw [← coadjointOrbitDiffeomorph_mk φ hφ hdφ ν k, Diffeomorph.symm_apply_apply]
+
+/-- The diffeomorphism of coadjoint orbits is equivariant along `φ`:
+`[φ (k k')] = φ k • [φ k']`. -/
+theorem coadjointOrbitDiffeomorph_smul (k : K)
+    (x : K ⧸ (coadjointRepresentation ℝ J K).stabilizer
+      (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)) :
+    φ.coadjointOrbitDiffeomorph hφ hdφ ν (k • x) =
+      φ k • φ.coadjointOrbitDiffeomorph hφ hdφ ν x := by
+  rw [coe_coadjointOrbitDiffeomorph]
+  exact φ.toMonoidHom.coadjointOrbitQuotientMap_smul hdφ ν k x
+
+/-- **The diffeomorphism of coadjoint orbits intertwines the orbit maps.** The image in `𝔨*` of a
+point `x` of the coadjoint orbit of `ν ∘ dφ` is the pullback along `dφ` of the image in `𝔤*` of the
+corresponding point of the coadjoint orbit of `ν`: `Ad*_k (ν ∘ dφ) = (Ad*_{φ k} ν) ∘ dφ`. -/
+theorem orbitMap_coadjointRepresentation_comp_groupLieAlgebraMap
+    (x : K ⧸ (coadjointRepresentation ℝ J K).stabilizer
+      (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)) :
+    (coadjointRepresentation ℝ J K).orbitMap
+        (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap) x =
+      ((coadjointRepresentation ℝ I G).orbitMap ν (φ.coadjointOrbitDiffeomorph hφ hdφ ν x)).comp
+        (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap := by
+  rw [coe_coadjointOrbitDiffeomorph]
+  exact (φ.toMonoidHom.orbitMap_coadjointOrbitQuotientMap hdφ ν x).symm
+
+/-- **The diffeomorphism of coadjoint orbits is a symplectomorphism.** It pulls the
+Kirillov–Kostant–Souriau form of `G ⧸ G_ν` back to that of `K ⧸ K_{ν ∘ dφ}`. -/
+@[simp]
+theorem mpullback_coadjointOrbitDiffeomorph_coadjointOrbitForm :
+    SmoothForm.mpullback (φ.coadjointOrbitDiffeomorph hφ hdφ ν)
+        (φ.coadjointOrbitDiffeomorph hφ hdφ ν).contMDiff ν.coadjointOrbitForm =
+      Dual.coadjointOrbitForm (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap) := by
+  -- The diffeomorphism is the induced map of coadjoint orbits, which is symplectic.
+  simp_rw [coe_coadjointOrbitDiffeomorph]
+  exact φ.toMonoidHom.mpullback_coadjointOrbitQuotientMap_coadjointOrbitForm hdφ ν
+
+end ContMDiffMonoidMorphism

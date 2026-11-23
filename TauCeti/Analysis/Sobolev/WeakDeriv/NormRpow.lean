@@ -59,6 +59,9 @@ point lemma; at `p = -1`, the unit radial field, it is assembled from the coordi
   `1 - d < s ≤ 0`.
 * `TauCeti.hasWeakFDerivOn_norm_rpow`: the classical derivative is a weak derivative on every
   open set for `s > 1 - d`.
+* `TauCeti.HasWeakFDerivOn.neg_finrank_lt_sub_one_mul_of_integrableOn`: for `s ≠ 0`, a weak
+  derivative of the power agrees with the classical one away from the origin, so it is
+  `p`-integrable near the origin only when `(s - 1) p > -d`.
 * `TauCeti.hasWeakFDerivOn_norm_rpow_mul_inner`: for `s > -d`, the products `‖x‖ ^ s ⟪x, v⟫` are
   weakly differentiable on every open set, with their classical derivatives.
 * `TauCeti.abs_norm_rpow_mul_inner_le`, `TauCeti.norm_norm_rpow_smul_innerSL_add_le`: the products
@@ -252,11 +255,46 @@ theorem hasWeakFDerivOn_norm_rpow (hs : 1 - (Module.finrank ℝ E : ℝ) < s) (�
         locallyIntegrable_norm_sub_rpow (mu := μ) (s := s) (by linarith) (0 : E))
       (locallyIntegrable_norm_rpow_smul_innerSL hs) (fun _ hg hc v ↦ by
         simpa only [smul_eq_mul, mul_comm] using
-          integral_norm_rpow_mul_fderiv_eq_neg hs0 hs hg hc v) Ω
+          integral_norm_rpow_mul_fderiv_eq_neg hs0 hs (hg.of_le (by simp)) hc v) Ω
   · exact hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
       (continuous_norm.rpow_const fun _ ↦ Or.inr hs0.le).continuousOn
       ((locallyIntegrable_norm_rpow_smul_innerSL hs).locallyIntegrableOn _)
       fun x hx ↦ hasFDerivAt_norm_rpow_of_ne s hx.2
+
+/-- **Weak derivatives of non-integrable norm powers.** Let `s ≠ 0` and let `D` be a weak
+derivative of `x ↦ ‖x‖ ^ s` on an open set containing a ball `B(0, r)` with `r > 0`. If
+`‖D‖ ^ p` is integrable on that ball, then `(s - 1) p > -dim E`. -/
+theorem HasWeakFDerivOn.neg_finrank_lt_sub_one_mul_of_integrableOn [Nontrivial E]
+    {Ω : Opens E} {D : E → E →L[ℝ] ℝ} (hD : HasWeakFDerivOn μ Ω (fun x : E => ‖x‖ ^ s) D)
+    (hs0 : s ≠ 0) {r : ℝ} (hr : 0 < r) (hrΩ : Metric.ball (0 : E) r ⊆ Ω) {p : ℝ}
+    (hint : IntegrableOn (fun x => ‖D x‖ ^ p) (Metric.ball 0 r) μ) :
+    -(Module.finrank ℝ E : ℝ) < (s - 1) * p := by
+  -- On the punctured ball, `D` is the classical derivative.
+  let W : Opens E := ⟨Metric.ball 0 r, Metric.isOpen_ball⟩ ⊓ ⟨{0}ᶜ, isOpen_compl_singleton⟩
+  have hdiff : ∀ x ∈ (W : Set E), HasFDerivAt (fun x : E => ‖x‖ ^ s)
+      ((s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) x := fun x hx => hasFDerivAt_norm_rpow_of_ne s hx.2
+  have hcont : ContinuousOn (fderiv ℝ fun x : E => ‖x‖ ^ s) W := by
+    have hc : ContinuousOn (fun x : E => (s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) W :=
+      fun x hx => ((continuousAt_const.mul ((continuous_norm.continuousAt).rpow_const
+        (Or.inl (norm_ne_zero_iff.2 hx.2)))).smul
+          (innerSL ℝ).continuous.continuousAt).continuousWithinAt
+    exact hc.congr fun x hx => (hdiff x hx).fderiv
+  have hae := (hD.mono (fun x hx => hrΩ hx.1 : W ≤ Ω)).ae_eq_fderiv
+    (hcont.locallyIntegrableOn W.isOpen.measurableSet)
+    fun x hx => (hdiff x hx).differentiableAt
+  have hae' := (ae_restrict_iff' W.isOpen.measurableSet).1 hae
+  -- So `|s| ‖x‖ ^ (s - 1)` is `p`-integrable on the ball.
+  have hball : IntegrableOn (fun x : E => |s| ^ p * ‖x‖ ^ ((s - 1) * p))
+      (Metric.ball 0 r) μ := by
+    refine hint.congr ?_
+    filter_upwards [ae_restrict_of_ae hae', ae_restrict_mem measurableSet_ball,
+      ae_restrict_of_ae (Measure.ae_ne μ (0 : E))] with x hx hxb hx0
+    rw [hx ⟨hxb, hx0⟩, norm_fderiv_norm_rpow_of_ne s hx0,
+      Real.mul_rpow (abs_nonneg s) (Real.rpow_nonneg (norm_nonneg x) _),
+      ← Real.rpow_mul (norm_nonneg x)]
+  have hpos : (0 : ℝ) < |s| ^ p := Real.rpow_pos_of_pos (abs_pos.2 hs0) _
+  rwa [IntegrableOn, integrable_const_mul_iff hpos.ne'.isUnit, ← IntegrableOn,
+    integrableOn_norm_rpow_ball_iff hr] at hball
 
 /-! ### Norm powers times a coordinate -/
 

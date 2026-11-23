@@ -1009,6 +1009,21 @@ theorem criticalCount_projectiveMomentFunction_real {w : Fin (n + 1) → ℝ} (h
   simp only [criticalCount_projectiveMomentFunction hw, Module.finrank_self, one_mul,
     encard_setOf_ncard_setOf_lt_eq hw, Nat.card_eq_fintype_card, Fintype.card_fin, Nat.lt_succ_iff]
 
+/-- **One critical point of each even index on `ℂℙⁿ`.** For pairwise distinct weights the moment
+function on complex projective space has exactly one critical point of each even index `m ≤ 2n`,
+and none of odd index or of index above `2n`. -/
+theorem criticalCount_projectiveMomentFunction_complex {w : Fin (n + 1) → ℝ} (hw : Injective w)
+    (m : ℕ) :
+    criticalCount 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ w) m =
+      if Even m ∧ m ≤ 2 * n then 1 else 0 := by
+  split_ifs with h
+  · obtain ⟨⟨j, rfl⟩, hj⟩ := h
+    rw [← two_mul, ← Complex.finrank_real_complex, criticalCount_projectiveMomentFunction_mul hw]
+    simp [show j ≤ n by lia]
+  · refine criticalCount_projectiveMomentFunction_eq_zero hw fun j hj hjm ↦ h ?_
+    rw [Complex.finrank_real_complex] at hjm
+    exact ⟨⟨j, by lia⟩, by lia⟩
+
 /-- For pairwise distinct weights, at most one critical point of the moment function on `ℝℙⁿ` has
 a given index. -/
 theorem subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real

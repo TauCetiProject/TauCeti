@@ -422,7 +422,7 @@ include hjets in
 /-- A frequency cutoff `χ` times the members of the family gives a family whose jets are jointly
 continuous everywhere: away from the zero frequency by the Leibniz rule, and near it because `χ`
 vanishes there. -/
-private theorem continuous_iteratedFDeriv_smul_coefficient (χ : FrequencyCutoff E) (k : ℕ) :
+theorem continuous_iteratedFDeriv_smul_coefficient (χ : FrequencyCutoff E) (k : ℕ) :
     Continuous (fun p : Y × (X × E) ↦
       iteratedFDeriv ℝ k (fun q : X × E ↦ χ q.2 • (a p.1).coefficient q) p.2) := by
   have hopen : IsOpen {p : X × E | p.2 ≠ 0} := isOpen_ne_fun continuous_snd continuous_const
@@ -484,6 +484,28 @@ def integral : HomogeneousSymbol X E V W m where
 theorem coefficient_integral (p : X × E) :
     (integral μ a hjets).coefficient p = ∫ y, (a y).coefficient p ∂μ :=
   (rfl)
+
+/-- Integration preserves addition of compact families of homogeneous symbols. -/
+theorem integral_add (b : Y → HomogeneousSymbol X E V W m)
+    (hb : ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (X × E) ↦ iteratedFDeriv ℝ k (b p.1).coefficient p.2) (univ ×ˢ {p | p.2 ≠ 0}))
+    {hab : ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (X × E) ↦ iteratedFDeriv ℝ k (a p.1 + b p.1).coefficient p.2)
+      (univ ×ˢ {p | p.2 ≠ 0})} :
+    integral μ (fun y ↦ a y + b y) hab = integral μ a hjets + integral μ b hb := by
+  refine HomogeneousSymbol.ext (funext fun p ↦ ?_)
+  simp only [coefficient_integral, coefficient_add, Pi.add_apply]
+  exact MeasureTheory.integral_add (integrable_coefficient_family μ a hjets p)
+    (integrable_coefficient_family μ b hb p)
+
+/-- Integration of homogeneous symbols commutes with multiplication by a fixed complex scalar. -/
+theorem integral_smul (c : ℂ)
+    {hcs : ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (X × E) ↦ iteratedFDeriv ℝ k (c • a p.1).coefficient p.2)
+      (univ ×ˢ {p | p.2 ≠ 0})} :
+    integral μ (fun y ↦ c • a y) hcs = c • integral μ a hjets := by
+  refine HomogeneousSymbol.ext (funext fun p ↦ ?_)
+  simp only [coefficient_integral, coefficient_smul, Pi.smul_apply, MeasureTheory.integral_smul]
 
 /-- A probability average fixes a constant family of homogeneous symbols. -/
 @[simp]
