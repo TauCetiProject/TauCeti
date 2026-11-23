@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
-public import TauCeti.RingTheory.Idempotents.Corner.Central
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
 /-!
 # Block algebras of a group algebra
@@ -48,11 +48,6 @@ namespace IsBlockIdempotent
 
 variable {b : Subalgebra.center R (MonoidAlgebra R G)}
 
-/-- A block idempotent of `R[G]`, read in `R[G]`, is idempotent. -/
-theorem isIdempotentElem_val (hb : IsBlockIdempotent b) :
-    IsIdempotentElem (b : MonoidAlgebra R G) :=
-  hb.isIdempotentElem.map (Subalgebra.center R (MonoidAlgebra R G)).val
-
 /-- The **block algebra** `e_B R[G]` of a block idempotent `e_B` of `R[G]`: Mathlib's corner ring
 `e_B R[G] e_B`, which is `e_B R[G]` because `e_B` is central. It is an `R`-algebra with identity
 `e_B`. -/
@@ -63,9 +58,7 @@ namespace BlockAlgebra
 
 /-- The block algebra of a block idempotent is nonzero, because its identity `e_B` is nonzero. -/
 instance instNontrivial (hb : IsBlockIdempotent b) : Nontrivial hb.BlockAlgebra :=
-  ⟨1, 0, fun h ↦ hb.ne_zero <| Subtype.ext <| by
-    simpa only [IsIdempotentElem.Corner.val_one, IsIdempotentElem.Corner.val_zero,
-      ZeroMemClass.coe_zero] using congrArg Subtype.val h⟩
+  IsIdempotentElem.Corner.nontrivial _ fun h ↦ hb.ne_zero <| Subtype.ext <| by simpa using h
 
 end BlockAlgebra
 
@@ -82,19 +75,28 @@ noncomputable def algEquivPiBlockAlgebra (hb : CompleteOrthogonalIdempotents b)
   (hb.map (Subalgebra.center R (MonoidAlgebra R G)).val.toRingHom).algEquivOfIsMulCentral
     fun i ↦ Set.mem_center_iff.mp (b i).property
 
+/-- The component of `x` in the block algebra `e_B R[G]` is the compression `e_B x e_B`. -/
+theorem algEquivPiBlockAlgebra_apply (hb : CompleteOrthogonalIdempotents b)
+    (hbp : ∀ i, IsBlockIdempotent (b i)) (x : MonoidAlgebra R G) (i : ι) :
+    algEquivPiBlockAlgebra hb hbp x i = (hbp i).isIdempotentElem_val.compress x := by
+  rw [algEquivPiBlockAlgebra]
+  exact (hb.map _).algEquivOfIsMulCentral_apply _ x i
+
 /-- The component of `x` in the block algebra `e_B R[G]` is `e_B x`. -/
 @[simp]
 theorem algEquivPiBlockAlgebra_apply_val (hb : CompleteOrthogonalIdempotents b)
     (hbp : ∀ i, IsBlockIdempotent (b i)) (x : MonoidAlgebra R G) (i : ι) :
-    (algEquivPiBlockAlgebra hb hbp x i).val = b i * x :=
-  (hb.map _).algEquivOfIsMulCentral_apply_val _ x i
+    (algEquivPiBlockAlgebra hb hbp x i).val = b i * x := by
+  rw [algEquivPiBlockAlgebra]
+  exact (hb.map _).algEquivOfIsMulCentral_apply_val _ x i
 
 /-- An element of `∏_B e_B R[G]` corresponds to the sum of its components in `R[G]`. -/
 @[simp]
 theorem algEquivPiBlockAlgebra_symm_apply (hb : CompleteOrthogonalIdempotents b)
     (hbp : ∀ i, IsBlockIdempotent (b i)) (y : ∀ i, (hbp i).BlockAlgebra) :
-    (algEquivPiBlockAlgebra hb hbp).symm y = ∑ i, (y i).val :=
-  CompleteOrthogonalIdempotents.algEquivOfIsMulCentral_symm_apply
+    (algEquivPiBlockAlgebra hb hbp).symm y = ∑ i, (y i).val := by
+  rw [algEquivPiBlockAlgebra]
+  exact CompleteOrthogonalIdempotents.algEquivOfIsMulCentral_symm_apply
     (hb.map (Subalgebra.center R (MonoidAlgebra R G)).val.toRingHom)
     (fun i ↦ Set.mem_center_iff.mp (b i).property) y
 
