@@ -284,7 +284,7 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
     exact zsmul_mem (map_mem_supportedIn_range k (g z) _) _
   · rintro _ ⟨p, rfl⟩ hp
     exact Set.disjoint_left.1 (hUι x z.val z'.val y z'.prop.1 z'.prop.2 fun h ↦ hz (Subtype.ext h))
-      ⟨p, rfl⟩ hp
+      ⟨p, rfl⟩ (by simpa [g] using hp)
   · rintro a ⟨z, hyz, hzx, ha⟩
     exact Set.mem_iUnion.2 ⟨⟨z, hyz, hzx⟩, ha⟩
   · -- The cross product of the representatives of the two factors, carried to the face, represents

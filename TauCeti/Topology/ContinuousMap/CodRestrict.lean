@@ -30,19 +30,19 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- The restriction of the codomain of a continuous map `f : C(X, Y)` to a set `s` containing
 all its values. -/
-@[expose] def codRestrict (f : C(X, Y)) (s : Set Y) (hs : ∀ x, f x ∈ s) : C(X, s) :=
+def codRestrict (f : C(X, Y)) (s : Set Y) (hs : ∀ x, f x ∈ s) : C(X, s) :=
   ⟨s.codRestrict f hs, f.continuous.codRestrict hs⟩
 
 /-- The values of the restriction of the codomain of `f` are those of `f`. -/
 @[simp]
 theorem coe_codRestrict_apply (f : C(X, Y)) (s : Set Y) (hs : ∀ x, f x ∈ s) (x : X) :
     (f.codRestrict s hs x : Y) = f x :=
-  rfl
+  (rfl)
 
 /-- The restriction of the codomain of `f`, followed by the inclusion of the set, is `f`. -/
 @[simp]
 theorem subtypeVal_comp_codRestrict (f : C(X, Y)) (s : Set Y) (hs : ∀ x, f x ∈ s) :
     (subtypeVal s).comp (f.codRestrict s hs) = f :=
-  rfl
+  ext fun _ ↦ rfl
 
 end ContinuousMap
