@@ -25,6 +25,8 @@ import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Analysis.Analytic.ConstantOrder.Basic
 import TauCeti.Analysis.Analytic.Inverse
 import TauCeti.Analysis.Analytic.IteratedDeriv
+import TauCeti.Analysis.Analytic.Order
+import TauCeti.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
@@ -51,7 +53,8 @@ integrals with two coalescing saddle points: under `u = w(α, t)` with local inv
 `∫ exp(-z p(α, t)) q(α, t) dt` becomes
 `exp(-z η(α)) ∫ exp(-z (u ^ 3 / 3 - ζ(α) u)) f(α, u) du` with holomorphic transformed amplitude
 `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)`, and the critical points `∂p/∂t = 0` near `(α₀, t₀)` map
-bijectively to the two square roots `w ^ 2 = ζ(α)`.
+bijectively to the full root set `{u | u ^ 2 = ζ(α)}` (over `ℂ`, two distinct roots when
+`ζ(α) ≠ 0` and one root when `ζ(α) = 0`).
 
 The existence of the cubic normal form requires only `∂p/∂t = ∂²p/∂t² = 0` and `∂³p/∂t³ ≠ 0`. For
 a one-dimensional complex parameter `α`, the mixed-derivative condition `∂²p/∂α∂t (α₀, t₀) ≠ 0` is
@@ -229,8 +232,7 @@ private noncomputable def cubicLinearEquiv {R : ℝ} (hR : 0 < R) :
     have h2 : DiscAlgebra.coord 0 R * u₂ +
         algebraMap ℂ (discAlgebra 0 R) (deriv (DiscAlgebra.extend u) 0) = u₁ := by
       have h := DiscAlgebra.coord_sub_algebraMap_mul_dslope_add h0 u₁
-      rw [DiscAlgebra.extend_apply u₁ ⟨0, ball_subset_closedBall h0⟩, DiscAlgebra.dslope_apply,
-        dslope_same] at h
+      rw [DiscAlgebra.extend_dslope h0 u (ball_subset_closedBall h0), dslope_same] at h
       simpa [u₁] using h
     apply Subtype.ext
     ext z
@@ -376,26 +378,6 @@ end DiscAlgebraOperator
 
 /-! ### The holomorphic cubic normal form -/
 
-/-- Vanishing of the first two derivatives and nonvanishing of the third gives analytic order `3`
-after subtracting the base value and multiplying by `3`. -/
-private theorem analyticOrderAt_three_mul_sub_eq_three {g : ℂ → ℂ} {t₀ : ℂ}
-    (hg : AnalyticAt ℂ g t₀) (h₁ : deriv g t₀ = 0) (h₂ : deriv (deriv g) t₀ = 0)
-    (h₃ : deriv (deriv (deriv g)) t₀ ≠ 0) :
-    analyticOrderAt (fun z => 3 * (g z - g t₀)) t₀ = 3 := by
-  have hsub : AnalyticAt ℂ (fun z => g z - g t₀) t₀ := hg.sub analyticAt_const
-  have ho₀ : analyticOrderAt (fun z => g z - g t₀) t₀ = 3 := by
-    refine (analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero hsub).2 ⟨?_, ?_⟩
-    · intro k hk
-      interval_cases k
-      · simp
-      · simp [iteratedDeriv_one, h₁]
-      · rw [iteratedDeriv_succ', iteratedDeriv_one]
-        simp [deriv_sub_const_fun, h₂]
-    · rw [iteratedDeriv_succ', iteratedDeriv_succ', iteratedDeriv_one]
-      simpa [deriv_sub_const_fun] using h₃
-  classical
-  simpa [ho₀] using analyticOrderAt_fun_const_mul hsub (3 : ℂ)
-
 /-- Local coordinate `e` in `t` at `t₀` normalizing the slice `p(α₀, t) - p(α₀, t₀)` to
 `s ^ 3 / 3`. -/
 private theorem exists_slice_cubic_coord {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -407,9 +389,19 @@ private theorem exists_slice_cubic_coord {E : Type*} [NormedAddCommGroup E] [Nor
       AnalyticAt ℂ e t₀ ∧ AnalyticAt ℂ e.symm 0 ∧ deriv e t₀ ≠ 0 ∧
       ∀ᶠ s in 𝓝 (0 : ℂ), p (α₀, e.symm s) - p (α₀, t₀) = s ^ 3 / 3 := by
   have hp₀ : AnalyticAt ℂ (fun t => p (α₀, t)) t₀ := hp.curry_right
+  have hp₀_sub : AnalyticAt ℂ (fun t => p (α₀, t) - p (α₀, t₀)) t₀ :=
+    hp₀.sub analyticAt_const
+  have ho₀ : analyticOrderAt (fun t => p (α₀, t) - p (α₀, t₀)) t₀ = 3 := by
+    refine (hp₀.analyticOrderAt_sub_eq_nat_iff_iteratedDeriv_eq_zero (by norm_num)).2 ⟨?_, ?_⟩
+    · intro k hk0 hk3
+      interval_cases k
+      · simpa [iteratedDeriv_one] using h₁
+      · simpa [iteratedDeriv_succ', iteratedDeriv_one] using h₂
+    · simpa [iteratedDeriv_succ', iteratedDeriv_one] using h₃
   have hord : analyticOrderAt (fun z => (3 * (p (α₀, z) - p (α₀, t₀))) -
       (3 * (p (α₀, t₀) - p (α₀, t₀)))) t₀ = 3 := by
-    simpa using analyticOrderAt_three_mul_sub_eq_three hp₀ h₁ h₂ h₃
+    classical
+    simpa [ho₀] using analyticOrderAt_fun_const_mul hp₀_sub (3 : ℂ)
   obtain ⟨e, ht₀_src, he_t₀, -, he_an, he_symm_an, he_pow⟩ :=
     ((analyticAt_const (v := (3 : ℂ))).mul
       (hp₀.sub analyticAt_const)).exists_openPartialHomeomorph_sub_eq_pow
@@ -794,16 +786,9 @@ theorem hasDerivAt_deriv_deriv_two_mul_deriv_pow_three {𝕜 : Type*} [Nontrivia
     rwa [hval] at h
   -- Only `C²` regularity of `u` is assumed, so we avoid differentiating `deriv (deriv u)` at `t₀`.
   have h_right : HasDerivAt (fun t => u t ^ 2 * deriv (deriv u) t) 0 t₀ := by
-    have ho₁ : (fun t => u t * deriv (deriv u) t) =o[𝓝 t₀] fun _ : 𝕜 => (1 : 𝕜) := by
-      rw [Asymptotics.isLittleO_one_iff]
-      simpa [hu0] using (hu.continuousAt.fun_mul hu2.continuousAt).tendsto
-    have ho₂ : u =O[𝓝 t₀] fun t => t - t₀ := by
-      simpa [hu0] using (hu.differentiableAt (by norm_num)).hasDerivAt.isBigO_sub
-    rw [hasDerivAt_iff_isLittleO]
-    refine (ho₁.mul_isBigO ho₂).congr' (Eventually.of_forall fun t => ?_)
-      (Eventually.of_forall fun t => ?_)
-    · simp [hu0]; ring
-    · simp
+    have h := ((hu.differentiableAt (by norm_num)).hasDerivAt.pow 2).smul_of_eq_zero
+      hu2.continuousAt (by simp [hu0])
+    simpa [hu0] using h
   simpa [add_zero] using (h_left.fun_add h_right).congr_of_eventuallyEq hd₂
 
 /-- For a one-variable germ `g(t) = u(t) ^ 3 / 3 + c` with `u` twice continuously differentiable at
@@ -866,15 +851,11 @@ private theorem deriv_deriv_eq_neg_deriv_mul_deriv_aux {p w : ℂ × ℂ → ℂ
   have hh : AnalyticAt ℂ (fun α => w (α, t₀) ^ 2) α₀ := hwa.curry_left.pow 2
   rw [(eventuallyEq_deriv_snd_slice hwa hpw).deriv_eq]
   by_cases hdw : deriv (fun t => w (α₀, t)) t₀ = 0
-  · have ho₁ : (fun α => w (α, t₀) ^ 2 - ζ α) =o[𝓝 α₀] fun _ : ℂ => (1 : ℂ) := by
-      rw [Asymptotics.isLittleO_one_iff]
-      simpa [Pi.sub_def, hw0, hζ0] using (hh.continuousAt.sub (hζ hdw)).tendsto
-    have ho₂ : (fun α => deriv (fun t => w (α, t)) t₀) =O[𝓝 α₀] fun α => α - α₀ := by
-      simpa [hdw] using hg.differentiableAt.hasDerivAt.isBigO_sub
-    have hd0 : HasDerivAt
+  · have hd0 : HasDerivAt
         (fun α => (w (α, t₀) ^ 2 - ζ α) * deriv (fun t => w (α, t)) t₀) 0 α₀ := by
-      rw [hasDerivAt_iff_isLittleO]
-      simpa [hw0, hζ0, hdw] using ho₁.mul_isBigO ho₂
+      have h := hg.differentiableAt.hasDerivAt.smul_of_eq_zero
+        (hh.continuousAt.sub (hζ hdw)) hdw
+      simpa [hw0, hζ0, mul_comm] using h
     rw [hd0.deriv, hdw, mul_zero]
   · have hnot : ¬DifferentiableAt ℂ
         (fun α => (w (α, t₀) ^ 2 - ζ α) * deriv (fun t => w (α, t)) t₀) α₀ := fun hfd => by

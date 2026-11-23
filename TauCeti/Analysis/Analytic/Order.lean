@@ -38,6 +38,9 @@ at `z` keeps its order as that exponent. The finiteness of the zero set itself o
 * `AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero`: `f · - f x` has order `1` at `x`
   exactly when `deriv f x ≠ 0`, the `iff` form of Mathlib's
   `AnalyticAt.analyticOrderAt_sub_eq_one_of_deriv_ne_zero`.
+* `AnalyticAt.analyticOrderAt_sub_eq_nat_iff_iteratedDeriv_eq_zero`: for `n > 0`, `g · - g z₀` has
+  order `n` at `z₀` exactly when the iterated derivatives of orders `1 ≤ k < n` vanish at `z₀`
+  and the `n`-th does not.
 * `AnalyticAt.analyticOrderAt_le_of_isBigO` and `AnalyticAt.analyticOrderAt_eq_of_isTheta`: an
   analytic function dominated by `f` vanishes to at least the order of `f`, so analytic functions
   equivalent up to constant factors have the same order.
@@ -137,6 +140,28 @@ theorem _root_.AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero {E : Type
     simp only [pow_one, Pi.sub_apply] at hz
     simp [← hz]
   rwa [hd.deriv]
+
+/-- An analytic function `g` at `z₀` satisfies `analyticOrderAt (fun z ↦ g z - g z₀) z₀ = n`
+for a positive natural number `n` if and only if its iterated derivatives of orders `1 ≤ k < n`
+vanish at `z₀` and its `n`-th iterated derivative at `z₀` is nonzero. -/
+theorem _root_.AnalyticAt.analyticOrderAt_sub_eq_nat_iff_iteratedDeriv_eq_zero {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E] [CharZero 𝕜]
+    {g : 𝕜 → E} (hg : AnalyticAt 𝕜 g z₀) {n : ℕ} (hn : 0 < n) :
+    analyticOrderAt (fun z ↦ g z - g z₀) z₀ = n ↔
+      (∀ k, 0 < k → k < n → iteratedDeriv k g z₀ = 0) ∧ iteratedDeriv n g z₀ ≠ 0 := by
+  have hsub : AnalyticAt 𝕜 (fun z ↦ g z - g z₀) z₀ := hg.sub analyticAt_const
+  have hiter : ∀ k, 0 < k → iteratedDeriv k (fun z ↦ g z - g z₀) z₀ = iteratedDeriv k g z₀ := by
+    rintro (_ | k) hk
+    · exact absurd hk (lt_irrefl 0)
+    · rw [iteratedDeriv_succ', deriv_sub_const_fun, iteratedDeriv_succ']
+  rw [analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero hsub, hiter n hn]
+  refine and_congr_left' ⟨fun h k hk0 hkn => ?_, fun h k hkn => ?_⟩
+  · rw [← hiter k hk0]
+    exact h k hkn
+  · rcases k with _ | k
+    · simp
+    · rw [hiter (k + 1) (Nat.succ_pos k)]
+      exact h (k + 1) (Nat.succ_pos k) hkn
 
 /-- A function analytic at `z₀` and dominated there by `f` vanishes to at least the order of `f`
 at `z₀`. No analyticity of `f` is needed: a non-analytic `f` has order `0`. -/
