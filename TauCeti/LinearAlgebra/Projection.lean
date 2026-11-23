@@ -51,6 +51,8 @@ remains injective.
   `TauCeti.internalProjection`.
 * `DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection`: the
   component supplied by the inverse direct-sum equivalence is the internal projection.
+* `Submodule.projection_map_apply_of_mem`: an additive homomorphism preserving the two
+  summands commutes with the projections.
 * `Submodule.apply_eq_sum_repr_projectionOnto`: a linear map vanishing on `F₀` is determined by
   its values on a basis of a complement of `F₀`.
 * `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
@@ -233,6 +235,25 @@ namespace Submodule
 
 variable {R : Type u} {V : Type v} {M : Type w} [Ring R] [AddCommGroup V] [Module R V]
   [AddCommGroup M] [Module R M]
+
+/-- An additive homomorphism sending each summand into the corresponding summand
+commutes with the projections onto the first summands. -/
+theorem projection_map_apply_of_mem {R S M N : Type*} [Ring R] [Ring S]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module S N]
+    {p q : Submodule R M} {p' q' : Submodule S N}
+    (hpq : IsCompl p q) (hpq' : IsCompl p' q') (φ : M →+ N)
+    (hp : ∀ x ∈ p, φ x ∈ p') (hq : ∀ x ∈ q, φ x ∈ q') (x : M) :
+    p'.projection q' hpq' (φ x) = φ (p.projection q hpq x) := by
+  have h := congrArg φ (projection_add_projection_eq_self hpq x)
+  rw [map_add] at h
+  have hp' := hp _ (projection_apply_mem hpq x)
+  have hq' := hq _ (projection_apply_mem hpq.symm x)
+  calc
+    _ = p'.projection q' hpq' (φ (p.projection q hpq x) + φ (q.projection p hpq.symm x)) :=
+      congrArg (p'.projection q' hpq') h.symm
+    _ = _ := by
+      rw [map_add, projection_apply_of_mem_left hpq' hp',
+        projection_apply_of_mem_right hpq' hq', add_zero]
 
 /-- A linear map vanishing on `F₀` is computed from its values on a basis `b` of a complement
 `F₁` of `F₀`, through the coordinates of the projection onto `F₁`. -/

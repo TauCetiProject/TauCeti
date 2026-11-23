@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 
 /-!
 # Root systems whose automorphisms are all Weyl
@@ -27,6 +26,8 @@ the full automorphism group of a root system of rigid type, such as `E₈`, with
 * `RootPairing.Base.eq_one_of_forall_indexEquiv_eq`: an automorphism of a root system fixing every
   simple root of a base is the identity.
 * `RootPairing.Base.mem_support_map_iff`: the simple roots of a transported base.
+* `RootPairing.Base.subtypePerm_mem_matrixSymmetryGroup`: an automorphism carrying the simple roots
+  of a base onto themselves permutes them by a symmetry of the Cartan matrix.
 * `RootPairing.Base.weylGroup_eq_top_of_matrixSymmetryGroup_eq_bot`: **if the Cartan matrix of a
   base has no nontrivial symmetry, every automorphism lies in the Weyl group.**
 * `TauCeti.HasCartanType.weylGroup_eq_top`: the same for a base of a Dynkin type whose diagram has
@@ -66,6 +67,17 @@ theorem _root_.RootPairing.Base.mem_support_map_iff (b : P.Base) (e : P.Aut) (j 
   rw [RootPairing.Base.support_map_eq, Finset.mem_image]
   exact ⟨by rintro ⟨i, hi, rfl⟩; simpa using hi, fun h ↦ ⟨_, h, by simp⟩⟩
 
+/-- **An automorphism carrying the simple roots of a base onto themselves induces a symmetry of the
+Cartan matrix**: its index bijection, restricted to the simple roots, preserves the Cartan
+matrix. -/
+theorem _root_.RootPairing.Base.subtypePerm_mem_matrixSymmetryGroup [P.IsCrystallographic]
+    (b : P.Base) (u : P.Aut) (hu : ∀ i, u.indexEquiv i ∈ b.support ↔ i ∈ b.support) :
+    Equiv.Perm.subtypePerm u.indexEquiv hu ∈ matrixSymmetryGroup b.cartanMatrix := by
+  refine mem_matrixSymmetryGroup_iff.mpr (Matrix.ext fun i j ↦ ?_)
+  simp only [Matrix.submatrix_apply, Equiv.Perm.subtypePerm_apply, RootPairing.Base.cartanMatrix,
+    RootPairing.Base.cartanMatrixIn_def]
+  exact u.toHom.pairingIn_indexEquiv ℤ i j
+
 variable [Finite ι] [IsDomain R] [CharZero R] [P.IsCrystallographic] [P.IsReduced]
 
 /-- **If the Cartan matrix of a base has no nontrivial symmetry, every automorphism of the root
@@ -82,11 +94,7 @@ theorem _root_.RootPairing.Base.weylGroup_eq_top_of_matrixSymmetryGroup_eq_bot [
       simp
     rw [hidx, ← b.mem_support_map_iff, hw, b.mem_support_map_iff, Equiv.symm_apply_apply]
   -- The permutation it induces on the simple roots preserves the Cartan matrix, so is trivial.
-  have hσ := hb.le (show Equiv.Perm.subtypePerm _ hsupp ∈ matrixSymmetryGroup b.cartanMatrix by
-    refine mem_matrixSymmetryGroup_iff.mpr (Matrix.ext fun i j ↦ ?_)
-    simp only [Matrix.submatrix_apply, Equiv.Perm.subtypePerm_apply, RootPairing.Base.cartanMatrix,
-      RootPairing.Base.cartanMatrixIn_def]
-    exact RootPairing.Hom.pairingIn_indexEquiv _ ℤ (i : ι) j)
+  have hσ := hb.le (b.subtypePerm_mem_matrixSymmetryGroup _ hsupp)
   have hv : (w : P.Aut)⁻¹ * u = 1 := b.eq_one_of_forall_indexEquiv_eq fun i hi ↦ by
     simpa using congrArg Subtype.val (Equiv.ext_iff.mp (Subgroup.mem_bot.mp hσ) ⟨i, hi⟩)
   rw [inv_mul_eq_one] at hv
@@ -100,14 +108,10 @@ theorem HasCartanType.weylGroup_eq_top [P.IsRootSystem] {b : P.Base} {t : Dynkin
   refine b.weylGroup_eq_top_of_matrixSymmetryGroup_eq_bot
     ((Subgroup.eq_bot_iff_forall _).mpr fun σ hσ ↦ ?_)
   -- Transport `σ` along the labelling of the simple roots by the nodes of `t`.
-  have hτ : e.symm.trans (σ.trans e) ∈ t.diagramSymmetry :=
-    DynkinType.mem_diagramSymmetry_iff.mpr fun i j ↦ by
-      have hij := congrFun₂ (mem_matrixSymmetryGroup_iff.mp hσ) (e.symm i) (e.symm j)
-      rw [Matrix.submatrix_apply, he, he, Equiv.apply_symm_apply, Equiv.apply_symm_apply] at hij
-      simpa only [Equiv.trans_apply] using hij
+  have hτ := DynkinType.mem_diagramSymmetry_of_mem_matrixSymmetryGroup he hσ
   ext i
   have hi := Equiv.ext_iff.mp (Subgroup.mem_bot.mp (ht.le hτ)) (e i)
-  simp only [Equiv.trans_apply, Equiv.symm_apply_apply, Equiv.Perm.coe_one, id_eq] at hi
+  simp only [Equiv.permCongr_apply, Equiv.symm_apply_apply, Equiv.Perm.coe_one, id_eq] at hi
   simp [e.injective hi]
 
 /-- **Every automorphism of a root system of type `E₈` lies in its Weyl group.** -/

@@ -8,10 +8,11 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import TauCeti.Topology.VectorBundle.Trivialization
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
-public import TauCeti.Topology.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.VectorBundle.MaximalAtlas
 
 /-!
 # The fibre coordinate and partial diffeomorphism of a bundle trivialization
@@ -36,6 +37,9 @@ Read back through such a trivialization, a `C^n` family of vectors of the model 
 section.
 
 ## Main results
+
+* `Bundle.Trivialization.contMDiffOn_scalarCoordChange`: scalar transitions between two
+  maximal-atlas linear frames are `C^n` on their common base.
 
 * `Bundle.TotalSpace.contMDiffAt_trivializationAt_snd`: the fibre coordinate in the
   trivialization at `v₀.proj` is `C^n` at `v₀`.
@@ -437,3 +441,36 @@ theorem contDiffOn_trivialization_comp_chart_symm_of_contMDiff {s : ∀ x, V x}
   (e.contMDiffOn_section_baseSet_iff.1 hs.contMDiffOn).contDiffOn_comp_symm_of_mem_maximalAtlas hφ
 
 end TauCeti
+
+namespace Bundle.Trivialization
+
+open Set
+open scoped ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V]
+
+/-- The scalar transition between holomorphic or smooth rank-one coordinates has the
+regularity of the native bundle atlas. -/
+theorem contMDiffOn_scalarCoordChange {n : ℕ∞ω}
+    (e e' : Trivialization F (π F V)) [e.IsLinear 𝕜] [e'.IsLinear 𝕜]
+    (q q' : F ≃L[𝕜] 𝕜)
+    (he : e.toOpenPartialHomeomorph ∈
+      (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F V))
+    (he' : e'.toOpenPartialHomeomorph ∈
+      (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F V)) :
+    ContMDiffOn IB 𝓘(𝕜) n (e.scalarCoordChange e' q q') (e.baseSet ∩ e'.baseSet) := by
+  have h := q'.contDiff.contMDiff.comp_contMDiffOn
+    ((contMDiffOn_coordChangeL_of_mem_maximalAtlas he he').clm_apply
+      (contMDiffOn_const (c := q.symm 1)))
+  exact h.congr fun x _ ↦ by
+    simpa only [Function.comp_apply, ContinuousLinearEquiv.coe_coe] using
+      e.scalarCoordChange_def e' q q' x
+
+end Bundle.Trivialization
