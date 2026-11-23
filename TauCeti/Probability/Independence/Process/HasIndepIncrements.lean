@@ -13,6 +13,8 @@ import Mathlib.Probability.IdentDistribIndep
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 import Mathlib.Data.Finset.Sort
 import TauCeti.Data.Finset.Sort
+import TauCeti.Order.Filter.Basic
+import TauCeti.Probability.IdentDistrib
 import TauCeti.Probability.Independence.Sup
 
 /-!
@@ -326,16 +328,17 @@ namespace ProbabilityTheory
 
 variable {T Ω : Type*} [Preorder T] [MeasurableSpace Ω] {P : Measure Ω} {N : T → Ω → ℕ}
 
-/-- Casting a nondecreasing natural-valued process to the integers preserves independent
-increments. Monotonicity is needed because subtraction in the natural numbers is truncated. -/
-theorem HasIndepIncrements.natCast (hN : HasIndepIncrements N P)
-    (hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N t ω)) :
-    HasIndepIncrements (fun t ω ↦ (N t ω : ℤ)) P := by
+/-- Casting a natural-valued process that is pairwise almost surely nondecreasing to an
+`AddGroupWithOne` preserves independent increments. Monotonicity is needed because subtraction in
+the natural numbers is truncated. -/
+theorem HasIndepIncrements.natCast {R : Type*} [MeasurableSpace R] [AddGroupWithOne R]
+    (hN : HasIndepIncrements N P)
+    (hle : ∀ s t, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
+    HasIndepIncrements (fun t ω ↦ (N t ω : R)) P := by
   intro n t ht
-  have h := (hN n t ht).comp (fun _ (x : ℕ) ↦ (x : ℤ)) (fun _ ↦ measurable_of_countable _)
-  refine h.congr fun i ↦ ?_
-  filter_upwards [hmono] with ω hω
-  exact Int.ofNat_sub (hω (ht i.castSucc_le_succ))
+  have h := (hN n t ht).comp (fun _ (x : ℕ) ↦ (x : R)) (fun _ ↦ Measurable.of_discrete)
+  exact h.congr fun i ↦
+    Filter.EventuallyLE.natCast_sub (hle _ _ (ht i.castSucc_le_succ))
 
 end ProbabilityTheory
 
@@ -350,16 +353,9 @@ theorem IdentDistrib.natCast_sub_of_le {Ω Ω' : Type*}
     (h : IdentDistrib (fun ω ↦ b ω - a ω) (fun ω ↦ b' ω - a' ω) P Q)
     (hab : ∀ᵐ ω ∂P, a ω ≤ b ω) (hab' : ∀ᵐ ω ∂Q, a' ω ≤ b' ω) :
     IdentDistrib (fun ω ↦ (b ω : ℤ) - a ω)
-      (fun ω ↦ (b' ω : ℤ) - a' ω) P Q := by
-  have hcast := h.comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))
-  have hx : (fun ω ↦ ((b ω - a ω : ℕ) : ℤ)) =ᵐ[P]
-      (fun ω ↦ (b ω : ℤ) - a ω) := by
-    filter_upwards [hab] with ω hω using Int.ofNat_sub hω
-  have hy : (fun ω ↦ ((b' ω - a' ω : ℕ) : ℤ)) =ᵐ[Q]
-      (fun ω ↦ (b' ω : ℤ) - a' ω) := by
-    filter_upwards [hab'] with ω hω using Int.ofNat_sub hω
-  exact (IdentDistrib.of_ae_eq hcast.aemeasurable_fst hx).symm.trans
-    (hcast.trans (IdentDistrib.of_ae_eq hcast.aemeasurable_snd hy))
+      (fun ω ↦ (b' ω : ℤ) - a' ω) P Q :=
+  (h.comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))).congr
+    (Filter.EventuallyLE.natCast_sub hab) (Filter.EventuallyLE.natCast_sub hab')
 
 /-- Nondecreasing count processes starting at zero have the same full path law if they have
 independent increments and corresponding increment laws agree. The sample spaces may differ.
@@ -383,7 +379,8 @@ theorem HasIndepIncrements.identDistrib_nat {T Ω Ω' : Type*} [LinearOrder T] [
     filter_upwards [h0X] with ω hω using by simp [hω]
   have h0YZ : ∀ᵐ ω ∂Q, (Y ⊥ ω : ℤ) = 0 := by
     filter_upwards [h0Y] with ω hω using by simp [hω]
-  have hdist := (hX.natCast hmonoX).identDistrib (hY.natCast hmonoY)
+  have hdist := (hX.natCast (fun _ _ hst ↦ hmonoX.mono fun _ hω ↦ hω hst)).identDistrib
+    (hY.natCast (fun _ _ hst ↦ hmonoY.mono fun _ hω ↦ hω hst))
     hmXZ hmYZ h0XZ h0YZ (fun s t hst ↦
       (hlaw s t hst).natCast_sub_of_le
         (hmonoX.mono fun _ hω ↦ hω hst) (hmonoY.mono fun _ hω ↦ hω hst))
@@ -431,7 +428,8 @@ theorem HasIndepIncrements.indepFun_shift_nat (hN : HasIndepIncrements N P)
     filter_upwards [h0] with ω hω using by simp [hω]
   -- The local bottom is zero, so the history theorem's initial-time hypothesis is h0Z.
   have hbotZ : ∀ᵐ ω ∂P, (N (⊥ : T) ω : ℤ) = 0 := h0Z
-  have h := (hN.natCast hmono).indepFun_future_past hmZ hbotZ t
+  have h := (hN.natCast (fun _ _ hsu ↦ hmono.mono fun _ hω ↦ hω hsu)).indepFun_future_past
+    hmZ hbotZ t
   have hf : Measurable (fun (z : Ici t → ℤ) (s : T) ↦
       (z ⟨t + s, by simp only [Set.mem_Ici]; exact le_self_add⟩).toNat) := by fun_prop
   have hg : Measurable (fun (z : Iic t → ℤ) (s : Iic t) ↦ (z s).toNat) := by fun_prop

@@ -92,12 +92,6 @@ theorem IsIntegerValued.natCast_natFloor_apply (hμ : μ.IsIntegerValued) {A : S
   obtain ⟨n, hn⟩ := hμ.exists_eq_natCast (measurableSet_toMeasurable μ A) hfin
   rw [hn, ENNReal.toNNReal_natCast, Nat.floor_natCast]
 
-/-- Flooring a finite measurable mass of an integer-valued measure to a natural number and
-casting back recovers the mass. -/
-theorem IsIntegerValued.natCast_floor_toNNReal (hμ : μ.IsIntegerValued) {A : Set X}
-    (_hA : MeasurableSet A) (hfin : μ A ≠ ∞) : (⌊(μ A).toNNReal⌋₊ : ℝ≥0∞) = μ A :=
-  hμ.natCast_natFloor_apply hfin.lt_top
-
 /-- For a locally finite integer-valued measure on a preorder with a least element and compact
 closed intervals, the natural floor of `μ (Set.Iic t)` casts back to `μ (Set.Iic t)`. -/
 @[simp]

@@ -11,6 +11,7 @@ public import TauCeti.Probability.PointProcess.Poisson.Superposition.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.Probability.RandomMeasure.Cumulative
 
 /-!
@@ -90,9 +91,7 @@ theorem ae_forall_measure_Iic_eq_natCast_nat_count [IsLocallyFiniteMeasure Λ]
     h.ae_eq_zero hΛ]
     with ω hint hfin hz t
   let := hfin
-  have hinterval : M ω (Iic t) = M ω (Ioc 0 t) := by
-    rw [← Set.Icc_bot, NNReal.bot_eq_zero, (measure_congr (Ioc_ae_eq_Icc' hz)).symm]
-  rw [hinterval, hint.natCast_natFloor_Ioc]
+  rw [← (M ω).measure_Ioc_bot_eq_Iic hz t, NNReal.bot_eq_zero, hint.natCast_natFloor_Ioc]
 
 private theorem ae_nat_count_sub_eq [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) {s t : ℝ≥0} (hst : s ≤ t) :

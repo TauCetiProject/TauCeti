@@ -18,6 +18,7 @@ import Mathlib.Probability.Process.FiniteDimensionalLaws
 
 import TauCeti.MeasureTheory.Measure.AEMeasurable
 import TauCeti.MeasureTheory.Measure.Prod
+import TauCeti.Order.Filter.Basic
 
 /-!
 # Conditioning laws, source atoms, connected sources and almost-sure limits
@@ -143,9 +144,8 @@ theorem hasLaw_sub_natCast_iff {Ω R : Type*} [MeasurableSpace Ω]
     HasLaw ((fun ω ↦ (Y ω : R)) - fun ω ↦ (X ω : R)) (μ.map (Nat.cast : ℕ → R)) P ↔
       HasLaw (fun ω ↦ Y ω - X ω) μ P := by
   have hcast : ((fun ω ↦ (Y ω : R)) - fun ω ↦ (X ω : R)) =ᵐ[P]
-      (Nat.cast : ℕ → R) ∘ fun ω ↦ Y ω - X ω := by
-    filter_upwards [hle] with ω hω
-    simp [Nat.cast_sub hω]
+      (Nat.cast : ℕ → R) ∘ fun ω ↦ Y ω - X ω :=
+    (Filter.EventuallyLE.natCast_sub hle).symm
   refine ⟨fun h ↦ MeasurableEmbedding.natCast.hasLaw_comp_iff.mp (h.congr hcast.symm),
     fun h ↦ (MeasurableEmbedding.natCast.hasLaw_comp_iff.mpr h).congr hcast⟩
 

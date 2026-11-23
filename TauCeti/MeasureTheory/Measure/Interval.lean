@@ -61,6 +61,10 @@ longer windows linearly in their length, and so makes the measure locally finite
   `(n + 1) * C`, and is locally finite.
 * `MeasureTheory.Measure.restrict_Ioi_apply_Iic`: restricting a measure to `(a, ∞)` and evaluating
   on `(-∞, b]` gives `μ (Ioc a b)`.
+* `MeasureTheory.Measure.measure_Ioc_bot_eq_Iic`: if `⊥` has zero measure, `(⊥, t]` and
+  `(-∞, t]` have the same measure.
+* `MeasureTheory.Measure.le_of_measure_Iic_eq`: when `s ≤ t` and `μ (Iic s)`, `μ (Iic t)` equal
+  natural numbers `m`, `n`, one has `m ≤ n`.
 * `MeasureTheory.Measure.measure_Ioc_eq_natCast_sub`: when `μ (Iic s)` and `μ (Iic t)` equal
   natural numbers `m` and `n`, `μ (Ioc s t)` equals `((n - m : ℕ) : ℝ≥0∞)`.
 -/
@@ -82,6 +86,18 @@ theorem restrict_Ioi_apply_Iic {α : Type*} [Preorder α] [TopologicalSpace α]
     μ.restrict (Ioi a) (Iic b) = μ (Ioc a b) := by
   rw [Measure.restrict_apply measurableSet_Iic, inter_comm, Ioi_inter_Iic]
 
+/-- If `⊥` has zero measure, `(⊥, t]` and `(-∞, t]` have the same measure. -/
+theorem measure_Ioc_bot_eq_Iic {α : Type*} [PartialOrder α] [OrderBot α] [MeasurableSpace α]
+    (μ : Measure α) (hbot : μ {⊥} = 0) (t : α) :
+    μ (Ioc ⊥ t) = μ (Iic t) := by
+  rw [measure_congr (Ioc_ae_eq_Icc' hbot), Set.Icc_bot]
+
+/-- If `s ≤ t` and `μ (Iic s)` and `μ (Iic t)` equal natural numbers `m` and `n`, then `m ≤ n`. -/
+theorem le_of_measure_Iic_eq {α : Type*} [Preorder α] [MeasurableSpace α]
+    {μ : Measure α} {s t : α} {m n : ℕ} (hs : μ (Iic s) = m) (ht : μ (Iic t) = n)
+    (hst : s ≤ t) : m ≤ n := by
+  exact_mod_cast hs.symm.trans_le ((measure_mono (Iic_subset_Iic.2 hst)).trans_eq ht)
+
 /-- If the cumulative measures `μ (Iic s)` and `μ (Iic t)` equal natural numbers `m` and `n`,
 then `μ (Ioc s t)` equals `((n - m : ℕ) : ℝ≥0∞)`. -/
 theorem measure_Ioc_eq_natCast_sub {α : Type*} [LinearOrder α] [TopologicalSpace α]
@@ -91,9 +107,7 @@ theorem measure_Ioc_eq_natCast_sub {α : Type*} [LinearOrder α] [TopologicalSpa
   rcases le_total s t with hst | hts
   · rw [← Iic_sdiff_Iic, measure_sdiff (Iic_subset_Iic.2 hst) measurableSet_Iic.nullMeasurableSet
       (by rw [hs]; exact ENNReal.natCast_ne_top _), hs, ht, ← ENNReal.natCast_sub]
-  · have hmn : n ≤ m := by
-      have h : (n : ℝ≥0∞) ≤ m := ht ▸ hs ▸ measure_mono (Iic_subset_Iic.2 hts)
-      exact_mod_cast h
+  · have hmn : n ≤ m := le_of_measure_Iic_eq ht hs hts
     rw [Ioc_eq_empty_of_le hts, measure_empty, Nat.sub_eq_zero_of_le hmn, Nat.cast_zero]
 
 section NegInvariant

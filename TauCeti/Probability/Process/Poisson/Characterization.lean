@@ -46,29 +46,25 @@ theorem ae_le_of_hasLaw_sub_poissonMeasure {Ω : Type*} [MeasurableSpace Ω] {P 
     (hlaw : ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure (r * (t - s))) P)
     {s t : ℝ≥0} (hst : s ≤ t) :
     ∀ᵐ ω ∂P, N s ω ≤ N t ω := by
-  have hcast {X : Ω → ℕ} {c : ℝ≥0} (hX : HasLaw X (poissonMeasure c) P) :
-      HasLaw (fun ω ↦ (X ω : ℝ)) Po(ℝ, c) P :=
-    MeasurableEmbedding.natCast.hasLaw_comp_iff.2 hX
-  have hint {X : Ω → ℝ} {c : ℝ≥0} (hX : HasLaw X Po(ℝ, c) P) : Integrable X P :=
-    hX.integrable ((memLp_id_map_cast_poissonMeasure c 1).integrable le_rfl)
-  have hmarg (u : ℝ≥0) : HasLaw (fun ω ↦ (N u ω : ℝ)) Po(ℝ, r * u) P := by
-    have hu : HasLaw (N u) (poissonMeasure (r * u)) P := by
+  have hmarg (u : ℝ≥0) : HasLaw (fun ω ↦ (N u ω : ℝ)) Po(ℝ, r * u) P :=
+    HasLaw.natCast_poissonMeasure <| by
       simpa only [tsub_zero] using (hlaw 0 u zero_le).congr (h0.mono fun ω hω ↦ by simp [hω])
-    exact hcast hu
   have hs := hmarg s
   have ht := hmarg t
-  have hd := hcast (hlaw s t hst)
+  have hd := (hlaw s t hst).natCast_poissonMeasure
   have hadm : Integrable (fun ω ↦ (N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ)) P :=
-    (hint hs).add (hint hd)
+    hs.integrable_map_cast_poissonMeasure.add hd.integrable_map_cast_poissonMeasure
   have hle : (fun ω ↦ (N t ω : ℝ)) ≤ᵐ[P] fun ω ↦ (N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ) :=
     ae_of_all P fun ω ↦ by
       simpa only [← Nat.cast_add] using
         Nat.cast_le (α := ℝ).2 (le_add_tsub : N t ω ≤ N s ω + (N t ω - N s ω))
   have heq : (fun ω ↦ (N t ω : ℝ)) =ᵐ[P] fun ω ↦ (N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ) := by
-    refine (integral_eq_iff_of_ae_le (hint ht) hadm hle).1 ?_
-    rw [integral_add (hint hs) (hint hd), integral_of_hasLaw_map_cast_poissonMeasure ht,
-      integral_of_hasLaw_map_cast_poissonMeasure hs, integral_of_hasLaw_map_cast_poissonMeasure hd,
-      NNReal.coe_mul, NNReal.coe_mul, NNReal.coe_mul, NNReal.coe_sub hst]
+    refine (integral_eq_iff_of_ae_le ht.integrable_map_cast_poissonMeasure hadm hle).1 ?_
+    rw [integral_add hs.integrable_map_cast_poissonMeasure hd.integrable_map_cast_poissonMeasure,
+      integral_of_hasLaw_map_cast_poissonMeasure ht,
+      integral_of_hasLaw_map_cast_poissonMeasure hs,
+      integral_of_hasLaw_map_cast_poissonMeasure hd]
+    push_cast [NNReal.coe_sub hst]
     ring
   filter_upwards [heq] with ω hω
   have hnat : N t ω = N s ω + (N t ω - N s ω) :=

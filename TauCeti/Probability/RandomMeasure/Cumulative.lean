@@ -247,15 +247,15 @@ theorem ae_le_of_ae_measure_Iic_eq {P : Measure Ω} {X Y : Ω → ℕ} {s t : �
     (ht : ∀ᵐ ω ∂P, M ω (Iic t) = (Y ω : ℝ≥0∞)) (hst : s ≤ t) :
     ∀ᵐ ω ∂P, X ω ≤ Y ω := by
   filter_upwards [hs, ht] with ω hωs hωt
-  exact_mod_cast (hωs.symm.trans_le ((measure_mono (Iic_subset_Iic.mpr hst)).trans_eq hωt))
+  exact Measure.le_of_measure_Iic_eq hωs hωt hst
 
 /-- A natural-valued process that agrees almost surely with the cumulative masses of a random
 measure simultaneously at all times is almost surely monotone. -/
 theorem ae_monotone_of_ae_forall_measure_Iic_eq {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
     (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞)) :
     ∀ᵐ ω ∂P, Monotone (N · ω) := by
-  filter_upwards [hcount] with ω hω s t hst
-  exact_mod_cast (hω s).symm.trans_le ((measure_mono (Iic_subset_Iic.mpr hst)).trans_eq (hω t))
+  filter_upwards [hcount] with ω hω _ _ hst
+  exact Measure.le_of_measure_Iic_eq (hω _) (hω _) hst
 
 end TauCeti.Probability
 

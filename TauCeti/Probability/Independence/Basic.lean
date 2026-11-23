@@ -17,9 +17,6 @@ A dependent family of random variables is independent if all but at most one coo
 almost surely constant; no measurability assumption or restriction on the index type is needed
 (`TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_subsingleton`).
 
-Independence of a σ-algebra pulled back along a map from another σ-algebra is also invariant
-under almost-everywhere equality of the map (`indep_comap_congr_left`, `indep_comap_congr_right`).
-
 Under a zero or probability measure `P`, a random variable `Z` is independent of a sub-σ-algebra `m`
 whenever restricting `P` to every `m`-measurable event `A` (or `A ∩ F` for an almost-surely holding
 event `F`) gives `Z` the scalar-multiple law `P A • ν` (respectively `P (A ∩ F) • ν`): see
@@ -36,32 +33,6 @@ public section
 open MeasureTheory ProbabilityTheory
 
 namespace TauCeti.Probability
-
-section Comap
-
-variable {Ω α : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-
-/-- Independence of a comapped σ-algebra on the left from another σ-algebra is invariant under
-almost-everywhere equality of the map. -/
-theorem indep_comap_congr_left {m : MeasurableSpace Ω} {mα : MeasurableSpace α}
-    {X Y : Ω → α} (hXY : X =ᵐ[μ] Y) :
-    Indep (mα.comap X) m μ ↔ Indep (mα.comap Y) m μ := by
-  have h {f g : Ω → α} (hfg : f =ᵐ[μ] g) (hf : Indep (mα.comap f) m μ) :
-      Indep (mα.comap g) m μ := by
-    have hi : @IndepFun Ω α Ω mΩ mα m f id μ := by
-      simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hf
-    simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hi.congr hfg .rfl
-  exact ⟨h hXY, h hXY.symm⟩
-
-/-- Independence of a σ-algebra from a comapped σ-algebra on the right is invariant under
-almost-everywhere equality of the map. -/
-theorem indep_comap_congr_right {m : MeasurableSpace Ω} {mα : MeasurableSpace α}
-    {X Y : Ω → α} (hXY : X =ᵐ[μ] Y) :
-    Indep m (mα.comap X) μ ↔ Indep m (mα.comap Y) μ :=
-  ⟨fun h ↦ ((indep_comap_congr_left hXY).1 h.symm).symm,
-    fun h ↦ ((indep_comap_congr_left hXY).2 h.symm).symm⟩
-
-end Comap
 
 variable {Ω ι : Type*} {β : ι → Type*} [MeasurableSpace Ω]
   [∀ i, MeasurableSpace (β i)] {μ : Measure Ω} [IsProbabilityMeasure μ]

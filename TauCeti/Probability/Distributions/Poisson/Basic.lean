@@ -251,6 +251,18 @@ end TauCeti.Probability
 
 namespace ProbabilityTheory.HasLaw
 
+/-- A natural random variable with a Poisson law has real cast with the real-valued Poisson
+law. -/
+theorem natCast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℕ} {r : ℝ≥0} (hX : HasLaw X (poissonMeasure r) P) :
+    HasLaw (fun ω ↦ (X ω : ℝ)) Po(ℝ, r) P :=
+  (hasLaw_map Measurable.of_discrete.aemeasurable).comp hX
+
+/-- A real random variable with a Poisson law is integrable. -/
+theorem integrable_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {r : ℝ≥0} (hX : HasLaw X Po(ℝ, r) P) : Integrable X P :=
+  hX.integrable ((TauCeti.Probability.memLp_id_map_cast_poissonMeasure r 1).integrable le_rfl)
+
 /-- A real random variable with Poisson law has centered second moment equal to the rate. -/
 theorem integral_sub_sq_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} {X : Ω → ℝ} {r : ℝ≥0} (hX : HasLaw X Po(ℝ, r) P) :

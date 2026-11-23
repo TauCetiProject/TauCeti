@@ -51,36 +51,6 @@ namespace MeasureTheory.Measure
 
 variable {μ : Measure ℝ≥0} [IsLocallyFiniteMeasure μ]
 
-/-- The natural-valued cumulative count of a locally finite measure on the half-line is
-nondecreasing. No integrality is needed. -/
-theorem monotone_nat_count : Monotone fun t : ℝ≥0 => ⌊(μ (Ioc 0 t)).toNNReal⌋₊ :=
-  fun _ _ hst => Nat.floor_mono <| ENNReal.toNNReal_mono measure_Ioc_lt_top.ne <|
-    measure_mono <| Ioc_subset_Ioc_right hst
-
-/-- For a locally finite integer-valued measure, the natural-valued count of a bounded
-interval is its mass. -/
-theorem IsIntegerValued.natCast_nat_count_Ioc (hμ : μ.IsIntegerValued) (a b : ℝ≥0) :
-    (⌊(μ (Ioc a b)).toNNReal⌋₊ : ℝ≥0∞) = μ (Ioc a b) :=
-  hμ.natCast_floor_toNNReal measurableSet_Ioc measure_Ioc_lt_top.ne
-
-/-- The cumulative count of a locally finite integer-valued measure is right-continuous:
-it is constant on a right neighbourhood of each time. -/
-theorem IsIntegerValued.isRightContinuous_nat_count (hμ : μ.IsIntegerValued) :
-    IsRightContinuous fun t : ℝ≥0 => ⌊(μ (Ioc 0 t)).toNNReal⌋₊ := by
-  refine TauCeti.isRightContinuous_iff_eventually_eq.2 fun a ↦ ?_
-  have hIoc (r : ℝ≥0) : μ.restrict (Ioi 0) (Iic r) = μ (Ioc 0 r) := by
-    rw [restrict_apply measurableSet_Iic, inter_comm, Ioi_inter_Iic]
-  have hlim : Tendsto (fun r => μ (Ioc 0 r)) (𝓝[>] a) (𝓝 (μ (Ioc 0 a))) := by
-    simpa only [hIoc] using tendsto_measure_Iic_nhdsGT (μ := μ.restrict (Ioi 0))
-      ⟨a + 1, lt_add_one a, (hIoc _).trans_lt measure_Ioc_lt_top |>.ne⟩
-  have hlt : μ (Ioc 0 a) < ⌊(μ (Ioc 0 a)).toNNReal⌋₊ + 1 := by
-    rw [hμ.natCast_nat_count_Ioc]
-    exact ENNReal.lt_add_right measure_Ioc_lt_top.ne one_ne_zero
-  -- Masses just to the right of `a` are integers below the next integer, hence unchanged.
-  filter_upwards [hlim (Iio_mem_nhds hlt), self_mem_nhdsWithin] with r hr har
-  refine le_antisymm ?_ (monotone_nat_count (le_of_lt har))
-  rw [mem_preimage, mem_Iio, ← hμ.natCast_nat_count_Ioc] at hr
-  exact_mod_cast Nat.lt_succ_iff.mp (by exact_mod_cast hr)
 /-- At a positive time, the cumulative count of a locally finite integer-valued measure jumps
 from the left by at most the mass of that time. The bound is stated without left limits: some
 earlier count is at most that mass below. -/
