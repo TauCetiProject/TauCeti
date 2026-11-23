@@ -305,11 +305,9 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
     ((NNReal.coe_le_coe.2 (min_le_right γ₀ β)).trans hβq) hU (by positivity)
     (hUU.trans ((thickening_mono (by linarith) S).trans hRS)) (h₀.mono hUU)
   -- The Lipschitz step: `ū` is `β`-Hölder on `S_{R/8}`.
-  obtain ⟨M₁, hM₁⟩ :=
-    ((h₀.mono (thickening_mono (by linarith) S)).isBounded_image hU).exists_norm_le
   obtain ⟨M₂, hM₂⟩ := (h₁.isBounded_image hU).exists_norm_le
   obtain ⟨C₂, h₂⟩ := W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le u
-    (by positivity) hUΩ (forall_mem_image.1 hM₁) (forall_mem_image.1 hM₂) hβ1.le
+    hUΩ (forall_mem_image.1 hM₂) hβ1.le
   -- Second Schauder pass, on `S`, with the exponent `β`.
   have hR8 : R / 4 / 2 = R / 8 := by ring
   rw [hR8] at h₂

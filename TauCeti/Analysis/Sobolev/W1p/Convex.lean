@@ -24,25 +24,28 @@ import TauCeti.Topology.MetricSpace.Holder
 /-!
 # Lipschitz and Hölder representatives on convex domains
 
-The precise representative of a real `W^{1,p}` function, of any exponent `p`, whose weak gradient
-is essentially bounded by `M` on an open subset `V` of its domain is `M`-Lipschitz on each convex
-subset of `V` (`TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`). The
-value need not be bounded, and neither boundedness of the domain nor boundary regularity is needed.
-For a `W^{1,∞}` function this is a Lipschitz bound on each convex subset of the domain, with the
-sharp constant: the essential supremum of the weak gradient. In particular the whole-space
+The precise representative of a real `W^{1,p}` function, for any exponent `1 ≤ p ≤ ∞`, whose weak
+gradient is essentially bounded by `M` on an open subset `V` of its domain is `M`-Lipschitz on each
+convex subset of `V` (`TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`).
+The value need not be bounded, and neither boundedness of the domain nor boundary regularity is
+needed. For a `W^{1,∞}` function this gives a Lipschitz bound on each convex subset of the domain,
+with the essential supremum of the weak gradient over the whole domain as a uniform constant; when
+the domain itself is convex, no smaller constant works on all of it. In particular the whole-space
 representative has this bound. On an arbitrary open domain the representative is therefore locally
 Lipschitz, and by Rademacher's theorem its classical directional derivatives, which exist almost
 everywhere, are the components of the weak gradient.
 
 The proof mollifies on a neighborhood of each segment, without assuming that smooth functions are
-dense in the `W^{1,∞}` norm. On an open convex set the mollifications are `M`-Lipschitz near each
-segment and converge almost everywhere, so there the precise representative agrees almost
+dense in the `W^{1,∞}` norm. On an open convex set, for each fixed segment the mollifications with
+a sufficiently small bump radius change by at most `M` times its length between its endpoints, and
+the mollifications converge almost everywhere, so there the precise representative agrees almost
 everywhere with an `M`-Lipschitz function, and hence equals it. Every segment of a convex subset of
 `V` has an open convex neighborhood in `V`, which gives the general case. This is how a weak
 solution of an elliptic equation whose gradient is known to be locally bounded, for instance Hölder
-continuous, is shown to be locally Lipschitz. If the precise representatives of the value and of
-the gradient are bounded on the `ρ`-thickening of a set `S`, the precise representative of the
-value is therefore Hölder on the `ρ / 2`-thickening with every exponent at most one
+continuous, is shown to be locally Lipschitz. If the precise representative of the gradient is
+bounded on the `ρ`-thickening of a set `S` inside the domain, then, as the value lies in `Lᵖ`, the
+precise representative of the value is bounded and Hölder on the `ρ / 2`-thickening with every
+exponent at most one
 (`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`).
 
 For `p` above the dimension `n`, **Morrey's inequality holds up to the boundary of a bounded
@@ -64,14 +67,15 @@ then gives the Hölder bound.
 * `TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`: the Lipschitz
   bound for `W^{1,p}` functions on convex subsets of an open set where the gradient is essentially
   bounded.
-* `TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_convex`: the sharp Lipschitz bound for
-  `W^{1,∞}` on convex subsets of the domain.
+* `TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_convex`: the Lipschitz bound for
+  `W^{1,∞}` on convex subsets of the domain, with the essential supremum of the weak gradient as a
+  uniform constant.
 * `TauCeti.W1p.locallyLipschitzOn_preciseRepresentative`,
   `TauCeti.W1p.lineDeriv_preciseRepresentative_ae_eq`: on any open domain the `W^{1,∞}`
   representative is locally Lipschitz, with classical directional derivatives a.e. equal to the
   components of the weak gradient.
 * `TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`: Hölder bounds
-  on thickenings from pointwise bounds on the value and the gradient.
+  on thickenings from a pointwise bound on the gradient.
 * `TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_convex`: Morrey's inequality on a
   bounded convex domain, for the precise representative.
 * `TauCeti.W1p.exists_holderOnWith_closure_ae_eq_of_convex`: a representative Hölder continuous
@@ -140,9 +144,9 @@ private theorem W1p.norm_fderiv_convolution_indicator_le {p : ℝ≥0∞} [Fact 
           mul_le_mul_of_nonneg_left hy (ρ.nonneg_normed y)
     _ = M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
 
-/-- Mollifying with a bump of radius at most `δ`, where the `δ`-thickening of the segment `[x, y]`
-lies in the domain, gives values at `x` and `y` at distance at most `M * dist x y`, where `M` bounds
-the weak gradient almost everywhere. -/
+/-- Mollifying with a bump of radius at most `δ`, where the closed `δ`-thickening of the segment
+`[x, y]` lies in the domain, gives values at `x` and `y` at distance at most `M * dist x y`, where
+`M` bounds the weak gradient almost everywhere. -/
 private theorem W1p.dist_convolution_indicator_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : W1p μ Ω p)
     {M : ℝ≥0} (hM : ∀ᵐ x ∂μ.restrict Ω, ‖W1p.gradient u x‖ ≤ M) {x y : E} {δ : ℝ}
     (hδ : cthickening δ (segment ℝ x y) ⊆ Ω) (ρ : ContDiffBump (0 : E)) (hρ : ρ.rOut ≤ δ) :
@@ -211,8 +215,8 @@ private theorem W1p.lipschitzOnWith_preciseRepresentative_of_isOpen_convex {p : 
   exact hg.edist_le_mul x y
 
 /-- A Sobolev function whose weak gradient is essentially bounded by `M` on an open subset `V` of
-its domain has a precise representative that is `M`-Lipschitz on each convex subset of `V`. The
-exponent `p` of the Sobolev space is arbitrary, and the value need not be bounded. -/
+its domain has a precise representative that is `M`-Lipschitz on each convex subset of `V`. Here
+`1 ≤ p ≤ ∞` is any exponent of the Sobolev space, and the value need not be bounded. -/
 theorem W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le {p : ℝ≥0∞}
     [Fact (1 ≤ p)] (u : W1p μ Ω p) {V : Opens E} (hV : V ≤ Ω) {s : Set E} (hs : Convex ℝ s)
     (hsV : s ⊆ V) {M : ℝ≥0} (hM : ∀ᵐ x ∂μ.restrict V, ‖W1p.gradient u x‖ ≤ M) :
@@ -229,7 +233,8 @@ theorem W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le {p : �
     x (hxy (left_mem_segment ℝ x y)) y (hxy (right_mem_segment ℝ x y))
 
 /-- On any convex subset of its open domain the precise representative of a `W^{1,∞}`
-class is Lipschitz, with the sharp bound given by the essential supremum of its weak gradient. -/
+class is Lipschitz, with constant the essential supremum of its weak gradient over the whole
+domain. -/
 theorem W1p.lipschitzOnWith_preciseRepresentative_of_convex (u : W1p μ Ω ∞)
     {s : Set E} (hs : Convex ℝ s) (hsΩ : s ⊆ Ω) :
     LipschitzOnWith ‖W1p.gradient u‖₊ (preciseRepresentative μ (W1p.value u)) s :=
@@ -243,18 +248,53 @@ theorem W1p.lipschitzWith_preciseRepresentative (u : W1p μ ⊤ ∞) :
   rw [← lipschitzOnWith_univ]
   exact W1p.lipschitzOnWith_preciseRepresentative_of_convex u convex_univ subset_rfl
 
-/-- A Sobolev function whose precise representative and the precise representative of whose
-gradient are bounded on the `ρ`-thickening of a set `S` inside its domain has a precise
-representative that is Lipschitz on the balls of radius `ρ / 2` about the points of the
-`ρ / 2`-thickening, hence Hölder on the `ρ / 2`-thickening with every exponent at most one. -/
+/-- A function that is `L`-Lipschitz on `ball z r` and agrees almost everywhere there with a
+function of `Lᵖ` norm at most `N` on that ball is bounded at the centre by `L * r` plus `N` divided
+by the `p`-th root of the measure of the ball. -/
+private theorem norm_le_of_lipschitzOnWith_ball {X F : Type*} [PseudoMetricSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {ν : Measure X} [ν.IsOpenPosMeasure]
+    [SeminormedAddCommGroup F] {f g : X → F} {L : ℝ≥0} {z : X} {r : ℝ} (hr : 0 < r)
+    (hf : LipschitzOnWith L f (ball z r)) (hfg : g =ᵐ[ν.restrict (ball z r)] f) {p : ℝ≥0∞}
+    (hp : p ≠ 0) {N : ℝ≥0∞} (hN : eLpNorm g p (ν.restrict (ball z r)) ≤ N) (hNtop : N ≠ ⊤) :
+    ‖f z‖ ≤ L * r + N.toReal / (ν (ball z r) ^ (1 / p.toReal)).toReal := by
+  suffices ‖f z‖ - L * r ≤ N.toReal / (ν (ball z r) ^ (1 / p.toReal)).toReal by linarith
+  rcases le_or_gt (‖f z‖ - L * r) 0 with ha | ha
+  · exact ha.trans (by positivity)
+  -- On the ball, `‖g‖` is at least `‖f z‖ - L * r`, which bounds the `Lᵖ` norm of `g` below.
+  have hbound : ∀ᵐ y ∂ν.restrict (ball z r), ‖‖f z‖ - L * r‖ ≤ ‖g y‖ := by
+    filter_upwards [hfg, ae_restrict_mem measurableSet_ball] with y hy hyB
+    rw [hy, Real.norm_of_nonneg ha.le]
+    have hd := hf.dist_le_mul z (mem_ball_self hr) y hyB
+    have := mul_le_mul_of_nonneg_left (mem_ball'.1 hyB).le L.coe_nonneg
+    rw [dist_eq_norm] at hd
+    linarith [norm_sub_norm_le (f z) (f y)]
+  have hle := (eLpNorm_mono_eNorm_ae (f := fun _ => ‖f z‖ - L * r) aestronglyMeasurable_const
+    (by simpa only [eNorm_le_iff_norm_le] using hbound)).trans hN
+  rw [eLpNorm_const _ hp (Measure.restrict_eq_zero.not.2 (measure_ball_pos ν z hr).ne'),
+    Measure.restrict_apply_univ] at hle
+  have hctop : ν (ball z r) ^ (1 / p.toReal) ≠ ⊤ := fun h => by
+    rw [h, ENNReal.mul_top (eNorm_ne_zero.2 ha.ne')] at hle
+    exact hNtop (top_le_iff.1 hle)
+  have hc : 0 < (ν (ball z r) ^ (1 / p.toReal)).toReal :=
+    ENNReal.toReal_pos (ENNReal.rpow_pos_of_nonneg (measure_ball_pos ν z hr) (by positivity)).ne'
+      hctop
+  have hle' := ENNReal.toReal_mono hNtop hle
+  rw [ENNReal.toReal_mul, toReal_eNorm, Real.norm_of_nonneg ha.le] at hle'
+  exact (le_div_iff₀ hc).2 hle'
+
+/-- A Sobolev function the precise representative of whose gradient is bounded on the
+`ρ`-thickening of a set `S` inside its domain has a precise representative that is bounded on the
+`ρ / 2`-thickening and Lipschitz on the balls of radius `ρ / 2` about its points, hence Hölder on
+the `ρ / 2`-thickening with every exponent at most one. -/
 theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ≥0∞}
-    [Fact (1 ≤ p)] (u : W1p μ Ω p) {S : Set E} {ρ : ℝ} (hρ : 0 < ρ)
-    (hρS : thickening ρ S ⊆ Ω) {M₁ M₂ : ℝ}
-    (hv : ∀ x ∈ thickening ρ S, ‖preciseRepresentative μ (W1p.value u) x‖ ≤ M₁)
-    (hg : ∀ x ∈ thickening ρ S, ‖preciseRepresentative μ (W1p.gradient u) x‖ ≤ M₂)
+    [Fact (1 ≤ p)] (u : W1p μ Ω p) {S : Set E} {ρ : ℝ} (hρS : thickening ρ S ⊆ Ω) {M : ℝ}
+    (hg : ∀ x ∈ thickening ρ S, ‖preciseRepresentative μ (W1p.gradient u) x‖ ≤ M)
     {γ : NNReal} (hγ : γ ≤ 1) :
     ∃ C : NNReal,
       HolderOnWith C γ (preciseRepresentative μ (W1p.value u)) (thickening (ρ / 2) S) := by
+  rcases le_or_gt ρ 0 with hρ | hρ
+  · rw [thickening_of_nonpos (by linarith)]
+    exact ⟨0, holderOnWith_empty _ _ _⟩
   have hgrad : (W1p.gradient u : E → E) =ᵐ[μ.restrict Ω]
       preciseRepresentative μ (W1p.gradient u) :=
     ae_eq_restrict_preciseRepresentative Ω.isOpen
@@ -264,7 +304,7 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ
       ((thickening_thickening_subset _ _ _).trans (by rw [add_halves]))
   -- On each such ball, the gradient of `u` is essentially bounded.
   have hlip : ∀ x ∈ thickening (ρ / 2) S,
-      LipschitzOnWith M₂.toNNReal (preciseRepresentative μ (W1p.value u)) (ball x (ρ / 2)) := by
+      LipschitzOnWith M.toNNReal (preciseRepresentative μ (W1p.value u)) (ball x (ρ / 2)) := by
     intro x hx
     let V : Opens E := ⟨ball x (ρ / 2), isOpen_ball⟩
     have hVU : (V : Set E) ⊆ thickening ρ S := hball x hx
@@ -276,21 +316,29 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ
     filter_upwards [ae_restrict_mem V.isOpen.measurableSet, hgrad.filter_mono hae] with y hy hy'
     rw [hy']
     exact (hg y (hVU hy)).trans (Real.le_coe_toNNReal _)
+  -- Since the value lies in `Lᵖ`, the precise representative is bounded on the thickening.
+  have hval : (W1p.value u : E → ℝ) =ᵐ[μ.restrict Ω] preciseRepresentative μ (W1p.value u) :=
+    ae_eq_restrict_preciseRepresentative Ω.isOpen (W1p.hasWeakFDerivOn u).locallyIntegrableOn
+  obtain ⟨B, hv⟩ : ∃ B : ℝ, ∀ x ∈ thickening (ρ / 2) S,
+      ‖preciseRepresentative μ (W1p.value u) x‖ ≤ B := by
+    refine ⟨M.toNNReal * (ρ / 2) + (eLpNorm (W1p.value u) p (μ.restrict Ω)).toReal /
+      (μ (ball 0 (ρ / 2)) ^ (1 / p.toReal)).toReal, fun x hx => ?_⟩
+    have hB : μ.restrict (ball x (ρ / 2)) ≤ μ.restrict Ω :=
+      Measure.restrict_mono ((hball x hx).trans hρS) le_rfl
+    have := norm_le_of_lipschitzOnWith_ball (ν := μ) (by positivity) (hlip x hx)
+      (hval.filter_mono (ae_mono hB)) (zero_lt_one.trans_le Fact.out).ne'
+      (eLpNorm_mono_measure _ hB) (Lp.eLpNorm_ne_top _)
+    rwa [Measure.addHaar_ball_center] at this
   have hρ2 : ((ρ / 2).toNNReal : ℝ) = ρ / 2 := Real.coe_toNNReal _ (by positivity)
-  refine ⟨_, HolderOnWith.of_le_of_dist_le (K := M₂.toNNReal) (D := (2 * M₁).toNNReal)
+  refine ⟨_, HolderOnWith.of_le_of_dist_le (K := M.toNNReal) (D := (2 * B).toNNReal)
     (δ := (ρ / 2).toNNReal) (β := 1) (fun x hx y _ hxy => ?_) (fun x hx y hy => ?_) hγ
     (by rw [← NNReal.coe_pos, hρ2]; positivity)⟩
   · rw [hρ2] at hxy
     rw [NNReal.coe_one, Real.rpow_one]
     exact (hlip x hx).dist_le_mul x (mem_ball_self (by positivity)) y
       (mem_ball_comm.1 (mem_ball.2 hxy))
-  · have hsub : thickening (ρ / 2) S ⊆ thickening ρ S := thickening_mono (by linarith) S
-    calc dist (preciseRepresentative μ (W1p.value u) x)
-          (preciseRepresentative μ (W1p.value u) y)
-        ≤ ‖preciseRepresentative μ (W1p.value u) x‖ +
-          ‖preciseRepresentative μ (W1p.value u) y‖ := dist_le_norm_add_norm _ _
-      _ ≤ 2 * M₁ := by linarith [hv x (hsub hx), hv y (hsub hy)]
-      _ ≤ (2 * M₁).toNNReal := Real.le_coe_toNNReal _
+  · linarith [Real.le_coe_toNNReal (2 * B), hv x hx, hv y hy, dist_le_norm_add_norm
+      (preciseRepresentative μ (W1p.value u) x) (preciseRepresentative μ (W1p.value u) y)]
 
 /-- The precise representative of a `W^{1,∞}` class is locally Lipschitz on its open domain: it
 is Lipschitz on every ball contained in the domain. -/
