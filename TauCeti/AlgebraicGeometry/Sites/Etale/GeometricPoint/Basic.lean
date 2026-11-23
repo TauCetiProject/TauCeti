@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Sites.EtalePoint
 public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.CategoryTheory.Sites.Point.Category
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
 # The category of geometric points of a scheme
@@ -17,10 +18,10 @@ A geometric point of a scheme `S` is a separably closed field `Ω` together with
 `Spec Ω ⟶ S`. A morphism from `(Ω₁, s₁)` to `(Ω₂, s₂)` is a morphism `φ : Spec Ω₁ ⟶ Spec Ω₂` with
 `φ ≫ s₂ = s₁` (Stacks, Tag 04FN). This file defines the category
 `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint S` of geometric points, its ring-homomorphism
-interface (`homOfRingHom`, `Hom.ringHom`, `isoOfRingEquiv`, `Hom.isIso_iff_ringHom_surjective`),
-and the covariant functor `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.toPointFunctor` to
-Mathlib's category of points of the small étale site, sending `s` to
-`AlgebraicGeometry.Scheme.pointSmallEtale s.hom`.
+interface (`homOfRingHom`, `Hom.ringHom`, `homOfRingHom_ringHom`, `isoOfRingEquiv`,
+`Hom.isIso_iff_ringHom_surjective`), and the covariant functor
+`TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.toPointFunctor` to Mathlib's category of points of
+the small étale site, sending `s` to `AlgebraicGeometry.Scheme.pointSmallEtale s.hom`.
 
 The direction is Mathlib's: a morphism of points `Φ₁ ⟶ Φ₂` is a natural transformation
 `Φ₂.fiber ⟶ Φ₁.fiber`. The fibre of `pointSmallEtale s` at an étale `U ⟶ S` is the set of lifts of
@@ -177,12 +178,10 @@ theorem Hom.SpecMap_ringHom {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :
     Spec.map (CommRingCat.ofHom f.ringHom) = f.hom :=
   Scheme.Spec.map_preimage f.hom
 
-/-- Two ring homomorphisms with the same induced morphism on spectra are equal. -/
-theorem Hom.ringHom_eq_of_SpecMap_eq {R₁ R₂ : Type u} [CommRing R₁] [CommRing R₂]
-    {φ ψ : R₁ →+* R₂}
-    (h : Spec.map (CommRingCat.ofHom φ) = Spec.map (CommRingCat.ofHom ψ)) :
-    φ = ψ :=
-  congrArg CommRingCat.Hom.hom (Spec.map_injective h)
+/-- The spectrum of `f.ringHom` is compatible with the morphisms into `S`. -/
+theorem Hom.SpecMap_ringHom_comp {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :
+    Spec.map (CommRingCat.ofHom f.ringHom) ≫ s₂.hom = s₁.hom := by
+  rw [Hom.SpecMap_ringHom, f.w]
 
 /-- `Hom.ringHom` is injective on morphisms of geometric points. -/
 theorem Hom.ringHom_injective {s₁ s₂ : GeometricPoint S} :
@@ -196,13 +195,21 @@ theorem Hom.ringHom_injective {s₁ s₂ : GeometricPoint S} :
 theorem Hom.ringHom_homOfRingHom {s₁ s₂ : GeometricPoint S} (ι : s₂.Ω →+* s₁.Ω)
     (w : Spec.map (CommRingCat.ofHom ι) ≫ s₂.hom = s₁.hom) :
     (homOfRingHom ι w).ringHom = ι :=
-  Hom.ringHom_eq_of_SpecMap_eq (by rw [Hom.SpecMap_ringHom, homOfRingHom_hom])
+  TauCeti.AlgebraicGeometry.ringHom_eq_of_SpecMap_eq (by
+    rw [Hom.SpecMap_ringHom, homOfRingHom_hom])
+
+/-- Reconstructing a morphism of geometric points from its underlying ring homomorphism recovers the
+morphism. -/
+@[simp]
+theorem homOfRingHom_ringHom {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :
+    homOfRingHom f.ringHom f.SpecMap_ringHom_comp = f :=
+  Hom.ringHom_injective (Hom.ringHom_homOfRingHom _ _)
 
 /-- The ring homomorphism of the identity morphism is the identity ring homomorphism. -/
 @[simp]
 theorem Hom.ringHom_id (s : GeometricPoint S) :
     Hom.ringHom (𝟙 s) = RingHom.id s.Ω :=
-  Hom.ringHom_eq_of_SpecMap_eq
+  TauCeti.AlgebraicGeometry.ringHom_eq_of_SpecMap_eq
     (by rw [Hom.SpecMap_ringHom, id_hom, CommRingCat.ofHom_id, Spec.map_id])
 
 /-- The ring homomorphism of a composite `f ≫ g` of morphisms of geometric points is
@@ -210,7 +217,7 @@ theorem Hom.ringHom_id (s : GeometricPoint S) :
 @[simp]
 theorem Hom.ringHom_comp {s₁ s₂ s₃ : GeometricPoint S} (f : s₁ ⟶ s₂) (g : s₂ ⟶ s₃) :
     (f ≫ g).ringHom = f.ringHom.comp g.ringHom :=
-  Hom.ringHom_eq_of_SpecMap_eq (by
+  TauCeti.AlgebraicGeometry.ringHom_eq_of_SpecMap_eq (by
     rw [Hom.SpecMap_ringHom, comp_hom, CommRingCat.ofHom_comp, Spec.map_comp,
       Hom.SpecMap_ringHom, Hom.SpecMap_ringHom])
 
@@ -402,17 +409,6 @@ theorem stalkIso_comp {s₁ s₂ s₃ : GeometricPoint S} (φ : s₁ ⟶ s₂) (
   simp
   rfl
 
-/-- On germs, `stalkIso φ` sends the germ at `(U, u)` to the germ at `(U, φ ≫ u)`. -/
-@[reassoc, elementwise]
-theorem toPresheafFiber_stalkIso_hom_app {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ s₂)
-    (F : Sheaf (Scheme.smallEtaleTopology S) A) (U : S.Etale)
-    (u : (Scheme.pointSmallEtale s₂.hom).fiber.obj U) :
-    (Scheme.pointSmallEtale s₂.hom).toPresheafFiber U u F.obj ≫ (stalkIso φ).hom.app F =
-      (Scheme.pointSmallEtale s₁.hom).toPresheafFiber U
-        ((Over.homMk φ.hom φ.w : Over.mk s₁.hom ⟶ Over.mk s₂.hom) ≫ u) F.obj := by
-  rw [stalkIso_hom]
-  exact toPresheafFiber_toPointFunctor_map_sheafFiber_app φ F U u
-
 end StalkIso
 
 end ToPoint
@@ -462,21 +458,6 @@ noncomputable def stalkAction (s : GeometricPoint S) :
 lemma stalkAction_apply (s : GeometricPoint S) (φ : (Aut s)ᵐᵒᵖ) :
     (stalkAction A s φ).asIso.hom = ((toPointFunctor S).map φ.unop.asIso.hom).sheafFiber :=
   (rfl)
-
-/-- On stalks of sheaves of sets, multiplying automorphisms composes their evaluations. -/
-theorem sheafFiber_aut_mul_app_apply {s : GeometricPoint S}
-    (e₁ e₂ : Aut ((Scheme.pointSmallEtale s.hom).sheafFiber (A := Type u)))
-    (F : Sheaf (Scheme.smallEtaleTopology S) (Type u))
-    (z : (Scheme.pointSmallEtale s.hom).sheafFiber.obj F) :
-    (e₁ * e₂).asIso.hom.app F z = e₁.asIso.hom.app F (e₂.asIso.hom.app F z) := by
-  rw [Aut.mul_asIso, Iso.trans_hom, NatTrans.comp_app, types_comp_apply]
-
-/-- On stalks of sheaves of sets, the identity automorphism acts as the identity. -/
-theorem sheafFiber_aut_one_app_apply {s : GeometricPoint S}
-    (F : Sheaf (Scheme.smallEtaleTopology S) (Type u))
-    (z : (Scheme.pointSmallEtale s.hom).sheafFiber.obj F) :
-    (1 : Aut ((Scheme.pointSmallEtale s.hom).sheafFiber (A := Type u))).asIso.hom.app F z = z := by
-  rw [Aut.one_asIso, Iso.refl_hom, NatTrans.id_app, types_id_apply]
 
 /-- Evaluation of `stalkAction` at an étale sheaf `F`: the right action of `Aut s` (equivalently
 the left action of `(Aut s)ᵐᵒᵖ`) by automorphisms of the stalk

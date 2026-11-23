@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Endomorphism
+public import Mathlib.CategoryTheory.Types.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
@@ -17,6 +18,9 @@ This file contains general bookkeeping lemmas for automorphisms of objects in a 
 
 * `CategoryTheory.Aut.comp_pow_hom_of_comp`: iterating an automorphism that reindexes a
   family of morphisms reindexes that family by the corresponding function iterate.
+* `CategoryTheory.Aut.functor_mul_asIso_hom_app_apply`,
+  `CategoryTheory.Aut.functor_one_asIso_hom_app_apply`: evaluation of automorphism multiplication
+  and identity on a `Type`-valued functor.
 * `CategoryTheory.Iso.natCard_aut_eq`: isomorphic objects have automorphism groups of the same
   cardinality.
 * `CategoryTheory.Functor.FullyFaithful.natCard_aut_obj`: a fully faithful functor preserves the
@@ -39,6 +43,18 @@ theorem comp_pow_hom_of_comp (γ : Aut X) (F : ι → (Y ⟶ X)) (s : ι → ι)
   induction m generalizing i with
   | zero => simp
   | succ m ih => simp [pow_succ, reassoc_of% h, ih]
+
+/-- On a `Type`-valued functor, multiplying automorphisms composes their evaluations. -/
+theorem functor_mul_asIso_hom_app_apply {D : Type*} [Category* D] {F : D ⥤ Type*}
+    (e₁ e₂ : Aut F) (Z : D) (z : F.obj Z) :
+    (e₁ * e₂).asIso.hom.app Z z = e₁.asIso.hom.app Z (e₂.asIso.hom.app Z z) := by
+  rw [Aut.mul_asIso, Iso.trans_hom, NatTrans.comp_app, types_comp_apply]
+
+/-- On a `Type`-valued functor, the identity automorphism acts as the identity. -/
+theorem functor_one_asIso_hom_app_apply {D : Type*} [Category* D] {F : D ⥤ Type*}
+    (Z : D) (z : F.obj Z) :
+    (1 : Aut F).asIso.hom.app Z z = z := by
+  rw [Aut.one_asIso, Iso.refl_hom, NatTrans.id_app, types_id_apply]
 
 end CategoryTheory.Aut
 

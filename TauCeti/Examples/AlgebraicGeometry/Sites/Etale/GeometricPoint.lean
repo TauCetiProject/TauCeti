@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.FieldTheory.Finite.GaloisField
-public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Frobenius
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Functoriality
 public import TauCeti.FieldTheory.RatFunc.PowerTower
+import TauCeti.CategoryTheory.Aut.Basic
 
 /-!
 # Worked examples of geometric points and stalk Frobenius
@@ -26,7 +26,7 @@ Galois actions on stalks, and the stalk Frobenius:
 * **Fifth roots of unity `μ_5` over `Spec 𝔽_2`**: the stalk at `kbar` is `rootsOfUnity 5 kbar`,
   `stalkFrobenius` acts by `ζ ↦ ζ ^ 3` (since `3 · 2 ≡ 1 [MOD 5]`), `stalkArithmeticFrobenius`
   acts by `ζ ↦ ζ ^ 2`, and the two automorphisms are distinct on this stalk.
-* **Rational function fields `K(X)`**: the morphism `ofSepToAlgClosure` from
+* **Rational function fields `K(X)`**: the morphism `ofAlgClosureToSepClosure` from
   `Spec (AlgebraicClosure (RatFunc K))` to `Spec (SeparableClosure (RatFunc K))` is an isomorphism
   in `GeometricPoint` if and only if `CharZero K` (in particular, it is not an isomorphism for
   `𝔽_p(t)`); see `isIso_toPointFunctor_map` for why every morphism induces an isomorphism of
@@ -53,20 +53,24 @@ noncomputable def galComplexRealMulEquivAutOp :
 theorem natCard_specComplex_stalk :
     Nat.card ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of ℝ))) ℂ).hom).sheafFiber.obj
         ((FiniteEtaleScheme.toSheaf (Spec (.of ℝ))).obj
-          ((FiniteEtaleScheme.spec (.of ℝ)).obj (op (finiteEtaleOfSeparableFieldExt ℝ ℂ))))) =
+          ((FiniteEtaleScheme.spec (.of ℝ)).obj
+            (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt ℝ ℂ))))) =
       2 :=
   (natCard_toSheafSpecStalk_fieldExt_eq_finrank ℝ ℂ ℂ).trans Complex.finrank_real_complex
 
-/-- Complex conjugation has no fixed points on the stalk of `Spec ℂ ⟶ Spec ℝ` at `Spec ℂ`. -/
+/-- Complex conjugation has no fixed points on the stalk of `Spec ℂ ⟶ Spec ℝ` at `Spec ℂ`
+(using Mathlib's classification `Complex.real_algHom_eq_id_or_conj`). -/
 theorem conjAe_specComplex_stalk_ne_self
     (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of ℝ))) ℂ).hom).sheafFiber.obj
       ((FiniteEtaleScheme.toSheaf (Spec (.of ℝ))).obj
-        ((FiniteEtaleScheme.spec (.of ℝ)).obj (op (finiteEtaleOfSeparableFieldExt ℝ ℂ))))) :
+        ((FiniteEtaleScheme.spec (.of ℝ)).obj
+          (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt ℝ ℂ))))) :
     (galStalkAut (𝟙 (Spec (.of ℝ))) ℂ Complex.conjAe).asIso.hom.app
         ((FiniteEtaleScheme.toSheaf (Spec (.of ℝ))).obj
-          ((FiniteEtaleScheme.spec (.of ℝ)).obj (op (finiteEtaleOfSeparableFieldExt ℝ ℂ)))) z ≠
+          ((FiniteEtaleScheme.spec (.of ℝ)).obj
+            (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt ℝ ℂ)))) z ≠
       z := by
-  let B := finiteEtaleOfSeparableFieldExt ℝ ℂ
+  let B := CommAlgCat.FiniteEtale.ofSeparableFieldExt ℝ ℂ
   intro h
   let φ : ℂ →ₐ[ℝ] ℂ := toSheafSpecStalkEquiv ℝ ℂ B z
   have hφ : φ = Complex.conjAe.toAlgHom.comp φ :=
@@ -84,13 +88,14 @@ theorem conjAe_specComplex_stalk_ne_self
 theorem conjAe_specComplex_stalk_involutive :
     Function.Involutive ((galStalkAut (𝟙 (Spec (.of ℝ))) ℂ Complex.conjAe).asIso.hom.app
       ((FiniteEtaleScheme.toSheaf (Spec (.of ℝ))).obj
-        ((FiniteEtaleScheme.spec (.of ℝ)).obj (op (finiteEtaleOfSeparableFieldExt ℝ ℂ))))) := by
+        ((FiniteEtaleScheme.spec (.of ℝ)).obj
+          (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt ℝ ℂ))))) := by
   intro z
   rw [← galStalkAut_mul_app_apply]
   have hsq : Complex.conjAe * Complex.conjAe = 1 := by
     ext x
     simp
-  rw [hsq, map_one, sheafFiber_aut_one_app_apply]
+  rw [hsq, map_one, Aut.functor_one_asIso_hom_app_apply]
 
 end ComplexReal
 
@@ -104,23 +109,24 @@ theorem natCard_galoisField_two_stalk :
     Nat.card ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of (ZMod p)))) kbar).hom).sheafFiber.obj
         ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
           ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
-            (op (finiteEtaleOfSeparableFieldExt (ZMod p) (GaloisField p 2)))))) =
+            (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2)))))) =
       2 :=
   (natCard_toSheafSpecStalk_fieldExt_eq_finrank (ZMod p) (GaloisField p 2) kbar).trans
     (GaloisField.finrank p (by decide))
 
-variable [Algebra.IsAlgebraic (ZMod p) kbar]
+variable [PerfectField kbar]
 
 /-- On the two-element stalk of `Spec 𝔽_{p²} ⟶ Spec 𝔽_p`, `stalkFrobenius` has no fixed points. -/
 theorem stalkFrobenius_galoisField_two_ne_self
     (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of (ZMod p)))) kbar).hom).sheafFiber.obj
       ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
         ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
-          (op (finiteEtaleOfSeparableFieldExt (ZMod p) (GaloisField p 2)))))) :
+          (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2)))))) :
     (stalkFrobenius (𝟙 (Spec (.of (ZMod p)))) kbar).asIso.hom.app
         ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
           ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
-            (op (finiteEtaleOfSeparableFieldExt (ZMod p) (GaloisField p 2))))) z ≠ z :=
+            (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2))))) z ≠
+      z :=
   stalkFrobenius_ne_self_of_one_lt_finrank (ZMod p) (GaloisField p 2) kbar
     (by rw [GaloisField.finrank p (by decide)]; decide) z
 
@@ -129,7 +135,7 @@ theorem stalkFrobenius_galoisField_two_involutive :
     Function.Involutive ((stalkFrobenius (𝟙 (Spec (.of (ZMod p)))) kbar).asIso.hom.app
       ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
         ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
-          (op (finiteEtaleOfSeparableFieldExt (ZMod p) (GaloisField p 2)))))) :=
+          (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2)))))) :=
   stalkFrobenius_involutive_of_finrank_eq_two (ZMod p) (GaloisField p 2) kbar
     (GaloisField.finrank p (by decide))
 
@@ -139,15 +145,15 @@ theorem stalkFrobenius_eq_stalkArithmeticFrobenius_galoisField_two
     (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of (ZMod p)))) kbar).hom).sheafFiber.obj
       ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
         ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
-          (op (finiteEtaleOfSeparableFieldExt (ZMod p) (GaloisField p 2)))))) :
+          (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2)))))) :
     (stalkFrobenius (𝟙 (Spec (.of (ZMod p)))) kbar).asIso.hom.app
         ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
           ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
-            (op (finiteEtaleOfSeparableFieldExt (ZMod p) (GaloisField p 2))))) z =
+            (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2))))) z =
       (stalkArithmeticFrobenius (𝟙 (Spec (.of (ZMod p)))) kbar).asIso.hom.app
         ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod p)))).obj
           ((FiniteEtaleScheme.spec (.of (ZMod p))).obj
-            (op (finiteEtaleOfSeparableFieldExt (ZMod p) (GaloisField p 2))))) z :=
+            (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt (ZMod p) (GaloisField p 2))))) z :=
   stalkFrobenius_eq_stalkArithmeticFrobenius_of_finrank_eq_two (ZMod p) (GaloisField p 2) kbar
     (GaloisField.finrank p (by decide)) z
 
@@ -155,8 +161,7 @@ end QuadraticFiniteField
 
 section FifthRootsOverF2
 
-variable (kbar : Type) [Field kbar] [Algebra (ZMod 2) kbar] [Algebra.IsAlgebraic (ZMod 2) kbar]
-  [IsSepClosed kbar]
+variable (kbar : Type) [Field kbar] [Algebra (ZMod 2) kbar] [PerfectField kbar] [IsSepClosed kbar]
 
 /-- **Stalk Frobenius on `μ_5` over `Spec 𝔽_2`.** Under the identification of the stalk of the
 degree-`5` Kummer cover over `1` with `rootsOfUnity 5 kbar`, `stalkFrobenius` acts by
@@ -231,21 +236,22 @@ end FifthRootsOverF2
 
 section ImperfectFunctionField
 
-/-- For any field `K` and any `a : Spec (.of (RatFunc K)) ⟶ S`, the morphism `ofSepToAlgClosure a`
-is an isomorphism in `GeometricPoint S` if and only if `K` has characteristic zero (whereas
-`(toPointFunctor S).map (ofSepToAlgClosure a)` is always an isomorphism by
-`isIso_toPointFunctor_map`). -/
-theorem isIso_ofSepToAlgClosure_ratFunc_iff {S : Scheme.{u}} {K : Type u} [Field K]
+/-- For any field `K` and any `a : Spec (.of (RatFunc K)) ⟶ S`, the morphism
+`ofAlgClosureToSepClosure a` is an isomorphism in `GeometricPoint S` if and only if `K` has
+characteristic zero (whereas `(toPointFunctor S).map (ofAlgClosureToSepClosure a)` is always an
+isomorphism by `isIso_toPointFunctor_map`). -/
+theorem isIso_ofAlgClosureToSepClosure_ratFunc_iff {S : Scheme.{u}} {K : Type u} [Field K]
     (a : Spec (.of (RatFunc K)) ⟶ S) :
-    IsIso (ofSepToAlgClosure a) ↔ CharZero K :=
-  (isIso_ofSepToAlgClosure_iff_perfectField a).trans (TauCeti.RatFunc.perfectField_iff_charZero K)
+    IsIso (ofAlgClosureToSepClosure a) ↔ CharZero K :=
+  (isIso_ofAlgClosureToSepClosure_iff_perfectField a).trans
+    (TauCeti.RatFunc.perfectField_iff_charZero K)
 
 /-- For `k = 𝔽_p(t)`, the morphism `Spec (AlgebraicClosure k) ⟶ Spec (SeparableClosure k)` over
 `Spec k` is not an isomorphism in `GeometricPoint (Spec (.of (RatFunc (ZMod p))))` (though by
 `isIso_toPointFunctor_map` its image under `toPointFunctor` is an isomorphism). -/
-theorem not_isIso_ofSepToAlgClosure_ratFunc_zmod (p : ℕ) [Fact p.Prime] :
-    ¬ IsIso (ofSepToAlgClosure (𝟙 (Spec (.of (RatFunc (ZMod p)))))) := by
-  rw [isIso_ofSepToAlgClosure_ratFunc_iff]
+theorem not_isIso_ofAlgClosureToSepClosure_ratFunc_zmod (p : ℕ) [Fact p.Prime] :
+    ¬ IsIso (ofAlgClosureToSepClosure (𝟙 (Spec (.of (RatFunc (ZMod p)))))) := by
+  rw [isIso_ofAlgClosureToSepClosure_ratFunc_iff]
   intro h
   exact (Fact.out : p.Prime).ne_zero (CharP.eq (ZMod p) inferInstance (CharP.ofCharZero (ZMod p)))
 

@@ -55,8 +55,14 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
 * `TauCeti.AlgebraicGeometry.exists_algHom_SpecMap_eq`: a morphism `Spec B ⟶ Spec A` over
   `Spec R` is `Spec.map` of an `R`-algebra homomorphism; `SpecMap_quotient_mk_comp_SpecMap_algHom`
   and `SpecMap_algHom_comp_quotient` compute its restriction to `Spec (B ⧸ I)`.
+* `TauCeti.AlgebraicGeometry.ringHom_eq_of_SpecMap_eq`: two ring homomorphisms with the same
+  induced morphism on spectra are equal.
+* `TauCeti.AlgebraicGeometry.SpecMap_ofHom_comp_algebraMap`: compatibility of `Spec` of an
+  `R`-algebra homomorphism with `Spec (algebraMap R ·)`.
 * `TauCeti.AlgebraicGeometry.algSpecHomEquivAlgHom`: morphisms `algSpec B ⟶ algSpec A` of schemes
   over `Spec R` are the `R`-algebra homomorphisms `A →ₐ[R] B`.
+* `TauCeti.AlgebraicGeometry.algSpec_map_ofHom_left`: underlying scheme morphism of
+  `(algSpec R).map (CommAlgCat.ofHom φ).op`.
 * `TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk`: `algSpec A` is `Spec A` with structure
   morphism `Spec.algebraMap R A`.
 -/
@@ -204,6 +210,22 @@ theorem SpecMap_algHom_comp_quotient (I : Ideal B) (f : A →ₐ[R] B ⧸ I) :
       Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ Spec.algebraMap R B := by
   exact (Spec.homEquivAlgHom.symm f).property.trans (by rw [← Spec.map_comp]; rfl)
 
+/-- Two ring homomorphisms with the same induced morphism on spectra are equal. -/
+theorem ringHom_eq_of_SpecMap_eq {R₁ R₂ : Type u} [CommRing R₁] [CommRing R₂]
+    {φ ψ : R₁ →+* R₂}
+    (h : Spec.map (CommRingCat.ofHom φ) = Spec.map (CommRingCat.ofHom ψ)) :
+    φ = ψ :=
+  congrArg CommRingCat.Hom.hom (Spec.map_injective h)
+
+/-- Compatibility of `Spec σ` with `Spec (algebraMap R ·)` for an `R`-algebra homomorphism
+`σ : A →ₐ[R] B`. -/
+theorem SpecMap_ofHom_comp_algebraMap (σ : A →ₐ[R] B) :
+    Spec.map (CommRingCat.ofHom σ.toRingHom) ≫
+        Spec.map (CommRingCat.ofHom (algebraMap R A)) =
+      Spec.map (CommRingCat.ofHom (algebraMap R B)) := by
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  exact congrArg (Spec.map ∘ CommRingCat.ofHom) (RingHom.ext fun r ↦ σ.commutes r)
+
 section algSpec
 
 variable {R : CommRingCat.{u}} {A B : CommAlgCat.{u} R}
@@ -228,6 +250,18 @@ theorem algSpecObjIsoOverMk_hom_left : (algSpecObjIsoOverMk A).hom.left = 𝟙 _
 @[simp]
 theorem algSpecObjIsoOverMk_inv_left : (algSpecObjIsoOverMk A).inv.left = 𝟙 _ :=
   (rfl)
+
+/-- The underlying scheme morphism of `(algSpec R).map (CommAlgCat.ofHom φ).op` is
+`Spec.map (CommRingCat.ofHom φ.toRingHom)`. -/
+theorem algSpec_map_ofHom_left (φ : A →ₐ[R] B) :
+    ((algSpec R).map (CommAlgCat.ofHom φ).op).left =
+      Spec.map (CommRingCat.ofHom φ.toRingHom) := by
+  -- `algSpec_map_left` leaves the ring map as `Under.Hom.right` through
+  -- `commAlgCatEquivUnder`. No public computation lemma reduces that projection, so
+  -- unfold the equivalence here to expose the underlying ring map of `φ`.
+  simp only [algSpec_map_left, commAlgCatEquivUnder, Quiver.Hom.unop_op,
+    CommAlgCat.hom_ofHom, AlgHom.toUnder, Under.homMk_right]
+  rfl
 
 variable (A B) in
 /-- Morphisms `algSpec B ⟶ algSpec A` of schemes over `Spec R` are the `R`-algebra homomorphisms
@@ -258,12 +292,7 @@ theorem algSpecHomEquivAlgHom_eq_appTop
       (Scheme.ΓSpecIso (CommRingCat.of B)).hom
         (p.left.appTop ((Scheme.ΓSpecIso (CommRingCat.of A)).inv a)) := by
   obtain ⟨φ, rfl⟩ := (algSpecHomEquivAlgHom A B).symm.surjective p
-  rw [Equiv.apply_symm_apply, algSpecHomEquivAlgHom_symm_apply, algSpec_map_left]
-  -- `algSpec_map_left` leaves the ring map as `Under.Hom.right` through
-  -- `commAlgCatEquivUnder`. No public computation lemma reduces that projection, so
-  -- unfold the equivalence here to expose the underlying ring map of `φ` for naturality.
-  simp only [commAlgCatEquivUnder, Quiver.Hom.unop_op, CommAlgCat.hom_ofHom,
-    AlgHom.toUnder, Under.homMk_right]
+  rw [Equiv.apply_symm_apply, algSpecHomEquivAlgHom_symm_apply, algSpec_map_ofHom_left]
   have h := ConcreteCategory.congr_hom
     (Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom φ.toRingHom)) a
   have h' := congrArg (Scheme.ΓSpecIso (CommRingCat.of B)).hom h

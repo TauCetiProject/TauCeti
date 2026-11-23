@@ -36,6 +36,8 @@ elements behind the finite unitary groups.
 
 * `TauCeti.FiniteField.frobeniusFixedSubalgebra`: the subalgebra fixed by an iterate of the
   Frobenius.
+* `TauCeti.FiniteField.frobeniusAlgEquiv`: the `Nat.card K`-power `K`-algebra automorphism on a
+  perfect field `L / K` without requiring `[Fintype K]`.
 
 ## Main results
 
@@ -48,9 +50,11 @@ elements behind the finite unitary groups.
   only finitely many elements.
 * `TauCeti.FiniteField.isPurelyInseparable_fieldRange_frobeniusAlgHom`: `L` is purely
   inseparable over the field range of `FiniteField.frobeniusAlgHom K L`.
-* `TauCeti.FiniteField.frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff`: period of the arithmetic
-  Frobenius on embeddings of a field extension (when `E / K` is infinite, `Module.finrank K E = 0`
-  so only `m = 0` fixes the embedding).
+* `TauCeti.FiniteField.frobeniusAlgHom_pow_comp_eq_iff`,
+  `TauCeti.FiniteField.frobeniusAlgEquiv_pow_comp_eq_iff`: period of the arithmetic Frobenius on
+  embeddings of a field extension (supplied in finite degree by
+  `FiniteField.orderOf_frobeniusAlgHom`; when `E / K` is infinite, `Module.finrank K E = 0` so
+  only `m = 0` fixes the embedding).
 * `TauCeti.FiniteField.iterateFrobenius_involutive`: on a field of exponential characteristic `p`
   with `Nat.card K = p ^ (n * 2)`, the iterated Frobenius `x ↦ x ^ p ^ n` is an involution.
 * `TauCeti.FiniteField.frobeniusEquiv_involutive`: on a field of exponential characteristic `p`
@@ -188,30 +192,59 @@ theorem exists_iterateFrobenius_ne_of_card_eq_sq {n : ℕ}
 
 /-! ### Exact period of the arithmetic Frobenius on embeddings -/
 
-section Algebraic
+section Perfect
 
-/-- For any field extension `E / K` of a finite field `K` and any `K`-embedding `φ : E →ₐ[K] L`
-into an algebraic extension `L / K`, postcomposing `φ` with the `m`-th power of
-`FiniteField.frobeniusAlgEquivOfAlgebraic K L` equals `φ` if and only if
-`Module.finrank K E ∣ m`. When `E / K` is finite this gives exact period `[E : K]` (via
+/-- If `L` is a perfect field over a finite field `K`, the `Nat.card K`-power map is a
+`K`-algebra automorphism of `L`. This wraps Mathlib's `FiniteField.frobeniusAlgEquiv` with the
+`[Fintype K]` and exponential characteristic choices encapsulated. -/
+noncomputable def frobeniusAlgEquiv (K L : Type*) [Field K] [Finite K] [Field L] [Algebra K L]
+    [PerfectField L] : L ≃ₐ[K] L :=
+  let _ := Fintype.ofFinite K
+  have : ExpChar L (ringExpChar K) := expChar_of_injective_algebraMap (algebraMap K L).injective _
+  _root_.FiniteField.frobeniusAlgEquiv K L (ringExpChar K)
+
+/-- `TauCeti.FiniteField.frobeniusAlgEquiv K L` raises every element to the `Nat.card K`-th
+power. -/
+@[simp]
+theorem frobeniusAlgEquiv_apply (K L : Type*) [Field K] [Finite K] [Field L] [Algebra K L]
+    [PerfectField L] (x : L) :
+    frobeniusAlgEquiv K L x = x ^ Nat.card K := by
+  let _ := Fintype.ofFinite K
+  simp [frobeniusAlgEquiv, Nat.card_eq_fintype_card]
+
+/-- Raising the inverse image under `TauCeti.FiniteField.frobeniusAlgEquiv K L` to the
+`Nat.card K`-th power recovers the input. -/
+theorem frobeniusAlgEquiv_symm_apply_pow (K L : Type*) [Field K] [Finite K] [Field L] [Algebra K L]
+    [PerfectField L] (x : L) :
+    ((frobeniusAlgEquiv K L).symm x) ^ Nat.card K = x := by
+  rw [← frobeniusAlgEquiv_apply K L, AlgEquiv.apply_symm_apply]
+
+end Perfect
+
+/-! ### Exact period of the arithmetic Frobenius on embeddings -/
+
+section Embeddings
+
+/-- For any field extension `E / K` of a finite field `K` and any `K`-algebra homomorphism
+`φ : E →ₐ[K] A` into a nontrivial commutative `K`-algebra `A`, postcomposing `φ` with the `m`-th
+power of `FiniteField.frobeniusAlgHom K A` equals `φ` if and only if `Module.finrank K E ∣ m`.
+When `E / K` is finite this gives exact period `[E : K]` (supplied by
 `FiniteField.orderOf_frobeniusAlgHom`); when `E / K` is infinite, `Module.finrank K E = 0`, so the
 condition reduces to `m = 0`. -/
-theorem frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff (K L : Type*) [Field K] [Fintype K] [Field L]
-    [Algebra K L] [Algebra.IsAlgebraic K L] {E : Type*} [Field E] [Algebra K E]
-    (φ : E →ₐ[K] L) (m : ℕ) :
-    ((_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ m).toAlgHom.comp φ) = φ ↔
+theorem frobeniusAlgHom_pow_comp_eq_iff (K A : Type*) [Field K] [Fintype K] [CommRing A]
+    [Nontrivial A] [Algebra K A] {E : Type*} [Field E] [Algebra K E]
+    (φ : E →ₐ[K] A) (m : ℕ) :
+    ((_root_.FiniteField.frobeniusAlgHom K A ^ m).comp φ) = φ ↔
       Module.finrank K E ∣ m := by
   have hpow (x : E) :
-      ((_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ m).toAlgHom.comp φ) x =
+      ((_root_.FiniteField.frobeniusAlgHom K A ^ m).comp φ) x =
         φ (x ^ Nat.card K ^ m) := by
-    rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_pow,
-      _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate,
-      ← Nat.card_eq_fintype_card, map_pow]
+    rw [AlgHom.comp_apply, frobeniusAlgHom_pow_apply, map_pow]
   by_cases hfin : Module.Finite K E
   · have : Finite E := Module.finite_of_finite K
     rw [AlgHom.ext_iff]
     have hcomp (x : E) :
-        ((_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ m).toAlgHom.comp φ) x =
+        ((_root_.FiniteField.frobeniusAlgHom K A ^ m).comp φ) x =
           φ (((_root_.FiniteField.frobeniusAlgHom K E) ^ m) x) := by
       rw [hpow, frobeniusAlgHom_pow_apply]
     have hinj : Function.Injective φ := φ.toRingHom.injective
@@ -232,7 +265,30 @@ theorem frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff (K L : Type*) [Field K] [Fi
         fun _ _ hxy ↦ congrArg Subtype.val hxy
     exact hfin .of_finite
 
-end Algebraic
+/-- For any field extension `E / K` of a finite field `K` and any `K`-embedding `φ : E →ₐ[K] L`
+into a perfect field `L`, postcomposing `φ` with the `m`-th power of
+`TauCeti.FiniteField.frobeniusAlgEquiv K L` equals `φ` if and only if `Module.finrank K E ∣ m`
+(supplied in finite degree by `FiniteField.orderOf_frobeniusAlgHom`; in infinite degree
+`Module.finrank K E = 0`, so this reduces to `m = 0`). -/
+theorem frobeniusAlgEquiv_pow_comp_eq_iff (K L : Type*) [Field K] [Finite K] [Field L]
+    [Algebra K L] [PerfectField L] {E : Type*} [Field E] [Algebra K E]
+    (φ : E →ₐ[K] L) (m : ℕ) :
+    ((frobeniusAlgEquiv K L ^ m).toAlgHom.comp φ) = φ ↔
+      Module.finrank K E ∣ m := by
+  let _ := Fintype.ofFinite K
+  have hpow : (frobeniusAlgEquiv K L ^ m).toAlgHom =
+      _root_.FiniteField.frobeniusAlgHom K L ^ m := by
+    ext x
+    rw [AlgEquiv.coe_toAlgHom, AlgEquiv.coe_pow, frobeniusAlgHom_pow_apply]
+    induction m generalizing x with
+    | zero => simp
+    | succ m ih =>
+      simp [Function.iterate_succ_apply', frobeniusAlgEquiv_apply, ih, ← pow_mul, pow_succ',
+        mul_comm]
+  rw [hpow]
+  exact frobeniusAlgHom_pow_comp_eq_iff K L φ m
+
+end Embeddings
 
 end TauCeti.FiniteField
 

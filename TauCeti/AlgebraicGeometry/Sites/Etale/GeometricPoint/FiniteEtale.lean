@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Etale.Field
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.FundamentalGroup
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Kummer
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Sheaf
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Galois
--- Exposed via `@[expose]` on `finiteEtaleOfSeparableFieldExt`.
+-- Exposed via `@[expose]` on `CommAlgCat.FiniteEtale.ofSeparableFieldExt`.
 public import TauCeti.RingTheory.Etale.Field
--- Proof-only: cardinality of `Ω`-points of a finite étale algebra over a field.
+-- Proof-only: affine `Spec` lemmas and cardinality of `Ω`-points of a finite étale algebra.
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.Etale.Splitting
 
 /-!
@@ -27,7 +27,8 @@ This file computes the action of morphisms and Galois automorphisms of geometric
 stalks:
 
 * A morphism `φ : s₁ ⟶ s₂` of geometric points acts on the stalk of `FiniteEtaleScheme.toSheaf`
-  by precomposing lifts with `φ` (`toSheafCompSheafFiberIso_inv_app_comp_toPointFunctor_map`).
+  by precomposing lifts with `φ`
+  (`toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply`).
 * Over an affine base `Spec (.of R)`, the stalk at `ofOver (𝟙 (Spec (.of R))) Ω` of the sheaf of
   sections of `Spec B` (for a finite étale `R`-algebra `B`) is identified with `B →ₐ[R] Ω`
   (`toSheafSpecStalkEquiv`), and `σ : Ω ≃ₐ[R] Ω` acts via `galStalkAut` by postcomposition
@@ -50,16 +51,14 @@ stalks:
 * `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.toSheafFieldStalkEquiv`: identifies the stalk
   of `FiniteEtaleScheme.toSheaf` of any finite étale `K`-scheme with the `Ω`-points of its
   coordinate algebra.
-* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.finiteEtaleOfSeparableFieldExt`: packages a
-  finite separable field extension `L / K` as an object of `CommAlgCat.FiniteEtale K`.
 * `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.kummerCoverStalkEquiv`,
   `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.kummerCoverStalkEquivRootsOfUnity`: identify
   the stalk of a Kummer cover with `n`-th roots of `t` and with `rootsOfUnity n Ω`.
 
 ## Main results
 
-* `toSheafCompSheafFiberIso_inv_app_comp_toPointFunctor_map`: a morphism of geometric points acts
-  on stalks of finite étale sheaves by precomposition of lifts.
+* `toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply`: a morphism of
+  geometric points acts on stalks of finite étale sheaves by precomposition of lifts.
 * `toSheafSpecStalkEquiv_galStalkAut`, `toSheafFieldStalkEquiv_galStalkAut`: on the stalk of a
   finite étale cover, `σ` sends the point with coordinate map `v` to `σ ∘ v`.
 * `natCard_toSheafSpecStalk_eq_finrank`: over a field `K`, the stalk of `Spec B` has cardinality
@@ -87,7 +86,7 @@ variable {S : Scheme.{u}}
 /-- On the étale sheaf of sections of a finite étale `S`-scheme `X`, the stalk map of a morphism
 `φ : s₁ ⟶ s₂` of geometric points corresponds, under `FiniteEtaleScheme.toSheafCompSheafFiberIso`,
 to precomposition of lifts with `φ`. -/
-theorem toSheafCompSheafFiberIso_inv_app_comp_toPointFunctor_map
+theorem toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply
     {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ s₂) (X : FiniteEtaleScheme S)
     (y : (FiniteEtaleScheme.fiber s₂.hom).obj X) :
     ((toPointFunctor S).map φ).sheafFiber.app ((FiniteEtaleScheme.toSheaf S).obj X)
@@ -158,8 +157,8 @@ theorem toSheafOfOverIdStalkEquivFiber_galStalkAut (R : Type u) [CommRing R] (Ω
   let F := (FiniteEtaleScheme.toSheaf (Spec (.of R))).obj X
   let s₀ := of (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))
   let φ₀ : s₀ ⟶ s₀ := homOfRingHom σ.toAlgHom.toRingHom
-    (SpecMap_ofHom_comp_algebraMap σ.toAlgHom)
-  have hcomm : (ofOverIdIso R Ω).inv ≫ homOfAlgHom (𝟙 (Spec (.of R))) Ω σ.toAlgHom =
+    (TauCeti.AlgebraicGeometry.SpecMap_ofHom_comp_algebraMap σ.toAlgHom)
+  have hcomm : (ofOverIdIso R Ω).inv ≫ homOfAlgHom (𝟙 (Spec (.of R))) σ.toAlgHom =
       φ₀ ≫ (ofOverIdIso R Ω).inv := by
     ext : 1
     simp only [comp_hom, ofOverIdIso_inv_hom, homOfAlgHom_hom, Category.id_comp, φ₀,
@@ -188,7 +187,7 @@ theorem toSheafOfOverIdStalkEquivFiber_galStalkAut (R : Type u) [CommRing R] (Ω
         ((galStalkAut (𝟙 (Spec (.of R))) Ω σ).asIso.hom.app F z) =
       (FiniteEtaleScheme.fiberCompInclIso s₀.hom).inv.app X a := by
     rw [toSheafOfOverIdStalkEquivFiber_apply, hnat, ← hy_inv,
-      toSheafCompSheafFiberIso_inv_app_comp_toPointFunctor_map φ₀ X y]
+      toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply φ₀ X y]
     exact congrArg (fun g ↦ g ((FiniteEtaleScheme.fiberCompInclIso s₀.hom).inv.app X a))
       ((FiniteEtaleScheme.toSheafCompSheafFiberIso s₀.hom).inv_hom_id_app X)
   rw [hstep]
@@ -197,8 +196,9 @@ theorem toSheafOfOverIdStalkEquivFiber_galStalkAut (R : Type u) [CommRing R] (Ω
     congrArg (fun g ↦ g a) ((FiniteEtaleScheme.fiberCompInclIso s₀.hom).inv_hom_id_app X)
   rw [ha]
   refine Over.OverMorphism.ext ?_
-  -- `Over.comp_left` on the RHS bridges `(algSpec (.of R)).obj (op (.of Ω))` and `Over.mk s₀.hom`.
   simp only [a, Over.comp_left, Over.homMk_left, φ₀, homOfRingHom_hom]
+  -- `y` is definitionally the stalk fibre transported along `ofOverIdIso`, bridging
+  -- `(algSpec (.of R)).obj (op (CommAlgCat.of (.of R) Ω))` and `Over.mk s₀.hom`.
   rfl
 
 private theorem algHom_eq_comp_of_galStalkAut {R Ω : Type u} [CommRing R] [Field Ω] [IsSepClosed Ω]
@@ -232,18 +232,9 @@ private theorem algHom_eq_comp_of_galStalkAut {R Ω : Type u} [CommRing R] [Fiel
       _ = (algSpec (.of R)).map (CommAlgCat.ofHom (σ.toAlgHom.comp v₂)).op := by
         rw [← Functor.map_comp, ← op_comp]
         rfl
-  have halg {A : CommAlgCat.{u} R} (w : A →ₐ[R] Ω) :
-      ((algSpec (.of R)).map (CommAlgCat.ofHom w).op).left =
-        Spec.map (CommRingCat.ofHom w.toRingHom) := by
-    simp only [algSpec_map_left, commAlgCatEquivUnder, Quiver.Hom.unop_op,
-      CommAlgCat.hom_ofHom, AlgHom.toUnder, Under.homMk_right]
-    rfl
-  have hspec : Spec.map (CommRingCat.ofHom v₁.toRingHom) =
-      Spec.map (CommRingCat.ofHom (σ.toAlgHom.comp v₂).toRingHom) := by
-    have h := congrArg Over.Hom.left hmap
-    simp only [halg] at h
-    exact h
-  exact AlgHom.ext fun x ↦ DFunLike.congr_fun (Hom.ringHom_eq_of_SpecMap_eq hspec) x
+  have h' := congrArg (fun f : (op (CommAlgCat.of R Ω) ⟶ op B) ↦ f.unop.hom)
+    (algSpec.fullyFaithful.map_injective hmap)
+  simpa only [Quiver.Hom.unop_op, CommAlgCat.hom_ofHom] using h'
 
 /-- The stalk at `ofOver (𝟙 (Spec (.of R))) Ω` of the étale sheaf of sections of the spectrum of a
 finite étale `R`-algebra `B` is the set `B →ₐ[R] Ω` of `Ω`-valued points. -/
@@ -328,15 +319,6 @@ theorem toSheafFieldStalkEquiv_galStalkAut (K Ω : Type u) [Field K] [Field Ω] 
     (FiniteEtaleScheme.algSpec_map_fiberIsoFiniteEtaleFiber_hom_app K Ω X _)
     (FiniteEtaleScheme.algSpec_map_fiberIsoFiniteEtaleFiber_hom_app K Ω X _)
 
-/-- A finite separable field extension `L / K` is a finite étale `K`-algebra. -/
--- Exposed so that `(finiteEtaleOfSeparableFieldExt K L).obj` unfolds definitionally to `L` in
--- downstream statements about `L →ₐ[K] Ω`.
-@[expose] noncomputable def finiteEtaleOfSeparableFieldExt (K L : Type u) [Field K] [Field L]
-    [Algebra K L] [Module.Finite K L] [Algebra.IsSeparable K L] :
-    CommAlgCat.FiniteEtale.{u} K :=
-  have : Algebra.Etale K L := Algebra.Etale.of_isSeparable K L
-  CommAlgCat.FiniteEtale.of K L
-
 /-- Over a field `K`, the stalk at `ofOver (𝟙 (Spec (.of K))) Ω` of the étale sheaf of sections
 of `Spec B` has cardinality `Module.finrank K B.obj`. -/
 theorem natCard_toSheafSpecStalk_eq_finrank (K Ω : Type u) [Field K] [Field Ω] [IsSepClosed Ω]
@@ -356,9 +338,9 @@ theorem natCard_toSheafSpecStalk_fieldExt_eq_finrank (K L : Type u) [Field K] [F
     Nat.card ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of K))) Ω).hom).sheafFiber.obj
         ((FiniteEtaleScheme.toSheaf (Spec (.of K))).obj
           ((FiniteEtaleScheme.spec (.of K)).obj
-            (op (finiteEtaleOfSeparableFieldExt K L))))) =
+            (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt K L))))) =
       Module.finrank K L :=
-  natCard_toSheafSpecStalk_eq_finrank K Ω (finiteEtaleOfSeparableFieldExt K L)
+  natCard_toSheafSpecStalk_eq_finrank K Ω (CommAlgCat.FiniteEtale.ofSeparableFieldExt K L)
 
 section Kummer
 
