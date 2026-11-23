@@ -184,7 +184,7 @@ structure IsSiegelUnitData (N : ℕ) (s : Finset ι) (a : ι → Fin 2 → ℤ) 
   /-- `N` divides `∑ mᵢ aᵢ₁ aᵢ₂`. -/
   dvd_sum_mul : (N : ℤ) ∣ ∑ i ∈ s, m i * (a i 0 * a i 1)
   /-- `12` divides `gcd(12, N) ∑ mᵢ`. -/
-  dvd_twelve : (12 : ℤ) ∣ Nat.gcd 12 N * ∑ i ∈ s, m i
+  twelve_dvd : (12 : ℤ) ∣ Nat.gcd 12 N * ∑ i ∈ s, m i
 
 /-- The Kubert–Lang conditions are preserved by the substitution `aᵢ ↦ aᵢ γ`, `γ ∈ SL(2, ℤ)`. -/
 theorem IsSiegelUnitData.vecMul (h : IsSiegelUnitData N s a m) (γ : SL(2, ℤ)) :
@@ -192,7 +192,7 @@ theorem IsSiegelUnitData.vecMul (h : IsSiegelUnitData N s a m) (γ : SL(2, ℤ))
   ⟨fun i hi ↦ not_forall_dvd_vecMul (h.not_dvd i hi) γ,
     dvd_sum_mul_vecMul_sq _ h.dvd_sum_sq₀ h.dvd_sum_sq₁ h.dvd_sum_mul 0,
     dvd_sum_mul_vecMul_sq _ h.dvd_sum_sq₀ h.dvd_sum_sq₁ h.dvd_sum_mul 1,
-    dvd_sum_mul_vecMul_mul_vecMul _ h.dvd_sum_sq₀ h.dvd_sum_sq₁ h.dvd_sum_mul, h.dvd_twelve⟩
+    dvd_sum_mul_vecMul_mul_vecMul _ h.dvd_sum_sq₀ h.dvd_sum_sq₁ h.dvd_sum_mul, h.twelve_dvd⟩
 
 /-- The family `(aᵢ γ, mᵢ)` satisfies the Kubert–Lang conditions exactly when `(aᵢ, mᵢ)` does,
 since `γ⁻¹` carries it back. -/
@@ -230,7 +230,7 @@ def siegelMeromorphicFunction (N : ℕ) [NeZero N] (s : Finset ι) (a : ι → F
       (fun τ ↦ ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) τ ^ m i)
       (mdifferentiable_prod_siegelFunction h.not_dvd)
       (fun _ hγ τ ↦ prod_siegelFunction_div_zpow_smul_of_mem_Gamma s a m h.dvd_sum_sq₀
-        h.dvd_sum_sq₁ h.dvd_sum_mul h.dvd_twelve hγ τ)
+        h.dvd_sum_sq₁ h.dvd_sum_mul h.twelve_dvd hγ τ)
       (exists_isBigO_prod_siegelFunction_smul h.not_dvd)
   else 0
 
