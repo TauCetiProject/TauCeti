@@ -27,7 +27,9 @@ Finally it computes the order of the product `r₁ r₂` of two reflections `r�
 `r₂ z = z - g(z) y` from their Cartan product `c = f(y) g(x)`, with no root system or inner
 product around. If `f(y) = g(x) = 0`, or `c = 1, 2, 3`, then `(r₁ r₂)ᵐ = 1` for `m = 2, 3, 4, 6`.
 For `c = 1, 2, 3` these are the exact orders as soon as `3 ≠ 0` and `4 ≠ 0` (as far as they are
-needed), read off the `f`-coordinate of `(r₁ r₂)ⁿ x`, which avoids the value `f(x) = 2`; for
+needed), read off the `f`-coordinate of `(r₁ r₂)ⁿ x`, which avoids the value `f(x) = 2`; at `c = 2`,
+noncommutation of `r₁` and `r₂` already forces order `4` over any commutative ring, including
+characteristic `2` (`Module.orderOf_reflection_mul_reflection_eq_four_of_not_commute`). For
 `f(y) = g(x) = 0` the order is exactly `2` as soon as `2 • x ≠ 0`. Over a ring of characteristic
 zero, an integral Cartan product `c ≥ 4` gives infinite order for linearly independent `x` and `y`.
 This is the rank-two computation behind the Weyl group of a Kac–Moody realization, where the
@@ -259,19 +261,35 @@ theorem orderOf_reflection_mul_reflection_eq_three (h : f y * g x = 1) (h3 : (3 
   norm_num [h, S_zero, S_one] at this
   exact h3 (by linear_combination -this)
 
-/-- **At Cartan product `2` the product of two reflections has order exactly `4`**, provided
-`4 ≠ 0`. -/
-theorem orderOf_reflection_mul_reflection_eq_four (h : f y * g x = 2) (h4 : (4 : R) ≠ 0) :
+/-- **At Cartan product `2`, two noncommuting reflections have product of order `4`**, over any
+commutative ring (including characteristic `2`). -/
+theorem orderOf_reflection_mul_reflection_eq_four_of_not_commute (h : f y * g x = 2)
+    (hcomm : ¬Commute (reflection hf) (reflection hg)) :
     orderOf (reflection hf * reflection hg) = 4 := by
   refine orderOf_eq_of_pow_and_pow_div_prime
     (reflection_mul_reflection_pow_four_eq_one hf hg h) fun p hp hpd ↦ ?_
   obtain rfl : p = 2 :=
     (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp (hp.dvd_of_dvd_pow (n := 2) hpd)
   intro h2
+  apply hcomm
+  have hinv := eq_inv_of_mul_eq_one_left (sq (reflection hf * reflection hg) ▸ h2)
+  rw [mul_inv_rev, reflection_inv, reflection_inv] at hinv
+  exact hinv
+
+/-- **At Cartan product `2` the product of two reflections has order exactly `4`**, provided
+`4 ≠ 0`. -/
+theorem orderOf_reflection_mul_reflection_eq_four (h : f y * g x = 2) (h4 : (4 : R) ≠ 0) :
+    orderOf (reflection hf * reflection hg) = 4 := by
+  refine orderOf_reflection_mul_reflection_eq_four_of_not_commute h fun hcomm ↦ h4 ?_
+  have h2 : (reflection hf * reflection hg) ^ 2 = 1 := by
+    rw [hcomm.mul_pow]
+    ext z
+    simp only [sq, mul_apply_eq_comp, one_apply_eq_self]
+    rw [involutive_reflection hg, involutive_reflection hf]
   -- The `f`-coordinate of `(r₁ r₂)² x` is `2 (S₂(0) + S₁(0)) = -2`, not `2`.
   have := two_mul_S_eval_add_S_eval_sub_eq_two (n := 2) h2 0 (by rw [h]; ring)
   norm_num [h, S_one, S_two] at this
-  exact h4 (by linear_combination -this)
+  linear_combination -this
 
 /-- **At Cartan product `3` the product of two reflections has order exactly `6`**, provided
 `3 ≠ 0` and `4 ≠ 0`. -/
