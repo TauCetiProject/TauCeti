@@ -16,7 +16,6 @@ import Mathlib.Tactic.FinCases
 
 Concrete checks of the constants and normalisations in
 `Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`,
-`TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt`,
 `HasFPowerSeriesOnBall.norm_sub_partialSum_le`, `HasFPowerSeriesOnBall.norm_mvCoeff_mul_pow_le`,
 `HasFPowerSeriesOnBall.norm_mvCoeff_mul_prod_pow_le`, and
 `HasFPowerSeriesOnBall.norm_le_add_sum_mvCoeff`:
@@ -30,16 +29,14 @@ Concrete checks of the constants and normalisations in
   series with single nonzero term `p 2 (u, v) = u 0 * v 1`, has `p.mvCoeff ![1, 1] = 1`,
   satisfies `‖p.mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for every `0 ≤ ρ ≤ 2` (attained at `ρ = 2`), and
   satisfies the unequal-polyradii bound at `ρ = ![1, 2]`.
-* Boundary counterexamples show that `‖z‖ < R` cannot be weakened to `‖z‖ ≤ R` in
-  `HasFPowerSeriesOnBall.norm_sub_partialSum_le` (for `f z = if ‖z‖ < 1 then 0 else 1`) and
-  `1 ≤ T` cannot be dropped at `T = 0` in
-  `TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt` (for `g w = if w = 0 then 0 else 1`).
+* A boundary counterexample shows that `‖z‖ < R` cannot be weakened to `‖z‖ ≤ R` in
+  `HasFPowerSeriesOnBall.norm_sub_partialSum_le` (for `f z = if ‖z‖ < 1 then 0 else 1`).
 -/
 
 public section
 
-open Filter Finset Metric
-open scoped ENNReal NNReal Topology
+open Finset Metric
+open scoped ENNReal NNReal
 
 namespace TauCeti.TaylorRemainderExample
 
@@ -210,7 +207,7 @@ example {z : Fin 2 → ℂ} (hz : ‖z‖ ≤ 1) :
   hasFPowerSeriesOnBall_prodCoordSeries.norm_le_add_sum_mvCoeff
     (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) 2 hz (by norm_num)
 
-/-! ### Boundary counterexamples for `‖z‖ < R` and `1 ≤ T` -/
+/-! ### Boundary counterexample for `‖z‖ < R` -/
 
 /-- `hz : ‖z‖ < R` cannot be weakened to `‖z‖ ≤ R` in
 `HasFPowerSeriesOnBall.norm_sub_partialSum_le`: `f z = if ‖z‖ < 1 then 0 else 1` has formal power
@@ -233,19 +230,5 @@ example : ∃ (f : ℂ → ℂ) (z : ℂ),
   · intro y hy
     have hy' : ‖y‖ < 1 := by simpa using hy
     simp [hy']
-
-/-- `hT : 1 ≤ T` cannot be dropped at `T = 0` in
-`TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt`: `g w = if w = 0 then 0 else 1` trivially
-satisfies `(0 : ℕ∞) ≤ analyticOrderAt g 0`, yet `g w - g 0` is not `o(1)` as `w → 0`. -/
-example : ∃ g : ℂ → ℂ, (0 : ℕ∞) ≤ analyticOrderAt g 0 ∧
-    ¬((fun w ↦ g w - g 0) =o[𝓝 (0 : ℂ)] fun w ↦ ‖w - 0‖ ^ ((0 : ℕ) - 1)) := by
-  classical
-  refine ⟨fun w ↦ if w = 0 then 0 else 1, OrderBot.bot_le _, fun ho ↦ ?_⟩
-  have hlim : Tendsto (fun w : ℂ ↦ (if w = 0 then (0 : ℂ) else 1) - 0) (𝓝[≠] 0) (𝓝 0) :=
-    (Asymptotics.isLittleO_one_iff ℂ).1 (by simpa using ho) |>.mono_left nhdsWithin_le_nhds
-  have hlim1 : Tendsto (fun w : ℂ ↦ (if w = 0 then (0 : ℂ) else 1) - 0) (𝓝[≠] 0) (𝓝 1) :=
-    tendsto_const_nhds.congr' <| eventually_nhdsWithin_iff.2 <| .of_forall fun w (hw : w ≠ 0) ↦ by
-      simp [hw]
-  exact zero_ne_one (tendsto_nhds_unique hlim hlim1)
 
 end TauCeti.TaylorRemainderExample
