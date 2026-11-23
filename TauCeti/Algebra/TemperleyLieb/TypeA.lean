@@ -9,7 +9,7 @@ public import TauCeti.Algebra.TemperleyLieb.PathModel
 public import TauCeti.QuantumGroups.QuantumInteger.Real
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
 
-import TauCeti.Combinatorics.SimpleGraph.PathGraph
+import TauCeti.Combinatorics.SimpleGraph.PathGraph.Basic
 
 /-!
 # Type-`A` quantum-integer eigenvectors for Temperley–Lieb path models

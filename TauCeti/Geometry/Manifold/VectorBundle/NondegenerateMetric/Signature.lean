@@ -95,8 +95,6 @@ theorem sigPos_sigNeg_tangentBilinFormInCoordinates (a : M) {x : M}
     exact congrArg (fun w ↦ ϕ w w) (e.symm_apply_apply v)
   exact Prod.ext hequiv.sigPos_eq.symm hequiv.sigNeg_eq.symm
 
-variable [FiniteDimensional ℝ E]
-
 /-- The positive and negative inertia indices of a continuous family of symmetric nondegenerate
 tangent bilinear forms are locally constant. The family is a continuous map from an arbitrary
 topological space to the total space of the tangent bilinear-form bundle, so its base point may
@@ -119,9 +117,7 @@ theorem isLocallyConstant_sigPos_sigNeg_of_continuous {X : Type*} [TopologicalSp
     (FiberBundle.continuous_proj _ _ |>.comp hq).continuousAt.preimage_mem_nhds
       (e.open_baseSet.mem_nhds ha)
   have hV : ContinuousAt V y₀ := continuousAt_tangentBilinFormInCoordinates hq.continuousAt
-  have hsymmV : ∀ᶠ y in nhds y₀, (V y).toBilinForm.IsSymm := by
-    filter_upwards [he] with y hy
-    exact isSymm_tangentBilinFormInCoordinates a hy (hsymm y)
+  have hsymmV : (V y₀).toBilinForm.IsSymm := isSymm_tangentBilinFormInCoordinates a ha (hsymm y₀)
   have hndV : (V y₀).toBilinForm.Nondegenerate :=
     nondegenerate_tangentBilinFormInCoordinates a ha (hnd y₀)
   have hneg : ∀ᶠ y in nhds y₀,

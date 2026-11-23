@@ -135,6 +135,8 @@ private theorem hilbertSymbol_seventeen_five_mul {ℓ : ℕ} [Fact ℓ.Prime] (h
     rw [ite_eq_left_iff.2 fun h ↦ (h rfl).elim]
     apply Units.ext
     rw [Units.val_neg, Units.val_one, ← h]
+    congr 2
+    ext
     simp
   · rw [ite_eq_right h5]
     convert Padic.hilbertSymbol_intCast_intCast_eq_one hℓ h17

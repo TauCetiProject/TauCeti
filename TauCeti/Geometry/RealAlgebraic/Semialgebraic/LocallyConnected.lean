@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Components
-import Mathlib.Topology.Connected.LocallyConnected
+import TauCeti.Topology.LocallyConnected
 
 /-!
 # Connected neighborhoods in locally semialgebraic sets
@@ -44,25 +44,14 @@ theorem SemialgebraicAt.exists_isConnected_mem_nhdsWithin (hs : SemialgebraicAt 
       IsOpen ((Subtype.val : s → (σ → ℝ)) ⁻¹' C) := by
   obtain ⟨W, hW, hWV⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hV
   obtain ⟨U, hUo, hxU, hUW, _, hsU⟩ := hs.exists_subset hW
-  let C := connectedComponentIn (s ∩ U) x
-  have hxC : x ∈ C := mem_connectedComponentIn ⟨hx, hxU⟩
-  have hCT : C ⊆ s ∩ U := connectedComponentIn_subset _ _
-  have hrel := hsU.finite_image_connectedComponentIn.isOpen_preimage_connectedComponentIn x
-  obtain ⟨O, hOo, hO⟩ := isOpen_induced_iff.1 hrel
-  have hCeq : C = s ∩ (U ∩ O) := by
-    apply Set.eq_of_preimage_val_eq_of_subset hCT (by grind)
-    simpa only [← inter_assoc, Subtype.preimage_coe_self_inter] using hO.symm
-  have hopen : IsOpen ((Subtype.val : s → (σ → ℝ)) ⁻¹' C) := by
-    rw [hCeq, preimage_inter]
-    simpa only [Subtype.coe_preimage_self, univ_inter] using
-      (hUo.inter hOo).preimage continuous_subtypeVal
-  have hCn : C ∈ 𝓝[s] x := by
-    rw [hCeq]
-    exact inter_mem_nhdsWithin s ((hUo.inter hOo).mem_nhds (hCeq ▸ hxC).2)
-  refine ⟨C, hCn, ?_, isConnected_connectedComponentIn_iff.2 ⟨hx, hxU⟩,
-    hsU.connectedComponentIn x, hopen⟩
-  intro y hy
-  exact ⟨(hCT hy).1, hWV ⟨hUW (hCT hy).2, (hCT hy).1⟩⟩
+  have hfin := hsU.finite_image_connectedComponentIn
+  have hCT := connectedComponentIn_subset (s ∩ U) x
+  exact ⟨connectedComponentIn (s ∩ U) x,
+    hfin.connectedComponentIn_inter_mem_nhdsWithin hx (hUo.mem_nhds hxU),
+    fun y hy ↦ ⟨(hCT hy).1, hWV ⟨hUW (hCT hy).2, (hCT hy).1⟩⟩,
+    isConnected_connectedComponentIn_iff.2 ⟨hx, hxU⟩,
+    hsU.connectedComponentIn x,
+    hfin.isOpen_preimage_connectedComponentIn_inter hUo x⟩
 
 /-- The relative neighborhood filter at a semialgebraic point of a set has a basis of
 connected semialgebraic sets open in the subspace. -/
@@ -86,19 +75,10 @@ theorem SemialgebraicAt.nhdsWithin_hasBasis_isConnected (hs : SemialgebraicAt s 
 /-- Every locally semialgebraic set is locally connected in its subspace topology.
 This includes the empty set and finite coordinate spaces of dimension zero. -/
 theorem IsLocallySemialgebraic.locallyConnectedSpace (hs : IsLocallySemialgebraic s) :
-    LocallyConnectedSpace s := by
-  refine locallyConnectedSpace_iff_connected_subsets.2 fun x V hV ↦ ?_
-  obtain ⟨W, hW, hWV⟩ := (mem_nhds_subtype s x V).1 hV
-  obtain ⟨C, hCn, hCW, hc, _, _⟩ :=
-    (hs.semialgebraicAt x).exists_isConnected_mem_nhdsWithin x.property
-      (mem_nhdsWithin_of_mem_nhds hW)
-  refine ⟨(Subtype.val : s → (σ → ℝ)) ⁻¹' C, ?_, ?_, ?_⟩
-  · rw [nhds_subtype_eq_comap_nhdsWithin]
-    exact preimage_mem_comap hCn
-  · apply Topology.IsInducing.subtypeVal.isPreconnected_image.1
-    simpa only [Subtype.image_preimage_val, inter_eq_right.2
-      (hCW.trans inter_subset_left)] using hc.isPreconnected
-  · intro y hy
-    exact hWV (hCW hy).2
+    LocallyConnectedSpace s :=
+  locallyConnectedSpace_subtype_iff_nhdsWithin.2 fun x hx _ hV ↦ by
+    obtain ⟨C, hCn, hCV, hc, _, _⟩ :=
+      (hs.semialgebraicAt x).exists_isConnected_mem_nhdsWithin hx hV
+    exact ⟨C, hCn, hCV, hc.isPreconnected⟩
 
 end TauCeti

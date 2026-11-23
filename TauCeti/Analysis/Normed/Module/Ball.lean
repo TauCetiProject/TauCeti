@@ -44,7 +44,8 @@ or metric on the vector type is required.
 For `0 < ε`, the rescaling `z ↦ ε⁻¹ • (z - y)` pulls `closedBall 0 R` back to
 `closedBall y (ε * R)` (`TauCeti.inv_smul_sub_mem_closedBall_zero_iff`), so composing it with a
 function supported in the closed unit ball gives a function supported in `closedBall y ε`
-(`TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall`).
+(`TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall`). It likewise pulls `ball 0 R` back to
+`ball y (ε * R)` (`TauCeti.preimage_inv_smul_sub_ball_zero`).
 
 In a nontrivial real normed space, one ball lies in another exactly when its radius plus the
 distance between the centres is at most the radius of the other. The sufficiency holds in every
@@ -267,6 +268,12 @@ in `closedBall y (ε * R)`. -/
 theorem inv_smul_sub_mem_closedBall_zero_iff {ε : ℝ} (hε : 0 < ε) {R : ℝ} {y z : E} :
     ε⁻¹ • (z - y) ∈ closedBall (0 : E) R ↔ z ∈ closedBall y (ε * R) := by
   simp [norm_smul, abs_of_pos hε, dist_eq_norm, inv_mul_le_iff₀ hε]
+
+/-- For `0 < ε`, the rescaling `z ↦ ε⁻¹ • (z - y)` pulls `ball 0 R` back to `ball y (ε * R)`. -/
+theorem preimage_inv_smul_sub_ball_zero {ε : ℝ} (hε : 0 < ε) (y : E) (R : ℝ) :
+    (fun z ↦ ε⁻¹ • (z - y)) ⁻¹' ball (0 : E) R = ball y (ε * R) := by
+  ext z
+  simp [norm_smul, abs_of_pos hε, dist_eq_norm, inv_mul_lt_iff₀ hε]
 
 /-- Rescaling a function supported in the closed unit ball to `z ↦ χ (ε⁻¹ • (z - y))` gives a
 function supported in `closedBall y ε`. -/

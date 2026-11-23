@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.Geometry.Diffeomorphism.Evaluation
+public import TauCeti.Topology.MappingSpace.Evaluation
 
 /-!
 # Manifolds covered by diffeomorphisms
@@ -55,10 +56,11 @@ within a path component, since evaluations at two points joined by a path are ho
 * `isCoveredByDiffeomorphisms_of_smul`: the condition from a smooth group action.
 * `isCoveredByDiffeomorphisms_of_lieGroup`: compact Lie groups are covered by diffeomorphisms.
 * `IsCoveredByDiffeomorphisms.mul_left`: multiples of `ℓ`.
-* `isCoveredByDiffeomorphisms_neg`, `isCoveredByDiffeomorphisms_iff_of_preconnectedSpace`:
-  independence of the orientation.
+* `isCoveredByDiffeomorphisms_neg`: independence of the orientation.
 * `isCoveredByDiffeomorphisms_iff_of_joined`,
-  `isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace`: independence of the base point.
+  `isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace`,
+  `isCoveredByDiffeomorphisms_iff_of_preconnectedSpace`: independence of the base point and
+  homological orientation.
 
 ## References
 
@@ -201,28 +203,20 @@ theorem isCoveredByDiffeomorphisms_neg {x₀ : M} {ℓ : ℤ} :
   · rw [map_neg, hA, mapFundamentalClass_neg, zsmul_neg, neg_neg]
   · rw [map_neg, hA, mapFundamentalClass_neg, zsmul_neg]
 
-/-- On a preconnected manifold, covering by diffeomorphisms does not depend on the orientation: any
-two orientations agree up to reversal. -/
-theorem isCoveredByDiffeomorphisms_iff_of_preconnectedSpace [PreconnectedSpace M]
-    (o o' : HomologicalOrientation M E d) {x₀ : M} {ℓ : ℤ} :
-    o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o'.IsCoveredByDiffeomorphisms hd n x₀ ℓ := by
-  have : ConnectedSpace M := { toNonempty := ⟨x₀⟩ }
-  rcases eq_or_eq_neg hd o o' with rfl | rfl
-  · rfl
-  · exact isCoveredByDiffeomorphisms_neg.symm
-
 /-- **Independence of the base point along a path.** At two points joined by a path, `M` is
 `ℓ`-covered by diffeomorphisms at one exactly when it is at the other: the two evaluations are
 homotopic, so they induce the same map on homology. -/
 theorem isCoveredByDiffeomorphisms_iff_of_joined {x₀ x₁ : M} (hx : Joined x₀ x₁) {ℓ : ℤ} :
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o.IsCoveredByDiffeomorphisms hd n x₁ ℓ := by
+  have H : (Diffeomorph.evalAt (I := 𝓘(ℝ, E)) (J := 𝓘(ℝ, E)) (n := n) (N := M) x₀).Homotopy
+      (Diffeomorph.evalAt x₁) :=
+    hx.somePath.evalHomotopy (Diffeomorph.evalAt_apply x₀) (Diffeomorph.evalAt_apply x₁)
   have heq : ((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj
       (ModuleCat.of ℤ (ULift.{0} ℤ))).map
       (TopCat.ofHom (Diffeomorph.evalAt (I := 𝓘(ℝ, E)) (J := 𝓘(ℝ, E)) (n := n) (N := M) x₀)) =
       ((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
         (TopCat.ofHom (Diffeomorph.evalAt x₁)) :=
-    TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ)
-      (Diffeomorph.evalAtHomotopy (n := n) (J := 𝓘(ℝ, E)) hx.somePath) _ d
+    TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ) H _ d
   simp only [IsCoveredByDiffeomorphisms, heq]
 
 /-- On a path-connected manifold, covering by diffeomorphisms does not depend on the base
@@ -231,6 +225,19 @@ theorem isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace [PathConnectedSpace
     {ℓ : ℤ} :
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o.IsCoveredByDiffeomorphisms hd n x₁ ℓ :=
   isCoveredByDiffeomorphisms_iff_of_joined (PathConnectedSpace.joined x₀ x₁)
+
+/-- On a preconnected manifold, covering by diffeomorphisms does not depend on the homological
+orientation or the base point. -/
+theorem isCoveredByDiffeomorphisms_iff_of_preconnectedSpace [PreconnectedSpace M]
+    (o o' : HomologicalOrientation M E d) (x₀ x₁ : M) {ℓ : ℤ} :
+    o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o'.IsCoveredByDiffeomorphisms hd n x₁ ℓ := by
+  have : ConnectedSpace M := { toNonempty := ⟨x₀⟩ }
+  have := ChartedSpace.locallyPathConnectedSpace E M
+  have := PathConnectedSpace.of_locallyPathConnectedSpace (X := M)
+  rcases eq_or_eq_neg hd o o' with rfl | rfl
+  · exact isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace x₀ x₁
+  · exact (isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace x₀ x₁).trans
+      isCoveredByDiffeomorphisms_neg.symm
 
 end Covered
 

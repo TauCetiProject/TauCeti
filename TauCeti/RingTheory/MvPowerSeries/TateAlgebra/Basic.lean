@@ -47,8 +47,10 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
-* `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound gives
-  the same Gauss-norm bound, even across different coefficient rings.
+* `MvPowerSeries.IsRestricted.of_norm_coeff_le` and
+  `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound against a
+  restricted series preserves restrictedness and gives the same Gauss-norm bound, even across
+  different coefficient rings.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
   polyradius the norm is the largest coefficient norm, and it is attained.
@@ -90,7 +92,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   constant series, and over a normed field `K` restricted series over a normed `K`-algebra form a
   `NormedAlgebra` over `K`.
 * `TauCeti.MvPowerSeries.polynomialToRestricted`: the inclusion of polynomials as an algebra
-  homomorphism into restricted series.
+  homomorphism into restricted series, which is bijective over a discrete coefficient ring when
+  `∀ i, 1 ≤ c i` (`TauCeti.MvPowerSeries.polynomialToRestricted_bijective_of_discreteTopology`).
 * `TauCeti.MvPowerSeries.not_finite_isRestrictedSubring`: over a nontrivial ring, restricted
   series in at least one variable do not form a finitely generated module.
 
@@ -124,6 +127,18 @@ theorem IsRestricted.hasGaussNorm {c : σ → ℝ} {f : MvPowerSeries σ R}
 /-- The weights `∏ i, |c i| ^ t i` of the absolute polyradii are nonnegative. -/
 theorem prod_abs_pow_nonneg {c : σ → ℝ} (t : σ →₀ ℕ) : 0 ≤ t.prod (|c| · ^ ·) :=
   Finset.prod_nonneg fun _ _ ↦ pow_nonneg (abs_nonneg _) _
+
+/-- If each coefficient norm of `f` is bounded by `C` times the corresponding coefficient norm of a
+restricted series `g`, then `f` is restricted at the same polyradius. Neither positivity of the
+polyradii nor ultrametricity is needed, and the two series may have different coefficient rings. -/
+theorem IsRestricted.of_norm_coeff_le {S : Type*} [NormedRing S] {c : σ → ℝ}
+    {f : MvPowerSeries σ R} {g : MvPowerSeries σ S} {C : ℝ} (hg : IsRestricted c g)
+    (h : ∀ t, ‖coeff t f‖ ≤ C * ‖coeff t g‖) : IsRestricted c f := by
+  rw [← isRestricted_abs_iff, IsRestricted] at hg ⊢
+  refine tendsto_const_nhds.squeeze (mul_zero C ▸ hg.const_mul C)
+    (fun t ↦ mul_nonneg (norm_nonneg _) (prod_abs_pow_nonneg t)) fun t ↦ ?_
+  rw [← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (h t) (prod_abs_pow_nonneg t)
 
 /-- Decreasing the polyradius `c` to `c'`, the weight of an exponent drops at least by the factor
 `(c'ᵢ / cᵢ) ^ νᵢ` coming from the variable `Xᵢ`. -/
@@ -933,6 +948,32 @@ theorem renameAlgEquiv_polynomialToRestricted {τ : Type*} (e : σ ≃ τ) (c : 
     IsRestricted.renameAlgEquiv e c (polynomialToRestricted (c ∘ e) p) =
       polynomialToRestricted c (MvPolynomial.rename e p) :=
   Subtype.ext <| by simp [rename_coe]
+
+/-- Over a discrete ultrametric normed ring, the polynomial inclusion into restricted series at
+polyradii `c ≥ 1` is bijective: only finitely many weighted coefficient norms can exceed the radius
+of an isolating ball around `0`. -/
+theorem polynomialToRestricted_bijective_of_discreteTopology [DiscreteTopology R]
+    (hc : ∀ i, 1 ≤ c i) :
+    Function.Bijective (polynomialToRestricted (R := R) c) := by
+  refine ⟨fun p q h ↦ MvPolynomial.coe_injective σ R (by simpa using congrArg Subtype.val h),
+    fun f ↦ ?_⟩
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp (isOpen_discrete ({0} : Set R)) 0 rfl
+  have hfin : {t : σ →₀ ℕ | ε ≤ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)}.Finite := by
+    simpa [Filter.eventually_cofinite, not_lt] using f.property.eventually (gt_mem_nhds hε)
+  have hsupp : (Function.support fun t ↦ coeff t (f : MvPowerSeries σ R)).Finite := by
+    refine hfin.subset fun t ht ↦ ?_
+    rw [Function.mem_support, Ne] at ht
+    have hnorm : ε ≤ ‖coeff t (f : MvPowerSeries σ R)‖ :=
+      not_lt.mp fun hlt ↦ ht (by simpa [Metric.mem_ball] using hball (by simpa using hlt))
+    have hprod : 1 ≤ t.prod (c · ^ ·) := by
+      simpa [Finsupp.prod] using
+        Finset.prod_le_prod₀ (fun _ _ ↦ zero_le_one) fun i _ ↦ one_le_pow₀ (hc i)
+    exact hnorm.trans <| by
+      simpa only [mul_one] using
+        mul_le_mul_of_nonneg_left hprod (norm_nonneg (coeff t (f : MvPowerSeries σ R)))
+  refine ⟨AddMonoidAlgebra.ofCoeff (Finsupp.ofSupportFinite _ hsupp), Subtype.ext ?_⟩
+  ext t
+  simp [coe_polynomialToRestricted, MvPolynomial.coeff_coe, Finsupp.ofSupportFinite_coe]
 
 variable (c) in
 /-- Over a nontrivial ring, restricted series in at least one variable do not form a finitely

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.RatFunc.Basic
+public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 
 /-!
 # Normalized fractions and change of coefficients
@@ -13,7 +13,8 @@ public import Mathlib.FieldTheory.RatFunc.Basic
 A rational function has a unique relatively prime numerator and monic denominator. Consequently,
 an embedding of coefficient fields carries its normalized numerator and denominator to those of
 the image. These compatibility results allow invariance of a rational function to be checked on
-its polynomial coefficients.
+its polynomial coefficients. Evaluating a rational function at a point of its coefficient field
+divides the values there of its normalized numerator and denominator.
 -/
 
 public section
@@ -55,6 +56,12 @@ theorem denom_mapRingHom (f : F →+* K)
   refine ((num_eq_and_denom_eq_iff_eq_div ((isCoprime_num_denom z).map (Polynomial.mapRingHom f))
     ((monic_denom z).map f)).2 ?_).2
   rw [coe_mapRingHom_eq_coe_map, map_apply, Polynomial.coe_mapRingHom]
+
+/-- Evaluating a rational function over `K` at `t ∈ K` divides the values at `t` of its reduced
+numerator and denominator. -/
+theorem eval_id_eq_div (t : K) (z : RatFunc K) :
+    eval (RingHom.id K) t z = z.num.eval t / z.denom.eval t := by
+  rw [eval, eval₂_id, eval₂_id]
 
 end RatFunc
 

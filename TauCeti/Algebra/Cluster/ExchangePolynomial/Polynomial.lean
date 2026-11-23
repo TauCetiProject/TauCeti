@@ -203,6 +203,11 @@ theorem toPolynomial_reverse_eq_reverse (H : ExchangePolynomial R) :
   ext i
   obtain _ | _ | i := i <;> simp [Polynomial.coeff_one, coeff_X]
 
+@[simp] theorem toPolynomial_binomial (y : Rˣ) :
+    (binomial y).toPolynomial = 1 + C (y : R) * X := by
+  ext i
+  obtain _ | _ | i := i <;> simp [coeff_binomial, Polynomial.coeff_one, coeff_X]
+
 variable {S : Type*} [Semiring S]
 
 /-- The reciprocal evaluation identity holds at every unit of the target semiring. -/
@@ -228,5 +233,13 @@ theorem eval_toPolynomial (H : ExchangePolynomial R) (x : R) :
 theorem eval_toPolynomial_reverse_mul_pow (H : ExchangePolynomial R) (x : Rˣ) :
     H.reverse.toPolynomial.eval (↑x⁻¹) * (x : R) ^ H.degree = H.toPolynomial.eval (x : R) := by
   simpa using H.eval₂_toPolynomial_reverse_mul_pow (.id R) x
+
+/-- In a nontrivial semiring in which sums vanish only when every summand does, an exchange
+polynomial does not vanish anywhere: its constant term is a unit. -/
+theorem eval_toPolynomial_ne_zero [Nontrivial R] [Subsingleton (AddUnits R)]
+    (H : ExchangePolynomial R) (x : R) : H.toPolynomial.eval x ≠ 0 := by
+  rw [eval_toPolynomial, Ne, Finset.sum_eq_zero_iff]
+  intro h
+  simpa using h 0 (Finset.mem_univ _)
 
 end TauCeti.ExchangePolynomial

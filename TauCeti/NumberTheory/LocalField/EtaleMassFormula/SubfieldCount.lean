@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Main
 public import TauCeti.NumberTheory.LocalField.Unramified.IntermediateField
 import TauCeti.FieldTheory.IntermediateField.Map
-import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.FieldTheory.IsSepClosed
 import TauCeti.NumberTheory.LocalField.Discriminant.Tower
 
@@ -33,6 +32,13 @@ then turns Serre's `∑ (q ^ f) ^ (-c) = e` into the formula above.
 
 ## Main results
 
+* `TauCeti.map_mem_totallyRamifiedOfDegree_iff`: over a finite extension `F / K`, transporting an
+  intermediate field of `SeparableClosure K / F` to `SeparableClosure F` lands in `σ_F(e)`
+  precisely when its restriction of scalars to `K` has degree `[F : K] * e` and residue degree
+  `f(F / K)`.
+* `TauCeti.one_div_natCard_residueField_pow_discriminantExponent_restrictScalars`: the discriminant
+  weight `q ^ (-d)` over `K` factors into the wild-exponent weight `(q ^ f) ^ (-c)` over `F` times
+  `q ^ (-f(e - 1))`.
 * `TauCeti.tsum_inertiaDegree_eq`: the subextensions of degree `f * e` and residue degree `f`
   satisfy `∑_L q ^ (-d(L)) = e · q ^ (-f(e - 1))`.
 
@@ -55,39 +61,105 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-! ### Transport from `SeparableClosure K` to the separable closure of an unramified base
+/-! ### Transport from `SeparableClosure K` to the separable closure of a finite base
 
-Throughout, `F` is a finite unramified extension of `K` with an embedding into
-`SeparableClosure K`, and `Φ` identifies the separable closure of `F` with `SeparableClosure K`
-over `F`. An intermediate field `E` of `SeparableClosure K / F` is then read over `K` as
-`E.restrictScalars K`, and over `F` inside the separable closure of `F` as its image under
-`Φ.symm`. -/
+Throughout, `F` is a finite extension of `K` with an embedding into `SeparableClosure K` (assumed
+unramified over `K` once discriminants enter), and `Φ` identifies the separable closure of `F` with
+`SeparableClosure K` over `F`. An intermediate field `E` of `SeparableClosure K / F` is then read
+over `K` as `E.restrictScalars K`, and over `F` inside the separable closure of `F` as its image
+under `Φ.symm`. -/
 
 section Transport
 
 variable (F : Type*) [Field F] [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F]
-  [Algebra K F] [ValuativeExtension K F] [IsUnramified K F] [Algebra F (SeparableClosure K)]
+  [Algebra K F] [ValuativeExtension K F] [Algebra F (SeparableClosure K)]
   [IsScalarTower K F (SeparableClosure K)] (Φ : SeparableClosure F ≃ₐ[F] SeparableClosure K)
   (E : IntermediateField F (SeparableClosure K))
 
-/-- Over an unramified base `F`, the residue degree and the discriminant exponent of
-`E.restrictScalars K` over `K` are `f(F / K)` times those of the transported intermediate field
-over `F`: the residue degree is multiplicative in the tower `K ⊆ F ⊆ E`, and the tower law for
-discriminants has no contribution from `d(F / K) = 0`. -/
-private theorem inertiaDegree_restrictScalars_and_discriminantExponent_restrictScalars
+/-- Over a finite extension `F / K`, the residue degree of `E.restrictScalars K` over `K` is
+`f(F / K)` times that of the transported intermediate field over `F`, by multiplicativity of
+residue degrees in the tower `K ⊆ F ⊆ E`. -/
+private theorem inertiaDegree_restrictScalars
     (hE : Module.Finite F (E.map Φ.symm.toAlgHom)) :
     (E.restrictScalars K).inertiaDegree =
-        inertiaDegree K F * (E.map Φ.symm.toAlgHom).inertiaDegree ∧
-      (E.restrictScalars K).discriminantExponent =
-        inertiaDegree K F * (E.map Φ.symm.toAlgHom).discriminantExponent := by
+      inertiaDegree K F * (E.map Φ.symm.toAlgHom).inertiaDegree := by
   let e₁ := restrictScalarsAlgEquiv K E
   let e₂ : E ≃ₐ[F] E.map Φ.symm.toAlgHom := intermediateFieldMap Φ.symm E
   have : Module.Finite K F := finite_of_valuativeExtension K F
   have : Module.Finite F E := Module.Finite.equiv e₂.symm.toLinearEquiv
   have : Module.Finite K E := Module.Finite.trans F E
   have : Module.Finite K (E.restrictScalars K) := Module.Finite.equiv e₁.symm.toLinearEquiv
-  rw [IntermediateField.inertiaDegree_eq, IntermediateField.inertiaDegree_eq,
-    IntermediateField.discriminantExponent_eq, IntermediateField.discriminantExponent_eq]
+  rw [IntermediateField.inertiaDegree_eq, IntermediateField.inertiaDegree_eq]
+  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) (E.restrictScalars K)
+  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) (E.restrictScalars K)
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K)
+    (E.restrictScalars K)
+  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) (E.restrictScalars K)
+  let _ := finiteIntermediateFieldValuativeRel F (SeparableClosure F) (E.map Φ.symm.toAlgHom)
+  let _ := finiteIntermediateFieldTopology F (SeparableClosure F) (E.map Φ.symm.toAlgHom)
+  have := finiteIntermediateField_isNonarchimedeanLocalField F (SeparableClosure F)
+    (E.map Φ.symm.toAlgHom)
+  have := finiteIntermediateField_valuativeExtension F (SeparableClosure F) (E.map Φ.symm.toAlgHom)
+  let _ := finiteIntermediateFieldValuativeRel F (SeparableClosure K) E
+  let _ := finiteIntermediateFieldTopology F (SeparableClosure K) E
+  have := finiteIntermediateField_isNonarchimedeanLocalField F (SeparableClosure K) E
+  have := finiteIntermediateField_valuativeExtension F (SeparableClosure K) E
+  have : ValuativeExtension K E := ValuativeExtension.trans K F E
+  rw [TauCeti.inertiaDegree_eq_of_algEquiv K _ E e₁, TauCeti.inertiaDegree_tower K F E,
+    TauCeti.inertiaDegree_eq_of_algEquiv F E _ e₂]
+
+/-- Over a finite extension `F / K`, the transported intermediate field lies in `σ_F(e)` exactly
+when `E.restrictScalars K` has degree `[F : K] * e` and residue degree `f(F / K)` over `K`. -/
+theorem map_mem_totallyRamifiedOfDegree_iff (e : ℕ) :
+    E.map Φ.symm.toAlgHom ∈ totallyRamifiedOfDegree F e ↔
+      Module.finrank K (E.restrictScalars K) = Module.finrank K F * e ∧
+        (E.restrictScalars K).inertiaDegree = inertiaDegree K F := by
+  let e₁ := restrictScalarsAlgEquiv K E
+  let e₂ : E ≃ₐ[F] E.map Φ.symm.toAlgHom := intermediateFieldMap Φ.symm E
+  have : Module.Finite K F := finite_of_valuativeExtension K F
+  have hrank : Module.finrank K (E.restrictScalars K) =
+      Module.finrank K F * Module.finrank F (E.map Φ.symm.toAlgHom) := by
+    rw [e₁.toLinearEquiv.finrank_eq, ← e₂.toLinearEquiv.finrank_eq, Module.finrank_mul_finrank]
+  have hf : 0 < inertiaDegree K F := inertiaDegree_pos
+  rw [mem_totallyRamifiedOfDegree_iff, hrank,
+    IntermediateField.isTotallyRamified_iff_inertiaDegree_eq_one]
+  constructor
+  · rintro ⟨he, hM⟩
+    have : Module.Finite F (E.map Φ.symm.toAlgHom) := by
+      by_contra h
+      rw [← inertiaDegree_eq_zero_iff] at h
+      omega
+    rw [he, inertiaDegree_restrictScalars F Φ E this, hM, mul_one]
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨he, hi⟩
+    -- A subextension of positive residue degree is finite.
+    have : Module.Finite K (E.restrictScalars K) := by
+      by_contra h
+      rw [← inertiaDegree_eq_zero_iff] at h
+      omega
+    have : Module.Finite K E := Module.Finite.equiv e₁.toLinearEquiv
+    have : Module.Finite F E := Module.Finite.of_restrictScalars_finite K F E
+    have : Module.Finite F (E.map Φ.symm.toAlgHom) := Module.Finite.equiv e₂.toLinearEquiv
+    rw [inertiaDegree_restrictScalars F Φ E this] at hi
+    exact ⟨Nat.eq_of_mul_eq_mul_left Module.finrank_pos he,
+      Nat.eq_of_mul_eq_mul_left hf (hi.trans (mul_one _).symm)⟩
+
+variable [IsUnramified K F]
+
+/-- Over an unramified base `F`, the discriminant exponent of `E.restrictScalars K` over `K` is
+`f(F / K)` times that of the transported intermediate field over `F`, since `d(F / K) = 0` in the
+tower law for discriminants. -/
+private theorem discriminantExponent_restrictScalars
+    (hE : Module.Finite F (E.map Φ.symm.toAlgHom)) :
+    (E.restrictScalars K).discriminantExponent =
+      inertiaDegree K F * (E.map Φ.symm.toAlgHom).discriminantExponent := by
+  let e₁ := restrictScalarsAlgEquiv K E
+  let e₂ : E ≃ₐ[F] E.map Φ.symm.toAlgHom := intermediateFieldMap Φ.symm E
+  have : Module.Finite K F := finite_of_valuativeExtension K F
+  have : Module.Finite F E := Module.Finite.equiv e₂.symm.toLinearEquiv
+  have : Module.Finite K E := Module.Finite.trans F E
+  have : Module.Finite K (E.restrictScalars K) := Module.Finite.equiv e₁.symm.toLinearEquiv
+  rw [IntermediateField.discriminantExponent_eq, IntermediateField.discriminantExponent_eq]
   -- The local-field structures: `E.restrictScalars K` over `K`, the transported field over `F`,
   -- and `E` itself over `F`, which is also an extension of `K` through `F`.
   let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) (E.restrictScalars K)
@@ -113,57 +185,16 @@ private theorem inertiaDegree_restrictScalars_and_discriminantExponent_restrictS
     Algebra.isSeparable_tower_top_of_isSeparable K F (SeparableClosure K)
   have : Algebra.IsSeparable F E :=
     Algebra.isSeparable_tower_bot_of_isSeparable F E (SeparableClosure K)
-  refine ⟨?_, ?_⟩
-  · rw [TauCeti.inertiaDegree_eq_of_algEquiv K _ E e₁, TauCeti.inertiaDegree_tower K F E,
-      TauCeti.inertiaDegree_eq_of_algEquiv F E _ e₂]
-  · rw [TauCeti.discriminantExponent_eq_of_algEquiv K _ E e₁]
-    convert TauCeti.discriminantExponent_tower K F E using 1
-    rw [(discriminantExponent_eq_zero_iff K F).2 ‹_›, mul_zero, zero_add,
-      TauCeti.discriminantExponent_eq_of_algEquiv F E _ e₂]
-
-/-- Over an unramified base `F`, the transported intermediate field lies in `σ_F(e)` exactly when
-`E.restrictScalars K` has degree `[F : K] * e` and residue degree `f(F / K)` over `K`. -/
-private theorem map_mem_totallyRamifiedOfDegree_iff (e : ℕ) :
-    E.map Φ.symm.toAlgHom ∈ totallyRamifiedOfDegree F e ↔
-      Module.finrank K (E.restrictScalars K) = Module.finrank K F * e ∧
-        (E.restrictScalars K).inertiaDegree = inertiaDegree K F := by
-  let e₁ := restrictScalarsAlgEquiv K E
-  let e₂ : E ≃ₐ[F] E.map Φ.symm.toAlgHom := intermediateFieldMap Φ.symm E
-  have : Module.Finite K F := finite_of_valuativeExtension K F
-  have hrank : Module.finrank K (E.restrictScalars K) =
-      Module.finrank K F * Module.finrank F (E.map Φ.symm.toAlgHom) := by
-    rw [e₁.toLinearEquiv.finrank_eq, ← e₂.toLinearEquiv.finrank_eq, Module.finrank_mul_finrank]
-  have hf : 0 < inertiaDegree K F := inertiaDegree_pos
-  rw [mem_totallyRamifiedOfDegree_iff, hrank,
-    IntermediateField.isTotallyRamified_iff_inertiaDegree_eq_one]
-  constructor
-  · rintro ⟨he, hM⟩
-    have : Module.Finite F (E.map Φ.symm.toAlgHom) := by
-      by_contra h
-      rw [← inertiaDegree_eq_zero_iff] at h
-      omega
-    rw [he, (inertiaDegree_restrictScalars_and_discriminantExponent_restrictScalars F Φ E
-      this).1, hM, mul_one]
-    exact ⟨rfl, rfl⟩
-  · rintro ⟨he, hi⟩
-    -- A subextension of positive residue degree is finite.
-    have : Module.Finite K (E.restrictScalars K) := by
-      by_contra h
-      rw [← inertiaDegree_eq_zero_iff] at h
-      omega
-    have : Module.Finite K E := Module.Finite.equiv e₁.toLinearEquiv
-    have : Module.Finite F E := Module.Finite.of_restrictScalars_finite K F E
-    have : Module.Finite F (E.map Φ.symm.toAlgHom) := Module.Finite.equiv e₂.toLinearEquiv
-    rw [(inertiaDegree_restrictScalars_and_discriminantExponent_restrictScalars F Φ E
-      this).1] at hi
-    exact ⟨Nat.eq_of_mul_eq_mul_left Module.finrank_pos he,
-      Nat.eq_of_mul_eq_mul_left hf (hi.trans (mul_one _).symm)⟩
+  rw [TauCeti.discriminantExponent_eq_of_algEquiv K _ E e₁]
+  convert TauCeti.discriminantExponent_tower K F E using 1
+  rw [(discriminantExponent_eq_zero_iff K F).2 ‹_›, mul_zero, zero_add,
+    TauCeti.discriminantExponent_eq_of_algEquiv F E _ e₂]
 
 /-- For `E` whose transport lies in `σ_F(e)`, the weight `q ^ (-d)` of `E.restrictScalars K`
 splits as `(q ^ f) ^ (-c) · q ^ (-f(e - 1))`, where `f = f(F / K)`, `q ^ f` is the residue
 cardinality of `F` and `c` is the wild exponent of the transport over `F`: indeed
 `d(E / K) = f · d(E / F)` and `d(E / F) = c + e - 1`. -/
-private theorem one_div_natCard_residueField_pow_discriminantExponent_restrictScalars {e : ℕ}
+theorem one_div_natCard_residueField_pow_discriminantExponent_restrictScalars {e : ℕ}
     (hE : E.map Φ.symm.toAlgHom ∈ totallyRamifiedOfDegree F e) :
     1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (E.restrictScalars K).discriminantExponent =
       1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ (E.map Φ.symm.toAlgHom).wildExponent *
@@ -172,8 +203,8 @@ private theorem one_div_natCard_residueField_pow_discriminantExponent_restrictSc
     rintro rfl
     simp at hE
   have hc := IntermediateField.wildExponent_add_eq_discriminantExponent_add_one hE
-  have hd := (inertiaDegree_restrictScalars_and_discriminantExponent_restrictScalars F Φ E
-    (mem_totallyRamifiedOfDegree_iff.1 hE).2.finite).2
+  have hd := discriminantExponent_restrictScalars F Φ E
+    (mem_totallyRamifiedOfDegree_iff.1 hE).2.finite
   have hdc : (E.map Φ.symm.toAlgHom).discriminantExponent =
       (E.map Φ.symm.toAlgHom).wildExponent + (e - 1) := by
     omega
@@ -194,24 +225,17 @@ private theorem tsum_one_div_natCard_residueField_pow_discriminantExponent_eq (e
   let Φ := IsSepClosure.equiv F (SeparableClosure F) (SeparableClosure K)
   have hfr : Module.finrank K F = inertiaDegree K F := IsUnramified.inertiaDegree_eq_finrank.symm
   -- The intermediate fields of `Kˢ / F` are the intermediate fields of `Kˢ / K` containing `F`.
-  let ρ : IntermediateField F (SeparableClosure K) ≃
-      {L : IntermediateField K (SeparableClosure K) //
-        ∀ x : F, algebraMap F (SeparableClosure K) x ∈ L} :=
-    { toFun E := ⟨E.restrictScalars K, E.algebraMap_mem⟩
-      invFun L := L.val.toSubfield.toIntermediateField L.property
-      left_inv _ := rfl
-      right_inv _ := rfl }
+  let ρ := restrictScalarsOrderIso K (L' := F) (L := SeparableClosure K)
   -- Transported to the separable closure of `F`, the subextensions being counted are `σ_F(e)`.
   let ε : {L : IntermediateField K (SeparableClosure K) //
       (∀ x : F, algebraMap F (SeparableClosure K) x ∈ L) ∧
         Module.finrank K L = inertiaDegree K F * e ∧ L.inertiaDegree = inertiaDegree K F} ≃
       totallyRamifiedOfDegree F e :=
     (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans
-      (Equiv.subtypeEquiv (ρ.symm.trans (orderIsoMapComap Φ.symm).toEquiv) fun L ↦ by
-        rw [Equiv.trans_apply, OrderIso.coe_toEquiv, orderIsoMapComap_apply,
-          map_mem_totallyRamifiedOfDegree_iff F Φ (ρ.symm L) e, hfr]
-        -- `ρ.symm L` restricts back to `L` itself.
-        rfl)
+      (Equiv.subtypeEquiv (ρ.symm.trans (orderIsoMapComap Φ.symm)).toEquiv fun L ↦ by
+        rw [OrderIso.coe_toEquiv, OrderIso.trans_apply, orderIsoMapComap_apply,
+          map_mem_totallyRamifiedOfDegree_iff F Φ (ρ.symm L) e,
+          restrictScalars_restrictScalarsOrderIso_symm, hfr])
   have hw (L) : 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent =
       1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ (ε L).val.wildExponent *
         (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (inertiaDegree K F * (e - 1))) := by
@@ -221,8 +245,7 @@ private theorem tsum_one_div_natCard_residueField_pow_discriminantExponent_eq (e
     rw [hε] at hM ⊢
     have h := one_div_natCard_residueField_pow_discriminantExponent_restrictScalars F Φ
       (ρ.symm ⟨L.val, L.property.1⟩) hM
-    -- `ρ.symm` followed by restriction of scalars is the identity.
-    rwa [show (ρ.symm ⟨L.val, L.property.1⟩).restrictScalars K = L.val from rfl] at h
+    rwa [restrictScalars_restrictScalarsOrderIso_symm] at h
   calc _ = ∑' L, 1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ (ε L).val.wildExponent *
         (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (inertiaDegree K F * (e - 1))) := tsum_congr hw
     _ = (∑' M : totallyRamifiedOfDegree F e, 1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ M.val.wildExponent) *

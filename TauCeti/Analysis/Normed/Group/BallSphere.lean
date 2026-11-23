@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.BallSphere
+public import Mathlib.Analysis.Normed.Group.Uniform
+public import Mathlib.GroupTheory.GroupAction.Hom
 
 /-!
 # Spheres and open subsets of closed balls
@@ -30,6 +32,14 @@ Translating by `-h` maps `{x | s < ‖x‖}` into `{x | r < ‖x‖}` whenever `
 
 A bijection of the closed unit ball preserving the unit sphere restricts to a bijection of the
 unit sphere (`Equiv.restrictUnitSphere`).
+
+An action by isometries fixing zero (`SMulZeroClass`) preserves every sphere centred at zero, so
+it restricts to a scalar action on the sphere (`TauCeti.Sphere.instSMulOfIsIsometricSMul`),
+continuous when the ambient action is and again by isometries, and the inclusion of the sphere is
+equivariant (`TauCeti.Sphere.subtypeMulActionHom`). A monoid acting distributively
+(`DistribMulAction`) by isometries acts on the sphere
+(`TauCeti.Sphere.instMulActionOfIsIsometricSMul`). For instance, the unit circle acts in this way
+on the spheres of a complex normed space.
 -/
 
 public section
@@ -144,5 +154,64 @@ theorem _root_.Equiv.apply_restrictUnitSphere_symm {σ : sphere (0 : V) 1 → sp
   exact Subtype.ext (congrArg Subtype.val h).symm
 
 end RestrictUnitSphere
+
+section IsometricSMul
+
+/-! ### Isometric actions fixing zero act on spheres centred at zero -/
+
+variable {M E : Type*} [SeminormedAddGroup E] {r : ℝ}
+
+namespace Sphere
+
+/-- An isometric action fixing zero preserves every sphere centred at zero. -/
+instance instSMulOfIsIsometricSMul [SMulZeroClass M E] [IsIsometricSMul M E] :
+    SMul M (sphere (0 : E) r) where
+  smul c x := ⟨c • (x : E), by
+    rw [mem_sphere_zero_iff_norm, (isometry_smul E c).norm_map_of_map_zero (smul_zero c),
+      norm_eq_of_mem_sphere]⟩
+
+/-- The action of an isometric action fixing zero on a sphere centred at zero is the ambient
+action. -/
+@[simp, norm_cast]
+theorem coe_smul_of_isIsometricSMul [SMulZeroClass M E] [IsIsometricSMul M E] (c : M)
+    (x : sphere (0 : E) r) : ((c • x : sphere (0 : E) r) : E) = c • (x : E) :=
+  (rfl)
+
+variable (M E r) in
+/-- The inclusion of a sphere centred at zero into the ambient space, equivariant for an isometric
+action fixing zero. -/
+def subtypeMulActionHom [SMulZeroClass M E] [IsIsometricSMul M E] : sphere (0 : E) r →[M] E where
+  toFun := Subtype.val
+  map_smul' _ _ := (rfl)
+
+@[simp]
+theorem coe_subtypeMulActionHom [SMulZeroClass M E] [IsIsometricSMul M E] :
+    ⇑(subtypeMulActionHom M E r) = Subtype.val :=
+  (rfl)
+
+/-- The equivariant inclusion of a sphere centred at zero is an embedding. -/
+theorem isEmbedding_subtypeMulActionHom [SMulZeroClass M E] [IsIsometricSMul M E] :
+    IsEmbedding (subtypeMulActionHom M E r) :=
+  IsEmbedding.subtypeVal
+
+/-- A monoid acting distributively by isometries acts on every sphere centred at zero. -/
+instance instMulActionOfIsIsometricSMul [Monoid M] [DistribMulAction M E] [IsIsometricSMul M E] :
+    MulAction M (sphere (0 : E) r) :=
+  Subtype.coe_injective.mulAction _ coe_smul_of_isIsometricSMul
+
+/-- The restricted action on a sphere centred at zero is continuous when the ambient action is. -/
+instance instContinuousSMulOfIsIsometricSMul [TopologicalSpace M] [SMulZeroClass M E]
+    [IsIsometricSMul M E] [ContinuousSMul M E] : ContinuousSMul M (sphere (0 : E) r) :=
+  ⟨(continuous_fst.smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _⟩
+
+/-- The restricted action on a sphere centred at zero is again by isometries. -/
+instance instIsIsometricSMulOfIsIsometricSMul [SMulZeroClass M E] [IsIsometricSMul M E] :
+    IsIsometricSMul M (sphere (0 : E) r) :=
+  ⟨fun c ↦ Isometry.of_dist_eq fun x y ↦ by
+    simp only [Subtype.dist_eq, coe_smul_of_isIsometricSMul, dist_smul]⟩
+
+end Sphere
+
+end IsometricSMul
 
 end TauCeti

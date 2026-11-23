@@ -25,10 +25,15 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
 * `Flow.orbit_eq_iff`: two points have the same orbit exactly when one lies on the orbit of the
   other.
+* `Flow.orbit_union_orbit_eq`: two points on different orbits inside the union of two orbits
+  have these two orbits.
 * `Flow.orbit_reverse`: reversing time does not change the orbits.
 * `Flow.prod`: the product of two flows with the same time.
 * `Flow.exists_forall_exists_mem_Ioo_apply_mem`: if the forward orbits of the points of a compact
   set all meet an open set, they all meet it before a common time.
+* `Flow.homotopic_of_eq_apply`: maps sending each point to two times of its flow line are homotopic.
+* `Flow.homotopic_id_restrict`: on a forward invariant set, each forward time map is homotopic to
+  the identity.
 -/
 
 public section
@@ -69,6 +74,21 @@ theorem orbit_apply [AddGroup τ] (ϕ : Flow τ α) (s : τ) (x : α) : orbit ϕ
 theorem orbit_eq_iff [AddGroup τ] (ϕ : Flow τ α) {x y : α} :
     orbit ϕ x = orbit ϕ y ↔ x ∈ orbit ϕ y :=
   @AddAction.orbit_eq_iff τ α _ ϕ.toAddAction x y
+
+/-- Two points on different orbits, both in the union of the orbits of `u₁` and `u₂`, have these
+two orbits. -/
+theorem orbit_union_orbit_eq [AddGroup τ] (ϕ : Flow τ α) {u₁ u₂ y₁ y₂ : α}
+    (h₁ : y₁ ∈ ϕ.orbit u₁ ∪ ϕ.orbit u₂) (h₂ : y₂ ∈ ϕ.orbit u₁ ∪ ϕ.orbit u₂)
+    (hne : y₂ ∉ ϕ.orbit y₁) : ϕ.orbit y₁ ∪ ϕ.orbit y₂ = ϕ.orbit u₁ ∪ ϕ.orbit u₂ := by
+  have key {y : α} (h : y ∈ ϕ.orbit u₁ ∪ ϕ.orbit u₂) :
+      ϕ.orbit y = ϕ.orbit u₁ ∨ ϕ.orbit y = ϕ.orbit u₂ :=
+    h.imp (ϕ.orbit_eq_iff).2 (ϕ.orbit_eq_iff).2
+  have hne' : ϕ.orbit y₂ ≠ ϕ.orbit y₁ := fun h ↦ hne ((ϕ.orbit_eq_iff).1 h)
+  rcases key h₁ with e₁ | e₁ <;> rcases key h₂ with e₂ | e₂
+  · exact (hne' (e₂.trans e₁.symm)).elim
+  · rw [e₁, e₂]
+  · rw [e₁, e₂, Set.union_comm]
+  · exact (hne' (e₂.trans e₁.symm)).elim
 
 /-- Reversing time does not change the orbits of a flow. -/
 @[simp]
@@ -128,5 +148,16 @@ theorem homotopic_of_eq_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpa
     exact ϕ.continuous (by fun_prop) (hp.comp continuous_snd)
   · exact hι.injective ((hG (0, y)).trans (by simp [hF₀]))
   · exact hι.injective ((hG (1, y)).trans (by simp [hF₁]))
+
+/-- On a forward invariant set, the time-`t` map of the flow with `t ≥ 0` is homotopic to the
+identity, through the time-`u t` maps with `u ∈ [0, 1]`. -/
+theorem homotopic_id_restrict {ϕ : Flow ℝ α} {s : Set α} (hs : IsForwardInvariant ϕ s) {t : ℝ}
+    (ht : 0 ≤ t) :
+    (ContinuousMap.id s).Homotopic
+      ⟨(hs ht).restrict (ϕ t) s s, (ϕ.continuous_toFun t).restrict (hs ht)⟩ :=
+  ϕ.homotopic_of_eq_apply Topology.IsEmbedding.subtypeVal continuous_subtypeVal
+    continuous_const continuous_const (τ₀ := fun _ ↦ 0) (τ₁ := fun _ ↦ t)
+    (fun x ↦ by simp) (fun _ ↦ rfl) fun x u hu ↦
+      ⟨⟨ϕ (u * t) x, hs (mul_nonneg hu.1 ht) x.property⟩, by simp⟩
 
 end Flow

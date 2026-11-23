@@ -159,4 +159,34 @@ theorem pivotalBalancedEquiv_symm_apply (B : BalancedCategory C) :
     (pivotalBalancedEquiv C).symm B = @pivotalOfBalanced C _ _ _ _ B :=
   (rfl)
 
+/-- The twist of the balanced structure attached to a pivotal structure is `φ_X ≫ u_X⁻¹`. -/
+@[simp]
+theorem pivotalBalancedEquiv_twist_hom_app (P : PivotalCategory C) (X : C) :
+    (pivotalBalancedEquiv C P).twist.hom.app X =
+      (@pivotalIsoApp C _ _ _ P X).hom ≫ (drinfeldIso X).inv :=
+  @balancedOfBraidedPivotal_twist_hom_app C _ _ _ _ P X
+
+/-- The inverse of the twist of the balanced structure attached to a pivotal structure is
+`u_X ≫ φ_X⁻¹`. -/
+@[simp]
+theorem pivotalBalancedEquiv_twist_inv_app (P : PivotalCategory C) (X : C) :
+    (pivotalBalancedEquiv C P).twist.inv.app X =
+      (drinfeldIso X).hom ≫ (@pivotalIsoApp C _ _ _ P X).inv :=
+  @balancedOfBraidedPivotal_twist_inv_app C _ _ _ _ P X
+
+/-- The pivotal isomorphism of the pivotal structure attached to a twist is `θ_X ≫ u_X`. -/
+@[simp]
+theorem pivotalBalancedEquiv_symm_pivotalIsoApp_hom (B : BalancedCategory C) (X : C) :
+    (@pivotalIsoApp C _ _ _ ((pivotalBalancedEquiv C).symm B) X).hom =
+      B.twist.hom.app X ≫ (drinfeldIso X).hom :=
+  @pivotalOfBalanced_pivotalIsoApp_hom C _ _ _ _ B X
+
+/-- The inverse pivotal isomorphism of the pivotal structure attached to a twist is
+`u_X⁻¹ ≫ θ_X⁻¹`. -/
+@[simp]
+theorem pivotalBalancedEquiv_symm_pivotalIsoApp_inv (B : BalancedCategory C) (X : C) :
+    (@pivotalIsoApp C _ _ _ ((pivotalBalancedEquiv C).symm B) X).inv =
+      (drinfeldIso X).inv ≫ B.twist.inv.app X :=
+  @pivotalOfBalanced_pivotalIsoApp_inv C _ _ _ _ B X
+
 end TauCeti
