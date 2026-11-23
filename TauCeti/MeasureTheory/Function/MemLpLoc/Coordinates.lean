@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.MemLpLoc.Basic
+public import TauCeti.MeasureTheory.Function.MemLpLoc
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -22,14 +22,14 @@ open MeasureTheory TauCeti
 
 namespace Module.Basis
 
-variable {E F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Finite ι]
+variable {X F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Finite ι]
   {p : ENNReal}
 
 /-- Local `Lᵖ` membership can be tested in any finite basis. No completeness of the
 codomain is needed. -/
-theorem memLpLoc_iff [TopologicalSpace E] [MeasureSpace E] {U : Set E} {f : E → F}
-    (b : Module.Basis ι ℝ F) :
-    MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
+theorem memLpLoc_iff [TopologicalSpace X] [MeasurableSpace X] {U : Set X} {f : X → F}
+    {μ : Measure X} (b : Module.Basis ι ℝ F) :
+    MemLpLoc p U f μ ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) μ := by
   classical
   let : Fintype ι := Fintype.ofFinite ι
   let : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
@@ -37,7 +37,7 @@ theorem memLpLoc_iff [TopologicalSpace E] [MeasureSpace E] {U : Set E} {f : E �
   · intro h i
     exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
   · intro h
-    have hs : MemLpLoc p U (fun z => ∑ i, b.repr (f z) i • b i) :=
+    have hs : MemLpLoc p U (fun z => ∑ i, b.repr (f z) i • b i) μ :=
       MemLpLoc.sum Finset.univ fun i _ =>
         (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
     simpa only [b.sum_repr] using hs

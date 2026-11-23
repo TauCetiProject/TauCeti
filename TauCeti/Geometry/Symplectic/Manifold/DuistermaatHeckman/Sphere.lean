@@ -12,7 +12,6 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
-import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -20,6 +19,7 @@ import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.Instances.Sphere
+import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
 # The Duistermaat–Heckman measure of the two-sphere
@@ -71,7 +71,8 @@ Duistermaat–Heckman measure.
   measure on `(0, 2π) × (-1, 1)`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_height`: the Duistermaat–Heckman measure of the
   height is `2π` times Lebesgue measure on `[-1, 1]`.
-* `TauCeti.liouvilleMeasure_sphereAreaForm_univ`: the area of `S²` is `4π`.
+* `TauCeti.liouvilleMeasure_sphereAreaForm_univ`: the area of `S²` is `4π`, and
+  `TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`: that of `r • σ` is `4π |r|`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_const`: a constant moment map has
   Duistermaat–Heckman measure `4π δ_c`.
 
@@ -438,13 +439,12 @@ Lebesgue measure on `(-1, 1)`. -/
 private theorem map_restrict_longitudeHeightStrip_zero :
     (volume.restrict (longitudeHeightStrip 0 : Set ℝ²)).map (fun y : ℝ² ↦ y 1) =
       ENNReal.ofReal (2 * π) • volume.restrict (Ioo (-1) 1) := by
-  set e : ℝ² → ℝ × ℝ := fun y ↦ (y 0, y 1)
-  have he : MeasurePreserving e volume volume :=
-    (volume_preserving_finTwoArrow ℝ).comp (PiLp.volume_preserving_ofLp (Fin 2))
+  let e := euclideanPlaneEquivProd
+  have he : MeasurePreserving e volume volume := measurePreserving_euclideanPlaneEquivProd
   have hS : (longitudeHeightStrip 0 : Set ℝ²) = e ⁻¹' (Ioo 0 (0 + 2 * π) ×ˢ Ioo (-1) 1) := by
     ext y
     simp [e, mem_longitudeHeightStrip]
-  have hsnd : (fun y : ℝ² ↦ y 1) = Prod.snd ∘ e := rfl
+  have hsnd : (fun y : ℝ² ↦ y 1) = Prod.snd ∘ e := funext fun y ↦ by simp [e]
   rw [hS, hsnd, ← Measure.map_map measurable_snd he.measurable,
     (he.restrict_preimage (measurableSet_Ioo.prod measurableSet_Ioo)).map_eq,
     Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.map_snd_prod,
@@ -481,6 +481,15 @@ theorem liouvilleMeasure_sphereAreaForm_univ :
   rw [← SmoothTwoForm.duistermaatHeckmanMeasure_univ measurable_height,
     duistermaatHeckmanMeasure_sphereAreaForm_height, smul_apply, Measure.restrict_apply_univ,
     Real.volume_Icc, smul_eq_mul, ← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  ring
+
+/-- **The area of a rescaled sphere.** Rescaling the area form of the unit sphere by `r` rescales
+its area `4π` by `|r|`. -/
+theorem liouvilleMeasure_smul_sphereAreaForm_univ (r : ℝ) :
+    (r • sphereAreaForm).liouvilleMeasure 1 univ = ENNReal.ofReal (4 * π * |r|) := by
+  rw [SmoothTwoForm.liouvilleMeasure_smul, smul_apply, liouvilleMeasure_sphereAreaForm_univ,
+    pow_one, smul_eq_mul, ← ENNReal.ofReal_mul (abs_nonneg r)]
   congr 1
   ring
 

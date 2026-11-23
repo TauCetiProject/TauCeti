@@ -10,6 +10,7 @@ import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The formal adjoint of a real Cauchy–Riemann operator as a Cauchy–Riemann operator

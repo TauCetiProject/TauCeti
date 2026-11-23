@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Prod
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-public import TauCeti.MeasureTheory.Function.MemLpLoc.Basic
+public import TauCeti.MeasureTheory.Function.MemLpLoc
 public import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 public import TauCeti.Topology.Sets.Opens
 
@@ -17,7 +17,7 @@ public import TauCeti.Topology.Sets.Opens
 `TauCeti.MemWkpLoc p U k f` requires iterated weak derivatives through order `k` on
 `interior U`, with `Lᵖ` bounds on every compact subset of `U` itself, for a real normed measure
 space `E` and function `f : E → F`, building on the local `Lᵖ` predicate `TauCeti.MemLpLoc` from
-`TauCeti.MeasureTheory.Function.MemLpLoc.Basic`. On subsets reaching a boundary (such as
+`TauCeti.MeasureTheory.Function.MemLpLoc`. On subsets reaching a boundary (such as
 half-discs in `ℂ`), the `Lᵖ` bounds reach the boundary while test functions stay in the interior.
 On open sets this is the usual local Sobolev class `W^{k,p}_loc(Ω; F)`. Derivatives take values in
 iterated continuous linear maps rather than scalar jets.

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
 /-!
-# Locally Lipschitz maps are in every local `W^{1,p}` class
+# Lipschitz maps and maps with Lipschitz derivative in local Sobolev classes
 
 A locally Lipschitz map from an open subset of a finite-dimensional real normed space into a
 finite-dimensional real normed space belongs to the local class `W^{1,p}` for every exponent
@@ -18,7 +18,9 @@ finite-dimensional real normed space belongs to the local class `W^{1,p}` for ev
 derivative, and on every compact subset it is bounded by a local Lipschitz constant. The same
 conclusions hold on arbitrary subsets for locally Lipschitz (`LocallyLipschitz.memWkpLoc_one`) and
 globally Lipschitz (`LipschitzWith.memWkpLoc_one`) maps; in particular the norm `x ↦ ‖x‖` lies in
-`W^{1,p}` everywhere (`TauCeti.memWkpLoc_one_norm`).
+`W^{1,p}` everywhere (`TauCeti.memWkpLoc_one_norm`). Moreover, a differentiable map whose
+derivative is locally Lipschitz lies in `W^{2,p}`
+(`DifferentiableOn.memWkpLoc_two_of_locallyLipschitzOn_fderiv`): it is `C^{1,1}`, hence `W^{2,∞}`.
 
 ## References
 
@@ -30,7 +32,7 @@ globally Lipschitz (`LipschitzWith.memWkpLoc_one`) maps; in particular the norm 
 
 public section
 
-open MeasureTheory TopologicalSpace Filter
+open MeasureTheory TopologicalSpace Filter Set
 open scoped Topology
 
 namespace TauCeti
@@ -74,5 +76,17 @@ inner product. -/
 theorem memWkpLoc_one_norm {U : Set E} :
     MemWkpLoc p U 1 (fun x : E => ‖x‖) :=
   lipschitzWith_one_norm.memWkpLoc_one
+
+/-- A map from a finite-dimensional real normed space into a finite-dimensional space which is
+differentiable on an open set `Ω`, with derivative locally Lipschitz on `Ω`, is in the local class
+`W^{2,p}` on `Ω`, for every exponent: its first weak derivative is its classical derivative, and
+its second weak derivative is the almost-everywhere derivative of that derivative. -/
+theorem _root_.DifferentiableOn.memWkpLoc_two_of_locallyLipschitzOn_fderiv [FiniteDimensional ℝ F]
+    {Ω : Opens E} {u : E → F} (hu : DifferentiableOn ℝ u Ω)
+    (hDu : LocallyLipschitzOn (Ω : Set E) (fderiv ℝ u)) : MemWkpLoc p Ω 2 u := by
+  have hC1 : ContDiffOn ℝ 1 u Ω := (contDiffOn_succ_iff_fderiv_of_isOpen Ω.isOpen).2
+    ⟨hu, by simp, contDiffOn_zero.2 hDu.continuousOn⟩
+  exact memWkpLoc_succ_iff_of_isOpen.2
+    ⟨hu.continuousOn.memLpLoc, fderiv ℝ u, hC1.hasWeakFDerivOn_fderiv, hDu.memWkpLoc_one⟩
 
 end TauCeti

@@ -48,8 +48,12 @@ finite-measure sets.
   on a measurable subset.
 * `MeasureTheory.Lp.toReal_eLpNorm_restrict_mono`: the `Lᵖ` seminorm of an element of `Lᵖ(Ω)` on
   subsets of `Ω` is monotone in the subset.
+* `MeasureTheory.Lp.toReal_eLpNorm_restrict_le_norm`: the `Lᵖ` seminorm of an element of `Lᵖ(Ω)`
+  on a subset of `Ω` is at most its norm.
 * `MeasureTheory.Lp.isClosed_setOf_ae_notMem_imp_eq_zero`: the `Lᵖ` classes vanishing off a set
   form a closed set.
+* `MeasureTheory.LpToLpRestrictCLM_eq_zero_iff`: the restriction of an `Lᵖ` class to a set vanishes
+  exactly when the class vanishes almost everywhere on that set.
 -/
 
 public section
@@ -216,6 +220,12 @@ theorem Lp.toReal_eLpNorm_restrict_mono {α F : Type*} [MeasurableSpace α] [Nor
   ENNReal.toReal_mono ((eLpNorm_mono_measure _ (Measure.restrict_mono htΩ le_rfl)).trans_lt
     (Lp.eLpNorm_lt_top g)).ne (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
 
+/-- On a subset `s ⊆ Ω`, the `Lᵖ` seminorm of an element of `Lᵖ(Ω)` is at most its norm. -/
+theorem Lp.toReal_eLpNorm_restrict_le_norm {α F : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup F] {μ : Measure α} {p : ENNReal} {Ω : Set α} (g : Lp F p (μ.restrict Ω))
+    {s : Set α} (hs : s ⊆ Ω) : (eLpNorm g p (μ.restrict s)).toReal ≤ ‖g‖ :=
+  (Lp.toReal_eLpNorm_restrict_mono g hs subset_rfl).trans_eq (Lp.norm_def g).symm
+
 /-- The `Lᵖ` classes vanishing almost everywhere off a set `s` form a closed set: convergence in
 `Lᵖ` implies almost everywhere convergence of a subsequence. -/
 theorem Lp.isClosed_setOf_ae_notMem_imp_eq_zero {α F : Type*} [MeasurableSpace α]
@@ -225,5 +235,14 @@ theorem Lp.isClosed_setOf_ae_notMem_imp_eq_zero {α F : Type*} [MeasurableSpace 
   obtain ⟨ns, -, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hg).exists_seq_tendsto_ae
   filter_upwards [hns, ae_all_iff.2 hgs] with x hx hgx hxs
   exact tendsto_nhds_unique hx (tendsto_const_nhds.congr fun i ↦ (hgx (ns i) hxs).symm)
+
+/-- The restriction of an `Lᵖ` class to a set `s` vanishes exactly when the class vanishes almost
+everywhere on `s`. -/
+theorem LpToLpRestrictCLM_eq_zero_iff {E F 𝕜 : Type*} [MeasurableSpace E] [NormedAddCommGroup F]
+    [NormedRing 𝕜] [Module 𝕜 F] [IsBoundedSMul 𝕜 F] {μ : Measure E} {p : ENNReal} [Fact (1 ≤ p)]
+    (s : Set E) (f : Lp F p μ) :
+    LpToLpRestrictCLM E F 𝕜 μ p s f = 0 ↔ f =ᵐ[μ.restrict s] 0 :=
+  Lp.eq_zero_iff_ae_eq_zero.trans
+    ⟨(LpToLpRestrictCLM_coeFn 𝕜 s f).symm.trans, (LpToLpRestrictCLM_coeFn 𝕜 s f).trans⟩
 
 end MeasureTheory

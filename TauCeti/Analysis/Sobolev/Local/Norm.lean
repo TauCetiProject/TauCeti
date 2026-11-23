@@ -353,7 +353,7 @@ private theorem eLpNormWkp_clm_comp_le_succ [OpensMeasurableSpace E] [CompleteSp
   have hA_top : ‖A‖ₑ ≠ ⊤ := eNorm_ne_top
   rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
   gcongr ?_ + ?_
-  · exact MeasureTheory.eLpNorm_clm_comp_le A
+  · exact A.eLpNorm_comp_le
   · rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
     refine le_iInf fun D => ?_
     rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
@@ -381,10 +381,10 @@ theorem eLpNormWkp_clm_comp_le [OpensMeasurableSpace E] [CompleteSpace G] (A : F
       eLpNormWkp p U k (fun z => A (f z)) ≤ ‖A‖ₑ * eLpNormWkp p U k f := by
     intro k
     induction k with
-    | zero => intro _ _ _ _ _ _ _ _ A; exact MeasureTheory.eLpNorm_clm_comp_le A
+    | zero => intro _ _ _ _ _ _ _ _ A; exact A.eLpNorm_comp_le
     | succ k ih => exact fun {_ _ _ _ _ _ _ _} A => eLpNormWkp_clm_comp_le_succ A (ih _)
   cases k with
-  | zero => exact MeasureTheory.eLpNorm_clm_comp_le A
+  | zero => exact A.eLpNorm_comp_le
   | succ k => exact eLpNormWkp_clm_comp_le_succ A (aux k _)
 
 end TauCeti
