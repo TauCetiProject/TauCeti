@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
-public import TauCeti.LinearAlgebra.TensorProduct.Trilinear
+public import TauCeti.Analysis.Normed.Module.TensorProduct.Trilinear
 
 /-!
 # The Hilbert–Schmidt energy of a trilinear map
@@ -42,16 +42,14 @@ local instance trilinearCompleteSpace₃ : CompleteSpace E₃ := FiniteDimension
 /-- Squared Frobenius energy of the tensor-product linearization of a continuous trilinear map. -/
 def trilinearHilbertSchmidtEnergy (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) : ℝ :=
   TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 _ F
-    (TensorProduct.uncurryThreefold (RingHom.id 𝕜) E₁ E₂ E₃ F
-      ((LinearMap.compRight 𝕜 toLinearMap₁₂) T.toLinearMap)) ^ 2
+    (uncurryThreefold T) ^ 2
 
 /-- The trilinear energy is the squared Frobenius seminorm of its tensor linearization. -/
 theorem trilinearHilbertSchmidtEnergy_eq_sq_frobenius
     (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
     trilinearHilbertSchmidtEnergy T =
       TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 _ F
-        (TensorProduct.uncurryThreefold (RingHom.id 𝕜) E₁ E₂ E₃ F
-          ((LinearMap.compRight 𝕜 toLinearMap₁₂) T.toLinearMap)) ^ 2 := (rfl)
+        (uncurryThreefold T) ^ 2 := (rfl)
 
 /-- The three-slot energy is the sum of squared output norms over all triples of vectors
 from three independently chosen orthonormal bases. -/
@@ -65,8 +63,7 @@ theorem trilinearHilbertSchmidtEnergy_eq_sum {ι₁ ι₂ ι₃ : Type*}
     TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply
       ((b₁.tensorProduct b₂).tensorProduct b₃)]
   simp only [Fintype.sum_prod_type, OrthonormalBasis.tensorProduct_apply,
-    TensorProduct.uncurryThreefold_tmul, LinearMap.compRight_apply,
-    LinearMap.comp_apply, toLinearMap₁₂_apply_apply_apply, coe_coe]
+    uncurryThreefold_tmul]
 
 /-- The three-slot energy is the sum of squared Hilbert–Schmidt norms of its slices.
 The first two slots use independently chosen orthonormal bases. -/
@@ -85,7 +82,7 @@ theorem trilinearHilbertSchmidtEnergy_eq_sum_sq_hilbertSchmidtNorm
 theorem trilinearHilbertSchmidtEnergy_smul (c : 𝕜)
     (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
     trilinearHilbertSchmidtEnergy (c • T) = ‖c‖ ^ 2 * trilinearHilbertSchmidtEnergy T := by
-  simp only [trilinearHilbertSchmidtEnergy_eq_sq_frobenius, toLinearMap_smul,
+  simp only [trilinearHilbertSchmidtEnergy_eq_sq_frobenius,
     map_smul, map_smul_eq_mul, mul_pow]
 
 /-- Negating a trilinear map preserves its energy. -/
@@ -107,7 +104,7 @@ theorem trilinearHilbertSchmidtEnergy_nonneg
 @[simp]
 theorem trilinearHilbertSchmidtEnergy_zero :
     trilinearHilbertSchmidtEnergy (0 : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) = 0 := by
-  simp only [trilinearHilbertSchmidtEnergy_eq_sq_frobenius, toLinearMap_zero,
+  simp only [trilinearHilbertSchmidtEnergy_eq_sq_frobenius,
     map_zero, zero_pow two_ne_zero]
 
 /-- The energy vanishes exactly when the trilinear map vanishes. -/
@@ -117,8 +114,7 @@ theorem trilinearHilbertSchmidtEnergy_eq_zero_iff
     trilinearHilbertSchmidtEnergy T = 0 ↔ T = 0 := by
   constructor
   · intro h
-    let L := (TensorProduct.uncurryThreefold (RingHom.id 𝕜) E₁ E₂ E₃ F
-      ((LinearMap.compRight 𝕜 toLinearMap₁₂) T.toLinearMap)).toContinuousLinearMap
+    let L := (uncurryThreefold T).toContinuousLinearMap
     let b := (stdOrthonormalBasis 𝕜 ((E₁ ⊗[𝕜] E₂) ⊗[𝕜] E₃)).toHilbertBasis
     have hL := L.enorm_sq_le_hilbertSchmidtEnergy b
     have henergy : L.hilbertSchmidtEnergy b = ENNReal.ofReal (trilinearHilbertSchmidtEnergy T) := by
@@ -129,9 +125,8 @@ theorem trilinearHilbertSchmidtEnergy_eq_zero_iff
     have hLzero : L = 0 := by
       simpa using hL
     ext x y z
-    simpa only [L, LinearMap.coe_toContinuousLinearMap', TensorProduct.uncurryThreefold_tmul,
-      LinearMap.compRight_apply, LinearMap.comp_apply, toLinearMap₁₂_apply_apply_apply,
-      coe_coe, zero_apply] using congrArg (fun f ↦ f ((x ⊗ₜ[𝕜] y) ⊗ₜ[𝕜] z)) hLzero
+    simpa only [L, LinearMap.coe_toContinuousLinearMap', uncurryThreefold_tmul,
+      zero_apply] using congrArg (fun f ↦ f ((x ⊗ₜ[𝕜] y) ⊗ₜ[𝕜] z)) hLzero
   · rintro rfl
     exact trilinearHilbertSchmidtEnergy_zero
 
