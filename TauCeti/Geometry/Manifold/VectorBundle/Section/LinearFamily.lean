@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Joint regularity of finite-dimensional linear families of bundle sections

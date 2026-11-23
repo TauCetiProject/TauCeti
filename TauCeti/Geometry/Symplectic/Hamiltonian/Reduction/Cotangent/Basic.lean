@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Relation
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.MomentMap
 
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+
 /-!
 # Cotangent reduction at zero
 
@@ -431,7 +433,7 @@ theorem reductionMap_eq_reductionMap_iff_quotientMk {z z' : CotangentBundle I Q}
       ∃ g : G, g • z = z' := by
   let _ := orbitRelQuotientChartedSpace IG G I Q
   exact CotangentBundle.reductionMap_eq_reductionMap_iff ker_mfderiv_quotientMk
-    (fun q q' ↦ by rw [eq_comm, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff])
+    (fun _ _ ↦ MulAction.quotientMk_eq_quotientMk_iff_exists_smul_eq)
     (fun q ↦ (contMDiff_quotientMk q).mdifferentiableAt (by simp))
     (isSubmersion_quotientMk.hasRightInverse_mfderiv (by simp)) hz hz'
 

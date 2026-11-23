@@ -62,7 +62,8 @@ spatial support, and they are the pieces that are patched together on manifolds.
   an `Op(a)` does not enlarge the support of its input by more than `R`
   (`TauCeti.Symbol.HasNearDiagonalKernel.tsupport_quantizeSchwartzValue_subset`). The kernel
   cutoff by a `χ` supported in that ball has this property
-  (`TauCeti.Symbol.hasNearDiagonalKernel_kernelCutoff`).
+  (`TauCeti.Symbol.hasNearDiagonalKernel_kernelCutoff`), and so has `L ∘ a ∘ K` for constant
+  maps `L`, `K` of the fibres (`TauCeti.Symbol.HasNearDiagonalKernel.map`).
 * `TauCeti.Symbol.isSmoothing_kernelCutoff_sub`: if `χ = 1` near `0`, then `c - b` is smoothing.
 * `TauCeti.Symbol.HasNearDiagonalKernel.quantizeSchwartzValue_kernelCutoff_eq`: a cutoff
   equal to one on the full propagation ball preserves quantization.
@@ -466,6 +467,18 @@ theorem HasNearDiagonalKernel.of_coefficient_eq {m' : ℝ} {a : Symbol n V W m}
     {b : Symbol n V W m'} {R : ℝ} (ha : a.HasNearDiagonalKernel R)
     (h : b.coefficient = a.coefficient) : b.HasNearDiagonalKernel R :=
   fun u x hu ↦ h ▸ ha u x hu
+
+/-- **Constant maps of the fibres keep the kernel near the diagonal.** If `Φ` acts on the
+coefficients by `T ↦ L ∘ T ∘ K` for continuous linear maps `L` and `K`, then `Op(a.map Φ)` has
+kernel supported within distance `R` of the diagonal whenever `Op(a)` does. -/
+theorem HasNearDiagonalKernel.map [CompleteSpace V] [CompleteSpace W] {V' W' : Type*}
+    [NormedAddCommGroup V'] [NormedSpace ℂ V'] [CompleteSpace V'] [NormedAddCommGroup W']
+    [NormedSpace ℂ W'] [CompleteSpace W'] {a : Symbol n V W m} {R : ℝ}
+    (ha : a.HasNearDiagonalKernel R) {Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')} (L : W →L[ℂ] W')
+    (K : V' →L[ℂ] V) (hΦ : ∀ T, Φ T = L ∘L T ∘L K) : (a.map Φ).HasNearDiagonalKernel R :=
+  fun u x hu ↦ by
+    rw [coefficient_map_eq_comp_comp L K hΦ, quantizeSchwartzValue_comp_comp,
+      ha _ x fun y hy ↦ by simp [hu y hy], map_zero]
 
 /-- An operator with kernel supported within distance `R` of the diagonal vanishes outside the
 closed `R`-neighbourhood of the support of its input. -/

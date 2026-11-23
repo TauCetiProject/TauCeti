@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.HasPrimitives
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
-import TauCeti.Analysis.Complex.HasPrimitives
+import TauCeti.Analysis.Complex.HasPrimitives.Basic
 
 /-!
 # Holomorphic primitives on the upper half-plane
@@ -15,7 +15,7 @@ import TauCeti.Analysis.Complex.HasPrimitives
 Every holomorphic function on the upper half-plane has a global primitive.  This file gives an
 explicit one: `Complex.wedgeIntegral b z f`, the integral along the horizontal-then-vertical
 polygonal path from a chosen base point `b` to `z`, deduced by specializing the product-domain
-primitive theorems of `TauCeti.Analysis.Complex.HasPrimitives` to
+primitive theorems of `TauCeti.Analysis.Complex.HasPrimitives.Basic` to
 `upperHalfPlaneSet = univ ×ℂ Ioi 0`.
 
 ## Main results
