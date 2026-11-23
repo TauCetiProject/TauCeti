@@ -40,7 +40,9 @@ def polarPointHomeomorphComplex : PolarPoint ≃ₜ ℂ where
     have hlog := hr.log radius_ne_zero
     have ha : Continuous fun p : PolarPoint ↦ angle p :=
       by simpa only [angle_def] using continuous_subtypeVal.snd
-    exact Complex.equivRealProdCLM.symm.continuous.comp (hlog.prodMk ha)
+    simpa only [Function.comp_def, Complex.equivRealProdCLM_symm_apply,
+      Complex.mk_eq_add_mul_I] using
+      Complex.equivRealProdCLM.symm.continuous.comp (hlog.prodMk ha)
   continuous_invFun :=
     ((Real.continuous_exp.comp Complex.continuous_re).prodMk
       Complex.continuous_im).subtype_mk _

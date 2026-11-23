@@ -36,6 +36,16 @@ theorem polarCoord_symm_eq_projection (p : PolarPoint) :
 def projectionDeriv (x : ℝ × ℝ) : ℝ × ℝ →L[ℝ] ℂ :=
   Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm x)
 
+/-- The Cartesian polar parametrization has derivative `projectionDeriv` at every point. -/
+theorem hasFDerivAt_polarCoord_symm_projectionDeriv (x : ℝ × ℝ) :
+    HasFDerivAt Complex.polarCoord.symm (projectionDeriv x) x := by
+  simpa only [zero_add, projectionDeriv] using TauCeti.hasFDerivAt_add_polarCoord_symm x 0
+
+/-- The Fréchet derivative of the Cartesian polar parametrization is `projectionDeriv`. -/
+@[simp] theorem fderiv_polarCoord_symm (x : ℝ × ℝ) :
+    fderiv ℝ Complex.polarCoord.symm x = projectionDeriv x :=
+  (hasFDerivAt_polarCoord_symm_projectionDeriv x).fderiv
+
 @[simp] theorem projectionDeriv_apply (x v : ℝ × ℝ) :
     projectionDeriv x v =
       ⟨Real.cos x.2 * v.1 - x.1 * Real.sin x.2 * v.2,
@@ -70,15 +80,23 @@ theorem isLocalDiffeomorphAt_polarCoord_symm (x : ℝ × ℝ) (hx : x.1 ≠ 0) :
   let e := ((projectionDeriv x).toLinearMap.linearEquivOfInjective
     (projectionDeriv_injective x hx) Complex.equivRealProdCLM.symm.toLinearEquiv.finrank_eq
     ).toContinuousLinearEquiv
-  have hd : HasFDerivAt Complex.polarCoord.symm (projectionDeriv x) x := by
-    simpa only [zero_add, projectionDeriv] using TauCeti.hasFDerivAt_add_polarCoord_symm x 0
+  have he : (e : ℝ × ℝ →L[ℝ] ℂ) = projectionDeriv x :=
+    ContinuousLinearMap.ext fun v ↦ by simp [e]
   exact TauCeti.isLocalDiffeomorphAt_of_fderiv_eq hs.contDiffOn isOpen_univ (Set.mem_univ x)
-    (by simp) (e := e) hd.fderiv.symm
+    (by simp) (e := e) (he.trans (fderiv_polarCoord_symm x).symm)
+
+/-- Every real angular translation preserves the pullback inner product at any real radius. -/
+theorem inner_projectionDeriv_add_angle (x v w : ℝ × ℝ) (t : ℝ) :
+    ⟪projectionDeriv (x + (0, t)) v, projectionDeriv (x + (0, t)) w⟫ =
+      ⟪projectionDeriv x v, projectionDeriv x w⟫ := by
+  simp only [inner_projectionDeriv]
+  simp
 
 /-- All deck translations preserve the pullback inner product. -/
 theorem inner_projectionDeriv_deckShift (k : ℤ) (p : PolarPoint) (v w : ℝ × ℝ) :
     ⟪projectionDeriv (deckShift k p).val v, projectionDeriv (deckShift k p).val w⟫ =
       ⟪projectionDeriv p.val v, projectionDeriv p.val w⟫ := by
-  simp only [inner_projectionDeriv, ← radius_def, radius_deckShift]
+  simpa only [deckShift_val] using
+    inner_projectionDeriv_add_angle p.val v w ((k : ℝ) * (2 * Real.pi))
 
 end TauCeti.PolarGraph
