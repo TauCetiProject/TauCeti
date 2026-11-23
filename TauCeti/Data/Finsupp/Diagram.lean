@@ -70,8 +70,8 @@ noncomputable def transferExp (α : σ →₀ ℕ) (i j : σ) : σ →₀ ℕ :=
 theorem transferExp_def (α : σ →₀ ℕ) (i j : σ) :
     α.transferExp i j = α - single i (α i) + single j (α i) := (rfl)
 
-@[simp] theorem transferExp_self (α : σ →₀ ℕ) (i : σ) : α.transferExp i i = α :=
-  tsub_add_cancel_of_le (single_le_iff.mpr le_rfl)
+@[simp] theorem transferExp_self (α : σ →₀ ℕ) (i : σ) : α.transferExp i i = α := by
+  rw [transferExp_def, tsub_add_cancel_of_le (single_le_iff.mpr le_rfl)]
 
 @[simp] theorem transferExp_zero (i j : σ) :
     (0 : σ →₀ ℕ).transferExp i j = 0 := by simp [transferExp_def]
@@ -163,7 +163,8 @@ theorem degree_add_one_le_of_le_single_zero_add {n : ℕ} {α γ : Fin (n + 1) �
     1 ≤ α 0 ∧ γ.degree + 1 ≤ α.degree + n * (α 0 - 1) := by
   have h0lt : γ 0 < α 0 := not_le.mp fun h0le ↦
     hnot (Fin.forall_fin_succ.mpr ⟨h0le, fun q ↦ by simpa using hle q.succ⟩)
-  have hα0 : 1 ≤ α 0 := by have := hle 0; simp at this; omega
+  have hα0 : 1 ≤ α 0 := by
+    have := hle 0; simp only [add_apply, single_eq_same] at this; omega
   have hsum : γ.tail.degree ≤ α.tail.degree + n * (α 0 - 1) := by
     simpa [degree_eq_sum, Finset.sum_add_distrib] using Finset.sum_le_sum (s := Finset.univ)
       (g := fun q : Fin n ↦ α.tail q + (α 0 - 1)) fun q _ ↦ by
