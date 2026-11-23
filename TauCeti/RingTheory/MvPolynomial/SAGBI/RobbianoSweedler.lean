@@ -33,9 +33,8 @@ adjoining its monic normalization strictly enlarges the leading-term subalgebra 
   `X 0 + X 1`, `X 0 * X 1`, `X 0 * X 1 ^ 2` and the subalgebra they generate in
   `MvPolynomial (Fin 2) R`.
 * `TauCeti.fg_robbianoSweedlerSubalgebra`, `TauCeti.not_fg_leadingExponents_robbianoSweedler`,
-  `TauCeti.not_fg_initialAlgebra_robbianoSweedler`,
-  `TauCeti.not_isSAGBIBasis_of_finite_robbianoSweedler`, and
-  `TauCeti.not_isSAGBIBasis_finset_robbianoSweedler`: the subalgebra is finitely generated, while
+  `TauCeti.not_fg_initialAlgebra_robbianoSweedler`, and
+  `TauCeti.not_isSAGBIBasis_of_finite_robbianoSweedler`: the subalgebra is finitely generated, while
   its `lex`-leading exponent monoid (over a nontrivial domain) and `lex`-initial algebra (over a
   field) are not, so over a field it has no finite `lex`-SAGBI basis.
 * `TauCeti.robbianoSweedlerStage`, `TauCeti.robbianoSweedlerBinomial`,
@@ -283,11 +282,6 @@ theorem not_isSAGBIBasis_of_finite_robbianoSweedler {B : Set (MvPolynomial (Fin 
     ¬ lex.IsSAGBIBasis B (robbianoSweedlerSubalgebra k) :=
   fun hB ↦ not_fg_leadingExponents_robbianoSweedler (hB.fg_leadingExponents hBfin)
 
-/-- Over a field, no finite subset is a `lex`-SAGBI basis of `robbianoSweedlerSubalgebra k`. -/
-theorem not_isSAGBIBasis_finset_robbianoSweedler (B : Finset (MvPolynomial (Fin 2) k)) :
-    ¬ lex.IsSAGBIBasis (B : Set (MvPolynomial (Fin 2) k)) (robbianoSweedlerSubalgebra k) :=
-  not_isSAGBIBasis_of_finite_robbianoSweedler k B.finite_toSet
-
 end Field
 
 end RobbianoSweedler
@@ -391,7 +385,8 @@ theorem robbianoSweedlerBinomial_def (R : Type*) [CommRing R] (n : ℕ) :
   (rfl)
 
 /-- `robbianoSweedlerBinomial R n` belongs to the toric ideal of the leading exponents of
-`robbianoSweedlerStage R n` (both monomials have common leading exponent `(2, n + 2)`). -/
+`robbianoSweedlerStage R n` (both monomials have common weight `(2, n + 2)` under the stage
+leading-exponent map). -/
 theorem robbianoSweedlerBinomial_mem_toricIdeal {R : Type*} [CommRing R] [Nontrivial R] (n : ℕ) :
     robbianoSweedlerBinomial R n ∈
       TauCeti.toricIdeal R (fun i ↦ lex.degree (robbianoSweedlerStage R n i)) := by

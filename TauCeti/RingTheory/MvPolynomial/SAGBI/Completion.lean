@@ -403,17 +403,14 @@ theorem ker_aeval_sumElim_monicNormalize
     (hs : ∀ l, m.IsSubduction b (aeval b (P l)) (Q l) (r l)) :
     RingHom.ker (aeval (Sum.elim b (m.monicNormalize ∘ r))) =
       (RingHom.ker (aeval b)).map (rename Sum.inl) ⊔ RingHom.ker (m.subductionRetract P Q r) := by
-  let Φ : κ → MvPolynomial ι k := fun l ↦ C (m.leadingCoeff (r l))⁻¹ * (P l - Q l)
-  have hΦ : ∀ l, aeval (Sum.elim b (m.monicNormalize ∘ r)) (rename Sum.inl (Φ l)) =
-      aeval (Sum.elim b (m.monicNormalize ∘ r)) (X (Sum.inr l)) := fun l ↦ by
-    have hcomp := AlgHom.congr_fun (m.aeval_comp_subductionRetract hs)
-      (X (Sum.inr l) : MvPolynomial (ι ⊕ κ) k)
-    rw [aeval_rename, Sum.elim_comp_inl, ← hcomp, AlgHom.comp_apply, subductionRetract_X_inr]
-  have hcomp : (aeval (Sum.elim b (m.monicNormalize ∘ r))).comp (rename (R := k) Sum.inl) =
-      aeval b := by
-    rw [aeval_comp_rename, Sum.elim_comp_inl]
-  rw [MvPolynomial.ker_eq_map_ker_comp_rename_inl_sup Φ hΦ, hcomp,
-    subductionRetract_def, MvPolynomial.ker_aeval_sumElim]
+  have hmap : ((RingHom.ker (aeval b)).map (rename (R := k) Sum.inl)).map
+      (m.subductionRetract P Q r) = RingHom.ker (aeval b) := by
+    rw [Ideal.map_mapₐ, m.subductionRetract_comp_rename_inl]
+    exact Ideal.map_id _
+  rw [← m.aeval_comp_subductionRetract hs, ← AlgHom.comap_ker]
+  conv_lhs => rw [← hmap]
+  rw [Ideal.comap_map_of_surjective (m.subductionRetract P Q r) m.subductionRetract_surjective]
+  rfl
 
 end SubductionRetract
 
@@ -466,9 +463,9 @@ theorem range_subset_of_le (h : m.IsFairSAGBISequence c) {n₁ n₂ : ℕ} (hle 
     Set.range (c n₁) ⊆ Set.range (c n₂) :=
   monotone_nat_of_le_succ h.range_subset hle
 
-/-- Once a toric binomial of stage `n` has been subducted at stage `N` and any nonzero
-normalized remainder lies in `Set.range (c M)` (`M ≥ N`), it admits a bounded zero-subduction
-expression in stage `M`. -/
+/-- Once the evaluation at `c n` of a stage-`n` toric binomial has been subducted against `c N`
+and any nonzero normalized remainder lies in `Set.range (c M)` (`M ≥ N`), that evaluation admits a
+representation at stage `M` whose `c M`-weights are strictly below the binomial's common weight. -/
 private theorem exists_aeval_eq_support_lt_of_isSubduction (h : m.IsFairSAGBISequence c)
     {n N M : ℕ} (hNM : N ≤ M) {u v : ι n →₀ ℕ}
     (huv : Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) u =
