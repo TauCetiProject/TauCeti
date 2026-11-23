@@ -919,6 +919,7 @@ theorem detLineProdMapEquiv_detLineCongr_prodComm (x : (f.prodMap g).detLine) :
 the swaps `M × M' ≃ M' × M` and `N × N' ≃ N' × N` carry `LinearMap.detLineProdMapEquiv f g` to
 `LinearMap.detLineProdMapEquiv g f` followed by the exchange of the tensor factors. This applies in
 particular to complex-linear operators, whose real index is even. -/
+@[simp]
 theorem detLineProdMapEquiv_detLineCongr_prodComm_of_even
     (hfg : Even (f.index * g.index)) (x : (f.prodMap g).detLine) :
     detLineProdMapEquiv g f ((f.prodMap g).detLineCongr (LinearEquiv.prodComm K M M')
