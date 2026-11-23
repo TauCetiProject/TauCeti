@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Strichartz.TTStar
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Integral.Lebesgue.SlidingWindow
 
@@ -48,13 +49,22 @@ them at the corners from which Keel and Tao obtain the general exponents by inte
   `(s + L, s + 2L]` gives `|T_L(F, G)| ≤ C A^{1/2} B L^{1 - 1/q} ‖F‖_{L² L²} ‖G‖_{L² L^{r'}}`,
   Keel and Tao's case `a = 2`.
 
+Both corners are proved for an arbitrary measurable window `W` of time separations `s - t`: the
+decay bound for windows whose points satisfy `|w| ≥ ρ > 0`, and the energy bound from an abstract
+dual estimate with a time exponent `p ≤ 2`. The dyadic time shells of
+`TauCeti.Analysis.PDE.Strichartz.TimeShell` are the symmetric windows `ρ ≤ |s - t| < 2ρ`.
+
 ## Main declarations
 
+* `TauCeti.lintegral_setLIntegral_sub_preimage_enorm_inner_adjoint_le`: the decay bound for an
+  arbitrary measurable window.
 * `TauCeti.lintegral_setLIntegral_enorm_inner_adjoint_le`: the decay corner for the absolute
   values of the localized pairings.
 * `TauCeti.enorm_integral_inner_setIntegral_adjoint_le`: the decay corner for `T_L`.
+* `TauCeti.enorm_integral_inner_setIntegral_sub_preimage_adjoint_le`: the energy bound for an
+  arbitrary measurable window and an abstract dual estimate.
 * `TauCeti.exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le`: the energy bound for
-  an arbitrary measurable window.
+  an arbitrary measurable window at a non-endpoint exponent.
 * `TauCeti.exists_enorm_integral_inner_setIntegral_adjoint_le`: the energy corner for `T_L`.
 * `TauCeti.exists_enorm_integral_inner_setIntegral_adjoint_le'`: the exchanged energy corner.
 
@@ -88,13 +98,67 @@ private theorem volume_Ico_neg (L : ℝ) : volume (Ico (-(2 * L)) (-L)) = ENNRea
   congr 1
   ring
 
+/-- **The decay bound on sliding windows.** Let `U(t) : H → L²(X, μ)` be bounded operators whose
+time pairings decay from `L^{r'}` to `L^r`, `‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-γ) ‖g‖_{r'}` for
+`s ≠ t`, with `γ ≥ 0`. Let `W ⊆ ℝ` be a measurable window whose points satisfy `|w| ≥ ρ > 0`.
+Then for almost everywhere strongly measurable `F, G : ℝ → L²(X, μ)`,
+
+`∫∫_{s - t ∈ W} |⟪U(s)* F(s), U(t)* G(t)⟫| ≤ A ρ^{-γ} |W| ‖F‖_{L² L^{r'}} ‖G‖_{L² L^{r'}}`. -/
+theorem lintegral_setLIntegral_sub_preimage_enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ}
+    {A : ℝ≥0∞} {γ ρ : ℝ} (hγ : 0 ≤ γ) (hρ : 0 < ρ)
+    (hU : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
+      eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
+    {W : Set ℝ} (hW : MeasurableSet W) (hWρ : ∀ w ∈ W, ρ ≤ |w|)
+    {F G : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) (hG : AEStronglyMeasurable G) :
+    ∫⁻ t, ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤
+      A * ENNReal.ofReal ρ ^ (-γ) * volume W * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) 2 *
+        eLpNorm (fun t ↦ eLpNorm (G t) r' μ) 2 := by
+  set a := fun s ↦ eLpNorm (F s) r' μ
+  set b := fun t ↦ eLpNorm (G t) r' μ
+  have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
+  have hb : AEMeasurable b := hG.aemeasurable_eLpNorm_Lp .rfl r'
+  -- On the window the separation `|s - t|` is at least `ρ`, so the pairing is at most
+  -- `A ρ^{-γ} a(s) b(t)`.
+  have hpt (t : ℝ) : ∀ s ∈ (fun s ↦ s - t) ⁻¹' W,
+      ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤ A * ENNReal.ofReal ρ ^ (-γ) * a s * b t :=
+    fun s hs ↦ by
+    have hsep : ρ ≤ |s - t| := hWρ _ hs
+    have hst : s ≠ t := fun h ↦ by simp only [h, sub_self, abs_zero] at hsep; linarith
+    calc _ ≤ A * ‖s - t‖ₑ ^ (-γ) * a s * b t := enorm_inner_adjoint_le hU hst _ _
+      _ ≤ A * ENNReal.ofReal ρ ^ (-γ) * a s * b t := by
+          gcongr A * ?_ * a s * b t
+          refine ENNReal.rpow_le_rpow_of_nonpos ?_ (neg_nonpos.2 hγ)
+          rw [Real.eNorm_eq_ofReal_abs]
+          exact ENNReal.ofReal_le_ofReal hsep
+  set c := A * ENNReal.ofReal ρ ^ (-γ)
+  have hm : AEMeasurable fun t ↦ (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, a s) * b t :=
+    (measurable_setLIntegral_sub_preimage hW ha).aemeasurable.mul hb
+  calc ∫⁻ t, ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ
+      ≤ ∫⁻ t, ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, c * a s * b t :=
+        lintegral_mono fun t ↦ setLIntegral_mono' (measurable_sub_const t hW) (hpt t)
+    _ = ∫⁻ t, c * ((∫⁻ s in (fun s ↦ s - t) ⁻¹' W, a s) * b t) := by
+        refine lintegral_congr fun t ↦ ?_
+        rw [lintegral_mul_const'' _ (ha.const_mul c).restrict,
+          lintegral_const_mul'' _ ha.restrict, mul_assoc]
+    _ = c * ∫⁻ t, (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, a s) * b t := lintegral_const_mul'' _ hm
+    _ ≤ c * (volume W * eLpNorm a 2 * eLpNorm b 2) := by
+        gcongr
+        exact lintegral_setLIntegral_sub_preimage_mul_le hW ha hb
+    _ = A * ENNReal.ofReal ρ ^ (-γ) * volume W * eLpNorm a 2 * eLpNorm b 2 := by ring
+  -- The chained `≤` is `Preorder.toLE` while the goal uses the `ℝ≥0∞` order instance directly;
+  -- `calc` does not unfold instances to match them, so the last comparison is closed here.
+  exact le_rfl
+
 /-- **The decay corner of the localized `TT*` form.** Let `U(t) : H → L²(X, μ)` be bounded
 operators whose time pairings decay from `L^{r'}` to `L^r`,
 `‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-γ) ‖g‖_{r'}` for `s ≠ t`, with `γ ≥ 0`. Then for every `L` and
 almost everywhere strongly measurable `F, G : ℝ → L²(X, μ)`, the pairings with time separation
 `L < t - s ≤ 2L` satisfy
 
-`∫∫_{t - 2L ≤ s < t - L} |⟪U(s)* F(s), U(t)* G(t)⟫| ≤ A L^{1-γ} ‖F‖_{L² L^{r'}} ‖G‖_{L² L^{r'}}`. -/
+`∫∫_{t - 2L ≤ s < t - L} |⟪U(s)* F(s), U(t)* G(t)⟫| ≤ A L^{1-γ} ‖F‖_{L² L^{r'}} ‖G‖_{L² L^{r'}}`.
+
+This is `TauCeti.lintegral_setLIntegral_sub_preimage_enorm_inner_adjoint_le` for the window
+`[-2L, -L)`. -/
 theorem lintegral_setLIntegral_enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞}
     {γ L : ℝ} (hγ : 0 ≤ γ)
     (hU : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
@@ -107,46 +171,15 @@ theorem lintegral_setLIntegral_enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] 
   rcases le_or_gt L 0 with hL | hL
   · have h (t : ℝ) : Ico (t - 2 * L) (t - L) = ∅ := Ico_eq_empty (by linarith)
     simp [h]
-  set a := fun s ↦ eLpNorm (F s) r' μ
-  set b := fun t ↦ eLpNorm (G t) r' μ
-  have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
-  have hb : AEMeasurable b := hG.aemeasurable_eLpNorm_Lp .rfl r'
-  set W := Ico (-(2 * L)) (-L)
-  -- On the window the separation `t - s` is at least `L`, so the pairing is at most
-  -- `A L^{-γ} a(s) b(t)`.
-  have hpt (t : ℝ) : ∀ s ∈ Ico (t - 2 * L) (t - L),
-      ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤ A * ENNReal.ofReal L ^ (-γ) * a s * b t :=
-    fun s hs ↦ by
-    have hst : s ≠ t := by linarith [hs.2]
-    have hsep : ENNReal.ofReal L ≤ ‖s - t‖ₑ := by
-      rw [Real.eNorm_eq_ofReal_abs, abs_sub_comm, abs_of_pos (by linarith [hs.2])]
-      exact ENNReal.ofReal_le_ofReal (by linarith [hs.2])
-    calc _ ≤ A * ‖s - t‖ₑ ^ (-γ) * a s * b t := enorm_inner_adjoint_le hU hst _ _
-      _ ≤ A * ENNReal.ofReal L ^ (-γ) * a s * b t := by
-          gcongr A * ?_ * a s * b t
-          exact ENNReal.rpow_le_rpow_of_nonpos hsep (neg_nonpos.2 hγ)
-  set c := A * ENNReal.ofReal L ^ (-γ)
-  have hm : AEMeasurable fun t ↦ (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, a s) * b t :=
-    (measurable_setLIntegral_sub_preimage measurableSet_Ico ha).aemeasurable.mul hb
-  calc ∫⁻ t, ∫⁻ s in Ico (t - 2 * L) (t - L), ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ
-      ≤ ∫⁻ t, ∫⁻ s in Ico (t - 2 * L) (t - L), c * a s * b t :=
-        lintegral_mono fun t ↦ setLIntegral_mono' measurableSet_Ico (hpt t)
-    _ = ∫⁻ t, c * ((∫⁻ s in (fun s ↦ s - t) ⁻¹' W, a s) * b t) := by
-        refine lintegral_congr fun t ↦ ?_
-        rw [Ico_sub_eq_preimage, lintegral_mul_const'' _ (ha.const_mul c).restrict,
-          lintegral_const_mul'' _ ha.restrict, mul_assoc]
-    _ = c * ∫⁻ t, (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, a s) * b t := lintegral_const_mul'' _ hm
-    _ ≤ c * (volume W * eLpNorm a 2 * eLpNorm b 2) := by
-        gcongr
-        exact lintegral_setLIntegral_sub_preimage_mul_le measurableSet_Ico ha hb
-    _ = A * ENNReal.ofReal L ^ (1 - γ) * eLpNorm a 2 * eLpNorm b 2 := by
-        have hL0 : ENNReal.ofReal L ≠ 0 := ENNReal.ofReal_ne_zero_iff.2 hL
-        rw [volume_Ico_neg, sub_eq_neg_add, ENNReal.rpow_add _ _ hL0 ENNReal.ofReal_ne_top,
-          ENNReal.rpow_one]
-        ring
-  -- The chained `≤` is `Preorder.toLE` while the goal uses the `ℝ≥0∞` order instance directly;
-  -- `calc` does not unfold instances to match them, so the last comparison is closed here.
-  exact le_rfl
+  simp only [Ico_sub_eq_preimage]
+  refine (lintegral_setLIntegral_sub_preimage_enorm_inner_adjoint_le hγ hL hU measurableSet_Ico
+    (fun w hw ↦ ?_) hF hG).trans_eq ?_
+  · rw [abs_of_neg (by linarith [hw.2])]
+    linarith [hw.2]
+  · have hL0 : ENNReal.ofReal L ≠ 0 := ENNReal.ofReal_ne_zero_iff.2 hL
+    rw [volume_Ico_neg, sub_eq_neg_add, ENNReal.rpow_add _ _ hL0 ENNReal.ofReal_ne_top,
+      ENNReal.rpow_one]
+    ring
 
 variable [NormedSpace ℝ H]
 
@@ -183,48 +216,33 @@ private theorem holderConjugate_inv_eq_and_le_two {p q : ℝ≥0} (hq : 2 < q)
   have : (p : ℝ) ≤ 2 := (inv_le_inv₀ (by norm_num : (0 : ℝ) < 2) hp0).1 (by linarith)
   exact_mod_cast this
 
-/-- **The dual estimate on a set of times.** If the non-endpoint dual estimate
-`‖∫ U(s)* F(s) ds‖ ≤ C A^{1/2} ‖F‖_{L^p L^{r'}}` holds with `1 / p = 1 - 1 / q`, `q > 2`, then
-restricting `F` to a measurable set `S` of times and applying Hölder's inequality in time on `S`
-gives `‖∫_S U(s)* F(s) ds‖ ≤ C A^{1/2} |S|^{1/2 - 1/q} ‖F‖_{L²(S; L^{r'})}`. -/
-private theorem enorm_setIntegral_adjoint_le_of_two_lt {p q : ℝ≥0} (hq : 2 < q)
-    (hpq : p.HolderConjugate q) {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {C : ℝ≥0}
-    (hC : ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
-      ‖∫ s, ((U s)†) (F s)‖ₑ ≤ C * A ^ (2⁻¹ : ℝ) * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p)
+/-- **The dual estimate on a set of times.** If the dual estimate
+`‖∫ U(s)* F(s) ds‖ ≤ K ‖F‖_{L^p L^r}` holds with a time exponent `p ≤ 2`, then restricting `F` to a
+measurable set `S` of times and applying Hölder's inequality in time on `S` gives
+`‖∫_S U(s)* F(s) ds‖ ≤ K |S|^{1/p - 1/2} ‖F‖_{L²(S; L^r)}`. -/
+private theorem enorm_setIntegral_adjoint_le_of_le_two {p a : ℝ≥0∞} (hp : p ≤ 2)
+    {U : ℝ → H →L[𝕜] Lp E 2 μ} {K : ℝ≥0∞}
+    (hK : ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
+      ‖∫ s, ((U s)†) (F s)‖ₑ ≤ K * eLpNorm (fun s ↦ eLpNorm (F s) a μ) p)
     {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) {S : Set ℝ} (hS : MeasurableSet S)
     (hUF : IntegrableOn (fun s ↦ ((U s)†) (F s)) S) :
-    ‖∫ s in S, ((U s)†) (F s)‖ₑ ≤ C * A ^ (2⁻¹ : ℝ) * volume S ^ (2⁻¹ - (q : ℝ)⁻¹) *
-      (∫⁻ s in S, eLpNorm (F s) r' μ ^ (2 : ℝ)) ^ (2⁻¹ : ℝ) := by
-  obtain ⟨hpinv, hp2⟩ := holderConjugate_inv_eq_and_le_two hq hpq
-  set a := fun s ↦ eLpNorm (F s) r' μ
-  have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
+    ‖∫ s in S, ((U s)†) (F s)‖ₑ ≤ K * volume S ^ (p.toReal⁻¹ - 2⁻¹) *
+      (∫⁻ s in S, eLpNorm (F s) a μ ^ (2 : ℝ)) ^ (2⁻¹ : ℝ) := by
+  set b := fun s ↦ eLpNorm (F s) a μ
+  have hb : AEMeasurable b := hF.aemeasurable_eLpNorm_Lp .rfl a
   calc ‖∫ s in S, ((U s)†) (F s)‖ₑ
-      ≤ C * A ^ (2⁻¹ : ℝ) * eLpNorm (S.indicator a) p :=
-        TauCeti.enorm_setIntegral_adjoint_le hC hS hF.restrict hUF
-    _ = C * A ^ (2⁻¹ : ℝ) * eLpNorm a p (volume.restrict S) := by
+      ≤ K * eLpNorm (S.indicator b) p := enorm_setIntegral_adjoint_le hK hS hF.restrict hUF
+    _ = K * eLpNorm b p (volume.restrict S) := by
         rw [eLpNorm_indicator_eq_eLpNorm_restrict hS.nullMeasurableSet]
-    _ ≤ C * A ^ (2⁻¹ : ℝ) * (eLpNorm a 2 (volume.restrict S) *
-          volume S ^ (1 / (p : ℝ≥0∞).toReal - 1 / (2 : ℝ≥0∞).toReal)) := by
+    _ ≤ K * (eLpNorm b 2 (volume.restrict S) *
+          volume S ^ (1 / p.toReal - 1 / (2 : ℝ≥0∞).toReal)) := by
         gcongr
         rw [← Measure.restrict_apply_univ]
-        exact eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp2 ha.restrict.aestronglyMeasurable
-    _ = C * A ^ (2⁻¹ : ℝ) * volume S ^ (2⁻¹ - (q : ℝ)⁻¹) *
-          (∫⁻ s in S, a s ^ (2 : ℝ)) ^ (2⁻¹ : ℝ) := by
-        rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-          ha.restrict.aestronglyMeasurable]
-        simp only [eNorm_eq_self, ENNReal.toReal_ofNat, ENNReal.coe_toReal, one_div, hpinv]
-        rw [show (1 : ℝ) - (q : ℝ)⁻¹ - 2⁻¹ = 2⁻¹ - (q : ℝ)⁻¹ by ring]
+        exact eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hb.restrict.aestronglyMeasurable
+    _ = K * volume S ^ (p.toReal⁻¹ - 2⁻¹) * (∫⁻ s in S, b s ^ (2 : ℝ)) ^ (2⁻¹ : ℝ) := by
+        rw [eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top hb.restrict]
+        simp only [ENNReal.toReal_ofNat, one_div]
         ring
-
-omit [NormedSpace ℝ H] in
-/-- `‖U(t)* g‖ ≤ B ‖g‖` when `‖U(t)‖ ≤ B`. -/
-private theorem enorm_adjoint_apply_le_of_enorm_le {T : H →L[𝕜] Lp E 2 μ} {B : ℝ≥0∞} (hT : ‖T‖ₑ ≤ B)
-    (g : Lp E 2 μ) : ‖(T†) g‖ₑ ≤ B * ‖g‖ₑ :=
-  calc ‖(T†) g‖ₑ ≤ ‖T†‖ₑ * ‖g‖ₑ := (T†).le_opENorm _
-    _ ≤ B * ‖g‖ₑ := by
-        gcongr
-        rw [eNorm_eq_nnNorm, LinearIsometryEquiv.nnNorm_map, ← eNorm_eq_nnNorm]
-        exact hT
 
 omit [CompleteSpace E] in
 /-- **Exchanging the order of integration** in a pairing localized to `s - t ∈ W`: for integrable
@@ -238,13 +256,10 @@ private theorem integral_inner_setIntegral_sub_preimage_eq {f g : ℝ → H} (hf
   set S := {z : ℝ × ℝ | z.2 - z.1 ∈ W}
   set Φ := S.indicator fun z : ℝ × ℝ ↦ ⟪f z.2, g z.1⟫_𝕜
   -- The integrand on the region `s - t ∈ W` is integrable on `ℝ × ℝ`.
-  have hΦ : Integrable Φ (volume.prod volume) := by
-    refine Integrable.indicator ?_ ((measurable_snd.sub measurable_fst) hW)
-    refine (hg.norm.mul_prod hf.norm).mono'
-      (hf.aestronglyMeasurable.comp_snd.inner hg.aestronglyMeasurable.comp_fst)
-      (Filter.Eventually.of_forall fun z ↦ ?_)
-    rw [mul_comm]
-    exact norm_inner_le_norm _ _
+  have hΦ : Integrable Φ (volume.prod volume) :=
+    (hg.op_fst_snd (op := fun v u ↦ ⟪u, v⟫_𝕜) (continuous_inner.comp continuous_swap)
+      ⟨1, fun v u ↦ by simpa [mul_comm] using norm_inner_le_norm u v⟩ hf).indicator
+      ((measurable_snd.sub measurable_fst) hW)
   -- Both windows describe the same region: `s - t ∈ W` exactly when `t - s ∈ -W`.
   have hmem (t s : ℝ) : (t, s) ∈ S ↔ s ∈ (fun s ↦ s - t) ⁻¹' W := by
     simp only [S, mem_ofPred_eq, mem_preimage]
@@ -265,16 +280,91 @@ private theorem integral_inner_setIntegral_sub_preimage_eq {f g : ℝ → H} (hf
         exact integral_congr_ae (Filter.Eventually.of_forall fun t ↦
           indicator_eq_indicator (hmem' t s) rfl)
 
-/-- **The energy bound on sliding windows.** Let `2 < q < ∞` with Hölder conjugate `p`. There is
-`C` such that the following holds. Let `U(t) : H → L²(X, μ)` be bounded operators with
-`‖U(t)‖ ≤ B` whose time pairings decay from `L^{r'}` to `L^r`,
+/-- **The energy bound on sliding windows.** Let `U(t) : H → L²(X, μ)` be bounded operators,
+`‖U(t)‖ ≤ M`, satisfying a dual estimate with a time exponent `p ≤ 2`,
+`‖∫ U(s)* F(s) ds‖ ≤ K ‖F‖_{L^p L^a}`. Then for every measurable window `W ⊆ ℝ` and almost
+everywhere strongly measurable `F, G : ℝ → L²(X, μ)`,
+
+`|∫ ⟪∫_{s - t ∈ W} U(s)* F(s) ds, U(t)* G(t)⟫ dt| ≤ M K |W|^{1/p} ‖F‖_{L² L^a} ‖G‖_{L² L²}`.
+
+The dual estimate on each window `{s | s - t ∈ W}` and Hölder's inequality in time bound the
+window integral by `K |W|^{1/p - 1/2}` times the `L²` norm of `‖F(s)‖_a` over the window, and the
+square-function bound `MeasureTheory.lintegral_rpow_setLIntegral_sub_preimage_mul_le` sums these
+over `t`. -/
+theorem enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p a : ℝ≥0∞} (hp : p ≤ 2)
+    {U : ℝ → H →L[𝕜] Lp E 2 μ} {M K : ℝ≥0∞} (hM : ∀ t, ‖U t‖ₑ ≤ M)
+    (hK : ∀ F' : ℝ → Lp E 2 μ, AEStronglyMeasurable F' → Integrable (fun s ↦ ((U s)†) (F' s)) →
+      ‖∫ s, ((U s)†) (F' s)‖ₑ ≤ K * eLpNorm (fun s ↦ eLpNorm (F' s) a μ) p)
+    {W : Set ℝ} (hW : MeasurableSet W) {F G : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F)
+    (hG : AEStronglyMeasurable G) :
+    ‖∫ t, ⟪∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤
+      M * K * volume W ^ p.toReal⁻¹ * eLpNorm (fun s ↦ eLpNorm (F s) a μ) 2 *
+        eLpNorm (fun t ↦ ‖G t‖ₑ) 2 := by
+  -- For `p = 0` the dual estimate forces every window integral to vanish.
+  rcases eq_or_ne p 0 with rfl | hp0
+  · have h0 (t : ℝ) : ∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s) = 0 := by
+      by_cases hi : IntegrableOn (fun s ↦ ((U s)†) (F s)) ((fun s ↦ s - t) ⁻¹' W)
+      · have h := enorm_setIntegral_adjoint_le hK (measurable_sub_const t hW) hF.restrict hi
+        rwa [eLpNorm_exponent_zero (((hF.aemeasurable_eLpNorm_Lp .rfl a).indicator
+          (measurable_sub_const t hW)).aestronglyMeasurable), mul_zero, nonpos_iff_eq_zero,
+          eNorm_eq_zero] at h
+      · exact integral_undef hi
+    simp [h0]
+  set b := fun s ↦ eLpNorm (F s) a μ
+  have hb : AEMeasurable b := hF.aemeasurable_eLpNorm_Lp .rfl a
+  have hGm : AEMeasurable fun t ↦ ‖G t‖ₑ := hG.eNorm
+  -- The `L²` norms of `b` over the windows, and their measurability.
+  set φ := fun t ↦ (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, b s ^ (2 : ℝ)) ^ (2⁻¹ : ℝ)
+  have hφ : Measurable φ :=
+    (measurable_setLIntegral_sub_preimage hW (hb.pow_const _)).pow_const _
+  set c := K * volume W ^ (p.toReal⁻¹ - 2⁻¹)
+  -- On each window, the dual estimate and Hölder's inequality in time.
+  have hwin (t : ℝ) : ‖∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s)‖ₑ ≤ c * φ t := by
+    by_cases hi : IntegrableOn (fun s ↦ ((U s)†) (F s)) ((fun s ↦ s - t) ⁻¹' W)
+    swap
+    · simp [integral_undef hi]
+    have h := enorm_setIntegral_adjoint_le_of_le_two hp hK hF (measurable_sub_const t hW) hi
+    rwa [(measurePreserving_sub_right volume t).measure_preimage hW.nullMeasurableSet] at h
+  have hp2 : (2⁻¹ : ℝ) ≤ p.toReal⁻¹ :=
+    inv_anti₀ (ENNReal.toReal_pos hp0 (ne_top_of_le_ne_top ENNReal.ofNat_ne_top hp))
+      (by simpa using ENNReal.toReal_mono ENNReal.ofNat_ne_top hp)
+  refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
+  calc ∫⁻ t, ‖⟪∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ
+      ≤ ∫⁻ t, c * M * (φ t * ‖G t‖ₑ) := lintegral_mono fun t ↦ by
+        calc _ ≤ ‖∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s)‖ₑ * ‖((U t)†) (G t)‖ₑ :=
+              eNorm_inner_le_eNorm _ _
+          _ ≤ c * φ t * (‖(U t)†‖ₑ * ‖G t‖ₑ) := by
+              gcongr
+              · exact hwin t
+              · exact ((U t)†).le_opENorm _
+          _ ≤ c * M * (φ t * ‖G t‖ₑ) := by
+              rw [ContinuousLinearMap.adjoint.eNorm_map]
+              calc _ ≤ c * φ t * (M * ‖G t‖ₑ) := by gcongr; exact hM t
+                _ = c * M * (φ t * ‖G t‖ₑ) := by ring
+    _ = c * M * ∫⁻ t, φ t * ‖G t‖ₑ := lintegral_const_mul'' _ (hφ.aemeasurable.mul hGm)
+    _ ≤ c * M * (volume W ^ (2⁻¹ : ℝ) * eLpNorm b 2 * eLpNorm (fun t ↦ ‖G t‖ₑ) 2) := by
+        gcongr
+        exact lintegral_rpow_setLIntegral_sub_preimage_mul_le hW hb hGm
+    _ = M * K * volume W ^ p.toReal⁻¹ * eLpNorm b 2 * eLpNorm (fun t ↦ ‖G t‖ₑ) 2 := by
+        rw [show p.toReal⁻¹ = (p.toReal⁻¹ - 2⁻¹) + 2⁻¹ by ring,
+          ENNReal.rpow_add_of_nonneg _ _ (sub_nonneg.2 hp2) (by norm_num)]
+        ring
+  -- The chained `≤` is `Preorder.toLE` while the goal uses the `ℝ≥0∞` order instance directly;
+  -- `calc` does not unfold instances to match them, so the last comparison is closed here.
+  exact le_rfl
+
+/-- **The energy bound on sliding windows at a non-endpoint exponent.** Let `2 < q < ∞` with
+Hölder conjugate `p`. There is `C` such that the following holds. Let `U(t) : H → L²(X, μ)` be
+bounded operators with `‖U(t)‖ ≤ B` whose time pairings decay from `L^{r'}` to `L^r`,
 `‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-2 / q) ‖g‖_{r'}` for `s ≠ t`. Then for every measurable window
 `W ⊆ ℝ` and almost everywhere strongly measurable `F, G : ℝ → L²(X, μ)`,
 
 `|∫ ⟪∫_{s - t ∈ W} U(s)* F(s) ds, U(t)* G(t)⟫ dt| ≤
   C A^{1/2} B |W|^{1 - 1/q} ‖F‖_{L² L^{r'}} ‖G‖_{L² L²}`.
 
-The constant `C` is independent of the family `U`, of `A`, `B`, `W`, `F` and `G`. -/
+The constant `C` is independent of the family `U`, of `A`, `B`, `W`, `F` and `G`. This is
+`TauCeti.enorm_integral_inner_setIntegral_sub_preimage_adjoint_le` for the non-endpoint dual
+estimate `TauCeti.exists_enorm_integral_adjoint_le`. -/
 theorem exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p q : ℝ≥0} (hq : 2 < q)
     (hpq : p.HolderConjugate q) :
     ∃ C : ℝ≥0, ∀ (U : ℝ → H →L[𝕜] Lp E 2 μ) (A B : ℝ≥0∞), (∀ t, ‖U t‖ₑ ≤ B) →
@@ -287,46 +377,12 @@ theorem exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p q : �
             eLpNorm (fun s ↦ eLpNorm (F s) r' μ) 2 * eLpNorm (fun t ↦ ‖G t‖ₑ) 2 := by
   obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le (𝕜 := 𝕜) (H := H) (E := E) (μ := μ)
     (r := r) (r' := r') hq hpq
+  obtain ⟨hpinv, hp2⟩ := holderConjugate_inv_eq_and_le_two hq hpq
   refine ⟨C, fun U A B hB hU W hW F G hF hG ↦ ?_⟩
-  set a := fun s ↦ eLpNorm (F s) r' μ
-  have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
-  have hGm : AEMeasurable fun t ↦ ‖G t‖ₑ := hG.eNorm
-  -- The `L²` norms of `a` over the windows, and their measurability.
-  set φ := fun t ↦ (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, a s ^ (2 : ℝ)) ^ (2⁻¹ : ℝ)
-  have hφ : Measurable φ :=
-    (measurable_setLIntegral_sub_preimage hW (ha.pow_const _)).pow_const _
-  set c := C * A ^ (2⁻¹ : ℝ) * volume W ^ (2⁻¹ - (q : ℝ)⁻¹)
-  -- On each window, the non-endpoint dual estimate and Hölder's inequality in time.
-  have hwin (t : ℝ) : ‖∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s)‖ₑ ≤ c * φ t := by
-    by_cases hi : IntegrableOn (fun s ↦ ((U s)†) (F s)) ((fun s ↦ s - t) ⁻¹' W)
-    swap
-    · simp [integral_undef hi]
-    have h := enorm_setIntegral_adjoint_le_of_two_lt hq hpq (hC U A hU) hF
-      (measurable_sub_const t hW) hi
-    rwa [(measurePreserving_sub_right volume t).measure_preimage hW.nullMeasurableSet] at h
-  have hq2 : (q : ℝ)⁻¹ ≤ 2⁻¹ := inv_anti₀ two_pos (by exact_mod_cast hq.le)
-  refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
-  calc ∫⁻ t, ‖⟪∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ
-      ≤ ∫⁻ t, c * B * (φ t * ‖G t‖ₑ) := lintegral_mono fun t ↦ by
-        calc _ ≤ ‖∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s)‖ₑ * ‖((U t)†) (G t)‖ₑ :=
-              eNorm_inner_le_eNorm _ _
-          _ ≤ c * φ t * (B * ‖G t‖ₑ) := by
-              gcongr
-              · exact hwin t
-              · exact enorm_adjoint_apply_le_of_enorm_le (hB t) _
-          _ = c * B * (φ t * ‖G t‖ₑ) := by ring
-    _ = c * B * ∫⁻ t, φ t * ‖G t‖ₑ := lintegral_const_mul'' _ (hφ.aemeasurable.mul hGm)
-    _ ≤ c * B * (volume W ^ (2⁻¹ : ℝ) * eLpNorm a 2 * eLpNorm (fun t ↦ ‖G t‖ₑ) 2) := by
-        gcongr
-        exact lintegral_rpow_setLIntegral_sub_preimage_mul_le hW ha hGm
-    _ = C * A ^ (2⁻¹ : ℝ) * B * volume W ^ (1 - (q : ℝ)⁻¹) * eLpNorm a 2 *
-          eLpNorm (fun t ↦ ‖G t‖ₑ) 2 := by
-        rw [show (1 : ℝ) - (q : ℝ)⁻¹ = (2⁻¹ - (q : ℝ)⁻¹) + 2⁻¹ by ring,
-          ENNReal.rpow_add_of_nonneg _ _ (sub_nonneg.2 hq2) (by norm_num)]
-        ring
-  -- The chained `≤` is `Preorder.toLE` while the goal uses the `ℝ≥0∞` order instance directly;
-  -- `calc` does not unfold instances to match them, so the last comparison is closed here.
-  exact le_rfl
+  have h := enorm_integral_inner_setIntegral_sub_preimage_adjoint_le hp2 hB (hC U A hU) hW hF hG
+  rw [ENNReal.coe_toReal, hpinv] at h
+  refine h.trans_eq ?_
+  ring
 
 /-- **The energy corner of `T_L`.** Let `2 < q < ∞` with Hölder conjugate `p`. There is `C` such
 that the following holds. Let `U(t) : H → L²(X, μ)` be bounded operators with `‖U(t)‖ ≤ B` whose

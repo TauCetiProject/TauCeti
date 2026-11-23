@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Analysis.Convolution.Young
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
 # Lower integrals over sliding windows
@@ -51,14 +52,6 @@ open MeasureTheory Set Function
 open scoped ENNReal Pointwise
 
 namespace MeasureTheory
-
-/-- The `L²` norm of an extended nonnegative function as a lower integral. -/
-private theorem eLpNorm_two_eq_lintegral {α : Type*} {_ : MeasurableSpace α} {ν : Measure α}
-    {h : α → ℝ≥0∞} (hh : AEMeasurable h ν) :
-    eLpNorm h 2 ν = (∫⁻ s, h s ^ (2 : ℝ) ∂ν) ^ (1 / 2 : ℝ) := by
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-    hh.aestronglyMeasurable]
-  simp only [eNorm_eq_self, ENNReal.toReal_ofNat]
 
 variable {G : Type*} [MeasurableSpace G] [AddCommGroup G] [MeasurableAdd₂ G] [MeasurableNeg G]
   {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant] {W : Set G}
@@ -131,7 +124,9 @@ theorem lintegral_rpow_setLIntegral_sub_preimage_mul_le (hW : MeasurableSet W) {
       ≤ (∫⁻ t, φ t ^ (2 : ℝ) ∂μ) ^ (1 / 2 : ℝ) * (∫⁻ t, g t ^ (2 : ℝ) ∂μ) ^ (1 / 2 : ℝ) :=
         ENNReal.lintegral_mul_le_Lp_mul_Lq μ h2 hφ.aemeasurable hg
     _ = μ W ^ (2⁻¹ : ℝ) * eLpNorm f 2 μ * eLpNorm g 2 μ := by
-        rw [hφ2, eLpNorm_two_eq_lintegral hf, eLpNorm_two_eq_lintegral hg, one_div,
+        rw [hφ2, TauCeti.eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top hf,
+          TauCeti.eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top hg,
+          ENNReal.toReal_ofNat, one_div,
           ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 2⁻¹)]
 
 /-- **The window kernel on `L²`.** The integrals of `f` over the windows `{s | s - t ∈ W}`,
@@ -159,7 +154,9 @@ theorem lintegral_setLIntegral_sub_preimage_mul_le (hW : MeasurableSet W) {f g :
   calc ∫⁻ t, (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ) * g t ∂μ
       = ∫⁻ t, (f ⋆ₗ[μ] k) t * g t ∂μ := by simp only [hconv]
     _ ≤ eLpNorm (f ⋆ₗ[μ] k) 2 μ * eLpNorm g 2 μ := by
-        rw [eLpNorm_two_eq_lintegral hfk, eLpNorm_two_eq_lintegral hg]
+        rw [TauCeti.eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top hfk,
+          TauCeti.eLpNorm_eq_lintegral_rpow two_ne_zero ENNReal.ofNat_ne_top hg,
+          ENNReal.toReal_ofNat]
         exact ENNReal.lintegral_mul_le_Lp_mul_Lq μ Real.HolderConjugate.two_two hfk hg
     _ ≤ eLpNorm f 2 μ * eLpNorm k 1 μ * eLpNorm g 2 μ := by
         gcongr
