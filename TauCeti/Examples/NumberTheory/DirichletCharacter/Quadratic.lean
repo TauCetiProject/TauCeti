@@ -125,7 +125,7 @@ example :
     rw [(by decide : ∀ u : (ZMod 2)ˣ, u = 1) u, Units.val_one, MulChar.map_one, MulChar.map_one]
   refine ⟨h2, ZMod.isQuadratic_χ₄.comp _, ?_⟩
   have hne : ZMod.χ₄.ringHomComp (Int.castRingHom ℂ) ≠ 1 :=
-    ne_of_conductor_ne (by rw [conductor_χ₄_ringHomComp, conductor_one]; decide)
+    ne_of_apply_ne conductor (by rw [conductor_χ₄_ringHomComp, conductor_one]; decide)
   rintro (h | ⟨h, h'⟩)
   · exact hne h
   · rw [h2, MulChar.ringHomComp_one, changeLevel_one] at h'

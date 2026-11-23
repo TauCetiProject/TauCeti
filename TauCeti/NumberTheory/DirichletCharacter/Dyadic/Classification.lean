@@ -37,7 +37,6 @@ commutative monoid with zero.
   `DirichletCharacter.conductor_eq_one_or_four_or_eight_of_isQuadratic`: a character of order
   dividing two, in particular a quadratic character, of level `2 ^ k` has conductor `1`, `4`
   or `8`.
-* `DirichletCharacter.ne_of_conductor_ne`: characters with different conductors are different.
 * `DirichletCharacter.conductor_χ₄_ringHomComp`, `DirichletCharacter.conductor_χ₈_ringHomComp`,
   `DirichletCharacter.conductor_χ₈'_ringHomComp`: the conductors of the classical characters
   when `2 ≠ 0`.
@@ -155,11 +154,6 @@ theorem conductor_eq_one_or_four_or_eight_of_isQuadratic {k : ℕ}
     χ.conductor = 1 ∨ χ.conductor = 4 ∨ χ.conductor = 8 :=
   conductor_eq_one_or_four_or_eight_of_sq_eq_one hχ.sq_eq_one
 
-/-- Dirichlet characters with different conductors are different. -/
-theorem ne_of_conductor_ne {n : ℕ} {χ ψ : DirichletCharacter R n}
-    (h : χ.conductor ≠ ψ.conductor) : χ ≠ ψ :=
-  mt (congrArg conductor) h
-
 /-! ### Conductors of the classical dyadic characters -/
 
 section Conductor
@@ -205,9 +199,10 @@ theorem natCard_isQuadratic_two_pow (k : ℕ) :
     have h8 : ¬8 ∣ 2 ^ k := by rw [hk2]; decide
     have c4 : conductor (changeLevel h4 (χ₄.ringHomComp (Int.castRingHom R))) = 4 := by
       rw [conductor_changeLevel, conductor_χ₄_ringHomComp]
+    have h14 : 1 ≠ changeLevel h4 (χ₄.ringHomComp (Int.castRingHom R)) :=
+      ne_of_apply_ne conductor (by rw [conductor_one, c4]; decide)
     rw [Set.ncard_eq_two]
-    refine ⟨1, changeLevel h4 (χ₄.ringHomComp (Int.castRingHom R)),
-      ne_of_conductor_ne (by rw [conductor_one, c4]; decide), Set.ext fun χ ↦ ?_⟩
+    refine ⟨1, changeLevel h4 (χ₄.ringHomComp (Int.castRingHom R)), h14, Set.ext fun χ ↦ ?_⟩
     rw [Set.mem_ofPred_eq, isQuadratic_iff_of_level_two_pow]
     simp [h4, h8]
   · have h4 : 4 ∣ 2 ^ k := Nat.pow_dvd_pow 2 (by omega : 2 ≤ k)
@@ -230,14 +225,21 @@ theorem natCard_isQuadratic_two_pow (k : ℕ) :
         MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈' (a := 3) (b := 1) (by decide),
         Int.cast_neg, Int.cast_one] at h3
       exact two_ne_zero (α := R) (by linear_combination -h3)
+    -- The other pairs are separated by their conductors.
+    have h14 : (1 : DirichletCharacter R (2 ^ k)) ≠ ψ₄ :=
+      ne_of_apply_ne conductor (by rw [c1, c4]; decide)
+    have h18 : (1 : DirichletCharacter R (2 ^ k)) ≠ ψ₈ :=
+      ne_of_apply_ne conductor (by rw [c1, c8]; decide)
+    have h18' : (1 : DirichletCharacter R (2 ^ k)) ≠ ψ₈' :=
+      ne_of_apply_ne conductor (by rw [c1, c8']; decide)
+    have h48 : ψ₄ ≠ ψ₈ := ne_of_apply_ne conductor (by rw [c4, c8]; decide)
+    have h48' : ψ₄ ≠ ψ₈' := ne_of_apply_ne conductor (by rw [c4, c8']; decide)
     have h4n : ψ₄ ∉ ({ψ₈, ψ₈'} : Set (DirichletCharacter R (2 ^ k))) := by
       simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-      exact ⟨ne_of_conductor_ne (by rw [c4, c8]; decide),
-        ne_of_conductor_ne (by rw [c4, c8']; decide)⟩
+      exact ⟨h48, h48'⟩
     have h1n : 1 ∉ ({ψ₄, ψ₈, ψ₈'} : Set (DirichletCharacter R (2 ^ k))) := by
       simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-      exact ⟨ne_of_conductor_ne (by rw [c1, c4]; decide),
-        ne_of_conductor_ne (by rw [c1, c8]; decide), ne_of_conductor_ne (by rw [c1, c8']; decide)⟩
+      exact ⟨h14, h18, h18'⟩
     rw [hset, Set.ncard_insert_of_notMem h1n, Set.ncard_insert_of_notMem h4n, Set.ncard_pair h88]
 
 end Conductor
