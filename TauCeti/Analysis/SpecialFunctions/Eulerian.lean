@@ -12,7 +12,6 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc

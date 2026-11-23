@@ -12,8 +12,8 @@ import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.LaplaceTransform.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Decay
 import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The Gamma integral with a complex rate
@@ -31,13 +31,14 @@ integrable real majorant on `(0, ∞)`, giving holomorphy in `s` and joint analy
 ## Main results
 
 * `Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi`,
+  `Complex.norm_cpow_mul_log_pow_mul_exp_neg_mul`,
   `Complex.integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi`,
   `Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi`,
+  `Complex.summable_integral_norm_mul_cpow_mul_exp_neg_mul_Ioi`,
   `IsCompact.exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le`:
-  `(0, ∞)` integrability and compact real majorant for `t^s (log t)^k e^{-wt}`-type integrands.
-* `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`,
-  `Complex.integral_cpow_mul_exp_neg_mul_Ioi_eq_Gamma_mul_exp`: the Gamma integral with complex
-  rate, in principal-power and principal-logarithm forms.
+  `(0, ∞)` integrability, weighted series-norm summability, and compact real majorant for
+  `t^s (log t)^k e^{-wt}`-type integrands.
+* `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`: the Gamma integral with complex rate.
 * `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi`: holomorphy in the rate on the
   right half-plane.
 * `Complex.analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod`,
@@ -109,6 +110,14 @@ theorem Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi {s b : ℝ} (
 
 namespace Complex
 
+/-- The norm of `(t : ℂ) ^ s * (log t) ^ k * exp (-(w * t))` for `t > 0`. -/
+theorem norm_cpow_mul_log_pow_mul_exp_neg_mul (s w : ℂ) (k : ℕ) {t : ℝ} (ht : 0 < t) :
+    ‖(t : ℂ) ^ s * (log t) ^ k * exp (-(w * t))‖ =
+      |Real.log t| ^ k * t ^ s.re * Real.exp (-w.re * t) := by
+  rw [norm_mul, norm_mul, norm_pow, norm_cpow_eq_rpow_re_of_pos ht, ← ofReal_log ht.le,
+    norm_real, Real.norm_eq_abs, norm_exp_neg_mul_ofReal, neg_mul]
+  ring
+
 /-- For `Re s > -1`, `Re w > 0`, and `k : ℕ`, `t ↦ t^s (log t)^k e^{-wt}` is integrable on
 `(0, ∞)`. -/
 theorem integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi {s w : ℂ} (hs : -1 < s.re)
@@ -124,6 +133,37 @@ theorem integrableOn_cpow_mul_exp_neg_mul_Ioi {s w : ℂ} (hs : 0 < s.re) (hw : 
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s - 1) * exp (-(w * t))) (Ioi 0) := by
   have hs' : -1 < (s - 1).re := by simp; linarith
   simpa using integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi hs' hw 0
+
+/-- If `∑' n, ‖a n‖` converges and the rates `w n` satisfy `0 < b ≤ (w n).re` for all `n`, then
+for `0 < s.re` the sequence of `(0, ∞)` `L¹`-norms
+`∫ t in Ioi 0, ‖a n * (t ^ (s - 1) * e^{-w n * t})‖` is summable. -/
+theorem summable_integral_norm_mul_cpow_mul_exp_neg_mul_Ioi {a w : ℕ → ℂ}
+    (ha : Summable fun n => ‖a n‖) {b : ℝ} (hb : 0 < b) (hw : ∀ n, b ≤ (w n).re)
+    {s : ℂ} (hs : 0 < s.re) :
+    Summable fun n : ℕ =>
+      ∫ t : ℝ in Ioi 0, ‖a n * ((t : ℂ) ^ (s - 1) * exp (-(w n * t)))‖ := by
+  let g₀ : ℝ → ℝ := fun t => ‖(t : ℂ) ^ (s - 1) * exp (-((b : ℂ) * t))‖
+  have hb' : 0 < (b : ℂ).re := by simpa using hb
+  have hg₀ : Integrable g₀ (volume.restrict (Ioi 0)) :=
+    (integrableOn_cpow_mul_exp_neg_mul_Ioi hs hb').norm
+  refine Summable.of_nonneg_of_le (fun _ => integral_nonneg fun _ => norm_nonneg _) (fun n => ?_)
+    (ha.mul_right (∫ t : ℝ in Ioi 0, g₀ t))
+  rw [← integral_const_mul]
+  have hwn : 0 < (w n).re := hb.trans_le (hw n)
+  refine integral_mono_ae
+    ((integrableOn_cpow_mul_exp_neg_mul_Ioi hs hwn).const_mul (a n)).norm
+    (hg₀.const_mul _) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+  have ht0 : 0 < t := ht
+  have h1 := norm_cpow_mul_log_pow_mul_exp_neg_mul (s - 1) (w n) 0 ht0
+  have h2 := norm_cpow_mul_log_pow_mul_exp_neg_mul (s - 1) b 0 ht0
+  simp only [pow_zero, mul_one, one_mul, ofReal_re] at h1 h2
+  dsimp only [g₀]
+  rw [norm_mul, h1, h2]
+  exact mul_le_mul_of_nonneg_left
+    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (by nlinarith [hw n]))
+      (Real.rpow_nonneg ht0.le _))
+    (norm_nonneg _)
 
 /-- On any compact subset `K` of `{p : ℂ × ℂ | -1 < p.1.re ∧ 0 < p.2.re}`, the weighted
 Gamma-Laplace integrand `t^{p.1} (log t)^k e^{-p.2 t}` admits a single integrable real majorant
@@ -202,14 +242,6 @@ theorem integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos {s z : ℂ} (hs : 0 < s.re) 
     exact hreal r hr
   exact hanI.eqOn_of_preconnected_of_frequently_eq hanR (convex_halfSpace_re_gt 0).isPreconnected
     (by simp [hU]) hfreq hz
-
-/-- The Gamma integral with a complex rate in principal-logarithm form: for `Re s > 0` and
-`Re z > 0`, `∫₀^∞ t^{s-1} e^{-zt} dt = Γ(s) exp (-s * log z)`. -/
-theorem integral_cpow_mul_exp_neg_mul_Ioi_eq_Gamma_mul_exp {s z : ℂ} (hs : 0 < s.re)
-    (hz : 0 < z.re) :
-    ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * exp (-(z * t)) = Gamma s * exp (-s * log z) := by
-  have hz0 : z ≠ 0 := by intro h; rw [h, zero_re] at hz; exact lt_irrefl 0 hz
-  rw [integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs hz, cpow_def_of_ne_zero hz0, mul_comm (log z)]
 
 /-- The complex-rate Gamma integral `(s, z) ↦ ∫₀^∞ t^{s-1} e^{-zt} dt` is jointly analytic on
 `{p : ℂ × ℂ | 0 < p.1.re ∧ 0 < p.2.re}`. -/

@@ -107,7 +107,7 @@ theorem polylog_neg_nat_eq_div (r : ℕ) (z : ℂ) :
         (mt DifferentiableAt.continuousAt (not_continuousAt_polylog_neg_nat_one r))]
       simp
   · rw [polylog_neg_nat_eq_mul_iterate_of_ne_one r hz,
-      iterate_mul_deriv_add_mul_inv_one_sub r z 1, shiftedEulerianPolynomial_one_eval_eq_aeval,
+      iterate_mul_deriv_add_mul_inv_one_sub r z 1, shiftedEulerianPolynomial_one_left_eval_eq_aeval,
       mul_div_assoc]
 
 /-- In weight minus two the rational numerator is `z(1 + z)`.

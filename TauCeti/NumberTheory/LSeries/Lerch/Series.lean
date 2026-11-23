@@ -53,10 +53,11 @@ in `(z, s, c)` admit uniform summable bounds, giving joint analyticity, the lowe
   `TauCeti.lerchZeta_eq_exp_add_mul_add_one_right`, `TauCeti.analyticOnNhd_lerchZeta`,
   `TauCeti.differentiableOn_lerchZeta`, `TauCeti.hasSum_lerchZeta_of_im_nonneg`: characteristic API
   for `lerchZeta`.
-* `TauCeti.hasDerivAt_lerchSeries_left`, `TauCeti.mul_deriv_lerchSeries_left_add_mul`,
+* `TauCeti.isOpen_lerchSeriesDomain`, `TauCeti.isOpen_lerchZetaDomain`,
+  `TauCeti.hasDerivAt_lerchSeries_left`, `TauCeti.mul_deriv_lerchSeries_left_add_mul`,
   `TauCeti.hasDerivAt_lerchSeries_middle`, `TauCeti.hasDerivAt_lerchSeries_right`,
-  `TauCeti.analyticOnNhd_lerchSeries`, `TauCeti.differentiableOn_lerchSeries`: termwise derivatives,
-  lowering relation, and joint analyticity in `(s, z, c)`.
+  `TauCeti.analyticOnNhd_lerchSeries`, `TauCeti.differentiableOn_lerchSeries`: domain openness,
+  termwise derivatives, lowering relation, and joint analyticity in `(s, z, c)`.
 * `TauCeti.summable_norm_lerchSeries_term_of_norm_le_one`,
   `TauCeti.summable_lerchSeries_term_of_norm_le_one`,
   `TauCeti.hasSum_lerchSeries_of_norm_le_one`, `TauCeti.summable_lerchZeta_term_of_im_nonneg`,
@@ -98,13 +99,14 @@ theorem lerchZeta_def (s a c : ℂ) :
 /-- When no shift `n + c` vanishes, each `exp (-s * log (n + c))` coincides with the principal
 complex power `(n + c) ^ (-s)`. -/
 theorem lerchSeries_eq_tsum_cpow (z s : ℂ) {c : ℂ} (hc : ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
-    lerchSeries z s c = ∑' n : ℕ, z ^ n * ((n : ℂ) + c) ^ (-s) :=
-  tsum_congr fun n => by rw [cpow_def_of_ne_zero (hc n), mul_comm (Complex.log _)]
+    lerchSeries z s c = ∑' n : ℕ, z ^ n * ((n : ℂ) + c) ^ (-s) := by
+  rw [lerchSeries_def]
+  exact tsum_congr fun n => by rw [cpow_def_of_ne_zero (hc n), mul_comm (Complex.log _)]
 
 /-! ### Uniform norm bounds and compact convergence -/
 
 private theorem norm_log_pow_lerchTerm_le_aux {s z c : ℂ} {r S C δ : ℝ} {k n : ℕ}
-    (hz : ‖z‖ ≤ r) (hs : ‖s‖ ≤ S) (hc : ‖c‖ ≤ C) (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
+    (hz : ‖z‖ ≤ r) (hs : ‖s‖ ≤ S) (hc : ‖c‖ ≤ C) (hδ0 : 0 < δ)
     (hw_lo : δ ≤ ‖(n : ℂ) + c‖) :
     ‖z ^ n * ((-Complex.log (n + c)) ^ k * Complex.exp (-s * Complex.log (n + c)))‖ ≤
       (|Real.log δ| + Real.pi + C + 1) ^ k * Real.exp (S * Real.pi) *
@@ -114,8 +116,7 @@ private theorem norm_log_pow_lerchTerm_le_aux {s z c : ℂ} {r S C δ : ℝ} {k 
   have hC0 : 0 ≤ C := (norm_nonneg c).trans hc
   have hw_hi : ‖(n : ℂ) + c‖ ≤ (n : ℝ) + C + 1 := by
     have := norm_add_le (n : ℂ) c; rw [Complex.norm_natCast] at this; linarith
-  have hbase := Complex.norm_log_pow_mul_exp_le hs hδ0 hδ1 hw_lo
-    (by linarith [Nat.cast_nonneg (α := ℝ) n] : 1 ≤ (n : ℝ) + C + 1) hw_hi k
+  have hbase := Complex.norm_log_pow_mul_exp_le hs hδ0 hw_lo hw_hi k
   set L : ℝ := |Real.log δ| + Real.pi + C + 1
   set M : ℕ := Nat.ceil S
   have hL_bound : |Real.log δ| + Real.pi + ((n : ℝ) + C + 1) ≤ L * ((n : ℝ) + 1) := by
@@ -155,7 +156,7 @@ private theorem exists_summable_norm_log_pow_lerchSeries_term_le {K : Set (ℂ �
     (continuous_norm.comp (continuous_fst.comp continuous_snd)).continuousOn
   obtain ⟨S, hS⟩ := (hK.image continuous_fst).isBounded.exists_norm_le
   obtain ⟨C, hC⟩ := (hK.image (continuous_snd.comp continuous_snd)).isBounded.exists_norm_le
-  obtain ⟨δ, hδ0, hδ1, hδK⟩ :=
+  obtain ⟨δ, hδ0, _, hδK⟩ :=
     (hK.image (continuous_snd.comp continuous_snd)).exists_pos_le_norm_natCast_add
       (by rintro _ ⟨p, hp, rfl⟩ n; exact hKc p hp n)
   set r : ℝ := ‖p₀.2.1‖
@@ -170,7 +171,7 @@ private theorem exists_summable_norm_log_pow_lerchSeries_term_le {K : Set (ℂ �
   exact ⟨_, (hsum1.add hsum2).mul_left
       ((|Real.log δ| + Real.pi + C + 1) ^ k * Real.exp (S * Real.pi)),
     fun n p hp => norm_log_pow_lerchTerm_le_aux (hmax_z hp) (hS p.1 ⟨p, hp, rfl⟩)
-      (hC p.2.2 ⟨p, hp, rfl⟩) hδ0 hδ1 (hδK p.2.2 ⟨p, hp, rfl⟩ n)⟩
+      (hC p.2.2 ⟨p, hp, rfl⟩) hδ0 (hδK p.2.2 ⟨p, hp, rfl⟩ n)⟩
 
 /-- On any compact subset `K ⊆ ℂ × ℂ × ℂ` (in coordinates `(s, z, c)`) with `‖z‖ < 1` and
 `n + c ≠ 0` for all `n : ℕ`, the Lerch series terms are dominated by a single summable sequence. -/
@@ -238,8 +239,9 @@ theorem summable_lerchSeries_term {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
 
 /-- `HasSum` form of `lerchSeries` on `‖z‖ < 1`. -/
 theorem hasSum_lerchSeries {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
-    HasSum (fun n : ℕ => z ^ n * Complex.exp (-s * Complex.log (n + c))) (lerchSeries z s c) :=
-  (summable_lerchSeries_term hz s c).hasSum
+    HasSum (fun n : ℕ => z ^ n * Complex.exp (-s * Complex.log (n + c))) (lerchSeries z s c) := by
+  rw [lerchSeries_def]
+  exact (summable_lerchSeries_term hz s c).hasSum
 
 /-! ### Initial evaluations and parameter shifts -/
 
@@ -316,8 +318,9 @@ theorem hasSum_lerchZeta (s : ℂ) {a : ℂ} (ha : 0 < a.im) (c : ℂ) :
 /-- At `s = 0` on the upper half-plane `0 < a.im`, `L(0, a, c) = (1 - exp (2πia))⁻¹`. -/
 @[simp]
 theorem lerchZeta_zero_left {a : ℂ} (ha : 0 < a.im) (c : ℂ) :
-    lerchZeta 0 a c = (1 - Complex.exp (2 * Real.pi * I * a))⁻¹ :=
-  lerchSeries_zero_middle (UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mpr ha) c
+    lerchZeta 0 a c = (1 - Complex.exp (2 * Real.pi * I * a))⁻¹ := by
+  rw [lerchZeta_def]
+  exact lerchSeries_zero_middle (UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mpr ha) c
 
 /-- One-step shift identity in `c` for `lerchZeta`:
 `L(s, a, c) = exp (-s * log c) + exp (2πia) * L(s, a, c + 1)` whenever the series is summable. -/
@@ -326,15 +329,26 @@ theorem lerchZeta_eq_exp_add_mul_add_one_right {s a c : ℂ}
       Complex.exp (2 * Real.pi * I * n * a) * Complex.exp (-s * Complex.log (n + c)))) :
     lerchZeta s a c =
       Complex.exp (-s * Complex.log c) +
-        Complex.exp (2 * Real.pi * I * a) * lerchZeta s a (c + 1) :=
-  lerchSeries_eq_exp_add_mul_add_one_right
+        Complex.exp (2 * Real.pi * I * a) * lerchZeta s a (c + 1) := by
+  rw [lerchZeta_def, lerchZeta_def]
+  exact lerchSeries_eq_exp_add_mul_add_one_right
     (hs.congr fun n => by rw [← Complex.exp_two_pi_mul_I_mul_pow])
 
 /-! ### Termwise derivatives, compact mixed-derivative bounds, and joint analyticity -/
 
-private theorem isOpen_lerchSeriesDomain :
+/-- The joint analyticity domain
+`{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}` of `lerchSeries` is open. -/
+theorem isOpen_lerchSeriesDomain :
     IsOpen {p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane} :=
   (isOpen_lt (continuous_norm.comp (continuous_fst.comp continuous_snd)) continuous_const).inter
+    (Complex.isOpen_slitPlane.preimage (continuous_snd.comp continuous_snd))
+
+/-- The joint analyticity domain
+`{p : ℂ × ℂ × ℂ | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane}` of `lerchZeta` is open. -/
+theorem isOpen_lerchZetaDomain :
+    IsOpen {p : ℂ × ℂ × ℂ | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane} :=
+  (isOpen_lt continuous_const
+      (Complex.continuous_im.comp (continuous_fst.comp continuous_snd))).inter
     (Complex.isOpen_slitPlane.preimage (continuous_snd.comp continuous_snd))
 
 /-- On `‖z‖ < 1`, `w ↦ lerchSeries w s c` has term-by-term complex derivative at `z` for all
@@ -393,6 +407,14 @@ theorem mul_deriv_lerchSeries_left_add_mul {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ
     ← (hs1.sub hs2).tsum_add hs2]
   simp [lerchSeries_def]
 
+private theorem iteratedDeriv_middle_lerchSeries_term (n ds : ℕ) (z s₀ c : ℂ) :
+    iteratedDeriv ds (fun s => z ^ n * Complex.exp (-s * Complex.log (n + c))) s₀ =
+      z ^ n * ((-Complex.log (n + c)) ^ ds * Complex.exp (-s₀ * Complex.log (n + c))) := by
+  have hfun : (fun s => Complex.exp (-s * Complex.log (n + c))) =
+      fun s => Complex.exp (-Complex.log (n + c) * s) := funext fun s => by ring_nf
+  rw [iteratedDeriv_const_mul_field, hfun, congrFun (iteratedDeriv_cexp_const_mul ds _) s₀]
+  simp [mul_comm s₀]
+
 /-- On `‖z‖ < 1`, `w ↦ lerchSeries z w c` is entire and may be differentiated term-by-term in `s`
 for all `c : ℂ`. -/
 theorem hasDerivAt_lerchSeries_middle {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
@@ -408,7 +430,10 @@ theorem hasDerivAt_lerchSeries_middle {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
   have hterm : (fun n => deriv (F n) s) =
       fun n : ℕ => -Complex.log (n + c) * z ^ n * Complex.exp (-s * Complex.log (n + c)) := by
     ext n
-    rw [((((hasDerivAt_neg s).mul_const (Complex.log (n + c))).cexp).const_mul (z ^ n)).deriv]
+    have h1 := iteratedDeriv_middle_lerchSeries_term n 1 z s c
+    rw [iteratedDeriv_one, pow_one] at h1
+    rw [show deriv (F n) s = deriv (fun s => z ^ n * Complex.exp (-s * Complex.log (n + c))) s
+      from rfl, h1]
     ring
   rw [hterm] at hd
   exact hd.congr_of_eventuallyEq (Eventually.of_forall fun w => (lerchSeries_def z w c).symm)
@@ -537,14 +562,6 @@ theorem differentiableOn_lerchZeta :
     DifferentiableOn ℂ (fun p : ℂ × ℂ × ℂ => lerchZeta p.1 p.2.1 p.2.2)
       {p | 0 < p.2.1.im ∧ p.2.2 ∈ Complex.slitPlane} :=
   analyticOnNhd_lerchZeta.differentiableOn
-
-private theorem iteratedDeriv_middle_lerchSeries_term (n ds : ℕ) (z s₀ c : ℂ) :
-    iteratedDeriv ds (fun s => z ^ n * Complex.exp (-s * Complex.log (n + c))) s₀ =
-      z ^ n * ((-Complex.log (n + c)) ^ ds * Complex.exp (-s₀ * Complex.log (n + c))) := by
-  have hfun : (fun s => Complex.exp (-s * Complex.log (n + c))) =
-      fun s => Complex.exp (-Complex.log (n + c) * s) := funext fun s => by ring_nf
-  rw [iteratedDeriv_const_mul_field, hfun, congrFun (iteratedDeriv_cexp_const_mul ds _) s₀]
-  simp [mul_comm s₀]
 
 private theorem iteratedDeriv_lerchSeries_term_eq (n dz ds dc : ℕ) (p : ℂ × ℂ × ℂ) :
     iteratedDeriv dc (fun c =>
@@ -732,8 +749,9 @@ theorem summable_lerchSeries_term_of_norm_le_one {z s : ℂ} (hz : ‖z‖ ≤ 1
 
 /-- `HasSum` form of `lerchSeries` on the closed unit disc `‖z‖ ≤ 1` when `1 < s.re`. -/
 theorem hasSum_lerchSeries_of_norm_le_one {z s : ℂ} (hz : ‖z‖ ≤ 1) (hs : 1 < s.re) (c : ℂ) :
-    HasSum (fun n : ℕ => z ^ n * Complex.exp (-s * Complex.log (n + c))) (lerchSeries z s c) :=
-  (summable_lerchSeries_term_of_norm_le_one hz hs c).hasSum
+    HasSum (fun n : ℕ => z ^ n * Complex.exp (-s * Complex.log (n + c))) (lerchSeries z s c) := by
+  rw [lerchSeries_def]
+  exact (summable_lerchSeries_term_of_norm_le_one hz hs c).hasSum
 
 /-- Summability of the `lerchZeta` series on `0 ≤ a.im` (including real `a`) when `1 < s.re`. -/
 theorem summable_lerchZeta_term_of_im_nonneg {s a : ℂ} (hs : 1 < s.re) (ha : 0 ≤ a.im) (c : ℂ) :

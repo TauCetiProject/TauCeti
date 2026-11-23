@@ -83,8 +83,8 @@ theorem shiftedEulerianPolynomial_eval_one {R : Type*} [CommRing R] (c : R) (m :
 /-- Ring-homomorphism naturality of `shiftedEulerianPolynomial`: mapping coefficients along
 `f : R →+* S` sends `shiftedEulerianPolynomial c m` to `shiftedEulerianPolynomial (f c) m`. -/
 @[simp]
-theorem map_shiftedEulerianPolynomial {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
-    (c : R) (m : ℕ) :
+theorem _root_.RingHom.map_shiftedEulerianPolynomial {R S : Type*} [CommRing R] [CommRing S]
+    (f : R →+* S) (c : R) (m : ℕ) :
     (shiftedEulerianPolynomial c m).map f = shiftedEulerianPolynomial (f c) m := by
   induction m with
   | zero => simp
@@ -98,8 +98,8 @@ noncomputable def eulerianPolynomial (r : ℕ) : ℤ[X] :=
   shiftedEulerianPolynomial (1 : ℤ) r
 
 /-- The zeroth Eulerian polynomial is 1. -/
-@[simp] theorem eulerianPolynomial_zero : eulerianPolynomial 0 = 1 :=
-  shiftedEulerianPolynomial_zero 1
+@[simp] theorem eulerianPolynomial_zero : eulerianPolynomial 0 = 1 := by
+  simpa only [eulerianPolynomial] using shiftedEulerianPolynomial_zero (1 : ℤ)
 
 /-- The Eulerian polynomial recurrence induced by Euler differentiation. -/
 theorem eulerianPolynomial_succ (r : ℕ) :
@@ -124,8 +124,8 @@ theorem eulerianPolynomial_succ (r : ℕ) :
 
 /-- Evaluating `eulerianPolynomial r` at `1` gives `r!`. -/
 @[simp] theorem eulerianPolynomial_eval_one (r : ℕ) :
-    (eulerianPolynomial r).eval 1 = (r.factorial : ℤ) :=
-  shiftedEulerianPolynomial_eval_one (1 : ℤ) r
+    (eulerianPolynomial r).eval 1 = (r.factorial : ℤ) := by
+  simpa only [eulerianPolynomial] using shiftedEulerianPolynomial_eval_one (1 : ℤ) r
 
 /-- No Eulerian polynomial vanishes at 1. -/
 theorem eulerianPolynomial_eval_one_ne_zero (r : ℕ) :
@@ -137,11 +137,11 @@ theorem eulerianPolynomial_eval_one_ne_zero (r : ℕ) :
 image of `TauCeti.eulerianPolynomial m` under `Int.castRingHom R`. -/
 theorem shiftedEulerianPolynomial_one_left {R : Type*} [CommRing R] (m : ℕ) :
     shiftedEulerianPolynomial (1 : R) m = (eulerianPolynomial m).map (Int.castRingHom R) := by
-  rw [eulerianPolynomial, map_shiftedEulerianPolynomial, map_one]
+  rw [eulerianPolynomial, RingHom.map_shiftedEulerianPolynomial, map_one]
 
 /-- Evaluating `shiftedEulerianPolynomial (1 : R) m` at `z : R` coincides with
 `aeval z (eulerianPolynomial m)`. -/
-theorem shiftedEulerianPolynomial_one_eval_eq_aeval {R : Type*} [CommRing R] (m : ℕ) (z : R) :
+theorem shiftedEulerianPolynomial_one_left_eval_eq_aeval {R : Type*} [CommRing R] (m : ℕ) (z : R) :
     (shiftedEulerianPolynomial (1 : R) m).eval z = aeval z (eulerianPolynomial m) := by
   have hmap : Int.castRingHom R = algebraMap ℤ R := Subsingleton.elim _ _
   rw [shiftedEulerianPolynomial_one_left, Polynomial.eval_map, Polynomial.aeval_def, hmap]

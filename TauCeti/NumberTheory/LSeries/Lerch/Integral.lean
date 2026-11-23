@@ -13,7 +13,6 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
-import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 
 /-!
@@ -29,13 +28,14 @@ extending `TauCeti.lerchSeries z s c` from `‖z‖ < 1` across `ℂ \ [1, ∞)`
 * `TauCeti.lerchIntegral`, `IsCompact.exists_integrableOn_Ioi_lerchMajorant`,
   `TauCeti.integrableOn_lerchIntegrand`: Gamma-normalized integral representation, compact
   dominated majorant, and integrability on `(0, ∞)`.
-* `TauCeti.analyticOnNhd_lerchIntegral`, `TauCeti.analyticOnNhd_lerchIntegral_middle`,
-  `TauCeti.differentiableOn_lerchIntegral`: joint analyticity, `z`-slice analyticity, and
-  holomorphy on `{p | 0 < p.1.re ∧ 1 - p.2.1 ∈ Complex.slitPlane ∧ 0 < p.2.2.re}`.
-* `TauCeti.lerchIntegral_eq_lerchSeries`,
+* `TauCeti.isOpen_lerchIntegralDomain`, `TauCeti.analyticOnNhd_lerchIntegral`,
+  `TauCeti.analyticOnNhd_lerchIntegral_middle`, `TauCeti.differentiableOn_lerchIntegral`:
+  domain openness, joint analyticity, `z`-slice analyticity, and holomorphy on
+  `{p | 0 < p.1.re ∧ 1 - p.2.1 ∈ Complex.slitPlane ∧ 0 < p.2.2.re}`.
+* `TauCeti.lerchIntegral_eq_lerchSeries`, `TauCeti.lerchIntegral_zero_middle`,
   `TauCeti.lerchIntegral_eq_sum_range_add_pow_mul_add_natCast_right`,
   `TauCeti.lerchIntegral_eq_exp_add_mul_add_one_right`: agreement with `lerchSeries` on `‖z‖ < 1`,
-  `N`-step and `1`-step `c`-shift identities.
+  evaluation at `z = 0`, and `N`-step and `1`-step `c`-shift identities.
 * `TauCeti.mul_deriv_lerchIntegral_middle_add_mul`, `TauCeti.hasDerivAt_lerchIntegral_right`,
   `TauCeti.deriv_lerchIntegral_right`, `TauCeti.mul_deriv_deriv_lerchIntegral_right_add_mul`:
   lowering relation `(z ∂_z + c) lerchIntegral (s, z, c) = lerchIntegral (s - 1, z, c)`, raising
@@ -86,7 +86,7 @@ theorem _root_.IsCompact.exists_integrableOn_Ioi_lerchMajorant {K : Set (ℂ × 
           Complex.exp (-((p.2.2 + shift_c) * t))‖ /
             ‖1 - p.2.1 * Complex.exp (-t)‖ ^ pow_denom ≤ g t := by
   obtain ⟨δ, hδ, hden⟩ :=
-    (hK.image (continuous_fst.comp continuous_snd)).exists_le_norm_one_sub_mul_exp_neg
+    (hK.image (continuous_fst.comp continuous_snd)).exists_le_norm_one_sub_ofReal_mul
       (by rintro _ ⟨p, hp, rfl⟩; exact hKz p hp)
   have hK' : IsCompact ((fun p : ℂ × ℂ × ℂ => (p.1 + (shift_s : ℂ), p.2.2 + (shift_c : ℂ))) '' K) :=
     hK.image (by fun_prop)
@@ -95,11 +95,31 @@ theorem _root_.IsCompact.exists_integrableOn_Ioi_lerchMajorant {K : Set (ℂ × 
       (by rintro _ ⟨p, hp, rfl⟩; simpa using hs_shift p hp)
       (by rintro _ ⟨p, hp, rfl⟩; simpa using hc_shift p hp) k
   refine ⟨fun t => (δ ^ pow_denom)⁻¹ * g₀ t, hg₀.const_mul _, fun p hp t ht => ?_⟩
-  have hd := pow_le_pow_left₀ hδ.le (hden p.2.1 ⟨p, hp, rfl⟩ t ht.le) pow_denom
-  have hn := hnum (p.1 + shift_s, p.2.2 + shift_c) ⟨p, hp, rfl⟩ t ht
+  have hden_t : δ ≤ ‖1 - p.2.1 * Complex.exp (-t)‖ := by
+    simpa [Complex.ofReal_exp, mul_comm p.2.1] using hden p.2.1 ⟨p, hp, rfl⟩ (Real.exp (-t))
+      ⟨(Real.exp_pos _).le, Real.exp_le_one_iff.mpr (neg_nonpos.mpr ht.le)⟩
+  have hd := pow_le_pow_left₀ hδ.le hden_t pow_denom
+  have hn := hnum (p.1 + shift_s, p.2.2 + (shift_c : ℂ)) ⟨p, hp, rfl⟩ t ht
   have : 0 ≤ g₀ t := (norm_nonneg _).trans hn
   rw [div_eq_mul_inv, mul_comm _ (‖1 - p.2.1 * Complex.exp (-t)‖ ^ pow_denom)⁻¹]
   exact mul_le_mul (inv_anti₀ (pow_pos hδ _) hd) hn (norm_nonneg _) (by positivity)
+
+private theorem one_sub_mul_exp_neg_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane)
+    {t : ℝ} (ht : 0 ≤ t) : 1 - z * Complex.exp (-t) ∈ Complex.slitPlane := by
+  simpa [Complex.ofReal_exp] using
+    Complex.one_sub_mul_ofReal_mem_slitPlane hz
+      ⟨(Real.exp_pos (-t)).le, Real.exp_le_one_iff.mpr (neg_nonpos.mpr ht)⟩
+
+private theorem _root_.IsCompact.exists_integrableOn_Ioi_norm_lerchIntegrand_le
+    {K : Set (ℂ × ℂ × ℂ)} (hK : IsCompact K) (hKs : ∀ p ∈ K, 0 < p.1.re)
+    (hKz : ∀ p ∈ K, 1 - p.2.1 ∈ Complex.slitPlane) (hKc : ∀ p ∈ K, 0 < p.2.2.re) :
+    ∃ g : ℝ → ℝ, IntegrableOn g (Ioi 0) ∧
+      ∀ p ∈ K, ∀ t > (0 : ℝ),
+        ‖(t : ℂ) ^ (p.1 - 1) * Complex.exp (-(p.2.2 * t)) /
+          (1 - p.2.1 * Complex.exp (-t))‖ ≤ g t := by
+  obtain ⟨g, hg, hle⟩ := hK.exists_integrableOn_Ioi_lerchMajorant hKz 0 1 (-1) 0
+    (fun p hp => by linarith [hKs p hp]) (fun p hp => by simpa using hKc p hp)
+  exact ⟨g, hg, fun p hp t ht => by simpa [sub_eq_add_neg, norm_div] using hle p hp t ht⟩
 
 /-- For `0 < Re s`, `1 - z ∈ Complex.slitPlane`, and `0 < Re c`, the Lerch integrand is integrable
 on `(0, ∞)`. -/
@@ -108,33 +128,24 @@ theorem integrableOn_lerchIntegrand {p : ℂ × ℂ × ℂ} (hs : 0 < p.1.re)
     IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ (p.1 - 1) * Complex.exp (-(p.2.2 * t)) /
         (1 - p.2.1 * Complex.exp (-t))) (Ioi 0) := by
-  obtain ⟨g, hg, hle⟩ := (isCompact_singleton (x := p)).exists_integrableOn_Ioi_lerchMajorant
-    (by rintro _ rfl; exact hz) 0 1 (-1) 0 (by simp [hs]) (by simp [hc])
+  obtain ⟨g, hg, hle⟩ :=
+    (isCompact_singleton (x := p)).exists_integrableOn_Ioi_norm_lerchIntegrand_le
+      (by rintro _ rfl; exact hs) (by rintro _ rfl; exact hz) (by rintro _ rfl; exact hc)
   refine hg.mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-  simpa [sub_eq_add_neg, norm_div] using hle p rfl t ht
+  exact hle p rfl t ht
 
 /-! ### Joint analyticity on the cut domain -/
 
-private theorem isOpen_lerchIntegralDomain :
+/-- The principal Lerch integral domain
+`{p : ℂ × ℂ × ℂ | 0 < p.1.re ∧ 1 - p.2.1 ∈ Complex.slitPlane ∧ 0 < p.2.2.re}`
+is open. -/
+theorem isOpen_lerchIntegralDomain :
     IsOpen {p : ℂ × ℂ × ℂ | 0 < p.1.re ∧ 1 - p.2.1 ∈ Complex.slitPlane ∧ 0 < p.2.2.re} :=
   (isOpen_lt continuous_const (Complex.continuous_re.comp continuous_fst)).inter <|
     (Complex.isOpen_setOf_one_sub_mem_slitPlane.preimage
       (continuous_fst.comp continuous_snd)).inter
       (isOpen_lt continuous_const (Complex.continuous_re.comp (continuous_snd.comp continuous_snd)))
-
-private theorem exp_neg_add_mul (c a : ℂ) (t : ℝ) :
-    Complex.exp (-((c + a) * t)) = Complex.exp (-(c * t)) * Complex.exp (-(a * t)) := by
-  rw [add_mul, neg_add, Complex.exp_add]
-
-private theorem exp_neg_add_one_mul (c : ℂ) (t : ℝ) :
-    Complex.exp (-((c + 1) * t)) = Complex.exp (-(c * t)) * Complex.exp (-(t : ℂ)) := by
-  simpa using exp_neg_add_mul c 1 t
-
-private theorem exp_neg_natCast_add_mul (n : ℕ) (c : ℂ) (t : ℝ) :
-    Complex.exp (-(((n : ℂ) + c) * t)) =
-      Complex.exp (-((n : ℂ) * t)) * Complex.exp (-(c * t)) := by
-  rw [add_comm (n : ℂ) c, exp_neg_add_mul, mul_comm]
 
 /-- The principal Lerch integral `lerchIntegral` is jointly analytic on
 `{p : ℂ × ℂ × ℂ | 0 < p.1.re ∧ 1 - p.2.1 ∈ Complex.slitPlane ∧ 0 < p.2.2.re}`. -/
@@ -150,16 +161,16 @@ theorem analyticOnNhd_lerchIntegral :
     · intro p₀ hp₀
       obtain ⟨r, hr, hsub⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
         (isOpen_lerchIntegralDomain.mem_nhds hp₀)
-      obtain ⟨g, hg, hle⟩ := (isCompact_closedBall p₀ r).exists_integrableOn_Ioi_lerchMajorant
-        (fun p hp => (hsub hp).2.1) 0 1 (-1) 0
-        (fun p hp => by linarith [(hsub hp).1]) (fun p hp => by simpa using (hsub hp).2.2)
+      obtain ⟨g, hg, hle⟩ :=
+        (isCompact_closedBall p₀ r).exists_integrableOn_Ioi_norm_lerchIntegrand_le
+          (fun p hp => (hsub hp).1) (fun p hp => (hsub hp).2.1) (fun p hp => (hsub hp).2.2)
       refine ⟨closedBall p₀ r, closedBall_mem_nhds p₀ hr, g, hg, ?_⟩
       filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht p hp
-      simpa [F, sub_eq_add_neg, norm_div] using hle p hp t ht
+      exact hle p hp t ht
     · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht p hp
       have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (ne_of_gt ht)
       have hden : 1 - p.2.1 * Complex.exp (-t) ≠ 0 :=
-        Complex.slitPlane_ne_zero (Complex.one_sub_mul_exp_neg_mem_slitPlane hp.2.1 ht.le)
+        Complex.slitPlane_ne_zero (one_sub_mul_exp_neg_mem_slitPlane hp.2.1 ht.le)
       have hpow : DifferentiableAt ℂ (fun q : ℂ × ℂ × ℂ => (t : ℂ) ^ (q.1 - 1)) p :=
         ((differentiableAt_fst.sub_const 1).const_cpow (Or.inl ht0)).comp p differentiableAt_id
       have hexp : DifferentiableAt ℂ (fun q : ℂ × ℂ × ℂ => Complex.exp (-(q.2.2 * t))) p := by
@@ -191,30 +202,6 @@ theorem differentiableOn_lerchIntegral :
 
 /-! ### Agreement with `lerchSeries` on the open unit disc and principal-sheet identities -/
 
-private theorem summable_integral_norm_lerchTerm {s z c : ℂ} (hs : 0 < s.re) (hz : ‖z‖ < 1)
-    (hc : 0 < c.re) :
-    Summable (fun n : ℕ => ∫ t : ℝ in Ioi 0,
-      ‖z ^ n * ((t : ℂ) ^ (s - 1) * Complex.exp (-(((n : ℂ) + c) * t)))‖) := by
-  let g₀ : ℝ → ℝ := fun t => ‖(t : ℂ) ^ (s - 1) * Complex.exp (-(c * t))‖
-  have hg₀ : Integrable g₀ (volume.restrict (Ioi 0)) :=
-    (Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi hs hc).norm
-  refine Summable.of_nonneg_of_le (fun _ => integral_nonneg fun _ => norm_nonneg _) (fun n => ?_)
-    ((summable_geometric_of_lt_one (norm_nonneg z) hz).mul_right (∫ t : ℝ in Ioi 0, g₀ t))
-  rw [← integral_const_mul]
-  refine integral_mono_ae
-    ((Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi hs
-      (Complex.natCast_add_re_pos n hc)).const_mul (z ^ n)).norm (hg₀.const_mul _) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-  have ht0 : 0 < t := ht
-  have hexp : Real.exp (-(n : ℝ) * t) ≤ 1 :=
-    Real.exp_le_one_iff.mpr (by nlinarith [Nat.cast_nonneg (α := ℝ) n])
-  have hn_exp : ‖Complex.exp (-((n : ℂ) * t))‖ = Real.exp (-(n : ℝ) * t) := by
-    rw [Complex.norm_exp]; simp [neg_mul]
-  dsimp only [g₀]
-  simp only [exp_neg_natCast_add_mul, norm_mul, norm_pow, hn_exp]
-  gcongr
-  exact mul_le_of_le_one_left (norm_nonneg _) hexp
-
 /-- On the open unit disc `‖z‖ < 1` with `0 < Re s` and `0 < Re c`, `lerchIntegral (s, z, c)`
 agrees with `lerchSeries z s c`. -/
 theorem lerchIntegral_eq_lerchSeries {s z c : ℂ} (hs : 0 < s.re) (hz : ‖z‖ < 1) (hc : 0 < c.re) :
@@ -225,31 +212,43 @@ theorem lerchIntegral_eq_lerchSeries {s z c : ℂ} (hs : 0 < s.re) (hz : ‖z‖
     (Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi hs
       (Complex.natCast_add_re_pos n hc)).const_mul (z ^ n)
   have hsum := hasSum_integral_of_summable_integral_norm hF_int
-    (summable_integral_norm_lerchTerm hs hz hc)
+    (Complex.summable_integral_norm_mul_cpow_mul_exp_neg_mul_Ioi (a := fun n : ℕ => z ^ n)
+      (w := fun n : ℕ => (n : ℂ) + c)
+      (by simpa [norm_pow] using summable_geometric_of_lt_one (norm_nonneg z) hz) hc
+      (fun n => by simp) hs)
   have htsum_eq : ∫ t : ℝ in Ioi 0, (∑' n, F n t) =
       ∫ t : ℝ in Ioi 0, (t : ℂ) ^ (s - 1) * Complex.exp (-(c * t)) / (1 - z * Complex.exp (-t)) :=
     setIntegral_congr_fun measurableSet_Ioi fun t ht => by
       have ht0 : 0 < t := ht
       have hzw : ‖z * Complex.exp (-t)‖ < 1 := by
-        rw [norm_mul, Complex.norm_exp, Complex.neg_re, Complex.ofReal_re]
+        rw [norm_mul, ← Complex.ofReal_neg, Complex.norm_exp_ofReal]
         exact (mul_le_of_le_one_right (norm_nonneg z)
           (Real.exp_le_one_iff.mpr (by linarith))).trans_lt hz
       have hterm (n : ℕ) : F n t =
           ((t : ℂ) ^ (s - 1) * Complex.exp (-(c * t))) * (z * Complex.exp (-t)) ^ n := by
         dsimp only [F]
-        rw [exp_neg_natCast_add_mul, mul_pow, ← Complex.exp_natCast_mul]
+        rw [add_mul, neg_add, Complex.exp_add, mul_pow, ← Complex.exp_natCast_mul]
         simp only [mul_neg]
         ring
       simp_rw [hterm, tsum_mul_left, tsum_geometric_of_norm_lt_one hzw, div_eq_mul_inv]
   have hterm_int (n : ℕ) : ∫ t : ℝ in Ioi 0, F n t =
       Complex.Gamma s * (z ^ n * Complex.exp (-s * Complex.log (n + c))) := by
     have hcpos := Complex.natCast_add_re_pos n hc
+    have hcne : (n : ℂ) + c ≠ 0 := by
+      intro h; rw [h, Complex.zero_re] at hcpos; exact lt_irrefl 0 hcpos
     dsimp only [F]
-    rw [integral_const_mul, Complex.integral_cpow_mul_exp_neg_mul_Ioi_eq_Gamma_mul_exp hs hcpos]
+    rw [integral_const_mul, Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs hcpos,
+      Complex.cpow_def_of_ne_zero hcne, mul_comm (Complex.log _)]
     ring
   rw [lerchIntegral_def, ← htsum_eq, ← hsum.tsum_eq]
   simp_rw [hterm_int, tsum_mul_left, ← lerchSeries_def]
   exact inv_mul_cancel_left₀ (Complex.Gamma_ne_zero_of_re_pos hs) _
+
+/-- At `z = 0` with `0 < Re s` and `0 < Re c`, `lerchIntegral (s, 0, c) = exp (-s * log c)`. -/
+@[simp]
+theorem lerchIntegral_zero_middle {s c : ℂ} (hs : 0 < s.re) (hc : 0 < c.re) :
+    lerchIntegral (s, 0, c) = Complex.exp (-s * Complex.log c) := by
+  rw [lerchIntegral_eq_lerchSeries hs (by simp) hc, lerchSeries_zero_left]
 
 /-- Parameter shift `lerchIntegral (s, z, c) = exp (-s * log c) + z * lerchIntegral (s, z, c + 1)`
 across the entire cut domain `0 < Re s`, `1 - z ∈ Complex.slitPlane`, `0 < Re c`. -/
@@ -257,6 +256,7 @@ theorem lerchIntegral_eq_exp_add_mul_add_one_right {s z c : ℂ} (hs : 0 < s.re)
     (hz : 1 - z ∈ Complex.slitPlane) (hc : 0 < c.re) :
     lerchIntegral (s, z, c) =
       Complex.exp (-s * Complex.log c) + z * lerchIntegral (s, z, c + 1) := by
+  have hcne : c ≠ 0 := by intro h; rw [h, Complex.zero_re] at hc; exact lt_irrefl 0 hc
   have hc1 : 0 < (c + 1).re := by simp; linarith
   have hi1 := Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi hs hc
   have hi2 := (integrableOn_lerchIntegrand (p := (s, z, c + 1)) hs hz hc1).const_mul z
@@ -268,11 +268,12 @@ theorem lerchIntegral_eq_exp_add_mul_add_one_right {s z c : ℂ} (hs : 0 < s.re)
     rw [← integral_add hi1 hi2]
     refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
     have hden :=
-      Complex.slitPlane_ne_zero (Complex.one_sub_mul_exp_neg_mem_slitPlane hz (le_of_lt ht))
-    rw [exp_neg_add_one_mul]
+      Complex.slitPlane_ne_zero (one_sub_mul_exp_neg_mem_slitPlane hz (le_of_lt ht))
+    rw [add_mul, one_mul, neg_add, Complex.exp_add]
     field_simp; ring
   rw [lerchIntegral_def (s, z, c), lerchIntegral_def (s, z, c + 1), hcongr,
-    Complex.integral_cpow_mul_exp_neg_mul_Ioi_eq_Gamma_mul_exp hs hc, integral_const_mul,
+    Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs hc,
+    Complex.cpow_def_of_ne_zero hcne, mul_comm (Complex.log c), integral_const_mul,
     mul_add, inv_mul_cancel_left₀ (Complex.Gamma_ne_zero_of_re_pos hs)]
   dsimp only; ring
 
@@ -338,9 +339,9 @@ theorem hasDerivAt_lerchIntegral_right {s z c : ℂ} (hs : 0 < s.re) (hz : 1 - z
   let K : Set (ℂ × ℂ × ℂ) := ({s} : Set ℂ) ×ˢ (({z} : Set ℂ) ×ˢ closedBall c δ)
   have hK : IsCompact K :=
     isCompact_singleton.prod (isCompact_singleton.prod (isCompact_closedBall c δ))
-  obtain ⟨g, hg, hle⟩ := hK.exists_integrableOn_Ioi_lerchMajorant
-    (fun p hp => by rw [hp.2.1]; exact hz) 0 1 (-1) 0
-    (fun p hp => by rw [hp.1]; linarith) (fun p hp => by simpa using hcb hp.2.2)
+  obtain ⟨g, hg, hle⟩ := hK.exists_integrableOn_Ioi_norm_lerchIntegrand_le
+    (fun p hp => by rw [hp.1]; exact hs) (fun p hp => by rw [hp.2.1]; exact hz)
+    (fun p hp => hcb hp.2.2)
   let F : ℂ → ℝ → ℂ := fun w t =>
     (t : ℂ) ^ (s - 1) * Complex.exp (-(w * t)) / (1 - z * Complex.exp (-t))
   have hraw : HasDerivAt (fun w => ∫ t : ℝ in Ioi 0, F w t)
@@ -349,8 +350,7 @@ theorem hasDerivAt_lerchIntegral_right {s z c : ℂ} (hs : 0 < s.re) (hz : 1 - z
       (fun _ _ => Measurable.aestronglyMeasurable (by fun_prop)) ?_ hg
       (Eventually.of_forall fun _ => (by fun_prop : Differentiable ℂ (F · _)).differentiableOn)
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht w hw
-    simpa [F, sub_eq_add_neg, norm_div] using
-      hle (s, z, w) ⟨rfl, rfl, ball_subset_closedBall hw⟩ t ht
+    exact hle (s, z, w) ⟨rfl, rfl, ball_subset_closedBall hw⟩ t ht
   have hderiv_int : ∫ t : ℝ in Ioi 0, deriv (F · t) c =
       - ∫ t : ℝ in Ioi 0,
           (t : ℂ) ^ ((s + 1) - 1) * Complex.exp (-(c * t)) / (1 - z * Complex.exp (-t)) := by
@@ -367,7 +367,8 @@ theorem hasDerivAt_lerchIntegral_right {s z c : ℂ} (hs : 0 < s.re) (hz : 1 - z
       rw [← hpow]
       ring
     exact hd.deriv
-  refine (hraw.const_mul (Complex.Gamma s)⁻¹).congr_deriv ?_
+  refine ((hraw.const_mul (Complex.Gamma s)⁻¹).congr_of_eventuallyEq
+    (Eventually.of_forall fun w => (lerchIntegral_def (s, z, w)).symm)).congr_deriv ?_
   rw [hderiv_int, Complex.one_div_Gamma_eq_self_mul_one_div_Gamma_add_one, lerchIntegral_def]
   ring
 

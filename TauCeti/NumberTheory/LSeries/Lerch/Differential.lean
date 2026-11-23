@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.LSeries.Lerch.Series
 public import TauCeti.RingTheory.Polynomial.Eulerian
 
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Eulerian
 
 /-!
@@ -28,8 +27,8 @@ Iterating `z ∂_z + c` on `Φ(z, 0, c) = (1 - z)⁻¹` yields rational values
 
 * `TauCeti.mul_deriv_deriv_lerchSeries_right_add_mul`: the Lerch PDE
   `(z ∂_z + c) ∂_c Φ(z, s, c) = -s Φ(z, s, c)`.
-* `TauCeti.lerchSeries_neg_nat_eq_iterate`, `TauCeti.lerchSeries_neg_nat_eq_div`,
-  `TauCeti.lerchSeries_neg_one`:
+* `TauCeti.lerchSeries_neg_nat_middle_eq_iterate`, `TauCeti.lerchSeries_neg_nat_middle_eq_div`,
+  `TauCeti.lerchSeries_neg_one_middle`:
   rational nonpositive-integer formulas (using `TauCeti.shiftedEulerianPolynomial` from
   `TauCeti/RingTheory/Polynomial/Eulerian.lean` and the shared shifted Euler-operator lemmas from
   `TauCeti/Analysis/SpecialFunctions/Eulerian.lean`).
@@ -76,7 +75,7 @@ theorem mul_deriv_deriv_lerchSeries_right_add_mul {z : ℂ} (hz : ‖z‖ < 1) (
 /-- At nonpositive integer orders `s = -(m : ℂ)`, `Φ(z, -m, c)` on `‖z‖ < 1` agrees with `m`-fold
 iteration of the shifted Euler operator `f ↦ (w ↦ w * deriv f w + c * f w)` applied to
 `w ↦ (1 - w)⁻¹` whenever `(n : ℂ) + c ≠ 0` for all `n : ℕ`. -/
-theorem lerchSeries_neg_nat_eq_iterate (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ}
+theorem lerchSeries_neg_nat_middle_eq_iterate (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ}
     (hc : ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
     lerchSeries z (-(m : ℂ)) c =
       ((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + c * f w)^[m]) (fun w => (1 - w)⁻¹) z := by
@@ -92,19 +91,20 @@ theorem lerchSeries_neg_nat_eq_iterate (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c
     rw [hloc.deriv_eq, ← ih hz, mul_deriv_lerchSeries_left_add_mul hz (-(m : ℂ)) hc, hcast]
 
 /-- Rational formula for `Φ(z, -m, c)` on `‖z‖ < 1` whenever `(n : ℂ) + c ≠ 0` for all `n : ℕ`. -/
-theorem lerchSeries_neg_nat_eq_div (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ}
+theorem lerchSeries_neg_nat_middle_eq_div (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ}
     (hc : ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
     lerchSeries z (-(m : ℂ)) c = (shiftedEulerianPolynomial c m).eval z / (1 - z) ^ (m + 1) := by
-  rw [lerchSeries_neg_nat_eq_iterate m hz hc, iterate_mul_deriv_add_mul_inv_one_sub]
+  rw [lerchSeries_neg_nat_middle_eq_iterate m hz hc, iterate_mul_deriv_add_mul_inv_one_sub]
 
 /-- Explicit rational value `Φ(z, -1, c) = c / (1 - z) + z / (1 - z) ^ 2` on `‖z‖ < 1` whenever
 `(n : ℂ) + c ≠ 0` for all `n : ℕ`. -/
-theorem lerchSeries_neg_one {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ} (hc : ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
+theorem lerchSeries_neg_one_middle {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ}
+    (hc : ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
     lerchSeries z (-1) c = c / (1 - z) + z / (1 - z) ^ 2 := by
   have : 1 - z ≠ 0 := sub_ne_zero.mpr fun h1 => by rw [← h1, norm_one] at hz; exact lt_irrefl 1 hz
   calc lerchSeries z (-1) c
       = (shiftedEulerianPolynomial c 1).eval z / (1 - z) ^ 2 := by
-          simpa using lerchSeries_neg_nat_eq_div 1 hz hc
+          simpa using lerchSeries_neg_nat_middle_eq_div 1 hz hc
     _ = (c * (1 - z) + z) / (1 - z) ^ 2 := by simp [shiftedEulerianPolynomial_one]
     _ = c / (1 - z) + z / (1 - z) ^ 2 := by field_simp
 

@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Taylor
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
@@ -75,8 +74,6 @@ term takes.
   positive vertical strip, including empty and singleton strips.
 * `Complex.abs_log_norm_ofReal_add_mul_I_sub_le`: for `2 ≤ x` and `t : ℝ`,
   `|Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log x`.
-* `Complex.norm_log_pow_mul_exp_le`: uniform norm bound for `(-log w) ^ k * exp (-s * log w)`
-  on an annulus `δ ≤ ‖w‖ ≤ B` with `‖s‖ ≤ S`.
 -/
 
 public section
@@ -272,56 +269,5 @@ theorem abs_log_norm_ofReal_add_mul_I_sub_le {x : ℝ} (hx : 2 ≤ x) (t : ℝ) 
   · have h := Real.log_le_log hz0 hhi
     rw [Real.log_mul hx0.ne' ht1.ne'] at h
     linarith
-
-/-- Uniform norm bound for `(-log w) ^ k * exp (-s * log w)` on an annulus `δ ≤ ‖w‖ ≤ B`
-(`0 < δ ≤ 1 ≤ B`) with `‖s‖ ≤ S`. -/
-theorem norm_log_pow_mul_exp_le {s w : ℂ} {S δ B : ℝ} (hS : ‖s‖ ≤ S)
-    (hδ0 : 0 < δ) (hδ1 : δ ≤ 1) (hw_lo : δ ≤ ‖w‖) (hB1 : 1 ≤ B) (hw_hi : ‖w‖ ≤ B) (k : ℕ) :
-    ‖(-Complex.log w) ^ k * Complex.exp (-s * Complex.log w)‖ ≤
-      (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * Real.pi) *
-        (Real.exp (-S * Real.log δ) + B ^ S) := by
-  have hS0 : 0 ≤ S := (norm_nonneg s).trans hS
-  have hw0 : 0 < ‖w‖ := hδ0.trans_le hw_lo
-  have hne : w ≠ 0 := norm_pos_iff.mp hw0
-  have hlog_norm : ‖Complex.log w‖ ≤ |Real.log δ| + Real.pi + B := by
-    have h := norm_le_abs_re_add_abs_im (Complex.log w)
-    rw [Complex.log_re, Complex.log_im] at h
-    have h1 := Real.log_le_log hδ0 hw_lo
-    have h2 := (Real.log_le_log hw0 hw_hi).trans
-      (Real.log_le_sub_one_of_pos (zero_lt_one.trans_le hB1))
-    have hδ_np := Real.log_nonpos hδ0.le hδ1
-    have habs : |Real.log ‖w‖| ≤ -Real.log δ + B := abs_le.mpr ⟨by linarith, by linarith⟩
-    rw [abs_of_nonpos hδ_np]; linarith [abs_arg_le_pi w]
-  have hcpow : ‖w ^ (-s)‖ ≤ Real.exp (S * Real.pi) * (Real.exp (-S * Real.log δ) + B ^ S) := by
-    have him : Real.exp (Real.pi * |(-s).im|) ≤ Real.exp (S * Real.pi) := by
-      rw [Complex.neg_im, abs_neg, mul_comm Real.pi]
-      exact Real.exp_le_exp.mpr
-        (mul_le_mul_of_nonneg_right ((abs_im_le_norm s).trans hS) Real.pi_pos.le)
-    have hrpow : ‖w‖ ^ (-s).re ≤ Real.exp (-S * Real.log δ) + B ^ S := by
-      rw [Complex.neg_re]
-      have hs_re : -S ≤ -s.re ∧ -s.re ≤ S :=
-        abs_le.mp (by rw [abs_neg]; exact (abs_re_le_norm s).trans hS)
-      rcases le_or_gt ‖w‖ 1 with hw1 | hw1
-      · have h1 : ‖w‖ ^ (-s.re) ≤ ‖w‖ ^ (-S) :=
-          Real.rpow_le_rpow_of_exponent_ge hw0 hw1 hs_re.1
-        have h2 : ‖w‖ ^ (-S) ≤ δ ^ (-S) :=
-          Real.rpow_le_rpow_of_nonpos hδ0 hw_lo (neg_nonpos.mpr hS0)
-        rw [Real.rpow_def_of_pos hδ0, mul_comm (Real.log δ)] at h2
-        linarith [Real.rpow_pos_of_pos (zero_lt_one.trans_le hB1) S]
-      · have h1 : ‖w‖ ^ (-s.re) ≤ ‖w‖ ^ S :=
-          Real.rpow_le_rpow_of_exponent_le hw1.le hs_re.2
-        have h2 : ‖w‖ ^ S ≤ B ^ S :=
-          Real.rpow_le_rpow hw0.le hw_hi hS0
-        linarith [Real.exp_pos (-S * Real.log δ)]
-    exact (norm_cpow_le_mul_exp w (-s)).trans <|
-      (mul_comm _ _).trans_le (mul_le_mul him hrpow (Real.rpow_nonneg hw0.le _) (Real.exp_pos _).le)
-  rw [norm_mul, norm_pow, norm_neg, mul_comm (-s), ← Complex.cpow_def_of_ne_zero hne]
-  calc ‖Complex.log w‖ ^ k * ‖w ^ (-s)‖
-      ≤ (|Real.log δ| + Real.pi + B) ^ k *
-          (Real.exp (S * Real.pi) * (Real.exp (-S * Real.log δ) + B ^ S)) :=
-        mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) hlog_norm k) hcpow (norm_nonneg _)
-          (by positivity)
-    _ = (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * Real.pi) *
-          (Real.exp (-S * Real.log δ) + B ^ S) := by ring
 
 end Complex
