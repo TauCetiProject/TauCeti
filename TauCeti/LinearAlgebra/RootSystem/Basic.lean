@@ -24,8 +24,7 @@ theory.
 * `RootPairing.nonempty_of_isRootSystem`: a root system on a nontrivial module has a root.
 * `RootPairing.finite_weight_of_isRootSystem`: the weight module of a finite root system is finitely
   generated.
-* `RootPairing.corootKer_eq_bot`: the central kernel of a root system is trivial.
-* `RootPairing.reflection_apply_of_mem_corootKer`: every root reflection fixes `P.corootKer`
+* `RootPairing.reflection_apply_eq_self_of_mem_corootKer`: every root reflection fixes `P.corootKer`
   pointwise.
 -/
 
@@ -70,21 +69,10 @@ variable {P} in
 theorem mem_corootKer {x : M} : x ∈ P.corootKer ↔ ∀ i, P.coroot' i x = 0 := by
   simp [corootKer_def]
 
-/-- The central kernel of a root system is trivial. -/
-@[simp]
-theorem corootKer_eq_bot [P.IsRootSystem] : P.corootKer = ⊥ := by
-  rw [eq_bot_iff]
-  intro x hx
-  rw [Submodule.mem_bot]
-  apply (LinearMap.IsPerfPair.bijective_left P.toLinearMap).injective
-  rw [map_zero]
-  exact LinearMap.ext_on_range (IsRootSystem.span_coroot_eq_top (P := P)) fun i ↦
-    mem_corootKer.mp hx i
-
 variable {P}
 
 /-- Every root reflection fixes `P.corootKer` pointwise. -/
-theorem reflection_apply_of_mem_corootKer {x : M} (hx : x ∈ P.corootKer) (i : ι) :
+theorem reflection_apply_eq_self_of_mem_corootKer {x : M} (hx : x ∈ P.corootKer) (i : ι) :
     P.reflection i x = x := by
   rw [reflection_apply, mem_corootKer.mp hx i, zero_smul, sub_zero]
 

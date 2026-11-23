@@ -40,15 +40,11 @@ variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
 /-- **Equivalences of balanced root pairings commute with `rootSpanProj`.** -/
 theorem Equiv.coe_rootSpanProj_weightMap [P.IsBalanced] [Q.IsBalanced] (e : P.Equiv Q) (x : M) :
     (Q.rootSpanProj (e.weightMap x) : M₂) = e.weightMap (P.rootSpanProj x : M) := by
-  have hmem : e.weightMap (P.rootSpanProj x : M) ∈ Q.rootSpan R :=
-    e.toHom.weightMap_mem_rootSpan (P.rootSpanProj x).property
-  have hker : e.weightMap x - e.weightMap (P.rootSpanProj x : M) ∈ Q.corootKer := by
-    rw [← map_sub, e.weightMap_mem_corootKer_iff]
-    exact P.sub_coe_rootSpanProj_mem_corootKer x
-  have hzero : Q.rootSpanProj (e.weightMap x - e.weightMap (P.rootSpanProj x : M)) = 0 :=
-    Q.rootSpanProj_eq_zero_iff.mpr hker
-  rw [map_sub, Q.rootSpanProj_apply_of_mem hmem, sub_eq_zero] at hzero
-  exact congrArg Subtype.val hzero
+  refine congrArg Subtype.val ((Q.rootSpanProj_eq_iff (y :=
+    ⟨e.weightMap (P.rootSpanProj x : M),
+      e.toHom.weightMap_mem_rootSpan (P.rootSpanProj x).property⟩)).mpr ?_)
+  rw [← map_sub, e.weightMap_mem_corootKer_iff]
+  exact P.sub_coe_rootSpanProj_mem_corootKer x
 
 /-- Automorphisms of a balanced root pairing commute with `rootSpanProj`. -/
 @[simp]

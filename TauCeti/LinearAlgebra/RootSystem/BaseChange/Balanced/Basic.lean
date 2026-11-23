@@ -38,6 +38,8 @@ preserves every coroot evaluation and commutes with root reflections.
 * `RootPairing.isCompl_rootSpan_corootKer` and `RootPairing.isBalanced_iff_isCompl`: a root pairing
   is balanced if and only if `P.rootSpan R` complements `P.corootKer` and `P.corootSpan R`
   complements `P.flip.corootKer`.
+* `RootPairing.rootSpanProj_eq_iff`: characterizes `P.rootSpanProj x` as the unique element of
+  `P.rootSpan R` differing from `x` by an element of `P.corootKer`.
 * `RootPairing.coroot'_coe_rootSpanProj`: `P.rootSpanProj` preserves all coroot evaluations.
 
 ## References
@@ -132,6 +134,14 @@ theorem range_rootSpanProj : LinearMap.range P.rootSpanProj = ⊤ :=
 theorem sub_coe_rootSpanProj_mem_corootKer (x : M) :
     x - (P.rootSpanProj x : M) ∈ P.corootKer := by
   rw [← rootSpanProj_eq_zero_iff, map_sub, rootSpanProj_coe, sub_self]
+
+/-- `P.rootSpanProj x` is the unique element of `P.rootSpan R` differing from `x` by an element
+of `P.corootKer`. -/
+theorem rootSpanProj_eq_iff {x : M} {y : P.rootSpan R} :
+    P.rootSpanProj x = y ↔ x - (y : M) ∈ P.corootKer := by
+  refine ⟨fun h ↦ h ▸ P.sub_coe_rootSpanProj_mem_corootKer x, fun h ↦ ?_⟩
+  have hzero := P.rootSpanProj_eq_zero_iff.mpr h
+  rwa [map_sub, rootSpanProj_coe, sub_eq_zero] at hzero
 
 -- Not `@[simp]`: `coroot'` is an `abbrev` for `toLinearMap.flip ∘ coroot`, which `simp` unfolds to
 -- `toLinearMap_coe_rootSpanProj_coroot` below (`simpNF`).

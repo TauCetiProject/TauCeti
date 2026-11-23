@@ -54,7 +54,7 @@ theorem map_weylGroup_restrictScalars'Hom :
   have h : (Equiv.restrictScalars'Hom P K ∘ Equiv.reflection P) =
       Equiv.reflection (P.restrictScalars' K) :=
     funext fun i ↦ by
-      rw [Function.comp_apply, Equiv.restrictScalars'Hom_apply, Equiv.reflection_restrictScalars']
+      rw [Function.comp_apply, Equiv.restrictScalars'Hom_apply, Equiv.restrictScalars'_reflection]
   rw [weylGroup, MonoidHom.map_closure, ← range_comp, h, weylGroup]
 
 /-- **The Weyl group of `P` is canonically isomorphic to that of `P.restrictScalars' K`.** -/
@@ -85,9 +85,9 @@ theorem coe_weylGroupRestrictScalars'Equiv (w : P.weylGroup) :
     (P.weylGroupRestrictScalars'Equiv K w : (P.restrictScalars' K).Aut) =
       Equiv.restrictScalars'Hom P K w := by
   apply Equiv.indexHom_injective (P.restrictScalars' K)
-  rw [← MonoidHom.domRestrict_apply (Equiv.indexHom (P.restrictScalars' K)),
-    weylGroupToPerm_weylGroupRestrictScalars'Equiv, MonoidHom.domRestrict_apply,
-    Equiv.indexHom_apply, Equiv.indexHom_apply, Equiv.restrictScalars'Hom_apply,
-    Equiv.indexEquiv_restrictScalars']
+  ext i
+  simpa [Equiv.indexEquiv_restrictScalars'] using
+    congrArg (fun p : _root_.Equiv.Perm ι ↦ p i)
+      (P.weylGroupToPerm_weylGroupRestrictScalars'Equiv K w)
 
 end RootPairing

@@ -24,10 +24,10 @@ balanced root pairings to `P.restrictScalars' K` (and `P.restrictScalars K`).
 
 ## Main results
 
-* `RootPairing.Hom.id_restrictScalars'`, `RootPairing.Hom.comp_restrictScalars'`,
-  `RootPairing.Equiv.id_restrictScalars'`, `RootPairing.Equiv.comp_restrictScalars'`, and
-  `RootPairing.Equiv.symm_restrictScalars'`: functoriality of restriction.
-* `RootPairing.Equiv.reflection_restrictScalars'`: reflections of `P` restrict to those of
+* `RootPairing.Hom.restrictScalars'_id`, `RootPairing.Hom.restrictScalars'_comp`,
+  `RootPairing.Equiv.restrictScalars'_id`, `RootPairing.Equiv.restrictScalars'_comp`, and
+  `RootPairing.Equiv.restrictScalars'_symm`: functoriality of restriction.
+* `RootPairing.Equiv.restrictScalars'_reflection`: reflections of `P` restrict to those of
   `P.restrictScalars' K`.
 
 ## References
@@ -64,13 +64,7 @@ noncomputable def Hom.restrictScalars' (f : P.Hom Q) :
   weight_coweight_transpose := by
     ext y x
     apply FaithfulSMul.algebraMap_injective K L
-    simp only [flip_toLinearMap, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
-      LinearMap.toLinearMap_toPerfPair, LinearMap.dualMap_apply, LinearMap.flip_apply,
-      restrictScalars_toLinearMap_apply_apply, LinearMap.coe_restrict_apply,
-      LinearMap.restrictScalars_apply]
-    simpa only [flip_toLinearMap, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
-      LinearMap.toLinearMap_toPerfPair, LinearMap.dualMap_apply, LinearMap.flip_apply] using
-      congr($f.weight_coweight_transpose (y : N₂) (x : M))
+    simpa using congr($f.weight_coweight_transpose (y : N₂) (x : M))
   root_weightMap := by
     ext i
     exact f.root_weightMap_apply P Q i
@@ -98,13 +92,13 @@ theorem Hom.indexEquiv_restrictScalars' (f : P.Hom Q) :
 
 /-- `Hom.restrictScalars'` sends the identity morphism to the identity morphism. -/
 @[simp]
-theorem Hom.id_restrictScalars' :
+theorem Hom.restrictScalars'_id :
     (Hom.id P).restrictScalars' K = Hom.id (P.restrictScalars' K) := by
   ext <;> rfl
 
 /-- `Hom.restrictScalars'` commutes with composition of morphisms. -/
 @[simp]
-theorem Hom.comp_restrictScalars' {ι₃ M₃ N₃ : Type*} [AddCommGroup M₃] [AddCommGroup N₃]
+theorem Hom.restrictScalars'_comp {ι₃ M₃ N₃ : Type*} [AddCommGroup M₃] [AddCommGroup N₃]
     [Module L M₃] [Module L N₃] {S : RootPairing ι₃ L M₃ N₃} [Module K M₃] [Module K N₃]
     [IsScalarTower K L M₃] [IsScalarTower K L N₃] [S.IsBalanced] [S.IsValuedIn K]
     (g : Q.Hom S) (f : P.Hom Q) :
@@ -112,24 +106,34 @@ theorem Hom.comp_restrictScalars' {ι₃ M₃ N₃ : Type*} [AddCommGroup M₃] 
       Hom.comp (g.restrictScalars' K) (f.restrictScalars' K) := by
   ext <;> rfl
 
+private lemma bijective_restrict_of_equiv {A B : Type*} [AddCommGroup A] [AddCommGroup B]
+    [Module L A] [Module L B] [Module K A] [Module K B]
+    [IsScalarTower K L A] [IsScalarTower K L B]
+    {S₁ : Submodule K A} {S₂ : Submodule K B}
+    {f : A →ₗ[L] B} {g : B →ₗ[L] A} (hf : ∀ x ∈ S₁, f x ∈ S₂) (hg : ∀ y ∈ S₂, g y ∈ S₁)
+    (hinj : Injective f) (hfg : ∀ y, f (g y) = y) :
+    Bijective ((f.restrictScalars K).restrict hf) :=
+  ⟨fun _ _ h ↦ Subtype.ext (hinj (congrArg Subtype.val h)),
+   fun y ↦ ⟨⟨g y, hg y y.property⟩, Subtype.ext (hfg y)⟩⟩
+
 /-- Restriction of an equivalence of balanced root pairings to `restrictScalars' K`. -/
 noncomputable def Equiv.restrictScalars' (e : P.Equiv Q) :
     (P.restrictScalars' K).Equiv (Q.restrictScalars' K) :=
   { e.toHom.restrictScalars' K with
-    bijective_weightMap :=
-      ⟨fun x y h ↦ Subtype.ext (e.bijective_weightMap.1 (by
-        simpa only [Hom.coe_weightMap_restrictScalars'] using congrArg Subtype.val h)),
-       fun y ↦ ⟨((Equiv.symm P Q e).toHom.restrictScalars' K).weightMap y, Subtype.ext (by
-        rw [Hom.coe_weightMap_restrictScalars', Hom.coe_weightMap_restrictScalars',
-          Equiv.inv_weightMap]
-        exact e.weightMap_weightEquiv_symm y)⟩⟩
-    bijective_coweightMap :=
-      ⟨fun x y h ↦ Subtype.ext (e.bijective_coweightMap.1 (by
-        simpa only [Hom.coe_coweightMap_restrictScalars'] using congrArg Subtype.val h)),
-       fun y ↦ ⟨((Equiv.symm P Q e).toHom.restrictScalars' K).coweightMap y, Subtype.ext (by
-        rw [Hom.coe_coweightMap_restrictScalars', Hom.coe_coweightMap_restrictScalars',
-          Equiv.inv_coweightMap]
-        exact e.coweightMap_coweightEquiv_symm y)⟩⟩ }
+    bijective_weightMap := bijective_restrict_of_equiv K
+      (g := (Equiv.symm P Q e).weightMap)
+      (fun _ hx ↦ by simpa only [rootSpan] using e.toHom.weightMap_mem_rootSpan hx)
+      (fun _ hy ↦ by
+        simpa only [rootSpan] using (Equiv.symm P Q e).toHom.weightMap_mem_rootSpan hy)
+      e.bijective_weightMap.1
+      (fun y ↦ by rw [Equiv.inv_weightMap]; exact e.weightMap_weightEquiv_symm y)
+    bijective_coweightMap := bijective_restrict_of_equiv K
+      (g := (Equiv.symm P Q e).coweightMap)
+      (fun _ hy ↦ by simpa only [corootSpan] using e.toHom.coweightMap_mem_corootSpan hy)
+      (fun _ hx ↦ by
+        simpa only [corootSpan] using (Equiv.symm P Q e).toHom.coweightMap_mem_corootSpan hx)
+      e.bijective_coweightMap.1
+      (fun x ↦ by rw [Equiv.inv_coweightMap]; exact e.coweightMap_coweightEquiv_symm x) }
 
 /-- The underlying morphism of `e.restrictScalars' K` is `e.toHom.restrictScalars' K`. -/
 @[simp]
@@ -154,13 +158,13 @@ theorem Equiv.indexEquiv_restrictScalars' (e : P.Equiv Q) :
 
 /-- `Equiv.restrictScalars'` sends the identity equivalence to the identity equivalence. -/
 @[simp]
-theorem Equiv.id_restrictScalars' :
+theorem Equiv.restrictScalars'_id :
     (Equiv.id P).restrictScalars' K = Equiv.id (P.restrictScalars' K) := by
   ext <;> rfl
 
 /-- `Equiv.restrictScalars'` commutes with composition of equivalences. -/
 @[simp]
-theorem Equiv.comp_restrictScalars' {ι₃ M₃ N₃ : Type*} [AddCommGroup M₃] [AddCommGroup N₃]
+theorem Equiv.restrictScalars'_comp {ι₃ M₃ N₃ : Type*} [AddCommGroup M₃] [AddCommGroup N₃]
     [Module L M₃] [Module L N₃] {S : RootPairing ι₃ L M₃ N₃} [Module K M₃] [Module K N₃]
     [IsScalarTower K L M₃] [IsScalarTower K L N₃] [S.IsBalanced] [S.IsValuedIn K]
     (g : Q.Equiv S) (f : P.Equiv Q) :
@@ -170,20 +174,18 @@ theorem Equiv.comp_restrictScalars' {ι₃ M₃ N₃ : Type*} [AddCommGroup M₃
 
 /-- `Equiv.restrictScalars'` commutes with inversion of equivalences. -/
 @[simp]
-theorem Equiv.symm_restrictScalars' (e : P.Equiv Q) :
+theorem Equiv.restrictScalars'_symm (e : P.Equiv Q) :
     (Equiv.symm P Q e).restrictScalars' K =
       Equiv.symm (P.restrictScalars' K) (Q.restrictScalars' K) (e.restrictScalars' K) := by
-  refine Equiv.ext (LinearMap.ext fun x ↦ ?_) (LinearMap.ext fun x ↦ ?_) rfl
-  · refine Subtype.ext (e.bijective_weightMap.1 ?_)
-    rw [Equiv.toHom_restrictScalars', Hom.coe_weightMap_restrictScalars', Equiv.inv_weightMap,
-      LinearEquiv.coe_coe, e.weightMap_weightEquiv_symm, ← Hom.coe_weightMap_restrictScalars',
-      ← Equiv.toHom_restrictScalars', Equiv.inv_weightMap, LinearEquiv.coe_coe,
+  refine Equiv.ext (LinearMap.ext fun x ↦ ?_) (LinearMap.ext fun y ↦ ?_) rfl
+  · refine (e.restrictScalars' K).bijective_weightMap.1 ?_
+    rw [Equiv.inv_weightMap, LinearEquiv.coe_coe,
       (e.restrictScalars' K).weightMap_weightEquiv_symm]
-  · refine Subtype.ext (e.bijective_coweightMap.1 ?_)
-    rw [Equiv.toHom_restrictScalars', Hom.coe_coweightMap_restrictScalars', Equiv.inv_coweightMap,
-      LinearEquiv.coe_coe, e.coweightMap_coweightEquiv_symm, ← Hom.coe_coweightMap_restrictScalars',
-      ← Equiv.toHom_restrictScalars', Equiv.inv_coweightMap, LinearEquiv.coe_coe,
+    exact Subtype.ext (by simp [Equiv.toHom_restrictScalars'])
+  · refine (e.restrictScalars' K).bijective_coweightMap.1 ?_
+    rw [Equiv.inv_coweightMap, LinearEquiv.coe_coe,
       (e.restrictScalars' K).coweightMap_coweightEquiv_symm]
+    exact Subtype.ext (by simp [Equiv.toHom_restrictScalars'])
 
 end HomEquiv
 
@@ -202,8 +204,8 @@ variable [P.IsValuedIn K]
 `P.restrictScalars' K`. -/
 noncomputable def Equiv.restrictScalars'Hom : P.Aut →* (P.restrictScalars' K).Aut where
   toFun g := g.restrictScalars' K
-  map_one' := Equiv.id_restrictScalars' K
-  map_mul' g h := Equiv.comp_restrictScalars' K g h
+  map_one' := Equiv.restrictScalars'_id K
+  map_mul' g h := Equiv.restrictScalars'_comp K g h
 
 /-- `Equiv.restrictScalars'Hom` evaluates to `Equiv.restrictScalars'`. -/
 @[simp]
@@ -221,7 +223,7 @@ theorem coe_restrictScalars'_smul (g : P.Aut) (x : span K (range P.root)) :
 /-- `Equiv.restrictScalars'` sends each reflection automorphism of `P` to the corresponding
 reflection automorphism of `P.restrictScalars' K`. -/
 @[simp]
-theorem Equiv.reflection_restrictScalars' (i : ι) :
+theorem Equiv.restrictScalars'_reflection (i : ι) :
     (Equiv.reflection P i).restrictScalars' K =
       Equiv.reflection (P.restrictScalars' K) i := by
   refine Equiv.ext (LinearMap.ext fun x ↦ Subtype.ext ?_) (LinearMap.ext fun y ↦ Subtype.ext ?_) rfl

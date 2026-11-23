@@ -17,7 +17,7 @@ pairings (`RootPairing.Base.map` and `RootPairing.Equiv.restrictScalars'`).
 
 ## Main results
 
-* `RootPairing.Base.map_restrictScalars'`: `Base.restrictScalars'` commutes with `Base.map`.
+* `RootPairing.Base.restrictScalars'_map`: `Base.restrictScalars'` commutes with `Base.map`.
 
 ## References
 
@@ -36,7 +36,7 @@ variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module 
 
 /-- `Base.restrictScalars'` commutes with transporting a base along an equivalence. -/
 @[simp]
-theorem Base.map_restrictScalars' {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [AddCommGroup N₂]
+theorem Base.restrictScalars'_map {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [AddCommGroup N₂]
     [Module L M₂] [Module L N₂] {Q : RootPairing ι₂ L M₂ N₂} [Module K M₂] [Module K N₂]
     [IsScalarTower K L M₂] [IsScalarTower K L N₂] [Q.IsBalanced] [Q.IsValuedIn K]
     (e : P.Equiv Q) :

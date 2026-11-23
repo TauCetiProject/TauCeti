@@ -38,14 +38,11 @@ theorem weylGroupToPerm_injective_of_isBalanced [P.IsBalanced] :
     Function.Injective P.weylGroupToPerm := by
   rw [← MonoidHom.ker_eq_bot_iff, Subgroup.eq_bot_iff_forall]
   intro w hw
-  apply Subtype.ext
-  apply Equiv.weightHom_injective P
-  rw [OneMemClass.coe_one, map_one]
-  refine LinearEquiv.ext fun x ↦ ?_
+  refine weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_
   have h1 : w • (P.rootSpanProj x : M) = (P.rootSpanProj x : M) :=
-    smul_eq_self_of_mem_ker_weylGroupToPerm P hw (P.rootSpanProj x).property
+    P.smul_eq_self_of_mem_ker_indexHom hw (P.rootSpanProj x).property
   have h2 : w • (x - (P.rootSpanProj x : M)) = x - (P.rootSpanProj x : M) :=
-    weylGroup_smul_of_mem_corootKer (P.sub_coe_rootSpanProj_mem_corootKer x) w
+    weylGroup_smul_eq_self_of_mem_corootKer (P.sub_coe_rootSpanProj_mem_corootKer x) w
   have hsum := congrArg₂ (· + ·) h1 h2
   rwa [← smul_add, add_sub_cancel] at hsum
 

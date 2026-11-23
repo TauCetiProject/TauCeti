@@ -21,6 +21,10 @@ forcing `Disjoint (P.rootSpan R) P.corootKer`.
 
 * `RootPairing.disjoint_rootSpan_corootKer`: for finitely many roots and a torsion-free additive
   weight group, the root span and the central kernel intersect trivially.
+* `RootPairing.finrank_add_finrank_corootKer_eq`: dimension formula
+  `finrank K (Q.corootSpan K) + finrank K Q.corootKer = finrank K M` over any field.
+* `RootPairing.finrank_rootSpan_eq_finrank_corootSpan_of_charZero`: in characteristic zero with
+  finitely many roots, the root span and coroot span have equal dimension.
 * `RootPairing.instIsBalancedOfCharZero`: every finite root pairing over a field of characteristic
   zero is balanced.
 
@@ -46,8 +50,8 @@ private noncomputable def weylQuotientAct
   Quotient.liftOn' q (fun w ↦ w • (x : M)) fun w₁ w₂ h ↦ by
     have hk : w₁⁻¹ * w₂ ∈ P.weylGroupToPerm.ker := QuotientGroup.leftRel_apply.mp h
     calc
-      w₁ • (x : M) = w₁ • ((w₁⁻¹ * w₂) • (x : M)) := by
-        rw [smul_eq_self_of_mem_ker_weylGroupToPerm P hk x.property]
+      w₁ • (x : M) = w₁ • ((w₁⁻¹ * w₂) • (x : M)) :=
+        congrArg (w₁ • ·) (P.smul_eq_self_of_mem_ker_indexHom hk x.property).symm
       _ = w₂ • (x : M) := by rw [← mul_smul, mul_inv_cancel_left]
 
 private lemma weylQuotientAct_mk (w : P.weylGroup) (x : P.rootSpan R) :
@@ -105,7 +109,7 @@ theorem disjoint_rootSpan_corootKer [Finite ι] [HasUniqueDiv M] :
   have hzero : ∑ q : G, weylQuotientAct P q ⟨x, hx₁⟩ = 0 := P.sum_weylQuotientAct_eq_zero hx₁
   have hfix (q : G) : weylQuotientAct P q ⟨x, hx₁⟩ = x := by
     induction q using QuotientGroup.induction_on with | _ w =>
-      exact weylGroup_smul_of_mem_corootKer hx₂ w
+      exact weylGroup_smul_eq_self_of_mem_corootKer hx₂ w
   simp only [hfix, Finset.sum_const, Finset.card_univ] at hzero
   exact (nsmul_right_inj (M := M) Fintype.card_ne_zero).mp (by simpa only [nsmul_zero] using hzero)
 
@@ -113,7 +117,9 @@ end Finite
 
 section CharZero
 
-private lemma finrank_add_finrank_corootKer_eq {ι K M N : Type*} [Field K]
+/-- Over any field, the dimensions of the coroot span and the central kernel sum to the
+dimension of the weight space. -/
+theorem finrank_add_finrank_corootKer_eq {ι K M N : Type*} [Field K]
     [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
     (Q : RootPairing ι K M N) :
     finrank K (Q.corootSpan K) + finrank K Q.corootKer = finrank K M := by
@@ -139,15 +145,19 @@ private lemma finrank_rootSpan_le_finrank_corootSpan (Q : RootPairing ι K M N) 
   have hker := finrank_add_finrank_corootKer_eq Q
   omega
 
+/-- For a finite root pairing over a field of characteristic zero, the root span and the coroot
+span have the same dimension. -/
+theorem finrank_rootSpan_eq_finrank_corootSpan_of_charZero (Q : RootPairing ι K M N) :
+    finrank K (Q.rootSpan K) = finrank K (Q.corootSpan K) :=
+  le_antisymm (finrank_rootSpan_le_finrank_corootSpan Q)
+    (finrank_rootSpan_le_finrank_corootSpan Q.flip)
+
 private lemma isCompl_rootSpan_corootKer_of_charZero (Q : RootPairing ι K M N) :
     IsCompl (Q.rootSpan K) Q.corootKer := by
   have : HasUniqueDiv M := .of_isTorsionFree K M
   have : IsReflexive K M := .of_isPerfPair Q.toLinearMap
-  have hrank : finrank K (Q.rootSpan K) = finrank K (Q.corootSpan K) :=
-    le_antisymm (finrank_rootSpan_le_finrank_corootSpan Q)
-      (finrank_rootSpan_le_finrank_corootSpan Q.flip)
   refine (Submodule.isCompl_iff_disjoint _ _ ?_).mpr Q.disjoint_rootSpan_corootKer
-  rw [hrank, finrank_add_finrank_corootKer_eq]
+  rw [finrank_rootSpan_eq_finrank_corootSpan_of_charZero Q, finrank_add_finrank_corootKer_eq]
 
 /-- **Every finite root pairing over a field of characteristic zero is balanced.** Neither
 crystallographicity nor nondegeneracy of the trace root form is needed. -/
