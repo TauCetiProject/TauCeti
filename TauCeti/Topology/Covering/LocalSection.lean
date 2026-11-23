@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.UniformSpace.Defs
 public import TauCeti.Topology.SeparatedMap
@@ -17,12 +16,15 @@ A continuous separated, locally injective map to a locally connected space is a 
 if every base point has a neighbourhood over which there are continuous sections through every
 point of its preimage. The neighbourhood may depend on the base point; no metric is required.
 
-The sheets over `x` are the images of a connected open neighbourhood under sections through
-points of the fibre. Local injectivity makes these images open. Separatedness and local
-injectivity make sections that agree at one point agree throughout a connected set, so distinct
-points of the fibre give disjoint sheets and these sheets exhaust the preimage. Mathlib's
-`IsOpen.trivializationDiscrete` assembles these sheets into a trivialization over the interior
-of the neighbourhood.
+The general evenly-covered criterion takes a preconnected neighbourhood `V` of `x` and continuous
+sections over `V` through every point of the preimage of `V`. Separatedness and local injectivity
+make two such sections that agree at one point agree on all of `V`, so distinct points of the fibre
+give sections that differ throughout `V`. The sheets over `x` are the images of the interior of `V`
+under the sections through the points of the fibre over `x`; this interior need not be connected.
+Local injectivity makes the sheets open, rigidity on `V` makes them disjoint and makes them exhaust
+the preimage of the interior, and Mathlib's `IsOpen.trivializationDiscrete` assembles them into a
+trivialization over the interior of `V`. On a locally connected space the neighbourhood criterion
+chooses `V` open and connected inside the given neighbourhood.
 
 The uniform-size criterion on a uniform space is a special case. Its sections, over the balls
 of one fixed entourage `U`, have images that are neighbourhoods of the points they pass through,
