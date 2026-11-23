@@ -52,6 +52,19 @@ instance (T : (Over S)ᵒᵖ) :
       M := rfl
   exact h.symm ▸ inferInstance
 
+/-- The empty relative divisor is cut out by the unit ideal. -/
+@[simp]
+lemma relativeEffectiveCartier_val_one {T : (Over S)ᵒᵖ} :
+    ((1 : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T).val :
+      (pullback T.unop.hom f).IdealSheafData) = ⊤ := (rfl)
+
+/-- The ideal of a sum of relative divisors is the product of their ideals. -/
+@[simp]
+lemma relativeEffectiveCartier_val_mul {T : (Over S)ᵒᵖ}
+    (D E : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) :
+    ((D * E).val : (pullback T.unop.hom f).IdealSheafData) =
+      (D.val : (pullback T.unop.hom f).IdealSheafData) * E.val := (rfl)
+
 /-- Pullback of relative effective Cartier divisors preserves the empty divisor. -/
 lemma relativeEffectiveCartier_map_one {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') :
     (relativeEffectiveCartierSubfunctor f).toFunctor.map φ
@@ -66,7 +79,7 @@ lemma relativeEffectiveCartier_map_mul {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
       (relativeEffectiveCartierSubfunctor f).toFunctor.map φ D *
         (relativeEffectiveCartierSubfunctor f).toFunctor.map φ E := by
   apply Subtype.ext
-  exact Scheme.IdealSheafData.comap_mul D.1 E.1 _
+  exact Scheme.IdealSheafData.comap_mul D.val E.val _
 
 end
 

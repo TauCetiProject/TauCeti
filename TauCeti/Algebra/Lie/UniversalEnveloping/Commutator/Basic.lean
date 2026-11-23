@@ -42,11 +42,11 @@ theorem commute_baseChangeExp_of_lie_eq_zero {x y : L} (hxy : ⁅x, y⁆ = 0)
   commute_baseChangeExp M (commute_of_lie_eq_zero ρ hxy) hMx hMy u v
 
 /-- The single-term integral exponential relation, with its integer structure constant absorbed
-into the parameter. Only the three vectors' divided powers need preserve the lattice. -/
+into the parameter. Only the three vectors' divided powers need preserve the lattice, and only
+`z` has to be nilpotent: the exponential of a non-nilpotent `x` or `y` is the junk value `0`,
+which makes both sides vanish. -/
 theorem baseChangeExp_mul_baseChangeExp_of_lie_eq {x y z : L} {c : ℤ}
     (hxy : ⁅x, y⁆ = c • z) (hxz : ⁅x, z⁆ = 0) (hyz : ⁅y, z⁆ = 0)
-    (hx : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x)))
-    (hy : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ y)))
     (hz : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ z)))
     (hMx : ∀ n, ∀ v ∈ M,
       Associative.dividedPower n (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) • v ∈ M)
@@ -65,7 +65,7 @@ theorem baseChangeExp_mul_baseChangeExp_of_lie_eq {x y z : L} {c : ℤ}
   exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M
     (mul_eq_mul_add_zsmul_of_lie_eq ρ hxy)
     ((commute_of_lie_eq_zero ρ hxz).smul_right c)
-    ((commute_of_lie_eq_zero ρ hyz).smul_right c) hx hy hMx hMy hcM u v
+    ((commute_of_lie_eq_zero ρ hyz).smul_right c) hMx hMy hcM u v
 
 end
 

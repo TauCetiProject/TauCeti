@@ -125,8 +125,8 @@ noncomputable def H1ConjInvariantsEquivOfSmulEqSelf :
     H1ConjInvariants G M N ≃+
       Additive ((N ⧸ (pLowerCentralStep p N).subgroupOf N) →ₜ* Multiplicative M) where
   toFun x := Additive.ofMul (ContinuousMonoidHom.quotientLift
-    (Additive.toMul (H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m) x.1)) _
-    (pLowerCentralStep_subgroupOf_le_ker_of_mem_H1ConjInvariants htriv p hpM x.2))
+    (Additive.toMul (H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m) x.val)) _
+    (pLowerCentralStep_subgroupOf_le_ker_of_mem_H1ConjInvariants htriv p hpM x.property))
   invFun ψ := ⟨(H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m)).symm
       (Additive.ofMul ((Additive.toMul ψ).comp (Subgroup.quotientMkContinuousMonoidHom _))),
     (mem_H1ConjInvariants_iff_of_smul_eq_self htriv).mpr fun g n ↦ by
@@ -150,7 +150,7 @@ of `n`, the value at `n` of the continuous homomorphism `N → M` representing t
 theorem H1ConjInvariantsEquivOfSmulEqSelf_apply_mk (x : H1ConjInvariants G M N) (n : N) :
     Additive.toMul (H1ConjInvariantsEquivOfSmulEqSelf htriv p hpM x)
         (n : N ⧸ (pLowerCentralStep p N).subgroupOf N) =
-      Additive.toMul (H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m) x.1) n := by
+      Additive.toMul (H1EquivOfSmulEqSelf (fun (n : N) (m : M) ↦ htriv n m) x.val) n := by
   rw [H1ConjInvariantsEquivOfSmulEqSelf]
   simp only [AddEquiv.coe_mk, Equiv.coe_fn_mk, toMul_ofMul, ContinuousMonoidHom.quotientLift_mk]
 

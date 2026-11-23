@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.FourierMultiplier
-import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
-import TauCeti.MeasureTheory.Function.L2Space
+public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Operator
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
 import TauCeti.Analysis.Distribution.SchwartzSpace.Prod
@@ -43,19 +42,17 @@ volume measure. They are proved on `ℝⁿ` and transported to `V` along a linea
 On Schwartz functions `∂_v ∂_w = T_{m_{v,w}} ∘ Δ`, where `T_{m_{v,w}}` is the `L²` Fourier
 multiplier with symbol `m_{v,w}(ξ) = ⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²`
 (`SchwartzMap.toLp_lineDerivOp_lineDerivOp_eq_fourierMultiplierCLM`). So it suffices to bound
-`T_{m_{v,w}}` in the `Lᵖ` norm, which is the Calderón–Zygmund theorem
-(`ContinuousLinearMap.exists_eLpNorm_le_of_norm_sub_le_mul_rpow`) applied with the kernel
-`k(x, y) = -D²Gₙ(x - y)(v, w)` built from the Newtonian kernel `Gₙ`. Its three hypotheses are:
+`T_{m_{v,w}}` in the `Lᵖ` norm. It is a Calderón–Zygmund operator with the standard kernel
+`k(x, y) = -D²Gₙ(x - y)(v, w)` built from the Newtonian kernel `Gₙ`
+(`TauCeti.hasStandardKernel_fourierMultiplierCLM_hessianSymbolLp`), so the bound is
+`TauCeti.HasStandardKernel.exists_eLpNorm_le`. The three conditions on the kernel are:
 
 * the kernel representation of `T_{m_{v,w}}` off the support of its argument
   (`TauCeti.ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral`, which needs `n ≥ 3`);
 * the size estimate `‖D²Gₙ(z)‖ ≲ ‖z‖⁻ⁿ` (`TauCeti.norm_iteratedFDeriv_two_newtonianKernel_le`);
 * the smoothness estimate `‖D²Gₙ(a) - D²Gₙ(b)‖ ≲ ‖a - b‖ ‖b‖⁻ⁿ⁻¹` for `2 ‖a - b‖ ≤ ‖b‖`
-  (`TauCeti.norm_iteratedFDeriv_two_newtonianKernel_sub_le`), giving exponent `δ = 1`.
-
-The theorem also asks for the same of the adjoint. The symbol is real, so `T_{m_{v,w}}` is
-self-adjoint (`MeasureTheory.Lp.adjoint_fourierMultiplierCLM`), also for the real inner product
-of `L²` that the Calderón–Zygmund theorem uses, and the adjoint has the same kernel.
+  (`TauCeti.norm_iteratedFDeriv_two_newtonianKernel_sub_le`), giving exponent `δ = 1`. Since
+  `k(x, y)` depends only on `x - y` and is even, it gives the estimate in both variables.
 
 ## Descent to low dimensions
 
@@ -76,6 +73,8 @@ The full Hessian is controlled through an orthonormal basis `(eᵢ)`: the norm o
 
 ## Main declarations
 
+* `TauCeti.hasStandardKernel_fourierMultiplierCLM_hessianSymbolLp`: for `n ≥ 3`, the multiplier
+  `T_{m_{v,w}}` is a Calderón–Zygmund operator with kernel `-D²Gₙ(x - y)(v, w)`.
 * `TauCeti.exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le`: for `n ≥ 3`, the multiplier
   `T_{m_{v,w}}`, that is `∂_v ∂_w Δ⁻¹`, is bounded in the `Lᵖ` norm for `1 < p < ∞`.
 * `TauCeti.exists_eLpNorm_lineDerivOp_lineDerivOp_le_eLpNorm_laplacian`:
@@ -103,69 +102,34 @@ open scoped ENNReal NNReal Laplacian LineDeriv SchwartzMap
 
 variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
 
-/-- The kernel `k(x, y) = -D²Gₙ(x - y)(v, w)` of the Hessian multiplier, as a scalar multiple of
-the identity of `F`. -/
-private def hessianKernel (v w : EuclideanSpace ℝ (Fin n)) (x y : EuclideanSpace ℝ (Fin n)) :
-    F →L[ℝ] F :=
-  (-iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) ![v, w]) • ContinuousLinearMap.id ℝ F
-
-private theorem stronglyMeasurable_hessianKernel (v w : EuclideanSpace ℝ (Fin n)) :
-    StronglyMeasurable (Function.uncurry (hessianKernel (F := F) v w)) := by
-  have hm : Measurable fun z : EuclideanSpace ℝ (Fin n) =>
-      iteratedFDeriv ℝ 2 (newtonianKernel n) z ![v, w] := by
-    simp only [iteratedFDeriv_two_apply]
-    exact ((measurable_fderiv ℝ (fderiv ℝ (newtonianKernel n))).apply_continuousLinearMap
-      (![v, w] 0)).apply_continuousLinearMap (![v, w] 1)
-  exact ((hm.comp (measurable_fst.sub measurable_snd)).neg.stronglyMeasurable).smul_const _
-
 /-- **The size estimate for the kernel of the Hessian multiplier**:
-`‖k(x, y)‖ ≤ C ‖x - y‖⁻ⁿ`. -/
-private theorem norm_hessianKernel_le (v w x y : EuclideanSpace ℝ (Fin n)) :
-    ‖hessianKernel (F := F) v w x y‖ ≤
+`|D²Gₙ(z)(v, w)| ≤ C / ‖z‖ⁿ`. -/
+private theorem abs_iteratedFDeriv_two_newtonianKernel_apply_le (v w z : EuclideanSpace ℝ (Fin n)) :
+    |iteratedFDeriv ℝ 2 (newtonianKernel n) z ![v, w]| ≤
       ((n : ℝ) + 1) * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-        (‖v‖ * ‖w‖) * dist x y ^ (-(n : ℝ)) := by
-  rw [hessianKernel, norm_smul, Real.norm_eq_abs, abs_neg, dist_eq_norm]
-  have hM : |iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) ![v, w]| ≤
-      ‖iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y)‖ * (‖v‖ * ‖w‖) := by
-    simpa [Fin.prod_univ_two] using
-      (iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y)).le_opNorm ![v, w]
-  refine ((mul_le_of_le_one_right (abs_nonneg _) norm_id_le).trans hM).trans ?_
-  exact (mul_le_mul_of_nonneg_right (norm_iteratedFDeriv_two_newtonianKernel_le _)
-    (by positivity)).trans_eq (by ring)
+        (‖v‖ * ‖w‖) / ‖z‖ ^ n := by
+  rw [div_eq_mul_inv, ← Real.rpow_natCast, ← Real.rpow_neg (norm_nonneg _)]
+  have hM : |iteratedFDeriv ℝ 2 (newtonianKernel n) z ![v, w]| ≤
+      ‖iteratedFDeriv ℝ 2 (newtonianKernel n) z‖ * (‖v‖ * ‖w‖) := by
+    simpa [Fin.prod_univ_two] using (iteratedFDeriv ℝ 2 (newtonianKernel n) z).le_opNorm ![v, w]
+  exact hM.trans ((mul_le_mul_of_nonneg_right (norm_iteratedFDeriv_two_newtonianKernel_le _)
+    (by positivity)).trans_eq (by ring))
 
 /-- **The smoothness estimate for the kernel of the Hessian multiplier**:
-`‖k(x, y) - k(x, y')‖ ≤ C ‖y - y'‖ ‖x - y'‖⁻ⁿ⁻¹` when `2 ‖y - y'‖ < ‖x - y'‖`. -/
-private theorem norm_hessianKernel_sub_le (v w : EuclideanSpace ℝ (Fin n))
-    {x y y' : EuclideanSpace ℝ (Fin n)} (h : 2 * dist y y' < dist x y') :
-    ‖hessianKernel (F := F) v w x y - hessianKernel v w x y'‖ ≤
+`|D²Gₙ(a)(v, w) - D²Gₙ(b)(v, w)| ≤ C ‖a - b‖ / ‖b‖ⁿ⁺¹` when `2 ‖a - b‖ ≤ ‖b‖`. -/
+private theorem abs_iteratedFDeriv_two_newtonianKernel_apply_sub_le
+    (v w : EuclideanSpace ℝ (Fin n)) {a b : EuclideanSpace ℝ (Fin n)} (hab : 2 * ‖a - b‖ ≤ ‖b‖) :
+    |iteratedFDeriv ℝ 2 (newtonianKernel n) a ![v, w] -
+        iteratedFDeriv ℝ 2 (newtonianKernel n) b ![v, w]| ≤
       2 ^ (n + 1) * ((n : ℝ) + 5) * (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-        (‖v‖ * ‖w‖) * (dist y y' * dist x y' ^ (-((n : ℝ) + 1))) := by
-  have hsub : (x - y) - (x - y') = y' - y := by abel
-  have hD := norm_iteratedFDeriv_two_newtonianKernel_sub_le (a := x - y) (b := x - y') (by
-    rw [hsub, norm_sub_rev y' y, ← dist_eq_norm y y', ← dist_eq_norm x y']
-    exact h.le)
-  rw [hsub, norm_sub_rev y' y, ← dist_eq_norm y y', ← dist_eq_norm x y'] at hD
-  have hM := (iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) -
-    iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y')).le_opNorm ![v, w]
-  simp only [sub_apply, Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, Real.norm_eq_abs] at hM
-  rw [hessianKernel, hessianKernel, ← sub_smul, norm_smul, Real.norm_eq_abs, neg_sub_neg,
-    abs_sub_comm]
-  refine (mul_le_of_le_one_right (abs_nonneg _) norm_id_le).trans (hM.trans ?_)
-  exact (mul_le_mul_of_nonneg_right hD (by positivity)).trans_eq (by ring)
-
-/-- Off the support of its argument, the Hessian multiplier, viewed as a real-linear operator, is
-given by the kernel `hessianKernel`. -/
-private theorem ae_fourierMultiplierCLM_hessianSymbolLp_eq_integral_hessianKernel [CompleteSpace F]
-    (hn : 3 ≤ n) (v w : EuclideanSpace ℝ (Fin n))
-    (f : Lp F 2 (volume : Measure (EuclideanSpace ℝ (Fin n)))) {s : Set (EuclideanSpace ℝ (Fin n))}
-    (hs : IsCompact s) (hf : ∀ᵐ x, x ∉ s → f x = 0) :
-    ∀ᵐ x, x ∉ s → (Lp.fourierMultiplierCLM F (hessianSymbolLp v w)).restrictScalars ℝ f x =
-      ∫ z, hessianKernel v w x z (f z) := by
-  filter_upwards [ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral hn v w f hs hf]
-    with x hx hxs
-  simp only [coe_restrictScalars', hx hxs, hessianKernel, neg_smul, neg_apply, smul_apply,
-    id_apply, integral_neg]
+        (‖v‖ * ‖w‖) * ‖a - b‖ ^ (1 : ℝ) / ‖b‖ ^ ((n : ℝ) + 1) := by
+  rw [Real.rpow_one, div_eq_mul_inv, ← Real.rpow_neg (norm_nonneg _)]
+  have hM := (iteratedFDeriv ℝ 2 (newtonianKernel n) a -
+    iteratedFDeriv ℝ 2 (newtonianKernel n) b).le_opNorm ![v, w]
+  simp only [sub_apply, Fin.prod_univ_two, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, Real.norm_eq_abs] at hM
+  exact hM.trans ((mul_le_mul_of_nonneg_right (norm_iteratedFDeriv_two_newtonianKernel_sub_le hab)
+    (by positivity)).trans_eq (by ring))
 
 section Descent
 
@@ -306,56 +270,55 @@ end Descent
 
 variable [CompleteSpace F]
 
+/-- **The Hessian multiplier is a Calderón–Zygmund operator.** Let `n ≥ 3` and `v, w ∈ ℝⁿ`. The
+Fourier multiplier `T_{m_{v,w}}` on `L²(ℝⁿ, F)` with symbol `⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²`, that is the
+operator `∂_v ∂_w Δ⁻¹`, has the standard kernel `-D²Gₙ(x - y)(v, w)` with exponent `1`. -/
+theorem hasStandardKernel_fourierMultiplierCLM_hessianSymbolLp (hn : 3 ≤ n)
+    (v w : EuclideanSpace ℝ (Fin n)) :
+    HasStandardKernel (Lp.fourierMultiplierCLM F (hessianSymbolLp v w))
+      (fun x y ↦ ((-iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) ![v, w] : ℝ) : ℂ))
+      (2 ^ (n + 2) * ((n : ℝ) + 5) * (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+        (‖v‖ * ‖w‖)).toNNReal 1 where
+  exponent_pos := one_pos
+  norm_le x y _ := by
+    have hvol := volume_real_unitBall_pos n
+    have hn' : (1 : ℝ) ≤ n := by exact_mod_cast (by omega : 1 ≤ n)
+    rw [Complex.norm_real, norm_neg, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity),
+      finrank_euclideanSpace_fin, dist_eq_norm]
+    refine (abs_iteratedFDeriv_two_newtonianKernel_apply_le v w (x - y)).trans ?_
+    gcongr
+    · exact (by linarith : (n : ℝ) + 1 ≤ n + 5).trans
+        (le_mul_of_one_le_left (by positivity) (one_le_pow₀ one_le_two))
+    · exact le_mul_of_one_le_left hvol.le hn'
+  norm_sub_add_norm_sub_le x y y' hy := by
+    have hvol := volume_real_unitBall_pos n
+    refine (norm_sub_add_norm_sub_le_of_norm_sub_le
+      (k := fun z ↦ ((-iteratedFDeriv ℝ 2 (newtonianKernel n) z ![v, w] : ℝ) : ℂ))
+      (c := 2 ^ (n + 1) * ((n : ℝ) + 5) *
+        (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ * (‖v‖ * ‖w‖)) (δ := 1)
+      (e := (n : ℝ) + 1) (fun a b hab ↦ ?_) hy).trans_eq ?_
+    · rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, neg_sub_neg, abs_sub_comm]
+      exact abs_iteratedFDeriv_two_newtonianKernel_apply_sub_le v w hab.le
+    · rw [Real.coe_toNNReal _ (by positivity), finrank_euclideanSpace_fin, pow_succ]
+      ring
+  ae_apply_eq_integral f s hs hf := by
+    filter_upwards [ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral hn v w f hs hf]
+      with x hx hxs
+    simp only [hx hxs, Complex.coe_smul, neg_smul, integral_neg]
+
 /-- **The Calderón–Zygmund estimate for the Hessian multiplier.** Let `n ≥ 3`, `v, w ∈ ℝⁿ` and
 `1 < p < ∞`. The Fourier multiplier `T_{m_{v,w}}` on `L²(ℝⁿ, F)` with symbol
 `⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²`, that is the operator `∂_v ∂_w Δ⁻¹`, is bounded in the `Lᵖ` norm: there is
 a constant `C` with `‖T_{m_{v,w}} f‖_p ≤ C ‖f‖_p` for every `f ∈ L²`.
 
-It is the singular integral operator with kernel `-D²Gₙ(x - y)(v, w)`, which satisfies the
-standard Calderón–Zygmund size and smoothness estimates. -/
+It is a Calderón–Zygmund operator
+(`TauCeti.hasStandardKernel_fourierMultiplierCLM_hessianSymbolLp`). -/
 theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le (hn : 3 ≤ n)
     (v w : EuclideanSpace ℝ (Fin n)) {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ f : Lp F 2 (volume : Measure (EuclideanSpace ℝ (Fin n))),
       eLpNorm (Lp.fourierMultiplierCLM F (hessianSymbolLp v w) f) p volume ≤
-        C * eLpNorm f p volume := by
-  -- The Calderón–Zygmund theorem is stated for real Hilbert spaces.
-  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have : Nontrivial (EuclideanSpace ℝ (Fin n)) := by
-    have : Nonempty (Fin n) := ⟨⟨0, by omega⟩⟩
-    infer_instance
-  set T := (Lp.fourierMultiplierCLM F (hessianSymbolLp v w)).restrictScalars ℝ
-  -- The symbol is real, so `T` is self-adjoint, also for the real inner product of `L²`.
-  have hT : adjoint T = T := by
-    have hT : adjoint (Lp.fourierMultiplierCLM F (hessianSymbolLp v w)) =
-        Lp.fourierMultiplierCLM F (hessianSymbolLp v w) := by
-      rw [Lp.adjoint_fourierMultiplierCLM, star_hessianSymbolLp]
-    exact ((eq_adjoint_iff _ _).2 fun f g => by
-      rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner, coe_restrictScalars',
-        ← adjoint_inner_right, hT]).symm
-  -- The kernel satisfies the size and smoothness estimates with exponent `δ = 1`.
-  have hfin : (Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ) = n := by
-    rw [finrank_euclideanSpace_fin]
-  have hvol := volume_real_unitBall_pos n
-  set C₀ : ℝ≥0 := (((n : ℝ) + 1) * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
-    * (‖v‖ * ‖w‖)).toNNReal
-  set C : ℝ≥0 := (2 ^ (n + 1) * ((n : ℝ) + 5) *
-    (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ * (‖v‖ * ‖w‖)).toNNReal
-  have hsize : ∀ x y : EuclideanSpace ℝ (Fin n), x ≠ y → ‖hessianKernel (F := F) v w x y‖ ≤
-      C₀ * dist x y ^ (-(Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ)) := fun x y _ => by
-    rw [hfin, Real.coe_toNNReal _ (by positivity)]
-    exact norm_hessianKernel_le v w x y
-  have hk : ∀ x y y' : EuclideanSpace ℝ (Fin n), 2 * dist y y' < dist x y' →
-      ‖hessianKernel (F := F) v w x y - hessianKernel v w x y'‖ ≤
-        C * (dist y y' ^ (1 : ℝ) *
-          dist x y' ^ (-(Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) + 1 : ℝ))) :=
-      fun x y y' h => by
-    rw [hfin, Real.coe_toNNReal _ (by positivity), Real.rpow_one]
-    exact norm_hessianKernel_sub_le v w h
-  have hrep := fun f s (hs : IsCompact s) hf =>
-    ae_fourierMultiplierCLM_hessianSymbolLp_eq_integral_hessianKernel (F := F) hn v w f hs hf
-  exact T.exists_eLpNorm_le_of_norm_sub_le_mul_rpow (stronglyMeasurable_hessianKernel v w)
-    (stronglyMeasurable_hessianKernel v w) one_pos one_pos hsize hsize hk hk hrep
-    (by rw [hT]; exact hrep) hp hp_top
+        C * eLpNorm f p volume :=
+  (hasStandardKernel_fourierMultiplierCLM_hessianSymbolLp hn v w).exists_eLpNorm_le hp hp_top
 
 /-- The estimate for a second directional derivative in dimension `n ≥ 3`, from the bound on the
 Hessian multiplier. -/

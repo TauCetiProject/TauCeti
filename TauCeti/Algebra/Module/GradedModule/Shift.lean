@@ -27,7 +27,7 @@ suspension leaves the underlying module unchanged and reindexes its homogeneous 
 
 ## Main results
 
-* `TauCeti.LinearMap.isHomogeneous_shift_piece_iff`: shifting both gradings preserves degrees.
+* `LinearMap.isHomogeneous_shift_piece_iff`: shifting both gradings preserves degrees.
 
 ## References
 
@@ -112,7 +112,7 @@ end InternalGrading
 
 /-- Shifting the source and the target internal grading by the same amount leaves the degree of a
 homogeneous linear map unchanged. -/
-theorem LinearMap.isHomogeneous_shift_piece_iff {R : Type u} {M N : Type*} [Semiring R]
+theorem _root_.LinearMap.isHomogeneous_shift_piece_iff {R : Type u} {M N : Type*} [Semiring R]
     {ι : Type*} [DecidableEq ι] [AddCommGroup ι]
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {G : InternalGrading R M ι}
     {H : InternalGrading R N ι} {f : M →ₗ[R] N} {c q : ι} :
