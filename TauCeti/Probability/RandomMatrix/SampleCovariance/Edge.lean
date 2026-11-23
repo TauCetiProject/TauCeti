@@ -95,7 +95,7 @@ theorem ae_tendsto_eigenvalues₀_zero_sampleCovariance_of_integral_re_trace_pow
     refine ⟨t, B, C, d, k, ht, htr, hB, hk, .of_forall fun n ↦ ?_, hb⟩
     exact (integrable_trace_pow_sampleCovariance (fun _ ↦ inferInstance) fun i j ↦
       (hx _).aemeasurable.aestronglyMeasurable.memLp_centeredTruncation _).re
-  have happrox := ae_tendsto_l2_opNorm_sub_centeredTruncation_div_sqrt hx
+  have happrox := SampleCovariance.ae_tendsto_l2_opNorm_sub_centeredTruncation_div_sqrt hx
     (fun i ↦ hindep.precomp (Prod.mk_right_injective i))
     (fun j ↦ hindep.precomp (Prod.mk_left_injective j)) h4 hmean hK ha
   filter_upwards [hnorm, happrox, marchenkoPastur_ae hx hindep hmean hvar hy hp]

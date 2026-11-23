@@ -10,6 +10,8 @@ public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Analysis.Matrix.HardThreshold
 public import TauCeti.Probability.Moments.CenteredTruncation
 import Mathlib.Analysis.PSeries
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
 import TauCeti.MeasureTheory.Integral.Bochner.Markov
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
@@ -24,7 +26,8 @@ within each row and within each column, and let `Xₙ` be its top-left `p(n) × 
 `p(n) ≤ K n` eventually. Cut off the entries at the unnormalized level `n^a`. If `ν` has a finite
 absolute moment of order `m` and `2 < q (m a - 1)`, then
 almost surely every row and every column of `Xₙ` eventually has fewer than `q` entries above the
-cutoff, by a union bound over `q`-element sets of positions and Borel–Cantelli. If `ν` has a
+cutoff, by the union bound `TauCeti.Probability.measure_exists_le_card_filter_lt_norm_le` over
+`q`-element sets of positions and Borel–Cantelli. If `ν` has a
 finite fourth moment, the largest entry of `Xₙ` is almost surely `o(√n)`, without any
 independence.
 
@@ -38,15 +41,15 @@ and with them the upper edge of the sample covariance spectrum, to bounded centr
 
 ## Main results
 
-* `TauCeti.Probability.measure_exists_le_card_filter_lt_norm_apply_le`: a union bound for the
-  rows of a random matrix with independent entries in each row having at least `q` large entries.
-* `TauCeti.Probability.ae_eventually_card_filter_lt_norm_lt`: almost surely, every row and every
+The results about the corners are filed under `TauCeti.Probability.SampleCovariance`.
+
+* `SampleCovariance.ae_eventually_card_filter_lt_norm_lt`: almost surely, every row and every
   column of the corners eventually has fewer than `q` entries above `n^a`.
-* `TauCeti.Probability.ae_eventually_norm_le_mul_sqrt`: almost surely, the largest entry of the
+* `SampleCovariance.ae_eventually_norm_le_mul_sqrt`: almost surely, the largest entry of the
   corners is eventually below `ε √n` for every `ε > 0`.
-* `TauCeti.Probability.ae_tendsto_l2_opNorm_hardThreshold_div_sqrt`: the discarded part has
+* `SampleCovariance.ae_tendsto_l2_opNorm_hardThreshold_div_sqrt`: the discarded part has
   operator norm `o(√n)` almost surely.
-* `TauCeti.Probability.ae_tendsto_l2_opNorm_sub_centeredTruncation_div_sqrt`: the corners and
+* `SampleCovariance.ae_tendsto_l2_opNorm_sub_centeredTruncation_div_sqrt`: the corners and
   their centered truncations differ by `o(√n)` in operator norm almost surely.
 
 ## References
@@ -65,94 +68,51 @@ noncomputable section
 open Filter MeasureTheory ProbabilityTheory Matrix Set
 open scoped Topology ENNReal NNReal Matrix.Norms.L2Operator
 
-namespace TauCeti.Probability
+namespace TauCeti.Probability.SampleCovariance
 
 variable {Ω E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 section Count
 
 variable [SeminormedAddGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
-
-/-- For a random matrix whose entries within each row are independent, the measure of the set
-where some row has at least `q` entries of norm strictly above `R` is at most
-`card m * (card n) ^ q * τ ^ q`, where `τ` bounds the measure of each entry exceeding `R`. The
-entries need not be measurable, so this bounds an outer measure in general. -/
-theorem measure_exists_le_card_filter_lt_norm_apply_le {m n : Type*} [Fintype m] [Fintype n]
-    {Y : Ω → Matrix m n E} (hind : ∀ i, iIndepFun (fun j ω ↦ Y ω i j) P) (R : ℝ)
-    {τ : ℝ≥0∞} (htail : ∀ i j, P {ω | R < ‖Y ω i j‖} ≤ τ) (q : ℕ) :
-    P {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ R < ‖Y ω i j‖).card} ≤
-      Fintype.card m * (Fintype.card n : ℝ≥0∞) ^ q * τ ^ q := by
-  have hE (i : m) : iIndepSet (fun j ↦ {ω | R < ‖Y ω i j‖}) P :=
-    (hind i).iIndepSet_preimage (s := fun _ ↦ {z : E | R < ‖z‖})
-      fun _ ↦ measurableSet_lt measurable_const continuous_norm.measurable
-  calc
-    _ ≤ P {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ {ω | R < ‖Y ω i j‖}).card} :=
-      -- The two filters differ only in their decidability instances.
-      measure_mono fun ω ↦ by
-        rintro ⟨i, hi⟩
-        exact ⟨i, by convert hi⟩
-    _ ≤ ∑ _i : m, ((Fintype.card n).choose q : ℝ≥0∞) * τ ^ q :=
-      measure_exists_le_card_filter_mem_le _ hE htail q
-    _ ≤ ∑ _i : m, (Fintype.card n : ℝ≥0∞) ^ q * τ ^ q := by
-      gcongr
-      exact_mod_cast Nat.choose_le_pow _ _
-    _ = _ := by simp [mul_assoc]
-
-variable {x : ℕ × ℕ → Ω → E} {ν : Measure E} {p : ℕ → ℕ}
-
-/-- Each entry of an array with common law `ν` exceeds a cutoff `R > 0` with probability at most
-the `m`-th absolute moment of `ν` divided by `R ^ m`. -/
-private theorem measure_lt_norm_le (hx : ∀ ij, HasLaw (x ij) ν P) {m : ℕ}
-    (hm : Integrable (fun z ↦ ‖z‖ ^ m) ν) {R : ℝ} (hR : 0 < R) (ij : ℕ × ℕ) :
-    P {ω | R < ‖x ij ω‖} ≤ ENNReal.ofReal ((∫ z, ‖z‖ ^ m ∂ν) / R ^ m) := by
-  rw [(hx ij).measure_eq (p := fun z ↦ R < ‖z‖)
-    (measurableSet_lt measurable_const continuous_norm.measurable)]
-  exact (measure_mono (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)).trans
-    (meas_ge_le_integral_pow_div_pow (Y := fun z ↦ ‖z‖) m hm (.of_forall fun _ ↦ by positivity) hR)
+  {x : ℕ × ℕ → Ω → E} {ν : Measure E} {p : ℕ → ℕ}
 
 /-- In the `p(n) × n` corner of an array with common law `ν`, independent within each row and
 within each column, the measure of the set where some row or some column has at least `q` entries
-above a cutoff `R > 0` is at most
-`(p(n) n^q + n p(n)^q) τ^q`, where `τ` is the `m`-th absolute moment of `ν` divided by `R ^ m`. -/
+above a cutoff `R > 0` is at most `(p(n) n^q + n p(n)^q) τ^q`, where `τ` is the `m`-th absolute
+moment of `ν` divided by `R ^ m`. -/
 private theorem measure_exists_row_or_col_le_card_filter_le (hx : ∀ ij, HasLaw (x ij) ν P)
     (hrow : ∀ i, iIndepFun (fun j ↦ x (i, j)) P)
     (hcol : ∀ j, iIndepFun (fun i ↦ x (i, j)) P) {m : ℕ} (hm : Integrable (fun z ↦ ‖z‖ ^ m) ν)
-    (n q : ℕ) {R : ℝ}
-    (hR : 0 < R) :
+    (n q : ℕ) {R : ℝ} (hR : 0 < R) :
     P ({ω | ∃ i : Fin (p n), q ≤ (Finset.univ.filter fun j : Fin n ↦ R < ‖x (i, j) ω‖).card} ∪
       {ω | ∃ j : Fin n, q ≤ (Finset.univ.filter fun i : Fin (p n) ↦ R < ‖x (i, j) ω‖).card}) ≤
-      ENNReal.ofReal (p n * n ^ q * ((∫ z, ‖z‖ ^ m ∂ν) / R ^ m) ^ q +
-        n * p n ^ q * ((∫ z, ‖z‖ ^ m ∂ν) / R ^ m) ^ q) := by
-  have hτ : 0 ≤ (∫ z, ‖z‖ ^ m ∂ν) / R ^ m :=
-    div_nonneg (integral_nonneg fun _ ↦ by positivity) (by positivity)
-  have hrow := measure_exists_le_card_filter_lt_norm_apply_le
-    (Y := fun ω ↦ Matrix.of fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j) ω)
-    (fun i ↦ by simpa only [of_apply] using (hrow i).precomp Fin.val_injective) R
-    (fun _ _ ↦ by simpa only [of_apply] using measure_lt_norm_le hx hm hR _) q
-  have hcol := measure_exists_le_card_filter_lt_norm_apply_le
-    (Y := fun ω ↦ Matrix.of fun (j : Fin n) (i : Fin (p n)) ↦ x (i, j) ω)
-    (fun j ↦ by simpa only [of_apply] using (hcol j).precomp Fin.val_injective) R
-    (fun _ _ ↦ by simpa only [of_apply] using measure_lt_norm_le hx hm hR _) q
-  simp only [of_apply, Fintype.card_fin] at hrow hcol
-  refine (measure_union_le _ _).trans ((add_le_add hrow hcol).trans_eq ?_)
-  -- Move `ENNReal.ofReal` through the nonnegative products and powers.
-  rw [ENNReal.ofReal_add (by positivity) (by positivity), ENNReal.ofReal_mul (by positivity),
-    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),
-    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hτ,
-    ENNReal.ofReal_pow (Nat.cast_nonneg _), ENNReal.ofReal_pow (Nat.cast_nonneg _),
-    ENNReal.ofReal_natCast, ENNReal.ofReal_natCast]
+      (p n * n ^ q + n * p n ^ q) * ENNReal.ofReal ((∫ z, ‖z‖ ^ m ∂ν) / R ^ m) ^ q := by
+  -- Each entry exceeds the cutoff with probability at most the Markov bound for `ν`.
+  have htail (ij : ℕ × ℕ) :
+      P {ω | R < ‖x ij ω‖} ≤ ENNReal.ofReal ((∫ z, ‖z‖ ^ m ∂ν) / R ^ m) := by
+    rw [(hx ij).measure_eq (p := fun z ↦ R < ‖z‖)
+      (measurableSet_lt measurable_const continuous_norm.measurable)]
+    exact meas_norm_gt_le_integral_norm_pow_div_pow (Z := fun z ↦ z) m hm hR
+  have hrow := measure_exists_le_card_filter_lt_norm_le
+    (Y := fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j))
+    (fun i ↦ (hrow i).precomp Fin.val_injective) R (fun _ _ ↦ htail _)
+    (fun _ ↦ (Fintype.card_fin n).le) q
+  have hcol := measure_exists_le_card_filter_lt_norm_le
+    (Y := fun (j : Fin n) (i : Fin (p n)) ↦ x (i, j))
+    (fun j ↦ (hcol j).precomp Fin.val_injective) R (fun _ _ ↦ htail _)
+    (fun _ ↦ (Fintype.card_fin (p n)).le) q
+  simp only [Fintype.card_fin] at hrow hcol
+  calc
+    _ ≤ _ := (measure_union_le _ _).trans (add_le_add hrow hcol)
+    _ = _ := by ring
 
 /-- The real inequality behind the summable bound for row and column counts: if `0 ≤ P' ≤ K N`
 with `N > 0`, then `(P' N^q + N P'^q) (C / N^(a m))^q ≤ (K + K^q) C^q N^(q + 1 - a m q)`. -/
 private theorem corner_count_bound_le {N P' K C a : ℝ} {m q : ℕ} (hN : 0 < N) (hP₀ : 0 ≤ P')
     (hP : P' ≤ K * N) (hC : 0 ≤ C) :
-    P' * N ^ q * (C / (N ^ a) ^ m) ^ q + N * P' ^ q * (C / (N ^ a) ^ m) ^ q ≤
+    (P' * N ^ q + N * P' ^ q) * (C / (N ^ a) ^ m) ^ q ≤
       (K + K ^ q) * C ^ q * N ^ ((q : ℝ) + 1 - a * m * q) := by
-  have hpow : N ^ (q + 1) * (C / (N ^ a) ^ m) ^ q = C ^ q * N ^ ((q : ℝ) + 1 - a * m * q) := by
-    rw [div_pow, ← pow_mul, ← Real.rpow_natCast N (q + 1), ← Real.rpow_mul_natCast hN.le,
-      mul_div_left_comm, ← Real.rpow_sub hN]
-    push_cast
-    ring_nf
   have h₁ : P' * N ^ q ≤ K * N ^ (q + 1) := by
     calc P' * N ^ q ≤ K * N * N ^ q := by gcongr
       _ = K * N ^ (q + 1) := by ring
@@ -160,11 +120,10 @@ private theorem corner_count_bound_le {N P' K C a : ℝ} {m q : ℕ} (hN : 0 < N
     calc N * P' ^ q ≤ N * (K * N) ^ q := by gcongr
       _ = K ^ q * N ^ (q + 1) := by ring
   calc
-    _ ≤ K * N ^ (q + 1) * (C / (N ^ a) ^ m) ^ q + K ^ q * N ^ (q + 1) * (C / (N ^ a) ^ m) ^ q := by
-      gcongr
+    _ ≤ (K * N ^ (q + 1) + K ^ q * N ^ (q + 1)) * (C / (N ^ a) ^ m) ^ q := by gcongr
     _ = (K + K ^ q) * (N ^ (q + 1) * (C / (N ^ a) ^ m) ^ q) := by ring
     _ = _ := by
-      rw [hpow]
+      rw [pow_add_one_mul_div_rpow_pow_pow hN]
       ring
 
 /-- **Row and column counts of large entries.** Let the array have entries with a common law `ν`
@@ -195,9 +154,15 @@ theorem ae_eventually_card_filter_lt_norm_lt (hx : ∀ ij, HasLaw (x ij) ν P)
         ENNReal.ofReal ((K + K ^ q) * C ^ q * (n : ℝ) ^ ((q : ℝ) + 1 - a * m * q)) := by
     filter_upwards [hp, eventually_gt_atTop 0] with n hpn hn
     have hN : (0 : ℝ) < n := by exact_mod_cast hn
-    exact (measure_exists_row_or_col_le_card_filter_le hx hrow hcol hm n q
-      (Real.rpow_pos_of_pos hN a)).trans
-      (ENNReal.ofReal_le_ofReal (corner_count_bound_le hN (Nat.cast_nonneg _) hpn hC))
+    refine (measure_exists_row_or_col_le_card_filter_le hx hrow hcol hm n q
+      (Real.rpow_pos_of_pos hN a)).trans ?_
+    calc
+      _ = ENNReal.ofReal ((p n * n ^ q + n * p n ^ q) *
+          ((∫ z, ‖z‖ ^ m ∂ν) / ((n : ℝ) ^ a) ^ m) ^ q) := by
+        -- Move `ENNReal.ofReal` through the nonnegative sums, products and powers.
+        simp (disch := positivity) only [ENNReal.ofReal_mul, ENNReal.ofReal_add,
+          ENNReal.ofReal_pow, ENNReal.ofReal_natCast]
+      _ ≤ _ := ENNReal.ofReal_le_ofReal (corner_count_bound_le hN (Nat.cast_nonneg _) hpn hC)
   filter_upwards [TauCeti.MeasureTheory.ae_eventually_notMem_of_eventually_measure_le hb hbound]
     with ω hω
   filter_upwards [hω] with n hn
@@ -268,28 +233,6 @@ private theorem of_sub_of_centeredTruncation_eq (hx : ∀ ij, HasLaw (x ij) ν P
   · simp [h, not_lt.2 h]
   · simp [h, lt_of_not_ge h]
 
-/-- If `p(n) ≤ K n` eventually and `a > 1/6`, then `√(p n) / (n ^ a) ^ 3 → 0`. -/
-private theorem tendsto_sqrt_div_rpow_pow_three {K : ℝ} (hp : ∀ᶠ n in atTop, (p n : ℝ) ≤ K * n)
-    {a : ℝ} (ha : 1 / 6 < a) :
-    Tendsto (fun n : ℕ ↦ √(p n) / ((n : ℝ) ^ a) ^ 3) atTop (𝓝 0) := by
-  have hpow := (tendsto_rpow_neg_atTop (by linarith : 0 < 3 * a - 1 / 2)).comp
-    tendsto_natCast_atTop_atTop
-  refine squeeze_zero' (.of_forall fun n ↦ by positivity) ?_
-    (by simpa only [mul_zero] using hpow.const_mul √(|K| + 1))
-  filter_upwards [hp, eventually_gt_atTop 0] with n hn hn₀
-  have hN : (0 : ℝ) < n := by exact_mod_cast hn₀
-  have hsq : √(p n) ≤ √(|K| + 1) * (n : ℝ) ^ (1 / 2 : ℝ) := by
-    rw [← Real.sqrt_eq_rpow, ← Real.sqrt_mul (by positivity)]
-    exact Real.sqrt_le_sqrt (hn.trans (by nlinarith [le_abs_self K]))
-  calc
-    _ ≤ √(|K| + 1) * (n : ℝ) ^ (1 / 2 : ℝ) / ((n : ℝ) ^ a) ^ 3 := by gcongr
-    _ = _ := by
-      rw [Function.comp_apply, mul_div_assoc, ← Real.rpow_mul_natCast hN.le,
-        ← Real.rpow_sub hN]
-      congr 2
-      push_cast
-      ring
-
 /-- **The discarded part of the corners.** Let the array have complex entries with a common law
 `ν` of finite fourth moment, independent within each row and within each column, and let
 `p(n) ≤ K n` eventually. For `a > 1/4`, the
@@ -346,10 +289,20 @@ theorem ae_tendsto_l2_opNorm_sub_centeredTruncation_div_sqrt (hx : ∀ ij, HasLa
     rw [show (n : ℝ) * ‖c n‖ * (p n * ‖c n‖) = (√(p n) * ‖c n‖ * √n) ^ 2 by
       rw [mul_pow, mul_pow, Real.sq_sqrt (Nat.cast_nonneg _), Real.sq_sqrt (Nat.cast_nonneg _)]
       ring, Real.sqrt_sq (by positivity)]
+  -- `√(p n) / (n ^ a) ^ 3 → 0`, comparing `p n` with `(|K| + 1) n`.
+  have hquot : Tendsto (fun n ↦ √(p n) / ((n : ℝ) ^ a) ^ 3) atTop (𝓝 0) := by
+    have hlim := ((tendsto_sqrt_div_rpow_pow_atTop_nhds_zero (a := a) (k := 3)
+      (by push_cast; linarith)).comp tendsto_natCast_atTop_atTop).const_mul √(|K| + 1)
+    rw [mul_zero] at hlim
+    refine squeeze_zero' (.of_forall fun n ↦ by positivity) ?_ hlim
+    filter_upwards [hp] with n hn
+    dsimp only [Function.comp_apply]
+    rw [← mul_div_assoc, ← Real.sqrt_mul (by positivity)]
+    gcongr
+    exact hn.trans (by nlinarith [le_abs_self K, (Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
   -- The means vanish fast enough, by the fourth moment.
   have hc : Tendsto (fun n ↦ √(p n) * ‖c n‖) atTop (𝓝 0) :=
-    h4.tendsto_mul_norm_integral_indicator_setOf_norm_le_nhds_zero (k := 3) hmean
-      (tendsto_sqrt_div_rpow_pow_three hp (by linarith))
+    h4.tendsto_mul_norm_integral_indicator_setOf_norm_le_nhds_zero (k := 3) hmean hquot
   filter_upwards [ae_tendsto_l2_opNorm_hardThreshold_div_sqrt hx hrow hcol h4 hp ha]
     with ω hω
   refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) (by simpa using hω.add hc)
@@ -364,4 +317,4 @@ theorem ae_tendsto_l2_opNorm_sub_centeredTruncation_div_sqrt (hx : ∀ ij, HasLa
 
 end OperatorNorm
 
-end TauCeti.Probability
+end TauCeti.Probability.SampleCovariance
