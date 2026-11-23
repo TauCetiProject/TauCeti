@@ -482,7 +482,11 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re :
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1).re := by
   rcases lt_trichotomy (discr K) 0 with hd | hd | hd
-  · have : IsTotallyComplex K := (isTotallyComplex_iff_discr_lt_zero hK).mpr hd
+  · have hc : nrComplexPlaces K = 1 := nrComplexPlaces_eq_one_of_discr_lt_zero hd (by omega)
+    have hr : nrRealPlaces K = 0 := by
+      have := card_add_two_mul_card_eq_rank K
+      omega
+    have : IsTotallyComplex K := nrRealPlaces_eq_zero_iff.mp hr
     have hD : 0 ≤ √|(discr K : ℝ)| := Real.sqrt_nonneg _
     have hφπ : 2 * Real.log Real.goldenRatio ≤ π / 3 := by
       linarith [TauCeti.log_goldenRatio_lt_one_half, Real.pi_gt_three]
@@ -490,7 +494,7 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re :
     rw [div_eq_mul_inv, ← div_div, div_eq_mul_inv (π / 3)]
     exact mul_le_mul_of_nonneg_right hφπ (inv_nonneg.mpr hD)
   · exact absurd hd (discr_ne_zero K)
-  · have : IsTotallyReal K := (isTotallyReal_iff_zero_lt_discr (by omega)).mpr hd
+  · have : IsTotallyReal K := IsTotallyReal.of_zero_lt_discr hd (by omega)
     have hD : 0 < √|(discr K : ℝ)| := Real.sqrt_pos.mpr (abs_cast_discr_pos K)
     have hh : (1 : ℝ) ≤ classNumber K := Nat.one_le_cast.mpr (classNumber_pos K)
     have hreg : Real.log Real.goldenRatio ≤ NumberField.Units.regulator K :=
