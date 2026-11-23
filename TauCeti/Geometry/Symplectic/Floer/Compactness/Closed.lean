@@ -26,7 +26,9 @@ Sizes in `M` are measured through an injective map `e : M → F` into a normed s
 Whitney embedding of a closed manifold
 (`TauCeti.SmoothEmbedding.exists_nonempty_euclidean_of_compact`), as in
 `TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity`. The data are read in the charts
-of `M`, where they are assumed `C²`. The results are in the namespace `TauCeti.SmoothTwoForm`.
+of `M`, where they are assumed `C²`; for the Hamiltonian vector fields this holds as soon as the
+Hamiltonians are `C³` (`IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt`). The results
+are in the namespace `TauCeti.SmoothTwoForm`.
 
 * **The mean-value inequality on a closed manifold.** Since `e` embeds the compact space `M`, a
   Lebesgue number `l` of a finite cover of `e(M)` by images of chart pieces places every set

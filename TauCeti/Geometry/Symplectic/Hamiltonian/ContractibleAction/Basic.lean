@@ -213,6 +213,16 @@ theorem comp {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [To
   apply_zero t := congrArg f (hw.apply_zero t)
   apply_one t := congrArg f (hw.apply_one t)
 
+/-- Rotating a cylinder from `γ₀` to `γ₁` in its circle coordinate, `z ↦ w (z + (0, θ))`, gives a
+cylinder from the rotated loop `t ↦ γ₀ (t + θ)` to the rotated loop `t ↦ γ₁ (t + θ)`. -/
+theorem comp_add_snd (hw : IsLoopCylinder I w γ₀ γ₁) (θ : ℝ) :
+    IsLoopCylinder I (fun z ↦ w (z + (0, θ))) (fun t ↦ γ₀ (t + θ)) (fun t ↦ γ₁ (t + θ)) where
+  contMDiff := hw.contMDiff.comp (contDiff_id.add contDiff_const).contMDiff
+  apply_add_one := fun ⟨s, t⟩ ↦ by
+    simpa only [Prod.mk_add_mk, add_zero, add_right_comm t 1 θ] using hw.apply_add_one (s, t + θ)
+  apply_zero t := by simpa only [Prod.mk_add_mk, add_zero] using hw.apply_zero (t + θ)
+  apply_one t := by simpa only [Prod.mk_add_mk, add_zero] using hw.apply_one (t + θ)
+
 end IsLoopCylinder
 
 /-- A `C²` map `w`, `1`-periodic in its second coordinate, sweeps out a cylinder from its loop

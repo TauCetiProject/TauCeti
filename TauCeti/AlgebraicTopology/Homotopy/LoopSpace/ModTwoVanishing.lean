@@ -95,7 +95,8 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_lo
   have : Subsingleton (FundamentalGroup (Ω X x) (Path.refl x)) :=
     HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.toEquiv.subsingleton_congr.2 ‹_›
   (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent
-    (Path.refl x) hX n).of_addEquiv (HomotopyGroup.pathLoopSpaceMulEquiv (n + 1)).toAdditive
+    (RingEquiv.refl _) (Path.refl x) hX n).of_addEquiv
+      (HomotopyGroup.pathLoopSpaceMulEquiv (n + 1)).toAdditive
 
 /-- **Mod-two vanishing for the contractible Moore loops.** If `π₂(X, x)` is trivial and the path
 component of the constant loop `1` in the Moore loop space has the mod-two homology of a point,
@@ -110,7 +111,7 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_mo
     (HomotopyGroup.pi1MulEquivFundamentalGroup.symm.trans
       (MooreLoopSpace.homotopyGroupMulEquiv x 0)).toEquiv.subsingleton_congr.2 ‹_›
   (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent
-    (1 : MooreLoopSpace X x) hX n).of_addEquiv
+    (RingEquiv.refl _) (1 : MooreLoopSpace X x) hX n).of_addEquiv
       (MooreLoopSpace.homotopyGroupMulEquiv x (n + 1)).toAdditive
 
 /-! ### The double loop space -/

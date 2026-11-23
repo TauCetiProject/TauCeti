@@ -13,9 +13,11 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # The homology of the classifying space of `ℤ[1/m]`
 
-For a nonzero integer `m`, the additive group of `ℤ[1/m] = Localization.Away m` is the directed
-union of its infinite cyclic subgroups `m⁻ʳ ℤ`. Each of these is a free group, whose group homology
-with trivial coefficients vanishes in degrees `n ≥ 2` (`TauCeti.isZero_groupHomology_freeGroup`).
+For a nonzero integer `m`, let `L` be a localization `ℤ[1/m]` of `ℤ` away from `m`
+(`IsLocalization.Away m L`), such as `Localization.Away m` or its lift to any universe. Its
+additive group is the directed union of its infinite cyclic subgroups `m⁻ʳ ℤ`. Each of these is a
+free group, whose group homology with trivial coefficients vanishes in degrees `n ≥ 2`
+(`TauCeti.isZero_groupHomology_freeGroup`).
 Every class of a directed union of subgroups comes from a member, so its homology vanishes if it
 vanishes on each member (`TauCeti.groupHomology.isZero_groupHomology_of_directed`); for directed
 unions of infinite cyclic subgroups this is `TauCeti.isZero_groupHomology_of_directed_zpowers`.
@@ -52,91 +54,98 @@ public section
 
 open CategoryTheory Limits groupHomology
 
+universe u
+
 namespace TauCeti
 
-variable (k : Type) [CommRing k]
+variable (k : Type u) [CommRing k]
 
 section LocalizationAway
 
 open IsLocalization.Away
 
-variable {m : ℤ}
+variable {m : ℤ} {L : Type u} [CommRing L] [Algebra ℤ L] [IsLocalization.Away m L]
 
+variable (L m) in
 /-- The generator `m⁻ʳ` of the subgroup `m⁻ʳ ℤ` of `ℤ[1/m]`, in multiplicative notation. -/
-private noncomputable abbrev invPowGen (m : ℤ) (r : ℕ) : Multiplicative (Localization.Away m) :=
-  Multiplicative.ofAdd (invSelf m ^ r)
+private noncomputable abbrev invPowGen (r : ℕ) : Multiplicative L :=
+  Multiplicative.ofAdd (invSelf (S := L) m ^ r)
 
 /-- The `a`-th power of the generator `m⁻ʳ` is `a m⁻ʳ`, in additive notation. -/
 private theorem toAdd_invPowGen_zpow (r : ℕ) (a : ℤ) :
-    (invPowGen m r ^ a).toAdd = algebraMap ℤ (Localization.Away m) a * invSelf m ^ r := by
+    (invPowGen m L r ^ a).toAdd = algebraMap ℤ L a * invSelf (S := L) m ^ r := by
   rw [toAdd_zpow, toAdd_ofAdd, zsmul_eq_mul, eq_intCast]
 
 private theorem invPowGen_mem_zpowers_succ (r : ℕ) :
-    invPowGen m r ∈ Subgroup.zpowers (invPowGen m (r + 1)) := by
+    invPowGen m L r ∈ Subgroup.zpowers (invPowGen m L (r + 1)) := by
   refine Subgroup.mem_zpowers_iff.2 ⟨m, Multiplicative.toAdd.injective ?_⟩
   rw [toAdd_invPowGen_zpow, toAdd_ofAdd]
-  linear_combination invSelf m ^ r * mul_invSelf (S := Localization.Away m) m
+  linear_combination invSelf (S := L) m ^ r * mul_invSelf (S := L) m
 
 private theorem directed_zpowers_invPowGen :
-    Directed (· ≤ ·) fun r ↦ Subgroup.zpowers (invPowGen m r) :=
+    Directed (· ≤ ·) fun r ↦ Subgroup.zpowers (invPowGen m L r) :=
   Monotone.directed_le <| monotone_nat_of_le_succ fun r ↦
     Subgroup.zpowers_le.2 (invPowGen_mem_zpowers_succ r)
 
-private theorem iSup_zpowers_invPowGen : ⨆ r, Subgroup.zpowers (invPowGen m r) = ⊤ := by
+private theorem iSup_zpowers_invPowGen : ⨆ r, Subgroup.zpowers (invPowGen m L r) = ⊤ := by
   refine eq_top_iff.2 fun y _ ↦ (Subgroup.mem_iSup_of_directed directed_zpowers_invPowGen).2 ?_
   -- every element of `ℤ[1/m]` is `a / mʳ` for some integer `a` and some `r`
   obtain ⟨r, a, h⟩ := surj m y.toAdd
   refine ⟨r, Subgroup.mem_zpowers_iff.2 ⟨a, Multiplicative.toAdd.injective ?_⟩⟩
-  have hr : (algebraMap ℤ (Localization.Away m) m * invSelf m) ^ r = 1 := by
+  have hr : (algebraMap ℤ L m * invSelf (S := L) m) ^ r = 1 := by
     rw [mul_invSelf, one_pow]
   rw [toAdd_invPowGen_zpow]
-  linear_combination -(invSelf m ^ r) * h + y.toAdd * hr
+  linear_combination -(invSelf (S := L) m ^ r) * h + y.toAdd * hr
 
 private theorem not_isOfFinOrder_invPowGen (hm : m ≠ 0) (r : ℕ) :
-    ¬IsOfFinOrder (invPowGen m r) := by
+    ¬IsOfFinOrder (invPowGen m L r) := by
   intro h
   obtain ⟨n, hn, hn1⟩ := isOfFinOrder_iff_zpow_eq_one.1 h
   replace hn1 := congrArg Multiplicative.toAdd hn1
   rw [toAdd_invPowGen_zpow, toAdd_one] at hn1
   -- clearing the denominator `mʳ`, the integer `n` vanishes in `ℤ[1/m]`
-  have hr : (algebraMap ℤ (Localization.Away m) m * invSelf m) ^ r = 1 := by
+  have hr : (algebraMap ℤ L m * invSelf (S := L) m) ^ r = 1 := by
     rw [mul_invSelf, one_pow]
-  have hn0 : algebraMap ℤ (Localization.Away m) n = 0 := by
-    linear_combination algebraMap ℤ (Localization.Away m) m ^ r * hn1 -
-      algebraMap ℤ (Localization.Away m) n * hr
+  have hn0 : algebraMap ℤ L n = 0 := by
+    linear_combination algebraMap ℤ L m ^ r * hn1 - algebraMap ℤ L n * hr
   obtain ⟨⟨c, j, rfl⟩, hc⟩ := (IsLocalization.map_eq_zero_iff (Submonoid.powers m) _ n).1 hn0
   exact hn ((mul_eq_zero.1 hc).resolve_left (pow_ne_zero _ hm))
 
+variable (L)
+
 /-- **The homology of `ℤ[1/m]` in degrees at least two.** For a nonzero integer `m`, the group
-homology of the additive group of `ℤ[1/m]` with trivial coefficients vanishes in degrees `n ≥ 2`. -/
+homology of the additive group of a localization `L = ℤ[1/m]` with trivial coefficients vanishes
+in degrees `n ≥ 2`. -/
 theorem isZero_groupHomology_localizationAway (hm : m ≠ 0) {n : ℕ} (hn : 2 ≤ n) :
-    IsZero (groupHomology (Rep.trivial k (Multiplicative (Localization.Away m)) k) n) :=
+    IsZero (groupHomology (Rep.trivial k (Multiplicative L) k) n) :=
   isZero_groupHomology_of_directed_zpowers k (not_isOfFinOrder_invPowGen hm)
     directed_zpowers_invPowGen iSup_zpowers_invPowGen hn
 
 /-- **The first homology of `ℤ[1/m]`.** If `m = 0` in `k`, the first group homology of the
-additive group of `ℤ[1/m]` with trivial coefficients `k` vanishes: it is `ℤ[1/m] ⊗ k`, and
-`ℤ[1/m]` is divisible by `m`. -/
+additive group of a localization `L = ℤ[1/m]` with trivial coefficients `k` vanishes: it is
+`L ⊗ k`, and `L` is divisible by `m`. -/
 theorem isZero_groupHomology_one_localizationAway (hmk : (m : k) = 0) :
-    IsZero (groupHomology (Rep.trivial k (Multiplicative (Localization.Away m)) k) 1) :=
+    IsZero (groupHomology (Rep.trivial k (Multiplicative L) k) 1) :=
   TauCeti.groupHomology.isZero_H1_of_forall_exists_zpow_eq _ m
-    (fun g ↦ ⟨Multiplicative.ofAdd (invSelf m * g.toAdd), Multiplicative.toAdd.injective <| by
-      rw [toAdd_zpow, toAdd_ofAdd, zsmul_eq_mul, ← eq_intCast (algebraMap ℤ (Localization.Away m))]
-      linear_combination g.toAdd * mul_invSelf (S := Localization.Away m) m⟩)
+    (fun g ↦ ⟨Multiplicative.ofAdd (invSelf (S := L) m * g.toAdd),
+      Multiplicative.toAdd.injective <| by
+      rw [toAdd_zpow, toAdd_ofAdd, zsmul_eq_mul, ← eq_intCast (algebraMap ℤ L)]
+      linear_combination g.toAdd * mul_invSelf (S := L) m⟩)
     fun c ↦ by rw [zsmul_eq_mul, hmk, zero_mul]
 
 /-- **The classifying space of `ℤ[1/m]` is acyclic modulo `m`.** For a nonzero integer `m` and a
 commutative ring `k` in which `m = 0`, the singular homology of the classifying space of the
-additive group of `ℤ[1/m]` with coefficients in `k` vanishes in every positive degree. For
-`m = 2` and `k = ZMod 2`, the space `K(ℤ[1/2], 1)` has the mod-two homology of a point. -/
+additive group of a localization `L = ℤ[1/m]` with coefficients in `k` vanishes in every positive
+degree. For `m = 2` and `k = ZMod 2`, the space `K(ℤ[1/2], 1)` has the mod-two homology of a
+point. -/
 theorem isZero_classifyingSpace_singularHomology_localizationAway (hm : m ≠ 0)
     (hmk : (m : k) = 0) {n : ℕ} (hn : 1 ≤ n) :
     IsZero (((singularChains k).obj
-      (TopCat.of (classifyingSpace (Multiplicative (Localization.Away m))))).homology n) := by
+      (TopCat.of (classifyingSpace (Multiplicative L)))).homology n) := by
   refine IsZero.of_iso ?_ (classifyingSpaceSingularHomologyIsoGroupHomology k _ n)
   obtain rfl | hn := hn.eq_or_lt
-  · exact isZero_groupHomology_one_localizationAway k hmk
-  · exact isZero_groupHomology_localizationAway k hm hn
+  · exact isZero_groupHomology_one_localizationAway k L hmk
+  · exact isZero_groupHomology_localizationAway k L hm hn
 
 end LocalizationAway
 

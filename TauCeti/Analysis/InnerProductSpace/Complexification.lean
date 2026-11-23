@@ -419,6 +419,11 @@ variable {X Y}
 @[simp]
 theorem complexifyL2ₗᵢ_apply (T : X →L[ℝ] Y) : complexifyL2ₗᵢ X Y T = T.complexifyL2 := (rfl)
 
+/-- Complexification commutes with negation. -/
+@[simp]
+theorem complexifyL2_neg (T : X →L[ℝ] Y) : (-T).complexifyL2 = -T.complexifyL2 :=
+  map_neg (complexifyL2ₗᵢ X Y).toLinearMap T
+
 @[simp]
 theorem complexifyL2StarAlgHom_apply [CompleteSpace X] (T : X →L[ℝ] X) :
     complexifyL2StarAlgHom X T = T.complexifyL2 := (rfl)
