@@ -15,8 +15,10 @@ Let `σ` be a symplectic form on a boundaryless manifold `M` and let `π : M →
 Lagrangian torus fibration (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration`)
 with period lattice `Λ_b ⊆ T*_b B`. Fix a smooth section `s` of `π` and its section map
 `Φ_s : T*B → M`, `Φ_s(ξ) = (-ξ) • s(b)` (`IsLagrangianTorusFibration.sectionMap`). This file
-describes all other sections of `π` through `Φ_s`: they are the one-forms on `B` modulo `Λ`, and
-the Lagrangian ones correspond to the one-forms whose derivative is `s^* σ`.
+describes the other sections of `π` through `Φ_s`: the sections of the form `Φ_s ∘ α` are the
+one-forms `α` on `B` modulo `Λ`, the Lagrangian ones being those with `dα = s^* σ`. Every
+section of `π` has this form locally, with lifts unique up to `Λ`; a global section need not
+have a global lift.
 
 A one-form `α` on `B` moves `s` to the section
 
