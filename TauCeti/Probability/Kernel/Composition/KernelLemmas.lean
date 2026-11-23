@@ -14,7 +14,7 @@ import Mathlib.Probability.Kernel.Composition.MeasureComp
 For a kernel `κ : Kernel α β` and an s-finite kernel `η : Kernel (α × β) γ`, the second marginal
 of the composition-product `κ ⊗ₖ η` is the composition of `η` with `Kernel.id ×ₖ κ`: integrating
 `η (a, b)` against `κ a` and forgetting `b` is the same as integrating `η` against the measure
-`Kernel.id ×ₖ κ` on pairs `(a, b)`. When `κ` is not s-finite both sides are `0`. For probability
+`(Kernel.id ×ₖ κ) a` on pairs `(a, b)`. When `κ` is not s-finite both sides are `0`. For probability
 kernels: drawing `b` from `κ a`, then `c` from `η (a, b)`, and keeping `c`. Mathlib's
 `ProbabilityTheory.Kernel.snd_compProd_prodMkLeft` is the special case where `η` ignores `a`.
 
