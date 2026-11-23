@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Algebraic
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.FiniteComponent
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Shift
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
-import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
@@ -184,12 +183,6 @@ theorem unitaryWeight_apply_of_dvd (χ : Grossencharacter K 𝔪) {v : HeightOne
   χ.unitaryWeight_eq_zero _ fun h ↦
     (Modulus.isCoprimeTo_iff.mp h).2 v ((𝔪.mem_support_iff v).mpr hv) dvd_rfl
 
-private theorem exists_unit_valued_eq_exp_neg_one (v : HeightOneSpectrum (𝓞 K)) :
-    ∃ u : (v.adicCompletion K)ˣ, Valued.v (u : v.adicCompletion K) = WithZero.exp (-1) := by
-  have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  obtain ⟨u, hu⟩ := TauCeti.exists_isUniformizer (v.adicCompletion K)
-  exact ⟨u, v.isUniformizer_iff_valued_eq_exp_neg_one.mp hu⟩
-
 /-- **The bad primes of the unitary weight of a presentation are the primes dividing the
 modulus**: at a prime `v ∣ 𝔪` the weight vanishes, and at every prime `v ∤ 𝔪` it is a local
 component of the unitary part at a uniformizer and hence nonzero. -/
@@ -199,7 +192,7 @@ theorem badPrimes_unitaryWeight (χ : Grossencharacter K 𝔪) :
   rw [MultiplicativeIdealWeight.mem_badPrimes, SetLike.mem_coe, 𝔪.mem_support_iff v]
   refine ⟨fun h0 ↦ ?_, fun hv ↦ χ.unitaryWeight_apply_of_dvd hv⟩
   by_contra hv
-  obtain ⟨u, hu⟩ := exists_unit_valued_eq_exp_neg_one v
+  obtain ⟨u, hu⟩ := v.exists_unit_valued_eq_exp K (-1)
   rw [χ.unitaryWeight_apply v hv u hu] at h0
   exact Units.ne_zero _ h0
 
@@ -256,7 +249,7 @@ theorem unitaryWeight_eq_mul {ξ χ ψ : Grossencharacter K 𝔪}
   by_cases hv : v.asIdeal ∣ 𝔪.finitePart
   · rw [ξ.unitaryWeight_apply_of_dvd hv, χ.unitaryWeight_apply_of_dvd hv,
       ψ.unitaryWeight_apply_of_dvd hv, mul_zero]
-  · obtain ⟨u, hu⟩ := exists_unit_valued_eq_exp_neg_one v
+  · obtain ⟨u, hu⟩ := v.exists_unit_valued_eq_exp K (-1)
     rw [ξ.unitaryWeight_apply v hv u hu, χ.unitaryWeight_apply v hv u hu,
       ψ.unitaryWeight_apply v hv u hu, h, HeckeCharacter.unitaryPart_mul,
       HeckeCharacter.finiteComponent_mul, ContinuousMonoidHom.mul_apply, Units.val_mul]
@@ -273,7 +266,7 @@ theorem ext {χ ψ : Grossencharacter K 𝔪} (h : χ.toHeckeCharacter = ψ.toHe
     refine Subtype.ext (MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_)
     by_cases hv : v.asIdeal ∣ 𝔪.finitePart
     · rw [χ.unitaryWeight_apply_of_dvd hv, ψ.unitaryWeight_apply_of_dvd hv]
-    · obtain ⟨u, hu⟩ := exists_unit_valued_eq_exp_neg_one v
+    · obtain ⟨u, hu⟩ := v.exists_unit_valued_eq_exp K (-1)
       rw [χ.unitaryWeight_apply v hv u hu, ψ.unitaryWeight_apply v hv u hu, h]
   cases χ
   cases ψ

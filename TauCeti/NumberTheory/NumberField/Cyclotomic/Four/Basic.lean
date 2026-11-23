@@ -50,8 +50,11 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
 * `TauCeti.finrank_eq_two_of_isCyclotomicExtension_four`: `[K : ℚ] = 2`;
 * `TauCeti.isTotallyComplex_four`, `TauCeti.subsingleton_infinitePlace_four`,
   `TauCeti.complexPlaceFour`: `K` is totally complex with a unique (complex) infinite place;
-* `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
-* `TauCeti.units_pow_four_eq_one_four`: every unit of `ℤ[i]` is a fourth root of unity;
+* `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`, `TauCeti.classNumber_eq_one_four`: `ℤ[i]` is
+  a principal ideal domain, so `ℚ(i)` has class number `1`;
+* `TauCeti.units_pow_four_eq_one_four`, `TauCeti.map_coe_unit_pow_four_eq_one_four`: every unit of
+  `ℤ[i]` (and its image under any multiplicative homomorphism out of `ℚ(i)`) is a fourth root of
+  unity;
 * `TauCeti.exists_gal_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
   fourth root of unity;
 * `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`,
@@ -212,6 +215,15 @@ theorem units_pow_four_eq_one_four {K : Type*} [Field K] [CharZero K]
     decide
   simpa [htor] using NumberField.Units.pow_torsionOrder_eq_one_of_rank_eq_zero hrank u
 
+/-- Any multiplicative homomorphism out of `ℚ(i)` maps every unit of `ℤ[i]` to a fourth root of
+unity. -/
+theorem map_coe_unit_pow_four_eq_one_four {K L : Type*} [Field K] [CharZero K]
+    [IsCyclotomicExtension {4} ℚ K] [Monoid L] {M : Type*} [FunLike M K L]
+    [MonoidHomClass M K L] (φ : M) (u : (𝓞 K)ˣ) :
+    φ ((u : 𝓞 K) : K) ^ 4 = 1 := by
+  rw [← map_pow, RingOfIntegers.coe_eq_algebraMap, ← map_pow, ← Units.val_pow_eq_pow_val,
+    units_pow_four_eq_one_four u, Units.val_one, map_one, map_one]
+
 variable (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
 /-- **`ℤ[i]` is a principal ideal domain.** This is
@@ -221,6 +233,10 @@ theorem isPrincipalIdealRing_ringOfIntegers_four : IsPrincipalIdealRing (𝓞 K)
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
   NumberField.GaussianRationals.isPrincipalIdealRing hζ.minpoly_toInteger_eq_X_sq_add_one
     hζ.adjoin_toInteger_four
+
+/-- The fourth cyclotomic field `ℚ(i)` has class number `1`. -/
+theorem classNumber_eq_one_four : classNumber K = 1 :=
+  classNumber_eq_one_iff.mpr (isPrincipalIdealRing_ringOfIntegers_four K)
 
 end TauCeti
 

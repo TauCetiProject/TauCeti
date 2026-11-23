@@ -81,6 +81,8 @@ equivalent to a nonarchimedean absolute value.
   places.
 * `NumberField.InfinitePlace.subsingleton_of_finrank_eq_two`: a totally complex field of degree
   `2` has a unique infinite place.
+* `NumberField.InfinitePlace.univ_embedding_eq_pair`: when `K` has a unique infinite place `w`,
+  the complex embeddings of `K` are `w.embedding` and its conjugate.
 * `NumberField.InfinitePlace.embedding_eq_or_eq_conjugate`: an embedding inducing `w` equals
   `w.embedding` or its conjugate.
 * `NumberField.InfinitePlace.IsComplex.embedding_ne_conjugate`: at a complex place, `w.embedding`
@@ -268,6 +270,14 @@ theorem InfinitePlace.embedding_eq_or_eq_conjugate {w : InfinitePlace K} {σ : K
     (h : mk σ = w) :
     σ = w.embedding ∨ σ = ComplexEmbedding.conjugate w.embedding :=
   (mk_eq_iff.mp ((mk_embedding w).trans h.symm)).imp Eq.symm Eq.symm
+
+/-- When `K` has a unique infinite place `w`, the complex embeddings of `K` are `w.embedding`
+and its complex conjugate. -/
+theorem InfinitePlace.univ_embedding_eq_pair [NumberField K] [Subsingleton (InfinitePlace K)]
+    [DecidableEq (K →+* ℂ)] (w : InfinitePlace K) :
+    (Finset.univ : Finset (K →+* ℂ)) = {w.embedding, ComplexEmbedding.conjugate w.embedding} := by
+  ext τ
+  simpa using w.embedding_eq_or_eq_conjugate (Subsingleton.elim (mk τ) w)
 
 /-- At a complex infinite place `w`, `w.embedding` is distinct from its complex conjugate. -/
 theorem InfinitePlace.IsComplex.embedding_ne_conjugate {w : InfinitePlace K} (hw : w.IsComplex) :

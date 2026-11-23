@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Places.Connected
 
 import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Basic API for ideles
@@ -302,8 +303,8 @@ theorem NumberField.InfinitePlace.ideleComplexCoord_ofCompletion_self {w : Infin
       Units.mapContinuousMulEquiv (Completion.continuousMulEquivComplexOfIsComplex hw) u := by
   apply Units.ext
   rw [coe_ideleComplexCoord, ideleInfiniteCoord_ofCompletion_self,
-    Units.mapContinuousMulEquiv_apply, Units.coe_map]
-  rfl
+    Units.mapContinuousMulEquiv_apply, Units.coe_map, MonoidHom.coe_ofClass,
+    ContinuousMulEquiv.coe_toMulEquiv]
 
 /-- On an idele concentrated at a different infinite place `w' ≠ w`, the complex coordinate at `w`
 is `1`. -/
