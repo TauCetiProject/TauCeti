@@ -9,10 +9,9 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Wenzl
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.Analytic
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import Mathlib.Tactic.FieldSimp
 
 /-!
-# The hyperbolic parameter dictionary for Wenzl's Markov trace parameters
+# Wenzl's balanced-projection convention in hyperbolic parameters
 
 In `TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic`, at the Hecke parameter `q = exp (-θ)` and
 rescaled braid generators `γ i = I * exp (-α) • T i`, the positive and negative stabilization
@@ -27,37 +26,26 @@ projection parameter
 
 `η_W = 1 - η = (1 + tanh α * tanh θ) / 2` (`TauCeti.hyperbolicWenzlProjParam`).
 
-This file establishes Wenzl's projection rule in hyperbolic parameters and the dictionary between
-the hyperbolic parameters and Wenzl's discrete parameters `a_d(Q)` (`TauCeti.wenzlParam`) at
-`Q = q ^ 2 = exp (-2 * θ)` along the **exceptional discrete lines** `α = k * θ + π * I / 2`
-(`k ∈ ℤ \ {0}`): the native projection parameter is `a_(-k)(exp (-2 * θ))` and Wenzl's
-projection parameter is `a_k(exp (-2 * θ))`, with common stabilization constant
-`-sinh θ / sinh (k * θ)`. The root-of-unity specialization is in
-`TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.RootOfUnity`.
+This file establishes the balanced-projection compatibility and Wenzl's projection rule in
+hyperbolic parameters `q = exp (-θ)`, `Q = q ^ 2 = exp (-2 * θ)`. The exceptional discrete line
+dictionary is in `TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.ExceptionalLine`.
 
 ## Main results
 
 * `TauCeti.wenzlParam_neg_two_mul_hyperbolicHeckeParam_add_inv_sq` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_hyperbolic_wenzlProjection`:
   balanced-projection compatibility and Wenzl's projection rule in hyperbolic parameters.
-* `TauCeti.hyperbolicProjParam_mul_add_pi_mul_I_div_two`,
-  `TauCeti.hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two`, and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_hyperbolicGen_line_eq_iff`: the exceptional
-  discrete line dictionary `α = k * θ + π * I / 2`.
 
 ## References
 
 * H. Wenzl, *Hecke algebras of type A_n and subfactors*, Invent. Math. 92 (1988), 349–383, §§2–3.
 * V. F. R. Jones, *Hecke algebra representations of braid groups and link polynomials*,
   Ann. of Math. 126 (1987), 335–388, §§5–6, 11.
-* P. Freyd, D. Yetter, J. Hoste, W. B. R. Lickorish, K. Millett and A. Ocneanu, *A new
-  polynomial invariant of knots and links*, Bull. Amer. Math. Soc. 12 (1985), 239–246.
 -/
 
 public section
 
 open Complex
-open scoped Real
 
 namespace TauCeti
 
@@ -76,7 +64,7 @@ theorem wenzlParam_neg_two_mul_hyperbolicHeckeParam_add_inv_sq {θ : ℂ} (hθ :
 
 namespace InfiniteTypeAHeckeAlgebra
 
-variable {α θ z η ηW : ℂ} {τ : InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ) →ₗ[ℂ] ℂ}
+variable {θ z ηW : ℂ} {τ : InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ) →ₗ[ℂ] ℂ}
 
 /-- **Wenzl's projection rule in hyperbolic parameters.** When `cosh θ ≠ 0` and
 `z = exp (-θ) * (1 - η_W) - exp θ * η_W`, appending Wenzl's projection
@@ -97,106 +85,6 @@ theorem IsMarkovTrace.map_mul_hyperbolic_wenzlProjection (hτ : IsMarkovTrace z 
   rw [val_hyperbolicHeckeParam_sq] at h
   simpa only [Units.val_inv_eq_inv_val, Units.val_mk0, val_hyperbolicHeckeParam,
     sub_sub_cancel] using h
-
-end InfiniteTypeAHeckeAlgebra
-
-/-! ### Exceptional discrete line states `α = k * θ + π * I / 2` -/
-
-/-- **Native projection parameter on the exceptional line `α = k * θ + π * I / 2`.** Whenever
-`cosh θ ≠ 0` and `sinh (k * θ) ≠ 0`, `hyperbolicProjParam (k * θ + π * I / 2) θ` equals
-`a_(-k)(exp (-2 * θ))`. -/
-theorem hyperbolicProjParam_mul_add_pi_mul_I_div_two {k : ℤ} {θ : ℂ} (hθ : cosh θ ≠ 0)
-    (hk : sinh (k * θ) ≠ 0) :
-    hyperbolicProjParam (k * θ + π * I / 2) θ = wenzlParam (-k) (exp (-2 * θ)) := by
-  have hk_neg : sinh ((-k : ℤ) * θ) ≠ 0 := by simpa [Int.cast_neg, neg_mul, sinh_neg] using hk
-  -- Normalize the shifted exponent `(-k + 1) * θ` as `-(k * θ - θ)` for `sinh_neg` and `sinh_sub`.
-  have harg : (-(k : ℂ) + 1) * θ = -(k * θ - θ) := by ring
-  rw [hyperbolicProjParam_def, tanh_add_pi_mul_I_div_two, tanh_eq_sinh_div_cosh,
-    wenzlParam_exp_neg_two_mul (-k) hθ hk_neg, Int.cast_neg, neg_mul, sinh_neg, harg, sinh_neg,
-    sinh_sub]
-  field_simp [hθ, hk]
-
-/-- **Wenzl projection parameter on the exceptional line `α = k * θ + π * I / 2`.** Whenever
-`cosh θ ≠ 0` and `sinh (k * θ) ≠ 0`, `hyperbolicWenzlProjParam (k * θ + π * I / 2) θ` equals
-`a_k(exp (-2 * θ))`. -/
-theorem hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two {k : ℤ} {θ : ℂ} (hθ : cosh θ ≠ 0)
-    (hk : sinh (k * θ) ≠ 0) :
-    hyperbolicWenzlProjParam (k * θ + π * I / 2) θ = wenzlParam k (exp (-2 * θ)) := by
-  have hθ' : cosh (-θ) ≠ 0 := by simpa using hθ
-  have hk' : sinh ((-k : ℤ) * (-θ)) ≠ 0 := by simpa using hk
-  simpa [mul_neg] using hyperbolicProjParam_mul_add_pi_mul_I_div_two hθ' hk'
-
-/-- **Common stabilization constant on the exceptional line.** At `α = k * θ + π * I / 2` and
-`η = a_(-k)(exp (-2 * θ))`, the common stabilization constant is `-sinh θ / sinh (k * θ)`. -/
-theorem hyperbolicStabilization_mul_add_pi_mul_I_div_two {k : ℤ} {θ : ℂ} (hθ : cosh θ ≠ 0)
-    (hk : sinh (k * θ) ≠ 0) :
-    hyperbolicStabilization (k * θ + π * I / 2) θ (wenzlParam (-k) (exp (-2 * θ))) =
-      -sinh θ / sinh (k * θ) := by
-  rw [hyperbolicStabilization_eq_neg_I_mul_sinh_div_cosh
-    (cosh_add_pi_mul_I_div_two_ne_zero.2 hk) hθ
-    (hyperbolicProjParam_mul_add_pi_mul_I_div_two hθ hk).symm, cosh_add_pi_mul_I_div_two]
-  field_simp [I_ne_zero]
-
-/-- **Real-`θ` exceptional line parameter (`k ≠ 0`, `θ ≠ 0`).** At real `θ ≠ 0` and integer `k ≠ 0`,
-`hyperbolicProjParam (k * θ + π * I / 2) θ = a_(-k)(exp (-2 * θ))`. -/
-theorem hyperbolicProjParam_ofReal_mul_add_pi_mul_I_div_two {k : ℤ} (hk : k ≠ 0) {θ : ℝ}
-    (hθ : θ ≠ 0) :
-    hyperbolicProjParam (k * (θ : ℂ) + π * I / 2) θ =
-      ↑(wenzlParam (-k) (Real.exp (-2 * θ))) := by
-  have hs : sinh ((k : ℂ) * θ) ≠ 0 := by
-    simpa using sinh_ofReal_ne_zero.2 (mul_ne_zero (Int.cast_ne_zero.2 hk) hθ)
-  rw [hyperbolicProjParam_mul_add_pi_mul_I_div_two (cosh_ofReal_ne_zero θ) hs]
-  symm
-  simpa using map_wenzlParam Complex.ofRealHom (-k) (Real.exp (-2 * θ))
-
-/-- At real `θ ≠ 0` and integer `k ≠ 0`, Wenzl's parameter on `α = k * θ + π * I / 2` is
-`a_k(exp (-2 * θ))`. -/
-theorem hyperbolicWenzlProjParam_ofReal_mul_add_pi_mul_I_div_two {k : ℤ} (hk : k ≠ 0) {θ : ℝ}
-    (hθ : θ ≠ 0) :
-    hyperbolicWenzlProjParam (k * (θ : ℂ) + π * I / 2) θ =
-      ↑(wenzlParam k (Real.exp (-2 * θ))) := by
-  simpa [mul_neg] using
-    hyperbolicProjParam_ofReal_mul_add_pi_mul_I_div_two (neg_ne_zero.2 hk) (neg_ne_zero.2 hθ)
-
-namespace InfiniteTypeAHeckeAlgebra
-
-variable {k : ℤ} {θ z η ηW : ℂ}
-  {τ : InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ) →ₗ[ℂ] ℂ}
-
-/-- **Markov trace characterization on the exceptional line (native convention).** For
-`cosh θ ≠ 0` and `sinh (k * θ) ≠ 0`, a Markov trace with native projection parameter `η` has equal
-stabilization constants at `α = k * θ + π * I / 2` if and only if `η = a_(-k)(exp (-2 * θ))`. -/
-theorem IsMarkovTrace.map_hyperbolicGen_line_eq_iff (hτ : IsMarkovTrace z τ)
-    (hz : z = exp (-θ) * η - exp θ * (1 - η)) (hθ : cosh θ ≠ 0) (hk : sinh (k * θ) ≠ 0)
-    (n : ℕ) :
-    τ (hyperbolicGen (k * θ + π * I / 2) θ n) =
-        τ ↑(hyperbolicGen (k * θ + π * I / 2) θ n)⁻¹ ↔
-      η = wenzlParam (-k) (exp (-2 * θ)) := by
-  rw [hτ.map_hyperbolicGen_eq_map_inv_iff hz (cosh_add_pi_mul_I_div_two_ne_zero.2 hk) hθ n,
-    hyperbolicProjParam_mul_add_pi_mul_I_div_two hθ hk]
-
-/-- **Markov trace characterization on the exceptional line (Wenzl convention).** For `cosh θ ≠ 0`
-and `sinh (k * θ) ≠ 0`, a Markov trace with Wenzl projection parameter `η_W` has equal
-stabilization constants at `α = k * θ + π * I / 2` if and only if `η_W = a_k(exp (-2 * θ))`. -/
-theorem IsMarkovTrace.map_hyperbolicGen_line_eq_iff_wenzl (hτ : IsMarkovTrace z τ)
-    (hz : z = exp (-θ) * (1 - ηW) - exp θ * ηW) (hθ : cosh θ ≠ 0) (hk : sinh (k * θ) ≠ 0)
-    (n : ℕ) :
-    τ (hyperbolicGen (k * θ + π * I / 2) θ n) =
-        τ ↑(hyperbolicGen (k * θ + π * I / 2) θ n)⁻¹ ↔
-      ηW = wenzlParam k (exp (-2 * θ)) := by
-  rw [hτ.map_hyperbolicGen_eq_map_inv_iff_wenzl hz (cosh_add_pi_mul_I_div_two_ne_zero.2 hk) hθ n,
-    hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two hθ hk]
-
-/-- Precomposing with `complementEquiv` on the exceptional line `α = k * θ + π * I / 2` gives the
-complementary parameter `a_k(exp (-2 * θ))`. -/
-theorem IsMarkovTrace.map_complementEquiv_hyperbolicGen_line_eq_iff (hτ : IsMarkovTrace z τ)
-    (hz : z = exp (-θ) * η - exp θ * (1 - η)) (hθ : cosh θ ≠ 0) (hk : sinh (k * θ) ≠ 0)
-    (n : ℕ) :
-    τ (complementEquiv _ (hyperbolicGen (k * θ + π * I / 2) θ n)) =
-        τ (complementEquiv _ ↑(hyperbolicGen (k * θ + π * I / 2) θ n)⁻¹) ↔
-      η = wenzlParam k (exp (-2 * θ)) := by
-  rw [hτ.map_complementEquiv_hyperbolicGen_eq_iff hz (cosh_add_pi_mul_I_div_two_ne_zero.2 hk) hθ n,
-    hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two hθ hk]
 
 end InfiniteTypeAHeckeAlgebra
 

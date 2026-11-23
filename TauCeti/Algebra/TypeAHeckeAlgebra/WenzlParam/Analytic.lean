@@ -152,10 +152,9 @@ theorem wenzlParam_real_exp_two_mul {k : ℤ} (hk : k ≠ 0) {θ : ℝ} (hθ : �
     wenzlParam k (Real.exp (2 * θ)) =
       Real.sinh ((k + 1) * θ) / (2 * Real.cosh θ * Real.sinh (k * θ)) := by
   apply Complex.ofReal_injective
-  have hs : sinh ((k : ℂ) * θ) ≠ 0 := by
-    simpa using sinh_ofReal_ne_zero.2 (mul_ne_zero (Int.cast_ne_zero.2 hk) hθ)
   rw [← Complex.ofRealHom_eq_coe, map_wenzlParam]
-  simpa using wenzlParam_exp_two_mul k (cosh_ofReal_ne_zero θ) hs
+  simpa using wenzlParam_exp_two_mul k (cosh_ofReal_ne_zero θ)
+    (sinh_intCast_mul_ofReal_ne_zero hk hθ)
 
 /-- **The real hyperbolic form at `Real.exp (-2 θ)`.** For `k ≠ 0` and real `θ ≠ 0`,
 `a_k(exp (-2 * θ)) = sinh ((k + 1) * θ) / (2 * cosh θ * sinh (k * θ))`. -/

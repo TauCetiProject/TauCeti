@@ -249,22 +249,17 @@ theorem bijOn_realHyperbolicProjParam {θ : ℝ} (hθ : 0 < θ) :
     Set.BijOn (fun α ↦ realHyperbolicProjParam α θ) Set.univ
       (Set.Ioo (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) (1 / (1 + Real.exp (-2 * θ)))) := by
   have ht : 0 < Real.tanh θ := by simpa using Real.tanh_strictMono hθ
-  refine ⟨fun α _ ↦ ?_, (strictAnti_realHyperbolicProjParam hθ).injective.injOn, fun η hη ↦ ?_⟩
-  · dsimp only
-    rw [Set.mem_Ioo, ← Real.one_sub_tanh_div_two, ← Real.one_add_tanh_div_two,
-      realHyperbolicProjParam_def]
-    exact ⟨by nlinarith [Real.tanh_lt_one α], by nlinarith [Real.neg_one_lt_tanh α]⟩
-  · rw [Set.mem_Ioo, ← Real.one_sub_tanh_div_two, ← Real.one_add_tanh_div_two] at hη
-    let t := (1 - 2 * η) / Real.tanh θ
-    have ht_mem : t ∈ Set.Ioo (-1 : ℝ) 1 := by
-      rw [Set.mem_Ioo, lt_div_iff₀ ht, div_lt_iff₀ ht]
+  have haff : Set.BijOn (fun t : ℝ ↦ (1 - t * Real.tanh θ) / 2) (Set.Ioo (-1 : ℝ) 1)
+      (Set.Ioo ((1 - Real.tanh θ) / 2) ((1 + Real.tanh θ) / 2)) := by
+    refine ⟨fun t ht' ↦ ⟨by nlinarith [ht'.2], by nlinarith [ht'.1]⟩,
+      fun a _ b _ h ↦ mul_right_cancel₀ ht.ne' (by linarith), fun η hη ↦ ?_⟩
+    refine ⟨(1 - 2 * η) / Real.tanh θ, ?_, ?_⟩
+    · rw [Set.mem_Ioo, lt_div_iff₀ ht, div_lt_iff₀ ht]
       exact ⟨by linarith [hη.2], by linarith [hη.1]⟩
-    refine ⟨Real.artanh t, Set.mem_univ _, ?_⟩
-    dsimp only
-    rw [realHyperbolicProjParam_def, Real.tanh_artanh ht_mem]
-    dsimp only [t]
-    field_simp [ht.ne']
-    ring
+    · field_simp [ht.ne']
+      ring
+  rw [← Real.one_sub_tanh_div_two, ← Real.one_add_tanh_div_two]
+  simpa only [Function.comp_def, ← realHyperbolicProjParam_def] using haff.comp Real.tanh_bijOn
 
 /-- For `0 < θ`, Wenzl's parameter `α ↦ realHyperbolicWenzlProjParam α θ` is also a bijection from
 `ℝ` onto `(exp (-2 * θ) / (1 + exp (-2 * θ)), 1 / (1 + exp (-2 * θ)))`. -/
