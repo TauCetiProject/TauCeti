@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Iso
 public import Mathlib.CategoryTheory.Products.Basic
 public import TauCeti.CategoryTheory.DoubleCategory.Transpose
 
@@ -37,7 +36,8 @@ left to right. It is the horizontal globular category of the transpose of `D`, s
 construction on horizontal globular cells applies to vertical ones.
 
 Isomorphisms in these categories are the invertible globular cells, through which a represented
-double category compares an edge path with a single generating edge.
+double category compares an edge path with a single generating edge. Pasting an invertible
+globular cell onto a side of an arbitrary cell replaces that boundary edge by an isomorphic one.
 
 ## Main declarations
 
@@ -49,6 +49,8 @@ double category compares an edge path with a single generating edge.
   describing its composition by horizontal pasting;
 * `TauCeti.StrictDoubleCategory.HorizontalIso` and `TauCeti.StrictDoubleCategory.VerticalIso`:
   invertible globular cells.
+* `TauCeti.StrictDoubleCategory.changeTop`, `changeBottom`, `changeLeft` and `changeRight`:
+  replacing a boundary of a cell along an invertible globular cell.
 
 ## References
 
@@ -144,16 +146,6 @@ end HorizontalGlobular
 
 variable {a b c : O}
 
-/-- Horizontal pasting of horizontal globular cells is functorial in both arguments: pasting two
-vertical composites side by side is the vertical composite of the side-by-side pastings. -/
-theorem hComp_comp_cell {p q t : D.HorizontalGlobular a b} {p' q' t' : D.HorizontalGlobular b c}
-    (α : p ⟶ q) (β : q ⟶ t) (γ : p' ⟶ q') (δ : q' ⟶ t') :
-    D.hComp (α ≫ β).cell (γ ≫ δ).cell =
-      (D.vComp (D.hComp α.cell γ.cell) (D.hComp β.cell δ.cell)).cast rfl rfl
-        (Category.id_comp (self := V) _) (Category.id_comp (self := V) _) := by
-  rw [HorizontalGlobular.comp_cell, HorizontalGlobular.comp_cell, hComp_cast_cast,
-    ← D.interchange]
-
 /-- Horizontal pasting of horizontal globular cells, as a functor of both arguments: composition
 on edges and horizontal pasting on cells. -/
 @[expose]
@@ -167,7 +159,8 @@ def hCompFunctor :
       HorizontalGlobular.id_cell, D.vId_comp]
   map_comp α β := by
     ext
-    rw [prod_comp, D.hComp_comp_cell, HorizontalGlobular.comp_cell]
+    rw [prod_comp, HorizontalGlobular.comp_cell, HorizontalGlobular.comp_cell,
+      HorizontalGlobular.comp_cell, hComp_cast_cast, ← D.interchange]
 
 @[simp]
 theorem hCompFunctor_obj (p : D.HorizontalGlobular a b × D.HorizontalGlobular b c) :
@@ -266,6 +259,142 @@ end VerticalGlobular
 from `l` to `r` in the vertical globular category. -/
 abbrev VerticalIso (l r : Edge V a b) : Type s :=
   D.transpose.HorizontalIso l r
+
+section BoundaryChange
+
+variable {a b c d : O} {p p' p'' : Edge H a b} {q q' q'' : Edge H c d} {l l' l'' : Edge V a c}
+  {r r' r'' : Edge V b d}
+
+/-- Replace the top boundary `p` of a cell by `p'` along an invertible horizontal globular cell
+`e : p ≅ p'`, by pasting the inverse of `e` on top of the cell. -/
+def changeTop (e : D.HorizontalIso p p') (α : D.Cell p q l r) : D.Cell p' q l r :=
+  (D.vComp e.inv.cell α).cast rfl rfl (Category.id_comp (self := V) l)
+    (Category.id_comp (self := V) r)
+
+/-- Replace the bottom boundary `q` of a cell by `q'` along an invertible horizontal globular cell
+`e : q ≅ q'`, by pasting `e` below the cell. -/
+def changeBottom (e : D.HorizontalIso q q') (α : D.Cell p q l r) : D.Cell p q' l r :=
+  (D.vComp α e.hom.cell).cast rfl rfl (Category.comp_id (self := V) l)
+    (Category.comp_id (self := V) r)
+
+/-- Replace the left boundary `l` of a cell by `l'` along an invertible vertical globular cell
+`e : l ≅ l'`, by pasting the inverse of `e` to the left of the cell. It is the change of top
+boundary in the transpose. -/
+def changeLeft (e : D.VerticalIso l l') (α : D.Cell p q l r) : D.Cell p q l' r :=
+  D.transpose.changeTop e α
+
+/-- Replace the right boundary `r` of a cell by `r'` along an invertible vertical globular cell
+`e : r ≅ r'`, by pasting `e` to the right of the cell. It is the change of bottom boundary in the
+transpose. -/
+def changeRight (e : D.VerticalIso r r') (α : D.Cell p q l r) : D.Cell p q l r' :=
+  D.transpose.changeBottom e α
+
+/-- Changing the top boundary pastes the inverse globular cell on top. -/
+theorem changeTop_def (e : D.HorizontalIso p p') (α : D.Cell p q l r) :
+    D.changeTop e α = (D.vComp e.inv.cell α).cast rfl rfl (Category.id_comp (self := V) l)
+      (Category.id_comp (self := V) r) :=
+  (rfl)
+
+/-- Changing the bottom boundary pastes the globular cell below. -/
+theorem changeBottom_def (e : D.HorizontalIso q q') (α : D.Cell p q l r) :
+    D.changeBottom e α = (D.vComp α e.hom.cell).cast rfl rfl (Category.comp_id (self := V) l)
+      (Category.comp_id (self := V) r) :=
+  (rfl)
+
+/-- Changing the left boundary pastes the inverse vertical globular cell on the left, by
+horizontal pasting in `D`. -/
+theorem changeLeft_def (e : D.VerticalIso l l') (α : D.Cell p q l r) :
+    D.changeLeft e α = (D.hComp e.inv.cell α).cast (Category.id_comp (self := H) p)
+      (Category.id_comp (self := H) q) rfl rfl :=
+  (D.transpose.changeTop_def e α).trans
+    (DoubleCategoryStruct.transpose_cast D.toDoubleCategoryStruct _ _ _ _ _)
+
+/-- Changing the right boundary pastes the vertical globular cell on the right, by horizontal
+pasting in `D`. -/
+theorem changeRight_def (e : D.VerticalIso r r') (α : D.Cell p q l r) :
+    D.changeRight e α = (D.hComp α e.hom.cell).cast (Category.comp_id (self := H) p)
+      (Category.comp_id (self := H) q) rfl rfl :=
+  (D.transpose.changeBottom_def e α).trans
+    (DoubleCategoryStruct.transpose_cast D.toDoubleCategoryStruct _ _ _ _ _)
+
+@[simp]
+theorem changeTop_refl (α : D.Cell p q l r) : D.changeTop (Iso.refl _) α = α := by
+  simp [changeTop_def]
+
+@[simp]
+theorem changeBottom_refl (α : D.Cell p q l r) : D.changeBottom (Iso.refl _) α = α := by
+  simp [changeBottom_def]
+
+@[simp]
+theorem changeTop_trans (e : D.HorizontalIso p p') (e' : D.HorizontalIso p' p'')
+    (α : D.Cell p q l r) : D.changeTop (e ≪≫ e') α = D.changeTop e' (D.changeTop e α) := by
+  simp [changeTop_def, vComp_assoc]
+
+@[simp]
+theorem changeBottom_trans (e : D.HorizontalIso q q') (e' : D.HorizontalIso q' q'')
+    (α : D.Cell p q l r) :
+    D.changeBottom (e ≪≫ e') α = D.changeBottom e' (D.changeBottom e α) := by
+  simp [changeBottom_def, vComp_assoc]
+
+@[simp]
+theorem changeTop_symm_changeTop (e : D.HorizontalIso p p') (α : D.Cell p q l r) :
+    D.changeTop e.symm (D.changeTop e α) = α := by
+  rw [← changeTop_trans, Iso.self_symm_id, changeTop_refl]
+
+@[simp]
+theorem changeTop_changeTop_symm (e : D.HorizontalIso p p') (α : D.Cell p' q l r) :
+    D.changeTop e (D.changeTop e.symm α) = α := by
+  rw [← changeTop_trans, Iso.symm_self_id, changeTop_refl]
+
+@[simp]
+theorem changeBottom_symm_changeBottom (e : D.HorizontalIso q q') (α : D.Cell p q l r) :
+    D.changeBottom e.symm (D.changeBottom e α) = α := by
+  rw [← changeBottom_trans, Iso.self_symm_id, changeBottom_refl]
+
+@[simp]
+theorem changeBottom_changeBottom_symm (e : D.HorizontalIso q q') (α : D.Cell p q' l r) :
+    D.changeBottom e (D.changeBottom e.symm α) = α := by
+  rw [← changeBottom_trans, Iso.symm_self_id, changeBottom_refl]
+
+@[simp]
+theorem changeLeft_refl (α : D.Cell p q l r) : D.changeLeft (Iso.refl _) α = α :=
+  D.transpose.changeTop_refl α
+
+@[simp]
+theorem changeRight_refl (α : D.Cell p q l r) : D.changeRight (Iso.refl _) α = α :=
+  D.transpose.changeBottom_refl α
+
+@[simp]
+theorem changeLeft_trans (e : D.VerticalIso l l') (e' : D.VerticalIso l' l'')
+    (α : D.Cell p q l r) : D.changeLeft (e ≪≫ e') α = D.changeLeft e' (D.changeLeft e α) :=
+  D.transpose.changeTop_trans e e' α
+
+@[simp]
+theorem changeRight_trans (e : D.VerticalIso r r') (e' : D.VerticalIso r' r'')
+    (α : D.Cell p q l r) : D.changeRight (e ≪≫ e') α = D.changeRight e' (D.changeRight e α) :=
+  D.transpose.changeBottom_trans e e' α
+
+@[simp]
+theorem changeLeft_symm_changeLeft (e : D.VerticalIso l l') (α : D.Cell p q l r) :
+    D.changeLeft e.symm (D.changeLeft e α) = α :=
+  D.transpose.changeTop_symm_changeTop e α
+
+@[simp]
+theorem changeLeft_changeLeft_symm (e : D.VerticalIso l l') (α : D.Cell p q l' r) :
+    D.changeLeft e (D.changeLeft e.symm α) = α :=
+  D.transpose.changeTop_changeTop_symm e α
+
+@[simp]
+theorem changeRight_symm_changeRight (e : D.VerticalIso r r') (α : D.Cell p q l r) :
+    D.changeRight e.symm (D.changeRight e α) = α :=
+  D.transpose.changeBottom_symm_changeBottom e α
+
+@[simp]
+theorem changeRight_changeRight_symm (e : D.VerticalIso r r') (α : D.Cell p q l r') :
+    D.changeRight e (D.changeRight e.symm α) = α :=
+  D.transpose.changeBottom_changeBottom_symm e α
+
+end BoundaryChange
 
 end StrictDoubleCategory
 

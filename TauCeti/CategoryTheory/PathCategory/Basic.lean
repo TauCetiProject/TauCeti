@@ -59,11 +59,4 @@ theorem pathCategory_comp (Q : Quiver.{h} O) {a b c : O} (p : @Path O Q a b)
     CategoryStruct.comp (self := (pathCategory O Q).toCategoryStruct) p q = p.comp q :=
   rfl
 
-/-- Composing a morphism of the path category with the path `[f]` of length one appends `f`. -/
-theorem pathCategory_comp_toPath (Q : Quiver.{h} O) {a b c : O} (p : @Path O Q a b)
-    (f : @Quiver.Hom O Q b c) :
-    CategoryStruct.comp (self := (pathCategory O Q).toCategoryStruct) p
-      (@Hom.toPath O Q b c f) = p.cons f :=
-  (pathCategory_comp Q p _).trans (Path.comp_toPath_eq_cons p f)
-
 end Quiver
