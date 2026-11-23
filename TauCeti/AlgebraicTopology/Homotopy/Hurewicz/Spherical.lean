@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
+import TauCeti.Algebra.Group.ZMultiples
+import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 
 /-!
@@ -38,7 +40,11 @@ different path components. This file defines the subgroup of spherical classes.
   classes of `X × Y` are the images of those of `X` under a slice inclusion `x ↦ (x, y)`
   (`TauCeti.sphericalClasses_prod_eq_map`). In particular those of `Sⁿ⁺¹ × Y` are the integer
   multiples of the class of the slice `Sⁿ⁺¹ × {y}`
-  (`TauCeti.sphericalClasses_sphere_prod_eq_zmultiples`).
+  (`TauCeti.sphericalClasses_sphere_prod_eq_zmultiples`). Hence the value of a homomorphism `ω` on
+  a spherical class of `Sⁿ⁺¹ × Y` is an integer multiple of `a = ω [Sⁿ⁺¹ × {y}]`
+  (`TauCeti.exists_apply_eq_zsmul_apply_sphereSliceClass`), and if `a > 0` every positive such
+  value is at least `a` (`TauCeti.apply_sphereSliceClass_le`). This is the topological part of
+  the area gap in Gromov's proof of nonsqueezing, for `S² × Tᵏ`.
 
 In degree two these are the spherical classes over which the periods of capped Hamiltonian Floer
 theory are taken: two caps of a contractible loop differ by a sphere.
@@ -222,7 +228,40 @@ def sphereSliceClass (y : Y) (n : ℕ) :
     (TopCat.ofHom ((ContinuousMap.id _).prodMk (ContinuousMap.const _ y)))).hom
     ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop (n + 1))).hom 1)
 
+theorem sphereSliceClass_def (y : Y) (n : ℕ) :
+    sphereSliceClass Y y n =
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).map
+        (TopCat.ofHom ((ContinuousMap.id _).prodMk (ContinuousMap.const _ y)))).hom
+        ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop (n + 1))).hom 1) :=
+  (rfl)
+
+/-- The class of the slice `Sⁿ⁺¹ × {y}` does not depend on the point `y` within a path
+component: slices at points joined by a path are homotopic. -/
+theorem sphereSliceClass_eq_of_joined {y y' : Y} (h : Joined y y') (n : ℕ) :
+    sphereSliceClass Y y n = sphereSliceClass Y y' n := by
+  have : Nonempty (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1) := ⟨sphereNorthPole (n + 1)⟩
+  rw [sphereSliceClass_def, sphereSliceClass_def,
+    ContinuousMap.singularHomologyFunctor_map_eq_of_homotopic _ _
+      ⟨(ContinuousMap.Homotopy.refl (ContinuousMap.id _)).prod
+        (ContinuousMap.homotopic_const_iff.2 h).some⟩]
+
+/-- The first projection sends the class of the slice `Sⁿ⁺¹ × {y}` back to the fundamental class
+of the sphere. -/
+@[simp]
+theorem map_fst_sphereSliceClass (y : Y) (n : ℕ) :
+    (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).map
+      (TopCat.ofHom (ContinuousMap.fst :
+        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y, _)))).hom (sphereSliceClass Y y n) =
+      (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop (n + 1))).hom 1 := by
+  have h : (ContinuousMap.fst : C(_ × Y, _)).comp
+      ((ContinuousMap.id (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)).prodMk
+        (ContinuousMap.const _ y)) = ContinuousMap.id _ :=
+    rfl
+  rw [sphereSliceClass_def, ← ModuleCat.comp_apply, ← Functor.map_comp, ← TopCat.ofHom_comp, h,
+    TopCat.ofHom_id, CategoryTheory.Functor.map_id, ModuleCat.id_apply]
+
 /-- The class of a slice `Sⁿ⁺¹ × {y}` is spherical. -/
+@[simp]
 theorem sphereSliceClass_mem_sphericalClasses (y : Y) (n : ℕ) :
     sphereSliceClass Y y n ∈
       sphericalClasses (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y) n :=
@@ -238,5 +277,37 @@ theorem sphericalClasses_sphere_prod_eq_zmultiples [PathConnectedSpace Y] (y : Y
   rw [sphericalClasses_prod_eq_map y, sphericalClasses_sphere_eq_top,
     ← zmultiples_hurewicz_sphereGenLoop, AddMonoidHom.map_zmultiples,
     LinearMap.toAddMonoidHom_coe, sphereSliceClass]
+
+/-- **Spherical areas of `Sⁿ⁺¹ × Y` are multiples of the area of a slice.** If `Y` is
+path-connected and `πₙ₊₁(Y, y)` is trivial, the value of a homomorphism `ω` on a spherical class
+of `Sⁿ⁺¹ × Y` is an integer multiple of its value on the class of the slice `Sⁿ⁺¹ × {y}`. -/
+theorem exists_apply_eq_zsmul_apply_sphereSliceClass {G : Type*} [AddGroup G]
+    [PathConnectedSpace Y] (y : Y) {n : ℕ} [Subsingleton (HomotopyGroup (Fin (n + 1)) Y y)]
+    (ω : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y)) →+ G)
+    {c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y))}
+    (hc : c ∈ sphericalClasses (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y) n) :
+    ∃ k : ℤ, ω c = k • ω (sphereSliceClass Y y n) := by
+  rw [sphericalClasses_sphere_prod_eq_zmultiples y n] at hc
+  obtain ⟨k, rfl⟩ := AddSubgroup.mem_zmultiples_iff.1 hc
+  exact ⟨k, map_zsmul ω k _⟩
+
+/-- **The area gap of `Sⁿ⁺¹ × Y`.** If `Y` is path-connected and `πₙ₊₁(Y, y)` is trivial, and the
+homomorphism `ω` is positive on the class of the slice `Sⁿ⁺¹ × {y}`, then every positive value of
+`ω` on a spherical class of `Sⁿ⁺¹ × Y` is at least its value on the slice. -/
+theorem apply_sphereSliceClass_le {G : Type*} [AddCommGroup G] [PartialOrder G]
+    [IsOrderedAddMonoid G] [PathConnectedSpace Y] {y : Y} {n : ℕ}
+    [Subsingleton (HomotopyGroup (Fin (n + 1)) Y y)]
+    (ω : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y)) →+ G)
+    (ha : 0 < ω (sphereSliceClass Y y n))
+    {c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y))}
+    (hc : c ∈ sphericalClasses (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y) n)
+    (hpos : 0 < ω c) : ω (sphereSliceClass Y y n) ≤ ω c := by
+  rw [sphericalClasses_sphere_prod_eq_zmultiples y n] at hc
+  exact le_of_mem_zmultiples ha
+    (AddMonoidHom.map_zmultiples ω _ ▸ AddSubgroup.mem_map_of_mem ω hc) hpos
 
 end TauCeti
