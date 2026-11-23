@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Statistics.Experiments.Mixture
 public import TauCeti.Statistics.Sufficiency.Basic
+public import TauCeti.Statistics.Sufficiency.Mixture
 
 import Mathlib.Probability.Kernel.CondDistrib
 import TauCeti.MeasureTheory.Measure.Decomposition.RNDeriv
@@ -20,9 +21,6 @@ families and deduces the minimal sufficiency of the likelihood ratio for countab
 building on the generic two-measure disintegration/density lemmas in
 `TauCeti.Probability.Kernel.Disintegration.Map`:
 
-* `TauCeti.IsSufficientStatistic.countableMixture`,
-  `TauCeti.IsSufficientStatistic.sumElim_countableMixture`: preservation of sufficiency under
-  countable mixtures, retaining the same common Markov kernel.
 * `TauCeti.IsSufficientStatistic.exists_factorization`: forward factorization (no standard Borel
   assumption needed).
 * `TauCeti.isSufficientStatistic_of_exists_factorization`: converse factorization on a standard
@@ -51,29 +49,6 @@ open scoped ENNReal
 namespace TauCeti
 
 variable {Θ X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
-
-/-! ### Countable mixtures of sufficient statistics -/
-
-/-- Taking countable mixtures `TauCeti.countableMixture P (θss ι)` preserves sufficiency of `T`,
-with a single common Markov kernel. -/
-theorem IsSufficientStatistic.countableMixture {P : Θ → Measure X} {T : X → S}
-    (h : IsSufficientStatistic P T) {Ι : Type*} (θss : Ι → ℕ → Θ) :
-    IsSufficientStatistic (fun ι ↦ TauCeti.countableMixture P (θss ι)) T := by
-  obtain ⟨hT, K, hK, hdis⟩ := isSufficientStatistic_def.mp h
-  rw [isSufficientStatistic_def]
-  exact ⟨hT, K, hK, fun ι ↦ map_prodMk_countableMixture_eq_compProd hT fun n ↦ hdis (θss ι n)⟩
-
-/-- Adjoining countable mixtures `TauCeti.countableMixture P (θss ι)` to `P` preserves
-sufficiency with a single common Markov kernel shared by `P` and all mixtures. -/
-theorem IsSufficientStatistic.sumElim_countableMixture {P : Θ → Measure X} {T : X → S}
-    (h : IsSufficientStatistic P T) {Ι : Type*} (θss : Ι → ℕ → Θ) :
-    IsSufficientStatistic (Sum.elim P (fun ι ↦ TauCeti.countableMixture P (θss ι))) T := by
-  obtain ⟨hT, K, hK, hdis⟩ := isSufficientStatistic_def.mp h
-  rw [isSufficientStatistic_def]
-  refine ⟨hT, K, hK, ?_⟩
-  rintro (θ | ι)
-  · exact hdis θ
-  · exact map_prodMk_countableMixture_eq_compProd hT fun n ↦ hdis (θss ι n)
 
 /-! ### The Neyman–Fisher factorization theorem -/
 

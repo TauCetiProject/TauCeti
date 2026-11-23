@@ -29,6 +29,11 @@ and develops the conditional-expectation characterization of sufficiency:
   characterization lemmas for sufficiency of finite families.
 * `TauCeti.IsSufficientStatistic.sFinite`, `TauCeti.isSufficientStatistic_id_iff`: sufficiency
   implies s-finiteness of every model law, characterizing identity sufficiency.
+* `TauCeti.IsSufficientStatistic.comp_of_ae_leftInverse`,
+  `TauCeti.isSufficientStatistic_comp_iff_of_ae_leftInverse`,
+  `TauCeti.IsMinimalSufficientStatistic.comp_of_ae_leftInverse`,
+  `TauCeti.isMinimalSufficientStatistic_comp_iff_of_ae_leftInverse`: transport of sufficiency
+  and minimal sufficiency under recodings that are invertible almost everywhere.
 * `TauCeti.IsSufficientStatistic.comp`, `TauCeti.IsSufficientStatistic.sumElim_comp`: preservation
   of sufficiency under kernel mixtures, retaining the same common Markov kernel.
 * `TauCeti.IsMinimalSufficientStatistic.{u, v, w, r} P T`: `T` is sufficient and factors
@@ -173,26 +178,34 @@ theorem isSufficientStatistic_const [Nonempty Θ] {P : Θ → Measure X}
     IsSufficientStatistic P (fun _ ↦ s₀) :=
   (isSufficientStatistic_const_iff s₀).mpr hconst
 
+/-- Composing a sufficient statistic `T : X → S` with a measurable map `e : S → S'` that admits
+a measurable left inverse `d : S' → S` almost everywhere under every `P θ` preserves sufficiency. -/
+theorem IsSufficientStatistic.comp_of_ae_leftInverse {P : Θ → Measure X} {T : X → S}
+    (h : IsSufficientStatistic P T) {e : S → S'} (he : Measurable e) {d : S' → S}
+    (hd : Measurable d) (hae : ∀ θ, d ∘ e ∘ T =ᵐ[P θ] T) :
+    IsSufficientStatistic P (e ∘ T) := by
+  obtain ⟨hT, K, _, hdis⟩ := h
+  refine ⟨he.comp hT, K.comap d hd, inferInstance, fun θ ↦ ?_⟩
+  exact map_prodMk_eq_compProd_comap_of_ae_eq hT (he.comp hT) he hd Filter.EventuallyEq.rfl
+    (hae θ) (hdis θ)
+
+/-- If `e : S → S'` and `d : S' → S` are measurable with `d ∘ e ∘ T =ᵐ[P θ] T` for every `θ`,
+then a measurable statistic `T` is sufficient if and only if `e ∘ T` is sufficient. -/
+theorem isSufficientStatistic_comp_iff_of_ae_leftInverse {P : Θ → Measure X} {T : X → S}
+    (hT : Measurable T) {e : S → S'} (he : Measurable e) {d : S' → S} (hd : Measurable d)
+    (hae : ∀ θ, d ∘ e ∘ T =ᵐ[P θ] T) :
+    IsSufficientStatistic P (e ∘ T) ↔ IsSufficientStatistic P T := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_of_ae_leftInverse he hd hae⟩
+  obtain ⟨_, K, _, hdis⟩ := h
+  exact ⟨hT, K.comap e he, inferInstance, fun θ ↦
+    map_prodMk_eq_compProd_comap_of_ae_eq (he.comp hT) hT hd he (hae θ)
+      Filter.EventuallyEq.rfl (hdis θ)⟩
+
 /-- Composing a sufficient statistic with a measurable equivalence preserves sufficiency. -/
 theorem IsSufficientStatistic.comp_measurableEquiv {P : Θ → Measure X}
     {T : X → S} (h : IsSufficientStatistic P T) (e : S ≃ᵐ S') :
-    IsSufficientStatistic P (e ∘ T) := by
-  obtain ⟨hT, K, hK, hdis⟩ := h
-  refine ⟨e.measurable.comp hT, K.comap e.symm e.symm.measurable, inferInstance, fun θ ↦ ?_⟩
-  have : SFinite (P θ) := sfinite_of_map_prodMk_eq_compProd hT.aemeasurable (hdis θ)
-  have hK' : (K.comap e.symm e.symm.measurable).comap e e.measurable = K := by
-    rw [← Kernel.comap_comp_right]
-    simp
-  calc (P θ).map (fun x ↦ ((e ∘ T) x, x))
-    _ = ((P θ).map (fun x ↦ (T x, x))).map (Prod.map e id) :=
-        (Measure.map_map (e.measurable.prodMap measurable_id) (hT.prodMk measurable_id)).symm
-    _ = ((P θ).map T ⊗ₘ K).map (Prod.map e id) := by rw [hdis θ]
-    _ = ((P θ).map T ⊗ₘ (K.comap e.symm e.symm.measurable).comap e e.measurable).map
-          (Prod.map e id) := by rw [hK']
-    _ = ((P θ).map T).map e ⊗ₘ K.comap e.symm e.symm.measurable :=
-        Measure.map_prodMap_compProd_comap _ _ e.measurable
-    _ = (P θ).map (e ∘ T) ⊗ₘ K.comap e.symm e.symm.measurable := by
-        rw [Measure.map_map e.measurable hT]
+    IsSufficientStatistic P (e ∘ T) :=
+  h.comp_of_ae_leftInverse e.measurable e.symm.measurable fun _ ↦ by simp [Function.comp_def]
 
 /-- Composing a statistic with a measurable equivalence preserves sufficiency. -/
 @[simp]
@@ -299,16 +312,43 @@ theorem isMinimalSufficientStatistic_const_iff [Nonempty Θ] {P : Θ → Measure
   ⟨fun h ↦ (isSufficientStatistic_const_iff s₀).mp h.isSufficientStatistic,
     fun hconst ↦ isMinimalSufficientStatistic_const hconst s₀⟩
 
+/-- Composing a minimal sufficient statistic `T : X → S` with a measurable map `e : S → S'`
+that admits a measurable left inverse `d : S' → S` almost everywhere under every `P θ` preserves
+minimal sufficiency. -/
+theorem IsMinimalSufficientStatistic.comp_of_ae_leftInverse.{u, v, w, w', r} {Θ : Type u}
+    {X : Type v} {S : Type w} {S' : Type w'} [MeasurableSpace X] [MeasurableSpace S]
+    [MeasurableSpace S'] {P : Θ → Measure X} {T : X → S}
+    (h : IsMinimalSufficientStatistic.{u, v, w, r} P T) {e : S → S'} (he : Measurable e)
+    {d : S' → S} (hd : Measurable d) (hae : ∀ θ, d ∘ e ∘ T =ᵐ[P θ] T) :
+    IsMinimalSufficientStatistic.{u, v, w', r} P (e ∘ T) := by
+  refine ⟨h.isSufficientStatistic.comp_of_ae_leftInverse he hd hae, fun U_ty _ U hU ↦ ?_⟩
+  obtain ⟨φ, hφ, hfac⟩ := h.exists_ae_eq_comp hU
+  exact ⟨e ∘ φ, he.comp hφ, fun θ ↦ (hfac θ).fun_comp e⟩
+
+/-- If `e : S → S'` and `d : S' → S` are measurable with `d ∘ e ∘ T =ᵐ[P θ] T` for every `θ`,
+then a measurable statistic `T` is minimal sufficient if and only if `e ∘ T` is minimal
+sufficient. -/
+theorem isMinimalSufficientStatistic_comp_iff_of_ae_leftInverse.{u, v, w, w', r}
+    {Θ : Type u} {X : Type v} {S : Type w} {S' : Type w'} [MeasurableSpace X]
+    [MeasurableSpace S] [MeasurableSpace S'] {P : Θ → Measure X} {T : X → S}
+    (hT : Measurable T) {e : S → S'} (he : Measurable e) {d : S' → S} (hd : Measurable d)
+    (hae : ∀ θ, d ∘ e ∘ T =ᵐ[P θ] T) :
+    IsMinimalSufficientStatistic.{u, v, w', r} P (e ∘ T) ↔
+      IsMinimalSufficientStatistic.{u, v, w, r} P T := by
+  refine ⟨fun h ↦ ⟨(isSufficientStatistic_comp_iff_of_ae_leftInverse hT he hd hae).mp
+      h.isSufficientStatistic, fun U_ty _ U hU ↦ ?_⟩,
+    fun h ↦ h.comp_of_ae_leftInverse he hd hae⟩
+  obtain ⟨φ, hφ, hfac⟩ := h.exists_ae_eq_comp hU
+  exact ⟨d ∘ φ, hd.comp hφ, fun θ ↦ (hae θ).symm.trans ((hfac θ).fun_comp d)⟩
+
 /-- Composing a minimal sufficient statistic with a measurable equivalence preserves minimal
 sufficiency. -/
 theorem IsMinimalSufficientStatistic.comp_measurableEquiv.{u, v, w, w', r} {Θ : Type u}
     {X : Type v} {S : Type w} {S' : Type w'} [MeasurableSpace X] [MeasurableSpace S]
     [MeasurableSpace S'] {P : Θ → Measure X} {T : X → S}
     (h : IsMinimalSufficientStatistic.{u, v, w, r} P T) (e : S ≃ᵐ S') :
-    IsMinimalSufficientStatistic.{u, v, w', r} P (e ∘ T) := by
-  refine ⟨h.isSufficientStatistic.comp_measurableEquiv e, fun U_ty _ U hU ↦ ?_⟩
-  obtain ⟨φ, hφ, hfac⟩ := h.exists_ae_eq_comp hU
-  exact ⟨e ∘ φ, e.measurable.comp hφ, fun θ ↦ (hfac θ).fun_comp e⟩
+    IsMinimalSufficientStatistic.{u, v, w', r} P (e ∘ T) :=
+  h.comp_of_ae_leftInverse e.measurable e.symm.measurable fun _ ↦ by simp [Function.comp_def]
 
 /-- Composing a statistic with a measurable equivalence preserves minimal sufficiency. -/
 @[simp]

@@ -42,8 +42,9 @@ density `k` of `P.map φ` with respect to `μ.map φ`.
   defines.
 * `TauCeti.HasDensity.measure_apply_eq_zero_iff`: a set is `P`-null iff its intersection with
   `{x | 0 < f x}` is `μ`-null.
-* `TauCeti.HasDensity.measure_apply`, `TauCeti.HasDensity.measureReal_apply`: extended and real
-  set masses as integrals of the density.
+* `TauCeti.HasDensity.measure_apply`, `TauCeti.HasDensity.measureReal_apply`,
+  `TauCeti.HasDensity.restrict`: extended and real set masses as integrals of the density, and
+  restriction of a density to a measurable set.
 * `TauCeti.HasDensity.lintegral_eq`, `TauCeti.HasDensity.integral_eq`: Lebesgue and Bochner
   integral transfers for `P`.
 * `TauCeti.HasDensity.integrable_iff`: `g` is `P`-integrable iff `f • g` is `μ`-integrable.
@@ -179,6 +180,14 @@ theorem measureReal_apply (h : HasDensity P μ f) {s : Set X} (hs : NullMeasurab
   rw [h.eq_withDensity]
   exact MeasureTheory.measureReal_withDensity_ofReal (ae_restrict_of_ae h.ae_nonneg) hs
     h.measurable.aemeasurable.restrict
+
+/-- Restricting both a measure and its reference measure to a measurable set preserves the
+density. -/
+theorem restrict (h : HasDensity P μ f) {s : Set X} (hs : MeasurableSet s) :
+    HasDensity (P.restrict s) (μ.restrict s) f where
+  measurable := h.measurable
+  ae_nonneg := ae_restrict_of_ae h.ae_nonneg
+  eq_withDensity := by rw [h.eq_withDensity, restrict_withDensity hs]
 
 /-- **The Lebesgue integral transfer.** Integration of a nonnegative function against `P` is
 integration against `μ` weighted by `ENNReal.ofReal ∘ f`, with no measurability hypothesis on

@@ -53,6 +53,8 @@ together with Tau Ceti's `MeasureTheory.Measure.map_withDensity_comp` and
   disintegrating kernel `K` given `T`, then `P = L.withDensity ((P.map T).rnDeriv (L.map T) ∘ T)`.
 * `ProbabilityTheory.map_prodMk_withDensity_comp_eq_compProd`: tilting `L` by a measurable weight
   `q ∘ T` preserves any disintegrating kernel `K` given `T`.
+* `ProbabilityTheory.map_prodMk_eq_compProd_comap_of_ae_eq`: transporting a graph disintegration
+  along measurable maps `f` and `g` that are almost-everywhere inverses on the observed values.
 -/
 
 public section
@@ -284,5 +286,40 @@ theorem eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd {P L : Measure X}
     rw [map_prodMk_withDensity_comp_eq_compProd hT hL hq, hmarg, hP]
   have hsnd := congrArg Measure.snd hjoint
   rwa [Measure.snd_map_prodMk_id hT, Measure.snd_map_prodMk_id hT] at hsnd
+
+/-- Transporting a graph disintegration `μ.map (U₁, id) = μ.map U₁ ⊗ₘ K` along measurable
+maps `f : S₁ → S₂` and `g : S₂ → S₁` that are almost-everywhere inverses on the observed values:
+if `f ∘ U₁ =ᵐ[μ] U₂` and `g ∘ U₂ =ᵐ[μ] U₁`, then `K.comap g hg` disintegrates
+`μ.map (U₂, id)`. -/
+theorem map_prodMk_eq_compProd_comap_of_ae_eq {S₁ S₂ : Type*} [MeasurableSpace S₁]
+    [MeasurableSpace S₂] {μ : Measure X} {U₁ : X → S₁} (hU₁ : Measurable U₁)
+    {U₂ : X → S₂} (hU₂ : Measurable U₂) {f : S₁ → S₂} (hf : Measurable f)
+    {g : S₂ → S₁} (hg : Measurable g) (h12 : f ∘ U₁ =ᵐ[μ] U₂) (h21 : g ∘ U₂ =ᵐ[μ] U₁)
+    {K : Kernel S₁ X} [IsSFiniteKernel K]
+    (hdis : μ.map (fun x ↦ (U₁ x, x)) = μ.map U₁ ⊗ₘ K) :
+    μ.map (fun x ↦ (U₂ x, x)) = μ.map U₂ ⊗ₘ K.comap g hg := by
+  have : SFinite μ := sfinite_of_map_prodMk_eq_compProd hU₁.aemeasurable hdis
+  ext A hA
+  let B : Set (S₁ × X) := Prod.map f id ⁻¹' A
+  have hB : MeasurableSet B := hA.preimage (hf.prodMap measurable_id)
+  have hpair : (fun x ↦ (U₂ x, x)) =ᵐ[μ] fun x ↦ (f (U₁ x), x) :=
+    h12.mono fun x hx ↦ congrArg (·, x) hx.symm
+  have hLHS : (μ.map (fun x ↦ (U₂ x, x))) A =
+      ∫⁻ x, K (U₁ x) (Prod.mk (f (U₁ x)) ⁻¹' A) ∂μ := by
+    have hcomp : (fun x ↦ (f (U₁ x), x)) = Prod.map f id ∘ fun x ↦ (U₁ x, x) := rfl
+    rw [Measure.map_congr hpair, hcomp,
+      ← Measure.map_map (hf.prodMap measurable_id) (hU₁.prodMk measurable_id'),
+      Measure.map_apply (hf.prodMap measurable_id) hA, hdis, Measure.compProd_apply hB,
+      lintegral_map (Kernel.measurable_kernel_prodMk_left hB) hU₁]
+    rfl
+  have hRHS : (μ.map U₂ ⊗ₘ K.comap g hg) A =
+      ∫⁻ x, K (g (U₂ x)) (Prod.mk (U₂ x) ⁻¹' A) ∂μ := by
+    rw [Measure.compProd_apply hA, lintegral_map (Kernel.measurable_kernel_prodMk_left hA) hU₂]
+    simp [Kernel.comap_apply]
+  rw [hLHS, hRHS]
+  refine lintegral_congr_ae ?_
+  filter_upwards [h12, h21] with x hx12 hx21
+  rw [Function.comp_apply] at hx12 hx21
+  rw [hx12, hx21]
 
 end ProbabilityTheory
