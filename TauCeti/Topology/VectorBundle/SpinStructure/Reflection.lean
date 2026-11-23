@@ -16,10 +16,10 @@ import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 A `Spinᶜ` structure `s` on a real vector bundle `E` with fibre inner products
 (`TauCeti.SpinCStructure`) chooses an orientation of `E`: the frames of its points are positive
 for it. This file constructs, from an orthogonal transformation `f` of `ℝⁿ`, the `Spinᶜ` structure
-`s.reflect f` whose frames are those of `s` precomposed with `f`; when `f` reverses orientation, as
-the reflection `TauCeti.realCliffordCoordReflection i` in the `i`-th coordinate hyperplane does,
-it is a `Spinᶜ` structure for the opposite orientation of `E`, the *orientation reversal*
-`s.reverse`.
+`s.reflect f` whose frames are those of `s` precomposed with `f`; when `f` reverses orientation,
+it is a `Spinᶜ` structure for the opposite orientation of `E`. Choosing for `f` the reflection
+`TauCeti.realCliffordCoordReflection 0` in the first coordinate hyperplane defines the
+*orientation reversal* `s.reverse`.
 
 The construction has two steps.
 
@@ -43,8 +43,9 @@ the orientation that `s` transports `-o` to
 `TauCeti.SpinCStructure.toOrientationCover_toFrame_reverse_inl`).
 
 The extension of structure group is only available for principal bundles in the universe of the
-structure group, so the bundles here have fibres in `Type`, as for
-`TauCeti.OrthonormalFrameLift.extendSpinC`.
+structure group, so `SpinCStructure.reflect` and `SpinCStructure.reverse` are stated for bundles
+with fibres in `Type`, as for `TauCeti.OrthonormalFrameLift.extendSpinC`;
+`OrthonormalFrameLift.precomp` works for fibres in any `Type w`.
 
 ## Main definitions
 
@@ -148,6 +149,7 @@ theorem realCliffordIsometryEquivEuclidean_apply
 
 /-- The determinant of an isometry read on `EuclideanSpace ℝ (Fin n)` is its determinant on
 `Fin n → ℝ`. -/
+@[simp]
 theorem det_realCliffordIsometryEquivEuclidean
     (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0)) :
     LinearMap.det ((realCliffordIsometryEquivEuclidean f).toLinearEquiv :
@@ -156,7 +158,7 @@ theorem det_realCliffordIsometryEquivEuclidean
   LinearMap.det_conj _ (EuclideanSpace.equiv (Fin n) ℝ).symm.toLinearEquiv
 
 /-- The **reflection of `ℝⁿ` in the `i`-th coordinate hyperplane**, negating the `i`-th
-coordinate: the reflection `TauCeti.QuadraticMap.reflection` in the coordinate vector
+coordinate: the reflection `QuadraticMap.reflection` in the coordinate vector
 `Pi.single i 1`, as an isometry of the positive-definite form `realCliffordForm n 0`. Its
 determinant is `-1` (`TauCeti.det_realCliffordCoordReflection`), so it reverses orientation. -/
 noncomputable def realCliffordCoordReflection (i : Fin n) :
@@ -166,16 +168,15 @@ noncomputable def realCliffordCoordReflection (i : Fin n) :
     (QuadraticMap.reflectionOrthogonal _ (Pi.single i 1))
 
 /-- The reflection in a coordinate hyperplane is the reflection in the coordinate vector. -/
-theorem coe_realCliffordCoordReflection (i : Fin n)
-    [Invertible (realCliffordForm n 0 (Pi.single i 1))] :
+theorem coe_realCliffordCoordReflection (i : Fin n) :
+    letI : Invertible (realCliffordForm n 0 (Pi.single i 1)) := invertibleOfNonzero (by simp)
     ⇑(realCliffordCoordReflection i) =
       ⇑(QuadraticMap.reflection (realCliffordForm n 0) (Pi.single i 1)) := by
   simp only [realCliffordCoordReflection, QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv,
     QuadraticMap.coe_reflectionOrthogonal]
-  congr
-  exact Subsingleton.elim _ _
 
 /-- The reflection in a coordinate hyperplane has determinant `-1`. -/
+@[simp]
 theorem det_realCliffordCoordReflection (i : Fin n) :
     LinearMap.det ((realCliffordCoordReflection i).toLinearEquiv :
       (Fin n → ℝ) →ₗ[ℝ] (Fin n → ℝ)) = -1 := by
@@ -240,6 +241,7 @@ noncomputable def reflect (f : (realCliffordForm n 0).IsometryEquiv (realCliffor
 
 /-- **The frame of `[p, 1]`** in the reflection of a `Spinᶜ` structure by `f` is the frame of `p`
 precomposed with `f`. -/
+@[simp]
 theorem toFrame_reflect_inl (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
     (s : SpinCStructure F V n) (x : X) (p : s.P x) :
     (s.reflect f).toFrame ⟨x, PrincipalBundle.Extend.inl (reflectHom f)
@@ -254,12 +256,12 @@ theorem toFrame_reflect_inl (f : (realCliffordForm n 0).IsometryEquiv (realCliff
 `p` transports `f o` to. -/
 theorem toOrientationCover_toFrame_reflect_inl
     (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0)) (s : SpinCStructure F V n)
-    (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X) (p : s.P x) :
+    {ι : Type*} (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) ι) (x : X) (p : s.P x) :
     OrthonormalFrameBundle.toOrientationCover o ((s.reflect f).toFrame ⟨x,
         PrincipalBundle.Extend.inl (reflectHom f)
           (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p⟩) =
       OrthonormalFrameBundle.toOrientationCover
-        (Orientation.map (Fin n) (realCliffordIsometryEquivEuclidean f).toLinearEquiv o)
+        (Orientation.map ι (realCliffordIsometryEquivEuclidean f).toLinearEquiv o)
         (s.toFrame ⟨x, p⟩) := by
   rw [toFrame_reflect_inl, OrthonormalFrameBundle.toOrientationCover_eq_mk,
     OrthonormalFrameBundle.toOrientationCover_eq_mk, LinearIsometryEquiv.toLinearEquiv_trans,
@@ -272,14 +274,14 @@ transports `-o` to. -/
 theorem toOrientationCover_toFrame_reflect_inl_of_det_neg
     (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
     (hf : LinearMap.det (f.toLinearEquiv : (Fin n → ℝ) →ₗ[ℝ] (Fin n → ℝ)) < 0)
-    (s : SpinCStructure F V n) (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X)
-    (p : s.P x) :
+    (s : SpinCStructure F V n) {ι : Type*} [Fintype ι] (hι : Fintype.card ι = n)
+    (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) ι) (x : X) (p : s.P x) :
     OrthonormalFrameBundle.toOrientationCover o ((s.reflect f).toFrame ⟨x,
         PrincipalBundle.Extend.inl (reflectHom f)
           (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p⟩) =
       OrthonormalFrameBundle.toOrientationCover (-o) (s.toFrame ⟨x, p⟩) := by
   rw [toOrientationCover_toFrame_reflect_inl, (Orientation.map_eq_neg_iff_det_neg o _
-    (by simp [finrank_euclideanSpace])).2 (by rwa [det_realCliffordIsometryEquivEuclidean])]
+    (by simp [finrank_euclideanSpace, hι])).2 (by rwa [det_realCliffordIsometryEquivEuclidean])]
 
 /-- The **orientation reversal** of a `Spinᶜ` structure: its reflection by the reflection of `ℝⁿ`
 in the first coordinate hyperplane. The frame of `[p, 1]` is the frame of `p` with its first
@@ -291,14 +293,15 @@ noncomputable abbrev reverse (s : SpinCStructure F V n) : SpinCStructure F V n :
 /-- **The orientation reversal reverses orientation**: it transports a model orientation `o` of
 `EuclideanSpace ℝ (Fin n)`, along the frame of `[p, 1]`, to the orientation that the frame of `p`
 transports `-o` to. -/
-theorem toOrientationCover_toFrame_reverse_inl (s : SpinCStructure F V n)
-    (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X) (p : s.P x) :
+theorem toOrientationCover_toFrame_reverse_inl (s : SpinCStructure F V n) {ι : Type*}
+    [Fintype ι] (hι : Fintype.card ι = n) (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) ι) (x : X)
+    (p : s.P x) :
     OrthonormalFrameBundle.toOrientationCover o (s.reverse.toFrame ⟨x,
         PrincipalBundle.Extend.inl (reflectHom (realCliffordCoordReflection 0))
           ((realCliffordCoordReflection 0).symm.toIsometry.continuous_spinCGroupMap hQ hQ) p⟩) =
       OrthonormalFrameBundle.toOrientationCover (-o) (s.toFrame ⟨x, p⟩) :=
   toOrientationCover_toFrame_reflect_inl_of_det_neg _
-    (by rw [det_realCliffordCoordReflection]; norm_num) s o x p
+    (by rw [det_realCliffordCoordReflection]; norm_num) s hι o x p
 
 end SpinCStructure
 
