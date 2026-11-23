@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 public import TauCeti.NumberTheory.NumberField.ArtinSymbol
-import TauCeti.NumberTheory.NumberField.AlgEquiv
+import TauCeti.RingTheory.Unramified.AlgEquiv
 
 /-!
 # The unramified primes carrying a prescribed Artin class
@@ -163,7 +163,7 @@ itself — not merely some conjugate of it — is an arithmetic Frobenius at som
 above `𝔭`. -/
 theorem exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk {𝔭 : HeightOneSpectrum (𝓞 K)}
     {σ : L ≃ₐ[K] L} (h : 𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ)) :
-    ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.1 := by
+    ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.val := by
   obtain ⟨hur, hC⟩ := mem_frobeniusPrimeSet_iff.mp h
   exact exists_isArithFrobAt_of_artinSymbol_eq_mk 𝔭.asIdeal hur hC
 
@@ -174,9 +174,9 @@ theorem mem_frobeniusPrimeSet_mk_iff_exists_isArithFrobAt {𝔭 : HeightOneSpect
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
       Algebra.IsUnramifiedAt (𝓞 K) Q) (σ : L ≃ₐ[K] L) :
     𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ) ↔
-      ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.1 :=
+      ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.val :=
   ⟨exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk, fun ⟨Q, hσ⟩ ↦
-    mem_frobeniusPrimeSet_mk_of_isArithFrobAt hur Q.1 hσ⟩
+    mem_frobeniusPrimeSet_mk_of_isArithFrobAt hur Q.val hσ⟩
 
 section IsoOfExtensions
 
@@ -204,10 +204,10 @@ theorem frobeniusPrimeSet_map_autCongr (C : ConjClasses (L ≃ₐ[K] L)) (e : L 
   simp only [mem_frobeniusPrimeSet_iff]
   constructor
   · rintro ⟨hur', hC⟩
-    have hur := (e.forall_isUnramifiedAt_iff 𝔭.asIdeal).mpr hur'
+    have hur := ((NumberField.RingOfIntegers.mapAlgEquiv e).isUnramifiedIn_iff 𝔭.asIdeal).mpr hur'
     exact ⟨hur, by rw [artinSymbol_eq_map_autCongr 𝔭.asIdeal e.symm hur' hur, hC, hcomp]⟩
   · rintro ⟨hur, hC⟩
-    have hur' := (e.forall_isUnramifiedAt_iff 𝔭.asIdeal).mp hur
+    have hur' := ((NumberField.RingOfIntegers.mapAlgEquiv e).isUnramifiedIn_iff 𝔭.asIdeal).mp hur
     exact ⟨hur', by rw [artinSymbol_eq_map_autCongr 𝔭.asIdeal e hur hur', hC]⟩
 
 end IsoOfExtensions

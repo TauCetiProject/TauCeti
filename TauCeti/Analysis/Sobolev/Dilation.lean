@@ -17,6 +17,9 @@ import Mathlib.Analysis.Calculus.FDeriv.Equiv
 -- `Mathlib.Analysis.Calculus.ContDiff.Operations` is imported privately for the same reason: it
 -- supplies `iteratedFDeriv_comp_const_smul`, used only inside a proof.
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+-- `Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm` is imported privately: its `toReal_eLpNorm`
+-- is used only inside a proof.
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Dilation scaling of the Sobolev seminorms
@@ -46,6 +49,12 @@ the whole space.
   `‖D(u (r⁻¹ • ·))‖_p = |r| ^ (n / p - 1) * ‖Du‖_p`.
 * `MeasureTheory.Measure.eLpNorm_iteratedFDeriv_comp_inv_smul`:
   `‖Dᵏ(u (r⁻¹ • ·))‖_p = |r| ^ (n / p - k) * ‖Dᵏ u‖_p` for `u` of class `Cᵏ`.
+* `MeasureTheory.Measure.eLpNorm_iteratedFDeriv_comp_smul`: with the dilation written as
+  `u (r • ·)`, `‖Dᵏ(u (r • ·))‖_p = |r| ^ (k - n / p) * ‖Dᵏ u‖_p`.
+* `MeasureTheory.Measure.lpNorm_iteratedFDeriv_comp_smul`: the same law in the real-valued
+  seminorm.
+* `MeasureTheory.MemLp.iteratedFDeriv_comp_smul`: dilation preserves `Lᵖ` integrability of the
+  `k`-th derivative.
 -/
 
 public section
@@ -94,4 +103,44 @@ theorem eLpNorm_iteratedFDeriv_comp_inv_smul {u : E → F} {k : ℕ} (hu : ContD
   rw [Real.eNorm_eq_ofReal_abs, abs_pow, abs_inv, ← ENNReal.ofReal_mul (by positivity),
     Real.rpow_sub (abs_pos.2 hr), Real.rpow_natCast, inv_pow, ← div_eq_inv_mul]
 
+/-- **Dilation scaling of the `Lᵖ` seminorm of the `k`-th derivative, for `u (r • ·)`:**
+`‖Dᵏ(u (r • ·))‖_p = |r| ^ (k - n / p) * ‖Dᵏ u‖_p` for `r ≠ 0` and `u` of class `Cᵏ`. This is
+`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_comp_inv_smul` for the dilation by `r⁻¹`. -/
+theorem eLpNorm_iteratedFDeriv_comp_smul {u : E → F} {k : ℕ} (hu : ContDiff ℝ k u) {r : ℝ}
+    (hr : r ≠ 0) (p : ℝ≥0∞) :
+    eLpNorm (iteratedFDeriv ℝ k fun y => u (r • y)) p μ =
+      ENNReal.ofReal (|r| ^ ((k : ℝ) - finrank ℝ E / p.toReal)) *
+        eLpNorm (iteratedFDeriv ℝ k u) p μ := by
+  simpa [abs_inv, Real.inv_rpow, ← Real.rpow_neg] using
+    eLpNorm_iteratedFDeriv_comp_inv_smul μ hu (inv_ne_zero hr) p
+
+/-- **Dilation scaling of the real `Lᵖ` seminorm of the `k`-th derivative:**
+`‖Dᵏ(u (r • ·))‖_p = |r| ^ (k - n / p) * ‖Dᵏ u‖_p` for `r ≠ 0` and `u` of class `Cᵏ`. This is
+`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_comp_smul` read in `lpNorm`. -/
+theorem lpNorm_iteratedFDeriv_comp_smul {u : E → F} {k : ℕ} (hu : ContDiff ℝ k u) {r : ℝ}
+    (hr : r ≠ 0) (p : ℝ≥0∞) :
+    lpNorm (iteratedFDeriv ℝ k fun y => u (r • y)) p μ =
+      |r| ^ ((k : ℝ) - finrank ℝ E / p.toReal) * lpNorm (iteratedFDeriv ℝ k u) p μ := by
+  rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_iteratedFDeriv_comp_smul μ hu hr p,
+    ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+
 end MeasureTheory.Measure
+
+namespace MeasureTheory.MemLp
+
+open Module
+open scoped ENNReal
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **Dilation preserves `Lᵖ` integrability of the `k`-th derivative.** If `u` is of class `Cᵏ`
+and `Dᵏ u ∈ Lᵖ`, then `Dᵏ(u (r • ·)) ∈ Lᵖ` for every `r ≠ 0`. -/
+theorem iteratedFDeriv_comp_smul {u : E → F} {k : ℕ} (hu : ContDiff ℝ k u) {r : ℝ} (hr : r ≠ 0)
+    {p : ℝ≥0∞} (hm : MemLp (iteratedFDeriv ℝ k u) p μ) :
+    MemLp (iteratedFDeriv ℝ k fun y => u (r • y)) p μ := by
+  rw [memLp_iff, Measure.eLpNorm_iteratedFDeriv_comp_smul μ hu hr p]
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (memLp_iff.1 hm)
+
+end MeasureTheory.MemLp

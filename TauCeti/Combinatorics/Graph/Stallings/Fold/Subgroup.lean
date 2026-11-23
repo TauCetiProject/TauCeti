@@ -69,14 +69,14 @@ theorem exists_fold_path_lift {a b : (S.foldAt f₁ f₂ hsrc hlabel).graph.V}
       exact ⟨x, .nil, hx, by simp⟩
   | @cons b c q e ih =>
       obtain ⟨y, p, hy, hp⟩ := ih x hx
-      obtain ⟨d, hd⟩ := S.foldHom_mapE_surjective f₁ f₂ hsrc hlabel e.1
+      obtain ⟨d, hd⟩ := S.foldHom_mapE_surjective f₁ f₂ hsrc hlabel e.val
       have hb : φ.graphHom.mapV (S.graph.src d) = b := by
-        rw [← e.2.1, ← hd]
+        rw [← e.property.1, ← hd]
         exact (φ.graphHom.map_src d).symm
       obtain ⟨r, hr⟩ := S.exists_path_read_eq_one_of_foldHom_mapV_eq
         f₁ f₂ hsrc hlabel (hy.trans hb.symm)
       have hc : φ.graphHom.mapV (S.graph.tgt d) = c := by
-        rw [← e.2.2, ← hd]
+        rw [← e.property.2, ← hd]
         exact (SerreGraph.Hom.map_tgt S.graph φ.graphHom d).symm
       have hre : S.read (S.graph.dart d).toPath = F.read e.toPath := by
         simp only [S.read_toPath, F.read_toPath, S.graph.dart_val]

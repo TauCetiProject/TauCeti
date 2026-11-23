@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.Instances.CircleFamily.Pullback
 public import TauCeti.Geometry.Manifold.ContMDiff.Pi
 public import TauCeti.Geometry.Manifold.IsManifold.Pi
@@ -40,6 +41,15 @@ rescaling `(b, x) ↦ (b, (D_(p i b, q i b) (x i))ᵢ)` is a smooth diffeomorphi
 preserving the normalized angles, with the identity, inverse and composition laws, compatible with
 the coordinates and with base change.
 
+The **real representative map** `Q(b, t) = (b, ([t i]_(p i b))ᵢ)` from `B × (ι → ℝ)`
+(`TauCeti.TorusFamily.representative`) is surjective, and its fibres are exactly the orbits of the
+deck translations `(b, t) ↦ (b, t + (k i * p i b)ᵢ)` for `k : ι → ℤ`
+(`TauCeti.TorusFamily.representative_eq_representative_iff`). After the real normalization
+`(b, t) ↦ (b, (t i / p i b)ᵢ)`, a homeomorphism for continuous periods and a diffeomorphism for
+smooth ones, it is the product of the identity of `B` with the covering map `(ι → ℝ) → (ι → ℝ / ℤ)`
+of the unit torus. Hence `Q` is a covering map for continuous periods, with finitely many factors,
+and a local diffeomorphism for `C^n` periods.
+
 ## Main definitions
 
 * `TauCeti.TorusFamily p`: the family of the tori `∀ i, AddCircle (p i b)` over `B`.
@@ -50,6 +60,10 @@ the coordinates and with base change.
 * `TauCeti.TorusFamily.comap p f`: base change along `f`.
 * `TauCeti.TorusFamily.rescale p IB q n`: the fiberwise rescaling from the periods `p` to the
   periods `q`.
+* `TauCeti.TorusFamily.representative p`: the real representative map
+  `(b, t) ↦ (b, ([t i]_(p i b))ᵢ)`.
+* `TauCeti.TorusFamily.realNormalization p IB hp`: the diffeomorphism
+  `(b, t) ↦ (b, (t i / p i b)ᵢ)` of `B × (ι → ℝ)`.
 
 ## Main results
 
@@ -65,6 +79,12 @@ the coordinates and with base change.
   `TauCeti.TorusFamily.opensHomeomorph`: smooth base change and open restriction.
 * `TauCeti.TorusFamily.rescale_mk`, `TauCeti.TorusFamily.rescale_trans`,
   `TauCeti.TorusFamily.coord_rescale`: the fiberwise rescalings.
+* `TauCeti.TorusFamily.representative_add_intCast_mul`,
+  `TauCeti.TorusFamily.representative_eq_representative_iff`: the fibres of the real
+  representative map are the orbits of the deck translations.
+* `TauCeti.TorusFamily.isCoveringMap_representative`,
+  `TauCeti.TorusFamily.isLocalDiffeomorph_representative`: the real representative map is a
+  covering map and a local diffeomorphism.
 
 ## References
 
@@ -287,21 +307,21 @@ theorem continuous_retraction (b : B) : Continuous (retraction p b) :=
 def fiberHomeomorph (b : B) :
     (∀ i, AddCircle (p i b : ℝ)) ≃ₜ {z : TorusFamily p // z.base = b} where
   toFun x := ⟨mk b x, rfl⟩
-  invFun z := retraction p b z.1
+  invFun z := retraction p b z.val
   left_inv := retraction_mk p b
-  right_inv z := Subtype.ext (mk_retraction p z.2)
+  right_inv z := Subtype.ext (mk_retraction p z.property)
   continuous_toFun := (continuous_mk p b).subtype_mk _
-  continuous_invFun := (continuous_retraction p b).comp continuous_subtype_val
+  continuous_invFun := (continuous_retraction p b).comp continuous_subtypeVal
 
 /-- The fiber homeomorphism is the inclusion of the torus. -/
 @[simp]
 theorem coe_fiberHomeomorph (b : B) (x : ∀ i, AddCircle (p i b : ℝ)) :
-    (fiberHomeomorph p b x).1 = mk b x := (rfl)
+    (fiberHomeomorph p b x).val = mk b x := (rfl)
 
 /-- The inverse fiber homeomorphism is the retraction restricted to the fiber. -/
 @[simp]
 theorem fiberHomeomorph_symm_apply (b : B) (z : {z : TorusFamily p // z.base = b}) :
-    (fiberHomeomorph p b).symm z = retraction p b z.1 := (rfl)
+    (fiberHomeomorph p b).symm z = retraction p b z.val := (rfl)
 
 /-- In normalized coordinates, the `i`-th coordinate keeps the base point and the `i`-th
 normalized angle. -/
@@ -661,7 +681,7 @@ is one. -/
 theorem isLocalDiffeomorphOn_comap {s : Set B'} (hf : IsLocalDiffeomorphOn IB' IB n f s) :
     IsLocalDiffeomorphOn (IB'.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
       (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n (comap p f) (base ⁻¹' s) :=
-  fun z ↦ isLocalDiffeomorphAt_comap p f IB (hf ⟨z.1.base, z.2⟩)
+  fun z ↦ isLocalDiffeomorphAt_comap p f IB (hf ⟨z.val.base, z.property⟩)
 
 /-- Base change along a `C^n` local diffeomorphism is a `C^n` local diffeomorphism. -/
 theorem isLocalDiffeomorph_comap (hf : IsLocalDiffeomorph IB' IB n f) :
@@ -740,6 +760,190 @@ theorem comap_rescale (n : ℕ∞ω) (z : TorusFamily fun i ↦ p i ∘ f) :
   rfl
 
 end Manifold
+
+/-! ### The real representative map -/
+
+/-- The real representative map `(b, t) ↦ (b, ([t i]_(p i b))ᵢ)` of the family. -/
+@[expose] def representative (z : B × (ι → ℝ)) : TorusFamily p :=
+  ⟨z.1, fun i ↦ (z.2 i : AddCircle (p i z.1 : ℝ))⟩
+
+/-- The representative of `(b, t)` is the point `([t i]_(p i b))ᵢ` of the torus over `b`. -/
+theorem representative_apply (z : B × (ι → ℝ)) :
+    representative p z = mk z.1 fun i ↦ (z.2 i : AddCircle (p i z.1 : ℝ)) :=
+  (rfl)
+
+/-- The real representative map covers the projection to the base. -/
+@[simp]
+theorem base_representative (z : B × (ι → ℝ)) : (representative p z).base = z.1 := (rfl)
+
+/-- The point of the representative of `(b, t)` is `([t i]_(p i b))ᵢ`. -/
+@[simp]
+theorem point_representative (z : B × (ι → ℝ)) :
+    (representative p z).point = fun i ↦ (z.2 i : AddCircle (p i z.1 : ℝ)) := (rfl)
+
+/-- The `i`-th coordinate of the representative of `(b, t)` is the class `[t i]_(p i b)` over
+`b` in the family of circles of `p i`. -/
+@[simp]
+theorem coord_representative (i : ι) (z : B × (ι → ℝ)) :
+    coord p i (representative p z) =
+      CircleFamily.Pullback.mk z.1 (z.2 i : AddCircle (p i z.1 : ℝ)) :=
+  (rfl)
+
+/-- Every point of the family has a real representative. -/
+theorem representative_surjective : Function.Surjective (representative p) := by
+  rintro ⟨b, x⟩
+  choose t ht using fun i ↦ QuotientAddGroup.mk_surjective (x i)
+  exact ⟨(b, t), congrArg (mk b) (funext ht)⟩
+
+/-- The real representative map is invariant under the deck translations
+`t ↦ t + (k i * p i b)ᵢ`, for `k : ι → ℤ`. -/
+@[simp]
+theorem representative_add_intCast_mul (b : B) (t : ι → ℝ) (k : ι → ℤ) :
+    representative p (b, t + fun i ↦ k i * (p i b : ℝ)) = representative p (b, t) := by
+  simp [representative, ← zsmul_eq_mul]
+
+/-- **The fibres of the real representative map are the orbits of the deck translations.** Two
+real points have the same representative exactly when they lie over the same base point `b` and
+their time coordinates differ by an integer multiple `k i * p i b` of the period in each factor. -/
+theorem representative_eq_representative_iff {z w : B × (ι → ℝ)} :
+    representative p z = representative p w ↔
+      z.1 = w.1 ∧ ∃ k : ι → ℤ, w.2 = z.2 + fun i ↦ k i * (p i z.1 : ℝ) := by
+  rcases z with ⟨b, t⟩
+  rcases w with ⟨b', t'⟩
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain rfl : b = b' := congrArg base h
+    -- Retracting to the torus over `b` recovers the classes of the time coordinates.
+    have hx := congrArg (retraction p b) h
+    rw [representative_apply, representative_apply, retraction_mk, retraction_mk] at hx
+    have hk : ∀ i, ∃ k : ℤ, t' i = t i + k * (p i b : ℝ) := fun i ↦ by
+      obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1
+        (QuotientAddGroup.eq.1 (congrFun hx i))
+      exact ⟨k, by rw [zsmul_eq_mul] at hk; linarith⟩
+    choose k hk using hk
+    exact ⟨rfl, k, funext hk⟩
+  · rintro ⟨rfl, k, rfl⟩
+    exact (representative_add_intCast_mul p b t k).symm
+
+/-- In normalized coordinates, the representative of `(b, t)` has angles the classes of
+`t i / p i b` in the unit circle. -/
+private theorem normalizationEquiv_representative (z : B × (ι → ℝ)) :
+    normalizationEquiv p (representative p z) =
+      (z.1, fun i ↦ ((z.2 i / (p i z.1 : ℝ) : ℝ) : AddCircle (1 : ℝ))) := by
+  rw [representative_apply, normalizationEquiv_apply]
+  refine Prod.ext (rfl) (funext fun i ↦ ?_)
+  dsimp only
+  rw [AddCircle.diffeomorphAddCircle_apply_mk]
+  simp [div_eq_mul_inv]
+
+/-- In normalized coordinates, the real representative map is the covering map of the unit torus
+after dividing each time coordinate by its period. -/
+private theorem representative_eq_comp :
+    representative p = (normalizationEquiv p).symm ∘
+      Prod.map id (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (1 : ℝ))) ∘
+        fun z : B × (ι → ℝ) ↦ (z.1, fun i ↦ z.2 i / (p i z.1 : ℝ)) := by
+  funext z
+  simp only [Function.comp_apply, Prod.map_apply, id_eq, Equiv.eq_symm_apply,
+    normalizationEquiv_representative]
+
+section RealCoverTopology
+
+variable [TopologicalSpace B]
+
+/-- Normalize real representatives by dividing each time coordinate by its period at the base
+point. For continuous periods this is a homeomorphism of `B × (ι → ℝ)`. -/
+def realNormalizationHomeomorph (hp : ∀ i, Continuous (p i)) : B × (ι → ℝ) ≃ₜ B × (ι → ℝ) where
+  toFun z := (z.1, fun i ↦ z.2 i / (p i z.1 : ℝ))
+  invFun z := (z.1, fun i ↦ z.2 i * (p i z.1 : ℝ))
+  left_inv z := Prod.ext (rfl) (funext fun i ↦ by simp [(p i z.1).property.ne'])
+  right_inv z := Prod.ext (rfl) (funext fun i ↦ by simp [(p i z.1).property.ne'])
+  continuous_toFun := continuous_fst.prodMk (continuous_pi fun i ↦
+    ((continuous_apply i).comp continuous_snd).div
+      ((continuous_subtypeVal.comp (hp i)).comp continuous_fst) fun z ↦ (p i z.1).property.ne')
+  continuous_invFun := continuous_fst.prodMk (continuous_pi fun i ↦
+    ((continuous_apply i).comp continuous_snd).mul
+      ((continuous_subtypeVal.comp (hp i)).comp continuous_fst))
+
+/-- Real normalization divides each time coordinate by its period. -/
+@[simp]
+theorem realNormalizationHomeomorph_apply (hp : ∀ i, Continuous (p i)) (z : B × (ι → ℝ)) :
+    realNormalizationHomeomorph p hp z = (z.1, fun i ↦ z.2 i / (p i z.1 : ℝ)) := (rfl)
+
+/-- Inverse real normalization multiplies each normalized time by its period. -/
+@[simp]
+theorem realNormalizationHomeomorph_symm_apply (hp : ∀ i, Continuous (p i)) (z : B × (ι → ℝ)) :
+    (realNormalizationHomeomorph p hp).symm z = (z.1, fun i ↦ z.2 i * (p i z.1 : ℝ)) := (rfl)
+
+/-- For continuous periods and finitely many factors, the real representative map is a covering
+map. In normalized coordinates it is the covering map `(ι → ℝ) → (ι → AddCircle 1)` of the unit
+torus after dividing each time coordinate by its period. -/
+theorem isCoveringMap_representative [Finite ι] (hp : ∀ i, Continuous (p i)) :
+    IsCoveringMap (representative p) := by
+  rw [representative_eq_comp]
+  -- The homeomorphisms have `(normalizationEquiv p).symm` and the division by the periods as their
+  -- underlying functions by definition.
+  exact ((IsCoveringMap.id.prodMap (AddCircle.isCoveringMap_coe_pi 1)).comp_homeomorph
+    (realNormalizationHomeomorph p hp)).homeomorph_comp (normalizationHomeomorph p).symm
+
+end RealCoverTopology
+
+section RealCoverManifold
+
+variable [Fintype ι] {EB HB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  [TopologicalSpace HB] (IB : ModelWithCorners ℝ EB HB) [TopologicalSpace B] [ChartedSpace HB B]
+  {n : ℕ∞ω}
+
+/-- The normalized angles of the representative of `(b, t)` are the classes of `t i / p i b` in
+the unit circle. -/
+@[simp]
+theorem normalization_representative (n : ℕ∞ω) (z : B × (ι → ℝ)) :
+    normalization p IB n (representative p z) =
+      (z.1, fun i ↦ ((z.2 i / (p i z.1 : ℝ) : ℝ) : AddCircle (1 : ℝ))) := by
+  rw [coe_normalization, normalizationEquiv_representative]
+
+/-- Normalize real representatives by dividing each time coordinate by its period at the base
+point. For `C^n` periods this is a `C^n` diffeomorphism of `B × (ι → ℝ)`, with the underlying
+equivalence of `realNormalizationHomeomorph`. -/
+def realNormalization (hp : ∀ i, ContMDiff IB 𝓘(ℝ) n (p i)) :
+    (B × (ι → ℝ)) ≃ₘ^n⟮IB.prod 𝓘(ℝ, ι → ℝ), IB.prod 𝓘(ℝ, ι → ℝ)⟯ B × (ι → ℝ) where
+  __ := (realNormalizationHomeomorph p fun i ↦ (hp i).continuous).toEquiv
+  contMDiff_toFun := contMDiff_fst.prodMk (contMDiff_pi_module_iff.2 fun i ↦
+    (((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff).comp
+      contMDiff_snd).div₀ ((contMDiff_subtypeVal.comp (hp i)).comp contMDiff_fst)
+        fun z ↦ (p i z.1).property.ne')
+  contMDiff_invFun := contMDiff_fst.prodMk (contMDiff_pi_module_iff.2 fun i ↦
+    (((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff).comp
+      contMDiff_snd).mul ((contMDiff_subtypeVal.comp (hp i)).comp contMDiff_fst))
+
+/-- Real normalization divides each time coordinate by its period. -/
+@[simp]
+theorem realNormalization_apply (hp : ∀ i, ContMDiff IB 𝓘(ℝ) n (p i)) (z : B × (ι → ℝ)) :
+    realNormalization p IB hp z = (z.1, fun i ↦ z.2 i / (p i z.1 : ℝ)) := (rfl)
+
+/-- Inverse real normalization multiplies each normalized time by its period. -/
+@[simp]
+theorem realNormalization_symm_apply (hp : ∀ i, ContMDiff IB 𝓘(ℝ) n (p i)) (z : B × (ι → ℝ)) :
+    (realNormalization p IB hp).symm z = (z.1, fun i ↦ z.2 i * (p i z.1 : ℝ)) := (rfl)
+
+/-- For `C^n` periods, the real representative map is a `C^n` local diffeomorphism. -/
+theorem isLocalDiffeomorph_representative (hp : ∀ i, ContMDiff IB 𝓘(ℝ) n (p i)) :
+    IsLocalDiffeomorph (IB.prod 𝓘(ℝ, ι → ℝ)) (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n
+      (representative p) := by
+  rw [representative_eq_comp]
+  intro z
+  -- The diffeomorphisms have `(normalizationEquiv p).symm` and the division by the periods as their
+  -- underlying functions by definition.
+  have h := (Diffeomorph.refl IB B n).isLocalDiffeomorph.prodMap
+    (AddCircle.isLocalDiffeomorph_coe_pi (ι := ι) 1 n)
+  exact ((realNormalization p IB hp).isLocalDiffeomorph z).comp _ _
+    ((h _).comp _ _ ((normalization p IB n).symm.isLocalDiffeomorph _))
+
+/-- For `C^n` periods, the real representative map is `C^n`. -/
+theorem contMDiff_representative (hp : ∀ i, ContMDiff IB 𝓘(ℝ) n (p i)) :
+    ContMDiff (IB.prod 𝓘(ℝ, ι → ℝ)) (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n
+      (representative p) :=
+  (isLocalDiffeomorph_representative p IB hp).contMDiff
+
+end RealCoverManifold
 
 end TorusFamily
 

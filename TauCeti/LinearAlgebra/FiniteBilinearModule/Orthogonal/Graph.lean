@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import Mathlib.Algebra.Group.Graph
 
 /-!

@@ -50,6 +50,8 @@ which `Φ` is read off.
   `q : M →* N`, the `n`-weight space is the sum of the `m`-weight spaces with `q m = n`.
 * `Derivation.sup_iSup_adjointWeightSpace_eq_top`: the trivial weight submodule together
   with the submodules indexed by `nontrivialAdjointWeights π` exhaust the Lie algebra.
+* `Derivation.iSup_adjointWeightSpace_eq_sup_iSup`: when the nontrivial weights are in the range
+  of `f`, a sum of weight submodules over a predicate is a sum over the trivial weight and `f`.
 * `Derivation.finite_nontrivialAdjointWeights`: **the set of nontrivial adjoint weights is
   finite.**
 * `Derivation.endOfPoint_tmul_of_mem_adjointWeightSpace`: a point of `D(M)` acts on the
@@ -353,6 +355,28 @@ theorem sup_iSup_adjointWeightSpace_eq_top (π : H →ₐc[R] MonoidAlgebra R M)
     · exact le_sup_of_le_right
         (le_iSup₂ (f := fun β (_ : β ∈ nontrivialAdjointWeights π) => adjointWeightSpace π β)
           α ⟨hα, hbot⟩)
+
+/-- **A sum of weight submodules over a predicate, through a parametrization of the nontrivial
+weights.** When every nontrivial adjoint weight is in the range of `f`, the sum of the weight
+submodules over the characters satisfying `p` is the trivial weight submodule, if `p` holds there,
+together with the weight submodules of the `f i` satisfying `p`. -/
+theorem iSup_adjointWeightSpace_eq_sup_iSup {ι : Type*} (π : H →ₐc[R] MonoidAlgebra R M)
+    {f : ι → M} (hf : nontrivialAdjointWeights π ⊆ Set.range f) (p : M → Prop) :
+    ⨆ (χ) (_ : p χ), adjointWeightSpace π χ =
+      (⨆ _ : p 1, adjointWeightSpace π 1) ⊔
+        ⨆ (i) (_ : p (f i)), adjointWeightSpace π (f i) := by
+  refine le_antisymm (iSup₂_le fun χ hχ ↦ ?_)
+    (sup_le (iSup_le fun h ↦ le_iSup₂_of_le 1 h le_rfl)
+      (iSup₂_le fun i hi ↦ le_iSup₂_of_le (f i) hi le_rfl))
+  by_cases h1 : χ = 1
+  · subst h1
+    exact le_sup_of_le_left (le_iSup_of_le hχ le_rfl)
+  by_cases hχ' : χ ∈ nontrivialAdjointWeights π
+  · obtain ⟨i, rfl⟩ := hf hχ'
+    exact le_sup_of_le_right
+      (le_iSup₂_of_le (f := fun i (_ : p (f i)) ↦ adjointWeightSpace π (f i)) i hχ le_rfl)
+  · rw [adjointWeightSpace_eq_bot_of_notMem_nontrivialAdjointWeights h1 hχ']
+    exact bot_le
 
 /-- **A point of `D(M)` acts on the `α`-weight submodule `𝔤_α` by the value of the character
 `α` at that point.** -/

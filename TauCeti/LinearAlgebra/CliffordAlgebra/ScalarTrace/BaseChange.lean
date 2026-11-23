@@ -72,7 +72,6 @@ variable {R : Type*} {M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Inv
   {Q : QuadraticForm R M} (A : Type*) [CommRing A] [Algebra R A]
 
 /-- The extended scalar part is normalized. -/
-@[simp]
 theorem baseChange_scalarTrace_one :
     Module.Dual.baseChange A (scalarTrace Q) 1 = 1 := by
   simp [Algebra.TensorProduct.one_def]
@@ -122,7 +121,7 @@ theorem scalarTrace_ofBaseChange_of_pairwise_isOrtho {l : List M} (hl : l.Pairwi
   have h := eq_smul_scalarTrace hl' hspan' f
     (fun x y => by simp [f, baseChange_scalarTrace_mul_comm])
     (fun x => by simp [f, toBaseChange_involute, baseChange_scalarTrace_map_involute])
-  have h1 : f 1 = 1 := by simp [f]
+  have h1 : f 1 = 1 := by simp [f, baseChange_scalarTrace_one]
   rw [h1, one_smul] at h
   simpa [f] using (LinearMap.congr_fun h (ofBaseChange A Q x)).symm
 
