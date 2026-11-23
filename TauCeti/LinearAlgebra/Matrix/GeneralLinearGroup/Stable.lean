@@ -694,26 +694,16 @@ end StableGeneralLinearGroup
 namespace AlgebraicK1
 
 /-- The homomorphism of algebraic `K₁` induced by a ring homomorphism `f : A →+* B`, applying `f`
-to the entries of invertible matrices. -/
+to the entries of invertible matrices: the abelianization of the induced homomorphism of `GL_∞`. -/
 def map (f : A →+* B) : AlgebraicK1 A →* AlgebraicK1 B :=
-  lift (fun n ↦ (mk B n).comp (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom))
-    fun m n h u ↦ by simp only [MonoidHom.comp_apply, ← stabilizeGL_map, mk_stabilizeGL]
+  Group.Abelianization.map (StableGeneralLinearGroup.map f)
 
 /-- The induced homomorphism of algebraic `K₁` sends the class of an invertible matrix to the
 class of the matrix obtained by applying the ring homomorphism to its entries. -/
 @[simp]
 theorem map_mk (f : A →+* B) (n : ℕ) (u : GL (Fin n) A) :
-    map f (mk A n u) = mk B n (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom u) :=
-  lift_mk ..
-
-/-- The projection `GL_∞ →* K₁` is natural: the induced homomorphism of algebraic `K₁` sends
-the class of `x` to the class of its image under the induced homomorphism of `GL_∞`. -/
-@[simp]
-theorem map_of (f : A →+* B) (x : StableGeneralLinearGroup A) :
-    map f (Group.Abelianization.of x) =
-      Group.Abelianization.of (StableGeneralLinearGroup.map f x) := by
-  obtain ⟨n, u, rfl⟩ := StableGeneralLinearGroup.exists_of x
-  exact (map_mk f n u).trans (congrArg _ (StableGeneralLinearGroup.map_of f n u).symm)
+    map f (mk A n u) = mk B n (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom u) := by
+  simp [map, mk]
 
 /-- The identity ring homomorphism induces the identity of algebraic `K₁`. -/
 @[simp]

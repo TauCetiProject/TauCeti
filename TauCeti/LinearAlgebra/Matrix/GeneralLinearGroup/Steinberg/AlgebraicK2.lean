@@ -78,6 +78,11 @@ def algebraicK2 : Subgroup (SteinbergGroup R) :=
 
 variable {R}
 
+/-- The kernel of `St(R) →* GL_∞(R)` is algebraic `K₂(R)`. -/
+@[simp]
+theorem SteinbergGroup.ker_toStableGL : (SteinbergGroup.toStableGL R).ker = algebraicK2 R :=
+  (rfl)
+
 /-- An element of the Steinberg group lies in `K₂` exactly when its image in `GL_∞` is trivial. -/
 @[simp]
 theorem mem_algebraicK2_iff {z : SteinbergGroup R} :
@@ -181,6 +186,13 @@ theorem diagGL_one_inv_mem_elementarySubgroup (u : Rˣ) :
   exact h ▸ (Equiv.reindexGL_mem_elementarySubgroup_iff _).2
     (diagGL_inv_one_mem_elementarySubgroup u)
 
+/-- The diagonal matrix `diag(1, 1, 1)` is the identity. -/
+private theorem diagGL_one_one_one : diagGL ![(1 : Rˣ), 1, 1] = 1 := by
+  rw [← map_one diagGL]
+  congr 1
+  ext i : 1
+  fin_cases i <;> rfl
+
 /-- For commuting units `u` and `v`, the commutator of `diag(u, u⁻¹, 1)` and `diag(v, 1, v⁻¹)`
 is trivial. -/
 private theorem commutatorElement_diagGL_eq_one {u v : Rˣ} (h : Commute u v) :
@@ -197,24 +209,46 @@ private theorem exists_toStableGL_eq_of {n : ℕ} {g : GL (Fin n) R}
   MonoidHom.mem_range.1
     (SteinbergGroup.range_toStableGL.ge (StableGeneralLinearGroup.of_mem_elementarySubgroup hg))
 
-/-- Two elements of `St(R)` with the same image in `GL_∞(R)` differ by a central element. -/
-private theorem exists_mem_center_eq_mul {a a' : SteinbergGroup R}
-    (h : SteinbergGroup.toStableGL R a = SteinbergGroup.toStableGL R a') :
-    ∃ c ∈ Subgroup.center (SteinbergGroup R), a' = a * c := by
-  refine ⟨a⁻¹ * a', algebraicK2_eq_center.le ?_, by group⟩
-  rw [mem_algebraicK2_iff, map_mul, map_inv, h, inv_mul_cancel]
+/-- A chosen lift to `St(R)` of the stable matrix `diag(u, u⁻¹, 1)`. -/
+private def diagInvOneLift (u : Rˣ) : SteinbergGroup R :=
+  (exists_toStableGL_eq_of (diagGL_inv_one_mem_elementarySubgroup u)).choose
+
+/-- The chosen lift maps to `diag(u, u⁻¹, 1)` in `GL_∞(R)`. -/
+private theorem toStableGL_diagInvOneLift (u : Rˣ) :
+    SteinbergGroup.toStableGL R (diagInvOneLift u) =
+      StableGeneralLinearGroup.of R 3 (diagGL ![u, u⁻¹, 1]) :=
+  (exists_toStableGL_eq_of (diagGL_inv_one_mem_elementarySubgroup u)).choose_spec
+
+/-- A chosen lift to `St(R)` of the stable matrix `diag(v, 1, v⁻¹)`. -/
+private def diagOneInvLift (v : Rˣ) : SteinbergGroup R :=
+  (exists_toStableGL_eq_of (diagGL_one_inv_mem_elementarySubgroup v)).choose
+
+/-- The chosen lift maps to `diag(v, 1, v⁻¹)` in `GL_∞(R)`. -/
+private theorem toStableGL_diagOneInvLift (v : Rˣ) :
+    SteinbergGroup.toStableGL R (diagOneInvLift v) =
+      StableGeneralLinearGroup.of R 3 (diagGL ![v, 1, v⁻¹]) :=
+  (exists_toStableGL_eq_of (diagGL_one_inv_mem_elementarySubgroup v)).choose_spec
+
+/-- The stable matrix `diag(u₀, u₁, u₂)`, with a ring homomorphism applied to its entries, is the
+diagonal matrix of the mapped units. -/
+private theorem map_of_diagGL {S : Type*} [Ring S] (f : R →+* S) (u₀ u₁ u₂ : Rˣ) :
+    StableGeneralLinearGroup.map f (StableGeneralLinearGroup.of R 3 (diagGL ![u₀, u₁, u₂])) =
+      StableGeneralLinearGroup.of S 3 (diagGL
+        ![Units.map (f : R →* S) u₀, Units.map (f : R →* S) u₁, Units.map (f : R →* S) u₂]) := by
+  rw [StableGeneralLinearGroup.map_of, RingHom.toMonoidHom_eq_coe, f.unitsMap_mapMatrix_diagGL]
+  congr 2
+  ext i : 1
+  fin_cases i <;> rfl
 
 /-- The **Steinberg symbol** `{u, v} ∈ K₂(R)` of commuting units `u` and `v` of `R`: the
 commutator `⁅a, b⁆` of lifts `a` and `b` to the Steinberg group `St(R)` of the stable matrices
 `diag(u, u⁻¹, 1)` and `diag(v, 1, v⁻¹)`. It does not depend on the choice of lifts
 (`TauCeti.coe_steinbergSymbol_eq_commutatorElement`). -/
 def steinbergSymbol (u v : Rˣ) (h : Commute u v) : algebraicK2 R :=
-  ⟨⁅(exists_toStableGL_eq_of (diagGL_inv_one_mem_elementarySubgroup u)).choose,
-      (exists_toStableGL_eq_of (diagGL_one_inv_mem_elementarySubgroup v)).choose⁆, by
-    rw [mem_algebraicK2_iff, map_commutatorElement,
-      (exists_toStableGL_eq_of (diagGL_inv_one_mem_elementarySubgroup u)).choose_spec,
-      (exists_toStableGL_eq_of (diagGL_one_inv_mem_elementarySubgroup v)).choose_spec,
-      ← map_commutatorElement, commutatorElement_diagGL_eq_one h, map_one]⟩
+  ⟨⁅diagInvOneLift u, diagOneInvLift v⁆, by
+    rw [mem_algebraicK2_iff, map_commutatorElement, toStableGL_diagInvOneLift,
+      toStableGL_diagOneInvLift, ← map_commutatorElement, commutatorElement_diagGL_eq_one h,
+      map_one]⟩
 
 /-- **The Steinberg symbol is independent of the lifts**: for any lifts `a` and `b` to `St(R)` of
 `diag(u, u⁻¹, 1)` and `diag(v, 1, v⁻¹)`, the symbol `{u, v}` is the commutator `⁅a, b⁆`. -/
@@ -222,33 +256,24 @@ theorem coe_steinbergSymbol_eq_commutatorElement {u v : Rˣ} (h : Commute u v)
     {a b : SteinbergGroup R}
     (ha : SteinbergGroup.toStableGL R a = StableGeneralLinearGroup.of R 3 (diagGL ![u, u⁻¹, 1]))
     (hb : SteinbergGroup.toStableGL R b = StableGeneralLinearGroup.of R 3 (diagGL ![v, 1, v⁻¹])) :
-    (steinbergSymbol u v h : SteinbergGroup R) = ⁅a, b⁆ := by
-  obtain ⟨c, hc, rfl⟩ := exists_mem_center_eq_mul
-    ((exists_toStableGL_eq_of (diagGL_inv_one_mem_elementarySubgroup u)).choose_spec.trans ha.symm)
-  obtain ⟨d, hd, rfl⟩ := exists_mem_center_eq_mul
-    ((exists_toStableGL_eq_of (diagGL_one_inv_mem_elementarySubgroup v)).choose_spec.trans hb.symm)
-  exact (commutatorElement_mul_mul_of_mem_center hc hd).symm
+    (steinbergSymbol u v h : SteinbergGroup R) = ⁅a, b⁆ :=
+  MonoidHom.commutatorElement_eq_of_ker_le_center SteinbergGroup.ker_toStableGL_le_center
+    ((toStableGL_diagInvOneLift u).trans ha.symm) ((toStableGL_diagOneInvLift v).trans hb.symm)
 
 /-- The Steinberg symbol `{1, v}` is trivial. -/
 @[simp]
 theorem steinbergSymbol_one_left (v : Rˣ) : steinbergSymbol 1 v (Commute.one_left v) = 1 := by
-  obtain ⟨b, hb⟩ := exists_toStableGL_eq_of (diagGL_one_inv_mem_elementarySubgroup v)
-  refine Subtype.ext ((coe_steinbergSymbol_eq_commutatorElement _ (a := 1) ?_ hb).trans ?_)
-  · rw [map_one, ← map_one (StableGeneralLinearGroup.of R 3), ← map_one diagGL]
-    congr 2
-    ext i : 1
-    fin_cases i <;> simp
+  refine Subtype.ext ((coe_steinbergSymbol_eq_commutatorElement _ (a := 1) ?_
+    (toStableGL_diagOneInvLift v)).trans ?_)
+  · rw [map_one, inv_one, diagGL_one_one_one, map_one]
   · simp [commutatorElement_def]
 
 /-- The Steinberg symbol `{u, 1}` is trivial. -/
 @[simp]
 theorem steinbergSymbol_one_right (u : Rˣ) : steinbergSymbol u 1 (Commute.one_right u) = 1 := by
-  obtain ⟨a, ha⟩ := exists_toStableGL_eq_of (diagGL_inv_one_mem_elementarySubgroup u)
-  refine Subtype.ext ((coe_steinbergSymbol_eq_commutatorElement _ ha (b := 1) ?_).trans ?_)
-  · rw [map_one, ← map_one (StableGeneralLinearGroup.of R 3), ← map_one diagGL]
-    congr 2
-    ext i : 1
-    fin_cases i <;> simp
+  refine Subtype.ext ((coe_steinbergSymbol_eq_commutatorElement _
+    (toStableGL_diagInvOneLift u) (b := 1) ?_).trans ?_)
+  · rw [map_one, inv_one, diagGL_one_one_one, map_one]
   · simp [commutatorElement_def]
 
 /-- **Steinberg symbols are natural**: the homomorphism of `K₂` induced by a ring homomorphism
@@ -258,27 +283,12 @@ theorem algebraicK2.map_steinbergSymbol {S : Type*} [Ring S] (f : R →+* S) {u 
     (h : Commute u v) :
     algebraicK2.map f (steinbergSymbol u v h) =
       steinbergSymbol (Units.map (f : R →* S) u) (Units.map (f : R →* S) v) (h.map _) := by
-  obtain ⟨a, ha⟩ := exists_toStableGL_eq_of (diagGL_inv_one_mem_elementarySubgroup u)
-  obtain ⟨b, hb⟩ := exists_toStableGL_eq_of (diagGL_one_inv_mem_elementarySubgroup v)
-  have hdiag (d : Fin 3 → Rˣ) :
-      StableGeneralLinearGroup.map f (StableGeneralLinearGroup.of R 3 (diagGL d)) =
-        StableGeneralLinearGroup.of S 3 (diagGL fun i ↦ Units.map (f : R →* S) (d i)) := by
-    rw [StableGeneralLinearGroup.map_of]
-    congr 1
-    ext i j
-    simp [diagonal_apply, apply_ite f]
   refine Subtype.ext ?_
-  rw [algebraicK2.coe_map_apply, coe_steinbergSymbol_eq_commutatorElement h ha hb,
-    map_commutatorElement]
+  rw [algebraicK2.coe_map_apply, coe_steinbergSymbol_eq_commutatorElement h
+    (toStableGL_diagInvOneLift u) (toStableGL_diagOneInvLift v), map_commutatorElement]
   refine (coe_steinbergSymbol_eq_commutatorElement _ ?_ ?_).symm
-  · rw [SteinbergGroup.toStableGL_map, ha, hdiag]
-    congr 2
-    ext i : 1
-    fin_cases i <;> simp
-  · rw [SteinbergGroup.toStableGL_map, hb, hdiag]
-    congr 2
-    ext i : 1
-    fin_cases i <;> simp
+  · rw [SteinbergGroup.toStableGL_map, toStableGL_diagInvOneLift, map_of_diagGL, map_inv, map_one]
+  · rw [SteinbergGroup.toStableGL_map, toStableGL_diagOneInvLift, map_of_diagGL, map_inv, map_one]
 
 end Symbol
 
