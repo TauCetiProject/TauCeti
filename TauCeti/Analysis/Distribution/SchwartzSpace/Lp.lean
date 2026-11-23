@@ -123,14 +123,17 @@ theorem toLpTop_mem_closure_range_schwartz_toLp_top_iff {μ : Measure E}
     obtain ⟨g₀, hg₀_smooth, hg₀_approx, hg₀_supp⟩ := hfcut_cont.exists_contDiff_approx ⊤
       (ε := fun _ ↦ ε / 3) continuous_const fun _ ↦ by positivity
     set g : 𝓢(E, F) := (hfcut_supp.mono hg₀_supp).toSchwartzMap hg₀_smooth
+    have hg : ⇑g = g₀ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
     refine ⟨g.toLp ∞ μ, ⟨g, rfl⟩, ?_⟩
     have hpt : ∀ x, ‖f x - g x‖ ≤ 2 * ε / 3 := fun x ↦ by
       calc ‖f x - g x‖ ≤ ‖f x - fcut x‖ + ‖fcut x - g x‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
         _ = ‖f x - fcut x‖ + dist (g x) (fcut x) := by rw [dist_comm, dist_eq_norm]
-        _ ≤ ε / 3 + ε / 3 := add_le_add (hfcut_dist x) (hg₀_approx x).le
+        _ ≤ ε / 3 + ε / 3 := by
+            rw [hg]
+            exact add_le_add (hfcut_dist x) (hg₀_approx x).le
         _ = 2 * ε / 3 := by ring
     rw [dist_eq_norm]
-    refine (Lp.norm_top_le_of_ae_bound (c := 2 * ε / 3) (by positivity) ?_).trans_lt (by linarith)
+    refine (Lp.norm_le_of_ae_bound_top (C := 2 * ε / 3) (by positivity) ?_).trans_lt (by linarith)
     filter_upwards [Lp.coeFn_sub (toLpTop μ 𝕜 f) (g.toLp ∞ μ),
       coeFn_toLpTop (𝕜 := 𝕜) μ f, g.coeFn_toLp ∞ μ] with x hsub hf' hg'
     rw [hsub, Pi.sub_apply, hf', hg']

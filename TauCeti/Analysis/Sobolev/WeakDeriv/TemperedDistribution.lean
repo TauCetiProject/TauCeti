@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
@@ -243,22 +244,18 @@ theorem iteratedLineDerivOp_toLpTop_eq {μ : Measure E} [μ.IsAddHaarMeasure] {k
         (mul_le_mul_of_nonneg_right (hC x) (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _))
     set g' : E →ᵇ F := ofNormedAddCommGroup (fun x ↦ iteratedFDeriv ℝ k f x (Fin.tail v))
       hcont (C * ∏ i, ‖Fin.tail v i‖) hbd
+    have hg' : ⇑g' = fun x ↦ iteratedFDeriv ℝ k f x (Fin.tail v) :=
+      coe_ofNormedAddCommGroup ..
     have hih : ∂^{Fin.tail v} (toLpTop μ ℂ f : 𝓢'(E, F)) = (toLpTop μ ℂ g' : 𝓢'(E, F)) :=
       ih (hf.of_le (by exact_mod_cast Nat.le_succ k))
         (fun i hi ↦ hbdd i (hi.trans (Nat.lt_succ_self k))) (Fin.tail v)
-        fun x ↦ by simp only [g', coe_ofNormedAddCommGroup]
+        fun x ↦ congrFun hg' x
     have hdiff : ∀ x, HasFDerivAt (g' : E → F)
         ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).comp
-          (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ E) F
-            (iteratedFDeriv ℝ (k + 1) f x))) x := fun x ↦ by
-      have hF : HasFDerivAt (iteratedFDeriv ℝ k f)
-          (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ E) F
-            (iteratedFDeriv ℝ (k + 1) f x)) x := by
-        have h := (hf.differentiable_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self k) x
-          ).hasFDerivAt
-        rwa [fderiv_iteratedFDeriv] at h
+          ((iteratedFDeriv ℝ (k + 1) f x).curryLeft)) x := fun x ↦ by
+      rw [hg']
       exact (ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).hasFDerivAt.comp
-        x hF
+        x (hf.hasFDerivAt_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self k) x)
     rw [LineDeriv.iteratedLineDerivOp_succ_left, hih]
     refine lineDerivOp_toLpTop_eq (fun x ↦ (hdiff x).differentiableAt) (v 0) fun x ↦ ?_
     rw [hg x, (hdiff x).fderiv]

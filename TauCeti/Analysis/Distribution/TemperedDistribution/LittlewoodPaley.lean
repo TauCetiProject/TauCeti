@@ -7,13 +7,9 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import Mathlib.Analysis.Distribution.Support
-public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
-public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
-import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Commutator
-import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
@@ -24,7 +20,6 @@ import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.Data.Nat.Interval
-import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
@@ -173,11 +168,6 @@ blocks `Δⱼ u`.
   `Δⱼ` with a Lipschitz function is `O(2^{-j})` on `Lᵖ`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le_of_le`: Bernstein's inequality
   `‖Δⱼ u‖_r ≤ C 2^{j n (1/p - 1/r)} ‖Δⱼ u‖_p` for `p ≤ r`.
-* `TemperedDistribution.norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le`,
-  `TemperedDistribution.rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le`, and
-  `TemperedDistribution.exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith`: kernel
-  cancellation bounds for the dyadic blocks of a bounded continuous function with an
-  `A ‖y‖^α + B ‖y‖` increment bound, and for bounded Hölder functions.
 * `TemperedDistribution.exists_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq`
   and `exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq`: dyadic
   and weighted dyadic reverse Bernstein bounds for `Lᵖ` block representatives.
@@ -1049,17 +1039,19 @@ theorem littlewoodPaleyBlock_mem_closure_range_schwartz_toLp [CompleteSpace F]
   let T : Lp F p (volume : Measure E) →L[ℂ] Lp F p (volume : Measure E) :=
     T₀.mkContinuous C fun u ↦ by
       obtain ⟨g, hg, hgn⟩ := hC j u
-      have hug : T₀ u = g := hi (by simpa [i, hT₀ u] using hg)
+      have hug : T₀ u = g := Lp.toTemperedDistribution_injective ((hT₀ u).trans hg)
       simpa only [hug] using hgn
-  have hvT : v = T f := hi <| by
-    simpa [i, T, hT₀ f] using hv.symm
+  have hT (u : Lp F p (volume : Measure E)) :
+      (T u : 𝓢'(E, F)) = littlewoodPaleyBlock F φ j (u : 𝓢'(E, F)) := hT₀ u
+  have hvT : v = T f := Lp.toTemperedDistribution_injective (hv.symm.trans (hT f).symm)
   rw [hvT]
   refine map_mem_closure T.continuous hf fun _ ⟨g, hg⟩ ↦ ?_
   refine ⟨SchwartzMap.fourierMultiplierCLM F
-    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g, hi ?_⟩
-  rw [← hg]
-  simpa [i, T, hT₀, Lp.toTemperedDistribution_toLp_eq] using
-    (littlewoodPaleyBlock_toTemperedDistributionCLM_eq φ j g).symm
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g,
+    Lp.toTemperedDistribution_injective ?_⟩
+  dsimp only
+  rw [← hg, Lp.toTemperedDistribution_toLp_eq, hT, Lp.toTemperedDistribution_toLp_eq,
+    littlewoodPaleyBlock_toTemperedDistributionCLM_eq]
 
 /-- **The low-pass truncations are bounded on `Lᵖ` uniformly in the scale.** For every
 `1 ≤ p ≤ ∞`, every `R ≠ 0` and every `f ∈ Lᵖ`, the truncation `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 f)` is a
@@ -1189,128 +1181,6 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_le [CompleteSpace F] {p r 
   rw [Real.mul_rpow (by positivity) φ.rOut_pos.le, ← Real.rpow_natCast,
     ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ) a]
   ring
-
-open BoundedContinuousFunction in
-open scoped Convolution in
-/-- **Kernel cancellation estimate for dyadic blocks.** If a bounded continuous function `f`
-satisfies `‖f (x - y) - f x‖ ≤ A ‖y‖^α + B ‖y‖` for all `x, y` (with `α ≥ 0`), then its dyadic
-block `Δ_{j+1} f` has `L^∞` norm bounded by `A 2^{-α j} M_α + B 2^{-j} M_1`, where
-`M_s = ∫ ‖y‖^s ‖𝓕⁻ ψ₁ y‖ dy`. -/
-theorem norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le [CompleteSpace F] {α : ℝ} (hα : 0 ≤ α)
-    {A B : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) {f : E →ᵇ F}
-    (hf : ∀ x y, ‖f (x - y) - f x‖ ≤ A * ‖y‖ ^ α + B * ‖y‖)
-    {j : ℕ} {v : Lp F ∞ (volume : Measure E)}
-    (hv : littlewoodPaleyBlock F φ (j + 1) (toLpTop volume ℂ f : 𝓢'(E, F)) = v) :
-    ‖v‖ ≤ A * ((2 : ℝ) ^ (α * j))⁻¹ *
-        (∫ y, ‖y‖ ^ α * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) +
-      B * ((2 : ℝ) ^ j)⁻¹ *
-        (∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) := by
-  set κ : 𝓢(E, ℂ) := 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1))
-  have hκ : (κ : E → ℂ) = 𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) := by
-    rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
-  have hκ0 : ∫ y, κ y = 0 := hκ ▸ φ.integral_fourierInv_inhomogeneousLittlewoodPaley_succ j
-  have hMα : Integrable (fun y ↦ ‖y‖ ^ α * ‖κ y‖) volume :=
-    κ.integrable_norm_rpow_mul_norm hα
-  have hM1 : Integrable (fun y ↦ ‖y‖ * ‖κ y‖) volume := by
-    simpa only [Real.rpow_one] using κ.integrable_norm_rpow_mul_norm (μ := volume) zero_le_one
-  have hbound_int : Integrable (fun y ↦ A * (‖y‖ ^ α * ‖κ y‖) + B * (‖y‖ * ‖κ y‖)) volume :=
-    (hMα.const_mul A).add (hM1.const_mul B)
-  have hM1_eq : ∫ y, ‖y‖ * ‖κ y‖ =
-      ((2 : ℝ) ^ j)⁻¹ *
-        ∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖ := by
-    rw [hκ]
-    simpa only [pow_one] using
-      φ.integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ 1 j
-  have hMα_eq : ∫ y, ‖y‖ ^ α * ‖κ y‖ =
-      ((2 : ℝ) ^ (α * j))⁻¹ *
-        ∫ y, ‖y‖ ^ α * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖ := by
-    rw [hκ, mul_comm α, Real.rpow_mul zero_le_two, Real.rpow_natCast]
-    exact φ.integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ α j
-  have hmaj_eq : ∫ y, (A * (‖y‖ ^ α * ‖κ y‖) + B * (‖y‖ * ‖κ y‖)) =
-      A * ((2 : ℝ) ^ (α * j))⁻¹ *
-          (∫ y, ‖y‖ ^ α * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) +
-        B * ((2 : ℝ) ^ j)⁻¹ *
-          (∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) := by
-    rw [integral_add (hMα.const_mul A) (hM1.const_mul B), integral_const_mul, integral_const_mul,
-      hMα_eq, hM1_eq]
-    ring
-  -- `v` agrees almost everywhere with the convolution `κ ⋆ f`.
-  have hae : (v : E → F) =ᵐ[volume] (κ : E → ℂ) ⋆[ContinuousLinearMap.lsmul ℂ ℂ] (f : E → F) := by
-    refine (ae_eq_convolution_of_littlewoodPaleyBlock_eq φ (j + 1) hv).trans ?_
-    rw [← hκ, convolution_congr (ContinuousLinearMap.lsmul ℂ ℂ) (Filter.EventuallyEq.refl _ _)
-      (coeFn_toLpTop (volume : Measure E) f)]
-  have hconv (x : E) :
-      ConvolutionExistsAt (κ : E → ℂ) (f : E → F) x (ContinuousLinearMap.lsmul ℂ ℂ) volume :=
-    convolutionExists_of_integrable_of_ae_norm_le _ (κ.integrable (μ := volume))
-      f.continuous.aestronglyMeasurable (Filter.Eventually.of_forall f.norm_coe_le_norm) x
-  refine Lp.norm_top_le_of_ae_bound (by
-    refine add_nonneg (mul_nonneg (mul_nonneg hA (by positivity))
-      (integral_nonneg fun _ ↦ by positivity))
-      (mul_nonneg (mul_nonneg hB (by positivity)) (integral_nonneg fun _ ↦ by positivity))) ?_
-  filter_upwards [hae] with x hx
-  rw [hx, ← hmaj_eq]
-  refine norm_convolution_lsmul_le_integral_of_integral_eq_zero (κ.integrable (μ := volume))
-    hκ0 (hconv x) hbound_int (Filter.Eventually.of_forall fun y ↦ ?_)
-  calc ‖κ y‖ * ‖f (x - y) - f x‖
-      ≤ ‖κ y‖ * (A * ‖y‖ ^ α + B * ‖y‖) := by gcongr; exact hf x y
-    _ = A * (‖y‖ ^ α * ‖κ y‖) + B * (‖y‖ * ‖κ y‖) := by ring
-
-open BoundedContinuousFunction in
-/-- **Weighted kernel cancellation estimate for dyadic blocks.** From a global
-`η ‖y‖^α + B ‖y‖` increment bound on a bounded continuous function `f`, the weighted dyadic block
-`2^{α (j + 1)} ‖Δ_{j+1} f‖_∞` splits into a scale-free `O(η)` term and a geometric
-`O((2^{α - 1})^j)` term. -/
-theorem rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le [CompleteSpace F]
-    {α : ℝ≥0} {η B : ℝ} (hη : 0 ≤ η) (hB : 0 ≤ B) {f : E →ᵇ F}
-    (hf : ∀ x y, ‖f (x - y) - f x‖ ≤ η * ‖y‖ ^ (α : ℝ) + B * ‖y‖) {j : ℕ}
-    {v : Lp F ∞ (volume : Measure E)}
-    (hv : littlewoodPaleyBlock F φ (j + 1) (toLpTop volume ℂ f : 𝓢'(E, F)) = v) :
-    2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖v‖ ≤
-      η * (2 ^ (α : ℝ) *
-        ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) +
-      (B * 2 ^ (α : ℝ) *
-        ∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) *
-          ((2 : ℝ) ^ ((α : ℝ) - 1)) ^ j := by
-  have hblock := norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le φ α.coe_nonneg hη hB hf hv
-  have hpow : (2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) =
-      2 ^ (α : ℝ) * 2 ^ ((α : ℝ) * j) := by
-    rw [Nat.cast_add, Nat.cast_one, mul_add, mul_one, Real.rpow_add two_pos, mul_comm]
-  have hratio : 2 ^ ((α : ℝ) * j) * ((2 : ℝ) ^ j)⁻¹ = ((2 : ℝ) ^ ((α : ℝ) - 1)) ^ j := by
-    rw [← Real.rpow_natCast (2 : ℝ) j, ← Real.rpow_neg zero_le_two, ← Real.rpow_add two_pos,
-      ← Real.rpow_mul_natCast zero_le_two]
-    congr 1
-    ring
-  calc 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖v‖
-      ≤ 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) *
-          (η * ((2 : ℝ) ^ ((α : ℝ) * j))⁻¹ *
-            (∫ y, ‖y‖ ^ (α : ℝ) *
-              ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) +
-          B * ((2 : ℝ) ^ j)⁻¹ *
-            (∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖)) := by
-        gcongr
-    _ = _ := by
-        rw [hpow, mul_add, ← hratio]
-        have h2αj : (2 : ℝ) ^ ((α : ℝ) * j) ≠ 0 := by positivity
-        field_simp
-
-open BoundedContinuousFunction in
-/-- **The blocks of a Hölder function.** Let `α ≥ 0`. There is `C`, depending only on `φ` and `α`,
-with the following property. Let `f` be a bounded continuous `α`-Hölder function with constant `H`.
-Then for every `j` the `L^∞` function `Δ_{j+1} f` satisfies
-`2^{(j+1)α} ‖Δ_{j+1} f‖_∞ ≤ C H`. -/
-theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith [CompleteSpace F]
-    (α : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (f : E →ᵇ F) {H : ℝ≥0}, HolderWith H α f →
-      ∀ (j : ℕ) (g : Lp F ∞ (volume : Measure E)),
-      littlewoodPaleyBlock F φ (j + 1) (toLpTop volume ℂ f : 𝓢'(E, F)) = g →
-      2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖g‖ ≤ C * H := by
-  refine ⟨2 ^ (α : ℝ) *
-      ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖,
-    mul_nonneg (by positivity) (integral_nonneg fun _ ↦ by positivity), fun f H hf j g hg ↦ ?_⟩
-  have hinc : ∀ x y, ‖f (x - y) - f x‖ ≤ (H : ℝ) * ‖y‖ ^ (α : ℝ) + 0 * ‖y‖ := fun x y ↦ by
-    simpa [dist_eq_norm] using hf.dist_le (x - y) x
-  simpa only [zero_mul, add_zero, mul_comm (H : ℝ)] using
-    rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le φ H.coe_nonneg le_rfl hinc hg
 
 /-- **Dyadic reverse Bernstein bound for `Lᵖ` block representatives.** Given an orthonormal basis
 `b` of `E`, there is `C ≥ 0` depending only on `φ` and `b` such that for every `1 ≤ p ≤ ∞`,
