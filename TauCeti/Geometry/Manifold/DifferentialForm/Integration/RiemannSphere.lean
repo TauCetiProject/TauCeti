@@ -96,9 +96,7 @@ theorem integralTopForm_fubiniStudyForm :
         orientationAt_reindex_complexManifoldOrientation_complex]
       exact (congrArg (fun f ↦ Orientation.map (Fin 2) f Complex.basisOneI.orientation)
         hrefl).trans (by rw [Orientation.map_refl, Equiv.refl_apply, Complex.orientation]))
-  have hvol : Complex.basisOneI.addHaar = volume := by
-    rw [← Complex.toBasis_orthonormalBasisOneI, OrthonormalBasis.addHaar_eq_volume]
-  rw [← hl, h.2, Measure.restrict_univ, hvol]
+  rw [← hl, h.2, Measure.restrict_univ, Complex.addHaar_basisOneI]
   -- On the basis `(1, i)` the form is the Fubini–Study density; the derivative applied to the
   -- basis is `ContinuousLinearEquiv.refl`, which acts definitionally as the identity.
   exact (integral_congr_ae (ae_of_all _ fun z ↦ fubiniStudyForm_coe_basisOneI z)).trans
