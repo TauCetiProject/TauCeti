@@ -49,6 +49,10 @@ not microlocally smooth.
 
 * `Distribution.isOpen_setOf_isMicrolocallySmoothAt`, `Distribution.isOpen_diff_waveFrontSet`:
   the wave front set is closed in `Ω × (E \ {0})`.
+* `Distribution.isClosed_insert_zero_image_snd_waveFrontSet_inter`: the frequencies of the wave
+  front set over a compact set, together with `0`, form a closed set.
+* `Distribution.eventually_forall_mem_waveFrontSet_imp_mem`: the frequencies of the wave front
+  set at points near `x` stay in any open neighbourhood of those at `x` with conic complement.
 * `Distribution.smul_mem_waveFrontSet_iff`: it is conic in the frequency variable.
 * `Distribution.waveFrontSet_subset_dsupport`: it lies over the support of `T`.
 * `Distribution.localFourier_smulLeftCLM`, `Distribution.localFourier_restrictCLM`: the localized
@@ -171,6 +175,13 @@ theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, �
 theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
   simpa using localFourier_smul_cutoff T 0 0 η
 
+/-- The localized Fourier transform is additive in the cutoff over finite sums. -/
+@[simp]
+theorem localFourier_sum_cutoff {ι : Type*} (T : 𝓓'(Ω, ℂ)) (s : Finset ι) (φ : ι → 𝓓(Ω, ℂ))
+    (η : E) : T.localFourier (∑ i ∈ s, φ i) η = ∑ i ∈ s, T.localFourier (φ i) η :=
+  map_sum (AddMonoidHom.mk' (fun ψ ↦ T.localFourier ψ η)
+    fun ψ ψ' ↦ localFourier_add_cutoff T ψ ψ' η) φ s
+
 /-- At the zero frequency the localized Fourier transform is the pairing `T φ` with the cutoff. -/
 @[simp]
 theorem localFourier_at_zero (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
@@ -205,6 +216,18 @@ theorem localFourier_smulLeftCLM (T : 𝓓'(Ω, ℂ)) {g : E → ℝ} (hg : Cont
   congr 1
   ext x
   simp [bilinLeftCLM_apply, mul_assoc]
+
+/-- Modulating the cutoff by the Fourier atom `e_ζ` shifts the localized Fourier transform by `ζ`:
+`T ((φ e_ζ) e_η) = T (φ e_(ζ + η))`. -/
+@[simp]
+theorem localFourier_bilinLeftCLM_fourierAtom (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (ζ η : E) :
+    T.localFourier (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom ζ)
+      φ) η = T.localFourier φ (ζ + η) := by
+  rw [localFourier_def, localFourier_def]
+  congr 1
+  ext x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', TauCeti.fourierAtom_add_left]
+  ring
 
 /-- The localized Fourier transform of a restriction `T|_{Ω'}` with cutoff `φ` is that of `T`
 with cutoff `φ` extended by zero. -/
@@ -282,6 +305,29 @@ theorem isOpen_diff_waveFrontSet (T : 𝓓'(Ω, ℂ)) :
     tauto
   rw [h]
   exact (Ω.isOpen.prod isOpen_compl_singleton).inter T.isOpen_setOf_isMicrolocallySmoothAt
+
+/-- The frequencies of the wave front set of `T` over a compact set `K ⊆ Ω`, together with `0`,
+form a closed set: microlocal smoothness is an open condition, and `K` is compact. -/
+theorem isClosed_insert_zero_image_snd_waveFrontSet_inter {K : Set E} (hK : IsCompact K)
+    (hKΩ : K ⊆ Ω) (T : 𝓓'(Ω, ℂ)) :
+    IsClosed (insert 0 (Prod.snd '' (T.waveFrontSet ∩ K ×ˢ univ))) := by
+  have hmem (ζ : E) : ζ ∈ (insert 0 (Prod.snd '' (T.waveFrontSet ∩ K ×ˢ univ)))ᶜ ↔
+      ¬ζ = 0 ∧ ∀ x, (x, ζ) ∈ T.waveFrontSet → x ∉ K := by
+    simp only [mem_compl_iff, mem_insert_iff, mem_image, mem_inter_iff, mem_prod, mem_univ,
+      and_true, Prod.exists, exists_eq_right, not_or, not_exists, not_and]
+  refine isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun ζ hζ ↦ ?_)
+  obtain ⟨hζ0, hζK⟩ := (hmem ζ).1 hζ
+  -- Near `ζ`, the distribution is microlocally smooth at every point of `K`.
+  have hsmooth : ∀ x ∈ K, ∀ᶠ p : E × E in 𝓝 (ζ, x), T.IsMicrolocallySmoothAt p.2 p.1 := by
+    intro x hx
+    have hx' : T.IsMicrolocallySmoothAt x ζ := by
+      by_contra hns
+      exact hζK x (mem_waveFrontSet_iff.2 ⟨hKΩ hx, hζ0, hns⟩) hx
+    exact ((isOpen_setOf_isMicrolocallySmoothAt T).preimage continuous_swap).mem_nhds hx'
+  filter_upwards [hK.eventually_forall_of_forall_eventually
+    (P := fun ζ' x ↦ T.IsMicrolocallySmoothAt x ζ') hsmooth,
+    isOpen_ne.mem_nhds hζ0] with ζ' hζ' hζ'0
+  exact (hmem ζ').2 ⟨hζ'0, fun x hx hxK ↦ (mem_waveFrontSet_iff.1 hx).2.2 (hζ' x hxK)⟩
 
 /-! ### Scalar multiples and conjugation -/
 
@@ -380,6 +426,44 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
+/-- **The wave front set is upper semicontinuous in the base point.** If the frequencies of the
+wave front set of `T` at a point `x ∈ Ω` lie in an open set `U` whose complement is closed under
+multiplication by positive reals, then so do the frequencies of the wave front set of `T` at every
+point near `x`. -/
+theorem eventually_forall_mem_waveFrontSet_imp_mem {T : 𝓓'(Ω, ℂ)} {x : E} (hx : x ∈ Ω)
+    {U : Set E} (hU : IsOpen U) (hcU : ∀ t : ℝ, 0 < t → ∀ ξ ∈ Uᶜ, t • ξ ∈ Uᶜ)
+    (h : ∀ ξ, (x, ξ) ∈ T.waveFrontSet → ξ ∈ U) :
+    ∀ᶠ y in 𝓝 x, ∀ ξ, (y, ξ) ∈ T.waveFrontSet → ξ ∈ U := by
+  -- `T` is microlocally smooth at `x` in every direction of the compact set of unit vectors
+  -- outside `U`, and microlocal smoothness is an open condition.
+  have hK : IsCompact (Uᶜ ∩ Metric.sphere (0 : E) 1) :=
+    (isCompact_sphere 0 1).inter_left hU.isClosed_compl
+  have hsmooth : ∀ ν ∈ Uᶜ ∩ Metric.sphere (0 : E) 1,
+      ∀ᶠ p : E × E in 𝓝 (x, ν), T.IsMicrolocallySmoothAt p.1 p.2 := by
+    rintro ν ⟨hνU, hν⟩
+    refine T.isOpen_setOf_isMicrolocallySmoothAt.mem_nhds (by_contra fun hns ↦ hνU (h ν ?_))
+    exact mem_waveFrontSet_iff.2 ⟨hx, Metric.ne_of_mem_sphere hν one_ne_zero, hns⟩
+  filter_upwards [hK.eventually_forall_of_forall_eventually hsmooth] with y hy ξ hξ
+  -- Otherwise the unit vector `‖ξ‖⁻¹ ξ` lies outside `U`, and `T` is microlocally smooth at
+  -- `(y, ξ)`.
+  by_contra hξU
+  obtain ⟨-, hξ0, hns⟩ := mem_waveFrontSet_iff.1 hξ
+  have hpos : 0 < ‖ξ‖⁻¹ := inv_pos.2 (norm_pos_iff.2 hξ0)
+  refine hns ((isMicrolocallySmoothAt_smul_iff hpos).1 (hy _ ⟨hcU _ hpos ξ hξU, ?_⟩))
+  simpa using norm_smul_inv_norm (𝕜 := ℝ) hξ0
+
+omit [FiniteDimensional ℝ E] in
+/-- The localized Fourier transform vanishes for a cutoff whose support is disjoint from the
+support of the distribution. -/
+theorem localFourier_eq_zero_of_disjoint_dsupport {T : 𝓓'(Ω, ℂ)} {φ : 𝓓(Ω, ℂ)}
+    (h : Disjoint (tsupport φ) (dsupport T)) (η : E) : T.localFourier φ η = 0 := by
+  rw [localFourier, ← map_zero T.complexPairing]
+  -- The cut-off test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
+  refine complexPairing_eq_of_eventuallyEq T ?_
+  refine eventuallyEq_of_mem ((isClosed_tsupport φ).isOpen_compl.mem_nhdsSet.2
+    h.subset_compl_left) fun y hy => ?_
+  simp [image_eq_zero_of_notMem_tsupport hy]
+
 /-- A distribution is microlocally smooth in every direction at a point of `Ω` outside its
 support. -/
 theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (hx : x ∈ Ω)
@@ -389,14 +473,13 @@ theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (
     inter_subset_right (1 : ℂ)
   refine isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
     (fun N => ⟨0, fun η => ?_⟩) ξ
-  -- The cut-off test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
-  have hzero : T.localFourier φ η = 0 := by
-    rw [localFourier, ← map_zero T.complexPairing]
-    refine complexPairing_eq_of_eventuallyEq T ?_
-    refine (eventuallyEq_of_mem ((isOpen_compl_iff.2 (isClosed_tsupport φ)).mem_nhdsSet.2
-      fun y hy hyφ => (hφ hyφ).1 hy) fun y hy => ?_)
-    simp [image_eq_zero_of_notMem_tsupport hy]
-  simp [hzero]
+  simp [localFourier_eq_zero_of_disjoint_dsupport
+    (disjoint_left.2 fun _ hy => (hφ hy).1 : Disjoint (tsupport φ) (dsupport T)) η]
+
+/-- The zero distribution is microlocally smooth in every direction at every point of `Ω`. -/
+theorem isMicrolocallySmoothAt_zero {x : E} (hx : x ∈ Ω) (ξ : E) :
+    (0 : 𝓓'(Ω, ℂ)).IsMicrolocallySmoothAt x ξ :=
+  isMicrolocallySmoothAt_of_notMem_dsupport hx (by simp) ξ
 
 /-- The wave front set lies over the support of the distribution. -/
 theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :
@@ -552,7 +635,7 @@ private theorem isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem (V : Subm
     inter_subset_right (1 : ℂ)
   -- The cutoff vanishes on `V`, so the localized Fourier transform vanishes identically.
   have hg : (fun v : V => φ v) = 0 :=
-    funext fun v => image_eq_zero_of_notMem_tsupport fun h => (hφ h).1 v.2
+    funext fun v => image_eq_zero_of_notMem_tsupport fun h => (hφ h).1 v.property
   exact isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
     (fun N => ⟨0, fun η => by simp [hg, Real.fourier_eq]⟩) ξ
 

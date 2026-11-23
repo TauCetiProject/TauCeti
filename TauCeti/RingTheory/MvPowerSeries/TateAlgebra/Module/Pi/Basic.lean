@@ -52,9 +52,9 @@ def piLinearEquiv (c : σ → ℝ) :
     IsRestrictedFamily.addSubgroup (∀ i, E i) c ≃ₗ[R]
       ∀ i, IsRestrictedFamily.addSubgroup (E i) c where
   toFun a i := ⟨fun t ↦ (a : (σ →₀ ℕ) → ∀ i, E i) t i,
-    mem_addSubgroup.mpr (isRestrictedFamily_pi_iff.mp (mem_addSubgroup.mp a.2) i)⟩
+    mem_addSubgroup.mpr (isRestrictedFamily_pi_iff.mp (mem_addSubgroup.mp a.property) i)⟩
   invFun a := ⟨fun t i ↦ (a i : (σ →₀ ℕ) → E i) t,
-    mem_addSubgroup.mpr (isRestrictedFamily_pi_iff.mpr fun i ↦ mem_addSubgroup.mp (a i).2)⟩
+    mem_addSubgroup.mpr (isRestrictedFamily_pi_iff.mpr fun i ↦ mem_addSubgroup.mp (a i).property)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl

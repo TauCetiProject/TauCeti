@@ -43,11 +43,11 @@ theorem isEmbedding_graph (P : M →L[R] M) (hP : IsIdempotentElem P) (g : M →
   have hleft : Function.LeftInverse (rangeFactorization P) (fun v : range P ↦ (v : M) + g v) := by
     intro v
     apply Subtype.ext
-    rw [rangeFactorization_coe, map_add, hPg v v.2, add_zero]
+    rw [rangeFactorization_coe, map_add, hPg v v.property, add_zero]
     exact (LinearMap.IsIdempotentElem.mem_range_iff
-      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp (LinearMap.mem_range.mpr v.2)
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp (LinearMap.mem_range.mpr v.property)
   exact hleft.isEmbedding P.continuous.rangeFactorization
-    (continuous_subtype_val.add (hg.comp_continuous continuous_subtype_val Subtype.prop))
+    (continuous_subtypeVal.add (hg.comp_continuous continuous_subtypeVal Subtype.prop))
 
 /-- The graph over the part of the range of a continuous projection lying in `s` is homeomorphic
 to that part, when the vertical component of the graph lies in the kernel of the projection. -/
@@ -78,10 +78,10 @@ theorem coe_graphHomeomorph_symm_apply (P : M →L[R] M) (hP : IsIdempotentElem 
     (((graphHomeomorph P hP g hPg hg s).symm z : range P) : M) = P z := by
   set v := (graphHomeomorph P hP g hPg hg s).symm z
   rw [← (graphHomeomorph P hP g hPg hg s).apply_symm_apply z, coe_graphHomeomorph_apply,
-    map_add, hPg _ (v : range P).2, add_zero]
+    map_add, hPg _ (v : range P).property, add_zero]
   exact ((LinearMap.IsIdempotentElem.mem_range_iff
     (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp
-      (LinearMap.mem_range.mpr (v : range P).2)).symm
+      (LinearMap.mem_range.mpr (v : range P).property)).symm
 
 end ContinuousLinearMap
 

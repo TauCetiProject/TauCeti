@@ -40,7 +40,7 @@ open scoped Distributions ENNReal
 namespace Distribution
 
 variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup V] [NormedSpace ℝ V] {Ω : Opens E} {n : ℕ∞}
   {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) V] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) V]
 

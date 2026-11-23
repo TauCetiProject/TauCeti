@@ -90,10 +90,10 @@ variable (n : ℕ) [NeZero n]
 class of the form. -/
 private theorem j_root_eq_of_orbitRel {f g : ↥(posDef n ⊓ primitiveForms (-n))}
     (h : orbitRel SL(2, ℤ) _ f g) :
-    j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩) =
-      j (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.2⟩) := by
+    j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩) =
+      j (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.property⟩) := by
   obtain ⟨γ, rfl⟩ := mem_orbit_iff.1 h
-  rw [← j_smul_SL2Z γ (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.2⟩), ← root_smul]
+  rw [← j_smul_SL2Z γ (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.property⟩), ← root_smul]
   -- both sides are the form `γ • g`, once as an element of `posDef n ⊓ primitiveForms (-n)` and
   -- once as an element of `posDef n`; the sub-action subtypes share their underlying forms
   congr 2
@@ -102,14 +102,14 @@ private theorem j_root_eq_of_orbitRel {f g : ↥(posDef n ⊓ primitiveForms (-n
 discriminant `-n`: the value `j(τ)` of the modular invariant at the root
 `τ = (-b + i √n) / (2 a)` of any form `a x² + b x y + c y²` in the class. -/
 def singularModulus : PosDefProperClass n → ℂ :=
-  Quotient.lift (fun f ↦ j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩))
+  Quotient.lift (fun f ↦ j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩))
     fun _ _ ↦ j_root_eq_of_orbitRel n
 
 /-- The singular modulus of the class of a form is the value of `j` at the root of the form. -/
 @[simp]
 theorem singularModulus_mk (f : ↥(posDef n ⊓ primitiveForms (-n))) :
     singularModulus n (Quotient.mk _ f) =
-      j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩) :=
+      j (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩) :=
   (rfl)
 
 variable {n} in
@@ -130,8 +130,8 @@ theorem star_singularModulus_mk_of_eq_reflected {f g : ↥(posDef n ⊓ primitiv
     (hg : (g : BinaryQuadraticForm ℤ) = (f : BinaryQuadraticForm ℤ).reflected) :
     starRingEnd ℂ (singularModulus n (Quotient.mk _ f)) = singularModulus n (Quotient.mk _ g) := by
   rw [singularModulus_mk, singularModulus_mk, ← j_J_smul,
-    root_of_eq_reflected (f := ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩)
-      (g := ⟨g, inf_le_left (b := primitiveForms (-n)) g.2⟩) hg]
+    root_of_eq_reflected (f := ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩)
+      (g := ⟨g, inf_le_left (b := primitiveForms (-n)) g.property⟩) hg]
 
 variable {n} in
 /-- **Complex conjugation inverts the class of a singular modulus.** The complex conjugate of the
@@ -143,7 +143,8 @@ theorem star_singularModulus (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) (q
         ((posDefProperClassEquivPic n hn).symm (posDefProperClassToPic n hn q)⁻¹) := by
   induction q using Quotient.inductionOn with | h f
   let g : ↥(posDef n ⊓ primitiveForms (-n)) :=
-    ⟨(f : BinaryQuadraticForm ℤ).reflected, reflected_mem_posDef_inf_primitiveForms_iff.2 f.2⟩
+    ⟨(f : BinaryQuadraticForm ℤ).reflected, reflected_mem_posDef_inf_primitiveForms_iff.2
+        f.property⟩
   rw [star_singularModulus_mk_of_eq_reflected (g := g) rfl]
   refine congrArg (singularModulus n) ((Equiv.eq_symm_apply _).2 ?_)
   rw [posDefProperClassEquivPic_apply]
@@ -166,7 +167,7 @@ theorem im_singularModulus_eq_zero_iff (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) %
 
 /-- The proper class of a primitive reduced form. -/
 private abbrev reducedClass (f : primitiveReducedForms n) : PosDefProperClass n :=
-  Quotient.mk _ ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2⟩
+  Quotient.mk _ ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property⟩
 
 /-- The **Hilbert class polynomial** of discriminant `-n`: the product of `X - j(τ)` over the
 roots `τ = (-b + i √n) / (2 a)` of the primitive reduced forms `a x² + b x y + c y²` of
@@ -174,7 +175,7 @@ discriminant `-n`. Each proper class of primitive positive definite forms contai
 primitive reduced form, so the roots are the singular moduli of discriminant `-n`. -/
 def hilbertClassPolynomial : ℂ[X] :=
   ∏ f : primitiveReducedForms n, (X - C (singularModulus n
-    (Quotient.mk _ ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2⟩)))
+    (Quotient.mk _ ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property⟩)))
 
 /-- The Hilbert class polynomial is the product of `X - j(q)` over all proper classes `q` of
 primitive positive definite forms of discriminant `-n`. -/
@@ -215,7 +216,7 @@ roots of the primitive reduced forms of discriminant `-n`. -/
 theorem roots_hilbertClassPolynomial :
     (hilbertClassPolynomial n).roots =
       Finset.univ.val.map fun f : primitiveReducedForms n ↦ singularModulus n (Quotient.mk _
-        ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2⟩) := by
+        ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property⟩) := by
   rw [hilbertClassPolynomial, roots_prod _ _ (monic_prod_of_monic _ _
     fun _ _ ↦ monic_X_sub_C _).ne_zero]
   simp [Multiset.bind_singleton]
