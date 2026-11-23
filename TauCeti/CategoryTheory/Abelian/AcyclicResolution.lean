@@ -329,9 +329,9 @@ augmentation `X ⟶ K⁰` of the resolution. -/
 @[reassoc]
 lemma toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom :
     F.toRightDerivedZero.app X ≫ (F.rightDerivedObjIsoOfResolution P hinj hP hF ι hK 0).hom =
-      ((F.mapHomologicalComplex _).obj K).liftCycles (F.map (K.fromSingle₀Equiv X ι).1) 1
+      ((F.mapHomologicalComplex _).obj K).liftCycles (F.map (K.fromSingle₀Equiv X ι).val) 1
         (by simp) (by
-          rw [Functor.mapHomologicalComplex_obj_d, ← F.map_comp, (K.fromSingle₀Equiv X ι).2,
+          rw [Functor.mapHomologicalComplex_obj_d, ← F.map_comp, (K.fromSingle₀Equiv X ι).property,
             F.map_zero]) ≫
         ((F.mapHomologicalComplex _).obj K).homologyπ 0 := by
   let I := injectiveResolution X
@@ -345,7 +345,6 @@ lemma toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom :
     -- `isoRightDerivedObj` has source `(homologyFunctor _ _ 0).obj _`, the target of
     -- `isoHomologyπ₀` only up to unfolding, so its cancellation is matched with `erw`
     erw [Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-    rfl
   have h₂ : F.map (I.ι.f 0) = F.map (ι.f 0) ≫ F.map (φ.f 0) := by
     rw [← F.map_comp, ← HomologicalComplex.comp_f, hφ]
   -- after the comparison map to an injective resolution, both sides are the class of `F(I.ι)`;

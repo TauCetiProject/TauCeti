@@ -65,8 +65,7 @@ lemma ΓCompIsoSheafComposeCompΓ_hom_app (G : Sheaf J A) :
   -- the middle comparison has identity components; its source and target functors agree with
   -- those of its neighbours only after unfolding, so its composite is split with `erw`
   erw [NatTrans.comp_app]
-  simp only [Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.symm_hom,
-    NatIso.ofComponents_hom_app, Iso.refl_hom, Functor.isoWhiskerRight_hom,
+  simp only [NatIso.ofComponents_hom_app, Iso.refl_hom, Functor.isoWhiskerRight_hom,
     Functor.whiskerRight_app]
   exact congrArg (F.map ((ΓNatIsoSheafSections J A hT).hom.app G) ≫ ·) (Category.id_comp _)
 

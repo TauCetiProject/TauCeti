@@ -91,9 +91,9 @@ lemma toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app
           ((godementResolution (ModuleCat.{u} R) X).obj F)).liftCycles
         ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
           (((godementResolution (ModuleCat.{u} R) X).obj F).fromSingle₀Equiv F
-            ((toGodementResolution (ModuleCat.{u} R) X).app F)).1) 1 (by simp) (by
+            ((toGodementResolution (ModuleCat.{u} R) X).app F)).val) 1 (by simp) (by
           rw [Functor.mapHomologicalComplex_obj_d, ← Functor.map_comp,
-            (((godementResolution (ModuleCat.{u} R) X).obj F).fromSingle₀Equiv F _).2,
+            (((godementResolution (ModuleCat.{u} R) X).obj F).fromSingle₀Equiv F _).property,
             Functor.map_zero]) ≫
         (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
           ((godementResolution (ModuleCat.{u} R) X).obj F)).homologyπ 0 := by

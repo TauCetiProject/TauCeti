@@ -264,9 +264,9 @@ theorem equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero
     (ComplexShape.up ℕ)).obj K
   let c : ΓK.cycles 0 := ΓK.liftCycles ((Sheaf.Γ (Opens.grothendieckTopology X)
     (ModuleCat.{u} R)).map (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app
-      F)).1) 1 (by simp) (by
+      F)).val) 1 (by simp) (by
         rw [Functor.mapHomologicalComplex_obj_d, ← Functor.map_comp,
-          (K.fromSingle₀Equiv F _).2, Functor.map_zero]) s
+          (K.fromSingle₀Equiv F _).property, Functor.map_zero]) s
   have hA := ConcreteCategory.congr_hom
     (toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app F) s
   erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hA
@@ -298,7 +298,7 @@ theorem equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero
   -- it remains to follow the cycle through the identifications of the complexes
   refine Eq.trans ?_ (iCycles_app_mapCyclesIso_hom_cyclesMap (M := P) (op ⊤) _ c).symm
   have hJ : ΓK.iCycles 0 c = (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
-      (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app F)).1 s :=
+      (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app F)).val s :=
     ConcreteCategory.congr_hom (ΓK.liftCycles_i _ _ _ _) s
   erw [hJ]
   simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplexCompIso_hom_app_f,
@@ -307,7 +307,7 @@ theorem equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero
   erw [sectionsIso_hom_app_apply]
   refine Eq.trans ?_ (ConcreteCategory.congr_hom ((Sheaf.ΓNatIsoSheafSections
     (Opens.grothendieckTopology X) (ModuleCat.{u} R) isTerminalTop).hom.naturality
-      (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app F)).1) s).symm
+      (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app F)).val) s).symm
   -- the augmentation `F ⟶ G⁰(F)` of the Godement resolution is `toGodement`
   exact (congrArg (fun f ↦ f.hom.app (op ⊤) ((Sheaf.ΓNatIsoSheafSections
     (Opens.grothendieckTopology X) (ModuleCat.{u} R) isTerminalTop).hom.app F s))
