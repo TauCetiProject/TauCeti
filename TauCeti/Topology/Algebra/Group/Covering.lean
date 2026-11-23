@@ -16,9 +16,9 @@ These criteria turn local information about a group homomorphism into a global c
 
 The kernel of a homomorphism that is a local homeomorphism is discrete, hence central when the
 source is preconnected. Together with `MonoidHom.compactSpace_quotient_ker_of_isOpenMap`, a
-homomorphism to a compact group which is a local homeomorphism, such as the universal covering
-group of a compact group, exhibits its source as a central extension of a compact group by a
-discrete group.
+homomorphism `f` from a preconnected group to a compact group which is a local homeomorphism,
+such as the projection of the universal covering group of a connected compact group, exhibits
+its source as a central extension of the compact group `G ⧸ f.ker` by a discrete group.
 
 ## Main results
 
