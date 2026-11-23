@@ -45,6 +45,8 @@ It remains to bound `‖K‖₁`. By Poisson summation the lift of `K` to `ℝ�
 
 ## Main declarations
 
+* `TauCeti.UnitAddTorus.periodicKernel`: the periodic kernel `∑ₙ σ(n) eₙ` of a Schwartz symbol.
+* `TauCeti.UnitAddTorus.eLpNorm_periodicKernel_le`: its `L¹` norm is at most `‖𝓕⁻ σ‖_{L¹(ℝᵈ)}`.
 * `TauCeti.UnitAddTorus.eLpNorm_fourierMultiplier_le`: the `Lᵖ` bound for a Fourier multiplier
   whose symbol is a Schwartz function sampled on `ℤᵈ`.
 
@@ -99,10 +101,11 @@ private theorem summable_smul_mFourier (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
     rw [norm_smul, mFourier_norm, mul_one]
 
 /-- The periodic kernel `K = ∑ₙ σ(n) eₙ` of the multiplier with symbol `σ`. -/
-private def periodicKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) : C(UnitAddTorus d, ℂ) :=
+def periodicKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) : C(UnitAddTorus d, ℂ) :=
   ∑' n : d → ℤ, σ (latticePoint n) • mFourier n
 
-private theorem _root_.UnitAddTorus.periodicKernel_apply (σ : 𝓢(EuclideanSpace ℝ d, ℂ))
+/-- The periodic kernel is the pointwise sum of its absolutely convergent Fourier series. -/
+theorem periodicKernel_apply (σ : 𝓢(EuclideanSpace ℝ d, ℂ))
     (z : UnitAddTorus d) :
     periodicKernel σ z = ∑' n : d → ℤ, σ (latticePoint n) * mFourier n z := by
   rw [periodicKernel, ← ContinuousMap.tsum_apply (summable_smul_mFourier σ)]
@@ -110,7 +113,7 @@ private theorem _root_.UnitAddTorus.periodicKernel_apply (σ : 𝓢(EuclideanSpa
 
 /-- **The `L¹` norm of the periodic kernel** is at most the `L¹` norm of `𝓕⁻ σ` on `ℝᵈ`: the
 kernel is the periodization of `𝓕⁻ σ`. -/
-private theorem eLpNorm_periodicKernel_le (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
+theorem eLpNorm_periodicKernel_le (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
     eLpNorm (periodicKernel σ) 1 volume ≤
       ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) := by
   have h := (𝓕⁻ σ).lintegral_eNorm_tsum_fourier_mul_mFourier_le (EuclideanSpace.basisFun d ℝ)

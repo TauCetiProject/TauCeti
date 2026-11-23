@@ -17,6 +17,7 @@ import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.PoissonSummation
 import TauCeti.Analysis.Fourier.Torus.Convolution
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
+import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
 import TauCeti.Analysis.Fourier.Torus.Uniqueness
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
@@ -155,7 +156,7 @@ private theorem hasCompactSupport_of_eq_zero {τ : EuclideanSpace ℝ d → ℂ}
 vanishing wherever one coordinate exceeds `2` in absolute value. By Poisson summation the
 trigonometric polynomial `x ↦ ∑ n, τ (n / R) e_n(x)` is the periodization of the kernel
 `𝓕⁻ (τ (· / R))` on `ℝᵈ`, a dilate of `𝓕⁻ τ`, so its `L¹` norm on the torus is at most
-`∫ ‖𝓕⁻ τ‖`, whatever the scale `R` (`SchwartzMap.lintegral_eNorm_tsum_fourier_mul_mFourier_le`). -/
+`∫ ‖𝓕⁻ τ‖`, whatever the scale `R` (`TauCeti.UnitAddTorus.eLpNorm_periodicKernel_le`). -/
 private theorem integral_norm_sum_box_le [DecidableEq d] {τ : EuclideanSpace ℝ d → ℂ}
     (hτ : ContDiff ℝ ∞ τ) (h0 : ∀ (ξ : EuclideanSpace ℝ d) i, 2 < |ξ i| → τ ξ = 0) {R : ℝ}
     (hR : 0 < R) :
@@ -168,10 +169,7 @@ private theorem integral_norm_sum_box_le [DecidableEq d] {τ : EuclideanSpace �
   set S : SchwartzMap (EuclideanSpace ℝ d) ℂ := hcR.toSchwartzMap hsR
   have hS (ξ : EuclideanSpace ℝ d) : S ξ = τ (R⁻¹ • ξ) :=
     HasCompactSupport.toSchwartzMap_toFun _ _ _
-  have h := (𝓕⁻ S).lintegral_eNorm_tsum_fourier_mul_mFourier_le (EuclideanSpace.basisFun d ℝ)
-  simp only [← latticePoint_eq_sum, ← SchwartzMap.fourier_coe,
-    FourierTransform.fourier_fourierInv_eq] at h
-  -- The series in `h` is the trigonometric polynomial on the box.
+  -- The periodic kernel of `S` is the trigonometric polynomial on the box.
   have hsum (x : UnitAddTorus d) : ∑' n : d → ℤ, S (latticePoint n) * mFourier n x =
       ∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x := by
     simp only [hS]
@@ -188,9 +186,10 @@ private theorem integral_norm_sum_box_le [DecidableEq d] {τ : EuclideanSpace �
     exact integral_norm_fourierInv_comp_smul τ (inv_ne_zero hR.ne')
   have hlint : ∫⁻ x, ‖∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x‖ₑ ≤
       ENNReal.ofReal (∫ y, ‖𝓕⁻ τ y‖) := by
-    rw [← hFS, ← SchwartzMap.fourierInv_coe,
-      ofReal_integral_norm_eq_lintegral_eNorm (𝓕⁻ S).integrable, volume_eq_pi_haarAddCircle]
-    simp only [← hsum]
+    have h := eLpNorm_periodicKernel_le S
+    rw [eLpNorm_one_eq_lintegral_eNorm (periodicKernel S).continuous.aestronglyMeasurable] at h
+    simp only [periodicKernel_apply, hsum] at h
+    rw [← hFS, volume_eq_pi_haarAddCircle]
     exact h
   rw [integral_norm_eq_lintegral_eNorm hcont.aestronglyMeasurable]
   exact ENNReal.toReal_le_of_le_ofReal (integral_nonneg fun _ ↦ norm_nonneg _) hlint
