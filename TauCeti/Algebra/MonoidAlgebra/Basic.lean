@@ -22,8 +22,9 @@ none of the further theory built on it.
 
 * `TauCeti.single_sub_one_ne_zero_iff`: over a nontrivial ring, the difference `single g 1 - 1`
   between the basis element at `g` and the unit is nonzero exactly when `g ≠ 1`.
-* This file tags Mathlib's `AddMonoidAlgebra.coeff_natCast_mul` as a `simp` lemma: a
-  natural-number constant scales every coefficient, `(↑n * x).coeff m = ↑n * x.coeff m`.
+* This file tags Mathlib's `MonoidAlgebra.coeff_natCast_mul` and
+  `AddMonoidAlgebra.coeff_natCast_mul` as `simp` lemmas: a natural-number constant scales every
+  coefficient, `(↑n * x).coeff m = ↑n * x.coeff m`.
 * `MonoidAlgebra.coeff_one_mul_comm`: the coefficient at the identity of `xy` equals
   that of `yx` in the monoid algebra of a Dedekind-finite monoid (for instance a group) over a
   commutative semiring.
@@ -101,11 +102,12 @@ theorem _root_.MonoidAlgebra.exists_eq_smul_iff_dvd_coeff (x : MonoidAlgebra R M
   exact (exists_congr fun _ ↦ eq_comm).trans
     (h.trans (forall_congr' fun _ ↦ exists_congr fun _ ↦ eq_comm))
 
--- Mathlib states that a natural-number constant scales every coefficient of an additive monoid
--- algebra, but does not tag it `simp`. Tag it so that `simp` normalizes `(↑n * x).coeff m` in
--- every additive monoid algebra, such as Laurent polynomials, as Mathlib does for polynomials
--- (`Polynomial.coeff_natCast_mul`) and power series (`PowerSeries.coeff_natCast_mul`).
-attribute [simp] AddMonoidAlgebra.coeff_natCast_mul
+-- Mathlib states that a natural-number constant scales every coefficient of a monoid algebra and
+-- an additive monoid algebra, but does not tag either lemma `simp`. Tag both so that `simp`
+-- normalizes `(↑n * x).coeff m` in every monoid algebra, such as Laurent polynomials, as Mathlib
+-- does for polynomials (`Polynomial.coeff_natCast_mul`) and power series
+-- (`PowerSeries.coeff_natCast_mul`).
+attribute [simp] MonoidAlgebra.coeff_natCast_mul AddMonoidAlgebra.coeff_natCast_mul
 
 end Semiring
 

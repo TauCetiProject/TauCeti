@@ -152,6 +152,6 @@ theorem sum_filter_eq_ite_of_forall_sum_mul_zpow_eq {K ι : Type*} [Field K] {s 
     rintro t ⟨ht, ht0 : t ≠ 0⟩
     refine ⟨Units.mk0 t ht0, ?_, rfl⟩
     simpa [← eval₂_eq_smeval, p, sub_eq_zero] using h t ht
-  simpa [p, Finset.sum_filter, sub_eq_zero, @eq_comm _ m] using congr(($hp).coeff m)
+  simpa [p, coeff_C_mul, Finset.sum_filter, sub_eq_zero] using congr(($hp).coeff m)
 
 end TauCeti

@@ -50,8 +50,10 @@ section Semiring
 variable {R : Type*} [Semiring R]
 
 /-- Multiplication by `T n` shifts coefficients by `n`. It is stated with `T n` on the right,
-where `simp` puts it with `LaurentPolynomial.T_mul`; rewrite a left factor with `T_mul` first. -/
-@[simp]
+where `simp` puts it with `LaurentPolynomial.T_mul`; rewrite a left factor with `T_mul` first.
+Low `simp` priority lets `coeff_C_mul` and `AddMonoidAlgebra.coeff_natCast_mul` act first on
+scalar multiples of `T n`, preserving the `T_apply` normal form. -/
+@[simp low]
 theorem coeff_mul_T (f : R[T;T⁻¹]) (n d : ℤ) : (f * T n).coeff d = f.coeff (d - n) := by
   simpa only [T, mul_one, sub_eq_add_neg] using
     AddMonoidAlgebra.coeff_mul_single_apply f (1 : R) n d

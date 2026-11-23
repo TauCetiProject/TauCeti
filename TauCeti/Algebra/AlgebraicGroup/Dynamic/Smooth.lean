@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
-import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
