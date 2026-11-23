@@ -262,7 +262,7 @@ theorem pLocalRationalSubring_eq_closure_image_insert_inv (p : ℕ) :
       have he'_mono : Monotone e' := fun i j hij ↦ by have := he hij; dsimp only [e']; omega
       have he'_cast : (fun i ↦ (e' i : ℤ)) = fun i ↦ e i + (k : ℤ) :=
         funext fun i ↦ Int.toNat_of_nonneg (by
-          have hmin : i₀ ≤ i := Fin.le_iff_val_le_val.mpr (Nat.zero_le i.1)
+          have hmin : i₀ ≤ i := Fin.le_iff_val_le_val.mpr (Nat.zero_le i.val)
           have := he hmin; omega)
       have hdecomp : intPowDiagElem n p e = integralToRational n (diagElem (primePowDiag n p e')) *
           (↑(scalarUnit n p)⁻¹ : RationalHeckeRing n) ^ k := by
@@ -282,7 +282,7 @@ theorem pLocalRationalSubring_eq_closure_image_insert_inv (p : ℕ) :
 noncomputable def integralToRationalLocal (p : ℕ) :
     pLocalSubring n p →+* pLocalRationalSubring n p :=
   ((integralToRational n).comp (pLocalSubring n p).subtype).codRestrict
-    (pLocalRationalSubring n p) fun x ↦ integralToRational_mem_pLocalRationalSubring n p x.2
+    (pLocalRationalSubring n p) fun x ↦ integralToRational_mem_pLocalRationalSubring n p x.property
 
 /-- Coercion of `integralToRationalLocal` to `RationalHeckeRing n` agrees with
 `integralToRational`. -/
@@ -343,7 +343,7 @@ theorem exists_mul_scalarLocalUnit_pow_eq (p : ℕ) (z : pLocalRationalSubring n
       simp [f, g₀, -val_inv_scalarUnit, ← val_scalarUnit]
     · exact Subalgebra.mem_toSubring.mpr (Subalgebra.le_saturation (⟨⟨w, hw⟩, rfl⟩ : _ ∈ f.range))
   obtain ⟨_, ⟨_, ⟨k, rfl⟩, rfl⟩, a, hk⟩ :=
-    Subalgebra.mem_saturation_iff.mp (Subalgebra.mem_toSubring.mp (hsub z.2))
+    Subalgebra.mem_saturation_iff.mp (Subalgebra.mem_toSubring.mp (hsub z.property))
   refine ⟨k, a, Subtype.ext ?_⟩
   have hk' : (z : RationalHeckeRing n) * f (g₀ ^ k) = f a :=
     (mul_comm (z : RationalHeckeRing n) (f (g₀ ^ k))).trans
@@ -362,7 +362,7 @@ theorem pLocalRationalSubring_ringHom_ext {p : ℕ} {R : Type*} [Semiring R]
   · have hle : pLocalRationalSubring 0 p ≤ (pLocalSubring 0 p).map (integralToRational 0) :=
       (pLocalRationalSubring_le_iff 0 p _).mpr fun e _ ↦ by
         rw [Subsingleton.elim e 0, intPowDiagElem_zero]; exact Subring.one_mem _
-    ext z; obtain ⟨a, ha, hza⟩ := Subring.mem_map.mp (hle z.2)
+    ext z; obtain ⟨a, ha, hza⟩ := Subring.mem_map.mp (hle z.property)
     exact (Subtype.ext hza.symm : z = integralToRationalLocal 0 p ⟨a, ha⟩) ▸
       RingHom.congr_fun h ⟨a, ha⟩
   · have : NeZero n := ⟨hn.ne'⟩
@@ -384,7 +384,7 @@ private noncomputable def pLocalRationalSubringLiftAux {p : ℕ} {R : Type*} [Se
     ⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩
   have hmul_comm (a b : pLocalSubring n p) : a * b = b * a := Subtype.ext
     (HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
-      (transposeAntiInvolution_onHeckeCoset_eq_self n) a.1 b.1)
+      (transposeAntiInvolution_onHeckeCoset_eq_self n) a.val b.val)
   letI : CommRing (pLocalSubring n p) := { (inferInstance : Ring _) with mul_comm := hmul_comm }
   letI : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
     (integralToRationalLocal n p).toAlgebra
@@ -419,7 +419,7 @@ noncomputable def pLocalRationalSubringLift {p : ℕ} {R : Type*} [Semiring R]
     (g : pLocalSubring n p →+* R)
     (hg : IsUnit (g ⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩)) :
     pLocalRationalSubring n p →+* R :=
-  (pLocalRationalSubringLiftAux n g hg).1
+  (pLocalRationalSubringLiftAux n g hg).val
 
 /-- `pLocalRationalSubringLift` extends `g` along `integralToRationalLocal`. -/
 @[simp]
@@ -428,7 +428,7 @@ theorem pLocalRationalSubringLift_integralToRationalLocal {p : ℕ} {R : Type*} 
     (hg : IsUnit (g ⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩))
     (a : pLocalSubring n p) :
     pLocalRationalSubringLift n g hg (integralToRationalLocal n p a) = g a :=
-  (pLocalRationalSubringLiftAux n g hg).2 a
+  (pLocalRationalSubringLiftAux n g hg).property a
 
 /-- Precomposing `pLocalRationalSubringLift` with `integralToRationalLocal` recovers `g`. -/
 @[simp]

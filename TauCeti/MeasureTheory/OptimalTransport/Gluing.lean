@@ -32,36 +32,36 @@ needs, since its two carriers are arbitrary probability spaces.
 
 ## Main definitions
 
-* `TauCeti.Measure.glue π κ` — the measure on `X × Y × Z` obtained by extending a measure
+* `MeasureTheory.Measure.glue π κ` — the measure on `X × Y × Z` obtained by extending a measure
   `π : Measure (X × Y)` along a kernel `κ : Kernel Y Z` acting on the middle coordinate. It is the
   associated right-nested form of `π ⊗ₘ Kernel.prodMkLeft X κ`.
 
 ## Main statements
 
-* `TauCeti.Measure.map_prodMap_id_fst_glue` — the `(X, Y)`-marginal of `glue π κ` is `π`;
-* `TauCeti.Measure.snd_glue` — its `(Y, Z)`-marginal is `π.snd ⊗ₘ κ`;
-* `TauCeti.Measure.lintegral_glue` — the iterated-integral formula against `glue π κ`;
-* `TauCeti.Measure.glue_deterministic` — gluing against a deterministic kernel is a pushforward,
-  so a graph plan glues without adding randomness;
-* `TauCeti.Measure.exists_glue_of_standardBorel_right` and
-  `TauCeti.Measure.exists_glue_of_standardBorel_left` — **the gluing lemma**, in the two regimes
-  obtained by disintegrating `σ` over `Y` (which needs `Z` standard Borel) and by disintegrating
-  `π` over `Y` (which needs `X` standard Borel);
+* `MeasureTheory.Measure.map_prodMap_id_fst_glue` — the `(X, Y)`-marginal of `π.glue κ` is `π`;
+* `MeasureTheory.Measure.snd_glue` — its `(Y, Z)`-marginal is `π.snd ⊗ₘ κ`;
+* `MeasureTheory.Measure.lintegral_glue` — the iterated-integral formula against `π.glue κ`;
+* `MeasureTheory.Measure.glue_deterministic` — gluing against a deterministic kernel is a
+  pushforward, so a graph plan glues without adding randomness;
+* `MeasureTheory.Measure.exists_glue_of_standardBorel_right` and
+  `MeasureTheory.Measure.exists_glue_of_standardBorel_left` — **the gluing lemma**, in the two
+  regimes obtained by disintegrating `σ` over `Y` (which needs `Z` standard Borel) and by
+  disintegrating `π` over `Y` (which needs `X` standard Borel);
 * `MeasureTheory.Measure.exists_glue_of_fst_eq` — the gluing lemma for two plans out of a common
   first space, realising both on `X × Y × Z`;
 * `MeasureTheory.Measure.exists_glue_pi_of_fst_eq` — the same for finitely many plans out of a
   common first space, realising all of them on `X × ∀ i, Y i`;
-* `TauCeti.MeasureTheory.exists_glue_of_countable_middle` — **the gluing lemma over a countable
+* `MeasureTheory.Measure.exists_glue_of_countable_middle` — **the gluing lemma over a countable
   middle space**, which needs nothing of either outer space;
-* `TauCeti.Measure.exists_comp_of_exists_glue` — the composition of plans read off a glued measure,
-  with `TauCeti.Measure.exists_comp_of_standardBorel_right`,
-  `TauCeti.Measure.exists_comp_of_standardBorel_left` and
-  `TauCeti.MeasureTheory.exists_comp_of_countable_middle` its three concrete forms;
-* `TauCeti.Measure.lintegral_map_prodMap_id_snd_le` — the composition estimate: a cost on `X × Z`
+* `MeasureTheory.Measure.exists_comp_of_exists_glue` — the composition of plans read off a glued
+  measure, with `MeasureTheory.Measure.exists_comp_of_standardBorel_right`,
+  `MeasureTheory.Measure.exists_comp_of_standardBorel_left` and
+  `MeasureTheory.Measure.exists_comp_of_countable_middle` its three concrete forms;
+* `MeasureTheory.lintegral_map_prodMap_id_snd_le` — the composition estimate: a cost on `X × Z`
   dominated by the sum of a cost on `X × Y` and a cost on `Y × Z` integrates against the composed
   plan to at most the sum of the two integrals. This is the mechanism behind the triangle
-  inequality for transport costs, and `TauCeti.MeasureTheory.eLpNorm_map_prodMap_id_snd_le` is its
-  `L^p` form for `1 ≤ p`.
+  inequality for transport costs, and `MeasureTheory.eLpNorm_map_prodMap_id_snd_le` is its `L^p`
+  form for `1 ≤ p`.
 
 ## Implementation notes
 
@@ -77,7 +77,7 @@ and stating it this way keeps the theorems usable by any packaging of couplings 
 ## References
 
 * C. Villani, *Topics in Optimal Transportation*, Graduate Studies in Mathematics 58, 2003,
-  Lemma 7.6 ("Gluing lemma"), and *Optimal Transport: Old and New*, Grundlehren 338, 2009,
+  Lemma 7.6 (Gluing lemma), and *Optimal Transport: Old and New*, Grundlehren 338, 2009,
   Chapter 1. Both state it for three Polish probability spaces; the versions here ask for a
   standard Borel structure on one outer space only — or, in the countable-middle version, for
   nothing at all on the outer spaces — and no normalisation of the plans.
@@ -87,11 +87,11 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
+open ProbabilityTheory
 
 open scoped ENNReal
 
-namespace TauCeti
+namespace MeasureTheory
 
 namespace Measure
 
@@ -101,10 +101,11 @@ variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpac
 coordinate: the measure on `X × Y × Z` which draws `(x, y)` from `π` and then `z` from `κ y`.
 
 For an s-finite `π` and a Markov kernel `κ` its `(X, Y)`-marginal is `π`
-(`TauCeti.Measure.map_prodMap_id_fst_glue`), and for an s-finite kernel `κ` its `(Y, Z)`-marginal
-is `π.snd ⊗ₘ κ` (`TauCeti.Measure.snd_glue`), so choosing `κ` to be a conditional kernel of a
-second plan `σ` glues `π` and `σ`. The definition takes any kernel: for one that is not Markov
-the first marginal need not be `π`, and the zero kernel glues every `π` to `0`. -/
+(`MeasureTheory.Measure.map_prodMap_id_fst_glue`), and for an s-finite kernel `κ` its
+`(Y, Z)`-marginal is `π.snd ⊗ₘ κ` (`MeasureTheory.Measure.snd_glue`), so choosing `κ` to be a
+conditional kernel of a second plan `σ` glues `π` and `σ`. The definition takes any kernel: for one
+that is not Markov the first marginal need not be `π`, and the zero kernel glues every `π` to
+`0`. -/
 def glue (π : Measure (X × Y)) (κ : Kernel Y Z) : Measure (X × Y × Z) :=
   (π ⊗ₘ Kernel.prodMkLeft X κ).map MeasurableEquiv.prodAssoc
 
@@ -113,86 +114,82 @@ variable (π : Measure (X × Y)) (κ : Kernel Y Z)
 /-- The measure a gluing assigns to a measurable set: integrate the kernel mass of the fibre
 against the plan being extended. -/
 theorem glue_apply [SFinite π] [IsSFiniteKernel κ] {s : Set (X × Y × Z)} (hs : MeasurableSet s) :
-    glue π κ s = ∫⁻ w, κ w.2 {z | (w.1, w.2, z) ∈ s} ∂π := by
-  rw [glue, MeasureTheory.Measure.map_apply MeasurableEquiv.prodAssoc.measurable hs,
-    MeasureTheory.Measure.compProd_apply (hs.preimage MeasurableEquiv.prodAssoc.measurable)]
+    π.glue κ s = ∫⁻ w, κ w.2 {z | (w.1, w.2, z) ∈ s} ∂π := by
+  rw [glue, map_apply MeasurableEquiv.prodAssoc.measurable hs,
+    compProd_apply (hs.preimage MeasurableEquiv.prodAssoc.measurable)]
   rfl
 
 /-- Integration against a gluing is the iterated integral: first over the fibre of the kernel,
 then over the plan being extended. -/
 theorem lintegral_glue [SFinite π] [IsSFiniteKernel κ] {f : X × Y × Z → ℝ≥0∞} (hf : Measurable f) :
-    ∫⁻ p, f p ∂(glue π κ) = ∫⁻ w, ∫⁻ z, f (w.1, w.2, z) ∂(κ w.2) ∂π := by
+    ∫⁻ p, f p ∂(π.glue κ) = ∫⁻ w, ∫⁻ z, f (w.1, w.2, z) ∂(κ w.2) ∂π := by
   rw [glue, lintegral_map hf MeasurableEquiv.prodAssoc.measurable]
-  exact MeasureTheory.Measure.lintegral_compProd (hf.comp MeasurableEquiv.prodAssoc.measurable)
+  exact lintegral_compProd (hf.comp MeasurableEquiv.prodAssoc.measurable)
 
 instance instIsFiniteMeasureGlue [IsFiniteMeasure π] [IsFiniteKernel κ] :
-    IsFiniteMeasure (glue π κ) := by
+    IsFiniteMeasure (π.glue κ) := by
   rw [glue]; infer_instance
 
 instance instIsProbabilityMeasureGlue [IsProbabilityMeasure π] [IsMarkovKernel κ] :
-    IsProbabilityMeasure (glue π κ) := by
+    IsProbabilityMeasure (π.glue κ) := by
   rw [glue]
   infer_instance
 
 /-- The `(X, Y)`-marginal of a gluing is the plan it extends. -/
 @[simp]
 theorem map_prodMap_id_fst_glue [SFinite π] [IsMarkovKernel κ] :
-    (glue π κ).map (Prod.map id Prod.fst) = π := by
+    (π.glue κ).map (Prod.map id Prod.fst) = π := by
   have h : (Prod.map (id : X → X) (Prod.fst : Y × Z → Y)) ∘
       ⇑(MeasurableEquiv.prodAssoc (α := X) (β := Y) (γ := Z)) = Prod.fst := rfl
-  rw [glue, MeasureTheory.Measure.map_map (measurable_id.prodMap measurable_fst)
-    MeasurableEquiv.prodAssoc.measurable, h]
-  exact MeasureTheory.Measure.fst_compProd π _
+  rw [glue, map_map (measurable_id.prodMap measurable_fst) MeasurableEquiv.prodAssoc.measurable, h]
+  exact fst_compProd π _
 
 /-- The `(Y, Z)`-marginal of a gluing is the composition-product of the middle marginal with the
 kernel. -/
 @[simp]
-theorem snd_glue [SFinite π] : (glue π κ).snd = π.snd ⊗ₘ κ := by
+theorem snd_glue [SFinite π] : (π.glue κ).snd = π.snd ⊗ₘ κ := by
   by_cases hκ : IsSFiniteKernel κ
   swap
   · rcases isEmpty_or_nonempty X with hX | hX
-    · have : π = 0 := MeasureTheory.Measure.eq_zero_of_isEmpty π
+    · have : π = 0 := eq_zero_of_isEmpty π
       simp [glue, this]
     · have : ¬IsSFiniteKernel (Kernel.prodMkLeft X κ) := by
         rwa [Kernel.isSFiniteKernel_prodMkLeft_iff]
-      simp [glue, MeasureTheory.Measure.compProd_of_not_isSFiniteKernel _ _ hκ, this]
+      simp [glue, compProd_of_not_isSFiniteKernel _ _ hκ, this]
   have h : (Prod.snd : X × Y × Z → Y × Z) ∘
       ⇑(MeasurableEquiv.prodAssoc (α := X) (β := Y) (γ := Z))
       = Prod.map (Prod.snd : X × Y → Y) (id : Z → Z) := rfl
   -- `Kernel.prodMkLeft X κ` is `Kernel.comap κ Prod.snd measurable_snd`, so the kernel factors
   -- through the middle coordinate and `map_prodMap_compProd_comap` applies.
-  calc (glue π κ).snd
+  calc (π.glue κ).snd
       = (π ⊗ₘ Kernel.comap κ (Prod.snd : X × Y → Y) measurable_snd).map
           (Prod.map Prod.snd id) := by
-        rw [glue, MeasureTheory.Measure.snd, MeasureTheory.Measure.map_map measurable_snd
-          MeasurableEquiv.prodAssoc.measurable, h]
+        rw [glue, snd, map_map measurable_snd MeasurableEquiv.prodAssoc.measurable, h]
         rfl
     _ = π.snd ⊗ₘ κ := π.map_prodMap_compProd_comap κ measurable_snd
 
 /-- The `X`-marginal of a gluing is the `X`-marginal of the plan it extends. -/
 @[simp]
-theorem fst_glue [SFinite π] [IsMarkovKernel κ] : (glue π κ).fst = π.fst := by
+theorem fst_glue [SFinite π] [IsMarkovKernel κ] : (π.glue κ).fst = π.fst := by
   have h : (Prod.fst : X × Y → X) ∘ Prod.map (id : X → X) (Prod.fst : Y × Z → Y)
       = Prod.fst := rfl
   conv_rhs => rw [← map_prodMap_id_fst_glue π κ]
-  rw [MeasureTheory.Measure.fst, MeasureTheory.Measure.fst,
-    MeasureTheory.Measure.map_map measurable_fst (measurable_id.prodMap measurable_fst), h]
+  rw [fst, fst, map_map measurable_fst (measurable_id.prodMap measurable_fst), h]
 
 /-- The middle marginal of a gluing is the middle marginal of the plan it extends: gluing does not
 disturb the coordinate the kernel is indexed by. -/
-theorem fst_snd_glue [SFinite π] [IsMarkovKernel κ] : (glue π κ).snd.fst = π.snd := by
-  rw [snd_glue, MeasureTheory.Measure.fst_compProd]
+theorem fst_snd_glue [SFinite π] [IsMarkovKernel κ] : (π.glue κ).snd.fst = π.snd := by
+  rw [snd_glue, fst_compProd]
 
 /-- Gluing against a deterministic kernel is a pushforward: the third coordinate is the image of
 the second. This is the graph-plan case, in which the glued measure carries no new randomness. -/
 @[simp]
 theorem glue_deterministic [SFinite π] {T : Y → Z} (hT : Measurable T) :
-    glue π (Kernel.deterministic T hT) = π.map fun w ↦ (w.1, w.2, T w.2) := by
+    π.glue (Kernel.deterministic T hT) = π.map fun w ↦ (w.1, w.2, T w.2) := by
   have h : Kernel.prodMkLeft X (Kernel.deterministic T hT)
       = Kernel.deterministic (fun w : X × Y ↦ T w.2) (hT.comp measurable_snd) := rfl
-  rw [glue, h, MeasureTheory.Measure.compProd_deterministic,
-    MeasureTheory.Measure.map_map MeasurableEquiv.prodAssoc.measurable
-      (measurable_id.prod (hT.comp measurable_snd))]
+  rw [glue, h, compProd_deterministic,
+    map_map MeasurableEquiv.prodAssoc.measurable (measurable_id.prod (hT.comp measurable_snd))]
   rfl
 
 section Gluing
@@ -202,11 +199,11 @@ variable (σ : Measure (Y × Z))
 /-- Gluing `π` against a conditional kernel of `σ` recovers `σ` as the `(Y, Z)`-marginal, as soon
 as the two plans share their middle marginal. -/
 theorem snd_glue_condKernel [StandardBorelSpace Z] [Nonempty Z] [IsFiniteMeasure σ]
-    (hπσ : π.snd = σ.fst) : (glue π σ.condKernel).snd = σ := by
+    (hπσ : π.snd = σ.fst) : (π.glue σ.condKernel).snd = σ := by
   have : IsFiniteMeasure π := ⟨by
-    rw [← MeasureTheory.Measure.snd_univ, hπσ]
+    rw [← snd_univ, hπσ]
     exact measure_lt_top _ _⟩
-  rw [snd_glue, hπσ, MeasureTheory.Measure.disintegrate]
+  rw [snd_glue, hπσ, disintegrate]
 
 /-- **The gluing lemma**, obtained by disintegrating the second plan over the middle space.
 
@@ -214,42 +211,40 @@ Two plans sharing a middle marginal, `π.snd = σ.fst`, admit a joint law on `X 
 `σ` as its two consecutive two-coordinate marginals. Only the last space is assumed standard Borel;
 the middle space `Y` carries no hypothesis.
 
-When `Z` is nonempty, the explicit witness is `glue π σ.condKernel`; use it instead of this
+When `Z` is nonempty, the explicit witness is `π.glue σ.condKernel`; use it instead of this
 statement when the probability-measure or finiteness instances of the glued measure are needed. -/
 theorem exists_glue_of_standardBorel_right [StandardBorelSpace Z] [IsFiniteMeasure σ]
     (hπσ : π.snd = σ.fst) :
     ∃ γ : Measure (X × Y × Z), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ := by
   let _ : IsFiniteMeasure π := ⟨by
-    rw [← MeasureTheory.Measure.snd_univ, hπσ]
+    rw [← snd_univ, hπσ]
     exact measure_lt_top _ _⟩
   rcases isEmpty_or_nonempty Z with hZ | hZ
   · let _ := hZ
-    have hσ : σ = 0 := MeasureTheory.Measure.eq_zero_of_isEmpty σ
+    have hσ : σ = 0 := eq_zero_of_isEmpty σ
     have hπ : π = 0 := by
-      rw [← MeasureTheory.Measure.measure_univ_eq_zero, ← MeasureTheory.Measure.snd_univ,
-        hπσ, hσ]
+      rw [← measure_univ_eq_zero, ← snd_univ, hπσ, hσ]
       simp
     exact ⟨0, by simp [hπ], by simp [hσ]⟩
   · let _ := hZ
-    exact ⟨glue π σ.condKernel, map_prodMap_id_fst_glue π _, snd_glue_condKernel π σ hπσ⟩
+    exact ⟨π.glue σ.condKernel, map_prodMap_id_fst_glue π _, snd_glue_condKernel π σ hπσ⟩
 
 /-- **The gluing lemma**, obtained by disintegrating the first plan over the middle space.
 
-This is the mirror image of `TauCeti.Measure.exists_glue_of_standardBorel_right`: it assumes the
-*first* space standard Borel instead of the last one. Neither version implies the other, and the
-middle space `Y` again carries no hypothesis. -/
+This is the mirror image of `MeasureTheory.Measure.exists_glue_of_standardBorel_right`: it assumes
+the *first* space standard Borel instead of the last one. Neither version implies the other, and
+the middle space `Y` again carries no hypothesis. -/
 theorem exists_glue_of_standardBorel_left [StandardBorelSpace X] [IsFiniteMeasure π]
     (hπσ : π.snd = σ.fst) :
     ∃ γ : Measure (X × Y × Z), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ := by
   let _ : IsFiniteMeasure σ := ⟨by
-    rw [← MeasureTheory.Measure.fst_univ, ← hπσ]
+    rw [← fst_univ, ← hπσ]
     exact measure_lt_top _ _⟩
   rcases isEmpty_or_nonempty X with hX | hX
   · let _ := hX
-    have hπ : π = 0 := MeasureTheory.Measure.eq_zero_of_isEmpty π
+    have hπ : π = 0 := eq_zero_of_isEmpty π
     have hσ : σ = 0 := by
-      rw [← MeasureTheory.Measure.measure_univ_eq_zero, ← MeasureTheory.Measure.fst_univ,
-        ← hπσ, hπ]
+      rw [← measure_univ_eq_zero, ← fst_univ, ← hπσ, hπ]
       simp
     exact ⟨0, by simp [hπ], by simp [hσ]⟩
   let _ := hX
@@ -258,51 +253,46 @@ theorem exists_glue_of_standardBorel_left [StandardBorelSpace X] [IsFiniteMeasur
   -- `X` standard Borel provides, then permute the three coordinates back.
   set τ : Measure (Z × Y) := σ.map Prod.swap with hτ
   set ϖ : Measure (Y × X) := π.map Prod.swap with hϖ
-  have hϖfst : ϖ.fst = σ.fst := by rw [hϖ, MeasureTheory.Measure.fst_map_swap, hπσ]
-  have hτsnd : τ.snd = σ.fst := by rw [hτ, MeasureTheory.Measure.snd_map_swap]
+  have hϖfst : ϖ.fst = σ.fst := by rw [hϖ, fst_map_swap, hπσ]
+  have hτsnd : τ.snd = σ.fst := by rw [hτ, snd_map_swap]
   have hswapπ : ϖ.map Prod.swap = π := by
-    rw [hϖ, MeasureTheory.Measure.map_map measurable_swap measurable_swap, Prod.swap_swap_eq,
-      MeasureTheory.Measure.map_id]
+    rw [hϖ, map_map measurable_swap measurable_swap, Prod.swap_swap_eq, map_id]
   have hswapσ : τ.map Prod.swap = σ := by
-    rw [hτ, MeasureTheory.Measure.map_map measurable_swap measurable_swap, Prod.swap_swap_eq,
-      MeasureTheory.Measure.map_id]
-  refine ⟨(glue τ ϖ.condKernel).map fun q ↦ (q.2.2, q.2.1, q.1), ?_, ?_⟩
+    rw [hτ, map_map measurable_swap measurable_swap, Prod.swap_swap_eq, map_id]
+  refine ⟨(τ.glue ϖ.condKernel).map fun q ↦ (q.2.2, q.2.1, q.1), ?_, ?_⟩
   · have h : (Prod.map (id : X → X) (Prod.fst : Y × Z → Y)) ∘
         (fun q : Z × Y × X ↦ (q.2.2, q.2.1, q.1)) = Prod.swap ∘ Prod.snd := rfl
-    rw [MeasureTheory.Measure.map_map (measurable_id.prodMap measurable_fst) (by fun_prop), h,
-      ← MeasureTheory.Measure.map_map measurable_swap measurable_snd,
-      ← MeasureTheory.Measure.snd, snd_glue, hτsnd, ← hϖfst,
-      MeasureTheory.Measure.disintegrate, hswapπ]
+    rw [map_map (measurable_id.prodMap measurable_fst) (by fun_prop), h,
+      ← map_map measurable_swap measurable_snd, ← snd, snd_glue, hτsnd, ← hϖfst, disintegrate,
+      hswapπ]
   · have h : (Prod.snd : X × Y × Z → Y × Z) ∘ (fun q : Z × Y × X ↦ (q.2.2, q.2.1, q.1))
         = Prod.swap ∘ Prod.map id Prod.fst := rfl
-    rw [MeasureTheory.Measure.snd,
-      MeasureTheory.Measure.map_map measurable_snd (by fun_prop), h,
-      ← MeasureTheory.Measure.map_map measurable_swap (measurable_id.prodMap measurable_fst),
-      map_prodMap_id_fst_glue, hswapσ]
+    rw [snd, map_map measurable_snd (by fun_prop), h,
+      ← map_map measurable_swap (measurable_id.prodMap measurable_fst), map_prodMap_id_fst_glue,
+      hswapσ]
 
 /-- **The gluing lemma along a shared first marginal.**
 
 Two plans out of a common space, `π` on `X × Y` and `ρ` on `X × Z` with `π.fst = ρ.fst`, admit a
 joint law on `X × Y × Z` whose `(X, Y)`-marginal is `π` and whose `(X, Z)`-marginal is `ρ`. Only
 the last space is assumed standard Borel. Compare
-`TauCeti.Measure.exists_glue_of_standardBorel_right`, where the shared space is the middle one. -/
-theorem _root_.MeasureTheory.Measure.exists_glue_of_fst_eq [StandardBorelSpace Z]
+`MeasureTheory.Measure.exists_glue_of_standardBorel_right`, where the shared space is the middle
+one. -/
+theorem exists_glue_of_fst_eq [StandardBorelSpace Z]
     {ρ : Measure (X × Z)} [IsFiniteMeasure ρ] (hπρ : π.fst = ρ.fst) :
     ∃ γ : Measure (X × Y × Z),
       γ.map (Prod.map id Prod.fst) = π ∧ γ.map (Prod.map id Prod.snd) = ρ := by
   obtain ⟨γ, hγπ, hγρ⟩ := exists_glue_of_standardBorel_right (π.map Prod.swap) ρ
-    (by rw [MeasureTheory.Measure.snd_map_swap, hπρ])
+    (by rw [snd_map_swap, hπρ])
   refine ⟨γ.map fun q ↦ (q.2.1, q.1, q.2.2), ?_, ?_⟩
   · have h : (Prod.map (id : X → X) (Prod.fst : Y × Z → Y)) ∘
         (fun q : Y × X × Z ↦ (q.2.1, q.1, q.2.2)) = Prod.swap ∘ Prod.map id Prod.fst := rfl
-    rw [MeasureTheory.Measure.map_map (measurable_id.prodMap measurable_fst) (by fun_prop), h,
-      ← MeasureTheory.Measure.map_map measurable_swap (measurable_id.prodMap measurable_fst),
-      hγπ, MeasureTheory.Measure.map_map measurable_swap measurable_swap, Prod.swap_swap_eq,
-      MeasureTheory.Measure.map_id]
+    rw [map_map (measurable_id.prodMap measurable_fst) (by fun_prop), h,
+      ← map_map measurable_swap (measurable_id.prodMap measurable_fst), hγπ,
+      map_map measurable_swap measurable_swap, Prod.swap_swap_eq, map_id]
   · have h : (Prod.map (id : X → X) (Prod.snd : Y × Z → Z)) ∘
         (fun q : Y × X × Z ↦ (q.2.1, q.1, q.2.2)) = Prod.snd := rfl
-    rw [MeasureTheory.Measure.map_map (measurable_id.prodMap measurable_snd) (by fun_prop), h,
-      ← MeasureTheory.Measure.snd, hγρ]
+    rw [map_map (measurable_id.prodMap measurable_snd) (by fun_prop), h, ← snd, hγρ]
 
 /-- **The gluing lemma for finitely many plans out of a common space.**
 
@@ -310,14 +300,14 @@ Plans `π i` on `X × Y i`, indexed by a finite type and sharing their first mar
 joint law on `X × ∀ i, Y i` with first marginal `ν` whose `(X, Y i)`-marginal is `π i` for every
 `i`. Only the spaces `Y i` are assumed standard Borel. Compare
 `MeasureTheory.Measure.exists_glue_of_fst_eq`, the case of two plans. -/
-theorem _root_.MeasureTheory.Measure.exists_glue_pi_of_fst_eq {ι : Type*} [Finite ι]
+theorem exists_glue_pi_of_fst_eq {ι : Type*} [Finite ι]
     {Y : ι → Type*} [∀ i, MeasurableSpace (Y i)] [∀ i, StandardBorelSpace (Y i)]
     {ν : Measure X} [IsFiniteMeasure ν] {π : ∀ i, Measure (X × Y i)} (hπ : ∀ i, (π i).fst = ν) :
     ∃ γ : Measure (X × ∀ i, Y i),
       γ.fst = ν ∧ ∀ i, γ.map (Prod.map id (Function.eval i)) = π i := by
   have := Fintype.ofFinite ι
   have _ (i : ι) : IsFiniteMeasure (π i) := ⟨by
-    rw [← MeasureTheory.Measure.fst_univ, hπ i]
+    rw [← fst_univ, hπ i]
     exact measure_lt_top _ _⟩
   by_cases hY : ∀ i, Nonempty (Y i)
   · -- Given `x`, draw the coordinates independently from the conditional laws of the plans.
@@ -333,42 +323,65 @@ theorem _root_.MeasureTheory.Measure.exists_glue_pi_of_fst_eq {ι : Type*} [Fini
       ext1 x
       rw [Kernel.map_apply _ (measurable_pi_apply i), hκx]
       exact (measurePreserving_eval _ i).map_eq
-    refine ⟨ν ⊗ₘ κ, MeasureTheory.Measure.fst_compProd _ _, fun i ↦ ?_⟩
-    rw [← MeasureTheory.Measure.compProd_map (measurable_pi_apply i), hκ, ← hπ i,
-      MeasureTheory.Measure.disintegrate]
+    refine ⟨ν ⊗ₘ κ, fst_compProd _ _, fun i ↦ ?_⟩
+    rw [← compProd_map (measurable_pi_apply i), hκ, ← hπ i, disintegrate]
   · -- An empty factor forces every plan, and hence `ν`, to vanish.
     obtain ⟨i₀, hi₀⟩ := not_forall.1 hY
     have : IsEmpty (Y i₀) := not_nonempty_iff.1 hi₀
-    have hν : ν = 0 := by rw [← hπ i₀, MeasureTheory.Measure.eq_zero_of_isEmpty (π i₀)]; simp
+    have hν : ν = 0 := by rw [← hπ i₀, eq_zero_of_isEmpty (π i₀)]; simp
     refine ⟨0, by simp [hν], fun i ↦ ?_⟩
-    rw [MeasureTheory.Measure.map_zero, eq_comm, ← MeasureTheory.Measure.measure_univ_eq_zero,
-      ← MeasureTheory.Measure.fst_univ, hπ i, hν, FunLike.coe_zero, Pi.zero_apply]
+    rw [Measure.map_zero, eq_comm, ← measure_univ_eq_zero, ← fst_univ, hπ i, hν, FunLike.coe_zero,
+      Pi.zero_apply]
+
+/-! ### Gluing over a countable middle space -/
+
+/-- Gluing `π` against the conditional kernel of `σ` over a countable middle space recovers `σ` as
+the `(Y, Z)`-marginal, as soon as the two plans share their middle marginal. -/
+theorem snd_glue_countableCondKernel [Countable Y] [MeasurableSingletonClass Y] [Nonempty Z]
+    [IsFiniteMeasure σ] (hπσ : π.snd = σ.fst) :
+    (π.glue σ.countableCondKernel).snd = σ := by
+  let _ : IsFiniteMeasure π := ⟨by
+    rw [← snd_univ, hπσ]
+    exact measure_lt_top _ _⟩
+  rw [snd_glue, hπσ, disintegrate]
+
+/-- **The gluing lemma over a countable middle space.**
+
+Two plans sharing a middle marginal, `π.snd = σ.fst`, admit a joint law on `X × Y × Z` with `π`
+and `σ` as its two consecutive two-coordinate marginals, as soon as the middle space `Y` is
+countable with measurable singletons. Neither outer space carries any hypothesis — in particular
+neither is assumed standard Borel, so this is not a special case of either
+`MeasureTheory.Measure.exists_glue_of_standardBorel_right` or
+`MeasureTheory.Measure.exists_glue_of_standardBorel_left`, and conversely neither of those covers
+it.
+
+When `Z` is nonempty the explicit witness is `π.glue σ.countableCondKernel`; use it instead of this
+statement when the probability-measure or finiteness instances of the glued measure are needed. -/
+theorem exists_glue_of_countable_middle [Countable Y] [MeasurableSingletonClass Y]
+    [IsFiniteMeasure σ] (hπσ : π.snd = σ.fst) :
+    ∃ γ : Measure (X × Y × Z), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ := by
+  let _ : IsFiniteMeasure π := ⟨by
+    rw [← snd_univ, hπσ]
+    exact measure_lt_top _ _⟩
+  rcases isEmpty_or_nonempty Z with hZ | hZ
+  · let _ := hZ
+    have hσ : σ = 0 := eq_zero_of_isEmpty σ
+    have hπ : π = 0 := by
+      rw [← measure_univ_eq_zero, ← snd_univ, hπσ, hσ]
+      simp
+    exact ⟨0, by simp [hπ], by simp [hσ]⟩
+  · let _ := hZ
+    exact ⟨π.glue σ.countableCondKernel, map_prodMap_id_fst_glue π _,
+      snd_glue_countableCondKernel π σ hπσ⟩
 
 end Gluing
 
-section Comp
+end Measure
 
-variable {π : Measure (X × Y)} {σ : Measure (Y × Z)} {γ : Measure (X × Y × Z)}
+section CostEstimates
 
-/-- The composition of two plans is the `(X, Z)`-marginal of a glued measure. Its first marginal is
-the first marginal of the first plan. -/
-theorem fst_map_prodMap_id_snd (hγπ : γ.map (Prod.map id Prod.fst) = π) :
-    (γ.map (Prod.map id Prod.snd)).fst = π.fst := by
-  have h : (Prod.fst : X × Z → X) ∘ Prod.map (id : X → X) (Prod.snd : Y × Z → Z)
-      = Prod.fst ∘ Prod.map (id : X → X) (Prod.fst : Y × Z → Y) := rfl
-  rw [← hγπ, MeasureTheory.Measure.fst, MeasureTheory.Measure.fst,
-    MeasureTheory.Measure.map_map measurable_fst (measurable_id.prodMap measurable_snd),
-    MeasureTheory.Measure.map_map measurable_fst (measurable_id.prodMap measurable_fst), h]
-
-/-- The second marginal of the composition of two plans is the second marginal of the second
-plan. -/
-theorem snd_map_prodMap_id_snd (hγσ : γ.snd = σ) :
-    (γ.map (Prod.map id Prod.snd)).snd = σ.snd := by
-  have h : (Prod.snd : X × Z → Z) ∘ Prod.map (id : X → X) (Prod.snd : Y × Z → Z)
-      = Prod.snd ∘ (Prod.snd : X × Y × Z → Y × Z) := rfl
-  rw [← hγσ, MeasureTheory.Measure.snd, MeasureTheory.Measure.snd,
-    MeasureTheory.Measure.map_map measurable_snd (measurable_id.prodMap measurable_snd),
-    MeasureTheory.Measure.snd, MeasureTheory.Measure.map_map measurable_snd measurable_snd, h]
+variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z]
+  {π : Measure (X × Y)} {σ : Measure (Y × Z)} {γ : Measure (X × Y × Z)}
 
 /-- The composition estimate. If a cost on `X × Z` is dominated pointwise by the sum of a cost on
 `X × Y` and a cost on `Y × Z`, then the composition of two glued plans costs at most the sum of
@@ -390,7 +403,56 @@ theorem lintegral_map_prodMap_id_snd_le (hγπ : γ.map (Prod.map id Prod.fst) =
         lintegral_add_left (hc₁.comp (measurable_id.prodMap measurable_fst)) _
     _ = (∫⁻ w, c₁ w ∂π) + ∫⁻ v, c₂ v ∂σ := by
         rw [← hγπ, ← hγσ, lintegral_map hc₁ (measurable_id.prodMap measurable_fst),
-          MeasureTheory.Measure.snd, lintegral_map hc₂ measurable_snd]
+          Measure.snd, lintegral_map hc₂ measurable_snd]
+
+/-- The `L^p` composition estimate. For `1 ≤ p`, if a cost on `X × Z` is dominated pointwise by the
+sum of a cost on `X × Y` and a cost on `Y × Z`, then its `L^p` seminorm against the composition of
+two glued plans is at most the sum of the `L^p` seminorms of the two costs against the plans.
+
+This is the `L^p` form of `MeasureTheory.lintegral_map_prodMap_id_snd_le`, and the mechanism
+behind the triangle inequality for `L^p` transport distances. -/
+theorem eLpNorm_map_prodMap_id_snd_le {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hγπ : γ.map (Prod.map id Prod.fst) = π) (hγσ : γ.snd = σ) {c : X × Z → ℝ≥0∞}
+    {c₁ : X × Y → ℝ≥0∞} {c₂ : Y × Z → ℝ≥0∞} (hc : Measurable c) (hc₁ : Measurable c₁)
+    (hc₂ : Measurable c₂) (hle : ∀ x y z, c (x, z) ≤ c₁ (x, y) + c₂ (y, z)) :
+    eLpNorm c p (γ.map (Prod.map id Prod.snd)) ≤ eLpNorm c₁ p π + eLpNorm c₂ p σ := by
+  rw [eLpNorm_map_measure hc.aestronglyMeasurable
+      (measurable_id.prodMap measurable_snd).aemeasurable, ← hγπ,
+    eLpNorm_map_measure hc₁.aestronglyMeasurable
+      (measurable_id.prodMap measurable_fst).aemeasurable, ← hγσ, Measure.snd,
+    eLpNorm_map_measure hc₂.aestronglyMeasurable measurable_snd.aemeasurable]
+  exact (eLpNorm_mono_eNorm (hc.comp (measurable_id.prodMap measurable_snd)).aestronglyMeasurable
+    (g := c₁ ∘ Prod.map id Prod.fst + c₂ ∘ Prod.snd)
+    fun ⟨x, y, z⟩ ↦ by
+      simpa only [eNorm_eq_self, Pi.add_apply, Function.comp_apply, Prod.map_apply, id_eq] using
+        hle x y z).trans (eLpNorm_add_le hp)
+
+end CostEstimates
+
+namespace Measure
+
+section Comp
+
+variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z]
+  {γ : Measure (X × Y × Z)} {π : Measure (X × Y)} {σ : Measure (Y × Z)}
+
+/-- The composition of two plans is the `(X, Z)`-marginal of a glued measure. Its first marginal is
+the first marginal of the first plan. -/
+theorem fst_map_prodMap_id_snd (hγπ : γ.map (Prod.map id Prod.fst) = π) :
+    (γ.map (Prod.map id Prod.snd)).fst = π.fst := by
+  have h : (Prod.fst : X × Z → X) ∘ Prod.map (id : X → X) (Prod.snd : Y × Z → Z)
+      = Prod.fst ∘ Prod.map (id : X → X) (Prod.fst : Y × Z → Y) := rfl
+  rw [← hγπ, fst, fst, map_map measurable_fst (measurable_id.prodMap measurable_snd),
+    map_map measurable_fst (measurable_id.prodMap measurable_fst), h]
+
+/-- The second marginal of the composition of two plans is the second marginal of the second
+plan. -/
+theorem snd_map_prodMap_id_snd (hγσ : γ.snd = σ) :
+    (γ.map (Prod.map id Prod.snd)).snd = σ.snd := by
+  have h : (Prod.snd : X × Z → Z) ∘ Prod.map (id : X → X) (Prod.snd : Y × Z → Z)
+      = Prod.snd ∘ (Prod.snd : X × Y × Z → Y × Z) := rfl
+  rw [← hγσ, snd, snd, map_map measurable_snd (measurable_id.prodMap measurable_snd), snd,
+    map_map measurable_snd measurable_snd, h]
 
 /-- The composition of two plans, read off a glued measure: the `(X, Z)`-marginal of a gluing of
 `π` and `σ` has the outer marginals of `π` and `σ`. -/
@@ -400,8 +462,8 @@ theorem exists_comp_of_exists_glue
   let ⟨γ, hγπ, hγσ⟩ := h
   ⟨γ.map (Prod.map id Prod.snd), fst_map_prodMap_id_snd hγπ, snd_map_prodMap_id_snd hγσ⟩
 
-/-- The composed plan of `TauCeti.Measure.exists_comp_of_exists_glue`, together with the cost
-estimate of `TauCeti.Measure.lintegral_map_prodMap_id_snd_le`. -/
+/-- The composed plan of `MeasureTheory.Measure.exists_comp_of_exists_glue`, together with the cost
+estimate of `MeasureTheory.lintegral_map_prodMap_id_snd_le`. -/
 theorem exists_comp_lintegral_le_of_exists_glue
     (h : ∃ γ : Measure (X × Y × Z), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ)
     {c : X × Z → ℝ≥0∞} {c₁ : X × Y → ℝ≥0∞} {c₂ : Y × Z → ℝ≥0∞}
@@ -427,95 +489,16 @@ theorem exists_comp_of_standardBorel_left [StandardBorelSpace X] [IsFiniteMeasur
     ∃ ζ : Measure (X × Z), ζ.fst = π.fst ∧ ζ.snd = σ.snd :=
   exists_comp_of_exists_glue (exists_glue_of_standardBorel_left π σ hπσ)
 
-end Comp
-
-end Measure
-
-namespace MeasureTheory
-
-variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z]
-
-/-- The `L^p` composition estimate. For `1 ≤ p`, if a cost on `X × Z` is dominated pointwise by the
-sum of a cost on `X × Y` and a cost on `Y × Z`, then its `L^p` seminorm against the composition of
-two glued plans is at most the sum of the `L^p` seminorms of the two costs against the plans.
-
-This is the `L^p` form of `TauCeti.Measure.lintegral_map_prodMap_id_snd_le`, and the mechanism
-behind the triangle inequality for `L^p` transport distances. It lives in `TauCeti.MeasureTheory`
-for the same dot-notation reason as the countable gluing lemmas below. -/
-theorem eLpNorm_map_prodMap_id_snd_le {π : Measure (X × Y)} {σ : Measure (Y × Z)}
-    {γ : Measure (X × Y × Z)} {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (hγπ : γ.map (Prod.map id Prod.fst) = π) (hγσ : γ.snd = σ) {c : X × Z → ℝ≥0∞}
-    {c₁ : X × Y → ℝ≥0∞} {c₂ : Y × Z → ℝ≥0∞} (hc : Measurable c) (hc₁ : Measurable c₁)
-    (hc₂ : Measurable c₂) (hle : ∀ x y z, c (x, z) ≤ c₁ (x, y) + c₂ (y, z)) :
-    eLpNorm c p (γ.map (Prod.map id Prod.snd)) ≤ eLpNorm c₁ p π + eLpNorm c₂ p σ := by
-  rw [eLpNorm_map_measure hc.aestronglyMeasurable
-      (measurable_id.prodMap measurable_snd).aemeasurable, ← hγπ,
-    eLpNorm_map_measure hc₁.aestronglyMeasurable
-      (measurable_id.prodMap measurable_fst).aemeasurable, ← hγσ, MeasureTheory.Measure.snd,
-    eLpNorm_map_measure hc₂.aestronglyMeasurable measurable_snd.aemeasurable]
-  exact (eLpNorm_mono_eNorm (hc.comp (measurable_id.prodMap measurable_snd)).aestronglyMeasurable
-    (g := c₁ ∘ Prod.map id Prod.fst + c₂ ∘ Prod.snd)
-    fun ⟨x, y, z⟩ ↦ by
-      simpa only [eNorm_eq_self, Pi.add_apply, Function.comp_apply, Prod.map_apply, id_eq] using
-        hle x y z).trans (eLpNorm_add_le hp)
-
-/-! ### Gluing over a countable middle space
-
-These live in `TauCeti.MeasureTheory` rather than alongside their standard Borel siblings in
-`TauCeti.Measure`: `scripts/lint-dot-notation.py` forbids a *new* declaration under
-`TauCeti.Measure` whose statement mentions `MeasureTheory.Measure`, because such a namespace
-blocks dot notation on Mathlib's type. -/
-
-variable (π : Measure (X × Y)) (σ : Measure (Y × Z))
-
-/-- Gluing `π` against the conditional kernel of `σ` over a countable middle space recovers `σ` as
-the `(Y, Z)`-marginal, as soon as the two plans share their middle marginal. -/
-theorem snd_glue_countableCondKernel [Countable Y] [MeasurableSingletonClass Y] [Nonempty Z]
-    [IsFiniteMeasure σ] (hπσ : π.snd = σ.fst) :
-    (Measure.glue π σ.countableCondKernel).snd = σ := by
-  let _ : IsFiniteMeasure π := ⟨by
-    rw [← _root_.MeasureTheory.Measure.snd_univ, hπσ]
-    exact measure_lt_top _ _⟩
-  rw [Measure.snd_glue, hπσ, _root_.MeasureTheory.Measure.disintegrate]
-
-/-- **The gluing lemma over a countable middle space.**
-
-Two plans sharing a middle marginal, `π.snd = σ.fst`, admit a joint law on `X × Y × Z` with `π`
-and `σ` as its two consecutive two-coordinate marginals, as soon as the middle space `Y` is
-countable with measurable singletons. Neither outer space carries any hypothesis — in particular
-neither is assumed standard Borel, so this is not a special case of either
-`TauCeti.Measure.exists_glue_of_standardBorel_right` or
-`TauCeti.Measure.exists_glue_of_standardBorel_left`, and conversely neither of those covers it.
-
-When `Z` is nonempty the explicit witness is `TauCeti.Measure.glue π σ.countableCondKernel`; use
-it instead of this statement when the probability-measure or finiteness instances of the glued
-measure are needed. -/
-theorem exists_glue_of_countable_middle [Countable Y] [MeasurableSingletonClass Y]
-    [IsFiniteMeasure σ] (hπσ : π.snd = σ.fst) :
-    ∃ γ : Measure (X × Y × Z), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ := by
-  let _ : IsFiniteMeasure π := ⟨by
-    rw [← _root_.MeasureTheory.Measure.snd_univ, hπσ]
-    exact measure_lt_top _ _⟩
-  rcases isEmpty_or_nonempty Z with hZ | hZ
-  · let _ := hZ
-    have hσ : σ = 0 := _root_.MeasureTheory.Measure.eq_zero_of_isEmpty σ
-    have hπ : π = 0 := by
-      rw [← _root_.MeasureTheory.Measure.measure_univ_eq_zero,
-        ← _root_.MeasureTheory.Measure.snd_univ, hπσ, hσ]
-      simp
-    exact ⟨0, by simp [hπ], by simp [hσ]⟩
-  · let _ := hZ
-    exact ⟨Measure.glue π σ.countableCondKernel, Measure.map_prodMap_id_fst_glue π _,
-      snd_glue_countableCondKernel π σ hπσ⟩
-
 /-- Two plans sharing a middle marginal compose to a plan with the two outer marginals, when the
 middle space is countable. Unlike the two standard Borel forms, this asks nothing of either outer
 space. -/
 theorem exists_comp_of_countable_middle [Countable Y] [MeasurableSingletonClass Y]
     [IsFiniteMeasure σ] (hπσ : π.snd = σ.fst) :
     ∃ ζ : Measure (X × Z), ζ.fst = π.fst ∧ ζ.snd = σ.snd :=
-  Measure.exists_comp_of_exists_glue (exists_glue_of_countable_middle π σ hπσ)
+  exists_comp_of_exists_glue (exists_glue_of_countable_middle π σ hπσ)
+
+end Comp
+
+end Measure
 
 end MeasureTheory
-
-end TauCeti

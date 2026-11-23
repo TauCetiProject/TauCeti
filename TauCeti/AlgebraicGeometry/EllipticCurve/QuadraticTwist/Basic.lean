@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Aut
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
@@ -42,6 +43,9 @@ change of variables, again over any commutative ring in which the relevant param
   `a₁² - 2n` and `2n`.
 * `WeierstrassCurve.Δ_quadraticTwistOf`, `WeierstrassCurve.c₄_quadraticTwistOf`,
   `WeierstrassCurve.c₆_quadraticTwistOf`: the invariants of the twist.
+* `WeierstrassCurve.Ψ₂Sq_quadraticTwistOf_comp_C_mul_X` and
+  `WeierstrassCurve.eval_Ψ₂Sq_quadraticTwistOf`: the `2`-division cubic of the twist at `Dx` is
+  `D³` times that of `E` at `x`, with `D = t² - 4n`.
 * `WeierstrassCurve.isElliptic_quadraticTwistOf_iff` and its field specialisation
   `WeierstrassCurve.isElliptic_quadraticTwistOf`, and `WeierstrassCurve.j_quadraticTwistOf`: the
   twist of an elliptic curve is elliptic exactly when `t² - 4n` is a unit — over a field, when
@@ -235,6 +239,24 @@ curve itself. -/
   simp only [Δ, b₂_quadraticTwistOf, b₄_quadraticTwistOf, b₆_quadraticTwistOf,
     b₈_quadraticTwistOf]
   ring
+
+/-- The `2`-division cubic `Ψ₂Sq = 4X³ + b₂X² + 2b₄X + b₆` of the quadratic twist, rescaled by
+`X ↦ DX`, is `D³` times that of `E`, with `D = t² - 4n`: this is the scaling of `b₂, b₄, b₆` by
+`D, D², D³`. -/
+theorem Ψ₂Sq_quadraticTwistOf_comp_C_mul_X :
+    (E.quadraticTwistOf t n).Ψ₂Sq.comp (Polynomial.C (t ^ 2 - 4 * n) * Polynomial.X) =
+      Polynomial.C ((t ^ 2 - 4 * n) ^ 3) * E.Ψ₂Sq := by
+  simp only [Ψ₂Sq, b₂_quadraticTwistOf, b₄_quadraticTwistOf, b₆_quadraticTwistOf,
+    Polynomial.add_comp, Polynomial.mul_comp, Polynomial.C_comp, Polynomial.X_comp,
+    Polynomial.pow_comp, map_mul, map_pow]
+  ring
+
+/-- The `2`-division cubic of the quadratic twist at `Dz` is `D³ Ψ₂Sq(z)`, with `D = t² - 4n`. -/
+theorem eval_Ψ₂Sq_quadraticTwistOf (z : A) :
+    (E.quadraticTwistOf t n).Ψ₂Sq.eval ((t ^ 2 - 4 * n) * z) =
+      (t ^ 2 - 4 * n) ^ 3 * E.Ψ₂Sq.eval z := by
+  simpa only [Polynomial.eval_comp, Polynomial.eval_mul, Polynomial.eval_C, Polynomial.eval_X]
+    using congrArg (Polynomial.eval z) (E.Ψ₂Sq_quadraticTwistOf_comp_C_mul_X t n)
 
 /-- **The constant coefficient of the node polynomial, under twisting.** Unlike `b₂`, `b₄`, `b₆`,
 `c₄`, `c₆` and `Δ`, which all simply scale by a power of `D = t² - 4n`, this coefficient picks up

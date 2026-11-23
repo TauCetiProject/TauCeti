@@ -228,7 +228,7 @@ theorem orientationPreservingOn_iff (A : E →L[ℝ] E) {s : Set E} :
     A.differentiableAt.differentiableWithinAt, true_and]
   rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
   · simp
-  · exact ⟨fun h => Or.inr (h x hx), fun h y _ => h.resolve_left (nonempty_iff_ne_empty.1 ⟨x, hx⟩)⟩
+  · exact ⟨fun h => Or.inr (h x hx), fun h y _ => h.resolve_left (ne_empty_iff_nonempty.2 ⟨x, hx⟩)⟩
 
 end ContinuousLinearMap
 

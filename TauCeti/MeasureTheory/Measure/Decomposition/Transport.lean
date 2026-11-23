@@ -69,7 +69,7 @@ theorem exists_measurePreserving_of_atomic_assignment
     (diffusePart μ) (ν - ρ) hdiffmass
   let T : X → Y := fun x ↦ if hx : x ∈ positiveSingletons μ then f ⟨x, hx⟩ else g x
   have hTm : Measurable T := (measurable_of_countable f).dite
-    (hg.measurable.comp measurable_subtype_coe) (measurableSet_positiveSingletons μ)
+    (hg.measurable.comp measurable_subtypeVal) (measurableSet_positiveSingletons μ)
   have hTf (x : positiveSingletons μ) : T x = f x := by
     simp only [T, dite_eq_left x.property]
   have hTdiff : MeasurePreserving T (diffusePart μ) (ν - ρ) := by

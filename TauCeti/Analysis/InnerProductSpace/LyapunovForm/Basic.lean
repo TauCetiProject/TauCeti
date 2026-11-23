@@ -41,6 +41,9 @@ in `TauCeti.Analysis.InnerProductSpace.LyapunovForm.Hyperbolic`.
   Lyapunov form; `ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric` applies this to a
   limit of symmetric operators, and `ContinuousLinearMap.hasLyapunovForm_sub_smul_id_of_isSymmetric`
   to its shifts `A - c • id` with `|c|` below the bound.
+* `ContinuousLinearMap.hasLyapunovForm_comp_of_isSymmetric`: more generally `S = H` is a Lyapunov
+  form of `K ∘ H` when `K` has a coercive quadratic form and `H` is symmetric and bounded below,
+  with the inequality itself in `ContinuousLinearMap.mul_sq_mul_norm_sq_le_inner_apply_comp_apply`.
 * `ContinuousLinearMap.HasLyapunovForm.exists_eventually_nhds`: one Lyapunov form serves every
   operator close enough to `A`; `ContinuousLinearMap.isOpen_setOf_hasLyapunovForm` is the
   corresponding openness statement.
@@ -55,6 +58,7 @@ in `TauCeti.Analysis.InnerProductSpace.LyapunovForm.Hyperbolic`.
 * `ContinuousLinearMap.HasLyapunovForm.neg_adjoint`: in finite dimensions, `-A†` has a Lyapunov
   form whenever `A` does. The formal adjoint of `d/ds + A` is `-d/ds + A†`; multiplying it by `-1`
   gives `d/ds - A†`, whose coefficient is `-A†`.
+* `ContinuousLinearMap.HasLyapunovForm.adjoint`: in finite dimensions, `A†` has a Lyapunov form.
 
 ## References
 
@@ -99,14 +103,37 @@ theorem HasLyapunovForm.neg (h : A.HasLyapunovForm) : (-A).HasLyapunovForm := by
   obtain ⟨hS', hcS'⟩ := isSymmetric_neg_and_forall_le_inner_neg_apply_neg_apply hS hcS
   exact ⟨-S, hS', c, hc, hcS'⟩
 
-/-- **A symmetric operator bounded below has a Lyapunov form**, namely `S = A` with `c = α²`. -/
+/-- **The Lyapunov inequality for a composite `K ∘ H`.** If the quadratic form of `K` is bounded
+below by `κ ‖w‖²` with `κ ≥ 0`, and `H` is symmetric with `α ‖v‖ ≤ ‖H v‖` for some `α ≥ 0`, then
+`κ α² ‖v‖² ≤ ⟪H (K (H v)), v⟫`, because the right side is `⟪K (H v), H v⟫ ≥ κ ‖H v‖²`. So `H` is
+a Lyapunov form of `K ∘ H` as soon as `κ` and `α` are positive. No symmetry of `K` is needed. -/
+theorem mul_sq_mul_norm_sq_le_inner_apply_comp_apply {K H : E →L[ℝ] E}
+    (hH : (H : E →ₗ[ℝ] E).IsSymmetric) {κ α : ℝ} (hκ : 0 ≤ κ)
+    (hK : ∀ w, κ * ‖w‖ ^ 2 ≤ ⟪K w, w⟫_ℝ) (hα : 0 ≤ α) (hgap : ∀ v, α * ‖v‖ ≤ ‖H v‖) (v : E) :
+    κ * α ^ 2 * ‖v‖ ^ 2 ≤ ⟪H ((K ∘L H) v), v⟫_ℝ := by
+  calc κ * α ^ 2 * ‖v‖ ^ 2 = κ * (α * ‖v‖) ^ 2 := by ring
+    _ ≤ κ * ‖H v‖ ^ 2 :=
+        mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) (hgap v) 2) hκ
+    _ ≤ ⟪K (H v), H v⟫_ℝ := hK (H v)
+    _ = ⟪H ((K ∘L H) v), v⟫_ℝ := by rw [comp_apply, hH.apply_clm]
+
+/-- **A coercive operator composed with a symmetric operator bounded below has a Lyapunov
+form**, namely `S = H` with `c = κ α²`. For `K` the inverse of a Riemannian metric in coordinates
+and `H` the Hessian at a nondegenerate critical point, `-(K ∘ H)` is the linearization of the
+negative gradient vector field of that metric. -/
+theorem hasLyapunovForm_comp_of_isSymmetric {K H : E →L[ℝ] E}
+    (hH : (H : E →ₗ[ℝ] E).IsSymmetric) {κ α : ℝ} (hκ : 0 < κ)
+    (hK : ∀ w, κ * ‖w‖ ^ 2 ≤ ⟪K w, w⟫_ℝ) (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖H v‖) :
+    (K ∘L H).HasLyapunovForm :=
+  ⟨H, hH, κ * α ^ 2, by positivity,
+    mul_sq_mul_norm_sq_le_inner_apply_comp_apply hH hκ.le hK hα.le hgap⟩
+
+/-- **A symmetric operator bounded below has a Lyapunov form**, namely `S = A` with `c = α²`. This
+is `ContinuousLinearMap.hasLyapunovForm_comp_of_isSymmetric` with `K = id`. -/
 theorem hasLyapunovForm_of_isSymmetric (hA : (A : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α)
     (hgap : ∀ v, α * ‖v‖ ≤ ‖A v‖) : A.HasLyapunovForm := by
-  refine ⟨A, hA, α ^ 2, by positivity, fun v ↦ ?_⟩
-  have h : ⟪A (A v), v⟫_ℝ = ‖A v‖ ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, hA.apply_clm]
-  rw [h, ← mul_pow]
-  exact pow_le_pow_left₀ (by positivity) (hgap v) 2
+  simpa using hasLyapunovForm_comp_of_isSymmetric (K := .id ℝ E) hA one_pos
+    (fun w ↦ by rw [one_mul, id_apply, real_inner_self_eq_norm_sq]) hα hgap
 
 /-- **A limit of symmetric operators bounded below has a Lyapunov form.** If symmetric operators
 `F i` tend to `A` and `α ‖v‖ ≤ ‖A v‖` with `α > 0`, then `A` is symmetric, so it has the Lyapunov
@@ -123,10 +150,12 @@ symmetric with `α ‖v‖ ≤ ‖A v‖` and `|c| < α`, then `A - c • id` is
 theorem hasLyapunovForm_sub_smul_id_of_isSymmetric (hA : (A : E →ₗ[ℝ] E).IsSymmetric) {α c : ℝ}
     (hgap : ∀ v, α * ‖v‖ ≤ ‖A v‖) (hc : |c| < α) :
     (A - c • ContinuousLinearMap.id ℝ E).HasLyapunovForm := by
-  refine hasLyapunovForm_of_isSymmetric (hA.clm_sub_smul_id c) (sub_pos.2 hc) fun v ↦ ?_
-  calc (α - |c|) * ‖v‖ = α * ‖v‖ - ‖c • v‖ := by rw [norm_smul, Real.norm_eq_abs]; ring
-    _ ≤ ‖A v‖ - ‖c • v‖ := by linarith [hgap v]
-    _ ≤ ‖(A - c • ContinuousLinearMap.id ℝ E) v‖ := by simpa using norm_sub_norm_le (A v) (c • v)
+  refine hasLyapunovForm_of_isSymmetric (fun x y ↦ ?_) (sub_pos.2 hc) fun v ↦ ?_
+  · simp [inner_sub_left, inner_sub_right, real_inner_smul_left, real_inner_smul_right,
+      hA.apply_clm x y]
+  · calc (α - |c|) * ‖v‖ = α * ‖v‖ - ‖c • v‖ := by rw [norm_smul, Real.norm_eq_abs]; ring
+      _ ≤ ‖A v‖ - ‖c • v‖ := by linarith [hgap v]
+      _ ≤ ‖(A - c • ContinuousLinearMap.id ℝ E) v‖ := by simpa using norm_sub_norm_le (A v) (c • v)
 
 /-- **A Lyapunov form survives small perturbations.** If `A` has a Lyapunov form, then a single
 symmetric `S` and a single constant `c > 0` satisfy `c ‖v‖² ≤ ⟪S (B v), v⟫` for every `B`
@@ -272,5 +301,12 @@ theorem HasLyapunovForm.neg_adjoint [FiniteDimensional ℝ E] (h : A.HasLyapunov
         gcongr
     _ = c * ‖x‖ ^ 2 := by field_simp
     _ ≤ ⟪S (A x), x⟫_ℝ := hcS x
+
+/-- **The adjoint has a Lyapunov form.** In finite dimensions, if `A` has a Lyapunov form, then so
+does `A†`. So the reversed coefficient `s ↦ A(-s)†` of a trajectory operator has hyperbolic limits
+whenever `A` does. -/
+theorem HasLyapunovForm.adjoint [FiniteDimensional ℝ E] (h : A.HasLyapunovForm) :
+    (adjoint A).HasLyapunovForm := by
+  simpa using h.neg_adjoint.neg
 
 end ContinuousLinearMap

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
+import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power
 
 /-!
 # The vacuum vortex operator on the Sobolev scale
@@ -40,8 +42,9 @@ lies in `H^{s-1}`. On Schwartz fields the tempered operators agree with `vacuumO
 * `TauCeti.Vortex.temperedVacuumOperator_toTemperedDistribution` and
   `TauCeti.Vortex.temperedVacuumAdjoint_toTemperedDistribution`: they extend `vacuumOperator` and
   `vacuumAdjoint` from Schwartz fields.
-* `TauCeti.Vortex.sum_temperedVacuumOperator_apply`: on tempered fields, `L₀` is the transpose of
-  `vacuumAdjoint` on real Schwartz fields.
+* `TauCeti.Vortex.sum_temperedVacuumOperator_apply` and
+  `TauCeti.Vortex.sum_temperedVacuumAdjoint_apply`: on tempered fields, `L₀` and `L₀*` are the
+  transposes of `vacuumAdjoint` and `vacuumOperator` on real Schwartz fields.
 * `TauCeti.Vortex.temperedVacuumAdjoint_temperedVacuumOperator` and
   `TauCeti.Vortex.temperedVacuumOperator_temperedVacuumAdjoint`: the Weitzenböck identities
   `L₀* L₀ = L₀ L₀* = -Δ + 1 / 4`.
@@ -216,6 +219,32 @@ theorem sum_temperedVacuumOperator_apply (Y : Fin 4 → 𝓢'(ℂ, ℂ))
   simp [lineDerivOp_apply_apply]
   ring
 
+/-- **`L₀*` on tempered fields is the transpose of `L₀` on real Schwartz fields.** For every field
+`Y` of complex tempered distributions and every real Schwartz field `η`,
+`∑ᵢ (L₀* Y)ᵢ (ηᵢ) = ∑ⱼ Yⱼ ((L₀ η)ⱼ)`. -/
+theorem sum_temperedVacuumAdjoint_apply (Y : Fin 4 → 𝓢'(ℂ, ℂ))
+    (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
+    ∑ i, temperedVacuumAdjoint Y i (η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)) =
+      ∑ j, Y j ((vacuumOperator η).postcompCLM (ofRealCLM ∘L EuclideanSpace.proj j)) := by
+  set c : Fin 4 → 𝓢(ℂ, ℂ) := fun j ↦ η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj j)
+  set c' : Fin 4 → 𝓢(ℂ, ℂ) :=
+    fun j ↦ (vacuumOperator η).postcompCLM (ofRealCLM ∘L EuclideanSpace.proj j)
+  obtain ⟨h₀, h₁, h₂, h₃⟩ :
+      c' 0 = ∂_{(1 : ℂ)} (c 0) + ∂_{I} (c 1) + (1 / 2 : ℂ) • c 3 ∧
+      c' 1 = ∂_{I} (c 0) - ∂_{(1 : ℂ)} (c 1) + (1 / 2 : ℂ) • c 2 ∧
+      c' 2 = ∂_{(1 : ℂ)} (c 2) - ∂_{I} (c 3) - (1 / 2 : ℂ) • c 1 ∧
+      c' 3 = ∂_{I} (c 2) + ∂_{(1 : ℂ)} (c 3) + (1 / 2 : ℂ) • c 0 := by
+    refine ⟨?_, ?_, ?_, ?_⟩ <;>
+    · ext z
+      simp [c, c', TauCeti.lineDerivOp_postcompCLM]
+      ring
+  simp only [c, c'] at h₀ h₁ h₂ h₃
+  simp only [Fin.sum_univ_four, h₀, h₁, h₂, h₃, temperedVacuumAdjoint_apply_zero,
+    temperedVacuumAdjoint_apply_one, temperedVacuumAdjoint_apply_two,
+    temperedVacuumAdjoint_apply_three]
+  simp [lineDerivOp_apply_apply]
+  ring
+
 /-! ### The Weitzenböck identities -/
 
 /-- **The Weitzenböck identity at the vacuum** on tempered fields: `L₀* L₀ = -Δ + 1 / 4`. -/
@@ -270,23 +299,25 @@ theorem temperedVacuumAdjoint_injective : Function.Injective temperedVacuumAdjoi
 automorphism of the fields of tempered distributions. Its inverse is `L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹`
 (`temperedVacuumOperatorEquiv_symm_apply`). -/
 def temperedVacuumOperatorEquiv : (Fin 4 → 𝓢'(ℂ, ℂ)) ≃L[ℂ] (Fin 4 → 𝓢'(ℂ, ℂ)) :=
-  .equivOfInverse temperedVacuumOperator
+  .ofContinuousLinearMap temperedVacuumOperator
     (temperedVacuumAdjoint ∘L .piMap fun _ ↦ laplacianResolvent ℂ (1 / 4))
     -- `ContinuousLinearMap.piMap` applies the resolvent componentwise, by definition.
-    (fun _ ↦ temperedVacuumOperator_injective <|
+    (ContinuousLinearMap.ext fun y ↦
+      temperedVacuumOperator_temperedVacuumAdjoint_laplacianResolvent y)
+    (ContinuousLinearMap.ext fun _ ↦ temperedVacuumOperator_injective <|
       temperedVacuumOperator_temperedVacuumAdjoint_laplacianResolvent _)
-    (fun y ↦ temperedVacuumOperator_temperedVacuumAdjoint_laplacianResolvent y)
 
 /-- **The adjoint of the vacuum operator is invertible on tempered fields**: `L₀*` as a continuous
 linear automorphism of the fields of tempered distributions. Its inverse is
 `(L₀*)⁻¹ = L₀ (-Δ + 1 / 4)⁻¹` (`temperedVacuumAdjointEquiv_symm_apply`). -/
 def temperedVacuumAdjointEquiv : (Fin 4 → 𝓢'(ℂ, ℂ)) ≃L[ℂ] (Fin 4 → 𝓢'(ℂ, ℂ)) :=
-  .equivOfInverse temperedVacuumAdjoint
+  .ofContinuousLinearMap temperedVacuumAdjoint
     (temperedVacuumOperator ∘L .piMap fun _ ↦ laplacianResolvent ℂ (1 / 4))
     -- `ContinuousLinearMap.piMap` applies the resolvent componentwise, by definition.
-    (fun _ ↦ temperedVacuumAdjoint_injective <|
+    (ContinuousLinearMap.ext fun y ↦
+      temperedVacuumAdjoint_temperedVacuumOperator_laplacianResolvent y)
+    (ContinuousLinearMap.ext fun _ ↦ temperedVacuumAdjoint_injective <|
       temperedVacuumAdjoint_temperedVacuumOperator_laplacianResolvent _)
-    (fun y ↦ temperedVacuumAdjoint_temperedVacuumOperator_laplacianResolvent y)
 
 @[simp]
 theorem coe_temperedVacuumOperatorEquiv : ⇑temperedVacuumOperatorEquiv = temperedVacuumOperator :=

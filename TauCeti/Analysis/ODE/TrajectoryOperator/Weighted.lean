@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.EnergyEstimate.Index
+public import TauCeti.Analysis.ODE.EnergyEstimate.WeightCrossing
 
 /-!
 # The trajectory operator on exponentially weighted spaces
@@ -25,7 +25,9 @@ recorded by `TauCeti.weightedSquareIntegrableSolutions A w`. Its limits are `A±
 weights move the limiting spectra. For symmetric limits, `D_A` is Fredholm on the weighted spaces
 exactly when neither `δ±` is an eigenvalue of `A±`, and its index is then the number of
 eigenvalues of `A⁻` below `δ⁻` minus the number of eigenvalues of `A⁺` below `δ⁺`, counted with
-multiplicity. A weight can therefore make `D_A` Fredholm when a limit is degenerate, as for
+multiplicity
+(`TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`
+in `TauCeti.Analysis.ODE.EnergyEstimate.WeightCrossing`). A weight can therefore make `D_A` Fredholm when a limit is degenerate, as for
 Morse–Bott trajectories: for `A = 0` and a weight with `δ⁻ < 0 < δ⁺`, the index is `-dim E`.
 Weights below the spectral gaps do not change the solutions; that case is
 `TauCeti.squareIntegrableSolutions_sub_smul_id`.
@@ -39,8 +41,6 @@ Weights below the spectral gaps do not change the solutions; that case is
   spaces of `u' + A u = 0` and of the adjoint equation `u' - A† u = 0` with weight `-w`.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id_iff`: for symmetric limits,
   the weighted operator is Fredholm exactly when `δ±` is not an eigenvalue of `A±`.
-* `index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`, in
-  `TauCeti.WeakDerivStep`: its index counts the eigenvalues of `A±` below `δ±`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_neg_smul_id_eq_neg_finrank`: with decaying
   weights, `d/ds` has index `-dim E`.
 
@@ -146,39 +146,12 @@ theorem isFredholm_trajectoryOperator_sub_smul_id_iff (hA : Continuous A) (hw' :
       ¬ Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus ∧
         ¬ Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus := by
   rw [isFredholm_trajectoryOperator_iff (hA.sub (hw'.smul continuous_const))
-      (hsymminus.clm_sub_smul_id δminus) (hsymplus.clm_sub_smul_id δplus)
+      (ContinuousLinearMap.isSymmetric_sub_smul_id hsymminus (conj_trivial δminus))
+      (ContinuousLinearMap.isSymmetric_sub_smul_id hsymplus (conj_trivial δplus))
       (hbot.sub (hw'bot.smul_const _)) (htop.sub (hw'top.smul_const _)) AL hAL,
-    ContinuousLinearMap.injective_sub_smul_id_iff, ContinuousLinearMap.injective_sub_smul_id_iff]
-
-/-- **The weighted index counts eigenvalues below the weights.** Let `A` be a continuous family of
-operators on a finite-dimensional real inner product space with symmetric limits `A±`, and `w` a
-weight whose continuous derivative `w'` tends to `δ±` at `±∞`, where `δ±` is not an eigenvalue of
-`A±`. Then the trajectory operator with coefficient `A - w'`, which is `D_A` conjugated from the
-`e^w`-weighted spaces, has index the number of eigenvalues of `A⁻` below `δ⁻` minus the number of
-eigenvalues of `A⁺` below `δ⁺`, counted with multiplicity. Moving a weight across an eigenvalue
-changes the index by its multiplicity. -/
-theorem index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank
-    (hA : Continuous A) (hw' : Continuous w') {Aminus Aplus : E →L[ℝ] E} {δminus δplus : ℝ}
-    (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
-    (hδminus : ¬ Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus)
-    (hδplus : ¬ Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (hw'bot : Tendsto w' atBot (𝓝 δminus)) (hw'top : Tendsto w' atTop (𝓝 δplus))
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ E) :
-    (trajectoryOperator (p := 2) AL).index =
-      (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio δminus)) : ℤ) -
-        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio δplus)) := by
-  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-      (hA.sub (hw'.smul continuous_const))
-      (hsymminus.clm_sub_smul_id δminus) (hsymplus.clm_sub_smul_id δplus)
-      (ContinuousLinearMap.injective_sub_smul_id_iff.2 hδminus)
-      (ContinuousLinearMap.injective_sub_smul_id_iff.2 hδplus)
-      (hbot.sub (hw'bot.smul_const _)) (htop.sub (hw'top.smul_const _)) AL hAL,
-    ContinuousLinearMap.pointSpectralSubspace_sub_smul_id,
-    ContinuousLinearMap.pointSpectralSubspace_sub_smul_id, preimage_sub_const_Iio,
-    preimage_sub_const_Iio, zero_add, zero_add]
+    ← ContinuousLinearMap.ker_sub_smul_id_eq_bot_iff,
+    ← ContinuousLinearMap.ker_sub_smul_id_eq_bot_iff, LinearMap.ker_eq_bot, LinearMap.ker_eq_bot,
+    ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe]
 
 /-- **The index of `d/ds` with decaying weights.** For the zero family the trajectory operator is
 `d/ds`, which is not Fredholm on `W^{1,2}(ℝ, E)` when `E ≠ 0` since its limits are not injective
@@ -205,8 +178,8 @@ theorem index_trajectoryOperator_neg_smul_id_eq_neg_finrank (hw' : Continuous w'
     fun h ↦ h (heig μ hμ)
   have hsym : (((0 : E →L[ℝ] E) : E →ₗ[ℝ] E)).IsSymmetric := fun x y ↦ by simp
   rw [index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank
-      (A := fun _ ↦ 0) continuous_const hw' hsym hsym (hnot _ hδminus.ne) (hnot _ hδplus.ne')
-      tendsto_const_nhds tendsto_const_nhds hw'bot hw'top AL (by simpa using hAL)]
+      (A := fun _ ↦ 0) continuous_const hsym hsym tendsto_const_nhds tendsto_const_nhds hw' hw'bot
+      hw'top (hnot _ hδminus.ne) (hnot _ hδplus.ne') AL (by simpa using hAL)]
   have hbot : Module.End.pointSpectralSubspace (((0 : E →L[ℝ] E) : E →ₗ[ℝ] E))
       (Iio δminus) = ⊥ :=
     eq_bot_iff.2 <| Module.End.pointSpectralSubspace_le_iff.2 fun μ hμ ↦

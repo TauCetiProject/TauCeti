@@ -64,6 +64,22 @@ theorem weight_eq_sum_of_support_subset (L : Ω → ι → Module.Dual K V)
   rw [weight_def]
   exact finsum_eq_sum_of_support_subset _ ((support_localWeight_subset L c U).trans hc)
 
+/-- Finitely supported form weights give only finitely many global subspace weights. -/
+theorem finite_range_weight (L : Ω → ι → Module.Dual K V) {c : Ω → ι → ℝ}
+    (hc : HasFiniteSupport c) : (range (weight L c)).Finite := by
+  classical
+  have hfinite (s : Finset Ω) :
+      (range fun U : Submodule K V ↦ ∑ v ∈ s, localWeight (L v) (c v) U).Finite := by
+    induction s using Finset.induction_on with
+    | empty => simp
+    | @insert v s hv ih =>
+      simp only [Finset.sum_insert hv]
+      exact ((finite_range_localWeight (L v) (c v)).image2 (· + ·) ih).subset
+        (by rintro _ ⟨U, rfl⟩; exact ⟨_, ⟨U, rfl⟩, _, ⟨U, rfl⟩, rfl⟩)
+  have heq := funext fun U ↦ weight_eq_sum_of_support_subset L c U hc.coe_toFinset.ge
+  rw [heq]
+  exact hfinite hc.toFinset
+
 /-- Zero form weights give zero global weight. -/
 @[simp]
 theorem weight_zero (L : Ω → ι → Module.Dual K V) (U : Submodule K V) :
@@ -94,5 +110,33 @@ theorem weight_inf_add_weight_sup {L : Ω → ι → Module.Dual K V}
     weight_eq_sum_of_support_subset L c A hc.coe_toFinset.ge
   simp only [hsum, ← Finset.sum_add_distrib]
   exact Finset.sum_le_sum fun v _ ↦ localWeight_inf_add_localWeight_sup (hL v) (c v) U W
+
+/-- Pulling forms back along an injective linear map gives the global weight of the image
+subspace. -/
+theorem weight_comp_of_injective (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
+    {W : Type*} [AddCommGroup W] [Module K W] {f : W →ₗ[K] V}
+    (hf : Function.Injective f) (U : Submodule K W) :
+    weight (fun v i ↦ (L v i).comp f) c U = weight L c (U.map f) := by
+  simp [weight_def, localWeight_comp_of_injective _ _ hf]
+
+/-- Restricting forms to a subspace `W` gives the global weight of the ambient image subspace. -/
+@[simp]
+theorem weight_comp_subtype (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
+    (W : Submodule K V) (U : Submodule K W) :
+    weight (fun v i ↦ (L v i).comp W.subtype) c U = weight L c (U.map W.subtype) :=
+  weight_comp_of_injective L c W.injective_subtype U
+
+/-- On a subspace `U ≤ W`, the global weight of `U.comap W.subtype` for the restricted forms on
+`W` equals the ambient global weight of `U`. -/
+theorem weight_comap_subtype (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
+    {U W : Submodule K V} (hUW : U ≤ W) :
+    weight (fun v i ↦ (L v i).comp W.subtype) c (U.comap W.subtype) = weight L c U := by
+  rw [weight_comp_subtype, Submodule.map_comap_subtype, inf_of_le_right hUW]
+
+/-- An infinite-dimensional subspace has global weight zero. -/
+theorem weight_eq_zero_of_not_finite (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
+    {U : Submodule K V} (hU : ¬Module.Finite K U) :
+    weight L c U = 0 := by
+  simp [weight_def, localWeight_eq_zero_of_not_finite _ _ hU]
 
 end TauCeti
