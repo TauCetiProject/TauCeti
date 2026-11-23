@@ -19,7 +19,7 @@ and a generator has order larger than `k`. For `k = 2` and fields with at least 
 is the input to the perfectness of the special linear groups in rank two.
 
 More generally, for `m < n`, a field with more than `n - m + 1` elements admits a nonzero element
-with `a ^ m ≠ a ^ n`; over a field of order `q ^ 2`, this applies to every `m < q`.
+with `a ^ m ≠ a ^ n`.
 
 ## Main results
 
@@ -27,8 +27,6 @@ with `a ^ m ≠ a ^ n`; over a field of order `q ^ 2`, this applies to every `m 
   nonzero element `a` with `a ^ k ≠ 1`.
 * `TauCeti.FiniteField.exists_ne_zero_pow_ne_pow`: for `m < n`, a field with more than
   `n - m + 1` elements has a nonzero element `a` with `a ^ m ≠ a ^ n`.
-* `TauCeti.FiniteField.exists_ne_zero_pow_ne_pow_of_natCard_eq_sq`: in a field of order `q ^ 2`,
-  for every `m < q`, some nonzero element `a` satisfies `a ^ m ≠ a ^ q`.
 -/
 
 public section
@@ -54,15 +52,5 @@ theorem exists_ne_zero_pow_ne_pow {m n : ℕ} (hmn : m < n) (hF : n - m + 1 < Na
   obtain ⟨a, ha0, ha⟩ := exists_ne_zero_pow_ne_one (Nat.sub_ne_zero_of_lt hmn) hF
   refine ⟨a, ha0, fun heq ↦ ha ?_⟩
   rw [pow_sub_of_lt a hmn, ← heq, ← div_eq_mul_inv, div_self (pow_ne_zero m ha0)]
-
-/-- In a field of order `q ^ 2`, for every `m < q`, some nonzero element has distinct `m`-th and
-`q`-th powers. -/
-theorem exists_ne_zero_pow_ne_pow_of_natCard_eq_sq {m q : ℕ} (hmq : m < q)
-    (hF : Nat.card F = q ^ 2) :
-    ∃ a : F, a ≠ 0 ∧ a ^ m ≠ a ^ q := by
-  have : Finite F := Nat.finite_of_card_ne_zero (hF ▸ pow_ne_zero 2 (by omega))
-  have h1q : 1 < q := (Nat.one_lt_pow_iff two_ne_zero).mp (hF ▸ Finite.one_lt_card)
-  have hqq : 2 * q ≤ q ^ 2 := by rw [sq]; exact Nat.mul_le_mul_right q h1q
-  exact exists_ne_zero_pow_ne_pow hmq (by omega)
 
 end TauCeti.FiniteField

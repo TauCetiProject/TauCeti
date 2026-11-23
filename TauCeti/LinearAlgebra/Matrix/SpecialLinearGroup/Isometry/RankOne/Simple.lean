@@ -215,18 +215,17 @@ element `d` with `d + σ d = 0`, the conjugates of `unipotentSubgroup K σ` gene
 rank-one special isometry group. -/
 theorem normalClosure_unipotentSubgroup_eq_top (hσ : Function.Involutive σ)
     (hadm : ∃ d : K, d ≠ 0 ∧ d + σ d = 0) :
-    Subgroup.normalClosure (unipotentSubgroup K σ :
-      Set ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) = ⊤ := by
-  have hB : borelSubgroup K σ ≤ Subgroup.normalClosure (unipotentSubgroup K σ :
-      Set ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) := by
+    Subgroup.normalClosure (unipotentSubgroup K σ : Set (UnitaryRankOne.Group K σ)) = ⊤ := by
+  have hB : borelSubgroup K σ ≤
+      Subgroup.normalClosure (unipotentSubgroup K σ : Set (UnitaryRankOne.Group K σ)) := by
     rw [borelSubgroup_eq_sup hσ]
     refine sup_le ?_ Subgroup.le_normalClosure
     rw [torus_eq_range_torusHom K σ hσ]
     rintro _ ⟨t, rfl⟩
     exact torusHom_mem_normalClosure hσ hadm t
   obtain ⟨d, hd0, hd⟩ := hadm
-  have hw : weyl K σ ∈ Subgroup.normalClosure (unipotentSubgroup K σ :
-      Set ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) := by
+  have hw : weyl K σ ∈
+      Subgroup.normalClosure (unipotentSubgroup K σ : Set (UnitaryRankOne.Group K σ)) := by
     have hwd := weyl_mul_torusHom_mem_normalClosure hσ (x := 0) (z := Units.mk0 d hd0)
       (by simpa using hd)
     have hd_mem := torusHom_mem_normalClosure hσ ⟨d, hd0, hd⟩ (Units.mk0 d hd0)
@@ -259,8 +258,7 @@ theorem normalCore_borelSubgroup_eq_center (hσ : Function.Involutive σ)
     have hcomm : g * u = u * g := (Subgroup.mem_center_iff.mp hg u).symm
     have hmul :
         ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 * d = 0 := by
-      have h22 := congrArg (fun m :
-          (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ ↦
+      have h22 := congrArg (fun m : UnitaryRankOne.Group K σ ↦
         ((m : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 2) hcomm
       simpa [u, Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, coe_unipotentHom,
         HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.toMatrix_apply,
@@ -272,8 +270,7 @@ theorem normalCore_borelSubgroup_eq_center (hσ : Function.Involutive σ)
 private theorem unipotentHom_unitaryMk_zero_mem_commutator (hσ : Function.Involutive σ)
     (htr : ∃ t : K, t + σ t = 1) {z₀ : K} (hz₀ : z₀ + σ z₀ = 0) :
     unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀)) ∈
-      commutator
-        ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) := by
+      commutator (UnitaryRankOne.Group K σ) := by
   obtain ⟨b, c, hbc⟩ := HeisenbergGroup.unitarySubgroup.exists_commutatorElement_eq_of_mem_zAxis
     hσ htr (HeisenbergGroup.unitaryMk σ hσ 0 z₀ (by simpa using hz₀)) (by simp)
   rw [← hbc, map_commutatorElement]
@@ -282,9 +279,7 @@ private theorem unipotentHom_unitaryMk_zero_mem_commutator (hσ : Function.Invol
 private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involutive σ)
     (htr : ∃ t : K, t + σ t = 1) (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) (x : K) :
     ∃ b : HeisenbergGroup.unitarySubgroup σ, (b : HeisenbergGroup K).x = x ∧
-      unipotentHom K σ b ∈
-        commutator
-          ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) := by
+      unipotentHom K σ b ∈ commutator (UnitaryRankOne.Group K σ) := by
   obtain ⟨a, ha0, ha⟩ := hunit
   have hσa : σ a ≠ 0 := (map_ne_zero σ).mpr ha0
   let c : K := a ^ 2 * (σ a)⁻¹ - 1
@@ -315,9 +310,7 @@ private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involuti
 private theorem unipotentSubgroup_le_commutator_of_exists_add_map_ne_zero
     (hσ : Function.Involutive σ) (htr0 : ∃ y : K, y + σ y ≠ 0)
     (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) :
-    unipotentSubgroup K σ ≤
-      commutator
-        ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) := by
+    unipotentSubgroup K σ ≤ commutator (UnitaryRankOne.Group K σ) := by
   obtain ⟨y, hy⟩ := htr0
   have htr : ∃ t : K, t + σ t = 1 := ⟨(y + σ y)⁻¹ * y, by
     have hσy : σ (y + σ y) = y + σ y := by rw [map_add, hσ y, add_comm]
@@ -330,9 +323,7 @@ private theorem unipotentSubgroup_le_commutator_of_exists_add_map_ne_zero
   have hb₀_x : (b₀ : HeisenbergGroup K).x = 0 := by simp [b₀, hb₁_x]
   have hb₀_z : (b₀ : HeisenbergGroup K).z + σ (b₀ : HeisenbergGroup K).z = 0 := by
     simpa [hb₀_x] using HeisenbergGroup.unitarySubgroup.z_add_map_z b₀
-  have hb₀_mem : unipotentHom K σ b₀ ∈
-      commutator
-        ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) := by
+  have hb₀_mem : unipotentHom K σ b₀ ∈ commutator (UnitaryRankOne.Group K σ) := by
     rw [← HeisenbergGroup.unitaryMk_eta hσ b₀]
     simp only [hb₀_x]
     exact unipotentHom_unitaryMk_zero_mem_commutator hσ htr hb₀_z
@@ -342,9 +333,7 @@ private theorem unipotentSubgroup_le_commutator_of_exists_add_map_ne_zero
 private theorem unipotentSubgroup_le_commutator_of_add_map_eq_zero
     (hσ : Function.Involutive σ) (htr0 : ∀ y : K, y + σ y = 0)
     (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) :
-    unipotentSubgroup K σ ≤
-      commutator
-        ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) := by
+    unipotentSubgroup K σ ≤ commutator (UnitaryRankOne.Group K σ) := by
   have h1 : (1 : K) + 1 = 0 := by simpa using htr0 1
   have hσ_id : ∀ y : K, σ y = y := fun y ↦ by
     have hy := htr0 y
@@ -382,9 +371,7 @@ private theorem unipotentSubgroup_le_commutator_of_add_map_eq_zero
 and `K` has a nonzero `a` with `a ^ 2 ≠ σ a`. -/
 theorem unipotentSubgroup_le_commutator (hσ : Function.Involutive σ)
     (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) :
-    unipotentSubgroup K σ ≤
-      commutator
-        ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) := by
+    unipotentSubgroup K σ ≤ commutator (UnitaryRankOne.Group K σ) := by
   by_cases htr0 : ∃ y : K, y + σ y ≠ 0
   · exact unipotentSubgroup_le_commutator_of_exists_add_map_ne_zero hσ htr0 hunit
   · push Not at htr0
@@ -396,8 +383,7 @@ is perfect. -/
 theorem commutator_eq_top (hσ : Function.Involutive σ)
     (hadm : ∃ d : K, d ≠ 0 ∧ d + σ d = 0)
     (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) :
-    commutator ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) =
-      ⊤ :=
+    commutator (UnitaryRankOne.Group K σ) = ⊤ :=
   top_le_iff.mp (normalClosure_unipotentSubgroup_eq_top hσ hadm ▸
     Subgroup.normalClosure_le_normal (unipotentSubgroup_le_commutator hσ hunit))
 
@@ -407,13 +393,8 @@ group. -/
 theorem isSimpleGroup_quotient_center (hσ : Function.Involutive σ)
     (hadm : ∃ d : K, d ≠ 0 ∧ d + σ d = 0)
     (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) :
-    IsSimpleGroup
-      ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ ⧸
-        Subgroup.center
-          ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) := by
-  have : Group.IsPerfect
-      ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) :=
-    ⟨commutator_eq_top hσ hadm hunit⟩
+    IsSimpleGroup (UnitaryRankOne.Group K σ ⧸ Subgroup.center (UnitaryRankOne.Group K σ)) := by
+  have : Group.IsPerfect (UnitaryRankOne.Group K σ) := ⟨commutator_eq_top hσ hadm hunit⟩
   have hS : (titsSystem K σ hσ).simple.Nonempty := by
     rw [titsSystem_simple]
     exact Set.singleton_nonempty _
@@ -432,11 +413,8 @@ hypotheses of `commutator_eq_top`. -/
 theorem isSimpleGroup_derivedCentralQuotient (hσ : Function.Involutive σ)
     (hadm : ∃ d : K, d ≠ 0 ∧ d + σ d = 0)
     (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) :
-    IsSimpleGroup (DerivedCentralQuotient
-      ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) := by
-  have : Group.IsPerfect
-      ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) :=
-    ⟨commutator_eq_top hσ hadm hunit⟩
+    IsSimpleGroup (DerivedCentralQuotient (UnitaryRankOne.Group K σ)) := by
+  have : Group.IsPerfect (UnitaryRankOne.Group K σ) := ⟨commutator_eq_top hσ hadm hunit⟩
   have := isSimpleGroup_quotient_center hσ hadm hunit
   exact DerivedCentralQuotient.mulEquivQuotientCenter.isSimpleGroup
 
@@ -451,15 +429,15 @@ private theorem unitaryHypotheses_of_natCard_eq_sq {q : ℕ} (hq : 3 ≤ q)
       simpa only [pow_zero, one_mul, hσ] using
         TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero hK 0,
     by
-      simpa only [hσ] using TauCeti.FiniteField.exists_ne_zero_pow_ne_pow_of_natCard_eq_sq
-        (F := K) (Nat.lt_of_succ_le hq) hK⟩
+      have hq2 : 2 * q ≤ q ^ 2 := by rw [sq]; exact Nat.mul_le_mul_right q (by omega)
+      simpa only [hσ] using TauCeti.FiniteField.exists_ne_zero_pow_ne_pow
+        (F := K) (m := 2) (n := q) (by omega) (by rw [hK]; omega)⟩
 
 /-- **Over a field of order `q ^ 2` with `3 ≤ q` and `σ a = a ^ q`, the three-dimensional special
 unitary group `SU₃(q)` is perfect.** -/
 theorem commutator_eq_top_of_natCard_eq_sq {q : ℕ} (hq : 3 ≤ q)
     (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
-    commutator ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) =
-      ⊤ := by
+    commutator (UnitaryRankOne.Group K σ) = ⊤ := by
   obtain ⟨hinv, hadm, hunit⟩ := unitaryHypotheses_of_natCard_eq_sq hq hK hσ
   exact commutator_eq_top hinv hadm hunit
 
@@ -467,10 +445,7 @@ theorem commutator_eq_top_of_natCard_eq_sq {q : ℕ} (hq : 3 ≤ q)
 group `PSU₃(q)` is simple.** -/
 theorem isSimpleGroup_quotient_center_of_natCard_eq_sq {q : ℕ} (hq : 3 ≤ q)
     (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
-    IsSimpleGroup
-      ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ ⧸
-        Subgroup.center
-          ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) := by
+    IsSimpleGroup (UnitaryRankOne.Group K σ ⧸ Subgroup.center (UnitaryRankOne.Group K σ)) := by
   obtain ⟨hinv, hadm, hunit⟩ := unitaryHypotheses_of_natCard_eq_sq hq hK hσ
   exact isSimpleGroup_quotient_center hinv hadm hunit
 

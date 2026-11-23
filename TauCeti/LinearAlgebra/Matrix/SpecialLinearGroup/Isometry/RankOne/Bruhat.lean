@@ -92,8 +92,7 @@ variable (R σ) in
 /-- The upper-unitriangular root-group homomorphism from `HeisenbergGroup.unitarySubgroup σ` into
 the special isometry group of the three-dimensional signed reversal form. -/
 def unipotentHom :
-    HeisenbergGroup.unitarySubgroup σ →*
-      (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ :=
+    HeisenbergGroup.unitarySubgroup σ →* UnitaryRankOne.Group R σ :=
   (HeisenbergGroup.toSpecialLinear.comp (HeisenbergGroup.unitarySubgroup σ).subtype).codRestrict
     ((typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ) fun a ↦ by
       have ha :=
@@ -113,22 +112,9 @@ variable (R σ) in
 theorem unipotentHom_injective : Function.Injective (unipotentHom R σ) :=
   fun _ _ h ↦ Subtype.ext (HeisenbergGroup.toSpecialLinear_injective (congrArg Subtype.val h))
 
-/-- Two root elements have the same image under `unipotentHom` if and only if they are equal. -/
-@[simp]
-theorem unipotentHom_inj {a b : HeisenbergGroup.unitarySubgroup σ} :
-    unipotentHom R σ a = unipotentHom R σ b ↔ a = b :=
-  (unipotentHom_injective R σ).eq_iff
-
-/-- A root element maps to `1` under `unipotentHom` if and only if it is `1`. -/
-@[simp]
-theorem unipotentHom_eq_one_iff {a : HeisenbergGroup.unitarySubgroup σ} :
-    unipotentHom R σ a = 1 ↔ a = 1 :=
-  map_eq_one_iff _ (unipotentHom_injective R σ)
-
 variable (R σ) in
 /-- The upper-unitriangular unipotent subgroup of the rank-one special isometry group. -/
-def unipotentSubgroup :
-    Subgroup ((typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ) :=
+def unipotentSubgroup : Subgroup (UnitaryRankOne.Group R σ) :=
   (unipotentHom R σ).range
 
 variable (R σ) in
@@ -143,8 +129,7 @@ theorem unipotentHom_mem_unipotentSubgroup (a : HeisenbergGroup.unitarySubgroup 
 
 /-- An element of the rank-one special isometry group lies in `unipotentSubgroup` if and only if
 its matrix is upper unitriangular. -/
-theorem mem_unipotentSubgroup_iff
-    {g : (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ} :
+theorem mem_unipotentSubgroup_iff {g : UnitaryRankOne.Group R σ} :
     g ∈ unipotentSubgroup R σ ↔
       ((g : Matrix.SpecialLinearGroup (Fin 3) R) :
         Matrix (Fin 3) (Fin 3) R).IsUpperUnitriangular := by
@@ -168,8 +153,7 @@ instance : Group.IsNilpotent (unipotentSubgroup R σ) :=
 /-- Conjugating an upper-unitriangular root element by `weyl` gives the lower-unitriangular matrix
 with off-diagonal coordinates `-σ x`, `z`, and `-x`. -/
 theorem coe_weyl_mul_unipotentHom_mul_weyl (a : HeisenbergGroup.unitarySubgroup σ) :
-    (((weyl R σ * unipotentHom R σ a * weyl R σ :
-        (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ) :
+    (((weyl R σ * unipotentHom R σ a * weyl R σ : UnitaryRankOne.Group R σ) :
         Matrix.SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
       !![1, 0, 0; -σ (a : HeisenbergGroup R).x, 1, 0;
         (a : HeisenbergGroup R).z, -(a : HeisenbergGroup R).x, 1] := by
@@ -177,18 +161,6 @@ theorem coe_weyl_mul_unipotentHom_mul_weyl (a : HeisenbergGroup.unitarySubgroup 
   fin_cases i <;> fin_cases j <;>
     simp [coe_typeAGraphConjugator_two, HeisenbergGroup.toMatrix_apply, Matrix.mul_apply,
       Fin.sum_univ_three]
-
-/-- Two units have the same image under `torusHom` if and only if they are equal. -/
-@[simp]
-theorem torusHom_inj (hσ : Function.Involutive σ) {s t : Rˣ} :
-    torusHom R σ hσ s = torusHom R σ hσ t ↔ s = t :=
-  (torusHom_injective R σ hσ).eq_iff
-
-/-- A unit maps to `1` under `torusHom` if and only if it is `1`. -/
-@[simp]
-theorem torusHom_eq_one_iff (hσ : Function.Involutive σ) {t : Rˣ} :
-    torusHom R σ hσ t = 1 ↔ t = 1 :=
-  map_eq_one_iff _ (torusHom_injective R σ hσ)
 
 /-- The diagonal torus and the unipotent subgroup intersect trivially. -/
 theorem torus_inf_unipotentSubgroup_eq_bot :
@@ -254,8 +226,7 @@ variable {K : Type*} [Field K] {σ : K →+* K}
 variable (K σ) in
 /-- The Borel subgroup of the rank-one special isometry group: the stabilizer of the distinguished
 isotropic point `infinity K σ = [1 : 0 : 0]`. -/
-def borelSubgroup :
-    Subgroup ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) :=
+def borelSubgroup : Subgroup (UnitaryRankOne.Group K σ) :=
   MulAction.stabilizer _ (infinity K σ)
 
 variable (K σ) in
@@ -269,8 +240,7 @@ private theorem vec_one_zero_zero_eq_single :
 
 /-- An element of the rank-one special isometry group lies in the Borel subgroup if and only if
 its `(2, 0)` matrix entry vanishes. -/
-theorem mem_borelSubgroup_iff
-    {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ} :
+theorem mem_borelSubgroup_iff {g : UnitaryRankOne.Group K σ} :
     g ∈ borelSubgroup K σ ↔
       ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 = 0 := by
   have h2 : ((g : Matrix.SpecialLinearGroup (Fin 3) K) • (![1, 0, 0] : Fin 3 → K)) 2 =
@@ -282,8 +252,7 @@ theorem mem_borelSubgroup_iff
 
 /-- Every element of the Borel subgroup also has vanishing `(1, 0)` entry, by isotropy of the
 first column. -/
-theorem apply_one_zero_eq_zero_of_mem_borelSubgroup
-    {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ}
+theorem apply_one_zero_eq_zero_of_mem_borelSubgroup {g : UnitaryRankOne.Group K σ}
     (hg : g ∈ borelSubgroup K σ) :
     ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 0 = 0 := by
   have hg20 := mem_borelSubgroup_iff.mp hg
@@ -295,8 +264,7 @@ theorem apply_one_zero_eq_zero_of_mem_borelSubgroup
   exact (mul_eq_zero.mp hmul).elim (map_eq_zero σ).mp id
 
 /-- Every element of the Borel subgroup has nonzero `(0, 0)` entry. -/
-theorem apply_zero_zero_ne_zero_of_mem_borelSubgroup
-    {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ}
+theorem apply_zero_zero_ne_zero_of_mem_borelSubgroup {g : UnitaryRankOne.Group K σ}
     (hg : g ∈ borelSubgroup K σ) :
     ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 0 0 ≠ 0 := by
   intro hg00
@@ -364,9 +332,8 @@ theorem weyl_mul_unipotentHom_mul_weyl_mem_borelSubgroup_iff
 /-- For involutive `σ`, every element of the Borel subgroup factors as a diagonal torus element
 multiplied by a unipotent element. -/
 theorem exists_torusHom_mul_unipotent_of_mem_borelSubgroup (hσ : Function.Involutive σ)
-    {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ}
-    (hg : g ∈ borelSubgroup K σ) :
-    ∃ (t : Kˣ) (u : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ),
+    {g : UnitaryRankOne.Group K σ} (hg : g ∈ borelSubgroup K σ) :
+    ∃ (t : Kˣ) (u : UnitaryRankOne.Group K σ),
       u ∈ unipotentSubgroup K σ ∧ torusHom K σ hσ t * u = g := by
   let t : Kˣ := Units.mk0 _ (apply_zero_zero_ne_zero_of_mem_borelSubgroup hg)
   let u := (torusHom K σ hσ t)⁻¹ * g
@@ -424,8 +391,7 @@ theorem unipotentHom_mul_weyl_smul_infinity (hσ : Function.Involutive σ)
   apply Subtype.ext
   rw [SubMulAction.val_smul, coe_infinity, coe_point, Subgroup.smul_def, Projectivization.smul_mk]
   have hvec : ((unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
-        (by simpa [hσ c.val.2] using c.property)) * weyl K σ :
-        (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) :
+        (by simpa [hσ c.val.2] using c.property)) * weyl K σ : UnitaryRankOne.Group K σ) :
       Matrix.SpecialLinearGroup (Fin 3) K) • ![1, 0, 0] = ![c.val.1, c.val.2, 1] := by
     rw [Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec, vec_one_zero_zero_eq_single,
       Matrix.mulVec_single_one]
@@ -447,8 +413,7 @@ theorem disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup :
 /-- **Sharp rank-one Bruhat decomposition**: every element outside the Borel subgroup factors as
 `u * weyl * b` with `u` unipotent and `b` in the Borel subgroup. -/
 theorem exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup (hσ : Function.Involutive σ)
-    {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ}
-    (hg : g ∉ borelSubgroup K σ) :
+    {g : UnitaryRankOne.Group K σ} (hg : g ∉ borelSubgroup K σ) :
     ∃ u ∈ unipotentSubgroup K σ, ∃ b ∈ borelSubgroup K σ, u * weyl K σ * b = g := by
   have hg' : g • infinity K σ ≠ infinity K σ := by
     simpa [borelSubgroup_def, MulAction.mem_stabilizer_iff] using hg
@@ -469,12 +434,9 @@ theorem exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup (hσ : Funct
 /-- **Unique sharp rank-one Bruhat decomposition**: every element outside the Borel subgroup
 factors uniquely as `u * weyl * b` with `u ∈ unipotentSubgroup` and `b ∈ borelSubgroup`. -/
 theorem existsUnique_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup
-    (hσ : Function.Involutive σ)
-    {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ}
-    (hg : g ∉ borelSubgroup K σ) :
+    (hσ : Function.Involutive σ) {g : UnitaryRankOne.Group K σ} (hg : g ∉ borelSubgroup K σ) :
     ∃! p : unipotentSubgroup K σ × borelSubgroup K σ,
-      (p.1 : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) *
-        weyl K σ * p.2 = g :=
+      (p.1 : UnitaryRankOne.Group K σ) * weyl K σ * p.2 = g :=
   ((unipotentSubgroup K σ).mul_mul_injective_of_disjoint (borelSubgroup K σ)
     disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup).existsUnique_iff_exists.mpr <| by
       obtain ⟨u, hu, b, hb, hub⟩ :=
@@ -483,7 +445,7 @@ theorem existsUnique_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup
 
 /-- **The rank-one Bruhat decomposition** `G = B ∪ B w B` of the three-dimensional unitary group. -/
 theorem mem_borelSubgroup_or_mem_doubleCoset (hσ : Function.Involutive σ)
-    (g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) :
+    (g : UnitaryRankOne.Group K σ) :
     g ∈ borelSubgroup K σ ∨
       g ∈ DoubleCoset.doubleCoset (weyl K σ) (borelSubgroup K σ) (borelSubgroup K σ) := by
   by_cases hg : g ∈ borelSubgroup K σ
@@ -509,8 +471,7 @@ theorem exists_mem_unipotentSubgroup_weyl_conj_notMem_borelSubgroup (hσ : Funct
 variable (K σ) in
 /-- **The rank-one Tits system** `(B, ⟨w⟩)` on the three-dimensional unitary group over any field
 `K` with an involutive endomorphism `σ`. -/
-def titsSystem (hσ : Function.Involutive σ) :
-    TitsSystem ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) :=
+def titsSystem (hσ : Function.Involutive σ) : TitsSystem (UnitaryRankOne.Group K σ) :=
   TitsSystem.ofRankOneOfSqEqOne (borelSubgroup K σ) (weyl K σ) (by rw [sq, weyl_mul_self])
     (by
       obtain ⟨u, hu, hwu⟩ := exists_mem_unipotentSubgroup_weyl_conj_notMem_borelSubgroup hσ
