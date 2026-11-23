@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Intersection
+public import TauCeti.RingTheory.Intersection.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!
@@ -16,32 +16,29 @@ Fix a two-dimensional regular local ring `(R, 𝔪)` and two of its elements `f`
 curves `f = 0` and `g = 0` meet properly at the closed point, that is, where `(f, g)` has radical
 `𝔪`, that finite length is the local intersection multiplicity of the two curves there. The general
 facts about that length, none of which needs a regular surface, are in
-`TauCeti.RingTheory.Intersection`. What a regular surface adds is a condition on the first equation
-under which the curve `R ⧸ (f)` is a curve of dimension one, so that the order of vanishing of the
-second equation on it is an order on a domain. A nonzero element `f` of `𝔪` whose principal ideal is
-prime is such a condition: the curve `R ⧸ (f)` is then a one-dimensional local domain, by the
-dimension drop along the non-zero-divisor `f`, and a second equation `g` through the closed point,
-outside `(f)`, generates with `f` an ideal whose radical is `𝔪`, the proper-intersection condition
-of that general file.
+`TauCeti.RingTheory.Intersection.Basic`. What a regular surface adds is a condition on the first
+equation under which the curve `R ⧸ (f)` is a curve of dimension one, so that the order of
+vanishing of the second equation on it is an order on a domain. A nonzero element `f` of `𝔪` whose
+principal ideal is prime is such a condition: the curve `R ⧸ (f)` is then a one-dimensional local
+domain, by the dimension drop along the non-zero-divisor `f`, and a second equation `g` through
+the closed point, outside `(f)`, generates with `f` an ideal whose radical is `𝔪`, the
+proper-intersection condition of that general file.
 
 The results below are the parameter level of a pair of levels, the prime level being the one of
-`TauCeti.RingTheory.Intersection`. A parameter, `f ∈ 𝔪 \ 𝔪²`, is a non-zero-divisor of the domain
-`R`, and its principal ideal is prime by
+`TauCeti.RingTheory.Intersection.Basic`. A parameter, `f ∈ 𝔪 \ 𝔪²`, is a non-zero-divisor of
+the domain `R`, and its principal ideal is prime by
 `TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`, because
 the curve it cuts out is a regular local ring, hence a domain, so the statements of that prime
 level apply to it. The prime level is the more general one, and it covers what the parameter level
 does not: the equation of a singular irreducible curve, the cusp `x² - y³` of `k[[x, y]]` for
 instance, lies in `𝔪²` and so is not a parameter, while its principal ideal is prime.
 
-A reducible first equation is outside both levels, and the statements of
-`TauCeti.RingTheory.Intersection` on that case are the ones that apply. In `k[[x, y]]` the union of
-the two axes, cut out by the reducible equation `f = x * y`, lies in `𝔪²` and still meets the curve
-`g = x + y` properly, with local intersection multiplicity two, and that is a case of the general
-statements, not of the ones below. What these theorems do not establish is additivity over the
-components of a reducible first curve: `R ⧸ (f)` is then not a domain, and its length, infinite in
-`k[[x, y]] ⧸ (x * y)`, is not an order of vanishing. That number is a sum of orders of vanishing
-over the components — two, for the two axes and `g = x + y` — but obtaining it that way needs a
-theory of the associated primes of a module of infinite length, which this file does not have.
+A reducible first equation is outside both levels. For proper intersections, the
+Cohen–Macaulay argument of `TauCeti.RingTheory.Intersection.Proper` proves finite additivity
+with multiplicities even when the fixed first equation is reducible or nonreduced. For example,
+in `k[[x, y]]` the union of the axes `f = x * y` meets `g = x + y` properly, with local
+intersection multiplicity two. The unrestricted parameter statement below also allows
+intersections sharing a component, whose lengths may be infinite.
 
 This file develops these local statements, which are the local input for the intersection numbers
 `aᵢⱼ` and the component multiplicities of the special fibre of a regular model of a curve, and
@@ -54,7 +51,7 @@ and a regular local ring is what they require. For `n = 1` the local ring of
 `x` and `y` are a parameter and a second equation outside it, so the length computed here is the
 thickness of that node. For `n > 1` the model is singular, neither branch ideal `(x)` nor `(y)` is
 prime in it, and the theorems of this file do not apply there; the thickness of such a node is a
-separate application of the general length results of `TauCeti.RingTheory.Intersection`.
+separate application of the general length results of `TauCeti.RingTheory.Intersection.Basic`.
 
 ## Main results
 

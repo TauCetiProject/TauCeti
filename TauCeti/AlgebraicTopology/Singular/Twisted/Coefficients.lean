@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
@@ -24,7 +25,11 @@ colimits. Applying the homology sequence to its image gives
 `CategoryTheory.ShortComplex.ShortExact.twistedHomologyδ`, the coefficient connecting morphism
 `Hₙ(X; L₃) ⟶ Hₘ(X; L₁)` for `m + 1 = n`. The three exactness statements and naturality use the
 existing maps `TauCeti.LocalCoefficientSystem.twistedHomologyCoefficientMap`. In degree zero,
-the map `H₀(X; L₂) ⟶ H₀(X; L₃)` is an epimorphism.
+the map `H₀(X; L₂) ⟶ H₀(X; L₃)` is an epimorphism. The coefficient maps commute with negation,
+on absolute and on relative twisted homology
+(`TauCeti.LocalCoefficientSystem.twistedHomologyCoefficientMap_neg`,
+`TopPair.twistedHomologyCoefficientMap_neg`), and on absolute twisted homology also with
+subtraction (`TauCeti.LocalCoefficientSystem.twistedHomologyCoefficientMap_sub`).
 
 These are sequences varying the coefficients on one space. They supply the geometric connecting
 maps needed to compare local-coefficient homology with algebraic homology theories, in particular
@@ -75,7 +80,108 @@ lemma twistedChainComplexFunctor_map {L K : LocalCoefficientSystem.{u, v, max v 
     (twistedChainComplexFunctor R X).map f = twistedChainComplexCoefficientMap f :=
   (rfl)
 
+/-- **Twisted chains are additive in the coefficients**: the coefficient map of a sum of
+morphisms of local systems is the sum of their coefficient maps. -/
+instance twistedChainComplexFunctor_additive : (twistedChainComplexFunctor R X).Additive where
+  map_add {L _ _ _} := HomologicalComplex.hom_ext _ _ fun _ ↦ twistedChainComplex_hom_ext L
+    fun σ ↦ by
+      simp only [HomologicalComplex.add_f_apply, Preadditive.comp_add,
+        ιTwistedChainComplex_twistedChainComplexCoefficientMap_f, NatTrans.app_add,
+        Preadditive.add_comp]
+
 variable {R X}
+
+/-- The map on twisted homology induced by the negative of a morphism of local systems is the
+negative of the induced map. -/
+@[simp]
+lemma twistedHomologyCoefficientMap_neg {L K : LocalCoefficientSystem.{u, v, max v w} R X}
+    (η : L ⟶ K) (k : ℕ) :
+    twistedHomologyCoefficientMap (-η) k = -twistedHomologyCoefficientMap η k :=
+  (congrArg (HomologicalComplex.homologyMap · k)
+    ((twistedChainComplexFunctor.{u, v, w} R X).map_neg (f := η))).trans
+      (HomologicalComplex.homologyMap_neg _ k)
+
+/-- The map on twisted homology induced by a sum of morphisms of local systems is the sum of the
+induced maps. -/
+@[simp]
+lemma twistedHomologyCoefficientMap_add {L K : LocalCoefficientSystem.{u, v, max v w} R X}
+    (η θ : L ⟶ K) (k : ℕ) :
+    twistedHomologyCoefficientMap (η + θ) k =
+      twistedHomologyCoefficientMap η k + twistedHomologyCoefficientMap θ k :=
+  (congrArg (HomologicalComplex.homologyMap · k)
+    ((twistedChainComplexFunctor.{u, v, w} R X).map_add (f := η) (g := θ))).trans
+      (HomologicalComplex.homologyMap_add _ _ k)
+
+/-- The map on twisted homology induced by a difference of morphisms of local systems is the
+difference of the induced maps. -/
+@[simp]
+lemma twistedHomologyCoefficientMap_sub {L K : LocalCoefficientSystem.{u, v, max v w} R X}
+    (η θ : L ⟶ K) (k : ℕ) :
+    twistedHomologyCoefficientMap (η - θ) k =
+      twistedHomologyCoefficientMap η k - twistedHomologyCoefficientMap θ k :=
+  (congrArg (HomologicalComplex.homologyMap · k)
+    ((twistedChainComplexFunctor.{u, v, w} R X).map_sub (f := η) (g := θ))).trans
+      (HomologicalComplex.homologyMap_sub _ _ k)
+
+/-- The twisted homology maps of an isomorphism of local coefficient systems and of its inverse
+compose to the identity. -/
+@[reassoc (attr := simp), elementwise]
+lemma twistedHomologyCoefficientMap_hom_inv_id
+    {L K : LocalCoefficientSystem.{u, v, max v w} R X} (e : L ≅ K) (k : ℕ) :
+    twistedHomologyCoefficientMap e.hom k ≫ twistedHomologyCoefficientMap e.inv k = 𝟙 _ := by
+  rw [← twistedHomologyCoefficientMap_comp, e.hom_inv_id, twistedHomologyCoefficientMap_id]
+
+/-- The twisted homology maps of the inverse of an isomorphism of local coefficient systems and
+of the isomorphism compose to the identity. -/
+@[reassoc (attr := simp), elementwise]
+lemma twistedHomologyCoefficientMap_inv_hom_id
+    {L K : LocalCoefficientSystem.{u, v, max v w} R X} (e : L ≅ K) (k : ℕ) :
+    twistedHomologyCoefficientMap e.inv k ≫ twistedHomologyCoefficientMap e.hom k = 𝟙 _ := by
+  rw [← twistedHomologyCoefficientMap_comp, e.inv_hom_id, twistedHomologyCoefficientMap_id]
+
+variable (X) in
+/-- The inverse comparison with singular homology is natural in the coefficient module. -/
+@[reassoc]
+lemma twistedHomologyConstantIso_inv_naturality {M N : ModuleCat.{max v w} R} (φ : M ⟶ N) (k : ℕ) :
+    (twistedHomologyConstantIso X M k).inv ≫
+        twistedHomologyCoefficientMap ((constantFunctor X).map φ) k =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{max v w} R) k).map φ).app X ≫
+        (twistedHomologyConstantIso X N k).inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv, twistedHomologyConstantIso_hom_naturality]
+
+end TauCeti.LocalCoefficientSystem
+
+namespace TopPair
+
+open TauCeti
+
+variable {R : Type u} [Ring R] {P : TopPair.{v}}
+
+/-- The map on relative twisted chains induced by the negative of a morphism of local systems is
+the negative of the induced map. -/
+lemma twistedChainComplexCoefficientMap_neg
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (η : L ⟶ K) :
+    P.twistedChainComplexCoefficientMap (-η) = -P.twistedChainComplexCoefficientMap η := by
+  rw [← cancel_epi (P.twistedChainComplexπ L),
+    twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, Preadditive.comp_neg,
+    twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, ← Preadditive.neg_comp]
+  exact congrArg (· ≫ _)
+    ((LocalCoefficientSystem.twistedChainComplexFunctor.{u, v, w} R P.fst).map_neg (f := η))
+
+/-- The map on relative twisted homology induced by the negative of a morphism of local systems is
+the negative of the induced map. -/
+@[simp]
+lemma twistedHomologyCoefficientMap_neg
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (η : L ⟶ K) (k : ℕ) :
+    P.twistedHomologyCoefficientMap (-η) k = -P.twistedHomologyCoefficientMap η k :=
+  (congrArg (HomologicalComplex.homologyMap · k)
+    (twistedChainComplexCoefficientMap_neg η)).trans (HomologicalComplex.homologyMap_neg _ k)
+
+end TopPair
+
+namespace TauCeti.LocalCoefficientSystem
+
+variable {R : Type u} [Ring R] {X : TopCat.{v}}
 
 -- Evaluation in a chain degree is restriction to the initial vertices of singular simplices,
 -- followed by the coproduct functor. The discrete-diagram comparison accounts for the two

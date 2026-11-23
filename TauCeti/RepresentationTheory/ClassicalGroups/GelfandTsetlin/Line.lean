@@ -76,8 +76,8 @@ noncomputable def gtLine : ∀ {n : ℕ} (l : DominantWeight n),
     {P : GTPattern n // P.topWeight = l} →
       Submodule ℂ (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule
   | 0, _, _ => ⊤
-  | n + 1, l, P => (gtLine P.1.truncate.topWeight ⟨P.1.truncate, rfl⟩).map
-      (Classical.epsilon fun f : IntertwiningMap (rationalWeylRep ℂ n P.1.truncate.topWeight)
+  | n + 1, l, P => (gtLine P.val.truncate.topWeight ⟨P.val.truncate, rfl⟩).map
+      (Classical.epsilon fun f : IntertwiningMap (rationalWeylRep ℂ n P.val.truncate.topWeight)
         ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n)) ↦ f ≠ 0).toLinearMap
 
 /-- For `GL 0 ℂ` the Gelfand–Tsetlin line of the unique pattern is the whole Weyl module. -/
@@ -128,12 +128,12 @@ private theorem map_eq_map_of_ne_zero {l : DominantWeight (n + 1)} {m : Dominant
 `n + 1` rows is the image of the line of its truncation under *every* nonzero intertwiner from the
 Weyl module of the second row of `P` to the restriction of `V_λ` to `GL n ℂ`. -/
 theorem gtLine_succ (l : DominantWeight (n + 1)) (P : {P : GTPattern (n + 1) // P.topWeight = l})
-    (f : IntertwiningMap (rationalWeylRep ℂ n P.1.truncate.topWeight)
+    (f : IntertwiningMap (rationalWeylRep ℂ n P.val.truncate.topWeight)
       ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n))) (hf : f ≠ 0) :
-    gtLine l P = (gtLine P.1.truncate.topWeight ⟨P.1.truncate, rfl⟩).map f.toLinearMap := by
-  have hm : P.1.truncate.topWeight ∈ interlacingWeights l := by
-    have h := P.1.topWeight_truncate_mem_interlacingWeights
-    rwa [P.2] at h
+    gtLine l P = (gtLine P.val.truncate.topWeight ⟨P.val.truncate, rfl⟩).map f.toLinearMap := by
+  have hm : P.val.truncate.topWeight ∈ interlacingWeights l := by
+    have h := P.val.topWeight_truncate_mem_interlacingWeights
+    rwa [P.property] at h
   rw [gtLine]
   exact map_eq_map_of_ne_zero hm
     (Classical.epsilon_spec (exists_intertwiningMap_ne_zero_of_mem_interlacingWeights hm)) hf _
@@ -147,13 +147,13 @@ theorem finrank_gtLine : ∀ {n : ℕ} (l : DominantWeight n)
     exact (finrank_rationalWeylFDRep ℂ 0 l).trans
       ((GTPattern.card_topWeight_eq_weylDimension l).symm.trans Nat.card_unique)
   | n + 1, l, P => by
-    have hm : P.1.truncate.topWeight ∈ interlacingWeights l := by
-      have h := P.1.topWeight_truncate_mem_interlacingWeights
-      rwa [P.2] at h
+    have hm : P.val.truncate.topWeight ∈ interlacingWeights l := by
+      have h := P.val.topWeight_truncate_mem_interlacingWeights
+      rwa [P.property] at h
     obtain ⟨f, hf⟩ := exists_intertwiningMap_ne_zero_of_mem_interlacingWeights hm
     have hinj : Function.Injective f :=
       (IsIrreducible.injective_or_eq_zero
-        (V := ↥(weylModuleOfShape ℂ n P.1.truncate.topWeight.detShiftShape).toSubmodule)
+        (V := ↥(weylModuleOfShape ℂ n P.val.truncate.topWeight.detShiftShape).toSubmodule)
         (W := ↥(weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule) f).resolve_right hf
     rw [gtLine_succ l P f hf, ← (Submodule.equivMapOfInjective _ hinj _).finrank_eq]
     exact finrank_gtLine _ _
@@ -196,16 +196,16 @@ theorem isInternal_gtLine : ∀ {n : ℕ} (l : DominantWeight n), DirectSum.IsIn
       refine hv (DirectSum.of_injective (β := fun m : interlacingWeights l ↦
         ↥(weylModuleOfShape ℂ n (m : DominantWeight n).detShiftShape).toSubmodule) m
         (e.symm.injective ?_))
-      simpa [ι, DirectSum.lof_eq_of] using congrArg (fun f ↦ f v) h
+      simpa [ι, DirectSum.lof_eq_of, -EmbeddingLike.map_eq_zero_iff] using congrArg (fun f ↦ f v) h
     have hsigma := e.symm.toLinearEquiv.isInternal_sigma_map
       (B := fun m Q ↦ gtLine (m : DominantWeight n) Q) fun m ↦ isInternal_gtLine _
     have hline : gtLine l = (fun x ↦ (gtLine (x.1 : DominantWeight n) x.2).map
         (e.symm.toLinearEquiv.toLinearMap ∘ₗ DirectSum.lof ℂ _ _ x.1)) ∘
           GTPattern.truncateTopWeightSigmaEquiv l :=
       funext fun P ↦ by
-        have hm : P.1.truncate.topWeight ∈ interlacingWeights l := by
-          have h := P.1.topWeight_truncate_mem_interlacingWeights
-          rwa [P.2] at h
+        have hm : P.val.truncate.topWeight ∈ interlacingWeights l := by
+          have h := P.val.topWeight_truncate_mem_interlacingWeights
+          rwa [P.property] at h
         rw [Function.comp_apply, GTPattern.truncateTopWeightSigmaEquiv_apply l P hm]
         exact gtLine_succ l P (ι ⟨_, hm⟩) (hι _)
     rw [hline]

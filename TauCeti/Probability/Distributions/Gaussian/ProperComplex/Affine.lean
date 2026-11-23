@@ -17,7 +17,9 @@ and positive semidefinite covariance `C` to the proper complex Gaussian with mea
 `L *ᵥ m + c` and covariance `L * C * Lᴴ`. Rectangular maps allow singular images
 and coordinate restrictions. The real and imaginary parts of a coordinate have a planar
 Gaussian law with spherical covariance equal to half the complex variance. Multiplication
-by a unit complex scalar preserves a centered proper complex Gaussian law.
+by a unit complex scalar preserves a centered proper complex Gaussian law. Complex conjugation
+conjugates the mean and transposes the covariance; in particular it preserves the standard
+scalar law.
 
 The affine identity follows by realification from
 `TauCeti.Probability.map_affine_multivariateGaussian`. The planar marginal uses
@@ -130,6 +132,59 @@ theorem properComplexGaussianMeasure_centered_rotation (C : Matrix ι ι ℂ)
     simpa only [Matrix.smul_mulVec, Matrix.one_mulVec, Matrix.mulVec_zero, add_zero] using h
   · simp [properComplexGaussianMeasure_of_not_posSemidef _ hC,
       Measure.map_dirac' (by fun_prop : Measurable (fun z : ι → ℂ ↦ u • z))]
+
+/-- Complex conjugation sends a proper complex Gaussian to the proper complex Gaussian with
+conjugated mean and transposed covariance. For Hermitian `C`, the transpose is the entrywise
+conjugate; invalid covariance parameters give the conjugated Dirac law. -/
+@[simp]
+theorem map_star_properComplexGaussianMeasure (m : ι → ℂ) (C : Matrix ι ι ℂ) :
+    (properComplexGaussianMeasure m C).map star = properComplexGaussianMeasure (star m) Cᵀ := by
+  by_cases hC : C.PosSemidef
+  · let L : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ :=
+      Matrix.diagonal (Sum.elim (fun _ ↦ 1) (fun _ ↦ -1))
+    have hT : Cᵀ = C.map star := by
+      ext i j
+      rw [Matrix.transpose_apply, Matrix.map_apply]
+      exact (hC.isHermitian.apply j i).symm
+    have hcov : L * complexGaussianRealCovariance C * Lᵀ = complexGaussianRealCovariance Cᵀ := by
+      rw [hT]
+      ext a b
+      cases a <;> cases b <;> simp [L, Matrix.diagonal_mul, Matrix.mul_diagonal, neg_div]
+    have hreflect (x : EuclideanSpace ℝ (ι ⊕ ι)) :
+        star ((complexToRealEuclidean ι).symm x) =
+          (complexToRealEuclidean ι).symm (L.toEuclideanLin x) := by
+      funext i
+      apply Complex.ext <;> simp [L, Matrix.toEuclideanLin, Matrix.mulVec_diagonal,
+        complexToRealEuclidean_symm_apply]
+    have hmean : L.toEuclideanLin (complexToRealEuclidean ι m) =
+        complexToRealEuclidean ι (star m) := by
+      apply (complexToRealEuclidean ι).symm.injective
+      rw [← hreflect, ContinuousLinearEquiv.symm_apply_apply,
+        ContinuousLinearEquiv.symm_apply_apply]
+    have h := map_affine_multivariateGaussian (complexToRealEuclidean ι m)
+      ((posSemidef_complexGaussianRealCovariance_iff C).2 hC) L 0
+    simp only [add_zero, hcov, hmean] at h
+    rw [properComplexGaussianMeasure_def, properComplexGaussianMeasure_def, ← h,
+      Measure.map_map (by fun_prop) (by fun_prop),
+      Measure.map_map (by fun_prop) (by fun_prop)]
+    exact congrArg (fun f ↦ Measure.map f _) (by
+      funext x
+      simpa only [Function.comp_apply] using hreflect x)
+  · rw [properComplexGaussianMeasure_of_not_posSemidef _ hC,
+      properComplexGaussianMeasure_of_not_posSemidef _ (by simpa using hC),
+      Measure.map_dirac' (by fun_prop)]
+
+/-- Complex conjugation preserves the standard scalar proper complex Gaussian law. -/
+@[simp]
+theorem map_conj_properComplexGaussianScalar :
+    properComplexGaussianScalar.map (starRingEnd ℂ) = properComplexGaussianScalar := by
+  have h := map_star_properComplexGaussianMeasure (0 : Unit → ℂ) 1
+  rw [star_zero, Matrix.transpose_one] at h
+  have hconj : (starRingEnd ℂ) ∘ (fun z : Unit → ℂ ↦ z ()) = (fun z ↦ z ()) ∘ star := by
+    funext z
+    simp
+  rw [properComplexGaussianScalar_def, ← Pi.zero_def, Measure.map_map (by fun_prop) (by fun_prop),
+    hconj, ← Measure.map_map (by fun_prop) (by fun_prop), h]
 
 end TauCeti.Probability
 

@@ -233,7 +233,7 @@ theorem _root_.HeckeRing.GL2.Newform.atkinLehnerTransform_atkinLehnerTransform
     (f : Newform N k) (h : Q ∥ N) :
     (f.atkinLehnerTransform h).atkinLehnerTransform h = f := by
   let hW := isAtkinLehnerMatrix_atkinLehnerMatrix h
-  obtain ⟨γ, hγ, hsq⟩ := hW.exists_mem_Gamma0_mul_self h.ne_zero h.dvd
+  obtain ⟨γ, hγ, hsq⟩ := hW.exists_mem_Gamma0_mul_self
   let u : (ZMod N)ˣ := (Gamma0Map N).toHomUnits ⟨γ, hγ⟩
   have hu : ZMod.unitsMap h.dvd u = -1 :=
     hW.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq h.ne_zero h.dvd hγ hsq

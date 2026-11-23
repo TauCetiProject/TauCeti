@@ -154,33 +154,7 @@ theorem perimeter_ball_setOf_inner_lt (hν : ‖ν‖ = 1) (x : F) {r : ℝ} (hr
     perimeter volume ⟨ball x r, isOpen_ball⟩ {y | ⟪y, ν⟫ < ⟪x, ν⟫} =
       ENNReal.ofReal r ^ (finrank ℝ F - 1) *
         volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
-  set c := ⟪x, ν⟫
-  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
-  have : Nontrivial F := ⟨⟨ν, 0, hν0⟩⟩
-  have : Fact (finrank ℝ F = finrank ℝ F - 1 + 1) := ⟨(Nat.sub_add_cancel finrank_pos).symm⟩
-  -- The point `x` is `c • ν + x₀` with `x₀ ∈ (ℝ ∙ ν)ᗮ`, so the part of the hyperplane in the
-  -- ball is the image of the ball of radius `r` about `x₀` in `(ℝ ∙ ν)ᗮ`.
-  have hx₀ : x - c • ν ∈ (ℝ ∙ ν)ᗮ := by
-    rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,
-      real_inner_smul_left, real_inner_self_eq_norm_sq, hν]
-    ring
-  have hι := isometry_smul_add_coe (ν := ν) c
-  have hpre : (fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F)) ⁻¹' ball x r = ball ⟨x - c • ν, hx₀⟩ r := by
-    convert hι.preimage_ball ⟨x - c • ν, hx₀⟩ r
-    simp
-  -- An orthonormal basis identifies `(ℝ ∙ ν)ᗮ` with `ℝ^(n-1)`, preserving volume and unit balls.
-  have hball : volume (ball (0 : (ℝ ∙ ν)ᗮ) 1) =
-      volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
-    let e := ((stdOrthonormalBasis ℝ (ℝ ∙ ν)ᗮ).reindex (finCongr
-      (Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0))).repr
-    rw [← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet,
-      e.preimage_ball, map_zero]
   rw [perimeter_setOf_inner_lt hν, Opens.coe_mk,
-    ← Measure.restrict_apply' (measurableSet_eq_fun (by fun_prop) measurable_const),
-    euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
-    Measure.map_apply hι.continuous.measurable measurableSet_ball, hpre,
-    Measure.addHaar_ball_of_pos _ _ hr,
-    Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0,
-    ENNReal.ofReal_pow hr.le, hball]
+    euclideanHausdorffMeasure_ball_inter_setOf_inner_eq hν x hr]
 
 end TauCeti

@@ -97,7 +97,7 @@ private theorem normalBundleRadialPartialDiffeomorphOfRadius_toPartialEquiv :
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
     (normalBundleRadialPartialDiffeomorphOfRadius hf himm hdim hr hrpos).target =
-      {p | ‖(p.2 : V)‖ < r p.proj} := by
+      {p | ‖(p.snd : V)‖ < r p.proj} := by
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   let := normalFiberBundle (hf.of_le le_add_self) himm hdim
   let := normalVectorBundle (hf.of_le le_add_self) himm hdim

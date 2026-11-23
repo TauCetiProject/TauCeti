@@ -16,7 +16,9 @@ import Mathlib.Topology.Algebra.Ring.Real
 # Geometric stars and radial coordinates
 
 Open vertex stars cover the realization, and closed stars consist of points whose carriers
-lie in the corresponding combinatorial closed star. Finite closed stars are compact.
+lie in the corresponding combinatorial closed star. Finite closed stars are compact. A closed
+star is a neighbourhood of every point whose carrier contains its face, both in the realization
+and relative to the polyhedron of any precomplex in it.
 
 The closed star of a vertex is a cone on its link. Removing the apex gives a product of
 that link with `[0, 1)`: the interval coordinate is the barycentric coordinate at the apex,
@@ -39,7 +41,7 @@ public section
 
 noncomputable section
 
-open Set TauCeti.SetLike
+open Set Topology TauCeti.SetLike
 
 namespace AbstractSimplicialComplex
 
@@ -47,16 +49,16 @@ variable {ι : Type*} (K : AbstractSimplicialComplex ι)
 
 /-- The open star of a vertex consists of points with positive barycentric coordinate at
 that vertex. Equivalently, their carriers contain the vertex. -/
-def openStarRealization (v : ι) : Set (Realization K) := {x | 0 < x.1 v}
+def openStarRealization (v : ι) : Set (Realization K) := {x | 0 < x.val v}
 
 /-- Membership in the open star is positivity of the corresponding coordinate. -/
 @[simp]
 theorem mem_openStarRealization {v : ι} {x : Realization K} :
-    x ∈ K.openStarRealization v ↔ 0 < x.1 v := Iff.rfl
+    x ∈ K.openStarRealization v ↔ 0 < x.val v := Iff.rfl
 
 /-- A point lies in the open star exactly when its carrier contains the vertex. -/
 theorem mem_openStarRealization_iff_mem_support {v : ι} {x : Realization K} :
-    x ∈ K.openStarRealization v ↔ v ∈ x.1.support := by
+    x ∈ K.openStarRealization v ↔ v ∈ x.val.support := by
   rw [mem_openStarRealization, Finsupp.mem_support_iff]
   exact (lt_iff_le_and_ne).trans (by simp [Realization.nonneg K x v, ne_comm])
 
@@ -81,13 +83,13 @@ variable [DecidableEq ι]
 /-- The realized closed star of a finite vertex set consists of points whose carriers lie
 in its closed star. -/
 def closedStarRealization (σ : Finset ι) : Set (Realization K) :=
-  {x | x.1.support ∈ PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex σ}
+  {x | x.val.support ∈ PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex σ}
 
 /-- Membership in the realized closed star is closed-star membership of the carrier. -/
 @[simp]
 theorem mem_closedStarRealization {σ : Finset ι} {x : Realization K} :
     x ∈ K.closedStarRealization σ ↔
-      x.1.support ∈ PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex σ :=
+      x.val.support ∈ PreAbstractSimplicialComplex.closedStar K.toPreAbstractSimplicialComplex σ :=
   Iff.rfl
 
 /-- Each open star lies in its closed star. -/
@@ -109,24 +111,37 @@ theorem isCompact_closedStarRealization {σ : Finset ι}
 
 /-- Closed-star membership is determined by adjoining the finite vertex set to the carrier. -/
 theorem mem_closedStarRealization_iff {σ : Finset ι} {x : Realization K} :
-    x ∈ K.closedStarRealization σ ↔ x.1.support ∪ σ ∈ K := by
+    x ∈ K.closedStarRealization σ ↔ x.val.support ∪ σ ∈ K := by
   simp [mem_closedStarRealization, PreAbstractSimplicialComplex.mem_closedStar, support_mem]
+
+/-- A realized closed star is a neighbourhood of every point whose carrier contains the
+finite vertex set. In particular this applies to the face barycentre. -/
+theorem closedStarRealization_mem_nhds {σ : Finset ι} {x : Realization K}
+    (hx : σ ⊆ x.val.support) : K.closedStarRealization σ ∈ 𝓝 x := by
+  have hopen := isOpen_biInter_finset fun i (_ : i ∈ σ) => K.isOpen_openStarRealization i
+  have hmem : x ∈ ⋂ i ∈ σ, K.openStarRealization i :=
+    mem_iInter₂.mpr fun i hi => K.mem_openStarRealization_iff_mem_support.mpr (hx hi)
+  refine Filter.mem_of_superset (hopen.mem_nhds hmem) fun y hy => ?_
+  have hsub : σ ⊆ y.val.support := fun i hi =>
+    K.mem_openStarRealization_iff_mem_support.mp (mem_iInter₂.mp hy i hi)
+  rw [mem_closedStarRealization_iff, Finset.union_eq_left.mpr hsub]
+  exact support_mem K y
 
 variable (v : ι)
 
 /-- The polyhedron of the link of `v`, inside the realization of `K`. -/
 def geometricLink : Set (Realization K) :=
-  {x | x.1 v = 0 ∧ x ∈ closedStarRealization K {v}}
+  {x | x.val v = 0 ∧ x ∈ closedStarRealization K {v}}
 
 /-- Geometric link membership is closed-star membership with zero apex coordinate. -/
 @[simp]
 theorem mem_geometricLink (x : Realization K) :
-    x ∈ geometricLink K v ↔ x.1 v = 0 ∧ x ∈ closedStarRealization K {v} := (Iff.rfl)
+    x ∈ geometricLink K v ↔ x.val v = 0 ∧ x ∈ closedStarRealization K {v} := (Iff.rfl)
 
 /-- The geometric link is compact whenever its closed star is compact. -/
 theorem isCompact_geometricLink (hc : IsCompact (closedStarRealization K {v})) :
     IsCompact (geometricLink K v) := by
-  have heq : geometricLink K v = {x : Realization K | x.1 v = 0} ∩
+  have heq : geometricLink K v = {x : Realization K | x.val v = 0} ∩
       closedStarRealization K {v} := by
     ext x
     simp
@@ -137,19 +152,19 @@ theorem isCompact_geometricLink (hc : IsCompact (closedStarRealization K {v})) :
 /-- The coordinate vectors of the geometric link form a compact set whenever its closed star is
 compact. -/
 theorem isCompact_range_geometricLink (hc : IsCompact (closedStarRealization K {v})) :
-    IsCompact (range fun y : geometricLink K v => (y.1.1 : ι → ℝ)) := by
+    IsCompact (range fun y : geometricLink K v => (y.val.val : ι → ℝ)) := by
   have := isCompact_iff_compactSpace.mp (K.isCompact_geometricLink v hc)
-  exact isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
+  exact isCompact_range ((continuous_realization_coe K).comp continuous_subtypeVal)
 
 /-- The apex coordinate of a geometric link point is zero. -/
 @[simp]
-theorem geometricLink_apex (x : geometricLink K v) : x.1.1 v = 0 :=
-  ((mem_geometricLink K v x.1).mp x.2).1
+theorem geometricLink_apex (x : geometricLink K v) : x.val.val v = 0 :=
+  ((mem_geometricLink K v x.val).mp x.property).1
 
 /-- A point lies in the geometric link exactly when its carrier is a link face. -/
 theorem mem_geometricLink_iff (x : Realization K) :
     x ∈ geometricLink K v ↔
-      x.1.support ∈ PreAbstractSimplicialComplex.link K.toPreAbstractSimplicialComplex {v} := by
+      x.val.support ∈ PreAbstractSimplicialComplex.link K.toPreAbstractSimplicialComplex {v} := by
   simp [geometricLink, PreAbstractSimplicialComplex.mem_link,
     support_mem, Finset.disjoint_singleton_right]
 
@@ -170,56 +185,56 @@ def starApex : closedStarRealization K {v} :=
 
 /-- The underlying realization point of the closed-star apex is its vertex. -/
 @[simp]
-theorem starApex_val : (starApex K v).1 = vertex K v := (rfl)
+theorem starApex_val : (starApex K v).val = vertex K v := (rfl)
 
 /-- A point of the closed star is the apex exactly when its apex coordinate is one. -/
-theorem eq_starApex_iff (x : closedStarRealization K {v}) : x = starApex K v ↔ x.1.1 v = 1 := by
+theorem eq_starApex_iff (x : closedStarRealization K {v}) : x = starApex K v ↔ x.val.val v = 1 := by
   rw [← Subtype.coe_inj, starApex_val, Realization.eq_vertex_iff]
 
 /-- A point of the closed star whose apex coordinate is not less than one is the apex. -/
-theorem eq_starApex_of_not_lt {x : closedStarRealization K {v}} (hx : ¬x.1.1 v < 1) :
+theorem eq_starApex_of_not_lt {x : closedStarRealization K {v}} (hx : ¬x.val.val v < 1) :
     x = starApex K v :=
-  (eq_starApex_iff K v x).mpr (le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx))
+  (eq_starApex_iff K v x).mpr (le_antisymm (Realization.le_one K x.val v) (not_lt.mp hx))
 
 /-- The punctured geometric closed star, expressed by the apex coordinate being less than one. -/
 def puncturedClosedStar : Set (Realization K) :=
-  {x | x ∈ closedStarRealization K {v} ∧ x.1 v < 1}
+  {x | x ∈ closedStarRealization K {v} ∧ x.val v < 1}
 
 /-- Membership in the punctured closed star. -/
 @[simp]
 theorem mem_puncturedClosedStar (x : Realization K) :
-    x ∈ puncturedClosedStar K v ↔ x ∈ closedStarRealization K {v} ∧ x.1 v < 1 := (Iff.rfl)
+    x ∈ puncturedClosedStar K v ↔ x ∈ closedStarRealization K {v} ∧ x.val v < 1 := (Iff.rfl)
 
 private def normalizedLinkSimplex (x : puncturedClosedStar K v) : Convexity.StdSimplex ℝ ι := by
   let w : Convexity.StdSimplex ℝ ι :=
-    ⟨x.1.1, Realization.nonneg K x.1, Realization.sum_eq_one K x.1⟩
+    ⟨x.val.val, Realization.nonneg K x.val, Realization.sum_eq_one K x.val⟩
   apply w.restrict {v}ᶜ
   by_contra h
-  have hx : x.1.1 = Finsupp.single v (x.1.1 v) := by
+  have hx : x.val.val = Finsupp.single v (x.val.val v) := by
     apply Finsupp.eq_single_iff.mpr
     refine ⟨?_, rfl⟩
     intro u hu
     by_contra huv
     exact h ⟨u, by simpa using huv, Finsupp.mem_support_iff.mp hu⟩
-  have hsum := Realization.sum_eq_one K x.1
+  have hsum := Realization.sum_eq_one K x.val
   rw [hx, Finsupp.sum_single_index (by simp)] at hsum
-  exact (ne_of_lt x.2.2) hsum
+  exact (ne_of_lt x.property.2) hsum
 
 private theorem normalizedLinkCoordinates_apply (x : puncturedClosedStar K v) (u : ι) :
     (normalizedLinkSimplex K v x).weights u =
-      if u = v then 0 else (1 - x.1.1 v)⁻¹ * x.1.1 u := by
-  have hfilter : x.1.1.filter (· ∈ ({v}ᶜ : Set ι)) = x.1.1.erase v := by
+      if u = v then 0 else (1 - x.val.val v)⁻¹ * x.val.val u := by
+  have hfilter : x.val.val.filter (· ∈ ({v}ᶜ : Set ι)) = x.val.val.erase v := by
     ext u
     simp [Finsupp.filter_apply, Finsupp.erase_apply]
-  have hsum := Finsupp.add_sum_erase' x.1.1 v (fun _ r => r) (fun _ => rfl)
+  have hsum := Finsupp.add_sum_erase' x.val.val v (fun _ r => r) (fun _ => rfl)
   rw [Realization.sum_eq_one] at hsum
-  have he : (x.1.1.erase v).sum (fun _ r => r) = 1 - x.1.1 v := by linarith
+  have he : (x.val.val.erase v).sum (fun _ r => r) = 1 - x.val.val v := by linarith
   simp only [normalizedLinkSimplex, Convexity.StdSimplex.weights_restrict]
   rw [hfilter, he]
   simp [Finsupp.erase_apply]
 
 private theorem normalizedLinkCoordinates_support (x : puncturedClosedStar K v) :
-    (normalizedLinkSimplex K v x).weights.support = x.1.1.support.erase v := by
+    (normalizedLinkSimplex K v x).weights.support = x.val.val.support.erase v := by
   simp only [normalizedLinkSimplex, Convexity.StdSimplex.support_weights_restrict]
   ext u
   simp [and_comm]
@@ -227,13 +242,13 @@ private theorem normalizedLinkCoordinates_support (x : puncturedClosedStar K v) 
 private theorem normalizedLinkCoordinates_mem (x : puncturedClosedStar K v) :
     (normalizedLinkSimplex K v x).weights ∈ (standardGeometricComplex K).space := by
   classical
-  have hne : (x.1.1.support.erase v).Nonempty := by
+  have hne : (x.val.val.support.erase v).Nonempty := by
     rw [← normalizedLinkCoordinates_support K v x, Finsupp.support_nonempty_iff]
     intro hzero
     have hsum := (normalizedLinkSimplex K v x).total
     simp [hzero] at hsum
-  have hface : x.1.1.support.erase v ∈ K :=
-    K.isRelLowerSet_faces.mem_of_le (support_mem K x.1) (Finset.erase_subset _ _) hne
+  have hface : x.val.val.support.erase v ∈ K :=
+    K.isRelLowerSet_faces.mem_of_le (support_mem K x.val) (Finset.erase_subset _ _) hne
   apply mem_realization_iff.mpr
   refine ⟨_, hface, ?_⟩
   simp only [Finset.coe_image]
@@ -246,54 +261,54 @@ def starLinkProjection (x : puncturedClosedStar K v) : geometricLink K v :=
   ⟨⟨(normalizedLinkSimplex K v x).weights, normalizedLinkCoordinates_mem K v x⟩, by
     refine ⟨?_, ?_⟩
     · simp [normalizedLinkCoordinates_apply]
-    · have hsub : (x.1.1.support.erase v) ∪ {v} ⊆ x.1.1.support ∪ {v} :=
+    · have hsub : (x.val.val.support.erase v) ∪ {v} ⊆ x.val.val.support ∪ {v} :=
         Finset.union_subset_union (Finset.erase_subset _ _) Finset.Subset.rfl
       apply (K.mem_closedStarRealization_iff).mpr
       rw [normalizedLinkCoordinates_support]
-      exact K.isRelLowerSet_faces.mem_of_le ((K.mem_closedStarRealization_iff).mp x.2.1) hsub
+      exact K.isRelLowerSet_faces.mem_of_le ((K.mem_closedStarRealization_iff).mp x.property.1) hsub
         ((Finset.singleton_nonempty v).mono Finset.subset_union_right)⟩
 
 /-- Barycentric coordinates of radial projection onto the link. -/
 @[simp]
 theorem starLinkProjection_apply (x : puncturedClosedStar K v) (w : ι) :
-    (starLinkProjection K v x).1.1 w =
-      if w = v then 0 else (1 - x.1.1 v)⁻¹ * x.1.1 w :=
+    (starLinkProjection K v x).val.val w =
+      if w = v then 0 else (1 - x.val.val v)⁻¹ * x.val.val w :=
   normalizedLinkCoordinates_apply K v x w
 
 /-- Move from a link point towards the apex, with apex coordinate `t < 1`. -/
 def starRay (y : geometricLink K v) (t : Ico (0 : ℝ) 1) : puncturedClosedStar K v := by
   classical
-  let z : ι →₀ ℝ := (1 - t.1) • y.1.1 + Finsupp.single v t.1
-  have hzv : z v = t.1 := by simp [z, y.2.1]
-  have hsupport : z.support ⊆ y.1.1.support ∪ {v} := by
+  let z : ι →₀ ℝ := (1 - t.val) • y.val.val + Finsupp.single v t.val
+  have hzv : z v = t.val := by simp [z, y.property.1]
+  have hsupport : z.support ⊆ y.val.val.support ∪ {v} := by
     apply Finsupp.support_add.trans
     exact Finset.union_subset_union Finsupp.support_smul (Finsupp.support_single_subset)
   have hzmem : z ∈ (standardGeometricComplex K).space := by
     apply mem_realization_iff.mpr
-    refine ⟨y.1.1.support ∪ {v}, (K.mem_closedStarRealization_iff).mp y.2.2, ?_⟩
+    refine ⟨y.val.val.support ∪ {v}, (K.mem_closedStarRealization_iff).mp y.property.2, ?_⟩
     simp only [Finset.coe_image]
     rw [mem_standardSimplex_iff]
     refine ⟨?_, ?_, hsupport⟩
     · intro w
-      have hs : 0 ≤ (Finsupp.single v t.1) w := by
-        by_cases h : v = w <;> simp [h, t.2.1]
-      exact add_nonneg (mul_nonneg (sub_pos.mpr t.2.2).le (Realization.nonneg K y.1 w)) hs
+      have hs : 0 ≤ (Finsupp.single v t.val) w := by
+        by_cases h : v = w <;> simp [h, t.property.1]
+      exact add_nonneg (mul_nonneg (sub_pos.mpr t.property.2).le (Realization.nonneg K y.val w)) hs
     · rw [Finsupp.sum_add_index' (fun _ => rfl) (fun _ _ _ => rfl),
         Finsupp.sum_single_index (by simp)]
       rw [Finsupp.sum_smul_index' (by simp)]
       simp only [smul_eq_mul]
       rw [← Finsupp.mul_sum, Realization.sum_eq_one]
       ring
-  refine ⟨⟨z, hzmem⟩, ?_, by simpa [hzv] using t.2.2⟩
+  refine ⟨⟨z, hzmem⟩, ?_, by simpa [hzv] using t.property.2⟩
   apply (K.mem_closedStarRealization_iff).mpr
-  exact K.isRelLowerSet_faces.mem_of_le ((K.mem_closedStarRealization_iff).mp y.2.2)
+  exact K.isRelLowerSet_faces.mem_of_le ((K.mem_closedStarRealization_iff).mp y.property.2)
     (Finset.union_subset_union hsupport Finset.Subset.rfl |>.trans (by simp))
     ((Finset.singleton_nonempty v).mono Finset.subset_union_right)
 
 /-- Coordinates of a ray from the link to its star apex. -/
 @[simp]
 theorem starRay_apply (y : geometricLink K v) (t : Ico (0 : ℝ) 1) (w : ι) :
-    (starRay K v y t).1.1 w = (1 - t.1) * y.1.1 w + if v = w then t.1 else 0 := by
+    (starRay K v y t).val.val w = (1 - t.val) * y.val.val w + if v = w then t.val else 0 := by
   simp [starRay, Finsupp.single_apply]
 
 /-- Radial projection recovers the link point of a ray. -/
@@ -306,28 +321,28 @@ theorem starLinkProjection_starRay (y : geometricLink K v) (t : Ico (0 : ℝ) 1)
   by_cases h : w = v
   · simp [h]
   · simp [starLinkProjection_apply, starRay_apply, h, Ne.symm h,
-      ← mul_assoc, inv_mul_cancel₀ (sub_pos.mpr t.2.2).ne']
+      ← mul_assoc, inv_mul_cancel₀ (sub_pos.mpr t.property.2).ne']
 
 /-- The ray determined by a point's radial projection and apex coordinate recovers that point. -/
 @[simp]
 theorem starRay_starLinkProjection (x : puncturedClosedStar K v) :
     starRay K v (starLinkProjection K v x)
-      ⟨x.1.1 v, Realization.nonneg K x.1 v,
-        ((mem_puncturedClosedStar K v x.1).mp x.2).2⟩ = x := by
+      ⟨x.val.val v, Realization.nonneg K x.val v,
+        ((mem_puncturedClosedStar K v x.val).mp x.property).2⟩ = x := by
   apply Subtype.ext
   apply Subtype.ext
   ext w
   by_cases h : w = v
   · simp [h]
   · simp [starRay_apply, starLinkProjection_apply, h, Ne.symm h,
-      ← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr x.2.2).ne']
+      ← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr x.property.2).ne']
 
 /-- The punctured closed star is the product of its geometric link and `[0, 1)`.
 The interval coordinate is the coordinate at the apex. -/
 def puncturedClosedStarEquiv :
     puncturedClosedStar K v ≃ geometricLink K v × Ico (0 : ℝ) 1 where
   toFun x := ⟨starLinkProjection K v x,
-    ⟨x.1.1 v, Realization.nonneg K x.1 v, x.2.2⟩⟩
+    ⟨x.val.val v, Realization.nonneg K x.val v, x.property.2⟩⟩
   invFun p := starRay K v p.1 p.2
   left_inv := starRay_starLinkProjection K v
   right_inv p := by
@@ -339,8 +354,8 @@ def puncturedClosedStarEquiv :
 @[simp]
 theorem puncturedClosedStarEquiv_apply (x : puncturedClosedStar K v) :
     puncturedClosedStarEquiv K v x =
-      (starLinkProjection K v x, ⟨x.1.1 v, Realization.nonneg K x.1 v,
-        ((mem_puncturedClosedStar K v x.1).mp x.2).2⟩) := (rfl)
+      (starLinkProjection K v x, ⟨x.val.val v, Realization.nonneg K x.val v,
+        ((mem_puncturedClosedStar K v x.val).mp x.property).2⟩) := (rfl)
 
 /-- The inverse radial equivalence is the ray from the link to the apex. -/
 @[simp]
@@ -360,7 +375,7 @@ theorem puncturedClosedStar_eq_sdiff_vertex :
 This includes the case of an isolated vertex, where the ray family is empty. -/
 theorem closedStarRealization_singleton_eq_insert_range_starRay :
     closedStarRealization K {v} = insert (vertex K v)
-      (range (fun p : geometricLink K v × Ico (0 : ℝ) 1 => (starRay K v p.1 p.2).1)) := by
+      (range (fun p : geometricLink K v × Ico (0 : ℝ) 1 => (starRay K v p.1 p.2).val)) := by
   ext x
   constructor
   · intro hx
@@ -376,16 +391,16 @@ theorem closedStarRealization_singleton_eq_insert_range_starRay :
     · simp only [mem_closedStarRealization_iff, vertex_val,
         Finsupp.support_single v one_ne_zero, Finset.union_self]
       exact K.singleton_mem v
-    · exact ((mem_puncturedClosedStar K v _).mp (starRay K v p.1 p.2).2).1
+    · exact ((mem_puncturedClosedStar K v _).mp (starRay K v p.1 p.2).property).1
 
 /-- The coordinate at a vertex is continuous on the punctured star. -/
 private theorem continuous_puncturedStar_coordinate (w : ι) :
-    Continuous (fun x : puncturedClosedStar K v => x.1.1 w) :=
-  (continuous_apply w).comp ((continuous_realization_coe K).comp continuous_subtype_val)
+    Continuous (fun x : puncturedClosedStar K v => x.val.val w) :=
+  (continuous_apply w).comp ((continuous_realization_coe K).comp continuous_subtypeVal)
 
 /-- Radial projection is continuous when the realization has its coordinate topology. -/
 theorem continuous_starLinkProjection
-    (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ))) :
+    (hK : Topology.IsInducing (fun x : Realization K => (x.val : ι → ℝ))) :
     Continuous (starLinkProjection K v) := by
   apply Continuous.subtype_mk
   apply hK.continuous_iff.mpr
@@ -394,7 +409,7 @@ theorem continuous_starLinkProjection
   simp only [Function.comp_apply, normalizedLinkCoordinates_apply]
   have hc := continuous_puncturedStar_coordinate K v
   have hinv := (continuous_const.sub (hc v)).inv₀
-    (fun x => (sub_pos.mpr x.2.2).ne')
+    (fun x => (sub_pos.mpr x.property.2).ne')
   by_cases h : w = v
   · simp only [h, ↓reduceIte]
     exact continuous_const
@@ -406,7 +421,7 @@ No hypothesis on the topology outside that star is needed. -/
 theorem continuous_starLinkProjection_of_isCompact
     (hcompact : IsCompact (closedStarRealization K {v})) :
     Continuous (starLinkProjection K v) := by
-  have hlink : Topology.IsEmbedding (fun x : geometricLink K v => (x.1.1 : ι → ℝ)) :=
+  have hlink : Topology.IsEmbedding (fun x : geometricLink K v => (x.val.val : ι → ℝ)) :=
     (K.isClosedEmbedding_realization_coe_restrict hcompact).isEmbedding.comp
       (Topology.IsEmbedding.inclusion fun _ hx => ((mem_geometricLink K v _).mp hx).2)
   apply hlink.continuous_iff.mpr
@@ -415,7 +430,7 @@ theorem continuous_starLinkProjection_of_isCompact
   simp only [Function.comp_apply, starLinkProjection_apply]
   have hc := continuous_puncturedStar_coordinate K v
   have hinv := (continuous_const.sub (hc v)).inv₀
-    (fun x => (sub_pos.mpr x.2.2).ne')
+    (fun x => (sub_pos.mpr x.property.2).ne')
   by_cases h : w = v
   · simp only [h, ↓reduceIte]
     exact continuous_const
@@ -424,17 +439,17 @@ theorem continuous_starLinkProjection_of_isCompact
 
 /-- The star rays vary continuously when the realization has its coordinate topology. -/
 theorem continuous_starRay
-    (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ))) :
+    (hK : Topology.IsInducing (fun x : Realization K => (x.val : ι → ℝ))) :
     Continuous (fun p : geometricLink K v × Ico (0 : ℝ) 1 => starRay K v p.1 p.2) := by
   apply Continuous.subtype_mk
   apply hK.continuous_iff.mpr
   apply continuous_pi
   intro w
-  have hc : Continuous (fun p : geometricLink K v × Ico (0 : ℝ) 1 => p.1.1.1 w) :=
+  have hc : Continuous (fun p : geometricLink K v × Ico (0 : ℝ) 1 => p.1.val.val w) :=
     (continuous_apply w).comp ((continuous_realization_coe K).comp
-      (continuous_subtype_val.comp continuous_fst))
+      (continuous_subtypeVal.comp continuous_fst))
   have ht : Continuous (fun p : geometricLink K v × Ico (0 : ℝ) 1 => (p.2 : ℝ)) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   simp only [Function.comp_apply, Finsupp.add_apply, Finsupp.smul_apply,
     Finsupp.single_apply, smul_eq_mul]
   by_cases h : v = w
@@ -447,7 +462,7 @@ theorem continuous_starRay
 provided the realization has its coordinate topology. The homeomorphism uses radial barycentric
 coordinates; `isClosedEmbedding_realization_coe` supplies the hypothesis for finite vertex types. -/
 def puncturedClosedStarHomeomorph
-    (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ))) :
+    (hK : Topology.IsInducing (fun x : Realization K => (x.val : ι → ℝ))) :
     puncturedClosedStar K v ≃ₜ geometricLink K v × Ico (0 : ℝ) 1 where
   toEquiv := puncturedClosedStarEquiv K v
   continuous_toFun := (continuous_starLinkProjection K v hK).prodMk
@@ -457,17 +472,43 @@ def puncturedClosedStarHomeomorph
 /-- The forward homeomorphism records the radial projection and the apex coordinate. -/
 @[simp]
 theorem puncturedClosedStarHomeomorph_apply
-    (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ)))
+    (hK : Topology.IsInducing (fun x : Realization K => (x.val : ι → ℝ)))
     (x : puncturedClosedStar K v) :
     puncturedClosedStarHomeomorph K v hK x =
-      (starLinkProjection K v x, ⟨x.1.1 v, Realization.nonneg K x.1 v,
-        ((mem_puncturedClosedStar K v x.1).mp x.2).2⟩) := (rfl)
+      (starLinkProjection K v x, ⟨x.val.val v, Realization.nonneg K x.val v,
+        ((mem_puncturedClosedStar K v x.val).mp x.property).2⟩) := (rfl)
 
 /-- The inverse homeomorphism takes a link point along its ray towards the apex. -/
 @[simp]
 theorem puncturedClosedStarHomeomorph_symm_apply
-    (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ)))
+    (hK : Topology.IsInducing (fun x : Realization K => (x.val : ι → ℝ)))
     (p : geometricLink K v × Ico (0 : ℝ) 1) :
     (puncturedClosedStarHomeomorph K v hK).symm p = starRay K v p.1 p.2 := (rfl)
 
 end AbstractSimplicialComplex
+
+namespace PreAbstractSimplicialComplex
+
+open AbstractSimplicialComplex
+
+variable {ι : Type*} [DecidableEq ι] {A : AbstractSimplicialComplex ι} {σ : Finset ι}
+
+/-- A closed face star is a neighbourhood of every point whose carrier contains that face,
+relative to the original polyhedron in a containing weak realization. In particular this
+applies to the face barycentre. -/
+theorem setOf_support_mem_closedStar_mem_nhds (K : PreAbstractSimplicialComplex ι)
+    {x : {x : Realization A // x.val.support ∈ K}} (hx : σ ⊆ x.val.val.support) :
+    {y : {x : Realization A // x.val.support ∈ K} |
+      y.val.val.support ∈ closedStar K σ} ∈ 𝓝 x := by
+  have hopen := (isOpen_biInter_finset fun i (_ : i ∈ σ) =>
+    A.isOpen_openStarRealization i).preimage
+      (continuous_subtypeVal (p := fun x : Realization A => x.val.support ∈ K))
+  have hmem : x.val ∈ ⋂ i ∈ σ, A.openStarRealization i :=
+    mem_iInter₂.mpr fun i hi => A.mem_openStarRealization_iff_mem_support.mpr (hx hi)
+  refine Filter.mem_of_superset (hopen.mem_nhds hmem) fun y hy => ?_
+  have hsub : σ ⊆ y.val.val.support := fun i hi =>
+    A.mem_openStarRealization_iff_mem_support.mp (mem_iInter₂.mp hy i hi)
+  exact mem_closedStar.mpr ⟨y.property,
+      by simpa only [Finset.union_eq_left.mpr hsub] using y.property⟩
+
+end PreAbstractSimplicialComplex

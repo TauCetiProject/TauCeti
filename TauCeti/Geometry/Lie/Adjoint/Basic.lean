@@ -39,6 +39,8 @@ The construction works over any nontrivially normed field. Its differential only
   trivial.
 * `MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`: a homomorphism intertwines the
   adjoint actions of its differential at the identity, `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`.
+* `MonoidHom.adjointContinuousLinearMap_eq_id_of_mem_ker`: when that differential is injective,
+  the kernel of the homomorphism acts trivially on the Lie algebra.
 
 ## References
 
@@ -144,6 +146,13 @@ theorem adjointContinuousLinearMap_mul (g h : G) :
     (by simp)]
   rfl
 
+/-- The adjoint action of `g` undoes that of `g⁻¹`: `Ad_g (Ad_{g⁻¹} X) = X`. -/
+theorem adjointContinuousLinearMap_adjointContinuousLinearMap_inv (g : G)
+    (X : GroupLieAlgebra I G) :
+    adjointContinuousLinearMap (I := I) g (adjointContinuousLinearMap (I := I) g⁻¹ X) = X := by
+  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, mul_inv_cancel,
+    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+
 /-- **Naturality of the adjoint action.** A group homomorphism `φ : K →* G` intertwines the adjoint
 actions: `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`, where `dφ` is the differential of `φ` at the identity
 (zero if `φ` is not differentiable there, in which case both sides vanish). -/
@@ -176,6 +185,19 @@ theorem _root_.MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap
   -- steps are chained as terms.
   exact (DFunLike.congr_fun (mfderiv_congr (I := J) (I' := I) hfun) ξ).trans <|
     hcomp'.trans (adjointContinuousLinearMap_apply (I := I) (φ k) _).symm
+
+/-- **The kernel of a homomorphism with injective differential acts trivially on the Lie
+algebra.** If the differential `dφ` at the identity of `φ : K →* G` is injective, then every
+`k ∈ ker φ` has trivial adjoint action, `Ad_k = id`, since `dφ (Ad_k ξ) = Ad_1 (dφ ξ) = dφ ξ`. -/
+theorem _root_.MonoidHom.adjointContinuousLinearMap_eq_id_of_mem_ker
+    {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
+    {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
+    [LieGroup J 1 K] (φ : K →* G) (hφ : Function.Injective (φ.groupLieAlgebraMap J I)) {k : K}
+    (hk : k ∈ φ.ker) :
+    adjointContinuousLinearMap (I := J) k = ContinuousLinearMap.id 𝕜 (GroupLieAlgebra J K) := by
+  refine ContinuousLinearMap.ext fun ξ ↦ hφ ?_
+  rw [φ.groupLieAlgebraMap_adjointContinuousLinearMap, φ.mem_ker.1 hk,
+    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
 
 @[simp]
 private theorem conjDiffeomorph_inv (g : G) :

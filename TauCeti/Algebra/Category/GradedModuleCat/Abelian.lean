@@ -34,20 +34,25 @@ graded abelian category, whose canonical exact structure is
 
 ## Main definitions
 
-* `TauCeti.GradedModuleCat.kernelCone` and `TauCeti.GradedModuleCat.cokernelCocone`: the kernel
-  and cokernel of a morphism of graded modules, formed on underlying modules.
+* `TauCeti.GradedModuleCat.kernelObj`, `TauCeti.GradedModuleCat.kernelι` and
+  `TauCeti.GradedModuleCat.kernelCone`: the kernel of a morphism of graded modules, its inclusion
+  and the corresponding kernel fork, formed on underlying modules.
 * `TauCeti.GradedModuleCat.cokernelGrading`: the grading of `N ⧸ range f` induced from `N`.
-* `TauCeti.GradedModuleCat.productFan`: the product of finitely many graded modules, formed as
-  their direct sum.
+* `TauCeti.GradedModuleCat.cokernelObj`, `TauCeti.GradedModuleCat.cokernelπ` and
+  `TauCeti.GradedModuleCat.cokernelCocone`: the cokernel of a morphism of graded modules, the
+  projection onto it and the corresponding cokernel cofork.
+* `TauCeti.GradedModuleCat.directSumObj` and `TauCeti.GradedModuleCat.productFan`: the direct sum
+  of a family of graded modules, graded degreewise, and the product fan it forms.
 
 ## Main results
 
 * `TauCeti.GradedModuleCat.kernelIsLimit`, `TauCeti.GradedModuleCat.cokernelIsColimit` and
-  `TauCeti.GradedModuleCat.productFanIsLimit`: these are limits and colimits.
+  `TauCeti.GradedModuleCat.productFanIsLimit`: these are limits and colimits (for `productFan`,
+  when the family is finite).
 * `TauCeti.GradedModuleCat.mem_kernelCone_pt_piece_iff`,
   `TauCeti.GradedModuleCat.mem_cokernelCocone_pt_piece_iff` and
   `TauCeti.GradedModuleCat.mem_productFan_pt_piece_iff`: the homogeneous elements of kernels,
-  cokernels and finite products.
+  cokernels and direct-sum products (for any family).
 * The instance `Abelian (TauCeti.GradedModuleCat 𝒜)`.
 * `TauCeti.GradedModuleCat.epi_iff_surjective`, `TauCeti.GradedModuleCat.mono_iff_injective` and
   `TauCeti.GradedModuleCat.isIso_iff_bijective`: epimorphisms, monomorphisms and isomorphisms are
@@ -55,6 +60,10 @@ graded abelian category, whose canonical exact structure is
   respectively.
 * `TauCeti.GradedModuleCat.isIso_biprod_desc_of_bijective`: a map out of a binary biproduct is an
   isomorphism when the induced map out of the product of underlying modules is bijective.
+* The instances `PreservesFiniteLimits`, `PreservesFiniteColimits` and `PreservesHomology` of the
+  forgetful functor `TauCeti.GradedModuleCat.toModuleCat`.
+* `TauCeti.GradedModuleCat.exact_iff`: a short complex of graded modules is exact exactly when its
+  underlying linear maps are exact.
 * `TauCeti.GradedModuleCat.shortExact_cokernelπ`: a monomorphism and the projection onto its
   cokernel form a short exact sequence.
 -/
@@ -94,7 +103,7 @@ theorem hom_kernelι : (kernelι f).hom = (LinearMap.ker f.hom).subtype :=
 
 @[reassoc (attr := simp)]
 theorem kernelι_comp : kernelι f ≫ f = 0 :=
-  hom_ext <| LinearMap.ext fun z ↦ z.2
+  hom_ext <| LinearMap.ext fun z ↦ z.property
 
 /-- The kernel fork of a morphism of graded modules. -/
 @[expose]
@@ -134,7 +143,7 @@ section Cokernel
 
 /-- The grading of the quotient of `N` by the image of `f`, whose degree-`p` piece is the image
 of `Nₚ`. -/
-noncomputable def cokernelGrading : InternalGrading k (N ⧸ LinearMap.range f.hom) :=
+noncomputable def cokernelGrading : InternalGrading k (N ⧸ LinearMap.range f.hom) ℤ :=
   N.grading.quotient (LinearMap.range f.hom) f.isHomogeneous.isHomogeneous_range
 
 /-- An element of the quotient of `N` by the image of `f` has degree `p` exactly when it is the
@@ -290,29 +299,29 @@ instance {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) :
 instance : Abelian (GradedModuleCat.{v} 𝒜) :=
   Abelian.ofCoimageImageComparisonIsIso
 
+/-- The forgetful functor preserves homology because kernels and cokernels are formed on
+underlying modules. -/
+instance : (toModuleCat (𝒜 := 𝒜)).PreservesHomology where
+
+/-- The forgetful functor preserves finite limits, being an additive functor between abelian
+categories which preserves homology. -/
+instance : PreservesFiniteLimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
+  Functor.preservesFiniteLimits_of_preservesHomology _
+
+/-- The forgetful functor preserves finite colimits, being an additive functor between abelian
+categories which preserves homology. -/
+instance : PreservesFiniteColimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
+  Functor.preservesFiniteColimits_of_preservesHomology _
+
 /-- A morphism of graded modules is an epimorphism exactly when its underlying map is
 surjective. -/
-theorem epi_iff_surjective (f : M ⟶ N) : Epi f ↔ Function.Surjective f.hom := by
-  constructor
-  · intro hf
-    have hzero : cokernelπ f = 0 := (cancel_epi f).mp (by simp)
-    intro y
-    have hy := LinearMap.congr_fun (congrArg Hom.hom hzero) y
-    exact (Submodule.Quotient.mk_eq_zero _).mp hy
-  · intro hf
-    have : Epi (toModuleCat.map f) := (ModuleCat.epi_iff_surjective _).mpr hf
-    exact (toModuleCat (𝒜 := 𝒜)).epi_of_epi_map inferInstance
+theorem epi_iff_surjective (f : M ⟶ N) : Epi f ↔ Function.Surjective f.hom :=
+  ((toModuleCat (𝒜 := 𝒜)).epi_map_iff_epi f).symm.trans (ModuleCat.epi_iff_surjective _)
 
 /-- A morphism of graded modules is a monomorphism exactly when its underlying map is
 injective. -/
-theorem mono_iff_injective (f : M ⟶ N) : Mono f ↔ Function.Injective f.hom := by
-  constructor
-  · intro hf
-    have := NormalEpiCategory.preservesMonomorphisms_of_preservesKernels (toModuleCat (𝒜 := 𝒜))
-    exact (ModuleCat.mono_iff_injective (toModuleCat.map f)).1 inferInstance
-  · intro hf
-    have : Mono (toModuleCat.map f) := (ModuleCat.mono_iff_injective _).mpr hf
-    exact (toModuleCat (𝒜 := 𝒜)).mono_of_mono_map inferInstance
+theorem mono_iff_injective (f : M ⟶ N) : Mono f ↔ Function.Injective f.hom :=
+  ((toModuleCat (𝒜 := 𝒜)).mono_map_iff_mono f).symm.trans (ModuleCat.mono_iff_injective _)
 
 /-- A morphism of graded modules is an isomorphism exactly when its underlying map is
 bijective: the inverse of a bijective map of degree zero again has degree zero. -/
@@ -341,20 +350,6 @@ theorem isIso_biprod_desc_of_bijective {Q : GradedModuleCat.{v} 𝒜} (f : M ⟶
   have : PreservesBinaryBiproduct M N F := preservesBinaryBiproduct_of_preservesBiproduct F M N
   have : IsIso (F.map (biprod.desc f g)) := biprod.mapBiprod_hom_desc F M N f g ▸ inferInstance
   exact isIso_of_reflects_iso _ F
-
-/-- The forgetful functor preserves homology because kernels and cokernels are formed on
-underlying modules. -/
-instance : (toModuleCat (𝒜 := 𝒜)).PreservesHomology where
-
-/-- The forgetful functor preserves finite limits, being an additive functor between abelian
-categories which preserves homology. -/
-instance : PreservesFiniteLimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
-  Functor.preservesFiniteLimits_of_preservesHomology _
-
-/-- The forgetful functor preserves finite colimits, being an additive functor between abelian
-categories which preserves homology. -/
-instance : PreservesFiniteColimits (toModuleCat.{v} (𝒜 := 𝒜)) :=
-  Functor.preservesFiniteColimits_of_preservesHomology _
 
 /-- A short complex of graded modules is exact exactly when its underlying linear maps are
 exact. No additional condition on the internal degrees is needed. -/

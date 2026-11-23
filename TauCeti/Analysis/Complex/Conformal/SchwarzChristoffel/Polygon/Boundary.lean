@@ -65,7 +65,7 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
     Set.range (schwarzChristoffelCompactifiedBoundary a e z₀) =
       (schwarzChristoffelPolygon a e z₀).boundary ℝ := by
   have hfinite' (i : Fin n) : ∀ j, e j ≠ 0 → a j ∉ Ioo (a i.castSucc) (a i.succ) :=
-    fun j _ ↦ not_mem_Ioo_castSucc_succ a ha i j
+    fun j _ ↦ notMem_Ioo_castSucc_succ a ha i j
   have hb := fun i : Fin n ↦ schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
     (ha i.castSucc_le_succ) (hfinite' i) (hfinite i.castSucc) (hfinite i.succ)
   have hr := schwarzChristoffelBoundary_image_Ici_prevertex a e z₀ (Fin.last n)
@@ -94,7 +94,7 @@ theorem exists_mem_edgeSet_schwarzChristoffelBoundary_of_mem_Icc
   refine ⟨i, ?_⟩
   rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc,
     ← schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
-      (ha i.castSucc_le_succ) (fun k _ ↦ not_mem_Ioo_castSucc_succ a ha i k)
+      (ha i.castSucc_le_succ) (fun k _ ↦ notMem_Ioo_castSucc_succ a ha i k)
       (hfinite _) (hfinite _)]
   exact ⟨x, hi, rfl⟩
 
