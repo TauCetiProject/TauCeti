@@ -336,9 +336,10 @@ theorem IsOneSided.prop {T : DGTwistedObject R (DGAdditiveClosure (DGShiftClosur
     have htwist : (T.restrict _ (dgComp_twist_eq_zero_right hp)).twist = 0 :=
       DGAdditiveClosure.dgHom_ext R fun i j ↦ by
         rw [dgHomEquiv_twist_restrict, map_zero, Pi.zero_apply, Pi.zero_apply]
-        exact hlevel i j ((congrArg level ((not_not.mp i.2).trans (not_not.mp j.2).symm)).le)
+        exact hlevel i j ((congrArg level ((not_not.mp i.property).trans
+            (not_not.mp j.property).symm)).le)
     have : Subsingleton {i // ¬ i ≠ i₀} :=
-      ⟨fun i j ↦ Subtype.ext ((not_not.mp i.2).trans (not_not.mp j.2).symm)⟩
+      ⟨fun i j ↦ Subtype.ext ((not_not.mp i.property).trans (not_not.mp j.property).symm)⟩
     rw [eq_ofObj_of_twist_eq_zero R htwist]
     exact prop_ofObj_of_subsingleton hrep _
 

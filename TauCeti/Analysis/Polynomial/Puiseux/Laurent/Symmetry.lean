@@ -76,11 +76,11 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
           (∀ i b, b ∈ U ×ˢ ball 0 R' → g (σ i) b = conj (g i (τ b.1, conj b.2))) ∧
           ∃ (e : Fin d → ℤ) (w : U → Fin d → E × ℂ → ℂ),
             (∀ i, -(d.factorial * a : ℤ) ≤ e i) ∧ (∀ i, e (σ i) = e i) ∧
-            (∀ x i, AnalyticAt ℂ (w x i) (x.1, 0) ∧ w x i (x.1, 0) ≠ 0) ∧
-            (∀ x, ∀ᶠ b in 𝓝 (x.1, (0 : ℂ)), (∀ i, w x i b ≠ 0) ∧
+            (∀ x i, AnalyticAt ℂ (w x i) (x.val, 0) ∧ w x i (x.val, 0) ≠ 0) ∧
+            (∀ x, ∀ᶠ b in 𝓝 (x.val, (0 : ℂ)), (∀ i, w x i b ≠ 0) ∧
               (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * w x i b)) ∧
-            ∀ x i, ∀ᶠ b in 𝓝 (x.1, (0 : ℂ)),
-              w x (σ i) b = conj (w ⟨τ x.1, hτU x.2⟩ i (τ b.1, conj b.2)) := by
+            ∀ x i, ∀ᶠ b in 𝓝 (x.val, (0 : ℂ)),
+              w x (σ i) b = conj (w ⟨τ x.val, hτU x.property⟩ i (τ b.1, conj b.2)) := by
   obtain ⟨R', hR', hfit, r, g, hra, hg, hr, e, W, hbound, hWa, hW0, hWform⟩ :=
     exists_analyticOnNhd_nonmonic_laurent hU hR hF hdeg hdiscr hu hu0 hv hv0 hlead hconst
   have hform (x : E) (hx : x ∈ U) : ∀ᶠ b in 𝓝 (x, (0 : ℂ)),
@@ -121,26 +121,26 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
     (fun b hb ↦ (hr b hb).1) hroot (hκ.mono (prod_mono subset_rfl sdiff_subset)) hκS hκS
     (fun b hb ↦ Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2))
     (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
-    ⟨(x₀, t₀), x₀.2, t₀.2⟩
+    ⟨(x₀, t₀), x₀.property, t₀.property⟩
   -- Compare units at `x` and `τ x`; a fixed point of `τ` is unnecessary.
   have hcompat (x : U) (i : Fin d) := AnalyticAt.laurent_eq_of_conj_of_forms
     (D₁ := r (σ i)) (D₂ := r i)
-    ((hWa (σ i) _ ⟨x.2, mem_ball_self hR'⟩).restrictScalars (𝕜 := ℝ))
-    (hW0 (σ i) _ ⟨x.2, mem_ball_self hR'⟩)
-    ((hWa i _ ⟨hτU x.2, mem_ball_self hR'⟩).restrictScalars (𝕜 := ℝ))
-    (hW0 i _ ⟨hτU x.2, mem_ball_self hR'⟩)
-    (hτ.continuousAt (hU.mem_nhds x.2))
-    ((hform x.1 x.2).mono fun _ h hb ↦ h.2 hb (σ i))
-    ((hform (τ x.1) (hτU x.2)).mono fun _ h hb ↦ h.2 hb i)
+    ((hWa (σ i) _ ⟨x.property, mem_ball_self hR'⟩).restrictScalars (𝕜 := ℝ))
+    (hW0 (σ i) _ ⟨x.property, mem_ball_self hR'⟩)
+    ((hWa i _ ⟨hτU x.property, mem_ball_self hR'⟩).restrictScalars (𝕜 := ℝ))
+    (hW0 i _ ⟨hτU x.property, mem_ball_self hR'⟩)
+    (hτ.continuousAt (hU.mem_nhds x.property))
+    ((hform x.val x.property).mono fun _ h hb ↦ h.2 hb (σ i))
+    ((hform (τ x.val) (hτU x.property)).mono fun _ h hb ↦ h.2 hb i)
     (by
       filter_upwards [(hU.prod isOpen_ball).mem_nhds
-        (x := (x.1, (0 : ℂ))) ⟨x.2, mem_ball_self hR'⟩] with b hb hb0
+        (x := (x.val, (0 : ℂ))) ⟨x.property, mem_ball_self hR'⟩] with b hb hb0
       exact hσ i b ⟨hb.1, hb.2, hb0⟩)
   exact ⟨R', hR', hfit, r, g, hra, hg, hr, σ, hσσ, hσ,
     TauCeti.eqOn_conj_extension (τ := τ) (fun i ↦ (hg i).1.continuousOn) (fun i ↦ (hg i).2) hσ
       hκ hκT,
     e, fun _ ↦ W, hbound, fun i ↦ (hcompat x₀ i).1,
-    fun x i ↦ ⟨hWa i _ ⟨x.2, mem_ball_self hR'⟩, hW0 i _ ⟨x.2, mem_ball_self hR'⟩⟩,
-    fun x ↦ hform x.1 x.2, fun x i ↦ (hcompat x i).2⟩
+    fun x i ↦ ⟨hWa i _ ⟨x.property, mem_ball_self hR'⟩, hW0 i _ ⟨x.property, mem_ball_self hR'⟩⟩,
+    fun x ↦ hform x.val x.property, fun x i ↦ (hcompat x i).2⟩
 
 end TauCeti.Polynomial

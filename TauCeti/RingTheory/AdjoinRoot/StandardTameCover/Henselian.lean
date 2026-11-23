@@ -43,6 +43,6 @@ theorem standardTameCover_henselianLocalRing [HenselianLocalRing A]
     HenselianLocalRing (standardTameCover A f e) := by
   have := standardTameCover_isLocalRing hf he
   have := (monic_X_pow_sub_C f he).finite_adjoinRoot
-  exact HenselianLocalRing.of_finite A (standardTameCover A f e)
+  exact HenselianLocalRing.of_isIntegral A (standardTameCover A f e)
 
 end TauCeti
