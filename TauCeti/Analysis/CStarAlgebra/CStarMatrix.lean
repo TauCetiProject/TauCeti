@@ -454,13 +454,16 @@ theorem map_fromBlocks_inl_nonneg {k m : Type*} [Fintype k] [Fintype m]
   let e₁ := compStarAlgEquiv ℂ k n A
   let e₂ := compStarAlgEquiv ℂ k (n ⊕ m) A
   have hM₁ : 0 ≤ e₁ M := by simpa using (map_le_map_iff e₁).mpr hM
-  rw [← map_le_map_iff e₂, map_zero, nonneg_iff_forall_sum_nonneg]
-  intro y
-  convert nonneg_iff_forall_sum_nonneg.mp hM₁ (fun ⟨i, x⟩ => y (i, Sum.inl x)) using 1
-  simp only [Fintype.sum_prod_type, Fintype.sum_sum_type, e₂, e₁, compStarAlgEquiv_apply,
-    map_apply, ofMatrix_apply, ofMatrix_symm_apply, Matrix.fromBlocks_apply₁₁,
-    Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂,
-    Matrix.zero_apply, mul_zero, zero_mul, add_zero, Finset.sum_const_zero]
+  have hf : Function.Injective (Prod.map (id : k → k) (Sum.inl : n → n ⊕ m)) :=
+    Function.injective_id.prodMap Sum.inl_injective
+  rw [← map_le_map_iff e₂, map_zero]
+  convert extend_nonneg hf hM₁ using 1
+  ext ⟨i, p⟩ ⟨j, q⟩
+  rcases p with p | p <;> rcases q with q | q <;> simp [e₂, e₁]
+  · simp only [show (i, Sum.inl p) = Prod.map id Sum.inl (i, p) from rfl, hf.extend_apply,
+      show (j, Sum.inl q) = Prod.map id Sum.inl (j, q) from rfl]
+    rfl
+  · simp only [show (i, Sum.inl p) = Prod.map id Sum.inl (i, p) from rfl, hf.extend_apply]
 
 /-- Extracting the bottom-right block of each entry of a positive block matrix
 `M : CStarMatrix k k (CStarMatrix (n ⊕ m) (n ⊕ m) A)` preserves positivity. -/
