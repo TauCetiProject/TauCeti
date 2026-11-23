@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Relative
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
-public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 public import TauCeti.Topology.VectorBundle.Thom.OrientationCover
 public import TauCeti.Topology.VectorBundle.Thom.TwistedRankDegreeHomology
 
@@ -168,17 +167,14 @@ theorem signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply
       ⟨v.proj, (proj_proj_eq_proj_coverThomPairMap_fst v).trans
         (congrArg TotalSpace.proj (coverThomPairMap_fst_deckThomPairMap_fst v)).symm⟩ = -r := by
   set w := TopPair.Hom.fst (deckThomPairMap F E ι) v
-  -- The deck involution carries the point `w.proj` of the fibre to `v.proj`.
-  have he : Function.fiberMap _ (funext proj_deck) (TopPair.Hom.fst (coverThomPairMap F E ι) w).proj
-      ⟨w.proj, proj_proj_eq_proj_coverThomPairMap_fst w⟩ =
-      ⟨v.proj, (proj_proj_eq_proj_coverThomPairMap_fst v).trans
-        (congrArg TotalSpace.proj (coverThomPairMap_fst_deckThomPairMap_fst v)).symm⟩ :=
-    Subtype.ext ((Function.fiberMap_apply_coe _ _ _ _).trans
-      ((congrArg (fun x ↦ deck x) (deckThomPairMap_fst_proj v)).trans (deck_deck v.proj)))
-  rw [← he, ← signFiberEquiv_apply deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h),
-    signFiberEquiv_fiberMap, signFiberEquiv_apply]
-  exact congrArg Neg.neg
-    (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply hι R w r)
+  -- The orientation `v.proj` is the image of `w.proj` under the deck involution.
+  have hv : v.proj = deck w.proj :=
+    (deck_deck v.proj).symm.trans (congrArg (fun x ↦ deck x) (deckThomPairMap_fst_proj v)).symm
+  refine (liftFiberEquiv_apply hι v.proj _ _).symm.trans ?_
+  simp only [hv]
+  exact (liftFiberEquiv_deck hι w.proj (proj_proj_eq_proj_coverThomPairMap_fst w) _ _).trans
+    (congrArg Neg.neg ((liftFiberEquiv_apply hι _ _ _).trans
+      (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply hι R w r)))
 
 variable (F E) in
 /-- The orientation local system `π^*o(E)` of `E` pulled back to its total space, written out as a

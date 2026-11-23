@@ -221,6 +221,19 @@ theorem liftFiberEquiv_apply {x : B} (e : VectorBundleOrientationCover F E ι)
         (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨e, he⟩ :=
   signFiberEquiv_apply _ _ _ _
 
+/-- Evaluation at the image `deck e` of a point `e` of the orientation cover is the negative of
+evaluation at `e`. -/
+theorem liftFiberEquiv_deck {x : B} (e : VectorBundleOrientationCover F E ι) (he : e.proj = x)
+    (he' : (deck e).proj = x) (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x)) :
+    liftFiberEquiv hι (deck e) he' f = -liftFiberEquiv hι e he f := by
+  -- The point `deck e` of the fibre is the image of `e` under the deck involution.
+  have h : (⟨deck e, he'⟩ : (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι))) =
+      Function.fiberMap _ (funext proj_deck) x ⟨e, he⟩ :=
+    Subtype.ext (Function.fiberMap_apply_coe _ (funext proj_deck) x ⟨e, he⟩).symm
+  rw [liftFiberEquiv_apply, liftFiberEquiv_apply, h,
+    ← signFiberEquiv_apply deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h), signFiberEquiv_fiberMap,
+    signFiberEquiv_apply]
+
 /-- Evaluation at an orientation `o` of the fibre `E_b` identifies the fibre of the orientation
 local system over `b` with `R`. -/
 def signLocalSystemFiberEquiv {b : B} (o : Orientation ℝ (E b) ι) :
@@ -242,12 +255,11 @@ priority so that `simp` applies it before unfolding the evaluation by
 theorem signLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
     (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
     signLocalSystemFiberEquiv hι (-o) f = -signLocalSystemFiberEquiv hι o f := by
-  -- The deck involution sends the point `⟨b, o⟩` of the fibre to `⟨b, -o⟩`.
-  have h : Function.fiberMap _ proj_comp_deck b ⟨⟨b, o⟩, rfl⟩ =
-      (⟨⟨b, -o⟩, rfl⟩ : (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι))) :=
-    Subtype.ext (by simp [deck_apply])
-  rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, ← h]
-  exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).property _
+  -- The deck involution sends the point `⟨b, o⟩` of the cover to `⟨b, -o⟩`.
+  have h := liftFiberEquiv_deck hι ⟨b, o⟩ rfl (proj_deck _) f
+  simp only [deck_apply] at h
+  -- `signLocalSystemFiberEquiv` is `liftFiberEquiv` at the point `⟨b, o⟩` by definition.
+  exact h
 
 /-- Evaluation at the opposite orientation is the negative of evaluation at `o`, stated for the
 inverse equivalences. -/
@@ -703,15 +715,10 @@ theorem pullbackSignLocalSystemIsoOfLift_hom_of_eq_deck {Y : TopCat.{uB}} (g : C
   refine NatTrans.ext (funext fun ⟨y⟩ ↦ ModuleCat.hom_ext (LinearMap.ext fun
     (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y))) ↦ ?_))
   rw [NatTrans.app_neg, ModuleCat.hom_neg]
-  -- The orientation `s' y` is the other point of the fibre over `g y`.
-  have he : (⟨s' y, hs' y⟩ : (proj ⁻¹' {g y} : Set (VectorBundleOrientationCover F E ι))) =
-      Function.fiberMap _ (funext proj_deck) (g y) ⟨s y, hs y⟩ :=
-    Subtype.ext ((h y).trans
-      (Function.fiberMap_apply_coe _ (funext proj_deck) (g y) ⟨s y, hs y⟩).symm)
-  refine (pullbackSignLocalSystemIsoOfLift_hom_app_apply hι g s' hs' y f).trans ?_
-  rw [he, ← signFiberEquiv_apply deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h),
-    signFiberEquiv_fiberMap, signFiberEquiv_apply]
-  exact congrArg Neg.neg (pullbackSignLocalSystemIsoOfLift_hom_app_apply hι g s hs y f).symm
+  -- `change`: the components are evaluations at `s' y = deck (s y)` and at `s y`.
+  change liftFiberEquiv hι (s' y) (hs' y) f = -liftFiberEquiv hι (s y) (hs y) f
+  simp only [h y]
+  exact liftFiberEquiv_deck hι (s y) (hs y) _ f
 
 /-- Two lifts exchanged by the deck involution give opposite inverses of the trivializations of the
 pulled-back orientation local system. -/
