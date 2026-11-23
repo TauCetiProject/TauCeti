@@ -95,10 +95,6 @@ theorem pathHmul_id (a b : Y) :
     FundamentalGroupoid.id_eq_path_refl]
   exact congrArg Path.Homotopic.Quotient.mk (Path.ext rfl)
 
-/-- The neutral element multiplied by itself twice, `(e ⋀ e) ⋀ e`, is `e`. -/
-theorem hmul_e_e_e : (((e : Y) ⋀ e) ⋀ e) = e :=
-  (congrArg (· ⋀ e) hmul_e_e).trans hmul_e_e
-
 /-- **The product of path classes is functorial**: the product of two composites is the composite
 of the products. -/
 @[reassoc]

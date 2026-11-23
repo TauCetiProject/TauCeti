@@ -76,18 +76,11 @@ variable {γ γ₀ γ₁ γ₂ γ₃ : Ω X x}
 /-- **Gluing caps along a four-holed sphere.** For a four-holed sphere `W : γ₀ ⟶ (γ₁ ⬝ γ₂) ⬝ γ₃`,
 a homotopy class of homotopies of loops from the output `γ₀` to the triple concatenation of the
 inputs, and raw caps `D₁`, `D₂`, `D₃` of the inputs, the raw cap of `γ₀` obtained by placing the
-three caps side by side on top of `W`. -/
+three caps side by side on top of `W`: the first two caps glued along the trivial pair of pants,
+then glued with the third along `W`. -/
 def glue₃ (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩)
     (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) (D₃ : RawCap γ₃) : RawCap γ₀ :=
-  W ≫ HSpace.pathHmul (HSpace.pathHmul D₁ D₂) D₃ ≫
-    eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e_e)
-
-theorem glue₃_def (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩)
-    (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) (D₃ : RawCap γ₃) :
-    glue₃ W D₁ D₂ D₃ =
-      W ≫ HSpace.pathHmul (HSpace.pathHmul D₁ D₂) D₃ ≫
-        eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e_e) :=
-  (rfl)
+  pantsGlue W (pantsGlue (𝟙 _) D₁ D₂) D₃
 
 /-- Gluing caps along a four-holed sphere `W` is gluing them along `W`, read as a pair of pants
 with inputs `γ₁ ⬝ γ₂` and `γ₃`, after gluing the first two caps along the trivial pair of
@@ -95,14 +88,8 @@ pants. -/
 theorem glue₃_eq_pantsGlue_pantsGlue
     (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩) (D₁ : RawCap γ₁)
     (D₂ : RawCap γ₂) (D₃ : RawCap γ₃) :
-    glue₃ W D₁ D₂ D₃ = pantsGlue W (pantsGlue (𝟙 _) D₁ D₂) D₃ := by
-  have h := HSpace.pathHmul_comp (HSpace.pathHmul D₁ D₂)
-    (eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e)) D₃ (𝟙 _)
-  rw [Category.comp_id] at h
-  simp only [glue₃_def, pantsGlue_def, Category.id_comp, h, Category.assoc]
-  rw [HSpace.pathHmul_eqToHom_id, eqToHom_trans]
-  -- The two transports `(e ⋀ e) ⋀ e ⟶ e` differ only in their equality proofs.
-  rfl
+    glue₃ W D₁ D₂ D₃ = pantsGlue W (pantsGlue (𝟙 _) D₁ D₂) D₃ :=
+  (rfl)
 
 /-- **Sewing a pair of pants into the first input.** If the four-holed sphere `W` is the pair of
 pants `P : γ₀ ⟶ γ ⬝ γ₃` with the pair of pants `P' : γ ⟶ γ₁ ⬝ γ₂` sewn into its first input, then
@@ -138,7 +125,7 @@ four-holed sphere is gluing caps along the composite four-holed sphere `p ≫ W`
 theorem comp_glue₃ {γ₀' : Ω X x} (p : (⟨γ₀'⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₀⟩)
     (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩) (D₁ : RawCap γ₁)
     (D₂ : RawCap γ₂) (D₃ : RawCap γ₃) : p ≫ glue₃ W D₁ D₂ D₃ = glue₃ (p ≫ W) D₁ D₂ D₃ := by
-  simp only [glue₃_def, Category.assoc]
+  simp only [glue₃_eq_pantsGlue_pantsGlue, comp_pantsGlue]
 
 /-- Gluing caps glued to homotopies of loops `p₁`, `p₂` and `p₃` at the inputs is gluing caps
 along the four-holed sphere `W` followed by the product `(p₁ ⋀ p₂) ⋀ p₃` of the homotopies. -/
@@ -150,13 +137,13 @@ theorem glue₃_comp_comp_comp {γ₁' γ₂' γ₃' : Ω X x}
     (D₃ : RawCap γ₃') :
     glue₃ W (p₁ ≫ D₁) (p₂ ≫ D₂) (p₃ ≫ D₃) =
       glue₃ (W ≫ HSpace.pathHmul (HSpace.pathHmul p₁ p₂) p₃) D₁ D₂ D₃ := by
-  rw [glue₃_def, glue₃_def, HSpace.pathHmul_comp p₁ D₁ p₂ D₂]
-  -- The objects `γ₁ ⬝ γ₂` and `γ₁ ⋀ γ₂` only agree after
-  -- unfolding the product of the loop space, so the outer functoriality and the reassociation
-  -- are terms.
-  exact (congrArg (W ≫ · ≫ eqToHom _)
-    (HSpace.pathHmul_comp (HSpace.pathHmul p₁ p₂) (HSpace.pathHmul D₁ D₂) p₃ D₃)).trans
-      ((congrArg (W ≫ ·) (Category.assoc _ _ _)).trans (Category.assoc _ _ _).symm)
+  have h : pantsGlue (𝟙 _) (p₁ ≫ D₁) (p₂ ≫ D₂) =
+      HSpace.pathHmul p₁ p₂ ≫ pantsGlue (𝟙 _) D₁ D₂ := by
+    rw [pantsGlue_comp_comp, comp_pantsGlue, Category.id_comp, Category.comp_id]
+  rw [glue₃_eq_pantsGlue_pantsGlue, glue₃_eq_pantsGlue_pantsGlue, h, pantsGlue_comp_comp]
+  -- The objects `γ₁' ⬝ γ₂'` and `γ₁' ⋀ γ₂'` of the two trivial pairs of pants only agree after
+  -- unfolding the product of the loop space.
+  rfl
 
 /-- Gluing a sphere at the centre of the first input cap glues the same sphere at the centre of
 the cap glued along a four-holed sphere. -/
