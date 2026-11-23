@@ -77,7 +77,7 @@ theorem isDistinguished_iff {d : A} : IsDistinguished p d ↔ IsUnit (delta p d)
 theorem IsDistinguished.map {f : A →+* B} (hf : IsDeltaMap p f) {d : A}
     (hd : IsDistinguished p d) : IsDistinguished p (f d) := by
   rw [isDistinguished_iff, ← hf.map_delta]
-  exact IsUnit.map f hd
+  exact (isDistinguished_iff.1 hd).map f
 
 variable [hp : Fact p.Prime]
 
@@ -94,7 +94,7 @@ private theorem isUnit_delta_mul_iff {x y : A} (hxJ : x ∈ Ring.jacobson A) :
 /-- A distinguished element `d` has `p ∈ (d, φ d)`, as `φ d = d ^ p + p * δ d`. -/
 theorem IsDistinguished.natCast_mem_span_frobenius {d : A} (hd : IsDistinguished p d) :
     (p : A) ∈ Ideal.span {d, frobenius p A d} := by
-  obtain ⟨u, hu⟩ := hd
+  obtain ⟨u, hu⟩ := isDistinguished_iff.1 hd
   have hdp : d ^ (p - 1) * d = d ^ p := pow_sub_one_mul hp.out.ne_zero d
   have hv : (↑u⁻¹ : A) * delta p d = 1 := by rw [← hu, Units.inv_mul]
   refine Ideal.mem_span_pair.2 ⟨-(↑u⁻¹ * d ^ (p - 1)), ↑u⁻¹, ?_⟩
@@ -116,21 +116,22 @@ prismatic cohomology*, Lemma 2.23, which also assumes `p` in the Jacobson radica
 theorem IsDistinguished.unit_mul {d u : A} (hd : IsDistinguished p d) (hu : IsUnit u)
     (hdJ : d ∈ Ring.jacobson A) : IsDistinguished p (u * d) := by
   rw [mul_comm, isDistinguished_iff, isUnit_delta_mul_iff hdJ]
-  exact hd.mul (hu.map (frobenius p A))
+  exact (isDistinguished_iff.1 hd).mul (hu.map (frobenius p A))
 
 /-- **The factor lemma, distinguished factor.** If `f * h` is distinguished and `f` lies in the
 Jacobson radical, then `f` is distinguished (Bhatt and Scholze, *Prisms and prismatic cohomology*,
 Lemma 2.24, which also assumes `p` in the Jacobson radical). -/
 theorem IsDistinguished.of_mul_left {f h : A} (hd : IsDistinguished p (f * h))
     (hfJ : f ∈ Ring.jacobson A) : IsDistinguished p f :=
-  isUnit_of_mul_isUnit_left ((isUnit_delta_mul_iff hfJ).1 hd)
+  isDistinguished_iff.2
+    (isUnit_of_mul_isUnit_left ((isUnit_delta_mul_iff hfJ).1 (isDistinguished_iff.1 hd)))
 
 /-- **The factor lemma, unit factor.** If `f * h` is distinguished and `f` and `p` lie in the
 Jacobson radical, then `h` is a unit (Bhatt and Scholze, *Prisms and prismatic cohomology*,
 Lemma 2.24). -/
 theorem IsDistinguished.isUnit_of_mul_right {f h : A} (hd : IsDistinguished p (f * h))
     (hfJ : f ∈ Ring.jacobson A) (hpJ : (p : A) ∈ Ring.jacobson A) : IsUnit h := by
-  have hφ := isUnit_of_mul_isUnit_right ((isUnit_delta_mul_iff hfJ).1 hd)
+  have hφ := isUnit_of_mul_isUnit_right ((isUnit_delta_mul_iff hfJ).1 (isDistinguished_iff.1 hd))
   rw [frobenius_apply, Ring.isUnit_add_iff_of_mem_jacobson (Ideal.mul_mem_right _ _ hpJ)] at hφ
   exact (isUnit_pow_iff hp.out.ne_zero).1 hφ
 
@@ -172,6 +173,7 @@ theorem isDistinguished_iff_natCast_mem_span_frobenius {d : A} (hdJ : d ∈ Ring
     IsDistinguished p d ↔ (p : A) ∈ Ideal.span {d, frobenius p A d} := by
   refine ⟨IsDistinguished.natCast_mem_span_frobenius, fun hspan => ?_⟩
   by_contra hd
+  rw [isDistinguished_iff] at hd
   obtain ⟨m, hm, hδ⟩ := exists_max_ideal_of_mem_nonunits hd
   exact delta_notMem_of_natCast_mem_span hspan hdJ hpJ m hδ
 
