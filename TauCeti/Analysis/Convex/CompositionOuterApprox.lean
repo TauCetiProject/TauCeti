@@ -75,7 +75,8 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
   the same comparison when `h` is monotone on the whole height space.
 * `TauCeti.CompositionLift.directOuterApprox_subset_fst_image_sharedOuterApproxOn` and
   `TauCeti.CompositionLift.directOuterApprox_subset_fst_image_sharedOuterApprox`: the reverse
-  inclusion when all anchors share a common component row.
+  inclusion when, at every point of the direct approximation, all anchors share a common component
+  row and that row is an admissible height.
 * `TauCeti.CompositionLift.sharedOuterApprox_empty_heights`,
   `TauCeti.CompositionLift.sharedOuterApproxOn_empty_heights`,
   `TauCeti.CompositionLift.directOuterApprox_of_isEmpty`,
@@ -114,30 +115,27 @@ def outerRow (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dh : (ι
 theorem outerRow_def : outerRow g h a Dh y = h (g a) + Dh (y - g a) :=
   (rfl)
 
+/-- A continuous affine outer function is its own outer row at any anchor. -/
+@[simp]
+theorem _root_.ContinuousAffineMap.outerRow_eq_apply (φ : (ι → ℝ) →ᴬ[ℝ] ℝ) :
+    outerRow g φ a φ.contLinear y = φ y := by
+  rw [outerRow_def, ← vsub_eq_sub, φ.contLinear_apply_vsub, vsub_eq_sub, add_sub_cancel]
+
 /-- A continuous linear outer function is its own outer row at any anchor. -/
 @[simp]
-theorem outerRow_continuousLinearMap (L : (ι → ℝ) →L[ℝ] ℝ) : outerRow g L a L y = L y := by
-  simp [outerRow_def]
+theorem _root_.ContinuousLinearMap.outerRow_eq_apply (L : (ι → ℝ) →L[ℝ] ℝ) :
+    outerRow g L a L y = L y :=
+  L.toContinuousAffineMap.outerRow_eq_apply
 
 /-- For the outer sum, the outer row at any anchor is the sum of the heights. -/
 @[simp]
 theorem outerRow_sum_coord [Fintype ι] :
     outerRow g (fun y ↦ ∑ j, y j) a (∑ j, ContinuousLinearMap.proj j) y = ∑ j, y j := by
-  convert outerRow_continuousLinearMap (g := g) (a := a) (y := y)
-    (∑ j, ContinuousLinearMap.proj (R := ℝ) j) using 2
+  convert (∑ j, ContinuousLinearMap.proj (R := ℝ) j).outerRow_eq_apply (g := g) (a := a) (y := y)
+    using 2
   · ext
     simp
   · simp
-
-/-- The outer sum `y ↦ ∑ j, y j` is monotone. -/
-theorem monotone_sum_coord [Fintype ι] : Monotone fun y : ι → ℝ ↦ ∑ j, y j :=
-  fun _ _ hyz ↦ Finset.sum_le_sum fun j _ ↦ hyz j
-
-/-- The derivative `∑ j, proj j` of the outer sum is monotone. -/
-theorem monotone_sum_proj [Fintype ι] :
-    Monotone (∑ j, ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ) := fun y z hyz ↦ by
-  simp only [sum_apply, ContinuousLinearMap.proj_apply]
-  exact monotone_sum_coord hyz
 
 @[simp]
 theorem outerRow_self : outerRow g h a Dh (g a) = h (g a) := by
@@ -179,16 +177,17 @@ def directRow (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dg : X 
 theorem componentRow_def : componentRow g a Dg x = g a + Dg (x - a) :=
   (rfl)
 
+/-- A continuous affine inner map is its own component row at any anchor. -/
+@[simp]
+theorem _root_.ContinuousAffineMap.componentRow_eq_apply (φ : X →ᴬ[ℝ] ι → ℝ) :
+    componentRow φ a φ.contLinear x = φ x := by
+  rw [componentRow_def, ← vsub_eq_sub, φ.contLinear_apply_vsub, vsub_eq_sub, add_sub_cancel]
+
 /-- A continuous linear inner map is its own component row at any anchor. -/
 @[simp]
-theorem componentRow_continuousLinearMap (L : X →L[ℝ] ι → ℝ) : componentRow L a L x = L x := by
-  simp [componentRow_def]
-
-/-- The component row of the identity inner map is the identity at every anchor. -/
-@[simp]
-theorem componentRow_id [Fintype ι] (a x : ι → ℝ) :
-    componentRow id a (ContinuousLinearMap.id ℝ _) x = x := by
-  simpa using componentRow_continuousLinearMap (a := a) (x := x) (ContinuousLinearMap.id ℝ _)
+theorem _root_.ContinuousLinearMap.componentRow_eq_apply (L : X →L[ℝ] ι → ℝ) :
+    componentRow L a L x = L x :=
+  L.toContinuousAffineMap.componentRow_eq_apply
 
 theorem directRow_def : directRow g h a Dg Dh x = h (g a) + Dh (Dg (x - a)) :=
   (rfl)
@@ -429,24 +428,28 @@ theorem fst_image_sharedOuterApproxOn_subset_directOuterApprox
   rw [outerRow_componentRow] at hsub
   linarith [(hz i).2]
 
-/-- **A common component row lifts the direct approximation.** If at every point `x ∈ D` all
-anchors share the component row `r x`, and `r` maps `D` into `E`, then every point of the direct
-approximation lifts to the shared approximation with exact rows on `J`, with height `r x`. -/
+/-- **A common component row lifts the direct approximation.** If at every point `x` of the direct
+approximation all anchors share the component row `r x`, and `r` maps the direct approximation into
+`E`, then every point of the direct approximation lifts to the shared approximation with exact rows
+on `J`, with height `r x`. -/
 theorem directOuterApprox_subset_fst_image_sharedOuterApproxOn {r : X → ι → ℝ}
-    (hr : MapsTo r D E) (hrow : ∀ x ∈ D, ∀ i, componentRow g (a i) (Dg i) x = r x) :
+    (hr : MapsTo r (directOuterApprox D g h a Dg Dh b) E)
+    (hrow : ∀ x ∈ directOuterApprox D g h a Dg Dh b, ∀ i, componentRow g (a i) (Dg i) x = r x) :
     directOuterApprox D g h a Dg Dh b ⊆ Prod.fst '' sharedOuterApproxOn J D E g h a Dg Dh b := by
   intro x hx
   obtain ⟨hxD, hxb⟩ := mem_directOuterApprox.1 hx
-  refine ⟨(x, r x), mem_sharedOuterApproxOn.2 ⟨mem_sharedOuterApprox.2 ⟨hxD, hr hxD,
-    fun i ↦ ⟨(hrow x hxD i).le, ?_⟩⟩, fun i j _ ↦ congr_fun (hrow x hxD i).symm j⟩, rfl⟩
-  rw [← hrow x hxD i, outerRow_componentRow]
+  refine ⟨(x, r x), mem_sharedOuterApproxOn.2 ⟨mem_sharedOuterApprox.2 ⟨hxD, hr hx,
+    fun i ↦ ⟨(hrow x hx i).le, ?_⟩⟩, fun i j _ ↦ congr_fun (hrow x hx i).symm j⟩, rfl⟩
+  rw [← hrow x hx i, outerRow_componentRow]
   exact hxb i
 
-/-- **A common component row lifts the direct approximation.** If at every point `x ∈ D` all
-anchors share the component row `r x`, and `r` maps `D` into `E`, then every point of the direct
-approximation lifts to the shared approximation, with height `r x`. -/
+/-- **A common component row lifts the direct approximation.** If at every point `x` of the direct
+approximation all anchors share the component row `r x`, and `r` maps the direct approximation into
+`E`, then every point of the direct approximation lifts to the shared approximation, with height
+`r x`. -/
 theorem directOuterApprox_subset_fst_image_sharedOuterApprox {r : X → ι → ℝ}
-    (hr : MapsTo r D E) (hrow : ∀ x ∈ D, ∀ i, componentRow g (a i) (Dg i) x = r x) :
+    (hr : MapsTo r (directOuterApprox D g h a Dg Dh b) E)
+    (hrow : ∀ x ∈ directOuterApprox D g h a Dg Dh b, ∀ i, componentRow g (a i) (Dg i) x = r x) :
     directOuterApprox D g h a Dg Dh b ⊆ Prod.fst '' sharedOuterApprox D E g h a Dg Dh b := by
   simpa using directOuterApprox_subset_fst_image_sharedOuterApproxOn (J := ∅) (h := h) (Dh := Dh)
     (b := b) hr hrow
