@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
+public import Mathlib.AlgebraicGeometry.Group.Affine
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
@@ -34,6 +35,8 @@ monoidal category `Over (Spec R)`, as for the points of group schemes over `Spec
   back functions along it.
 * `AlgebraicGeometry.Scheme.Hom.pointsEquivAlgHom_symm_apply_left`: the point attached to a
   character `φ` is `Spec φ`.
+* `TauCeti.AlgebraicGeometry.specMap_algHom_comp_eq_id`: for an `R`-algebra `A`, the spectrum
+  of a character `A →ₐ[R] R` is a section of the structure morphism `Spec A ⟶ Spec R`.
 -/
 
 public section
@@ -112,3 +115,20 @@ theorem Scheme.Hom.pointsEquivAlgHom_symm_apply_left (f : X ⟶ Spec (.of R)) [I
     X.isoSpec.inv)
 
 end AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry
+
+open _root_.AlgebraicGeometry
+
+variable {R A : Type u} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- The spectrum of a character `φ : A →ₐ[R] R` is a section of the structure morphism
+`Spec A ⟶ Spec R`, that is an `R`-rational point of `Spec A`. -/
+theorem specMap_algHom_comp_eq_id (φ : A →ₐ[R] R) :
+    Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ (Spec (.of A) ↘ Spec (.of R)) = 𝟙 _ := by
+  rw [specOverSpec_over, ← Spec.map_comp, ← Spec.map_id]
+  congr 1
+  ext r
+  simp
+
+end TauCeti.AlgebraicGeometry
