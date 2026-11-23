@@ -216,6 +216,15 @@ theorem lipschitzWith_antiperiodicGaugeLoop :
 theorem continuous_antiperiodicGaugeLoop : Continuous (antiperiodicGaugeLoop (E := E) T) :=
   (lipschitzWith_antiperiodicGaugeLoop T).continuous
 
+/-- The periodic gauge `Sₐ` of a loop of complex-linear maps is a loop of complex-linear maps. -/
+theorem antiperiodicGaugeLoop_apply_I_smul {S : C(AddCircle T, E →L[ℝ] E)}
+    (hS : ∀ t v, S t (I • v) = I • S t v) (t : AddCircle T) (v : E) :
+    antiperiodicGaugeLoop T S t (I • v) = I • antiperiodicGaugeLoop T S t v := by
+  induction t using QuotientAddGroup.induction_on with
+  | H t =>
+    simp only [antiperiodicGaugeLoop_apply_coe, smul_sub]
+    rw [smul_comm _ I v, hS, smul_comm _ I, smul_comm _ I v]
+
 /-! ### Solutions -/
 
 /-- **The gauge identity.** With `u(t) = exp (π i t / T)`, a map `η : ℝ → E` satisfies
