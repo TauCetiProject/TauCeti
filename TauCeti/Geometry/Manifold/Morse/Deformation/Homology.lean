@@ -128,46 +128,6 @@ theorem isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff I 
   rwa [h]
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- A collar `f⁻¹[a, a']` which a flow `φ` crosses at unit speed strongly deformation retracts
-onto its lower level `f⁻¹(a)`. -/
-theorem exists_collarDeformation {a' : ℝ} (hf : Continuous f) (φ : Flow ℝ M)
-    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ a' → f (φ t x) = f x - t)
-    (hLN : f ⁻¹' {a} ⊆ f ⁻¹' Icc a a') :
-    ∃ r : C(f ⁻¹' Icc a a', f ⁻¹' {a}),
-      Nonempty (((ContinuousMap.inclusion hLN).comp r).HomotopyRel (ContinuousMap.id _)
-        {x | (x : M) ∈ f ⁻¹' {a}}) := by
-  -- Along the flow line of `x` in the collar, `f` takes the value `f x - s * (f x - a)` at time
-  -- `s * (f x - a)`, for `0 ≤ s ≤ 1`.
-  have hval (x : f ⁻¹' Icc a a') (s : ℝ) (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
-      f (φ (s * (f x - a)) x) = f x - s * (f x - a) := by
-    have hx : a ≤ f x ∧ f x ≤ a' := x.property
-    exact hφf x _ (mul_nonneg hs₀ (by linarith)) (by nlinarith) hx.2
-  have hmem (x : f ⁻¹' Icc a a') (s : ℝ) (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
-      φ (s * (f x - a)) x ∈ f ⁻¹' Icc a a' := by
-    have hx : a ≤ f x ∧ f x ≤ a' := x.property
-    rw [mem_preimage, hval x s hs₀ hs₁, mem_Icc]
-    constructor <;> nlinarith
-  let r : C(f ⁻¹' Icc a a', f ⁻¹' {a}) :=
-    { toFun := fun x ↦ ⟨φ (1 * (f x - a)) x, by
-        rw [mem_preimage, hval x 1 zero_le_one le_rfl, mem_singleton_iff]
-        ring⟩
-      continuous_toFun := by
-        refine Continuous.subtype_mk ?_ _
-        exact φ.continuous (by fun_prop) (by fun_prop) }
-  exact ⟨r, ⟨{
-    toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * (f p.2 - a)) p.2,
-      hmem p.2 _ (by linarith [p.1.property.2]) (by linarith [p.1.property.1])⟩
-    continuous_toFun := by
-      refine Continuous.subtype_mk ?_ _
-      exact φ.continuous (by fun_prop) (by fun_prop)
-    map_zero_left := fun x ↦ Subtype.ext (by simp [r])
-    map_one_left := fun x ↦ Subtype.ext (by simp [Flow.map_zero_apply])
-    prop' := fun t x hx ↦ by
-      have hxa : f x = a := hx
-      ext
-      simp [r, hxa] }⟩⟩
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- A collar `f⁻¹[a, a']` which the flow `φ` crosses at unit speed carries no homology relative to
 its lower level `f⁻¹(a)`: following the flow down to the level `a` is a strong deformation
 retraction. -/
@@ -180,51 +140,6 @@ private theorem isZero_singularHomology_collar {a' : ℝ} (hf : Continuous f) (�
 
 variable {A : Type v} [Category.{w} A] [HasCoproducts.{u} A] [Abelian A]
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- The excision step: for a collar `f⁻¹[a, a']` with `a < a'`, or with `a' = b`, excising
-`{f < a}` from `({f ≤ b}, {f ≤ a'})` leaves `(f⁻¹[a, b], f⁻¹[a, a'])`. -/
-private theorem isIso_singularHomologyMap_excision_collar {a' : ℝ} (hf : Continuous f)
-    (ha'b : a' ≤ b) (hlt : a < a' ∨ a' = b) (R : A) (n : ℕ) :
-    IsIso (TopPair.singularHomologyMap
-      (TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
-        (preimage_mono (Icc_subset_Icc_right ha'b) : f ⁻¹' Icc a a' ⊆ f ⁻¹' Icc a b)
-        (sublevel_mono f ha'b) (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2)
-        fun _ hx ↦ (hx : f _ ∈ Icc a a').2) R n) := by
-  have hWb : f ⁻¹' Icc a b ⊆ {x | f x ≤ b} := fun _ hx ↦ hx.2
-  set ι := TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
-    (preimage_mono (Icc_subset_Icc_right ha'b) : f ⁻¹' Icc a a' ⊆ f ⁻¹' Icc a b)
-    (sublevel_mono f ha'b) (ContinuousMap.inclusion hWb) fun _ hx ↦ (hx : f _ ∈ Icc a a').2
-  have hι : ⇑(TopPair.Hom.fst ι) = ContinuousMap.inclusion hWb :=
-    funext fun _ ↦ TopPair.ofInclusionMap_fst_apply _ _ _
-  -- The cover of `{f ≤ b}` by `{f < a'}` (all of it if `a' = b`), inside the subspace, and by
-  -- `{a < f}`, inside the band.
-  refine TopPair.isIso_singularHomologyMap_of_open_cover R ι
-    (hι ▸ Topology.IsEmbedding.inclusion hWb) ?_
-    (fun i : Bool ↦ bif i then ({x | f x.val < a' ∨ b ≤ a'} : Set {x | f x ≤ b})
-      else ({x | a < f x.val} : Set {x | f x ≤ b})) (fun i ↦ ?_) ?_ (fun i ↦ ?_) n
-  · rintro x ⟨y, hy⟩
-    have hy' : f x.val ≤ a' := by
-      have h := congrArg Subtype.val (hy.trans (congrFun hι x))
-      exact h ▸ y.property
-    exact ⟨⟨x.val, x.property.1, hy'⟩, rfl⟩
-  · cases i
-    · exact isOpen_lt continuous_const (hf.comp continuous_subtypeVal)
-    · exact (isOpen_lt (hf.comp continuous_subtypeVal) continuous_const).union isOpen_const
-  · refine eq_univ_of_forall fun x ↦ mem_iUnion.2 ?_
-    by_cases hx : f x.val < a'
-    · exact ⟨true, Or.inl hx⟩
-    rcases hlt with hlt | rfl
-    · exact ⟨false, hlt.trans_le (le_of_not_gt hx)⟩
-    · exact ⟨true, Or.inr le_rfl⟩
-  · cases i
-    · refine Or.inr fun x (hx : a < f x.val) ↦ ⟨⟨x.val, hx.le, x.property⟩, ?_⟩
-      rw [hι]
-      rfl
-    · refine Or.inl fun x (hx : f x.val < a' ∨ b ≤ a') ↦ ⟨⟨x.val, ?_⟩, rfl⟩
-      rcases hx with hx | hx
-      · exact hx.le
-      · exact (x.property : f x.val ≤ b).trans hx
-
 /-- **The relative homology of a band over a regular level** (Milnor, *Lectures on the h-cobordism
 theorem*, §3). If `a ≤ b`, the band `f⁻¹[a, b]` is compact and `a` is a regular value of the
 smooth function `f`, then the inclusion of pairs `(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a})`
@@ -235,18 +150,8 @@ theorem isIso_singularHomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ) 
     IsIso (TopPair.singularHomologyMap (bandPairInclusion f hab) R n) := by
   have hfc : Continuous f := hf.continuous
   -- A collar `f⁻¹[a, a']` without critical points, with `a < a'` unless the band is a level.
-  obtain ⟨a', haa', ha'b, hlt, hreg⟩ : ∃ a', a ≤ a' ∧ a' ≤ b ∧ (a < a' ∨ a' = b) ∧
-      ∀ x, a ≤ f x → f x ≤ a' → mfderiv I 𝓘(ℝ) f x ≠ 0 := by
-    rcases hab.eq_or_lt with rfl | hlt
-    · refine ⟨a, le_rfl, le_rfl, Or.inr rfl, fun x h₁ h₂ hx ↦ ?_⟩
-      exact isRegularPoint_iff_notMem_criticalPoints.1 (ha.isRegularPoint (le_antisymm h₂ h₁))
-        (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx)
-    · obtain ⟨a', ⟨h₁, h₂⟩, -, h⟩ :=
-        exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero (hf.of_le (by simp)) hlt hcompact ha
-      exact ⟨a', h₁.le, h₂, Or.inl h₁, h⟩
-  have hcollar : IsCompact (f ⁻¹' Icc a a') :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc)
-      (preimage_mono (Icc_subset_Icc_right ha'b))
+  obtain ⟨a', ⟨haa', ha'b⟩, hlt, hcollar, hreg⟩ :=
+    exists_mem_Icc_isCompact_forall_mfderiv_ne_zero (hf.of_le (by simp)) hab hcompact ha
   -- Enlarge `{f ≤ a}` to `{f ≤ a'}` in the sublevel pair.
   let T₁ :=
     TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f haa') (sublevel_mono f ha'b)
@@ -274,7 +179,7 @@ theorem isIso_singularHomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ) 
     TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2)
       fun _ hx ↦ (hx : f _ ∈ Icc a a').2
   have h₃ : IsIso (TopPair.singularHomologyMap ι R n) :=
-    isIso_singularHomologyMap_excision_collar hfc ha'b hlt R n
+    TopPair.isIso_singularHomologyMap_ofInclusionMap_preimage_Icc R hfc ha'b hlt n
   -- The two composites `(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a'})` agree.
   have hsq : bandPairInclusion f hab ≫ ψ₁ = ψ₂ ≫ ι := by
     refine TopPair.hom_ext_of_fst _ ?_

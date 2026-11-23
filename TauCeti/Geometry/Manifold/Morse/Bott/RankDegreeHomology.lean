@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
 public import TauCeti.Topology.VectorBundle.Orientation.RankDegreeHomology
 public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology.Basic
 import TauCeti.Geometry.Manifold.Topology
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
-import TauCeti.Topology.VectorBundle.EulerClass
 
 /-!
 # The homology across a Morse–Bott level in the degree of the index
@@ -103,40 +100,15 @@ theorem isZero_singularHomology_sublevelPair_of_lt {r : ℕ}
   | inl _ =>
     exact isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit R k
   | inr _ =>
-    have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-    have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
-    have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
-    have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
     have := h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc (hfs.of_le (by simp))
       hc hac.le hcb.le hcompact hcrit
-    have : T2Space S := i.isEmbedding.t2Space
-    -- Choose a smooth fibre metric `g` on the normal bundle, modelled on a Euclidean space; the
-    -- negative normal spaces relative to `g` form a vector bundle of rank `r`.
-    let P₀ := EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ E'))
-    have hdim : finrank ℝ P₀ = finrank ℝ E - finrank ℝ E' := finrank_euclideanSpace_fin
-    let := i.normalSpaceFiberBundle hn hdim
-    let := i.normalSpaceVectorBundle hn hdim
-    have := i.normalSpaceContMDiffVectorBundle hn (m := ∞) (by simp) hdim
-    obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤)
-      (F := P₀) (E := fun s ↦ i.NormalSpace s hn)
-    have hV := h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
-      (fun s ↦ (hfs (i s)).of_le (by simp)) hdim g hr
-    have hVu := hV.hasLocalSubbundleFrames.comp_equiv Equiv.ulift
-    let := subbundleTopology P₀ (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-    let := subbundleTopology P₀ (F' := ULift.{u} (Fin r) → ℝ)
-      (h.negativeNormalSpace hn g.toRiemannianMetric)
-    let := hVu.fiberBundle
-    have := hVu.vectorBundle
+    obtain ⟨V, _, _, _, _, _, _, ⟨e⟩⟩ := h.exists_thomPair_ulift_singularHomology_iso
+      hfs hc hac hcb hcompact hcrit hr R k
     have hrank : finrank ℝ (ULift.{u} (Fin r) → ℝ) = r := by
       rw [Module.finrank_pi, Fintype.card_ulift, Fintype.card_fin]
-    obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
-      hcrit hdim g hr R k
-    have hzero : IsZero ((thomPair (ULift.{u} (Fin r) → ℝ)
-        fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s).singularHomology R k) :=
+    have hzero : IsZero ((thomPair (ULift.{u} (Fin r) → ℝ) V).singularHomology R k) :=
       isZero_singularHomology_thomPair_of_compactSpace R (hrank.symm ▸ hk)
-    exact hzero.of_iso (e ≪≫ TopPair.singularHomologyMapIso R
-      (subbundleThomPairModelIso P₀ (Fin r → ℝ) (ULift.{u} (Fin r) → ℝ)
-        (h.negativeNormalSpace hn g.toRiemannianMetric)) k)
+    exact hzero.of_iso e
 
 include h hfs hc hac hcb hcompact hcrit in
 /-- **Across a Morse–Bott level the relative cohomology vanishes below the index.** Under the

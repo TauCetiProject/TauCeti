@@ -23,7 +23,10 @@ closure lies in the interior of `B` does not change relative cohomology
 and an open neighbourhood `U` of `K`, restriction `Hⁿ(X, X ∖ K) ⟶ Hⁿ(U, U ∖ K)` is an
 isomorphism (`TopPair.isIso_singularCohomologyMap_excisionMap_of_isClosed_subset`); this is the
 form in which cohomology with supports in a compact subset of a Hausdorff space, and hence
-Poincaré duality, is localised.
+Poincaré duality, is localised. For a continuous real function `f` and `a' ≤ b` with `a < a'` or
+`a' = b`, excising `{f < a}` gives isomorphisms for the collar inclusion
+`(f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})`
+(`TopPair.isIso_singularCohomologyMap_ofInclusionMap_preimage_Icc`).
 
 All of these follow from the general statement
 `TopPair.quasiIso_singularCochainComplexMap_of_open_cover`: a map of topological pairs
@@ -196,5 +199,27 @@ theorem isIso_singularCohomologyMap_ofSubsetMap_compl_iff {U L₁ L₂ : Set X} 
   exact ⟨fun _ ↦ IsIso.of_isIso_fac_right hw.symm, fun _ ↦ IsIso.of_isIso_fac_left hw⟩
 
 end Subsets
+
+section PreimageIcc
+
+variable (R k M) in
+/-- **Collar excision for continuous real functions, in cohomology.** For a continuous function
+`f : X → ℝ` and `a' ≤ b` with `a < a'` or `a' = b`, excising `{f < a}` from `({f ≤ b}, {f ≤ a'})`
+shows that the inclusion of pairs `(f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})` induces
+isomorphisms on relative singular cohomology in every degree. -/
+theorem isIso_singularCohomologyMap_ofInclusionMap_preimage_Icc {X : Type w} [TopologicalSpace X]
+    {f : X → ℝ} (hf : Continuous f) {a a' b : ℝ} (ha'b : a' ≤ b) (hlt : a < a' ∨ a' = b)
+    (n : ℕ) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (ofInclusionMap (X := TopCat.of X) (Y := TopCat.of X)
+        (Set.preimage_mono (Set.Icc_subset_Icc_right ha'b) :
+          f ⁻¹' Set.Icc a a' ⊆ f ⁻¹' Set.Icc a b)
+        (show {x | f x ≤ a'} ⊆ {x | f x ≤ b} from fun _ hx ↦ hx.trans ha'b)
+        (ContinuousMap.inclusion (s := f ⁻¹' Set.Icc a b) (t := {x | f x ≤ b}) fun _ hx ↦ hx.2)
+        fun _ hx ↦ (hx : f _ ∈ Set.Icc a a').2) n) := by
+  obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := open_cover_ofInclusionMap_preimage_Icc hf ha'b hlt
+  exact isIso_singularCohomologyMap_of_open_cover (R := R) (k := k) (M := M) _ h₁ h₂ _ h₃ h₄ h₅ n
+
+end PreimageIcc
 
 end TopPair

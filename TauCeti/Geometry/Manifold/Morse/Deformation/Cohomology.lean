@@ -216,50 +216,6 @@ private theorem isZero_singularCohomology_collar {a' : ℝ} (hf : Continuous f) 
   obtain ⟨r, ⟨G⟩⟩ := exists_collarDeformation hf φ hφf hLN
   exact TopPair.isZero_singularCohomology_ofInclusion_of_homotopyRel hLN r G R k N n
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- The excision step: for a collar `f⁻¹[a, a']` with `a < a'`, or with `a' = b`, excising
-`{f < a}` from `({f ≤ b}, {f ≤ a'})` leaves `(f⁻¹[a, b], f⁻¹[a, a'])`. -/
-private theorem isIso_singularCohomologyMap_excision_collar {a' : ℝ} (hf : Continuous f)
-    (ha'b : a' ≤ b) (hlt : a < a' ∨ a' = b) (R : C) (k : Type*) [Ring k] [Linear k C] (N : C)
-    (n : ℕ) :
-    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
-      (TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
-        (preimage_mono (Icc_subset_Icc_right ha'b) : f ⁻¹' Icc a a' ⊆ f ⁻¹' Icc a b)
-        (sublevel_mono f ha'b) (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2)
-        fun _ hx ↦ (hx : f _ ∈ Icc a a').2) n) := by
-  have hWb : f ⁻¹' Icc a b ⊆ {x | f x ≤ b} := fun _ hx ↦ hx.2
-  set ι := TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
-    (preimage_mono (Icc_subset_Icc_right ha'b) : f ⁻¹' Icc a a' ⊆ f ⁻¹' Icc a b)
-    (sublevel_mono f ha'b) (ContinuousMap.inclusion hWb) fun _ hx ↦ (hx : f _ ∈ Icc a a').2
-  have hι : ⇑(TopPair.Hom.fst ι) = ContinuousMap.inclusion hWb :=
-    funext fun _ ↦ TopPair.ofInclusionMap_fst_apply _ _ _
-  refine TopPair.isIso_singularCohomologyMap_of_open_cover (R := R) (k := k) (M := N) ι
-    (hι ▸ Topology.IsEmbedding.inclusion hWb) ?_
-    (fun i : Bool ↦ bif i then ({x | f x.val < a' ∨ b ≤ a'} : Set {x | f x ≤ b})
-      else ({x | a < f x.val} : Set {x | f x ≤ b})) (fun i ↦ ?_) ?_ (fun i ↦ ?_) n
-  · rintro x ⟨y, hy⟩
-    have hy' : f x.val ≤ a' := by
-      have h := congrArg Subtype.val (hy.trans (congrFun hι x))
-      exact h ▸ y.property
-    exact ⟨⟨x.val, x.property.1, hy'⟩, rfl⟩
-  · cases i
-    · exact isOpen_lt continuous_const (hf.comp continuous_subtypeVal)
-    · exact (isOpen_lt (hf.comp continuous_subtypeVal) continuous_const).union isOpen_const
-  · refine eq_univ_of_forall fun x ↦ mem_iUnion.2 ?_
-    by_cases hx : f x.val < a'
-    · exact ⟨true, Or.inl hx⟩
-    rcases hlt with hlt | rfl
-    · exact ⟨false, hlt.trans_le (le_of_not_gt hx)⟩
-    · exact ⟨true, Or.inr le_rfl⟩
-  · cases i
-    · refine Or.inr fun x (hx : a < f x.val) ↦ ⟨⟨x.val, hx.le, x.property⟩, ?_⟩
-      rw [hι]
-      rfl
-    · refine Or.inl fun x (hx : f x.val < a' ∨ b ≤ a') ↦ ⟨⟨x.val, ?_⟩, rfl⟩
-      rcases hx with hx | hx
-      · exact hx.le
-      · exact (x.property : f x.val ≤ b).trans hx
-
 /-- **The relative cohomology of a band over a regular level** (Milnor, *Lectures on the
 h-cobordism theorem*, §3). If `a ≤ b`, the band `f⁻¹[a, b]` is compact and `a` is a regular value
 of the smooth function `f`, then the inclusion of pairs `(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a})`
@@ -271,17 +227,10 @@ theorem isIso_singularCohomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
       (bandPairInclusion f hab) n) := by
   have hfc : Continuous f := hf.continuous
-  obtain ⟨a', haa', ha'b, hlt, hreg⟩ : ∃ a', a ≤ a' ∧ a' ≤ b ∧ (a < a' ∨ a' = b) ∧
-      ∀ x, a ≤ f x → f x ≤ a' → mfderiv I 𝓘(ℝ) f x ≠ 0 := by
-    rcases hab.eq_or_lt with rfl | hlt
-    · refine ⟨a, le_rfl, le_rfl, Or.inr rfl, fun x h₁ h₂ hx ↦ ?_⟩
-      exact isRegularPoint_iff_notMem_criticalPoints.1 (ha.isRegularPoint (le_antisymm h₂ h₁))
-        (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx)
-    · obtain ⟨a', ⟨h₁, h₂⟩, -, h⟩ :=
-        exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero (hf.of_le (by simp)) hlt hcompact ha
-      exact ⟨a', h₁.le, h₂, Or.inl h₁, h⟩
-  have hcollar : IsCompact (f ⁻¹' Icc a a') :=
-    isCompact_preimage_Icc_of_subset hfc hcompact le_rfl ha'b
+  -- A collar `f⁻¹[a, a']` without critical points, with `a < a'` unless the band is a level.
+  obtain ⟨a', ⟨haa', ha'b⟩, hlt, hcollar, hreg⟩ :=
+    exists_mem_Icc_isCompact_forall_mfderiv_ne_zero (hf.of_le (by simp)) hab hcompact ha
+  -- Enlarge `{f ≤ a}` to `{f ≤ a'}` in the sublevel pair.
   let T₁ :=
     TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f haa') (sublevel_mono f ha'b)
   let ψ₁ : sublevelPair f hab ⟶ TopPair.ofInclusion (X := TopCat.of M) (sublevel_mono f ha'b) :=
@@ -291,6 +240,7 @@ theorem isIso_singularCohomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ
       (isZero_singularCohomology_sublevelPair_of_mfderiv_ne_zero R k N hf haa' hcollar hreg n)
       fun m _ ↦
         isZero_singularCohomology_sublevelPair_of_mfderiv_ne_zero R k N hf haa' hcollar hreg m
+  -- Enlarge `f⁻¹(a)` to the collar `f⁻¹[a, a']` in the band pair.
   have hLN : f ⁻¹' {a} ⊆ f ⁻¹' Icc a a' :=
     preimage_mono (singleton_subset_iff.2 ⟨le_rfl, haa'⟩)
   have hNW : f ⁻¹' Icc a a' ⊆ f ⁻¹' Icc a b := preimage_mono (Icc_subset_Icc_right ha'b)
@@ -302,12 +252,15 @@ theorem isIso_singularCohomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ
     T₂.isIso_singularCohomologyMap_totalToOuter_of_isZero R k N n
       (isZero_singularCohomology_collar hfc φ hφf hLN R k N n)
       fun m _ ↦ isZero_singularCohomology_collar hfc φ hφf hLN R k N m
+  -- Excise `{f < a}` from `({f ≤ b}, {f ≤ a'})`.
   let ι : TopPair.ofInclusion (X := TopCat.of M) hNW ⟶
       TopPair.ofInclusion (X := TopCat.of M) (sublevel_mono f ha'b) :=
     TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2)
       fun _ hx ↦ (hx : f _ ∈ Icc a a').2
   have h₃ : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N) ι n) :=
-    isIso_singularCohomologyMap_excision_collar hfc ha'b hlt R k N n
+    TopPair.isIso_singularCohomologyMap_ofInclusionMap_preimage_Icc (R := R) (k := k) (M := N)
+      hfc ha'b hlt n
+  -- The two composites `(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a'})` agree.
   have hsq : bandPairInclusion f hab ≫ ψ₁ = ψ₂ ≫ ι := by
     refine TopPair.hom_ext_of_fst _ ?_
     rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, bandPairInclusion_fst]
@@ -319,6 +272,22 @@ theorem isIso_singularCohomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ
     exact IsIso.comp_isIso' h₃ h₂
   exact IsIso.of_isIso_comp_left
     (TopPair.singularCohomologyMap (R := R) (k := k) (M := N) ψ₁ n) _
+
+/-- Restrict a compact band `[s, t]` around an isolated critical value `c` to a subband `[u, v]`
+around `c`. -/
+private def singularCohomologySublevelPairIsoSubBand (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {c s t u v : ℝ} (hsc : s < c) (hct : c < t) (hsu : s ≤ u) (huc : u < c) (hcv : c < v)
+    (hvt : v ≤ t) (hcompact : IsCompact (f ⁻¹' Icc s t))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c)
+    (R : C) (k : Type*) [Ring k] [Linear k C] (N : C) (n : ℕ) :
+    (sublevelPair f (hsc.trans hct).le).singularCohomology R k N n ≅
+      (sublevelPair f (huc.trans hcv).le).singularCohomology R k N n :=
+  have hfc := hf.continuous
+  singularCohomologySublevelPairIsoOfCollars R k N hf hsu (huc.trans hcv).le hvt
+    (isCompact_preimage_Icc_of_subset hfc hcompact le_rfl (huc.trans hct).le)
+    (isCompact_preimage_Icc_of_subset hfc hcompact (hsc.trans hcv).le le_rfl)
+    (mfderiv_ne_zero_of_notMem_Icc hcrit le_rfl (huc.trans hct).le fun h ↦ huc.not_ge h.2)
+    (mfderiv_ne_zero_of_notMem_Icc hcrit (hsc.trans hcv).le le_rfl fun h ↦ hcv.not_ge h.1) n
 
 /-- **The relative cohomology of an isolated critical value.** Let `f⁻¹[s, t]` and `f⁻¹[s', t']` be
 compact bands with `s, s' < c < t, t'`, in each of which every critical point of `f` lies on the
@@ -336,18 +305,10 @@ def singularCohomologySublevelPairIsoOfCriticalValue (hf : ContMDiff I 𝓘(ℝ)
       (sublevelPair f (hs'c.trans hct').le).singularCohomology R k N n :=
   have hu : max s s' < c := max_lt hsc hs'c
   have hv : c < min t t' := lt_min hct hct'
-  have hfc := hf.continuous
-  singularCohomologySublevelPairIsoOfCollars R k N hf (le_max_left s s') (hu.trans hv).le
-      (min_le_left t t') (isCompact_preimage_Icc_of_subset hfc hcompact le_rfl (hu.trans hct).le)
-      (isCompact_preimage_Icc_of_subset hfc hcompact (hsc.trans hv).le le_rfl)
-      (mfderiv_ne_zero_of_notMem_Icc hcrit le_rfl (hu.trans hct).le fun h ↦ hu.not_ge h.2)
-      (mfderiv_ne_zero_of_notMem_Icc hcrit (hsc.trans hv).le le_rfl fun h ↦ hv.not_ge h.1) n ≪≫
-    (singularCohomologySublevelPairIsoOfCollars R k N hf (le_max_right s s') (hu.trans hv).le
-      (min_le_right t t') (isCompact_preimage_Icc_of_subset hfc hcompact' le_rfl (hu.trans hct').le)
-      (isCompact_preimage_Icc_of_subset hfc hcompact' (hs'c.trans hv).le le_rfl)
-      (mfderiv_ne_zero_of_notMem_Icc hcrit' le_rfl (hu.trans hct').le fun h ↦ hu.not_ge h.2)
-      (mfderiv_ne_zero_of_notMem_Icc hcrit' (hs'c.trans hv).le le_rfl fun h ↦ hv.not_ge h.1)
-      n).symm
+  singularCohomologySublevelPairIsoSubBand hf hsc hct (le_max_left s s') hu hv (min_le_left t t')
+      hcompact hcrit R k N n ≪≫
+    (singularCohomologySublevelPairIsoSubBand hf hs'c hct' (le_max_right s s') hu hv
+      (min_le_right t t') hcompact' hcrit' R k N n).symm
 
 /-- The identification `TauCeti.singularCohomologySublevelPairIsoOfCollars` of
 `Hⁿ({f ≤ b}, {f ≤ a})` with `Hⁿ({f ≤ t}, {f ≤ s})` is compatible with inclusions of pairs: for
@@ -400,6 +361,37 @@ lemma singularCohomologySublevelPairIsoOfCollars_hom_comp_singularCohomologyMap
         hf has hst htb hcompact₁ hcompact₂ hreg₁ hreg₂ n =≫ TopPair.singularCohomologyMap m n).trans
         (TopPair.singularCohomologyMap_comp m _ n).symm
 
+/-- Compatibility of `singularCohomologySublevelPairIsoSubBand` with inclusions from
+`({f ≤ v}, {f ≤ l})` for `l ≤ s`. -/
+private lemma singularCohomologySublevelPairIsoSubBand_hom_comp (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {c s t u v l : ℝ} (hsc : s < c) (hct : c < t) (hsu : s ≤ u) (huc : u < c) (hcv : c < v)
+    (hvt : v ≤ t) (hls : l ≤ s) (hcompact : IsCompact (f ⁻¹' Icc s t))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c)
+    (R : C) (k : Type*) [Ring k] [Linear k C] (N : C) (n : ℕ) :
+    (singularCohomologySublevelPairIsoSubBand hf hsc hct hsu huc hcv hvt hcompact hcrit
+      R k N n).hom ≫
+      TopPair.singularCohomologyMap (R := R) (k := k) (M := N) (TopPair.ofInclusionMap
+        (X := TopCat.of M) (Y := TopCat.of M)
+        (sublevel_mono f (hls.trans (hsc.trans hcv).le))
+        (sublevel_mono f (huc.trans hcv).le)
+        (ContinuousMap.inclusion subset_rfl)
+        (fun _ hx ↦ (sublevel_mono f hsu) (sublevel_mono f hls hx))) n =
+      TopPair.singularCohomologyMap (R := R) (k := k) (M := N) (TopPair.ofInclusionMap
+        (X := TopCat.of M) (Y := TopCat.of M)
+        (sublevel_mono f (hls.trans (hsc.trans hcv).le))
+        (sublevel_mono f (hsc.trans hct).le)
+        (ContinuousMap.inclusion (sublevel_mono f hvt))
+        (fun _ hx ↦ sublevel_mono f hls hx)) n :=
+  have hfc := hf.continuous
+  singularCohomologySublevelPairIsoOfCollars_hom_comp_singularCohomologyMap hf hsu
+    (huc.trans hcv).le hvt
+    (isCompact_preimage_Icc_of_subset hfc hcompact le_rfl (huc.trans hct).le)
+    (isCompact_preimage_Icc_of_subset hfc hcompact (hsc.trans hcv).le le_rfl)
+    (mfderiv_ne_zero_of_notMem_Icc hcrit le_rfl (huc.trans hct).le fun h ↦ huc.not_ge h.2)
+    (mfderiv_ne_zero_of_notMem_Icc hcrit (hsc.trans hcv).le le_rfl fun h ↦ hcv.not_ge h.1)
+    (sublevel_mono f (hls.trans (hsc.trans hcv).le))
+    (hK := subset_rfl) (hL := sublevel_mono f hls) R k N n
+
 /-- The identification `TauCeti.singularCohomologySublevelPairIsoOfCriticalValue` of
 `Hⁿ({f ≤ t}, {f ≤ s})` with `Hⁿ({f ≤ t'}, {f ≤ s'})` is induced by inclusions of pairs: followed
 by the map induced by `({f ≤ min t t'}, {f ≤ min s s'}) ⟶ ({f ≤ t'}, {f ≤ s'})`, it is the map
@@ -426,30 +418,12 @@ lemma singularCohomologySublevelPairIsoOfCriticalValue_hom_comp_singularCohomolo
         (sublevel_mono f (hsc.trans hct).le)
         (ContinuousMap.inclusion (sublevel_mono f (min_le_left t t')))
         fun _ hx ↦ (hx : f _ ≤ min s s').trans (min_le_left s s')) n := by
-  have h1 := singularCohomologySublevelPairIsoOfCollars_hom_comp_singularCohomologyMap hf
-    (le_max_left s s') ((max_lt hsc hs'c).trans (lt_min hct hct')).le (min_le_left t t')
-    (isCompact_preimage_Icc_of_subset hf.continuous hcompact le_rfl
-      ((max_lt hsc hs'c).trans hct).le)
-    (isCompact_preimage_Icc_of_subset hf.continuous hcompact
-      (hsc.trans (lt_min hct hct')).le le_rfl)
-    (mfderiv_ne_zero_of_notMem_Icc hcrit le_rfl ((max_lt hsc hs'c).trans hct).le
-      fun h ↦ (max_lt hsc hs'c).not_ge h.2)
-    (mfderiv_ne_zero_of_notMem_Icc hcrit (hsc.trans (lt_min hct hct')).le le_rfl
-      fun h ↦ (lt_min hct hct').not_ge h.1)
-    (sublevel_mono f ((min_le_left s s').trans (hsc.trans (lt_min hct hct')).le))
-    (hK := subset_rfl) (hL := sublevel_mono f (min_le_left s s')) R k N n
-  have h2 := singularCohomologySublevelPairIsoOfCollars_hom_comp_singularCohomologyMap hf
-    (le_max_right s s') ((max_lt hsc hs'c).trans (lt_min hct hct')).le (min_le_right t t')
-    (isCompact_preimage_Icc_of_subset hf.continuous hcompact' le_rfl
-      ((max_lt hsc hs'c).trans hct').le)
-    (isCompact_preimage_Icc_of_subset hf.continuous hcompact'
-      (hs'c.trans (lt_min hct hct')).le le_rfl)
-    (mfderiv_ne_zero_of_notMem_Icc hcrit' le_rfl ((max_lt hsc hs'c).trans hct').le
-      fun h ↦ (max_lt hsc hs'c).not_ge h.2)
-    (mfderiv_ne_zero_of_notMem_Icc hcrit' (hs'c.trans (lt_min hct hct')).le le_rfl
-      fun h ↦ (lt_min hct hct').not_ge h.1)
-    (sublevel_mono f ((min_le_left s s').trans (hsc.trans (lt_min hct hct')).le))
-    (hK := subset_rfl) (hL := sublevel_mono f (min_le_right s s')) R k N n
+  have h1 := singularCohomologySublevelPairIsoSubBand_hom_comp hf hsc hct (le_max_left s s')
+    (max_lt hsc hs'c) (lt_min hct hct') (min_le_left t t') (min_le_left s s') hcompact hcrit
+    R k N n
+  have h2 := singularCohomologySublevelPairIsoSubBand_hom_comp hf hs'c hct' (le_max_right s s')
+    (max_lt hsc hs'c) (lt_min hct hct') (min_le_right t t') (min_le_right s s') hcompact' hcrit'
+    R k N n
   simp only [singularCohomologySublevelPairIsoOfCriticalValue, Iso.trans_hom, Iso.symm_hom,
     Category.assoc]
   rw [← h2, Iso.inv_hom_id_assoc, h1]

@@ -129,28 +129,23 @@ private theorem exists_isIso_singularHomologyMap_union_range [T2Space M]
   rcases isEmpty_or_nonempty S with hS | hS
   · refine ⟨1, one_pos, fun ε hε _ hcompact hcrit ↦ ?_⟩
     have hle : c - ε ≤ c + ε := by linarith
-    have hreg : ∀ x, c - ε ≤ f x → f x ≤ c + ε → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x h₁ h₂ hx ↦ by
-      obtain ⟨s, -⟩ := hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, h₁, h₂⟩
-      exact isEmptyElim s
-    obtain ⟨rdef, -, ⟨G⟩⟩ := exists_sublevelDeformation hfs hle hcompact hreg
-    have e : sublevelInclusion f (c - ε) (c + ε) hle = .inclusion (sublevel_mono f hle) := by
-      ext; simp
-    rw [e] at G
+    obtain ⟨rdef, -, ⟨G⟩⟩ :=
+      exists_sublevelDeformation hfs hle hcompact (mfderiv_ne_zero_of_isEmpty hcrit)
     have hA : {y | f y ≤ c - ε} ∪ range i ⊆ {y | f y ≤ c + ε} := by
       rw [range_eq_empty, union_empty]
       exact sublevel_mono f hle
     let r' : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c - ε} ∪ range i)) :=
       (ContinuousMap.inclusion subset_union_left).comp rdef
-    have G' : ((ContinuousMap.inclusion hA).comp r').HomotopyRel (ContinuousMap.id _)
-        {x | (x : M) ∈ {y | f y ≤ c - ε} ∪ range i} :=
-      { toFun := G
-        continuous_toFun := G.continuous
-        map_zero_left := fun x ↦ Subtype.ext (congrArg Subtype.val (G.map_zero_left x))
-        map_one_left := fun x ↦ Subtype.ext (congrArg Subtype.val (G.map_one_left x))
-        prop' := fun τ x hx ↦
-          Subtype.ext (congrArg Subtype.val (G.eq_fst τ (by simpa [range_eq_empty] using hx))) }
+    have hset : ({x | f ↑x ≤ c - ε} : Set ↥{y | f y ≤ c + ε}) =
+        ({x | ↑x ∈ {y | f y ≤ c - ε} ∪ range i} : Set ↥{y | f y ≤ c + ε}) := by
+      ext x
+      simp [range_eq_empty]
+    have hcomp : (sublevelInclusion f (c - ε) (c + ε) hle).comp rdef =
+        (ContinuousMap.inclusion hA).comp r' := by
+      ext x
+      simp [r']
     exact ⟨hA, fun R n ↦ TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel
-      (X := TopCat.of M) subset_union_left hA r' G' R n⟩
+      (X := TopCat.of M) subset_union_left hA r' (hset ▸ G.cast hcomp rfl) R n⟩
   have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   by_cases hS : CompactSpace S
   swap

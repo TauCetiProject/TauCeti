@@ -723,8 +723,7 @@ theorem isZero_singularHomology_sublevelPair_of_isEmpty [IsEmpty S] {i : SmoothE
     (R : C) (k : ℕ) :
     IsZero ((sublevelPair f hab).singularHomology R k) :=
   isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hfs hab hcompact
-    (fun _ hax hxb hx ↦ isEmptyElim (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx,
-      hax, hxb⟩).choose) R k
+    (mfderiv_ne_zero_of_isEmpty hcrit) R k
 
 end Empty
 

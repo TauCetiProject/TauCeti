@@ -94,9 +94,12 @@ polynomial in the Morse inequalities.
 * `TauCeti.isClosed_criticalPoints` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints`: the critical
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
-* `TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints` and
-  `TauCeti.exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero`: a compact band starting at a regular
+* `TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints`,
+  `TauCeti.exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero` and
+  `TauCeti.exists_mem_Icc_isCompact_forall_mfderiv_ne_zero`: a compact band starting at a regular
   value begins with a compact collar free of critical points.
+* `TauCeti.mfderiv_ne_zero_of_isEmpty`: a band whose critical points lie in the range of a map
+  from an empty type has nowhere-vanishing manifold derivative.
 * `TauCeti.eventually_isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints`: near a
   regular point or a nondegenerate critical point of a function which is `C¹` there, every
   critical point is nondegenerate.
@@ -595,6 +598,13 @@ theorem finiteDimensional_of_isCompact_sublevel [T2Space M] {b : ℝ} (hf : Cont
 
 end Boundaryless
 
+/-- If all critical points of `f` in the band `f⁻¹[a, b]` lie in the image of a map from an empty
+type `S`, then `f` has nonzero manifold derivative throughout the band. -/
+theorem mfderiv_ne_zero_of_isEmpty {S : Type*} [IsEmpty S] {i : S → M} {a b : ℝ}
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i) (x : M) (hax : a ≤ f x)
+    (hxb : f x ≤ b) : mfderiv I 𝓘(ℝ) f x ≠ 0 := fun hx ↦
+  isEmptyElim (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, hax, hxb⟩).choose
+
 /-! ### Closedness, isolation and finiteness -/
 
 section IsManifold
@@ -666,6 +676,21 @@ theorem exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero (hf : ContMDiff I 𝓘(�
   exact ⟨a', ha', hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.continuous)
     (preimage_mono (Icc_subset_Icc_right ha'.2)), fun x hxa hxb h0 ↦
       h x (mem_criticalPoints_iff_mfderiv_eq_zero.2 h0) ⟨hxa, hxb⟩⟩
+
+/-- **A regular value has a compact collar without critical points above it, allowing a degenerate
+band.** If `f` is `C¹`, `a ≤ b`, the band `f⁻¹[a, b]` is compact and `a` is a regular value of `f`,
+then for some `a' ∈ [a, b]` (with `a < a'` whenever `a < b`, or `a' = b`) the band `f⁻¹[a, a']` is
+compact and `f` has nonzero derivative on it. -/
+theorem exists_mem_Icc_isCompact_forall_mfderiv_ne_zero (hf : ContMDiff I 𝓘(ℝ) 1 f) {a b : ℝ}
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a) :
+    ∃ a' ∈ Icc a b, (a < a' ∨ a' = b) ∧ IsCompact (f ⁻¹' Icc a a') ∧
+      ∀ x, a ≤ f x → f x ≤ a' → mfderiv I 𝓘(ℝ) f x ≠ 0 := by
+  rcases hab.eq_or_lt with rfl | hlt
+  · exact ⟨a, ⟨le_rfl, le_rfl⟩, Or.inr rfl, hcompact, fun x h₁ h₂ hx ↦
+      isRegularPoint_iff_notMem_criticalPoints.1 (ha.isRegularPoint (le_antisymm h₂ h₁))
+        (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx)⟩
+  · obtain ⟨a', ha', hc, h⟩ := exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero hf hlt hcompact ha
+    exact ⟨a', ⟨ha'.1.le, ha'.2⟩, Or.inl ha'.1, hc, h⟩
 
 /-- **Nondegenerate critical points in a compact set are finite in number.** If every critical
 point of a `C¹` function `f` in a compact set `K` is nondegenerate, then `K` contains only finitely

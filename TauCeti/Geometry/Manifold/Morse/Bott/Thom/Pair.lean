@@ -13,6 +13,8 @@ public import TauCeti.Topology.VectorBundle.Attachment
 public import TauCeti.Topology.VectorBundle.Subbundle
 public import TauCeti.Topology.Order.Sublevel
 import TauCeti.Geometry.Manifold.Morse.Deformation.Cohomology
+import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
+import TauCeti.Topology.VectorBundle.EulerClass
 import TauCeti.Topology.VectorBundle.Riemannian.FiniteDimensional
 import TauCeti.Topology.VectorBundle.Thom.Attachment.Basic
 
@@ -78,8 +80,10 @@ critical points lie on the submanifold, `Hₙ({f ≤ b}, {f ≤ a}) ≅ Hₙ(ν�
 any abelian category with coproducts
 (`IsNondegenerateCriticalSubmanifold.nonempty_singularHomology_sublevelPair_iso_thomPair`), and
 likewise `Hⁿ({f ≤ b}, {f ≤ a}) ≅ Hⁿ(ν⁻, ν⁻₀)` in cohomology
-(`IsNondegenerateCriticalSubmanifold.nonempty_singularCohomology_sublevelPair_iso_thomPair`): the
-band is narrowed to `f⁻¹[c - ε, c + ε]` by cutting off its regular collars
+(`IsNondegenerateCriticalSubmanifold.nonempty_singularCohomology_sublevelPair_iso_thomPair`), and
+a universe-lifted Thom-pair model exists without prescribing a metric
+(`IsNondegenerateCriticalSubmanifold.exists_thomPair_ulift_singularHomology_iso`): the band is
+narrowed to `f⁻¹[c - ε, c + ε]` by cutting off its regular collars
 (`TauCeti.singularHomologySublevelPairIsoSymmetricBand`,
 `TauCeti.singularCohomologySublevelPairIsoSymmetricBand`). For an isolated nondegenerate critical
 point of index `r` the Thom pair is `(ℝʳ, ℝʳ ∖ {0})`.
@@ -985,10 +989,8 @@ theorem nonempty_singularHomology_sublevelPair_iso_thomPair [T2Space M]
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
   cases isEmpty_or_nonempty S with
   | inl hS =>
-    have hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x h₁ h₂ hx ↦
-      isEmptyElim (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, h₁, h₂⟩).choose
     exact ⟨(isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hfs (hac.trans hcb).le
-        hcompact hreg R n).iso
+        hcompact (mfderiv_ne_zero_of_isEmpty hcrit) R n).iso
       (TopPair.isZero_singularHomology_of_surjective_map
         (thomPair (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
         R (fun x ↦ isEmptyElim (TotalSpace.proj x)) n)⟩
@@ -1136,10 +1138,8 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair [T2Space M]
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
   cases isEmpty_or_nonempty S with
   | inl hS =>
-    have hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x h₁ h₂ hx ↦
-      isEmptyElim (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, h₁, h₂⟩).choose
     exact ⟨(isZero_singularCohomology_sublevelPair_of_mfderiv_ne_zero R k N hfs (hac.trans hcb).le
-        hcompact hreg n).iso
+        hcompact (mfderiv_ne_zero_of_isEmpty hcrit) n).iso
       (TopPair.isZero_singularCohomology_of_surjective_map
         (thomPair (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
         (R := R) (k := k) (M := N) (fun x ↦ isEmptyElim (TotalSpace.proj x)) n)⟩
@@ -1166,6 +1166,52 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair [T2Space M]
       asIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N) φ n) ≪≫
       (asIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
         (gaugeDiscSpherePairMap hρ) n)).symm⟩
+
+omit hn in
+/-- **Universe-lifted Thom pair of the negative normal bundle.** Under the hypotheses of
+`nonempty_singularHomology_sublevelPair_iso_thomPair`, without prescribing a fibre metric,
+there exists a real vector bundle `V → S` in the universe of `S` with model fibre
+`ULift.{u} (Fin r) → ℝ` whose Thom pair computes the relative homology across the level `c`. -/
+theorem exists_thomPair_ulift_singularHomology_iso [T2Space M]
+    [SecondCountableTopology M] [J.Boundaryless]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
+    (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i) {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
+    {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (n : ℕ) :
+    ∃ (V : S → Type u) (_ : ∀ s, AddCommGroup (V s)) (_ : ∀ s, Module ℝ (V s))
+        (_ : ∀ s, TopologicalSpace (V s))
+        (_ : TopologicalSpace (TotalSpace (ULift.{u} (Fin r) → ℝ) V))
+        (_ : FiberBundle (ULift.{u} (Fin r) → ℝ) V)
+        (_ : VectorBundle ℝ (ULift.{u} (Fin r) → ℝ) V),
+      Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
+        (thomPair (ULift.{u} (Fin r) → ℝ) V).singularHomology R n) := by
+  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+  have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
+  have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
+  have := h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc (hfs.of_le (by simp))
+    hc hac.le hcb.le hcompact hcrit
+  have : T2Space S := i.isEmbedding.t2Space
+  let P₀ := EuclideanSpace ℝ (Fin (Module.finrank ℝ E - Module.finrank ℝ E'))
+  have hdim : Module.finrank ℝ P₀ = Module.finrank ℝ E - Module.finrank ℝ E' :=
+    finrank_euclideanSpace_fin
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  obtain ⟨g⟩ := i.nonempty_contMDiffRiemannianMetric_normalSpace hn hdim
+  have hV := h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
+    (fun s ↦ (hfs (i s)).of_le (by simp)) hdim g hr
+  have hVu := hV.hasLocalSubbundleFrames.comp_equiv Equiv.ulift
+  let := subbundleTopology P₀ (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := subbundleTopology P₀ (F' := ULift.{u} (Fin r) → ℝ)
+    (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := hVu.fiberBundle
+  have := hVu.vectorBundle
+  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
+    hcrit hdim g hr R n
+  exact ⟨fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s, inferInstance, inferInstance,
+    inferInstance, inferInstance, inferInstance, inferInstance,
+    ⟨e ≪≫ TopPair.singularHomologyMapIso R (subbundleThomPairModelIso P₀ (Fin r → ℝ)
+      (ULift.{u} (Fin r) → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)) n⟩⟩
 
 end IsNondegenerateCriticalSubmanifold
 

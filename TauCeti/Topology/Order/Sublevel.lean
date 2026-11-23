@@ -70,7 +70,9 @@ points of `{f ≤ b}` at which `f ≤ a`, `TauCeti.sublevelInclusion` is
 topology across the band. The band itself, relative to its lower level, is the pair
 `TauCeti.bandPair f : (f⁻¹[a, b], f⁻¹(a))`, which includes into the sublevel pair by
 `TauCeti.bandPairInclusion`; when `f⁻¹[a, b]` is a cobordism between regular levels, this is the
-cobordism relative to its incoming boundary. Relative to its upper level, the band is the pair
+cobordism relative to its incoming boundary, and a collar `f⁻¹[a, a']` traversed at unit speed by
+a flow strongly deformation retracts onto `f⁻¹(a)` (`TauCeti.exists_collarDeformation`). Relative to
+its upper level, the band is the pair
 `TauCeti.upperBandPair f : (f⁻¹[a, b], f⁻¹(b))`, the cobordism relative to its outgoing boundary;
 negating `f` exchanges the two (`TauCeti.bandPair_neg`). All sublevels together form the functor
 `TauCeti.sublevelFunctor f` from the levels to spaces, with the cocone `TauCeti.sublevelCocone f`
@@ -516,6 +518,50 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
       map_zero_left := fun x ↦ Subtype.ext <| by simp [hr]
       map_one_left := fun x ↦ Subtype.ext <| by simp [hφ0]
       prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.val hx, hφ0] }
+
+/-- **Strong deformation retraction of a collar onto its lower level.** A collar `f⁻¹[a, a']`
+which a flow `φ` crosses at unit speed strongly deformation retracts onto its lower level
+`f⁻¹(a)`. -/
+theorem exists_collarDeformation {X : Type*} [TopologicalSpace X] {f : X → ℝ} {a a' : ℝ}
+    (hf : Continuous f) (φ : Flow ℝ X)
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ a' → f (φ t x) = f x - t)
+    (hLN : f ⁻¹' {a} ⊆ f ⁻¹' Icc a a') :
+    ∃ r : C(f ⁻¹' Icc a a', f ⁻¹' {a}),
+      Nonempty (((ContinuousMap.inclusion hLN).comp r).HomotopyRel (ContinuousMap.id _)
+        {x | (x : X) ∈ f ⁻¹' {a}}) := by
+  -- Along the flow line of `x` in the collar, `f` takes the value `f x - s * (f x - a)` at time
+  -- `s * (f x - a)`, for `0 ≤ s ≤ 1`.
+  have hval (x : f ⁻¹' Icc a a') (s : ℝ) (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
+      f (φ (s * (f x - a)) x) = f x - s * (f x - a) := by
+    have hx : a ≤ f x ∧ f x ≤ a' := x.property
+    exact hφf x _ (mul_nonneg hs₀ (by linarith)) (by nlinarith) hx.2
+  have hmem (x : f ⁻¹' Icc a a') (s : ℝ) (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
+      φ (s * (f x - a)) x ∈ f ⁻¹' Icc a a' := by
+    have hx : a ≤ f x ∧ f x ≤ a' := x.property
+    rw [mem_preimage, hval x s hs₀ hs₁, mem_Icc]
+    constructor <;> nlinarith
+  let r : C(f ⁻¹' Icc a a', f ⁻¹' {a}) :=
+    { toFun := fun x ↦ ⟨φ (1 * (f x - a)) x, by
+        rw [mem_preimage, hval x 1 zero_le_one le_rfl, mem_singleton_iff]
+        ring⟩
+      continuous_toFun := by
+        refine Continuous.subtype_mk (φ.continuous ?_ ?_) _
+        · exact continuous_const.mul ((hf.comp continuous_subtypeVal).sub continuous_const)
+        · exact continuous_subtypeVal }
+  exact ⟨r, ⟨{
+    toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * (f p.2 - a)) p.2,
+      hmem p.2 _ (by linarith [p.1.property.2]) (by linarith [p.1.property.1])⟩
+    continuous_toFun := by
+      refine Continuous.subtype_mk (φ.continuous ?_ ?_) _
+      · exact (continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).mul
+          ((hf.comp (continuous_subtypeVal.comp continuous_snd)).sub continuous_const)
+      · exact continuous_subtypeVal.comp continuous_snd
+    map_zero_left := fun x ↦ Subtype.ext (by simp [r])
+    map_one_left := fun x ↦ Subtype.ext (by simp [Flow.map_zero_apply])
+    prop' := fun t x hx ↦ by
+      have hxa : f x = a := hx
+      ext
+      simp [r, hxa] }⟩⟩
 
 end TauCeti
 
