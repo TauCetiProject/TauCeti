@@ -144,8 +144,8 @@ theorem uniqueAlgEquiv_mem_degreeLT_iff_mem_restrictTotalDegree [Unique σ] {d :
     uniqueAlgEquiv R σ p ∈ Polynomial.degreeLT R (d + 1) ↔
       p ∈ restrictTotalDegree σ R d := by
   rw [← map_restrictTotalDegree_uniqueAlgEquiv (σ := σ), ← AlgEquiv.toLinearEquiv_toLinearMap,
-    Submodule.mem_map_equiv]
-  exact iff_of_eq (congrArg (· ∈ _) ((uniqueAlgEquiv R σ).symm_apply_apply p))
+    Submodule.mem_map_equiv, ← AlgEquiv.toLinearEquiv_symm, AlgEquiv.toLinearEquiv_apply,
+    AlgEquiv.symm_apply_apply]
 
 variable (σ R) in
 /-- In one variable, `uniqueAlgEquiv` restricts to an `R`-linear equivalence between
