@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Continued.Basic
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
+import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!
 # The continued uncompleted function of the zeta record
@@ -54,5 +55,12 @@ theorem riemannZetaData_continuedL : riemannZetaData.continuedL = riemannZeta :=
 -- The cancelled pole at zero is filled with the genuine value of zeta, not zero.
 example : riemannZetaData.continuedL 0 = -1 / 2 := by
   simp [riemannZeta_zero]
+
+-- At the trivial zeros the continued function vanishes, while the completion is regular and
+-- nonzero there.
+example (n : ℕ) : riemannZetaData.continuedL (-2 * ((n : ℂ) + 1)) = 0 ∧
+    meromorphicOrderAt completedRiemannZeta (-2 * ((n : ℂ) + 1)) = 0 :=
+  ⟨by rw [riemannZetaData_continuedL, riemannZeta_neg_two_mul_nat_add_one],
+    TauCeti.meromorphicOrderAt_completedRiemannZeta_neg_two_mul_nat_add_one n⟩
 
 end TauCeti.LFunctions
