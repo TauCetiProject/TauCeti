@@ -509,14 +509,9 @@ theorem val_invEquiv (x : universalGSpace G) :
   let : DecidableEq ℕ := Classical.decEq ℕ
   let : DecidableEq G := Classical.decEq G
   rw [invEquiv, Equiv.trans_apply, Homeomorph.coe_toEquiv, equivRealization_symm_apply,
-    val_ofRealization, invRealizationHomeomorph,
+    invRealizationHomeomorph,
     PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph_apply]
-  exact (PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val
-    (indexedJoinMap (A := fun _ : ℕ ↦ G) (B := fun _ : ℕ ↦ G)
-      _root_.id Function.injective_id (fun _ a ↦ a⁻¹)) x).trans
-    (congrArg (Finsupp.mapDomain · x.val) (funext (indexedJoinMap_apply
-      (A := fun _ : ℕ ↦ G) (B := fun _ : ℕ ↦ G)
-      _root_.id Function.injective_id (fun _ a ↦ a⁻¹))))
+  exact val_relabel (fun a : G ↦ a⁻¹) (ofRealization x)
 
 @[simp] theorem invEquiv_basepoint : invEquiv G (universalGSpaceBasepoint G) = basepoint G :=
   ext_val (by
