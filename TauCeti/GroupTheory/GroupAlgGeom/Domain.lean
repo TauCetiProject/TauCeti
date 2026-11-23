@@ -144,11 +144,11 @@ theorem of_isCSA {ι : G →* H} (hH : IsCSA H) {a b : G} (hab : ¬Commute (ι a
   -- conjugates by coefficients. By malnormality it contains every coefficient, so `M` being
   -- abelian makes all coefficients commute.
   have hyM : y ∈ Subgroup.centralizer {x} :=
-    Subgroup.mem_centralizer_singleton_iff.2 (by simpa using (hxy 1).eq.symm)
+    Subgroup.mem_centralizer_singleton_iff.2 (by simpa using (hxy 1).symm)
   have hmem (g : G) : ι g ∈ Subgroup.centralizer {x} := by
     by_contra hg
     exact (hH.centralizer_isTISubgroup x).conj_notMem hg hyM hy
-      (Subgroup.mem_centralizer_singleton_iff.2 (hxy g).eq.symm)
+      (Subgroup.mem_centralizer_singleton_iff.2 (hxy g).symm)
   have := hH.centralizer_isMulCommutative hx
   exact hab (setLike_mul_comm (hmem a) (hmem b))
 

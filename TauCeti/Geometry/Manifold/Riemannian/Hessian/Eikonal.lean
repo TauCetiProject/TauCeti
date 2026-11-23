@@ -42,12 +42,9 @@ theorem hessian_mgradient_eq_zero_of_eventually_norm_sq_eq_const {f : M → ℝ}
     (contMDiffAt_mgradient (n := 1) hf).mdifferentiableAt (by simp)
   have heq : (fun y ↦ inner ℝ (mgradient I f y) (mgradient I f y)) =ᶠ[𝓝 x]
       fun _ ↦ c := by simpa only [real_inner_self_eq_norm_sq] using hc
-  have hm := (isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
-    (FiberBundle.extend E v) hG hG
-  rw [heq.mvfderiv_eq, mvfderiv_const] at hm
-  simp only [zero_apply, FiberBundle.extend_apply_self,
-    real_inner_comm (mgradient I f x)] at hm
-  rw [hessian_symm x hf, hessian_def, real_inner_comm]
-  linarith
+  have hcov := isMetricCompatible_leviCivitaConnection I (M := M)
+  have hm := hcov.inner_apply_self_eq_zero_of_eventuallyEq_const hG heq v
+  rw [hessian_symm x hf, hessian_def]
+  exact hm
 
 end TauCeti.Manifold

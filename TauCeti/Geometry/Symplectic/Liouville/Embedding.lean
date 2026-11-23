@@ -103,14 +103,15 @@ structure IsExactLiouvilleEmbedding (φ : M → M') (h : M → ℝ) : Prop where
   contMDiff_primitive : ContMDiff I 𝓘(ℝ) (⊤ : ℕ∞) h
   /-- Near the domain, an exact codimension-zero embedding pulls `α'` back to `α + dh`. -/
   eventually_mpullback_eq : ∀ᶠ x in 𝓝ˢ W,
-    mpullback I I' φ α'.1 x = α.1 x + mextDeriv (RoughForm.ofFunction I h) x
+    mpullback I I' φ α'.val x = α.val x + mextDeriv (RoughForm.ofFunction I h) x
 
 /-- The defining properties of an exact codimension-zero embedding. -/
 theorem isExactLiouvilleEmbedding_iff : IsExactLiouvilleEmbedding α W α' W' φ h ↔
     ContMDiff I I' (⊤ : ℕ∞) φ ∧ IsLocalDiffeomorphOn I I' (⊤ : ℕ∞) φ W ∧ InjOn φ W ∧
       MapsTo φ W (interior W') ∧ ContMDiff I 𝓘(ℝ) (⊤ : ℕ∞) h ∧
-      ∀ᶠ x in 𝓝ˢ W, mpullback I I' φ α'.1 x = α.1 x + mextDeriv (RoughForm.ofFunction I h) x :=
-  ⟨fun hφ ↦ ⟨hφ.1, hφ.2, hφ.3, hφ.4, hφ.5, hφ.6⟩,
+      ∀ᶠ x in 𝓝ˢ W, mpullback I I' φ α'.val x = α.val x + mextDeriv (RoughForm.ofFunction I h) x :=
+  ⟨fun hφ ↦ ⟨hφ.contMDiff, hφ.isLocalDiffeomorphOn, hφ.injOn, hφ.mapsTo_interior,
+      hφ.contMDiff_primitive, hφ.eventually_mpullback_eq⟩,
     fun hφ ↦ ⟨hφ.1, hφ.2.1, hφ.2.2.1, hφ.2.2.2.1, hφ.2.2.2.2.1, hφ.2.2.2.2.2⟩⟩
 
 /-- **The identity is an exact embedding.** If `W` lies in the interior of `W'`, then the identity
@@ -138,14 +139,14 @@ theorem mapsTo (hφ : IsExactLiouvilleEmbedding α W α' W' φ h) : MapsTo φ W 
 pulls `dα'` back to `dα`. For Liouville domains, where `dα = ω` and `dα' = ω'`, it pulls the
 symplectic form `ω'` back to `ω`. -/
 theorem eventually_mpullback_mextDeriv_eq (hφ : IsExactLiouvilleEmbedding α W α' W' φ h) :
-    ∀ᶠ x in 𝓝ˢ W, mpullback I I' φ (mextDeriv α'.1) x = mextDeriv α.1 x := by
+    ∀ᶠ x in 𝓝ˢ W, mpullback I I' φ (mextDeriv α'.val) x = mextDeriv α.val x := by
   have hdh : IsSmoothForm I (⊤ : ℕ∞) (mextDeriv (RoughForm.ofFunction I h)) :=
     isSmoothForm_mextDeriv (isSmoothForm_ofFunction_iff.mpr hφ.contMDiff_primitive) (by simp)
   filter_upwards [hφ.eventually_mpullback_eq.eventually_nhdsSet] with x hx
   -- `φ^* dα' = d(φ^* α') = d(α + dh) = dα + d(dh) = dα` at `x`.
   rw [mpullback_mextDeriv_at (hφ.contMDiff.contMDiffAt.of_le (by simp))
       ((α'.contMDiff (φ x)).of_le (by simp)),
-    mextDeriv_congr_of_eventuallyEq (η := α.1 + mextDeriv (RoughForm.ofFunction I h)) hx,
+    mextDeriv_congr_of_eventuallyEq (η := α.val + mextDeriv (RoughForm.ofFunction I h)) hx,
     mextDeriv_add ((α.isSmoothForm.contDiffWithinAt_inChartAt_self x).differentiableWithinAt
         (by simp)) ((hdh.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp)),
     mextDeriv_mextDeriv_ofFunction (hφ.contMDiff_primitive.of_le (by simp)), Pi.zero_apply,
@@ -169,7 +170,7 @@ theorem comp (hφ' : IsExactLiouvilleEmbedding α' W' α'' W'' φ' h')
   contMDiff := hφ'.contMDiff.comp hφ.contMDiff
   isLocalDiffeomorphOn x :=
     IsLocalDiffeomorphAt.comp (K := I'') (P := M'') (hφ.isLocalDiffeomorphOn x)
-      (hφ'.isLocalDiffeomorphOn ⟨φ x, hφ.mapsTo x.2⟩)
+      (hφ'.isLocalDiffeomorphOn ⟨φ x, hφ.mapsTo x.property⟩)
   injOn := hφ'.injOn.comp hφ.injOn hφ.mapsTo
   mapsTo_interior := hφ'.mapsTo_interior.comp hφ.mapsTo
   contMDiff_primitive := hφ.contMDiff_primitive.add (hφ'.contMDiff_primitive.comp hφ.contMDiff)
@@ -178,15 +179,15 @@ theorem comp (hφ' : IsExactLiouvilleEmbedding α' W' α'' W'' φ' h')
     have hhd : MDifferentiable I 𝓘(ℝ) h := hφ.contMDiff_primitive.mdifferentiable (by simp)
     have hh'd : MDifferentiable I' 𝓘(ℝ) h' := hφ'.contMDiff_primitive.mdifferentiable (by simp)
     -- Near `W`, the point `φ x` lies near `W'`, where `φ'^* α'' = α' + dh'`.
-    have hφ'x : ∀ᶠ x in 𝓝ˢ W, mpullback I' I'' φ' α''.1 (φ x) =
-        α'.1 (φ x) + mextDeriv (RoughForm.ofFunction I' h') (φ x) :=
+    have hφ'x : ∀ᶠ x in 𝓝ˢ W, mpullback I' I'' φ' α''.val (φ x) =
+        α'.val (φ x) + mextDeriv (RoughForm.ofFunction I' h') (φ x) :=
       eventually_nhdsSet_iff_forall.mpr fun x hx ↦
         hφ.contMDiff.continuous.continuousAt.eventually
           (eventually_nhdsSet_iff_forall.mp hφ'.eventually_mpullback_eq _ (hφ.mapsTo hx))
     filter_upwards [hφ.eventually_mpullback_eq, hφ'x] with x hx hx'
     -- `(φ' ∘ φ)^* α'' = φ^* (α' + dh') = α + dh + d(h' ∘ φ)` at `x`.
-    have hpull : mpullback I I' φ (mpullback I' I'' φ' α''.1) x =
-        mpullback I I' φ (α'.1 + mextDeriv (RoughForm.ofFunction I' h')) x := by
+    have hpull : mpullback I I' φ (mpullback I' I'' φ' α''.val) x =
+        mpullback I I' φ (α'.val + mextDeriv (RoughForm.ofFunction I' h')) x := by
       ext v
       simp only [mpullback_apply, hx', Pi.add_apply]
     rw [mpullback_comp_at (hφd x) ((hφ'.contMDiff.mdifferentiable (by simp)) (φ x)), hpull,

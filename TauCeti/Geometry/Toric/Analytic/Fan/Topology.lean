@@ -65,7 +65,7 @@ theorem isClosed_setOf_analyticAffineChartι_eq (σ τ : Φ.cones) :
     rw [analyticOverlapRight_def, analyticAffineChartDiagram_map_apply]
   simp only [analyticAffineChartι_eq_analyticAffineChartι_iff, hL, hR]
   exact AffineSemigroupComplexPoint.isClosed_setOf_exists_comap_inclusion_eq _ _
-    (Φ.dualSemigroup_inf_eq_sup σ.2 τ.2).le _ _
+    (Φ.dualSemigroup_inf_eq_sup σ.property τ.property).le _ _
 
 /-- The analytic realization of a regular fan is Hausdorff. -/
 instance t2Space_analyticRealization : T2Space (Φ.analyticRealization hΦ) :=

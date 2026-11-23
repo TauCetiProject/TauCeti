@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import Mathlib.Analysis.Convex.Continuous
 import TauCeti.Geometry.Manifold.Riemannian.Trudinger
-import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
+import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 
 /-!
 # Exponential integrability on the completed Sobolev space of a closed surface

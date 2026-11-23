@@ -17,6 +17,7 @@ public import TauCeti.Topology.FiberBundle.Countable
 public import TauCeti.Topology.FiberBundle.Separation
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Topology.Instances.ZMultiples
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The quotient of a cotangent bundle by the lattice of a coframe
@@ -204,7 +205,7 @@ theorem smul_def (k : Multiplicative (ι → ℤ)) (z : LatticeCover α hα) :
 @[simp]
 theorem smul_ofCotangent (k : Multiplicative (ι → ℤ)) (z : CotangentBundle I B) :
     k • ofCotangent hα z = ofCotangent hα
-      ⟨z.proj, z.2 + ∑ i, (k.toAdd i : ℝ) • SmoothForm.degreeOneEquiv (α i) z.proj⟩ := by
+      ⟨z.proj, z.snd + ∑ i, (k.toAdd i : ℝ) • SmoothForm.degreeOneEquiv (α i) z.proj⟩ := by
   rw [smul_def, Equiv.symm_apply_apply, vectorBundleTranslateDiffeomorph_apply,
     degreeOneEquiv_latticeForm_apply]
 
@@ -222,23 +223,25 @@ instance : MulAction (Multiplicative (ι → ℤ)) (LatticeCover α hα) where
     abel
 
 /-- The coordinates `c` of a covector `p = ∑ i, c i • α i x` in the frame. -/
-private def coord (z : CotangentBundle I B) : ι → ℝ := fun i ↦ hα.coeff i z.proj z.2
+def coord (z : CotangentBundle I B) : ι → ℝ := fun i ↦ hα.coeff i z.proj z.snd
 
 omit [Fintype ι] in
-private theorem continuous_coord [FiniteDimensional ℝ E] : Continuous (coord hα) :=
+/-- The coordinate `i` of a covector is its coefficient `i` in the frame. -/
+@[simp]
+theorem coord_apply (z : CotangentBundle I B) (i : ι) : coord hα z i = hα.coeff i z.proj z.snd :=
+  (rfl)
+
+omit [Fintype ι] in
+/-- The coordinates of a covector in the frame depend continuously on the covector. -/
+theorem continuous_coord [FiniteDimensional ℝ E] : Continuous (coord hα) :=
   continuous_pi fun i ↦ continuousOn_univ.mp (hα.continuousOn_coeff_totalSpace isOpen_univ i)
 
 /-- Translating by the lattice vector of `k` shifts the coordinates by `k`. -/
-private theorem coord_add_sum (x : B) (p : TangentSpace I x →L[ℝ] ℝ) (k : ι → ℤ) :
+theorem coord_add_sum (x : B) (p : TangentSpace I x →L[ℝ] ℝ) (k : ι → ℤ) :
     coord hα ⟨x, p + ∑ i, (k i : ℝ) • SmoothForm.degreeOneEquiv (α i) x⟩ =
       coord hα ⟨x, p⟩ + fun i ↦ (k i : ℝ) := by
-  classical
   funext i
-  have h (j : ι) :
-      hα.coeff i x (SmoothForm.degreeOneEquiv (α j) x) = if j = i then 1 else 0 := by
-    rw [hα.coeff_apply_of_mem (mem_univ x) (fun x ↦ SmoothForm.degreeOneEquiv (α j) x),
-      ← hα.toBasisAt_coe (mem_univ x), Module.Basis.repr_self, Finsupp.single_apply]
-  simp [coord, map_sum, h]
+  simp only [coord, map_add, hα.coeff_sum_smul (mem_univ x), Pi.add_apply]
 
 /-- The action is properly discontinuous: only finitely many integer vectors translate a compact
 set to meet another compact set. -/
@@ -330,7 +333,7 @@ theorem mk_surjective : Function.Surjective (mk hα) := fun z ↦ by
 /-- Two covectors have the same class in `T*B/Λ` exactly when they differ by a lattice vector. -/
 theorem mk_eq_mk_iff {z w : CotangentBundle I B} :
     mk hα z = mk hα w ↔ ∃ k : ι → ℤ,
-      z = ⟨w.proj, w.2 + ∑ i, (k i : ℝ) • SmoothForm.degreeOneEquiv (α i) w.proj⟩ := by
+      z = ⟨w.proj, w.snd + ∑ i, (k i : ℝ) • SmoothForm.degreeOneEquiv (α i) w.proj⟩ := by
   rw [mk, mk, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
   constructor
   · rintro ⟨k, hk⟩
@@ -372,7 +375,7 @@ theorem proj_comp_mk : proj hα ∘ mk hα = TotalSpace.proj :=
 /-! ### The fibres of the projection -/
 
 /-- The map `(x, c) ↦ ∑ i, c i • α i x` is smooth. -/
-private theorem contMDiff_sum_smul :
+theorem contMDiff_sum_smul :
     ContMDiff (I.prod 𝓘(ℝ, ι → ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
       (fun q : B × (ι → ℝ) ↦ (⟨q.1, ∑ i, q.2 i • SmoothForm.degreeOneEquiv (α i) q.1⟩ :
         CotangentBundle I B)) :=
