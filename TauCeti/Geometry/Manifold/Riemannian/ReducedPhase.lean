@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.ODE.ExistUnique

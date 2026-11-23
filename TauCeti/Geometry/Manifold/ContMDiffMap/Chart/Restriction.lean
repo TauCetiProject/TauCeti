@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import TauCeti.Topology.LocallyFinite.Basic
 public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Restriction and locality in the manifold Whitney topologies
@@ -17,7 +18,9 @@ public import TauCeti.Geometry.Manifold.ExtChartAt
 Restriction to an open source is continuous for the existing weak Whitney topology. Its
 coordinate derivatives agree with the ambient derivatives in inherited charts, so a compact chart
 `C^k` seminorm of a restricted map is the seminorm of the ambient map on the same coordinate set
-read in the ambient chart (`ContMDiffMap.chartCkSeminorm_restrict`).
+read in the ambient chart (`ContMDiffMap.chartCkSeminorm_restrict`). Likewise the differential of
+a restricted map at `x ∈ U` is the ambient differential at `x`, the tangent spaces being identified
+through `TauCeti.Manifold.tangentSpaceOpenEquiv` (`ContMDiffMap.mvfderiv_restrict`).
 
 For the strong Whitney topology the situation is different, because a strong neighbourhood on an
 open subset `U` may impose tolerances tending to zero near the frontier of `U`, where the ambient
@@ -83,6 +86,29 @@ theorem restrict_sub (f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (U : Opens M) :
     (f - g).restrict U = f.restrict U - g.restrict U := by
   ext x
   simp
+
+/-- The restriction of the constant function one is one. -/
+@[simp]
+theorem restrict_one (U : Opens M) :
+    (1 : C^n⟮I, M; 𝕜⟯).restrict U = 1 := by
+  ext x
+  simp
+
+/-- Restriction to an open subset commutes with multiplication of scalar functions. -/
+@[simp]
+theorem restrict_mul (f g : C^n⟮I, M; 𝕜⟯) (U : Opens M) :
+    (f * g).restrict U = f.restrict U * g.restrict U := by
+  ext x
+  simp
+
+/-- The differential at `x ∈ U` of the restriction of `f` is the differential of `f` at `x`,
+composed with the identification of the tangent spaces of `U` and `M`. -/
+theorem mvfderiv_restrict (hn : n ≠ 0) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (U : Opens M) (x : U) :
+    mvfderiv I (f.restrict U) x =
+      (mvfderiv I f x).comp
+        (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
+  rw [coe_restrict, mvfderiv_comp x (f.contMDiff.mdifferentiable hn _)
+    (contMDiff_subtypeVal.mdifferentiableAt hn), TauCeti.Manifold.mfderiv_subtype_val]
 
 /-- Restriction to an open source is continuous for the native weak Whitney topologies. -/
 theorem continuous_restrict [IsManifold I n M] [IsManifold J n N] [LocallyCompactSpace E]

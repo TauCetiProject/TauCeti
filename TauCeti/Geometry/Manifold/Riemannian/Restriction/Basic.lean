@@ -32,6 +32,9 @@ pullback along the inclusion, whose differential is invertible also at the bound
   rescaled metric commutes with rescaling.
 * `TauCeti.Manifold.contMDiffRiemannianMetricOpen`: the ambient instance metric restricted to an
   open submanifold.
+* `TauCeti.Manifold.tangentSpaceOpenLinearIsometryEquiv`: for the inherited metric, the
+  identification of the tangent spaces of an open submanifold and of the ambient manifold is a
+  linear isometric equivalence.
 * `TauCeti.Manifold.instRiemannianBundleOpen`,
   `TauCeti.Manifold.instIsContinuousRiemannianBundleOpen`, and
   `TauCeti.Manifold.instIsContMDiffRiemannianBundleOpen`: the corresponding scoped instances.
@@ -334,6 +337,25 @@ theorem enorm_tangentSpace_open
     letI := instRiemannianBundleOpen (I := I) U
     ‖v‖ₑ = ‖tangentSpaceOpenEquiv (I := I) x v‖ₑ := by
   simp only [eNorm, nnNorm, norm_tangentSpace_open]
+
+/-- For the Riemannian metric inherited by an open submanifold `U`, the identification
+`tangentSpaceOpenEquiv` of the tangent spaces of `U` and `M` at `x ∈ U` is a linear isometric
+equivalence. -/
+def tangentSpaceOpenLinearIsometryEquiv
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (U : Opens M) (x : U) :
+    letI := instRiemannianBundleOpen (I := I) U
+    TangentSpace I x ≃ₗᵢ[ℝ] TangentSpace I (x : M) :=
+  letI := instRiemannianBundleOpen (I := I) U
+  { (tangentSpaceOpenEquiv (I := I) x).toLinearEquiv with
+    norm_map' := fun v ↦ (norm_tangentSpace_open U x v).symm }
+
+/-- As a function, `tangentSpaceOpenLinearIsometryEquiv` is `tangentSpaceOpenEquiv`. -/
+@[simp]
+theorem coe_tangentSpaceOpenLinearIsometryEquiv
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (U : Opens M) (x : U) :
+    letI := instRiemannianBundleOpen (I := I) U
+    ⇑(tangentSpaceOpenLinearIsometryEquiv (I := I) U x) = tangentSpaceOpenEquiv (I := I) x :=
+  (rfl)
 
 end Manifold
 

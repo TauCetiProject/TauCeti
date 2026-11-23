@@ -77,6 +77,8 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   a unit in `A`.
 * `Nat.Prime.exists_not_dvd_choose`: if `n ≠ 0` is not a power of the prime `p`, then `p` does not
   divide some `n.choose i` with `0 < i < n`.
+* `Nat.Prime.exists_not_sq_dvd_choose`: if `n ≥ 2`, then `p ^ 2` does not divide some
+  `n.choose i` with `0 < i < n`.
 * `TauCeti.lazardGcd_dvd_pow_succ_sub`: `d_(n+1)` divides `k^(n + 1) - k`.
 * `TauCeti.gcd_choose_div_lazardGcd_eq_one`: for `n ≥ 2`, the coefficients `n.choose i / d_n`
   have greatest common divisor `1`.
@@ -256,6 +258,22 @@ theorem _root_.Nat.Prime.exists_not_dvd_choose {p n : ℕ} (hp : p.Prime) (hn0 :
   by_contra! H
   obtain ⟨k, hk⟩ := (prime_dvd_lazardGcd_iff hp hn0).1 (dvd_lazardGcd_iff.2 H)
   exact hn k hk
+
+/-- For `n ≥ 2` and a prime `p`, some binomial coefficient `n.choose i` with `0 < i < n` is not
+divisible by `p ^ 2`: their greatest common divisor `d_n` is `1` or a prime. -/
+theorem _root_.Nat.Prime.exists_not_sq_dvd_choose {p n : ℕ} (hp : p.Prime) (hn : 2 ≤ n) :
+    ∃ i, 0 < i ∧ i < n ∧ ¬p ^ 2 ∣ n.choose i := by
+  by_contra! H
+  have h := dvd_lazardGcd_iff.2 H
+  have hp1 : p ^ 2 ≠ 1 := by simp [hp.ne_one]
+  by_cases hpp : IsPrimePow n
+  · rw [lazardGcd_eq_minFac_of_isPrimePow hpp] at h
+    have hq := Nat.minFac_prime (by omega : n ≠ 1)
+    rcases hq.eq_one_or_self_of_dvd _ h with h1 | h1
+    · exact hp1 h1
+    · exact Nat.Prime.not_prime_pow' (by decide) (h1 ▸ hq)
+  · rw [lazardGcd_eq_one_of_not_isPrimePow (by omega) hpp, Nat.dvd_one] at h
+    exact hp1 h
 
 /-- `d_n` divides `n.choose i` for `0 < i < n`. -/
 theorem lazardGcd_dvd_choose {n i : ℕ} (hi : 0 < i) (hin : i < n) : lazardGcd n ∣ n.choose i :=
