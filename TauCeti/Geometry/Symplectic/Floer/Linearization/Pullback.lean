@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
 import TauCeti.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # The linearized Floer operator under holomorphic changes of domain coordinates
@@ -309,7 +310,7 @@ theorem norm_floerLinearization_perturbationPullback_sq_le (ω : SymplecticForm 
     ContinuousLinearMap.det, hφJ.det_eq_sq_add_sq, ContinuousLinearMap.coe_coe]
   set a := (fderiv ℝ φ w stdComplexLineReal).1
   set b := (fderiv ℝ φ w stdComplexLineReal).2
-  have h := (J (φ w) (u (φ w))).norm_smul_add_smul_apply_sq_le hM a (-b)
+  have h := ContinuousLinearMap.norm_smul_add_smul_apply_sq_le _ hM a (-b)
     (ω.floerLinearization (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ (φ w))
   rwa [neg_sq, neg_smul, ← sub_eq_add_neg] at h
 
@@ -348,7 +349,8 @@ theorem det_mul_norm_floerLinearization_sq_le (ω : SymplecticForm V) {M : ℝ}
     simp only [D', AlmostComplexStructure.apply_sub, AlmostComplexStructure.apply_smul,
       AlmostComplexStructure.apply_apply]
     module
-  have h := (J (φ w) (u (φ w))).norm_smul_add_smul_apply_sq_le hM a b D'
+  have h : ‖a • D' + b • J (φ w) (u (φ w)) D'‖ ^ 2 ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖D'‖ ^ 2 :=
+    ContinuousLinearMap.norm_smul_add_smul_apply_sq_le _ hM a b D'
   rw [← hD, norm_smul, Real.norm_of_nonneg (by positivity), mul_pow] at h
   rcases (by positivity : 0 ≤ a ^ 2 + b ^ 2).eq_or_lt with h₀ | hpos
   · rw [← h₀, zero_mul]

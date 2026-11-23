@@ -14,7 +14,6 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Geometry.Symplectic.Duality
 
 /-!
@@ -36,8 +35,6 @@ equivalent, it does not depend on the choice of the norm of `V`.
   complex structure squares to `-1`.
 * `TauCeti.AlmostComplexStructure.toContinuousLinearMap_cayley`: in operator-norm coordinates the
   Cayley transform is the rational expression `-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹`.
-* `TauCeti.AlmostComplexStructure.norm_smul_add_smul_apply_sq_le`: if `‖J‖ ≤ M`, then
-  `‖a v + b J v‖² ≤ (1 + M²) (a² + b²) ‖v‖²`.
 * `TauCeti.AlmostComplexStructure.mul_opNorm_le_of_eq_smul_sub_smul`: if `B = (a - b J) A` with
   `a² + b² = r² > 0`, then `r ‖A‖ ≤ (1 + ‖J‖) ‖B‖`, inverting `a - b J` through
   `(a + b J) (a - b J) = a² + b²`.
@@ -102,19 +99,6 @@ theorem toContinuousLinearMap_cayley (J₀ J₁ : AlmostComplexStructure V) {A B
     ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hB])
   rw [← hA', ← hB', cayley_eq_cayleyFormula]
   exact map_cayleyFormula (Module.End.toContinuousLinearMap V) J₀.toLinearMap J₁.toLinearMap
-
-/-- Multiplication by `a + b J`, for an almost complex structure `J` with `‖J‖ ≤ M`, scales the
-norm squared by at most `(1 + M²) (a² + b²)`. -/
-theorem norm_smul_add_smul_apply_sq_le (J : AlmostComplexStructure V) {M : ℝ}
-    (hM : ‖J.toLinearMap.toContinuousLinearMap‖ ≤ M) (a b : ℝ) (v : V) :
-    ‖a • v + b • J v‖ ^ 2 ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by
-  have hJv : ‖J v‖ ≤ M * ‖v‖ :=
-    (J.toLinearMap.toContinuousLinearMap.le_opNorm v).trans
-      (mul_le_mul_of_nonneg_right hM (norm_nonneg v))
-  calc ‖a • v + b • J v‖ ^ 2 ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + ‖J v‖ ^ 2) :=
-        norm_smul_add_smul_sq_le a b v (J v)
-    _ ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + (M * ‖v‖) ^ 2) := by gcongr
-    _ = (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by ring
 
 /-- Inverting `a - b J` for an almost complex structure `J`: if `B = (a - b J) A` and
 `a² + b² = r²` with `r > 0`, then `r ‖A‖ ≤ (1 + ‖J‖) ‖B‖`, since `(a + b J) (a - b J) = a² + b²`. -/

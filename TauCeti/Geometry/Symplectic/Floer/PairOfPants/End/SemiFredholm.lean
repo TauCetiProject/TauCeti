@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Linearization
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.Topology.Instances.Real.TSupport
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
@@ -97,7 +98,7 @@ private theorem norm_floerLinearization_comp_positiveEndChart_sq_le (ω : Symple
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     u ξ (positiveEndChart q ζ)
   have hB₀ : 0 ≤ B := (norm_nonneg _).trans hB
-  have h := Jx.norm_smul_add_smul_apply_sq_le hB a (-b) D
+  have h := ContinuousLinearMap.norm_smul_add_smul_apply_sq_le _ hB a (-b) D
   rw [neg_sq, neg_smul, ← sub_eq_add_neg] at h
   refine h.trans ?_
   rw [← mul_assoc]

@@ -13,6 +13,7 @@ import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.Floer.Plane.ExponentialDecay
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Topology.MetricSpace.Pseudo.Basic
@@ -190,7 +191,7 @@ theorem norm_floerLinearization_comp_realChart_cylindricalEndLift_sq_le (ω : Sy
     (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     u ξ (realChart p.cylindricalEndLift ζ)
-  have h := Jx.norm_smul_add_smul_apply_sq_le hB a (-b) D
+  have h := ContinuousLinearMap.norm_smul_add_smul_apply_sq_le _ hB a (-b) D
   rwa [neg_sq, neg_smul, ← sub_eq_add_neg, mul_assoc] at h
 
 /-- The linearized operator of a PSS plane applied to a `C¹` section `ξ` with compact support in a

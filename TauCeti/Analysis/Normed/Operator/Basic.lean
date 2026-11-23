@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.LinearAlgebra.Pi
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Basic facts about bounded operators
@@ -40,7 +41,9 @@ any ball about `0` into any neighbourhood of `0`
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
-(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). The difference of two
+(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). For a real endomorphism
+`T` with `‖T‖ ≤ M`, `‖a v + b T v‖² ≤ (1 + M²) (a² + b²) ‖v‖²`
+(`ContinuousLinearMap.norm_smul_add_smul_apply_sq_le`). The difference of two
 compositions obeys the three-term estimate
 `‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
 (`ContinuousLinearMap.enorm_comp_sub_comp_le` in extended norms,
@@ -243,6 +246,17 @@ theorem exists_norm_toSpanSingleton_apply_le (R : Type*) {E : Type*} [Seminormed
     [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] (e : E) :
     ∃ C, ∀ r : R, ‖toSpanSingleton R e r‖ ≤ C * ‖r‖ :=
   ⟨‖e‖, fun r ↦ by simpa only [toSpanSingleton_apply, mul_comm ‖e‖] using norm_smul_le r e⟩
+
+/-- Applying `a + b T`, for a real endomorphism `T` with `‖T‖ ≤ M`, scales the norm squared by at
+most `(1 + M²) (a² + b²)`. -/
+theorem norm_smul_add_smul_apply_sq_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (T : E →L[ℝ] E) {M : ℝ} (hM : ‖T‖ ≤ M) (a b : ℝ) (v : E) :
+    ‖a • v + b • T v‖ ^ 2 ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by
+  have hTv : ‖T v‖ ≤ M * ‖v‖ := T.le_of_opNorm_le hM v
+  calc ‖a • v + b • T v‖ ^ 2 ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + ‖T v‖ ^ 2) :=
+        TauCeti.norm_smul_add_smul_sq_le a b v (T v)
+    _ ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + (M * ‖v‖) ^ 2) := by gcongr
+    _ = (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by ring
 
 variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
 variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
