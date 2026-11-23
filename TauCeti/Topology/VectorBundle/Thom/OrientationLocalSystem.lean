@@ -9,6 +9,7 @@ public import TauCeti.Topology.VectorBundle.Thom.Descent
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
 import TauCeti.Topology.Connected.PathConnected
+import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 import TauCeti.Topology.Homotopy.Monodromy.Basic
 import TauCeti.Topology.UnitInterval.PathConnected
 
@@ -56,8 +57,10 @@ and so identifies the fibre of `o(E)`, by evaluation at the orientation that `e`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemFiberIsoSingularHomology_hom`): another
 trivialization changes both identifications by the sign of the determinant of the coordinate
 change, since a linear automorphism acts on `Hᵣ(F, F ∖ {0})` by the sign of its determinant
-(`TauCeti.singularHomologyMap_continuousLinearMap_compl_zero`). The only remaining choice is `ωF`,
-and `-ωF` gives the opposite identification
+(`TauCeti.singularHomologyMap_continuousLinearMap_compl_zero`; for the fibre maps of two
+trivializations, `singularHomologyMap_complZeroPairIso_inv_eq_of_mapOrientation_eq` and its `_neg`
+variant in `Bundle.Trivialization`). The only remaining choice is `ωF`, and `-ωF` gives the
+opposite identification
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemFiberIsoSingularHomology_neg_hom`).
 
 ## The proof
@@ -156,56 +159,36 @@ private theorem ofHom_signLocalSystemFiberEquiv_neg_trans {b : B} (o : Orientati
   ext φ
   exact signLocalSystemFiberEquiv_neg hι o φ
 
+omit [FiniteDimensional ℝ F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [Fintype ι] in
+/-- A trivialization reading `o` as `-ωF` reads `-o` as `ωF`. -/
+private theorem mapOrientation_symm_eq_neg_of_eq_neg (e : Trivialization F (π F E))
+    [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) {o : Orientation ℝ (E b) ι}
+    (h : e.mapOrientation ι hb o = -ωF) :
+    (e.mapOrientation ι hb).symm ωF = -o := by
+  rw [← neg_neg ωF, ← h, Trivialization.mapOrientation_symm_neg, Equiv.symm_apply_apply]
+
 /-- **The identification does not depend on the trivialization.** Two linear trivializations
 whose base sets contain `b` give the same identification of the fibre of `o(E)` over `b` with
 `Hᵣ(E_b, E_b ∖ {0}; K)`. -/
 private theorem fiberIsoAt_eq (e e' : Trivialization F (π F E)) [e.IsLinear ℝ] [e'.IsLinear ℝ]
     {b : B} (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) :
     fiberIsoAt K hι ωF e hb = fiberIsoAt K hι ωF e' hb' := by
-  set M := ModuleCat.of K (ULift.{max w uι} K)
-  set c := e.coordChangeL ℝ e' b
-  -- Reading in `e'` is reading in `e` followed by the coordinate change `c`.
-  have ho : e'.mapOrientation ι hb' ((e.mapOrientation ι hb).symm ωF) =
-      Orientation.map ι c.toLinearEquiv ωF := by
-    rw [Trivialization.mapOrientation_eq_map_coordChangeL e e' hb hb', Equiv.apply_symm_apply]
-  have hH : TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.inv
-      M (finrank ℝ F) =
-        TopPair.singularHomologyMap c.complZeroPairIso.inv M (finrank ℝ F) ≫
-          TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
-            M (finrank ℝ F) := by
-    rw [← e.continuousLinearEquivAt_trans_coordChangeL ℝ e' hb hb',
-      ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_inv,
-      TopPair.singularHomologyMap_comp]
-  -- The coordinate change acts on `Hᵣ(F, F ∖ {0})` by the sign of its determinant.
-  have hcH : TopPair.singularHomologyMap c.complZeroPairIso.hom M (finrank ℝ F) =
-      (SignType.sign (LinearMap.det (c.toLinearEquiv : F →ₗ[ℝ] F)) : ℤ) • 𝟙 _ := by
-    rw [ContinuousLinearEquiv.complZeroPairIso_hom]
-    exact singularHomologyMap_continuousLinearMap_compl_zero _ (c : F →L[ℝ] F) _ _
-  have hcinv : TopPair.singularHomologyMap c.complZeroPairIso.inv M (finrank ℝ F) =
-      (SignType.sign (LinearMap.det (c.toLinearEquiv : F →ₗ[ℝ] F)) : ℤ) • 𝟙 _ := by
-    have hinv : TopPair.singularHomologyMap c.complZeroPairIso.hom M (finrank ℝ F) ≫
-        TopPair.singularHomologyMap c.complZeroPairIso.inv M (finrank ℝ F) = 𝟙 _ := by
-      rw [← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id]
-    rw [hcH, Linear.smul_comp, Category.id_comp] at hinv
-    have hsq : (SignType.sign (LinearMap.det (c.toLinearEquiv : F →ₗ[ℝ] F)) : ℤ) *
-        SignType.sign (LinearMap.det (c.toLinearEquiv : F →ₗ[ℝ] F)) = 1 := by
-      rcases (LinearEquiv.isUnit_det' c.toLinearEquiv).ne_zero.lt_or_gt with h | h <;> simp [h]
-    rw [← hinv, smul_smul, hsq, one_smul]
   ext : 1
-  rw [fiberIsoAt_hom, fiberIsoAt_hom, hH, hcinv]
-  rcases (LinearEquiv.isUnit_det' c.toLinearEquiv).ne_zero.lt_or_gt with hneg | hpos
-  · -- A coordinate change of negative determinant reverses the orientation read as `ωF`.
-    have hω : (e'.mapOrientation ι hb').symm ωF = -(e.mapOrientation ι hb).symm ωF := by
-      rw [Equiv.symm_apply_eq, Trivialization.mapOrientation_neg, ho,
-        (Orientation.map_eq_neg_iff_det_neg ωF c.toLinearEquiv hι).2 hneg]
-      exact (neg_neg ωF).symm
-    rw [hω, sign_neg hneg, ofHom_signLocalSystemFiberEquiv_neg_trans]
-    simp only [M, SignType.coe_neg, SignType.coe_one, neg_smul, one_smul, Preadditive.neg_comp,
-      Category.id_comp, Preadditive.comp_neg, neg_neg]
-  · have hω : (e'.mapOrientation ι hb').symm ωF = (e.mapOrientation ι hb).symm ωF := by
-      rw [Equiv.symm_apply_eq, ho, (Orientation.map_eq_iff_det_pos ωF c.toLinearEquiv hι).2 hpos]
-    rw [hω, sign_pos hpos]
-    simp only [M, SignType.coe_one, one_smul, Category.id_comp]
+  rw [fiberIsoAt_hom, fiberIsoAt_hom]
+  -- Compare how `e'` reads the orientation `o` that `e` reads as `ωF`.
+  set o := (e.mapOrientation ι hb).symm ωF
+  have ho : e.mapOrientation ι hb o = ωF := Equiv.apply_symm_apply _ _
+  rcases Orientation.eq_or_eq_neg (e'.mapOrientation ι hb' o) ωF
+    (Nat.card_eq_fintype_card.trans hι) with h | h
+  · rw [(Equiv.symm_apply_eq _).2 h.symm,
+      e.singularHomologyMap_complZeroPairIso_inv_eq_of_mapOrientation_eq e' hb hb' hι _
+        (h.trans ho.symm)]
+  · rw [mapOrientation_symm_eq_neg_of_eq_neg ωF e' hb' h,
+      e.singularHomologyMap_complZeroPairIso_inv_eq_neg_of_mapOrientation_eq_neg e' hb hb' hι _
+        (by rw [h, ho]),
+      ofHom_signLocalSystemFiberEquiv_neg_trans, Preadditive.neg_comp, Preadditive.comp_neg,
+      Preadditive.comp_neg, neg_neg]
 
 variable (E) in
 /-- **The fibre of the orientation local system is the top local homology of the fibre.** The
@@ -329,10 +312,8 @@ private theorem fiberClass_of_eq_neg (e : Trivialization F (π F E)) [e.IsLinear
     {p : VectorBundleOrientationCover F E ι} (hp : p.proj ∈ e.baseSet)
     (ho : e.mapOrientation ι hp p.orientation = -ωF) :
     fiberClass K hι ωF p = -trivializationClass K e hp := by
-  have hω : (e.mapOrientation ι hp).symm ωF = -p.orientation := by
-    rw [Equiv.symm_apply_eq, Trivialization.mapOrientation_neg, ho]
-    exact (neg_neg ωF).symm
-  rw [fiberClass, leg, signLocalSystemFiberIsoSingularHomology_hom K hι ωF e hp, hω,
+  rw [fiberClass, leg, signLocalSystemFiberIsoSingularHomology_hom K hι ωF e hp,
+    mapOrientation_symm_eq_neg_of_eq_neg ωF e hp ho,
     ofHom_signLocalSystemFiberEquiv_neg_trans, Preadditive.neg_comp, trivializationClass,
     TopPair.singularHomologyMap_comp]
   simp

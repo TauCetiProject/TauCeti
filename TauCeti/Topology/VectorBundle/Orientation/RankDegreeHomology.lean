@@ -187,10 +187,8 @@ theorem thomPairSingularHomologyIsoTwistedHomology_hom_apply (b : B)
       (Nat.card_eq_fintype_card.trans hι) with ho | ho
     · rw [← h o ho, Iso.inv_hom_id_apply]
     · have hneg : (signLocalSystemFiberEquiv hι (-o)).symm (1 : ℤ) =
-          -(signLocalSystemFiberEquiv hι o).symm 1 := by
-        rw [LinearEquiv.symm_apply_eq, map_neg, signLocalSystemFiberEquiv_neg,
-          LinearEquiv.apply_symm_apply]
-        exact (neg_neg 1).symm
+          -(signLocalSystemFiberEquiv hι o).symm 1 :=
+        LinearMap.congr_fun (signLocalSystemFiberEquiv_neg_symm hι o) 1
       have h' := h (-o) (by
         rw [Bundle.Trivialization.mapOrientation_neg, ho]; exact neg_neg (modelOrientation hF))
       rw [hneg, map_neg, map_neg, fiberLocalOrientation_neg, LocalOrientation.coe_neg, map_neg,
