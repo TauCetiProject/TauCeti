@@ -20,7 +20,7 @@ import TauCeti.RingTheory.Iwasawa.ReflexiveHull
 import TauCeti.RingTheory.Iwasawa.TorsionSplitting
 import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
-import TauCeti.RingTheory.Support
+import TauCeti.RingTheory.Support.Basic
 
 /-!
 # The structure theorem up to pseudo-isomorphism
@@ -114,17 +114,17 @@ theorem exists_isPseudoIsomorphism_pi_quotient_pow [IsDomain A] [IsNoetherianRin
   -- The primes of height at most one in the support of `M`: finitely many, all of height one.
   let P := {𝔭 ∈ Module.support A M | 𝔭.asIdeal.height ≤ 1}
   have : Fintype P := hM.finite_setOf_mem_support_height_le_one.fintype
-  have hP (𝔭 : P) : 𝔭.1.asIdeal.height = 1 := by
-    refine le_antisymm 𝔭.2.2 (Order.one_le_iff_pos.mpr (pos_iff_ne_zero.mpr fun h0 ↦ ?_))
-    exact hM.notMem_support_of_mem_minimalPrimes (Ideal.height_eq_zero_iff.mp h0) 𝔭.2.1
+  have hP (𝔭 : P) : 𝔭.val.asIdeal.height = 1 := by
+    refine le_antisymm 𝔭.property.2 (Order.one_le_iff_pos.mpr (pos_iff_ne_zero.mpr fun h0 ↦ ?_))
+    exact hM.notMem_support_of_mem_minimalPrimes (Ideal.height_eq_zero_iff.mp h0) 𝔭.property.1
   choose ι _ n h hh using fun 𝔭 : P ↦
-    exists_bijective_localizedModule_map_pi_quotient_pow hM (𝔭 := 𝔭.1.asIdeal) (hP 𝔭)
-  let E (𝔭 : P) := ∀ i, A ⧸ 𝔭.1.asIdeal ^ n 𝔭 i
+    exists_bijective_localizedModule_map_pi_quotient_pow hM (𝔭 := 𝔭.val.asIdeal) (hP 𝔭)
+  let E (𝔭 : P) := ∀ i, A ⧸ 𝔭.val.asIdeal ^ n 𝔭 i
   -- The prime of height one belonging to a factor `E 𝔭` is the only prime of height at most one in
   -- its support.
   have hsupp (𝔭 : P) (𝔮 : PrimeSpectrum A) (h𝔮 : 𝔮.asIdeal.height ≤ 1)
-      (hmem : 𝔮 ∈ Module.support A (E 𝔭)) : 𝔭.1 = 𝔮 := by
-    have : 𝔭.1.asIdeal.FiniteHeight := ⟨.inr (by simp [hP 𝔭])⟩
+      (hmem : 𝔮 ∈ Module.support A (E 𝔭)) : 𝔭.val = 𝔮 := by
+    have : 𝔭.val.asIdeal.FiniteHeight := ⟨.inr (by simp [hP 𝔭])⟩
     exact PrimeSpectrum.ext (Ideal.eq_of_le_of_height_le _
       (Module.le_of_mem_support_pi_quotient_pow hmem) (h𝔮.trans (hP 𝔭).ge))
   -- The sum of the local maps is a pseudo-isomorphism `∏_𝔭 E 𝔭 → M`.
@@ -155,14 +155,15 @@ theorem exists_isPseudoIsomorphism_pi_quotient_pow [IsDomain A] [IsNoetherianRin
         rw [Module.mem_support_iff_of_finite, Module.annihilator_pi, ← Finset.inf_univ_eq_iInf,
           𝔮.isPrime.inf_le'] at hmem
         obtain ⟨𝔭, -, h𝔭⟩ := hmem
-        exact hq (hsupp 𝔭 𝔮 h𝔮 (Module.mem_support_iff_of_finite.mpr h𝔭) ▸ 𝔭.2.1)
+        exact hq (hsupp 𝔭 𝔮 h𝔮 (Module.mem_support_iff_of_finite.mpr h𝔭) ▸ 𝔭.property.1)
       exact ⟨Function.injective_of_subsingleton _, Function.surjective_to_subsingleton _⟩
   obtain ⟨f, hf⟩ := hH.exists_reverse hM
   -- Flatten the index to `Σ 𝔭, ι 𝔭` and drop the factors with exponent zero, which vanish.
   let κ := {x : Σ 𝔭 : P, ι 𝔭 // n x.1 x.2 ≠ 0}
-  exact ⟨κ, inferInstance, fun y ↦ y.1.1.1, fun y ↦ n y.1.1 y.1.2, fun y ↦ ⟨hP y.1.1, y.2⟩,
-    (LinearMap.pi fun y : κ ↦ LinearMap.proj y.1) ∘ₗ
-      (LinearEquiv.piCurry A fun 𝔭 i ↦ A ⧸ 𝔭.1.asIdeal ^ n 𝔭 i).symm.toLinearMap ∘ₗ f,
+  exact ⟨κ, inferInstance, fun y ↦ y.val.1.val, fun y ↦ n y.val.1 y.val.2, fun y ↦ ⟨hP y.val.1,
+      y.property⟩,
+    (LinearMap.pi fun y : κ ↦ LinearMap.proj y.val) ∘ₗ
+      (LinearEquiv.piCurry A fun 𝔭 i ↦ A ⧸ 𝔭.val.asIdeal ^ n 𝔭 i).symm.toLinearMap ∘ₗ f,
     (IsPseudoIsomorphism.of_bijective (TauCeti.Ideal.Quotient.bijective_pi_restrict_pow _ _)).comp
       ((IsPseudoIsomorphism.of_bijective (LinearEquiv.bijective _)).comp hf)⟩
 

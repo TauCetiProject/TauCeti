@@ -32,8 +32,7 @@ small-chain equivalence and prove excision.
   the small subcomplex of the preimage family.
 * `TopCat.toSmallSingularSubcomplex`: the singular simplicial set of a subset of a member of the
   family maps into the small subcomplex.
-* `TopCat.chainComplexMap_f_toSmallSingularSubcomplex_comp`: restriction of singular cochains
-  along the small-chain inclusion followed by a subspace inclusion.
+* `TopCat.chainComplexMap_f_toSmallSingularSubcomplex_ι`: the inclusion law for subordinate chains.
 * `TopCat.chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero`: a chain map vanishing on the
   singular chains of each member of the family vanishes on the small chains.
 * `TopCat.smallSingularSubcomplex` is affinely stable (`SSet.Subcomplex.IsAffineStable`), so
@@ -150,7 +149,7 @@ def toSmallSingularSubcomplex {S : Set X} {i : ι} (h : S ⊆ U i) :
     rintro n _ ⟨σ, rfl⟩
     rw [mem_smallSingularSubcomplex_iff, TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app,
       ContinuousMap.coe_comp, Set.range_comp]
-    exact ⟨i, (Set.image_subset_range _ _).trans fun _ ⟨x, hx⟩ ↦ hx ▸ h x.2⟩)
+    exact ⟨i, (Set.image_subset_range _ _).trans fun _ ⟨x, hx⟩ ↦ hx ▸ h x.property⟩)
 
 @[reassoc (attr := simp)]
 lemma toSmallSingularSubcomplex_ι {S : Set X} {i : ι} (h : S ⊆ U i) :
@@ -188,9 +187,9 @@ lemma chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero {C : Type u} [Cate
     SSet.chainComplexMap (X.smallSingularSubcomplex U).ι T ≫ F = 0 := by
   ext n : 1
   refine SSet.chainComplex_hom_ext fun σ ↦ ?_
-  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X U σ.1).1 σ.2
+  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X U σ.val).1 σ.property
   -- `σ` is the image of a singular simplex of `U i`
-  obtain ⟨τ, hτ⟩ := (mem_range_toSSet_subtypeVal_iff (U i) _ σ.1).2 hi
+  obtain ⟨τ, hτ⟩ := (mem_range_toSSet_subtypeVal_iff (U i) _ σ.val).2 hi
   have h : (toSSet.obj (of (U i))).ιChainComplex (R := T) τ ≫
       (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U i))))
         T).f n ≫ F.f n = 0 := by
@@ -205,17 +204,15 @@ end TopCat
 namespace TopCat
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
-  {R M : C} {X : TopCat.{w}}
+  {R : C} {X : TopCat.{w}}
 
-/-- Restricting singular cochains of `X` to the simplices subordinate to a cover, and then to a
-subspace lying in a member of the cover, is restricting to that subspace. -/
-lemma chainComplexMap_f_toSmallSingularSubcomplex_comp {ι : Type*} (U : ι → Set X)
-    {S' : Set X} {i : ι} (hS' : S' ⊆ U i) (n : ℕ) (z : ((toSSet.obj X).chainComplex R).X n ⟶ M) :
+/-- Inclusion of subordinate chains after restricting to a subset is its singular inclusion. -/
+lemma chainComplexMap_f_toSmallSingularSubcomplex_ι {ι : Type*} (U : ι → Set X)
+    {S' : Set X} {i : ι} (hS' : S' ⊆ U i) (n : ℕ) :
     (SSet.chainComplexMap (toSmallSingularSubcomplex U hS') R).f n ≫
-        (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n ≫ z =
-      (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal S'))) R).f n ≫ z := by
-  rw [← Category.assoc, ← HomologicalComplex.comp_f, ← Functor.map_comp,
-    toSmallSingularSubcomplex_ι]
+        (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n =
+      (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal S'))) R).f n := by
+  rw [← HomologicalComplex.comp_f, ← Functor.map_comp, toSmallSingularSubcomplex_ι]
 
 end TopCat
 

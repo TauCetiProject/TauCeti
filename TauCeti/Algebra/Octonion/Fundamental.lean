@@ -88,8 +88,9 @@ submodules of `𝕆` itself, which is where the derivations act; irreducibility 
 
 ## References
 
-The identification of `Der 𝕆` with the split `LieAlgebra.g₂` and its type-`G₂` Killing-simplicity
-are not proved here.
+The identification of `Der 𝕆` with the split `LieAlgebra.g₂` is
+`TauCeti.Octonion.g₂EquivDerivationLieAlgebra` in `TauCeti/Algebra/Octonion/G2.lean`, and its
+type-`G₂` Killing-simplicity is in `TauCeti/Algebra/Octonion/Simple.lean`.
 
 * T. A. Springer and F. D. Veldkamp, *Octonions, Jordan Algebras and Exceptional Groups*, §2.
 * J. C. Baez, *The octonions*, Bull. Amer. Math. Soc. 39 (2002), §4.1.

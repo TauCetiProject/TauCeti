@@ -13,8 +13,12 @@ public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 On a `μ`-null set `s`, the Radon–Nikodym derivative `μ.rnDeriv ν` vanishes `ν`-almost everywhere
 (`MeasureTheory.Measure.ae_rnDeriv_eq_zero_of_measure_eq_zero`): its integral over `s` is
-at most `μ s = 0`. For σ-finite `μ ≪ ν`, a measurable set `Z` and reals `ε`, `L`, it follows that
-`(ε * L)⁺ * μ Z` is the integral over `Z` of the positive part of `ε * L * μ.rnDeriv ν`
+at most `μ s = 0`. Likewise, when `μ ≪ ν` and `ν` admits a Lebesgue decomposition with respect to
+`κ`, vanishing of `ν.rnDeriv κ` forces vanishing of `μ.rnDeriv κ` `κ`-almost everywhere
+(`MeasureTheory.Measure.ae_rnDeriv_eq_zero_imp`), and when `ν` is σ-finite the same holds for
+`.toReal` (`MeasureTheory.Measure.ae_toReal_rnDeriv_eq_zero_imp`). For σ-finite `μ ≪ ν`, a
+measurable set `Z` and reals `ε`, `L`, it follows that `(ε * L)⁺ * μ Z` is the integral over `Z` of
+the positive part of `ε * L * μ.rnDeriv ν`
 (`MeasureTheory.Measure.toENNReal_mul_measure_eq_setLIntegral_ofReal_mul_rnDeriv`).
 
 The Radon–Nikodym derivative `μ.rnDeriv ν` is a fixed representative of an almost-everywhere
@@ -61,6 +65,30 @@ theorem ae_rnDeriv_eq_zero_of_measure_eq_zero {s : Set α} (hs : μ s = 0) :
   (ae_restrict_iff (measurable_rnDeriv μ ν (measurableSet_singleton 0))).1 <|
     (lintegral_eq_zero_iff (measurable_rnDeriv μ ν)).1 <|
       le_antisymm ((setLIntegral_rnDeriv_le s).trans hs.le) zero_le
+
+/-- If `μ ≪ ν`, then `κ`-almost everywhere the vanishing of `dν/dκ` forces the vanishing of
+`dμ/dκ`. -/
+theorem ae_rnDeriv_eq_zero_imp {κ : Measure α} [ν.HaveLebesgueDecomposition κ] (h : μ ≪ ν) :
+    ∀ᵐ x ∂κ, ν.rnDeriv κ x = 0 → μ.rnDeriv κ x = 0 := by
+  obtain ⟨t, htm, hsing, hκt⟩ := mutuallySingular_singularPart ν κ
+  set s := {x | ν.rnDeriv κ x = 0} ∩ t
+  have hsm : MeasurableSet s := (measurable_rnDeriv ν κ (measurableSet_singleton 0)).inter htm
+  have hνs : ν s = 0 := by
+    rw [haveLebesgueDecomposition_add ν κ, add_apply,
+      measure_mono_null Set.inter_subset_right hsing, zero_add,
+      withDensity_apply _ hsm, setLIntegral_congr_fun hsm fun x hx ↦ hx.1, lintegral_zero]
+  filter_upwards [ae_rnDeriv_eq_zero_of_measure_eq_zero (ν := κ) (h hνs),
+    ae_iff.2 hκt] with x hxs hxt hν₀
+  exact hxs ⟨hν₀, hxt⟩
+
+/-- If `μ ≪ ν` with `ν` σ-finite, then `κ`-almost everywhere the vanishing of `(dν/dκ).toReal`
+forces the vanishing of `(dμ/dκ).toReal`. -/
+theorem ae_toReal_rnDeriv_eq_zero_imp {κ : Measure α} [SigmaFinite ν]
+    [ν.HaveLebesgueDecomposition κ] (h : μ ≪ ν) :
+    ∀ᵐ x ∂κ, (ν.rnDeriv κ x).toReal = 0 → (μ.rnDeriv κ x).toReal = 0 := by
+  filter_upwards [ae_rnDeriv_eq_zero_imp (κ := κ) h, rnDeriv_lt_top ν κ] with x himp hfin hv
+  have hν₀ : ν.rnDeriv κ x = 0 := (ENNReal.toReal_eq_zero_iff _).1 hv |>.resolve_right hfin.ne
+  rw [himp hν₀, ENNReal.toReal_zero]
 
 /-- For `μ ≪ ν` with `μ` σ-finite, a measurable set `Z` and a real `L` which is the extended real
 `c` unless `μ Z = 0`, the term `(ε c)⁺ μ(Z)` is the integral over `Z` of the positive part of

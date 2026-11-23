@@ -99,7 +99,7 @@ theorem isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints (U : OpenNorm
       ((m : Additive Lˣ).toMul : L) ∈ F :=
     (IntermediateField.mem_fixedField_iff _ _).2 fun σ hσ => by
       simpa [AlgEquiv.smul_units_def] using
-        congrArg (fun v : Additive Lˣ => ((v.toMul : Lˣ) : L)) (m.2 ⟨σ, hσ⟩)
+        congrArg (fun v : Additive Lˣ => ((v.toMul : Lˣ) : L)) (m.property ⟨σ, hσ⟩)
   -- The cocycle `f`, transported to `Gal(F/K) → Fˣ`.
   let g : Gal(F/K) → Fˣ := fun τ =>
     Units.mk0 ⟨_, hmem (f (e.symm τ))⟩ fun h => (f (e.symm τ) : Additive Lˣ).toMul.ne_zero
@@ -120,7 +120,7 @@ theorem isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints (U : OpenNorm
   refine ⟨⟨Additive.ofMul (Units.map (F.val : F →* L) β), fun σ => ?_⟩, fun q => ?_⟩
   · refine Additive.toMul.injective (Units.ext ?_)
     simpa [Subgroup.smul_def, AlgEquiv.smul_units_def] using
-      (IntermediateField.mem_fixedField_iff _ _).1 (β : F).2 σ σ.2
+      (IntermediateField.mem_fixedField_iff _ _).1 (β : F).property σ σ.property
   · obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective q
     refine Subtype.ext (Additive.toMul.injective (Units.ext ?_))
     rw [← hg_apply, ← hβ]
@@ -193,7 +193,7 @@ theorem subsingleton_H1_additive_units {K L : Type*} [Field K] [Field L] [Algebr
     induction x using QuotientAddGroup.induction_on with
     | H z =>
       exact H1pi_eq_zero_iff.2 (mem_B1_iff.2
-        (isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints U (mem_Z1_iff.1 z.2).2))
+        (isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints U (mem_Z1_iff.1 z.property).2))
 
 /-- **Hilbert 90 for explicit cocycles.** For a Galois extension `L/K`, finite or not, every
 locally constant multiplicative `1`-cocycle `f : Gal(L/K) → Lˣ`, that is

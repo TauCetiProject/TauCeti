@@ -65,8 +65,8 @@ open subgroup `N` of finite index in `Kˣ` is at most `n` exactly when `U(K,n) �
 least `n` with `U(K,n) ⊆ N`. -/
 theorem conductorExponent_localClassField_le_iff [CharZero K] (N : LocalNormSubgroups K)
     {n : ℕ} :
-    conductorExponent K (classField K (localClassField N).1) ≤ n ↔
-      unitFiltration K n ≤ N.1.toSubgroup := by
+    conductorExponent K (classField K (localClassField N).val) ≤ n ↔
+      unitFiltration K n ≤ N.val.toSubgroup := by
   rw [conductorExponent_le_iff, ← localNormSubgroup_def, localClassField_normSubgroup]
 
 /-- The conductor exponent of the class field of an open subgroup `N` of `Kˣ` whose index is
@@ -74,9 +74,9 @@ prime to the residue characteristic `p` is at most `n` exactly when `U(K,n) ⊆ 
 every characteristic. -/
 theorem conductorExponent_localClassFieldPrimeToResidueCharacteristic_le_iff
     (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) {n : ℕ} :
-    conductorExponent K (classField K (localClassFieldPrimeToResidueCharacteristic p N).1.1) ≤
+    conductorExponent K (classField K (localClassFieldPrimeToResidueCharacteristic p N).val.val) ≤
         n ↔
-      unitFiltration K n ≤ N.1.1.toSubgroup := by
+      unitFiltration K n ≤ N.val.val.toSubgroup := by
   rw [conductorExponent_le_iff, ← localNormSubgroup_def,
     localClassFieldPrimeToResidueCharacteristic_normSubgroup]
 
@@ -95,14 +95,14 @@ def unitFiltrationSupZpowers {ϖ : Kˣ} (hϖ : normalizedValuation K ϖ = .ofAdd
 @[simp]
 theorem unitFiltrationSupZpowers_toSubgroup {ϖ : Kˣ} (hϖ : normalizedValuation K ϖ = .ofAdd 1)
     (n : ℕ) :
-    (unitFiltrationSupZpowers hϖ n).1.toSubgroup = unitFiltration K n ⊔ Subgroup.zpowers ϖ :=
+    (unitFiltrationSupZpowers hϖ n).val.toSubgroup = unitFiltration K n ⊔ Subgroup.zpowers ϖ :=
   (rfl)
 
 /-- The conductor exponent of the class field of `U(K,n) · ϖ ^ ℤ` is at most `m` exactly when
 `U(K,m) ⊆ U(K,n)`. -/
 theorem conductorExponent_localClassField_unitFiltrationSupZpowers_le_iff [CharZero K]
     {ϖ : Kˣ} (hϖ : normalizedValuation K ϖ = .ofAdd 1) {m n : ℕ} :
-    conductorExponent K (classField K (localClassField (unitFiltrationSupZpowers hϖ n)).1) ≤ m ↔
+    conductorExponent K (classField K (localClassField (unitFiltrationSupZpowers hϖ n)).val) ≤ m ↔
       unitFiltration K m ≤ unitFiltration K n := by
   rw [conductorExponent_localClassField_le_iff, unitFiltrationSupZpowers_toSubgroup,
     unitFiltration_le_unitFiltration_sup_zpowers_iff (by simp [hϖ])]
@@ -112,7 +112,7 @@ with a residue field of two elements is genuine: there `U(K,1) · ϖ ^ ℤ = Kˣ
 (`conductorExponent_localClassField_unitFiltrationSupZpowers_one_eq_zero`). -/
 theorem conductorExponent_localClassField_unitFiltrationSupZpowers [CharZero K] {ϖ : Kˣ}
     (hϖ : normalizedValuation K ϖ = .ofAdd 1) {n : ℕ} (h : n ≠ 1 ∨ Nat.card 𝓀[K] ≠ 2) :
-    conductorExponent K (classField K (localClassField (unitFiltrationSupZpowers hϖ n)).1) =
+    conductorExponent K (classField K (localClassField (unitFiltrationSupZpowers hϖ n)).val) =
       n :=
   eq_of_forall_ge_iff fun _ ↦ by
     rw [conductorExponent_localClassField_unitFiltrationSupZpowers_le_iff,
@@ -122,7 +122,7 @@ theorem conductorExponent_localClassField_unitFiltrationSupZpowers [CharZero K] 
 `Kˣ`, and its class field has conductor exponent `0`. -/
 theorem conductorExponent_localClassField_unitFiltrationSupZpowers_one_eq_zero [CharZero K] {ϖ : Kˣ}
     (hϖ : normalizedValuation K ϖ = .ofAdd 1) (h : Nat.card 𝓀[K] = 2) :
-    conductorExponent K (classField K (localClassField (unitFiltrationSupZpowers hϖ 1)).1) =
+    conductorExponent K (classField K (localClassField (unitFiltrationSupZpowers hϖ 1)).val) =
       0 := by
   rw [← Nat.le_zero, conductorExponent_localClassField_unitFiltrationSupZpowers_le_iff,
     unitFiltration_one_eq_unitFiltration_zero_iff.mpr h]

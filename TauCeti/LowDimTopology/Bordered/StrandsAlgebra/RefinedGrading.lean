@@ -492,7 +492,7 @@ theorem nonempty (hM : Function.Surjective M) (s₀ : Finset β) :
   refine ⟨⟨fun s ↦ StrandGradingGroup.mk ((∑ x, (δ s x : ℚ) ^ 2) / 4) (δ s),
     fun s ↦ mem_gPrime_iff_sum_sq.2 ⟨⟨0, by simp⟩, ?_⟩, fun s ↦ ?_⟩⟩
   · simp only [δ, mk_boundary, Pi.sub_apply, sum_sub_distrib, sum_boole, filter_mem_eq_inter,
-      univ_inter, card_image_of_injective _ hσ, s.2, sub_self]
+      univ_inter, card_image_of_injective _ hσ, s.property, sub_self]
   · rw [mk_boundary, map_sub, pushBoundary_indicator (hinj _), pushBoundary_indicator (hinj _),
       himage, himage]
 
