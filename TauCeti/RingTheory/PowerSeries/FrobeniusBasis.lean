@@ -151,6 +151,11 @@ theorem algebraMap_frobeniusAlgebra :
   (rfl)
 
 @[simp]
+theorem algebraMap_frobeniusAlgebra_apply (a : R⟦X⟧) :
+    @algebraMap R⟦X⟧ R⟦X⟧ _ _ (frobeniusAlgebra R p) a = frobeniusSubst R p a :=
+  (rfl)
+
+@[simp]
 theorem frobeniusAlgebra_smul (a f : R⟦X⟧) :
     @HSMul.hSMul _ _ _ (@instHSMul _ _ (frobeniusAlgebra R p).toSMul) a f =
       frobeniusSubst R p a * f :=
