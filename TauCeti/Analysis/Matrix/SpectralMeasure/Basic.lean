@@ -77,9 +77,6 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   matrix is concentrated on the nonnegative reals;
 * `Matrix.eigenvalueMeasure_toMeasure_of_isNilpotent` — a nilpotent matrix has eigenvalue measure
   `δ₀`;
-* `Matrix.integrable_spectralMeasure`, `Matrix.integrable_pow_spectralMeasure` — every function into
-  a normed additive group (in particular every monomial `x ↦ x ^ k`) is integrable against the
-  spectral measure;
 * `Matrix.integral_pow_spectralMeasure`, `Matrix.ofReal_integral_pow_spectralMeasure` — the `k`-th
   moment of the spectral measure is the normalized trace of `A ^ k`;
 * `Matrix.resolventTransform_spectralMeasure` — the resolvent transform of the spectral measure is
@@ -407,21 +404,6 @@ theorem eigenvalueMeasure_toMeasure_of_isNilpotent {A : Matrix n n ℂ} (hA : Is
   rw [eigenvalueMeasure_toMeasure, hchar, roots_X_pow, Multiset.map_nsmul, Multiset.sum_nsmul,
     Multiset.map_singleton, Multiset.sum_singleton, ← Nat.cast_smul_eq_nsmul ℝ≥0∞, smul_smul,
     ENNReal.inv_mul_cancel (by simp) (by simp), one_smul]
-
-/-- Every function into a normed additive group is integrable against `A.spectralMeasure hA`,
-because singletons in `ℝ` are measurable and the spectral measure is a finite sum of Dirac
-masses. -/
-theorem integrable_spectralMeasure {E : Type*} [NormedAddCommGroup E]
-    (A : Matrix n n 𝕜) (hA : A.IsHermitian) (f : ℝ → E) :
-    Integrable f (A.spectralMeasure hA : Measure ℝ) := by
-  rw [spectralMeasure_def, empiricalMeasureOfFintype_toMeasure]
-  exact integrable_finsetSum_measure.mpr fun i _ =>
-    (integrable_dirac (by simp)).smul_measure (by simp)
-
-/-- Every monomial `x ↦ x ^ k` is integrable against `A.spectralMeasure hA`. -/
-theorem integrable_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
-    Integrable (fun x : ℝ => x ^ k) (A.spectralMeasure hA : Measure ℝ) :=
-  integrable_spectralMeasure A hA _
 
 /-- The `k`-th moment of the spectral measure of a Hermitian matrix is the normalized trace of
 `A ^ k`: `∫ x ^ k dL_A = (card n)⁻¹ * Re tr (A ^ k)`. -/
