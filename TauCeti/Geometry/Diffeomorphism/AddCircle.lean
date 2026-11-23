@@ -156,7 +156,7 @@ theorem straighten_one_apply (f : C^n⟮𝓘(ℝ), AddCircle T; 𝓘(ℝ), AddCi
     (θ : AddCircle T) : straighten 1 f θ = f 0 + d • θ := by
   induction θ using QuotientAddGroup.induction_on with
   | H x =>
-    have hf0 : f 0 = (F 0 : AddCircle T) := hf 0
+    have hf0 : f 0 = (F 0 : AddCircle T) := by rw [← coe_zero, hf]
     rw [straighten_apply_coe 1 f hF hf hd, hf0, ← coe_zsmul, ← coe_add, zsmul_eq_mul]
     congr 1
     ring
@@ -266,7 +266,7 @@ private theorem exists_diffeomorph_coe_eq_straighten (hn : n ≠ 0)
   induction θ using QuotientAddGroup.induction_on with
   | H x =>
     rw [straighten_apply_coe t f.toContMDiffMap hF.continuous hf hper]
-    have hf0 : f 0 = (F 0 : AddCircle T) := hf 0
+    have hf0 : f 0 = (F 0 : AddCircle T) := by rw [← coe_zero, hf]
     simp only [Diffeomorph.coe_trans, Function.comp_apply, TauCeti.Diffeotopy.timeSlice_apply, hu,
       TauCeti.Lie.addZSMulDiffeomorph_apply, hf0]
     rw [← coe_zsmul, ← coe_add, zsmul_eq_mul]
