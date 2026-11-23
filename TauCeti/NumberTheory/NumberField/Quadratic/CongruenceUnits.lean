@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.QuadraticAlgebra
 import TauCeti.NumberTheory.QuadraticOrder.Reduction
 
 /-!
@@ -80,28 +79,11 @@ theorem ker_unitsMap_ringOfIntegers_quotient_span_natCast [NumberField K] [IsTot
   obtain ⟨θ, d, hmin, hgen, hsf, hd_neg⟩ :=
     exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_of_isTotallyComplex hK
   by_cases hd4 : d % 4 = 1
-  · set ω₀ := halfGen hmin hd4
-    have hω_sq : ω₀ * ω₀ = ((d - 1) / 4) • (1 : 𝓞 K) + (1 : ℤ) • ω₀ := by
-      have haeval := minpoly.aeval ℤ ω₀
-      rw [minpoly_halfGen hmin hd4, show (1 - d) / 4 = -((d - 1) / 4) by omega] at haeval
-      simp only [map_add, map_sub, map_pow, map_neg, map_intCast, aeval_X, zsmul_eq_mul,
-        eq_intCast, Int.cast_one, one_mul] at haeval ⊢
-      linear_combination haeval
-    have hω_notMem : (ω₀ : K) ∉ (algebraMap ℚ K).range := fun ⟨q, hq⟩ ↦
-      gen_notMem_range hmin ⟨2 * q - 1, by
-        rw [coe_halfGen] at hq; rw [map_sub, map_mul, map_one, map_ofNat, hq]; ring⟩
-    let e := ringOfIntegersAlgEquivOfAdjoin hω_sq
-      (adjoin_halfGen_eq_top_of_mod_four_eq_one hmin hgen hsf hd4) hω_notMem
-    have hd : QuadraticAlgebra.discr ((d - 1) / 4) 1 < 0 := by
-      rw [QuadraticAlgebra.discr_def]; omega
-    exact ker_unitsMap_ringOfIntegers_quotient_span_natCast_of_algEquiv e hd hN
-  · have hθ_sq : θ * θ = d • (1 : 𝓞 K) + (0 : ℤ) • θ := by
-      apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-      simpa [sq, zsmul_eq_mul, RingOfIntegers.coe_eq_algebraMap] using coe_gen_sq hmin
-    let e := ringOfIntegersAlgEquivOfAdjoin hθ_sq
-      (adjoin_gen_eq_top_of_mod_four_ne_one hmin hgen hsf hd4) (gen_notMem_range hmin)
-    have hd : QuadraticAlgebra.discr d 0 < 0 := by
-      rw [QuadraticAlgebra.discr_def]; omega
-    exact ker_unitsMap_ringOfIntegers_quotient_span_natCast_of_algEquiv e hd hN
+  · exact ker_unitsMap_ringOfIntegers_quotient_span_natCast_of_algEquiv
+      (ringOfIntegersAlgEquivHalfGen hmin hgen hsf hd4)
+      (by rw [QuadraticAlgebra.discr_def]; omega) hN
+  · exact ker_unitsMap_ringOfIntegers_quotient_span_natCast_of_algEquiv
+      (ringOfIntegersAlgEquivGen hmin hgen hsf hd4)
+      (by rw [QuadraticAlgebra.discr_def]; omega) hN
 
 end TauCeti.NumberField

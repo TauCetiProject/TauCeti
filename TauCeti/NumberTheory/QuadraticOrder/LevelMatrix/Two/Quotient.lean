@@ -13,10 +13,12 @@ import TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Two.Basic
 
 For discriminants strictly below `-4`, `unitPeriodMatrixSubgroup a b 2 = ⊥`
 (`unitPeriodMatrixSubgroup_two_eq_bot_of_discr_lt_neg_four`). By contrast, for the Gaussian and
-Eisenstein integer algebras, every residue unit lifts to an actual integral unit, so the reduced
-global-unit subgroup is `⊤` (`unitPeriodMatrixSubgroup_neg_one_zero_two_eq_top`,
+Eisenstein integer algebras — and hence for every integral quadratic algebra of discriminant `-4`
+or `-3` — every residue unit lifts to an actual integral unit, so the reduced global-unit subgroup
+is `⊤` (`unitPeriodMatrixSubgroup_neg_one_zero_two_eq_top`,
 `unitPeriodMatrixSubgroup_neg_one_one_two_eq_top`,
-`unitPeriodMatrixSubgroup_neg_three_three_two_eq_top`).
+`unitPeriodMatrixSubgroup_two_eq_top_of_discr_eq_neg_four`,
+`unitPeriodMatrixSubgroup_two_eq_top_of_discr_eq_neg_three`).
 
 ## References
 
@@ -59,32 +61,39 @@ theorem unitPeriodMatrixSubgroup_neg_one_one_two_eq_top :
   exact mem_unitPeriodMatrixSubgroup_iff.mpr
     ⟨u, by rw [unitPeriodMatrixHom_apply, hu, MulEquiv.apply_symm_apply]⟩
 
-/-- In the `(1, (3 + i√3)/2)` presentation of the Eisenstein integers (`a = -3`, `b = 3`,
-`discr = -3`), every level-`2` multiplication matrix likewise lifts to an integral unit (`1`,
-`ω - 1`, or `(ω - 1)²`). -/
-@[simp]
-theorem unitPeriodMatrixSubgroup_neg_three_three_two_eq_top :
-    unitPeriodMatrixSubgroup (-3) 3 2 = ⊤ := by
+/-- Transport `unitPeriodMatrixSubgroup a' b' N = ⊤` along equal discriminants using the
+residue-unit quotient identification `residueUnitsQuotientPeriodMatrixEquiv`. -/
+private theorem unitPeriodMatrixSubgroup_eq_top_of_discr_eq {a b a' b' : ℤ} {N : ℕ}
+    (hd : discr a b = discr a' b') (htop : unitPeriodMatrixSubgroup a' b' N = ⊤) :
+    unitPeriodMatrixSubgroup a b N = ⊤ := by
+  obtain ⟨e⟩ := nonempty_algEquiv_int_iff.mpr hd
+  let φ :=
+    (residueUnitsQuotientPeriodMatrixEquiv (RingEquiv.refl (QuadraticAlgebra ℤ a b)) N).symm.trans
+      (residueUnitsQuotientPeriodMatrixEquiv e.toRingEquiv N)
   rw [eq_top_iff]
   rintro M -
-  set u := periodUnitMatrixEquiv.symm M
-  suffices ∃ v : (QuadraticAlgebra ℤ (-3) 3)ˣ,
-      Units.map (mapRingHom (Int.castRingHom (ZMod 2)) (-3) 3).toMonoidHom v = u by
-    obtain ⟨v, hv⟩ := this
-    exact mem_unitPeriodMatrixSubgroup_iff.mpr
-      ⟨v, by rw [unitPeriodMatrixHom_apply, hv, MulEquiv.apply_symm_apply]⟩
-  have hζ : IsUnit (⟨-1, 1⟩ : QuadraticAlgebra ℤ (-3) 3) :=
-    isUnit_iff_norm_isUnit.mpr (by norm_num [norm_def])
-  have hu := isUnit_iff_norm_isUnit.mp u.isUnit
-  have h3 : (3 : ZMod 2) = 1 := by decide
-  have key : ∀ t s : ZMod 2, IsUnit (t ^ 2 + t * s + s ^ 2) →
-      (t = 1 ∧ s = 0) ∨ (t = 1 ∧ s = 1) ∨ (t = 0 ∧ s = 1) := by decide
-  have hn : IsUnit (u.val.re ^ 2 + u.val.re * u.val.im + u.val.im ^ 2) := by
-    simpa [norm_def, sq, h3, sub_eq_add_neg, ZMod.neg_eq_self_mod_two] using hu
-  rcases key _ _ hn with h | h | h
-  · exact ⟨1, Units.ext (by ext <;> simp [h.1, h.2])⟩
-  · exact ⟨hζ.unit, Units.ext (by ext <;> simp [mapRingHom, h.1, h.2])⟩
-  · exact ⟨hζ.unit ^ 2, Units.ext (by ext <;> simp [mapRingHom, sq, h.1, h.2, h3,
-      CharTwo.add_self_eq_zero])⟩
+  rw [← QuotientGroup.eq_one_iff]
+  apply φ.injective
+  rw [map_one]
+  obtain ⟨M', hM'⟩ := QuotientGroup.mk_surjective
+    (φ (M : periodMatrixGroup (a : ZMod N) (b : ZMod N) ⧸ unitPeriodMatrixSubgroup a b N))
+  rw [← hM', QuotientGroup.eq_one_iff, htop]
+  trivial
+
+/-- For any quadratic algebra of discriminant `-4`, the reduced global-unit subgroup at level `2`
+is the entire multiplication-matrix group. -/
+@[simp]
+theorem unitPeriodMatrixSubgroup_two_eq_top_of_discr_eq_neg_four {a b : ℤ} (hd : discr a b = -4) :
+    unitPeriodMatrixSubgroup a b 2 = ⊤ :=
+  unitPeriodMatrixSubgroup_eq_top_of_discr_eq (by rw [hd, discr_def]; norm_num)
+    unitPeriodMatrixSubgroup_neg_one_zero_two_eq_top
+
+/-- For any quadratic algebra of discriminant `-3`, the reduced global-unit subgroup at level `2`
+is the entire multiplication-matrix group. -/
+@[simp]
+theorem unitPeriodMatrixSubgroup_two_eq_top_of_discr_eq_neg_three {a b : ℤ} (hd : discr a b = -3) :
+    unitPeriodMatrixSubgroup a b 2 = ⊤ :=
+  unitPeriodMatrixSubgroup_eq_top_of_discr_eq (by rw [hd, discr_def]; norm_num)
+    unitPeriodMatrixSubgroup_neg_one_one_two_eq_top
 
 end QuadraticAlgebra

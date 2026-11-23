@@ -10,7 +10,6 @@ public import Mathlib.Data.ZMod.Defs
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 import Mathlib.Data.ZMod.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.QuadraticAlgebra
 
 /-!
 # Period-algebra presentations of quadratic rings of integers
@@ -100,34 +99,17 @@ theorem exists_ringOfIntegers_periodAlgEquiv {K : Type*} [Field K] [NumberField 
       QuadraticAlgebra ℤ (-periodCoeffC (discr K)) (-periodCoeffB (discr K))) := by
   obtain ⟨θ, d, hmin, hgen, hsf⟩ := exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
   by_cases hd4 : d % 4 = 1
-  · set ω₀ := halfGen hmin hd4
-    have hdisc : discr K = d := discr_eq_of_squarefree_of_mod_four_eq_one hmin hgen hsf hd4
+  · have hdisc : discr K = d := discr_eq_of_squarefree_of_mod_four_eq_one hmin hgen hsf hd4
     have hD4 : discr K % 4 = 0 ∨ discr K % 4 = 1 := Or.inr (hdisc.symm ▸ hd4)
-    have hω_sq : ω₀ * ω₀ = ((d - 1) / 4) • (1 : 𝓞 K) + (1 : ℤ) • ω₀ := by
-      have haeval := minpoly.aeval ℤ ω₀
-      rw [minpoly_halfGen hmin hd4, show (1 - d) / 4 = -((d - 1) / 4) by omega] at haeval
-      simp only [map_add, map_sub, map_pow, map_neg, map_intCast, aeval_X, zsmul_eq_mul,
-        eq_intCast, Int.cast_one, one_mul] at haeval ⊢
-      linear_combination haeval
-    have hω_notMem : (ω₀ : K) ∉ (algebraMap ℚ K).range := fun ⟨q, hq⟩ ↦
-      gen_notMem_range hmin ⟨2 * q - 1, by
-        rw [coe_halfGen] at hq; rw [map_sub, map_mul, map_one, map_ofNat, hq]; ring⟩
-    let e₁ := ringOfIntegersAlgEquivOfAdjoin hω_sq
-      (adjoin_halfGen_eq_top_of_mod_four_eq_one hmin hgen hsf hd4) hω_notMem
     obtain ⟨e₂⟩ := (QuadraticAlgebra.nonempty_algEquiv_int_iff (a := (d - 1) / 4) (b := 1)
       (a' := -periodCoeffC (discr K)) (b' := -periodCoeffB (discr K))).mpr <| by
         rw [discr_neg_periodCoeff (discr K) hD4, hdisc, QuadraticAlgebra.discr_def]; omega
-    exact ⟨e₁.trans e₂⟩
+    exact ⟨(ringOfIntegersAlgEquivHalfGen hmin hgen hsf hd4).trans e₂⟩
   · have hdisc : discr K = 4 * d := discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf hd4
     have hD4 : discr K % 4 = 0 ∨ discr K % 4 = 1 := Or.inl (by rw [hdisc]; omega)
-    have hθ_sq : θ * θ = d • (1 : 𝓞 K) + (0 : ℤ) • θ := by
-      apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-      simpa [sq, zsmul_eq_mul, RingOfIntegers.coe_eq_algebraMap] using coe_gen_sq hmin
-    let e₁ := ringOfIntegersAlgEquivOfAdjoin hθ_sq
-      (adjoin_gen_eq_top_of_mod_four_ne_one hmin hgen hsf hd4) (gen_notMem_range hmin)
     obtain ⟨e₂⟩ := (QuadraticAlgebra.nonempty_algEquiv_int_iff (a := d) (b := 0)
       (a' := -periodCoeffC (discr K)) (b' := -periodCoeffB (discr K))).mpr <| by
         rw [discr_neg_periodCoeff (discr K) hD4, hdisc, QuadraticAlgebra.discr_def]; ring
-    exact ⟨e₁.trans e₂⟩
+    exact ⟨(ringOfIntegersAlgEquivGen hmin hgen hsf hd4).trans e₂⟩
 
 end TauCeti.NumberField
