@@ -210,13 +210,13 @@ private theorem chartValueL_dataSuccL_ae (w : A.sectionChartData.SobolevData μ 
     rw [dataSuccL_apply, h₂ c]
     refine (h₃ c).trans ?_
     rw [Pi.add_apply, h₄ c, h₅ c]
-  have hL := Matrix.toLin_apply (finBasis ℝ (ℂ →L[ℝ] F)) (finBasis ℝ (ℂ →L[ℝ] F))
-    (LinearMap.toMatrix (finBasis ℝ (ℂ →L[ℝ] F)) (finBasis ℝ (ℂ →L[ℝ] F))
-      (complexAntilinearPartL (F := F)).toLinearMap) (chartDeriv A μ p k i w y)
-  rw [Matrix.toLin_toMatrix, ContinuousLinearMap.coe_coe, chartDeriv,
-    (finBasis ℝ (ℂ →L[ℝ] F)).repr_sum_self] at hL
-  simp_rw [hc, add_smul, Finset.sum_add_distrib, ← hL, Basis.sum_repr]
-  rfl
+  have hrepr : ⇑((finBasis ℝ (ℂ →L[ℝ] F)).repr (chartDeriv A μ p k i w y)) =
+      fun a ↦ Wkp.value k (A.sectionChartData.chartDerivDataL μ p k i w a) y := by
+    rw [chartDeriv, (finBasis ℝ (ℂ →L[ℝ] F)).repr_sum_self]
+  have hL := LinearMap.toMatrix_mulVec_repr (finBasis ℝ (ℂ →L[ℝ] F)) (finBasis ℝ (ℂ →L[ℝ] F))
+    (complexAntilinearPartL (F := F)).toLinearMap (chartDeriv A μ p k i w y)
+  rw [hrepr, ContinuousLinearMap.coe_coe] at hL
+  simp_rw [hc, add_smul, Finset.sum_add_distrib, hL, Basis.sum_repr]
 
 /-- The order-one Sobolev section underlying a Sobolev section of order `k + 1`. -/
 private def toOrderOne (w : SobolevSection A μ p (k + 1)) : SobolevSection A μ p 1 :=
