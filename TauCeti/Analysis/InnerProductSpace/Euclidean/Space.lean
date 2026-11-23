@@ -8,14 +8,15 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.RingTheory.AlgebraTower
+import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 
 /-!
 # Dimensions of Euclidean spaces
 
 The first lemma derives positive ambient dimension from two distinct points, in particular from
 a nonzero vector. Distinct points thus supply the dimension hypothesis needed for Newtonian-kernel
-monotonicity and Poisson-kernel positivity. Likewise two orthogonal nonzero vectors force the
-dimension to be at least two (`TauCeti.one_lt_of_inner_eq_zero_euclideanSpace`).
+monotonicity and Poisson-kernel positivity. Likewise two orthogonal nonzero vectors of `𝕜ⁿ⁺¹` force
+`n ≠ 0` (`TauCeti.ne_zero_of_inner_eq_zero_euclideanSpace`).
 
 The lemma `TauCeti.finrank_real_euclideanSpace_complex` and the instance
 `TauCeti.factFinrankEuclideanSpaceComplex` record the real dimension of `ℂᵏ⁺¹` as `(2k + 1) + 1`.
@@ -51,15 +52,13 @@ theorem pos_of_ne_euclideanSpace {𝕜 : Type*} {n : ℕ} {x y : EuclideanSpace 
     (hxy : x ≠ y) : 0 < n :=
   Nat.pos_of_ne_zero (by rintro rfl; exact hxy (Subsingleton.elim x y))
 
-/-- Two orthogonal nonzero vectors of `EuclideanSpace 𝕜 (Fin n)` force the dimension to be at
-least two. -/
-theorem one_lt_of_inner_eq_zero_euclideanSpace {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
-    {x y : EuclideanSpace 𝕜 (Fin n)} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : ⟪x, y⟫_𝕜 = 0) : 1 < n := by
-  have h := (linearIndependent_of_ne_zero_of_inner_eq_zero (𝕜 := 𝕜) (v := ![x, y])
-    (by simp [Fin.forall_fin_two, hx, hy])
-    (fun i j hij ↦ by
-      fin_cases i <;> fin_cases j <;> simp_all [inner_eq_zero_symm])).fintype_card_le_finrank
-  simp only [Fintype.card_fin, finrank_euclideanSpace_fin] at h
+/-- Two orthogonal nonzero vectors of `EuclideanSpace 𝕜 (Fin (n + 1))` force `n ≠ 0`, the form
+in which the complex projective space `CPⁿ` API takes its dimension hypothesis. -/
+theorem ne_zero_of_inner_eq_zero_euclideanSpace {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
+    {x y : EuclideanSpace 𝕜 (Fin (n + 1))} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : ⟪x, y⟫_𝕜 = 0) :
+    n ≠ 0 := by
+  have h := one_lt_finrank_of_inner_eq_zero hx hy hxy
+  rw [finrank_euclideanSpace_fin] at h
   omega
 
 /-- The real dimension of `ℂᵏ⁺¹` is `2k + 2`, written as `(2k + 1) + 1`, so that its unit sphere

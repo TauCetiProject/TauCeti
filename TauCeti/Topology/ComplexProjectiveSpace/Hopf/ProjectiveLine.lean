@@ -231,7 +231,7 @@ private theorem isBoundaryLift_projectiveLineLift :
       ((projectiveLineLift v w hvw).comp
         ⟨fun y : I × (Fin 1 → I) ↦ (y.1, y.2 0), by fun_prop⟩) where
   proj_apply y := by
-    have h : finSuccEquiv 1 1 = some 0 := rfl
+    have h : finSuccEquiv 1 1 = some 0 := by rw [← Fin.succ_zero_eq_one, finSuccEquiv_succ]
     simp [GenLoop.congr_apply, h, piOptionEquivProdHomeomorph_symm_apply_some, -mk_eq_mk_iff]
   apply_zero t := projectiveLineLift_zero_left hvw _
   apply_of_mem_boundary s t ht := by
@@ -280,8 +280,8 @@ read as a square, generates `π₂(CPⁿ, [v]) ≅ ℤ`. -/
 theorem zpowers_fromDoubleLoop_projectiveLineDoubleLoop_eq_top :
     Subgroup.zpowers (G := π_ 2 (ComplexProjectiveSpace n) (mk n v))
       ⟦GenLoop.fromDoubleLoop (projectiveLineDoubleLoop v w hvw)⟧ = ⊤ := by
-  have hn : n ≠ 0 := (Nat.lt_of_succ_lt_succ (one_lt_of_inner_eq_zero_euclideanSpace
-    (ne_zero_of_mem_unit_sphere v) (ne_zero_of_mem_unit_sphere w) hvw)).ne'
+  have hn := ne_zero_of_inner_eq_zero_euclideanSpace (ne_zero_of_mem_unit_sphere v)
+    (ne_zero_of_mem_unit_sphere w) hvw
   exact (pi2MulEquivInt v hn).zpowers_eq_top_of_apply_eq_ofAdd_one
     (pi2MulEquivInt_fromDoubleLoop_projectiveLineDoubleLoop hvw hn)
 
@@ -343,7 +343,7 @@ theorem bijective_mapOfEq_projectiveLineLoopMap :
       (projectiveLineLoopMap_one hvw)) :=
   Circle.bijective_mapOfEq_toCircle_of_apply_eq_ofAdd_one _ _
     (pi2MulEquivInt_fundamentalGroupLoopSpaceMulEquiv_fromPath_projectiveLineDoubleLoop hvw
-      (Nat.lt_of_succ_lt_succ (one_lt_of_inner_eq_zero_euclideanSpace
-        (ne_zero_of_mem_unit_sphere v) (ne_zero_of_mem_unit_sphere w) hvw)).ne')
+      (ne_zero_of_inner_eq_zero_euclideanSpace (ne_zero_of_mem_unit_sphere v)
+        (ne_zero_of_mem_unit_sphere w) hvw))
 
 end TauCeti.ComplexProjectiveSpace
