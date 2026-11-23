@@ -13,8 +13,9 @@ import Mathlib.LinearAlgebra.Matrix.StdBasis
 
 The Choi matrix uses `Matrix.comp` to flatten the block matrix of images of the
 input matrix units. Its indices agree with the column stacking of `Matrix.vec`,
-with the input index first. Choi matrices respect pointwise finite sums and
-determine linear maps with finite input index types and arbitrary output index types.
+with the input index first. Choi matrices respect pointwise finite sums and scalar
+multiplication and determine linear maps with finite input index types and arbitrary
+output index types.
 `choiMatrixAddEquiv` reconstructs such a linear map from the blocks of its Choi matrix.
 
 For a map `X ↦ A * X * B`, the Choi matrix is the outer product of `A.vec`
@@ -60,6 +61,14 @@ theorem choiMatrix_sum {ι m n R : Type*} [DecidableEq n] [AddCommMonoid R] [One
   ext p q
   simp only [choiMatrix_apply, Matrix.sum_apply]
 
+/-- Forming a Choi matrix commutes with pointwise scaling of a matrix-valued map. -/
+@[simp]
+theorem choiMatrix_smul {S m n R : Type*} [DecidableEq n] [Zero R] [One R] [SMul S R]
+    (c : S) (Φ : Matrix n n R → Matrix m m R) :
+    choiMatrix (fun X => c • Φ X) = c • choiMatrix Φ := by
+  ext p q
+  simp only [choiMatrix_apply, Matrix.smul_apply]
+
 /-- The additive equivalence sending a linear map with a finite input index type to its
 Choi matrix. The output index type is arbitrary. The inverse reconstructs the linear map
 that sends each matrix unit to the corresponding block. -/
@@ -100,6 +109,14 @@ theorem choiMatrix_injective {m n R : Type*} [Finite n] [DecidableEq n] [Semirin
   intro Φ Ψ h
   apply choiMatrixAddEquiv.injective
   simpa only [choiMatrixAddEquiv_apply] using h
+
+/-- Two linear maps with finite input index type have equal Choi matrices exactly when
+the maps are equal. -/
+@[simp]
+theorem choiMatrix_eq_iff {m n R : Type*} [Finite n] [DecidableEq n] [Semiring R]
+    {Φ Ψ : Matrix n n R →ₗ[R] Matrix m m R} :
+    choiMatrix Φ = choiMatrix Ψ ↔ Φ = Ψ :=
+  choiMatrix_injective.eq_iff
 
 /-- The reconstructed linear map sends the `(i, j)` matrix unit to the `(i, j)` block. -/
 @[simp]
