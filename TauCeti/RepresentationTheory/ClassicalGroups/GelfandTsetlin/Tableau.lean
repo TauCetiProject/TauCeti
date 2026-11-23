@@ -101,7 +101,7 @@ private theorem lt_card_filter_range_iff {N : ℕ} {p : ℕ → Prop} [Decidable
   rcases Nat.lt_or_ge x N with hx | hx
   · have h : x < #{i : Fin N | p i} ↔ p x :=
       Fin.lt_card_filter_univ_iff_apply_of_imp (j := (⟨x, hx⟩ : Fin N)) (fun i => p i)
-        fun i _ hji hi => hp hji i.2 hi
+        fun i _ hji hi => hp hji i.isLt hi
     rw [hcard, h, and_iff_right hx]
   · have hle : #{y ∈ range N | p y} ≤ N := (card_filter_le _ _).trans_eq (card_range N)
     exact iff_of_false (by omega) fun h => absurd h.1 (by omega)
@@ -116,7 +116,7 @@ theorem entry_top_eq (P : GTPattern n) (hμ : μ.colLen 0 ≤ n)
     (hP : ∀ i : Fin n, P.topRow i = (μ.rowLen i : ℤ)) (i : ℕ) : P i n = (μ.rowLen i : ℤ) := by
   rcases Nat.lt_or_ge i n with hi | hi
   · simpa using hP ⟨i, hi⟩
-  · rw [P.entry_eq_zero_of_le hi, YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans hi),
+  · rw [P.entry_eq_zero_of_le hi, YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans hi),
       Nat.cast_zero]
 
 /-! ### From a pattern to a tableau -/
@@ -420,20 +420,20 @@ Together with the count of the patterns with a given top row, this is the tablea
 Gelfand-Tsetlin basis of an irreducible polynomial representation of `GL n`. -/
 def gtPatternEquivSSYT (n : ℕ) (μ : YoungDiagram) (hμ : μ.colLen 0 ≤ n) :
     {P : GTPattern n // ∀ i : Fin n, P.topRow i = (μ.rowLen i : ℤ)} ≃ BoundedSSYT n μ where
-  toFun P := ⟨P.1.toTableau hμ P.2, fun _ _ h => P.1.toTableau_lt hμ P.2 h⟩
-  invFun T := ⟨SemistandardYoungTableau.toGTPattern T.1 n,
-    SemistandardYoungTableau.topRow_toGTPattern T.1 n T.2⟩
+  toFun P := ⟨P.val.toTableau hμ P.property, fun _ _ h => P.val.toTableau_lt hμ P.property h⟩
+  invFun T := ⟨SemistandardYoungTableau.toGTPattern T.val n,
+    SemistandardYoungTableau.topRow_toGTPattern T.val n T.property⟩
   left_inv P :=
-    Subtype.ext (GTPattern.ext fun i j => toGTPattern_toTableau_apply n μ hμ P.1 P.2 i j)
+    Subtype.ext (GTPattern.ext fun i j => toGTPattern_toTableau_apply n μ hμ P.val P.property i j)
   right_inv T :=
     Subtype.ext (SemistandardYoungTableau.ext fun i c =>
-      toTableau_toGTPattern_apply n μ hμ T.1 T.2 i c)
+      toTableau_toGTPattern_apply n μ hμ T.val T.property i c)
 
 /-- The bijection sends a pattern to the tableau `TauCeti.GTPattern.toTableau` it names. -/
 @[simp]
 theorem gtPatternEquivSSYT_apply_coe (n : ℕ) (μ : YoungDiagram) (hμ : μ.colLen 0 ≤ n)
     (P : {P : GTPattern n // ∀ i : Fin n, P.topRow i = (μ.rowLen i : ℤ)}) :
-    (gtPatternEquivSSYT n μ hμ P).1 = P.1.toTableau hμ P.2 :=
+    (gtPatternEquivSSYT n μ hμ P).val = P.val.toTableau hμ P.property :=
   (rfl)
 
 /-- The inverse bijection sends a tableau to the pattern
@@ -441,7 +441,7 @@ theorem gtPatternEquivSSYT_apply_coe (n : ℕ) (μ : YoungDiagram) (hμ : μ.col
 @[simp]
 theorem gtPatternEquivSSYT_symm_apply_coe (n : ℕ) (μ : YoungDiagram) (hμ : μ.colLen 0 ≤ n)
     (T : BoundedSSYT n μ) :
-    ((gtPatternEquivSSYT n μ hμ).symm T).1 = SemistandardYoungTableau.toGTPattern T.1 n :=
+    ((gtPatternEquivSSYT n μ hμ).symm T).val = SemistandardYoungTableau.toGTPattern T.val n :=
   (rfl)
 
 /-- **The pattern count is the tableau count**: the patterns with top row the shape `μ` are as

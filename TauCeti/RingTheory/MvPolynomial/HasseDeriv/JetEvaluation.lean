@@ -125,7 +125,7 @@ theorem mem_ker_jetEval {f : restrictSupport R s} :
 theorem jetEval_empty : jetEval (∅ : Set (σ →₀ ℕ)) a d = 0 := by
   ext f i
   have hf : (f : MvPolynomial σ R) = 0 := by
-    simpa [Set.subset_empty_iff] using (mem_restrictSupport_iff R).1 f.2
+    simpa [Set.subset_empty_iff] using (mem_restrictSupport_iff R).1 f.property
   simp [hf]
 
 /-- Naturality of the jet evaluation map: changing coefficients along `f : R →+* S` before or

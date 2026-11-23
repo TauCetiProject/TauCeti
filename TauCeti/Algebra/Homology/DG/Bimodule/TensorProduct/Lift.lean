@@ -117,9 +117,9 @@ def tensorLift (φ : M →ₗ[R] N →ₗ[R] P)
       | zero => simp
       | add m m' hm hm' => simp only [add_tmul, map_add, hm, hm']
       | @homogeneous p m =>
-        rw [tensorObj_differential_tmul m.2, map_add, map_zsmul_unit]
+        rw [tensorObj_differential_tmul m.property, map_add, map_zsmul_unit]
         simp only [L, lift_tmul]
-        exact hφd m.2 n
+        exact hφd m.property n
   · rw [mem_dgBimoduleHomSubmodule]
     intro a z
     exact lift_smul_left A φ hφ hφA a z

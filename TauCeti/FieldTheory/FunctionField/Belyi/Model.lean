@@ -8,10 +8,8 @@ module
 public import TauCeti.FieldTheory.FunctionField.Belyi.FieldOfModuli
 public import Mathlib.RingTheory.TensorProduct.Basic
 import TauCeti.FieldTheory.AlgebraicClosure
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
-import TauCeti.FieldTheory.RatFunc.Transcendental
-import TauCeti.FieldTheory.Separable.Regular
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Regular
+import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Models of algebraic Belyi pairs and fields of definition
@@ -44,7 +42,7 @@ need not be defined over its field of moduli (Couveignes).
 * `TauCeti.AlgebraicBelyiPair.Model`: a model of an algebraic Belyi pair over a subfield.
 * `TauCeti.AlgebraicBelyiPair.Model.trans`: composition of models along a tower of constant fields.
 * `TauCeti.AlgebraicBelyiPair.Model.fractionRingEquiv`: for arbitrary `k / K`, the `k`-algebra
-  isomorphism `FractionRing (k ⊗[K] F₀) ≃ₐ[k] F`.
+  isomorphism `FractionRing (k ⊗[K] M.pair) ≃ₐ[k] X`.
 * `TauCeti.AlgebraicBelyiPair.Model.baseChangeEquiv`: for algebraic `k / K`, the isomorphism
   `F₀ ⊗[K] k ≃+* F`.
 * `TauCeti.AlgebraicBelyiPair.Model.baseChangeAut`: the automorphism of the pair induced by an
@@ -73,7 +71,7 @@ public section
 
 universe u v w
 
-open scoped TensorProduct IntermediateField nonZeroDivisors
+open scoped TensorProduct
 
 namespace TauCeti
 
@@ -173,10 +171,8 @@ private theorem constantCompositum_eq_top :
 
 /-- For any field extension `k / K` (algebraic or transcendental), the tensor product
 `M.pair ⊗[K] k` of a model with `k` is an integral domain. -/
-instance isDomain_tensorProduct : IsDomain (M.pair ⊗[K] k) := by
-  have : Algebra.IsSeparable K⟮algebraMap (RatFunc K) (M.pair : Type _) RatFunc.X⟯ M.pair :=
-    (isSeparable_adjoin_algebraMap_X_iff (k := K) (F := M.pair)).mpr inferInstance
-  exact isDomain_tensorProduct_of_separating (x := algebraMap (RatFunc K) M.pair RatFunc.X)
+instance isDomain_tensorProduct : IsDomain (M.pair ⊗[K] k) :=
+  isDomain_tensorProduct_of_isGeometricallyReduced
     M.pair.isAlgebraicBelyiPair.isIntegrallyClosedIn k
 
 /-- Symmetric form `IsDomain (k ⊗[K] M.pair)`, convenient because `k ⊗[K] M.pair` carries a global
@@ -198,20 +194,12 @@ private theorem isFractionRing_tensorProduct :
   let _ : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
   have : IsScalarTower K M.pair X := .of_algebraMap_eq fun c ↦ (M.embedding_algebraMap c).symm
   have : IsScalarTower K k X := .of_algebraMap_eq fun _ ↦ rfl
-  have hF₀ : IsFunctionField K M.pair := (IsFunctionField.ratFunc K).finite_extension
-  let t₀ : M.pair := algebraMap (RatFunc K) M.pair RatFunc.X
-  have ht₀ : Transcendental K t₀ :=
-    (transcendental_algebraMap_iff (algebraMap (RatFunc K) M.pair).injective).mpr
-      RatFunc.transcendental_X
-  have ht : Transcendental k (algebraMap M.pair X t₀) := by
-    dsimp only [t₀]
-    rw [RingHom.algebraMap_toAlgebra, M.embedding_algebraMap_X]
-    exact (transcendental_algebraMap_iff (algebraMap (RatFunc k) X).injective).mpr
-      RatFunc.transcendental_X
-  have : FiniteDimensional K⟮t₀⟯ M.pair := hF₀.finiteDimensional_adjoin ht₀
-  exact isFractionRing_of_productMap_injective
-    (productMap_injective_of_transcendental (k := K) ht) M.constantCompositum_eq_top
+  have H := linearDisjoint_of_isGeometricallyReduced_ratFunc
+    M.pair.isAlgebraicBelyiPair.isIntegrallyClosedIn M.embedding_algebraMap_X
+  exact isFractionRing_tensorProduct_of_linearDisjoint H M.constantCompositum_eq_top
 
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+  Algebra.TensorProduct.right_isScalarTower in
 /-- For any field extension `k / K` (algebraic or transcendental), the fraction field of
 `k ⊗[K] M.pair` is canonically isomorphic to `X` as a `k`-algebra. -/
 noncomputable def fractionRingEquiv : FractionRing (k ⊗[K] M.pair) ≃ₐ[k] X :=
@@ -222,15 +210,13 @@ noncomputable def fractionRingEquiv : FractionRing (k ⊗[K] M.pair) ≃ₐ[k] X
   letI : Algebra (M.pair ⊗[K] k) X :=
     (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom K M.pair X)
       (IsScalarTower.toAlgHom K k X)).toRingHom.toAlgebra
+  haveI : IsScalarTower k (M.pair ⊗[K] k) X := .of_algebraMap_eq fun _ ↦ by
+    simp [RingHom.algebraMap_toAlgebra]
   haveI : IsFractionRing (M.pair ⊗[K] k) X := M.isFractionRing_tensorProduct
-  AlgEquiv.ofRingEquiv
-    (f := IsFractionRing.ringEquivOfRingEquiv (K := FractionRing (k ⊗[K] M.pair)) (L := X)
-      (Algebra.TensorProduct.comm K k M.pair).toRingEquiv)
-    fun c ↦ by
-      rw [IsScalarTower.algebraMap_apply k (k ⊗[K] M.pair) (FractionRing (k ⊗[K] M.pair)),
-        IsFractionRing.ringEquivOfRingEquiv_algebraMap]
-      simp [RingHom.algebraMap_toAlgebra]
+  (fractionRingTensorCommAlgEquiv K M.pair k X (FractionRing (k ⊗[K] M.pair))).symm
 
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+  Algebra.TensorProduct.right_isScalarTower in
 @[simp]
 theorem fractionRingEquiv_algebraMap_tmul (c : k) (y : M.pair) :
     M.fractionRingEquiv (algebraMap (k ⊗[K] M.pair) _ (c ⊗ₜ y)) =
@@ -242,9 +228,10 @@ theorem fractionRingEquiv_algebraMap_tmul (c : k) (y : M.pair) :
   let _ : Algebra (M.pair ⊗[K] k) X :=
     (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom K M.pair X)
       (IsScalarTower.toAlgHom K k X)).toRingHom.toAlgebra
+  have : IsScalarTower k (M.pair ⊗[K] k) X := .of_algebraMap_eq fun _ ↦ by
+    simp [RingHom.algebraMap_toAlgebra]
   have : IsFractionRing (M.pair ⊗[K] k) X := M.isFractionRing_tensorProduct
-  unfold fractionRingEquiv
-  rw [AlgEquiv.ofRingEquiv_apply, IsFractionRing.ringEquivOfRingEquiv_algebraMap]
+  rw [fractionRingEquiv, fractionRingTensorCommAlgEquiv_symm_algebraMap_tensorProduct]
   simp [RingHom.algebraMap_toAlgebra]
 
 /-- **Degree invariance for models**: over any extension `k / K` (algebraic or transcendental),
@@ -256,24 +243,9 @@ theorem finrank_pair :
   let _ : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
   have : IsScalarTower K M.pair X := .of_algebraMap_eq fun c ↦ (M.embedding_algebraMap c).symm
   have : IsScalarTower K k X := .of_algebraMap_eq fun _ ↦ rfl
-  have hF₀ : IsFunctionField K M.pair := (IsFunctionField.ratFunc K).finite_extension
-  let t₀ : M.pair := algebraMap (RatFunc K) M.pair RatFunc.X
-  have ht₀ : Transcendental K t₀ :=
-    (transcendental_algebraMap_iff (algebraMap (RatFunc K) M.pair).injective).mpr
-      RatFunc.transcendental_X
-  have ht : Transcendental k (algebraMap M.pair X t₀) := by
-    dsimp only [t₀]
-    rw [RingHom.algebraMap_toAlgebra, M.embedding_algebraMap_X]
-    exact (transcendental_algebraMap_iff (algebraMap (RatFunc k) X).injective).mpr
-      RatFunc.transcendental_X
-  have : FiniteDimensional K⟮t₀⟯ M.pair := hF₀.finiteDimensional_adjoin ht₀
-  have hld : (IsScalarTower.toAlgHom K k X).fieldRange.LinearDisjoint M.pair :=
-    linearDisjoint_of_transcendental ht
-  have hfin := finrank_over_adjoin_simple_eq_of_linearDisjoint hld M.constantCompositum_eq_top t₀
-  dsimp only [t₀] at hfin
-  rw [RingHom.algebraMap_toAlgebra, M.embedding_algebraMap_X, finrank_adjoin_algebraMap_X,
-    finrank_adjoin_algebraMap_X] at hfin
-  exact hfin.symm
+  exact (finrank_ratFunc_eq_of_isGeometricallyReduced
+    M.pair.isAlgebraicBelyiPair.isIntegrallyClosedIn M.constantCompositum_eq_top
+    M.embedding_algebraMap_X).symm
 
 /-- The **base change** of a model `Y = (F₀, t)` over `K` of `X = (F, t)` to an algebraic
 extension `k` of `K` is `X`: multiplication `F₀ ⊗[K] k → F` is an isomorphism. -/
@@ -405,7 +377,7 @@ pointwise lie in the stabilizer of `c`. -/
 theorem IsDefinedOver.fixingSubgroup_le_stabilizer {K : IntermediateField ℚ k}
     [Algebra.IsAlgebraic K k] {c : IsoClass k} (hc : c.IsDefinedOver K) :
     K.fixingSubgroup ≤ MulAction.stabilizer (k ≃ₐ[ℚ] k) c :=
-  fun g hg ↦ hc.smul_eq fun a ↦ (IntermediateField.mem_fixingSubgroup_iff K g).mp hg a a.2
+  fun g hg ↦ hc.smul_eq fun a ↦ (IntermediateField.mem_fixingSubgroup_iff K g).mp hg a a.property
 
 /-- **Every field of definition contains the field of moduli**: if a class `c` is defined over a
 subfield `K` of `k` over which `k` is Galois, such as a number field inside

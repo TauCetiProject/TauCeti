@@ -14,6 +14,7 @@ import TauCeti.FieldTheory.FunctionField.Place.Degree
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Equiv
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
 # Descent of algebraic Belyi pairs to pointed fields of moduli
@@ -93,7 +94,6 @@ This proves Köck's Theorem 2.2:
 public section
 
 open Polynomial IntermediateField
-open scoped nonZeroDivisors
 
 namespace TauCeti
 
@@ -185,21 +185,13 @@ theorem embedding_modelOfMinpolyMemLifts_algebraMap_ratFunc (r : RatFunc K) :
       algebraMap (RatFunc k) X (algebraMap (RatFunc K) (RatFunc k) r) :=
   (rfl)
 
-/-- Adjoining the generator of `F⟮z⟯` inside `F⟮z⟯` recovers `⊤`. -/
-private theorem adjoin_adjoinSimple_gen {F E : Type*} [Field F] [Field E] [Algebra F E] (a : E) :
-    F⟮IntermediateField.AdjoinSimple.gen F a⟯ = ⊤ := by
-  apply IntermediateField.map_injective F⟮a⟯.val
-  rw [IntermediateField.adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map,
-    IntermediateField.fieldRange_val]
-  rfl
-
 /-- The distinguished generator generates the function field of `modelOfMinpolyMemLifts` over
 `K(t)`. -/
 theorem adjoin_modelOfMinpolyMemLiftsGen :
     (RatFunc K)⟮X.modelOfMinpolyMemLiftsGen hC hX hgen hlift⟯ = ⊤ := by
   let _ : Algebra (RatFunc K) X :=
     ((algebraMap (RatFunc k) X).comp (algebraMap (RatFunc K) (RatFunc k))).toAlgebra
-  exact adjoin_adjoinSimple_gen (F := RatFunc K) z
+  exact IntermediateField.adjoin_adjoinSimple_gen_eq_top (F := RatFunc K) z
 
 /-- The minimal polynomial over `K(t)` of the distinguished generator of `modelOfMinpolyMemLifts`
 maps along `K(t) → k(t)` to `minpoly (RatFunc k) z`. -/
@@ -285,7 +277,7 @@ theorem range_embedding_modelOfMinpolyMemLifts [Algebra (RatFunc K) X]
   constructor
   · rintro ⟨y, rfl⟩
     rw [← X.coe_modelOfMinpolyMemLiftsEquiv hC hX hgen hlift y]
-    exact (X.modelOfMinpolyMemLiftsEquiv hC hX hgen hlift y).2
+    exact (X.modelOfMinpolyMemLiftsEquiv hC hX hgen hlift y).property
   · intro hx
     refine ⟨(X.modelOfMinpolyMemLiftsEquiv hC hX hgen hlift).symm ⟨x, hx⟩, ?_⟩
     rw [← X.coe_modelOfMinpolyMemLiftsEquiv hC hX hgen hlift, AlgEquiv.apply_symm_apply]
@@ -307,22 +299,13 @@ noncomputable def pointedModel {P : Place k X} {q : ℚ}
     (hP : P.degree = 1) :
     Model (X.pointedFieldOfModuli P) X :=
   let K := X.pointedFieldOfModuli P
-  letI : Algebra (RatFunc K) (RatFunc k) :=
-    (_root_.RatFunc.mapRingHom (Polynomial.mapRingHom (algebraMap K k))
-      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-        (Polynomial.map_injective _ (algebraMap K k).injective))).toAlgebra
-  have hpoly (p : K[X]) : algebraMap (RatFunc K) (RatFunc k) (algebraMap K[X] _ p) =
-      algebraMap k[X] _ (p.map (algebraMap K k)) := by
-    rw [RingHom.algebraMap_toAlgebra, _root_.RatFunc.mapRingHom_algebraMap,
-      Polynomial.coe_mapRingHom]
-  have hC (c : K) :
-      algebraMap (RatFunc K) (RatFunc k) (RatFunc.C c) = RatFunc.C (c : k) := by
-    rw [← RatFunc.algebraMap_C, ← RatFunc.algebraMap_C, hpoly, Polynomial.map_C]
-    rfl
-  have hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X := by
-    rw [← RatFunc.algebraMap_X, hpoly, Polynomial.map_X, RatFunc.algebraMap_X]
+  letI : Algebra (RatFunc K) (RatFunc k) := (ratFuncMapRingHom K k).toAlgebra
+  have hC (c : K) : algebraMap (RatFunc K) (RatFunc k) (RatFunc.C c) = RatFunc.C (c : k) :=
+    ratFuncMapRingHom_C K k c
+  have hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X :=
+    ratFuncMapRingHom_X K k
   let h := exists_generator_minpoly_mem_lifts hq₀ hq₁ hPa hP hC hX
-  X.modelOfMinpolyMemLifts hC hX h.choose_spec.1 h.choose_spec.2
+  X.modelOfMinpolyMemLifts hC hX h.choose_spec.left h.choose_spec.right
 
 /-- The isomorphism class of `X` is defined over `X.pointedFieldOfModuli P` at any rational
 unbranched place `P` of degree one. -/
@@ -435,7 +418,7 @@ theorem pointedStabilizer_eq_stabilizer_of_isGalois [IsGalois (RatFunc k) X]
     rw [restrict_smul, hPa, Place.equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C,
       map_ratCast]
   obtain ⟨σ, hσ⟩ := Place.exists_smul_eq_of_restrict_eq hres
-  refine mem_pointedStabilizer_iff.mpr ⟨p.1.trans σ.toRingEquiv, fun r ↦ ?_, fun z ↦ ?_⟩
+  refine mem_pointedStabilizer_iff.mpr ⟨p.fst.trans σ.toRingEquiv, fun r ↦ ?_, fun z ↦ ?_⟩
   · rw [RingEquiv.trans_apply, mem_semilinearAut_iff.mp hp, AlgEquiv.coe_toRingEquiv, σ.commutes]
   · rw [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, ← hσ, Place.valuation_smul_apply,
       valuation_smul_apply p₀ P z, hσ]
@@ -457,8 +440,8 @@ noncomputable def modelOfIsGalois [IsAlgClosed k] [IsGalois (RatFunc k) X] :
   have h20 : ((2 : ℚ) : k) ≠ 0 := by norm_num
   have h21 : ((2 : ℚ) : k) ≠ 1 := by norm_num
   Eq.rec (motive := fun (L : IntermediateField ℚ k) _ ↦ Model L X)
-    (X.pointedModel h20 h21 h.choose_spec.1 h.choose_spec.2)
-    (X.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois h.choose_spec.1)
+    (X.pointedModel h20 h21 h.choose_spec.left h.choose_spec.right)
+    (X.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois h.choose_spec.left)
 
 end Galois
 

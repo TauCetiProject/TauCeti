@@ -9,6 +9,8 @@ public import TauCeti.FieldTheory.FunctionField.Different.Complementary
 public import TauCeti.RingTheory.DedekindDomain.Different.Derivative
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 import TauCeti.FieldTheory.FunctionField.Different.Localization
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
+import TauCeti.FieldTheory.Separable.SimpleRoot
 
 /-!
 # The different exponent and derivatives of generating equations
@@ -39,18 +41,13 @@ every place `P'` finite on `C`.
   for a generator of the integral closure of an affine model.
 * `TauCeti.Place.differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one`: if `ψ'(y)` is a
   unit at `P'`, then `d(P' ∣ P) = 0`.
-* `TauCeti.Place.exists_adjoin_eq_top_and_valuation_aeval_derivative_minpoly_eq_one`: conversely,
-  when `d(P' ∣ P) = 0`, some primitive element integral over `𝒪_P` has unit minimal-polynomial
-  derivative at `P'` (Stichtenoth, Remark 3.5.11).
-* `TauCeti.Place.differentExponent_eq_zero_iff_exists_valuation_aeval_derivative_eq_one`: the
-  resulting characterization of `d(P' ∣ P) = 0`.
 * `TauCeti.Place.differentExponent_eq_zero_of_finrank_eq_one`: a degree-one extension has different
   exponent zero.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Theorem 3.5.10 and Remark 3.5.11.
+  Theorem 3.5.10.
 -/
 
 public section
@@ -110,27 +107,6 @@ theorem differentExponent_le_ord_aeval_derivative {y : F'} (hgen : F⟮y⟯ = �
     exact hψ' hval.symm
   rw [← hval]
   exact differentExponent_le_ord_of_mem_differentIdeal k F P' hmem hne
-
-/-- **The different exponent of a quadratic equation**: if `F' = F(z)` with
-`z² + u z - v = 0` and `u, v ∈ F` regular at `P'`, then `d(P' ∣ P) ≤ ord_{P'} (2 z + u)`, as long
-as `2 z + u ≠ 0`. This is `differentExponent_le_ord_aeval_derivative` for `ψ = X² + u X - v`. -/
-theorem differentExponent_le_ord_two_mul_add {u v : F} (hu : algebraMap F F' u ∈ P'.integers)
-    (hv : algebraMap F F' v ∈ P'.integers) {z : F'} (hgen : F⟮z⟯ = ⊤)
-    (hz : z ^ 2 + algebraMap F F' u * z - algebraMap F F' v = 0)
-    (hne : 2 * z + algebraMap F F' u ≠ 0) :
-    (differentExponent k F P' : ℤ) ≤ P'.ord (2 * z + algebraMap F F' u) := by
-  have hψ : (X ^ 2 + C u * X - C v : F[X]).Monic := by monicity!
-  have hderiv : aeval z (derivative (X ^ 2 + C u * X - C v : F[X])) =
-      2 * z + algebraMap F F' u := by
-    simp only [derivative_sub, derivative_X_pow, derivative_C_mul_X, derivative_C, sub_zero,
-      map_add, map_mul, aeval_C, Nat.cast_ofNat, map_ofNat]
-    norm_num
-  rw [← hderiv]
-  refine differentExponent_le_ord_aeval_derivative k F hgen hψ (fun i ↦ ?_)
-    (by simpa using hz) (by rwa [hderiv])
-  rw [mem_integers_restrict_iff]
-  rcases i with _ | _ | _ | i <;>
-    simp [coeff_X, coeff_C, coeff_X_pow, neg_mem_iff, hu, hv]
 
 /-- For a generator of the integral closure over the valuation ring, the different exponent is
 the order of the derivative of its field minimal polynomial. -/
@@ -206,47 +182,6 @@ theorem differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one {y : F'}
   have := differentExponent_le_ord_aeval_derivative k F hgen hψ hcoeff hy hne
   omega
 
-/-- **Converse of the derivative test at an unramified place** (Stichtenoth, Remark 3.5.11): if
-`d(P' ∣ P) = 0`, then `F' / F` admits a primitive element `y` whose minimal polynomial over `F`
-has coefficients in `𝒪_P` and derivative a unit at `P'`. -/
-theorem exists_adjoin_eq_top_and_valuation_aeval_derivative_minpoly_eq_one
-    (hd : differentExponent k F P' = 0) :
-    ∃ y : F', F⟮y⟯ = ⊤ ∧ (∀ i, (minpoly F y).coeff i ∈ (P'.restrict k F).integers) ∧
-      P'.valuation (aeval y (derivative (minpoly F y))) = 1 := by
-  let A := (P'.restrict k F).integers
-  let B := integralClosure A F'
-  let q := centerIntegralClosure k F P'
-  have : q.asIdeal.IsPrime := q.isPrime
-  have : Algebra.IsUnramifiedAt A q.asIdeal := (differentExponent_eq_zero_iff k F P').mp hd
-  obtain ⟨x, hgen, -, hder⟩ := exists_notMem_conductor_and_aeval_derivative_minpoly_notMem
-    A F F' B q.asIdeal
-  have hmap : minpoly F (algebraMap B F' x) = (minpoly A x).map (algebraMap A F) :=
-    minpoly.isIntegrallyClosed_eq_field_fractions F F' (integralClosure.isIntegral x)
-  have hder_eq : algebraMap B F' (aeval x (derivative (minpoly A x))) =
-      aeval (algebraMap B F' x) (derivative (minpoly F (algebraMap B F' x))) := by
-    rw [hmap, derivative_map, aeval_map_algebraMap, aeval_algebraMap_apply]
-  refine ⟨algebraMap B F' x, hgen, fun i ↦ ?_, ?_⟩
-  · rw [hmap, coeff_map]
-    exact ((minpoly A x).coeff i).2
-  · rw [← hder_eq]
-    have hle := P'.mem_integers_iff.mp
-      (algebraMap_mem_integers_of_mem_integralClosure k F P' (aeval x (derivative (minpoly A x))))
-    have hnotlt : ¬ P'.valuation (algebraMap B F' (aeval x (derivative (minpoly A x)))) < 1 := by
-      simpa only [q, centerIntegralClosure_def, mem_center_asIdeal] using hder
-    exact le_antisymm hle (not_lt.mp hnotlt)
-
-/-- **Derivative characterization of `d(P' ∣ P) = 0`** (Stichtenoth, Theorem 3.5.10(a) and
-Remark 3.5.11): the different exponent of `P'` over `P` vanishes if and only if some primitive
-element of `F' / F` has minimal polynomial over `F` with coefficients in `𝒪_P` and derivative a
-unit at `P'`. -/
-theorem differentExponent_eq_zero_iff_exists_valuation_aeval_derivative_eq_one (P' : Place k' F') :
-    differentExponent k F P' = 0 ↔
-      ∃ y : F', F⟮y⟯ = ⊤ ∧ (∀ i, (minpoly F y).coeff i ∈ (P'.restrict k F).integers) ∧
-        P'.valuation (aeval y (derivative (minpoly F y))) = 1 :=
-  ⟨exists_adjoin_eq_top_and_valuation_aeval_derivative_minpoly_eq_one k F,
-    fun ⟨y, hgen, hcoeff, hder⟩ ↦ differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k F
-      hgen (minpoly.monic (Algebra.IsIntegral.isIntegral y)) hcoeff (minpoly.aeval F y) hder⟩
-
 /-- **A degree-one extension has different exponent zero**: when `[F' : F] = 1`, every place
 of `F'` has different exponent zero over its restriction to `F`. -/
 theorem differentExponent_eq_zero_of_finrank_eq_one (P' : Place k' F')
@@ -255,6 +190,34 @@ theorem differentExponent_eq_zero_of_finrank_eq_one (P' : Place k' F')
     (IntermediateField.finrank_eq_one_iff_eq_top.mp
       (by rw [IntermediateField.adjoin_zero, IntermediateField.finrank_bot', h]))
     monic_X (fun i ↦ by rw [coeff_X]; split_ifs <;> simp) (aeval_X 0) (by simp)
+
+/-- **The different exponent of a quadratic equation**: if `F' = F(z)` with
+`z² + u z - v = 0` and `u, v ∈ F` regular at `P'`, then `d(P' ∣ P) ≤ ord_{P'} (2 z + u)`. When
+`2 z + u = 0` the extension has degree one, so the different exponent and `P'.ord 0` both vanish.
+This is `differentExponent_le_ord_aeval_derivative` for `ψ = X² + u X - v`. -/
+theorem differentExponent_le_ord_two_mul_add {u v : F} (hu : algebraMap F F' u ∈ P'.integers)
+    (hv : algebraMap F F' v ∈ P'.integers) {z : F'} (hgen : F⟮z⟯ = ⊤)
+    (hz : z ^ 2 + algebraMap F F' u * z - algebraMap F F' v = 0) :
+    (differentExponent k F P' : ℤ) ≤ P'.ord (2 * z + algebraMap F F' u) := by
+  by_cases hne : 2 * z + algebraMap F F' u = 0
+  · rw [hne, P'.ord_zero]
+    exact_mod_cast (differentExponent_eq_zero_of_finrank_eq_one k F P'
+      (IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot hgen
+        (IntermediateField.mem_bot.mpr
+          (mem_range_algebraMap_of_isSeparable_of_sq_add_mul_sub_eq_zero_of_two_mul_add_eq_zero
+            (Algebra.IsSeparable.isSeparable F z) hz hne)))).le
+  have hψ : (X ^ 2 + C u * X - C v : F[X]).Monic := by monicity!
+  have hderiv : aeval z (derivative (X ^ 2 + C u * X - C v : F[X])) =
+      2 * z + algebraMap F F' u := by
+    simp only [derivative_sub, derivative_X_pow, derivative_C_mul_X, derivative_C, sub_zero,
+      map_add, map_mul, aeval_C, Nat.cast_ofNat, map_ofNat]
+    norm_num
+  rw [← hderiv]
+  refine differentExponent_le_ord_aeval_derivative k F hgen hψ (fun i ↦ ?_)
+    (by simpa using hz) (by rwa [hderiv])
+  rw [mem_integers_restrict_iff]
+  rcases i with _ | _ | _ | i <;>
+    simp [coeff_X, coeff_C, coeff_X_pow, neg_mem_iff, hu, hv]
 
 end Place
 

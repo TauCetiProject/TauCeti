@@ -8,8 +8,6 @@ module
 public import Mathlib.RingTheory.Conductor
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import Mathlib.RingTheory.Unramified.LocalRing
-import Mathlib.RingTheory.Unramified.LocalStructure
 
 /-!
 # The different of a monogenic extension
@@ -40,19 +38,9 @@ also asks that `x` generate `L` over `K`, but in this setting that follows: `L` 
 field of `B = A[x]`, so every element of `L` is a ratio of two polynomials in `x`
 (`TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top`).
 
-Locally at an unramified prime `P` of `B`, `B` need not be globally monogenic over a Dedekind
-domain `A`, yet there is always `x : B` generating `L / K` whose conductor avoids `P`, so that
-`f'(x) ∉ P` (`TauCeti.exists_notMem_conductor_and_aeval_derivative_minpoly_notMem`). Using
-`Algebra.IsUnramifiedAt.exists_primesOver_under_adjoin_eq_singleton_and_residueField_bijective`,
-one chooses `x` so that `P` is the unique prime of `B` over `P ∩ A[x]` with equal residue field;
-then `A[x]` and `B` have the same localization there, clearing denominators on an `A`-generating
-set of `B` into `conductor A x \ P`.
-
 ## Main results
 
 * `TauCeti.differentIdeal_eq_span_aeval_derivative_minpoly`: the closed form.
-* `TauCeti.exists_notMem_conductor_and_aeval_derivative_minpoly_notMem`: at an unramified prime
-  `P`, some integral primitive element has conductor and minimal-polynomial derivative outside `P`.
 
 ## References
 
@@ -65,8 +53,6 @@ public section
 open Polynomial
 
 namespace TauCeti
-
-section Monogenic
 
 variable (A K L B : Type*) [CommRing A] [Field K] [Field L] [CommRing B]
   [Algebra A K] [Algebra B L] [Algebra A B] [Algebra K L] [Algebra A L]
@@ -90,122 +76,6 @@ theorem differentIdeal_eq_span_aeval_derivative_minpoly (x : B)
     exact TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top hx
   rw [← conductor_mul_differentIdeal A K L x hK, conductor_eq_top_of_adjoin_eq_top hx,
     Ideal.top_mul]
-
-end Monogenic
-
-section UnramifiedAt
-
-open scoped _root_.IntermediateField nonZeroDivisors
-
-attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra
-
-variable (A K L B : Type*) [CommRing A] [Field K] [Field L] [CommRing B]
-  [Algebra A K] [Algebra B L] [Algebra A B] [Algebra K L] [Algebra A L]
-  [IsScalarTower A K L] [IsScalarTower A B L]
-  [IsDedekindDomain A] [IsFractionRing A K] [IsIntegralClosure B A L]
-  [IsDedekindDomain B] [Module.IsTorsionFree A B]
-  [FiniteDimensional K L] [Algebra.IsSeparable K L]
-
-include K L in
-attribute [-instance] Subalgebra.instSMulSubtypeMem
-  Subalgebra.toAlgebra Subalgebra.isScalarTower_left in
-/-- **Local monogenic generator at an unramified prime**: if `P` is a prime of `B` unramified over
-`A`, there is `x : B` generating `L / K` whose conductor and minimal-polynomial derivative both
-avoid `P`. -/
-theorem exists_notMem_conductor_and_aeval_derivative_minpoly_notMem (P : Ideal B) [P.IsPrime]
-    [Algebra.IsUnramifiedAt A P] :
-    ∃ x : B, K⟮algebraMap B L x⟯ = ⊤ ∧
-      (∃ c ∈ conductor A x, c ∉ P) ∧ aeval x (derivative (minpoly A x)) ∉ P := by
-  classical
-  have : Module.Finite A B := IsIntegralClosure.finite A K L B
-  have : IsFractionRing B L := IsIntegralClosure.isFractionRing_of_finite_extension A K L B
-  obtain ⟨x, hprimes, hbij⟩ :=
-    Algebra.IsUnramifiedAt.exists_primesOver_under_adjoin_eq_singleton_and_residueField_bijective
-      (R := A) P
-  let _ := Localization.AtPrime.algebraOfLiesOver (P.under (Algebra.adjoin A {x})) P
-  have : Module.Finite (Algebra.adjoin A {x}) B := .of_restrictScalars_finite A _ B
-  have : Algebra.IsUnramifiedAt (Algebra.adjoin A {x}) P := .of_restrictScalars A P
-  have hloc := Localization.localRingHom_surjective_of_primesOver_eq_singleton hprimes hbij.2
-  -- Clear denominators on a finite `A`-generating set of `B` to land in the conductor of `x`.
-  have hclear (b : B) :
-      ∃ r : Algebra.adjoin A {x}, r ∉ P.under (Algebra.adjoin A {x}) ∧
-        (r : B) * b ∈ Algebra.adjoin A {x} := by
-    obtain ⟨u, hu⟩ := hloc (algebraMap B (Localization.AtPrime P) b)
-    obtain ⟨a, ⟨r, hr⟩, rfl⟩ :=
-      IsLocalization.exists_mk'_eq (P.under (Algebra.adjoin A {x})).primeCompl u
-    rw [Localization.localRingHom_mk', IsLocalization.mk'_eq_iff_eq_mul, ← map_mul,
-      IsLocalization.eq_iff_exists P.primeCompl] at hu
-    obtain ⟨⟨t, ht⟩, htb⟩ := hu
-    have ht0 : t ≠ 0 := fun h ↦ ht (h ▸ P.zero_mem)
-    have hmul : (a : B) = b * (r : B) := mul_left_cancel₀ ht0 htb
-    exact ⟨r, hr, by rw [mul_comm, ← hmul]; exact a.2⟩
-  choose r hrq hrb using hclear
-  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := B)
-  let c : Algebra.adjoin A {x} := ∏ b ∈ s, r b
-  have hcq : (c : B) ∉ P :=
-    Submonoid.prod_mem (P.under (Algebra.adjoin A {x})).primeCompl fun b _ ↦ hrq b
-  have hcond : (c : B) ∈ conductor A x := by
-    rw [mem_conductor_iff]
-    intro z
-    have hz : z ∈ Submodule.span A (s : Set B) := by rw [hs]; trivial
-    refine Submodule.span_induction (fun b hb ↦ ?_) (by simp)
-      (fun u v _ _ hu hv ↦ by rw [mul_add]; exact add_mem hu hv)
-      (fun a u _ hu ↦ by
-        rw [Algebra.smul_def, mul_left_comm]
-        exact mul_mem (Subalgebra.algebraMap_mem _ a) hu) hz
-    dsimp only [c]
-    rw [← Finset.prod_erase_mul _ _ hb, Subalgebra.coe_mul, mul_assoc]
-    exact mul_mem (SetLike.coe_mem _) (hrb b)
-  -- Since `c ≠ 0` multiplies every element of `B` into `A[x]`, `B ⊆ K(x)`, hence `K(x) = L`.
-  have hc0 : algebraMap B L (c : B) ≠ 0 :=
-    (FaithfulSMul.algebraMap_eq_zero_iff B L).not.mpr fun h ↦ hcq (by rw [h]; exact P.zero_mem)
-  have hgen : K⟮algebraMap B L x⟯ = ⊤ := by
-    rw [eq_top_iff]
-    rintro z -
-    obtain ⟨⟨b, d⟩, hbd⟩ := IsLocalization.surj (M := B⁰) (S := L) z
-    have hd0 : algebraMap B L d ≠ 0 :=
-      (FaithfulSMul.algebraMap_eq_zero_iff B L).not.mpr (mem_nonZeroDivisors_iff_ne_zero.mp d.2)
-    have hmemR : ∀ u : Algebra.adjoin A {x}, algebraMap B L (u : B) ∈ K⟮algebraMap B L x⟯ := by
-      intro u
-      have hu : (u : B) ∈ Algebra.adjoin A {x} := u.2
-      refine Algebra.adjoin_induction (fun y hy ↦ ?_)
-        (fun a ↦ by
-          rw [← IsScalarTower.algebraMap_apply A B L, IsScalarTower.algebraMap_apply A K L]
-          exact algebraMap_mem _ _)
-        (fun _ _ _ _ hu hv ↦ by rw [map_add]; exact add_mem hu hv)
-        (fun _ _ _ _ hu hv ↦ by rw [map_mul]; exact mul_mem hu hv) hu
-      rcases Set.mem_singleton_iff.mp hy with rfl
-      exact _root_.IntermediateField.mem_adjoin_simple_self K _
-    have hz_eq : z = algebraMap B L ((c : B) * b) / (algebraMap B L ((c : B) * d)) := by
-      rw [map_mul, map_mul, mul_div_mul_left _ _ hc0, eq_div_iff hd0]
-      exact hbd
-    rw [hz_eq]
-    exact div_mem (hmemR ⟨_, mem_conductor_iff.mp hcond b⟩)
-      (hmemR ⟨_, mem_conductor_iff.mp hcond d⟩)
-  have hgenAlg : Algebra.adjoin K {algebraMap B L x} = ⊤ := by
-    rw [← _root_.IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
-      (IsAlgebraic.of_finite K _), hgen, _root_.IntermediateField.top_toSubalgebra]
-  refine ⟨x, hgen, ⟨(c : B), hcond, hcq⟩, fun hder ↦ ?_⟩
-  have hnotdvd : ¬ P ∣ differentIdeal A B := by
-    have : Algebra.IsSeparable (FractionRing A) (FractionRing B) := by
-      refine Algebra.IsSeparable.of_equiv_equiv (FractionRing.algEquiv A K).symm.toRingEquiv
-        (FractionRing.algEquiv B L).symm.toRingEquiv ?_
-      apply IsLocalization.ringHom_ext A⁰
-      ext a
-      simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
-        AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
-      rw [IsScalarTower.algebraMap_apply A B L, AlgEquiv.commutes,
-        ← IsScalarTower.algebraMap_apply]
-    rwa [not_dvd_differentIdeal_iff]
-  obtain ⟨d, hd, hdP⟩ : ∃ d ∈ differentIdeal A B, d ∉ P := by
-    by_contra! hall
-    exact hnotdvd (Ideal.dvd_iff_le.mpr hall)
-  have hprod : (c : B) * d ∈ Ideal.span {aeval x (derivative (minpoly A x))} := by
-    rw [← conductor_mul_differentIdeal A K L x hgenAlg]
-    exact Ideal.mul_mem_mul hcond hd
-  exact ‹P.IsPrime›.mul_notMem hcq hdP ((Ideal.span_singleton_le_iff_mem P).mpr hder hprod)
-
-end UnramifiedAt
 
 end TauCeti
 
