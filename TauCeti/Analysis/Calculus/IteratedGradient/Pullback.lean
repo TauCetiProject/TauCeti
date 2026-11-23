@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
--- Private: the Fréchet derivative rules for translations and linear equivalences are used only
--- inside the chain-rule proofs.
-import Mathlib.Analysis.Calculus.FDeriv.Add
+-- Private: the Fréchet derivative rule for linear equivalences is used only inside the chain-rule
+-- proofs.
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
 /-!
@@ -42,8 +41,8 @@ differentiability assumptions.
   `‖B.iteratedGradientPullback j‖ ≤ ‖B‖ ^ (j + 1)`.
 * `ContinuousLinearMap.fullContractL_iteratedGradientPullback`: compatibility with full directional
   contraction.
-* `LinearIsometryEquiv.iteratedGradientPullback_coe`: for a linear isometry `e`, the pullback agrees
-  with `(e.iteratedGradientCongr j).symm`.
+* `LinearIsometryEquiv.iteratedGradientPullback_eq_iteratedGradientCongr_symm`: for a linear
+  isometry `e`, the pullback agrees with `(e.iteratedGradientCongr j).symm`.
 * `ContinuousLinearEquiv.iteratedGradientPullbackEquiv`: the induced continuous linear equivalence
   on `IteratedGradient` along `e : E ≃L[ℝ] E'`.
 * `ContinuousLinearEquiv.iteratedGradientChain_comp_right`,
@@ -199,7 +198,8 @@ end ContinuousLinearMap
 
 /-- For a linear isometric equivalence `e`, the general pullback `iteratedGradientPullback` agrees
 with `(e.iteratedGradientCongr j).symm`. -/
-theorem LinearIsometryEquiv.iteratedGradientPullback_coe (e : E ≃ₗᵢ[ℝ] E') (j : ℕ) :
+theorem LinearIsometryEquiv.iteratedGradientPullback_eq_iteratedGradientCongr_symm
+    (e : E ≃ₗᵢ[ℝ] E') (j : ℕ) :
     (e : E →L[ℝ] E').iteratedGradientPullback j =
       ((e.iteratedGradientCongr j).symm :
         TauCeti.IteratedGradient E' j →L[ℝ] TauCeti.IteratedGradient E j) := by
@@ -211,24 +211,6 @@ theorem LinearIsometryEquiv.iteratedGradientPullback_coe (e : E ≃ₗᵢ[ℝ] E
       ext1 G
       rw [ContinuousLinearMap.iteratedGradientPullback_succ_apply, ih]
       exact (e.iteratedGradientCongr_symm_succ_apply j G).symm
-
-namespace TauCeti
-
-/-- Classical iterated gradients commute with right translation; no differentiability hypothesis is
-needed. -/
-theorem iteratedGradientChain_comp_add_right (f : E → ℝ) (b : E) (j : ℕ) (x : E) :
-    iteratedGradientChain (fun y ↦ f (y + b)) j x = iteratedGradientChain f j (x + b) := by
-  induction j generalizing x with
-  | zero =>
-      simp only [iteratedGradientChain_zero, gradient, fderiv_comp_add_right]
-  | succ j ih =>
-      simp only [iteratedGradientChain_succ]
-      have hfun : iteratedGradientChain (fun y ↦ f (y + b)) j =
-          fun y ↦ iteratedGradientChain f j (y + b) :=
-        funext ih
-      rw [hfun, fderiv_comp_add_right]
-
-end TauCeti
 
 namespace ContinuousLinearEquiv
 

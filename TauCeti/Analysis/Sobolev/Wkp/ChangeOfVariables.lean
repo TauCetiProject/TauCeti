@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
+public import TauCeti.Analysis.Sobolev.Wkp.AffineScaling
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
@@ -26,7 +27,6 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Gluing
-import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
 import TauCeti.Topology.Algebra.Module.Determinant
@@ -82,8 +82,9 @@ uniqueness of weak derivatives gives the chain rule for the weak Hessian.
 
 * `TauCeti.Wkp.IsChangeOfVariables`: bundled `Cᵏ` change-of-variables hypotheses, including
   `IsChangeOfVariables.of_leftInvOn`.
-* `TauCeti.Wkp.compL`, `TauCeti.Wkp.compLEquiv`: bounded precomposition and diffeomorphism
-  invariance on `W^{k,p}` for `1 ≤ p ≤ ∞`.
+* `TauCeti.Wkp.compL`, `TauCeti.Wkp.compLEquiv`, `TauCeti.Wkp.compAffineL_eq_compL`: bounded
+  precomposition, diffeomorphism invariance on `W^{k,p}` for `1 ≤ p ≤ ∞`, and agreement with
+  `TauCeti.Wkp.compAffineL`.
 * `TauCeti.Wkp.compOfLeftInvOnL`, `TauCeti.Wkp.exists_norm_comp_le`: precomposition and uniform
   norm bound for left-invertible `Cᵏ` maps across all orders `k : ℕ` and exponents `1 ≤ p ≤ ∞`.
 * `TauCeti.Wkp.IsChangeOfVariables.w1pCompL`: the first-order change of variables
@@ -1210,7 +1211,7 @@ for almost every `x ∈ U` and all directions `f` and `g`. Here `D²u` is the we
 `TauCeti.Wkp.iteratedGradient 1 u` and `∇u` the weak gradient
 `TauCeti.Wkp.iteratedGradient 0 (TauCeti.Wkp.lowerOrder 1 u)`; `DΦ` and `D²Φ` are the classical
 derivatives. For a linear `Φ` the last term vanishes
-(`TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`). -/
+(`TauCeti.Wkp.iteratedGradient_compAffineEquiv_ae`). -/
 theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p 2) :
     ∀ᵐ x ∂mu.restrict U, ∀ f g : E,
@@ -1252,6 +1253,14 @@ theorem compL_comp (hΦ : IsChangeOfVariables k V W Φ L c)
   refine (compL_eq_iff _ _ _).2 ?_
   filter_upwards [value_compL_ae hΦΨ u, hΨ.ae_comp (value_compL_ae hΦ u)] with x h1 h2
   rw [h1, h2, Function.comp_apply]
+
+/-- On a single space, `compAffineL` agrees with `TauCeti.Wkp.compL`. -/
+theorem compAffineL_eq_compL {mu : Measure E} [mu.IsAddHaarMeasure] {U V : Opens E} {k : ℕ}
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {L c : ℝ} (B : E ≃L[ℝ] E) (b : E)
+    (h : IsChangeOfVariables k U V (fun x ↦ B x + b) L c) :
+    compAffineL (ν := mu) (p := p) mu B b h.mapsTo k = compL h := by
+  ext1 u
+  exact ((compL_eq_iff h u _).2 (value_compAffineL_ae mu B b h.mapsTo k u)).symm
 
 end Compatibility
 

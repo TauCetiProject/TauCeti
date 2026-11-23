@@ -12,7 +12,7 @@ import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
+import TauCeti.Analysis.Sobolev.Wkp.AffineScaling
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.Dilation
@@ -351,20 +351,19 @@ private theorem aestronglyMeasurable_conj_symmPart {a : E → E →L[ℝ] E}
 
 /-- Transporting back along `e`: if `v' ∈ W^{2,r}(E)` has value `u ∘ e`, then some `v ∈ W^{2,r}(E)`
 has value `u`. -/
-private theorem exists_value_ae_eq_of_value_ae_eq_comp {r : ℝ≥0∞} [Fact (1 ≤ r)] (hr_top : r ≠ ⊤)
+private theorem exists_value_ae_eq_of_value_ae_eq_comp {r : ℝ≥0∞} [Fact (1 ≤ r)]
     (e : E ≃L[ℝ] E) {g : E → ℝ} {v' : Wkp (volume : Measure E) ⊤ r 2}
     (hv' : (Wkp.value 2 v' : E → ℝ) =ᵐ[volume] fun y ↦ g (e y)) :
     ∃ v : Wkp (volume : Measure E) ⊤ r 2, (Wkp.value 2 v : E → ℝ) =ᵐ[volume] g := by
-  obtain ⟨v, hv, -, -⟩ :=
-    Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hr_top e.symm (U := ⊤) (W := ⊤)
-      (by simp) v'
+  set v := Wkp.compAffineEquiv (U := ⊤) volume e.symm 0 (by simp) 2 v'
+  have hv := Wkp.value_compAffineEquiv_ae (U := ⊤) volume e.symm 0 (by simp) 2 v'
   rw [Measure.ae_restrict_coe_opens_top] at hv
   refine ⟨v, ?_⟩
   filter_upwards [hv,
     (e.symm.toContinuousAddEquiv.quasiMeasurePreserving_addHaar volume volume).ae hv']
     with y h₁ h₂
   rw [ContinuousLinearEquiv.toContinuousAddEquiv_coe] at h₂
-  rw [h₁, h₂, ContinuousLinearEquiv.apply_symm_apply]
+  rw [h₁, add_zero, h₂, ContinuousLinearEquiv.apply_symm_apply]
 
 /-- **Integrability gain for strong solutions with coefficients close to a frozen elliptic
 operator** (Gilbarg–Trudinger, Lemma 9.16). Let `1 < p, r < ∞`. There is `δ > 0`, depending only
@@ -400,9 +399,17 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
   have hMN : (e : E →L[ℝ] E) ∘L (e.symm : E →L[ℝ] E) = ContinuousLinearMap.id ℝ E := by
     ext x; simp
   -- `w = u ∘ e ∈ W^{2,p}(E)` has weak Hessian `e† D²u(e ·) e`.
-  obtain ⟨w, hwv, hwD, -⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e
-    (U := ⊤) (W := ⊤) (by simp) u
-  rw [Measure.ae_restrict_coe_opens_top] at hwv hwD
+  set w := Wkp.compAffineEquiv (U := ⊤) volume e 0 (by simp) 2 u
+  have hwv : (Wkp.value 2 w : E → ℝ) =ᵐ[volume] fun x ↦ Wkp.value 2 u (e x) := by
+    simpa [Measure.ae_restrict_coe_opens_top] using
+      Wkp.value_compAffineEquiv_ae (U := ⊤) volume e 0 (by simp) 2 u
+  have hwD : Wkp.iteratedGradient 1 w =ᵐ[volume] fun x ↦
+      (e : E →L[ℝ] E).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L (e : E →L[ℝ] E) := by
+    have hD := Wkp.iteratedGradient_compAffineEquiv_ae (U := ⊤) volume e 0 (by simp) 1 u
+    rw [Measure.ae_restrict_coe_opens_top] at hD
+    filter_upwards [hD] with x hx
+    rw [hx, add_zero, ContinuousLinearMap.iteratedGradientPullback_succ_apply,
+      ContinuousLinearMap.iteratedGradientPullback_zero]
   have hadj := hqe.ae ((Measure.ae_restrict_coe_opens_top (volume : Measure E)) ▸
     Wkp.adjoint_iteratedGradient_one_ae_eq u)
   -- It solves `tr (b D²w) = f ∘ e` with `b(y) = e⁻¹ ((a + a†) / 2)(e y) e⁻†` close to `1`.
@@ -418,7 +425,7 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
       filter_upwards [hwD, hadj, hqe.ae htr] with y h₁ h₂ h₃
       rw [h₁, ← traceCLM_apply, ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id
         hMN, ContinuousLinearMap.traceCLM_symmPart_comp _ _ h₂, traceCLM_apply, h₃])
-  obtain ⟨v, hv⟩ := exists_value_ae_eq_of_value_ae_eq_comp hr_top e (hv'.trans hwv)
+  obtain ⟨v, hv⟩ := exists_value_ae_eq_of_value_ae_eq_comp e (hv'.trans hwv)
   exact ⟨v, hv, iteratedGradient_ae_eq_of_value_ae_eq hv⟩
 
 end TauCeti

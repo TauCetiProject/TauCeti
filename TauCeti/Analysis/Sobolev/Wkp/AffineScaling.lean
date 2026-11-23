@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.IteratedGradient.Pullback
+public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 public import TauCeti.Analysis.Normed.Operator.BallDiam
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Affine
-public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
-public import TauCeti.Analysis.Sobolev.Wkp.LinearIsometry
+public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Analysis.Sobolev.Wkp.Seminorm
+public import TauCeti.Analysis.Sobolev.Wkp.Zero
 public import TauCeti.LinearAlgebra.AffineSpace.AffineEquiv
 public import TauCeti.MeasureTheory.Function.Lp.Dilation
 -- Private: submodule restriction of continuous linear equivalences and restricted Haar
@@ -47,9 +48,8 @@ product spaces carrying additive Haar measures `μ` and `ν`, let `b : E'`, and 
 * `TauCeti.Wkp.value_compAffineL_eq`, `TauCeti.Wkp.iteratedGradient_compAffineL_eq`,
   `TauCeti.Wkp.value_compAffineL_ae`, `TauCeti.Wkp.iteratedGradient_compAffineL_ae`: bundled and
   a.e. value and all-order weak-derivative formulas.
-* `TauCeti.Wkp.toOrderL_compAffineL`, `TauCeti.Wkp.restrictL_compAffineL`,
-  `TauCeti.Wkp.compAffineL_eq_compL`, `TauCeti.Wkp.compAffineL_eq_compLinearIsometryEquiv`:
-  order truncation, restriction, `C^k` change of variables, and linear isometries.
+* `TauCeti.Wkp.toOrderL_compAffineL`, `TauCeti.Wkp.restrictL_compAffineL`: order truncation and
+  restriction compatibility.
 * `TauCeti.Wkp.compAffineL_ofTestFunctionₗ`, `TauCeti.Wkp.compAffineEquiv_ofTestFunctionₗ`,
   `TauCeti.Wkp.compAffineEquiv_mem_wkp0Submodule_iff`, `TauCeti.Wkp0.compAffineEquiv`: test
   function transport and invariance of `W^{k,p}_0`.
@@ -375,26 +375,6 @@ theorem compAffineL_comp {E'' : Type*} [NormedAddCommGroup E''] [InnerProductSpa
     hqmp.ae (value_compAffineL_ae ν B₂ b₂ hWO k u)] with x h1 h2
   rw [ContinuousLinearMap.comp_apply, h1, h2]
   simp [add_assoc]
-
-/-- For a measure-preserving linear isometry `e`, `compAffineL` with zero translation agrees with
-`TauCeti.Wkp.compLinearIsometryEquiv`. -/
-theorem compAffineL_eq_compLinearIsometryEquiv {μ : Measure E} [μ.IsAddHaarMeasure]
-    (e : E ≃ₗᵢ[ℝ] E') (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ)
-    (u : Wkp ν W p k) :
-    compAffineL μ e.toContinuousLinearEquiv 0
-        (fun x hx ↦ by simpa [hUW] using hx) k u =
-      compLinearIsometryEquiv he hUW k u := by
-  refine (compAffineL_eq_iff μ _ _ _ k u _).2 ?_
-  filter_upwards [value_compLinearIsometryEquiv_ae he hUW k u] with x hx
-  simpa using hx
-
-/-- On a single space, `compAffineL` agrees with the general `C^k` change-of-variables operator
-`TauCeti.Wkp.compL`. -/
-theorem compAffineL_eq_compL {μ : Measure E} [μ.IsAddHaarMeasure] {V : Opens E} {L c : ℝ}
-    (B : E ≃L[ℝ] E) (b : E) (h : IsChangeOfVariables k U V (fun x ↦ B x + b) L c) :
-    compAffineL (ν := μ) (p := p) μ B b h.mapsTo k = compL h := by
-  ext1 u
-  exact ((compL_eq_iff h u _).2 (value_compAffineL_ae μ B b h.mapsTo k u)).symm
 
 /-! ### Preimage Banach-space isomorphism and `W^{k,p}_0` invariance -/
 
@@ -771,9 +751,10 @@ theorem norm_value_compAffineEquiv (B : E ≃L[ℝ] E) (b : E)
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp μ W p k) :
     ‖value k (compAffineEquiv μ B b hUW k u)‖ =
       |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖value k u‖ := by
-  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (value_compAffineEquiv_ae μ B b hUW k u), hUW,
-    Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ _ B b p,
-    ENNReal.toReal_mul, Measure.toReal_ofReal_abs_inv_rpow _ (1 / p).toReal]
+  have hae : (value k (compAffineEquiv μ B b hUW k u) : E → ℝ) =ᵐ[μ.restrict U]
+      fun x ↦ (1 : ℝ) • value k u (B x + b) := by
+    simpa only [one_smul] using value_compAffineEquiv_ae μ B b hUW k u
+  simpa only [norm_one, one_mul] using Lp.norm_eq_mul_det_inv_of_ae_eq B b hUW (1 : ℝ) hae
 
 /-- **Reverse exact order-zero scaling on preimages.** -/
 theorem norm_value_eq_mul_norm_value_compAffineEquiv (B : E ≃L[ℝ] E) (b : E)
@@ -888,13 +869,28 @@ theorem seminorm_le_mul_seminorm_compAffineEquiv_of_ball_subset (B : E ≃L[ℝ]
 
 /-! ### Exact scaling for homotheties `x ↦ r • x + b` -/
 
+private theorem abs_inv_det_smulLeft_rpow (F : Type*) [AddCommGroup F] [Module ℝ F]
+    [TopologicalSpace F] [ContinuousConstSMul ℝ F]
+    (q : ℝ≥0∞) {r : ℝ} (hr : r ≠ 0) :
+    |LinearMap.det
+        ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : F ≃L[ℝ] F) : F →ₗ[ℝ] F)|⁻¹ ^
+        (1 / q).toReal =
+      |r|⁻¹ ^ ((Module.finrank ℝ F : ℝ) / q.toReal) := by
+  have hlin : ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : F ≃L[ℝ] F) : F →ₗ[ℝ] F) =
+      r • LinearMap.id := by
+    ext v
+    simp [Units.smul_def]
+  rw [hlin, LinearMap.det_smul, LinearMap.det_id, mul_one, abs_pow, ← inv_pow,
+    ← Real.rpow_natCast, ← Real.rpow_mul (by positivity), one_div, ENNReal.toReal_inv,
+    div_eq_mul_inv]
+
 /-- **Exact order-zero dilation identity** along `x ↦ r • x + b` (`r ≠ 0`). -/
 theorem norm_value_compAffineEquiv_smulLeft {r : ℝ} (hr : r ≠ 0) (b : E)
     (hUW : (U : Set E) = (fun x ↦ ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) x + b) ⁻¹' W)
     (k : ℕ) (u : Wkp μ W p k) :
     ‖value k (compAffineEquiv μ (ContinuousLinearEquiv.smulLeft (Units.mk0 r hr)) b hUW k u)‖ =
       |r|⁻¹ ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * ‖value k u‖ := by
-  rw [norm_value_compAffineEquiv, Measure.abs_inv_det_smulLeft_rpow E p hr]
+  rw [norm_value_compAffineEquiv, abs_inv_det_smulLeft_rpow E p hr]
 
 /-- **Exact order-`k + 1` dilation identity** along `x ↦ r • x + b` (`r ≠ 0`), valid for every
 order `k` and every exponent `1 ≤ p ≤ ∞`. -/
@@ -907,16 +903,15 @@ theorem norm_iteratedGradient_compAffineEquiv_smulLeft {r : ℝ} (hr : r ≠ 0) 
   set B : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 r hr)
   have hclm : (B : E →L[ℝ] E) = r • ContinuousLinearMap.id ℝ E := by
     ext v; simp [B, Units.smul_def]
-  have hae : iteratedGradient k (compAffineEquiv μ B b hUW (k + 1) u) =ᵐ[μ.restrict U]
-      r ^ (k + 1) • fun x ↦ iteratedGradient k u (B x + b) := by
+  have hae : (iteratedGradient k (compAffineEquiv μ B b hUW (k + 1) u) :
+      E → IteratedGradient E k) =ᵐ[μ.restrict U]
+      fun x ↦ r ^ (k + 1) • iteratedGradient k u (B x + b) := by
     filter_upwards [iteratedGradient_compAffineEquiv_ae μ B b hUW k u] with x hx
     rw [hx, hclm, ContinuousLinearMap.iteratedGradientPullback_smul,
-      ContinuousLinearMap.iteratedGradientPullback_id, Pi.smul_apply, smul_apply,
+      ContinuousLinearMap.iteratedGradientPullback_id, smul_apply,
       ContinuousLinearMap.id_apply]
-  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hae, eLpNorm_const_smul, hUW,
-    Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ _ B b p,
-    ENNReal.toReal_mul, ENNReal.toReal_mul, Measure.toReal_ofReal_abs_inv_rpow _ (1 / p).toReal,
-    Measure.abs_inv_det_smulLeft_rpow E p hr, ← mul_assoc, toReal_eNorm, Real.norm_eq_abs, abs_pow]
+  rw [Lp.norm_eq_mul_det_inv_of_ae_eq B b hUW (r ^ (k + 1)) hae,
+    abs_inv_det_smulLeft_rpow E p hr, Real.norm_eq_abs, abs_pow]
 
 /-- **Exact `Wkp.seminorm` dilation identity** along `x ↦ r • x + b` (`r ≠ 0`), valid for every
 derivative order `j ≤ k` and every exponent `1 ≤ p ≤ ∞`. -/

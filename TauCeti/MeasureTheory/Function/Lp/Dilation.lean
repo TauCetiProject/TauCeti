@@ -44,10 +44,9 @@ continuous extended norm.
   `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage`: the same
   identities for the `Lᵖ` seminorms on the preimage of `s` and on `s`.
 * `MeasureTheory.MemLp.comp_continuousLinearEquiv`: so composing with `e` preserves `Lᵖ`.
-* `MeasureTheory.Measure.toReal_ofReal_abs_inv_rpow`,
-  `MeasureTheory.Measure.abs_inv_det_smulLeft_rpow`: real-valued Jacobian-factor identities for
-  affine and homothetic `Lᵖ` scaling.
-* `MeasureTheory.Lp.norm_le_mul_det_inv_of_ae_le`: affine `Lᵖ` norm comparison on arbitrary sets.
+* `MeasureTheory.Lp.norm_le_mul_det_inv_of_ae_le`,
+  `MeasureTheory.Lp.norm_eq_mul_det_inv_of_ae_eq`: affine `Lᵖ` norm comparison and exact identity
+  on arbitrary sets.
 -/
 
 public section
@@ -127,33 +126,6 @@ theorem _root_.MeasureTheory.MemLp.comp_continuousLinearEquiv {p : ℝ≥0∞} {
   rw [memLp_iff, ← Function.comp_def, eLpNorm_comp_continuousLinearEquiv]
   exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
     ENNReal.ofReal_ne_top) hu.eLpNorm_lt_top
-
-section JacobianFactors
-
-/-- Converting the `Lᵖ` Jacobian factor `(ENNReal.ofReal |c⁻¹| ^ q).toReal` for a real scalar `c`
-and exponent `q` to `|c|⁻¹ ^ q`. -/
-theorem toReal_ofReal_abs_inv_rpow (c q : ℝ) :
-    (ENNReal.ofReal |c⁻¹| ^ q).toReal = |c|⁻¹ ^ q := by
-  rw [← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
-
-/-- For a nonzero scalar `r`, the `L^q` Jacobian factor `|det (r • id)|⁻¹ ^ (1 / q).toReal` on a
-real topological vector space `F` equals `|r|⁻¹ ^ (dim F / q.toReal)`. -/
-theorem abs_inv_det_smulLeft_rpow (F : Type*) [AddCommGroup F] [Module ℝ F]
-    [TopologicalSpace F] [ContinuousConstSMul ℝ F]
-    (q : ℝ≥0∞) {r : ℝ} (hr : r ≠ 0) :
-    |LinearMap.det
-        ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : F ≃L[ℝ] F) : F →ₗ[ℝ] F)|⁻¹ ^
-        (1 / q).toReal =
-      |r|⁻¹ ^ ((finrank ℝ F : ℝ) / q.toReal) := by
-  have hlin : ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : F ≃L[ℝ] F) : F →ₗ[ℝ] F) =
-      r • LinearMap.id := by
-    ext v
-    simp [Units.smul_def]
-  rw [hlin, LinearMap.det_smul, LinearMap.det_id, mul_one, abs_pow, ← inv_pow,
-    ← Real.rpow_natCast, ← Real.rpow_mul (by positivity), one_div, ENNReal.toReal_inv,
-    div_eq_mul_inv]
-
-end JacobianFactors
 
 variable {μ} {𝕜 F : Type*} [NormedField 𝕜] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {r s : ℝ}
@@ -250,6 +222,10 @@ namespace MeasureTheory.Lp
 
 open scoped ENNReal
 
+private theorem toReal_ofReal_abs_inv_rpow (c q : ℝ) :
+    (ENNReal.ofReal |c⁻¹| ^ q).toReal = |c|⁻¹ ^ q := by
+  rw [← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
+
 /-- **Affine `Lᵖ` norm comparison on arbitrary sets.** If `f ∈ Lᵖ(μ.restrict s)` and
 `g ∈ Lᵖ(μ.restrict t)` satisfy `‖f x‖ ≤ M * ‖g (B x + b)‖` for `μ.restrict s`-a.e. `x`, where
 `x ↦ B x + b` maps `s` into `t` for a linear automorphism `B : E ≃L[ℝ] E` and `0 ≤ M`, then
@@ -276,7 +252,26 @@ theorem norm_le_mul_det_inv_of_ae_le {E G H : Type*} [NormedAddCommGroup E] [Nor
       (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top)
       (Lp.eLpNorm_ne_top _)
   simpa only [ENNReal.toReal_mul, ENNReal.toReal_ofReal hM,
-    Measure.toReal_ofReal_abs_inv_rpow _ (1 / p).toReal, ← Lp.norm_def, mul_assoc] using
+    toReal_ofReal_abs_inv_rpow _ (1 / p).toReal, ← Lp.norm_def, mul_assoc] using
     ENNReal.toReal_mono hfin he
+
+/-- **Exact affine `Lᵖ` norm identity on preimages.** If `f ∈ Lᵖ(μ.restrict s)` and
+`g ∈ Lᵖ(μ.restrict t)` satisfy `f =ᵐ c • g (B · + b)` on `s = (fun x ↦ B x + b) ⁻¹' t` for a
+linear automorphism `B : E ≃L[ℝ] E` and scalar `c`, then
+`‖f‖ = ‖c‖ * |det B|⁻¹ ^ (1 / p).toReal * ‖g‖`. -/
+theorem norm_eq_mul_det_inv_of_ae_eq {E G 𝕜 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} {s t : Set E}
+    [NormedAddCommGroup G] [NormedDivisionRing 𝕜] [Module 𝕜 G] [NormSMulClass 𝕜 G]
+    (B : E ≃L[ℝ] E) (b : E) (hst : s = (fun x ↦ B x + b) ⁻¹' t)
+    {f : Lp G p (μ.restrict s)} {g : Lp G p (μ.restrict t)} (c : 𝕜)
+    (hpt : (f : E → G) =ᵐ[μ.restrict s] fun x ↦ c • g (B x + b)) :
+    ‖f‖ = ‖c‖ * |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖g‖ := by
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hpt]
+  have hsmul : (fun x ↦ c • g (B x + b)) = c • fun x ↦ g (B x + b) := rfl
+  rw [hsmul, eLpNorm_const_smul, hst,
+    Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ _ B b p,
+    ENNReal.toReal_mul, ENNReal.toReal_mul, toReal_eNorm,
+    toReal_ofReal_abs_inv_rpow _ (1 / p).toReal, ← mul_assoc]
 
 end MeasureTheory.Lp
