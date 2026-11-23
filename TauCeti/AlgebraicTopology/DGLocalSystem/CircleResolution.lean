@@ -459,9 +459,8 @@ theorem exists_loopCellCocycle_differential_eq_of_isUnit_windingNumber {p : ℝ}
     (fun n ↦ inferInstance) ?_ ?_ hu hε <;> rw [hγg]
   · rw [Subgroup.zpowers_inv]
     exact e.zpowers_eq_top_iff_isUnit_toAdd.mpr hγ
-  · rw [isOfFinOrder_inv_iff, ← e.injective.isOfFinOrder_iff (f := e.toMonoidHom),
-      MulEquiv.coe_toMonoidHom, ← ofAdd_toAdd (e g), isOfFinOrder_ofAdd_iff]
-    exact not_isOfFinAddOrder_of_isAddTorsionFree hγ.ne_zero
+  · rw [isOfFinOrder_inv_iff, e.isOfFinOrder_iff_toAdd_eq_zero]
+    exact hγ.ne_zero
 
 end Circle
 

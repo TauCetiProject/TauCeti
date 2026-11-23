@@ -14,8 +14,8 @@ For `n ≠ 0`, this file gives the standard computable enumeration of
 `Multiplicative (ZMod n)`, transported from the additive group `ZMod n`.
 It also records that `Multiplicative.ofAdd 1` generates `Multiplicative ℤ` and has infinite order,
 that the `n`-th powers of `Multiplicative ℤ` are the multiples of `n`, that an element corresponding
-to `1` under an equivalence with `Multiplicative ℤ` generates its group, and reindexes finite sums
-by the powers of a generator.
+to `±1` under an equivalence with `Multiplicative ℤ` generates its group and has finite order only
+when it corresponds to `0`, and reindexes finite sums by the powers of a generator.
 
 ## Main definitions
 
@@ -31,6 +31,8 @@ by the powers of a generator.
   `Multiplicative ℤ` generates its group.
 * `MulEquiv.zpowers_eq_top_iff_isUnit_toAdd`: an element generates a group equivalent to
   `Multiplicative ℤ` iff it is sent to `±1`.
+* `MulEquiv.isOfFinOrder_iff_toAdd_eq_zero`: an element of a group equivalent to
+  `Multiplicative ℤ` has finite order iff it is sent to `0`.
 * `TauCeti.sum_range_orderOf_eq_sum`: summing over powers of a generator enumerates a finite group.
 
 ## References
@@ -104,5 +106,12 @@ theorem _root_.MulEquiv.zpowers_eq_top_iff_isUnit_toAdd {G : Type*} [Group G] {g
   · rw [← Subgroup.zpowers_inv]
     exact e.zpowers_eq_top_of_apply_eq_ofAdd_one
       (by rw [map_inv, ← ofAdd_toAdd (e g), hg, ofAdd_neg, inv_inv])
+
+/-- An element of a group equivalent to `Multiplicative ℤ` has finite order iff it is sent to
+`0`. -/
+theorem _root_.MulEquiv.isOfFinOrder_iff_toAdd_eq_zero {G : Type*} [Group G] {g : G}
+    (e : G ≃* Multiplicative ℤ) : IsOfFinOrder g ↔ (e g).toAdd = 0 := by
+  rw [← e.injective.isOfFinOrder_iff (f := e.toMonoidHom), MulEquiv.coe_toMonoidHom,
+    isOfFinOrder_iff_eq_one, toAdd_eq_zero]
 
 end TauCeti

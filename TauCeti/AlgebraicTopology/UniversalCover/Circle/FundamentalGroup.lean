@@ -445,8 +445,8 @@ theorem zpowers_fromPath_eq_top_iff {x : Circle} (γ : Path x x) :
 @[simp]
 theorem isOfFinOrder_fromPath_iff {x : Circle} (γ : Path x x) :
     IsOfFinOrder (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) ↔ degree γ = 0 := by
-  rw [isOfFinOrder_iff_eq_one, ← (fundamentalGroupMulEquiv x).map_eq_one_iff,
-    fundamentalGroupMulEquiv_fromPath, ofAdd_eq_one]
+  rw [(fundamentalGroupMulEquiv x).isOfFinOrder_iff_toAdd_eq_zero,
+    fundamentalGroupMulEquiv_fromPath, toAdd_ofAdd]
 
 /-- **The counterclockwise loop generates `π₁(S¹)`.** Every class in `π₁(Circle, 1)` is a power
 of the class of `t ↦ exp(2πit)`. -/
