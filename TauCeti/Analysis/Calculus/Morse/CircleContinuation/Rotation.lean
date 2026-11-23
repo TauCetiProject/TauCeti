@@ -74,9 +74,10 @@ trajectories exist by the existence theorems above.
   `TauCeti.tendsto_coe_circleCosTwoMax_iff_of_add_two_mul_pi_div_three`). So
   `Φ_{Γ₁} = Φ_{Γ₂} = I` but `Φ_{Γ₂ * Γ₁} = S`: continuation maps do not compose strictly.
 
-The counts here are unsigned; the signs, the identification with the continuation map
-`TauCeti.morseContinuationMap` of the cylinder `S¹ × ℝ`, and the chain homotopy between `I` and
-`S` are not treated.
+The counts here are unsigned. Their identification with the mod-two continuation map
+`TauCeti.morseContinuationMap` of the cylinder `S¹ × ℝ` is in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Circle`; the signs and the chain homotopy
+between `I` and `S` are not treated.
 
 ## References
 

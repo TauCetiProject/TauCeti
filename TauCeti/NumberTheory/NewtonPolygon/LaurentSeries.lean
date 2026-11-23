@@ -532,7 +532,7 @@ theorem initialPolynomial_comp_C_mul_X (P : R⸨X⸩[X]) {c : R⸨X⸩} (hc : c 
   · simp [hn]
   simp only [comp_C_mul_X_coeff, ite_mul, zero_mul]
   refine if_congr (forall_congr' fun m => ?_)
-    (by rw [HahnSeries.leadingCoeff_mul, TauCeti.hahnSeries_leadingCoeff_pow]) rfl
+    (by rw [HahnSeries.leadingCoeff_mul, HahnSeries.leadingCoeff_pow]) rfl
   by_cases hm : P.coeff m = 0
   · simp [hm]
   have hord {k : ℕ} (hk : P.coeff k ≠ 0) :
