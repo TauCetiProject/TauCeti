@@ -132,15 +132,16 @@ theorem map_killingSymmetricEquiv_lieInvariants :
 multiplication to `TauCeti.killingCasimirTensor K L`. It is the degree-two PBW symbol of the
 Casimir element of `U(L)`. -/
 noncomputable def symmetricCasimir : SymmetricAlgebra K L :=
-  TensorProduct.lift (genMul K L) (killingCasimirTensor K L)
+  LinearMap.mul' K (SymmetricAlgebra K L)
+    (TensorProduct.map (ι K L) (ι K L) (killingCasimirTensor K L))
 
 variable {K L} in
 /-- **The quadratic symmetric Casimir may be computed in any basis.** -/
 theorem symmetricCasimir_eq_sum {ι' : Type*} [DecidableEq ι'] [Fintype ι']
     (b : Module.Basis ι' K L) :
     symmetricCasimir K L = ∑ i, ι K L (b i) * ι K L (killingDualBasis b i) := by
-  rw [symmetricCasimir, killingCasimirTensor_eq_sum b, map_sum]
-  simp only [TensorProduct.lift.tmul, genMul_apply]
+  rw [symmetricCasimir, killingCasimirTensor_eq_sum b, map_sum, map_sum]
+  simp only [TensorProduct.map_tmul, LinearMap.mul'_apply]
 
 /-- **The quadratic symmetric Casimir is homogeneous of degree two.** -/
 theorem symmetricCasimir_mem_homogeneousSubmodule :

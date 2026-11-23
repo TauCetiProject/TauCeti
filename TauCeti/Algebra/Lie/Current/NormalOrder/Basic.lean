@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Tower.Summation
 public import TauCeti.Algebra.Lie.Current.CompletedCoordinateAction
 
 import Mathlib.Topology.Algebra.InfiniteSum.Module
+import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # Normally ordered modes in the completed enveloping algebra
@@ -274,16 +275,9 @@ theorem tsum_normalOrderedSummand (p n : ℤ) (x y : L) :
           ∑ m ∈ Finset.Ico p 0, (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m])) := by
   refine HasSum.tsum_eq ?_
   simp only [normalOrderedSummand_eq_add_sub p n, map_add, map_sub, ← add_sub_assoc]
-  have hite (s : Finset ℤ) :
-      HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a
-          (if m ∈ s then ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m] else 0))
-        (toCompletedEnveloping Φ hΦ hΦs a
-          (∑ m ∈ s, (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]))) := by
-    simpa only [← map_sum, Finset.sum_ite_mem, Finset.inter_self] using
-      hasSum_sum_of_ne_finset_zero (f := fun m ↦ toCompletedEnveloping Φ hΦ hΦs a
-        (if m ∈ s then ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m] else 0))
-        (s := s) fun m hm ↦ by simp [hm]
-  exact ((hasSum_normalOrderedMode n x y).add (hite _)).sub (hite _)
+  exact ((hasSum_normalOrderedMode n x y).add
+    (hasSum_map_ite_mem (toCompletedEnveloping Φ hΦ hΦs a) _ _)).sub
+    (hasSum_map_ite_mem (toCompletedEnveloping Φ hΦ hΦs a) _ _)
 
 end NormalOrder
 

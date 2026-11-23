@@ -36,9 +36,9 @@ Two facts make `Ω` an invariant of `L` rather than of the chosen basis. They ar
 
 * `Ω` does not depend on the basis.  The canonical Killing Casimir tensor
   `TauCeti.killingCasimirTensor K L ∈ L ⊗[K] L` expands as `∑ᵢ bᵢ ⊗ b'ᵢ` in every basis
-  (`TauCeti.killingCasimirTensor_eq_sum`). Applying `TensorProduct.lift` to generator multiplication
-  `x ⊗ y ↦ x * y` defines `Ω` without choosing a basis, so `TauCeti.casimirElement_eq_sum` evaluates
-  `Ω` in any basis at once.
+  (`TauCeti.killingCasimirTensor_eq_sum`). Mapping both tensor factors into `U(L)` and multiplying
+  (`x ⊗ y ↦ x * y`) defines `Ω` without choosing a basis, so `TauCeti.casimirElement_eq_sum`
+  evaluates `Ω` in any basis at once.
 * `Ω` is central (`TauCeti.casimirElement_mem_center`).  The bilinear contraction mechanism gives
   `TauCeti.sum_apply_lie_killingDualBasis_add_eq_zero`, the statement that the element
   `∑ᵢ xᵢ ⊗ yᵢ` is annihilated by the adjoint action of `L`; this is exactly the invariance
@@ -106,34 +106,22 @@ variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
 variable [FiniteDimensional K L]
 
 variable (K L) in
-/-- Multiplying two canonical Lie generators of `U(L)`, as a `K`-bilinear map.  This is the
-bilinear map that turns the invariance of `∑ᵢ xᵢ ⊗ yᵢ` into the centrality of the Casimir
-element. -/
-private noncomputable def genMul :
-    L →ₗ[K] L →ₗ[K] UniversalEnvelopingAlgebra K L :=
-  (LinearMap.mul K (UniversalEnvelopingAlgebra K L)).compl₁₂
-    (ι K).toLinearMap (ι K).toLinearMap
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem genMul_apply (x y : L) : genMul K L x y = ι K x * ι K y := by
-  simp only [genMul, LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, LinearMap.mul_apply']
-
-variable (K L) in
 /-- **The Casimir element** `Ω = ∑ᵢ xᵢ yᵢ ∈ U(L)` of a Lie algebra with nondegenerate Killing
-form, obtained by applying generator multiplication to `TauCeti.killingCasimirTensor K L`.
+form, obtained by multiplying the image of `TauCeti.killingCasimirTensor K L` in `U(L) ⊗[K] U(L)`.
 
 `TauCeti.casimirElement_eq_sum` evaluates `Ω` as `∑ᵢ bᵢ b'ᵢ` in any basis `b` and its
 Killing-dual basis `b'`. -/
 noncomputable def casimirElement : UniversalEnvelopingAlgebra K L :=
-  TensorProduct.lift (genMul K L) (killingCasimirTensor K L)
+  LinearMap.mul' K (UniversalEnvelopingAlgebra K L)
+    (TensorProduct.map (ι K).toLinearMap (ι K).toLinearMap (killingCasimirTensor K L))
 
 /-- **The Casimir element is `∑ᵢ xᵢ yᵢ` for every basis `x` of `L`** and its Killing-dual basis
 `y`. -/
 theorem casimirElement_eq_sum {ι' : Type*} [DecidableEq ι'] [Fintype ι']
     (b : Module.Basis ι' K L) :
     casimirElement K L = ∑ i, ι K (b i) * ι K (killingDualBasis b i) := by
-  rw [casimirElement, killingCasimirTensor_eq_sum b, map_sum]
-  simp only [TensorProduct.lift.tmul, genMul_apply]
+  rw [casimirElement, killingCasimirTensor_eq_sum b, map_sum, map_sum]
+  simp only [TensorProduct.map_tmul, LinearMap.mul'_apply, LieHom.coe_toLinearMap]
 
 /-- **The Casimir element acts by zero on a module with trivial action.** Every summand
 `xᵢ yᵢ` of `Ω` acts by a double bracket, and brackets vanish. -/
@@ -163,13 +151,16 @@ theorem ι_mul_casimirElement (z : L) :
       (AlgHom.id K (UniversalEnvelopingAlgebra K L)) x y
   have step : ∀ i, ι K z * (ι K (b i) * ι K (killingDualBasis b i))
       - ι K (b i) * ι K (killingDualBasis b i) * ι K z
-      = genMul K L ⁅z, b i⁆ (killingDualBasis b i)
-        + genMul K L (b i) ⁅z, killingDualBasis b i⁆ := by
+      = ι K ⁅z, b i⁆ * ι K (killingDualBasis b i)
+        + ι K (b i) * ι K ⁅z, killingDualBasis b i⁆ := by
     intro i
-    rw [genMul_apply, genMul_apply, ← hcomm z (b i), ← hcomm z (killingDualBasis b i)]
+    rw [← hcomm z (b i), ← hcomm z (killingDualBasis b i)]
     noncomm_ring
-  rw [sum_congr rfl fun i _ ↦ step i, Finset.sum_add_distrib]
-  exact sum_apply_lie_killingDualBasis_add_eq_zero (genMul K L) b z
+  have hmove := sum_apply_lie_killingDualBasis_add_eq_zero
+    ((LinearMap.mul K (UniversalEnvelopingAlgebra K L)).compl₁₂
+      (ι K).toLinearMap (ι K).toLinearMap) b z
+  simp only [LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, LinearMap.mul_apply'] at hmove
+  rw [sum_congr rfl fun i _ ↦ step i, Finset.sum_add_distrib, hmove]
 
 variable (K L) in
 /-- **The Casimir element is central in `U(L)`.**  It commutes with the canonical Lie generators,

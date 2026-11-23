@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.Lie.Current.Sugawara.Degree
+import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # The Segal--Sugawara Virasoro relations
@@ -179,15 +180,10 @@ theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K
   have hcomb := hA₀.add hB
   simp only [combined_normalOrderedSummand_eq] at hcomb
   let g (l : ℤ) : UK := ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l])
-  have hite (s : Finset ℤ) :
-      HasSum (fun l ↦ toC (if l ∈ s then g l else 0)) (toC (∑ l ∈ s, g l)) := by
-    simpa only [← map_sum, Finset.sum_ite_mem, Finset.inter_self] using
-      hasSum_sum_of_ne_finset_zero (f := fun l ↦ toC (if l ∈ s then g l else 0))
-        (s := s) fun l hl ↦ by simp [hl]
   have h₂ := (((hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
       (m + n) x y).const_smul ((1 - 2 * a * c) * (m - n : K))).add
-    ((hite (Finset.Ico 0 m)).const_smul (1 - 2 * a * c))).sub
-    ((hite (Finset.Ico m 0)).const_smul (1 - 2 * a * c))
+    ((hasSum_map_ite_mem toC (Finset.Ico 0 m) g).const_smul (1 - 2 * a * c))).sub
+    ((hasSum_map_ite_mem toC (Finset.Ico m 0) g).const_smul (1 - 2 * a * c))
   rw [h₁.unique (hA.add hB), hcomb.unique h₂, add_sub_assoc, ← smul_sub, ← map_sub,
     sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul x y m (m + n), map_sub, map_smul,
     smul_sub, smul_smul, AlgHom.commutes]
