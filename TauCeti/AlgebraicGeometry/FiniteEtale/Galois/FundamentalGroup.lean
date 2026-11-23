@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Profinite
 public import TauCeti.AlgebraicGeometry.FiniteEtale.AffineFiber
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Monodromy
 public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import TauCeti.CategoryTheory.Galois.ContAction
 public import TauCeti.CategoryTheory.Galois.Transport
@@ -19,8 +20,11 @@ public import TauCeti.CategoryTheory.Galois.Transport
 Let `K` be a field, `Ω` a separable closure of `K`, and `x : Spec Ω ⟶ Spec K` the geometric point
 given by the inclusion `K → Ω`. The étale fundamental group `π₁(Spec K, x)` is the automorphism
 group `Aut (FiniteEtaleScheme.fiber x)` of the geometric fibre functor at `x`, a profinite group.
-This file identifies it with the absolute Galois group `Gal(Ω/K)`, as topological groups
-(`TauCeti.FiniteEtaleScheme.galContinuousMulEquivAutFiber`).
+This file identifies it with the absolute Galois group `Gal(Ω/K)`, as topological groups:
+`Gal(Ω/K)` is a fundamental group of the fibre functor
+(`TauCeti.FiniteEtaleScheme.instIsFundamentalGroupFiber`), so
+`TauCeti.FiniteEtaleScheme.continuousMulEquivAutFiber _ Gal(Ω/K)` is an isomorphism of
+topological groups `Gal(Ω/K) ≃ₜ* π₁(Spec K, x)`.
 
 The identification is compatible with Grothendieck's Galois theory for `K`. The geometric fibre
 functor at `x` is isomorphic to the functor sending a finite étale `K`-scheme with coordinate
@@ -40,7 +44,6 @@ Galois categories and isomorphisms of fibre functors.
 
 * `TauCeti.FiniteEtaleScheme.fiberIsoFiniteEtaleFiber`: the geometric fibre functor at `x` is the
   functor of `Ω`-valued points of coordinate algebras.
-* `TauCeti.FiniteEtaleScheme.galContinuousMulEquivAutFiber`: `Gal(Ω/K) ≃ₜ* π₁(Spec K, x)`.
 
 ## Main results
 
@@ -48,8 +51,6 @@ Galois categories and isomorphisms of fibre functors.
   attached to a point of the geometric fibre has the corresponding lift of `x` as spectrum.
 * `TauCeti.FiniteEtaleScheme.instIsFundamentalGroupFiber`: `Gal(Ω/K)` is a fundamental group of
   the geometric fibre functor at `x`.
-* `TauCeti.FiniteEtaleScheme.galContinuousMulEquivAutFiber_hom_app_apply`: the automorphism of
-  the fibre functor attached to `σ` acts on each fibre by `σ`.
 
 ## References
 
@@ -188,28 +189,10 @@ instance instIsFundamentalGroupFiber :
         (AlgEquiv.smul_algHom_def σ _).symm).trans <|
         (galoisFiber_obj_ρ_apply K Ω _ σ _).symm.trans (Action.ρ_apply_eq_smul _ σ _)
 
-/-- **The étale fundamental group of a field is its absolute Galois group.** For a separable
-closure `Ω` of `K`, the automorphism group of the geometric fibre functor of finite étale
-`K`-schemes at `Spec Ω ⟶ Spec K` is `Gal(Ω/K)`, as topological groups. -/
-noncomputable def galContinuousMulEquivAutFiber :
-    Gal(Ω/K) ≃ₜ* Aut (fiber (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))) where
-  toMulEquiv := toAutMulEquiv _ _
-  continuous_toFun := (toAutMulEquiv_isHomeomorph _ _).continuous
-  continuous_invFun := (toAutMulEquiv_isHomeomorph _ _).homeomorph.symm.continuous
-
-/-- The automorphism of the geometric fibre functor attached to `σ ∈ Gal(Ω/K)` acts on every
-fibre by `σ`. -/
-@[simp]
-theorem galContinuousMulEquivAutFiber_hom_app_apply (σ : Gal(Ω/K))
-    (X : FiniteEtaleScheme (Spec (.of K)))
-    (y : (fiber (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).obj X) :
-    (galContinuousMulEquivAutFiber K Ω σ).asIso.hom.app X y = σ • y :=
-  toAut_hom_app_apply _ σ y
-
 /-- Over a separably closed field `K`, the étale fundamental group at the geometric point
 `Spec K ⟶ Spec K` is trivial. -/
 instance [IsSepClosed K] :
     Subsingleton (Aut (fiber (Spec.map (CommRingCat.ofHom (algebraMap K K))))) :=
-  (galContinuousMulEquivAutFiber K K).toEquiv.symm.subsingleton
+  (continuousMulEquivAutFiber _ Gal(K/K)).toEquiv.symm.subsingleton
 
 end TauCeti.FiniteEtaleScheme
