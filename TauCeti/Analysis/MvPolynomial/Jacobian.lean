@@ -19,7 +19,9 @@ The formal partial derivatives of a multivariate polynomial give its Fréchet de
 finite coordinate space over any nontrivially normed field. For a family of equations, with the
 product topology on its target, this identifies the analytic derivative with the linear map of
 `TauCeti.jacobiMatrixAt`. In particular the derivative is surjective exactly when the Jacobian
-matrix is, and the evaluation map of the family is analytic.
+matrix is, and the evaluation map of the family is analytic. For a single polynomial, read as a
+scalar-valued function, the derivative is surjective exactly where some partial derivative does
+not vanish (`MvPolynomial.surjective_fderiv_eval_iff`).
 
 For real or complex Euclidean coordinate spaces, we also give the derivative applied to an
 arbitrary direction and to a standard coordinate direction, and record that evaluating a polynomial
@@ -58,6 +60,21 @@ theorem MvPolynomial.hasFDerivAt_eval (p : MvPolynomial σ 𝕜) (x : σ → �
     · ext y
       simp [Finset.sum_add_distrib, mul_add, Finset.mul_sum,
         Pi.single_apply, apply_ite, mul_comm, mul_left_comm]
+
+omit [Fintype σ] in
+/-- **The Jacobian criterion for a single polynomial.** The derivative of polynomial evaluation
+at `x` is surjective exactly when some formal partial derivative of the polynomial is nonzero
+at `x`. -/
+theorem MvPolynomial.surjective_fderiv_eval_iff [Finite σ] (p : MvPolynomial σ 𝕜) (x : σ → 𝕜) :
+    Function.Surjective (fderiv 𝕜 (fun y ↦ eval y p) x) ↔ ∃ j, eval x (pderiv j p) ≠ 0 := by
+  classical
+  let := Fintype.ofFinite σ
+  rw [(p.hasFDerivAt_eval x).fderiv]
+  refine ⟨fun h ↦ ?_, fun ⟨j, hj⟩ c ↦ ⟨Pi.single j (c / eval x (pderiv j p)), ?_⟩⟩
+  · by_contra! h0
+    obtain ⟨y, hy⟩ := h 1
+    simp [h0] at hy
+  · simp [Pi.single_apply, mul_div_cancel₀ _ hj]
 
 section
 
