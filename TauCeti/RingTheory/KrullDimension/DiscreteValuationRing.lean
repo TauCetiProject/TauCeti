@@ -10,10 +10,6 @@ public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 
-import Mathlib.RingTheory.FiniteStability
-import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
-import Mathlib.RingTheory.Ideal.Quotient.Operations
-import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.RingTheory.AlgebraicIndependent.DiscreteValuationRing
 import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
@@ -38,9 +34,9 @@ torsion-free `R`-algebra whose generic fibre `A[1/π] = K(X)` has dimension `0`,
 The proof reduces to a prime `q` of `A` lying over `maximalIdeal R`. Because a uniformizer `π` acts
 as a non-zero-divisor on `A`, any minimal prime `p ≤ q` of `A` misses `π`, so `D = A ⧸ p` embeds
 into a prime quotient `E` of `K ⊗[R] A`. Noether normalization of the finite-type `κ`-domain
-`A ⧸ q` supplies `s = dim (A ⧸ q)` algebraically independent elements modulo `q`; clearing
-denominators in `R` and dividing by the highest power of `π` dividing all coefficients shows that
-any lifts to `D` remain algebraically independent over `K` in `E`, whence `s ≤ trdeg_K E = dim E`.
+`A ⧸ q` supplies `s = dim (A ⧸ q)` algebraically independent elements modulo `q`; dividing by the
+highest power of `π` dividing all coefficients shows that any lifts to `D` remain algebraically
+independent over `K` in `E`, whence `s ≤ trdeg_K E = dim E`.
 
 ## Main results
 
@@ -74,12 +70,13 @@ variable {R K A B : Type*} [CommRing R] [IsDomain R] [_root_.IsDiscreteValuation
   [IsScalarTower R A B] [IsScalarTower R K B] [Algebra.IsPushout R A K B]
 
 include K in
-/-- Every prime quotient `A ⧸ q` lying over the maximal ideal of `R` has Krull dimension at most
-that of the generic fibre `B`. -/
-private lemma ringKrullDim_quotient_le_of_maximalIdeal_le (q : Ideal A) [q.IsPrime]
-    (hq : (IsLocalRing.maximalIdeal R).map (algebraMap R A) ≤ q) :
-    ringKrullDim (A ⧸ q) ≤ ringKrullDim B := by
-  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
+omit [Algebra.FiniteType R A] in
+/-- For a prime `q` of `A`, a minimal prime `p ≤ q` is disjoint from the powers of any uniformizer
+`π` and therefore contracts back from its extension to `B`. -/
+private lemma exists_minimalPrime_le_disjoint {π : R} (hπ : Irreducible π) (q : Ideal A)
+    [q.IsPrime] :
+    ∃ p ∈ minimalPrimes A, p ≤ q ∧ Disjoint (Submonoid.powers (algebraMap R A π) : Set A) p ∧
+      (p.map (algebraMap A B)).IsPrime ∧ (p.map (algebraMap A B)).comap (algebraMap A B) = p := by
   have : IsLocalization.Away (algebraMap R A π) B := hπ.isLocalizationAway_of_isPushout (K := K)
   have hπ_nzd : algebraMap R A π ∈ A⁰ := by
     rw [mem_nonZeroDivisors_iff_left]
@@ -91,12 +88,18 @@ private lemma ringKrullDim_quotient_le_of_maximalIdeal_le (q : Ideal A) [q.IsPri
   have hdisj : Disjoint (Submonoid.powers (algebraMap R A π) : Set A) p :=
     (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes hp).symm.mono_left
       (Submonoid.powers_le.mpr hπ_nzd)
-  have : (p.map (algebraMap A B)).IsPrime :=
-    IsLocalization.isPrime_of_isPrime_disjoint _ B p ‹_› hdisj
-  have hp_comap : (p.map (algebraMap A B)).comap (algebraMap A B) = p :=
-    IsLocalization.under_map_of_isPrime_disjoint _ B ‹_› hdisj
-  have hπp : algebraMap R A π ∉ p :=
-    Set.disjoint_left.mp hdisj (Submonoid.mem_powers _)
+  exact ⟨p, hp, hpq, hdisj, IsLocalization.isPrime_of_isPrime_disjoint _ B p ‹_› hdisj,
+    IsLocalization.under_map_of_isPrime_disjoint _ B ‹_› hdisj⟩
+
+include K in
+/-- Every prime quotient `A ⧸ q` lying over the maximal ideal of `R` has Krull dimension at most
+that of the generic fibre `B`. -/
+private lemma ringKrullDim_quotient_le_of_maximalIdeal_le (q : Ideal A) [q.IsPrime]
+    (hq : (IsLocalRing.maximalIdeal R).map (algebraMap R A) ≤ q) :
+    ringKrullDim (A ⧸ q) ≤ ringKrullDim B := by
+  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
+  obtain ⟨p, hp, hpq, _, hpB, hp_comap⟩ := exists_minimalPrime_le_disjoint (K := K) (B := B) hπ q
+  have : p.IsPrime := hp.1.1
   let pB := p.map (algebraMap A B)
   let : Algebra (A ⧸ p) (B ⧸ pB) := (Ideal.quotientMap pB (algebraMap A B) hp_comap.ge).toAlgebra
   have : IsScalarTower R (A ⧸ p) (B ⧸ pB) := .of_algebraMap_eq fun r ↦ by
@@ -114,8 +117,7 @@ private lemma ringKrullDim_quotient_le_of_maximalIdeal_le (q : Ideal A) [q.IsPri
   obtain ⟨s, g, hginj, hgint⟩ := exists_integral_inj_algHom_of_fg κ ((A ⧸ p) ⧸ qD)
   choose y hy using fun i : Fin s ↦ Ideal.Quotient.mk_surjective (I := qD) (g (MvPolynomial.X i))
   have hindep : AlgebraicIndependent K (fun i ↦ algebraMap (A ⧸ p) (B ⧸ pB) (y i)) := by
-    refine AlgebraicIndependent.of_quotient_residueField (R := R) (K := K) hπ
-      (fun h0 ↦ hπp (Ideal.Quotient.eq_zero_iff_mem.mp h0))
+    refine AlgebraicIndependent.of_quotient_residueField (R := R) (K := K)
       (Ideal.quotientMap_injective' hp_comap.le) qD y ?_
     rw [algebraicIndependent_iff_injective_aeval]
     convert hginj
@@ -162,6 +164,15 @@ theorem krullDimLE_quotient_maximalIdeal (n : ℕ) [Ring.KrullDimLE n B] :
   Ring.krullDimLE_iff.mpr
     ((ringKrullDim_quotient_maximalIdeal_le (K := K)).trans (Ring.krullDimLE_iff.mp ‹_›))
 
+/-- The canonical identification `ResidueField R ⊗[R] A ≃ₐ[R] A ⧸ 𝔪_R A`. -/
+private noncomputable def residueFieldTensorEquivQuotient (R A : Type*) [CommRing R]
+    [IsLocalRing R] [CommRing A] [Algebra R A] :
+    IsLocalRing.ResidueField R ⊗[R] A ≃ₐ[R]
+      A ⧸ (IsLocalRing.maximalIdeal R).map (algebraMap R A) :=
+  (Algebra.TensorProduct.comm R (IsLocalRing.ResidueField R) A).trans
+    ((Algebra.TensorProduct.quotIdealMapEquivTensorQuot A
+      (IsLocalRing.maximalIdeal R)).symm.restrictScalars R)
+
 include K in
 /-- Every fibre ring `p.Fiber A` of a torsion-free finite-type algebra `A` over a discrete
 valuation ring `R` has Krull dimension at most that of the generic fibre `B`. -/
@@ -183,9 +194,7 @@ theorem ringKrullDim_fiber_le (p : Ideal R) [hp : p.IsPrime] :
     let eF : (IsLocalRing.maximalIdeal R).Fiber A ≃ₐ[R]
         A ⧸ (IsLocalRing.maximalIdeal R).map (algebraMap R A) :=
       (Algebra.TensorProduct.congr em.symm (.refl : A ≃ₐ[R] A)).trans
-        ((Algebra.TensorProduct.comm R _ A).trans
-          ((Algebra.TensorProduct.quotIdealMapEquivTensorQuot A
-            (IsLocalRing.maximalIdeal R)).symm.restrictScalars R))
+        (residueFieldTensorEquivQuotient R A)
     rw [ringKrullDim_eq_of_ringEquiv eF.toRingEquiv]
     exact ringKrullDim_quotient_maximalIdeal_le (R := R) (K := K) (A := A) (B := B)
 
@@ -199,10 +208,7 @@ theorem ringKrullDim_residueField_tensorProduct_le {R : Type*} [CommRing R] [IsD
     [_root_.IsDiscreteValuationRing R] (K A : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
     [CommRing A] [Algebra R A] [Module.IsTorsionFree R A] [Algebra.FiniteType R A] :
     ringKrullDim (IsLocalRing.ResidueField R ⊗[R] A) ≤ ringKrullDim (K ⊗[R] A) := by
-  let e := (Algebra.TensorProduct.comm R (IsLocalRing.ResidueField R) A).trans
-    ((Algebra.TensorProduct.quotIdealMapEquivTensorQuot A
-      (IsLocalRing.maximalIdeal R)).symm.restrictScalars R)
-  rw [ringKrullDim_eq_of_ringEquiv e.toRingEquiv]
+  rw [ringKrullDim_eq_of_ringEquiv (residueFieldTensorEquivQuotient R A).toRingEquiv]
   have : Algebra.IsPushout R A K (K ⊗[R] A) := Algebra.IsPushout.symm inferInstance
   exact ringKrullDim_quotient_maximalIdeal_le (R := R) (K := K) (A := A) (B := K ⊗[R] A)
 

@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
-import Mathlib.RingTheory.Noetherian.Basic
 import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 import TauCeti.RingTheory.IntegralClosure.Map
 
@@ -24,8 +23,7 @@ on the individual field factors.
 In particular, for a reduced algebra `B` with finitely many minimal primes over a Noetherian ring
 `P`, finiteness of `integralClosure P B` reduces to finiteness of `integralClosure P Q.ResidueField`
 for each minimal prime `Q` of `B`
-(`TauCeti.finite_integralClosure_of_isReduced_of_forall_minimalPrimes`), using the minimal-prime
-residue field family `TauCeti.minimalPrimeResidueField`.
+(`TauCeti.finite_integralClosure_of_isReduced_of_forall_minimalPrimes`).
 
 The finiteness assumption is essential: the integral equations for infinitely many
 coordinates need not have a common degree or common coefficients.
@@ -77,15 +75,6 @@ theorem integralClosurePiAlgEquiv_apply (x : integralClosure R (∀ i, B i)) (i 
 theorem integralClosurePiAlgEquiv_symm_apply (x : ∀ i, integralClosure R (B i)) (i : ι) :
     ((integralClosurePiAlgEquiv R B).symm x : ∀ i, B i) i = x i := (rfl)
 
-/-- Every minimal prime of a commutative semiring is a prime ideal. -/
-instance minimalPrime_isPrime {B : Type*} [CommSemiring B] (i : minimalPrimes B) :
-    i.val.IsPrime :=
-  i.property.1.1
-
-/-- The residue field of a minimal prime `i` of a commutative ring `B`. -/
-abbrev minimalPrimeResidueField (B : Type*) [CommRing B] (i : minimalPrimes B) : Type _ :=
-  i.val.ResidueField
-
 /-- Let `P` be a Noetherian ring and `B` a reduced `P`-algebra with finitely many minimal primes.
 If the integral closure of `P` in the residue field `Q.ResidueField` of every minimal prime `Q` of
 `B` is a finite `P`-module, then `integralClosure P B` is a finite `P`-module. -/
@@ -94,7 +83,7 @@ theorem finite_integralClosure_of_isReduced_of_forall_minimalPrimes {P B : Type*
     (hfin : ∀ (Q : Ideal B) (hQ : Q ∈ minimalPrimes B), haveI := hQ.1.1;
       Module.Finite P (integralClosure P Q.ResidueField)) :
     Module.Finite P (integralClosure P B) := by
-  let F := minimalPrimeResidueField B
+  let F := fun i : minimalPrimes B ↦ i.val.ResidueField
   have (i : minimalPrimes B) : Module.Finite P (integralClosure P (F i)) := hfin i.val i.property
   have : Module.Finite P (integralClosure P (∀ i : minimalPrimes B, F i)) :=
     Module.Finite.equiv (integralClosurePiAlgEquiv P F).toLinearEquiv.symm

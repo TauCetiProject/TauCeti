@@ -140,9 +140,7 @@ theorem trdeg_residueField_of_isStandardSmoothOfRelativeDimension {B : Type*} [C
   have hdisj : Disjoint (M : Set B) P := Set.disjoint_left.mpr fun _ hm ↦ hM hm
   have hunit : ∀ m : M, IsUnit (IsScalarTower.toAlgHom k B P.ResidueField m) := fun m ↦
     IsUnit.mk0 _ <| by
-      change algebraMap B P.ResidueField m.val ≠ 0
-      rw [IsScalarTower.algebraMap_apply B (B ⧸ P) P.ResidueField, Ideal.Quotient.algebraMap_eq,
-        ne_eq, FaithfulSMul.algebraMap_eq_zero_iff, Ideal.Quotient.eq_zero_iff_mem]
+      rw [IsScalarTower.coe_toAlgHom', ne_eq, Ideal.algebraMap_residueField_eq_zero]
       exact hM m.property
   let φ : S →ₐ[k] P.ResidueField :=
     IsLocalization.liftAlgHom (M := M) (f := IsScalarTower.toAlgHom k B P.ResidueField) hunit

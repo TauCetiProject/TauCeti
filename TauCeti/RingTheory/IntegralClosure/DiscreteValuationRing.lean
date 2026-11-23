@@ -14,22 +14,19 @@ public import TauCeti.FieldTheory.FunctionField.Basic
 
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
-import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
+import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 import TauCeti.RingTheory.IntegralClosure.MvPolynomial
 import TauCeti.RingTheory.IntegralClosure.Pi
 import TauCeti.RingTheory.IntegralClosure.QuasiFinite
 import TauCeti.RingTheory.IntegralClosure.Transfer
 import TauCeti.RingTheory.IsTensorProduct.Pushout
-import TauCeti.RingTheory.Kaehler.FormallyEtale
 import TauCeti.RingTheory.Kaehler.SeparatingLift
 import TauCeti.RingTheory.KrullDimension.DiscreteValuationRing
-import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.Localization.Away.Quotient
 import TauCeti.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.Localization.FractionRing
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.Localization.TensorProduct
-import TauCeti.RingTheory.QuasiFinite.Parameter
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import TauCeti.RingTheory.Smooth.KrullDimension
 
@@ -113,7 +110,7 @@ private lemma exists_separating_perturbation [IsReduced B] [Finite (minimalPrime
       letI : Algebra R[X] B :=
         (Polynomial.aeval (R := R) (algebraMap A B (a + π • b))).toRingHom.toAlgebra
       Module.Finite R[X] (integralClosure R[X] B) := by
-  let F := minimalPrimeResidueField B
+  let F := fun i : minimalPrimes B ↦ i.val.ResidueField
   have (i : minimalPrimes B) : Algebra.EssFiniteType K (F i) :=
     (hF i.val i.property).essFiniteType
   have (i : minimalPrimes B) : Algebra.Transcendental K (F i) :=

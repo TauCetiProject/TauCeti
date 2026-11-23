@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.Kaehler.JacobiZariski
 public import Mathlib.RingTheory.Kaehler.Polynomial
 public import Mathlib.RingTheory.RingHom.Etale
 public import Mathlib.RingTheory.Smooth.StandardSmooth
-import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
 import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.RingTheory.MvPolynomial.Ideal

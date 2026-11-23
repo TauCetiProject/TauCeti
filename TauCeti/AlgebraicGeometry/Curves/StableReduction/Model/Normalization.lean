@@ -15,7 +15,6 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 
 import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 import TauCeti.AlgebraicGeometry.Normalization.DiscreteValuationRing
-import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 import TauCeti.RingTheory.Localization.Integral
 
 /-!

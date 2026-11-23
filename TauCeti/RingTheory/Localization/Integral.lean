@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Module.LocalizedModule.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Localization.Integral
 
-import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Localization.Finiteness
 
 /-!
