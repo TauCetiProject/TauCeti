@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Topology.UniformSpace.UniformApproximation
 import Mathlib.Topology.Algebra.Monoid
 import Mathlib.Topology.Order.OrderClosed
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Limits of positive-definite functions
@@ -87,8 +88,7 @@ convergence is converted to pointwise convergence before applying
 theorem of_tendstoLocallyUniformly {ι : Type*} {l : Filter ι} [NeBot l] {F : ι → M → ℂ} {G : M → ℂ}
     (hF : ∀ᶠ i in l, IsPositiveDefinite (F i)) (hlim : TendstoLocallyUniformly F G l) :
     IsPositiveDefinite G :=
-  of_tendsto hF fun x =>
-    hlim.tendstoLocallyUniformlyOn.tendsto_at (Set.mem_univ x)
+  of_tendsto hF hlim.tendsto_at
 
 end IsPositiveDefinite
 

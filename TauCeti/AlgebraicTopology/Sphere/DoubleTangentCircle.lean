@@ -8,7 +8,9 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.Sphere.TangentCircle
-import TauCeti.Algebra.Group.ZMultiples
+public import TauCeti.AlgebraicTopology.Sphere.TwoFieldFamily
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.LoopSpace
+import TauCeti.Topology.MappingSpace.Sphere.Basic
 
 /-!
 # Double loops of a sphere swept by tangent circles
@@ -30,13 +32,25 @@ through `q`, and the loop map of `φ_{E,u}`, which sends a point `w` of the equa
 
 The paper applies this construction at every point `p` of a sphere `S^{4k-1}`, with `u` and `v`
 two pointwise orthonormal tangent vector fields (two of the quaternionic fields
-`TauCeti.quaternionFrame`, say), to obtain a fibred family of two-spheres; this file treats the
+`TauCeti.quaternionFrame`, say), to obtain a family of two-spheres in `Sⁿ` fibred over `Sⁿ`, a
+map from its total space to `Map(S², Sⁿ)` (`TauCeti.twoFieldSphereFamily`); this file treats the
 fibre over one point.
 
-The main result is Proposition 6.21 of the same paper, for `n ≥ 4`: the map `σ : Σ → Ω²Sⁿ`
+The main result is Proposition 6.21 of the same paper, for `n ≥ 3`: the map `σ : Σ → Ω²Sⁿ`
 induces an isomorphism `σ_* : H_{n-2}(Σ; ℤ) ≅ H_{n-2}(Ω²Sⁿ; ℤ)`
 (`TauCeti.isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop`). Both groups are infinite
 cyclic, so `σ_*` sends the fundamental class of `Σ` to a generator of `H_{n-2}(Ω²Sⁿ; ℤ)`.
+
+The same holds for the fibres of the fibred family. Over a point `x` of `Sⁿ`, the fibre `Σₓ` is the
+equator through `x` orthogonal to `v x` in the unit sphere of `(u x)⊥`, and on the square the
+restriction `Σₓ → Map_*(S², Sⁿ)` of the family is the family of double loops above for the unit
+vectors `u x` and `v x`, read in `Map_*(S², Sⁿ) ≃ₜ Ω²Sⁿ` with the first cube coordinate as the
+outer loop parameter. So it also induces an isomorphism on `H_{n-2}(-; ℤ)`
+(`TauCeti.isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber`): the fibre class of the
+family generates `H_{n-2}(Map_*(S², Sⁿ); ℤ) ≅ ℤ` over every point. At a single point `x₀`, any two
+orthonormal vectors orthogonal to `x₀` give such an equator through `x₀`, so
+`H_{n-2}(Map_*(S², Sⁿ); ℤ)` is infinite cyclic at every base point
+(`TauCeti.nonempty_iso_singularHomology_basedMap_sphere`).
 
 The proof reads through `σ` a generalized loop `c` of `Σ` that is a homeomorphism off the boundary
 of its cube. Under the loop-space shifts `π_{n-2}(Ω²Sⁿ) ≅ π_{n-1}(ΩSⁿ) ≅ πₙ(Sⁿ)`
@@ -44,8 +58,10 @@ of its cube. Under the loop-space shifts `π_{n-2}(Ω²Sⁿ) ≅ π_{n-1}(ΩSⁿ
 class of the cube `(y, s, t) ↦ σ(c y)(s)(t)`, which is, up to the order of the cube coordinates,
 the family of circles through the circles through the points of `c` (`TauCeti.tangentCircleGenLoop`,
 applied twice). That cube is again a homeomorphism off the boundary, so its class generates
-`πₙ(Sⁿ)`. By the Hurewicz theorems for `Sⁿ` and for the `(n - 3)`-connected space `Ω²Sⁿ`
-(`HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`), the Hurewicz class of `σ ∘ c`
+`πₙ(Sⁿ)`. Both loop-space shifts preserve generating Hurewicz classes
+(`HomotopyGroup.isIso_hurewicz_genLoopLoopHomeomorph_iff`, from the Hurewicz theorem for `Sⁿ` and
+the Hurewicz criterion for the loop spaces `ΩSⁿ` and `Ω²Sⁿ`, which in degree one, for `n = 3`, uses
+that the fundamental group of a loop space is commutative), so the Hurewicz class of `σ ∘ c`
 generates `H_{n-2}(Ω²Sⁿ; ℤ)`, while that of `c` generates `H_{n-2}(Σ; ℤ)`.
 
 ## Main declarations
@@ -53,12 +69,17 @@ generates `H_{n-2}(Ω²Sⁿ; ℤ)`, while that of `c` generates `H_{n-2}(Σ; ℤ
 * `TauCeti.tangentCircleDoubleLoop hu hv p`: the family `σ : Σ → Ω_p Ω_p Sⁿ` of Example 6.20.
 * `TauCeti.isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop`: `σ_*` is an isomorphism
   `H_{n-2}(Σ; ℤ) ≅ H_{n-2}(Ω²Sⁿ; ℤ)`.
+* `TauCeti.isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber`: over every point `x`, the
+  restriction `Σₓ → Map_*(S², Sⁿ)` of the family of two-spheres of two orthonormal tangent fields
+  is an isomorphism on `H_{n-2}(-; ℤ)`.
+* `TauCeti.nonempty_iso_singularHomology_basedMap_sphere`: `H_{n-2}(Map_*(S², Sⁿ); ℤ) ≅ ℤ` at
+  every base point.
 
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §6.4.2, Example 6.20 and
-  Proposition 6.21.
+  Applications to cotangent bundles*, arXiv:2404.07953, §6.4.2, Definition 6.14, Example 6.20
+  and Proposition 6.21.
 -/
 
 public section
@@ -69,6 +90,8 @@ open AlgebraicTopology CategoryTheory Metric Real Set
 open scoped RealInnerProductSpace Topology unitInterval Topology.Homotopy
 
 namespace TauCeti
+
+section DoubleLoop
 
 /-! ### The double loops `σ` -/
 
@@ -140,8 +163,7 @@ private theorem genLoopLoopHomeomorph_map_tangentCircleDoubleLoop (hu : ‖u‖ 
   have he₁ : e (0 : Fin (k + 2)).succ = (Fin.last _).castSucc := by
     simp [e, Fin.ext_iff, Fin.coe_sub_one]
   have he₂ (j : Fin (k + 1)) : e j.succ.succ = j.castSucc.castSucc := by
-    simp [e, Equiv.swap_apply_of_ne_of_ne, Fin.succ_succ_ne_one, sub_eq_iff_eq_add]
-    grind [Fin.succ_castSucc, Fin.coeSucc_eq_succ]
+    simp [e, Equiv.swap_apply_of_ne_of_ne, Fin.succ_succ_ne_one]
   refine GenLoop.ext _ _ fun w => ?_
   rw [GenLoop.genLoopLoopHomeomorph_apply, GenLoop.genLoopLoopHomeomorph_apply,
     GenLoop.map_apply, tangentCircleDoubleLoop_apply, GenLoop.congr_apply,
@@ -193,67 +215,194 @@ private theorem bijective_toSphere_genLoopLoopHomeomorph_map_tangentCircleDouble
 
 /-- **The double loops generate the homology of the double loop space** (Proposition 6.21 of
 Barraud–Damian–Humilière–Oancea). For a unit vector `u` of a real inner product space `E` of
-dimension `n + 1 ≥ 5`, a unit vector `v` of `u⊥` and a point `p₀` of the equator `Σ` of the unit
+dimension `n + 1 ≥ 4`, a unit vector `v` of `u⊥` and a point `p₀` of the equator `Σ` of the unit
 sphere of `u⊥` orthogonal to `v`, the family of double loops `σ : Σ → Ω²Sⁿ` of Example 6.20
 induces an isomorphism `σ_* : H_{n-2}(Σ; ℤ) ≅ H_{n-2}(Ω²Sⁿ; ℤ)`. As `Σ` is a sphere of dimension
 `n - 2`, this says that `σ_*` sends the fundamental class of `Σ` to a generator of
 `H_{n-2}(Ω²Sⁿ; ℤ) ≅ ℤ`. -/
 theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
-    (hE : Module.finrank ℝ E = m + 5) (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (p₀ : sphereEquator v) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj (ModuleCat.of ℤ ℤ)).map
+    (hE : Module.finrank ℝ E = m + 4) (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (p₀ : sphereEquator v) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).obj (ModuleCat.of ℤ ℤ)).map
       (TopCat.ofHom (tangentCircleDoubleLoop hu hv p₀))) := by
   let R := ModuleCat.of ℤ ℤ
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
-  have hu0 : u ≠ 0 := by
-    rintro rfl
-    simp at hu
-  have hv0 : v ≠ 0 := by
-    rintro rfl
-    simp at hv
-  have hV : Module.finrank ℝ (ℝ ∙ u)ᗮ = m + 4 := by
-    have : Fact (Module.finrank ℝ E = m + 4 + 1) := ⟨hE⟩
+  have hu0 : u ≠ 0 := norm_ne_zero_iff.1 (hu ▸ one_ne_zero)
+  have hv0 : v ≠ 0 := norm_ne_zero_iff.1 (hv ▸ one_ne_zero)
+  have hV : Module.finrank ℝ (ℝ ∙ u)ᗮ = m + 3 := by
+    have : Fact (Module.finrank ℝ E = m + 3 + 1) := ⟨hE⟩
     exact Submodule.finrank_orthogonal_span_singleton hu0
   -- A generalized loop `c` of `Σ` that is a homeomorphism off the boundary of its cube.
-  obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphereEquator hv0 (k := m + 2) hV p₀
-  have hcs' : Function.Surjective c := fun q ↦ by
-    by_cases hq : q = p₀
-    · exact ⟨0, hq ▸ GenLoop.boundary c 0 ⟨0, Or.inl rfl⟩⟩
-    · exact hcs q hq
-  have hc : IsIso (GenLoop.hurewicz R c) := GenLoop.isIso_hurewicz_of_bijective_toSphere R
-    ⟨(GenLoop.injective_toSphere_iff c).2 hci, (GenLoop.surjective_toSphere_iff c).2 hcs'⟩
+  obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphereEquator hv0 (k := m + 1) hV p₀
+  have hc : IsIso (GenLoop.hurewicz R c) := GenLoop.isIso_hurewicz_of_forall_ne R hcs hci
   -- Read through `σ` and the loop-space shifts, `c` becomes a cube `Q` of `Sⁿ` that is again a
   -- homeomorphism off the boundary.
   set γ := GenLoop.map (tangentCircleDoubleLoop hu hv p₀) (tangentCircleDoubleLoop_self hu hv p₀) c
-  set Q := GenLoop.genLoopLoopHomeomorph _ (m + 3) (GenLoop.genLoopLoopHomeomorph _ (m + 2) γ)
+  set Q := GenLoop.genLoopLoopHomeomorph _ (m + 2) (GenLoop.genLoopLoopHomeomorph _ (m + 1) γ)
   have hQiso : IsIso (GenLoop.hurewicz R Q) := GenLoop.isIso_hurewicz_of_bijective_toSphere R
     (bijective_toSphere_genLoopLoopHomeomorph_map_tangentCircleDoubleLoop hu hv c hcs hci)
-  -- Connectivity of `Sⁿ` and of `Ω²Sⁿ`, for the Hurewicz theorem.
+  -- Connectivity of `Sⁿ`, for the Hurewicz theorem.
   have hS (x : sphere (0 : E) 1) :
-      ∀ k < m + 2 + 2, Subsingleton (HomotopyGroup (Fin k) (sphere (0 : E) 1) x) :=
-    fun k hk ↦ subsingleton_homotopyGroup_sphere_of_lt (n := m + 4) hE (by simpa using hk) x
-  have hΩ (x : sphere (0 : E) 1) : ∀ k < m + 2,
-      Subsingleton (HomotopyGroup (Fin k) (Ω (Ω (sphere (0 : E) 1) x) (Path.refl x))
-        (Path.refl (Path.refl x))) := fun k hk ↦
-    (subsingleton_homotopyGroup_loopSpace_iff _ k).2
-      ((subsingleton_homotopyGroup_loopSpace_iff x (k + 1)).2 (hS x (k + 1 + 1) (by omega)))
-  -- The two loop-space shifts send the class of `γ` to the class of `Q`.
-  have hshift : HomotopyGroup.pathLoopSpaceMulEquiv (m + 2)
-      (HomotopyGroup.pathLoopSpaceMulEquiv (m + 1) ⟦γ⟧) = ⟦Q⟧ := by
-    rw [HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph,
-      HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
-  -- Through the Hurewicz theorems for `Sⁿ` and for `Ω²Sⁿ`, the Hurewicz class of `γ` generates.
-  have hQgen := (HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom (hS _) Q).1 hQiso
-  have hF : ((HomotopyGroup.pathLoopSpaceMulEquiv (m + 1)).trans
-      (HomotopyGroup.pathLoopSpaceMulEquiv (m + 2))).toAdditive
-        (Additive.ofMul (α := π_ (m + 1 + 1) (Ω (Ω (sphere (0 : E) 1) _) (Path.refl _)) _) ⟦γ⟧) =
-      Additive.ofMul (α := π_ (m + 2 + 2) (sphere (0 : E) 1) _) ⟦Q⟧ := by
-    -- `toMul (ofMul ⟦γ⟧)` is `⟦γ⟧`, read in `π_ (m + 1 + 1)`
-    rw [MulEquiv.toAdditive_apply_apply, MulEquiv.trans_apply]
-    exact congrArg Additive.ofMul hshift
-  rw [← hF] at hQgen
-  have hγgen := (AddEquiv.bijective_zmultiplesHom_apply_iff _ _).1 hQgen
-  have hγ := (HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom (hΩ _) γ).2 hγgen
+      ∀ k < m + 1 + 2, Subsingleton (HomotopyGroup (Fin k) (sphere (0 : E) 1) x) :=
+    fun k hk ↦ subsingleton_homotopyGroup_sphere_of_lt (n := m + 3) hE (by simpa using hk) x
+  -- The loop-space shifts from `Ω²Sⁿ` to `ΩSⁿ` and from `ΩSⁿ` to `Sⁿ` preserve generating Hurewicz
+  -- classes, so the Hurewicz class of `γ` generates.
+  have hγ := (HomotopyGroup.isIso_hurewicz_genLoopLoopHomeomorph_iff (n := m)
+    (fun k hk ↦ (subsingleton_homotopyGroup_loopSpace_iff _ k).2 (hS _ (k + 1) (by omega))) γ).1
+    ((HomotopyGroup.isIso_hurewicz_genLoopLoopHomeomorph_iff (n := m + 1) (hS _) _).1 hQiso)
   rw [GenLoop.hurewicz_map] at hγ
   exact IsIso.of_isIso_comp_left (GenLoop.hurewicz R c) _
+
+/-- For `a = x`, the double loops of `Sⁿ` at `a` are the based maps `(S², north) → (Sⁿ, x)`,
+through `Map_*(S², Sⁿ) ≃ₜ Ω²Sⁿ`. `Ω^[2] X` is `Ω (Ω X)` by definition (`iteratedLoopSpace`
+unfolds via `loopSpace^[2]`), so the inverse of `Map_*(S², Sⁿ) ≃ₜ Ω^[2] Sⁿ` is a homeomorphism out
+of the nested loop space up to this unfolding. -/
+private def doubleLoopBasedMapHomeomorph {a x : sphere (0 : E) 1} (ha : a = x) :
+    Ω (Ω (sphere (0 : E) 1) a) (Path.refl a) ≃ₜ
+      BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x :=
+  (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2
+    ⟨sphere (0 : E) 1, a⟩ Sphere2.north).symm.trans
+      ((Homeomorph.refl _).subtype fun f ↦ by rw [ha]; rfl)
+
+end DoubleLoop
+
+/-! ### The two-spheres over a point of a sphere with two orthonormal tangent fields -/
+
+section TwoFieldFamily
+
+variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {u v : sphere (0 : E) 1 → E}
+  (h : ∀ x : sphere (0 : E) 1, Orthonormal ℝ ![(x : E), u x, v x])
+  (hu : Continuous u) (hv : Continuous v)
+
+/-- On the square, the based two-sphere over `x` of the point `(x, q)` of the fibre is the double
+loop `σ(q)` of `TauCeti.tangentCircleDoubleLoop` for the unit vectors `u x` and `v x`, read with
+the first cube coordinate as the loop parameter of the loop of loops. -/
+private theorem twoFieldSphereFamilyFiber_sphereCollapse (x : sphere (0 : E) 1)
+    (huv : ⟪v x, u x⟫ = 0) (hux : ‖u x‖ = 1)
+    (hvx : ‖(⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ : (ℝ ∙ u x)ᗮ)‖ = 1)
+    (p₀ q : sphereEquator
+      (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ : (ℝ ∙ u x)ᗮ))
+    (hp₀ : (((p₀ : sphere (0 : (ℝ ∙ u x)ᗮ) 1) : (ℝ ∙ u x)ᗮ) : E) = x) (y : I^(Fin 2)) :
+    (twoFieldSphereFamilyFiber h hu hv x (twoFieldEquatorsFiberHomeomorph huv q)).val
+        (sphereCollapse 2 Sphere2.north y) =
+      tangentCircleDoubleLoop hux hvx p₀ q (y 0) (y 1) := by
+  apply Subtype.ext
+  rw [coe_twoFieldSphereFamilyFiber_apply, coe_twoFieldSphereFamily_sphereCollapse,
+    coe_tangentCircleDoubleLoop_apply, Submodule.coe_tangentCircle]
+  simp [hp₀]
+
+/-- **The two-spheres over a point generate the homology of the double loop space**
+(Proposition 6.21 of Barraud–Damian–Humilière–Oancea, for the fibred family of Example 6.20). Let
+`u`, `v` be continuous tangent vector fields on the unit sphere `Sⁿ` of a real inner product space
+of dimension `n + 1 ≥ 5`, orthonormal at every point. Over every point `x`, the family of
+two-spheres `σ` restricts to the fibre `Σₓ ≅ Sⁿ⁻²` as a map `Σₓ → Map_*(S², Sⁿ)` into the based
+mapping space, which is the double loop space of `Sⁿ`. This map induces an isomorphism
+`H_{n-2}(Σₓ; ℤ) ≅ H_{n-2}(Map_*(S², Sⁿ); ℤ)`, so it sends the fundamental class of `Σₓ` to a
+generator of `H_{n-2}(Ω²Sⁿ; ℤ) ≅ ℤ`. -/
+theorem isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber {m : ℕ}
+    (hE : Module.finrank ℝ E = m + 5) (x : sphere (0 : E) 1) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj (ModuleCat.of ℤ ℤ)).map
+      (TopCat.ofHom (twoFieldSphereFamilyFiber h hu hv x))) := by
+  -- The unit vectors `u x` and `v x`, and the point `x` of the fibre over `x`.
+  have huv : ⟪v x, u x⟫ = 0 := by simpa using (h x).inner_eq_zero (by decide : (2 : Fin 3) ≠ 1)
+  have hux : ‖u x‖ = 1 := by simpa using (h x).norm_eq_one 1
+  have hvx : ‖(⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ :
+      (ℝ ∙ u x)ᗮ)‖ = 1 := by simpa using (h x).norm_eq_one 2
+  set e := twoFieldEquatorsFiberHomeomorph huv
+  set p₀ := e.symm ⟨⟨(x, x), mk_self_mem_twoFieldEquators (h x)⟩, rfl⟩
+  have hp₀ : (((p₀ : sphere (0 : (ℝ ∙ u x)ᗮ) 1) : (ℝ ∙ u x)ᗮ) : E) = x :=
+    coe_twoFieldEquatorsFiberHomeomorph_symm_apply huv _
+  -- The double loops at the base point `a = x` of `tangentCircleDoubleLoop` are the based maps
+  -- `(S², north) → (Sⁿ, x)`, through the generalized loops of the cube `I²`.
+  set a := (orthogonalSphereToEquator (u x) p₀ : sphere (0 : E) 1)
+  have ha : a = x := Subtype.ext (by simp [a, hp₀])
+  let B := BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2
+    ⟨sphere (0 : E) 1, a⟩ Sphere2.north
+  let Φ := doubleLoopBasedMapHomeomorph ha
+  have hsq : (twoFieldSphereFamilyFiber h hu hv x).comp (e : C(_, _)) =
+      (Φ : C(_, _)).comp (tangentCircleDoubleLoop hux hvx p₀) := by
+    ext q z : 3
+    obtain ⟨y, rfl⟩ := sphereCollapse_surjective 2 Sphere2.north z
+    refine (twoFieldSphereFamilyFiber_sphereCollapse h hu hv x huv hux hvx p₀ q hp₀ y).trans ?_
+    -- Read through `Map_*(S², Sⁿ) ≃ₜ Ω^[2] Sⁿ`, the double loop `σ(q)` is the cube loop `σ(q)`.
+    -- The nested loop `σ(q)` is an element of `Ω^[2] Sⁿ` by the same definitional unfolding.
+    have hγ := (congrArg (BasedTopologicalSpace.iteratedLoopSpaceHomeomorph 2 _)
+      (B.apply_symm_apply (tangentCircleDoubleLoop hux hvx p₀ q))).symm.trans
+      (BasedTopologicalSpace.iteratedLoopSpaceHomeomorph_basedMapSphereHomeomorphIteratedLoopSpace
+        2 ⟨sphere (0 : E) 1, a⟩ Sphere2.north _)
+    exact ((BasedTopologicalSpace.iteratedLoopSpaceHomeomorph_two_apply _ _ y).symm.trans
+      (DFunLike.congr_fun hγ y)).trans (basedMapSphereHomeomorph_apply ..)
+  -- So the fibre map is the double loops of `tangentCircleDoubleLoop` up to homeomorphisms.
+  let F := (singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj (ModuleCat.of ℤ ℤ)
+  have hσ := isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop hE hux hvx p₀
+  have hcomp : (TopCat.isoOfHomeo (X := TopCat.of _) (Y := TopCat.of _) e).hom ≫
+      TopCat.ofHom (twoFieldSphereFamilyFiber h hu hv x) =
+      TopCat.ofHom (tangentCircleDoubleLoop hux hvx p₀) ≫
+        (TopCat.isoOfHomeo (X := TopCat.of _) (Y := TopCat.of _) Φ).hom := by
+    ext q : 1
+    exact DFunLike.congr_fun hsq q
+  have : IsIso (F.map ((TopCat.isoOfHomeo (X := TopCat.of _) (Y := TopCat.of _) e).hom ≫
+      TopCat.ofHom (twoFieldSphereFamilyFiber h hu hv x))) := by
+    rw [hcomp, F.map_comp]
+    infer_instance
+  rw [F.map_comp] at this
+  exact IsIso.of_isIso_comp_left
+    (F.map (TopCat.isoOfHomeo (X := TopCat.of _) (Y := TopCat.of _) e).hom) _
+
+end TwoFieldFamily
+
+/-! ### The homology of the based mapping space `Map_*(S², Sⁿ)` in degree `n - 2` -/
+
+section BasedMap
+
+variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- **The homology of `Map_*(S², Sⁿ)` in degree `n - 2` is infinite cyclic** (a consequence of
+Proposition 6.21 of Barraud–Damian–Humilière–Oancea). For the unit sphere `Sⁿ` of a real inner
+product space of dimension `n + 1 ≥ 4` and every point `x₀` of it, the integral homology
+`Hₙ₋₂(Map_*(S², Sⁿ); ℤ)` of the maps `(S², north) → (Sⁿ, x₀)` is isomorphic to `ℤ`. -/
+theorem nonempty_iso_singularHomology_basedMap_sphere {m : ℕ} (hE : Module.finrank ℝ E = m + 4)
+    (x₀ : sphere (0 : E) 1) :
+    Nonempty (ModuleCat.of ℤ (ULift.{0} ℤ) ≅
+      ((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).obj
+        (TopCat.of (BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x₀))) := by
+  have : Fact (Module.finrank ℝ E = m + 3 + 1) := ⟨hE⟩
+  -- Unit vectors `u` and `v` orthogonal to each other and to `x₀`.
+  have hx₀ : (x₀ : E) ≠ 0 := ne_zero_of_mem_unit_sphere x₀
+  let b := OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) (m + 3) hx₀
+  let u : E := b 0
+  have hu : ‖u‖ = 1 := b.orthonormal.1 0
+  have hu0 : u ≠ 0 := norm_ne_zero_iff.1 (hu ▸ one_ne_zero)
+  have hux : ⟪(x₀ : E), u⟫ = 0 :=
+    Submodule.mem_orthogonal_singleton_iff_inner_right.1 (b 0).property
+  let v : (ℝ ∙ u)ᗮ := ⟨b 1, Submodule.mem_orthogonal_singleton_iff_inner_right.2
+    (b.orthonormal.2 (by simp : (0 : Fin (m + 3)) ≠ 1))⟩
+  have hv : ‖v‖ = 1 := b.orthonormal.1 1
+  have hv0 : v ≠ 0 := norm_ne_zero_iff.1 (hv ▸ one_ne_zero)
+  -- The point `x₀` of the equator `Σ` of the unit sphere of `u⊥` orthogonal to `v`.
+  let p₀ : sphereEquator v :=
+    ⟨⟨⟨x₀, Submodule.mem_orthogonal_singleton_iff_inner_left.2 hux⟩, by simp⟩, by
+      rw [mem_sphereEquator, Submodule.coe_inner]
+      exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 (b 1).property⟩
+  -- The double loops `σ : Σ → Ω²Sⁿ`, read in the based mapping space through `Φ`.
+  let Φ := doubleLoopBasedMapHomeomorph
+    (Subtype.ext (coe_orthogonalSphereToEquator u _) : (orthogonalSphereToEquator u
+      (p₀ : sphere (0 : (ℝ ∙ u)ᗮ) 1) : sphere (0 : E) 1) = x₀)
+  -- Proposition 6.21, with the coefficients `ℤ` replaced by `ULift ℤ`.
+  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
+  let F := (singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).obj R
+  let φ : ModuleCat.of ℤ ℤ ≅ R := (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso.symm
+  have hσ : IsIso (F.map (TopCat.ofHom (tangentCircleDoubleLoop hu hv p₀))) :=
+    (NatIso.isIso_map_iff ((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).mapIso φ) _).1
+      (isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop hE hu hv p₀)
+  -- A generalized loop `c` of `Σ` that is a homeomorphism off the boundary of its cube; its
+  -- Hurewicz class generates `Hₙ₋₂(Σ; ℤ)`.
+  have hV : Module.finrank ℝ (ℝ ∙ u)ᗮ = m + 1 + 2 :=
+    Submodule.finrank_orthogonal_span_singleton hu0
+  obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphereEquator hv0 (k := m + 1) hV p₀
+  have hc := GenLoop.isIso_hurewicz_of_forall_ne R hcs hci
+  exact ⟨asIso (GenLoop.hurewicz R c ≫ F.map (TopCat.ofHom (tangentCircleDoubleLoop hu hv p₀)) ≫
+    F.map (TopCat.isoOfHomeo (X := TopCat.of _) (Y := TopCat.of _) Φ).hom)⟩
+
+end BasedMap
 
 end TauCeti

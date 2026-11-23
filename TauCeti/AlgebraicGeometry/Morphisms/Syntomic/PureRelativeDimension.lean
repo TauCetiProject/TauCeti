@@ -79,10 +79,11 @@ private lemma pureRelativeDimension_of_field {k : Type u} [Field k] {X : Scheme.
   have := SyntomicOfRelativeDimension.locallyOfFinitePresentation n f
   choose W hxW _ hW using
     SyntomicOfRelativeDimension.exists_isStandardSyntomicOfRelativeDimension_appLE_top n f
-  have hcov : IsOpenCover fun x ↦ (W x).1 :=
+  have hcov : IsOpenCover fun x ↦ (W x).val :=
     eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxW x⟩
   rw [pureRelativeDimension_iff_of_openCover f (X.openCoverOfIsOpenCover _ hcov)]
-  exact fun x ↦ pureRelativeDimension_of_isStandardSyntomicOfRelativeDimension f (W x).2 (hW x)
+  exact fun x ↦ pureRelativeDimension_of_isStandardSyntomicOfRelativeDimension f (W x).property
+      (hW x)
 
 /-- A morphism syntomic of relative dimension `n` has pure relative dimension `n`: every
 irreducible component of every nonempty fibre has dimension `n`. -/

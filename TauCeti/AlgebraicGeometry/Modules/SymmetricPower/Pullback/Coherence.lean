@@ -18,9 +18,9 @@ finiteness hypotheses.
 
 The pushforward equations are checked on sheafified sectionwise symmetric tensors; the pullback
 equations then follow from Mathlib's conjugacy of the canonical pullback and pushforward
-comparisons by `CategoryTheory.Adjunction.app_comp_map_hom_app_of_mateEquiv` and
-`CategoryTheory.Adjunction.app_comp_map_inv_app_of_mateEquiv`, exactly as for exterior powers in
-`TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Coherence`.
+comparisons by `CategoryTheory.Adjunction.app_comp_map_app_eq_app_of_mateEquiv` and
+`CategoryTheory.Adjunction.app_comp_map_app_eq_app_comp_map_app_comp_app_of_mateEquiv`, exactly
+as for exterior powers in `TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Coherence`.
 
 ## Main results
 
@@ -69,6 +69,8 @@ theorem pushforwardSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
   -- wrappers.
   change ((SheafOfModules.pushforwardSymmetricPowerComparison (S := X.sheaf) (R := X.sheaf)
       (𝟙 X : X ⟶ X).toRingCatSheafHom n).app M).val.app U _ = _
+  -- The evaluation lemmas are stated with the sheaf of rings unfolded.
+  dsimp only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
   rw [_root_.SheafOfModules.symmetricPower_map_val_app_unit (R := X.sheaf) n
     ((Scheme.Modules.pushforwardId X).hom.app M) U x]
   -- `erw`: the evaluation lemma is stated for `SheafOfModules.pushforward`, which
@@ -81,11 +83,11 @@ theorem pushforwardSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
   -- Both maps are the identity on scalars and on sections.
   refine (TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x).trans ?_
   refine (DFunLike.congr_fun (_root_.SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl)
-    (fun _ ↦ rfl)) x.1).trans ?_
+    (fun _ ↦ rfl)) x.val).trans ?_
   exact ((ModuleCat.symmetricPower.coe_map_apply_eq_mapₛₗ
     (((Scheme.Modules.pushforwardId X).hom.app M).val.app' U) n x).trans
       (DFunLike.congr_fun (_root_.SymmetricAlgebra.mapₛₗ_eq_id (fun _ ↦ rfl) (fun _ ↦ rfl))
-        x.1)).symm
+        x.val)).symm
 
 /-- The symmetric-power comparison for composite pushforward is the composite of the two
 successive comparisons, through the canonical pushforward composition isomorphism. -/
@@ -169,7 +171,7 @@ theorem pullbackSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
   have hcq : mateEquiv adj adj c = q :=
     Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison (𝟙 X) n
   -- The typed endofunctor `W` avoids repeatedly reconstructing the scheme's sheaf category.
-  exact adj.app_comp_map_hom_app_of_mateEquiv (Scheme.Modules.pullbackId X)
+  exact adj.app_comp_map_app_eq_app_of_mateEquiv (Scheme.Modules.pullbackId X).hom
     (Scheme.Modules.pushforwardId X) (Scheme.Modules.conjugateEquiv_pullbackId_hom X) c q hcq
     (pushforwardSymmetricPowerComparison_id n) M
 
@@ -212,8 +214,9 @@ theorem pullbackSymmetricPowerComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
     Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison f n
   have h₃ : mateEquiv C C c₃ = q₃ :=
     Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison (f ≫ g) n
-  exact A.app_comp_map_inv_app_of_mateEquiv B C (Scheme.Modules.pullbackComp f g)
-    (Scheme.Modules.pushforwardComp f g) (Scheme.Modules.conjugateEquiv_pullbackComp_inv f g)
+  exact A.app_comp_map_app_eq_app_comp_map_app_comp_app_of_mateEquiv B C
+    (Scheme.Modules.pullbackComp f g).inv (Scheme.Modules.pushforwardComp f g).hom
+    (Scheme.Modules.conjugateEquiv_pullbackComp_inv f g)
     c₁ c₂ c₃ q₁ q₂ q₃ h₁ h₂ h₃ (pushforwardSymmetricPowerComparison_comp f g n) M
 
 end

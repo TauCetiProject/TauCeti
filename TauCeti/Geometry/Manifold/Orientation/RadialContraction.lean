@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
-public import TauCeti.Analysis.InnerProductSpace.Euclidean.RadialContraction
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Radial.Contraction
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
