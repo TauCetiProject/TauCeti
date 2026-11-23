@@ -215,7 +215,7 @@ theorem isGeodesicCurveOnFrom_iff_eqOn_add_smul {γ : ℝ → F} {s : Set ℝ}
       refine HasDerivWithinAt.congr_of_mem ?_ h h0
       simpa using (((hasDerivAt_id (0 : ℝ)).smul_const w).const_add q).hasDerivWithinAt
     have hchart := derivWithin_extChartAt_comp_curve (I := 𝓘(ℝ, F))
-      hline.differentiableWithinAt.mdifferentiableWithinAt (hs 0 h0)
+      hline.differentiableWithinAt.mdifferentiableWithinAt
     rw [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_comp,
       hline.derivWithin (hs 0 h0)] at hchart
     exact hchart.symm

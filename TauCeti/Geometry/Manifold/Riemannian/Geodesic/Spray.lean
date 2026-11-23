@@ -191,7 +191,7 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
   have hγd : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s := hγ.mdifferentiableOn (by norm_num)
   rw [geodesicSpray_apply, curveVelocityLiftWithin_snd, curveVelocityLiftWithin_proj,
     accelerationWithin_eq_zero_iff (leviCivitaConnection I M) γ hγd ht,
-    derivWithin_extChartAt_comp_curve (hγd t ht) (hs t ht)]
+    derivWithin_extChartAt_comp_curve (hγd t ht)]
   -- the fibre reading of the velocity lift is the derivative of the chart reading of the curve
   have hsec : (fun r ↦ (trivializationAt E (TangentSpace I) (γ t)
       (curveVelocityLiftWithin I γ s r)).2) =ᶠ[𝓝[s] t]

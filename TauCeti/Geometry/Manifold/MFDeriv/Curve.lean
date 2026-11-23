@@ -360,12 +360,17 @@ theorem curveVelocity_chartInverse_eq
   exact hvel.unique (hγ.congr_of_eventuallyEq heq)
 
 /-- The derivative within `s` of a differentiable curve read in the chart centred at the current
-point is its velocity within `s`. -/
-theorem derivWithin_extChartAt_comp_curve (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
-    (hs : UniqueDiffWithinAt 𝕜 s t) :
-    derivWithin (extChartAt I (γ t) ∘ γ) s t = curveVelocityWithin I γ s t :=
-  (hasDerivWithinAt_extChartAt_comp_curve
-    (hasMFDerivWithinAt_curveVelocityWithin hγ)).derivWithin hs
+point is its velocity within `s`.  Where the derivative within `s` is not unique, both sides are
+Mathlib's junk value `0`. -/
+theorem derivWithin_extChartAt_comp_curve (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t) :
+    derivWithin (extChartAt I (γ t) ∘ γ) s t = curveVelocityWithin I γ s t := by
+  by_cases hs : UniqueDiffWithinAt 𝕜 s t
+  · exact (hasDerivWithinAt_extChartAt_comp_curve
+      (hasMFDerivWithinAt_curveVelocityWithin hγ)).derivWithin hs
+  · rw [derivWithin_zero_of_not_uniqueDiffWithinAt hs,
+      curveVelocityWithin_eq_zero_of_not_uniqueDiffWithinAt hs]
+    -- The zero of `E` and the zero of `TangentSpace I (γ t)` agree by definition.
+    rfl
 
 /-- For a `C²` manifold-valued curve, the second within-derivative of its reading in the chart at
 `γ t` is a genuine derivative of the first within-derivative.  This is the regularity needed to
