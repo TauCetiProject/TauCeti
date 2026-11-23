@@ -66,9 +66,10 @@ Mathlib's Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)` in the frequency `ζ =
 (`TauCeti.Symbol.quantizeSchwartzValue_besselPotential`), which as a tempered distribution is
 Mathlib's Bessel potential `TemperedDistribution.besselPotential`
 (`TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`). -/
-def besselPotential (s : ℝ) : Symbol n V V s :=
+@[expose] def besselPotential (s : ℝ) : Symbol n V V s :=
   ofFrequency (fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V)
-    ((Complex.ofRealCLM.contDiff.comp
+    -- Both proofs are tactic blocks, so the exposed body refers to no privately imported lemma.
+    (by exact (Complex.ofRealCLM.contDiff.comp
       (Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1).smul contDiff_const)
     fun k ↦ by
       simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using

@@ -57,20 +57,22 @@ Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)`, the Schwartz-space form of
 * `TauCeti.quantizeFrequencyCLM_besselWeight`,
   `TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`: the Bessel weight
   quantizes to Mathlib's Bessel multiplier and Bessel potential.
-* `TauCeti.Symbol.quantizeSchwartzValue_ofFrequency`: the frequency-only symbol
+* `TauCeti.Symbol.quantizeSchwartzValue_ofFrequency`,
+  `TauCeti.Symbol.quantizeUniformCLM_ofFrequency`: the frequency-only symbol
   `TauCeti.Symbol.ofFrequency` quantizes to `b(D)`.
 * `TauCeti.Symbol.quantizeSchwartzValue_ofFrequency_sharp`,
   `TauCeti.Symbol.quantizeSchwartzValue_besselPotential_sharp`: `c(D) ∘ Op(a) = Op(c # a)` and
   `J^s ∘ Op(a) = Op(⟨ξ / 2π⟩ ^ s # a)` for a symbol `a` with compact spatial support.
 * `TauCeti.Symbol.quantizeSchwartzValue_besselPotential` and
   `TauCeti.Symbol.quantizeSchwartzValue_ofInner`: the quantizations of the example symbols.
-* `TauCeti.Symbol.quantizeUniformCLM_comp_besselMultiplier`: for a uniform symbol `a`,
-  `Op(a) ∘ J^t` is the quantization of `a ⟨ξ / 2π⟩ ^ t`.
 * `TauCeti.Symbol.quantizeUniformCLM_comp_quantizeFrequencyCLM`,
-  `TauCeti.Symbol.quantizeFrequencyCLM_comp_quantizeUniformCLM`,
-  `TauCeti.Symbol.besselMultiplier_comp_quantizeUniformCLM`: the operator forms
-  `Op(a) ∘ b(D) = Op(a b)`, `b(D) ∘ Op(a) = Op(b # a)` and `J^t ∘ Op(a) = Op(⟨ξ / 2π⟩ ^ t # a)` as
-  continuous linear maps of Schwartz spaces.
+  `TauCeti.Symbol.quantizeFrequencyCLM_comp_quantizeUniformCLM`: for a smooth frequency
+  coefficient `b(ξ)` with the symbol estimates `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m' - k)` of some order
+  `m'`, the operator forms `Op(a) ∘ b(D) = Op(a b)` and `b(D) ∘ Op(a) = Op(b # a)` as continuous
+  linear maps of Schwartz spaces.
+* `TauCeti.Symbol.quantizeUniformCLM_comp_besselMultiplier`,
+  `TauCeti.Symbol.besselMultiplier_comp_quantizeUniformCLM`: their Bessel cases
+  `Op(a) ∘ J^t = Op(a ⟨ξ / 2π⟩ ^ t)` and `J^t ∘ Op(a) = Op(⟨ξ / 2π⟩ ^ t # a)`.
 * `TauCeti.Symbol.quantizeUniformCLM_comp_besselPotential_two`: `Op(a) ∘ J²` is `J² ∘ Op(a)` plus
   `(2π)⁻²` times the quantization of the Laplacian commutator symbol.
 
@@ -226,6 +228,14 @@ theorem quantizeSchwartzValue_ofFrequency [CompleteSpace W] (u : 𝓢(Coordinate
   exact quantizeSchwartzValue_comp_snd
     (Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hb hbound) u x
 
+/-- The quantization of a frequency-only symbol is the Fourier multiplier `b(D)`, as a continuous
+linear map of Schwartz spaces. -/
+theorem quantizeUniformCLM_ofFrequency [CompleteSpace W] :
+    quantizeUniformCLM (ofFrequency b hb hbound) (isUniform_ofFrequency hb hbound) =
+      quantizeFrequencyCLM b := by
+  ext u x
+  rw [quantizeUniformCLM_apply, quantizeSchwartzValue_ofFrequency]
+
 /-- **Composition with a frequency multiplier on the left.** For a symbol `a` with compact spatial
 support, `c(D) ∘ Op(a) = Op(c # a)`: the Fourier multiplier `c(D)` applied to the test function
 `Op(a) u` is the quantization of the composition symbol of the frequency-only symbol `c` with `a`.
@@ -287,28 +297,10 @@ section Uniform
 variable [CompleteSpace V] [CompleteSpace W]
 
 omit [CompleteSpace W] in
-/-- **Composition with a Bessel multiplier on the right is exact.** `Op(a) ∘ J^t` is the
-quantization of `a ⟨ξ / 2π⟩ ^ t`. -/
-theorem quantizeUniformCLM_comp_besselMultiplier (a : Symbol n V W m) (ha : a.IsUniform)
-    (t : ℝ) :
-    quantizeUniformCLM a ha ∘L SchwartzMap.fourierMultiplierCLM V
-        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) =
-      quantizeUniformCLM (a.comp (besselPotential t)) (ha.comp (isUniform_besselPotential t)) := by
-  -- The temperate growth of the Bessel weight is given as a term: `fun_prop` times out on it
-  -- for `CoordinateSpace n` in this context.
-  have hg : (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)).HasTemperateGrowth :=
-    Complex.ofRealCLM.hasTemperateGrowth.comp
-      (Function.hasTemperateGrowth_one_add_norm_sq_rpow _ (t / 2))
-  ext u x
-  rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply,
-    quantizeSchwartzValue_fourierMultiplierCLM hg]
-  congr 1
-  ext1 p
-  simp [coefficient_comp, ContinuousLinearMap.comp_smul]
-
-omit [CompleteSpace W] in
-/-- **Composition with a frequency multiplier on the right is exact.** For a uniform symbol `a`,
-`Op(a) ∘ b(D) = Op(a b)` with the pointwise product of `a` and the frequency-only symbol `b`. -/
+/-- **Composition with a frequency multiplier on the right is exact.** For a uniform symbol `a` and
+a smooth frequency coefficient `b(ξ)` with the symbol estimates `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m' - k)`
+of some order `m'`, `Op(a) ∘ b(D) = Op(a b)` with the pointwise product of `a` and the
+frequency-only symbol `b`. -/
 theorem quantizeUniformCLM_comp_quantizeFrequencyCLM {U : Type*} [NormedAddCommGroup U]
     [NormedSpace ℂ U] {m' : ℝ} {b : CoordinateSpace n → U →L[ℂ] V} (hb : ContDiff ℝ ∞ b)
     (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' - k) / 2))
@@ -324,10 +316,22 @@ theorem quantizeUniformCLM_comp_quantizeFrequencyCLM {U : Type*} [NormedAddCommG
   ext1 p
   rw [coefficient_comp, coefficient_ofFrequency]
 
+omit [CompleteSpace W] in
+/-- **Composition with a Bessel multiplier on the right is exact.** `Op(a) ∘ J^t` is the
+quantization of `a ⟨ξ / 2π⟩ ^ t`. -/
+theorem quantizeUniformCLM_comp_besselMultiplier (a : Symbol n V W m) (ha : a.IsUniform)
+    (t : ℝ) :
+    quantizeUniformCLM a ha ∘L SchwartzMap.fourierMultiplierCLM V
+        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) =
+      quantizeUniformCLM (a.comp (besselPotential t)) (ha.comp (isUniform_besselPotential t)) := by
+  rw [← quantizeFrequencyCLM_besselWeight (E := CoordinateSpace n) (V := V) t]
+  exact quantizeUniformCLM_comp_quantizeFrequencyCLM (U := V) _ _ a ha
+
 omit [CompleteSpace V] in
-/-- **Composition with a frequency multiplier on the left.** For a symbol `a` with compact spatial
-support, `b(D) ∘ Op(a) = Op(b # a)`, the quantization of a uniform symbol which need not have
-compact spatial support. -/
+/-- **Composition with a frequency multiplier on the left.** For a smooth frequency coefficient
+`b(ξ)` with the symbol estimates `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m' - k)` of some order `m'` and a symbol
+`a` with compact spatial support, `b(D) ∘ Op(a) = Op(b # a)`, the quantization of a uniform symbol
+which need not have compact spatial support. -/
 theorem quantizeFrequencyCLM_comp_quantizeUniformCLM {U : Type*} [NormedAddCommGroup U]
     [NormedSpace ℂ U] [CompleteSpace U] {m' : ℝ} {b : CoordinateSpace n → W →L[ℂ] U}
     (hb : ContDiff ℝ ∞ b)
@@ -336,10 +340,8 @@ theorem quantizeFrequencyCLM_comp_quantizeUniformCLM {U : Type*} [NormedAddCommG
     quantizeFrequencyCLM b ∘L quantizeUniformCLM a ha.isUniform =
       quantizeUniformCLM ((ofFrequency b hb hbound).sharp a ha)
         ((isUniform_ofFrequency hb hbound).sharp ha) := by
-  ext u x
   rw [quantizeUniformCLM_sharp (isUniform_ofFrequency hb hbound) ha,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    quantizeUniformCLM_apply (ofFrequency b hb hbound), quantizeSchwartzValue_ofFrequency]
+    quantizeUniformCLM_ofFrequency]
 
 omit [CompleteSpace V] in
 /-- **Composition with a Bessel multiplier on the left.** For a symbol `a` with compact spatial
@@ -352,10 +354,8 @@ theorem besselMultiplier_comp_quantizeUniformCLM {a : Symbol n V W m}
           quantizeUniformCLM a ha.isUniform =
       quantizeUniformCLM ((besselPotential t).sharp a ha)
         ((isUniform_besselPotential t).sharp ha) := by
-  ext u x
-  rw [quantizeUniformCLM_sharp (isUniform_besselPotential t) ha,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    quantizeUniformCLM_apply (besselPotential t), quantizeSchwartzValue_besselPotential]
+  rw [← quantizeFrequencyCLM_besselWeight (E := CoordinateSpace n) (V := W) t]
+  exact quantizeFrequencyCLM_comp_quantizeUniformCLM (U := W) _ _ ha
 
 /-- The commutator with `J²` in the form `Op(a) ∘ J² = J² ∘ Op(a) + (2π)⁻² Op(c)`, where
 `c = (Δ_x + 2i ⟪ξ, ∇_x⟫) a` and `Op(a) ∘ J²` is the quantization of `a ⟨ξ / 2π⟩²`. -/
