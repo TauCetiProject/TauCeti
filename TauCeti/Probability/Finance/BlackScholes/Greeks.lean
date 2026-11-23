@@ -56,6 +56,9 @@ the formulas generally jump at `t = T`, where the equation can fail, so
 * `TauCeti.BlackScholes.deriv_callPrice_spot_of_mul_sqrt_eq_zero`,
   `TauCeti.BlackScholes.deriv_deriv_callPrice_spot_of_mul_sqrt_eq_zero` — without a diffusion
   term (`σ √τ = 0`, for instance at `σ = 0`) the call formula has delta `1 / 2` and gamma `0`.
+* `TauCeti.BlackScholes.deriv_callPrice_spot_strike_zero`,
+  `TauCeti.BlackScholes.deriv_deriv_callPrice_spot_strike_zero` — at `K = 0` the call formula is
+  linear in the spot, with constant delta and gamma `0`.
 * The corresponding `putPrice` statements.
 * `TauCeti.BlackScholes.abs_callPrice_sub_callPrice_le` — the call is `1`-Lipschitz in the spot
   on `s > 0` (for `τ > 0`, `σ ≠ 0`, `K > 0`).
@@ -307,7 +310,7 @@ theorem deriv_putPrice_volatility_pos (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0)
     ← (hasDerivAt_callPrice_volatility hs hK hσ).deriv]
   exact deriv_callPrice_volatility_pos hs hK hσ hτ
 
-/-! ### Delta and gamma of the formulas without a diffusion term -/
+/-! ### Delta and gamma at zero diffusion or zero strike -/
 
 /-- Without a diffusion term (`σ √τ = 0`, for instance at `σ = 0`), the closed-form call formula
 is the affine function `(s - K e^{-rτ}) / 2` of the spot (`callPrice_of_mul_sqrt_eq_zero`, through
@@ -338,6 +341,36 @@ its gamma vanishes. -/
 theorem deriv_deriv_putPrice_spot_of_mul_sqrt_eq_zero (h : σ * √τ = 0) :
     deriv (deriv fun x => putPrice x r σ K τ) s = 0 := by
   rw [deriv_putPrice_spot_of_mul_sqrt_eq_zero h, deriv_const]
+
+/-- At `K = 0` the closed-form call formula is linear in the spot (`callPrice_strike_zero`,
+through Lean's convention `log (s / 0) = 0`), so its delta is the spot-independent constant
+`Φ(((r + σ² / 2) τ) / (σ √τ))`. -/
+theorem deriv_callPrice_spot_strike_zero (r σ τ : ℝ) :
+    deriv (fun x => callPrice x r σ 0 τ) =
+      fun _ => cdf (gaussianReal 0 1) ((r + σ ^ 2 / 2) * τ / (σ * √τ)) := by
+  ext x
+  simp only [callPrice_strike_zero]
+  exact (hasDerivAt_mul_const _).deriv
+
+/-- At `K = 0` the closed-form call formula is linear in the spot, so its gamma vanishes. -/
+theorem deriv_deriv_callPrice_spot_strike_zero (s r σ τ : ℝ) :
+    deriv (deriv fun x => callPrice x r σ 0 τ) s = 0 := by
+  rw [deriv_callPrice_spot_strike_zero, deriv_const]
+
+/-- At `K = 0` the closed-form put formula is linear in the spot (`putPrice_strike_zero`, through
+Lean's convention `log (s / 0) = 0`), so its delta is the spot-independent constant
+`-Φ(-((r + σ² / 2) τ) / (σ √τ))`. -/
+theorem deriv_putPrice_spot_strike_zero (r σ τ : ℝ) :
+    deriv (fun x => putPrice x r σ 0 τ) =
+      fun _ => -cdf (gaussianReal 0 1) (-((r + σ ^ 2 / 2) * τ / (σ * √τ))) := by
+  ext x
+  simp only [putPrice_strike_zero]
+  exact (hasDerivAt_mul_const _).neg.deriv
+
+/-- At `K = 0` the closed-form put formula is linear in the spot, so its gamma vanishes. -/
+theorem deriv_deriv_putPrice_spot_strike_zero (s r σ τ : ℝ) :
+    deriv (deriv fun x => putPrice x r σ 0 τ) s = 0 := by
+  rw [deriv_putPrice_spot_strike_zero, deriv_const]
 
 /-! ### The Black–Scholes equation -/
 

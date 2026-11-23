@@ -372,9 +372,7 @@ theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hK : 0 �
   · exact tendsto_const_nhds.congr fun u => (deriv_deriv_callPrice_spot_of_mul_sqrt_eq_zero
       (zero_mul _)).symm
   rcases hK.eq_or_lt with rfl | hK
-  · -- At `K = 0` the call price `x Φ(d₊)` is linear in the spot `x`.
-    refine tendsto_const_nhds.congr fun u => ?_
-    simp [callPrice_def, dPlus_def]
+  · exact tendsto_const_nhds.congr fun u => (deriv_deriv_callPrice_spot_strike_zero s r σ u).symm
   -- Writing `A(τ) = log (s / K) + (r + σ² / 2) τ = σ √τ d₊`, the gamma `φ(d₊) / (s σ √τ)` is
   -- `d₊ φ(d₊) / (s A(τ))`, where `d₊ φ(d₊) → 0` since `|d₊| → ∞` and `A(τ) → log (s / K) ≠ 0`.
   have hlog : log (s / K) ≠ 0 := by
@@ -461,9 +459,7 @@ theorem tendsto_deriv_deriv_putPrice_spot_maturity_zero (hs : 0 < s) (hK : 0 ≤
   · exact tendsto_const_nhds.congr fun u => (deriv_deriv_putPrice_spot_of_mul_sqrt_eq_zero
       (zero_mul _)).symm
   rcases hK.eq_or_lt with rfl | hK
-  · -- At `K = 0` the put price `-x Φ(-d₊)` is linear in the spot `x`.
-    refine tendsto_const_nhds.congr fun u => ?_
-    simp [putPrice_def, dPlus_def]
+  · exact tendsto_const_nhds.congr fun u => (deriv_deriv_putPrice_spot_strike_zero s r σ u).symm
   exact (tendsto_deriv_deriv_callPrice_spot_maturity_zero hs hK.le hsK).congr'
     (deriv_deriv_putPrice_spot_eventuallyEq hs hσ hK).symm
 

@@ -58,6 +58,9 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
 * `TauCeti.BlackScholes.callPrice_volatility_zero`,
   `TauCeti.BlackScholes.putPrice_volatility_zero` — at `σ = 0` the closed-form formulas evaluate,
   through Lean's convention `x / 0 = 0`, to `(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2`.
+* `TauCeti.BlackScholes.callPrice_strike_zero`,
+  `TauCeti.BlackScholes.putPrice_strike_zero` — at `K = 0` the closed-form formulas are linear in
+  the spot through Lean's convention `log (s / 0) = 0`.
 * `TauCeti.BlackScholes.riskNeutralPrice_call` — the risk-neutral price of a call is `callPrice`.
 * `TauCeti.BlackScholes.riskNeutralPrice_put` — the risk-neutral price of a put is `putPrice`.
 * `TauCeti.BlackScholes.callPrice_nonneg`, `TauCeti.BlackScholes.callPrice_le`,
@@ -324,6 +327,22 @@ a put on a stock without volatility (which is the discounted intrinsic value). -
 @[simp] theorem putPrice_volatility_zero (s r K τ : ℝ) :
     putPrice s r 0 K τ = (K * exp (-r * τ) - s) / 2 :=
   putPrice_of_mul_sqrt_eq_zero (zero_mul _)
+
+/-- At `K = 0` the closed-form call formula evaluates to `s Φ(((r + σ² / 2) τ) / (σ √τ))`, linear
+in the spot: through Lean's convention `log (s / 0) = log 0 = 0`, `d₊` does not depend on the spot
+and the strike term vanishes. This is a value of the formula, not the price of a zero-strike call
+(which is `s` for `s ≥ 0`). -/
+@[simp] theorem callPrice_strike_zero (s r σ τ : ℝ) :
+    callPrice s r σ 0 τ = s * cdf (gaussianReal 0 1) ((r + σ ^ 2 / 2) * τ / (σ * √τ)) := by
+  rw [callPrice_def, dPlus_def, div_zero, log_zero, zero_add, zero_mul, zero_mul, sub_zero]
+
+/-- At `K = 0` the closed-form put formula evaluates to `-s Φ(-((r + σ² / 2) τ) / (σ √τ))`, linear
+in the spot: through Lean's convention `log (s / 0) = log 0 = 0`, `d₊` does not depend on the spot
+and the strike term vanishes. This is a value of the formula, not the price of a zero-strike put
+(which is `0` for `s ≥ 0`). -/
+@[simp] theorem putPrice_strike_zero (s r σ τ : ℝ) :
+    putPrice s r σ 0 τ = -(s * cdf (gaussianReal 0 1) (-((r + σ ^ 2 / 2) * τ / (σ * √τ)))) := by
+  rw [putPrice_def, dPlus_def, div_zero, log_zero, zero_add, zero_mul, zero_mul, zero_sub]
 
 /-! ### Risk-neutral prices of calls and puts -/
 
