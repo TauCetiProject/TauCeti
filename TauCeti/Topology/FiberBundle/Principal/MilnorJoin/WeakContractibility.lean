@@ -10,6 +10,7 @@ public import TauCeti.Topology.Homotopy.Extension.Ball
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.FundamentalGroupAction
 public import TauCeti.Topology.Homotopy.Path
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Topology.Algebra.InfiniteSum.Order
 import Mathlib.Topology.MetricSpace.ProperSpace
 
@@ -223,16 +224,9 @@ private theorem sum_tailWeight {N : ℕ} {f : C(X, MilnorTotalSpace G)}
     exact fun hi ↦ Finset.mem_union_right _ (Finset.mem_range.mpr hi)
   have hsplit := Finset.sum_filter_add_sum_filter_not S (· < N) (fun i ↦ weight i (f z.2))
   rw [hfilter, ← partialWeightSum_apply, hsum_one] at hsplit
-  unfold tailWeight; simp_rw [div_eq_mul_inv, ← Finset.sum_mul, ← div_eq_mul_inv]
-  suffices ∑ i ∈ S, (if i < N then weight i (f z.2) else (1 - (z.1 : ℝ)) * weight i (f z.2)) =
-      tailDenom N f z by rw [this, div_self (tailDenom_pos hf z).ne']
-  have htail_sum : ∑ i ∈ S.filter (fun i ↦ ¬i < N), weight i (f z.2) =
-      1 - partialWeightSum G N (f z.2) := eq_sub_of_add_eq' hsplit
-  rw [← Finset.sum_filter_add_sum_filter_not S (· < N),
-    Finset.sum_congr rfl fun i hi ↦ ite_eq_left (Finset.mem_filter.mp hi).2, hfilter,
-    ← partialWeightSum_apply,
-    Finset.sum_congr rfl fun i hi ↦ ite_eq_right (Finset.mem_filter.mp hi).2,
-    ← Finset.mul_sum, htail_sum, tailDenom]
+  unfold tailWeight
+  rw [← Finset.sum_div, Finset.sum_ite, hfilter, ← partialWeightSum_apply, ← Finset.mul_sum,
+    eq_sub_of_add_eq' hsplit, ← tailDenom, div_self (tailDenom_pos hf z).ne']
 
 private def tailTruncationPt (N : ℕ) (f : C(X, MilnorTotalSpace G))
     (hf : ∀ x, 0 < partialWeightSum G N (f x)) (z : I × X) : MilnorTotalSpace G :=

@@ -26,8 +26,9 @@ with the weak simplicial topology and left group action on `universalGSpace G`.
 * `TauCeti.MilnorTotalSpace`, `weight`, `coordSet`, `label`, `map`, `continuous_iff`, `instT2Space`:
   strong-topology join, coordinates `(t_i, g_i)`, universal continuity criterion, and Hausdorffness.
 * `TauCeti.MilnorTotalSpace.instContinuousSMul`, `invEquiv`, `TauCeti.weakToMilnorTotalSpace`,
-  `MonoidHom.milnorTotalSpaceMap`: joint continuity of the right `Gᵐᵒᵖ`-action from `ContinuousMul`,
-  label-inversion dictionary (`g⁻¹ • x ↦ (invEquiv x) · g`), and functoriality.
+  `MilnorTotalSpace.map_basepoint`, `MilnorTotalSpace.map_op_smul`: joint continuity of the right
+  `Gᵐᵒᵖ`-action from `ContinuousMul`, label-inversion dictionary (`g⁻¹ • x ↦ (invEquiv x) · g`),
+  and homomorphism compatibility.
 
 ## References
 
@@ -530,6 +531,25 @@ end Group
 
 end RightAction
 
+section Homomorphism
+
+variable {G : Type u} {H : Type v} [Monoid G] [Monoid H] [TopologicalSpace G] [TopologicalSpace H]
+
+/-- A continuous monoid homomorphism preserves the base point of `MilnorTotalSpace`. -/
+@[simp] theorem map_basepoint (φ : G →* H) (hφ : Continuous φ) :
+    map ⟨φ, hφ⟩ (basepoint G) = basepoint H := by
+  simp [basepoint]
+
+/-- A continuous monoid homomorphism is equivariant with respect to the right `G`-action on
+`MilnorTotalSpace`. -/
+@[simp] theorem map_op_smul (φ : G →* H) (hφ : Continuous φ) (g : G) (p : MilnorTotalSpace G) :
+    map ⟨φ, hφ⟩ (op g • p) = op (φ g) • map ⟨φ, hφ⟩ p := by
+  apply ext_val
+  simp only [val_map, val_op_smul, ← Finsupp.mapDomain_comp]
+  congr 1; funext ⟨_, _⟩; simp
+
+end Homomorphism
+
 end MilnorTotalSpace
 
 /-- Continuous equivariant comparison from `universalGSpace G` to `MilnorTotalSpace G`. -/
@@ -566,44 +586,3 @@ theorem continuousAt_milnorTotalSpace_label_comp {G : Type u} [TopologicalSpace 
     ((isOpen_lt continuous_const ((MilnorTotalSpace.continuous_iff.mp hf).1 i)).mem_nhds hz)
 
 end Continuous
-
-namespace MonoidHom
-
-open TauCeti
-
-variable {G : Type u} {H : Type v} [Monoid G] [Monoid H] [TopologicalSpace G] [TopologicalSpace H]
-
-/-- A continuous monoid homomorphism induces a continuous equivariant map on Milnor total spaces. -/
-def milnorTotalSpaceMap (φ : G →* H) (hφ : Continuous φ) :
-    C(MilnorTotalSpace G, MilnorTotalSpace H) :=
-  MilnorTotalSpace.map ⟨φ, hφ⟩
-
-@[simp] theorem weight_milnorTotalSpaceMap (φ : G →* H) (hφ : Continuous φ) (i : ℕ)
-    (p : MilnorTotalSpace G) :
-    MilnorTotalSpace.weight i (φ.milnorTotalSpaceMap hφ p) = MilnorTotalSpace.weight i p :=
-  MilnorTotalSpace.weight_map ⟨φ, hφ⟩ i p
-@[simp] theorem label_milnorTotalSpaceMap (φ : G →* H) (hφ : Continuous φ) {i : ℕ}
-    {p : MilnorTotalSpace G} (hp : p ∈ MilnorTotalSpace.coordSet G i) :
-    MilnorTotalSpace.label i (φ.milnorTotalSpaceMap hφ p) = φ (MilnorTotalSpace.label i p) :=
-  MilnorTotalSpace.label_map ⟨φ, hφ⟩ hp
-@[simp] theorem milnorTotalSpaceMap_basepoint (φ : G →* H) (hφ : Continuous φ) :
-    φ.milnorTotalSpaceMap hφ (MilnorTotalSpace.basepoint G) = MilnorTotalSpace.basepoint H := by
-  simp [milnorTotalSpaceMap, MilnorTotalSpace.basepoint]
-@[simp] theorem milnorTotalSpaceMap_op_smul (φ : G →* H) (hφ : Continuous φ) (g : G)
-    (p : MilnorTotalSpace G) :
-    φ.milnorTotalSpaceMap hφ (MulOpposite.op g • p) =
-      MulOpposite.op (φ g) • φ.milnorTotalSpaceMap hφ p := by
-  apply MilnorTotalSpace.ext_val
-  simp only [milnorTotalSpaceMap, MilnorTotalSpace.val_map, MilnorTotalSpace.val_op_smul,
-    ← Finsupp.mapDomain_comp]
-  congr 1; funext ⟨_, _⟩; simp
-@[simp] theorem milnorTotalSpaceMap_id :
-    (MonoidHom.id G).milnorTotalSpaceMap continuous_id = ContinuousMap.id (MilnorTotalSpace G) :=
-  MilnorTotalSpace.map_id G
-@[simp] theorem milnorTotalSpaceMap_comp {K : Type w} [Monoid K] [TopologicalSpace K]
-    (ψ : H →* K) (hψ : Continuous ψ) (φ : G →* H) (hφ : Continuous φ) :
-    (ψ.comp φ).milnorTotalSpaceMap (hψ.comp hφ) =
-      (ψ.milnorTotalSpaceMap hψ).comp (φ.milnorTotalSpaceMap hφ) :=
-  MilnorTotalSpace.map_comp ⟨ψ, hψ⟩ ⟨φ, hφ⟩
-
-end MonoidHom
