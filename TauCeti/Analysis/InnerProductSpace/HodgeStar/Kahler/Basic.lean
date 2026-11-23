@@ -65,6 +65,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
   almost complex structure `J`.
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
+* `twoVectorContraction_kahlerForm`: the contraction by `ω` is `J`, `v ⌟ ω = J v`.
 * `sum_ιMulti_apply_eq_two_smul_kahlerForm`: `∑ᵢ bᵢ ∧ J bᵢ = 2 ω` in every orthonormal basis.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`, so `‖ω‖² = 2` in dimension four
   (`norm_kahlerForm_sq_eq_two`).
@@ -80,8 +81,6 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `toLinearMap_eq_twoVectorContraction`: a `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` is the
   contraction by `F`; it is orthogonal (`inner_apply_apply_of_inner_eq`) and `F` is its Kähler
   two-vector (`kahlerForm_eq_of_inner_eq`).
-* `twoVectorContraction_kahlerForm`: for an orthogonal `J`, `twoVectorContraction J.kahlerForm`
-  recovers `J.toLinearMap`.
 * `kahlerForm_eq_sum_of_adapted`: in any adapted orthonormal basis in dimension `2 * n`,
   `ω = ∑ j, b_{2j} ∧ b_{2j+1}`.
 * `repr_apply`: the coordinates of `J v` in a unitary frame.
@@ -201,6 +200,11 @@ theorem inner_kahlerForm_ιMulti (u w : V) :
   rw [inner_kahlerForm_ιMulti_eq_inv_two_mul_sub, inner_apply_left hJ w u,
     real_inner_comm w (J u)]
   ring
+
+/-- **The contraction by the Kähler two-vector is `J`**: `v ⌟ ω = J v`. -/
+@[simp]
+theorem twoVectorContraction_kahlerForm (v : V) : twoVectorContraction J.kahlerForm v = J v :=
+  ext_inner_right ℝ fun w ↦ by rw [inner_twoVectorContraction_apply, inner_kahlerForm_ιMulti hJ]
 
 /-- **The Kähler two-vector in any orthonormal basis**: `∑ᵢ bᵢ ∧ J bᵢ = 2 ω` for an orthogonal
 `J`, as in the definition of `ω` through the standard orthonormal basis. -/
@@ -361,15 +365,6 @@ theorem kahlerForm_eq_of_inner_eq : J.kahlerForm = F := by
     inner_twoVectorContraction_apply]
 
 end Contraction
-
-/-- For an orthogonal almost complex structure `J`, the skew-adjoint contraction of its Kähler
-two-vector is `J` itself. -/
-@[simp]
-theorem twoVectorContraction_kahlerForm {J : AlmostComplexStructure V}
-    (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) :
-    twoVectorContraction J.kahlerForm = J.toLinearMap :=
-  (toLinearMap_eq_twoVectorContraction fun u w ↦ by
-    rw [inner_kahlerForm_ιMulti hJ, hJ]).symm
 
 /-! ### Adapted orthonormal bases in arbitrary even dimension -/
 
