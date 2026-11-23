@@ -143,11 +143,8 @@ private theorem isInvertible_fderiv_inner_deriv_chordDir_comp_inr (hn : n ≠ 0)
     exact h2.ne
   -- A linear map `ℝ →L[ℝ] ℝ` is multiplication by its value `c` at `1`, inverted by `c⁻¹`.
   refine .of_inverse (g := c⁻¹ • ContinuousLinearMap.id ℝ ℝ)
-    (ContinuousLinearMap.ext_ring ?_) (ContinuousLinearMap.ext_ring ?_)
-  · rw [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul,
-      mul_one, ← mul_one c⁻¹, ← smul_eq_mul, map_smul, smul_eq_mul, inv_mul_cancel₀ hc]
-  · rw [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul,
-      inv_mul_cancel₀ hc, ContinuousLinearMap.id_apply]
+    (ContinuousLinearMap.ext_ring ?_) (ContinuousLinearMap.ext_ring ?_) <;>
+    simpa [c] using inv_mul_cancel₀ hc
 
 /-- The next collision parameter `t(s, v)` is jointly continuous at a state `(s, v)` of the strip
 `ℝ × (-1, 1)` when `χ` is `C¹` at `s`. For `c` in the window `(s, s + L)`, the sign of
