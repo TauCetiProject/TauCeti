@@ -6,17 +6,18 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.Dixon.Def
+public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Dixon.H1Diff
 import TauCeti.Analysis.Contour.Dixon.H2.Diff
 import TauCeti.Analysis.Contour.Winding.LocallyConstant
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
 # The Dixon function is entire
 
 Dixon's glued function `dixonFunction f U γ a b` — equal to `dixonH1` on `U` and `dixonH2` off `U`
 — is complex-differentiable on all of `ℂ` when `f` is holomorphic on the open set `U` and the
-curve `γ` lives in `U`, is null-homologous there, is closed, and is differentiable off a countable
-set with interval-integrable derivative. On `U`
+curve `γ` lives in `U`, is null-homologous there, is closed, and is absolutely continuous. On `U`
 it agrees with the holomorphic `dixonH1`; off `U` (hence off the curve) it agrees with the
 holomorphic `dixonH2`, and the two pieces match across `∂U` because the winding number vanishes
 there, so the `h₁`/`h₂` identity collapses.
@@ -53,7 +54,7 @@ namespace TauCeti.Contour
 
 section
 
-variable {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {P : Set ℝ} {w : ℂ}
+variable {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
 
 /-- **The Cauchy-type integrand is interval-integrable.** `f (γ ·) / (γ · - w) · deriv γ` is
 interval-integrable for `w` off the curve: a continuous factor (using `f` continuous on `U ⊇ γ`,
@@ -115,21 +116,19 @@ private theorem differentiable_dixonFunction_of_windingNumber_zero_near (hU : Is
     exact dixonFunction_eq_dixonH2_of_windingNumber_zero hγ_cont hderiv_int
       (cauchy_integrand_intervalIntegrable hf.continuousOn hγ_cont hγU hderiv_int hoff') hoff' hwz'
 
-/-- **The Dixon function is entire.** For `f` differentiable on the open set `U`, a curve `γ`
-that is continuous on `uIcc a b`, differentiable off a countable subset, with interval-integrable
-derivative, image in `U`, and null-homologous in `U`, the glued function `dixonFunction f U γ a b`
-is complex-differentiable on all of `ℂ`. Closedness of `γ` is not needed here: it follows from
-null-homology about any point outside `U`, and there is no such point when `U = ℂ`. This specialises
-`differentiable_dixonFunction_of_windingNumber_zero_near`, discharging its local winding hypothesis
-via `exists_ball_windingNumber_zero`. -/
+/-- **The Dixon function is entire.** For `f` differentiable on the open set `U` and an absolutely
+continuous curve `γ` with image in `U` that is null-homologous in `U`, the glued function
+`dixonFunction f U γ a b` is complex-differentiable on all of `ℂ`. Closedness of `γ` is not needed
+here: it follows from null-homology about any point outside `U`, and there is no such point when
+`U = ℂ`. This specialises `differentiable_dixonFunction_of_windingNumber_zero_near`, discharging
+its local winding hypothesis via `exists_ball_windingNumber_zero`. -/
 theorem differentiable_dixonFunction (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
-    (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
-    (hP : P.Countable) (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
     (h_null : IsNullHomologous γ a b U) :
     Differentiable ℂ (dixonFunction f U γ a b) :=
-  differentiable_dixonFunction_of_windingNumber_zero_near hU hf hγ_cont hγU hderiv_int
-    fun w hw ↦ exists_ball_windingNumber_zero hP hγ_cont hγ_diff hderiv_int
+  differentiable_dixonFunction_of_windingNumber_zero_near hU hf hγ.continuousOn hγU
+    hγ.intervalIntegrable_deriv_of_finiteDimensional
+    fun w hw ↦ exists_ball_windingNumber_zero hγ
       (fun t ht heq ↦ hw (heq ▸ hγU t ht)) ((isNullHomologous_iff.mp h_null) w hw)
 
 end

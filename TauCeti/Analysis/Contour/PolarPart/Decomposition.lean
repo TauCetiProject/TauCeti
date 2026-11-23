@@ -121,15 +121,15 @@ theorem sum_ite_coeff_eq_residue_mul (decomp : PolarPartDecomposition f S U) (s 
     rw [Finset.sum_congr rfl fun k _ => h_pick k, Finset.sum_ite_eq' Finset.univ,
       ite_eq_left (Finset.mem_univ _), decomp.residue_eq s, dite_eq_left h_pos]
 
-/-- **The analytic remainder integrates to zero** along any closed null-homologous
-piecewise-`C¹` curve in `U` — even one passing through the poles of `f`, since the remainder
+/-- **The analytic remainder integrates to zero** along any closed null-homologous absolutely
+continuous curve in `U` — even one passing through the poles of `f`, since the remainder
 extends differentiably to all of `U`. The homology Cauchy theorem applied to the remainder. -/
 theorem intervalIntegral_deriv_smul_analyticRemainder_eq_zero
     (decomp : PolarPartDecomposition f S U)
-    (hU : IsOpen U) {γ : ℝ → ℂ} {a b : ℝ} (hγ_pc1 : IsPiecewiseC1On γ a b)
+    (hU : IsOpen U) {γ : ℝ → ℂ} {a b : ℝ} (hγ_ac : AbsolutelyContinuousOnInterval γ a b)
     (hγ : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b) (hnull : IsNullHomologous γ a b U) :
     ∫ t in a..b, deriv γ t • decomp.analyticRemainder (γ t) = 0 :=
-  homologyCauchyTheorem hU γ a b hγ_pc1 hγ hclosed decomp.analyticRemainder_differentiableOn hnull
+  homologyCauchyTheorem hU γ a b hγ_ac hγ hclosed decomp.analyticRemainder_differentiableOn hnull
 
 end PolarPartDecomposition
 

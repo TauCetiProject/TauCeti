@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Analysis.Contour.PolarPart.Decomposition
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.PerWindow.HigherOrder
 
 /-!
@@ -197,7 +199,8 @@ theorem intervalIntegral_deriv_smul_eq_sum_windingNumber_mul_residue
     ∫ t in a..b, deriv γ t • f (γ t)
       = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber γ a b s * residue f s := by
   rw [decomp.intervalIntegral_deriv_smul_eq_analyticRemainder_add_sum hγ hγU hclosed hoff,
-    decomp.intervalIntegral_deriv_smul_analyticRemainder_eq_zero hU hγ hγU hclosed hnull, zero_add]
+    decomp.intervalIntegral_deriv_smul_analyticRemainder_eq_zero hU
+      hγ.absolutelyContinuousOnInterval hγU hclosed hnull, zero_add]
 
 end PolarPartDecomposition
 

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Contour.Argument.CyclePV
 public import TauCeti.Analysis.Contour.Cauchy.HomologyFormula
 public import TauCeti.Analysis.Contour.Cycle.HungerbuhlerWasem
 public import TauCeti.Analysis.Contour.Cycle.Residue
+public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 public import TauCeti.Analysis.Contour.Winding.StarConvex
 
 /-!
@@ -25,7 +26,8 @@ neighborhood of a rectangle or triangle, and a contour drawn inside it.
 star-shaped about some point is null-homologous there. This file records the resulting
 hypothesis-free statements:
 
-* Cauchy's theorem `∮_γ f = 0`, for a curve and for a cycle, and its `Metric.ball` case;
+* Cauchy's theorem `∮_γ f = 0`, for an absolutely continuous curve and for a cycle, and its
+  `Metric.ball` case;
 * Cauchy's integral formula `n_z(γ) · f(z) = (2πi)⁻¹ ∮_γ f/(· − z)` in every derivative order, for
   a curve, and its `Metric.ball` case;
 * the classical residue theorem `∮_γ f = 2πi · Σ_s n_s(γ) · Res_s f` for poles off the curve, for a
@@ -38,8 +40,9 @@ hypothesis-free statements:
 
 In each the hypothesis `IsNullHomologous` disappears, replaced by star-shapedness and openness of
 the ambient domain. Star-shapedness is genuinely a hypothesis on the *domain*, not on the curve:
-nothing is asked of `γ` beyond the piecewise-`C¹` regularity (or, where a principal value is taken,
-the immersion regularity) that every statement of the tower already carries.
+nothing is asked of `γ` beyond the regularity that every statement of the tower already carries —
+absolute continuity for Cauchy's theorem along a curve, piecewise-`C¹` regularity for the other
+statements, and the immersion regularity where a principal value is taken.
 
 The relation to the other route to null-homology,
 `TauCeti.Contour.isNullHomologous_of_pathHomotopy_refl`, is one-way: a star-shaped domain
@@ -57,7 +60,8 @@ The disc statements `TauCeti.Contour.cauchyTheorem_ball` and
 `TauCeti.Contour.cauchyIntegralFormula_ball`, with the star-shaped statements they specialise,
 reconcile Cauchy's theorem for a contractible contour with Mathlib's disc statements: Mathlib's
 disc Cauchy theory integrates over the bounding circle, and these extend it to an arbitrary closed
-piecewise-`C¹` curve inside the disc. The residue and argument statements make the null-homologous
+curve inside the disc — absolutely continuous for Cauchy's theorem, piecewise `C¹` for the
+integral formula. The residue and argument statements make the null-homologous
 residue theorems, argument principle and Hungerbühler–Wasem theorem applicable to the classical
 settings — poles inside a circle, a simple pole *on* the contour contributing the half-residue, an
 improper integral along the real axis — which are posed on a disc or a half-plane, both
@@ -81,7 +85,8 @@ star-shaped.
 ## Provenance
 
 No formalization is vendored: each statement is its null-homologous counterpart with the
-null-homology discharged by `TauCeti.Contour.isNullHomologous_of_starConvex`.
+null-homology discharged by `TauCeti.Contour.isNullHomologous_of_starConvex` or, for an absolutely
+continuous curve, by `AbsolutelyContinuousOnInterval.isNullHomologous_of_starConvex`.
 
 ## References
 
@@ -102,23 +107,25 @@ namespace TauCeti.Contour
 variable {f : ℂ → ℂ} {Ω : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {x : ℂ}
 
 /-- **Cauchy's theorem on a star-shaped open set.** A holomorphic function integrates to zero along
-every closed piecewise-`C¹` curve contained in an open set that is star-shaped about some point.
+every closed absolutely continuous curve contained in an open set that is star-shaped about some
+point. In particular this holds for every closed piecewise-`C¹` curve
+(`TauCeti.IsPiecewiseC1On.absolutelyContinuousOnInterval`).
 
 This is the homology Cauchy theorem `TauCeti.Contour.homologyCauchyTheorem` with its
 null-homology hypothesis discharged by star-shapedness, and it is the form in which Cauchy's
 theorem is usually applied: on an open disc, half-plane, strip, open rectangle, or slit plane. -/
 theorem cauchyTheorem_starConvex (hstar : StarConvex ℝ x Ω) (hopen : IsOpen Ω)
-    (hf : DifferentiableOn ℂ f Ω) (hγ : IsPiecewiseC1On γ a b)
+    (hf : DifferentiableOn ℂ f Ω) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hclosed : γ a = γ b) :
     ∫ t in a..b, deriv γ t • f (γ t) = 0 :=
   homologyCauchyTheorem hopen γ a b hγ hγΩ hclosed hf
-    (isNullHomologous_of_starConvex hstar hγ hclosed hγΩ)
+    (hγ.isNullHomologous_of_starConvex hstar hclosed hγΩ)
 
 /-- **Cauchy's theorem on a disc** — the `Metric.ball` case of
 `TauCeti.Contour.cauchyTheorem_starConvex`: a function holomorphic on a disc integrates to zero
-along every closed piecewise-`C¹` curve inside it, not only along the boundary circles. -/
+along every closed absolutely continuous curve inside it, not only along the boundary circles. -/
 theorem cauchyTheorem_ball {c : ℂ} {r : ℝ} (hf : DifferentiableOn ℂ f (Metric.ball c r))
-    (hγ : IsPiecewiseC1On γ a b) (hγr : ∀ t ∈ uIcc a b, γ t ∈ Metric.ball c r)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγr : ∀ t ∈ uIcc a b, γ t ∈ Metric.ball c r)
     (hclosed : γ a = γ b) :
     ∫ t in a..b, deriv γ t • f (γ t) = 0 :=
   cauchyTheorem_starConvex ((convex_ball c r).starConvex (hγr a left_mem_uIcc))
