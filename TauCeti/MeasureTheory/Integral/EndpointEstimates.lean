@@ -6,24 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.NormPow
 import Mathlib.Analysis.MeanInequalities
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 
 /-!
-# The one-dimensional energy estimate for traces
+# Endpoint estimates for `C¹` curves
 
-A `C¹` function with values in a real normed space has both endpoint norms controlled
-by its value and derivative energies on a finite interval, with an explicit width-dependent
-constant. No compact support is needed for this finite-interval estimate.
+A curve with values in a real normed space that is `C¹` on a finite closed interval has both
+endpoint norms controlled by its value and derivative energies on that interval, with an explicit
+width-dependent constant (`norm_sq_add_norm_sq_le_integral_norm_sq_add_norm_deriv_sq`). No
+compact support is needed for this finite-interval estimate.
 
 For `1 ≤ r`, a compactly supported `C¹` curve in a real normed space has the `r`-th power
 of the norm of its value at the endpoint of a half-line bounded by the integral of
-`(r - 1) ‖g‖ʳ + ‖g'‖ʳ` on that half-line (`ContDiff.norm_rpow_le_integral_Ioi`); for `r = 2` this
-is the `H¹` energy. Integrating this estimate over the transverse variables supplies the
+`(r - 1) ‖g‖ʳ + ‖g'‖ʳ` over that half-line (`ContDiff.norm_rpow_le_integral_Ioi`); for `r = 2`
+this is the `H¹` energy. Integrating this estimate over the transverse variables supplies the
 flat-boundary `W^{1,p}` trace inequality. The energy density `(r - 1) ‖u‖ʳ + ‖Du‖ʳ` of a
 compactly supported `C¹` function between normed spaces is continuous for `0 ≤ r` and has
 compact support for every `r` (`ContDiff.continuous_rpow_energy`,
@@ -32,7 +31,7 @@ compact support for every `r` (`ContDiff.continuous_rpow_energy`,
 Both estimates reduce to real-valued curves: composing with a continuous linear functional of
 norm at most `1` that norms the endpoint value (Hahn–Banach) does not increase the energy.
 
-The estimate follows the fundamental-theorem-of-calculus proof of the trace theorem in
+The estimates follow the fundamental-theorem-of-calculus proof of the trace theorem in
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.5.
 -/
 
@@ -42,11 +41,26 @@ namespace TauCeti
 
 open MeasureTheory Set
 
-/-- An affine weight `(t - m) / ℓ` of absolute value at most `1` on `[a, b]` controls the weighted
-squares of `φ ∘ g` at `a` and `b` by the energy of `g` on `[a, b]`, for a curve `g` that is `C¹`
-near `[a, b]` and a functional `φ` of norm at most `1`. -/
+/-- On `(a, b)`, the derivative of a curve that is `C¹` on `[a, b]` agrees with its derivative
+within `[a, b]`, which is continuous there, so its energy density is interval integrable. -/
+private theorem intervalIntegrable_norm_sq_add_norm_deriv_sq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {g : ℝ → F} {a b : ℝ} (hg : ContDiffOn ℝ 1 g (Icc a b)) (hab : a ≤ b)
+    (c : ℝ) : IntervalIntegrable (fun t ↦ c * ‖g t‖ ^ 2 + ‖deriv g t‖ ^ 2) volume a b := by
+  rcases hab.eq_or_lt with rfl | hab
+  · exact .refl
+  have hc : ContinuousOn (fun t ↦ c * ‖g t‖ ^ 2 + ‖derivWithin g (Icc a b) t‖ ^ 2) (Icc a b) :=
+    (continuousOn_const.mul (hg.continuousOn.norm.pow 2)).add
+      ((hg.continuousOn_derivWithin (uniqueDiffOn_Icc hab) le_rfl).norm.pow 2)
+  rw [intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le]
+  refine (hc.integrableOn_Icc.mono_set Ioo_subset_Icc_self).congr_fun (fun t ht ↦ ?_)
+    measurableSet_Ioo
+  simp only [derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)]
+
+/-- For an affine weight `(t - m) / ℓ` of absolute value at most `1` on `[a, b]`, a curve `g`
+that is `C¹` on `[a, b]` and a functional `φ` of norm at most `1`, the energy of `g` on `[a, b]`
+bounds the weighted square of `φ ∘ g` at `b` minus the weighted square of `φ ∘ g` at `a`. -/
 private theorem weighted_sq_sub_weighted_sq_le_integral {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {g : ℝ → F} {a b m ℓ : ℝ} (hg : ∀ t ∈ Icc a b, ContDiffAt ℝ 1 g t)
+    [NormedSpace ℝ F] {g : ℝ → F} {a b m ℓ : ℝ} (hg : ContDiffOn ℝ 1 g (Icc a b))
     (hab : a ≤ b) (hm : ∀ t ∈ Icc a b, |t - m| ≤ ℓ) (φ : StrongDual ℝ F) (hφ : ‖φ‖ ≤ 1) :
     (b - m) / ℓ * φ (g b) ^ 2 - (a - m) / ℓ * φ (g a) ^ 2 ≤
       ∫ t in a..b, (ℓ⁻¹ + 1) * ‖g t‖ ^ 2 + ‖deriv g t‖ ^ 2 := by
@@ -54,51 +68,58 @@ private theorem weighted_sq_sub_weighted_sq_le_integral {F : Type*} [NormedAddCo
   rcases ((abs_nonneg _).trans (hm a (left_mem_Icc.2 hab))).eq_or_lt with rfl | hℓ
   · simp only [div_zero, zero_mul, sub_self]
     exact intervalIntegral.integral_nonneg hab fun t _ ↦ by positivity
-  have hgc : ContinuousOn g (Icc a b) :=
-    fun t ht ↦ (hg t ht).continuousAt.continuousWithinAt
-  have hdc : ContinuousOn (deriv g) (Icc a b) :=
-    fun t ht ↦ ((hg t ht).derivWithin (m := 0) (by norm_num)).continuousAt.continuousWithinAt
-  have hd (t : ℝ) (ht : t ∈ Icc a b) : HasDerivAt (fun t ↦ (t - m) / ℓ * φ (g t) ^ 2)
-      (ℓ⁻¹ * φ (g t) ^ 2 + (t - m) / ℓ * (2 * φ (g t) * φ (deriv g t))) t := by
-    have hφg : HasDerivAt (fun t ↦ φ (g t)) (φ (deriv g t)) t :=
-      φ.hasFDerivAt.comp_hasDerivAt t ((hg t ht).differentiableAt one_ne_zero).hasDerivAt
+  rcases hab.eq_or_lt with rfl | hab'
+  · simp only [sub_self, intervalIntegral.integral_same, le_refl]
+  -- On `(a, b)`, `deriv g` is the derivative `g'` of `g` within `[a, b]`, continuous on `[a, b]`.
+  have hgc : ContinuousOn g (Icc a b) := hg.continuousOn
+  have hdc := hg.continuousOn_derivWithin (uniqueDiffOn_Icc hab') le_rfl
+  have hderiv (t : ℝ) (ht : t ∈ Ioo a b) : deriv g t = derivWithin g (Icc a b) t :=
+    (derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)).symm
+  generalize derivWithin g (Icc a b) = g' at hdc hderiv
+  have hd (t : ℝ) (ht : t ∈ Ioo a b) : HasDerivAt (fun t ↦ (t - m) / ℓ * φ (g t) ^ 2)
+      (ℓ⁻¹ * φ (g t) ^ 2 + (t - m) / ℓ * (2 * φ (g t) * φ (g' t))) t := by
+    have hφg : HasDerivAt (fun t ↦ φ (g t)) (φ (g' t)) t := by
+      rw [← hderiv t ht]
+      exact φ.hasFDerivAt.comp_hasDerivAt t
+        ((hg.contDiffAt (Icc_mem_nhds ht.1 ht.2)).differentiableAt one_ne_zero).hasDerivAt
     convert (((hasDerivAt_id' t).sub_const m).div_const ℓ).fun_mul (hφg.fun_pow 2) using 1
     ring
   have hint : IntervalIntegrable
-      (fun t ↦ ℓ⁻¹ * φ (g t) ^ 2 + (t - m) / ℓ * (2 * φ (g t) * φ (deriv g t))) volume a b :=
+      (fun t ↦ ℓ⁻¹ * φ (g t) ^ 2 + (t - m) / ℓ * (2 * φ (g t) * φ (g' t))) volume a b :=
     ContinuousOn.intervalIntegrable_of_Icc hab
       ((continuousOn_const.mul ((φ.continuous.comp_continuousOn hgc).pow 2)).add
         ((continuous_id.sub continuous_const).div_const ℓ |>.continuousOn.mul
           (continuousOn_const.mul (φ.continuous.comp_continuousOn hgc) |>.mul
             (φ.continuous.comp_continuousOn hdc))))
-  rw [← intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun t ht ↦ hd t ((uIcc_of_le hab) ▸ ht)) hint]
-  refine intervalIntegral.integral_mono_on hab hint
-    (((continuousOn_const.mul (hgc.norm.pow 2)).add (hdc.norm.pow 2)).intervalIntegrable_of_Icc
-      hab) fun t ht ↦ ?_
+  rw [← intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le
+    (f := fun t ↦ (t - m) / ℓ * φ (g t) ^ 2) hab
+    (((continuous_id.sub continuous_const).div_const ℓ).continuousOn.mul
+      ((φ.continuous.comp_continuousOn hgc).pow 2)) hd hint]
+  refine intervalIntegral.integral_mono_on_of_le_Ioo hab hint
+    (intervalIntegrable_norm_sq_add_norm_deriv_sq hg hab _) fun t ht ↦ ?_
+  rw [hderiv t ht]
   -- Bound `φ ∘ g`, its derivative and the weight, then use `2 x y ≤ x ^ 2 + y ^ 2`.
   have hle (v : F) : |φ v| ≤ ‖v‖ := by
     simpa only [Real.norm_eq_abs, one_mul] using φ.le_of_opNorm_le hφ v
   have hq : |(t - m) / ℓ| ≤ 1 := by
     rw [abs_div, abs_of_pos hℓ, div_le_one hℓ]
-    exact hm t ht
+    exact hm t (Ioo_subset_Icc_self ht)
   have hx := sq_le_sq' (abs_le.1 (hle (g t))).1 (abs_le.1 (hle (g t))).2
-  have hy := sq_le_sq' (abs_le.1 (hle (deriv g t))).1 (abs_le.1 (hle (deriv g t))).2
-  have hxy : (t - m) / ℓ * (2 * φ (g t) * φ (deriv g t)) ≤
-      2 * (|φ (g t)| * |φ (deriv g t)|) :=
+  have hy := sq_le_sq' (abs_le.1 (hle (g' t))).1 (abs_le.1 (hle (g' t))).2
+  have hxy : (t - m) / ℓ * (2 * φ (g t) * φ (g' t)) ≤ 2 * (|φ (g t)| * |φ (g' t)|) :=
     (le_abs_self _).trans <| by
       rw [abs_mul, abs_mul, abs_mul, abs_two, mul_assoc]
       exact mul_le_of_le_one_left (by positivity) hq
-  nlinarith [sq_nonneg (|φ (g t)| - |φ (deriv g t)|), sq_abs (φ (g t)),
-    sq_abs (φ (deriv g t)), mul_le_mul_of_nonneg_left hx (inv_nonneg.2 hℓ.le)]
+  nlinarith [two_mul_le_add_sq |φ (g t)| |φ (g' t)|,
+    sq_abs (φ (g t)), sq_abs (φ (g' t)), mul_le_mul_of_nonneg_left hx (inv_nonneg.2 hℓ.le)]
 
-/-- Both endpoint norms of a curve that is `C¹` near a closed interval are controlled by
+/-- Both endpoint norms of a curve that is `C¹` on a closed interval are controlled by
 its energy on that interval.
-The coefficient of the value energy depends on the interval width; no compact support or
-integrability outside the interval is required. -/
+The coefficient of the value energy depends on the interval width; no compact support,
+regularity or integrability outside the interval is required. -/
 theorem norm_sq_add_norm_sq_le_integral_norm_sq_add_norm_deriv_sq
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {g : ℝ → F} {a b : ℝ} (hg : ∀ t ∈ Icc a b, ContDiffAt ℝ 1 g t)
+    {g : ℝ → F} {a b : ℝ} (hg : ContDiffOn ℝ 1 g (Icc a b))
     (hab : a < b) :
     ‖g a‖ ^ 2 + ‖g b‖ ^ 2 ≤
       ∫ t in a..b, (2 / (b - a) + 1) * ‖g t‖ ^ 2 + ‖deriv g t‖ ^ 2 := by
@@ -107,14 +128,14 @@ theorem norm_sq_add_norm_sq_le_integral_norm_sq_add_norm_deriv_sq
   -- at `m`.
   obtain ⟨φ, hφ, hφa⟩ := exists_dual_vector'' ℝ (g a)
   obtain ⟨ψ, hψ, hψb⟩ := exists_dual_vector'' ℝ (g b)
-  have hl := weighted_sq_sub_weighted_sq_le_integral (b := (a + b) / 2) (m := (a + b) / 2)
-    (ℓ := (b - a) / 2)
-    (fun t ht ↦ hg t ⟨ht.1, ht.2.trans (by linarith)⟩) (by linarith)
-    (fun t ht ↦ abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩) φ hφ
-  have hr := weighted_sq_sub_weighted_sq_le_integral (a := (a + b) / 2) (m := (a + b) / 2)
-    (ℓ := (b - a) / 2)
-    (fun t ht ↦ hg t ⟨(by linarith : a ≤ (a + b) / 2).trans ht.1, ht.2⟩) (by linarith)
-    (fun t ht ↦ abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩) ψ hψ
+  have ham : a ≤ (a + b) / 2 := by linarith
+  have hmb : (a + b) / 2 ≤ b := by linarith
+  have hgl : ContDiffOn ℝ 1 g (Icc a ((a + b) / 2)) := hg.mono (Icc_subset_Icc le_rfl hmb)
+  have hgr : ContDiffOn ℝ 1 g (Icc ((a + b) / 2) b) := hg.mono (Icc_subset_Icc ham le_rfl)
+  have hl := weighted_sq_sub_weighted_sq_le_integral (m := (a + b) / 2) (ℓ := (b - a) / 2) hgl
+    ham (fun t ht ↦ abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩) φ hφ
+  have hr := weighted_sq_sub_weighted_sq_le_integral (m := (a + b) / 2) (ℓ := (b - a) / 2) hgr
+    hmb (fun t ht ↦ abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩) ψ hψ
   have hc : ((b - a) / 2)⁻¹ = 2 / (b - a) := inv_div _ _
   have hla : (a - (a + b) / 2) / ((b - a) / 2) = -1 := by
     field_simp [(sub_pos.2 hab).ne']; ring
@@ -122,15 +143,9 @@ theorem norm_sq_add_norm_sq_le_integral_norm_sq_add_norm_deriv_sq
     field_simp [(sub_pos.2 hab).ne']; ring
   simp only [sub_self, zero_div, zero_mul, hc, hla, hrb, hφa, hψb, RCLike.ofReal_real_eq_id,
     id_eq] at hl hr
-  have hgc : ContinuousOn g (Icc a b) :=
-    fun t ht ↦ (hg t ht).continuousAt.continuousWithinAt
-  have hdc : ContinuousOn (deriv g) (Icc a b) :=
-    fun t ht ↦ ((hg t ht).derivWithin (m := 0) (by norm_num)).continuousAt.continuousWithinAt
-  have hE : ContinuousOn (fun t ↦ (2 / (b - a) + 1) * ‖g t‖ ^ 2 + ‖deriv g t‖ ^ 2) (Icc a b) :=
-    (continuousOn_const.mul (hgc.norm.pow 2)).add (hdc.norm.pow 2)
   rw [← intervalIntegral.integral_add_adjacent_intervals (b := (a + b) / 2)
-    ((hE.mono (Icc_subset_Icc le_rfl (by linarith))).intervalIntegrable_of_Icc (by linarith))
-    ((hE.mono (Icc_subset_Icc (by linarith) le_rfl)).intervalIntegrable_of_Icc (by linarith))]
+    (intervalIntegrable_norm_sq_add_norm_deriv_sq hgl ham _)
+    (intervalIntegrable_norm_sq_add_norm_deriv_sq hgr hmb _)]
   linarith
 
 section Energy
@@ -212,8 +227,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- **The one-dimensional `Lᵖ` trace estimate.** For `1 ≤ r`, the `r`-th power of the norm of the
 value at the endpoint of a half-line of a compactly supported `C¹` curve in a real normed space
-is controlled by `(r - 1) ‖g‖ʳ + ‖g'‖ʳ` on that half-line. For `r = 2` the right side is
-the `H¹` energy. -/
+is controlled by the integral of `(r - 1) ‖g‖ʳ + ‖g'‖ʳ` over that half-line. For `r = 2` the
+right side is the `H¹` energy. -/
 theorem _root_.ContDiff.norm_rpow_le_integral_Ioi {g : ℝ → E} (hg : ContDiff ℝ 1 g)
     (hs : HasCompactSupport g) (a : ℝ) {r : ℝ} (hr : 1 ≤ r) :
     ‖g a‖ ^ r ≤ ∫ t in Ioi a, (r - 1) * ‖g t‖ ^ r + ‖deriv g t‖ ^ r := by
@@ -237,7 +252,8 @@ theorem _root_.ContDiff.norm_rpow_le_integral_Ioi {g : ℝ → E} (hg : ContDiff
             gcongr <;> exact hle _
 
 /-- For `1 ≤ r`, the `r`-th power of the norm of a point value of a compactly supported `C¹`
-curve in a real normed space is controlled by `(r - 1) ‖g‖ʳ + ‖g'‖ʳ` on the whole line. -/
+curve in a real normed space is controlled by the integral of `(r - 1) ‖g‖ʳ + ‖g'‖ʳ` over the
+whole line. -/
 theorem _root_.ContDiff.norm_rpow_le_integral {g : ℝ → E} (hg : ContDiff ℝ 1 g)
     (hs : HasCompactSupport g) (a : ℝ) {r : ℝ} (hr : 1 ≤ r) :
     ‖g a‖ ^ r ≤ ∫ t, (r - 1) * ‖g t‖ ^ r + ‖deriv g t‖ ^ r :=

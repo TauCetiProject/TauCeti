@@ -110,7 +110,8 @@ private theorem norm_sq_boundary_le_integral_line_energy
         (fderiv ℝ u (WithLp.toLp 2 (t, y))).le_opNorm
           (WithLp.toLp 2 (1, (0 : E))))
   simpa only [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo] using
-    (norm_sq_add_norm_sq_le_integral_norm_sq_add_norm_deriv_sq hg hab).trans hmono
+    (norm_sq_add_norm_sq_le_integral_norm_sq_add_norm_deriv_sq
+      (fun t ht ↦ (hg t ht).contDiffWithinAt) hab).trans hmono
 
 private theorem integrable_boundary_norm_sq_add_and_le
     {u : WithLp 2 (ℝ × E) → F} {a b : ℝ}

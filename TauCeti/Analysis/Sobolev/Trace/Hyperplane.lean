@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Trace.Estimate
+public import TauCeti.MeasureTheory.Integral.EndpointEstimates
 public import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Analysis.Normed.Operator.Extend
@@ -23,10 +25,10 @@ restriction on test functions, has operator norm at most `p ^ (1 / p)`, and send
 convergence to convergence of boundary values. The construction uses the whole-space
 test-function density theorem and Mathlib's `LinearMap.extendOfNorm`.
 
-The estimate behind it is the `Lʳ` trace inequality for compactly supported `C¹` functions,
-`∫ |u(a, y)|ʳ dy ≤ ∫_{x₁ > a} ((r - 1) |u|ʳ + ‖Du‖ʳ)` for `1 ≤ r`
-(`TauCeti.integral_hyperplane_abs_rpow_le_integral_halfSpace`), obtained by integrating the
-one-dimensional estimate `ContDiff.norm_rpow_le_integral_Ioi` over the normal lines. For `r = 2`
+The estimate behind it is the `Lʳ` trace inequality for compactly supported `C¹` functions
+with values in a real normed space, `∫ ‖u(a, y)‖ʳ dy ≤ ∫_{x₁ > a} ((r - 1) ‖u‖ʳ + ‖Du‖ʳ)` for
+`1 ≤ r` (`TauCeti.integral_hyperplane_norm_rpow_le_integral_halfSpace`), obtained by integrating
+the one-dimensional estimate `ContDiff.norm_rpow_le_integral_Ioi` over the normal lines. For `r = 2`
 its right side is the `H¹` energy on the half-space, and for `r = 1` it is the `L¹` norm of the
 gradient there. For a test function, `TauCeti.integral_rpow_energy_eq_of_ae_eq` writes that right
 side as `(p - 1) ‖u‖ᵖ + ‖∇u‖ᵖ` in terms of `Lᵖ` norms.
@@ -71,10 +73,14 @@ private def hyperplaneTestFunctionₗ (p : ℝ≥0∞) (a : ℝ) :
     apply MemLp.toLp_congr
     exact Filter.Eventually.of_forall fun y ↦ by simp
 
+section Estimate
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+
 omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-private theorem rpow_energy_nonneg (u : WithLp 2 (ℝ × E) → ℝ) {r : ℝ} (hr : 1 ≤ r)
-    (x : WithLp 2 (ℝ × E)) : 0 ≤ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r :=
-  add_nonneg (mul_nonneg (sub_nonneg.2 hr) (Real.rpow_nonneg (abs_nonneg _) _))
+private theorem rpow_energy_nonneg (u : WithLp 2 (ℝ × E) → G) {r : ℝ} (hr : 1 ≤ r)
+    (x : WithLp 2 (ℝ × E)) : 0 ≤ (r - 1) * ‖u x‖ ^ r + ‖fderiv ℝ u x‖ ^ r :=
+  add_nonneg (mul_nonneg (sub_nonneg.2 hr) (Real.rpow_nonneg (norm_nonneg _) _))
     (Real.rpow_nonneg (norm_nonneg (fderiv ℝ u x)) _)
 
 omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
@@ -82,7 +88,7 @@ omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Bo
 `C¹` function `u` on `ℝ × E`, `‖u(a, y)‖ʳ` is bounded by the integral of
 `(r - 1) ‖u‖ʳ + ‖Du‖ʳ` over the half-line `t > a` of the normal line through `(a, y)`. -/
 private theorem norm_rpow_le_integral_Ioi_energy [NormedSpace ℝ E]
-    {u : WithLp 2 (ℝ × E) → ℝ} (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
+    {u : WithLp 2 (ℝ × E) → G} (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
     (a : ℝ) {r : ℝ} (hr : 1 ≤ r) (y : E) :
     ‖u (WithLp.toLp 2 (a, y))‖ ^ r ≤
       ∫ t : ℝ in Ioi a, ((r - 1) * ‖u (WithLp.toLp 2 (t, y))‖ ^ r +
@@ -93,18 +99,13 @@ private theorem norm_rpow_le_integral_Ioi_energy [NormedSpace ℝ E]
   have he : IsClosedEmbedding (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
     (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
       (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y) (isClosedMap_prodMk_right y))
-  have hpath : ContDiff ℝ 1 (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
-    ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
-      (contDiff_id.prodMk contDiff_const)
-  have hg := hu.comp hpath
-  have hgs := hsupp.comp_isClosedEmbedding he
-  have hd (t : ℝ) : deriv (u ∘ fun s : ℝ ↦ WithLp.toLp 2 (s, y)) t =
-      fderiv ℝ u (WithLp.toLp 2 (t, y)) (WithLp.toLp 2 (1, (0 : E))) := by
-    have hp : HasDerivAt (fun s : ℝ ↦ WithLp.toLp 2 (s, y))
-        (WithLp.toLp 2 (1, (0 : E))) t :=
-      ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.hasFDerivAt).comp_hasDerivAt t
-        ((hasDerivAt_id t).prodMk (hasDerivAt_const t y))
-    exact ((hu.differentiable one_ne_zero _).hasFDerivAt.comp_hasDerivAt t hp).deriv
+  have hg : ContDiff ℝ 1 (fun s : ℝ ↦ u (WithLp.toLp 2 (s, y))) :=
+    hu.comp (WithLp.contDiff_toLp.comp (contDiff_id.prodMk contDiff_const))
+  have hgs : HasCompactSupport (fun s : ℝ ↦ u (WithLp.toLp 2 (s, y))) :=
+    hsupp.comp_isClosedEmbedding he
+  have hd (t : ℝ) : deriv (fun s : ℝ ↦ u (WithLp.toLp 2 (s, y))) t =
+      fderiv ℝ u (WithLp.toLp 2 (t, y)) (WithLp.toLp 2 (1, (0 : E))) :=
+    (hasDerivAt_comp_toLp_fst (hu.differentiable one_ne_zero _)).deriv
   refine (hg.norm_rpow_le_integral_Ioi hgs a hr).trans (integral_mono_of_nonneg
     (Filter.Eventually.of_forall fun t ↦ add_nonneg
       (mul_nonneg (sub_nonneg.2 hr) (Real.rpow_nonneg (norm_nonneg _) _))
@@ -114,20 +115,19 @@ private theorem norm_rpow_le_integral_Ioi_energy [NormedSpace ℝ E]
     (Filter.Eventually.of_forall fun t ↦ ?_))
   have hb := (fderiv ℝ u (WithLp.toLp 2 (t, y))).le_opNorm (WithLp.toLp 2 (1, (0 : E)))
   simp only [WithLp.norm_toLp_fst, norm_one, mul_one] at hb
-  simp only [Function.comp_apply, hd t]
+  simp only [hd t]
   gcongr
 
 /-- **The one-sided flat `Lʳ` trace inequality.** For `1 ≤ r` and a compactly supported `C¹`
-function `u` on `ℝ × E`, the integral of `|u|ʳ` over the hyperplane `{a} × E` is bounded by the
-integral of `(r - 1) |u|ʳ + ‖Du‖ʳ` over the half-space `{x | a < x.fst}`. -/
-theorem integral_hyperplane_abs_rpow_le_integral_halfSpace
-    {u : WithLp 2 (ℝ × E) → ℝ} (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
+function `u` on `ℝ × E` with values in a real normed space, the integral of `‖u‖ʳ` over the
+hyperplane `{a} × E` is bounded by the integral of `(r - 1) ‖u‖ʳ + ‖Du‖ʳ` over the half-space
+`{x | a < x.fst}`. -/
+theorem integral_hyperplane_norm_rpow_le_integral_halfSpace
+    {u : WithLp 2 (ℝ × E) → G} (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
     (a : ℝ) {r : ℝ} (hr : 1 ≤ r) :
-    (∫ y : E, |u (WithLp.toLp 2 (a, y))| ^ r) ≤
+    (∫ y : E, ‖u (WithLp.toLp 2 (a, y))‖ ^ r) ≤
       ∫ x : WithLp 2 (ℝ × E) in {x | a < (WithLp.ofLp x).1},
-        (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r := by
-  -- Work with the norm `‖u x‖ = |u x|` of the general energy lemmas.
-  simp only [← Real.norm_eq_abs]
+        (r - 1) * ‖u x‖ ^ r + ‖fderiv ℝ u x‖ ^ r := by
   set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * ‖u x‖ ^ r + ‖fderiv ℝ u x‖ ^ r
   have hint : Integrable F volume :=
     (hu.continuous_rpow_energy (zero_le_one.trans hr)).integrable_of_hasCompactSupport
@@ -157,19 +157,20 @@ theorem integral_hyperplane_abs_rpow_le_integral_halfSpace
           {x | a < (WithLp.ofLp x).1}
 
 /-- **The flat `Lʳ` trace inequality.** For `1 ≤ r` and a compactly supported `C¹` function `u`
-on `ℝ × E`, the integral of `|u|ʳ` over the hyperplane `{a} × E` is bounded by the integral of
-`(r - 1) |u|ʳ + ‖Du‖ʳ` over the whole space. -/
-theorem integral_hyperplane_abs_rpow_le_integral
-    {u : WithLp 2 (ℝ × E) → ℝ} (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
+on `ℝ × E` with values in a real normed space, the integral of `‖u‖ʳ` over the hyperplane
+`{a} × E` is bounded by the integral of `(r - 1) ‖u‖ʳ + ‖Du‖ʳ` over the whole space. -/
+theorem integral_hyperplane_norm_rpow_le_integral
+    {u : WithLp 2 (ℝ × E) → G} (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
     (a : ℝ) {r : ℝ} (hr : 1 ≤ r) :
-    (∫ y : E, |u (WithLp.toLp 2 (a, y))| ^ r) ≤
-      ∫ x : WithLp 2 (ℝ × E), (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r :=
-  (integral_hyperplane_abs_rpow_le_integral_halfSpace hu hsupp a hr).trans
-    (setIntegral_le_integral (by
-      simpa only [Real.norm_eq_abs] using
-        (hu.continuous_rpow_energy (zero_le_one.trans hr)).integrable_of_hasCompactSupport
-          (hsupp.rpow_energy r))
+    (∫ y : E, ‖u (WithLp.toLp 2 (a, y))‖ ^ r) ≤
+      ∫ x : WithLp 2 (ℝ × E), (r - 1) * ‖u x‖ ^ r + ‖fderiv ℝ u x‖ ^ r :=
+  (integral_hyperplane_norm_rpow_le_integral_halfSpace hu hsupp a hr).trans
+    (setIntegral_le_integral
+      ((hu.continuous_rpow_energy (zero_le_one.trans hr)).integrable_of_hasCompactSupport
+        (hsupp.rpow_energy r))
       (Filter.Eventually.of_forall (rpow_energy_nonneg u hr)))
+
+end Estimate
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -219,7 +220,8 @@ private theorem norm_hyperplaneTestFunction_le (hp : p ≠ ∞) (a : ℝ)
     (by rw [W1p.value_ofTestFunctionₗ]; exact testFunctionLp_apply_ae (mu := volume) p φ)
     (by rw [W1p.gradient_ofTestFunctionₗ]; exact gradientTestFunctionLp_apply_ae (mu := volume) p φ)
   simp only [Opens.coe_top, Measure.restrict_univ] at henergy
-  have key := integral_hyperplane_abs_rpow_le_integral hu φ.hasCompactSupport a hr
+  have key := integral_hyperplane_norm_rpow_le_integral hu φ.hasCompactSupport a hr
+  simp only [Real.norm_eq_abs] at key
   rw [henergy, ← htr] at key
   -- Both norms on the right are at most the Sobolev norm.
   exact Real.le_rpow_inv_mul_of_rpow_le hr (norm_nonneg _) (norm_nonneg _)

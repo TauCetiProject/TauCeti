@@ -579,7 +579,7 @@ theorem le_rpow_inv_mul_of_rpow_le {r x y z n : ℝ} (hr : 1 ≤ r) (hy : 0 ≤ 
   have h1 : y ^ r ≤ n ^ r := rpow_le_rpow hy hyn hr0.le
   have h2 : z ^ r ≤ n ^ r := rpow_le_rpow hz hzn hr0.le
   rw [← rpow_le_rpow_iff hx (by positivity) hr0, mul_rpow (by positivity) hn,
-    ← rpow_mul hr0.le, inv_mul_cancel₀ hr0.ne', rpow_one]
+    rpow_inv_rpow hr0.le hr0.ne']
   nlinarith [sub_nonneg.2 hr]
 
 end Real
