@@ -134,9 +134,13 @@ the parameter adjoined. It applies to the rescaled solutions at a bubbling point
 form a family over the centres and scales of the rescaling
 (`TauCeti.Geometry.Symplectic.Floer.Rescaling.Bubble`).
 
-The limit off the bubbling points is only shown to be continuous here; its regularity, the
-rescaled bubbles at the points of `Z` (spheres for the structure `J(z, ·)` frozen at the bubbling
-point), and breaking along cylindrical ends are not treated in this file.
+For smooth solutions, the convergence off `Z` in the unparametrized coordinate statement is
+upgraded to convergence in `C¹` to a `C¹` solution
+(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`), by
+`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer`. For the Floer energy this upgrade is in
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Limit`; the parametric versions are not upgraded.
+The rescaled bubbles at the points of `Z` (spheres for the structure `J(z, ·)` frozen at the
+bubbling point) and breaking along cylindrical ends are not treated in this file.
 
 ## References
 
@@ -305,6 +309,53 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
       (norm_fderiv_le_norm_fderiv_toLp_prodMk_right differentiableAt_fun_id).trans (hM n y hy)⟩
   · simpa [Function.comp_def, g] using
       (WithLp.sndL 2 ℝ ℂ V).uniformContinuous.comp_tendstoLocallyUniformlyOn hlim
+
+/-- **Floer solutions converge in `C¹` off finitely many bubbling points.** Let `J` and `X` be
+`C²` on an open set `W ⊆ ℂ × V` containing `D × K` for compact `D ⊆ ℂ` and `K ⊆ V`, with
+`J(z, x)² = -1` on `D × K`, where `V` is a finite-dimensional real inner product space. There is
+a threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions of
+`∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` on an open set `Ω ⊆ D`, with image in `K` and
+energy `∫_Ω ‖∂ₛuₖ‖² ≤ E`. Then there are a subsequence `φ`, a finite set `Z ⊆ Ω` with
+`#Z * δ ≤ E`, and a map `v` with values in `K` on `Ω \ Z`, such that along `φ` every disc about a
+point of `Z` eventually carries energy at least `δ`, the differentials are uniformly bounded on
+every compact subset of `Ω \ Z`, `u_{φ n} → v` and `Du_{φ n} → Dv` locally uniformly on `Ω \ Z`,
+and `v` is a `C¹` solution of the equation on `Ω \ Z`. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
+    [FiniteDimensional ℝ V]
+    {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {W : Set (ℂ × V)} {D : Set ℂ} {K : Set V}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
+    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ D, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v) :
+    ∃ δ > 0, ∀ ⦃Ω : Set ℂ⦄ ⦃u : ℕ → ℂ → V⦄ ⦃E : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, ContDiffOn ℝ (⊤ : ℕ∞) (u k) Ω) →
+      (∀ k, ∀ y ∈ Ω, fderiv ℝ (u k) y I - X (y, u k y) I =
+        J (y, u k y) (fderiv ℝ (u k) y 1 - X (y, u k y) 1)) →
+      (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, IntegrableOn (fun y ↦ ‖fderiv ℝ (u k) y 1‖ ^ 2) Ω) →
+      (∀ k, ∫ y in Ω, ‖fderiv ℝ (u k) y 1‖ ^ 2 ≤ E) →
+      ∃ (φ : ℕ → ℕ) (Z : Finset ℂ) (v : ℂ → V), StrictMono φ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
+          δ ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u (φ n)) y 1‖ ^ 2) ∧
+        (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
+          ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
+        MapsTo v (Ω \ ↑Z) K ∧ ContDiffOn ℝ 1 v (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u (φ n))) (fderiv ℝ v) atTop (Ω \ ↑Z) ∧
+        ∀ y ∈ Ω \ ↑Z,
+          fderiv ℝ v y I - X (y, v y) I = J (y, v y) (fderiv ℝ v y 1 - X (y, v y) 1) := by
+  obtain ⟨δ, hδ, hconv⟩ := exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hW hJ hX
+    hD hK hDKW hJsq
+  refine ⟨δ, hδ, fun Ω u E hΩ hΩD hu hCR huK hint hE ↦ ?_⟩
+  obtain ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, -, hvK, hlim⟩ := hconv hΩ hΩD
+    (fun k ↦ (hu k).of_le (WithTop.coe_le_coe.2 le_top)) hCR huK hint hE
+  -- Off `Z` the whole subsequence converges in `C¹`.
+  obtain ⟨hv, hdconv, hveq⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer hW
+    (hJ.of_le one_le_two) (hX.of_le one_le_two) (hΩ.sdiff Z.finite_toSet.isClosed)
+    (u := fun n ↦ u (φ n)) (fun y hy ↦ hDKW ⟨hΩD hy.1, hvK hy⟩)
+    (fun n ↦ (hu _).mono sdiff_subset) (fun n y hy ↦ hJsq y (hΩD hy.1) _ (huK _ hy.1))
+    (fun n y hy ↦ hCR _ y hy.1) hbd fun y hy ↦ hlim.tendsto_at hy
+  exact ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, hvK, hv, hlim, hdconv, hveq⟩
 
 section Parameter
 
