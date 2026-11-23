@@ -116,72 +116,6 @@ namespace HorizontalRepresentation
 
 variable {D} (R : D.HorizontalRepresentation)
 
-/-- The generator representing a horizontal path: the chosen identity generator for the empty
-path, `f` for the path `[f]`, and the left-associated chosen composite
-`(⋯((f₁ ⋆ f₂) ⋆ f₃) ⋯) ⋆ fₙ` for a path `[f₁, …, fₙ]` with `n ≥ 2`. Its body is exposed
-because the type of `repIso` computes with it. -/
-@[expose]
-def rep {a : O} : {b : O} → Edge (pathCategory O H) a b → @Quiver.Hom O H a b
-  | _, @Quiver.Path.nil _ .(H) _ => R.unit a
-  | _, @Quiver.Path.cons _ .(H) _ _ _ (@Quiver.Path.nil _ .(H) _) f => f
-  | _, @Quiver.Path.cons _ .(H) _ _ _ (@Quiver.Path.cons _ .(H) _ _ _ p g) f =>
-    R.mul (rep (@Quiver.Path.cons _ H _ _ _ p g)) f
-
-/-- The comparison of a horizontal path with its chosen composite: the nullary comparison for
-the empty path, the identity for a path of length one, and for a longer path `p ++ [f]` the
-comparison for `p`, whiskered by `[f]`, followed by the binary comparison
-`[rep p, f] ≅ [rep p ⋆ f]`. -/
-def repIso {a : O} : {b : O} → (p : Edge (pathCategory O H) a b) →
-    D.HorizontalIso p (@Quiver.Hom.toPath O H a b (R.rep p))
-  | _, @Quiver.Path.nil _ .(H) _ => R.unitIso a
-  | _, @Quiver.Path.cons _ .(H) _ _ _ (@Quiver.Path.nil _ .(H) _) _ => Iso.refl _
-  | _, @Quiver.Path.cons _ .(H) _ _ _ (@Quiver.Path.cons _ .(H) _ _ _ p g) f =>
-    (D.hWhiskerRight (@Quiver.Hom.toPath O H _ _ f)).mapIso
-        (repIso (@Quiver.Path.cons _ H _ _ _ p g)) ≪≫
-      R.mulIso (R.rep (@Quiver.Path.cons _ H _ _ _ p g)) f
-
-/-- The generator representing the empty path is the chosen identity generator. -/
-@[simp]
-theorem rep_nil (a : O) : R.rep (@Quiver.Path.nil O H a) = R.unit a :=
-  rfl
-
-/-- The generator representing the path `[f]`, written with constructors, is `f`. -/
-@[simp]
-theorem rep_cons_nil {a b : O} (f : @Quiver.Hom O H a b) :
-    R.rep (@Quiver.Path.cons O H a a b (@Quiver.Path.nil O H a) f) = f :=
-  rfl
-
-/-- Appending a generator `f` to a nonempty path `p ++ [g]` composes its representing generator
-with `f`. -/
-@[simp]
-theorem rep_cons_cons {a b c d : O} (p : Edge (pathCategory O H) a b)
-    (g : @Quiver.Hom O H b c) (f : @Quiver.Hom O H c d) :
-    R.rep (@Quiver.Path.cons O H a c d (@Quiver.Path.cons O H a b c p g) f) =
-      R.mul (R.rep (@Quiver.Path.cons O H a b c p g)) f :=
-  rfl
-
-/-- The recursive comparison of the empty path is the chosen nullary comparison. -/
-@[simp]
-theorem repIso_nil (a : O) : R.repIso (@Quiver.Path.nil O H a) = R.unitIso a :=
-  (rfl)
-
-/-- The recursive comparison of the path `[f]`, written with constructors, is its identity. -/
-@[simp]
-theorem repIso_cons_nil {a b : O} (f : @Quiver.Hom O H a b) :
-    R.repIso (@Quiver.Path.cons O H a a b (@Quiver.Path.nil O H a) f) = Iso.refl _ :=
-  (rfl)
-
-/-- The recursive comparison of a nonempty path `p ++ [g]` followed by a generator `f` is the
-comparison of `p ++ [g]`, whiskered by `[f]`, followed by the binary comparison. -/
-@[simp]
-theorem repIso_cons_cons {a b c d : O} (p : Edge (pathCategory O H) a b)
-    (g : @Quiver.Hom O H b c) (f : @Quiver.Hom O H c d) :
-    R.repIso (@Quiver.Path.cons O H a c d (@Quiver.Path.cons O H a b c p g) f) =
-      (D.hWhiskerRight (@Quiver.Hom.toPath O H c d f)).mapIso
-          (R.repIso (@Quiver.Path.cons O H a b c p g)) ≪≫
-        R.mulIso (R.rep (@Quiver.Path.cons O H a b c p g)) f :=
-  (rfl)
-
 /-- Fold a horizontal path `q = [f₁, …, fₙ]` into a generator, starting from the generator `x`:
 the left-associated chosen composite `(⋯((x ⋆ f₁) ⋆ f₂) ⋯) ⋆ fₙ`. Its body is exposed because
 the type of `foldIso` computes with it. -/
@@ -229,6 +163,71 @@ theorem foldIso_cons {a b c d : O} {p : Edge (pathCategory O H) a b} {x : @Quive
       (D.hWhiskerRight (@Quiver.Hom.toPath O H c d f)).mapIso (R.foldIso e q) ≪≫
         R.mulIso (R.foldRep x q) f :=
   (rfl)
+
+/-- The generator representing a horizontal path: the chosen identity generator for the empty
+path, `f` for the path `[f]`, and the left-associated chosen composite
+`(⋯((f₁ ⋆ f₂) ⋆ f₃) ⋯) ⋆ fₙ` for a path `[f₁, …, fₙ]` with `n ≥ 2`, obtained by folding the
+last arrow into the generator representing the rest with `foldRep`. Its body is exposed because
+the type of `repIso` computes with it. -/
+@[expose]
+def rep {a : O} : {b : O} → Edge (pathCategory O H) a b → @Quiver.Hom O H a b
+  | _, @Quiver.Path.nil _ .(H) _ => R.unit a
+  | _, @Quiver.Path.cons _ .(H) _ _ _ (@Quiver.Path.nil _ .(H) _) f => f
+  | _, @Quiver.Path.cons _ .(H) _ _ _ (@Quiver.Path.cons _ .(H) _ _ _ p g) f =>
+    R.foldRep (rep (@Quiver.Path.cons _ H _ _ _ p g)) (@Quiver.Hom.toPath O H _ _ f)
+
+/-- The comparison of a horizontal path with its chosen composite: the nullary comparison for
+the empty path, the identity for a path of length one, and for a longer path `p ++ [f]` the
+fold `foldIso` of the comparison for `p` along `[f]`: the comparison for `p`, whiskered by `[f]`,
+followed by the binary comparison `[rep p, f] ≅ [rep p ⋆ f]`. -/
+def repIso {a : O} : {b : O} → (p : Edge (pathCategory O H) a b) →
+    D.HorizontalIso p (@Quiver.Hom.toPath O H a b (R.rep p))
+  | _, @Quiver.Path.nil _ .(H) _ => R.unitIso a
+  | _, @Quiver.Path.cons _ .(H) _ _ _ (@Quiver.Path.nil _ .(H) _) _ => Iso.refl _
+  | _, @Quiver.Path.cons _ .(H) _ _ _ (@Quiver.Path.cons _ .(H) _ _ _ p g) f =>
+    R.foldIso (repIso (@Quiver.Path.cons _ H _ _ _ p g)) (@Quiver.Hom.toPath O H _ _ f)
+
+/-- The generator representing the empty path is the chosen identity generator. -/
+@[simp]
+theorem rep_nil (a : O) : R.rep (@Quiver.Path.nil O H a) = R.unit a :=
+  rfl
+
+/-- The generator representing the path `[f]`, written with constructors, is `f`. -/
+@[simp]
+theorem rep_cons_nil {a b : O} (f : @Quiver.Hom O H a b) :
+    R.rep (@Quiver.Path.cons O H a a b (@Quiver.Path.nil O H a) f) = f :=
+  rfl
+
+/-- Appending a generator `f` to a nonempty path `p ++ [g]` composes its representing generator
+with `f`. -/
+@[simp]
+theorem rep_cons_cons {a b c d : O} (p : Edge (pathCategory O H) a b)
+    (g : @Quiver.Hom O H b c) (f : @Quiver.Hom O H c d) :
+    R.rep (@Quiver.Path.cons O H a c d (@Quiver.Path.cons O H a b c p g) f) =
+      R.mul (R.rep (@Quiver.Path.cons O H a b c p g)) f :=
+  R.foldRep_cons _ (@Quiver.Path.nil O H c) f
+
+/-- The recursive comparison of the empty path is the chosen nullary comparison. -/
+@[simp]
+theorem repIso_nil (a : O) : R.repIso (@Quiver.Path.nil O H a) = R.unitIso a :=
+  (rfl)
+
+/-- The recursive comparison of the path `[f]`, written with constructors, is its identity. -/
+@[simp]
+theorem repIso_cons_nil {a b : O} (f : @Quiver.Hom O H a b) :
+    R.repIso (@Quiver.Path.cons O H a a b (@Quiver.Path.nil O H a) f) = Iso.refl _ :=
+  (rfl)
+
+/-- The recursive comparison of a nonempty path `p ++ [g]` followed by a generator `f` is the
+comparison of `p ++ [g]`, whiskered by `[f]`, followed by the binary comparison. -/
+@[simp]
+theorem repIso_cons_cons {a b c d : O} (p : Edge (pathCategory O H) a b)
+    (g : @Quiver.Hom O H b c) (f : @Quiver.Hom O H c d) :
+    R.repIso (@Quiver.Path.cons O H a c d (@Quiver.Path.cons O H a b c p g) f) =
+      (D.hWhiskerRight (@Quiver.Hom.toPath O H c d f)).mapIso
+          (R.repIso (@Quiver.Path.cons O H a b c p g)) ≪≫
+        R.mulIso (R.rep (@Quiver.Path.cons O H a b c p g)) f :=
+  R.foldIso_cons _ (@Quiver.Path.nil O H c) f
 
 /-- Concatenation formula: the generator representing a nonempty path `p ++ [g]` followed by a
 path `q` folds `q` starting from the generator representing `p ++ [g]`. (For the empty prefix,

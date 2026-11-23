@@ -50,9 +50,11 @@ globular cell onto a side of an arbitrary cell replaces that boundary edge by an
 * `TauCeti.StrictDoubleCategory.HorizontalIso` and `TauCeti.StrictDoubleCategory.VerticalIso`:
   invertible globular cells.
 * `TauCeti.StrictDoubleCategory.changeTop`, `changeBottom`, `changeLeft` and `changeRight`:
-  replacing a boundary of a cell along an invertible globular cell, with
-  `vComp_changeBottom_changeTop` and `hComp_changeRight_changeLeft` showing that changing a
-  shared edge on both sides leaves a pasting unchanged.
+  replacing a boundary of a cell along an invertible globular cell. `changeTop_vComp`,
+  `changeBottom_vComp`, `changeLeft_hComp` and `changeRight_hComp` move a change of an outer
+  edge of a pasting onto the cell carrying that edge, and `vComp_changeBottom_changeTop` and
+  `hComp_changeRight_changeLeft` show that changing a shared edge on both sides leaves a
+  pasting unchanged.
 
 ## References
 
@@ -429,6 +431,57 @@ theorem changeRight_eqToIso (h : (⟨r⟩ : D.VerticalGlobular b d) = ⟨r'⟩) 
   (D.transpose.changeBottom_eqToIso h α).trans
     (DoubleCategoryStruct.transpose_cast D.toDoubleCategoryStruct _ _ _ _ _)
 
+/-- Changing the top boundary of a vertical pasting changes the top boundary of its upper
+cell. -/
+theorem changeTop_vComp {x y : O} {s : Edge H x y} {n : Edge V c x} {t : Edge V d y}
+    (e : D.HorizontalIso p p') (α : D.Cell p q l r) (β : D.Cell q s n t) :
+    D.changeTop e (D.vComp α β) = D.vComp (D.changeTop e α) β := by
+  simp only [changeTop_def, vComp_cast_top, vComp_assoc, Cell.cast_cast]
+
+/-- Changing the bottom boundary of a vertical pasting changes the bottom boundary of its lower
+cell. -/
+theorem changeBottom_vComp {x y : O} {s s' : Edge H x y} {n : Edge V c x} {t : Edge V d y}
+    (e : D.HorizontalIso s s') (α : D.Cell p q l r) (β : D.Cell q s n t) :
+    D.changeBottom e (D.vComp α β) = D.vComp α (D.changeBottom e β) := by
+  simp only [changeBottom_def, vComp_cast_bottom, vComp_assoc, Cell.cast_cast]
+
+/-- Changing the left boundary of a horizontal pasting changes the left boundary of its left
+cell. -/
+theorem changeLeft_hComp {x y : O} {s : Edge H b x} {t : Edge H d y} {n : Edge V x y}
+    (e : D.VerticalIso l l') (α : D.Cell p q l r) (β : D.Cell s t r n) :
+    D.changeLeft e (D.hComp α β) = D.hComp (D.changeLeft e α) β :=
+  D.transpose.changeTop_vComp e α β
+
+/-- Changing the right boundary of a horizontal pasting changes the right boundary of its right
+cell. -/
+theorem changeRight_hComp {x y : O} {s : Edge H b x} {t : Edge H d y} {n n' : Edge V x y}
+    (e : D.VerticalIso n n') (α : D.Cell p q l r) (β : D.Cell s t r n) :
+    D.changeRight e (D.hComp α β) = D.hComp α (D.changeRight e β) :=
+  D.transpose.changeBottom_vComp e α β
+
+/-- Pasting an invertible globular cell `e` on top of a cell whose top boundary was changed along
+`e` recovers the original cell, up to the unit law on the vertical boundaries. This is
+`changeTop_symm_changeTop` written as a pasting. -/
+theorem vComp_hom_cell_changeTop {x y : O} {s : Edge H x y} {n : Edge V c x} {t : Edge V d y}
+    (e : D.HorizontalIso q q') (β : D.Cell q s n t) :
+    D.vComp e.hom.cell (D.changeTop e β) =
+      β.cast rfl rfl (Category.id_comp (self := V) n).symm
+        (Category.id_comp (self := V) t).symm := by
+  have h := D.changeTop_def e.symm (D.changeTop e β)
+  rw [changeTop_symm_changeTop, Iso.symm_inv, eq_comm, Cell.cast_eq_iff] at h
+  exact h
+
+/-- Pasting an invertible vertical globular cell `e` to the left of a cell whose left boundary
+was changed along `e` recovers the original cell, up to the unit law on the horizontal
+boundaries. -/
+theorem hComp_hom_cell_changeLeft {x y : O} {s : Edge H b x} {t : Edge H d y} {n : Edge V x y}
+    (e : D.VerticalIso r r') (β : D.Cell s t r n) :
+    D.hComp e.hom.cell (D.changeLeft e β) =
+      β.cast (Category.id_comp (self := H) s).symm (Category.id_comp (self := H) t).symm rfl
+        rfl :=
+  (D.transpose.vComp_hom_cell_changeTop e β).trans
+    (DoubleCategoryStruct.transpose_cast D.toDoubleCategoryStruct _ _ _ _ _)
+
 /-- Changing the edge shared by two vertically pasted cells along the same invertible globular
 cell, at the bottom of the upper cell and at the top of the lower cell, does not change their
 vertical pasting. -/
@@ -436,12 +489,7 @@ vertical pasting. -/
 theorem vComp_changeBottom_changeTop {x y : O} {s : Edge H x y} {n : Edge V c x}
     {t : Edge V d y} (e : D.HorizontalIso q q') (α : D.Cell p q l r) (β : D.Cell q s n t) :
     D.vComp (D.changeBottom e α) (D.changeTop e β) = D.vComp α β := by
-  have he := congrArg HorizontalGlobular.Hom.cell e.hom_inv_id
-  rw [HorizontalGlobular.comp_cell, HorizontalGlobular.id_cell, Cell.cast_eq_iff] at he
-  have h := D.vComp_assoc e.hom.cell e.inv.cell β
-  rw [he, vComp_cast_top, vId_vComp, Cell.cast_cast, eq_comm, Cell.cast_eq_iff,
-    Cell.cast_cast] at h
-  rw [changeBottom_def, changeTop_def, vComp_cast_top, vComp_cast_bottom, vComp_assoc, h,
+  rw [changeBottom_def, vComp_cast_top, vComp_assoc, vComp_hom_cell_changeTop,
     vComp_cast_bottom]
   simp only [Cell.cast_cast, Cell.cast_rfl]
 
