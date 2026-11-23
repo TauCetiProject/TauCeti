@@ -41,7 +41,8 @@ the symbol calculus needs:
 * the dilated cutoffs `ξ ↦ χ (t⁻¹ • ξ)`, `t ≥ 1`, which vanish for `‖ξ‖ ≤ t` and equal `1` for
   `‖ξ‖ ≥ 2 t`, satisfy the order-zero symbol estimates `‖D^k (χ (t⁻¹ • ·)) ξ‖ ≤ C ⟨ξ⟩^(-k)`
   uniformly in `t` (`FrequencyCutoff.exists_norm_iteratedFDeriv_comp_inv_smul_le`); cutoffs at
-  growing radii are how asymptotic sums of symbols are built;
+  growing radii are how asymptotic sums of symbols are built, and with radii `tⱼ ≥ j + 1` the
+  series `∑ⱼ χ(ξ / tⱼ) fⱼ` is a finite sum on each ball (`FrequencyCutoff.finsum_smul_eq_sum`);
 * the pointwise product of two cutoffs is a cutoff, which is how the cut-off expansions of two
   classical symbols multiply;
 * the rescaled cutoff `(x, ξ) ↦ χ(ξ / R)` on a product `X × E` is smooth
@@ -218,6 +219,18 @@ theorem apply_inv_smul_eq_one {t : ℝ} (ht : 0 < t) {ξ : E} (hξ : 2 * t ≤ �
   χ.apply_eq_one_of_two_le_norm <| by
     rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht.le), le_inv_mul_iff₀ ht]
     linarith
+
+/-- With radii `tⱼ ≥ j + 1`, only the terms with `j < J` of a cut-off series `∑ⱼ χ(ξ / tⱼ) fⱼ` can
+be nonzero at frequencies `‖ξ‖ < J`. -/
+theorem finsum_smul_eq_sum {t : ℕ → ℝ} (ht : ∀ j : ℕ, (j : ℝ) + 1 ≤ t j) {M : Type*}
+    [AddCommMonoid M] [Module ℝ M] (f : ℕ → M) {J : ℕ} {ξ : E} (hξ : ‖ξ‖ < J) :
+    ∑ᶠ j, χ ((t j)⁻¹ • ξ) • f j = ∑ j ∈ Finset.range J, χ ((t j)⁻¹ • ξ) • f j := by
+  refine finsum_eq_sum_of_support_subset _ fun j hj => ?_
+  rw [Finset.coe_range, Set.mem_Iio]
+  by_contra hjJ
+  have hJj : (J : ℝ) ≤ j := by exact_mod_cast not_lt.1 hjJ
+  have htj : 0 < t j := by linarith [ht j, (Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
+  exact hj (by simp only [χ.apply_inv_smul_eq_zero htj (by linarith [ht j]), zero_smul])
 
 /-- Every iterated derivative of the dilated cutoff `ξ ↦ χ (t⁻¹ • ξ)` vanishes on the closed ball
 of radius `t`. -/
