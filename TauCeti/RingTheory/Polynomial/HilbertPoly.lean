@@ -45,6 +45,8 @@ polynomial:
   `(e - 1)! • hilbertPoly (h.map (Int.castRingHom ℚ)) e` has integer coefficients and degree `< e`.
 * `Polynomial.eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq`: eventual evaluation of the
   shifted Hilbert polynomial associated to a rational series `h / (1 - X)^e`.
+* `Polynomial.eval_hilbertPoly_map_intCast_comp_sub_eq_of_mul_one_sub_pow_eq`: specialization to an
+  integer power-series identity mapped into a field `F`.
 -/
 
 public section
@@ -220,6 +222,32 @@ theorem eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F]
       congr 1
       have hsub : ((n : ℤ) - (i : ℤ) + 1) + (k : ℤ) - 1 = ((k + (n - i) : ℕ) : ℤ) := by omega
       rw [Ring.multichoose_eq, hsub, Ring.choose_natCast, Int.cast_natCast]
+
+/-- Given a sequence `f : ℤ → ℤ` whose shifted generating series satisfies
+`(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `ℤ⟦X⟧` and a field `F` with `(e - 1)! ≠ 0` in `F`,
+the shifted Hilbert polynomial of `h.map (Int.castRingHom F)` agrees with `(f d : F)` for every
+integer `d ≥ d₀ + h.natDegree + 1`. -/
+theorem eval_hilbertPoly_map_intCast_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F]
+    {f : ℤ → ℤ} {d₀ : ℤ} {h : ℤ[X]} {e : ℕ} (hfac : ((e - 1).factorial : F) ≠ 0)
+    (hh : (PowerSeries.mk fun n : ℕ ↦ f (d₀ + n)) * (1 - PowerSeries.X) ^ e = h.toPowerSeries)
+    {d : ℤ} (hd : d₀ + (h.natDegree : ℤ) + 1 ≤ d) :
+    ((hilbertPoly (h.map (Int.castRingHom F)) e).comp (X - C (d₀ : F))).eval (d : F) =
+      (f d : F) := by
+  have hserF : (PowerSeries.mk fun n : ℕ ↦ (f (d₀ + n) : F)) * (1 - PowerSeries.X) ^ e =
+      ((h.map (Int.castRingHom F) : F[X]) : F⟦X⟧) := by
+    have hmap := congrArg (PowerSeries.map (Int.castRingHom F)) hh
+    rw [map_mul, map_pow, map_sub, map_one, PowerSeries.map_X] at hmap
+    have hmk : PowerSeries.map (Int.castRingHom F) (PowerSeries.mk fun n : ℕ ↦ f (d₀ + n)) =
+        PowerSeries.mk fun n : ℕ ↦ (f (d₀ + n) : F) := by
+      ext n; simp
+    have hcoe : PowerSeries.map (Int.castRingHom F) (h : ℤ⟦X⟧) =
+        ((h.map (Int.castRingHom F) : F[X]) : F⟦X⟧) := by
+      ext n; simp
+    rwa [hmk, hcoe] at hmap
+  have hdeg : (h.map (Int.castRingHom F)).natDegree ≤ h.natDegree := natDegree_map_le
+  exact eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq
+    (f := fun k ↦ (f k : F)) (d₀ := d₀) (h := h.map (Int.castRingHom F)) (e := e)
+    hfac hserF (by omega)
 
 end Eventual
 
