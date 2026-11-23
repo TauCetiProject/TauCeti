@@ -396,10 +396,8 @@ carrier to the unitary group of the target algebra. -/
 def evenUnitaryGroupEquivUnitaryOfAlgEquiv
     (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x)) :
     evenUnitaryGroup Q ≃* unitary A where
-  toFun x := ⟨e (evenUnitaryGroupEvenPart Q x), by
-    rw [Unitary.mem_iff, ← he, ← map_mul, ← map_mul, reverseEven_evenUnitaryGroupEvenPart_mul_self,
-      evenUnitaryGroupEvenPart_mul_reverseEven, map_one]
-    exact ⟨rfl, rfl⟩⟩
+  toFun x := ⟨e (evenUnitaryGroupEvenPart Q x),
+    map_evenUnitaryGroupEvenPart_mem_unitary Q e.toMonoidHom he x⟩
   invFun q :=
     have hs : ∀ a : A, reverseEven Q (e.symm a) = e.symm (star a) := fun a ↦ by
       apply e.injective; rw [he, e.apply_symm_apply, e.apply_symm_apply]

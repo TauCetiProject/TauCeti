@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
 # Reading the `ℤ/2`-grading: base cases, exterior bases, and ordered products
@@ -58,8 +59,8 @@ belongs to the grading API independently of any spin representation.
   with every vector intertwines Clifford multiplication with the grade involution.
 * `CliffordAlgebra.involute_eq_self_iff` and `CliffordAlgebra.involute_eq_neg_iff`: with `2`
   invertible, the even and odd parts are the `±1`-eigenspaces of the grade involution.
-* `CliffordAlgebra.inv_mem_evenOdd_zero` and `CliffordAlgebra.mul_mul_inv_mem_evenOdd`: the inverse
-  of an even unit is even, and conjugation by an even unit preserves every graded piece.
+* `CliffordAlgebra.mul_mul_inv_mem_evenOdd`: conjugation by an even unit preserves every graded
+  piece, since the inverse of an even unit is even (`Units.val_inv_mem_graded`).
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
   homogeneous of degree given by the cardinality of its index set, and
   `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
@@ -172,24 +173,6 @@ end Involute
 
 /-! ### Conjugation by an even unit -/
 
-/-- The inverse of a unit lying in the even part of the Clifford algebra is again even. -/
-theorem inv_mem_evenOdd_zero {x : (CliffordAlgebra Q)ˣ}
-    (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q 0) : (↑x⁻¹ : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
-  obtain ⟨e, he, o, ho, hsum⟩ := exists_add_eq (↑x⁻¹ : CliffordAlgebra Q)
-  have hxe : (x : CliffordAlgebra Q) * e ∈ evenOdd Q 0 := by
-    simpa using SetLike.mul_mem_graded hx he
-  have hxo : (x : CliffordAlgebra Q) * o ∈ evenOdd Q 1 := by
-    simpa using SetLike.mul_mem_graded hx ho
-  have hone : (x : CliffordAlgebra Q) * e + (x : CliffordAlgebra Q) * o = 1 := by
-    rw [← mul_add, hsum, Units.mul_inv]
-  have hxo0 : (x : CliffordAlgebra Q) * o ∈ evenOdd Q 0 := by
-    rw [eq_sub_of_add_eq' hone]
-    exact sub_mem (SetLike.one_mem_graded _) hxe
-  have ho0 : o = 0 := by
-    have h := Submodule.disjoint_def.mp (evenOdd_isCompl Q).disjoint _ hxo0 hxo
-    simpa [← mul_assoc] using congrArg (fun z => (↑x⁻¹ : CliffordAlgebra Q) * z) h
-  rwa [← hsum, ho0, add_zero]
-
 /-- Conjugation by a unit whose value lies in the even part of the Clifford algebra preserves every
 graded piece. -/
 theorem mul_mul_inv_mem_evenOdd {x : (CliffordAlgebra Q)ˣ}
@@ -197,7 +180,9 @@ theorem mul_mul_inv_mem_evenOdd {x : (CliffordAlgebra Q)ˣ}
     (hy : y ∈ evenOdd Q k) : (x : CliffordAlgebra Q) * y * ↑x⁻¹ ∈ evenOdd Q k := by
   have h : (x : CliffordAlgebra Q) * y ∈ evenOdd Q k := by
     simpa using SetLike.mul_mem_graded hx hy
-  simpa using SetLike.mul_mem_graded h (inv_mem_evenOdd_zero hx)
+  -- The inverse of an even unit is even: `Units.val_inv_mem_graded` gives degree `-0`.
+  have hxi : (↑x⁻¹ : CliffordAlgebra Q) ∈ evenOdd Q 0 := by simpa using x.val_inv_mem_graded hx
+  simpa using SetLike.mul_mem_graded h hxi
 
 end CliffordAlgebra
 
