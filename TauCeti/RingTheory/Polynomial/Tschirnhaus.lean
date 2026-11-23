@@ -55,6 +55,10 @@ recomputed at the transform, whose roots are in bijection with those of `f`.
   The `_field` variants cover arbitrary field polynomials in splitting domains, including `f = 0`.
 * `Polynomial.isRoot_tschirnhausPolynomial`: over a domain, `T(α)` is a root of the transform
   whenever `α` is a root of the nonzero polynomial `f`.
+* `Polynomial.minpoly_aeval_dvd_tschirnhausPolynomial`,
+  `Polynomial.minpoly_aeval_eq_tschirnhausPolynomial_iff`: over a field, the minimal polynomial
+  of `T(x)` divides the transform of the minimal polynomial of `x`, with equality exactly when
+  the two have the same degree.
 * `Polynomial.Monic.tschirnhausRootMap`, `Polynomial.tschirnhausRootMap`: the resulting map
   `α ↦ T(α)` from the roots of `f` to the roots of its transform, for monic `f` over a domain and
   for any field polynomial in a domain; it is surjective whenever `f` splits.
@@ -371,19 +375,22 @@ theorem splits_map_tschirnhausPolynomial_field {f : K[X]}
   rw [map_tschirnhausPolynomial_of_injective f T _ (algebraMap K L).injective]
   exact splits_tschirnhausPolynomial hs _
 
+/-- Over a field, if `a` is a root in a domain of the nonzero polynomial `f`, then `T(a)` is a
+root of the Tschirnhaus transform of `f` by `T`. -/
+theorem aeval_tschirnhausPolynomial_eq_zero {f : K[X]} (hf : f ≠ 0) {a : L}
+    (ha : aeval a f = 0) (T : K[X]) : aeval (aeval a T) (tschirnhausPolynomial f T) = 0 := by
+  rw [← eval_map_algebraMap, map_tschirnhausPolynomial_of_injective f T _
+    (algebraMap K L).injective, ← eval_map_algebraMap]
+  exact isRoot_tschirnhausPolynomial (map_ne_zero hf) (by rwa [IsRoot, eval_map_algebraMap]) _
+
 /-- The map from the roots of a field polynomial to the roots of its Tschirnhaus transform in a
 domain, sending `α` to `T(α)`. -/
 noncomputable def tschirnhausRootMap (f T : K[X]) :
     f.rootSet L → (tschirnhausPolynomial f T).rootSet L :=
-  Set.MapsTo.restrict (fun a ↦ aeval a T) _ _ <| by
-    intro a ha
-    rw [mem_rootSet', ← eval_map_algebraMap] at ha ⊢
-    dsimp only
-    have hf : f ≠ 0 := fun hf ↦ ha.1 (by simp [hf])
-    refine ⟨map_ne_zero (ne_zero_tschirnhausPolynomial_field hf T), ?_⟩
-    rw [map_tschirnhausPolynomial_of_injective f T _ (algebraMap K L).injective,
-      ← eval_map_algebraMap]
-    exact isRoot_tschirnhausPolynomial ha.1 ha.2 _
+  Set.MapsTo.restrict (fun a ↦ aeval a T) _ _ fun _ ha ↦ by
+    rw [mem_rootSet] at ha ⊢
+    exact ⟨ne_zero_tschirnhausPolynomial_field ha.1 T,
+      aeval_tschirnhausPolynomial_eq_zero ha.1 ha.2 T⟩
 
 @[simp]
 theorem coe_tschirnhausRootMap (f T : K[X]) (x : f.rootSet L) :
@@ -399,6 +406,26 @@ theorem tschirnhausRootMap_surjective {f : K[X]}
   refine (Set.MapsTo.restrict_surjective_iff _).2 ?_
   rw [rootSet_tschirnhausPolynomial_field hs]
   exact Set.surjOn_image _ _
+
+/-- The minimal polynomial of `T(x)` divides the Tschirnhaus transform by `T` of the minimal
+polynomial of `x`. -/
+theorem minpoly_aeval_dvd_tschirnhausPolynomial {x : L} (hx : IsIntegral K x) (T : K[X]) :
+    minpoly K (aeval x T) ∣ tschirnhausPolynomial (minpoly K x) T :=
+  minpoly.dvd K _ (aeval_tschirnhausPolynomial_eq_zero (minpoly.ne_zero hx) (minpoly.aeval K x) T)
+
+/-- The minimal polynomial of `T(x)` is the Tschirnhaus transform by `T` of the minimal
+polynomial of `x` exactly when the two minimal polynomials have the same degree. -/
+theorem minpoly_aeval_eq_tschirnhausPolynomial_iff {x : L} (hx : IsIntegral K x) (T : K[X]) :
+    minpoly K (aeval x T) = tschirnhausPolynomial (minpoly K x) T ↔
+      (minpoly K (aeval x T)).natDegree = (minpoly K x).natDegree := by
+  have hm := monic_tschirnhausPolynomial (minpoly.monic hx) T
+  have hd := natDegree_tschirnhausPolynomial (minpoly.monic hx) T
+  refine ⟨fun h ↦ h ▸ hd, fun h ↦ ?_⟩
+  have hy : IsIntegral K (aeval x T) := ⟨_, hm, by
+    rw [← aeval_def]
+    exact aeval_tschirnhausPolynomial_eq_zero (minpoly.ne_zero hx) (minpoly.aeval K x) T⟩
+  exact (eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hy) hm
+    (minpoly_aeval_dvd_tschirnhausPolynomial hx T) (by omega)).symm
 
 end Domain
 
