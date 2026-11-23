@@ -10,7 +10,6 @@ public import Mathlib.Data.Matrix.Block
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Rectangular
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.LinearAlgebra.Matrix.Hermitian
-import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
 /-!
 # Block matrices, corner embeddings, and block operator norms on `CStarMatrix`
@@ -19,7 +18,7 @@ Building on the rectangular `CStarMatrix` calculus, this file develops `2 × 2` 
 standard corner/diagonal `⋆`-algebra embeddings for `CStarMatrix`:
 
 * Block matrices `CStarMatrix.fromBlocks`, their algebraic and star operations, block-diagonal
-  characterizations of self-adjointness and unitarity, and reindexing under
+  characterizations of self-adjointness, and reindexing under
   `Equiv.sumCongr`, `Equiv.sumComm`, and `Equiv.sumAssoc`.
 * Block-diagonal `⋆`-algebra embedding `CStarMatrix.blockDiagStarAlgHom`, corner embeddings
   `CStarMatrix.inl` and `CStarMatrix.inr`, matrix units `CStarMatrix.single` and
@@ -201,21 +200,6 @@ theorem isSelfAdjoint_fromBlocks_iff [InvolutiveStar A]
     {M : CStarMatrix m m A} {N : CStarMatrix n n A} :
     IsSelfAdjoint (fromBlocks M 0 0 N) ↔ IsSelfAdjoint M ∧ IsSelfAdjoint N := by
   simp [isSelfAdjoint_fromBlocks_iff]
-
-private theorem mem_unitary_iff_ofMatrix_symm {k A : Type*} [Fintype k] [DecidableEq k]
-    [Semiring A] [StarRing A] (X : CStarMatrix k k A) :
-    X ∈ unitary (CStarMatrix k k A) ↔ ofMatrix.symm X ∈ unitary (Matrix k k A) := by
-  simp [Unitary.mem_iff, ← ofMatrix.symm.injective.eq_iff, Matrix.star_eq_conjTranspose]
-
-/-- A block-diagonal `CStarMatrix` is unitary iff both diagonal blocks are unitary. -/
-@[simp] theorem fromBlocks_zero₁₂_zero₂₁_mem_unitary [Fintype m] [Fintype n] [DecidableEq m]
-    [DecidableEq n] [Semiring A] [StarRing A] {M : CStarMatrix m m A} {N : CStarMatrix n n A} :
-    fromBlocks M 0 0 N ∈ unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A) ↔
-      M ∈ unitary (CStarMatrix m m A) ∧ N ∈ unitary (CStarMatrix n n A) := by
-  rw [mem_unitary_iff_ofMatrix_symm, ofMatrix_symm_fromBlocks,
-    ← of_zero (m := m) (n := n), ← of_zero (m := n) (n := m), Equiv.symm_apply_apply,
-    Equiv.symm_apply_apply, Matrix.fromBlocks_zero_zero_mem_unitary,
-    mem_unitary_iff_ofMatrix_symm, mem_unitary_iff_ofMatrix_symm]
 
 /-- Reindexing rows and columns by `Equiv.sumCongr` acts blockwise on `fromBlocks`. -/
 @[simp] theorem reindexₗ_sumCongr_fromBlocks [Semiring R] [AddCommMonoid A] [Module R A]

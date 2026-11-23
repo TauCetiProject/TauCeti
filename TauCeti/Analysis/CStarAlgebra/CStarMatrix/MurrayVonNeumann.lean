@@ -89,7 +89,7 @@ theorem _root_.IsStarProjection.murrayVonNeumannEquiv_inr [Fintype m] [Fintype n
     {q : CStarMatrix n n A} (hq : IsStarProjection q) :
     MurrayVonNeumannEquiv (inr (m := m) (R := R) q) q := by
   have h := (murrayVonNeumannEquiv_ofMatrix
-    ((isStarProjection_ofMatrix_symm hq).isMurrayVonNeumannEquivalent_zero_fromBlocks
+    (IsStarProjection.isMurrayVonNeumannEquivalent_zero_fromBlocks (p := ofMatrix.symm q) hq
       (n := m))).symm
   simpa only [inr_apply, of_fromBlocks, of_zero, Equiv.apply_symm_apply] using h
 
@@ -100,7 +100,7 @@ theorem _root_.IsStarProjection.murrayVonNeumannEquiv_reindexₐ [Fintype m] [Fi
     {p : CStarMatrix m m A} (hp : IsStarProjection p) (e : m ≃ n) :
     MurrayVonNeumannEquiv (reindexₐ R A e p) p := by
   have h := (murrayVonNeumannEquiv_ofMatrix
-    ((isStarProjection_ofMatrix_symm hp).isMurrayVonNeumannEquivalent_reindex e)).symm
+    (IsStarProjection.isMurrayVonNeumannEquivalent_reindex (p := ofMatrix.symm p) hp e)).symm
   have hre : ofMatrix (Matrix.reindex e e (ofMatrix.symm p)) = reindexₐ R A e p := by
     rw [← reindexₗ_eq_reindexₐ (R := R), ← ofMatrix_symm_reindexₗ (R := R), Equiv.apply_symm_apply]
   simpa only [hre, Equiv.apply_symm_apply] using h
@@ -207,7 +207,8 @@ private theorem mul_conjTranspose_eq_self_of_conjTranspose_mul_self {p : CStarMa
     {v : CStarMatrix n m A} (hp : IsIdempotentElem p) (hvp : v.conjTranspose * v = p) :
     p * v.conjTranspose = v.conjTranspose := by
   have hp_sa : p.conjTranspose = p := by
-    rw [← hvp, conjTranspose_mul, conjTranspose_conjTranspose]
+    rw [← hvp]
+    exact (Matrix.isHermitian_conjTranspose_mul_self (ofMatrix.symm v)).eq
   simpa [hp_sa] using congrArg conjTranspose (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
 
 private theorem mul_self_eq_self_of_self_mul_conjTranspose {p : CStarMatrix m m A}
@@ -221,7 +222,8 @@ private theorem conjTranspose_mul_eq_self_of_self_mul_conjTranspose {p : CStarMa
     (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
     v.conjTranspose * q = v.conjTranspose := by
   have hq_sa : q.conjTranspose = q := by
-    rw [← hvq, conjTranspose_mul, conjTranspose_conjTranspose]
+    rw [← hvq]
+    exact (Matrix.isHermitian_mul_conjTranspose_self (ofMatrix.symm v)).eq
   simpa [hq_sa] using congrArg conjTranspose
     (mul_self_eq_self_of_self_mul_conjTranspose hp hvp hvq)
 
@@ -351,9 +353,11 @@ theorem isStarProjection_rotationProjection {m n A : Type*} [Fintype m] [Fintype
     (hp : IsIdempotentElem p) (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
     IsStarProjection (rotationProjection p q v) := by
   have hp_sa : IsSelfAdjoint p := by
-    rw [IsSelfAdjoint, star_eq_conjTranspose, ← hvp, conjTranspose_mul, conjTranspose_conjTranspose]
+    rw [← hvp]
+    exact (Matrix.isHermitian_conjTranspose_mul_self (ofMatrix.symm v)).isSelfAdjoint
   have hq_sa : IsSelfAdjoint q := by
-    rw [IsSelfAdjoint, star_eq_conjTranspose, ← hvq, conjTranspose_mul, conjTranspose_conjTranspose]
+    rw [← hvq]
+    exact (Matrix.isHermitian_mul_conjTranspose_self (ofMatrix.symm v)).isSelfAdjoint
   have hv_mul_p : v * p = v := mul_eq_self_of_conjTranspose_mul_eq v hp hvp
   have hq_idem : q * q = q := by
     rw [← hvq, mul_assoc_rectangular, ← mul_assoc_rectangular v.conjTranspose v v.conjTranspose,
