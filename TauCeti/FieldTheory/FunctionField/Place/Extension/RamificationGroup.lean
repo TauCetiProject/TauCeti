@@ -286,30 +286,9 @@ torsion-free additive group, so the filtration is constant from `1` on and meets
 theorem ramificationGroup_one_eq_bot [Finite (ramificationGroup F P 1)]
     [CharZero P.ResidueField] :
     ramificationGroup F P 1 = ⊥ := by
-  have hstep : ∀ i : ℕ, ramificationGroup F P (i + 1) ≤ ramificationGroup F P (i + 2) := by
-    intro i
-    have : Finite (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F)
-        P.integers ((i + 1 : ℕ) : ℤ)) := by
-      rw [← ramificationGroup_def]
-      exact Finite.of_injective _ (Subgroup.inclusion_injective
-        (ramificationGroup_antitone F P (Nat.succ_le_succ (Nat.zero_le i))))
-    have hsub := IsLocalRing.subsingleton_ramificationGroupGraded_of_charZero
-      (P.integers.decompositionSubgroup F) P.integers (i := ((i + 1 : ℕ) : ℤ)) (by omega)
-    rw [IsLocalRing.RamificationGroupGraded, QuotientGroup.subsingleton_iff,
-      Subgroup.subgroupOf_eq_top] at hsub
-    rwa [ramificationGroup_def, ramificationGroup_def, Nat.cast_succ (R := ℤ) (i + 1)]
-  have hle : ∀ i : ℕ, ramificationGroup F P 1 ≤ ramificationGroup F P i := by
-    intro i
-    induction i with
-    | zero => exact ramificationGroup_antitone F P (Nat.zero_le 1)
-    | succ i ih =>
-      rcases Nat.eq_zero_or_pos i with rfl | hi
-      · exact le_rfl
-      · obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
-        exact le_trans ih (hstep j)
-  refine le_antisymm ?_ bot_le
-  rw [← iInf_ramificationGroup_eq_bot F P]
-  exact le_iInf hle
+  rw [ramificationGroup_def, Nat.cast_one] at *
+  exact IsLocalRing.ramificationGroup_eq_bot_of_charZero
+    (P.integers.decompositionSubgroup F) P.integers one_pos
 
 end Structure
 

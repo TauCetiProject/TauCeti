@@ -97,6 +97,24 @@ theorem residue_comp_algebraMap :
       (residue S).comp (algebraMap R S) :=
   RingHom.ext fun x => ResidueField.algebraMap_residue x
 
+/-- Lifting the minimal polynomial of a separable element `α` over the residue field of a local
+ring `R` gives a monic polynomial `p : R[X]` reducing to `minpoly (ResidueField R) α` whose
+reduction has `α` as a simple root. -/
+theorem exists_monic_lifts_minpoly_of_isSeparable {R Ω : Type*} [CommRing R] [IsLocalRing R]
+    [Field Ω] [Algebra (ResidueField R) Ω] (α : Ω) (hsep : IsSeparable (ResidueField R) α) :
+    ∃ p : R[X], p.Monic ∧ p.map (residue R) = minpoly (ResidueField R) α ∧
+      aeval α (p.map (residue R)) = 0 ∧ aeval α ((derivative p).map (residue R)) ≠ 0 := by
+  obtain ⟨p, hp, -, hmonic⟩ := lifts_and_natDegree_eq_and_monic
+    ((lifts_iff_coeff_lifts (f := residue R)
+      (minpoly (ResidueField R) α)).mpr fun _ ↦ Ideal.Quotient.mk_surjective _)
+    (minpoly.monic hsep.isIntegral)
+  have hroot : aeval α (p.map (residue R)) = 0 := by
+    rw [hp, minpoly.aeval]
+  have hderiv : aeval α ((derivative p).map (residue R)) ≠ 0 := by
+    rw [← derivative_map, hp]
+    exact hsep.aeval_derivative_ne_zero (minpoly.aeval _ _)
+  exact ⟨p, hmonic, hp, hroot, hderiv⟩
+
 /-- If the residue of `β` generates the residue field extension, then `R[β]` meets every residue
 class of `S` modulo the maximal ideal: `R[β]` and `𝓂(S)` together span `S` over `R`.  This is the
 residue-class step of the generation criterion
@@ -162,27 +180,20 @@ theorem exists_adjoin_eq_top_of_span_eq_maximalIdeal
     [Algebra.IsSeparable (ResidueField R) (ResidueField S)] {π : S}
     (hπ : Ideal.span {π} = maximalIdeal S) : ∃ β : S, Algebra.adjoin R {β} = ⊤ := by
   -- Pick a lift `a` of a primitive element of the residue extension and a polynomial `g : R[X]`
-  -- lifting its minimal polynomial.  Then `g(a)` lies in `𝓂(S)` and `g'(a)` is a unit, so the
+  -- lifting its minimal polynomial.  Then `g(a)` lies in `𝔪(S)` and `g'(a)` is a unit, so the
   -- Newton step replaces `a` by a `β` congruent to it at which `g` *generates* `𝓂(S)`, and
   -- `adjoin_eq_top_of_span_eval_eq_maximalIdeal` applies.
   obtain ⟨α, hα⟩ := Field.exists_primitive_element (ResidueField R) (ResidueField S)
   obtain ⟨a, rfl⟩ := residue_surjective (R := S) α
-  -- A lift `g : R[X]` of the minimal polynomial of the residue of `a`.
-  obtain ⟨g, hg⟩ := (mem_lifts _).mp
-    (mem_lifts_of_surjective residue_surjective (minpoly (ResidueField R) (residue S a)))
-  have hbridge : ∀ x : S, residue S (aeval x g) =
-      aeval (residue S x) (minpoly (ResidueField R) (residue S a)) := fun x => by
-    rw [map_aeval_eq_aeval_map residue_comp_algebraMap, hg]
-  have hbridge' : ∀ x : S, residue S (aeval x (derivative g)) =
-      aeval (residue S x) (derivative (minpoly (ResidueField R) (residue S a))) := fun x => by
-    rw [map_aeval_eq_aeval_map residue_comp_algebraMap, ← derivative_map, hg]
+  obtain ⟨g, -, -, hroot, hderiv⟩ := exists_monic_lifts_minpoly_of_isSeparable
+    (R := R) (residue S a) (Algebra.IsSeparable.isSeparable _ _)
   -- `g` has a simple root at `a` modulo the maximal ideal, so a Newton step applies.
   have hval : (g.map (algebraMap R S)).eval a ∈ maximalIdeal S := by
-    rw [eval_map, ← aeval_def, ← residue_eq_zero_iff]
-    exact (hbridge a).trans (minpoly.aeval _ _)
+    rwa [eval_map, ← aeval_def, ← residue_eq_zero_iff,
+      map_aeval_eq_aeval_map residue_comp_algebraMap]
   have hder : IsUnit ((derivative (g.map (algebraMap R S))).eval a) := by
-    rw [derivative_map, eval_map, ← aeval_def, ← residue_ne_zero_iff_isUnit, hbridge' a]
-    exact (Algebra.IsSeparable.isSeparable _ _).aeval_derivative_ne_zero (minpoly.aeval _ _)
+    rwa [derivative_map, eval_map, ← aeval_def, ← residue_ne_zero_iff_isUnit,
+      map_aeval_eq_aeval_map residue_comp_algebraMap]
   obtain ⟨β, hβa, hβ⟩ := exists_span_eval_eq_maximalIdeal hπ hval hder
   have hres : residue S β = residue S a := by
     rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff]; exact hβa

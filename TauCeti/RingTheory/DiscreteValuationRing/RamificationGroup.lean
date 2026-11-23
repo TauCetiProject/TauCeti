@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Irreducible.Lemmas
 public import Mathlib.GroupTheory.Sylow
-public import TauCeti.Algebra.Group.Irreducible.Lemmas
 public import TauCeti.RingTheory.DiscreteValuationRing.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 import Mathlib.RingTheory.IntegralDomain
@@ -143,11 +143,12 @@ private theorem unitsMap_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
 
 private theorem uniformizerChangeUnit_smul_mem_principalUnitGroup {ϖ : B} (hϖ : Irreducible ϖ)
     {i : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G B (i : ℤ)) :
-    uniformizerChangeUnit ϖ (σ • ϖ) hϖ (hϖ.smul σ) ∈
+    uniformizerChangeUnit ϖ (σ • ϖ) hϖ
+        (hϖ.map (MulDistribMulAction.toMulEquiv B σ) : Irreducible (σ • ϖ)) ∈
       (maximalIdeal B ^ i).principalUnitGroup := by
+  have hσϖ : Irreducible (σ • ϖ) := hϖ.map (MulDistribMulAction.toMulEquiv B σ)
   rw [Ideal.mem_principalUnitGroup, ← mul_mem_maximalIdeal_pow_succ_iff hϖ]
-  have hmul : ϖ * ((uniformizerChangeUnit ϖ (σ • ϖ) hϖ (hϖ.smul σ) : B) - 1) =
-      σ • ϖ - ϖ := by
+  have hmul : ϖ * ((uniformizerChangeUnit ϖ (σ • ϖ) hϖ hσϖ : B) - 1) = σ • ϖ - ϖ := by
     rw [mul_sub, mul_one, mul_uniformizerChangeUnit]
   rw [hmul]
   exact mem_ramificationGroup_natCast_iff.mp hσ ϖ
@@ -156,7 +157,8 @@ private theorem uniformizerChangeUnit_smul_mem_principalUnitGroup {ϖ : B} (hϖ 
 uniformizer `ϖ`, the unique unit `u ∈ 1 + 𝔪 ^ i` satisfying `ϖ * u = σ • ϖ`. -/
 def uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G B (i : ℤ)) : (maximalIdeal B ^ i).principalUnitGroup :=
-  ⟨uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ (hϖ.smul (σ : G)),
+  ⟨uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ
+      (hϖ.map (MulDistribMulAction.toMulEquiv B (σ : G)) : Irreducible ((σ : G) • ϖ)),
     uniformizerChangeUnit_smul_mem_principalUnitGroup hϖ σ.property⟩
 
 /-- As a unit of `B`, `uniformizerRatio i hϖ σ` is the uniformizer change unit from `ϖ` to
@@ -164,7 +166,8 @@ def uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
 theorem coe_uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G B (i : ℤ)) :
     (uniformizerRatio i hϖ σ : Bˣ) =
-      uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ (hϖ.smul (σ : G)) :=
+      uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ
+        (hϖ.map (MulDistribMulAction.toMulEquiv B (σ : G)) : Irreducible ((σ : G) • ϖ)) :=
   -- `(rfl)`, not `rfl`, because the body of `uniformizerRatio` is not `@[expose]`d.
   (rfl)
 
@@ -173,7 +176,8 @@ theorem coe_uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
 theorem mul_coe_uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G B (i : ℤ)) :
     ϖ * ((uniformizerRatio i hϖ σ : Bˣ) : B) = (σ : G) • ϖ := by
-  rw [coe_uniformizerRatio, mul_uniformizerChangeUnit]
+  have hσϖ : Irreducible ((σ : G) • ϖ) := hϖ.map (MulDistribMulAction.toMulEquiv B (σ : G))
+  rw [coe_uniformizerRatio, mul_uniformizerChangeUnit (hπ' := hσϖ)]
 
 /-- Multiplication by `ϖ` relates `uniformizerRatio i hϖ σ - 1` directly to the displacement
 `σ • ϖ - ϖ`. -/
@@ -706,17 +710,6 @@ theorem ramificationGroupOneSylow_coe (A G B : Type*) [CommRing A] [IsLocalRing 
   ramificationGroupOneSylowOfNotDvdIndex_coe G B p
     (not_dvd_index_ramificationGroup_one A G B p)
 
-/-- Membership in `ramificationGroupOneSylow` is membership in `G_1`. -/
-@[simp]
-theorem mem_ramificationGroupOneSylow (A G B : Type*) [CommRing A] [IsLocalRing A] [Group G]
-    [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B]
-    [IsLocalHom (algebraMap A B)] [MulSemiringAction G B] [SMulCommClass G A B]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (p : ℕ) [Fact p.Prime]
-    [CharP (ResidueField B) p] [FaithfulSMul G B] [Finite (ramificationGroup G B 0)]
-    (σ : ramificationGroup G B 0) :
-    σ ∈ ramificationGroupOneSylow A G B p ↔ (σ : G) ∈ ramificationGroup G B 1 :=
-  mem_ramificationGroupOneSylowOfNotDvdIndex G B p (not_dvd_index_ramificationGroup_one A G B p) σ
-
 /-- The wild inertia Sylow subgroup is normal in `G_0`. -/
 instance ramificationGroupOneSylow_normal (A G B : Type*) [CommRing A] [IsLocalRing A] [Group G]
     [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B]
@@ -773,8 +766,10 @@ theorem tameCharacter_injective_of_charZero (A : Type*) [CommRing A] [IsLocalRin
     [Algebra A B] [IsLocalHom (algebraMap A B)] [MulSemiringAction G B] [SMulCommClass G A B]
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] [CharZero (ResidueField B)]
     [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] {ϖ : B} (hϖ : Irreducible ϖ) :
-    Function.Injective (tameCharacter (G := G) hϖ) :=
-  (tameCharacter_injective_iff A hϖ).mpr
+    Function.Injective (tameCharacter (G := G) hϖ) := by
+  have : Finite (ramificationGroup G B 1) := Finite.of_injective _ <|
+    Subgroup.inclusion_injective (ramificationGroup_antitone G B zero_le_one)
+  exact (tameCharacter_injective_iff A hϖ).mpr
     (ramificationGroup_eq_bot_of_charZero G B (i := 1) one_pos)
 
 /-- When `B` is a local `A`-algebra on which `G` acts by `A`-algebra automorphisms with separable
@@ -801,8 +796,10 @@ theorem isCyclic_ramificationGroup_zero_of_charZero (A G B : Type*) [CommRing A]
     [IsLocalHom (algebraMap A B)] [MulSemiringAction G B] [SMulCommClass G A B]
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] [CharZero (ResidueField B)]
     [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
-    IsCyclic (ramificationGroup G B 0) :=
-  isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot A G B
+    IsCyclic (ramificationGroup G B 0) := by
+  have : Finite (ramificationGroup G B 1) := Finite.of_injective _ <|
+    Subgroup.inclusion_injective (ramificationGroup_antitone G B zero_le_one)
+  exact isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot A G B
     (ramificationGroup_eq_bot_of_charZero G B one_pos)
 
 end Structure

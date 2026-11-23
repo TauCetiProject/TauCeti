@@ -21,7 +21,6 @@ public import TauCeti.RingTheory.Ideal.Inertia
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.Pointwise
 import Mathlib.Algebra.Polynomial.Identities
-import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
 import TauCeti.RingTheory.LocalRing.Monogenic
 
@@ -104,7 +103,7 @@ integer indexing that Herbrand theory uses.
   abelian, killed by the residue characteristic `p` (so `G_i` is a `p`-group for a faithful action
   with finite `G_0` over a Noetherian local ring, giving the Sylow `p`-subgroup package for `G_1`
   whenever `p ∤ [G_0 : G_1]`), and trivial when finite in residue characteristic zero (so
-  `G_i = ⊥` for a faithful action with finite `G_0` over a Noetherian local ring).
+  `G_i = ⊥` for a faithful action with finite `G_i` over a Noetherian local ring).
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_addVal`: over a discrete valuation ring the
   defining condition is the valuation inequality `v (σ x - x) ≥ i + 1`;
   `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_lowerIndex` reads it as `i + 1 ≤ i_G(σ)`.
@@ -869,15 +868,12 @@ theorem smul_sub_mem_of_mem_ramificationGroup_zero_of_forall_mem_maximalIdeal (R
   -- Lift the minimal polynomial of `residue S x` over `ResidueField R` to `g : R[X]`: then
   -- `g(x) ∈ 𝔪_S` and `g'(x)` is a unit in `S` (adapting
   -- `TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.lean`, Stichtenoth Prop. 3.8.5).
-  obtain ⟨g, hg⟩ := (mem_lifts _).mp
-    (mem_lifts_of_surjective residue_surjective (minpoly (ResidueField R) (residue S x)))
+  obtain ⟨g, -, -, hroot, hderiv⟩ := exists_monic_lifts_minpoly_of_isSeparable
+    (R := R) (residue S x) (Algebra.IsSeparable.isSeparable _ _)
   have hval : aeval x g ∈ maximalIdeal S := by
-    rw [← residue_eq_zero_iff, map_aeval_eq_aeval_map residue_comp_algebraMap, hg]
-    exact minpoly.aeval _ _
+    rwa [← residue_eq_zero_iff, map_aeval_eq_aeval_map residue_comp_algebraMap]
   have hder : IsUnit (aeval x (derivative g)) := by
-    rw [← residue_ne_zero_iff_isUnit, map_aeval_eq_aeval_map residue_comp_algebraMap,
-      ← derivative_map, hg]
-    exact (Algebra.IsSeparable.isSeparable _ _).aeval_derivative_ne_zero (minpoly.aeval _ _)
+    rwa [← residue_ne_zero_iff_isUnit, map_aeval_eq_aeval_map residue_comp_algebraMap]
   -- Taylor expansion writes `g(σ • x) - g(x) = (σ • x - x) * u` with `u` a unit of `S`.
   set f : S[X] := g.map (algebraMap R S)
   set d : S := σ • x - x
@@ -1198,29 +1194,32 @@ theorem subsingleton_ramificationGroupGraded_of_charZero (G : Type*) [Group G] (
     rw [htoNat]
     exact (Ideal.unit_mul_mem_iff_mem _ hunit).mp (hmx x)
 
-/-- Over a Noetherian local ring in residue characteristic zero, every positive-depth ramification
-group `G_i` (`i > 0`) of a faithful action with finite `G_0` is trivial. -/
+/-- Over a Noetherian local ring in residue characteristic zero, any finite positive-depth
+ramification group `G_i` (`i > 0`) of a faithful action is trivial. -/
 theorem ramificationGroup_eq_bot_of_charZero (G : Type*) [Group G] (S : Type*) [CommRing S]
     [IsLocalRing S] [IsNoetherianRing S] [MulSemiringAction G S] [CharZero (ResidueField S)]
-    [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] {i : ℤ} (hi : 0 < i) :
+    [FaithfulSMul G S] {i : ℤ} (hi : 0 < i) [Finite (ramificationGroup G S i)] :
     ramificationGroup G S i = ⊥ := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
-  have hstep : ∀ j : ℤ, 0 < j → ramificationGroup G S j = ramificationGroup G S (j + 1) := by
-    intro j hj
-    have : Finite (ramificationGroup G S j) :=
-      Finite.of_injective _ (Subgroup.inclusion_injective
-        (ramificationGroup_antitone G S (by omega : (0 : ℤ) ≤ j)))
-    have hsub := subsingleton_ramificationGroupGraded_of_charZero G S hj
-    rw [RamificationGroupGraded, QuotientGroup.subsingleton_iff,
-      Subgroup.subgroupOf_eq_top] at hsub
-    exact le_antisymm hsub (ramificationGroup_antitone G S (Int.le_add_one le_rfl))
-  have hiter : ∀ k : ℕ, ramificationGroup G S i = ramificationGroup G S (i + k) := by
+  have hstep : ∀ k : ℕ, ramificationGroup G S i = ramificationGroup G S (i + k) := by
     intro k
     induction k with
     | zero => simp
     | succ k ih =>
-      rw [Nat.cast_succ, ← add_assoc, ← hstep (i + k) (by omega), ih]
-  rw [hiter (N - i).toNat, hN _ (by omega)]
+      have : Finite (ramificationGroup G S (i + k)) :=
+        Finite.of_injective _ (Subgroup.inclusion_injective
+          (ramificationGroup_antitone G S (by omega : i ≤ i + k)))
+      have hsub := subsingleton_ramificationGroupGraded_of_charZero G S (i := i + k) (by omega)
+      rw [RamificationGroupGraded, QuotientGroup.subsingleton_iff,
+        Subgroup.subgroupOf_eq_top] at hsub
+      rw [Nat.cast_succ, ← add_assoc]
+      exact ih.trans (le_antisymm hsub (ramificationGroup_antitone G S (Int.le_add_one le_rfl)))
+  refine le_antisymm ?_ bot_le
+  rw [← iInf_ramificationGroup_eq_bot G S]
+  refine le_iInf fun j ↦ ?_
+  rcases le_or_gt j i with hji | hij
+  · exact ramificationGroup_antitone G S hji
+  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, j = i + k := ⟨(j - i).toNat, by omega⟩
+    exact (hstep k).le
 
 /-- For a faithful action on a Noetherian local ring `S` in prime residue characteristic `p` with
 finite inertia `G_0` and `p ∤ [G_0 : G_1]`, the group `G_1` viewed inside `G_0` is a Sylow
@@ -1242,18 +1241,6 @@ theorem ramificationGroupOneSylowOfNotDvdIndex_coe (G S : Type*) [Group G] [Comm
     (ramificationGroupOneSylowOfNotDvdIndex G S p hidx : Subgroup (ramificationGroup G S 0)) =
       (ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0) :=
   (rfl)
-
-/-- Membership in `ramificationGroupOneSylowOfNotDvdIndex` is membership in `G_1`. -/
-@[simp]
-theorem mem_ramificationGroupOneSylowOfNotDvdIndex (G S : Type*) [Group G] [CommRing S]
-    [IsLocalRing S] [IsNoetherianRing S] [MulSemiringAction G S] (p : ℕ) [Fact p.Prime]
-    [CharP (ResidueField S) p] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
-    (hidx : ¬ p ∣ ((ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0)).index)
-    (σ : ramificationGroup G S 0) :
-    σ ∈ ramificationGroupOneSylowOfNotDvdIndex G S p hidx ↔
-      (σ : G) ∈ ramificationGroup G S 1 := by
-  rw [← SetLike.mem_coe, ← Sylow.coe_coe, ramificationGroupOneSylowOfNotDvdIndex_coe,
-    SetLike.mem_coe, Subgroup.mem_subgroupOf]
 
 /-- The wild inertia Sylow subgroup is normal in `G_0`. -/
 instance ramificationGroupOneSylowOfNotDvdIndex_normal (G S : Type*) [Group G] [CommRing S]
@@ -1305,6 +1292,9 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_of_not_dvd_index
       pow_eq_one_iff_right hp.ne_one, Nat.factorization_eq_zero_iff]
     simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
   · have : CharZero (ResidueField S) := CharP.charP_to_charZero (ResidueField S)
+    have : Finite (ramificationGroup G S 1) :=
+      Finite.of_injective _ (Subgroup.inclusion_injective
+        (ramificationGroup_antitone G S zero_le_one))
     rw [ramificationGroup_eq_bot_of_charZero G S one_pos, zero_dvd_iff]
     exact iff_of_true rfl Nat.card_pos.ne'
 
