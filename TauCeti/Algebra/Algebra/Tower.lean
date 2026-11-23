@@ -37,6 +37,8 @@ operators over an `RCLike` field, with the structure an instance provides in a c
   stated as a compatibility of the underlying ring isomorphism along `RingEquiv.refl R`.
 * `AlgHom.isScalarTower_compHom`: restricting a module action along an `R`-algebra homomorphism
   preserves the scalar tower with `R`.
+* `IsScalarTower.linearMap_eq_restrictScalars_comp`: in a tower `R → S → A`, the structure map
+  `R → A` is the composite of `R → S` and `S → A` as `R`-linear maps.
 -/
 
 public section
@@ -85,3 +87,11 @@ theorem AlgHom.isScalarTower_compHom {R A B M : Type*} [CommSemiring R] [Semirin
   let : Module A M := Module.compHom M f.toRingHom
   exact IsScalarTower.of_algebraMap_smul fun r m ↦ by
     simp [MulAction.compHom_smul_def, algebraMap_smul]
+
+variable (R S A) in
+/-- In a tower `R → S → A`, the structure map `R → A` is the composite of `R → S` and `S → A`, as
+`R`-linear maps. -/
+theorem IsScalarTower.linearMap_eq_restrictScalars_comp :
+    Algebra.linearMap R A = (Algebra.linearMap S A).restrictScalars R ∘ₗ Algebra.linearMap R S := by
+  ext
+  simp
