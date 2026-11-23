@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.RingTheory.TensorProduct.Free
+public import TauCeti.Algebra.TensorProduct.Module
 public import TauCeti.RingTheory.Idempotents.Module
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
@@ -24,8 +25,9 @@ receiving all `[L : ℚ]` embeddings of `L`, such as a Galois closure of `L`. Fo
 
 On a `ℤ`-basis of `𝓞 L` its determinant squares to `d_L`. The idempotents of the product split
 every `R`-module `M` with a commuting action of `𝓞 L` as an internal direct sum
-`M = ⨁_σ M(σ)`, where `M(σ)` is the largest submodule on which `𝓞 L` acts through `σ`. The
-splitting is functorial in `𝓞 L`-linear maps and commutes with base change:
+`M = ⨁_σ M(σ)`, where `M(σ)` is the largest submodule on which `𝓞 L` acts through `σ`; they act
+on `M` through `TauCeti.Algebra.TensorProduct.toModuleEnd R (𝓞 L) M`. The splitting is
+functorial in `𝓞 L`-linear maps and commutes with base change:
 `(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
 
 ## Main definitions
@@ -38,8 +40,6 @@ splitting is functorial in `𝓞 L`-linear maps and commutes with base change:
   receives all embeddings of `L` and `d_L` is a unit of `R`.
 * `TauCeti.NumberField.embeddingIdempotent`: the idempotent of `R ⊗[ℤ] 𝓞 L` at an embedding,
   the preimage of a coordinate idempotent.
-* `TauCeti.NumberField.embeddingAction L R M`: the action of `R ⊗[ℤ] 𝓞 L` on `M` by
-  `R`-linear endomorphisms.
 * `TauCeti.NumberField.embeddingEigenspace L K R M σ`: the submodule `M(σ)` of `m` with
   `ℓ • m = σ(ℓ) • m` for all `ℓ : 𝓞 L`.
 
@@ -130,46 +130,15 @@ theorem embeddingEigenspace_le_comap {N : Type*} [AddCommMonoid N] [Module R N] 
     embeddingEigenspace L K R M σ ≤ (embeddingEigenspace L K R N σ).comap f :=
   fun m hm ℓ ↦ by rw [← hf, hm ℓ, map_smul]
 
-end Eigenspace
-
-section Action
-
-variable (M : Type*) [AddCommMonoid M] [Module R M] [Module (𝓞 L) M] [SMulCommClass (𝓞 L) R M]
-
-/-- The action of `R ⊗[ℤ] 𝓞 L` on `M` by `R`-linear endomorphisms. -/
-noncomputable def embeddingAction : R ⊗[ℤ] 𝓞 L →ₐ[R] Module.End R M :=
-  letI : Ring (Module.End R M) := Algebra.semiringToRing R
-  Algebra.TensorProduct.lift (Algebra.ofId R _) (Module.toModuleEnd R (S := 𝓞 L) M).toIntAlgHom
-    fun r _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left r _
-
-variable {L K R M}
-
-@[simp]
-theorem embeddingAction_tmul (r : R) (ℓ : 𝓞 L) (m : M) :
-    embeddingAction L R M (r ⊗ₜ ℓ) m = r • ℓ • m := by
-  simp [embeddingAction]
-
 /-- On `M(σ)`, the algebra `R ⊗[ℤ] 𝓞 L` acts through evaluation at `σ`. -/
-theorem embeddingAction_apply_of_mem {σ : L →+* K} {m : M}
+theorem toModuleEnd_apply_of_mem_embeddingEigenspace {σ : L →+* K} {m : M}
     (hm : m ∈ embeddingEigenspace L K R M σ) (t : R ⊗[ℤ] 𝓞 L) :
-    embeddingAction L R M t m = embeddingEval L K R σ t • m := by
+    Algebra.TensorProduct.toModuleEnd R (𝓞 L) M t m = embeddingEval L K R σ t • m := by
   induction t using TensorProduct.inductionOn with
-  | tmul r ℓ => rw [embeddingAction_tmul, hm ℓ, embeddingEval_tmul, smul_smul]
+  | tmul r ℓ => rw [Algebra.TensorProduct.toModuleEnd_tmul, hm ℓ, embeddingEval_tmul, smul_smul]
   | add s t hs ht => rw [map_add, LinearMap.add_apply, hs, ht, map_add, add_smul]
 
-/-- **Compatibility with base change**: on `M ⊗[R] N`, with `𝓞 L` acting on the first factor,
-`R ⊗[ℤ] 𝓞 L` acts through its action on `M`. -/
-theorem embeddingAction_tensorProduct [SMulCommClass R (𝓞 L) M] (N : Type*) [AddCommMonoid N]
-    [Module R N] (t : R ⊗[ℤ] 𝓞 L) :
-    embeddingAction L R (M ⊗[R] N) t = (embeddingAction L R M t).rTensor N := by
-  induction t using TensorProduct.inductionOn with
-  | tmul r ℓ =>
-    apply TensorProduct.ext'
-    intro m n
-    simp [TensorProduct.smul_tmul']
-  | add s t hs ht => rw [map_add, map_add, hs, ht, LinearMap.rTensor_add]
-
-end Action
+end Eigenspace
 
 section Bijective
 
@@ -290,19 +259,20 @@ variable {M : Type*} [AddCommMonoid M] [Module R M] [Module (𝓞 L) M] [SMulCom
 
 /-- The idempotent at `σ` acts on `M` with range `M(σ)`. -/
 theorem embeddingIdempotent_smul_top (σ : L →+* K) :
-    (embeddingAction L R M (embeddingIdempotent hK hd σ)) • (⊤ : Submodule R M) =
-      embeddingEigenspace L K R M σ := by
+    Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ) •
+        (⊤ : Submodule R M) = embeddingEigenspace L K R M σ := by
   rw [Module.End.smul_top_eq_range]
   apply le_antisymm
   · rintro _ ⟨m, rfl⟩ ℓ
-    have h := congrArg (fun t ↦ embeddingAction L R M t m)
+    have h := congrArg (fun t ↦ Algebra.TensorProduct.toModuleEnd R (𝓞 L) M t m)
       (one_tmul_mul_embeddingIdempotent hK hd σ ℓ)
     simp only [map_mul, AlgHom.commutes, Module.End.mul_eq_comp, LinearMap.comp_apply,
       Module.algebraMap_end_apply] at h
-    rw [← h, embeddingAction_tmul, one_smul]
+    rw [← h, Algebra.TensorProduct.toModuleEnd_tmul, one_smul]
   · intro m hm
     refine ⟨m, ?_⟩
-    rw [embeddingAction_apply_of_mem hm, embeddingEval_embeddingIdempotent_self, one_smul]
+    rw [toModuleEnd_apply_of_mem_embeddingEigenspace hm,
+      embeddingEval_embeddingIdempotent_self, one_smul]
 
 /-- **The embedding eigenspace decomposition** `M = ⨁_σ M(σ)`, when `K` receives all `[L : ℚ]`
 embeddings of `L` and `d_L` is a unit of `R`. -/
@@ -310,7 +280,7 @@ theorem isInternal_embeddingEigenspace [DecidableEq (L →+* K)] :
     DirectSum.IsInternal (embeddingEigenspace L K R M) := by
   have h := TauCeti.isInternal_smul_top (S := R) (M := M)
     ((completeOrthogonalIdempotents_embeddingIdempotent hK hd).map
-      (embeddingAction L R M).toRingHom)
+      (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M).toRingHom)
   simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Function.comp_def,
     embeddingIdempotent_smul_top hK hd] at h
   exact h
@@ -323,14 +293,18 @@ theorem embeddingEigenspace_tensorProduct [SMulCommClass R (𝓞 L) M]
       LinearMap.range ((embeddingEigenspace L K R M σ).subtype.rTensor N) := by
   apply le_antisymm
   · intro v hv
-    have hv' : v = (embeddingAction L R M (embeddingIdempotent hK hd σ)).rTensor N v := by
-      rw [← embeddingAction_tensorProduct, embeddingAction_apply_of_mem hv,
-        embeddingEval_embeddingIdempotent_self, one_smul]
-    have hrange : LinearMap.range (embeddingAction L R M (embeddingIdempotent hK hd σ)) ≤
-        embeddingEigenspace L K R M σ := by
+    have hv' : v = LinearMap.rTensor N
+        (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)) v := by
+      rw [← Algebra.TensorProduct.toModuleEnd_rTensor,
+        toModuleEnd_apply_of_mem_embeddingEigenspace hv, embeddingEval_embeddingIdempotent_self,
+        one_smul]
+    have hrange : LinearMap.range
+        (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)) ≤
+          embeddingEigenspace L K R M σ := by
       rw [← Module.End.smul_top_eq_range, embeddingIdempotent_smul_top hK hd]
-    let g := (embeddingAction L R M (embeddingIdempotent hK hd σ)).codRestrict
-      (embeddingEigenspace L K R M σ) fun m ↦ hrange ⟨m, rfl⟩
+    let g :=
+      (Algebra.TensorProduct.toModuleEnd R (𝓞 L) M (embeddingIdempotent hK hd σ)).codRestrict
+        (embeddingEigenspace L K R M σ) fun m ↦ hrange ⟨m, rfl⟩
     refine ⟨g.rTensor N v, ?_⟩
     rw [← LinearMap.comp_apply, ← LinearMap.rTensor_comp, LinearMap.subtype_comp_codRestrict]
     exact hv'.symm
