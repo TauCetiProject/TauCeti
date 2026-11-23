@@ -55,7 +55,7 @@ theorem exists_isAffineOpen_genericPoint_mem_and_disjoint
   let T : Set (Set X) := irreducibleComponents X \ {C.val}
   have hT : T.Finite := hX.sdiff
   let O : X.Opens :=
-    ⟨(⋃₀ T)ᶜ, hT.isOpen_compl_sUnion_irreducibleComponents Set.sdiff_subset⟩
+    ⟨(⋃₀ T)ᶜ, hT.isOpen_compl_sUnion_of_subset_irreducibleComponents Set.sdiff_subset⟩
   have hOC : (O : Set X) ⊆ C.val := by
     rw [← closure_sUnion_irreducibleComponents_sdiff_singleton hX C.val C.property]
     exact subset_closure
@@ -80,7 +80,7 @@ theorem exists_isAffineOpen_mem_and_genericPoints_subset
   let s : Set (Set X) := {C ∈ irreducibleComponents X | x ∉ C}
   have hs : s.Finite := hX.subset (fun _ hC ↦ hC.1)
   let W₀ : X.Opens :=
-    ⟨(⋃₀ s)ᶜ, hs.isOpen_compl_sUnion_irreducibleComponents (fun _ hC ↦ hC.1)⟩
+    ⟨(⋃₀ s)ᶜ, hs.isOpen_compl_sUnion_of_subset_irreducibleComponents (fun _ hC ↦ hC.1)⟩
   have hxW₀ : x ∈ W₀ := by
     rintro ⟨C, hC, hxC⟩
     exact hC.2 hxC

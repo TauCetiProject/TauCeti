@@ -26,7 +26,7 @@ morphisms from spectra of residue fields.
 * `AlgebraicGeometry.Scheme.genericPointScheme`: the disjoint union of the residue-field
   spectra at the component-generic points of an arbitrary scheme.
 * `AlgebraicGeometry.Scheme.fromGenericPointScheme`: its dominant monomorphism to the scheme.
-* `AlgebraicGeometry.Scheme.Hom.range_genericPointScheme_pullback_fst`: the first projection
+* `AlgebraicGeometry.Scheme.Hom.range_pullback_fst_fromGenericPointScheme`: the first projection
   from its pullback has image the points mapping to component-generic points.
 -/
 
@@ -114,7 +114,7 @@ variable {X Y : Scheme.{u}}
 /-- The actual pullback of the target's generic-point scheme has as image the points lying
 over component-generic points. -/
 @[simp]
-theorem range_genericPointScheme_pullback_fst (f : X ⟶ Y) :
+theorem range_pullback_fst_fromGenericPointScheme (f : X ⟶ Y) :
     range (pullback.fst f Y.fromGenericPointScheme) = f ⁻¹' genericPoints Y := by
   rw [Scheme.Pullback.range_fst, Scheme.range_fromGenericPointScheme]
 
