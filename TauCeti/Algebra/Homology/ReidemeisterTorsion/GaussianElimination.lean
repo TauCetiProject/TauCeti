@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.ReidemeisterTorsion.SquareMinor
-import Mathlib.Algebra.Category.ModuleCat.Ulift
-import Mathlib.Algebra.Homology.Additive
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 import Mathlib.LinearAlgebra.Matrix.Block
+import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
+import TauCeti.Algebra.Homology.ModuleCat.MatrixBaseChange
+import TauCeti.Algebra.Homology.ReidemeisterTorsion.SquareMinor
 
 /-!
 # Gaussian elimination and Reidemeister torsion
@@ -77,60 +78,43 @@ section Pair
 `i`: `1` in these two degrees and `0` elsewhere. -/
 private abbrev pairRank (i j : ℤ) : ℕ := if j = i + 1 ∨ j = i then 1 else 0
 
-/-- The linear map `Fᵖ → F^q` all of whose matrix entries are `1`; between the one-dimensional
-terms of the elementary complex it is the identity. -/
-private def pairMap (p q : ℕ) : (Fin p → F) →ₗ[F] Fin q → F :=
-  LinearMap.pi fun _ ↦ ∑ k, LinearMap.proj k
-
-private theorem pairMap_single {p q : ℕ} (k : Fin p) (t : Fin q) :
-    pairMap p q (Pi.single k 1) t = (1 : F) := by
-  simp [pairMap]
+/-- The matrix of the differential of the elementary complex from degree `j + 1` to degree `j`:
+all of its entries are `1` if `j = i`, and `0` otherwise. Between the one-dimensional terms in
+degrees `i + 1` and `i` it is the identity. -/
+private def pairMatrix (i j : ℤ) : Matrix (Fin (pairRank i j)) (Fin (pairRank i (j + 1))) F :=
+  if j = i then .of fun _ _ ↦ 1 else 0
 
 variable (F) in
-/-- The elementary complex `F → F`, with identity differential, in degrees `i + 1` and `i`, with
-terms lifted to the universe `max u v`. -/
-private def pairComplex (i : ℤ) : ChainComplex (ModuleCat.{max v u} F) ℤ :=
-  ChainComplex.of (fun j ↦ ModuleCat.of F (ULift.{v} (Fin (pairRank i j) → F)))
-    (fun j ↦ ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ
-      (if j = i then pairMap _ _ else 0) ∘ₗ ULift.moduleEquiv.toLinearMap)) fun j ↦ by
-      split_ifs <;> first | omega | (ext; simp)
-
-private theorem pairComplex_d_apply (i j : ℤ) (x : ULift.{v} (Fin (pairRank i (j + 1)) → F)) :
-    ((pairComplex.{u, v} F i).d (j + 1) j).hom x =
-      ULift.up ((if j = i then pairMap _ _ else 0) x.down) := by
-  unfold pairComplex
-  dsimp only
-  rw [ChainComplex.of_d]
-  rfl
+/-- The elementary complex `F → F`, with identity differential, in degrees `i + 1` and `i`. -/
+private def pairComplex (i : ℤ) : ChainComplex (ModuleCat.{u} F) ℤ :=
+  ChainComplex.of (fun j ↦ ModuleCat.of F (Fin (pairRank i j) → F))
+    (fun j ↦ ModuleCat.ofHom (Matrix.toLin' (pairMatrix i j))) fun j ↦ by
+      ext1
+      by_cases h : j = i <;> simp [pairMatrix, h]
 
 /-- The standard basis of the elementary complex. -/
-private def pairBasis (i j : ℤ) :
-    Basis (Fin (pairRank i j)) F ((pairComplex.{u, v} F i).X j) :=
-  (Pi.basisFun F _).map ULift.moduleEquiv.symm
+private def pairBasis (i j : ℤ) : Basis (Fin (pairRank i j)) F ((pairComplex F i).X j) :=
+  Pi.basisFun F _
 
-private theorem pairBasis_apply (i j : ℤ) (t : Fin (pairRank i j)) :
-    pairBasis.{u, v} (F := F) i j t = ULift.up (Pi.single t 1) := by
-  exact (Basis.map_apply (Pi.basisFun F _) ULift.moduleEquiv.symm t).trans
-    (congrArg ULift.up (Pi.basisFun_apply F _ t))
+/-- The matrix of the differential of the elementary complex in its standard bases. -/
+private theorem toMatrix_pairComplex_d (i j : ℤ) :
+    LinearMap.toMatrix (pairBasis (F := F) i (j + 1)) (pairBasis i j)
+      ((pairComplex F i).d (j + 1) j).hom = pairMatrix i j := by
+  simp only [pairComplex, ChainComplex.of_d, ModuleCat.hom_ofHom]
+  -- As in `HomologicalComplex.toMatrix_matrixBaseChange_d`: `pairBasis i j` is
+  -- `Pi.basisFun F _` by definition, and `Matrix.toLin'` is `Matrix.toLin` in the standard bases;
+  -- the module structure on `(pairComplex F i).X j` is that of `Fin _ → F` only after unfolding
+  -- `ModuleCat.of`, so the lemma is applied with `exact` rather than rewritten with.
+  exact LinearMap.toMatrix_toLin (Pi.basisFun F _) (Pi.basisFun F _) _
 
-private theorem pairBasis_repr (i j : ℤ) (x : ULift.{v} (Fin (pairRank i j) → F))
-    (t : Fin (pairRank i j)) :
-    (pairBasis.{u, v} i j).repr x t = x.down t := by
-  -- Unfold `pairBasis` with its terms stated as the underlying `ULift` type rather than as the
-  -- terms of the complex, which is where `Basis.map_repr` applies.
-  change ((Pi.basisFun F _).map (ULift.moduleEquiv.symm :
-    (Fin (pairRank i j) → F) ≃ₗ[F] ULift.{v} (Fin (pairRank i j) → F))).repr x t = _
-  rw [Basis.map_repr]
-  rfl
-
-/-- The matrix of the differential of the elementary complex: `1` from degree `i + 1` to degree
-`i`, and `0` elsewhere. -/
-private theorem toMatrix_pairComplex_d (i j : ℤ) (t' : Fin (pairRank i j))
+/-- The entries of the matrix of the differential of the elementary complex: `1` from degree
+`i + 1` to degree `i`, and `0` elsewhere. -/
+private theorem toMatrix_pairComplex_d_apply (i j : ℤ) (t' : Fin (pairRank i j))
     (t : Fin (pairRank i (j + 1))) :
-    LinearMap.toMatrix (pairBasis.{u, v} (F := F) i (j + 1)) (pairBasis i j)
+    LinearMap.toMatrix (pairBasis (F := F) i (j + 1)) (pairBasis i j)
       ((pairComplex F i).d (j + 1) j).hom t' t = if j = i then 1 else 0 := by
-  rw [LinearMap.toMatrix_apply, pairBasis_apply, pairComplex_d_apply, pairBasis_repr]
-  split_ifs <;> simp [pairMap_single]
+  rw [toMatrix_pairComplex_d, pairMatrix]
+  split_ifs <;> simp
 
 private theorem pairRank_eq_add (i j : ℤ) :
     pairRank i j = (if j = i then 1 else 0) + if j = i + 1 then 1 else 0 := by
@@ -143,16 +127,15 @@ private theorem pairRank_succ_eq (i j : ℤ) :
 
 /-- The square minors of the elementary complex are identity matrices. -/
 private theorem torsionMinor_pairBasis (i j : ℤ) :
-    torsionMinor (pairBasis.{u, v} (F := F) i) (pairRank_eq_add i) (pairRank_succ_eq i) j =
-      1 := by
+    torsionMinor (pairBasis (F := F) i) (pairRank_eq_add i) (pairRank_succ_eq i) j = 1 := by
   ext r k
   by_cases hj : j = i
   · subst hj
-    have hrk : r = k := Fin.ext (by have := r.2; have := k.2; simp at *; omega)
+    have hrk : r = k := Fin.ext (by have := r.isLt; have := k.isLt; simp at *; omega)
     subst hrk
-    rw [torsionMinor_apply, pairBasis_apply, pairComplex_d_apply, pairBasis_repr]
-    simp [pairMap_single]
-  · exact absurd r.2 (by simp [hj])
+    rw [torsionMinor_apply, ← LinearMap.toMatrix_apply, toMatrix_pairComplex_d_apply]
+    simp
+  · exact absurd r.isLt (by simp [hj])
 
 private theorem finite_pairRank (i : ℤ) : {j | pairRank i j ≠ 0}.Finite :=
   (Set.toFinite {i + 1, i}).subset fun j hj ↦ by
@@ -162,38 +145,36 @@ private theorem finite_pairRank (i : ℤ) : {j | pairRank i j ≠ 0}.Finite :=
 
 /-- The elementary complex has torsion `1` in its standard basis. -/
 private theorem reidemeisterTorsion_pairComplex (i : ℤ) :
-    (pairComplex.{u, v} F i).reidemeisterTorsion (pairBasis i) = 1 := by
+    (pairComplex F i).reidemeisterTorsion (pairBasis i) = 1 := by
   rw [reidemeisterTorsion_eq_finprod_det_torsionMinor (hn := pairRank_eq_add i)
     (hpq := pairRank_succ_eq i) (fun j ↦ by simp [torsionMinor_pairBasis]) (finite_pairRank i)]
   simp [torsionMinor_pairBasis]
 
 /-- The elementary complex is acyclic. -/
-private theorem acyclic_pairComplex (i : ℤ) : (pairComplex.{u, v} F i).Acyclic :=
+private theorem acyclic_pairComplex (i : ℤ) : (pairComplex F i).Acyclic :=
   acyclic_of_det_torsionMinor_ne_zero (c := pairBasis i) (hn := pairRank_eq_add i)
     (hpq := pairRank_succ_eq i) fun j ↦ by simp [torsionMinor_pairBasis]
 
 /-- The differential of the elementary complex has rank `1` from degree `i + 1` to degree `i`,
 and rank `0` elsewhere. -/
 private theorem finrank_range_pairComplex_d (i j : ℤ) :
-    finrank F (LinearMap.range ((pairComplex.{u, v} F i).d (j + 1) j).hom) =
+    finrank F (LinearMap.range ((pairComplex F i).d (j + 1) j).hom) =
       if j = i then 1 else 0 := by
-  by_cases hj : j = i
+  have h := Matrix.rank_eq_finrank_range_toLin (pairMatrix (F := F) i j) (pairBasis i j)
+    (pairBasis i (j + 1))
+  rw [← toMatrix_pairComplex_d, Matrix.toLin_toMatrix] at h
+  rw [← h, toMatrix_pairComplex_d, pairMatrix]
+  split_ifs with hj
   · subst hj
-    have htop : LinearMap.range ((pairComplex.{u, v} F j).d (j + 1) j).hom = ⊤ :=
-      LinearMap.range_eq_top.2 fun y ↦
-        ⟨ULift.up (Pi.single ⟨0, by simp [pairRank]⟩ (y.down ⟨0, by simp [pairRank]⟩)), by
-          rw [pairComplex_d_apply]
-          refine ULift.ext (funext fun t ↦ ?_)
-          have ht : t = ⟨0, by simp [pairRank]⟩ :=
-            Fin.ext (by have := t.2; simp [pairRank] at this; simp; omega)
-          simp [pairMap, ht]⟩
-    rw [htop, finrank_top, Module.finrank_eq_card_basis (pairBasis j j)]
-    simp
-  · have hbot : LinearMap.range ((pairComplex.{u, v} F i).d (j + 1) j).hom = ⊥ :=
-      LinearMap.range_eq_bot.2 (LinearMap.ext fun x ↦ (pairComplex_d_apply i j x).trans
-        (by simp only [hj, ite_false]; rfl))
-    rw [hbot, finrank_bot]
-    simp [hj]
+    -- Between the one-dimensional terms, the matrix is the `1 × 1` identity matrix.
+    have h₀ : 1 = pairRank j j := by simp
+    have h₁ : 1 = pairRank j (j + 1) := by simp
+    have hM : (Matrix.of fun _ _ ↦ 1 : Matrix (Fin (pairRank j j)) (Fin (pairRank j (j + 1))) F) =
+        (1 : Matrix (Fin 1) (Fin 1) F).reindex (finCongr h₀) (finCongr h₁) := by
+      ext r t
+      simp [Matrix.one_apply, Subsingleton.elim (Fin.cast h₀.symm r) (Fin.cast h₁.symm t)]
+    rw [hM, Matrix.rank_reindex, Matrix.rank_one, Fintype.card_fin]
+  · exact Matrix.rank_zero
 
 end Pair
 
@@ -201,7 +182,7 @@ end Pair
 
 section Elimination
 
-variable {C : ChainComplex (ModuleCat F) ℤ} {D : ChainComplex (ModuleCat.{max v u} F) ℤ}
+variable {C : ChainComplex (ModuleCat F) ℤ} {D : ChainComplex (ModuleCat.{v} F) ℤ}
   {m : ℤ → ℕ} {i : ℤ}
 
 variable (m i) in
@@ -211,7 +192,7 @@ private def pairIdx (j : ℤ) (h : j = i + 1 ∨ j = i) : Fin (m j + pairRank i 
 
 private theorem natAdd_eq_pairIdx {j : ℤ} (h : j = i + 1 ∨ j = i) (t : Fin (pairRank i j)) :
     Fin.natAdd (m j) t = pairIdx m i j h :=
-  Fin.ext (by have := t.2; simp only [pairRank, h, ite_true] at this; simp [pairIdx]; omega)
+  Fin.ext (by have := t.isLt; simp only [pairRank, h, ite_true] at this; simp [pairIdx]; omega)
 
 private theorem castAdd_ne_pairIdx {j : ℤ} (h : j = i + 1 ∨ j = i) (r : Fin (m j)) :
     Fin.castAdd (pairRank i j) r ≠ pairIdx m i j h :=
@@ -219,7 +200,7 @@ private theorem castAdd_ne_pairIdx {j : ℤ} (h : j = i + 1 ∨ j = i) (r : Fin 
 
 private theorem le_pairIdx {j : ℤ} (h : j = i + 1 ∨ j = i) (k : Fin (m j + pairRank i j)) :
     k ≤ pairIdx m i j h := by
-  have := k.2
+  have := k.isLt
   simp only [pairRank, h, ite_true] at this
   rw [Fin.le_def]
   simp [pairIdx]
@@ -230,13 +211,13 @@ private theorem sum_natAdd_eq {M : Type*} [AddCommMonoid M] {j : ℤ} (h : j = i
     (g : Fin (m j + pairRank i j) → M) :
     ∑ t : Fin (pairRank i j), g (Fin.natAdd (m j) t) = g (pairIdx m i j h) := by
   rw [Fintype.sum_eq_single ⟨0, by simp [pairRank, h]⟩ fun t ht ↦ absurd (Fin.ext (by
-    have := t.2; simp only [pairRank, h, ite_true] at this; simp; omega)) ht]
+    have := t.isLt; simp only [pairRank, h, ite_true] at this; simp; omega)) ht]
   rfl
 
 /-- Outside the degrees of the cancelling pair, there are no indices of the pair. -/
 private theorem sum_pairRank_eq_zero {M : Type*} [AddCommMonoid M] {j : ℤ}
     (h : ¬(j = i + 1 ∨ j = i)) (g : Fin (pairRank i j) → M) : ∑ t, g t = 0 :=
-  Finset.sum_eq_zero fun t _ ↦ absurd t.2 (by simp [pairRank, h])
+  Finset.sum_eq_zero fun t _ ↦ absurd t.isLt (by simp [pairRank, h])
 
 variable (c : ∀ j, Basis (Fin (m j + if j = i + 1 ∨ j = i then 1 else 0)) F (C.X j))
   (e : ∀ j, Basis (Fin (m j)) F (D.X j))
@@ -304,7 +285,8 @@ private theorem det_lowerFamily :
   refine (Matrix.det_of_isUpperTriangular fun k l hkl ↦ ?_).trans ?_
   · have hl : l ≠ pairIdx m i i (.inr rfl) := fun hl ↦
       (le_pairIdx (.inr rfl) k).not_gt (hl ▸ hkl)
-    simp [Basis.toMatrix_apply, lowerFamily, hl, (show l < k from hkl).ne]
+    simp only [id_eq] at hkl
+    simp [Basis.toMatrix_apply, lowerFamily, hl, hkl.ne]
   · rw [Finset.prod_eq_single (pairIdx m i i (.inr rfl)) (fun k _ hk ↦ by
       simp [Basis.toMatrix_apply, lowerFamily, hk]) (by simp)]
     simp [Basis.toMatrix_apply, lowerFamily, LinearMap.toMatrix_apply]
@@ -358,8 +340,7 @@ private theorem d_upperFamily_castAdd
   rw [d_basis_eq_of_mem c (.inr rfl), d_basis_eq_of_mem c (.inr rfl)]
   set a := pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl))
   simp only [smul_add, Finset.smul_sum, smul_smul, sub_smul, Finset.sum_sub_distrib]
-  rw [show (a⁻¹ * pivotMatrix c (pairIdx m i i (.inr rfl)) (Fin.castAdd _ s)) * a =
-    pivotMatrix c (pairIdx m i i (.inr rfl)) (Fin.castAdd _ s) by field_simp]
+  rw [mul_right_comm, inv_mul_cancel₀ ha, one_mul]
   have hcoef (r : Fin (m i)) :
       a⁻¹ * pivotMatrix c (pairIdx m i i (.inr rfl)) (Fin.castAdd _ s) *
           pivotMatrix c (Fin.castAdd _ r) (pairIdx m i (i + 1) (.inl rfl)) =
@@ -378,18 +359,13 @@ private theorem sum_pivotMatrix_mul_eq_zero (l : Fin (m (i + 1 + 1) + pairRank i
       pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) *
         LinearMap.toMatrix (c (i + 1 + 1)) (c (i + 1)) (C.d (i + 1 + 1) (i + 1)).hom
           (pairIdx m i (i + 1) (.inl rfl)) l = 0 := by
-  have h0 : (C.d (i + 1) i).hom ∘ₗ (C.d (i + 1 + 1) (i + 1)).hom = 0 := by
-    ext x
-    exact d_comp_d_apply C _ _ _ x
-  have hmul := LinearMap.toMatrix_comp (c (i + 1 + 1)) (c (i + 1)) (c i) (C.d (i + 1) i).hom
-    (C.d (i + 1 + 1) (i + 1)).hom
-  rw [h0, map_zero] at hmul
   have hpair := sum_natAdd_eq (.inl rfl) fun k ↦ pivotMatrix c (pairIdx m i i (.inr rfl)) k *
     LinearMap.toMatrix (c (i + 1 + 1)) (c (i + 1)) (C.d (i + 1 + 1) (i + 1)).hom k l
   beta_reduce at hpair
-  have := congrFun (congrFun hmul (pairIdx m i i (.inr rfl))) l
+  have := congrFun (congrFun (toMatrix_d_mul_toMatrix_d C c (i + 1 + 1) (i + 1) i)
+    (pairIdx m i i (.inr rfl))) l
   rw [Matrix.mul_apply, Fin.sum_univ_add, hpair] at this
-  exact this.symm
+  exact this
 
 /-- The differential `Cᵢ₊₂ → Cᵢ₊₁`, written in the corrected basis of `Cᵢ₊₁`, has no
 `z⁺`-coordinate. -/
@@ -439,7 +415,8 @@ private theorem d_newFamily_castAdd
   by_cases h₀ : j = i
   · subst h₀
     rw [newFamily_succ, d_upperFamily_castAdd ha]
-    simp only [hDi, newFamily_castAdd_of_ne (show j ≠ j + 1 by omega)]
+    have hj : j ≠ j + 1 := by omega
+    simp only [hDi, newFamily_castAdd_of_ne hj]
   by_cases h₁ : j = i + 1
   · subst h₁
     rw [newFamily_of_ne c (by omega) (by omega), d_basis_castAdd_eq_sum_upperFamily ha,
@@ -462,7 +439,7 @@ private theorem d_newFamily_natAdd (j : ℤ) (t : Fin (pairRank i (j + 1))) :
     rw [hpair, newFamily_succ, newFamily_self, natAdd_eq_pairIdx (.inl rfl)]
     simp [upperFamily, lowerFamily]
   have h₁ : j + 1 = i := by
-    have := t.2
+    have := t.isLt
     simp only [pairRank] at this
     split_ifs at this with h
     · omega
@@ -491,41 +468,60 @@ private theorem coe_newBasis
   Basis.coe_mk _ _
 
 variable (i) in
+/-- The direct sum of the coordinate copy of `D` and the elementary complex. -/
+private abbrev sumComplex : ChainComplex (ModuleCat.{u} F) ℤ :=
+  D.matrixBaseChange e (RingHom.id F) ⊞ pairComplex F i
+
+variable (i) in
 /-- The bases of the direct sum of `D` and the elementary complex: those of `D` followed by the
 standard basis of the elementary complex. -/
-private def sumBasis (j : ℤ) :
-    Basis (Fin (m j + pairRank i j)) F ((D ⊞ pairComplex.{u, v} F i).X j) :=
-  (biprodXBasis (e j) (pairBasis.{u, v} i j)).reindex finSumFinEquiv
+private def sumBasis (j : ℤ) : Basis (Fin (m j + pairRank i j)) F ((sumComplex i e).X j) :=
+  (biprodXBasis (D.matrixBaseChangeBasis e (RingHom.id F) j) (pairBasis i j)).reindex
+    finSumFinEquiv
 
 /-- The torsion of the direct sum of `D` and the elementary complex. -/
 private theorem reidemeisterTorsion_sumBasis :
-    (D ⊞ pairComplex.{u, v} F i).reidemeisterTorsion (sumBasis i e) =
+    (sumComplex i e).reidemeisterTorsion (sumBasis i e) =
       (∏ᶠ j : ℤ, (-1 : F) ^ (finrank F (LinearMap.range
-          ((pairComplex.{u, v} F i).d (j + 1 + 1) (j + 1)).hom) *
+          ((pairComplex F i).d (j + 1 + 1) (j + 1)).hom) *
         finrank F (LinearMap.range (D.d (j + 1) j).hom))) * D.reidemeisterTorsion e := by
-  have h := reidemeisterTorsion_biprod e (pairBasis i)
-  rw [reidemeisterTorsion_pairComplex, mul_one] at h
+  have hrk (j : ℤ) :
+      finrank F (LinearMap.range ((D.matrixBaseChange e (RingHom.id F)).d (j + 1) j).hom) =
+        finrank F (LinearMap.range (D.d (j + 1) j).hom) :=
+    finrank_range_d_eq_of_toMatrix_eq (RingHom.id F) (toMatrix_matrixBaseChange_d D e _ (j + 1) j)
+  have h := reidemeisterTorsion_biprod (D.matrixBaseChangeBasis e (RingHom.id F)) (pairBasis i)
+  rw [reidemeisterTorsion_pairComplex, mul_one,
+    ← map_reidemeisterTorsion (RingHom.id F) fun j ↦ toMatrix_matrixBaseChange_d D e _ (j + 1) j,
+    RingHom.id_apply] at h
+  simp only [hrk] at h
   exact h
 
 private theorem d_sumBasis_castAdd (j : ℤ) (s : Fin (m (j + 1))) :
-    ((D ⊞ pairComplex.{u, v} F i).d (j + 1) j).hom (sumBasis i e (j + 1) (Fin.castAdd _ s)) =
+    ((sumComplex i e).d (j + 1) j).hom (sumBasis i e (j + 1) (Fin.castAdd _ s)) =
       ∑ r, LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom r s •
         sumBasis i e j (Fin.castAdd _ r) := by
-  simp only [sumBasis, Basis.reindex_apply, finSumFinEquiv_symm_apply_castAdd, biprodXBasis_inl,
-    Hom.comm_apply, LinearMap.toMatrix_apply]
-  nth_rewrite 1 [← (e j).sum_repr ((D.d (j + 1) j).hom (e (j + 1) s))]
+  have hmat (r : Fin (m j)) : LinearMap.toMatrix (D.matrixBaseChangeBasis e (RingHom.id F) (j + 1))
+      (D.matrixBaseChangeBasis e (RingHom.id F) j)
+      ((D.matrixBaseChange e (RingHom.id F)).d (j + 1) j).hom r s =
+        LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom r s := by
+    rw [toMatrix_matrixBaseChange_d, Matrix.map_apply, RingHom.id_apply]
+  simp only [← hmat, sumBasis, Basis.reindex_apply, finSumFinEquiv_symm_apply_castAdd,
+    biprodXBasis_inl, Hom.comm_apply, LinearMap.toMatrix_apply]
+  nth_rewrite 1 [← (D.matrixBaseChangeBasis e (RingHom.id F) j).sum_repr
+    (((D.matrixBaseChange e (RingHom.id F)).d (j + 1) j).hom
+      (D.matrixBaseChangeBasis e (RingHom.id F) (j + 1) s))]
   rw [map_sum]
   simp only [map_smul]
 
 private theorem d_sumBasis_natAdd (j : ℤ) (t : Fin (pairRank i (j + 1))) :
-    ((D ⊞ pairComplex.{u, v} F i).d (j + 1) j).hom (sumBasis i e (j + 1) (Fin.natAdd _ t)) =
+    ((sumComplex i e).d (j + 1) j).hom (sumBasis i e (j + 1) (Fin.natAdd _ t)) =
       ∑ t' : Fin (pairRank i j), (if j = i then (1 : F) else 0) •
         sumBasis i e j (Fin.natAdd _ t') := by
   simp only [sumBasis, Basis.reindex_apply, finSumFinEquiv_symm_apply_natAdd, biprodXBasis_inr,
     Hom.comm_apply]
-  conv_lhs => rw [← (pairBasis.{u, v} i j).sum_repr
-    (((pairComplex.{u, v} F i).d (j + 1) j).hom (pairBasis i (j + 1) t))]
-  simp only [← LinearMap.toMatrix_apply, toMatrix_pairComplex_d, map_sum, map_smul]
+  conv_lhs => rw [← (pairBasis i j).sum_repr
+    (((pairComplex F i).d (j + 1) j).hom (pairBasis i (j + 1) t))]
+  simp only [← LinearMap.toMatrix_apply, toMatrix_pairComplex_d_apply, map_sum, map_smul]
 
 /-- After the elimination, the matrices of the differentials of `C` are those of the direct sum
 of `D` and the elementary complex. -/
@@ -541,7 +537,7 @@ private theorem toMatrix_newBasis
     (j : ℤ) :
     LinearMap.toMatrix (newBasis ha (j + 1)) (newBasis ha j) (C.d (j + 1) j).hom =
       (LinearMap.toMatrix (sumBasis i e (j + 1)) (sumBasis i e j)
-        ((D ⊞ pairComplex.{u, v} F i).d (j + 1) j).hom).map (RingHom.id F) := by
+        ((sumComplex i e).d (j + 1) j).hom).map (RingHom.id F) := by
   ext k l
   refine Fin.addCases (fun s ↦ ?_) (fun t ↦ ?_) l
   · rw [Matrix.map_apply, RingHom.id_apply, LinearMap.toMatrix_apply, LinearMap.toMatrix_apply,
@@ -589,96 +585,58 @@ private theorem acyclic_iff_of_newBasis
   rw [acyclic_iff_of_toMatrix_eq (RingHom.id F) fun a b (hab : b + 1 = a) ↦ by
       subst hab
       exact toMatrix_newBasis e ha hDi hD b,
-    acyclic_biprod_iff]
+    acyclic_biprod_iff, acyclic_matrixBaseChange_id_iff]
   exact and_iff_left (acyclic_pairComplex i)
 
 end Elimination
 
-/-! ### Lifting the universe of a based complex -/
-
-section ULift
-
-variable {D : ChainComplex (ModuleCat.{v} F) ℤ} {m : ℤ → ℕ}
-
-variable (D) in
-/-- The complex `D` with its terms lifted to the universe `max v u`. -/
-private abbrev uliftComplex : ChainComplex (ModuleCat.{max v u} F) ℤ :=
-  ((ModuleCat.uliftFunctor.{u, v} F).mapHomologicalComplex _).obj D
-
-/-- The bases of `D`, transported to its universe lift. -/
-private def uliftBasis (e : ∀ j, Basis (Fin (m j)) F (D.X j)) (j : ℤ) :
-    Basis (Fin (m j)) F ((uliftComplex.{u, v} D).X j) :=
-  (e j).map ULift.moduleEquiv.symm
-
-/-- Lifting the universe does not change the matrices of the differentials. -/
-private theorem toMatrix_uliftBasis (e : ∀ j, Basis (Fin (m j)) F (D.X j)) (j k : ℤ) :
-    LinearMap.toMatrix (uliftBasis.{u, v} e j) (uliftBasis e k) ((uliftComplex D).d j k).hom =
-      LinearMap.toMatrix (e j) (e k) (D.d j k).hom := by
-  ext r s
-  simp only [LinearMap.toMatrix_apply, uliftBasis]
-  rfl
-
-end ULift
-
 /-- **Gaussian elimination and torsion.** Let `C` be a based chain complex of vector spaces whose
 bases `c j` consist, in degrees `i + 1` and `i`, of `m (i + 1)`, respectively `m i`, vectors
 followed by one more vector `z⁺`, respectively `z⁻`, and of `m j` vectors in every other degree
-`j`. Suppose that the coefficient `a` of `z⁻` in `d z⁺` is nonzero, and let `D` be a based complex,
-with bases `e j` of `m j` vectors, whose differential `Dᵢ₊₁ → Dᵢ` has the Schur complement
-`N - w a⁻¹ v` as matrix and whose other differentials have the matrices of `C` with the rows and
-columns of `z⁺` and `z⁻` deleted; here `N`, `w`, `v` are the blocks of the matrix of
-`d : Cᵢ₊₁ → Cᵢ` away from `z⁺` and `z⁻`, in the column of `z⁺`, and in the row of `z⁻`. Then
+`j`; the identification of the index types of `c` with these blocks is `hn`. Suppose that the
+coefficient `a` of `z⁻` in `d z⁺` is nonzero, and let `D` be a based complex, with bases `e j` of
+`m j` vectors, whose differential `Dᵢ₊₁ → Dᵢ` has the Schur complement `N - w a⁻¹ v` as matrix
+and whose other differentials have the matrices of `C` with the rows and columns of `z⁺` and `z⁻`
+deleted; here `N`, `w`, `v` are the blocks of the matrix of `d : Cᵢ₊₁ → Cᵢ` away from `z⁺` and
+`z⁻`, in the column of `z⁺`, and in the row of `z⁻`. Then
 
 `τ(C) = (-1) ^ (dim Bᵢ₋₁(D)) · a ^ ((-1) ^ (i + 1)) · τ(D)`,
 
 where `Bᵢ₋₁(D)` is the image of `Dᵢ → Dᵢ₋₁`. Both torsions vanish unless `C`, equivalently `D`
 (`HomologicalComplex.acyclic_iff_of_gaussianElimination`), is acyclic. -/
 theorem reidemeisterTorsion_eq_mul_of_gaussianElimination {C : ChainComplex (ModuleCat F) ℤ}
-    {D : ChainComplex (ModuleCat.{v} F) ℤ} {m : ℤ → ℕ} {i : ℤ}
-    (c : ∀ j, Basis (Fin (m j + if j = i + 1 ∨ j = i then 1 else 0)) F (C.X j))
-    (e : ∀ j, Basis (Fin (m j)) F (D.X j))
+    {D : ChainComplex (ModuleCat.{v} F) ℤ} {n m : ℤ → ℕ} {i : ℤ}
+    (c : ∀ j, Basis (Fin (n j)) F (C.X j)) (e : ∀ j, Basis (Fin (m j)) F (D.X j))
+    (hn : ∀ j, n j = m j + if j = i + 1 ∨ j = i then 1 else 0)
     (ha : LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-      (Fin.natAdd (m i) ⟨0, by simp⟩) (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩) ≠ 0)
+      (Fin.cast (hn i).symm (Fin.natAdd (m i) ⟨0, by simp⟩))
+      (Fin.cast (hn (i + 1)).symm (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩)) ≠ 0)
     (hDi : ∀ r s, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom r s =
       LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-          (Fin.castAdd _ r) (Fin.castAdd _ s) -
+          (Fin.cast (hn i).symm (Fin.castAdd _ r)) (Fin.cast (hn (i + 1)).symm (Fin.castAdd _ s)) -
         LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-            (Fin.castAdd _ r) (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩) *
+            (Fin.cast (hn i).symm (Fin.castAdd _ r))
+            (Fin.cast (hn (i + 1)).symm (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩)) *
           (LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-            (Fin.natAdd (m i) ⟨0, by simp⟩) (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩))⁻¹ *
+            (Fin.cast (hn i).symm (Fin.natAdd (m i) ⟨0, by simp⟩))
+            (Fin.cast (hn (i + 1)).symm (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩)))⁻¹ *
           LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-            (Fin.natAdd (m i) ⟨0, by simp⟩) (Fin.castAdd _ s))
+            (Fin.cast (hn i).symm (Fin.natAdd (m i) ⟨0, by simp⟩))
+            (Fin.cast (hn (i + 1)).symm (Fin.castAdd _ s)))
     (hD : ∀ j, j ≠ i → ∀ r s, LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom r s =
       LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom
-        (Fin.castAdd _ r) (Fin.castAdd _ s)) :
+        (Fin.cast (hn j).symm (Fin.castAdd _ r)) (Fin.cast (hn (j + 1)).symm (Fin.castAdd _ s))) :
     C.reidemeisterTorsion c =
       (-1) ^ finrank F (LinearMap.range (D.d i (i - 1)).hom) *
         LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-          (Fin.natAdd (m i) ⟨0, by simp⟩) (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩) ^
+          (Fin.cast (hn i).symm (Fin.natAdd (m i) ⟨0, by simp⟩))
+          (Fin.cast (hn (i + 1)).symm (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩)) ^
             ((i + 1).negOnePow : ℤ) *
         D.reidemeisterTorsion e := by
+  obtain rfl : n = fun j ↦ m j + pairRank i j := funext hn
+  -- After substituting `n`, the casts are identities, and the hypotheses are those of the
+  -- auxiliary lemmas up to definitional equality.
   replace ha : pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) ≠ 0 := ha
-  -- Replace `D` by its lift to the universe `max v u`, which has the same matrices.
-  have hmatD := toMatrix_uliftBasis.{u, v} e
-  have hDi' : ∀ r s, LinearMap.toMatrix (uliftBasis e (i + 1)) (uliftBasis e i)
-      ((uliftComplex D).d (i + 1) i).hom r s =
-      pivotMatrix c (Fin.castAdd _ r) (Fin.castAdd _ s) -
-        pivotMatrix c (Fin.castAdd _ r) (pairIdx m i (i + 1) (.inl rfl)) *
-          (pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)))⁻¹ *
-          pivotMatrix c (pairIdx m i i (.inr rfl)) (Fin.castAdd _ s) := fun r s ↦ by
-    rw [hmatD]
-    exact hDi r s
-  have hD' : ∀ j, j ≠ i → ∀ r s, LinearMap.toMatrix (uliftBasis e (j + 1)) (uliftBasis e j)
-      ((uliftComplex D).d (j + 1) j).hom r s =
-      LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom (Fin.castAdd (pairRank i j) r)
-        (Fin.castAdd (pairRank i (j + 1)) s) := fun j hj r s ↦ by
-    rw [hmatD]
-    exact hD j hj r s
-  have hτD : (uliftComplex D).reidemeisterTorsion (uliftBasis e) = D.reidemeisterTorsion e :=
-    (map_reidemeisterTorsion (RingHom.id F) fun j ↦ by rw [hmatD]; rfl).symm
-  have hrkD : finrank F (LinearMap.range ((uliftComplex D).d i (i - 1)).hom) =
-      finrank F (LinearMap.range (D.d i (i - 1)).hom) :=
-    finrank_range_d_eq_of_toMatrix_eq (RingHom.id F) (by rw [hmatD]; rfl)
   -- Changing to the bases adapted to the elimination multiplies the torsion by `a ^ (-1) ^ i`.
   have hdet (j : ℤ) : (c j).det (newBasis ha j) = if j = i then
       pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) else 1 := by
@@ -691,8 +649,8 @@ theorem reidemeisterTorsion_eq_mul_of_gaussianElimination {C : ChainComplex (Mod
     congr 1
     rw [finprod_eq_single _ i fun j hj ↦ by simp [hdet, hj]]
     simp [hdet]
-  have hsum := reidemeisterTorsion_newBasis (uliftBasis e) ha hDi' hD'
-  rw [hrkD, hτD, hchange] at hsum
+  have hsum := reidemeisterTorsion_newBasis e ha hDi hD
+  rw [hchange] at hsum
   have hu : pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) ^
       (i.negOnePow : ℤ) ≠ 0 := zpow_ne_zero _ ha
   -- State the pivot with the indices `pairIdx` of the auxiliary lemmas, so that `ring` sees a
@@ -706,45 +664,31 @@ theorem reidemeisterTorsion_eq_mul_of_gaussianElimination {C : ChainComplex (Mod
 `HomologicalComplex.reidemeisterTorsion_eq_mul_of_gaussianElimination`, the complex `C` is acyclic
 if and only if the complex `D` obtained by cancelling the pair `z⁺`, `z⁻` is. -/
 theorem acyclic_iff_of_gaussianElimination {C : ChainComplex (ModuleCat F) ℤ}
-    {D : ChainComplex (ModuleCat.{v} F) ℤ} {m : ℤ → ℕ} {i : ℤ}
-    (c : ∀ j, Basis (Fin (m j + if j = i + 1 ∨ j = i then 1 else 0)) F (C.X j))
-    (e : ∀ j, Basis (Fin (m j)) F (D.X j))
+    {D : ChainComplex (ModuleCat.{v} F) ℤ} {n m : ℤ → ℕ} {i : ℤ}
+    (c : ∀ j, Basis (Fin (n j)) F (C.X j)) (e : ∀ j, Basis (Fin (m j)) F (D.X j))
+    (hn : ∀ j, n j = m j + if j = i + 1 ∨ j = i then 1 else 0)
     (ha : LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-      (Fin.natAdd (m i) ⟨0, by simp⟩) (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩) ≠ 0)
+      (Fin.cast (hn i).symm (Fin.natAdd (m i) ⟨0, by simp⟩))
+      (Fin.cast (hn (i + 1)).symm (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩)) ≠ 0)
     (hDi : ∀ r s, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom r s =
       LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-          (Fin.castAdd _ r) (Fin.castAdd _ s) -
+          (Fin.cast (hn i).symm (Fin.castAdd _ r)) (Fin.cast (hn (i + 1)).symm (Fin.castAdd _ s)) -
         LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-            (Fin.castAdd _ r) (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩) *
+            (Fin.cast (hn i).symm (Fin.castAdd _ r))
+            (Fin.cast (hn (i + 1)).symm (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩)) *
           (LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-            (Fin.natAdd (m i) ⟨0, by simp⟩) (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩))⁻¹ *
+            (Fin.cast (hn i).symm (Fin.natAdd (m i) ⟨0, by simp⟩))
+            (Fin.cast (hn (i + 1)).symm (Fin.natAdd (m (i + 1)) ⟨0, by simp⟩)))⁻¹ *
           LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom
-            (Fin.natAdd (m i) ⟨0, by simp⟩) (Fin.castAdd _ s))
+            (Fin.cast (hn i).symm (Fin.natAdd (m i) ⟨0, by simp⟩))
+            (Fin.cast (hn (i + 1)).symm (Fin.castAdd _ s)))
     (hD : ∀ j, j ≠ i → ∀ r s, LinearMap.toMatrix (e (j + 1)) (e j) (D.d (j + 1) j).hom r s =
       LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom
-        (Fin.castAdd _ r) (Fin.castAdd _ s)) :
+        (Fin.cast (hn j).symm (Fin.castAdd _ r)) (Fin.cast (hn (j + 1)).symm (Fin.castAdd _ s))) :
     C.Acyclic ↔ D.Acyclic := by
-  replace ha : pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) ≠ 0 := ha
-  -- Replace `D` by its lift to the universe `max v u`, which has the same matrices.
-  have hmatD := toMatrix_uliftBasis.{u, v} e
-  have hDi' : ∀ r s, LinearMap.toMatrix (uliftBasis e (i + 1)) (uliftBasis e i)
-      ((uliftComplex D).d (i + 1) i).hom r s =
-      pivotMatrix c (Fin.castAdd _ r) (Fin.castAdd _ s) -
-        pivotMatrix c (Fin.castAdd _ r) (pairIdx m i (i + 1) (.inl rfl)) *
-          (pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)))⁻¹ *
-          pivotMatrix c (pairIdx m i i (.inr rfl)) (Fin.castAdd _ s) := fun r s ↦ by
-    rw [hmatD]
-    exact hDi r s
-  have hD' : ∀ j, j ≠ i → ∀ r s, LinearMap.toMatrix (uliftBasis e (j + 1)) (uliftBasis e j)
-      ((uliftComplex D).d (j + 1) j).hom r s =
-      LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom (Fin.castAdd (pairRank i j) r)
-        (Fin.castAdd (pairRank i (j + 1)) s) := fun j hj r s ↦ by
-    rw [hmatD]
-    exact hD j hj r s
-  rw [acyclic_iff_of_newBasis (uliftBasis e) ha hDi' hD']
-  exact acyclic_iff_of_toMatrix_eq (RingHom.id F) fun a b (hab : b + 1 = a) ↦ by
-    subst hab
-    rw [hmatD]
-    rfl
+  obtain rfl : n = fun j ↦ m j + pairRank i j := funext hn
+  -- After substituting `n`, the casts are identities, and the hypotheses are those of
+  -- `acyclic_iff_of_newBasis` up to definitional equality.
+  exact acyclic_iff_of_newBasis e ha hDi hD
 
 end HomologicalComplex
