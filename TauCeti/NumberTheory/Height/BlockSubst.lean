@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.Height.Matrix
 public import TauCeti.NumberTheory.Height.MvPolynomial
 public import TauCeti.RingTheory.MvPolynomial.Abv.LinearSubst
-import TauCeti.NumberTheory.Height.Basic
 
 /-!
 # Projective coefficient heights under linear and block-linear substitutions
@@ -17,7 +16,7 @@ Over a field `K` with admissible absolute values, applying `MvPolynomial.linearS
 homogeneous polynomial `p` of degree `n` multiplies the local sup norm at each archimedean place by
 at most `(card σ ^ 2 * max_{i, j} v (M i j)) ^ n` and at each nonarchimedean place by at most
 `(max_{i, j} v (M i j)) ^ n`. Combining the `n`-th power of the matrix entry tuple with the nonzero
-coefficient tuple of `p` via the Segre multiplication table `Height.mulHeight_fun_mul_eq` gives
+coefficient tuple of `p` via `MvPolynomial.mulHeight_le_of_abv_coeff_le` gives
 `H(linearSubst M p) ≤ ((card σ ^ 2) ^ n) ^ totalWeight K * H(M) ^ n * H(p)`.
 
 For a multihomogeneous polynomial `P` of multidegree `d : κ → ℕ` under `MvPolynomial.blockSubst A`,
@@ -56,79 +55,7 @@ open Finset Height AdmissibleAbsValues
 
 section General
 
-variable {K σ τ κ ι : Type*} [Field K] [AdmissibleAbsValues K]
-
-private lemma mulHeight_le_of_abv_coeff_le [Finite ι] [Nonempty ι] {A : Matrix ι ι K}
-    {P : MvPolynomial σ K} {Q : MvPolynomial τ K} {D k : ℕ} (hk : 1 ≤ k)
-    (h0P : P = 0 → Q = 0) (h0A : A = 0 → D ≠ 0 → Q = 0)
-    (harch : ∀ (v : AbsoluteValue K ℝ) {B C : ℝ}, (∀ i j, v (A i j) ≤ B) →
-      (∀ a, v (P.coeff a) ≤ C) → ∀ t, v (Q.coeff t) ≤ (k * B) ^ D * C)
-    (hnon : ∀ (v : AbsoluteValue K ℝ), IsNonarchimedean v → ∀ {B C : ℝ}, 0 ≤ B →
-      (∀ i j, v (A i j) ≤ B) → (∀ a, v (P.coeff a) ≤ C) → ∀ t, v (Q.coeff t) ≤ B ^ D * C) :
-    Q.mulHeight ≤ ((k : ℝ) ^ D) ^ totalWeight K * A.mulHeight ^ D * P.mulHeight := by
-  cases nonempty_fintype ι
-  have hC : (1 : ℝ) ≤ (k : ℝ) ^ D := one_le_pow₀ (by exact_mod_cast hk)
-  rcases eq_or_ne P 0 with rfl | hP0
-  · rw [h0P rfl, MvPolynomial.mulHeight_zero, MvPolynomial.mulHeight_zero, mul_one]
-    exact one_le_mul_of_one_le_of_one_le (one_le_pow₀ hC) (one_le_pow₀ A.one_le_mulHeight)
-  by_cases hAD : A = 0 ∧ D ≠ 0
-  · rw [h0A hAD.1 hAD.2, MvPolynomial.mulHeight_zero]
-    exact one_le_mul_of_one_le_of_one_le (one_le_mul_of_one_le_of_one_le (one_le_pow₀ hC)
-      (one_le_pow₀ A.one_le_mulHeight)) P.one_le_mulHeight
-  let y : ι × ι → K := fun q ↦ A q.1 q.2
-  let x : P.support → K := fun c ↦ P.coeff c
-  obtain ⟨c₁, hc₁⟩ := support_nonempty.mpr hP0
-  have hx : x ≠ 0 := Function.ne_iff.mpr ⟨⟨c₁, hc₁⟩, mem_support_iff.mp hc₁⟩
-  have hyD : y ^ D ≠ 0 := by
-    rcases eq_or_ne D 0 with rfl | hD
-    · exact Function.ne_iff.mpr ⟨(Classical.arbitrary ι, Classical.arbitrary ι), by simp⟩
-    · obtain ⟨i, j, hij⟩ : ∃ i j, A i j ≠ 0 := by contrapose! hAD; exact ⟨Matrix.ext hAD, hD⟩
-      exact Function.ne_iff.mpr ⟨(i, j), pow_ne_zero D hij⟩
-  let w : (ι × ι) × P.support → K := fun a ↦ (y ^ D) a.1 * x a.2
-  have hwH : Height.mulHeight w = A.mulHeight ^ D * P.mulHeight := by
-    rw [Height.mulHeight_fun_mul_eq hyD hx, Height.mulHeight_pow, ← Matrix.mulHeight_def,
-      ← mulHeight_eq_support]
-  have hlocal (v : AbsoluteValue K ℝ) : ∃ B C, 0 ≤ B ∧ (∀ i j, v (A i j) ≤ B) ∧
-      (∀ a, v (P.coeff a) ≤ C) ∧ B ^ D * C ≤ ⨆ a, v (w a) := by
-    obtain ⟨q₀, -, hqmax⟩ := exists_max_image univ (fun q : ι × ι ↦ v (y q)) univ_nonempty
-    obtain ⟨c₀, hc₀, hcmax⟩ := exists_max_image P.support (v ∘ P.coeff) (support_nonempty.mpr hP0)
-    refine ⟨v (y q₀), v (P.coeff c₀), v.nonneg _, fun i j ↦ hqmax (i, j) (mem_univ _),
-      fun a ↦ by
-        by_cases ha : a ∈ P.support
-        · exact hcmax a ha
-        · rw [notMem_support_iff.mp ha, map_zero]; exact v.nonneg _,
-      (by simp [w, x, Pi.pow_apply] : v (y q₀) ^ D * v (P.coeff c₀) = v (w (q₀, ⟨c₀, hc₀⟩))) ▸
-        Finite.le_ciSup_of_le (q₀, ⟨c₀, hc₀⟩) le_rfl⟩
-  have hw0 (v : AbsoluteValue K ℝ) : 0 ≤ ⨆ a, v (w a) := Real.iSup_nonneg fun _ ↦ v.nonneg _
-  rw [mul_assoc, ← hwH, mulHeight_eq_support]
-  refine (Height.mulHeight_le_of_forall_iSup_le w _ hC (p := 1)
-    (fun v _ ↦ Real.iSup_le (fun t ↦ ?_) (mul_nonneg (zero_le_one.trans hC) (by simpa using hw0 v)))
-    fun v hv ↦ Real.iSup_le (fun t ↦ ?_) (by simpa using hw0 v)).trans_eq (by rw [pow_one])
-  · obtain ⟨B, C, -, hAB, hPC, hBC⟩ := hlocal v
-    rw [pow_one]
-    exact (harch v hAB hPC t.val).trans
-      ((by rw [mul_pow, mul_assoc] : (k * B : ℝ) ^ D * C = (k : ℝ) ^ D * (B ^ D * C)).trans_le
-        (mul_le_mul_of_nonneg_left hBC (zero_le_one.trans hC)))
-  · obtain ⟨B, C, hB0, hAB, hPC, hBC⟩ := hlocal v
-    simpa only [pow_one] using (hnon v (isNonarchimedean v hv) hB0 hAB hPC t.val).trans hBC
-
-private lemma logHeight_le_of_mulHeight_le [Finite ι] {A : Matrix ι ι K}
-    {P : MvPolynomial σ K} {Q : MvPolynomial τ K} {D : ℕ} {c : ℝ}
-    (hEmpty : IsEmpty ι → IsEmpty τ) (hc_pos : Nonempty ι → 0 < c) (hc_zero : IsEmpty ι → c = 0)
-    (hmul : Nonempty ι → Q.mulHeight ≤ (c ^ D) ^ totalWeight K * A.mulHeight ^ D * P.mulHeight) :
-    Q.logHeight ≤ P.logHeight + D * A.logHeight + totalWeight K * D * Real.log c := by
-  by_cases hι : Nonempty ι
-  · have hc : 0 < c := hc_pos hι
-    have hApos : 0 < A.mulHeight ^ D := pow_pos A.mulHeight_pos D
-    have h := Real.log_le_log (mulHeight_pos Q) (hmul hι)
-    rw [Real.log_mul (mul_pos (by positivity) hApos).ne' (mulHeight_pos P).ne',
-      Real.log_mul (by positivity) hApos.ne', Real.log_pow, Real.log_pow,
-      Real.log_pow A.mulHeight] at h
-    rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight, Matrix.logHeight_eq_log_mulHeight]
-    linarith
-  · have : IsEmpty ι := not_nonempty_iff.mp hι
-    have : IsEmpty τ := hEmpty ‹_›
-    simp [hc_zero ‹_›, P.logHeight_nonneg]
+variable {K σ κ ι : Type*} [Field K] [AdmissibleAbsValues K]
 
 /-- **The multiplicative height of a homogeneous polynomial under `linearSubst`.** For a
 homogeneous polynomial `p` of degree `n` in a nonempty finite variable type `σ`,
@@ -137,15 +64,19 @@ theorem mulHeight_linearSubst_le [Fintype σ] [Nonempty σ] {p : MvPolynomial σ
     (hp : p.IsHomogeneous n) (M : Matrix σ σ K) :
     (linearSubst M p).mulHeight ≤
       ((Fintype.card σ ^ 2 : ℝ) ^ n) ^ totalWeight K * M.mulHeight ^ n * p.mulHeight := by
-  have hk : 1 ≤ Fintype.card σ ^ 2 := Nat.pow_le_pow_left Fintype.card_pos 2
-  refine (mulHeight_le_of_abv_coeff_le hk (fun hp0 ↦ by rw [hp0, map_zero])
+  have hc : (1 : ℝ) ≤ (Fintype.card σ ^ 2 : ℝ) := by
+    exact_mod_cast Nat.pow_le_pow_left Fintype.card_pos 2
+  rw [Matrix.mulHeight_def]
+  exact mulHeight_le_of_abv_coeff_le hc (fun hp0 ↦ by rw [hp0, map_zero])
     (fun hM0 hn ↦ by
-      rw [hM0, linearSubst_zero, hp.coeff_eq_zero (by simpa using hn.symm), map_zero])
-    (fun v {B C} hMB hpC t ↦ by
-      simpa only [Nat.cast_pow] using abv_coeff_linearSubst_le_of_isHomogeneous hp hMB hpC t)
+      have hM : M = 0 := Matrix.ext fun i j ↦ congrFun hM0 (i, j)
+      rw [hM, linearSubst_zero, hp.coeff_eq_zero (by simpa using hn.symm), map_zero])
+    (fun v _ {B C} hMB hpC t ↦ by
+      simpa only [Nat.cast_pow] using
+        abv_coeff_linearSubst_le_of_isHomogeneous hp (fun i j ↦ hMB (i, j)) hpC t)
     (fun v hv {B C} hB0 hMB hpC t ↦
-      abv_coeff_linearSubst_le_of_isHomogeneous_of_isNonarchimedean hv hp hB0 hMB hpC t)).trans_eq
-    (by norm_cast)
+      abv_coeff_linearSubst_le_of_isHomogeneous_of_isNonarchimedean
+        (isNonarchimedean v hv) hp hB0 (fun i j ↦ hMB (i, j)) hpC t)
 
 /-- **The logarithmic height of a homogeneous polynomial under `linearSubst`:**
 `h(linearSubst M p) ≤ h(p) + n h(M) + 2 * totalWeight K * n * log (card σ)`. -/
@@ -153,10 +84,14 @@ theorem logHeight_linearSubst_le [Fintype σ] {p : MvPolynomial σ K} {n : ℕ}
     (hp : p.IsHomogeneous n) (M : Matrix σ σ K) :
     (linearSubst M p).logHeight ≤
       p.logHeight + n * M.logHeight + 2 * totalWeight K * n * Real.log (Fintype.card σ) := by
-  have h := logHeight_le_of_mulHeight_le id
-    (fun h ↦ by have := @Fintype.card_pos σ _ h; positivity) (fun _ ↦ by simp)
-    fun _ ↦ mulHeight_linearSubst_le hp M
-  simp only [Real.log_pow, Nat.cast_ofNat] at h
+  have h := logHeight_le_of_mulHeight_le (x := fun q : σ × σ ↦ M q.1 q.2)
+    (c := (Fintype.card σ ^ 2 : ℝ))
+    (fun h ↦ (isEmpty_prod.mp h).elim id id)
+    (fun ⟨q⟩ ↦ have : Nonempty σ := ⟨q.1⟩; by positivity)
+    (fun h ↦ have : IsEmpty σ := (isEmpty_prod.mp h).elim id id; by simp)
+    (fun ⟨q⟩ ↦ have : Nonempty σ := ⟨q.1⟩;
+      by simpa only [← Matrix.mulHeight_def] using mulHeight_linearSubst_le hp M)
+  rw [← Matrix.logHeight_def, Real.log_pow, Nat.cast_ofNat] at h
   linarith
 
 /-- **The multiplicative height of a multihomogeneous polynomial under `blockSubst`.** For a
@@ -167,15 +102,19 @@ theorem mulHeight_blockSubst_le [Fintype κ] [DecidableEq κ] [Fintype ι] [None
     (blockSubst A P).mulHeight ≤
       ((Fintype.card ι ^ 2 : ℝ) ^ ∑ h, d h) ^ totalWeight K *
         A.mulHeight ^ (∑ h, d h) * P.mulHeight := by
-  have hk : 1 ≤ Fintype.card ι ^ 2 := Nat.pow_le_pow_left Fintype.card_pos 2
-  refine (mulHeight_le_of_abv_coeff_le hk (fun hP0 ↦ by rw [hP0, map_zero])
+  have hc : (1 : ℝ) ≤ (Fintype.card ι ^ 2 : ℝ) := by
+    exact_mod_cast Nat.pow_le_pow_left Fintype.card_pos 2
+  rw [Matrix.mulHeight_def]
+  exact mulHeight_le_of_abv_coeff_le hc (fun hP0 ↦ by rw [hP0, map_zero])
     (fun hA0 hD ↦ by
-      rw [hA0, blockSubst_zero, hP.isHomogeneous.coeff_eq_zero (by simpa using hD.symm), map_zero])
-    (fun v {B C} hAB hPC t ↦ by
-      simpa only [Nat.cast_pow] using abv_coeff_blockSubst_le_of_isMultiHomogeneous hP hAB hPC t)
+      have hA : A = 0 := Matrix.ext fun i j ↦ congrFun hA0 (i, j)
+      rw [hA, blockSubst_zero, hP.isHomogeneous.coeff_eq_zero (by simpa using hD.symm), map_zero])
+    (fun v _ {B C} hAB hPC t ↦ by
+      simpa only [Nat.cast_pow] using
+        abv_coeff_blockSubst_le_of_isMultiHomogeneous hP (fun i j ↦ hAB (i, j)) hPC t)
     (fun v hv {B C} hB0 hAB hPC t ↦
       abv_coeff_blockSubst_le_of_isHomogeneous_of_isNonarchimedean
-        hv hP.isHomogeneous hB0 hAB hPC t)).trans_eq (by norm_cast)
+        (isNonarchimedean v hv) hP.isHomogeneous hB0 (fun i j ↦ hAB (i, j)) hPC t)
 
 /-- **The logarithmic height of a multihomogeneous polynomial under `blockSubst`:**
 `h(blockSubst A P) ≤ h(P) + (∑ h, d h) h(A) + 2 * totalWeight K * (∑ h, d h) * log (card ι)`. -/
@@ -184,10 +123,14 @@ theorem logHeight_blockSubst_le [Fintype κ] [DecidableEq κ] [Fintype ι]
     (blockSubst A P).logHeight ≤
       P.logHeight + (∑ h, d h) * A.logHeight +
         2 * totalWeight K * (∑ h, d h) * Real.log (Fintype.card ι) := by
-  have h := logHeight_le_of_mulHeight_le (fun _ ↦ inferInstance)
-    (fun h ↦ by have := @Fintype.card_pos ι _ h; positivity) (fun _ ↦ by simp)
-    fun _ ↦ mulHeight_blockSubst_le hP A
-  simp only [Real.log_pow, Nat.cast_ofNat] at h
+  have h := logHeight_le_of_mulHeight_le (x := fun q : ι × ι ↦ A q.1 q.2)
+    (c := (Fintype.card ι ^ 2 : ℝ))
+    (fun h ↦ @Prod.isEmpty_right _ _ ((isEmpty_prod.mp h).elim id id))
+    (fun ⟨q⟩ ↦ have : Nonempty ι := ⟨q.1⟩; by positivity)
+    (fun h ↦ have : IsEmpty ι := (isEmpty_prod.mp h).elim id id; by simp)
+    (fun ⟨q⟩ ↦ have : Nonempty ι := ⟨q.1⟩;
+      by simpa only [← Matrix.mulHeight_def] using mulHeight_blockSubst_le hP A)
+  rw [← Matrix.logHeight_def, Real.log_pow, Nat.cast_ofNat] at h
   linarith
 
 /-- **The multiplicative height of a Hasse derivative under `blockSubst`.** For a multihomogeneous
@@ -235,10 +178,15 @@ theorem logHeight_blockSubst_hasseDeriv_le [Fintype κ] [DecidableEq κ] [Fintyp
     (A : Matrix ι ι K) (I : κ × ι →₀ ℕ) :
     (blockSubst A (hasseDeriv I P)).logHeight ≤
       P.logHeight + (∑ h, d h) * A.logHeight +
-        totalWeight K * (∑ h, d h) * Real.log (2 * Fintype.card ι ^ 2) :=
-  logHeight_le_of_mulHeight_le (fun _ ↦ inferInstance)
-    (fun h ↦ by have := @Fintype.card_pos ι _ h; positivity) (fun _ ↦ by simp)
-    fun _ ↦ mulHeight_blockSubst_hasseDeriv_le hP A I
+        totalWeight K * (∑ h, d h) * Real.log (2 * Fintype.card ι ^ 2) := by
+  have h := logHeight_le_of_mulHeight_le (x := fun q : ι × ι ↦ A q.1 q.2)
+    (c := 2 * (Fintype.card ι : ℝ) ^ 2)
+    (fun h ↦ @Prod.isEmpty_right _ _ ((isEmpty_prod.mp h).elim id id))
+    (fun ⟨q⟩ ↦ have : Nonempty ι := ⟨q.1⟩; by positivity)
+    (fun h ↦ have : IsEmpty ι := (isEmpty_prod.mp h).elim id id; by simp)
+    (fun ⟨q⟩ ↦ have : Nonempty ι := ⟨q.1⟩;
+      by simpa only [← Matrix.mulHeight_def] using mulHeight_blockSubst_hasseDeriv_le hP A I)
+  simpa only [← Matrix.logHeight_def] using h
 
 end General
 

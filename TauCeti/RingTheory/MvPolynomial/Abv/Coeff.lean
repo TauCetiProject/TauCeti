@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Degrees
+public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import Mathlib.LinearAlgebra.Matrix.AbsoluteValue
 import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import Mathlib.Data.Fintype.Order
 
 /-!
 # Coefficient bounds for products and determinants of polynomials
@@ -39,6 +41,7 @@ Roth's lemma.
 ## Main results
 
 * `MvPolynomial.card_support_le_two_pow`: `#p.support ≤ 2 ^ ∑ j, p.degreeOf j`.
+* `MvPolynomial.abv_coeff_le_iSup_support`: `v (p.coeff b) ≤ ⨆ c : p.support, v (p.coeff c)`.
 * `MvPolynomial.abv_coeff_sum_monomial_le`, `MvPolynomial.abv_coeff_sum_C_mul_X_le`: coefficient
   bounds for finite sums of monomials with distinct exponents and for finite linear combinations of
   distinct variables.
@@ -93,6 +96,14 @@ end Support
 section AbsoluteValue
 
 variable {σ R S : Type*} [CommSemiring R]
+
+/-- Every coefficient of `p` has absolute value at most the supremum over `p.support`. -/
+theorem abv_coeff_le_iSup_support (v : AbsoluteValue R ℝ) (p : MvPolynomial σ R) (b : σ →₀ ℕ) :
+    v (p.coeff b) ≤ ⨆ c : p.support, v (p.coeff c) := by
+  by_cases hb : b ∈ p.support
+  · exact Finite.le_ciSup_of_le ⟨b, hb⟩ le_rfl
+  · rw [notMem_support_iff.mp hb, map_zero]
+    exact Real.iSup_nonneg fun _ ↦ v.nonneg _
 
 /-- If distinct indices in `s` map to distinct exponents under `a` and every coefficient satisfies
 `v (w j) ≤ B` with `0 ≤ B`, then every coefficient of `∑ j ∈ s, monomial (a j) (w j)` has

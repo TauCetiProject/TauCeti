@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.Height.BlockSubst
 import TauCeti.Combinatorics.Enumerative.AntidiagLargeDeviation
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
-import TauCeti.NumberTheory.Height.NumberField
 import TauCeti.NumberTheory.NumberField.SiegelsLemma
 import TauCeti.RingTheory.Algebraic.Denominator
 
@@ -43,12 +42,12 @@ at derivative order zero:
   order `0` below `m / n - m η` along every row of `A` propagates to all Hasse derivatives of
   weighted order at most `m η` and upgrades by multihomogeneity (`card ι ≥ 2`) to two-sided
   concentration in `(m / n - 2 m η, m / n + 2 m (n - 1) η)`.
-* By `Finset.exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le`,
-  once every `d h` is large enough to absorb the `O(1 / d h)` Chernoff error, the lower-tail
-  monomials for a single form number strictly less than `#(multiMons ι d) / (2 #F)`. Clearing the
-  denominators of each `A_f⁻¹` and applying `NumberField.exists_ne_zero_mulVec_eq_zero_house_le`
-  over `𝓞 K` produces algebraic integer coefficients of house `O(1) ^ ∑ h, d h`, bounded in
-  projective height via `NumberField.mulHeight_le_pow_finrank_of_forall_le` and
+* By `Finset.exists_bound_mul_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_lt`,
+  once every `d h` is large enough to absorb the `O(1 / d h)` Chernoff error, `2 #F` copies of the
+  lower-tail monomials number strictly less than `#(multiMons ι d)`. Clearing the denominators of
+  each `A_f⁻¹` and applying `NumberField.exists_siegelConstant_linear` over `𝓞 K` produces
+  algebraic integer coefficients of house `O(1) ^ ∑ h, d h`, bounded in projective height via
+  `MvPolynomial.logHeight_le_finrank_mul_log_of_house_le` and
   `MvPolynomial.logHeight_blockSubst_hasseDeriv_le`.
 
 ## Main results
@@ -75,22 +74,6 @@ open Finset Height AdmissibleAbsValues Matrix NumberField
 
 section Helpers
 
-/-- Real-exponential slack bound: if `0 < k ≤ nForms`, `0 < m`, and `4 log (2 nForms) < a * m`,
-halving the gap into `ε = (a * m - 4 log (2 nForms)) / (8 * m)` gives
-`(2 * k) * exp ((-a / 4 + ε) * m) < 1`. -/
-private lemma mul_exp_neg_div_four_add_lt_one {nForms k : ℕ} {a m : ℝ} (hk0 : k ≠ 0)
-    (hk : k ≤ nForms) (hm_pos : 0 < m) (hm : 4 * Real.log (2 * nForms) < a * m) :
-    (2 * k : ℝ) * Real.exp ((-a / 4 + (a * m - 4 * Real.log (2 * nForms)) / (8 * m)) * m) < 1 := by
-  have hk_pos : (0 : ℝ) < 2 * k := by positivity
-  have hk_le : (2 * k : ℝ) ≤ 2 * nForms := by exact_mod_cast Nat.mul_le_mul_left 2 hk
-  refine (mul_le_mul_of_nonneg_right
-    ((Real.exp_log hk_pos).symm.trans_le (Real.exp_le_exp.mpr (Real.log_le_log hk_pos hk_le)))
-    (Real.exp_pos _).le).trans_lt ?_
-  rw [← Real.exp_add, Real.exp_lt_one_iff]
-  have hsum : Real.log (2 * nForms) + ((-a / 4 + (a * m - 4 * Real.log (2 * nForms)) / (8 * m)) *
-      m) = -(a * m - 4 * Real.log (2 * nForms)) / 8 := by field_simp [hm_pos.ne']; ring
-  linarith
-
 /-- Choosing `D₀` from `AntidiagLargeDeviation` so that `2 * k` copies of the lower-tail monomials
 fit inside `multiMons ι d` whenever `k ≤ nForms` and
 `4 log (2 nForms) < card ι (card ι + 1) η² card κ`. -/
@@ -112,37 +95,31 @@ private lemma exists_D0_two_mul_card_filter_multiMons_le {ι κ : Type*} [Fintyp
     have hκ0 : (Fintype.card κ : ℝ) = 0 := hκ.antisymm (Nat.cast_nonneg _)
     linarith [hm, hlog_nn, show Fintype.card ι * (Fintype.card ι + 1) * η ^ 2 *
       (Fintype.card κ : ℝ) = 0 by rw [hκ0, mul_zero]]
-  rw [← sq_abs] at hm
-  let ε : ℝ := (Fintype.card ι * (Fintype.card ι + 1) * |η| ^ 2 * Fintype.card κ -
-    4 * Real.log (2 * nForms)) / (8 * Fintype.card κ)
+  rw [← sq_abs, ← card_univ (α := ι)] at hm
   obtain ⟨D₀, hD₀, htail⟩ :=
-    exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le
-      (univ : Finset ι) (abs_nonneg η) (div_pos (by linarith) (by positivity) : 0 < ε)
+    exists_bound_mul_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_lt
+      (univ : Finset ι) (c := (2 * nForms : ℝ)) (by positivity) (abs_nonneg η) hm
   refine ⟨D₀, hD₀, Fintype.card_pos_iff.mp (by exact_mod_cast hm_pos), fun d hd ↦ ?_⟩
-  rcases eq_or_ne k 0 with rfl | hk0
-  · simp
-  let S := Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)
-  have hS_pos : 0 < #S := card_pos.mpr ⟨fun h ↦ Finsupp.single i₀ (d h),
-    Fintype.mem_piFinset.mpr fun h ↦ mem_finsuppAntidiag.mpr ⟨by simp, subset_univ _⟩⟩
-  have hSm_card : #(multiMons ι d) = #S := by
-    rw [multiMons_def, card_map]
-  have hbad_eq := card_filter_multiMons_eq d fun g ↦
-    ∑ h, (g (h, i₀) : ℝ) / d h ≤ Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|
-  have hexp_lt : (2 * k : ℝ) * Real.exp ((-#(univ : Finset ι) * (#(univ : Finset ι) + 1) *
-      |η| ^ 2 / 4 + ε) * Fintype.card κ) < 1 := by
-    rw [card_univ]
-    simpa only [ε, neg_mul] using mul_exp_neg_div_four_add_lt_one hk0 hk hm_pos hm
-  have htail' : (#{f ∈ S | ∑ h, (f h i₀ : ℝ) / d h ≤
-      Fintype.card κ / #(univ : Finset ι) - Fintype.card κ * |η|} : ℝ) ≤
-      (#S : ℝ) * Real.exp ((-#(univ : Finset ι) * (#(univ : Finset ι) + 1) * |η| ^ 2 / 4 + ε) *
-        Fintype.card κ) := by
-    simpa only [S, Fintype.card_piFinset, Nat.cast_prod] using htail d hd (mem_univ i₀)
+  have htail' := htail d hd (mem_univ i₀)
+  have hk_le : (2 * k : ℝ) ≤ 2 * nForms := by exact_mod_cast Nat.mul_le_mul_left 2 hk
   have hreal : (2 * (k * #{N ∈ multiMons ι d | ∑ h, (N (h, i₀) : ℝ) / d h ≤
       Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|}) : ℝ) < #(multiMons ι d) := by
-    rw [hbad_eq, hSm_card, ← mul_assoc, ← card_univ (α := ι)]
-    exact (mul_le_mul_of_nonneg_left htail' (by positivity)).trans_lt
-      ((by ring : (2 * k : ℝ) * ((#S : ℝ) * _) = (#S : ℝ) * ((2 * k : ℝ) * _)).trans_lt
-        ((mul_lt_mul_of_pos_left hexp_lt (by exact_mod_cast hS_pos)).trans_eq (mul_one _)))
+    rw [card_filter_multiMons_eq d (fun g ↦
+      ∑ h, (g (h, i₀) : ℝ) / d h ≤ Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|),
+      multiMons_def, card_map]
+    push_cast
+    rw [← mul_assoc]
+    rw [card_univ] at htail'
+    have h1 : (2 * k : ℝ) *
+        (#{f ∈ Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h) |
+          ∑ h, (f h i₀ : ℝ) / d h ≤
+            Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|} : ℝ) ≤
+        (2 * nForms : ℝ) *
+        (#{f ∈ Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h) |
+          ∑ h, (f h i₀ : ℝ) / d h ≤
+            Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|} : ℝ) :=
+      mul_le_mul_of_nonneg_right hk_le (Nat.cast_nonneg _)
+    linarith [h1, htail']
   exact le_of_lt (by exact_mod_cast hreal)
 
 /-- Extending each nonzero linear form `f ∈ F'` to an invertible matrix `A_f` with row `i₀` equal to
@@ -206,7 +183,7 @@ private lemma exists_matrix_blockSubst_house_le {K ι : Type*} [Field K] [Number
 /-- Assembling a nonzero coefficient vector `ξ : multiMons ι d → 𝓞 K` of bounded house into a
 nonzero multihomogeneous polynomial `P` and bounding its projective logarithmic height. -/
 private lemma logHeight_sum_multiMons_le_of_house_le {K ι κ : Type*} [Field K] [NumberField K]
-    [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] {d : κ → ℕ}
+    [Fintype ι] [Nonempty ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] {d : κ → ℕ}
     (hD_pos : 0 < ∑ h, d h) {C_siegel B_sys : ℝ} (hCs1 : 1 ≤ C_siegel) (hB1 : 1 ≤ B_sys)
     {ξ : multiMons ι d → 𝓞 K} (hξ0 : ξ ≠ 0)
     (hξ_house : ∀ u,
@@ -229,10 +206,21 @@ private lemma logHeight_sum_multiMons_le_of_house_le {K ι κ : Type*} [Field K]
   have hP0 : P ≠ 0 := fun h0 ↦
     RingOfIntegers.coe_ne_zero_iff.mpr hu₀ (by simpa [h0] using (hP_coeff u₀).symm)
   let K_base : ℝ := C_siegel * Fintype.card ι ^ 2 * B_sys
+  have hK1 : 1 ≤ K_base := one_le_mul_of_one_le_of_one_le
+    (one_le_mul_of_one_le_of_one_le hCs1 (by exact_mod_cast Nat.pow_le_pow_left Fintype.card_pos 2))
+    hB1
   have _ : 0 ≤ B_sys := zero_le_one.trans hB1
-  have hξK (u : multiMons ι d) (w : InfinitePlace K) : w (ξ u) ≤ K_base ^ ∑ h, d h := by
-    rw [← InfinitePlace.norm_embedding_eq]
-    refine (norm_embedding_le_house _ _).trans ((hξ_house u).trans ?_)
+  have hP_int : ∀ m ∈ P.support, IsIntegral ℤ (P.coeff m) := fun m hm ↦ by
+    let u : multiMons ι d := ⟨m, isMultiHomogeneous_iff_support_subset.mp hP_hom hm⟩
+    have hcu : P.coeff m = algebraMap (𝓞 K) K (ξ u) :=
+      (hP_coeff u).trans (RingOfIntegers.coe_eq_algebraMap _)
+    rw [hcu]
+    exact RingOfIntegers.isIntegral_coe (ξ u)
+  have hP_house : ∀ m ∈ P.support, house (P.coeff m) ≤ K_base ^ ∑ h, d h := fun m hm ↦ by
+    let u : multiMons ι d := ⟨m, isMultiHomogeneous_iff_support_subset.mp hP_hom hm⟩
+    have hcu : P.coeff m = (ξ u : K) := hP_coeff u
+    rw [hcu]
+    refine (hξ_house u).trans ?_
     rw [Fintype.card_coe]
     calc C_siegel * #(multiMons ι d) * (Fintype.card ι * B_sys) ^ ∑ h, d h
         ≤ C_siegel ^ (∑ h, d h) * (Fintype.card ι ^ ∑ h, d h) *
@@ -241,12 +229,10 @@ private lemma logHeight_sum_multiMons_le_of_house_le {K ι κ : Type*} [Field K]
           · exact le_self_pow₀ hCs1 hD_pos.ne'
           · exact_mod_cast card_multiMons_le_pow d
       _ = K_base ^ ∑ h, d h := by dsimp only [K_base]; rw [mul_pow, mul_pow, mul_pow]; ring
-  have hmul : P.mulHeight ≤ (K_base ^ ∑ h, d h) ^ Module.finrank ℚ K := by
-    rw [mulHeight_eq_coeff P (multiMons ι d) (isMultiHomogeneous_iff_support_subset.mp hP_hom)]
-    simpa only [hP_coeff] using mulHeight_le_pow_finrank_of_forall_le hξ0 hξK
-  have hlog := Real.log_le_log (mulHeight_pos P) hmul
-  rw [Real.log_pow, Real.log_pow, Nat.cast_sum, ← logHeight_eq_log_mulHeight] at hlog
-  exact ⟨hP0, hP_hom, by linarith⟩
+  have hlog : P.logHeight ≤ Module.finrank ℚ K * Real.log (K_base ^ ∑ h, d h) :=
+    logHeight_le_finrank_mul_log_of_house_le (one_le_pow₀ hK1) hP_int hP_house
+  rw [Real.log_pow, Nat.cast_sum] at hlog
+  exact ⟨hP0, hP_hom, hlog.trans_eq (by ring)⟩
 
 /-- Solving the cleared-denominator linear system via Siegel's lemma over `𝓞 K` and bounding the
 projective logarithmic height of the resulting multihomogeneous polynomial `P`. -/
