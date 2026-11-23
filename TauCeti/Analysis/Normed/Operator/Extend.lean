@@ -23,8 +23,9 @@ assume this.
 
 The factor on the range is Mathlib's `LinearMap.compLeftInverse` and its extension to the closure
 is `LinearMap.extendOfNorm`. This file records the pointwise and operator-norm bounds for the
-former and the two factorization criteria. The pointwise bound needs only division rings as
-scalars and module structures on `E`, `G` and `F`.
+former and the two factorization criteria. The pointwise bound needs no norms on the scalars,
+which may be any division rings; it still needs `G` to be a seminormed and `F` a normed additive
+group, each a module over its scalars, while `E` is any module over `𝕜`.
 
 ## Main results
 
