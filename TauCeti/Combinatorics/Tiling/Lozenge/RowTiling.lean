@@ -106,7 +106,7 @@ theorem rowTiling_vadd (w : ℤ × ℤ) (ε : ℤ → Bool) :
     Prod.fst_sub]
 
 /-- `M_ε` is invariant under the translation by `e₂`. -/
-@[simp] theorem rowTiling_vadd_snd (b : ℤ) (ε : ℤ → Bool) :
+@[simp] theorem rowTiling_vadd_zero_mk (b : ℤ) (ε : ℤ → Bool) :
     ((0, b) : ℤ × ℤ) +ᵥ rowTiling ε = rowTiling ε := by
   simp [rowTiling_vadd]
 

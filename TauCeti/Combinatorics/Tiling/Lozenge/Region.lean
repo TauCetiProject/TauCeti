@@ -27,8 +27,9 @@ with all three vertices in `V`, which is Aggarwal's induced-subgraph convention.
 * `TauCeti.interiorEdges`, `TauCeti.boundaryEdges`: the edges with both faces in `R`, and the edges
   of `R` lying in a face outside `R`.
 * `TauCeti.boundaryVertices`: the endpoints `∂R` of the boundary edges.
-* `TauCeti.regionGraph`, `TauCeti.boundaryGraph`: the graphs on `ℤ × ℤ` whose edges are the edges
-  and the boundary edges of `R`.
+* `TauCeti.regionGraph`: the graph on `ℤ × ℤ` whose edges are the edges of `R`.
+* `TauCeti.boundaryGraph`: the graph on the boundary vertices `∂R` whose edges are the boundary
+  edges of `R`.
 * `TauCeti.IsConnectedRegion`: any two vertices of `R` are joined in `regionGraph R`.
 * `TauCeti.regionUnion`: the union `F(R) ⊆ ℝ²` of the closed triangles of the faces of `R`.
 * `TauCeti.facesOf`: the faces with all three vertices in a set `V`.
@@ -37,12 +38,14 @@ with all three vertices in `V`, which is Aggarwal's induced-subgraph convention.
 
 * `TauCeti.regionVertices_eq`: the vertices of `R` are the endpoints of its edges.
 * `TauCeti.regionGraph_adj`, `TauCeti.boundaryGraph_adj`: the edges of the two graphs.
+* `TauCeti.isConnectedRegion_singleton`: a single face is a connected region, and
+  `TauCeti.isConnectedRegion_iff_reachable` restates connectedness through the edges of `R`.
 * `TauCeti.three_mul_card_eq`: for a finite region, `3 |R| = 2 |E°(R)| + |E∂(R)|`.
 * `TauCeti.notMem_boundaryVertices_iff`: a vertex of `R` is not a boundary vertex exactly when
   all six faces at it lie in `R`.
 * `TauCeti.regionEdges_vadd`, `TauCeti.regionEdges_rot` and their analogues: translations and the
-  rotation `ρ` act compatibly with the constructions (for `F(R)`, `TauCeti.regionUnion_vadd`
-  covers translations).
+  rotation `ρ` act compatibly with the constructions; on `F(R) ⊆ ℝ²`, `ρ` acts by the linear map
+  `(x, y) ↦ (-y, x - y)` (`TauCeti.regionUnion_rot`).
 * `TauCeti.boundaryVertices_facesOf`: when every vertex of `V` lies in a face of `facesOf V`,
   Aggarwal's boundary of `V` (its vertices adjacent to a vertex outside `V`) is
   `∂(facesOf V)`.
@@ -70,10 +73,6 @@ theorem endpoints_def (e : TriEdge) : e.endpoints = s(e.v, e.target) := (rfl)
 
 @[simp] theorem mem_endpoints {e : TriEdge} {u : ℤ × ℤ} :
     u ∈ e.endpoints ↔ u = e.v ∨ u = e.target := Sym2.mem_iff
-
-theorem v_ne_target (e : TriEdge) : e.v ≠ e.target := by
-  obtain ⟨⟨x, y⟩, k⟩ := e
-  fin_cases k <;> simp [Prod.ext_iff]
 
 theorem not_isDiag_endpoints (e : TriEdge) : ¬e.endpoints.IsDiag :=
   Sym2.mk_isDiag_iff.not.2 e.v_ne_target
@@ -145,10 +144,10 @@ edges of `R`. Vertices outside `V(R)` are isolated. -/
 def regionGraph (R : Set TriFace) : SimpleGraph (ℤ × ℤ) :=
   SimpleGraph.fromRel fun u u' => ∃ e ∈ regionEdges R, e.v = u ∧ e.target = u'
 
-/-- The boundary graph of a region: the simple graph on `ℤ × ℤ` whose edges are the segments of the
-boundary edges of `R`. Vertices outside `∂R` are isolated. -/
-def boundaryGraph (R : Set TriFace) : SimpleGraph (ℤ × ℤ) :=
-  SimpleGraph.fromRel fun u u' => ∃ e ∈ boundaryEdges R, e.v = u ∧ e.target = u'
+/-- The boundary graph of a region: the simple graph on the boundary vertices `∂R` whose edges are
+the segments of the boundary edges of `R`. -/
+def boundaryGraph (R : Set TriFace) : SimpleGraph (boundaryVertices R) :=
+  SimpleGraph.fromRel fun u u' => ∃ e ∈ boundaryEdges R, e.v = u.val ∧ e.target = u'.val
 
 /-- A region is connected when any two of its vertices are joined by a path of its edges. -/
 def IsConnectedRegion (R : Set TriFace) : Prop :=
@@ -179,6 +178,13 @@ theorem mem_boundaryVertices : u ∈ boundaryVertices R ↔ ∃ e ∈ boundaryEd
   Iff.rfl
 
 theorem mem_facesOf {V : Set (ℤ × ℤ)} : f ∈ facesOf V ↔ ∀ u ∈ f.vertices, u ∈ V := Iff.rfl
+
+theorem isConnectedRegion_def : IsConnectedRegion R ↔
+    ∀ u ∈ regionVertices R, ∀ u' ∈ regionVertices R, (regionGraph R).Reachable u u' := Iff.rfl
+
+theorem mem_regionUnion {x : ℝ × ℝ} : x ∈ regionUnion R ↔
+    ∃ f ∈ R, x ∈ convexHull ℝ ((fun u : ℤ × ℤ => ((u.1 : ℝ), (u.2 : ℝ))) '' f.vertices) := by
+  simp only [regionUnion, Set.mem_iUnion, exists_prop]
 
 theorem regionUnion_def (R : Set TriFace) : regionUnion R =
     ⋃ f ∈ R, convexHull ℝ ((fun u : ℤ × ℤ => ((u.1 : ℝ), (u.2 : ℝ))) '' f.vertices) := (rfl)
@@ -225,8 +231,16 @@ theorem edges_subset_regionEdges (hf : f ∈ R) : (f.edges : Set TriEdge) ⊆ re
 theorem regionEdges_mono (h : R ⊆ S) : regionEdges R ⊆ regionEdges S :=
   fun _ ⟨f, hf, he⟩ => ⟨f, h hf, he⟩
 
+/-- A finite region has finitely many edges. -/
+theorem finite_regionEdges (R : Finset TriFace) : (regionEdges (R : Set TriFace)).Finite :=
+  (R.biUnion TriFace.edges).finite_toSet.subset fun _ ⟨f, hf, he⟩ =>
+    Finset.mem_coe.2 (Finset.mem_biUnion.2 ⟨f, hf, he⟩)
+
 theorem interiorEdges_mono (h : R ⊆ S) : interiorEdges R ⊆ interiorEdges S :=
   fun _ he f hf => h (he f hf)
+
+theorem regionVertices_mono (h : R ⊆ S) : regionVertices R ⊆ regionVertices S :=
+  fun _ ⟨f, hf, hu⟩ => ⟨f, h hf, hu⟩
 
 /-- The vertices of a region are the endpoints of its edges. -/
 theorem regionVertices_eq (R : Set TriFace) :
@@ -264,24 +278,47 @@ theorem regionGraph_adj : (regionGraph R).Adj u u' ↔ ∃ e ∈ regionEdges R, 
   fromRel_edges_adj _
 
 /-- The edges of `boundaryGraph R` are the endpoint pairs of the boundary edges of `R`. -/
-theorem boundaryGraph_adj :
-    (boundaryGraph R).Adj u u' ↔ ∃ e ∈ boundaryEdges R, e.endpoints = s(u, u') :=
-  fromRel_edges_adj _
+theorem boundaryGraph_adj {u u' : boundaryVertices R} :
+    (boundaryGraph R).Adj u u' ↔ ∃ e ∈ boundaryEdges R, e.endpoints = s(u.val, u'.val) := by
+  rw [← fromRel_edges_adj, boundaryGraph, SimpleGraph.fromRel_adj, SimpleGraph.fromRel_adj, ne_eq,
+    ne_eq, Subtype.ext_iff]
+
+theorem regionGraph_mono (h : R ⊆ S) : regionGraph R ≤ regionGraph S := fun _ _ huu => by
+  obtain ⟨e, he, h'⟩ := regionGraph_adj.1 huu
+  exact regionGraph_adj.2 ⟨e, regionEdges_mono h he, h'⟩
 
 theorem regionGraph_edgeSet (R : Set TriFace) :
     (regionGraph R).edgeSet = TriEdge.endpoints '' regionEdges R := by
   ext ⟨u, u'⟩
   simp [regionGraph_adj]
 
-theorem boundaryGraph_edgeSet (R : Set TriFace) :
-    (boundaryGraph R).edgeSet = TriEdge.endpoints '' boundaryEdges R := by
-  ext ⟨u, u'⟩
-  simp [boundaryGraph_adj]
+theorem v_mem_boundaryVertices (he : e ∈ boundaryEdges R) : e.v ∈ boundaryVertices R :=
+  ⟨e, he, by simp⟩
 
-theorem boundaryGraph_le_regionGraph (R : Set TriFace) : boundaryGraph R ≤ regionGraph R :=
-  fun _ _ h => by
-    obtain ⟨e, he, h⟩ := boundaryGraph_adj.1 h
-    exact regionGraph_adj.2 ⟨e, he.1, h⟩
+theorem target_mem_boundaryVertices (he : e ∈ boundaryEdges R) :
+    e.target ∈ boundaryVertices R :=
+  ⟨e, he, by simp⟩
+
+/-- The edges of `boundaryGraph R`, as pairs of points of `ℤ × ℤ`, are the endpoint pairs of the
+boundary edges of `R`. -/
+theorem boundaryGraph_edgeSet (R : Set TriFace) :
+    Sym2.map Subtype.val '' (boundaryGraph R).edgeSet = TriEdge.endpoints '' boundaryEdges R := by
+  ext z
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    induction y using Sym2.ind with
+    | h p p' =>
+      obtain ⟨e, he, h⟩ := boundaryGraph_adj.1 hy
+      exact ⟨e, he, by rw [h, Sym2.map_mk]⟩
+  · rintro ⟨e, he, rfl⟩
+    exact ⟨s(⟨e.v, v_mem_boundaryVertices he⟩, ⟨e.target, target_mem_boundaryVertices he⟩),
+      boundaryGraph_adj.2 ⟨e, he, rfl⟩, rfl⟩
+
+/-- The boundary graph is a subgraph of the edge graph induced on `∂R`. -/
+theorem boundaryGraph_le_induce_regionGraph (R : Set TriFace) :
+    boundaryGraph R ≤ (regionGraph R).induce (boundaryVertices R) := fun _ _ h => by
+  obtain ⟨e, he, h⟩ := boundaryGraph_adj.1 h
+  exact SimpleGraph.induce_adj.2 (regionGraph_adj.2 ⟨e, he.1, h⟩)
 
 private theorem exists_adj_iff (E : Set TriEdge) :
     (∃ u', ∃ e ∈ E, e.endpoints = s(u, u')) ↔ ∃ e ∈ E, u ∈ e.endpoints := by
@@ -298,13 +335,47 @@ theorem regionGraph_support (R : Set TriFace) : (regionGraph R).support = region
   simp only [regionGraph_adj]
   exact exists_adj_iff _
 
-/-- The non-isolated vertices of `boundaryGraph R` are the boundary vertices of `R`. -/
-theorem boundaryGraph_support (R : Set TriFace) :
-    (boundaryGraph R).support = boundaryVertices R := by
-  ext u
-  rw [SimpleGraph.mem_support]
-  simp only [boundaryGraph_adj]
-  exact exists_adj_iff _
+/-- `boundaryGraph R` has no isolated vertex. -/
+theorem boundaryGraph_support (R : Set TriFace) : (boundaryGraph R).support = Set.univ := by
+  refine Set.eq_univ_of_forall fun ⟨u, e, he, hu⟩ => ?_
+  exact ⟨⟨_, e, he, Sym2.other_mem hu⟩, boundaryGraph_adj.2 ⟨e, he, (Sym2.other_spec hu).symm⟩⟩
+
+/-! ### Connected regions -/
+
+/-- The empty region is connected. -/
+@[simp] theorem isConnectedRegion_empty : IsConnectedRegion ∅ :=
+  fun _ ⟨f, hf, _⟩ => (Set.notMem_empty f hf).elim
+
+/-- A single face is a connected region: any two of its vertices are joined by one of its
+edges. -/
+theorem isConnectedRegion_singleton (f : TriFace) : IsConnectedRegion {f} := by
+  rintro u ⟨g, hg, hu⟩ u' ⟨g', hg', hu'⟩
+  rw [Set.mem_singleton_iff] at hg hg'
+  subst hg hg'
+  by_cases h : u = u'
+  · exact h ▸ SimpleGraph.Reachable.refl _
+  · obtain ⟨e, he, hee⟩ := TriFace.exists_mem_edges_endpoints_eq hu hu' h
+    exact (regionGraph_adj.2 ⟨e, ⟨_, Set.mem_singleton _, he⟩, hee⟩).reachable
+
+private theorem reachable_v_of_mem_endpoints (he : e ∈ regionEdges R) (hu : u ∈ e.endpoints) :
+    (regionGraph R).Reachable u e.v := by
+  rcases TriEdge.mem_endpoints.1 hu with rfl | rfl
+  · rfl
+  · exact (regionGraph_adj.2 ⟨e, he, Sym2.eq_swap⟩).reachable
+
+/-- A region is connected exactly when the initial vertices of any two of its edges are joined in
+its edge graph. -/
+theorem isConnectedRegion_iff_reachable : IsConnectedRegion R ↔
+    ∀ e ∈ regionEdges R, ∀ e' ∈ regionEdges R, (regionGraph R).Reachable e.v e'.v := by
+  have hv : ∀ e ∈ regionEdges R, e.v ∈ regionVertices R := fun e he => by
+    rw [regionVertices_eq]
+    exact ⟨e, he, by simp⟩
+  refine ⟨fun h e he e' he' => h _ (hv e he) _ (hv e' he'), fun h u hu u' hu' => ?_⟩
+  rw [regionVertices_eq] at hu hu'
+  obtain ⟨e, he, hue⟩ := hu
+  obtain ⟨e', he', hue'⟩ := hu'
+  exact ((reachable_v_of_mem_endpoints he hue).trans (h e he e' he')).trans
+    (reachable_v_of_mem_endpoints he' hue').symm
 
 theorem regionUnion_mono (h : R ⊆ S) : regionUnion R ⊆ regionUnion S :=
   Set.biUnion_subset_biUnion_left h
@@ -360,9 +431,8 @@ theorem three_mul_card_eq (R : Finset TriFace) :
     rw [hT, mem_regionEdges_iff] at he
     rw [TriEdge.faces_def, Finset.filter_insert, Finset.filter_singleton]
     by_cases h₁ : e.whiteFace ∈ R <;> by_cases h₂ : e.blackFace ∈ R <;> simp_all
-  rw [Finset.sum_congr rfl habove, Finset.sum_congr rfl hbelow, Finset.sum_const, smul_eq_mul,
-    Finset.sum_ite, Finset.sum_const, Finset.sum_const, smul_eq_mul, smul_eq_mul, mul_one,
-    mul_comm] at hdc
+  rw [Finset.sum_congr rfl habove, Finset.sum_congr rfl hbelow, Finset.sum_ite] at hdc
+  simp only [Finset.sum_const, smul_eq_mul] at hdc
   omega
 
 /-! ### Boundary vertices and the six faces at a vertex -/
@@ -500,9 +570,10 @@ private theorem regionGraph_adj_image :
   simp [← Sym2.map_mk, Sym2.map.injective χ.injective |>.eq_iff]
 
 include hψ hχ in
-private theorem boundaryGraph_adj_image :
-    (boundaryGraph (φ '' R)).Adj (χ u) (χ u') ↔ (boundaryGraph R).Adj u u' := by
-  simp only [boundaryGraph_adj, boundaryEdges_image φ ψ hψ, Set.exists_mem_image, hχ]
+private theorem boundaryGraph_adj_image {p p' : boundaryVertices R}
+    {q q' : boundaryVertices (φ '' R)} (hq : q.val = χ p.val) (hq' : q'.val = χ p'.val) :
+    (boundaryGraph (φ '' R)).Adj q q' ↔ (boundaryGraph R).Adj p p' := by
+  simp only [boundaryGraph_adj, boundaryEdges_image φ ψ hψ, Set.exists_mem_image, hχ, hq, hq']
   simp [← Sym2.map_mk, Sym2.map.injective χ.injective |>.eq_iff]
 
 include hφ in
@@ -526,6 +597,12 @@ private theorem facesOf_image (V : Set (ℤ × ℤ)) : facesOf (χ '' V) = φ ''
   · obtain ⟨u, rfl⟩ := χ.surjective u
     exact Set.mem_image_of_mem χ (h u ((hφ f u).1 hu))
 
+include hψ hχ hφ in
+private theorem isConnectedRegion_image : IsConnectedRegion (φ '' R) ↔ IsConnectedRegion R := by
+  let iso : regionGraph R ≃g regionGraph (φ '' R) := ⟨χ, regionGraph_adj_image φ ψ χ hψ hχ⟩
+  simp only [IsConnectedRegion, regionVertices_image φ χ hφ, Set.forall_mem_image]
+  exact forall₂_congr fun u _ => forall₂_congr fun u' _ => iso.reachable_iff
+
 end Transfer
 
 section Translation
@@ -547,40 +624,48 @@ private theorem vadd_mem_vertices_vadd (f : TriFace) (u : ℤ × ℤ) :
       ((AddAction.toPerm w : Equiv.Perm TriFace) f).vertices ↔ u ∈ f.vertices := by
   simp
 
-theorem regionEdges_vadd (R : Set TriFace) : regionEdges (w +ᵥ R) = w +ᵥ regionEdges R :=
+@[simp] theorem regionEdges_vadd (R : Set TriFace) : regionEdges (w +ᵥ R) = w +ᵥ regionEdges R :=
   regionEdges_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_edges_vadd w)
 
-theorem interiorEdges_vadd (R : Set TriFace) : interiorEdges (w +ᵥ R) = w +ᵥ interiorEdges R :=
+@[simp] theorem interiorEdges_vadd (R : Set TriFace) :
+    interiorEdges (w +ᵥ R) = w +ᵥ interiorEdges R :=
   interiorEdges_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_edges_vadd w)
 
-theorem boundaryEdges_vadd (R : Set TriFace) : boundaryEdges (w +ᵥ R) = w +ᵥ boundaryEdges R :=
+@[simp] theorem boundaryEdges_vadd (R : Set TriFace) :
+    boundaryEdges (w +ᵥ R) = w +ᵥ boundaryEdges R :=
   boundaryEdges_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_edges_vadd w)
 
-theorem regionVertices_vadd (R : Set TriFace) :
+@[simp] theorem regionVertices_vadd (R : Set TriFace) :
     regionVertices (w +ᵥ R) = w +ᵥ regionVertices R :=
   regionVertices_image (AddAction.toPerm w) (AddAction.toPerm w)
     (vadd_mem_vertices_vadd w)
 
-theorem boundaryVertices_vadd (R : Set TriFace) :
+@[simp] theorem boundaryVertices_vadd (R : Set TriFace) :
     boundaryVertices (w +ᵥ R) = w +ᵥ boundaryVertices R :=
   boundaryVertices_image (AddAction.toPerm w) (AddAction.toPerm w) (AddAction.toPerm w)
     (vadd_mem_edges_vadd w) (endpoints_toPerm w)
 
-theorem regionGraph_adj_vadd (R : Set TriFace) :
+@[simp] theorem isConnectedRegion_vadd_iff (R : Set TriFace) :
+    IsConnectedRegion (w +ᵥ R) ↔ IsConnectedRegion R :=
+  isConnectedRegion_image (AddAction.toPerm w) (AddAction.toPerm w) (AddAction.toPerm w)
+    (vadd_mem_edges_vadd w) (endpoints_toPerm w) (vadd_mem_vertices_vadd w)
+
+@[simp] theorem regionGraph_adj_vadd (R : Set TriFace) :
     (regionGraph (w +ᵥ R)).Adj (w + u) (w + u') ↔ (regionGraph R).Adj u u' :=
   regionGraph_adj_image (AddAction.toPerm w) (AddAction.toPerm w) (AddAction.toPerm w)
     (vadd_mem_edges_vadd w) (endpoints_toPerm w)
 
-theorem boundaryGraph_adj_vadd (R : Set TriFace) :
-    (boundaryGraph (w +ᵥ R)).Adj (w + u) (w + u') ↔ (boundaryGraph R).Adj u u' :=
+theorem boundaryGraph_adj_vadd {R : Set TriFace} {p p' : boundaryVertices R}
+    {q q' : boundaryVertices (w +ᵥ R)} (hq : q.val = w + p.val) (hq' : q'.val = w + p'.val) :
+    (boundaryGraph (w +ᵥ R)).Adj q q' ↔ (boundaryGraph R).Adj p p' :=
   boundaryGraph_adj_image (AddAction.toPerm w) (AddAction.toPerm w) (AddAction.toPerm w)
-    (vadd_mem_edges_vadd w) (endpoints_toPerm w)
+    (vadd_mem_edges_vadd w) (endpoints_toPerm w) hq hq'
 
-theorem facesOf_vadd (V : Set (ℤ × ℤ)) : facesOf (w +ᵥ V) = w +ᵥ facesOf V :=
+@[simp] theorem facesOf_vadd (V : Set (ℤ × ℤ)) : facesOf (w +ᵥ V) = w +ᵥ facesOf V :=
   facesOf_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_vertices_vadd w) V
 
 /-- Translating a region by `w` translates `F(R)` by `w ∈ ℤ² ⊆ ℝ²`. -/
-theorem regionUnion_vadd (R : Set TriFace) :
+@[simp] theorem regionUnion_vadd (R : Set TriFace) :
     regionUnion (w +ᵥ R) = ((w.1 : ℝ), (w.2 : ℝ)) +ᵥ regionUnion R := by
   rw [regionUnion_def, regionUnion_def, ← Set.image_vadd, Set.biUnion_image, Set.vadd_set_iUnion₂]
   refine Set.iUnion₂_congr fun f _ => ?_
@@ -603,23 +688,23 @@ private theorem latticeRot_mem_vertices_rot (f : TriFace) (u : ℤ × ℤ) :
   rw [TriFace.vertices_rot, Finset.mem_map]
   exact ⟨fun ⟨u', hu', h⟩ => latticeRot.injective h ▸ hu', fun h => ⟨u, h, rfl⟩⟩
 
-theorem regionEdges_rot (R : Set TriFace) :
+@[simp] theorem regionEdges_rot (R : Set TriFace) :
     regionEdges (TriFace.rot '' R) = TriEdge.rot '' regionEdges R :=
   regionEdges_image _ _ rot_mem_edges_rot'
 
-theorem interiorEdges_rot (R : Set TriFace) :
+@[simp] theorem interiorEdges_rot (R : Set TriFace) :
     interiorEdges (TriFace.rot '' R) = TriEdge.rot '' interiorEdges R :=
   interiorEdges_image _ _ rot_mem_edges_rot'
 
-theorem boundaryEdges_rot (R : Set TriFace) :
+@[simp] theorem boundaryEdges_rot (R : Set TriFace) :
     boundaryEdges (TriFace.rot '' R) = TriEdge.rot '' boundaryEdges R :=
   boundaryEdges_image _ _ rot_mem_edges_rot'
 
-theorem regionVertices_rot (R : Set TriFace) :
+@[simp] theorem regionVertices_rot (R : Set TriFace) :
     regionVertices (TriFace.rot '' R) = latticeRot '' regionVertices R :=
   regionVertices_image (χ := latticeRot.toEquiv) _ latticeRot_mem_vertices_rot
 
-theorem boundaryVertices_rot (R : Set TriFace) :
+@[simp] theorem boundaryVertices_rot (R : Set TriFace) :
     boundaryVertices (TriFace.rot '' R) = latticeRot '' boundaryVertices R :=
   boundaryVertices_image (χ := latticeRot.toEquiv) _ _ rot_mem_edges_rot' TriEdge.endpoints_rot
 
@@ -628,13 +713,35 @@ theorem regionGraph_adj_rot (R : Set TriFace) :
       (regionGraph R).Adj u u' :=
   regionGraph_adj_image (χ := latticeRot.toEquiv) _ _ rot_mem_edges_rot' TriEdge.endpoints_rot
 
-theorem boundaryGraph_adj_rot (R : Set TriFace) :
-    (boundaryGraph (TriFace.rot '' R)).Adj (latticeRot u) (latticeRot u') ↔
-      (boundaryGraph R).Adj u u' :=
+theorem boundaryGraph_adj_rot {R : Set TriFace} {p p' : boundaryVertices R}
+    {q q' : boundaryVertices (TriFace.rot '' R)} (hq : q.val = latticeRot p.val)
+    (hq' : q'.val = latticeRot p'.val) :
+    (boundaryGraph (TriFace.rot '' R)).Adj q q' ↔ (boundaryGraph R).Adj p p' :=
   boundaryGraph_adj_image (χ := latticeRot.toEquiv) _ _ rot_mem_edges_rot' TriEdge.endpoints_rot
+    hq hq'
+
+@[simp] theorem isConnectedRegion_rot_iff (R : Set TriFace) :
+    IsConnectedRegion (TriFace.rot '' R) ↔ IsConnectedRegion R :=
+  isConnectedRegion_image (χ := latticeRot.toEquiv) _ _ rot_mem_edges_rot' TriEdge.endpoints_rot
+    latticeRot_mem_vertices_rot
 
 theorem facesOf_rot (V : Set (ℤ × ℤ)) : facesOf (latticeRot '' V) = TriFace.rot '' facesOf V :=
   facesOf_image (χ := latticeRot.toEquiv) _ latticeRot_mem_vertices_rot V
+
+/-- The rotation `ρ` acts on `F(R) ⊆ ℝ²` by the linear map `(x, y) ↦ (-y, x - y)` extending
+`latticeRot`. -/
+theorem regionUnion_rot (R : Set TriFace) :
+    regionUnion (TriFace.rot '' R) = (fun p : ℝ × ℝ => (-p.2, p.1 - p.2)) '' regionUnion R := by
+  let L : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ :=
+    (-LinearMap.snd ℝ ℝ ℝ).prod (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ)
+  have hL : (fun p : ℝ × ℝ => (-p.2, p.1 - p.2)) = L := rfl
+  rw [hL, regionUnion_def, regionUnion_def, Set.biUnion_image, Set.image_iUnion₂]
+  refine Set.iUnion₂_congr fun f _ => ?_
+  rw [LinearMap.image_convexHull, TriFace.vertices_rot, Finset.coe_map, Set.image_image,
+    Set.image_image]
+  congr 2
+  funext u
+  simp [L]
 
 end Rotation
 

@@ -32,14 +32,16 @@ lozenges may stick out of `R` by one face. A plane tiling is a tiling of `Set.un
 * `TauCeti.isTiling_iff_lozenges`: `M` is a tiling of `R` exactly when the lozenges of its edges
   lie in `R`, are pairwise disjoint and cover `R`.
 * `TauCeti.IsTiling.card_eq_two_mul_ncard`, `TauCeti.IsTiling.card_filter_isWhite_eq_ncard`,
-  `TauCeti.IsTiling.card_filter_isWhite_eq_card_filter_not`: a finite tileable region has
-  `|R| = 2 |M|` and as many white as black faces.
-* `TauCeti.IsTiling.isFreeTiling_inter_regionEdges`: the restriction of a plane tiling to the
-  edges of `R` is a free tiling of `R`.
+  `TauCeti.IsTiling.card_filter_isWhite_eq_card_filter_isWhite_eq_false`: a finite tileable region
+  has `|R| = 2 |M|` and as many white as black faces.
+* `TauCeti.IsFreeTiling.inter_regionEdges`, `TauCeti.IsTiling.isFreeTiling_inter_regionEdges`: the
+  restriction of a free tiling of `S ⊇ R`, in particular of a plane tiling, to the edges of `R` is
+  a free tiling of `R`.
 * `TauCeti.IsFreeTiling.isTiling_iff`: a free tiling is a tiling exactly when it contains no
   boundary edge.
-* `TauCeti.isTiling_vadd_iff`, `TauCeti.isTiling_rot_iff`: translations and `ρ` map tilings to
-  tilings of the image region.
+* `TauCeti.isTiling_vadd_iff`, `TauCeti.isTiling_rot_iff`, `TauCeti.isFreeTiling_vadd_iff`,
+  `TauCeti.isFreeTiling_rot_iff`: translations and `ρ` map tilings and free tilings to those of the
+  image region.
 * `TauCeti.isTiling_iff_placedTile`: tilings are the families of placed tiles of
   `lozengeProtoset` lying in `R`, pairwise disjoint and covering `R`.
 
@@ -112,6 +114,29 @@ theorem eq_of_mem_edges (h : IsTiling R M) {e e' : TriEdge} (he : e ∈ M) (he' 
 
 end IsTiling
 
+/-- A plane free tiling is a plane tiling: every edge is an edge of some face. -/
+theorem isFreeTiling_univ_iff :
+    IsFreeTiling Set.univ M ↔ ∀ f : TriFace, ∃! e, e ∈ M ∧ e ∈ f.edges :=
+  ⟨fun h f => h.2 f (Set.mem_univ f), fun h =>
+    ⟨fun e _ => mem_regionEdges.2 ⟨_, Set.mem_univ _, e.mem_whiteFace_edges⟩, fun f _ => h f⟩⟩
+
+namespace IsFreeTiling
+
+theorem subset_regionEdges (h : IsFreeTiling R M) : M ⊆ regionEdges R := h.1
+
+theorem existsUnique (h : IsFreeTiling R M) (hf : f ∈ R) : ∃! e, e ∈ M ∧ e ∈ f.edges := h.2 f hf
+
+/-- Two edges of a free tiling lying in a common face of the region are equal. -/
+theorem eq_of_mem_edges (h : IsFreeTiling R M) (hf : f ∈ R) {e e' : TriEdge} (he : e ∈ M)
+    (he' : e' ∈ M) (hef : e ∈ f.edges) (he'f : e' ∈ f.edges) : e = e' :=
+  (h.2 f hf).unique ⟨he, hef⟩ ⟨he', he'f⟩
+
+/-- A free tiling of a finite region is finite. -/
+theorem finite {R : Finset TriFace} (h : IsFreeTiling (R : Set TriFace) M) : M.Finite :=
+  (finite_regionEdges R).subset h.1
+
+end IsFreeTiling
+
 /-- **Tilings partition the region.** `M` is a tiling of `R` exactly when the lozenges of the
 edges of `M` lie in `R`, are pairwise disjoint and cover `R`. -/
 theorem isTiling_iff_lozenges :
@@ -139,8 +164,7 @@ namespace IsTiling
 variable {R : Finset TriFace}
 
 theorem finite (h : IsTiling (R : Set TriFace) M) : M.Finite :=
-  (R.biUnion TriFace.edges).finite_toSet.subset fun e he => by
-    simpa using ⟨e.whiteFace, h.whiteFace_mem he, e.mem_whiteFace_edges⟩
+  h.isFreeTiling.finite
 
 /-- A finite tileable region has twice as many faces as its tilings have lozenges. -/
 theorem card_eq_two_mul_ncard (h : IsTiling (R : Set TriFace) M) : R.card = 2 * M.ncard := by
@@ -156,56 +180,53 @@ theorem card_eq_two_mul_ncard (h : IsTiling (R : Set TriFace) M) : R.card = 2 * 
     (hdisj (h.finite.mem_toFinset.1 he) (h.finite.mem_toFinset.1 he') hne),
     Finset.sum_const_nat fun e _ => e.card_faces, Set.ncard_eq_toFinset_card M h.finite, mul_comm]
 
-/-- In a finite tileable region, each tiling has one lozenge per white face. -/
-theorem card_filter_isWhite_eq_ncard (h : IsTiling (R : Set TriFace) M) :
-    (R.filter fun f => f.isWhite = true).card = M.ncard := by
+/-- In a finite tileable region, each tiling has one lozenge per white face and one per black
+face: the faces of colour `c` are in bijection with the edges of the tiling. -/
+theorem card_filter_isWhite_eq_ncard (h : IsTiling (R : Set TriFace) M) (c : Bool) :
+    (R.filter fun f => f.isWhite = c).card = M.ncard := by
   classical
-  have hR : R.filter (fun f => f.isWhite = true) = h.finite.toFinset.image TriEdge.whiteFace := by
+  have hF : ∀ e : TriEdge, e ∈ (if c then e.whiteFace else e.blackFace).edges := by
+    intro e
+    cases c <;> simp
+  have hR : R.filter (fun f => f.isWhite = c) =
+      h.finite.toFinset.image fun e => if c then e.whiteFace else e.blackFace := by
     ext f
     simp only [Finset.mem_filter, Finset.mem_image, Set.Finite.mem_toFinset]
     refine ⟨fun ⟨hf, hw⟩ => ?_, ?_⟩
     · obtain ⟨e, ⟨he, hfe⟩, -⟩ := h.2 f hf
-      exact ⟨e, he, (TriEdge.eq_whiteFace_of_mem_edges hfe hw).symm⟩
+      refine ⟨e, he, ?_⟩
+      cases c
+      exacts [(TriEdge.eq_blackFace_of_mem_edges hfe hw).symm,
+        (TriEdge.eq_whiteFace_of_mem_edges hfe hw).symm]
     · rintro ⟨e, he, rfl⟩
-      exact ⟨h.whiteFace_mem he, e.whiteFace_isWhite⟩
+      exact ⟨h.mem_of_mem_edges he (hF e), by cases c <;> simp⟩
   rw [hR, Finset.card_image_of_injOn, Set.ncard_eq_toFinset_card M h.finite]
   intro e he e' he' hee
-  exact h.eq_of_mem_edges (h.finite.mem_toFinset.1 he) (h.finite.mem_toFinset.1 he')
-    e.mem_whiteFace_edges (hee ▸ e'.mem_whiteFace_edges)
-
-/-- In a finite tileable region, each tiling has one lozenge per black face. -/
-theorem card_filter_isWhite_eq_false_eq_ncard (h : IsTiling (R : Set TriFace) M) :
-    (R.filter fun f => f.isWhite = false).card = M.ncard := by
-  classical
-  have hR : R.filter (fun f => f.isWhite = false) = h.finite.toFinset.image TriEdge.blackFace := by
-    ext f
-    simp only [Finset.mem_filter, Finset.mem_image, Set.Finite.mem_toFinset]
-    refine ⟨fun ⟨hf, hw⟩ => ?_, ?_⟩
-    · obtain ⟨e, ⟨he, hfe⟩, -⟩ := h.2 f hf
-      exact ⟨e, he, (TriEdge.eq_blackFace_of_mem_edges hfe hw).symm⟩
-    · rintro ⟨e, he, rfl⟩
-      exact ⟨h.blackFace_mem he, e.blackFace_isWhite⟩
-  rw [hR, Finset.card_image_of_injOn, Set.ncard_eq_toFinset_card M h.finite]
-  intro e he e' he' hee
-  exact h.eq_of_mem_edges (h.finite.mem_toFinset.1 he) (h.finite.mem_toFinset.1 he')
-    e.mem_blackFace_edges (hee ▸ e'.mem_blackFace_edges)
+  exact h.eq_of_mem_edges (h.finite.mem_toFinset.1 he) (h.finite.mem_toFinset.1 he') (hF e)
+    (by simp only at hee; exact hee ▸ hF e')
 
 /-- A finite tileable region has as many white as black faces. -/
-theorem card_filter_isWhite_eq_card_filter_not (h : IsTiling (R : Set TriFace) M) :
+theorem card_filter_isWhite_eq_card_filter_isWhite_eq_false (h : IsTiling (R : Set TriFace) M) :
     (R.filter fun f => f.isWhite = true).card = (R.filter fun f => f.isWhite = false).card := by
-  rw [h.card_filter_isWhite_eq_ncard, h.card_filter_isWhite_eq_false_eq_ncard]
+  rw [h.card_filter_isWhite_eq_ncard true, h.card_filter_isWhite_eq_ncard false]
 
 end IsTiling
 
 /-! ### Free tilings -/
 
-/-- The restriction of a plane tiling to the edges of a region is a free tiling of the region. -/
-theorem IsTiling.isFreeTiling_inter_regionEdges (h : IsTiling Set.univ M) (R : Set TriFace) :
+/-- The restriction of a free tiling of `S` to the edges of a subregion `R` is a free tiling of
+`R`. -/
+theorem IsFreeTiling.inter_regionEdges {S : Set TriFace} (h : IsFreeTiling S M) (hRS : R ⊆ S) :
     IsFreeTiling R (M ∩ regionEdges R) := by
   refine ⟨Set.inter_subset_right, fun f hf => ?_⟩
-  obtain ⟨e, ⟨he, hfe⟩, huniq⟩ := h.2 f (Set.mem_univ f)
+  obtain ⟨e, ⟨he, hfe⟩, huniq⟩ := h.2 f (hRS hf)
   exact ⟨e, ⟨⟨he, mem_regionEdges.2 ⟨f, hf, hfe⟩⟩, hfe⟩,
     fun e' he' => huniq e' ⟨he'.1.1, he'.2⟩⟩
+
+/-- The restriction of a plane tiling to the edges of a region is a free tiling of the region. -/
+theorem IsTiling.isFreeTiling_inter_regionEdges (h : IsTiling Set.univ M) (R : Set TriFace) :
+    IsFreeTiling R (M ∩ regionEdges R) :=
+  h.isFreeTiling.inter_regionEdges (Set.subset_univ R)
 
 /-- A free tiling is a tiling exactly when it contains no boundary edge. -/
 theorem IsFreeTiling.isTiling_iff (h : IsFreeTiling R M) :
@@ -248,6 +269,27 @@ private theorem isTiling_image (φ : Equiv.Perm TriFace) (ψ : Equiv.Perm TriEdg
     IsTiling (TriFace.rot '' R) (TriEdge.rot '' M) ↔ IsTiling R M :=
   isTiling_image _ _ fun _ _ => TriEdge.rot_mem_edges_rot
 
+private theorem isFreeTiling_image (φ : Equiv.Perm TriFace) (ψ : Equiv.Perm TriEdge)
+    (hψ : ∀ e f, ψ e ∈ (φ f).edges ↔ e ∈ f.edges)
+    (hE : regionEdges (φ '' R) = ψ '' regionEdges R) :
+    IsFreeTiling (φ '' R) (ψ '' M) ↔ IsFreeTiling R M := by
+  rw [isFreeTiling_def, isFreeTiling_def, hE, Set.image_subset_image_iff ψ.injective,
+    Set.forall_mem_image]
+  refine and_congr_right fun _ => forall₂_congr fun f _ =>
+    (ψ.existsUnique_congr fun {e} => ?_).symm
+  rw [ψ.injective.mem_set_image, hψ]
+
+/-- Translations map free tilings of `R` to free tilings of the translated region. -/
+@[simp] theorem isFreeTiling_vadd_iff (w : ℤ × ℤ) :
+    IsFreeTiling (w +ᵥ R) (w +ᵥ M) ↔ IsFreeTiling R M :=
+  isFreeTiling_image (AddAction.toPerm w) (AddAction.toPerm w)
+    (fun e f => by simp [Finset.vadd_mem_vadd_finset_iff]) (regionEdges_vadd w R)
+
+/-- The rotation `ρ` maps free tilings of `R` to free tilings of the rotated region. -/
+@[simp] theorem isFreeTiling_rot_iff :
+    IsFreeTiling (TriFace.rot '' R) (TriEdge.rot '' M) ↔ IsFreeTiling R M :=
+  isFreeTiling_image _ _ (fun _ _ => TriEdge.rot_mem_edges_rot) (regionEdges_rot R)
+
 /-! ### Lozenges as placed tiles -/
 
 /-- The protoset of the three lozenges at the origin, `{W(0), B(-e₂)}`, `{W(-e₁), B(0)}` and
@@ -275,18 +317,17 @@ theorem toPlacedTile_def (e : TriEdge) :
     DiscreteTiling.Prototile.coe_mk]
   have he : e = e.v +ᵥ (⟨0, e.k⟩ : TriEdge) := by simp
   conv_rhs => rw [he, faces_vadd, Finset.coe_vadd_finset]
-  rfl
+  ext f
+  simp [Set.mem_vadd_set]
 
-/-- An edge is determined by its lozenge. -/
-theorem faces_injective : Function.Injective faces := by
-  intro e e' h
-  have hw : e.whiteFace ∈ e'.faces := h ▸ mem_faces.2 e.mem_whiteFace_edges
-  have hb : e.blackFace ∈ e'.faces := h ▸ mem_faces.2 e.mem_blackFace_edges
-  rw [faces_def, Finset.mem_insert, Finset.mem_singleton] at hw hb
-  refine eq_of_whiteFace_eq_of_blackFace_eq (hw.resolve_right fun h' => ?_)
-    (hb.resolve_left fun h' => ?_)
-  · simpa using congrArg TriFace.isWhite h'
-  · simpa using congrArg TriFace.isWhite h'
+@[simp] theorem mem_toPlacedTile {e : TriEdge} {f : TriFace} :
+    f ∈ e.toPlacedTile ↔ e ∈ f.edges := by
+  rw [← DiscreteTiling.PlacedTile.mem_coe, coe_toPlacedTile, Finset.mem_coe, mem_faces]
+
+@[simp] theorem toPlacedTile_vadd (w : ℤ × ℤ) (e : TriEdge) :
+    (w +ᵥ e).toPlacedTile = Multiplicative.ofAdd w • e.toPlacedTile := by
+  rw [toPlacedTile_def, toPlacedTile_def, DiscreteTiling.PlacedTile.smul_mk_coe]
+  rfl
 
 theorem toPlacedTile_bijective : Function.Bijective toPlacedTile := by
   refine ⟨fun e e' h => faces_injective (Finset.coe_injective ?_), fun pt => ?_⟩

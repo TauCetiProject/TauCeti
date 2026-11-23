@@ -44,21 +44,6 @@ public section
 
 namespace TauCeti
 
-/-- Three faces containing an edge: the third is one of two distinct ones, since an edge lies in
-exactly two faces. -/
-theorem TriFace.eq_or_eq_of_mem_edges {e : TriEdge} {f g h : TriFace} (hfg : f ≠ g)
-    (hf : e ∈ f.edges) (hg : e ∈ g.edges) (hh : e ∈ h.edges) : h = f ∨ h = g := by
-  rw [mem_edges_iff] at hf hg hh
-  rcases hf with rfl | rfl <;> rcases hg with rfl | rfl <;> rcases hh with rfl | rfl <;>
-    simp_all
-
-/-- An edge of a face also lies in a second face. -/
-theorem TriFace.exists_ne_mem_edges {e : TriEdge} {f : TriFace} (he : e ∈ f.edges) :
-    ∃ g, g ≠ f ∧ e ∈ g.edges := by
-  rcases mem_edges_iff.1 he with rfl | rfl
-  exacts [⟨_, e.whiteFace_ne_blackFace.symm, e.mem_blackFace_edges⟩,
-    ⟨_, e.whiteFace_ne_blackFace, e.mem_whiteFace_edges⟩]
-
 /-- The spanning subgraph of `SimpleGraph.induce R hexGraph` whose edges are the pairs of faces of
 `R` sharing an edge of `M`. -/
 def tilingSubgraph (R : Set TriFace) (M : Set TriEdge) :
@@ -68,8 +53,7 @@ def tilingSubgraph (R : Set TriFace) (M : Set TriEdge) :
       intro f g h
       rw [SimpleGraph.fromRel_adj] at h
       obtain ⟨hne, h⟩ := h
-      change hexGraph.Adj f.val g.val
-      rw [hexGraph_adj]
+      rw [SimpleGraph.induce_adj, hexGraph_adj]
       refine ⟨fun hfg => hne (Subtype.ext hfg), ?_⟩
       rcases h with ⟨e, -, h₁, h₂⟩ | ⟨e, -, h₁, h₂⟩
       exacts [⟨e, h₁, h₂⟩, ⟨e, h₂, h₁⟩])
@@ -80,8 +64,7 @@ variable {R : Set TriFace} {M M' : Set TriEdge} {f g : R}
 edge of `M` lies in both. -/
 theorem tilingSubgraph_adj :
     (tilingSubgraph R M).Adj f g ↔ f ≠ g ∧ ∃ e ∈ M, e ∈ f.val.edges ∧ e ∈ g.val.edges := by
-  change (SimpleGraph.fromRel fun f g : R => ∃ e ∈ M, e ∈ f.val.edges ∧ e ∈ g.val.edges).Adj f g ↔ _
-  rw [SimpleGraph.fromRel_adj]
+  rw [tilingSubgraph, SimpleGraph.toSubgraph_adj, SimpleGraph.fromRel_adj]
   refine and_congr_right fun _ => ⟨?_, Or.inl⟩
   rintro (h | ⟨e, he, h₁, h₂⟩)
   exacts [h, ⟨e, he, h₂, h₁⟩]
@@ -108,16 +91,24 @@ theorem tilingSubgraph_inter_interiorEdges :
   rcases TriFace.eq_or_eq_of_mem_edges (fun h => hne (Subtype.ext h)) h₁ h₂ hk with rfl | rfl
   exacts [f.property, g.property]
 
-/-- If `M` is a tiling of `R`, every set `M'` whose subgraph contains that of `M` contains `M`. -/
-theorem IsTiling.subset_of_tilingSubgraph_le (hM : IsTiling R M)
-    (h : tilingSubgraph R M ≤ tilingSubgraph R M') : M ⊆ M' := by
-  intro e he
-  have hadj : (tilingSubgraph R M).Adj ⟨_, hM.whiteFace_mem he⟩ ⟨_, hM.blackFace_mem he⟩ :=
+/-- The subgraph of `M` lies in that of `M'` exactly when every interior edge of `R` in `M` lies
+in `M'`. -/
+theorem tilingSubgraph_le_iff :
+    tilingSubgraph R M ≤ tilingSubgraph R M' ↔ M ∩ interiorEdges R ⊆ M' := by
+  refine ⟨fun h e ⟨he, hi⟩ => ?_, fun h =>
+    tilingSubgraph_inter_interiorEdges.ge.trans (tilingSubgraph_mono h)⟩
+  rw [mem_interiorEdges_iff] at hi
+  have hadj : (tilingSubgraph R M).Adj ⟨_, hi.1⟩ ⟨_, hi.2⟩ :=
     tilingSubgraph_adj.2 ⟨fun h => e.whiteFace_ne_blackFace (congrArg Subtype.val h), e, he,
       e.mem_whiteFace_edges, e.mem_blackFace_edges⟩
   obtain ⟨-, e', he', h₁, h₂⟩ := tilingSubgraph_adj.1 (h.2 hadj)
   rwa [TriFace.eq_of_mem_edges_of_mem_edges e.whiteFace_ne_blackFace e.mem_whiteFace_edges
     e.mem_blackFace_edges h₁ h₂]
+
+/-- If `M` is a tiling of `R`, every set `M'` whose subgraph contains that of `M` contains `M`. -/
+theorem IsTiling.subset_of_tilingSubgraph_le (hM : IsTiling R M)
+    (h : tilingSubgraph R M ≤ tilingSubgraph R M') : M ⊆ M' := by
+  simpa [Set.inter_eq_left.2 hM.subset_interiorEdges] using tilingSubgraph_le_iff.1 h
 
 /-- The subgraph of a tiling is a perfect matching. -/
 theorem IsTiling.isPerfectMatching_tilingSubgraph (hM : IsTiling R M) :

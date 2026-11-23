@@ -113,6 +113,10 @@ def target (e : TriEdge) : ℤ × ℤ := e.v + latticeDir e.k
 @[simp] theorem target_mk (v : ℤ × ℤ) (k : Fin 3) : (⟨v, k⟩ : TriEdge).target = v + latticeDir k :=
   (rfl)
 
+theorem v_ne_target (e : TriEdge) : e.v ≠ e.target := by
+  obtain ⟨⟨x, y⟩, k⟩ := e
+  fin_cases k <;> simp [Prod.ext_iff]
+
 /-- The white face containing an edge: `W(v)` for `(v, 1)` and `(v, 3)`, and `W(v - e₁)` for
 `(v, 2)`. -/
 def whiteFace (e : TriEdge) : TriFace := ⟨if e.k = 1 then e.v - (1, 0) else e.v, true⟩
@@ -223,6 +227,14 @@ theorem isWhite_ne_of_mem_edges {f g : TriFace} {e : TriEdge} (hfg : f ≠ g) (h
   rw [mem_edges_iff] at hf hg
   rcases hf with rfl | rfl <;> rcases hg with rfl | rfl <;> simp_all
 
+/-- Three faces containing an edge: the third is one of two distinct ones, since an edge lies in
+exactly two faces. -/
+theorem eq_or_eq_of_mem_edges {e : TriEdge} {f g h : TriFace} (hfg : f ≠ g)
+    (hf : e ∈ f.edges) (hg : e ∈ g.edges) (hh : e ∈ h.edges) : h = f ∨ h = g := by
+  rw [mem_edges_iff] at hf hg hh
+  rcases hf with rfl | rfl <;> rcases hg with rfl | rfl <;> rcases hh with rfl | rfl <;>
+    simp_all
+
 /-- Two distinct faces share at most one edge. -/
 theorem eq_of_mem_edges_of_mem_edges {f g : TriFace} {e e' : TriEdge} (hfg : f ≠ g)
     (hef : e ∈ f.edges) (heg : e ∈ g.edges) (hef' : e' ∈ f.edges) (heg' : e' ∈ g.edges) :
@@ -286,7 +298,25 @@ theorem eq_blackFace_of_mem_edges {e : TriEdge} {f : TriFace} (he : e ∈ f.edge
   · simp at hf
   · exact h
 
+/-- An edge is determined by its lozenge. -/
+theorem faces_injective : Function.Injective faces := by
+  intro e e' h
+  have hw : e.whiteFace ∈ e'.faces := h ▸ mem_faces.2 e.mem_whiteFace_edges
+  have hb : e.blackFace ∈ e'.faces := h ▸ mem_faces.2 e.mem_blackFace_edges
+  rw [faces_def, Finset.mem_insert, Finset.mem_singleton] at hw hb
+  refine eq_of_whiteFace_eq_of_blackFace_eq (hw.resolve_right fun h' => ?_)
+    (hb.resolve_left fun h' => ?_)
+  · simpa using congrArg TriFace.isWhite h'
+  · simpa using congrArg TriFace.isWhite h'
+
 end TriEdge
+
+/-- An edge of a face also lies in a second face. -/
+theorem TriFace.exists_ne_mem_edges {e : TriEdge} {f : TriFace} (he : e ∈ f.edges) :
+    ∃ g, g ≠ f ∧ e ∈ g.edges := by
+  rcases mem_edges_iff.1 he with rfl | rfl
+  exacts [⟨_, e.whiteFace_ne_blackFace.symm, e.mem_blackFace_edges⟩,
+    ⟨_, e.whiteFace_ne_blackFace, e.mem_whiteFace_edges⟩]
 
 /-! ### The six faces at a vertex -/
 
