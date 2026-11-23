@@ -530,9 +530,7 @@ theorem
       fun s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s :=
     fun j ↦ (hV j).vectorBundle
   -- The Morse index along `i j` is the rank `r j` of the negative normal bundle.
-  have hr (j : ι) (s : S j) : manifoldMorseIndex I f (i j s) = r j := by
-    rw [← (h j).finrank_negativeNormalSpace hn (g j).toRiemannianMetric s, (hV j).finrank_eq s,
-      Fintype.card_fin]
+  have hr (j : ι) := (h j).manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j)
   obtain ⟨e⟩ := SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn h hfs
     hc hd hac hcb hcompact hcrit hdim g hr (ModuleCat.of K K) n
   -- The Thom pairs of the bundles of rank above `n` have no homology in degree `n`.

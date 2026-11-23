@@ -286,6 +286,19 @@ theorem floerLinearization_congr_data (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J' Ks' Kt' u ξ z := by
   rw [floerLinearization_def, floerLinearization_def, hJ, hKs, hKt]
 
+/-- The linearization in the direction `ξ` depends on the Floer data `J`, `Ks`, `Kt` only through
+their values on the support of `ξ`: off the support both linearizations vanish. -/
+theorem floerLinearization_congr_data_of_tsupport (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u ξ : ℝ × ℝ → V)
+    (h : ∀ z ∈ tsupport ξ, J z = J' z ∧ Ks z = Ks' z ∧ Kt z = Kt' z) :
+    ω.floerLinearization J Ks Kt u ξ = ω.floerLinearization J' Ks' Kt' u ξ := by
+  funext z
+  by_cases hz : z ∈ tsupport ξ
+  · obtain ⟨hJ, hKs, hKt⟩ := h z hz
+    exact ω.floerLinearization_congr_data u ξ hJ hKs hKt
+  · rw [ω.floerLinearization_of_notMem_tsupport J Ks Kt u hz,
+      ω.floerLinearization_of_notMem_tsupport J' Ks' Kt' u hz]
+
 /-- The zeroth-order part `ξ ↦ (dJ(u) ξ)(∂t u - X_Kt(u)) - dX_Ks(u) ξ - J(u) dX_Kt(u) ξ` of the
 linearized Floer operator at the domain point `z`. -/
 noncomputable def floerLinearizationCoeff (ω : SymplecticForm V)

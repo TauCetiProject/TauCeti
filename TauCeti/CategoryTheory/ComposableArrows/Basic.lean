@@ -63,6 +63,10 @@ theorem totalArrow_left (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i 
 theorem totalArrow_right (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
     (F.totalArrow i j hij).right = F.obj j := (rfl)
 
+/-- After dropping the first vertex, vertex `1` becomes the first vertex of the tail. -/
+theorem δ₀_left (F : ComposableArrows C (n + 1)) : F.δ₀.left = F.obj 1 := by
+  rfl
+
 theorem totalArrow_def (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
     F.totalArrow i j hij = ⟨F.obj i, F.obj j, F.map (homOfLE hij)⟩ := (rfl)
 

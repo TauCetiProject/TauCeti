@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Lie.FundamentalVectorField.Circle
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Linear
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.Inner
 
 /-!
