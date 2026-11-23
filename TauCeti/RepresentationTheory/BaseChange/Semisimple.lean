@@ -8,7 +8,6 @@ module
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.BaseChange
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
 -- Non-public: the semisimplicity of base change for modules over an algebra, and the action of
 -- `L ⊗[k] B` on `L ⊗[k] V`, are used only inside the proof.
 import TauCeti.Algebra.TensorProduct.Module
@@ -19,8 +18,8 @@ import TauCeti.RingTheory.Semisimple.BaseChange
 
 Let `k` be a perfect field and `ρ` a finite-dimensional semisimple representation of a monoid `G`
 over `k`. Then for every field extension `L / k` the base change `L ⊗[k] ρ` is semisimple
-(`Representation.isSemisimpleRepresentation_baseChange`), and likewise for continuous
-representations (`TauCeti.ContinuousRep.isSemisimpleRepresentation_baseChange`).
+(`Representation.isSemisimpleRepresentation_baseChange`). The continuous version is in
+`TauCeti.RepresentationTheory.Continuous.BaseChangeSemisimple`.
 
 The proof applies `TauCeti.isSemisimpleModule_tensorProduct_of_perfectField` to the image `B` of
 `k[G]` in `End_k(V)`, with `V` as a `B`-module: `L ⊗[k] V` is a semisimple module over `L ⊗[k] B`,
@@ -112,6 +111,7 @@ instance isSemisimpleRepresentation_baseChange [PerfectField k] [FiniteDimension
   let : Module (L ⊗[k] ρ.asAlgebraHom.range) (L ⊗[k] V) := Module.compHom _ act.toRingHom
   have hss := TauCeti.isSemisimpleModule_tensorProduct_of_perfectField (k := k)
     (A := ρ.asAlgebraHom.range) (M := V) L fun l l' a m ↦ by
+      -- The action on `L ⊗[k] V` is `act` through `Module.compHom`.
       change act (l ⊗ₜ a) (l' ⊗ₜ m) = _
       simp [act]
   let : Module (L ⊗[k] ρ.asAlgebraHom.range) (ρ.baseChange L).asModule :=
@@ -124,21 +124,3 @@ instance isSemisimpleRepresentation_baseChange [PerfectField k] [FiniteDimension
     Function.bijective_id).mpr hss
 
 end Representation
-
-namespace TauCeti.ContinuousRep
-
-variable {Γ k V : Type*} [Monoid Γ] [TopologicalSpace Γ] [Field k] [PerfectField k]
-  [TopologicalSpace k] [AddCommGroup V] [Module k V] [TopologicalSpace V] [IsModuleTopology k V]
-  [FiniteDimensional k V]
-
-/-- **Semisimplicity of a continuous representation is preserved by base change over a perfect
-field**: the underlying representation of `ρ.baseChange L` is semisimple when that of `ρ` is. -/
-instance isSemisimpleRepresentation_baseChange (ρ : ContinuousRep Γ k V)
-    [ρ.toRepresentation.IsSemisimpleRepresentation] (L : Type*) [Field L] [TopologicalSpace L]
-    [IsTopologicalSemiring L] [Algebra k L] [ContinuousSMul k L] [TopologicalSpace (L ⊗[k] V)]
-    [IsModuleTopology L (L ⊗[k] V)] :
-    (ρ.baseChange L).toRepresentation.IsSemisimpleRepresentation := by
-  rw [toRepresentation_baseChange]
-  infer_instance
-
-end TauCeti.ContinuousRep

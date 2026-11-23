@@ -20,6 +20,7 @@ import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.Algebra.CentralSimple.TensorProduct
 import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.Algebra.TensorProduct.Module
+import TauCeti.RingTheory.SimpleModule.Basic
 import TauCeti.RingTheory.Unramified.Field
 
 /-!
@@ -39,7 +40,8 @@ simple, as the tensor product of a central simple algebra with a simple one, and
 `L ⊗[k] D` is a finite product of simple Artinian rings.
 
 For modules, the action of `A` on `M` factors through its image `B` in `End_k(M)`, a
-finite-dimensional semisimple algebra (`TauCeti.isSemisimpleRing_range_lsmul`), and the action of
+finite-dimensional semisimple algebra (`TauCeti.isSemisimpleRing_range_lsmul`, in
+`TauCeti.RingTheory.SimpleModule.Basic`), and the action of
 `L ⊗[k] A` on `L ⊗[k] M` factors through the semisimple ring `L ⊗[k] B`.
 
 Perfectness is essential. For `k = 𝔽_p(s)` and `B = k(s^{1/p})`, the field `B` is semisimple, but
@@ -56,13 +58,12 @@ is not a field, so it is not semisimple.
   of the algebra.
 * `TauCeti.isSemisimpleRing_tensorProduct_of_isCentral`: `D ⊗[Z] R` is semisimple for `D` finite
   central simple over a field `Z` and `R` a reduced commutative Artinian `Z`-algebra.
-* `TauCeti.isSemisimpleRing_range_lsmul`: the image of an algebra in the endomorphisms of a finite
-  semisimple module is a semisimple ring.
 
 ## References
 
-* Stacks Project, tag 030V (separable base change is reduced) and tag 074H (base change of a
-  central simple algebra).
+* Stacks Project, tag 030U (separable base change is reduced; here the instance
+  `TauCeti.Algebra.FormallyUnramified.isReduced_tensorProduct_field`) and tag 074H (base
+  change of a central simple algebra).
 * N. Bourbaki, *Algebra, Chapter 8*, §12, no. 7, for the behaviour of semisimplicity under
   extension of scalars.
 -/
@@ -73,32 +74,6 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-/-! ### The image of an algebra acting on a semisimple module -/
-
-section Range
-
-variable {k A M : Type*} [CommRing k] [Ring A] [Algebra k A] [AddCommGroup M] [Module k M]
-  [Module A M] [IsScalarTower k A M]
-
-/-- **The image of an algebra acting on a finite semisimple module is semisimple.** If `M` is a
-semisimple `A`-module, finitely generated over `k`, then the image of `A` in `End_k(M)` is a
-semisimple ring: `M` is semisimple over the image, which embeds into a finite power of `M` by
-evaluation at generators. -/
-theorem isSemisimpleRing_range_lsmul [Module.Finite k M] [IsSemisimpleModule A M] :
-    IsSemisimpleRing (Algebra.lsmul k (A := A) k M).range := by
-  have : RingHomSurjective (Algebra.lsmul k (A := A) k M).rangeRestrict.toRingHom :=
-    ⟨AlgHom.rangeRestrict_surjective _⟩
-  have : IsSemisimpleModule (Algebra.lsmul k (A := A) k M).range M :=
-    (LinearMap.isSemisimpleModule_iff_of_bijective (M' := M) (N' := M)
-      (σ := (Algebra.lsmul k (A := A) k M).rangeRestrict.toRingHom) ⟨⟨id, fun _ _ ↦ rfl⟩,
-        fun _ _ ↦ rfl⟩ Function.bijective_id).mp ‹_›
-  obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin (R := k) (M := M)
-  let f : (Algebra.lsmul k (A := A) k M).range →ₗ[(Algebra.lsmul k (A := A) k M).range]
-      (Fin n → M) := LinearMap.pi fun i ↦ LinearMap.toSpanSingleton _ M (s i)
-  refine IsSemisimpleModule.of_injective f fun b c hbc ↦ Subtype.ext <|
-    LinearMap.ext_on_range hs fun i ↦ congr_fun hbc i
-
-end Range
 
 /-! ### Base change of a central simple algebra to a reduced Artinian ring -/
 
@@ -192,6 +167,7 @@ theorem isSemisimpleModule_tensorProduct_of_perfectField [FiniteDimensional k M]
     (AlgHom.rangeRestrict_surjective _)⟩
   refine (LinearMap.isSemisimpleModule_iff_of_bijective (M' := L ⊗[k] M) (N' := L ⊗[k] M)
     (σ := φ) ⟨⟨id, fun _ _ ↦ rfl⟩, fun t x ↦ ?_⟩ Function.bijective_id).mpr inferInstance
+  -- Both actions are pulled back along ring maps (`Module.compHom`), so `•` unfolds to them.
   change t • x = φ t • x
   induction t using TensorProduct.inductionOn with
   | add t u ht hu => simp only [map_add, add_smul, ht, hu]
@@ -199,6 +175,7 @@ theorem isSemisimpleModule_tensorProduct_of_perfectField [FiniteDimensional k M]
     induction x using TensorProduct.inductionOn with
     | add x y hx hy => simp only [smul_add, hx, hy]
     | tmul l' m =>
+      -- The action of `L ⊗[k] range` on `L ⊗[k] M` is `tensorPairAction` through `Module.compHom`.
       change _ = BialgebraModule.tensorPairAction k L M (Algebra.TensorProduct.map _ _ (l ⊗ₜ a))
         (l' ⊗ₜ m)
       simp [h, Subalgebra.smul_def]
