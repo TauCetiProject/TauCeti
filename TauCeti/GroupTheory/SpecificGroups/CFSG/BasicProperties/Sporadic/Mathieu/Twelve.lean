@@ -30,8 +30,10 @@ and index at most `1728`. The proof replays four compact certificates in the ker
 
 1. From the three defining relators alone (`413` points, `535` steps), `a⁵ = 1`, and hence
    `b⁶ = 1` from `a⁵ b⁶ = 1`.
-2. Adjoining `a⁵` and `b⁶` (`234` points, `312` steps), `(a b)⁶ = 1` and `(a² b)¹¹ = 1`,
-   which by conjugation yield `k⁵ = 1` and `h¹¹ = 1`.
+2. Adjoining `a⁵` and `b⁶` (`234` points, `312` steps), `(a b)⁶ = 1` and `(a² b)¹¹ = 1`. Since
+   `k` is conjugate to `a` (`k = b² a b⁻²`), `a⁵ = 1` gives `k⁵ = 1`, while `(a² b)¹¹ = 1` gives
+   `h¹¹ = 1` by conjugation (`h = a⁻¹ (a² b) a`); `(a b)⁶` is used as an extra relator for
+   stage 3.
 3. Adjoining `(a b)⁶` and `(a² b)¹¹` (`93` points, `118` steps), `k h k⁻¹ h² = 1`, i.e.,
    `k h k⁻¹ = h⁻² ∈ ⟨h⟩`. Power-conjugate normal forms then show that `H` is finite with
    `Nat.card H ≤ 55`.
@@ -534,16 +536,23 @@ private abbrev gB : M12.Group := m12Of ⟨1, by simp [presentation_M12]⟩
 private abbrev gH : M12.Group := gA * gB * gA
 private abbrev gK : M12.Group := gB * gB * gA * gB⁻¹ * gB⁻¹
 
+@[simp]
+private theorem letter_m12Of_zero : letter m12Of 0 = gA :=
+  letter_two_mul m12Of ⟨0, by simp [presentation_M12]⟩
+
+@[simp]
+private theorem letter_m12Of_two : letter m12Of 2 = gB :=
+  letter_two_mul m12Of ⟨1, by simp [presentation_M12]⟩
+
+@[simp]
+private theorem letter_m12Of_three : letter m12Of 3 = gB⁻¹ :=
+  letter_two_mul_add_one m12Of ⟨1, by simp [presentation_M12]⟩
+
 private theorem wordValue_wordH : wordValue m12Of wordH = gH := by
-  simp [wordH, wordValue_cons, wordValue_nil, gH, mul_assoc,
-    show letter m12Of 0 = gA from letter_two_mul m12Of ⟨0, by simp [presentation_M12]⟩,
-    show letter m12Of 2 = gB from letter_two_mul m12Of ⟨1, by simp [presentation_M12]⟩]
+  simp [wordH, wordValue_cons, wordValue_nil, gH, mul_assoc]
 
 private theorem wordValue_wordK : wordValue m12Of wordK = gK := by
-  simp [wordK, wordValue_cons, wordValue_nil, gK, mul_assoc,
-    show letter m12Of 0 = gA from letter_two_mul m12Of ⟨0, by simp [presentation_M12]⟩,
-    show letter m12Of 2 = gB from letter_two_mul m12Of ⟨1, by simp [presentation_M12]⟩,
-    show letter m12Of 3 = gB⁻¹ from letter_two_mul_add_one m12Of ⟨1, by simp [presentation_M12]⟩]
+  simp [wordK, wordValue_cons, wordValue_nil, gK, mul_assoc]
 
 private theorem wordValue_wordK_inv : wordValue m12Of (wordK.reverse.map invLetter) = gK⁻¹ := by
   have hinv : wordK.map (letter m12Of ∘ invLetter) =
@@ -599,9 +608,8 @@ private theorem wordValue_wordConj : wordValue m12Of wordConj = 1 :=
 private theorem gK_pow_five : gK ^ 5 = 1 := by
   have ha5 : gA ^ 5 = 1 := by
     have h := wordValue_wordA5
-    rw [wordA5, wordValue_def, List.map_replicate, List.prod_replicate] at h
-    simpa [show letter m12Of 0 = gA from
-      letter_two_mul m12Of ⟨0, by simp [presentation_M12]⟩] using h
+    rw [wordA5, wordValue_replicate, letter_m12Of_zero] at h
+    exact h
   have hk : gK = MulAut.conj (gB * gB) gA := by
     simp [gK, MulAut.conj_apply, mul_assoc]
   rw [hk, ← map_pow, ha5, map_one]
@@ -609,11 +617,8 @@ private theorem gK_pow_five : gK ^ 5 = 1 := by
 private theorem gH_pow_eleven : gH ^ 11 = 1 := by
   have haab11 : (gA * gA * gB) ^ 11 = 1 := by
     have h := wordValue_wordAAB11
-    rw [wordAAB11, wordValue_def, List.map_flatten, List.prod_flatten, List.map_replicate,
-      List.map_replicate, List.prod_replicate] at h
-    simpa [mul_assoc,
-      show letter m12Of 0 = gA from letter_two_mul m12Of ⟨0, by simp [presentation_M12]⟩,
-      show letter m12Of 2 = gB from letter_two_mul m12Of ⟨1, by simp [presentation_M12]⟩] using h
+    rw [wordAAB11, wordValue_flatten_replicate] at h
+    simpa [wordValue_cons, wordValue_nil, mul_assoc] using h
   have hh : gH = MulAut.conj gA⁻¹ (gA * gA * gB) := by
     simp [gH, mul_assoc]
   rw [hh, ← map_pow, haab11, map_one]
@@ -668,13 +673,14 @@ private theorem wordValue_subgens :
 instance finite_group_M12 : Finite M12.Group :=
   haveI : Finite frobSubgroup := frobSubgroup_finite_and_card.1
   haveI : frobSubgroup.FiniteIndex :=
-    M12.presentation.finiteIndex_of_run wordValue_subgens run_stage4
+    M12.presentation.finiteIndex_of_subgroupEnumeration_run wordValue_subgens run_stage4
   (Subgroup.finite_iff_finite_and_finiteIndex frobSubgroup).mpr ⟨inferInstance, inferInstance⟩
 
 /-- **The presented group of `M₁₂` has at most `95040` elements.** -/
 theorem natCard_group_M12_le : Nat.card M12.Group ≤ 95040 := by
   rw [← frobSubgroup.index_mul_card]
-  exact (Nat.mul_le_mul (M12.presentation.index_le_of_run wordValue_subgens run_stage4)
+  exact (Nat.mul_le_mul
+    (M12.presentation.index_le_of_subgroupEnumeration_run wordValue_subgens run_stage4)
     frobSubgroup_finite_and_card.2).trans (by decide)
 
 end TauCeti.SporadicName

@@ -64,9 +64,9 @@ trivial-label scheme `TauCeti.SubgroupEnumeration.unlabeledScheme`.
   `H.FiniteIndex` and `H.index ≤ k`.
 * `TauCeti.GroupPresentation.wordValue_mem_of_checkWords`,
   `TauCeti.GroupPresentation.wordValue_eq_one_of_checkRelators`,
-  `TauCeti.GroupPresentation.finiteIndex_of_run`, and
-  `TauCeti.GroupPresentation.index_le_of_run`: the corresponding interfaces for the group defined
-  by a `TauCeti.GroupPresentation`.
+  `TauCeti.GroupPresentation.finiteIndex_of_subgroupEnumeration_run`, and
+  `TauCeti.GroupPresentation.index_le_of_subgroupEnumeration_run`: the corresponding interfaces for
+  the group defined by a `TauCeti.GroupPresentation`.
 
 ## References
 
@@ -164,7 +164,8 @@ private theorem closesAt_coset {G : Type*} [Group G] {n : ℕ} {x : Fin n → G}
     wordValue x w • (QuotientGroup.mk (pt x parents i) : G ⧸ H) =
       QuotientGroup.mk (pt x parents i) := by
   obtain ⟨r, _, _, hw1, hw2⟩ :=
-    closesAt_of_runSteps (unlabeledInterp H) hrels (unlabeledInterp_sub hsubs) trivial hw
+    exists_actR_eq_of_closesAt_replay (unlabeledInterp H) hrels (unlabeledInterp_sub hsubs) trivial
+      hw
   simpa [unlabeledInterp, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one] using hw1.trans hw2.symm
 
 end Soundness
@@ -252,8 +253,9 @@ theorem _root_.TauCeti.GroupPresentation.wordValue_eq_one_of_checkRelators (P : 
 
 /-- A closed unlabeled replay over the compiled relators of `P` shows that any subgroup of
 `P.Group` containing the values of `subs` has finite index. -/
-theorem _root_.TauCeti.GroupPresentation.finiteIndex_of_run (P : GroupPresentation)
-    {H : Subgroup P.Group} {subs : List (List ℕ)} {parents steps : List ℕ} {k : ℕ}
+theorem _root_.TauCeti.GroupPresentation.finiteIndex_of_subgroupEnumeration_run
+    (P : GroupPresentation) {H : Subgroup P.Group} {subs : List (List ℕ)}
+    {parents steps : List ℕ} {k : ℕ}
     (hsubs : ∀ s ∈ subs, wordValue (PresentedGroup.of (rels := P.relatorSet)) s ∈ H)
     (hrun : run P.generatorCount (P.relatorLetters.map (List.map signedLetter)) subs parents steps =
       some k) :
@@ -264,8 +266,9 @@ theorem _root_.TauCeti.GroupPresentation.finiteIndex_of_run (P : GroupPresentati
 /-- **Subgroup index bound for a presented group.** A closed unlabeled replay over the compiled
 relators of `P` with `k` surviving points certifies `H.index ≤ k` for any subgroup `H` containing
 the values of `subs`. -/
-theorem _root_.TauCeti.GroupPresentation.index_le_of_run (P : GroupPresentation)
-    {H : Subgroup P.Group} {subs : List (List ℕ)} {parents steps : List ℕ} {k : ℕ}
+theorem _root_.TauCeti.GroupPresentation.index_le_of_subgroupEnumeration_run
+    (P : GroupPresentation) {H : Subgroup P.Group} {subs : List (List ℕ)}
+    {parents steps : List ℕ} {k : ℕ}
     (hsubs : ∀ s ∈ subs, wordValue (PresentedGroup.of (rels := P.relatorSet)) s ∈ H)
     (hrun : run P.generatorCount (P.relatorLetters.map (List.map signedLetter)) subs parents steps =
       some k) :
