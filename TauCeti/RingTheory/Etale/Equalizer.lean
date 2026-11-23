@@ -45,19 +45,20 @@ require of finite étale covers.
 
 The proof reduces to split algebras in three steps.
 
-* Over a split base, an algebra map `φ : (ι → T) →ₐ[T] (κ → T)` has idempotent matrix entries
-  `φ (Pi.single i 1) j`. Over the component of each atom of the Boolean algebra they generate
-  (`TauCeti.completeOrthogonalIdempotents_prod_ite`), every entry is `0` or `1`, so `φ` is induced
-  by a map `κ → ι`, and the equalizer of two such maps is the algebra of functions on a quotient
-  of `ι`.
+* Over a split base, an algebra map `φ : (ι → T) →ₐ[T] (κ → T)` with `ι` and `κ` finite has
+  idempotent matrix entries `φ (Pi.single i 1) j`. Over the component of each of their choice
+  products (`TauCeti.completeOrthogonalIdempotents_prod_ite`), every entry is `0` or `1`. If the
+  component is nonzero, `φ` is induced by a map `κ → ι`, and the equalizer of two such maps is the
+  algebra of functions on a quotient of `ι`. Over a zero component, the equalizer is the zero
+  algebra.
 * If `A` and `B` have constant ranks, they both split after a faithfully flat finite étale base
   change (`Algebra.IsFiniteSplit.exists_tensorProduct_of_etale`). Flat base change commutes with
   equalizers (`AlgHom.tensorEqualizerEquiv`), and finite étaleness descends along faithfully flat
   maps.
-* In general the ranks are locally constant, and the atoms of the idempotents cutting out their
-  fibres decompose the base into components where both ranks are constant. Finite étaleness is
+* In general the ranks are locally constant, and the choice products of the idempotents cutting
+  out their fibres decompose the base into components of constant ranks. Finite étaleness is
   local for such a decomposition (`TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents`,
-  `TauCeti.Module.Finite.of_completeOrthogonalIdempotents`).
+  `CompleteOrthogonalIdempotents.module_finite_iff`).
 
 The main results take `R`, `A` and `B` in one universe, as
 `Algebra.IsFiniteSplit.exists_tensorProduct_of_etale` does.
@@ -78,10 +79,10 @@ namespace AlgHom
 
 variable {A B : Type*} [CommRing A] [CommRing B]
 
-/-- Finite étaleness of an equalizer is local for the decomposition of the base by the atoms of
-finitely many idempotents `a x`: it suffices that over the component of every atom, the equalizer
-of the base changes of `f` and `g` is finite étale. The components are flat localizations, and flat
-base change commutes with equalizers (`AlgHom.tensorEqualizerEquiv`). -/
+/-- Finite étaleness of an equalizer is local for the decomposition of the base by the choice
+products of finitely many idempotents `a x`: it suffices that over the component of every choice
+product, the equalizer of the base changes of `f` and `g` is finite étale. The components are flat
+localizations, and flat base change commutes with equalizers (`AlgHom.tensorEqualizerEquiv`). -/
 private theorem etale_and_finite_equalizer_of_prod_ite {T ι : Type*} [CommRing T] [Algebra T A]
     [Algebra T B] [Fintype ι] {a : ι → T} (ha : ∀ x, IsIdempotentElem (a x)) (f g : A →ₐ[T] B)
     (H : ∀ σ : ι → Bool,
@@ -97,7 +98,7 @@ private theorem etale_and_finite_equalizer_of_prod_ite {T ι : Type*} [CommRing 
       let T' := T ⧸ Ideal.span {1 - ∏ x, if σ x then a x else 1 - a x}
       Algebra.Etale T' (T' ⊗[T] equalizer f g) ∧ Module.Finite T' (T' ⊗[T] equalizer f g) from
     ⟨TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents hF fun σ ↦ (H' σ).1,
-      TauCeti.Module.Finite.of_completeOrthogonalIdempotents hF fun σ ↦ (H' σ).2⟩
+      hF.module_finite_iff.mpr fun σ ↦ (H' σ).2⟩
   intro σ T'
   have : IsLocalization.Away (∏ x, if σ x then a x else 1 - a x) T' :=
     IsLocalization.Away.quotient_of_isIdempotentElem (hF.idem σ)
@@ -111,9 +112,11 @@ section Split
 
 variable {T : Type*} [CommRing T]
 
-/-- The equalizer of two algebra maps between split algebras whose matrix entries are all `0` or
-`1` is finite étale: the maps are induced by maps `u v : κ → ι`, and the equalizer is the algebra
-of functions on the quotient of `ι` by the relation identifying `u j` with `v j`. -/
+/-- The equalizer of two algebra maps `(ι → T) →ₐ[T] (κ → T)` between split algebras, with `ι`
+finite, whose matrix entries are all `0` or `1` is finite étale. If `T` is nontrivial, the maps
+are induced by maps `u v : κ → ι`, and the equalizer is the algebra of functions on the quotient
+of `ι` by the relation identifying `u j` with `v j`. If `T` is the zero ring, so is the
+equalizer. -/
 private theorem etale_and_finite_equalizer_of_entries {ι κ : Type*} [_root_.Finite ι]
     [DecidableEq ι] (φ ψ : (ι → T) →ₐ[T] (κ → T))
     (hφ : ∀ i j, φ (Pi.single i 1) j = 0 ∨ φ (Pi.single i 1) j = 1)
@@ -139,9 +142,10 @@ private theorem etale_and_finite_equalizer_of_entries {ι κ : Type*} [_root_.Fi
       simpa [hu, hv] using congrFun hs j
   exact ⟨.of_equiv e, .equiv e.toLinearEquiv⟩
 
-/-- The equalizer of two algebra maps between split algebras is finite étale. Over the component
-of each atom of the Boolean algebra generated by the matrix entries, all entries become `0` or `1`,
-and the equalizer is computed by `etale_and_finite_equalizer_of_entries`. -/
+/-- The equalizer of two algebra maps `(ι → T) →ₐ[T] (κ → T)` between split algebras, with `ι` and
+`κ` finite, is finite étale. Over the component of each choice product of the matrix entries, all
+entries become `0` or `1`, and the equalizer is computed by
+`etale_and_finite_equalizer_of_entries`. -/
 private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι] [_root_.Finite κ]
     (φ ψ : (ι → T) →ₐ[T] (κ → T)) :
     Algebra.Etale T (equalizer φ ψ) ∧ Module.Finite T (equalizer φ ψ) := by
@@ -155,11 +159,11 @@ private theorem etale_and_finite_equalizer_pi {ι κ : Type*} [_root_.Finite ι]
     exact (hs.map (bif x.1 then φ else ψ)).map (Pi.evalRingHom (fun _ ↦ T) x.2.2)
   refine etale_and_finite_equalizer_of_prod_ite ha φ ψ fun σ ↦ ?_
   intro T'
-  -- In `T'` the atom becomes `1`, so every entry becomes `0` or `1` according to `σ`.
+  -- In `T'` the choice product becomes `1`, so every entry becomes `0` or `1` according to `σ`.
   have hT' (x : Bool × ι × κ) : algebraMap T T' (a x) = 0 ∨ algebraMap T T' (a x) = 1 := by
     have hfactor :=
       congrArg (Ideal.Quotient.mk (Ideal.span {1 - ∏ y, if σ y then a y else 1 - a y}))
-        (TauCeti.ite_mul_prod_ite σ (ha x))
+        (TauCeti.ite_mul_prod_ite σ (Finset.mem_univ x) (ha x))
     rw [map_mul, TauCeti.Ideal.Quotient.mk_span_singleton_one_sub_self, mul_one] at hfactor
     rw [Ideal.Quotient.algebraMap_eq]
     split at hfactor
@@ -227,8 +231,8 @@ private theorem etale_and_finite_equalizer_of_rankAtStalk_eq {R A B : Type u} [C
     .of_finite_tensorProduct_of_faithfullyFlat T₂⟩
 
 /-- The equalizer of two algebra maps between finite étale algebras is finite étale. The ranks of
-the two algebras are locally constant, so the atoms of the idempotents cutting out their fibres
-decompose the base into components over which both ranks are constant. -/
+the two algebras are locally constant, so the choice products of the idempotents cutting out their
+fibres decompose the base into components over which both ranks are constant. -/
 private theorem etale_and_finite_equalizer {R A B : Type u} [CommRing R] [CommRing A] [CommRing B]
     [Algebra R A] [Algebra R B] [Algebra.Etale R A] [Module.Finite R A] [Algebra.Etale R B]
     [Module.Finite R B] (f g : A →ₐ[R] B) :
@@ -257,13 +261,13 @@ private theorem etale_and_finite_equalizer {R A B : Type u} [CommRing R] [CommRi
     · exact hεB _
   refine etale_and_finite_equalizer_of_prod_ite ha f g fun σ ↦ ?_
   intro T'
-  -- Every prime of `T'` lies over the component of the atom, where the ranks of `A` and `B` are
-  -- read off from the atom.
+  -- Every prime of `T'` lies over the component of the choice product, where the ranks of `A`
+  -- and `B` are read off from the product.
   have hσ (q : PrimeSpectrum T') : ∀ x, a x ∉ (q.comap (algebraMap R T')).asIdeal ↔ σ x := by
     have h0 : algebraMap R T' (1 - ∏ x, if σ x then a x else 1 - a x) = 0 :=
       Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self _)
-    exact fun x ↦ TauCeti.notMem_iff_of_one_sub_prod_ite_mem σ
-      (Ideal.mem_comap.mpr (h0 ▸ q.asIdeal.zero_mem)) (ha x)
+    exact fun x ↦ TauCeti.notMem_iff_of_one_sub_prod_ite_mem σ Ideal.IsPrime.ne_top'
+      (Ideal.mem_comap.mpr (h0 ▸ q.asIdeal.zero_mem)) (Finset.mem_univ x) (by simp [(ha x).eq])
   -- A rank bounded by `N` whose fibres are the basic open sets of elements `ε k` that every prime
   -- of `T'` sees uniformly is the same at all primes under primes of `T'`.
   have hconst (r : PrimeSpectrum R → ℕ) (ε : Fin (N + 1) → R) (hN : ∀ p, r p ≤ N)
