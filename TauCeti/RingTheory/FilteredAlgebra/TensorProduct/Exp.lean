@@ -95,8 +95,7 @@ the sum of their completed inclusions. -/
 theorem completedTensor_completedExp [Algebra ℚ A] [Algebra ℚ B] [Algebra ℚ (A ⊗[R] B)]
     (x : F.completionIdeal 1) (y : G.completionIdeal 1) :
     F.completedTensor R G (F.completedExp x) (G.completedExp y) = (F.tensorProduct R G).completedExp
-      (⟨F.includeLeftCompletion R G x,
-          F.includeLeftCompletion_mem_completionIdeal R G x.property⟩ +
+      (⟨F.includeLeftCompletion R G x, F.includeLeftCompletion_mem_completionIdeal R G x.property⟩ +
         ⟨F.includeRightCompletion R G y,
           F.includeRightCompletion_mem_completionIdeal R G y.property⟩) := by
   rw [completedTensor_apply, includeLeftCompletion_completedExp,

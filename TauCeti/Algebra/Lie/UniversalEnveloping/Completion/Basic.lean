@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Graded.Completion
-public import TauCeti.Algebra.Lie.UniversalEnveloping.DegreeFiltration
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Truncation
 public import TauCeti.RingTheory.FilteredAlgebra.Algebra
 
 /-!
@@ -15,29 +15,9 @@ public import TauCeti.RingTheory.FilteredAlgebra.Algebra
 For a Lie algebra `L` over a commutative ring `R` graded by `Γ` with degree functional
 `d : Γ →+ ℤ` and no negative-degree components, `completedEnveloping` is the completion of
 `U(L)` along `TauCeti.UniversalEnvelopingAlgebra.degreeFiltration`. When the grading is positive
-(`d : PositiveDegrees N`), `ι : L → U(L)` descends to compatible Lie homomorphisms
-`truncatedLieToU` and a completed Lie map `completedLieToU : d.completedLie ℒ →ₗ⁅R⁆ Û`, while
-`envelopingComponent` extracts homogeneous components from `completedEnveloping`.
-
-## Main definitions
-
-* `TauCeti.UniversalEnvelopingAlgebra.completedEnveloping`: completion of `U(L)` along
-  `degreeFiltration`.
-* `TauCeti.UniversalEnvelopingAlgebra.truncatedLieToU`: Lie homomorphism from
-  `d.truncatedLie ℒ k` to the order-`k` enveloping quotient.
-* `TauCeti.UniversalEnvelopingAlgebra.completedLieToU`: Lie homomorphism from `d.completedLie ℒ`
-  to `completedEnveloping`.
-* `TauCeti.UniversalEnvelopingAlgebra.envelopingComponent`: homogeneous component projection on
-  `completedEnveloping`.
-
-## Main results
-
-* `TauCeti.UniversalEnvelopingAlgebra.toCompletion_ι_mem_completionIdeal_one`: canonical Lie
-  generators map into the first completion ideal for a strictly positive Lie grading.
-* `TauCeti.UniversalEnvelopingAlgebra.completedLieToU_injective`: `completedLieToU` is injective
-  whenever `ι : L → U(L)` is injective.
-* `TauCeti.UniversalEnvelopingAlgebra.mk_sum_envelopingComponent`: every element of
-  `completedEnveloping` is represented at cutoff `k` by the finite sum of its components.
+(`d : PositiveDegrees N`), `ι : L → U(L)` descends to a completed Lie map
+`completedLieToU : d.completedLie ℒ →ₗ⁅R⁆ Û`, while `envelopingComponent` extracts homogeneous
+components from `completedEnveloping`.
 
 ## References
 
@@ -86,46 +66,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "Û" => completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
 local notation "𝓕" => degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
-
-/-- The canonical Lie map sends `d.degreeIdeal ℒ k` into filtration order `k + 1`. -/
-theorem ι_mem_degreeFiltration_succ_of_mem_degreeIdeal {k : ℕ} {x : L}
-    (hx : x ∈ d.degreeIdeal ℒ k) : ι R x ∈ (𝓕).ideal (k + 1) := by
-  rw [mem_degreeFiltration_ideal_iff]; intro n hn
-  rw [ι_apply, coe_decompose_mkAlgHom_ι, (d.mem_degreeIdeal_iff ℒ).mp hx n (by omega), map_zero]
-
-/-- When `ι : L → U(L)` is injective, the preimage of filtration order `k + 1` is
-`d.degreeIdeal ℒ k`. -/
-theorem comap_degreeFiltration_succ_ι (hι : Function.Injective (ι R : L → U)) (k : ℕ) :
-    (((𝓕).ideal (k + 1)).restrictScalars R).comap (ι R : L →ₗ⁅R⁆ U).toLinearMap =
-      (d.degreeIdeal ℒ k).toSubmodule := by
-  rw [comap_degreeFiltration_ι ℒ d.degree (d.eq_bot_of_degree_neg ℒ) hι (k + 1)]; ext x
-  simp only [DirectSum.mem_degreeTail_iff, LieSubmodule.mem_toSubmodule, d.mem_degreeIdeal_iff ℒ]
-  exact ⟨fun h n hn => h n (by omega), fun h n hn => h n (by omega)⟩
-
-/-- The Lie homomorphism from the order-`k` Lie truncation to the order-`k` enveloping quotient. -/
-noncomputable def truncatedLieToU (k : ℕ) : d.truncatedLie ℒ k →ₗ⁅R⁆ U ⧸ (𝓕).ideal (k + 1) :=
-  (d.degreeIdeal ℒ k).liftQ ((Ideal.Quotient.mkₐ R ((𝓕).ideal (k + 1))).toLieHom.comp (ι R))
-    fun _ hx => by
-      simpa [Ideal.Quotient.eq_zero_iff_mem] using
-        ι_mem_degreeFiltration_succ_of_mem_degreeIdeal d ℒ hx
-
-@[simp]
-theorem truncatedLieToU_mk (k : ℕ) (x : L) :
-    truncatedLieToU d ℒ k (LieSubmodule.Quotient.mk x) =
-      Ideal.Quotient.mk ((𝓕).ideal (k + 1)) (ι R x) := by simp [truncatedLieToU]
-
-/-- When `ι : L → U(L)` is injective, every truncated Lie-to-enveloping map is injective. -/
-theorem truncatedLieToU_injective (hι : Function.Injective (ι R : L → U)) (k : ℕ) :
-    Function.Injective (truncatedLieToU d ℒ k) := by
-  rw [truncatedLieToU, LieIdeal.liftQ_injective_iff]
-  exact fun _ hx => (comap_degreeFiltration_succ_ι d ℒ hι k).le
-    (by simpa [Ideal.Quotient.eq_zero_iff_mem] using hx)
-
-/-- `truncatedLieToU` commutes with transitions between degree cutoffs. -/
-theorem factor_truncatedLieToU {k l : ℕ} (h : k ≤ l) (z : d.truncatedLie ℒ l) :
-    Ideal.Quotient.factor ((𝓕).antitone (Nat.add_le_add_right h 1)) (truncatedLieToU d ℒ l z) =
-      truncatedLieToU d ℒ k (LieIdeal.factor (d.degreeIdeal_antitone ℒ h) z) := by
-  obtain ⟨x, rfl⟩ := (d.degreeIdeal ℒ l).surjective_mkQ z; simp [LieIdeal.mkQ_apply]
 
 private noncomputable def completedLieToUFun (x : d.completedLie ℒ) : Û :=
   ⟨fun k => truncatedLieToU d ℒ k.unop
@@ -188,7 +128,7 @@ private theorem envelopingIdealSubmodule_antitone : Antitone (𝔈) :=
 
 private theorem envelopingIdealSubmodule_eq_degreeSubmodule (k : ℕ) :
     𝔈 k = d.degreeSubmodule (homogeneousSubmodule ℒ) k := by
-  ext a; rw [envelopingIdealSubmodule, Submodule.restrictScalars_mem,
+  ext a; simp only [envelopingIdealSubmodule, Submodule.restrictScalars_mem,
     mem_degreeFiltration_ideal_iff, d.mem_degreeSubmodule_iff]
   exact ⟨fun h n hn => h n (by omega), fun h n hn => h n (by omega)⟩
 
@@ -206,30 +146,26 @@ private theorem envelopingQuotEquiv_π (k : ℕ) (a : U) :
       Ideal.Quotient.mk ((𝓕).ideal (k + 1)) a :=
   ModuleTower.quotientsLiftEquiv_quotientsπ _ _ _ _ _ _ a
 
-private theorem envelopingQuotEquiv_transition {k l : ℕ} (h : k ≤ l)
-    (x : (ModuleTower.quotients (𝔈) (envelopingIdealSubmodule_antitone d ℒ)).obj (Opposite.op l)) :
-    envelopingQuotEquiv d ℒ k
-        ((ModuleTower.quotients (𝔈) (envelopingIdealSubmodule_antitone d ℒ)).transitionOfLE h x) =
-      Ideal.Quotient.factor ((degreeFiltration ℒ d.degree _).antitone (Nat.add_le_add_right h 1))
-        (envelopingQuotEquiv d ℒ l x) := by
-  obtain ⟨a, rfl⟩ := ModuleTower.quotientsπ_surjective _ _ l x
-  rw [ModuleTower.transitionOfLE_quotientsπ, envelopingQuotEquiv_π, envelopingQuotEquiv_π,
-    Ideal.Quotient.factor_mk]
-
 private noncomputable def toModuleCompletion :
     Û →ₗ[R] (ModuleTower.quotients (𝔈) (envelopingIdealSubmodule_antitone d ℒ)).lim :=
   (ModuleTower.quotients _ _).limLift (fun k => (envelopingQuotEquiv d ℒ k).symm.toLinearMap.comp
       ((𝓕).projectionₐ (R := R) k).toLinearMap) fun k => by
     ext u; apply (envelopingQuotEquiv d ℒ k).injective
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-      ← ModuleTower.transitionOfLE_succ, envelopingQuotEquiv_transition]; simp
+    obtain ⟨a, ha⟩ := ModuleTower.quotientsπ_surjective (𝔈) (envelopingIdealSubmodule_antitone d ℒ)
+      (k + 1) ((envelopingQuotEquiv d ℒ (k + 1)).symm ((𝓕).projection (k + 1) u))
+    have hfa : Ideal.Quotient.mk ((𝓕).ideal (k + 1 + 1)) a = (𝓕).projection (k + 1) u := by
+      rw [← envelopingQuotEquiv_π, ha, LinearEquiv.apply_symm_apply]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply,
+      AlgFiltration.projectionₐ_apply, LinearEquiv.apply_symm_apply]
+    rw [← ModuleTower.transitionOfLE_succ, ← ha, ModuleTower.transitionOfLE_quotientsπ,
+      envelopingQuotEquiv_π, ← AlgFiltration.factor_projection (𝓕) (Nat.le_succ k) u, ← hfa,
+      Ideal.Quotient.factor_mk]
 
 private theorem limπ_toModuleCompletion (k : ℕ) (u : Û) :
     (ModuleTower.quotients (𝔈) (envelopingIdealSubmodule_antitone d ℒ)).limπ k
         (toModuleCompletion d ℒ u) = (envelopingQuotEquiv d ℒ k).symm ((𝓕).projection k u) := by
   rw [toModuleCompletion, ← LinearMap.comp_apply, ModuleTower.limπ_comp_limLift]
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply,
-    AlgFiltration.projectionₐ_apply]
+  simp [AlgFiltration.projectionₐ_apply]
 
 /-- The `n`-th homogeneous enveloping component of an element of `completedEnveloping`. -/
 noncomputable def envelopingComponent (n : N) : Û →ₗ[R] homogeneousSubmodule ℒ n :=

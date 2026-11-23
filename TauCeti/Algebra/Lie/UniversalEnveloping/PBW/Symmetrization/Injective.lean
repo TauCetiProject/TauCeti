@@ -128,7 +128,7 @@ theorem pbwSymmetrizationMap_injective : Function.Injective (pbwSymmetrizationMa
   rw [← RingHom.mem_ker, SymmetricAlgebra.ker_map_of_surjective π.toLinearMap hπ]
   exact hj
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, the canonical map `ι : L → U(L)` is injective
+/-- Over a commutative `ℚ`-algebra `R`, the canonical map `ι : L → U(L)` is injective
 without any freeness or flatness hypothesis. -/
 theorem ι_injective_of_algebra_rat :
     Function.Injective (_root_.UniversalEnvelopingAlgebra.ι R : L → U) := fun _ _ h =>

@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Free.LowerCentral
 public import TauCeti.Algebra.Lie.Presentation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Cofinality
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Completion.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Truncation
 
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Injective
 

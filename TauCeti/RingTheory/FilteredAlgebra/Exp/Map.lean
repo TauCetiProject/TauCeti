@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.FilteredAlgebra.AlgHom
 public import TauCeti.RingTheory.FilteredAlgebra.Exp.Basic
-public import TauCeti.RingTheory.FilteredAlgebra.Map
 
 /-!
 # Naturality of completed exponentials and logarithms
