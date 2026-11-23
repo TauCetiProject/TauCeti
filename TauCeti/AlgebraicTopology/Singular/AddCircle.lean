@@ -30,8 +30,7 @@ circuit class does not depend on the starting point of the circuit.
 For `p > 0` the circuit class generates `H₁(ℝ / pℤ; ℤ) ≅ ℤ`: the Hurewicz map and the winding
 number of loops give an equivalence `AddCircle.firstHomologyAddEquiv p` sending the circuit class to
 `1`, so every class is its winding number times the circuit class
-(`AddCircle.eq_firstHomologyAddEquiv_zsmul_fundamentalClass`). The map `θ ↦ n • θ` multiplies
-the winding number by `n` (`AddCircle.firstHomologyAddEquiv_singularHomologyMap_zsmul`).
+(`AddCircle.eq_firstHomologyAddEquiv_zsmul_fundamentalClass`).
 
 We use Mathlib's `AddCircle.zsmulLoop` and winding-number isomorphism, and the degree-one
 Hurewicz map. The homological convention is the class of the loop itself. The ordered cross
@@ -264,15 +263,6 @@ theorem eq_firstHomologyAddEquiv_zsmul_fundamentalClass
     (c : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1) :
     c = firstHomologyAddEquiv p c • fundamentalClass p := by
   rw [← firstHomologyAddEquiv_symm_apply, AddEquiv.symm_apply_apply]
-
-/-- The map `θ ↦ n • θ` of a circle acts on the winding number as multiplication by `n`. -/
-@[simp]
-theorem firstHomologyAddEquiv_singularHomologyMap_zsmul (n : ℤ)
-    (c : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1) :
-    firstHomologyAddEquiv p (ContinuousMap.singularHomologyMap ℤ 1
-      ⟨fun θ : AddCircle p ↦ n • θ, continuous_zsmul n⟩ c) = n * firstHomologyAddEquiv p c := by
-  obtain ⟨m, rfl⟩ := (firstHomologyAddEquiv p).symm.surjective c
-  simp [singularHomologyMap_zsmul_fundamentalClass, mul_comm]
 
 end WindingNumber
 

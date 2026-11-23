@@ -696,17 +696,6 @@ theorem singularCohomologyMap_thomPairProj_injective (n : ℕ) :
   Function.LeftInverse.injective
     singularCohomologyMap_zeroSectionHom_singularCohomologyMap_thomPairProj_apply
 
-/-- The projection of a real vector bundle induces isomorphisms on singular homology, since it is
-a homotopy equivalence (`TauCeti.VectorBundle.totalSpaceHomotopyEquiv`). -/
-instance isIso_homologyMap_thomPairProj {C : Type u} [Category.{v} C] [HasCoproducts.{w} C]
-    [Preadditive C] [CategoryWithHomology C] {R : C} (n : ℕ) :
-    IsIso (SSet.homologyMap (TopCat.toSSet.map (thomPairProj F E)) R n) := by
-  have h : thomPairProj F E = TopCat.ofHom (VectorBundle.totalSpaceHomotopyEquiv F E).toFun :=
-    TopCat.ext fun v ↦ (thomPairProj_apply F E v).trans
-      (congrFun (VectorBundle.coe_totalSpaceHomotopyEquiv F E) v).symm
-  rw [h]
-  exact (VectorBundle.totalSpaceHomotopyEquiv F E).isIso_homologyMap R n
-
 /-- Fibrewise negation `v ↦ -v` of a real vector bundle, written `v ↦ (-1) • v`, as a self-map of
 its total space. -/
 def negTotalSpace : C(TotalSpace F E, TotalSpace F E) where
