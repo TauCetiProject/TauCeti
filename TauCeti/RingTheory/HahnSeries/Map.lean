@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.HahnSeries.PowerSeries
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.RingTheory.HahnSeries.Multiplication
 
 /-!
 # Coefficientwise maps of Hahn series
@@ -180,12 +181,6 @@ theorem order_mapRingHom_of_injective (x : R⟦Γ⟧) {f : R →+* S} (hf : Func
 theorem mapRingHom_single (f : R →+* S) (a : Γ) (r : R) :
     mapRingHom f (single a r) = single a (f r) :=
   HahnSeries.map_single (f : ZeroHom R S)
-
-/-- A Hahn series commutes with the constant series `C c` exactly when each of its coefficients
-commutes with `c`. -/
-theorem commute_C_iff {x : R⟦Γ⟧} {c : R} : Commute x (C c) ↔ ∀ g, Commute (x.coeff g) c := by
-  simp only [commute_iff_eq, HahnSeries.ext_iff, funext_iff, C_apply, coeff_mul_single_zero,
-    coeff_single_zero_mul]
 
 /-- A Hahn series is in the range of a coefficientwise map exactly when all its coefficients are
 in the range of the coefficient map. Compare `Polynomial.mem_map_rangeS`. -/
