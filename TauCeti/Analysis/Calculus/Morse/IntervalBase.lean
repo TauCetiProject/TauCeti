@@ -86,6 +86,8 @@ bijective.
   gluing parameters `e^{C s}` and `e^{-C s}`.
 * `TauCeti.intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq`: `q` is `1 / √(1 + ε²)` in the gluing
   parameter `ε = e^{-C s}` of its sink, a function of `ε²`.
+* `TauCeti.intervalBaseOrbit_add_log_div` and `TauCeti.intervalBaseOrbit_sub_log_div`: shifting
+  the time of `q` by `log x / C` scales its gluing parameters at the two ends by `x`.
 * `TauCeti.intervalBaseFlow_mul_inv_sqrt_one_add_sq` and
   `TauCeti.intervalBaseFlow_inv_sqrt_one_add_sq`: the flow acts on the end forms
   `x / √(1 + x²)` and `1 / √(1 + y²)` of the trajectory by scaling `x` with `e^{C s}` and `y` with
@@ -490,6 +492,23 @@ theorem intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq (C s : ℝ) :
   rw [intervalBaseOrbit_apply, ← Real.exp_natCast_mul,
     show (2 : ℕ) * -(C * s) = -(2 * C * s) by push_cast; ring]
 
+/-- **The departing chart under a time shift.** Delaying the trajectory `q` by `log x / C`
+multiplies its departing gluing parameter `ε = e^{C t}`
+(`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`) by `x > 0`. -/
+theorem intervalBaseOrbit_add_log_div {C x : ℝ} (hC : C ≠ 0) (hx : 0 < x) (t : ℝ) :
+    intervalBaseOrbit C (t + Real.log x / C) =
+      Real.exp (C * t) * x * (√(1 + (Real.exp (C * t) * x) ^ 2))⁻¹ := by
+  rw [intervalBaseOrbit_eq_exp_mul_inv_sqrt, mul_add, mul_div_cancel₀ _ hC, Real.exp_add,
+    Real.exp_log hx]
+
+/-- **The arriving chart under a time shift.** Advancing the trajectory `q` by `log y / C`
+multiplies its arriving gluing parameter `ε = e^{-C t}`
+(`TauCeti.intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq`) by `y > 0`. -/
+theorem intervalBaseOrbit_sub_log_div {C y : ℝ} (hC : C ≠ 0) (hy : 0 < y) (t : ℝ) :
+    intervalBaseOrbit C (t - Real.log y / C) = (√(1 + (Real.exp (-(C * t)) * y) ^ 2))⁻¹ := by
+  rw [intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq, mul_sub, mul_div_cancel₀ _ hC, neg_sub',
+    sub_neg_eq_add, Real.exp_add, Real.exp_log hy]
+
 /-- **The end chart of `q` at its sink.** In the gluing parameter `ε = e^{-C s}`, which tends to
 `0` as `s → ∞` for `C > 0`, the trajectory is `q(s) = 1 - ε² / (√(1 + ε²) (√(1 + ε²) + 1))`.
 This theorem is only that identity; it shows (without formalizing it) that the factor of `ε²` is a
@@ -538,10 +557,11 @@ theorem intervalBaseFlow_mul_inv_sqrt_one_add_sq (C s x : ℝ) :
   generalize C * s = s
   have key : ∀ x : ℝ, 0 < x → intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
       Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := fun x hx ↦ by
-    have h0 : x * (√(1 + x ^ 2))⁻¹ = intervalBaseOrbit 1 (Real.log x) := by
-      rw [intervalBaseOrbit_eq_exp_mul_inv_sqrt, one_mul, Real.exp_log hx]
-    rw [h0, intervalBaseFlow_intervalBaseOrbit, intervalBaseOrbit_eq_exp_mul_inv_sqrt, one_mul,
-      Real.exp_add, Real.exp_log hx]
+    have h := intervalBaseOrbit_add_log_div one_ne_zero hx
+    simp only [div_one, one_mul] at h
+    have h0 := h 0
+    rw [Real.exp_zero, one_mul, zero_add] at h0
+    rw [← h0, intervalBaseFlow_intervalBaseOrbit, h]
   rcases lt_trichotomy x 0 with hx | rfl | hx
   · simpa only [neg_sq, mul_neg, neg_mul, intervalBaseFlow_neg, neg_inj] using
       key (-x) (by linarith)
@@ -558,8 +578,8 @@ theorem intervalBaseFlow_inv_sqrt_one_add_sq (C s y : ℝ) :
   · simp
   have key (t : ℝ) :
       intervalBaseOrbit 1 (t - Real.log |y|) = (√(1 + (Real.exp (-t) * y) ^ 2))⁻¹ := by
-    rw [intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq, one_mul, neg_sub', sub_neg_eq_add,
-      Real.exp_add, Real.exp_log (abs_pos.2 hy), mul_pow, sq_abs, ← mul_pow]
+    rw [← div_one (Real.log |y|), intervalBaseOrbit_sub_log_div one_ne_zero (abs_pos.2 hy),
+      one_mul, mul_pow, sq_abs, ← mul_pow]
   have h0 := key 0
   rw [neg_zero, Real.exp_zero, one_mul, zero_sub] at h0
   rw [← h0, intervalBaseFlow_intervalBaseOrbit, ← sub_eq_add_neg, key]

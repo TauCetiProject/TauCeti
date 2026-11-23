@@ -213,7 +213,7 @@ theorem quarticGluingEarly_of_pos (p r q : ι → ℝ) {ρ : ℝ} (hρ : 0 < ρ)
   · rw [quarticTrajectoryPoint_apply_of_ne _ hpq, quarticGluingEarly_apply, ite_eq_right hpq]
     dsimp only
     split_ifs
-    · rw [intervalBaseOrbit_eq_exp_mul_inv_sqrt, one_mul, Real.exp_add, Real.exp_log hρ]
+    · rw [← div_one (Real.log ρ), intervalBaseOrbit_add_log_div one_ne_zero hρ, one_mul]
     · rfl
 
 /-- For `ρ > 0` the late point is the trajectory point with the first block advanced by
@@ -228,8 +228,7 @@ theorem quarticGluingLate_of_pos (p r q : ι → ℝ) {ρ : ℝ} (hρ : 0 < ρ) 
     dsimp only
     split_ifs
     · rfl
-    · rw [intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq, one_mul, neg_sub', sub_neg_eq_add,
-        Real.exp_add, Real.exp_log hρ]
+    · rw [← div_one (Real.log ρ), intervalBaseOrbit_sub_log_div one_ne_zero hρ, one_mul]
 
 /-- The flow of the quartic translates all time coordinates of the early point at once, for every
 gluing parameter `ρ`, including the break `ρ = 0`. -/
@@ -458,6 +457,18 @@ theorem contDiff_quarticGluingLate [Fintype ι] {n : WithTop ℕ∞} (p r q : ι
     ContDiff ℝ n fun x : ℝ × (ι → ℝ) ↦ quarticGluingLate p r q x.1 x.2 :=
   contDiff_pi.2 fun i ↦ contDiff_quarticGluingLate_apply p r q i contDiff_fst (by fun_prop)
 
+/-- Coordinate `i` of the early point depends on the time coordinates only through `u i`. The
+continuity theorems below use this to apply the smoothness of one coordinate on `ℝ × ℝ`, since
+`ι → ℝ` carries no normed space structure without `Fintype ι`. -/
+private theorem quarticGluingEarly_apply_const (p r q : ι → ℝ) (ρ : ℝ) (u : ι → ℝ) (i : ι) :
+    quarticGluingEarly p r q ρ (fun _ ↦ u i) i = quarticGluingEarly p r q ρ u i := by
+  simp only [quarticGluingEarly_apply]
+
+/-- Coordinate `i` of the late point depends on the time coordinates only through `u i`. -/
+private theorem quarticGluingLate_apply_const (p r q : ι → ℝ) (ρ : ℝ) (u : ι → ℝ) (i : ι) :
+    quarticGluingLate p r q ρ (fun _ ↦ u i) i = quarticGluingLate p r q ρ u i := by
+  simp only [quarticGluingLate_apply]
+
 /-- The early point depends continuously on the gluing parameter and the time coordinates
 jointly, including at the break `ρ = 0`. -/
 theorem continuous_quarticGluingEarly (p r q : ι → ℝ) :
@@ -465,7 +476,8 @@ theorem continuous_quarticGluingEarly (p r q : ι → ℝ) :
   continuous_pi fun i ↦
     ((contDiff_quarticGluingEarly_apply (n := 0) p r q i (u := fun y : ℝ × ℝ ↦ fun _ ↦ y.2)
       contDiff_fst contDiff_snd).continuous.comp
-        (f := fun x : ℝ × (ι → ℝ) ↦ (x.1, x.2 i)) (by fun_prop) :)
+        (continuous_fst.prodMk ((continuous_apply i).comp continuous_snd))).congr
+      fun x ↦ quarticGluingEarly_apply_const p r q x.1 x.2 i
 
 /-- The late point depends continuously on the gluing parameter and the time coordinates
 jointly, including at the break `ρ = 0`. -/
@@ -474,7 +486,8 @@ theorem continuous_quarticGluingLate (p r q : ι → ℝ) :
   continuous_pi fun i ↦
     ((contDiff_quarticGluingLate_apply (n := 0) p r q i (u := fun y : ℝ × ℝ ↦ fun _ ↦ y.2)
       contDiff_fst contDiff_snd).continuous.comp
-        (f := fun x : ℝ × (ι → ℝ) ↦ (x.1, x.2 i)) (by fun_prop) :)
+        (continuous_fst.prodMk ((continuous_apply i).comp continuous_snd))).congr
+      fun x ↦ quarticGluingLate_apply_const p r q x.1 x.2 i
 
 /-- **Convergence to the broken trajectory, early side.** As the gluing parameter tends to `0`,
 the early point tends to the point with time coordinates `u` on the first piece. -/
