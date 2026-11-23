@@ -44,7 +44,8 @@ complementary nonsquare units whose exponents relative to a generator are odd). 
   symbol annihilator for Steinberg pairings.
 * `TauCeti.IsSteinbergPairing.eq_zero_of_finite`: every Steinberg pairing on a finite field is
   identically zero.
-* `TauCeti.SymbolGroup.subsingleton_of_finite`: `SymbolGroup F` is trivial for every finite field.
+* `TauCeti.SymbolGroup.symbol_eq_zero_of_finite`,
+  `TauCeti.SymbolGroup.subsingleton_of_finite`: `SymbolGroup F` is trivial for every finite field.
 * `TauCeti.MilnorK.degree_eq_bot_of_finite`: `MilnorK.degree F n = ⊥` for every finite field `F`
   and `2 ≤ n`.
 * `TauCeti.MilnorK.finiteField_vanishing`: `Subsingleton (MilnorK.degree F n)` for every finite
@@ -130,18 +131,22 @@ section FiniteField
 
 variable {F : Type u} [Field F]
 
+namespace SymbolGroup
+
 /-- Every symbol `{a, b}` in `SymbolGroup F` vanishes over a finite field `F`. -/
 @[simp]
 theorem symbol_eq_zero_of_finite [Finite F] (a b : Fˣ) : symbol a b = 0 :=
   isSteinbergPairing_symbol.eq_zero_of_finite a b
 
 /-- The degree-two symbol group `SymbolGroup F` of any finite field is trivial. -/
-instance SymbolGroup.subsingleton_of_finite (F : Type u) [Field F] [Finite F] :
+instance subsingleton_of_finite (F : Type u) [Field F] [Finite F] :
     Subsingleton (SymbolGroup F) := by
   refine subsingleton_of_forall_eq 0 fun x ↦ ?_
   induction x using SymbolGroup.induction_on with
   | symbol a b => exact symbol_eq_zero_of_finite a b
   | add x y hx hy => rw [hx, hy, add_zero]
+
+end SymbolGroup
 
 namespace MilnorK
 

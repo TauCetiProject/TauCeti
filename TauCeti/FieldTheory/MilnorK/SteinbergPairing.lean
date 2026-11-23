@@ -40,7 +40,7 @@ Milnor's `K₂ᴹ(R)` directly as a quotient of the tensor square.
   tensors `a ⊗ b` with `(a : R) + b = 1`.
 * `TauCeti.SymbolGroup`: the degree-two symbol group
   `(Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R`.
-* `TauCeti.symbol`: the universal Steinberg pairing `Rˣ → Rˣ → SymbolGroup R`.
+* `TauCeti.SymbolGroup.symbol`: the universal Steinberg pairing `Rˣ → Rˣ → SymbolGroup R`.
 * `TauCeti.SymbolGroup.lift`, `TauCeti.SymbolGroup.liftEquiv`: the universal property identifying
   additive homomorphisms out of `SymbolGroup R` with Steinberg pairings.
 * `TauCeti.SymbolGroup.map`: functoriality of `SymbolGroup` along ring homomorphisms.
@@ -51,7 +51,8 @@ Milnor's `K₂ᴹ(R)` directly as a quotient of the tensor square.
   `TauCeti.IsSteinbergPairing.map_self`, `TauCeti.IsSteinbergPairing.two_nsmul_map_self`,
   `TauCeti.IsSteinbergPairing.map_self_of_charTwo`: integral symbol identities for every Steinberg
   pairing on a field.
-* `TauCeti.isSteinbergPairing_symbol`: `TauCeti.symbol` is a Steinberg pairing.
+* `TauCeti.SymbolGroup.isSteinbergPairing_symbol`: `TauCeti.SymbolGroup.symbol` is a Steinberg
+  pairing.
 
 ## References
 
@@ -261,6 +262,8 @@ theorem steinbergRelations_eq_span :
 universal target of Steinberg pairings on `Rˣ`; it is canonically isomorphic to `K₂ᴹ(R)`. -/
 abbrev SymbolGroup : Type u := (Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R
 
+namespace SymbolGroup
+
 variable {R}
 
 /-- The universal symbol `{a, b}` in `SymbolGroup R`, the quotient class of `a ⊗ b`. -/
@@ -272,7 +275,7 @@ theorem symbol_def (a b : Rˣ) :
     symbol a b = Submodule.Quotient.mk (Additive.ofMul a ⊗ₜ Additive.ofMul b) := by
   rfl
 
-/-- `TauCeti.symbol` is a Steinberg pairing. -/
+/-- `TauCeti.SymbolGroup.symbol` is a Steinberg pairing. -/
 theorem isSteinbergPairing_symbol : IsSteinbergPairing (symbol (R := R)) where
   map_mul_left a₁ a₂ b := by
     simp only [symbol_def, ofMul_mul, TensorProduct.add_tmul, Submodule.Quotient.mk_add]
@@ -284,10 +287,12 @@ theorem isSteinbergPairing_symbol : IsSteinbergPairing (symbol (R := R)) where
     (Submodule.Quotient.mk_eq_zero _).mpr (Submodule.subset_span ⟨a, b, h, rfl⟩)
 
 /-- Multiplicativity of `symbol` in the first entry. -/
+@[simp]
 theorem symbol_mul_left (a₁ a₂ b : Rˣ) : symbol (a₁ * a₂) b = symbol a₁ b + symbol a₂ b :=
   isSteinbergPairing_symbol.map_mul_left a₁ a₂ b
 
 /-- Multiplicativity of `symbol` in the second entry. -/
+@[simp]
 theorem symbol_mul_right (a b₁ b₂ : Rˣ) : symbol a (b₁ * b₂) = symbol a b₁ + symbol a b₂ :=
   isSteinbergPairing_symbol.map_mul_right a b₁ b₂
 
@@ -316,18 +321,22 @@ theorem symbol_inv_right (a b : Rˣ) : symbol a b⁻¹ = -symbol a b :=
   isSteinbergPairing_symbol.map_inv_right a b
 
 /-- Raising the first entry to a natural power scales the symbol. -/
+@[simp]
 theorem symbol_pow_left (a b : Rˣ) (n : ℕ) : symbol (a ^ n) b = n • symbol a b :=
   isSteinbergPairing_symbol.map_pow_left a b n
 
 /-- Raising the second entry to a natural power scales the symbol. -/
+@[simp]
 theorem symbol_pow_right (a b : Rˣ) (n : ℕ) : symbol a (b ^ n) = n • symbol a b :=
   isSteinbergPairing_symbol.map_pow_right a b n
 
 /-- Raising the first entry to an integer power scales the symbol. -/
+@[simp]
 theorem symbol_zpow_left (a b : Rˣ) (n : ℤ) : symbol (a ^ n) b = n • symbol a b :=
   isSteinbergPairing_symbol.map_zpow_left a b n
 
 /-- Raising the second entry to an integer power scales the symbol. -/
+@[simp]
 theorem symbol_zpow_right (a b : Rˣ) (n : ℤ) : symbol a (b ^ n) = n • symbol a b :=
   isSteinbergPairing_symbol.map_zpow_right a b n
 
@@ -377,8 +386,6 @@ theorem symbol_self_of_charTwo [CharP F 2] (a : Fˣ) : symbol a a = 0 :=
   isSteinbergPairing_symbol.map_self_of_charTwo a
 
 end FieldSymbols
-
-namespace SymbolGroup
 
 /-- The quotient class of a pure tensor of units is their symbol. -/
 @[simp]

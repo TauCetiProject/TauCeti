@@ -114,6 +114,7 @@ theorem ofUnit_one : ofUnit (1 : Rˣ) = 0 := by
   rw [← ofUnitHom_ofMul, ofMul_one, map_zero]
 
 /-- The degree-one generator is additive in the multiplicative group of units. -/
+@[simp]
 theorem ofUnit_mul (a b : Rˣ) : ofUnit (a * b) = ofUnit a + ofUnit b := by
   rw [← ofUnitHom_ofMul, ofMul_mul, map_add, ofUnitHom_ofMul, ofUnitHom_ofMul]
 
@@ -123,10 +124,12 @@ theorem ofUnit_inv (a : Rˣ) : ofUnit a⁻¹ = -ofUnit a := by
   rw [← ofUnitHom_ofMul, ofMul_inv, map_neg, ofUnitHom_ofMul]
 
 /-- The degree-one generator sends natural powers to scalar multiples. -/
+@[simp]
 theorem ofUnit_pow (a : Rˣ) (n : ℕ) : ofUnit (a ^ n) = n • ofUnit a := by
   rw [← ofUnitHom_ofMul, ofMul_pow, map_nsmul, ofUnitHom_ofMul]
 
 /-- The degree-one generator sends integer powers to integer scalar multiples. -/
+@[simp]
 theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a := by
   rw [← ofUnitHom_ofMul, ofMul_zpow, map_zsmul, ofUnitHom_ofMul]
 
@@ -193,6 +196,14 @@ theorem mkRingHom_tprod {n : ℕ} (a : Fin n → Rˣ) :
   simp only [TensorAlgebra.tprod_apply, map_list_prod, symbol, List.map_ofFn, Function.comp_def,
     ofUnit_def]
 
+/-- Evaluating the quotient map on a pure tensor of `Additive Rˣ` elements yields the Milnor
+symbol of the underlying units. -/
+theorem mkRingHom_tprod_additive {n : ℕ} (x : Fin n → Additive Rˣ) :
+    RingQuot.mkRingHom (milnorRel R) (TensorAlgebra.tprod ℤ (Additive Rˣ) n x) =
+      symbol (List.ofFn (Additive.toMul ∘ x)) := by
+  simp only [TensorAlgebra.tprod_apply, map_list_prod, symbol, List.map_ofFn, Function.comp_def,
+    ofUnit_def, ofMul_toMul]
+
 variable (R)
 
 /-- The degree-`n` submodule `Kₙᴹ(R)` of `MilnorK R`, defined as the image of the `n`-th graded
@@ -256,9 +267,7 @@ theorem degree_eq_span_symbol (n : ℕ) :
     | smul_tprod r m =>
       rw [map_smul, TensorPower.toTensorAlgebra_tprod, map_zsmul]
       refine Submodule.smul_mem _ r (Submodule.subset_span ?_)
-      refine ⟨List.ofFn (Additive.toMul ∘ m), List.length_ofFn, ?_⟩
-      have hm : m = Additive.ofMul ∘ (Additive.toMul ∘ m) := funext fun _ ↦ (ofMul_toMul _).symm
-      rw [← mkRingHom_tprod, ← hm]
+      exact ⟨List.ofFn (Additive.toMul ∘ m), List.length_ofFn, mkRingHom_tprod_additive m⟩
     | add x y hx hy =>
       rw [map_add, map_add]
       exact add_mem hx hy

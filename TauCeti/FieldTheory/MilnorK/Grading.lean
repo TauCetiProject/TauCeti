@@ -449,10 +449,7 @@ theorem ker_mkRingHom_comp_toTensorAlgebra (R : Type u) [CommSemiring R] (n : �
   · rw [tensorRel, Submodule.span_le]
     rintro _ ⟨x, k, hk, a, b, hab, hxk, hxk1, rfl⟩
     rw [SetLike.mem_coe, mem_ker_mkRingHom_comp_toTensorAlgebra_iff, RingHom.mem_ker,
-      TensorPower.toTensorAlgebra_tprod]
-    have hx : x = Additive.ofMul ∘ (Additive.toMul ∘ x) :=
-      funext fun _ ↦ (ofMul_toMul _).symm
-    rw [hx, mkRingHom_tprod]
+      TensorPower.toTensorAlgebra_tprod, mkRingHom_tprod_additive]
     set l : List Rˣ := List.ofFn (Additive.toMul ∘ x)
     have hlen : l.length = n := List.length_ofFn
     have hsplit : l = l.take k ++ a :: b :: l.drop (k + 2) := by
@@ -527,16 +524,24 @@ theorem coe_degreeEquivQuotTensorPower_symm_mk_tprod {n : ℕ} (a : Fin n → R�
       symbol (List.ofFn a) := by
   rw [coe_degreeEquivQuotTensorPower_symm_mk, TensorPower.toTensorAlgebra_tprod, mkRingHom_tprod]
 
+/-- `degreeEquivQuotTensorPower` sends any degree-`n` class equal to `symbol (List.ofFn a)` to
+the class of its pure tensor. -/
+theorem degreeEquivQuotTensorPower_of_coe_eq_symbol {n : ℕ} (x : degree R n) (a : Fin n → Rˣ)
+    (hx : (x : MilnorK R) = symbol (List.ofFn a)) :
+    degreeEquivQuotTensorPower R n x =
+      Submodule.Quotient.mk (PiTensorProduct.tprod ℤ (Additive.ofMul ∘ a)) := by
+  apply (degreeEquivQuotTensorPower R n).symm.injective
+  rw [LinearEquiv.symm_apply_apply]
+  exact Subtype.ext (hx.trans (coe_degreeEquivQuotTensorPower_symm_mk_tprod a).symm)
+
 /-- `degreeEquivQuotTensorPower` sends a Milnor symbol to the class of its pure tensor. -/
 @[simp]
 theorem degreeEquivQuotTensorPower_symbol {n : ℕ} (a : Fin n → Rˣ) :
     degreeEquivQuotTensorPower R n
       ⟨symbol (List.ofFn a),
         by simpa only [List.length_ofFn] using symbol_mem_degree (List.ofFn a)⟩ =
-      Submodule.Quotient.mk (PiTensorProduct.tprod ℤ (Additive.ofMul ∘ a)) := by
-  apply (degreeEquivQuotTensorPower R n).symm.injective
-  rw [LinearEquiv.symm_apply_apply]
-  exact Subtype.ext (coe_degreeEquivQuotTensorPower_symm_mk_tprod a).symm
+      Submodule.Quotient.mk (PiTensorProduct.tprod ℤ (Additive.ofMul ∘ a)) :=
+  degreeEquivQuotTensorPower_of_coe_eq_symbol _ a rfl
 
 /-- Pointwise `AddCommMonoid` instance aiding `DirectSum` typeclass synthesis over `ℕ`. -/
 instance (priority := low) instAddCommMonoidQuotTensorPower (R : Type u) [CommSemiring R]
@@ -614,10 +619,8 @@ noncomputable def degreeZeroEquiv (R : Type u) [CommSemiring R] : degree R 0 ≃
   let e₀ : degree R 0 ≃ₗ[ℤ] ℤ := (degreeEquivQuotTensorPower R 0).trans
     ((Submodule.quotEquivOfEqBot _ (tensorRel_zero R)).trans (PiTensorProduct.isEmptyEquiv (Fin 0)))
   have he₀_one : e₀ (1 : degree R 0) = 1 := by
-    have h1 : (1 : degree R 0) = ⟨symbol (List.ofFn (Fin.elim0 : Fin 0 → Rˣ)),
-        by simpa only [List.length_ofFn] using symbol_mem_degree (List.ofFn Fin.elim0)⟩ :=
-      Subtype.ext (by simp)
-    rw [h1, LinearEquiv.trans_apply, LinearEquiv.trans_apply, degreeEquivQuotTensorPower_symbol,
+    rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+      degreeEquivQuotTensorPower_of_coe_eq_symbol _ (Fin.elim0 : Fin 0 → Rˣ) (by simp),
       Submodule.quotEquivOfEqBot_apply_mk, PiTensorProduct.isEmptyEquiv_apply_tprod]
   have he₀ (k : ℤ) : e₀ (Algebra.ofId ℤ (degree R 0) k) = k := by
     rw [Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one, map_zsmul, he₀_one, smul_eq_mul,
@@ -657,13 +660,9 @@ noncomputable def degreeOneEquiv (R : Type u) [CommSemiring R] : degree R 1 ≃�
 @[simp]
 theorem degreeOneEquiv_ofUnit (a : Rˣ) :
     degreeOneEquiv R ⟨ofUnit a, ofUnit_mem_degree_one a⟩ = Additive.ofMul a := by
-  have h1 : (⟨ofUnit a, ofUnit_mem_degree_one a⟩ : degree R 1) =
-      ⟨symbol (List.ofFn (fun _ : Fin 1 ↦ a)), by
-        simpa only [List.length_ofFn] using symbol_mem_degree (List.ofFn fun _ : Fin 1 ↦ a)⟩ :=
-    Subtype.ext (by simp)
-  rw [h1, degreeOneEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    degreeEquivQuotTensorPower_symbol, Submodule.quotEquivOfEqBot_apply_mk,
-    TauCeti.TensorPower.oneEquiv_tprod, Function.comp_apply]
+  rw [degreeOneEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    degreeEquivQuotTensorPower_of_coe_eq_symbol _ (fun _ : Fin 1 ↦ a) (by simp),
+    Submodule.quotEquivOfEqBot_apply_mk, TauCeti.TensorPower.oneEquiv_tprod, Function.comp_apply]
 
 /-- The inverse of `degreeOneEquiv` sends `Additive.ofMul a` to `ofUnit a`. -/
 @[simp]
@@ -688,28 +687,24 @@ noncomputable def degreeTwoEquiv (R : Type u) [CommSemiring R] :
       (TauCeti.tensorProductEquivTensorSquare ℤ (Additive Rˣ))
       (map_steinbergRelations_eq_tensorRel_two R)).symm
 
-/-- `degreeTwoEquiv` sends the product `ofUnit a * ofUnit b` to `TauCeti.symbol a b`. -/
+/-- `degreeTwoEquiv` sends the product `ofUnit a * ofUnit b` to `SymbolGroup.symbol a b`. -/
 @[simp]
 theorem degreeTwoEquiv_ofUnit_mul (a b : Rˣ) :
     degreeTwoEquiv R
       ⟨ofUnit a * ofUnit b, mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩ =
-      TauCeti.symbol a b := by
-  have h2 : (⟨ofUnit a * ofUnit b,
-      mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩ : degree R 2) =
-      ⟨symbol (List.ofFn ![a, b]),
-        by simpa only [List.length_ofFn] using symbol_mem_degree (List.ofFn ![a, b])⟩ :=
-    Subtype.ext (by simp)
-  rw [h2, degreeTwoEquiv, LinearEquiv.trans_apply, degreeEquivQuotTensorPower_symbol,
-    LinearEquiv.symm_apply_eq, TauCeti.symbol_def]
-  refine Eq.symm <| (Submodule.Quotient.equiv_apply _ _ _ _ _).trans <|
-    (Submodule.mapQ_apply _ _ _ _).trans <| congrArg Submodule.Quotient.mk <|
-      (TauCeti.tensorProductEquivTensorSquare_tmul ℤ (Additive Rˣ) _ _).trans <|
-        congrArg (PiTensorProduct.tprod ℤ) (funext fun i ↦ by fin_cases i <;> simp)
+      SymbolGroup.symbol a b := by
+  rw [degreeTwoEquiv, LinearEquiv.trans_apply,
+    degreeEquivQuotTensorPower_of_coe_eq_symbol _ ![a, b] (by simp),
+    LinearEquiv.symm_apply_eq, SymbolGroup.symbol_def]
+  symm
+  erw [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
+    TauCeti.tensorProductEquivTensorSquare_tmul]
+  congr 2
 
-/-- The inverse of `degreeTwoEquiv` sends `TauCeti.symbol a b` to `ofUnit a * ofUnit b`. -/
+/-- The inverse of `degreeTwoEquiv` sends `SymbolGroup.symbol a b` to `ofUnit a * ofUnit b`. -/
 @[simp]
 theorem coe_degreeTwoEquiv_symm_symbol (a b : Rˣ) :
-    ((degreeTwoEquiv R).symm (TauCeti.symbol a b) : MilnorK R) = ofUnit a * ofUnit b := by
+    ((degreeTwoEquiv R).symm (SymbolGroup.symbol a b) : MilnorK R) = ofUnit a * ofUnit b := by
   simpa only [degreeTwoEquiv_ofUnit_mul] using congrArg Subtype.val
     ((degreeTwoEquiv R).symm_apply_apply
       ⟨ofUnit a * ofUnit b, mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩)
@@ -770,32 +765,26 @@ theorem quotTensorPowerMap_mk_tprod {S : Type w} [CommSemiring S] (f : R →+* S
   simp only [Function.comp_def, AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive,
     toMul_ofMul]
 
-private theorem additiveUnitsMap_id (R : Type u) [CommSemiring R] :
-    (Units.map (RingHom.id R).toMonoidHom).toAdditive.toIntLinearMap = LinearMap.id :=
-  LinearMap.ext fun _ ↦ by simp
-
-private theorem additiveUnitsMap_comp {S : Type v} {T : Type w} [CommSemiring S] [CommSemiring T]
-    (g : S →+* T) (f : R →+* S) :
-    (Units.map (g.comp f).toMonoidHom).toAdditive.toIntLinearMap =
-      (Units.map g.toMonoidHom).toAdditive.toIntLinearMap ∘ₗ
-        (Units.map f.toMonoidHom).toAdditive.toIntLinearMap :=
-  LinearMap.ext fun _ ↦ by ext; simp
-
 /-- The identity ring homomorphism induces the identity on
 `(⨂[ℤ]^n (Additive Rˣ)) ⧸ tensorRel R n`. -/
 @[simp]
 theorem quotTensorPowerMap_id (R : Type u) [CommSemiring R] (n : ℕ) :
     quotTensorPowerMap (RingHom.id R) n = LinearMap.id := by
   refine LinearMap.ext fun x ↦ Submodule.Quotient.induction_on _ x fun w ↦ ?_
-  simp only [quotTensorPowerMap_mk, additiveUnitsMap_id, PiTensorProduct.map_id,
-    LinearMap.id_apply]
+  simp only [quotTensorPowerMap_mk, RingHom.toMonoidHom_eq_coe, RingHom.toMonoidHom_id,
+    Units.map_id, MonoidHom.toAdditive_id, AddMonoidHom.toIntLinearMap_id,
+    PiTensorProduct.map_id, LinearMap.id_apply]
 
 /-- `quotTensorPowerMap` respects composition of ring homomorphisms. -/
 theorem quotTensorPowerMap_comp {S : Type v} {T : Type w} [CommSemiring S] [CommSemiring T]
     (g : S →+* T) (f : R →+* S) (n : ℕ) :
     quotTensorPowerMap (g.comp f) n = (quotTensorPowerMap g n).comp (quotTensorPowerMap f n) := by
   refine LinearMap.ext fun x ↦ Submodule.Quotient.induction_on _ x fun w ↦ ?_
-  simp only [quotTensorPowerMap_mk, LinearMap.comp_apply, additiveUnitsMap_comp,
+  have hcomp : (Units.map (g.comp f).toMonoidHom).toAdditive =
+      (Units.map g.toMonoidHom).toAdditive.comp (Units.map f.toMonoidHom).toAdditive := by
+    rw [RingHom.toMonoidHom_comp, Units.map_comp]
+    exact AddMonoidHom.ext fun _ ↦ by simp
+  simp only [quotTensorPowerMap_mk, LinearMap.comp_apply, hcomp, AddMonoidHom.toIntLinearMap_comp,
     PiTensorProduct.map_comp]
 
 /-- Naturality of `degreeEquivQuotTensorPower` in arbitrary degree `n`: for any ring
@@ -811,9 +800,11 @@ theorem degreeEquivQuotTensorPower_map {S : Type w} [CommSemiring S] (f : R →+
   rw [LinearEquiv.symm_apply_apply, LinearEquiv.apply_symm_apply]
   induction w using PiTensorProduct.induction_on with
   | smul_tprod r a =>
-    have ha : a = Additive.ofMul ∘ (Additive.toMul ∘ a) := funext fun _ ↦ (ofMul_toMul _).symm
-    rw [ha]
-    simp [map_symbol, List.map_ofFn]
+    simp only [Submodule.Quotient.mk_smul, SetLike.val_smul, map_zsmul,
+      coe_degreeEquivQuotTensorPower_symm_mk, TensorPower.toTensorAlgebra_tprod,
+      mkRingHom_tprod_additive, map_symbol, List.map_ofFn, quotTensorPowerMap_mk,
+      PiTensorProduct.map_tprod, AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive,
+      Function.comp_def, toMul_ofMul]
   | add w₁ w₂ hw₁ hw₂ =>
     simp only [Submodule.Quotient.mk_add, map_add, Submodule.coe_add] at hw₁ hw₂ ⊢
     rw [hw₁, hw₂]
