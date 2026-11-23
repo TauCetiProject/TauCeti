@@ -251,19 +251,12 @@ private theorem kernel_apply [DecidableEq ι] (s : Finset ι) (z : V) :
   exact SchwartzMap.fourierInv_postcompCLM_apply _ (σ i) z
 
 /-- **Hörmander's condition for the `ℓ²`-valued kernels**, uniformly in the truncation:
-`∫_{‖x‖ > 2 ‖h‖} ‖K_s (x - h) - K_s x‖ dx ≤ B`. In dimension `0` the domain of integration is
-empty. -/
+`∫_{‖x‖ > 2 ‖h‖} ‖K_s (x - h) - K_s x‖ dx ≤ B`. -/
 private theorem exists_setIntegral_norm_kernel_sub_sub_le [DecidableEq ι] (hP : IsDyadic ψ σ e) :
     ∃ B, 0 ≤ B ∧ ∀ (s : Finset ι) (h : V),
       ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖kernel σ s (x - h) - kernel σ s x‖ ≤ B := by
-  rcases subsingleton_or_nontrivial V with hV | hV
-  · refine ⟨0, le_rfl, fun s h ↦ ?_⟩
-    have h0 : {x : V | 2 * ‖h‖ < ‖x‖} = ∅ := by
-      ext x
-      simp [Subsingleton.elim x 0, Subsingleton.elim h 0]
-    rw [h0, Measure.restrict_empty, integral_zero_measure]
-  set N := finrank ℝ V
-  have hN : finrank ℝ V < 2 * N := by have := finrank_pos (R := ℝ) (M := V); omega
+  set N := finrank ℝ V + 1
+  have hN : finrank ℝ V < 2 * N := by omega
   obtain ⟨C, hC, hK⟩ := SchwartzMap.exists_setIntegral_norm_fourierInv_sum_sub_sub_le
     (H := lp (fun _ : ι ↦ ℂ) 2) (stdOrthonormalBasis ℝ V) hN
   choose B hB0 hB using hP.deriv
