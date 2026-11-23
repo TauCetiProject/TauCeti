@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Data.ZMod.QuotientGroup
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -37,7 +38,8 @@ grading graded-isomorphic to a shift has such a generator.
 ## Main results
 
 * `Units.val_inv_mem_graded`: the inverse of a homogeneous unit of degree `d` is homogeneous of
-  degree `-d`.
+  degree `-d`, and `Units.val_mul_mul_inv_mem_graded`: in a ring graded by an additive commutative
+  group, conjugation by a homogeneous unit preserves every graded piece.
 * `TauCeti.mem_homogeneousUnitDegrees_iff`: a degree lies in `homogeneousUnitDegrees 𝒜` if and
   only if it is the degree of a homogeneous unit.
 * `TauCeti.mul_mem_iff_of_isUnit_mem` and `TauCeti.eq_map_mulLeft_of_isUnit_mem`: a compatible
@@ -46,6 +48,8 @@ grading graded-isomorphic to a shift has such a generator.
   the shift `A(d)` if and only if it has a unit in degree `-d`.
 * `TauCeti.sub_mem_homogeneousUnitDegrees_iff` and `TauCeti.ShiftClassGroup.mk_eq_mk_iff`: the
   shifts `A(d)` and `A(e)` are graded-isomorphic if and only if `d - e ∈ homogeneousUnitDegrees 𝒜`.
+* `TauCeti.ShiftClassGroup.equivZMod`: for a `ℤ`-grading whose homogeneous unit degrees are the
+  multiples of `e`, the shift class group is `ZMod |e|`.
 
 The group-algebra and Laurent-polynomial examples, `TauCeti.homogeneousUnitDegrees_gradeBy` and
 `TauCeti.shiftClassGroupLaurentPolynomialEquiv`, are in `TauCeti.Algebra.MonoidAlgebra.Grading`
@@ -70,6 +74,20 @@ theorem Units.val_inv_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) :
     (by rw [Units.mul_inv, add_neg_cancel]; exact SetLike.one_mem_graded 𝒜)
 
 end Inverse
+
+section Conjugation
+
+variable {ι A σ : Type*} [DecidableEq ι] [AddCommGroup ι] [Semiring A] [SetLike σ A]
+  [AddSubmonoidClass σ A] {𝒜 : ι → σ} [GradedRing 𝒜]
+
+/-- In a ring graded by an additive commutative group, conjugation by a homogeneous unit of any
+degree preserves every graded piece. -/
+theorem Units.val_mul_mul_inv_mem_graded (u : Aˣ) {i k : ι} (hu : (u : A) ∈ 𝒜 i) {y : A}
+    (hy : y ∈ 𝒜 k) : (u : A) * y * ↑u⁻¹ ∈ 𝒜 k := by
+  simpa [add_comm, add_assoc] using
+    SetLike.mul_mem_graded (SetLike.mul_mem_graded hu hy) (u.val_inv_mem_graded hu)
+
+end Conjugation
 
 namespace TauCeti
 
@@ -144,6 +162,22 @@ abbrev ShiftClassGroup {ι A σ : Type*} [AddCommGroup ι] [Monoid A] [SetLike �
     Type _ :=
   ι ⧸ homogeneousUnitDegrees 𝒜
 
+/-- If the degrees of the homogeneous units of a `ℤ`-graded ring are the multiples of `e`, then the
+shift class group is `ZMod |e|`. -/
+noncomputable def ShiftClassGroup.equivZMod {A σ : Type*} [Monoid A] [SetLike σ A] {𝒜 : ℤ → σ}
+    {e : ℤ} (h : homogeneousUnitDegrees 𝒜 = AddSubgroup.zmultiples e) :
+    ShiftClassGroup 𝒜 ≃+ ZMod e.natAbs :=
+  (QuotientAddGroup.quotientAddEquivOfEq h).trans (Int.quotientZMultiplesEquivZMod e)
+
+/-- The identification `ShiftClassGroup.equivZMod` sends the class of a shift `c` to
+`c mod |e|`. -/
+@[simp]
+theorem ShiftClassGroup.equivZMod_mk {A σ : Type*} [Monoid A] [SetLike σ A] {𝒜 : ℤ → σ} {e : ℤ}
+    (h : homogeneousUnitDegrees 𝒜 = AddSubgroup.zmultiples e) (c : ℤ) :
+    ShiftClassGroup.equivZMod h c = c := by
+  rw [ShiftClassGroup.equivZMod, AddEquiv.trans_apply, QuotientAddGroup.quotientAddEquivOfEq_mk,
+    Int.quotientZMultiplesEquivZMod_mk]
+
 section Shift
 
 variable {ι A σ σM : Type*} [DecidableEq ι] [Semiring A] [SetLike σ A] [AddSubmonoidClass σ A]
@@ -165,7 +199,7 @@ theorem mul_mem_iff_of_isUnit_mem [AddSubmonoidClass σM A] [Decomposition ℳ]
     have h := DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 ℳ (a := x) (i := n - c) hmem
     rw [smul_eq_mul, sub_add_cancel, decompose_of_mem_same ℳ hx, smul_eq_mul,
       hu.isRegular.right.eq_iff] at h
-    exact h ▸ (decompose 𝒜 x (n - c)).2
+    exact h ▸ (decompose 𝒜 x (n - c)).property
   · simpa using SetLike.GradedSMul.smul_mem (B := ℳ) hx hmem
 
 /-- Linear form of the shift classification: a grading `ℳ` of `A` compatible with `𝒜` with a

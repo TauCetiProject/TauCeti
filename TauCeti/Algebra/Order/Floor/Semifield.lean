@@ -30,9 +30,13 @@ For closed intervals `[0, W]` subdivided into `n > 0` equal cells of step `W / n
 floor index `⌊x / (W / n)⌋₊` at `n - 1` keeps the right endpoint `W` inside the last cell while
 preserving `[k * (W / n), (k + 1) * (W / n)]` for all `x ∈ [0, W]`. Similarly, `max 1 ⌈t⌉₊` gives
 a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 1` whenever `t > 0`.
+In an ordered ring, the integers `a ≤ k ≤ ⌊y⌋₊` number at most `(y + 1 − a)⁺`, which bounds a sum
+of terms at most `M ≥ 0` over them by `(y + 1 − a)⁺ M`.
 
 ## Main results
 
+* `TauCeti.le_ceil_div_mul`: `t ≤ ⌈t / τ⌉₊ * τ` for `τ > 0`.
+* `TauCeti.ceil_div_mul_lt_add`: `⌈t / τ⌉₊ * τ < t + τ` for `t ≥ 0` and `τ > 0`.
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
 * `TauCeti.mem_Ico_ceil_div_iff`: `n ∈ [⌈s / τ⌉₊, ⌈t / τ⌉₊)` if and only if `n τ ∈ [s, t)`.
 * `TauCeti.exists_pos_nat_mul_bounds`: a positive multiple `N a` lies in `(t, t + a]`.
@@ -47,6 +51,8 @@ a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 
   the closed cell of step `W / n` indexed by `min (n - 1) ⌊x / (W / n)⌋₊`.
 * `TauCeti.natCast_max_one_ceil_lt_add_one` and `TauCeti.natCast_max_one_ceil_le_add_one`:
   `max 1 ⌈t⌉₊ < t + 1` for `0 < t`, and `max 1 ⌈t⌉₊ ≤ t + 1` for `0 ≤ t`.
+* `TauCeti.sum_Icc_floor_le_max_mul`: a sum of terms at most `M ≥ 0` over the integers
+  `a ≤ k ≤ y` is at most `(y + 1 − a)⁺ M`, for `y ≥ 0`.
 -/
 
 public section
@@ -55,6 +61,16 @@ namespace TauCeti
 
 variable {K : Type*} [DivisionSemiring K] [LinearOrder K] [IsStrictOrderedRing K] [FloorSemiring K]
   {τ s t B : K}
+
+/-- For a positive step `τ`, `t ≤ ⌈t / τ⌉₊ * τ`. -/
+theorem le_ceil_div_mul (hτ : 0 < τ) : t ≤ (⌈t / τ⌉₊ : K) * τ :=
+  (div_le_iff₀ hτ).1 (Nat.le_ceil _)
+
+/-- For `0 ≤ t` and a positive step `τ`, `⌈t / τ⌉₊ * τ < t + τ`. -/
+theorem ceil_div_mul_lt_add (ht : 0 ≤ t) (hτ : 0 < τ) :
+    (⌈t / τ⌉₊ : K) * τ < t + τ := by
+  simpa [add_mul, div_mul_cancel₀ t hτ.ne'] using
+    mul_lt_mul_of_pos_right (Nat.ceil_lt_add_one (div_nonneg ht hτ.le)) hτ
 
 /-- For a nonnegative step `τ` and `s ≤ t`, the indices in `[⌈s / τ⌉₊, ⌈t / τ⌉₊)` number
 strictly less than `(t - s) / τ + 1`. This holds for both ordinary and truncated subtraction. -/
@@ -191,5 +207,25 @@ theorem natCast_max_one_ceil_le_add_one {t : R} (ht : 0 ≤ t) :
   · exact (natCast_max_one_ceil_lt_add_one ht).le
 
 end Semiring
+
+section Ring
+
+variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R] [FloorSemiring R]
+
+/-- A sum of terms at most `M ≥ 0` over the integers `a ≤ k ≤ y` is at most `(y + 1 − a)⁺ M`, for
+`y ≥ 0`: there are at most `(y + 1 − a)⁺` such `k`. -/
+theorem sum_Icc_floor_le_max_mul {y M : R} (hy : 0 ≤ y) (hM : 0 ≤ M) (a : ℕ)
+    {f : ℕ → R} (hf : ∀ k ∈ Finset.Icc a ⌊y⌋₊, f k ≤ M) :
+    ∑ k ∈ Finset.Icc a ⌊y⌋₊, f k ≤ max (y + 1 - a) 0 * M := by
+  refine (Finset.sum_le_card_nsmul _ _ _ hf).trans ?_
+  rw [nsmul_eq_mul, Nat.card_Icc]
+  gcongr
+  rcases le_total (⌊y⌋₊ + 1) a with h | h
+  · rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero]
+    exact le_max_right _ _
+  · rw [Nat.cast_sub h, Nat.cast_add, Nat.cast_one]
+    exact le_max_of_le_left (by gcongr; exact Nat.floor_le hy)
+
+end Ring
 
 end TauCeti

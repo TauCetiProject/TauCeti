@@ -92,7 +92,7 @@ theorem exists_isOpen_isCompact_preimage_of_isLimit {U : Set c.pt} (hUo : IsOpen
     exact ⟨Classical.choice (IsCofiltered.nonempty (C := J)), ∅,
       isOpen_empty, isCompact_empty, by simp⟩
   | @insert V s _ _ ih =>
-    obtain ⟨i, Vi, hVio, hVic, hVi⟩ := V.2
+    obtain ⟨i, Vi, hVio, hVic, hVi⟩ := V.property
     obtain ⟨j, Wj, hWjo, hWjc, hWj⟩ := ih
     let k := IsCofiltered.min i j
     let a : k ⟶ i := IsCofiltered.minToLeft i j

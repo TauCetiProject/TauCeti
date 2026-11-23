@@ -120,7 +120,7 @@ theorem IsMulDistinguished.isNormMulUnit_restrictedMap_and_gaussNorm_map_eq_of_m
     IsNormMulUnit (restrictedMap φ hφ e) ∧
       (ω.map φ : PowerSeries S).gaussNorm norm c = c ^ s := by
   have : NormOneClass S := hg'.normOneClass
-  have hgr : g.IsRestricted c := h ▸ e.2.mul (isRestricted_polynomial ω)
+  have hgr : g.IsRestricted c := h ▸ e.property.mul (isRestricted_polynomial ω)
   -- `MvPowerSeries.map φ g` is definitionally `fun t ↦ φ (coeff t g)`, the series that
   -- `isRestricted_map` shows to be restricted.
   obtain ⟨u, p, hu, hp, hn, hmul⟩ :=

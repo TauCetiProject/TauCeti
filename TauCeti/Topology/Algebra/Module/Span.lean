@@ -18,6 +18,9 @@ quotient of a module spanned densely by a countable family is again spanned dens
 Restricting a point-continuous family of maps to a dense-range index map likewise preserves the
 closed span of all their ranges (`DenseRange.topologicalClosure_span_iUnion_range_comp_eq`).
 No norm, separation, or completeness assumptions are needed.
+
+Likewise, a continuous semilinear map sending a generating set into a closed submodule sends the
+closure of its span there (`Continuous.apply_mem_of_mem_topologicalClosure_span`).
 -/
 
 public section
@@ -45,6 +48,18 @@ theorem dense_span_in_topologicalClosure {R ι M : Type*} [Semiring R]
   exact closure_mono hspan.symm.subset
 
 end TauCeti
+
+/-- If a continuous semilinear map `f` sends a generating set `s` into a closed submodule `p` of
+`N`, then it sends `(Submodule.span R s).topologicalClosure` into `p`. -/
+theorem Continuous.apply_mem_of_mem_topologicalClosure_span {R S M N F : Type*} [Semiring R]
+    [Semiring S] {σ : R →+* S} [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [ContinuousAdd M] [ContinuousConstSMul R M] [AddCommMonoid N] [Module S N]
+    [TopologicalSpace N] [FunLike F M N] [SemilinearMapClass F σ M N] {f : F} (hfc : Continuous f)
+    {s : Set M} {p : Submodule S N} (hp : IsClosed (p : Set N)) (hs : ∀ x ∈ s, f x ∈ p) {x : M}
+    (hx : x ∈ (Submodule.span R s).topologicalClosure) :
+    f x ∈ p :=
+  Submodule.topologicalClosure_minimal _ (t := p.comap (LinearMap.ofClass f))
+    (Submodule.span_le.mpr hs) (hp.preimage hfc) hx
 
 /-- The image of a densely spanning family under a continuous linear map with dense range has
 dense span. For instance, the image of a densely spanning family in a quotient module `M ⧸ p`

@@ -78,9 +78,9 @@ Frobenius of the standard symplectic matrix group, so it identifies their fixed 
 the fixed subgroup of that Frobenius is the finite symplectic group by the coefficient
 identification. Here `r = carrierRank + 1` is the rank of the index. -/
 def symplecticEquivFixedPoints :
-    GLSymplecticFin (d.carrierRank + 1) (GaloisField d.1.characteristic d.1.fieldExponent) ≃*
+    GLSymplecticFin (d.carrierRank + 1) (GaloisField d.val.characteristic d.val.fieldExponent) ≃*
       d.FixedPoints :=
-  (ValidLieTypeIndex.symplecticEquivFrobeniusFixedPoints d.1 (d.carrierRank + 1)).trans
+  (ValidLieTypeIndex.symplecticEquivFrobeniusFixedPoints d.val (d.carrierRank + 1)).trans
     (fixedSubgroupCongr d.carrierEquivSymplectic
       (MonoidHom.ext fun g => by
         rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.coe_ofClass, steinberg_def,
@@ -92,12 +92,13 @@ underlying invertible matrix, that matrix read over the closure. -/
 @[simp]
 theorem coe_symplecticEquivFixedPoints
     (g : GLSymplecticFin (d.carrierRank + 1)
-      (GaloisField d.1.characteristic d.1.fieldExponent)) :
-    (((d.symplecticEquivFixedPoints g : d.AmbientGroup) : SpStd.points d.carrierRank d.1.Closure) :
-        Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) =
-      Matrix.GeneralLinearGroup.map d.1.galoisFieldEmbedding
+      (GaloisField d.val.characteristic d.val.fieldExponent)) :
+    (((d.symplecticEquivFixedPoints g : d.AmbientGroup) : SpStd.points d.carrierRank d.val.Closure)
+        :
+        Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) =
+      Matrix.GeneralLinearGroup.map d.val.galoisFieldEmbedding
         (g : Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
-          (GaloisField d.1.characteristic d.1.fieldExponent)) := by
+          (GaloisField d.val.characteristic d.val.fieldExponent)) := by
   rw [symplecticEquivFixedPoints, MulEquiv.trans_apply, coe_fixedSubgroupCongr_symm_apply,
     coe_carrierEquivSymplectic_symm_apply,
     ValidLieTypeIndex.coe_symplecticEquivFrobeniusFixedPoints]
@@ -106,7 +107,7 @@ theorem coe_symplecticEquivFixedPoints
 rank at least three. -/
 theorem commutator_symplectic_eq_top :
     commutator (GLSymplecticFin (d.carrierRank + 1)
-      (GaloisField d.1.characteristic d.1.fieldExponent)) = ⊤ :=
+      (GaloisField d.val.characteristic d.val.fieldExponent)) = ⊤ :=
   GLSymplecticFin.commutator_eq_top_of_three_le (by simpa using d.three_le_rank)
 
 /-- **The group attached to `C_r(q)` is the projective symplectic group `PSp_{2r}(𝔽_q)`.**
@@ -115,11 +116,11 @@ The fixed points are `Sp_{2r}(𝔽_q)` by `TauCeti.TypeCLieIndex.symplecticEquiv
 group is perfect, so its derived subgroup is the whole group and the derived central quotient is
 its quotient by the centre. -/
 def projectiveSymplecticEquivGroup :
-    GLSymplecticFin (d.carrierRank + 1) (GaloisField d.1.characteristic d.1.fieldExponent) ⧸
+    GLSymplecticFin (d.carrierRank + 1) (GaloisField d.val.characteristic d.val.fieldExponent) ⧸
         Subgroup.center (GLSymplecticFin (d.carrierRank + 1)
-          (GaloisField d.1.characteristic d.1.fieldExponent)) ≃* d.Group :=
+          (GaloisField d.val.characteristic d.val.fieldExponent)) ≃* d.Group :=
   letI : Group.IsPerfect (GLSymplecticFin (d.carrierRank + 1)
-      (GaloisField d.1.characteristic d.1.fieldExponent)) :=
+      (GaloisField d.val.characteristic d.val.fieldExponent)) :=
     ⟨d.commutator_symplectic_eq_top⟩
   DerivedCentralQuotient.mulEquivQuotientCenter.symm.trans
     (DerivedCentralQuotient.congr d.symplecticEquivFixedPoints)
@@ -129,14 +130,14 @@ the class of the corresponding fixed point. -/
 @[simp]
 theorem projectiveSymplecticEquivGroup_mk
     (x : commutator (GLSymplecticFin (d.carrierRank + 1)
-      (GaloisField d.1.characteristic d.1.fieldExponent))) :
+      (GaloisField d.val.characteristic d.val.fieldExponent))) :
     d.projectiveSymplecticEquivGroup (QuotientGroup.mk (s := Subgroup.center _)
         (x : GLSymplecticFin (d.carrierRank + 1)
-          (GaloisField d.1.characteristic d.1.fieldExponent))) =
+          (GaloisField d.val.characteristic d.val.fieldExponent))) =
       ((MulEquiv.commutatorCongr d.symplecticEquivFixedPoints x : commutator d.FixedPoints) :
         d.Group) := by
   let _ : Group.IsPerfect (GLSymplecticFin (d.carrierRank + 1)
-      (GaloisField d.1.characteristic d.1.fieldExponent)) :=
+      (GaloisField d.val.characteristic d.val.fieldExponent)) :=
     ⟨d.commutator_symplectic_eq_top⟩
   rw [projectiveSymplecticEquivGroup, MulEquiv.trans_apply,
     ← DerivedCentralQuotient.mulEquivQuotientCenter_mk, MulEquiv.symm_apply_apply,

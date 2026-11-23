@@ -38,29 +38,29 @@ variable (d : TypeE7LieIndex)
 
 /-- The full-weight torus of the minuscule E₇ carrier in the validated index's
 Bourbaki-numbered fundamental-weight coordinates. -/
-def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
-  (E7Minuscule.weightTorusPoints d.1.Closure).comp
+def weightTorus : (Fin d.val.rank → d.val.Closureˣ) →* d.AmbientGroup :=
+  (E7Minuscule.weightTorusPoints d.val.Closure).comp
     (MulEquiv.arrowCongr (finCongr d.rank_eq_seven) (MulEquiv.refl _)).toMonoidHom
 
 /-- The indexed torus is the represented torus with unchanged coordinate values. -/
-theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.weightTorus s = E7Minuscule.weightTorusPoints d.1.Closure
+theorem weightTorus_apply (s : Fin d.val.rank → d.val.Closureˣ) :
+    d.weightTorus s = E7Minuscule.weightTorusPoints d.val.Closure
       (fun i => s ((finCongr d.rank_eq_seven).symm i)) :=
   (rfl)
 
 /-- The Steinberg map raises every fundamental-weight torus parameter to the field order. -/
 @[simp]
-theorem steinberg_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.steinberg (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
+theorem steinberg_weightTorus (s : Fin d.val.rank → d.val.Closureˣ) :
+    d.steinberg (d.weightTorus s) = d.weightTorus (s ^ d.val.fieldOrder) := by
   rw [weightTorus_apply, steinberg_weightTorusPoints, weightTorus_apply]
   simp only [Pi.pow_def]
 
 /-- The uniform datum Steinberg map is the character pullback of the represented
 E₇ Steinberg map on its full-weight torus. -/
 theorem isCharacterMap_steinberg :
-    IsCharacterMap d.weightTorus d.steinberg d.1.datumSteinberg.weightMap := by
-  rw [d.1.datumSteinberg_weightMap_of_diagramPerm_eq_one
-    d.toGraphTwistedIndex.2 d.diagramPerm_toGraphTwistedIndex]
+    IsCharacterMap d.weightTorus d.steinberg d.val.datumSteinberg.weightMap := by
+  rw [d.val.datumSteinberg_weightMap_of_diagramPerm_eq_one
+    d.toGraphTwistedIndex.property d.diagramPerm_toGraphTwistedIndex]
   exact IsCharacterMap.of_map_eq_pow d.steinberg_weightTorus
 
 end

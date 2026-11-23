@@ -10,6 +10,10 @@ public import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 
 /-!
 # Extending an operator from `L² ∩ Lᵖ` to `Lᵖ`
@@ -20,6 +24,15 @@ both spaces. A uniform estimate therefore gives a unique bounded operator on all
 This is the final density step in the Calderón–Zygmund strong-type theorem.
 
 The construction uses Mathlib's `Lp.simpleFunc.dense` and `LinearMap.extendOfNorm`.
+
+When the operator is composed with multiplication by an unbounded function `b`, as in a
+commutator `[b, T]`, the dense domain must also keep `b u` in `L^q`. On a σ-finite measure space,
+for `p < ∞` and a.e. strongly measurable `b`, the `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q`, which
+form the submodule `MeasureTheory.memLpSmulSubmodule b q`, are dense in `Lᵖ` for every `q`
+(`MeasureTheory.dense_memLpSmulSubmodule`): truncating `u` to the sets of finite measure
+where `‖u‖` and `|b|` are bounded gives such functions converging to `u` in `Lᵖ`. An `Lᵖ` bound
+for `b T u - T (b u)` on these `u` therefore extends it uniquely to a bounded operator on `Lᵖ`
+(`ContinuousLinearMap.exists_continuousLinearMap_apply_ae_eq_smul_sub`).
 
 ## Bounds from simple functions
 
@@ -77,11 +90,11 @@ theorem mem_lpTwoSubmodule (f : Lp E p μ) :
 
 /-- The `L²` membership proof carried by an element of `Lᵖ ∩ L²`. -/
 theorem lpTwoSubmodule.memLp (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
-    MemLp (f.1 : α → E) 2 μ := f.property
+    MemLp (f.val : α → E) 2 μ := f.property
 
 /-- An `Lᵖ ∩ L²` function, read as an element of `L²`. -/
 def lpTwoSubmodule.toL2 : lpTwoSubmodule (E := E) (p := p) (μ := μ) →ₗ[ℝ] Lp E 2 μ where
-  toFun f := (lpTwoSubmodule.memLp f).toLp (f.1 : α → E)
+  toFun f := (lpTwoSubmodule.memLp f).toLp (f.val : α → E)
   map_add' := by
     intro f g
     apply Lp.ext
@@ -89,13 +102,13 @@ def lpTwoSubmodule.toL2 : lpTwoSubmodule (E := E) (p := p) (μ := μ) →ₗ[ℝ
     have hf := lpTwoSubmodule.memLp f
     have hg := lpTwoSubmodule.memLp g
     filter_upwards [hfg.coeFn_toLp, hf.coeFn_toLp, hg.coeFn_toLp,
-      Lp.coeFn_add (f.1 : Lp E p μ) g.1,
-      Lp.coeFn_add (hf.toLp (f.1 : α → E)) (hg.toLp (g.1 : α → E))]
+      Lp.coeFn_add (f.val : Lp E p μ) g.val,
+      Lp.coeFn_add (hf.toLp (f.val : α → E)) (hg.toLp (g.val : α → E))]
       with x h₁ h₂ h₃ h₄ h₅
     calc
-      _ = (f.1 : α → E) x + (g.1 : α → E) x := h₁.trans h₄
-      _ = (hf.toLp (f.1 : α → E) : α → E) x +
-          (hg.toLp (g.1 : α → E) : α → E) x := by rw [h₂, h₃]
+      _ = (f.val : α → E) x + (g.val : α → E) x := h₁.trans h₄
+      _ = (hf.toLp (f.val : α → E) : α → E) x +
+          (hg.toLp (g.val : α → E) : α → E) x := by rw [h₂, h₃]
       _ = _ := h₅.symm
   map_smul' := by
     intro c f
@@ -103,19 +116,74 @@ def lpTwoSubmodule.toL2 : lpTwoSubmodule (E := E) (p := p) (μ := μ) →ₗ[ℝ
     have hcf := lpTwoSubmodule.memLp (c • f)
     have hf := lpTwoSubmodule.memLp f
     filter_upwards [hcf.coeFn_toLp, hf.coeFn_toLp,
-      Lp.coeFn_smul c (f.1 : Lp E p μ),
-      Lp.coeFn_smul c (hf.toLp (f.1 : α → E))] with x h₁ h₂ h₃ h₄
+      Lp.coeFn_smul c (f.val : Lp E p μ),
+      Lp.coeFn_smul c (hf.toLp (f.val : α → E))] with x h₁ h₂ h₃ h₄
     calc
-      _ = ((c • f).1 : α → E) x := h₁
-      _ = c • (f.1 : α → E) x := h₃
-      _ = c • (hf.toLp (f.1 : α → E) : α → E) x := by rw [h₂]
+      _ = ((c • f).val : α → E) x := h₁
+      _ = c • (f.val : α → E) x := h₃
+      _ = c • (hf.toLp (f.val : α → E) : α → E) x := by rw [h₂]
       _ = _ := h₄.symm
 
 /-- The `L²` and `Lᵖ` views of an intersection function agree almost everywhere. -/
 theorem lpTwoSubmodule.toL2_ae (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
-    (lpTwoSubmodule.toL2 f : α → E) =ᵐ[μ] (f.1 : α → E) := by
+    (lpTwoSubmodule.toL2 f : α → E) =ᵐ[μ] (f.val : α → E) := by
   have hf := lpTwoSubmodule.memLp f
   exact hf.coeFn_toLp
+
+/-- The `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q`. On a σ-finite measure space this subspace is
+dense in `Lᵖ` for `p < ∞` and a.e. strongly measurable `b`
+(`MeasureTheory.dense_memLpSmulSubmodule`). -/
+def memLpSmulSubmodule (b : α → ℝ) (q : ℝ≥0∞) : Submodule ℝ (Lp E p μ) where
+  carrier := {u | MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ}
+  zero_mem' := by
+    refine ⟨MemLp.zero.ae_eq (Lp.coeFn_zero E p μ).symm, MemLp.zero.ae_eq ?_⟩
+    filter_upwards [Lp.coeFn_zero E p μ] with x h
+    simp only [h, Pi.zero_apply, smul_zero]
+  add_mem' {u v} hu hv := by
+    refine ⟨(hu.1.add hv.1).ae_eq (Lp.coeFn_add u v).symm, (hu.2.add hv.2).ae_eq ?_⟩
+    filter_upwards [Lp.coeFn_add u v] with x h
+    simp only [h, Pi.add_apply, smul_add]
+  smul_mem' c u hu := by
+    refine ⟨(hu.1.const_smul c).ae_eq (Lp.coeFn_smul c u).symm, (hu.2.const_smul c).ae_eq ?_⟩
+    filter_upwards [Lp.coeFn_smul c u] with x h
+    simp only [h, Pi.smul_apply, smul_comm c (b x)]
+
+/-- Membership in `memLpSmulSubmodule b q` means that `u` and `b u` have finite `L^q` norm. -/
+theorem mem_memLpSmulSubmodule {b : α → ℝ} {q : ℝ≥0∞} {u : Lp E p μ} :
+    u ∈ memLpSmulSubmodule (μ := μ) b q ↔ MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ :=
+  Iff.rfl
+
+/-- An element `u` of `memLpSmulSubmodule b q`, read as the pair `(u, b u)` in `L^q × L^q`. -/
+def memLpSmulSubmodule.toLpPair (b : α → ℝ) (q : ℝ≥0∞) :
+    memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q →ₗ[ℝ] Lp E q μ × Lp E q μ where
+  toFun u := ((mem_memLpSmulSubmodule.1 u.property).1.toLp u,
+    (mem_memLpSmulSubmodule.1 u.property).2.toLp fun x => b x • u.val x)
+  map_add' u v := by
+    rw [Prod.mk_add_mk, ← MemLp.toLp_add, ← MemLp.toLp_add]
+    congr 1
+    · exact MemLp.toLp_congr _ _ (Lp.coeFn_add u.val v.val)
+    refine MemLp.toLp_congr _ _ ?_
+    filter_upwards [Lp.coeFn_add u.val v.val] with x h
+    simp only [Submodule.coe_add, h, Pi.add_apply, smul_add]
+  map_smul' c u := by
+    rw [RingHom.id_apply, Prod.smul_mk, ← MemLp.toLp_const_smul, ← MemLp.toLp_const_smul]
+    congr 1
+    · exact MemLp.toLp_congr _ _ (Lp.coeFn_smul c u.val)
+    refine MemLp.toLp_congr _ _ ?_
+    filter_upwards [Lp.coeFn_smul c u.val] with x h
+    simp only [Submodule.coe_smul, h, Pi.smul_apply, smul_comm (b x) c]
+
+/-- The first component of `toLpPair b q u` is `u` almost everywhere. -/
+theorem memLpSmulSubmodule.toLpPair_fst_ae {b : α → ℝ} {q : ℝ≥0∞}
+    (u : memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q) :
+    ((toLpPair b q u).1 : α → E) =ᵐ[μ] (u : Lp E p μ) :=
+  (mem_memLpSmulSubmodule.1 u.property).1.coeFn_toLp
+
+/-- The second component of `toLpPair b q u` is `b u` almost everywhere. -/
+theorem memLpSmulSubmodule.toLpPair_snd_ae {b : α → ℝ} {q : ℝ≥0∞}
+    (u : memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q) :
+    ((toLpPair b q u).2 : α → E) =ᵐ[μ] fun x => b x • (u : Lp E p μ) x :=
+  (mem_memLpSmulSubmodule.1 u.property).2.coeFn_toLp
 
 variable [Fact (1 ≤ p)]
 
@@ -125,6 +193,68 @@ theorem dense_lpTwoSubmodule (hp : p ≠ ∞) :
   apply (Lp.simpleFunc.dense (E := E) (p := p) (μ := μ) hp).mono
   intro f hf
   exact Lp.simpleFunc.memLp_two hp ⟨f, hf⟩
+
+/-- A function `φ`, truncated to `Sₖ = spanningSets μ k ∩ {‖φ‖ ≤ k, |b| ≤ k}`, lies in every
+`Lʳ`, and so does its product with `b`: both are bounded and vanish off a set of finite measure.
+(The sup norm of `(φ x, b x)` is the larger of `‖φ x‖` and `|b x|`.) -/
+private theorem memLp_indicator_and_memLp_smul_indicator [SigmaFinite μ]
+    {φ : α → E} (hφ : StronglyMeasurable φ) {b : α → ℝ} (hb : StronglyMeasurable b) (k : ℕ)
+    (r : ℝ≥0∞) :
+    MemLp ((spanningSets μ k ∩ {x | ‖((φ x, b x) : E × ℝ)‖ ≤ k}).indicator φ) r μ ∧
+      MemLp (fun x => b x • (spanningSets μ k ∩ {x | ‖((φ x, b x) : E × ℝ)‖ ≤ k}).indicator
+        φ x) r μ := by
+  set S := spanningSets μ k ∩ {x | ‖((φ x, b x) : E × ℝ)‖ ≤ k}
+  have hS : MeasurableSet S := measurableSet_spanningSets_inter_norm_le (hφ.prodMk hb) k
+  have hzero (x : α) (hx : x ∉ spanningSets μ k) : S.indicator φ x = 0 :=
+    Set.indicator_of_notMem (s := S) (fun h => hx h.1) _
+  have hk := (measure_spanningSets_lt_top μ k).ne
+  refine ⟨memLp_of_norm_le_of_measure_support_ne_top (c := k)
+      (hφ.indicator hS).aestronglyMeasurable (.of_forall fun x => ?_) hk hzero r,
+    memLp_of_norm_le_of_measure_support_ne_top (u := fun x => b x • S.indicator φ x)
+      (c := k * k) (hb.aestronglyMeasurable.smul (hφ.indicator hS).aestronglyMeasurable)
+      (.of_forall fun x => ?_) hk (fun x hx => by rw [hzero x hx, smul_zero]) r⟩
+  · by_cases hx : x ∈ S
+    · simpa [hx] using (norm_fst_le ((φ x, b x) : E × ℝ)).trans hx.2
+    · simp [hx]
+  · by_cases hx : x ∈ S
+    · rw [norm_smul, Set.indicator_of_mem hx]
+      exact mul_le_mul ((norm_snd_le ((φ x, b x) : E × ℝ)).trans hx.2)
+        ((norm_fst_le ((φ x, b x) : E × ℝ)).trans hx.2) (norm_nonneg _) (Nat.cast_nonneg k)
+    · simp [hx, mul_nonneg]
+
+/-- On a σ-finite measure space, let `p < ∞` and let `b` be a real a.e. strongly measurable
+function. For every exponent `q`, the functions `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q` are dense
+in `Lᵖ`. This is a dense domain on which an operator given on `L^q` can be composed with
+multiplication by an unbounded `b`, as in the commutator `[b, T]` of a singular integral
+operator `T` with a function `b` of bounded mean oscillation. -/
+theorem dense_memLpSmulSubmodule [SigmaFinite μ] {b : α → ℝ}
+    (hb : AEStronglyMeasurable b μ) (hp : p ≠ ∞) (q : ℝ≥0∞) :
+    Dense (memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q : Set (Lp E p μ)) := by
+  intro φ
+  -- Truncate `φ` to `Sₖ = spanningSets μ k ∩ {‖φ‖ ≤ k, |b'| ≤ k}`, where `b' = b` a.e. is
+  -- strongly measurable. The truncations converge to `φ` in `Lᵖ` by dominated convergence.
+  set b' := hb.mk b
+  set S : ℕ → Set α := fun k => spanningSets μ k ∩ {x | ‖((φ x, b' x) : E × ℝ)‖ ≤ k}
+  set φs : ℕ → α → E := fun k => (S k).indicator φ
+  have hφs (k : ℕ) (r : ℝ≥0∞) : MemLp (φs k) r μ ∧ MemLp (fun x => b' x • φs k x) r μ :=
+    memLp_indicator_and_memLp_smul_indicator (Lp.stronglyMeasurable φ)
+      hb.stronglyMeasurable_mk k r
+  have hmem (k : ℕ) : (hφs k p).1.toLp (φs k) ∈ memLpSmulSubmodule (μ := μ) b q := by
+    refine mem_memLpSmulSubmodule.2
+      ⟨(hφs k q).1.ae_eq (hφs k p).1.coeFn_toLp.symm, (hφs k q).2.ae_eq ?_⟩
+    filter_upwards [hb.ae_eq_mk, (hφs k p).1.coeFn_toLp] with x h₁ h₂
+    rw [h₁, h₂]
+  refine mem_closure_of_tendsto (TauCeti.tendsto_toLp_of_ae_tendsto_of_norm_le (l := Filter.atTop)
+    hp (fun k => (hφs k p).1) Filter.EventuallyEq.rfl
+    (fun k => .of_forall fun x => norm_indicator_le_norm_self _ _) (.of_forall fun x => ?_))
+    (.of_forall hmem)
+  have hlim : Filter.Tendsto (fun k => (S k).indicator (fun x => ((φ x, b' x) : E × ℝ)) x)
+      Filter.atTop (nhds (φ x, b' x)) :=
+    tendsto_indicator_spanningSets_inter_norm_le _ x
+  refine ((continuous_fst.tendsto _).comp hlim).congr fun k => ?_
+  by_cases hx : x ∈ S k
+  · simp only [Function.comp_apply, φs, Set.indicator_of_mem hx]
+  · simp only [Function.comp_apply, φs, Set.indicator_of_notMem hx, Prod.fst_zero]
 
 end MeasureTheory
 
@@ -154,22 +284,22 @@ def strongTypeOnIntersection (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ≥0)
   toFun f := (memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f)
     (by
       have hf := lpTwoSubmodule.memLp f
-      exact (Lp.memLp f.1).ae_eq hf.coeFn_toLp.symm)).toLp (T (lpTwoSubmodule.toL2 f))
+      exact (Lp.memLp f.val).ae_eq hf.coeFn_toLp.symm)).toLp (T (lpTwoSubmodule.toL2 f))
   map_add' := by
     intro f g
     apply Lp.ext
     let hfg := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 (f + g))
       (by
         have h := lpTwoSubmodule.memLp (f + g)
-        exact (Lp.memLp (f + g).1).ae_eq h.coeFn_toLp.symm)
+        exact (Lp.memLp (f + g).val).ae_eq h.coeFn_toLp.symm)
     let hf := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f)
       (by
         have h := lpTwoSubmodule.memLp f
-        exact (Lp.memLp f.1).ae_eq h.coeFn_toLp.symm)
+        exact (Lp.memLp f.val).ae_eq h.coeFn_toLp.symm)
     let hg := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 g)
       (by
         have h := lpTwoSubmodule.memLp g
-        exact (Lp.memLp g.1).ae_eq h.coeFn_toLp.symm)
+        exact (Lp.memLp g.val).ae_eq h.coeFn_toLp.symm)
     filter_upwards [hfg.coeFn_toLp, hf.coeFn_toLp, hg.coeFn_toLp,
       Lp.coeFn_add (T (lpTwoSubmodule.toL2 f)) (T (lpTwoSubmodule.toL2 g)),
       Lp.coeFn_add (hf.toLp _) (hg.toLp _)] with x h₁ h₂ h₃ h₄ h₅
@@ -187,11 +317,11 @@ def strongTypeOnIntersection (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ≥0)
     let hcf := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 (c • f))
       (by
         have h := lpTwoSubmodule.memLp (c • f)
-        exact (Lp.memLp (c • f).1).ae_eq h.coeFn_toLp.symm)
+        exact (Lp.memLp (c • f).val).ae_eq h.coeFn_toLp.symm)
     let hf := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f)
       (by
         have h := lpTwoSubmodule.memLp f
-        exact (Lp.memLp f.1).ae_eq h.coeFn_toLp.symm)
+        exact (Lp.memLp f.val).ae_eq h.coeFn_toLp.symm)
     filter_upwards [hcf.coeFn_toLp, hf.coeFn_toLp,
       Lp.coeFn_smul c (T (lpTwoSubmodule.toL2 f)), Lp.coeFn_smul c (hf.toLp _)]
       with x h₁ h₂ h₃ h₄
@@ -210,7 +340,7 @@ theorem strongTypeOnIntersection_ae (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ
     (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
     (strongTypeOnIntersection T C hT f : α → F) =ᵐ[μ] T (lpTwoSubmodule.toL2 f) := by
   have hf : MemLp (lpTwoSubmodule.toL2 f : α → E) p μ :=
-    (Lp.memLp f.1).ae_eq (lpTwoSubmodule.toL2_ae f).symm
+    (Lp.memLp f.val).ae_eq (lpTwoSubmodule.toL2_ae f).symm
   exact (memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f) hf).coeFn_toLp
 
 variable [Fact (1 ≤ p)]
@@ -223,16 +353,11 @@ theorem norm_strongTypeOnIntersection_le (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C 
     ‖strongTypeOnIntersection T C hT f‖ ≤ C * ‖f‖ := by
   have hf := lpTwoSubmodule.memLp f
   have hfp : MemLp (lpTwoSubmodule.toL2 f : α → E) p μ :=
-    (Lp.memLp f.1).ae_eq hf.coeFn_toLp.symm
+    (Lp.memLp f.val).ae_eq hf.coeFn_toLp.symm
   have hTp := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f) hfp
-  have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top hfp.ne)
-    (hT (lpTwoSubmodule.toL2 f) hfp)
-  have heq : eLpNorm (lpTwoSubmodule.toL2 f : α → E) p μ = eLpNorm (f.1 : α → E) p μ :=
-    eLpNorm_congr_ae hf.coeFn_toLp
   -- The bundled map applies by turning its `L²` value into the corresponding `Lᵖ` class.
   change ‖hTp.toLp (T (lpTwoSubmodule.toL2 f))‖ ≤ (C : ℝ) * ‖(f : Lp E p μ)‖
-  rw [Lp.norm_toLp, Lp.norm_def]
-  simpa [heq, ENNReal.toReal_mul] using h
+  exact hTp.norm_toLp_le_of_eLpNorm_le hf.coeFn_toLp (hT _ hfp)
 
 variable [CompleteSpace F]
 
@@ -250,9 +375,9 @@ theorem strongTypeExtension_apply (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ�
     (hT : ∀ f : Lp E 2 μ, MemLp f p μ →
       eLpNorm (T f) p μ ≤ C * eLpNorm f p μ) (hp : p ≠ ∞)
     (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
-    strongTypeExtension T C hT hp f.1 = strongTypeOnIntersection T C hT f := by
+    strongTypeExtension T C hT hp f.val = strongTypeOnIntersection T C hT f := by
   apply LinearMap.extendOfNorm_eq
-  · exact (denseRange_subtype_val).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
+  · exact (denseRange_subtypeVal).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
   · exact ⟨C, norm_strongTypeOnIntersection_le T C hT⟩
 
 /-- The operator norm of the extended map is bounded by the strong-type constant. -/
@@ -261,7 +386,7 @@ theorem norm_strongTypeExtension_le (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ
       eLpNorm (T f) p μ ≤ C * eLpNorm f p μ) (hp : p ≠ ∞) :
     ‖strongTypeExtension T C hT hp‖ ≤ C := by
   apply LinearMap.opNorm_extendOfNorm_le
-  · exact (denseRange_subtype_val).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
+  · exact (denseRange_subtypeVal).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
   · exact C.property
   · exact norm_strongTypeOnIntersection_le T C hT
 
@@ -287,11 +412,11 @@ theorem strongTypeExtension_unique (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ�
       eLpNorm (T f) p μ ≤ C * eLpNorm f p μ) (hp : p ≠ ∞)
     (S : Lp E p μ →L[ℝ] Lp F p μ)
     (hS : ∀ f : lpTwoSubmodule (E := E) (p := p) (μ := μ),
-      S f.1 = strongTypeOnIntersection T C hT f) :
+      S f.val = strongTypeOnIntersection T C hT f) :
     S = strongTypeExtension T C hT hp := by
   symm
   apply LinearMap.extendOfNorm_unique
-    ((denseRange_subtype_val).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp))
+    ((denseRange_subtypeVal).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp))
     C (norm_strongTypeOnIntersection_le T C hT)
   apply LinearMap.ext
   intro f
@@ -309,14 +434,122 @@ theorem strongTypeExtension_unique_of_ae (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C 
   intro g
   have h₂ := lpTwoSubmodule.memLp g
   have hp' : MemLp (lpTwoSubmodule.toL2 g : α → E) p μ :=
-    (Lp.memLp g.1).ae_eq h₂.coeFn_toLp.symm
-  have heq : hp'.toLp (lpTwoSubmodule.toL2 g : α → E) = g.1 :=
+    (Lp.memLp g.val).ae_eq h₂.coeFn_toLp.symm
+  have heq : hp'.toLp (lpTwoSubmodule.toL2 g : α → E) = g.val :=
     Lp.ext (hp'.coeFn_toLp.trans h₂.coeFn_toLp)
   have hSg := hS (lpTwoSubmodule.toL2 g) hp'
   rw [heq] at hSg
   have hEg := strongTypeExtension_apply_of_memLp T C hT hp (lpTwoSubmodule.toL2 g) hp'
   rw [heq, strongTypeExtension_apply T C hT hp g] at hEg
   exact Lp.ext (hSg.trans hEg.symm)
+
+end ContinuousLinearMap
+
+/-! ### Extending an operator composed with multiplication
+
+For a bounded operator `T` on `L^q` and an unbounded real function `b`, the expression
+`b T f - T (b f)`, as in a commutator `[b, T]`, is defined a priori only for `f ∈ L^q` with
+`b f ∈ L^q`. An `Lᵖ` bound for it on the dense set of such `f ∈ Lᵖ` extends it uniquely to a
+bounded operator on `Lᵖ` (`ContinuousLinearMap.exists_continuousLinearMap_apply_ae_eq_smul_sub`). -/
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+open scoped ENNReal NNReal
+
+variable {α E F : Type*} [MeasurableSpace α] {μ : Measure α}
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {p : ℝ≥0∞}
+
+/-- The map `u ↦ b T u - T (b u)` on `memLpSmulSubmodule b q`, with values in `Lᵖ`, given that
+it takes values in `Lᵖ`. -/
+private def memLpSmulSubmodule.smulSub {q : ℝ≥0∞} [Fact (1 ≤ q)] (T : Lp E q μ →L[ℝ] Lp F q μ)
+    {b : α → ℝ} (hmem : ∀ u : memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q,
+      MemLp (fun x => b x • T (memLpSmulSubmodule.toLpPair b q u).1 x -
+        T (memLpSmulSubmodule.toLpPair b q u).2 x) p μ) :
+    memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q →ₗ[ℝ] Lp F p μ where
+  toFun u := (hmem u).toLp _
+  map_add' u v := by
+    refine (MemLp.toLp_congr _ _ ?_).trans (MemLp.toLp_add _ _)
+    filter_upwards [Lp.coeFn_add (T (memLpSmulSubmodule.toLpPair b q u).1)
+        (T (memLpSmulSubmodule.toLpPair b q v).1),
+      Lp.coeFn_add (T (memLpSmulSubmodule.toLpPair b q u).2)
+        (T (memLpSmulSubmodule.toLpPair b q v).2)] with x h₁ h₂
+    simp only [map_add, Prod.fst_add, Prod.snd_add, Pi.add_apply, h₁, h₂, smul_add]
+    abel
+  map_smul' a u := by
+    refine (MemLp.toLp_congr _ _ ?_).trans (MemLp.toLp_const_smul _ _)
+    filter_upwards [Lp.coeFn_smul a (T (memLpSmulSubmodule.toLpPair b q u).1),
+      Lp.coeFn_smul a (T (memLpSmulSubmodule.toLpPair b q u).2)] with x h₁ h₂
+    simp only [map_smul, Prod.smul_fst, Prod.smul_snd, Pi.smul_apply, RingHom.id_apply, h₁, h₂,
+      smul_sub, smul_comm (b x) a]
+
+private theorem memLpSmulSubmodule.smulSub_apply {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    (T : Lp E q μ →L[ℝ] Lp F q μ) {b : α → ℝ}
+    (hmem : ∀ u : memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q,
+      MemLp (fun x => b x • T (memLpSmulSubmodule.toLpPair b q u).1 x -
+        T (memLpSmulSubmodule.toLpPair b q u).2 x) p μ)
+    (u : memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q) :
+    memLpSmulSubmodule.smulSub T hmem u = (hmem u).toLp _ :=
+  rfl
+
+/-- **Extension of an operator composed with multiplication.** Let `1 ≤ p < ∞`, let `T` be a
+bounded operator on `L^q` of a σ-finite measure space, and let `b` be a real a.e. strongly
+measurable function. If `‖b T f - T g‖_p ≤ B ‖f‖_p` for all `f, g ∈ L^q` with `g = b f` and
+`f ∈ Lᵖ`, as for a commutator `[b, T]`, then there is a bounded operator `S` on `Lᵖ` with
+`‖S‖ ≤ B` and `S f = b T f - T g` for all such `f, g`. These `f` are dense in `Lᵖ`
+(`MeasureTheory.dense_memLpSmulSubmodule`), so `S` is the only bounded operator with the
+latter property. -/
+theorem exists_continuousLinearMap_apply_ae_eq_smul_sub [SigmaFinite μ] [Fact (1 ≤ p)]
+    [CompleteSpace F] {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    (T : Lp E q μ →L[ℝ] Lp F q μ) {b : α → ℝ} (hb : AEStronglyMeasurable b μ) (hp : p ≠ ∞)
+    {B : ℝ≥0} (hB : ∀ f g : Lp E q μ, MemLp f p μ → g =ᵐ[μ] (fun x => b x • f x) →
+      eLpNorm (fun x => b x • T f x - T g x) p μ ≤ B * eLpNorm f p μ) :
+    ∃ S : Lp E p μ →L[ℝ] Lp F p μ, ‖S‖ ≤ B ∧
+      (∀ (f g : Lp E q μ) (hf : MemLp f p μ), g =ᵐ[μ] (fun x => b x • f x) →
+        S (hf.toLp f) =ᵐ[μ] fun x => b x • T f x - T g x) ∧
+      ∀ S' : Lp E p μ →L[ℝ] Lp F p μ,
+        (∀ (f g : Lp E q μ) (hf : MemLp f p μ), g =ᵐ[μ] (fun x => b x • f x) →
+          S' (hf.toLp f) =ᵐ[μ] fun x => b x • T f x - T g x) → S' = S := by
+  set D := memLpSmulSubmodule (E := E) (p := p) (μ := μ) b q
+  set j := memLpSmulSubmodule.toLpPair (E := E) (p := p) (μ := μ) b q
+  -- `j u = (u, b u)`, read in `L^q × L^q`.
+  have hj₁ (u : D) : ((j u).1 : α → E) =ᵐ[μ] u := memLpSmulSubmodule.toLpPair_fst_ae u
+  have hj₂ (u : D) : ((j u).2 : α → E) =ᵐ[μ] fun x => b x • (j u).1 x := by
+    filter_upwards [memLpSmulSubmodule.toLpPair_snd_ae u, hj₁ u] with x h₁ h₂
+    rw [h₂]
+    exact h₁
+  have hjp (u : D) : MemLp (j u).1 p μ := (Lp.memLp u.val).ae_eq (hj₁ u).symm
+  have hmem (u : D) : MemLp (fun x => b x • T (j u).1 x - T (j u).2 x) p μ :=
+    (hB _ _ (hjp u) (hj₂ u)).trans_lt (ENNReal.mul_lt_top (by finiteness) (hjp u))
+  set c := memLpSmulSubmodule.smulSub T hmem
+  have hc (u : D) : c u =ᵐ[μ] fun x => b x • T (j u).1 x - T (j u).2 x := (hmem u).coeFn_toLp
+  have hnorm (u : D) : ‖c u‖ ≤ B * ‖D.subtype u‖ := by
+    rw [memLpSmulSubmodule.smulSub_apply, Submodule.subtype_apply]
+    exact (hmem u).norm_toLp_le_of_eLpNorm_le (hj₁ u) (hB _ _ (hjp u) (hj₂ u))
+  have hdense : DenseRange D.subtype :=
+    denseRange_subtypeVal.2 (dense_memLpSmulSubmodule hb hp q)
+  refine ⟨c.extendOfNorm D.subtype, LinearMap.opNorm_extendOfNorm_le hdense B.property hnorm,
+    fun f g hf hg => ?_, fun S' hS' => ?_⟩
+  · -- `f`, read in `Lᵖ`, lies in `D`, and `j` sends it back to `(f, g)`.
+    have hu : hf.toLp f ∈ D := mem_memLpSmulSubmodule.2
+      ⟨(Lp.memLp f).ae_eq hf.coeFn_toLp.symm, (Lp.memLp g).ae_eq (hg.trans
+        (by filter_upwards [hf.coeFn_toLp] with x h; rw [h]))⟩
+    have hju : j ⟨_, hu⟩ = (f, g) := by
+      refine Prod.ext (Lp.ext ((hj₁ _).trans hf.coeFn_toLp)) (Lp.ext ((hj₂ _).trans ?_))
+      filter_upwards [hj₁ ⟨_, hu⟩, hf.coeFn_toLp, hg] with x h₁ h₂ h₃
+      rw [h₁, h₂, h₃]
+    have h := LinearMap.extendOfNorm_eq hdense ⟨B, hnorm⟩ ⟨_, hu⟩
+    rw [Submodule.subtype_apply, Submodule.coe_mk] at h
+    rw [h]
+    simpa only [hju] using hc ⟨_, hu⟩
+  · refine (LinearMap.extendOfNorm_unique hdense B hnorm S'
+      (LinearMap.ext fun u => Lp.ext ?_)).symm
+    have hu : (hjp u).toLp (j u).1 = u.val := Lp.ext ((hjp u).coeFn_toLp.trans (hj₁ u))
+    have h := hS' (j u).1 (j u).2 (hjp u) (hj₂ u)
+    rw [hu] at h
+    exact h.trans (hc u).symm
 
 end ContinuousLinearMap
 

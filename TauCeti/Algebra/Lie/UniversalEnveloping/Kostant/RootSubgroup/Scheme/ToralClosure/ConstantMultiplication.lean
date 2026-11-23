@@ -64,6 +64,48 @@ universe u v w
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
 
+section TorusGenericMatrix
+
+variable {κ : Type} {V : Type} [AddCommGroup V] (M : AddSubgroup V)
+variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (wt : Fin n → κ → ℤ)
+
+/-- The generic matrix of the represented weight-torus coordinate map is the weight-diagonal
+matrix at the universal point of the split torus. -/
+private theorem exists_map_genericMatrix_weightTorusCoordinateMap [Fintype κ] :
+    ∃ s : κ → ((DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)ˣ,
+      (GeneralLinear.genericMatrix ℤ n).map
+          (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom.toAlgHom =
+        ((kostantTorusMatrix M b wt s :
+          Matrix.GeneralLinearGroup (Fin n)
+            (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) :
+          Matrix (Fin n) (Fin n)
+            (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) := by
+  let p : HopfAlgebra.points (R := ℤ)
+      (H := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)
+      (CommAlgCat.of ℤ
+        (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) :=
+    toConv (AlgHom.id ℤ
+      (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)
+  refine ⟨SplitTorus.pointsMulEquiv (R := ℤ) (σ := κ) p, ?_⟩
+  have hq : (CommHopfAlgCat.Hom.mapPointsFunctor
+        (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt)).app
+        (CommAlgCat.of ℤ
+          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) p =
+      toConv (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom.toAlgHom := by
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+    exact congrArg toConv (AlgHom.ext fun x => rfl)
+  rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
+  refine congrArg _ ?_
+  rw [← GeneralLinear.pointsMulEquiv_apply, ← hq,
+    GeneralLinear.mapPointsFunctor_weightTorusCoordinateMap_app,
+    GeneralLinear.pointsMulEquiv_diagonalTorusPoints, kostantTorusMatrix_apply]
+  refine congrArg _ ?_
+  funext i
+  rw [GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap wt
+    (CommAlgCat.of ℤ (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) p i]
+
+end TorusGenericMatrix
+
 variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
 variable {I : Type w} {κ : Type} [Finite κ]
 variable {V : Type} [AddCommGroup V] [Module ℚ V]
@@ -128,42 +170,6 @@ theorem preserves_of_mem_kostantToralPointsSubgroup
 
 
 section Generators
-
-omit [Module ℚ V] in
-/-- The generic matrix of the represented weight-torus coordinate map is the weight-diagonal
-matrix at the universal point of the split torus. -/
-private theorem exists_map_genericMatrix_weightTorusCoordinateMap [Fintype κ] :
-    ∃ s : κ → ((DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)ˣ,
-      (GeneralLinear.genericMatrix ℤ n).map
-          (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom.toAlgHom =
-        ((kostantTorusMatrix M b wt s :
-          Matrix.GeneralLinearGroup (Fin n)
-            (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) :
-          Matrix (Fin n) (Fin n)
-            (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) := by
-  let p : HopfAlgebra.points (R := ℤ)
-      (H := (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)
-      (CommAlgCat.of ℤ
-        (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) :=
-    toConv (AlgHom.id ℤ
-      (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)
-  refine ⟨SplitTorus.pointsMulEquiv (R := ℤ) (σ := κ) p, ?_⟩
-  have hq : (CommHopfAlgCat.Hom.mapPointsFunctor
-        (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt)).app
-        (CommAlgCat.of ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) p =
-      toConv (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom.toAlgHom := by
-    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
-    exact congrArg toConv (AlgHom.ext fun x => rfl)
-  rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
-  refine congrArg _ ?_
-  rw [← GeneralLinear.pointsMulEquiv_apply, ← hq,
-    GeneralLinear.mapPointsFunctor_weightTorusCoordinateMap_app,
-    GeneralLinear.pointsMulEquiv_diagonalTorusPoints, kostantTorusMatrix_apply]
-  refine congrArg _ ?_
-  funext i
-  rw [GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap wt
-    (CommAlgCat.of ℤ (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) p i]
 
 /-- **The toral Kostant carrier preserves a multiplication preserved by its generators.** If
 every represented root-subgroup matrix and every represented weight-torus matrix preserves the

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.JointEigenspace
 public import Mathlib.LinearAlgebra.Complex.Module
+public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.Analysis.CStarAlgebra.Fuglede
 import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 import Mathlib.Tactic.Module
@@ -46,6 +47,10 @@ dimensionality.
 * `LinearMap.exists_orthonormalBasis_apply_eq_smul_of_isStarNormal`: **the spectral theorem for
   normal operators**, a normal operator on a finite-dimensional complex inner product space has
   an orthonormal basis of eigenvectors, indexed by any finite type of the right cardinality.
+
+* `LinearMap.rootMultiplicity_charpoly_of_isStarNormal`: the algebraic multiplicity of an
+  eigenvalue of a normal operator is its geometric multiplicity, since a normal operator is
+  semisimple (`LinearMap.isFinitelySemisimple_of_isStarNormal`).
 
 * `IsStarNormal.adjoint_apply_eq_smul_iff`: for a normal bounded operator `T`,
   `T† x = conj μ • x ↔ T x = μ • x`.
@@ -223,7 +228,7 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
   have hS (p : ι × Bool) : (S p).IsSymmetric := by
     rw [isSymmetric_iff_isSelfAdjoint]
     rcases p with ⟨i, _ | _⟩
-    exacts [(ℜ (T i)).2, (ℑ (T i)).2]
+    exacts [(ℜ (T i)).property, (ℑ (T i)).property]
   have hSC : Pairwise (Commute on S) := by
     rintro ⟨i, a⟩ ⟨j, b⟩ -
     have := hT i
@@ -244,8 +249,8 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
   let χ : Fin (finrank ℂ E) → J := fun j =>
     hVJ.subordinateOrthonormalBasisIndex rfl j hOJ
   let e : κ ≃ Fin (finrank ℂ E) := Fintype.equivFinOfCardEq hκ
-  refine ⟨b.reindex e.symm, fun i j => (χ (e j)).1 (i, false) +
-    Complex.I * (χ (e j)).1 (i, true), fun i j => ?_⟩
+  refine ⟨b.reindex e.symm, fun i j => (χ (e j)).val (i, false) +
+    Complex.I * (χ (e j)).val (i, true), fun i j => ?_⟩
   have hmem := hVJ.subordinateOrthonormalBasis_subordinate rfl (e j) hOJ
   rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm]
   exact (T i).apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart
@@ -265,5 +270,24 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_isStarNormal (T : E →ₗ[ℂ]
   obtain ⟨b, μ, hb⟩ := TauCeti.exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
     (fun _ : Unit => T) (fun _ => inferInstance) (fun _ _ _ => Commute.refl _) hι
   exact ⟨b, μ (), hb ()⟩
+
+/-- A normal operator on a finite-dimensional complex inner product space is semisimple: by the
+spectral theorem its eigenspaces span the space. -/
+theorem isFinitelySemisimple_of_isStarNormal (T : E →ₗ[ℂ] E) [IsStarNormal T] :
+    IsFinitelySemisimple T := by
+  obtain ⟨b, ν, hb⟩ := T.exists_orthonormalBasis_apply_eq_smul_of_isStarNormal
+    (ι := Fin (finrank ℂ E)) (Fintype.card_fin _)
+  have htop : ⨆ μ, eigenspace T μ = ⊤ := by
+    rw [eq_top_iff, ← b.toBasis.span_eq, Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    exact Submodule.mem_iSup_of_mem (ν i) (mem_eigenspace_iff.2 (by simpa using hb i))
+  exact (TauCeti.isSemisimple_of_iSup_eigenspace_eq_top htop).isFinitelySemisimple
+
+/-- For a normal operator on a finite-dimensional complex inner product space, the algebraic
+multiplicity of an eigenvalue, its multiplicity as a root of the characteristic polynomial, is its
+geometric multiplicity. -/
+theorem rootMultiplicity_charpoly_of_isStarNormal (T : E →ₗ[ℂ] E) [IsStarNormal T] (μ : ℂ) :
+    T.charpoly.rootMultiplicity μ = finrank ℂ (eigenspace T μ) :=
+  (T.isFinitelySemisimple_of_isStarNormal).rootMultiplicity_charpoly μ
 
 end LinearMap

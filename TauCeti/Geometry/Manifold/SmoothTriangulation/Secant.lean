@@ -84,7 +84,7 @@ variable {ι : Type*} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n 
 injective on the directions of the simplex, is a `Cⁿ` immersion of the simplex for every `n`. -/
 theorem isSimplexImmersion {σ : Finset ι} (L : (σ → ℝ) →ₗ[ℝ] E)
     (hL : ∀ v : σ → ℝ, ∑ a, v a = 0 → L v = 0 → v = 0) :
-    TauCeti.IsSimplexImmersion 𝓘(ℝ, E) n fun x : StandardSimplex σ => L fun a => x.1 a := by
+    TauCeti.IsSimplexImmersion 𝓘(ℝ, E) n fun x : StandardSimplex σ => L fun a => x.val a := by
   -- The domain of `L` is finite dimensional, so `L` is continuous, and it is its own derivative.
   let L' : (σ → ℝ) →L[ℝ] E := L.toContinuousLinearMap
   exact TauCeti.isSimplexImmersion_iff.mpr ⟨L', fun _ => rfl, L'.contMDiff.contMDiffOn,
@@ -102,15 +102,15 @@ variable {ι : Type*} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n 
 /-- The secant map of `f : |K| → E`: the map which agrees with `f` at the vertices of `K` and is
 linear in barycentric coordinates on every closed simplex. -/
 def secantMap (f : Realization K → E) (x : Realization K) : E :=
-  Finsupp.linearCombination ℝ (fun v => f (vertex K v)) x.1
+  Finsupp.linearCombination ℝ (fun v => f (vertex K v)) x.val
 
 variable {K}
 
 /-- The secant map evaluates a point of the realization as the combination, with its
 barycentric coordinates as weights, of the values of `f` at the vertices. -/
 theorem secantMap_apply (f : Realization K → E) (x : Realization K) :
-    K.secantMap f x = x.1.sum fun v t => t • f (vertex K v) :=
-  Finsupp.linearCombination_apply ℝ x.1
+    K.secantMap f x = x.val.sum fun v t => t • f (vertex K v) :=
+  Finsupp.linearCombination_apply ℝ x.val
 
 /-- The secant map agrees with `f` at every vertex. -/
 @[simp]
@@ -120,17 +120,17 @@ theorem secantMap_vertex (f : Realization K → E) (v : ι) :
 
 /-- On a closed simplex `σ`, the secant map is the combination of the values of `f` at the
 vertices of `σ`, weighted by the barycentric coordinates. -/
-theorem secantMap_faceInclusion (f : Realization K → E) (σ : Face K) (x : StandardSimplex σ.1) :
-    K.secantMap f (faceInclusion K σ x) = ∑ a : σ.1, x.1 a • f (vertex K a) := by
-  rw [secantMap_apply, faceInclusion_val, Finsupp.sum_of_support_subset x.1
+theorem secantMap_faceInclusion (f : Realization K → E) (σ : Face K) (x : StandardSimplex σ.val) :
+    K.secantMap f (faceInclusion K σ x) = ∑ a : σ.val, x.val a • f (vertex K a) := by
+  rw [secantMap_apply, faceInclusion_val, Finsupp.sum_of_support_subset x.val
     (StandardSimplex.support_subset x) (fun v t => t • f (vertex K v))
     fun _ _ => zero_smul ℝ _]
-  exact (Finset.sum_coe_sort σ.1 fun a => x.1 a • f (vertex K a)).symm
+  exact (Finset.sum_coe_sort σ.val fun a => x.val a • f (vertex K a)).symm
 
 /-- The secant map is continuous. -/
 theorem continuous_secantMap (f : Realization K → E) : Continuous (K.secantMap f) := by
   refine continuous_iff_faceInclusion.mpr fun σ => ?_
-  have hcoord (a : ι) : Continuous fun x : StandardSimplex σ.1 => x.1 a :=
+  have hcoord (a : ι) : Continuous fun x : StandardSimplex σ.val => x.val a :=
     (continuous_apply a).comp continuous_induced_dom
   simp_rw [comp_def, secantMap_faceInclusion]
   exact continuous_finsetSum _ fun a _ => (hcoord a).smul continuous_const
@@ -147,21 +147,21 @@ theorem secantMap_secantMap (f : Realization K → E) :
 /-- **Uniqueness of secant maps.** A map that is linear in barycentric coordinates on every closed
 simplex, and agrees with `f` at the vertices, is the secant map of `f`. -/
 theorem eq_secantMap {f g : Realization K → E}
-    (hg : ∀ (σ : Face K) (x : StandardSimplex σ.1),
-      g (faceInclusion K σ x) = ∑ a : σ.1, x.1 a • g (vertex K a))
+    (hg : ∀ (σ : Face K) (x : StandardSimplex σ.val),
+      g (faceInclusion K σ x) = ∑ a : σ.val, x.val a • g (vertex K a))
     (hfg : ∀ v : ι, g (vertex K v) = f (vertex K v)) :
     g = K.secantMap f := by
   funext x
   -- Every point of the realization lies in the closed simplex spanned by its carrier.
-  obtain ⟨σ, y, rfl⟩ : ∃ (σ : Face K) (y : StandardSimplex σ.1), faceInclusion K σ y = x :=
-    ⟨carrier K x, ⟨x.1, mem_convexHull_carrier K x⟩, Subtype.ext (faceInclusion_val _ _ _)⟩
+  obtain ⟨σ, y, rfl⟩ : ∃ (σ : Face K) (y : StandardSimplex σ.val), faceInclusion K σ y = x :=
+    ⟨carrier K x, ⟨x.val, mem_convexHull_carrier K x⟩, Subtype.ext (faceInclusion_val _ _ _)⟩
   simp only [hg, secantMap_faceInclusion, hfg]
 
 /-- A map is its own secant map exactly when it is linear in barycentric coordinates on every
 closed simplex. -/
 theorem secantMap_eq_self_iff {g : Realization K → E} :
-    K.secantMap g = g ↔ ∀ (σ : Face K) (x : StandardSimplex σ.1),
-      g (faceInclusion K σ x) = ∑ a : σ.1, x.1 a • g (vertex K a) :=
+    K.secantMap g = g ↔ ∀ (σ : Face K) (x : StandardSimplex σ.val),
+      g (faceInclusion K σ x) = ∑ a : σ.val, x.val a • g (vertex K a) :=
   ⟨fun h σ x => by
     conv_lhs => rw [← h]
     exact secantMap_faceInclusion g σ x,
@@ -173,15 +173,15 @@ the simplex is everywhere within `ε` of a linear map `A` with `c * ∑ a, |v a|
 directions `v` of the simplex, and `ε < c`, then the secant map of `f` is a `Cⁿ` immersion of
 `σ`, for every `n`. -/
 theorem isSimplexImmersion_secantMap_comp_faceInclusion [DecidableEq ι] {f : Realization K → E}
-    {σ : Face K} {F : (σ.1 → ℝ) → E} (hFf : ∀ a : σ.1, F (Pi.single a 1) = f (vertex K a))
-    {F' : (σ.1 → ℝ) → (σ.1 → ℝ) →L[ℝ] E} {A : (σ.1 → ℝ) →L[ℝ] E} {ε c : ℝ}
-    (hF : ∀ y ∈ range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights,
-      HasFDerivWithinAt F (F' y) (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) y)
-    (hA : ∀ y ∈ range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights, ‖F' y - A‖ ≤ ε)
-    (hc : ∀ v : σ.1 → ℝ, ∑ a, v a = 0 → c * ∑ a, |v a| ≤ ‖A v‖) (hεc : ε < c) :
+    {σ : Face K} {F : (σ.val → ℝ) → E} (hFf : ∀ a : σ.val, F (Pi.single a 1) = f (vertex K a))
+    {F' : (σ.val → ℝ) → (σ.val → ℝ) →L[ℝ] E} {A : (σ.val → ℝ) →L[ℝ] E} {ε c : ℝ}
+    (hF : ∀ y ∈ range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights,
+      HasFDerivWithinAt F (F' y) (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights) y)
+    (hA : ∀ y ∈ range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights, ‖F' y - A‖ ≤ ε)
+    (hc : ∀ v : σ.val → ℝ, ∑ a, v a = 0 → c * ∑ a, |v a| ≤ ‖A v‖) (hεc : ε < c) :
     TauCeti.IsSimplexImmersion 𝓘(ℝ, E) n (K.secantMap f ∘ faceInclusion K σ) := by
-  have hL : K.secantMap f ∘ faceInclusion K σ = fun x : StandardSimplex σ.1 =>
-      Fintype.linearCombination ℝ (fun a => F (Pi.single a 1)) fun a => x.1 a := by
+  have hL : K.secantMap f ∘ faceInclusion K σ = fun x : StandardSimplex σ.val =>
+      Fintype.linearCombination ℝ (fun a => F (Pi.single a 1)) fun a => x.val a := by
     funext x
     simp only [comp_apply, secantMap_faceInclusion, Fintype.linearCombination_apply, hFf]
   rw [hL]
@@ -202,33 +202,34 @@ theorem isSimplexImmersion_secantMap_comp_faceInclusion_of_injOn {f : Realizatio
     {σ : Face K} (hinj : InjOn (K.secantMap f) (range (faceInclusion K σ))) :
     TauCeti.IsSimplexImmersion 𝓘(ℝ, E) n (K.secantMap f ∘ faceInclusion K σ) := by
   classical
-  set L := Fintype.linearCombination ℝ fun a : σ.1 => f (vertex K a)
-  have hL : K.secantMap f ∘ faceInclusion K σ = fun x : StandardSimplex σ.1 => L fun a => x.1 a :=
+  set L := Fintype.linearCombination ℝ fun a : σ.val => f (vertex K a)
+  have hL : K.secantMap f ∘ faceInclusion K σ = fun x : StandardSimplex σ.val => L fun a => x.val a
+      :=
     funext fun x => by rw [comp_apply, secantMap_faceInclusion, Fintype.linearCombination_apply]
   rw [hL]
   refine LinearMap.isSimplexImmersion _ fun v hv hLv => ?_
   -- Moving the barycenter along a direction killed by `L` would not change its value, so `L` is
   -- injective on the directions of the standard simplex, the convex hull of the unit vectors.
   refine L.toAffineMap.eq_zero_of_injOn_convexHull
-    (s := range fun a : σ.1 => Pi.single a (1 : ℝ)) ?_ ?_ (by simpa using hLv)
+    (s := range fun a : σ.val => Pi.single a (1 : ℝ)) ?_ ?_ (by simpa using hLv)
   · -- Points of the convex hull are the coordinates of points of the closed simplex.
-    have hhull : convexHull ℝ (range fun a : σ.1 => Pi.single a (1 : ℝ)) ⊆
-        range fun x : StandardSimplex σ.1 => fun a : σ.1 => x.1 a := by
+    have hhull : convexHull ℝ (range fun a : σ.val => Pi.single a (1 : ℝ)) ⊆
+        range fun x : StandardSimplex σ.val => fun a : σ.val => x.val a := by
       rw [Finset.range_standardSimplex_coordinates]
       exact convexHull_min (range_subset_iff.2 fun a => ⟨.single a, by
         simp [Finsupp.single_eq_pi_single]⟩)
-        (Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ σ.1)
+        (Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ σ.val)
     rintro _ hw₁ _ hw₂ hw
     obtain ⟨x₁, rfl⟩ := hhull hw₁
     obtain ⟨x₂, rfl⟩ := hhull hw₂
     have heq := congrArg Subtype.val (hinj ⟨x₁, rfl⟩ ⟨x₂, rfl⟩
       (by simpa only [comp_apply] using (congrFun hL x₁).trans (hw.trans (congrFun hL x₂).symm)))
     rw [faceInclusion_val, faceInclusion_val] at heq
-    exact congrArg (fun w : ι →₀ ℝ => fun a : σ.1 => w a) heq
-  · obtain ⟨a₀, ha₀⟩ := K.isRelLowerSet_faces.prop_of_mem σ.2
+    exact congrArg (fun w : ι →₀ ℝ => fun a : σ.val => w a) heq
+  · obtain ⟨a₀, ha₀⟩ := K.isRelLowerSet_faces.prop_of_mem σ.property
     -- A vector with zero coordinate sum is a combination of edge vectors from the vertex `a₀`.
     have hsum : v = ∑ a, v a •
-        ((Pi.single a (1 : ℝ) : σ.1 → ℝ) -ᵥ Pi.single ⟨a₀, ha₀⟩ (1 : ℝ)) := by
+        ((Pi.single a (1 : ℝ) : σ.val → ℝ) -ᵥ Pi.single ⟨a₀, ha₀⟩ (1 : ℝ)) := by
       simpa only [vsub_eq_sub, smul_sub, Finset.sum_sub_distrib, ← Finset.sum_smul, hv, zero_smul,
         sub_zero] using pi_eq_sum_univ' v
     rw [hsum]
@@ -250,7 +251,7 @@ simplex and injective on its directions at every point of the simplex. -/
 theorem exists_continuousOn_hasFDerivWithinAt (h : IsSimplexImmersion 𝓘(ℝ, E) n g)
     (hn : 1 ≤ n) :
     ∃ F : (σ → ℝ) → E, ∃ F' : (σ → ℝ) → (σ → ℝ) →L[ℝ] E,
-      (∀ x : StandardSimplex σ, F (fun a => x.1 a) = g x) ∧
+      (∀ x : StandardSimplex σ, F (fun a => x.val a) = g x) ∧
       (∀ y ∈ range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights,
         HasFDerivWithinAt F (F' y) (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) y) ∧
       ContinuousOn F' (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) ∧
@@ -278,20 +279,20 @@ immersion of `τ` for every `m`. -/
 theorem exists_pos_forall_isSimplexImmersion_sum_smul (h : IsSimplexImmersion 𝓘(ℝ, E) n g)
     (hn : 1 ≤ n) {t : ℝ} (ht : 0 < t) :
     ∃ δ > 0, ∀ {κ : Type*} {τ : Finset κ} (p : τ → StandardSimplex σ) (d : ℝ), 0 < d → d < δ →
-      (∀ a b, ‖(fun i : σ => (p a).1 i) - fun i : σ => (p b).1 i‖ ≤ d) →
+      (∀ a b, ‖(fun i : σ => (p a).val i) - fun i : σ => (p b).val i‖ ≤ d) →
       (∀ v : τ → ℝ, ∑ a, v a = 0 →
-        t * d * ∑ a, |v a| ≤ ‖∑ a, v a • fun i : σ => (p a).1 i‖) →
+        t * d * ∑ a, |v a| ≤ ‖∑ a, v a • fun i : σ => (p a).val i‖) →
       ∀ m : WithTop ℕ∞, IsSimplexImmersion 𝓘(ℝ, E) m
-        fun x : StandardSimplex τ => ∑ a : τ, x.1 a • g (p a) := by
+        fun x : StandardSimplex τ => ∑ a : τ, x.val a • g (p a) := by
   obtain ⟨F, F', hFg, hFd, hFc, hinj⟩ := h.exists_continuousOn_hasFDerivWithinAt hn
   obtain ⟨δ, hδ, hδF⟩ := exists_pos_forall_eq_zero_of_linearCombination_eq_zero hFd hFc hinj ht
   refine ⟨δ, hδ, fun {κ τ} p d hd hdδ hpd hfat m => ?_⟩
-  have hsecant : (fun x : StandardSimplex τ => ∑ a : τ, x.1 a • g (p a)) = fun x =>
-      Fintype.linearCombination ℝ (fun a => F fun i : σ => (p a).1 i) fun a => x.1 a := by
+  have hsecant : (fun x : StandardSimplex τ => ∑ a : τ, x.val a • g (p a)) = fun x =>
+      Fintype.linearCombination ℝ (fun a => F fun i : σ => (p a).val i) fun a => x.val a := by
     funext x
     simp only [Fintype.linearCombination_apply, hFg]
   rw [hsecant]
-  exact LinearMap.isSimplexImmersion _ (hδF (fun a i => (p a).1 i) d (fun a =>
+  exact LinearMap.isSimplexImmersion _ (hδF (fun a i => (p a).val i) d (fun a =>
     Finset.range_standardSimplex_coordinates σ ▸ mem_range_self (p a)) hd
     hdδ hpd fun v hv => by simpa only [Fintype.linearCombination_apply] using hfat v hv)
 

@@ -396,25 +396,25 @@ private noncomputable def upSeq (n : ℕ) (hJ : ∀ k : ℕ, n ≤ k → E.isInj
   | 0 => ⟨(hJ n le_rfl).factorThru (E.isInflation_f (tI.conflation n)) (x ≫ tJ.i n), by
       dsimp only [Nat.add_zero]
       rw [(hJ n le_rfl).comp_factorThru_assoc, Category.assoc, tJ.zero, comp_zero]⟩
-  | k + 1 => ⟨(exists_d_comp_eq (n + k) (hJ _ (by lia)) (upSeq n hJ x k).1
-        (upSeq n hJ x k).2).choose,
-      (exists_d_comp_eq (n + k) (hJ _ (by lia)) (upSeq n hJ x k).1
-        (upSeq n hJ x k).2).choose_spec.2⟩
+  | k + 1 => ⟨(exists_d_comp_eq (n + k) (hJ _ (by lia)) (upSeq n hJ x k).val
+        (upSeq n hJ x k).property).choose,
+      (exists_d_comp_eq (n + k) (hJ _ (by lia)) (upSeq n hJ x k).val
+        (upSeq n hJ x k).property).choose_spec.2⟩
 
 /-- The upward extensions as a family indexed by `ℤ`, zero below `n`. -/
 private noncomputable def upFamily (n : ℕ) (hJ : ∀ k : ℕ, n ≤ k → E.isInjective (J.X k))
     (x : tI.Z n ⟶ tJ.Z n) (j : ℤ) : I.X j ⟶ J.X j :=
   if h : (n : ℤ) ≤ j then
     (I.XIsoOfEq (show ((n + (j - n).toNat : ℕ) : ℤ) = j by lia)).inv ≫
-      (upSeq n hJ x (j - n).toNat).1 ≫ (J.XIsoOfEq (by lia)).hom
+      (upSeq n hJ x (j - n).toNat).val ≫ (J.XIsoOfEq (by lia)).hom
   else 0
 
 private theorem upFamily_natCast (n : ℕ) (hJ : ∀ k : ℕ, n ≤ k → E.isInjective (J.X k))
-    (x : tI.Z n ⟶ tJ.Z n) (k : ℕ) : upFamily n hJ x (n + k : ℕ) = (upSeq n hJ x k).1 := by
+    (x : tI.Z n ⟶ tJ.Z n) (k : ℕ) : upFamily n hJ x (n + k : ℕ) = (upSeq n hJ x k).val := by
   have key : ∀ (a : ℕ) (ha : a = k),
       (I.XIsoOfEq (show ((n + a : ℕ) : ℤ) = (n + k : ℕ) by subst ha; rfl)).inv ≫
-        (upSeq n hJ x a).1 ≫ (J.XIsoOfEq (show ((n + a : ℕ) : ℤ) = (n + k : ℕ) by
-          subst ha; rfl)).hom = (upSeq n hJ x k).1 := by
+        (upSeq n hJ x a).val ≫ (J.XIsoOfEq (show ((n + a : ℕ) : ℤ) = (n + k : ℕ) by
+          subst ha; rfl)).hom = (upSeq n hJ x k).val := by
     rintro a rfl
     simp
   rw [upFamily, dite_eq_left (by lia)]
@@ -433,10 +433,11 @@ theorem exists_hom_cyclesMap_eq [I.IsStrictlyGE 0]
     obtain ⟨k, rfl⟩ : ∃ k : ℕ, j = ((n + k : ℕ) : ℤ) := ⟨(j - n).toNat, by lia⟩
     rw [show (((n + k : ℕ) : ℤ) + 1) = ((n + (k + 1) : ℕ) : ℤ) by lia, upFamily_natCast,
       upFamily_natCast]
-    exact ((exists_d_comp_eq (n + k) (hJ _ (by lia)) _ (upSeq n hJ x k).2).choose_spec.1).symm)
+    exact ((exists_d_comp_eq (n + k) (hJ _ (by lia)) _
+        (upSeq n hJ x k).property).choose_spec.1).symm)
   refine ⟨Φ, (cancel_mono (tJ.i n)).1 ?_⟩
   -- `n + 0` reduces to `n`, so this is the case `k = 0` of `upFamily_natCast`.
-  have h0 : upFamily n hJ x n = (upSeq n hJ x 0).1 := upFamily_natCast n hJ x 0
+  have h0 : upFamily n hJ x n = (upSeq n hJ x 0).val := upFamily_natCast n hJ x 0
   rw [cyclesMap_i, hΦ n le_rfl, h0]
   exact (hJ n le_rfl).comp_factorThru _ _
 

@@ -157,11 +157,11 @@ theorem mem_span_levelRaise_of_forall_heckeTCuspNat_eq_smul [NeZero N]
   -- prescribed eigenvalue system on them
   let ι := {p : ℕ // p.Prime ∧ Nat.Coprime p N}
   let T : ι → Module.End ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := fun p ↦
-    heckeTCuspNat k p.1 (_hn := ⟨p.2.1.ne_zero⟩)
+    heckeTCuspNat k p.val (_hn := ⟨p.property.1.ne_zero⟩)
   let S : (ι → ℂ) → Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := fun χ ↦
     Submodule.span ℂ {G | ∃ (M d : ℕ) (_ : NeZero M) (_ : NeZero d) (h : d * M ∣ N)
-      (g : Newform M k), (∀ p : ι, g.eigenvalue ⟨p.1, p.2.1.pos⟩
-        (p.2.2.coprime_dvd_right (dvd_of_mul_left_dvd h)) = χ p) ∧
+      (g : Newform M k), (∀ p : ι, g.eigenvalue ⟨p.val, p.property.1.pos⟩
+        (p.property.2.coprime_dvd_right (dvd_of_mul_left_dvd h)) = χ p) ∧
       CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) g.toCuspForm = G}
   -- each `V_d g` is a simultaneous eigenvector, with the eigenvalues of `g`
   have hS (χ : ι → ℂ) : S χ ≤ ⨅ p, (T p).eigenspace (χ p) := by
@@ -169,22 +169,23 @@ theorem mem_span_levelRaise_of_forall_heckeTCuspNat_eq_smul [NeZero N]
     rintro _ ⟨M, d, _, _, h, g, hg, rfl⟩
     refine Submodule.mem_iInf _ |>.mpr fun p ↦ Module.End.mem_eigenspace_iff.mpr ?_
     simp only [T]
-    rw [g.heckeTCuspNat_levelRaise_eq_eigenvalue_smul h p.2.1 p.2.2, hg p]
+    rw [g.heckeTCuspNat_levelRaise_eq_eigenvalue_smul h p.property.1 p.property.2, hg p]
   -- the spaces `S χ` together span everything
   have htop : ⨆ χ, S χ = ⊤ := by
     refine eq_top_iff.mpr ((span_levelRaise_eq_top N k).ge.trans (Submodule.span_le.mpr ?_))
     rintro _ ⟨M, d, _, _, h, g, rfl⟩
-    exact Submodule.mem_iSup_of_mem (fun p : ι ↦ g.eigenvalue ⟨p.1, p.2.1.pos⟩
-      (p.2.2.coprime_dvd_right (dvd_of_mul_left_dvd h)))
+    exact Submodule.mem_iSup_of_mem (fun p : ι ↦ g.eigenvalue ⟨p.val, p.property.1.pos⟩
+      (p.property.2.coprime_dvd_right (dvd_of_mul_left_dvd h)))
       (Submodule.subset_span ⟨M, d, inferInstance, inferInstance, h, g, fun _ ↦ rfl, rfl⟩)
   -- split off the component of `F` with the eigenvalues `a`; the rest is an eigenvector for `a`
   -- lying in the span of the other joint eigenspaces, hence zero
-  let a' : ι → ℂ := fun p ↦ a p.1 p.2.1 p.2.2
+  let a' : ι → ℂ := fun p ↦ a p.val p.property.1 p.property.2
   have hFmem : F ∈ ⨆ χ, S χ := htop ▸ Submodule.mem_top
   rw [iSup_split_single S a'] at hFmem
   obtain ⟨s, hs, t, ht, rfl⟩ := Submodule.mem_sup.mp hFmem
   have hsF : s + t ∈ ⨅ p, (T p).eigenspace (a' p) :=
-    Submodule.mem_iInf _ |>.mpr fun p ↦ Module.End.mem_eigenspace_iff.mpr (hF p.1 p.2.1 p.2.2)
+    Submodule.mem_iInf _ |>.mpr fun p ↦ Module.End.mem_eigenspace_iff.mpr
+        (hF p.val p.property.1 p.property.2)
   have ht' : t ∈ ⨅ p, (T p).eigenspace (a' p) := by
     simpa using Submodule.sub_mem _ hsF (hS a' hs)
   have ht0 : t = 0 := (Submodule.disjoint_def.mp (iSupIndep_iInf_eigenspace T a')) t ht'

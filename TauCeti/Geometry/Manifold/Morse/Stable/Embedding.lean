@@ -142,7 +142,7 @@ the flow moves `φ⁻¹ w` to `φ⁻¹ (e^{-s} w)`. -/
 theorem flow_toChart_symm_stableSubspace {w : φ.stableSubspace} (hw : ‖w‖ < δ) {s : ℝ}
     (hs : 0 ≤ s) : hX.flow s (φ.toChart.symm w) = φ.toChart.symm (Real.exp (-s) • (w : E)) := by
   simpa using hX.flow_toChart_symm_of_forall_coord_eq_zero φ hφ hrT (hδr w hw)
-    (φ.mem_stableSubspace.1 w.2) hs
+    (φ.mem_stableSubspace.1 w.property) hs
 
 /-- Small vectors of the stable subspace parametrize points of the stable manifold. -/
 theorem toChart_symm_mem_stableSet {w : φ.stableSubspace} (hw : ‖w‖ < δ) :
@@ -151,7 +151,7 @@ theorem toChart_symm_mem_stableSet {w : φ.stableSubspace} (hw : ‖w‖ < δ) :
   refine hX.mem_stableSet_of_forall_coord_eq_zero φ hφ hrT (φ.toChart.map_target ht) ?_ ?_ <;>
     rw [φ.toChart.right_inv ht]
   · exact hδr w hw
-  · exact φ.mem_stableSubspace.1 w.2
+  · exact φ.mem_stableSubspace.1 w.property
 
 /-- **Flowing along the stable subspace adds times.** If `e^{-T} ‖v‖ < δ`, the flow for a time
 `s ≥ 0` moves `φ⁻¹ (e^{-T} v)` to `φ⁻¹ (e^{-(T + s)} v)`. -/
