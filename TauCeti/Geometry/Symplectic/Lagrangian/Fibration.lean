@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
 
 /-!
 # Lagrangian fibrations
@@ -152,13 +153,12 @@ at `π x`, the Hamiltonian vector of `g ∘ π` at `x` is tangent to the fibre: 
 -/
 theorem hamiltonianVectorField_comp_mem_ker_mfderiv [FiniteDimensional ℝ E] {g : B → ℝ} {x : M}
     (hg : MDifferentiableAt J 𝓘(ℝ) g (π x)) :
-    σ.hamiltonianVectorField (g ∘ π) x ∈ (mfderiv I J π x).ker := by
-  -- `d(g ∘ π)` vanishes on `ker dπ`, so `X_(g ∘ π)` is `σ`-orthogonal to the Lagrangian `ker dπ`.
-  refine SymplecticForm.isCoisotropic_iff_le.1 (h.isLagrangian_ker_mfderiv x).isCoisotropic <|
-    SymplecticForm.mem_orthogonal_iff.2 fun v hv ↦ ?_
-  have hv' : mfderiv I J π x v = 0 := LinearMap.mem_ker.1 hv
-  rw [symplecticFormAt_apply, SmoothBundleForm.eval₂_swap σ x, hσ.eval₂_hamiltonianVectorField,
-    mvfderiv_comp_apply x hg (h.mdifferentiableAt x), hv', map_zero, neg_zero]
+    σ.hamiltonianVectorField (g ∘ π) x ∈ (mfderiv I J π x).ker :=
+  -- `d(g ∘ π)` vanishes on `ker dπ`, which is Lagrangian and hence coisotropic.
+  hσ.hamiltonianVectorField_mem_of_forall_mvfderiv_eq_zero
+    (h.isLagrangian_ker_mfderiv x).isCoisotropic fun v hv ↦ by
+      have hv' : mfderiv I J π x v = 0 := LinearMap.mem_ker.1 hv
+      rw [mvfderiv_comp_apply x hg (h.mdifferentiableAt x), hv', map_zero]
 
 /-- The projection of a Lagrangian fibration kills the Hamiltonian vector field of a pulled-back
 function. -/

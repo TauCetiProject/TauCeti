@@ -115,7 +115,8 @@ theorem _root_.IsCompact.exists_closedBall_forall_mem_extChartAt_source {K : Set
   have hN : φ.source ∩ φ ⁻¹' ball (φ (v y)) (κ / 2) ∈ 𝓝 (v y) :=
     inter_mem (extChartAt_source_mem_nhds' hyα)
       ((continuousAt_extChartAt' hyα).preimage_mem_nhds (ball_mem_nhds _ (half_pos hκ)))
-  obtain ⟨V, hV, hVN⟩ := hK.exists_mem_nhds_inter_preimage_subset he he_inj (hvK hy) hN
+  obtain ⟨V, hV, hVN⟩ := hK.exists_mem_nhds_inter_preimage_subset he he_inj (hvK hy)
+    (mem_nhdsWithin_of_mem_nhds hN)
   obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
   have hin {x : M} (hxK : x ∈ K) (hx : dist (e x) (e (v y)) < ε) :
       x ∈ φ.source ∧ φ x ∈ closedBall (φ (v y)) (κ / 2) :=

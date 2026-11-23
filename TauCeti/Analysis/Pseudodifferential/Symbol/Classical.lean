@@ -1295,6 +1295,15 @@ theorem IsElliptic.exists_isInvertible_and_norm_inverse_le {a : ClassicalSymbol 
     (isElliptic_iff.1 ha x ξ (norm_pos_iff.1 (by linarith))) (by positivity) (le_max_right _ _) hξ
     hM (hC₁ x hx ξ h2)
 
+/-- **Ellipticity on compact sets of positions.** On every compact set `K` of positions, an
+elliptic classical symbol is elliptic at the frequencies of norm at least some radius `R`, in the
+sense of `TauCeti.Symbol.IsEllipticOn`. -/
+theorem IsElliptic.exists_isEllipticOn {a : ClassicalSymbol n V W m} (ha : a.IsElliptic)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ R, a.toSymbol.IsEllipticOn {p | p.1 ∈ K ∧ R ≤ ‖p.2‖} := by
+  obtain ⟨R, C, hC⟩ := ha.exists_isInvertible_and_norm_inverse_le hK
+  exact ⟨R, Symbol.isEllipticOn_iff.2 fun _ _ ↦ ⟨C, fun p hp _ ↦ hC p.1 hp.1 p.2 hp.2⟩⟩
+
 /-- **Elliptic symbols with coefficients constant off a compact set.** An elliptic classical
 symbol whose full symbol at every position outside a compact set `K` is its full symbol at some
 position of `K` is elliptic above a radius independent of the position. -/
