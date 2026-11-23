@@ -10,36 +10,35 @@ public import TauCeti.Analysis.Contour.Curve.Rectangle
 public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Contour.Cauchy.Rectangle
-import TauCeti.Analysis.Contour.Residue.Cycle
 import TauCeti.Analysis.Contour.Residue.Theorem
-import TauCeti.Analysis.Contour.Winding.Number.Rectangle
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
 # The residue theorem on a rectangle and U-shaped contour shifts
 
 For a closed axis-parallel rectangle `R = Complex.Rectangle z w` with `z` its lower left corner,
-and a function `f` analytic on `R` outside a finite set `S` that avoids `frontier R` and
-meromorphic at the points of `S` inside `R`, the contour integral of `f` along the counterclockwise
-boundary `Complex.rectBoundary z w` is `2πi` times the sum of the residues of `f` at the points of
-`S` in `R`:
+a finite set `P` in its open interior `(z.re, w.re) ×ℂ (z.im, w.im)`, and a function `f : ℂ → ℂ`
+continuous on `R \ P`, complex differentiable on `(z.re, w.re) ×ℂ (z.im, w.im) \ P`, and
+meromorphic at each point of `P`, the contour integral of `f` along the counterclockwise boundary
+`Complex.rectBoundary z w` is `2πi` times the sum of the residues of `f` at `P`:
 
-`∫ t in 0..4, γ' t • f (γ t) = 2πi · ∑_{s ∈ S ∩ R} Res_s f`.
+`∫ t in 0..4, γ' t • f (γ t) = 2πi · ∑_{p ∈ P} Res_p f`.
 
-We also prove the four-edge rectangle residue theorem and finite-height / infinite-line U-shaped
-contour shifts without requiring an open neighbourhood of the closed rectangle: given a finite set
-`P` in `(σ₁, σ₂) ×ℂ (t₁, t₂)` and `f : ℂ → ℂ` continuous on `[σ₁, σ₂] ×ℂ [t₁, t₂] \ P`, complex
-differentiable on `(σ₁, σ₂) ×ℂ (t₁, t₂) \ P`, and meromorphic at each point of `P`,
-`TauCeti.Contour.rectangle_boundary_integral_eq_sum_circleIntegral` reduces the four-edge boundary
-integral to small circle integrals around `P`, which evaluate to `2πi · ∑ p ∈ P, residue f p`.
+No open neighbourhood of the closed rectangle is required: the four-edge rectangle residue theorem
+`TauCeti.Contour.rectangle_boundary_integral_eq_residues` reduces the four-edge boundary integral
+to small circle integrals around `P` via
+`TauCeti.Contour.rectangle_boundary_integral_eq_sum_circleIntegral`, and
+`TauCeti.Contour.classicalResidueTheorem_rectBoundary` derives the `Complex.rectBoundary` form
+through `Complex.integral_rectBoundary`. We also provide finite-height and infinite-line U-shaped
+contour shifts.
 
 ## Main results
 
 * `TauCeti.Contour.classicalResidueTheorem_rectBoundary`: the residue theorem along
-  `Complex.rectBoundary z w`.
+  `Complex.rectBoundary z w`, assuming only continuity on the closed rectangle off `P` and complex
+  differentiability on its interior off `P`.
 * `TauCeti.Contour.rectangle_boundary_integral_eq_residues`: the four-edge boundary integral of `f`
-  around `[σ₁, σ₂] ×ℂ [t₁, t₂]` equals `2πi · ∑ p ∈ P, residue f p`, assuming only continuity on
-  the closed rectangle off `P` and complex differentiability on its interior off `P`.
+  around `[σ₁, σ₂] ×ℂ [t₁, t₂]` equals `2πi · ∑ p ∈ P, residue f p`, under the same hypotheses.
 * `TauCeti.Contour.vertical_integral_eq_uShaped_add_residues`: the finite-height U-shaped identity
   expressing the right vertical edge in terms of the left vertical edge, the horizontal edges, and
   the enclosed residues.
@@ -63,46 +62,6 @@ open Set Complex Filter MeasureTheory Metric
 open scoped Real Interval Topology
 
 namespace TauCeti.Contour
-
-open scoped Classical in
-/-- **The classical residue theorem on a rectangle.** Let `z` be the lower left corner of the
-closed rectangle `Rectangle z w`, and let `S` be a finite set avoiding `frontier (Rectangle z w)`.
-If `f` is analytic at every point of `Rectangle z w \ S` and meromorphic at every point of
-`S ∩ Rectangle z w`, then the contour integral of `f` along `rectBoundary z w` equals `2πi` times
-the sum of the residues of `f` at the points of `S` lying in the rectangle. -/
-theorem classicalResidueTheorem_rectBoundary {f : ℂ → ℂ} {S : Finset ℂ} {z w : ℂ}
-    (hre : z.re ≤ w.re) (him : z.im ≤ w.im)
-    (hf : ∀ x ∈ Rectangle z w, x ∉ S → AnalyticAt ℂ f x)
-    (hmero : ∀ s ∈ S, s ∈ Rectangle z w → MeromorphicAt f s)
-    (hS : ∀ s ∈ S, s ∉ frontier (Rectangle z w)) :
-    ∫ t in (0 : ℝ)..4, deriv (rectBoundary z w) t • f (rectBoundary z w t) =
-      2 * π * I * ∑ s ∈ S with s ∈ Rectangle z w, residue f s := by
-  set T : Finset ℂ := S.filter (· ∈ Rectangle z w)
-  -- Off `T`, `Rectangle z w` lies in `{x | AnalyticAt ℂ f x}`, while `T` lies in `interior R`.
-  set U : Set ℂ := {x : ℂ | AnalyticAt ℂ f x} ∪ interior (Rectangle z w)
-  have hU : IsOpen U := (isOpen_analyticAt ℂ f).union isOpen_interior
-  have hRU : Rectangle z w ⊆ U := fun x hx ↦ by
-    by_cases hxS : x ∈ S
-    · exact Or.inr (by rw [← self_sdiff_frontier]; exact ⟨hx, hS x hxS⟩)
-    · exact Or.inl (hf x hx hxS)
-  have hdiff : DifferentiableOn ℂ f (U \ (↑T : Set ℂ)) := fun x ⟨hxU, hxT⟩ ↦ by
-    rcases hxU with ha | hint
-    · exact ha.differentiableAt.differentiableWithinAt
-    · have hxR : x ∈ Rectangle z w := interior_subset hint
-      have hxS : x ∉ S := fun h ↦ hxT (Finset.mem_coe.mpr (Finset.mem_filter.mpr ⟨h, hxR⟩))
-      exact (hf x hxR hxS).differentiableAt.differentiableWithinAt
-  have hmT : ∀ s ∈ T, s ∈ U → MeromorphicAt f s := fun s hs _ ↦
-    hmero s (Finset.mem_filter.mp hs).1 (Finset.mem_filter.mp hs).2
-  have hoff : ∀ t ∈ uIcc (0 : ℝ) 4, rectBoundary z w t ∉ (↑T : Set ℂ) := fun t _ ht ↦
-    hS _ (Finset.mem_filter.mp (Finset.mem_coe.mp ht)).1 (rectBoundary_mem_frontier t)
-  rw [classicalResidueTheorem_nullHomologous hU hdiff hmT (isPiecewiseC1On_rectBoundary z w)
-    (fun t _ ↦ hRU (rectBoundary_mem_rectangle t)) (by simp) hoff
-    (isNullHomologous_rectBoundary hRU)]
-  refine congrArg _ (Finset.sum_congr rfl fun s hs ↦ ?_)
-  have hsR := (Finset.mem_filter.mp hs).2
-  have hsfr := hS s (Finset.mem_filter.mp hs).1
-  rw [windingNumber_rectBoundary_eq_one (mem_Ioo_reProdIm_of_mem_rectangle hre him hsR hsfr),
-    one_mul]
 
 /-- **The rectangle residue theorem in four-edge form.** Let `σ₁ ≤ σ₂`, `t₁ ≤ t₂`, `P` a finite
 subset of the open rectangle `(σ₁, σ₂) ×ℂ (t₁, t₂)`, and `f : ℂ → ℂ` continuous on the closed
@@ -136,6 +95,32 @@ theorem rectangle_boundary_integral_eq_residues {σ₁ σ₂ t₁ t₂ : ℝ} (h
   have hzUP : z ∈ U \ P := ⟨hP_ball p hp hz, fun hzP ↦
     disjoint_left.1 (hdisj hp hzP hzp.symm) hz (mem_closedBall_self hr.le)⟩
   exact hd.analyticAt ((hU.sdiff P.finite_toSet.isClosed).mem_nhds hzUP)
+
+/-- **The classical residue theorem on a rectangle.** Let `z` be the lower left corner of the
+closed rectangle `Rectangle z w`, and let `P` be a finite subset of the open rectangle
+`(z.re, w.re) ×ℂ (z.im, w.im)`. If `f : ℂ → ℂ` is continuous on `Rectangle z w \ P`, complex
+differentiable on `(z.re, w.re) ×ℂ (z.im, w.im) \ P`, and meromorphic at each point of `P`, then
+the contour integral of `f` along `rectBoundary z w` equals `2πi · ∑ p ∈ P, residue f p`.
+
+No open neighbourhood of the closed rectangle is required, and poles in `P` may have arbitrary
+order (or be removable). -/
+theorem classicalResidueTheorem_rectBoundary {f : ℂ → ℂ} {P : Finset ℂ} {z w : ℂ}
+    (hre : z.re ≤ w.re) (him : z.im ≤ w.im)
+    (hP : ∀ p ∈ P, p ∈ Ioo z.re w.re ×ℂ Ioo z.im w.im)
+    (hc : ContinuousOn f (Rectangle z w \ P))
+    (hd : DifferentiableOn ℂ f (Ioo z.re w.re ×ℂ Ioo z.im w.im \ P))
+    (hmer : ∀ p ∈ P, MeromorphicAt f p) :
+    ∫ t in (0 : ℝ)..4, deriv (rectBoundary z w) t • f (rectBoundary z w t) =
+      2 * π * I * ∑ p ∈ P, residue f p := by
+  have hrect : Rectangle z w = Icc z.re w.re ×ℂ Icc z.im w.im := by
+    rw [Rectangle, uIcc_of_le hre, uIcc_of_le him]
+  have hfr : ContinuousOn f (frontier (Rectangle z w)) :=
+    hc.mono fun x hx ↦ ⟨(isClosed_rectangle z w).frontier_subset hx, fun hxP ↦
+      disjoint_left.1 disjoint_interior_frontier
+        (by rw [interior_rectangle hre him]; exact hP x hxP) hx⟩
+  rw [integral_rectBoundary hfr]
+  simp only [smul_eq_mul]
+  exact rectangle_boundary_integral_eq_residues hre him hP (hrect ▸ hc) hd hmer
 
 /-- **Finite-height U-shaped contour identity.** Under the hypotheses of
 `rectangle_boundary_integral_eq_residues` (with no integrability hypothesis), the right vertical

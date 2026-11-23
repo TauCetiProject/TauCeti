@@ -8,8 +8,8 @@ module
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 public import TauCeti.Analysis.Contour.Curve.Rectangle
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.Analysis.Complex.Laurent.Basic
 import TauCeti.Analysis.Contour.Cauchy.Circle
+import TauCeti.Analysis.Contour.Cauchy.SingularitySubtraction
 import TauCeti.Analysis.Contour.Cycle.Circle
 import TauCeti.Analysis.Contour.Cycle.Fubini
 import TauCeti.Analysis.Contour.Winding.Number.Rectangle
@@ -197,7 +197,7 @@ theorem integral_rectPolygon_eq_sum_circleIntegral
   have hP_int : ∀ ρ ∈ P, closedBall ρ r ⊆ interior (Rectangle z₀ w₀) := fun ρ hρ ↦ by
     rw [interior_rectangle hre him]; exact hP ρ hρ
   obtain ⟨g, hg_cont, hg_diff, hg_eq⟩ :=
-    TauCeti.exists_continuousOn_differentiableOn_sub_sum_circleIntegral hr hP_int hdisj hc
+    exists_continuousOn_differentiableOn_sub_sum_circleIntegral hr hP_int hdisj hc
       (by rwa [interior_rectangle hre him])
   have hUrect : Ioo (min z₀.re w₀.re) (max z₀.re w₀.re) ×ℂ
       Ioo (min z₀.im w₀.im) (max z₀.im w₀.im) = Ioo z₀.re w₀.re ×ℂ Ioo z₀.im w₀.im := by
@@ -222,10 +222,11 @@ theorem integral_rectPolygon_eq_sum_circleIntegral
         (Cycle.trace (rectPolygon z₀ w₀).contourCycle) := by
     rw [htrace]
     exact fun ρ hρ z hz ↦
-      (differentiableAt_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_left
+      ((differentiableAt_circleIntegral_sub_inv_smul_left
         ((hfc_r ρ hρ).circleIntegrable hr.le) fun hsp ↦
           hfr_out z hz ρ hρ
-            (sphere_subset_closedBall (abs_of_pos hr ▸ hsp))).continuousAt.continuousWithinAt
+            (sphere_subset_closedBall (abs_of_pos hr ▸ hsp))).const_smul
+        _).continuousAt.continuousWithinAt
   have hsplit : Cycle.integral g (rectPolygon z₀ w₀).contourCycle =
       Cycle.integral f (rectPolygon z₀ w₀).contourCycle -
         ∑ ρ ∈ P, Cycle.integral (fun z ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w)

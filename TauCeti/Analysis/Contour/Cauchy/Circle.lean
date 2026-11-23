@@ -17,12 +17,10 @@ rectangles:
 * the divided-difference identity `TauCeti.circleIntegral_dslope_eq` and the two-circle Cauchy
   formula on a closed annulus off a countable exceptional set
   (`two_pi_I_inv_smul_circleIntegral_sub_inv_smul_sub_of_differentiable_on_annulus_off_countable`);
-* the signed-kernel conversions `TauCeti.Contour.circleIntegral_sub_inv_smul_eq_neg` and
-  `TauCeti.Contour.two_pi_I_inv_smul_circleIntegral_sub_inv_smul_eq_neg`;
+* the signed-kernel conversion `TauCeti.Contour.circleIntegral_sub_inv_smul_eq_neg`;
 * off-circle complex differentiability of `s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w`
-  (`TauCeti.Contour.hasDerivAt_circleIntegral_sub_inv_smul_left`,
-  `TauCeti.Contour.differentiableAt_circleIntegral_sub_inv_smul_left`, and
-  `TauCeti.Contour.differentiableAt_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_left`);
+  (`TauCeti.Contour.hasDerivAt_circleIntegral_sub_inv_smul_left` and
+  `TauCeti.Contour.differentiableAt_circleIntegral_sub_inv_smul_left`);
 * the annulus subtraction formula
   (`TauCeti.Contour.sub_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_eq`) expressing
   `f w - (2πi)⁻¹ • ∮ z in C(c, r), (w - z)⁻¹ • f z` as the interior Cauchy integral over
@@ -33,10 +31,8 @@ rectangles:
 * `TauCeti.circleIntegral_dslope_eq`
 * `two_pi_I_inv_smul_circleIntegral_sub_inv_smul_sub_of_differentiable_on_annulus_off_countable`
 * `TauCeti.Contour.circleIntegral_sub_inv_smul_eq_neg`
-* `TauCeti.Contour.two_pi_I_inv_smul_circleIntegral_sub_inv_smul_eq_neg`
 * `TauCeti.Contour.hasDerivAt_circleIntegral_sub_inv_smul_left`
 * `TauCeti.Contour.differentiableAt_circleIntegral_sub_inv_smul_left`
-* `TauCeti.Contour.differentiableAt_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_left`
 * `TauCeti.Contour.sub_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_eq`
 
 ## Provenance
@@ -144,13 +140,6 @@ theorem circleIntegral_sub_inv_smul_eq_neg (f : ℂ → E) (c z : ℂ) (r : ℝ)
     _ = -(∮ w in C(c, r), (w - z)⁻¹ • f w) := neg_one_smul _ _
 
 omit [CompleteSpace E] in
-/-- Reversing the sign in the Cauchy kernel negates the `(2πi)⁻¹`-normalized circle integral. -/
-theorem two_pi_I_inv_smul_circleIntegral_sub_inv_smul_eq_neg (f : ℂ → E) (c z : ℂ) (r : ℝ) :
-    (2 * π * I : ℂ)⁻¹ • (∮ w in C(c, r), (z - w)⁻¹ • f w) =
-      -((2 * π * I : ℂ)⁻¹ • ∮ w in C(c, r), (w - z)⁻¹ • f w) := by
-  rw [circleIntegral_sub_inv_smul_eq_neg, smul_neg]
-
-omit [CompleteSpace E] in
 /-- Away from `sphere c |r|`, `s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w` has derivative
 `-(∮ w in C(c, r), (z - w) ^ (-2 : ℤ) • f w)` at `z`. -/
 theorem hasDerivAt_circleIntegral_sub_inv_smul_left {f : ℂ → E} {c z : ℂ} {r : ℝ}
@@ -178,15 +167,6 @@ theorem differentiableAt_circleIntegral_sub_inv_smul_left {f : ℂ → E} {c z :
     DifferentiableAt ℂ (fun s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w) z :=
   (hasDerivAt_circleIntegral_sub_inv_smul_left hf hz).differentiableAt
 
-omit [CompleteSpace E] in
-/-- The normalized exterior Cauchy integral `s ↦ (2πi)⁻¹ • ∮ w in C(c, r), (s - w)⁻¹ • f w`
-is complex differentiable at every point off `sphere c |r|`. -/
-theorem differentiableAt_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_left
-    {f : ℂ → E} {c z : ℂ} {r : ℝ} (hf : CircleIntegrable f c r) (hz : z ∉ sphere c |r|) :
-    DifferentiableAt ℂ
-      (fun s ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(c, r), (s - w)⁻¹ • f w) z :=
-  (differentiableAt_circleIntegral_sub_inv_smul_left hf hz).const_smul _
-
 /-- **Annulus subtraction formula.** On the open annulus `ball c R \ closedBall c r` (`0 < r`), if
 `f` is continuous on `closedBall c R \ ball c r` and complex differentiable outside a countable
 set `s` in `ball c R \ closedBall c r`, then subtracting the exterior Cauchy integral over `C(c, r)`
@@ -201,7 +181,7 @@ theorem sub_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_eq
   have hann :=
     two_pi_I_inv_smul_circleIntegral_sub_inv_smul_sub_of_differentiable_on_annulus_off_countable
       hr hs hw hc hd
-  rw [← hann, smul_sub, two_pi_I_inv_smul_circleIntegral_sub_inv_smul_eq_neg]
+  rw [← hann, smul_sub, circleIntegral_sub_inv_smul_eq_neg, smul_neg]
   abel
 
 end Contour
