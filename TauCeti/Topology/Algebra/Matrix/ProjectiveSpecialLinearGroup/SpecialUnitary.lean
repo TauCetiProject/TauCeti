@@ -77,6 +77,11 @@ theorem isCompact_range_toPSL :
   rw [MonoidHom.coe_range]
   exact isCompact_range continuous_toPSL
 
+/-- Over `ℝ` or `ℂ`, the projective special unitary group `PSU(n)` is a compact space. -/
+instance :
+    CompactSpace (toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range :=
+  isCompact_iff_compactSpace.mp isCompact_range_toPSL
+
 /-- Over `ℝ` or `ℂ`, the projective special unitary group `PSU(n)` is closed in the Hausdorff
 group `PSL(n, 𝕜)`. -/
 theorem isClosed_range_toPSL :

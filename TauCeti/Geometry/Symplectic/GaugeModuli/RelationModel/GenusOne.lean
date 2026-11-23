@@ -151,9 +151,6 @@ noncomputable def psuOrbitHomeomorphGenusOne {r : ℕ} {ζ : ℂ} (hζ : IsPrimi
   letI : MulAction.IsPretransitive (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ 1) :=
     isPretransitive_psu_relationSet_genus_one hζ
-  letI : CompactSpace (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-      ProjectiveSpecialLinearGroup (Fin r) ℂ).range :=
-    isCompact_iff_compactSpace.mp isCompact_range_toPSL
   let htriv : ∀ ⦃p q : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range⦄,
       QuotientGroup.leftRel (MulAction.stabilizer _ x₀) p q → p = q := by
@@ -171,12 +168,7 @@ theorem psuOrbitHomeomorphGenusOne_apply {r : ℕ} {ζ : ℂ} (hζ : IsPrimitive
     (p : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range) :
     psuOrbitHomeomorphGenusOne hζ x₀ p = p • x₀ := by
-  let : MulAction.IsPretransitive (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ 1) :=
-    isPretransitive_psu_relationSet_genus_one hζ
-  let : CompactSpace (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-      ProjectiveSpecialLinearGroup (Fin r) ℂ).range :=
-    isCompact_iff_compactSpace.mp isCompact_range_toPSL
+  have := isPretransitive_psu_relationSet_genus_one hζ
   dsimp only [psuOrbitHomeomorphGenusOne, Homeomorph.trans_apply,
     Homeomorph.quotientTrivial_symm_apply]
   exact TauCeti.quotientStabilizerHomeomorph_mk _ x₀ (continuous_id.smul continuous_const) p

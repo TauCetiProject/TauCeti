@@ -295,11 +295,8 @@ instance instContinuousSMulPSURelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
 and `relationSet r ζ g` is Hausdorff. -/
 instance instProperSMulPSURelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     ProperSMul (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ g) := by
-  have : CompactSpace (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-      ProjectiveSpecialLinearGroup (Fin r) ℂ).range :=
-    isCompact_iff_compactSpace.mp isCompact_range_toPSL
-  exact TauCeti.properSMul_of_compactSpace _ _
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ g) :=
+  TauCeti.properSMul_of_compactSpace _ _
 
 /-- The moduli space `relationModuli r ζ g` is homeomorphic to the orbit space of the induced
 `PSU(r)` action on `relationSet r ζ g`. -/

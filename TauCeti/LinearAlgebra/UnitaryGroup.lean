@@ -61,10 +61,9 @@ theorem commutatorElement_eq_smul_one_iff {A B : specialUnitaryGroup n α} {c : 
       rw [commutatorElement_def, mul_assoc (A * B)]
     have hcancel : (B * A) * (A⁻¹ * B⁻¹) = 1 := by
       rw [mul_assoc B A, mul_inv_cancel_left, mul_inv_cancel]
-    have hcoe := congrArg Subtype.val hmul
-    have hcancel_coe : (((B * A) * (A⁻¹ * B⁻¹) : specialUnitaryGroup n α) : Matrix n n α) = 1 :=
-      congrArg Subtype.val hcancel
-    rw [hcoe, Submonoid.coe_mul, Submonoid.coe_mul, h, Matrix.smul_mul, ← Submonoid.coe_mul,
-      ← Submonoid.coe_mul, hcancel_coe]
+    have hcancel_coe :
+        (B : Matrix n n α) * A * (((A⁻¹ : specialUnitaryGroup n α) : Matrix n n α) * B⁻¹) = 1 := by
+      simpa only [Submonoid.coe_mul, OneMemClass.coe_one] using congrArg Subtype.val hcancel
+    simpa only [Submonoid.coe_mul, h, Matrix.smul_mul, hcancel_coe] using congrArg Subtype.val hmul
 
 end Matrix.specialUnitaryGroup
