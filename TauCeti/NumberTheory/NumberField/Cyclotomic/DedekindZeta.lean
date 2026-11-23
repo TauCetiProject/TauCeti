@@ -162,7 +162,7 @@ theorem normCoeff_one_eq_prod_primitiveCharacter :
   have h2 :=
     DirichletCharacter.bellSeries_prod_toArithmeticFunction_primitiveCharacter_mul_pow_one_sub
       (R := ℂ) (N := n) hp
-  exact inv_unique (by simpa only [mul_comm] using h1) (by simpa only [mul_comm] using h2)
+  exact inv_unique ((mul_comm _ _).trans h1) ((mul_comm _ _).trans h2)
 
 /-- **Ideal-counting coefficients of `ζ_K` for a cyclotomic field.** For every `k ≠ 0`, the number
 `dedekindZetaCoeff K k` of integral ideals of `𝓞 K` of norm `k` equals the `k`-th coefficient of

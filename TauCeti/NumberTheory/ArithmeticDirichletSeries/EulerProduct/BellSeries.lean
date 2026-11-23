@@ -65,39 +65,16 @@ theorem bellSeries_normCoeff_one_mul_prod_one_sub_X_pow (K : Type*) [Field K] [N
     ArithmeticFunction.bellSeries p hp (normCoeff K 1) *
       ∏ 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K),
         (1 - PowerSeries.X ^ 𝔭.inertiaDeg ℤ) = 1 := by
-  classical
   have : Fact p.Prime := ⟨hp⟩
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    simpa [Ideal.span_singleton_eq_bot] using hp.ne_zero
-  set T : Finset (Ideal (𝓞 K)) := primesOverFinset (span {(p : ℤ)}) (𝓞 K)
-  let toH1 : {𝔭 // 𝔭 ∈ T} → HeightOneSpectrum (𝓞 K) := fun ⟨𝔭, h𝔭⟩ ↦
-    have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp h𝔭
-    have : 𝔭.IsPrime := hmem.1
-    have : 𝔭.LiesOver (span {(p : ℤ)}) := hmem.2
-    TauCeti.NumberField.heightOneSpectrumOfLiesOver p 𝔭
-  have htoH1_asIdeal (q : {𝔭 // 𝔭 ∈ T}) : (toH1 q).asIdeal = q.val := by
-    have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.property
-    have : q.val.IsPrime := hmem.1
-    have : q.val.LiesOver (span {(p : ℤ)}) := hmem.2
-    exact TauCeti.NumberField.heightOneSpectrumOfLiesOver_asIdeal p q.val
-  have hinj : Function.Injective toH1 := fun q₁ q₂ h ↦
-    Subtype.ext (by rw [← htoH1_asIdeal q₁, ← htoH1_asIdeal q₂, h])
-  let S : Finset (HeightOneSpectrum (𝓞 K)) := T.attach.image toH1
-  have hS_cover : ∀ P : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ P.asIdeal → P ∈ S :=
-    TauCeti.NumberField.mem_of_natCast_mem_asIdeal fun P hP ↦ by
-      have hPT : P.asIdeal ∈ T := (mem_primesOverFinset_iff hp0 (𝓞 K)).mpr hP
-      exact Finset.mem_image.mpr
-        ⟨⟨P.asIdeal, hPT⟩, Finset.mem_attach T _,
-          HeightOneSpectrum.ext (htoH1_asIdeal ⟨P.asIdeal, hPT⟩)⟩
-  rw [bellSeries_normCoeff_eq_prod_bellSeries_localArithmeticFactor
-    isMultiplicative_one hp S hS_cover,
-    Finset.prod_image (fun _ _ _ _ h ↦ hinj h), ← Finset.prod_attach T, ← Finset.prod_mul_distrib]
-  refine Finset.prod_eq_one fun q _ ↦ ?_
-  have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.property
-  have : q.val.IsPrime := hmem.1
-  have : q.val.LiesOver (span {(p : ℤ)}) := hmem.2
-  rw [localArithmeticFactor_def, localPowerSeries_one, htoH1_asIdeal, ← pow_inertiaDeg p q.val]
+  rw [bellSeries_normCoeff_eq_prod_bellSeries_localArithmeticFactor isMultiplicative_one hp
+      (TauCeti.NumberField.heightOneSpectrumPrimesOverFinset K p)
+      (fun _ ↦ TauCeti.NumberField.mem_heightOneSpectrumPrimesOverFinset_iff.mpr),
+    TauCeti.NumberField.prod_primesOverFinset_eq_prod_heightOneSpectrumPrimesOverFinset,
+    ← Finset.prod_mul_distrib]
+  refine Finset.prod_eq_one fun P hP ↦ ?_
+  have := TauCeti.NumberField.liesOver_of_mem_heightOneSpectrumPrimesOverFinset hP
+  rw [localArithmeticFactor_def, localPowerSeries_one, ← pow_inertiaDeg p P.asIdeal]
   exact ArithmeticFunction.bellSeries_ofPowerSeries_mk_one_mul_one_sub_X_pow hp
-    (Ideal.inertiaDeg_pos q.val ℤ).ne'
+    (Ideal.inertiaDeg_pos P.asIdeal ℤ).ne'
 
 end TauCeti.IdealArithmeticFunction
