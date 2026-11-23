@@ -468,6 +468,10 @@ theorem one_tangentSpace_Icc_apply (x : Icc a b) (i : Fin 1) :
   have h := mfderiv_subtypeVal_Icc_one x
   rw [mfderiv_subtypeVal_Icc] at h
   -- `h` says `s * v 0 = 1` for the chart sign `s`, an identity in the real tangent space of `ℝ`.
+  -- After the rewrite, `h` applies the functional `s • EuclideanSpace.proj 0` on
+  -- `EuclideanSpace ℝ (Fin 1)` as a map between tangent spaces, which is type-correct only up to
+  -- unfolding `TangentSpace`. Neither `rw [smul_apply]` nor `simp` matches this application, so
+  -- `change` performs the unfolding.
   change (if (x : ℝ) < b then (1 : ℝ) else -1) *
     WithLp.ofLp (p := 2) (1 : TangentSpace (𝓡∂ 1) x) 0 = 1 at h
   by_cases hx : (x : ℝ) < b

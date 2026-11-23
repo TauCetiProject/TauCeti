@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.ParametricIntegral.Segment
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Topology
 
 /-!
 # Smooth families of primitives of exact one-forms
@@ -39,8 +40,8 @@ the segment from the chart point of `x₁` to that of `x`
 point and the parameter (`Convex.contDiffOn_intervalIntegral_lineMap_apply`). Hence, for a base
 point `c`, the set of points `x₁` for which `p ↦ F (x₁, p) - F (c, p)` is `C^r` is open and closed;
 it contains `c`, so it contains the connected component of `c`. Normalizing the primitives at a
-chosen point of each connected component, which is constant on the preconnected neighbourhoods
-of the local formula, the local formula then gives joint regularity at every point.
+chosen point of each connected component, which is locally constant since the connected components
+of a manifold are open, the local formula then gives joint regularity at every point.
 
 ## Main results
 
@@ -236,29 +237,20 @@ private theorem exists_eq_sub_of_slices_of_ball {r : ℕ∞} {B : RoughForm (I.p
 
 /-- **The local formula.** Near `x₁`, uniformly for parameters near any `p₁`, the difference
 `f p x - f p x₁` of the primitives of the slices of `B` is a `C^r` function of `(x, p)`. The
-neighbourhood of `x₁` is preconnected and does not depend on `p₁`. -/
+neighbourhood of `x₁` does not depend on `p₁`. -/
 private theorem exists_eq_sub_of_slices {r : ℕ∞} {B : RoughForm (I.prod IP) (M × P) V 1}
     (hB : IsSmoothForm (I.prod IP) r B) [CompleteSpace V] {f : P → M → V}
     (hf : ∀ p, MDifferentiable I 𝓘(ℝ, V) (f p))
     (hfB : ∀ (p : P) (x : M) (v : E), mvfderiv I (f p) x v = B (x, p) ![(v, (0 : G))])
     (x₁ : M) :
-    ∃ U : Set M, IsOpen U ∧ IsPreconnected U ∧ x₁ ∈ U ∧ ∀ p₁ : P, ∃ W : Set P, IsOpen W ∧
-      p₁ ∈ W ∧ ∃ g : M × P → V, ContMDiffOn (I.prod IP) 𝓘(ℝ, V) r g (U ×ˢ W) ∧
+    ∃ U : Set M, IsOpen U ∧ x₁ ∈ U ∧ ∀ p₁ : P, ∃ W : Set P, IsOpen W ∧ p₁ ∈ W ∧
+      ∃ g : M × P → V, ContMDiffOn (I.prod IP) 𝓘(ℝ, V) r g (U ×ˢ W) ∧
         ∀ x ∈ U, ∀ p ∈ W, f p x - f p x₁ = g (x, p) := by
   obtain ⟨ε, hε, hεs⟩ :=
     Metric.mem_nhdsWithin_iff.mp (extChartAt_target_mem_nhdsWithin (I := I) x₁)
-  set c := extChartAt I x₁
-  -- The neighbourhood is the image under the inverse chart of the convex set `ball ∩ range I`.
-  have himage : c.source ∩ c ⁻¹' ball (c x₁) ε = c.symm '' (ball (c x₁) ε ∩ range I) := by
-    have hsub : c.source ∩ c ⁻¹' ball (c x₁) ε ⊆ c ⁻¹' range I := fun x hx ↦
-      extChartAt_target_subset_range x₁ (c.map_source hx.1)
-    rw [c.symm_image_eq_source_inter_preimage hεs, Set.preimage_inter, ← Set.inter_assoc,
-      Set.inter_eq_left.2 hsub]
-  refine ⟨_, isOpen_extChartAt_preimage' x₁ isOpen_ball, ?_,
-    ⟨mem_extChartAt_source x₁, mem_ball_self hε⟩, exists_eq_sub_of_slices_of_ball hB hf hfB hε hεs⟩
-  rw [himage]
-  exact ((convex_ball _ _).inter I.convex_range).isPreconnected.image _
-    ((continuousOn_extChartAt_symm x₁).mono hεs)
+  exact ⟨_, isOpen_extChartAt_preimage' x₁ isOpen_ball,
+    ⟨mem_extChartAt_source x₁, mem_ball_self hε⟩,
+    exists_eq_sub_of_slices_of_ball hB hf hfB hε hεs⟩
 
 omit [IsManifold I ∞ M] [IsManifold IP ∞ P] in
 /-- If the local formula at `x₁` holds on an open set `U` containing `x`, then the primitive at
@@ -301,9 +293,9 @@ private theorem contMDiff_sub_of_mem_connectedComponent {r : ℕ∞}
   have hclopen : IsClopen S := by
     refine ⟨isOpen_compl_iff.mp (isOpen_iff_forall_mem_open.mpr fun x₁ hx₁ ↦ ?_),
       isOpen_iff_forall_mem_open.mpr fun x₁ hx₁ ↦ ?_⟩
-    · obtain ⟨U, hUo, -, hx₁U, hU⟩ := hloc x₁
+    · obtain ⟨U, hUo, hx₁U, hU⟩ := hloc x₁
       exact ⟨U, fun x hx hxS ↦ hx₁ ((contMDiff_sub_iff_of_eq_sub hUo hx hU).mpr hxS), hUo, hx₁U⟩
-    · obtain ⟨U, hUo, -, hx₁U, hU⟩ := hloc x₁
+    · obtain ⟨U, hUo, hx₁U, hU⟩ := hloc x₁
       exact ⟨U, fun x hx ↦ (contMDiff_sub_iff_of_eq_sub hUo hx hU).mp hx₁, hUo, hx₁U⟩
   have hc : c ∈ S := by
     simp only [S, Set.mem_ofPred_eq, sub_self]
@@ -320,17 +312,21 @@ private theorem exists_contMDiff_eventuallyEq_sub {r : ℕ∞}
     ∃ F : M × P → V, ContMDiff (I.prod IP) 𝓘(ℝ, V) r F ∧
       ∀ (p : P) (x : M), ∃ c : V, (fun y ↦ F (y, p)) =ᶠ[𝓝 x] fun y ↦ f p y - c := by
   have hloc := exists_eq_sub_of_slices hB hf hfB
-  -- A base point of each connected component, depending only on the component.
+  -- A base point of each connected component, depending only on the component. Connected
+  -- components of a manifold are open, so the base point is locally constant.
+  let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let rep : M → M := fun x ↦ Quotient.out (ConnectedComponents.mk x)
   have hrep_eq {x y : M} (h : y ∈ connectedComponent x) : rep y = rep x :=
     congrArg Quotient.out (ConnectedComponents.coe_eq_coe'.2 h)
   have hmem_rep (x : M) : x ∈ connectedComponent (rep x) :=
     ConnectedComponents.coe_eq_coe'.1 (Quotient.out_eq _).symm
+  have hcc (x : M) : connectedComponent x ∈ 𝓝 x :=
+    isOpen_connectedComponent.mem_nhds mem_connectedComponent
   refine ⟨fun z ↦ f z.2 z.1 - f z.2 (rep z.1), ?_, fun p x ↦ ⟨f p (rep x), ?_⟩⟩
   · -- Near `(x₁, p₁)` the base point is constant, and the normalized primitive is its value at
     -- `x₁` plus the local formula.
     rintro ⟨x₁, p₁⟩
-    obtain ⟨U, hUo, hUc, hx₁U, hU⟩ := hloc x₁
+    obtain ⟨U, hUo, hx₁U, hU⟩ := hloc x₁
     obtain ⟨W, hW, hpW, g, hg, hfg⟩ := hU p₁
     have hmem : U ×ˢ W ∈ 𝓝 (x₁, p₁) := prod_mem_nhds (hUo.mem_nhds hx₁U) (hW.mem_nhds hpW)
     have h₁ : ContMDiffAt (I.prod IP) 𝓘(ℝ, V) r
@@ -338,12 +334,11 @@ private theorem exists_contMDiff_eventuallyEq_sub {r : ℕ∞}
       (contMDiff_sub_of_mem_connectedComponent hB hf hfB (hmem_rep x₁) p₁).comp (x₁, p₁)
         contMDiffAt_snd
     refine (h₁.add (hg.contMDiffAt hmem)).congr_of_eventuallyEq ?_
-    filter_upwards [hmem] with ⟨x, p⟩ hz
-    rw [Pi.add_apply, ← hfg x hz.1 p hz.2, hrep_eq (hUc.subset_connectedComponent hx₁U hz.1)]
+    filter_upwards [hmem, prod_mem_nhds (hcc x₁) univ_mem] with ⟨x, p⟩ hz hzc
+    rw [Pi.add_apply, ← hfg x hz.1 p hz.2, hrep_eq hzc.1]
     abel
-  · obtain ⟨U, hUo, hUc, hxU, -⟩ := hloc x
-    filter_upwards [hUo.mem_nhds hxU] with y hy
-    rw [hrep_eq (hUc.subset_connectedComponent hxU hy)]
+  · filter_upwards [hcc x] with y hy
+    rw [hrep_eq hy]
 
 /-- **Smooth families of primitives.** Let `B` be a `C^r` one-form on `M × P` such that for every
 parameter `p` the slice `v ↦ B (x, p) (v, 0)` is the differential of a differentiable function on

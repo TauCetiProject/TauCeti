@@ -100,11 +100,16 @@ theorem mpullback_cylinderMap_apply_eq_eval₂_velocity (p : M × unitInterval) 
   -- the motion.
   exact congrArg (σ.val (Φ.cylinderMap p)) (funext fun i : Fin 2 ↦ by fin_cases i <;> rfl)
 
+variable (σ Φ) in
 /-- The one-form `ι_{∂ₜ} Φ^* σ` on the cylinder: the contraction of the pullback of `σ` along the
-motion with the unit time vector field `∂ₜ`. It is smooth. -/
+motion with the unit time vector field `∂ₜ`. -/
+private def timeContraction : RoughForm (J.prod (𝓡∂ 1)) (M × unitInterval) ℝ 1 :=
+  (mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.val).interior
+    (verticalField J fun (_ : M) (t : unitInterval) ↦ (1 : TangentSpace (𝓡∂ 1) t))
+
+/-- The one-form `ι_{∂ₜ} Φ^* σ` on the cylinder is smooth. -/
 private theorem isSmoothForm_interior_mpullback_cylinderMap :
-    IsSmoothForm (J.prod (𝓡∂ 1)) ∞ ((mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.val).interior
-      (verticalField J fun (_ : M) (t : unitInterval) ↦ (1 : TangentSpace (𝓡∂ 1) t))) :=
+    IsSmoothForm (J.prod (𝓡∂ 1)) ∞ (timeContraction σ Φ) :=
   ((SmoothForm.isSmoothForm σ).mpullback (Φ.contMDiff_cylinderMap.of_le (by simp))).interior
     (contMDiff_verticalField (contMDiff_one_tangentSpace_Icc.comp contMDiff_snd))
 
@@ -142,15 +147,13 @@ primitive of the slice at time `t` of the one-form `ι_{∂ₜ} Φ^* σ` on the 
 private theorem mvfderiv_comp_timeSlice_eq_interior_mpullback_cylinderMap {t : unitInterval}
     {H : M → ℝ} (hX : σ.IsHamiltonianVectorField H (Φ.velocity t)) (x : M) (v : E) :
     mvfderiv J (H ∘ Φ.timeSlice t) x v =
-      (mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.val).interior
-        (verticalField J fun (_ : M) (t : unitInterval) ↦ (1 : TangentSpace (𝓡∂ 1) t))
-        (x, t) ![(v, (0 : EuclideanSpace ℝ (Fin 1)))] := by
+      timeContraction σ Φ (x, t) ![(v, (0 : EuclideanSpace ℝ (Fin 1)))] := by
   refine (DFunLike.congr_fun ((Φ.timeSlice t).mvfderiv_comp_diffeomorph (by simp) H x) v).trans ?_
   refine (SmoothTwoForm.isHamiltonianVectorField_iff.1 hX _ _).symm.trans ?_
   have h := mpullback_cylinderMap_apply_eq_eval₂_velocity (σ := σ) (Φ := Φ) (x, t) v
   rw [← timeSlice_apply] at h
   dsimp only at h
-  rw [RoughForm.interior_apply, verticalField_apply]
+  rw [timeContraction, RoughForm.interior_apply, verticalField_apply]
   exact h.symm
 
 /-- **Hamiltonians from Hamiltonian velocity fields.** A diffeotopy has a Hamiltonian, read along
@@ -169,9 +172,7 @@ theorem exists_hasHamiltonian_iff :
   -- selection of primitives assembles into one smooth function on the cylinder.
   have hslice (t : unitInterval) : ∃ f : M → ℝ, MDifferentiable J 𝓘(ℝ) f ∧
       ∀ (x : M) (v : E), mvfderiv J f x v =
-        (mpullback (J.prod (𝓡∂ 1)) J Φ.cylinderMap σ.val).interior
-          (verticalField J fun (_ : M) (t : unitInterval) ↦ (1 : TangentSpace (𝓡∂ 1) t))
-          (x, t) ![(v, (0 : EuclideanSpace ℝ (Fin 1)))] := by
+        timeContraction σ Φ (x, t) ![(v, (0 : EuclideanSpace ℝ (Fin 1)))] := by
     obtain ⟨H, hH, hX⟩ := h t
     exact ⟨H ∘ Φ.timeSlice t, hH.comp ((Φ.timeSlice t).contMDiff.mdifferentiable (by simp)),
       mvfderiv_comp_timeSlice_eq_interior_mpullback_cylinderMap hX⟩
@@ -179,7 +180,7 @@ theorem exists_hasHamiltonian_iff :
     isSmoothForm_interior_mpullback_cylinderMap hslice x₀
   refine ⟨F, hasHamiltonian_iff.2 ⟨hF, fun p v ↦ ?_⟩⟩
   refine Eq.trans ?_ ((hF.mdifferentiableAt (by simp)).mvfderiv_apply_mk_zero (p := p) v).symm
-  rw [hFB, RoughForm.interior_apply, verticalField_apply, Prod.mk.eta]
+  rw [hFB, timeContraction, RoughForm.interior_apply, verticalField_apply, Prod.mk.eta]
   -- The two sides agree up to the implicit base points `(p.1, p.2).2` and `p.2` of the unit time
   -- vector, which are equal by eta for pairs.
   rfl
