@@ -268,6 +268,9 @@ variable {E X G : Type*} [TopologicalSpace E] [TopologicalSpace X]
   [Group G] [MulAction G E] {q : E → X}
 
 /-- A quotient map whose fibres are the orbits identifies the orbit space with its target. -/
+@[to_additive addOrbitRelQuotientHomeomorph
+  /-- A quotient map whose fibres are the additive orbits identifies the additive orbit space
+  with its target. -/]
 noncomputable def orbitRelQuotientHomeomorph (hq : IsQuotientMap q)
     (h : ∀ e e', q e = q e' ↔ e ∈ MulAction.orbit G e') :
     MulAction.orbitRel.Quotient G E ≃ₜ X :=
@@ -277,7 +280,9 @@ noncomputable def orbitRelQuotientHomeomorph (hq : IsQuotientMap q)
     (hq.homeomorph (f := ⟨q, hq.continuous⟩))
 
 /-- The orbit quotient homeomorphism sends a representative to its image in the target. -/
-@[simp]
+@[to_additive (attr := simp) addOrbitRelQuotientHomeomorph_mk
+  /-- The additive orbit quotient homeomorphism sends a representative to its image in the
+  target. -/]
 theorem orbitRelQuotientHomeomorph_mk (hq : IsQuotientMap q)
     (h : ∀ e e', q e = q e' ↔ e ∈ MulAction.orbit G e') (e : E) :
     hq.orbitRelQuotientHomeomorph h (Quotient.mk _ e) = q e := by
@@ -285,7 +290,8 @@ theorem orbitRelQuotientHomeomorph_mk (hq : IsQuotientMap q)
   rfl
 
 /-- The inverse homeomorphism sends the image of a representative to its orbit. -/
-@[simp]
+@[to_additive (attr := simp) addOrbitRelQuotientHomeomorph_symm_apply
+  /-- The inverse homeomorphism sends the image of a representative to its additive orbit. -/]
 theorem orbitRelQuotientHomeomorph_symm_apply (hq : IsQuotientMap q)
     (h : ∀ e e', q e = q e' ↔ e ∈ MulAction.orbit G e') (e : E) :
     (hq.orbitRelQuotientHomeomorph h).symm (q e) = Quotient.mk _ e :=

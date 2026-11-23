@@ -47,8 +47,8 @@ theorem orientationCoverQuotientHomeomorph_mk (r N : ℕ)
 @[simp]
 theorem orientationCoverQuotientHomeomorph_symm_proj (r N : ℕ)
     (p : VectorBundleOrientationCover (Fin r → ℝ) (Tautological ℝ r N) (Fin r)) :
-    (orientationCoverQuotientHomeomorph r N).symm p.proj = Quotient.mk _ p :=
-  (orientationCoverQuotientHomeomorph r N).symm_apply_eq.2
-    (orientationCoverQuotientHomeomorph_mk r N p).symm
+    (orientationCoverQuotientHomeomorph r N).symm p.proj = Quotient.mk _ p := by
+  unfold orientationCoverQuotientHomeomorph
+  exact Topology.IsQuotientMap.orbitRelQuotientHomeomorph_symm_apply _ _ p
 
 end TauCeti.finiteGrassmannian
