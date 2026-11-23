@@ -92,7 +92,7 @@ theorem poleClearedContinuedL_eq_of_eval_ne_zero {s : ℂ} (hP : P.eval s ≠ 0)
   · exact poleClearedContinuedL_eq_of_analyticAt (hPa.mul (d.analyticAt_continuedL hs))
   · apply toMeromorphicNFOn_eq_self_on_compl (meromorphic_eval_mul_continuedL d P).meromorphicOn
     simp only [Set.mem_compl_iff, Set.mem_ofPred_eq]
-    rwa [show meromorphicOrderAt (fun z ↦ P.eval z * d.continuedL z) s = _ from
+    rwa [← Pi.mul_def (fun z ↦ P.eval z) d.continuedL,
       meromorphicOrderAt_mul_of_ne_zero hPa hP]
 
 /-- Clearing by `P ≠ 0` adds the root multiplicity of `P` to the meromorphic order. -/
@@ -190,9 +190,8 @@ theorem orderLE_poleClearedContinuedL {A : ℝ} (hA : OrderLE d.entireCompletion
     have hpc := polarPolynomial_mul_continuedL_eventuallyEq hm s
     have hord : 0 ≤ meromorphicOrderAt d.continuedL s := by
       have h0 := (analyticAt_clearedProduct hE).meromorphicOrderAt_nonneg
-      rwa [← meromorphicOrderAt_congr hpc, show meromorphicOrderAt
-        (fun z ↦ d.polarPolynomial.eval z * d.continuedL z) s = _ from
-        meromorphicOrderAt_mul_of_ne_zero hQa hs] at h0
+      rwa [← meromorphicOrderAt_congr hpc, ← Pi.mul_def (fun z ↦ d.polarPolynomial.eval z)
+        d.continuedL, meromorphicOrderAt_mul_of_ne_zero hQa hs] at h0
     have hc := d.analyticAt_continuedL hord
     have hval := (((hQa.mul hc).continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
       (analyticAt_clearedProduct hE).continuousAt).mp hpc).eq_of_nhds
