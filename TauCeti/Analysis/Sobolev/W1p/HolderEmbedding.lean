@@ -55,7 +55,8 @@ private def W1p.morreyHolderSpace (hp : (finrank ℝ E : ℝ≥0) < p)
     have hvalue : MemLp (W1p.value u) (p : ℝ≥0∞) mu := by
       simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.memLp (W1p.value u)
     exact MemLp.ae_eq (W1p.value_ae_eq_morreyRepresentative u hp) hvalue
-  exact (W1p.holderWith_morreyRepresentative u hp).toHolderSpace hα Fact.out hmem
+  exact (W1p.holderWith_morreyRepresentative u hp).toHolderSpace hα
+    (zero_lt_one.trans_le Fact.out).ne' hmem
 
 private theorem W1p.morreyHolderSpace_apply (hp : (finrank ℝ E : ℝ≥0) < p)
     (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :

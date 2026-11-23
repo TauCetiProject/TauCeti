@@ -468,8 +468,7 @@ theorem maximalFunction_le_ofReal_mul_maximalFunction_map {E' : Type*} [NormedAd
           maximalFunction (μ.map e) (fun z => f (e.symm z)) (e x) /
             (μ.map e) (ball (e x) (r / b)) := by
         gcongr
-        exact setLIntegral_ball_le_measure_mul_maximalFunction (mul_pos ha hr)
-          measure_ball_lt_top.ne
+        exact setLIntegral_ball_le_measure_mul_maximalFunction measure_ball_lt_top.ne
     _ = ENNReal.ofReal ((a * b) ^ finrank ℝ E) *
           maximalFunction (μ.map e) (fun z => f (e.symm z)) (e x) := by
         rw [hratio, mul_right_comm, ENNReal.mul_div_cancel_right hB₀ hB₀']
