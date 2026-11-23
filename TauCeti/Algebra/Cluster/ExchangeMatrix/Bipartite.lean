@@ -58,6 +58,26 @@ theorem isBipartite_iff_forall_nonneg_or_nonpos {I : Type*} (B : Matrix I I ℤ)
     · exact mul_nonneg (hi j) (hi k)
     · exact mul_nonneg_of_nonpos_of_nonpos (hi j) (hi k)
 
+namespace IsBipartite
+
+variable {I : Type*} [DecidableEq I] {B : Matrix I I ℤ} {s : I → ℤ}
+
+/-- At a vertex of a bipartite matrix, mutation negates the incident entries. -/
+theorem matrixMutation_apply (hB : B.IsBipartite) (hs : B.IsSkewSymmetrizer s) (k i j : I) :
+    TauCeti.matrixMutation (Function.Embedding.refl I) B k i j =
+      if i = k ∨ j = k then -B i j else B i j :=
+  hs.matrixMutation_apply_of_row_nonneg_or_nonpos k i j
+    ((B.isBipartite_iff_forall_nonneg_or_nonpos).mp hB k)
+
+/-- Mutating at any vertex of a bipartite matrix preserves its Cartan companion. -/
+theorem cartanCompanion_matrixMutation (hB : B.IsBipartite) (hs : B.IsSkewSymmetrizer s) (k : I) :
+    (TauCeti.matrixMutation (Function.Embedding.refl I) B k).cartanCompanion =
+      B.cartanCompanion :=
+  hs.cartanCompanion_matrixMutation_of_row_nonneg_or_nonpos k
+    ((B.isBipartite_iff_forall_nonneg_or_nonpos).mp hB k)
+
+end IsBipartite
+
 end Matrix
 
 namespace TauCeti.SymmetrizableDatum
@@ -122,8 +142,8 @@ theorem bipartiteExchangeMatrix_matrix : (A.bipartiteExchangeMatrix c).matrix =
     A.bipartiteMatrix c := by rfl
 
 @[simp]
-theorem bipartiteExchangeMatrix_symmetrizer (i : I) :
-    (A.bipartiteExchangeMatrix c).symmetrizer i = A.symmetrizer i := by rfl
+theorem bipartiteExchangeMatrix_symmetrizer :
+    (A.bipartiteExchangeMatrix c).symmetrizer = (fun i ↦ (A.symmetrizer i : ℤ)) := by rfl
 
 /-- Forgetting the orientation recovers the original Cartan matrix exactly. -/
 @[simp]
@@ -153,6 +173,7 @@ theorem bipartiteMatrix_nonpos {i : I} (hc : c i = false) (j : I) :
   · simp [A.bipartiteMatrix_apply_of_ne c hij, hc, A.offDiag_nonpos i j hij]
 
 /-- Every two-coloured symmetrizable Cartan datum yields a bipartite exchange matrix. -/
+@[simp]
 theorem isBipartite_bipartiteMatrix : (A.bipartiteMatrix c).IsBipartite := by
   intro i j k
   cases hc : c i
@@ -161,23 +182,19 @@ theorem isBipartite_bipartiteMatrix : (A.bipartiteMatrix c).IsBipartite := by
   · exact mul_nonneg (A.bipartiteMatrix_nonneg c hc j) (A.bipartiteMatrix_nonneg c hc k)
 
 /-- Mutation at any vertex of the bipartite orientation only reverses incident entries. -/
+@[grind =]
 theorem matrixMutation_bipartiteMatrix_apply (k i j : I) :
     matrixMutation (Function.Embedding.refl I) (A.bipartiteMatrix c) k i j =
-      if i = k ∨ j = k then -A.bipartiteMatrix c i j else A.bipartiteMatrix c i j := by
-  apply (A.isSkewSymmetrizer_bipartiteMatrix c).matrixMutation_apply_of_row_nonneg_or_nonpos
-  cases hc : c k
-  · exact Or.inr (A.bipartiteMatrix_nonpos c hc)
-  · exact Or.inl (A.bipartiteMatrix_nonneg c hc)
+      if i = k ∨ j = k then -A.bipartiteMatrix c i j else A.bipartiteMatrix c i j :=
+  (A.isBipartite_bipartiteMatrix c).matrixMutation_apply
+    (A.isSkewSymmetrizer_bipartiteMatrix c) k i j
 
 /-- Every initial source or sink mutation preserves the given Cartan companion. -/
+@[simp]
 theorem cartanCompanion_matrixMutation_bipartiteMatrix (k : I) :
     (matrixMutation (Function.Embedding.refl I) (A.bipartiteMatrix c) k).cartanCompanion =
       A.cartan := by
-  have h := (A.isSkewSymmetrizer_bipartiteMatrix c)
-  rw [h.cartanCompanion_matrixMutation_of_row_nonneg_or_nonpos k,
-    A.cartanCompanion_bipartiteMatrix c]
-  cases hc : c k
-  · exact Or.inr (A.bipartiteMatrix_nonpos c hc)
-  · exact Or.inl (A.bipartiteMatrix_nonneg c hc)
+  rw [(A.isBipartite_bipartiteMatrix c).cartanCompanion_matrixMutation
+    (A.isSkewSymmetrizer_bipartiteMatrix c) k, A.cartanCompanion_bipartiteMatrix c]
 
 end TauCeti.SymmetrizableDatum
