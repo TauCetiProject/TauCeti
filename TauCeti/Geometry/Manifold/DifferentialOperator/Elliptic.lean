@@ -37,8 +37,9 @@ at most `m + 1` does not have order at most `m`; in particular the zero operator
 
 Operators of Laplace type (`TauCeti.IsSectionLaplaceType`), such as the rough Laplacian `∇*∇`
 (`CovariantDerivative.isSectionLaplaceType_smoothRoughLaplacian`), are elliptic. An operator of
-Dirac type (`TauCeti.IsDiracType`) has injective principal symbol, and it is elliptic exactly when
-its two bundles have the same rank.
+Dirac type (`TauCeti.IsDiracType`) has injective principal symbol at nonzero covectors, so it is
+elliptic when its two bundles have the same rank; over a manifold of positive dimension it is
+elliptic at an interior point exactly when they do.
 
 ## Main definitions
 
