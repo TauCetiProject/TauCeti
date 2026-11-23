@@ -19,7 +19,7 @@ import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 Both polynomials split over `ℂ` with distinct roots, all of them roots of unity:
 
 * `Polynomial.roots_X_pow_add_one`: the roots of `Xⁿ + 1` are `exp (2πi (2k + 1) / 2n)` for
-  `k < n`, each once.
+  `k < n`, each once (none for `n = 0`).
 * `Polynomial.roots_geom_sum_X`: the roots of `1 + X + ⋯ + Xⁿ` are `exp (2πi k / (n + 1))` for
   `k = 1, …, n`, each once.
 -/
@@ -30,12 +30,15 @@ open Polynomial
 
 namespace Polynomial
 
-/-- **The roots of `Xⁿ + 1`** are `exp (2πi (2k + 1) / 2n)` for `k < n`, each once: they are the
-`n`-th roots of `-1 = exp (πi / n) ^ n` (`IsPrimitiveRoot.nthRoots_eq`). -/
-theorem roots_X_pow_add_one {n : ℕ} (hn : n ≠ 0) :
+/-- **The roots of `Xⁿ + 1`** are `exp (2πi (2k + 1) / 2n)` for `k < n`, each once: for `n ≠ 0`
+they are the `n`-th roots of `-1 = exp (πi / n) ^ n` (`IsPrimitiveRoot.nthRoots_eq`), and for
+`n = 0` the constant `2` has no roots. -/
+theorem roots_X_pow_add_one (n : ℕ) :
     (X ^ n + 1 : ℂ[X]).roots = ((List.range n).map fun k : ℕ =>
       Complex.exp (2 * Real.pi * Complex.I * (((2 * k + 1 : ℕ) : ℂ) / ((2 * n : ℕ) : ℂ))) :
         Multiset ℂ) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [pow_zero, ← C_1, ← C_add, roots_C, List.range_zero, List.map_nil, Multiset.coe_nil]
   have hn' : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hn
   have hα : Complex.exp (Real.pi * Complex.I / n) ^ n = -1 := by
     rw [← Complex.exp_natCast_mul, mul_div_cancel₀ _ hn', Complex.exp_pi_mul_I]

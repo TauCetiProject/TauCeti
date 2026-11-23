@@ -22,8 +22,8 @@ matrix:
 | type | `h` | characteristic polynomial |
 |---|---|---|
 | `Aₙ` | `n + 1` | `1 + X + ⋯ + Xⁿ` |
-| `Bₙ`, `Cₙ` | `2n` | `Xⁿ + 1` |
-| `Dₙ` | `2n - 2` | `(X^{n-1} + 1)(X + 1)` |
+| `Bₙ`, `Cₙ` (`n ≥ 1`) | `2n` | `Xⁿ + 1` |
+| `Dₙ` (`n ≥ 3`) | `2n - 2` | `(X^{n-1} + 1)(X + 1)` |
 
 ## Main results
 
@@ -56,7 +56,7 @@ theorem orderOf_wordProd_of_hasCartanType_A [Finite ι] {n : ℕ} (h : HasCartan
     (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd
     hall).trans (orderOf_coxeterElement_A n)
 
-/-- **Every Coxeter element of a base of type `Bₙ` has order `2n`.** -/
+/-- **Every Coxeter element of a base of type `Bₙ` has order `2n`** for `n ≥ 1`. -/
 theorem orderOf_wordProd_of_hasCartanType_B [Finite ι] {n : ℕ} (hn : 1 ≤ n)
     (h : HasCartanType P b (.B n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
     orderOf (wordProd P b l) = 2 * n :=
@@ -64,7 +64,7 @@ theorem orderOf_wordProd_of_hasCartanType_B [Finite ι] {n : ℕ} (hn : 1 ≤ n)
     (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd
     hall).trans (orderOf_coxeterElement_B hn)
 
-/-- **Every Coxeter element of a base of type `Cₙ` has order `2n`.** -/
+/-- **Every Coxeter element of a base of type `Cₙ` has order `2n`** for `n ≥ 1`. -/
 theorem orderOf_wordProd_of_hasCartanType_C [Finite ι] {n : ℕ} (hn : 1 ≤ n)
     (h : HasCartanType P b (.C n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
     orderOf (wordProd P b l) = 2 * n :=
@@ -72,7 +72,7 @@ theorem orderOf_wordProd_of_hasCartanType_C [Finite ι] {n : ℕ} (hn : 1 ≤ n)
     (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd
     hall).trans (orderOf_coxeterElement_C hn)
 
-/-- **Every Coxeter element of a base of type `Dₙ` has order `2n - 2`.** -/
+/-- **Every Coxeter element of a base of type `Dₙ` has order `2n - 2`** for `n ≥ 3`. -/
 theorem orderOf_wordProd_of_hasCartanType_D [Finite ι] {n : ℕ} (hn : 3 ≤ n)
     (h : HasCartanType P b (.D n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
     orderOf (wordProd P b l) = 2 * (n - 1) := by
@@ -91,8 +91,8 @@ theorem charpoly_of_hasCartanType_A_of_actsBy [DecidableEq ι] {n : ℕ}
     (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd hall
     hW).trans (charpoly_coxeterElement_A n)
 
-/-- **Every Coxeter element of a base of type `Bₙ`** has characteristic polynomial `Xⁿ + 1` on
-the simple roots. -/
+/-- **Every Coxeter element of a base of type `Bₙ`** (`n ≥ 1`) has characteristic polynomial
+`Xⁿ + 1` on the simple roots. -/
 theorem charpoly_of_hasCartanType_B_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 1 ≤ n)
     (h : HasCartanType P b (.B n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
@@ -101,8 +101,8 @@ theorem charpoly_of_hasCartanType_B_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 1
     (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd hall
     hW).trans (charpoly_coxeterElement_B hn)
 
-/-- **Every Coxeter element of a base of type `Cₙ`** has characteristic polynomial `Xⁿ + 1` on
-the simple roots. -/
+/-- **Every Coxeter element of a base of type `Cₙ`** (`n ≥ 1`) has characteristic polynomial
+`Xⁿ + 1` on the simple roots. -/
 theorem charpoly_of_hasCartanType_C_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 1 ≤ n)
     (h : HasCartanType P b (.C n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
@@ -111,7 +111,7 @@ theorem charpoly_of_hasCartanType_C_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 1
     (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd hall
     hW).trans (charpoly_coxeterElement_C hn)
 
-/-- **Every Coxeter element of a base of type `Dₙ`** has characteristic polynomial
+/-- **Every Coxeter element of a base of type `Dₙ`** (`n ≥ 3`) has characteristic polynomial
 `(X^{n-1} + 1)(X + 1)` on the simple roots. -/
 theorem charpoly_of_hasCartanType_D_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 3 ≤ n)
     (h : HasCartanType P b (.D n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)

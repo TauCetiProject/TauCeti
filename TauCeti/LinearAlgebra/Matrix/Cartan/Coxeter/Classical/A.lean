@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
-public import TauCeti.LinearAlgebra.Matrix.Intertwining
 public import TauCeti.LinearAlgebra.Matrix.Permutation
-public import TauCeti.GroupTheory.Perm.Coxeter
+public import TauCeti.LinearAlgebra.Matrix.Permutation.Coxeter
 public import TauCeti.Data.List.OneDegenerateOrder
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
@@ -20,8 +19,10 @@ In the `ε`-model the simple root `αᵢ` is `εᵢ - εᵢ₊₁ ∈ ℤⁿ⁺�
 reflection `sᵢ` becomes the permutation matrix of the adjacent transposition
 `TauCeti.BraidGroup.transposition i = (i i+1)` (`TauCeti.Coxeter.epsA_mul_reflMatrix`), and the
 Coxeter element becomes the permutation matrix of their product, the rotation `finRotate (n + 1)`
-(`TauCeti.permCoxeterSystem_wordProd_finRange`), an `(n+1)`-cycle. The `ε`-embedding is injective,
-so the order of the Coxeter element is `n + 1`.
+(`TauCeti.permCoxeterSystem_wordProd_finRange`), an `(n+1)`-cycle. The `ε`-embedding is injective
+(it has the left inverse `TauCeti.Coxeter.epsALeftInv`), so the order of the Coxeter element divides
+that of the rotation; conversely, a permutation fixing every simple root `εᵢ - εᵢ₊₁` is the identity
+(`TauCeti.Coxeter.eq_one_of_permMatrixHom_mul_epsA`), so the two orders agree: both are `n + 1`.
 
 In the basis of simple roots the Coxeter element is, up to relabelling, the companion matrix of
 `1 + X + ⋯ + Xⁿ` (`TauCeti.Coxeter.coxeterElement_A_apply`).
@@ -54,21 +55,6 @@ theorem epsA_mul_reflMatrix (i : Fin n) :
     Fin.val_castSucc, Fin.val_succ]
   split_ifs <;> simp_all <;> omega
 
-/-- If `E` intertwines each `f i` with the permutation matrix of the adjacent transposition
-`(i i+1)`, then it intertwines the product `f 0 * f 1 * ⋯ * f (n - 1)` with the permutation matrix
-of their product, the rotation `finRotate (n + 1)` (`TauCeti.permCoxeterSystem_wordProd_finRange`).
--/
-theorem mul_prod_map_finRange_eq_permMatrixHom_finRotate_mul {k : Type*} [Fintype k]
-    [DecidableEq k] {E : Matrix (Fin (n + 1)) k ℤ} {f : Fin n → Matrix k k ℤ}
-    (h : ∀ i, E * f i = permMatrixHom (R := ℤ) (BraidGroup.transposition (n := n + 1) i) * E) :
-    E * ((List.finRange n).map f).prod = permMatrixHom (R := ℤ) (finRotate (n + 1)) * E := by
-  rw [mul_list_map_prod_eq_list_map_prod_mul h]
-  refine congrArg (· * E) ?_
-  rw [← permCoxeterSystem_wordProd_finRange, permCoxeterSystem_wordProd, map_list_prod,
-    List.map_map, Function.comp_def]
-  -- the two sides differ only in the index type `Fin (n + 1 - 1)`, which reduces to `Fin n`
-  rfl
-
 /-- **The Coxeter element of type `Aₙ` is the rotation `finRotate (n + 1)`** in the `ε`-model. -/
 theorem epsA_mul_coxeterElement :
     epsA n * coxeterElement (CartanMatrix.A n) =
@@ -83,6 +69,7 @@ theorem epsALeftInv_apply (i : Fin n) (a : Fin (n + 1)) :
     epsALeftInv n i a = if a.val ≤ i.val then 1 else 0 :=
   (rfl)
 
+@[simp]
 theorem epsALeftInv_mul_epsA : epsALeftInv n * epsA n = 1 := by
   ext i k
   simp only [epsALeftInv_apply, epsA_apply, Matrix.mul_apply, Matrix.one_apply, mul_sub,

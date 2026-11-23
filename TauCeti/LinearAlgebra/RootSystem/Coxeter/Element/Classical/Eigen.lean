@@ -18,8 +18,8 @@ the exponents `e`, with multiplicity:
 | type | `h` | exponents |
 |---|---|---|
 | `Aₙ` | `n + 1` | `1, 2, …, n` |
-| `Bₙ`, `Cₙ` | `2n` | `1, 3, …, 2n - 1` |
-| `Dₙ` | `2n - 2` | `1, 3, …, 2n - 3` and `n - 1` |
+| `Bₙ`, `Cₙ` (`n ≥ 1`) | `2n` | `1, 3, …, 2n - 1` |
+| `Dₙ` (`n ≥ 3`) | `2n - 2` | `1, 3, …, 2n - 3` and `n - 1` |
 
 For `Dₙ` with `n` even, the exponent `n - 1` is odd and also occurs in `1, 3, …, 2n - 3`, so the
 eigenvalue `-1` is double. The roots of the factors `Xⁿ + 1` and `1 + X + ⋯ + Xⁿ` are
@@ -111,7 +111,7 @@ theorem mem_dExponents_iff {n e : ℕ} :
   simp [dExponents, mem_bExponents_iff]
 
 /-- The multiplicity of `e` among the exponents of `Dₙ`: `n - 1` occurs once more than among the
-odd numbers below `2n - 2`, so twice when `n` is even. -/
+odd numbers below `2n - 2`, so twice when `n` is positive and even. -/
 theorem count_dExponents (n e : ℕ) :
     (dExponents n).count e = (bExponents (n - 1)).count e + if e = n - 1 then 1 else 0 := by
   by_cases h : e = n - 1
@@ -130,7 +130,7 @@ theorem roots_X_pow_add_one_mul_X_add_one {n : ℕ} (hn : 2 ≤ n) :
     simpa using monic_X_pow_add_C (1 : ℂ) (n := k) (by omega)
   have h1 : (X + 1 : ℂ[X]) = X + C 1 := by simp
   rw [roots_mul (mul_ne_zero hmon.ne_zero (h1 ▸ X_add_C_ne_zero 1)),
-    roots_X_pow_add_one (by omega), h1, roots_X_add_C, dExponents_succ, List.map_append,
+    roots_X_pow_add_one, h1, roots_X_add_C, dExponents_succ, List.map_append,
     ← Multiset.coe_add]
   congr 1
   · simp only [bExponents, List.map_map, Function.comp_def]
@@ -156,7 +156,7 @@ theorem eigenvalues_of_hasCartanType_A {n : ℕ} {b : P.Base} (h : HasCartanType
   simp only [Polynomial.map_pow, map_X]
   exact (roots_geom_sum_X n).trans (by simp only [aExponents, List.map_map, Function.comp_def])
 
-/-- **Eigenvalues of every Coxeter element of type `Bₙ`**: `exp (2πi e / 2n)` for
+/-- **Eigenvalues of every Coxeter element of type `Bₙ`** (`n ≥ 1`): `exp (2πi e / 2n)` for
 `e = 1, 3, …, 2n - 1`, each once. -/
 theorem eigenvalues_of_hasCartanType_B {n : ℕ} (hn : 1 ≤ n) {b : P.Base}
     (h : HasCartanType P b (.B n)) {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
@@ -165,10 +165,10 @@ theorem eigenvalues_of_hasCartanType_B {n : ℕ} (hn : 1 ≤ n) {b : P.Base}
       Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((2 * n : ℕ) : ℂ))) : Multiset ℂ) := by
   rw [charpoly_map, charpoly_of_hasCartanType_B_of_actsBy hn h hnd hall hW]
   simp only [Polynomial.map_add, Polynomial.map_pow, map_X, Polynomial.map_one]
-  exact (roots_X_pow_add_one (by omega)).trans
+  exact (roots_X_pow_add_one _).trans
     (by simp only [bExponents, List.map_map, Function.comp_def])
 
-/-- **Eigenvalues of every Coxeter element of type `Cₙ`**: `exp (2πi e / 2n)` for
+/-- **Eigenvalues of every Coxeter element of type `Cₙ`** (`n ≥ 1`): `exp (2πi e / 2n)` for
 `e = 1, 3, …, 2n - 1`, each once. -/
 theorem eigenvalues_of_hasCartanType_C {n : ℕ} (hn : 1 ≤ n) {b : P.Base}
     (h : HasCartanType P b (.C n)) {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
@@ -177,11 +177,12 @@ theorem eigenvalues_of_hasCartanType_C {n : ℕ} (hn : 1 ≤ n) {b : P.Base}
       Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((2 * n : ℕ) : ℂ))) : Multiset ℂ) := by
   rw [charpoly_map, charpoly_of_hasCartanType_C_of_actsBy hn h hnd hall hW]
   simp only [Polynomial.map_add, Polynomial.map_pow, map_X, Polynomial.map_one]
-  exact (roots_X_pow_add_one (by omega)).trans
+  exact (roots_X_pow_add_one _).trans
     (by simp only [bExponents, List.map_map, Function.comp_def])
 
-/-- **Eigenvalues of every Coxeter element of type `Dₙ`**: `exp (2πi e / (2n - 2))` over the
-exponents `1, 3, …, 2n - 3` and `n - 1`, with multiplicity (`-1` is double when `n` is even). -/
+/-- **Eigenvalues of every Coxeter element of type `Dₙ`** (`n ≥ 3`): `exp (2πi e / (2n - 2))`
+over the exponents `1, 3, …, 2n - 3` and `n - 1`, with multiplicity (`-1` is double when `n` is
+even). -/
 theorem eigenvalues_of_hasCartanType_D {n : ℕ} (hn : 3 ≤ n) {b : P.Base}
     (h : HasCartanType P b (.D n)) {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :

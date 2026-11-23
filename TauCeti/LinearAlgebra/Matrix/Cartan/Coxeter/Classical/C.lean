@@ -15,7 +15,8 @@ Mathlib's `Cₙ` Cartan matrix is the transpose of the `Bₙ` one. The diagonal 
 `D = diag (2, …, 2, 1)` symmetrizes `Cₙ` on the left (`D * Cₙ` is symmetric), equivalently `Bₙ` on
 the right, and it intertwines the simple reflections of the two types over `ℤ`:
 `D sᵢ^B = sᵢ^C D` (`TauCeti.Coxeter.dB_mul_reflMatrix_B`). Since `D` is cancellable, the two Coxeter
-elements have the same order, `2n` (`Matrix.orderOf_eq_orderOf_of_mul_eq_mul`).
+elements have the same order (`Matrix.orderOf_eq_orderOf_of_isLeftRegular`), which is `2n` for
+`n ≥ 1`.
 -/
 
 public section
@@ -45,23 +46,20 @@ theorem dB_mul_reflMatrix_B (i : Fin n) :
 /-- **`diag (2, …, 2, 1)` intertwines the Coxeter elements of types `Bₙ` and `Cₙ`.** -/
 theorem dB_mul_coxeterElement :
     dB n * coxeterElement (CartanMatrix.B n) = coxeterElement (CartanMatrix.C n) * dB n :=
-  mul_list_map_prod_eq_list_map_prod_mul dB_mul_reflMatrix_B _
+  mul_prod_map_eq_prod_map_mul dB_mul_reflMatrix_B _
 
-/-- `dB` can be cancelled on the left (hence also on the right,
-`Matrix.isLeftRegular_iff_isRightRegular`). -/
+/-- `dB` can be cancelled on the left: its diagonal entries are nonzero. -/
 theorem isLeftRegular_dB : IsLeftRegular (dB n) := fun X Y h => by
   ext a j
   have := congrFun (congrFun h a) j
   simp only [dB, diagonal_mul] at this
   exact mul_left_cancel₀ (by split_ifs <;> norm_num) this
 
-/-- **The Coxeter element of type `Cₙ` has order `2n`.** -/
+/-- **The Coxeter element of type `Cₙ` has order `2n`** for `n ≥ 1`. -/
 theorem orderOf_coxeterElement_C (hn : 1 ≤ n) :
     orderOf (coxeterElement (CartanMatrix.C n)) = 2 * n := by
-  rw [← orderOf_coxeterElement_B hn, orderOf_eq_orderOf_of_mul_eq_mul dB_mul_coxeterElement
-    (fun k h => isLeftRegular_dB (h.trans (Matrix.mul_one _).symm))
-    (fun k h => isLeftRegular_iff_isRightRegular.mp isLeftRegular_dB
-      (h.trans (Matrix.one_mul _).symm))]
+  rw [← orderOf_coxeterElement_B hn,
+    orderOf_eq_orderOf_of_isLeftRegular dB_mul_coxeterElement isLeftRegular_dB]
 
 /-- The path `0, 1, …, n - 1` is a one-degenerate order of the Dynkin diagram of type `Cₙ`. -/
 theorem isOneDegenerateOrder_C (n : ℕ) :

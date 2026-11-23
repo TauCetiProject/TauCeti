@@ -19,7 +19,8 @@ Mathlib's `Dₙ` (`n = m + 3`) has the chain `0 - 1 - ⋯ - (n-3)` and the fork 
 (`TauCeti.Coxeter.epsD`, injective but of determinant `2`). The reflections become the
 transpositions `(i i+1)` and the signed swap `ε_{n-2} ↦ -ε_{n-1}`, `ε_{n-1} ↦ -ε_{n-2}`; the Coxeter
 element is the negacyclic shift of the first `n - 1` coordinates times `-1` on the last
-(`TauCeti.Coxeter.reindex_negaD`), so its order is that of the negacyclic shift, `2n - 2`.
+(`TauCeti.Coxeter.negaD`, block diagonal by definition), so its order is that of the negacyclic
+shift, `2n - 2`.
 -/
 
 public section
@@ -91,10 +92,20 @@ private theorem epsD_mul_reflMatrix_last (i : Fin (m + 3)) (hi : i.val = m + 2) 
     ite_false, lt_irrefl, or_true, and_true]
   split_ifs <;> omega
 
-/-! The simple reflections `sᵢ`, `i < n - 1`, are transpositions in the `ε`-model. The proof splits
-by where `sᵢ` sits in the Dynkin diagram (the chain, the branch node, the node before the fork), so
-that `simp` can settle the branches of `CartanMatrix.D` before `split_ifs`. The three cases are
-separate declarations because together they exceed the default heartbeat budget. -/
+/-- **The fork reflection `s_{n-1}` of type `Dₙ` is the signed swap `ε_{n-2} ↦ -ε_{n-1}`,
+`ε_{n-1} ↦ -ε_{n-2}`** in the `ε`-model. -/
+theorem epsD_mul_reflMatrix_last_apply (i : Fin (m + 3)) (hi : i.val = m + 2) (a j : Fin (m + 3)) :
+    (epsD m * reflMatrix (CartanMatrix.D (m + 3)) i) a j =
+      if a.val = m + 1 then -epsD m (Fin.last (m + 2)) j
+      else if a.val = m + 2 then -epsD m ⟨m + 1, by omega⟩ j else epsD m a j := by
+  rw [epsD_mul_reflMatrix_last i hi, flipPair_mul_apply]
+
+/-! The simple reflections `sᵢ`, `i < n - 1`, are the transpositions `(i i+1)` in the `ε`-model.
+We treat separately the chain nodes `i < n - 3`, the branch node `i = n - 3` and the node
+`i = n - 2` before the fork. -/
+
+-- Splitting by node lets `simp` settle the branches of `CartanMatrix.D` before `split_ifs`; the
+-- three cases are separate declarations because together they exceed the default heartbeat budget.
 
 private theorem epsD_mul_reflMatrix_chain (i : Fin (m + 3)) (hi : i.val < m) :
     epsD m * reflMatrix (CartanMatrix.D (m + 3)) i =
@@ -139,57 +150,21 @@ private theorem epsD_mul_reflMatrix_pre (i : Fin (m + 3)) (hi : i.val = m + 1) :
     omega
 
 /-- The simple reflections `s₀, …, s_{n-2}` of type `Dₙ` are transpositions in the `ε`-model. -/
-theorem epsD_mul_reflMatrix_of_lt (i : Fin (m + 3)) (hi : i.val < m + 2) :
+theorem epsD_mul_reflMatrix_of_lt (i : Fin (m + 3)) (hi : i.val + 1 < m + 3) :
     epsD m * reflMatrix (CartanMatrix.D (m + 3)) i =
-      permMatrixHom (R := ℤ) (Equiv.swap i ⟨i.val + 1, by omega⟩) * epsD m := by
+      permMatrixHom (R := ℤ) (Equiv.swap i ⟨i.val + 1, hi⟩) * epsD m := by
   rcases Nat.lt_or_ge i.val m with h | h
   · exact epsD_mul_reflMatrix_chain i h
   · rcases Nat.eq_or_lt_of_le h with h' | h'
     · exact epsD_mul_reflMatrix_branch i h'.symm
     · exact epsD_mul_reflMatrix_pre i (by omega)
 
-/-- The Coxeter element of type `D_{m+3}` in the `ε`-model: the negacyclic shift of the first
-`m + 2` coordinates, and `-1` on the last. -/
+/-- The Coxeter element of type `D_{m+3}` in the `ε`-model: block diagonal, with the negacyclic
+shift on the first `m + 2` coordinates and `-1` on the last. -/
 def negaD (m : ℕ) : Matrix (Fin (m + 3)) (Fin (m + 3)) ℤ :=
-  Matrix.of fun a b =>
-    if b.val < m + 1 ∧ a.val = b.val + 1 then 1 else if b.val = m + 1 ∧ a.val = 0 then -1
-    else if b.val = m + 2 ∧ a.val = m + 2 then -1 else 0
-
-theorem negaD_apply (a b : Fin (m + 3)) :
-    negaD m a b =
-      if b.val < m + 1 ∧ a.val = b.val + 1 then 1 else if b.val = m + 1 ∧ a.val = 0 then -1
-      else if b.val = m + 2 ∧ a.val = m + 2 then -1 else 0 :=
-  (rfl)
-
-/-- **The Coxeter element of type `Dₙ` is `negaD`** in the `ε`-model. -/
-theorem epsD_mul_coxeterElement :
-    epsD m * coxeterElement (CartanMatrix.D (m + 3)) = negaD m * epsD m := by
-  have hlong : ∀ i : Fin (m + 2), epsD m * reflMatrix (CartanMatrix.D (m + 3)) i.castSucc =
-      permMatrixHom (R := ℤ) (BraidGroup.transposition (n := m + 3) i) * epsD m := fun i => by
-    rw [BraidGroup.transposition_eq_swap_castSucc_succ,
-      show i.succ = ⟨i.castSucc.val + 1, by have := i.isLt; simp only [Fin.val_castSucc]; omega⟩
-        from Fin.ext (by simp)]
-    exact epsD_mul_reflMatrix_of_lt _ (by simp)
-  rw [coxeterElement, List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
-    Function.comp_def, ← Matrix.mul_assoc,
-    mul_prod_map_finRange_eq_permMatrixHom_finRotate_mul hlong, List.map_cons, List.map_nil,
-    List.prod_cons, List.prod_nil, Matrix.mul_one, Matrix.mul_assoc,
-    epsD_mul_reflMatrix_last _ (by simp), ← Matrix.mul_assoc]
-  congr 1
-  ext a b
-  rw [permMatrixHom_mul_apply]
-  obtain ⟨x, rfl⟩ := (finRotate (m + 3)).surjective a
-  have hval : (finRotate (m + 3) x).val = (x.val + 1) % (m + 3) := by
-    rw [finRotate_apply, Fin.val_add, Fin.val_one]
-  rw [Equiv.symm_apply_apply]
-  simp only [flipPair, negaD, Matrix.of_apply, Fin.ext_iff]
-  rw [hval]
-  by_cases hx : x.val + 1 < m + 3
-  · have hm := Nat.mod_eq_of_lt hx
-    split_ifs <;> omega
-  · have hx' : x.val + 1 = m + 3 := by omega
-    have hm : (x.val + 1) % (m + 3) = 0 := by rw [hx', Nat.mod_self]
-    split_ifs <;> omega
+  reindex (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3))
+    (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3))
+    (fromBlocks (negaShift (m + 2)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ))
 
 /-- `negaD m` is block diagonal: the negacyclic shift on the first `m + 2` coordinates, `-1` on
 the last. -/
@@ -197,21 +172,48 @@ theorem reindex_negaD (m : ℕ) :
     reindex (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3)).symm
         (finSumFinEquiv : Fin (m + 2) ⊕ Fin 1 ≃ Fin (m + 3)).symm (negaD m) =
       fromBlocks (negaShift (m + 2)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ) := by
-  ext (i | i) (j | j)
-  · simp only [reindex_apply, submatrix_apply, Equiv.symm_symm, finSumFinEquiv_apply_left,
-      fromBlocks_apply₁₁, negaD_apply, negaShift_apply, Fin.val_castAdd]
+  rw [negaD, ← reindex_symm, Equiv.symm_apply_apply]
+
+theorem negaD_apply (a b : Fin (m + 3)) :
+    negaD m a b =
+      if b.val < m + 1 ∧ a.val = b.val + 1 then 1 else if b.val = m + 1 ∧ a.val = 0 then -1
+      else if b.val = m + 2 ∧ a.val = m + 2 then -1 else 0 := by
+  rw [negaD, reindex_apply, submatrix_apply]
+  refine Fin.addCases (m := m + 2) (n := 1) (fun a => ?_) (fun a => ?_) a <;>
+    refine Fin.addCases (m := m + 2) (n := 1) (fun b => ?_) (fun b => ?_) b <;>
+    have := a.isLt <;> have := b.isLt
+  · simp only [finSumFinEquiv_symm_apply_castAdd, fromBlocks_apply₁₁, negaShift_apply,
+      Fin.val_castAdd]
     split_ifs <;> omega
-  · simp only [reindex_apply, submatrix_apply, Equiv.symm_symm, finSumFinEquiv_apply_left,
-      finSumFinEquiv_apply_right, fromBlocks_apply₁₂, negaD_apply, Fin.val_castAdd,
-      Fin.val_natAdd, Matrix.zero_apply]
+  · simp only [finSumFinEquiv_symm_apply_castAdd, finSumFinEquiv_symm_apply_natAdd,
+      fromBlocks_apply₁₂, Matrix.zero_apply, Fin.val_castAdd, Fin.val_natAdd]
     split_ifs <;> omega
-  · simp only [reindex_apply, submatrix_apply, Equiv.symm_symm, finSumFinEquiv_apply_left,
-      finSumFinEquiv_apply_right, fromBlocks_apply₂₁, negaD_apply, Fin.val_castAdd,
-      Fin.val_natAdd, Matrix.zero_apply]
+  · simp only [finSumFinEquiv_symm_apply_castAdd, finSumFinEquiv_symm_apply_natAdd,
+      fromBlocks_apply₂₁, Matrix.zero_apply, Fin.val_castAdd, Fin.val_natAdd]
     split_ifs <;> omega
-  · simp only [reindex_apply, submatrix_apply, Equiv.symm_symm, finSumFinEquiv_apply_right,
-      fromBlocks_apply₂₂, negaD_apply, Fin.val_natAdd, Matrix.neg_apply, Matrix.one_apply,
-      Subsingleton.elim i j]
+  · simp only [finSumFinEquiv_symm_apply_natAdd, fromBlocks_apply₂₂, Matrix.neg_apply,
+      Matrix.one_apply, Subsingleton.elim a b, Fin.val_natAdd]
+    split_ifs <;> omega
+
+/-- **The Coxeter element of type `Dₙ` is `negaD`** in the `ε`-model. -/
+theorem epsD_mul_coxeterElement :
+    epsD m * coxeterElement (CartanMatrix.D (m + 3)) = negaD m * epsD m := by
+  rw [coxeterElement, mul_prod_map_finRange_succ_eq_permMatrixHom_finRotate_mul_mul
+    epsD_mul_reflMatrix_of_lt (epsD_mul_reflMatrix_last _ (by simp))]
+  congr 1
+  ext a b
+  rw [permMatrixHom_mul_apply]
+  obtain ⟨x, rfl⟩ := (finRotate (m + 3)).surjective a
+  have hval : (finRotate (m + 3) x).val = (x.val + 1) % (m + 3) := by
+    rw [finRotate_apply, Fin.val_add, Fin.val_one]
+  rw [Equiv.symm_apply_apply]
+  simp only [flipPair, negaD_apply, Matrix.of_apply, Fin.ext_iff]
+  rw [hval]
+  by_cases hx : x.val + 1 < m + 3
+  · have hm := Nat.mod_eq_of_lt hx
+    split_ifs <;> omega
+  · have hx' : x.val + 1 = m + 3 := by omega
+    have hm : (x.val + 1) % (m + 3) = 0 := by rw [hx', Nat.mod_self]
     split_ifs <;> omega
 
 /-- **The `Dₙ` Coxeter matrix `negaD` has order `2n - 2`**, the order of its block
@@ -222,14 +224,15 @@ theorem orderOf_negaD : orderOf (negaD m) = 2 * (m + 2) := by
   rw [RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv, AlgEquiv.coe_toRingEquiv,
     coe_reindexAlgEquiv, reindex_negaD] at h
   rw [← h]
-  refine (orderOf_eq_orderOf_iff.2 fun k => ?_).trans orderOf_negaShift
+  refine (orderOf_eq_orderOf_iff.2 fun k => ?_).trans (orderOf_negaShift (by omega))
   rw [fromBlocks_diagonal_pow, ← fromBlocks_one, fromBlocks_inj]
   refine ⟨fun h => h.1, fun h => ⟨h, rfl, rfl, ?_⟩⟩
   have hdvd := orderOf_dvd_of_pow_eq_one h
-  rw [orderOf_negaShift] at hdvd
+  rw [orderOf_negaShift (by omega)] at hdvd
   exact (even_iff_two_dvd.2 ((dvd_mul_right 2 _).trans hdvd)).neg_one_pow
 
-theorem epsD_mul_apply {k : Type*} (Z : Matrix (Fin (m + 3)) k ℤ) (a : Fin (m + 3)) (j : k) :
+private theorem epsD_mul_apply {k : Type*} (Z : Matrix (Fin (m + 3)) k ℤ) (a : Fin (m + 3))
+    (j : k) :
     (epsD m * Z) a j =
       (if a.val < m + 2 then Z a j else 0) -
         (if h : 1 ≤ a.val then Z ⟨a.val - 1, by omega⟩ j else 0) +
@@ -255,8 +258,7 @@ theorem epsD_mul_apply {k : Type*} (Z : Matrix (Fin (m + 3)) k ℤ) (a : Fin (m 
   · rw [dite_eq_right ha]
     exact Finset.sum_eq_zero fun c _ => ite_eq_right_iff.2 fun h => absurd h.1 (by omega)
 
-/-- `epsD` can be cancelled on the left (it has determinant `2` and `ℤ` is torsion-free), hence
-also on the right (`Matrix.isLeftRegular_iff_isRightRegular`). -/
+/-- `epsD` can be cancelled on the left (it has determinant `2` and `ℤ` is torsion-free). -/
 theorem isLeftRegular_epsD : IsLeftRegular (epsD m) := fun X Y h => by
   replace h : epsD m * X = epsD m * Y := h
   have hZ : epsD m * (X - Y) = 0 := by rw [Matrix.mul_sub, h, sub_self]
@@ -299,14 +301,12 @@ theorem isLeftRegular_epsD : IsLeftRegular (epsD m) := fun X Y h => by
   · obtain hh | hh : c.val = m + 1 ∨ c.val = m + 2 := by omega
     all_goals rw [hh]; omega
 
-/-- **The Coxeter element of type `Dₙ` has order `2n - 2`.** -/
+/-- **The Coxeter element of type `Dₙ` has order `2n - 2`** for `n ≥ 3`. -/
 theorem orderOf_coxeterElement_D {n : ℕ} (hn : 3 ≤ n) :
     orderOf (coxeterElement (CartanMatrix.D n)) = 2 * (n - 1) := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
-  refine (orderOf_eq_orderOf_of_mul_eq_mul epsD_mul_coxeterElement
-    (fun k h => isLeftRegular_epsD (h.trans (Matrix.mul_one _).symm))
-    (fun k h => isLeftRegular_iff_isRightRegular.mp isLeftRegular_epsD
-      (h.trans (Matrix.one_mul _).symm))).trans orderOf_negaD
+  exact (orderOf_eq_orderOf_of_isLeftRegular epsD_mul_coxeterElement isLeftRegular_epsD).trans
+    orderOf_negaD
 
 /-- The order `0, 1, …, n - 1` is a one-degenerate order of the Dynkin diagram of type `Dₙ`
 (`n = m + 3`): the fork node `n - 1` has the single earlier neighbour `n - 3`. -/
