@@ -24,6 +24,8 @@ Benjamini–Hochberg procedure rejects the hypotheses whose p-values are at most
 ## Main results
 
 * `TauCeti.benjaminiHochbergCount_le`: the count is at most `m`.
+* `TauCeti.benjaminiHochbergCount_comp_perm`: the count does not depend on the order of the
+  p-values.
 * `TauCeti.le_benjaminiHochbergCount`, `TauCeti.benjaminiHochbergCount_le_iff`: lower bounds
   from a qualifying `k`, and upper bounds from the failure of every larger `j`.
 * `TauCeti.benjaminiHochbergCount_right_monotone`: the count is monotone in `α`.
@@ -68,6 +70,19 @@ theorem le_benjaminiHochbergCount (p : Fin m → ℝ) (α : ℝ) {k : ℕ}
 @[grind! .]
 theorem benjaminiHochbergCount_le (p : Fin m → ℝ) (α : ℝ) : benjaminiHochbergCount p α ≤ m :=
   Nat.findGreatest_le m
+
+/-- The Benjamini–Hochberg count of no p-values is `0`. -/
+@[simp]
+theorem benjaminiHochbergCount_fin_zero (p : Fin 0 → ℝ) (α : ℝ) : benjaminiHochbergCount p α = 0 :=
+  Nat.le_zero.1 (benjaminiHochbergCount_le p α)
+
+/-- The Benjamini–Hochberg count does not depend on the order of the p-values. -/
+theorem benjaminiHochbergCount_comp_perm (p : Fin m → ℝ) (α : ℝ) (σ : Equiv.Perm (Fin m)) :
+    benjaminiHochbergCount (p ∘ σ) α = benjaminiHochbergCount p α := by
+  rw [benjaminiHochbergCount_def, benjaminiHochbergCount_def]
+  congr 1
+  funext k
+  rw [card_equiv σ (t := {i | p i ≤ k * α / m}) fun i ↦ by simp]
 
 /-- At least `k` p-values are at most `k α / m`, where `k` is the Benjamini–Hochberg count. -/
 @[grind! .]

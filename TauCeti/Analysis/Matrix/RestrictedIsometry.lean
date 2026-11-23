@@ -69,10 +69,8 @@ theorem toEuclideanLin_injOn_of_forall_mul_norm_sq_le (A : Matrix m ι ℝ) {s :
     Set.InjOn (toEuclideanLin A) {x | hammingNorm (WithLp.ofLp x) ≤ s} := by
   intro x hx y hy hxy
   have hsparse : hammingNorm (WithLp.ofLp (x - y)) ≤ 2 * s := by
-    rw [WithLp.ofLp_sub, sub_eq_add_neg, two_mul]
-    refine (TauCeti.hammingNorm_add_le _ _).trans ?_
-    rw [TauCeti.hammingNorm_neg]
-    exact add_le_add hx hy
+    rw [WithLp.ofLp_sub, two_mul]
+    exact (TauCeti.hammingNorm_sub_le _ _).trans (add_le_add hx hy)
   have h := hA _ hsparse
   rw [map_sub, hxy, sub_self, norm_zero] at h
   have hsq : ‖x - y‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖x - y‖]
