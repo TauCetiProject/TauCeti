@@ -63,7 +63,8 @@ supported in a fixed closed disc, on whose support the vortex equation holds,
 For variations vanishing on the disc of radius `R` it gives the exterior bound
 `TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`, and in addition it
 controls the covariant gradient of the variation, which bounds the flat gradient up to the term
-`2 ‖x‖² ‖y‖²` given by the norm of the field (`TauCeti.Vortex.sum_norm_gradient_sq_le`).
+`2 (A₁² + A₂²) ‖y‖²` given by the connection coefficients of the field
+(`TauCeti.Vortex.sum_norm_gradient_sq_le`).
 Combined with the compactness of `H¹ → L²` on the disc, an estimate of this form gives
 finite-dimensionality of the kernel and closedness of the range of `L_x` on the completed spaces.
 The radius and the constant depend on the vortex and on `a`. These are classical test-field
@@ -139,6 +140,28 @@ theorem gaugeFixedGradientDensity_nonneg (x y : ℂ → EuclideanSpace ℝ (Fin 
   rw [gaugeFixedGradientDensity_def]
   positivity
 
+/-- The squared gradient of a function on `ℂ` is the sum of its squared partial derivatives along
+`1` and `I`. -/
+private theorem norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq (f : ℂ → ℝ) (z : ℂ) :
+    ‖∇ f z‖ ^ 2 = fderiv ℝ f z 1 ^ 2 + fderiv ℝ f z I ^ 2 := by
+  rw [← Complex.orthonormalBasisOneI.sum_sq_inner_left]
+  simp [Fin.sum_univ_two, inner_gradient_left]
+
+/-- The covariant gradient density controls the flat gradient of a variation `y`, up to the term
+`2 (A₁² + A₂²) ‖y z‖²` given by the connection coefficients of the field, where
+`a = i (A₁ ds + A₂ dt)`. -/
+theorem sum_norm_gradient_sq_le (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ∑ j : Fin 4, ‖∇ (fun w ↦ y w j) z‖ ^ 2 ≤
+      2 * gaugeFixedGradientDensity x y z + 2 * (x z 0 ^ 2 + x z 1 ^ 2) * ‖y z‖ ^ 2 := by
+  simp only [Fin.sum_univ_four, norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq,
+    gaugeFixedGradientDensity_def, EuclideanSpace.real_norm_sq_eq]
+  nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z 1 - 2 * x z 0 * y z 3),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z 1 + 2 * x z 0 * y z 2),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z I - 2 * x z 1 * y z 3),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z I + 2 * x z 1 * y z 2),
+    mul_nonneg (add_nonneg (sq_nonneg (x z 0)) (sq_nonneg (x z 1)))
+      (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1)))]
+
 /-- The squared derivative of a variation is controlled by its covariant gradient density and
 the connection coefficients of the field:
 `|Dy|² ≤ 4 (|∇b|² + |∇_a ψ|²) + 4 (A₁² + A₂²) |y|²`, where `a = i (A₁ ds + A₂ dt)`. -/
@@ -146,37 +169,10 @@ theorem norm_fderiv_sq_le_gaugeFixedGradientDensity_add (x y : ℂ → Euclidean
     (z : ℂ) :
     ‖fderiv ℝ y z‖ ^ 2 ≤
       4 * gaugeFixedGradientDensity x y z + 4 * (x z 0 ^ 2 + x z 1 ^ 2) * ‖y z‖ ^ 2 := by
+  have h := sum_norm_gradient_sq_le x y z
   have hD := norm_fderiv_sq_le_two_mul_sum_sq y z
-  rw [Fin.sum_univ_four] at hD
-  rw [gaugeFixedGradientDensity_def, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
-  nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z 1 - 2 * (x z 0 * y z 3)),
-    sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z I - 2 * (x z 1 * y z 3)),
-    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z 1 + 2 * (x z 0 * y z 2)),
-    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z I + 2 * (x z 1 * y z 2)),
-    mul_nonneg (sq_nonneg (x z 0)) (sq_nonneg (y z 0)),
-    mul_nonneg (sq_nonneg (x z 0)) (sq_nonneg (y z 1)),
-    mul_nonneg (sq_nonneg (x z 1)) (sq_nonneg (y z 0)),
-    mul_nonneg (sq_nonneg (x z 1)) (sq_nonneg (y z 1))]
-
-/-- The covariant gradient density controls the flat gradient of a variation `y`, up to the term
-`2 ‖x z‖² ‖y z‖²` given by the norm of the field `x`. -/
-theorem sum_norm_gradient_sq_le (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    ∑ j : Fin 4, ‖∇ (fun w ↦ y w j) z‖ ^ 2 ≤
-      2 * gaugeFixedGradientDensity x y z + 2 * ‖x z‖ ^ 2 * ‖y z‖ ^ 2 := by
-  have hg (f : ℂ → ℝ) : ‖∇ f z‖ ^ 2 = fderiv ℝ f z 1 ^ 2 + fderiv ℝ f z I ^ 2 := by
-    rw [← Complex.orthonormalBasisOneI.sum_sq_inner_left]
-    simp [Fin.sum_univ_two, inner_gradient_left]
-  simp only [Fin.sum_univ_four, hg, gaugeFixedGradientDensity_def, EuclideanSpace.real_norm_sq_eq]
-  nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z 1 - 2 * x z 0 * y z 3),
-    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z 1 + 2 * x z 0 * y z 2),
-    sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z I - 2 * x z 1 * y z 3),
-    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z I + 2 * x z 1 * y z 2),
-    mul_nonneg (add_nonneg (sq_nonneg (x z 2)) (sq_nonneg (x z 3)))
-      (add_nonneg (sq_nonneg (y z 2)) (sq_nonneg (y z 3))),
-    mul_nonneg (add_nonneg (sq_nonneg (x z 0)) (sq_nonneg (x z 1)))
-      (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1))),
-    mul_nonneg (add_nonneg (sq_nonneg (x z 2)) (sq_nonneg (x z 3)))
-      (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1)))]
+  simp only [Fin.sum_univ_four, norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq] at h hD
+  linarith
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
 

@@ -85,7 +85,7 @@ All in the namespace `TauCeti.Vortex`:
   the global weighted estimates for `η` and `L_x* η` in terms of `L_x L_x* η`.
 * `exists_integral_gaugeFixedGradientDensity_fun_smul_le`: the weighted Gårding inequality.
 * `exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le` and
-  `exists_integral_norm_sq_fderiv_exp_smul_gaugeFixedAdjoint_le`: the weighted covariant and
+  `exists_integral_norm_fderiv_sq_exp_smul_gaugeFixedAdjoint_le`: the weighted covariant and
   ordinary gradient estimates for `exp(c ρ) L_x* η` in terms of `L_x L_x* η`.
 
 ## References
@@ -733,7 +733,7 @@ satisfies
 With `exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq`, this
 bounds `‖exp(c ρ) L_x* η‖_{H¹}` by `‖exp(c ρ) L_x L_x* η‖₂`: the exponentially weighted output
 estimate for the right inverse `L_x* (L_x L_x*)⁻¹`, from `L²` to `H¹`, on inputs of this form. -/
-theorem exists_integral_norm_sq_fderiv_exp_smul_gaugeFixedAdjoint_le
+theorem exists_integral_norm_fderiv_sq_exp_smul_gaugeFixedAdjoint_le
     (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     {M : ℝ} (hM : ∀ z, x z 0 ^ 2 + x z 1 ^ 2 ≤ M) {c : ℝ} (hc : |c| < 1 / 2) :
