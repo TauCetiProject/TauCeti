@@ -14,8 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
 The energy of a continuous bilinear map is the sum of squared output norms over orthonormal
 bases in both input slots. It is independent of the chosen bases when the output is an inner
 product space. This is the squared Hilbert–Schmidt norm of tensors such as a second fundamental
-form; the output need not be finite-dimensional. Otis Chodosh authored the original
-formalization of the bilinear energy and its basis-independent sum formula.
+form; the output need not be finite-dimensional.
 
 The main results are `ContinuousLinearMap.bilinearHilbertSchmidtEnergy_eq_sum`, its zero
 criterion, its scaling law, and invariance under linear isometric equivalences of the inputs
@@ -47,12 +46,20 @@ def bilinearHilbertSchmidtEnergy (T : E →L[𝕜] E₂ →L[𝕜] F) : ℝ :=
   TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 (E ⊗[𝕜] E₂) F
     (TensorProduct.lift T.toLinearMap₁₂) ^ 2
 
-/-- The two input slots may use arbitrary, independently chosen orthonormal bases. -/
+/-- The energy is the squared Frobenius seminorm of the tensor-product linearization. -/
+theorem bilinearHilbertSchmidtEnergy_def (T : E →L[𝕜] E₂ →L[𝕜] F) :
+    bilinearHilbertSchmidtEnergy T =
+      TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 (E ⊗[𝕜] E₂) F
+        (TensorProduct.lift T.toLinearMap₁₂) ^ 2 :=
+  (rfl)
+
+/-- The energy is `∑ i, ∑ j, ‖T (b₁ i) (b₂ j)‖ ^ 2` for any orthonormal bases `b₁` of `E`
+and `b₂` of `E₂`, chosen independently. -/
 theorem bilinearHilbertSchmidtEnergy_eq_sum {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
     (b₁ : OrthonormalBasis ι₁ 𝕜 E) (b₂ : OrthonormalBasis ι₂ 𝕜 E₂)
     (T : E →L[𝕜] E₂ →L[𝕜] F) :
     bilinearHilbertSchmidtEnergy T = ∑ i, ∑ j, ‖T (b₁ i) (b₂ j)‖ ^ 2 := by
-  rw [bilinearHilbertSchmidtEnergy,
+  rw [bilinearHilbertSchmidtEnergy_def,
     TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply (b₁.tensorProduct b₂)]
   simp only [Fintype.sum_prod_type, OrthonormalBasis.tensorProduct_apply,
     TensorProduct.lift.tmul, toLinearMap₁₂_apply_apply_apply]
@@ -68,7 +75,8 @@ theorem bilinearHilbertSchmidtEnergy_flip (T : E →L[𝕜] E₂ →L[𝕜] F) :
   simp only [flip_apply]
   exact Finset.sum_comm
 
-/-- Sum of the ordinary one-slot Hilbert–Schmidt energies of the slices. -/
+/-- The energy is the sum of squared one-slot Hilbert–Schmidt norms of the slices
+`T (b₁ i)`. -/
 theorem bilinearHilbertSchmidtEnergy_eq_sum_sq_hilbertSchmidtNorm
     {ι₁ : Type*} [Fintype ι₁] (b₁ : OrthonormalBasis ι₁ 𝕜 E)
     (T : E →L[𝕜] E₂ →L[𝕜] F) :
@@ -132,7 +140,7 @@ theorem bilinearHilbertSchmidtEnergy_eq_zero_iff (T : E →L[𝕜] E₂ →L[�
 
 /-- Input linear isometric equivalences and pointwise equality of output norms preserve
 bilinear energy, even when the maps have different output spaces. -/
-theorem bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquivs_of_norm_eq {E' E₂' G : Type*}
+theorem bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquiv_of_norm_eq {E' E₂' G : Type*}
     [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E'] [FiniteDimensional 𝕜 E']
     [NormedAddCommGroup E₂'] [InnerProductSpace 𝕜 E₂'] [FiniteDimensional 𝕜 E₂']
     [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
@@ -152,13 +160,13 @@ theorem bilinearHilbertSchmidtEnergy_eq_of_norm_eq {G : Type*} [NormedAddCommGro
     (S : E →L[𝕜] E₂ →L[𝕜] G)
     (h : ∀ x y, ‖T x y‖ = ‖S x y‖) :
     bilinearHilbertSchmidtEnergy T = bilinearHilbertSchmidtEnergy S := by
-  apply bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquivs_of_norm_eq S T
+  apply bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquiv_of_norm_eq S T
     (.refl 𝕜 E) (.refl 𝕜 E₂)
   simpa only [LinearIsometryEquiv.coe_refl, id_eq] using h
 
 /-- Independent input linear isometric equivalences and an output linear isometry preserve
 energy. The output isometry need not be surjective. -/
-theorem bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquivs_of_linearIsometry
+theorem bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquiv_of_linearIsometry
     {E' E₂' G : Type*}
     [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E'] [FiniteDimensional 𝕜 E']
     [NormedAddCommGroup E₂'] [InnerProductSpace 𝕜 E₂'] [FiniteDimensional 𝕜 E₂']
@@ -167,7 +175,7 @@ theorem bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquivs_of_linearIsometr
     (e₁ : E' ≃ₗᵢ[𝕜] E) (e₂ : E₂' ≃ₗᵢ[𝕜] E₂) (U : F →ₗᵢ[𝕜] G)
     (h : ∀ x y, S x y = U (T (e₁ x) (e₂ y))) :
     bilinearHilbertSchmidtEnergy S = bilinearHilbertSchmidtEnergy T := by
-  apply bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquivs_of_norm_eq T S e₁ e₂
+  apply bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquiv_of_norm_eq T S e₁ e₂
   intro x y
   rw [h, U.norm_map]
 
