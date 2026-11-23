@@ -37,8 +37,8 @@ not prove it.
 
 Pullback along a bijection `Φ` of `E` such that `Φ` and `Φ⁻¹` are smooth with bounded
 derivatives of every positive order preserves the Bessel-potential space `H^s`
-(`TemperedDistribution.MemSobolev.compCLM`). Two steps reduce the local statement to this global
-statement.
+(`TemperedDistribution.MemSobolev.compCLM_of_norm_iteratedFDeriv_le_natCeil` at `p = 2`). Two
+steps reduce the local statement to this global statement.
 
 * **Extension of the change of variables.** Near `x`, `e` agrees with such a global bijection `Φ`
   (`TauCeti.exists_equiv_eventuallyEq_of_det_fderiv_ne_zero`), which is affine outside a compact
@@ -168,8 +168,9 @@ theorem IsLocallySobolevAt.compCLMOfOpenPartialHomeomorph {s : ℝ} {T : 𝓓'(�
   have hχN : EqOn χ 1 (e '' N) := by
     rintro _ ⟨y, hy, rfl⟩
     exact ((eventually_nhdsSet_iff_forall.1 hχ1) _ ⟨y, ball_subset_closedBall hy, rfl⟩).self_of_nhds
-  have hmem := (hWT χ (hχW.trans (inter_subset_left.trans hWW₀))).compCLM hΦt hΨt
-    (fun n ↦ hΦb (n + 1) (Nat.le_add_left 1 n)) (fun n ↦ hΨb (n + 1) (Nat.le_add_left 1 n))
+  have hmem := (hWT χ (hχW.trans (inter_subset_left.trans hWW₀)))
+    |>.compCLM_of_norm_iteratedFDeriv_le_natCeil ENNReal.one_lt_two ENNReal.ofNat_ne_top hΦt hΨt
+      (fun n hn _ ↦ hΦb n hn) (fun n hn _ ↦ hΨb n hn)
   rw [← isLocallySobolevAt_restrictCLM_iff hNU hxN,
     restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution hNU hΦt hΨt hΦeN T hχN]
   exact hmem.isLocallySobolevAt_toDistribution hxN
