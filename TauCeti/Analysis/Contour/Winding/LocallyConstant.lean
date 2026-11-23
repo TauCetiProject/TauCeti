@@ -17,11 +17,13 @@ import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 For a closed curve `γ` (so `γ a = γ b`) that is continuous on `Set.uIcc a b`, differentiable off a
 countable set, with interval-integrable derivative, the generalized winding number
 `fun w ↦ windingNumber γ a b w`, viewed as a function on the points off the curve, is locally
-constant (`isLocallyConstant_windingNumber_of_closed`). It is the ingredient Dixon's argument uses
-for the homology form of Cauchy's theorem. As a corollary,
-the winding number is constant on every connected component of the curve complement. The local
-matching data Dixon needs, a ball around an off-curve point of vanishing winding number on which
-the winding number still vanishes, is
+constant (`isLocallyConstant_windingNumber_of_closed`). As a corollary, the winding number is
+constant on every connected component of the curve complement.
+
+This file gives the forms for a curve whose winding numbers off its trace are known to be
+integers, for a curve with a countable exceptional set, and for a piecewise-`C¹` curve. The forms
+for an absolutely continuous curve are in `Winding/AbsolutelyContinuous/LocallyConstant.lean`;
+Dixon's argument for the homology form of Cauchy's theorem uses those, through
 `AbsolutelyContinuousOnInterval.exists_ball_windingNumber_zero`.
 
 ## Main results
