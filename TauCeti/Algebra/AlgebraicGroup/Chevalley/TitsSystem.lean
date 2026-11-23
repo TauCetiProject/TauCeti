@@ -75,21 +75,27 @@ private theorem mem_doubleCoset_borelSubgroupOf_iff
     Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup K)]
   rfl
 
-private theorem borelSubgroupOf_subgroupOf_weylSubgroupOf_eq :
-    ((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K)).subgroupOf
-        ((D.weylSubgroup K).subgroupOf (D.extendedElementarySubgroup K)) =
-      (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K)).comap
-        (Subgroup.subgroupOfEquivOfLe
-          (D.weylSubgroup_le_extendedElementarySubgroup K)).toMonoidHom := by
+private theorem borelSubgroupOf_subgroupOf_eq_comap
+    {B N : Subgroup (D.extendedElementarySubgroup K)}
+    (hB : B = (D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K))
+    (hN : N = (D.weylSubgroup K).subgroupOf (D.extendedElementarySubgroup K))
+    (e : N ≃* D.weylSubgroup K)
+    (he : ∀ n : N, ((e n : D.weylSubgroup K) : D.points K) =
+      ((n : D.extendedElementarySubgroup K) : D.points K)) :
+    B.subgroupOf N =
+      (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K)).comap e.toMonoidHom := by
+  subst hB hN
   ext n
   rw [Subgroup.mem_subgroupOf, Subgroup.mem_subgroupOf, Subgroup.mem_comap,
-    MulEquiv.coe_toMonoidHom, Subgroup.mem_subgroupOf, Subgroup.subgroupOfEquivOfLe_apply_coe]
+    MulEquiv.coe_toMonoidHom, Subgroup.mem_subgroupOf, he]
   exact D.mem_borelSubgroup_iff_mem_range_torusPoints_of_mem_weylSubgroup K n.property
 
 private instance normal_borelSubgroupOf_subgroupOf_weylSubgroupOf :
     (((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K)).subgroupOf
       ((D.weylSubgroup K).subgroupOf (D.extendedElementarySubgroup K))).Normal := by
-  rw [D.borelSubgroupOf_subgroupOf_weylSubgroupOf_eq K]
+  rw [D.borelSubgroupOf_subgroupOf_eq_comap K rfl rfl
+    (Subgroup.subgroupOfEquivOfLe (D.weylSubgroup_le_extendedElementarySubgroup K))
+    (Subgroup.subgroupOfEquivOfLe_apply_coe (D.weylSubgroup_le_extendedElementarySubgroup K))]
   exact Subgroup.Normal.comap inferInstance _
 
 private noncomputable def titsSimpleRepAux (i : Fin t.rank) :
@@ -303,18 +309,10 @@ theorem titsSimpleReflection_mem_simple (i : Fin t.rank) :
 private theorem titsSystem_intersection_eq_comap :
     (D.titsSystem K).intersection =
       (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K)).comap
-        (D.titsSubgroupNMulEquiv K).toMonoidHom := by
-  -- Unfold `TitsSystem.intersection` (`abbrev` for `subgroupB.subgroupOf subgroupN`),
-  -- `titsSystem_subgroupB`/`titsSystem_subgroupN`, and `titsSubgroupNMulEquiv`
-  -- (`Subgroup.subgroupOfEquivOfLe`) by defeq so we can reuse
-  -- `borelSubgroupOf_subgroupOf_weylSubgroupOf_eq` (proved prior to `titsSystem` for
-  -- `intersection_normal`) without repeating its `ext` proof.
-  change ((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K)).subgroupOf
-      ((D.weylSubgroup K).subgroupOf (D.extendedElementarySubgroup K)) =
-    (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K)).comap
-      (Subgroup.subgroupOfEquivOfLe
-        (D.weylSubgroup_le_extendedElementarySubgroup K)).toMonoidHom
-  exact D.borelSubgroupOf_subgroupOf_weylSubgroupOf_eq K
+        (D.titsSubgroupNMulEquiv K).toMonoidHom :=
+  D.borelSubgroupOf_subgroupOf_eq_comap K
+    (D.titsSystem_subgroupB K) (D.titsSystem_subgroupN K)
+    (D.titsSubgroupNMulEquiv K) (D.coe_titsSubgroupNMulEquiv K)
 
 /-- The canonical isomorphism between the Weyl group of `D.titsSystem K` and the Weyl group of the
 root datum. -/

@@ -57,6 +57,17 @@ private def simpleLift (i : Fin t.rank) : N :=
 private def simpleClass (i : Fin t.rank) : Q :=
   QuotientGroup.mk (D.simpleLift A i)
 
+private theorem coe_list_prod_simpleLift (l : List (Fin t.rank)) :
+    ((l.map (D.simpleLift A)).prod : D.points A) =
+      (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod := by
+  simp only [Subgroup.val_list_prod, List.map_map, Function.comp_def, simpleLift]
+
+private theorem mk_list_prod_simpleLift (l : List (Fin t.rank)) :
+    (QuotientGroup.mk (l.map (D.simpleLift A)).prod : Q) =
+      (l.map (D.simpleClass A)).prod := by
+  rw [← QuotientGroup.mk'_apply, map_list_prod, List.map_map]
+  rfl
+
 private theorem simpleClass_mul_self (i : Fin t.rank) :
     D.simpleClass A i * D.simpleClass A i = 1 := by
   rw [simpleClass, ← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff,
@@ -72,10 +83,8 @@ private theorem simpleClass_prod_eq (l l' : List (Fin t.rank))
     (l.map (D.simpleClass A)).prod = (l'.map (D.simpleClass A)).prod := by
   have h' : (l.map (D.simpleLift A)).prod = (l'.map (D.simpleLift A)).prod := by
     apply Subtype.ext
-    simpa only [Subgroup.val_list_prod, List.map_map, simpleLift, Function.comp_def] using h
-  unfold simpleClass
-  simpa only [map_list_prod, List.map_map, Function.comp_def, QuotientGroup.mk'_apply]
-    using congrArg (QuotientGroup.mk' H) h'
+    rw [D.coe_list_prod_simpleLift, D.coe_list_prod_simpleLift, h]
+  rw [← D.mk_list_prod_simpleLift, ← D.mk_list_prod_simpleLift, h']
 
 private theorem simpleClass_liftable :
     (coxeterMatrixOfBase (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)).IsLiftable
@@ -298,13 +307,10 @@ theorem weylQuotientMulEquiv_list_prod_mul_torusPoints [Nontrivial A]
         (l.map (D.simpleLift A)).prod *
           ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ := by
     apply Subtype.ext
-    simp only [Subgroup.coe_mul, Subgroup.val_list_prod, List.map_map, Function.comp_def,
-      simpleLift]
+    rw [Subgroup.coe_mul, D.coe_list_prod_simpleLift]
   rw [hsub, QuotientGroup.mk_mul, map_mul, D.weylQuotientMulEquiv_mk_torusPoints A s, mul_one,
-    ← QuotientGroup.mk'_apply, map_list_prod (QuotientGroup.mk' H),
-    map_list_prod (D.weylQuotientMulEquiv A), List.map_map, List.map_map]
-  simp only [Function.comp_def, QuotientGroup.mk'_apply, simpleLift,
-    D.weylQuotientMulEquiv_mk_weylElement]
+    D.mk_list_prod_simpleLift, map_list_prod, List.map_map]
+  simp only [Function.comp_def, simpleClass, simpleLift, D.weylQuotientMulEquiv_mk_weylElement]
   exact (t.geckWeylWordProd_eq_prod_map ht l).symm
 
 end
