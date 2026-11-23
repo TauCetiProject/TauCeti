@@ -165,7 +165,7 @@ theorem scalar_sq_eq_one_of_basePointsRepresentation_eq_smul (hn : n ≠ 0)
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
   exact sq_eq_one_of_smul_one_mem_orthogonalGroup
     (hmat ▸ (Matrix.mem_specialOrthogonalGroup_iff.mp
-      (pointsMulEquiv (R := R) (A := R) n g).2).1)
+      (pointsMulEquiv (R := R) (A := R) n g).property).1)
 
 /-- **A subcomodule of the standard special orthogonal comodule is stable under every special
 orthogonal matrix.** -/

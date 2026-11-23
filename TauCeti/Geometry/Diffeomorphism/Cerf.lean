@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Smale
-import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Topology.Homotopy.Path
 import TauCeti.Geometry.Diffeomorphism.Sphere.Isotopy
-import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 
 /-!
 # Cerf's theorem: the path components of `Diff(S³)`
@@ -85,42 +83,11 @@ theorem SmaleConjecture.cerfTheorem (h : SmaleConjecture) : CerfTheorem := by
   obtain ⟨g, -, ⟨H⟩⟩ := smaleConjecture_iff_exists_homotopyInverse.1 h
   exact fun f ↦ ⟨g f, ⟨(H.evalAt f).cast (by simp) rfl⟩⟩
 
-/-- The class in `π₀ Diff(S³)` of the diffeomorphism induced by an orthogonal transformation is
-that of the identity or that of the reflection `TauCeti.orthogonalDiagonalReflection`. -/
-private lemma joined_orthogonalToDiffSphere_one_or_reflection
-    (A : Matrix.orthogonalGroup (Fin 4) ℝ) :
-    Joined 1 (orthogonalToDiffSphere 3 ∞ A) ∨
-      Joined (orthogonalToDiffSphere 3 ∞ (orthogonalDiagonalReflection ℝ 0))
-        (orthogonalToDiffSphere 3 ∞ A) := by
-  rw [← map_one (orthogonalToDiffSphere 3 ∞), joined_orthogonalToDiffSphere_iff,
-    joined_orthogonalToDiffSphere_iff, det_orthogonalDiagonalReflection]
-  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.2 with hA | hA <;> simp [hA]
-
 /-- **Cerf's theorem as a count of path components.** Cerf's theorem holds exactly when the
 diffeomorphism group of `S³` has two path components. -/
 theorem cerfTheorem_iff_natCard_zerothHomotopy_eq_two :
     CerfTheorem ↔
-      Nat.card (ZerothHomotopy (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞)) = 2 := by
-  set ρ := orthogonalToDiffSphere 3 ∞ (orthogonalDiagonalReflection ℝ 0)
-  have hmk : ∀ f g : Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞,
-      ZerothHomotopy.mk f = ZerothHomotopy.mk g ↔ Joined f g := fun _ _ ↦ Quotient.eq
-  have hρ : ZerothHomotopy.mk ρ ≠ ZerothHomotopy.mk 1 := fun h ↦
-    not_joined_one_orthogonalToDiffSphere_of_det_eq_neg_one
-      (det_orthogonalDiagonalReflection ℝ 0) ((hmk _ _).1 h).symm
-  rw [Nat.card_eq_two_iff' (ZerothHomotopy.mk 1)]
-  constructor
-  · -- Every class is that of the identity or of the reflection.
-    refine fun h ↦ ⟨ZerothHomotopy.mk ρ, hρ, fun c hc ↦ ?_⟩
-    induction c with | mk f => ?_
-    obtain ⟨A, hA⟩ := h f
-    rcases joined_orthogonalToDiffSphere_one_or_reflection A with h1 | h1
-    · exact (hc ((hmk _ _).2 (h1.trans hA).symm)).elim
-    · exact ((hmk _ _).2 (h1.trans hA)).symm
-  · -- Conversely, a class other than that of the identity is that of the reflection.
-    rintro ⟨c, -, hc⟩ f
-    by_cases hf : ZerothHomotopy.mk f = ZerothHomotopy.mk 1
-    · exact ⟨1, by rw [map_one]; exact ((hmk _ _).1 hf).symm⟩
-    · refine ⟨orthogonalDiagonalReflection ℝ 0, (hmk _ _).1 ?_⟩
-      exact (hc _ hρ).trans (hc _ hf).symm
+      Nat.card (ZerothHomotopy (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞)) = 2 :=
+  forall_exists_joined_orthogonalToDiffSphere_iff_natCard_zerothHomotopy_eq_two
 
 end TauCeti

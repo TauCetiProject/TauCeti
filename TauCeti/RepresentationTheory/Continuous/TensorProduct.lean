@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.TensorProduct
+public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 public import TauCeti.RepresentationTheory.Continuous.MatrixCoefficient
 
 /-!

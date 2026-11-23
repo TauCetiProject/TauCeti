@@ -58,8 +58,11 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   subcategory of `TopRep R G`, and its inclusion functor.
 * `TauCeti.DiscreteRep`: the discrete `G`-modules with continuous `G`-action as a category, the
   source side of the dictionary in bundled form; its morphisms are Mathlib's
-  `Representation.IntertwiningMap`s.
-* `TauCeti.toSmoothDiscrete`, `TauCeti.ofSmoothDiscrete`: the two translations as functors.
+  `Representation.IntertwiningMap`s, and `TauCeti.DiscreteRep.of` bundles an unbundled discrete
+  module.
+* `TauCeti.toSmoothDiscrete`, `TauCeti.ofSmoothDiscrete`: the two translations as functors;
+  `TauCeti.SmoothDiscreteTopRep.of` bundles an unbundled discrete module directly into
+  `SmoothDiscreteTopRep`.
 * `TauCeti.smoothDiscreteResFunctor`: restriction to a subgroup as a functor between the smooth
   discrete subcategories; `TauCeti.smoothDiscreteResTopRep` is its object map as a transparent
   abbreviation.
@@ -233,6 +236,17 @@ anything about the elements of that module. -/
 reducible transparency, so instance search cannot find the discreteness of `M` through the
 projection on its own. -/
 instance : DiscreteTopology (ofDiscreteModule R G M).V := inferInstanceAs (DiscreteTopology M)
+
+/-- The underlying module of `ofDiscreteModule R G M` inherits a `Monoid` structure on `M` at
+instance transparency. -/
+instance instMonoidOfDiscreteModuleV [Monoid M] : Monoid (ofDiscreteModule R G M).V :=
+  inferInstanceAs (Monoid M)
+
+/-- The underlying module of `ofDiscreteModule R G M` inherits a `CommMonoid` structure on `M` at
+instance transparency. -/
+instance instCommMonoidOfDiscreteModuleV [CommMonoid M] :
+    CommMonoid (ofDiscreteModule R G M).V :=
+  inferInstanceAs (CommMonoid M)
 
 variable {R G M}
 
@@ -711,6 +725,22 @@ lemma DiscreteRep.equivariant {X Y : DiscreteRep.{u, v, w} R G} (f : X ⟶ Y) (g
     f.toLinearMap (g • x) = g • f.toLinearMap x := by
   simpa using f.isIntertwining _ _ g x
 
+/-- An equivalence between the underlying representations of two discrete `G`-modules induces an
+isomorphism in `DiscreteRep R G`, mirroring `Rep.mkIso`. -/
+def DiscreteRep.mkIso {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) : X ≅ Y where
+  hom := e.toIntertwiningMap
+  inv := e.symm.toIntertwiningMap
+  hom_inv_id := Representation.IntertwiningMap.ext <| LinearMap.ext e.symm_apply_apply
+  inv_hom_id := Representation.IntertwiningMap.ext <| LinearMap.ext e.apply_symm_apply
+
+/-- The forward morphism of `DiscreteRep.mkIso e` is `e.toIntertwiningMap`. -/
+@[simp] lemma DiscreteRep.mkIso_hom {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) :
+    (DiscreteRep.mkIso e).hom = e.toIntertwiningMap := (rfl)
+
+/-- The inverse morphism of `DiscreteRep.mkIso e` is `e.symm.toIntertwiningMap`. -/
+@[simp] lemma DiscreteRep.mkIso_inv {X Y : DiscreteRep.{u, v, w} R G} (e : X.ρ.Equiv Y.ρ) :
+    (DiscreteRep.mkIso e).inv = e.symm.toIntertwiningMap := (rfl)
+
 variable (R G)
 
 /-- The dictionary going in, as a functor: a discrete `G`-module with continuous `G`-action goes
@@ -732,6 +762,66 @@ to the smooth discrete object it names, and an equivariant map to the morphism i
 @[simp] lemma toSmoothDiscrete_map_hom_hom_apply {X Y : DiscreteRep.{u, v, w} R G} (f : X ⟶ Y)
     (x : X.V) : ((toSmoothDiscrete R G).map f).hom.hom x = f.toLinearMap x := (rfl)
 
+variable {R G} in
+/-- On `((toSmoothDiscrete R G).obj X).obj`, the operator of `g` evaluates `X.ρ g`. -/
+lemma toSmoothDiscrete_obj_obj_ρ_apply (X : DiscreteRep.{u, v, w} R G) (g : G) (x : X.V) :
+    ((toSmoothDiscrete R G).obj X).obj.ρ g x = X.ρ g x := (rfl)
+
+variable {R G} in
+/-- The underlying module of `((toSmoothDiscrete R G).obj X).obj` inherits a `Monoid` structure on
+`X.V` at instance transparency; in particular this covers
+`(TauCeti.SmoothDiscreteTopRep.of R G M).obj.V`. -/
+instance instMonoidToSmoothDiscreteObjV (X : DiscreteRep.{u, v, w} R G) [Monoid X.V] :
+    Monoid ((toSmoothDiscrete R G).obj X).obj.V :=
+  inferInstanceAs (Monoid X.V)
+
+variable {R G} in
+/-- The underlying module of `((toSmoothDiscrete R G).obj X).obj` inherits a `CommMonoid` structure
+on `X.V` at instance transparency; in particular this covers
+`(TauCeti.SmoothDiscreteTopRep.of R G M).obj.V`. -/
+instance instCommMonoidToSmoothDiscreteObjV (X : DiscreteRep.{u, v, w} R G) [CommMonoid X.V] :
+    CommMonoid ((toSmoothDiscrete R G).obj X).obj.V :=
+  inferInstanceAs (CommMonoid X.V)
+
+section Of
+
+variable (M : Type w) [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M] [ContinuousSMul G M]
+
+/-- A discrete `R`-module `M` with continuous `R`- and `G`-actions, bundled as an object of
+`TauCeti.DiscreteRep R G`. When `R` carries the discrete topology and
+`TauCeti.Topology.Algebra.MulAction.Discrete` is imported, `ContinuousSMul R M` is supplied
+automatically by `TauCeti.continuousSMul_of_discreteTopology`. -/
+abbrev DiscreteRep.of : DiscreteRep.{u, v, w} R G where
+  V := M
+
+/-- The underlying module of `DiscreteRep.of R G M` is `M`. -/
+theorem DiscreteRep.of_V : (DiscreteRep.of R G M).V = M := (rfl)
+
+/-- The representation of `DiscreteRep.of R G M` is `Representation.ofDistribMulAction R G M`. -/
+theorem DiscreteRep.of_ρ :
+    (DiscreteRep.of R G M).ρ = Representation.ofDistribMulAction R G M := (rfl)
+
+/-- A discrete `R`-module `M` with continuous `R`- and `G`-actions, bundled as an object of
+`TauCeti.SmoothDiscreteTopRep R G` via `toSmoothDiscrete` and `DiscreteRep.of`. -/
+abbrev SmoothDiscreteTopRep.of : SmoothDiscreteTopRep.{u, v, w} R G :=
+  (toSmoothDiscrete R G).obj (DiscreteRep.of R G M)
+
+/-- The underlying `TopRep` of `SmoothDiscreteTopRep.of R G M` is `ofDiscreteModule R G M`. -/
+theorem SmoothDiscreteTopRep.of_obj :
+    (SmoothDiscreteTopRep.of R G M).obj = ofDiscreteModule R G M := (rfl)
+
+/-- The underlying module of `(SmoothDiscreteTopRep.of R G M).obj` is `M`. -/
+theorem SmoothDiscreteTopRep.of_V : (SmoothDiscreteTopRep.of R G M).obj.V = M := (rfl)
+
+variable {R G M} in
+/-- In `(SmoothDiscreteTopRep.of R G M).obj`, the operator of `g` is the given action
+`m ↦ g • m`. -/
+@[simp] theorem SmoothDiscreteTopRep.of_obj_ρ_apply (g : G) (m : M) :
+    (SmoothDiscreteTopRep.of R G M).obj.ρ g m = g • m := (rfl)
+
+end Of
+
 end CoefficientCategories
 
 /-! ### Restriction to a subgroup -/
@@ -749,7 +839,7 @@ statements that must see the restricted representation (for instance the domain 
 `TauCeti.coindTraceHom`) use this abbreviation. -/
 abbrev smoothDiscreteResTopRep (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     SmoothDiscreteTopRep.{u, v, w} R U :=
-  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩
+  ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtypeVal⟩
 
 /-- Restriction along `U → G` on smooth discrete representations: Mathlib's `TopRep.resFunctor`
 along the subgroup inclusion, lifted to the smooth discrete objects since restriction preserves
@@ -759,13 +849,13 @@ object map as `TauCeti.smoothDiscreteResTopRep` and its action on morphisms as t
 @[expose] def smoothDiscreteResFunctor :
     SmoothDiscreteTopRep.{u, v, w} R G ⥤ SmoothDiscreteTopRep.{u, v, w} R U :=
   ObjectProperty.lift _ (smoothDiscreteι R G ⋙ TopRep.resFunctor (U.subtype : U →* G))
-    fun A ↦ A.property.res continuous_subtype_val
+    fun A ↦ A.property.res continuous_subtypeVal
 
 /-- Restriction along `U → G` restricts the underlying topological representation. -/
 @[simp]
 theorem smoothDiscreteResFunctor_obj (A : SmoothDiscreteTopRep.{u, v, w} R G) :
     (smoothDiscreteResFunctor R G U).obj A =
-      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtype_val⟩ :=
+      ⟨TopRep.res (U.subtype : U →* G) A.obj, A.property.res continuous_subtypeVal⟩ :=
   (rfl)
 
 /-- Restriction along `U → G` does not change the underlying map of a morphism. -/
@@ -856,6 +946,11 @@ instance isEquivalence_toSmoothDiscrete : (toSmoothDiscrete.{u, v, w} R G).IsEqu
 /-- `ofSmoothDiscrete` is an equivalence of categories, with inverse `toSmoothDiscrete`. -/
 instance isEquivalence_ofSmoothDiscrete : (ofSmoothDiscrete.{u, v, w} R G).IsEquivalence :=
   (discreteRepEquivSmoothTopRep R G).isEquivalence_inverse
+
+/-- Applying `toSmoothDiscrete` and then `ofSmoothDiscrete` returns the original discrete
+representation on the nose. -/
+lemma ofSmoothDiscrete_toSmoothDiscrete_obj (X : DiscreteRep.{u, v, w} R G) :
+    (ofSmoothDiscrete R G).obj ((toSmoothDiscrete R G).obj X) = X := (rfl)
 
 end CoefficientEquivalence
 

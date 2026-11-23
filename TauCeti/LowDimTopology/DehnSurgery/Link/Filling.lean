@@ -351,7 +351,7 @@ def meridianDehnFilling (h : IsSolidTorusLinkNeighborhood f Φ) :
     rw [IsSolidTorusNeighborhood.meridianDehnFilling_exteriorEmbedding,
       IsSolidTorusNeighborhood.meridianDehnFilling_solidTorusEmbedding] at hknot
     rintro _ ⟨⟨x, rfl⟩, p, hp⟩
-    exact hknot ⟨⟨⟨x, mem_knotExterior.2 (mem_linkExterior.1 x.2 i)⟩, rfl⟩, p, hp⟩
+    exact hknot ⟨⟨⟨x, mem_knotExterior.2 (mem_linkExterior.1 x.property i)⟩, rfl⟩, p, hp⟩
   pairwiseDisjoint_range := h.pairwiseDisjoint_range
   fillingSlope_gluing i := (h.neighborhood i).fillingSlope_refl
 
@@ -425,7 +425,7 @@ theorem toLinkDehnFilling_gluing (F : DehnFilling (h.neighborhood default) (s de
 theorem toLinkDehnFilling_exteriorEmbedding_apply
     (F : DehnFilling (h.neighborhood default) (s default) Y) (x : linkExterior Φ) :
     (F.toLinkDehnFilling h).exteriorEmbedding x =
-      F.exteriorEmbedding ⟨x, linkExterior_unique Φ ▸ x.2⟩ :=
+      F.exteriorEmbedding ⟨x, linkExterior_unique Φ ▸ x.property⟩ :=
   congrArg F.exteriorEmbedding (Homeomorph.setCongr_apply _ x)
 
 end DehnFilling

@@ -76,9 +76,9 @@ theorem _root_.FirstOrder.Language.PartialEquiv.le_of_dom_eq_range {f g : M ≃�
 whole domain is the range of the first tuple. Repeated entries are allowed. -/
 theorem SameAtomicType.exists_fgEquiv {n : ℕ} {a : Fin n → M} {b : Fin n → N}
     (h : SameAtomicType (L := L) a b) :
-    ∃ (f : L.FGEquiv M N) (a' : Fin n → f.1.dom),
-      (∀ i, (a' i : M) = a i) ∧ (∀ i, f.1.toEmbedding (a' i) = b i) ∧
-        (f.1.dom : Set M) = Set.range a := by
+    ∃ (f : L.FGEquiv M N) (a' : Fin n → f.val.dom),
+      (∀ i, (a' i : M) = a i) ∧ (∀ i, f.val.toEmbedding (a' i) = b i) ∧
+        (f.val.dom : Set M) = Set.range a := by
   classical
   let A := Substructure.closure L (Set.range a)
   let idx (x : A) := Set.rangeSplitting a
@@ -112,10 +112,10 @@ theorem SameAtomicType.exists_embedding_comp_eq {n : ℕ} {a : Fin n → M} {b :
     (h : SameAtomicType (L := L) a b) (ha : Function.Surjective a) :
     ∃ f : M ↪[L] N, f ∘ a = b := by
   obtain ⟨f, a', ha', hb', hdom⟩ := h.exists_fgEquiv
-  have hdom' : f.1.dom = ⊤ := SetLike.coe_injective (hdom.trans (Set.range_eq_univ.mpr ha))
+  have hdom' : f.val.dom = ⊤ := SetLike.coe_injective (hdom.trans (Set.range_eq_univ.mpr ha))
   refine ⟨PartialEquiv.toEmbeddingOfEqTop hdom', funext fun i => ?_⟩
   rw [Function.comp_apply, PartialEquiv.toEmbeddingOfEqTop_apply, ← hb' i]
-  exact congrArg f.1.toEmbedding (Subtype.ext (ha' i).symm)
+  exact congrArg f.val.toEmbedding (Subtype.ext (ha' i).symm)
 
 /-- A tuple back-and-forth system gives a system of finitely generated partial equivalences,
 closed under extensions on both sides, in which each pair of the tuple system is matched by some
@@ -123,24 +123,24 @@ member. -/
 theorem IsTupleBFSystem.exists_fgEquiv_system
     {S : Set (Σ n, (Fin n → M) × (Fin n → N))} (hS : IsTupleBFSystem (L := L) S) {n : ℕ}
     {a : Fin n → M} {b : Fin n → N} (hab : ⟨n, a, b⟩ ∈ S) :
-    ∃ T : Set (L.FGEquiv M N), (∀ f ∈ T, ∀ m : M, ∃ g ∈ T, m ∈ g.1.dom ∧ f ≤ g) ∧
-      (∀ f ∈ T, ∀ y : N, ∃ g ∈ T, y ∈ g.1.cod ∧ f ≤ g) ∧
-      ∃ f ∈ T, ∃ a' : Fin n → f.1.dom,
-        (∀ i, (a' i : M) = a i) ∧ ∀ i, f.1.toEmbedding (a' i) = b i := by
+    ∃ T : Set (L.FGEquiv M N), (∀ f ∈ T, ∀ m : M, ∃ g ∈ T, m ∈ g.val.dom ∧ f ≤ g) ∧
+      (∀ f ∈ T, ∀ y : N, ∃ g ∈ T, y ∈ g.val.cod ∧ f ≤ g) ∧
+      ∃ f ∈ T, ∃ a' : Fin n → f.val.dom,
+        (∀ i, (a' i : M) = a i) ∧ ∀ i, f.val.toEmbedding (a' i) = b i := by
   -- Use only partial equivalences whose whole domains are enumerated by pairs in the system.
   let T : Set (L.FGEquiv M N) := {f | ∃ (n : ℕ) (a : Fin n → M) (b : Fin n → N),
-    ⟨n, a, b⟩ ∈ S ∧ ∃ a' : Fin n → f.1.dom,
-      (∀ i, (a' i : M) = a i) ∧ (∀ i, f.1.toEmbedding (a' i) = b i) ∧
-        (f.1.dom : Set M) = Set.range a}
+    ⟨n, a, b⟩ ∈ S ∧ ∃ a' : Fin n → f.val.dom,
+      (∀ i, (a' i : M) = a i) ∧ (∀ i, f.val.toEmbedding (a' i) = b i) ∧
+        (f.val.dom : Set M) = Set.range a}
   have extend {f : L.FGEquiv M N} {n : ℕ} {a : Fin n → M} {b : Fin n → N}
-      (a' : Fin n → f.1.dom) (ha : ∀ i, (a' i : M) = a i)
-      (hb : ∀ i, f.1.toEmbedding (a' i) = b i) (hd : (f.1.dom : Set M) = Set.range a)
+      (a' : Fin n → f.val.dom) (ha : ∀ i, (a' i : M) = a i)
+      (hb : ∀ i, f.val.toEmbedding (a' i) = b i) (hd : (f.val.dom : Set M) = Set.range a)
       {x : M} {y : N} (hxy : ⟨n + 1, snoc a x, snoc b y⟩ ∈ S) :
-      ∃ g ∈ T, x ∈ g.1.dom ∧ y ∈ g.1.cod ∧ f ≤ g := by
+      ∃ g ∈ T, x ∈ g.val.dom ∧ y ∈ g.val.cod ∧ f ≤ g := by
     obtain ⟨g, c, hc, he, hgdom⟩ := (hS.sameAtomicType hxy).exists_fgEquiv
     refine ⟨g, ⟨n + 1, snoc a x, snoc b y, hxy, c, hc, he, hgdom⟩, ?_, ?_, ?_⟩
     · exact (by simpa only [snoc_last] using hc (last n)) ▸ (c (last n)).property
-    · have hy := (g.1.toEquiv (c (last n))).property
+    · have hy := (g.val.toEquiv (c (last n))).property
       exact (by simpa only [snoc_last] using he (last n)) ▸ hy
     · exact PartialEquiv.le_of_dom_eq_range a' ha hb hd (fun i => c i.castSucc)
         (fun i => by simpa only [snoc_castSucc] using hc i.castSucc)
@@ -170,24 +170,24 @@ theorem PotentialIso.exists_isTupleBFSystem (h : PotentialIso (L := L) M N) :
     ∃ S : Set (Σ n, (Fin n → M) × (Fin n → N)), IsTupleBFSystem (L := L) S := by
   obtain ⟨T, ⟨f₀, hf₀⟩, hforth, hback⟩ := potentialIso_def.mp h
   let S : Set (Σ n, (Fin n → M) × (Fin n → N)) :=
-    {p | ∃ f ∈ T, ∃ a : Fin p.1 → f.1.dom,
-      (∀ i, (a i : M) = p.2.1 i) ∧ (∀ i, f.1.toEmbedding (a i) = p.2.2 i)}
+    {p | ∃ f ∈ T, ∃ a : Fin p.1 → f.val.dom,
+      (∀ i, (a i : M) = p.2.1 i) ∧ (∀ i, f.val.toEmbedding (a i) = p.2.2 i)}
   have extend {f g : L.FGEquiv M N} (hfg : f ≤ g) {n : ℕ}
-      (a : Fin n → f.1.dom) {b : Fin n → N} (hb : ∀ i, f.1.toEmbedding (a i) = b i) :
-      ∀ i, g.1.toEmbedding (Substructure.inclusion (PartialEquiv.dom_le_dom hfg) (a i)) =
+      (a : Fin n → f.val.dom) {b : Fin n → N} (hb : ∀ i, f.val.toEmbedding (a i) = b i) :
+      ∀ i, g.val.toEmbedding (Substructure.inclusion (PartialEquiv.dom_le_dom hfg) (a i)) =
         b i := by
     intro i
     exact (congrArg Subtype.val (PartialEquiv.toEquiv_inclusion_apply hfg (a i))).trans (hb i)
   refine ⟨S, ⟨?_, ?_, ?_, ?_⟩⟩
   · exact ⟨f₀, hf₀, Fin.elim0, fun i => Fin.elim0 i, fun i => Fin.elim0 i⟩
   · rintro n a b ⟨f, _, a', ha, hb⟩
-    convert f.1.sameAtomicType a' using 1 <;> funext i
+    convert f.val.sameAtomicType a' using 1 <;> funext i
     · exact (ha i).symm
     · exact (hb i).symm
   · rintro n a b ⟨f, hf, a', ha, hb⟩ x
     obtain ⟨g, hg, hx, hfg⟩ := hforth f hf x
     let c := Substructure.inclusion (PartialEquiv.dom_le_dom hfg) ∘ a'
-    refine ⟨g.1.toEmbedding ⟨x, hx⟩, g, hg, snoc c ⟨x, hx⟩, ?_, ?_⟩
+    refine ⟨g.val.toEmbedding ⟨x, hx⟩, g, hg, snoc c ⟨x, hx⟩, ?_, ?_⟩
     · intro i
       exact lastCases (by simp) (fun j => by simpa [c] using ha j) i
     · intro i
@@ -195,7 +195,7 @@ theorem PotentialIso.exists_isTupleBFSystem (h : PotentialIso (L := L) M N) :
   · rintro n a b ⟨f, hf, a', ha, hb⟩ y
     obtain ⟨g, hg, hy, hfg⟩ := hback f hf y
     let c := Substructure.inclusion (PartialEquiv.dom_le_dom hfg) ∘ a'
-    let x := g.1.toEquiv.symm ⟨y, hy⟩
+    let x := g.val.toEquiv.symm ⟨y, hy⟩
     refine ⟨(x : M), g, hg, snoc c x, ?_, ?_⟩
     · intro i
       exact lastCases (by simp) (fun j => by simpa [c] using ha j) i

@@ -43,7 +43,7 @@ variable {n : ℕ} (G : OddComponentGridDiagram n)
 /-- The unblocked differential between consecutive Maslov degrees at Alexander degree `a`. -/
 noncomputable def gradedUnblockedDifferential (R : Type*) [CommSemiring R] (a m : ℤ) :
     G.bigradedChainMinusPiece R (m + 1, a) →ₗ[R] G.bigradedChainMinusPiece R (m, a) :=
-  ((G.1.unblockedDifferential R).restrictScalars R).restrict fun c hc => by
+  ((G.val.unblockedDifferential R).restrictScalars R).restrict fun c hc => by
     simpa using G.unblockedDifferential_mem_bigradedChainMinusPiece hc
 
 /-- The graded differential agrees with the total differential after inclusion. -/
@@ -51,7 +51,7 @@ noncomputable def gradedUnblockedDifferential (R : Type*) [CommSemiring R] (a m 
 theorem coe_gradedUnblockedDifferential (R : Type*) [CommSemiring R] (a m : ℤ)
     (c : G.bigradedChainMinusPiece R (m + 1, a)) :
     (G.gradedUnblockedDifferential R a m c : GridChainMinus R n) =
-      G.1.unblockedDifferential R c := (rfl)
+      G.val.unblockedDifferential R c := (rfl)
 
 /-- Multiplication by `V_i` between homogeneous pieces of `GC⁻`. -/
 noncomputable def gradedUnblockedX (R : Type*) [CommSemiring R] (i : Fin n) (g : ℤ × ℤ) :
@@ -91,7 +91,7 @@ theorem exact_gradedUnblockedX_gradedSimplyBlockedSpecialization
     obtain ⟨b, hb⟩ := (exact_X_smul_simplyBlockedSpecialization R i c.val).mp hz
     have hb' : (X i : MvPolynomial (Fin n) R) • b = c.val := hb
     have hgrade : b ∈ G.bigradedChainMinusPiece R g :=
-      (G.X_smul_mem_bigradedChainMinusPiece_iff i).mp (by rw [hb']; exact c.2)
+      (G.X_smul_mem_bigradedChainMinusPiece_iff i).mp (by rw [hb']; exact c.property)
     exact ⟨⟨b, hgrade⟩, Subtype.ext hb'⟩
   · rintro ⟨b, rfl⟩
     apply Subtype.ext
@@ -108,7 +108,7 @@ theorem gradedUnblockedDifferential_comp_eq_zero (a m : ℤ) :
   apply Subtype.ext
   simp only [LinearMap.comp_apply, LinearMap.zero_apply, coe_gradedUnblockedDifferential,
     ZeroMemClass.coe_zero]
-  exact LinearMap.congr_fun (G.1.unblockedDifferential_comp_self_eq_zero R) c
+  exact LinearMap.congr_fun (G.val.unblockedDifferential_comp_self_eq_zero R) c
 
 /-- The Maslov-graded unblocked grid complex in Alexander degree `a`. Its degree-`m`
 homology is the unblocked grid homology in bidegree `(m, a)`. -/
@@ -155,7 +155,7 @@ noncomputable def gradedSimplyBlockedSpecializationMap (i : Fin n) (a : ℤ) :
       simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
         coe_gradedSimplyBlockedSpecialization, coe_gradedUnblockedDifferential,
         coe_gradedSimplyBlockedDifferential]
-      exact (G.1.simplyBlockedSpecialization_unblockedDifferential R i c).symm)
+      exact (G.val.simplyBlockedSpecialization_unblockedDifferential R i c).symm)
 
 /-- The components of the specialization chain map are the homogeneous
 coefficient-specialization maps, after identifying the complex objects. -/

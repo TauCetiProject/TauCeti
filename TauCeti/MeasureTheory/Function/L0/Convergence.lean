@@ -15,10 +15,12 @@ import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 
 The pseudometric on `TauCeti.L0 E μ` induces exactly native convergence in measure. The two
 quantitative estimates retain the total mass of an arbitrary finite measure; no probability
-normalization is imposed. The inclusion `TauCeti.L0.ofLp` preserves the native almost-everywhere
-class without requiring measure finiteness. On finite measure spaces, `TauCeti.L0.continuous_ofLp`
-proves its continuity for every `1 ≤ p`, including infinity. Continuous unary and binary
-transformations lift to continuous maps on `L0`, and the constant-function inclusion is continuous.
+normalization is imposed. Almost-everywhere sequential convergence implies convergence in `L0`,
+and every sequence converging in `L0` admits an almost-everywhere convergent subsequence. The
+inclusion `TauCeti.L0.ofLp` preserves the native almost-everywhere class without requiring
+measure finiteness. On finite measure spaces, `TauCeti.L0.continuous_ofLp` proves its continuity
+for every `1 ≤ p`, including infinity. Continuous unary and binary transformations lift to
+continuous maps on `L0`, and the constant-function inclusion is continuous.
 -/
 
 public section
@@ -91,6 +93,18 @@ theorem measureReal_ge_le_mul_dist (f g : L0 E μ) {ε : ℝ} (hε : 0 < ε) :
       simpa only [dist_def, mul_comm] using hm)
     _ = ((1 + ε) / ε) * dist f g := by field_simp
 
+/-- Strict-tail variant of `measureReal_ge_le_mul_dist`. -/
+theorem measureReal_gt_le_mul_dist (f g : L0 E μ) {ε : ℝ} (hε : 0 < ε) :
+    μ.real {x | ε < dist (f x) (g x)} ≤ ((1 + ε) / ε) * dist f g :=
+  (measureReal_mono (μ := μ) (fun _ hx ↦ by rw [Set.mem_ofPred_eq] at hx ⊢; exact hx.le)
+    (measure_ne_top μ _)).trans (measureReal_ge_le_mul_dist f g hε)
+
+/-- `ℝ≥0∞`-valued form of Markov's inequality for the `L⁰` metric. -/
+theorem measure_ge_le_ofReal_mul_dist (f g : L0 E μ) {ε : ℝ} (hε : 0 < ε) :
+    μ {x | ε ≤ dist (f x) (g x)} ≤ ENNReal.ofReal (((1 + ε) / ε) * dist f g) := by
+  rw [← ENNReal.ofReal_toReal (measure_ne_top μ _), ← measureReal_def]
+  exact ENNReal.ofReal_le_ofReal (measureReal_ge_le_mul_dist f g hε)
+
 /-- For `0 ≤ ε`, the distance is at most `ε * μ.real univ` plus the real measure of
 `{x | ε < dist (f x) (g x)}`. The total-mass factor allows arbitrary finite measures. -/
 theorem dist_le_mul_measureReal_univ_add_measureReal_gt (f g : L0 E μ) {ε : ℝ}
@@ -120,6 +134,19 @@ theorem dist_le_mul_measureReal_univ_add_measureReal_gt (f g : L0 E μ) {ε : �
       rw [integral_add (integrable_const ε) hi, integral_const, integral_indicator hs,
         setIntegral_const]
       simp [s, smul_eq_mul, mul_comm]
+
+/-- Non-strict tail variant of `dist_le_mul_measureReal_univ_add_measureReal_gt`. -/
+theorem dist_le_mul_measureReal_univ_add_measureReal_ge (f g : L0 E μ) {ε : ℝ} (hε : 0 ≤ ε) :
+    dist f g ≤ ε * μ.real univ + μ.real {x | ε ≤ dist (f x) (g x)} := by
+  have hsub : μ.real {x | ε < dist (f x) (g x)} ≤ μ.real {x | ε ≤ dist (f x) (g x)} :=
+    measureReal_mono (fun _ hx ↦ by rw [Set.mem_ofPred_eq] at hx ⊢; exact hx.le)
+      (measure_ne_top μ _)
+  linarith [dist_le_mul_measureReal_univ_add_measureReal_gt f g hε]
+
+/-- On a probability space, `dist f g ≤ ε + μ.real {x | ε < dist (f x) (g x)}` for `ε ≥ 0`. -/
+theorem dist_le_add_measureReal_gt [IsProbabilityMeasure μ] (f g : L0 E μ) {ε : ℝ} (hε : 0 ≤ ε) :
+    dist f g ≤ ε + μ.real {x | ε < dist (f x) (g x)} := by
+  simpa using dist_le_mul_measureReal_univ_add_measureReal_gt f g hε
 
 /-- Convergence for the bounded integral pseudometric is exactly convergence in measure of
 the chosen representatives, for an arbitrary index filter. -/
@@ -181,6 +208,21 @@ theorem tendsto_ofFun_iff_tendstoInMeasure {ι : Type*} {l : Filter ι}
   exact ⟨fun h ↦ h.congr_left (fun i ↦ coeFn_ofFun (f i) (hf i)),
     fun h ↦ h.congr_left (fun i ↦ (coeFn_ofFun (f i) (hf i)).symm)⟩
 
+/-- Almost-everywhere sequential convergence on a finite measure space implies convergence in
+`L0 E μ`. -/
+theorem tendsto_of_tendsto_ae {u : ℕ → L0 E μ} {f : L0 E μ}
+    (h : ∀ᵐ x ∂μ, Tendsto (fun n ↦ u n x) atTop (𝓝 (f x))) :
+    Tendsto u atTop (𝓝 f) :=
+  tendsto_iff_tendstoInMeasure.mpr
+    (tendstoInMeasure_of_tendsto_ae (fun n ↦ (u n).aestronglyMeasurable) h)
+
+/-- Every sequence converging in `L0 E μ` admits a subsequence whose representatives converge
+almost everywhere. -/
+theorem exists_seq_tendsto_ae_of_tendsto {u : ℕ → L0 E μ} {f : L0 E μ}
+    (hu : Tendsto u atTop (𝓝 f)) :
+    ∃ ns : ℕ → ℕ, StrictMono ns ∧ ∀ᵐ x ∂μ, Tendsto (fun k ↦ u (ns k) x) atTop (𝓝 (f x)) :=
+  (tendsto_iff_tendstoInMeasure.mp hu).exists_seq_tendsto_ae
+
 /-- Continuous post-composition is continuous for convergence in measure. -/
 @[fun_prop]
 theorem continuous_comp {F : Type*} [PseudoMetricSpace F] (φ : E → F)
@@ -211,21 +253,8 @@ theorem continuous_comp₂ {F G : Type*} [PseudoMetricSpace F] [PseudoMetricSpac
 
 /-- The inclusion of constant functions into random variables is continuous. -/
 @[fun_prop]
-theorem continuous_const : Continuous (const μ : E → L0 E μ) := by
-  apply continuous_iff_continuousAt.2
-  intro c
-  apply tendsto_iff_tendstoInMeasure.2
-  have h : TendstoInMeasure μ (fun d : E ↦ fun _ : Ω ↦ d) (𝓝 c) (fun _ ↦ c) := by
-    rw [tendstoInMeasure_iff_dist]
-    intro ε hε
-    apply tendsto_const_nhds.congr'
-    filter_upwards [Metric.ball_mem_nhds c hε] with d hd
-    have hempty : {_x : Ω | ε ≤ dist d c} = ∅ :=
-      Set.eq_empty_iff_forall_notMem.mpr fun _ hx ↦ by
-        simp only [Set.mem_ofPred_eq, Metric.mem_ball] at hd hx
-        exact (not_le_of_gt hd) hx
-    simp only [hempty, measure_empty]
-  exact h.congr (fun d ↦ (coeFn_const d).symm) (coeFn_const c).symm
+theorem continuous_const : Continuous (const μ : E → L0 E μ) :=
+  lipschitzWith_const.continuous
 
 end FiniteMeasure
 

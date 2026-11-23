@@ -49,7 +49,7 @@ theorem isUnit_decomposeLaurent_one : IsUnit (decomposeLaurent ℳ (1 : A)) := b
   have h (i : ℤ) :
       decomposeLaurent 𝒜 (m i) * decomposeLaurent ℳ (1 : A) = C (m i) * T i := by
     rw [← decomposeLaurent_mul ℳ 𝒜, mul_one]
-    exact decomposeLaurent_of_mem ℳ (decompose ℳ (1 : A) i).2
+    exact decomposeLaurent_of_mem ℳ (decompose ℳ (1 : A) i).property
   -- Shifting each identity back by its degree and summing gives an explicit inverse.
   apply isUnit_iff_exists_inv'.mpr
   refine ⟨∑ i ∈ (decompose ℳ (1 : A)).support, decomposeLaurent 𝒜 (m i) * T (-i), ?_⟩
@@ -76,7 +76,7 @@ preconnected prime spectrum has a homogeneous unit, hence a homogeneous generato
 theorem exists_isUnit_mem_of_connected : ∃ c : ℤ, ∃ u : A, IsUnit u ∧ u ∈ ℳ c := by
   obtain ⟨c, hc, -⟩ := exists_isUnit_coeff_of_isUnit (decomposeLaurent ℳ (1 : A))
     (isUnit_decomposeLaurent_one 𝒜 ℳ)
-  refine ⟨c, (decompose ℳ (1 : A) c : A), ?_, (decompose ℳ (1 : A) c).2⟩
+  refine ⟨c, (decompose ℳ (1 : A) c : A), ?_, (decompose ℳ (1 : A) c).property⟩
   simpa using hc
 
 end Ring
@@ -93,8 +93,8 @@ with preconnected prime spectrum is graded-isomorphic to a shift `A(d)`. -/
 theorem exists_shift_linearEquiv_of_connected :
     ∃ d : ℤ, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) := by
   obtain ⟨c, u, hu, hmem⟩ := exists_isUnit_mem_of_connected 𝒜 ℳ
-  exact ⟨-c,
-    (exists_linearEquiv_iff_exists_isUnit_mem 𝒜 ℳ).mpr ⟨u, hu, by simpa using hmem⟩⟩
+  obtain ⟨φ, hφ⟩ := exists_linearEquiv_of_isUnit_mem 𝒜 ℳ hu hmem
+  exact ⟨-c, φ, fun n x ↦ by rw [hφ, sub_eq_add_neg]⟩
 
 /-- **Classification of rank-one gradings on a connected spectrum.** Over a `ℤ`-graded commutative
 ring with preconnected prime spectrum, every compatible `ℤ`-grading of the free rank-one module is
@@ -103,17 +103,17 @@ graded-isomorphic to the shift `A(d)` if and only if `d` represents a unique cla
 theorem existsUnique_shiftClass_of_connected :
     ∃! c : ShiftClassGroup 𝒜,
       ∀ d : ℤ, (∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) ↔
-        (d : ShiftClassGroup 𝒜) = c :=
-  existsUnique_shiftClass_of_exists_linearEquiv 𝒜 ℳ
-    (exists_shift_linearEquiv_of_connected 𝒜 ℳ)
+        (d : ShiftClassGroup 𝒜) = c := by
+  obtain ⟨_, _, hu, hmem⟩ := exists_isUnit_mem_of_connected 𝒜 ℳ
+  exact existsUnique_shiftClass_of_isUnit_mem 𝒜 ℳ hu hmem
 
 /-- Over a `ℤ`-graded commutative ring with preconnected prime spectrum whose homogeneous units
 all have degree zero, every compatible `ℤ`-grading of the free rank-one module is
 graded-isomorphic to a shift `A(d)` for a unique integer `d`. -/
 theorem existsUnique_shift_linearEquiv_of_connected (hbot : homogeneousUnitDegrees 𝒜 = ⊥) :
-    ∃! d : ℤ, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) :=
-  existsUnique_shift_linearEquiv_of_exists_linearEquiv 𝒜 ℳ
-    (exists_shift_linearEquiv_of_connected 𝒜 ℳ) hbot
+    ∃! d : ℤ, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) := by
+  obtain ⟨_, _, hu, hmem⟩ := exists_isUnit_mem_of_connected 𝒜 ℳ
+  exact existsUnique_shift_linearEquiv_of_isUnit_mem 𝒜 ℳ hu hmem hbot
 
 end ShiftClassification
 

@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.QuotientGroup
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Generator
-public import TauCeti.RingTheory.GradedAlgebra.Localization.Away
+public import TauCeti.RingTheory.GradedAlgebra.Localization.HomogeneousUnits
 import Mathlib.RingTheory.Spectrum.Prime.Topology
 import TauCeti.Algebra.Divisibility.Basic
 import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
@@ -99,74 +98,13 @@ homogeneous unit degrees as inverting `f`. -/
 theorem homogeneousUnitDegrees_awayGrading_pow {k : ℕ} (hk : k ≠ 0) :
     homogeneousUnitDegrees (awayGrading 𝒜 (SetLike.pow_mem_graded k hf)) =
       homogeneousUnitDegrees (awayGrading 𝒜 hf) := by
-  have : IsLocalization.Away f (Localization.Away (f ^ k)) := by
-    refine IsLocalization.Away.mk f
-      (IsLocalization.Away.isUnit_of_dvd (f ^ k) (dvd_pow_self f hk))
-      (fun s ↦ ?_) (fun a b hab ↦ ?_)
-    · obtain ⟨n, a, hn⟩ := IsLocalization.Away.surj (f ^ k) s
-      exact ⟨k * n, a, by simpa [pow_mul] using hn⟩
-    · obtain ⟨n, hn⟩ := IsLocalization.Away.exists_of_eq (f ^ k) hab
-      exact ⟨k * n, by simpa [pow_mul] using hn⟩
-  let eqv : Localization.Away f ≃ₐ[A] Localization.Away (f ^ k) :=
-    IsLocalization.algEquiv (Submonoid.powers f) _ _
-  refine le_antisymm ?_ ?_
-  · rw [homogeneousUnitDegrees_le_iff]
-    intro u d hu
-    obtain ⟨n, a, ha, hua⟩ := mem_awayGrading_iff.mp hu
-    have hmul : eqv.symm (u : Localization.Away (f ^ k)) * algebraMap A _ (f ^ (n * k)) =
-        algebraMap A _ a := by
-      have h1 : (u : Localization.Away (f ^ k)) * algebraMap A _ ((f ^ k) ^ n) =
-          algebraMap A _ a := by
-        rw [hua, Localization.mk_eq_mk'_apply]
-        exact IsLocalization.mk'_spec (Localization.Away (f ^ k)) a (Submonoid.pow (f ^ k) n)
-      calc
-        eqv.symm (u : Localization.Away (f ^ k)) * algebraMap A _ (f ^ (n * k))
-          = eqv.symm ((u : Localization.Away (f ^ k)) * algebraMap A _ ((f ^ k) ^ n)) := by
-            rw [← pow_mul, mul_comm k n, map_mul, eqv.symm.commutes]
-        _ = algebraMap A _ a := by rw [h1, eqv.symm.commutes]
-    have hmem : ((Units.map eqv.symm.toRingHom.toMonoidHom u : (Localization.Away f)ˣ) :
-        Localization.Away f) ∈ awayGrading 𝒜 hf d := by
-      rw [mem_awayGrading_iff]
-      refine ⟨n * k, a, by simpa [mul_smul] using ha, ?_⟩
-      refine (IsLocalization.Away.algebraMap_pow_isUnit f (n * k)).mul_left_inj.mp ?_
-      have hspec := IsLocalization.mk'_spec (Localization.Away f) a (Submonoid.pow f (n * k))
-      simpa [Units.coe_map, Localization.mk_eq_mk'_apply, ← map_pow] using hmul.trans hspec.symm
-    exact mem_homogeneousUnitDegrees_of_mem hmem
-  · rw [homogeneousUnitDegrees_le_iff]
-    intro u d hu
-    obtain ⟨n, a, ha, hua⟩ := mem_awayGrading_iff.mp hu
-    have hpow_add : n + n * (k - 1) = n * k := by
-      calc
-        n + n * (k - 1) = n * (1 + (k - 1)) := by ring
-        _ = n * k := by rw [Nat.add_sub_of_le (Nat.one_le_iff_ne_zero.mpr hk)]
-    have hmul : eqv (u : Localization.Away f) * algebraMap A _ ((f ^ k) ^ n) =
-        algebraMap A _ (a * f ^ (n * (k - 1))) := by
-      have h1 : (u : Localization.Away f) * algebraMap A _ (f ^ n) = algebraMap A _ a := by
-        rw [hua, Localization.mk_eq_mk'_apply]
-        exact IsLocalization.mk'_spec (Localization.Away f) a (Submonoid.pow f n)
-      calc
-        eqv (u : Localization.Away f) * algebraMap A _ ((f ^ k) ^ n)
-          = eqv (u : Localization.Away f) *
-              (algebraMap A _ (f ^ n) * algebraMap A _ (f ^ (n * (k - 1)))) := by
-            rw [← map_mul, ← pow_add, hpow_add, ← pow_mul, mul_comm n k]
-        _ = eqv ((u : Localization.Away f) * algebraMap A _ (f ^ n)) *
-              algebraMap A _ (f ^ (n * (k - 1))) := by
-            rw [← mul_assoc, map_mul, eqv.commutes]
-        _ = algebraMap A _ (a * f ^ (n * (k - 1))) := by
-            rw [h1, eqv.commutes, map_mul]
-    have ha' : a * f ^ (n * (k - 1)) ∈ 𝒜 (d + n • (k • e)) := by
-      convert SetLike.mul_mem_graded ha (SetLike.pow_mem_graded (n * (k - 1)) hf) using 2
-      rw [add_assoc, ← add_smul, hpow_add, mul_smul]
-    have hmem : ((Units.map eqv.toRingHom.toMonoidHom u : (Localization.Away (f ^ k))ˣ) :
-        Localization.Away (f ^ k)) ∈ awayGrading 𝒜 (SetLike.pow_mem_graded k hf) d := by
-      rw [mem_awayGrading_iff]
-      refine ⟨n, a * f ^ (n * (k - 1)), ha', ?_⟩
-      refine (IsLocalization.Away.algebraMap_pow_isUnit (f ^ k) n).mul_left_inj.mp ?_
-      have hspec :=
-        IsLocalization.mk'_spec (Localization.Away (f ^ k)) (a * f ^ (n * (k - 1)))
-          (Submonoid.pow (f ^ k) n)
-      simpa [Units.coe_map, Localization.mk_eq_mk'_apply, ← map_pow] using hmul.trans hspec.symm
-    exact mem_homogeneousUnitDegrees_of_mem hmem
+  rw [homogeneousUnitDegrees_awayGrading, homogeneousUnitDegrees_awayGrading]
+  congr 1
+  ext d
+  refine ⟨fun ⟨a, ha, n, hn⟩ ↦ ⟨a, ha, k * n, by rwa [pow_mul]⟩,
+    fun ⟨a, ha, n, hn⟩ ↦ ⟨a, ha, n, hn.trans ?_⟩⟩
+  rw [← pow_mul]
+  exact pow_dvd_pow f (Nat.le_mul_of_pos_left n (Nat.pos_of_ne_zero hk))
 
 end GradedMonoid
 
@@ -274,9 +212,8 @@ noncomputable def shiftClassGroupAwayPrimeEquiv {f : A} {e : ℤ} (hf : f ∈ �
     (hprime : Prime f) (hreg : IsLeftRegular f)
     (hle : homogeneousUnitDegrees 𝒜 ≤ AddSubgroup.zmultiples e) :
     ShiftClassGroup (awayGrading 𝒜 hf) ≃+ ZMod e.natAbs :=
-  (QuotientAddGroup.quotientAddEquivOfEq (by
-    rw [homogeneousUnitDegrees_awayGrading_prime 𝒜 hf hprime hreg, sup_eq_right.mpr hle])).trans
-    (Int.quotientZMultiplesEquivZMod e)
+  ShiftClassGroup.equivZMod <| by
+    rw [homogeneousUnitDegrees_awayGrading_prime 𝒜 hf hprime hreg, sup_eq_right.mpr hle]
 
 /-- The identification of `ShiftClassGroup (awayGrading 𝒜 hf)` with `ZMod e.natAbs` sends the
 class of a shift `d` to `d mod |e|`. -/
@@ -284,8 +221,8 @@ class of a shift `d` to `d mod |e|`. -/
 theorem shiftClassGroupAwayPrimeEquiv_mk {f : A} {e : ℤ} (hf : f ∈ 𝒜 e)
     (hprime : Prime f) (hreg : IsLeftRegular f)
     (hle : homogeneousUnitDegrees 𝒜 ≤ AddSubgroup.zmultiples e) (d : ℤ) :
-    shiftClassGroupAwayPrimeEquiv 𝒜 hf hprime hreg hle d = d := by
-  rfl
+    shiftClassGroupAwayPrimeEquiv 𝒜 hf hprime hreg hle d = d :=
+  ShiftClassGroup.equivZMod_mk _ d
 
 end ShiftClassGroup
 

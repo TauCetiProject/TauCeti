@@ -218,7 +218,7 @@ theorem Splits.exists_isRoot_ne {g : F[X]} (hsplit : g.Splits) (hsep : g.Separab
   have hmap : (g.map (algebraMap F F)).Splits := by simpa using hsplit
   have hcard : Fintype.card (g.rootSet F) = g.natDegree := card_rootSet_eq_natDegree hsep hmap
   have hroot : ∀ z : g.rootSet F, g.IsRoot (z : F) := fun z => by
-    simpa [IsRoot] using (mem_rootSet_of_ne (S := F) hg0).mp z.2
+    simpa [IsRoot] using (mem_rootSet_of_ne (S := F) hg0).mp z.property
   have hone : 1 < Fintype.card (g.rootSet F) := by omega
   obtain ⟨x, y, hxy⟩ := Fintype.one_lt_card_iff.mp hone
   by_cases hxa : (x : F) = a

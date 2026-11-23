@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.GradedAlgebra.Localization.Units
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.HomogeneousUnits
 
 /-!
 # Homogeneous units and shift classes of weighted polynomial rings
@@ -15,8 +15,9 @@ For a nontrivial commutative semiring `R`, any type of variables `σ`, and any w
 `w : σ → ι` into an additive commutative group `ι`, the weighted polynomial ring
 `MvPolynomial σ R` is graded by `MvPolynomial.weightedHomogeneousSubmodule R w`. Because the
 constant term of any unit of `MvPolynomial σ R` is a unit of `R`, hence nonzero, every homogeneous
-unit has degree `0`: `homogeneousUnitDegrees (weightedHomogeneousSubmodule R w) = ⊥`. No
-positivity hypothesis on `w` and no finiteness hypothesis on `σ` are required.
+unit has degree `0`: `homogeneousUnitDegrees_weightedHomogeneousSubmodule` gives
+`homogeneousUnitDegrees (weightedHomogeneousSubmodule R w) = ⊥`. No positivity hypothesis on `w`
+and no finiteness hypothesis on `σ` are required.
 
 Without any global cancellativity hypothesis on `R`, the localization results of
 `TauCeti.RingTheory.GradedAlgebra.Localization.Units` apply directly to any regular
@@ -50,8 +51,6 @@ weighted-homogeneous element `f` (`IsLeftRegular f`):
 
 ## Main results
 
-* `TauCeti.homogeneousUnitDegrees_weighted`: the homogeneous unit degrees of a weighted polynomial
-  ring are `⊥`.
 * `TauCeti.homogeneousUnitDegrees_away_of_associated_prod`: homogeneous unit degrees after inverting
   a regular element associated to a finite product of weighted-homogeneous primes.
 * `TauCeti.homogeneousUnitDegrees_away_prime` and
@@ -74,26 +73,12 @@ section Weighted
 
 variable {σ ι : Type*} [AddCommGroup ι]
 
-/-- For any weights `w : σ → ι` into an additive commutative group over a nontrivial commutative
-semiring `R`, every homogeneous unit of `MvPolynomial σ R` has degree `0`, because its constant
-term is a unit and hence nonzero. -/
-@[simp]
-theorem homogeneousUnitDegrees_weighted {R : Type*} [CommSemiring R] [Nontrivial R]
-    (w : σ → ι) :
-    homogeneousUnitDegrees (weightedHomogeneousSubmodule R w) = ⊥ := by
-  refine eq_bot_iff.mpr (homogeneousUnitDegrees_le_iff.mpr fun u d hu ↦ ?_)
-  have h0 : (u : MvPolynomial σ R).coeff 0 ≠ 0 := by
-    rw [← constantCoeff_eq]
-    exact (u.isUnit.map (constantCoeff (σ := σ) (R := R))).ne_zero
-  have hd : Finsupp.weight w (0 : σ →₀ ℕ) = d :=
-    (mem_weightedHomogeneousSubmodule ..).mp hu h0
-  simpa using hd.symm
-
 /-- The shift class group of a weighted polynomial ring over a nontrivial commutative semiring is
 the degree group `ι`. -/
 noncomputable def shiftClassGroupWeightedEquiv (R : Type*) [CommSemiring R] [Nontrivial R]
     (w : σ → ι) : ShiftClassGroup (weightedHomogeneousSubmodule R w) ≃+ ι :=
-  (QuotientAddGroup.quotientAddEquivOfEq (homogeneousUnitDegrees_weighted w)).trans
+  (QuotientAddGroup.quotientAddEquivOfEq
+    (homogeneousUnitDegrees_weightedHomogeneousSubmodule w)).trans
     QuotientAddGroup.quotientBot
 
 /-- The identification of the shift class group of a weighted polynomial ring with `ι` sends the
@@ -126,7 +111,7 @@ theorem homogeneousUnitDegrees_away_of_associated_prod [Nontrivial R] (w : σ �
   classical
   let := MvPolynomial.weightedGradedAlgebra R w
   rw [homogeneousUnitDegrees_awayGrading_of_associated_prod (weightedHomogeneousSubmodule R w)
-    hf hp hmem hassoc hreg, homogeneousUnitDegrees_weighted, bot_sup_eq]
+    hf hp hmem hassoc hreg, homogeneousUnitDegrees_weightedHomogeneousSubmodule, bot_sup_eq]
 
 /-- Inverting a regular weighted-homogeneous prime polynomial `f` of weight `e` produces a graded
 localization whose homogeneous unit degrees are `AddSubgroup.zmultiples e`. -/
@@ -140,7 +125,7 @@ theorem homogeneousUnitDegrees_away_prime (w : σ → ι)
   have : Nontrivial R := not_subsingleton_iff_nontrivial.mp fun _ ↦
     hprime.ne_zero (Subsingleton.elim f 0)
   rw [homogeneousUnitDegrees_awayGrading_prime (weightedHomogeneousSubmodule R w) hf hprime hreg,
-    homogeneousUnitDegrees_weighted, bot_sup_eq]
+    homogeneousUnitDegrees_weightedHomogeneousSubmodule, bot_sup_eq]
 
 /-- Inverting a nonzero power `f ^ k` of a regular weighted-homogeneous prime `f` of weight `e`
 still yields homogeneous unit degrees `AddSubgroup.zmultiples e`, since `f` itself becomes a unit
@@ -165,7 +150,7 @@ noncomputable def shiftClassGroupWeightedAwayPrimeEquiv (w : σ → ℤ)
   have : Nontrivial R := not_subsingleton_iff_nontrivial.mp fun _ ↦
     hprime.ne_zero (Subsingleton.elim f 0)
   shiftClassGroupAwayPrimeEquiv (weightedHomogeneousSubmodule R w)
-    hf hprime hreg ((homogeneousUnitDegrees_weighted w).trans_le bot_le)
+    hf hprime hreg ((homogeneousUnitDegrees_weightedHomogeneousSubmodule w).trans_le bot_le)
 
 /-- The identification of the shift class group of `Localization.Away f` with `ZMod e.natAbs` sends
 the class of a shift `d` to `d mod |e|`. -/
@@ -179,7 +164,7 @@ theorem shiftClassGroupWeightedAwayPrimeEquiv_mk (w : σ → ℤ)
   have : Nontrivial R := not_subsingleton_iff_nontrivial.mp fun _ ↦
     hprime.ne_zero (Subsingleton.elim f 0)
   exact shiftClassGroupAwayPrimeEquiv_mk (weightedHomogeneousSubmodule R w)
-    hf hprime hreg ((homogeneousUnitDegrees_weighted w).trans_le bot_le) d
+    hf hprime hreg ((homogeneousUnitDegrees_weightedHomogeneousSubmodule w).trans_le bot_le) d
 
 end Away
 
@@ -203,7 +188,7 @@ theorem existsUnique_shift_linearEquiv_weighted [CommRing R] [Nontrivial R]
         ∀ n x, φ x ∈ ℳ n ↔ x ∈ weightedHomogeneousSubmodule R w (n + d) := by
   let := MvPolynomial.weightedGradedAlgebra R w
   exact existsUnique_shift_linearEquiv_of_connected (weightedHomogeneousSubmodule R w) ℳ
-    (homogeneousUnitDegrees_weighted w)
+    (homogeneousUnitDegrees_weightedHomogeneousSubmodule w)
 
 /-- Whenever `PrimeSpectrum.basicOpen f` is preconnected for a weighted-homogeneous polynomial
 `f`, every compatible `ℤ`-grading of the free rank-one module over `Localization.Away f` is
