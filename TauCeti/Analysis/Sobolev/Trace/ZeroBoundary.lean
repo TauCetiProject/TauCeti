@@ -149,7 +149,7 @@ theorem hyperplaneTrace_apply_eq_zero_of_forall_not_mem (hp : p ≠ ∞) (a : �
       W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩, ?_, rfl⟩
     exact hyperplaneTrace_ofTestFunction_eq_zero hp a hOmega phi
   obtain ⟨v, hv, hvu⟩ :=
-    w1p0Submodule_subset_of_isClosed hs htest u.2
+    w1p0Submodule_subset_of_isClosed hs htest u.property
   have hv_eq : v = u := Subtype.ext hvu
   have hv_zero : T v = 0 := by
     exact hv

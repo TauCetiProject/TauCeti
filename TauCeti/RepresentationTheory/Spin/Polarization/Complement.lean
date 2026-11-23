@@ -11,9 +11,9 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.Basic
 /-!
 # Polarizations from complementary isotropic subspaces
 
-A finite-dimensional nondegenerate quadratic space which is the direct sum of two totally isotropic
-subspaces `W` and `W'` is polarized by them, with no orthogonal remainder: the polar form pairs
-`W'` perfectly with `W`. This file packages that observation as a constructor of
+A finite-dimensional quadratic space with trivial radical which is the direct sum of two totally
+isotropic subspaces `W` and `W'` is polarized by them, with no orthogonal remainder: the polar
+form pairs `W'` perfectly with `W`. This file packages that observation as a constructor of
 `TauCeti.SpinPolarizationData`, so that a polarization whose two summands are given by a formula
 (for instance the two eigenspaces of a complexified orthogonal complex structure) can be produced
 from the isotropy and the complementarity of the summands alone.
@@ -35,7 +35,7 @@ whose left radical is trivial. Both `ofIsCompl` and the hyperbolic polarization
 * `TauCeti.SpinPolarizationData.ofIsComplOfPairing`: the polarization data with no orthogonal
   remainder determined by two complementary isotropic submodules and a polar pairing of them.
 * `TauCeti.SpinPolarizationData.ofIsCompl`: the polarization data of a finite-dimensional
-  nondegenerate quadratic space determined by two complementary isotropic subspaces.
+  quadratic space with trivial radical determined by two complementary isotropic subspaces.
 
 ## Main results
 
@@ -79,9 +79,9 @@ noncomputable def ofIsComplOfPairing (hWW' : IsCompl W W') (hW : Q.IsTotallyIsot
   decompositionEquiv := LinearEquiv.prodUnique ≪≫ₗ Submodule.prodEquivOfIsCompl W W' hWW'
   decompositionEquiv_apply x := by
     rw [LinearEquiv.trans_apply, LinearEquiv.prodUnique_apply, Submodule.coe_prodEquivOfIsCompl',
-      (Submodule.mem_bot K).mp x.2.2, add_zero]
-  isotropic_W x := hW.apply_eq_zero x.2
-  isotropic_W' y := hW'.apply_eq_zero y.2
+      (Submodule.mem_bot K).mp x.2.property, add_zero]
+  isotropic_W x := hW.apply_eq_zero x.property
+  isotropic_W' y := hW'.apply_eq_zero y.property
   pairingEquiv := e
   pairingEquiv_apply := he
   pairing_separatingLeft := hsep
@@ -117,11 +117,11 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} {W W' : Submodule K V} [FiniteDimensional K V]
 
 /-- **The polarization of a quadratic space by two complementary isotropic subspaces.** If a
-finite-dimensional quadratic space `(V, Q)` with nondegenerate `Q` is the direct sum of two
+finite-dimensional quadratic space `(V, Q)` with trivial radical is the direct sum of two
 totally isotropic subspaces `W` and `W'`, then `W` and `W'` are the two isotropic summands of a
 polarization of `Q` with no orthogonal remainder; the polar form identifies `W'` with the dual
 of `W`. -/
-noncomputable def ofIsCompl (hQ : Q.Nondegenerate) (hWW' : IsCompl W W')
+noncomputable def ofIsCompl (hQ : Q.radical = ⊥) (hWW' : IsCompl W W')
     (hW : Q.IsTotallyIsotropic W) (hW' : Q.IsTotallyIsotropic W') : SpinPolarizationData Q :=
   ofIsComplOfPairing hWW' hW hW'
     (((polarBilin Q).compl₁₂ W.subtype W'.subtype).flip.linearEquivOfInjective
@@ -131,11 +131,11 @@ noncomputable def ofIsCompl (hQ : Q.Nondegenerate) (hWW' : IsCompl W W')
       rw [LinearMap.linearEquivOfInjective_apply, LinearMap.flip_apply, LinearMap.compl₁₂_apply,
         polarBilin_apply_apply, Submodule.subtype_apply, Submodule.subtype_apply])
     (fun x hx => Subtype.ext <|
-      hW.eq_zero_of_polar_eq_zero hQ hWW'.symm.codisjoint x.2 fun y hy => by
+      hW.eq_zero_of_polar_eq_zero hQ hWW'.symm.codisjoint x.property fun y hy => by
         rw [polar_comm]
         exact hx ⟨y, hy⟩)
 
-variable (hQ : Q.Nondegenerate) (hWW' : IsCompl W W') (hW : Q.IsTotallyIsotropic W)
+variable (hQ : Q.radical = ⊥) (hWW' : IsCompl W W') (hW : Q.IsTotallyIsotropic W)
   (hW' : Q.IsTotallyIsotropic W')
 
 @[simp]

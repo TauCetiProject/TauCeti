@@ -146,7 +146,7 @@ private theorem continuousAt_and_eq_one_and_eventually_isUnit_compression {g : E
       IsUnit (localNormalCompression g u₀ u) := by
   have hR₀ : localNormalCompression g u₀ u₀ = 1 := by
     ext w
-    simp [localNormalCompression, Submodule.starProjection_eq_self_iff.mpr w.2]
+    simp [localNormalCompression, Submodule.starProjection_eq_self_iff.mpr w.property]
   have hRc : ContinuousAt (localNormalCompression g u₀) u₀ := by
     unfold localNormalCompression
     exact continuousAt_const.clm_comp
@@ -362,23 +362,23 @@ theorem isOpenEmbedding_normalTubeOfRadius_of_le {f : M → V} {r R : M → ℝ}
       (mem_normalTubeOfRadius.mp hp).2.trans_le (hrR p.1)⟩
   apply h.comp (IsOpenEmbedding.inclusion hsub ?_)
   convert isOpen_lt ((continuous_norm.comp continuous_snd).comp
-    (continuous_subtype_val : Continuous
+    (continuous_subtypeVal : Continuous
       (Subtype.val : normalTubeOfRadius I f R → M × V)))
-    ((hr.comp continuous_fst).comp continuous_subtype_val) using 1
+    ((hr.comp continuous_fst).comp continuous_subtypeVal) using 1
   ext p
   simp only [mem_preimage, mem_normalTubeOfRadius, mem_ofPred_eq, Function.comp_apply]
-  exact and_iff_right (mem_normalTubeOfRadius.mp p.2).1
+  exact and_iff_right (mem_normalTubeOfRadius.mp p.property).1
 
 /-- The total space of the normal bundle of `f` carries the topology of a subspace of `M × V`,
 independently of its model-fibre parameter `F`. -/
 instance instTopologicalSpaceTotalSpaceNormalSubspace {F : Type*} (f : M → V) :
     TopologicalSpace (TotalSpace F fun x : M => normalSubspace I f x) :=
-  TopologicalSpace.induced (fun p => (p.proj, (p.2 : V))) inferInstance
+  TopologicalSpace.induced (fun p => (p.proj, (p.snd : V))) inferInstance
 
 /-- The total space of the normal bundle of `f` is embedded in `M × V`. -/
 theorem isEmbedding_totalSpace_normalSubspace {F : Type*} (f : M → V) :
     IsEmbedding fun p : TotalSpace F (fun x : M => normalSubspace I f x) =>
-      (p.proj, (p.2 : V)) := by
+      (p.proj, (p.snd : V)) := by
   refine ⟨⟨rfl⟩, ?_⟩
   rintro ⟨x, v⟩ ⟨y, w⟩ h
   simp only [Prod.mk.injEq] at h
@@ -527,10 +527,11 @@ theorem exists_isOpenEmbedding_normalTube {f : M → V} (hf : ContMDiff I 𝓘(�
         _ = m := add_halves m
     obtain ⟨⟨x, hx⟩, h1, h2⟩ := hmW _ _ (by rw [dist_eq_norm]; exact hlt)
     exact hinjOn x (hloc p hp x hx h1) (hloc p' hp' x hx h2) heq
-  refine .of_continuous_injective_isOpenMap ?_ (fun p p' h => Subtype.ext (hinjT p.2 p'.2 h)) ?_
+  refine .of_continuous_injective_isOpenMap ?_ (fun p p' h => Subtype.ext
+      (hinjT p.property p'.property h)) ?_
   · have hfc := hf.continuous
     have hΦ : Continuous fun p : M × V => f p.1 + p.2 := by fun_prop
-    exact hΦ.comp continuous_subtype_val
+    exact hΦ.comp continuous_subtypeVal
   · intro U hU
     obtain ⟨O₁, hO₁, rfl⟩ := isOpen_induced_iff.mp hU
     have himage : (normalTube I f ε).domRestrict (fun p : M × V => f p.1 + p.2) ''
@@ -556,21 +557,21 @@ which contains every fibre. -/
 theorem exists_isTubularNeighborhood_normalBundle {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hinj : Injective f) :
     ∃ ε > 0, IsTubularNeighborhood f
-      {p : TotalSpace V (fun x : M => normalSubspace I f x) | ‖(p.2 : V)‖ < ε}
-      fun p => f p.1.proj + p.1.2 := by
+      {p : TotalSpace V (fun x : M => normalSubspace I f x) | ‖(p.snd : V)‖ < ε}
+      fun p => f p.val.proj + p.val.snd := by
   obtain ⟨ε, hε, hemb⟩ := exists_isOpenEmbedding_normalTube hf himm hinj
-  let ι : TotalSpace V (fun x : M => normalSubspace I f x) → M × V := fun p => (p.proj, p.2)
+  let ι : TotalSpace V (fun x : M => normalSubspace I f x) → M × V := fun p => (p.proj, p.snd)
   have hι : IsEmbedding ι := isEmbedding_totalSpace_normalSubspace f
-  set U := {p : TotalSpace V (fun x : M => normalSubspace I f x) | ‖(p.2 : V)‖ < ε}
+  set U := {p : TotalSpace V (fun x : M => normalSubspace I f x) | ‖(p.snd : V)‖ < ε}
   -- The normal vectors of length less than `ε` in the total space and in `M × V`.
   let σ : U ≃ₜ normalTube I f ε :=
-    { toFun := fun p => ⟨ι p.1, p.1.2.2, p.2⟩
-      invFun := fun q => ⟨⟨q.1.1, ⟨q.1.2, q.2.1⟩⟩, q.2.2⟩
+    { toFun := fun p => ⟨ι p.val, p.val.snd.property, p.property⟩
+      invFun := fun q => ⟨⟨q.val.1, ⟨q.val.2, q.property.1⟩⟩, q.property.2⟩
       left_inv := fun _ => rfl
       right_inv := fun _ => rfl
-      continuous_toFun := (hι.continuous.comp continuous_subtype_val).subtype_mk _
+      continuous_toFun := (hι.continuous.comp continuous_subtypeVal).subtype_mk _
       continuous_invFun :=
-        (hι.isInducing.continuous_iff.mpr continuous_subtype_val).subtype_mk _ }
+        (hι.isInducing.continuous_iff.mpr continuous_subtypeVal).subtype_mk _ }
   refine ⟨ε, hε, ?_⟩
   exact
     { isOpen := (isOpen_lt (continuous_norm.comp continuous_snd) continuous_const).preimage
@@ -584,10 +585,10 @@ theorem exists_isTubularNeighborhood_normalBundle {f : M → V} (hf : ContMDiff 
       map_zeroSection := fun x => by simp [zeroSection]
       continuous_radial := by
         refine hι.isInducing.continuous_iff.mpr ?_
-        have h1 : Continuous fun p : Icc (0 : ℝ) 1 × U => ι p.2.1 :=
-          hι.continuous.comp (continuous_subtype_val.comp continuous_snd)
+        have h1 : Continuous fun p : Icc (0 : ℝ) 1 × U => ι p.2.val :=
+          hι.continuous.comp (continuous_subtypeVal.comp continuous_snd)
         have h2 : Continuous fun p : Icc (0 : ℝ) 1 × U => (p.1 : ℝ) :=
-          continuous_subtype_val.comp continuous_fst
+          continuous_subtypeVal.comp continuous_fst
         exact h1.fst.prodMk (h2.smul h1.snd) }
 
 end FiniteDimensionalAmbient

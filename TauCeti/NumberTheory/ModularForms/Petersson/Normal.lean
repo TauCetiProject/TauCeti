@@ -158,7 +158,7 @@ theorem isAdjointPair_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0
     peterssonInnerCosets_heckeTCuspNat_right k hpN,
     diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ]
   · rw [map_inv, Units.val_inv_eq_inv_val]
-  · exact heckeTCuspNat_mem_cuspFormCharSpace k χ hp g.2
+  · exact heckeTCuspNat_mem_cuspFormCharSpace k χ hp g.property
 
 end HeckeRing.GL2
 

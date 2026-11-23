@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Rescale
+import TauCeti.Analysis.Normed.MulAction
 
 /-!
 # Rescaling module-valued restricted series
@@ -46,7 +47,7 @@ defined whenever the radii are norms of multiplicative units.
 
 * `TauCeti.MvPowerSeries.isRestrictedFamily_prod_pow_smul_iff`: rescaling converts restrictedness
   at `r` into restrictedness at `s`, by the weighted norm identity
-  `TauCeti.MvPowerSeries.norm_prod_pow_smul_mul_prod`.
+  `TauCeti.norm_finsuppProd_pow_smul_mul_finsuppProd`.
 * `TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.rescaleLinearIsometryEquiv_one`,
   `TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.rescaleLinearIsometryEquiv_trans` and
   `TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.rescaleLinearIsometryEquiv_symm`: the identity,
@@ -78,7 +79,7 @@ theorem isRestrictedFamily_prod_pow_smul_iff (u : σ → R)
     (hu : ∀ i (e : E), ‖u i • e‖ * s i = ‖e‖ * r i) (a : (σ →₀ ℕ) → E) :
     IsRestrictedFamily s (fun t ↦ (t.prod fun i m ↦ u i ^ m) • a t) ↔ IsRestrictedFamily r a := by
   simp only [isRestrictedFamily_iff]
-  exact Filter.tendsto_congr fun t ↦ norm_prod_pow_smul_mul_prod u hu t (a t)
+  exact Filter.tendsto_congr fun t ↦ norm_finsuppProd_pow_smul_mul_finsuppProd u hu t (a t)
 
 /-- If `u i` scales norms in `E` by `r i / s i`, then its inverse scales them by `s i / r i`. -/
 theorem norm_units_inv_smul_mul (u : σ → Rˣ)
@@ -97,10 +98,10 @@ private def rescaleLinearEquiv (u : σ → Rˣ)
     Gauss r E ≃ₗ[R] Gauss s E where
   toFun a := ofAddSubgroup ⟨fun t ↦ (t.prod fun i m ↦ (u i : R) ^ m) • a t,
     mem_addSubgroup.mpr <| (isRestrictedFamily_prod_pow_smul_iff _ hu _).mpr
-      (mem_addSubgroup.mp a.toAddSubgroup.2)⟩
+      (mem_addSubgroup.mp a.toAddSubgroup.property)⟩
   invFun a := ofAddSubgroup ⟨fun t ↦ (t.prod fun i m ↦ (((u i)⁻¹ : Rˣ) : R) ^ m) • a t,
     mem_addSubgroup.mpr <| (isRestrictedFamily_prod_pow_smul_iff _
-      (norm_units_inv_smul_mul u hu) _).mpr (mem_addSubgroup.mp a.toAddSubgroup.2)⟩
+      (norm_units_inv_smul_mul u hu) _).mpr (mem_addSubgroup.mp a.toAddSubgroup.property)⟩
   left_inv a := by
     ext t
     simp [smul_smul, ← Finsupp.prod_mul, ← mul_pow]
@@ -132,7 +133,7 @@ def rescaleLinearIsometryEquiv (u : σ → Rˣ)
     congr 1
     funext t
     rw [rescaleLinearEquiv_apply]
-    exact norm_prod_pow_smul_mul_prod _ hu t (a t)
+    exact norm_finsuppProd_pow_smul_mul_finsuppProd _ hu t (a t)
 
 /-- The rescaling isometry multiplies the coefficient at `t` by `uᵗ`. -/
 @[simp]
