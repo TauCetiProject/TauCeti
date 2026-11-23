@@ -30,10 +30,17 @@ datum: the square replaces a descent datum.
 This is the two-module presentation of a glueing datum `(M₁, M₂, M₁₂, ψ₁, ψ₂)`, with
 `α = ψ₂⁻¹ ψ₁`; it has the same sections and morphisms.
 
+The four rings live in independent universes, and so do the two pieces of a datum. The canonical
+datum of a module `N : Type w` has pieces in `max u₁ w` and `max u₂ w`; the comparison morphism
+and the adjunction take both pieces in a common universe containing `R₁` and `R₂`.
+
 ## Main definitions
 
 * `TauCeti.PatchingData R R₁ R₂ L`: patching data over the square, forming a category.
-* `TauCeti.PatchingData.sections D`: the `R`-module of sections of a datum.
+* `TauCeti.PatchingData.difference D`: the difference map `(x₁, x₂) ↦ α (1 ⊗ x₁) - 1 ⊗ x₂` to
+  the overlap.
+* `TauCeti.PatchingData.sections D`: the `R`-module of sections of a datum, the kernel of its
+  difference map.
 * `TauCeti.PatchingData.compareLeft`, `TauCeti.PatchingData.compareRight`: the comparison maps
   `R₁ ⊗[R] sections D → M₁` and `R₂ ⊗[R] sections D → M₂`.
 * `TauCeti.PatchingData.can N`: the canonical datum of an `R`-module.
@@ -67,23 +74,23 @@ This is the two-module presentation of a glueing datum `(M₁, M₂, M₁₂, ψ
 
 public section
 
-universe u
+universe u u₁ u₂ v v₁ v₂ w
 
 open CategoryTheory TensorProduct
 
 namespace TauCeti
 
-variable (R R₁ R₂ L : Type u) [CommRing R] [CommRing R₁] [CommRing R₂] [CommRing L]
-  [Algebra R R₁] [Algebra R R₂] [Algebra R₁ L] [Algebra R₂ L]
+variable (R : Type u) (R₁ : Type u₁) (R₂ : Type u₂) (L : Type v) [CommRing R] [CommRing R₁]
+  [CommRing R₂] [CommRing L] [Algebra R R₁] [Algebra R R₂] [Algebra R₁ L] [Algebra R₂ L]
 
 /-- A patching datum over the square `R → R₁, R₂ → L`: an `R₁`-module `left`, an `R₂`-module
 `right` and an `L`-linear identification of their scalar extensions to `L`. The restricted
 `R`-module structures are part of the bundle, compatible with the algebra maps. -/
 structure PatchingData where
   /-- The module over the first corner `R₁`. -/
-  left : Type u
+  left : Type v₁
   /-- The module over the second corner `R₂`. -/
-  right : Type u
+  right : Type v₂
   /-- The additive group structure of `left`. -/
   [addCommGroupLeft : AddCommGroup left]
   /-- The additive group structure of `right`. -/
@@ -165,18 +172,32 @@ section Sections
 
 variable (D : PatchingData R R₁ R₂ L)
 
-/-- The module of sections of a patching datum: the pairs `(x₁, x₂)` whose images
-`α (1 ⊗ x₁)` and `1 ⊗ x₂` agree over the overlap. It is the module of compatible pairs
-`ker (F.coprod (-G))` of the two maps `F = α ∘ (1 ⊗ ·)` and `G = (1 ⊗ ·)` to the overlap. -/
-def sections : Submodule R (D.left × D.right) :=
-  LinearMap.ker ((D.transition.toLinearMap.restrictScalars R ∘ₗ
+/-- The difference map `(x₁, x₂) ↦ α (1 ⊗ x₁) - 1 ⊗ x₂` of a patching datum to the overlap: the
+map `F.coprod (-G)` of the two maps `F = α ∘ (1 ⊗ ·)` and `G = (1 ⊗ ·)` to `L ⊗[R₂] right`. Its
+kernel is the module of sections (`PatchingData.sections_eq_ker_difference`). -/
+def difference : D.left × D.right →ₗ[R] L ⊗[R₂] D.right :=
+  (D.transition.toLinearMap.restrictScalars R ∘ₗ
     (TensorProduct.mk R₁ L D.left 1).restrictScalars R).coprod
-      (-(TensorProduct.mk R₂ L D.right 1).restrictScalars R))
+      (-(TensorProduct.mk R₂ L D.right 1).restrictScalars R)
+
+@[simp]
+theorem difference_apply (x : D.left × D.right) :
+    D.difference x = D.transition (1 ⊗ₜ x.1) - 1 ⊗ₜ x.2 := by
+  simp [difference, sub_eq_add_neg]
+
+/-- The module of sections of a patching datum: the pairs `(x₁, x₂)` whose images
+`α (1 ⊗ x₁)` and `1 ⊗ x₂` agree over the overlap, that is, the kernel of the difference map.
+This is the convention of compatible pairs `ker (F.coprod (-G))`. -/
+def sections : Submodule R (D.left × D.right) :=
+  LinearMap.ker D.difference
+
+theorem sections_eq_ker_difference : D.sections = LinearMap.ker D.difference :=
+  (rfl)
 
 @[simp]
 theorem mem_sections_iff (x : D.left × D.right) :
     x ∈ D.sections ↔ D.transition (1 ⊗ₜ x.1) = 1 ⊗ₜ x.2 := by
-  simp [sections, add_neg_eq_zero]
+  rw [sections_eq_ker_difference, LinearMap.mem_ker, difference_apply, sub_eq_zero]
 
 /-- Two sections agree when their two coordinates agree. -/
 @[ext]
@@ -224,13 +245,14 @@ variable (R R₁ R₂ L) in
 /-- The module of sections, as a functor from patching data to `R`-modules. -/
 -- Exposed so that its objects unfold to the module of sections, as the adjunction requires.
 @[expose, simps]
-def sectionsFunctor : PatchingData R R₁ R₂ L ⥤ ModuleCat.{u} R where
+def sectionsFunctor :
+    PatchingData.{u, u₁, u₂, v, v₁, v₂} R R₁ R₂ L ⥤ ModuleCat.{max v₁ v₂} R where
   obj D := ModuleCat.of R D.sections
   map f := ModuleCat.ofHom (sectionsMap f)
 
 section Can
 
-variable (N : Type u) [AddCommGroup N] [Module R N]
+variable (N : Type w) [AddCommGroup N] [Module R N]
 
 variable (R R₁ R₂ L) in
 /-- The canonical patching datum `(R₁ ⊗[R] N, R₂ ⊗[R] N, can)` of an `R`-module `N`, whose
@@ -241,6 +263,7 @@ abbrev can : PatchingData R R₁ R₂ L where
   transition := (AlgebraTensorModule.cancelBaseChange R R₁ L L N).trans
     (AlgebraTensorModule.cancelBaseChange R R₂ L L N).symm
 
+@[simp]
 theorem can_transition_tmul (l : L) (a : R₁) (n : N) :
     (can R R₁ R₂ L N).transition (l ⊗ₜ (a ⊗ₜ[R] n)) = (a • l) ⊗ₜ ((1 : R₂) ⊗ₜ[R] n) :=
   (rfl)
@@ -289,17 +312,17 @@ theorem canHom_right {D : PatchingData R R₁ R₂ L} (f₁ : R₁ ⊗[R] N →�
 
 variable {N} (R₁ R₂ L) in
 /-- The canonical morphism of patching data `Can N ⟶ Can N'` induced by a linear map. -/
-def canMap {N' : Type u} [AddCommGroup N'] [Module R N'] (g : N →ₗ[R] N') :
+def canMap {N' : Type w} [AddCommGroup N'] [Module R N'] (g : N →ₗ[R] N') :
     can R R₁ R₂ L N ⟶ can R R₁ R₂ L N' :=
   canHom (g.baseChange R₁) (g.baseChange R₂) fun _ ↦ by simp
 
 @[simp]
-theorem canMap_left {N' : Type u} [AddCommGroup N'] [Module R N'] (g : N →ₗ[R] N') :
+theorem canMap_left {N' : Type w} [AddCommGroup N'] [Module R N'] (g : N →ₗ[R] N') :
     Hom.left (canMap R₁ R₂ L g) = g.baseChange R₁ :=
   (rfl)
 
 @[simp]
-theorem canMap_right {N' : Type u} [AddCommGroup N'] [Module R N'] (g : N →ₗ[R] N') :
+theorem canMap_right {N' : Type w} [AddCommGroup N'] [Module R N'] (g : N →ₗ[R] N') :
     Hom.right (canMap R₁ R₂ L g) = g.baseChange R₂ :=
   (rfl)
 
@@ -307,7 +330,8 @@ variable (R R₁ R₂ L) in
 /-- The canonical datum, as a functor from `R`-modules to patching data. -/
 -- Exposed so that its objects unfold to the canonical data, as the adjunction requires.
 @[expose, simps]
-def canFunctor : ModuleCat.{u} R ⥤ PatchingData R R₁ R₂ L where
+def canFunctor :
+    ModuleCat.{w} R ⥤ PatchingData.{u, u₁, u₂, v, max u₁ w, max u₂ w} R R₁ R₂ L where
   obj N := can R R₁ R₂ L N
   map g := canMap R₁ R₂ L g.hom
   map_id N := by ext <;> simp
@@ -327,9 +351,10 @@ theorem coe_canUnit_apply (n : N) :
 
 end Can
 
-section Adjunction
+section HomEquiv
 
-variable (N : Type u) [AddCommGroup N] [Module R N] (D : PatchingData R R₁ R₂ L)
+variable (N : Type w) [AddCommGroup N] [Module R N]
+  (D : PatchingData.{u, u₁, u₂, v, max u₁ w, max u₂ w} R R₁ R₂ L)
 
 /-- Morphisms of patching data from a canonical datum correspond to linear maps into the
 sections: the sections functor is right adjoint to the canonical datum. -/
@@ -365,15 +390,26 @@ theorem homEquiv_symm_right (φ : N →ₗ[R] D.sections) :
   (rfl)
 
 /-- Naturality of `homEquiv` in the module. -/
-theorem homEquiv_symm_comp {N' : Type u} [AddCommGroup N'] [Module R N'] (f : N' →ₗ[R] N)
+theorem homEquiv_symm_comp {N' : Type w} [AddCommGroup N'] [Module R N'] (f : N' →ₗ[R] N)
     (φ : N →ₗ[R] D.sections) :
     (homEquiv N' D).symm (φ ∘ₗ f) = canMap R₁ R₂ L f ≫ (homEquiv N D).symm φ := by
   ext n <;> simp
 
 /-- Naturality of `homEquiv` in the patching datum. -/
-theorem homEquiv_comp {E : PatchingData R R₁ R₂ L} (f : can R R₁ R₂ L N ⟶ D) (g : D ⟶ E) :
+theorem homEquiv_comp {E : PatchingData.{u, u₁, u₂, v, max u₁ w, max u₂ w} R R₁ R₂ L}
+    (f : can R R₁ R₂ L N ⟶ D) (g : D ⟶ E) :
     homEquiv N E (f ≫ g) = sectionsMap g ∘ₗ homEquiv N D f := by
   ext n <;> simp
+
+end HomEquiv
+
+section Adjunction
+
+/-! The comparison morphism `Can (sections D) ⟶ D` and the adjunction need the canonical datum of
+the sections of `D` to live in the universes of `D`, so here both pieces of `D` live in a common
+universe that also contains `R₁` and `R₂`. -/
+
+variable (D : PatchingData.{u, u₁, u₂, v, max u₁ u₂ w, max u₁ u₂ w} R R₁ R₂ L)
 
 /-- The comparison morphism `Can (sections D) ⟶ D`, whose components are `compareLeft` and
 `compareRight`. It is the counit of `Can ⊣ sections` (`canAdjunction_counit_app`). -/
@@ -396,13 +432,15 @@ theorem transition_comp_baseChange_compareLeft :
   Hom.transition_comp_baseChange D.compareHom
 
 /-- The comparison morphisms are natural with respect to morphisms of patching data. -/
-theorem canMap_sectionsMap_comp_compareHom {E : PatchingData R R₁ R₂ L} (f : D ⟶ E) :
+theorem canMap_sectionsMap_comp_compareHom
+    {E : PatchingData.{u, u₁, u₂, v, max u₁ u₂ w, max u₁ u₂ w} R R₁ R₂ L} (f : D ⟶ E) :
     canMap R₁ R₂ L (sectionsMap f) ≫ E.compareHom = D.compareHom ≫ f := by
   ext x <;> simp
 
 variable (R R₁ R₂ L) in
 /-- The canonical datum is left adjoint to the sections: `Can ⊣ sections`. -/
-def canAdjunction : canFunctor R R₁ R₂ L ⊣ sectionsFunctor R R₁ R₂ L :=
+def canAdjunction :
+    (canFunctor R R₁ R₂ L : ModuleCat.{max u₁ u₂ w} R ⥤ _) ⊣ sectionsFunctor R R₁ R₂ L :=
   Adjunction.mkOfHomEquiv
     { homEquiv N D := (homEquiv N D).trans
         (ModuleCat.homEquiv (M := N) (N := ModuleCat.of R D.sections)).symm
@@ -412,7 +450,7 @@ def canAdjunction : canFunctor R R₁ R₂ L ⊣ sectionsFunctor R R₁ R₂ L :
         exact homEquiv_comp _ _ f g }
 
 /-- The unit of the adjunction `Can ⊣ sections` is `n ↦ (1 ⊗ n, 1 ⊗ n)`. -/
-theorem canAdjunction_unit_app (N : ModuleCat.{u} R) :
+theorem canAdjunction_unit_app (N : ModuleCat.{max u₁ u₂ w} R) :
     (canAdjunction R R₁ R₂ L).unit.app N = ModuleCat.ofHom (canUnit R R₁ R₂ L N) := by
   rw [← Adjunction.homEquiv_id, canAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
   ext n
@@ -446,7 +484,7 @@ include h
 canonical patching datum: the unit `N → sections (Can N)` is bijective. The diagonal is injective
 when `N` is flat (`ExactSquare.injective_patchingDiagonal`) or when the overlap `L` is flat
 (`ExactSquare.injective_patchingDiagonal_of_flat_overlap`). -/
-theorem bijective_canUnit (N : Type u) [AddCommGroup N] [Module R N]
+theorem bijective_canUnit (N : Type w) [AddCommGroup N] [Module R N]
     (hN : Function.Injective (patchingDiagonal R R₁ R₂ N)) :
     Function.Bijective (canUnit R R₁ R₂ L N) := by
   refine ⟨fun x y hxy ↦ hN (congr_arg Subtype.val hxy), fun ⟨x, hx⟩ ↦ ?_⟩
@@ -456,28 +494,45 @@ theorem bijective_canUnit (N : Type u) [AddCommGroup N] [Module R N]
 
 /-- Over an exact square, a module whose patching diagonal is injective, for instance a flat
 module, is isomorphic to the sections of its canonical patching datum. -/
-noncomputable def canUnitEquiv (N : Type u) [AddCommGroup N] [Module R N]
+noncomputable def canUnitEquiv (N : Type w) [AddCommGroup N] [Module R N]
     (hN : Function.Injective (patchingDiagonal R R₁ R₂ N)) :
     N ≃ₗ[R] (can R R₁ R₂ L N).sections :=
   LinearEquiv.ofBijective _ (h.bijective_canUnit N hN)
 
 @[simp]
-theorem coe_canUnitEquiv_apply (N : Type u) [AddCommGroup N] [Module R N]
+theorem toLinearMap_canUnitEquiv (N : Type w) [AddCommGroup N] [Module R N]
+    (hN : Function.Injective (patchingDiagonal R R₁ R₂ N)) :
+    (h.canUnitEquiv N hN : N →ₗ[R] (can R R₁ R₂ L N).sections) = canUnit R R₁ R₂ L N :=
+  (rfl)
+
+@[simp]
+theorem canUnitEquiv_apply (N : Type w) [AddCommGroup N] [Module R N]
     (hN : Function.Injective (patchingDiagonal R R₁ R₂ N)) (n : N) :
-    (h.canUnitEquiv N hN n : (R₁ ⊗[R] N) × (R₂ ⊗[R] N)) = (1 ⊗ₜ n, 1 ⊗ₜ n) :=
-  coe_canUnit_apply N n
+    h.canUnitEquiv N hN n = canUnit R R₁ R₂ L N n :=
+  (rfl)
+
+@[simp]
+theorem canUnitEquiv_symm_canUnit (N : Type w) [AddCommGroup N] [Module R N]
+    (hN : Function.Injective (patchingDiagonal R R₁ R₂ N)) (n : N) :
+    (h.canUnitEquiv N hN).symm (canUnit R R₁ R₂ L N n) = n :=
+  (h.canUnitEquiv N hN).symm_apply_apply n
+
+theorem coe_canUnitEquiv_apply (N : Type w) [AddCommGroup N] [Module R N]
+    (hN : Function.Injective (patchingDiagonal R R₁ R₂ N)) (n : N) :
+    (h.canUnitEquiv N hN n : (R₁ ⊗[R] N) × (R₂ ⊗[R] N)) = (1 ⊗ₜ n, 1 ⊗ₜ n) := by
+  rw [canUnitEquiv_apply, coe_canUnit_apply]
 
 /-- Over an exact square, morphisms of canonical patching data `Can M ⟶ Can N` are exactly the
 `R`-linear maps `M → N` when the patching diagonal of `N` is injective, for instance when `N` or
 the overlap is flat: compatible maps of the two scalar extensions descend uniquely. The inverse is
 `canMap` (`ExactSquare.canHomEquiv_symm_apply`). -/
-noncomputable def canHomEquiv (M N : Type u) [AddCommGroup M] [Module R M] [AddCommGroup N]
+noncomputable def canHomEquiv (M N : Type w) [AddCommGroup M] [Module R M] [AddCommGroup N]
     [Module R N] (hN : Function.Injective (patchingDiagonal R R₁ R₂ N)) :
     (can R R₁ R₂ L M ⟶ can R R₁ R₂ L N) ≃ (M →ₗ[R] N) :=
   (homEquiv M (can R R₁ R₂ L N)).trans (h.canUnitEquiv N hN).symm.congrRight.toEquiv
 
 @[simp]
-theorem canHomEquiv_symm_apply (M N : Type u) [AddCommGroup M] [Module R M] [AddCommGroup N]
+theorem canHomEquiv_symm_apply (M N : Type w) [AddCommGroup M] [Module R M] [AddCommGroup N]
     [Module R N] (hN : Function.Injective (patchingDiagonal R R₁ R₂ N)) (g : M →ₗ[R] N) :
     (h.canHomEquiv M N hN).symm g = canMap R₁ R₂ L g := by
   rw [Equiv.symm_apply_eq]
@@ -487,28 +542,35 @@ theorem canHomEquiv_symm_apply (M N : Type u) [AddCommGroup M] [Module R M] [Add
   ext <;> rw [coe_canUnitEquiv_apply, homEquiv_apply_coe] <;> simp
 
 @[simp]
-theorem canHomEquiv_canMap {M N : Type u} [AddCommGroup M] [Module R M] [AddCommGroup N]
+theorem canHomEquiv_canMap {M N : Type w} [AddCommGroup M] [Module R M] [AddCommGroup N]
     [Module R N] (hN : Function.Injective (patchingDiagonal R R₁ R₂ N)) (g : M →ₗ[R] N) :
     h.canHomEquiv M N hN (canMap R₁ R₂ L g) = g := by
   rw [← canHomEquiv_symm_apply h M N hN, Equiv.apply_symm_apply]
 
+/-- Over an exact square, a morphism of canonical data `Can M ⟶ Can N` is the canonical morphism
+of the linear map `M → N` it corresponds to. -/
+@[simp]
+theorem canMap_canHomEquiv {M N : Type w} [AddCommGroup M] [Module R M] [AddCommGroup N]
+    [Module R N] (hN : Function.Injective (patchingDiagonal R R₁ R₂ N))
+    (f : can R R₁ R₂ L M ⟶ can R R₁ R₂ L N) :
+    canMap R₁ R₂ L (h.canHomEquiv M N hN f) = f := by
+  rw [← canHomEquiv_symm_apply h M N hN, Equiv.symm_apply_apply]
+
 /-- Over an exact square, a morphism of canonical data `Can M ⟶ Can N` is, on the piece over
 `R₁`, the scalar extension of the linear map `M → N` it corresponds to. -/
-theorem left_eq_baseChange_canHomEquiv {M N : Type u} [AddCommGroup M] [Module R M]
+theorem left_eq_baseChange_canHomEquiv {M N : Type w} [AddCommGroup M] [Module R M]
     [AddCommGroup N] [Module R N] (hN : Function.Injective (patchingDiagonal R R₁ R₂ N))
     (f : can R R₁ R₂ L M ⟶ can R R₁ R₂ L N) :
-    Hom.left f = (h.canHomEquiv M N hN f).baseChange R₁ := by
-  conv_lhs => rw [← (h.canHomEquiv M N hN).symm_apply_apply f, canHomEquiv_symm_apply,
-    canMap_left]
+    Hom.left f = (h.canHomEquiv M N hN f).baseChange R₁ :=
+  (congrArg Hom.left (h.canMap_canHomEquiv hN f)).symm.trans (canMap_left _ _)
 
 /-- Over an exact square, a morphism of canonical data `Can M ⟶ Can N` is, on the piece over
 `R₂`, the scalar extension of the linear map `M → N` it corresponds to. -/
-theorem right_eq_baseChange_canHomEquiv {M N : Type u} [AddCommGroup M] [Module R M]
+theorem right_eq_baseChange_canHomEquiv {M N : Type w} [AddCommGroup M] [Module R M]
     [AddCommGroup N] [Module R N] (hN : Function.Injective (patchingDiagonal R R₁ R₂ N))
     (f : can R R₁ R₂ L M ⟶ can R R₁ R₂ L N) :
-    Hom.right f = (h.canHomEquiv M N hN f).baseChange R₂ := by
-  conv_lhs => rw [← (h.canHomEquiv M N hN).symm_apply_apply f, canHomEquiv_symm_apply,
-    canMap_right]
+    Hom.right f = (h.canHomEquiv M N hN f).baseChange R₂ :=
+  (congrArg Hom.right (h.canMap_canHomEquiv hN f)).symm.trans (canMap_right _ _)
 
 end ExactSquare
 

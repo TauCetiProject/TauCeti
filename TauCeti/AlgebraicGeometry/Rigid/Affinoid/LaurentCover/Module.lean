@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.LaurentCover.Basic
-public import Mathlib.LinearAlgebra.TensorProduct.Prod
+public import TauCeti.RingTheory.Patching.ExactSquare
 import TauCeti.RingTheory.Affinoid.Subdomain.Flat
-import Mathlib.RingTheory.Flat.Equalizer
 
 /-!
 # The Laurent sequence for arbitrary modules
@@ -25,8 +24,12 @@ is imposed on `M`.
 
 Right exactness of tensor product gives middle exactness and surjectivity over any complete
 ultrametric normed ring. For affinoids, flatness of the overlap algebra also preserves
-injectivity of the augmentation. In particular gluing holds for infinitely generated and
-nonflat modules, including quotient modules `A ⧸ I`.
+injectivity of the augmentation. The augmentation is the patching diagonal
+`TauCeti.patchingDiagonal`, and all three statements are instances of the general tensor results
+for the sequence `A → A⟨f⟩ × A⟨f⁻¹⟩ → A⟨f,f⁻¹⟩` (`TauCeti.exact_patchingDiagonal_of_exact`,
+`TauCeti.surjective_of_comp_prodLeft_eq_rTensor`,
+`TauCeti.injective_patchingDiagonal_of_exact_of_flat`). In particular gluing holds for
+infinitely generated and nonflat modules, including quotient modules `A ⧸ I`.
 
 ## References
 
@@ -46,14 +49,16 @@ local notation "L(" f ")" => LaurentFraction (fun _ : Fin 1 ↦ f) (Fin.elim0 : 
 local notation "G(" f ")" => LaurentFraction (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f)
 local notation "O(" f ")" => LaurentFraction (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f)
 
-/-- Restrict an algebraic module element to both pieces of the Laurent cover. -/
+/-- Restrict an algebraic module element to both pieces of the Laurent cover: the patching
+diagonal of the cover. -/
 noncomputable def moduleAugmentation (f : A) :
     M →ₗ[A] (L(f) ⊗[A] M) × (G(f) ⊗[A] M) :=
-  (TensorProduct.mk A (L(f)) M 1).prod (TensorProduct.mk A (G(f)) M 1)
+  patchingDiagonal A (L(f)) (G(f)) M
 
 @[simp]
 theorem moduleAugmentation_apply (f : A) (m : M) :
-    moduleAugmentation M f m = (1 ⊗ₜ[A] m, 1 ⊗ₜ[A] m) := (rfl)
+    moduleAugmentation M f m = (1 ⊗ₜ[A] m, 1 ⊗ₜ[A] m) :=
+  patchingDiagonal_apply m
 
 /-- The Laurent differential on algebraic modules: second restriction minus first. -/
 noncomputable def moduleDiff (f : A) :
@@ -65,17 +70,6 @@ noncomputable def moduleDiff (f : A) :
 theorem moduleDiff_apply (f : A) (u : L(f) ⊗[A] M) (v : G(f) ⊗[A] M) :
     moduleDiff M f (u, v) =
       (geToOverlap f).toLinearMap.rTensor M v - (leToOverlap f).toLinearMap.rTensor M u := (rfl)
-
-private theorem moduleAugmentation_lid (f : A) :
-    (moduleAugmentation M f).comp (TensorProduct.lid A M).toLinearMap =
-      (TensorProduct.prodLeft A A (L(f)) (G(f)) M).toLinearMap.comp
-        ((Algebra.linearMap A (L(f) × G(f))).rTensor M) := by
-  apply TensorProduct.ext'
-  intro a m
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.lid_tmul,
-    moduleAugmentation_apply, LinearMap.rTensor_tmul, Algebra.linearMap_apply,
-    Prod.algebraMap_apply, TensorProduct.prodLeft_tmul]
-  simp [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul']
 
 private theorem moduleDiff_prodLeft (f : A) :
     (moduleDiff M f).comp (TensorProduct.prodLeft A A (L(f)) (G(f)) M).toLinearMap =
@@ -107,20 +101,13 @@ variable [CompleteSpace A]
 /-- The kernel of the module Laurent differential is exactly the image of the module
 augmentation; `M` need not be flat or finite. -/
 theorem exact_moduleAugmentation_moduleDiff (f : A) :
-    Function.Exact (moduleAugmentation M f) (moduleDiff M f) := by
-  apply Function.Exact.of_ladder_linearEquiv_of_exact
-    (e₁ := TensorProduct.lid A M)
-    (e₂ := TensorProduct.prodLeft A A (L(f)) (G(f)) M)
-    (e₃ := LinearEquiv.refl A (O(f) ⊗[A] M))
-    (moduleAugmentation_lid M f) (by simpa using moduleDiff_prodLeft M f)
-  exact rTensor_exact M (exact_algebraMap_diff f) (diff_surjective f)
+    Function.Exact (moduleAugmentation M f) (moduleDiff M f) :=
+  exact_patchingDiagonal_of_exact (moduleDiff_prodLeft M f) (exact_algebraMap_diff f)
+    (diff_surjective f)
 
 /-- Every module section on the Laurent overlap is a difference of restrictions. -/
-theorem moduleDiff_surjective (f : A) : Function.Surjective (moduleDiff M f) := by
-  apply Function.Surjective.of_comp
-    (g := TensorProduct.prodLeft A A (L(f)) (G(f)) M)
-  rw [← LinearEquiv.coe_coe, ← LinearMap.coe_comp, moduleDiff_prodLeft]
-  exact LinearMap.rTensor_surjective M (diff_surjective f)
+theorem moduleDiff_surjective (f : A) : Function.Surjective (moduleDiff M f) :=
+  surjective_of_comp_prodLeft_eq_rTensor (moduleDiff_prodLeft M f) (diff_surjective f)
 
 section Affinoid
 
@@ -135,13 +122,8 @@ theorem moduleAugmentation_injective (f : A) :
   have : Module.Flat A (O(f)) := RingHom.flat_algebraMap_iff.mp
     ((LaurentFraction.isAffinoidSubdomainMap hA (f := fun _ : Fin 1 ↦ f)
       (g := fun _ : Fin 1 ↦ f)).flat hA)
-  let α := Algebra.linearMap A (L(f) × G(f))
-  have hi := LinearMap.lTensor_injective_of_exact_of_flat (diff f) (diff_surjective f)
-    α (algebraMap_injective hA f) (exact_algebraMap_diff f) M
-  have hr := (α.lTensor_inj_iff_rTensor_inj M).mp hi
-  apply (EquivLike.injective_comp (TensorProduct.lid A M) _).mp
-  rw [← LinearEquiv.coe_coe, ← LinearMap.coe_comp, moduleAugmentation_lid]
-  exact (TensorProduct.prodLeft A A (L(f)) (G(f)) M).injective.comp hr
+  exact injective_patchingDiagonal_of_exact_of_flat M (algebraMap_injective hA f)
+    (exact_algebraMap_diff f) (diff_surjective f)
 
 include hA in
 /-- Compatible algebraic module sections on the two Laurent pieces glue uniquely. -/
