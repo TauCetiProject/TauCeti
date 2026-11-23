@@ -1,0 +1,36 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import TauCeti.AlgebraicGeometry.Morphisms.Alteration
+
+/-!
+# An alteration that is not a modification
+
+The morphism `Spec ℂ ⟶ Spec ℝ` is finite and surjective, hence an alteration
+(`TauCeti.AlgebraicGeometry.isAlteration_of_isFinite`). Its generic degree is
+`[ℂ : ℝ] = 2`, so it is not a modification: the predicate `IsAlteration` admits genuinely finite
+covers of degree greater than one.
+-/
+
+public section
+
+open CategoryTheory AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry
+
+/-- `Spec ℂ ⟶ Spec ℝ` is an alteration of generic degree two. -/
+theorem isAlteration_Spec_algebraMap_real_complex :
+    IsAlteration (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ))) := by
+  have : IsFinite (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ))) := by
+    rw [IsFinite.SpecMap_iff]
+    exact RingHom.finite_algebraMap.mpr inferInstance
+  have : Surjective (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ))) :=
+    ⟨fun _ ↦ ⟨Nonempty.some inferInstance, Subsingleton.elim _ _⟩⟩
+  infer_instance
+
+end TauCeti.AlgebraicGeometry

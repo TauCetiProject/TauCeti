@@ -26,6 +26,9 @@ alterations of generic degree one; de Jong's theorem resolves singularities up t
 
 * `TauCeti.AlgebraicGeometry.IsModification.isAlteration`: a modification of a nonempty scheme is
   an alteration.
+* `TauCeti.AlgebraicGeometry.isAlteration_of_isFinite`: a finite dominant morphism to a nonempty
+  scheme is an alteration. `TauCeti/Examples/AlgebraicGeometry/Morphisms/Alteration.lean` applies
+  it to `Spec ℂ ⟶ Spec ℝ`, an alteration of generic degree two.
 
 ## References
 
@@ -58,5 +61,11 @@ instance (priority := 100) IsModification.isAlteration (f : X ⟶ Y) [IsModifica
   exists_isFinite_morphismRestrict := by
     obtain ⟨U, hU, -, _⟩ := IsModification.exists_isIso_morphismRestrict (f := f)
     exact ⟨U, hU.nonempty, inferInstance⟩
+
+/-- A finite dominant morphism to a nonempty scheme is an alteration: it is finite over the whole
+target. -/
+instance (priority := 100) isAlteration_of_isFinite (f : X ⟶ Y) [IsFinite f] [IsDominant f]
+    [Nonempty Y] : IsAlteration f where
+  exists_isFinite_morphismRestrict := ⟨⊤, Set.univ_nonempty, inferInstance⟩
 
 end TauCeti.AlgebraicGeometry
