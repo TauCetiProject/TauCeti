@@ -325,10 +325,17 @@ theorem tensorMulIso_inv_app (L L' : RankOneLocalSystem B b R) (𝓕 : DGLocalSy
 
 /-- **Tensoring with `L` is an autoequivalence** of DG local systems, with inverse tensoring with
 `L⁻¹`. -/
-def tensorEquivalence : DGLocalSystem.{uM} B b R ≌ DGLocalSystem.{uM} B b R :=
-  .mk L.tensor L⁻¹.tensor
-    (tensorOneIso.symm ≪≫ eqToIso (by rw [mul_inv_cancel]) ≪≫ tensorMulIso L L⁻¹)
-    ((tensorMulIso L⁻¹ L).symm ≪≫ eqToIso (by rw [inv_mul_cancel]) ≪≫ tensorOneIso)
+@[expose]
+def tensorEquivalence : DGLocalSystem.{uM} B b R ≌ DGLocalSystem.{uM} B b R where
+  functor := L.tensor
+  inverse := L⁻¹.tensor
+  unitIso := tensorOneIso.symm ≪≫ eqToIso (by rw [mul_inv_cancel]) ≪≫ tensorMulIso L L⁻¹
+  counitIso := (tensorMulIso L⁻¹ L).symm ≪≫ eqToIso (by rw [inv_mul_cancel]) ≪≫ tensorOneIso
+  functor_unitIso_comp 𝓕 := by
+    ext x
+    apply (DGRightModuleCat.restrictScalarsEquiv L.twist 𝓕).injective
+    simp [DGRightModuleCat.restrictScalarsEquiv_eqToHom_apply (twist_inv_comp_twist L),
+      DGRightModuleCat.restrictScalarsEquiv_eqToHom_apply (twist_comp_twist_inv L).symm]
 
 @[simp]
 theorem tensorEquivalence_functor : L.tensorEquivalence.{uM}.functor = L.tensor :=
@@ -337,6 +344,40 @@ theorem tensorEquivalence_functor : L.tensorEquivalence.{uM}.functor = L.tensor 
 @[simp]
 theorem tensorEquivalence_inverse : L.tensorEquivalence.{uM}.inverse = L⁻¹.tensor :=
   (rfl)
+
+/-- The component of the unit of `tensorEquivalence` at `𝓕`: `𝓕 ≅ 𝓕 ⊗ 1 = 𝓕 ⊗ (L L⁻¹) ≅
+(𝓕 ⊗ L) ⊗ L⁻¹`. -/
+@[simp]
+theorem tensorEquivalence_unitIso_hom_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.unitIso.hom.app 𝓕 =
+      tensorOneIso.inv.app 𝓕 ≫ eqToHom (by rw [mul_inv_cancel]) ≫
+        (tensorMulIso L L⁻¹).hom.app 𝓕 := by
+  simp [tensorEquivalence]
+
+/-- The component of the inverse of the unit of `tensorEquivalence` at `𝓕`. -/
+@[simp]
+theorem tensorEquivalence_unitIso_inv_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.unitIso.inv.app 𝓕 =
+      (tensorMulIso L L⁻¹).inv.app 𝓕 ≫ eqToHom (by rw [mul_inv_cancel]) ≫
+        tensorOneIso.hom.app 𝓕 := by
+  simp [tensorEquivalence]
+
+/-- The component of the counit of `tensorEquivalence` at `𝓕`: `(𝓕 ⊗ L⁻¹) ⊗ L ≅
+𝓕 ⊗ (L⁻¹ L) = 𝓕 ⊗ 1 ≅ 𝓕`. -/
+@[simp]
+theorem tensorEquivalence_counitIso_hom_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.counitIso.hom.app 𝓕 =
+      (tensorMulIso L⁻¹ L).inv.app 𝓕 ≫ eqToHom (by rw [inv_mul_cancel]) ≫
+        tensorOneIso.hom.app 𝓕 := by
+  simp [tensorEquivalence]
+
+/-- The component of the inverse of the counit of `tensorEquivalence` at `𝓕`. -/
+@[simp]
+theorem tensorEquivalence_counitIso_inv_app (𝓕 : DGLocalSystem.{uM} B b R) :
+    L.tensorEquivalence.counitIso.inv.app 𝓕 =
+      tensorOneIso.inv.app 𝓕 ≫ eqToHom (by rw [inv_mul_cancel]) ≫
+        (tensorMulIso L⁻¹ L).hom.app 𝓕 := by
+  simp [tensorEquivalence]
 
 /-- Moore loops with the same class in the fundamental group act by the same unit. -/
 theorem ρ_eq_of_fundamentalGroupHom_eq {γ δ : MooreLoopSpace B b}
