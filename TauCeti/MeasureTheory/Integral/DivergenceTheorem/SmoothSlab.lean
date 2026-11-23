@@ -8,20 +8,24 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
+public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 
 /-!
 # Divergence on a smooth symmetric slab
 
 Let `E` be a real inner product space, `e` a unit vector, `ψ₀ ∈ 𝓓(⊤, E)` a test vector field,
-and `ℓ : (ℝ ∙ e)ᗮ → ℝ` a smooth thickness profile (`ContDiff ℝ ∞ ℓ`). On the smooth symmetric
-slab `{ (y : E) + t • e | |t| < ℓ y / 2 }`, integrating `div ψ₀` decomposes into a longitudinal
-boundary difference and a transverse divergence pairing against the horizontal boundary average
-`TauCeti.slabHorizAvg e he ψ₀ hℓ ∈ 𝓓(⊤, (ℝ ∙ e)ᗮ)`.
+and `ℓ : (ℝ ∙ e)ᗮ → ℝ` a smooth signed thickness profile (`ContDiff ℝ ∞ ℓ`). For the iterated
+oriented interval integrals `∫ y, ∫ t in (-(ℓ y / 2))..(ℓ y / 2), ...`, integrating `div ψ₀`
+decomposes into a longitudinal boundary difference and a transverse divergence pairing against the
+horizontal boundary average `TauCeti.slabHorizAvg e he ψ₀ hℓ ∈ 𝓓(⊤, (ℝ ∙ e)ᗮ)`.
+
+These general identities hold for any smooth `ℓ : (ℝ ∙ e)ᗮ → ℝ` without a sign assumption on `ℓ`.
+When `0 ≤ ℓ y` almost everywhere, the oriented interval integrals coincide with the set integrals
+over the smooth symmetric slab `{ (y : E) + t • e | |t| < ℓ y / 2 }`.
 
 ## Main definitions
 
@@ -32,18 +36,22 @@ boundary difference and a transverse divergence pairing against the horizontal b
 ## Main results
 
 * `TauCeti.slabHorizAvg_apply`: pointwise evaluation of `TauCeti.slabHorizAvg`.
-* `TauCeti.integrable_and_integral_horizontal_divergence_symmSlab_eq`: integrating the horizontal
-  divergence of `ψ₀` over the smooth symmetric slab equals
-  `-∫ y, fderiv ℝ ℓ y (slabHorizAvg e he ψ₀ hℓ y)`.
+* `TauCeti.tsupport_slabHorizAvg_subset`: the support of `TauCeti.slabHorizAvg` is contained in the
+  transverse projection of `tsupport ψ₀`.
+* `TauCeti.integrable_and_integral_horizontal_divergence_symmSlab_eq`: the iterated oriented
+  interval integral of the horizontal divergence of `ψ₀` from `-(ℓ y / 2)` to `ℓ y / 2` equals
+  `-∫ y, fderiv ℝ ℓ y (slabHorizAvg e he ψ₀ hℓ y)` (matching the set integral over the smooth
+  symmetric slab when `0 ≤ ℓ y` almost everywhere).
 * `TauCeti.continuous_and_integrable_slabVerticalDiff`: continuity and integrability of the
   longitudinal boundary half-difference.
-* `TauCeti.integrable_and_integral_divergenceCLM_symmSlab_eq`: the divergence integral over the
-  smooth symmetric slab splits into twice the integral of the longitudinal boundary half-difference
-  minus `∫ y, fderiv ℝ ℓ y (slabHorizAvg e he ψ₀ hℓ y)`.
+* `TauCeti.integrable_and_integral_divergenceCLM_symmSlab_eq`: the iterated oriented interval
+  integral of `divergenceCLM ψ₀` from `-(ℓ y / 2)` to `ℓ y / 2` splits into twice the integral of
+  the longitudinal boundary half-difference minus `∫ y, fderiv ℝ ℓ y (slabHorizAvg e he ψ₀ hℓ y)`
+  (matching the set integral over the smooth symmetric slab when `0 ≤ ℓ y` almost everywhere).
 * `TauCeti.norm_sq_slabBoundaryAvg_le_one`: when `‖ψ₀‖ ≤ 1`, the horizontal average and vertical
   half-difference satisfy `‖slabHorizAvg e he ψ₀ hℓ y‖ ^ 2 + d y ^ 2 ≤ 1`.
 * `TauCeti.abs_slabVerticalDiff_le`: pointwise Lipschitz-cutoff bound for the vertical boundary
-  half-difference against any real comparison value.
+  half-difference against any real comparison value for `t ≥ 0`.
 -/
 
 public section
@@ -60,7 +68,7 @@ section
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The horizontal boundary-average test vector field in `𝓓(⊤, (ℝ ∙ e)ᗮ)` associated to `ψ₀` and
-a smooth slab thickness `ℓ`. -/
+a smooth signed thickness profile `ℓ`. -/
 def slabHorizAvg (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓((⊤ : Opens E), E))
     {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) : 𝓓((⊤ : Opens (ℝ ∙ e)ᗮ), (ℝ ∙ e)ᗮ) where
   toFun y := (2 : ℝ)⁻¹ •
@@ -90,6 +98,18 @@ theorem slabHorizAvg_apply (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓((⊤ : Opens
     slabHorizAvg e he ψ₀ hℓ y = (2 : ℝ)⁻¹ •
       ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((y : E) + (ℓ y / 2) • e)) +
         (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))) := (rfl)
+
+/-- The topological support of `TauCeti.slabHorizAvg` is contained in the transverse projection of
+`tsupport ψ₀` under `TauCeti.orthogonalLineEquiv e he`. -/
+theorem tsupport_slabHorizAvg_subset (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓((⊤ : Opens E), E))
+    {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) :
+    tsupport (slabHorizAvg e he ψ₀ hℓ) ⊆
+      Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport ψ₀) := by
+  obtain ⟨hK, h0⟩ := ψ₀.hasCompactSupport.isCompact_fst_image_tsupport_orthogonalLineEquiv e he
+  refine closure_minimal (fun y hy => ?_) hK.isClosed
+  by_contra hyK
+  exact hy (by simp only [slabHorizAvg_apply, h0 hyK (ℓ y / 2), h0 hyK (-(ℓ y / 2)),
+    map_zero, add_zero, smul_zero])
 
 /-- Pointwise Pythagorean bound for the horizontal average `TauCeti.slabHorizAvg` and vertical
 half-difference of `ψ₀` with `‖ψ₀‖ ≤ 1` on the boundary of a smooth symmetric slab. -/
@@ -170,8 +190,11 @@ section Integral
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-/-- Integrating the horizontal divergence of `ψ₀` over the smooth symmetric slab `{|t| < ℓ y / 2}`
-gives `-∫ y, Dℓ(y) (slabHorizAvg e he ψ₀ hℓ y)` and proves `y`-integrability. -/
+/-- For any smooth signed thickness profile `ℓ : (ℝ ∙ e)ᗮ → ℝ`, the iterated oriented interval
+integral `∫ y, ∫ t in (-(ℓ y / 2))..(ℓ y / 2), ...` of the horizontal divergence of `ψ₀` equals
+`-∫ y, Dℓ(y) (slabHorizAvg e he ψ₀ hℓ y)` and is `y`-integrable. When `0 ≤ ℓ y` almost
+everywhere, this oriented interval integral coincides with the set integral over the smooth
+symmetric slab `{ (y : E) + t • e | |t| < ℓ y / 2 }`. -/
 theorem integrable_and_integral_horizontal_divergence_symmSlab_eq (e : E) (he : ‖e‖ = 1)
     (ψ₀ : 𝓓(⊤, E)) {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) :
     Integrable (fun y : (ℝ ∙ e)ᗮ => ∫ t in (-(ℓ y / 2))..(ℓ y / 2),
@@ -248,8 +271,8 @@ theorem integrable_and_integral_horizontal_divergence_symmSlab_eq (e : E) (he : 
     integral_mul_trace_fderiv_comp_mul_eq_neg hK (hA.of_le (by simp)) hA0 ha,
     intervalIntegral.integral_neg]
 
-/-- Continuity and integrability of the longitudinal boundary half-difference on a smooth
-symmetric slab. -/
+/-- Continuity and integrability of the longitudinal boundary half-difference at `±(ℓ y / 2)` for
+a smooth signed thickness profile `ℓ`. -/
 theorem continuous_and_integrable_slabVerticalDiff (e : E) (he : ‖e‖ = 1)
     (ψ₀ : 𝓓(⊤, E)) {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) :
     Continuous (fun y : (ℝ ∙ e)ᗮ => (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (ℓ y / 2) • e)⟫ -
@@ -272,9 +295,12 @@ theorem continuous_and_integrable_slabVerticalDiff (e : E) (he : ‖e‖ = 1)
   exact hy (by simp only [h0 hyK (ℓ y / 2), h0 hyK (-(ℓ y / 2)), inner_zero_right, sub_self,
     mul_zero])
 
-/-- Integrating `divergenceCLM ψ₀` over the smooth symmetric slab `{|t| < ℓ y / 2}` splits into
+/-- For any smooth signed thickness profile `ℓ : (ℝ ∙ e)ᗮ → ℝ`, the iterated oriented interval
+integral `∫ y, ∫ t in (-(ℓ y / 2))..(ℓ y / 2), divergenceCLM ψ₀ ((y : E) + t • e)` splits into
 twice the integral of the longitudinal boundary half-difference minus the pairing of `Dℓ` with the
-transverse boundary average `TauCeti.slabHorizAvg`. -/
+transverse boundary average `TauCeti.slabHorizAvg`. When `0 ≤ ℓ y` almost everywhere, this oriented
+interval integral coincides with the set integral over the smooth symmetric slab
+`{ (y : E) + t • e | |t| < ℓ y / 2 }`. -/
 theorem integrable_and_integral_divergenceCLM_symmSlab_eq (e : E) (he : ‖e‖ = 1)
     (ψ₀ : 𝓓(⊤, E)) {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) :
     Integrable (fun y : (ℝ ∙ e)ᗮ =>
