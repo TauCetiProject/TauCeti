@@ -91,9 +91,9 @@ theorem pLowerCentralStep_proPKernel :
     refine IsPGroup.of_exponent_dvd_pow (n := 1) ?_
     rw [pow_one, Monoid.exponent_dvd_iff_forall_pow_eq_one]
     intro x
-    obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective x.1
+    obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective x.val
     have hgR : g ∈ R := by
-      have hx : f x.1 = 1 := x.2
+      have hx : f x.val = 1 := x.property
       rwa [← hg, QuotientGroup.map_mk, MonoidHom.id_apply, QuotientGroup.eq_one_iff] at hx
     apply Subtype.ext
     rw [SubgroupClass.coe_pow, OneMemClass.coe_one, ← hg, ← QuotientGroup.mk_pow,
@@ -125,7 +125,7 @@ theorem subsingleton_h1ConjInvariants_proPKernel {M : Type v} [AddCommGroup M]
   have hr : (r : proPKernel p G ⧸ (pLowerCentralStep p (proPKernel p G)).subgroupOf
       (proPKernel p G)) = 1 := by
     rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, pLowerCentralStep_proPKernel]
-    exact r.2
+    exact r.property
   rw [hr, map_one, map_one]
 
 end MaximalKernel

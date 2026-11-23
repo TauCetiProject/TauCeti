@@ -22,8 +22,9 @@ allowed, so the result applies both to embeddings and to possibly singular proje
 
 ## Main results
 
-* `TauCeti.Probability.gaussianReal_map_const_add_const_mul`: the affine pushforward formula for
-  a real Gaussian measure.
+* `TauCeti.Probability.gaussianReal_zero_one_map_const_mul`,
+  `TauCeti.Probability.gaussianReal_map_const_add_const_mul`: linear and affine pushforward formulas
+  for a real Gaussian measure.
 * `TauCeti.Probability.gaussianReal_map_linear_combination`: orthogonal combinations of two
   independent standard Gaussians remain standard Gaussian.
 * `TauCeti.Probability.map_affine_multivariateGaussian`: the affine pushforward formula for a
@@ -33,8 +34,17 @@ allowed, so the result applies both to embeddings and to possibly singular proje
   a translation.
 * `TauCeti.Probability.map_comp_multivariateGaussian`: reindexing the coordinates along a map of
   index types.
-* `TauCeti.Probability.multivariateGaussian_one_eq_map_pi`: the identity-covariance law as a
-  product of its Gaussian coordinate laws.
+* `ProbabilityTheory.HasLaw.affine_multivariateGaussian`,
+  `ProbabilityTheory.HasLaw.add_smul_multivariateGaussian`, and
+  `ProbabilityTheory.HasLaw.comp_multivariateGaussian`: the corresponding affine, scalar-affine,
+  and coordinate-reindexing laws for random vectors.
+* `TauCeti.Probability.multivariateGaussian_smul_one_eq_map_pi`: an isotropic law as a product
+  of its Gaussian coordinate laws, with `multivariateGaussian_one_eq_map_pi` its unit-variance
+  case.
+* `TauCeti.Probability.isGaussian_map_smul`: scaling a Gaussian measure by a real scalar preserves
+  Gaussianity.
+* `LinearIsometryEquiv.measurePreserving_map_smul_stdGaussian`: linear isometry equivalences
+  preserve scalar multiples of `ProbabilityTheory.stdGaussian`.
 
 ## References
 
@@ -49,6 +59,12 @@ open MeasureTheory ProbabilityTheory
 open scoped MatrixOrder RealInnerProductSpace NNReal
 
 namespace TauCeti.Probability
+
+/-- Scaling the standard real Gaussian `N(0, 1)` by `c` yields `N(0, v)` whenever `c ^ 2 = v`. -/
+theorem gaussianReal_zero_one_map_const_mul (c : ℝ) {v : ℝ≥0} (hv : c ^ 2 = v) :
+    (gaussianReal 0 1).map (c * ·) = gaussianReal 0 v := by
+  rw [gaussianReal_map_const_mul, mul_zero, mul_one]
+  exact congrArg (gaussianReal 0) (NNReal.eq hv)
 
 /-- An orthogonal combination of two independent standard Gaussians is standard Gaussian. -/
 theorem gaussianReal_map_linear_combination (a b : ℝ) (hab : a ^ 2 + b ^ 2 = 1) :
@@ -78,6 +94,17 @@ theorem gaussianReal_map_const_add_const_mul (m : ℝ) (v : ℝ≥0) (a b : ℝ)
       (Measure.map_map (by fun_prop) (by fun_prop)).symm
     _ = _ := by
       rw [gaussianReal_map_const_mul, gaussianReal_map_const_add, add_comm (b * m) a]
+
+/-- A finite product of centered Gaussian laws of variance `v` is the pushforward of the unit
+product Gaussian law under coordinatewise scaling by `√v`. -/
+theorem pi_gaussianReal_zero_eq_map_smul {ι : Type*} [Fintype ι] (v : ℝ≥0) :
+    (Measure.pi fun _ : ι ↦ gaussianReal 0 v) =
+      (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map (fun x : ι → ℝ ↦ √(v : ℝ) • x) := by
+  have hscale : (fun _ : ι ↦ gaussianReal 0 v) =
+      fun _ : ι ↦ (gaussianReal 0 1).map (fun r : ℝ ↦ √(v : ℝ) * r) := by
+    ext _; rw [gaussianReal_map_const_mul]; simp [Real.sq_sqrt v.coe_nonneg]
+  rw [hscale, ← Measure.pi_map_pi fun _ ↦ by fun_prop]
+  rfl
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
@@ -170,25 +197,101 @@ theorem map_comp_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix ι
     simp [L, Matrix.mul_apply, Matrix.one_apply]
   simpa [hL, hcov] using map_affine_multivariateGaussian m hS L 0
 
+/-- An isotropic Gaussian with covariance `v • 1` is the product of its variance-`v` Gaussian
+coordinate laws, transported to Euclidean space. This includes `v = 0`, where both sides are the
+point mass at the mean. -/
+theorem multivariateGaussian_smul_one_eq_map_pi (m : EuclideanSpace ℝ ι) (v : ℝ≥0) :
+    multivariateGaussian m ((v : ℝ) • (1 : Matrix ι ι ℝ)) =
+      (Measure.pi fun i ↦ gaussianReal (m i) v).map (WithLp.toLp 2) := by
+  have hscale : (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map
+      (fun x i ↦ m i + √(v : ℝ) * x i) = Measure.pi fun i ↦ gaussianReal (m i) v := by
+    rw [Measure.pi_map_pi (f := fun i r ↦ m i + √(v : ℝ) * r) (fun _ ↦ by fun_prop)]
+    congr 1
+    funext i
+    rw [gaussianReal_map_const_add_const_mul, mul_zero, add_zero, mul_one]
+    congr 1
+    ext
+    exact Real.sq_sqrt v.coe_nonneg
+  have hmean : multivariateGaussian m ((v : ℝ) • (1 : Matrix ι ι ℝ)) =
+      (stdGaussian (EuclideanSpace ℝ ι)).map (fun x ↦ m + √(v : ℝ) • x) := by
+    simpa [Real.sq_sqrt v.coe_nonneg] using
+      (map_add_smul_multivariateGaussian (0 : EuclideanSpace ℝ ι) Matrix.PosSemidef.one m
+        √(v : ℝ)).symm
+  rw [hmean, ← map_pi_eq_stdGaussian, ← hscale,
+    Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  apply congrArg (fun f ↦ (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map f)
+  funext x
+  ext i
+  simp
+
 /-- An identity-covariance Gaussian is the product of its unit-variance Gaussian coordinate
 laws, transported to Euclidean space. -/
 theorem multivariateGaussian_one_eq_map_pi (m : EuclideanSpace ℝ ι) :
     multivariateGaussian m (1 : Matrix ι ι ℝ) =
       (Measure.pi fun i ↦ gaussianReal (m i) 1).map (WithLp.toLp 2) := by
-  have hshift : (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map
-      (fun x i ↦ m i + x i) = Measure.pi fun i ↦ gaussianReal (m i) 1 := by
-    rw [Measure.pi_map_pi (fun _ ↦ by fun_prop)]
-    simp only [gaussianReal_map_const_add, zero_add]
-  have hmean : multivariateGaussian m (1 : Matrix ι ι ℝ) =
-      (stdGaussian (EuclideanSpace ℝ ι)).map (fun x ↦ m + x) := by
-    simpa [add_comm] using
-      (map_affine_multivariateGaussian (0 : EuclideanSpace ℝ ι) Matrix.PosSemidef.one 1 m).symm
-  rw [hmean, ← map_pi_eq_stdGaussian, ← hshift,
-    Measure.map_map (by fun_prop) (by fun_prop),
-    Measure.map_map (by fun_prop) (by fun_prop)]
-  apply congrArg (fun f ↦ (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map f)
-  funext x
-  simpa only [Function.comp_apply, WithLp.toLp_ofLp, Pi.add_def] using
-    (WithLp.toLp_add 2 m.ofLp x).symm
+  simpa using multivariateGaussian_smul_one_eq_map_pi m 1
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
+variable {ι κ Ω : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+  [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → EuclideanSpace ℝ ι}
+  {m m₀ : EuclideanSpace ℝ ι} {S : Matrix ι ι ℝ}
+
+/-- A rectangular affine image of a random vector with a multivariate Gaussian law is
+multivariate Gaussian, with the transformed mean and covariance. -/
+theorem HasLaw.affine_multivariateGaussian (hX : HasLaw X (multivariateGaussian m S) P)
+    (hS : S.PosSemidef) (L : Matrix κ ι ℝ) (c : EuclideanSpace ℝ κ) :
+    HasLaw (fun ω ↦ L.toEuclideanLin (X ω) + c)
+      (multivariateGaussian (L.toEuclideanLin m + c) (L * S * L.transpose)) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_multivariateGaussian m hS L c)).comp hX
+
+/-- Scaling and translating a random vector with a multivariate Gaussian law transforms its
+mean and covariance by the corresponding scalar affine formulas. -/
+theorem HasLaw.add_smul_multivariateGaussian
+    (hX : HasLaw X (multivariateGaussian m₀ S) P) (hS : S.PosSemidef)
+    (m : EuclideanSpace ℝ ι) (c : ℝ) :
+    HasLaw (fun ω ↦ m + c • X ω) (multivariateGaussian (m + c • m₀) (c ^ 2 • S)) P :=
+  (HasLaw.mk (by fun_prop) (map_add_smul_multivariateGaussian m₀ hS m c)).comp hX
+
+/-- Reindexing the coordinates of a random vector with a multivariate Gaussian law reindexes
+its mean and covariance. The coordinate map need not be injective. -/
+theorem HasLaw.comp_multivariateGaussian (hX : HasLaw X (multivariateGaussian m S) P)
+    (hS : S.PosSemidef) (f : κ → ι) :
+    HasLaw (fun ω ↦ WithLp.toLp 2 fun k ↦ X ω (f k))
+      (multivariateGaussian (WithLp.toLp 2 fun k ↦ m (f k)) (S.submatrix f f)) P :=
+  (HasLaw.mk (by fun_prop) (map_comp_multivariateGaussian m hS f)).comp hX
+
+end ProbabilityTheory
+
+namespace TauCeti.Probability
+
+/-- Scaling a Gaussian measure by a real scalar `c` yields a Gaussian measure. -/
+theorem isGaussian_map_smul {E : Type*} [TopologicalSpace E] [AddCommMonoid E] [Module ℝ E]
+    [ContinuousConstSMul ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {μ : Measure E} [IsGaussian μ] (c : ℝ) :
+    IsGaussian (μ.map (c • ·)) := by
+  have hsmul : (c • · : E → E) = ⇑(c • ContinuousLinearMap.id ℝ E) :=
+    funext fun x ↦ by rw [smul_apply, ContinuousLinearMap.id_apply]
+  rw [hsmul]
+  exact isGaussian_map_of_measurable (L := c • ContinuousLinearMap.id ℝ E)
+    (c • ContinuousLinearMap.id ℝ E).continuous.measurable
+
+end TauCeti.Probability
+
+/-- A linear isometry equivalence between finite-dimensional real inner product spaces preserves
+any scalar multiple of `ProbabilityTheory.stdGaussian`. -/
+theorem LinearIsometryEquiv.measurePreserving_map_smul_stdGaussian
+    {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] (L : E ≃ₗᵢ[ℝ] F) (c : ℝ) :
+    MeasurePreserving L ((stdGaussian E).map (c • ·)) ((stdGaussian F).map (c • ·)) := by
+  refine ⟨L.continuous.measurable, ?_⟩
+  rw [Measure.map_map L.continuous.measurable (by fun_prop)]
+  simp_rw [Function.comp_def, map_smul]
+  rw [← Function.comp_def (c • ·) L, ← Measure.map_map (by fun_prop) L.continuous.measurable,
+    stdGaussian_map L]

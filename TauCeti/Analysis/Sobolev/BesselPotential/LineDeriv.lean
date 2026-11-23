@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
-import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Directional derivatives on `H^s` and the Plancherel identity for the norms
@@ -24,23 +24,22 @@ for `u ∈ H^{r+1}(E, F)` and every orthonormal basis `(eᵢ)` of `E`,
 
 (`BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`).
 
-At `r = 0`, where `H^0 = L²`, this reads `‖u‖²_{H^1} = ‖u‖²_{L²} + (2π)⁻² ∑ᵢ ‖∂ᵢ u‖²_{L²}`: the
-`H^{1,2}` norm is equivalent to the norm `(‖u‖²_{L²} + ∑ᵢ ‖∂ᵢ u‖²_{L²})^{1/2}` of the
-weak-derivative space `W^{1,2}`, with the explicit constants `1` and `(2π)⁻²` on the derivative
-term. Applied at every order `r`, the identity relates consecutive orders of the whole
-Bessel-potential scale. The factor `(2π)⁻²` comes from Mathlib's normalization of the Fourier
-transform: the Bessel potential is the multiplier `(1 + ‖ξ‖²)^{s/2}`, not
-`(1 + 4π² ‖ξ‖²)^{s/2}`, while `∂_m` has the symbol `2πi ⟪ξ, m⟫`.
+At `r = 0`, where `H^0 = L²`, this reads `‖u‖²_{H^1} = ‖u‖²_{L²} + (2π)⁻² ∑ᵢ ‖∂ᵢ u‖²_{L²}`, the
+form `BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq` of `Schwartz.lean` for elements
+of `H^1` given by `L²` functions. Applied at every order `r`, the identity relates consecutive
+orders of the whole Bessel-potential scale; on Schwartz functions it is
+`SchwartzMap.norm_toBesselPotentialSpaceCLM_add_one_sq`. The factor `(2π)⁻²` comes from Mathlib's
+normalization of the Fourier transform: the Bessel potential is the multiplier
+`(1 + ‖ξ‖²)^{s/2}`, not `(1 + 4π² ‖ξ‖²)^{s/2}`, while `∂_m` has the symbol `2πi ⟪ξ, m⟫`.
 
 ## The argument
 
-The `H^{r+1}` norm of `u` is the `L²` norm of `W = ⟨ξ⟩^{r+1} 𝓕 u`, where `⟨ξ⟩ = (1 + ‖ξ‖²)^{1/2}`
-(`BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`). The weighted Fourier transforms of
-`u` and `∂_m u` at order `r` are `⟨ξ⟩⁻¹ W` and `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹ W`, so their squared norms are
-`∫ ⟨ξ⟩⁻² ‖W‖²` and `∫ 4π² ⟪ξ, m⟫² ⟨ξ⟩⁻² ‖W‖²`
-(`BesselPotentialSpace.norm_inclusion_sq_eq_integral`,
-`BesselPotentialSpace.norm_sq_eq_integral_of_smulLeftCLM_fourier_eq`). Parseval's identity
-`∑ᵢ ⟪ξ, eᵢ⟫² = ‖ξ‖²` in `E` makes the weights add up to `⟨ξ⟩⁻² (1 + ‖ξ‖²) = 1`.
+The `H^{r+1}` norm of `u` is the `L²` norm of `W = 𝓕 u.toLp = ⟨ξ⟩^{r+1} 𝓕 u`, where
+`⟨ξ⟩ = (1 + ‖ξ‖²)^{1/2}` (`BesselPotentialSpace.toTemperedDistribution_fourier_toLp`). The
+corresponding `L²` Fourier transforms of `u` and `∂_m u` at order `r` are `⟨ξ⟩⁻¹ W` and
+`2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹ W`, so their squared norms are `∫ ⟨ξ⟩⁻² ‖W‖²` and
+`∫ 4π² ⟪ξ, m⟫² ⟨ξ⟩⁻² ‖W‖²` (`BesselPotentialSpace.norm_inclusion_sq_eq_integral`). Parseval's
+identity `∑ᵢ ⟪ξ, eᵢ⟫² = ‖ξ‖²` in `E` makes the weights add up to `⟨ξ⟩⁻² (1 + ‖ξ‖²) = 1`.
 
 ## Main declarations
 
@@ -48,8 +47,6 @@ The `H^{r+1}` norm of `u` is the `L²` norm of `W = ⟨ξ⟩^{r+1} 𝓕 u`, wher
   `‖∂_m u‖_{H^r} ≤ 2π ‖m‖ ‖u‖_{H^{r+1}}`.
 * `BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`: the Plancherel
   identity for the norms of consecutive orders.
-* `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`: its case `r = 0` on Schwartz functions,
-  `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
 
 ## References
 
@@ -124,8 +121,14 @@ private theorem smulLeftCLM_fourier_lineDerivOp_eq (m : E) (f : 𝓢'(E, F)) :
           (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ))
         (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) (𝓕 f)) := by
   have hm : (fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have hw := smulLeftCLM_rpow_sub_smulLeftCLM r (r + 1) (𝓕 f)
-  rw [show r - (r + 1) = -1 by ring] at hw
+  have hw : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ))
+      (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) (𝓕 f)) =
+      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) (𝓕 f) := by
+    rw [smulLeftCLM_smulLeftCLM_apply (by fun_prop) (by fun_prop)]
+    congr 2
+    ext x
+    rw [Pi.mul_apply, ← Complex.ofReal_mul, ← TauCeti.one_add_norm_sq_rpow_add,
+      add_neg_cancel_right]
   have hsymb : (fun x : E ↦ (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
       (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)) =
       (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)) *
@@ -141,11 +144,25 @@ private theorem smulLeftCLM_fourier_lineDerivOp_eq (m : E) (f : 𝓢'(E, F)) :
     smulLeftCLM_smulLeftCLM_apply hm (by fun_prop), mul_comm (fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)),
     FunLike.coe_smul, Pi.smul_apply]
 
+/-- On the Fourier side, `∂_m : H^{r+1} → H^r` is multiplication by the symbol
+`2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹`. -/
+private theorem coeFn_fourier_toLp_lineDerivCLM (m : E) (u : H^{r + 1}(E, F)) :
+    ⇑(𝓕 (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top m u).toLp :
+        Lp F 2 (volume : Measure E)) =ᵐ[volume] fun x ↦
+      ((2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
+        (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)) •
+        (𝓕 u.toLp : Lp F 2 (volume : Measure E)) x := by
+  rw [← Lp.toTemperedDistribution_eq_smulLeftCLM_iff (hasTemperateGrowth_lineDerivSymbol m),
+    toTemperedDistribution_fourier_toLp, toTemperedDistribution_fourier_toLp,
+    toDistr_lineDerivCLM, smulLeftCLM_fourier_lineDerivOp_eq]
+
 /-- At `p = 2`, `‖∂_m u‖_{H^r} ≤ 2π ‖m‖ ‖u‖_{H^{r+1}}`. -/
 theorem norm_lineDerivCLM_apply_le (m : E) (u : H^{r + 1}(E, F)) :
-    ‖lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top m u‖ ≤ 2 * π * ‖m‖ * ‖u‖ :=
-  norm_le_mul_norm_of_smulLeftCLM_fourier_eq (hasTemperateGrowth_lineDerivSymbol m)
-    (norm_lineDerivSymbol_le m) (by rw [toDistr_lineDerivCLM, smulLeftCLM_fourier_lineDerivOp_eq])
+    ‖lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top m u‖ ≤ 2 * π * ‖m‖ * ‖u‖ := by
+  rw [← norm_fourier_toLp_eq, ← norm_fourier_toLp_eq u]
+  exact Lp.norm_le_mul_norm_of_ae_le_mul ((coeFn_fourier_toLp_lineDerivCLM m u).mono fun x hx ↦ by
+    rw [hx, norm_smul]
+    exact mul_le_mul_of_nonneg_right (norm_lineDerivSymbol_le m x) (norm_nonneg _))
 
 /-- At `p = 2`, `∂_m : H^{r+1} → H^r` has operator norm at most `2π ‖m‖`. -/
 theorem norm_lineDerivCLM_le (m : E) :
@@ -173,10 +190,9 @@ theorem norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq {ι : Type*} [
     simp only [norm_inclusion_sq_eq_integral, sub_add_cancel_left, Real.rpow_neg_one, G₀]
   have hderiv (i : ι) : ‖lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top (b i) u‖ ^ 2 =
       ∫ x, (2 * π) ^ 2 * inner ℝ x (b i) ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ * ‖G₀ x‖ ^ 2 := by
-    rw [norm_sq_eq_integral_of_smulLeftCLM_fourier_eq (u := u)
-      (hasTemperateGrowth_lineDerivSymbol (b i)) (norm_lineDerivSymbol_le (b i))]
-    · simp only [norm_lineDerivSymbol_sq, G₀]
-    · rw [toDistr_lineDerivCLM, smulLeftCLM_fourier_lineDerivOp_eq]
+    rw [← norm_fourier_toLp_eq, ← Lp.integral_norm_sq_eq_norm_sq]
+    refine integral_congr_ae ((coeFn_fourier_toLp_lineDerivCLM (b i) u).mono fun x hx ↦ ?_)
+    rw [hx, norm_smul, mul_pow, norm_lineDerivSymbol_sq]
   have hint (i : ι) : Integrable fun x ↦
       (2 * π) ^ 2 * inner ℝ x (b i) ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ * ‖G₀ x‖ ^ 2 := by
     refine (hG₀.const_mul ((2 * π * ‖b i‖) ^ 2)).mono' ?_ (.of_forall fun x ↦ ?_)
@@ -203,36 +219,3 @@ theorem norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq {ι : Type*} [
 
 end BesselPotentialSpace
 
-namespace SchwartzMap
-
-/-- **The `H¹` norm of a Schwartz function** in terms of its first derivatives: for an orthonormal
-basis `b` of `E`,
-
-`‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
-
-This is the case `r = 0` of
-`BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`. -/
-theorem norm_toBesselPotentialSpaceCLM_one_sq {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) :
-    ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 =
-      (∫ x, ‖u x‖ ^ 2) + (2 * π)⁻¹ ^ 2 * ∑ i, ∫ x, ‖∂_{b i} u x‖ ^ 2 := by
-  have h := BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq
-    (r := 0) b (toBesselPotentialSpaceCLM (0 + 1) 2 u)
-  simp only [BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
-    BesselPotentialSpace.lineDerivCLM_toBesselPotentialSpaceCLM,
-    ← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM_zero, norm_toLp_sq] at h
-  rwa [zero_add, BesselPotentialSpace.norm_toLp_eq] at h
-
-/-- The `H¹` norm of a Schwartz function bounds the `L²` norm of each of its first derivatives
-along an orthonormal basis `b`: `(2π)⁻² ∫ ‖∂_{bᵢ} u‖² ≤ ‖u‖²_{H¹}`. -/
-theorem inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) (i : ι) :
-    (2 * π)⁻¹ ^ 2 * ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 := by
-  rw [norm_toBesselPotentialSpaceCLM_one_sq b]
-  have hi : ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ∑ j, ∫ x, ‖∂_{b j} u x‖ ^ 2 :=
-    Finset.single_le_sum (f := fun j ↦ ∫ x, ‖∂_{b j} u x‖ ^ 2)
-      (fun j _ ↦ integral_nonneg fun _ ↦ by positivity) (Finset.mem_univ i)
-  have h0 : 0 ≤ ∫ x, ‖u x‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
-  nlinarith [mul_le_mul_of_nonneg_left hi (by positivity : (0 : ℝ) ≤ (2 * π)⁻¹ ^ 2)]
-
-end SchwartzMap

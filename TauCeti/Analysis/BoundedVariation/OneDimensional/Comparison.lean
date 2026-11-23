@@ -126,7 +126,7 @@ theorem totalVariationOn_eq_variation_vectorMeasure
     fun K _ _ => ⟨⊤, subset_univ K, (hf.totalVariationOn_lt_top ⊤).ne⟩
   let ν := (TauCeti.variationMeasure volume ⊤ f).map ((↑) : (⊤ : Opens ℝ) → ℝ)
   have hν (U : Opens ℝ) : ν U = TauCeti.totalVariationOn volume U f := by
-    rw [Measure.map_apply measurable_subtype_coe U.isOpen.measurableSet,
+    rw [Measure.map_apply measurable_subtypeVal U.isOpen.measurableSet,
       TauCeti.variationMeasure_preimage_coe hloc hfin le_top]
   have : IsFiniteMeasure ν := ⟨by
     simpa using (hν ⊤).trans_lt (hf.totalVariationOn_lt_top ⊤)⟩

@@ -85,7 +85,7 @@ noncomputable def alternatingGroupFourZModThreeHom :
     ((symmetricGroupFourMatchingHom.comp (alternatingGroup (Fin 4)).subtype).codRestrict
       (alternatingGroup (Fin 3)) fun g => by
         rw [← map_alternatingGroup_symmetricGroupFourMatchingHom]
-        exact Subgroup.mem_map_of_mem _ g.2)
+        exact Subgroup.mem_map_of_mem _ g.property)
 
 /-- `κ(g)` is the unique `r` with `q g = c ^ r` for the three-cycle `c = (0 1 2)` of the
 matchings. -/
@@ -118,7 +118,7 @@ theorem alternatingGroupFourZModThreeHom_surjective :
     Function.Surjective alternatingGroupFourZModThreeHom := by
   intro r
   obtain ⟨σ, hσ, hq⟩ := map_alternatingGroup_symmetricGroupFourMatchingHom.ge
-    (alternatingGroupFinThreeZModMulEquiv r).2
+    (alternatingGroupFinThreeZModMulEquiv r).property
   exact ⟨⟨σ, hσ⟩, alternatingGroupFourZModThreeHom_eq_iff.2
     (hq.trans (coe_alternatingGroupFinThreeZModMulEquiv r))⟩
 

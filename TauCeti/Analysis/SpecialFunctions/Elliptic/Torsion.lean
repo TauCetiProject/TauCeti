@@ -89,7 +89,7 @@ theorem coe_torsionEquivLatticeQuotient_symm_mk (l : L.lattice) :
     ⟨L.weierstrassPoint ((l : ℂ) / N), AddSubgroup.torsionBy.nsmul_iff.mpr <| by
       rw [L.nsmul_weierstrassPoint_eq_zero_iff]
       rw [← natCast_zsmul, hmul]
-      exact l.2⟩
+      exact l.property⟩
   have hP : L.torsionEquivLatticeQuotient N P = Submodule.Quotient.mk l := by
     rw [torsionEquivLatticeQuotient, TauCeti.torsionByδEquiv_apply]
     exact TauCeti.torsionByδ_eq L.exact_lattice_weierstrassPoint L.lattice.injective_subtype

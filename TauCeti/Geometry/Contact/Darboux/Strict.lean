@@ -87,8 +87,8 @@ private def stdPrimitive : SmoothForm 𝓘(ℝ, V × V) (V × V) ℝ 1 :=
     (innerProductContactForm V)
 
 private theorem stdPrimitive_apply (w : V × V) (u : TangentSpace 𝓘(ℝ, V × V) w) :
-    (stdPrimitive V).1 w ![u] = ⟪w.2, u.1⟫_ℝ := by
-  have key : (innerProductContactForm V).1 (zeroSectionCLM V w) ![zeroSectionCLM V u] =
+    (stdPrimitive V).val w ![u] = ⟪w.2, u.1⟫_ℝ := by
+  have key : (innerProductContactForm V).val (zeroSectionCLM V w) ![zeroSectionCLM V u] =
       -⟪w.2, u.1⟫_ℝ := by
     obtain ⟨a, b⟩ := u
     exact (innerProductContactForm_apply V _ _).trans (by simp [zeroSectionCLM])
@@ -115,7 +115,7 @@ private theorem eval₂_mextDerivₗ_stdPrimitive (w : V × V) (u v : TangentSpa
 the standard contact form `dz - ⟪p, dq⟫`. -/
 private theorem mpullback_reassoc_contactization_stdPrimitive :
     mpullback 𝓘(ℝ, V × V × ℝ) (𝓘(ℝ, V × V).prod 𝓘(ℝ)) (prodAssocSymmSelf ℝ V V ℝ ∞)
-      (stdPrimitive V).contactization.1 = (innerProductContactForm V).1 := by
+      (stdPrimitive V).contactization.val = (innerProductContactForm V).val := by
   let ιL : (V × V × ℝ) →L[ℝ] V × V :=
     (ContinuousLinearMap.fst ℝ V (V × ℝ)).prod
       ((ContinuousLinearMap.fst ℝ V ℝ).comp (ContinuousLinearMap.snd ℝ V (V × ℝ)))
@@ -157,7 +157,7 @@ private theorem SmoothForm.IsContactForm.exists_reebSlice (hα : α.IsContactFor
   set e := extChartAt I x₀
   set y₀ := e x₀
   -- The covector `α_{x₀}` as a continuous linear form `ℓ` on the model space.
-  obtain ⟨ℓ, hℓ⟩ : ∃ ℓ : E →L[ℝ] ℝ, ∀ v : E, ℓ v = α.1 x₀ ![v] :=
+  obtain ⟨ℓ, hℓ⟩ : ∃ ℓ : E →L[ℝ] ℝ, ∀ v : E, ℓ v = α.val x₀ ![v] :=
     ⟨SmoothForm.degreeOneEquiv α x₀, SmoothForm.degreeOneEquiv_apply_apply_vec α x₀⟩
   obtain ⟨R₀, hR₀⟩ : ∃ R₀ : E, ℓ R₀ = 1 :=
     ⟨α.reebVectorField x₀, (hℓ _).trans (hα.apply_reebVectorField x₀)⟩
@@ -168,7 +168,7 @@ private theorem SmoothForm.IsContactForm.exists_reebSlice (hα : α.IsContactFor
       one_ne_zero (hR₀.symm.trans (LinearMap.congr_fun h R₀))
   -- Vectors of `K` are killed by `α` at `x₀`. The base point is generalized to any `y = x₀` so
   -- that `hK` applies at `ι 0` without rewriting `ι 0` inside the type `TangentSpace I (ι 0)`.
-  have hK (y : M) (hy : y = x₀) (v : E) (hv : v ∈ K) : α.1 y ![v] = 0 := by
+  have hK (y : M) (hy : y = x₀) (v : E) (hv : v ∈ K) : α.val y ![v] = 0 := by
     subst hy
     rw [← hℓ]
     exact LinearMap.mem_ker.1 hv
@@ -199,9 +199,9 @@ private theorem SmoothForm.IsContactForm.exists_reebSlice (hα : α.IsContactFor
   refine ⟨_, ι, hι, hι0, hdim, fun w w' h ↦ Subtype.ext ((hd w).symm.trans (h.trans (hd w'))),
     fun ⟨w, hw⟩ ↦ ?_⟩
   -- The Reeb vector takes the value `1` under `α`, while vectors of `K` are in its kernel.
-  have h1 : α.1 (ι 0) ![mfderiv 𝓘(ℝ, K) I ι 0 w] = 1 :=
-    (congrArg (fun v ↦ α.1 (ι 0) ![v]) hw).trans (hα.apply_reebVectorField _)
-  rw [congrArg (fun v ↦ α.1 (ι 0) ![v]) (hd w), hK _ hι0 _ w.2] at h1
+  have h1 : α.val (ι 0) ![mfderiv 𝓘(ℝ, K) I ι 0 w] = 1 :=
+    (congrArg (fun v ↦ α.val (ι 0) ![v]) hw).trans (hα.apply_reebVectorField _)
+  rw [congrArg (fun v ↦ α.val (ι 0) ![v]) (hd w), hK _ hι0 _ w.property] at h1
   exact zero_ne_one h1
 
 end Slice
@@ -223,10 +223,10 @@ private theorem exists_neg_add_mextDerivₗ_ofFunction_eq_stdPrimitive
     (hω : ∀ᶠ w in 𝓝 (0 : V × V), ∀ u v : TangentSpace 𝓘(ℝ, V × V) w,
       SmoothBundleForm.eval₂ (mextDerivₗ 𝓘(ℝ, V × V) 1 β) w u v = stdSymplecticForm u v) :
     ∃ (g : V × V → ℝ) (hg : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ) ∞ g), g 0 = 0 ∧
-      ∀ᶠ w in 𝓝 (0 : V × V), (-β + mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).1 w =
-        (stdPrimitive V).1 w := by
+      ∀ᶠ w in 𝓝 (0 : V × V), (-β + mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).val w =
+        (stdPrimitive V).val w := by
   -- `⟪p, dq⟫ + β` is closed near `0`, so it has a primitive there.
-  have hγ : ∀ᶠ w in 𝓝 (0 : V × V), mextDeriv (stdPrimitive V + β).1 w = 0 := by
+  have hγ : ∀ᶠ w in 𝓝 (0 : V × V), mextDeriv (stdPrimitive V + β).val w = 0 := by
     filter_upwards [hω] with w hw
     refine ContinuousAlternatingMap.ext fun v ↦ ?_
     obtain ⟨a, b, rfl⟩ : ∃ a b, v = ![a, b] := ⟨v 0, v 1, funext fun i ↦ by fin_cases i <;> rfl⟩
@@ -241,8 +241,8 @@ private theorem exists_neg_add_mextDerivₗ_ofFunction_eq_stdPrimitive
     rw [RoughForm.eq_ofFunction g₀, isSmoothForm_ofFunction_iff] at hg₀
     exact hg₀.sub contMDiff_const
   refine ⟨g, hg, sub_self _, eventually_of_mem hU fun w hw ↦ ?_⟩
-  have hdg : (mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).1 w =
-      (stdPrimitive V + β).1 w := by
+  have hdg : (mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).val w =
+      (stdPrimitive V + β).val w := by
     rw [mextDerivₗ_apply, ← hdg₀ w hw, RoughForm.eq_ofFunction g₀]
     refine (congrArg (mextDeriv · w) (SmoothForm.coe_ofFunction _)).trans ?_
     exact mextDeriv_ofFunction_eq_of_eventuallyEq_add_const
@@ -264,12 +264,12 @@ private theorem mpullback_flowOf_comp_contactizationShift_comp_reassoc (hα : α
       ι (contactizationShift 𝓘(ℝ, V × V) hg (prodAssocSymmSelf ℝ V V ℝ ∞ y)).1) ∈
         flowDomain α.reebVectorField)
     (hθ : (-SmoothForm.mpullback ι hι α +
-      mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).1
+      mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).val
         (prodAssocSymmSelf ℝ V V ℝ ∞ y).1 =
-        (stdPrimitive V).1 (prodAssocSymmSelf ℝ V V ℝ ∞ y).1) :
+        (stdPrimitive V).val (prodAssocSymmSelf ℝ V V ℝ ∞ y).1) :
     TauCeti.mpullback _ I ((fun p : (V × V) × ℝ ↦ flowOf α.reebVectorField p.2 (ι p.1)) ∘
-        contactizationShift 𝓘(ℝ, V × V) hg ∘ prodAssocSymmSelf ℝ V V ℝ ∞) α.1 y =
-      (innerProductContactForm V).1 y := by
+        contactizationShift 𝓘(ℝ, V × V) hg ∘ prodAssocSymmSelf ℝ V V ℝ ∞) α.val y =
+      (innerProductContactForm V).val y := by
   have hR := hα.contMDiff_reebVectorField
   set Sh := contactizationShift 𝓘(ℝ, V × V) hg
   set Φ : (V × V) × ℝ → M := fun p ↦ flowOf α.reebVectorField p.2 (ι p.1)
@@ -287,14 +287,14 @@ private theorem mpullback_flowOf_comp_contactizationShift_comp_reassoc (hα : α
   rw [SmoothForm.coe_mpullback] at hSh
   -- At `(q, p)`, the contactization forms of `-ι^* α + dg` and of `⟪p, dq⟫` agree.
   have hcon : (-SmoothForm.mpullback ι hι α +
-      mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).contactization.1
+      mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).contactization.val
         (prodAssocSymmSelf ℝ V V ℝ ∞ y) =
-        (stdPrimitive V).contactization.1 (prodAssocSymmSelf ℝ V V ℝ ∞ y) := by
+        (stdPrimitive V).contactization.val (prodAssocSymmSelf ℝ V V ℝ ∞ y) := by
     refine ContinuousAlternatingMap.ext fun v ↦ ?_
     obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
     rw [SmoothForm.contactization_apply, SmoothForm.contactization_apply, hθ]
-  have hpt : TauCeti.mpullback _ _ (Φ ∘ Sh) α.1 (prodAssocSymmSelf ℝ V V ℝ ∞ y) =
-      (stdPrimitive V).contactization.1 (prodAssocSymmSelf ℝ V V ℝ ∞ y) := by
+  have hpt : TauCeti.mpullback _ _ (Φ ∘ Sh) α.val (prodAssocSymmSelf ℝ V V ℝ ∞ y) =
+      (stdPrimitive V).contactization.val (prodAssocSymmSelf ℝ V V ℝ ∞ y) := by
     rw [mpullback_comp_at (Sh.contMDiff.mdifferentiableAt (by simp)) hΦd, ← hcon, ← hSh]
     exact ContinuousAlternatingMap.ext fun u ↦ by
       rw [TauCeti.mpullback_apply (⇑Sh), TauCeti.mpullback_apply (⇑Sh), hflow]
@@ -319,7 +319,7 @@ private theorem SmoothForm.IsContactForm.exists_strictDarbouxChart_of_slice
         stdSymplecticForm u v) :
     ∃ chart : PartialDiffeomorph I 𝓘(ℝ, V × V × ℝ) M (V × V × ℝ) ∞, ι 0 ∈ chart.source ∧
       chart (ι 0) = 0 ∧ ∀ x ∈ chart.source,
-        TauCeti.mpullback I 𝓘(ℝ, V × V × ℝ) chart (innerProductContactForm V).1 x = α.1 x := by
+        TauCeti.mpullback I 𝓘(ℝ, V × V × ℝ) chart (innerProductContactForm V).val x = α.val x := by
   have hR := hα.contMDiff_reebVectorField
   obtain ⟨g, hg, hg0, hgθ⟩ := exists_neg_add_mextDerivₗ_ofFunction_eq_stdPrimitive hω
   set Sh := contactizationShift 𝓘(ℝ, V × V) hg
@@ -355,17 +355,17 @@ private theorem SmoothForm.IsContactForm.exists_strictDarbouxChart_of_slice
   -- Near `0`, `Ξ` pulls `α` back to the standard contact form.
   have hev : ∀ᶠ y in 𝓝 (0 : V × V × ℝ), (Sh ∘ prodAssocSymmSelf ℝ V V ℝ ∞) y ∈ D ∧
       (-SmoothForm.mpullback ι hι α +
-        mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).1
+        mextDerivₗ 𝓘(ℝ, V × V) 0 (SmoothForm.ofFunction ⟨g, hg⟩)).val
           (prodAssocSymmSelf ℝ V V ℝ ∞ y).1 =
-          (stdPrimitive V).1 (prodAssocSymmSelf ℝ V V ℝ ∞ y).1 :=
+          (stdPrimitive V).val (prodAssocSymmSelf ℝ V V ℝ ∞ y).1 :=
     Filter.Eventually.and (p := fun y ↦ (Sh ∘ prodAssocSymmSelf ℝ V V ℝ ∞) y ∈ D)
       ((Sh.continuous.comp (prodAssocSymmSelf ℝ V V ℝ ∞).continuous).continuousAt.preimage_mem_nhds
         (by rw [hSh0]; exact hD.mem_nhds h0D))
       (((continuous_fst.comp (prodAssocSymmSelf ℝ V V ℝ ∞).continuous).tendsto'
         (0 : V × V × ℝ) (0 : V × V) (by simp)).eventually hgθ)
   have hpull : ∀ᶠ y in 𝓝 (0 : V × V × ℝ),
-      TauCeti.mpullback _ I (Φ ∘ Sh ∘ prodAssocSymmSelf ℝ V V ℝ ∞) α.1 y =
-        (innerProductContactForm V).1 y := by
+      TauCeti.mpullback _ I (Φ ∘ Sh ∘ prodAssocSymmSelf ℝ V V ℝ ∞) α.val y =
+        (innerProductContactForm V).val y := by
     filter_upwards [hev] with y ⟨hyD, hyθ⟩
     exact mpullback_flowOf_comp_contactizationShift_comp_reassoc hα hι hg hyD hyθ
   obtain ⟨chart, hsrc, hchart, hpb⟩ := hΞ.exists_partialDiffeomorph_mpullback_eq (by simp) hpull
@@ -405,10 +405,10 @@ private theorem eval₂_mextDerivₗ_mpullback_eq_stdSymplecticForm {K : Type*}
     rw [mvfderiv_apply_eq_mfderiv_apply]
     exact ψ.mfderiv_apply_mfderiv_symm_apply (by simp) hwt u
   calc SmoothBundleForm.eval₂ (mextDerivₗ _ 1 (SmoothForm.mpullback ι' hι' α)) w u v
-      = TauCeti.mpullback _ I ι' (mextDeriv α.1) w ![u, v] := by
+      = TauCeti.mpullback _ I ι' (mextDeriv α.val) w ![u, v] := by
         rw [SmoothForm.mextDerivₗ_mpullback, SmoothBundleForm.eval₂_apply,
           SmoothForm.coe_mpullback, mextDerivₗ_apply]
-    _ = TauCeti.mpullback _ 𝓘(ℝ, K) ψ.symm (TauCeti.mpullback _ I ι (mextDeriv α.1)) w
+    _ = TauCeti.mpullback _ 𝓘(ℝ, K) ψ.symm (TauCeti.mpullback _ I ι (mextDeriv α.val)) w
           ![u, v] := by
         rw [hloc.mpullback_eq, mpullback_comp_at hψs (hι.mdifferentiableAt (by simp))]
     _ = SmoothBundleForm.eval₂ (mextDerivₗ 𝓘(ℝ, K) 1 (SmoothForm.mpullback ι hι α)) (ψ.symm w)
@@ -429,8 +429,8 @@ theorem SmoothForm.IsContactForm.exists_strictDarbouxChart_of_finrank_eq
         𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) M
         (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞,
       x₀ ∈ chart.source ∧ chart x₀ = 0 ∧ ∀ x ∈ chart.source, ∀ v : TangentSpace I x,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
-          ![mvfderiv I chart x v] = α.1 x ![v] := by
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
+          ![mvfderiv I chart x v] = α.val x ![v] := by
   -- A slice transverse to the Reeb field, on which `dα` restricts to a symplectic form at `0`.
   obtain ⟨K, ι, hι, hι0, hdimK, hinj, hR⟩ := hα.exists_reebSlice x₀
   have hσ0 : ((mextDerivₗ 𝓘(ℝ, K) 1 (SmoothForm.mpullback ι hι α)).bilinFormAt 0).Nondegenerate :=
@@ -483,8 +483,8 @@ theorem SmoothForm.IsContactForm.exists_strictDarbouxChart (hα : α.IsContactFo
         (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) ∞),
       finrank ℝ E = 2 * n + 1 ∧ x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, ∀ v : TangentSpace I x,
-        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
-          ![mvfderiv I chart x v] = α.1 x ![v] := by
+        (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val (chart x)
+          ![mvfderiv I chart x v] = α.val x ![v] := by
   obtain ⟨n, -, -, hn, -⟩ := hα.exists_darbouxChart x₀
   obtain ⟨chart, h⟩ := hα.exists_strictDarbouxChart_of_finrank_eq hn x₀
   exact ⟨n, chart, hn, h⟩

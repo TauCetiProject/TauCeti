@@ -71,7 +71,7 @@ theorem fdBoundary_mem_verticalSingularSet_of_mem_Ioo_zero_one [ModularFormClass
     fdBoundary H t ∈ (verticalSingularSet S : Set ℂ) := by
   have ht05 : t ∈ Icc (0 : ℝ) 5 := ⟨ht.1.le, by linarith [ht.2]⟩
   obtain ⟨q, hq, hqe⟩ := fdBoundary_mem_coe_truncatedFundamentalDomain hH ht05
-  have hre : (fdBoundary H t).re = 1 / 2 := re_fdBoundarySegment1 H ⟨ht.1.le, ht.2.le⟩
+  have hre : (fdBoundary H t).re = 1 / 2 := re_fdBoundary_of_le_one ht.2.le
   have hs32 : Real.sqrt 3 / 2 < 1 := sqrt_three_div_two_lt_one
   have him_gt : Real.sqrt 3 / 2 < (fdBoundary H t).im := by
     rw [im_fdBoundary_of_le_one ht.2.le]
@@ -138,7 +138,7 @@ theorem fdBoundary_mem_verticalSingularSet_of_mem_Ioo_three_four [ModularFormCla
     rwa [hshift] at h0
   have hmem_s := fdBoundary_mem_verticalSingularSet_of_mem_Ioo_zero_one hf hS hH hs_mem h0s
   have hre_s : (fdBoundary H s).re = 1 / 2 :=
-    re_fdBoundarySegment1 H ⟨hs_mem.1.le, hs_mem.2.le⟩
+    re_fdBoundary_of_le_one hs_mem.2.le
   rw [hshift]
   exact sub_one_mem_verticalSingularSet hmem_s hre_s
 
@@ -167,7 +167,7 @@ theorem fdBoundary_mem_arcSingularSet_union_verticalSingularSet_of_comp_eq_zero
       ⟨h3, h4⟩ h0)
   · exfalso
     refine comp_ofComplex_fdBoundary_ne_zero_of_forall_im_lt hf hS hH hbound ht ?_ h0
-    exact im_fdBoundarySegment5 H ⟨h4, ht.2⟩
+    exact im_fdBoundary_of_four_le h4
 
 end ModularForm
 

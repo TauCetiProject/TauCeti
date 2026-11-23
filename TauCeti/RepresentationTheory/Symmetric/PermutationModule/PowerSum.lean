@@ -193,7 +193,7 @@ theorem psumPart_eq_sum_card_fixedPoints_smul_msymm {ρ : n.Partition} {π : Per
       (Nat.card {q : Perm (Fin n) ⧸ youngSubgroup ν // π • q = q} : R) • msymm σ R ν := by
   ext d
   rw [coeff_sum]
-  simp only [coeff_smul, smul_eq_mul]
+  simp only [AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul]
   by_cases hd : d.degree = n
   · rw [coeff_psumPart_eq_card_fixedPoints R hπ hd, Finset.sum_eq_single (weightPartition d hd)]
     · rw [coeff_msymm R _ hd, ite_eq_left rfl, mul_one]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.LogNormal.Basic
 import TauCeti.Probability.Distributions.Gaussian.Transforms
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Moment-indeterminate perturbations of the log-normal distribution
@@ -149,13 +150,13 @@ private theorem integral_pow_mul_oscillation_logNormalMeasure (n : ℕ) :
     ∫ x, x ^ n * logNormalMomentOscillation x ∂logNormalMeasure 0 1 = 0 := by
   rw [logNormalMeasure_map_exp, integral_map measurable_exp.aemeasurable (by fun_prop)]
   simpa only [Function.comp_apply, logNormalMomentOscillation, Real.log_exp,
-    Real.exp_nat_mul] using integral_exp_nat_mul_sin_gaussianReal n
+    Real.exp_natCast_mul, Int.cast_natCast] using integral_exp_int_mul_sin_gaussianReal n
 
 /-- Every natural power is integrable under a valid log-normal moment perturbation. -/
 theorem integrable_pow_logNormalMomentPerturbation {ε : ℝ} (hε : |ε| ≤ 1) (n : ℕ) :
     Integrable (fun x => x ^ n) (logNormalMomentPerturbation ε) := by
   rw [logNormalMomentPerturbation]
-  rw [integrable_withDensity_ofReal_iff
+  rw [MeasureTheory.integrable_withDensity_ofReal_iff
       (ρ := fun x => 1 + ε * logNormalMomentOscillation x)
       ((measurable_const.add (measurable_logNormalMomentOscillation.const_mul ε)).aemeasurable)
       (ae_of_all _ (logNormalMomentPerturbation_weight_nonneg hε))]
@@ -178,7 +179,7 @@ theorem integral_pow_logNormalMomentPerturbation {ε : ℝ} (hε : |ε| ≤ 1) (
     ∫ x, x ^ n ∂logNormalMomentPerturbation ε =
       Real.exp ((n : ℝ) ^ 2 / 2) := by
   rw [logNormalMomentPerturbation]
-  rw [integral_withDensity_ofReal
+  rw [MeasureTheory.integral_withDensity_ofReal
       (ρ := fun x => 1 + ε * logNormalMomentOscillation x)
       ((measurable_const.add (measurable_logNormalMomentOscillation.const_mul ε)).aemeasurable)
       (ae_of_all _ (logNormalMomentPerturbation_weight_nonneg hε)) (fun x => x ^ n)]
@@ -240,7 +241,7 @@ private theorem integral_oscillation_logNormalMomentPerturbation {ε : ℝ} (hε
     ∫ x, logNormalMomentOscillation x ∂logNormalMomentPerturbation ε =
       ε * ∫ x, logNormalMomentOscillation x ^ 2 ∂logNormalMeasure 0 1 := by
   rw [logNormalMomentPerturbation]
-  rw [integral_withDensity_ofReal
+  rw [MeasureTheory.integral_withDensity_ofReal
       (ρ := fun x => 1 + ε * logNormalMomentOscillation x)
       ((measurable_const.add (measurable_logNormalMomentOscillation.const_mul ε)).aemeasurable)
       (ae_of_all _ (logNormalMomentPerturbation_weight_nonneg hε))

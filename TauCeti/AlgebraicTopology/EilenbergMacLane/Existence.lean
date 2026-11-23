@@ -126,7 +126,7 @@ abbrev Relation : Type :=
 /-- The relations of the presentation, as attaching maps of `(n + 3)`-cells. -/
 abbrev relationAttach (r : Relation A n ψ) :
     TopCat.diskBoundary.{0} (n + 3) ⟶ sphereWedge A (n + 2) :=
-  r.1
+  r.val
 
 /-- **The presentation complex.** The wedge of `(n + 2)`-spheres indexed by `A`, with an
 `(n + 3)`-cell attached along every map `Sⁿ⁺² → W` whose class lies in the kernel of `ψ`. -/
@@ -156,7 +156,7 @@ theorem ker_singularHomologyMap_presentation :
   rw [ker_singularHomologyMap_cellAttachmentIncl]
   refine le_antisymm (Submodule.span_le.2 ?_) fun h hh ↦ ?_
   · rintro _ ⟨r, rfl⟩
-    exact r.2
+    exact r.property
   -- Every class of `Hₙ₊₂(W)` is the Hurewicz class of a generalized loop, so up to sign the class
   -- of its attaching sphere, which lies in the kernel of `ψ` with the class.
   obtain ⟨ε, hε⟩ :=
