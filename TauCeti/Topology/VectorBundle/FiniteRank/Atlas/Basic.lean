@@ -60,8 +60,8 @@ abbrev Fiber (x : X) := Fin (A.rank x) → 𝕜
 
 /-- Package the point-indexed coordinate core on the rank-`n` clopen stratum of `A` as a
 `FiniteRankBundleCore`. -/
--- Expose the rank projection so the dependent coordinate model reduces to `Fin n → 𝕜`.
-@[expose]
+-- Reduce the rank also during implicit-argument matching of coordinate-map simp lemmas.
+@[expose, implicit_reducible]
 def stratumCore (n : ℕ) : FiniteRankBundleCore 𝕜 {x : X // A.rank x = n} where
   rank := n
   core := A.charts n
@@ -153,6 +153,20 @@ theorem range_stratum (n : ℕ) :
     | mk x v =>
       cases hp
       exact ⟨⟨⟨x, rfl⟩, v⟩, rfl⟩
+
+/-- Including a single fibre into the reconstructed total space of a variable-rank atlas is
+inducing. -/
+theorem isInducing_mk (x : X) :
+    IsInducing (fun v : A.Fiber x ↦ (⟨x, v⟩ : TotalSpace Unit A.Fiber)) := by
+  rw [← A.totalSpaceHomeomorph.symm.isInducing.of_comp_iff]
+  have hcomp :
+      A.totalSpaceHomeomorph.symm ∘ (fun v : A.Fiber x ↦ (⟨x, v⟩ : TotalSpace Unit A.Fiber)) =
+        Sigma.mk (A.rank x) ∘
+          fun v : A.Fiber x ↦ (⟨⟨x, rfl⟩, v⟩ : (A.charts (A.rank x)).TotalSpace) :=
+    funext fun v ↦ A.totalSpaceHomeomorph_symm_apply ⟨x, v⟩
+  rw [hcomp]
+  exact IsEmbedding.sigmaMk.isInducing.comp
+    (FiberBundle.totalSpaceMk_isInducing (Fin (A.rank x) → 𝕜) (A.charts (A.rank x)).Fiber ⟨x, rfl⟩)
 
 section Continuity
 
