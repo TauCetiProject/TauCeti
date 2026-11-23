@@ -142,17 +142,14 @@ theorem Equiv.stabilizer_apply (e : Equiv ρ σ) (v : V) : σ.stabilizer (e v) =
   e.toIntertwiningMap.stabilizer_apply_of_injective (EquivLike.injective e) v
 
 /-- Every vector in a trivial representation has stabilizer `⊤`. -/
+@[simp]
 theorem stabilizer_eq_top (ρ : Representation A G V) [ρ.IsTrivial] (v : V) :
     ρ.stabilizer v = ⊤ := by
   ext g
   simp [isTrivial_apply]
 
-/-- Every vector in `Representation.trivial` has stabilizer `⊤`. -/
-@[simp]
-theorem stabilizer_trivial (v : V) : (trivial A G V).stabilizer v = ⊤ :=
-  stabilizer_eq_top (trivial A G V) v
-
 /-- Every vector in a representation on a subsingleton module has stabilizer `⊤`. -/
+@[simp]
 theorem stabilizer_eq_top_of_subsingleton (ρ : Representation A G V) [Subsingleton V] (v : V) :
     ρ.stabilizer v = ⊤ := by
   ext g

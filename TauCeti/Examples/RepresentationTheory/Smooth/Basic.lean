@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.CharZero.Infinite
-import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.NumberTheory.Padics.ProperSpace

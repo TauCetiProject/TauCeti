@@ -44,7 +44,7 @@ case.
 
 * `Representation.isSmooth_iff_exists_isCompact_openSubgroup`: for a locally profinite group, a
   representation is smooth when every vector is fixed by a compact open subgroup.
-* `Representation.coe_smoothVectors_eq_iUnion`,
+* `Representation.coe_smoothVectors_eq_biUnion_invariants_isCompact`,
   `Representation.toSubmodule_smoothVectors_eq_biSup_invariants_isCompact`: over a commutative ring
   `A` and an additive commutative group `V`, for a locally profinite group, `V^∞` is the union and
   supremum of the invariants of the compact open subgroups.
@@ -410,7 +410,7 @@ theorem mem_smoothVectors_iff_exists_isCompact_openSubgroup_mem_invariants {v : 
 
 /-- For a locally profinite group, `V^∞ = ⋃ V^U`, the union of the invariants of the compact open
 subgroups `U`. -/
-theorem coe_smoothVectors_eq_iUnion :
+theorem coe_smoothVectors_eq_biUnion_invariants_isCompact :
     (ρ.smoothVectors : Set V) =
       ⋃ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
         (invariants (ρ.comp (U : Subgroup G).subtype) : Set V) := by
@@ -432,12 +432,12 @@ theorem toSubmodule_smoothVectors_eq_biSup_invariants_isCompact (ρ : Representa
 
 /-- For a locally profinite group, a representation is smooth exactly when `V = ⋃ V^U`, the
 union of the invariants of the compact open subgroups `U`. -/
-theorem isSmooth_iff_iUnion_eq_univ :
+theorem isSmooth_iff_biUnion_invariants_isCompact_eq_univ :
     IsSmooth ρ ↔
       ⋃ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
         (invariants (ρ.comp (U : Subgroup G).subtype) : Set V) = univ := by
-  simp only [← coe_smoothVectors_eq_iUnion, isSmooth_iff_forall_mem_smoothVectors,
-    eq_univ_iff_forall, SetLike.mem_coe]
+  simp only [← coe_smoothVectors_eq_biUnion_invariants_isCompact,
+    isSmooth_iff_forall_mem_smoothVectors, eq_univ_iff_forall, SetLike.mem_coe]
 
 /-- For a locally profinite group, `⨆_U V^U = ⊤` over compact open subgroups `U` if and only if
 `ρ` is smooth. -/
