@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimpleGraph
+import TauCeti.LinearAlgebra.Matrix.ZMatrix
 
 /-!
 # Affine simply-laced diagrams are not of finite type
@@ -101,23 +102,23 @@ theorem not_isContained_of_posDef {R : Type*} [Ring R] [LinearOrder R] [IsStrict
       rw [hx]
       exact (hm u).le
     · exact (hx0 v hv).ge
-  have hpos := hC.dotProduct_mulVec_pos (x := x) fun h ↦
+  -- `2I - A` is nonpositive at `x`, which contradicts positive definiteness.
+  obtain ⟨v, hv⟩ := hC.exists_mulVec_pos hx0le fun h ↦
     (hm 0).ne' (by rw [← hx, h, Pi.zero_apply])
-  rw [star_trivial] at hpos
-  refine hpos.not_ge ?_
-  -- Only the vertices of the copy contribute to the form.
-  rw [dotProduct, ← Fintype.sum_of_injective f f.injective
-    (fun u ↦ m u * (G.graphCartanMatrix R).mulVec x (f u)) _
-    (fun v hv ↦ by rw [hx0 v hv, zero_mul])
-    fun u ↦ by rw [hx]]
-  refine Finset.sum_nonpos fun u _ ↦ mul_nonpos_of_nonneg_of_nonpos (hm u).le ?_
-  -- At a vertex of the copy, the neighbours in `G` include the images of the neighbours in the
-  -- affine graph, whose marks already sum to twice the mark of the vertex.
-  have hsum : ∑ w ∈ t.graph.neighborFinset u, x (f w) = 2 * m u := by
-    simp only [hx, m]
-    exact_mod_cast sum_marks_neighborFinset_eq_two_mul ht hg u
-  rw [graphCartanMatrix_mulVec_apply, hx, sub_nonpos, ← hsum]
-  exact f.sum_neighborFinset_comp_le hx0le u
+  refine hv.not_ge ?_
+  rw [graphCartanMatrix_mulVec_apply, sub_nonpos]
+  by_cases hv' : v ∈ Set.range f
+  · -- At a vertex of the copy, the neighbours in `G` include the images of the neighbours in the
+    -- affine graph, whose marks already sum to twice the mark of the vertex.
+    obtain ⟨u, rfl⟩ := hv'
+    have hsum : ∑ w ∈ t.graph.neighborFinset u, x (f w) = 2 * m u := by
+      simp only [hx, m]
+      exact_mod_cast sum_marks_neighborFinset_eq_two_mul ht hg u
+    rw [hx, ← hsum]
+    exact f.sum_neighborFinset_comp_le hx0le u
+  · -- Off the copy, `x` vanishes and its neighbour sum is nonnegative.
+    rw [hx0 v hv', mul_zero]
+    exact Finset.sum_nonneg fun w _ ↦ hx0le w
 
 end AffineDynkinType
 

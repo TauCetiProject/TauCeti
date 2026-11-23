@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
 public import TauCeti.Combinatorics.SimpleGraph.Finite
+import TauCeti.LinearAlgebra.Matrix.ZMatrix
 
 /-!
 # Coefficient reflections and stuck vectors
@@ -150,18 +151,14 @@ theorem isStuck_and_forall_not_isPrecarious_natCast_iff_sum_eq_two_mul (a : V �
   rw [graphCartanMatrix_mulVec_apply, Pi.zero_apply, sub_eq_zero, eq_comm]
   exact_mod_cast Iff.rfl
 
-/-- **Positive definite graphs have no stuck positions without precarious vertices.** If `2I - A`
-is positive definite, then every nonzero nonnegative vector has a precarious vertex, since
-`aᵀ (2I - A) a > 0` forces some coordinate of `(2I - A) a` to be positive. -/
+/-- **On a graph with positive definite `2I - A`, every nonzero nonnegative vector has a
+precarious vertex.** Some coordinate of `(2I - A) a` is positive, by
+`Matrix.PosDef.exists_mulVec_pos`. -/
 theorem exists_isPrecarious_of_posDef {R : Type*} [Ring R] [LinearOrder R] [IsOrderedRing R]
     [StarRing R] [TrivialStar R]
     (hC : (G.graphCartanMatrix R).PosDef) {a : V → R} (ha0 : 0 ≤ a) (ha : a ≠ 0) :
     ∃ i, G.IsPrecarious a i := by
-  simp only [isPrecarious_iff_graphCartanMatrix_mulVec_pos]
-  by_contra! h
-  have hpos := hC.dotProduct_mulVec_pos ha
-  rw [star_trivial] at hpos
-  exact hpos.not_ge (sum_nonpos fun i _ ↦ mul_nonpos_of_nonneg_of_nonpos (ha0 i) (h i))
+  simpa only [isPrecarious_iff_graphCartanMatrix_mulVec_pos] using hC.exists_mulVec_pos ha0 ha
 
 section Relabel
 
