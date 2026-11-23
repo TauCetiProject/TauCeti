@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.TemperedDistribution.MulLeft
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Pseudodifferential.Lp.CalderonZygmund
-public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Pseudodifferential.UniformSobolev
-import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
-import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 
 /-!
 # Uniform pseudodifferential operators on `H^{s,p}`
@@ -29,7 +25,9 @@ and finite-dimensional normed fibres it is
 namespace `TauCeti.Symbol`. Uniform symbols of order `0` include the smooth operator-valued
 functions `f` all of whose derivatives are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`), so
 each gives a bounded operator on every `H^{s,p}`; for finite-dimensional `V` and `W` this operator
-is multiplication by `f` (`TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_ofSpatial`).
+is multiplication by `f`, by the lemma `toDistr_quantizeUniformBesselPotentialSpace_ofSpatial` in
+the namespace `TauCeti.Symbol.HasBesselPotentialSpaceExtension` applied to
+`TauCeti.Symbol.IsUniform.hasBesselPotentialSpaceExtension`.
 
 ## The argument
 
@@ -52,20 +50,12 @@ functions.
 * `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM`: the operator
   `H^{s,p} → H^{s - m,p}` extends `Op(a)` from Schwartz functions.
 * `TauCeti.Symbol.IsUniform.hasBesselPotentialSpaceExtension`: equivalently, `a` has the extension
-  property `TauCeti.Symbol.HasBesselPotentialSpaceExtension`, from which the lemmas below follow.
-* `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_add`,
-  `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_smul` and their consequences: the operator is
-  linear in the symbol.
-* `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_inclusion`,
-  `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_comp_inclusion`: compatibility with raising
-  the order of the symbol and with the inclusions `H^{s,p} ⊆ H^{r,p}`.
-* `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_congr`,
-  `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_congr_exponent`: the operators for
-  different orders `s` and exponents `p` agree as maps of tempered distributions.
-* `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_comp`: composition of uniform
-  quantizations on `H^{s,p}`.
-* `TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_ofSpatial`: for finite-dimensional
-  fibres, the symbol `f(x)` quantizes to multiplication by `f`.
+  property `TauCeti.Symbol.HasBesselPotentialSpaceExtension`. The lemmas in that namespace then give
+  the linearity of the operator in the symbol
+  (`TauCeti.Symbol.HasBesselPotentialSpaceExtension.quantizeUniformBesselPotentialSpace_add` and
+  the lemmas after it), its compatibility with raising the order, with the inclusions
+  `H^{s,p} ⊆ H^{r,p}`, with composition and across exponents, and the multiplication operators of
+  symbols `f(x)`.
 
 ## References
 
@@ -85,7 +75,7 @@ namespace TauCeti
 
 namespace Symbol
 
-variable {n : ℕ} {m m' : ℝ}
+variable {n : ℕ} {m : ℝ}
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
@@ -126,126 +116,6 @@ theorem IsUniform.hasBesselPotentialSpaceExtension (ha : a.IsUniform) (hp : 1 < 
     (hp_top : p ≠ ∞) : a.HasBesselPotentialSpaceExtension ha p :=
   hasBesselPotentialSpaceExtension_iff.2 fun s ↦
     quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM ha s hp hp_top
-
-/-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is additive in the symbol. -/
-theorem quantizeUniformBesselPotentialSpace_add {b : Symbol n V W m} (ha : a.IsUniform)
-    (hb : b.IsUniform) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ ∞) :
-    (a + b).quantizeUniformBesselPotentialSpace (ha.add hb) s p =
-      a.quantizeUniformBesselPotentialSpace ha s p +
-        b.quantizeUniformBesselPotentialSpace hb s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_add
-    (hb.hasBesselPotentialSpaceExtension hp hp_top) s hp_top
-
-/-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is homogeneous in the symbol. -/
-theorem quantizeUniformBesselPotentialSpace_smul (ha : a.IsUniform) (c : ℂ) (s : ℝ) (hp : 1 < p)
-    (hp_top : p ≠ ∞) :
-    (c • a).quantizeUniformBesselPotentialSpace (ha.smul c) s p =
-      c • a.quantizeUniformBesselPotentialSpace ha s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_smul c s
-    hp_top
-
-/-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes the negated symbol to the negated
-operator. -/
-theorem quantizeUniformBesselPotentialSpace_neg (ha : a.IsUniform) (s : ℝ) (hp : 1 < p)
-    (hp_top : p ≠ ∞) :
-    (-a).quantizeUniformBesselPotentialSpace ha.neg s p =
-      -a.quantizeUniformBesselPotentialSpace ha s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_neg s
-    hp_top
-
-/-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes differences of symbols to differences of
-operators. -/
-theorem quantizeUniformBesselPotentialSpace_sub {b : Symbol n V W m} (ha : a.IsUniform)
-    (hb : b.IsUniform) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ ∞) :
-    (a - b).quantizeUniformBesselPotentialSpace (ha.sub hb) s p =
-      a.quantizeUniformBesselPotentialSpace ha s p -
-        b.quantizeUniformBesselPotentialSpace hb s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_sub
-    (hb.hasBesselPotentialSpaceExtension hp hp_top) s hp_top
-
-/-- **Changing the order of the symbol.** Let `1 < p < ∞`. Viewing a symbol of order `m` as a
-symbol of order `m' ≥ m` gives the operator `H^{s,p} → H^{s - m,p}` followed by the inclusion
-`H^{s - m,p} ⊆ H^{s - m',p}`. -/
-theorem quantizeUniformBesselPotentialSpace_inclusion (h : m ≤ m') (ha : a.IsUniform) (s : ℝ)
-    (hp : 1 < p) (hp_top : p ≠ ∞) :
-    (inclusion h a).quantizeUniformBesselPotentialSpace (ha.inclusion h) s p =
-      BesselPotentialSpace.inclusion (by linarith) ∘L
-        a.quantizeUniformBesselPotentialSpace ha s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_inclusion h s
-    hp_top
-
-/-- **Changing the Sobolev order.** Let `1 < p < ∞`. The operators
-`Op(a) : H^{s,p} → H^{s - m,p}` for the different orders `s` are compatible with the inclusions
-`H^{s,p} ⊆ H^{r,p}`. -/
-theorem quantizeUniformBesselPotentialSpace_comp_inclusion (ha : a.IsUniform) {r s : ℝ}
-    (h : r ≤ s) (hp : 1 < p) (hp_top : p ≠ ∞) :
-    a.quantizeUniformBesselPotentialSpace ha r p ∘L BesselPotentialSpace.inclusion h =
-      BesselPotentialSpace.inclusion (by linarith) ∘L
-        a.quantizeUniformBesselPotentialSpace ha s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_comp_inclusion
-    h hp_top
-
-/-- **Compatibility of the extensions.** The operator `Op(a) : H^{s,p} → H^{s - m,p}` only depends
-on the coefficient of `a` and on the tempered distribution of its argument: uniform symbols `a`
-and `b` of orders `m` and `m'` with the same coefficient give the same tempered distribution on
-`u ∈ H^{s,p}` and `v ∈ H^{t,p}` whenever `u` and `v` have the same tempered distribution. -/
-theorem toDistr_quantizeUniformBesselPotentialSpace_congr {b : Symbol n V W m'}
-    (hab : a.coefficient = b.coefficient) (ha : a.IsUniform) (hb : b.IsUniform) (hp : 1 < p)
-    (hp_top : p ≠ ∞) {s t : ℝ} {u : H^{s, p}(CoordinateSpace n, V)}
-    {v : H^{t, p}(CoordinateSpace n, V)} (huv : u.toDistr = v.toDistr) :
-    (a.quantizeUniformBesselPotentialSpace ha s p u).toDistr =
-      (b.quantizeUniformBesselPotentialSpace hb t p v).toDistr :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).toDistr_quantizeUniformBesselPotentialSpace_congr
-    (hb.hasBesselPotentialSpaceExtension hp hp_top) hab hp_top huv
-
-/-- **Composition of uniform quantizations on `H^{s,p}`.** Let `1 < p < ∞`. If the uniform symbol
-`c` of order `m''` quantizes to the composition `Op(a) ∘ Op(b)` of uniform symbols of orders `m'`
-and `m` on Schwartz space, as given by `TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`,
-then `Op(c) : H^{s,p} → H^{s - m'',p}` is the composition of `Op(b) : H^{s,p} → H^{s - m,p}` and
-`Op(a) : H^{s - m,p} → H^{s - m - m',p}`, as maps of tempered distributions. -/
-theorem toDistr_quantizeUniformBesselPotentialSpace_comp {U : Type*} [NormedAddCommGroup U]
-    [InnerProductSpace ℂ U] [CompleteSpace U] {m'' : ℝ} {a : Symbol n W U m'} {b : Symbol n V W m}
-    {c : Symbol n V U m''} (ha : a.IsUniform) (hb : b.IsUniform) (hc : c.IsUniform)
-    (habc : quantizeUniformCLM a ha ∘L quantizeUniformCLM b hb = quantizeUniformCLM c hc) (s : ℝ)
-    (hp : 1 < p) (hp_top : p ≠ ∞) (u : H^{s, p}(CoordinateSpace n, V)) :
-    (c.quantizeUniformBesselPotentialSpace hc s p u).toDistr =
-      (a.quantizeUniformBesselPotentialSpace ha (s - m) p
-        (b.quantizeUniformBesselPotentialSpace hb s p u)).toDistr :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).toDistr_quantizeUniformBesselPotentialSpace_comp
-    (hb.hasBesselPotentialSpaceExtension hp hp_top) (hc.hasBesselPotentialSpaceExtension hp hp_top)
-    habc s hp_top u
-
-/-- **Compatibility of the extensions for different exponents.** For `1 < p, q < ∞` in positive
-dimension, the operators `Op(a)` on `H^{s,p}` and `Op(b)` on `H^{t,q}`, for uniform symbols with
-the same coefficient, agree on any `u ∈ H^{s,p}` and `v ∈ H^{t,q}` with the same tempered
-distribution. -/
-theorem toDistr_quantizeUniformBesselPotentialSpace_congr_exponent [NeZero n]
-    {a : Symbol n V W m} {b : Symbol n V W m'} (hab : a.coefficient = b.coefficient)
-    (ha : a.IsUniform) (hb : b.IsUniform) {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
-    [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 1 < p) (hq : 1 < q) {s t : ℝ}
-    {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, q}(CoordinateSpace n, V)}
-    (huv : u.toDistr = v.toDistr) :
-    (a.quantizeUniformBesselPotentialSpace ha s p u).toDistr =
-      (b.quantizeUniformBesselPotentialSpace hb t q v).toDistr :=
-  HasBesselPotentialSpaceExtension.toDistr_quantizeUniformBesselPotentialSpace_congr_exponent
-    (ha.hasBesselPotentialSpaceExtension (mod_cast hp) ENNReal.coe_ne_top)
-    (ha.hasBesselPotentialSpaceExtension (mod_cast hq) ENNReal.coe_ne_top)
-    (hb.hasBesselPotentialSpaceExtension (mod_cast hp) ENNReal.coe_ne_top)
-    (hb.hasBesselPotentialSpaceExtension (mod_cast hq) ENNReal.coe_ne_top) hab hp hq huv
-
-open scoped ContDiff in
-/-- **Multiplication operators.** Let `1 < p < ∞` and let `V` and `W` be finite-dimensional. For a
-smooth `f : ℝⁿ → (V →L[ℂ] W)` all of whose derivatives are bounded, so that the symbol `f(x)` of
-order `0` is uniform (`TauCeti.Symbol.isUniform_ofSpatial_iff`), this symbol quantizes to
-multiplication by `f` on `H^{s,p}`. -/
-theorem toDistr_quantizeUniformBesselPotentialSpace_ofSpatial [FiniteDimensional ℂ V]
-    [FiniteDimensional ℂ W] {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
-    (ha : (ofSpatial f hf).IsUniform) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
-    (u : H^{s, p}(CoordinateSpace n, V)) :
-    ((ofSpatial f hf).quantizeUniformBesselPotentialSpace ha s p u).toDistr =
-      TemperedDistribution.mulLeftCLM f u.toDistr :=
-  (ha.hasBesselPotentialSpaceExtension hp
-    hp_top).toDistr_quantizeUniformBesselPotentialSpace_ofSpatial s hp_top u
 
 end Symbol
 

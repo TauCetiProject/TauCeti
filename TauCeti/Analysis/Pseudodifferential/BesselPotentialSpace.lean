@@ -102,12 +102,8 @@ All in the namespace `TauCeti.Symbol`:
   fixed compact set, the operator norm is at most a continuous seminorm of the symbol.
 * `continuous_quantizeUniformBesselPotentialSpace`: continuity of `Op(a)` in the operator norm
   along a continuous family of such symbols.
-* `HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_add`,
-  `HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_smul` and their consequences: the
-  operator is linear in the symbol.
-* `HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_inclusion`,
-  `HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_comp_inclusion`: compatibility with
-  raising the order of the symbol and with the inclusions `H^{s,p} ⊆ H^{r,p}`.
+* `HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_sub`: the operator takes
+  differences of symbols to differences of operators.
 * `HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_congr`: the operators for
   different orders `s` and for symbols with the same coefficient agree as maps of tempered
   distributions;
@@ -920,33 +916,6 @@ theorem HasCompactSpatialSupport.hasBesselPotentialSpaceExtension (ha : a.HasCom
     (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) : a.HasBesselPotentialSpaceExtension ha.isUniform p :=
   fun s ↦ ha.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s hp hp_top
 
-/-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is additive in the symbol. -/
-theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_add {b : Symbol n V W m}
-    (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p)
-    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (a + b).quantizeUniformBesselPotentialSpace (ha.add hb).isUniform s p =
-      a.quantizeUniformBesselPotentialSpace ha.isUniform s p +
-        b.quantizeUniformBesselPotentialSpace hb.isUniform s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_add
-    (hb.hasBesselPotentialSpaceExtension hp hp_top) s hp_top
-
-/-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is homogeneous in the symbol. -/
-theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_smul
-    (ha : a.HasCompactSpatialSupport) (c : ℂ) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (c • a).quantizeUniformBesselPotentialSpace (ha.smul c).isUniform s p =
-      c • a.quantizeUniformBesselPotentialSpace ha.isUniform s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_smul c s
-    hp_top
-
-/-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes the negated symbol to the negated
-operator. -/
-theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_neg
-    (ha : a.HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (-a).quantizeUniformBesselPotentialSpace ha.neg.isUniform s p =
-      -a.quantizeUniformBesselPotentialSpace ha.isUniform s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_neg s
-    hp_top
-
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes differences of symbols to differences of
 operators. -/
 theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_sub {b : Symbol n V W m}
@@ -1030,29 +999,6 @@ theorem continuous_quantizeUniformBesselPotentialSpace {X : Type*} [TopologicalS
     exact hbound _ ((hK t).sub (hK t₀)) fun x hx ξ ↦ by simp [haK t x hx ξ, haK t₀ x hx ξ]
   · simpa [Function.comp_def] using
       (hq.comp (hcont.sub (continuous_const (y := a t₀)))).tendsto t₀
-
-/-- **Changing the order of the symbol.** Let `1 < p < ∞`. Viewing a symbol of order `m` as a
-symbol of order `m' ≥ m` gives the operator `H^{s,p} → H^{s - m,p}` followed by the inclusion
-`H^{s - m,p} ⊆ H^{s - m',p}`. -/
-theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_inclusion
-    (ha : a.HasCompactSpatialSupport) (h : m ≤ m') (s : ℝ) (hp : 1 < p)
-    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    (Symbol.inclusion h a).quantizeUniformBesselPotentialSpace (ha.inclusion h).isUniform s p =
-      BesselPotentialSpace.inclusion (by linarith) ∘L
-        a.quantizeUniformBesselPotentialSpace ha.isUniform s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_inclusion h s
-    hp_top
-
-/-- **Changing the Sobolev order.** Let `1 < p < ∞`. The operators
-`Op(a) : H^{s,p} → H^{s - m,p}` for the different orders `s` are compatible with the inclusions
-`H^{s,p} ⊆ H^{r,p}`. -/
-theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_comp_inclusion
-    (ha : a.HasCompactSpatialSupport) {r s : ℝ} (h : r ≤ s) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
-    a.quantizeUniformBesselPotentialSpace ha.isUniform r p ∘L BesselPotentialSpace.inclusion h =
-      BesselPotentialSpace.inclusion (by linarith) ∘L
-        a.quantizeUniformBesselPotentialSpace ha.isUniform s p :=
-  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_comp_inclusion
-    h hp_top
 
 /-- **Compatibility of the extensions.** The operator `Op(a) : H^{s,p} → H^{s - m,p}` only depends
 on the coefficient of `a` and on the tempered distribution of its argument: symbols `a` and `b` of
