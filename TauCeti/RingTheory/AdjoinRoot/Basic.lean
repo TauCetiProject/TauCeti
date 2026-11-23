@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.AdjoinRoot
 
-import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
@@ -45,9 +44,6 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
 * `AdjoinRoot.isUnit_root_X_pow_sub_C`: that root is a unit when `a` is a unit and `n ≠ 0`.
 * `AdjoinRoot.isUnit_mk_iff_isCoprime`: the class of `g` is a unit of `AdjoinRoot f` exactly when
   `f` and `g` are coprime.
-* `AdjoinRoot.isUnit_mk_mul_X_sub_C_iff`: modulo a relator with a linear factor `X - C x`, the
-  class of `p` is a unit exactly when `p.eval x` is a unit and the class of `p` modulo the
-  cofactor is a unit.
 * `AdjoinRoot.isUnit_mk_mul_sub_iff_isCoprime`: modulo a product `p * q`, the class of `p - q` is
   a unit exactly when `p` and `q` are coprime.
 * `AdjoinRoot.mk_modByMonic`: for any relator, a polynomial and its remainder have the same
@@ -207,13 +203,6 @@ theorem isUnit_root_X_pow_sub_C {n : ℕ} {a : R} (ha : IsUnit a) (hn : n ≠ 0)
 theorem isUnit_mk_iff_isCoprime {f g : R[X]} : IsUnit (mk f g) ↔ IsCoprime f g :=
   -- `mk f` is by definition the quotient map `R[X] →+* R[X] ⧸ span {f}`, as in `mk_surjective`.
   Ideal.Quotient.isUnit_mk_iff.trans <| (Ideal.sup_eq_top_iff_isCoprime g f).trans isCoprime_comm
-
-/-- Modulo a relator `q * (X - C x)` with a linear factor, the class of `p` is a unit exactly when
-`p.eval x` is a unit and the class of `p` modulo the cofactor `q` is a unit. This holds for every
-cofactor `q`, including one with `q.eval x = 0`. -/
-theorem isUnit_mk_mul_X_sub_C_iff {q p : R[X]} {x : R} :
-    IsUnit (mk (q * (X - C x)) p) ↔ IsUnit (p.eval x) ∧ IsUnit (mk q p) := by
-  simp [IsCoprime.mul_left_iff, and_comm]
 
 /-- Modulo a product `p * q`, the class of the difference `p - q` is a unit exactly when `p` and
 `q` are coprime. For a relator `p * (X - C x)` with a linear factor, `p - (X - C x)` is the
