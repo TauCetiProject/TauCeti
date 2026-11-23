@@ -14,7 +14,7 @@ import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.MellinTransform.Convolution
 import TauCeti.Analysis.SpecialFunctions.Exp.Decay
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
-import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!
