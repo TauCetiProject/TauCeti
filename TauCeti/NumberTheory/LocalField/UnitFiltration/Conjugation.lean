@@ -49,13 +49,12 @@ theorem ramificationGroupGradedConj_zero
     (τ : RamificationGroupGraded G 𝒪[L] 0) :
     ramificationGroupGradedConj G 𝒪[L] (σ : G) 0 τ = τ := by
   apply tameCharacterGraded_injective
-  induction τ using QuotientGroup.induction_on with
-  | _ τ =>
-    simp only [ramificationGroupGradedConj_mk, IsDiscreteValuationRing.tameCharacterGraded_mk]
-    rw [MulAut.conjNormal_val, MulAut.conj_apply, map_mul, map_mul, map_inv,
-      mul_comm (IsDiscreteValuationRing.tameCharacter G 𝒪[L] σ)
-        (IsDiscreteValuationRing.tameCharacter G 𝒪[L] τ),
-      mul_assoc, mul_inv_cancel, mul_one]
+  apply Units.ext
+  rw [IsDiscreteValuationRing.tameCharacterGraded_ramificationGroupGradedConj]
+  have hmem : (σ : G) ∈ MonoidHom.ker (MulSemiringAction.toRingAut G 𝓀[L]) := by
+    rw [← ramificationGroup_zero_eq_ker_toRingAut]
+    exact σ.property
+  exact TauCeti.MulSemiringAction.mem_ker_toRingAut_iff.mp hmem _
 
 /-- **The tame character twisted by a power map.** If `g ∈ G` acts on the residue field as the
 `q`-th power map, then `theta_0(g σ g⁻¹) = theta_0(σ) ^ q` for every `σ ∈ G_0`. This applies with

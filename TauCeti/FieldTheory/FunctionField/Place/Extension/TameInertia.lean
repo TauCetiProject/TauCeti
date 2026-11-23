@@ -90,18 +90,9 @@ private def ramificationGroupZeroQuotientEquiv :
     (ramificationGroup F P 0 ⧸
       (ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)) ≃*
       IsLocalRing.RamificationGroupGraded (P.integers.decompositionSubgroup F) P.integers 0 :=
-  QuotientGroup.congr _ _ (ramificationGroupZeroEquiv F P) <| by
-    ext ⟨g, hg⟩
-    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
-    constructor
-    · rintro ⟨x, hx, hEq⟩
-      have hval : (x : P.integers.decompositionSubgroup F) = g := by
-        simpa [ramificationGroupZeroEquiv] using congrArg Subtype.val hEq
-      rwa [← hval, zero_add, ← Nat.cast_one, ← ramificationGroup_def]
-    · intro hg1
-      refine ⟨(ramificationGroupZeroEquiv F P).symm ⟨g, hg⟩, ?_,
-        (ramificationGroupZeroEquiv F P).apply_symm_apply _⟩
-      simpa [ramificationGroupZeroEquiv, ramificationGroup_def, Nat.cast_one] using hg1
+  QuotientGroup.equivQuotientSubgroupOfOfEq
+    (by rw [ramificationGroup_def, Nat.cast_one, zero_add])
+    (by rw [ramificationGroup_def, Nat.cast_zero])
 
 /-- **The tame character** (Stichtenoth, Proposition 3.8.5): the choice-free homomorphism from the
 inertia group `G_0(P)` to the units of the residue field sending `σ` to the value at `P` of the
@@ -129,8 +120,7 @@ theorem coe_tameCharacter_of_eq (ht : P.ord t = 1) (g : ramificationGroup F P 0)
     (ramificationGroupZeroEquiv F P g) (Subtype.ext ?_)
   rw [MulMemClass.coe_mul, ValuationSubring.coe_decompositionSubgroup_smul,
     ramificationGroupZeroEquiv, MulEquiv.subgroupCongr_apply, hy]
-  change t * (((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') t * t⁻¹) =
-    ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') t
+  dsimp only [π]
   rw [mul_comm, mul_assoc, inv_mul_cancel₀ ht0, mul_one]
 
 omit [Algebra k F] [IsScalarTower k F F'] in
@@ -180,7 +170,8 @@ theorem tameCharacterGraded_mk (g : ramificationGroup F P 0) :
     tameCharacterGraded F P (QuotientGroup.mk g) = tameCharacter F P g := by
   rw [tameCharacterGraded, tameCharacter, MonoidHom.comp_apply, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom, ramificationGroupZeroQuotientEquiv,
-    QuotientGroup.congr_mk]
+    QuotientGroup.equivQuotientSubgroupOfOfEq, MonoidHom.toMulEquiv_apply,
+    QuotientGroup.quotientMapSubgroupOfOfLe_mk]
   exact IsDiscreteValuationRing.tameCharacterGraded_mk (ramificationGroupZeroEquiv F P g)
 
 end Character

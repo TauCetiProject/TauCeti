@@ -20,6 +20,8 @@ public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.Pointwise
 import Mathlib.Algebra.Group.Pi.Torsion
+import Mathlib.Algebra.Module.Torsion.Basic
+import Mathlib.Algebra.Module.Torsion.Free
 import Mathlib.Algebra.Polynomial.Identities
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
 import TauCeti.GroupTheory.PGroup
@@ -287,6 +289,23 @@ instance instNormalRamificationGroup (G : Type*) [Group G] (S : Type*) [CommRing
     [IsLocalRing S] [MulSemiringAction G S] (i : ℤ) : (ramificationGroup G S i).Normal := by
   simp_rw [ramificationGroup_def, Subgroup.normal_iff_map_conj_eq, ← Ideal.inertia_smul]
   exact fun σ ↦ congrArg (Ideal.inertia G) (smul_maximalIdeal_pow σ _)
+
+/-- Canonical isomorphism between graded ramification pieces at equal indices. -/
+def ramificationGroupGradedCongr (G S : Type*) [Group G] [CommRing S] [IsLocalRing S]
+    [MulSemiringAction G S] {i j : ℤ} (h : i = j) :
+    RamificationGroupGraded G S i ≃* RamificationGroupGraded G S j := by
+  subst h
+  exact MulEquiv.refl _
+
+/-- Evaluating `ramificationGroupGradedCongr` on a quotient class preserves its representative. -/
+@[simp]
+theorem ramificationGroupGradedCongr_mk (G S : Type*) [Group G] [CommRing S]
+    [IsLocalRing S] [MulSemiringAction G S] {i j : ℤ} (h : i = j)
+    (σ : ramificationGroup G S i) :
+    ramificationGroupGradedCongr G S h (QuotientGroup.mk σ) =
+      QuotientGroup.mk ⟨(σ : G), h ▸ σ.property⟩ := by
+  subst h
+  rfl
 
 end Normal
 
@@ -870,12 +889,9 @@ theorem ramificationGroupGraded_natCast_succ_pow_char_eq_one {G : Type*} [Group 
   apply ramificationGroupGradedToMaximalIdealGraded_injective G S n
   rw [map_pow, map_one, ← toAdd_eq_zero, toAdd_pow]
   funext s
-  rw [Pi.smul_apply, Pi.zero_apply]
-  induction Multiplicative.toAdd (ramificationGroupGradedToMaximalIdealGraded G S n x) s
-    using Submodule.Quotient.induction_on with
-  | _ v =>
-    rw [← Nat.cast_smul_eq_nsmul S, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
-    exact Submodule.smul_mem_smul hp Submodule.mem_top
+  rw [Pi.smul_apply, Pi.zero_apply, ← Nat.cast_smul_eq_nsmul S]
+  exact Module.isTorsionBySet_quotient_ideal_smul
+    ↥(maximalIdeal S ^ (n + 2)) (maximalIdeal S) (a := ⟨(p : S), hp⟩)
 
 /-- At positive depth `n + 1`, the graded piece `G_{n+1} / G_{n+2}` is a `p`-group for the residue
 characteristic `p`, over an arbitrary commutative local ring `S`. -/
@@ -887,16 +903,11 @@ theorem isPGroup_ramificationGroupGraded_natCast_succ (p : ℕ) [CharP (ResidueF
 is torsion-free, over an arbitrary commutative local ring `S`. -/
 theorem isMulTorsionFree_ramificationGroupGraded_natCast_succ [CharZero (ResidueField S)] (n : ℕ) :
     IsMulTorsionFree (RamificationGroupGraded G S ((n : ℤ) + 1)) := by
-  have : HasUniqueDiv (↥(maximalIdeal S ^ (n + 2)) ⧸
-      (maximalIdeal S • ⊤ : Submodule S ↥(maximalIdeal S ^ (n + 2)))) :=
-    ⟨fun k hk x y hxy ↦ by
-      have hu : IsUnit (k : S) := by
-        rw [← notMem_maximalIdeal, ← residue_eq_zero_iff, map_natCast]
-        exact Nat.cast_ne_zero.mpr hk
-      obtain ⟨u, hu'⟩ := hu
-      have hsmul : u • x = u • y := by
-        simpa [Units.smul_def, hu', Nat.cast_smul_eq_nsmul] using hxy
-      simpa only [inv_smul_smul] using congrArg (u⁻¹ • ·) hsmul⟩
+  let Q := ↥(maximalIdeal S ^ (n + 2)) ⧸
+    (maximalIdeal S • ⊤ : Submodule S ↥(maximalIdeal S ^ (n + 2)))
+  let _ : Field (S ⧸ maximalIdeal S) := Ideal.Quotient.field (maximalIdeal S)
+  have : CharZero (S ⧸ maximalIdeal S) := ⟨fun a b h ↦ Nat.cast_injective (R := ResidueField S) h⟩
+  let _ : HasUniqueDiv Q := HasUniqueDiv.of_isTorsionFree (S ⧸ maximalIdeal S) Q
   exact (ramificationGroupGradedToMaximalIdealGraded_injective G S n).isMulTorsionFree _
 
 /-- In residue characteristic zero, every finite positive-depth graded piece `G_{n+1} / G_{n+2}` is

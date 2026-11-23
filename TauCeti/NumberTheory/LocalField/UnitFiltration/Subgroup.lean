@@ -60,8 +60,8 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_comp_subgroupHom
   induction x using QuotientGroup.induction_on with
   | _ σ =>
     rw [MonoidHom.comp_apply, ramificationGroupGradedSubgroupHom_mk,
-      ramificationGroupGradedToUnitFiltrationGraded_mk hϖ,
-      ramificationGroupGradedToUnitFiltrationGraded_mk hϖ]
+      ramificationGroupGradedToUnitFiltrationGraded_mk_eq_uniformizerRatio hϖ,
+      ramificationGroupGradedToUnitFiltrationGraded_mk_eq_uniformizerRatio hϖ]
     congr 1
     apply Subtype.ext
     apply Units.ext

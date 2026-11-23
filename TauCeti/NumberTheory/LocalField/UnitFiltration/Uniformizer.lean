@@ -53,7 +53,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 is sent to the residue of `(u - 1) / π^(n+1)`. -/
 noncomputable def unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (n : ℕ)
     (π : 𝒪[K]) (hπ : Irreducible π) : Additive (UnitFiltrationGraded K (n + 1)) ≃+ 𝓀[K] :=
-  (principalUnitGroupGradedEquivUnitFiltrationGraded K (n + 1)).toAdditive.symm.trans
+  (principalUnitGroupGradedEquivUnitFiltrationGraded K (n + 1)).symm.toAdditive.trans
     (principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer n π hπ)
 
 /-- The uniformizer coordinate of the class of `u` is characterized by multiplying it by
@@ -65,17 +65,11 @@ theorem unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk (n : ℕ
         (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π hπ
           (Additive.ofMul (QuotientGroup.mk x))) =
       Submodule.Quotient.mk (unitFiltrationDifference n x) := by
-  rw [unitFiltrationGradedSuccEquivResidueFieldOfUniformizer, AddEquiv.trans_apply]
-  change residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)
-      (principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer n π hπ
-        (Additive.ofMul ((principalUnitGroupGradedEquivUnitFiltrationGraded K (n + 1)).symm
-          (QuotientGroup.mk x)))) = _
-  rw [principalUnitGroupGradedEquivUnitFiltrationGraded_symm_mk,
-    principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk]
-  refine congrArg Submodule.Quotient.mk (Subtype.ext (Subtype.ext ?_))
-  change ((((principalUnitGroupEquivUnitFiltration K (n + 1)).symm x : 𝒪[K]ˣ) : 𝒪[K]) : K) - 1 =
-    (((unitFiltrationDifference n x : 𝒪[K]) : K))
-  rw [coe_coe_principalUnitGroupEquivUnitFiltration_symm, coe_coe_unitFiltrationDifference]
+  rw [unitFiltrationGradedSuccEquivResidueFieldOfUniformizer, AddEquiv.trans_apply,
+    MulEquiv.toAdditive_apply_apply, toMul_ofMul,
+    principalUnitGroupGradedEquivUnitFiltrationGraded_symm_mk,
+    principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk,
+    coe_principalUnitGroupEquivUnitFiltration_symm_sub_one]
 
 /-- If `u - 1 = y * π^(n+1)`, then the uniformizer coordinate of the class of `u` is the
 residue of `y`. This is the representative form of the positive-depth graded equivalence used in

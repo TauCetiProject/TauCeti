@@ -240,8 +240,7 @@ private theorem ramificationGroupToPrincipalUnitGroupGradedOf_eq {i : ℕ} {ϖ �
   set a : Bˣ := uniformizerChangeUnit ϖ ϖ' hϖ hϖ'
   have ha : ϖ * (a : B) = ϖ' := mul_uniformizerChangeUnit ϖ ϖ' hϖ hϖ'
   refine MonoidHom.ext fun σ ↦ ?_
-  change QuotientGroup.mk (uniformizerRatio i hϖ σ) =
-    QuotientGroup.mk (uniformizerRatio i hϖ' σ)
+  simp only [ramificationGroupToPrincipalUnitGroupGradedOf, MonoidHom.mk'_apply]
   rw [QuotientGroup.eq, Subgroup.mem_subgroupOf, Subgroup.coe_mul, Subgroup.coe_inv]
   have hrel : a * (uniformizerRatio i hϖ' σ : Bˣ) =
       (uniformizerRatio i hϖ σ : Bˣ) *
@@ -315,13 +314,31 @@ def ramificationGroupGradedToPrincipalUnitGroupGraded :
   QuotientGroup.lift _ (ramificationGroupToPrincipalUnitGroupGraded G B i)
     (ramificationGroup_succ_subgroupOf_le_ker G B i)
 
-/-- Evaluating `ramificationGroupGradedToPrincipalUnitGroupGraded` on the class of `σ` using any
-uniformizer `ϖ` yields the class of `uniformizerRatio i hϖ σ`. -/
-theorem ramificationGroupGradedToPrincipalUnitGroupGraded_mk (hϖ : Irreducible ϖ)
+variable (G B i) in
+/-- `ramificationGroupGradedToPrincipalUnitGroupGraded` is the quotient lift of
+`ramificationGroupToPrincipalUnitGroupGraded`. -/
+theorem ramificationGroupGradedToPrincipalUnitGroupGraded_def :
+    ramificationGroupGradedToPrincipalUnitGroupGraded G B i =
+      QuotientGroup.lift _ (ramificationGroupToPrincipalUnitGroupGraded G B i)
+        (ramificationGroup_succ_subgroupOf_le_ker G B i) :=
+  (rfl)
+
+/-- Evaluating `ramificationGroupGradedToPrincipalUnitGroupGraded` on the class of `σ` agrees with
+`ramificationGroupToPrincipalUnitGroupGraded`. -/
+@[simp]
+theorem ramificationGroupGradedToPrincipalUnitGroupGraded_mk
     (σ : ramificationGroup G B (i : ℤ)) :
     ramificationGroupGradedToPrincipalUnitGroupGraded G B i (QuotientGroup.mk σ) =
+      ramificationGroupToPrincipalUnitGroupGraded G B i σ :=
+  QuotientGroup.lift_mk _ _ _
+
+/-- Evaluating `ramificationGroupGradedToPrincipalUnitGroupGraded` on the class of `σ` using any
+uniformizer `ϖ` yields the class of `uniformizerRatio i hϖ σ`. -/
+theorem ramificationGroupGradedToPrincipalUnitGroupGraded_mk_eq_uniformizerRatio
+    (hϖ : Irreducible ϖ) (σ : ramificationGroup G B (i : ℤ)) :
+    ramificationGroupGradedToPrincipalUnitGroupGraded G B i (QuotientGroup.mk σ) =
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
-  rw [ramificationGroupGradedToPrincipalUnitGroupGraded, QuotientGroup.lift_mk,
+  rw [ramificationGroupGradedToPrincipalUnitGroupGraded_mk,
     ramificationGroupToPrincipalUnitGroupGraded_apply hϖ]
 
 /-! ### Depth zero: the tame character -/
@@ -369,6 +386,15 @@ def tameCharacterGraded :
   (principalUnitGroupGradedZeroEquivResidueFieldUnits B).toMonoidHom.comp
     (ramificationGroupGradedToPrincipalUnitGroupGraded G B 0)
 
+variable (G B) in
+/-- `tameCharacterGraded` factors `ramificationGroupGradedToPrincipalUnitGroupGraded` through
+`TauCeti.IsLocalRing.principalUnitGroupGradedZeroEquivResidueFieldUnits`. -/
+theorem tameCharacterGraded_def :
+    tameCharacterGraded G B =
+      (principalUnitGroupGradedZeroEquivResidueFieldUnits B).toMonoidHom.comp
+        (ramificationGroupGradedToPrincipalUnitGroupGraded G B 0) :=
+  (rfl)
+
 /-- Evaluating `tameCharacterGraded` on the class of `σ` agrees with `tameCharacter`. -/
 @[simp]
 theorem tameCharacterGraded_mk (σ : ramificationGroup G B (0 : ℤ)) :
@@ -407,20 +433,6 @@ theorem tameCharacterGraded_ramificationGroupGradedConj (g : G)
 
 /-! ### Positive depth: additive residue-field coordinates -/
 
-private def ramificationGroupGradedCongr (G B : Type*) [Group G] [CommRing B] [IsLocalRing B]
-    [MulSemiringAction G B] {i j : ℤ} (h : i = j) :
-    RamificationGroupGraded G B i ≃* RamificationGroupGraded G B j := by
-  subst h
-  exact MulEquiv.refl _
-
-private theorem ramificationGroupGradedCongr_mk (G B : Type*) [Group G] [CommRing B]
-    [IsLocalRing B] [MulSemiringAction G B] {i j : ℤ} (h : i = j)
-    (σ : ramificationGroup G B i) :
-    ramificationGroupGradedCongr G B h (QuotientGroup.mk σ) =
-      QuotientGroup.mk ⟨(σ : G), h ▸ σ.property⟩ := by
-  subst h
-  rfl
-
 variable (G B) in
 /-- The positive-depth additive homomorphism `Additive (G_{n+1} / G_{n+2}) →+ ResidueField B` in the
 coordinate determined by a uniformizer `ϖ`, sending `σ` to the residue of
@@ -430,6 +442,17 @@ def ramificationGroupGradedToResidueField (n : ℕ) (ϖ : B) (hϖ : Irreducible 
   (principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer n ϖ hϖ).toAddMonoidHom.comp
     ((ramificationGroupGradedToPrincipalUnitGroupGraded G B (n + 1)).comp
       (ramificationGroupGradedCongr G B (Nat.cast_succ n).symm).toMonoidHom).toAdditive
+
+variable (G B) in
+/-- `ramificationGroupGradedToResidueField` factors
+`ramificationGroupGradedToPrincipalUnitGroupGraded` through
+`TauCeti.principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer`. -/
+theorem ramificationGroupGradedToResidueField_def (n : ℕ) (ϖ : B) (hϖ : Irreducible ϖ) :
+    ramificationGroupGradedToResidueField G B n ϖ hϖ =
+      (principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer n ϖ hϖ).toAddMonoidHom.comp
+        ((ramificationGroupGradedToPrincipalUnitGroupGraded G B (n + 1)).comp
+          (ramificationGroupGradedCongr G B (Nat.cast_succ n).symm).toMonoidHom).toAdditive :=
+  (rfl)
 
 /-- Evaluating `ramificationGroupGradedToResidueField` on the class of `τ` gives the uniformizer
 coordinate of `uniformizerRatio (n + 1) hϖ τ'`. -/
@@ -445,7 +468,7 @@ theorem ramificationGroupGradedToResidueField_ofMul_mk (n : ℕ) (ϖ : B) (hϖ :
     MulEquiv.coe_toMonoidHom, ramificationGroupGradedCongr_mk, toMul_ofMul]
   exact congrArg (principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer n ϖ hϖ)
     (congrArg Additive.ofMul
-      (ramificationGroupGradedToPrincipalUnitGroupGraded_mk (i := n + 1) hϖ
+      (ramificationGroupGradedToPrincipalUnitGroupGraded_mk_eq_uniformizerRatio (i := n + 1) hϖ
         ⟨(τ : G), (Nat.cast_succ (R := ℤ) n).symm ▸ τ.property⟩))
 
 /-- Compute the positive-depth residue coordinate from `(τ : G) • ϖ - ϖ = y * ϖ ^ (n + 2)`. -/
