@@ -22,7 +22,6 @@ variable {R A B : Type*} [Add A] [Mul A] [Star A] [SMul R A]
   [Add B] [Mul B] [Star B] [SMul R B]
 
 /-- Forgetting the algebraic structure of a star algebra equivalence leaves its action unchanged. -/
-@[simp]
 theorem toEquiv_apply (φ : A ≃⋆ₐ[R] B) (a : A) : φ.toEquiv a = φ a := (rfl)
 
 /-- Restrict a star algebra equivalence to the star projections of its domain and codomain. -/
