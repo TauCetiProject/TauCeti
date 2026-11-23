@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.Support
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import TauCeti.Analysis.Distribution.Convolution
@@ -13,9 +12,6 @@ public import TauCeti.Analysis.Distribution.LineDeriv
 public import TauCeti.Analysis.Distribution.SmulLeft
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.Support
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
@@ -25,10 +21,10 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 
 Let `E` be a finite-dimensional real inner product space, `Ω ⊆ E` an open set, `F` a real normed
 space (or a topological real vector space for the distributional Poisson equation), and
-`T : 𝓓'(Ω, F)` a distribution. For a symmetric locally integrable kernel `G : E → ℝ` that is
-harmonic on `{0}ᶜ` and a smooth cutoff `χ : 𝓓(Ω, ℝ)`, `Distribution.cutoffConvolutionCLM χ hG_loc T`
-is the global distributional potential `G ⋆ (χ T)` on `E`. Whenever `-Δ (G ⋆ φ) = φ` for all global
-test functions `φ`, this distribution solves Poisson's equation `-Δ (G ⋆ (χ T)) = χ T` on `E`
+`T : 𝓓'(Ω, F)` a distribution. For a locally integrable kernel `G : E → ℝ` that is harmonic on
+`{0}ᶜ` and a smooth cutoff `χ : 𝓓(Ω, ℝ)`, `Distribution.cutoffConvolutionCLM χ hG_loc T` is the
+global distributional potential `G ⋆ (χ T)` on `E`. Whenever `-Δ (G ⋆ φ) = φ` for all global test
+functions `φ`, this distribution solves Poisson's equation `-Δ (G ⋆ (χ T)) = χ T` on `E`
 (`Distribution.laplacianCLM_cutoffConvolutionCLM`).
 
 Away from `tsupport χ`, the reflected translated kernel `y ↦ G (x - y)` is smooth on a neighbourhood
@@ -206,11 +202,12 @@ theorem kernelPotentialPairing_mapCLM {F' : Type*} [NormedAddCommGroup F'] [Norm
   · simp [kernelPotentialPairing, hx]
   · simp [kernelPotentialPairing, hx]
 
-/-- Given a compact set `K` disjoint from `tsupport χ`, cut off `G` away from `0` to obtain a test
-function `ρ` on `E` with `ρ (y - z) = G (z - y)` for all `y ∈ tsupport χ` and `z` near `K`. -/
+/-- Given a compact set `K` disjoint from `tsupport χ`, cut off the reflected kernel
+`z ↦ G (-z)` away from `0` to obtain a test function `ρ` on `E` with `ρ (y - z) = G (z - y)` for
+all `y ∈ tsupport χ` and `z` near `K`. -/
 private theorem exists_kernelTestFunction_of_disjoint (χ : 𝓓(Ω, ℝ)) {G : E → ℝ}
-    (hG : HarmonicOnNhd G {0}ᶜ) (hG_symm : ∀ x y, G (x - y) = G (y - x))
-    {K : Set E} (hK : IsCompact K) (hdisj : Disjoint K (tsupport (χ : E → ℝ))) :
+    (hG : HarmonicOnNhd G {0}ᶜ) {K : Set E} (hK : IsCompact K)
+    (hdisj : Disjoint K (tsupport (χ : E → ℝ))) :
     ∃ ρ : 𝓓((⊤ : Opens E), ℝ),
       ∀ y ∈ tsupport (χ : E → ℝ), ∀ x ∈ K,
         (fun z ↦ ρ (y - z)) =ᶠ[𝓝 x] fun z ↦ G (z - y) := by
@@ -224,25 +221,26 @@ private theorem exists_kernelTestFunction_of_disjoint (χ : 𝓓(Ω, ℝ)) {G : 
   obtain ⟨η, -, hη1, hη0⟩ := TestFunction.exists_cutoff_tsupport_subset
     (Ω := (⊤ : Opens E)) (n := ⊤) hS isOpen_compl_singleton hS0 (subset_univ _)
   let ρ : 𝓓((⊤ : Opens E), ℝ) := η.smulOfContDiffOn isOpen_compl_singleton hη0
-    (hG.analyticOnNhd.contDiffOn isOpen_compl_singleton.uniqueDiffOn)
+    (((hG.contDiffOn_sub_right 0).congr fun _ _ ↦ by simp) :
+      ContDiffOn ℝ _ (fun z ↦ G (-z)) {0}ᶜ)
   obtain ⟨W, hWo, hSW, hηW⟩ := mem_nhdsSet_iff_exists.1 hη1
   refine ⟨ρ, fun y hy x hx ↦ ?_⟩
   have hyx : y - x ∈ W := hSW ⟨y, hy, x, hx, rfl⟩
   filter_upwards [(hWo.preimage (continuous_const.sub continuous_id)).mem_nhds hyx] with z hz
   have hηz : η (y - z) = 1 := hηW hz
-  simp [ρ, hηz, hG_symm]
+  simp [ρ, hηz]
 
 /-- On any compact set `K` disjoint from `tsupport χ`, `kernelPotentialPairing` agrees with the
 global regularization of `cutoffCLM ... T`. -/
 private theorem exists_translatePairing_eqOn_of_disjoint (T : 𝓓'(Ω, F)) (χ : 𝓓(Ω, ℝ)) {G : E → ℝ}
-    (hG : HarmonicOnNhd G {0}ᶜ) (hG_symm : ∀ x y, G (x - y) = G (y - x))
-    {K : Set E} (hK : IsCompact K) (hdisj : Disjoint K (tsupport (χ : E → ℝ))) :
+    (hG : HarmonicOnNhd G {0}ᶜ) {K : Set E} (hK : IsCompact K)
+    (hdisj : Disjoint K (tsupport (χ : E → ℝ))) :
     ∃ ρ : 𝓓((⊤ : Opens E), ℝ),
       (∀ y ∈ tsupport (χ : E → ℝ), ∀ x ∈ K,
         (fun z ↦ ρ (y - z)) =ᶠ[𝓝 x] fun z ↦ G (z - y)) ∧
       EqOn ((cutoffCLM (Ω' := ⊤) χ.contDiff (inter_subset_left.trans χ.tsupport_subset) T
         ).translatePairing ρ) (T.kernelPotentialPairing χ hG) K := by
-  obtain ⟨ρ, hρ⟩ := exists_kernelTestFunction_of_disjoint χ hG hG_symm hK hdisj
+  obtain ⟨ρ, hρ⟩ := exists_kernelTestFunction_of_disjoint χ hG hK hdisj
   refine ⟨ρ, hρ, fun x hx ↦ ?_⟩
   have hxχ : x ∉ tsupport (χ : E → ℝ) := Disjoint.notMem_of_mem_left hdisj hx
   let ψ : 𝓓((⊤ : Opens E), ℝ) := ρ.translateOfMapsTo (mapsTo_univ (· + x) _)
@@ -258,10 +256,10 @@ private theorem exists_translatePairing_eqOn_of_disjoint (T : 𝓓'(Ω, F)) (χ 
       · rw [image_eq_zero_of_notMem_tsupport hy, zero_mul, zero_mul]]
 
 /-- Around any point `x₀ ∉ tsupport χ`, `kernelPotentialPairing` locally agrees with a
-regularization of `cutoffCLM ... T` by a smooth cutoff of `G`. -/
+regularization of `cutoffCLM ... T` by a smooth cutoff of the reflected kernel `z ↦ G (-z)`. -/
 private theorem exists_translatePairing_eventuallyEq_kernelPotentialPairing (T : 𝓓'(Ω, F))
-    (χ : 𝓓(Ω, ℝ)) {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ)
-    (hG_symm : ∀ x y, G (x - y) = G (y - x)) {x₀ : E} (hx₀ : x₀ ∉ tsupport (χ : E → ℝ)) :
+    (χ : 𝓓(Ω, ℝ)) {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ) {x₀ : E}
+    (hx₀ : x₀ ∉ tsupport (χ : E → ℝ)) :
     ∃ ρ : 𝓓((⊤ : Opens E), ℝ),
       (∀ y ∈ tsupport (χ : E → ℝ), (fun z ↦ ρ (y - z)) =ᶠ[𝓝 x₀] fun z ↦ G (z - y)) ∧
       T.kernelPotentialPairing χ hG =ᶠ[𝓝 x₀]
@@ -271,7 +269,7 @@ private theorem exists_translatePairing_eventuallyEq_kernelPotentialPairing (T :
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 hopen x₀ hx₀
   have hcb : closedBall x₀ (r / 2) ⊆ (tsupport (χ : E → ℝ))ᶜ :=
     (closedBall_subset_ball (half_lt_self hr)).trans hball
-  obtain ⟨ρ, hρ, hEq⟩ := exists_translatePairing_eqOn_of_disjoint T χ hG hG_symm
+  obtain ⟨ρ, hρ, hEq⟩ := exists_translatePairing_eqOn_of_disjoint T χ hG
     (isCompact_closedBall x₀ (r / 2)) (Set.disjoint_left.2 fun _ h₁ h₂ ↦ hcb h₁ h₂)
   refine ⟨ρ, fun y hy ↦ hρ y hy x₀ (mem_closedBall_self (half_pos hr).le), ?_⟩
   filter_upwards [ball_mem_nhds x₀ (half_pos hr)] with x hx
@@ -280,11 +278,11 @@ private theorem exists_translatePairing_eventuallyEq_kernelPotentialPairing (T :
 /-- **Smoothness of the off-support kernel potential.** `T.kernelPotentialPairing χ hG` is smooth
 on `(tsupport χ)ᶜ`. -/
 theorem contDiffOn_kernelPotentialPairing (T : 𝓓'(Ω, F)) (χ : 𝓓(Ω, ℝ)) {G : E → ℝ}
-    (hG : HarmonicOnNhd G {0}ᶜ) (hG_symm : ∀ x y, G (x - y) = G (y - x)) :
+    (hG : HarmonicOnNhd G {0}ᶜ) :
     ContDiffOn ℝ ∞ (T.kernelPotentialPairing χ hG) (tsupport (χ : E → ℝ))ᶜ := by
   intro x₀ hx₀
   obtain ⟨ρ, -, hev⟩ :=
-    exists_translatePairing_eventuallyEq_kernelPotentialPairing T χ hG hG_symm hx₀
+    exists_translatePairing_eventuallyEq_kernelPotentialPairing T χ hG hx₀
   have hc : ContDiffAt ℝ ∞
       ((cutoffCLM (Ω' := ⊤) χ.contDiff (inter_subset_left.trans χ.tsupport_subset) T
         ).translatePairing ρ) x₀ :=
@@ -297,12 +295,11 @@ theorem contDiffOn_kernelPotentialPairing (T : 𝓓'(Ω, F)) (χ : 𝓓(Ω, ℝ)
 directional derivative of `T.kernelPotentialPairing χ hG` along `vs` pairs `T` with
 `y ↦ χ y * (∂_{vs} G)(x₀ - y)`. -/
 theorem iteratedFDerivAlong_kernelPotentialPairing (T : 𝓓'(Ω, F)) {χ : 𝓓(Ω, ℝ)} {G : E → ℝ}
-    (hG : HarmonicOnNhd G {0}ᶜ) (hG_symm : ∀ x y, G (x - y) = G (y - x))
-    {x₀ : E} (hx₀ : x₀ ∉ tsupport (χ : E → ℝ)) (vs : List E) {φ : 𝓓(Ω, ℝ)}
-    (hφ : ∀ y, φ y = χ y * iteratedFDerivAlong ℝ vs G (x₀ - y)) :
+    (hG : HarmonicOnNhd G {0}ᶜ) {x₀ : E} (hx₀ : x₀ ∉ tsupport (χ : E → ℝ)) (vs : List E)
+    {φ : 𝓓(Ω, ℝ)} (hφ : ∀ y, φ y = χ y * iteratedFDerivAlong ℝ vs G (x₀ - y)) :
     iteratedFDerivAlong ℝ vs (T.kernelPotentialPairing χ hG) x₀ = T φ := by
   obtain ⟨ρ, hρ, hev⟩ :=
-    exists_translatePairing_eventuallyEq_kernelPotentialPairing T χ hG hG_symm hx₀
+    exists_translatePairing_eventuallyEq_kernelPotentialPairing T χ hG hx₀
   let ψ : 𝓓((⊤ : Opens E), ℝ) := ρ.translateIteratedFDerivAlong (mapsTo_univ (· + x₀) _) vs
   rw [(hev.iteratedFDerivAlong vs).eq_of_nhds,
     (cutoffCLM (Ω' := ⊤) χ.contDiff (inter_subset_left.trans χ.tsupport_subset) T
@@ -317,19 +314,32 @@ theorem iteratedFDerivAlong_kernelPotentialPairing (T : 𝓓'(Ω, F)) {χ : 𝓓
       ((hρ y hy).iteratedFDerivAlong vs).eq_of_nhds, iteratedFDerivAlong_comp_sub]
   · simp [image_eq_zero_of_notMem_tsupport hy]
 
+/-- Express the Laplacian of a `C²` function at `x` as the sum of its second iterated directional
+derivatives along the standard orthonormal basis. -/
+private theorem laplacian_eq_sum_iteratedFDerivAlong_stdOrthonormalBasis
+    {E' F' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+    [NormedAddCommGroup F'] [NormedSpace ℝ F'] {f : E' → F'} {x : E'}
+    (hf : ContDiffAt ℝ 2 f x) :
+    Δ f x = ∑ i, iteratedFDerivAlong ℝ
+      [stdOrthonormalBasis ℝ E' i, stdOrthonormalBasis ℝ E' i] f x := by
+  rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simpa using (hf.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl
+    ![stdOrthonormalBasis ℝ E' i, stdOrthonormalBasis ℝ E' i]).symm
+
 /-- **Harmonicity of the off-support kernel potential.** `T.kernelPotentialPairing χ hG` is
 harmonic on `(tsupport χ)ᶜ`. -/
 theorem harmonicOnNhd_kernelPotentialPairing (T : 𝓓'(Ω, F)) (χ : 𝓓(Ω, ℝ)) {G : E → ℝ}
-    (hG : HarmonicOnNhd G {0}ᶜ) (hG_symm : ∀ x y, G (x - y) = G (y - x)) :
+    (hG : HarmonicOnNhd G {0}ᶜ) :
     HarmonicOnNhd (T.kernelPotentialPairing χ hG) (tsupport (χ : E → ℝ))ᶜ := by
   have hopen := (isClosed_tsupport (χ : E → ℝ)).isOpen_compl
-  have hsmooth := contDiffOn_kernelPotentialPairing T χ hG hG_symm
+  have hsmooth := contDiffOn_kernelPotentialPairing T χ hG
   intro x₀ hx₀
   refine ⟨(hsmooth.contDiffAt (hopen.mem_nhds hx₀)).of_le (by simp), ?_⟩
   filter_upwards [hopen.mem_nhds hx₀] with x hx
   set b := stdOrthonormalBasis ℝ E
-  have hcx : ContDiffAt ℝ ∞ (T.kernelPotentialPairing χ hG) x :=
-    hsmooth.contDiffAt (hopen.mem_nhds hx)
+  have hcx : ContDiffAt ℝ 2 (T.kernelPotentialPairing χ hG) x :=
+    (hsmooth.contDiffAt (hopen.mem_nhds hx)).of_le (by simp)
   let φ (i : Fin (Module.finrank ℝ E)) : 𝓓(Ω, ℝ) :=
     χ.smulOfContDiffOn isOpen_compl_singleton (subset_compl_singleton_iff.2 hx)
       ((hG.iteratedFDerivAlong_sub_right [b i, b i] x).analyticOnNhd.contDiffOn
@@ -341,21 +351,14 @@ theorem harmonicOnNhd_kernelPotentialPairing (T : 𝓓'(Ω, F)) (χ : 𝓓(Ω, �
     by_cases hy : y ∈ tsupport (χ : E → ℝ)
     · have hxy : x - y ∈ ({0}ᶜ : Set E) := sub_ne_zero.2 fun h ↦ hx (h ▸ hy)
       have hGx : ContDiffAt ℝ 2 G (x - y) := (hG (x - y) hxy).1
-      have hΔ : ∑ i, iteratedFDerivAlong ℝ [b i, b i] G (x - y) = Δ G (x - y) := by
-        rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        simpa using hGx.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl ![b i, b i]
-      rw [hΔ, (hG (x - y) hxy).2.self_of_nhds, Pi.zero_apply, mul_zero]
+      rw [← laplacian_eq_sum_iteratedFDerivAlong_stdOrthonormalBasis hGx,
+        (hG (x - y) hxy).2.self_of_nhds, Pi.zero_apply, mul_zero]
     · rw [image_eq_zero_of_notMem_tsupport hy, zero_mul]
-  rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-  calc ∑ i, iteratedFDeriv ℝ 2 (T.kernelPotentialPairing χ hG) x ![b i, b i]
-      = ∑ i, iteratedFDerivAlong ℝ [b i, b i] (T.kernelPotentialPairing χ hG) x := by
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        simpa using ((hcx.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)
-          ).iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl ![b i, b i]).symm
+  calc Δ (T.kernelPotentialPairing χ hG) x
+      = ∑ i, iteratedFDerivAlong ℝ [b i, b i] (T.kernelPotentialPairing χ hG) x :=
+        laplacian_eq_sum_iteratedFDerivAlong_stdOrthonormalBasis hcx
     _ = ∑ i, T (φ i) := Finset.sum_congr rfl fun i _ ↦
-        iteratedFDerivAlong_kernelPotentialPairing T hG hG_symm hx [b i, b i] (fun y ↦ by
-          simp [φ])
+        iteratedFDerivAlong_kernelPotentialPairing T hG hx [b i, b i] (fun y ↦ by simp [φ])
     _ = 0 := by rw [← map_sum, hsum, map_zero]
 
 /-- **Integral representation of the distributional kernel potential.** On test functions `φ`
@@ -370,7 +373,7 @@ theorem cutoffConvolutionCLM_apply_eq_integral [CompleteSpace F] [MeasurableSpac
     cutoffConvolutionCLM (Ω' := ⊤) χ hG_loc T φ =
       ∫ x, φ x • T.kernelPotentialPairing χ hG x ∂μ := by
   obtain ⟨ρ, hρ, hEq⟩ :=
-    exists_translatePairing_eqOn_of_disjoint T χ hG hG_symm φ.hasCompactSupport hdisj
+    exists_translatePairing_eqOn_of_disjoint T χ hG φ.hasCompactSupport hdisj
   let ψ : 𝓓((⊤ : Opens E), ℝ) :=
     ⟨(φ : E → ℝ) ⋆[lsmul ℝ ℝ, μ] (ρ : E → ℝ),
       ρ.hasCompactSupport.contDiff_convolution_right (lsmul ℝ ℝ)
@@ -464,24 +467,6 @@ theorem kernelPotentialOfSupport_zero {G : E → ℝ} (hG : HarmonicOnNhd G {0}�
   ext x
   simp [kernelPotentialOfSupport]
 
-/-- The cutoff-free potential commutes with negation of the distribution. -/
-@[simp]
-theorem kernelPotentialOfSupport_neg (T : 𝓓'(Ω, F)) {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ) :
-    (-T).kernelPotentialOfSupport hG = -T.kernelPotentialOfSupport hG := by
-  ext x
-  have hsupp : dsupport (-T) = dsupport T := by
-    rw [FunLike.coe_neg]
-    exact dsupport_neg ⇑T
-  by_cases h : ∃ χ : 𝓓(Ω, ℝ), (∀ᶠ y in 𝓝ˢ (dsupport T), χ y = 1) ∧ x ∉ tsupport (χ : E → ℝ)
-  · obtain ⟨χ, hχ, hx⟩ := h
-    rw [Pi.neg_apply,
-      kernelPotentialOfSupport_eq_kernelPotentialPairing (-T) (by rwa [hsupp]) hG hx,
-      kernelPotentialOfSupport_eq_kernelPotentialPairing T hχ hG hx,
-      kernelPotentialPairing_neg, Pi.neg_apply]
-  · rw [Pi.neg_apply,
-      kernelPotentialOfSupport_eq_zero_of_not_exists (-T) hG (by rwa [hsupp]),
-      kernelPotentialOfSupport_eq_zero_of_not_exists T hG h, neg_zero]
-
 /-- The cutoff-free potential commutes with scalar multiplication of the distribution. -/
 @[simp]
 theorem kernelPotentialOfSupport_smul (c : ℝ) (T : 𝓓'(Ω, F)) {G : E → ℝ}
@@ -502,6 +487,12 @@ theorem kernelPotentialOfSupport_smul (c : ℝ) (T : 𝓓'(Ω, F)) {G : E → �
   · rw [Pi.smul_apply,
       kernelPotentialOfSupport_eq_zero_of_not_exists (c • T) hG (by rwa [hsupp]),
       kernelPotentialOfSupport_eq_zero_of_not_exists T hG h, smul_zero]
+
+/-- The cutoff-free potential commutes with negation of the distribution. -/
+@[simp]
+theorem kernelPotentialOfSupport_neg (T : 𝓓'(Ω, F)) {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ) :
+    (-T).kernelPotentialOfSupport hG = -T.kernelPotentialOfSupport hG := by
+  simpa using kernelPotentialOfSupport_smul (-1) T hG
 
 /-- On distributions with compact support inside `Ω`, `kernelPotentialOfSupport` is additive away
 from the union of their supports. -/
@@ -542,8 +533,7 @@ theorem kernelPotentialOfSupport_mapCLM {F' : Type*} [NormedAddCommGroup F'] [No
 /-- **Smoothness of the cutoff-free potential off `dsupport T`.** When `dsupport T` is a compact
 subset of `Ω`, `T.kernelPotentialOfSupport hG` is smooth on `(dsupport T)ᶜ`. -/
 theorem contDiffOn_kernelPotentialOfSupport {T : 𝓓'(Ω, F)} (hc : IsCompact (dsupport T))
-    (hΩ : dsupport T ⊆ Ω) {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ)
-    (hG_symm : ∀ x y, G (x - y) = G (y - x)) :
+    (hΩ : dsupport T ⊆ Ω) {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ) :
     ContDiffOn ℝ ∞ (T.kernelPotentialOfSupport hG) (dsupport T)ᶜ := by
   intro x hx
   obtain ⟨χ, hχ1, hxχ⟩ := exists_cutoff_notMem_tsupport_of_notMem_dsupport T hc hΩ hx
@@ -552,7 +542,7 @@ theorem contDiffOn_kernelPotentialOfSupport {T : 𝓓'(Ω, F)} (hc : IsCompact (
   have hev : T.kernelPotentialOfSupport hG =ᶠ[𝓝 x] T.kernelPotentialPairing χ hG :=
     Set.EqOn.eventuallyEq_of_mem
       (fun _ hx' ↦ kernelPotentialOfSupport_eq_kernelPotentialPairing T hχ1 hG hx') hx_mem
-  exact (((contDiffOn_kernelPotentialPairing T χ hG hG_symm).contDiffAt
+  exact (((contDiffOn_kernelPotentialPairing T χ hG).contDiffAt
     hx_mem).congr_of_eventuallyEq hev).contDiffWithinAt
 
 /-- **Jet formula for the cutoff-free potential.** For a cutoff `χ` equal to `1` near `dsupport T`
@@ -560,8 +550,7 @@ and `x₀ ∉ tsupport χ`, the iterated directional derivative of `T.kernelPote
 along `vs` pairs `T` with `y ↦ χ y * (∂_{vs} G)(x₀ - y)`. -/
 theorem iteratedFDerivAlong_kernelPotentialOfSupport (T : 𝓓'(Ω, F)) {χ : 𝓓(Ω, ℝ)}
     (hχ : ∀ᶠ y in 𝓝ˢ (dsupport T), χ y = 1) {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ)
-    (hG_symm : ∀ x y, G (x - y) = G (y - x)) {x₀ : E} (hx₀ : x₀ ∉ tsupport (χ : E → ℝ))
-    (vs : List E) {φ : 𝓓(Ω, ℝ)}
+    {x₀ : E} (hx₀ : x₀ ∉ tsupport (χ : E → ℝ)) (vs : List E) {φ : 𝓓(Ω, ℝ)}
     (hφ : ∀ y, φ y = χ y * iteratedFDerivAlong ℝ vs G (x₀ - y)) :
     iteratedFDerivAlong ℝ vs (T.kernelPotentialOfSupport hG) x₀ = T φ := by
   have hev : T.kernelPotentialOfSupport hG =ᶠ[𝓝 x₀] T.kernelPotentialPairing χ hG :=
@@ -569,13 +558,12 @@ theorem iteratedFDerivAlong_kernelPotentialOfSupport (T : 𝓓'(Ω, F)) {χ : �
       (fun _ hx' ↦ kernelPotentialOfSupport_eq_kernelPotentialPairing T hχ hG hx')
       ((isClosed_tsupport (χ : E → ℝ)).isOpen_compl.mem_nhds hx₀)
   rw [(hev.iteratedFDerivAlong vs).eq_of_nhds]
-  exact iteratedFDerivAlong_kernelPotentialPairing T hG hG_symm hx₀ vs hφ
+  exact iteratedFDerivAlong_kernelPotentialPairing T hG hx₀ vs hφ
 
 /-- **Harmonicity of the cutoff-free potential off `dsupport T`.** When `dsupport T` is a compact
 subset of `Ω`, `T.kernelPotentialOfSupport hG` is harmonic on `(dsupport T)ᶜ`. -/
 theorem harmonicOnNhd_kernelPotentialOfSupport {T : 𝓓'(Ω, F)} (hc : IsCompact (dsupport T))
-    (hΩ : dsupport T ⊆ Ω) {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ)
-    (hG_symm : ∀ x y, G (x - y) = G (y - x)) :
+    (hΩ : dsupport T ⊆ Ω) {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ) :
     HarmonicOnNhd (T.kernelPotentialOfSupport hG) (dsupport T)ᶜ := by
   intro x hx
   obtain ⟨χ, hχ1, hxχ⟩ := exists_cutoff_notMem_tsupport_of_notMem_dsupport T hc hΩ hx
@@ -584,7 +572,7 @@ theorem harmonicOnNhd_kernelPotentialOfSupport {T : 𝓓'(Ω, F)} (hc : IsCompac
       (fun _ hx' ↦ kernelPotentialOfSupport_eq_kernelPotentialPairing T hχ1 hG hx')
       ((isClosed_tsupport (χ : E → ℝ)).isOpen_compl.mem_nhds hxχ)
   exact (harmonicAt_congr_nhds hev).2
-    (harmonicOnNhd_kernelPotentialPairing T χ hG hG_symm x hxχ)
+    (harmonicOnNhd_kernelPotentialPairing T χ hG x hxχ)
 
 /-- On tests disjoint from `dsupport T`, `cutoffConvolutionCLM` is represented by integrating
 against the cutoff-free potential `T.kernelPotentialOfSupport hG`. -/

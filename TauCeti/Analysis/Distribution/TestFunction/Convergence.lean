@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.TestFunction
-public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
+public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
@@ -30,6 +28,8 @@ depends continuously on the parameter.
 * `TestFunction.tendsto_of_tendstoUniformly_iteratedFDeriv`: test functions supported in a common
   compact subset of `Ω` whose derivatives of order at most `n` converge uniformly converge in
   `𝓓^{n}(Ω, F)`.
+* `TestFunction.norm_iteratedFDeriv_smulOfContDiffOn_sub_le`: pointwise Leibniz bound for the `k`-th
+  derivative of the difference of two cutoff products `χ • g₁ - χ • g₂`.
 * `TestFunction.tendsto_smulOfContDiffOn`: multiplying a fixed scalar cutoff `χ ∈ 𝓓^{n}(Ω, ℝ)` by
   functions `g i` that are `Cⁿ` on an open neighbourhood of `tsupport χ` converges in `𝓓^{n}(Ω, F)`
   whenever the derivatives of `g i` up to order `n` converge uniformly on `tsupport χ`.
@@ -105,7 +105,7 @@ theorem tendsto_of_tendstoUniformly_iteratedFDeriv {ι : Type*} {l : Filter ι}
 
 /-- Pointwise Leibniz bound for the `k`-th derivative of
 `χ.smulOfContDiffOn hU hχU hg₁ - χ.smulOfContDiffOn hU hχU hg₂`. -/
-private theorem norm_iteratedFDeriv_smulOfContDiffOn_sub_le (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E}
+theorem norm_iteratedFDeriv_smulOfContDiffOn_sub_le (χ : 𝓓^{n}(Ω, ℝ)) {U : Set E}
     (hU : IsOpen U) (hχU : tsupport (χ : E → ℝ) ⊆ U) {g₁ g₂ : E → F}
     (hg₁ : ContDiffOn ℝ n g₁ U) (hg₂ : ContDiffOn ℝ n g₂ U) {k : ℕ} (hk : (k : ℕ∞) ≤ n)
     {M : ℕ → ℝ} (hM0 : ∀ j ∈ Finset.range (k + 1), 0 ≤ M j)

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.Distribution
 public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Convolution
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Topology.Algebra.Module.Spaces.CompactConvergenceCLM
 
 /-!
 # Cutoff convolution of distributions with locally integrable kernels
@@ -67,13 +67,13 @@ def cutoffConvolutionCLM (χ : 𝓓(Ω, ℝ)) (hK₀ : LocallyIntegrable K₀ μ
 theorem cutoffConvolutionCLM_apply (χ : 𝓓(Ω, ℝ)) (hK₀ : LocallyIntegrable K₀ μ)
     (T : 𝓓'(Ω, F)) (φ : 𝓓(Ω', ℝ)) :
     cutoffConvolutionCLM χ hK₀ T φ = T (TestFunction.cutoffConvolutionCLM χ hK₀ φ) :=
-  (rfl)
+  ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply _ _ _
 
 /-- As a function on test functions, `cutoffConvolutionCLM χ hK₀ T` is `T` composed with
 `TestFunction.cutoffConvolutionCLM χ hK₀`. -/
 theorem coe_cutoffConvolutionCLM (χ : 𝓓(Ω, ℝ)) (hK₀ : LocallyIntegrable K₀ μ) (T : 𝓓'(Ω, F)) :
     ⇑(cutoffConvolutionCLM (Ω' := Ω') χ hK₀ T) = ⇑T ∘ ⇑(TestFunction.cutoffConvolutionCLM χ hK₀) :=
-  (rfl)
+  funext (cutoffConvolutionCLM_apply χ hK₀ T)
 
 /-- Cutoff convolution with the zero cutoff vanishes. -/
 @[simp]

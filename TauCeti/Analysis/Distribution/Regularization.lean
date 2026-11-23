@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.Distribution.Distribution
-public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
@@ -144,21 +143,6 @@ theorem translatePairing_zero_kernel (T : 𝓓'(Ω, F)) :
     simp
   · exact translatePairing_eq_zero_of_not_mapsTo T hx
 
-/-- Regularization commutes with negation of the kernel. -/
-@[simp]
-theorem translatePairing_neg_kernel (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
-    T.translatePairing (-ρ) = -T.translatePairing ρ := by
-  ext x
-  have hsupp : tsupport ⇑(-ρ) = tsupport ⇑ρ := by
-    rw [FunLike.coe_neg, tsupport_neg]
-  by_cases hx : MapsTo (· + x) (tsupport ⇑ρ) Ω
-  · rw [Pi.neg_apply,
-      translatePairing_eq T (φ := -(ρ.translateOfMapsTo hx)) fun y => by simp,
-      translatePairing_eq T (ρ.translateOfMapsTo_apply hx), map_neg]
-  · rw [Pi.neg_apply,
-      translatePairing_eq_zero_of_not_mapsTo T (by rwa [hsupp]),
-      translatePairing_eq_zero_of_not_mapsTo T hx, neg_zero]
-
 /-- Regularization commutes with scalar multiplication of the kernel. -/
 @[simp]
 theorem translatePairing_smul_kernel (T : 𝓓'(Ω, F)) (c : ℝ) (ρ : 𝓓(V, ℝ)) :
@@ -176,6 +160,12 @@ theorem translatePairing_smul_kernel (T : 𝓓'(Ω, F)) (c : ℝ) (ρ : 𝓓(V, 
   · rw [Pi.smul_apply,
       translatePairing_eq_zero_of_not_mapsTo T (by rwa [hsupp]),
       translatePairing_eq_zero_of_not_mapsTo T hx, smul_zero]
+
+/-- Regularization commutes with negation of the kernel. -/
+@[simp]
+theorem translatePairing_neg_kernel (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
+    T.translatePairing (-ρ) = -T.translatePairing ρ := by
+  simpa using T.translatePairing_smul_kernel (-1) ρ
 
 /-- Regularization is additive in the distribution. -/
 @[simp]

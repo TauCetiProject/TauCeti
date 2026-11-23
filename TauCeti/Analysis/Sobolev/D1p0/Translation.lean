@@ -75,8 +75,8 @@ theorem coe_translate (h : E) (u : D1p0 mu ⊤ p) :
 @[simp↓]
 theorem translate_ofTestFunctionₗ (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     translate mu p h (ofTestFunctionₗ mu ⊤ p phi) =
-      ofTestFunctionₗ mu ⊤ p (translateTestFunction (Omega := ⊤) (h := -h)
-        (mapsTo_univ _ _) phi) := by
+      ofTestFunctionₗ mu ⊤ p (phi.translateOfMapsTo (x := -h)
+        (mapsTo_univ _ _)) := by
   apply Subtype.ext
   simp only [coe_translate, coe_ofTestFunctionₗ, gradientTestFunctionLp_translateTestFunction]
 

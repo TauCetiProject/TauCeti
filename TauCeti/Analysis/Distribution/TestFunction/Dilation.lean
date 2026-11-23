@@ -128,9 +128,10 @@ theorem exists_eq_comp [FiniteDimensional ℝ E] {x : E} (φ : 𝓓((⊤ : Opens
     rw [Opens.coe_top]
     exact mapsTo_univ _ _
   let ψ' : 𝓓((⊤ : Opens E), E) :=
-    translateTestFunction (h := x) htop (dilateTestFunction hr htop φ)
+    (dilateTestFunction hr htop φ).translateOfMapsTo (x := x)
+      (htop.mono_left (dilateTestFunction hr htop φ).tsupport_subset)
   have hψ' (y : E) : ψ' y = φ (r⁻¹ • (y - x)) := by
-    rw [translateTestFunction_apply, dilateTestFunction_apply]
+    rw [translateOfMapsTo_apply, dilateTestFunction_apply]
   -- The support of `ψ'` lies in the image of the support of `φ` under `z ↦ x + r • z`.
   have hsub : Function.support (ψ' : E → E) ⊆ (fun z => x + r • z) '' tsupport φ := fun y hy =>
     ⟨r⁻¹ • (y - x), subset_tsupport _ (by rwa [Function.mem_support, ← hψ']),
@@ -142,8 +143,8 @@ theorem exists_eq_comp [FiniteDimensional ℝ E] {x : E} (φ : 𝓓((⊤ : Opens
     exact hΩ y hy
   refine ⟨⟨ψ', ψ'.contDiff, ψ'.hasCompactSupport, hsupp⟩, fun y => by rw [coe_mk, hψ'],
     fun y => ?_⟩
-  rw [divergenceCLM_apply, coe_mk, ← divergenceCLM_apply, divergenceCLM_translateTestFunction,
-    translateTestFunction_apply, divergenceCLM_dilateTestFunction]
+  rw [divergenceCLM_apply, coe_mk, ← divergenceCLM_apply, divergenceCLM_translateOfMapsTo,
+    translateOfMapsTo_apply, divergenceCLM_dilateTestFunction]
   simp only [IsSMulApply.smul_apply, dilateTestFunction_apply, smul_eq_mul]
 
 end TestFunction

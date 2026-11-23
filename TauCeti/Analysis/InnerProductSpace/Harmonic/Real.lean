@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Topology.FilledIn
 import Mathlib.Analysis.Calculus.MeanValue
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 
 /-!
 # One-dimensional harmonic functions

@@ -5,30 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.Support
-public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
-public import TauCeti.Analysis.Distribution.Convolution
 public import TauCeti.Analysis.PDE.FundamentalSolution.CutoffPotential
 public import TauCeti.Topology.FilledIn
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Analytic.Uniqueness
-import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
-import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.LinearEquiv
-import TauCeti.Analysis.Distribution.SmulLeft
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Real
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Multipole
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
-import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Basic
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Multipole
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Potential
@@ -41,9 +31,10 @@ set that is filled in `Ω` (`TauCeti.IsFilledIn K Ω`), `F` a real normed space,
 distribution with `dsupport T ⊆ K` that annihilates every test function agreeing near `K` with a
 function harmonic on `Ω`.
 
-For any symmetric locally integrable kernel `G : E → ℝ` that solves `-Δ (G ⋆ φ) = φ`, is harmonic
-on `{0}ᶜ`, and admits exterior multipole approximation by globally harmonic functions, scalarizing
-`T` with continuous linear functionals `ℓ : StrongDual ℝ F` reduces to `F = ℝ`:
+For any locally integrable kernel `G : E → ℝ` that is harmonic on `{0}ᶜ` and admits exterior
+multipole approximation by globally harmonic functions (and, for support confinement and harmonic
+orthogonality, is symmetric and solves `-Δ (G ⋆ φ) = φ`), scalarizing `T` with continuous linear
+functionals `ℓ : StrongDual ℝ F` reduces to `F = ℝ`:
 
 * at every `x₀ ∉ Ω`, all iterated derivatives of `T.kernelPotentialOfSupport hG` vanish;
 * outside a large ball, `T.kernelPotentialOfSupport hG` vanishes by exterior multipole
@@ -100,7 +91,7 @@ functions harmonic on `Ω`, then `T.kernelPotentialOfSupport hG` vanishes on a n
 `x₀`. -/
 private theorem eventuallyEq_zero_kernelPotentialOfSupport_of_notMem
     {T : 𝓓'(Ω, ℝ)} {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hTK : dsupport T ⊆ K)
-    {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ) (hG_symm : ∀ x y, G (x - y) = G (y - x))
+    {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ)
     (hT : ∀ (H : E → ℝ) (ψ : 𝓓(Ω, ℝ)), HarmonicOnNhd H Ω → ((ψ : E → ℝ) =ᶠ[𝓝ˢ K] H) → T ψ = 0)
     {x₀ : E} (hx₀ : x₀ ∉ (Ω : Set E)) :
     T.kernelPotentialOfSupport hG =ᶠ[𝓝 x₀] 0 := by
@@ -110,12 +101,12 @@ private theorem eventuallyEq_zero_kernelPotentialOfSupport_of_notMem
   have hx₀T : x₀ ∉ dsupport T := fun h ↦ hx₀ (hKΩ (hTK h))
   have hcT : IsCompact (dsupport T) := hK.of_isClosed_subset isClosed_dsupport hTK
   have han : AnalyticAt ℝ (T.kernelPotentialOfSupport hG) x₀ :=
-    (harmonicOnNhd_kernelPotentialOfSupport hcT (hTK.trans hKΩ) hG hG_symm x₀ hx₀T).analyticAt
+    (harmonicOnNhd_kernelPotentialOfSupport hcT (hTK.trans hKΩ) hG x₀ hx₀T).analyticAt
   rw [han.eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero]
   intro k
   ext m
   have hcx : ContDiffAt ℝ k (T.kernelPotentialOfSupport hG) x₀ :=
-    ((contDiffOn_kernelPotentialOfSupport hcT (hTK.trans hKΩ) hG hG_symm).contDiffAt
+    ((contDiffOn_kernelPotentialOfSupport hcT (hTK.trans hKΩ) hG).contDiffAt
       (isClosed_dsupport.isOpen_compl.mem_nhds hx₀T)).of_le (by simp)
   rw [← hcx.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl m]
   let H : E → ℝ := fun y ↦ iteratedFDerivAlong ℝ (List.ofFn m) G (x₀ - y)
@@ -123,7 +114,7 @@ private theorem eventuallyEq_zero_kernelPotentialOfSupport_of_notMem
   let ψ : 𝓓(Ω, ℝ) := χ.smulOfContDiffOn isOpen_compl_singleton
     (subset_compl_singleton_iff.2 hx₀χ)
     (hH.analyticOnNhd.contDiffOn isOpen_compl_singleton.uniqueDiffOn)
-  rw [iteratedFDerivAlong_kernelPotentialOfSupport T hχT hG hG_symm hx₀χ (List.ofFn m)
+  rw [iteratedFDerivAlong_kernelPotentialOfSupport T hχT hG hx₀χ (List.ofFn m)
       (φ := ψ) (fun y ↦ by simp [ψ, H]), zero_apply]
   refine hT H ψ (hH.mono (subset_compl_singleton_iff.2 hx₀)) ?_
   filter_upwards [hχ1] with y hy
@@ -181,7 +172,7 @@ private theorem exists_radius_kernelPotentialOfSupport_eq_zero {T : 𝓓'(Ω, �
 
 private theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn_real {T : 𝓓'(Ω, ℝ)} {K : Set E}
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hfill : IsFilledIn K Ω) (hTK : dsupport T ⊆ K)
-    {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ) (hG_symm : ∀ x y, G (x - y) = G (y - x))
+    {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ)
     (hmp : ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : E, x ≠ 0 →
       ∃ P : ℕ → E → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
         ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
@@ -191,7 +182,7 @@ private theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn_real {T : 𝓓'(�
     T.kernelPotentialOfSupport hG x = 0 := by
   have hcT : IsCompact (dsupport T) := hK.of_isClosed_subset isClosed_dsupport hTK
   have han : AnalyticOnNhd ℝ (T.kernelPotentialOfSupport hG) (connectedComponentIn Kᶜ x) :=
-    ((harmonicOnNhd_kernelPotentialOfSupport hcT (hTK.trans hKΩ) hG hG_symm).analyticOnNhd).mono
+    ((harmonicOnNhd_kernelPotentialOfSupport hcT (hTK.trans hKΩ) hG).analyticOnNhd).mono
       ((connectedComponentIn_subset Kᶜ x).trans (compl_subset_compl.2 hTK))
   by_cases hxH : x ∈ filledHull K
   · -- A bounded component of `Kᶜ` cannot stay inside `Ω` since `K` is filled in `Ω`.
@@ -199,7 +190,7 @@ private theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn_real {T : 𝓓'(�
       hK.isClosed Ω.isOpen hKΩ).1 hfill x ⟨hxH, hx⟩
     obtain ⟨x₀, hx₀C, hx₀Ω⟩ := not_subset.1 hnot
     exact han.eqOn_zero_of_preconnected_of_eventuallyEq_zero isPreconnected_connectedComponentIn
-      hx₀C (eventuallyEq_zero_kernelPotentialOfSupport_of_notMem hK hKΩ hTK hG hG_symm hT hx₀Ω)
+      hx₀C (eventuallyEq_zero_kernelPotentialOfSupport_of_notMem hK hKΩ hTK hG hT hx₀Ω)
       (mem_connectedComponentIn hx)
   · -- An unbounded component of `Kᶜ` escapes every closed ball, reaching the multipole region.
     obtain ⟨R, _, hRzero⟩ := exists_radius_kernelPotentialOfSupport_eq_zero hK hKΩ hTK hG hmp hT
@@ -216,12 +207,12 @@ private theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn_real {T : 𝓓'(�
 
 /-- **Unique continuation for off-support kernel potentials on filled compact sets.** For any real
 normed space `F`, if `T : 𝓓'(Ω, F)` has `dsupport T ⊆ K` for a compact set `K ⊆ Ω` filled in `Ω`,
-`T` vanishes on every test agreeing near `K` with a function harmonic on `Ω`, and `G` is a
-symmetric kernel harmonic on `{0}ᶜ` with exterior multipole approximation by globally harmonic
-functions, then `T.kernelPotentialOfSupport hG` vanishes throughout `Kᶜ`. -/
+`T` vanishes on every test agreeing near `K` with a function harmonic on `Ω`, and `G` is a kernel
+harmonic on `{0}ᶜ` with exterior multipole approximation by globally harmonic functions, then
+`T.kernelPotentialOfSupport hG` vanishes throughout `Kᶜ`. -/
 theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn {T : 𝓓'(Ω, F)} {K : Set E}
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hfill : IsFilledIn K Ω) (hTK : dsupport T ⊆ K)
-    {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ) (hG_symm : ∀ x y, G (x - y) = G (y - x))
+    {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ)
     (hmp : ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : E, x ≠ 0 →
       ∃ P : ℕ → E → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
         ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
@@ -234,7 +225,7 @@ theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn {T : 𝓓'(Ω, F)} {K : S
   refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun ℓ ↦ ?_
   rw [← kernelPotentialOfSupport_mapCLM ℓ hcT (hTK.trans hKΩ) hG hxT]
   exact kernelPotentialOfSupport_eq_zero_of_isFilledIn_real hK hKΩ hfill
-    ((dsupport_comp_subset T (map_zero ℓ)).trans hTK) hG hG_symm hmp
+    ((dsupport_comp_subset T (map_zero ℓ)).trans hTK) hG hmp
     (fun H ψ hH hψ ↦ by simp [hT H ψ hH hψ]) hx
 
 /-- **Support confinement of the distributional kernel potential.** Under the hypotheses of
@@ -266,7 +257,7 @@ theorem dsupport_cutoffConvolutionCLM_subset_of_isFilledIn [MeasurableSpace E] [
       hdisj]
   refine integral_eq_zero_of_ae (ae_of_all _ fun x ↦ ?_)
   by_cases hx : x ∈ tsupport (φ : E → ℝ)
-  · simp [kernelPotentialOfSupport_eq_zero_of_isFilledIn_real hK hKΩ hfill hsuppℓ hG hG_symm hmp
+  · simp [kernelPotentialOfSupport_eq_zero_of_isFilledIn_real hK hKΩ hfill hsuppℓ hG hmp
       (fun H ψ hH hψ ↦ by simp [hT H ψ hH hψ]) (hφ hx)]
   · simp [image_eq_zero_of_notMem_tsupport hx]
 

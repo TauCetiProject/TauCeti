@@ -52,7 +52,7 @@ it to evaluations at points gives the identity of test forms.
   `TestFunction.mollifyCLM_apply` identifying it with the convolution `ρ̂ ⋆ ω`.
 * `TestFunction.tsupport_mollifyCLM_subset`: the support of `M φ`.
 * `TestFunction.apply_mollifyCLM`: a current passes under `M`, as the average of the translates
-  `TauCeti.translateTestFunction`.
+  `TestFunction.translateOfMapsTo`.
 * `TestFunction.extDerivCLM_comp_mollifyCLM`: `d ∘ M = M ∘ d`.
 * `TestFunction.mollifyHomotopyCLM`: the averaged straight-line homotopy operator `K`.
 * `TestFunction.tsupport_mollifyHomotopyCLM_subset`: the support of `K ω`.
@@ -164,9 +164,9 @@ private theorem pullbackCLM_lineHomotopy_one (y : E)
       IsCompact (((⊤ : Opens E) : Set E) ∩ (fun x ↦ lineHomotopy y (x, 1)) ⁻¹' K)}
     (ω : 𝓓((⊤ : Opens E), E [⋀^Fin m]→L[ℝ] F)) :
     pullbackCLM (fun x ↦ lineHomotopy y (x, 1)) h₁ h₂ ω =
-      TauCeti.translateTestFunction (h := -y) (mapsTo_univ _ _) ω := by
+      ω.translateOfMapsTo (x := -y) (mapsTo_univ _ _) := by
   ext x : 1
-  rw [pullbackCLM_lineHomotopy_apply, one_smul, TauCeti.translateTestFunction_apply,
+  rw [pullbackCLM_lineHomotopy_apply, one_smul, translateOfMapsTo_apply,
     sub_neg_eq_add]
 
 /-- The homotopy operator of the straight-line homotopy from the identity to the translation by
@@ -374,25 +374,25 @@ variable {G V : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensi
 `S (M ω) = ∫ ρ̂ y S (ω (· + y)) dμ(y)`. -/
 theorem apply_mollifyCLM (S : 𝓓((⊤ : Opens E), G) →L[ℝ] V) (ω : 𝓓((⊤ : Opens E), G)) :
     S (mollifyCLM μ ρ ω) = ∫ y : closedBall (0 : E) ρ.rOut,
-      ρ.normed μ y • S (TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω)
+      ρ.normed μ y • S (ω.translateOfMapsTo (x := -(y : E)) (mapsTo_univ _ _))
         ∂(μ.comap (↑)) := by
   rw [mollifyCLM, S.apply_translateAverageCLM ω
     (f := fun y : closedBall (0 : E) ρ.rOut ↦ ρ.normed μ y •
-      TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω)
+      ω.translateOfMapsTo (x := -(y : E)) (mapsTo_univ _ _))
     fun y x ↦ by simp [sub_neg_eq_add]]
   simp only [map_smul]
 
 omit [FiniteDimensional ℝ G] [CompleteSpace V] in
 /-- The translates averaged by mollification, tested against a current, are integrable. -/
-private theorem integrable_apply_translateTestFunction (S : 𝓓((⊤ : Opens E), G) →L[ℝ] V)
+private theorem integrable_apply_translateOfMapsTo (S : 𝓓((⊤ : Opens E), G) →L[ℝ] V)
     (ω : 𝓓((⊤ : Opens E), G)) :
     Integrable (fun y : closedBall (0 : E) ρ.rOut ↦
-      ρ.normed μ y • S (TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω))
+      ρ.normed μ y • S (ω.translateOfMapsTo (x := -(y : E)) (mapsTo_univ _ _)))
       (μ.comap (↑)) := by
   simpa only [Function.comp_def, map_smul] using (S.continuous.comp
     (continuous_of_apply_eq_apply_add (continuous_mollifyWeight μ ρ) continuous_subtypeVal ω
       (f := fun y : closedBall (0 : E) ρ.rOut ↦ ρ.normed μ y •
-        TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω)
+        ω.translateOfMapsTo (x := -(y : E)) (mapsTo_univ _ _))
       fun y x ↦ by simp [sub_neg_eq_add])).integrable_of_hasCompactSupport
     (μ := μ.comap ((↑) : closedBall (0 : E) ρ.rOut → E)) (.of_compactSpace _)
 
@@ -403,12 +403,12 @@ theorem apply_mollifyHomotopyCLM [FiniteDimensional ℝ F]
     (ω : 𝓓((⊤ : Opens E), E [⋀^Fin (k + 1)]→L[ℝ] F)) :
     S (mollifyHomotopyCLM μ ρ ω) = ∫ q : closedBall (0 : E) ρ.rOut × unitInterval,
       ρ.normed μ q.1 • S (postcompCLM (curryLeftFlipL (q.1 : E))
-        (TauCeti.translateTestFunction (h := -((q.2 : ℝ) • (q.1 : E))) (mapsTo_univ _ _) ω))
+        (ω.translateOfMapsTo (x := -((q.2 : ℝ) • (q.1 : E))) (mapsTo_univ _ _)))
         ∂((μ.comap (↑)).prod volume) := by
   rw [mollifyHomotopyCLM, S.apply_translateAverageCLM ω
     (f := fun q : closedBall (0 : E) ρ.rOut × unitInterval ↦
       ρ.normed μ q.1 • postcompCLM (curryLeftFlipL (q.1 : E))
-      (TauCeti.translateTestFunction (h := -((q.2 : ℝ) • (q.1 : E))) (mapsTo_univ _ _) ω))
+      (ω.translateOfMapsTo (x := -((q.2 : ℝ) • (q.1 : E))) (mapsTo_univ _ _)))
     fun q x ↦ by simp [sub_neg_eq_add, map_smul]]
   simp only [map_smul]
 
@@ -465,21 +465,21 @@ private theorem apply_mollifyHomotopyCLM_extDerivCLM
       S (mollifyCLM μ ρ ω) - S ω - S (extDerivCLM (mollifyHomotopyCLM μ ρ ω)) := by
   have hy (y : closedBall (0 : E) ρ.rOut) :
       S (lineHomotopyCLM (y : E) (extDerivCLM ω)) =
-        S (TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω) - S ω -
+        S (ω.translateOfMapsTo (x := -(y : E)) (mapsTo_univ _ _)) - S ω -
           (S ∘L extDerivCLM) (lineHomotopyCLM (y : E) ω) := by
     have h := congr($(ContinuousLinearMap.comp_homotopyPullbackCLM_comp_extDerivCLM
       (hH := contDiffAt_lineHomotopy (y : E)) (hHp := isCompact_lineHomotopy (y : E)) S) ω)
     simp only [ContinuousLinearMap.comp_apply, _root_.sub_apply,
       pullbackCLM_lineHomotopy_zero, pullbackCLM_lineHomotopy_one] at h
     exact h
-  have hM := integrable_apply_translateTestFunction μ ρ S ω
+  have hM := integrable_apply_translateOfMapsTo μ ρ S ω
   obtain ⟨hK, hKe⟩ := apply_mollifyHomotopyCLM_lineHomotopyCLM μ ρ (S ∘L extDerivCLM) ω
   have hc := ρ.integrable_closedBall_normed_smul_const μ (S ω)
   rw [(apply_mollifyHomotopyCLM_lineHomotopyCLM μ ρ S _).2, apply_mollifyCLM μ ρ S ω,
     ← ContinuousLinearMap.comp_apply S extDerivCLM, hKe,
     ← ρ.integral_closedBall_normed_smul_const μ (S ω), ← integral_sub hM hc]
   rw [← integral_sub (f := fun y : closedBall (0 : E) ρ.rOut ↦
-      ρ.normed μ y • S (TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω) -
+      ρ.normed μ y • S (ω.translateOfMapsTo (x := -(y : E)) (mapsTo_univ _ _)) -
         ρ.normed μ y • S ω) (hM.sub hc) hK]
   refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
   dsimp only
@@ -493,13 +493,13 @@ private theorem apply_mollifyHomotopyCLM_extDerivCLM_finZero
     S (mollifyHomotopyCLM μ ρ (extDerivCLM ω)) = S (mollifyCLM μ ρ ω) - S ω := by
   have hy (y : closedBall (0 : E) ρ.rOut) :
       S (lineHomotopyCLM (y : E) (extDerivCLM ω)) =
-        S (TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω) - S ω := by
+        S (ω.translateOfMapsTo (x := -(y : E)) (mapsTo_univ _ _)) - S ω := by
     have h := congr($(ContinuousLinearMap.comp_homotopyPullbackCLM_comp_extDerivCLM_finZero
       (hH := contDiffAt_lineHomotopy (y : E)) (hHp := isCompact_lineHomotopy (y : E)) S) ω)
     simp only [ContinuousLinearMap.comp_apply, _root_.sub_apply,
       pullbackCLM_lineHomotopy_zero, pullbackCLM_lineHomotopy_one] at h
     exact h
-  have hM := integrable_apply_translateTestFunction μ ρ S ω
+  have hM := integrable_apply_translateOfMapsTo μ ρ S ω
   have hc := ρ.integrable_closedBall_normed_smul_const μ (S ω)
   rw [(apply_mollifyHomotopyCLM_lineHomotopyCLM μ ρ S _).2, apply_mollifyCLM μ ρ S ω,
     ← ρ.integral_closedBall_normed_smul_const μ (S ω), ← integral_sub hM hc]

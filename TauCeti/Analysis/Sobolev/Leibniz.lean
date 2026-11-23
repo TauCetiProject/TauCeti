@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.LineDeriv.Measurable
 import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.Mollification.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -145,8 +146,16 @@ theorem HasWeakLineDerivOn.contDiffOn_smul (h : HasWeakLineDerivOn μ Ω u u' v)
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨h.completeSpace, hu, hu', fun φ => ?_⟩
   -- `ψ φ` and `(∂_v ψ) φ` are test functions on `Ω`.
-  obtain ⟨Φ, hΦ⟩ := TestFunction.exists_coe_eq_smul_of_contDiffOn hψ φ
-  obtain ⟨Ψ, hΨ⟩ := TestFunction.exists_coe_eq_smul_of_contDiffOn hdψ φ
+  let Φ : 𝓓(Ω, ℝ) := φ.bilinOfContDiffOn (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen
+    φ.tsupport_subset hψ
+  let Ψ : 𝓓(Ω, ℝ) := φ.bilinOfContDiffOn (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen
+    φ.tsupport_subset hdψ
+  have hΦ : (Φ : E → ℝ) = fun x => ψ x • φ x := funext fun x =>
+    φ.bilinOfContDiffOn_apply (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen φ.tsupport_subset
+      hψ x
+  have hΨ : (Ψ : E → ℝ) = fun x => fderiv ℝ ψ x v • φ x := funext fun x =>
+    φ.bilinOfContDiffOn_apply (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen φ.tsupport_subset
+      hdψ x
   have hint1 : Integrable (fun x => lineDeriv ℝ (Φ : E → ℝ) x v • u x) μ :=
     integrable_lineDeriv_smul_of_locallyIntegrableOn h.locallyIntegrableOn Φ v
   have hint2 : Integrable (fun x => (Ψ : E → ℝ) x • u x) μ :=

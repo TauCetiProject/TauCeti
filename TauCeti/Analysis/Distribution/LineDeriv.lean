@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Distribution
-import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Repeated distributional differentiation

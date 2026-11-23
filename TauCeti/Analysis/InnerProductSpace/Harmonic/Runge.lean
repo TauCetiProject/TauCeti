@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Topology.FilledIn
 import TauCeti.Analysis.Distribution.JetSpace
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.Normed.Module.Annihilator
@@ -91,19 +90,12 @@ end Submodule
 
 section Approximation
 
-private theorem harmonicOnNhd_subset_harmonicAt
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-    {K : Set E} {f : E → ℝ} (hf : HarmonicOnNhd f K) :
-    K ⊆ {y | HarmonicAt f y} :=
-  hf
-
 /-- The `m`-jet on a compact set `K` of a scalar function harmonic on a neighbourhood of `K`. -/
 private def harmonicJetOn
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
     {K : Set E} (hK : IsCompact K) {f : E → ℝ} (hf : HarmonicOnNhd f K) (m : ℕ) :
     JetSpace E ℝ K m :=
-  JetSpace.ofContDiffOn hK (isOpen_setOfPred_harmonicAt (f := f))
-    (harmonicOnNhd_subset_harmonicAt hf) m
+  JetSpace.ofContDiffOn hK (isOpen_setOfPred_harmonicAt (f := f)) (fun _ hx ↦ hf _ hx) m
     (((HarmonicOnNhd.analyticOnNhd (f := f) fun _ hy ↦ hy).contDiffOn
       (isOpen_setOfPred_harmonicAt (f := f)).uniqueDiffOn).of_le (mod_cast le_top))
 
@@ -156,10 +148,11 @@ private theorem exists_harmonicOnNhd_norm_iteratedFDeriv_sub_lt_real
   set JH := JetSpace.ofContDiffOn hK hΩ hKΩ m
     ((hH.analyticOnNhd.contDiffOn hΩ.uniqueDiffOn).of_le (mod_cast le_top))
   have hsub : iteratedFDeriv ℝ k (H - f) x = (JH - Jf).eval j ⟨x, hx⟩ := by
-    dsimp only [JH, Jf, harmonicJetOn]
-    rw [JetSpace.eval_sub, FunLike.coe_sub, Pi.sub_apply, JetSpace.eval_ofContDiffOn,
-      JetSpace.eval_ofContDiffOn]
-    dsimp only [j]
+    have hJH : JH.eval j ⟨x, hx⟩ = iteratedFDeriv ℝ k H x :=
+      JetSpace.eval_ofContDiffOn _ _ _ _ _ _ _
+    have hJf : Jf.eval j ⟨x, hx⟩ = iteratedFDeriv ℝ k f x :=
+      JetSpace.eval_ofContDiffOn _ _ _ _ _ _ _
+    rw [JetSpace.eval_sub, FunLike.coe_sub, Pi.sub_apply, hJH, hJf]
     exact iteratedFDeriv_sub_apply
       ((hH x (hKΩ hx)).analyticAt.contDiffAt.of_le (mod_cast le_top))
       ((hf x hx).analyticAt.contDiffAt.of_le (mod_cast le_top))

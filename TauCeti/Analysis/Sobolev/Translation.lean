@@ -279,10 +279,10 @@ theorem Sobolev1JetLp.translateLp_mem_w1pSubmodule (h : E) {J : Sobolev1JetLp mu
   set nu := mu.restrict ((⊤ : Opens E) : Set E)
   rw [mem_w1pSubmodule_iff] at hJ ⊢
   intro phi v
-  have htop : MapsTo (· + h) (⊤ : Opens E) (⊤ : Opens E) := fun _ _ => by simp
+  have htop : MapsTo (· + h) (tsupport (phi : E → ℝ)) (⊤ : Opens E) := fun _ _ => by simp
   let f : E → ℝ := fun y =>
-    lineDeriv ℝ (translateTestFunction htop phi : E → ℝ) y v * Sobolev1JetLp.value J y +
-      translateTestFunction htop phi y * Sobolev1JetLp.candidateWeakFDeriv J y v
+    lineDeriv ℝ (phi.translateOfMapsTo htop : E → ℝ) y v * Sobolev1JetLp.value J y +
+      phi.translateOfMapsTo htop y * Sobolev1JetLp.candidateWeakFDeriv J y v
   have hq : Filter.Tendsto (· + h) (ae nu) (ae nu) :=
     (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
   calc
@@ -296,11 +296,11 @@ theorem Sobolev1JetLp.translateLp_mem_w1pSubmodule (h : E) {J : Sobolev1JetLp mu
         Measure.coeFn_translateLp (mu := nu) h J,
         hq.eventually (Sobolev1JetLp.value_apply_ae J),
         hq.eventually (Sobolev1JetLp.gradient_apply_ae J)] with x hvK hgK hK hvJ hgJ
-      simp only [f, Sobolev1JetLp.candidateWeakFDeriv_apply, lineDeriv_translateTestFunction,
-        translateTestFunction_apply, add_sub_cancel_right, hvK, hgK, hK, Function.comp_apply,
-        hvJ, hgJ]
+      simp only [f, Sobolev1JetLp.candidateWeakFDeriv_apply,
+        TestFunction.lineDeriv_translateOfMapsTo, TestFunction.translateOfMapsTo_apply,
+        add_sub_cancel_right, hvK, hgK, hK, Function.comp_apply, hvJ, hgJ]
     _ = ∫ x in (⊤ : Opens E), f x ∂mu := integral_add_right_eq_self f h
-    _ = 0 := hJ (translateTestFunction htop phi) v
+    _ = 0 := hJ (phi.translateOfMapsTo htop) v
 
 end TranslateJet
 

@@ -7,14 +7,14 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
-import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import Mathlib.Analysis.Normed.Module.TransferInstance
 
 /-!
 # Spaces of continuous `m`-jets
 
 For real normed spaces `E` and `F`, a subset `K ⊆ E`, and an order `m : ℕ`,
-`TauCeti.JetSpace E F K m` is the normed space of continuous `m`-jets on `K`, realized as the
-finite product `Π k : Fin (m + 1), K →ᵇ (E [×k]→L[ℝ] F)` of bounded continuous multilinear-map
+`TauCeti.JetSpace E F K m` is the normed space of continuous `m`-jets on `K`, linearly isometric to
+the finite product `Π k : Fin (m + 1), K →ᵇ (E [×k]→L[ℝ] F)` of bounded continuous multilinear-map
 spaces up to order `m` with the product (sup) norm. It is complete whenever `F` is complete.
 
 Every `C^m` function on an open neighbourhood of a compact set `K` defines an `m`-jet
@@ -23,8 +23,10 @@ Every `C^m` function on an open neighbourhood of a compact set `K` defines an `m
 ## Main declarations
 
 * `TauCeti.JetSpace`: the normed space of bounded continuous `m`-jets on `K`.
-* `TauCeti.JetSpace.eval`, `TauCeti.JetSpace.ext`, `TauCeti.JetSpace.norm_eval_le`,
-  `TauCeti.JetSpace.norm_eval_apply_le`: evaluation, extensionality, and norm bounds.
+* `TauCeti.JetSpace.eval`, `TauCeti.JetSpace.evalEquiv`, `TauCeti.JetSpace.ext`,
+  `TauCeti.JetSpace.norm_eval_le`, `TauCeti.JetSpace.norm_eval_apply_le`,
+  `TauCeti.JetSpace.norm_le_iff`: evaluation, linear isometric equivalence with component
+  functions, extensionality, and norm bounds.
 * `TauCeti.JetSpace.ofContDiffOn`: the `m`-jet on a compact `K` of a `C^m` function on an open
   neighbourhood of `K`, with linearity and germ invariance.
 -/
@@ -41,29 +43,55 @@ namespace TauCeti
 variable (E F : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The normed space of bounded continuous `m`-jets on `K ⊆ E` with values in `F`, realized as the
-finite product `Π k : Fin (m + 1), K →ᵇ (E [×k]→L[ℝ] F)` with the sup norm. Defined as a `def`
-rather than an `abbrev` so that topological and algebraic instances resolve through
-`NormedAddCommGroup` and `NormedSpace` without competing `Pi` topologies. -/
-@[expose] def JetSpace (K : Set E) (m : ℕ) : Type _ :=
+/-- The normed space of bounded continuous `m`-jets on `K ⊆ E` with values in `F`, isomorphic to
+`Π k : Fin (m + 1), K →ᵇ (E [×k]→L[ℝ] F)` with the sup norm. Its internal representation is hidden;
+interact with elements through `JetSpace.eval`, `JetSpace.evalEquiv`, and
+`JetSpace.ofContDiffOn`. -/
+def JetSpace (K : Set E) (m : ℕ) : Type _ :=
   Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F)
 
-instance (K : Set E) (m : ℕ) : NormedAddCommGroup (JetSpace E F K m) :=
-  Pi.normedAddCommGroup
+private def JetSpace.equivPi (K : Set E) (m : ℕ) :
+    JetSpace E F K m ≃ Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F) where
+  toFun := id
+  invFun := id
+  left_inv _ := rfl
+  right_inv _ := rfl
 
-instance (K : Set E) (m : ℕ) : NormedSpace ℝ (JetSpace E F K m) :=
-  Pi.normedSpace
+@[implicit_reducible]
+def JetSpace.instNormedAddCommGroup (K : Set E) (m : ℕ) :
+    NormedAddCommGroup (JetSpace E F K m) :=
+  letI := (JetSpace.equivPi E F K m).addCommGroup
+  NormedAddCommGroup.induced (JetSpace E F K m)
+    (Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F))
+    ({ JetSpace.equivPi E F K m with map_add' _ _ := by rfl } :
+      JetSpace E F K m ≃+ Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F))
+    (JetSpace.equivPi E F K m).injective
 
-instance [CompleteSpace F] (K : Set E) (m : ℕ) : CompleteSpace (JetSpace E F K m) :=
-  inferInstanceAs (CompleteSpace (Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F)))
+attribute [instance] JetSpace.instNormedAddCommGroup
+
+@[implicit_reducible]
+def JetSpace.instNormedSpace (K : Set E) (m : ℕ) :
+    NormedSpace ℝ (JetSpace E F K m) :=
+  letI : SMul ℝ (JetSpace E F K m) :=
+    ⟨fun c J ↦ (JetSpace.equivPi E F K m).symm (c • JetSpace.equivPi E F K m J)⟩
+  letI : Module ℝ (JetSpace E F K m) :=
+    Function.Injective.module (M := Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F)) ℝ
+      { toFun := JetSpace.equivPi E F K m
+        map_zero' := by rfl
+        map_add' _ _ := by rfl }
+      (JetSpace.equivPi E F K m).injective
+      (fun _ _ ↦ by rfl)
+  { norm_smul_le c J := by exact norm_smul_le c (JetSpace.equivPi E F K m J) }
+
+attribute [instance] JetSpace.instNormedSpace
 
 namespace JetSpace
 
 variable {E F} {K : Set E} {m : ℕ}
 
 /-- Evaluate a continuous `m`-jet at derivative order `k : Fin (m + 1)`. -/
-@[expose] def eval (J : JetSpace E F K m) (k : Fin (m + 1)) : K →ᵇ (E [×(k : ℕ)]→L[ℝ] F) :=
-  J k
+def eval (J : JetSpace E F K m) (k : Fin (m + 1)) : K →ᵇ (E [×(k : ℕ)]→L[ℝ] F) :=
+  JetSpace.equivPi E F K m J k
 
 @[ext]
 theorem ext {J₁ J₂ : JetSpace E F K m}
@@ -95,9 +123,44 @@ theorem eval_smul (c : ℝ) (J : JetSpace E F K m) (k : Fin (m + 1)) :
     (c • J).eval k = c • J.eval k := by
   rfl
 
+/-- Linear isometric equivalence between `JetSpace E F K m` and the finite product of bounded
+continuous component spaces `Π k : Fin (m + 1), K →ᵇ (E [×k]→L[ℝ] F)`. -/
+def evalEquiv :
+    JetSpace E F K m ≃ₗᵢ[ℝ] Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F) where
+  toFun := eval
+  invFun := (JetSpace.equivPi E F K m).symm
+  left_inv _ := by rfl
+  right_inv _ := by rfl
+  map_add' _ _ := by rfl
+  map_smul' _ _ := by rfl
+  norm_map' _ := by rfl
+
+instance [CompleteSpace F] : CompleteSpace (JetSpace E F K m) :=
+  (completeSpace_congr (e := evalEquiv.toEquiv)
+    evalEquiv.isometry.isUniformEmbedding).2 inferInstance
+
+@[simp]
+theorem evalEquiv_apply (J : JetSpace E F K m) (k : Fin (m + 1)) :
+    evalEquiv J k = J.eval k := by
+  rfl
+
+@[simp]
+theorem eval_evalEquiv_symm (f : Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F))
+    (k : Fin (m + 1)) :
+    (evalEquiv.symm f).eval k = f k := by
+  rfl
+
 /-- The norm of each order-`k` component of a jet is bounded by the norm of the jet. -/
-theorem norm_eval_le (J : JetSpace E F K m) (k : Fin (m + 1)) : ‖J.eval k‖ ≤ ‖J‖ :=
-  norm_le_pi_norm (J : Π i : Fin (m + 1), K →ᵇ (E [×(i : ℕ)]→L[ℝ] F)) k
+theorem norm_eval_le (J : JetSpace E F K m) (k : Fin (m + 1)) : ‖J.eval k‖ ≤ ‖J‖ := by
+  rw [← evalEquiv.norm_map J]
+  exact norm_le_pi_norm (evalEquiv J) k
+
+/-- A jet has norm at most `r` (for `r ≥ 0`) if and only if each of its components has norm at
+most `r`. -/
+theorem norm_le_iff {J : JetSpace E F K m} {r : ℝ} (hr : 0 ≤ r) :
+    ‖J‖ ≤ r ↔ ∀ k : Fin (m + 1), ‖J.eval k‖ ≤ r := by
+  rw [← evalEquiv.norm_map J]
+  simpa using pi_norm_le_iff_of_nonneg (x := evalEquiv J) hr
 
 /-- The norm of each pointwise derivative value of a jet is bounded by the norm of the jet. -/
 theorem norm_eval_apply_le (J : JetSpace E F K m) (k : Fin (m + 1)) (x : K) :
@@ -108,7 +171,7 @@ theorem norm_eval_apply_le (J : JetSpace E F K m) (k : Fin (m + 1)) (x : K) :
 neighbourhood `U` of `K`. -/
 def ofContDiffOn {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ)
     {g : E → F} (hg : ContDiffOn ℝ m g U) : JetSpace E F K m :=
-  fun k ↦ by
+  (JetSpace.equivPi E F K m).symm fun k ↦ by
     haveI : CompactSpace K := isCompact_iff_compactSpace.1 hK
     have hk : ((k : ℕ) : WithTop ℕ∞) ≤ (m : WithTop ℕ∞) := by
       exact_mod_cast Nat.le_of_lt_succ k.isLt
@@ -126,11 +189,13 @@ theorem eval_ofContDiffOn {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : 
   rfl
 
 /-- The `m`-jet of the zero function vanishes. -/
+@[simp]
 theorem ofContDiffOn_zero {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ) :
     ofContDiffOn hK hU hKU m (contDiffOn_const (c := (0 : F))) = 0 :=
   ext fun k x ↦ by simp
 
 /-- Taking `m`-jets is additive on `C^m` functions. -/
+@[simp]
 theorem ofContDiffOn_add {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ)
     {g₁ g₂ : E → F} (hg₁ : ContDiffOn ℝ m g₁ U) (hg₂ : ContDiffOn ℝ m g₂ U) :
     ofContDiffOn hK hU hKU m (hg₁.add hg₂) =
@@ -144,6 +209,7 @@ theorem ofContDiffOn_add {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K
       ((hg₂ x.val (hKU x.property)).contDiffAt (hU.mem_nhds (hKU x.property)) |>.of_le hk)
 
 /-- Taking `m`-jets commutes with scalar multiplication on `C^m` functions. -/
+@[simp]
 theorem ofContDiffOn_smul {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ)
     (c : ℝ) {g : E → F} (hg : ContDiffOn ℝ m g U) :
     ofContDiffOn hK hU hKU m (hg.const_smul c) = c • ofContDiffOn hK hU hKU m hg :=

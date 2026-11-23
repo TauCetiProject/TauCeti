@@ -40,8 +40,6 @@ elliptic equations are reduced to the harmonic case.
 * `InnerProductSpace.HarmonicAt.iteratedFDerivAlong_sub_right` and
   `InnerProductSpace.HarmonicOnNhd.iteratedFDerivAlong_sub_right`: reflected translates
   `y ↦ (∂_{vs} f)(x - y)` of iterated directional derivatives are harmonic.
-* `InnerProductSpace.HarmonicOnNhd.contDiffOn_sub_right`: for `f` harmonic on `{0}ᶜ`,
-  `y ↦ f (x - y)` is smooth on `{x}ᶜ`.
 * `InnerProductSpace.HarmonicAt.gradient` and `InnerProductSpace.HarmonicOnNhd.gradient`: the
   gradient of a real-valued harmonic function is harmonic.
 
@@ -129,12 +127,6 @@ theorem HarmonicOnNhd.iteratedFDerivAlong_sub_right (hf : HarmonicOnNhd f {0}ᶜ
   fun _ hy ↦
     (hf _ (sub_ne_zero.2 (Ne.symm (Set.mem_compl_singleton_iff.1 hy)))
       ).iteratedFDerivAlong_sub_right vs
-
-/-- If `f` is harmonic away from `0`, then for any `x`, `y ↦ f (x - y)` is smooth away from `x`. -/
-theorem HarmonicOnNhd.contDiffOn_sub_right (hf : HarmonicOnNhd f {0}ᶜ) (x : E) :
-    ContDiffOn ℝ ∞ (fun y ↦ f (x - y)) {x}ᶜ := by
-  simpa using (hf.iteratedFDerivAlong_sub_right [] x).analyticOnNhd.contDiffOn
-    isOpen_compl_singleton.uniqueDiffOn
 
 end VectorValued
 

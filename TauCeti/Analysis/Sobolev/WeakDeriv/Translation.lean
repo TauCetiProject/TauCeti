@@ -71,17 +71,17 @@ theorem HasWeakLineDerivOn.comp_add_right
     MeasureTheory.LocallyIntegrableOn.comp_add_right_of_mapsTo
       hu.locallyIntegrableOn_deriv hVO,
     fun phi => ?_⟩
-  let psi := translateTestFunction hVO phi
+  let psi := phi.translateOfMapsTo (hVO.mono_left phi.tsupport_subset)
   have hleft :
       (∫ x, lineDeriv ℝ (phi : E → ℝ) x v • u (x + h) ∂mu) =
         ∫ y, lineDeriv ℝ (psi : E → ℝ) y v • u y ∂mu := by
-    simpa only [psi, lineDeriv_translateTestFunction, add_sub_cancel_right] using
+    simpa only [psi, TestFunction.lineDeriv_translateOfMapsTo, add_sub_cancel_right] using
       integral_add_right_eq_self
         (fun y => lineDeriv ℝ (psi : E → ℝ) y v • u y) h
   have hright :
       (∫ x, (phi : E → ℝ) x • u' (x + h) ∂mu) =
         ∫ y, (psi : E → ℝ) y • u' y ∂mu := by
-    simpa only [psi, translateTestFunction_apply, add_sub_cancel_right] using
+    simpa only [psi, TestFunction.translateOfMapsTo_apply, add_sub_cancel_right] using
       integral_add_right_eq_self (fun y => (psi : E → ℝ) y • u' y) h
   rw [hleft, hright]
   exact hu.integral_lineDeriv_smul_eq_neg_integral_smul psi

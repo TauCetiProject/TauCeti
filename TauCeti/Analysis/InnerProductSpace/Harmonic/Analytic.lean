@@ -35,6 +35,8 @@ dilation.
 
 * `InnerProductSpace.HarmonicAt.analyticAt`, `InnerProductSpace.HarmonicOnNhd.analyticOnNhd`:
   harmonic functions are real analytic.
+* `InnerProductSpace.HarmonicOnNhd.contDiffOn_sub_right`: for `f` harmonic on `{0}ᶜ`,
+  `y ↦ f (x - y)` is smooth on `{x}ᶜ`.
 
 ## References
 
@@ -114,5 +116,15 @@ real analytic there. -/
 theorem HarmonicOnNhd.analyticOnNhd {s : Set E} (hf : HarmonicOnNhd f s) :
     AnalyticOnNhd ℝ f s :=
   fun x hx ↦ (hf x hx).analyticAt
+
+open scoped ContDiff in
+/-- If `f` is harmonic away from `0`, then for any `x`, `y ↦ f (x - y)` is smooth away from `x`. -/
+theorem HarmonicOnNhd.contDiffOn_sub_right (hf : HarmonicOnNhd f {0}ᶜ) (x : E) :
+    ContDiffOn ℝ ∞ (fun y ↦ f (x - y)) {x}ᶜ := by
+  have h : HarmonicOnNhd (fun y ↦ f (x - y)) {x}ᶜ := fun y hy ↦ by
+    simpa [Function.comp_def] using (TauCeti.harmonicAt_comp_affineIsometryEquiv_right_iff
+      (AffineIsometryEquiv.constVSub ℝ x)).2
+      (hf (x - y) (sub_ne_zero.2 (Ne.symm (Set.mem_compl_singleton_iff.1 hy))))
+  exact h.analyticOnNhd.contDiffOn isOpen_compl_singleton.uniqueDiffOn
 
 end InnerProductSpace

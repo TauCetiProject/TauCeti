@@ -131,19 +131,25 @@ translated by `x₀`. -/
 private def concentrate {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ r ⊆ Omega)
     (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) :
     𝓓(Omega, ℝ) :=
-  ε ^ l • translateTestFunction (V := ⟨ball (0 : E) r, isOpen_ball⟩) (h := x₀)
-    (show MapsTo (· + x₀) (ball (0 : E) r) Omega from fun z hz => hΩ <| by
-      rwa [mem_ball, dist_eq_norm, add_sub_cancel_right, ← mem_ball_zero_iff])
-    (dilateTestFunction (V := ⟨ball (0 : E) r, isOpen_ball⟩) h0.ne'
-      (show MapsTo (ε • ·) (ball (0 : E) r) (ball 0 r) from fun z hz => by
+  ε ^ l •
+    (dilateTestFunction (V := ⟨ball (0 : E) r, isOpen_ball⟩) (Ω := ⟨ball (0 : E) r, isOpen_ball⟩)
+      h0.ne'
+      (show MapsTo (ε • ·) (⟨ball (0 : E) r, isOpen_ball⟩ : Opens E)
+          (⟨ball (0 : E) r, isOpen_ball⟩ : Opens E) from fun z hz => by
+        change z ∈ ball (0 : E) r at hz
+        change ε • z ∈ ball (0 : E) r
         rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg h0.le]
-        exact (mul_le_of_le_one_left (norm_nonneg z) h1).trans_lt (mem_ball_zero_iff.1 hz)) φ)
+        exact (mul_le_of_le_one_left (norm_nonneg z) h1).trans_lt (mem_ball_zero_iff.1 hz))
+      φ).translateOfMapsTo (x := x₀)
+      (show MapsTo (· + x₀) _ Omega from fun z hz => hΩ <| by
+        rw [mem_ball, dist_eq_norm, add_sub_cancel_right, ← mem_ball_zero_iff]
+        exact TestFunction.tsupport_subset _ hz)
 
 private theorem coe_concentrate {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ r ⊆ Omega)
     (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) :
     (concentrate hΩ φ h0 h1 l : E → ℝ) = fun y => ε ^ l * φ (ε⁻¹ • (y - x₀)) := by
   ext y
-  rw [concentrate, FunLike.coe_smul, Pi.smul_apply, translateTestFunction_apply,
+  rw [concentrate, FunLike.coe_smul, Pi.smul_apply, TestFunction.translateOfMapsTo_apply,
     dilateTestFunction_apply, smul_eq_mul]
 
 /-- The `l`-th derivative of the rescaled profile is `D^l φ(ε⁻¹ (y - x₀))`: the factor `ε ^ l`

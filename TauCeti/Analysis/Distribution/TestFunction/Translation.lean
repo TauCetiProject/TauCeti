@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 public import TauCeti.Topology.Algebra.Support
@@ -16,25 +15,25 @@ import TauCeti.MeasureTheory.Constructions.UnitInterval
 # Translation of test functions
 
 This file translates a test function on an open set `V` in the opposite direction to a vector
-`h`, producing a test function on any open set `Ω` that contains `V + h` (or more generally
-`tsupport ρ + x`). The codomain may be any real normed space. This is the common test-function
-operation used to prove translation invariance of weak derivatives, distributional variation, and
-iterated directional derivatives of regularizations.
+`x`, producing a test function on any open set `Ω` that contains `tsupport ρ + x` (or in particular
+`V + x`). The codomain may be any real normed space. This is the common test-function operation used
+to prove translation invariance of weak derivatives, distributional variation, and iterated
+directional derivatives of regularizations.
 
 ## Main declarations
 
-* `TauCeti.translateTestFunction`: translate a test function while changing its domain.
-* `TauCeti.translateTestFunction_apply`: evaluation of a translated test function.
-* `TauCeti.fderiv_translateTestFunction`: Fréchet derivatives commute with translation.
-* `TauCeti.lineDeriv_translateTestFunction`: directional derivatives commute with translation.
+* `TestFunction.translateOfMapsTo`: translate a `Cⁿ` test function `ρ` by `x` whenever
+  `tsupport ρ + x ⊆ Ω`.
+* `TestFunction.translateOfMapsTo_apply`: evaluation of a translated test function.
+* `TestFunction.tsupport_translateOfMapsTo`: support of a translated test function.
+* `TestFunction.fderiv_translateOfMapsTo`: Fréchet derivatives commute with translation.
+* `TestFunction.lineDeriv_translateOfMapsTo`: directional derivatives commute with translation.
 * `TauCeti.exists_testFunction_eq_intervalIntegral`: segment averages of a test function are test
   functions.
 * `TauCeti.reflectTranslateTestFunction`: the reflected translate `t ↦ ρ (y - t)` of a smooth
   compactly supported function, as a test function on `Omega`.
 * `TauCeti.fderiv_reflectTranslateTestFunction`, `TauCeti.lineDeriv_reflectTranslateTestFunction`:
   derivatives of the reflected translate.
-* `TestFunction.translateOfMapsTo`: translate a `Cⁿ` test function `ρ` by `x` whenever
-  `tsupport ρ + x ⊆ Ω`.
 * `TestFunction.translateIteratedFDerivAlong`: package
   `y ↦ TauCeti.iteratedFDerivAlong ℝ vs (fun z ↦ ρ (y - z)) x` as a test function on `Ω`.
 -/
@@ -70,6 +69,33 @@ theorem translateOfMapsTo_apply {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
     ρ.translateOfMapsTo h y = ρ (y - x) := by
   rfl
 
+/-- The support of `ρ.translateOfMapsTo h` is the translated support of `ρ`. -/
+@[simp]
+theorem tsupport_translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
+    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) :
+    tsupport (ρ.translateOfMapsTo h : E → F) = (· - x) ⁻¹' tsupport (ρ : E → F) := by
+  rw [funext (translateOfMapsTo_apply ρ h), TauCeti.tsupport_comp_sub_right]
+
+/-- The Fréchet derivative of a translated test function is the translated Fréchet
+derivative. -/
+@[simp]
+theorem fderiv_translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
+    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (y : E) :
+    fderiv ℝ (ρ.translateOfMapsTo h : E → F) y = fderiv ℝ (ρ : E → F) (y - x) := by
+  rw [funext (translateOfMapsTo_apply ρ h), fderiv_comp_sub]
+
+/-- The directional derivative of a translated test function is the translated directional
+derivative. -/
+@[simp]
+theorem lineDeriv_translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
+    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (y w : E) :
+    lineDeriv ℝ (ρ.translateOfMapsTo h : E → F) y w = lineDeriv ℝ (ρ : E → F) (y - x) w := by
+  simp only [lineDeriv, translateOfMapsTo_apply, sub_eq_add_neg]
+  congr 1
+  funext t
+  congr 1
+  abel
+
 end TestFunction
 
 namespace TauCeti
@@ -81,39 +107,6 @@ open scoped Distributions
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Omega V : Opens E} {h : E}
-
-/-- Translate a test function in the opposite direction, regarding it as a test function on an
-open set containing the translated support. -/
-def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, F)) :
-    𝓓(Omega, F) :=
-  phi.translateOfMapsTo (hVO.mono_left phi.tsupport_subset)
-
-/-- Translating a test function evaluates it at the oppositely translated point. -/
-@[simp]
-theorem translateTestFunction_apply (hVO : MapsTo (· + h) V Omega)
-    (phi : 𝓓(V, F)) (y : E) : translateTestFunction hVO phi y = phi (y - h) :=
-  (rfl)
-
-/-- The Fréchet derivative of a translated test function is the translated Fréchet
-derivative. -/
-@[simp]
-theorem fderiv_translateTestFunction (hVO : MapsTo (· + h) V Omega)
-    (phi : 𝓓(V, F)) (y : E) :
-    fderiv ℝ (translateTestFunction hVO phi : E → F) y = fderiv ℝ (phi : E → F) (y - h) :=
-  fderiv_comp_sub (f := (phi : E → F)) h
-
-/-- The directional derivative of a translated test function is the translated directional
-derivative. -/
-@[simp]
-theorem lineDeriv_translateTestFunction (hVO : MapsTo (· + h) V Omega)
-    (phi : 𝓓(V, F)) (y w : E) :
-    lineDeriv ℝ (translateTestFunction hVO phi : E → F) y w =
-      lineDeriv ℝ (phi : E → F) (y - h) w := by
-  simp only [lineDeriv, translateTestFunction_apply, sub_eq_add_neg]
-  congr 1
-  funext t
-  congr 1
-  abel
 
 /-- For `g ∈ 𝓓(V, F)`, the function `Φ y = ∫₀¹ g (y - t h) dt` is a test function on
 `Omega`, as soon as the segments `x + [0, 1] h` starting in `V` lie in `Omega`. -/
@@ -223,9 +216,7 @@ theorem translateIteratedFDerivAlong_apply (ρ : 𝓓(V, F)) {x : E}
 theorem tsupport_translateIteratedFDerivAlong_subset (ρ : 𝓓(V, F)) {x : E}
     (hx : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (vs : List E) :
     tsupport (ρ.translateIteratedFDerivAlong hx vs : E → F) ⊆ (· - x) ⁻¹' tsupport (ρ : E → F) := by
-  rw [translateIteratedFDerivAlong,
-    funext (TestFunction.translateOfMapsTo_apply ((-1 : ℝ) ^ vs.length • ∂^{vs.get} ρ) _),
-    TauCeti.tsupport_comp_sub_right]
+  rw [translateIteratedFDerivAlong, tsupport_translateOfMapsTo]
   exact preimage_mono ((tsupport_smul_subset_right _ _).trans
     (ρ.tsupport_iteratedLineDerivOp_subset vs.get))
 
