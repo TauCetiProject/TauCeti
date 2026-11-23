@@ -232,6 +232,31 @@ theorem baseChange_smul (r : R) (B : LinearMap.BilinForm R M) :
     | add y z hy hz => simp only [map_add, hy, hz]
   | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx']
 
+/-- Scalar extension of an alternating bilinear form is alternating. -/
+theorem IsAlt.baseChange {B : LinearMap.BilinForm R M} (hB : B.IsAlt) :
+    (B.baseChange A).IsAlt := by
+  have hB' (x y : M) : B x y + B y x = 0 := by
+    have := hB (x + y)
+    simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
+    rwa [add_comm] at this
+  have hskew (x y : A ⊗[R] M) : B.baseChange A x y + B.baseChange A y x = 0 := by
+    induction x using TensorProduct.inductionOn with
+    | tmul a x =>
+      induction y using TensorProduct.inductionOn with
+      | tmul b y => rw [baseChange_tmul, baseChange_tmul, mul_comm b a, ← add_smul, hB', zero_smul]
+      | add y z hy hz =>
+        simp only [map_add, LinearMap.add_apply]
+        rw [add_add_add_comm, hy, hz, add_zero]
+    | add x x' hx hx' =>
+      simp only [map_add, LinearMap.add_apply]
+      rw [add_add_add_comm, hx, hx', add_zero]
+  intro x
+  induction x using TensorProduct.inductionOn with
+  | tmul a x => simp [hB x]
+  | add x x' hx hx' =>
+    simp only [map_add, LinearMap.add_apply, hx, hx', zero_add, add_zero]
+    exact hskew x' x
+
 end Arithmetic
 
 section Ring
@@ -241,30 +266,8 @@ variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M
 /-- Scalar extension commutes with negation of bilinear forms. -/
 @[simp]
 theorem baseChange_neg (B : LinearMap.BilinForm R M) : (-B).baseChange A = -B.baseChange A := by
-  refine LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_
-  induction x using TensorProduct.inductionOn with
-  | tmul a x =>
-    induction y using TensorProduct.inductionOn with
-    | tmul b y => simp
-    | add y z hy hz => simp only [map_add, hy, hz]
-  | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx']
-
-/-- Scalar extension of an alternating bilinear form is alternating. -/
-theorem IsAlt.baseChange {B : LinearMap.BilinForm R M} (hB : B.IsAlt) :
-    (B.baseChange A).IsAlt := by
-  have hskew (x y : A ⊗[R] M) : B.baseChange A y x = -B.baseChange A x y := by
-    induction x using TensorProduct.inductionOn with
-    | tmul a x =>
-      induction y using TensorProduct.inductionOn with
-      | tmul b y => simp only [baseChange_tmul, ← hB.neg_eq x y, neg_smul, mul_comm a b]
-      | add y z hy hz => simp only [map_add, LinearMap.add_apply, hy, hz, neg_add]
-    | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx', neg_add]
-  intro x
-  induction x using TensorProduct.inductionOn with
-  | tmul a x => simp [hB x]
-  | add x x' hx hx' =>
-    simp only [map_add, LinearMap.add_apply, hx, hx', hskew x x']
-    abel
+  rw [← neg_one_smul R B, baseChange_smul, map_neg, map_one]
+  exact neg_one_smul A (B.baseChange A)
 
 end Ring
 

@@ -10,19 +10,20 @@ public import Mathlib.Analysis.Complex.Order
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# The Hermitian form with a given imaginary part
+# The complex-valued form with a given imaginary part
 
 Let `J` be an almost complex structure on a real module `U` and `B` a real bilinear form on `U`.
-The form
+The associated complex-valued real bilinear map
 
 `H (v, w) = B (J v) w + i B v w`
 
-is real bilinear, has imaginary part `B`, and is complex linear in the first variable for the
-complex structure `J.complexModule` in which `i` acts by `J`. When `B` is alternating and
-`J`-invariant, `H` is conjugate symmetric, and it is positive definite exactly when
-`0 < B (J v) v` for `v ≠ 0`. This is the classical correspondence between Hermitian forms on
-`(U, J)` and `J`-invariant alternating real forms (Birkenhake–Lange, *Complex Abelian Varieties*,
-Lemma 2.1.7), in the convention linear in the first variable.
+has imaginary part `B` and is complex linear in the first variable for the complex structure
+`J.complexModule` in which `i` acts by `J`; it is the only such map (`complexFormOfIm_unique`).
+When `B` is `J`-invariant, `H` is conjugate linear in the second variable. When `B` is moreover
+alternating, `H` is a Hermitian form: it is conjugate symmetric, and it is positive definite
+exactly when `0 < B (J v) v` for `v ≠ 0`. This is the classical correspondence between Hermitian
+forms on `(U, J)` and `J`-invariant alternating real forms (Birkenhake–Lange, *Complex Abelian
+Varieties*, Lemma 2.1.7), in the convention linear in the first variable.
 
 `TauCeti.SymplecticForm.complexAssociatedForm` is the form `ω (v, J w) + i ω (v, w)` of a symplectic
 form, linear in the second variable; for `J`-invariant `ω` its real part is the negative of the
@@ -30,14 +31,16 @@ real part of `H` here.
 
 ## Main declarations
 
-* `TauCeti.AlmostComplexStructure.hermitianOfIm`: the form `H` of `(J, B)`.
-* `TauCeti.AlmostComplexStructure.re_hermitianOfIm`,
-  `TauCeti.AlmostComplexStructure.im_hermitianOfIm`: `Re H = B (J ·) ·` and `Im H = B`.
-* `TauCeti.AlmostComplexStructure.hermitianOfIm_smul_left`: `H` is complex linear in the first
-  variable for `J.complexModule`.
-* `TauCeti.AlmostComplexStructure.hermitianOfIm_conj_symm`: for alternating `J`-invariant `B`,
+* `TauCeti.AlmostComplexStructure.complexFormOfIm`: the map `H` of `(J, B)`, characterized by
+  `TauCeti.AlmostComplexStructure.complexFormOfIm_unique`.
+* `TauCeti.AlmostComplexStructure.re_complexFormOfIm`,
+  `TauCeti.AlmostComplexStructure.im_complexFormOfIm`: `Re H = B (J ·) ·` and `Im H = B`.
+* `TauCeti.AlmostComplexStructure.complexFormOfIm_smul_left`: `H` is complex linear in the first
+  variable for `J.complexModule`, and `TauCeti.AlmostComplexStructure.complexFormOfIm_smul_right`:
+  for `J`-invariant `B` it is conjugate linear in the second.
+* `TauCeti.AlmostComplexStructure.complexFormOfIm_conj_symm`: for alternating `J`-invariant `B`,
   `H` is conjugate symmetric.
-* `TauCeti.AlmostComplexStructure.hermitianOfIm_self_pos`: `0 < H (v, v)` when `B` is alternating
+* `TauCeti.AlmostComplexStructure.complexFormOfIm_self_pos`: `0 < H (v, v)` when `B` is alternating
   and `0 < B (J v) v`.
 -/
 
@@ -49,19 +52,13 @@ open scoped ComplexOrder ComplexConjugate
 
 variable {U : Type*} [AddCommGroup U] [Module ℝ U]
 
-/-- An alternating bilinear form preserved by `J` satisfies `B (J v) w = B (J w) v`. -/
-theorem bilinForm_apply_left_comm (J : AlmostComplexStructure U) {B : LinearMap.BilinForm ℝ U}
-    (hB : B.IsAlt) (hBJ : ∀ v w, B (J v) (J w) = B v w) (v w : U) :
-    B (J v) w = B (J w) v := by
-  rw [J.bilinForm_apply_left_eq_neg_apply_right hBJ, hB.neg_eq]
-
 variable (J : AlmostComplexStructure U) (B : LinearMap.BilinForm ℝ U)
 
-/-- The **Hermitian form** `H (v, w) = B (J v) w + i B v w` with imaginary part a real bilinear
-form `B`, for an almost complex structure `J`, as a real bilinear map. It is complex linear in the
-first variable for `J.complexModule` (`hermitianOfIm_smul_left`); when `B` is alternating and
-`J`-invariant it is conjugate symmetric (`hermitianOfIm_conj_symm`). -/
-noncomputable def hermitianOfIm : U →ₗ[ℝ] U →ₗ[ℝ] ℂ :=
+/-- The complex-valued real bilinear map `H (v, w) = B (J v) w + i B v w` with imaginary part a
+real bilinear form `B`, for an almost complex structure `J`. It is complex linear in the first
+variable for `J.complexModule` (`complexFormOfIm_smul_left`); when `B` is alternating and
+`J`-invariant it is a Hermitian form (`complexFormOfIm_conj_symm`). -/
+noncomputable def complexFormOfIm : U →ₗ[ℝ] U →ₗ[ℝ] ℂ :=
   LinearMap.mk₂ ℝ (fun v w ↦ (B (J v) w : ℂ) + Complex.I * B v w)
     (fun v v' w ↦ by simp only [map_add, LinearMap.add_apply]; push_cast; ring)
     (fun c v w ↦ by
@@ -74,56 +71,84 @@ noncomputable def hermitianOfIm : U →ₗ[ℝ] U →ₗ[ℝ] ℂ :=
 
 /-- The defining formula `H (v, w) = B (J v) w + i B v w`. -/
 @[simp]
-theorem hermitianOfIm_apply (v w : U) :
-    J.hermitianOfIm B v w = (B (J v) w : ℂ) + Complex.I * B v w := by
-  simp [hermitianOfIm]
+theorem complexFormOfIm_apply (v w : U) :
+    J.complexFormOfIm B v w = (B (J v) w : ℂ) + Complex.I * B v w := by
+  simp [complexFormOfIm]
 
-/-- The real part of the Hermitian form is `B (J v) w`. -/
-theorem re_hermitianOfIm (v w : U) : (J.hermitianOfIm B v w).re = B (J v) w := by
+/-- The real part of `H` is `B (J v) w`. -/
+theorem re_complexFormOfIm (v w : U) : (J.complexFormOfIm B v w).re = B (J v) w := by
   simp
 
-/-- **The imaginary part of the Hermitian form is `B`.** -/
-theorem im_hermitianOfIm (v w : U) : (J.hermitianOfIm B v w).im = B v w := by
+/-- **The imaginary part of `H` is `B`.** -/
+theorem im_complexFormOfIm (v w : U) : (J.complexFormOfIm B v w).im = B v w := by
   simp
 
-/-- The Hermitian form turns `J` in the first variable into multiplication by `i`. -/
-theorem hermitianOfIm_apply_left (v w : U) :
-    J.hermitianOfIm B (J v) w = Complex.I * J.hermitianOfIm B v w := by
-  simp only [hermitianOfIm_apply, apply_apply, map_neg, LinearMap.neg_apply]
+/-- `H` turns `J` in the first variable into multiplication by `i`. -/
+theorem complexFormOfIm_apply_left (v w : U) :
+    J.complexFormOfIm B (J v) w = Complex.I * J.complexFormOfIm B v w := by
+  simp only [complexFormOfIm_apply, apply_apply, map_neg, LinearMap.neg_apply]
   push_cast
   linear_combination (-(B v w : ℂ)) * Complex.I_sq
 
-/-- The Hermitian form is complex linear in the first variable for the complex structure
-`J.complexModule`, in which `i` acts by `J`. -/
-theorem hermitianOfIm_smul_left (z : ℂ) (v w : U) :
+/-- `H` is complex linear in the first variable for the complex structure `J.complexModule`, in
+which `i` acts by `J`. -/
+theorem complexFormOfIm_smul_left (z : ℂ) (v w : U) :
     letI := J.complexModule
-    J.hermitianOfIm B (z • v) w = z * J.hermitianOfIm B v w := by
+    J.complexFormOfIm B (z • v) w = z * J.complexFormOfIm B v w := by
   let := J.complexModule
   rw [J.complexModule_smul_def, map_add, map_smul, map_smul, LinearMap.add_apply,
-    LinearMap.smul_apply, LinearMap.smul_apply, hermitianOfIm_apply_left, Complex.real_smul,
+    LinearMap.smul_apply, LinearMap.smul_apply, complexFormOfIm_apply_left, Complex.real_smul,
     Complex.real_smul, ← mul_assoc, ← add_mul]
   conv_rhs => rw [← Complex.re_add_im z]
 
+/-- **Uniqueness of `H`**: a real bilinear map with imaginary part `B` that turns `J` in the first
+variable into multiplication by `i` is `J.complexFormOfIm B`. -/
+theorem complexFormOfIm_unique {F : U →ₗ[ℝ] U →ₗ[ℝ] ℂ} (hIm : ∀ v w, (F v w).im = B v w)
+    (hJ : ∀ v w, F (J v) w = Complex.I * F v w) : F = J.complexFormOfIm B := by
+  refine LinearMap.ext₂ fun v w ↦ Complex.ext ?_ ?_
+  · rw [re_complexFormOfIm, ← hIm, hJ]
+    simp
+  · rw [im_complexFormOfIm, hIm]
+
 variable {J B}
 
-/-- On the diagonal, the Hermitian form of an alternating form is real, equal to `B (J v) v`. -/
-theorem hermitianOfIm_self (hB : B.IsAlt) (v : U) :
-    J.hermitianOfIm B v v = (B (J v) v : ℂ) := by
+/-- For `J`-invariant `B`, `H` turns `J` in the second variable into multiplication by `-i`. -/
+theorem complexFormOfIm_apply_right (hBJ : ∀ v w, B (J v) (J w) = B v w) (v w : U) :
+    J.complexFormOfIm B v (J w) = -Complex.I * J.complexFormOfIm B v w := by
+  rw [complexFormOfIm_apply, complexFormOfIm_apply, hBJ,
+    J.bilinForm_apply_left_eq_neg_apply_right hBJ v w]
+  push_cast
+  linear_combination (B v w : ℂ) * Complex.I_sq
+
+/-- For `J`-invariant `B`, `H` is conjugate linear in the second variable for the complex structure
+`J.complexModule`. -/
+theorem complexFormOfIm_smul_right (hBJ : ∀ v w, B (J v) (J w) = B v w) (z : ℂ) (v w : U) :
+    letI := J.complexModule
+    J.complexFormOfIm B v (z • w) = conj z * J.complexFormOfIm B v w := by
+  let := J.complexModule
+  rw [J.complexModule_smul_def, map_add, map_smul, map_smul, complexFormOfIm_apply_right hBJ,
+    Complex.real_smul, Complex.real_smul]
+  conv_rhs => rw [← Complex.re_add_im z]
+  rw [map_add, map_mul, Complex.conj_ofReal, Complex.conj_ofReal, Complex.conj_I]
+  ring
+
+/-- On the diagonal, `H` is real for alternating `B`, equal to `B (J v) v`. -/
+theorem complexFormOfIm_self (hB : B.IsAlt) (v : U) :
+    J.complexFormOfIm B v v = (B (J v) v : ℂ) := by
   simp [hB v]
 
-/-- **The Hermitian form of an alternating `J`-invariant form is conjugate symmetric**:
+/-- **For an alternating `J`-invariant form, `H` is conjugate symmetric**:
 `conj (H (w, v)) = H (v, w)`. -/
-theorem hermitianOfIm_conj_symm (hB : B.IsAlt) (hBJ : ∀ v w, B (J v) (J w) = B v w) (v w : U) :
-    conj (J.hermitianOfIm B w v) = J.hermitianOfIm B v w := by
+theorem complexFormOfIm_conj_symm (hB : B.IsAlt) (hBJ : ∀ v w, B (J v) (J w) = B v w) (v w : U) :
+    conj (J.complexFormOfIm B w v) = J.complexFormOfIm B v w := by
   apply Complex.ext
-  · simp [J.bilinForm_apply_left_comm hB hBJ v w]
+  · simp [J.bilinForm_apply_left_symm hB hBJ v w]
   · simp [← hB.neg_eq v w]
 
-/-- **Positivity of the Hermitian form**: if `B` is alternating and `0 < B (J v) v`, then
-`0 < H (v, v)`. -/
-theorem hermitianOfIm_self_pos (hB : B.IsAlt) {v : U} (hv : 0 < B (J v) v) :
-    0 < J.hermitianOfIm B v v := by
-  rw [hermitianOfIm_self hB]
+/-- **Positivity of `H`**: if `B` is alternating and `0 < B (J v) v`, then `0 < H (v, v)`. -/
+theorem complexFormOfIm_self_pos (hB : B.IsAlt) {v : U} (hv : 0 < B (J v) v) :
+    0 < J.complexFormOfIm B v v := by
+  rw [complexFormOfIm_self hB]
   exact Complex.zero_lt_real.mpr hv
 
 end TauCeti.AlmostComplexStructure

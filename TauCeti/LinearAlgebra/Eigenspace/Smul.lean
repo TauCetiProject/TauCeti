@@ -75,10 +75,6 @@ theorem eigenspace_neg (f : End R M) (μ : R) : eigenspace (-f) μ = eigenspace 
   ext x
   simp only [mem_eigenspace_iff, LinearMap.neg_apply, neg_smul, neg_eq_iff_eq_neg]
 
-/-- The `-μ`-eigenspace of `-f` is the `μ`-eigenspace of `f`. -/
-theorem eigenspace_neg_neg (f : End R M) (μ : R) : eigenspace (-f) (-μ) = eigenspace f μ := by
-  rw [eigenspace_neg, neg_neg]
-
 end Module.End
 
 /-! ### Rescaling by a nonzero scalar over a field -/
