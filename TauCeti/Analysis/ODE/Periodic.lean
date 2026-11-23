@@ -91,20 +91,20 @@ this is the sign of `det (1 - P)` or `det (-1 - P)`.
 The canonical trivialization is also normalized at complex-linear equations. Let `X = V` be a
 complex vector space and let every `M t` commute with multiplication by `I`. Then the twisted maps
 form complex vector spaces, `L` is complex linear (`TauCeti.complexTwistedLinearOperator`), and so
-is the propagator (`TauCeti.dysonSeriesLeft_apply_I_smul`). Evaluation at `0` and the endpoint map commute with
-`I`, so the identification of `det L` with the determinant line of `ε - Ψ(d)` respects complex
-orientations (`LinearMap.IsComplexPositiveDetLine.detLineCongrKerCoker`), and the canonical
+is the propagator (`TauCeti.dysonSeriesLeft_apply_I_smul`). Evaluation at `0` and the endpoint map
+commute with `I`, so the identification of `det L` with the determinant line of `ε - Ψ(d)` respects
+complex orientations (`LinearMap.IsComplexPositiveDetLine.detLineCongrKerCoker`), and the canonical
 trivialization of the determinant line of a complex endomorphism is positive on complex positive
 elements (`LinearMap.IsComplexPositiveDetLine.detLineEndEquiv_pos`). Hence the orientation of
 `det L` induced by the canonical trivialization is its complex orientation
 (`TauCeti.detLineEndEquiv_detLineTwistedLinearOperatorEquiv_pos`), also when `L` has a kernel, as
 for `M = 0` and `ε = 1`. For the loop part `J₀ ∂t + S(t) = J₀ (∂t - J₀ S(t))` of the normal operator
 of an orbit torus, this says that at a complex-linear reference, where `S(t)` commutes with `J₀`,
-the canonical orientation is the complex one. The canonical trivialization orients the problems
-for all coefficients `M` at once, and for a nondegenerate one its sign relative to the orientation
-given by bijectivity is the sign of `det (ε - P)`; this result fixes it to be the complex
-orientation at the complex-linear coefficients. Its comparison with the transport of determinant
-lines along a continuous family of operators is not made here.
+the canonical orientation is the complex one. The canonical trivialization orients the problems for
+all coefficients `M` at once, and for a nondegenerate one its sign relative to the orientation given
+by bijectivity is the sign of `det (ε - P)`; this result fixes it to be the complex orientation at
+the complex-linear coefficients. Its comparison with the transport of determinant lines along a
+continuous family of operators is not made here.
 
 ## Main definitions
 
@@ -720,15 +720,15 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {d ε : ℝ}
 multiplication by complex scalars. -/
 instance : SMul ℂ (twistedContinuous V d ε) where
   smul c f := ⟨c • (f : ℝ → V), mem_twistedContinuous.2
-    ⟨(mem_twistedContinuous.1 f.2).1.const_smul c, fun t => by
-      rw [Pi.smul_apply, Pi.smul_apply, (mem_twistedContinuous.1 f.2).2 t, smul_comm]⟩⟩
+    ⟨(mem_twistedContinuous.1 f.property).1.const_smul c, fun t => by
+      rw [Pi.smul_apply, Pi.smul_apply, (mem_twistedContinuous.1 f.property).2 t, smul_comm]⟩⟩
 
 /-- For a complex normed space `V`, the `C¹` maps twisted by a real `ε` are closed under
 multiplication by complex scalars. -/
 instance : SMul ℂ (twistedContDiff V d ε) where
   smul c w := ⟨c • (w : ℝ → V), mem_twistedContDiff.2
-    ⟨(mem_twistedContDiff.1 w.2).1.const_smul c, fun t => by
-      rw [Pi.smul_apply, Pi.smul_apply, (mem_twistedContDiff.1 w.2).2 t, smul_comm]⟩⟩
+    ⟨(mem_twistedContDiff.1 w.property).1.const_smul c, fun t => by
+      rw [Pi.smul_apply, Pi.smul_apply, (mem_twistedContDiff.1 w.property).2 t, smul_comm]⟩⟩
 
 @[simp, norm_cast]
 theorem coe_smul_twistedContinuous (c : ℂ) (f : twistedContinuous V d ε) :
@@ -774,7 +774,7 @@ def complexTwistedLinearOperator (hM : Continuous M) (hper : Function.Periodic M
   map_smul' c w := Subtype.ext <| funext fun t => by
     simp only [coe_smul_twistedContinuous, coe_smul_twistedContDiff, Pi.smul_apply,
       twistedLinearOperator_apply, RingHom.id_apply,
-      deriv_const_smul c (w.2.1.differentiable one_ne_zero t)]
+      deriv_const_smul c (w.property.1.differentiable one_ne_zero t)]
     rw [← Complex.re_smul_add_im_smul c ((w : ℝ → V) t), map_add, map_smul, map_smul, hMI,
       smul_sub, Complex.re_smul_add_im_smul]
 
@@ -830,14 +830,25 @@ theorem detLineEndEquiv_detLineTwistedLinearOperatorEquiv_pos (hM : Continuous M
       map_smul' c x := by
         simpa only [LinearMap.coe_complexOfMapISmul, RingHom.id_apply] using
           ((ε • 1 - (↑(dysonSeriesLeft M d) : V →ₗ[ℝ] V)).complexOfMapISmul hP).map_smul c x }
+  -- The identifications of kernels and cokernels, stated with `T`: unifying their stated types
+  -- with those of the transport theorem otherwise times out.
+  let eK : LinearMap.ker ((complexTwistedLinearOperator hM hper hMI ε).restrictScalars ℝ) ≃ₗ[ℝ]
+      LinearMap.ker (T.restrictScalars ℝ) := kerTwistedLinearOperatorEquiv hM hper ε
+  let eC : (twistedContinuous V d ε ⧸
+      LinearMap.range ((complexTwistedLinearOperator hM hper hMI ε).restrictScalars ℝ)) ≃ₗ[ℝ]
+      V ⧸ LinearMap.range (T.restrictScalars ℝ) :=
+    quotientRangeTwistedLinearOperatorEquiv hM hper hd hε
   refine LinearMap.IsComplexPositiveDetLine.detLineEndEquiv_pos (T := T)
-    (hz.detLineCongrKerCoker (f' := T) (eK := kerTwistedLinearOperatorEquiv hM hper ε)
-      (eC := quotientRangeTwistedLinearOperatorEquiv hM hper hd hε) (fun x y hxy => ?_)
+    (hz.detLineCongrKerCoker (f' := T) (eK := eK) (eC := eC) (fun x y hxy => ?_)
       (fun y y' h => ?_))
   -- Both identifications are evaluations: at `0` on the kernel, and of the endpoint map on the
   -- cokernel.
   · exact congrFun (congrArg Subtype.val hxy) 0
-  · rw [quotientRangeTwistedLinearOperatorEquiv_mk, Submodule.Quotient.eq] at h ⊢
+  · change (Submodule.Quotient.mk (twistedEndpoint hM d ε y) :
+      V ⧸ LinearMap.range (T.restrictScalars ℝ)) = _ at h
+    change (Submodule.Quotient.mk (twistedEndpoint hM d ε (I • y)) :
+      V ⧸ LinearMap.range (T.restrictScalars ℝ)) = _
+    rw [Submodule.Quotient.eq] at h ⊢
     obtain ⟨v, hv⟩ := h
     refine ⟨I • v, ?_⟩
     rw [twistedEndpoint_I_smul hM hMI, ← smul_sub, ← hv]
