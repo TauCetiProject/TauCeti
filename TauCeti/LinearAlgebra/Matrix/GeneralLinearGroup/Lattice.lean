@@ -83,7 +83,7 @@ the `R`-submodule `L` onto itself restricts to an `R`-linear automorphism of `L`
 def restrictStabilizer (L : Submodule R V) :
     MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V) →* (L ≃ₗ[R] L) where
   toFun g := ((g : V ≃ₗ[K] V).restrictScalars R).ofSubmodules L L
-    ((L.mem_stabilizer_iff_map_restrictScalars_eq (g : V ≃ₗ[K] V)).mp g.2)
+    ((L.mem_stabilizer_iff_map_restrictScalars_eq (g : V ≃ₗ[K] V)).mp g.property)
   map_one' := by ext; rfl
   map_mul' _ _ := by ext; rfl
 
