@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Quantile
 public import TauCeti.Probability.Distributions.FisherSnedecor.Basic
+import TauCeti.Probability.Distributions.FisherSnedecor.Cdf
 import TauCeti.Probability.Quantile.Map
 
 /-!
@@ -24,6 +25,8 @@ one-sided endpoint limits are `0` and `+∞`, matching the support of the law.
 ## Main results
 
 * `TauCeti.Probability.quantile_fisherSnedecorMeasure` gives the explicit quantile formula.
+* `TauCeti.Probability.quantile_fisherSnedecorMeasure_spec` gives nonnegativity and exact cdf
+  calibration, including at level zero.
 * `TauCeti.Probability.tendsto_quantile_fisherSnedecorMeasure_nhdsGT_zero` and
   `TauCeti.Probability.tendsto_quantile_fisherSnedecorMeasure_nhdsLT_one` give the support-endpoint
   limits.
@@ -60,6 +63,24 @@ theorem quantile_fisherSnedecorMeasure (hm : 0 < m) (hn : 0 < n) (hu : u ∈ Ioo
         (hasDerivAt_fisherSnedecorMap m n (ne_of_lt hx.2)).continuousAt.continuousWithinAt)
       hu.1 hu.2,
     quantile_betaMeasure (by linarith) (by linarith) hu, fisherSnedecorMap_def]
+
+/-- For positive degrees of freedom and a level in `[0, 1)`, the Fisher--Snedecor quantile is
+nonnegative and its cdf value is the given level. -/
+theorem quantile_fisherSnedecorMeasure_spec (hm : 0 < m) (hn : 0 < n) (hu : u ∈ Ico 0 1) :
+    let F := fisherSnedecorMeasure m n
+    0 ≤ F.quantile u ∧ cdf F (F.quantile u) = u := by
+  have := isProbabilityMeasure_fisherSnedecorMeasure hm hn
+  have : NullSingletonClass (fisherSnedecorMeasure m n) := by
+    rw [fisherSnedecorMeasure_eq_withDensity]
+    infer_instance
+  have hcdf : cdf (fisherSnedecorMeasure m n) 0 = 0 := by
+    simp only [cdf_fisherSnedecorMeasure_eq hm hn, le_refl, ite_true]
+  rcases hu.1.eq_or_lt with he | hu₀
+  · subst u
+    simp [Measure.quantile_of_nonpos, hcdf]
+  · have hlt : cdf (fisherSnedecorMeasure m n) 0 < u := by rwa [hcdf]
+    exact ⟨((Measure.lt_quantile_iff _ hu₀ hu.2).2 hlt).le,
+      Measure.cdf_quantile_of_noAtoms _ hu₀ hu.2⟩
 
 /-- Fisher--Snedecor quantiles tend to the lower support endpoint `0` as the probability level
 tends to zero from above. -/

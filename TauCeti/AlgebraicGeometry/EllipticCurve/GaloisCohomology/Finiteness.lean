@@ -95,15 +95,13 @@ theorem explicitCoeff1_weilPairingCoeff_mem_unramifiedOutsideKummerCohomology [W
   -- the image of `T` in `E(K_v)[m]`
   let T' : AddSubgroup.torsionBy (W⁄(v.adicCompletion K)).toAffine.Point m :=
     ⟨W.toAffine.pointMap _ T, AddSubgroup.torsionBy.nsmul_iff.2 <| by
-      rw [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 T.2, map_zero]⟩
+      rw [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 T.property, map_zero]⟩
   -- restriction to `K_v` commutes with `e_m(·, T)`, and a coefficient map over `G_{K_v}`
-  -- preserves vanishing on inertia
-  rw [W.explicitMap1_explicitCoeff1_weilPairingCoeff m hm (τ v) (T' := T') rfl,
-    explicitCoeff1_eq_explicitMap1]
-  exact (ContinuousMonoidHom.id _).explicitRes1_explicitMap1_eq_zero_of_map_le _ _ _
-    (by rintro _ ⟨g, hg, rfl⟩; exact hg)
-    ((mem_unramifiedTorsionCohomology_iff _ _).1
-      (mem_unramifiedOutsideTorsionCohomology_iff.1 hc v hv))
+  -- preserves unramified classes
+  have hcv := mem_unramifiedOutsideTorsionCohomology_iff.1 hc v hv
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1] at hcv
+  rw [W.explicitMap1_explicitCoeff1_weilPairingCoeff m hm (τ v) (T' := T') rfl]
+  exact DistribMulActionHom.explicitCoeff1_mem_unramifiedH1 _ continuous_of_discreteTopology hcv
 
 end Dedekind
 

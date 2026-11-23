@@ -38,7 +38,9 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
 * `TauCeti.FormalVertexAxioms.ext`: a formal vertex algebra is determined by its state–field map.
 * `TauCeti.FormalVertexAxioms.translation_apply`: `T a = a₍₋₂₎|0⟩`.
 * `TauCeti.FormalVertexAxioms.translation_ncoeff_apply`:
-  `T (a₍ₙ₎ b) = (T a)₍ₙ₎ b + a₍ₙ₎ (T b)`.
+  `T (a₍ₙ₎ b) = (T a)₍ₙ₎ b + a₍ₙ₎ (T b)`, and its rearrangement
+  `TauCeti.FormalVertexAxioms.ncoeff_field_apply_translation`:
+  `a₍ₙ₎ (T b) = T (a₍ₙ₎ b) + n a₍ₙ₋₁₎ b`.
 * `TauCeti.FormalVertexAxioms.factorial_smul_ncoeff_field_apply_vacuum`:
   `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`, and `TauCeti.FormalVertexAxioms.ncoeff_field_apply_vacuum_neg` its
   form `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!` over `ℚ`, the creation identity `Y(a,z)|0⟩ = e^{zT} a`.
@@ -46,6 +48,8 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
   local to every `Y(a,z)` is determined by its values on the vacuum.
 * `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`: such a field `B` with
   `B(z)|0⟩ = Y(b,z)|0⟩` is `Y(b,z)`.
+* `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation`: if `V` has unique divisibility, a
+  translation covariant field `B` local with every `Y(a,z)` is `Y(B₍₋₁₎|0⟩, z)`.
 
 ## References
 
@@ -115,6 +119,11 @@ theorem ncoeff_neg_one_field_vacuum : (A.field A.vacuum)[[-1]] = 1 := by
 theorem ncoeff_field_vacuum_of_ne {n : ℤ} (hn : n ≠ -1) : (A.field A.vacuum)[[n]] = 0 := by
   simp [A.ncoeff_field_vacuum, hn]
 
+-- Not a simp lemma, so that `ncoeff_neg_one_field_vacuum` and `ncoeff_field_vacuum_of_ne` fire.
+/-- The field of the vacuum is the identity field: `Y(|0⟩, z) = id`. -/
+theorem field_vacuum : A.field A.vacuum = idField :=
+  ext_ncoeff fun n ↦ by rw [A.ncoeff_field_vacuum, ncoeff_idField]
+
 /-- The state–field map is injective: `a` is recovered as `a₍₋₁₎|0⟩`. -/
 theorem field_injective : Function.Injective A.field := by
   intro a b h
@@ -137,6 +146,13 @@ theorem translation_ncoeff_apply (a b : V) (n : ℤ) :
     ← A.field_translation, sub_eq_iff_eq_add] at h
   rw [h, add_comm]
 
+/-- A mode moves past the translation operator: `a₍ₙ₎ (T b) = T (a₍ₙ₎ b) + n a₍ₙ₋₁₎ b`. -/
+theorem ncoeff_field_apply_translation (a b : V) (n : ℤ) :
+    ((A.field a)[[n]]) (A.translation b) =
+      A.translation (((A.field a)[[n]]) b) + n • ((A.field a)[[n - 1]]) b := by
+  rw [A.translation_ncoeff_apply, A.ncoeff_field_translation, LinearMap.smul_apply, neg_smul]
+  abel
+
 /-- The creation recursion `T (a₍ₙ₎|0⟩) = -n a₍ₙ₋₁₎|0⟩`. -/
 theorem translation_ncoeff_apply_vacuum (a : V) (n : ℤ) :
     A.translation (((A.field a)[[n]]) A.vacuum) = (-n) • ((A.field a)[[n - 1]]) A.vacuum := by
@@ -149,15 +165,7 @@ theorem translation_apply (a : V) : A.translation a = ((A.field a)[[-2]]) A.vacu
 /-- The creation identity without division: `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`. -/
 theorem factorial_smul_ncoeff_field_apply_vacuum (a : V) (k : ℕ) :
     k.factorial • ((A.field a)[[-k - 1]]) A.vacuum = (A.translation ^ k) a := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    have h := A.translation_ncoeff_apply_vacuum a (-k - 1)
-    have h₁ : -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) := by push_cast; ring
-    have h₂ : -(k : ℤ) - 1 - 1 = -((k + 1 : ℕ) : ℤ) - 1 := by push_cast; ring
-    rw [h₁, h₂, natCast_zsmul] at h
-    rw [pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h, Nat.factorial_succ, mul_nsmul,
-      smul_comm]
+  simpa using factorial_smul_ncoeff_apply A.translation_vacuum (A.lie_translation_ncoeff a) k
 
 /-- The creation identity `Y(a,z)|0⟩ = e^{zT} a`, in modes: `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!`. -/
 theorem ncoeff_field_apply_vacuum_neg [Module ℚ V] (a : V) (k : ℕ) :
@@ -184,8 +192,9 @@ theorem ext {A B : FormalVertexAxioms R V} (h : A.field = B.field) : A = B := by
 /-! ### Goddard's uniqueness theorem -/
 
 /-- If `B` is local of order `N` with `Y(a,z)`, the modes of `B` on `a` are determined by the
-action of `B` on the vacuum. -/
-private theorem ncoeff_add_apply_eq_sum {B : VertexOperator R V} {a : V} {N : ℕ}
+action of `B` on the vacuum:
+`B[[m + N]] a = ∑_{i + j = N} (N choose i) (-1)ʲ a₍ⱼ₋₁₎ (B[[m + i]] |0⟩)`. -/
+theorem ncoeff_add_apply_eq_sum {B : VertexOperator R V} {a : V} {N : ℕ}
     (h : B.IsLocalOfOrder (A.field a) N) (m : ℤ) :
     (B[[m + N]]) a = ∑ ij ∈ antidiagonal N, N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
       ((A.field a)[[-1 + ij.2]]) ((B[[m + ij.1]]) A.vacuum) := by
@@ -219,6 +228,22 @@ theorem eq_field_of_ncoeff_apply_vacuum_eq {B : VertexOperator R V} {b : V}
     (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
     (h : ∀ n, (B[[n]]) A.vacuum = ((A.field b)[[n]]) A.vacuum) : B = A.field b :=
   A.eq_of_ncoeff_apply_vacuum_eq hB (A.exists_isLocalOfOrder b) h
+
+/-- When `V` has unique divisibility (in particular over any `ℚ`-module), a translation covariant
+field `B` that is local with every field `Y(a,z)` is the field of the state `B₍₋₁₎|0⟩`. -/
+theorem eq_field_of_lie_translation [HasUniqueDiv V] {B : VertexOperator R V}
+    (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
+    (hT : ∀ n : ℤ, ⁅A.translation, B[[n]]⁆ = (derivative B)[[n]]) :
+    B = A.field ((B[[-1]]) A.vacuum) := by
+  refine A.eq_field_of_ncoeff_apply_vacuum_eq hB fun n ↦ ?_
+  by_cases hn : 0 ≤ n
+  · rw [ncoeff_apply_of_nonneg A.translation_vacuum hT hn,
+      A.ncoeff_field_apply_vacuum_of_nonneg _ n hn]
+  · -- Both creation series satisfy `k! • x₍₋ₖ₋₁₎|0⟩ = Tᵏ x₍₋₁₎|0⟩`.
+    obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
+    rw [← nsmul_right_inj k.factorial_ne_zero,
+      factorial_smul_ncoeff_apply A.translation_vacuum hT k,
+      A.factorial_smul_ncoeff_field_apply_vacuum]
 
 end FormalVertexAxioms
 
