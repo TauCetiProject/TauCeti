@@ -49,7 +49,7 @@ theorem sIntegerToQuotient_eq_one_iff (m : Ideal R) (hm : m ≠ ⊥)
         WithZero.exp (-((Associates.mk v.asIdeal).count (Associates.mk m).factors : ℤ)) := by
   obtain ⟨a, b, hb, hab⟩ :=
     m.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
-      (fun v hv ↦ x.2 v (by simpa using hv))
+      (fun v hv ↦ x.property v (by simpa using hv))
   have hnum : m.sIntegerToQuotient x = 1 ↔ a - 1 ∈ m := by
     rw [m.sIntegerToQuotient_eq x hb hab]
     exact Ideal.Quotient.mk_eq_one_iff_sub_mem a

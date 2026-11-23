@@ -36,8 +36,7 @@ local instance (point : S →ₐ[R] Ω) : (RingHom.ker point).IsPrime :=
 /-- The residue-field embedding induced by a field-valued point. -/
 noncomputable def residueEmbedding (point : S →ₐ[R] Ω) :
     (RingHom.ker point).ResidueField →ₐ[R] Ω :=
-  Ideal.ResidueField.liftₐ _ point le_rfl fun element hnonzero ↦ by
-    exact isUnit_iff_ne_zero.mpr hnonzero
+  Ideal.ResidueField.liftₐ _ point le_rfl fun _ ↦ isUnit_iff_ne_zero.mpr
 
 /-- The residue-field embedding recovers the original point. -/
 @[simp]
@@ -49,11 +48,9 @@ theorem residueEmbedding_comp (point : S →ₐ[R] Ω) :
 /-- A field-valued point factors uniquely through the residue field of its kernel. -/
 theorem existsUnique_residueEmbedding (point : S →ₐ[R] Ω) :
     ∃! embedding : (RingHom.ker point).ResidueField →ₐ[R] Ω,
-      embedding.comp (IsScalarTower.toAlgHom R S (RingHom.ker point).ResidueField) = point := by
-  refine ⟨point.residueEmbedding, point.residueEmbedding_comp, ?_⟩
-  intro embedding equality
-  exact Ideal.ResidueField.algHom_ext
-    (equality.trans point.residueEmbedding_comp.symm)
+      embedding.comp (IsScalarTower.toAlgHom R S (RingHom.ker point).ResidueField) = point :=
+  ⟨point.residueEmbedding, point.residueEmbedding_comp, fun _ equality ↦
+    Ideal.ResidueField.algHom_ext (equality.trans point.residueEmbedding_comp.symm)⟩
 
 /-- The kernel of an `R`-algebra map to the residue field `κ(P)` of a prime `P` of `R` lies over
 `P`. -/
@@ -100,9 +97,7 @@ theorem ker_residueEmbedding_comp (prime : Ideal S) [prime.IsPrime]
     [Nontrivial Ω] (embedding : prime.ResidueField →ₐ[R] Ω) :
     RingHom.ker (embedding.comp (IsScalarTower.toAlgHom R S prime.ResidueField)) = prime := by
   ext element
-  simp only [RingHom.mem_ker, AlgHom.comp_apply,
-    map_eq_zero_iff embedding embedding.injective, IsScalarTower.toAlgHom_apply]
-  exact Ideal.algebraMap_residueField_eq_zero
+  simp
 
 /-- Compatibility of residue embeddings is exactly compatibility of the associated points. -/
 theorem residueEmbedding_comp_map_iff {T : Type*} [CommRing T] [Algebra R T]
@@ -114,20 +109,11 @@ theorem residueEmbedding_comp_map_iff {T : Type*} [CommRing T] [Algebra R T]
       sourceEmbedding ↔
     (targetEmbedding.comp (IsScalarTower.toAlgHom R T targetPrime.ResidueField)).comp morphism =
       sourceEmbedding.comp (IsScalarTower.toAlgHom R S sourcePrime.ResidueField) := by
-  constructor
-  · intro equality
-    ext element
-    have result := DFunLike.congr_fun equality (algebraMap S sourcePrime.ResidueField element)
-    simpa only [AlgHom.comp_apply, Ideal.ResidueField.mapₐ_apply,
-      Ideal.ResidueField.map_algebraMap, IsScalarTower.toAlgHom_apply,
-      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using result
-  · intro equality
-    apply Ideal.ResidueField.algHom_ext
-    ext element
-    have result := DFunLike.congr_fun equality element
-    simpa only [AlgHom.comp_apply, Ideal.ResidueField.mapₐ_apply,
-      Ideal.ResidueField.map_algebraMap, IsScalarTower.toAlgHom_apply,
-      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using result
+  -- The residue-field map `κ(sourcePrime) → κ(targetPrime)` is compatible with `morphism`.
+  have hmap : (Ideal.ResidueField.mapₐ sourcePrime targetPrime morphism hprime).comp
+      (IsScalarTower.toAlgHom R S _) = (IsScalarTower.toAlgHom R T _).comp morphism :=
+    AlgHom.ext fun _ ↦ by simp
+  rw [Ideal.ResidueField.algHom_ext_iff, AlgHom.comp_assoc, hmap, AlgHom.comp_assoc]
 
 end Ideal
 
@@ -163,14 +149,10 @@ variable {R S Ω : Type*} [CommRing R] [CommRing S] [CommRing Ω] [Nontrivial Ω
 theorem PointData.toAlgHom_injective :
     Function.Injective (PointData.toAlgHom : PointData R S Ω → S →ₐ[R] Ω) := by
   rintro ⟨firstPrime, firstEmbedding⟩ ⟨secondPrime, secondEmbedding⟩ equality
-  have hprime : firstPrime = secondPrime := by
-    apply PrimeSpectrum.ext
-    exact (Ideal.ker_residueEmbedding_comp _ firstEmbedding).symm.trans
-      ((congrArg RingHom.ker equality).trans
-        (Ideal.ker_residueEmbedding_comp _ secondEmbedding))
-  subst secondPrime
-  congr 1
-  exact Ideal.ResidueField.algHom_ext equality
+  obtain rfl : firstPrime = secondPrime := PrimeSpectrum.ext <| by
+    simpa only [PointData.toAlgHom, Ideal.ker_residueEmbedding_comp] using
+      congr(RingHom.ker $equality)
+  exact congrArg _ (Ideal.ResidueField.algHom_ext equality)
 
 end Nontrivial
 
@@ -183,12 +165,9 @@ local instance (point : S →ₐ[R] Ω) : (RingHom.ker point).IsPrime :=
 
 /-- Residue-field data determine the point bijectively. -/
 theorem PointData.toAlgHom_bijective :
-    Function.Bijective (PointData.toAlgHom : PointData R S Ω → S →ₐ[R] Ω) := by
-  constructor
-  · exact PointData.toAlgHom_injective
-  · intro point
-    exact ⟨⟨⟨RingHom.ker point, inferInstance⟩, point.residueEmbedding⟩,
-      point.residueEmbedding_comp⟩
+    Function.Bijective (PointData.toAlgHom : PointData R S Ω → S →ₐ[R] Ω) :=
+  ⟨PointData.toAlgHom_injective, fun point ↦
+    ⟨⟨⟨RingHom.ker point, inferInstance⟩, point.residueEmbedding⟩, point.residueEmbedding_comp⟩⟩
 
 /-- Field-valued points are equivalent to a prime and a residue-field embedding. -/
 noncomputable def pointDataEquiv : PointData R S Ω ≃ (S →ₐ[R] Ω) :=
@@ -197,8 +176,8 @@ noncomputable def pointDataEquiv : PointData R S Ω ≃ (S →ₐ[R] Ω) :=
 /-- The forward correspondence is the point induced by the residue-field embedding. -/
 @[simp]
 theorem pointDataEquiv_apply (data : PointData R S Ω) :
-    pointDataEquiv data = data.toAlgHom := by
-  exact Equiv.ofBijective_apply _ _ _
+    pointDataEquiv data = data.toAlgHom :=
+  Equiv.ofBijective_apply _ _ _
 
 /-- The inverse correspondence assigns a point its kernel and residue-field embedding. -/
 @[simp]
@@ -221,16 +200,14 @@ theorem PointData.toAlgHom_comp_iff {T : Type*} [CommRing T] [Algebra R T]
       ∃ hprime : source.1.asIdeal = target.1.asIdeal.comap morphism.toRingHom,
         target.2.comp (Ideal.ResidueField.mapₐ source.1.asIdeal target.1.asIdeal morphism hprime) =
           source.2 := by
-  constructor
-  · intro equality
-    have hkernel := congrArg RingHom.ker equality
-    rw [← AlgHom.comap_ker] at hkernel
-    have hprime : source.1.asIdeal = target.1.asIdeal.comap morphism.toRingHom := by
-      have hprime' : source.1.asIdeal = target.1.asIdeal.comap morphism := by
-        simpa only [PointData.toAlgHom, Ideal.ker_residueEmbedding_comp] using hkernel.symm
-      exact hprime'
-    exact ⟨hprime, (Ideal.residueEmbedding_comp_map_iff _ _ _ _ _ hprime).mpr equality⟩
-  · rintro ⟨hprime, equality⟩
-    exact (Ideal.residueEmbedding_comp_map_iff _ _ _ _ _ hprime).mp equality
+  refine ⟨fun equality ↦ ?_, fun ⟨hprime, equality⟩ ↦
+    (Ideal.residueEmbedding_comp_map_iff _ _ _ _ _ hprime).mp equality⟩
+  -- The kernels of the two sides give the comparison of primes.
+  have hkernel := congr(RingHom.ker $equality)
+  rw [← AlgHom.comap_ker] at hkernel
+  have hprime : source.1.asIdeal = target.1.asIdeal.comap morphism.toRingHom := by
+    simpa only [PointData.toAlgHom, Ideal.ker_residueEmbedding_comp, AlgHom.toRingHom_eq_coe,
+      Ideal.comap_coe] using hkernel.symm
+  exact ⟨hprime, (Ideal.residueEmbedding_comp_map_iff _ _ _ _ _ hprime).mpr equality⟩
 
 end TauCeti.ResidueField

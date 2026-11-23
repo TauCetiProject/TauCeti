@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
+import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
+import Mathlib.Analysis.Normed.Operator.Mul
 
 /-!
 # The GNS class map and cyclic vector
@@ -21,11 +23,13 @@ transported to the GNS space. Composed with the embedding into the completion, i
 continuous linear class map `f.toGNS : A →L[ℂ] f.GNS`, `a ↦ [a]`, which has dense range.
 Its norm is at most the square root of the norm of `f`, so for a norm-one functional
 `‖[a]‖ ≤ ‖a‖`. If `A` is separable, this dense continuous image makes `f.GNS` separable.
+The GNS representation acts on classes by left multiplication, `π(a)[b] = [a * b]`.
 
 For a unital algebra, `PositiveLinearMap.gnsVector` is the class of the unit. Its orbit under
 Mathlib's GNS representation is dense and its vector functional recovers the original positive
-functional. It has norm one when the functional is normalized. This identifies a state with a
-concrete vector state, allowing comparison of scalar laws with spectral measures.
+functional. Its squared norm—and the squared operator norm of `toSpanSingleton ℂ f.gnsVector`—equals
+the operator norm of `f`, so it has norm one when the functional is normalized. This identifies a
+state with a concrete vector state, allowing comparison of scalar laws with spectral measures.
 
 ## References
 
@@ -97,6 +101,12 @@ theorem toGNS_eq_zero_iff (f : A →ₚ[ℂ] ℂ) (a : A) :
   rw [← f.norm_toGNS_sq, ← Complex.ofReal_pow, Complex.ofReal_eq_zero, sq_eq_zero_iff,
     norm_eq_zero]
 
+/-- The GNS representation acts on classes by left multiplication: `π(a)[b] = [a * b]`. -/
+-- Not a simp lemma: `toGNS_apply` already rewrites the class map to the completion embedding.
+theorem gnsNonUnitalStarAlgHom_apply_toGNS (f : A →ₚ[ℂ] ℂ) (a b : A) :
+    f.gnsNonUnitalStarAlgHom a (f.toGNS b) = f.toGNS (a * b) := by
+  simp
+
 section Unital
 
 variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
@@ -145,6 +155,22 @@ theorem norm_gnsVector (f : B →ₚ[ℂ] ℂ) (hf : f 1 = 1) : ‖f.gnsVector�
   have h := f.norm_gnsVector_sq
   rw [hf, ← Complex.ofReal_pow, Complex.ofReal_eq_one] at h
   nlinarith [norm_nonneg f.gnsVector]
+
+/-- `‖f.gnsVector‖ ^ 2` equals the operator norm of `f`. -/
+theorem norm_gnsVector_sq_eq_opNorm (f : B →ₚ[ℂ] ℂ) :
+    ‖f.gnsVector‖ ^ 2 = ‖(PositiveContinuousLinearMap.ofClass (R := ℂ) f : B →L[ℂ] ℂ)‖ := by
+  let g : B →P[ℂ] ℂ := PositiveContinuousLinearMap.ofClass (R := ℂ) f
+  have hg1 : (‖(g : B →L[ℂ] ℂ)‖ : ℂ) = f 1 := g.ofReal_opNorm_eq_map_one
+  have hsq : ((‖f.gnsVector‖ ^ 2 : ℝ) : ℂ) = f 1 := by simpa using f.norm_gnsVector_sq
+  exact Complex.ofReal_inj.mp (hsq.trans hg1.symm)
+
+/-- The squared operator norm of `toSpanSingleton ℂ f.gnsVector` equals the operator norm of `f`. -/
+theorem norm_toSpanSingleton_gnsVector_sq (f : B →ₚ[ℂ] ℂ) :
+    ‖ContinuousLinearMap.toSpanSingleton ℂ f.gnsVector‖ ^ 2 =
+      ‖(PositiveContinuousLinearMap.ofClass (R := ℂ) f : B →L[ℂ] ℂ)‖ := by
+  have hV : ‖ContinuousLinearMap.toSpanSingleton ℂ f.gnsVector‖ = ‖f.gnsVector‖ :=
+    (ContinuousLinearMap.toSpanSingletonLIE ℂ f.GNS).norm_map f.gnsVector
+  rw [hV, f.norm_gnsVector_sq_eq_opNorm]
 
 end Unital
 

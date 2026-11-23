@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.ModelSpace
-import TauCeti.Geometry.Manifold.VectorField.LieBracket
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 
 /-!
 # Geodesics and the exponential map in inner-product spaces
@@ -35,8 +34,6 @@ exponential map, normal domains, and the logarithm can be checked.
 
 ## Main results
 
-* `TauCeti.Manifold.christoffelMap_leviCivita_model_space`: the Christoffel map of the standard
-  Riemannian metric vanishes.
 * `TauCeti.Manifold.acceleration_model_space`: the covariant acceleration of a curve is its
   second derivative.
 * `TauCeti.Manifold.isGeodesicCurve_add_smul`: an affine line is an all-time geodesic.
@@ -47,6 +44,8 @@ exponential map, normal domains, and the logarithm can be checked.
   exactly the affine segments, and the one with initial data `(p, v)` is `t ↦ p + t • v`.
 * `TauCeti.Manifold.isGeodesicCurve_iff_exists_eq_add_smul`: the all-time geodesics are exactly
   the affine lines.
+* `TauCeti.Manifold.IsGeodesicCurve.injective_of_nonconstant`: every nonconstant all-time
+  geodesic is injective.
 * `TauCeti.Manifold.geodesicInterval_model_space`: every affine initial condition exists for all
   time.
 * `TauCeti.Manifold.maximalGeodesic_model_space`: the chosen maximal geodesic is the affine line.
@@ -92,56 +91,6 @@ private theorem tangentSpaceEquivModel_apply (p : F) (v : TangentSpace 𝓘(ℝ,
     tangentSpaceEquivModel p v = NormedSpace.fromTangentSpace p v := (rfl)
 
 variable [FiniteDimensional ℝ F]
-
-private theorem leviCivitaConnection_const_apply (u v : F) (x : F) :
-    leviCivitaConnection 𝓘(ℝ, F) F (fun _ : F ↦ v) x u = 0 := by
-  let C (a : F) : ∀ y : F, TangentSpace 𝓘(ℝ, F) y := fun _ ↦ a
-  -- Writing the constant sections dependently keeps all Koszul-formula terms well typed.
-  change leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x) = 0
-  have hconst (a : F) :
-      MDiffAt (fun y : F ↦ (TotalSpace.mk' F y (C a y) : TangentBundle 𝓘(ℝ, F) F)) x := by
-    simpa only [C] using
-      ((contMDiffAt_vectorSpace_iff_contDiffAt (n := (1 : ℕ∞ω))
-        (V := fun _ : F ↦ a)).2 contDiffAt_const).mdifferentiableAt one_ne_zero
-  -- The inner product of two constant fields is constant, so its differential vanishes.
-  have hinner (a b : F) : d% (fun y : F ↦ inner ℝ (C a y) (C b y)) x = 0 :=
-    mvfderiv_const (I := 𝓘(ℝ, F)) (c := inner ℝ a b)
-  -- Constant fields commute, so every bracket term of the Koszul formula vanishes.
-  have hbracket (a b c : F) :
-      inner ℝ (C a x) (VectorField.mlieBracket 𝓘(ℝ, F) (C b) (C c) x) = 0 := by
-    have h : VectorField.mlieBracket 𝓘(ℝ, F) (C b) (C c) x = 0 := by
-      simpa only [C] using VectorField.mlieBracket_const_model_space b c x
-    rw [h]
-    exact inner_zero_right (𝕜 := ℝ) (C a x)
-  let w : F := leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x)
-  -- `w` abbreviates a tangent vector represented in the model vector space.
-  change w = 0
-  rw [← inner_self_eq_zero (𝕜 := ℝ)]
-  -- Re-expose the dependent constant section so the Koszul formula applies directly.
-  change inner ℝ (leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x)) (C w x) = 0
-  rw [leviCivitaConnection_apply_inner 𝓘(ℝ, F)
-    (X := C u) (Y := C v) (Z := C w) (hconst u) (hconst v) (hconst w)]
-  simp [hinner, hbracket]
-
-/-- The Levi-Civita connection of the standard Riemannian metric differentiates a constant vector
-field to zero. -/
-@[simp]
-theorem leviCivitaConnection_const_model_space (v : F) (x : F) :
-    leviCivitaConnection 𝓘(ℝ, F) F (fun _ : F ↦ v) x = 0 := by
-  ext u
-  simpa using leviCivitaConnection_const_apply (F := F) u v x
-
-/-- The Christoffel map of the standard Riemannian metric on an inner-product space vanishes in
-its canonical coordinates. -/
-@[simp]
-theorem christoffelMap_leviCivita_model_space (x : F) :
-    christoffelMap (Module.finBasis ℝ F)
-      ((leviCivitaConnection 𝓘(ℝ, F) F).isCovariantDerivativeOn
-        (s := (trivializationAt F (TangentSpace 𝓘(ℝ, F)) x).baseSet)) x = 0 := by
-  ext v u
-  rw [christoffelMap_model_space, leviCivitaConnection_const_model_space]
-  -- The zero map on tangent vectors, evaluated at `u`.
-  rfl
 
 /-- **The covariant acceleration in an inner-product space is the second derivative.** Since the
 Christoffel map of the standard Riemannian metric vanishes, the acceleration at `t` of a curve
@@ -290,6 +239,18 @@ theorem isGeodesicCurve_iff_exists_eq_add_smul {γ : ℝ → F} :
   simp only [← isGeodesicCurveOn_univ, isGeodesicCurveOn_iff_exists_eqOn_add_smul
     uniqueDiffOn_univ isPreconnected_univ, eqOn_univ]
 
+/-- A nonconstant all-time Euclidean geodesic has no self-intersections. -/
+theorem IsGeodesicCurve.injective_of_nonconstant {γ : ℝ → F}
+    (hγ : IsGeodesicCurve 𝓘(ℝ, F) γ) (hnot : ∃ s t, γ s ≠ γ t) :
+    Function.Injective γ := by
+  obtain ⟨p, v, rfl⟩ := isGeodesicCurve_iff_exists_eq_add_smul.mp hγ
+  have hv : v ≠ 0 := by
+    rintro rfl
+    obtain ⟨s, t, hst⟩ := hnot
+    simp at hst
+  intro s t hst
+  exact smul_left_injective ℝ hv (add_left_cancel hst)
+
 /-! ### The exponential map and the logarithm -/
 
 /-- The exponential map of a finite-dimensional inner-product space is defined on every tangent
@@ -386,7 +347,7 @@ theorem isNormalDomain_model_space (p : F) {U : Set (TangentSpace 𝓘(ℝ, F) p
     rw [expDomain_model_space] at hsmooth
     exact isLocalDiffeomorphAt_of_mfderiv_eq hsmooth isOpen_univ (mem_univ _)
       BoundarylessManifold.isInteriorPoint (by simp)
-      (hasMFDerivAt_riemannianExp_model_space p v.1).mfderiv.symm
+      (hasMFDerivAt_riemannianExp_model_space p v.val).mfderiv.symm
 
 /-- In a finite-dimensional inner-product space, every tangent ball of positive radius is a
 normal domain; its normal neighbourhood is the ball of the same radius about the base point

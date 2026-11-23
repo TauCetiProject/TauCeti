@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Riccardo Brasca
 -/
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Minimizing
+public import TauCeti.Topology.MetricSpace.Curve
 public import TauCeti.Topology.MetricSpace.Length
 import Mathlib.Analysis.Normed.Module.Ray
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -33,6 +34,11 @@ a broken radial path through `γ 0` whose two directions are not opposite is str
 the distance between its endpoints, so these logarithms must point in opposite directions. In
 particular a metric geodesic segment is smooth at its interior parameters.
 
+Local distance preservation also recovers unit-speed parametrizations at arbitrary interior
+parameters, without assuming differentiability, for use in intrinsic-geodesic arguments.
+More generally, a local identity `dist (γ s) (γ t) = |s - t| * c` determines the Riemannian
+speed `c`, including the constant case `c = 0`.
+
 ## Main results
 
 In the namespace `TauCeti.Manifold`:
@@ -48,11 +54,15 @@ In the namespace `TauCeti.Manifold`:
   (`contMDiffAt_of_dist_eq_abs`) with unit speed (`norm_curveVelocity_eq_one_of_dist_eq_abs`).
 * `contMDiffAt_of_dist_eq_mul_abs`: a curve with `dist (γ s) (γ t) = |s - t| * c` near `t₀` is
   smooth at `t₀`.
+* `norm_curveVelocity_eq_of_dist_eq_mul_abs`: the same local distance identity gives speed `c`
+  at `t₀`; `norm_curveVelocity_eq_one_of_dist_eq_abs_at` is the unit-speed specialization.
 * `TauCeti.IsGeodesicSegment.contMDiffAt`: **a metric geodesic segment is smooth at its interior
   parameters.**
 
 ## References
 
+* The arbitrary-centre unit-speed statement is adapted from Riccardo Brasca's
+  `ForTauCeti/Geometry/Manifold/Riemannian/Curve/MetricSpeed.lean` formalization.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 7, §2, Thm. 2.8, assertion (f).
 * J. M. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2nd ed., 2018, Ch. 6, for the fact
   that minimizing curves with unit-speed parametrizations are geodesics, which is proved here for
@@ -211,33 +221,52 @@ theorem contMDiffAt_of_dist_eq_mul_abs {γ : ℝ → M} {ε c t₀ : ℝ} (hε :
     (hdist : ∀ s ∈ Icc (t₀ - ε) (t₀ + ε), ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
       dist (γ s) (γ t) = |s - t| * c) :
     ContMDiffAt 𝓘(ℝ, ℝ) I ∞ γ t₀ := by
-  have ht₀ : t₀ ∈ Icc (t₀ - ε) (t₀ + ε) := ⟨by linarith, by linarith⟩
   rcases hc.eq_or_lt with rfl | hc
-  · refine (contMDiffAt_const (c := γ t₀)).congr_of_eventuallyEq ?_
-    filter_upwards [Icc_mem_nhds (by linarith : t₀ - ε < t₀) (by linarith : t₀ < t₀ + ε)]
-      with t ht
-    rw [← dist_eq_zero, hdist t ht t₀ ht₀, mul_zero]
-  set η : ℝ → M := fun s ↦ γ (t₀ + s / c)
-  have hb : ∀ s ∈ Icc (-(ε * c)) (ε * c), t₀ + s / c ∈ Icc (t₀ - ε) (t₀ + ε) := by
-    intro s hs
-    constructor
-    · have h : -ε ≤ s / c := (le_div_iff₀ hc).mpr (by nlinarith [hs.1])
-      linarith
-    · have h : s / c ≤ ε := (div_le_iff₀ hc).mpr hs.2
-      linarith
-  have hη : ∀ s ∈ Icc (-(ε * c)) (ε * c), ∀ t ∈ Icc (-(ε * c)) (ε * c),
-      dist (η s) (η t) = |s - t| := by
-    intro s hs t ht
-    rw [hdist _ (hb s hs) _ (hb t ht), show t₀ + s / c - (t₀ + t / c) = (s - t) / c by ring,
-      abs_div, abs_of_pos hc, div_mul_cancel₀ _ hc.ne']
+  · exact (contMDiffAt_const (c := γ t₀)).congr_of_eventuallyEq
+      (eventuallyEq_const_of_dist_eq_mul_zero hε hdist)
+  let η : ℝ → M := γ ∘ (fun s : ℝ ↦ s / c + t₀)
+  have hη := dist_reparam_eq_abs_of_dist_eq_mul_abs hc hdist
   have hηsmooth : ContMDiffAt 𝓘(ℝ, ℝ) I ∞ η (c * (t₀ - t₀)) := by
-    simpa only [sub_self, mul_zero] using contMDiffAt_of_dist_eq_abs (mul_pos hε hc) hη
+    simpa only [sub_self, mul_zero] using
+      contMDiffAt_of_dist_eq_abs (γ := η) (mul_pos hε hc) hη
   have hψ : ContMDiffAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ (fun t : ℝ ↦ c * (t - t₀)) t₀ :=
     contMDiffAt_iff_contDiffAt.mpr (by fun_prop)
   have heq : (fun t : ℝ ↦ η (c * (t - t₀))) = γ := by
     funext t
-    simp only [η, mul_div_cancel_left₀ (t - t₀) hc.ne', add_sub_cancel]
+    simp only [η, Function.comp_apply, mul_div_cancel_left₀ (t - t₀) hc.ne',
+      sub_add_cancel]
   simpa only [Function.comp_def, heq] using hηsmooth.comp t₀ hψ
+
+/-- A curve with `dist (γ s) (γ t) = |s - t| * c` near `t₀`, with `c ≥ 0`, has Riemannian
+speed `c` at `t₀`. No differentiability is assumed. -/
+theorem norm_curveVelocity_eq_of_dist_eq_mul_abs {γ : ℝ → M} {ε c t₀ : ℝ}
+    (hε : 0 < ε) (hc : 0 ≤ c)
+    (hdist : ∀ s ∈ Icc (t₀ - ε) (t₀ + ε), ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
+      dist (γ s) (γ t) = |s - t| * c) : ‖curveVelocity I γ t₀‖ = c := by
+  rcases hc.eq_or_lt with rfl | hc
+  · rw [(eventuallyEq_const_of_dist_eq_mul_zero hε hdist).norm_curveVelocity_eq (I := I),
+      curveVelocity_const, norm_zero]
+  let η : ℝ → M := γ ∘ (fun s : ℝ ↦ s / c + t₀)
+  have hηdist := dist_reparam_eq_abs_of_dist_eq_mul_abs hc hdist
+  have hnorm := norm_curveVelocity_eq_one_of_dist_eq_abs (I := I) (γ := η) (mul_pos hε hc) hηdist
+  have hmd : MDifferentiableAt 𝓘(ℝ, ℝ) I γ (0 / c + t₀) := by
+    simpa only [zero_div, zero_add] using
+      (contMDiffAt_of_dist_eq_mul_abs (I := I) hε hc.le hdist).mdifferentiableAt (by simp)
+  have hderiv : HasDerivAt (fun s : ℝ ↦ s / c + t₀) c⁻¹ 0 := by
+    simpa only [one_div] using ((hasDerivAt_id' (0 : ℝ)).div_const c).add_const t₀
+  rw [curveVelocity_comp hderiv hmd, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hc] at hnorm
+  -- Rewrite the norm together with its tangent fibre, rather than just its parameter.
+  have hzero : (0 : ℝ) / c + t₀ = t₀ := by simp only [zero_div, zero_add]
+  rw [congrArg (fun t : ℝ ↦ ‖curveVelocity I γ t‖) hzero] at hnorm
+  simpa only [mul_one] using (inv_mul_eq_iff_eq_mul₀ hc.ne').mp hnorm
+
+/-- A curve preserving distances near an arbitrary parameter has unit Riemannian speed there,
+without any differentiability assumption. -/
+theorem norm_curveVelocity_eq_one_of_dist_eq_abs_at {γ : ℝ → M} {ε t₀ : ℝ} (hε : 0 < ε)
+    (hdist : ∀ s ∈ Icc (t₀ - ε) (t₀ + ε), ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
+      dist (γ s) (γ t) = |s - t|) : ‖curveVelocity I γ t₀‖ = 1 := by
+  exact norm_curveVelocity_eq_of_dist_eq_mul_abs hε zero_le_one
+    fun s hs t ht ↦ by simpa only [mul_one] using hdist s hs t ht
 
 /-- **Metric geodesic segments are smooth.** A metric geodesic segment from `p` to `q` is smooth
 at every interior parameter `t ∈ (0, 1)`. -/

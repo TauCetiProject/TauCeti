@@ -46,6 +46,7 @@ from such a root separately requires the separation evidence above.
 * `TauCeti.isHomogeneous_quinticF20Invariant`: the invariant is homogeneous of degree four.
 * `TauCeti.eval₂_rename_quinticF20Invariant`: the value of a renaming of the invariant at a vector
   of five roots, written out.
+* `TauCeti.rename_finRotate_quinticF20Invariant`: the translation `a ↦ a + 1` fixes the invariant.
 * `TauCeti.rename_quinticF20Invariant_eq_self_iff`: the stabilizer of the invariant is exactly
   the reference subgroup of `5T3`.
 * `TauCeti.card_renameOrbit_quinticF20Invariant`: its orbit has six elements.
@@ -112,7 +113,8 @@ theorem eval₂_rename_quinticF20Invariant {R : Type*} [CommRing R] (x : Fin 5 �
   simp only [Fin.isValue, Fin.reduceAdd, Fin.reduceSub]
 
 /-- The translation `a ↦ a + 1` fixes the `F₂₀`-invariant: it reindexes the sum. -/
-private theorem rename_finRotate_quinticF20Invariant :
+@[simp]
+theorem rename_finRotate_quinticF20Invariant :
     MvPolynomial.rename (⇑(finRotate 5)) quinticF20Invariant = quinticF20Invariant := by
   have e1 : ∀ a : Fin 5, a - 1 + 1 = a + 1 - 1 := by decide
   have e2 : ∀ a : Fin 5, a + 2 + 1 = a + 1 + 2 := by decide
@@ -169,7 +171,7 @@ theorem rename_quinticF20Invariant_eq_self_iff (σ : Perm (Fin 5)) :
       constructor
       intro x y
       obtain ⟨g, hg⟩ := (isPretransitive_referenceSubgroup 5 ⟨2, by simp⟩).exists_smul_eq x y
-      exact ⟨⟨(g : Perm (Fin 5)), hle g.2⟩, hg⟩
+      exact ⟨⟨(g : Perm (Fin 5)), hle g.property⟩, hg⟩
     obtain ⟨j, hj⟩ := exists_transitiveGroupLabel_five
       (renameStabilizer quinticF20Invariant)
     have hcard := hj.natCard_eq

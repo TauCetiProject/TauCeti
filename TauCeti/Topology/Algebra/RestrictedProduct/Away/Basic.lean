@@ -61,7 +61,7 @@ it. -/
 the indices **outside** `S`. This is `RestrictedProductAddGroup` at the index type
 `{i // i ∉ S}`; no finiteness of `S` is needed to form it. -/]
 abbrev RestrictedProductGroupAway (S : Set ι) (U : ∀ i, Subgroup (G i)) :=
-  RestrictedProductGroup fun i : {i // i ∉ S} ↦ U i.1
+  RestrictedProductGroup fun i : {i // i ∉ S} ↦ U i.val
 
 /-- Restriction of a restricted product to the indices outside `S`, forgetting the coordinates
 indexed by `S`. -/
@@ -69,8 +69,8 @@ indexed by `S`. -/
 indices outside `S`, forgetting the coordinates indexed by `S`. -/]
 def restrictAway (S : Set ι) (U : ∀ i, Subgroup (G i)) :
     RestrictedProductGroup U →* RestrictedProductGroupAway S U :=
-  RestrictedProduct.mapAlongMonoidHom G (fun i : {i // i ∉ S} ↦ G i.1) Subtype.val
-    Subtype.val_injective.tendsto_cofinite (fun i ↦ MonoidHom.id (G i.1))
+  RestrictedProduct.mapAlongMonoidHom G (fun i : {i // i ∉ S} ↦ G i.val) Subtype.val
+    Subtype.val_injective.tendsto_cofinite (fun i ↦ MonoidHom.id (G i.val))
     (.of_forall fun _ _ hx ↦ hx)
 
 /-- The restriction away from `S` keeps the coordinates outside `S` unchanged. -/
@@ -78,9 +78,9 @@ def restrictAway (S : Set ι) (U : ∀ i, Subgroup (G i)) :
 product of additive groups keeps the coordinates outside `S` unchanged. -/]
 theorem restrictAway_apply (S : Set ι) (U : ∀ i, Subgroup (G i))
     (x : RestrictedProductGroup U) (i : {i // i ∉ S}) :
-    restrictAway S U x i = x i.1 :=
-  RestrictedProduct.mapAlongMonoidHom_apply G (fun i : {i // i ∉ S} ↦ G i.1) Subtype.val
-    Subtype.val_injective.tendsto_cofinite (fun i ↦ MonoidHom.id (G i.1))
+    restrictAway S U x i = x i.val :=
+  RestrictedProduct.mapAlongMonoidHom_apply G (fun i : {i // i ∉ S} ↦ G i.val) Subtype.val
+    Subtype.val_injective.tendsto_cofinite (fun i ↦ MonoidHom.id (G i.val))
     (.of_forall fun _ _ hx ↦ hx) x i
 
 /-- Removing an empty set of indices recovers the original restricted product, by the canonical
@@ -161,7 +161,7 @@ groups away from a larger set factors through restricting away from a smaller on
 viewed outside `S ⊆ T`. -/]
 theorem restrictAway_restrictAway {S T : Set ι} (hST : S ⊆ T) (U : ∀ i, Subgroup (G i))
     (x : RestrictedProductGroup U) (i : {i // i ∉ T}) :
-    restrictAway T U x i = restrictAway S U x ⟨i.1, fun hi ↦ i.2 (hST hi)⟩ := by
+    restrictAway T U x i = restrictAway S U x ⟨i.val, fun hi ↦ i.property (hST hi)⟩ := by
   simp
 
 /-- The restriction away from `S` is continuous for every reference family: it is a map out of a
@@ -172,9 +172,9 @@ product whose coordinate maps are identities. -/]
 theorem continuous_restrictAway [∀ i, TopologicalSpace (G i)] (S : Set ι)
     (U : ∀ i, Subgroup (G i)) :
     Continuous (restrictAway S U) :=
-  RestrictedProduct.mapAlong_continuous G (fun i : {i // i ∉ S} ↦ G i.1) Subtype.val
+  RestrictedProduct.mapAlong_continuous G (fun i : {i // i ∉ S} ↦ G i.val) Subtype.val
     Subtype.val_injective.tendsto_cofinite
-    (fun i ↦ (MonoidHom.id (G i.1) : G i.1 → G i.1)) (.of_forall fun _ _ hx ↦ hx)
+    (fun i ↦ (MonoidHom.id (G i.val) : G i.val → G i.val)) (.of_forall fun _ _ hx ↦ hx)
     fun _ ↦ continuous_id
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.AsymmetricLaplace.Transforms
+import TauCeti.Probability.Distributions.Exponential.Basic
 
 /-!
 # Natural moments of asymmetric Laplace laws

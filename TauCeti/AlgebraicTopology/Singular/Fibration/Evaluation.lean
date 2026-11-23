@@ -59,11 +59,11 @@ variable {B Q : Type u} [TopologicalSpace B] [TopologicalSpace Q] {b₀ : B} {Y 
 inclusion of the fibre over `q` of evaluation `ev⁻¹(Y) → Y` at `b₀`. -/
 def inclEvalPreimage (hq : q ∈ Y) :
     C(BasedMap B Q b₀ q, mappingSpaceEval (X := Q) b₀ ⁻¹' Y) :=
-  ⟨fun f ↦ ⟨f.1, by simpa [f.2] using hq⟩, by fun_prop⟩
+  ⟨fun f ↦ ⟨f.val, by simpa [f.property] using hq⟩, by fun_prop⟩
 
 @[simp]
 theorem coe_inclEvalPreimage_apply (hq : q ∈ Y) (f : BasedMap B Q b₀ q) :
-    (inclEvalPreimage hq f : C(B, Q)) = f.1 :=
+    (inclEvalPreimage hq f : C(B, Q)) = f.val :=
   (rfl)
 
 /-- **Based maps over a highly connected subspace.** Suppose that evaluation
@@ -82,8 +82,8 @@ theorem bijective_singularHomologyMap_inclEvalPreimage
   have hp : TopCat.serreFibrations p := TopCat.mem_serreFibrations_restrictPreimage hev Y
   -- The based maps are its fibre over `q`.
   let e : BasedMap B Q b₀ q ≃ₜ p.fiber ⟨q, hq⟩ :=
-    { toFun f := ⟨inclEvalPreimage hq f, Subtype.ext (by simp [p, f.2])⟩
-      invFun g := ⟨g.1.1, by simpa [p] using congrArg Subtype.val g.2⟩
+    { toFun f := ⟨inclEvalPreimage hq f, Subtype.ext (by simp [p, f.property])⟩
+      invFun g := ⟨g.val.val, by simpa [p] using congrArg Subtype.val g.property⟩
       left_inv _ := rfl
       right_inv _ := rfl }
   have hcomp : inclEvalPreimage (b₀ := b₀) hq = (p.fiberι ⟨q, hq⟩).hom.comp e :=
