@@ -118,10 +118,7 @@ theorem bruhatCell_weylProjection_eq_doubleCoset_positivePoints_left
     obtain ⟨u, hu, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hb₁
     have hb' :
         (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) * b₂ ∈ D.borelSubgroup K :=
-      mul_mem
-        (by simpa only [Subgroup.coe_inv, inv_inv] using
-          D.weylSubgroup_conj_torusPoints_mem_borelSubgroup K n⁻¹ s)
-        hb₂
+      mul_mem (D.weylSubgroup_inv_conj_torusPoints_mem_borelSubgroup K n s) hb₂
     refine DoubleCoset.mem_doubleCoset.mpr
       ⟨u, hu, (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) * b₂, hb', ?_⟩
     group

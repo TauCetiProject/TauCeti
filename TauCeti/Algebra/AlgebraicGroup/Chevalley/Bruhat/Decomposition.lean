@@ -352,9 +352,8 @@ theorem existsUnique_mul_mul_eq_of_mem_bruhatCell (n : D.weylSubgroup K) {g : D.
   rw [D.bruhatCell_weylProjection K n] at hg
   obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
   obtain ⟨u₁, hu₁, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hb₁
-  have ht' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K := by
-    simpa only [Subgroup.coe_inv, inv_inv] using
-      D.weylSubgroup_conj_torusPoints_mem_borelSubgroup K n⁻¹ s
+  have ht' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K :=
+    D.weylSubgroup_inv_conj_torusPoints_mem_borelSubgroup K n s
   obtain ⟨u, hu, b₀, hb₀, heq⟩ :=
     D.exists_inversionPoints_mul_borelSubgroup_of_ncard_eq K _ n rfl hu₁
   let bFinal := b₀ * ((n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K)) * b₂

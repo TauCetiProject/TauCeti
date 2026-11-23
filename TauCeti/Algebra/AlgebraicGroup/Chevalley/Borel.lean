@@ -247,4 +247,12 @@ theorem weylSubgroup_conj_torusPoints_mem_borelSubgroup (w : D.weylSubgroup A)
       (D.weylSubgroup_le_normalizer_range_torusPoints A w.property)
       (D.torusPoints A s)).mp ⟨s, rfl⟩
 
+/-- Conjugating any point of the actual weight-lattice torus by the inverse of an element of
+`D.weylSubgroup A` stays inside `D.borelSubgroup A`. -/
+theorem weylSubgroup_inv_conj_torusPoints_mem_borelSubgroup (w : D.weylSubgroup A)
+    (s : Fin t.rank → Aˣ) :
+    (w : D.points A)⁻¹ * D.torusPoints A s * (w : D.points A) ∈ D.borelSubgroup A := by
+  simpa only [Subgroup.coe_inv, inv_inv] using
+    D.weylSubgroup_conj_torusPoints_mem_borelSubgroup A w⁻¹ s
+
 end TauCeti.DynkinType.ChevalleyDatum

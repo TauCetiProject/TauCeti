@@ -153,9 +153,8 @@ private theorem exists_weylElement_mul_borelSubgroup_mul_eq
       (D.iSup_rootSubgroupPoints_diff_singleton_le_positivePoints K i
         ((Subgroup.mem_normalizer_iff.mp
           (D.weylElement_mem_normalizer_positivePoints_diff_singleton K i 1) v).mp hv))
-  have hts' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K := by
-    simpa only [Subgroup.coe_inv, inv_inv] using
-      D.weylSubgroup_conj_torusPoints_mem_borelSubgroup K n⁻¹ s
+  have hts' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K :=
+    D.weylSubgroup_inv_conj_torusPoints_mem_borelSubgroup K n s
   refine ⟨r * v * r⁻¹, hv', (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K), hts',
     toAdd u₀, ?_⟩
   rw [ofAdd_toAdd]
