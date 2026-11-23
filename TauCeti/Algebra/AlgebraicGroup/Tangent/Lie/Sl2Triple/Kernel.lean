@@ -80,11 +80,8 @@ theorem moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap (t : IsSl2Triple 
 theorem isCentral_kernelHopfIdeal_sl2CoordinateMap (t : IsSl2Triple h e f) :
     (CommHopfAlgCat.kernelHopfIdeal t.sl2CoordinateMap).IsCentral := by
   let A := SpecialLinear.coordinateHopfAlgebra k 2
-  let K := CommHopfAlgCat.kernelHopfIdeal t.sl2CoordinateMap
-  let _ : Module.Finite k (CommHopfAlgCat.quotient A K) :=
-    t.moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap
-  let _ : Algebra.Etale k (CommHopfAlgCat.quotient A K) :=
-    t.algebraEtale_quotient_kernelHopfIdeal_sl2CoordinateMap
+  let _ := t.moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap
+  let _ := t.algebraEtale_quotient_kernelHopfIdeal_sl2CoordinateMap
   exact HopfIdeal.IsNormal.isCentral_of_finite_of_isGeometricallyReduced
     (H := ⟨A, inferInstanceAs (Algebra.FiniteType k _)⟩)
     (CommHopfAlgCat.isNormal_kernelHopfIdeal t.sl2CoordinateMap)
@@ -111,7 +108,8 @@ theorem kernelHopfIdeal_sl2CoordinateMap_eq_augmentation_or_eq_centerDefiningIde
   have hKε : K ≤ ε := HopfIdeal.le_augmentation k A K
   let _ : Module.Finite k (CommHopfAlgCat.quotient A Z) :=
     SpecialLinear.moduleFinite_centerCoordinate 2 zero_lt_two
-  let _ := t.moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap
+  let _ : Module.Finite k (CommHopfAlgCat.quotient A K) :=
+    t.moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap
   let _ := HopfIdeal.moduleFinite_quotient_augmentation (R := k) A
   have hdimZ := SpecialLinear.finrank_centerCoordinate (k := k) 2 zero_lt_two
   have hdimε := HopfIdeal.finrank_quotient_augmentation (R := k) A

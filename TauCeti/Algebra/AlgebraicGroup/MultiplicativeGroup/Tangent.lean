@@ -34,6 +34,8 @@ even when `B` is noncommutative. For commutative `B`, the tangent Lie bracket va
   vanishes.
 * `TauCeti.MultiplicativeGroup.mapValue_derivationComp_tangentLinearEquiv_symm_one`:
   coefficient change preserves a cocharacter's unit tangent differential.
+* `TauCeti.MultiplicativeGroup.derivationComp_invert`: pulling a tangent derivation of `𝔾ₘ`
+  back along inversion `T ↦ T⁻¹` negates it.
 
 ## References
 
@@ -208,6 +210,17 @@ theorem mapValue_derivationComp_tangentLinearEquiv_symm_one
   exact h
 
 end Ring
+
+/-- Pulling a tangent derivation of `𝔾ₘ` back along inversion `T ↦ T⁻¹` negates it. -/
+theorem derivationComp_invert {R : Type u} [CommRing R] [Ring B] [Algebra R B]
+    (d : Derivation R R[T;T⁻¹] (CounitAlgebra R R[T;T⁻¹] B)) :
+    derivationComp (B := B)
+      (AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ)).toBialgHom d = -d := by
+  apply (tangentLinearEquiv (R := R) (B := B)).injective
+  rw [tangentLinearEquiv_apply, algEquivSelf_derivationComp_apply,
+    show (AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ)).toBialgHom.toAlgHom
+      (LaurentPolynomial.T 1) = LaurentPolynomial.T (-1) from LaurentPolynomial.invert_T 1,
+    derivation_T_zsmul, map_zsmul, neg_one_zsmul, map_neg, tangentLinearEquiv_apply]
 
 section Lie
 

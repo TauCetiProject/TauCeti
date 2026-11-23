@@ -187,8 +187,7 @@ private theorem differential_slFinTwoBasis_one_signedBasis (d : ℕ) {i : Fin (d
         ((tangentLieEquivSl (R := R) (B := R) 2).symm (slFinTwoBasis R 1))
         (binaryFormsSignedBasis R d i) =
       ((d : R) - (i : ℕ)) • binaryFormsSignedBasis R d ⟨(i : ℕ) + 1, by omega⟩ := by
-  apply Subtype.ext
-  rw [coe_differential_binaryForms, coe_binaryFormsSignedBasis_apply, map_smul,
+  apply Subtype.ext; rw [coe_differential_binaryForms, coe_binaryFormsSignedBasis_apply, map_smul,
     differential_slFinTwoBasis_one_monomial, SetLike.val_smul, coe_binaryFormsSignedBasis_apply]
   have hsub : d - (i : ℕ) - 1 = d - ((i : ℕ) + 1) := by omega
   simp only [hsub, Nat.cast_sub hi.le, pow_succ, mul_neg, mul_one, smul_neg, neg_smul, smul_smul]
@@ -260,10 +259,9 @@ theorem differential_binaryFormsEquivSl2Std_symm (d : ℕ)
     (A : SpecialLinear.sl (Fin 2) R) (v : Sl2Std R d) :
     Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2)
         ((tangentLieEquivSl (R := R) (B := R) 2).symm A) ((binaryFormsEquivSl2Std R d).symm v) =
-      (binaryFormsEquivSl2Std R d).symm ⁅A, v⁆ :=
-  (binaryFormsEquivSl2Std R d).injective <| by
-    rw [binaryFormsEquivSl2Std_differential, LieEquiv.apply_symm_apply,
-      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+      (binaryFormsEquivSl2Std R d).symm ⁅A, v⁆ := (binaryFormsEquivSl2Std R d).injective <| by
+  rw [binaryFormsEquivSl2Std_differential, LieEquiv.apply_symm_apply,
+    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
 
 end BinaryFormsEquiv
 

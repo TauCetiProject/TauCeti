@@ -77,10 +77,9 @@ theorem existsUnique_sl2CoordinateMap (t : IsSl2Triple h e f) :
   let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
   have _ : Module.Finite k M := Module.Finite.of_basis b
   let ρLie := (Comodule.differential (R := k) (H := H) (M := M)).comp (t.toLieHom k)
-  let _ : LieRingModule (SpecialLinear.sl (Fin 2) k) M := LieRingModule.compLieHom M ρLie
-  let _ : LieModule k (SpecialLinear.sl (Fin 2) k) M := LieModule.compLieHom M ρLie
-  let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k 2) M :=
-    SpecialLinear.comoduleOfLieModule k M
+  let _ := LieRingModule.compLieHom M ρLie
+  let _ := LieModule.compLieHom M ρLie
+  let _ := SpecialLinear.comoduleOfLieModule k M
   let A := SpecialLinear.coordinateHopfAlgebra k 2
   have hdiff : (derivationCompLieHom (B := k) (Comodule.coordinateBialgHom (H := H) b)).comp
       ((t.toLieHom k).comp (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).toLieHom) =
@@ -179,7 +178,8 @@ theorem sl2CoordinateMap_map {H' : Type u} [CommRing H'] [HopfAlgebra k H']
   have ht : t = (isSl2Triple_single (R := k) (zero_ne_one : (0 : Fin 2) ≠ 1)).map
       (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm.toLieHom t.h_ne_zero :=
     Subsingleton.elim _ _
-  symm; rw [eq_sl2CoordinateMap_iff, CommHopfAlgCat.id_hom, derivationCompLieHom_id, ht,
+  symm; rw [eq_sl2CoordinateMap_iff, TauCeti.CommHopfAlgCat.hom_id_eq_bialgHom_id,
+    derivationCompLieHom_id, ht,
     (isSl2Triple_single (R := k) zero_ne_one).toLieHom_map k _ t.h_ne_zero,
     toLieHom_isSl2Triple_single, LieHom.comp_id]
   exact LieHom.ext fun d ↦

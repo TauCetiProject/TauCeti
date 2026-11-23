@@ -115,8 +115,7 @@ theorem differential_comoduleOfLieModule_symm (A : SpecialLinear.sl (Fin 2) k) (
     letI := comoduleOfLieModule k M
     Comodule.differential (R := k) (H := coordinateHopfAlgebra k 2)
         ((tangentLieEquivSl (R := k) (B := k) 2).symm A) m = ⁅A, m⁆ := by
-  let _ := comoduleOfLieModule k M
-  rw [differential_comoduleOfLieModule, LieEquiv.apply_symm_apply]
+  let _ := comoduleOfLieModule k M; rw [differential_comoduleOfLieModule, LieEquiv.apply_symm_apply]
 
 /-- Uniqueness characterization of `comoduleOfLieModule k M` by its differential. -/
 theorem eq_comoduleOfLieModule_iff (c : Comodule k (coordinateHopfAlgebra k 2) M) :
@@ -151,9 +150,7 @@ noncomputable def comoduleHomOfLieModuleHom (f : M →ₗ⁅k,SpecialLinear.sl (
     letI := comoduleOfLieModule k M
     comoduleHomOfLieModuleHom (LieModuleHom.id : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ M) =
       Comodule.Hom.id k (coordinateHopfAlgebra k 2) M := by
-  let _ := comoduleOfLieModule k M
-  ext m
-  rfl
+  let _ := comoduleOfLieModule k M; ext m; rfl
 
 /-- `comoduleHomOfLieModuleHom` preserves composition of Lie-module homomorphisms. -/
 @[simp] theorem comoduleHomOfLieModuleHom_comp
@@ -167,9 +164,7 @@ noncomputable def comoduleHomOfLieModuleHom (f : M →ₗ⁅k,SpecialLinear.sl (
     comoduleHomOfLieModuleHom (g.comp f) =
       (comoduleHomOfLieModuleHom g).comp (comoduleHomOfLieModuleHom f) := by
   let _ := comoduleOfLieModule k M; let _ := comoduleOfLieModule k N
-  let _ := comoduleOfLieModule k P
-  ext m
-  rfl
+  let _ := comoduleOfLieModule k P; ext m; rfl
 
 /-- **Comodule promotion of `binaryFormsEquivSl2Std k d`.** Over a characteristic-zero field `k`,
 the canonical linear equivalence `binaryFormsEquivSl2Std k d : binaryForms k d ≃ₗ[k] Sl2Std k d`
@@ -222,17 +217,17 @@ noncomputable def sl2StdToBinaryFormsComoduleHom (k : Type u) [Field k] [CharZer
 theorem sl2StdToBinaryFormsComoduleHom_comp_binaryFormsToSl2StdComoduleHom (d : ℕ) :
     letI := comoduleOfLieModule k (Sl2Std k d)
     (sl2StdToBinaryFormsComoduleHom k d).comp (binaryFormsToSl2StdComoduleHom k d) =
-      Comodule.Hom.id k (coordinateHopfAlgebra k 2) (binaryForms k d) := by
-  let _ := comoduleOfLieModule k (Sl2Std k d)
-  exact Comodule.Hom.ext fun g ↦ (binaryFormsEquivSl2Std k d).symm_apply_apply g
+      Comodule.Hom.id k (coordinateHopfAlgebra k 2) (binaryForms k d) :=
+  letI := comoduleOfLieModule k (Sl2Std k d)
+  Comodule.Hom.ext fun g ↦ (binaryFormsEquivSl2Std k d).symm_apply_apply g
 
 /-- `sl2StdToBinaryFormsComoduleHom` is right inverse to `binaryFormsToSl2StdComoduleHom`. -/
 theorem binaryFormsToSl2StdComoduleHom_comp_sl2StdToBinaryFormsComoduleHom (d : ℕ) :
     letI := comoduleOfLieModule k (Sl2Std k d)
     (binaryFormsToSl2StdComoduleHom k d).comp (sl2StdToBinaryFormsComoduleHom k d) =
-      Comodule.Hom.id k (coordinateHopfAlgebra k 2) (Sl2Std k d) := by
-  let _ := comoduleOfLieModule k (Sl2Std k d)
-  exact Comodule.Hom.ext fun v ↦ (binaryFormsEquivSl2Std k d).apply_symm_apply v
+      Comodule.Hom.id k (coordinateHopfAlgebra k 2) (Sl2Std k d) :=
+  letI := comoduleOfLieModule k (Sl2Std k d)
+  Comodule.Hom.ext fun v ↦ (binaryFormsEquivSl2Std k d).apply_symm_apply v
 
 /-- A `k`-submodule of `M` underlies an `O(SL₂)`-subcomodule for `comoduleOfLieModule k M` iff it is
 `sl (Fin 2) k`-stable. -/

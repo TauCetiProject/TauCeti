@@ -121,26 +121,15 @@ theorem cocharacter_symm (t : IsSl2Triple h e f) :
     ext d x
     rw [_root_.CommHopfAlgCat.hom_ofHom, _root_.CommHopfAlgCat.hom_ofHom,
       derivationCompLieHom_apply, derivationCompLieHom_apply]
-    have hopp_eq : t.cocharacter.oppositeCocharacter =
-        (AddMonoidAlgebra.domCongrBialgEquiv k k (AddEquiv.neg ℤ)).toBialgHom.comp
-          t.cocharacter :=
-      BialgHom.ext fun a ↦ t.cocharacter.oppositeCocharacter_apply a
     have hopp : derivationComp (B := k) t.cocharacter.oppositeCocharacter d =
-        derivationComp (B := k) t.cocharacter
-          (derivationComp (B := k)
-            (AddMonoidAlgebra.domCongrBialgEquiv k k (AddEquiv.neg ℤ)).toBialgHom d) := by
-      rw [hopp_eq, derivationComp_comp, LinearMap.comp_apply]
-    have hcoord : MultiplicativeGroup.tangentLinearEquiv
-        (derivationComp (B := k)
-          (AddMonoidAlgebra.domCongrBialgEquiv k k (AddEquiv.neg ℤ)).toBialgHom d) =
-        -MultiplicativeGroup.tangentLinearEquiv d := by
-      rw [MultiplicativeGroup.tangentLinearEquiv_apply, algEquivSelf_derivationComp_apply]
-      have hT : (AddMonoidAlgebra.domCongrBialgEquiv k k (AddEquiv.neg ℤ)).toBialgHom.toAlgHom
-          (LaurentPolynomial.T 1) = LaurentPolynomial.T (-1) := LaurentPolynomial.invert_T 1
-      rw [hT, MultiplicativeGroup.derivation_T_zsmul, map_zsmul, neg_one_zsmul,
-        MultiplicativeGroup.tangentLinearEquiv_apply]
-    rw [t.symm.derivationComp_cocharacter, hopp, t.derivationComp_cocharacter, hcoord,
-      smul_apply, smul_apply, neg_apply, smul_neg, neg_smul]
+        -derivationComp (B := k) t.cocharacter d := by
+      rw [show t.cocharacter.oppositeCocharacter =
+        (AddMonoidAlgebra.domCongrBialgEquiv k k (AddEquiv.neg ℤ)).toBialgHom.comp t.cocharacter
+        from BialgHom.ext fun a ↦ t.cocharacter.oppositeCocharacter_apply a,
+        derivationComp_comp, LinearMap.comp_apply, MultiplicativeGroup.derivationComp_invert,
+        map_neg]
+    rw [t.symm.derivationComp_cocharacter, hopp, neg_apply, t.derivationComp_cocharacter,
+      smul_neg, neg_apply]
   exact congrArg _root_.CommHopfAlgCat.Hom.hom hhom
 
 /-- **Conjugation compatibility of `t.cocharacter`.** Conjugating an `sl₂` triple by the adjoint
@@ -170,20 +159,10 @@ theorem cocharacter_adDerivationLieEquiv (t : IsSl2Triple h e f)
     rw [hφ]; simpa only [LieEquiv.coe_toLieHom, map_zero] using
       (Derivation.adDerivationLieEquiv k
         (Derivation.pointInCounitAlgebra (CommAlgCat.of k k) g)).injective.ne t.h_ne_zero
-  have hmap : (t.map (Derivation.adDerivationLieEquiv k
-        (Derivation.pointInCounitAlgebra (CommAlgCat.of k k) g)).toLieHom
-        (by
-          simpa only [LieEquiv.coe_toLieHom, map_zero] using
-            (Derivation.adDerivationLieEquiv k
-              (Derivation.pointInCounitAlgebra (CommAlgCat.of k k) g)).injective.ne
-              t.h_ne_zero)).cocharacter =
-      t.cocharacter.comp (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom := by
-    simpa only [hφ, _root_.CommHopfAlgCat.hom_ofHom] using
-      t.cocharacter_map
-        (_root_.CommHopfAlgCat.ofHom (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom) hne
-  rw [hmap]
-  apply BialgHom.ext; intro a
-  rw [BialgHom.comp_apply, BialgHom.conjCocharacter_apply]
+  have hmap := t.cocharacter_map
+    (_root_.CommHopfAlgCat.ofHom (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom) hne
+  simp only [hφ, _root_.CommHopfAlgCat.hom_ofHom] at hmap
+  rw [hmap]; apply BialgHom.ext; intro a; rw [BialgHom.comp_apply, BialgHom.conjCocharacter_apply]
   exact congrArg t.cocharacter
     (DFunLike.congr_fun (HopfAlgebra.pointConjugationBialgEquiv_toAlgHom g) a)
 
@@ -203,28 +182,9 @@ theorem basePointsRepresentation_pointsHom_cocharacter_of_mem_eigenspace (t : Is
     (hv : v ∈ Module.End.eigenspace
       (Comodule.differential (R := k) (H := H) (M := V) h) (m : k)) :
     Comodule.basePointsRepresentation (H := H) V (Cocharacter.pointsHom k t.cocharacter s) v =
-      ((s ^ m : kˣ) : k) • v := by
-  rw [← t.weightSpace_cocharacter_eq_eigenspace V m] at hv
-  let eMult := AddMonoidAlgebra.toMultiplicativeBialgEquiv k k ℤ
-  let π : H →ₐc[k] MonoidAlgebra k (Multiplicative ℤ) := eMult.toBialgHom.comp t.cocharacter
-  let q : WithConv (MonoidAlgebra k (Multiplicative ℤ) →ₐ[k] k) :=
-    toConv ((laurentEval (R := k) s).comp eMult.symm.toAlgEquiv.toAlgHom)
-  have hmap : BialgHom.mapDomain π q = Cocharacter.pointsHom k t.cocharacter s := by
-    rw [Cocharacter.pointsHom_apply]
-    apply ofConv_injective; ext a
-    simp [π, q, BialgHom.mapDomain_apply, eMult]
-  have ht : eMult.symm.toAlgEquiv (MonoidAlgebra.single (Multiplicative.ofAdd m) (1 : k)) =
-      LaurentPolynomial.T m := by
-    apply eMult.injective
-    rw [← AddMonoidAlgebra.toMultiplicativeBialgEquiv_single (R := k) (A := k) (M := ℤ) m 1]
-    exact eMult.apply_symm_apply _
-  rw [← hmap, ← Comodule.basePointsRepresentation_corestrict π q]
-  let _ : Comodule k (MonoidAlgebra k (Multiplicative ℤ)) V := Comodule.Corestrict π.toCoalgHom
-  rw [Comodule.basePointsRepresentation_apply, Comodule.endOfPoint_tmul,
-    Comodule.corestrict_coact_apply, DiagonalizableGroup.mem_weightSpace.mp hv]
-  simp only [q, one_smul, LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply,
-    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ht, laurentEval_T, TensorProduct.comm_tmul,
-    TensorProduct.lid_tmul]
+      ((s ^ m : kˣ) : k) • v :=
+  t.cocharacter.basePointsRepresentation_pointsHom_of_mem_weightSpace s
+    ((t.weightSpace_cocharacter_eq_eigenspace V m).symm ▸ hv)
 
 /-- **Adjoint weight spaces of `t.cocharacter` are `ad h`-eigenspaces.** -/
 theorem adjointWeightSpace_cocharacter_eq_eigenspace (t : IsSl2Triple h e f) (m : ℤ) :
@@ -264,8 +224,7 @@ theorem adDerivationLieEquiv_pointsHom_cocharacter (t : IsSl2Triple h e f) (s : 
           (Cocharacter.pointsHom k t.cocharacter s)) =
       TauCeti.gradingAut t.isInternal_eigenspace_ad s := by
   let _ := Derivation.adjointComodule (R := k) (H := H)
-  apply LieEquiv.ext
-  intro d
+  apply LieEquiv.ext; intro d
   refine LinearMap.congr_fun (TauCeti.eq_gradingAut t.isInternal_eigenspace_ad
     (φ := (Derivation.adDerivationLieEquiv k
       (Derivation.pointInCounitAlgebra (CommAlgCat.of k k)
@@ -278,26 +237,18 @@ theorem adDerivationLieEquiv_pointsHom_cocharacter (t : IsSl2Triple h e f) (s : 
     (Module.Dual k (Bialgebra.CotangentSpace k H)) s hy
   have hend := Derivation.tangentScalarExtensionEquiv_adjointComodule_endOfPoint
     (R := k) (H := H) (CommAlgCat.of k k) (Cocharacter.pointsHom k t.cocharacter s) (1 ⊗ₜ[k] x)
-  have h1 : Comodule.endOfPoint (Module.Dual k (Bialgebra.CotangentSpace k H))
-      (Cocharacter.pointsHom k t.cocharacter s).ofConv (1 ⊗ₜ[k] x) =
-      1 ⊗ₜ[k] Comodule.basePointsRepresentation (H := H)
-        (Module.Dual k (Bialgebra.CotangentSpace k H))
-        (Cocharacter.pointsHom k t.cocharacter s) x := by
-    rw [Comodule.endOfPoint_tmul, one_smul,
-      Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
   have h1eq (f : Module.Dual k (Bialgebra.CotangentSpace k H)) :
       Derivation.tangentScalarExtensionEquiv (R := k) (A := H) (B := CommAlgCat.of k k)
-          (1 ⊗ₜ[k] f) =
-        Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k) f := by
-    ext a
-    apply (Bialgebra.CounitAlgebra.algEquivSelf k H k).injective
+        (1 ⊗ₜ[k] f) = Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k) f := by
+    ext a; apply (Bialgebra.CounitAlgebra.algEquivSelf k H k).injective
     rw [Derivation.tangentScalarExtensionEquiv_tmul, TauCeti.algEquivSelf_derivation_smul_apply,
       one_mul, Algebra.ofId_self, Derivation.mapValue_id, LinearMap.id_apply]
-  rw [h1, hact, h1eq, h1eq, map_smul] at hend
+  rw [Comodule.endOfPoint_tmul, one_smul,
+    Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation, hact, h1eq, h1eq,
+    map_smul] at hend
   rw [LinearEquiv.coe_toLinearMap, LieEquiv.coe_toLinearEquiv,
     Derivation.adDerivationLieEquiv_apply, ← hend]
-  ext a
-  rfl
+  ext a; rfl
 
 /-- **The underlying submodule of `Lie(P_G(t.cocharacter))` is the supremum of the
 `(n : k)`-eigenspaces of `ad h` on `Lie(G)` for `0 ≤ n`.** -/
@@ -321,8 +272,7 @@ theorem lieSubalgebra_unipotentDefiningHopfIdeal_cocharacter (t : IsSl2Triple h 
 on `Lie(G)`.** -/
 theorem lieSubalgebra_leviDefiningHopfIdeal_cocharacter (t : IsSl2Triple h e f) :
     ((leviDefiningHopfIdeal t.cocharacter).lieSubalgebra (B := k)).toSubmodule =
-      Module.End.eigenspace
-        (ad k (Derivation k H (Bialgebra.CounitAlgebra k H k)) h) 0 := by
+      Module.End.eigenspace (ad k (Derivation k H (Bialgebra.CounitAlgebra k H k)) h) 0 := by
   rw [t.cocharacter.lieSubalgebra_leviDefiningHopfIdeal_eq_eigenspace,
     t.derivationComp_cocharacter_unit]
 
@@ -332,8 +282,7 @@ theorem lieSubalgebra_leviDefiningHopfIdeal_cocharacter_eq_centralizerHopfIdeal
     (t : IsSl2Triple h e f) :
     (leviDefiningHopfIdeal t.cocharacter).lieSubalgebra (B := k) =
       (centralizerHopfIdeal H
-        ((Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm h)).lieSubalgebra
-          (B := k) := by
+        ((Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm h)).lieSubalgebra (B := k) := by
   simpa only [t.derivationComp_cocharacter_unit] using
     t.cocharacter.lieSubalgebra_leviDefiningHopfIdeal_eq_centralizerHopfIdeal
 
