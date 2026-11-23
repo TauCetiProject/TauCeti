@@ -244,4 +244,204 @@ theorem leftCointegralsConvEquiv_symm_apply (ψ : leftIntegral R (ConvolutionDua
 
 end ConvolutionDual
 
+section Opposite
+
+variable {k H : Type*} [CommSemiring k] [AddCommMonoid H] [One H] [Module k H] [Coalgebra k H]
+
+/-- Precomposing with `MulOpposite.opLinearEquiv.symm` preserves and reflects right
+cointegrals: a functional on `H` is a right cointegral iff its pushforward to `Hᵐᵒᵖ` is. -/
+theorem IsRightCointegral.mulOpposite_iff (φ : Module.Dual k H) :
+    IsRightCointegral (φ ∘ₗ (MulOpposite.opLinearEquiv k).symm.toLinearMap) ↔
+      IsRightCointegral φ := by
+  simp only [isRightCointegral_def]
+  constructor
+  · intro hφ h
+    have hswap :
+        (MulOpposite.opLinearEquiv k).symm.toLinearMap ∘ₗ
+          (TensorProduct.lid k Hᵐᵒᵖ).toLinearMap ∘ₗ
+          (φ ∘ₗ (MulOpposite.opLinearEquiv k).symm.toLinearMap).rTensor Hᵐᵒᵖ ∘ₗ
+          TensorProduct.map (MulOpposite.opLinearEquiv k).toLinearMap
+            (MulOpposite.opLinearEquiv k).toLinearMap =
+          (TensorProduct.lid k H).toLinearMap ∘ₗ φ.rTensor H :=
+      TensorProduct.ext' fun a b ↦ by simp
+    have hL := LinearMap.congr_fun hswap (Coalgebra.comul (R := k) h)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hL
+    have heq := congrArg MulOpposite.unop (hφ (MulOpposite.op h))
+    rw [MulOpposite.comul_op] at heq
+    exact hL.symm.trans (by simpa using heq)
+  · intro hφ y
+    induction y using MulOpposite.rec' with | h y =>
+    have hswap :
+        (TensorProduct.lid k Hᵐᵒᵖ).toLinearMap ∘ₗ
+          (φ ∘ₗ (MulOpposite.opLinearEquiv k).symm.toLinearMap).rTensor Hᵐᵒᵖ ∘ₗ
+          TensorProduct.map (MulOpposite.opLinearEquiv k).toLinearMap
+            (MulOpposite.opLinearEquiv k).toLinearMap =
+          (MulOpposite.opLinearEquiv k).toLinearMap ∘ₗ
+            (TensorProduct.lid k H).toLinearMap ∘ₗ φ.rTensor H :=
+      TensorProduct.ext' fun a b ↦ by simp
+    have hL := LinearMap.congr_fun hswap (Coalgebra.comul (R := k) y)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hL
+    rw [MulOpposite.comul_op]
+    exact hL.trans (by simpa using congrArg MulOpposite.op (hφ y))
+
+/-- Pushing a right cointegral on `H` forward to `Hᵐᵒᵖ` yields a right cointegral. -/
+theorem IsRightCointegral.mulOpposite {φ : Module.Dual k H} (hφ : IsRightCointegral φ) :
+    IsRightCointegral (φ ∘ₗ (MulOpposite.opLinearEquiv k).symm.toLinearMap) :=
+  (IsRightCointegral.mulOpposite_iff φ).mpr hφ
+
+/-- Precomposing with `MulOpposite.opLinearEquiv.symm` preserves and reflects left
+cointegrals: a functional on `H` is a left cointegral iff its pushforward to `Hᵐᵒᵖ` is. -/
+theorem IsLeftCointegral.mulOpposite_iff (φ : Module.Dual k H) :
+    IsLeftCointegral (φ ∘ₗ (MulOpposite.opLinearEquiv k).symm.toLinearMap) ↔
+      IsLeftCointegral φ := by
+  simp only [isLeftCointegral_def]
+  constructor
+  · intro hφ h
+    have hswap :
+        (MulOpposite.opLinearEquiv k).symm.toLinearMap ∘ₗ
+          (TensorProduct.rid k Hᵐᵒᵖ).toLinearMap ∘ₗ
+          (φ ∘ₗ (MulOpposite.opLinearEquiv k).symm.toLinearMap).lTensor Hᵐᵒᵖ ∘ₗ
+          TensorProduct.map (MulOpposite.opLinearEquiv k).toLinearMap
+            (MulOpposite.opLinearEquiv k).toLinearMap =
+          (TensorProduct.rid k H).toLinearMap ∘ₗ φ.lTensor H :=
+      TensorProduct.ext' fun a b ↦ by simp
+    have hL := LinearMap.congr_fun hswap (Coalgebra.comul (R := k) h)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hL
+    have heq := congrArg MulOpposite.unop (hφ (MulOpposite.op h))
+    rw [MulOpposite.comul_op] at heq
+    exact hL.symm.trans (by simpa using heq)
+  · intro hφ y
+    induction y using MulOpposite.rec' with | h y =>
+    have hswap :
+        (TensorProduct.rid k Hᵐᵒᵖ).toLinearMap ∘ₗ
+          (φ ∘ₗ (MulOpposite.opLinearEquiv k).symm.toLinearMap).lTensor Hᵐᵒᵖ ∘ₗ
+          TensorProduct.map (MulOpposite.opLinearEquiv k).toLinearMap
+            (MulOpposite.opLinearEquiv k).toLinearMap =
+          (MulOpposite.opLinearEquiv k).toLinearMap ∘ₗ
+            (TensorProduct.rid k H).toLinearMap ∘ₗ φ.lTensor H :=
+      TensorProduct.ext' fun a b ↦ by simp
+    have hL := LinearMap.congr_fun hswap (Coalgebra.comul (R := k) y)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hL
+    rw [MulOpposite.comul_op]
+    exact hL.trans (by simpa using congrArg MulOpposite.op (hφ y))
+
+/-- Pushing a left cointegral on `H` forward to `Hᵐᵒᵖ` yields a left cointegral. -/
+theorem IsLeftCointegral.mulOpposite {φ : Module.Dual k H} (hφ : IsLeftCointegral φ) :
+    IsLeftCointegral (φ ∘ₗ (MulOpposite.opLinearEquiv k).symm.toLinearMap) :=
+  (IsLeftCointegral.mulOpposite_iff φ).mpr hφ
+
+/-- A functional on `H` is a right cointegral iff its pullback to `Coop H` is a left
+cointegral. -/
+theorem IsRightCointegral.coop_iff (φ : Module.Dual k H) :
+    IsLeftCointegral (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap) ↔ IsRightCointegral φ := by
+  simp only [isLeftCointegral_def, isRightCointegral_def]
+  constructor
+  · intro hφ h
+    have hswap :
+        (Coop.linearEquiv k H).toLinearMap ∘ₗ (TensorProduct.rid k (Coop H)).toLinearMap ∘ₗ
+          (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap).lTensor (Coop H) ∘ₗ
+          TensorProduct.map (Coop.linearEquiv k H).symm.toLinearMap
+            (Coop.linearEquiv k H).symm.toLinearMap ∘ₗ
+          (TensorProduct.comm k H H).toLinearMap =
+          (TensorProduct.lid k H).toLinearMap ∘ₗ φ.rTensor H :=
+      TensorProduct.ext' fun a b ↦ by simp
+    have hL := LinearMap.congr_fun hswap (Coalgebra.comul (R := k) h)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hL
+    have heq := congrArg Coop.val (hφ (Coop.mk h))
+    rw [Coop.comul_mk] at heq
+    exact hL.symm.trans (by simpa using heq)
+  · intro hφ y
+    induction y with | mk y =>
+    have hswap :
+        (TensorProduct.rid k (Coop H)).toLinearMap ∘ₗ
+          (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap).lTensor (Coop H) ∘ₗ
+          TensorProduct.map (Coop.linearEquiv k H).symm.toLinearMap
+            (Coop.linearEquiv k H).symm.toLinearMap ∘ₗ
+          (TensorProduct.comm k H H).toLinearMap =
+          (Coop.linearEquiv k H).symm.toLinearMap ∘ₗ
+            (TensorProduct.lid k H).toLinearMap ∘ₗ φ.rTensor H :=
+      TensorProduct.ext' fun a b ↦ by simp
+    have hL := LinearMap.congr_fun hswap (Coalgebra.comul (R := k) y)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hL
+    rw [Coop.comul_mk]
+    exact hL.trans (by simpa using congrArg Coop.mk (hφ y))
+
+/-- Pulling a right cointegral on `H` back to `Coop H` yields a left cointegral. -/
+theorem IsRightCointegral.coop {φ : Module.Dual k H} (hφ : IsRightCointegral φ) :
+    IsLeftCointegral (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap) :=
+  (IsRightCointegral.coop_iff φ).mpr hφ
+
+/-- A functional on `H` is a left cointegral iff its pullback to `Coop H` is a right
+cointegral. -/
+theorem IsLeftCointegral.coop_iff (φ : Module.Dual k H) :
+    IsRightCointegral (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap) ↔ IsLeftCointegral φ := by
+  simp only [isRightCointegral_def, isLeftCointegral_def]
+  constructor
+  · intro hφ h
+    have hswap :
+        (Coop.linearEquiv k H).toLinearMap ∘ₗ (TensorProduct.lid k (Coop H)).toLinearMap ∘ₗ
+          (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap).rTensor (Coop H) ∘ₗ
+          TensorProduct.map (Coop.linearEquiv k H).symm.toLinearMap
+            (Coop.linearEquiv k H).symm.toLinearMap ∘ₗ
+          (TensorProduct.comm k H H).toLinearMap =
+          (TensorProduct.rid k H).toLinearMap ∘ₗ φ.lTensor H :=
+      TensorProduct.ext' fun a b ↦ by simp
+    have hL := LinearMap.congr_fun hswap (Coalgebra.comul (R := k) h)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hL
+    have heq := congrArg Coop.val (hφ (Coop.mk h))
+    rw [Coop.comul_mk] at heq
+    exact hL.symm.trans (by simpa using heq)
+  · intro hφ y
+    induction y with | mk y =>
+    have hswap :
+        (TensorProduct.lid k (Coop H)).toLinearMap ∘ₗ
+          (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap).rTensor (Coop H) ∘ₗ
+          TensorProduct.map (Coop.linearEquiv k H).symm.toLinearMap
+            (Coop.linearEquiv k H).symm.toLinearMap ∘ₗ
+          (TensorProduct.comm k H H).toLinearMap =
+          (Coop.linearEquiv k H).symm.toLinearMap ∘ₗ
+            (TensorProduct.rid k H).toLinearMap ∘ₗ φ.lTensor H :=
+      TensorProduct.ext' fun a b ↦ by simp
+    have hL := LinearMap.congr_fun hswap (Coalgebra.comul (R := k) y)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hL
+    rw [Coop.comul_mk]
+    exact hL.trans (by simpa using congrArg Coop.mk (hφ y))
+
+/-- Pulling a left cointegral on `H` back to `Coop H` yields a right cointegral. -/
+theorem IsLeftCointegral.coop {φ : Module.Dual k H} (hφ : IsLeftCointegral φ) :
+    IsRightCointegral (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap) :=
+  (IsLeftCointegral.coop_iff φ).mpr hφ
+
+/-- A functional on `H` is a left cointegral iff its transfer to `(Coop H)ᵐᵒᵖ` is a right
+cointegral. -/
+theorem IsLeftCointegral.opCoop_iff (φ : Module.Dual k H) :
+    IsRightCointegral
+        (φ ∘ₗ ((MulOpposite.opLinearEquiv k).symm.trans (Coop.linearEquiv k H)).toLinearMap) ↔
+      IsLeftCointegral φ :=
+  (IsRightCointegral.mulOpposite_iff (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap)).trans
+    (IsLeftCointegral.coop_iff φ)
+
+/-- Transferring a left cointegral on `H` to `(Coop H)ᵐᵒᵖ` yields a right cointegral. -/
+theorem IsLeftCointegral.opCoop {φ : Module.Dual k H} (hφ : IsLeftCointegral φ) :
+    IsRightCointegral
+      (φ ∘ₗ ((MulOpposite.opLinearEquiv k).symm.trans (Coop.linearEquiv k H)).toLinearMap) :=
+  (IsLeftCointegral.opCoop_iff φ).mpr hφ
+
+/-- A functional on `H` is a right cointegral iff its transfer to `(Coop H)ᵐᵒᵖ` is a left
+cointegral. -/
+theorem IsRightCointegral.opCoop_iff (φ : Module.Dual k H) :
+    IsLeftCointegral
+        (φ ∘ₗ ((MulOpposite.opLinearEquiv k).symm.trans (Coop.linearEquiv k H)).toLinearMap) ↔
+      IsRightCointegral φ :=
+  (IsLeftCointegral.mulOpposite_iff (φ ∘ₗ (Coop.linearEquiv k H).toLinearMap)).trans
+    (IsRightCointegral.coop_iff φ)
+
+/-- Transferring a right cointegral on `H` to `(Coop H)ᵐᵒᵖ` yields a left cointegral. -/
+theorem IsRightCointegral.opCoop {φ : Module.Dual k H} (hφ : IsRightCointegral φ) :
+    IsLeftCointegral
+      (φ ∘ₗ ((MulOpposite.opLinearEquiv k).symm.trans (Coop.linearEquiv k H)).toLinearMap) :=
+  (IsRightCointegral.opCoop_iff φ).mpr hφ
+
+end Opposite
+
 end TauCeti
