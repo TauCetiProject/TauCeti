@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.RepresentationTheory.Intertwining
 
@@ -54,6 +55,8 @@ divisors whose additive group has no `2`-torsion.
   monoid the action of `x` is `∑ g, x g • ρ g`.
 * `Representation.asAlgebraHom_directSum`: the monoid algebra acts on a direct sum summand by
   summand.
+* `Representation.asAlgebraHom_trivial`: an element of the monoid algebra acts on the trivial
+  representation as multiplication by its augmentation.
 * `Representation.Equiv.conjAlgEquiv_asAlgebraHom`: an equivalence of representations conjugates
   the action of the monoid algebra.
 * `Representation.asAlgebraHom_quotient_mk`: the action on a quotient representation is induced
@@ -175,6 +178,20 @@ theorem Equiv.conjAlgEquiv_asAlgebraHom {W : Type*} [AddCommMonoid W] [Module k 
     LinearEquiv.symm_apply_apply]
   rw [Representation.Equiv.toLinearEquiv_apply]
   exact e.toIntertwiningMap.apply_asAlgebraHom x v
+
+/-- An element `x ∈ k[G]` acts on the trivial representation as multiplication by its
+augmentation. -/
+@[simp]
+theorem asAlgebraHom_trivial (x : MonoidAlgebra k G) :
+    (trivial k G k).asAlgebraHom x = MonoidAlgebra.augmentation k G x • 1 := by
+  induction x using MonoidAlgebra.induction_on with
+  | of g =>
+    rw [asAlgebraHom_of, MonoidAlgebra.of_apply, MonoidAlgebra.augmentation_single, one_smul]
+    exact LinearMap.ext (trivial_apply k g)
+  | add x y hx hy => rw [map_add, map_add, hx, hy, add_smul]
+  | smul r x hx =>
+    rw [map_smul, hx, ← MonoidAlgebra.augmentationLinearMap_apply k G (r • x), map_smul,
+      MonoidAlgebra.augmentationLinearMap_apply, smul_eq_mul, mul_smul]
 
 end Representation
 

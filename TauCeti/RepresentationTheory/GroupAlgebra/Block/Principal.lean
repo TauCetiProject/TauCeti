@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
 public import Mathlib.RepresentationTheory.Invariants
+import TauCeti.RepresentationTheory.AsAlgebraHom
 import TauCeti.RepresentationTheory.GroupAlgebra.Average
 
 /-!
@@ -23,8 +24,8 @@ block** `B₀(G)` (`TauCeti.principalBlockIdempotent`); every other block idempo
 augmentation `0`.
 
 The trivial module lies in the principal block: an element `x ∈ k[G]` acts on the trivial
-representation as multiplication by `ε(x)` (`TauCeti.asAlgebraHom_trivial`), so the principal block
-idempotent acts as the identity and every other block idempotent acts as `0`.
+representation as multiplication by `ε(x)` (`Representation.asAlgebraHom_trivial`), so the
+principal block idempotent acts as the identity and every other block idempotent acts as `0`.
 
 For the trivial group the augmentation is injective, and the principal block idempotent is `1`.
 When `|G|` is invertible in `k`, the principal block idempotent is the averaging idempotent
@@ -72,7 +73,7 @@ open MonoidAlgebra
 variable (R G : Type*) [CommRing R] [Monoid G]
 
 /-- The augmentation `ε : R[G] → R`, restricted to the centre `Z(R[G])`. -/
-@[expose] def centerAugmentation : Subalgebra.center R (MonoidAlgebra R G) →+* R :=
+def centerAugmentation : Subalgebra.center R (MonoidAlgebra R G) →+* R :=
   (augmentation R G).comp (Subalgebra.center R (MonoidAlgebra R G)).val.toRingHom
 
 variable {R G}
@@ -80,7 +81,7 @@ variable {R G}
 @[simp]
 theorem centerAugmentation_apply (b : Subalgebra.center R (MonoidAlgebra R G)) :
     centerAugmentation R G b = augmentation R G b :=
-  rfl
+  (rfl)
 
 /-- Over a domain, the augmentation of a central idempotent is `0` or `1`. -/
 theorem centerAugmentation_eq_zero_or_one [IsDomain R]
@@ -111,9 +112,8 @@ theorem existsUnique_isBlockIdempotent_centerAugmentation_eq_one (k G : Type*) [
     by_contra! h
     have := congrArg (centerAugmentation k G) he.complete
     simp [map_sum, h] at this
-  refine ⟨e i, ⟨hep i, (centerAugmentation_eq_zero_or_one (he.idem i)).resolve_left hi⟩,
-    fun b hb ↦ hb.1.eq_of_centerAugmentation_eq_one (hep i) hb.2 ?_⟩
-  exact (centerAugmentation_eq_zero_or_one (he.idem i)).resolve_left hi
+  have h1 := (centerAugmentation_eq_zero_or_one (he.idem i)).resolve_left hi
+  exact ⟨e i, ⟨hep i, h1⟩, fun b hb ↦ hb.1.eq_of_centerAugmentation_eq_one (hep i) hb.2 h1⟩
 
 variable (k G : Type*) [Field k] [Monoid G] [Finite G]
 
@@ -131,6 +131,12 @@ theorem isBlockIdempotent_principalBlockIdempotent :
 theorem centerAugmentation_principalBlockIdempotent :
     centerAugmentation k G (principalBlockIdempotent k G) = 1 :=
   (existsUnique_isBlockIdempotent_centerAugmentation_eq_one k G).exists.choose_spec.2
+
+/-- The principal block idempotent has augmentation `1`, as an element of `k[G]`. -/
+@[simp]
+theorem augmentation_principalBlockIdempotent :
+    augmentation k G (principalBlockIdempotent k G : MonoidAlgebra k G) = 1 :=
+  centerAugmentation_principalBlockIdempotent k G
 
 variable {k G}
 
@@ -152,31 +158,11 @@ theorem IsBlockIdempotent.centerAugmentation_eq_zero
   by_contra h
   exact hne (hb.eq_principalBlockIdempotent_iff.mpr h)
 
-omit [Finite G] in
-/-- The augmentation of `r • x` is `r` times that of `x`. -/
-private theorem augmentation_smul (r : k) (x : MonoidAlgebra k G) :
-    augmentation k G (r • x) = r • augmentation k G x := by
-  rw [Algebra.smul_def, map_mul, MonoidAlgebra.coe_algebraMap, Function.comp_apply,
-    augmentation_single, smul_eq_mul, Algebra.algebraMap_self, RingHom.id_apply]
-
-omit [Finite G] in
-/-- An element `x ∈ k[G]` acts on the trivial representation as multiplication by its
-augmentation. -/
-theorem asAlgebraHom_trivial (x : MonoidAlgebra k G) :
-    (Representation.trivial k G k).asAlgebraHom x = augmentation k G x • 1 := by
-  induction x using MonoidAlgebra.induction_on with
-  | of g =>
-    rw [Representation.asAlgebraHom_of, of_apply, augmentation_single, one_smul]
-    rfl
-  | add x y hx hy => rw [map_add, map_add, hx, hy, add_smul]
-  | smul r x hx => rw [map_smul, hx, augmentation_smul, smul_eq_mul, mul_smul]
-
 /-- **The trivial module lies in the principal block**: the principal block idempotent acts on
 the trivial representation as the identity. -/
 theorem asAlgebraHom_trivial_principalBlockIdempotent :
     (Representation.trivial k G k).asAlgebraHom (principalBlockIdempotent k G) = 1 := by
-  rw [asAlgebraHom_trivial, ← centerAugmentation_apply,
-    centerAugmentation_principalBlockIdempotent, one_smul]
+  rw [Representation.asAlgebraHom_trivial, augmentation_principalBlockIdempotent, one_smul]
 
 /-- Every block idempotent other than the principal one acts on the trivial representation as
 `0`. -/
@@ -184,8 +170,8 @@ theorem IsBlockIdempotent.asAlgebraHom_trivial_eq_zero
     {b : Subalgebra.center k (MonoidAlgebra k G)} (hb : IsBlockIdempotent b)
     (hne : b ≠ principalBlockIdempotent k G) :
     (Representation.trivial k G k).asAlgebraHom b = 0 := by
-  rw [asAlgebraHom_trivial, ← centerAugmentation_apply, hb.centerAugmentation_eq_zero hne,
-    zero_smul]
+  rw [Representation.asAlgebraHom_trivial, ← centerAugmentation_apply,
+    hb.centerAugmentation_eq_zero hne, zero_smul]
 
 /-- **The principal block of the trivial group** is `1`: for a group with one element the
 augmentation is injective. -/
@@ -195,56 +181,34 @@ theorem principalBlockIdempotent_eq_one_of_subsingleton [Subsingleton G] :
     induction x using MonoidAlgebra.induction_on with
     | of g => simp [Subsingleton.elim g 1]
     | add x y hx hy => rw [map_add, single_add, ← hx, ← hy]
-    | smul r x hx => rw [augmentation_smul, smul_eq_mul, ← smul_single', ← hx]
+    | smul r x hx =>
+      rw [← augmentationLinearMap_apply k G (r • x), map_smul, augmentationLinearMap_apply,
+        smul_eq_mul, ← smul_single', ← hx]
   have hinj : Function.Injective (augmentation k G) := fun x y h ↦ by rw [key x, key y, h]
-  refine Subtype.ext (hinj ?_)
-  simpa using centerAugmentation_principalBlockIdempotent k G
+  exact Subtype.ext (hinj (by simp))
 
 section Average
 
 variable {k G : Type*} [Field k] [Group G] [Fintype G] [Invertible (Fintype.card G : k)]
-
-/-- Multiplying `average k G` on the left by any `x` multiplies it by the augmentation of `x`. -/
-private theorem mul_average (x : MonoidAlgebra k G) :
-    x * GroupAlgebra.average k G = augmentation k G x • GroupAlgebra.average k G := by
-  induction x using MonoidAlgebra.induction_on with
-  | of g => rw [of_apply, GroupAlgebra.mul_average_left, augmentation_single, one_smul]
-  | add x y hx hy => rw [add_mul, hx, hy, map_add, add_smul]
-  | smul r x hx => rw [smul_mul_assoc, hx, augmentation_smul, smul_smul, smul_eq_mul]
-
-/-- Multiplying `average k G` on the right by any `x` multiplies it by the augmentation of `x`. -/
-private theorem average_mul (x : MonoidAlgebra k G) :
-    GroupAlgebra.average k G * x = augmentation k G x • GroupAlgebra.average k G := by
-  induction x using MonoidAlgebra.induction_on with
-  | of g => rw [of_apply, GroupAlgebra.mul_average_right, augmentation_single, one_smul]
-  | add x y hx hy => rw [mul_add, hx, hy, map_add, add_smul]
-  | smul r x hx => rw [mul_smul_comm, hx, augmentation_smul, smul_smul, smul_eq_mul]
-
-/-- The augmentation of `average k G` is `1`. -/
-private theorem augmentation_average : augmentation k G (GroupAlgebra.average k G) = 1 := by
-  rw [GroupAlgebra.average, augmentation_smul, map_sum]
-  simp [Finset.card_univ]
 
 variable (k G) in
 /-- **The principal block when `|G|` is invertible**: the principal block idempotent of `k[G]` is
 the averaging idempotent `|G|⁻¹ ∑ g`. -/
 theorem coe_principalBlockIdempotent_eq_average :
     (principalBlockIdempotent k G : MonoidAlgebra k G) = GroupAlgebra.average k G := by
-  have hc : GroupAlgebra.average k G ∈ Subalgebra.center k (MonoidAlgebra k G) :=
-    Subalgebra.mem_center_iff.mpr fun x ↦ by rw [mul_average, average_mul]
-  let a : Subalgebra.center k (MonoidAlgebra k G) := ⟨_, hc⟩
+  let a : Subalgebra.center k (MonoidAlgebra k G) := ⟨_, GroupAlgebra.average_mem_center⟩
   have ha : IsBlockIdempotent a := by
     refine isPrimitiveIdempotent_of_eq_zero_or_eq
       (Subtype.ext (GroupAlgebra.isIdempotentElem_average k G)) (fun h ↦ ?_) fun f hf h _ ↦ ?_
-    · simpa [a, augmentation_average] using congrArg (augmentation k G ∘ Subtype.val) h
+    · simpa [a] using congrArg (augmentation k G ∘ Subtype.val) h
     · have hf' : (f : MonoidAlgebra k G) = augmentation k G f • GroupAlgebra.average k G := by
-        rw [← average_mul]
+        rw [← GroupAlgebra.average_mul]
         exact congrArg Subtype.val h.symm
       rcases centerAugmentation_eq_zero_or_one hf with h0 | h1
-      · exact Or.inl (Subtype.ext (by rw [hf', ← centerAugmentation_apply, h0, zero_smul]; rfl))
+      · exact Or.inl (Subtype.ext (by
+          rw [hf', ← centerAugmentation_apply, h0, zero_smul, ZeroMemClass.coe_zero]))
       · exact Or.inr (Subtype.ext (by rw [hf', ← centerAugmentation_apply, h1, one_smul]))
-  have := (ha.eq_principalBlockIdempotent_iff.mpr (by simp [a, augmentation_average])).symm
-  rw [this]
+  exact congrArg Subtype.val (ha.eq_principalBlockIdempotent_iff.mpr (by simp [a])).symm
 
 end Average
 
