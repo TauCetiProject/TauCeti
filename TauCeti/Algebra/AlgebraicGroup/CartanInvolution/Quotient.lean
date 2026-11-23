@@ -23,8 +23,6 @@ involution of `H`, then `θ_G` is a Cartan involution of `G`.
 
 ## Main results
 
-* `TauCeti.quotientIsoOfComapEq_hom_comp_self`: over any base ring, the automorphism of `H ⧸ I`
-  induced by an involution of `H` is an involution.
 * `TauCeti.mem_twistedRealPoints_quotientIsoOfComapEq_iff`: a complex point of `G` is twisted-real
   for `θ_G` exactly when its composite with the quotient map is twisted-real for `θ`.
 * `TauCeti.IsCartanInvolution.quotient`: a Cartan involution of `H` restricts to a Cartan
@@ -44,33 +42,6 @@ namespace TauCeti
 
 universe v
 
-section General
-
-variable {R : Type*} [CommRing R] {H : _root_.CommHopfAlgCat.{v} R} {θ : H ≅ H}
-  {I : HopfIdeal R H}
-
-/-- The automorphism of `H ⧸ I` induced by `θ` sends the class of `x` to the class of `θ x`. -/
-theorem quotientIsoOfComapEq_hom_mk
-    (hI : I.comapOfSurjective θ.hom.hom (ConcreteCategory.bijective_of_isIso θ.hom).2 = I)
-    (x : H) :
-    (CommHopfAlgCat.quotientIsoOfComapEq θ I hI).hom.hom (Ideal.Quotient.mk I.toIdeal x) =
-      Ideal.Quotient.mk I.toIdeal (θ.hom.hom x) := by
-  have h := congr($(CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom θ I hI).hom x)
-  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp, Function.comp_apply] at h
-  rwa [CommHopfAlgCat.mkQuotient_apply, CommHopfAlgCat.mkQuotient_apply] at h
-
-/-- The automorphism of `H ⧸ I` induced by an involution of `H` is an involution. -/
-theorem quotientIsoOfComapEq_hom_comp_self (hθ : θ.hom ≫ θ.hom = 𝟙 H)
-    (hI : I.comapOfSurjective θ.hom.hom (ConcreteCategory.bijective_of_isIso θ.hom).2 = I) :
-    (CommHopfAlgCat.quotientIsoOfComapEq θ I hI).hom ≫
-        (CommHopfAlgCat.quotientIsoOfComapEq θ I hI).hom =
-      𝟙 (_root_.CommHopfAlgCat.quotient H I) := by
-  ext : 1
-  rw [← Category.assoc, CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom, Category.assoc,
-    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom, ← Category.assoc, hθ,
-    Category.id_comp, Category.comp_id]
-
-end General
 
 variable {H : _root_.CommHopfAlgCat.{v} ℝ} {θ : H ≅ H} {I : HopfIdeal ℝ H}
 
@@ -86,10 +57,10 @@ theorem mem_twistedRealPoints_quotientIsoOfComapEq_iff
   simp only [mem_twistedRealPoints_iff, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
   constructor
   · intro hp x
-    rw [hp, quotientIsoOfComapEq_hom_mk]
+    rw [hp, CommHopfAlgCat.quotientIsoOfComapEq_hom_mk]
   · intro hp y
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [hp, quotientIsoOfComapEq_hom_mk]
+    rw [hp, CommHopfAlgCat.quotientIsoOfComapEq_hom_mk]
 
 /-- **A Cartan involution restricts to a Cartan involution of every stable closed subgroup.** If
 `θ` is a Cartan involution of `H` and the closed subgroup `G` cut out by the Hopf ideal `I` is
@@ -99,7 +70,7 @@ set. -/
 theorem IsCartanInvolution.quotient (hθ : IsCartanInvolution θ)
     (hI : I.comapOfSurjective θ.hom.hom (ConcreteCategory.bijective_of_isIso θ.hom).2 = I) :
     IsCartanInvolution (CommHopfAlgCat.quotientIsoOfComapEq θ I hI) where
-  hom_comp_self := quotientIsoOfComapEq_hom_comp_self hθ.hom_comp_self hI
+  hom_comp_self := CommHopfAlgCat.quotientIsoOfComapEq_hom_comp_self hθ.hom_comp_self I hI
   isCompact := by
     -- Read a function on `H` as a function on `H ⧸ I` through a section of the quotient map.
     let s := Function.surjInv (Ideal.Quotient.mk_surjective (I := I.toIdeal))
@@ -123,12 +94,11 @@ theorem IsCartanInvolution.quotient (hθ : IsCartanInvolution θ)
         simp [hs]
     · rintro ⟨_, ⟨⟨q, hq, rfl⟩, hvan⟩, rfl⟩
       let p : H ⧸ I.toIdeal →ₐ[ℝ] ℂ := Ideal.Quotient.liftₐ I.toIdeal q hvan
-      have hpq : p.comp (Ideal.Quotient.mkₐ ℝ I.toIdeal) = q := by
-        ext x
-        exact Ideal.Quotient.lift_mk I.toIdeal (q : H →+* ℂ) hvan
+      have hpq : p.comp (Ideal.Quotient.mkₐ ℝ I.toIdeal) = q :=
+        Ideal.Quotient.liftₐ_comp I.toIdeal q hvan
       refine ⟨p, (mem_twistedRealPoints_quotientIsoOfComapEq_iff hI p).mpr (hpq ▸ hq), ?_⟩
       ext y
-      change p y = q (s y)
-      rw [← hpq, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hs]
+      simpa only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hs] using
+        congrArg (fun f : H →ₐ[ℝ] ℂ ↦ f (s y)) hpq
 
 end TauCeti
