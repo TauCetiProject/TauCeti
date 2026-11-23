@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.NatAntidiagonal
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import TauCeti.RingTheory.HochschildCohomology.Bimodule
 import TauCeti.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Algebra.BigOperators.Fin
@@ -106,27 +107,13 @@ section Bilinear
 
 variable {R A : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
 
-/-- A `2`-cochain as a bilinear map, `a ↦ b ↦ f(a, b)`: Mathlib's `MultilinearMap.curryLeft`
-followed by the identification of unary multilinear maps with linear maps. -/
-private def bil (f : (Fin 2 → A) →ₘₗ[R] A) : A →ₗ[R] A →ₗ[R] A :=
-  ((MultilinearMap.ofSubsingletonₗ (S := R) (σ₁₂ := RingHom.id R) (N₁ := A) (N₂ := A)
-    (0 : Fin 1)).symm : _ →ₗ[R] A →ₗ[R] A) ∘ₗ f.curryLeft
-
-private theorem bil_apply (f : (Fin 2 → A) →ₘₗ[R] A) (a b : A) : bil f a b = f ![a, b] := by
-  simp only [bil, MultilinearMap.ofSubsingletonₗ, Equiv.toFun_as_coe, Equiv.invFun_as_coe,
-    LinearEquiv.symm_mk, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.coe_comp, Function.comp_apply,
-    MultilinearMap.ofSubsingleton_symm_apply_apply, MultilinearMap.curryLeft_apply]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
-
 /-- A `2`-cochain as a biadditive map, `a ↦ b ↦ f(a, b)`. -/
 private def bilAdd (f : (Fin 2 → A) →ₘₗ[R] A) : A →+ A →+ A :=
-  LinearMap.toAddMonoidHom'.comp (bil f).toAddMonoidHom
+  LinearMap.toAddMonoidHom'.comp f.toBilinMap.toAddMonoidHom
 
 private theorem bilAdd_apply (f : (Fin 2 → A) →ₘₗ[R] A) (a b : A) :
     bilAdd f a b = f ![a, b] :=
-  bil_apply f a b
+  f.toBilinMap_apply a b
 
 end Bilinear
 
@@ -137,17 +124,19 @@ variable {R A : Type*} [CommSemiring R] [AddCommGroup A] [Module R A]
 /-- **Gerstenhaber's composition** of two Hochschild `2`-cochains of `A` with coefficients in
 `A`: the `3`-cochain `(f ∘ g)(a, b, c) = f(g(a, b), c) - f(a, g(b, c))`. -/
 def _root_.MultilinearMap.gerstenhaberComp (f g : (Fin 2 → A) →ₘₗ[R] A) : (Fin 3 → A) →ₘₗ[R] A :=
-  MultilinearMap.mk' (fun v ↦ bil f (bil g (v 0) (v 1)) (v 2) - bil f (v 0) (bil g (v 1) (v 2)))
+  MultilinearMap.mk' (fun v ↦ f.toBilinMap (g.toBilinMap (v 0) (v 1)) (v 2) -
+      f.toBilinMap (v 0) (g.toBilinMap (v 1) (v 2)))
     (fun v i x y ↦ by
-      fin_cases i <;> simp <;> abel)
+      fin_cases i <;> simp [-MultilinearMap.toBilinMap_apply] <;> abel)
     (fun v i r x ↦ by
-      fin_cases i <;> simp [smul_sub])
+      fin_cases i <;> simp [-MultilinearMap.toBilinMap_apply, smul_sub])
 
 /-- Evaluating Gerstenhaber's composition. -/
+@[simp]
 theorem _root_.MultilinearMap.gerstenhaberComp_apply (f g : (Fin 2 → A) →ₘₗ[R] A)
     (v : Fin 3 → A) :
     f.gerstenhaberComp g v = f ![g ![v 0, v 1], v 2] - f ![v 0, g ![v 1, v 2]] := by
-  simp [MultilinearMap.gerstenhaberComp, bil_apply]
+  simp [MultilinearMap.gerstenhaberComp]
 
 
 /-! ### The associator coefficients and the obstruction of a family of cochains -/
@@ -179,8 +168,8 @@ theorem _root_.MultilinearMap.gerstenhaberComp_add_left (f f' g : (Fin 2 → A) 
 theorem _root_.MultilinearMap.gerstenhaberComp_add_right (f g g' : (Fin 2 → A) →ₘₗ[R] A) :
     f.gerstenhaberComp (g + g') = f.gerstenhaberComp g + f.gerstenhaberComp g' := by
   ext v
-  simp only [MultilinearMap.gerstenhaberComp_apply, add_apply, ← bil_apply, map_add,
-    LinearMap.add_apply]
+  simp only [MultilinearMap.gerstenhaberComp_apply, add_apply, ← MultilinearMap.toBilinMap_apply,
+    map_add, LinearMap.add_apply]
   abel
 
 /-- Gerstenhaber's composition is `R`-linear in its first argument. -/
@@ -195,8 +184,8 @@ theorem _root_.MultilinearMap.gerstenhaberComp_smul_right (c : R)
     (f g : (Fin 2 → A) →ₘₗ[R] A) :
     f.gerstenhaberComp (c • g) = c • f.gerstenhaberComp g := by
   ext v
-  simp only [MultilinearMap.gerstenhaberComp_apply, smul_apply, ← bil_apply, map_smul,
-    LinearMap.smul_apply, smul_sub]
+  simp only [MultilinearMap.gerstenhaberComp_apply, smul_apply, ← MultilinearMap.toBilinMap_apply,
+    map_smul, LinearMap.smul_apply, smul_sub]
 
 /-- The coefficient `∑_{i + j = k} φᵢ ∘ φⱼ` of `tᵏ` in the associator of the multiplication
 `μₜ = ∑ tⁱ φᵢ`, Gerstenhaber's composition `∘` being `MultilinearMap.gerstenhaberComp`. -/
@@ -289,16 +278,6 @@ private theorem sum_antidiagonal_teichmuller {M : Type*} [AddCommGroup M] (ψ : 
   rw [e₁, e₂, e₃, e₄, ← e₅, e₆]
   abel
 
-/-- A triple is the tuple of its entries. -/
-private theorem eq_vecCons_three {α : Type*} (v : Fin 3 → α) : v = ![v 0, v 1, v 2] := by
-  ext i
-  fin_cases i <;> rfl
-
-/-- A quadruple is the tuple of its entries. -/
-private theorem eq_vecCons_four {α : Type*} (v : Fin 4 → α) : v = ![v 0, v 1, v 2, v 3] := by
-  ext i
-  fin_cases i <;> rfl
-
 section Coboundary
 
 variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
@@ -323,14 +302,6 @@ private theorem coboundary_two_apply (ψ : (Fin 2 → A) →ₘₗ[R] A) (a b c 
   rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_two]
   simp [h₀, h₁, h₂, sub_eq_add_neg, add_assoc]
 
-/-- The coboundary of a `3`-cochain with coefficients in `A`: `(δχ)(a, b, c, d)` is
-`a χ(b, c, d) - χ(ab, c, d) + χ(a, bc, d) - χ(a, b, cd) + χ(a, b, c) d`. -/
-private theorem coboundary_three_apply (χ : (Fin 3 → A) →ₘₗ[R] A) (a b c d : A) :
-    hochschildBimoduleCoboundary R A A 3 χ ![a, b, c, d] =
-      a * χ ![b, c, d] - χ ![a * b, c, d] + χ ![a, b * c, d] - χ ![a, b, c * d] +
-        χ ![a, b, c] * d := by
-  simpa [op_smul_eq_mul] using hochschildBimoduleCoboundary_three_apply χ a b c d
-
 end Coboundary
 
 section Deformation
@@ -344,7 +315,8 @@ theorem _root_.MultilinearMap.gerstenhaberComp_mkPiAlgebraFin_add (ψ : (Fin 2 �
         gerstenhaberComp ψ (MultilinearMap.mkPiAlgebraFin R 2 A) =
       -hochschildBimoduleCoboundary R A A 2 ψ := by
   ext v
-  rw [eq_vecCons_three v, neg_apply, coboundary_two_apply]
+  rw [show v = ![v 0, v 1, v 2] from (FinVec.etaExpand_eq v).symm, neg_apply,
+    coboundary_two_apply]
   simp [gerstenhaberComp_apply]
   abel
 
@@ -464,13 +436,14 @@ theorem IsAlgebraDeformationOfOrder.algebraDeformationObstruction_mem_hochschild
     (fun q x y z ↦ by simp [hΦ, deformationAssociator_apply, bilAdd_apply]) (n + 1)
   rw [mem_hochschildBimoduleCocycles_iff]
   ext v
-  have hv := eq_vecCons_four v
+  have hv : v = ![v 0, v 1, v 2, v 3] := (FinVec.etaExpand_eq v).symm
   have e := key (v 0) (v 1) (v 2) (v 3)
   rw [Finset.Nat.sum_antidiagonal_succ, Finset.sum_eq_zero fun x hx ↦ by
     have hx2 : x.2 ≤ n := by rw [Finset.mem_antidiagonal] at hx; omega
     simp [hzero hx2], add_zero] at e
-  rw [hv, coboundary_three_apply, zero_apply, ← e]
-  simp [bilAdd_apply, hφ', hΦ, h.zero_eq, algebraDeformationObstruction_def]
+  rw [hv, hochschildBimoduleCoboundary_three_apply, zero_apply, ← e]
+  simp [bilAdd_apply, hφ', hΦ, h.zero_eq, algebraDeformationObstruction_def,
+    smul_eq_mul]
 
 end Deformation
 
