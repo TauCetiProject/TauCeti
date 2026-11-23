@@ -124,6 +124,7 @@ private theorem cutoffPullbackCLM_slice_eq {m : ℕ} {H : E × ℝ → E'} {t : 
   obtain rfl : (fun x ↦ H (x, t)) = Φ := funext h
   rfl
 
+omit [FiniteDimensional ℝ E] in
 /-- The support of a homotopy current `S ∘ K_ψ` of the straight-line homotopy is compact and lies in
 the union of the segments from `f x` to `g x` over any set `U` containing the support of `S`. -/
 private theorem isCompact_dsupport_comp_cutoffHomotopyPullbackCLM_lineMap {j : ℕ}

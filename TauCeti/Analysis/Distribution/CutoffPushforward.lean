@@ -345,7 +345,7 @@ variable [CompleteSpace F] {H : E × ℝ → E'}
 /-- **The support of a homotopy current**: the support of `T ∘ K_χ`, where `K_χ` is the homotopy
 operator with cutoff `χ`, lies in the image under `H` of the product of the part of the support of
 `T` in the support of `χ` with `[0, 1]`. In particular it is compact. -/
-theorem dsupport_comp_cutoffHomotopyPullbackCLM_subset [FiniteDimensional ℝ E] [AddCommMonoid V]
+theorem dsupport_comp_cutoffHomotopyPullbackCLM_subset [AddCommMonoid V]
     [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [AddMonoidHomClass 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
     (T : 𝓕) :
     dsupport (T ∘ (cutoffHomotopyPullbackCLM χ hH :
