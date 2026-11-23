@@ -33,8 +33,9 @@ trajectory, the late one the image of the early one under the flow for time `T`
 of the broken trajectory (`TauCeti.quarticGluingEarly_zero`, `TauCeti.quarticGluingLate_zero`).
 For every `ρ`, including `ρ = 0`, the flow translates the time coordinates of both points
 (`TauCeti.quarticWellSumFlow_quarticGluingEarly`, `TauCeti.quarticWellSumFlow_quarticGluingLate`).
-For `ρ ≥ 0` the glued pair determines the gluing parameter and the time coordinates of the moving
-coordinates (`TauCeti.quarticGluingEarly_eq_and_quarticGluingLate_eq_iff`), and both are recovered
+For `ρ ≥ 0` the glued pair determines the time coordinates of the moving coordinates with
+`q i ≠ 0`, and the gluing parameter as soon as there is one
+(`TauCeti.quarticGluingEarly_eq_and_quarticGluingLate_eq_iff`), and both are recovered
 from it explicitly: the time coordinates
 (`TauCeti.intervalBaseTimeCoordinate_abs_quarticGluingEarly`,
 `TauCeti.intervalBaseTimeCoordinate_abs_quarticGluingLate`), the gluing parameter from the early
@@ -69,7 +70,7 @@ through `ρ²` (`TauCeti.quarticGluingLate_neg`) and has derivative zero in `ρ`
 * `TauCeti.quarticWellSumFlow_quarticGluingEarly`, `TauCeti.quarticWellSumFlow_quarticGluingLate`:
   the flow translates the time coordinates of the glued pair, across `ρ = 0`.
 * `TauCeti.quarticGluingEarly_eq_and_quarticGluingLate_eq_iff`: the glued pair determines its
-  parameters on the moving coordinates.
+  parameters on the moving coordinates with `q i ≠ 0`.
 * `TauCeti.contDiff_quarticGluingEarly`, `TauCeti.contDiff_quarticGluingLate`: smoothness across
   the break.
 * `TauCeti.hasDerivAt_quarticGluingEarly_zero`, `TauCeti.hasDerivAt_quarticGluingLate_zero`,
@@ -384,8 +385,9 @@ theorem exp_mul_sqrt_one_sub_quarticGluingLate_sq_div_abs {p r q : ι → ℝ} {
     ← Real.exp_add, add_neg_cancel, Real.exp_zero]
 
 /-- **The glued pair determines its parameters.** For gluing parameters `ρ₁, ρ₂ ≥ 0`, the glued
-pairs agree exactly when the time coordinates agree on every coordinate that moves, and the
-gluing parameters agree as soon as some coordinate moves. -/
+pairs agree exactly when the time coordinates agree on every moving coordinate with `q i ≠ 0`,
+and the gluing parameters agree as soon as some coordinate moves towards a nonzero `q i`. On a
+moving coordinate with `q i = 0` both points vanish whatever the parameters. -/
 theorem quarticGluingEarly_eq_and_quarticGluingLate_eq_iff {p r q : ι → ℝ} {ρ₁ ρ₂ : ℝ}
     (hρ₁ : 0 ≤ ρ₁) (hρ₂ : 0 ≤ ρ₂) {u₁ u₂ : ι → ℝ} :
     quarticGluingEarly p r q ρ₁ u₁ = quarticGluingEarly p r q ρ₂ u₂ ∧

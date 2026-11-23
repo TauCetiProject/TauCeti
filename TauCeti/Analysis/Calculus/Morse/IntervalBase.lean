@@ -243,6 +243,11 @@ noncomputable def intervalBaseFlow (C s t : ℝ) : ℝ :=
 theorem intervalBaseFlow_apply (C s t : ℝ) :
     intervalBaseFlow C s t = t / √(t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s))) := (rfl)
 
+/-- The flow depends on the rate `C` and the time `s` only through `C * s`. -/
+theorem intervalBaseFlow_eq_intervalBaseFlow_one_mul (C s : ℝ) :
+    intervalBaseFlow C s = intervalBaseFlow 1 (C * s) := by
+  ext; simp only [intervalBaseFlow_apply, mul_one, mul_assoc]
+
 /-- At time `0` the flow is the identity. -/
 @[simp]
 theorem intervalBaseFlow_zero (C t : ℝ) : intervalBaseFlow C 0 t = t := by
@@ -529,9 +534,7 @@ trajectory (`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`) by `x ↦ e^{C s} x
 theorem intervalBaseFlow_mul_inv_sqrt_one_add_sq (C s x : ℝ) :
     intervalBaseFlow C s (x * (√(1 + x ^ 2))⁻¹) =
       Real.exp (C * s) * x * (√(1 + (Real.exp (C * s) * x) ^ 2))⁻¹ := by
-  -- The flow depends on `C` and `s` only through `C * s`, so reduce to the unit rate.
-  rw [show intervalBaseFlow C s = intervalBaseFlow 1 (C * s) by
-    ext; simp only [intervalBaseFlow_apply, mul_one, mul_assoc]]
+  rw [intervalBaseFlow_eq_intervalBaseFlow_one_mul]
   generalize C * s = s
   have key : ∀ x : ℝ, 0 < x → intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
       Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := fun x hx ↦ by
@@ -549,9 +552,7 @@ theorem intervalBaseFlow_mul_inv_sqrt_one_add_sq (C s x : ℝ) :
 (`TauCeti.intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq`) by `y ↦ e^{-C s} y`, for every real `y`. -/
 theorem intervalBaseFlow_inv_sqrt_one_add_sq (C s y : ℝ) :
     intervalBaseFlow C s (√(1 + y ^ 2))⁻¹ = (√(1 + (Real.exp (-(C * s)) * y) ^ 2))⁻¹ := by
-  -- The flow depends on `C` and `s` only through `C * s`, so reduce to the unit rate.
-  rw [show intervalBaseFlow C s = intervalBaseFlow 1 (C * s) by
-    ext; simp only [intervalBaseFlow_apply, mul_one, mul_assoc]]
+  rw [intervalBaseFlow_eq_intervalBaseFlow_one_mul]
   generalize C * s = s
   rcases eq_or_ne y 0 with rfl | hy
   · simp
