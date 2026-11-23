@@ -86,25 +86,25 @@ theorem relativeDegree_equivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1)
 def degreeZeroEquivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1) (f : X ⟶ Y) :
     (relativeDegree f).ker ≃+ Scheme.CartierDivisor.degreeZero f := by
   refine
-    { toFun := fun D ↦ ⟨equivCartierDivisor hX D.1, ?_⟩
-      invFun := fun D ↦ ⟨(equivCartierDivisor hX).symm D.1, ?_⟩
-      left_inv := fun D ↦ Subtype.ext ((equivCartierDivisor hX).symm_apply_apply D.1)
-      right_inv := fun D ↦ Subtype.ext ((equivCartierDivisor hX).apply_symm_apply D.1)
-      map_add' := fun D E ↦ Subtype.ext (map_add (equivCartierDivisor hX) D.1 E.1) }
+    { toFun := fun D ↦ ⟨equivCartierDivisor hX D.val, ?_⟩
+      invFun := fun D ↦ ⟨(equivCartierDivisor hX).symm D.val, ?_⟩
+      left_inv := fun D ↦ Subtype.ext ((equivCartierDivisor hX).symm_apply_apply D.val)
+      right_inv := fun D ↦ Subtype.ext ((equivCartierDivisor hX).apply_symm_apply D.val)
+      map_add' := fun D E ↦ Subtype.ext (map_add (equivCartierDivisor hX) D.val E.val) }
   · rw [Scheme.CartierDivisor.mem_degreeZero_iff,
       relativeDegree_equivCartierDivisor]
-    exact D.2
+    exact D.property
   · rw [AddMonoidHom.mem_ker]
     rw [← relativeDegree_equivCartierDivisor hX f,
       (equivCartierDivisor hX).apply_symm_apply]
-    exact D.2
+    exact D.property
 
 /-- The degree-zero Weil--Cartier equivalence sends a divisor to its Cartier divisor. -/
 @[simp]
 lemma degreeZeroEquivCartierDivisor_apply (hX : ∀ x : X, coheight x ≤ 1) (f : X ⟶ Y)
     (D : (relativeDegree f).ker) :
     ((degreeZeroEquivCartierDivisor hX f D : Scheme.CartierDivisor.degreeZero f) :
-      Scheme.CartierDivisor X) = equivCartierDivisor hX D.1 :=
+      Scheme.CartierDivisor X) = equivCartierDivisor hX D.val :=
   by simp [degreeZeroEquivCartierDivisor]
 
 /-- The inverse degree-zero equivalence sends a Cartier divisor to its associated Weil divisor. -/
@@ -112,7 +112,7 @@ lemma degreeZeroEquivCartierDivisor_apply (hX : ∀ x : X, coheight x ≤ 1) (f 
 lemma degreeZeroEquivCartierDivisor_symm_apply (hX : ∀ x : X, coheight x ≤ 1)
     (f : X ⟶ Y) (D : Scheme.CartierDivisor.degreeZero f) :
     ((degreeZeroEquivCartierDivisor hX f).symm D : SchemeWeilDivisor X) =
-      D.1.toWeilDivisor := by
+      D.val.toWeilDivisor := by
   rw [← equivCartierDivisor_symm_apply hX]
   simp [degreeZeroEquivCartierDivisor]
 

@@ -34,13 +34,13 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
 
 /-- The north-east corner `X`-stabilization of a diagram with an odd number of components. -/
 abbrev stabilizeXSucc : OddComponentGridDiagram (n + 1) :=
-  ⟨G.1.stabilizeX s.succ (G.1.X s).succ s,
-    (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩
+  ⟨G.val.stabilizeX s.succ (G.val.X s).succ s,
+    (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩
 
 /-- The underlying north-east stabilized diagram. -/
 @[simp]
 theorem val_stabilizeXSucc :
-    (G.stabilizeXSucc s).1 = G.1.stabilizeX s.succ (G.1.X s).succ s :=
+    (G.stabilizeXSucc s).val = G.val.stabilizeX s.succ (G.val.X s).succ s :=
   (rfl)
 
 /-- A half-turn exchanges the north-east and south-west corner stabilizations. -/
@@ -55,7 +55,7 @@ variable (R : Type*) [CommRing R]
 theorem stabilizeXSuccChainMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ}
     {c : GridChainMinus R (n + 1)}
     (hc : c ∈ (G.stabilizeXSucc s).bigradedChainMinusPiece R g) :
-    G.1.stabilizeXSuccChainMap s R c ∈ G.bigradedChainMinusPiece R g := by
+    G.val.stabilizeXSuccChainMap s R c ∈ G.bigradedChainMinusPiece R g := by
   have hturn := (G.stabilizeXSucc s).halfTurnRenameEquiv_mem_bigradedChainMinusPiece R hc
   rw [rotate_stabilizeXSucc] at hturn
   have hmap := G.rotate.stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece s.rev R hturn
@@ -70,7 +70,7 @@ variable [CharP R 2]
 theorem stabilizeXSuccChainMap_mem_alexanderChainMinusPiece {a : ℤ}
     {c : GridChainMinus R (n + 1)}
     (hc : c ∈ (G.stabilizeXSucc s).alexanderChainMinusPiece R a) :
-    G.1.stabilizeXSuccChainMap s R c ∈ G.alexanderChainMinusPiece R a := by
+    G.val.stabilizeXSuccChainMap s R c ∈ G.alexanderChainMinusPiece R a := by
   have hturn := (G.stabilizeXSucc s).halfTurnRenameEquiv_mem_alexanderChainMinusPiece R hc
   rw [rotate_stabilizeXSucc] at hturn
   have hmap := G.rotate.stabilizeXMap_mem_alexanderChainMinusPiece s.rev R hturn
@@ -82,20 +82,20 @@ theorem stabilizeXSuccChainMap_mem_alexanderChainMinusPiece {a : ℤ}
 
 /-- The specified north-east stabilization comparison preserves Alexander degree on `GH⁻`. -/
 theorem stabilizeXSuccHomologyMap_mem_alexanderUnblockedHomologyGrading_piece {a : ℤ}
-    {y : (G.stabilizeXSucc s).1.unblockedHomology R}
+    {y : (G.stabilizeXSucc s).val.unblockedHomology R}
     (hy : y ∈ ((G.stabilizeXSucc s).alexanderUnblockedHomologyGrading R).piece a) :
-    G.1.stabilizeXSuccHomologyMap s R y ∈
+    G.val.stabilizeXSuccHomologyMap s R y ∈
       (G.alexanderUnblockedHomologyGrading R).piece a := by
   rw [mem_alexanderUnblockedHomologyGrading_piece_iff, mem_alexanderHomologyGrading_piece_iff]
     at hy ⊢
   obtain ⟨w, hw, heq⟩ := hy
-  obtain rfl : y = (G.stabilizeXSucc s).1.unblockedHomologyClass R w := by
+  obtain rfl : y = (G.stabilizeXSucc s).val.unblockedHomologyClass R w := by
     apply (ModuleCat.mono_iff_injective
-      ((G.stabilizeXSucc s).1.unblockedHomologyIso R).hom).mp inferInstance
+      ((G.stabilizeXSucc s).val.unblockedHomologyIso R).hom).mp inferInstance
     rw [GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass, heq]
   rw [GridDiagram.stabilizeXSuccHomologyMap_unblockedHomologyClass]
-  refine ⟨⟨G.1.stabilizeXSuccChainMap s R w,
-    G.1.stabilizeXSuccChainMap_mem_ker s R w.2⟩,
+  refine ⟨⟨G.val.stabilizeXSuccChainMap s R w,
+    G.val.stabilizeXSuccChainMap_mem_ker s R w.property⟩,
     G.stabilizeXSuccChainMap_mem_alexanderChainMinusPiece s R hw, ?_⟩
   exact (GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass _ _ _).symm
 

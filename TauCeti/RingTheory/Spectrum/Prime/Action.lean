@@ -24,13 +24,9 @@ variable {G R : Type*} [Group G] [CommSemiring R] [MulSemiringAction G R]
 
 /-- Each semiring automorphism acts continuously on the prime spectrum. -/
 instance : ContinuousConstSMul G (PrimeSpectrum R) where
-  continuous_const_smul g := by
-    have h : (fun p : PrimeSpectrum R ↦ g • p) =
-        homeomorphOfRingEquiv (MulSemiringAction.toRingAut G R g) := by
-      funext p
-      apply PrimeSpectrum.ext
-      exact Ideal.pointwise_smul_eq_comap p.asIdeal
-    rw [h]
-    exact (homeomorphOfRingEquiv (MulSemiringAction.toRingAut G R g)).continuous
+  continuous_const_smul g :=
+    (continuous_comap ((MulSemiringAction.toRingAut G R g).symm : R →+* R)).congr fun p ↦ by
+      ext1
+      rw [asIdeal_smul, Ideal.pointwise_smul_eq_comap, comap_asIdeal, Ideal.comap_coe]
 
 end PrimeSpectrum

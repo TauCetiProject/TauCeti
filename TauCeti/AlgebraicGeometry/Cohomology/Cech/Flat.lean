@@ -51,6 +51,6 @@ theorem flat_cechComplexFunctor_obj_X_of_flat_stalk {ι : Type u} [Finite ι]
   intro s hs
   obtain ⟨i, hi⟩ := hs
   exact flat_sections_of_flat_stalk R M (hU s ⟨i, hi⟩) fun x ↦
-    hM i ⟨x, (Finset.inf_le (f := U) hi) x.2⟩
+    hM i ⟨x, (Finset.inf_le (f := U) hi) x.property⟩
 
 end AlgebraicGeometry.Scheme.Modules

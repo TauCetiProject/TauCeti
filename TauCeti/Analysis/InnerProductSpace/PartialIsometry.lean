@@ -199,7 +199,7 @@ theorem isPartialIsometry_iff_norm_map :
   · -- Polarization on `(ker u)ᗮ` shows that `u† u x - x` is orthogonal to `(ker u)ᗮ`.
     have hinner : ∀ y ∈ u.kerᗮ, ⟪u y, u x⟫_𝕜 = ⟪y, x⟫_𝕜 := fun y hy =>
       (LinearMap.norm_map_iff_inner_map_map (u ∘L u.kerᗮ.subtypeL)).mp
-        (fun z => h z z.2) ⟨y, hy⟩ ⟨x, hx⟩
+        (fun z => h z z.property) ⟨y, hy⟩ ⟨x, hx⟩
     have hperp : (u†) (u x) - x ∈ u.kerᗮᗮ := fun y hy => by
       rw [inner_sub_right, adjoint_inner_right, hinner y hy, sub_self]
     exact sub_eq_zero.mp <| (Submodule.mem_bot 𝕜).mp <|
@@ -375,9 +375,9 @@ theorem exists_star_mul_self_eq_starProjection_and_starProjection_mul_eq_zero
   -- An isometry from `K` onto the subspace `W` of `Kᗮ`, which has the same dimension.
   let e : K ≃ₗᵢ[𝕜] W := (stdOrthonormalBasis 𝕜 K).equiv (stdOrthonormalBasis 𝕜 W) (finCongr hW)
   let L : K →ₗᵢ[𝕜] E := Kᗮ.subtypeₗᵢ.comp (W.subtypeₗᵢ.comp e.toLinearIsometry)
-  have hLK : ∀ x, L x ∈ Kᗮ := fun x => ((e x : W) : Kᗮ).2
+  have hLK : ∀ x, L x ∈ Kᗮ := fun x => ((e x : W) : Kᗮ).property
   have hKK : ∀ z, K.starProjection (K.starProjection z) = K.starProjection z :=
-    fun z => starProjection_eq_self_iff.mpr (K.orthogonalProjectionOnto z).2
+    fun z => starProjection_eq_self_iff.mpr (K.orthogonalProjectionOnto z).property
   refine ⟨L.toContinuousLinearMap ∘L K.orthogonalProjectionOnto, ?_, ?_⟩
   · ext x
     refine ext_inner_left 𝕜 fun y => ?_

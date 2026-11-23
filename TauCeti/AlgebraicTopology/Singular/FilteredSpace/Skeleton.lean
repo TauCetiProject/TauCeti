@@ -70,7 +70,7 @@ continuous map with values in a CW complex `C`, with no finiteness or dimension 
 filter `E` by the preimages `E_q` of the skeleta. Suppose that `Hₙ(E_{i+1}, E_i) = 0` whenever
 `n ≤ i`. Then on every page `r ≥ 2` with `q + 3 ≤ r` and `2 - p - 2q ≤ r`, the object at `(p, q)`
 is the graded piece `F_{q+1} H / F_q H` of the filtration of the abutment in degree `p + q`, which
-is `H_{-(p+q)}(E)` by `TauCeti.filteredSpaceAbutmentIso`. -/
+is `H_{-(p+q)}(E)` by `TauCeti.chainFiltrationAbutmentIso`. -/
 def preimageSkeletonSpectralSequencePageXIsoGraded {f : E → B} (hf : Continuous f)
     (hfC : Set.range f ⊆ C)
     (hvanish : ∀ (i : ℤ) (n : ℕ), n ≤ i →
@@ -79,8 +79,7 @@ def preimageSkeletonSpectralSequencePageXIsoGraded {f : E → B} (hf : Continuou
     (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 + 3 ≤ r) (hrb : 2 - pq.1 - 2 * pq.2 ≤ r) :
     ((filteredSpaceSpectralSequence M (monotone_preimageSkeleton (C := C) f)).page r).X pq ≅
       cokernel (Abelian.SpectralObject.abutmentFiltrationMap
-        (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-          (monotone_singularChainFiltration M (monotone_preimageSkeleton (C := C) f))))
+        (filteredSpaceSpectralObject M (monotone_preimageSkeleton (C := C) f))
         pq.2 (pq.1 + pq.2)) :=
   filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive M _
     (fun _ hK ↦ exists_subset_preimageSkeleton_of_isCompact hf hfC hK)
@@ -97,7 +96,9 @@ skeleton. The complex `C` may have infinitely many cells and be infinite-dimensi
 theorem exists_mem_range_singularChainFiltration_preimageSkeleton_arrow {C D : Set B}
     [RelCWComplex C D] {f : E → B} (hf : Continuous f) (hfC : Set.range f ⊆ C) (m : ℤ)
     (x : (((TopCat.toSSet.obj E).chainComplex M).extend ComplexShape.embeddingDownNat).X m) :
-    ∃ q, x ∈ LinearMap.range ((singularChainFiltration M (preimageSkeleton C f) q).arrow.f m).hom :=
+    ∃ q, x ∈ LinearMap.range ((chainFiltration
+      ((AlgebraicTopology.singularChainComplexFunctor _).obj M) (preimageSkeleton C f)
+        q).arrow.f m).hom :=
   exists_mem_range_singularChainFiltration_arrow M (monotone_preimageSkeleton f)
     (fun _ hK ↦ exists_subset_preimageSkeleton_of_isCompact hf hfC hK) m x
 

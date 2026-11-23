@@ -60,13 +60,11 @@ universe w
 
 namespace TauCeti
 
-variable {B : Type w}
-
 /-- The **Stiefel bundle** `V_k(E)` of a vector bundle `E` with model fibre `F` whose fibres are
 real inner product spaces: the pairs of a point of the base and an orthonormal `k`-frame of the
 fibre over it. The model fibre `F` enters only through the topology, which is read in the total
 space of `E`. -/
-structure StiefelBundle (F : Type*) (E : B → Type w) [∀ b, NormedAddCommGroup (E b)]
+structure StiefelBundle {B : Type*} (F : Type*) (E : B → Type*) [∀ b, NormedAddCommGroup (E b)]
     [∀ b, InnerProductSpace ℝ (E b)] (k : ℕ) where
   /-- The base point. -/
   proj : B
@@ -75,7 +73,9 @@ structure StiefelBundle (F : Type*) (E : B → Type w) [∀ b, NormedAddCommGrou
 
 namespace StiefelBundle
 
-variable {F : Type*} {E : B → Type w} [∀ b, NormedAddCommGroup (E b)]
+section General
+
+variable {B F : Type*} {E : B → Type*} [∀ b, NormedAddCommGroup (E b)]
   [∀ b, InnerProductSpace ℝ (E b)] {k : ℕ}
 
 /-- Two frames over the same base point are equal exactly when they are equal as frames of that
@@ -127,18 +127,6 @@ theorem continuous_totalSpaceMk_frame (i : Fin k) :
       (⟨p.proj, (p.frame : Fin k → E p.proj) i⟩ : TotalSpace F E) :=
   (continuous_iff.1 continuous_id).2 i
 
-variable (F k) in
-/-- The `i`th vector of a frame, as a point of the unit sphere bundle `S(E)`. -/
-def sphereProj (i : Fin k) : C(StiefelBundle F E k, sphereBundle F E) where
-  toFun p := ⟨⟨p.proj, (p.frame : Fin k → E p.proj) i⟩,
-    mem_sphereBundle.2 (norm_eq_one_of_mem_stiefel p.frame.2 i)⟩
-  continuous_toFun := (continuous_totalSpaceMk_frame i).subtype_mk _
-
-@[simp]
-theorem coe_sphereProj_apply (i : Fin k) (p : StiefelBundle F E k) :
-    (sphereProj F k i p : TotalSpace F E) = ⟨p.proj, (p.frame : Fin k → E p.proj) i⟩ :=
-  (rfl)
-
 section Fiber
 
 variable (F E k) [TopologicalSpace F] [FiberBundle F E]
@@ -148,7 +136,7 @@ def fiberIncl (b : B) : C(stiefel (E b) k, StiefelBundle F E k) where
   toFun x := ⟨b, x⟩
   continuous_toFun := continuous_iff.2 ⟨continuous_const, fun i ↦
     (FiberBundle.continuous_totalSpaceMk F E b).comp
-      ((continuous_apply i).comp continuous_subtype_val)⟩
+      ((continuous_apply i).comp continuous_subtypeVal)⟩
 
 variable {F E k}
 
@@ -186,7 +174,25 @@ theorem isEmbedding_fiberIncl (b : B) : IsEmbedding (fiberIncl F E k b) := by
 
 end Fiber
 
+end General
+
 section Sphere
+
+variable {B : Type w} {F : Type*} {E : B → Type w} [∀ b, NormedAddCommGroup (E b)]
+  [∀ b, InnerProductSpace ℝ (E b)] {k : ℕ} [TopologicalSpace B]
+  [TopologicalSpace (TotalSpace F E)]
+
+variable (F k) in
+/-- The `i`th vector of a frame, as a point of the unit sphere bundle `S(E)`. -/
+def sphereProj (i : Fin k) : C(StiefelBundle F E k, sphereBundle F E) where
+  toFun p := ⟨⟨p.proj, (p.frame : Fin k → E p.proj) i⟩,
+    mem_sphereBundle.2 (norm_eq_one_of_mem_stiefel p.frame.property i)⟩
+  continuous_toFun := (continuous_totalSpaceMk_frame i).subtype_mk _
+
+@[simp]
+theorem coe_sphereProj_apply (i : Fin k) (p : StiefelBundle F E k) :
+    (sphereProj F k i p : TotalSpace F E) = ⟨p.proj, (p.frame : Fin k → E p.proj) i⟩ :=
+  (rfl)
 
 variable [NormedAddCommGroup F] [FiberBundle F E]
 
