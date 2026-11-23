@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Convex
-import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.ODE.Gronwall
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.Calculus.GridInterpolation
 import TauCeti.Analysis.GradientFlow.MinimizingMovement
+import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
 # Two-step error estimate for Moreau–Yosida minimizing movements
@@ -28,9 +29,11 @@ one-step discrete variational inequalities
 (`TauCeti.PenalizedConvex.apply_add_le_of_mem_moreauYosidaResolvent`) cancels the cross-evaluated
 energies identically into `α_n(t) (φ(U n) - φ(U (n + 1))) + β_k(t) (φ(V k) - φ(V (k + 1)))`, while
 the one-step dissipations `-d(U n, U (n + 1))² / (2τ)` and `-d(V k, V (k + 1))² / (2η)` absorb the
-metric shift terms coming from `-m`. Integrating by Grönwall's inequality bounds
-`d(U ⌈t / τ⌉₊, V ⌈t / η⌉₊)²` in terms of `d(U 0, V 0)²` and `(τ + η)` times the energy dissipated
-up to steps `⌊t / τ⌋₊ + 1` and `⌊t / η⌋₊ + 1`.
+metric shift terms coming from `-m`. Applying the right-derivative comparison principle
+(`image_le_of_liminf_slope_right_le_deriv_boundary`) against the piecewise quadratic dissipation
+primitives (`TauCeti.stepWeightDiffPrimitive`) bounds `d(U ⌈t / τ⌉₊, V ⌈t / η⌉₊)²` in terms of
+`d(U 0, V 0)²` and `(τ + η)` times the energy dissipated up to steps `⌊t / τ⌋₊ + 1` and
+`⌊t / η⌋₊ + 1`.
 
 ## Main results
 
@@ -52,80 +55,41 @@ open scoped NNReal
 
 namespace TauCeti
 
-/-! ### Piecewise quadratic primitive of discrete energy dissipation -/
-
-section EnergyPrim
-
-/-- Piecewise quadratic primitive of `t ↦ stepWeight τ ⌊t / τ⌋₊ t * (e ⌊t / τ⌋₊ - e (⌊t / τ⌋₊ + 1))`
-starting at `0`. -/
-private def energyPrim (τ : ℝ) (e : ℕ → ℝ) : ℝ → ℝ :=
-  piecewiseStep τ fun n t ↦
-    (τ / 2) * (e 0 - e (n + 1) + stepWeight τ n t ^ 2 * (e (n + 1) - e n))
-
-private theorem energyPrim_zero {τ : ℝ} (hτ : 0 < τ) (e : ℕ → ℝ) : energyPrim τ e 0 = 0 := by
-  simp [energyPrim, hτ.ne']
-
-private theorem energyPrim_le {τ t : ℝ} (hτ : 0 < τ) {e : ℕ → ℝ} (he : Antitone e) :
-    energyPrim τ e t ≤ (τ / 2) * (e 0 - e (⌊t / τ⌋₊ + 1)) := by
-  simp only [energyPrim, piecewiseStep_def]
-  have hle : stepWeight τ ⌊t / τ⌋₊ t ^ 2 * (e (⌊t / τ⌋₊ + 1) - e ⌊t / τ⌋₊) ≤ 0 :=
-    mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) (sub_nonpos.2 (he (Nat.le_succ _)))
-  exact mul_le_mul_of_nonneg_left (by linarith) (by positivity)
-
-private theorem continuousOn_energyPrim {τ : ℝ} (hτ : 0 < τ) (e : ℕ → ℝ) :
-    ContinuousOn (energyPrim τ e) (Ici 0) :=
-  continuousOn_piecewiseStep hτ (fun _ ↦ by simp [hτ.ne']) fun _ ↦ by fun_prop
-
-private theorem hasDerivWithinAt_energyPrim {τ : ℝ} (hτ : 0 < τ) (e : ℕ → ℝ) {t : ℝ} (ht : 0 ≤ t) :
-    HasDerivWithinAt (energyPrim τ e)
-      (stepWeight τ ⌊t / τ⌋₊ t * (e ⌊t / τ⌋₊ - e (⌊t / τ⌋₊ + 1))) (Ici t) t := by
-  unfold energyPrim
-  rw [hasDerivWithinAt_piecewiseStep_iff hτ ht]
-  have hd := ((((hasDerivAt_stepWeight τ ⌊t / τ⌋₊ t).pow 2).mul_const
-    (e (⌊t / τ⌋₊ + 1) - e ⌊t / τ⌋₊)).const_add (e 0 - e (⌊t / τ⌋₊ + 1))).const_mul (τ / 2)
-  exact (hd.congr_deriv (by have := hτ.ne'; field_simp; ring)).hasDerivWithinAt
-
-end EnergyPrim
-
 /-! ### Discrete two-step error estimate -/
 
 section TwoStepBound
 
 /-- Absorbs one metric shift `α m (d(x, y)² / 2 - d(x', y)² / 2)` into the one-step dissipation
-`-d(x, x')² / (2τ)` when `|m| τ ≤ 1 / 2` and `α ∈ [0, 1]`. -/
+`-d(x, x')² / (2τ)` when `(-m) * τ ≤ 1 / 2` and `α ∈ [0, 1]`. -/
 private theorem mul_half_dist_sq_sub_le {X : Type*} [PseudoMetricSpace X] (x x' y : X)
-    {m τ α : ℝ} (hτ : 0 < τ) (hmτ : |m| * τ ≤ 1 / 2) (hα : α ∈ Icc (0 : ℝ) 1) :
+    {m τ α : ℝ} (hτ : 0 < τ) (hmτ : (-m) * τ ≤ 1 / 2) (hα : α ∈ Icc (0 : ℝ) 1) :
     α * m * (dist x y ^ 2 / 2 - dist x' y ^ 2 / 2) - dist x x' ^ 2 / (2 * τ) ≤
       2 * m ^ 2 * τ * (α * (dist x y ^ 2 / 2)) := by
   set d := dist x y; set d' := dist x' y; set Δ := dist x x'
-  have hd0 : 0 ≤ d := dist_nonneg
-  have hd'0 : 0 ≤ d' := dist_nonneg
-  have hdiff : |d ^ 2 - d' ^ 2| ≤ 2 * d * Δ + Δ ^ 2 := by
-    have h1 : |d - d'| ≤ Δ := abs_dist_sub_le x x' y
-    have h2 : d + d' ≤ 2 * d + Δ := by linarith [dist_triangle_left x' y x]
-    calc |d ^ 2 - d' ^ 2| = |d - d'| * (d + d') := by
-          rw [sq_sub_sq, abs_mul, abs_of_nonneg (add_nonneg hd0 hd'0), mul_comm]
-      _ ≤ Δ * (2 * d + Δ) := mul_le_mul h1 h2 (add_nonneg hd0 hd'0) dist_nonneg
-      _ = 2 * d * Δ + Δ ^ 2 := by ring
-  have hm_bd : m * (d ^ 2 / 2 - d' ^ 2 / 2) ≤ |m| * d * Δ + |m| * Δ ^ 2 / 2 := by
-    have h : m * (d ^ 2 - d' ^ 2) ≤ |m| * (2 * d * Δ + Δ ^ 2) := (le_abs_self _).trans <| by
-      rw [abs_mul]; exact mul_le_mul_of_nonneg_left hdiff (abs_nonneg m)
-    linarith
+  have hα0 : 0 ≤ α := hα.1
   refine le_of_mul_le_mul_right ?_ (by positivity : 0 < 4 * τ)
   have hclear : (α * m * (d ^ 2 / 2 - d' ^ 2 / 2) - Δ ^ 2 / (2 * τ)) * (4 * τ) =
-      4 * τ * α * (m * (d ^ 2 / 2 - d' ^ 2 / 2)) - 2 * Δ ^ 2 := by field_simp; ring
-  have hα0 : 0 ≤ α := hα.1
-  have h1 := mul_le_mul_of_nonneg_left hm_bd (by positivity : 0 ≤ 4 * τ * α)
-  have hΔ : 2 * τ * α * |m| * Δ ^ 2 ≤ Δ ^ 2 :=
-    (mul_le_mul_of_nonneg_right (by nlinarith [hα.1, hα.2, hmτ, abs_nonneg m] :
-      2 * τ * α * |m| ≤ 1) (sq_nonneg Δ)).trans_eq (one_mul _)
-  have hαm : 4 * τ ^ 2 * α ^ 2 * |m| ^ 2 * d ^ 2 ≤ 4 * τ ^ 2 * α * m ^ 2 * d ^ 2 := by
-    rw [sq_abs]
-    have := mul_le_mul_of_nonneg_right (by nlinarith [hα.1, hα.2] : α ^ 2 ≤ α)
-      (by positivity : 0 ≤ 4 * τ ^ 2 * m ^ 2 * d ^ 2)
-    linarith
+      2 * τ * α * (m * (d ^ 2 - d' ^ 2)) - 2 * Δ ^ 2 := by field_simp; ring
+  have hα2 : α ^ 2 ≤ α := by nlinarith [hα.1, hα.2]
+  have hαm : 4 * τ ^ 2 * α ^ 2 * m ^ 2 * d ^ 2 ≤ 4 * τ ^ 2 * α * m ^ 2 * d ^ 2 := by
+    nlinarith [mul_le_mul_of_nonneg_right hα2 (by positivity : 0 ≤ 4 * τ ^ 2 * m ^ 2 * d ^ 2)]
   rw [hclear]
-  nlinarith [sq_nonneg (Δ - 2 * τ * α * |m| * d), h1, hΔ, hαm]
+  rcases le_or_gt m 0 with hm0 | hm0
+  · have hm_bd : m * (d ^ 2 - d' ^ 2) ≤ (-m) * (2 * d * Δ + Δ ^ 2) :=
+      calc m * (d ^ 2 - d' ^ 2) = (-m) * (-(d ^ 2 - d' ^ 2)) := by ring
+        _ ≤ (-m) * |d ^ 2 - d' ^ 2| := mul_le_mul_of_nonneg_left (neg_le_abs _) (neg_nonneg.2 hm0)
+        _ ≤ (-m) * (2 * d * Δ + Δ ^ 2) :=
+            mul_le_mul_of_nonneg_left (abs_dist_sq_sub_le x x' y) (neg_nonneg.2 hm0)
+    have h1 := mul_le_mul_of_nonneg_left hm_bd (by positivity : 0 ≤ 2 * τ * α)
+    have hΔ : 2 * τ * α * (-m) * Δ ^ 2 ≤ Δ ^ 2 :=
+      (mul_le_mul_of_nonneg_right (by nlinarith [hα.1, hα.2, hmτ] : 2 * τ * α * (-m) ≤ 1)
+        (sq_nonneg Δ)).trans_eq (one_mul _)
+    nlinarith [sq_nonneg (Δ + 2 * τ * α * m * d), h1, hΔ, hαm]
+  · have hm_bd : m * (d ^ 2 - d' ^ 2) ≤ 2 * m * d * Δ := by
+      have := mul_le_mul_of_nonneg_left (dist_sq_sub_le x x' y) hm0.le
+      linarith
+    have h1 := mul_le_mul_of_nonneg_left hm_bd (by positivity : 0 ≤ 2 * τ * α)
+    nlinarith [sq_nonneg (Δ - 2 * τ * α * m * d), sq_nonneg Δ, h1, hαm]
 
 /-- One-step real-valued discrete variational inequality for `d(U (n + 1), v)² / 2 - d(U n, v)² / 2`
 along a minimizing movement sequence with real energies. -/
@@ -188,7 +152,7 @@ private theorem bilin_deriv_algebraic_le {a₀₀ a₁₀ a₀₁ a₁₁ eU₀ 
     mul_le_mul_of_nonneg_left hs1 hβ0, mul_le_mul_of_nonneg_left hs2 hβ1,
     mul_le_mul_of_nonneg_left hs3 hα0, mul_le_mul_of_nonneg_left hs4 hα1]
 
-/-- Exponential Grönwall rate for the discrete two-step comparison at time steps `τ` and `η`. -/
+/-- Exponential growth rate for the discrete two-step comparison at time steps `τ` and `η`. -/
 private def twoStepRate (m : ℝ) (τ η : ℝ≥0) : ℝ :=
   max 0 (-2 * m + 2 * m ^ 2 * τ + 2 * m ^ 2 * η)
 
@@ -200,7 +164,7 @@ private def halfDistSq {X : Type*} [PseudoMetricSpace X] (U V : ℕ → X) (n k 
 along two minimizing movement sequences. -/
 private theorem bilin_deriv_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace X] {m : ℝ}
     {τ η : ℝ≥0} {φ : X → EReal} (hτc : PenalizedConvex m τ φ) (hηc : PenalizedConvex m η φ)
-    (hτ : 0 < τ) (hη : 0 < η) (hmτ : |m| * τ ≤ 1 / 2) (hmη : |m| * η ≤ 1 / 2)
+    (hτ : 0 < τ) (hη : 0 < η) (hmτ : (-m) * τ ≤ 1 / 2) (hmη : (-m) * η ≤ 1 / 2)
     {U V : ℕ → X} (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n))
     (hV : ∀ k, V (k + 1) ∈ moreauYosidaResolvent φ η (V k))
     {eU eV : ℕ → ℝ} (heU : ∀ n, φ (U n) = eU n) (heV : ∀ k, φ (V k) = eV k)
@@ -236,27 +200,27 @@ private theorem bilin_deriv_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace
     (mul_half_dist_sq_sub_le (U n) (U (n + 1)) (V k) hτ hmτ hα)
     (mul_half_dist_sq_sub_le (U n) (U (n + 1)) (V (k + 1)) hτ hmτ hα) hs3 hs4
 
-/-- Nonpositive right-hand derivative of the Grönwall auxiliary function
+/-- Nonpositive right-hand derivative of the exponentially weighted auxiliary function
 `s ↦ exp (-twoStepRate m τ η * s) * gridBilinearInterpolant τ η (halfDistSq U V) s s - ...`
 for `s ≥ 0`. -/
 private theorem exists_hasDerivWithinAt_exp_bilinInterp_sub {X : Type*} [PseudoMetricSpace X]
     {m : ℝ} {τ η : ℝ≥0} {φ : X → EReal} (hτc : PenalizedConvex m τ φ)
-    (hηc : PenalizedConvex m η φ) (hτ : 0 < τ) (hη : 0 < η) (hmτ : |m| * τ ≤ 1 / 2)
-    (hmη : |m| * η ≤ 1 / 2) {U V : ℕ → X}
+    (hηc : PenalizedConvex m η φ) (hτ : 0 < τ) (hη : 0 < η) (hmτ : (-m) * τ ≤ 1 / 2)
+    (hmη : (-m) * η ≤ 1 / 2) {U V : ℕ → X}
     (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n))
     (hV : ∀ k, V (k + 1) ∈ moreauYosidaResolvent φ η (V k))
     {eU eV : ℕ → ℝ} (heU : ∀ n, φ (U n) = eU n) (heV : ∀ k, φ (V k) = eV k)
     (hantiU : Antitone eU) (hantiV : Antitone eV) {s : ℝ} (hs : 0 ≤ s) :
     ∃ d : ℝ, d ≤ 0 ∧ HasDerivWithinAt
       (fun r ↦ exp (-twoStepRate m τ η * r) * gridBilinearInterpolant τ η (halfDistSq U V) r r -
-        energyPrim τ eU r - energyPrim η eV r) d (Ici s) s := by
+        stepWeightDiffPrimitive τ eU r - stepWeightDiffPrimitive η eV r) d (Ici s) s := by
   set K := twoStepRate m τ η
   have hK0 : 0 ≤ K := le_max_left _ _
   have hexp : HasDerivWithinAt (fun r ↦ exp (-K * r)) (-K * exp (-K * s)) (Ici s) s :=
     (((hasDerivAt_id' s).const_mul (-K)).exp).hasDerivWithinAt.congr_deriv (by ring)
   refine ⟨_, ?_, ((hexp.mul (hasDerivWithinAt_gridBilinearInterpolant_diag hτ hη
-    (halfDistSq U V) hs)).sub (hasDerivWithinAt_energyPrim hτ eU hs)).sub
-    (hasDerivWithinAt_energyPrim hη eV hs)⟩
+    (halfDistSq U V) hs)).sub (hasDerivWithinAt_stepWeightDiffPrimitive hτ eU hs)).sub
+    (hasDerivWithinAt_stepWeightDiffPrimitive hη eV hs)⟩
   have hbd := bilin_deriv_le_of_penalizedConvex hτc hηc hτ hη hmτ hmη hU hV heU heV hs
   set pU := stepWeight τ ⌊s / τ⌋₊ s * (eU ⌊s / τ⌋₊ - eU (⌊s / τ⌋₊ + 1))
   set pV := stepWeight η ⌊s / η⌋₊ s * (eV ⌊s / η⌋₊ - eV (⌊s / η⌋₊ + 1))
@@ -268,15 +232,16 @@ private theorem exists_hasDerivWithinAt_exp_bilinInterp_sub {X : Type*} [PseudoM
   have h1 := add_le_add_left (mul_le_mul_of_nonneg_left hbd (exp_pos (-K * s)).le)
     ((-K * exp (-K * s)) * gridBilinearInterpolant τ η (halfDistSq U V) s s)
   have h2 := (mul_le_mul_of_nonneg_right hexp1 (add_nonneg hpU hpV)).trans_eq (one_mul _)
-  rw [sub_sub, sub_nonpos, add_comm]
+  simp only [smul_eq_mul, sub_sub, sub_nonpos]
+  rw [add_comm]
   exact (h1.trans_eq (by dsimp only [K]; ring)).trans h2
 
-/-- Grönwall integration of `bilin_deriv_le_of_penalizedConvex` bounds
+/-- Integrating `bilin_deriv_le_of_penalizedConvex` via right-derivative comparison bounds
 `2 * gridBilinearInterpolant τ η (halfDistSq U V) t t`. -/
 private theorem two_mul_bilinInterp_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace X]
     {m : ℝ} {τ η : ℝ≥0} {φ : X → EReal} (hτc : PenalizedConvex m τ φ)
-    (hηc : PenalizedConvex m η φ) (hτ : 0 < τ) (hη : 0 < η) (hmτ : |m| * τ ≤ 1 / 2)
-    (hmη : |m| * η ≤ 1 / 2) {U V : ℕ → X}
+    (hηc : PenalizedConvex m η φ) (hτ : 0 < τ) (hη : 0 < η) (hmτ : (-m) * τ ≤ 1 / 2)
+    (hmη : (-m) * η ≤ 1 / 2) {U V : ℕ → X}
     (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n))
     (hV : ∀ k, V (k + 1) ∈ moreauYosidaResolvent φ η (V k))
     {eU eV : ℕ → ℝ} (heU : ∀ n, φ (U n) = eU n) (heV : ∀ k, φ (V k) = eV k)
@@ -288,33 +253,31 @@ private theorem two_mul_bilinInterp_le_of_penalizedConvex {X : Type*} [PseudoMet
   set K := twoStepRate m τ η
   set G : ℝ → ℝ := fun s ↦
     exp (-K * s) * gridBilinearInterpolant τ η (halfDistSq U V) s s -
-      energyPrim τ eU s - energyPrim η eV s
+      stepWeightDiffPrimitive τ eU s - stepWeightDiffPrimitive η eV s
   have hBcont : ContinuousOn (fun s ↦ gridBilinearInterpolant τ η (halfDistSq U V) s s) (Icc 0 t) :=
     (continuousOn_gridBilinearInterpolant hτ hη (halfDistSq U V)).comp
       (continuousOn_id.prodMk continuousOn_id) fun _ hs ↦ ⟨hs.1, hs.1⟩
   have hGcont : ContinuousOn G (Icc 0 t) :=
     ((((by fun_prop : ContinuousOn (fun s ↦ exp (-K * s)) (Icc 0 t))).mul hBcont).sub
-      ((continuousOn_energyPrim hτ eU).mono Icc_subset_Ici_self)).sub
-      ((continuousOn_energyPrim hη eV).mono Icc_subset_Ici_self)
-  have hGderiv (s : ℝ) : ∃ d : ℝ, s ∈ Ico 0 t → d ≤ 0 ∧ HasDerivWithinAt G d (Ici s) s := by
-    by_cases hs : s ∈ Ico 0 t
-    · obtain ⟨d, hd0, hd⟩ := exists_hasDerivWithinAt_exp_bilinInterp_sub hτc hηc hτ hη hmτ hmη
+      ((continuousOn_stepWeightDiffPrimitive hτ eU).mono Icc_subset_Ici_self)).sub
+      ((continuousOn_stepWeightDiffPrimitive hη eV).mono Icc_subset_Ici_self)
+  have hgr := image_le_of_liminf_slope_right_le_deriv_boundary hGcont (B := fun _ ↦ G 0)
+    (B' := fun _ ↦ 0) le_rfl continuousOn_const (fun s _ ↦ hasDerivWithinAt_const s _ (G 0))
+    (fun s hs r hr ↦ by
+      obtain ⟨d, hd0, hd⟩ := exists_hasDerivWithinAt_exp_bilinInterp_sub hτc hηc hτ hη hmτ hmη
         hU hV heU heV hantiU hantiV hs.1
-      exact ⟨d, fun _ ↦ ⟨hd0, hd⟩⟩
-    · exact ⟨0, fun h ↦ absurd h hs⟩
-  choose d hdG using hGderiv
-  have hgr := le_gronwallBound_of_liminf_deriv_right_le (f := G) (f' := d) (δ := G 0) (K := 0)
-    (ε := 0) hGcont (fun s hs r hr ↦ ((hdG s hs).2).liminf_right_slope_le hr) le_rfl
-    (fun s hs ↦ by linarith [(hdG s hs).1]) t ⟨ht, le_rfl⟩
-  simp only [gronwallBound_K0, zero_mul, add_zero] at hgr
+      exact hd.liminf_right_slope_le (hd0.trans_lt hr))
+    ⟨ht, le_rfl⟩
   have hG0 : G 0 = dist (U 0) (V 0) ^ 2 / 2 := by
     simp only [G, mul_zero, exp_zero, one_mul,
       gridBilinearInterpolant_apply_zero (NNReal.coe_pos.2 hτ).ne' (NNReal.coe_pos.2 hη).ne',
-      energyPrim_zero (τ := τ) hτ, energyPrim_zero (τ := η) hη, sub_zero, halfDistSq]
+      stepWeightDiffPrimitive_apply_zero (NNReal.coe_pos.2 hτ).ne',
+      stepWeightDiffPrimitive_apply_zero (NNReal.coe_pos.2 hη).ne', sub_zero, halfDistSq]
+  have hpU := stepWeightDiffPrimitive_le (τ := τ) (t := t) (NNReal.coe_nonneg τ) hantiU
+  have hpV := stepWeightDiffPrimitive_le (τ := η) (t := t) (NNReal.coe_nonneg η) hantiV
+  simp only [smul_eq_mul] at hpU hpV
   have hcan : exp (K * t) * exp (-K * t) = 1 := by rw [← exp_add]; simp [neg_mul]
-  have hmul := mul_le_mul_of_nonneg_left (by
-      linarith [hgr, hG0, energyPrim_le (τ := τ) (t := t) hτ hantiU,
-        energyPrim_le (τ := η) (t := t) hη hantiV] :
+  have hmul := mul_le_mul_of_nonneg_left (by linarith [hgr, hG0, hpU, hpV] :
       exp (-K * t) * gridBilinearInterpolant τ η (halfDistSq U V) t t ≤
         dist (U 0) (V 0) ^ 2 / 2 +
           ((τ : ℝ) / 2) * (eU 0 - eU (⌊t / τ⌋₊ + 1)) +
@@ -327,15 +290,23 @@ private theorem two_mul_bilinInterp_le_of_penalizedConvex {X : Type*} [PseudoMet
       exp (K * t) * (τ * (eU 0 - eU (⌊t / τ⌋₊ + 1)) + η * (eV 0 - eV (⌊t / η⌋₊ + 1))) := by ring
   linarith [hmul, hrhs]
 
+/-- Endpoint distance from `W ⌈t / δ⌉₊` to either corner `⌊t / δ⌋₊` or `⌊t / δ⌋₊ + 1` of the
+active time cell is bounded by the single-step jump `dist (W ⌊t / δ⌋₊) (W (⌊t / δ⌋₊ + 1))`. -/
+private theorem dist_ceil_div_le_dist_step {X : Type*} [PseudoMetricSpace X] (δ : ℝ≥0)
+    (W : ℕ → X) (t : ℝ) {i : ℕ} (hi : i = ⌊t / δ⌋₊ ∨ i = ⌊t / δ⌋₊ + 1) :
+    dist (W ⌈t / δ⌉₊) (W i) ≤ dist (W ⌊t / δ⌋₊) (W (⌊t / δ⌋₊ + 1)) := by
+  rcases ceil_eq_floor_or_add_one (t / (δ : ℝ)) with hc | hc <;>
+    rcases hi with rfl | rfl <;> simp [hc, dist_comm]
+
 /-- **Quantitative two-step error bound for minimizing movements.** Under
-`TauCeti.PenalizedConvex m τ φ` and `TauCeti.PenalizedConvex m η φ` with `|m| τ ≤ 1 / 2` and
-`|m| η ≤ 1 / 2`, the piecewise constant interpolants of two minimizing movement sequences with real
-energies satisfy an explicit bound in terms of `d(U 0, V 0)²` and `(τ + η)` times the energy
+`TauCeti.PenalizedConvex m τ φ` and `TauCeti.PenalizedConvex m η φ` with `(-m) * τ ≤ 1 / 2` and
+`(-m) * η ≤ 1 / 2`, the piecewise constant interpolants of two minimizing movement sequences with
+real energies satisfy an explicit bound in terms of `d(U 0, V 0)²` and `(τ + η)` times the energy
 dissipated up to steps `⌊t / τ⌋₊ + 1` and `⌊t / η⌋₊ + 1`. -/
 theorem dist_ceil_sq_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace X]
     {m : ℝ} {τ η : ℝ≥0} {φ : X → EReal} (hτc : PenalizedConvex m τ φ)
-    (hηc : PenalizedConvex m η φ) (hτ : 0 < τ) (hη : 0 < η) (hmτ : |m| * τ ≤ 1 / 2)
-    (hmη : |m| * η ≤ 1 / 2) {U V : ℕ → X}
+    (hηc : PenalizedConvex m η φ) (hτ : 0 < τ) (hη : 0 < η) (hmτ : (-m) * τ ≤ 1 / 2)
+    (hmη : (-m) * η ≤ 1 / 2) {U V : ℕ → X}
     (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n))
     (hV : ∀ k, V (k + 1) ∈ moreauYosidaResolvent φ η (V k))
     {eU eV : ℕ → ℝ} (heU : ∀ n, φ (U n) = eU n) (heV : ∀ k, φ (V k) = eV k)
@@ -360,34 +331,26 @@ theorem dist_ceil_sq_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace X]
   set ΔU := dist (U n) (U (n + 1)); set ΔV := dist (V k) (V (k + 1))
   have hΔU := hstep hU heU hantiU n
   have hΔV := hstep hV heV hantiV k
-  have hdU (i : ℕ) (hi : i = n ∨ i = n + 1) : dist (U ⌈t / τ⌉₊) (U i) ≤ ΔU := by
-    rcases ceil_eq_floor_or_add_one (t / (τ : ℝ)) with hc | hc <;>
-      rcases hi with rfl | rfl <;> simp [hc, n, ΔU, dist_comm]
-  have hdV (j : ℕ) (hj : j = k ∨ j = k + 1) : dist (V j) (V ⌈t / η⌉₊) ≤ ΔV := by
-    rcases ceil_eq_floor_or_add_one (t / (η : ℝ)) with hc | hc <;>
-      rcases hj with rfl | rfl <;> simp [hc, k, ΔV, dist_comm]
   have hcell (i j : ℕ) (hi : i = n ∨ i = n + 1) (hj : j = k ∨ j = k + 1) :
-      dist (U ⌈t / τ⌉₊) (V ⌈t / η⌉₊) ^ 2 ≤ 2 * dist (U i) (V j) ^ 2 + 4 * ΔU ^ 2 + 4 * ΔV ^ 2 := by
+      (dist (U ⌈t / τ⌉₊) (V ⌈t / η⌉₊) ^ 2 - 4 * ΔU ^ 2 - 4 * ΔV ^ 2) / 4 ≤
+        halfDistSq U V i j := by
     have htri : dist (U ⌈t / τ⌉₊) (V ⌈t / η⌉₊) ≤ dist (U i) (V j) + ΔU + ΔV :=
       (dist_triangle4 (U ⌈t / τ⌉₊) (U i) (V j) (V ⌈t / η⌉₊)).trans
-        (by linarith [hdU i hi, hdV j hj])
-    nlinarith [sq_nonneg (dist (U i) (V j) - ΔU - ΔV), sq_nonneg (ΔU - ΔV),
-      pow_le_pow_left₀ dist_nonneg htri 2]
-  obtain ⟨hα0, hα1⟩ := stepWeight_floor_mem_Icc (τ := τ) hτ ht
-  obtain ⟨hβ0, hβ1⟩ := stepWeight_floor_mem_Icc (τ := η) hη ht
+        (by linarith [dist_ceil_div_le_dist_step τ U t hi,
+          dist_comm (V j) (V ⌈t / η⌉₊) ▸ dist_ceil_div_le_dist_step η V t hj])
+    have hsq : dist (U ⌈t / τ⌉₊) (V ⌈t / η⌉₊) ^ 2 ≤
+        2 * dist (U i) (V j) ^ 2 + 4 * ΔU ^ 2 + 4 * ΔV ^ 2 := by
+      nlinarith [sq_nonneg (dist (U i) (V j) - ΔU - ΔV), sq_nonneg (ΔU - ΔV),
+        pow_le_pow_left₀ dist_nonneg htri 2]
+    dsimp only [halfDistSq]
+    linarith
+  have hbilin := le_gridBilinearInterpolant (NNReal.coe_pos.2 hτ) (NNReal.coe_pos.2 hη) ht ht
+    (hcell n k (.inl rfl) (.inl rfl)) (hcell (n + 1) k (.inr rfl) (.inl rfl))
+    (hcell n (k + 1) (.inl rfl) (.inr rfl)) (hcell (n + 1) (k + 1) (.inr rfl) (.inr rfl))
   have hb := two_mul_bilinInterp_le_of_penalizedConvex hτc hηc hτ hη hmτ hmη hU hV heU heV
     hantiU hantiV ht
-  rw [gridBilinearInterpolant_apply] at hb
-  simp only [smul_eq_mul] at hb
-  dsimp only [twoStepRate, halfDistSq] at hb
-  nlinarith [hΔU, hΔV, hb,
-    mul_le_mul_of_nonneg_left (hcell n k (.inl rfl) (.inl rfl)) (mul_nonneg hβ0 hα0),
-    mul_le_mul_of_nonneg_left (hcell (n + 1) k (.inr rfl) (.inl rfl))
-      (mul_nonneg hβ0 (sub_nonneg.2 hα1)),
-    mul_le_mul_of_nonneg_left (hcell n (k + 1) (.inl rfl) (.inr rfl))
-      (mul_nonneg (sub_nonneg.2 hβ1) hα0),
-    mul_le_mul_of_nonneg_left (hcell (n + 1) (k + 1) (.inr rfl) (.inr rfl))
-      (mul_nonneg (sub_nonneg.2 hβ1) (sub_nonneg.2 hα1))]
+  dsimp only [twoStepRate] at hb
+  linarith [hΔU, hΔV, hb, hbilin]
 
 end TwoStepBound
 

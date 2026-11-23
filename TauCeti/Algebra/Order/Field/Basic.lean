@@ -118,6 +118,10 @@ zero only at `0`.
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
   scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
+* `TauCeti.exists_pos_abs_mul_le`: given `m` and positive `c, b`, there exists `0 < τ < b` such
+  that `|m| * δ ≤ c` for all `0 ≤ δ ≤ τ`.
+* `TauCeti.one_add_mul_pos_of_abs_mul_le_half`: `0 < 1 + m * δ` whenever `0 ≤ δ` and
+  `|m| * δ ≤ 1 / 2`.
 -/
 
 public section
@@ -491,6 +495,22 @@ theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
 theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
     {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
   div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
+
+/-- For any `m : K`, `c > 0`, and bound `b > 0` in a linearly ordered field, there exists a
+positive step size `τ < b` such that `|m| * δ ≤ c` for every `0 ≤ δ ≤ τ`. -/
+theorem exists_pos_abs_mul_le {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    (m : K) {c b : K} (hc : 0 < c) (hb : 0 < b) :
+    ∃ τ : K, 0 < τ ∧ τ < b ∧ ∀ ⦃δ : K⦄, 0 ≤ δ → δ ≤ τ → |m| * δ ≤ c := by
+  obtain ⟨r, hr0, hr⟩ := exists_pos_mul_lt hc |m|
+  exact ⟨min r (b / 2), lt_min hr0 (half_pos hb), (min_le_right _ _).trans_lt (half_lt_self hb),
+    fun _ _ hδ ↦
+      (mul_le_mul_of_nonneg_left (hδ.trans (min_le_left _ _)) (abs_nonneg m)).trans hr.le⟩
+
+/-- If `0 ≤ δ` and `|m| * δ ≤ 1 / 2`, then `0 < 1 + m * δ`. -/
+theorem one_add_mul_pos_of_abs_mul_le_half {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {m δ : K} (hδ : 0 ≤ δ) (h : |m| * δ ≤ 1 / 2) :
+    0 < 1 + m * δ := by
+  nlinarith [neg_abs_le m, hδ]
 
 end TauCeti
 

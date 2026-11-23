@@ -9,6 +9,7 @@ public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Instances.EReal.Lemmas
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Data.EReal.Operations
 
 /-!
@@ -703,31 +704,6 @@ theorem GeodesicallyConvex.moreauYosida_ne_bot (h : GeodesicallyConvex m φ)
 
 end Existence
 
-section StepSize
-
-open NNReal
-
-/-- For any `m : ℝ`, `c > 0`, and bound `b > 0`, there exists a positive step size `τ : ℝ≥0` below
-`b` such that `|m| * δ ≤ c` for every `δ ≤ τ`. -/
-theorem exists_pos_abs_mul_le (m : ℝ) {c : ℝ} (hc : 0 < c) {b : ℝ≥0} (hb : 0 < b) :
-    ∃ τ : ℝ≥0, 0 < τ ∧ τ < b ∧ ∀ ⦃δ : ℝ≥0⦄, δ ≤ τ → |m| * (δ : ℝ) ≤ c := by
-  set r : ℝ := c / (|m| + 1)
-  have hr : 0 < r := by positivity
-  refine ⟨min (b / 2) r.toNNReal, lt_min (half_pos hb) (Real.toNNReal_pos.2 hr),
-    (min_le_left _ _).trans_lt (half_lt_self hb), fun δ hδ ↦ ?_⟩
-  have hδr : (δ : ℝ) ≤ r :=
-    (NNReal.coe_le_coe.2 (hδ.trans (min_le_right _ _))).trans_eq (Real.coe_toNNReal r hr.le)
-  calc |m| * (δ : ℝ) ≤ (|m| + 1) * r :=
-        mul_le_mul (by linarith) hδr (NNReal.coe_nonneg δ) (by positivity)
-    _ = c := by dsimp [r]; field_simp
-
-/-- If `0 ≤ δ` and `|m| * δ ≤ 1 / 2`, then `0 < 1 + m * δ`. -/
-theorem one_add_mul_pos_of_abs_mul_le_half {m δ : ℝ} (hδ : 0 ≤ δ) (h : |m| * δ ≤ 1 / 2) :
-    0 < 1 + m * δ := by
-  nlinarith [neg_abs_le m, hδ]
-
-end StepSize
-
 section Assumption324AndCATZero
 
 variable {X : Type*} [PseudoMetricSpace X] {m : ℝ} {τ : ℝ≥0} {φ : X → EReal} {x x₀ : X}
@@ -738,9 +714,10 @@ variable {X : Type*} [PseudoMetricSpace X] {m : ℝ} {τ : ℝ≥0} {φ : X → 
 theorem ConvexWithDistSq.exists_moreauYosida_ne_bot (h : ConvexWithDistSq m φ)
     (hx₀ : LowerSemicontinuousAt φ x₀) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥) (x : X) :
     ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ x ≠ ⊥ :=
-  let ⟨τ₀, hτ₀, _, hm⟩ := exists_pos_abs_mul_le m (by norm_num : (0 : ℝ) < 1 / 2) one_pos
-  ⟨τ₀, hτ₀, h.moreauYosida_ne_bot hx₀ hx₀top hx₀bot
-    (one_add_mul_pos_of_abs_mul_le_half τ₀.property (hm le_rfl)) x⟩
+  let ⟨τ₀, hτ₀, _, hm⟩ :=
+    exists_pos_abs_mul_le m (by norm_num : (0 : ℝ) < 1 / 2) (one_pos : (0 : ℝ) < 1)
+  ⟨⟨τ₀, hτ₀.le⟩, hτ₀, h.moreauYosida_ne_bot (τ := ⟨τ₀, hτ₀.le⟩) hx₀ hx₀top hx₀bot
+    (one_add_mul_pos_of_abs_mul_le_half (δ := τ₀) hτ₀.le (hm hτ₀.le le_rfl)) x⟩
 
 /-- **Existence of a coercive time step for geodesically convex energies.** If `φ` is
 `m`-geodesically convex on a pseudometric space, and is lower semicontinuous and finite at some
@@ -748,24 +725,29 @@ point `x₀`, then for every `x : X` there exists `τ₀ > 0` with `φ_{τ₀}(x
 theorem GeodesicallyConvex.exists_moreauYosida_ne_bot (h : GeodesicallyConvex m φ)
     (hx₀ : LowerSemicontinuousAt φ x₀) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥) (x : X) :
     ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ x ≠ ⊥ :=
-  let ⟨τ₀, hτ₀, _, hm⟩ := exists_pos_abs_mul_le m (by norm_num : (0 : ℝ) < 1 / 2) one_pos
-  ⟨τ₀, hτ₀, h.moreauYosida_ne_bot hx₀ hx₀top hx₀bot
-    (one_add_mul_pos_of_abs_mul_le_half τ₀.property (hm le_rfl)) x⟩
+  let ⟨τ₀, hτ₀, _, hm⟩ :=
+    exists_pos_abs_mul_le m (by norm_num : (0 : ℝ) < 1 / 2) (one_pos : (0 : ℝ) < 1)
+  ⟨⟨τ₀, hτ₀.le⟩, hτ₀, h.moreauYosida_ne_bot (τ := ⟨τ₀, hτ₀.le⟩) hx₀ hx₀top hx₀bot
+    (one_add_mul_pos_of_abs_mul_le_half (δ := τ₀) hτ₀.le (hm hτ₀.le le_rfl)) x⟩
 
 /-- **Existence of resolvent steps under curve convexity of the energy and of the squared distance**
 (Ambrosio–Gigli, Assumption 3.24). In a complete pseudometric space, if `φ` is lower
-semicontinuous, never takes `⊥`, and satisfies `ConvexWithDistSq m φ`, then `J_τ x` is nonempty
-whenever `τ > 0` and `1 + m τ > 0`. -/
+semicontinuous and satisfies `ConvexWithDistSq m φ`, then `J_τ x` is nonempty whenever `τ > 0` and
+`1 + m τ > 0`. -/
 theorem ConvexWithDistSq.moreauYosidaResolvent_nonempty [CompleteSpace X]
-    (hφ : LowerSemicontinuous φ) (h : ConvexWithDistSq m φ) (hbot : ∀ y, φ y ≠ ⊥)
+    (hφ : LowerSemicontinuous φ) (h : ConvexWithDistSq m φ)
     (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
     (moreauYosidaResolvent φ τ x).Nonempty := by
-  refine h.penalizedConvex.moreauYosidaResolvent_nonempty hφ hτ hmτ ?_
-  by_cases hdom : ∃ z₀, φ z₀ ≠ ⊤
-  · obtain ⟨z₀, hz₀⟩ := hdom
-    exact h.moreauYosida_ne_bot (hφ.lowerSemicontinuousAt z₀) hz₀ (hbot z₀) hmτ x
-  · rw [moreauYosida_eq_top_of_forall_eq_top fun z _ ↦ not_ne_iff.1 fun hz ↦ hdom ⟨z, hz⟩]
-    exact top_ne_bot
+  by_cases hbot : ∃ y, φ y = ⊥
+  · obtain ⟨y, hy⟩ := hbot
+    exact ⟨y, mem_moreauYosidaResolvent_iff.2 ⟨edist_ne_top x y, fun z _ ↦ by simp [hy]⟩⟩
+  · push Not at hbot
+    refine h.penalizedConvex.moreauYosidaResolvent_nonempty hφ hτ hmτ ?_
+    by_cases hdom : ∃ z₀, φ z₀ ≠ ⊤
+    · obtain ⟨z₀, hz₀⟩ := hdom
+      exact h.moreauYosida_ne_bot (hφ.lowerSemicontinuousAt z₀) hz₀ (hbot z₀) hmτ x
+    · rw [moreauYosida_eq_top_of_forall_eq_top fun z _ ↦ not_ne_iff.1 fun hz ↦ hdom ⟨z, hz⟩]
+      exact top_ne_bot
 
 /-- **Existence and uniqueness of resolvent steps under curve convexity of the energy and of the
 squared distance** (Ambrosio–Gigli, Assumption 3.24). -/
@@ -778,23 +760,25 @@ theorem ConvexWithDistSq.existsUnique_mem_moreauYosidaResolvent {X : Type*} [Met
     (h.moreauYosida_ne_bot (hφ.lowerSemicontinuousAt x₀) hx₀top hx₀bot hmτ x) ⟨x₀, hx₀top⟩
 
 /-- **Existence of minimizing movement sequences under curve convexity of the energy and of the
-squared distance** (Ambrosio–Gigli, Assumption 3.24). -/
+squared distance** (Ambrosio–Gigli, Assumption 3.24). In a complete pseudometric space, if `φ` is
+lower semicontinuous and satisfies `ConvexWithDistSq m φ`, then for every `τ > 0` with
+`1 + m τ > 0` and every `x₀ : X` there exists a minimizing movement sequence starting at `x₀`. -/
 theorem ConvexWithDistSq.exists_forall_mem_moreauYosidaResolvent [CompleteSpace X]
-    (hφ : LowerSemicontinuous φ) (h : ConvexWithDistSq m φ) (hbot : ∀ y, φ y ≠ ⊥)
+    (hφ : LowerSemicontinuous φ) (h : ConvexWithDistSq m φ)
     (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x₀ : X) :
     ∃ U : ℕ → X, U 0 = x₀ ∧ ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n) := by
-  choose f hf using h.moreauYosidaResolvent_nonempty hφ hbot hτ hmτ
+  choose f hf using h.moreauYosidaResolvent_nonempty hφ hτ hmτ
   exact ⟨fun n ↦ f^[n] x₀, rfl, fun n ↦ by simpa only [Function.iterate_succ_apply'] using hf _⟩
 
 /-- **Existence of resolvent steps for geodesically convex energies on CAT(0) spaces.** In a
-complete CAT(0) pseudometric space, if `φ` is lower semicontinuous, `m`-geodesically convex, and
-never takes the value `⊥`, then for every time step `τ > 0` with `1 + m τ > 0` and every `x : X`,
-the resolvent `J_τ x` is nonempty. -/
+complete CAT(0) pseudometric space, if `φ` is lower semicontinuous and `m`-geodesically convex,
+then for every time step `τ > 0` with `1 + m τ > 0` and every `x : X`, the resolvent `J_τ x` is
+nonempty. -/
 theorem GeodesicallyConvex.moreauYosidaResolvent_nonempty [CompleteSpace X] [IsCATZeroSpace X]
-    (hφ : LowerSemicontinuous φ) (h : GeodesicallyConvex m φ) (hbot : ∀ z, φ z ≠ ⊥)
+    (hφ : LowerSemicontinuous φ) (h : GeodesicallyConvex m φ)
     (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
     (moreauYosidaResolvent φ τ x).Nonempty :=
-  h.convexWithDistSq.moreauYosidaResolvent_nonempty hφ hbot hτ hmτ x
+  h.convexWithDistSq.moreauYosidaResolvent_nonempty hφ hτ hmτ x
 
 /-- **Existence and uniqueness of the resolvent step for geodesically convex energies on CAT(0)
 metric spaces.** In a complete CAT(0) metric space, if `φ` is lower semicontinuous,
@@ -808,14 +792,14 @@ theorem GeodesicallyConvex.existsUnique_mem_moreauYosidaResolvent {X : Type*} [M
   h.convexWithDistSq.existsUnique_mem_moreauYosidaResolvent hφ hx₀top hx₀bot hτ hmτ x
 
 /-- **Existence of minimizing movement sequences for geodesically convex energies on CAT(0)
-spaces.** In a complete CAT(0) pseudometric space, if `φ` is lower semicontinuous, `m`-geodesically
-convex, and never takes the value `⊥`, then for every time step `τ > 0` with `1 + m τ > 0` and
-every `x : X`, there is a minimizing movement sequence starting at `x`. -/
+spaces.** In a complete CAT(0) pseudometric space, if `φ` is lower semicontinuous and
+`m`-geodesically convex, then for every time step `τ > 0` with `1 + m τ > 0` and every `x : X`,
+there is a minimizing movement sequence starting at `x`. -/
 theorem GeodesicallyConvex.exists_forall_mem_moreauYosidaResolvent [CompleteSpace X]
     [IsCATZeroSpace X] (hφ : LowerSemicontinuous φ) (h : GeodesicallyConvex m φ)
-    (hbot : ∀ z, φ z ≠ ⊥) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
     ∃ u : ℕ → X, u 0 = x ∧ ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n) :=
-  h.convexWithDistSq.exists_forall_mem_moreauYosidaResolvent hφ hbot hτ hmτ x
+  h.convexWithDistSq.exists_forall_mem_moreauYosidaResolvent hφ hτ hmτ x
 
 end Assumption324AndCATZero
 

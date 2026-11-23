@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.GradientFlow.EVI.MinimizingMovement
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Convex
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Complete
 
 /-!
@@ -69,10 +70,11 @@ private lemma exists_moreauYosida_ne_bot_and_penalizedConvex
     {μ₀ : WassersteinSpace 2 E} (hμ₀ : φ μ₀ ≠ ⊤) (hμ₀bot : φ μ₀ ≠ ⊥) :
     ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ μ₀ ≠ ⊥ ∧
       ∀ τ : ℝ≥0, 0 < τ → τ < τ₀ → PenalizedConvex lam τ φ := by
-  obtain ⟨τ₀, hτ₀, _, hm⟩ := exists_pos_abs_mul_le lam (by norm_num : (0 : ℝ) < 1 / 2) one_pos
-  have hpos : ∀ {δ : ℝ≥0}, δ ≤ τ₀ → 0 < 1 + lam * (δ : ℝ) := fun {δ} hδ ↦
-    one_add_mul_pos_of_abs_mul_le_half δ.property (hm hδ)
-  exact ⟨τ₀, hτ₀,
+  obtain ⟨τ₀, hτ₀, _, hm⟩ :=
+    exists_pos_abs_mul_le lam (by norm_num : (0 : ℝ) < 1 / 2) (one_pos : (0 : ℝ) < 1)
+  have hpos : ∀ {δ : ℝ≥0}, δ ≤ ⟨τ₀, hτ₀.le⟩ → 0 < 1 + lam * (δ : ℝ) := fun {δ} hδ ↦
+    one_add_mul_pos_of_abs_mul_le_half (δ := (δ : ℝ)) δ.property (hm δ.property hδ)
+  exact ⟨⟨τ₀, hτ₀.le⟩, hτ₀,
     (hconv μ₀).moreauYosida_ne_bot (hφ.lowerSemicontinuousAt μ₀) hμ₀ hμ₀bot (hpos le_rfl) μ₀,
     fun τ hτ hττ₀ ↦ penalizedConvex_of_generalizedGeodesicallyConvex hconv hτ (hpos hττ₀.le).le⟩
 

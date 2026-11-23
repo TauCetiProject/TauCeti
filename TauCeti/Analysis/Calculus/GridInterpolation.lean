@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Module
@@ -20,7 +21,7 @@ import TauCeti.Topology.Order.Interval
 
 For a step size `τ > 0`, the nonnegative half-line `[0, ∞)` is covered by the uniform grid cells
 `[n τ, (n + 1) τ)` (`n : ℕ`), with each `t ≥ 0` lying in the cell indexed by `⌊t / τ⌋₊`. Given a
-family of functions `g : ℕ → ℝ → α`, `TauCeti.piecewiseStep τ g` glues the pieces along this grid
+family of functions `g : ℕ → ℝ → α`, `TauCeti.gridPiecewise τ g` glues the pieces along this grid
 by `t ↦ g ⌊t / τ⌋₊ t`. When adjacent pieces agree at each grid point `(n + 1) τ`, the glued
 function agrees with `g n` on the closed cell `[n τ, (n + 1) τ]` and is continuous on `[0, ∞)`
 whenever each `g n` is continuous on its closed cell; independently of the matching condition, its
@@ -28,33 +29,43 @@ right-hand derivative at any `t ≥ 0` equals that of `g ⌊t / τ⌋₊`.
 
 Using the cell barycentric weight `TauCeti.stepWeight τ n t = ((n + 1) τ - t) / τ`, we build:
 
+* `TauCeti.stepWeightDiffPrimitive τ c`: the piecewise quadratic primitive of
+  `t ↦ stepWeight τ ⌊t / τ⌋₊ t • (c ⌊t / τ⌋₊ - c (⌊t / τ⌋₊ + 1))` starting at `0`.
 * `TauCeti.gridLinearInterpolant τ c`: the piecewise linear interpolant of a sequence `c : ℕ → E`
-  in a real module `E`, taking the value `c n` at `n τ`, continuous on `[0, ∞)`, and having
-  right-hand derivative `τ⁻¹ • (c (⌊t / τ⌋₊ + 1) - c ⌊t / τ⌋₊)` in a real normed space.
+  in a real module `E`, taking the value `c n` at `n τ`, continuous on `[0, ∞)`, reproducing
+  affine sequences (`TauCeti.gridLinearInterpolant_natCast_smul`,
+  `TauCeti.gridLinearInterpolant_affine`), monotone in the grid values
+  (`TauCeti.gridLinearInterpolant_le_gridLinearInterpolant`, `TauCeti.gridLinearInterpolant_mono`),
+  and having right-hand derivative `τ⁻¹ • (c (⌊t / τ⌋₊ + 1) - c ⌊t / τ⌋₊)` in a real normed space.
 * `TauCeti.gridBilinearInterpolant τ η a`: the piecewise bilinear interpolant of a doubly indexed
   family `a : ℕ → ℕ → E` on the product grid `(n τ, k η)`, taking the value `a n k` at
-  `(n τ, k η)`, jointly continuous on `[0, ∞) × [0, ∞)`, with explicit one-sided partial
-  derivatives and diagonal right-hand derivative along `t ↦ (t, t)`.
+  `(n τ, k η)`, jointly continuous on `[0, ∞) × [0, ∞)`, bounded by its four cell corners
+  (`TauCeti.le_gridBilinearInterpolant`, `TauCeti.gridBilinearInterpolant_le`), with explicit
+  one-sided partial derivatives and diagonal right-hand derivative along `t ↦ (t, t)`.
 
 ## Main definitions
 
-* `TauCeti.piecewiseStep`: glues a family `g : ℕ → ℝ → α` on the uniform grid `[n τ, (n + 1) τ)`.
+* `TauCeti.gridPiecewise`: glues a family `g : ℕ → ℝ → α` on the uniform grid `[n τ, (n + 1) τ)`.
 * `TauCeti.stepWeight`: the barycentric weight `((n + 1) τ - t) / τ` on `[n τ, (n + 1) τ]`.
+* `TauCeti.stepWeightDiffPrimitive`: piecewise quadratic primitive of weighted forward differences.
 * `TauCeti.gridLinearInterpolant`: piecewise linear interpolant of `c : ℕ → E` with step `τ`.
 * `TauCeti.gridBilinearInterpolant`: piecewise bilinear interpolant of `a : ℕ → ℕ → E` with steps
   `τ` and `η`.
 
 ## Main results
 
-* `TauCeti.continuousOn_piecewiseStep`, `TauCeti.hasDerivWithinAt_piecewiseStep_iff`: continuity
-  and right-hand derivative of `piecewiseStep` on `[0, ∞)`.
+* `TauCeti.continuousOn_gridPiecewise`, `TauCeti.hasDerivWithinAt_gridPiecewise_iff`: continuity
+  and right-hand derivative of `gridPiecewise` on `[0, ∞)`.
+* `TauCeti.continuousOn_stepWeightDiffPrimitive`,
+  `TauCeti.hasDerivWithinAt_stepWeightDiffPrimitive`: continuity, upper bound for antitone
+  sequences, and right-hand derivative of `stepWeightDiffPrimitive` on `[0, ∞)`.
 * `TauCeti.continuousOn_gridLinearInterpolant`, `TauCeti.hasDerivWithinAt_gridLinearInterpolant`:
   continuity and right-hand derivative of `gridLinearInterpolant` on `[0, ∞)`, alongside its
-  linearity lemmas (`gridLinearInterpolant_add`, `gridLinearInterpolant_smul`, etc.).
+  linearity, affine-reproduction, and order lemmas.
 * `TauCeti.continuousOn_gridBilinearInterpolant`,
   `TauCeti.hasDerivWithinAt_gridBilinearInterpolant_diag`: joint continuity on `[0, ∞) × [0, ∞)`
-  and diagonal right-hand derivative of `gridBilinearInterpolant`, alongside its linearity lemmas
-  (`gridBilinearInterpolant_add`, `gridBilinearInterpolant_smul`, etc.).
+  and diagonal right-hand derivative of `gridBilinearInterpolant`, alongside its linearity,
+  single-index-constant reduction, and corner-bound lemmas.
 -/
 
 public section
@@ -67,91 +78,91 @@ namespace TauCeti
 
 /-! ### Uniform-grid gluing -/
 
-section PiecewiseStep
+section GridPiecewise
 
 /-- Glues a family of functions `g n` along the uniform grid `[n τ, (n + 1) τ)` via the floor
 index `⌊t / τ⌋₊`. -/
-def piecewiseStep {α : Type*} (τ : ℝ) (g : ℕ → ℝ → α) (t : ℝ) : α :=
+def gridPiecewise {α : Type*} (τ : ℝ) (g : ℕ → ℝ → α) (t : ℝ) : α :=
   g ⌊t / τ⌋₊ t
 
-/-- Unconditional defining equation of `piecewiseStep`. -/
-theorem piecewiseStep_def {α : Type*} (τ : ℝ) (g : ℕ → ℝ → α) (t : ℝ) :
-    piecewiseStep τ g t = g ⌊t / τ⌋₊ t :=
+/-- Unconditional defining equation of `gridPiecewise`. -/
+theorem gridPiecewise_def {α : Type*} (τ : ℝ) (g : ℕ → ℝ → α) (t : ℝ) :
+    gridPiecewise τ g t = g ⌊t / τ⌋₊ t :=
   (rfl)
 
-/-- At `0`, `piecewiseStep τ g` evaluates the `0`-th piece at `0`. -/
+/-- At `0`, `gridPiecewise τ g` evaluates the `0`-th piece at `0`. -/
 @[simp]
-theorem piecewiseStep_zero {α : Type*} (τ : ℝ) (g : ℕ → ℝ → α) :
-    piecewiseStep τ g 0 = g 0 0 := by
-  simp [piecewiseStep_def]
+theorem gridPiecewise_apply_zero {α : Type*} (τ : ℝ) (g : ℕ → ℝ → α) :
+    gridPiecewise τ g 0 = g 0 0 := by
+  simp [gridPiecewise_def]
 
-/-- At the grid point `n * τ` (with `τ ≠ 0`), `piecewiseStep τ g` evaluates `g n` at `n * τ`. -/
+/-- At the grid point `n * τ` (with `τ ≠ 0`), `gridPiecewise τ g` evaluates `g n` at `n * τ`. -/
 @[simp]
-theorem piecewiseStep_natCast_mul {α : Type*} {τ : ℝ} (hτ : τ ≠ 0) (g : ℕ → ℝ → α) (n : ℕ) :
-    piecewiseStep τ g ((n : ℝ) * τ) = g n ((n : ℝ) * τ) := by
-  simp [piecewiseStep_def, mul_div_cancel_right₀ _ hτ]
+theorem gridPiecewise_natCast_mul {α : Type*} {τ : ℝ} (hτ : τ ≠ 0) (g : ℕ → ℝ → α) (n : ℕ) :
+    gridPiecewise τ g ((n : ℝ) * τ) = g n ((n : ℝ) * τ) := by
+  simp [gridPiecewise_def, mul_div_cancel_right₀ _ hτ]
 
 /-- Gluing a constant family `fun _ ↦ f` returns `f`. -/
 @[simp]
-theorem piecewiseStep_const {α : Type*} (τ : ℝ) (f : ℝ → α) (t : ℝ) :
-    piecewiseStep τ (fun _ ↦ f) t = f t :=
+theorem gridPiecewise_const {α : Type*} (τ : ℝ) (f : ℝ → α) (t : ℝ) :
+    gridPiecewise τ (fun _ ↦ f) t = f t :=
   (rfl)
 
-/-- On the half-open cell `[n τ, (n + 1) τ)`, `piecewiseStep τ g` agrees with `g n`. -/
-theorem piecewiseStep_eq_of_mem_Ico {α : Type*} {τ : ℝ} (hτ : 0 < τ) (g : ℕ → ℝ → α) (n : ℕ)
+/-- On the half-open cell `[n τ, (n + 1) τ)`, `gridPiecewise τ g` agrees with `g n`. -/
+theorem gridPiecewise_eq_of_mem_Ico {α : Type*} {τ : ℝ} (hτ : 0 < τ) (g : ℕ → ℝ → α) (n : ℕ)
     {t : ℝ} (ht : t ∈ Ico ((n : ℝ) * τ) (((n : ℝ) + 1) * τ)) :
-    piecewiseStep τ g t = g n t := by
+    gridPiecewise τ g t = g n t := by
   have ht0 : 0 ≤ t / τ := div_nonneg ((mul_nonneg n.cast_nonneg hτ.le).trans ht.1) hτ.le
   have hfl : ⌊t / τ⌋₊ = n :=
     (Nat.floor_eq_iff ht0).2 ⟨(le_div_iff₀ hτ).2 ht.1, (div_lt_iff₀ hτ).2 ht.2⟩
-  simp [piecewiseStep_def, hfl]
+  simp [gridPiecewise_def, hfl]
 
-/-- When `g n` and `g (n + 1)` agree at `(n + 1) τ`, `piecewiseStep τ g` agrees with `g n` on the
+/-- When `g n` and `g (n + 1)` agree at `(n + 1) τ`, `gridPiecewise τ g` agrees with `g n` on the
 entire closed interval `[n τ, (n + 1) τ]`. -/
-theorem piecewiseStep_eq_of_mem_Icc {α : Type*} {τ : ℝ} (hτ : 0 < τ) {g : ℕ → ℝ → α} {n : ℕ}
+theorem gridPiecewise_eq_of_mem_Icc {α : Type*} {τ : ℝ} (hτ : 0 < τ) {g : ℕ → ℝ → α} {n : ℕ}
     (hjoin : g n (((n : ℝ) + 1) * τ) = g (n + 1) (((n : ℝ) + 1) * τ))
     {t : ℝ} (ht : t ∈ Icc ((n : ℝ) * τ) (((n : ℝ) + 1) * τ)) :
-    piecewiseStep τ g t = g n t := by
+    gridPiecewise τ g t = g n t := by
   rcases ht.2.eq_or_lt with rfl | hlt
-  · have heq := piecewiseStep_natCast_mul hτ.ne' g (n + 1)
+  · have heq := gridPiecewise_natCast_mul hτ.ne' g (n + 1)
     push_cast at heq
     rw [heq, hjoin]
-  · exact piecewiseStep_eq_of_mem_Ico hτ g n ⟨ht.1, hlt⟩
+  · exact gridPiecewise_eq_of_mem_Ico hτ g n ⟨ht.1, hlt⟩
 
-/-- On a right neighborhood of `t ≥ 0`, `piecewiseStep τ g` coincides with the active piece
+/-- On a right neighborhood of `t ≥ 0`, `gridPiecewise τ g` coincides with the active piece
 `g ⌊t / τ⌋₊`. -/
-theorem piecewiseStep_eventuallyEq_nhdsWithin_Ici {α : Type*} {τ : ℝ} (hτ : 0 < τ)
+theorem gridPiecewise_eventuallyEq_nhdsWithin_Ici {α : Type*} {τ : ℝ} (hτ : 0 < τ)
     (g : ℕ → ℝ → α) {t : ℝ} (ht : 0 ≤ t) :
-    piecewiseStep τ g =ᶠ[𝓝[Ici t] t] g ⌊t / τ⌋₊ := by
+    gridPiecewise τ g =ᶠ[𝓝[Ici t] t] g ⌊t / τ⌋₊ := by
   have hmem : t ∈ Ico ((⌊t / τ⌋₊ : ℝ) * τ) (((⌊t / τ⌋₊ : ℝ) + 1) * τ) :=
     mem_Ico_floor_div_mul hτ ht
   filter_upwards [mem_nhdsWithin.2 ⟨Iio (((⌊t / τ⌋₊ : ℝ) + 1) * τ), isOpen_Iio, hmem.2,
     Subset.rfl⟩] with s hs
-  exact piecewiseStep_eq_of_mem_Ico hτ g ⌊t / τ⌋₊ ⟨hmem.1.trans hs.2, hs.1⟩
+  exact gridPiecewise_eq_of_mem_Ico hτ g ⌊t / τ⌋₊ ⟨hmem.1.trans hs.2, hs.1⟩
 
-/-- A `piecewiseStep` function whose pieces are continuous on `[n τ, (n + 1) τ]` and match at the
+/-- A `gridPiecewise` function whose pieces are continuous on `[n τ, (n + 1) τ]` and match at the
 grid points is continuous on `[0, ∞)`. -/
-theorem continuousOn_piecewiseStep {α : Type*} [TopologicalSpace α] {τ : ℝ} (hτ : 0 < τ)
+theorem continuousOn_gridPiecewise {α : Type*} [TopologicalSpace α] {τ : ℝ} (hτ : 0 < τ)
     {g : ℕ → ℝ → α}
     (hjoin : ∀ n : ℕ, g n (((n : ℝ) + 1) * τ) = g (n + 1) (((n : ℝ) + 1) * τ))
     (hcont : ∀ n : ℕ, ContinuousOn (g n) (Icc ((n : ℝ) * τ) (((n : ℝ) + 1) * τ))) :
-    ContinuousOn (piecewiseStep τ g) (Ici 0) := by
+    ContinuousOn (gridPiecewise τ g) (Ici 0) := by
   rw [← iUnion_Icc_natCast_mul hτ]
   exact (locallyFinite_Icc_natCast_mul hτ).continuousOn_iUnion (fun _ ↦ isClosed_Icc) fun n ↦
-    (hcont n).congr fun _ hs ↦ piecewiseStep_eq_of_mem_Icc hτ (hjoin n) hs
+    (hcont n).congr fun _ hs ↦ gridPiecewise_eq_of_mem_Icc hτ (hjoin n) hs
 
-/-- Right-hand derivative of `piecewiseStep τ g` at `t ≥ 0`. Because `piecewiseStep τ g` coincides
+/-- Right-hand derivative of `gridPiecewise τ g` at `t ≥ 0`. Because `gridPiecewise τ g` coincides
 with `g ⌊t / τ⌋₊` on a right neighborhood of `t`, its right-hand derivative at `t` agrees with that
 of `g ⌊t / τ⌋₊` without any matching condition at the grid points. -/
-theorem hasDerivWithinAt_piecewiseStep_iff {E : Type*} [AddCommGroup E] [Module ℝ E]
+theorem hasDerivWithinAt_gridPiecewise_iff {E : Type*} [AddCommGroup E] [Module ℝ E]
     [TopologicalSpace E] [ContinuousSMul ℝ E] {τ : ℝ} (hτ : 0 < τ) {g : ℕ → ℝ → E}
     {t : ℝ} (ht : 0 ≤ t) {f' : E} :
-    HasDerivWithinAt (piecewiseStep τ g) f' (Ici t) t ↔
+    HasDerivWithinAt (gridPiecewise τ g) f' (Ici t) t ↔
       HasDerivWithinAt (g ⌊t / τ⌋₊) f' (Ici t) t :=
-  (piecewiseStep_eventuallyEq_nhdsWithin_Ici hτ g ht).hasFDerivWithinAt_iff
-    (piecewiseStep_def τ g t)
+  (gridPiecewise_eventuallyEq_nhdsWithin_Ici hτ g ht).hasFDerivWithinAt_iff
+    (gridPiecewise_def τ g t)
 
-end PiecewiseStep
+end GridPiecewise
 
 /-! ### Barycentric weight on a grid cell -/
 
@@ -189,7 +200,7 @@ theorem stepWeight_succ_natCast_add_one_mul {τ : ℝ} (hτ : τ ≠ 0) (n : ℕ
 
 /-- At `0` (with `τ ≠ 0`), `stepWeight τ 0` equals `1`. -/
 @[simp]
-theorem stepWeight_zero {τ : ℝ} (hτ : τ ≠ 0) : stepWeight τ 0 0 = 1 := by
+theorem stepWeight_apply_zero {τ : ℝ} (hτ : τ ≠ 0) : stepWeight τ 0 0 = 1 := by
   simpa using stepWeight_natCast_mul hτ 0
 
 /-- Barycentric coordinate identity: `stepWeight τ n t` and `1 - stepWeight τ n t` express `t` as
@@ -225,6 +236,80 @@ theorem hasDerivAt_stepWeight (τ : ℝ) (n : ℕ) (t : ℝ) :
 
 end StepWeight
 
+/-! ### Piecewise quadratic primitive of weighted forward differences -/
+
+section StepWeightDiffPrimitive
+
+/-- Piecewise quadratic primitive of
+`t ↦ stepWeight τ ⌊t / τ⌋₊ t • (c ⌊t / τ⌋₊ - c (⌊t / τ⌋₊ + 1))` starting at `0`. -/
+def stepWeightDiffPrimitive {E : Type*} [AddCommGroup E] [Module ℝ E]
+    (τ : ℝ) (c : ℕ → E) : ℝ → E :=
+  gridPiecewise τ fun n t ↦
+    (τ / 2) • (c 0 - c (n + 1) + stepWeight τ n t ^ 2 • (c (n + 1) - c n))
+
+/-- Unconditional defining equation of `stepWeightDiffPrimitive`. -/
+theorem stepWeightDiffPrimitive_def {E : Type*} [AddCommGroup E] [Module ℝ E]
+    (τ : ℝ) (c : ℕ → E) (t : ℝ) :
+    stepWeightDiffPrimitive τ c t =
+      (τ / 2) • (c 0 - c (⌊t / τ⌋₊ + 1) +
+        stepWeight τ ⌊t / τ⌋₊ t ^ 2 • (c (⌊t / τ⌋₊ + 1) - c ⌊t / τ⌋₊)) :=
+  (rfl)
+
+/-- At `0` (with `τ ≠ 0`), `stepWeightDiffPrimitive τ c` vanishes. -/
+@[simp]
+theorem stepWeightDiffPrimitive_apply_zero {E : Type*} [AddCommGroup E] [Module ℝ E]
+    {τ : ℝ} (hτ : τ ≠ 0) (c : ℕ → E) : stepWeightDiffPrimitive τ c 0 = 0 := by
+  simp [stepWeightDiffPrimitive_def, hτ]
+
+/-- At the grid point `n * τ` (with `τ ≠ 0`), `stepWeightDiffPrimitive τ c` equals
+`(τ / 2) • (c 0 - c n)`. -/
+@[simp]
+theorem stepWeightDiffPrimitive_natCast_mul {E : Type*} [AddCommGroup E] [Module ℝ E]
+    {τ : ℝ} (hτ : τ ≠ 0) (c : ℕ → E) (n : ℕ) :
+    stepWeightDiffPrimitive τ c ((n : ℝ) * τ) = (τ / 2) • (c 0 - c n) := by
+  simp only [stepWeightDiffPrimitive, gridPiecewise_natCast_mul hτ, stepWeight_natCast_mul hτ,
+    one_pow, one_smul]
+  module
+
+/-- For an antitone sequence `c`, `stepWeightDiffPrimitive τ c t` is bounded above by
+`(τ / 2) • (c 0 - c (⌊t / τ⌋₊ + 1))` whenever `τ ≥ 0`. -/
+theorem stepWeightDiffPrimitive_le {E : Type*} [AddCommGroup E] [PartialOrder E]
+    [IsOrderedAddMonoid E] [Module ℝ E] [PosSMulMono ℝ E]
+    {τ t : ℝ} (hτ : 0 ≤ τ) {c : ℕ → E} (hc : Antitone c) :
+    stepWeightDiffPrimitive τ c t ≤ (τ / 2) • (c 0 - c (⌊t / τ⌋₊ + 1)) := by
+  rw [stepWeightDiffPrimitive_def]
+  refine smul_le_smul_of_nonneg_left ?_ (by positivity)
+  have hle : stepWeight τ ⌊t / τ⌋₊ t ^ 2 • (c (⌊t / τ⌋₊ + 1) - c ⌊t / τ⌋₊) ≤ 0 :=
+    smul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) (sub_nonpos.2 (hc (Nat.le_succ _)))
+  exact add_le_of_nonpos_right hle
+
+/-- For `τ > 0`, `stepWeightDiffPrimitive τ c` is continuous on `[0, ∞)`. -/
+theorem continuousOn_stepWeightDiffPrimitive {E : Type*} [AddCommGroup E] [Module ℝ E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E]
+    {τ : ℝ} (hτ : 0 < τ) (c : ℕ → E) :
+    ContinuousOn (stepWeightDiffPrimitive τ c) (Ici 0) :=
+  continuousOn_gridPiecewise hτ (fun _ ↦ by simp [hτ.ne']) fun _ ↦ by fun_prop
+
+/-- For `τ > 0` and `t ≥ 0`, `stepWeightDiffPrimitive τ c` has right-hand derivative
+`stepWeight τ ⌊t / τ⌋₊ t • (c ⌊t / τ⌋₊ - c (⌊t / τ⌋₊ + 1))` at `t`. -/
+theorem hasDerivWithinAt_stepWeightDiffPrimitive {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {τ : ℝ} (hτ : 0 < τ) (c : ℕ → E) {t : ℝ} (ht : 0 ≤ t) :
+    HasDerivWithinAt (stepWeightDiffPrimitive τ c)
+      (stepWeight τ ⌊t / τ⌋₊ t • (c ⌊t / τ⌋₊ - c (⌊t / τ⌋₊ + 1))) (Ici t) t := by
+  unfold stepWeightDiffPrimitive
+  rw [hasDerivWithinAt_gridPiecewise_iff hτ ht]
+  have hd := (((((hasDerivAt_stepWeight τ ⌊t / τ⌋₊ t).pow 2).smul_const
+    (c (⌊t / τ⌋₊ + 1) - c ⌊t / τ⌋₊)).const_add (c 0 - c (⌊t / τ⌋₊ + 1))).const_smul
+    (τ / 2))
+  refine (hd.congr_deriv ?_).hasDerivWithinAt
+  have : τ ≠ 0 := hτ.ne'
+  rw [← neg_sub (c ⌊t / τ⌋₊), smul_neg, ← neg_smul, smul_smul]
+  congr 1
+  simp only [Nat.add_one_sub_one, pow_one, Nat.cast_ofNat]
+  field_simp
+
+end StepWeightDiffPrimitive
+
 /-! ### Piecewise linear interpolation on a uniform grid -/
 
 section GridLinearInterpolant
@@ -236,7 +321,7 @@ variable {E : Type*} [AddCommMonoid E] [Module ℝ E]
 /-- Piecewise linear interpolant of a sequence `c : ℕ → E` on the uniform grid `n * τ`, affine on
 each cell `[n τ, (n + 1) τ]`. -/
 def gridLinearInterpolant (τ : ℝ) (c : ℕ → E) : ℝ → E :=
-  piecewiseStep τ fun n t ↦ stepWeight τ n t • c n + (1 - stepWeight τ n t) • c (n + 1)
+  gridPiecewise τ fun n t ↦ stepWeight τ n t • c n + (1 - stepWeight τ n t) • c (n + 1)
 
 /-- Unconditional defining equation of `gridLinearInterpolant`. -/
 theorem gridLinearInterpolant_def (τ : ℝ) (c : ℕ → E) (t : ℝ) :
@@ -249,7 +334,7 @@ theorem gridLinearInterpolant_def (τ : ℝ) (c : ℕ → E) (t : ℝ) :
 @[simp]
 theorem gridLinearInterpolant_natCast_mul {τ : ℝ} (hτ : τ ≠ 0) (c : ℕ → E) (n : ℕ) :
     gridLinearInterpolant τ c ((n : ℝ) * τ) = c n := by
-  simp [gridLinearInterpolant, piecewiseStep_natCast_mul hτ, stepWeight_natCast_mul hτ]
+  simp [gridLinearInterpolant, gridPiecewise_natCast_mul hτ, stepWeight_natCast_mul hτ]
 
 /-- At `0` (with `τ ≠ 0`), `gridLinearInterpolant τ c` takes the value `c 0`. -/
 @[simp]
@@ -290,15 +375,87 @@ combination of `c n` and `c (n + 1)` with weight `stepWeight τ n t`. -/
 theorem gridLinearInterpolant_eq_of_mem_Icc {τ : ℝ} (hτ : 0 < τ) (c : ℕ → E) (n : ℕ) {t : ℝ}
     (ht : t ∈ Icc ((n : ℝ) * τ) (((n : ℝ) + 1) * τ)) :
     gridLinearInterpolant τ c t = stepWeight τ n t • c n + (1 - stepWeight τ n t) • c (n + 1) :=
-  piecewiseStep_eq_of_mem_Icc hτ (by simp [hτ.ne']) ht
+  gridPiecewise_eq_of_mem_Icc hτ (by simp [hτ.ne']) ht
+
+/-- The piecewise linear interpolant of an affine sequence `n ↦ c₀ + (n : ℝ) • v` reproduces the
+affine function `t ↦ c₀ + (t / τ) • v` on all of `ℝ` whenever `τ ≠ 0`. -/
+theorem gridLinearInterpolant_natCast_smul {τ : ℝ} (hτ : τ ≠ 0) (c₀ v : E) (t : ℝ) :
+    gridLinearInterpolant τ (fun n ↦ c₀ + (n : ℝ) • v) t = c₀ + (t / τ) • v := by
+  simp only [gridLinearInterpolant_def, smul_add]
+  rw [add_add_add_comm, ← add_smul, add_sub_cancel, one_smul]
+  congr 1
+  simp only [smul_smul, ← add_smul]
+  congr 1
+  apply mul_right_cancel₀ hτ
+  have h := stepWeight_mul_add_one_sub_mul hτ ⌊t / τ⌋₊ t
+  push_cast
+  calc (stepWeight τ ⌊t / τ⌋₊ t * (⌊t / τ⌋₊ : ℝ) +
+        (1 - stepWeight τ ⌊t / τ⌋₊ t) * ((⌊t / τ⌋₊ : ℝ) + 1)) * τ
+      = stepWeight τ ⌊t / τ⌋₊ t * ((⌊t / τ⌋₊ : ℝ) * τ) +
+        (1 - stepWeight τ ⌊t / τ⌋₊ t) * (((⌊t / τ⌋₊ : ℝ) + 1) * τ) := by ring
+    _ = t := h
+    _ = t / τ * τ := (div_mul_cancel₀ t hτ).symm
+
+/-- The piecewise linear interpolant of a real affine sequence `n ↦ c + m * n` reproduces the
+affine function `t ↦ c + m * (t / τ)` on all of `ℝ` whenever `τ ≠ 0`. -/
+@[simp]
+theorem gridLinearInterpolant_affine {τ : ℝ} (hτ : τ ≠ 0) (c m t : ℝ) :
+    gridLinearInterpolant τ (fun n ↦ c + m * (n : ℝ)) t = c + m * (t / τ) := by
+  simpa only [smul_eq_mul, mul_comm m] using gridLinearInterpolant_natCast_smul hτ c m t
 
 /-- For `τ > 0`, `gridLinearInterpolant τ c` is continuous on `[0, ∞)`. -/
 theorem continuousOn_gridLinearInterpolant [TopologicalSpace E] [ContinuousAdd E]
     [ContinuousSMul ℝ E] {τ : ℝ} (hτ : 0 < τ) (c : ℕ → E) :
     ContinuousOn (gridLinearInterpolant τ c) (Ici 0) :=
-  continuousOn_piecewiseStep hτ (fun _ ↦ by simp [hτ.ne']) fun _ ↦ by fun_prop
+  continuousOn_gridPiecewise hτ (fun _ ↦ by simp [hτ.ne']) fun _ ↦ by fun_prop
 
 end Module
+
+section Order
+
+variable {E : Type*} [AddCommMonoid E] [PartialOrder E] [IsOrderedAddMonoid E]
+  [Module ℝ E] [PosSMulMono ℝ E]
+
+/-- At a nonnegative time `t`, `gridLinearInterpolant τ` is monotone in the two grid values at
+`⌊t / τ⌋₊` and `⌈t / τ⌉₊`; no other sequence values are used. -/
+theorem gridLinearInterpolant_le_gridLinearInterpolant {τ : ℝ} (hτ : 0 < τ) {f g : ℕ → E}
+    {t : ℝ} (ht : 0 ≤ t) (hfloor : f ⌊t / τ⌋₊ ≤ g ⌊t / τ⌋₊) (hceil : f ⌈t / τ⌉₊ ≤ g ⌈t / τ⌉₊) :
+    gridLinearInterpolant τ f t ≤ gridLinearInterpolant τ g t := by
+  rcases (Nat.floor_le_ceil (t / τ)).lt_or_eq with hlt | heq
+  · have hc : ⌈t / τ⌉₊ = ⌊t / τ⌋₊ + 1 := le_antisymm (Nat.ceil_le_floor_add_one _) hlt
+    rw [hc] at hceil
+    obtain ⟨hw0, hw1⟩ := stepWeight_floor_mem_Icc hτ ht
+    simp only [gridLinearInterpolant_def]
+    exact add_le_add (smul_le_smul_of_nonneg_left hfloor hw0)
+      (smul_le_smul_of_nonneg_left hceil (sub_nonneg.2 hw1))
+  · have hdiv : t / τ = ⌊t / τ⌋₊ :=
+      le_antisymm (heq ▸ Nat.le_ceil _) (Nat.floor_le (div_nonneg ht hτ.le))
+    have ht_eq : t = (⌊t / τ⌋₊ : ℝ) * τ := (div_eq_iff hτ.ne').1 hdiv
+    rw [ht_eq, gridLinearInterpolant_natCast_mul hτ.ne', gridLinearInterpolant_natCast_mul hτ.ne']
+    exact hfloor
+
+/-- At a nonnegative time `t`, `gridLinearInterpolant τ` is monotone in the interpolated
+sequence. -/
+theorem gridLinearInterpolant_mono {τ : ℝ} (hτ : 0 < τ) {f g : ℕ → E} (hfg : f ≤ g)
+    {t : ℝ} (ht : 0 ≤ t) :
+    gridLinearInterpolant τ f t ≤ gridLinearInterpolant τ g t :=
+  gridLinearInterpolant_le_gridLinearInterpolant hτ ht (hfg _) (hfg _)
+
+/-- If `m` lies below both grid values `c ⌊t / τ⌋₊` and `c ⌈t / τ⌉₊`, then `m` lies below
+`gridLinearInterpolant τ c t`. -/
+theorem le_gridLinearInterpolant {τ : ℝ} (hτ : 0 < τ) {c : ℕ → E} {t : ℝ} (ht : 0 ≤ t) {m : E}
+    (hfloor : m ≤ c ⌊t / τ⌋₊) (hceil : m ≤ c ⌈t / τ⌉₊) :
+    m ≤ gridLinearInterpolant τ c t := by
+  simpa using gridLinearInterpolant_le_gridLinearInterpolant hτ ht (f := fun _ ↦ m) hfloor hceil
+
+/-- If both grid values `c ⌊t / τ⌋₊` and `c ⌈t / τ⌉₊` are at most `M`, then so is
+`gridLinearInterpolant τ c t`. -/
+theorem gridLinearInterpolant_le {τ : ℝ} (hτ : 0 < τ) {c : ℕ → E} {t : ℝ} (ht : 0 ≤ t) {M : E}
+    (hfloor : c ⌊t / τ⌋₊ ≤ M) (hceil : c ⌈t / τ⌉₊ ≤ M) :
+    gridLinearInterpolant τ c t ≤ M := by
+  simpa using gridLinearInterpolant_le_gridLinearInterpolant hτ ht (g := fun _ ↦ M) hfloor hceil
+
+end Order
 
 section Mul
 
@@ -346,7 +503,7 @@ theorem hasDerivWithinAt_gridLinearInterpolant {E : Type*} [NormedAddCommGroup E
     HasDerivWithinAt (gridLinearInterpolant τ c)
       (τ⁻¹ • (c (⌊t / τ⌋₊ + 1) - c ⌊t / τ⌋₊)) (Ici t) t := by
   unfold gridLinearInterpolant
-  rw [hasDerivWithinAt_piecewiseStep_iff hτ ht]
+  rw [hasDerivWithinAt_gridPiecewise_iff hτ ht]
   have hd := ((hasDerivAt_stepWeight τ ⌊t / τ⌋₊ t).smul_const (c ⌊t / τ⌋₊)).add
     (((hasDerivAt_stepWeight τ ⌊t / τ⌋₊ t).const_sub 1).smul_const (c (⌊t / τ⌋₊ + 1)))
   exact (hd.congr_deriv (by simp only [neg_neg]; module)).hasDerivWithinAt
@@ -440,6 +597,20 @@ theorem gridBilinearInterpolant_const (τ η : ℝ) (x : E) (s t : ℝ) :
     gridBilinearInterpolant τ η (fun _ _ ↦ x) s t = x := by
   simp [gridBilinearInterpolant_def]
 
+/-- When a doubly indexed family is independent of its first index, `gridBilinearInterpolant`
+reduces to `gridLinearInterpolant` in the second coordinate. -/
+@[simp]
+theorem gridBilinearInterpolant_const_left (τ η : ℝ) (c : ℕ → E) (s t : ℝ) :
+    gridBilinearInterpolant τ η (fun _ k ↦ c k) s t = gridLinearInterpolant η c t := by
+  simp [gridBilinearInterpolant_def]
+
+/-- When a doubly indexed family is independent of its second index, `gridBilinearInterpolant`
+reduces to `gridLinearInterpolant` in the first coordinate. -/
+@[simp]
+theorem gridBilinearInterpolant_const_right (τ η : ℝ) (c : ℕ → E) (s t : ℝ) :
+    gridBilinearInterpolant τ η (fun n _ ↦ c n) s t = gridLinearInterpolant τ c s := by
+  simp [gridBilinearInterpolant_def]
+
 /-- `gridBilinearInterpolant τ η` is additive in the interpolated family. -/
 @[simp]
 theorem gridBilinearInterpolant_add (τ η : ℝ) (a b : ℕ → ℕ → E) (s t : ℝ) :
@@ -504,6 +675,47 @@ theorem continuousOn_gridBilinearInterpolant [TopologicalSpace E] [ContinuousAdd
     fun _ hp ↦ gridBilinearInterpolant_eq_of_mem_Icc hτ hη a hp.1 hp.2
 
 end Module
+
+section Order
+
+variable {E : Type*} [AddCommMonoid E] [PartialOrder E] [IsOrderedAddMonoid E]
+  [Module ℝ E] [PosSMulMono ℝ E]
+
+/-- If `m` lies below all four corners of the active cell `[⌊s / τ⌋₊, ⌊s / τ⌋₊ + 1] ×
+[⌊t / η⌋₊, ⌊t / η⌋₊ + 1]` at nonnegative times `s, t`, then
+`m ≤ gridBilinearInterpolant τ η a s t`. -/
+theorem le_gridBilinearInterpolant {τ η : ℝ} (hτ : 0 < τ) (hη : 0 < η) {a : ℕ → ℕ → E}
+    {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) {m : E}
+    (h00 : m ≤ a ⌊s / τ⌋₊ ⌊t / η⌋₊) (h10 : m ≤ a (⌊s / τ⌋₊ + 1) ⌊t / η⌋₊)
+    (h01 : m ≤ a ⌊s / τ⌋₊ (⌊t / η⌋₊ + 1)) (h11 : m ≤ a (⌊s / τ⌋₊ + 1) (⌊t / η⌋₊ + 1)) :
+    m ≤ gridBilinearInterpolant τ η a s t := by
+  have hrow {k : ℕ} (hk0 : m ≤ a ⌊s / τ⌋₊ k) (hk1 : m ≤ a (⌊s / τ⌋₊ + 1) k) :
+      m ≤ gridLinearInterpolant τ (a · k) s :=
+    le_gridLinearInterpolant hτ hs hk0
+      ((Nat.floor_le_ceil (s / τ)).eq_or_lt.elim (fun h ↦ h ▸ hk0) fun h ↦
+        (le_antisymm (Nat.ceil_le_floor_add_one _) h) ▸ hk1)
+  refine le_gridLinearInterpolant hη ht (hrow h00 h10) ?_
+  exact (Nat.floor_le_ceil (t / η)).eq_or_lt.elim (fun h ↦ h ▸ hrow h00 h10) fun h ↦
+    (le_antisymm (Nat.ceil_le_floor_add_one _) h) ▸ hrow h01 h11
+
+/-- If all four corners of the active cell `[⌊s / τ⌋₊, ⌊s / τ⌋₊ + 1] ×
+[⌊t / η⌋₊, ⌊t / η⌋₊ + 1]` at nonnegative times `s, t` are at most `M`, then so is
+`gridBilinearInterpolant τ η a s t`. -/
+theorem gridBilinearInterpolant_le {τ η : ℝ} (hτ : 0 < τ) (hη : 0 < η) {a : ℕ → ℕ → E}
+    {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) {M : E}
+    (h00 : a ⌊s / τ⌋₊ ⌊t / η⌋₊ ≤ M) (h10 : a (⌊s / τ⌋₊ + 1) ⌊t / η⌋₊ ≤ M)
+    (h01 : a ⌊s / τ⌋₊ (⌊t / η⌋₊ + 1) ≤ M) (h11 : a (⌊s / τ⌋₊ + 1) (⌊t / η⌋₊ + 1) ≤ M) :
+    gridBilinearInterpolant τ η a s t ≤ M := by
+  have hrow {k : ℕ} (hk0 : a ⌊s / τ⌋₊ k ≤ M) (hk1 : a (⌊s / τ⌋₊ + 1) k ≤ M) :
+      gridLinearInterpolant τ (a · k) s ≤ M :=
+    gridLinearInterpolant_le hτ hs hk0
+      ((Nat.floor_le_ceil (s / τ)).eq_or_lt.elim (fun h ↦ h ▸ hk0) fun h ↦
+        (le_antisymm (Nat.ceil_le_floor_add_one _) h) ▸ hk1)
+  refine gridLinearInterpolant_le hη ht (hrow h00 h10) ?_
+  exact (Nat.floor_le_ceil (t / η)).eq_or_lt.elim (fun h ↦ h ▸ hrow h00 h10) fun h ↦
+    (le_antisymm (Nat.ceil_le_floor_add_one _) h) ▸ hrow h01 h11
+
+end Order
 
 section Mul
 
@@ -585,11 +797,11 @@ theorem hasDerivWithinAt_gridBilinearInterpolant_diag {τ η : ℝ} (hτ : 0 < �
           (a (⌊t / τ⌋₊ + 1) (⌊t / η⌋₊ + 1) - a (⌊t / τ⌋₊ + 1) ⌊t / η⌋₊))
       (Ici t) t := by
   have hdiag : (fun u ↦ gridBilinearInterpolant τ η a u u) =
-      piecewiseStep η fun k u ↦ stepWeight η k u • gridLinearInterpolant τ (a · k) u +
+      gridPiecewise η fun k u ↦ stepWeight η k u • gridLinearInterpolant τ (a · k) u +
         (1 - stepWeight η k u) • gridLinearInterpolant τ (a · (k + 1)) u := by
     funext u
-    rw [gridBilinearInterpolant_def, gridLinearInterpolant, piecewiseStep_def, piecewiseStep_def]
-  rw [hdiag, hasDerivWithinAt_piecewiseStep_iff hη ht]
+    rw [gridBilinearInterpolant_def, gridLinearInterpolant, gridPiecewise_def, gridPiecewise_def]
+  rw [hdiag, hasDerivWithinAt_gridPiecewise_iff hη ht]
   have hd1 := ((hasDerivAt_stepWeight η ⌊t / η⌋₊ t).hasDerivWithinAt).smul
     (hasDerivWithinAt_gridLinearInterpolant hτ (a · ⌊t / η⌋₊) ht)
   have hd2 := (((hasDerivAt_stepWeight η ⌊t / η⌋₊ t).const_sub 1).hasDerivWithinAt).smul
