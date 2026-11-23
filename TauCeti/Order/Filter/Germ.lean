@@ -40,6 +40,13 @@ theorem compTendstoRingHom_apply {α β R : Type*} [Semiring R]
     {l : Filter α} {l' : Filter β} (f : α → β) (hf : Tendsto f l l') (s : Germ l' R) :
     compTendstoRingHom (R := R) f hf s = s.compTendsto f hf := (rfl)
 
+/-- Congruence of germ composition along equal germs tending to the target filter. -/
+theorem compTendsto'_congr {α β γ : Type*} {l : Filter α} {l' : Filter β}
+    (s : Germ l' γ) {g₁ g₂ : Germ l β} (hg : g₁ = g₂) (hg₁ : g₁.Tendsto l')
+    (hg₂ : g₂.Tendsto l') :
+    s.compTendsto' g₁ hg₁ = s.compTendsto' g₂ hg₂ := by
+  subst hg; rfl
+
 variable {α R A : Type*} {l : Filter α}
   [CommSemiring R] [Semiring A] [Algebra R A]
 
