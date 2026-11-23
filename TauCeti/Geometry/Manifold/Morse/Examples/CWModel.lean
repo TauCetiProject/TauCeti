@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Morse.CWModel.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Topology.CWComplex.Classical.ComplexProjective
 import TauCeti.Analysis.Calculus.Morse.NormSq
+import TauCeti.Data.Set.Card
 import TauCeti.Topology.Algebra.Polynomial.Basic
 
 /-!
@@ -28,7 +29,8 @@ points, and the empty manifold.
   with one `0`-cell, one `n`-cell and no other cells
   (`TauCeti.exists_cwComplex_homotopyEquiv_sphere`).
 * **Complex projective space.** The moment function `[z] ↦ (∑ⱼ j |zⱼ|²) / ∑ⱼ |zⱼ|²` on `ℂℙⁿ` has
-  one critical point of each even index `0, 2, …, 2n` and no others, so its CW model has one cell
+  one critical point of each even index `0, 2, …, 2n` and no others
+  (`TauCeti.criticalCount_projectiveMomentFunction_complex`), so its CW model has one cell
   in each even dimension up to `2n` and no others
   (`TauCeti.exists_finite_cwComplex_homotopyEquiv_projectivization`). In every dimension it
   therefore has as many cells as the standard CW structure on `ℂℙⁿ`
@@ -133,15 +135,14 @@ theorem exists_cwComplex_homotopyEquiv_projectivization_complex (n : ℕ) :
   have := (ComplexProjectiveSpace.finite_cwComplex (n := n)).finite_cell m
   -- Both cell types are finite, with one element in each even dimension up to `2n`.
   refine Finite.card_eq.1 ?_
-  rw [ComplexProjectiveSpace.nat_card_cell_cwComplex, Nat.card_congr c,
-    Complex.finrank_real_complex]
-  split_ifs with h
-  · obtain ⟨⟨i, rfl⟩, hi⟩ := h
-    exact Nat.card_eq_one_iff_exists.2 ⟨⟨⟨i, by omega⟩, by simp; omega⟩,
-      fun k ↦ Subtype.ext (Fin.ext (show (k.val : ℕ) = i by have := k.property; omega))⟩
-  · have : IsEmpty {k : Fin (n + 1) // 2 * (k : ℕ) = m} :=
-      ⟨fun k ↦ h ⟨⟨k, by omega⟩, by have := k.val.isLt; omega⟩⟩
-    exact Nat.card_of_isEmpty
+  have hw : StrictMono fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ) :=
+    Nat.strictMono_cast.comp Fin.val_strictMono
+  rw [ComplexProjectiveSpace.nat_card_cell_cwComplex, Nat.card_congr (c.trans
+      ((Equiv.subtypeEquivRight fun k ↦ by rw [ncard_setOf_lt_of_strictMono hw]).trans
+        (projectiveMomentFunctionCriticalPointsEquiv hw.injective m))),
+    natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount,
+    criticalCount_projectiveMomentFunction_complex hw.injective]
+  split_ifs <;> simp
 
 /-! ### The real line -/
 

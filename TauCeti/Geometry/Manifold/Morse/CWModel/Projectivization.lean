@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.CWModel.Lacunary
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Data.Set.Card
 
 /-!
 # The Morse CW model of projective space
@@ -73,25 +74,6 @@ section CWModel
 
 variable {𝕜 : Type u} [RCLike 𝕜] {n : ℕ}
 
-/-- The critical points of index `m` of a moment function with strictly increasing weights are the
-coordinate points `[eₖ]` with `dim_ℝ 𝕜 * k = m`. -/
-private def criticalPointsIndexEquiv {w : Fin (n + 1) → ℝ} (hw : StrictMono w) (m : ℕ) :
-    {k : Fin (n + 1) // Module.finrank ℝ 𝕜 * k = m} ≃
-      ↥{x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) |
-        manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) x = m} :=
-  Equiv.ofBijective
-    (fun k ↦ ⟨mk 𝕜 (Pi.single k.val 1) (by simp),
-      mk_single_mem_criticalPoints_projectiveMomentFunction w k.val,
-      (manifoldMorseIndex_projectiveMomentFunction_of_strictMono hw k.val).trans k.property⟩)
-    ⟨fun _ _ h ↦ Subtype.ext (mk_single_injective (congrArg Subtype.val h)), fun x ↦ by
-      obtain ⟨k, hk⟩ : x.val ∈ range fun k ↦ mk 𝕜 (Pi.single k 1 : Fin (n + 1) → 𝕜) (by simp) := by
-        rw [← criticalPoints_projectiveMomentFunction hw.injective]
-        exact x.property.1
-      replace hk : mk 𝕜 (Pi.single k 1 : Fin (n + 1) → 𝕜) (by simp) = x.val := hk
-      refine ⟨⟨k, ?_⟩, Subtype.ext hk⟩
-      rw [← manifoldMorseIndex_projectiveMomentFunction_of_strictMono hw k, hk]
-      exact x.property.2⟩
-
 variable (𝕜 n) in
 /-- **The Morse CW model of projective space.** The projective space `ℙ 𝕜 (Fin (n + 1) → 𝕜)`,
 for `𝕜 = ℝ` or `ℂ`, is homotopy equivalent to a finite CW complex whose `m`-cells correspond to the
@@ -107,8 +89,9 @@ theorem exists_finite_cwComplex_homotopyEquiv_projectivization :
     Nat.strictMono_cast.comp Fin.val_strictMono
   obtain ⟨W, _, _, _, hfin, he, hcell⟩ :=
     (isMorse_projectiveMomentFunction (𝕜 := 𝕜) hw.injective).exists_finite_cwComplex_homotopyEquiv
-  exact ⟨W, _, ‹_›, ‹_›, hfin, he,
-    fun m ↦ (hcell m).map fun e ↦ e.trans (criticalPointsIndexEquiv hw m).symm⟩
+  exact ⟨W, _, ‹_›, ‹_›, hfin, he, fun m ↦ (hcell m).map fun e ↦
+    e.trans ((projectiveMomentFunctionCriticalPointsEquiv hw.injective m).symm.trans
+      (Equiv.subtypeEquivRight fun k ↦ by rw [ncard_setOf_lt_of_strictMono hw]))⟩
 
 end CWModel
 
@@ -133,11 +116,11 @@ theorem nonempty_singularHomology_projectivization_complex_iso_sigma (m : ℕ) :
       -- All critical points have even index, so no two indices differ by one.
       rw [criticalPoints_projectiveMomentFunction hw.injective]
       rintro _ ⟨k, rfl⟩ _ ⟨l, rfl⟩
-      rw [manifoldMorseIndex_projectiveMomentFunction_of_strictMono hw,
-        manifoldMorseIndex_projectiveMomentFunction_of_strictMono hw, Complex.finrank_real_complex]
+      simp only [manifoldMorseIndex_projectiveMomentFunction_natCast_complex]
       omega) R m
-  let c := (criticalPointsIndexEquiv (𝕜 := ℂ) hw m).symm.trans
-    (Equiv.subtypeEquivRight fun k ↦ by rw [Complex.finrank_real_complex])
+  let c := (projectiveMomentFunctionCriticalPointsEquiv (𝕜 := ℂ) hw.injective m).symm.trans
+    (Equiv.subtypeEquivRight fun k ↦ by
+      rw [ncard_setOf_lt_of_strictMono hw, Complex.finrank_real_complex])
   exact ⟨e ≪≫ Sigma.whiskerEquiv c fun _ ↦ Iso.refl R⟩
 
 end Complex
