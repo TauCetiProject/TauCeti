@@ -8,12 +8,16 @@ module
 public import Mathlib.Topology.Separation.Hausdorff
 
 /-!
-# Closedness of indexed equalizers into Hausdorff spaces
+# Closed equalizers and relatively compact images in Hausdorff spaces
 
 Mathlib's `isClosed_eq` shows that the locus `{ x : X | f x = g x }` where two continuous maps into
 a Hausdorff space agree is closed. Intersecting over one or two arbitrary index types (possibly
 propositions, for bounded quantifiers) shows that the simultaneous agreement locus of a singly or
 doubly indexed family of pairs of continuous maps into Hausdorff spaces is closed.
+
+Mathlib's `image_closure_of_isCompact` identifies the image of a compact closure with the closure
+of the image; consequently a map into a Hausdorff space that is continuous on the closure of a
+relatively compact set sends it to a relatively compact set (`IsCompact.closure_image`).
 
 ## Main results
 
@@ -21,6 +25,8 @@ doubly indexed family of pairs of continuous maps into Hausdorff spaces is close
   into Hausdorff spaces.
 * `TauCeti.isClosed_forall₂_eq`: `{ x : X | ∀ i j, f i j x = g i j x }` is closed for doubly
   indexed continuous maps into Hausdorff spaces.
+* `IsCompact.closure_image`: a map into a Hausdorff space, continuous on the closure of `s`, sends
+  a set `s` with compact closure to a set with compact closure.
 -/
 
 public section
@@ -47,3 +53,11 @@ theorem isClosed_forall₂_eq {X : Type*} [TopologicalSpace X] {ι : Sort*} {κ 
   exact isClosed_iInter fun i => isClosed_forall_eq (hf i) (hg i)
 
 end TauCeti
+
+/-- A map into a Hausdorff space that is continuous on the closure of `s` sends a set `s` with
+compact closure to a set with compact closure. -/
+theorem IsCompact.closure_image {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    [T2Space Y] {s : Set X} (hs : IsCompact (closure s)) {f : X → Y}
+    (hf : ContinuousOn f (closure s)) : IsCompact (closure (f '' s)) := by
+  rw [← image_closure_of_isCompact hs hf]
+  exact hs.image_of_continuousOn hf
