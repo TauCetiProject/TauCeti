@@ -35,15 +35,17 @@ Riemann sums of a continuous map form a Cauchy net, whose limit in the complete 
 integral.
 
 Every identity between Riemann sums passes to the limit. This gives linearity, commutation with
-continuous linear maps into any Hausdorff topological module, the bound
-`p (∫ f) ≤ ∫ x, p (f x) ∂μ` for every continuous seminorm `p`, and the value of a constant map. When
-`E` is a Banach space the integral is Mathlib's Bochner integral, since the Bochner integral is
-also the limit of the Riemann sums. Continuous linear functionals separate the points of a
-Hausdorff locally convex space, so the integral is characterised as the unique vector `v` with
-`ℓ v = ∫ x, ℓ (f x) ∂μ` for every continuous linear functional `ℓ`. This transfers change of
-variables along measure-preserving maps from the scalar case, and with it invariance of the
-integral against an invariant measure under translation and inversion, for instance on a compact
-group.
+continuous linear maps into any Hausdorff topological module, the bound `p (∫ f) ≤ ∫ x, p (f x) ∂μ`
+for every continuous seminorm `p`, and the value of a constant map. Likewise, when the values of `f`
+lie in a convex neighbourhood `C` of `0` inside a closed set `D`, the Riemann sums scaled by
+`(μ univ + 1)⁻¹` lie in `C`, so the scaled integral lies in `D`; hence the integral is continuous
+for uniform convergence. When `E` is a Banach space the integral is Mathlib's Bochner integral,
+since the Bochner integral is also the limit of the Riemann sums. Continuous linear functionals
+separate the points of a Hausdorff locally convex space, so the integral is characterised as the
+unique vector `v` with `ℓ v = ∫ x, ℓ (f x) ∂μ` for every continuous linear functional `ℓ`. This
+transfers change of variables along measure-preserving maps from the scalar case, and with it
+invariance of the integral against an invariant measure under translation and inversion, for
+instance on a compact group.
 
 ## Main definitions
 
@@ -54,6 +56,8 @@ group.
 
 * `ContinuousMap.compactIntegral_eq_integral`: in a Banach space, the integral is the Bochner
   integral.
+* `ContinuousMap.continuous_compactIntegral`: the integral is continuous for the topology of
+  uniform convergence.
 * `ContinuousLinearMap.compactIntegral_comp_comm`: continuous linear maps commute with the
   integral.
 * `ContinuousMap.eq_compactIntegral_iff`: the integral is the unique vector whose image under every
@@ -131,9 +135,8 @@ private theorem exists_isFine [CompactSpace K] [OpensMeasurableSpace K] {U : K �
   let O : Fin t.card → Set K := fun i ↦ interior (U (tag i))
   refine ⟨⟨t.card, disjointed O, tag, fun i ↦ ?_, disjoint_disjointed O, ?_⟩,
     fun i ↦ (disjointed_subset O i).trans interior_subset⟩
-  · rw [disjointed_eq_inter_compl]
-    exact isOpen_interior.measurableSet.inter
-      (.iInter fun j ↦ .iInter fun _ ↦ isOpen_interior.measurableSet.compl)
+  · exact disjointedRec (p := MeasurableSet) (fun _ j ht ↦ ht.diff isOpen_interior.measurableSet)
+      isOpen_interior.measurableSet
   · rw [iUnion_disjointed]
     refine eq_univ_of_forall fun z ↦ ?_
     obtain ⟨x, hx, hz⟩ := mem_iUnion₂.1 (ht (mem_univ z))
@@ -243,7 +246,7 @@ variable [CompactSpace K] [OpensMeasurableSpace K] {μ : Measure K}
 private theorem compactIntegral_eq_of_tendsto [T2Space E] {f : C(K, E)} {v : E}
     (h : Tendsto (riemannSum μ f) (fineFilter K) (𝓝 v)) : f.compactIntegral μ = v :=
   have := fineFilter_neBot (K := K)
-  tendsto_nhds_unique (tendsto_nhds_limUnder ⟨v, h⟩) h
+  h.limUnder_eq
 
 variable [IsFiniteMeasure μ]
 
@@ -318,14 +321,12 @@ private theorem cauchy_map_riemannSum (f : C(K, E)) :
   have hW' : ((μ.real univ + 1) • ·) ⁻¹' W ∈ 𝓝 (0 : E) :=
     (continuous_const_smul (μ.real univ + 1)).tendsto' 0 0 (smul_zero _) hW
   obtain ⟨C, ⟨hC0, hCc⟩, hCW⟩ := (LocallyConvexSpace.convex_basis_zero ℝ E).mem_iff.1 hW'
-  have hsub : Tendsto (fun p : E × E ↦ p.1 - p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0) := by
-    simpa [nhds_prod_eq] using (continuous_sub (G := E)).tendsto ((0 : E), (0 : E))
-  obtain ⟨V, hV, hVC⟩ := mem_prod_self_iff.1 (hsub hC0)
+  obtain ⟨V, hV, hVC⟩ := exists_nhds_half_neg hC0
   have hU := fun x ↦ tendsto_sub_nhds_zero_iff.2 (f.continuousAt x) hV
   refine mem_map.2 <| mem_of_superset
     (prod_mem_prod (isFine_mem_fineFilter hU) (isFine_mem_fineFilter hU)) fun PQ hPQ ↦ ?_
-  have hd := hCW <| riemannSum_sub_riemannSum_mem (μ := μ) hCc (mem_of_mem_nhds hC0)
-    (fun a ha b hb ↦ hVC (mk_mem_prod ha hb)) hPQ.1 hPQ.2
+  have hd := hCW <| riemannSum_sub_riemannSum_mem (μ := μ) hCc (mem_of_mem_nhds hC0) hVC hPQ.1
+    hPQ.2
   rwa [mem_preimage, smul_inv_smul₀ (by positivity)] at hd
 
 private theorem tendsto_riemannSum (f : C(K, E)) :
@@ -404,6 +405,33 @@ theorem compactIntegral_neg (f : C(K, E)) : (-f).compactIntegral μ = -f.compact
 theorem compactIntegral_sub (f g : C(K, E)) :
     (f - g).compactIntegral μ = f.compactIntegral μ - g.compactIntegral μ :=
   (compactIntegralₗ μ ℝ).map_sub f g
+
+/-- The integral is continuous on `C(K, E)` with its compact-open topology, the topology of uniform
+convergence on the compact space `K`. If every value of `f` lies in a convex neighbourhood `C` of
+`0` contained in a closed set `D`, every Riemann sum lies in `(μ univ + 1) • C`, so the integral
+lies in `(μ univ + 1) • D`. -/
+theorem continuous_compactIntegral : Continuous fun f : C(K, E) ↦ f.compactIntegral μ := by
+  refine continuous_of_continuousAt_zero (compactIntegralₗ μ ℝ) fun W hW ↦ ?_
+  rw [map_zero] at hW
+  have hW' : ((μ.real univ + 1) • ·) ⁻¹' W ∈ 𝓝 (0 : E) :=
+    (continuous_const_smul (μ.real univ + 1)).tendsto' 0 0 (smul_zero _) hW
+  obtain ⟨D, hD, hDc, hDW⟩ := exists_mem_nhds_isClosed_subset hW'
+  obtain ⟨C, ⟨hC0, hCc⟩, hCD⟩ := (LocallyConvexSpace.convex_basis_zero ℝ E).mem_iff.1 hD
+  have := fineFilter_neBot (K := K)
+  refine mem_map.2 ?_
+  filter_upwards [eventually_mapsTo (X := K) (f := 0) isCompact_univ isOpen_interior
+    fun _ _ ↦ mem_interior_iff_mem_nhds.2 hC0] with f hf
+  have hm : 0 < μ.real univ + 1 := by positivity
+  have hfD : (μ.real univ + 1)⁻¹ • f.compactIntegral μ ∈ D := by
+    refine hDc.mem_of_tendsto ((tendsto_riemannSum f).const_smul _) (.of_forall fun P ↦ hCD ?_)
+    rw [riemannSum, Finset.smul_sum]
+    simp_rw [smul_smul]
+    refine hCc.sum_mem_of_zero_mem (mem_of_mem_nhds hC0) (fun _ _ ↦ by positivity) ?_
+      fun i _ ↦ interior_subset (hf (mem_univ _))
+    rw [← Finset.mul_sum, sum_measureReal_piece, inv_mul_le_one₀ hm]
+    linarith
+  have hd := hDW hfD
+  rwa [mem_preimage, smul_inv_smul₀ hm.ne'] at hd
 
 /-- The integral is the unique vector whose value under every continuous linear functional `ℓ` is
 the integral of `ℓ ∘ f`. Continuous linear functionals separate the points of a Hausdorff locally
