@@ -214,7 +214,7 @@ private theorem norm_timeDeriv_eq (u : EvolutionSpace ι a b) :
     ‖timeDeriv u‖ = ‖WeakDerivStep.weakFDeriv (mu := volume)
       (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (evolutionBaseL ι a b) u‖ := by
   rw [timeDeriv, timeDerivL, ContinuousLinearMap.comp_apply, WeakDerivStep.weakFDerivL_apply]
-  exact ContinuousLinearMap.norm_apply_one_compLpL_apply _
+  rw [ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.norm_apply_one_compLp]
 
 /-- Convergence in the energy space is equivalent to convergence of the value and the
 dual-valued weak time derivative in their respective `L²` spaces. -/
