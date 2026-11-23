@@ -43,10 +43,12 @@ axis through two opposite face centres a double transposition, a third-turn abou
 * `TauCeti.cubeRotationGroup`: the determinant-one signed permutation matrices, a subgroup of
   `SL(3, ℤ)`, acting on the vertices `Fin 3 → ℤˣ`.
 * `TauCeti.cubeEdgeSet`: the twelve edges, as unordered pairs of vertices at Hamming distance one,
-  with the induced action of `TauCeti.cubeRotationGroup`.
+  with the induced action of `TauCeti.cubeRotationGroup` and the antipodal map.
 * `TauCeti.cubeBodyDiagonal`, `TauCeti.cubeBodyDiagonalIndex`: the labelled diagonals and the label
   of the diagonal through a vertex.
 * `TauCeti.cubeBodyDiagonalHom`: the permutation of the body diagonals induced by a rotation.
+* `TauCeti.cubeEdgeOrientation`: the orientation `det(v, w, d) · ⟨v - w, d⟩` of an edge relative to
+  a body diagonal.
 * `TauCeti.cubeRotationEquiv`: the isomorphism of the rotation group with `S₄`.
 * `TauCeti.cubeEdgeHalfTurn`, `TauCeti.cubeFaceHalfTurn`, `TauCeti.cubeDiagonalThirdTurn`,
   `TauCeti.cubeFaceQuarterTurn`: the four rotations above.
@@ -55,8 +57,13 @@ axis through two opposite face centres a double transposition, a third-turn abou
 
 * `TauCeti.cubeBodyDiagonalHom_injective`, `TauCeti.cubeBodyDiagonalHom_surjective`: the induced
   permutation of the diagonals is an isomorphism.
+* `TauCeti.cubeEdgeOrientation_smul`, `TauCeti.cubeEdgeOrientation_neg`: the orientation is
+  invariant under the rotations and changes sign on the antipodal edge.
 * `TauCeti.cubeBodyDiagonalHom_cubeEdgeHalfTurn` and its three companions: the permutations of the
   diagonals induced by the four named rotations.
+* `TauCeti.prod_cubeRotationGroup_smul`: a rotation multiplies the product of the coordinates of
+  each vertex by the sign of the permutation of the diagonals it induces, so the rotations inducing
+  odd permutations are those exchanging the two tetrahedra inscribed in the cube.
 * `TauCeti.natCard_fixed_cubeVertex_cubeEdgeHalfTurn`,
   `TauCeti.natCard_fixed_cubeEdgeSet_cubeEdgeHalfTurn` and their companions: the numbers of
   vertices and edges fixed by the four named rotations, `0, 0, 2, 0` and `2, 0, 0, 0`.
@@ -110,25 +117,37 @@ theorem mulVec_mul_self_of_mem_cubeRotationGroup {A : SpecialLinearGroup (Fin 3)
   rw [← Matrix.toLin'_apply, ← SpecialLinearGroup.toLin'_apply, ← h, monomialEquiv_apply,
     ← Units.val_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one]
 
+/-- A rotation of the cube is an orthogonal matrix: `Aᵀ A = 1`. -/
+theorem transpose_mul_self_of_mem_cubeRotationGroup {A : SpecialLinearGroup (Fin 3) ℤ}
+    (hA : A ∈ cubeRotationGroup) : (A : Matrix (Fin 3) (Fin 3) ℤ)ᵀ * A = 1 := by
+  obtain ⟨σ, ε, h⟩ := mem_cubeRotationGroup_iff.mp hA
+  ext i j
+  simp only [Matrix.mul_apply, Matrix.transpose_apply, h, Matrix.one_apply, ite_mul, zero_mul,
+    mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true, σ.injective.eq_iff]
+  split_ifs with hij
+  · subst hij
+    rw [← Units.val_mul, Int.units_mul_self, Units.val_one]
+  · rfl
+
 /-- The rotation group of the cube acts on the vertices `{-1, 1}³ = Fin 3 → ℤˣ` by matrix
 multiplication. -/
 instance : SMul cubeRotationGroup (Fin 3 → ℤˣ) where
   smul A v i :=
-    ⟨((A.1 : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ fun j ↦ (v j : ℤ)) i,
-      ((A.1 : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ fun j ↦ (v j : ℤ)) i,
-      mulVec_mul_self_of_mem_cubeRotationGroup A.2 v i,
-      mulVec_mul_self_of_mem_cubeRotationGroup A.2 v i⟩
+    ⟨((A.val : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ fun j ↦ (v j : ℤ)) i,
+      ((A.val : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ fun j ↦ (v j : ℤ)) i,
+      mulVec_mul_self_of_mem_cubeRotationGroup A.property v i,
+      mulVec_mul_self_of_mem_cubeRotationGroup A.property v i⟩
 
 /-- The coordinates of `A • v` are those of the matrix product `A v`. -/
 @[simp]
 theorem coe_cubeRotationGroup_smul_apply (A : cubeRotationGroup) (v : Fin 3 → ℤˣ) (i : Fin 3) :
-    ((A • v) i : ℤ) = ((A.1 : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ fun j ↦ (v j : ℤ)) i :=
+    ((A • v) i : ℤ) = ((A.val : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ fun j ↦ (v j : ℤ)) i :=
   (rfl)
 
 /-- A rotation acting on `ℤ³` as the monomial transformation with signs `ε` and coordinate
 permutation `σ` moves coordinate `σ⁻¹ i` of a vertex to coordinate `i`, with sign `ε (σ⁻¹ i)`. -/
 theorem cubeRotationGroup_smul_apply_of_monomialEquiv {A : cubeRotationGroup}
-    {ε : Fin 3 → ℤˣ} {σ : Perm (Fin 3)} (h : monomialEquiv ε σ = SpecialLinearGroup.toLin' A.1)
+    {ε : Fin 3 → ℤˣ} {σ : Perm (Fin 3)} (h : monomialEquiv ε σ = SpecialLinearGroup.toLin' A.val)
     (v : Fin 3 → ℤˣ) (i : Fin 3) : (A • v) i = ε (σ.symm i) * v (σ.symm i) :=
   Units.ext <| by
     rw [coe_cubeRotationGroup_smul_apply, ← Matrix.toLin'_apply, ← SpecialLinearGroup.toLin'_apply,
@@ -153,7 +172,7 @@ changes their signs. -/
 @[simp]
 theorem hammingDist_cubeRotationGroup_smul (A : cubeRotationGroup) (v w : Fin 3 → ℤˣ) :
     hammingDist (A • v) (A • w) = hammingDist v w := by
-  obtain ⟨ε, σ, h⟩ := exists_monomialEquiv_eq_of_mem_cubeRotationGroup A.2
+  obtain ⟨ε, σ, h⟩ := exists_monomialEquiv_eq_of_mem_cubeRotationGroup A.property
   have hval (u : Fin 3 → ℤˣ) :
       (fun i ↦ ((A • u) i : ℤ)) = monomialEquiv ε σ (fun i ↦ (u i : ℤ)) := by
     funext i
@@ -191,7 +210,7 @@ theorem map_smul_mem_cubeEdgeSet (A : cubeRotationGroup) {e : Sym2 (Fin 3 → �
 
 /-- The rotation group of the cube acts on its edges. -/
 instance : SMul cubeRotationGroup cubeEdgeSet where
-  smul A e := ⟨e.1.map (A • ·), map_smul_mem_cubeEdgeSet A e.2⟩
+  smul A e := ⟨e.val.map (A • ·), map_smul_mem_cubeEdgeSet A e.property⟩
 
 /-- A rotation moves an edge by moving its two endpoints. -/
 @[simp]
@@ -203,12 +222,52 @@ instance : MulAction cubeRotationGroup cubeEdgeSet where
   one_smul e := Subtype.ext <| by
     rw [coe_cubeRotationGroup_smul_cubeEdgeSet]
     simp only [one_smul]
-    exact congrFun Sym2.map_id' e.1
+    exact congrFun Sym2.map_id' e.val
   mul_smul A B e := Subtype.ext <| by
     simp only [coe_cubeRotationGroup_smul_cubeEdgeSet, Sym2.map_map]
     congr 1
     funext v
     exact mul_smul A B v
+
+/-- The antipodal map sends an edge to an edge. -/
+theorem map_neg_mem_cubeEdgeSet {e : Sym2 (Fin 3 → ℤˣ)} (he : e ∈ cubeEdgeSet) :
+    e.map Neg.neg ∈ cubeEdgeSet := by
+  induction e using Sym2.ind with
+  | _ v w =>
+    rw [Sym2.map_mk, mk_mem_cubeEdgeSet]
+    exact (hammingDist_comp (fun _ ↦ Neg.neg) (fun _ ↦ neg_injective)).trans
+      (mk_mem_cubeEdgeSet.mp he)
+
+/-- The antipodal map `{v, w} ↦ {-v, -w}` on the edges of the cube. -/
+instance : Neg cubeEdgeSet where
+  neg e := ⟨e.val.map Neg.neg, map_neg_mem_cubeEdgeSet e.property⟩
+
+/-- The antipodal edge of `e` has the antipodal endpoints. -/
+@[simp]
+theorem coe_neg_cubeEdgeSet (e : cubeEdgeSet) :
+    ((-e : cubeEdgeSet) : Sym2 (Fin 3 → ℤˣ)) = (e : Sym2 (Fin 3 → ℤˣ)).map Neg.neg :=
+  (rfl)
+
+/-- The antipodal edge of `{v, w}` is `{-v, -w}`. -/
+theorem neg_mk_cubeEdgeSet {v w : Fin 3 → ℤˣ} (h : s(v, w) ∈ cubeEdgeSet) :
+    -(⟨s(v, w), h⟩ : cubeEdgeSet) =
+      ⟨s(-v, -w), by simpa only [Sym2.map_mk] using map_neg_mem_cubeEdgeSet h⟩ :=
+  Subtype.ext (Sym2.map_mk _ _ _)
+
+instance : InvolutiveNeg cubeEdgeSet where
+  neg_neg e := Subtype.ext <| by
+    rw [coe_neg_cubeEdgeSet, coe_neg_cubeEdgeSet, Sym2.map_map,
+      show (Neg.neg ∘ Neg.neg : (Fin 3 → ℤˣ) → Fin 3 → ℤˣ) = id from funext neg_neg, Sym2.map_id,
+      id]
+
+/-- A rotation commutes with the antipodal map on the edges. -/
+@[simp]
+theorem cubeRotationGroup_smul_neg_cubeEdgeSet (A : cubeRotationGroup) (e : cubeEdgeSet) :
+    A • -e = -(A • e) := Subtype.ext <| by
+  simp only [coe_cubeRotationGroup_smul_cubeEdgeSet, coe_neg_cubeEdgeSet, Sym2.map_map]
+  congr 1
+  funext v
+  exact cubeRotationGroup_smul_neg A v
 
 /-! ### The body diagonals -/
 
@@ -216,6 +275,11 @@ instance : MulAction cubeRotationGroup cubeEdgeSet where
 product `1`: `(1, 1, 1)`, `(1, -1, -1)`, `(-1, 1, -1)` and `(-1, -1, 1)`. -/
 def cubeBodyDiagonal : Fin 4 → Fin 3 → ℤˣ :=
   ![![1, 1, 1], ![1, -1, -1], ![-1, 1, -1], ![-1, -1, 1]]
+
+/-- The coordinates of the labelled endpoints of the body diagonals. -/
+theorem cubeBodyDiagonal_def :
+    cubeBodyDiagonal = ![![1, 1, 1], ![1, -1, -1], ![-1, 1, -1], ![-1, -1, 1]] :=
+  (rfl)
 
 /-- The label of the body diagonal through a vertex, read off from which coordinates agree. -/
 def cubeBodyDiagonalIndex (v : Fin 3 → ℤˣ) : Fin 4 :=
@@ -280,7 +344,7 @@ theorem cubeBodyDiagonalHom_apply_cubeBodyDiagonalIndex (A : cubeRotationGroup)
 needed: the antipodal map `-1` fixes every diagonal. -/
 theorem cubeBodyDiagonalHom_injective : Function.Injective cubeBodyDiagonalHom := by
   refine (injective_iff_map_eq_one _).mpr fun A hA ↦ ?_
-  obtain ⟨ε, σ, h⟩ := exists_monomialEquiv_eq_of_mem_cubeRotationGroup A.2
+  obtain ⟨ε, σ, h⟩ := exists_monomialEquiv_eq_of_mem_cubeRotationGroup A.property
   have hfix : ∀ k, cubeBodyDiagonalIndex (fun i ↦ ε (σ.symm i) * cubeBodyDiagonal k (σ.symm i)) =
       k := fun k ↦ by
     rw [← funext (cubeRotationGroup_smul_apply_of_monomialEquiv h (cubeBodyDiagonal k))]
@@ -293,43 +357,132 @@ theorem cubeBodyDiagonalHom_injective : Function.Injective cubeBodyDiagonalHom :
     rw [← h, OneMemClass.coe_one, map_one]
     exact LinearEquiv.ext fun x ↦ funext fun i ↦ by simp [← Perm.inv_def]
   · -- The antipodal map `-1` has determinant `-1`, so it is not in `SL(3, ℤ)`.
-    have hA1 : (A.1 : Matrix (Fin 3) (Fin 3) ℤ) = -1 := by
-      rw [← LinearMap.toMatrix'_toLin' (A.1 : Matrix (Fin 3) (Fin 3) ℤ),
+    have hA1 : (A.val : Matrix (Fin 3) (Fin 3) ℤ) = -1 := by
+      rw [← LinearMap.toMatrix'_toLin' (A.val : Matrix (Fin 3) (Fin 3) ℤ),
         ← SpecialLinearGroup.toLin'_to_linearMap, ← h]
       ext i j
       rw [toMatrix'_monomialEquiv]
       simp [Matrix.one_apply, eq_comm, apply_ite Neg.neg]
-    have hdet := A.1.2
+    have hdet := A.val.property
     rw [hA1, Matrix.det_neg, Matrix.det_one] at hdet
     simp at hdet
 
+/-! ### The orientation of an edge relative to a body diagonal -/
+
+/-- The integer `det(a, b, c) · ⟨a - b, c⟩`, whose value on an edge `{a, b}` and a diagonal
+endpoint `c` is the orientation of the edge. -/
+private def orientedWeight (a b c : Fin 3 → ℤ) : ℤ :=
+  (Matrix.of ![a, b, c]).det * ((a - b) ⬝ᵥ c)
+
+private theorem orientedWeight_comm (a b c : Fin 3 → ℤ) :
+    orientedWeight b a c = orientedWeight a b c := by
+  simp [orientedWeight, det_fin_three, dotProduct, Fin.sum_univ_three]
+  ring
+
+private theorem orientedWeight_neg_right (a b c : Fin 3 → ℤ) :
+    orientedWeight a b (-c) = orientedWeight a b c := by
+  simp [orientedWeight, det_fin_three, dotProduct, Fin.sum_univ_three]
+  ring
+
+/-- The oriented weight is invariant under the rotations: they preserve both the determinant and
+the dot product. -/
+private theorem orientedWeight_mulVec {A : SpecialLinearGroup (Fin 3) ℤ}
+    (hA : A ∈ cubeRotationGroup) (a b c : Fin 3 → ℤ) :
+    orientedWeight ((A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ a) ((A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ b)
+      ((A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ c) = orientedWeight a b c := by
+  have hdet : Matrix.of ![(A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ a,
+      (A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ b, (A : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ c] =
+      Matrix.of ![a, b, c] * (A : Matrix (Fin 3) (Fin 3) ℤ)ᵀ := by
+    ext r i
+    fin_cases r <;> simp [Matrix.mul_apply, Matrix.mulVec, dotProduct, mul_comm]
+  rw [orientedWeight, orientedWeight, hdet, det_mul, det_transpose, SpecialLinearGroup.det_coe,
+    mul_one, ← mulVec_sub, dotProduct_mulVec, ← mulVec_transpose, mulVec_mulVec,
+    transpose_mul_self_of_mem_cubeRotationGroup hA, one_mulVec]
+
+/-- **The orientation of an edge relative to a body diagonal.** For an edge `{v, w}` of the cube
+and the body diagonal `j`, with endpoint `d = TauCeti.cubeBodyDiagonal j`, it is the integer
+`det(v, w, d) · ⟨v - w, d⟩`. Both factors change sign when `v` and `w` are exchanged, so the
+product depends only on the edge; it is `0` when `j` is the diagonal through `v` or through `w`,
+and `±8` with opposite signs for the other two diagonals. Rotations preserve it
+(`TauCeti.cubeEdgeOrientation_smul`), and the antipodal edge has the opposite orientation
+(`TauCeti.cubeEdgeOrientation_neg`). -/
+def cubeEdgeOrientation (e : cubeEdgeSet) (j : Fin 4) : ℤ :=
+  Sym2.lift (α := Fin 3 → ℤˣ) (β := ℤ)
+    ⟨fun v w ↦ orientedWeight (fun i ↦ (v i : ℤ)) (fun i ↦ (w i : ℤ))
+      (fun i ↦ (cubeBodyDiagonal j i : ℤ)), fun v w ↦ orientedWeight_comm (fun i ↦ (w i : ℤ))
+      (fun i ↦ (v i : ℤ)) (fun i ↦ (cubeBodyDiagonal j i : ℤ))⟩ (e : Sym2 (Fin 3 → ℤˣ))
+
+/-- The orientation of the edge `{v, w}` relative to the diagonal `j` is
+`det(v, w, d) · ⟨v - w, d⟩` for `d = TauCeti.cubeBodyDiagonal j`. -/
+theorem cubeEdgeOrientation_mk {v w : Fin 3 → ℤˣ} (h : s(v, w) ∈ cubeEdgeSet) (j : Fin 4) :
+    cubeEdgeOrientation ⟨s(v, w), h⟩ j =
+      (Matrix.of ![fun i ↦ (v i : ℤ), fun i ↦ (w i : ℤ), fun i ↦ (cubeBodyDiagonal j i : ℤ)]).det *
+        (((fun i ↦ (v i : ℤ)) - fun i ↦ (w i : ℤ)) ⬝ᵥ fun i ↦ (cubeBodyDiagonal j i : ℤ)) :=
+  (rfl)
+
+/-- **The orientation is invariant under the rotations**: a rotation `A` carries an edge and a
+diagonal `j` to an edge and the diagonal `A j` with the same orientation. -/
+@[simp]
+theorem cubeEdgeOrientation_smul (A : cubeRotationGroup) (e : cubeEdgeSet) (j : Fin 4) :
+    cubeEdgeOrientation (A • e) (cubeBodyDiagonalHom A j) = cubeEdgeOrientation e j := by
+  obtain ⟨e, he⟩ := e
+  induction e using Sym2.ind with
+  | _ v w =>
+    have hvec (x : Fin 3 → ℤˣ) : (fun i ↦ ((A • x) i : ℤ)) =
+        (A.val : Matrix (Fin 3) (Fin 3) ℤ) *ᵥ fun i ↦ (x i : ℤ) :=
+      funext (coe_cubeRotationGroup_smul_apply A x)
+    -- The endpoint of the diagonal `A j` is `± A d` for the endpoint `d` of `j`.
+    have hd : orientedWeight (fun i ↦ ((A • v) i : ℤ)) (fun i ↦ ((A • w) i : ℤ))
+        (fun i ↦ (cubeBodyDiagonal (cubeBodyDiagonalHom A j) i : ℤ)) =
+        orientedWeight (fun i ↦ ((A • v) i : ℤ)) (fun i ↦ ((A • w) i : ℤ))
+          (fun i ↦ ((A • cubeBodyDiagonal j) i : ℤ)) := by
+      rcases cubeBodyDiagonalIndex_eq_iff.mp (cubeBodyDiagonalHom_apply A j).symm with h | h
+      · rw [h]
+      · rw [h, ← orientedWeight_neg_right]
+        congr 1
+    simp only [cubeEdgeOrientation, coe_cubeRotationGroup_smul_cubeEdgeSet, Sym2.map_mk,
+      Sym2.lift_mk]
+    rw [hd, hvec, hvec, hvec, orientedWeight_mulVec A.property]
+
+/-- **The antipodal edge has the opposite orientation.** -/
+@[simp]
+theorem cubeEdgeOrientation_neg (e : cubeEdgeSet) (j : Fin 4) :
+    cubeEdgeOrientation (-e) j = -cubeEdgeOrientation e j := by
+  obtain ⟨e, he⟩ := e
+  induction e using Sym2.ind with
+  | _ v w =>
+    rw [neg_mk_cubeEdgeSet, cubeEdgeOrientation_mk, cubeEdgeOrientation_mk]
+    simp [det_fin_three, dotProduct, Fin.sum_univ_three]
+    ring
+
 /-! ### Four rotations -/
 
+-- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
 /-- **The half-turn about the axis through the midpoints of two opposite edges**, the edges with
 midpoints `±(0, 1, 1)`: `(x, y, z) ↦ (-x, z, y)`. -/
 def cubeEdgeHalfTurn : cubeRotationGroup :=
-  ⟨⟨!![-1, 0, 0; 0, 0, 1; 0, 1, 0], by simp [Matrix.det_fin_three]⟩,
+  ⟨.mk !![-1, 0, 0; 0, 0, 1; 0, 1, 0] (by simp [Matrix.det_fin_three]),
     mem_cubeRotationGroup_iff.mpr
       ⟨swap 1 2, ![-1, 1, 1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
 /-- **The half-turn about the axis through two opposite face centres**, the first coordinate axis:
 `(x, y, z) ↦ (x, -y, -z)`. -/
 def cubeFaceHalfTurn : cubeRotationGroup :=
-  ⟨⟨!![1, 0, 0; 0, -1, 0; 0, 0, -1], by simp [Matrix.det_fin_three]⟩,
+  ⟨.mk !![1, 0, 0; 0, -1, 0; 0, 0, -1] (by simp [Matrix.det_fin_three]),
     mem_cubeRotationGroup_iff.mpr
       ⟨1, ![1, -1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
 /-- **The third-turn about a body diagonal**, the diagonal through `(-1, -1, 1)`:
 `(x, y, z) ↦ (y, -z, -x)`. -/
 def cubeDiagonalThirdTurn : cubeRotationGroup :=
-  ⟨⟨!![0, 1, 0; 0, 0, -1; -1, 0, 0], by simp [Matrix.det_fin_three]⟩,
+  ⟨.mk !![0, 1, 0; 0, 0, -1; -1, 0, 0] (by simp [Matrix.det_fin_three]),
     mem_cubeRotationGroup_iff.mpr
       ⟨[0, 2, 1].formPerm, ![-1, 1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
 /-- **The quarter-turn about the axis through two opposite face centres**, the second coordinate
 axis: `(x, y, z) ↦ (-z, y, x)`. -/
 def cubeFaceQuarterTurn : cubeRotationGroup :=
-  ⟨⟨!![0, 0, -1; 0, 1, 0; 1, 0, 0], by simp [Matrix.det_fin_three]⟩,
+  ⟨.mk !![0, 0, -1; 0, 1, 0; 1, 0, 0] (by simp [Matrix.det_fin_three]),
     mem_cubeRotationGroup_iff.mpr
       ⟨swap 0 2, ![1, 1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
@@ -404,6 +557,49 @@ theorem cubeRotationEquiv_symm_formPerm_zero_one_two :
 theorem cubeRotationEquiv_symm_formPerm_zero_one_two_three :
     cubeRotationEquiv.symm [0, 1, 2, 3].formPerm = cubeFaceQuarterTurn :=
   cubeRotationEquiv.symm_apply_eq.mpr cubeBodyDiagonalHom_cubeFaceQuarterTurn.symm
+
+/-! ### The two inscribed tetrahedra -/
+
+/-- The endpoints `TauCeti.cubeBodyDiagonal k` are the vertices whose coordinates have product
+`1`; they span one of the two tetrahedra inscribed in the cube, and the antipodal vertices, with
+coordinate product `-1`, span the other. -/
+@[simp]
+theorem prod_cubeBodyDiagonal (k : Fin 4) : ∏ i, cubeBodyDiagonal k i = 1 := by
+  revert k
+  decide
+
+/-- **A rotation preserves the two inscribed tetrahedra exactly when it induces an even
+permutation of the body diagonals**: it multiplies the product of the coordinates of every vertex
+by the sign of that permutation. -/
+@[simp]
+theorem prod_cubeRotationGroup_smul (A : cubeRotationGroup) (v : Fin 3 → ℤˣ) :
+    ∏ i, (A • v) i = Perm.sign (cubeBodyDiagonalHom A) * ∏ i, v i := by
+  -- In monomial form a rotation multiplies the coordinate product by the product of its signs,
+  -- the coordinate product of the image of `(1, 1, 1)`.
+  have key (A : cubeRotationGroup) (v : Fin 3 → ℤˣ) :
+      ∏ i, (A • v) i = (∏ i, (A • (1 : Fin 3 → ℤˣ)) i) * ∏ i, v i := by
+    obtain ⟨ε, σ, h⟩ := exists_monomialEquiv_eq_of_mem_cubeRotationGroup A.property
+    simp only [cubeRotationGroup_smul_apply_of_monomialEquiv h, Pi.one_apply, mul_one,
+      Finset.prod_mul_distrib, Equiv.prod_comp σ.symm (fun i ↦ v i)]
+  -- That sign product is a homomorphism to `ℤˣ`, nontrivial on the edge half-turn, so it is the
+  -- sign of the induced permutation.
+  let χ : cubeRotationGroup →* ℤˣ :=
+    { toFun A := ∏ i, (A • (1 : Fin 3 → ℤˣ)) i
+      map_one' := by simp
+      map_mul' A B := by
+        simp only [mul_smul]
+        exact key A _ }
+  have hχ : χ.comp cubeRotationEquiv.symm.toMonoidHom = Perm.sign :=
+    Perm.eq_sign_of_surjective_hom fun u ↦ by
+      rcases Int.units_eq_one_or u with rfl | rfl
+      · exact ⟨1, map_one _⟩
+      · refine ⟨swap 0 1, ?_⟩
+        simp only [χ, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MonoidHom.coe_mk,
+          OneHom.coe_mk, cubeRotationEquiv_symm_swap_zero_one]
+        decide
+  rw [key, ← cubeRotationEquiv_apply, ← hχ]
+  simp only [χ, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply,
+    MonoidHom.coe_mk, OneHom.coe_mk]
 
 /-! ### Fixed vertices and edges -/
 

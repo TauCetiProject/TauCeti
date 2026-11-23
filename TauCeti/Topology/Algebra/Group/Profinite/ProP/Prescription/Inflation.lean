@@ -93,7 +93,7 @@ def fixedPointsEquiv :
       ZModTwist χ i where
   toFun x := ⟨(x : ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i).val⟩
   invFun y := ⟨⟨y.val⟩, (FixedPoints.mem_addSubgroup _ _ _).2 fun n =>
-    smul_eq_self_of_mem N χ i n.2 _⟩
+    smul_eq_self_of_mem N χ i n.property _⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -202,7 +202,8 @@ theorem explicitInfl1ZModTwist_bijective (hN : proPKernel p N = ⊤) :
     Function.Bijective (explicitInfl1ZModTwist N χ i) := by
   refine ⟨explicitInfl1ZModTwist_injective N χ i, fun x => ?_⟩
   set M := ZModTwist (χ.comp (Subgroup.quotientMkContinuousMonoidHom N)) i
-  have htriv : ∀ (n : N) (m : M), n • m = m := fun n m => ZModTwist.smul_eq_self_of_mem N χ i n.2 m
+  have htriv : ∀ (n : N) (m : M), n • m = m := fun n m => ZModTwist.smul_eq_self_of_mem N χ i
+      n.property m
   have hsub : Subsingleton (H1 N M) := by
     refine (H1EquivOfSmulEqSelf htriv).toEquiv.subsingleton_congr.2 ⟨fun φ ψ => ?_⟩
     have h (φ : Additive (ContinuousMonoidHom N (Multiplicative M))) : φ = 0 :=

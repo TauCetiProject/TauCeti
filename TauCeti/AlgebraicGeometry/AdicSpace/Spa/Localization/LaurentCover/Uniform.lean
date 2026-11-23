@@ -159,7 +159,7 @@ private theorem exists_pow_mul_eq_of_mem_locSubring {T : Finset A} {s : A} {S : 
     obtain ⟨⟨t, ht⟩, rfl⟩ := hx
     exact ⟨1, t, hT t ht, by simp⟩
   | algebraMap c =>
-    refine ⟨0, c, mem_monomialSpan_zero c.2, ?_⟩
+    refine ⟨0, c, mem_monomialSpan_zero c.property, ?_⟩
     rw [pow_zero, map_one, one_mul, IsScalarTower.algebraMap_apply P.ringOfDefinition A S,
       Algebra.algebraMap_ofSubsemiring_apply]
   | add x y _ _ hx hy =>
@@ -255,7 +255,7 @@ private theorem exists_awayLift_eq_of_mem_adjoin {z : S₁₂}
   -- the image of `A₀[1/f]` is a subring, so it suffices that it contains `A₀` and `1/(1 · f)`
   refine Subring.mem_map.1 <| Subring.closure_le.2 ?_ (Algebra.mem_adjoin_iff.1 hz)
   rintro _ (⟨c, rfl⟩ | rfl)
-  · refine ⟨_, algebraMap_mem_locSubring P _ f S₂ c.2, ?_⟩
+  · refine ⟨_, algebraMap_mem_locSubring P _ f S₂ c.property, ?_⟩
     rw [IsLocalization.Away.lift_eq, IsScalarTower.algebraMap_apply P.ringOfDefinition A S₁₂,
       Algebra.algebraMap_ofSubsemiring_apply]
   · refine ⟨divBy 1 f, divBy_mem_locSubring P _ f S₂ (Finset.mem_singleton_self 1), ?_⟩
@@ -300,7 +300,7 @@ private theorem exists_eq_add_of_mem_locIdealImage (n : ℕ) {e : S₁₂}
     (fun b hb c _ ↦ ?_) fun x y ⟨p, hp, q, hq, e⟩ ⟨p', hp', q', hq', e'⟩ ↦ ?_
   · rw [Algebra.smul_def, Algebra.commutes, RingHom.algebraMap_toAlgebra, MulMemClass.coe_mul,
       toLocSubring_apply]
-    exact exists_mul_algebraMap_eq_add P f S₁ S₂ S₁₂ c.2 hb
+    exact exists_mul_algebraMap_eq_add P f S₁ S₂ S₁₂ c.property hb
   · refine ⟨p + p', by rw [map_add]; exact add_mem hp hp', q + q', add_mem hq hq', ?_⟩
     rw [AddMemClass.coe_add, e, e', map_add, map_add, add_add_add_comm]
 

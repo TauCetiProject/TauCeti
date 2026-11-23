@@ -66,6 +66,8 @@ docstring says where its conclusion comes from.
 * `WeierstrassCurve.formalInverseDenomEval_eq`, `WeierstrassCurve.formalInverseEval_eq` and
   `WeierstrassCurve.formalInverseEval_mul_formalInverseDenomEval` : the defining formulas for
   `d(t)` and `ι(t)`, the last in the form `ι(t) * d(t) = -t` that avoids the series inverse.
+* `WeierstrassCurve.a₁_mul_add_a₃_mul_formalWEval_eq_two_of_formalInverseEval_eq` : any nonzero
+  fixed point `ι(t) = t` satisfies `a₁ t + a₃ w(t) = 2`.
 * `WeierstrassCurve.formalWEval_wEquation` : the `w`-equation at a parameter.
 * `WeierstrassCurve.eq_formalWEval_of_wEquation` : **`w(t)` is the only solution of the
   `w`-equation lying in the ideal**, the evaluated counterpart of `WExpansion.lean`'s
@@ -324,6 +326,15 @@ theorem formalInverseEval_mul_formalInverseDenomEval {t : O} (ht : PowerSeries.H
     W.formalInverseEval t * W.formalInverseDenomEval t = -t := by
   rw [W.formalInverseEval_eq ht, neg_mul, mul_assoc, mul_comm (W.formalInverseDenomInvEval t),
     W.formalInverseDenomEval_mul_inv ht, mul_one]
+
+/-- **A nonzero fixed point of the formal inverse satisfies `a₁ t + a₃ w(t) = 2`.** -/
+theorem a₁_mul_add_a₃_mul_formalWEval_eq_two_of_formalInverseEval_eq [NoZeroDivisors O] {t : O}
+    (ht : PowerSeries.HasEval t) (ht0 : t ≠ 0) (hfix : W.formalInverseEval t = t) :
+    W.a₁ * t + W.a₃ * W.formalWEval t = 2 := by
+  have h := W.formalInverseEval_mul_formalInverseDenomEval ht
+  rw [hfix, W.formalInverseDenomEval_eq ht] at h
+  apply mul_left_cancel₀ ht0
+  linear_combination -h
 
 /-- The formal inverse maps a parameter of `I ^ k` back into `I ^ k`: it is `-t` times a value. -/
 theorem formalInverseEval_mem {I : Ideal O} {k : ℕ} {t : O} (ht : PowerSeries.HasEval t)

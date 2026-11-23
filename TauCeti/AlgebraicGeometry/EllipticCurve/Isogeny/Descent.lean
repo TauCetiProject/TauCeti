@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Galois
 public import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Galois.Descent
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 
 /-!
 # Galois descent of isogenies

@@ -88,10 +88,10 @@ variable [IsManifold I ∞ M] [FiniteDimensional ℝ E] {J : SmoothAlmostComplex
 /-- If `α (J v) = c • α v` with `c² = -1`, then
 `dα(v, w) - dα(Jv, Jw) + c • (dα(Jv, w) + dα(v, Jw)) = α (N_J (v, w))`. -/
 private theorem mextDeriv_sub_add_smul_eq_nijenhuis {c : ℂ} (hc : c * c = -1)
-    (hα : ∀ y z, α.1 y ![J y z] = c • α.1 y ![z]) (x : M) (v w : TangentSpace I x) :
-    mextDeriv α.1 x ![v, w] - mextDeriv α.1 x ![J x v, J x w] +
-        c • (mextDeriv α.1 x ![J x v, w] + mextDeriv α.1 x ![v, J x w]) =
-      α.1 x ![J.nijenhuis x v w] := by
+    (hα : ∀ y z, α.val y ![J y z] = c • α.val y ![z]) (x : M) (v w : TangentSpace I x) :
+    mextDeriv α.val x ![v, w] - mextDeriv α.val x ![J x v, J x w] +
+        c • (mextDeriv α.val x ![J x v, w] + mextDeriv α.val x ![v, J x w]) =
+      α.val x ![J.nijenhuis x v w] := by
   -- Extend `v` and `w` to vector fields and expand the four exterior derivatives and the
   -- Nijenhuis tensor through vector fields.
   obtain ⟨X, hX, rfl⟩ : ∃ X : (y : M) → TangentSpace I y,
@@ -109,8 +109,8 @@ private theorem mextDeriv_sub_add_smul_eq_nijenhuis {c : ℂ} (hc : c * c = -1)
   -- The derivative of `α (J Z)` is `c` times the derivative of `α Z`.
   have hd (Z : (y : M) → TangentSpace I y)
       (hZ : MDifferentiableAt I I.tangent (fun y ↦ (Z y : TangentBundle I M)) x) :
-      mvfderiv I (fun y ↦ α.1 y ![J y (Z y)]) x = c • mvfderiv I (fun y ↦ α.1 y ![Z y]) x := by
-    have hαZ : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ α.1 y ![Z y]) x := by
+      mvfderiv I (fun y ↦ α.val y ![J y (Z y)]) x = c • mvfderiv I (fun y ↦ α.val y ![Z y]) x := by
+    have hαZ : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ α.val y ![Z y]) x := by
       have h := α.mdifferentiableAt_apply_vectorField (V := ![Z]) (x := x)
         (fun i ↦ by fin_cases i; exact hZ)
       convert h using 3 with y
@@ -124,8 +124,8 @@ private theorem mextDeriv_sub_add_smul_eq_nijenhuis {c : ℂ} (hc : c * c = -1)
   -- What remains is linear algebra in the values of `α x` on tangent vectors, where the
   -- derivative terms cancel because `1 + c² = 0`.
   set ℓ := (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) F (0 : Fin 1)).symm
-    (α.1 x)
-  have hℓ (u : TangentSpace I x) : α.1 x ![u] = ℓ u := by
+    (α.val x)
+  have hℓ (u : TangentSpace I x) : α.val x ![u] = ℓ u := by
     rw [ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply]
     congr 1
     funext i
@@ -133,15 +133,15 @@ private theorem mextDeriv_sub_add_smul_eq_nijenhuis {c : ℂ} (hc : c * c = -1)
     rfl
   have hJℓ (u : TangentSpace I x) : ℓ (J x u) = c • ℓ u := by rw [← hℓ, ← hℓ, hα]
   simp only [hℓ, map_sub, hJℓ, smul_apply]
-  linear_combination (norm := module) hc • (mvfderiv I (fun y ↦ α.1 y ![Y y]) x (X x) -
-    mvfderiv I (fun y ↦ α.1 y ![X y]) x (Y x))
+  linear_combination (norm := module) hc • (mvfderiv I (fun y ↦ α.val y ![Y y]) x (X x) -
+    mvfderiv I (fun y ↦ α.val y ![X y]) x (Y x))
 
 /-- **The `(-1,2)` component of `d` on `(1,0)`-forms is the Nijenhuis tensor.** For a smooth
 one-form `α` of type `(1,0)`, the `(0,2)` component of `dα` is `(v, w) ↦ α (N_J (v, w)) / 4`. -/
 theorem IsOfType.typeProjection_zero_two_mextDerivₗ_apply (hα : α.IsOfType J 1 0) (x : M)
     (v w : TangentSpace I x) :
-    (J.typeProjection 0 2 (mextDerivₗ I 1 α)).1 x ![v, w] =
-      (4 : ℂ)⁻¹ • α.1 x ![J.nijenhuis x v w] := by
+    (J.typeProjection 0 2 (mextDerivₗ I 1 α)).val x ![v, w] =
+      (4 : ℂ)⁻¹ • α.val x ![J.nijenhuis x v w] := by
   rw [SmoothAlmostComplexStructure.coe_typeProjection, mextDerivₗ_apply,
     ContinuousLinearMap.typeProjection_zero_two_apply (J.apply_apply x),
     ← mextDeriv_sub_add_smul_eq_nijenhuis Complex.I_mul_I (isOfType_one_zero_iff.1 hα)]
@@ -150,8 +150,8 @@ theorem IsOfType.typeProjection_zero_two_mextDerivₗ_apply (hα : α.IsOfType J
 one-form `α` of type `(0,1)`, the `(2,0)` component of `dα` is `(v, w) ↦ α (N_J (v, w)) / 4`. -/
 theorem IsOfType.typeProjection_two_zero_mextDerivₗ_apply (hα : α.IsOfType J 0 1) (x : M)
     (v w : TangentSpace I x) :
-    (J.typeProjection 2 0 (mextDerivₗ I 1 α)).1 x ![v, w] =
-      (4 : ℂ)⁻¹ • α.1 x ![J.nijenhuis x v w] := by
+    (J.typeProjection 2 0 (mextDerivₗ I 1 α)).val x ![v, w] =
+      (4 : ℂ)⁻¹ • α.val x ![J.nijenhuis x v w] := by
   rw [SmoothAlmostComplexStructure.coe_typeProjection, mextDerivₗ_apply,
     ContinuousLinearMap.typeProjection_two_zero_apply (J.apply_apply x),
     ← mextDeriv_sub_add_smul_eq_nijenhuis (by simp) (isOfType_zero_one_iff.1 hα)]
@@ -161,7 +161,7 @@ theorem IsOfType.typeProjection_two_zero_mextDerivₗ_apply (hα : α.IsOfType J
 exactly when `α ∘ N_J = 0`. -/
 theorem IsOfType.typeProjection_zero_two_mextDerivₗ_eq_zero_iff (hα : α.IsOfType J 1 0) :
     J.typeProjection 0 2 (mextDerivₗ I 1 α) = 0 ↔
-      ∀ x (v w : TangentSpace I x), α.1 x ![J.nijenhuis x v w] = 0 := by
+      ∀ x (v w : TangentSpace I x), α.val x ![J.nijenhuis x v w] = 0 := by
   refine ⟨fun h x v w ↦ ?_, fun h ↦ SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_⟩
   · have hx := hα.typeProjection_zero_two_mextDerivₗ_apply x v w
     rw [h] at hx
@@ -173,7 +173,7 @@ theorem IsOfType.typeProjection_zero_two_mextDerivₗ_eq_zero_iff (hα : α.IsOf
 exactly when `α ∘ N_J = 0`. -/
 theorem IsOfType.typeProjection_two_zero_mextDerivₗ_eq_zero_iff (hα : α.IsOfType J 0 1) :
     J.typeProjection 2 0 (mextDerivₗ I 1 α) = 0 ↔
-      ∀ x (v w : TangentSpace I x), α.1 x ![J.nijenhuis x v w] = 0 := by
+      ∀ x (v w : TangentSpace I x), α.val x ![J.nijenhuis x v w] = 0 := by
   refine ⟨fun h x v w ↦ ?_, fun h ↦ SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_⟩
   · have hx := hα.typeProjection_two_zero_mextDerivₗ_apply x v w
     rw [h] at hx
@@ -199,14 +199,14 @@ alternation lives, rather than of the tangent space. -/
 private theorem IsOfType.typeProjection_mextDeriv_apply_eq_inv_eight_smul_of_forall_eq
     (hφ : φ.IsOfType J p q) (x : M) (hP : P = p + 2 ∨ P + 1 = p) {N : E →L[ℝ] E →L[ℝ] E}
     (hN : ∀ v w, N v w = J.nijenhuis x v w) :
-    (J.toEndomorphism x).typeProjection P Q (mextDeriv φ.1 x) =
+    (J.toEndomorphism x).typeProjection P Q (mextDeriv φ.val x) =
       (8 : ℂ)⁻¹ • (J.toEndomorphism x).typeProjection P Q
-        (alternatizeUncurryFin ((φ.1 x : E [⋀^Fin k]→L[ℝ] F).fderivCompContinuousLinearMap
+        (alternatizeUncurryFin ((φ.val x : E [⋀^Fin k]→L[ℝ] F).fderivCompContinuousLinearMap
           (.id ℝ E) ∘L N) : E [⋀^Fin (k + 1)]→L[ℝ] F) := by
   -- The derivatives of `φ` and of `J` in the chart at `x` form a first-order variation of the
   -- pair `(φ x, J x)` preserving type, whose bilinear map `N` is the Nijenhuis tensor in that
   -- chart. Its alternation is the exterior derivative of `φ` at `x`.
-  have hφ₀ : (RoughForm.inChartAt φ.1 x (extChartAt I x x)).IsOfType
+  have hφ₀ : (RoughForm.inChartAt φ.val x (extChartAt I x x)).IsOfType
       (J.inChart x (extChartAt I x x)) p q := by
     rw [RoughForm.inChartAt_extChartAt_self, J.inChart_extChartAt_self]
     exact hφ.apply x
@@ -229,9 +229,9 @@ tensor.** Let `φ` be a smooth form of type `(p,q)`. At each point `x`, the comp
 `φ x`. In particular they involve no derivative of `φ`. -/
 theorem IsOfType.typeProjection_mextDeriv_apply_eq_inv_eight_smul (hφ : φ.IsOfType J p q)
     (x : M) (hP : P = p + 2 ∨ P + 1 = p) :
-    (J.toEndomorphism x).typeProjection P Q (mextDeriv φ.1 x) =
+    (J.toEndomorphism x).typeProjection P Q (mextDeriv φ.val x) =
       (8 : ℂ)⁻¹ • (J.toEndomorphism x).typeProjection P Q
-        (alternatizeUncurryFin ((φ.1 x : E [⋀^Fin k]→L[ℝ] F).fderivCompContinuousLinearMap
+        (alternatizeUncurryFin ((φ.val x : E [⋀^Fin k]→L[ℝ] F).fderivCompContinuousLinearMap
           (.id ℝ E) ∘L (J.nijenhuis x : E →L[ℝ] E →L[ℝ] E)) : E [⋀^Fin (k + 1)]→L[ℝ] F) :=
   hφ.typeProjection_mextDeriv_apply_eq_inv_eight_smul_of_forall_eq x hP fun _ _ ↦ rfl
 

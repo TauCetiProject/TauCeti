@@ -194,7 +194,7 @@ noncomputable def toSchemeHopfIdealLocusFamily :
     Spec (.of ((A ⊗[R] H) ⧸ N.hopfIdeal hN)) ⟶ schemeHopfIdealLocusFamily R H k :=
   pullback.lift (toUniversalQuotient N hN)
     (Spec.map (CommRingCat.ofHom (algebraMap A ((A ⊗[R] H) ⧸ N.hopfIdeal hN))) ≫
-      (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).1) <| by
+      (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).val) <| by
     rw [(isPullback_toUniversalQuotient N hN).w, Category.assoc,
       schemeHopfIdealLocusHomEquiv_apply_comp_subschemeι]
 
@@ -221,7 +221,7 @@ theorem toSchemeHopfIdealLocusFamily_ι_subschemeι :
 theorem toSchemeHopfIdealLocusFamily_schemeHopfIdealLocusFamilyHom :
     toSchemeHopfIdealLocusFamily N hN ≫ schemeHopfIdealLocusFamilyHom R H k =
       Spec.map (CommRingCat.ofHom (algebraMap A ((A ⊗[R] H) ⧸ N.hopfIdeal hN))) ≫
-        (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).1 :=
+        (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).val :=
   pullback.lift_snd _ _ _
 
 /-- **The fibre of the universal family over a point of the Hopf-ideal locus.** For a point `N` of
@@ -232,7 +232,7 @@ theorem isPullback_schemeHopfIdealLocusFamilyHom :
     IsPullback (toSchemeHopfIdealLocusFamily N hN)
       (Spec.map (CommRingCat.ofHom (algebraMap A ((A ⊗[R] H) ⧸ N.hopfIdeal hN))))
       (schemeHopfIdealLocusFamilyHom R H k)
-      (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).1 := by
+      (schemeHopfIdealLocusHomEquiv R H k A ⟨N, hN⟩).val := by
   refine IsPullback.of_right ?_ (toSchemeHopfIdealLocusFamily_schemeHopfIdealLocusFamilyHom N hN)
     (isPullback_schemeHopfIdealLocusFamily R H k)
   rw [toSchemeHopfIdealLocusFamily_ι, schemeHopfIdealLocusHomEquiv_apply_comp_subschemeι]
@@ -256,9 +256,9 @@ private theorem exists_isPullback_schemeHopfIdealLocusFamilyHom (C : CommRingCat
       Spec.map (CommRingCat.ofHom (algebraMap R C)) :=
     (Spec.map_preimage _).symm
   let N := (schemeHopfIdealLocusHomEquiv R H k C).symm ⟨g, hg⟩
-  have hgN : (schemeHopfIdealLocusHomEquiv R H k C ⟨N.1, N.2⟩).1 = g := by
+  have hgN : (schemeHopfIdealLocusHomEquiv R H k C ⟨N.val, N.property⟩).val = g := by
     rw [Subtype.coe_eta, Equiv.apply_symm_apply]
-  exact ⟨_, N.1, N.2, _, hgN ▸ isPullback_schemeHopfIdealLocusFamilyHom N.1 N.2⟩
+  exact ⟨_, N.val, N.property, _, hgN ▸ isPullback_schemeHopfIdealLocusFamilyHom N.val N.property⟩
 
 /-- A property of morphisms which is local on the target holds for the universal family over the
 Hopf-ideal locus as soon as it holds for every structure morphism `Spec ((A ⊗[R] H) ⧸ N) ⟶ Spec A`
