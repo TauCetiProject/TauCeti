@@ -25,6 +25,9 @@ affine space is made to meet a prescribed dense open subset.
 The base must be chosen after `h`: for `m ≥ 2` the graph itself lies in the hypersurface
 `V(X_1 - X_0 ^ B)`.
 
+For every `m` and `B` the graph is a morphism over `Spec R`, and for `B ≠ 0` it sends the origin
+of the line to the origin of affine `m`-space.
+
 ## Main results
 
 * `AlgebraicGeometry.isClosedImmersion_spec_map_polynomialGraph`: for `m ≠ 0` the graph is a
@@ -32,6 +35,10 @@ The base must be chosen after `h`: for `m ≥ 2` the graph itself lies in the hy
 * `AlgebraicGeometry.exists_avoiding_graph`: a nonzero polynomial in `m ≠ 0` variables has
   nonzero pullback along the closed immersion given by some base `B ≥ 2` exceeding all of its
   exponents.
+* `AlgebraicGeometry.SpecMap_polynomialGraph_comp_SpecMap_algebraMap`: the graph is a morphism
+  over `Spec R`.
+* `AlgebraicGeometry.SpecMap_constantCoeff_comp_SpecMap_polynomialGraph`: for `B ≠ 0` the graph
+  sends the origin to the origin.
 
 ## References
 
@@ -46,7 +53,29 @@ open CategoryTheory MvPolynomial
 
 namespace AlgebraicGeometry
 
-variable {R : Type*} [CommRing R] {m : ℕ} [NeZero m]
+variable {R : Type*} [CommRing R] {m : ℕ}
+
+/-- The graph `Spec R[T] → Spec R[X_0, …, X_{m-1}]` of the base-`B` Kronecker substitution is a
+morphism over `Spec R`, for every `m` and every base `B`. -/
+@[reassoc]
+theorem SpecMap_polynomialGraph_comp_SpecMap_algebraMap (B : ℕ) :
+    Spec.map (CommRingCat.ofHom (polynomialGraph R m B)) ≫
+      Spec.map (CommRingCat.ofHom (algebraMap R (MvPolynomial (Fin m) R))) =
+      Spec.map (CommRingCat.ofHom (algebraMap R (Polynomial R))) := by
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, MvPolynomial.algebraMap_eq,
+    polynomialGraph_comp_C, Polynomial.algebraMap_eq]
+
+/-- For `B ≠ 0` the graph of the base-`B` Kronecker substitution sends the origin of the affine
+line, the spectrum of `Polynomial.constantCoeff`, to the origin of affine `m`-space, the spectrum
+of `MvPolynomial.constantCoeff`. For `B = 0` and `m ≥ 2` it does not, since then `X_1 ↦ 1`. -/
+@[reassoc (attr := simp)]
+theorem SpecMap_constantCoeff_comp_SpecMap_polynomialGraph {B : ℕ} (hB : B ≠ 0) :
+    Spec.map (CommRingCat.ofHom (Polynomial.constantCoeff (R := R))) ≫
+      Spec.map (CommRingCat.ofHom (polynomialGraph R m B)) =
+      Spec.map (CommRingCat.ofHom (constantCoeff (R := R) (σ := Fin m))) := by
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, constantCoeff_comp_polynomialGraph hB]
+
+variable [NeZero m]
 
 /-- For `m ≠ 0` the graph `Spec R[T] → Spec R[X_0, …, X_{m-1}]` of the base-`B` Kronecker
 substitution, `T ↦ (T, T ^ B, …, T ^ (B ^ (m - 1)))`, is a closed immersion, for every base `B`. -/
