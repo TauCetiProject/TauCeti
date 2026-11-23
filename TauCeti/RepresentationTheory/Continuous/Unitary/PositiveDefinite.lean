@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 import Mathlib.Analysis.InnerProductSpace.GramMatrix
 import TauCeti.Analysis.Normed.Operator.Dense
+import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Positive-definite functions on groups and unitary representations
@@ -206,7 +207,7 @@ theorem norm_gnsVector_sub_lt (h1 : φ 1 = 1) {g h : G} {δ : ℝ} (hδ : 0 < δ
   have hsq := hφ.norm_gnsVector_sub_sq g h
   rw [h1, RCLike.one_re] at hsq
   have hre : 1 - RCLike.re (φ (g⁻¹ * h)) < δ ^ 2 / 2 :=
-    lt_of_le_of_lt (by simpa [norm_sub_rev] using RCLike.re_le_norm (1 - φ (g⁻¹ * h))) hgh
+    (RCLike.one_sub_re_le_norm_sub_one (φ (g⁻¹ * h))).trans_lt hgh
   exact (sq_lt_sq₀ (norm_nonneg _) hδ.le).mp (by linarith)
 
 /-- If a normalized positive-definite function `φ` satisfies `‖φ g - 1‖ < δ ^ 2 / 2` with `δ > 0`,

@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.PropertyT.KazhdanPair
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
 import TauCeti.Analysis.PositiveDefinite.Kernel.Schoenberg
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.GroupTheory.PositiveDefinite.Metric
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvex
 import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
@@ -114,7 +115,7 @@ private theorem approx_invariant_of_posSemidef_approx {Λ : Subgroup Γ}
   have horb (k : Λ) : ‖(ρ.restrict Λ.subtype) k ξ - ξ‖ ≤ (3 / 4 : ℝ) * ε := by
     have hk := hFδ φ hφ hφ1 hφF k k.property
     have hre : 1 - (φ k).re < ε ^ 2 / 4 :=
-      lt_of_le_of_lt (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ k)) hk
+      (RCLike.one_sub_re_le_norm_sub_one (φ k)).trans_lt hk
     have hsq : ‖ρ k ξ - ξ‖ ^ 2 = 2 * (1 - (φ k).re) := by
       rw [@norm_sub_sq ℂ, hρ.norm_map, hξ, one_pow]
       have hsymm : RCLike.re ⟪ρ k ξ, ξ⟫_ℂ = (φ k).re :=
@@ -278,9 +279,9 @@ private theorem sq_div_eight_le_one_sub_re_inv_mul_mul {φ : Γ → ℂ}
   have htri := hφ.le_sqrt_re_one_sub_re_inv_mul_mul a g b
   simp only [RCLike.re_to_complex, h1, Complex.one_re] at htri
   have hre_a : 1 - (φ a).re ≤ ε ^ 2 / 32 :=
-    le_trans (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ a)) ha
+    (RCLike.one_sub_re_le_norm_sub_one (φ a)).trans ha
   have hre_b : 1 - (φ b).re ≤ ε ^ 2 / 32 :=
-    le_trans (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ b)) hb
+    (RCLike.one_sub_re_le_norm_sub_one (φ b)).trans hb
   have hsq_g : (4 * u) ^ 2 ≤ 1 - (φ g).re := by
     have hnorm : ‖φ g - 1‖ ^ 2 ≤ 2 * (1 - (φ g).re) := hφ.norm_sub_one_sq_le h1 g
     have hε_sq : ε ^ 2 ≤ ‖φ g - 1‖ ^ 2 := pow_le_pow_left₀ hε hg 2
@@ -332,16 +333,57 @@ private theorem tendsto_cexp_neg_tsum_mul_zero {A : ℕ → Finset Γ}
         (by nlinarith [sq_pos_of_pos hε₀])
   exact squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) hbound hexp0
 
+/-- Positive semidefiniteness of `g ↦ exp (-t * ∑' k, w k * (1 - φ k g))` for nonnegative
+weights `w` and positive-definite functions `φ k`, via `CondNegSemidef.tsum_of_summable` and
+Schoenberg's theorem. -/
+private theorem posSemidef_cexp_neg_tsum_mul {φ : ℕ → Γ → ℂ}
+    (hpd : ∀ k, (Matrix.of fun a b : Γ ↦ φ k (a⁻¹ * b)).PosSemidef)
+    {w : ℕ → ℝ} (hw : ∀ k, 0 ≤ w k)
+    (hsumm : ∀ g, Summable fun k : ℕ ↦ (w k : ℂ) * (1 - φ k g))
+    {t : ℝ} (ht : 0 ≤ t) :
+    (Matrix.of fun a b : Γ ↦
+      Complex.exp (-(t : ℂ) * ∑' k : ℕ, (w k : ℂ) * (1 - φ k (a⁻¹ * b)))).PosSemidef := by
+  let Ψ : Matrix Γ Γ ℂ :=
+    Matrix.of fun a b : Γ ↦ ∑' k : ℕ, (w k : ℂ) * (1 - φ k (a⁻¹ * b))
+  have hΨ : Ψ.CondNegSemidef := by
+    refine Matrix.CondNegSemidef.tsum_of_summable
+      (f := fun (k : ℕ) (a b : Γ) ↦ (w k : ℂ) * (1 - φ k (a⁻¹ * b)))
+      (fun a b ↦ hsumm (a⁻¹ * b)) fun k ↦ ?_
+    convert ((hpd k).const_sub_condNegSemidef (star_one ℂ)).smul
+      (a := (w k : ℂ)) (by exact_mod_cast hw k) using 1
+    ext a b
+    simp
+  simpa [Ψ] using hΨ.posSemidef_cexp_neg_mul ht
+
+omit [Group Γ] in
+/-- For a finite set `F₀` and `ε > 0`, there exists `t > 0` such that `exp (-t * ψ g)` lies within
+`ε` of `1` on `F₀`. -/
+private theorem exists_pos_forall_mem_norm_cexp_neg_mul_sub_lt (F₀ : Finset Γ) (ψ : Γ → ℂ)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ t : ℝ, 0 < t ∧ ∀ g ∈ F₀, ‖Complex.exp (-(t : ℂ) * ψ g) - 1‖ < ε := by
+  have hev : ∀ᶠ t : ℝ in 𝓝 0, ∀ g ∈ F₀, ‖Complex.exp (-(t : ℂ) * ψ g) - 1‖ < ε := by
+    refine (Filter.eventually_all_finset F₀).mpr fun g _ ↦ ?_
+    have hcont : Continuous fun t : ℝ ↦ Complex.exp (-(t : ℂ) * ψ g) := by fun_prop
+    have ht0 : Tendsto (fun t : ℝ ↦ Complex.exp (-(t : ℂ) * ψ g)) (𝓝 0) (𝓝 1) := by
+      simpa using (hcont.continuousAt (x := 0)).tendsto
+    simpa only [dist_eq_norm] using Metric.tendsto_nhds.mp ht0 ε hε
+  obtain ⟨r, hr, hr_sub⟩ := Metric.mem_nhds_iff.mp hev
+  refine ⟨r / 2, half_pos hr, hr_sub ?_⟩
+  rw [Metric.mem_ball, dist_zero_right, Real.norm_of_nonneg (half_pos hr).le]
+  exact half_lt_self hr
+
 /-- **Jolissaint – Anantharaman–Popa exponential step.** For a subgroup `Λ` of a countable group
 `Γ`, relative property (T) implies quantitative positive-definite approximation on `Λ`. -/
 private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subgroup Γ}
     (hΛ : Λ.RelativePropertyT.{v}) : PosSemidefApprox Λ := by
   classical
+  -- Fix a Kazhdan pair `(F₀, δ₀)` and assume positive-definite approximation fails at scale `ε₀`.
   obtain ⟨F₀, δ₀, hδ₀, hK⟩ := Λ.relativePropertyT_iff_exists_isKazhdanPair.{v, v}.mp hΛ
   by_contra hnot
   unfold PosSemidefApprox at hnot
   push Not at hnot
   obtain ⟨ε₀, hε₀, hbad⟩ := hnot
+  -- Exhaust `Γ` by finite sets `A k ⊇ F₀` to pick a bad sequence `(φ k, s k ∈ Λ)` violating `ε₀`.
   obtain ⟨B, -, hB⟩ := exists_seq_monotone_tendsto_atTop_atTop (Finset Γ)
   let A (k : ℕ) : Finset Γ := F₀ ∪ B k
   let η (k : ℕ) : ℝ := min (1 / ((k + 1 : ℝ) * (2 : ℝ) ^ (k + 1))) (ε₀ ^ 2 / 32)
@@ -349,42 +391,24 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
   choose φ hpd h1 hF s hsΛ hsε using hex
   have hA_mem (g : Γ) : ∀ᶠ k in atTop, g ∈ A k :=
     (hB.eventually (eventually_finset_mem_atTop g)).mono fun _ hg ↦ Finset.mem_union_right _ hg
+  -- Define the weighted series `ψ g = ∑' k, (k + 1) * (1 - φ k g)`.
   have hsumm (g : Γ) : Summable fun k : ℕ ↦ ((k + 1 : ℝ) : ℂ) * (1 - φ k g) :=
     summable_mul_one_sub_of_exhaustion hA_mem
       (fun k x hx ↦ (hF k x hx).le.trans (min_le_left _ _)) g
   let ψ (g : Γ) : ℂ := ∑' k : ℕ, ((k + 1 : ℝ) : ℂ) * (1 - φ k g)
-  -- Pick `t > 0` small enough that `exp (-t * ψ g)` is within `δ₀ ^ 2 / 2` of `1` on `F₀`.
-  have hev_t : ∀ᶠ t : ℝ in 𝓝 0,
-      ∀ g ∈ F₀, ‖Complex.exp (-(t : ℂ) * ψ g) - 1‖ < δ₀ ^ 2 / 2 := by
-    refine (Filter.eventually_all_finset F₀).mpr fun g _ ↦ ?_
-    have hcont : Continuous fun t : ℝ ↦ Complex.exp (-(t : ℂ) * ψ g) := by fun_prop
-    have ht0 : Tendsto (fun t : ℝ ↦ Complex.exp (-(t : ℂ) * ψ g)) (𝓝 0) (𝓝 1) := by
-      simpa using (hcont.continuousAt (x := 0)).tendsto
-    simpa only [dist_eq_norm] using Metric.tendsto_nhds.mp ht0 (δ₀ ^ 2 / 2) (by positivity)
-  obtain ⟨r, hr, hr_sub⟩ := Metric.mem_nhds_iff.mp hev_t
-  let t : ℝ := r / 2
-  have ht : 0 < t := half_pos hr
-  have htF₀ : ∀ g ∈ F₀, ‖Complex.exp (-(t : ℂ) * ψ g) - 1‖ < δ₀ ^ 2 / 2 :=
-    hr_sub (by
-      rw [Metric.mem_ball, dist_zero_right, Real.norm_of_nonneg ht.le]
-      exact half_lt_self hr)
+  -- Choose `t > 0` small enough that `Φ = exp (-t * ψ)` is `(F₀, δ₀ ^ 2 / 2)`-close to `1`.
+  obtain ⟨t, ht, htF₀⟩ := exists_pos_forall_mem_norm_cexp_neg_mul_sub_lt F₀ ψ (by positivity :
+    0 < δ₀ ^ 2 / 2)
   let Φ (g : Γ) : ℂ := Complex.exp (-(t : ℂ) * ψ g)
-  have hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef := by
-    let Ψ : Matrix Γ Γ ℂ := Matrix.of fun a b : Γ ↦ ψ (a⁻¹ * b)
-    have hΨ : Ψ.CondNegSemidef := by
-      refine Matrix.CondNegSemidef.tsum_of_summable
-        (f := fun (k : ℕ) (a b : Γ) ↦ ((k + 1 : ℝ) : ℂ) * (1 - φ k (a⁻¹ * b)))
-        (fun a b ↦ hsumm (a⁻¹ * b)) fun k ↦ ?_
-      convert ((hpd k).const_sub_condNegSemidef (star_one ℂ)).smul
-        (a := ((k + 1 : ℝ) : ℂ)) (by exact_mod_cast (by positivity : (0 : ℝ) ≤ k + 1)) using 1
-      ext a b
-      simp
-    simpa [Φ, Ψ] using hΨ.posSemidef_cexp_neg_mul ht.le
+  have hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef :=
+    posSemidef_cexp_neg_tsum_mul hpd (fun k ↦ by positivity) hsumm ht.le
   have hΦ1 : Φ 1 = 1 := by simp [Φ, ψ, h1]
+  -- Its GNS vector `gnsVector 1` is `(F₀, δ₀)`-invariant, giving a nonzero `Λ`-invariant `v`.
   obtain ⟨v, hv0, hvΛ⟩ := (isKazhdanPair_def Λ F₀ δ₀).mp hK
     hΦ.gnsSpace hΦ.gnsRepresentation hΦ.isUnitary_gnsRepresentation
     ⟨hΦ.gnsVector 1, hΦ.norm_gnsVector_eq_one hΦ1 1,
       fun g hg ↦ hΦ.norm_gnsRepresentation_gnsVector_one_sub_lt hΦ1 hδ₀ (htF₀ g hg)⟩
+  -- Exponential decay of `Φ (a⁻¹ * s n * b)` along `s n` forces `invariants = ⊥`, contradiction.
   have hbot : (hΦ.gnsRepresentation.restrict Λ.subtype).invariants = ⊥ :=
     hΦ.invariants_restrict_gnsRepresentation_eq_bot Λ.subtype (s := fun n ↦ ⟨s n, hsΛ n⟩)
       (tendsto_cexp_neg_tsum_mul_zero hA_mem hpd h1 hsumm hε₀

@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.PropertyT.KazhdanPair
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Induced
 import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.GroupTheory.PositiveDefinite.Basic
 import TauCeti.GroupTheory.PropertyT.PositiveDefinite
 
@@ -242,7 +243,7 @@ private theorem forall_posSemidef_norm_sub_one_lt_subgroupOf {𝕜 : Type*} [RCL
     hFδ ψ (TauCeti.posSemidef_inducedFun s hφ) ((TauCeti.inducedFun_one s φ).trans h1) hψF h hh
   -- Convert the bound on `ψ h` back to `‖φ h - 1‖` via the real-part averaging inequality.
   have hre_ψ : 1 - RCLike.re (ψ (h : Γ)) < ε ^ 2 / (2 * N) :=
-    lt_of_le_of_lt (by simpa [norm_sub_rev] using RCLike.re_le_norm (1 - ψ h)) hψh
+    (RCLike.one_sub_re_le_norm_sub_one (ψ h)).trans_lt hψh
   have hre_h : 1 - RCLike.re (φ h) ≤ (N : ℝ) * (1 - RCLike.re (ψ (h : Γ))) :=
     TauCeti.one_sub_re_le_card_mul_one_sub_re_inducedFun hs hs1 hφ h1 h
   have hre_lt : 1 - RCLike.re (φ h) < ε ^ 2 / 2 := by
