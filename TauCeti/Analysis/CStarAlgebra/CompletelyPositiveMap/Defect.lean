@@ -60,8 +60,9 @@ open scoped CStarAlgebra ComplexOrder InnerProductSpace
 namespace CompletelyPositiveMap
 
 open CStarMatrix
-open ContinuousLinearMap (hilbertSchmidtEnergy_ne_top hilbertSchmidtNorm_add_le
-  hilbertSchmidtNorm_comp_le_left hilbertSchmidtNorm_comp_le_right)
+open ContinuousLinearMap (hilbertSchmidtNorm_add_le_of_finiteDimensional
+  hilbertSchmidtNorm_comp_le_left_of_finiteDimensional
+  hilbertSchmidtNorm_comp_le_right_of_finiteDimensional)
 
 variable {n : Type*} [Fintype n]
 
@@ -329,8 +330,7 @@ theorem normalizedTwoNorm_map_mul_sub_le (a b : A) :
   rw [map_mul_sub_eq hφ, normalizedTwoNorm_toEuclideanCLM_symm, sqrt_twoNormDefect_eq hφ,
     mul_left_comm]
   gcongr
-  refine (hilbertSchmidtNorm_comp_le_left _ _ _
-    (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)).trans ?_
+  refine (hilbertSchmidtNorm_comp_le_left_of_finiteDimensional _ _).trans ?_
   rw [ContinuousLinearMap.adjoint.norm_map]
   exact mul_le_mul_of_nonneg_right (by simpa using norm_defectOp_le hφ (star a))
     (ContinuousLinearMap.hilbertSchmidtNorm_nonneg _)
@@ -344,8 +344,7 @@ theorem normalizedTwoNorm_map_mul_sub_le' (a b : A) :
   rw [← normalizedTwoNorm_star, h, map_star_mul_sub_eq hφ, normalizedTwoNorm_toEuclideanCLM_symm,
     sqrt_twoNormDefect_eq hφ, mul_assoc, mul_comm (ContinuousLinearMap.hilbertSchmidtNorm _)]
   gcongr
-  refine (hilbertSchmidtNorm_comp_le_left _ _ _
-    (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)).trans ?_
+  refine (hilbertSchmidtNorm_comp_le_left_of_finiteDimensional _ _).trans ?_
   rw [ContinuousLinearMap.adjoint.norm_map]
   exact mul_le_mul_of_nonneg_right (norm_defectOp_le hφ b)
     (ContinuousLinearMap.hilbertSchmidtNorm_nonneg _)
@@ -363,8 +362,7 @@ theorem sqrt_twoNormDefect_add_le (a b : A) :
   classical
   simp only [sqrt_twoNormDefect_eq hφ, map_add, ← mul_add]
   gcongr
-  exact hilbertSchmidtNorm_add_le _ _ _
-    (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)
+  exact hilbertSchmidtNorm_add_le_of_finiteDimensional _ _
 
 /-- The product rule `d_∞(φ, ab)^{1/2} ≤ ‖b‖ d_∞(φ, a)^{1/2} + ‖a‖ d_∞(φ, b)^{1/2}`. -/
 theorem sqrt_normDefect_mul_le (a b : A) :
@@ -387,15 +385,11 @@ theorem sqrt_twoNormDefect_mul_le (a b : A) :
   simp only [sqrt_twoNormDefect_eq hφ, mul_left_comm _ √_, ← mul_add]
   rw [defectOp_mul hφ]
   gcongr
-  refine (hilbertSchmidtNorm_add_le _ _ _
-    (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)).trans
-    (add_le_add ?_ ?_)
-  · refine (hilbertSchmidtNorm_comp_le_right _ _ _
-      (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)).trans ?_
+  refine (hilbertSchmidtNorm_add_le_of_finiteDimensional _ _).trans (add_le_add ?_ ?_)
+  · refine (hilbertSchmidtNorm_comp_le_right_of_finiteDimensional _ _).trans ?_
     rw [norm_toEuclideanCLM, mul_comm ‖b‖]
     exact mul_le_mul_of_nonneg_left (hφ b) (ContinuousLinearMap.hilbertSchmidtNorm_nonneg _)
-  · refine (hilbertSchmidtNorm_comp_le_left _ _ _
-      (hilbertSchmidtEnergy_ne_top _ (EuclideanSpace.basisFun n ℂ).toHilbertBasis)).trans ?_
+  · refine (hilbertSchmidtNorm_comp_le_left_of_finiteDimensional _ _).trans ?_
     exact mul_le_mul_of_nonneg_right (norm_defectSqrt_comp_le hφ a)
       (ContinuousLinearMap.hilbertSchmidtNorm_nonneg _)
 

@@ -70,6 +70,10 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
   source, `E_b(T) = ‖T‖_F²`.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_ne_top`: an operator with a finite-dimensional source
   has finite energy.
+* `ContinuousLinearMap.hilbertSchmidtNorm_add_le_of_finiteDimensional`,
+  `ContinuousLinearMap.hilbertSchmidtNorm_comp_le_left_of_finiteDimensional` and
+  `ContinuousLinearMap.hilbertSchmidtNorm_comp_le_right_of_finiteDimensional`: the triangle and
+  one-sided ideal inequalities with no finiteness hypothesis, on a finite-dimensional source.
 
 ## References
 
@@ -309,6 +313,13 @@ theorem hilbertSchmidtNorm_add_le (S T : E →L[𝕜] F) (b : HilbertBasis ι �
     one_pow, one_mul] at h1
   exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hST, hS'⟩) h1
 
+/-- **Triangle inequality for the Hilbert–Schmidt norm** on a finite-dimensional source, where every
+operator has finite energy: `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS`. -/
+theorem hilbertSchmidtNorm_add_le_of_finiteDimensional [FiniteDimensional 𝕜 E] (S T : E →L[𝕜] F) :
+    (S + T).hilbertSchmidtNorm ≤ S.hilbertSchmidtNorm + T.hilbertSchmidtNorm := by
+  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
+  exact hilbertSchmidtNorm_add_le S T b (S.hilbertSchmidtEnergy_ne_top b)
+
 /-- **Hilbert–Schmidt domination of the operator norm.** An operator of finite energy satisfies
 `‖T‖ ≤ ‖T‖_HS`. -/
 theorem norm_le_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
@@ -329,6 +340,14 @@ theorem hilbertSchmidtNorm_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜] F
     sq_hilbertSchmidtNorm _ b, mul_pow, T.sq_hilbertSchmidtNorm b]
   convert ENNReal.toReal_mono hfin (hilbertSchmidtEnergy_comp_le_left A T b) using 1
   simp [ENNReal.toReal_mul, ENNReal.toReal_pow]
+
+/-- **Left ideal inequality for the Hilbert–Schmidt norm** on a finite-dimensional source, where
+every operator has finite energy: `‖A T‖_HS ≤ ‖A‖ ‖T‖_HS`. -/
+theorem hilbertSchmidtNorm_comp_le_left_of_finiteDimensional [FiniteDimensional 𝕜 E]
+    (A : F →L[𝕜] G) (T : E →L[𝕜] F) :
+    (A ∘L T).hilbertSchmidtNorm ≤ ‖A‖ * T.hilbertSchmidtNorm := by
+  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
+  exact hilbertSchmidtNorm_comp_le_left A T b (T.hilbertSchmidtEnergy_ne_top b)
 
 section CompleteTarget
 
@@ -371,6 +390,14 @@ theorem hilbertSchmidtNorm_comp_le_right (T : F →L[𝕜] G) (B : E →L[𝕜] 
     sq_hilbertSchmidtNorm _ b, mul_pow, T.sq_hilbertSchmidtNorm c]
   convert ENNReal.toReal_mono hfin (hilbertSchmidtEnergy_comp_le_right T B b c) using 1
   simp [ENNReal.toReal_mul, ENNReal.toReal_pow]
+
+/-- **Right ideal inequality for the Hilbert–Schmidt norm** when the source of `T` is
+finite-dimensional, so that `T` has finite energy: `‖T B‖_HS ≤ ‖T‖_HS ‖B‖`. -/
+theorem hilbertSchmidtNorm_comp_le_right_of_finiteDimensional [FiniteDimensional 𝕜 F]
+    (T : F →L[𝕜] G) (B : E →L[𝕜] F) :
+    (T ∘L B).hilbertSchmidtNorm ≤ T.hilbertSchmidtNorm * ‖B‖ := by
+  obtain ⟨_, c, -⟩ := exists_hilbertBasis 𝕜 F
+  exact hilbertSchmidtNorm_comp_le_right T B c (T.hilbertSchmidtEnergy_ne_top c)
 
 end CompleteTarget
 
