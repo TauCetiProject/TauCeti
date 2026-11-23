@@ -49,16 +49,11 @@ preserves `α` exactly when its conjugate `e ∘ φ ∘ e⁻¹` preserves `β`. 
 theorem diffCongr_mem_diffeomorphStabilizer_iff (e : M ≃ₘ⟮I, J⟯ N) {α : SmoothForm I M F k}
     {β : SmoothForm J N F k} (h : mpullback e e.contMDiff β = α) {φ : M ≃ₘ⟮I, I⟯ M} :
     diffCongr e φ ∈ diffeomorphStabilizer β ↔ φ ∈ diffeomorphStabilizer α := by
-  subst h
-  rw [mem_diffeomorphStabilizer, mem_diffeomorphStabilizer, diffCongr_apply, mpullback_trans,
-    mpullback_trans]
-  constructor
-  · intro hφ
-    have h' := congrArg (mpullback e e.contMDiff) hφ
-    rwa [mpullback_mpullback_symm] at h'
-  · intro hφ
-    rw [hφ]
-    exact mpullback_symm_mpullback e β
+  refine ⟨fun hφ ↦ h ▸ mem_diffeomorphStabilizer_mpullback_of_semiconj e.contMDiff
+    (fun x ↦ by simp [diffCongr_apply]) hφ, fun hφ ↦ ?_⟩
+  rw [← mpullback_symm_eq_of_mpullback_eq h]
+  exact mem_diffeomorphStabilizer_mpullback_of_semiconj e.symm.contMDiff
+    (fun y ↦ by simp [diffCongr_apply]) hφ
 
 /-- A diffeomorphism `e : M → N` pulling `β` back to `α` conjugates the stabilizer of `α` onto the
 stabilizer of `β`. For symplectic forms, conjugation by a symplectomorphism identifies the
