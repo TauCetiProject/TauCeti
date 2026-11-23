@@ -139,6 +139,18 @@ open scoped NNReal
 
 namespace TauCeti
 
+/-- Multiplying a function by a scalar multiplies every iterated derivative by that scalar.
+Unlike Mathlib's `iteratedFDeriv_const_smul_apply'`, no differentiability is needed, and the
+scalar may be zero. -/
+theorem iteratedFDeriv_const_smul (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
+    iteratedFDeriv 𝕜 i (fun y ↦ a • f y) x = a • iteratedFDeriv 𝕜 i f x := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  · have h := (ContinuousLinearEquiv.smulLeft (Units.mk0 a ha) : F ≃L[𝕜] F)
+      |>.iteratedFDeriv_comp_left (f := f) (x := x) (i := i)
+    ext v
+    simpa [Function.comp_def] using congrArg (fun L ↦ L v) h
+
 /-- **Iterated derivatives of a rescaling.** The `i`-th derivative of `z ↦ f (a • z)` at `x` is
 `a ^ i` times the `i`-th derivative of `f` at `a • x`. Unlike Mathlib's
 `iteratedFDeriv_comp_const_smul`, no differentiability of `f` is needed. -/

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Otis Chodosh, The Tau Ceti contributors
 -/
 module
 
@@ -13,28 +13,33 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
-public import TauCeti.Analysis.Calculus.MeanValue
+public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # Scaling and normalization of Euclidean minimal graphs
 
 Simultaneously dilating the horizontal and vertical coordinates leaves the gradient unchanged
-at the corresponding point and multiplies the native minimal graph operator by the reciprocal
+at the corresponding point and multiplies the nondivergence minimal graph operator by the reciprocal
 scale. Centering at a point and dividing the height by the radius gives the inverse normalization:
-the gradient is unchanged and the native operator is multiplied by the radius.
+the gradient is unchanged and the nondivergence operator is multiplied by the radius.
 
-All finite derivative and native operator identities hold without regularity assumptions,
+All finite derivative and nondivergence operator identities hold without regularity assumptions,
 including at scale zero. Gradient identities require nonzero scales. Height centering disappears
 only at positive derivative orders. Nonnegative scales give exact derivative norm identities.
 Positive scales transport differentiability between the corresponding balls. A gradient bound
 on the original ball controls the normalized height by the mean value inequality.
 
+Adapted from Otis Chodosh's formalization in
+`ForTauCeti/Geometry/Euclidean/MinimalGraph/Equation/Scaling.lean` in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/2490d830cfd5db58e1477b549840931baef25a88/ForTauCeti/Geometry/Euclidean/MinimalGraph/Equation/Scaling.lean)
+(commit `2490d830cfd5db58e1477b549840931baef25a88`).
+
 ## Main declarations
 
 * `TauCeti.MinimalGraph.iteratedFDeriv_dilatedHeight`: the exact finite-order dilation factor.
 * `TauCeti.MinimalGraph.iteratedFDeriv_normalizedHeight`: positive-order normalization factors.
-* `TauCeti.MinimalGraph.nondivergenceOperator_normalizedHeight`: native graph equation scaling.
+* `TauCeti.MinimalGraph.nondivergenceOperator_normalizedHeight`: equation scaling.
 * `TauCeti.MinimalGraph.contDiffOn_normalizedHeight_ball`: regularity on a fixed normalized ball.
 * `TauCeti.MinimalGraph.abs_normalizedHeight_le`: a height bound from the gradient bound.
 -/
@@ -46,39 +51,59 @@ open scoped ContDiff Gradient Laplacian
 
 namespace TauCeti.MinimalGraph
 
+section Heights
+
+variable {E : Type*} [SMul ℝ E]
+
+/-- The height of a graph after dilating both horizontal and vertical coordinates by `r`. -/
+def dilatedHeight (u : E → ℝ) (r : ℝ) : E → ℝ :=
+  fun y ↦ r * u (r⁻¹ • y)
+
+/-- Evaluate the height of a simultaneously dilated graph. -/
+@[simp]
+theorem dilatedHeight_apply (u : E → ℝ) (r : ℝ) (y : E) :
+    dilatedHeight u r y = r * u (r⁻¹ • y) := (rfl)
+
+end Heights
+
+section CenteredHeight
+
+variable {E : Type*} [Add E] [SMul ℝ E]
+
+/-- The height centered at `p` and normalized by the spatial and vertical scale `R`. -/
+def normalizedHeight (u : E → ℝ) (p : E) (R : ℝ) : E → ℝ :=
+  fun y ↦ R⁻¹ * (u (p + R • y) - u p)
+
+/-- Evaluate the centered and normalized height. -/
+@[simp]
+theorem normalizedHeight_apply (u : E → ℝ) (p : E) (R : ℝ) (y : E) :
+    normalizedHeight u p R y = R⁻¹ * (u (p + R • y) - u p) := (rfl)
+
+end CenteredHeight
+
 section Jets
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-private theorem iteratedFDeriv_const_mul_nonzero (u : E → ℝ) {a : ℝ} (ha : a ≠ 0)
-    (x : E) (k : ℕ) :
-    iteratedFDeriv ℝ k (fun y ↦ a * u y) x = a • iteratedFDeriv ℝ k u x := by
-  have h := (ContinuousLinearEquiv.smulLeft (Units.mk0 a ha) : ℝ ≃L[ℝ] ℝ)
-    |>.iteratedFDeriv_comp_left (f := u) (x := x) (i := k)
-  ext v
-  simpa [Function.comp_def] using congrArg (fun L ↦ L v) h
-
-/-- Dilating a graph scales its iterated derivatives by the corresponding degree. -/
+/-- Dilating a graph by `r` multiplies its `k`-th iterated derivative by `r * (r⁻¹) ^ k`,
+evaluated at the corresponding point. -/
 theorem iteratedFDeriv_dilatedHeight (u : E → ℝ) (r : ℝ)
     (x : E) (k : ℕ) :
-    iteratedFDeriv ℝ k (fun y ↦ r * u (r⁻¹ • y)) x =
+    iteratedFDeriv ℝ k (dilatedHeight u r) x =
       (r * (r⁻¹) ^ k) • iteratedFDeriv ℝ k u (r⁻¹ • x) := by
-  by_cases hr : r = 0
-  · subst r
-    simp
-  rw [iteratedFDeriv_const_mul_nonzero _ hr,
+  change iteratedFDeriv ℝ k (fun y ↦ r • u (r⁻¹ • y)) x = _
+  rw [TauCeti.iteratedFDeriv_const_smul,
     TauCeti.iteratedFDeriv_comp_const_smul_apply, smul_smul]
 
-/-- Normalizing a graph scales its positive-order iterated derivatives by its radius. -/
+/-- Normalizing a graph multiplies its `k`-th iterated derivative by `R⁻¹ * R ^ k` for `1 ≤ k`,
+evaluated at the corresponding point. -/
 theorem iteratedFDeriv_normalizedHeight (u : E → ℝ) (p : E) (R : ℝ)
     (x : E) (k : ℕ) (hk : 1 ≤ k) :
-    iteratedFDeriv ℝ k (fun y ↦ R⁻¹ * (u (p + R • y) - u p)) x =
+    iteratedFDeriv ℝ k (normalizedHeight u p R) x =
       (R⁻¹ * R ^ k) • iteratedFDeriv ℝ k u (p + R • x) := by
-  by_cases hR : R = 0
-  · subst R
-    simp
+  change iteratedFDeriv ℝ k (fun y ↦ R⁻¹ • (u (p + R • y) - u p)) x = _
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hk
-  rw [iteratedFDeriv_const_mul_nonzero _ (inv_ne_zero hR)]
+  rw [TauCeti.iteratedFDeriv_const_smul]
   simp_rw [sub_eq_add_neg]
   rw [Nat.add_comm 1, TauCeti.iteratedFDeriv_succ_add_const]
   rw [TauCeti.iteratedFDeriv_comp_const_smul_apply (fun z ↦ u (p + z)) R x (j + 1),
@@ -87,7 +112,7 @@ theorem iteratedFDeriv_normalizedHeight (u : E → ℝ) (p : E) (R : ℝ)
 /-- Nonnegative graph dilations scale derivative norms by the corresponding factor. -/
 theorem norm_iteratedFDeriv_dilatedHeight (u : E → ℝ) {r : ℝ} (hr : 0 ≤ r)
     (x : E) (k : ℕ) :
-    ‖iteratedFDeriv ℝ k (fun y ↦ r * u (r⁻¹ • y)) x‖ =
+    ‖iteratedFDeriv ℝ k (dilatedHeight u r) x‖ =
       (r * (r⁻¹) ^ k) * ‖iteratedFDeriv ℝ k u (r⁻¹ • x)‖ := by
   rw [iteratedFDeriv_dilatedHeight u r, norm_smul,
     Real.norm_of_nonneg (mul_nonneg hr (pow_nonneg (inv_nonneg.mpr hr) k))]
@@ -95,7 +120,7 @@ theorem norm_iteratedFDeriv_dilatedHeight (u : E → ℝ) {r : ℝ} (hr : 0 ≤ 
 /-- Nonnegative graph normalizations scale positive-order derivative norms by the radius factor. -/
 theorem norm_iteratedFDeriv_normalizedHeight (u : E → ℝ) (p : E) {R : ℝ} (hR : 0 ≤ R)
     (x : E) (k : ℕ) (hk : 1 ≤ k) :
-    ‖iteratedFDeriv ℝ k (fun y ↦ R⁻¹ * (u (p + R • y) - u p)) x‖ =
+    ‖iteratedFDeriv ℝ k (normalizedHeight u p R) x‖ =
       (R⁻¹ * R ^ k) * ‖iteratedFDeriv ℝ k u (p + R • x)‖ := by
   rw [iteratedFDeriv_normalizedHeight u p R x k hk, norm_smul,
     Real.norm_of_nonneg (mul_nonneg (inv_nonneg.mpr hR) (pow_nonneg hR k))]
@@ -109,13 +134,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- Dilation transports local differentiability through the actual rescaling map. -/
 theorem contDiffOn_dilatedHeight {u : E → ℝ} {S T : Set E} {k : ℕ∞ω} {r : ℝ}
     (hu : ContDiffOn ℝ k u S) (hmap : MapsTo (fun x ↦ r⁻¹ • x) T S) :
-    ContDiffOn ℝ k (fun x ↦ r * u (r⁻¹ • x)) T := by
+    ContDiffOn ℝ k (dilatedHeight u r) T := by
   exact (hu.comp (contDiffOn_const.smul contDiffOn_id) hmap).const_smul r
 
 /-- Centering and rescaling the height transports local differentiability. -/
 theorem contDiffOn_normalizedHeight {u : E → ℝ} (p : E) (R : ℝ) {S T : Set E} {k : ℕ∞ω}
     (hu : ContDiffOn ℝ k u S) (hmap : MapsTo (fun x ↦ p + R • x) T S) :
-    ContDiffOn ℝ k (fun x ↦ R⁻¹ * (u (p + R • x) - u p)) T := by
+    ContDiffOn ℝ k (normalizedHeight u p R) T := by
   exact ((hu.comp (contDiffOn_const.add (contDiffOn_const.smul contDiffOn_id)) hmap).sub
     contDiffOn_const).const_smul R⁻¹
 
@@ -127,7 +152,7 @@ private theorem mem_ball_normalizedHeight {p z : E} {R a : ℝ} (hR : 0 < R)
 /-- A positive height normalization takes differentiability on a scaled ball to a fixed ball. -/
 theorem contDiffOn_normalizedHeight_ball {u : E → ℝ} {p : E} {R a : ℝ} {k : ℕ∞ω}
     (hR : 0 < R) (hu : ContDiffOn ℝ k u (ball p (R * a))) :
-    ContDiffOn ℝ k (fun x ↦ R⁻¹ * (u (p + R • x) - u p)) (ball (0 : E) a) := by
+    ContDiffOn ℝ k (normalizedHeight u p R) (ball (0 : E) a) := by
   exact contDiffOn_normalizedHeight p R hu (fun _ hx ↦ mem_ball_normalizedHeight hR hx)
 
 end Generic
@@ -137,27 +162,28 @@ section Gradient
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [CompleteSpace E]
 
-/-- The gradient is unchanged by simultaneous dilation of the horizontal and vertical axes. -/
-theorem gradient_dilatedHeight (u : E → ℝ) {r : ℝ} (hr : r ≠ 0) (x : E) :
-    ∇ (fun y ↦ r * u (r⁻¹ • y)) x = ∇ u (r⁻¹ • x) := by
+private theorem gradient_eq_of_iteratedFDeriv_one {u v : E → ℝ} {x y : E}
+    (h : iteratedFDeriv ℝ 1 v x = iteratedFDeriv ℝ 1 u y) : ∇ v x = ∇ u y := by
   apply (toDual ℝ E).injective
   rw [toDual_gradient, toDual_gradient]
   ext e
-  have h := congrArg (fun A : E [×1]→L[ℝ] ℝ ↦ A (fun _ ↦ e))
-    (iteratedFDeriv_dilatedHeight u r x 1)
-  simpa only [iteratedFDeriv_one_apply, smul_apply, pow_one,
-    mul_inv_cancel₀ hr, one_smul] using h
+  simpa only [iteratedFDeriv_one_apply] using
+    congrArg (fun A : E [×1]→L[ℝ] ℝ ↦ A (fun _ ↦ e)) h
 
-/-- Centering and normalizing the height leaves the gradient at the corresponding point. -/
+/-- For `r ≠ 0`, the gradient is unchanged by simultaneous dilation of both axes. -/
+theorem gradient_dilatedHeight (u : E → ℝ) {r : ℝ} (hr : r ≠ 0) (x : E) :
+    ∇ (dilatedHeight u r) x = ∇ u (r⁻¹ • x) := by
+  apply gradient_eq_of_iteratedFDeriv_one
+  simpa only [pow_one, mul_inv_cancel₀ hr, one_smul] using
+    iteratedFDeriv_dilatedHeight u r x 1
+
+/-- For `R ≠ 0`, centering and normalizing the height leaves the gradient unchanged at the
+corresponding point. -/
 theorem gradient_normalizedHeight (u : E → ℝ) (p : E) {R : ℝ} (hR : R ≠ 0) (x : E) :
-    ∇ (fun y ↦ R⁻¹ * (u (p + R • y) - u p)) x = ∇ u (p + R • x) := by
-  apply (toDual ℝ E).injective
-  rw [toDual_gradient, toDual_gradient]
-  ext e
-  have h := congrArg (fun A : E [×1]→L[ℝ] ℝ ↦ A (fun _ ↦ e))
-    (iteratedFDeriv_normalizedHeight u p R x 1 le_rfl)
-  simpa only [iteratedFDeriv_one_apply, smul_apply, pow_one,
-    inv_mul_cancel₀ hR, one_smul] using h
+    ∇ (normalizedHeight u p R) x = ∇ u (p + R • x) := by
+  apply gradient_eq_of_iteratedFDeriv_one
+  simpa only [pow_one, inv_mul_cancel₀ hR, one_smul] using
+    iteratedFDeriv_normalizedHeight u p R x 1 le_rfl
 
 end Gradient
 
@@ -183,12 +209,13 @@ private theorem nondivergenceOperator_eq_mul_of_gradient_of_iteratedFDeriv_two
   rw [nondivergenceOperator_eq, nondivergenceOperator_eq, hgrad, hlap, hH]
   ring
 
-/-- The native minimal graph operator scales inversely under simultaneous graph dilation. -/
+/-- The nondivergence minimal graph operator scales inversely under simultaneous graph dilation. -/
 theorem nondivergenceOperator_dilatedHeight (u : E → ℝ) (r : ℝ) (x : E) :
-    nondivergenceOperator (fun y ↦ r * u (r⁻¹ • y)) x =
+    nondivergenceOperator (dilatedHeight u r) x =
       r⁻¹ * nondivergenceOperator u (r⁻¹ • x) := by
   by_cases hr : r = 0
   · subst r
+    unfold dilatedHeight
     simp [nondivergenceOperator_eq]
   apply nondivergenceOperator_eq_mul_of_gradient_of_iteratedFDeriv_two
     (gradient_dilatedHeight u hr x)
@@ -196,12 +223,13 @@ theorem nondivergenceOperator_dilatedHeight (u : E → ℝ) (r : ℝ) (x : E) :
   congr 1
   field_simp
 
-/-- The native minimal graph operator scales by the radius under height normalization. -/
+/-- The nondivergence minimal graph operator scales by the radius under height normalization. -/
 theorem nondivergenceOperator_normalizedHeight (u : E → ℝ) (p : E) (R : ℝ) (x : E) :
-    nondivergenceOperator (fun y ↦ R⁻¹ * (u (p + R • y) - u p)) x =
+    nondivergenceOperator (normalizedHeight u p R) x =
       R * nondivergenceOperator u (p + R • x) := by
   by_cases hR : R = 0
   · subst R
+    unfold normalizedHeight
     simp [nondivergenceOperator_eq]
   apply nondivergenceOperator_eq_mul_of_gradient_of_iteratedFDeriv_two
     (gradient_normalizedHeight u p hR x)
@@ -220,7 +248,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 theorem abs_normalizedHeight_le_mul_norm {u : E → ℝ} {p z : E} {R a M : ℝ}
     (hR : 0 < R) (hu : DifferentiableOn ℝ u (ball p (R * a)))
     (hgrad : ∀ x ∈ ball p (R * a), ‖∇ u x‖ ≤ M) (hz : z ∈ ball (0 : E) a) :
-    |R⁻¹ * (u (p + R • z) - u p)| ≤ M * ‖z‖ := by
+    |normalizedHeight u p R z| ≤ M * ‖z‖ := by
   have ha : 0 < a := dist_nonneg.trans_lt (mem_ball.mp hz)
   have hp : p ∈ ball p (R * a) := mem_ball_self (mul_pos hR ha)
   have hbound := (convex_ball p (R * a)).norm_image_sub_le_of_norm_fderiv_le
@@ -229,7 +257,7 @@ theorem abs_normalizedHeight_le_mul_norm {u : E → ℝ} {p z : E} {R a M : ℝ}
     hp (mem_ball_normalizedHeight hR hz)
   calc
     _ = R⁻¹ * ‖u (p + R • z) - u p‖ := by
-      rw [abs_mul, abs_inv, abs_of_pos hR, Real.norm_eq_abs]
+      rw [normalizedHeight_apply, abs_mul, abs_inv, abs_of_pos hR, Real.norm_eq_abs]
     _ ≤ R⁻¹ * (M * ‖p + R • z - p‖) :=
       mul_le_mul_of_nonneg_left hbound (inv_nonneg.mpr hR.le)
     _ = _ := by
@@ -240,7 +268,7 @@ theorem abs_normalizedHeight_le_mul_norm {u : E → ℝ} {p z : E} {R a M : ℝ}
 theorem abs_normalizedHeight_le {u : E → ℝ} {p z : E} {R a M : ℝ}
     (hR : 0 < R) (hu : DifferentiableOn ℝ u (ball p (R * a)))
     (hgrad : ∀ x ∈ ball p (R * a), ‖∇ u x‖ ≤ M) (hz : z ∈ ball (0 : E) a) :
-    |R⁻¹ * (u (p + R • z) - u p)| ≤ M * a := by
+    |normalizedHeight u p R z| ≤ M * a := by
   have ha : 0 < a := dist_nonneg.trans_lt (mem_ball.mp hz)
   have hM : 0 ≤ M := (norm_nonneg _).trans (hgrad p (mem_ball_self (mul_pos hR ha)))
   exact (abs_normalizedHeight_le_mul_norm hR hu hgrad hz).trans
