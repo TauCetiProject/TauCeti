@@ -5,38 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Uniqueness
-public import Mathlib.Analysis.Complex.CauchyIntegral
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Analytic.Uniqueness
 
 /-!
-# Identity theorems from local agreement and right half-planes
+# Identity theorems on right half-planes and punctured planes
 
-Functions holomorphic on an open preconnected set `U` that agree near some point `z₀ ∈ U` agree
-throughout `U` (`DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq`). In
-particular, functions holomorphic on a right half-plane `Re s > a` or on a punctured complex plane
-`{w}ᶜ` that agree on the intersection with `{s | b < s.re}` agree throughout their domain. The
-codomain is any complete complex normed space.
+Functions holomorphic on a right half-plane `Re s > a` or on a punctured complex plane `{w}ᶜ`
+that agree on the intersection with `{s | b < s.re}` agree throughout their domain, by
+`DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq`. The codomain is any complete
+complex normed space.
 -/
 
 public section
 
 open Set
 open scoped Topology
-
-/-- **Identity theorem on an open preconnected domain from local agreement.** Two functions
-holomorphic on an open preconnected set `U ⊆ ℂ` that agree near some point `z₀ ∈ U` agree
-throughout `U`. -/
-theorem DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
-    {f g : ℂ → E} {U : Set ℂ} {z₀ : ℂ}
-    (hf : DifferentiableOn ℂ f U) (hg : DifferentiableOn ℂ g U)
-    (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
-    (hz₀ : z₀ ∈ U) (hfg : f =ᶠ[𝓝 z₀] g) : EqOn f g U :=
-  (hf.analyticOnNhd hU_open).eqOn_of_preconnected_of_eventuallyEq
-    (hg.analyticOnNhd hU_open) hU_conn hz₀ hfg
 
 /-- **Identity theorem on a right half-plane.** Two functions holomorphic on `Re s > a` that
 agree on `{s | a < s.re} ∩ {s | b < s.re}` agree throughout `Re s > a`. -/

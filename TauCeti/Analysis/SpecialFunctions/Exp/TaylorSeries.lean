@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
-public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.RingTheory.PowerSeries.Exp
 public import TauCeti.Analysis.Analytic.TaylorSeries
 
@@ -14,7 +13,8 @@ public import TauCeti.Analysis.Analytic.TaylorSeries
 # Formal Taylor series for the exponential function
 
 Identities evaluating `TauCeti.taylorSeries` at `0` for `z ↦ NormedSpace.exp (a * z)`,
-`NormedSpace.exp`, and `z ↦ NormedSpace.exp z - 1` over any `[RCLike 𝕜]`.
+`NormedSpace.exp`, and `z ↦ NormedSpace.exp z - 1` over any
+`[NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜]`.
 
 ## Main results
 
@@ -33,7 +33,8 @@ noncomputable section
 
 namespace NormedSpace
 
-variable {𝕜 : Type*} [RCLike 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
+  [CompleteSpace 𝕜]
 
 /-- The formal Taylor series at `0` of `z ↦ NormedSpace.exp (a * z)` is
 `PowerSeries.rescale a (PowerSeries.exp 𝕜)`. -/

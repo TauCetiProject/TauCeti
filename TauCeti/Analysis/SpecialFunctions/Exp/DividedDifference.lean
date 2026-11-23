@@ -92,6 +92,20 @@ end Real
 
 namespace Complex
 
+/-- Factoring out `exp z` rewrites `exp z - 1` as `exp z * (1 - exp (-z))`. -/
+theorem exp_sub_one_eq_exp_mul_one_sub_exp_neg (z : ℂ) :
+    exp z - 1 = exp z * (1 - exp (-z)) := by
+  rw [mul_sub, mul_one, ← exp_add, add_neg_cancel, exp_zero]
+
+/-- Rewriting `exp (-c * z) / (1 - exp (-z))` with denominator `exp z - 1`. -/
+theorem exp_neg_mul_div_one_sub_exp_neg (c z : ℂ) :
+    exp (-c * z) / (1 - exp (-z)) = exp ((1 - c) * z) / (exp z - 1) := by
+  have hnum : exp z * exp (-c * z) = exp ((1 - c) * z) := by
+    rw [← exp_add]
+    congr 1
+    ring
+  rw [exp_sub_one_eq_exp_mul_one_sub_exp_neg, ← hnum, mul_div_mul_left _ _ (exp_ne_zero z)]
+
 /-- Translating the complex exponential divided difference to zero extracts the factor `exp a`. -/
 theorem dslope_exp_eq_exp_mul_dslope_zero (a b : ℂ) :
     dslope exp a b = exp a * dslope exp 0 (b - a) := by

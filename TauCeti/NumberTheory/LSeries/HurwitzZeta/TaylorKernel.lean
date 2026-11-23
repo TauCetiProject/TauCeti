@@ -57,6 +57,8 @@ bounds on `‖∂_c^d (hurwitzTaylorQuot M c z)‖` and Taylor remainder bounds
   `iteratedDeriv n (hurwitzKernel c) 0` with `(-1) ^ n * B_n(c)`.
 * `TauCeti.coeff_taylorSeries_hurwitzKernel_zero`: identification of the `k`-th formal Taylor
   coefficient of `hurwitzKernel c` at `0` with `hurwitzBernoulliCoeff k c`.
+* `TauCeti.iterate_dslope_hurwitzKernel_zero`: `@[simp]` evaluation of the `k`-fold divided
+  difference `(Function.swap dslope 0)^[k] (hurwitzKernel c) 0 = hurwitzBernoulliCoeff k c`.
 * `TauCeti.hurwitzTaylorQuot` and `TauCeti.hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot`:
   jointly analytic iterated-`dslope` remainder quotient and exact Taylor decomposition.
 * `TauCeti.exists_norm_iteratedDeriv_left_hurwitzTaylorQuot_le`,
@@ -110,16 +112,13 @@ theorem hurwitzKernel_mul_exp_sub_one (c : ℂ) {z : ℂ} (hz : dslope Complex.e
     hurwitzKernel c z * (Complex.exp z - 1) = z * Complex.exp ((1 - c) * z) := by
   rcases eq_or_ne z 0 with rfl | hz0
   · simp
-  · have hne : 1 - Complex.exp (-z) ≠ 0 := by
+  · have hne : Complex.exp z - 1 ≠ 0 := by
+      rw [Complex.exp_sub_one_eq_exp_mul_one_sub_exp_neg]
+      refine mul_ne_zero (Complex.exp_ne_zero z) ?_
       rw [← Complex.oneSubExpNegDivSelf_eq_dslope_exp_zero_neg] at hz
       simpa [Complex.exp_eq_exp_ℂ] using mul_ne_zero hz0 hz
-    rw [hurwitzKernel_of_ne_zero c hz0]
-    have hexp : Complex.exp z - 1 = Complex.exp z * (1 - Complex.exp (-z)) := by
-      rw [mul_sub, mul_one, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero]
-    have hadd : Complex.exp (-c * z) * Complex.exp z = Complex.exp ((1 - c) * z) := by
-      rw [← Complex.exp_add]; congr 1; ring
-    rw [hexp, div_mul_eq_mul_div, div_eq_iff hne]
-    linear_combination z * (1 - Complex.exp (-z)) * hadd
+    rw [hurwitzKernel_of_ne_zero c hz0, mul_div_assoc, Complex.exp_neg_mul_div_one_sub_exp_neg,
+      mul_assoc, div_mul_cancel₀ _ hne]
 
 /-- `(c, z) ↦ hurwitzKernel c z` is jointly analytic on the full nonvanishing locus
 `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`. -/
@@ -159,9 +158,7 @@ theorem hurwitzBernoulliCoeff_def (k : ℕ) (c : ℂ) :
 /-- Each Bernoulli coefficient `c ↦ hurwitzBernoulliCoeff k c` is an entire polynomial in `c`. -/
 theorem differentiable_hurwitzBernoulliCoeff (k : ℕ) :
     Differentiable ℂ (hurwitzBernoulliCoeff k) := by
-  rw [show hurwitzBernoulliCoeff k = fun c : ℂ =>
-      (-1 : ℂ) ^ k * Polynomial.aeval c (Polynomial.bernoulli k) / k.factorial from
-    funext (hurwitzBernoulliCoeff_def k)]
+  unfold hurwitzBernoulliCoeff
   exact ((Polynomial.bernoulli k).differentiable_aeval.const_mul ((-1 : ℂ) ^ k)).div_const
     (k.factorial : ℂ)
 
@@ -197,11 +194,8 @@ private theorem iteratedDeriv_right_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ
   rw [taylorSeries_mul hf hexp1, taylorSeries_mul hid_an hexp2] at ht
   have hid : taylorSeries (fun z : ℂ => z) 0 = PowerSeries.X := by
     simpa only [sub_zero] using taylorSeries_sub_const (𝕜 := ℂ) (a := (0 : ℂ))
-  rw [hid, show (fun z : ℂ => Complex.exp z - 1) = fun z : ℂ => NormedSpace.exp z - 1 by
-      simp [Complex.exp_eq_exp_ℂ],
-    show (fun z : ℂ => Complex.exp ((1 - c) * z)) =
-      fun z : ℂ => NormedSpace.exp ((1 - c) * z) by simp [Complex.exp_eq_exp_ℂ],
-    NormedSpace.taylorSeries_exp_sub_one_at_zero,
+  simp only [Complex.exp_eq_exp_ℂ] at ht
+  rw [hid, NormedSpace.taylorSeries_exp_sub_one_at_zero,
     NormedSpace.taylorSeries_exp_const_mul_at_zero (1 - c),
     ← Polynomial.bernoulli_generating_function (A := ℂ) (1 - c)] at ht
   have hne : PowerSeries.exp ℂ - (1 : PowerSeries ℂ) ≠ 0 := fun h0 => by
@@ -240,6 +234,14 @@ theorem coeff_taylorSeries_hurwitzKernel_zero (k : ℕ) (c : ℂ) :
   rw [(analyticAt_hurwitzKernel_zero c).coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv k,
     inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero]
 
+/-- The `k`-fold divided difference of `hurwitzKernel c` at `0` equals
+`hurwitzBernoulliCoeff k c`. -/
+@[simp]
+theorem iterate_dslope_hurwitzKernel_zero (k : ℕ) (c : ℂ) :
+    (Function.swap dslope (0 : ℂ))^[k] (hurwitzKernel c) 0 = hurwitzBernoulliCoeff k c := by
+  rw [(analyticAt_hurwitzKernel_zero c).iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv k,
+    inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero]
+
 /-- The order-`M` Taylor remainder quotient of `hurwitzKernel c` at `z = 0`, defined as the
 `(M + 1)`-fold divided difference `(Function.swap dslope 0)^[M + 1] (hurwitzKernel c) z`. -/
 noncomputable def hurwitzTaylorQuot (M : ℕ) (c z : ℂ) : ℂ :=
@@ -272,11 +274,8 @@ theorem hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot (M : ℕ) (c z : ℂ)
 `hurwitzBernoulliCoeff (M + 1) c`. -/
 @[simp]
 theorem hurwitzTaylorQuot_zero_right (M : ℕ) (c : ℂ) :
-    hurwitzTaylorQuot M c 0 = hurwitzBernoulliCoeff (M + 1) c := by
-  rw [hurwitzTaylorQuot,
-    (analyticAt_hurwitzKernel_zero c).iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv
-      (M + 1),
-    inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero]
+    hurwitzTaylorQuot M c 0 = hurwitzBernoulliCoeff (M + 1) c :=
+  iterate_dslope_hurwitzKernel_zero (M + 1) c
 
 /-- Step relation between consecutive Taylor remainder quotients. -/
 theorem hurwitzTaylorQuot_eq_add_mul_succ (M : ℕ) (c z : ℂ) :

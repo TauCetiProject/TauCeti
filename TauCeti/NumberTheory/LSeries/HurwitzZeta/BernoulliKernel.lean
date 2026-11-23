@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.TaylorKernel
 public import TauCeti.NumberTheory.LSeries.RiemannZeta.BernoulliKernel
+import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
 
 /-!
 # Comparison between the Hurwitz and Bernoulli kernels
@@ -32,18 +33,9 @@ theorem hurwitzKernel_one_ofReal (t : ℝ) :
     hurwitzKernel 1 (t : ℂ) = (bernoulliKernel t : ℂ) := by
   rcases eq_or_ne t 0 with rfl | ht
   · simp
-  · rw [hurwitzKernel_of_ne_zero 1 (ofReal_ne_zero.mpr ht), neg_one_mul,
-      bernoulliKernel_of_ne_zero ht]
+  · rw [hurwitzKernel_of_ne_zero 1 (ofReal_ne_zero.mpr ht), mul_div_assoc,
+      Complex.exp_neg_mul_div_one_sub_exp_neg, bernoulliKernel_of_ne_zero ht]
     push_cast
-    have hexp : Complex.exp (-(t : ℂ)) * (Complex.exp (t : ℂ) - 1) =
-        1 - Complex.exp (-(t : ℂ)) := by
-      rw [mul_sub, mul_one, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero]
-    have hne1 : Complex.exp (t : ℂ) - 1 ≠ 0 := by
-      exact_mod_cast sub_ne_zero.mpr (by simpa using Real.exp_injective.ne ht)
-    have hne2 : 1 - Complex.exp (-(t : ℂ)) ≠ 0 := by
-      rw [← hexp]
-      exact mul_ne_zero (Complex.exp_ne_zero _) hne1
-    rw [div_eq_div_iff hne2 hne1]
-    linear_combination (t : ℂ) * hexp
+    rw [sub_self, zero_mul, Complex.exp_zero, one_div, ← div_eq_mul_inv]
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.RCLike.Basic
 
 -- Proof-only: `HasFiniteFPowerSeriesOnBall.changeOrigin`, the identity principle
@@ -19,6 +20,7 @@ import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.Convex
@@ -60,6 +62,8 @@ normed field) lives in `TauCeti.Analysis.Analytic.SingularDirection`.
 * `AnalyticOnNhd.eqOn_zero_of_preconnected_of_forall_iteratedFDeriv_eq_zero`,
   `AnalyticOnNhd.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq`: the corresponding identity
   principles on preconnected sets.
+* `DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq`: two functions holomorphic on
+  an open preconnected subset of `ℂ` that agree near a point agree throughout the set.
 
 ## References
 
@@ -202,5 +206,21 @@ theorem AnalyticOnNhd.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq
     (((hf z₀ h₀).eventuallyEq_iff_forall_iteratedFDeriv_eq (hg z₀ h₀)).2 hfg)
 
 end IteratedFDeriv
+
+section Complex
+
+/-- **Identity theorem on an open preconnected domain from local agreement.** Two functions
+holomorphic on an open preconnected set `U ⊆ ℂ` that agree near some point `z₀ ∈ U` agree
+throughout `U`. -/
+theorem DifferentiableOn.eqOn_of_isOpen_of_isPreconnected_of_eventuallyEq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    {f g : ℂ → E} {U : Set ℂ} {z₀ : ℂ}
+    (hf : DifferentiableOn ℂ f U) (hg : DifferentiableOn ℂ g U)
+    (hU_open : IsOpen U) (hU_conn : IsPreconnected U)
+    (hz₀ : z₀ ∈ U) (hfg : f =ᶠ[𝓝 z₀] g) : Set.EqOn f g U :=
+  (hf.analyticOnNhd hU_open).eqOn_of_preconnected_of_eventuallyEq
+    (hg.analyticOnNhd hU_open) hU_conn hz₀ hfg
+
+end Complex
 
 end

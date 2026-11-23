@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
+public import TauCeti.NumberTheory.LSeries.HurwitzZeta.MellinKernel
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Series
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.TaylorKernel
 import Mathlib.Analysis.Complex.RemovableSingularity
@@ -13,11 +14,10 @@ import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.HalfPlaneIdentity
 import TauCeti.Analysis.LaplaceTransform.Basic
 import TauCeti.Analysis.MellinTransform.Growth
+import TauCeti.Analysis.MellinTransform.UpperTail
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
-import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
-import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.IncompleteZeta
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
@@ -75,10 +75,12 @@ periodic and Dirichlet L-function decompositions in
   `TauCeti.meromorphicTrailingCoeffAt_complexHurwitzZeta_one`, and
   `TauCeti.tendsto_sub_one_mul_complexHurwitzZeta`: simple pole of order `-1` and residue `1` at
   `s = 1`.
-* `TauCeti.integrableOn_hurwitzMellinIntegrand`,
-  `TauCeti.complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi`, and
-  `TauCeti.complexHurwitzZeta_eq_complexHurwitzSeries`: Mellin–Laplace integrand convergence,
-  integral representation, and agreement with `complexHurwitzSeries` on `1 < s.re` and `0 < c.re`.
+* `TauCeti.complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi` and
+  `TauCeti.complexHurwitzZeta_eq_complexHurwitzSeries`: Mellin–Laplace integral representation
+  (using `TauCeti.integrableOn_hurwitzMellinIntegrand` and
+  `TauCeti.integral_hurwitzMellinIntegrand_eq_Gamma_mul_complexHurwitzSeries` from
+  `TauCeti.NumberTheory.LSeries.HurwitzZeta.MellinKernel`) and agreement with
+  `complexHurwitzSeries` on `1 < s.re` and `0 < c.re`.
 * `TauCeti.complexHurwitzZeta_neg_nat` and `TauCeti.complexHurwitzZeta_zero_left`: Bernoulli
   polynomial values at nonpositive integers.
 * `TauCeti.complexHurwitzContinuation_exists`, `TauCeti.eq_complexHurwitzZeta_of_eqOn_re_gt`,
@@ -322,25 +324,27 @@ private theorem differentiableAt_hurwitzTailIntegral_left (s₀ : ℂ) {c₀ : �
     (hc₀ : 0 < c₀.re) :
     DifferentiableAt ℂ (fun s => hurwitzTailIntegral s c₀) s₀ := by
   let g : ℝ → ℂ := fun t => exp (-c₀ * t) / (1 - exp (-t))
-  let f : ℝ → ℂ := (Ioi 1).indicator g
-  have hmellin : mellin f = fun s => hurwitzTailIntegral s c₀ := by
-    ext s; simpa [f, g, hurwitzTailIntegral, smul_eq_mul] using
-      mellin_indicator_Ioi g zero_le_one s
-  have hf_int : IntegrableOn f (Ioi 0) := by
-    simpa [MellinConvergent, f] using (mellinConvergent_indicator_Ioi_iff (f := g)
-      zero_le_one (s := 1)).mpr (integrableOn_hurwitzTailIntegrand 1 hc₀)
-  have hf_top : f =O[atTop] fun t : ℝ => Real.exp (-c₀.re * t) := by
+  have hg_exp : g =O[atTop] fun t : ℝ => Real.exp (-c₀.re * t) := by
     refine IsBigO.of_bound (1 - Real.exp (-1))⁻¹ ?_
-    filter_upwards [eventually_gt_atTop (1 : ℝ)] with t ht
-    simp only [f, indicator_of_mem (mem_Ioi.mpr ht), Real.norm_of_nonneg (Real.exp_pos _).le]
-    exact norm_exp_neg_mul_div_one_sub_exp_neg_le one_pos ht.le c₀
-  have hf_bot : f =O[𝓝[>] 0] fun t : ℝ => t ^ (-(s₀.re - 1)) :=
-    IsBigO.of_bound 0 (by
-      filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-      simp [f, indicator_of_notMem (fun h : t ∈ Ioi (1 : ℝ) => ht.2.not_gt h)])
-  rw [← hmellin]
-  exact mellin_differentiableAt_of_isBigO_rpow_exp hc₀ hf_int.locallyIntegrableOn
-    hf_top hf_bot (sub_one_lt s₀.re)
+    filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
+    simpa [g, Real.norm_of_nonneg (Real.exp_pos _).le] using
+      norm_exp_neg_mul_div_one_sub_exp_neg_le one_pos ht c₀
+  have hg_O : g =O[atTop] fun t : ℝ => t ^ (-s₀.re - 1) :=
+    hg_exp.trans (isLittleO_exp_neg_mul_rpow_atTop hc₀ _).isBigO
+  have hd : DifferentiableAt ℂ
+      (fun z : ℂ => ∫ t in Ioi (1 : ℝ), g t * (t : ℂ) ^ (-(z + 1))) (-s₀) :=
+    (differentiableOn_integral_mul_cpow_of_isBigO hg_O).differentiableAt
+      ((isOpen_lt continuous_const continuous_re).mem_nhds (by dsimp; linarith))
+  have heq : (fun s : ℂ => ∫ t in Ioi (1 : ℝ), g t * (t : ℂ) ^ (-((-s) + 1))) =
+      fun s => hurwitzTailIntegral s c₀ := by
+    ext s
+    rw [hurwitzTailIntegral_def]
+    refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+    rw [mul_comm (g t)]
+    congr 2
+    ring
+  rw [← heq]
+  exact hd.comp s₀ differentiableAt_id.neg
 
 private theorem differentiableAt_hurwitzTailIntegral_right (s₀ : ℂ) {c₀ : ℂ}
     (hc₀ : 0 < c₀.re) :
@@ -393,28 +397,13 @@ theorem hurwitzStageCore_def (M : ℕ) (s c : ℂ) :
 `{p : ℂ × ℂ | -(M : ℝ) < p.1.re ∧ 0 < p.2.re}`. -/
 theorem analyticOnNhd_hurwitzStageCore (M : ℕ) :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ => hurwitzStageCore M p.1 p.2)
-      {p | -(M : ℝ) < p.1.re ∧ 0 < p.2.re} := by
-  have hdiff : DifferentiableOn ℂ (fun p : ℂ × ℂ =>
-      (Complex.Gamma p.1)⁻¹ * (hurwitzHeadIntegral M p.1 p.2 + hurwitzTailIntegral p.1 p.2) +
-        ∑ k ∈ Finset.Icc 1 M, hurwitzBernoulliCoeff k p.2 *
-          dslope (fun w : ℂ ↦ (Complex.Gamma w)⁻¹) (-((k - 1 : ℕ) : ℂ)) p.1)
-      {p | -(M : ℝ) < p.1.re ∧ 0 < p.2.re} := by
-    intro p hp
-    have hd_sum : DifferentiableAt ℂ (fun q : ℂ × ℂ => ∑ k ∈ Finset.Icc 1 M,
-        hurwitzBernoulliCoeff k q.2 *
-          dslope (fun w : ℂ ↦ (Complex.Gamma w)⁻¹) (-((k - 1 : ℕ) : ℂ)) q.1) p :=
-      DifferentiableAt.fun_sum fun k _ =>
-        ((differentiable_hurwitzBernoulliCoeff k p.2).comp p differentiableAt_snd).mul
-          (((differentiableOn_univ.mp ((Complex.differentiableOn_dslope Filter.univ_mem).mpr
-            Complex.differentiable_one_div_Gamma.differentiableOn)) p.1).comp
-              p differentiableAt_fst)
-    exact ((((Complex.differentiable_one_div_Gamma p.1).comp p differentiableAt_fst).mul
-      ((analyticOnNhd_hurwitzHeadIntegral M p hp.1).differentiableAt.add
-        (analyticOnNhd_hurwitzTailIntegral p hp.2).differentiableAt)).add
-      hd_sum).differentiableWithinAt
-  simpa only [hurwitzStageCore_def] using hdiff.analyticOnNhd_of_finiteDimensional
-    ((isOpen_lt continuous_const (continuous_re.comp continuous_fst)).inter
-      (isOpen_lt continuous_const (continuous_re.comp continuous_snd)))
+      {p | -(M : ℝ) < p.1.re ∧ 0 < p.2.re} := fun p hp =>
+  (((Complex.differentiable_one_div_Gamma.analyticAt p.1).comp analyticAt_fst).mul
+    ((analyticOnNhd_hurwitzHeadIntegral M p hp.1).add
+      (analyticOnNhd_hurwitzTailIntegral p hp.2))).add
+    (Finset.analyticAt_fun_sum _ fun k _ =>
+      (((differentiable_hurwitzBernoulliCoeff k).analyticAt p.2).comp analyticAt_snd).mul
+        (((Complex.differentiable_one_div_Gamma.analyticAt p.1).dslope _).comp analyticAt_fst))
 
 /-- Recursive stage relation for `hurwitzHeadIntegral` on `-(M : ℝ) < s.re`. -/
 theorem hurwitzHeadIntegral_eq_add_succ (M : ℕ) {s : ℂ} (hs : -(M : ℝ) < s.re) (c : ℂ) :
@@ -556,9 +545,8 @@ theorem analyticOnNhd_complexHurwitzZeta_sub_inv_Gamma_div :
 theorem analyticOnNhd_complexHurwitzZeta₁ :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ => complexHurwitzZeta₁ p.1 p.2) {p | 0 < p.2.re} :=
   fun p hp =>
-    ((differentiable_one_div_Gamma.differentiableOn.analyticOnNhd isOpen_univ
-      p.1 trivial).comp analyticAt_fst).add
-        ((analyticAt_fst.sub analyticAt_const).mul (analyticOnNhd_hurwitzCore p hp))
+    ((Complex.differentiable_one_div_Gamma.analyticAt p.1).comp analyticAt_fst).add
+      ((analyticAt_fst.sub analyticAt_const).mul (analyticOnNhd_hurwitzCore p hp))
 
 /-- `(s, c) ↦ complexHurwitzZeta₁ s c` is jointly complex differentiable on
 `{p : ℂ × ℂ | 0 < p.2.re}`. -/
@@ -690,20 +678,6 @@ private theorem eqOn_hurwitzStageZero_add_cpow (s c : ℂ) :
   rw [hpow, mul_assoc, ← hdecomp, hurwitzKernel_of_ne_zero c ht_ne]
   ring
 
-/-- For `1 < s.re` and `0 < c.re`, the Mellin–Laplace integrand
-`t ↦ (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))` is integrable on `Ioi 0`. -/
-theorem integrableOn_hurwitzMellinIntegrand {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c.re) :
-    IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioi 0) := by
-  have hs0 : -((0 : ℕ) : ℝ) < s.re := by simp; linarith
-  have hint_Ioc : IntegrableOn
-      (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioc 0 1) :=
-    ((integrableOn_hurwitzHeadIntegrand 0 (c := c) hs0).add
-      (intervalIntegral.intervalIntegrable_cpow' (a := 0) (b := 1) (r := s - 2)
-        (by simp; linarith)).1).congr_fun
-      (fun t ht => by simpa using eqOn_hurwitzStageZero_add_cpow s c ht) measurableSet_Ioc
-  rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
-  exact hint_Ioc.union (integrableOn_hurwitzTailIntegrand s hc)
-
 private theorem hurwitzHeadIntegral_zero_add_one_div {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
     hurwitzHeadIntegral 0 s c + 1 / (s - 1) =
       ∫ t in Ioc (0 : ℝ) 1, (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t))) := by
@@ -745,31 +719,9 @@ theorem complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi {s c : ℂ} (hs : 1 < s
 convergent series `complexHurwitzSeries s c`. -/
 theorem complexHurwitzZeta_eq_complexHurwitzSeries {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c.re) :
     complexHurwitzZeta s c = complexHurwitzSeries s c := by
-  have hs_pos : 0 < s.re := by linarith
-  rw [complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi hs hc]
-  have hkernel : EqOn
-      (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t))))
-      (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp ((1 - c) * t) / (exp t - 1))) (Ioi 0) :=
-    fun t _ => by
-      dsimp only
-      congr 1
-      have hexp : exp (t : ℂ) - 1 = exp (t : ℂ) * (1 - exp (-(t : ℂ))) := by
-        rw [mul_sub, mul_one, ← exp_add, add_neg_cancel, exp_zero]
-      have hnum : exp ((1 - c) * (t : ℂ)) = exp (t : ℂ) * exp (-c * (t : ℂ)) := by
-        rw [← exp_add]; congr 1; ring
-      rw [hnum, hexp, mul_div_mul_left _ _ (exp_ne_zero _)]
-  rw [setIntegral_congr_fun measurableSet_Ioi hkernel]
-  have hsum := (hasSum_setIntegral_cpow_mul_exp_neg_mul hs hc subset_rfl).mul_left (Gamma s)⁻¹
-  have hterm : (fun k : ℕ => (Gamma s)⁻¹ *
-        ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * exp (-(((k : ℂ) + c) * t))) =
-      fun k : ℕ => ((k : ℂ) + c) ^ (-s) := funext fun k => by
-    have hk : 0 < ((k : ℂ) + c).re := by
-      simp only [add_re, natCast_re]
-      linarith [Nat.cast_nonneg (α := ℝ) k]
-    rw [integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs_pos hk,
-      inv_mul_cancel_left₀ (Gamma_ne_zero_of_re_pos hs_pos)]
-  rw [hterm] at hsum
-  exact hsum.unique (hasSum_complexHurwitzSeries_of_re_pos hs hc)
+  rw [complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi hs hc,
+    integral_hurwitzMellinIntegrand_eq_Gamma_mul_complexHurwitzSeries hs hc,
+    inv_mul_cancel_left₀ (Gamma_ne_zero_of_re_pos (by linarith))]
 
 /-! ### Nonpositive integer Bernoulli values -/
 
