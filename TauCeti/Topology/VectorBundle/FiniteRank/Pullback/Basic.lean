@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.CategoryTheory.IsomorphismClasses
-public import Mathlib.Topology.VectorBundle.Constructions
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.VectorBundle.Trivialization
 

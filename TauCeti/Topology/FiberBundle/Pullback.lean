@@ -30,8 +30,8 @@ Six facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is th
   (`Bundle.Pullback.totalSpace_ext`).
 * A map into the total space of `f *ᵖ E` is continuous exactly when its projection and its lift to
   the total space of `E` are (`Bundle.Pullback.continuous_iff`).
-* Pulling back a bundle to a universally true subtype `{b // P b}` and back to `B` recovers the
-  original total-space topology (`Bundle.Pullback.subtypeHomeomorph`).
+* Pulling back a bundle to a universally true subtype `{b // P b}` recovers the original
+  total-space topology (`Bundle.Pullback.subtypeHomeomorph`).
 * The canonical lift is the base change of `f` along the projection of `E`, so it inherits
   openness from `f` (`Bundle.Pullback.isOpenMap_lift`). If `f` is the quotient map of a covering
   action of a group `G` and `G` acts on the total space of `f *ᵖ E` over its action on the base,
@@ -111,42 +111,36 @@ theorem Bundle.Pullback.continuous_iff {Z : Type*} [TopologicalSpace Z] {f : B' 
 section Subtype
 
 omit [TopologicalSpace B'] in
-/-- Restricting a bundle to a universally satisfied subtype `{b : B // P b}` and pulling back along
-`b ↦ ⟨b, hP b⟩` produces a total space homeomorphic to the original total space over `B`. -/
+/-- Restricting a bundle to a universally satisfied subtype `{b : B // P b}` produces a total
+space homeomorphic to the original total space over `B`. -/
 def Bundle.Pullback.subtypeHomeomorph (F : Type*) (E : B → Type*)
     [TopologicalSpace (TotalSpace F E)] {P : B → Prop} (hP : ∀ b, P b)
     (hproj : Continuous (π F E)) :
-    TotalSpace F ((fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b})) *ᵖ
-      ((Subtype.val : {b : B // P b} → B) *ᵖ E)) ≃ₜ TotalSpace F E where
-  toFun q := ⟨q.proj, q.snd⟩
-  invFun p := ⟨p.proj, p.snd⟩
-  left_inv := fun ⟨_, _⟩ ↦ rfl
+    TotalSpace F ((Subtype.val : {b : B // P b} → B) *ᵖ E) ≃ₜ TotalSpace F E where
+  toFun q := ⟨q.proj.val, q.snd⟩
+  invFun p := ⟨⟨p.proj, hP p.proj⟩, p.snd⟩
+  left_inv := fun ⟨⟨_, _⟩, _⟩ ↦ rfl
   right_inv := fun ⟨_, _⟩ ↦ rfl
-  continuous_toFun := (Pullback.continuous_lift F E (Subtype.val : {b : B // P b} → B)).comp
-    (Pullback.continuous_lift F ((Subtype.val : {b : B // P b} → B) *ᵖ E)
-      fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b}))
+  continuous_toFun := Pullback.continuous_lift F E (Subtype.val : {b : B // P b} → B)
   continuous_invFun := by
-    let val : {b : B // P b} → B := Subtype.val
-    rw [(inducing_pullbackTotalSpaceEmbedding F (val *ᵖ E)
-      (fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b}))).continuous_iff]
-    refine hproj.prodMk ?_
-    rw [(inducing_pullbackTotalSpaceEmbedding F E val).continuous_iff]
+    rw [(inducing_pullbackTotalSpaceEmbedding F E
+      (Subtype.val : {b : B // P b} → B)).continuous_iff]
     exact (hproj.subtype_mk fun p ↦ hP p.proj).prodMk continuous_id
 
 omit [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace (TotalSpace F E)] in
 @[simp] theorem Bundle.Pullback.subtypeHomeomorph_apply (F : Type*) (E : B → Type*)
     [TopologicalSpace B] {P : B → Prop} (hP : ∀ b, P b)
     [TopologicalSpace (TotalSpace F E)] (hproj : Continuous (π F E))
-    (q : TotalSpace F ((fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b})) *ᵖ
-      ((Subtype.val : {b : B // P b} → B) *ᵖ E))) :
-    Bundle.Pullback.subtypeHomeomorph F E hP hproj q = ⟨q.proj, q.snd⟩ := by rfl
+    (q : TotalSpace F ((Subtype.val : {b : B // P b} → B) *ᵖ E)) :
+    Bundle.Pullback.subtypeHomeomorph F E hP hproj q = ⟨q.proj.val, q.snd⟩ := by rfl
 
 omit [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace (TotalSpace F E)] in
 @[simp] theorem Bundle.Pullback.subtypeHomeomorph_symm_apply (F : Type*) (E : B → Type*)
     [TopologicalSpace B] {P : B → Prop} (hP : ∀ b, P b)
     [TopologicalSpace (TotalSpace F E)] (hproj : Continuous (π F E))
     (p : TotalSpace F E) :
-    (Bundle.Pullback.subtypeHomeomorph F E hP hproj).symm p = ⟨p.proj, p.snd⟩ := by rfl
+    (Bundle.Pullback.subtypeHomeomorph F E hP hproj).symm p = ⟨⟨p.proj, hP p.proj⟩, p.snd⟩ := by
+  rfl
 
 end Subtype
 

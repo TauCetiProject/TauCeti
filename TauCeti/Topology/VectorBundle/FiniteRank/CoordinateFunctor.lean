@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.Basic
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 /-!
 # Continuous functors on coordinate spaces and the induced bundle operations

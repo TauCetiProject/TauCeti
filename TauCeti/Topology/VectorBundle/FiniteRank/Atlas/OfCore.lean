@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.FiberBundle.Pullback
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Preadditive
 public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.Basic
 
@@ -78,13 +79,16 @@ private def chartsOfCoreSelfPkg :
       { e : Z.TotalSpace ≃ₜ C.core.TotalSpace //
         (∀ q, e q = ⟨q.proj.val, q.snd⟩) ∧ (∀ r, e.symm r = ⟨⟨r.proj, rfl⟩, r.snd⟩) } := by
     rintro _ rfl
-    exact ⟨{ toFun q := ⟨q.proj.val, q.snd⟩, invFun r := ⟨⟨r.proj, rfl⟩, r.snd⟩
-             left_inv := fun ⟨⟨_, _⟩, _⟩ ↦ rfl, right_inv := fun ⟨_, _⟩ ↦ rfl
-             continuous_toFun := (C.continuous_pullbackLift inc).congr fun ⟨_, _⟩ ↦
-               C.pullbackLift_mk inc _ _
-             continuous_invFun := (C.continuous_core_pullback_iff inc).2
-               ⟨C.core.continuous_proj.subtype_mk fun _ ↦ rfl, continuous_id.congr fun ⟨x, v⟩ ↦
-                 (C.pullbackLift_mk inc ⟨x, rfl⟩ v).symm⟩ }, fun _ ↦ rfl, fun _ ↦ rfl⟩
+    exact ⟨(C.pullbackHomeomorph inc).trans
+      (Bundle.Pullback.subtypeHomeomorph (Fin C.rank → 𝕜) C.core.Fiber
+        (P := fun x ↦ LocallyConstant.const X C.rank x = C.rank) (fun _ ↦ rfl)
+        C.core.continuous_proj),
+      fun q ↦ (Homeomorph.trans_apply _ _ q).trans
+        ((congrArg _ (C.pullbackHomeomorph_apply inc q)).trans
+          (Bundle.Pullback.subtypeHomeomorph_apply _ _ _ _ _)),
+      fun r ↦ (Homeomorph.symm_trans_apply _ _ r).trans
+        ((congrArg _ (Bundle.Pullback.subtypeHomeomorph_symm_apply _ _ _ _ _)).trans
+          (C.pullbackHomeomorph_symm_apply inc _))⟩
   aux ((ofCore C).charts C.rank) (charts_ofCore_self C)
 
 /-- The reconstructed total space of `ofCore C` is homeomorphic over `X` to `C.core.TotalSpace`. -/

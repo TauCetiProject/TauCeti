@@ -89,18 +89,10 @@ private noncomputable def stratumTotalSpaceOfFixedRankSelfPkg :
           (TotalSpace (Fin n → 𝕜) E) t inferInstance //
         (∀ q, e q = ⟨q.proj.val, q.snd⟩) ∧ (∀ r, e.symm r = ⟨⟨r.proj, rfl⟩, r.snd⟩) } := by
     rintro _ rfl
-    letI : TopologicalSpace (TotalSpace (Fin n → 𝕜) (fun y : S ↦ E y.val)) :=
-      Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E val
-    let hproj := FiberBundle.continuous_proj (Fin n → 𝕜) E
-    refine ⟨{ toFun q := ⟨q.proj.val, q.snd⟩, invFun r := ⟨⟨r.proj, rfl⟩, r.snd⟩
-              left_inv := fun ⟨⟨_, _⟩, _⟩ ↦ rfl, right_inv := fun ⟨_, _⟩ ↦ rfl
-              continuous_toFun := Pullback.continuous_lift (Fin n → 𝕜) E val
-              continuous_invFun := ?_ }, fun _ ↦ rfl, fun _ ↦ rfl⟩
-    let inc : X → S := fun b ↦ ⟨b, rfl⟩
-    exact ((Pullback.continuous_lift (Fin n → 𝕜) (val *ᵖ E) inc).comp
-      (Bundle.Pullback.subtypeHomeomorph (Fin n → 𝕜) E (fun _ ↦ rfl) hproj).symm.continuous).congr
-        fun r ↦ congrArg (Pullback.lift inc)
-          (Bundle.Pullback.subtypeHomeomorph_symm_apply (Fin n → 𝕜) E (fun _ ↦ rfl) hproj r)
+    exact ⟨Bundle.Pullback.subtypeHomeomorph (Fin n → 𝕜) E (fun _ ↦ rfl)
+      (FiberBundle.continuous_proj (Fin n → 𝕜) E),
+      fun _ ↦ Bundle.Pullback.subtypeHomeomorph_apply _ _ _ _ _,
+      fun _ ↦ Bundle.Pullback.subtypeHomeomorph_symm_apply _ _ _ _ _⟩
   aux ((ofFixedRank 𝕜 n E).topologicalSpaceStratumTotalSpace n)
     (topologicalSpaceStratumTotalSpace_ofFixedRank_self 𝕜 n E)
 

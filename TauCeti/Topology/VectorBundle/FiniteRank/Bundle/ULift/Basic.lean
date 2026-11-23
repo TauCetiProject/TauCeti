@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.Equiv.ULift
+public import TauCeti.Topology.Algebra.Module.Equiv.Basic
 public import TauCeti.Topology.Homeomorph.Sigma
 public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.Basic
 public import TauCeti.Topology.VectorBundle.ULift
