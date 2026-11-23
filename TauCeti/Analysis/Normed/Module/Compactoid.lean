@@ -57,8 +57,10 @@ agree (`TauCeti.isCompactoidSet_iff_totallyBounded_of_forall`,
 * `TauCeti.IsCompactoidSet.mono`, `TauCeti.IsCompactoidSet.add`, `TauCeti.isCompactoidSet_sum`,
   `TauCeti.IsCompactoidSet.image`, `TauCeti.isCompactoidSet_closure_iff`: stability under subsets,
   finite sums, continuous linear images and closure.
-* `TauCeti.IsCompactoidSet.union`, `TauCeti.isCompactoidSet_union_iff`: stability under finite
-  unions, when `0 • x = 0`.
+* `TauCeti.IsCompactoidSet.union`, `TauCeti.isCompactoidSet_union_iff`,
+  `TauCeti.isCompactoidSet_singleton`, `TauCeti.isCompactoidSet_insert_iff`: stability under
+  finite unions (when `0 • x = 0`), compactoidness of singletons (when `‖1‖ ≤ 1` and `1 • x = x`),
+  and stability under inserting a point whose singleton is compactoid (when `0 • x = 0`).
 * `TauCeti.IsCompactoidSet.image_of_forall_exists`: stability under continuous additive maps `u`
   that transport coefficients: for each `a` with `‖a‖ ≤ 1` and each `v`, `u (a • v) = b • u v`
   for some `b` with `‖b‖ ≤ 1`.
@@ -265,6 +267,23 @@ theorem isCompactoidSet_union_iff {S T : Set E} (h0 : ∀ v : E, (0 : K) • v =
     IsCompactoidSet K (S ∪ T) ↔ IsCompactoidSet K S ∧ IsCompactoidSet K T :=
   ⟨fun h ↦ ⟨h.mono Set.subset_union_left, h.mono Set.subset_union_right⟩,
     fun h ↦ h.1.union h.2 h0⟩
+
+/-- A singleton `{x}` is compactoid as soon as `‖1‖ ≤ 1` and `1 • x = x`. Both hypotheses are
+discharged by `simp` by default, for instance for a module over a ring with `‖1‖ = 1`. -/
+@[simp]
+theorem isCompactoidSet_singleton {x : E} (hn : ‖(1 : K)‖ ≤ 1 := by simp)
+    (h1 : (1 : K) • x = x := by simp) : IsCompactoidSet K {x} :=
+  fun _ hε ↦ ⟨1, fun _ ↦ x, fun _ hy ↦ ⟨fun _ ↦ 1, fun _ ↦ hn, by simp_all⟩⟩
+
+/-- Inserting a point `x` keeps a set compactoid, and conversely, as soon as `{x}` is compactoid
+and `0 • v = 0`. Both hypotheses are discharged by `simp` by default, for instance for a module
+over a ring with `‖1‖ = 1`; since they are explicit, apply the equivalence as
+`(isCompactoidSet_insert_iff).1`. -/
+@[simp]
+theorem isCompactoidSet_insert_iff {x : E} {S : Set E}
+    (hx : IsCompactoidSet K {x} := by simp) (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
+    IsCompactoidSet K (insert x S) ↔ IsCompactoidSet K S := by
+  rw [Set.insert_eq, isCompactoidSet_union_iff h0, and_iff_right hx]
 
 /-- **A compactoid set is bounded** as soon as, for every vector `v`, the multiples `a • v` with
 `‖a‖ ≤ 1` form a bounded set, for instance for a bounded scalar action
