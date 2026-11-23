@@ -812,45 +812,22 @@ theorem exists_contDiff_cutoff_id {r R : ℝ} (hrR : r < R) :
 open Metric in
 /-- **A smooth cutoff of an annulus.** For `0 < r` and any `R`, some smooth, even, compactly
 supported `χ : E → ℝ` equals `1` on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on the ball of radius
-`r / 2`. It is a bump function of `‖ξ‖²`. -/
+`r / 2`. It is a difference of two bump functions centred at `0`. -/
 theorem exists_contDiff_cutoff_annulus [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {r : ℝ}
     (hr : 0 < r) (R : ℝ) :
     ∃ χ : E → ℝ, ContDiff ℝ ∞ χ ∧ HasCompactSupport χ ∧ (∀ ξ, ‖ξ‖ < r / 2 → χ ξ = 0) ∧
       (∀ ξ, χ (-ξ) = χ ξ) ∧ ∀ ξ, r ≤ ‖ξ‖ → ‖ξ‖ ≤ R → χ ξ = 1 := by
-  set a : ℝ := r ^ 2
-  set b : ℝ := (|R| + 2 * r) ^ 2
-  have ha : 0 < a := by positivity
-  have hab : a < b := pow_lt_pow_left₀ (by linarith [abs_nonneg R]) hr.le two_ne_zero
-  let ρ : ContDiffBump ((a + b) / 2) := ⟨(b - a) / 2, b / 2, by linarith, by linarith⟩
-  refine ⟨fun ξ ↦ ρ (‖ξ‖ ^ 2), ρ.contDiff.comp (contDiff_norm_sq ℝ), ?_, fun ξ hξ ↦ ?_,
-    fun ξ ↦ by simp, fun ξ h₁ h₂ ↦ ?_⟩
-  · refine HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 * (|R| + 2 * r)))
-      fun ξ hξ ↦ ρ.zero_of_le_dist ?_
-    have hξ' : 2 * (|R| + 2 * r) < ‖ξ‖ := by simpa using hξ
-    have : 4 * b < ‖ξ‖ ^ 2 := by
-      have := pow_lt_pow_left₀ hξ' (by positivity) two_ne_zero
-      simp only [b]
-      nlinarith
-    rw [Real.dist_eq, le_abs]
-    left
-    simp only [ρ]
-    linarith
-  · refine ρ.zero_of_le_dist ?_
-    have : ‖ξ‖ ^ 2 < a / 4 := by
-      have := pow_lt_pow_left₀ hξ (norm_nonneg _) two_ne_zero
-      simp only [a]
-      nlinarith
-    rw [Real.dist_eq, le_abs]
-    right
-    simp only [ρ]
-    nlinarith [sq_nonneg ‖ξ‖]
-  · refine ρ.one_of_mem_closedBall ?_
-    have hlo : a ≤ ‖ξ‖ ^ 2 := pow_le_pow_left₀ hr.le h₁ 2
-    have hhi : ‖ξ‖ ^ 2 ≤ b :=
-      pow_le_pow_left₀ (norm_nonneg _) (h₂.trans ((le_abs_self R).trans (by linarith))) 2
-    rw [mem_closedBall, Real.dist_eq, abs_le]
-    simp only [ρ]
-    constructor <;> linarith
+  let ρ₁ : ContDiffBump (0 : E) := ⟨|R| + r, |R| + 2 * r, by positivity, by linarith⟩
+  let ρ₂ : ContDiffBump (0 : E) := ⟨r / 2, r, by positivity, by linarith⟩
+  refine ⟨fun ξ ↦ ρ₁ ξ - ρ₂ ξ, ρ₁.contDiff.sub ρ₂.contDiff,
+    ρ₁.hasCompactSupport.sub ρ₂.hasCompactSupport, fun ξ hξ ↦ ?_, fun ξ ↦ by simp [ρ₁.neg, ρ₂.neg],
+    fun ξ h₁ h₂ ↦ ?_⟩
+  · beta_reduce
+    rw [ρ₁.one_of_mem_closedBall (by simp [ρ₁]; linarith [abs_nonneg R]),
+      ρ₂.one_of_mem_closedBall (by simpa [ρ₂] using hξ.le), sub_self]
+  · beta_reduce
+    rw [ρ₁.one_of_mem_closedBall (by simp [ρ₁]; linarith [le_abs_self R]),
+      ρ₂.zero_of_le_dist (by simpa [ρ₂] using h₁), sub_zero]
 
 open MeasureTheory Metric in
 /-- **Smooth plateaus on the line with uniformly bounded derivative.** There is a constant `C`
