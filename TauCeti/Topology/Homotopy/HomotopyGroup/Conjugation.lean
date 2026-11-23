@@ -207,15 +207,6 @@ private theorem conjLoopContraction_refl_apply (a : I) :
   ext t
   simp [conjLoopContraction_apply, trans_apply, subpath]
 
-private theorem evalAt_conjLoopReflHomotopy (x : X) :
-    (conjLoopReflHomotopy x).evalAt (refl x) = (refl x).conjLoopContraction.symm := by
-  -- every point of both paths is the constant loop
-  refine Path.ext (funext fun u => ?_)
-  have h : (conjLoopReflHomotopy x).evalAt (refl x) u = refl x := by
-    rw [ContinuousMap.Homotopy.evalAt_apply, conjLoopReflHomotopy,
-      ContinuousMap.Homotopy.cast_apply, reparamHomotopy_apply, Homotopy.reparam_refl_eval]
-  exact h.trans (conjLoopContraction_refl_apply (σ u)).symm
-
 /-- The path in `Ω X x` from a loop `ℓ` to its conjugate `(Path.refl x).conjLoop ℓ` by the
 constant path, which reparametrizes `ℓ`. It is the trace at `ℓ` of a homotopy from the identity
 of `Ω X x` to conjugation by the constant path. -/
@@ -225,8 +216,13 @@ def conjLoopReflPath (ℓ : Ω X x) : Path ℓ ((Path.refl x).conjLoop ℓ) :=
 /-- At the constant loop, the reparametrization `Path.conjLoopReflPath` is the reverse of the
 contraction `Path.conjLoopContraction` of the conjugated constant loop. -/
 theorem conjLoopReflPath_refl (x : X) :
-    conjLoopReflPath (Path.refl x) = (Path.refl x).conjLoopContraction.symm :=
-  evalAt_conjLoopReflHomotopy x
+    conjLoopReflPath (Path.refl x) = (Path.refl x).conjLoopContraction.symm := by
+  -- every point of both paths is the constant loop
+  refine Path.ext (funext fun u => ?_)
+  have h : (conjLoopReflHomotopy x).evalAt (refl x) u = refl x := by
+    rw [ContinuousMap.Homotopy.evalAt_apply, conjLoopReflHomotopy,
+      ContinuousMap.Homotopy.cast_apply, reparamHomotopy_apply, Homotopy.reparam_refl_eval]
+  exact h.trans (conjLoopContraction_refl_apply (σ u)).symm
 
 /-- **Naturality of the reparametrization**: in the fundamental groupoid of `Ω X x`, following
 `Path.conjLoopReflPath ℓ` and then the image of a path class `D` under conjugation by the constant
@@ -278,7 +274,7 @@ theorem loopSpaceTransport_refl (x : X) :
       (refl x).conjLoopContraction).symm g =
         FundamentalGroup.map (refl x).conjLoop (refl x) g := by
     have h := (conjLoopReflHomotopy x).fundamentalGroupMulEquivOfPath_evalAt_map (refl x) g
-    rw [hid, evalAt_conjLoopReflHomotopy] at h
+    rw [hid, ← conjLoopReflPath, conjLoopReflPath_refl] at h
     rwa [← FundamentalGroup.fundamentalGroupMulEquivOfPath_symm]
   rw [loopSpaceTransport, MonoidHom.comp_apply, ← h, MulEquiv.coe_toMonoidHom,
     MulEquiv.apply_symm_apply, MonoidHom.id_apply]
