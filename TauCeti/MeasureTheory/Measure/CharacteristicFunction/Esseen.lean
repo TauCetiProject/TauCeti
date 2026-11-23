@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Bochner.CharFun.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Fejer
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
@@ -40,22 +39,6 @@ namespace MeasureTheory
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
-/-- The average of `cos (t * (x - v))` over a finite measure is the real part of the
-characteristic function at `t`, rotated by the phase `-t * v`. -/
-private theorem integral_cos_mul_sub_eq_re (v t : ℝ) :
-    ∫ x, Real.cos (t * (x - v)) ∂μ = (cexp (↑(-(t * v)) * I) * charFun μ t).re := by
-  have hint : Integrable (fun x : ℝ ↦ cexp (↑(t * (x - v)) * I)) μ :=
-    Integrable.of_bound (by fun_prop) 1 (ae_of_all _ fun x ↦ by rw [norm_exp_ofReal_mul_I])
-  have hshift : ∫ x, cexp (↑(t * (x - v)) * I) ∂μ = cexp (↑(-(t * v)) * I) * charFun μ t := by
-    rw [charFun_apply_real, ← integral_const_mul]
-    congr with x
-    rw [← Complex.exp_add]
-    congr 1
-    push_cast
-    ring
-  rw [← hshift, ← RCLike.re_eq_complex_re, ← integral_re hint]
-  simp only [RCLike.re_eq_complex_re, exp_ofReal_mul_I_re]
-
 /-- The kernel `T / 2 * sinc (T * y / 2) ^ 2` is at least `T / 4` when `|y| ≤ T⁻¹`, since then
 `|T * y / 2| ≤ 1 / 2` and `sinc` is at least `3 / 4` there. -/
 private theorem div_four_le_mul_sinc_sq {T y : ℝ} (hy : |y| ≤ T⁻¹) :
@@ -64,10 +47,12 @@ private theorem div_four_le_mul_sinc_sq {T y : ℝ} (hy : |y| ≤ T⁻¹) :
   · -- For `T ≤ 0` the hypothesis forces `T⁻¹ = 0`, hence `T = 0`.
     have hT₀ : T = 0 := inv_eq_zero.1 (le_antisymm (inv_nonpos.2 hT) ((abs_nonneg y).trans hy))
     simp [hT₀]
+  -- Multiplying `|y| ≤ T⁻¹` by `T > 0` gives `T * |y| ≤ 1`.
+  have hTy₁ : T * |y| ≤ 1 := by
+    simpa [hT.ne'] using mul_le_mul_of_nonneg_left hy hT.le
   have hTy : |T * y / 2| ≤ 1 / 2 := by
-    rw [abs_div, abs_mul, abs_of_pos hT, abs_two, div_le_div_iff_of_pos_right two_pos,
-      ← le_inv_mul_iff₀ hT, mul_one]
-    exact hy
+    rw [abs_div, abs_mul, abs_of_pos hT, abs_two]
+    linarith
   have hsq : (T * y / 2) ^ 2 ≤ 1 / 4 := by
     rw [← sq_abs]
     nlinarith [abs_nonneg (T * y / 2)]
@@ -86,7 +71,9 @@ private theorem mul_sinc_sq_le {T : ℝ} (hT : 0 ≤ T) (y : ℝ) :
   exact mul_le_of_le_one_right (by positivity) hsq
 
 /-- Averaging the kernel `T / 2 * sinc (T * (x - v) / 2) ^ 2` against `μ` averages the rotated
-characteristic function against the triangular weight on `[0, T]`, by Fubini's theorem. -/
+characteristic function against the triangular weight on `[0, T]`, by Fubini's theorem. The
+Fubini step adapts the proof of Mathlib's `MeasureTheory.integral_charFun_Icc`, which swaps an
+interval integral with an integral against `μ` through `intervalIntegral_integral_swap`. -/
 private theorem integral_mul_sinc_sq_eq (v T : ℝ) :
     ∫ x, T / 2 * sinc (T * (x - v) / 2) ^ 2 ∂μ =
       ∫ t in 0..T, (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re := by
@@ -98,8 +85,13 @@ private theorem integral_mul_sinc_sq_eq (v T : ℝ) :
       (ae_of_all _ fun ⟨t, x⟩ ↦ ?_)
     simp only [Function.uncurry_apply_pair, Real.norm_eq_abs, mul_one, abs_mul]
     exact mul_le_of_le_one_right (abs_nonneg _) (Real.abs_cos_le_one _)
-  simp only [← TauCeti.integral_one_sub_div_mul_cos_mul, ← intervalIntegral_integral_swap hint,
-    integral_const_mul, integral_cos_mul_sub_eq_re]
+  calc ∫ x, T / 2 * sinc (T * (x - v) / 2) ^ 2 ∂μ
+      = ∫ x, (∫ t in 0..T, (1 - t / T) * Real.cos (t * (x - v))) ∂μ := by
+        simp only [TauCeti.integral_one_sub_div_mul_cos_mul]
+    _ = ∫ t in 0..T, ∫ x, (1 - t / T) * Real.cos (t * (x - v)) ∂μ :=
+        (intervalIntegral_integral_swap hint).symm
+    _ = ∫ t in 0..T, (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re := by
+        simp only [integral_const_mul, TauCeti.integral_cos_mul_sub_eq_re]
 
 omit [IsFiniteMeasure μ] in
 /-- Against the triangular weight on `[0, T]`, the rotated characteristic function has a smaller
@@ -109,12 +101,13 @@ private theorem integral_one_sub_div_mul_re_le {T : ℝ} (hT : 0 < T) (v : ℝ) 
       ∫ t in 0..T, ‖charFun μ t‖ := by
   refine integral_mono_on hT.le (Continuous.intervalIntegrable (by fun_prop) _ _)
     (Continuous.intervalIntegrable (by fun_prop) _ _) fun t ht ↦ ?_
+  obtain ⟨ht₀, htT⟩ := Set.mem_Icc.mp ht
   have h₁ : 0 ≤ 1 - t / T := by
     rw [sub_nonneg, div_le_one hT]
-    exact ht.2
+    exact htT
   have h₂ : 1 - t / T ≤ 1 := by
     rw [sub_le_self_iff]
-    exact div_nonneg ht.1 hT.le
+    exact div_nonneg ht₀ hT.le
   calc (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re ≤
         (1 - t / T) * ‖charFun μ t‖ :=
         mul_le_mul_of_nonneg_left ((Complex.re_le_norm _).trans_eq
@@ -143,7 +136,7 @@ theorem measureReal_closedBall_le_integral_norm_charFun (v : ℝ) {ε : ℝ} (h�
         refine mul_le_mul_of_nonneg_left ?_ (by positivity)
         refine setIntegral_mono_on integrableOn_const hK_int.integrableOn
           measurableSet_closedBall fun x hx ↦ div_four_le_mul_sinc_sq ?_
-        rwa [hT, inv_inv, ← Real.dist_eq]
+        simpa [hT, Real.dist_eq] using Metric.mem_closedBall.mp hx
     _ ≤ 4 / T * ∫ x, K x ∂μ := by
         refine mul_le_mul_of_nonneg_left ?_ (by positivity)
         exact setIntegral_le_integral hK_int (ae_of_all _ fun x ↦ by positivity)
