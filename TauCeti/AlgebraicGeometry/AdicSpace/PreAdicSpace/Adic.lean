@@ -358,6 +358,12 @@ theorem liftOfIsOpenImmersion_uniq (l : Y ⟶ X) (hl : l ≫ f = g) :
     l = liftOfIsOpenImmersion f g H := by
   rw [← cancel_mono f, hl, liftOfIsOpenImmersion_fac]
 
+/-- Lifting an open immersion through an open immersion in `AdicSpace` yields an open immersion. -/
+instance isOpenImmersion_liftOfIsOpenImmersion [PreAdicSpace.IsOpenImmersion g.hom] :
+    PreAdicSpace.IsOpenImmersion (liftOfIsOpenImmersion f g H).hom := by
+  rw [liftOfIsOpenImmersion_hom]
+  exact PreAdicSpace.IsOpenImmersion.isOpenImmersion_lift f.hom g.hom H
+
 end LiftOfIsOpenImmersion
 
 /-- The restriction `X|_{f⁻¹(V)} ⟶ Y|_V` of a morphism `f : X ⟶ Y` of adic spaces over an open

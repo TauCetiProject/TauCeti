@@ -50,7 +50,7 @@ fibres.
 ## Main results
 
 * `TauCeti.AdicSpace.isFiniteEtale_presentationLimitPreAdicSpaceComap` and
-  `TauCeti.AdicSpace.IsFiniteEtale.comapOfPair`: the morphism `Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced
+  `TauCeti.AdicSpace.isFiniteEtale_comapOfPair`: the morphism `Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced
   by a finite étale morphism of complete Hausdorff Huber pairs over a Tate ring, both of whose
   spectra are adic spaces, is finite étale.
 * `TauCeti.AdicSpace.IsFiniteEtale.exists_ofPair_chart`: local refinement to `ofPair` charts.
@@ -401,7 +401,7 @@ private theorem IsFiniteEtale.OfPairChart.targetHomeomorph_restrictPreimage
 
 /-- **`Spa(φ)` is finite étale for a finite étale morphism of sheafy Huber pairs** over a complete
 Hausdorff Tate ring (`AdicSpace.comapOfPair`). -/
-theorem IsFiniteEtale.comapOfPair {A : Type u} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
+theorem isFiniteEtale_comapOfPair {A : Type u} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
     [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsTateRing A] {B : Type u} [CommRing B]
     [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {S : Pair A} {T : Pair B}
     (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
@@ -448,40 +448,76 @@ theorem IsFiniteEtale.finite_preimage_singleton {f : X ⟶ Y} (hf : IsFiniteEtal
 /-- **Every morphism from an empty adic space into an analytic adic space is finite étale.** -/
 theorem IsFiniteEtale.of_isEmpty (f : X ⟶ Y) [IsEmpty X.obj] (hY : Y.IsAnalytic) :
     IsFiniteEtale f := by
-  refine (isFiniteEtale_iff f).mpr ((targetLocally_iff f).mpr fun y ↦ ?_)
-  obtain ⟨V, hV, hy⟩ := isAnalytic_iff.mp hY y
-  obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ :=
-    (isTateAffinoid_iff _).mp ((mem_propOpens_iff _).mp hV)
-  let _ : IsTateRing PUnit.{u + 1} := IsTateRing.of_isModuleTopology (A := A) (B := PUnit.{u + 1})
-  have _ : IsStronglyNoetherian PUnit.{u + 1} := IsNoetherianType.isStronglyNoetherian
-  let T : Pair PUnit.{u + 1} := S.finiteAlgebra PUnit.{u + 1}
-  obtain ⟨P', hP', hsheaf⟩ := (isSheafyForEveryPresentation_of_isStronglyNoetherian
-    T.isRingOfIntegralElements).exists_compatible_isSheaf
-  let Z : PreAdicSpace.{u} := presentationLimitPreAdicSpace P' T.plus
-    T.isRingOfIntegralElements.isPowerBounded_of_mem hP'
-  have _ : IsEmpty Z := Set.isEmpty_coe_sort.mpr
-    ((spa_eq_empty_iff_subsingleton _ T.isRingOfIntegralElements).mpr inferInstance)
-  let U := (Opens.map f.hom.base).obj V
-  have _ : IsEmpty (X.obj.restrict U.isOpenEmbedding) :=
-    ⟨fun z ↦ IsEmpty.false ((X.obj.ofRestrict U.isOpenEmbedding).base z)⟩
-  let g₁ : X.obj.restrict U.isOpenEmbedding ⟶ Y.obj :=
-    X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom
-  let g₂ : Z ⟶ Y.obj := presentationLimitPreAdicSpaceComap
-    (Pair.finiteAlgebra.algebraHom S PUnit.{u + 1}).toRingHom
-    (Pair.finiteAlgebra.algebraHom S PUnit.{u + 1}).continuous_toRingHom
-    (Pair.finiteAlgebra.algebraHom S PUnit.{u + 1}).map_mem_plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem
-    T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫
-    eV.inv ≫ Y.obj.ofRestrict V.isOpenEmbedding
-  have _ : IsOpenImmersion g₂ := by
-    refine PreAdicSpace.isOpenImmersion_of_isEmpty _ hsheaf Y.property.isSheafy
-  have hr : Set.range g₁.base = Set.range g₂.base := by simp [Set.range_eq_empty]
-  exact targetLocally_intro (V := V) (hy := hy) (S := S) (P := P) (hP := hP)
-    (T := T) (P' := P') (hP' := hP')
-    (φ := Pair.finiteAlgebra.algebraHom S PUnit.{u + 1})
-    (hφ := ⟨inferInstance, .of_subsingleton⟩) (hsheaf := hsheaf) (eV := eV)
-    (eU := IsOpenImmersion.isoOfRangeEq g₁ g₂ hr)
-    (hfac := (IsOpenImmersion.isoOfRangeEq_hom_comp g₁ g₂ hr).symm)
+  -- Cover `Y` by Tate affinoid opens; over each, both the restriction of `f` and the map from
+  -- `Spa(PUnit, PUnit)` are open immersions out of empty spaces, so they are isomorphic.
+  refine IsFiniteEtale.of_iSup_eq_top
+    (fun V : {V : Opens Y.obj // isTateAffinoid (Y.obj.restrict V.isOpenEmbedding)} ↦ V.val) ?_
+    fun V ↦ ?_
+  · refine Opens.ext <| Set.eq_univ_iff_forall.mpr fun y ↦ ?_
+    obtain ⟨W, hW, hy⟩ := isAnalytic_iff.mp hY y
+    exact Opens.mem_iSup.mpr ⟨⟨W, (mem_propOpens_iff _).mp hW⟩, hy⟩
+  · obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ := (isTateAffinoid_iff _).mp V.property
+    let _ : IsTateRing PUnit.{u + 1} := IsTateRing.of_isModuleTopology (A := A) (B := PUnit.{u + 1})
+    have _ : IsStronglyNoetherian PUnit.{u + 1} := IsNoetherianType.isStronglyNoetherian
+    let T : Pair PUnit.{u + 1} := S.finiteAlgebra PUnit.{u + 1}
+    obtain ⟨P', hP', hsheaf⟩ := (isSheafyForEveryPresentation_of_isStronglyNoetherian
+      T.isRingOfIntegralElements).exists_compatible_isSheaf
+    let Z : PreAdicSpace.{u} := presentationLimitPreAdicSpace P' T.plus
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hP'
+    have _ : IsEmpty Z := Set.isEmpty_coe_sort.mpr
+      ((spa_eq_empty_iff_subsingleton _ T.isRingOfIntegralElements).mpr inferInstance)
+    let U := (Opens.map f.hom.base).obj V.val
+    have _ : IsEmpty (X.obj.restrict U.isOpenEmbedding) :=
+      ⟨fun z ↦ IsEmpty.false ((X.obj.ofRestrict U.isOpenEmbedding).base z)⟩
+    have hA_sheaf : PreAdicSpace.isSheafy (presentationLimitPreAdicSpace P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
+      (ObjectProperty.prop_iff_of_iso PreAdicSpace.isSheafy eV).mp
+        (isSheafy_restrict V.val.isOpenEmbedding Y.property.isSheafy)
+    have hA : PreAdicSpace.isAdic (presentationLimitPreAdicSpace P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
+      isAdic_presentationLimitPreAdicSpace P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP
+        ((isSheafy_presentationLimitPreAdicSpace_iff P S.plus _ hP).mp hA_sheaf)
+    let φ := Pair.finiteAlgebra.algebraHom S PUnit.{u + 1}
+    let comap := presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
+      φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf
+    have _ : IsOpenImmersion (f.hom.restrictPreimage V.val ≫ eV.hom) :=
+      PreAdicSpace.isOpenImmersion_of_isEmpty _
+        (isSheafy_restrict U.isOpenEmbedding X.property.isSheafy) hA_sheaf
+    have _ : IsOpenImmersion comap :=
+      PreAdicSpace.isOpenImmersion_of_isEmpty _ hsheaf hA_sheaf
+    have hr : Set.range (f.hom.restrictPreimage V.val ≫ eV.hom).base = Set.range comap.base := by
+      simp [Set.range_eq_empty]
+    let eU_pre := IsOpenImmersion.isoOfRangeEq (f.hom.restrictPreimage V.val ≫ eV.hom) comap hr
+    let eU : (⟨_, isAdic_restrict U.isOpenEmbedding X.property⟩ : AdicSpace.{u}) ≅
+        ⟨Z, isAdic_presentationLimitPreAdicSpace P' T.plus
+          T.isRingOfIntegralElements.isPowerBounded_of_mem hP' hsheaf⟩ :=
+      { hom := ObjectProperty.homMk eU_pre.hom
+        inv := ObjectProperty.homMk eU_pre.inv
+        hom_inv_id := InducedCategory.Hom.ext eU_pre.hom_inv_id
+        inv_hom_id := InducedCategory.Hom.ext eU_pre.inv_hom_id }
+    let eV_adic : (⟨_, isAdic_restrict V.val.isOpenEmbedding Y.property⟩ : AdicSpace.{u}) ≅
+        ⟨_, hA⟩ :=
+      { hom := ObjectProperty.homMk eV.hom
+        inv := ObjectProperty.homMk eV.inv
+        hom_inv_id := InducedCategory.Hom.ext eV.hom_inv_id
+        inv_hom_id := InducedCategory.Hom.ext eV.inv_hom_id }
+    have _ : IsIso eU.hom := eU.isIso_hom
+    have _ : IsIso eV_adic.inv := eV_adic.isIso_inv
+    have hbase := isFiniteEtale_presentationLimitPreAdicSpaceComap P P' hP hP' hsheaf hA φ
+      .of_subsingleton
+    have hfac : (ObjectProperty.homMk (f.hom.restrictPreimage V.val) :
+        (⟨_, isAdic_restrict U.isOpenEmbedding X.property⟩ : AdicSpace.{u}) ⟶
+          ⟨_, isAdic_restrict V.val.isOpenEmbedding Y.property⟩) =
+        eU.hom ≫ ObjectProperty.homMk comap ≫ eV_adic.inv :=
+      InducedCategory.Hom.ext <| ((Iso.eq_comp_inv eV).mpr
+        (IsOpenImmersion.isoOfRangeEq_hom_comp
+          (f.hom.restrictPreimage V.val ≫ eV.hom) comap hr).symm).trans
+        (Category.assoc _ _ _)
+    rw [hfac]
+    exact MorphismProperty.RespectsIso.precomp @IsFiniteEtale.{u} _ _
+      (MorphismProperty.RespectsIso.postcomp @IsFiniteEtale.{u} _ _ hbase)
 
 /-- **A morphism from an empty adic space into `Y` is finite étale if and only if `Y` is
 analytic.** -/

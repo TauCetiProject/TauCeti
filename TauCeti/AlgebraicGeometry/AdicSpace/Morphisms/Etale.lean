@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.Finite.Etale
 
+import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid.QuotientSquare
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.GlueMorphisms
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyOfFiniteType.Local
 import TauCeti.RingTheory.Huber.ModuleTopology.FiniteEtale
@@ -502,9 +503,8 @@ private theorem comm_restrictPreimage_of_square {W W₀ Z Z₀ : AdicSpace.{u}}
 section SquareComparison
 
 variable {R hR I hRI} {W : Opens (ofPair R hR).obj} {z : (ofPair R hR).obj}
-  (sq : OfPairQuotientRationalSquare R hR I hRI W z)
 
-private theorem sqRestrictPreimage :
+private theorem sqRestrictPreimage (sq : OfPairQuotientRationalSquare R hR I hRI W z) :
     (sqZeroQuotHom R hR I hRI).hom.restrictPreimage sq.openSet =
       (IsOpenImmersion.isoRestrictOfRangeEq sq.square.quotientMap.hom
           sq.square.range_quotientMap).inv ≫
@@ -520,7 +520,8 @@ private theorem sqRestrictPreimage :
       (IsOpenImmersion.isoRestrictOfRangeEq_hom_ofRestrict sq.square.quotientMap.hom
         sq.square.range_quotientMap)).symm
 
-private theorem sqIncl_restrictPreimage {O : Opens (ofPair R hR).obj}
+private theorem sqIncl_restrictPreimage (sq : OfPairQuotientRationalSquare R hR I hRI W z)
+    {O : Opens (ofPair R hR).obj}
     (hmT : Set.range sq.square.targetMap.hom.base ⊆ (O : Set (ofPair R hR).obj))
     (hmQ : Set.range sq.square.quotientMap.hom.base ⊆
       (((Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj O :
@@ -534,6 +535,7 @@ private theorem sqIncl_restrictPreimage {O : Opens (ofPair R hR).obj}
     (Hom.liftToRestrict_ofRestrict _ _) (Hom.liftToRestrict_ofRestrict _ _)
 
 private theorem mem_range_liftToRestrict_targetMap
+    (sq : OfPairQuotientRationalSquare R hR I hRI W z)
     {p : (ofPair R hR).obj.restrict W.isOpenEmbedding} (hp : p.val = z)
     (ht : Set.range sq.square.targetMap.hom.base ⊆ (W : Set (ofPair R hR).obj)) :
     p ∈ Set.range (sq.square.targetMap.hom.liftToRestrict ht).base := by
@@ -541,7 +543,8 @@ private theorem mem_range_liftToRestrict_targetMap
     sq.square.range_targetMap.symm ▸ sq.mem
   exact ⟨q, Subtype.ext (by simp [hq, hp])⟩
 
-private theorem quotientHom_comp_liftToRestrict (g₀ : ofPair (R.quotient I) hRI ⟶ Y)
+private theorem quotientHom_comp_liftToRestrict
+    (sq : OfPairQuotientRationalSquare R hR I hRI W z) (g₀ : ofPair (R.quotient I) hRI ⟶ Y)
     {O : Opens (ofPair R hR).obj} (hWO : sq.openSet ≤ O)
     (hmT : Set.range sq.square.targetMap.hom.base ⊆ (O : Set (ofPair R hR).obj))
     {gO : (ofPair R hR).obj.restrict O.isOpenEmbedding ⟶ Y.obj}
@@ -606,7 +609,7 @@ private theorem exists_local_lift_of_sqZero_quotient (hf : IsEtaleLocalDescripti
   · simp only [Category.assoc, hgloc_f_hom,
       reassoc_of% (IsOpenImmersion.isoRestrictOfRangeEq_inv_comp sq.square.targetMap.hom
         sq.square.range_targetMap)]
-  · rw [sqRestrictPreimage]
+  · rw [sqRestrictPreimage sq]
     simp only [Category.assoc, Iso.hom_inv_id_assoc, hgloc_K_hom,
       reassoc_of% (IsOpenImmersion.isoRestrictOfRangeEq_inv_comp sq.square.quotientMap.hom
         (O := (Opens.map (sqZeroQuotHom R hR I hRI).hom.base).obj sq.openSet)

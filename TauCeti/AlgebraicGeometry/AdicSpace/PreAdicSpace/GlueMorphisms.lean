@@ -8,8 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Gluing
 public import TauCeti.Geometry.RingedSpace.PresheafedSpace.GlueMorphisms
 
-import TauCeti.Topology.Category.TopCat.Opens
-
 /-!
 # Gluing morphisms out of a sheafy pre-adic space
 

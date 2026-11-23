@@ -161,7 +161,8 @@ example :
     hφ.isFinite.isTopologicallyFiniteType.isTopologicallyFiniteType_toRingHom.isStronglyNoetherian
   have hB := isSheafyForEveryPresentation_of_isStronglyNoetherian
     ((discPair p).finiteAlgebra (A × A)).isRingOfIntegralElements
-  exact ⟨hB, hφ, .comapOfPair _ hB φ hφ, .of_isFiniteEtale (.comapOfPair _ hB φ hφ)⟩
+  exact ⟨hB, hφ, AdicSpace.isFiniteEtale_comapOfPair _ hB φ hφ,
+    .of_isFiniteEtale (AdicSpace.isFiniteEtale_comapOfPair _ hB φ hφ)⟩
 
 private structure DualNumberData (p : ℕ) [Fact p.Prime] : Type 1 where
   /-- Dual-number coefficient ring `ℚ_[p]⟨X⟩ ⧸ (X²)`. -/
