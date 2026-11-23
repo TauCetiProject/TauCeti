@@ -25,6 +25,9 @@ identifications `M ≃ Dual R N` and `M' ≃ Dual R N'` followed by the identifi
 ## Main declarations
 
 * `LinearMap.IsPerfPair.mul`: multiplication is a perfect pairing of `R` with itself.
+* `LinearMap.compl₁₂_fst_add_compl₁₂_snd_eq_dualProdDualEquivDual_comp_prodMap`: the curried
+  orthogonal sum is the product of the two pairings followed by `Module.dualProdDualEquivDual`.
+* `LinearMap.flip_compl₁₂_fst_add_compl₁₂_snd`: flipping the orthogonal sum flips each summand.
 * `LinearMap.IsPerfPair.compl₁₂_fst_add_compl₁₂_snd`: the orthogonal sum of two perfect pairings
   is a perfect pairing.
 -/
@@ -46,24 +49,28 @@ instance IsPerfPair.mul : (LinearMap.mul R R).IsPerfPair := by
 
 /-- Curried, the orthogonal sum of two pairings is their product followed by the identification of
 a product of duals with the dual of the product. -/
-private theorem compl₁₂_fst_add_compl₁₂_snd_eq_comp (p : M →ₗ[R] N →ₗ[R] R)
-    (q : M' →ₗ[R] N' →ₗ[R] R) :
+theorem compl₁₂_fst_add_compl₁₂_snd_eq_dualProdDualEquivDual_comp_prodMap
+    (p : M →ₗ[R] N →ₗ[R] R) (q : M' →ₗ[R] N' →ₗ[R] R) :
     p.compl₁₂ (fst R M M') (fst R N N') + q.compl₁₂ (snd R M M') (snd R N N') =
       (dualProdDualEquivDual R N N').toLinearMap ∘ₗ p.prodMap q := by
+  ext <;> simp
+
+/-- Flipping the orthogonal sum of two pairings flips each summand. -/
+theorem flip_compl₁₂_fst_add_compl₁₂_snd (p : M →ₗ[R] N →ₗ[R] R) (q : M' →ₗ[R] N' →ₗ[R] R) :
+    (p.compl₁₂ (fst R M M') (fst R N N') + q.compl₁₂ (snd R M M') (snd R N N')).flip =
+      p.flip.compl₁₂ (fst R N N') (fst R M M') + q.flip.compl₁₂ (snd R N N') (snd R M M') := by
   ext <;> simp
 
 /-- The orthogonal sum of two perfect pairings is a perfect pairing of the products. -/
 instance IsPerfPair.compl₁₂_fst_add_compl₁₂_snd (p : M →ₗ[R] N →ₗ[R] R)
     (q : M' →ₗ[R] N' →ₗ[R] R) [p.IsPerfPair] [q.IsPerfPair] :
     (p.compl₁₂ (fst R M M') (fst R N N') + q.compl₁₂ (snd R M M') (snd R N N')).IsPerfPair := by
-  have hflip : (p.compl₁₂ (fst R M M') (fst R N N') + q.compl₁₂ (snd R M M') (snd R N N')).flip =
-      p.flip.compl₁₂ (fst R N N') (fst R M M') + q.flip.compl₁₂ (snd R N N') (snd R M M') := by
-    ext <;> simp
   refine ⟨?_, ?_⟩
-  · rw [compl₁₂_fst_add_compl₁₂_snd_eq_comp, coe_comp, coe_prodMap]
+  · rw [compl₁₂_fst_add_compl₁₂_snd_eq_dualProdDualEquivDual_comp_prodMap, coe_comp, coe_prodMap]
     exact (LinearEquiv.bijective _).comp
       ((IsPerfPair.bijective_left p).prodMap (IsPerfPair.bijective_left q))
-  · rw [hflip, compl₁₂_fst_add_compl₁₂_snd_eq_comp, coe_comp, coe_prodMap]
+  · rw [flip_compl₁₂_fst_add_compl₁₂_snd,
+      compl₁₂_fst_add_compl₁₂_snd_eq_dualProdDualEquivDual_comp_prodMap, coe_comp, coe_prodMap]
     exact (LinearEquiv.bijective _).comp
       ((IsPerfPair.bijective_right p).prodMap (IsPerfPair.bijective_right q))
 

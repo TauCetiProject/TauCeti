@@ -97,7 +97,8 @@ end Pairing
 
 /-! ### The extension on the coroots -/
 
-variable (P : RootDatum ι M N) (δ : N →ₗ[ℤ] ℤ) (d : ι → ℤ) (hd : ∀ i, 2 * d i = δ (P.coroot i))
+variable (P : RootDatum ι M N) (δ : N →ₗ[ℤ] ℤ) (δ' : M →ₗ[ℤ] ℤ) (d : ι → ℤ)
+  (hd : ∀ i, 2 * d i = δ (P.coroot i))
 
 include hd in
 /-- The extra coordinates are compatible with the reflections:
@@ -264,7 +265,7 @@ theorem Base.extendCoroot_support (b : P.Base) : (b.extendCoroot δ d hd).suppor
 
 /-! ### The extension on the roots -/
 
-variable (δ' : M →ₗ[ℤ] ℤ) (hd' : ∀ i, 2 * d i = δ' (P.root i))
+variable (hd' : ∀ i, 2 * d i = δ' (P.root i))
 
 /-- **The extension of a root datum by a central rank-one torus**, with the extra coordinate on
 the roots: roots `(αᵢ, dᵢ)` and coroots `(αᵢ∨, 0)` in `M × ℤ` and `N × ℤ`, where
@@ -273,51 +274,51 @@ def extendRoot : RootDatum ι (M × ℤ) (N × ℤ) :=
   (P.flip.extendCoroot δ' d hd').flip
 
 /-- The extension on the roots is the flip of the extension on the coroots of the flip. -/
-theorem extendRoot_def : P.extendRoot d δ' hd' = (P.flip.extendCoroot δ' d hd').flip :=
+theorem extendRoot_def : P.extendRoot δ' d hd' = (P.flip.extendCoroot δ' d hd').flip :=
   (rfl)
 
 /-- The extension on the coroots is dual to the extension on the roots of the dual root datum. -/
-theorem flip_extendCoroot : (P.extendCoroot δ d hd).flip = P.flip.extendRoot d δ hd :=
+theorem flip_extendCoroot : (P.extendCoroot δ d hd).flip = P.flip.extendRoot δ d hd :=
   (rfl)
 
 /-- The extension on the roots is dual to the extension on the coroots of the dual root datum. -/
-theorem flip_extendRoot : (P.extendRoot d δ' hd').flip = P.flip.extendCoroot δ' d hd' :=
+theorem flip_extendRoot : (P.extendRoot δ' d hd').flip = P.flip.extendCoroot δ' d hd' :=
   P.flip.extendCoroot δ' d hd' |>.flip_flip
 
 @[simp]
-theorem extendRoot_root (i : ι) : (P.extendRoot d δ' hd').root i = (P.root i, d i) :=
+theorem extendRoot_root (i : ι) : (P.extendRoot δ' d hd').root i = (P.root i, d i) :=
   (rfl)
 
 @[simp]
-theorem extendRoot_coroot (i : ι) : (P.extendRoot d δ' hd').coroot i = (P.coroot i, 0) :=
+theorem extendRoot_coroot (i : ι) : (P.extendRoot δ' d hd').coroot i = (P.coroot i, 0) :=
   (rfl)
 
 @[simp]
 theorem extendRoot_reflectionPerm (i : ι) :
-    (P.extendRoot d δ' hd').reflectionPerm i = P.reflectionPerm i :=
+    (P.extendRoot δ' d hd').reflectionPerm i = P.reflectionPerm i :=
   (rfl)
 
 @[simp]
 theorem extendRoot_toLinearMap_apply (x : M × ℤ) (y : N × ℤ) :
-    (P.extendRoot d δ' hd').toLinearMap x y = P.toLinearMap x.1 y.1 + x.2 * y.2 := by
+    (P.extendRoot δ' d hd').toLinearMap x y = P.toLinearMap x.1 y.1 + x.2 * y.2 := by
   rw [extendRoot_def, flip_toLinearMap, LinearMap.flip_apply]
   exact (LinearMap.congr_fun₂ (extendCoroot_toLinearMap P.flip δ' d hd') y x).trans <| by
     rw [extendPairing_apply, flip_toLinearMap, LinearMap.flip_apply, mul_comm]
 
 /-- The extension on the roots has the Cartan integers of `P`. -/
 @[simp]
-theorem extendRoot_pairing (i j : ι) : (P.extendRoot d δ' hd').pairing i j = P.pairing i j := by
+theorem extendRoot_pairing (i j : ι) : (P.extendRoot δ' d hd').pairing i j = P.pairing i j := by
   rw [← RootPairing.root_coroot_eq_pairing, ← RootPairing.root_coroot_eq_pairing,
     extendRoot_toLinearMap_apply, extendRoot_root, extendRoot_coroot, mul_zero, add_zero]
 
 variable {P} in
 /-- A base of `P` is a base of the extension on the roots, on the same support. -/
-def Base.extendRoot (b : P.Base) : (P.extendRoot d δ' hd').Base :=
+def Base.extendRoot (b : P.Base) : (P.extendRoot δ' d hd').Base :=
   (b.flip.extendCoroot δ' d hd').flip
 
 variable {P} in
 @[simp]
-theorem Base.extendRoot_support (b : P.Base) : (b.extendRoot d δ' hd').support = b.support :=
+theorem Base.extendRoot_support (b : P.Base) : (b.extendRoot δ' d hd').support = b.support :=
   (rfl)
 
 end RootPairing

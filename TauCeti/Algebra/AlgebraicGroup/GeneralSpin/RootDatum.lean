@@ -40,8 +40,8 @@ The dualities of root data hold as follows:
 * `GSpin_{2n+1}^∨ = GSp₂ₙ` (`TauCeti.flip_gspinOddRootDatum`), by construction;
 * `GSpin_{2n}^∨ = GSO₂ₙ` (`TauCeti.flip_gspinEvenRootDatum`), with `ε₀∨` dual to the multiplier
   `ε₀`, because `SO_{2n}` is self-dual (`TauCeti.DynkinType.flip_typeDClassicalRootDatum`);
-* `Sp₂ₙ^∨ = SO_{2n+1}`: the root datum of `SO_{2n+1}` (`TauCeti.soOddRootDatum`) is the dual of
-  `TauCeti.Symplectic.diagonalRootDatum`.
+* `Sp₂ₙ^∨ = SO_{2n+1}` (`TauCeti.Symplectic.flip_diagonalRootDatum`): the root datum of
+  `SO_{2n+1}` (`TauCeti.soOddRootDatum`) is the dual of `TauCeti.Symplectic.diagonalRootDatum`.
 
 The bases of `GSpin_{2n+1}` and `GSp₂ₙ` come from `TauCeti.Symplectic.diagonalRootBase`, those of
 `GSpin_{2n}` and `GSO₂ₙ` from `TauCeti.DynkinType.typeDClassicalBase`, which needs `4 ≤ n`.
@@ -133,10 +133,9 @@ are those of `SO_{2n+1}` and its coroots are `εᵢ∨ - εⱼ∨`, `±(εᵢ∨
 noncomputable def gspinOddRootDatum :
     RootDatum (GLSymplecticFin.RootSubgroupIndex n) ((ULift.{u} (Fin n) → ℤ) × ℤ)
       ((ULift.{u} (Fin n) →₀ ℤ) × ℤ) :=
-  (Symplectic.diagonalRootDatum.{u} n).flip.extendCoroot (negCharacterSum n)
-    multiplierCoordinate fun i => by
-      rw [RootPairing.flip_coroot]
-      exact two_mul_multiplierCoordinate n i
+  (soOddRootDatum.{u} n).extendCoroot (negCharacterSum n) multiplierCoordinate fun i => by
+    rw [soOddRootDatum_coroot]
+    exact two_mul_multiplierCoordinate n i
 
 /-- **The root datum of `GSp₂ₙ`** on `X = (ULift (Fin n) →₀ ℤ) × ℤ`: the root datum of `Sp₂ₙ`
 extended by the multiplier `ε₀`. Its roots are `εᵢ - εⱼ`, `±(εᵢ + εⱼ - ε₀)`, `±(2εᵢ - ε₀)` and its
@@ -159,8 +158,8 @@ theorem flip_gspRootDatum : (gspRootDatum.{u} n).flip = gspinOddRootDatum.{u} n 
 /-- The root datum of `GSp₂ₙ` is the extension of the root datum of `Sp₂ₙ` by the multiplier
 `ε₀`, with roots `(αᵢ, multiplierCoordinate i)` and the coroots of `Sp₂ₙ`. -/
 theorem gspRootDatum_eq_extendRoot :
-    gspRootDatum.{u} n = (Symplectic.diagonalRootDatum.{u} n).extendRoot multiplierCoordinate
-      (negCharacterSum n) (two_mul_multiplierCoordinate n) :=
+    gspRootDatum.{u} n = (Symplectic.diagonalRootDatum.{u} n).extendRoot (negCharacterSum n)
+      multiplierCoordinate (two_mul_multiplierCoordinate n) :=
   RootPairing.flip_extendCoroot _ _ _ _
 
 /-- The pairing of `GSpin_{2n+1}`: the dot product on the first factors plus the product of the
@@ -170,7 +169,7 @@ theorem gspinOddRootDatum_toLinearMap_apply (x : (ULift.{u} (Fin n) → ℤ) × 
     (y : (ULift.{u} (Fin n) →₀ ℤ) × ℤ) :
     (gspinOddRootDatum.{u} n).toLinearMap x y = SplitTorus.dotPairing y.1 x.1 + x.2 * y.2 := by
   rw [gspinOddRootDatum, RootPairing.extendCoroot_toLinearMap, RootPairing.extendPairing_apply,
-    RootPairing.flip_toLinearMap, LinearMap.flip_apply, Symplectic.diagonalRootDatum_toLinearMap]
+    soOddRootDatum_toLinearMap_apply]
 
 /-- The pairing of `GSp₂ₙ`: the dot product on the first factors plus the product of the
 `ε₀`-coordinates. -/
@@ -212,7 +211,7 @@ theorem gspRootDatum_coroot (i : GLSymplecticFin.RootSubgroupIndex n) :
 /-- The coroot of the short root `εᵢ` of `GSpin_{2n+1}` is `2εᵢ∨ - ε₀∨`. -/
 theorem gspinOddRootDatum_coroot_positiveLong (i : Fin n) :
     (gspinOddRootDatum.{u} n).coroot (.positiveLong i) = (Finsupp.single (ULift.up i) 2, -1) := by
-  rw [gspinOddRootDatum_coroot, RootPairing.flip_coroot,
+  rw [gspinOddRootDatum_coroot, soOddRootDatum_coroot,
     Symplectic.diagonalRootDatum_root_positiveLong]
   rfl
 
@@ -220,14 +219,14 @@ theorem gspinOddRootDatum_coroot_positiveLong (i : Fin n) :
 theorem gspinOddRootDatum_coroot_positiveSum {i j : Fin n} (hij : i < j) :
     (gspinOddRootDatum.{u} n).coroot (.positiveSum i j hij) =
       (Finsupp.single (ULift.up i) 1 + Finsupp.single (ULift.up j) 1, -1) := by
-  rw [gspinOddRootDatum_coroot, RootPairing.flip_coroot,
+  rw [gspinOddRootDatum_coroot, soOddRootDatum_coroot,
     Symplectic.diagonalRootDatum_root_positiveSum]
   rfl
 
 /-- The short root `εᵢ` of `GSpin_{2n+1}`. -/
 theorem gspinOddRootDatum_root_positiveLong (i : Fin n) :
     (gspinOddRootDatum.{u} n).root (.positiveLong i) = (Pi.single (ULift.up i) 1, 0) := by
-  rw [gspinOddRootDatum_root, RootPairing.flip_root,
+  rw [gspinOddRootDatum_root, soOddRootDatum_root,
     Symplectic.diagonalRootDatum_coroot_positiveLong]
 
 /-- The long root `2εᵢ - ε₀` of `GSp₂ₙ`. -/
@@ -258,8 +257,7 @@ theorem gspinOddRootDatum_toLinearMap_gspinOddUpsilon_coroot
     (gspinOddRootDatum.{u} n).toLinearMap (gspinOddUpsilon n)
       ((gspinOddRootDatum.{u} n).coroot i) = 0 :=
   RootPairing.extendCoroot_toLinearMap_coroot_of_eq_neg _ _ _ _ (fun y => by
-    rw [RootPairing.flip_toLinearMap, LinearMap.flip_apply,
-      Symplectic.diagonalRootDatum_toLinearMap, negCharacterSum_apply, neg_neg]) i
+    rw [soOddRootDatum_toLinearMap_apply, negCharacterSum_apply, neg_neg]) i
 
 /-- `Υ` pairs with `ε₀∨` to `2`. -/
 theorem gspinOddRootDatum_toLinearMap_gspinOddUpsilon_inr :
@@ -278,9 +276,11 @@ noncomputable def gspBase : (gspRootDatum.{u} n).Base :=
 /-- The simple roots of `GSpin_{2n+1}` are indexed by `TauCeti.Symplectic.diagonalSimpleRootIndex`.
 -/
 theorem mem_gspinOddBase_support (p : GLSymplecticFin.RootSubgroupIndex n) :
-    p ∈ (gspinOddBase.{u} n).support ↔ ∃ i, Symplectic.diagonalSimpleRootIndex n i = p := by
-  rw [gspinOddBase, RootPairing.Base.extendCoroot_support, RootPairing.Base.flip_support]
-  exact Symplectic.mem_diagonalRootBase_support p
+    p ∈ (gspinOddBase.{u} n).support ↔ ∃ i, Symplectic.diagonalSimpleRootIndex n i = p :=
+  -- The flip of `TauCeti.Symplectic.diagonalRootBase` is a base of `soOddRootDatum` only after
+  -- unfolding it, so `RootPairing.Base.flip_support` is applied by defeq rather than by `rw`.
+  (Iff.of_eq (congrArg (p ∈ ·) (RootPairing.Base.extendCoroot_support _ _ _ _))).trans
+    (Symplectic.mem_diagonalRootBase_support p)
 
 /-- The simple roots of `GSp₂ₙ` are indexed by `TauCeti.Symplectic.diagonalSimpleRootIndex`. -/
 theorem mem_gspBase_support (p : GLSymplecticFin.RootSubgroupIndex n) :
@@ -359,7 +359,7 @@ noncomputable def gspinEvenRootDatum :
 by the multiplier `ε₀`. Its roots are `εᵢ - εⱼ` and `±(εᵢ + εⱼ - ε₀)` and its coroots are
 `±εᵢ∨ ± εⱼ∨`. -/
 noncomputable def gsoRootDatum : RootDatum (TypeDRoot n) ((Fin n → ℤ) × ℤ) ((Fin n → ℤ) × ℤ) :=
-  (typeDClassicalRootDatum n).extendRoot halfNegCoordinateSum (negCoordinateSum n)
+  (typeDClassicalRootDatum n).extendRoot (negCoordinateSum n) halfNegCoordinateSum
     (two_mul_halfNegCoordinateSum_root n)
 
 /-- The roots of `GSpin_{2n}` are the roots `±εᵢ ± εⱼ` of `SO_{2n}`, with `ε₀`-coordinate zero. -/
