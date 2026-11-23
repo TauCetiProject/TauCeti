@@ -25,10 +25,11 @@ with `cᵢⁿ = a`, and each `1 - cᵢ` divides the unit `b`, so it is a unit wi
 
 It follows that the submodule spanned by the Steinberg tensors is `n`-divisible whenever every
 `Xⁿ - a` splits, for instance for every `n ≠ 0` over an algebraically closed field. Together with
-the divisibility statements for tensor products and their quotients in
+the divisibility statements for tensor products in
 `TauCeti.LinearAlgebra.TensorProduct.Divisible` and
-`TauCeti.LinearAlgebra.PiTensorProduct.Divisible`, this is the input for the unique divisibility
-of the Milnor K-groups of an algebraically closed field in degrees at least two. In
+`TauCeti.LinearAlgebra.PiTensorProduct.Divisible`, and for quotients in
+`TauCeti.RingTheory.Regular.IsSMulRegular`, this is the input for the unique divisibility of the
+Milnor K-groups `TauCeti.MilnorK` of an algebraically closed field in degrees at least two. In
 characteristic `p` the roots of `Xᵖ - a` all coincide, and the argument uses them with their
 multiplicity.
 
@@ -52,56 +53,53 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R]
 
+/-- A pure tensor with a multiset sum in its right factor is the sum of the pure tensors. -/
+private theorem tmul_multiset_sum {S M N : Type*} [CommSemiring S] [AddCommMonoid M] [Module S M]
+    [AddCommMonoid N] [Module S N] (m : M) (s : Multiset N) :
+    m ⊗ₜ[S] s.sum = (s.map (m ⊗ₜ[S] ·)).sum :=
+  map_multiset_sum (TensorProduct.mk S M N m) s
+
 /-- **Root factorization of a Steinberg tensor.** Let `a, b` be units of a commutative ring
 with `a + b = 1`, and suppose `Xⁿ - a` splits for some `n ≠ 0`. Then in
 `Additive Rˣ ⊗[ℤ] Additive Rˣ` the Steinberg tensor `a ⊗ b` is `n` times a finite sum of Steinberg
-tensors `c ⊗ d`, with `c + d = 1` and `cⁿ = a`: the pairs are the roots `c` of a factorization
-`Xⁿ - a = ∏ (X - c)`, counted with multiplicity, together with `d = 1 - c`. -/
+tensors `c ⊗ d` of unit pairs with `c + d = 1` and `cⁿ = a`. -/
 theorem exists_ofMul_tmul_ofMul_eq_nsmul_sum {n : ℕ} (hn : n ≠ 0) {a b : Rˣ}
     (hab : (a : R) + b = 1) (hsplit : (X ^ n - C (a : R)).Splits) :
     ∃ s : Multiset (Rˣ × Rˣ), (∀ x ∈ s, (x.1 : R) + x.2 = 1 ∧ x.1 ^ n = a) ∧
       Additive.ofMul a ⊗ₜ[ℤ] Additive.ofMul b =
         n • (s.map fun x ↦ Additive.ofMul x.1 ⊗ₜ[ℤ] Additive.ofMul x.2).sum := by
   classical
-  -- A factorization `f = ∏ (X - c)`, with the roots `c` counted with multiplicity.
+  -- A factorization `Xⁿ - a = ∏ (X - c)`, with the roots `c` counted with multiplicity.
   obtain ⟨m, hm⟩ := splits_iff_exists_multiset.1 hsplit
   rw [(monic_X_pow_sub_C (a : R) hn).leadingCoeff, C_1, one_mul] at hm
   have heval (x : R) : x ^ n - a = (m.map (x - ·)).prod := by
     simpa [eval_multiset_prod, Multiset.map_map, Function.comp_def] using congrArg (eval x) hm
-  have hpow : ∀ c ∈ m, c ^ n = a := fun c hc ↦ by
+  have hpow (c : R) (hc : c ∈ m) : c ^ n = a := by
     rw [← sub_eq_zero, heval]
     exact Multiset.prod_eq_zero (Multiset.mem_map.2 ⟨c, hc, sub_self c⟩)
   -- Evaluating the factorization at `1` gives `b = ∏ (1 - c)`.
   have hprod : (m.map (1 - ·)).prod = (b : R) := by
     rw [← heval, one_pow, ← hab, add_sub_cancel_left]
   -- Every root is a unit, since its `n`th power is the unit `a`.
-  obtain ⟨s₀, hs₀⟩ : ∃ s₀ : Multiset Rˣ, s₀.map (↑) = m :=
-    CanLift.prf (β := Multiset Rˣ) m fun c hc ↦
-      (isUnit_pow_iff hn).1 (hpow c hc ▸ a.isUnit)
-  -- Every `1 - c` divides the unit `b`, so it is a unit.
-  have hunit : ∀ c ∈ s₀, IsUnit (1 - (c : R)) := fun c hc ↦ by
-    refine isUnit_of_dvd_unit (Multiset.dvd_prod ?_) (hprod ▸ b.isUnit)
-    rw [← hs₀, Multiset.map_map]
-    exact Multiset.mem_map_of_mem _ hc
-  let u : R → Rˣ := fun x ↦ if h : IsUnit (1 - x) then h.unit else 1
-  have hu : ∀ c ∈ s₀, (u c : R) = 1 - c := fun c hc ↦ by simp [u, hunit c hc]
-  have hb : b = (s₀.map fun c : Rˣ ↦ u c).prod := by
-    have h := map_multiset_prod (Units.coeHom R) (s₀.map fun c : Rˣ ↦ u c)
-    simp only [Units.coeHom_apply, Multiset.map_map] at h
-    rw [Units.ext_iff, h, ← hprod, ← hs₀, Multiset.map_map]
-    exact congrArg Multiset.prod (Multiset.map_congr rfl fun c hc ↦ (hu c hc).symm)
-  have hpow' : ∀ c ∈ s₀, c ^ n = a := fun c hc ↦
-    Units.ext (by exact_mod_cast hpow c (hs₀ ▸ Multiset.mem_map_of_mem _ hc))
-  refine ⟨s₀.map fun c : Rˣ ↦ (c, u c), ?_, ?_⟩
+  lift m to Multiset Rˣ using fun c hc ↦ (isUnit_pow_iff hn).1 (hpow c hc ▸ a.isUnit)
+  simp only [Multiset.map_map, Function.comp_def] at hprod
+  replace hpow (c : Rˣ) (hc : c ∈ m) : c ^ n = a :=
+    Units.ext (by simpa using hpow c (Multiset.mem_map_of_mem _ hc))
+  -- Every `1 - c` divides the unit `b`, so it is a unit `d c`.
+  have hunit (c : Rˣ) (hc : c ∈ m) : ∃ d : Rˣ, (d : R) = 1 - c :=
+    isUnit_of_dvd_unit (Multiset.dvd_prod (Multiset.mem_map_of_mem (fun c : Rˣ ↦ 1 - (c : R)) hc))
+      (hprod ▸ b.isUnit)
+  choose! d hd using hunit
+  have hb : b = (m.map d).prod := Units.ext <| by
+    rw [← hprod, ← Units.coeHom_apply, map_multiset_prod, Multiset.map_map]
+    exact congrArg Multiset.prod (Multiset.map_congr rfl fun c hc ↦ (hd c hc).symm)
+  refine ⟨m.map fun c ↦ (c, d c), ?_, ?_⟩
   · simp only [Multiset.mem_map]
     rintro _ ⟨c, hc, rfl⟩
-    exact ⟨by simp [hu c hc], hpow' c hc⟩
-  · have h := map_multiset_sum (TensorProduct.mk ℤ (Additive Rˣ) (Additive Rˣ) (Additive.ofMul a))
-      (s₀.map fun c : Rˣ ↦ Additive.ofMul (u c))
-    rw [hb, ofMul_multiset_prod, Multiset.map_map, Multiset.map_map, ← Multiset.sum_map_nsmul]
-    simp only [TensorProduct.mk_apply, Multiset.map_map, Function.comp_def] at h ⊢
-    rw [h]
+    exact ⟨by simp [hd c hc], hpow c hc⟩
+  · simp only [hb, ofMul_multiset_prod, tmul_multiset_sum, Multiset.map_map, Function.comp_def,
+      ← Multiset.sum_map_nsmul]
     refine congrArg Multiset.sum (Multiset.map_congr rfl fun c hc ↦ ?_)
-    simp [← hpow' c hc, ofMul_pow, TensorProduct.smul_tmul']
+    rw [← hpow c hc, ofMul_pow, TensorProduct.smul_tmul']
 
 end TauCeti

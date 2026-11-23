@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Regular.IsSMulRegular
 
 /-!
-# Divisibility in tensor products and quotients
+# Divisibility in tensor products
 
 Let `R` be a commutative ring and `r : R`. Call an `R`-module `M` *`r`-divisible* if
 multiplication by `r` is surjective on `M`. This file proves:
@@ -19,15 +19,13 @@ multiplication by `r` is surjective on `M`. This file proves:
   Neither `M` nor `N` needs to be `r`-torsion free: the `r`-torsion `M[r]` of `M` is killed by
   tensoring with the `r`-divisible module `N`, and right exactness of `⊗[R] N` applied to
   `0 → M[r] → M → M → 0` shows that multiplication by `r` on `M ⊗[R] N` has kernel the image
-  of `M[r] ⊗[R] N`;
-* if multiplication by `r` is injective on `M` and a submodule `P` is `r`-divisible, then
-  multiplication by `r` is injective on `M ⧸ P`.
+  of `M[r] ⊗[R] N`.
 
 For `R = ℤ` these are the statements on uniquely `p`-divisible abelian groups behind the unique
 divisibility of Milnor K-groups of algebraically closed fields in degrees at least two: the
-degree-`n` tensor power of the multiplicative group is uniquely divisible for `n ≥ 2`, and so is
-its quotient by a divisible group of relations. The hypothesis on the relations cannot be
-dropped: `ℤ ⊆ ℚ` is not `p`-divisible, and `ℚ ⧸ ℤ` has nonzero `p`-torsion.
+degree-`n` tensor power of the multiplicative group is uniquely divisible for `n ≥ 2`. Passing to
+the quotient by a divisible group of relations is `IsSMulRegular.quotient_of_le_smul` in
+`TauCeti.RingTheory.Regular.IsSMulRegular`.
 
 ## Main results
 
@@ -36,8 +34,6 @@ dropped: `ℤ ⊆ ℚ` is not `p`-divisible, and `ℚ ⧸ ℤ` has nonzero `p`-t
   factor is `r`-divisible.
 * `TensorProduct.isSMulRegular_of_surjective_smul`: multiplication by `r` is injective on the
   tensor product of two `r`-divisible modules.
-* `IsSMulRegular.quotient_of_le_smul`: multiplication by `r` stays injective on the quotient by
-  an `r`-divisible submodule.
 
 ## References
 
@@ -47,7 +43,7 @@ dropped: `ℤ ⊆ ℚ` is not `p`-divisible, and `ℚ ⧸ ℤ` has nonzero `p`-t
 
 public section
 
-open scoped Pointwise TensorProduct
+open scoped TensorProduct
 
 variable {R M N : Type*} {r : R}
 
@@ -85,16 +81,12 @@ theorem isSMulRegular_of_surjective_smul (hM : Function.Surjective fun m : M ↦
   have hzero : (LinearMap.ker f).subtype.rTensor N = 0 := by
     ext k n
     obtain ⟨n, rfl⟩ := hN n
-    have hk : r • (k : M) = 0 := k.2
+    have hk : r • (k : M) = 0 := by
+      rw [← DistribSMul.toLinearMap_apply R M r]
+      exact LinearMap.mem_ker.1 k.property
     simp [smul_tmul', hk]
   refine isSMulRegular_iff_right_eq_zero_of_smul.2 fun x hx ↦ ?_
   obtain ⟨y, rfl⟩ := (hexact x).1 hx
   simp [hzero]
 
 end TensorProduct
-
-/-- If multiplication by `r` is injective on `M` and the submodule `P` is `r`-divisible, that is
-`P ≤ r • P`, then multiplication by `r` is injective on `M ⧸ P`. -/
-theorem IsSMulRegular.quotient_of_le_smul [CommRing R] [AddCommGroup M] [Module R M]
-    (h : IsSMulRegular M r) {P : Submodule R M} (hP : P ≤ r • P) : IsSMulRegular (M ⧸ P) r :=
-  (h.isSMulRegular_on_quot_iff_smul_top_inf_eq_smul P).2 (inf_le_right.trans hP)
