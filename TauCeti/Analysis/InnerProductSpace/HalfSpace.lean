@@ -26,7 +26,8 @@ For `x` in the closed half-space `{z | c ≤ ⟪z, ν⟫}`, the open ball of rad
 The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}` and
 does not increase norms, and neither does the projection `(⟪z, ν⟫ / ‖ν‖²) ν` onto the line
 `ℝ ∙ ν`. The foot `x - ((⟪x, ν⟫ - c) / ‖ν‖²) ν` of the perpendicular from `x` lies on the
-hyperplane `{y | ⟪y, ν⟫ = c}`, at distance `|⟪x, ν⟫ - c| / ‖ν‖` from `x`, and every point of that
+hyperplane `{y | ⟪y, ν⟫ = c}`, at distance `|⟪x, ν⟫ - c| / ‖ν‖` from `x`
+(`TauCeti.exists_inner_eq_and_dist_eq`), and every point of that
 hyperplane lies at distance at least `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. Relative to an
 orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
 projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
@@ -171,6 +172,15 @@ theorem div_norm_le_dist_of_inner_eq {E : Type*} [NormedAddCommGroup E] [InnerPr
   · simp
   rw [div_le_iff₀ (norm_pos_iff.2 hν), dist_eq_norm, ← hw, ← inner_sub_left]
   exact real_inner_le_norm _ _
+
+/-- **The foot of the perpendicular.** For `ν ≠ 0`, some point of the hyperplane
+`{y | ⟪y, ν⟫ = c}` lies at distance exactly `|⟪w, ν⟫ - c| / ‖ν‖` from `w`, namely
+`w - ((⟪w, ν⟫ - c) / ‖ν‖²) ν`. -/
+theorem exists_inner_eq_and_dist_eq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {ν : E} (hν : ν ≠ 0) (w : E) (c : ℝ) :
+    ∃ z, ⟪z, ν⟫_ℝ = c ∧ dist w z = |⟪w, ν⟫_ℝ - c| / ‖ν‖ :=
+  ⟨w - ((⟪w, ν⟫_ℝ - c) / ‖ν‖ ^ 2) • ν, real_inner_sub_div_norm_sq_smul_self_eq hν w c, by
+    rw [dist_eq_norm, sub_sub_cancel, norm_div_norm_sq_smul_self]⟩
 
 end TauCeti
 
