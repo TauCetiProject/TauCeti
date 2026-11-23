@@ -13,7 +13,6 @@ public import Mathlib.Logic.Equiv.Fin.Rotate
 import TauCeti.Data.Fin.Basic
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.EquivFin
-public import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -61,11 +60,12 @@ two- or three-variable object can rewrite rather than unfold them.
 
 ## Implementation notes
 
-The constructions are implementation details: `Mathlib.Data.Fintype.BigOperators`,
-`Mathlib.Data.Fintype.EquivFin` and `Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather
-than re-exported, as is `TauCeti.Data.Fin.Basic`, which supplies the value formula for
-`finRotate`. Only the finite sum, finiteness, equivalence, rotation and embedding interfaces needed
-by the declaration types are public.
+The constructions are implementation details: `Mathlib.Data.Fintype.BigOperators` and
+`Mathlib.Data.Fintype.EquivFin` are imported privately rather than re-exported, as is
+`TauCeti.Data.Fin.Basic`, which supplies the value formula for `finRotate`. Only the finite sum,
+finiteness, equivalence, rotation and embedding interfaces needed by the declaration types are
+public; `Mathlib.Logic.Equiv.Fin.Basic`, which provides `finSumFinEquiv`, is re-exported through
+`Mathlib.Logic.Equiv.Fin.Rotate`.
 -/
 
 public section
