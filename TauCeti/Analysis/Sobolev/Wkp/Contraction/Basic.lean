@@ -21,7 +21,7 @@ under every permutation of the direction tuple (`TauCeti.Wkp.iteratedLineDerivL_
 
 At positive number of directions, `iteratedLineDerivZeroL (j + 1) m u` agrees with
 `(IteratedGradient.evalL j m).compLp` applied to `iteratedGradient j u`
-(`TauCeti.Wkp.iteratedLineDerivZeroL_succ_apply`), so every weak derivative field
+(`TauCeti.Wkp.iteratedLineDerivZeroL_succ_eq_evalL_compLp`), so every weak derivative field
 `iteratedGradient j u` is symmetric almost everywhere as a continuous multilinear form
 (`TauCeti.Wkp.domDomCongr_toContinuousMultilinearMapₗᵢ_iteratedGradient_ae`), and every
 directional evaluation `(D^{j+1} u)(m 0, …, m j)` of `u ∈ W^{k+j+1,p}(Ω)` is the value of an
@@ -37,7 +37,7 @@ No boundedness or boundary regularity of `Ω` is assumed.
   directional derivatives along a tuple `Fin j → E`.
 * `TauCeti.Wkp.iteratedLineDerivL_comp_perm`: permutation invariance of iterated directional
   derivatives.
-* `TauCeti.Wkp.iteratedLineDerivZeroL_succ_apply`,
+* `TauCeti.Wkp.iteratedLineDerivZeroL_succ_eq_evalL_compLp`,
   `TauCeti.Wkp.value_iteratedLineDerivL_eq_evalL_compLp`, and
   `TauCeti.Wkp.value_iteratedLineDerivL_const`: identification of iterated directional
   derivatives with multilinear evaluations and full contractions of `Wkp.iteratedGradient`.
@@ -233,7 +233,7 @@ theorem iteratedLineDerivZeroL_comp_perm (j : ℕ) (m : Fin j → E) (σ : Equiv
 /-- **Iterated directional derivatives evaluate `iteratedGradient`.** Differentiating
 `u ∈ W^{j+1,p}(Ω)` along `m : Fin (j + 1) → E` produces `(IteratedGradient.evalL j m).compLp`
 applied to `iteratedGradient j u`. -/
-theorem iteratedLineDerivZeroL_succ_apply :
+theorem iteratedLineDerivZeroL_succ_eq_evalL_compLp :
     ∀ (j : ℕ) (m : Fin (j + 1) → E) (u : Wkp mu Omega p (j + 1)),
       iteratedLineDerivZeroL (j + 1) m u =
         (IteratedGradient.evalL j m).compLp (iteratedGradient j u)
@@ -242,7 +242,7 @@ theorem iteratedLineDerivZeroL_succ_apply :
         ContinuousLinearMap.id_apply, lineDerivL_zero_apply, IteratedGradient.evalL_zero]
   | j + 1, m, u => by
       rw [iteratedLineDerivZeroL_succ, ContinuousLinearMap.comp_apply,
-        iteratedLineDerivZeroL_succ_apply j (Fin.tail m) (lineDerivL (m 0) (j + 1) u),
+        iteratedLineDerivZeroL_succ_eq_evalL_compLp j (Fin.tail m) (lineDerivL (m 0) (j + 1) u),
         iteratedGradient_lineDerivL, ← IteratedGradient.contractL_one,
         ContinuousLinearMap.compLp_compLp, IteratedGradient.evalL_comp_contractL_one,
         Fin.cons_self_tail]
@@ -251,7 +251,7 @@ theorem iteratedLineDerivZeroL_succ_apply :
 theorem norm_iteratedLineDerivZeroL_succ_apply_le (j : ℕ) (m : Fin (j + 1) → E)
     (u : Wkp mu Omega p (j + 1)) :
     ‖iteratedLineDerivZeroL (j + 1) m u‖ ≤ (∏ r, ‖m r‖) * ‖iteratedGradient j u‖ := by
-  rw [iteratedLineDerivZeroL_succ_apply]
+  rw [iteratedLineDerivZeroL_succ_eq_evalL_compLp]
   exact ((IteratedGradient.evalL j m).norm_compLp_le _).trans
     (mul_le_mul_of_nonneg_right (IteratedGradient.norm_evalL_le j m) (norm_nonneg _))
 
@@ -263,7 +263,8 @@ theorem value_iteratedLineDerivL_eq_evalL_compLp (k j : ℕ) (m : Fin (j + 1) �
     value k (iteratedLineDerivL k (j + 1) m u) =
       (IteratedGradient.evalL j m).compLp
         (iteratedGradient j (toOrderL (Nat.le_add_left (j + 1) k) u)) := by
-  rw [value_iteratedLineDerivL_eq_iteratedLineDerivZeroL, iteratedLineDerivZeroL_succ_apply]
+  rw [value_iteratedLineDerivL_eq_iteratedLineDerivZeroL,
+    iteratedLineDerivZeroL_succ_eq_evalL_compLp]
 
 /-- Specializing `TauCeti.Wkp.value_iteratedLineDerivL_eq_evalL_compLp` to a constant direction
 tuple gives the scalar full contraction `TauCeti.IteratedGradient.fullContractL`. -/
@@ -319,7 +320,7 @@ theorem evalL_compLp_iteratedGradient_comp_perm (j : ℕ) (u : Wkp mu Omega p (j
     (m : Fin (j + 1) → E) (σ : Equiv.Perm (Fin (j + 1))) :
     (IteratedGradient.evalL j (m ∘ σ)).compLp (iteratedGradient j u) =
       (IteratedGradient.evalL j m).compLp (iteratedGradient j u) := by
-  rw [← iteratedLineDerivZeroL_succ_apply, ← iteratedLineDerivZeroL_succ_apply,
+  rw [← iteratedLineDerivZeroL_succ_eq_evalL_compLp, ← iteratedLineDerivZeroL_succ_eq_evalL_compLp,
     iteratedLineDerivZeroL_comp_perm]
 
 /-- **Weak derivatives of arbitrary order are symmetric almost everywhere.** For every

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
 public import TauCeti.Analysis.Sobolev.Wkp.Contraction.Basic
-import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
 # Classical `ContDiffOn` comparison lemmas for iterated directional derivatives
@@ -52,7 +51,7 @@ theorem iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn (j : ℕ) (u : Wkp mu Om
     (hu : (value (j + 1) u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     (iteratedLineDerivZeroL (j + 1) m u : E → ℝ) =ᵐ[mu.restrict Omega]
       fun x => iteratedFDeriv ℝ (j + 1) f x m := by
-  rw [iteratedLineDerivZeroL_succ_apply]
+  rw [iteratedLineDerivZeroL_succ_eq_evalL_compLp]
   filter_upwards [(IteratedGradient.evalL j m).coeFn_compLp (iteratedGradient j u),
     iteratedGradient_ae_eq_of_contDiffOn j u hf hu] with x hx hgx
   rw [hx, hgx, IteratedGradient.evalL_iteratedGradientChain]
