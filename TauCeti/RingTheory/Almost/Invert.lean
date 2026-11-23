@@ -133,20 +133,11 @@ gives a zero module. -/
 theorem IsAlmostZero.subsingleton_tensorProduct {M : Type*} [AddCommGroup M] [_root_.Module V M]
     (hM : S.IsAlmostZero M) {ϖ : V} (hϖ : ϖ ∈ S.ideal) (W : Type*) [CommRing W]
     [_root_.Algebra V W] (hu : IsUnit (algebraMap V W ϖ)) : Subsingleton (W ⊗[V] M) := by
-  obtain ⟨u, hu_eq⟩ := hu
-  have hzero (x : W ⊗[V] M) : x = 0 := by
-    induction x using TensorProduct.inductionOn with
-    | tmul w m =>
-      calc w ⊗ₜ[V] m
-          = (w * ↑u⁻¹ * algebraMap V W ϖ) ⊗ₜ[V] m := by
-              rw [← hu_eq, mul_assoc, Units.inv_mul, mul_one]
-        _ = (ϖ • (w * ↑u⁻¹)) ⊗ₜ[V] m := by
-              rw [_root_.Algebra.smul_def, mul_comm (algebraMap V W ϖ)]
-        _ = (w * ↑u⁻¹) ⊗ₜ[V] (ϖ • m) := TensorProduct.smul_tmul _ _ _
-        _ = (w * ↑u⁻¹) ⊗ₜ[V] 0 := by rw [hM.smul_eq_zero hϖ m]
-        _ = 0 := TensorProduct.tmul_zero _ _
-    | add x y hx hy => rw [hx, hy, add_zero]
-  exact ⟨fun a b ↦ (hzero a).trans (hzero b).symm⟩
+  refine TauCeti.subsingleton_tensorProduct_of_isTorsionBySet_right (I := S.ideal) ?_
+    (BasicSetup.isAlmostZero_iff_isTorsionBySet.mp hM)
+  rw [Ideal.smul_top_eq_map,
+    Ideal.eq_top_of_isUnit_mem _ (Ideal.mem_map_of_mem (algebraMap V W) hϖ) hu]
+  rfl
 
 /-- Localizing at a submonoid `P` containing `ϖ ∈ m` makes a linear map with almost zero kernel
 injective. -/
@@ -220,16 +211,8 @@ private theorem lTensor_comp_eq_smul {V : Type*} [CommRing V] {ϖ : V}
     (g₁ : A →ₗ[V] B) (g₂ : B →ₗ[V] A) (hg : g₂ ∘ₗ g₁ = ϖ • LinearMap.id)
     (x : W ⊗[V] A) :
     g₂.lTensor W (g₁.lTensor W x) = algebraMap V W ϖ • x := by
-  have hlin : ((g₂.lTensor W).comp (g₁.lTensor W)).restrictScalars V =
-      ((algebraMap V W ϖ) • (LinearMap.id : W ⊗[V] A →ₗ[W] W ⊗[V] A)).restrictScalars V := by
-    apply TensorProduct.ext'
-    intro w a
-    simp only [LinearMap.restrictScalars_apply, LinearMap.comp_apply, LinearMap.lTensor_tmul,
-      LinearMap.smul_apply, LinearMap.id_apply]
-    have ha : g₂ (g₁ a) = ϖ • a := LinearMap.congr_fun hg a
-    rw [ha, ← TensorProduct.smul_tmul, _root_.Algebra.smul_def, ← smul_eq_mul,
-      TensorProduct.smul_tmul']
-  exact LinearMap.congr_fun hlin x
+  rw [← LinearMap.lTensor_comp_apply, hg, LinearMap.lTensor_smul, LinearMap.lTensor_id,
+    LinearMap.smul_apply, LinearMap.id_apply, IsScalarTower.algebraMap_smul]
 
 /-- Base-changing along a `V`-algebra `W` in which `ϖ ∈ m` maps to a unit turns an almost
 isomorphism into a bijection. -/
@@ -546,17 +529,10 @@ theorem isZero_invert_obj_zero (M : Module S) :
     IsZero ((invert S S.ideal.zero_mem).obj M) :=
   (isZero_invert_obj_iff S S.ideal.zero_mem M).mpr fun _ ↦ ⟨1, by simp⟩
 
-/-- Inverting `ϖ ∈ m` kills the almostification of any `V`-module in which every element is
-annihilated by a power of `ϖ`. -/
-theorem isZero_invert_toAlmost_of_pow_smul_eq_zero {ϖ : V} (hϖ : ϖ ∈ S.ideal)
-    (M : ModuleCat.{u} V) (hM : ∀ m : M, ∃ n : ℕ, ϖ ^ n • m = 0) :
-    IsZero ((invert S hϖ).obj ((Module.toAlmost S).obj M)) :=
-  (isZero_invert_toAlmost_obj_iff S hϖ M).mpr hM
-
 /-- Inverting `ϖ ∈ m` sends `(V ⧸ (ϖ))^a` to a zero object. -/
 theorem isZero_invert_toAlmost_quotient_span_singleton {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
     IsZero ((invert S hϖ).obj ((Module.toAlmost S).obj (ModuleCat.of V (V ⧸ Ideal.span {ϖ})))) := by
-  refine isZero_invert_toAlmost_of_pow_smul_eq_zero S hϖ _ fun x ↦ ⟨1, ?_⟩
+  refine (isZero_invert_toAlmost_obj_iff S hϖ _).mpr fun x ↦ ⟨1, ?_⟩
   obtain ⟨v, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   rw [pow_one, ← Submodule.Quotient.mk_smul, smul_eq_mul, Submodule.Quotient.mk_eq_zero]
   exact Ideal.mem_span_singleton.mpr (dvd_mul_right ϖ v)
@@ -864,13 +840,6 @@ theorem subsingleton_invert_obj_iff (ϖ : V) (A : Algebra S) :
 instance subsingleton_invert_obj_zero (A : Algebra S) :
     Subsingleton ((invert S (0 : V)).obj A) :=
   (subsingleton_invert_obj_iff S 0 A).mpr ⟨1, by simp⟩
-
-/-- An almost algebra whose unit element (equivalently every almost element) is annihilated by a
-power of `ϖ` becomes the zero algebra after inverting `ϖ`. -/
-theorem subsingleton_invert_obj_of_pow_smul_one_eq_zero {ϖ : V}
-    {A : Algebra S} {n : ℕ} (h : ϖ ^ n • (1 : (Algebra.elements S).obj A) = 0) :
-    Subsingleton ((invert S ϖ).obj A) :=
-  (subsingleton_invert_obj_iff S ϖ A).mpr ⟨n, by simpa [_root_.Algebra.smul_def] using h⟩
 
 /-- For `ϖ ∈ m`, `Algebra.invert S ϖ` is naturally isomorphic to the functor induced on
 commutative monoid objects by the braided monoidal functor `Almost.invert S hϖ`. -/

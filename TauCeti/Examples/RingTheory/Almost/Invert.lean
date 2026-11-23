@@ -208,8 +208,10 @@ noncomputable example :
   exact ⟨‹_›,
     IsLocalization.algEquiv (Submonoid.powers (p : 𝓞_ℂ_[p]))
       (Localization.Away (p : 𝓞_ℂ_[p])) ℂ_[p],
-    Module.toAlmostBaseChangeAwayEquiv S ℂ_[p] hp,
-    Algebra.toAlmostBaseChangeAwayEquiv S ℂ_[p] hp⟩
+    Module.toAlmostBaseChangeEquiv S ℂ_[p]
+      (by simpa using congrArg BasicSetup.ideal (S.baseChange_away_eq_classical ℂ_[p] hp)),
+    Algebra.toAlmostBaseChangeEquiv S ℂ_[p]
+      (by simpa using congrArg BasicSetup.ideal (S.baseChange_away_eq_classical ℂ_[p] hp))⟩
 
 -- A single-term complex concentrated in degree `0` with `ResidueField 𝓞_ℂ_[p]` is not exact at
 -- `0` in `ModuleCat 𝓞_ℂ_[p]`, has almost zero homology in every degree, and becomes acyclic
@@ -284,17 +286,11 @@ example : Nontrivial ((Algebra.invert (classical ℤ) 1).obj
 example (ϖ : V) (n : ℕ) :
     Subsingleton ((Algebra.invert S ϖ).obj
       ((Algebra.toAlmost S).obj (CommAlgCat.of V (V ⧸ Ideal.span {ϖ ^ n})))) := by
-  refine Algebra.subsingleton_invert_obj_of_pow_smul_one_eq_zero S (ϖ := ϖ) (n := n) ?_
+  refine (Algebra.subsingleton_invert_obj_iff S ϖ _).mpr ⟨n, ?_⟩
   let f := (Algebra.adj S).unit.app (CommAlgCat.of V (V ⧸ Ideal.span {ϖ ^ n}))
-  have h1 : (1 : (Algebra.elements S).obj
-      ((Algebra.toAlmost S).obj (CommAlgCat.of V (V ⧸ Ideal.span {ϖ ^ n})))) = f.hom 1 :=
-    (map_one f.hom).symm
-  rw [h1, ← map_smul]
-  have hzero : ϖ ^ n • (1 : V ⧸ Ideal.span {ϖ ^ n}) = 0 := by
-    rw [Algebra.smul_def, mul_one, Ideal.Quotient.algebraMap_eq,
-      Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.subset_span rfl
-  rw [hzero, map_zero]
+  have hzero : algebraMap V (V ⧸ Ideal.span {ϖ ^ n}) (ϖ ^ n) = 0 :=
+    Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span rfl)
+  simpa [hzero] using (f.hom.commutes (ϖ ^ n)).symm
 
 -- For `ϖ ∈ m`, `Algebra.subsingleton_invert_toAlmost_obj_iff` characterizes vanishing directly,
 -- `Algebra.invertToAlmostObjEquiv` identifies canonical numerators of `(R^a)_*[1/ϖ]` and `R[1/ϖ]`,

@@ -46,8 +46,7 @@ the classical setup it is an isomorphism, and almostification of algebras is an 
   `A_* →ₐ[V] B_*`.
 * `TauCeti.Almost.Algebra.classicalEquiv`: for the classical setup, almostification is an
   equivalence `CommAlgCat V ≌ Algebra (BasicSetup.classical V)`.
-* `TauCeti.Almost.Algebra.toAlmostBaseChangeEquiv` and
-  `TauCeti.Almost.Algebra.toAlmostBaseChangeAwayEquiv`: when `mW = W` (in particular after
+* `TauCeti.Almost.Algebra.toAlmostBaseChangeEquiv`: when `mW = W` (in particular after
   inverting an element `ϖ ∈ m`), almostification identifies commutative `W`-algebras with
   almost `W`-algebras.
 
@@ -366,30 +365,6 @@ noncomputable def toAlmostBaseChangeEquiv (W : Type u) [CommRing W] [_root_.Alge
 theorem toAlmostBaseChangeEquiv_functor (W : Type u) [CommRing W] [_root_.Algebra V W]
     (hW : S.ideal.map (algebraMap V W) = ⊤) :
     (toAlmostBaseChangeEquiv S W hW).functor = toAlmost (S.baseChange W) :=
-  (rfl)
-
-/-- After base-changing `S` to a localization `W` away from `ϖ ∈ m`, the setup becomes classical,
-so almostification `CommAlgCat W ⥤ Algebra (S.baseChange W)` is an equivalence of categories. -/
-theorem isEquivalence_toAlmost_baseChange_away (W : Type u) [CommRing W] [_root_.Algebra V W]
-    {ϖ : V} [IsLocalization.Away ϖ W] (hϖ : ϖ ∈ S.ideal) :
-    (toAlmost (S.baseChange W)).IsEquivalence :=
-  isEquivalence_toAlmost_baseChange S W
-    (by simpa using congrArg BasicSetup.ideal (S.baseChange_away_eq_classical W hϖ))
-
-/-- Base-changing `S` to a localization `W` away from `ϖ ∈ m` identifies commutative
-`W`-algebras with almost `W`-algebras via `Algebra.toAlmost (S.baseChange W)`. -/
-noncomputable def toAlmostBaseChangeAwayEquiv (W : Type u) [CommRing W] [_root_.Algebra V W]
-    {ϖ : V} [IsLocalization.Away ϖ W] (hϖ : ϖ ∈ S.ideal) :
-    CommAlgCat.{u} W ≌ Algebra (S.baseChange W) :=
-  toAlmostBaseChangeEquiv S W
-    (by simpa using congrArg BasicSetup.ideal (S.baseChange_away_eq_classical W hϖ))
-
-/-- The forward functor of `toAlmostBaseChangeAwayEquiv` is almostification over
-`S.baseChange W`. -/
-@[simp]
-theorem toAlmostBaseChangeAwayEquiv_functor (W : Type u) [CommRing W] [_root_.Algebra V W]
-    {ϖ : V} [IsLocalization.Away ϖ W] (hϖ : ϖ ∈ S.ideal) :
-    (toAlmostBaseChangeAwayEquiv S W hϖ).functor = toAlmost (S.baseChange W) :=
   (rfl)
 
 end Algebra
