@@ -437,10 +437,12 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
 module, filtered by homogeneous submodules `N 0 ≤ N 1 ≤ ⋯`, and let `g : K_{m₀} → M` be a base
 model of `N 0`: it sends each base generator `p` into `N 0` in degree `-indP p`, commutes with the
 differentials, and every relative cycle of `g` with target in `N 0` is a relative boundary with
-target in `N 0`. Let the cells `G` carry a stage `st : G → ℕ`, and suppose that the free module on
-the cells of stage `n`, with its coefficient differential, is quasi-isomorphic to `N (n + 1)`
-modulo `N n` through elements `c₀ x ∈ N (n + 1)` of degree `-ind x` with `d (c₀ x) ∈ N n`, in the
-elementwise form of `RowFiniteTwistingCocycle.exists_attach_of_forall_exists`.
+target in `N 0`. Let the cells `G` carry a stage `st : G → ℕ`, with elements `c₀ x ∈ N (n + 1)`
+of degree `-ind x` and `d (c₀ x) ∈ N n` for the cells `x` of stage `n`. Suppose that, for the free
+module on the cells of stage `n` with its coefficient differential, every relative cycle of `c₀`
+with target in `N (n + 1)` modulo `N n` is a relative boundary there, the elementwise hypothesis of
+`RowFiniteTwistingCocycle.exists_attach_of_forall_exists`; when the `N n` are stable under `dM`,
+this says that `c₀` is a quasi-isomorphism onto `N (n + 1)` modulo `N n`.
 
 Then there are a row-finite twisting cocycle `m` on `P ⊕ G` extending `m₀`, whose rows of cells
 strictly lower the stage of the cells, and images `c x ≡ c₀ x` modulo `N (st x)`, of degree

@@ -37,10 +37,8 @@ is a cycle.
 ## Main definitions and results
 
 * `RowFiniteTwistingCocycle`: homogeneous finite rows with the Maurer–Cartan equation.
-* `RowFiniteTwistingCocycle.wellFounded_mem_support_of_lt`: a cocycle whose rows strictly lower
-  a well-founded stage of the generators is semi-free, its row relation `y ∈ (m.m x).support`
-  being well-founded; `RowFiniteTwistingCocycle.wellFounded_mem_support` is the case of a
-  one-sided cocycle with generator indices bounded below.
+* `RowFiniteTwistingCocycle.wellFounded_mem_support`: a one-sided cocycle with generator indices
+  bounded below is semi-free, its row relation `y ∈ (m.m x).support` being well-founded.
 * `RowFiniteTwistingCocycle.d_m_eq_zero_of_eq_add_one` and
   `RowFiniteTwistingCocycle.sum_subtype_m_mul_m_of_eq_add_two`: for a one-sided cocycle, the
   entries between generators of adjacent indices are cycles of degree zero, and the twisting
@@ -58,8 +56,7 @@ is a cycle.
 * `RowFiniteTwistingCocycle.ofComapDomain`: the restriction of rows to an injectively labelled
   set of generators closed under taking rows, with
   `RowFiniteTwistingCocycle.rowFiniteTwistedDifferential_mapDomain_ofComapDomain` relating the two
-  differentials, an instance of `rowFiniteTwistedDifferential_mapDomain_comapDomain` for the
-  raw restricted rows.
+  differentials.
 * `rowFiniteTwistedDifferential_mem_supported`: the generators whose rows stay in a set of
   generators span a differential submodule.
 * `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
@@ -252,29 +249,21 @@ theorem m_mem_rowFiniteTotalGrading (m : RowFiniteTwistingCocycle 𝒜 d P ind) 
     ring
 
 omit [GradedAlgebra 𝒜] in
-/-- A cocycle whose rows strictly lower a well-founded stage of the generators, as when each
-generator is attached along a cycle of generators of earlier stages, is **semi-free**: the relation
-`y ∈ (m.m x).support`, saying that `y` occurs in the row of `x`, is well-founded. -/
-theorem wellFounded_mem_support_of_lt {α : Type*} [LT α] [WellFoundedLT α]
-    (m : RowFiniteTwistingCocycle 𝒜 d P ind) (st : P → α)
-    (hst : ∀ x y, y ∈ (m.m x).support → st y < st x) :
-    WellFounded fun y x ↦ y ∈ (m.m x).support :=
-  Subrelation.wf (r := InvImage (· < ·) st) (fun {y x} hy ↦ hst x y hy)
-    (InvImage.wf _ wellFounded_lt)
-
-omit [GradedAlgebra 𝒜] in
 /-- A one-sided cocycle, with `m x y = 0` whenever `ind x ≤ ind y`, whose generator indices are
 bounded below, is **semi-free**: the relation `y ∈ (m.m x).support`, saying that `y` occurs in the
 row of `x`, is well-founded, since it strictly lowers the index. -/
 theorem wellFounded_mem_support (m : RowFiniteTwistingCocycle 𝒜 d P ind)
     (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {p₀ : ℤ} (hp₀ : ∀ x, p₀ ≤ ind x) :
     WellFounded fun y x ↦ y ∈ (m.m x).support :=
-  m.wellFounded_mem_support_of_lt (fun x ↦ (ind x - p₀).toNat) fun x y hy ↦ by
-    have hlt : ind y < ind x := by
-      by_contra h
-      exact Finsupp.mem_support_iff.mp hy (hm x y (not_lt.mp h))
-    have := hp₀ y
-    omega
+  Subrelation.wf (r := InvImage (· < ·) fun x ↦ (ind x - p₀).toNat)
+    (fun {y x} hy ↦ by
+      have hlt : ind y < ind x := by
+        by_contra h
+        exact Finsupp.mem_support_iff.mp hy (hm x y (not_lt.mp h))
+      have := hp₀ y
+      dsimp only [InvImage]
+      omega)
+    (InvImage.wf _ wellFounded_lt)
 
 omit [GradedAlgebra 𝒜] in
 /-- The twisting equation evaluated at a generator `z`: the differential of the entry `m x z` is
@@ -602,9 +591,9 @@ theorem mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero (m : P → P �
 /-- Let an injection `e : P → P'` pick out generators whose rows `m (e x)` only involve generators
 in the range of `e`. Then relabelling along `e` intertwines the differential of the rows read back
 on `P` with that of the original rows. -/
-theorem rowFiniteTwistedDifferential_mapDomain_comapDomain {P' : Type uP'} (m : P' → P' →₀ A)
-    (e : P → P') (he : Function.Injective e) (hsupp : ∀ x, ↑(m (e x)).support ⊆ Set.range e)
-    (f : P →₀ A) :
+private theorem rowFiniteTwistedDifferential_mapDomain_comapDomain {P' : Type uP'}
+    (m : P' → P' →₀ A) (e : P → P') (he : Function.Injective e)
+    (hsupp : ∀ x, ↑(m (e x)).support ⊆ Set.range e) (f : P →₀ A) :
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.mapDomain e f) =
       Finsupp.mapDomain e (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d)
         (fun x ↦ Finsupp.comapDomain e (m (e x)) he.injOn) f) :=
