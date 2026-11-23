@@ -22,7 +22,7 @@ nontrivially. Dually, the preimage of a subspace `W` under a linear map out of a
 codimension (the rank of the quotient) of a preimage is at most that of the submodule, and the
 codimension of an intersection is at most the sum of the codimensions. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
-of rank at least `k` contains a subspace of rank exactly `k`; for `1 ≤ k ≤ rank E`, a nonzero
+of rank at least `k` contains a subspace of rank exactly `k`; for `1 ≤ k ≤ rank E`, every
 vector lies in a subspace of rank exactly `k`. Two disjoint subspaces of a
 finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
 A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
@@ -165,12 +165,15 @@ theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) 
     span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).property), ?_⟩
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
 
-/-- A nonzero vector `v` lies in a subspace of rank exactly `k`, for each `1 ≤ k ≤ rank E`: the
-span of `v` and `k - 1` linearly independent vectors of a complement of `𝕜 ∙ v`. The rank of `E`
-may be an infinite cardinal. -/
-theorem exists_mem_rank_eq {v : E} (hv : v ≠ 0) {k : ℕ} (hk : k ≠ 0)
+/-- A vector `v` lies in a subspace of rank exactly `k`, for each `1 ≤ k ≤ rank E`: for `v ≠ 0`,
+the span of `v` and `k - 1` linearly independent vectors of a complement of `𝕜 ∙ v`. The rank of
+`E` may be an infinite cardinal. -/
+theorem exists_mem_rank_eq (v : E) {k : ℕ} (hk : k ≠ 0)
     (hkE : (k : Cardinal) ≤ Module.rank 𝕜 E) :
     ∃ N : Submodule 𝕜 E, v ∈ N ∧ Module.rank 𝕜 N = k := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · obtain ⟨N, -, hN⟩ := exists_le_rank_eq (M := ⊤) (by rwa [rank_top 𝕜 E])
+    exact ⟨N, N.zero_mem, hN⟩
   have hv1 : Module.rank 𝕜 (𝕜 ∙ v) = 1 := by
     rw [← Module.finrank_eq_rank, finrank_span_singleton hv, Nat.cast_one]
   obtain ⟨C, hC⟩ := (𝕜 ∙ v).exists_isCompl

@@ -131,8 +131,7 @@ theorem forall_range_le_iff_eq_top [CompleteSpace F] {S : Submodule ℝ F} (hk :
   refine ⟨fun h ↦ ?_, fun h _ ↦ h ▸ le_top⟩
   by_contra hS
   obtain ⟨v, -, hvS⟩ := IsConcreteLE.exists_of_lt (lt_top_iff_ne_top.2 hS)
-  have hv : v ≠ 0 := fun hv ↦ hvS (hv ▸ S.zero_mem)
-  obtain ⟨T, hvT, hT⟩ := Submodule.exists_mem_rank_eq hv hk hkF
+  obtain ⟨T, hvT, hT⟩ := Submodule.exists_mem_rank_eq v hk hkF
   have : FiniteDimensional ℝ T := Module.finite_of_rank_eq_nat hT
   refine hvS <| h ⟨T.starProjection, starProjection_mem (finrank_eq_of_rank_eq hT)⟩ ?_
   rwa [Submodule.range_starProjection]
