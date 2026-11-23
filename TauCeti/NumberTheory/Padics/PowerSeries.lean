@@ -40,8 +40,8 @@ with formal substitution (`TauCeti.padicPowerSeriesEval_subst`).
 * `PadicInt.X_sub_C_dvd_iff_aeval_eq_zero`: for `p ∣ c`, `(X - C c) ∣ ψ ↔ ψ(c) = 0`.
 * `TauCeti.padicPowerSeriesEval`: continuous `ℤ_[p]`-algebra evaluation of `ℤ_[p]⟦X⟧` at a
   topologically nilpotent element of a complete ultrametric normed `ℤ_[p]`-algebra, with
-  `TauCeti.hasSum_padicPowerSeriesEval`, `TauCeti.continuous_padicPowerSeriesEval`, and
-  `TauCeti.padicPowerSeriesEval_subst`.
+  `TauCeti.hasSum_padicPowerSeriesEval`, `TauCeti.continuous_padicPowerSeriesEval`,
+  `TauCeti.tendsto_padicPowerSeriesEval_pow`, and `TauCeti.padicPowerSeriesEval_subst`.
 
 ## References
 
@@ -156,12 +156,35 @@ theorem continuous_padicPowerSeriesEval {t : R} (ht : Tendsto (t ^ ·) atTop (�
 @[simp] theorem padicPowerSeriesEval_C {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) (a : ℤ_[p]) :
     padicPowerSeriesEval p ht (PowerSeries.C a) = algebraMap ℤ_[p] R a := PowerSeries.evalAt_C a t
 
+/-- Evaluating a substitutable power series `b ∈ ℤ_p⟦X⟧` at a topologically nilpotent element `t`
+produces a topologically nilpotent element. -/
+theorem tendsto_padicPowerSeriesEval_pow {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0))
+    {b : PowerSeries ℤ_[p]} (hb : PowerSeries.HasSubst b) :
+    Tendsto ((padicPowerSeriesEval p ht b) ^ ·) atTop (𝓝 0) := by
+  have hb0 : PowerSeries.constantCoeff b = 0 := IsNilpotent.eq_zero hb
+  rw [tendsto_zero_iff_norm_tendsto_zero, Metric.tendsto_atTop]
+  intro ε hε
+  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp ht (ε / 2) (half_pos hε)
+  refine ⟨N, fun k hk ↦ ?_⟩
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _), ← map_pow, padicPowerSeriesEval_apply,
+    PowerSeries.evalAt_def]
+  have hle : ‖∑' n : ℕ, (b ^ k).coeff n • t ^ n‖ ≤ ε / 2 := by
+    refine IsUltrametricDist.norm_tsum_le_of_forall_le (C := ε / 2) fun n ↦ ?_
+    by_cases hnk : n < k
+    · have hc : (b ^ k).coeff n = 0 := PowerSeries.coeff_of_lt_order n <|
+        (Nat.cast_lt.mpr hnk).trans_le (PowerSeries.le_order_pow_of_constantCoeff_eq_zero k hb0)
+      simpa [hc] using (half_pos hε).le
+    · have hNn : N ≤ n := hk.trans (not_lt.mp hnk)
+      exact (norm_coeff_smul_pow_le p (b ^ k) t n).trans <|
+        le_of_lt (by simpa [dist_zero_right] using hN n hNn)
+  exact hle.trans_lt (half_lt_self hε)
+
 /-- Substituting `b` (`PowerSeries.HasSubst b`) before evaluating at `t` equals evaluating at
-`padicPowerSeriesEval p ht b`, whenever the latter is topologically nilpotent. -/
+`padicPowerSeriesEval p ht b` (which is automatically topologically nilpotent). -/
 theorem padicPowerSeriesEval_subst {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0))
-    {b : PowerSeries ℤ_[p]} (hb : PowerSeries.HasSubst b)
-    (hb' : Tendsto ((padicPowerSeriesEval p ht b) ^ ·) atTop (𝓝 0)) (φ : PowerSeries ℤ_[p]) :
-    padicPowerSeriesEval p ht (φ.subst b) = padicPowerSeriesEval p hb' φ := by
+    {b : PowerSeries ℤ_[p]} (hb : PowerSeries.HasSubst b) (φ : PowerSeries ℤ_[p]) :
+    padicPowerSeriesEval p ht (φ.subst b) =
+      padicPowerSeriesEval p (tendsto_padicPowerSeriesEval_pow p ht hb) φ := by
   let L := (padicPowerSeriesEval p ht).comp (PowerSeries.substAlgHom hb)
   have hL_cont : Continuous L := ((continuous_padicPowerSeriesEval p ht).comp <|
     Continuous.powerSeries_subst continuous_id continuous_const fun _ ↦
@@ -170,7 +193,8 @@ theorem padicPowerSeriesEval_subst {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)
     simp [L, PowerSeries.coe_substAlgHom, PowerSeries.subst_X hb]
   simpa [L, PowerSeries.coe_substAlgHom] using congrFun
     ((PowerSeries.WithPiTopology.denseRange_toPowerSeries ℤ_[p]).equalizer hL_cont
-      (continuous_padicPowerSeriesEval p hb') <| funext fun P ↦ by
+      (continuous_padicPowerSeriesEval p (tendsto_padicPowerSeriesEval_pow p ht hb)) <|
+      funext fun P ↦ by
         simp only [Function.comp_apply, PowerSeries.algHom_coe_eq_aeval, hLX,
           padicPowerSeriesEval_X]) φ
 

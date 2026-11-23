@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.WeightSpace.CompletedGroupAlgebra
 public import TauCeti.NumberTheory.Padics.WeightSpace.GeneratorChange
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Topology.Algebra.MonoidAlgebra.PowerSeries
 
 /-!
@@ -141,25 +142,41 @@ theorem coe_finiteChar_ofContinuousRingHom_apply (δ : (ZMod (p ^ padicUnitsDept
   rw [coord_def, coe_ofContinuousRingHom_apply, map_sub, map_one]
 end OfContinuousRingHom
 
-/-- No continuous ring homomorphism out of `ℤ_p[[ℤ_pˣ]]` into an ultrametric normed `ℤ_p`-algebra
-sends `[γ] - 1` to an element whose powers do not tend to `0`. -/
-theorem not_exists_continuous_ringHom_of_not_tendsto_pow {R : Type*} [NormedRing R]
-    [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R] {z : R}
-    (hz : ¬Tendsto (z ^ ·) atTop (𝓝 0)) :
+/-- No continuous ring homomorphism out of `ℤ_p[[ℤ_pˣ]]` into a semiring with a topology sends
+`[γ] - 1` to an element whose powers do not tend to `0`. -/
+theorem not_exists_continuous_ringHom_of_not_tendsto_pow {R : Type*} [Semiring R]
+    [TopologicalSpace R] {z : R} (hz : ¬Tendsto (z ^ ·) atTop (𝓝 0)) :
     ¬∃ φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* R,
       Continuous φ ∧ φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = z := by
   rintro ⟨φ, hφ, rfl⟩
-  exact hz <| coord_ofContinuousRingHom φ hφ ▸ (ofContinuousRingHom φ hφ).tendsto_coord_pow
+  let : TopologicalSpace (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) :=
+    moduleTopology ℤ_[p] _
+  have : IsModuleTopology ℤ_[p] (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) := ⟨rfl⟩
+  have hX : Tendsto (fun n : ℕ ↦
+      (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) ^ n) atTop (𝓝 0) := by
+    have h0 : Tendsto (fun n : ℕ ↦
+        (PowerSeries.X : PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)) ^ n)
+        atTop (𝓝 0) :=
+      PowerSeries.WithPiTopology.isTopologicallyNilpotent_of_constantCoeff_zero
+        PowerSeries.constantCoeff_X
+    simpa only [Function.comp_def, map_pow, padicUnitsCoordinate_X] using
+      ((continuous_padicUnitsCoordinate p).tendsto' 0 0 (map_zero _)).comp h0
+  exact hz <| by
+    simpa only [Function.comp_def, map_pow] using (hφ.tendsto' 0 0 (map_zero φ)).comp hX
 
-/-- No continuous ring homomorphism out of `ℤ_p[[ℤ_pˣ]]` into a normed division `ℚ_p`-algebra `K`
-sends `[γ] - 1` to an element of norm at least `1`. -/
-theorem not_exists_continuous_ringHom_of_one_le_norm {K : Type*} [NormedDivisionRing K]
-    [NormedAlgebra ℚ_[p] K] {z : K} (hz : 1 ≤ ‖z‖) :
+/-- No continuous ring homomorphism out of `ℤ_p[[ℤ_pˣ]]` into a seminormed ring with
+multiplicative norm sends `[γ] - 1` to an element of norm at least `1`. -/
+theorem not_exists_continuous_ringHom_of_one_le_norm {K : Type*} [SeminormedRing K]
+    [NormMulClass K] {z : K} (hz : 1 ≤ ‖z‖) :
     ¬∃ φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K,
       Continuous φ ∧ φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = z := by
-  rintro ⟨φ, hφ, rfl⟩
-  exact not_lt_of_ge hz <| coord_ofContinuousRingHom φ hφ ▸
-    norm_coord_lt_one_of_normedAlgebra (ofContinuousRingHom φ hφ)
+  refine not_exists_continuous_ringHom_of_not_tendsto_pow fun h ↦ ?_
+  have hlim : Tendsto (fun n : ℕ ↦ ‖z ^ (n + 1)‖) atTop (𝓝 0) :=
+    (tendsto_zero_iff_norm_tendsto_zero.mp h).comp (tendsto_add_atTop_nat 1)
+  have hle : (1 : ℝ) ≤ 0 := ge_of_tendsto hlim <| Eventually.of_forall fun n ↦ by
+    rw [norm_pow_succ]
+    exact one_le_pow₀ hz
+  norm_num at hle
 end Universal
 
 /-! ### Adic specialisation into complete linearly topologised `ℤ_p`-algebras -/

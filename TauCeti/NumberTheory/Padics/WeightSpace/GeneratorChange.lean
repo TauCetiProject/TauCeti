@@ -127,8 +127,7 @@ theorem padicPowerSeriesEval_subst_binomialSeries_sub_one_weightCoordChangeEquiv
       (weightCoordChangeEquiv p R u t : R) := by
     rw [map_sub, map_one, padicPowerSeriesEval_binomialSeries, coe_weightCoordChangeEquiv_apply]
   rw [padicPowerSeriesEval_subst p t.property
-    (hasSubst_binomialSeries_sub_one (S := ℤ_[p]) (u : ℤ_[p]))
-    (heval ▸ (weightCoordChangeEquiv p R u t).property)]
+    (hasSubst_binomialSeries_sub_one (S := ℤ_[p]) (u : ℤ_[p]))]
   simpa only [padicPowerSeriesEval_apply] using congrArg φ.evalAt heval
 
 namespace WeightSpace
