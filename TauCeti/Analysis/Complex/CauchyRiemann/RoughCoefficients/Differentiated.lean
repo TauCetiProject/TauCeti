@@ -19,6 +19,7 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Higher
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # The differentiated Cauchy–Riemann system with Sobolev coefficients
@@ -381,6 +382,7 @@ private theorem integral_commutator_of_hasWeakFDerivOn [FiniteDimensional ℝ V]
     (memLp_indicator_iff_restrict W.isOpen.measurableSet.nullMeasurableSet).2 hξW
   let Dψ (n : ℕ) : ℂ → ℂ →L[ℝ] V :=
     (ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (W : Set ℂ).indicator Dξ
+  -- Per-`n` commutator identity for the smooth mollification `ψ_n = (ρ n).normed ⋆ 1_W ξ`.
   have hid (n : ℕ) : -(∫ z, ⟪(∂_{I} φ : 𝓓(Ω, V)) z, J z (Dψ n z 1)⟫_ℝ) -
       (∫ z, ⟪(φ : ℂ → V) z, DJ z I (Dψ n z 1)⟫_ℝ) +
       (∫ z, ⟪(φ : ℂ → V) z, DJ z 1 (Dψ n z I)⟫_ℝ) =
@@ -398,6 +400,7 @@ private theorem integral_commutator_of_hasWeakFDerivOn [FiniteDimensional ℝ V]
       hrew φ (hball n) (fun z M => DJ z 1 (M I)),
       hrew (∂_{(1 : ℂ)} φ) (fun z hz => hball n z (φ.tsupport_lineDerivOp_subset 1 hz))
         (fun z M => J z (M I))] at hc_n
+  -- Convergence of each paired integral term as `n → ∞` using `Dψ n → Dξ` in `L^q(W)`.
   let B (v : ℂ) : (ℂ →L[ℝ] V) →L[ℝ] (V →L[ℝ] V) →L[ℝ] V :=
     (ContinuousLinearMap.id ℝ (V →L[ℝ] V)).flip.comp (ContinuousLinearMap.apply ℝ V v)
   have hconv (Θ : 𝓓(Ω, V)) (hΘW : tsupport (Θ : ℂ → V) ⊆ W) {A : ℂ → V →L[ℝ] V}
@@ -406,6 +409,7 @@ private theorem integral_commutator_of_hasWeakFDerivOn [FiniteDimensional ℝ V]
         atTop (𝓝 (∫ z, ⟪(Θ : ℂ → V) z, A z (Dξ z v)⟫_ℝ)) := by
     simpa [B, Dψ] using Θ.tendsto_integral_inner_bilin_normed_convolution (B v)
       (add_comm p⁻¹ q⁻¹ ▸ hpq) W.isOpen.measurableSet.nullMeasurableSet hΘW hDξW hAW hρ0
+  -- Pass `n → ∞` in `hid` via uniqueness of limits.
   have ht1 := hconv (∂_{I} φ) ((φ.tsupport_lineDerivOp_subset I).trans hφW) hJW 1
   have ht4 := hconv (∂_{(1 : ℂ)} φ) ((φ.tsupport_lineDerivOp_subset 1).trans hφW) hJW I
   simpa only [TestFunction.lineDerivOp_apply_eq_fderiv] using tendsto_nhds_unique
@@ -640,19 +644,8 @@ theorem isWeakCRSolution_differentiated [FiniteDimensional ℝ V] {p q : ℝ≥0
     rw [TauCeti.toLp_prodMk_eq_add (𝕜 := ℝ)]
     exact ((e.toContinuousLinearMap.comp (.inl ℝ V V)).locallyIntegrableOn_comp (hloc 1)).add
       ((e.toContinuousLinearMap.comp (.inr ℝ V V)).locallyIntegrableOn_comp (hloc I))
-  obtain ⟨p₀, q₀, hp₀, hq₀, hp₀p, hq₀q, hp₀q₀⟩ :
-      ∃ p₀ q₀ : ℝ≥0∞, p₀ ≠ ⊤ ∧ q₀ ≠ ⊤ ∧ p₀ ≤ p ∧ q₀ ≤ q ∧ p₀⁻¹ + q₀⁻¹ ≤ 1 := by
-    rcases eq_or_ne p ⊤ with rfl | hpt <;> rcases eq_or_ne q ⊤ with rfl | hqt
-    · exact ⟨2, 2, ENNReal.ofNat_ne_top, ENNReal.ofNat_ne_top, le_top, le_top,
-        ENNReal.inv_two_add_inv_two.le⟩
-    · refine ⟨(1 - q⁻¹)⁻¹, q,
-        ENNReal.inv_ne_top.2 (tsub_pos_of_lt (ENNReal.inv_lt_one.2 hq)).ne', hqt, le_top,
-        le_rfl, ?_⟩
-      rw [inv_inv, tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hq.le)]
-    · refine ⟨p, (1 - p⁻¹)⁻¹, hpt,
-        ENNReal.inv_ne_top.2 (tsub_pos_of_lt (ENNReal.inv_lt_one.2 hp)).ne', le_rfl, le_top, ?_⟩
-      rw [inv_inv, add_tsub_cancel_of_le (ENNReal.inv_le_one.2 hp.le)]
-    · exact ⟨p, q, hpt, hqt, le_rfl, le_rfl, hpq⟩
+  obtain ⟨p₀, q₀, hp₀, hq₀, -, -, hp₀p, hq₀q, hp₀q₀⟩ :=
+    ENNReal.exists_one_lt_ne_top_le_and_inv_add_inv_le_one hp hq hpq
   have hS₀ := hS.mono_exponent hp₀p
   have hξ₀ := hξ.mono_exponent hq₀q
   have hc₀ : IsSobolevCRCoefficients p₀ Ω J DJ S :=

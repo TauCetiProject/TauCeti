@@ -21,6 +21,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
@@ -361,12 +362,8 @@ theorem tendsto_integral_bilin_of_tendsto_lintegral_enorm_sub
   rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine (lintegral_mono fun x => ?_).trans (lintegral_indicator_le _ _)
   by_cases hxs : x ∈ s
-  · have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x)
-    rw [Set.indicator_of_mem hxs, ← map_sub, ← ofReal_norm, ← ofReal_norm,
-      ← ENNReal.ofReal_mul (mul_nonneg (norm_nonneg P) hM0)]
-    exact ENNReal.ofReal_le_ofReal <| (P.le_opNorm₂ _ _).trans <|
-      mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (hM x) (norm_nonneg P))
-        (norm_nonneg _)
+  · rw [Set.indicator_of_mem hxs, ← map_sub]
+    exact P.enorm_apply_apply_le_of_norm_le (hM x)
   · simp [Set.indicator_of_notMem hxs, image_eq_zero_of_notMem_tsupport fun h => hxs (hφs h)]
 
 /-- Pairing a `C^n` test function `φ` through `P` against `x ↦ A i x (u x)` converges to
