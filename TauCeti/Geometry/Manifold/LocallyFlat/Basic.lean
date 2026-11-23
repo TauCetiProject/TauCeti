@@ -271,8 +271,8 @@ transverse coordinate. -/
 theorem subtypeChart_mk_zero_eq
     (h : IsSliceChart e ((univ : Set Y) ×ˢ ({0} : Set Y')) s) [Nonempty s]
     {x : s} (hx : x ∈ h.subtypeChart.source) :
-    (h.subtypeChart x, (0 : Y')) = e x := by
-  exact OpenPartialHomeomorph.subtypeCoord_parametrization_apply _ _ _ _ _ _ _ _ _ _ hx
+    (h.subtypeChart x, (0 : Y')) = e x :=
+  OpenPartialHomeomorph.subtypeCoord_parametrization_apply _ _ _ _ _ _ _ _ _ _ hx
 
 /-- On its target, the inverse of a zero-slice subtype chart is the ambient inverse evaluated on
 the zero slice. -/
@@ -296,20 +296,9 @@ target, without changing the map. -/
 theorem exists_target_eq (h : IsSliceChart φ S A) {T : Set F} (hT : IsOpen T)
     (hTφ : T ⊆ φ.target) :
     ∃ ψ : OpenPartialHomeomorph M F, ⇑ψ = ⇑φ ∧ ψ.source = φ.source ∩ φ ⁻¹' T ∧ ψ.target = T ∧
-      IsSliceChart ψ S A := by
-  refine ⟨φ.restrOpen (φ.source ∩ φ ⁻¹' T) (φ.isOpen_inter_preimage hT), rfl, ?_, ?_, ?_⟩
-  · rw [OpenPartialHomeomorph.restrOpen_source, inter_eq_right.2 inter_subset_left]
-  · ext z
-    simp only [OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
-      mem_inter_iff, mem_preimage, OpenPartialHomeomorph.coe_toPartialEquiv_symm]
-    refine ⟨fun hz => ?_, fun hz => ⟨hTφ hz, φ.map_target (hTφ hz), ?_⟩⟩
-    · have := hz.2.2
-      rwa [φ.right_inv hz.1] at this
-    · rw [φ.right_inv (hTφ hz)]
-      exact hz
-  · refine isSliceChart_iff.2 fun y hy => ?_
-    rw [OpenPartialHomeomorph.restrOpen_source] at hy
-    exact h.mem_iff hy.1
+      IsSliceChart ψ S A :=
+  ⟨(φ.symm.restrOpen T hT).symm, rfl, rfl, inter_eq_right.mpr hTφ,
+    isSliceChart_iff.mpr fun _ hy => h.mem_iff hy.1⟩
 
 /-- Restricting a slice chart to an open set restricts the flattened set to the same open set. -/
 theorem restrOpen (h : IsSliceChart φ S A) {V : Set M} (hV : IsOpen V) :
@@ -654,9 +643,9 @@ model slice. -/
 theorem isLocallyClosed_range (h : IsSliceEmbedding S f) (hS : IsLocallyClosed S) :
     IsLocallyClosed (range f) := by
   obtain ⟨U, Z, hU, hZ, rfl⟩ := hS
-  refine ((isLocallyClosed_tfae (range f)).out 2 1).1 ?_
+  refine isLocallyClosed_iff_isLocallyClosedAt.mpr ?_
   rintro _ ⟨x, rfl⟩
-  refine ((isLocallyClosedAt_tfae (range f) (f x)).out 2 1).1 ?_
+  refine isLocallyClosedAt_iff_exists_isClosed_preimage_val.mpr ?_
   obtain ⟨φ, hφx, hφ⟩ := h.exists_isSliceChart x
   -- Shrink the chart to the part of its source where the open half of the slice already holds;
   -- there the image is cut out by the closed half alone.
