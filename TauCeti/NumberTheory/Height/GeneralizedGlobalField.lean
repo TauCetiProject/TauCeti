@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Field.WithAbs
 public import Mathlib.NumberTheory.Height.NumberField
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 public import TauCeti.RingTheory.TensorProduct.Reduced
+import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
@@ -26,6 +27,8 @@ The archimedean absolute values are genuine absolute values satisfying the trian
 so a complex place is recorded as the ordinary modulus with multiplicity two. The extra fields are:
 
 * every member of `archAbsVal` is archimedean (not nonarchimedean), so in particular nontrivial;
+* a member of `archAbsVal` occurs with multiplicity `2` if its completion is isomorphic to `ℂ` (a
+  complex place) and `1` otherwise (a real place);
 * equivalent members of `archAbsVal`, and equivalent members of `nonarchAbsVal`, are equal;
 * `nonarchAbsVal` is infinite;
 * every member `v` of `nonarchAbsVal` is discrete: there is `π` with `0 < v π < 1` such that every
@@ -35,7 +38,9 @@ so a complex place is recorded as the ordinary modulus with multiplicity two. Th
   its only nontrivial formal fibre is the completion of `K`, and a field extension is geometrically
   regular exactly when it is separable.
 
-The nonarchimedean absolute values are normalized ones, as the product formula fixes their scale.
+The members of the family are chosen data satisfying the product formula; the class does not
+determine their scale. For a number field, `ofNumberField` normalizes the finite places by the
+absolute norm of their prime.
 
 `Height.GeneralizedGlobalField.ofNumberField` is the instance for a number field, extending
 Mathlib's `NumberField.instAdmissibleAbsValues`: infinite places with their multiplicities, and
@@ -55,11 +60,12 @@ namespace Height
 
 open AdmissibleAbsValues
 
+open Classical in
 /-- A generalized global field: a field with an admissible family of absolute values
 (`Height.AdmissibleAbsValues`) whose members are pairwise inequivalent, with infinitely many
-nonarchimedean ones, each archimedean member genuinely archimedean, and each nonarchimedean
-member discrete with completion separable over `K` (equivalently, with excellent valuation ring).
-See Conrad, Definition 8.1. -/
+nonarchimedean ones, each archimedean member genuinely archimedean and counted twice exactly when
+its completion is `ℂ`, and each nonarchimedean member discrete with completion separable over `K`
+(equivalently, with excellent valuation ring). See Conrad, Definition 8.1. -/
 class GeneralizedGlobalField (K : Type*) [Field K] extends AdmissibleAbsValues K where
   /-- The archimedean absolute values are not nonarchimedean. -/
   not_isNonarchimedean_of_mem_archAbsVal {v : AbsoluteValue K ℝ} (hv : v ∈ archAbsVal) :
@@ -67,6 +73,10 @@ class GeneralizedGlobalField (K : Type*) [Field K] extends AdmissibleAbsValues K
   /-- Equivalent archimedean absolute values are equal; they may still occur with multiplicity. -/
   eq_of_isEquiv_of_mem_archAbsVal {v w : AbsoluteValue K ℝ} (hv : v ∈ archAbsVal)
     (hw : w ∈ archAbsVal) (h : v.IsEquiv w) : v = w
+  /-- An archimedean absolute value occurs twice if its completion is isomorphic to `ℂ` (a
+  complex place) and once otherwise (a real place). -/
+  count_archAbsVal {v : AbsoluteValue K ℝ} (hv : v ∈ archAbsVal) :
+    archAbsVal.count v = if Nonempty (v.Completion ≃+* ℂ) then 2 else 1
   /-- Equivalent nonarchimedean absolute values are equal. -/
   eq_of_isEquiv_of_mem_nonarchAbsVal {v w : AbsoluteValue K ℝ} (hv : v ∈ nonarchAbsVal)
     (hw : w ∈ nonarchAbsVal) (h : v.IsEquiv w) : v = w
@@ -82,6 +92,16 @@ class GeneralizedGlobalField (K : Type*) [Field K] extends AdmissibleAbsValues K
     Algebra.IsGeometricallyReduced K v.Completion
 
 namespace GeneralizedGlobalField
+
+open NumberField in
+/-- The completion of a number field at a real place is not isomorphic to `ℂ`. -/
+theorem not_nonempty_ringEquiv_complex_of_isReal {K : Type*} [Field K] {w : InfinitePlace K}
+    (hw : w.IsReal) : ¬ Nonempty (w.val.Completion ≃+* ℂ) := by
+  rintro ⟨e⟩
+  have h := congrArg ((InfinitePlace.Completion.ringEquivRealOfIsReal hw).toRingHom.comp
+    e.symm.toRingHom) Complex.I_sq
+  simp only [RingHom.coe_comp, Function.comp_apply, map_pow, map_neg, map_one] at h
+  nlinarith [sq_nonneg ((InfinitePlace.Completion.ringEquivRealOfIsReal hw) (e.symm Complex.I))]
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -101,6 +121,15 @@ instance ofNumberField : GeneralizedGlobalField K where
     obtain ⟨v, rfl⟩ := (isInfinitePlace_iff _).1 (mem_multisetInfinitePlace.1 hv)
     obtain ⟨w, rfl⟩ := (isInfinitePlace_iff _).1 (mem_multisetInfinitePlace.1 hw)
     exact congrArg Subtype.val (InfinitePlace.eq_iff_isEquiv.2 h)
+  count_archAbsVal {v} hv := by
+    classical
+    obtain ⟨w, rfl⟩ := (isInfinitePlace_iff v).1 (mem_multisetInfinitePlace.1 hv)
+    change (multisetInfinitePlace K).count w.val = _
+    rw [count_multisetInfinitePlace_eq_mult, InfinitePlace.mult]
+    rcases w.isReal_or_isComplex with h | h
+    · simp [h, not_nonempty_ringEquiv_complex_of_isReal h]
+    · simp [InfinitePlace.not_isReal_iff_isComplex.2 h,
+        (⟨InfinitePlace.Completion.ringEquivComplexOfIsComplex h⟩ : Nonempty (_ ≃+* ℂ))]
   eq_of_isEquiv_of_mem_nonarchAbsVal {v w} hv hw h := by
     obtain ⟨v, rfl⟩ := (isFinitePlace_iff _).1 hv
     obtain ⟨w, rfl⟩ := (isFinitePlace_iff _).1 hw
