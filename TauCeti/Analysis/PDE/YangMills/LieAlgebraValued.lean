@@ -63,8 +63,8 @@ theorem rightMaurerCartan_mem_matrixLieAlgebra {O : E → Matrix n n 𝕜} {x : 
   rwa [rightMaurerCartan_apply, ← hgx, Unitary.ringInverse_coe]
 
 /-- **The gauge action preserves `𝔤`-valued one-forms.** If `O` takes values in `G` near `x` and
-the one-form `A` takes values in the Lie algebra of `G` at `x`, then
-so does `O·A = Ad(O) A - O;x` at `x`. -/
+the one-form `A` takes a value in the Lie algebra of `G` at `x` in the direction `v`, then
+so does `O·A = Ad(O) A - O;x`. -/
 -- The codomain of `A` carries the topology of the operator norm, as `gaugeAction` requires; the
 -- plain `E →L[ℝ] Matrix n n 𝕜` would elaborate with the product topology of the matrices, which
 -- is equal to it but not reducibly so.
@@ -72,12 +72,12 @@ theorem gaugeAction_mem_matrixLieAlgebra {O : E → Matrix n n 𝕜} {x : E}
     (hO : ∀ᶠ y in 𝓝 x, O y ∈ ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G)
     {A : E → @ContinuousLinearMap ℝ ℝ _ _ (RingHom.id ℝ) E _ _ (Matrix n n 𝕜)
       PseudoMetricSpace.toUniformSpace.toTopologicalSpace _ _ _}
-    (hA : ∀ v, A x v ∈ G.matrixLieAlgebra) (v : E) :
+    {v : E} (hA : A x v ∈ G.matrixLieAlgebra) :
     gaugeAction ℝ O A x v ∈ G.matrixLieAlgebra := by
   obtain ⟨g, hg, hgx⟩ := hO.self_of_nhds
   rw [gaugeAction_apply]
   refine sub_mem ?_ (rightMaurerCartan_mem_matrixLieAlgebra hO v)
   rw [← hgx, Unitary.ringInverse_coe]
-  exact ClosedSubgroup.mul_mul_star_mem_matrixLieAlgebra hg (hA v)
+  exact ClosedSubgroup.mul_mul_star_mem_matrixLieAlgebra hg hA
 
 end TauCeti

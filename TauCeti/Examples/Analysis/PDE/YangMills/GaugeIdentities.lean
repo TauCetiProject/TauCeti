@@ -18,8 +18,8 @@ Worked cases of the gauge calculus of `TauCeti.Analysis.PDE.YangMills.GaugeIdent
   curvature `F₁₂ = i` (`connectionCurvature_u1Connection`); the gauge transformation
   `O = exp (i φ)` acts by `O·A = A - i dφ` (`gaugeAction_expPhase`) and leaves the curvature
   unchanged (`connectionCurvature_gaugeAction_expPhase`).
-* A constant gauge transformation `c` that commutes with the coefficients acts trivially
-  (`gaugeAction_const_of_commute`).
+* A constant `U(1)` gauge transformation is central, so it acts trivially
+  (`gaugeAction_const_of_ne_zero`, from `TauCeti.gaugeAction_const_of_commute`).
 * The structure group `SU(2)`, as the unit quaternions: for `O(t) = g exp (t i)` with `g = 1 + k`
   (a multiple of `exp (π k / 4)`, so with the same adjoint action) and the constant `B = j`, the
   derivative of `Ad(O)B` at `t = 0` is `[O;1, Ad(O)B] = 2k`
@@ -94,15 +94,10 @@ theorem connectionCurvature_gaugeAction_expPhase {φ : ℝ × ℝ → ℝ} {x : 
     mul_comm _ (expPhase φ x)⁻¹ʳ, ← mul_assoc, Ring.inverse_mul_cancel _ (isUnit_expPhase φ x),
     one_mul]
 
-/-! ### Constant central gauge transformations -/
-
-/-- A constant gauge transformation by a unit `c` commuting with every value of the one-form acts
-trivially. -/
-theorem gaugeAction_const_of_commute {E 𝔸 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] {c : 𝔸} (hc : IsUnit c) {A : E → E →L[ℝ] 𝔸}
-    (hA : ∀ x v, Commute c (A x v)) : gaugeAction ℝ (fun _ ↦ c) A = A := by
-  ext x v
-  simp [(hA x v).eq, mul_assoc, Ring.mul_inverse_cancel _ hc]
+/-- A constant `U(1)` gauge transformation `c ≠ 0` is central, so it acts trivially. -/
+theorem gaugeAction_const_of_ne_zero {c : ℂ} (hc : c ≠ 0) (A : ℝ × ℝ → ℝ × ℝ →L[ℝ] ℂ) :
+    gaugeAction ℝ (fun _ ↦ c) A = A :=
+  gaugeAction_const_of_commute hc.isUnit fun _ _ ↦ Commute.all _ _
 
 /-! ### The structure group `SU(2)` -/
 
