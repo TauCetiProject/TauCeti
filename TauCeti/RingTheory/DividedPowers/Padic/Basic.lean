@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.DividedPowers.Padic
 public import Mathlib.RingTheory.DividedPowers.SubDPIdeal
 import TauCeti.Data.ZMod.Nilpotent
-import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.DividedPowers.SubDPIdeal
 
 /-!
@@ -184,13 +183,17 @@ section Canonical
 
 variable (p : ℕ) [hp : Fact p.Prime] (e : ℕ)
 
+private theorem map_span_p_toZModPow :
+    (Ideal.span {(p : ℤ_[p])}).map (PadicInt.toZModPow e) =
+      Ideal.span {(p : ZMod (p ^ e))} := by
+  rw [Ideal.map_span, Set.image_singleton, map_natCast]
+
 /-- The canonical divided power structure on `Ideal.span {(p : ZMod (p ^ e))}` induced from
 `PadicInt.dividedPowers p` along the quotient map `PadicInt.toZModPow e`. -/
 noncomputable def dividedPowers : DividedPowers (Ideal.span {(p : ZMod (p ^ e))}) :=
   DividedPowers.Quotient.OfSurjective.dividedPowers (PadicInt.dividedPowers p)
     (ZMod.ringHom_surjective (PadicInt.toZModPow e))
-    (Eq.symm <| by simpa only [PadicInt.maximalIdeal_eq_span_p] using
-      PadicInt.map_maximalIdeal_eq_span_p (PadicInt.toZModPow (p := p) e))
+    (map_span_p_toZModPow p e).symm
     (PadicInt.isSubDPIdeal_ker_toZModPow_inf p e)
 
 /-- The canonical quotient `PadicInt.toZModPow e : ℤ_[p] →+* ZMod (p ^ e)` is a divided power
@@ -199,8 +202,7 @@ theorem toZModPow_isDPMorphism :
     (PadicInt.dividedPowers p).IsDPMorphism (ZMod.dividedPowers p e) (PadicInt.toZModPow e) :=
   DividedPowers.Quotient.OfSurjective.isDPMorphism (PadicInt.dividedPowers p)
     (ZMod.ringHom_surjective (PadicInt.toZModPow e))
-    (Eq.symm <| by simpa only [PadicInt.maximalIdeal_eq_span_p] using
-      PadicInt.map_maximalIdeal_eq_span_p (PadicInt.toZModPow (p := p) e))
+    (map_span_p_toZModPow p e).symm
     (PadicInt.isSubDPIdeal_ker_toZModPow_inf p e)
 
 /-- Evaluation of `ZMod.dividedPowers p e` on the generator `(p : ZMod (p ^ e))`. -/
@@ -217,8 +219,7 @@ theorem dividedPowers_unique (hquot : DividedPowers (Ideal.span {(p : ZMod (p ^ 
     hquot = ZMod.dividedPowers p e :=
   DividedPowers.Quotient.OfSurjective.dividedPowers_unique (PadicInt.dividedPowers p)
     (ZMod.ringHom_surjective (PadicInt.toZModPow e))
-    (Eq.symm <| by simpa only [PadicInt.maximalIdeal_eq_span_p] using
-      PadicInt.map_maximalIdeal_eq_span_p (PadicInt.toZModPow (p := p) e))
+    (map_span_p_toZModPow p e).symm
     (PadicInt.isSubDPIdeal_ker_toZModPow_inf p e) hquot hm
 
 end Canonical

@@ -148,9 +148,8 @@ the divided power filtration of `PadicInt.dividedPowers p`. -/
 theorem pdFiltration_dividedPowers (n : ℕ) :
     (ZMod.dividedPowers p e).pdFiltration n =
       ((PadicInt.dividedPowers p).pdFiltration n).map (PadicInt.toZModPow e) :=
-  ((toZModPow_isDPMorphism p e).map_pdFiltration_eq (by
-    simpa only [PadicInt.maximalIdeal_eq_span_p] using
-      PadicInt.map_maximalIdeal_eq_span_p (PadicInt.toZModPow (p := p) e)) n).symm
+  ((toZModPow_isDPMorphism p e).map_pdFiltration_eq
+    (by rw [Ideal.map_span, Set.image_singleton, map_natCast]) n).symm
 
 /-- Vanishing of the `n`-th divided power filtration step in `ZMod (p ^ e)` is equivalent to
 containment of the `n`-th filtration step in `Ideal.span {(p : ℤ_[p]) ^ e}`. -/
@@ -175,9 +174,8 @@ section PrimeTwoAndClassification
 @[simp]
 theorem pdFiltration_dividedPowers_two {e n : ℕ} (hn : n ≠ 0) :
     (ZMod.dividedPowers 2 e).pdFiltration n = Ideal.span {(2 : ZMod (2 ^ e))} := by
-  rw [pdFiltration_dividedPowers 2 e n, PadicInt.pdFiltration_two_eq hn]
-  simpa only [Nat.cast_ofNat, PadicInt.maximalIdeal_eq_span_p] using
-    PadicInt.map_maximalIdeal_eq_span_p (PadicInt.toZModPow (p := 2) e)
+  rw [pdFiltration_dividedPowers 2 e n, PadicInt.pdFiltration_two_eq hn,
+    Ideal.map_span, Set.image_singleton, map_ofNat]
 
 /-- Complete classification of PD-nilpotence for the canonical divided power structure on
 `(p) ⊂ ZMod (p ^ e)`: it is PD-nilpotent if and only if `p` is odd (`p ≠ 2`) or `e ≤ 1`. -/
