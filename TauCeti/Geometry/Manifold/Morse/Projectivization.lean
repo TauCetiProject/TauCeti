@@ -982,6 +982,9 @@ def projectiveMomentFunctionCriticalPointsEquiv {w : Fin (n + 1) → ℝ} (hw : 
     (fun k ↦ ⟨mk 𝕜 (Pi.single k.val 1) (by simp),
       mk_single_mem_criticalPoints_projectiveMomentFunction w k.val,
       (manifoldMorseIndex_projectiveMomentFunction w k.val).trans k.property⟩)
+    -- The ascription keeps the abstracted proof at type `Bijective _`: without it the proof gets
+    -- the unfolded type `Injective _ ∧ Surjective _`, and `simp` no longer rewrites with
+    -- `Equiv.coe_ofBijective` in `coe_projectiveMomentFunctionCriticalPointsEquiv_apply`.
     (show Bijective _ from
       ⟨fun _ _ h ↦ Subtype.ext (mk_single_injective (congrArg Subtype.val h)), fun x ↦ by
         have hx : x.val ∈ range fun k ↦ mk 𝕜 (Pi.single k 1 : Fin (n + 1) → 𝕜) (by simp) := by
