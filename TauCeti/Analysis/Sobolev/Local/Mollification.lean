@@ -30,9 +30,10 @@ On a finite-dimensional real inner product space `V`, specializing to an operato
 `J ∈ W^{1,p}_loc(Ω; V →L[ℝ] V)` with `2 < p ≤ ∞` (so `J ∈ L^∞_loc(Ω)` by Morrey's embedding) yields:
 
 * `TauCeti.exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn`: for `1/p + 1/q ≤ 1`,
-  `α ∈ 𝓓(Ω, ℝ)` and `v : V`, smooth vector test functions `Ψ n = α • (J_n)* v ∈ 𝓓(Ω, V)` whose
-  directional-derivative pairings against `w ∈ L^q_loc(Ω)` and value pairings against locally
-  integrable `w` converge to the corresponding pairings of `J` and `DJ`.
+  `α ∈ 𝓓(Ω, ℝ)` and `v : V`, produces vector test functions `Ψ n ∈ 𝓓(Ω, V)` (constructed in the
+  proof as `α • (J_n)* v`) supported in `tsupport α` whose directional-derivative pairings against
+  `w ∈ L^q_loc(Ω)` and value pairings against locally integrable `w` converge to the corresponding
+  pairings of `J` and `DJ`.
 * `TauCeti.integral_inner_fderiv_add_integral_inner_eq_of_hasWeakFDerivOn`: the mixed-derivative
   commutator identity
   `∫ ⟪∂_u φ, J (∂_v ξ)⟫ + ∫ ⟪φ, (∂_u J) (∂_v ξ)⟫ = ∫ ⟪∂_v φ, J (∂_u ξ)⟫ + ∫ ⟪φ, (∂_v J) (∂_u ξ)⟫`
@@ -132,14 +133,16 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteS
 
 variable [FiniteDimensional ℝ V]
 
-/-- Local mollification of `J ∈ W^{1,p}_loc(Ω)` (`2 < p ≤ ∞`, `1/p + 1/q ≤ 1`) applied in the form
-`(α z) • J_n(z)* v`: produces vector test functions `Ψ n ∈ 𝓓(Ω, V)` whose directional-derivative
-pairings against `w ∈ L^q_loc(Ω)` and value pairings against locally integrable `w` on `Ω`
-converge to the corresponding pairings of `J` and `DJ`. -/
+/-- Local mollification of `J ∈ W^{1,p}_loc(Ω)` (`2 < p ≤ ∞`, `1/p + 1/q ≤ 1`): given
+`α ∈ 𝓓(Ω, ℝ)` and `v : V`, produces vector test functions `Ψ n ∈ 𝓓(Ω, V)` (constructed in the
+proof as `z ↦ α z • J_n(z)* v`) satisfying `tsupport (Ψ n) ⊆ tsupport α`, whose
+directional-derivative pairings against `w ∈ L^q_loc(Ω)` and value pairings against locally
+integrable `w` on `Ω` converge to the corresponding pairings of `J` and `DJ`. -/
 theorem exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn (hp : 2 < p)
     (hpq : p⁻¹ + q⁻¹ ≤ 1) (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
     (α : 𝓓(Ω, ℝ)) (v : V) :
     ∃ Ψ : ℕ → 𝓓(Ω, V),
+      (∀ n, tsupport (Ψ n : ℂ → V) ⊆ tsupport (α : ℂ → ℝ)) ∧
       (∀ (u : ℂ) {w : ℂ → V}, MemLpLoc q Ω w →
         Tendsto (fun n => ∫ z, ⟪fderiv ℝ (Ψ n : ℂ → V) z u, w z⟫_ℝ) atTop
           (𝓝 ((∫ z, (∂_{u} α : 𝓓(Ω, ℝ)) z * ⟪v, J z (w z)⟫_ℝ) +
@@ -159,6 +162,7 @@ theorem exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn (hp : 2 < 
     exists_contDiff_tendsto_integral_smul_bilin_of_hasWeakFDerivOn B hp1.le (hJ.memLpLoc_top hp)
       hDJ (hJ.memLpLoc_of_hasWeakFDerivOn hDJ) α.hasCompactSupport.isCompact α.tsupport_subset
   refine ⟨fun n => TestFunction.smulAdjointTestFunction (hJn_smooth n) α v,
+    fun n => TestFunction.tsupport_smulAdjointTestFunction_subset (hJn_smooth n) α v,
     fun u {w} hw => ?_, fun {w} hw => ?_⟩
   · have h1 := hlim_J (∂_{u} α) (α.tsupport_lineDerivOp_subset u)
       (hw.locallyIntegrableOn hq1 Ω.isOpen.isLocallyClosed)
@@ -185,7 +189,7 @@ private theorem integral_mul_inner_clm_apply_comm_scalar (hp : 2 < p)
         (∫ z, (α : ℂ → ℝ) z * ⟪x, DJ z u (Dξ z v)⟫_ℝ) =
       (∫ z, (∂_{v} α : 𝓓(Ω, ℝ)) z * ⟪x, J z (Dξ z u)⟫_ℝ) +
         ∫ z, (α : ℂ → ℝ) z * ⟪x, DJ z v (Dξ z u)⟫_ℝ := by
-  obtain ⟨Ψ, hderiv, -⟩ :=
+  obtain ⟨Ψ, -, hderiv, -⟩ :=
     exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn hp hpq hJ hDJ α x
   have hw (w : ℂ) : MemLpLoc q Ω (fun z => Dξ z w) :=
     hDξq.clm_comp (ContinuousLinearMap.apply ℝ V w)

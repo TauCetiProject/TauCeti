@@ -105,6 +105,28 @@ theorem differentiatedCRCoefficientWithLp_apply (r : ℝ≥0∞) [Fact (1 ≤ r)
       WithLp.toLp r (S x.fst + DJ 1 x.snd, S x.snd + DJ I x.snd) := by
   simp [differentiatedCRCoefficientWithLp]
 
+/-- The coefficient `S₂` on `WithLp r (V × V)` depends continuously and linearly on `(S, DJ)`. -/
+def differentiatedCRCoefficientWithLpL (r : ℝ≥0∞) [Fact (1 ≤ r)] :
+    (V →L[ℝ] V) × (ℂ →L[ℝ] V →L[ℝ] V) →L[ℝ]
+      (WithLp r (V × V) →L[ℝ] WithLp r (V × V)) :=
+  ((WithLp.prodContinuousLinearEquiv r ℝ V V).arrowCongr
+    (WithLp.prodContinuousLinearEquiv r ℝ V V)).symm.toContinuousLinearMap.comp
+    differentiatedCRCoefficientL
+
+/-- `TauCeti.differentiatedCRCoefficientWithLpL` evaluates to
+`TauCeti.differentiatedCRCoefficientWithLp`. -/
+@[simp]
+theorem differentiatedCRCoefficientWithLpL_apply (r : ℝ≥0∞) [Fact (1 ≤ r)]
+    (x : (V →L[ℝ] V) × (ℂ →L[ℝ] V →L[ℝ] V)) :
+    differentiatedCRCoefficientWithLpL r x = differentiatedCRCoefficientWithLp r x.1 x.2 := by
+  simp [differentiatedCRCoefficientWithLpL, differentiatedCRCoefficientWithLp]
+
+/-- For a constant complex structure and `S = 0` the `WithLp` coefficient `S₂` vanishes. -/
+@[simp]
+theorem differentiatedCRCoefficientWithLp_zero_zero (r : ℝ≥0∞) [Fact (1 ≤ r)] :
+    differentiatedCRCoefficientWithLp r (0 : V →L[ℝ] V) 0 = 0 := by
+  simp [differentiatedCRCoefficientWithLp]
+
 /-- **Sobolev regularity of `TauCeti.differentiatedCRCoefficientWithLp`.** If `S ∈ W^{k,p}_loc(Ω)`
 and `J ∈ W^{k+1,p}_loc(Ω)` with weak derivative `DJ`, then the `WithLp r (V × V)`-valued
 coefficient `z ↦ differentiatedCRCoefficientWithLp r (S z) (DJ z)` lies in `W^{k,p}_loc(Ω)`. -/
@@ -112,10 +134,9 @@ theorem MemWkpLoc.differentiatedCRCoefficientWithLp [CompleteSpace V] (r : ℝ�
     {p : ℝ≥0∞} {Ω : Opens ℂ} {k : ℕ} {J S : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V}
     (hS : MemWkpLoc p Ω k S) (hJ : MemWkpLoc p Ω (k + 1) J)
     (hDJ : HasWeakFDerivOn volume Ω J DJ) :
-    MemWkpLoc p Ω k (fun z => TauCeti.differentiatedCRCoefficientWithLp r (S z) (DJ z)) :=
-  (hS.differentiatedCRCoefficient hJ hDJ).clm_comp
-    ((WithLp.prodContinuousLinearEquiv r ℝ V V).arrowCongr
-      (WithLp.prodContinuousLinearEquiv r ℝ V V)).symm.toContinuousLinearMap
+    MemWkpLoc p Ω k (fun z => TauCeti.differentiatedCRCoefficientWithLp r (S z) (DJ z)) := by
+  simpa using (hS.prodMk (hJ.memWkpLoc_of_hasWeakFDerivOn hDJ)).clm_comp
+    (differentiatedCRCoefficientWithLpL r)
 
 end WithLpCoeff
 

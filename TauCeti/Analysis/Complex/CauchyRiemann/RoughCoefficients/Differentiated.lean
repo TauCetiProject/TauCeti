@@ -80,7 +80,7 @@ theorem MemWkpLoc.memWkpLoc_partials_of_hasWeakFDerivOn {q : ℝ≥0∞} {ξ : �
   exact (h.clm_comp (ContinuousLinearMap.apply ℝ V 1)).prodMk
     (h.clm_comp (ContinuousLinearMap.apply ℝ V I))
 
-/-- **The differentiated system.** Let `p > 2` and `1 < q ≤ p`. Let `J, S ∈ W^{1,p}_loc(Ω)` have
+/-- **The differentiated system.** Let `2 < p < ∞` and `1 < q ≤ p`. Let `J, S ∈ W^{1,p}_loc(Ω)` have
 weak derivatives `DJ`, `DS`, let `ξ ∈ W^{2,q}_loc(Ω)` have weak derivative `Dξ`, and let `η` have
 weak derivative `Dη`. If `∂_s ξ + J ∂_t ξ + S ξ = η` almost everywhere on `Ω`, then every weak
 derivative `DΞ` of `Ξ = (∂_s ξ, ∂_t ξ)` satisfies, almost everywhere on `Ω`,
@@ -160,7 +160,7 @@ theorem MemWkpLoc.differentiatedCRCoefficient [CompleteSpace V] {p : ℝ≥0∞}
   simpa using (hS.prodMk (hJ.memWkpLoc_of_hasWeakFDerivOn hDJ)).clm_comp
     differentiatedCRCoefficientL
 
-/-- **The right side of the differentiated system is locally `L^q`.** For `p > 2`, `1 ≤ q ≤ p`,
+/-- **The right side of the differentiated system is locally `L^q`.** For `2 < p < ∞`, `1 ≤ q ≤ p`,
 `S ∈ W^{1,p}_loc(Ω)` with weak derivative `DS` and `ξ, η ∈ W^{1,q}_loc(Ω)` with `η` having weak
 derivative `Dη`, the map `(∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` is in `L^q_loc(Ω)`. -/
 theorem memLpLoc_differentiatedCR_rightSide [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 2 < p)
@@ -179,7 +179,7 @@ theorem memLpLoc_differentiatedCR_rightSide [FiniteDimensional ℝ V] {p q : ℝ
   exact memWkpLoc_zero_iff.1
     ((memWkpLoc_zero_iff.2 (hcomp 1)).prodMk (memWkpLoc_zero_iff.2 (hcomp I)))
 
-/-- **Higher-order regularity of the right side of the differentiated system.** For `p > 2`,
+/-- **Higher-order regularity of the right side of the differentiated system.** For `2 < p < ∞`,
 `1 < q ≤ p`, `DS ∈ W^{k,p}_loc(Ω)`, `Dη ∈ W^{k,q}_loc(Ω)`, and `ξ ∈ W^{k+1,q}_loc(Ω)`, the map
 `(∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ) = (Dη(·) 1 - DS(·) 1 ξ, Dη(·) I - DS(·) I ξ)` is in
 `W^{k,q}_loc(Ω)`. -/

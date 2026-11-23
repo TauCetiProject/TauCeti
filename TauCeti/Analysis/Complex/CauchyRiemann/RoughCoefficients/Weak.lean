@@ -57,11 +57,11 @@ for the statements here.
   for `2 < p ≤ ∞` and `ξ ∈ W^{1,q}_loc(Ω)` (`1 ≤ q ≤ ∞`, including the `q = 1` and `p = ∞`
   endpoints), using `W^{1,1}_loc ⊂ L²_loc` and `TauCeti.HasWeakFDerivOn.bilin`.
 * `TauCeti.IsSobolevCRCoefficients.isWeakCRSolution_iff_ae`: in the Hölder regime
-  `1/p + 1/q ≤ 1` with `ξ, Dξ ∈ L^q_loc(Ω)`, characterizes `IsWeakCRSolution q` by
-  `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on `Ω`.
+  `1/p + 1/q ≤ 1` with `ξ, Dξ ∈ L^q_loc(Ω)` and `η ∈ L¹_loc(Ω)`, characterizes
+  `IsWeakCRSolution q` by `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on `Ω`.
 * `TauCeti.IsSobolevCRCoefficients.isWeakCRSolution_two_iff_ae`: in the Sobolev regime
-  `2 < p ≤ ∞`, `1 ≤ q ≤ ∞` with `ξ ∈ W^{1,q}_loc(Ω)`, characterizes `IsWeakCRSolution 2` by
-  `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on `Ω`.
+  `2 < p ≤ ∞`, `1 ≤ q ≤ ∞` with `ξ ∈ W^{1,q}_loc(Ω)` and `η ∈ L¹_loc(Ω)`, characterizes
+  `IsWeakCRSolution 2` by `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on `Ω`.
 * `TauCeti.IsSobolevCRCoefficients.isWeakLinearCauchyRiemannOn_iff`: the solutions of the linear
   equation in the sense of `TauCeti.IsWeakLinearCauchyRiemannOn` are exactly the continuous weak
   solutions of the homogeneous weak equation with a locally `L^q` weak derivative.
@@ -434,9 +434,9 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_of_memWkpLoc
       (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hp hq hc.memWkpLoc_coeff hξq hDξ I ψ) φ
 
 /-- **Weak solutions with a weak derivative.** If `ξ` has weak derivative `Dξ` on `Ω`, with `ξ`
-and `Dξ` locally `L^q` and `1/p + 1/q ≤ 1` (`1 ≤ p, q ≤ ∞`), then `ξ` is a weak solution of
-`∂_s ξ + J ∂_t ξ + S ξ = η` exactly when `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on
-`Ω`. -/
+and `Dξ` locally `L^q`, `η ∈ L¹_loc(Ω)`, and `1/p + 1/q ≤ 1` (`1 ≤ p, q ≤ ∞`), then `ξ` is a weak
+solution of `∂_s ξ + J ∂_t ξ + S ξ = η` exactly when `Dξ 1 + J (Dξ I) + S ξ = η` almost
+everywhere on `Ω`. -/
 theorem IsSobolevCRCoefficients.isWeakCRSolution_iff_ae [FiniteDimensional ℝ V]
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     {Dξ : ℂ → ℂ →L[ℝ] V} (hξ : HasWeakFDerivOn volume Ω ξ Dξ) (hξq : MemLpLoc q Ω ξ)
@@ -458,9 +458,9 @@ theorem IsSobolevCRCoefficients.isWeakCRSolution_iff_ae [FiniteDimensional ℝ V
   · rw [hz hzΩ]
   · simp [image_eq_zero_of_notMem_tsupport fun h' => hzΩ (φ.tsupport_subset h')]
 
-/-- **Weak `L²_loc` solutions for `W^{1,q}_loc` fields (`2 < p ≤ ∞`, `1 ≤ q ≤ ∞`).** When `p > 2`
-and `ξ ∈ W^{1,q}_loc(Ω)` has weak derivative `Dξ` (including `q = 1` and `p = ∞`), `ξ` solves
-`∂_s ξ + J ∂_t ξ + S ξ = η` weakly in `L²_loc(Ω)` (`IsWeakCRSolution 2`) exactly when
+/-- **Weak `L²_loc` solutions for `W^{1,q}_loc` fields (`2 < p ≤ ∞`, `1 ≤ q ≤ ∞`).** When `p > 2`,
+`ξ ∈ W^{1,q}_loc(Ω)` has weak derivative `Dξ` (including `q = 1` and `p = ∞`), and `η ∈ L¹_loc(Ω)`,
+`ξ` solves `∂_s ξ + J ∂_t ξ + S ξ = η` weakly in `L²_loc(Ω)` (`IsWeakCRSolution 2`) exactly when
 `Dξ 1 + J (Dξ I) + S ξ = η` almost everywhere on `Ω`. -/
 theorem IsSobolevCRCoefficients.isWeakCRSolution_two_iff_ae [FiniteDimensional ℝ V]
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hp : 2 < p) (hq : 1 ≤ q)
