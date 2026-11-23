@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
-public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.DualGraph
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Contracted
 
