@@ -8,7 +8,8 @@ module
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Coarsen
 import Mathlib.GroupTheory.GroupAction.Ring
-import TauCeti.RingTheory.GradedAlgebra.Supercommutativity
+import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Basic
+import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Generators
 
 /-!
 # Supercommutativity of the signed symmetric algebra
@@ -26,7 +27,7 @@ algebra to serve as a receiving supercommutative algebra in universal properties
 comparisons, for both integer and parity (`ZMod 2`) gradings.
 
 The proof instantiates `TauCeti.mul_eq_smul_mul_of_adjoin_range_eq_top_of_isHomogeneous` from
-`TauCeti.RingTheory.GradedAlgebra.Supercommutativity`.
+`TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Generators`.
 The construction follows the supercommutative algebra of J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1).
 -/
