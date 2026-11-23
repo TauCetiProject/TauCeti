@@ -127,6 +127,17 @@ theorem trivializationAt_apply_snd_basis_eq_det_mul {x₀ x₁ x : M}
     (ω.compContinuousLinearMap (e₀.symmL 𝕜 x)).compContinuousLinearMap_apply_basis b
       (tangentCoordChange I x₁ x₀ x)
 
+/-- Evaluated on vectors `v : Fin (finrank 𝕜 E) → E` in the model space, the preferred
+trivialization of `CanonicalBundle I M` at `x` evaluates `ω` on the corresponding coordinate
+tangent vectors at `x`. -/
+theorem trivializationAt_apply_snd_basis (x : M) (ω : CanonicalBundle I M x)
+    (v : Fin (finrank 𝕜 E) → E) :
+    (trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) x ⟨x, ω⟩).2 v =
+      ω fun i ↦ (trivializationAt E (TangentSpace I) x).symmL 𝕜 x (v i) := by
+  rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  rfl
+
 /-! ### The coordinate form of a chart -/
 
 section CoordForm
@@ -174,6 +185,16 @@ theorem trivializationAt_apply_snd_coordForm (hx : x ∈ (chartAt H x₀).source
       ⟨x, coordForm I x₀ b x⟩).2 = b.continuousDet := by
   rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
     coordForm_compContinuousLinearMap_symmL hx]
+
+/-- Under the preferred trivialization of `CanonicalBundle I M` at `x`, the constant determinant
+form `b.continuousDet` corresponds to the coordinate form `coordForm I x b x`. -/
+theorem continuousLinearEquivAt_symm_continuousDet (x : M) (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) :
+    (VectorBundle.continuousLinearEquivAt 𝕜 (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜)
+      (CanonicalBundle I M) x).symm b.continuousDet = coordForm I x b x := by
+  rw [VectorBundle.continuousLinearEquivAt_symm_apply,
+    ← trivializationAt_apply_snd_coordForm (I := I) (b := b) (mem_chart_source H x),
+    Trivialization.symm_apply_apply_mk _
+      (mem_baseSet_trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) x)]
 
 /-- The coordinate form does not vanish on the source of its chart. -/
 @[simp]

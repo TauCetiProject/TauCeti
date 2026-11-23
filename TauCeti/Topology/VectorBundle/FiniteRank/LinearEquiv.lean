@@ -153,29 +153,16 @@ private theorem localTriv_ofLinearEquivTotalEquiv_symm (b : B)
   rw [Equiv.apply_symm_apply] at htriv
   exact (e.apply_symm_apply _).symm.trans htriv.symm
 
-private theorem continuous_ofLinearEquivTotalEquiv : Continuous (ofLinearEquivTotalEquiv e V) := by
-  refine continuous_iff_continuousAt.2 fun p ↦ (FiberBundle.continuousAt_totalSpace _ _).2
-    ⟨(ofLinearEquiv e V).core.continuous_proj.continuousAt, ?_⟩
-  have hU := ((ofLinearEquiv e V).core.localTriv p.proj).open_source.mem_nhds
-    ((ofLinearEquiv e V).core.mem_source_at p.proj p.snd)
-  refine ContinuousAt.congr_of_eventuallyEq (e.symm.continuous.continuousAt.comp
-    (((ofLinearEquiv e V).core.localTriv p.proj).continuousOn.continuousAt hU).snd)
-    (Filter.eventually_of_mem hU fun q hq ↦ congrArg Prod.snd
-      (trivializationAt_ofLinearEquivTotalEquiv e V p.proj q
-        (((ofLinearEquiv e V).core.localTriv p.proj).mem_source.1 hq)))
+private theorem continuous_ofLinearEquivTotalEquiv : Continuous (ofLinearEquivTotalEquiv e V) :=
+  continuous_of_localTriv_snd_of_mem_baseSet (ofLinearEquiv e V) (ofLinearEquivTotalEquiv e V)
+    (fun _ ↦ rfl) e.symm.toContinuousLinearMap fun b p hp ↦
+      congrArg Prod.snd (trivializationAt_ofLinearEquivTotalEquiv e V b p hp)
 
 private theorem continuous_ofLinearEquivTotalEquiv_symm :
-    Continuous (ofLinearEquivTotalEquiv e V).symm := by
-  refine continuous_iff_continuousAt.2 fun p ↦ (FiberBundle.continuousAt_totalSpace _ _).2
-    ⟨(FiberBundle.continuous_proj F V).continuousAt, ?_⟩
-  have hU := (trivializationAt F V p.proj).open_source.mem_nhds
-    (FiberBundle.mem_trivializationAt_proj_source (x := p))
-  refine (e.continuous.continuousAt.comp
-    ((trivializationAt F V p.proj).continuousOn.continuousAt hU).snd).congr_of_eventuallyEq ?_
-  filter_upwards [hU] with q hq
-  rw [(ofLinearEquiv e V).trivializationAt_core]
-  exact localTriv_ofLinearEquivTotalEquiv_symm e V p.proj q
-    ((trivializationAt F V p.proj).mem_source.1 hq)
+    Continuous (ofLinearEquivTotalEquiv e V).symm :=
+  continuous_of_trivializationAt_snd_of_mem_baseSet (ofLinearEquiv e V)
+    (ofLinearEquivTotalEquiv e V).symm (fun _ ↦ rfl) e.toContinuousLinearMap fun b q hq ↦
+      localTriv_ofLinearEquivTotalEquiv_symm e V b q hq
 
 /-- The reconstructed total space of `ofLinearEquiv e V` is homeomorphic to `TotalSpace F V` over
 the identity of `B`, acting on each fibre by `ofLinearEquivFiberEquiv e V`. -/
@@ -216,7 +203,8 @@ end Basic
 
 section Change
 
-variable {r₁ r₂ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜)) (V : B → Type z)
+variable {r₁ r₂ r₃ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜))
+  (e₃ : F ≃L[𝕜] (Fin r₃ → 𝕜)) (V : B → Type z)
   [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
@@ -249,6 +237,54 @@ noncomputable def ofLinearEquivChangeIso :
     (ofLinearEquivChangeIso e₁ e₂ V).inv.fiberMap x =
       (e₂.symm.trans e₁ : (Fin r₂ → 𝕜) →L[𝕜] (Fin r₁ → 𝕜)) :=
   fiberMap_constIso_inv _ _ _ x
+
+/-- Changing from a coordinate equivalence to itself is the identity isomorphism. -/
+@[simp] theorem ofLinearEquivChangeIso_self :
+    ofLinearEquivChangeIso e₁ e₁ V = Iso.refl (ofLinearEquiv e₁ V) :=
+  Iso.ext <| hom_ext fun x ↦ by
+    rw [fiberMap_ofLinearEquivChangeIso_hom, Iso.refl_hom, fiberMap_id]
+    ext v : 1; simp; rfl
+
+/-- Inverting a coordinate-change isomorphism reverses the two coordinate equivalences. -/
+@[simp] theorem ofLinearEquivChangeIso_symm :
+    (ofLinearEquivChangeIso e₁ e₂ V).symm = ofLinearEquivChangeIso e₂ e₁ V :=
+  Iso.ext <| hom_ext fun x ↦ by
+    rw [Iso.symm_hom, fiberMap_ofLinearEquivChangeIso_inv, fiberMap_ofLinearEquivChangeIso_hom]
+
+/-- Composing the forward maps of successive coordinate changes yields the direct coordinate
+change. -/
+@[simp] theorem ofLinearEquivChangeIso_hom_comp :
+    (ofLinearEquivChangeIso e₁ e₂ V).hom ≫ (ofLinearEquivChangeIso e₂ e₃ V).hom =
+      (ofLinearEquivChangeIso e₁ e₃ V).hom :=
+  hom_ext fun x ↦ by
+    ext v : 1
+    rw [fiberMap_comp, ContinuousLinearMap.comp_apply]
+    exact (DFunLike.congr_fun (fiberMap_ofLinearEquivChangeIso_hom e₂ e₃ V x) _).trans
+      ((congrArg (fun w ↦ e₃ (e₂.symm w))
+        (DFunLike.congr_fun (fiberMap_ofLinearEquivChangeIso_hom e₁ e₂ V x) v)).trans
+      ((congrArg e₃ (e₂.symm_apply_apply (e₁.symm v))).trans
+      (DFunLike.congr_fun (fiberMap_ofLinearEquivChangeIso_hom e₁ e₃ V x) v).symm))
+
+/-- Composing the inverse maps of successive coordinate changes yields the direct inverse
+coordinate change. -/
+@[simp] theorem ofLinearEquivChangeIso_inv_comp :
+    (ofLinearEquivChangeIso e₂ e₃ V).inv ≫ (ofLinearEquivChangeIso e₁ e₂ V).inv =
+      (ofLinearEquivChangeIso e₁ e₃ V).inv :=
+  hom_ext fun x ↦ by
+    ext v : 1
+    rw [fiberMap_comp, ContinuousLinearMap.comp_apply]
+    exact (DFunLike.congr_fun (fiberMap_ofLinearEquivChangeIso_inv e₁ e₂ V x) _).trans
+      ((congrArg (fun w ↦ e₁ (e₂.symm w))
+        (DFunLike.congr_fun (fiberMap_ofLinearEquivChangeIso_inv e₂ e₃ V x) v)).trans
+      ((congrArg e₁ (e₂.symm_apply_apply (e₃.symm v))).trans
+      (DFunLike.congr_fun (fiberMap_ofLinearEquivChangeIso_inv e₁ e₃ V x) v).symm))
+
+/-- Composing two coordinate-change isomorphisms yields the direct coordinate-change
+isomorphism. -/
+@[simp] theorem ofLinearEquivChangeIso_trans :
+    (ofLinearEquivChangeIso e₁ e₂ V).trans (ofLinearEquivChangeIso e₂ e₃ V) =
+      ofLinearEquivChangeIso e₁ e₃ V :=
+  Iso.ext (ofLinearEquivChangeIso_hom_comp e₁ e₂ e₃ V)
 
 /-- The coordinate-change isomorphism commutes with the reconstruction homeomorphisms onto
 `TotalSpace F V`. -/
@@ -287,6 +323,15 @@ noncomputable def dualCoords {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) :
 @[simp] theorem dualCoords_symm_apply {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (w : Fin r → 𝕜) (v : F) :
     (dualCoords e).symm w v = ∑ i, e v i * w i := by simp [dualCoords]
 
+/-- Pairing a coordinate vector `v` against `dualCoords e p` evaluates `p` on `e.symm v`. -/
+theorem sum_mul_dualCoords_apply {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (p : F →L[𝕜] 𝕜)
+    (v : Fin r → 𝕜) :
+    ∑ i, v i * dualCoords e p i = p (e.symm v) := by
+  have hv : (∑ i, v i • Pi.single i (1 : 𝕜)) = v := by ext j; simp [Pi.single_apply]
+  calc ∑ i, v i * dualCoords e p i
+      = p (e.symm (∑ i, v i • Pi.single i 1)) := by simp [← smul_eq_mul, map_sum, map_smul]
+    _ = p (e.symm v) := by rw [hv]
+
 /-- Changing dual coordinates from `e₁` to `e₂` is the transpose of changing primal coordinates from
 `e₂` to `e₁`. -/
 theorem dualCoords_symm_trans_dualCoords {r₁ r₂ : ℕ}
@@ -294,12 +339,8 @@ theorem dualCoords_symm_trans_dualCoords {r₁ r₂ : ℕ}
     ((dualCoords e₁).symm.trans (dualCoords e₂) : (Fin r₁ → 𝕜) →L[𝕜] (Fin r₂ → 𝕜)) =
       (e₂.symm.trans e₁ : (Fin r₂ → 𝕜) →L[𝕜] (Fin r₁ → 𝕜)).piTranspose := by
   refine (ContinuousLinearMap.eq_piTranspose_iff _ _).2 fun v w ↦ ?_
-  have hv : (∑ i, v i • Pi.single i (1 : 𝕜)) = v := by ext j; simp [Pi.single_apply]
-  calc ∑ i, v i * dualCoords e₂ ((dualCoords e₁).symm w) i
-      = (dualCoords e₁).symm w (e₂.symm (∑ i, v i • Pi.single i 1)) := by
-          simp [← smul_eq_mul, map_sum, map_smul]
-    _ = ∑ j, (e₂.symm.trans e₁ : (Fin r₂ → 𝕜) →L[𝕜] (Fin r₁ → 𝕜)) v j * w j := by
-          rw [hv, dualCoords_symm_apply]; rfl
+  exact (sum_mul_dualCoords_apply e₂ ((dualCoords e₁).symm w) v).trans
+    (dualCoords_symm_apply e₁ w (e₂.symm v))
 
 /-- In `dualCoords b.equivFunL`, the `i`th coordinate of `p : F →L[𝕜] 𝕜` is `p (b i)`. -/
 theorem dualCoords_equivFunL_apply {r : ℕ} (b : Module.Basis (Fin r) 𝕜 F)
@@ -341,21 +382,10 @@ theorem coordChange_ofLinearEquiv_dualCoords {i j x : B}
   -- Pass `Fin r` explicitly so `Fintype` resolves to `Fin.fintype r` rather than
   -- `Fin.fintype (ofLinearEquiv e V).rank` (defeq via `@[expose]` on `ofLinearEquiv`).
   refine (ContinuousLinearMap.eq_piTranspose_iff (ι := Fin r) (κ := Fin r) _ _).2 fun v w ↦ ?_
-  let ed (b : B) := trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) b
-  have hpair : ∑ k, v k *
-      (dualCoords e).arrowCongr (dualCoords e) ((ed i).coordChangeL 𝕜 (ed j) x) w k =
-      ((ed i).coordChangeL 𝕜 (ed j) x ((dualCoords e).symm w)) (e.symm v) := by
-    conv_lhs => arg 2; ext k; rw [← congrFun (e.apply_symm_apply v) k]
-    rw [← dualCoords_symm_apply e _ (e.symm v)]; simp [ed]
-  rw [hpair, Trivialization.coordChangeL_apply _ _ ⟨by simp [ed, hi], by simp [ed, hj]⟩,
-    trivializationAt_dual_symm_eq V hi]
-  simp only [ed, hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
-    Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
-    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply]
-  rw [Trivialization.continuousLinearMapAt_apply_of_mem _ _ hi,
-    Trivialization.symmL_apply (R := 𝕜) _ hj,
-    ← Trivialization.coordChangeL_apply (R := 𝕜) _ _ ⟨hj, hi⟩, dualCoords_symm_apply]
-  simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.coe_coe]
+  dsimp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.coe_coe]
+  rw [sum_mul_dualCoords_apply, trivializationAt_dual_coordChangeL V hi hj,
+    ContinuousLinearMap.comp_apply, dualCoords_symm_apply]
+  rfl
 
 /-- The chart domain of `(ofLinearEquiv e V).dual` at `i` is `(trivializationAt F V i).baseSet`. -/
 theorem baseSet_ofLinearEquiv_dual (i : B) :

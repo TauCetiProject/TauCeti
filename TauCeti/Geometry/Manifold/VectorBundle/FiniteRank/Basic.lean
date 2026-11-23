@@ -68,6 +68,27 @@ theorem contMDiffAt_localTriv_snd (E : FiniteRankBundleCore 𝕜 B) (p₀ : E.co
     p₀.contMDiffAt_trivializationAt_snd (IB := I) (n := n)
 
 /-- A map from `E.core.TotalSpace` into the total space of a fibre bundle `V` covering the
+identity of `B` whose fibre coordinate in each preferred trivialization over its chart domain is a
+fixed continuous linear map `L` of the chart coordinate in `E` is `C^n`, without any smoothness
+hypothesis on the base or transition functions. -/
+theorem contMDiff_of_localTriv_snd_of_mem_baseSet {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+    [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+    (E : FiniteRankBundleCore 𝕜 B) (f : E.core.TotalSpace → TotalSpace F V)
+    (hf_proj : ∀ p, (f p).proj = p.proj) (L : (Fin E.rank → 𝕜) →L[𝕜] F)
+    (hL : ∀ (b : B) (p : E.core.TotalSpace), p.proj ∈ E.core.baseSet b →
+      (trivializationAt F V b (f p)).2 = L ((E.core.localTriv b p).2)) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, F)) n f := by
+  intro p₀
+  rw [Bundle.contMDiffAt_totalSpace_iff, hf_proj p₀]
+  refine ⟨((contMDiff_proj E.core.Fiber).congr hf_proj).contMDiffAt, ?_⟩
+  have hU := (E.core.localTriv p₀.proj).open_source.mem_nhds
+    ((E.core.mem_localTriv_source p₀.proj p₀).2 (E.mem_baseSet_self p₀.proj))
+  refine (L.contDiff.comp_contMDiffAt (E.contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq ?_
+  filter_upwards [hU] with q hq
+  exact hL p₀.proj q ((E.core.mem_localTriv_source p₀.proj q).1 hq)
+
+/-- A map from `E.core.TotalSpace` into the total space of a fibre bundle `V` covering the
 identity of `B` whose fibre coordinate in every preferred trivialization is a fixed continuous
 linear map `L` of the chart coordinate in `E` is `C^n`, without any smoothness hypothesis on the
 base or transition functions. -/
@@ -77,12 +98,30 @@ theorem contMDiff_of_localTriv_snd {F : Type*} [NormedAddCommGroup F] [NormedSpa
     (hf_proj : ∀ p, (f p).proj = p.proj) (L : (Fin E.rank → 𝕜) →L[𝕜] F)
     (hL : ∀ (b : B) (p : E.core.TotalSpace),
       (trivializationAt F V b (f p)).2 = L ((E.core.localTriv b p).2)) :
-    ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, F)) n f := by
+    ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, F)) n f :=
+  contMDiff_of_localTriv_snd_of_mem_baseSet E f hf_proj L fun b p _ ↦ hL b p
+
+/-- A map from the total space of a fibre bundle `V` into `E.core.TotalSpace` covering the
+identity of `B` whose chart coordinate in `E` at each base point over its trivialization domain is
+a fixed continuous linear map `L` of the fibre coordinate in the preferred trivialization of `V` is
+`C^n`, without any smoothness hypothesis on the base or transition functions. -/
+theorem contMDiff_of_trivializationAt_snd_of_mem_baseSet {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+    [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+    (E : FiniteRankBundleCore 𝕜 B) (f : TotalSpace F V → E.core.TotalSpace)
+    (hf_proj : ∀ p, (f p).proj = p.proj) (L : F →L[𝕜] (Fin E.rank → 𝕜))
+    (hL : ∀ (b : B) (p : TotalSpace F V), p.proj ∈ (trivializationAt F V b).baseSet →
+      (E.core.localTriv b (f p)).2 = L ((trivializationAt F V b p).2)) :
+    ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) n f := by
   intro p₀
-  rw [Bundle.contMDiffAt_totalSpace_iff, hf_proj p₀]
-  refine ⟨((contMDiff_proj E.core.Fiber).congr hf_proj).contMDiffAt, ?_⟩
-  exact (L.contDiff.comp_contMDiffAt (E.contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun p ↦ hL p₀.proj p)
+  rw [Bundle.contMDiffAt_totalSpace_iff, hf_proj p₀, E.trivializationAt_core]
+  refine ⟨((contMDiff_proj V).congr hf_proj).contMDiffAt, ?_⟩
+  have hU := (trivializationAt F V p₀.proj).open_source.mem_nhds
+    (FiberBundle.mem_trivializationAt_proj_source (x := p₀))
+  refine (L.contDiff.comp_contMDiffAt
+    (p₀.contMDiffAt_trivializationAt_snd (IB := I) (n := n))).congr_of_eventuallyEq ?_
+  filter_upwards [hU] with q hq
+  exact hL p₀.proj q ((trivializationAt F V p₀.proj).mem_source.1 hq)
 
 /-- A map from the total space of a fibre bundle `V` into `E.core.TotalSpace` covering the
 identity of `B` whose chart coordinate in `E` at every base point is a fixed continuous linear
@@ -94,13 +133,8 @@ theorem contMDiff_of_trivializationAt_snd {F : Type*} [NormedAddCommGroup F] [No
     (hf_proj : ∀ p, (f p).proj = p.proj) (L : F →L[𝕜] (Fin E.rank → 𝕜))
     (hL : ∀ (b : B) (p : TotalSpace F V),
       (E.core.localTriv b (f p)).2 = L ((trivializationAt F V b p).2)) :
-    ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) n f := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace_iff, hf_proj p₀, E.trivializationAt_core]
-  refine ⟨((contMDiff_proj V).congr hf_proj).contMDiffAt, ?_⟩
-  exact (L.contDiff.comp_contMDiffAt
-    (p₀.contMDiffAt_trivializationAt_snd (IB := I) (n := n))).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun p ↦ hL p₀.proj p)
+    ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) n f :=
+  contMDiff_of_trivializationAt_snd_of_mem_baseSet E f hf_proj L fun b p _ ↦ hL b p
 
 /-- A morphism `a : E ⟶ E'` of point-indexed finite-rank cores whose fibre maps intertwine the
 point-to-chart transitions on `E`'s chart domains with a fixed continuous linear map `L` glues to a
@@ -110,18 +144,12 @@ theorem contMDiff_totalSpaceMap_of_mem_baseSet {E E' : FiniteRankBundleCore 𝕜
     (hL : ∀ x b, x ∈ E.core.baseSet b → ∀ v,
       E'.core.coordChange x b x (a.fiberMap x v) = L (E.core.coordChange x b x v)) :
     ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin E'.rank → 𝕜)) n
-      a.totalSpaceMap := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace_iff, a.totalSpaceMap_proj p₀]
-  refine ⟨((contMDiff_proj E.core.Fiber).congr a.totalSpaceMap_proj).contMDiffAt, ?_⟩
-  have hp₀ : p₀ ∈ (E.core.localTriv p₀.proj).source :=
-    (E.core.mem_localTriv_source p₀.proj p₀).2 (E.mem_baseSet_self p₀.proj)
-  have hU := (E.core.localTriv p₀.proj).open_source.mem_nhds hp₀
-  refine (L.contDiff.comp_contMDiffAt (E.contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq ?_
-  filter_upwards [hU] with ⟨x, v⟩ hq
-  rw [E'.trivializationAt_core]
-  simp only [CoordinateHom.totalSpaceMap_mk, localTriv_apply, E.indexAt_eq, E'.indexAt_eq]
-  exact hL x p₀.proj ((E.core.mem_localTriv_source p₀.proj ⟨x, v⟩).1 hq) v
+      a.totalSpaceMap :=
+  contMDiff_of_localTriv_snd_of_mem_baseSet E a.totalSpaceMap a.totalSpaceMap_proj L
+    fun b ⟨x, v⟩ hx ↦ by
+      rw [E'.trivializationAt_core]
+      simp only [CoordinateHom.totalSpaceMap_mk, localTriv_apply, E.indexAt_eq, E'.indexAt_eq]
+      exact hL x b hx v
 
 /-- A morphism `a : E ⟶ E'` of point-indexed finite-rank cores whose fibre maps intertwine the
 point-to-chart transitions with a fixed continuous linear map `L` glues to a `C^n` map of total

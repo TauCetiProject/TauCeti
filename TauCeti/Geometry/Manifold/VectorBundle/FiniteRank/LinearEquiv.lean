@@ -65,38 +65,23 @@ variable {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type z)
 smoothness hypotheses on `B` or `V`. -/
 theorem contMDiff_ofLinearEquivTotalSpaceHomeomorph :
     ContMDiff (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).rank → 𝕜)) (I.prod 𝓘(𝕜, F)) n
-      (ofLinearEquivTotalSpaceHomeomorph e V) := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace_iff, ofLinearEquivTotalSpaceHomeomorph_apply]
-  refine ⟨((contMDiff_proj (ofLinearEquiv e V).core.Fiber).congr fun p ↦ by simp).contMDiffAt, ?_⟩
-  have hU := ((ofLinearEquiv e V).core.localTriv p₀.proj).open_source.mem_nhds
-    (((ofLinearEquiv e V).core.mem_localTriv_source p₀.proj p₀).2
-      ((ofLinearEquiv e V).mem_baseSet_self p₀.proj))
-  exact (e.symm.contDiff.comp_contMDiffAt
-    ((ofLinearEquiv e V).contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq
-      (Filter.eventually_of_mem hU fun q hq ↦ congrArg Prod.snd
-        (trivializationAt_ofLinearEquivTotalSpaceHomeomorph e V p₀.proj q
-          ((localTriv_baseSet_ofLinearEquiv e V p₀.proj).symm ▸
-            ((ofLinearEquiv e V).core.localTriv p₀.proj).mem_source.1 hq)))
+      (ofLinearEquivTotalSpaceHomeomorph e V) :=
+  contMDiff_of_localTriv_snd_of_mem_baseSet (ofLinearEquiv e V)
+    (ofLinearEquivTotalSpaceHomeomorph e V)
+    (fun p ↦ by rw [ofLinearEquivTotalSpaceHomeomorph_apply]) e.symm.toContinuousLinearMap
+    fun b p hp ↦ congrArg Prod.snd
+      (trivializationAt_ofLinearEquivTotalSpaceHomeomorph e V b p
+        ((baseSet_ofLinearEquiv e V b) ▸ hp))
 
 /-- The inverse map of `ofLinearEquivTotalSpaceHomeomorph` is `C^n` at every order, without
 smoothness hypotheses on `B` or `V`. -/
 theorem contMDiff_ofLinearEquivTotalSpaceHomeomorph_symm :
     ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).rank → 𝕜)) n
-      (ofLinearEquivTotalSpaceHomeomorph e V).symm := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace_iff]
-  have hproj : ((ofLinearEquivTotalSpaceHomeomorph e V).symm p₀).proj = p₀.proj := by simp
-  rw [hproj]
-  refine ⟨((contMDiff_proj V).congr fun p ↦ by simp).contMDiffAt, ?_⟩
-  have hU := (trivializationAt F V p₀.proj).open_source.mem_nhds
-    (FiberBundle.mem_trivializationAt_proj_source (x := p₀))
-  refine (e.contDiff.comp_contMDiffAt
-    (p₀.contMDiffAt_trivializationAt_snd (IB := I) (n := n))).congr_of_eventuallyEq ?_
-  filter_upwards [hU] with q hq
-  rw [(ofLinearEquiv e V).trivializationAt_core]
-  exact localTriv_ofLinearEquivTotalSpaceHomeomorph_symm e V p₀.proj q
-    ((trivializationAt F V p₀.proj).mem_source.1 hq)
+      (ofLinearEquivTotalSpaceHomeomorph e V).symm :=
+  contMDiff_of_trivializationAt_snd_of_mem_baseSet (ofLinearEquiv e V)
+    (ofLinearEquivTotalSpaceHomeomorph e V).symm
+    (fun p ↦ by rw [ofLinearEquivTotalSpaceHomeomorph_symm_apply]) e.toContinuousLinearMap
+    fun b q hq ↦ localTriv_ofLinearEquivTotalSpaceHomeomorph_symm e V b q hq
 
 /-- The reconstructed total space of `ofLinearEquiv e V` is `C^n` diffeomorphic to `TotalSpace F V`
 over the identity of `B`, without completeness or smoothness hypotheses. -/
@@ -130,7 +115,8 @@ end TotalSpace
 
 section Change
 
-variable {r₁ r₂ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜)) (V : B → Type z)
+variable {r₁ r₂ r₃ : ℕ} (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜))
+  (e₃ : F ≃L[𝕜] (Fin r₃ → 𝕜)) (V : B → Type z)
   [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
@@ -171,10 +157,41 @@ noncomputable def ofLinearEquivChangeDiffeomorph (I : ModelWithCorners 𝕜 EB H
       (ofLinearEquivChangeIso e₁ e₂ V).hom.totalSpaceMap :=
   coe_isoToDiffeomorph _ _ _
 
-@[simp] theorem coe_ofLinearEquivChangeDiffeomorph_symm :
+theorem coe_ofLinearEquivChangeDiffeomorph_symm :
     ⇑(ofLinearEquivChangeDiffeomorph e₁ e₂ V I n).symm =
       (ofLinearEquivChangeIso e₁ e₂ V).inv.totalSpaceMap :=
   coe_isoToDiffeomorph_symm _ _ _
+
+/-- Changing from a coordinate equivalence to itself induces the identity diffeomorphism. -/
+@[simp] theorem ofLinearEquivChangeDiffeomorph_self :
+    ofLinearEquivChangeDiffeomorph e₁ e₁ V I n =
+      Diffeomorph.refl (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e₁ V).rank → 𝕜))
+        (ofLinearEquiv e₁ V).core.TotalSpace n :=
+  Diffeomorph.ext fun p ↦ by
+    rw [coe_ofLinearEquivChangeDiffeomorph, ofLinearEquivChangeIso_self, Iso.refl_hom]
+    exact congrFun (CoordinateHom.totalSpaceMap_id _) p
+
+/-- Inverting a coordinate-change diffeomorphism reverses the two coordinate equivalences. -/
+@[simp] theorem ofLinearEquivChangeDiffeomorph_symm :
+    (ofLinearEquivChangeDiffeomorph e₁ e₂ V I n).symm =
+      ofLinearEquivChangeDiffeomorph e₂ e₁ V I n :=
+  Diffeomorph.ext fun p ↦ by
+    rw [coe_ofLinearEquivChangeDiffeomorph_symm, coe_ofLinearEquivChangeDiffeomorph,
+      ← Iso.symm_hom, ofLinearEquivChangeIso_symm]
+
+/-- Composing two coordinate-change diffeomorphisms yields the direct coordinate-change
+diffeomorphism. -/
+@[simp] theorem ofLinearEquivChangeDiffeomorph_trans :
+    (ofLinearEquivChangeDiffeomorph e₁ e₂ V I n).trans
+        (ofLinearEquivChangeDiffeomorph e₂ e₃ V I n) =
+      ofLinearEquivChangeDiffeomorph e₁ e₃ V I n :=
+  Diffeomorph.ext fun p ↦ by
+    rw [Diffeomorph.coe_trans, Function.comp_apply, coe_ofLinearEquivChangeDiffeomorph,
+      coe_ofLinearEquivChangeDiffeomorph, coe_ofLinearEquivChangeDiffeomorph]
+    exact (congrFun (CoordinateHom.totalSpaceMap_comp
+      (ofLinearEquivChangeIso e₂ e₃ V).hom (ofLinearEquivChangeIso e₁ e₂ V).hom) p).symm.trans
+      (congrArg (fun f : ofLinearEquiv e₁ V ⟶ ofLinearEquiv e₃ V ↦ f.totalSpaceMap p)
+        (ofLinearEquivChangeIso_hom_comp e₁ e₂ e₃ V))
 
 /-- The change-of-coordinates diffeomorphism `ofLinearEquivChangeDiffeomorph e₁ e₂ V I n` commutes
 with the two reconstruction diffeomorphisms `ofLinearEquivTotalSpaceDiffeomorph e₁ V I n` and

@@ -168,6 +168,49 @@ theorem operator_self (f : A ⟶ D) (x : B) :
   simp only [inChartCoordinates_apply, A.indexAt_eq, D.indexAt_eq, coordChange_self,
     ContinuousLinearMap.id_apply]
 
+/-- A map from `E.core.TotalSpace` into the total space of a fibre bundle `V` covering the
+identity of `B` whose fibre coordinate in each preferred trivialization over its chart domain is a
+fixed continuous linear map `L` of the chart coordinate in `E` is continuous. -/
+theorem continuous_of_localTriv_snd_of_mem_baseSet {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+    [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+    (E : FiniteRankBundleCore 𝕜 B) (f : E.core.TotalSpace → TotalSpace F V)
+    (hf_proj : ∀ p, (f p).proj = p.proj) (L : (Fin E.rank → 𝕜) →L[𝕜] F)
+    (hL : ∀ (b : B) (p : E.core.TotalSpace), p.proj ∈ E.core.baseSet b →
+      (trivializationAt F V b (f p)).2 = L ((E.core.localTriv b p).2)) :
+    Continuous f := by
+  refine continuous_iff_continuousAt.2 fun p₀ ↦ (FiberBundle.continuousAt_totalSpace _ _).2 ?_
+  rw [hf_proj p₀]
+  refine ⟨((FiberBundle.continuous_proj _ _).congr fun p ↦ (hf_proj p).symm).continuousAt, ?_⟩
+  have hU := (E.core.localTriv p₀.proj).open_source.mem_nhds
+    ((E.core.mem_localTriv_source p₀.proj p₀).2 (E.mem_baseSet_self p₀.proj))
+  refine (L.continuous.continuousAt.comp
+    (((E.core.localTriv p₀.proj).continuousOn.continuousAt hU).snd)).congr_of_eventuallyEq ?_
+  filter_upwards [hU] with q hq
+  exact hL p₀.proj q ((E.core.mem_localTriv_source p₀.proj q).1 hq)
+
+/-- A map from the total space of a fibre bundle `V` into `E.core.TotalSpace` covering the
+identity of `B` whose chart coordinate in `E` at each base point over its trivialization domain is
+a fixed continuous linear map `L` of the fibre coordinate in the preferred trivialization of `V` is
+continuous. -/
+theorem continuous_of_trivializationAt_snd_of_mem_baseSet {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+    [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+    (E : FiniteRankBundleCore 𝕜 B) (f : TotalSpace F V → E.core.TotalSpace)
+    (hf_proj : ∀ p, (f p).proj = p.proj) (L : F →L[𝕜] (Fin E.rank → 𝕜))
+    (hL : ∀ (b : B) (p : TotalSpace F V), p.proj ∈ (trivializationAt F V b).baseSet →
+      (E.core.localTriv b (f p)).2 = L ((trivializationAt F V b p).2)) :
+    Continuous f := by
+  refine continuous_iff_continuousAt.2 fun p₀ ↦ (FiberBundle.continuousAt_totalSpace _ _).2 ?_
+  rw [hf_proj p₀, E.trivializationAt_core]
+  refine ⟨((FiberBundle.continuous_proj _ _).congr fun p ↦ (hf_proj p).symm).continuousAt, ?_⟩
+  have hU := (trivializationAt F V p₀.proj).open_source.mem_nhds
+    (FiberBundle.mem_trivializationAt_proj_source (x := p₀))
+  refine (L.continuous.continuousAt.comp
+    (((trivializationAt F V p₀.proj).continuousOn.continuousAt hU).snd)).congr_of_eventuallyEq ?_
+  filter_upwards [hU] with q hq
+  exact hL p₀.proj q ((trivializationAt F V p₀.proj).mem_source.1 hq)
+
 /-- Pointwise addition of coordinate bundle maps makes the category preadditive. -/
 instance : Preadditive (FiniteRankBundleCore 𝕜 B) where
   homGroup A D := inferInstanceAs (AddCommGroup (CoordinateHom A.core D.core))

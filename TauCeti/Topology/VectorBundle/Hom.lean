@@ -290,6 +290,29 @@ theorem trivializationAt_dual_symm_eq {𝕜 B F : Type*} [NontriviallyNormedFiel
   exact (Bundle.Trivialization.continuousLinearMap_symmL (trivializationAt F V i)
     (trivializationAt 𝕜 (Bundle.Trivial B 𝕜) i) x p).trans (by simp [Trivial.eq_trivialization B 𝕜])
 
+/-- On the overlap of two chart domains, the transition of the dual bundle `fun y ↦ V y →L[𝕜] 𝕜`
+from `i` to `j` at `x` precomposes a model functional with the reverse transition of `V`. -/
+theorem trivializationAt_dual_coordChangeL {𝕜 B F : Type*} [NontriviallyNormedField 𝕜]
+    [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (V : B → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+    [FiberBundle F V] [VectorBundle 𝕜 F V] {i j x : B}
+    (hi : x ∈ (trivializationAt F V i).baseSet)
+    (hj : x ∈ (trivializationAt F V j).baseSet) (p : F →L[𝕜] 𝕜) :
+    (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) i).coordChangeL 𝕜
+        (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) j) x p =
+      p.comp ((trivializationAt F V j).coordChangeL 𝕜 (trivializationAt F V i) x : F →L[𝕜] F) := by
+  rw [Trivialization.coordChangeL_apply _ _ ⟨by simp [hi], by simp [hj]⟩,
+    trivializationAt_dual_symm_eq V hi p, hom_trivializationAt_apply]
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
+    ContinuousLinearMap.comp_apply]
+  rw [Trivialization.continuousLinearMapAt_apply_of_mem _ _ hi,
+    Trivialization.symmL_apply (R := 𝕜) _ hj,
+    ← Trivialization.coordChangeL_apply (R := 𝕜) _ _ ⟨hj, hi⟩]
+  rfl
+
 /-- For a finite-dimensional model source, a fibrewise continuous linear map is continuous
 on total spaces exactly when it is continuous as a section of the Hom bundle. The target
 need not have finite rank. -/
