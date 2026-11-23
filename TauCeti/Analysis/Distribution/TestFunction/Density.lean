@@ -15,35 +15,37 @@ import TauCeti.Analysis.Distribution.TestFunction.Convergence
 /-!
 # Smooth functions are dense in `𝓓^{n}_{K}(E, F)` for convex `K`
 
-For a compact set `K` in a real normed space `E` and `n ≤ ∞`, the space `𝓓^{n}_{K}(E, F)` of
-`Cⁿ` functions supported in `K` carries the topology of uniform convergence of all derivatives of
-order at most `n`. When `K` is convex, the smooth functions supported in `K` are dense in it: the
-inclusion `𝓓^{n₁}_{K}(E, F) → 𝓓^{n₂}_{K}(E, F)` has dense range for all `n₂ ≤ n₁`
+For a compact set `K` in a real normed space `E`, a real normed space `F` and `n ≤ ∞`, the space
+`𝓓^{n}_{K}(E, F)` of `Cⁿ` functions from `E` to `F` supported in `K` carries the topology of
+uniform convergence of all derivatives of order at most `n`. When `K` is convex and `F` is a Banach
+space, the smooth functions supported in `K` are dense in it: the inclusion
+`𝓓^{n₁}_{K}(E, F) → 𝓓^{n₂}_{K}(E, F)` has dense range for all `n₂ ≤ n₁`
 (`ContDiffMapSupportedIn.denseRange_monoCLM`). The approximants keep their support in `K` itself,
 not merely in a neighbourhood of `K`, and no extension theorem across the boundary of `K` is used.
-For finite `n` the topology of `𝓓^{n}_{K}(E, F)` is given by finitely many seminorms, so it serves
-as a complete normable space of perturbations in transversality arguments; density lets a property
-that is open in this `Cⁿ` topology, and holds for some `Cⁿ` perturbation, hold for a smooth
-perturbation with the same support.
+For finite `n` the topology of `𝓓^{n}_{K}(E, F)` is given by finitely many seminorms, so for a
+Banach space `F` it serves as a complete normable space of perturbations in transversality
+arguments; density lets a property that is open in this `Cⁿ` topology, and holds for some `Cⁿ`
+perturbation, hold for a smooth perturbation with the same support.
 
-The proof contracts and then mollifies. Since a continuous function vanishing off `K` is supported
-in the interior of `K` (`ContDiffMapSupportedIn.support_subset_interior`), there is nothing to
-prove when `K` has empty interior. Otherwise fix `p` in the interior of `K`. For `a > 1` the
-function `x ↦ f (p + a • (x - p))` is supported in the image of `K` under the homothety of centre
-`p` and ratio `a⁻¹`, a compact subset of the interior of `K` by convexity; its derivatives are
-`a ^ k` times those of `f` at the dilated point, so it tends to `f` in `𝓓^{n}_{K}(E, F)` as
-`a → 1`. A compact set with nonempty interior forces `E` to be finite-dimensional, and there each
-contracted function is approximated in every derivative of order at most `n` by mollifications
-whose supports stay inside the interior of `K`
+The proof contracts and then mollifies. A continuous function vanishing off `K` vanishes off the
+interior of `K`: its set-theoretic support `Function.support f` lies in `interior K`
+(`ContDiffMapSupportedIn.support_subset_interior`), although its closed support `tsupport f` may
+meet the boundary of `K`. So there is nothing to prove when `K` has empty interior. Otherwise fix
+`p` in the interior of `K`. For `a > 1` the function `x ↦ f (p + a • (x - p))` is supported in the
+image of `K` under the homothety of centre `p` and ratio `a⁻¹`, a compact subset of the interior
+of `K` by convexity; its derivatives are `a ^ k` times those of `f` at the dilated point, so it
+tends to `f` in `𝓓^{n}_{K}(E, F)` as `a → 1`. A compact set with nonempty interior forces `E` to
+be finite-dimensional, and there each contracted function is approximated in every derivative of
+order at most `n` by mollifications whose supports stay inside the interior of `K`
 (`ContDiff.exists_contDiff_hasCompactSupport_tendstoUniformly_iteratedFDeriv`).
 
 ## Main results
 
-* `ContDiffMapSupportedIn.support_subset_interior`: a function in `𝓓^{n}_{K}(E, F)` is supported
-  in the interior of `K`.
-* `ContDiffMapSupportedIn.denseRange_monoCLM`: for convex `K` and `n₂ ≤ n₁`, the inclusion
-  `𝓓^{n₁}_{K}(E, F) → 𝓓^{n₂}_{K}(E, F)` has dense range; for `n₁ = ∞` this says that smooth
-  functions supported in `K` are dense in `𝓓^{n₂}_{K}(E, F)`.
+* `ContDiffMapSupportedIn.support_subset_interior`: a function in `𝓓^{n}_{K}(E, F)` vanishes off
+  the interior of `K`, i.e. `Function.support f ⊆ interior K`.
+* `ContDiffMapSupportedIn.denseRange_monoCLM`: for convex `K`, a Banach space `F` and `n₂ ≤ n₁`,
+  the inclusion `𝓓^{n₁}_{K}(E, F) → 𝓓^{n₂}_{K}(E, F)` has dense range; for `n₁ = ∞` this says
+  that smooth functions supported in `K` are dense in `𝓓^{n₂}_{K}(E, F)`.
 
 ## References
 
@@ -64,8 +66,9 @@ namespace ContDiffMapSupportedIn
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] {n : ℕ∞} {K : Compacts E}
 
-/-- A function in `𝓓^{n}_{K}(E, F)` is supported in the interior of `K`: its support is open and
-contained in `K`. In particular `𝓓^{n}_{K}(E, F)` is trivial when `K` has empty interior. -/
+/-- A function in `𝓓^{n}_{K}(E, F)` vanishes off the interior of `K`: its set-theoretic support
+`Function.support f` lies in `interior K`, although `tsupport f` may meet the boundary of `K`. In
+particular `𝓓^{n}_{K}(E, F)` is trivial when `K` has empty interior. -/
 theorem support_subset_interior (f : 𝓓^{n}_{K}(E, F)) : support f ⊆ interior (K : Set E) :=
   interior_maximal f.support_subset f.continuous.isOpen_support
 
@@ -80,12 +83,12 @@ private noncomputable def contraction (hK : Convex ℝ (K : Set E)) (hp : p ∈ 
   .of_support_subset (f := fun x ↦ f (p + (a : ℝ) • (x - p)))
     (f.contDiff.comp (contDiff_const.add (contDiff_const.smul (contDiff_id.sub contDiff_const))))
     fun x hx ↦ by
-      have ha : (0 : ℝ) < a := zero_lt_one.trans_le a.2
+      have ha : (0 : ℝ) < a := zero_lt_one.trans_le a.property
       have hy := f.support_subset hx
       have hx' : x = p + (a : ℝ)⁻¹ • (p + (a : ℝ) • (x - p) - p) := by
         rw [add_sub_cancel_left, inv_smul_smul₀ ha.ne', add_sub_cancel]
       rw [hx']
-      exact hK.add_smul_sub_mem hp hy ⟨inv_nonneg.2 ha.le, inv_le_one_of_one_le₀ a.2⟩
+      exact hK.add_smul_sub_mem hp hy ⟨inv_nonneg.2 ha.le, inv_le_one_of_one_le₀ a.property⟩
 
 private theorem coe_contraction (hK : Convex ℝ (K : Set E)) (hp : p ∈ (K : Set E))
     (f : 𝓓^{n}_{K}(E, F)) (a : Ici (1 : ℝ)) :
@@ -113,30 +116,27 @@ private theorem continuous_contraction (hK : Convex ℝ (K : Set E)) (hp : p ∈
   have hfk := f.contDiff.continuous_iteratedFDeriv (m := k) (by exact_mod_cast hk)
   fun_prop
 
-/-- For a ratio `a > 1` and `p` in the interior of `K`, the contraction is supported in the
-interior of `K`: its support lies in the image of `K` under the homothety of centre `p` and ratio
+/-- For a ratio `a > 1` and `p` in the interior of `K`, the closed support of the contraction lies
+in the interior of `K`: it lies in the image of `K` under the homothety of centre `p` and ratio
 `a⁻¹`, a compact subset of the interior of `K`. -/
 private theorem tsupport_contraction_subset_interior (hK : Convex ℝ (K : Set E))
     (hp : p ∈ interior (K : Set E)) (f : 𝓓^{n}_{K}(E, F)) (a : Ici (1 : ℝ)) (ha : 1 < (a : ℝ)) :
     tsupport (contraction hK (interior_subset hp) f a) ⊆ interior (K : Set E) := by
-  have ha₀ : (0 : ℝ) < a := zero_lt_one.trans ha
-  let h : E → E := fun y ↦ y + (1 - (a : ℝ)⁻¹) • (p - y)
-  have hhK : IsCompact (h '' K) := K.isCompact.image (by fun_prop)
-  refine (closure_minimal (fun x hx ↦ ?_) hhK.isClosed).trans ?_
-  · refine ⟨p + (a : ℝ) • (x - p), f.support_subset (by simpa [coe_contraction] using hx), ?_⟩
-    simp only [h, show p - (p + (a : ℝ) • (x - p)) = -((a : ℝ) • (x - p)) by abel, smul_neg,
-      sub_smul, one_smul, smul_smul, inv_mul_cancel₀ ha₀.ne']
-    abel
-  · rintro _ ⟨y, hy, rfl⟩
-    exact hK.add_smul_sub_mem_interior hy hp
-      ⟨sub_pos.2 (inv_lt_one_of_one_lt₀ ha), sub_le_self _ (inv_nonneg.2 ha₀.le)⟩
+  rw [coe_contraction]
+  refine (tsupport_comp_subset_preimage (f : E → F) (f := fun x ↦ p + (a : ℝ) • (x - p))
+    (by fun_prop)).trans fun x hx ↦ ?_
+  obtain ⟨y, hy, hxy⟩ := hK.closure_subset_image_homothety_interior_of_one_lt hp a ha
+    (subset_closure (f.tsupport_subset hx))
+  rw [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add, add_comm] at hxy
+  exact sub_left_inj.1
+    (smul_right_injective E (zero_lt_one.trans ha).ne' (add_left_cancel hxy)) ▸ hy
 
 end Contraction
 
-/-- **Smooth functions supported in a convex compact set are dense.** For convex `K` and
-`n₂ ≤ n₁`, the inclusion `𝓓^{n₁}_{K}(E, F) → 𝓓^{n₂}_{K}(E, F)` has dense range. For `n₁ = ∞`
-this says that every `C^{n₂}` function supported in `K` is a limit, in every derivative of order at
-most `n₂` uniformly, of smooth functions supported in `K`. -/
+/-- **Smooth functions supported in a convex compact set are dense.** For convex `K`, a Banach
+space `F` (`[CompleteSpace F]`) and `n₂ ≤ n₁`, the inclusion `𝓓^{n₁}_{K}(E, F) → 𝓓^{n₂}_{K}(E, F)`
+has dense range. For `n₁ = ∞` this says that every `C^{n₂}` function supported in `K` is a limit,
+in every derivative of order at most `n₂` uniformly, of smooth functions supported in `K`. -/
 theorem denseRange_monoCLM [CompleteSpace F] (𝕜 : Type*) [NontriviallyNormedField 𝕜]
     [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] {n₁ n₂ : ℕ∞} (hn : n₂ ≤ n₁)
     (hK : Convex ℝ (K : Set E)) :
@@ -152,10 +152,8 @@ theorem denseRange_monoCLM [CompleteSpace F] (𝕜 : Type*) [NontriviallyNormedF
       simpa using mt (fun hx ↦ f.support_subset_interior hx) (by simp [hint])
     exact subset_closure ⟨0, by simp [hf]⟩
   -- A compact set with nonempty interior forces `E` to be finite-dimensional.
-  obtain ⟨r, hr, hrK⟩ := Metric.isOpen_iff.1 isOpen_interior p hp
-  have : FiniteDimensional ℝ E := .of_isCompact_closedBall ℝ (half_pos hr)
-    (K.isCompact.of_isClosed_subset Metric.isClosed_closedBall
-      ((Metric.closedBall_subset_ball (half_lt_self hr)).trans (hrK.trans interior_subset)))
+  have : FiniteDimensional ℝ E :=
+    .of_totallyBounded_nhds ℝ (mem_interior_iff_mem_nhds.mp hp) K.isCompact.totallyBounded
   -- Each contraction of `f` with ratio `> 1` is a limit of mollifications supported in `K`.
   have hmem (a : Ici (1 : ℝ)) (ha : 1 < (a : ℝ)) :
       contraction hK (interior_subset hp) f a ∈ closure (range (monoCLM 𝕜 :
