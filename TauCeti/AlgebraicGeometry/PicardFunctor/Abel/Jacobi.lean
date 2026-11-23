@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -31,7 +31,9 @@ morphism of schemes is constructed.
 * `TauCeti.AlgebraicGeometry.abelJacobiMap`: the natural transformation from the functor of points
   `T ↦ Hom_S(T, X)` to `T ↦ Pic(X_T) / Pic(T)`, sending `x` to the class of `𝒪(Γₓ - x₀_T)`
   (`abelJacobiMap_app_apply`);
-* `TauCeti.AlgebraicGeometry.abelJacobiMap_app_basePoint`: it sends `x₀` to the identity.
+* `TauCeti.AlgebraicGeometry.abelJacobiMap_app_basePoint`: it sends `x₀` to the identity;
+* `TauCeti.AlgebraicGeometry.abelJacobiMap_app_change_basePoint`: changing the base point
+  divides the normalized class by the class of the new base point.
 
 ## References
 
@@ -113,6 +115,18 @@ lemma abelJacobiMap_app_basePoint (T : (Over S)ᵒᵖ) :
       (Y := ToType ((relativePicardPresheaf f).obj T)) ((abelJacobiMap f hx₀).app T)
       (ULift.up (basePoint hx₀ T.unop)) = 1 := by
   rw [abelJacobiMap_app_apply, div_self']
+
+variable {x₁ : S ⟶ X} (hx₁ : x₁ ≫ f = 𝟙 S)
+
+/-- Changing the base point from `x₀` to `x₁` divides the Abel–Jacobi class by the class of
+`x₁ - x₀`. -/
+theorem abelJacobiMap_app_change_basePoint {T : (Over S)ᵒᵖ}
+    (x : T.unop ⟶ Over.mk f) :
+    (abelJacobiMap f hx₁).app T (ULift.up x) =
+      (abelJacobiMap f hx₀).app T (ULift.up x) /
+        (abelJacobiMap f hx₀).app T (ULift.up (basePoint hx₁ T.unop)) := by
+  rw [abelJacobiMap_app_apply, abelJacobiMap_app_apply, abelJacobiMap_app_apply]
+  exact (div_div_div_cancel_right _ _ _).symm
 
 end
 

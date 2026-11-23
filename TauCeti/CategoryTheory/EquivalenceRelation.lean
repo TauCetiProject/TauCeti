@@ -30,10 +30,20 @@ is an equivalence relation (Stacks, Definition 39.3.1 (022P), for schemes).
   equivalence relation gives an internal equivalence relation.
 * `CategoryTheory.IsKernelPair.isEquivalenceRelation`: a kernel pair is an internal equivalence
   relation, and `CategoryTheory.IsEquivalenceRelation.id`: so is the diagonal.
+* `TauCeti.CategoryTheory.restrictRel f p₁ p₂`: the restriction `R ×_{X × X} (Y × Y)` of a pair
+  `p₁ p₂ : R ⟶ X` along `f : Y ⟶ X`, with projections `restrictRel.fst` and `restrictRel.snd`.
+  It relates `a` to `b` exactly when `p₁, p₂` relates `f a` to `f b`
+  (`TauCeti.CategoryTheory.restrictRel.ofPairHom_iff`).
+* `CategoryTheory.IsEquivalenceRelation.restrictRel`: the restriction of an internal equivalence
+  relation is an internal equivalence relation (Stacks, Lemma 39.3.2 (02V8), for schemes), and
+  `CategoryTheory.IsKernelPair.restrictRel`: restricting the kernel pair of `φ` along `f` gives
+  the kernel pair of `f ≫ φ`.
 
 ## References
 
 * [Stacks Project, Definition 39.3.1](https://stacks.math.columbia.edu/tag/022P)
+* [Stacks Project, Lemma 39.3.2](https://stacks.math.columbia.edu/tag/02V8)
+* [Stacks Project, Definition 39.3.3](https://stacks.math.columbia.edu/tag/02V9)
 -/
 
 public section
@@ -283,5 +293,138 @@ theorem id_symm {X : C} (h : IsEquivalenceRelation (𝟙 X) (𝟙 X)) : h.symm =
   simpa using h.symmetry₁
 
 end IsEquivalenceRelation
+
+end CategoryTheory
+
+namespace TauCeti.CategoryTheory
+
+open _root_.CategoryTheory Limits
+
+variable {C : Type*} [Category* C] {R X Y : C}
+
+/-- The *restriction* of a pair `p₁ p₂ : R ⟶ X` along `f : Y ⟶ X`: the fibre product
+`R ×_{X × X} (Y × Y)` of `(p₁, p₂)` and `f × f`, formed as the iterated fibre product
+`(Y ×_{f, X, p₁} R) ×_{p₂, X, f} Y`. Its points are triples `(a, r, b)` of points `a, b` of `Y`
+and `r` of `R` with `f a = p₁ r` and `p₂ r = f b`; it relates `a` to `b` exactly when `R` relates
+`f a` to `f b` (`TauCeti.CategoryTheory.restrictRel.ofPairHom_iff`), and is an equivalence relation
+when `p₁, p₂` is one (`CategoryTheory.IsEquivalenceRelation.restrictRel`). This is the restriction,
+or pullback, of a relation (Stacks, Definition 39.3.3 (02V9), for schemes). -/
+noncomputable abbrev restrictRel (f : Y ⟶ X) (p₁ p₂ : R ⟶ X) [HasPullback f p₁]
+    [HasPullback (pullback.snd f p₁ ≫ p₂) f] : C :=
+  pullback (pullback.snd f p₁ ≫ p₂) f
+
+namespace restrictRel
+
+variable (f : Y ⟶ X) (p₁ p₂ : R ⟶ X) [HasPullback f p₁] [HasPullback (pullback.snd f p₁ ≫ p₂) f]
+
+/-- The first projection `(a, r, b) ↦ a` of the restriction of `p₁, p₂` along `f`. -/
+noncomputable def fst : restrictRel f p₁ p₂ ⟶ Y :=
+  pullback.fst (pullback.snd f p₁ ≫ p₂) f ≫ pullback.fst f p₁
+
+/-- The second projection `(a, r, b) ↦ b` of the restriction of `p₁, p₂` along `f`. -/
+noncomputable def snd : restrictRel f p₁ p₂ ⟶ Y :=
+  pullback.snd (pullback.snd f p₁ ≫ p₂) f
+
+/-- The projection `(a, r, b) ↦ r` from the restriction of `p₁, p₂` along `f` to `R`. -/
+noncomputable def proj : restrictRel f p₁ p₂ ⟶ R :=
+  pullback.fst (pullback.snd f p₁ ≫ p₂) f ≫ pullback.snd f p₁
+
+theorem fst_def :
+    fst f p₁ p₂ = pullback.fst (pullback.snd f p₁ ≫ p₂) f ≫ pullback.fst f p₁ := (rfl)
+
+theorem snd_def : snd f p₁ p₂ = pullback.snd (pullback.snd f p₁ ≫ p₂) f := (rfl)
+
+theorem proj_def :
+    proj f p₁ p₂ = pullback.fst (pullback.snd f p₁ ≫ p₂) f ≫ pullback.snd f p₁ := (rfl)
+
+@[reassoc (attr := simp)]
+theorem proj_p₁ : proj f p₁ p₂ ≫ p₁ = fst f p₁ p₂ ≫ f := by
+  simp [proj, fst, pullback.condition]
+
+@[reassoc (attr := simp)]
+theorem proj_p₂ : proj f p₁ p₂ ≫ p₂ = snd f p₁ p₂ ≫ f := by
+  simpa [proj, snd] using pullback.condition (f := pullback.snd f p₁ ≫ p₂) (g := f)
+
+variable {f p₁ p₂}
+
+/-- The point `(a, r, b)` of the restriction of `p₁, p₂` along `f`, for `f a = p₁ r` and
+`p₂ r = f b`. -/
+noncomputable def lift {T : C} (a b : T ⟶ Y) (r : T ⟶ R) (h₁ : r ≫ p₁ = a ≫ f)
+    (h₂ : r ≫ p₂ = b ≫ f) : T ⟶ restrictRel f p₁ p₂ :=
+  pullback.lift (pullback.lift a r h₁.symm) b (by simpa using h₂)
+
+@[reassoc (attr := simp)]
+theorem lift_fst {T : C} (a b : T ⟶ Y) (r : T ⟶ R) (h₁ : r ≫ p₁ = a ≫ f)
+    (h₂ : r ≫ p₂ = b ≫ f) : lift a b r h₁ h₂ ≫ fst f p₁ p₂ = a := by
+  simp [lift, fst]
+
+@[reassoc (attr := simp)]
+theorem lift_snd {T : C} (a b : T ⟶ Y) (r : T ⟶ R) (h₁ : r ≫ p₁ = a ≫ f)
+    (h₂ : r ≫ p₂ = b ≫ f) : lift a b r h₁ h₂ ≫ snd f p₁ p₂ = b := by
+  simp [lift, snd]
+
+@[reassoc (attr := simp)]
+theorem lift_proj {T : C} (a b : T ⟶ Y) (r : T ⟶ R) (h₁ : r ≫ p₁ = a ≫ f)
+    (h₂ : r ≫ p₂ = b ≫ f) : lift a b r h₁ h₂ ≫ proj f p₁ p₂ = r := by
+  simp [lift, proj]
+
+/-- Morphisms into the restriction of `p₁, p₂` along `f` agree when their composites with `fst`,
+`snd` and `proj` agree. -/
+@[ext high]
+theorem hom_ext {T : C} {g g' : T ⟶ restrictRel f p₁ p₂} (h₁ : g ≫ fst f p₁ p₂ = g' ≫ fst f p₁ p₂)
+    (h₂ : g ≫ snd f p₁ p₂ = g' ≫ snd f p₁ p₂) (h : g ≫ proj f p₁ p₂ = g' ≫ proj f p₁ p₂) :
+    g = g' := by
+  refine pullback.hom_ext ?_ h₂
+  apply pullback.hom_ext
+  · simpa [fst] using h₁
+  · simpa [proj] using h
+
+/-- The restriction of `p₁, p₂` along `f` relates `a` to `b` exactly when `p₁, p₂` relates `f a` to
+`f b`. -/
+theorem ofPairHom_iff {T : C} {a b : T ⟶ Y} :
+    Rel.ofPairHom (fst f p₁ p₂) (snd f p₁ p₂) T a b ↔ Rel.ofPairHom p₁ p₂ T (a ≫ f) (b ≫ f) := by
+  refine ⟨fun ⟨r, h₁, h₂⟩ ↦ ⟨r ≫ proj f p₁ p₂, by simp [← h₁], by simp [← h₂]⟩,
+    fun ⟨r, h₁, h₂⟩ ↦ ⟨lift a b r h₁ h₂, by simp, by simp⟩⟩
+
+/-- The projections of the restriction of a jointly monic pair are jointly monic. -/
+instance jointlyMono₂ [JointlyMono₂ p₁ p₂] : JointlyMono₂ (fst f p₁ p₂) (snd f p₁ p₂) where
+  right_cancellation _ g g' h₁ h₂ :=
+    hom_ext h₁ h₂ <| JointlyMono₂.right_cancellation (p₁ := p₁) (p₂ := p₂) _ _
+      (by simp [reassoc_of% h₁]) (by simp [reassoc_of% h₂])
+
+end restrictRel
+
+end TauCeti.CategoryTheory
+
+namespace CategoryTheory
+
+open Limits TauCeti.CategoryTheory
+
+variable {C : Type*} [Category* C] {R X Y : C}
+
+/-- The restriction of an internal equivalence relation `p₁, p₂ : R ⟶ X` along `f : Y ⟶ X`, the
+relation `R ×_{X × X} (Y × Y)` on `Y`, is an internal equivalence relation (Stacks, Lemma 39.3.2
+(02V8), for schemes). -/
+instance IsEquivalenceRelation.restrictRel (f : Y ⟶ X) (p₁ p₂ : R ⟶ X)
+    [IsEquivalenceRelation p₁ p₂] [HasPullback f p₁] [HasPullback (pullback.snd f p₁ ≫ p₂) f]
+    [HasPullback (restrictRel.snd f p₁ p₂) (restrictRel.fst f p₁ p₂)] :
+    IsEquivalenceRelation (restrictRel.fst f p₁ p₂) (restrictRel.snd f p₁ p₂) := by
+  have he := (‹IsEquivalenceRelation p₁ p₂›).equivalence_ofPairHom
+  refine isEquivalenceRelation_iff.2 ⟨inferInstance, fun T ↦ ?_⟩
+  refine ⟨fun a ↦ restrictRel.ofPairHom_iff.2 ((he T).refl _),
+    fun h ↦ restrictRel.ofPairHom_iff.2 ((he T).symm (restrictRel.ofPairHom_iff.1 h)),
+    fun h h' ↦ restrictRel.ofPairHom_iff.2
+      ((he T).trans (restrictRel.ofPairHom_iff.1 h) (restrictRel.ofPairHom_iff.1 h'))⟩
+
+/-- Restricting the kernel pair `p₁, p₂` of `φ` along `f` gives the kernel pair of `f ≫ φ`. -/
+theorem IsKernelPair.restrictRel {Z : C} {φ : X ⟶ Z} {f : Y ⟶ X} {p₁ p₂ : R ⟶ X}
+    [HasPullback f p₁] [HasPullback (pullback.snd f p₁ ≫ p₂) f] (hk : IsKernelPair φ p₁ p₂) :
+    IsKernelPair (f ≫ φ) (restrictRel.fst f p₁ p₂) (restrictRel.snd f p₁ p₂) := by
+  refine IsPullback.of_isLimit'
+    ⟨by simp [← restrictRel.proj_p₁_assoc, ← restrictRel.proj_p₂_assoc, hk.w]⟩
+    (PullbackCone.IsLimit.mk _ (fun c ↦ restrictRel.lift c.fst c.snd
+      (hk.lift (c.fst ≫ f) (c.snd ≫ f) (by simpa using c.condition)) (by simp) (by simp))
+      (fun c ↦ by simp) (fun c ↦ by simp) (fun c m h₁ h₂ ↦ restrictRel.hom_ext (by simpa using h₁)
+        (by simpa using h₂) (hk.hom_ext (by simp [← h₁]) (by simp [← h₂]))))
 
 end CategoryTheory

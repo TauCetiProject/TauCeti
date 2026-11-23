@@ -107,6 +107,20 @@ theorem isMinimum_iff {f : BoundedFlow lo hi s t} :
 theorem isMinimum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMinimum :=
   isMinimum_iff.2 fun g ↦ (val_eq_zero_of_eq hst f).trans_le (val_eq_zero_of_eq hst g).ge
 
+@[simp]
+theorem isMaximum_congr_iff {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo')
+    (hhi : hi = hi') (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
+    (BoundedFlow.congr hlo hhi hs ht f).IsMaximum ↔ f.IsMaximum := by
+  rw [isMaximum_iff, isMaximum_iff, ← (BoundedFlow.congr hlo hhi hs ht).forall_congr_right]
+  simp
+
+@[simp]
+theorem isMinimum_congr_iff {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo')
+    (hhi : hi = hi') (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
+    (BoundedFlow.congr hlo hhi hs ht f).IsMinimum ↔ f.IsMinimum := by
+  rw [isMinimum_iff, isMinimum_iff, ← (BoundedFlow.congr hlo hhi hs ht).forall_congr_right]
+  simp
+
 end Preorder
 
 /-- All minimum bounded terminal assignments have the same value. -/
@@ -262,6 +276,13 @@ def IsMaximum (f : Flow cap s t) : Prop :=
 capacities has value at most `f.val`. -/
 theorem isMaximum_iff {f : Flow cap s t} : f.IsMaximum ↔ ∀ g : Flow cap s t, g.val ≤ f.val :=
   isMaxOn_univ_iff
+
+@[simp]
+theorem isMaximum_congr_iff {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
+    (ht : t = t') (f : Flow cap s t) :
+    (Flow.congr hcap hs ht f).IsMaximum ↔ f.IsMaximum := by
+  rw [isMaximum_iff, isMaximum_iff, ← (Flow.congr hcap hs ht).forall_congr_right]
+  simp
 
 end Preorder
 

@@ -133,7 +133,7 @@ private theorem hasDerivAt_torusKnotMap_comp_circleExp (p q : ℤ) (t : ℝ) :
   have hfun : torusKnotMap p q ∘ Circle.exp = fun s : ℝ ↦
       cliffordScale (Complex.exp (p * (s * Complex.I)), Complex.exp (q * (s * Complex.I))) := by
     ext1 s
-    simp only [comp_apply, torusKnotMap, Circle.coe_zpow, Circle.coe_exp, Complex.exp_int_mul]
+    simp only [comp_apply, torusKnotMap, Circle.coe_zpow, Circle.coe_exp, Complex.exp_intCast_mul]
   rw [hfun]
   exact cliffordScale.hasFDerivAt.comp_hasDerivAt t ((hexp p).prodMk (hexp q))
 

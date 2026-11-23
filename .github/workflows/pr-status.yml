@@ -107,12 +107,11 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@1f5d35c117736e8907bbc09be80a4704196536e5
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 1f5d35c117736e8907bbc09be80a4704196536e5
           project-directory: .
-      - name: Checkout the pinned merge policy (read-only)
+      - name: Checkout the merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
 
       # Discover artifacts directly: cancelled pending runs have no artifact and
@@ -182,7 +181,7 @@ jobs:
           SINCE: ${{ steps.since.outputs.since }}
           # The event's own PR, when its payload names one, goes first.
           PR: ${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number }}
-        # From the repository root: readiness finds the pinned policy at .tauceti-review/runner.
+        # From the repository root: readiness finds the merge policy (TauCetiReview main) at .tauceti-review/runner.
         run: |
           args=(--since "$SINCE" --state-in "$RUNNER_TEMP/state-in/state.json" --state-out "$RUNNER_TEMP/progress/state.json")
           mkdir -p "$RUNNER_TEMP/progress"

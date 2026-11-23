@@ -30,7 +30,8 @@ vertices and darts lie in the universe of the basis, are exactly its minimal fre
 
 ## Main declarations
 
-* `TauCeti.GTree.cayley`: the Cayley tree of `FreeGroup α`, a tree for `FreeGroup α`.
+* `TauCeti.GTree.cayley`: the Cayley tree of `FreeGroup α`, a tree for `FreeGroup α`, with
+  identity vertex `TauCeti.GTree.cayleyBaseVertex`.
 * `TauCeti.GTree.cayley_stabilizer_vertex`, `TauCeti.GTree.cayley_stabilizer_dart`: the action is
   free.
 * `TauCeti.GTree.cayley_isHyperbolic_iff`: the hyperbolic elements are the nontrivial ones.
@@ -80,6 +81,14 @@ by left multiplication. -/
 @[simp] theorem cayleyDartEquiv_cayley_smul (g : FreeGroup α) (e : (cayley α).E) :
     cayleyDartEquiv (g • e) = (g * (cayleyDartEquiv e).1, (cayleyDartEquiv e).2) :=
   cayleyDartEquiv_cayleyMulLeft_smul g e
+
+/-- The identity vertex `1` of the Cayley `G`-tree of `FreeGroup α`. -/
+def cayleyBaseVertex (α : Type u) : (cayley α).V :=
+  cayleyVertexEquiv.symm 1
+
+@[simp] theorem cayleyVertexEquiv_cayleyBaseVertex (α : Type u) :
+    cayleyVertexEquiv (cayleyBaseVertex α) = 1 :=
+  Equiv.apply_symm_apply _ 1
 
 /-! ### The action is free -/
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Cover.Descent
 import TauCeti.Geometry.Manifold.DeRham.Integration.Bijective
 import TauCeti.Geometry.Manifold.Orientation.Cover.Integration

@@ -248,7 +248,7 @@ theorem norm_principalMinor_eq_prod {ι : Type*} [DecidableEq ι] {A : Matrix ι
     rw [principalMinor_def, principalMinor_def]
     congr 1
     ext i j
-    simp [mul_inv_cancel_left₀ (hd i i.2)]
+    simp [mul_inv_cancel_left₀ (hd i i.property)]
   rw [← hA, principalMinor_mul_column, norm_mul, hminor, mul_one, norm_prod]
 
 end NormedField
