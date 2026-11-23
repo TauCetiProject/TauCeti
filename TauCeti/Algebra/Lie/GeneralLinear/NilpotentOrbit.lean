@@ -10,10 +10,14 @@ public import TauCeti.LinearAlgebra.End.NilpotentCentralizer
 import TauCeti.Algebra.Lie.OfAssociative
 
 /-!
-# Dimensions of nilpotent orbits in `sl n`
+# Dimensions of nilpotent orbits in `gl n` and `sl n`
 
-Let `x ∈ sl n K` be a nilpotent matrix with Jordan partition `λ`, and write `λ'` for the
-conjugate partition. When the size of the matrices is nonzero in `K`, the centralizer of `x` in
+Let `x : Matrix n n K` be a nilpotent matrix with Jordan partition `λ`, and write `λ'` for the
+conjugate partition. In `gl n K`, the centralizer `ker (ad x)` has dimension `∑ⱼ (λ'ⱼ)²`, so the
+tangent space `[gl n K, x]` to the adjoint orbit of `x` has dimension `n² - ∑ⱼ (λ'ⱼ)²` over every
+field.
+
+For `x ∈ sl n K`, when the size of the matrices is nonzero in `K`, the centralizer of `x` in
 `sl n K` has dimension `∑ⱼ (λ'ⱼ)² - 1`, so the tangent space `[sl n K, x]` to the adjoint orbit
 of `x` has dimension `n² - ∑ⱼ (λ'ⱼ)²`. Over every field this is an upper bound, because
 `[sl n K, x]` lies in `[gl n K, x]`.
@@ -29,7 +33,10 @@ is that of the endomorphism `Matrix.toLinAlgEquiv' x` of `n → K`.
 
 ## Main results
 
-* `TauCeti.finrank_ker_ad_sl_add_one_eq_sum_sq_conjugate_parts`: the centralizer dimension.
+* `Matrix.finrank_ker_ad_eq_sum_sq_conjugate_parts`: the centralizer dimension in `gl n`.
+* `Matrix.finrank_range_ad_add_sum_sq_conjugate_parts`: the dimension of `[gl n K, x]`.
+* `TauCeti.finrank_ker_ad_sl_add_one_eq_sum_sq_conjugate_parts`: the centralizer dimension in
+  `sl n`.
 * `TauCeti.finrank_range_ad_sl_add_sum_sq_conjugate_parts`: the dimension of `[sl n K, x]`.
 * `TauCeti.finrank_range_ad_sl_add_sum_sq_conjugate_parts_le`: the upper bound over every field.
 * `TauCeti.finrank_range_ad_sl_add_card_eq_iff`: the regular Jordan type `(n)`.
@@ -39,28 +46,47 @@ is that of the endomorphism `Matrix.toLinAlgEquiv' x` of `n → K`.
 ## References
 
 * D. H. Collingwood and W. M. McGovern, *Nilpotent Orbits in Semisimple Lie Algebras*,
-  §6.1: dimensions of nilpotent orbits in `sl n` from the conjugate partition.
+  §6.1: dimensions of nilpotent orbits in `gl n` and `sl n` from the conjugate partition.
 -/
 
 public section
 
 open LieAlgebra Matrix Module Module.End
 
-namespace TauCeti
-
 -- As in `Mathlib/Algebra/Lie/Matrix.lean`, matrices are a Lie ring only through a local instance.
 attribute [local instance 100] LieRing.ofAssociativeRing
 
+namespace Matrix
+
 variable {K : Type*} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- The kernel of `ad x` on all matrices, the centralizer of a nilpotent matrix `x`, has
-dimension `∑ⱼ (λ'ⱼ)²`. -/
-private theorem finrank_ker_ad_matrix_eq_sum_sq_conjugate_parts (x : Matrix n n K)
+/-- **The centralizer of a nilpotent matrix in `gl n`.** The kernel of `ad x` on all matrices has
+dimension `∑ⱼ (λ'ⱼ)²`, where `λ'` is the conjugate of the Jordan partition of `x`. -/
+theorem finrank_ker_ad_eq_sum_sq_conjugate_parts (x : Matrix n n K)
     (hx : IsNilpotent (toLinAlgEquiv' x)) :
     finrank K (LinearMap.ker (ad K (Matrix n n K) x)) =
       ((jordanPartition (toLinAlgEquiv' x) hx).conjugate.parts.map (· ^ 2)).sum := by
   rw [ker_ad_eq_centralizer, Subalgebra.finrank_toSubmodule,
-    Matrix.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
+    finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
+
+/-- **The dimension of a nilpotent orbit in `gl n`.** The tangent space `[gl n K, x]` to the
+adjoint orbit of a nilpotent matrix `x` has dimension `n² - ∑ⱼ (λ'ⱼ)²`, where `λ'` is the
+conjugate of the Jordan partition of `x`. -/
+theorem finrank_range_ad_add_sum_sq_conjugate_parts (x : Matrix n n K)
+    (hx : IsNilpotent (toLinAlgEquiv' x)) :
+    finrank K (LinearMap.range (ad K (Matrix n n K) x)) +
+        ((jordanPartition (toLinAlgEquiv' x) hx).conjugate.parts.map (· ^ 2)).sum =
+      Fintype.card n ^ 2 := by
+  have hrank := LinearMap.finrank_range_add_finrank_ker (ad K (Matrix n n K) x)
+  rw [x.finrank_ker_ad_eq_sum_sq_conjugate_parts hx, finrank_matrix, finrank_self,
+    mul_one, ← sq] at hrank
+  exact hrank
+
+end Matrix
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- **The centralizer of a nilpotent matrix in `sl n`.** If the size of the matrices is nonzero
 in `K`, the centralizer of a nilpotent `x ∈ sl n K` has dimension `∑ⱼ (λ'ⱼ)² - 1`, where `λ'` is
@@ -70,7 +96,8 @@ theorem finrank_ker_ad_sl_add_one_eq_sum_sq_conjugate_parts (hn : (Fintype.card 
     finrank K (LinearMap.ker (ad K (SpecialLinear.sl n K) x)) + 1 =
       ((jordanPartition (toLinAlgEquiv' (x : Matrix n n K)) hx).conjugate.parts.map
         (· ^ 2)).sum := by
-  rw [finrank_ker_ad_sl_add_one hn, finrank_ker_ad_matrix_eq_sum_sq_conjugate_parts _ hx]
+  rw [finrank_ker_ad_sl_add_one hn,
+    (x : Matrix n n K).finrank_ker_ad_eq_sum_sq_conjugate_parts hx]
 
 /-- **The dimension of a nilpotent orbit in `sl n`.** If the size of the matrices is nonzero in
 `K`, the tangent space `[sl n K, x]` to the adjoint orbit of a nilpotent `x` has dimension
@@ -97,18 +124,18 @@ theorem finrank_range_ad_sl_add_sum_sq_conjugate_parts_le
         ((jordanPartition (toLinAlgEquiv' (x : Matrix n n K)) hx).conjugate.parts.map
           (· ^ 2)).sum ≤
       Fintype.card n ^ 2 := by
-  -- `[sl n K, x]` lies in `[gl n K, x]`, which has dimension `n² - ∑ⱼ (λ'ⱼ)²` by rank-nullity.
+  -- `[sl n K, x]` lies in `[gl n K, x]`, which has dimension `n² - ∑ⱼ (λ'ⱼ)²`.
   have hle : (LinearMap.range (ad K (SpecialLinear.sl n K) x)).map
       ((SpecialLinear.sl n K).incl : SpecialLinear.sl n K →ₗ[K] Matrix n n K) ≤
         LinearMap.range (ad K (Matrix n n K) (x : Matrix n n K)) := by
     rw [← LinearMap.range_comp, ← LieSubalgebra.ad_comp_incl_eq]
     exact LinearMap.range_comp_le_range _ _
   have hmono := Submodule.finrank_mono hle
-  rw [← LinearEquiv.finrank_eq (Submodule.equivMapOfInjective _ Subtype.val_injective _)] at hmono
-  have hrank := LinearMap.finrank_range_add_finrank_ker (ad K (Matrix n n K) (x : Matrix n n K))
-  rw [finrank_ker_ad_matrix_eq_sum_sq_conjugate_parts _ hx, finrank_matrix, finrank_self,
-    mul_one, ← sq] at hrank
-  exact (Nat.add_le_add_right hmono _).trans hrank.le
+  change finrank K ((LinearMap.range (ad K (SpecialLinear.sl n K) x)).map
+    (SpecialLinear.sl n K).toSubmodule.subtype) ≤ _ at hmono
+  rw [Submodule.finrank_map_subtype_eq] at hmono
+  exact (Nat.add_le_add_right hmono _).trans
+    ((x : Matrix n n K).finrank_range_ad_add_sum_sq_conjugate_parts hx).le
 
 /-- For a nilpotent `x ∈ sl n K`, the tangent space `[sl n K, x]` has dimension at most
 `n² - n`. -/
