@@ -370,11 +370,26 @@ theorem IsAdmissible.isCoprime_prime_realizationUnit {g : NikulinGenerator} (hg 
       exact (Nat.prime_iff_prime_int.mp hp).coprime_iff_not_dvd.mpr hg.2
   | dyadicCyclic _ _ θ =>
       obtain ⟨m, rfl⟩ := hg
-      exact ⟨-m, 1, by simp [prime, realizationUnit]; ring⟩
+      exact ⟨-m, 1, by simp only [prime, realizationUnit]; ring⟩
   | dyadicU _ =>
       exact ⟨0, -1, by norm_num [prime, realizationUnit]⟩
   | dyadicV _ =>
       exact ⟨-1, 1, by norm_num [prime, realizationUnit]⟩
+
+/-- For any list of admissible generators of prime `p`, the product of their `realizationUnit`s
+is coprime to `p` in `ℤ`. -/
+theorem isCoprime_prod_realizationUnit_of_forall {p : ℕ} {gs : List NikulinGenerator}
+    (hadm : ∀ g ∈ gs, g.IsAdmissible) (hprime : ∀ g ∈ gs, g.prime = p) :
+    IsCoprime (p : ℤ) (gs.map NikulinGenerator.realizationUnit).prod := by
+  induction gs with
+  | nil => exact isCoprime_one_right
+  | cons g gs ih =>
+      rw [List.map_cons, List.prod_cons]
+      have hg : IsCoprime (p : ℤ) g.realizationUnit :=
+        hprime g List.mem_cons_self ▸ (hadm g List.mem_cons_self).isCoprime_prime_realizationUnit
+      exact hg.mul_right
+        (ih (fun g' hg' ↦ hadm g' (List.mem_cons_of_mem g hg'))
+          (fun g' hg' ↦ hprime g' (List.mem_cons_of_mem g hg')))
 
 /-- Every admissible generator has nonzero realization determinant. -/
 theorem IsAdmissible.realizationDet_ne_zero {g : NikulinGenerator} (hg : g.IsAdmissible) :
@@ -808,19 +823,10 @@ theorem prod_realizationDet_filter_eq (D : NikulinDecomposition A) {p : ℕ} (hp
 /-- The product of `realizationUnit` across the `p`-primary generators of `D` is coprime to `p`. -/
 theorem isCoprime_prod_realizationUnit_filter (D : NikulinDecomposition A) (p : ℕ) :
     IsCoprime (p : ℤ)
-      ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.realizationUnit).prod := by
-  have h : ∀ {gs : List NikulinGenerator},
-      (∀ g ∈ gs, g.IsAdmissible ∧ g.prime = p) →
-      IsCoprime (p : ℤ) (gs.map NikulinGenerator.realizationUnit).prod := by
-    intro gs hgs
-    induction gs with
-    | nil => exact isCoprime_one_right
-    | cons g gs ih =>
-        obtain ⟨hadm, rfl⟩ := hgs g List.mem_cons_self
-        exact hadm.isCoprime_prime_realizationUnit.mul_right
-          (ih fun g' hg' ↦ hgs g' (List.mem_cons_of_mem g hg'))
-  exact h fun g hg ↦
-    ⟨D.isAdmissible g (List.mem_of_mem_filter hg), of_decide_eq_true (List.mem_filter.mp hg).2⟩
+      ((D.generators.filter fun g ↦ g.prime = p).map NikulinGenerator.realizationUnit).prod :=
+  NikulinGenerator.isCoprime_prod_realizationUnit_of_forall
+    (fun g hg ↦ D.isAdmissible g (List.mem_of_mem_filter hg))
+    (fun _ hg ↦ of_decide_eq_true (List.mem_filter.mp hg).2)
 
 /-- The product of `realizationDet` across the `p`-primary generators of `D` is nonzero. -/
 theorem prod_realizationDet_filter_ne_zero (D : NikulinDecomposition A) (p : ℕ) :
@@ -961,52 +967,43 @@ theorem hasCyclicTwoSummand_iff_exists_two_nsmul_eq_zero_and_quadratic_add_self_
     HasCyclicTwoSummand A ↔ ∃ x : A, 2 • x = 0 ∧ A.quadratic x + A.quadratic x ≠ 0 := by
   constructor
   · rintro ⟨θ, A', hθ, ⟨f⟩⟩
+    -- The carrier of `dyadicCyclic 1 θ` is definitionally `ZMod (2 ^ 1)`.
     let e : dyadicCyclic 1 θ := (1 : ZMod (2 ^ 1))
-    have h2 : (2 : ℕ) • (e, (0 : A')) = 0 := Prod.ext (ZMod.natCast_self 2) (nsmul_zero 2)
+    have h2e : (2 : ℕ) • e = 0 := by
+      rw [← pow_one 2, ← natCard_dyadicCyclic 1 θ]
+      exact card_nsmul_eq_zero'
+    have h2 : (2 : ℕ) • (e, (0 : A')) = 0 := Prod.ext h2e (nsmul_zero 2)
     refine ⟨f.symm (e, 0), by rw [← map_nsmul, h2, map_zero], ?_⟩
     rw [f.symm.map_app, prod_quadratic, map_zero, add_zero]
     exact dyadicCyclic_one_quadratic_add_self_ne_zero hθ
   · rintro ⟨x, hx, hq⟩
-    have hx0 : x ≠ 0 := by
-      rintro rfl
-      simp at hq
-    have hordx : addOrderOf x = 2 := by
-      simpa using addOrderOf_eq_prime_pow (p := 2) (n := 0) (hp := ⟨Nat.prime_two⟩)
-        (by simpa using hx0) (by simpa using hx)
     have hpair : A.toFiniteBilinearModule.pairing x x = -(A.quadratic x + A.quadratic x) := by
       rw [← A.polar_eq_pairing, QuadraticMap.polar, ← two_nsmul, hx, map_zero]
       abel
     have hpair0 : A.toFiniteBilinearModule.pairing x x ≠ 0 := by
       rw [hpair]
       exact neg_ne_zero.mpr hq
-    have h2pair : 2 • A.toFiniteBilinearModule.pairing x x = 0 := by
-      rw [← map_nsmul, hx, map_zero]
-    have hordp : addOrderOf (A.toFiniteBilinearModule.pairing x x) = 2 := by
-      simpa using addOrderOf_eq_prime_pow (p := 2) (n := 0) (hp := ⟨Nat.prime_two⟩)
-        (by simpa using hpair0) (by simpa using h2pair)
+    -- Since `2 • x = 0` and `b(x, x) ≠ 0`, `x` has order `2` and generates a nondegenerate cyclic
+    -- subgroup `H`.
+    have : Fact (2 : ℕ).Prime := ⟨Nat.prime_two⟩
+    have hx2 : (2 ^ (0 + 1)) • x = 0 := by simpa using hx
+    have hpair0' : (2 ^ 0) • A.toFiniteBilinearModule.pairing x x ≠ 0 := by simpa using hpair0
+    obtain ⟨hordx, hHndB⟩ :=
+      A.toFiniteBilinearModule.addOrderOf_eq_and_isNondegenerate_of_pairing hx2 hpair0'
     let H := AddSubgroup.zmultiples x
     have hHnd : (A.restrict H).IsNondegenerate := by
       rw [IsNondegenerate, restrict_toFiniteBilinearModule]
-      exact (A.toFiniteBilinearModule.isNondegenerate_restrict_zmultiples_iff x).mpr
-        (hordp.trans hordx.symm)
-    have hcardH : Nat.card (A.restrict H) = 2 ^ 1 := by
-      simpa [H] using (Nat.card_zmultiples x).trans hordx
+      exact hHndB
+    -- The carrier of `A.restrict H` is definitionally `H`.
+    have hcardH : Nat.card (A.restrict H) = 2 ^ 1 :=
+      show Nat.card H = 2 ^ 1 by rw [Nat.card_zmultiples x, hordx]
     have _ : IsAddCyclic (A.restrict H) := inferInstanceAs (IsAddCyclic H)
     obtain ⟨θ, hθ, ⟨fH⟩⟩ := exists_dyadicCyclic_isometry (A.restrict H) (k := 1) hcardH hHnd
+    -- Shrink the orthogonal complement to `Type 0`, since `HasCyclicTwoSummand` quantifies over
+    -- `FiniteQuadraticModule.{0}`.
     let B := A.restrict (A.toFiniteBilinearModule.orthogonalComplement H)
-    obtain ⟨n, ⟨eB⟩⟩ := Finite.exists_equiv_fin B
-    have _ : Small.{0} B := small_of_injective eB.injective
-    let e : Shrink.{0} B ≃ B := (equivShrink B).symm
-    let _ : AddCommGroup (Shrink.{0} B) := e.addCommGroup
-    let _ : Finite (Shrink.{0} B) := e.finite_iff.mpr inferInstance
-    let eAdd : Shrink.{0} B ≃+ B := e.addEquiv
-    let A' : FiniteQuadraticModule.{0} :=
-      ofQuadraticMap (B.quadratic.comp eAdd.toIntLinearEquiv.toLinearMap)
-    have fB : Isometry A' B :=
-      { toLinearEquiv := eAdd.toIntLinearEquiv
-        map_app' := fun _ ↦ rfl }
-    exact ⟨θ, A', hθ,
-      ⟨((fH.prod fB).trans (A.restrictProdOrthogonalComplementIsometry hHnd)).symm⟩⟩
+    exact ⟨θ, B.shrink, hθ,
+      ⟨((fH.prod B.shrinkIsometry).trans (A.restrictProdOrthogonalComplementIsometry hHnd)).symm⟩⟩
 
 /-- A module with a cyclic order-two dyadic summand has an element `x` with `2 • x = 0` and
 `q(x) + q(x) ≠ 0`. -/

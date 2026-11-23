@@ -257,14 +257,24 @@ theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] (n
   rwa [← h, MonoidHom.coe_toAdditive_range, MonoidHom.coe_toAdditive_ker,
     index_toAddSubgroup] at this
 
+/-- The subgroup of `n`-th powers in a product is the product of the subgroups of `n`-th
+powers. -/
+@[to_additive range_nsmulAddMonoidHom_prod
+  /-- The subgroup of `n`-multiples in a product is the product of the subgroups of
+  `n`-multiples. -/]
+theorem range_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
+    (powMonoidHom n : A × B →* A × B).range =
+      (powMonoidHom n : A →* A).range.prod (powMonoidHom n : B →* B).range := by
+  have : (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
+    ext x <;> simp
+  rw [this, MonoidHom.range_prodMap]
+
 /-- The index of the `n`-th powers in a product is the product of the indices. -/
 @[simp]
 theorem index_range_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
     (powMonoidHom n : A × B →* A × B).range.index =
       (powMonoidHom n : A →* A).range.index * (powMonoidHom n : B →* B).range.index := by
-  have : (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
-    ext x <;> simp
-  rw [this, MonoidHom.range_prodMap, index_prod]
+  rw [range_powMonoidHom_prod, index_prod]
 
 /-- The `n`-torsion of a product has cardinality the product of the cardinalities. -/
 theorem card_ker_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :

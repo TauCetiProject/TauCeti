@@ -511,10 +511,8 @@ theorem nonempty_isometry_dyadicU_dyadicV_iff (k : ℕ) :
     have hne : (2 : ℂ) = -2 := mul_left_cancel₀ h2 h
     norm_num at hne
   · rintro rfl
-    have : Subsingleton (dyadicU 0) :=
-      inferInstanceAs (Subsingleton (ZMod 1 × ZMod 1))
-    have : Subsingleton (dyadicV 0) :=
-      inferInstanceAs (Subsingleton (ZMod 1 × ZMod 1))
+    have := subsingleton_dyadicU_zero
+    have := subsingleton_dyadicV_zero
     exact ⟨Isometry.ofSubsingleton⟩
 
 end TauCeti.FiniteQuadraticModule

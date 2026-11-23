@@ -169,30 +169,23 @@ theorem rank_pi_eq_sup_of_coprime_card {ι : Type*} [Fintype ι] (M : ι → Typ
   simp_rw [AddGroup.rank_eq_spanFinrank]
   exact TauCeti.AddCommGroup.spanFinrank_pi_eq_sup_of_coprime_card M hcop
 
-private def prodAddEquivPiBool.{u} (F : Bool → Type u) [∀ b, AddCommGroup (F b)] :
-    (F true × F false) ≃+ ∀ b, F b where
-  toFun p b := match b with | true => p.1 | false => p.2
-  invFun f := (f true, f false)
-  left_inv _ := rfl
-  right_inv f := funext fun b ↦ by cases b <;> rfl
-  map_add' _ _ := funext fun b ↦ by cases b <;> rfl
-
 private theorem rank_prod_eq_max_of_coprime_card_aux.{u} {M N : Type u}
     [AddCommGroup M] [AddCommGroup N] [AddGroup.FG M] [AddGroup.FG N]
     (hcop : (Nat.card M).Coprime (Nat.card N)) :
     AddGroup.rank (M × N) = max (AddGroup.rank M) (AddGroup.rank N) := by
-  let F : Bool → Type u := fun b ↦ match b with | true => M | false => N
-  let _ : ∀ b, AddCommGroup (F b) := fun b ↦ by cases b <;> dsimp [F] <;> infer_instance
-  have : ∀ b, AddGroup.FG (F b) := fun b ↦ by cases b <;> dsimp [F] <;> infer_instance
+  let F : Fin 2 → Type u := fun i ↦ match i with | 0 => M | 1 => N
+  let _ : ∀ i, AddCommGroup (F i) := fun i ↦ match i with | 0 => inferInstance | 1 => inferInstance
+  have : ∀ i, AddGroup.FG (F i) := fun i ↦ match i with | 0 => inferInstance | 1 => inferInstance
   have hF : Pairwise fun i j ↦ (Nat.card (F i)).Coprime (Nat.card (F j)) := by
     intro i j hij
-    cases i <;> cases j
-    · exact (hij rfl).elim
-    · exact hcop.symm
-    · exact hcop
-    · exact (hij rfl).elim
-  rw [AddGroup.rank_congr (prodAddEquivPiBool F), rank_pi_eq_sup_of_coprime_card F hF]
-  have huniv : (Finset.univ : Finset Bool) = {true, false} := by decide
+    match i, j with
+    | 0, 0 => exact (hij rfl).elim
+    | 0, 1 => exact hcop
+    | 1, 0 => exact hcop.symm
+    | 1, 1 => exact (hij rfl).elim
+  have e : (M × N) ≃+ ∀ i, F i := (LinearEquiv.piFinTwo ℤ F).symm.toAddEquiv
+  rw [AddGroup.rank_congr e, rank_pi_eq_sup_of_coprime_card F hF]
+  have huniv : (Finset.univ : Finset (Fin 2)) = {0, 1} := by decide
   rw [huniv, Finset.sup_insert, Finset.sup_singleton]
 
 /-- For two finitely generated abelian groups of coprime orders, `AddGroup.rank (M × N)` is the
@@ -224,13 +217,15 @@ theorem rank_prod_zmod (m n : ℕ) :
       AddGroup.rank_zmod, AddGroup.rank_zmod]
     split_ifs <;> simp_all
   · obtain ⟨p, hp, hp_dvd⟩ := Nat.exists_prime_and_dvd hcop
-    have hdvd : ∀ b : Bool, p ∣ cond b m n := by
-      rintro (_ | _)
-      · exact hp_dvd.trans (Nat.gcd_dvd_right m n)
-      · exact hp_dvd.trans (Nat.gcd_dvd_left m n)
-    have e : (ZMod m × ZMod n) ≃+ ∀ b : Bool, ZMod (cond b m n) :=
-      prodAddEquivPiBool (fun b : Bool ↦ ZMod (cond b m n))
-    rw [AddGroup.rank_congr e, AddGroup.rank_pi_zmod _ hp hdvd, Fintype.card_bool]
+    let F : Fin 2 → ℕ := fun i ↦ match i with | 0 => m | 1 => n
+    have hdvd : ∀ i : Fin 2, p ∣ F i := by
+      intro i
+      match i with
+      | 0 => exact hp_dvd.trans (Nat.gcd_dvd_left m n)
+      | 1 => exact hp_dvd.trans (Nat.gcd_dvd_right m n)
+    have e : (ZMod m × ZMod n) ≃+ ∀ i : Fin 2, ZMod (F i) :=
+      (LinearEquiv.piFinTwo ℤ (fun i : Fin 2 ↦ ZMod (F i))).symm.toAddEquiv
+    rw [AddGroup.rank_congr e, AddGroup.rank_pi_zmod _ hp hdvd, Fintype.card_fin]
 
 /-- For prime `p` and `k₁, k₂ > 0`, `ZMod (p ^ k₁) × ZMod (p ^ k₂)` has generator rank `2`. -/
 theorem rank_prod_zmod_prime_pow {p k₁ k₂ : ℕ} (hp : p.Prime) (hk₁ : 0 < k₁) (hk₂ : 0 < k₂) :
