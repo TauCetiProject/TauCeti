@@ -160,13 +160,10 @@ private theorem ciInf_sum_filter_lt_distErr_prod_eq_lex
         ∑ p : (U ×ₗ ι) × (U ×ₗ ι) with p.1 < p.2,
           distErr (if (ofLex p.1).1 = (ofLex p.2).1 then 1 else α (ofLex p.1).1 (ofLex p.2).1)
             (β p.1 * (β p.2)⁻¹) := by
-  let γ₀ : Cochain (TwoComplex.complete (U ×ₗ ι)) (Perm (Fin n)) :=
-    Cochain.ofFn (TwoComplex.complete (U ×ₗ ι))
-      (fun x y => if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1)
-      fun x y _ => by
-        by_cases h1 : (ofLex x).1 = (ofLex y).1
-        · simp [h1]
-        · simp [h1, Ne.symm h1, hα _ _ h1]
+  let base : Cochain (TwoComplex.complete U) (Perm (Fin n)) :=
+    Cochain.ofFn (TwoComplex.complete U) α fun u v huv =>
+      hα u v ((TwoComplex.adj_complete u v).mp huv)
+  let γ₀ : Cochain (TwoComplex.complete (U ×ₗ ι)) (Perm (Fin n)) := base.replicate ι
   have hrel := γ₀.ciInf_costErr_relabelComplete (e.trans toLex).symm m
   have hL (β : V → Perm (Fin m)) :
       (γ₀.relabelComplete (e.trans toLex).symm).costErr β =
@@ -174,24 +171,26 @@ private theorem ciInf_sum_filter_lt_distErr_prod_eq_lex
           distErr (if (e p.1).1 = (e p.2).1 then 1 else α (e p.1).1 (e p.2).1)
             (β p.1 * (β p.2)⁻¹) := by
     rw [Cochain.costErr_complete]
-    refine sum_congr rfl fun p hp => ?_
-    have hne : toLex (e p.1) ≠ toLex (e p.2) :=
-      toLex.injective.ne (e.injective.ne (mem_filter.mp hp).2.ne)
+    refine sum_congr rfl fun p _ => ?_
     rw [Cochain.relabelComplete_apply, symm_symm]
     simp only [trans_apply]
     dsimp only [γ₀]
-    rw [Cochain.ofFn_apply_of_adj _ ((TwoComplex.adj_complete _ _).mpr hne)]
-    simp only [ofLex_toLex]
-    by_cases h : (e p.1).1 = (e p.2).1 <;> simp [h]
+    rw [Cochain.replicate_apply, ofLex_toLex, ofLex_toLex]
+    by_cases h : (e p.1).1 = (e p.2).1
+    · simp [h]
+    · simp [h, base, TwoComplex.adj_complete]
   have hR (β : (U ×ₗ ι) → Perm (Fin m)) :
       γ₀.costErr β =
         ∑ p : (U ×ₗ ι) × (U ×ₗ ι) with p.1 < p.2,
           distErr (if (ofLex p.1).1 = (ofLex p.2).1 then 1 else α (ofLex p.1).1 (ofLex p.2).1)
             (β p.1 * (β p.2)⁻¹) := by
     rw [Cochain.costErr_complete]
-    refine sum_congr rfl fun p hp => ?_
+    refine sum_congr rfl fun p _ => ?_
     dsimp only [γ₀]
-    rw [Cochain.ofFn_apply_of_adj _ ((TwoComplex.adj_complete _ _).mpr (mem_filter.mp hp).2.ne)]
+    rw [Cochain.replicate_apply]
+    by_cases h : (ofLex p.1).1 = (ofLex p.2).1
+    · simp [h]
+    · simp [h, base, TwoComplex.adj_complete]
   simp only [hL, hR] at hrel
   exact hrel
 
@@ -426,24 +425,12 @@ theorem ciInf_costErr_le_of_le_card_div_add_one (α : Cochain X (Perm (Fin n)))
   rcases eq_or_ne m n with rfl | hmn
   · exact le_rfl
   · refine le_ciInf fun β => hle.trans ?_
-    have hattach :
-        (∑ e ∈ X.edges.attach,
-            distErr
-              (α (X.exists_vertices_of_mem_edges e.property).choose
-                (X.exists_vertices_of_mem_edges e.property).choose_spec.choose)
-              (β (X.exists_vertices_of_mem_edges e.property).choose *
-                (β (X.exists_vertices_of_mem_edges e.property).choose_spec.choose)⁻¹)) =
-          α.costErr β := by
-      rw [costErr_def, ← sum_attach X.edges]
-      refine sum_congr rfl fun e _ => ?_
-      obtain ⟨huv, hu, hv⟩ := (X.exists_vertices_of_mem_edges e.property).choose_spec.choose_spec
-      exact (α.edgeCostErr_of_mem_edges β e.property huv hu hv).symm
-    rw [← hattach]
-    simpa using X.edges.attach.card_div_add_one_le_sum_distErr_of_ne
-      (fun e => α (X.exists_vertices_of_mem_edges e.property).choose
-        (X.exists_vertices_of_mem_edges e.property).choose_spec.choose)
-      (fun e => β (X.exists_vertices_of_mem_edges e.property).choose *
-        (β (X.exists_vertices_of_mem_edges e.property).choose_spec.choose)⁻¹) hmn.symm
+    rw [show (#X.edges : ℝ) / ((n : ℝ) + 1) = ∑ _ ∈ X.edges, (1 : ℝ) / ((n : ℝ) + 1) by
+      rw [sum_const, nsmul_eq_mul, mul_one_div], costErr_def]
+    refine sum_le_sum fun e he => ?_
+    obtain ⟨u, v, huv, hu, hv⟩ := X.exists_vertices_of_mem_edges he
+    rw [α.edgeCostErr_of_mem_edges β he huv hu hv]
+    exact one_div_add_one_le_distErr_of_ne (α u v) (β u * (β v)⁻¹) hmn.symm
 
 /-- When `2 ≤ n` and the equal-degree `costErr` infimum on `X` is at most `#X.edges / (n + 1)`,
 `α.gaugeDistErr` equals the equal-degree `costErr` infimum. -/
@@ -484,11 +471,12 @@ end CochainThreshold
 
 section StarAndReplication
 
-variable {V ι : Type*} [Fintype V] [LinearOrder V] {n m : ℕ}
+variable {V : Type*} [Fintype V] {n : ℕ}
 
 /-- Cross-degree star bound in counting form: for `2 ≤ n` and any degree-`n` cochain `α` on
 `complete V`, `Fintype.card V * α.gaugeDistErr ≤ 3 * (α.defect (movedNorm (Fin n)) / n)`. -/
-theorem card_mul_gaugeDistErr_le (α : Cochain (complete V) (Perm (Fin n))) (hn : 2 ≤ n) :
+theorem card_mul_gaugeDistErr_le [LinearOrder V]
+    (α : Cochain (complete V) (Perm (Fin n))) (hn : 2 ≤ n) :
     (Fintype.card V : ℝ) * α.gaugeDistErr ≤ 3 * (α.defect (movedNorm (Fin n)) / n) := by
   have hn_pos : (0 : ℝ) < n := by positivity
   have hgd : (Fintype.card V : ℝ) * α.gaugeDistErr ≤
@@ -504,18 +492,24 @@ theorem card_mul_gaugeDistErr_le (α : Cochain (complete V) (Perm (Fin n))) (hn 
 
 /-- Pointwise cross-degree star bound for a degree-`n` cochain (`2 ≤ n`) at positive
 `gaugeDistErr`. -/
-theorem card_div_three_le_defect_div_gaugeDistErr {α : Cochain (complete V) (Perm (Fin n))}
-    (hn : 2 ≤ n) (hα : 0 < α.gaugeDistErr) :
+theorem card_div_three_le_defect_div_gaugeDistErr [LinearOrder V]
+    {α : Cochain (complete V) (Perm (Fin n))} (hn : 2 ≤ n) (hα : 0 < α.gaugeDistErr) :
     (Fintype.card V : ℝ) / 3 ≤ α.defect (movedNorm (Fin n)) / n / α.gaugeDistErr := by
   rw [div_le_div_iff₀ (by norm_num : (0 : ℝ) < 3) hα, mul_comm _ (3 : ℝ)]
   exact α.card_mul_gaugeDistErr_le hn
 
+variable {ι : Type*} [Fintype ι]
+
 /-- Degree-`m` cross-degree cost infimum of `α.replicate ι` on `complete (V ×ₗ ι)`. -/
-theorem ciInf_costErr_replicate [Fintype ι] [LinearOrder ι]
+theorem ciInf_costErr_replicate
     (α : Cochain (complete V) (Perm (Fin n))) (m : ℕ) :
     (⨅ β : (V ×ₗ ι) → Perm (Fin m), (α.replicate ι).costErr β) =
       (Fintype.card V * (Fintype.card ι).choose 2 : ℕ) * (1 - (min n m : ℝ) / max n m) +
         (Fintype.card ι : ℝ) ^ 2 * ⨅ β₀ : V → Perm (Fin m), α.costErr β₀ := by
+  let _ : LinearOrder V :=
+    LinearOrder.lift' (Fintype.equivFin V) (Fintype.equivFin V).injective
+  let _ : LinearOrder ι :=
+    LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   have hL (β : (V ×ₗ ι) → Perm (Fin m)) :
       (α.replicate ι).costErr β =
         ∑ p ∈ ({q : (V ×ₗ ι) × (V ×ₗ ι) | q.1 < q.2} : Finset ((V ×ₗ ι) × (V ×ₗ ι))),
@@ -529,7 +523,7 @@ theorem ciInf_costErr_replicate [Fintype ι] [LinearOrder ι]
   exact ciInf_sum_distErr_lex (V := V) (ι := ι) α m
 
 /-- Replication multiplies the degree-`m` `costErr` infimum by at least `Fintype.card ι ^ 2`. -/
-theorem card_sq_mul_ciInf_costErr_le_replicate [Fintype ι] [LinearOrder ι]
+theorem card_sq_mul_ciInf_costErr_le_replicate
     (α : Cochain (complete V) (Perm (Fin n))) (m : ℕ) :
     (Fintype.card ι : ℝ) ^ 2 * (⨅ β₀ : V → Perm (Fin m), α.costErr β₀) ≤
       ⨅ β : (V ×ₗ ι) → Perm (Fin m), (α.replicate ι).costErr β := by
@@ -538,7 +532,7 @@ theorem card_sq_mul_ciInf_costErr_le_replicate [Fintype ι] [LinearOrder ι]
 
 /-- In equal nonzero degree `n`, balanced replication multiplies the `costErr` infimum by
 `Fintype.card ι ^ 2`. -/
-theorem ciInf_costErr_replicate_eq [Fintype ι] [LinearOrder ι] [NeZero n]
+theorem ciInf_costErr_replicate_eq [NeZero n]
     (α : Cochain (complete V) (Perm (Fin n))) :
     (⨅ β : (V ×ₗ ι) → Perm (Fin n), (α.replicate ι).costErr β) =
       (Fintype.card ι : ℝ) ^ 2 * ⨅ β₀ : V → Perm (Fin n), α.costErr β₀ := by
@@ -547,7 +541,7 @@ theorem ciInf_costErr_replicate_eq [Fintype ι] [LinearOrder ι] [NeZero n]
 /-- Whenever a degree-`n` cochain (`2 ≤ n`) on `complete V` attains its `gaugeDistErr` at its own
 degree `n`, its replication `α.replicate ι` also attains `gaugeDistErr` at degree `n`, with value
 multiplied by `Fintype.card ι ^ 2`. -/
-theorem gaugeDistErr_replicate_of_forall_le [Fintype ι] [LinearOrder ι]
+theorem gaugeDistErr_replicate_of_forall_le
     (α : Cochain (complete V) (Perm (Fin n))) (hn : 2 ≤ n)
     (hmin : ∀ m : ℕ,
       (⨅ β₀ : V → Perm (Fin n), α.costErr β₀) ≤ ⨅ β₀ : V → Perm (Fin (m + 2)), α.costErr β₀) :
@@ -587,7 +581,7 @@ end StarAndReplication
 
 section CochainStaircase
 
-variable {V : Type*} [Fintype V] [LinearOrder V] {q t m : ℕ}
+variable {V : Type*} [Fintype V] {q t m : ℕ}
 
 /-- On `Fintype.card V = q * (2 * t + 1)` vertices with `1 ≤ q` and `1 ≤ t`, the degree-`m`
 (`m ≠ 3`) `costErr` infimum of any degree-`3` cochain on `complete V` strictly exceeds
@@ -596,13 +590,15 @@ theorem sq_mul_mul_add_one_div_three_lt_ciInf_costErr_three_of_ne
     (hcard : Fintype.card V = q * (2 * t + 1)) (hq : 1 ≤ q) (ht : 1 ≤ t)
     (α : Cochain (complete V) (Perm (Fin 3))) (hm : m ≠ 3) :
     (q : ℝ) ^ 2 * t * (t + 1) / 3 < ⨅ β : V → Perm (Fin m), α.costErr β := by
+  let _ : LinearOrder V :=
+    LinearOrder.lift' (Fintype.equivFin V) (Fintype.equivFin V).injective
   simp_rw [costErr_complete]
   exact sq_mul_mul_add_one_div_three_lt_ciInf_sum_distErr_three_of_ne hcard hq ht α hm
 
 /-- For every `q, t : ℕ`, if `Fintype.card V = q * (2 * t + 1)` and `α` is a degree-`3` cochain on
 `complete V` with `α.gaugeDist (movedNorm (Fin 3)) ≤ q ^ 2 * t * (t + 1)`, then
 `α.gaugeDistErr = α.gaugeDist (movedNorm (Fin 3)) / 3`. -/
-theorem gaugeDistErr_eq_gaugeDist_div_three_of_card_eq
+theorem gaugeDistErr_eq_gaugeDist_div_three_of_card_eq [LinearOrder V]
     (hcard : Fintype.card V = q * (2 * t + 1)) (α : Cochain (complete V) (Perm (Fin 3)))
     (hle : α.gaugeDist (movedNorm (Fin 3)) ≤ (q : ℝ) ^ 2 * t * (t + 1)) :
     α.gaugeDistErr = α.gaugeDist (movedNorm (Fin 3)) / 3 := by
