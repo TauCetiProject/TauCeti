@@ -53,9 +53,10 @@ increase along their nonzero coefficients (the results named `_of_lt`). Otherwis
   homomorphism, and homotopic homomorphisms (`∂H = F + G`) induce homotopic homomorphisms, with
   homotopy `P ⊠ H`.
 
-The composite `(P ⊠ F) * (P ⊠ G)` agrees with `P ⊠ (F * G)` only up to homotopy, and `P ⊠ –`
-sends the identity morphism to the identity only for strictly unital bimodules; neither is treated
-here.
+The composite `(P ⊠ F) * (P ⊠ G)` agrees with `P ⊠ (F * G)` only up to homotopy, which is the
+subject of `TauCeti.LowDimTopology.Bordered.TypeDA.Composition`. The functor `P ⊠ –` sends the
+identity morphism to the identity only for strictly unital bimodules, over the idempotents; see
+`TauCeti.LowDimTopology.Bordered.TypeDA.Invariance`.
 
 ## Main definitions
 
@@ -69,6 +70,8 @@ here.
   `TauCeti.TypeDAStructure.boxMorphism_eq_sum_of_lt`: `P ⊠ F` as a finite sum over paths.
 * `TauCeti.TypeDAStructure.typeABoxMap_boxModule_apply_of_coeff_eq_zero` and
   `TauCeti.TypeDAStructure.typeABoxMap_boxModule_apply_of_lt`: `(M ⊠ P) ⊠ F = M ⊠ (P ⊠ F)`.
+* `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule_single`: the box tensor differential of
+  `B ⊠ P` sends the generator `1 ⊗ p` to the row of `P ⊠ N` at `p`.
 * `TauCeti.TypeDAStructure.morphismDifferential_boxMorphism_of_coeff_eq_zero` and
   `TauCeti.TypeDAStructure.morphismDifferential_boxMorphism_of_lt`: `∂(P ⊠ F) = P ⊠ ∂F`.
 * `TauCeti.TypeDAStructure.morphismDifferential_boxMorphism_eq_zero_of_coeff_eq_zero`,
@@ -358,6 +361,42 @@ section Differential
 
 variable [CharP R 2]
 
+/-- **The map induced by a matrix on a generator of `B ⊠ P`.** For the type `A` module `B ⊠ P` of
+the differential algebra `B` over itself, if associativity `(B ⊠ P) ⊠ F = B ⊠ (P ⊠ F)` holds for a
+matrix `F` from `N` to `N'`, the map induced by `F` sends the generator `1 ⊗ p` of `B ⊠ (P ⊠ N)`,
+the row vector supported at `p` with value `1`, to the row of `P ⊠ F` at `p`. -/
+theorem typeABoxMap_boxModule_single [DecidableEq Y] (hdB : IsUngradedDGAlgebra dB)
+    (F : Matrix X X' A)
+    (hassoc : ∀ (φ : X → Y → B) (z : X') (y' : Y),
+      TypeDStructure.typeABoxMap N N' (P.boxModule hdB.isUngradedDGRightModule) F φ z y' =
+        continuationMap R B (P.boxMorphism N N' F) (fun p => φ p.2 p.1) (y', z))
+    (p : Y × X) :
+    TypeDStructure.typeABoxMap N N' (P.boxModule hdB.isUngradedDGRightModule) F
+        (fun x y => Pi.single (M := fun _ : Y × X => B) p 1 (y, x)) =
+      fun z y' => P.boxMorphism N N' F p (y', z) := by
+  funext z y'
+  rw [hassoc]
+  simp only [Prod.mk.eta]
+  rw [continuationMap_single_apply (R := R) (M := B) (P.boxMorphism N N' F), op_smul_eq_mul,
+    one_mul]
+
+/-- **The box tensor differential of `B ⊠ P` on a generator.** For the type `A` module `B ⊠ P` of
+the differential algebra `B` over itself, the box tensor differential with `N` sends the generator
+`1 ⊗ p` of `B ⊠ (P ⊠ N)`, the row vector supported at `p` with value `1`, to the row of the
+coefficient matrix of `P ⊠ N` at `p`. -/
+theorem typeABoxDifferential_boxModule_single [DecidableEq Y] (hdB : IsUngradedDGAlgebra dB)
+    (hN : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) (p : Y × X) :
+    N.typeABoxDifferential (P.boxModule hdB.isUngradedDGRightModule)
+        (fun x y => Pi.single (M := fun _ : Y × X => B) p 1 (y, x)) =
+      fun x y => P.boxCoeff N p (y, x) := by
+  funext x y
+  rw [P.typeABoxDifferential_boxModule_apply N _ hN]
+  simp only [Prod.mk.eta]
+  rw [continuationMap_single_apply (R := R) (M := B) (P.boxCoeff N), op_smul_eq_mul, one_mul]
+  rcases eq_or_ne (y, x) p with hp | hp
+  · rw [hp, Pi.single_eq_same, hdB.map_one, zero_add]
+  · rw [Pi.single_eq_of_ne hp, map_zero, zero_add]
+
 /-- The core of `TauCeti.TypeDAStructure.morphismDifferential_boxMorphism_of_coeff_eq_zero` and
 `TauCeti.TypeDAStructure.morphismDifferential_boxMorphism_of_lt`: the identity
 `∂' ∘ T_F + T_F ∘ ∂ = T_{∂F}` for the type `A` module `B ⊠ P`, read on the generators `1 ⊗ p`
@@ -382,26 +421,15 @@ private theorem morphismDifferential_boxMorphism_of_assoc (hdB : IsUngradedDGAlg
   have hB := hdB.isUngradedDGRightModule
   ext p q
   -- The generator `1 ⊗ p` of `B ⊠ (P ⊠ N)`, as a row vector of `B ⊠ P` over `N`.
-  set e : X → Y → B := fun x y => Pi.single (M := fun _ : Y × X => B) p 1 (y, x) with he
-  have hsingle : (fun q : Y × X => e q.2 q.1) = Pi.single p 1 := by
-    funext q
-    simp [he]
+  set e : X → Y → B := fun x y => Pi.single (M := fun _ : Y × X => B) p 1 (y, x)
   -- The map induced by `G` sends it to the row of `P ⊠ G` at `p`.
   have hmap (G : Matrix X X' A) :
       TypeDStructure.typeABoxMap N N' (P.boxModule hB) G e =
-        fun z y' => P.boxMorphism N N' G p (y', z) := by
-    funext z y'
-    rw [hassoc, hsingle, continuationMap_single_apply (R := R) (M := B) (P.boxMorphism N N' G),
-      op_smul_eq_mul, one_mul]
+        fun z y' => P.boxMorphism N N' G p (y', z) :=
+    P.typeABoxMap_boxModule_single N N' hdB G (hassoc G) p
   -- The box tensor differential sends it to the row of `P ⊠ N` at `p`.
-  have hrow : N.typeABoxDifferential (P.boxModule hB) e = fun x y => P.boxCoeff N p (y, x) := by
-    funext x y
-    rw [P.typeABoxDifferential_boxModule_apply N hB hN, hsingle,
-      continuationMap_single_apply (R := R) (M := B) (P.boxCoeff N), op_smul_eq_mul, one_mul]
-    simp only [he]
-    rcases eq_or_ne (y, x) p with hp | hp
-    · rw [hp, Pi.single_eq_same, hdB.map_one, zero_add]
-    · rw [Pi.single_eq_of_ne hp, map_zero, zero_add]
+  have hrow : N.typeABoxDifferential (P.boxModule hB) e = fun x y => P.boxCoeff N p (y, x) :=
+    P.typeABoxDifferential_boxModule_single N hdB hN p
   have h₀ := congrFun (congrFun (htypeA e) q.2) q.1
   rw [hmap, hrow, hmap, Pi.add_apply, Pi.add_apply,
     P.typeABoxDifferential_boxModule_apply N' hB hN', hassoc,
