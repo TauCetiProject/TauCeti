@@ -64,26 +64,8 @@ and `Y.ofRestrict (g⁻¹(V))`. -/
 theorem isPullback_restrictPreimage (g : Y ⟶ S) (V : Opens S.obj) :
     IsPullback (restrictPreimage g V) (Y.ofRestrict ((Opens.map g.hom.base).obj V))
       (S.ofRestrict V) g := by
-  refine { w := restrictPreimage_ofRestrict g V
-           isLimit' := ⟨PullbackCone.isLimitAux' _ fun s ↦ ?_⟩ }
-  have hrange : Set.range s.snd.hom.base ⊆
-      Set.range (Y.obj.ofRestrict ((Opens.map g.hom.base).obj V).isOpenEmbedding).base := by
-    rintro _ ⟨w, rfl⟩
-    have hw : (s.fst ≫ S.ofRestrict V).hom.base w = (s.snd ≫ g).hom.base w :=
-      congrArg (fun k : s.pt ⟶ S ↦ k.hom.base w) s.condition
-    simp only [ObjectProperty.FullSubcategory.comp_hom, PreAdicSpace.comp_base, ofRestrict_base,
-      TopCat.coe_comp, Function.comp_apply] at hw
-    exact ⟨⟨s.snd.hom.base w, Opens.mem_map.mpr (hw ▸ (s.fst.hom.base w).property)⟩, rfl⟩
-  let m : s.pt ⟶ Y.restrict ((Opens.map g.hom.base).obj V) :=
-    ObjectProperty.homMk (PreAdicSpace.IsOpenImmersion.lift _ s.snd.hom hrange)
-  have hm₂ : m ≫ Y.ofRestrict ((Opens.map g.hom.base).obj V) = s.snd := by
-    ext1
-    rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, ofRestrict_hom]
-    exact PreAdicSpace.IsOpenImmersion.lift_fac _ _ _
-  have hm₁ : m ≫ restrictPreimage g V = s.fst := by
-    rw [← cancel_mono (S.ofRestrict V), Category.assoc, restrictPreimage_ofRestrict,
-      ← Category.assoc, hm₂, s.condition]
-  exact ⟨m, hm₁, hm₂, fun {m'} _ h₂ ↦ (cancel_mono (Y.ofRestrict _)).mp (h₂.trans hm₂.symm)⟩
+  refine isPullback_of_isOpenImmersion _ _ _ _ (restrictPreimage_ofRestrict g V) ?_
+  rw [range_ofRestrict, range_ofRestrict, Opens.map_coe]
 
 /-- **Restricting a pullback square in `AdicSpace` to a product of open subspaces**: the open
 subspace `Z|_{p⁻¹(U) ∩ q⁻¹(W)}` of the vertex `Z` of a pullback square `IsPullback p q f g` is a
@@ -241,17 +223,5 @@ theorem range_pullback_fst_of_isOpenImmersion_right (f : X ⟶ S) (i : Y ⟶ S)
     range_pullback_snd_of_isOpenImmersion_left]
   exact (TopCat.homeoOfIso (PreAdicSpace.forgetToTop.mapIso
     ((ObjectProperty.ι PreAdicSpace.isAdic).mapIso (pullbackSymmetry f i)))).surjective
-
-/-- The restriction of an isomorphism of adic spaces over an open is an isomorphism. -/
-instance isIso_restrictPreimage (g : Y ⟶ S) [IsIso g] (V : Opens S.obj) :
-    IsIso (restrictPreimage g V) :=
-  (isPullback_restrictPreimage g V).isIso_fst_of_isIso
-
-/-- The restriction of an open immersion of adic spaces over an open is an open immersion. -/
-instance isOpenImmersion_restrictPreimage (g : Y ⟶ S) [PreAdicSpace.IsOpenImmersion g.hom]
-    (V : Opens S.obj) : PreAdicSpace.IsOpenImmersion (restrictPreimage g V).hom := by
-  rw [restrictPreimage_hom]
-  -- `Y.restrict` unfolds to `Y.obj.restrict` only at default transparency
-  exact inferInstanceAs (PreAdicSpace.IsOpenImmersion (g.hom.restrictPreimage V))
 
 end TauCeti.AdicSpace

@@ -554,6 +554,22 @@ theorem restrictPreimage_comp (g : Y ⟶ Z) (W : Opens Z.obj) :
       restrictPreimage f ((Opens.map g.hom.base).obj W) ≫ restrictPreimage g W :=
   (restrictPreimage_uniq _ _ _ (by simp)).symm
 
+/-- The restriction of an isomorphism of adic spaces over an open is an isomorphism. -/
+instance isIso_restrictPreimage [IsIso f] : IsIso (restrictPreimage f V) := by
+  have : IsIso f.hom := inferInstanceAs (IsIso ((ObjectProperty.ι PreAdicSpace.isAdic).map f))
+  have : IsIso ((ObjectProperty.ι PreAdicSpace.isAdic).map (restrictPreimage f V)) := by
+    rw [ObjectProperty.ι_map, restrictPreimage_hom]
+    -- `AdicSpace.restrict` unfolds to `PreAdicSpace.restrict` only at default transparency
+    exact inferInstanceAs (IsIso (f.hom.restrictPreimage V))
+  exact isIso_of_fully_faithful (ObjectProperty.ι PreAdicSpace.isAdic) _
+
+/-- The restriction of an open immersion of adic spaces over an open is an open immersion. -/
+instance isOpenImmersion_restrictPreimage [PreAdicSpace.IsOpenImmersion f.hom] :
+    PreAdicSpace.IsOpenImmersion (restrictPreimage f V).hom := by
+  rw [restrictPreimage_hom]
+  -- `AdicSpace.restrict` unfolds to `PreAdicSpace.restrict` only at default transparency
+  exact inferInstanceAs (PreAdicSpace.IsOpenImmersion (f.hom.restrictPreimage V))
+
 end RestrictPreimage
 
 end AdicSpace
