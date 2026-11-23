@@ -51,6 +51,9 @@ sequence of curved modules.
 * `TauCeti.CurvedDGRightModuleCat.AbsoluteDerivedCategory.isIso_Q_map_iff`: a closed morphism
   becomes an isomorphism in the absolute derived category if and only if its mapping cone is
   absolutely acyclic.
+* `TauCeti.CurvedDGRightModuleCat.CoderivedCategory.isIso_Q_map_iff`: a closed morphism
+  becomes an isomorphism in the coderived category if and only if its mapping cone is
+  coacyclic.
 * `TauCeti.CurvedDGRightModuleCat.ContraderivedCategory.isIso_Q_map_iff`: a closed morphism
   becomes an isomorphism in the contraderived category if and only if its mapping cone is
   contraacyclic.
@@ -146,6 +149,17 @@ noncomputable abbrev Q :
 theorem isZero_Q_obj {X : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)}
     (hX : coacyclic R h X) : IsZero ((Q R h).obj X) :=
   ObjectProperty.TrWLocalization.isZero_obj _ _ hX
+
+/-- A closed morphism becomes an isomorphism in the coderived category if and only if its
+mapping cone is coacyclic. -/
+theorem isIso_Q_map_iff {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    IsIso ((Q R h).map ((dgClosedToHomotopy R).map f)) ↔
+      coacyclic R h (DGHomotopyCategory.of R (cone f)) :=
+  (Triangle.isZero₃_iff_isIso₁ _
+    ((Q R h).map_distinguished _ (coneTriangle_distinguished f))).symm.trans
+      (ObjectProperty.TrWLocalization.isZero_obj_iff _ (Q R h) _)
 
 end CoderivedCategory
 

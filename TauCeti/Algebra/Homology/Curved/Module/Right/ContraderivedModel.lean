@@ -38,9 +38,10 @@ has projective dimension at most `d`. Given any curved right module `M`:
    `Q ⟶ M` with contraacyclic cone.
 
 Combining full faithfulness with this replacement yields the triangulated equivalence
-`(gradedProjective R h).FullSubcategory ≌ ContraderivedCategory R h`. In particular, the
-equivalence holds whenever the abelian category of graded right `A`-modules has finite global
-dimension.
+`(gradedProjective R h).FullSubcategory ≌ ContraderivedCategory R h`. When every graded right
+`A`-module has finite projective dimension (for instance when the graded right global dimension is
+finite), the equivalence already holds by `ContraderivedCategory.isEquivalence_ι_comp_Q` in
+`Graded.Projective.Model`.
 
 ## Main definitions
 
@@ -58,8 +59,6 @@ dimension.
 * `TauCeti.CurvedDGRightModuleCat.ContraderivedCategory.isEquivalence_gradedProjective_ι_comp_Q`:
   Positselski's Theorem 7.9(b), asserting that `(gradedProjective R h).ι ⋙ Q` is an equivalence
   under condition `(**)`.
-* `TauCeti.CurvedDGRightModuleCat.ContraderivedCategory.isEquivalence_of_hasProjectiveDimensionLE`:
-  the specialization to graded algebras of finite right graded global dimension.
 
 ## References
 
@@ -185,16 +184,6 @@ theorem gradedProjectiveEquivalenceOfCountable_functor
     (gradedProjectiveEquivalenceOfCountable R h hprod).functor =
       (gradedProjective R h).ι ⋙ Q R h :=
   (rfl)
-
-variable (R h) in
-/-- If the abelian category of graded right `A`-modules has finite global dimension `≤ d`, then
-the contraderived localization functor restricts to an equivalence from graded-projective curved
-right modules to the contraderived category. -/
-theorem isEquivalence_of_hasProjectiveDimensionLE (d : ℕ)
-    (hd : ∀ X : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece,
-      HasProjectiveDimensionLE X d) :
-    ((gradedProjective R h).ι ⋙ Q R h).IsEquivalence :=
-  isEquivalence_gradedProjective_ι_comp_Q R h ⟨d, fun P _ ↦ hd (∏ᶜ P)⟩
 
 /-- The restriction of the contraderived localization functor to graded-projective curved right
 modules is a triangle functor. -/
