@@ -6,10 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
-public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
-public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
-import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 /-!
@@ -85,29 +81,32 @@ variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 /-- On a complete real inner product space, `toContinuousMultilinearMap E j` is surjective. -/
 theorem toContinuousMultilinearMap_surjective :
     (j : ℕ) → Function.Surjective (toContinuousMultilinearMap E j)
-  | 0 => fun M => by
-      refine ⟨(InnerProductSpace.toDual ℝ E).symm (continuousMultilinearCurryFin1 ℝ E ℝ M), ?_⟩
-      ext m
-      rw [toContinuousMultilinearMap_apply, evalL_zero_apply, real_inner_comm,
-        InnerProductSpace.toDual_symm_apply, continuousMultilinearCurryFin1_apply]
-      congr 1
-      ext i
-      fin_cases i
-      rfl
-  | j + 1 => fun M => by
+  | 0 => by
+      have h : ⇑(toContinuousMultilinearMap E 0) =
+          ⇑(continuousMultilinearCurryFin1 ℝ E ℝ).symm ∘ ⇑(InnerProductSpace.toDual ℝ E) := by
+        ext G m
+        rw [Function.comp_apply, continuousMultilinearCurryFin1_symm_apply,
+          toContinuousMultilinearMap_apply, evalL_zero_apply, real_inner_comm,
+          InnerProductSpace.toDual_apply_apply]
+      rw [h]
+      exact (continuousMultilinearCurryFin1 ℝ E ℝ).symm.surjective.comp
+        (InnerProductSpace.toDual ℝ E).surjective
+  | j + 1 => by
       let e : IteratedGradient E j ≃ₗᵢ[ℝ] (E [×(j + 1)]→L[ℝ] ℝ) :=
         LinearIsometryEquiv.ofSurjective (toContinuousMultilinearMap E j)
           (toContinuousMultilinearMap_surjective j)
-      let F := continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1 + 1) => E) ℝ M
-      refine ⟨e.symm.toLinearIsometry.toContinuousLinearMap.comp F, ?_⟩
-      ext m
-      rw [toContinuousMultilinearMap_succ_apply, ContinuousLinearMap.comp_apply,
-        LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
-      have h : toContinuousMultilinearMap E j (e.symm (F (m 0))) = F (m 0) :=
-        e.apply_symm_apply (F (m 0))
+      have h : ⇑(toContinuousMultilinearMap E (j + 1)) =
+          ⇑(continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1 + 1) => E) ℝ).symm ∘
+            ⇑((ContinuousLinearEquiv.refl ℝ E).arrowCongr e.toContinuousLinearEquiv) := by
+        ext G m
+        rw [Function.comp_apply, continuousMultilinearCurryLeftEquiv_symm_apply,
+          ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.refl_symm,
+          ContinuousLinearEquiv.refl_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+          LinearIsometryEquiv.coe_ofSurjective, toContinuousMultilinearMap_succ_apply]
       rw [h]
-      exact (continuousMultilinearCurryLeftEquiv_apply M (m 0) (Fin.tail m)).trans
-        (by rw [Fin.cons_self_tail])
+      exact (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1 + 1) => E)
+        ℝ).symm.surjective.comp
+        ((ContinuousLinearEquiv.refl ℝ E).arrowCongr e.toContinuousLinearEquiv).surjective
 
 /-- On a complete real inner product space, `IteratedGradient E j` is linearly isometric to the
 space `E [×(j + 1)]→L[ℝ] ℝ` of scalar continuous multilinear maps in `j + 1` arguments. -/

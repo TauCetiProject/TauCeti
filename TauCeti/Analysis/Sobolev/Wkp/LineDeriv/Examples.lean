@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Analysis.Sobolev.Wkp.Contraction.Classical
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Classical
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.MeasureTheory.Function.Lp.Basic

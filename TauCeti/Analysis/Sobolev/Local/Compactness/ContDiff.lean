@@ -130,10 +130,7 @@ private theorem uniformCauchySeqOn_iteratedFDeriv_of_tendsto_wkp [Fact (1 ≤ p)
   intro ε hε
   obtain ⟨N, hN⟩ := hC ε hε
   refine ⟨N, fun m hm n hn x hx => ?_⟩
-  have hxΩ := Ω.isOpen.mem_nhds (hKΩ hx)
-  rw [dist_eq_norm, ← norm_iteratedGradientChain_sub j
-    (((hf m).contDiffAt hxΩ).of_le (by exact_mod_cast hi))
-    (((hf n).contDiffAt hxΩ).of_le (by exact_mod_cast hi)), ← dist_eq_norm]
+  rw [dist_eq_norm, ← norm_iteratedGradientChain_sub j, ← dist_eq_norm]
   exact hN m hm n hn x hx
 
 /-- The combined statement behind `TauCeti.contDiffOn_preciseRepresentative_of_tendsto_wkp` and
