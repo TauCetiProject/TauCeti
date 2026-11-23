@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
+public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root

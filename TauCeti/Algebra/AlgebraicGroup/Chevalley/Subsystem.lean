@@ -100,6 +100,14 @@ theorem subsystemSubgroup_union (T : Set (Fin t.numRoots)) (A : CommAlgCat.{v} �
   simp only [D.subsystemSubgroup_eq_iSup, Set.mem_union, iSup_or]
   exact iSup_sup_eq
 
+/-- A singleton root set generates the corresponding root-subgroup range on the lattice. -/
+@[simp]
+theorem subsystemSubgroup_singleton (γ : Fin t.numRoots) (A : CommAlgCat.{v} ℤ) :
+    D.subsystemSubgroup {γ} A =
+      (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator γ A).range := by
+  rw [D.subsystemSubgroup_eq_iSup, iSup_singleton]
+
 /-- Each root element indexed by `S` belongs to the corresponding lattice subgroup. -/
 theorem chevalleyRootSubgroup_mem_subsystemSubgroup {S : Set (Fin t.numRoots)}
     (A : CommAlgCat.{v} ℤ) {γ : Fin t.numRoots} (hγ : γ ∈ S) (u : Multiplicative A) :
@@ -245,6 +253,12 @@ theorem subsystemPoints_union (T : Set (Fin t.numRoots)) (A : Type v) [CommRing 
     D.subsystemPoints (S ∪ T) A = D.subsystemPoints S A ⊔ D.subsystemPoints T A := by
   simp only [D.subsystemPoints_eq_iSup, Set.mem_union, iSup_or]
   exact iSup_sup_eq
+
+/-- A singleton root set generates the corresponding root-subgroup range inside datum points. -/
+@[simp]
+theorem subsystemPoints_singleton (γ : Fin t.numRoots) (A : Type v) [CommRing A] :
+    D.subsystemPoints {γ} A = (D.rootSubgroupPoints γ A).range := by
+  rw [D.subsystemPoints_eq_iSup, iSup_singleton]
 
 /-- Each root element indexed by `S` belongs to its point subgroup. -/
 @[simp]

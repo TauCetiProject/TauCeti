@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
 import TauCeti.GroupTheory.DoubleCoset.Map
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Bruhat cells and the Bruhat decomposition of a Chevalley datum
