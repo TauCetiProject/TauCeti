@@ -181,13 +181,9 @@ theorem eq_coadjointOrbitForm_iff
 @[simp]
 theorem coadjointOrbitForm_zero :
     (0 : Module.Dual ℝ (GroupLieAlgebra I G)).coadjointOrbitForm = 0 := by
-  -- `α_0 = α_0 + α_0` by additivity, so the left-invariant one-form of `0` vanishes.
-  have hα : (0 : Module.Dual ℝ (GroupLieAlgebra I G)).leftInvariantForm = 0 := by
-    simpa only [add_zero, left_eq_add] using
-      leftInvariantForm_add (0 : Module.Dual ℝ (GroupLieAlgebra I G)) 0
   rw [eq_comm, eq_coadjointOrbitForm_iff 0
       (isSubmersion_quotientMk_stabilizer_coadjointRepresentation 0).contMDiff,
-    map_zero, leftInvariantKirillovForm_def, hα, map_zero, neg_zero]
+    map_zero, leftInvariantKirillovForm_zero]
 
 /-- The KKS form evaluates on images under the differential of the projection `G → G ⧸ G_ν` as
 the left-invariant Kirillov form: `ω_ν(dπ v, dπ w) = σ_ν(v, w)`. -/
