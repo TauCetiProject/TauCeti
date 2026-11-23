@@ -47,6 +47,48 @@ universe u v
 
 namespace Representation
 
+section Helpers
+
+variable {k : Type*} {H : Type u} {V : Type v} [Field k] [Group H] [AddCommGroup V] [Module k V]
+
+/-- The scalars by which a subgroup acts on an irreducible representation are multiplicative:
+`λ(z⁻¹) λ(z) = 1`. -/
+private theorem inv_mul_self_of_forall_apply_eq_smul (ρ : Representation k H V)
+    [ρ.IsIrreducible] (Z : Subgroup H) (lam : Z → k) (hlam : ∀ (z : Z) v, ρ z v = lam z • v)
+    (z : Z) : lam z⁻¹ * lam z = 1 := by
+  have := (inferInstance : ρ.IsIrreducible).nontrivial
+  obtain ⟨v₀, hv₀⟩ := exists_ne (0 : V)
+  have h1 : ρ ((z : H) * (z⁻¹ : Z)) v₀ = v₀ := by simp
+  rw [map_mul, mul_apply_eq_comp, hlam z⁻¹, map_smul, hlam, smul_smul] at h1
+  have h2 : (lam z⁻¹ * lam z - 1) • v₀ = 0 := by rw [sub_smul, h1, one_smul, sub_self]
+  exact sub_eq_zero.mp ((smul_eq_zero.mp h2).resolve_right hv₀)
+
+/-- The embedding `(z, a) ↦ (z, ι(z)⁻¹ a)` of `Z × A` into `H × G`, a homomorphism because `ι`
+takes central values. -/
+private def antidiagonalHom {G : Type*} [Group G] (Z : Subgroup H) (ι : Z →* G)
+    (hι : ∀ z, ι z ∈ Subgroup.center G) (A : Subgroup G) : Z × A →* H × G where
+  toFun p := ((p.1 : H), (ι p.1)⁻¹ * p.2)
+  map_one' := by simp
+  map_mul' p q := by
+    have hcomm (x : G) : (ι q.1)⁻¹ * x = x * (ι q.1)⁻¹ :=
+      (Subgroup.mem_center_iff.mp (inv_mem (hι q.1)) x).symm
+    refine Prod.ext (by simp) ?_
+    change (ι (p.1 * q.1))⁻¹ * ((p.2 : G) * q.2) = (ι p.1)⁻¹ * p.2 * ((ι q.1)⁻¹ * q.2)
+    calc (ι (p.1 * q.1))⁻¹ * ((p.2 : G) * q.2)
+        = (ι q.1)⁻¹ * ((ι p.1)⁻¹ * p.2) * q.2 := by simp only [map_mul, mul_inv_rev, mul_assoc]
+      _ = (ι p.1)⁻¹ * p.2 * (ι q.1)⁻¹ * q.2 := by rw [hcomm]
+      _ = (ι p.1)⁻¹ * p.2 * ((ι q.1)⁻¹ * q.2) := by simp only [mul_assoc]
+
+private theorem antidiagonalHom_injective {G : Type*} [Group G] (Z : Subgroup H) (ι : Z →* G)
+    (hι : ∀ z, ι z ∈ Subgroup.center G) (A : Subgroup G) :
+    Function.Injective (antidiagonalHom Z ι hι A) := fun p q hpq => by
+  have h1 : p.1 = q.1 := Subtype.ext (congrArg Prod.fst hpq)
+  have h2 : (ι p.1)⁻¹ * p.2 = (ι q.1)⁻¹ * q.2 := congrArg Prod.snd hpq
+  rw [h1, mul_right_inj] at h2
+  exact Prod.ext h1 (Subtype.ext h2)
+
+end Helpers
+
 section Center
 
 variable {k : Type*} {H : Type u} {V : Type v} [Field k] [IsAlgClosed k] [CharZero k] [Group H]
@@ -90,33 +132,9 @@ private theorem finrank_mul_pow_dvd_aux (ρ : Representation k H V) [ρ.IsIrredu
       mul_dvd_mul_right (finrank_dvd_card (σ.ofQuotient A)) (Nat.card A)
   | succ m ih =>
     intro G _ W _ _ σ hσ ι hι hισ A hA hAσ
-    have := (inferInstance : ρ.IsIrreducible).nontrivial
-    obtain ⟨v₀, hv₀⟩ := exists_ne (0 : V)
-    -- the scalars `λ(z)` are multiplicative inverses of `λ(z⁻¹)`
-    have hinv (z : Z) : lam z⁻¹ * lam z = 1 := by
-      have h1 : ρ ((z : H) * (z⁻¹ : Z)) v₀ = v₀ := by simp
-      rw [map_mul, mul_apply_eq_comp, hlam z⁻¹, map_smul, hlam, smul_smul] at h1
-      have h2 : (lam z⁻¹ * lam z - 1) • v₀ = 0 := by rw [sub_smul, h1, one_smul, sub_self]
-      exact sub_eq_zero.mp ((smul_eq_zero.mp h2).resolve_right hv₀)
-    have hcomm (z : Z) (x : G) : (ι z)⁻¹ * x = x * (ι z)⁻¹ :=
-      Subgroup.mem_center_iff.mp (inv_mem (hι z)) x |>.symm
-    let φ : Z × A →* H × G :=
-      { toFun := fun p => ((p.1 : H), (ι p.1)⁻¹ * p.2)
-        map_one' := by simp
-        map_mul' := fun p q => by
-          refine Prod.ext (by simp) ?_
-          change (ι (p.1 * q.1))⁻¹ * ((p.2 : G) * q.2) = (ι p.1)⁻¹ * p.2 * ((ι q.1)⁻¹ * q.2)
-          calc (ι (p.1 * q.1))⁻¹ * ((p.2 : G) * q.2)
-              = (ι q.1)⁻¹ * ((ι p.1)⁻¹ * p.2) * q.2 := by
-                simp only [map_mul, mul_inv_rev, mul_assoc]
-            _ = (ι p.1)⁻¹ * p.2 * (ι q.1)⁻¹ * q.2 := by rw [hcomm]
-            _ = (ι p.1)⁻¹ * p.2 * ((ι q.1)⁻¹ * q.2) := by simp only [mul_assoc] }
-    have hφ : Function.Injective φ := fun p q hpq => by
-      have h1 : (p.1 : H) = q.1 := congrArg Prod.fst hpq
-      have h1' : p.1 = q.1 := Subtype.ext h1
-      have h2 : (ι p.1)⁻¹ * p.2 = (ι q.1)⁻¹ * q.2 := congrArg Prod.snd hpq
-      rw [h1', mul_right_inj] at h2
-      exact Prod.ext h1' (Subtype.ext h2)
+    have hinv := inv_mul_self_of_forall_apply_eq_smul ρ Z lam hlam
+    let φ := antidiagonalHom Z ι hι A
+    have hφ : Function.Injective φ := antidiagonalHom_injective Z ι hι A
     have hcard : Nat.card φ.range = Nat.card Z * Nat.card A := by
       rw [← Nat.card_prod]
       exact Nat.card_congr (MonoidHom.ofInjective hφ).toEquiv.symm
@@ -139,7 +157,7 @@ private theorem finrank_mul_pow_dvd_aux (ρ : Representation k H V) [ρ.IsIrredu
         rintro _ ⟨p, rfl⟩ w
         induction w using TensorProduct.inductionOn with
         | tmul v w =>
-          simp only [φ, MonoidHom.coe_mk, OneHom.coe_mk, externalTensor_apply,
+          simp only [φ, antidiagonalHom, MonoidHom.coe_mk, OneHom.coe_mk, externalTensor_apply,
             TensorProduct.map_tmul, map_mul, mul_apply_eq_comp, hAσ _ p.2.property, ← map_inv,
             hισ, hlam, TensorProduct.smul_tmul, smul_smul]
           rw [mul_comm, hinv, one_smul]
