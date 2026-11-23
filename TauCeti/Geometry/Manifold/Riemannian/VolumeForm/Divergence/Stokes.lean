@@ -66,6 +66,21 @@ local instance instIsManifoldBoundaryStokesComparison :
     IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
   isManifold_boundary M
 
+/-- On a `C²` Riemannian manifold with boundary, `∫_M d(ι_X dV) = ∫_M div X dV` for any compactly
+supported `C¹` vector field `X`. -/
+private theorem integralTopForm_mextDeriv_interior_eq
+    (o : Manifold.Orientation (𝓡∂ (n + 1)) M (Fin (n + 1)))
+    {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
+    (hX : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent 1 (T% X))
+    (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin (n + 1))) X) :
+    integralTopForm o (mextDeriv ((riemannianVolumeForm o).interior X)) =
+      ∫ x, Manifold.divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M := by
+  have : IsManifold (𝓡∂ (n + 1)) (1 + 1) M := by norm_num; infer_instance
+  rw [mextDeriv_interior_riemannianVolumeForm o (hX.mdifferentiable one_ne_zero)]
+  exact integralTopForm_smul_riemannianVolumeForm o
+    (Manifold.contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
+      (by simpa using hX)).continuous (hc.divergence (𝓡∂ (n + 1)))
+
 /-- **Comparison of Stokes' theorem for `ι_X dV` with the Riemannian divergence theorem.** On an
 oriented `C²` Riemannian manifold with boundary, the top-form integral of `d(ι_X dV)` equals
 `∫ div X dV` and the boundary top-form integral of `ι^*(ι_X dV)` equals `∫_{∂M} ⟪X, N⟫ dS`,
@@ -81,16 +96,11 @@ theorem integralTopForm_mextDeriv_interior_riemannianVolumeForm
           (boundaryRestriction ((riemannianVolumeForm o).interior X)) =
         ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (outwardUnitNormal x)
           ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
-  have : IsManifold (𝓡∂ (n + 1)) (1 + 1) M := by norm_num; infer_instance
-  refine ⟨?_, ?_⟩
-  · rw [mextDeriv_interior_riemannianVolumeForm o (hX.mdifferentiable one_ne_zero)]
-    exact integralTopForm_smul_riemannianVolumeForm o
-      (Manifold.contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
-        (by simpa using hX)).continuous (hc.divergence (𝓡∂ (n + 1)))
-  · rw [funext (boundaryRestriction_interior_riemannianVolumeForm o X),
-      halfSpaceBoundaryVolume_eq_riemannianVolume]
-    exact integralTopForm_smul_riemannianVolumeForm (boundaryOrientation o)
-      (continuous_boundaryFlux hX.continuous) (hasCompactSupport_boundaryFlux hc)
+  refine ⟨integralTopForm_mextDeriv_interior_eq o hX hc, ?_⟩
+  rw [funext (boundaryRestriction_interior_riemannianVolumeForm o X),
+    halfSpaceBoundaryVolume_eq_riemannianVolume]
+  exact integralTopForm_smul_riemannianVolumeForm (boundaryOrientation o)
+    (continuous_boundaryFlux hX.continuous) (hasCompactSupport_boundaryFlux hc)
 
 end Comparison
 
@@ -117,16 +127,11 @@ theorem integral_divergence_eq_integralTopForm_boundaryRestriction
     ∫ x, Manifold.divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M =
       integralTopForm (boundaryOrientation o)
         (boundaryRestriction ((riemannianVolumeForm o).interior X)) := by
-  have : IsManifold (𝓡∂ (n + 1)) (1 + 1) M := by norm_num; infer_instance
+  have : IsManifold (𝓡∂ (n + 1)) 2 M := IsManifold.of_le (n := ∞) (by simp)
   have hφ := (isSmoothForm_riemannianVolumeForm (n := 1) o).interior hX
   have hcφ := hc.of_isClosed_subset (isClosed_tsupport _)
     ((riemannianVolumeForm o).tsupport_interior_subset X)
-  rw [← integralTopForm_mextDeriv o hφ hcφ,
-    mextDeriv_interior_riemannianVolumeForm o (hX.mdifferentiable one_ne_zero),
-    integralTopForm_smul_riemannianVolumeForm o
-      (Manifold.contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
-        (by simpa using hX)).continuous
-      (hc.divergence _)]
+  rw [← integralTopForm_mextDeriv o hφ hcφ, integralTopForm_mextDeriv_interior_eq o hX hc]
 
 end Stokes
 

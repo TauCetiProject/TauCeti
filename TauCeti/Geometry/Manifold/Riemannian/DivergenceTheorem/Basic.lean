@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Analysis.Calculus.FDeriv.Integral
+import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
 import TauCeti.Geometry.Manifold.VectorField.Chart.Flux
@@ -83,15 +84,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
 
-private lemma contMDiff_smoothBumpFunction [IsManifold I 1 M] [T2Space M] {x : M}
-    (φ : SmoothBumpFunction I x) : ContMDiff I 𝓘(ℝ) 1 φ := by
-  refine contMDiff_of_tsupport fun y hy ↦ ?_
-  have hsrc : y ∈ (chartAt H x).source := φ.tsupport_subset_chartAt_source hy
-  refine ContMDiffAt.congr_of_eventuallyEq ?_ <| φ.eqOn_source.eventuallyEq_of_mem <|
-    (chartAt H x).open_source.mem_nhds hsrc
-  exact (φ.contDiffAt.contMDiffAt.of_le (by simp : (1 : ℕ∞ω) ≤ ∞)).comp _
-    (contMDiffAt_extChartAt' hsrc)
-
 /-- Decompose a compactly supported `C¹` vector field `X` into a finite sum of compactly
 supported `C¹` vector fields `Y i`, each supported in `U (c i)`, for any family of neighbourhoods
 `U x ∈ 𝓝 x` covering `tsupport X`. -/
@@ -111,7 +103,7 @@ theorem exists_subordinate_vectorField_sum [IsManifold I 2 M] [T2Space M]
   have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
   obtain ⟨ι, _, bc, hbc⟩ := hc.exists_smoothBumpCovering_isSubordinate I hU
   let bc' : BumpCovering ι M (tsupport (α := E) X) :=
-    { toFun i := ⟨bc i, (contMDiff_smoothBumpFunction (bc i)).continuous⟩
+    { toFun i := ⟨bc i, (SmoothBumpFunction.contMDiff_of_isManifold (n := 1) (bc i)).continuous⟩
       locallyFinite' := bc.locallyFinite
       nonneg' i _ := (bc i).nonneg
       le_one' i _ := (bc i).le_one
@@ -123,8 +115,9 @@ theorem exists_subordinate_vectorField_sum [IsManifold I 2 M] [T2Space M]
       funext fun x ↦ bc'.toPartitionOfUnity_eq_mul_prod i x Finset.univ
         fun _ _ _ ↦ Finset.mem_univ _
     rw [hfun]
-    exact (contMDiff_smoothBumpFunction (bc i)).mul <|
-      contMDiff_finsetProd fun j _ ↦ contMDiff_const.sub (contMDiff_smoothBumpFunction (bc j))
+    exact (SmoothBumpFunction.contMDiff_of_isManifold (n := 1) (bc i)).mul <|
+      contMDiff_finsetProd fun j _ ↦
+        contMDiff_const.sub (SmoothBumpFunction.contMDiff_of_isManifold (n := 1) (bc j))
   let Y : ι → (x : M) → TangentSpace I x := fun i x ↦ ρ i x • X x
   have hY (i : ι) : ContMDiff I I.tangent 1 (T% (Y i)) := (hρ_diff i).smul_section hX
   have hsum (x : M) : X x = ∑ i, Y i x := by

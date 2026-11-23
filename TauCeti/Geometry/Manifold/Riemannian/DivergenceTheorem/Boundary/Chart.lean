@@ -16,6 +16,7 @@ import TauCeti.Geometry.Manifold.VectorField.Chart.Flux
 import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
 import TauCeti.LinearAlgebra.Alternating.Uncurry.Fin
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem.HalfSpace
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Single-chart boundary divergence theorem
@@ -181,7 +182,6 @@ private theorem sum_fderivWithin_stdChartFlux_pi {α : M} {X : (x : M) → Tange
     (hX : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent 1 (T% X))
     (hKc : IsCompact (extChartAt (𝓡∂ (n + 1)) α '' ambTsupport X))
     (himage : extChartAt (𝓡∂ (n + 1)) α '' ambTsupport X ⊆ (extChartAt (𝓡∂ (n + 1)) α).target)
-    (hflux_diff : ∀ i, ContDiffOn ℝ 1 (stdChartFluxE α X i) (range (𝓡∂ (n + 1))))
     (hf_diff : ContDiffOn ℝ 1 (fun y i ↦ stdChartFluxE α X i (piToE (n + 1) y)) (piHalfSpace n))
     {x : Fin (n + 1) → ℝ} (hx : x ∈ piHalfSpace n) :
     (∑ i : Fin (n + 1), fderivWithin ℝ (fun y j ↦ stdChartFluxE α X j (piToE (n + 1) y))
@@ -189,16 +189,18 @@ private theorem sum_fderivWithin_stdChartFlux_pi {α : M} {X : (x : M) → Tange
       (extChartAt (𝓡∂ (n + 1)) α).target.indicator (fun z ↦
         stdChartVolumeDensity (I := 𝓡∂ (n + 1)) α ((extChartAt (𝓡∂ (n + 1)) α).symm z) *
           divergence (𝓡∂ (n + 1)) X ((extChartAt (𝓡∂ (n + 1)) α).symm z)) (piToE (n + 1) x) := by
-  have hL_maps := mapsTo_euclideanSpace_equiv_symm_range_modelWithCornersEuclideanHalfSpace n
+  have hpre := preimage_euclideanSpace_equiv_symm_range_modelWithCornersEuclideanHalfSpace n
+  have hx' : piToE (n + 1) x ∈ range (𝓡∂ (n + 1)) := by
+    simpa [piHalfSpace, ← hpre] using hx
   have huniqH := TauCeti.uniqueDiffOn_pi_halfSpace 0 0 x hx
-  rw [← sum_fderivWithin_stdChartFluxE hX hKc himage (hL_maps hx)]
+  rw [← sum_fderivWithin_stdChartFluxE hX hKc himage hx']
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hfi := ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ ↦ ℝ)
-    i).hasFDerivAt.comp_hasFDerivWithinAt x
-      (hf_diff.differentiableOn one_ne_zero x hx).hasFDerivWithinAt).fderivWithin huniqH
-  have hL_eq := (((hflux_diff i).differentiableOn one_ne_zero (piToE (n + 1) x)
-    (hL_maps hx)).hasFDerivWithinAt.comp x (piToE (n + 1)).hasFDerivAt.hasFDerivWithinAt
-      hL_maps).fderivWithin huniqH
+  have hfi := fderivWithin_apply (hf_diff.differentiableOn one_ne_zero x hx) huniqH i
+  have hL_eq : fderivWithin ℝ (fun y ↦ stdChartFluxE α X i (piToE (n + 1) y)) (piHalfSpace n) x =
+      (fderivWithin ℝ (stdChartFluxE α X i) (range (𝓡∂ (n + 1))) (piToE (n + 1) x)).comp
+        (piToE (n + 1) : (Fin (n + 1) → ℝ) →L[ℝ] Espace (n + 1)) := by
+    rw [piHalfSpace, ← hpre]
+    exact (piToE (n + 1)).comp_right_fderivWithin (hpre ▸ huniqH)
   have hsingle : piToE (n + 1) (Pi.single i 1) = stdBasis (n + 1) i := by
     ext j; simp [piToE, stdBasis, EuclideanSpace.basisFun_apply]
   simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
@@ -285,7 +287,6 @@ private theorem integral_divergence_eq_setIntegral_pi_halfSpace {α : M}
     (hKc : IsCompact (extChartAt (𝓡∂ (n + 1)) α '' ambTsupport X))
     (hKs : ambTsupport X ⊆ (chartAt (EuclideanHalfSpace (n + 1)) α).source)
     (himage : extChartAt (𝓡∂ (n + 1)) α '' ambTsupport X ⊆ (extChartAt (𝓡∂ (n + 1)) α).target)
-    (hflux_diff : ∀ i, ContDiffOn ℝ 1 (stdChartFluxE α X i) (range (𝓡∂ (n + 1))))
     (hf_diff : ContDiffOn ℝ 1 (fun y i ↦ stdChartFluxE α X i (piToE (n + 1) y)) (piHalfSpace n)) :
     (∫ x, divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M) =
       ∫ x in piHalfSpace n, ∑ i : Fin (n + 1),
@@ -320,7 +321,7 @@ private theorem integral_divergence_eq_setIntegral_pi_halfSpace {α : M}
     _ = ∫ x in piHalfSpace n, dE (piToE (n + 1) x) :=
           (hp.integral_comp (piToE (n + 1)).toHomeomorph.measurableEmbedding dE).symm
     _ = _ := setIntegral_congr_fun hHm fun x hx ↦
-          (sum_fderivWithin_stdChartFlux_pi hX hKc himage hflux_diff hf_diff hx).symm
+          (sum_fderivWithin_stdChartFlux_pi hX hKc himage hf_diff hx).symm
 
 /-- **Single-chart divergence theorem on a manifold with boundary.** For a compactly supported `C¹`
 vector field `X` supported in `(chartAt _ α).source`, where either `α` lies on the boundary or the
@@ -343,21 +344,19 @@ theorem integral_divergence_eq_boundaryFlux_of_tsupport_subset_chart {α : M}
   let f : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) := fun x i ↦ stdChartFluxE α X i (piToE (n + 1) x)
   have hflux_diff (i) := contDiffOn_chartFlux (stdBasis (n + 1))
     (contMDiffOn_stdChartVolumeDensity α) hX.contMDiffOn hKc himage i
+  have hL_maps : MapsTo (piToE (n + 1)) (piHalfSpace n) (range (𝓡∂ (n + 1))) := by
+    rw [piHalfSpace, ← preimage_euclideanSpace_equiv_symm_range_modelWithCornersEuclideanHalfSpace]
+    exact mapsTo_preimage _ _
   have hf_diff : ContDiffOn ℝ 1 f (piHalfSpace n) := contDiffOn_pi.2 fun i ↦
-    (hflux_diff i).comp (piToE (n + 1)).contDiff.contDiffOn
-      (mapsTo_euclideanSpace_equiv_symm_range_modelWithCornersEuclideanHalfSpace n)
+    (hflux_diff i).comp (piToE (n + 1)).contDiff.contDiffOn hL_maps
   have hsupp_i (i : Fin (n + 1)) : HasCompactSupport fun x ↦ f x i :=
     (hasCompactSupport_chartFlux (stdBasis (n + 1))
       (stdChartVolumeDensity (I := 𝓡∂ (n + 1)) α) hKc i).comp_homeomorph
         (piToE (n + 1)).toHomeomorph
-  have hf_supp : HasCompactSupport f :=
-    HasCompactSupport.intro (isCompact_iUnion fun i ↦ (hsupp_i i).isCompact) fun x hx ↦
-      funext fun i ↦ image_eq_zero_of_notMem_tsupport (f := fun x ↦ f x i) fun h ↦
-        hx (mem_iUnion.2 ⟨i, h⟩)
+  have hf_supp : HasCompactSupport f := TauCeti.hasCompactSupport_pi_iff.2 hsupp_i
   obtain ⟨-, -, hdiv_coord⟩ := hf_diff.integral_divergence_coordinate_halfSpace hf_supp
   -- Stage 2: transport `∫ div X dV` to the coordinate half-space divergence integral.
-  rw [integral_divergence_eq_setIntegral_pi_halfSpace hX hKc hKs himage hflux_diff hf_diff,
-    hdiv_coord]
+  rw [integral_divergence_eq_setIntegral_pi_halfSpace hX hKc hKs himage hf_diff, hdiv_coord]
   -- Stage 3: identify the `x₀ = 0` trace integral with the Riemannian boundary flux.
   exact hcase.elim (fun h ↦ neg_integral_stdChartFlux_zero_eq_boundaryFlux ⟨α, h⟩ hKs)
     neg_integral_stdChartFlux_zero_eq_boundaryFlux_of_disjoint

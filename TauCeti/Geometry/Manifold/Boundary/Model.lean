@@ -266,14 +266,6 @@ theorem preimage_euclideanSpace_equiv_symm_range_modelWithCornersEuclideanHalfSp
   ext x
   simp [range_modelWithCornersEuclideanHalfSpace]
 
-/-- The equivalence `(EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm` maps `{x | 0 ≤ x 0}` into
-`range (𝓡∂ (n + 1))`. -/
-theorem mapsTo_euclideanSpace_equiv_symm_range_modelWithCornersEuclideanHalfSpace (n : ℕ) :
-    MapsTo (EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm
-      {x : Fin (n + 1) → ℝ | 0 ≤ x 0} (range (𝓡∂ (n + 1))) := by
-  rw [← preimage_euclideanSpace_equiv_symm_range_modelWithCornersEuclideanHalfSpace]
-  exact mapsTo_preimage _ _
-
 /-- The half-space model `𝓡∂ (n + 1)` sends a point to the frontier of its range exactly when the
 zeroth coordinate of the point vanishes. -/
 theorem modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff {n : ℕ}
