@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.MappingSpace.Sphere.Circle
+public import TauCeti.Topology.MappingSpace.Sphere.LoopFamily
 
 /-!
 # The double loop space inside the free loop space of the loop space
@@ -29,6 +30,9 @@ All maps are natural in the based space `X`.
   `TauCeti.BasedTopologicalSpace.loopSpace2ToMapCircle_map` its naturality.
 * `TauCeti.BasedTopologicalSpace.evalCircle`: the evaluation `S¹ × Ω²X → ΩX`, with
   `TauCeti.BasedTopologicalSpace.evalCircle_map` its naturality.
+* `TauCeti.BasedTopologicalSpace.evalCircle_comp_prodMap`: on a continuous family of double loops,
+  the evaluation is the map `A × S¹ → ΩX` of the family of loops of loops
+  (`TauCeti.loopFamilyCircleMap`), with the factors exchanged.
 
 ## References
 
@@ -69,7 +73,7 @@ theorem loopSpace2Homeomorph_def :
 that corresponds to it under `loopSpace2Homeomorph`. -/
 def loopSpace2ToMapCircle :
     C((X.iteratedLoopSpace 2).carrier, C(Sphere1, Path X.basepoint X.basepoint)) :=
-  (⟨Subtype.val, continuous_subtype_val⟩ :
+  (⟨Subtype.val, continuous_subtypeVal⟩ :
     C(BasedMap Sphere1 X.loopSpace.carrier Sphere1.east X.loopSpace.basepoint,
       C(Sphere1, Path X.basepoint X.basepoint))).comp (loopSpace2Homeomorph X : C(_, _))
 
@@ -93,7 +97,7 @@ constant loop. -/
 @[simp]
 theorem loopSpace2ToMapCircle_east (γ : (X.iteratedLoopSpace 2).carrier) :
     loopSpace2ToMapCircle X γ Sphere1.east = Path.refl X.basepoint :=
-  (loopSpace2Homeomorph X γ).2
+  (loopSpace2Homeomorph X γ).property
 
 /-- The embedding of the double loop space in the space of maps from the circle to the loop space
 is a topological embedding. -/
@@ -129,6 +133,22 @@ theorem evalCircle_east (γ : (X.iteratedLoopSpace 2).carrier) :
     evalCircle X (Sphere1.east, γ) = Path.refl X.basepoint := by
   rw [evalCircle_apply, loopSpace2ToMapCircle_east]
 
+/-- **Evaluation of a family of double loops on the circle.** For a continuous family `ℓ` of
+double loops of `X` parametrized by `A`, the map `S¹ × A → ΩX`, `(z, a) ↦ ℓ a (z)`, is the map
+`A × S¹ → ΩX` of the family of loops `ℓ a` of `ΩX` (`TauCeti.loopFamilyCircleMap`), with the two
+factors exchanged. -/
+theorem evalCircle_comp_prodMap {A : Type*} [TopologicalSpace A]
+    (ℓ : A → Path (Path.refl X.basepoint) (Path.refl X.basepoint)) (hℓ : Continuous ℓ) :
+    (evalCircle X).comp ((ContinuousMap.id Sphere1).prodMap ⟨ℓ, hℓ⟩) =
+      (loopFamilyCircleMap ℓ (Path.continuous_uncurry_iff.mpr hℓ)).comp
+        ContinuousMap.prodSwap := by
+  refine ContinuousMap.ext fun ⟨z, a⟩ => ?_
+  obtain ⟨t, rfl⟩ := circleLoop_surjective z
+  rw [ContinuousMap.comp_apply, ContinuousMap.prodMap_apply, ContinuousMap.comp_apply,
+    ContinuousMap.prodSwap_apply, loopFamilyCircleMap_apply_circleLoop]
+  exact (evalCircle_circleLoop X (ℓ a) t).trans
+    (iteratedLoopSpaceHomeomorph_one_apply X.loopSpace (ℓ a) t)
+
 variable {X} {Y : BasedTopologicalSpace.{u}}
 
 /-- **Naturality of `Ω²X ≃ₜ Map_*(S¹, ΩX)`** in the based space `X`. -/
@@ -157,7 +177,7 @@ theorem loopSpace2ToMapCircle_map (f : Hom X Y) (γ : (X.iteratedLoopSpace 2).ca
   rw [loopSpace2ToMapCircle, loopSpace2ToMapCircle, ContinuousMap.comp_apply,
     ContinuousMap.comp_apply]
   -- the coercions of the homeomorphisms to bundled maps evaluate as the homeomorphisms
-  change (loopSpace2Homeomorph Y (f.iteratedLoopSpace 2 γ)).1 b = _
+  change (loopSpace2Homeomorph Y (f.iteratedLoopSpace 2 γ)).val b = _
   rw [loopSpace2Homeomorph_map]
   exact BasedMap.map_apply _ _ _ b
 

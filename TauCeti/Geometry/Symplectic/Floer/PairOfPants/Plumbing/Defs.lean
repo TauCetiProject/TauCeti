@@ -85,12 +85,30 @@ theorem plumbedPerturbation_add (Ha₁ Ha₂ Hb₁ Hb₂ : Puncture → ℝ → 
   simp only [plumbedPerturbation_def, pairOfPantsPerturbation_add, Pi.add_apply]
   split_ifs <;> simp [ContinuousLinearMap.add_comp]
 
+/-- Normalizing the Hamiltonians of the two pairs of pants by functions `ca r`, `cb r` of time adds
+the plumbed perturbation of the target-independent Hamiltonians `ca r`, `cb r`. -/
+theorem plumbedPerturbation_add_const (Ha Hb : Puncture → ℝ → M → ℝ) (ca cb : Puncture → ℝ → ℝ)
+    (q : Puncture) (L : ℝ) (w : ℂ) (x : M) :
+    plumbedPerturbation (fun r t y ↦ Ha r t y + ca r t) (fun r t y ↦ Hb r t y + cb r t) q L w x =
+      plumbedPerturbation Ha Hb q L w x +
+        plumbedPerturbation (fun r t (_ : M) ↦ ca r t) (fun r t (_ : M) ↦ cb r t) q L w x :=
+  congrFun (congrFun (plumbedPerturbation_add Ha (fun r t (_ : M) ↦ ca r t) Hb
+    (fun r t (_ : M) ↦ cb r t) q L) w) x
+
 /-- The plumbed perturbation is homogeneous in the Hamiltonians of the two pairs of pants. -/
 theorem plumbedPerturbation_smul (c : ℝ) (Ha Hb : Puncture → ℝ → M → ℝ) (q : Puncture) (L : ℝ) :
     plumbedPerturbation (c • Ha) (c • Hb) q L = c • plumbedPerturbation Ha Hb q L := by
   funext w x
   simp only [plumbedPerturbation_def, pairOfPantsPerturbation_smul, Pi.smul_apply]
   split_ifs <;> simp [ContinuousLinearMap.smul_comp]
+
+/-- The plumbed perturbation of target-independent Hamiltonians does not depend on the target:
+its values at points of `M` and of `N` agree. -/
+theorem plumbedPerturbation_const_target {N : Type*} (a b : Puncture → ℝ → ℝ) (q : Puncture)
+    (L : ℝ) (w : ℂ) (x : M) (y : N) :
+    plumbedPerturbation (fun r t (_ : M) ↦ a r t) (fun r t (_ : M) ↦ b r t) q L w x =
+      plumbedPerturbation (fun r t (_ : N) ↦ a r t) (fun r t (_ : N) ↦ b r t) q L w y := by
+  simp only [plumbedPerturbation_def, pairOfPantsPerturbation_def]
 
 /-- **The plumbed perturbation on the receiving pair of pants.** Away from the collar
 `Re z > L - 2` of the end `q`, the plumbed perturbation is the perturbation of the receiving pair

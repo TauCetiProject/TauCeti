@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
+public import TauCeti.MeasureTheory.Function.Lp.One
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -48,6 +49,16 @@ function by a function of temperate growth multiplies the function pointwise
 
 * `MeasureTheory.Lp.toTemperedDistribution_add`, `MeasureTheory.Lp.toTemperedDistribution_smul`
   and their companions: the embedding `Lᵖ → 𝓢'` is linear, stated on the coercion.
+* `MeasureTheory.MemLp.toTemperedDistribution_toLp`: the `Lᵖ` class of a function of temperate
+  growth is its tempered distribution `Function.HasTemperateGrowth.toTemperedDistribution`.
+* `MeasureTheory.Lp.toTemperedDistribution_one`: the constant one of `L^∞` is integration
+  against `μ`.
+* `MeasureTheory.Lp.toTemperedDistribution_injective`: an `Lᵖ` function is determined by its
+  tempered distribution.
+* `MeasureTheory.Lp.toTemperedDistribution_eq_toTemperedDistribution_iff`,
+  `MeasureTheory.Lp.toTemperedDistribution_add_toTemperedDistribution_eq_iff`: functions in `Lᵖ`
+  spaces for different exponents have the same tempered distribution, or tempered distributions
+  adding up, exactly when the same holds almost everywhere.
 * `MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`: an `Lᵖ` function whose pairings
   with Schwartz functions agree with those of a locally integrable `g` is almost everywhere
   equal to `g`.
@@ -66,12 +77,17 @@ function by a function of temperate growth multiplies the function pointwise
   transform, which pairs with `φ` as `∫ φ • 𝓕⁻ f`.
 * `MeasureTheory.Lp.ae_eq_fourierInv_of_fourier_eq`: an `Lᵖ` function whose Fourier transform is
   an `L¹` function `v` agrees almost everywhere with `𝓕⁻ v`.
+* `MeasureTheory.Lp.eq_fourierInv_of_ae_eq`: every continuous representative of such a function
+  is `𝓕⁻ v`.
 * `MeasureTheory.Lp.smulLeftCLM_toTemperedDistribution_apply`: the product of the tempered
   distribution of an `Lᵖ` function `u` with a function `g` of temperate growth pairs with `φ` as
   `∫ φ • (g • u)`.
 * `MeasureTheory.Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le`: the product with
   a function `g` of temperate growth bounded by `G` is an `Lᵖ` function of norm at most
   `G ‖u‖_p`.
+* `MeasureTheory.Lp.toTemperedDistribution_eq_smulLeftCLM_iff`: an `Lᵖ` function `w` is the
+  product of the tempered distribution of `u` with a function `g` of temperate growth exactly
+  when `w = g • u` almost everywhere, even for unbounded `g`.
 * `ContinuousLinearMap.exists_apply_eq_toTemperedDistribution_and_norm_le`: an operator
   `Lᵖ → 𝓢'` bounded on Schwartz functions takes values in `Lᵖ`.
 * `BoundedContinuousFunction.toTemperedDistribution_toLpTop_injective`: for a measure positive on
@@ -128,6 +144,23 @@ theorem toTemperedDistribution_sum {ι : Type*} (t : Finset ι) (f : ι → Lp F
     ((∑ i ∈ t, f i : Lp F p μ) : 𝓢'(E, F)) = ∑ i ∈ t, (f i : 𝓢'(E, F)) :=
   map_sum (toTemperedDistributionCLM F μ p) f t
 
+/-- The `Lᵖ` class of a function `f` of temperate growth is, as a tempered distribution,
+integration against `f`. -/
+theorem _root_.MeasureTheory.MemLp.toTemperedDistribution_toLp [SecondCountableTopology E]
+    {f : E → F} (hmem : MemLp f p μ) (hf : f.HasTemperateGrowth) :
+    ((hmem.toLp f : Lp F p μ) : 𝓢'(E, F)) = hf.toTemperedDistribution μ := by
+  ext g
+  rw [Lp.toTemperedDistribution_apply]
+  exact integral_congr_ae <| hmem.coeFn_toLp.mono fun x hx ↦ by simp [hx]
+
+/-- As a tempered distribution, the constant one of `L^∞` is integration against `μ`. -/
+@[simp]
+theorem toTemperedDistribution_one [SecondCountableTopology E] :
+    ((1 : Lp ℂ ⊤ μ) : 𝓢'(E, ℂ)) = μ.toTemperedDistribution := by
+  rw [one_def, MemLp.toTemperedDistribution_toLp _ (Function.HasTemperateGrowth.const 1)]
+  ext g
+  simp
+
 end Linear
 
 section NormedSpace
@@ -148,6 +181,52 @@ theorem ae_eq_of_toTemperedDistribution_apply_eq {μ : Measure E} [μ.HasTempera
   have hψ₁ : HasCompactSupport (Complex.ofRealCLM ∘ ψ) := hψc.comp_left rfl
   have hψ₂ : ContDiff ℝ ∞ (Complex.ofRealCLM ∘ ψ) := by fun_prop
   simpa [Lp.toTemperedDistribution_apply] using h (hψ₁.toSchwartzMap hψ₂)
+
+/-- An `Lᵖ` function is determined by its tempered distribution. -/
+theorem toTemperedDistribution_injective {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal}
+    [Fact (1 ≤ p)] : Function.Injective fun f : Lp F p μ ↦ (f : 𝓢'(E, F)) := fun f g h ↦ by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
+  refine LinearMap.ker_eq_bot.1 ker_toTemperedDistributionCLM_eq_bot ?_
+  simpa only [ContinuousLinearMap.coe_coe, toTemperedDistributionCLM_apply] using h
+
+omit [FiniteDimensional ℝ E] [CompleteSpace F] in
+/-- The pairing of a Schwartz function with an `Lᵖ` function is an absolutely convergent
+integral. -/
+theorem integrable_schwartzMap_smul {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal}
+    [hp : Fact (1 ≤ p)] (φ : 𝓢(E, ℂ)) (u : Lp F p μ) : Integrable (fun x ↦ φ x • u x) μ :=
+  have : (1 - p⁻¹)⁻¹.HolderConjugate p := (ENNReal.HolderConjugate.inv_one_sub_inv' hp.out).symm
+  memLp_one_iff_integrable.1 ((φ.memLp (1 - p⁻¹)⁻¹ (μ := μ)).smul (Lp.memLp u))
+
+/-- Two functions of `Lᵖ` and of `L^q`, for possibly different exponents, have the same tempered
+distribution exactly when they agree almost everywhere. -/
+theorem toTemperedDistribution_eq_toTemperedDistribution_iff {μ : Measure E}
+    [μ.HasTemperateGrowth] {p q : ENNReal} [Fact (1 ≤ p)] [hq : Fact (1 ≤ q)] {u : Lp F p μ}
+    {v : Lp F q μ} : (u : 𝓢'(E, F)) = (v : 𝓢'(E, F)) ↔ u =ᵐ[μ] v := by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
+  refine ⟨fun h ↦ ae_eq_of_toTemperedDistribution_apply_eq u
+    ((Lp.memLp v).locallyIntegrable hq.out) fun φ ↦ by rw [h, toTemperedDistribution_apply],
+    fun h ↦ ?_⟩
+  ext φ
+  simp only [toTemperedDistribution_apply]
+  exact integral_congr_ae (h.mono fun x hx ↦ congrArg (φ x • ·) hx)
+
+/-- For functions `u ∈ Lᵖ`, `v ∈ L^q` and `w ∈ L^r`, possibly for three different exponents, the
+tempered distributions satisfy `u + v = w` exactly when `u + v = w` almost everywhere. -/
+theorem toTemperedDistribution_add_toTemperedDistribution_eq_iff {μ : Measure E}
+    [μ.HasTemperateGrowth] {p q r : ENNReal} [hp : Fact (1 ≤ p)] [hq : Fact (1 ≤ q)]
+    [Fact (1 ≤ r)] {u : Lp F p μ} {v : Lp F q μ} {w : Lp F r μ} :
+    (u : 𝓢'(E, F)) + (v : 𝓢'(E, F)) = (w : 𝓢'(E, F)) ↔ ⇑u + ⇑v =ᵐ[μ] w := by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
+  have hpair (φ : 𝓢(E, ℂ)) :
+      ((u : 𝓢'(E, F)) + (v : 𝓢'(E, F))) φ = ∫ x, φ x • (⇑u + ⇑v) x ∂μ := by
+    simp only [add_apply, toTemperedDistribution_apply, Pi.add_apply,
+      smul_add, integral_add (integrable_schwartzMap_smul φ u) (integrable_schwartzMap_smul φ v)]
+  refine ⟨fun h ↦ (ae_eq_of_toTemperedDistribution_apply_eq w
+    (((Lp.memLp u).locallyIntegrable hp.out).add ((Lp.memLp v).locallyIntegrable hq.out))
+    fun φ ↦ by rw [← h, hpair]).symm, fun h ↦ ?_⟩
+  ext φ
+  rw [hpair, toTemperedDistribution_apply]
+  exact integral_congr_ae (h.mono fun x hx ↦ congrArg (φ x • ·) hx)
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying the tempered distribution of an `Lᵖ` function `u` by a function `g` of temperate
@@ -171,21 +250,34 @@ theorem exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le {μ : Measure E
   have hmem : MemLp g ⊤ μ := memLp_top_of_bound hmeas G (ae_of_all _ hG)
   refine ⟨hmem.toLp g • u, (Lp.toTemperedDistribution_smul_eq hg hmem u).symm,
     (Lp.norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))⟩
-  rw [Lp.norm_toLp g hmem, eLpNorm_exponent_top hmeas]
-  exact ENNReal.toReal_le_of_le_ofReal hG0 (eLpNormEssSup_le_of_ae_bound (ae_of_all _ hG))
+  exact Lp.norm_le_of_ae_bound_top hG0 (hmem.coeFn_toLp.mono fun x hx ↦ hx ▸ hG x)
+
+/-- The tempered distribution of an `Lᵖ` function `w` is the product of the tempered distribution
+of an `L^q` function `u` with a function `g` of temperate growth exactly when `w = g • u` almost
+everywhere. The product `g • u` need not lie in any `Lᵖ` space a priori. -/
+theorem toTemperedDistribution_eq_smulLeftCLM_iff {μ : Measure E} [μ.HasTemperateGrowth]
+    {p q : ENNReal} [Fact (1 ≤ p)] [hq : Fact (1 ≤ q)] {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    (w : Lp F p μ) (u : Lp F q μ) :
+    (w : 𝓢'(E, F)) = TemperedDistribution.smulLeftCLM F g (u : 𝓢'(E, F)) ↔
+      w =ᵐ[μ] fun x ↦ g x • u x := by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
+  refine ⟨fun h ↦ ae_eq_of_toTemperedDistribution_apply_eq w
+    (((Lp.memLp u).locallyIntegrable hq.out).continuous_smul hg.1.continuous) fun φ ↦ ?_,
+    fun h ↦ ?_⟩
+  · rw [h, smulLeftCLM_toTemperedDistribution_apply hg]
+  · ext φ
+    rw [smulLeftCLM_toTemperedDistribution_apply hg, Lp.toTemperedDistribution_apply]
+    exact integral_congr_ae (h.mono fun x hx ↦ by simp only [hx])
 
 omit [FiniteDimensional ℝ E] in
 /-- Applying a continuous linear map `L` to the values of an `Lᵖ` function `u` applies `L` to the
 pairings of its tempered distribution. -/
 theorem toTemperedDistribution_compLp_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
-    [CompleteSpace G] {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal} [hp : Fact (1 ≤ p)]
+    [CompleteSpace G] {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal} [Fact (1 ≤ p)]
     (L : F →L[ℂ] G) (u : Lp F p μ) (φ : 𝓢(E, ℂ)) :
     ((L.compLp u : Lp G p μ) : 𝓢'(E, G)) φ = L ((u : 𝓢'(E, F)) φ) := by
-  have : (1 - p⁻¹)⁻¹.HolderConjugate p :=
-    (ENNReal.HolderConjugate.inv_one_sub_inv' hp.out).symm
-  have hφu : Integrable (fun x ↦ φ x • u x) μ :=
-    memLp_one_iff_integrable.1 ((φ.memLp (1 - p⁻¹)⁻¹ (μ := μ)).smul (Lp.memLp u))
-  rw [Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply, ← L.integral_comp_comm hφu]
+  rw [Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply,
+    ← L.integral_comp_comm (integrable_schwartzMap_smul φ u)]
   refine integral_congr_ae ((L.coeFn_compLp u).mono fun x hx ↦ ?_)
   simp only [hx, map_smul]
 
@@ -269,6 +361,16 @@ theorem ae_eq_fourierInv_of_fourier_eq {p : ENNReal} [Fact (1 ≤ p)]
   refine ae_eq_of_toTemperedDistribution_apply_eq u hcont.locallyIntegrable fun φ => ?_
   rw [hu, fourierInv_toTemperedDistribution_apply v (L1.integrable_coeFn v) .rfl]
 
+/-- **The continuous representative of an `Lᵖ` function with integrable Fourier transform.** If
+the distributional Fourier transform of `u ∈ Lᵖ` is an `L¹` function `v`, then every continuous
+representative of `u` is the inverse Fourier transform `𝓕⁻ v`. -/
+theorem eq_fourierInv_of_ae_eq {p : ENNReal} [Fact (1 ≤ p)]
+    {u : Lp F p (volume : Measure E)} {v : Lp F 1 (volume : Measure E)}
+    (h : 𝓕 (u : 𝓢'(E, F)) = v) {g : E → F} (hg : Continuous g) (hug : u =ᵐ[volume] g) :
+    g = 𝓕⁻ (v : E → F) :=
+  (hg.ae_eq_iff_eq volume (L1.integrable_coeFn v).continuous_fourierInv).1
+    (hug.symm.trans (ae_eq_fourierInv_of_fourier_eq h))
+
 end InnerProductSpace
 
 end MeasureTheory.Lp
@@ -282,12 +384,16 @@ variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
   [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
 
 /-- Applying a continuous linear map `L` to the values of a Schwartz function `u` applies `L` to
-the pairings of its tempered distribution. -/
-theorem toTemperedDistributionCLM_postcompCLM_apply (L : F →L[ℂ] G) (u : 𝓢(E, F))
-    (φ : 𝓢(E, ℂ)) :
-    ((u.postcompCLM L : 𝓢(E, G)) : 𝓢'(E, G)) φ = L ((u : 𝓢'(E, F)) φ) := by
-  have hφu : Integrable (fun x ↦ φ x • u x) := φ.integrable.smul_of_top_left u.memLp_top
-  rw [SchwartzMap.coe_apply, SchwartzMap.coe_apply, ← L.integral_comp_comm hφu]
+the pairings of its tempered distribution, for the embedding against any measure of temperate
+growth. -/
+theorem toTemperedDistributionCLM_postcompCLM_apply {μ : Measure E} [μ.HasTemperateGrowth]
+    (L : F →L[ℂ] G) (u : 𝓢(E, F)) (φ : 𝓢(E, ℂ)) :
+    toTemperedDistributionCLM E G μ (u.postcompCLM L) φ =
+      L (toTemperedDistributionCLM E F μ u φ) := by
+  have hφu : Integrable (fun x ↦ φ x • u x) μ :=
+    (φ.integrable (μ := μ)).smul_of_top_left (u.memLp_top μ)
+  rw [toTemperedDistributionCLM_apply_apply μ, toTemperedDistributionCLM_apply_apply μ,
+    ← L.integral_comp_comm hφu]
   simp only [postcompCLM_apply, map_smul]
 
 end SchwartzMap
@@ -345,10 +451,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
 continuous function is determined by its tempered distribution. -/
 theorem toTemperedDistribution_toLpTop_injective {μ : Measure E} [μ.HasTemperateGrowth]
     [μ.IsOpenPosMeasure] :
-    Function.Injective fun f : E →ᵇ F ↦ Lp.toTemperedDistribution (toLpTop μ ℂ f) := fun f g h ↦
+    Function.Injective fun f : E →ᵇ F ↦ Lp.toTemperedDistribution (toLpTop μ ℂ f) :=
   have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
-  toLpTop_injective (𝕜 := ℂ) μ <|
-    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-    simpa only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply] using h
+  Lp.toTemperedDistribution_injective.comp (toLpTop_injective (𝕜 := ℂ) μ)
 
 end BoundedContinuousFunction

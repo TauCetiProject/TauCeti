@@ -83,11 +83,9 @@ private theorem forkBacktrack_false :
   · rw [forkBacktrack_false]
     exact forkTurn_mul_self k (G := DG)
       (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1) (by omega)
-      (by rw [DynkinType.rank_D]; omega)
   · rw [forkBacktrack_true]
     exact forkTurn_mul_self k (G := DG)
       (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1) (by omega)
-      (by rw [DynkinType.rank_D]; omega)
 
 /-- The sum of the leaf backtracks has zero `(n - 2)`-nd power. -/
 @[simp] theorem signlessPreprojectiveDForkBacktrack_add_pow_eq_zero (hn : 3 ≤ n) :
@@ -220,7 +218,6 @@ private theorem leafArrow_mul_topWord (hn : 3 ≤ n) (l : Bool) :
     have h := signlessArrow_mul_signlessArrow_leaf k (G := DG)
       (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1)
       (l := if l then c + 1 else c + 2) (by split_ifs <;> omega)
-      (by rw [DynkinType.rank_D]; split_ifs <;> omega)
     cases l <;> simp only [Bool.false_eq_true, ite_false, ite_true,
       signlessPreprojectiveDForkBacktrack_true,
       signlessPreprojectiveDForkBacktrack_false] at h ⊢ <;>

@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Relative
+import TauCeti.Algebra.Homology.ModuleCat.Basic
+import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 
 /-!
 # The cap product of relative cohomology with relative homology
@@ -42,6 +44,17 @@ pairing `μ : M ⊗ S ⟶ N` in an abelian monoidal category.
   `x ⌢ j^*α = j_*x ⌢ α` for `j^* : Hᵖ(X, A) ⟶ Hᵖ(X)` and `j_* : Hₙ(X) ⟶ Hₙ(X, A)`.
 * `TopPair.singularCap_naturality`: naturality in maps of pairs, the projection formula
   `f_*(x ⌢ f^*α) = f_*x ⌢ α`.
+* `TopPair.singularCap_coefficient_naturality`: the native relative cap product commutes with
+  compatible changes of every coefficient object.
+* `TopPair.singularCap_coefficient_naturality_map`: the same square combined with a map of pairs.
+* `TopPair.singularCap_singularCohomologyδ`: compatibility with the connecting morphisms of the
+  pair, `x ⌢ δβ = i_*(∂x ⌢ β)` for `β ∈ Hᵖ(A)`, `x ∈ Hₙ(X, A)` and `i : A ⟶ X` the inclusion.
+
+The proof of the last identity is a cochain computation. Lift `β` to a cochain `b` of `X` whose
+coboundary represents `δβ`, and lift a relative cycle to a chain `z` of `X` by the degreewise
+splitting of `0 ⟶ C(A) ⟶ C(X) ⟶ C(X, A) ⟶ 0`, so that `∂z` is a cycle of `A` representing `∂x`.
+The boundary formula for the cap product gives `z ⌢ δb = ∂z ⌢ b - (-1)ᵖ ∂(z ⌢ b)`, and `∂z ⌢ b`
+is the image of `∂z ⌢ β` under `i`.
 
 ## References
 
@@ -53,7 +66,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits MonoidalCategory Simplicial
+open CategoryTheory Limits MonoidalCategory Simplicial HomologicalComplex
 
 universe w v u
 
@@ -67,6 +80,22 @@ section Chain
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [MonoidalCategory C]
   [MonoidalPreadditive C] {R S T M N : C}
   [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
+
+/-- Relative cap chains commute with maps of pairs and the induced ambient chain maps. -/
+lemma capChain_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Type*)
+    [Semiring k] [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N)
+    (p q n : ℕ) (h : p + q = n) (φ : (P'.singularChainComplex R).X p ⟶ M) :
+    (TopPair.singularChainComplexMap f T).f n ≫
+        TauCeti.ChainComplex.capChain k (P'.alexanderWhitneyDiagonal u)
+          ((TopCat.toSSet.obj P'.fst).chainComplexPairing μ) p q n h φ =
+      TauCeti.ChainComplex.capChain k (P.alexanderWhitneyDiagonal u)
+          ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) p q n h
+          ((TopPair.singularChainComplexMap f R).f p ≫ φ) ≫
+        (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.Hom.fst f)) N).f q :=
+  (TauCeti.ChainComplex.capChain_naturality _ _ _ _ _ _ _ _
+    (TopPair.alexanderWhitneyDiagonal_naturality f u)
+    (SSet.chainComplexPairing_naturality (TopCat.toSSet.map (TopPair.Hom.fst f)) μ).symm
+    p q n h φ).symm
 
 /-- Capping the image of a singular chain of `X` in the relative chains of `(X, A)` with a
 relative cochain is capping the chain with the cochain of `X` it restricts to. -/
@@ -182,6 +211,217 @@ lemma singularCap_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Type*) [Ri
     (alexanderWhitneyDiagonal_naturality f u)
     (SSet.chainComplexPairing_naturality (TopCat.toSSet.map (Hom.fst f)) μ).symm p q n h α
 
+section Coefficients
+
+variable {R' S' T' M' N' : C}
+  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M')]
+
+/-- If `c ≫ u = u' ≫ (a ⊗ b)` and `(v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e`, then cap with the
+cochain pulled back by `a` and postcomposed by `v` equals cap between the homology maps
+of `c` and `e`. -/
+theorem singularCap_coefficient_naturality (P : TopPair.{w}) (k : Type*) [Ring k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (u' : T' ⟶ R' ⊗ S')
+    (μ : M ⊗ S ⟶ N) (μ' : M' ⊗ S' ⟶ N')
+    (a : R' ⟶ R) (b : S' ⟶ S) (c : T' ⟶ T) (v : M ⟶ M') (e : N ⟶ N')
+    (hu : c ≫ u = u' ≫ (a ⊗ₘ b)) (hμ : (v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e)
+    (p q n : ℕ) (h : p + q = n) (α : P.singularCohomology R k M p) :
+    P.singularCap k u' μ' p q n h
+        (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+          (((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj P)).op ≫
+            (P.singularChainComplex R').linearYonedaObjMap k v) p α) =
+      homologyMap (((SSetPair.chainComplexFunctor C).map c).app (toSSetPair.obj P)) n ≫
+        P.singularCap k u μ p q n h α ≫
+          ((AlgebraicTopology.singularHomologyFunctor C q).map e).app P.fst := by
+  rw [singularCap_def, singularCap_def]
+  have ha :
+      (NatTrans.mapHomologicalComplex ((tensoringLeft C).map v) _).app
+          ((TopCat.toSSet.obj P.fst).chainComplex S') ≫
+        (TopCat.toSSet.obj P.fst).chainComplexPairing μ' =
+        ((tensorLeft M).mapHomologicalComplex _).map
+            (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst)) ≫
+          (TopCat.toSSet.obj P.fst).chainComplexPairing μ ≫
+            ((SSet.chainComplexFunctor C).map e).app (TopCat.toSSet.obj P.fst) := by
+    rw [SSet.whiskerRight_comp_chainComplexPairing,
+      SSet.chainComplexPairing_comp_chainComplexFunctor_map_app,
+      SSet.whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing]
+    exact congrArg ((TopCat.toSSet.obj P.fst).chainComplexPairing) hμ
+  exact TauCeti.ChainComplex.cap_coefficient_naturality
+    (P.alexanderWhitneyDiagonal u) ((TopCat.toSSet.obj P.fst).chainComplexPairing μ)
+    (P.alexanderWhitneyDiagonal u') ((TopCat.toSSet.obj P.fst).chainComplexPairing μ')
+    (((SSetPair.chainComplexFunctor C).map c).app (toSSetPair.obj P))
+    (((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj P))
+    (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst)) v
+    (((SSet.chainComplexFunctor C).map e).app (TopCat.toSSet.obj P.fst))
+    (alexanderWhitneyDiagonal_coefficient_naturality P u u' a b c hu)
+    (fun j ↦ congrArg (fun f ↦ f.f j) ha) p q n h α
+
+/-- Coefficient transport commutes with the projection formula for a map of pairs. -/
+theorem singularCap_coefficient_naturality_map {P Q : TopPair.{w}} (f : P ⟶ Q)
+    (k : Type*) [Ring k] [Linear k C] [MonoidalLinear k C]
+    (u : T ⟶ R ⊗ S) (u' : T' ⟶ R' ⊗ S') (μ : M ⊗ S ⟶ N) (μ' : M' ⊗ S' ⟶ N')
+    (a : R' ⟶ R) (b : S' ⟶ S) (c : T' ⟶ T) (v : M ⟶ M') (e : N ⟶ N')
+    (hu : c ≫ u = u' ≫ (a ⊗ₘ b)) (hμ : (v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e)
+    (p q n : ℕ) (h : p + q = n) (α : Q.singularCohomology R k M p) :
+    P.singularCap k u' μ' p q n h
+        (TopPair.singularCohomologyMap f p
+          (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+            (((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj Q)).op ≫
+              (Q.singularChainComplex R').linearYonedaObjMap k v) p α)) ≫
+        ((AlgebraicTopology.singularHomologyFunctor C q).obj N').map (Hom.fst f) =
+      TopPair.singularHomologyMap f T' n ≫
+        homologyMap (((SSetPair.chainComplexFunctor C).map c).app (toSSetPair.obj Q)) n ≫
+          Q.singularCap k u μ p q n h α ≫
+            ((AlgebraicTopology.singularHomologyFunctor C q).map e).app Q.fst := by
+  rw [singularCap_naturality,
+    singularCap_coefficient_naturality Q k u u' μ μ' a b c v e hu hμ p q n h]
+
+end Coefficients
+
 end Homology
+
+section Connecting
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
+  [MonoidalPreadditive C] {R S T M N : C}
+  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
+
+/-- The chain-level form of `TopPair.singularCap_singularCohomologyδ`. Let `x₂` be a cochain of `X`
+whose coboundary is the pull-back of a relative cocycle `ζ` and whose restriction to `A` is a
+cocycle `z₃`, and let `s` be a section of the quotient map `C(X) ⟶ C(X, A)` and `r` a retraction
+onto `C(A)` as in `SSetPair.chainComplexXSplitting`. Then on relative cycles, capping with `ζ`
+agrees with taking the retracted boundary of the lift, capping with `z₃` and including into `X`,
+up to the boundary of `x ↦ -(-1)ᵖ s(x) ⌢ x₂`. -/
+-- `s` and `r` are variables, typed with the chains of `P.fst` and `P.snd`, so that their composites
+-- with the cap products are type-correct without unfolding `toSSetPair`.
+private lemma capCycles_eq_add (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
+    [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N) (p q m : ℕ) (h : p + q = m)
+    (ζ : (P.singularCochainComplex R k M).cycles (p + 1))
+    (x₂ : ((TopCat.toSSet.obj P.fst).chainComplex R).X p ⟶ M)
+    (z₃ : (P.snd.singularCochainComplex R k M).cycles p)
+    (hd : ((TopCat.toSSet.obj P.fst).chainComplex R).d (p + 1) p ≫ x₂ =
+      (P.singularChainComplexπ R).f (p + 1) ≫ (P.singularCochainComplex R k M).iCycles (p + 1) ζ)
+    (hg : (SSet.chainComplexMap (TopCat.toSSet.map P.map) R).f p ≫ x₂ =
+      (P.snd.singularCochainComplex R k M).iCycles p z₃)
+    (s : (P.singularChainComplex T).X (m + 1) ⟶
+      ((TopCat.toSSet.obj P.fst).chainComplex T).X (m + 1))
+    (r : ((TopCat.toSSet.obj P.fst).chainComplex T).X m ⟶
+      ((TopCat.toSSet.obj P.snd).chainComplex T).X m)
+    (hs : s ≫ (P.singularChainComplexπ T).f (m + 1) = 𝟙 _)
+    (hr : ((P.singularChainComplex T).iCycles (m + 1) ≫ s ≫
+        ((TopCat.toSSet.obj P.fst).chainComplex T).d (m + 1) m ≫ r) ≫
+        (SSet.chainComplexMap (TopCat.toSSet.map P.map) T).f m =
+      (P.singularChainComplex T).iCycles (m + 1) ≫ s ≫
+        ((TopCat.toSSet.obj P.fst).chainComplex T).d (m + 1) m)
+    (hcyc : ((P.singularChainComplex T).iCycles (m + 1) ≫ s ≫
+        ((TopCat.toSSet.obj P.fst).chainComplex T).d (m + 1) m ≫ r) ≫
+        ((TopCat.toSSet.obj P.snd).chainComplex T).d m ((ComplexShape.down ℕ).next m) = 0) :
+    TauCeti.ChainComplex.capCycles k (P.alexanderWhitneyDiagonal u)
+        ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) (p + 1) q (m + 1) (by omega) ζ =
+      ((TopCat.toSSet.obj P.snd).chainComplex T).liftCycles
+          ((P.singularChainComplex T).iCycles (m + 1) ≫ s ≫
+            ((TopCat.toSSet.obj P.fst).chainComplex T).d (m + 1) m ≫ r) _ rfl hcyc ≫
+        TauCeti.ChainComplex.capCycles k (P.snd.alexanderWhitneyDiagonal u)
+          ((TopCat.toSSet.obj P.snd).chainComplexPairing μ) p q m h z₃ ≫
+          HomologicalComplex.cyclesMap (SSet.chainComplexMap (TopCat.toSSet.map P.map) N) q +
+      (-((-1 : ℤ) ^ p) • ((P.singularChainComplex T).iCycles (m + 1) ≫ s ≫
+          TauCeti.ChainComplex.capChain k (P.fst.alexanderWhitneyDiagonal u)
+            ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) p (q + 1) (m + 1) (by omega) x₂)) ≫
+        ((TopCat.toSSet.obj P.fst).chainComplex N).toCycles (q + 1) q := by
+  -- Compare the underlying chains. The capped lift `x ⌢ ζ = s(x) ⌢ δx₂` (`hL`), the capped
+  -- retracted boundary `∂s(x) ⌢ x₂` (`hF3`, `hr`) and the boundary formula (`hF5`) remain.
+  rw [← cancel_mono (((TopCat.toSSet.obj P.fst).chainComplex N).iCycles q)]
+  simp only [Preadditive.add_comp, Category.assoc, HomologicalComplex.cyclesMap_i,
+    HomologicalComplex.toCycles_i, TauCeti.ChainComplex.capCycles_i,
+    TauCeti.ChainComplex.capCycles_i_assoc, HomologicalComplex.liftCycles_i_assoc]
+  have hF1 := (singularChainComplexπ_capChain_alexanderWhitneyDiagonal P k u μ (p + 1) q (m + 1)
+    (by omega) ((P.singularCochainComplex R k M).iCycles (p + 1) ζ)).trans
+      (congrArg (TauCeti.ChainComplex.capChain k (P.fst.alexanderWhitneyDiagonal u)
+        ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) (p + 1) q (m + 1) (by omega)) hd.symm)
+  have hF3 := TauCeti.ChainComplex.capChain_naturality (k := k) (P.fst.alexanderWhitneyDiagonal u)
+    ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) (P.snd.alexanderWhitneyDiagonal u)
+    ((TopCat.toSSet.obj P.snd).chainComplexPairing μ)
+    (SSet.chainComplexMap (TopCat.toSSet.map P.map) T)
+    (SSet.chainComplexMap (TopCat.toSSet.map P.map) R)
+    (SSet.chainComplexMap (TopCat.toSSet.map P.map) S)
+    (SSet.chainComplexMap (TopCat.toSSet.map P.map) N)
+    (TopCat.alexanderWhitneyDiagonal_naturality P.map u)
+    (SSet.chainComplexPairing_naturality (TopCat.toSSet.map P.map) μ).symm p q m h x₂
+  rw [show (SSet.chainComplexMap (TopCat.toSSet.map P.map) R).f p ≫ x₂ = _ from hg] at hF3
+  have hF5 := TauCeti.ChainComplex.capChain_comp_d (k := k) (P.fst.alexanderWhitneyDiagonal u)
+    ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) p q m h x₂
+  have hc : -(-1 : ℤ) ^ p * (-1) ^ p = -1 := by rw [neg_mul, ← mul_pow]; norm_num
+  -- Name the two cocycles as morphisms of `C`: as elements of the cochain modules they make the
+  -- composites below type-correct only up to unfolding `ModuleCat.of`, which blocks `rw`.
+  obtain ⟨φ, hφ⟩ : ∃ φ : (P.singularChainComplex R).X (p + 1) ⟶ M,
+      φ = (P.singularCochainComplex R k M).iCycles (p + 1) ζ := ⟨_, rfl⟩
+  obtain ⟨ψ, hψ⟩ : ∃ ψ : ((TopCat.toSSet.obj P.snd).chainComplex R).X p ⟶ M,
+      ψ = (P.snd.singularCochainComplex R k M).iCycles p z₃ := ⟨_, rfl⟩
+  rw [← hφ] at hF1 ⊢
+  rw [← hψ] at hF3 ⊢
+  have hL : (P.singularChainComplex T).iCycles (m + 1) ≫
+      TauCeti.ChainComplex.capChain k (P.alexanderWhitneyDiagonal u)
+        ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) (p + 1) q (m + 1) (by omega) φ =
+      (P.singularChainComplex T).iCycles (m + 1) ≫ s ≫
+        TauCeti.ChainComplex.capChain k (P.fst.alexanderWhitneyDiagonal u)
+          ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) (p + 1) q (m + 1) (by omega)
+          (((TopCat.toSSet.obj P.fst).chainComplex R).d (p + 1) p ≫ x₂) := by
+    refine Eq.trans ?_
+      (congrArg (fun t ↦ (P.singularChainComplex T).iCycles (m + 1) ≫ s ≫ t) hF1)
+    exact congrArg (_ ≫ ·) ((Category.id_comp _).symm.trans
+      ((congrArg (· ≫ _) hs.symm).trans (Category.assoc _ _ _)))
+  rw [hL, hF3, reassoc_of% hr, Preadditive.zsmul_comp, Category.assoc, Category.assoc, hF5,
+    Preadditive.comp_zsmul, Preadditive.comp_zsmul, smul_smul, hc, neg_one_zsmul,
+    Preadditive.comp_sub, Preadditive.comp_sub]
+  abel
+
+/-- **Compatibility of the relative cap product with the connecting morphisms**: for a class `β` of
+`Hᵖ(A)` with image `δβ` in `Hᵖ⁺¹(X, A)`, and a class `x` of `Hₘ₊₁(X, A)` with image `∂x` in
+`Hₘ(A)`, `x ⌢ δβ = i_*(∂x ⌢ β)` in `H_q(X)`, where `i : A ⟶ X` is the inclusion and
+`p + q = m`. There is no sign. -/
+theorem singularCap_singularCohomologyδ (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
+    [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N) (p q m : ℕ) (h : p + q = m)
+    (β : P.snd.singularCohomology R k M p) :
+    P.singularCap k u μ (p + 1) q (m + 1) (by omega)
+        (P.singularCohomologyδ R k M p (p + 1) rfl β) =
+      P.singularHomologyδ T (m + 1) m ≫ P.snd.singularCap k u μ p q m h β ≫
+        ((AlgebraicTopology.singularHomologyFunctor C q).obj N).map P.map := by
+  -- Represent `δβ` by a relative cocycle `ζ`, and `β` by a cocycle `z₃` of `A` which lifts to a
+  -- cochain `x₂` of `X` with coboundary exactly the pull-back of `ζ`.
+  obtain ⟨ζ, hζ⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ (p + 1)
+    (P.singularCohomologyδ R k M p (p + 1) rfl β)
+  obtain ⟨x₂, z₃, hd, hg, rfl⟩ :=
+    (P.shortExact_singularCochainComplexShortComplex R k M).moduleCat_exists_d_eq_of_δ_eq p
+      (p + 1) rfl β ζ hζ.symm
+  rw [← hζ, ← cancel_epi ((P.singularChainComplex T).homologyπ (m + 1)), singularCap_homologyπ,
+    SSetPair.homologyπ_homologyδ_assoc (toSSetPair.obj P) T m]
+  -- The subspace of `toSSetPair.obj P` is `TopCat.toSSet.obj P.snd` only up to definitional
+  -- unfolding (`toSSetPair_obj_left`), so the cap product on `A` is computed on cycles by
+  -- `TopCat.singularCap_homologyπ` in a `have` and substituted with `Eq.trans` rather than `rw`.
+  have hcap : ((toSSetPair.obj P).left.chainComplex T).homologyπ m ≫
+      P.snd.singularCap k u μ p q m h
+          (((P.snd.singularCochainComplex R k M).homologyπ p).hom z₃) =
+        TauCeti.ChainComplex.capCycles k (P.snd.alexanderWhitneyDiagonal u)
+          ((TopCat.toSSet.obj P.snd).chainComplexPairing μ) p q m h z₃ ≫
+        ((TopCat.toSSet.obj P.snd).chainComplex N).homologyπ q :=
+    TopCat.singularCap_homologyπ P.snd k u μ p q m h z₃
+  have hcap' := (Category.assoc _ _ _).symm.trans ((congrArg (· ≫
+    ((AlgebraicTopology.singularHomologyFunctor C q).obj N).map P.map) hcap).trans
+      (Category.assoc _ _ _))
+  refine Eq.trans ?_ (congrArg (_ ≫ ·) hcap').symm
+  rw [TauCeti.singularHomologyFunctor_obj_map, SSet.homologyMap]
+  -- `erw`: for the same reason the two homology objects of `A` differ syntactically here.
+  erw [HomologicalComplex.homologyπ_naturality]
+  rw [capCycles_eq_add P k u μ p q m h ζ x₂ z₃ hd hg
+    (SSetPair.chainComplexXSplitting T (toSSetPair.obj P) (m + 1)).s
+    (SSetPair.chainComplexXSplitting T (toSSetPair.obj P) m).r
+    (SSetPair.chainComplexXSplitting T (toSSetPair.obj P) (m + 1)).s_g
+    (SSetPair.chainComplexXSplitting_s_d_r_comp (toSSetPair.obj P) T m)
+    (SSetPair.chainComplexXSplitting_s_d_r_comp_d (toSSetPair.obj P) T m _)]
+  simp only [Preadditive.add_comp, Category.assoc, HomologicalComplex.toCycles_comp_homologyπ,
+    comp_zero, add_zero]
+  -- The two sides differ only by `toSSetPair_obj_left` and `toSSetPair_obj_right`.
+  rfl
+
+end Connecting
 
 end TopPair

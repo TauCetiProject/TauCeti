@@ -61,6 +61,8 @@ it extends by the identity to all of `X`, and takes `min 1 (2 f)` as control fun
 * `TauCeti.NDRPair.prod`: the product of two NDR pairs.
 * `TauCeti.NDRPair.ofHomotopyRel`: NDR data from a deformation of a neighbourhood `U ⊇ A` onto
   `A`, relative to `A`, and a function vanishing exactly on `A` that is less than one only on `U`.
+* `TauCeti.hasHomotopyExtensionProperty_singleton_unitInterval`: every singleton `{t₀}` in `I` has
+  the homotopy extension property.
 
 ## References
 
@@ -119,7 +121,8 @@ private theorem prodTime_zero_right (t u : I) : prodTime t u 0 = 0 := by
 /-- Where the control value `u` is positive and at most `v`, the deformation runs at full speed. -/
 private theorem prodTime_of_le {t u v : I} (hu : (u : ℝ) ≠ 0) (huv : u ≤ v) :
     prodTime t u v = t := by
-  rw [prodTime, projIcc_eq_one.2 ((one_le_div (lt_of_le_of_ne u.2.1 hu.symm)).2 huv), mul_one]
+  rw [prodTime, projIcc_eq_one.2 ((one_le_div (lt_of_le_of_ne u.property.1 hu.symm)).2 huv),
+      mul_one]
 
 /-- The time of the deformation with control `u`, read off at the point `q`, is continuous where
 `q` lies off the zero set of `u`. -/
@@ -148,10 +151,10 @@ theorem cylinderControl_eq_zero_iff (z : I × X) :
 private theorem cylinderHeight_mem (w : I × I × X) :
     (w.2.1 : ℝ) - w.1 * min (w.2.1 : ℝ) (N.control w.2.2) ∈ I := by
   have h₁ : (w.1 : ℝ) * min (w.2.1 : ℝ) (N.control w.2.2) ≤ min (w.2.1 : ℝ) (N.control w.2.2) :=
-    mul_le_of_le_one_left (le_min w.2.1.2.1 (N.control w.2.2).2.1) w.1.2.2
+    mul_le_of_le_one_left (le_min w.2.1.property.1 (N.control w.2.2).property.1) w.1.property.2
   have h₂ : 0 ≤ (w.1 : ℝ) * min (w.2.1 : ℝ) (N.control w.2.2) :=
-    mul_nonneg w.1.2.1 (le_min w.2.1.2.1 (N.control w.2.2).2.1)
-  constructor <;> linarith [min_le_left (w.2.1 : ℝ) (N.control w.2.2), w.2.1.2.2]
+    mul_nonneg w.1.property.1 (le_min w.2.1.property.1 (N.control w.2.2).property.1)
+  constructor <;> linarith [min_le_left (w.2.1 : ℝ) (N.control w.2.2), w.2.1.property.2]
 
 /-- The deformation of the cylinder `I × X` onto `{0} × X ∪ I × A`: at time `s` it sends
 `(t, x)` to `(t - s * min t (u x), H (s * min 1 (t / u x), x))`. For `t > 0` the height is
@@ -192,11 +195,11 @@ theorem cylinderDeformation_of_mem (s : I) {z : I × X} (hz : z ∈ cylinderExte
   rcases mem_cylinderExtensionDomain_iff.1 hz with ht | hx
   · obtain rfl : t = 0 := ht
     refine Prod.ext (Subtype.ext ?_) ?_
-    · simp [min_eq_left (N.control x).2.1]
+    · simp [min_eq_left (N.control x).property.1]
     · simp
   · have hu : (N.control x : ℝ) = 0 := by rw [(N.control_eq_zero_iff x).2 hx, Icc.coe_zero]
     refine Prod.ext (Subtype.ext ?_) ?_
-    · simp [hu, min_eq_right t.2.1]
+    · simp [hu, min_eq_right t.property.1]
     · rw [cylinderDeformation_snd, N.deformation_of_mem _ hx]
 
 /-- At time `1` the cylinder deformation lands in `{0} × X ∪ I × A`. Where `t ≤ u x` it reaches
@@ -216,11 +219,12 @@ theorem cylinderDeformation_one_mem (z : I × X) :
     · rw [N.deformation_of_mem _ hx]
       exact hx
     · have hpos : 0 < (N.control x : ℝ) :=
-        (N.control x).2.1.lt_of_ne ((coe_ne_zero_iff_notMem N.control_eq_zero_iff x).2 hx).symm
+        (N.control x).property.1.lt_of_ne ((coe_ne_zero_iff_notMem N.control_eq_zero_iff x).2
+            hx).symm
       have hproj : projIcc 0 1 zero_le_one ((t : ℝ) / N.control x) = 1 :=
         projIcc_eq_one.2 ((one_le_div hpos).2 hut.le)
       rw [hproj, one_mul]
-      exact N.deformation_one_mem (Subtype.coe_lt_coe.1 (hut.trans_le t.2.2))
+      exact N.deformation_one_mem (Subtype.coe_lt_coe.1 (hut.trans_le t.property.2))
 
 /-- The retraction of the cylinder `I × X` onto `{0} × X ∪ I × A`, the end of the cylinder
 deformation. -/
@@ -235,7 +239,7 @@ theorem coe_cylinderRetraction_apply (z : I × X) :
 @[simp]
 theorem cylinderRetraction_apply_coe (z : cylinderExtensionDomain A) :
     N.cylinderRetraction z = z :=
-  Subtype.ext (N.cylinderDeformation_of_mem 1 z.2)
+  Subtype.ext (N.cylinderDeformation_of_mem 1 z.property)
 
 /-- The cylinder deformation is a strong deformation retraction of `I × X` onto
 `{0} × X ∪ I × A`: a homotopy relative to that subspace from the identity to the retraction. -/
@@ -258,7 +262,7 @@ theorem cylinderHomotopyRel_apply (w : I × (I × X)) :
 protected theorem hasHomotopyExtensionProperty (N : NDRPair A) :
     HasHomotopyExtensionProperty A :=
   hasHomotopyExtensionProperty_of_retraction (r := (ContinuousMap.subtypeVal _).comp
-      N.cylinderRetraction) N.isClosed (fun z ↦ (N.cylinderRetraction z).2)
+      N.cylinderRetraction) N.isClosed (fun z ↦ (N.cylinderRetraction z).property)
     fun z hz ↦ congrArg Subtype.val (N.cylinderRetraction_apply_coe ⟨z, hz⟩)
 
 section Restrict
@@ -271,7 +275,7 @@ the deformation to `Y` are NDR data for the trace `Y ∩ A` of `A` on `Y`. -/
 def restrict : NDRPair ((↑) ⁻¹' A : Set Y) where
   control := N.control.comp (ContinuousMap.subtypeVal Y)
   control_eq_zero_iff y := N.control_eq_zero_iff y
-  deformation := ⟨fun p ↦ ⟨N.deformation (p.1, p.2), hY p.1 p.2 p.2.2⟩, by fun_prop⟩
+  deformation := ⟨fun p ↦ ⟨N.deformation (p.1, p.2), hY p.1 p.2 p.2.property⟩, by fun_prop⟩
   deformation_zero y := Subtype.ext (N.deformation_zero y)
   deformation_of_mem t _ hy := Subtype.ext (N.deformation_of_mem t hy)
   deformation_one_mem hy := N.deformation_one_mem hy
@@ -300,14 +304,14 @@ private noncomputable def retractionDrop (x : X) : ℝ :=
 
 private theorem bddAbove_range_drop (x : X) :
     BddAbove (range fun t : I ↦ (t : ℝ) - (r (t, x)).1) :=
-  ⟨1, forall_mem_range.2 fun t ↦ by linarith [t.2.2, (r (t, x)).1.2.1]⟩
+  ⟨1, forall_mem_range.2 fun t ↦ by linarith [t.property.2, (r (t, x)).1.property.1]⟩
 
 private theorem sub_le_retractionDrop (t : I) (x : X) :
     (t : ℝ) - (r (t, x)).1 ≤ retractionDrop r x :=
   le_ciSup (bddAbove_range_drop r x) t
 
 private theorem retractionDrop_le_one (x : X) : retractionDrop r x ≤ 1 :=
-  ciSup_le fun t ↦ by linarith [t.2.2, (r (t, x)).1.2.1]
+  ciSup_le fun t ↦ by linarith [t.property.2, (r (t, x)).1.property.1]
 
 private theorem continuous_retractionDrop : Continuous (retractionDrop r) := by
   have h := isCompact_univ.continuous_sSup (f := fun (x : X) (t : I) ↦ (t : ℝ) - (r (t, x)).1)
@@ -418,9 +422,9 @@ variable {f} in
 private theorem continuousOn_cutoff (hfU : ∀ x, f x < 1 → x ∈ U) :
     ContinuousOn (cutoff D f) (univ ×ˢ {x | f x < 1}) := by
   rw [continuousOn_iff_continuous_domRestrict]
-  have hU (p : (univ ×ˢ {x | f x < 1} : Set (I × X))) : p.1.2 ∈ U := hfU _ p.2.2
-  refine (continuous_subtype_val.comp (D.continuous.comp (Continuous.prodMk
-    ((continuous_cutoffTime f).comp continuous_subtype_val)
+  have hU (p : (univ ×ˢ {x | f x < 1} : Set (I × X))) : p.val.2 ∈ U := hfU _ p.property.2
+  refine (continuous_subtypeVal.comp (D.continuous.comp (Continuous.prodMk
+    ((continuous_cutoffTime f).comp continuous_subtypeVal)
     (Continuous.subtype_mk (by fun_prop) hU)))).congr fun p ↦ ?_
   simp only [Function.comp_apply, domRestrict_apply, cutoff_of_mem D f (hU p)]
 
@@ -432,14 +436,14 @@ private theorem continuous_cutoff (hfU : ∀ x, f x < 1 → x ∈ U) : Continuou
       ((isOpen_lt f.continuous continuous_const).mem_nhds (Subtype.coe_lt_coe.1 hp)))
   · have hlt : (3 / 4 : ℝ) < f p.2 := by linarith
     refine continuousAt_snd.congr (Filter.eventuallyEq_of_mem (prod_mem_nhds Filter.univ_mem
-      ((isOpen_lt continuous_const (continuous_subtype_val.comp f.continuous)).mem_nhds hlt))
+      ((isOpen_lt continuous_const (continuous_subtypeVal.comp f.continuous)).mem_nhds hlt))
         fun q hq ↦ ?_)
     exact (cutoff_of_le D f (le_of_lt hq.2) q.1).symm
 
 private theorem coe_projIcc_two_mul (x : X) :
     (projIcc 0 1 zero_le_one (2 * (f x : ℝ)) : ℝ) = min 1 (2 * (f x : ℝ)) := by
   rw [Set.coe_projIcc]
-  exact max_eq_right (le_min zero_le_one (mul_nonneg zero_le_two (f x).2.1))
+  exact max_eq_right (le_min zero_le_one (mul_nonneg zero_le_two (f x).property.1))
 
 variable (hAU) in
 /-- **NDR data from a deformation of a neighbourhood.** Let `D` be a homotopy, relative to `A`,
@@ -453,7 +457,7 @@ noncomputable def ofHomotopyRel (hf : ∀ x, f x = 0 ↔ x ∈ A) (hfU : ∀ x, 
   control_eq_zero_iff x := by
     rw [← hf, ContinuousMap.coe_mk, ← Subtype.coe_inj, ← Subtype.coe_inj, coe_projIcc_two_mul,
       Icc.coe_zero]
-    have := (f x).2.1
+    have := (f x).property.1
     constructor <;> intro h
     · rcases min_eq_iff.1 h with h | h <;> linarith [h.1]
     · simp [h]
@@ -477,7 +481,7 @@ noncomputable def ofHomotopyRel (hf : ∀ x, f x = 0 ↔ x ∈ A) (hfU : ∀ x, 
     have h1 : cutoffTime f (1, x) = 1 := by
       rw [cutoffTime, projIcc_eq_one.2 hle, one_mul]
     rw [ContinuousMap.coe_mk, cutoff_of_mem D f hU, h1, D.apply_one]
-    exact (r ⟨x, hU⟩).2
+    exact (r ⟨x, hU⟩).property
 
 variable (hf : ∀ x, f x = 0 ↔ x ∈ A) (hfU : ∀ x, f x < 1 → x ∈ U)
 
@@ -587,5 +591,23 @@ theorem nonempty_ndrPair_iff : Nonempty (NDRPair A) ↔ IsClosed A ∧ HasHomoto
   ⟨fun ⟨N⟩ ↦ ⟨N.isClosed, N.hasHomotopyExtensionProperty⟩, fun ⟨hA, h⟩ ↦
     let ⟨_, hr, hr'⟩ := h.exists_retraction
     ⟨NDRPair.ofRetraction hr hr' hA⟩⟩
+
+/-- Explicit NDR data for a singleton `{t₀} ⊆ I`: control `x ↦ |x - t₀|` and straight-line
+deformation `(s, x) ↦ (1 - s) x + s t₀`. -/
+private noncomputable def ndrPairSingletonUnitInterval (t₀ : I) : NDRPair ({t₀} : Set I) where
+  control := ⟨fun x ↦ ⟨|(x : ℝ) - t₀|, abs_nonneg _,
+    abs_sub_le_iff.2 ⟨by linarith [x.property.2, t₀.property.1],
+      by linarith [t₀.property.2, x.property.1]⟩⟩, by fun_prop⟩
+  control_eq_zero_iff x := by
+    simp [← Subtype.coe_inj, sub_eq_zero]
+  deformation := ⟨fun p ↦ Icc.convexComb p.2 t₀ p.1, by fun_prop⟩
+  deformation_zero := by simp
+  deformation_of_mem s x hx := by simp [mem_singleton_iff.1 hx]
+  deformation_one_mem := by simp
+
+/-- Every singleton `{t₀}` in the unit interval `I` has the homotopy extension property. -/
+theorem hasHomotopyExtensionProperty_singleton_unitInterval (t₀ : I) :
+    HasHomotopyExtensionProperty ({t₀} : Set I) :=
+  (ndrPairSingletonUnitInterval t₀).hasHomotopyExtensionProperty
 
 end TauCeti

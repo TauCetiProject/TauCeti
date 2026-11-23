@@ -140,8 +140,8 @@ theorem mem_toRingOfIntegers (O : NumberFieldOrder K) {x : 𝓞 K} :
 This moves ideals of the order between the two models: comparisons with ideals of `𝓞 K` use the
 former, fractional ideals and Picard groups the latter. -/
 def toRingOfIntegersEquiv (O : NumberFieldOrder K) : O.toRingOfIntegers ≃+* O.toSubalgebra where
-  toFun x := ⟨((x : 𝓞 K) : K), x.2⟩
-  invFun y := ⟨⟨y, O.le_ringOfIntegers y.2⟩, O.mem_toRingOfIntegers.mpr y.2⟩
+  toFun x := ⟨((x : 𝓞 K) : K), x.property⟩
+  invFun y := ⟨⟨y, O.le_ringOfIntegers y.property⟩, O.mem_toRingOfIntegers.mpr y.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl
@@ -226,7 +226,7 @@ theorem _root_.Ideal.restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one
   -- The extension of `I` is the `𝓞 K`-span of the elements of `I`.
   have hspan : (((I.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) : Ideal (𝓞 K)) :
       FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K) = Submodule.span (𝓞 K) (i : Set K) := by
-    rw [FractionalIdeal.coe_coeIdeal, Ideal.map, IsLocalization.coeSubmodule_span,
+    rw [FractionalIdeal.coeToSubmodule_coeIdeal, Ideal.map, IsLocalization.coeSubmodule_span,
       Set.image_image]
     congr 1
     ext y

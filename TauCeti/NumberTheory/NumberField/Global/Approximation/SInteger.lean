@@ -99,7 +99,7 @@ theorem exists_integer_forall_infinitePlace_add_le (γ : InfinitePlace K → K) 
   -- The point of the mixed space whose component at each infinite place `w` is `c w`, embedded
   -- by `w`, and its norm at `v`.
   let p : (InfinitePlace K → K) → mixedSpace K := fun c ↦
-    (fun w ↦ embedding_of_isReal w.2 (c w.1), fun w ↦ w.1.embedding (c w.1))
+    (fun w ↦ embedding_of_isReal w.property (c w.val), fun w ↦ w.val.embedding (c w.val))
   have hp (c : InfinitePlace K → K) (v : InfinitePlace K) : normAtPlace v (p c) = v (c v) := by
     by_cases hv : IsReal v
     · rw [normAtPlace_apply_of_isReal hv]
@@ -135,12 +135,12 @@ infinite place. The targets are indexed by the underlying absolute values of the
 one family serves both kinds of place; its values elsewhere are irrelevant. -/
 theorem exists_forall_apply_add_le :
     ∃ A : ℝ, ∀ (S : Finset (FinitePlace K)) (γ : AbsoluteValue K ℝ → K), ∃ ξ : K,
-      (∀ v : FinitePlace K, v ∉ S → v ξ ≤ 1) ∧ (∀ v ∈ S, v (ξ + γ v.1) ≤ 1) ∧
-        ∀ v : InfinitePlace K, v (ξ + γ v.1) ≤ A := by
+      (∀ v : FinitePlace K, v ∉ S → v ξ ≤ 1) ∧ (∀ v ∈ S, v (ξ + γ v.val) ≤ 1) ∧
+        ∀ v : InfinitePlace K, v (ξ + γ v.val) ≤ A := by
   classical
   refine ⟨∑ i, ‖mixedEmbedding.latticeBasis K i‖, fun S γ ↦ ?_⟩
-  obtain ⟨ξ, hξS, hξ⟩ := exists_forall_finitePlace_apply_add_le_one S fun v ↦ γ v.1
-  obtain ⟨ω, hω⟩ := exists_integer_forall_infinitePlace_add_le fun v ↦ ξ + γ v.1
+  obtain ⟨ξ, hξS, hξ⟩ := exists_forall_finitePlace_apply_add_le_one S fun v ↦ γ v.val
+  obtain ⟨ω, hω⟩ := exists_integer_forall_infinitePlace_add_le fun v ↦ ξ + γ v.val
   refine ⟨ξ + ω, fun v hv ↦ ?_, fun v hv ↦ ?_, fun v ↦ ?_⟩
   · exact (v.add_le _ _).trans (max_le (hξS v hv) (v.apply_le_one ω))
   · rw [add_right_comm]

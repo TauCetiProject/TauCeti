@@ -36,8 +36,11 @@ In calendar time `t = T - τ` both `V(s, t) = C(s, T - t)` and `V(s, t) = P(s, T
 `∂V/∂t + σ² s² / 2 ∂²V/∂s² + r (s ∂V/∂s - V) = 0`
 
 for `s > 0` and `t < T` (`TauCeti.BlackScholes.callPrice_pde`,
-`TauCeti.BlackScholes.putPrice_pde`). The formulas for the derivatives and the equation only need
-`σ ≠ 0`; the signs of gamma need `σ > 0`.
+`TauCeti.BlackScholes.putPrice_pde`). The formulas for the derivatives need `σ ≠ 0` and the signs
+of gamma need `σ > 0`. The equation holds for every `σ`: at `σ = 0` the closed-form formulas
+reduce, through Lean's convention `x / 0 = 0`, to `(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2`
+(`TauCeti.BlackScholes.callPrice_volatility_zero`, `TauCeti.BlackScholes.putPrice_volatility_zero`),
+which satisfy `∂V/∂t + r (s ∂V/∂s - V) = 0`.
 
 ## Main declarations
 
@@ -302,10 +305,24 @@ theorem deriv_putPrice_volatility_pos (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0)
 /-- **The Black–Scholes equation for the call.** In calendar time `t < T`, the call price
 `C(s, t) = callPrice s r σ K (T - t)` satisfies
 `∂C/∂t + σ² s² / 2 ∂²C/∂s² + r (s ∂C/∂s - C) = 0` at every spot `s > 0`. -/
-theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) {T t : ℝ} (ht : t < T) :
+theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
     deriv (fun u => callPrice s r σ K (T - u)) t +
       σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => callPrice x r σ K (T - t)) s +
       r * (s * deriv (fun x => callPrice x r σ K (T - t)) s - callPrice s r σ K (T - t)) = 0 := by
+  by_cases hσ : σ = 0
+  · -- At `σ = 0` the closed form is `(s - K e^{-rτ}) / 2` (by `x / 0 = 0`), which solves
+    -- `∂C/∂t + r (s ∂C/∂s - C) = 0`.
+    subst hσ
+    have hu : deriv (fun u => (s - K * exp (-r * (T - u))) / 2) t =
+        (0 - K * (exp (-r * (T - t)) * (-r * -1))) / 2 :=
+      (((hasDerivAt_const t s).sub
+        ((((hasDerivAt_id t).const_sub T).const_mul (-r)).exp.const_mul K)).div_const 2).deriv
+    have hx : deriv (fun x => (x - K * exp (-r * (T - t))) / 2) = fun _ => 1 / 2 := by
+      ext x
+      exact (((hasDerivAt_id x).sub_const _).div_const 2).deriv
+    simp only [callPrice_volatility_zero]
+    rw [hu, hx, deriv_const]
+    ring
   have hτ : 0 < T - t := sub_pos.2 ht
   rw [((hasDerivAt_callPrice_maturity (r := r) hs hK hσ hτ).comp_const_sub T t).deriv,
     (hasDerivAt_deriv_callPrice_spot hs hK hσ hτ).deriv, deriv_callPrice_spot hs hK hσ hτ,
@@ -317,10 +334,24 @@ theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) {T t : ℝ} (ht
 /-- **The Black–Scholes equation for the put.** In calendar time `t < T`, the put price
 `P(s, t) = putPrice s r σ K (T - t)` satisfies
 `∂P/∂t + σ² s² / 2 ∂²P/∂s² + r (s ∂P/∂s - P) = 0` at every spot `s > 0`. -/
-theorem putPrice_pde (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) {T t : ℝ} (ht : t < T) :
+theorem putPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
     deriv (fun u => putPrice s r σ K (T - u)) t +
       σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => putPrice x r σ K (T - t)) s +
       r * (s * deriv (fun x => putPrice x r σ K (T - t)) s - putPrice s r σ K (T - t)) = 0 := by
+  by_cases hσ : σ = 0
+  · -- At `σ = 0` the closed form is `(K e^{-rτ} - s) / 2` (by `x / 0 = 0`), which solves
+    -- `∂P/∂t + r (s ∂P/∂s - P) = 0`.
+    subst hσ
+    have hu : deriv (fun u => (K * exp (-r * (T - u)) - s) / 2) t =
+        K * (exp (-r * (T - t)) * (-r * -1)) / 2 :=
+      ((((((hasDerivAt_id t).const_sub T).const_mul (-r)).exp.const_mul K).sub_const s).div_const
+        2).deriv
+    have hx : deriv (fun x => (K * exp (-r * (T - t)) - x) / 2) = fun _ => -1 / 2 := by
+      ext x
+      exact (((hasDerivAt_id x).const_sub _).div_const 2).deriv
+    simp only [putPrice_volatility_zero]
+    rw [hu, hx, deriv_const]
+    ring
   have hτ : 0 < T - t := sub_pos.2 ht
   rw [((hasDerivAt_putPrice_maturity (r := r) hs hK hσ hτ).comp_const_sub T t).deriv,
     (hasDerivAt_deriv_putPrice_spot hs hK hσ hτ).deriv, deriv_putPrice_spot hs hK hσ hτ,

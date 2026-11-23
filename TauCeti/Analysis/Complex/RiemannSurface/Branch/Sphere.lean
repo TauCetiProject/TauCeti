@@ -10,24 +10,22 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
-import TauCeti.Geometry.Manifold.Triangulation.Complex
 
 /-!
 # The branched-cover Euler formula over the Riemann sphere
 
-The complement of every finite set of points of the Riemann sphere `OnePoint ℂ` has finite CW
-type (`Set.Finite.finiteCWType_compl_onePoint_complex`, in `Triangulation.Complex`). Applying the
-topological Riemann–Hurwitz formula
-(`FiniteHolomorphicMap.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_subset`)
-with the branch values as punctures and with `χ(ℙ¹) = 2` gives `-2 deg f + deg R_f = -χ(X)` for
-every finite holomorphic map `f : X → ℙ¹` from a compact Riemann surface of finite CW type
-(`FiniteHolomorphicMap.neg_two_mul_degree_add_ramificationDegree_eq_neg_eulerChar`, in the
-namespace `TauCeti.RiemannSurface`).
+Applying the topological Riemann--Hurwitz formula
+(`FiniteHolomorphicMap.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree`) with `χ(ℙ¹) = 2`
+gives `χ(X) = 2 deg f - deg R_f` for every finite holomorphic map `f : X → ℙ¹` from a compact
+Riemann surface (`FiniteHolomorphicMap.eulerChar_eq_two_mul_degree_sub_ramificationDegree`, in the
+namespace `TauCeti.RiemannSurface`). Its negated form `-2 deg f + deg R_f = -χ(X)`
+(`FiniteHolomorphicMap.neg_two_mul_degree_add_ramificationDegree_eq_neg_eulerChar`) is the shape
+of the canonical-divisor degree formula.
 
 ## References
 
 * Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
-  §17 (punctured surfaces in the topological proof of Riemann–Hurwitz).
+  §17 (punctured surfaces in the topological proof of Riemann--Hurwitz).
 -/
 
 public section
@@ -40,14 +38,22 @@ namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   [CompactSpace X] [T2Space X]
 
-/-- **Riemann–Hurwitz over the sphere, topological form.** A finite holomorphic map `f : X → ℙ¹`
-from a compact Riemann surface of finite CW type satisfies `-2 deg f + deg R_f = -χ(X)`. -/
-theorem neg_two_mul_degree_add_ramificationDegree_eq_neg_eulerChar [FiniteCWType X]
+/-- **Riemann--Hurwitz over the sphere, topological form.** A finite holomorphic map `f : X → ℙ¹`
+from a compact Riemann surface satisfies `χ(X) = 2 deg f - deg R_f`. -/
+theorem eulerChar_eq_two_mul_degree_sub_ramificationDegree
+    (f : FiniteHolomorphicMap X (OnePoint ℂ)) :
+    eulerChar X = 2 * (degree f : ℤ) - ramificationDegree f := by
+  rw [f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree, eulerChar_onePoint,
+    Complex.finrank_real_complex]
+  ring
+
+/-- **Riemann--Hurwitz over the sphere, negated form.** A finite holomorphic map `f : X → ℙ¹`
+from a compact Riemann surface satisfies `-2 deg f + deg R_f = -χ(X)`, the shape of the
+canonical-divisor degree formula. -/
+theorem neg_two_mul_degree_add_ramificationDegree_eq_neg_eulerChar
     (f : FiniteHolomorphicMap X (OnePoint ℂ)) :
     -2 * (degree f : ℤ) + ramificationDegree f = -eulerChar X := by
-  have := f.finite_branchValues.finiteCWType_compl_onePoint_complex
-  rw [f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_subset f.finite_branchValues
-    subset_rfl, eulerChar_onePoint, Complex.finrank_real_complex]
+  rw [f.eulerChar_eq_two_mul_degree_sub_ramificationDegree]
   ring
 
 /-- For the power map `z ↦ z²` of the sphere both sides are `-2`: the analytic count is

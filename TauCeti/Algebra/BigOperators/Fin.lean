@@ -12,12 +12,18 @@ public import TauCeti.Logic.Equiv.Fin.Basic
 public import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Max
+import Mathlib.Data.List.OfFn
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Sums and products over `Fin n`
 
 Successive differences along a finite sequence sum to the difference of its endpoints,
 including the empty edge sequence. Reversing every difference reverses the endpoint difference.
+Summing a tuple on `Fin (k + 1)` with one index left out, over all choices of the omitted
+index, counts every entry `k` times (`Fin.sum_sum_succAbove`, multiplicatively
+`Fin.prod_prod_succAbove`).
 The equivalence omitting the last index also reindexes sums by the preceding indices, and a
 filtered product over `Fin (n + 1)` splits off its first index; when two such products agree and
 so do their first factors, the products over the remaining indices agree.
@@ -30,10 +36,16 @@ A tuple is determined by its leading partial sums `∑_{j < k} a j`, and in a ca
 monoid each of them is at most the total. These are the facts about the dominance order of
 exponent vectors (compare leading partial sums) that triangular expansions in Hecke rings use.
 
-A product over the pairs `Fin 2 → α` is the double product over their two entries. A double sum
+A product over the pairs `Fin 2 → α` is the double product over their two entries, and a
+product over the triples `Fin 3 → α` is the triple product over their three entries. A double sum
 over pairs of paths `Fin (i + 1) → X` and `Fin (j + 1) → X` meeting at an endpoint is a sum over
 the paths of length `i + j` (`Fin.sum_sum_ite_apply_last_eq_apply_zero`). A sum over the pairs
 `(a, b)` with `P a` and a fixed second entry `b` is the sum over the `a` with `P a`.
+
+Deleting the entry at position `p` of a tuple leaves its partial products up to `p` unchanged
+(`Fin.partialProd_removeNth_of_le`); in a group, the later partial products of the shortened tuple
+are those of the original one with the factor at `p` cancelled
+(`Fin.partialProd_removeNth_of_ge`).
 
 A strictly increasing list `a` on `Fin (n + 1)` in an additive group with a preorder (no
 compatibility between the two is needed) telescopes (`StrictMono.eq_add_sum_ite_sub`): `a k` is
@@ -43,12 +55,32 @@ compatibility between the two is needed) telescopes (`StrictMono.eq_add_sum_ite_
 
 Mathlib's `finSigmaFinEquiv` places the pair `⟨i, k⟩`, `k < m i`, at `∑_{i' < i} m i' + k`
 (`val_finSigmaFinEquiv_eq_sum_filter`), so pairs with an earlier first entry come earlier
-(`finSigmaFinEquiv_lt_of_fst_lt`).
+(`finSigmaFinEquiv_lt_of_fst_lt`). Read as the positions of `r` consecutive blocks of lengths
+`m i`, the cyclic successor `finRotate` moves inside a block to the next position of that block
+(`Fin.finRotate_finSigmaFinEquiv_of_lt`), and from the last position of a block to the first
+position of the cyclically next block, when that block is nonempty
+(`Fin.finRotate_finSigmaFinEquiv_of_eq`). The list of values of a function on `Fin (∑ i, m i)`
+is the concatenation of the lists of its values on the blocks (`List.ofFn_sum`), as `List.ofFn_mul`
+says for blocks of equal length.
+For a multi-index `α : Fin n → ℕ`, the blocks of lengths `αᵢ` give the word
+`TauCeti.multiIndexWord α` listing each index `i` exactly `αᵢ` times, in increasing order
+(`TauCeti.card_filter_multiIndexWord_eq`); a product over its letters is the monomial
+`∏ᵢ gᵢ ^ αᵢ` (`TauCeti.prod_multiIndexWord`), and a sum over its letters is `∑ᵢ αᵢ • gᵢ`
+(`TauCeti.sum_multiIndexWord`).
 -/
 
 public section
 
 namespace Fin
+
+/-- Reindex the product omitting an index by the order-preserving map `Fin.succAbove`. -/
+@[to_additive /-- Reindex the sum omitting an index by the order-preserving map
+`Fin.succAbove`. -/]
+theorem prod_univ_succAbove_eq_erase {M : Type*} [CommMonoid M] {n : ℕ}
+    (f : Fin (n + 1) → M) (j : Fin (n + 1)) :
+    (∏ i : Fin n, f (j.succAbove i)) = ∏ i ∈ Finset.univ.erase j, f i := by
+  classical
+  simp only [univ_succAbove n j, Finset.erase_cons, Finset.prod_map, coe_succAboveEmb]
 
 /-- Successive differences telescope to the endpoint difference. -/
 theorem sum_univ_succ_sub_castSucc {G : Type*} [AddCommGroup G] {n : ℕ}
@@ -65,6 +97,24 @@ theorem sum_univ_castSucc_sub_succ {G : Type*} [AddCommGroup G] {n : ℕ}
     (f : Fin (n + 1) → G) :
     ∑ i : Fin n, (f i.castSucc - f i.succ) = f 0 - f (last n) := by
   simpa only [neg_sub_neg] using sum_univ_succ_sub_castSucc (fun i ↦ -f i)
+
+/-- Multiplying the products of a tuple on `Fin (k + 1)` with one index left out, over all `k + 1`
+choices of the omitted index, takes every entry `k` times. -/
+@[to_additive /-- Summing a tuple on `Fin (k + 1)` with one index left out, over all `k + 1`
+choices of the omitted index, counts every entry `k` times. -/]
+theorem prod_prod_succAbove {M : Type*} [CommMonoid M] {k : ℕ} (f : Fin (k + 1) → M) :
+    ∏ j : Fin (k + 1), ∏ i : Fin k, f (j.succAbove i) = (∏ i, f i) ^ k := by
+  classical
+  have h (j : Fin (k + 1)) :
+      ∏ i : Fin k, f (j.succAbove i) = ∏ l ∈ Finset.univ.filter (· ≠ j), f l := by
+    rw [Finset.filter_ne', ← Finset.prod_image fun _ _ _ _ h ↦ succAbove_right_injective h,
+      image_succAbove_univ, Finset.compl_eq_univ_sdiff, Finset.sdiff_singleton_eq_erase]
+  -- Exchanging the two products, each entry `f l` occurs once for every index `j ≠ l`.
+  simp_rw [h, Finset.prod_filter]
+  rw [Finset.prod_comm, ← Finset.prod_pow]
+  refine Finset.prod_congr rfl fun l _ ↦ ?_
+  rw [← Finset.prod_filter, Finset.prod_const]
+  simp [Finset.filter_ne]
 
 -- Adapted from [AINTLIB](https://github.com/CBirkbeck/AINTLIB) (Chris Birkbeck), Apache-2.0, at
 -- commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`,
@@ -172,6 +222,38 @@ theorem sum_sum_ite_apply_last_eq_apply_zero {X N : Type*} [Fintype X] [Decidabl
       · simp only [show ¬ (i + t ≤ i) by omega, dite_false]
         exact congrArg p.2 (Fin.ext (by simp))
 
+/-- Deleting the entry at position `p` does not change the partial products up to `p`. -/
+@[to_additive /-- Deleting the entry at position `p` does not change the partial sums up to
+`p`. -/]
+theorem partialProd_removeNth_of_le {M : Type*} [Monoid M] {n : ℕ} (f : Fin (n + 1) → M)
+    {p l : Fin (n + 1)} (h : l ≤ p) :
+    partialProd (p.removeNth f) l = partialProd f l.castSucc := by
+  induction l using Fin.induction with
+  | zero => simp
+  | succ l ih =>
+    have hl : l.castSucc < p := lt_of_lt_of_le castSucc_lt_succ h
+    rw [partialProd_succ, ih hl.le, removeNth_apply, succAbove_of_castSucc_lt _ _ hl,
+      ← succ_castSucc, partialProd_succ]
+
+/-- After the deleted position `p`, a partial product of the shortened tuple is the corresponding
+partial product of the original tuple with the factor `f p` cancelled. -/
+@[to_additive /-- After the deleted position `p`, a partial sum of the shortened tuple is the
+corresponding partial sum of the original tuple with the term `f p` cancelled. -/]
+theorem partialProd_removeNth_of_ge {G : Type*} [Group G] {n : ℕ} (f : Fin (n + 1) → G)
+    {p l : Fin (n + 1)} (h : p ≤ l) :
+    partialProd (p.removeNth f) l =
+      partialProd f p.castSucc * (partialProd f p.succ)⁻¹ * partialProd f l.succ := by
+  induction l using Fin.induction with
+  | zero =>
+    obtain rfl : p = 0 := nonpos_iff_eq_zero.1 h
+    simp
+  | succ l ih =>
+    rcases (h.lt_or_eq) with hlt | rfl
+    · have hpl : p ≤ l.castSucc := le_castSucc_iff.2 hlt
+      rw [partialProd_succ, ih hpl, removeNth_apply, succAbove_of_le_castSucc _ _ hpl,
+        mul_assoc _ (partialProd f l.castSucc.succ), succ_castSucc, ← partialProd_succ]
+    · rw [partialProd_removeNth_of_le f le_rfl, inv_mul_cancel_right]
+
 end Fin
 
 namespace Fintype
@@ -194,6 +276,14 @@ theorem prod_finTwoArrow {α M : Type*} [Fintype α] [CommMonoid M] (f : (Fin 2 
   rw [← (finTwoArrowEquiv α).symm.prod_comp, prod_prod_type]
   rfl
 
+/-- **A product over the triples `Fin 3 → α`** is the triple product over their three entries. -/
+@[to_additive /-- **A sum over the triples `Fin 3 → α`** is the triple sum over their three
+entries. -/]
+theorem prod_finThreeArrow {α M : Type*} [Fintype α] [CommMonoid M] (f : (Fin 3 → α) → M) :
+    ∏ w, f w = ∏ p, ∏ q, ∏ r, f ![p, q, r] := by
+  rw [← (Fin.consEquiv fun _ ↦ α).prod_comp, prod_prod_type]
+  exact Finset.prod_congr rfl fun p _ ↦ prod_finTwoArrow fun v ↦ f (Fin.cons p v)
+
 end Fintype
 
 /-- The position of the pair `⟨i, k⟩` in the lexicographic order is `∑_{i' < i} m i' + k`. -/
@@ -202,11 +292,11 @@ theorem val_finSigmaFinEquiv_eq_sum_filter {r : ℕ} {m : Fin r → ℕ}
     (finSigmaFinEquiv x : ℕ) = ∑ i ∈ Finset.univ.filter (· < x.1), m i + x.2 := by
   rw [finSigmaFinEquiv_apply]
   congr 1
-  refine (Finset.sum_map Finset.univ (Fin.castLEEmb x.1.2.le) m).symm.trans
+  refine (Finset.sum_map Finset.univ (Fin.castLEEmb x.1.isLt.le) m).symm.trans
     (congrArg (fun s : Finset (Fin r) => s.sum m) ?_)
   ext t
   simp only [Finset.mem_map, Finset.mem_univ, true_and, Fin.coe_castLEEmb, Finset.mem_filter]
-  exact ⟨fun ⟨u, hu⟩ => hu ▸ u.2, fun h => ⟨⟨t, h⟩, rfl⟩⟩
+  exact ⟨fun ⟨u, hu⟩ => hu ▸ u.isLt, fun h => ⟨⟨t, h⟩, rfl⟩⟩
 
 /-- A pair with an earlier first entry comes earlier in the lexicographic order. -/
 theorem finSigmaFinEquiv_lt_of_fst_lt {r : ℕ} {m : Fin r → ℕ} {x y : (i : Fin r) × Fin (m i)}
@@ -220,8 +310,75 @@ theorem finSigmaFinEquiv_lt_of_fst_lt {r : ℕ} {m : Fin r → ℕ} {x y : (i : 
     · exact ht.trans h
   have := Finset.sum_le_sum_of_subset (f := m) hsub
   rw [Finset.sum_insert (by simp)] at this
-  have := x.2.2
+  have := x.2.isLt
   omega
+
+namespace Fin
+
+open TauCeti
+
+variable {r : ℕ} {m : Fin r → ℕ}
+
+/-- The position of `⟨i, j⟩` in the concatenation is the total length of the blocks before `i`,
+plus `j`. -/
+private theorem coe_finSigmaFinEquiv (i : Fin r) (j : Fin (m i)) :
+    (finSigmaFinEquiv ⟨i, j⟩ : ℕ) = prefixSum i m + j := by
+  rw [finSigmaFinEquiv_apply, prefixSum_eq_sum_castLE i.isLt.le]
+
+/-- Inside a block, the cyclic successor of a position is the next position of that block. -/
+theorem finRotate_finSigmaFinEquiv_of_lt (i : Fin r) (j : Fin (m i)) (h : (j : ℕ) + 1 < m i) :
+    finRotate _ (finSigmaFinEquiv ⟨i, j⟩) = finSigmaFinEquiv ⟨i, ⟨j + 1, h⟩⟩ := by
+  apply Fin.ext
+  have hlt := (finSigmaFinEquiv ⟨i, ⟨j + 1, h⟩⟩).is_lt
+  rw [Fin.coe_finRotate_eq_ite, coe_finSigmaFinEquiv, coe_finSigmaFinEquiv]
+  rw [coe_finSigmaFinEquiv] at hlt
+  simp only at hlt ⊢
+  split_ifs <;> omega
+
+/-- The cyclic successor of the last position of a block is the first position `j'` of the
+cyclically next block; the existence of `j'` says that this block is nonempty. -/
+theorem finRotate_finSigmaFinEquiv_of_eq (i : Fin r) (j : Fin (m i)) (h : (j : ℕ) + 1 = m i)
+    (j' : Fin (m (finRotate r i))) (hj' : (j' : ℕ) = 0) :
+    finRotate _ (finSigmaFinEquiv ⟨i, j⟩) = finSigmaFinEquiv ⟨finRotate r i, j'⟩ := by
+  apply Fin.ext
+  have hlt := (finSigmaFinEquiv ⟨finRotate r i, j'⟩).is_lt
+  have hstep : prefixSum (i + 1) m = prefixSum i m + m i := prefixSum_succ i.isLt m
+  rw [Fin.coe_finRotate_eq_ite, coe_finSigmaFinEquiv, coe_finSigmaFinEquiv]
+  rw [coe_finSigmaFinEquiv] at hlt
+  rw [Fin.coe_finRotate_eq_ite i] at hlt ⊢
+  by_cases hi : (i : ℕ) + 1 = r
+  · rw [hi, prefixSum_of_le le_rfl] at hstep
+    simp only [hi, ite_true, prefixSum_zero]
+    split_ifs <;> omega
+  · simp only [hi, ite_false] at hlt ⊢
+    split_ifs <;> omega
+
+end Fin
+
+namespace List
+
+/-- The list of values of a function on the concatenation of blocks of lengths `m i` is the
+concatenation of the lists of its values on the blocks. -/
+theorem ofFn_sum {α : Type*} {r : ℕ} {m : Fin r → ℕ} (f : Fin (∑ i, m i) → α) :
+    ofFn f = (ofFn fun i => ofFn fun j => f (finSigmaFinEquiv ⟨i, j⟩)).flatten := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [ofFn_congr (Fin.sum_univ_castSucc m), ofFn_add, ofFn_succ', concat_eq_append,
+      flatten_append, flatten_singleton, ih]
+    congr 3 <;> funext i
+    · congr 1
+      funext j
+      congr 1
+      ext
+      simp [finSigmaFinEquiv_apply]
+    · congr 1
+      ext
+      simp [finSigmaFinEquiv_apply]
+      -- The two sums agree term by term: `Fin.castSucc` and `Fin.castLE` keep the value.
+      rfl
+
+end List
 
 namespace TauCeti
 
@@ -231,6 +388,36 @@ theorem sum_finSuccAboveEquiv_last {M : Type*} [AddCommMonoid M] (n : ℕ)
     ∑ i : Fin n, z ⟨i.castSucc, Fin.castSucc_ne_last i⟩ = ∑ j, z j := by
   simpa only [finSuccAboveEquiv_last_apply] using
     Equiv.sum_comp (finSuccAboveEquiv (Fin.last n)) z
+
+/-- The word in the indices `Fin n` listing each index `i` exactly `αᵢ` times, in increasing
+order. Evaluating an iterated derivative on the directions of this word computes the monomial
+`∂^α` in directional derivatives. -/
+def multiIndexWord {n : ℕ} (α : Fin n → ℕ) (j : Fin (∑ i, α i)) : Fin n :=
+  (finSigmaFinEquiv.symm j).1
+
+/-- The letter of `TauCeti.multiIndexWord α` at a position in the block of `i` is `i`. -/
+@[simp]
+theorem multiIndexWord_finSigmaFinEquiv {n : ℕ} (α : Fin n → ℕ) (p : (i : Fin n) × Fin (α i)) :
+    multiIndexWord α (finSigmaFinEquiv p) = p.1 := by
+  simp [multiIndexWord]
+
+open Finset in
+/-- Each index `i` occurs exactly `αᵢ` times in `TauCeti.multiIndexWord α`. -/
+@[simp]
+theorem card_filter_multiIndexWord_eq {n : ℕ} (α : Fin n → ℕ) (i : Fin n) :
+    #{j | multiIndexWord α j = i} = α i := by
+  rw [card_filter, ← Fintype.sum_equiv finSigmaFinEquiv (fun p ↦ if p.1 = i then 1 else 0)
+    (fun j ↦ if multiIndexWord α j = i then 1 else 0) fun p ↦ by simp,
+    Fintype.sum_sigma]
+  simp [apply_ite]
+
+/-- A product over the letters of `TauCeti.multiIndexWord α` is the monomial `∏ᵢ gᵢ ^ αᵢ`. -/
+@[to_additive (attr := simp) /-- A sum over the letters of `TauCeti.multiIndexWord α` is
+`∑ᵢ αᵢ • gᵢ`. -/]
+theorem prod_multiIndexWord {n : ℕ} {M : Type*} [CommMonoid M] (α : Fin n → ℕ) (g : Fin n → M) :
+    ∏ j, g (multiIndexWord α j) = ∏ i, g i ^ α i := by
+  rw [← Fintype.prod_equiv finSigmaFinEquiv (fun p ↦ g p.1) _ fun p ↦ by simp]
+  simp [Fintype.prod_sigma]
 
 end TauCeti
 

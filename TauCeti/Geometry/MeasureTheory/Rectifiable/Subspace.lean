@@ -79,7 +79,7 @@ theorem Submodule.countablyRectifiable {E : Type*} [NormedAddCommGroup E] [Norme
     [MeasurableSpace E] [BorelSpace E] (p : Submodule ℝ E) [FiniteDimensional ℝ p] :
     CountablyRectifiable (finrank ℝ p) (p : Set E) := by
   have h : (p : Set E) = Subtype.val '' (univ : Set p) := by simp
-  rw [h, CountablyRectifiable.isometry_image_iff isometry_subtype_coe]
+  rw [h, CountablyRectifiable.isometry_image_iff isometry_subtypeVal]
   exact .of_finiteDimensional univ
 
 /-- An affine subspace with finite-dimensional direction in a normed torsor over a real normed
@@ -96,7 +96,7 @@ theorem AffineSubspace.countablyRectifiable {V P : Type*} [NormedAddCommGroup V]
   let φ : EuclideanSpace ℝ (Fin (finrank ℝ s.direction)) → P := fun u ↦ (e u : V) +ᵥ q
   have hlip : LipschitzWith ‖e.toContinuousLinearMap‖₊ φ := by
     have hvadd : LipschitzWith 1 (fun w : s.direction ↦ (w : V) +ᵥ q) :=
-      ((IsometryEquiv.vaddConst q).isometry.comp isometry_subtype_coe).lipschitzWith
+      ((IsometryEquiv.vaddConst q).isometry.comp isometry_subtypeVal).lipschitzWith
     simpa only [one_mul, Function.comp_def, ContinuousLinearEquiv.coe_coe,
       IsometryEquiv.vaddConst_apply, φ] using hvadd.comp e.toContinuousLinearMap.lipschitzWith
   have hφ : φ '' univ = (s : Set P) := by
@@ -104,7 +104,7 @@ theorem AffineSubspace.countablyRectifiable {V P : Type*} [NormedAddCommGroup V]
     simp only [image_univ, mem_range, φ, SetLike.mem_coe]
     refine ⟨?_, fun hp ↦ ?_⟩
     · rintro ⟨u, rfl⟩
-      exact AffineSubspace.vadd_mem_of_mem_direction (e u).2 hq
+      exact AffineSubspace.vadd_mem_of_mem_direction (e u).property hq
     · refine ⟨e.symm ⟨p -ᵥ q, AffineSubspace.vsub_mem_direction hp hq⟩, ?_⟩
       simp
   rw [← hφ]

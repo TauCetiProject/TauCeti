@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SemidirectProduct
-public import TauCeti.Algebra.Group.Subgroup.Pointwise
+public import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # Gluing homomorphisms on a subgroup and a normalizing subgroup
@@ -112,14 +112,10 @@ theorem eq_liftSupOfRightLeNormalizer (F : ↥(H ⊔ K) →* D)
     (hF : F.comp (inclusion le_sup_left) = f)
     (hG : F.comp (inclusion le_sup_right) = g) :
     F = liftSupOfRightLeNormalizer H K hLE f g hconj hagree := by
-  apply MonoidHom.ext
-  intro x
-  obtain ⟨a, ha, b, hb, hab⟩ := (mem_sup_of_right_le_normalizer_left hLE).mp x.property
-  have hfactor : x = inclusion le_sup_left ⟨a, ha⟩ * inclusion le_sup_right ⟨b, hb⟩ := by
-    apply Subtype.ext
-    exact hab.symm
-  rw [hfactor, map_mul, map_mul, liftSupOfRightLeNormalizer_left,
-    liftSupOfRightLeNormalizer_right]
-  exact congrArg₂ (· * ·) (DFunLike.congr_fun hF ⟨a, ha⟩) (DFunLike.congr_fun hG ⟨b, hb⟩)
+  apply H.sup_hom_ext K
+  · intro a
+    simpa using DFunLike.congr_fun hF a
+  · intro b
+    simpa using DFunLike.congr_fun hG b
 
 end Subgroup
